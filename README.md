@@ -1,286 +1,170 @@
-# Felucca
+# JIANT
 
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
-[![Sponsor](https://img.shields.io/badge/Sponsor-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/hugelton)
 
-![Felucca 1.0](docs/felucca-1.0.png)
+Firmware de vivo para el **M-VAVE FM-1**: un instrumento para componer y tocar canciones enteras sin
+computadora, con control directo de todo lo que suena. Es un fork de
+[Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 de Hügelton Instruments (GPL-3.0), y toma de
+[SLOOP](https://github.com/isod89/sloop-fm1) el sistema de canciones.
 
-**TL;DR:** Felucca 1.1.5.1 — Big New Features, field testing. Connect your FM-1 to a computer by USB,
-open the [web installer](https://hugelton.github.io/Felucca/) in Chrome or Edge, and press Install;
-no extra hardware is needed. Installing is at your own risk: M-VAVE's updater or the installer's
-**Return to official V15** takes you back. Want to look around first?
-[Try it in your browser](https://hugelton.github.io/Felucca/webapp/try/), no FM-1 needed.
+> **Estado: en desarrollo (v0.1).** Compila y pasa todos los tests de Felucca y los propios, pero
+> **todavía no se probó en un FM-1 real**. No lo instales sin hacer antes un backup del flash.
 
-Multi-engine synthesizer firmware for the M-VAVE FM-1. Please report what you find in
-[Issues](https://github.com/hugelton/Felucca/issues).
+## La idea
 
-- Install: [web installer](https://hugelton.github.io/Felucca/) (Chrome or Edge, USB), or `tools/fm1_install.py` from a terminal
-- Try: [Felucca in your browser](https://hugelton.github.io/Felucca/webapp/try/): the same firmware compiled to
-  WebAssembly, with the panel on screen (mouse, touch, computer keyboard, Web MIDI in)
-- Editor: [web editor](https://hugelton.github.io/Felucca/webapp/editor/); its development has moved to
-  [Felucca-WebApp](https://github.com/hugelton/Felucca-WebApp)
-- Build: [BUILDING.md](BUILDING.md)
+- **Muchas canciones dentro del aparato.** 8 canciones, cada una con 4 variaciones (A–D) y una cadena
+  de partes al estilo SLOOP: quick chain, SONG REC y guardar / recuperar el estado de una parte.
+- **Canciones que evolucionan.** Cada paso de la cadena puede cambiar mutes, macros y efectos (escenas):
+  no quedar preso de un loop donde solo se mueve un cutoff.
+- **Batería tipo Microtonic (DRUM-X).** Síntesis en tiempo real con morph A↔B por sonido, mutes por grupo
+  (KICK, SNARE, HAT, PERCS).
+- **Deformación en vivo.** Punch-in FX que actúan sobre las notas (octava, stutter, arp, decay, random)
+  y se pueden secuenciar; 4 macros en los knobs; master con clipper y PUNCH.
+- **Menos engines, pero más profundos.** Se recorta lo que ocupa memoria sin aportar, y se suma
+  modulación a lo que queda.
 
-<a href="https://hugelton.itch.io/felucca"><img src="https://static.itch.io/images/badge-color.svg" alt="Available on itch.io" width="74"></a>
+La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) y el orden de trabajo en
+[FELUCCA-TONIC-SPEC.md](FELUCCA-TONIC-SPEC.md).
 
-## Features
+## Estado
 
-- **Thirteen engines** (below), each with its own factory presets
-- **Four tracks**, one synth part each with its own engine and sound (drums are the DRUM engine);
-  8 voices shared between them. ALGORITHM selects the track on every page
-- **Sequencer:** 64 steps per track with chords, ties, accent, slide, per-step chance and ratchets
-  (a step played 2, 3 or 4 times in its length); a piano roll of the steps; a drum grid (white keys =
-  steps, black keys = lanes); automation (formerly motion):
-  recording of knob moves per step (an automation icon marks the cards it drives); live loop recording
-  with overdub; step recording at the cursor (REC on SEQ > STEP while stopped: each key writes the step
-  under the cursor and moves on; without REC the keys only play); divisions listed by length, 4 bars
-  to 1/32; loading a sound never touches your patterns
-- **Parameter locks:** hold a step on SEQ > STEP (or the drum grid) and turn a knob to set that
-  parameter for that step only; EDIT with the step held clears its locks. **SEQ > AUTO LIST** lists the
-  track's locks and automation, step by step, to change their step, parameter or value, turn a lock into
-  automation or back, add or delete one. Loading another sound keeps the locks
-  that still mean the same (all of them for the same engine)
-- **SEQ TOOLS:** hold SEQ on STEP, PATTERN, CHANCE or AUTOMATION for tools on the keys: CLEAR, REVERSE,
-  SHIFT < / >, **RANDOM** (a new beat, or new notes in the scale on the same rhythm) and **COOK** (changes
-  the pattern a little each press); on a DRUM track also BEAT and each lane's CLEAR, REVERSE, FILL and
-  RANDOM. No undo (TONIC): the song layer's RECALL is coming in its place
-- **Metronome and count-in:** CLICK (OFF, while recording, or always) with three levels, and a count-in
-  of 1 or 2 bars before recording from stop; the click goes to the headphones and speaker only, never to
-  USB audio or into a pattern
-- **Songs:** chain patterns A–D
-- **Chord keys:** one finger plays an in-key chord (triads or sevenths of the scale, or fixed chord
-  shapes), with voicings; on the keys, MIDI in, recording and the arpeggiator
-- **Arpeggiator** with UP, DN, UPDN, RND, ORD, REPEAT and, for chords, DNUP, UP+8, CONV, DIVG,
-  PINKY, THUMB, WALK and CHORD; a beat LED; 16 scales with a white-key mode, glide,
-  MONO / LEGATO / UNISON
-- **Modulation matrix:** 4 slots per track, MIDI controllers as sources
-- **Effects:** distortion and the SLICER per track; chorus, delay and reverb sends (the reverb as
-  ROOM or SPRING); master limiter
-- **FX layer:** hold FX for repeat (1/8, 1/16, 1/32: F3 G3 A3) and filter sweeps (LPF B3, HPF C4), and
-  mutes on the black keys; MENU > FX LATCH makes them toggle, so nothing has to stay held (TONIC removed
-  reverse, tape stop, freeze and the harmonizer)
-- **Quick layers:** hold FX, GLO, SCL or EDIT for shortcuts on the keys and knobs, or double-tap it to
-  keep the layer open; hold REC for the REC layer (CLEAR the track's sequence, CLICK, COUNT-IN, CLICK
-  LEVEL) and SEQ on the SEQ pages for SEQ TOOLS; REC on every page; OCT+
-  confirms, OCT- goes back; what can be pressed breathes softly instead of blinking
-- **Presets:** factory presets, 32 user preset slots and 4 projects, named on the device (an FM6
-  sound keeps its own patch in both); projects from every earlier version load. The PRESETS knob
-  changes the sound from every page that is not a list, and moves the step cursor on the SEQ pages.
-  Turn the FM-1 off and on and the music is as you left it (MENU > RESTORE LAST, an autosave of its own,
-  written only when stopped and idle)
-- **Screen:** flat UI with Inter Tight and Fukiai icons, FLAT or LINE style, 10 palettes including
-  grayscale, black and white, high contrast and NIGHT; tracks numbered 1–4 on small cushions;
-  MENU > LARGE for tall knob cards with larger labels and values; the menu in four tabs. The header
-  shows the track, the play state and the tempo in three parts; a new start-up screen; the screen can
-  go dark when the panel is left alone (MENU > SCREEN OFF)
-- **LEDs:** idle buttons and keys glow dim so the panel can be found in the dark (MENU > LEDS: OFF,
-  DIM LO, DIM HI or INV, the official firmware's look); PLAY turns green while playing; the keys show
-  the notes the sequencer and MIDI IN play, and on SEQ > STEP (stopped) the notes of the step under the cursor;
-  the drum grid marks the beats (steps 1, 5, 9, 13); MENU > SCALE LEDS shows the track's scale on the keys;
-  a soft light sweeps over the keys at power-on
-- **USB:** class-compliant MIDI in and out, and a stereo audio input ("Felucca") at 44.1 or 48 kHz
-  (the computer picks) that records the master output on the computer, no driver needed (at a fixed level with MENU > USB LEVEL FIXED;
-  on macOS 13–15, set MENU > USB SERIAL to OFF so the audio input appears)
-- **MIDI:** USB and TRS MIDI in; with ROUT CH1-4, channels 1–4 play tracks 1–4 and 5–16 are ignored
-  (ROUT SEL: every channel plays the selected track), and the keys send on the track's channel; pitch
-  bend, sustain, panic; clock from internal, USB or TRS. MIDI CCs set track parameters: 5 GLIDE, 7 LEVEL,
-  10 PAN, 71 resonance, 72 / 73 / 75 release / attack / decay, 74 brightness, 91 / 93 / 94 the reverb,
-  chorus and delay sends
-- **Web:** editor for every parameter (with a 6-operator FM patch editor), step grid, mixer,
-  preset library, sample upload and recording with trim, the MENU settings; full backup and restore;
-  return to the official firmware; Felucca itself running in the browser
-
-## Controls
-
-![FM-1 controls with Felucca](docs/controls.jpg)
-
-- Tap a page button for its page, again for the next; HOME returns home
-- Hold FX, GLO, SCL or EDIT for its quick layer; HOME for the menu (SAVE held: reserved for TONIC's song layer), SEQ for the song
-  (on STEP, PATTERN, CHANCE and AUTOMATION, SEQ held opens SEQ TOOLS instead)
-- Hold REC on any page for the REC layer: F3 clears the track's sequence, G3 CLICK,
-  A3 COUNT-IN, B3 CLICK LEVEL. A tap of REC arms the track as before
-- Double-tap FX, GLO, SCL, EDIT, REC or SEQ (TOOLS) to keep its layer open without holding; tap it again to close
-- On SEQ > STEP, hold a step and turn KNOB 1–4 to lock those parameters on that step
-- On action pages and in dialogs, OCT+ does it and OCT− goes back; in the menu, OCT+ / OCT− change the value and HOME closes it
-- Save a sound: stop, tap SAVE, pick a slot with KNOB 1, then OCT+ and OCT+ again (name it with the keys)
-
-## Menu
-
-Hold **HOME** for the menu. Since 1.0.5 it is in four tabs: **DISPLAY** (COLOR to LEDS, SCREEN OFF),
-**CONTROL** (HOLD to BPM LOCK, SCALE LEDS), **AUDIO** (SPEAKER EQ, USB LEVEL, CLICK, CLICK LEVEL, COUNT-IN) and
-**SYSTEM** (USB SERIAL, RESTORE LAST, HARDWARE CALIBRATION, ABOUT).
-ALGORITHM moves between the tabs and PRESETS through the rows of one; any of KNOB 1–4, or OCT+ / OCT−,
-changes the value (OCT+ opens HARDWARE CALIBRATION and ABOUT); press HOME to close the menu. Every new
-setting defaults to the earlier behaviour. From 1.0.4 the web editor's Settings tab reads and changes them
-too (COLOR to USB SERIAL), saved the same way as from the menu; with 1.0.5 it groups them in the same tabs.
-
-- **COLOR:** the palette. GREY (grayscale, called MONO up to 1.0.1), GREEN, AMBER, ICE, VIOLET, ROSE,
-  PAPER (light), HI-CON (high contrast), NIGHT (the 0.9 look: true black, green-tinted text) and MONO
-  (black and white)
-- **STYLE:** FLAT (filled cards) or LINE (areas divided by thin lines)
-- **LARGE:** OFF or ON: on HOME and the value pages the four knob cards grow tall, marked K1–K4, with
-  larger labels and values about twice the size; the graph below becomes a strip. Lists, the piano roll,
-  the drum grid and the quick layers keep their layout with larger labels
-- **ANIM:** ON or OFF; OFF shows every change at once, without rolling digits, a gliding piano roll or
-  the LED sweep at power-on
-- **LEDS:** OFF (no glow), DIM LO, DIM HI (default) or INV (the idle LEDs lit, the active ones dark).
-  What can be pressed breathes up to about 60 % of a lit LED, about 30 % with DIM LO
-- **SCREEN OFF:** NEVER (default since 1.1.5.1), 5 MIN, 15 MIN, 30 MIN or 60 MIN: after that long with no
-  button, key or knob touched, the screen goes dark; the sound, the sequencer, MIDI and USB go on. The
-  backlight stays on: on the FM-1 its line also enables the buttons and keys (1.1.5 turned it off, and then
-  nothing woke the FM-1 until it was switched off). The next button, key or knob only turns the screen back on
-- **HOLD:** how long FX, GLO, SCL or EDIT is held before its map shows
-- **KNOB ACCEL:** OFF (one step per click) or ON: a fast, steady turn of a wide value moves 2 to 4 steps
-  per click, up to 8 on values of more than 64 steps, the FX and GLO layers' knobs included; lists never
-  jump. ON or OFF, every click of a fast turn counts
-- **FX LATCH:** ON, FX + an effect key turns the effect on until pressed again, the knob macros stay
-  where you leave them, and FX + OCT− turns everything off
-- **BPM LOCK:** ON, SELECT no longer changes the tempo; hold GLO and turn SELECT, tap F4 in the GLO
-  layer or use GLO > GLOBAL instead
-- **SCALE LEDS:** OFF or ON: the keys show the selected track's scale all the time (the root a little
-  brighter); not on DRUM or SLICE tracks
-- **SPEAKER EQ:** FLAT, LOWCUT or BASS+, a tone setting for the built-in speaker (not a switch). It also
-  shapes the headphone out and USB audio, so keep it on FLAT when recording. The firmware cannot turn
-  the speaker off, but headphones in the jack do
-- **USB LEVEL:** MASTER (the MASTER knob sets the USB audio level too) or FIXED (USB always at full
-  level, MASTER sets only the speaker and headphones)
-- **CLICK:** OFF (default), REC (while a track is armed) or ON: a click on every beat while playing, the
-  bar's first beat higher. **CLICK LEVEL:** LOW, MID (default) or HIGH; MASTER sets it too
-- **COUNT-IN:** OFF (default), 1 BAR or 2 BARS: with a track armed, PLAY counts in first (clicking even with
-  CLICK OFF), and a note played in the last half beat lands on step 1. Not with an external clock
-- **USB SERIAL:** ON or OFF, applied when the menu closes (the FM-1 reconnects). OFF leaves out the
-  serial console, a developer tool, so the FM-1 is a plain audio + MIDI device; this lets macOS 13–15
-  see its USB audio input. MIDI, the editor and the installer work either way
-- **RESTORE LAST:** ON (default) or OFF. ON, the FM-1 starts with the music you left (the header says
-  RESTORED), kept in an autosave apart from the four projects; it is written when the music changed, the
-  transport is stopped and nothing has been touched for 10 s, at most once a minute. OFF starts with the
-  power-on sounds
-- **HARDWARE CALIBRATION** and **ABOUT**
-
-## Engines
-
-In the order the device lists them:
-
-- **ANALOG**: virtual analog; two oscillators, noise, drive, resonant low-pass filter
-- **FM6**: classic 6-operator FM (Dexed-based): 32 algorithms, a full patch per track edited in the
-  web editor (which imports .syx files), macros on the device, an algorithm chart on screen; SLOT
-  picks a factory patch (F1–F8) or the track's own (OWN)
-- **PHASE**: phase distortion (ported from CrispyZebra)
-- **LOFI**: chiptune; pulse, triangle, saw, noise and a 4-bit wave RAM, stepped envelope, sweep, arpeggio
-- **SAMPLE**: multisampled instruments and 3 user sample slots
-- **VOICE**: formant oscillator, sung vowels
-- **TRIO**: 3 oscillators with ring modulation and sync, multimode filter
-- **WHEEL**: tonewheel-style organ; drawbar registrations, percussion, key click, drive, rotary speaker
-- **GRAIN**: granular textures from the built-in samples or a user slot
-- **NOISE**: noise from analog to digital: colours, crackle, shift-register and metallic tones
-- **SLICE**: a drum break, a piano note (both built in) or your own sample cut into slices, one per key;
-  set the slices by hand on the SLICES page
-- **DRUM**: an 8-lane kit of Felucca's own drum voices on the General MIDI key map. KIT picks the
-  standard kit or one of five virtual-analog (VA) kits in the manner of
-  classic analog drum machines (the numbers are a hint), every lane its own voice: **80** (deep sine kick with a long decay, noisy snare,
-  six-square hats), **10** (swept kick, white-noise snare, long-tailed claps, a cymbal), **66** (soft
-  round kick, bright snare, noise hats, a conga), **55** (dropping kick, high metal hats, a metal bell)
-  and **77** (swelling kick, multi-burst claps, claves, a cymbal). All of them are synthesized by
-  Felucca, no samples. EDIT > LANES and LANES 2 set each lane's level
-
-The DIGITAL engine of 0.9 has been replaced by FM6: projects and presets with DIGITAL sounds load
-as FM6 sounds converted from them. The SAMPLE engine's PERC kit was removed in 1.0.2: sounds and
-projects that used it load as the DRUM engine's kit, on the same key map. FM6's patch bank (the B
-slots) was removed in 1.0.3: user presets keep their own FM6 patch, and presets that used a B slot get
-that patch on the first start of 1.0.3. SLICE gained a second built-in sound in 1.0.4, PIANO (the SAMPLE
-engine's middle C), next to BREAK. Since 1.0.4 a missing sample (an empty user slot, or a set missing
-from the build) plays a plain sine at the note's pitch on SAMPLE, GRAIN and SLICE, and the screen says
-NO SAMPLE once. DRUM's KIT variants HAND, CYM and H+CYM were retired in 1.0.5: sounds and projects that
-used them play the 66, 10 and 77 kits.
-
-**SLICER** (FX page, every track): a tempo-synced 16-step gate or stutter, with 16 patterns.
-
-## Scale keyboard
-
-On the **SCL** page, set **QNT** to WHITE to play the selected scale using only the
-white keys (SNAP keeps every key and rounds it down to the scale). C4 plays **ROOT**; consecutive white keys play consecutive scale notes
-above and below it. Black keys are silent, including during live recording and
-step entry. **TRN** transposes the resulting notes; the octave buttons shift them
-by full octaves. Set QNT to OFF for the normal chromatic keyboard. QNT SEQ snaps the keys like SNAP and
-also maps the sequenced notes onto the current ROOT / SCALE as they play (the steps are not changed; drum
-kits are never quantized).
-
-Available scales: chromatic (CHR), major (MAJ), natural minor (MIN), Dorian (DOR),
-Mixolydian (MIX), major pentatonic (PEN), minor pentatonic (MPEN), harmonic minor
-(HARM), Phrygian (PHRY), Lydian (LYD), Locrian (LOC), ascending melodic minor (MEL),
-minor blues (BLUES), whole tone (WHOLE), half-whole diminished (DIMHW), and
-whole-half diminished (DIMWH). Scales with other than seven notes continue across
-the white keys without repeating notes; their roots need not fall on every C key.
-Drum kits and incoming MIDI keep their own note mapping.
-
-Press **SCL** again for the **CHORD** page: CHRD picks the chord keys (OFF, the scale's triads or
-sevenths, or a fixed shape) and VOIC the voicing.
-
-## Layout
-
-| Path | What |
+| Objetivo | Estado |
 | --- | --- |
-| `firmware/` | firmware sources: `src/` app, `hal/` hardware layer, `loader/` update loader |
-| `tools/` | build script, generators, package maker, installer and sample uploader |
-| `assets/` | UI font, icon names, CC0 instrument samples |
-| `web/` | the web installer, the earlier editor and the browser emulator (`web/emu/`); the new editor: [Felucca-WebApp](https://github.com/hugelton/Felucca-WebApp) |
-| `tests/` | tests that run on the build machine |
-| `LICENSES/` | licence texts of the bundled fonts, icons, ported DSP and SDK files |
+| Auditoría de Felucca, medidas de flash / RAM ([docs/TONIC-AUDIT.md](docs/TONIC-AUDIT.md)) | Hecho |
+| Limpieza para liberar recursos (PHYS, efectos de la capa FX, undo, lock de capas) | Hecho |
+| Song mode estilo SLOOP, 8 canciones × 4 variaciones ([docs/TONIC-SONG-PLAN.md](docs/TONIC-SONG-PLAN.md)) | En curso |
+| Escenas por paso de la cadena | Pendiente |
+| DRUM-X y mutes por grupo | Pendiente |
+| Master: clipper y PUNCH | Pendiente |
+| Macros M1–M4 | Pendiente |
+| Punch-in FX MIDI y sus lanes | Pendiente |
+| Más modulación y mejores efectos | Pendiente |
+| Estética nueva de la interfaz | Más adelante |
 
-## If the FM-1 does not start
+### Qué cambió respecto de Felucca 1.1.5.1
 
-If an update is interrupted and the FM-1 stays black, check whether a computer sees it as a USB device named
-**WL80UBOOT** (or a USB mass-storage device with ID 4C4A:8057). That is the chip's built-in boot mode, and
-the FM-1 can be brought back:
+- **PHYS** se retiró (liberó 50 KB de RAM). Un sonido PHYS de un proyecto o preset viejo suena como el
+  primer preset de ANALOG.
+- **Capa FX:** quedan REPEAT 1/8, 1/16, 1/32 y los filtros LPF / HPF. Se fueron REVERSE, TAPE STOP,
+  FREEZE y el armonizador.
+- **Sin undo.** SAVE sostenido ya no deshace (queda para la capa de canción) y OCT− ya no "devuelve" en
+  las capas. En su lugar viene el RECALL de la capa de canción.
+- **Sin lock de capas** por doble toque: una capa está abierta mientras se mantiene su botón.
+- **Capa REC:** CLEAR y CLICK. COUNT-IN y CLICK LEVEL siguen en MENU > AUDIO.
+- El splash y ABOUT dicen JIANT. Los nombres USB siguen siendo "Felucca" para que el editor web conecte.
 
-- First try another USB data cable, and close every other app that uses MIDI, then run the web installer again.
-- If it stays in boot mode, [FM-1 Transporter](https://github.com/kurogedelic/FM-1-transporter) reads and
-  writes the FM-1's flash from a Mac through a Seeed XIAO RP2040 (three wires to the FM-1's USB lines). Back up
-  the flash first, then write the official firmware (M-VAVE's FM-1.fwsc).
-- Questions: [Issues](https://github.com/hugelton/Felucca/issues).
+## Lo que tiene hoy
 
-## Support
+- **4 tracks**, cada uno con su engine y su sonido, 8 voces compartidas.
+- **12 engines:** ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, SAMPLE, VOICE, TRIO, WHEEL, GRAIN,
+  NOISE, SLICE y DRUM (kit de 8 lanes sintetizado, sin samples).
+- **Secuenciador:** 64 pasos por track con acordes, ties, accent, slide, chance y ratchets; piano roll;
+  grilla de batería; parameter locks; automatización de perillas; grabación en vivo con overdub;
+  metrónomo y count-in.
+- **SEQ TOOLS:** CLEAR, REVERSE, SHIFT, RANDOM y COOK sobre el patrón (BEAT y herramientas por lane en
+  DRUM).
+- **Teclas de acordes**, arpegiador, 16 escalas con modo de teclas blancas, glide, MONO / LEGATO / UNISON.
+- **Modulación:** 4 slots por track, con controladores MIDI como fuentes.
+- **Efectos:** distorsión y SLICER por track; envíos a chorus, delay y reverb (ROOM o SPRING); limiter
+  en el master.
+- **USB:** MIDI class-compliant y entrada de audio "Felucca" (el master en la computadora). MIDI por TRS,
+  clock interno, USB o TRS.
+- **Proyectos y presets:** 4 proyectos y 32 presets de usuario, con nombre; autoguardado al apagar.
+- **Editor web** de todos los parámetros (editor de patches FM6, grilla, mezcla, backup completo).
 
-If Felucca is useful to you, [sponsoring on GitHub](https://github.com/sponsors/hugelton) or a donation
-on [itch.io](https://hugelton.itch.io/felucca) helps keep its development going.
+## Controles
 
-Issues are for reproducible bugs (one per issue). Ideas and requests go to
-[Discussions](https://github.com/hugelton/Felucca/discussions), and feature requests posted as issues will be
-moved there. Pull requests are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
+- Tocar un botón de página abre su página; otra vez, la siguiente. HOME vuelve a la pantalla principal.
+- **Mantener** un botón abre su capa rápida: las teclas y las perillas cambian de función mientras está
+  apretado.
 
-## AI disclaimer
+| Mantener | Teclas | Perillas |
+| --- | --- | --- |
+| **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF; teclas negras 1–4: mute de T1–T4 | FILTER, CRUSH, THROW, DEPTH |
+| **GLO** | Teclas negras 1–4 mute (fijo), F3–B3 solo mientras se mantiene, C4 unmute, F4 tap tempo | Nivel de T1–T4 |
+| **SCL** | Cualquier tecla elige la raíz | ROOT, SCL, CHRD, VOIC |
+| **EDIT** | Las teclas blancas eligen el engine; la siguiente, INIT | Engine, sonido, favorito |
+| **SEQ** | En las páginas SEQ: SEQ TOOLS (fuera de ellas abre la canción) | LEN, DIV, SWING, GATE |
+| **REC** | F3 CLEAR del track, G3 CLICK | CLICK |
+| **HOME** | Menú | — |
+| **SAVE** | Reservado para la capa de canción | — |
 
-Felucca is developed with the assistance of AI coding agents. These tools are used for coding, testing, documentation, translation, and maintenance.
-The instrument's design, features, sound design, and overall direction are determined by the maintainer or community.
-No generative AI is used to create music, icons, or visual artwork for this project.
-For more details, see [On AI-Assisted Development and Responsibility](https://github.com/hugelton/Felucca/discussions/166).
+Otros: **PLAY** arranca y para; **REC** arma el track elegido; **SELECT** cambia el tempo; **ALGORITHM**
+elige el track en todas las páginas; **PRESETS** cambia el sonido; **OCT− / OCT+** la octava (en páginas
+de acción y diálogos: volver / confirmar); GLO + PLAY reinicia desde el principio.
 
-## Credits
+## Compilar y probar
 
-- **[Hügelton Instruments](https://hugelton.com)** (Leo Kuroshita, [@kurogedelic](https://github.com/kurogedelic)):
-  Felucca itself; the PHASE engine's waveforms (a C port of the oscillator of
-  [CrispyZebra](https://github.com/hugelton/CrispyZebra), GPL-3.0); the DRUM voices and kits; the Hügelton Sample
-  Pack (the drum samples, GPL-3.0-only, not CC0); the [Fukiai](https://github.com/hugelton/Fukiai) icon
-  font ([MIT](LICENSES/MIT-Fukiai.txt))
-- Fonts: [Inter Tight](https://github.com/rsms/inter-tight) by The Inter Project Authors, [SIL OFL 1.1](LICENSES/OFL-InterTight.txt);
-  the browser emulator's labels: [DotGothic16](https://github.com/fontworks-fonts/DotGothic16) by The DotGothic16 Project Authors, [SIL OFL 1.1](LICENSES/OFL-DotGothic16.txt)
-- Samples: [Versilian Studios](https://versilian-studios.com/) [VSCO-2 Community Edition](https://github.com/sgossner/VSCO-2-CE) and [VCSL](https://github.com/sgossner/VCSL), CC0 1.0: the SAMPLE sets, also SLICE's PIANO ([attribution](assets/samples-cc0/ATTRIBUTION.txt))
-- VOICE engine: after [klattsch](https://github.com/tgies/klattsch) by Tony Gies (MIT); formant data from Klatt (1980) and Hillenbrand et al. (1995)
-- FM6 engine: msfa from [Dexed](https://github.com/asb2m10/dexed) by Google Inc. and Pascal Gauthier ([Apache-2.0](LICENSES/Apache-2.0-msfa.txt))
-- Browser emulator: after [X0X](https://github.com/charlesvestal/fm1-x0x) by [charlesvestal](https://github.com/charlesvestal) (GPL-3.0), a Felucca fork whose browser build showed the way
-- Package format and boot files: [JieLi AC79 SDK](https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK) ([Apache-2.0](LICENSES/Apache-2.0.txt); three of its files are in every package, none in this tree)
-- Contributions: [keremimo](https://github.com/keremimo) (white-key scales, #2), [ChanceTheMaker](https://github.com/ChanceTheMaker)
-  (TRS MIDI, bend, sustain and clock, palettes, favourites, editor display settings: #8, #10, #11, #12),
-  [andreahaku](https://github.com/andreahaku) (sample recording and trim, #29; SLICE manual slices and tests, #27, #22),
-  [spinkham](https://github.com/spinkham) (the boot fix for 0.9 projects, #111),
-  [zednaked](https://github.com/zednaked) (ratchets, #100),
-  [jasonpersinger](https://github.com/jasonpersinger) (the ROOM reverb click fix, #121)
+Ver [BUILDING.md](BUILDING.md). En resumen:
 
-## Licence
+```
+./build.sh                 # firmware: build/felucca.fwsc
+web/emu/build.sh           # emulador en el navegador: build/emu
+tests/run_tests.sh         # tests de host, editor web y emulador
+```
 
-Free software: [GPL-3.0-only](LICENSE), the Hügelton Sample Pack included. The bundled fonts and the
-ported DSP keep their own licences ([LICENSES/](LICENSES/)); details in [LICENSING.md](LICENSING.md).
+Todo cambio se prueba primero en el emulador.
 
-M-VAVE and FM-1 are trademarks of their respective owners. Felucca is not affiliated with or endorsed by them.
+## Instalar (bajo tu riesgo)
 
-Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+1. Hacé un **backup del flash** antes de la primera instalación.
+2. Instalá `build/felucca.fwsc` con `python3 tools/fm1_install.py build/felucca.fwsc` o con una copia local
+   del instalador web (ver [BUILDING.md](BUILDING.md)).
+3. Para volver al firmware oficial, usá el actualizador de M-VAVE o **Return to official V15** del
+   instalador.
+
+Si el FM-1 queda en negro después de una actualización interrumpida, revisá si la computadora lo ve como
+**WL80UBOOT** (o un dispositivo USB 4C4A:8057): es el modo de arranque del chip y se puede recuperar
+volviendo a correr el instalador con otro cable. Si no alcanza,
+[FM-1 Transporter](https://github.com/kurogedelic/FM-1-transporter) lee y escribe el flash con una
+Seeed XIAO RP2040.
+
+## Documentos
+
+| Documento | Qué tiene |
+| --- | --- |
+| [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) | La visión y la lista completa de deseos |
+| [FELUCCA-TONIC-SPEC.md](FELUCCA-TONIC-SPEC.md) | Las fases y las reglas de trabajo |
+| [docs/TONIC-AUDIT.md](docs/TONIC-AUDIT.md) | Auditoría: memoria, engines, efectos, song mode de SLOOP |
+| [docs/TONIC-SONG-PLAN.md](docs/TONIC-SONG-PLAN.md) | Plan del song mode |
+| [BUILDING.md](BUILDING.md) | Toolchain, build, emulador y tests |
+| [web/EDITOR_PROTOCOL.md](web/EDITOR_PROTOCOL.md) | Protocolo SysEx del editor |
+| [LICENSING.md](LICENSING.md) | Licencias de cada parte |
+
+## Créditos
+
+- **[Felucca](https://github.com/hugelton/Felucca)** de [Hügelton Instruments](https://hugelton.com)
+  (Leo Kuroshita, [@kurogedelic](https://github.com/kurogedelic)): la base completa de este firmware;
+  las formas de onda de PHASE (port de [CrispyZebra](https://github.com/hugelton/CrispyZebra), GPL-3.0);
+  las voces y kits de DRUM; el Hügelton Sample Pack (GPL-3.0-only, no CC0); la fuente de íconos
+  [Fukiai](https://github.com/hugelton/Fukiai) ([MIT](LICENSES/MIT-Fukiai.txt)). Y quienes contribuyeron
+  a Felucca: keremimo, ChanceTheMaker, andreahaku, spinkham, zednaked, jasonpersinger.
+- **[SLOOP](https://github.com/isod89/sloop-fm1)** de isod89 (GPL-3.0): el sistema de secciones,
+  quick chain y SONG REC en el que se basa el song mode.
+- Fuentes: [Inter Tight](https://github.com/rsms/inter-tight) ([SIL OFL 1.1](LICENSES/OFL-InterTight.txt));
+  en el emulador, [DotGothic16](https://github.com/fontworks-fonts/DotGothic16) ([SIL OFL 1.1](LICENSES/OFL-DotGothic16.txt)).
+- Samples: [Versilian Studios](https://versilian-studios.com/) VSCO-2 CE y VCSL, CC0 1.0
+  ([atribución](assets/samples-cc0/ATTRIBUTION.txt)).
+- VOICE: según [klattsch](https://github.com/tgies/klattsch) de Tony Gies (MIT); datos de formantes de
+  Klatt (1980) y Hillenbrand et al. (1995).
+- FM6: msfa de [Dexed](https://github.com/asb2m10/dexed), Google Inc. y Pascal Gauthier
+  ([Apache-2.0](LICENSES/Apache-2.0-msfa.txt)).
+- Emulador: según [X0X](https://github.com/charlesvestal/fm1-x0x) de charlesvestal (GPL-3.0).
+- Formato de paquete: [JieLi AC79 SDK](https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK)
+  ([Apache-2.0](LICENSES/Apache-2.0.txt); tres de sus archivos van en cada paquete, ninguno en este árbol).
+
+## Desarrollo asistido por IA
+
+JIANT se desarrolla con ayuda de agentes de IA para el código, los tests y la documentación. El diseño
+del instrumento y las decisiones las toma su autor.
+
+## Licencia
+
+Software libre: [GPL-3.0-only](LICENSE), igual que Felucca. Las fuentes y el DSP portado conservan sus
+licencias ([LICENSES/](LICENSES/)); detalles en [LICENSING.md](LICENSING.md).
+
+"Felucca" y "Hügelton Instruments" son nombres de Hügelton Instruments; JIANT no está afiliado a ellos.
+M-VAVE y FM-1 son marcas de sus dueños; JIANT no está afiliado ni avalado por ellos.
+
+Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments — Felucca.
+Las modificaciones de JIANT se distribuyen bajo la misma licencia.
