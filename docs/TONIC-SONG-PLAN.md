@@ -41,7 +41,7 @@ terminar). La copia vieja de patrones (`chain.source`, 12,5 KB de `.bss`) ya no 
   - OCT+: guardar el loop en la sección que suena; OCT−: volver a ella como estaba guardada (en el compás).
 
 ### 4d. 8 canciones
-- Sacar los slots de samples de usuario (SAMPLE USR1–3, GRAIN USR, SLICE USR, `slice_store.c`, subida y
+- HECHO: sacar los slots de samples de usuario (SAMPLE USR1–3, GRAIN USR, SLICE USR, `slice_store.c`, subida y
   grabación del editor, comandos SysEx de samples).
 - Flash: 8 canciones × 4 secciones × A/B = 64 sectores + índice A/B = 66 de 68 disponibles.
 - Selector de canción (solo con el transporte parado), nombre por canción, backup / restore del editor.

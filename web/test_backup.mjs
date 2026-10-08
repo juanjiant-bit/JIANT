@@ -15,7 +15,7 @@ const b = rnd(1000, 1);
 ok(bkUnpack(bkPack(b), b.length).every((v, i) => v === b[i]), "backup: 7-bit pack / unpack round trip");
 ok(throws(() => bkUnpack([...bkPack(b.subarray(0, 14)), 0], 14)), "backup: trailing bytes refused");
 
-/* a device: objects by id, sample slots, the order of writes */
+/* a device: objects by id, the order of writes */
 function device(objs, opt = {}) {
   const d = { objs: new Map(objs), log: [], staged: null };
   d.request = async ([cmd, a]) => {
@@ -41,7 +41,6 @@ function device(objs, opt = {}) {
       if (op === 2) { const s = Uint8Array.from(d.staged.bytes); const rc = bkCrc(s) === d.staged.crc ? 0 : 2; if (!rc) { d.objs.set(id, s); d.log.push(id); } return [op, id, rc]; }
       if (op === 3) { d.log.push(`abort ${id}`); return [op, id, 0]; }
     }
-    if (cmd === 11 || cmd === 12 || cmd === 13 || cmd === 14) { if (cmd === 13 || cmd === 14) d.log.push(32 + a[0]); return [a[0], 0]; }
     throw new Error(`unexpected ${cmd}`);
   };
   return d;
@@ -64,22 +63,39 @@ const damaged = JSON.parse(JSON.stringify(file)); damaged.objects[6].crc ^= 1;
 ok(await athrows(() => restoreBackup(target.request, damaged)) && target.log.length === 0, "backup: restore validates every byte before the first write");
 await restoreBackup(target.request, file);
 const order = target.log.filter((x) => typeof x === "number");
-ok(order.at(-1) === 0 && order.at(-2) === 1 && order.indexOf(2) < order.indexOf(1), "backup: restore order: projects, banks, samples, settings, live music last");
+ok(order.at(-1) === 0 && order.at(-2) === 1 && order.indexOf(2) < order.indexOf(1), "backup: restore order: projects, banks, settings, live music last");
 ok([0, 1, 2, 6].every((id) => target.objs.get(id).every((v, i) => v === objs.find((o) => o[0] === id)[1][i])), "backup: restored objects equal the source");
-{   /* the FM6 patch bank (id 8) and the archives of firmware before it (11 objects, no id 8) */
-  ok(BACKUP_IDS.length === 13 && file.objects.some((o) => o.id === 8) && file.objects.some((o) => o.id === 9),
-    "backup: 13 objects: id 8 (the retired FM6 bank, empty) and id 9 (the user presets' FM6 patches)");
+{   /* the FM6 patch bank (id 8) and the archives of firmware before it (8 objects, no id 8) */
+  ok(BACKUP_IDS.length === 10 && file.objects.some((o) => o.id === 8) && file.objects.some((o) => o.id === 9) &&
+     !file.objects.some((o) => o.id >= 32), "backup: 10 objects: id 8 (the retired FM6 bank), id 9 (user presets' FM6 patches)");
   const v2 = JSON.parse(JSON.stringify(file)); v2.objects = v2.objects.filter((o) => o.id !== 9);
-  ok(readBackup(v2).objects.length === 12, "backup: an archive of 1.0..1.0.2 (12 objects, the bank as id 8) still reads");
+  ok(readBackup(v2).objects.length === 9, "backup: an archive of 1.0..1.0.2 (9 objects, the bank as id 8) still reads");
   const old = JSON.parse(JSON.stringify(file)); old.objects = old.objects.filter((o) => o.id !== 8 && o.id !== 9);
-  ok(readBackup(old).objects.length === 11, "backup: an archive of the 11 objects before FM6 still reads");
-  const odd = JSON.parse(JSON.stringify(file)); odd.objects = odd.objects.filter((o) => o.id !== 33);
+  ok(readBackup(old).objects.length === 8, "backup: an archive of the 8 objects before FM6 still reads");
+  const odd = JSON.parse(JSON.stringify(file)); odd.objects = odd.objects.filter((o) => o.id !== 5);
   ok(throws(() => readBackup(odd)), "backup: an archive missing another object is refused");
+}
+{   /* archives with the retired user sample slots (ids 32..34, any content): those entries are skipped */
+  const smp = (id, n) => { const v = rnd(n, id); let s = ""; for (const x of v) s += String.fromCharCode(x);
+    return { id, size: n, crc: n ? bkCrc(v) : 0, data: btoa(s) }; };
+  const withSmp = (f) => { const c = JSON.parse(JSON.stringify(f)); c.objects.push(smp(32, 5000), smp(33, 0), smp(34, 90000)); return c; };
+  const a13 = withSmp(file), r13 = readBackup(a13);
+  ok(r13.objects.length === 10 && r13.objects.every((o, i) => o.id === BACKUP_IDS[i]), "backup: an archive with sample slots (13 objects) reads, ids 32..34 skipped");
+  const v2 = JSON.parse(JSON.stringify(file)); v2.objects = v2.objects.filter((o) => o.id !== 9);
+  const old = JSON.parse(JSON.stringify(file)); old.objects = old.objects.filter((o) => o.id !== 8 && o.id !== 9);
+  ok(readBackup(withSmp(v2)).objects.length === 9 && readBackup(withSmp(old)).objects.length === 8,
+    "backup: 12- and 11-object archives with sample slots read too");
+  const to = device([]);
+  await restoreBackup(to.request, a13);
+  ok(!to.log.some((x) => typeof x === "number" && x >= 32) && to.log.at(-1) === 0 && [0, 1, 2, 6].every((id) => to.objs.has(id)),
+    "backup: restoring it writes no sample slot, the rest restored");
+  const short = withSmp(file); short.objects = short.objects.filter((o) => o.id !== 5);
+  ok(throws(() => readBackup(short)), "backup: an archive with sample slots but missing another object is refused");
 }
 {   /* 1.0.3: an old archive with a bank restores its id 8 (after 6, 7); a new archive onto 1.0.2 skips id 9 */
   const bankBytes = rnd(3472, 8), patches = rnd(3728, 9);
   const v2dev = device([...objs, [8, bankBytes]]);
-  const v2file = await captureBackup(async ([cmd, a]) => {   // (a 1.0.2 device: 12 objects)
+  const v2file = await captureBackup(async ([cmd, a]) => {   // (a 1.0.2 device: 9 objects)
     const r = await v2dev.request([cmd, a]);
     if (cmd !== BACKUP_CMD.LIST) return r;
     const n = r[2], keep = [];
@@ -89,7 +105,7 @@ ok([0, 1, 2, 6].every((id) => target.objs.get(id).every((v, i) => v === objs.fin
   const to103 = device([]);
   await restoreBackup(to103.request, v2file);
   const lg = to103.log.filter((x) => typeof x === "number");
-  ok(v2file.objects.length === 12 && lg.indexOf(8) > lg.indexOf(7) && lg.indexOf(7) > lg.indexOf(6) &&
+  ok(v2file.objects.length === 9 && lg.indexOf(8) > lg.indexOf(7) && lg.indexOf(7) > lg.indexOf(6) &&
      to103.objs.get(8).every((v, i) => v === bankBytes[i]), "backup: a 1.0.2 archive (id 8, the bank) restores, its bank after the user presets");
   const newFile = await captureBackup(device([...objs, [9, patches]]).request, "1.0.3");
   const to102 = device([], { maxId: 8 });

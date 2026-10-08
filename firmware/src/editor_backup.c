@@ -2,16 +2,16 @@
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* Complete musical archive: no raw addresses are accepted. Small objects are staged
  * in main-loop RAM and fully validated before the existing A/B commit path writes.
- * Sample restore uses SMP_BEGIN/WRITE/END and its existing CRC/header-last commit.
- * A disconnected sample restore can lose that sample; the exported file is retained.
+ * Ids 32..34 (Felucca's user sample slots) are gone with the slots (JIANT has none).
  * Id 8 (the FM6 patch bank of 1.0..1.0.2) is listed empty since 1.0.3; a PUT of it from an older archive moves its
  * patches into the user presets restored before it (ids 6, 7), as the first boot after the update does (up_fm6.c).
  * Id 9 is the user presets' FM6 patches (up_fm6.c), appended in 1.0.3.
  */
-static const uint8_t ED_BK_IDS[13] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 32, 33, 34};
+static const uint8_t ED_BK_IDS[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 #define ED_BK_N ((uint32_t)sizeof ED_BK_IDS)
 #define ED_BK_MAX ((uint32_t)sizeof proj_wire_u.raw)
 #define ED_BK_RAW (proj_wire_u.raw)  /* reuse the existing serialized main-loop scratch */
+static uint8_t ed_bk_buf[256];       /* a PUT's chunk, unpacked */
 _Static_assert(sizeof proj_wire_u.raw >= sizeof(upf_t) && sizeof proj_wire_u.raw >= sizeof(fm6_bank_t), "backup staging");
 static persist_t ed_bk_settings;
 static uint8_t ed_bk_valid, ed_bk_put, ed_bk_id, ed_bk_gen;
@@ -49,13 +49,6 @@ static const uint8_t *ed_bk_object(uint32_t id, uint32_t *len)
     if (id == 9u) {                                 /* the user presets' FM6 patches */
         if (upf_valid(&upf)) *len = sizeof upf;
         return (const uint8_t *)&upf;
-    }
-    if (id >= 32u && id < 32u + SMP_USER_SLOTS) {
-        uint32_t k = id - 32u;
-        const smp_user_hdr_t *h = (const smp_user_hdr_t *)smp_user_xip(k);
-        if (usr_nz[k] && h->magic == SMP_USER_MAGIC && h->data_len <= SMP_USER_SIZE - SMP_USER_DATA)
-            *len = SMP_USER_DATA + h->data_len;
-        return smp_user_xip(k);
     }
     return 0;
 }
@@ -190,10 +183,10 @@ static uint32_t ed_bk_write(const uint8_t *a, uint32_t n)
         uint32_t rc = ed_bk_commit(); ed_bk_put = 0; return rc;
     }
     if (n < 9u || a[6] > 15u || ed_bk_r32(a + 2) != ed_bk_pos) return 1;
-    uint32_t count = ed_unpack7(a + 7, n - 7u, ed_smp_buf, 256u);
+    uint32_t count = ed_unpack7(a + 7, n - 7u, ed_bk_buf, sizeof ed_bk_buf);
     if (!count || count > ed_bk_len - ed_bk_pos) return 1;
     if (ed_flash_stop()) return 3;
-    memcpy(ED_BK_RAW + ed_bk_pos, ed_smp_buf, count); ed_bk_pos += count;
+    memcpy(ED_BK_RAW + ed_bk_pos, ed_bk_buf, count); ed_bk_pos += count;
     return 0;
 }
 static int ed_backup_handle(uint32_t cmd, const uint8_t *a, uint32_t n)

@@ -1,6 +1,6 @@
 # Felucca editor protocol (SysEx over USB-MIDI)
 
-The firmware side is `firmware/src/editor.c`. Commands 1-15, track selection, dumps, step reads
+The firmware side is `firmware/src/editor.c`. Commands 1-10, track selection, dumps, step reads
 and parameter writes (27, 29, 30, 31) were checked on hardware. `tests/editor_test.c` also exercises the real C
 handler, malformed transfers and stop timeouts against simulated flash. User-preset
 flash writes and live pushes (16-26, 32) have host coverage; that does not establish
@@ -146,7 +146,8 @@ global `G_CLOCK` (id 2, label "CLK") 3 (INT, USB, TRS). `G_MIDI` (id 12) is an e
 `DESC` names it like the value it now plays (an alias), the device never holds it (a `SET` of it lands on that value
 and the reply says so) and its knob steps over it. Of a repeated name, the original is the first value when that has
 the name, else the last one with it; an editor should list only the originals and show an alias by its name when
-it ever sees one. Today: SAMPLE SET and GRAIN SRC 1 and 4 (once TRANH, PERC) = 0 PIANO; DRUM KIT (engine 10, E1)
+it ever sees one. Today: SAMPLE SET and GRAIN SRC 1 and 4 (once TRANH, PERC) = 0 PIANO (5..7, once USR1..USR3, clamp
+to 4); SLICE SRC 1..3 (once USR1..USR3) = 0 BREAK, named "BREAK"; DRUM KIT (engine 10, E1)
 1, 2, 3 (once HAND, CYM, H+CYM; 1.0.5) = 6 (66), 5 (10), 8 (77): its names are STD 66 10 77 80 10 66 55 77, the
 device's knob steps STD 80 10 66 55 77. An editor of before 1.0.5 (first of a name = original) offers 66 10 77
 at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device answers with 6 5 8.
@@ -165,11 +166,7 @@ at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device 
 | 8 PRESET | engine, preset | engine, preset (applies the preset's sound to the selected track and sends; the steps and the track's own parameters stay, see "Sound loads and undo"). For another track, select it with `TRACK` first |
 | 9 PROJECT | op (0 load, 1 save, 2 query), slot 0..3 | op, slot, used (1/0). Save writes flash: allow ~2 s; it stops the transport first (see "Saves while playing") |
 | 10 NAMES | engine | engine, count, count preset-name strings, then the two edit-page titles |
-| 11 SMP_BEGIN | slot 0..2 | slot, rc (0 ok). Erases the slot's header sector: the slot is empty from now on |
-| 12 SMP_WRITE | slot, offset (3 × 7 bit, LSB first), pack7 data (≤ 256 bytes) | slot, offset, rc: 0 ok, 1 arguments, 2 erase, 3 write, 4 slot in use (send SMP_BEGIN first). Offset ≥ 512 and a multiple of 256; writes go in increasing order (a write at a 4 KiB boundary erases that sector) |
-| 13 SMP_END | slot, pack7 header (480 bytes) | slot, rc: 0 ok, 1 size, 2 header, 3 data CRC, 4 flash, 5 zones |
-| 14 SMP_ERASE | slot | slot, rc (erases the whole slot, ~1 s) |
-| 15 SMP_INFO | — | slots, slot KiB, then per slot: zone count (0 = empty), name string, data KiB |
+| 11..15 | — | retired (Felucca's user sample upload SMP_BEGIN / SMP_WRITE / SMP_END / SMP_ERASE / SMP_INFO; JIANT has no user sample slots): reserved, no reply |
 | 16 UP_LIST | start, count (1..16) | start, count, total slots, then per slot: used (0/1), engine, name string ("" if unused) |
 | 17 UP_GET | slot | slot, used, engine, name, P_COUNT × v14, 16 × (note, flags), then (v5) kind (0 a note pattern, 1 a drum grid) and for kind 1 16 × hi |
 | 18 UP_PUT | slot, engine, name, P_COUNT × v14, 16 × (note, flags) [, kind 0 or 1, 16 × hi (v5)] | slot, rc (0 ok, 1 args, 2 flash). Writes flash: allow 1 s |
@@ -197,35 +194,14 @@ at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device 
 | cmd (v7) | Request args | Reply args |
 | --- | --- | --- |
 | 64 MOTION | track (query); track, 1, on 0/1 (play on / off); track, 2 (clear); track, 3, step, id, v14 (set an event); track, 4, step, id (delete an event or a lock); (1.1) track, 5, step, id, v14 (set a lock); track, 6, step (clear the step's locks; step 127: every step's); track, 7 (query with the kinds) | track, rc, on (0/1), count (this track's events and locks), max (64), then count × (step, id, v14); after ops 5..7 (1.1) then count × kind (0 automation, 1 lock), in the same order |
-| 65 BACKUP_LIST | — | 1, rc, count (11), then per object: id, size u32, crc u32 |
+| 65 BACKUP_LIST | — | 1, rc, count (10), then per object: id, size u32, crc u32 |
 | 66 BACKUP_GET | id, offset u32, count lo, count hi (≤ 256) | id, rc, offset u32, count lo, count hi, pack7 data |
 | 67 BACKUP_PUT | op 0 begin: 0, id, size u32, crc u32; op 1 data: 1, id, offset u32, pack7 data; op 2 commit: 2, id; op 3 abort: 3, id | op, id, rc |
-
-Without flash (no flash part found at boot) `SMP_BEGIN`, `SMP_WRITE`, `SMP_END` and `SMP_ERASE` get no
-reply.
 
 **pack7:** groups of up to 7 bytes, each preceded by one byte holding their top bits
 (bit j = bit 7 of byte j). A mask must have at least one following data byte;
 unused mask bits in the last group must be zero. Oversized or incomplete transfers
-are rejected; SMP_WRITE decodes at most 256 bytes, SMP_END exactly 480 bytes.
-
-**User sample slot** (80 KiB each, SAMPLE engine sets USR1..USR3; reference uploader
-`tools/fm1_sample_upload.py`, slot builder `sampleio.user_slot`; the editor's port of it is
-checked byte for byte by `web/test_web.mjs`): header at 0, ADPCM data at 512.
-
-| Offset | Field |
-| --- | --- |
-| 0 | magic `"FSMP"` (u32 0x504D5346), u16 version 1, u8 zone count 1..16, u8 0 |
-| 8 | name, 8 ASCII bytes (0-padded) |
-| 16 | u32 data length (bytes), u32 CRC-32 (zlib) of the data, 8 bytes 0 |
-| 32 | 16 zones × 28 bytes: u32 off (in the data), n (samples), loop start, loop end, rate (Hz / 44100 × 65536); i16 root × 16 (MIDI note), ADPCM predictor at the loop start; u8 step index at the loop start, lo note, hi note, looped (0/1) |
-
-Data is IMA ADPCM, 4 bit, low nibble first, starting from predictor 0 and step index 0.
-All little endian.
-
-The slot's last 4 KiB sector (offset 0x13000) holds SLICE's slices set by hand on the device (`src/slice_store.c`:
-magic `"SLM1"`, the sample's length and data CRC, the slice starts) when the data leaves it free (at most 77,312
-bytes). An upload writes over it like any other data; a record that is not the slot's sample's is ignored.
+are rejected; a `BACKUP_PUT` data piece decodes at most 256 bytes.
 
 `fmt` values (`firmware/src/core.h`):
 
@@ -266,7 +242,11 @@ numbered 0..31 (the device shows U01..U32).
   = 4, stored then or sent by `UP_PUT`, is the DRUM engine with its default kit: the device rewrites it (engine 10,
   E1..E8 = DRUM KIT's {0, 64, 70, 64, 64, 100, 0, 0}, the other values and the pattern as they were). Projects
   and `PRESET` 4 / 4 do the same (a project's track keeps its steps). SET 4 itself stays (`DESC` names it "PIANO":
-  an alias, as SET 1; a `SET` of 4 lands on 0), and USR1..USR3 stay 5..7; GRAIN's SRC 4 plays PIANO.
+  an alias, as SET 1; a `SET` of 4 lands on 0); GRAIN's SRC 4 plays PIANO. JIANT has no user sample slots: SET and
+  GRAIN SRC end at 4, and a stored 5..7 (once USR1..USR3) clamps to 4 (PIANO).
+- **SLICE SRC 1..3** were USR1..USR3; JIANT has no user samples, so they are aliases of 0 (BREAK, named "BREAK";
+  a `SET` of 1..3 lands on 0), and 4 stays PIANO. SLICE DIV is 0..4 (4, 8, 16, 32, AUTO): MAN (5, Felucca's slices
+  set by hand on the EDIT > SLICES page for the user slots) is gone with that page; a stored 5 plays AUTO.
 - **DRUM KIT 1..3** were HAND, CYM and H+CYM until 1.0.4 (STD with a conga / claves, a cymbal, both). Since 1.0.5
   they play the VA kits 66, 10 and 77, and a record holding one loads as that kit: `UP_GET` / `UP_LOAD` give KIT 6, 5
   or 8 (the record itself is not rewritten). Projects, motion events and `SET` do the same.
@@ -403,10 +383,10 @@ grid lives in the steps themselves, so every engine has it:
   for every request, keep-alive `PING` included. The device holds one incoming SysEx frame until the main
   loop has answered it; a frame that arrives before then is dropped whole (no reply). A frame is never
   taken in part: USB delivers every packet (acknowledged, retried), and a dropped frame leaves nothing.
-  Any frame size up to the largest request (a 256-byte `BACKUP_PUT` / `SMP_WRITE` piece: 306 bytes on the
+  Any frame size up to the largest request (a 256-byte `BACKUP_PUT` piece: 306 bytes on the
   wire, 640 bytes of buffer) is safe at full speed; pacing between bytes is not needed. With a second
   request in flight (pipelined, or a keep-alive from another thread) the second is lost: no reply, and a
-  following `BACKUP_PUT` / `SMP_WRITE` piece is then refused (rc 1, the offset). Measured on an FM-1 with
+  following `BACKUP_PUT` piece is then refused (rc 1, the offset). Measured on an FM-1 with
   1.0 over USB: 256-byte pieces one at a time, the next sent from the reply callback, 560 of 560 taken
   (about 10 ms each); with the next piece sent before the reply, every second piece was dropped.
 - **Following the device.** With v2 firmware, `WATCH` and `PING` (above). Older firmware pushes
@@ -441,16 +421,13 @@ grid lives in the steps themselves, so every engine has it:
   copy.
 - **Saves while playing.** A flash erase silences the audio and stalls the sequencer for a moment. The
   device refuses its own saves while the transport plays ("STOP TO SAVE"); `PROJECT` save, `UP_PUT`,
-  `UP_STORE`, `UP_ERASE`, `BACKUP_LIST`, `BACKUP_PUT` and sample BEGIN / WRITE / END / ERASE from the editor stop the transport
+  `UP_STORE`, `UP_ERASE`, `BACKUP_LIST` and `BACKUP_PUT` from the editor stop the transport
   first (`BACKUP_GET` does not: it answers rc 3 while the transport runs). If it does not stop within 100 ms, no flash operation starts: user-preset commands
-  return rc 2, sample commands a nonzero rc, backup commands rc 3. PROJECT retains its existing reply shape
+  return rc 2, backup commands rc 3. PROJECT retains its existing reply shape
   (op, slot, used); a failed PROJECT save gets no reply, allowing the editor to report
   a timeout instead of confirming the previous used slot. The previous slot is kept.
   A pending PLAY or SONG start also prevents a device save.
-- **Published samples.** SMP_END repeated with an identical committed header succeeds without
-  another write or zone scan. A different header is rejected (rc 2) until SMP_BEGIN,
-  so sounding sample voices cannot see their zone table change.
-- **Safety.** `PROJECT` save, sample-slot commands, `UP_PUT` / `UP_STORE` / `UP_ERASE`, and the tagged preference writes below write flash, and only in
+- **Safety.** `PROJECT` save, `UP_PUT` / `UP_STORE` / `UP_ERASE`, and the tagged preference writes below write flash, and only in
   Felucca's own storage; never the app or the update area.
 
 
@@ -484,7 +461,7 @@ also require STOP. Older editors keep working; older firmware gets no SONG
 requests from the new editor.
 
 Projects now write FUN7 (below), the same 3388 bytes in the same A/B sectors. FUN6 has the same size;
-FUN5 (3352 bytes) and FUN1–FUN4 convert with an empty chain, without changing the sample-slot layout.
+FUN5 (3352 bytes) and FUN1–FUN4 convert with an empty chain.
 A chain row also plays the motion of its source project (events for an FM operator parameter are skipped
 when the track's engine is not the saved one).
 
@@ -612,20 +589,21 @@ this firmware sends 3. Requests name objects, never flash addresses.
 | 6, 7 | user preset banks (slots 1..16, 17..32) | the bank's size, or 0 if empty |
 | 8 | the FM6 patch bank of 1.0..1.0.2 (B1..B27). Since 1.0.3 always listed empty (see below) | 3472, or 0 if empty |
 | 9 | the user presets' FM6 patches (1.0.3; `up_fm6.c`: per slot a tag and the packed patch) | 3728, or 0 if none |
-| 32..34 | user sample slots 1..3: header (512 bytes) then ADPCM data | 512 + data length, or 0 if empty |
 
 Reading: `BACKUP_LIST` (no arguments) stops the transport, then takes a snapshot of the runtime object and
-answers `1, rc, count` (13 since 1.0.3, 12 with FM6 up to 1.0.2, 11 before) and, per object in the order above, `id, size u32, crc u32` (CRC-32, zlib). The other objects are read as
+answers `1, rc, count` (JIANT: 10; Felucca with the user sample slots 32..34: 13 since 1.0.3, 12 with FM6 up to 1.0.2, 11 before) and, per object in the order above, `id, size u32, crc u32` (CRC-32, zlib). The other objects are read as
 they are in RAM or flash. Then `BACKUP_GET` reads an object in pieces: `id, offset u32, count lo, count hi`
 (count 1..256, LSB first 7 bit pair) answers `id, rc, offset u32, count lo, count hi` and the data as pack7. Check each object's CRC
 against the list; if it differs the device changed, so start again.
 
-Restoring: `BACKUP_PUT` takes ids 0..9 (firmware before 1.0.3: 0..8, id 9 answers rc 1 at begin and nothing is written) (the samples are written with `SMP_BEGIN` / `SMP_WRITE` / `SMP_END`,
-or `SMP_ERASE` for an empty slot). Begin: `0, id, size u32, crc u32`: size is 3648 (FUN9), 3584 (FUN8) or 3388 (FUN7, FUN6) for id 0,
+Restoring: `BACKUP_PUT` takes ids 0..9 (firmware before 1.0.3: 0..8, id 9 answers rc 1 at begin and nothing is written).
+Ids 32..34 (Felucca's user sample slots) are retired with the slots: the web editor skips them when it reads an older
+archive and restores the rest. Begin: `0, id, size u32, crc u32`: size is 3648 (FUN9), 3584 (FUN8) or 3388 (FUN7, FUN6) for id 0,
 the settings record's size for id 1, 3648, 3584, 3388 or 0 (empty the slot) for ids 2..5, the bank's size or 0 for 6 and 7,
 3472 or 0 for 8 (the FM6 bank: its magic, layout and every byte below 128 are checked), 3728 or 0 for 9 (its magic,
 version and slot count checked; 0 clears the patches). FUN8, FUN7 and FUN6 become FUN9.
-An archive without id 8 (written before FM6) still restores; the web editor reads all three kinds (11, 12, 13 objects).
+An archive without id 8 (written before FM6) still restores; the web editor reads all three kinds (8, 9, 10 objects;
+an older archive that also holds the sample slots, 11, 12 or 13 objects, reads with those skipped).
 Since 1.0.3 an id 8 with data (an archive of 1.0..1.0.2) is not stored: like the first boot after the update, every FM6
 user preset whose stored SLOT is a B slot (8..34) and has no patch yet gets that bank slot's patch, and id 9 is written.
 So restore ids 6 and 7 before 8 (the web editor does); an empty id 8 is taken and ignored (rc 0). Old archives
@@ -635,7 +613,7 @@ and at most 256 decoded bytes (256-byte pieces are fine at full speed, one reque
 the editor"; a piece that gets no reply was not taken: abort and begin the object again). Commit: `2, id`: the device checks the length and the CRC, validates the
 content, and then writes. Abort: `3, id`. Id 0 replaces the music now playing (RAM only, no flash);
 ids 1..9 are written to flash (settings and presets are applied too). Nothing is written before the commit.
-The web editor sends ids 2..7 and the samples first, then 1, then 0 last. A failed restore can leave
+The web editor sends ids 2..9 first, then 1, then 0 last. A failed restore can leave
 earlier objects restored; the file is still the source.
 
 | rc | Meaning |

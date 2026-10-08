@@ -45,6 +45,10 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 
 - **PHYS** se retiró (liberó 50 KB de RAM). Un sonido PHYS de un proyecto o preset viejo suena como el
   primer preset de ANALOG.
+- **Sin samples de usuario.** Se fueron los slots USR1–3 (SAMPLE, GRAIN, SLICE), la subida y grabación
+  desde el editor, la página EDIT > SLICES y las slices manuales (MAN). Los samples de fábrica, BREAK y
+  PIANO siguen. Un sonido viejo en USR suena con un set de fábrica. Libera 240 KB de flash para las
+  canciones.
 - **Capa FX:** quedan REPEAT 1/8, 1/16, 1/32 y los filtros LPF / HPF. Se fueron REVERSE, TAPE STOP,
   FREEZE y el armonizador.
 - **Sin undo.** SAVE sostenido abre la capa de canción; OCT− ya no "devuelve" en las capas. En su lugar,
