@@ -12,7 +12,7 @@
  *          parameter of the sound page shown last, to begin with), at the sound's own value; on a record: its kind
  *          LOCK <-> AUTO (an automation event holds its value until the next one, a lock sounds on its step only)
  *   EDIT   deletes the record;  OCT- goes HOME (as on the other action pages)
- * Every edit is one undo (SAVE held: ui.c motion_undo_take; a knob turned on is one). Not while a song plays
+ * Not while a song plays
  * (STOP TO EDIT). The 64 records are shared by the four tracks: AUTOMATION FULL when they are used */
 static int32_t accel(uint32_t role, int32_t s, int32_t range);
 
@@ -148,7 +148,6 @@ static void ev_knob(uint32_t slot, int32_t s)
         }
         if (to == (int32_t)step)
             return;
-        motion_undo_take(t, 0x200u | slot | i << 4);   /* (a knob turned on, this record) */
         (void)motion_move(t, i, (uint32_t)to, id, e->value);
     } else if (slot == 2u) {                            /* another parameter, from the sound's own value */
         uint32_t to = id, m = (uint32_t)(s > 0 ? s : -s);
@@ -156,16 +155,13 @@ static void ev_knob(uint32_t slot, int32_t s)
             to = ev_id_step(t, step, to, s > 0 ? 1 : -1);
         if (to == id)
             return;
-        motion_undo_take(t, 0x200u | slot | i << 4);   /* (a knob turned on, this record) */
         (void)motion_move(t, i, step, to, motion_base_value(t, to));
         ui.ev_id = (uint8_t)to;
     } else {                                            /* the value */
         d = track_desc(t, id);
         s = accel(EN_K1 + slot, s, d->fmt == F_ENUM ? 0 : d->max - d->min);
-        motion_undo_take(t, 0x200u | slot | i << 4);   /* (a knob turned on, this record) */
         (void)motion_move(t, i, step, id, (int16_t)param_turn(d, e->value, s));
     }
-    motion_undo_done(t);
     ev_follow(i);
 }
 
@@ -191,9 +187,7 @@ static void ev_oct(void)
             ui_message("AUTOMATION FULL");
             return;
         }
-        motion_undo_take(t, 0);
         (void)motion_set_lock(t, ui.ev_step, ui.ev_id, motion_base_value(t, ui.ev_id));
-        motion_undo_done(t);
         if ((at = motion_find(t, ui.ev_step, ui.ev_id)) >= 0)
             ev_follow((uint32_t)at);
         ui_message("LOCK ADDED");
@@ -202,9 +196,7 @@ static void ev_oct(void)
     {
         const motion_event_t e = motion.event[idx[r]];
         uint32_t lock = !(e.param & MOTION_LOCK);
-        motion_undo_take(t, 0);
         (void)motion_put(t, e.place & 63u, MOTION_ID(&e), e.value, lock ? MOTION_LOCK : 0u);
-        motion_undo_done(t);
         ui_message(lock ? "NOW A LOCK" : "NOW AUTOMATION");
     }
 }
@@ -223,9 +215,7 @@ static void ev_delete(void)
     if (ev_busy())
         return;
     e = &motion.event[idx[r]];
-    motion_undo_take(t, 0);
     motion_delete_event(t, e->place & 63u, MOTION_ID(e));
-    motion_undo_done(t);
     ui.ev_row = (uint8_t)r;                              /* (ev_row clamps it to the new count) */
     ui_message("DELETED");
 }

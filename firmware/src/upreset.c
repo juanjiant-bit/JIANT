@@ -16,7 +16,7 @@
  * That holds as long as common parameters are only ever added just before
  * P_E0 (else bump UP_VER and translate). Version 1 (before 1.0) has the
  * same layout; only its PHYS MODEL 2 meant DUST, which up_values loads as
- * MODAL bowed (eng_phys.c phys_legacy). A record of PHYS MODEL 4 (DRUM, version 2
+ * MODAL bowed (PHYS itself is retired in TONIC: a PHYS record loads as ANALOG, ui.c set_engine_of). A record of PHYS MODEL 4 (DRUM, version 2
  * until the kit became the DRUM engine) is that engine: up_migrate rewrites it
  * in the RAM mirror when a bank is read and when UP_PUT sends one (core.h
  * drum_from_phys); flash keeps the old record until its bank is written again,
@@ -230,8 +230,6 @@ static void up_values(const up_rec_t *r, int16_t *v)   /* mapped and clamped for
     for (i = 0; i < P_COUNT; i++)
         def[i] = param_desc_of(r->engine, i)->def;
     up_params(r, v, def);
-    if (r->ver == 1u && ENGINES[r->engine] == &ENG_PHYS)   /* (before 1.0: MODEL 2 was DUST) */
-        phys_legacy(&v[P_E0]);
     for (i = 0; i < P_COUNT; i++)
         v[i] = (int16_t)param_fit(param_desc_of(r->engine, i), v[i]);   /* (a retired KIT: the kit it plays) */
 }
@@ -321,7 +319,7 @@ static void up_auto_name(char *b, uint32_t e, uint32_t k)
 {
     char l[4];
     e %= NENGINES;
-    str_cpy(b, ENGINES[eng_ok(e) ? e : ENGI_FM6]->name, 9);   /* (a DIGITAL record plays as FM6) */
+    str_cpy(b, ENGINES[eng_live(e)]->name, 9);   /* (a DIGITAL record plays as FM6, PHYS as ANALOG) */
     up_slot_label(l, k);
     str_cpy(b + str_len(b), " ", 2);
     str_cpy(b + str_len(b), l + 1, 3);
@@ -403,7 +401,7 @@ static int up_load(uint32_t k)
         return 1;
     r = up_rec(k);
     up_values(r, v);
-    load_begin(t, UNDO_SOUND);                          /* (ui.c: the copy for SAVE held = undo) */
+    load_begin(t, LOAD_SOUND);
     panic_req |= (uint8_t)(1u << song.sel);
 #if !FELUCCA_FM4
     if (r->engine == ENGI_DIGITAL) {                    /* a DIGITAL sound (kept as it was stored): FM6 */
@@ -422,6 +420,8 @@ static int up_load(uint32_t k)
         t->preset = 0;
         fm1_irq_on();
         upf_track_load(t, k);                           /* FM6: the preset's own patch (up_fm6.c) */
+        if (r->engine == ENGI_PHYS)                     /* PHYS (retired, engines.c): ANALOG's first preset */
+            set_engine_of(t, ENGI_PHYS_TO);
     }
     t->user = (uint8_t)(k + 1u);
     load_end(t);
@@ -459,7 +459,7 @@ static uint32_t up_pat_rank(uint32_t slot)     /* ones that hold a pattern befor
 }
 
 /* slot k's pattern -> track t's steps 1..16 (the rest cleared), with the record's LEN (at most 16), DIV,
- * SWING and GATE; the sound stays (ui.c pat_load: the undo copy) */
+ * SWING and GATE; the sound stays (ui.c pat_load) */
 static void up_pat_load(track_t *t, uint32_t k)
 {
     const up_rec_t *r;
@@ -479,7 +479,7 @@ static void up_pat_load(track_t *t, uint32_t k)
 }
 
 /* the engine a used slot's sound plays on (a DIGITAL record: FM6, without FELUCCA_FM4) */
-static uint32_t up_engine(uint32_t k) { return eng_ok(up_rec(k)->engine) ? up_rec(k)->engine : ENGI_FM6; }
+static uint32_t up_engine(uint32_t k) { return eng_live(up_rec(k)->engine); }   /* (PHYS: ANALOG) */
 
 static uint32_t up_count(void)                 /* used slots */
 {

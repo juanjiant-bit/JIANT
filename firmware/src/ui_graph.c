@@ -465,38 +465,31 @@ static uint32_t str_hash(uint32_t h, const char *s)
 
 /* One shared, reduced sample display. Decode only in the UI/main loop with a
  * private IMA state, 512 samples per frame; no audio voice state is touched.
- * Cache follows the sample zone, selected note and user-slot generation. */
+ * Cache follows the sample zone and the selected note. */
 #define SAMPLE_WAVE_COLS 96u
 static struct {
     int16_t lo[SAMPLE_WAVE_COLS], hi[SAMPLE_WAVE_COLS];
     const smp_zone_t *zone;
-    uint32_t key, gen, pos;
+    uint32_t key, pos;
     int32_t pred, index, peak;
     uint8_t ready;
 } sample_wave;
 
 static uint32_t sample_wave_zone(const track_t *t)
 {
-    uint32_t si = (uint32_t)t->p[P_E0] % SMP_NALL, i, zi = 0xFFFFu;
-    if (si < SMP_NSETS) {
-        const smp_set_t *set = &SMP_SETS[si];
-        for (i = 0; i < set->nz; i++)
-            if (last_note >= SMP_ZONES[set->z0 + i].lo && last_note <= SMP_ZONES[set->z0 + i].hi) zi = set->z0 + i;
-        if (zi == 0xFFFFu && set->nz) zi = set->z0;
-    } else {
-        uint32_t k = si - SMP_NSETS;
-        for (i = 0; i < usr_nz[k]; i++)
-            if (last_note >= usr_zone[k][i].lo && last_note <= usr_zone[k][i].hi) zi = 0x8000u | k << 5 | i;
-        if (zi == 0xFFFFu && usr_nz[k]) zi = 0x8000u | k << 5;
-    }
+    uint32_t i, zi = 0xFFFFu;
+    const smp_set_t *set = &SMP_SETS[(uint32_t)t->p[P_E0] % SMP_NALL];
+    for (i = 0; i < set->nz; i++)
+        if (last_note >= SMP_ZONES[set->z0 + i].lo && last_note <= SMP_ZONES[set->z0 + i].hi) zi = set->z0 + i;
+    if (zi == 0xFFFFu && set->nz) zi = set->z0;
     return zi;
 }
 
 static void sample_wave_tick(const track_t *t)
 {
     uint32_t zi = sample_wave_zone(t), key = zi + ((uint32_t)last_note << 16), i;
-    if (key != sample_wave.key || sample_wave.gen != smp_user_gen || !sample_wave.zone) {
-        sample_wave.key = key; sample_wave.gen = smp_user_gen;
+    if (key != sample_wave.key || !sample_wave.zone) {
+        sample_wave.key = key;
         sample_wave.zone = zi == 0xFFFFu ? 0 : smp_zone(zi);
         sample_wave.pos = 0; sample_wave.pred = sample_wave.index = 0;
         sample_wave.peak = 1; sample_wave.ready = 0;
@@ -538,61 +531,6 @@ static void graph_sample(uint16_t c)
         cv_line(left, 4, left, 90, T_MID); cv_line(right, 4, right, 90, T_MID);
     }
 }
-
-#if FELUCCA_SLICE
-/* SLICES (ui_slice.c): the waveform from the marker before the selected one to the one after it (the selected
- * slice tinted, its marker the accent, outside the slices DIM), under it the whole material with every marker and
- * the view; then the selected slice's length and the source */
-static void graph_slices(void)
-{
-    uint32_t a, b, len, n = slice_count(), j = slice_sel(), i, src, div, ma, mb;
-    char t[20], u[12];
-    if (!slice_src(&src, &div) || !n) {             /* (it plays a sine: eng_slice.c) */
-        panel_alert(ICON_X_NOFILE, "SAMPLE NOT FOUND");
-        return;
-    }
-    slice_view(&a, &b, &len);
-    slice_env(a, b);
-    ma = slice_mark(0);
-    mb = slice_mark(n);
-#define SPX(p) (12 + (int32_t)((uint32_t)((p) - a) * SP_COLS / (b - a)))   /* p in [a, b] */
-    if (j < n) {                                     /* the selected slice */
-        uint32_t s0 = slice_mark(j), s1 = slice_mark(j + 1u);
-        int32_t x0 = SPX(s0 > a ? s0 : a), x1 = SPX(s1 < b ? s1 : b);
-        if (x1 > x0)
-            cv_rect(x0, 6, x1 - x0, 80, T_TINT);
-    }
-    for (i = 0; i < SP_COLS; i++) {
-        uint32_t p = a + (uint32_t)((uint32_t)i * (b - a) / SP_COLS);
-        cv_line(12 + (int32_t)i, 46 - sp.hi[i] * 38 / 64, 12 + (int32_t)i, 46 - sp.lo[i] * 38 / 64,
-                p >= ma && p < mb ? T_THEME : T_DIM);
-    }
-    for (i = 0; i <= n; i++) {                       /* the markers in the view (the selected one last: on top) */
-        uint32_t p = slice_mark(i);
-        if (i != j && p >= a && p <= b)
-            cv_rect(SPX(p), 4, 1, 84, T_MID);
-    }
-    {
-        uint32_t p = slice_mark(j);
-        if (p >= a && p <= b)
-            cv_rect(SPX(p) > 226 ? 226 : SPX(p), 2, 2, 88, T_ACCENT);
-    }
-#undef SPX
-    cv_rrect(12, 96, (int32_t)SP_COLS, 3, 1, T_RAISE, T_SURF);   /* the whole: every marker, the view */
-    for (i = 0; i <= n; i++)
-        cv_rect(12 + (int32_t)((uint32_t)slice_mark(i) * (SP_COLS - 1u) / len), 94, 1, 7, i == j ? T_ACCENT : T_MID);
-    {
-        int32_t x0 = 12 + (int32_t)((uint32_t)a * SP_COLS / len), x1 = 12 + (int32_t)((uint32_t)b * SP_COLS / len);
-        cv_rect(x0, 103, x1 - x0 < 2 ? 2 : x1 - x0, 2, T_THEME);
-    }
-    str_cpy(t, "LEN ", sizeof t);
-    slice_time(u, j < n ? slice_mark(j + 1u) - slice_mark(j) : len - mb);
-    str_cpy(t + 4, u, sizeof t - 4);
-    str_cpy(t + str_len(t), " S", sizeof t - str_len(t));
-    cv_text(12, 106, &AF_S, t, T_MID);
-    cv_text_r(228, 106, &AF_S, N_SLC_SRC[src], src && src != SLC_SRC_PIANO ? T_THEME : T_DIM, T_SURF);
-}
-#endif
 
 /* WHEEL: the nine drawbars as rounded bars over RAISE slots (the bars of the knob just turned: the accent),
  * their footages under them */
@@ -914,7 +852,7 @@ static uint32_t graph_signature(void)
     if (pg->graph == GR_SONG) {
         h ^= ui.song_row * 40503u + chain_config.count * 7919u;
         for (i = 0; i < CHAIN_ROWS; i++)
-            h = (h ^ (chain_config.row[i].slot + 4u * chain_config.row[i].repeat)) * 16777619u;
+            h = (h ^ (chain_config.row[i].slot + 4u * chain_config.row[i].bars)) * 16777619u;
         h ^= chain.running ? (chain.row + 1u) * 104729u + chain.remaining * 1299709u : 0u;
         for (i = 0; i < 4u; i++) h ^= (uint32_t)graph_project_used(i) << (24u + i);
         h += graph_pname_sig;
@@ -937,9 +875,6 @@ static uint32_t graph_signature(void)
                       (uint16_t)motion.event[idx[i]].value)) * 16777619u;
         h = (h ^ (n + 1u) * 40503u ^ ev_row(n) * 2654435761u ^ ((uint32_t)ui.ev_step << 8 | ui.ev_id) * 104729u) * 16777619u;
     }
-#if FELUCCA_SLICE
-    if (pg->graph == GR_SLICES && slice_page_ok()) h ^= slice_sig();
-#endif
     if (pg->graph == GR_CHANCE) h ^= ui.cursor * 40503u + step_chance(&t->step[ui.cursor]);
     if (pg->scope == SC_ENGINE && (ENGINES[t->eng_req % NENGINES] == &ENG_WHEEL || t->eng_req % NENGINES == ENGI_FM6 ||
                                    (FELUCCA_FM4 && t->eng_req % NENGINES == ENGI_DIGITAL)))
@@ -1419,13 +1354,12 @@ static void graph_scope(uint16_t c)
     }
 }
 
-/* SONG is a playing order of the four stored project patterns. Letters match
- * PROJECT A..D; loading a project still restores its sound, SONG borrows steps. */
+/* SONG: the rows, each a section (the saved project A..D, sounds and steps) and its bars (song_chain.c) */
 static void graph_song(void)
 {
     uint32_t first = ui.song_row > 2u ? ui.song_row - 2u : 0u, i;
     if (!chain_config.count) {
-        panel_note("PAT A x4 > B x1", "[K2] ADD PATTERN", "[SAVE] PROJECT A-D");
+        panel_note("A 4 BARS > B 2 BARS", "[K2] ADD SECTION", "[SAVE] PROJECT A-D");
         return;
     }
     for (i = first; i < CHAIN_ROWS && i < first + 7u; i++) {
@@ -1437,15 +1371,15 @@ static void graph_song(void)
         if (sel) cv_rrect(6, y, 228, 16, 4, T_THEME, T_SURF);
         if (chain.running && i == chain.row) cv_icon_on(9, y + 2, 12, ICON_X_RIGHT, sel ? T_INK : T_ACCENT, bg);
         fmt_int(b, (int32_t)i + 1); cv_text_on(24, y + 1, &AF_S, b, sel ? T_INK : T_MID, bg);
-        if (i == chain_config.count) { cv_text_on(54, y + 1, &AF_S, "+ ADD PATTERN", dim, bg); break; }
+        if (i == chain_config.count) { cv_text_on(54, y + 1, &AF_S, "+ ADD SECTION", dim, bg); break; }
         b[0] = (char)('A' + chain_config.row[i].slot); b[1] = 0;
         cv_text_on(54, y + 1, &AF_S, b, col, bg);
-        b[0] = 'x'; fmt_int(b + 1, chain_config.row[i].repeat);
+        fmt_int(b, chain_config.row[i].bars); str_cpy(b + str_len(b), " BAR", 8);
         cv_text_on(82, y + 1, &AF_S, b, col, bg);
         if (i + 1u < chain_config.count) cv_text_on(122, y + 1, &AF_S, ">", dim, bg);
         if (!graph_project_used(chain_config.row[i].slot)) cv_text_on(142, y + 1, &AF_S, "NOT SAVED", dim, bg);
         else if (chain.running && i == chain.row) {
-            fmt_int(b, chain.remaining); str_cpy(b + str_len(b), " LEFT", 8);
+            fmt_int(b, chain.remaining); str_cpy(b + str_len(b), " TO GO", 8);
             cv_text_on(142, y + 1, &AF_S, b, sel ? T_INK : T_THEME, bg);
         } else if (graph_project_name(chain_config.row[i].slot)[0]) {   /* the project's name, cut to fit */
             cv_free_text(142, y + 1, &AF_S, graph_project_name(chain_config.row[i].slot), sel ? T_INK : T_MID, bg, 232 - 142);
@@ -1548,12 +1482,6 @@ static void draw_graph(void)
             cv_oy = 0;
             panel_note("TURN TO PICK", "[OCT+] CONFIRM", 0);
             break;
-#if FELUCCA_SLICE
-        case GR_SLICES:
-            cv_oy = 0;
-            graph_slices();
-            break;
-#endif
         default:
             if (pg->scope == SC_ENGINE && ENGINES[t->eng_req % NENGINES] == &ENG_WHEEL) graph_wheel(t, c);
             else if (pg->scope == SC_ENGINE && ENGINES[t->eng_req % NENGINES] == &ENG_SAMPLE && sample_wave.ready) graph_sample(c);

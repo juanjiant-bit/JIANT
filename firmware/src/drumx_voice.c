@@ -1,0 +1,161 @@
+/* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * JIANT (FELUCCA TONIC): DRUM-X, after the idea of Sonic Charge's Microtonic (a tuned oscillator with a pitch
+ * envelope and FM, a filtered noise generator, their envelopes, two patches and a MORPH between them), built anew
+ * small and in fixed point for the FM-1. */
+/* A DRUM-X sound (a lane of a kit) is dx_lane_t, 11 bytes: the mode and five values for each of its patches A and B:
+ *   PITCH  the oscillator, MIDI 24..119 (33 Hz .. 7.9 kHz), 3/4 semitone a step
+ *   PMOD   the pitch envelope: up to +4 octaves at the hit, falling with a sixth of the decay's tau (1..40 ms)
+ *   DECAY  the amplitude's tau, 3 ms .. 1.5 s (exponential)
+ *   NOISE  the mix: 0 the oscillator only .. 127 the noise only
+ *   COLOR  the oscillator's FM index (SINE: its drive) and the noise filter's cutoff (30 Hz .. 16 kHz)
+ * The mode: the oscillator (SINE, FM at 1:1, METAL at 1:1.47, BELL at 1:2.76), the noise filter (LP, BP, HP), the
+ * noise's envelope (as the oscillator's, or SNAP: a quarter of its tau).
+ * MORPH (0 A .. 127 B) mixes the two patches value by value, read every block: it may move while a hit rings.
+ * Envelopes per block (Q30 values, Q16 factors, dv_kb), ramped linearly inside it; the pitch ramps too. A hit
+ * that has rung out (-84 dB) stops computing (live 0) and writes zeros. Only 32-bit products. */
+enum { DXW_SINE, DXW_FM, DXW_METAL, DXW_BELL };
+enum { DXF_LP, DXF_BP, DXF_HP };
+#define DX_MODE(w, f, snap) ((uint8_t)((w) | (f) << 2 | (snap) << 4))
+enum { DXP_PITCH, DXP_PMOD, DXP_DECAY, DXP_NOISE, DXP_COLOR, DXP_N };
+typedef struct {
+    uint8_t mode;
+    uint8_t a[DXP_N], b[DXP_N];                          /* 0..127 */
+} dx_lane_t;
+typedef struct {                                         /* a hit */
+    uint32_t ph, ph2, inc;                               /* the phases; the last block's end increment */
+    int32_t ea, en, ep;                                  /* amplitude, noise (Q30), pitch (Q15) envelopes */
+    int32_t ic1, ic2, rng;                               /* the noise filter's state, the noise */
+    uint8_t live, trig, choke;
+} dx_voice_t;
+
+/* the oscillator's modulator ratios (Q12), by wave */
+static const uint16_t DX_RATIO[4] = {4096, 4096, 6021, 11305};
+
+static void dx_trigger(dx_voice_t *v) { v->trig = 1; v->choke = 0; }
+static void dx_choke(dx_voice_t *v) { if (v->live) v->choke = 1; }
+
+/* a decay value (0..127) -> its tau in us: 3 ms x 2^(9 d / 127) */
+static uint32_t dx_tau(uint32_t d) { return ((dv_exp2(d * 9u * 4096u / 127u) >> 8) * 3000u) >> 8; }
+
+/* one block of lane L's hit v into y (n <= CTL): Q15, peaks near full scale. morph 0..127; tune16 1/16 semitones;
+ * dofs / cofs move DECAY / COLOR (-64..63). The oscillator and the noise each run their own loop (the wave and the
+ * filter picked once a block), skipped when the mix leaves them out; gains and the pitch step per sample */
+static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, int32_t morph, int32_t tune16,
+                                             int32_t dofs, int32_t cofs, int32_t *y, uint32_t n)
+{
+    int32_t q[DXP_N], p16, depth, ea1, en1, ep1, og, ng, ga, dga, gn, dgn, kd, inc, dinc;
+    uint32_t i, k, wave = L->mode & 3u, flt = (L->mode >> 2) & 3u, ta, tn, tp, kb, inc1;
+    tsvf_t c;
+    if (!v->live && !v->trig) {
+        for (i = 0; i < n; i++)
+            y[i] = 0;
+        return;
+    }
+    morph = clamp(morph, 0, 127);
+    for (k = 0; k < DXP_N; k++)
+        q[k] = L->a[k] + ((L->b[k] - L->a[k]) * morph) / 127;
+    q[DXP_DECAY] = clamp(q[DXP_DECAY] + dofs, 0, 127);
+    q[DXP_COLOR] = clamp(q[DXP_COLOR] + cofs, 0, 127);
+    ta = dx_tau((uint32_t)q[DXP_DECAY]);
+    tn = (L->mode >> 4) & 1u ? ta >> 2 : ta;
+    tp = clamp((int32_t)(ta / 6u), 1000, 40000);
+    p16 = 384 + q[DXP_PITCH] * 12 + tune16;
+    depth = q[DXP_PMOD] * 6;
+    if (v->trig) {                                       /* the hit: from the top */
+        v->trig = 0;
+        v->live = 1;
+        v->ea = v->en = 1 << 30;
+        v->ep = 32767;
+        v->ph = v->ph2 = 0;
+        v->ic1 = v->ic2 = 0;
+        if (!v->rng)
+            v->rng = 0x2545F491;
+        v->inc = pitch_inc((uint32_t)clamp(p16 + depth, 0, 2047));
+    }
+    kb = v->choke ? dv_kb(1500u) : dv_kb(ta);            /* (a choked hit: gone in ~5 ms) */
+    ea1 = mulq16(v->ea, kb);
+    en1 = mulq16(v->en, v->choke ? kb : dv_kb(tn));
+    ep1 = (int32_t)(((uint32_t)v->ep * dv_kb(tp)) >> 16);
+    inc1 = pitch_inc((uint32_t)clamp(p16 + ((depth * ep1) >> 15), 0, 2047));
+    ng = q[DXP_NOISE] * 258;
+    og = ((32767 - ng) * 11) >> 4;                       /* (x 11 / 16: about the DRUM kits' level) */
+    ng = (ng * 11) >> 4;
+    ga = mulq15(og, v->ea >> 15) << 8;                   /* the oscillator's gain, Q23, stepped */
+    dga = ((mulq15(og, ea1 >> 15) << 8) - ga) / (int32_t)n;
+    gn = mulq15(ng, v->en >> 15) << 8;                   /* the noise's */
+    dgn = ((mulq15(ng, en1 >> 15) << 8) - gn) / (int32_t)n;
+    inc = (int32_t)(v->inc >> 4);                        /* (>> 4: the step fits) */
+    dinc = ((int32_t)(inc1 >> 4) - inc) / (int32_t)n;
+    if (og) {                                            /* the oscillator */
+        uint32_t ph = v->ph;
+        if (wave == DXW_SINE && q[DXP_COLOR]) {          /* drive x1 .. x2.5 into the soft clip */
+            int32_t g = 4096 + q[DXP_COLOR] * 48;
+            for (i = 0; i < n; i++, inc += dinc, ga += dga) {
+                y[i] = mulq15(softclip((sine_i(ph) * g) >> 12), ga >> 8);
+                ph += (uint32_t)inc << 4;
+            }
+        } else if (wave == DXW_SINE) {
+            for (i = 0; i < n; i++, inc += dinc, ga += dga) {
+                y[i] = mulq15(sine_i(ph), ga >> 8);
+                ph += (uint32_t)inc << 4;
+            }
+        } else {                                         /* FM: up to ~1.5 cycles of phase */
+            uint32_t ph2 = v->ph2, ratio = DX_RATIO[wave];
+            int32_t idx = q[DXP_COLOR] * 3;
+            for (i = 0; i < n; i++, inc += dinc, ga += dga) {
+                y[i] = mulq15(sine_i(ph + (uint32_t)(sine_i(ph2) * idx) * 512u), ga >> 8);
+                ph += (uint32_t)inc << 4;
+                ph2 += ((uint32_t)inc >> 8) * ratio;
+            }
+            v->ph2 = ph2;
+        }
+        v->ph = ph;
+    } else {
+        for (i = 0; i < n; i++)
+            y[i] = 0;
+    }
+    if (ng) {                                            /* the noise through its filter */
+        int32_t ic1 = v->ic1, ic2 = v->ic2, rng = v->rng;
+        kd = flt == DXF_BP ? 2400 : 6000;                /* (BP a little resonant) */
+        tsvf_coef_k(&c, q[DXP_COLOR] << 8, kd);
+/* (one loop per filter: the choice is not made per sample) */
+#define DX_NOISE(OUT)                                                                                              \
+        for (i = 0; i < n; i++, gn += dgn) {                                                                       \
+            int32_t r = (int32_t)noise32(&rng) >> 17, v3 = r - ic2, v1, v2;   /* +-16384 */                      \
+            v1 = (c.a1 * ic1 + c.a2 * v3) >> 13;                                                                   \
+            v2 = ic2 + ((c.a2 * ic1 + c.a3 * v3) >> 13);                                                           \
+            ic1 = clamp(2 * v1 - ic1, -150000, 150000);                                                            \
+            ic2 = clamp(2 * v2 - ic2, -150000, 150000);                                                            \
+            y[i] += mulq15(clamp((OUT) << 1, -32767, 32767), gn >> 8);                                            \
+        }
+        if (flt == DXF_LP)
+            DX_NOISE(v2)
+        else if (flt == DXF_BP)
+            DX_NOISE(v1)
+        else
+            DX_NOISE(r - ((kd * v1) >> 12) - v2)
+#undef DX_NOISE
+        v->ic1 = ic1;
+        v->ic2 = ic2;
+        v->rng = rng;
+    }
+    v->ea = ea1;
+    v->en = en1;
+    v->ep = ep1;
+    v->inc = inc1;
+    if (v->ea < (1 << 16) && v->en < (1 << 16))         /* -84 dB */
+        v->live = 0;
+}
+
+/* the kit DRUM-X's first step plays (DRUM KIT X): {mode, A, B}, A {PITCH PMOD DECAY NOISE COLOR} */
+static const dx_lane_t DX_KIT_DEF[8] = {
+    {DX_MODE(DXW_SINE, DXF_LP, 1), {9, 70, 72, 4, 20}, {14, 100, 88, 10, 60}},        /* KICK */
+    {DX_MODE(DXW_FM, DXF_BP, 0), {40, 30, 52, 80, 90}, {46, 18, 64, 104, 70}},       /* SNARE */
+    {DX_MODE(DXW_SINE, DXF_BP, 0), {60, 0, 46, 127, 84}, {54, 0, 58, 127, 76}},      /* CLAP */
+    {DX_MODE(DXW_METAL, DXF_HP, 0), {100, 0, 22, 96, 116}, {108, 0, 14, 112, 122}},  /* HAT CL */
+    {DX_MODE(DXW_METAL, DXF_HP, 0), {100, 0, 62, 96, 112}, {108, 0, 74, 112, 118}},  /* HAT OP */
+    {DX_MODE(DXW_SINE, DXF_LP, 1), {30, 40, 66, 10, 30}, {36, 60, 76, 20, 50}},      /* TOM */
+    {DX_MODE(DXW_BELL, DXF_HP, 1), {63, 10, 14, 16, 46}, {70, 24, 20, 30, 60}},     /* RIM */
+    {DX_MODE(DXW_METAL, DXF_BP, 0), {69, 0, 72, 0, 40}, {74, 0, 84, 12, 56}},        /* BELL */
+};

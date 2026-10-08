@@ -10,7 +10,7 @@
  * 3. MIDI: CC1 / CC11 / CC121 and channel aftertouch over USB (packets) and TRS (bytes, running status) reach
  *    the matrix of the channel's track (ch 1..4 the parts, others ignored with ROUT CH1-4; with ROUT SEL every
  *    channel the selected track).
- * 4. cost: instructions per sample (kernel-counted) of the heaviest PHYS preset and of a 4-part mix with every
+ * 4. cost: instructions per sample (kernel-counted) of a heavy GRAIN preset (PHYS, retired in TONIC, was here) and of a 4-part mix with every
  *    slot of every part active, against the same with the matrix off; fails above MOD_COST_MAX.
  * 5. demos: LFO -> CUT, VEL -> AMP, MODW -> VIB, LFO -> TRIO PW, AT -> WHEEL DRV as WAVs in DEMO_DIR. */
 #define main hostsim_main
@@ -481,7 +481,7 @@ static double cost(const uint8_t parts[NPART][3], int on)
 
 static void test_cost(void)
 {
-    uint32_t e_phys = eng_by_name("PHYS"), pp = preset_by_name(e_phys, "BOWED METAL");
+    uint32_t e_phys = eng_by_name("GRAIN"), pp = preset_by_name(e_phys, "CLOUD PAD");
     uint8_t phys[NPART][3] = {{(uint8_t)e_phys, (uint8_t)pp, 8}}, idle[NPART][3] = {{0}};
     uint8_t mix[NPART][3] = {{1, 0, 8}, {2, 0, 8}, {(uint8_t)e_phys, (uint8_t)pp, 4}, {6, 0, 4}};
     double c_idle, c0, c1, m0, m1;
@@ -494,12 +494,12 @@ static void test_cost(void)
     c1 = cost(phys, 1);
     m0 = cost(mix, 0);
     m1 = cost(mix, 1);
-    printf("mod: cost: PHYS %s (plays 4 voices): %.0f -> %.0f instructions / sample with 4 slots (+%.0f, +%.1f %% of "
+    printf("mod: cost: GRAIN %s (plays 4 voices): %.0f -> %.0f instructions / sample with 4 slots (+%.0f, +%.1f %% of "
            "the part over the idle mix %.0f)\n", ENGINES[e_phys]->presets[pp].name, c0, c1, c1 - c0,
            (c1 - c0) * 100 / (c0 - c_idle), c_idle);
-    printf("mod: cost: 4 parts (DIGITAL / its FM6 conversion 8 + PHASE 8 + PHYS 4 + TRIO 4 asked, the budget plays 8), every slot of "
+    printf("mod: cost: 4 parts (DIGITAL / its FM6 conversion 8 + PHASE 8 + GRAIN 4 + TRIO 4 asked, the budget plays 8), every slot of "
            "every part active: %.0f -> %.0f (+%.1f %%)\n", m0, m1, (m1 - m0) * 100 / m0);
-    check("cost: 4 active slots add at most a few percent (PHYS part, the 4-part mix)",
+    check("cost: 4 active slots add at most a few percent (GRAIN part, the 4-part mix)",
           (c1 - c0) * 100 / (c0 - c_idle) <= MOD_COST_MAX && (m1 - m0) * 100 / m0 <= MOD_COST_MAX);
 }
 

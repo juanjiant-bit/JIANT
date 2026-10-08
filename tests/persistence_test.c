@@ -422,6 +422,70 @@ static int autosave_test(void)
     return bad;
 }
 
+/* JIANT's songs (song_main.c): song 1 is the four project slots, songs 2..8 their own objects; switching keeps the
+ * song left (its stored sections and rows) and brings in the other's sections, rows and section A; the index keeps
+ * the current song over a power-off; a first boot takes song 1's rows from its section A (Felucca's song) */
+static int songs_test(void)
+{
+    int bad = 0, ok;
+    reset();
+    song_cur = 0;
+    song_index_load();                                  /* (no index in flash) */
+    song_index_boot();
+    trk[0].p[P_SLEN] = 5;
+    chain_config.count = 1;
+    chain_config.row[0] = (chain_row_t){0, 3};
+    ok = project_save(0) == 0 && song_cur == 0 && st_load(OBJ_PROJECT0, &proj_wire, sizeof proj_wire) > 0;
+    ok &= song_select(1) == 0 && song_cur == 1 && !project_used(0) && !chain_config.count &&
+          trk[0].p[P_SLEN] == 5;                        /* (an empty song: the music stays) */
+    ok &= st_load(OBJ_SONGIDX, &song_idx, sizeof song_idx) == (int)sizeof song_idx && song_idx.cur == 1u &&
+          song_idx.rows[0].count == 1u && song_idx.rows[0].row[0].bars == 3u;
+    bad += check("songs: song 2 in, song 1's rows and the current song in the index", ok);
+    trk[0].p[P_SLEN] = 7;
+    section_store(1);                                   /* song 2, section B: RAM, then flash once stopped */
+    chain_config.count = 1;
+    chain_config.row[0] = (chain_row_t){1, 2};
+    song_poll();
+    ok = !live.dirty && st_load(OBJ_SONG1 + 1, &proj_wire, sizeof proj_wire) > 0 &&
+         st_load(OBJ_PROJECT0 + 1, &proj_wire, sizeof proj_wire) < 0;
+    fm1_ms += 3000u;
+    song_poll();                                        /* (the rows rested: the index written) */
+    ok &= st_load(OBJ_SONGIDX, &song_idx, sizeof song_idx) == (int)sizeof song_idx && song_idx.rows[1].row[0].slot == 1u;
+    bad += check("songs: a section stored in song 2 goes to song 2's object, its rows to the index", ok);
+    ok = song_select(0) == 0 && song_cur == 0 && project_used(0) && !project_used(1) && trk[0].p[P_SLEN] == 5 &&
+         chain_config.count == 1u && chain_config.row[0].bars == 3u && live.cur == 0;
+    bad += check("songs: back to song 1: its sections, its rows, its section A as the music", ok);
+    song.playing = 1;
+    ok = song_select(1) != 0 && song_cur == 0 && str_eq(ui.msg, "STOP TO CHANGE SONG");
+    song.playing = 0;
+    bad += check("songs: no change while playing", ok);
+    ok = song_select(1) == 0;
+    memset(proj_slot, 0, sizeof proj_slot);             /* a power-off */
+    song_cur = 0;
+    chain_defaults(&chain_config);
+    song_index_load();
+    for (uint32_t i = 0; i < 4u; i++)
+        proj_fetch(i);
+    song_index_boot();
+    ok &= song_cur == 1 && project_used(1) && !project_used(0) && chain_config.row[0].slot == 1u;
+    bad += check("songs: the current song, its sections and rows back after a power-off", ok);
+    reset();                                            /* Felucca's flash: a project with its song, no index */
+    song_cur = 0;
+    chain_config.count = 2;
+    chain_config.row[0] = (chain_row_t){0, 4};
+    chain_config.row[1] = (chain_row_t){0, 8};
+    ok = project_save(0) == 0;
+    memset(proj_slot, 0, sizeof proj_slot);
+    chain_defaults(&chain_config);
+    song_index_load();
+    for (uint32_t i = 0; i < 4u; i++)
+        proj_fetch(i);
+    song_index_boot();
+    ok &= song_cur == 0 && chain_config.count == 2u && chain_config.row[1].bars == 8u;
+    bad += check("songs: a first boot takes song 1's rows from its section A", ok);
+    return bad;
+}
+
 int main(void)
 {
     int bad = 0, ok;
@@ -640,7 +704,7 @@ int main(void)
     chain_config.count = 1;
     chain_config.row[0] = (chain_row_t){3, 1};
     bad += check("SONG sources use the same step bounds", chain_prepare() == 0 &&
-                  !memcmp(&chain.source[3].step[0][0], &trk[0].step[0], sizeof(step_t)));
+                  !memcmp(&sec_stage.t[0].step[0], &trk[0].step[0], sizeof(step_t)));
     seq_stop();
     transport_req = 0;
     memset(&r, 0, sizeof r);
@@ -699,6 +763,7 @@ int main(void)
                   irq_races == 3u && song.playing && !transport_req && persist_pending && erases == before);
     bad += mig_test();
     bad += autosave_test();
+    bad += songs_test();
     printf("%s\n", bad ? "PERSISTENCE TEST FAILED" : "persistence test passed");
     return bad != 0;
 }

@@ -130,7 +130,7 @@ static void fill_v3_track(proj_trk_v3_t *d, uint32_t t)
     uint32_t k;
     for (k = 0; k < PROJ_NP_V3; k++)
         d->p[k] = oldv3(t, k);
-    d->engine = (uint8_t)(t * 3u);
+    d->engine = (uint8_t)(t == 3u ? 11u : t * 3u);   /* (0 3 6 11: not PHYS, 9, retired) */
     d->preset = (uint8_t)(t + 1u);
     for (k = 0; k < NSTEP; k++) {
         step8_t *s = &d->step[k];
@@ -286,7 +286,7 @@ int main(void)
         q.sum = proj_sum(&q);
         bad += check("FUN6: chain round trip", proj_import(&q2, &q, sizeof q) &&
             !memcmp(&q.chain, &q2.chain, sizeof q.chain));
-        q.chain.row[0].repeat = 0;
+        q.chain.row[0].bars = 0;
         q.sum = proj_sum(&q);
         bad += check("FUN6: invalid row refused even with a correct checksum", !proj_import(&q2, &q, sizeof q));
         chain_defaults(&q.chain);
@@ -374,7 +374,7 @@ int main(void)
             q.t[0].p[P_E0 + i] = E0[i];
             q.t[1].p[P_E0 + i] = E1[i];
             q.t[2].p[P_E0 + i] = OLD_KIT[i];
-            q.t[3].p[P_E0 + i] = (int16_t)(i ? 30 : PM_SYMP);
+            q.t[3].p[P_E0 + i] = (int16_t)(i ? 30 : 3);   /* (3: SYMP) */
         }
         q.phys = 1;
         for (i = 1; i < NSTEP; i++)                     /* (the other steps rests) */
@@ -388,16 +388,23 @@ int main(void)
              q2.t[0].p[P_E0] == 2 && q2.t[0].p[P_E6] == 1 && q2.t[0].p[P_E7] == 0;
         for (i = 1; i < 6u; i++)
             ok &= q2.t[0].p[P_E0 + i] == E0[i];         /* TUNE TONE DECY SNAP ACC in place */
-        ok &= q2.t[1].engine == ENGI_PHYS && !memcmp(q2.t[1].p, q.t[1].p, sizeof q.t[1].p);
-        ok &= q2.t[3].engine == ENGI_PHYS && !memcmp(q2.t[3].p, q.t[3].p, sizeof q.t[3].p);
+        {   /* PHYS (retired in TONIC): ANALOG with its first preset's EDIT values, the rest of the track kept */
+            const preset_t *an = &ENGINES[ENGI_PHYS_TO]->presets[0];
+            uint32_t k2;
+            for (k2 = 1; k2 < 4u; k2 += 2u) {
+                ok &= q2.t[k2].engine == ENGI_PHYS_TO && q2.t[k2].p[P_LEVEL] == q.t[k2].p[P_LEVEL];
+                for (i = 0; i < 8u; i++)
+                    ok &= q2.t[k2].p[P_E0 + i] == an->e[i];
+            }
+        }
         ok &= q2.t[2].engine == ENGI_DRUM;              /* the old DRUM KIT: DRUM's DRUM KIT */
         for (i = 0; i < 8u; i++)
             ok &= q2.t[2].p[P_E0 + i] == dk->e[i];
         ok &= !memcmp(&q2.t[0].step[1], &q.t[0].step[1], sizeof q.t[0].step - sizeof(step_t)) &&
               q2.t[0].p[P_LEVEL] == q.t[0].p[P_LEVEL];
         ok &= q2.t[0].step[0].n == 0 && q2.t[0].step[0].hit == ((1u << DV_KICK) | (1u << DV_HATC));   /* the grid */
-        ok &= !memcmp(q2.t[1].step, q.t[1].step, sizeof q.t[1].step);   /* (PHYS: as they were) */
-        bad += check("FUN4 phys 1: PHYS MODEL DRUM -> DRUM engine (its lane notes as hits), MEMB kept", ok);
+        ok &= !memcmp(q2.t[1].step, q.t[1].step, sizeof q.t[1].step);   /* (the steps: as they were) */
+        bad += check("FUN4 phys 1: PHYS MODEL DRUM -> DRUM engine (its lane notes as hits), other PHYS -> ANALOG", ok);
         memcpy(&buf, &q2, sizeof q2);
         bad += check("FUN6 after it: imported again, as it is", proj_import(&q, &buf, (int)sizeof q2) &&
                                                                 !memcmp(&q, &q2, sizeof q));
@@ -406,9 +413,9 @@ int main(void)
         q.sum = proj_sum(&q);
         to_v4(&v4, &q);
         memcpy(&buf, &v4, sizeof v4);
-        ok = proj_import(&q2, &buf, (int)sizeof v4) && q2.phys == PROJ_PHYS && q2.t[1].engine == ENGI_PHYS &&
-             q2.t[1].p[P_E0] == PM_MODAL && q2.t[1].p[P_E6] == 64;
-        bad += check("FUN4 phys 0: PHYS DUST -> MODAL bowed", ok);
+        ok = proj_import(&q2, &buf, (int)sizeof v4) && q2.phys == PROJ_PHYS && q2.t[1].engine == ENGI_PHYS_TO &&
+             q2.t[1].p[P_E0] == ENGINES[ENGI_PHYS_TO]->presets[0].e[0];
+        bad += check("FUN4 phys 0: PHYS DUST -> ANALOG (PHYS retired)", ok);
     }
 
     {   /* the FUN7 name: the reserved tail's last 12 bytes, covered by the hash; zero = no name */

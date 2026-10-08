@@ -12,8 +12,7 @@
 #define ED_HDR1 0x46
 #define ED_HDR2 0x4C
 enum { ED_INFO = 1, ED_GET, ED_SET, ED_DUMP, ED_DESC, ED_STEP_GET, ED_STEP_SET, ED_PRESET, ED_PROJECT, ED_NAMES,
-       ED_SMP_BEGIN, ED_SMP_WRITE, ED_SMP_END, ED_SMP_ERASE, ED_SMP_INFO,
-       ED_UP_LIST, ED_UP_GET, ED_UP_PUT, ED_UP_STORE, ED_UP_LOAD, ED_UP_ERASE,   /* v2: user presets */
+       ED_UP_LIST = 16, ED_UP_GET, ED_UP_PUT, ED_UP_STORE, ED_UP_LOAD, ED_UP_ERASE,   /* v2: user presets */
        ED_WATCH, ED_CHANGED, ED_RELOAD, ED_PING, ED_STEP_CHANGED,              /* v2: live sync */
        ED_TRACK, ED_TRACK_MIX, ED_TRACK_DUMP, ED_TRACK_STEP,                    /* v3: tracks */
        ED_TRACK_PARAM, ED_TRACK_CHANGED, ED_SONG,
@@ -57,10 +56,7 @@ static void ed_send(void)
 }
 static int32_t ed_rv(const uint8_t *p) { return (int32_t)(p[0] | p[1] << 7) - 8192; }
 
-/* ---- user sample slots (eng_sample.c): flash SMP_USER_BASE + k * SMP_USER_SIZE ----
- * BEGIN erases the header sector (the slot is invalid from then on), WRITE fills the data
- * (offset >= 512, erasing each further sector when the write reaches its start), END sends
- * the header: the device checks the data CRC and writes the header last. */
+/* 7-bit packing (the backup's PUT): groups of a msb byte, then up to 7 bytes */
 static uint32_t ed_unpack7(const uint8_t *a, uint32_t na, uint8_t *out, uint32_t max)
 {
     uint32_t n = 0;                                 /* groups: msb byte, then up to 7 bytes */
@@ -75,52 +71,6 @@ static uint32_t ed_unpack7(const uint8_t *a, uint32_t na, uint8_t *out, uint32_t
     }
     return na ? 0u : n;
 }
-static uint8_t ed_smp_buf[512] __attribute__((aligned(4)));
-static uint32_t ed_smp_slot(uint32_t k) { return SMP_USER_BASE + k * SMP_USER_SIZE; }
-static void ed_smp_inval(uint32_t k)
-{
-    fm1_irq_off();
-    fl_inval(ed_smp_slot(k), SMP_USER_SIZE);
-    fm1_irq_on();
-}
-static int ed_smp_erase(uint32_t k, uint32_t all)  /* header sector, or the whole slot */
-{
-    uint32_t i, took;
-    int rc = 0;
-    usr_nz[k] = 0;
-    for (i = 0; i < 16u; i++)
-        usr_zone[k][i].n = 0;                     /* a sounding voice ends instead of reading 0xFF */
-    for (i = 0; i < (all ? SMP_USER_SIZE / 0x1000u : 1u) && !rc; i++) {
-        audio_silence();
-        rc = fl_erase4k(ed_smp_slot(k) + i * 0x1000u, &took);
-        fm1_wdt_feed();
-    }
-    ed_smp_inval(k);
-    return rc;
-}
-static int ed_flash_stop(void);
-static int ed_smp_end(uint32_t k, const uint8_t *a, uint32_t na)
-{
-    const smp_user_hdr_t *h = (const smp_user_hdr_t *)ed_smp_buf;
-    if (ed_unpack7(a, na, ed_smp_buf, sizeof(smp_user_hdr_t)) != sizeof(smp_user_hdr_t))
-        return 1;
-    if (h->magic != SMP_USER_MAGIC || h->version != 1 || !h->nz || h->nz > 16u ||
-        h->data_len > SMP_USER_SIZE - SMP_USER_DATA)
-        return 2;
-    if (usr_nz[k])                                     /* published zones may still be read by live voices */
-        return memcmp(h, smp_user_xip(k), sizeof *h) ? 2 : 0;
-    if (ed_flash_stop())                               /* (only a header that will be written stops the transport) */
-        return 1;
-    ed_smp_inval(k);
-    if (st_crc32(smp_user_xip(k) + SMP_USER_DATA, h->data_len) != h->crc)
-        return 3;
-    if (fl_write(ed_smp_slot(k), ed_smp_buf, sizeof(smp_user_hdr_t)))
-        return 4;
-    ed_smp_inval(k);
-    smp_user_scan(k);
-    return usr_nz[k] ? 0 : 5;
-}
-
 /* the engine byte of DUMP / RELOAD / TRACK */
 static uint32_t ed_eng(const track_t *t) { return t->eng_req % NENGINES; }
 
@@ -366,7 +316,7 @@ static void ed_motion_reply(uint32_t k, uint32_t rc, uint32_t kinds)
 static int ed_args_ok(uint32_t cmd, const uint8_t *a, uint32_t n)
 {
     switch (cmd) {
-    case ED_INFO: case ED_DUMP: case ED_SMP_INFO: case ED_PING:
+    case ED_INFO: case ED_DUMP: case ED_PING:
     case ED_UI_STATE: case ED_UI_PALETTES:
         return !n;
     case ED_GET: case ED_DESC: case ED_PRESET: case ED_PROJECT: case ED_UP_LIST:
@@ -374,7 +324,7 @@ static int ed_args_ok(uint32_t cmd, const uint8_t *a, uint32_t n)
         return n == 2u || (cmd == ED_TRACK_PARAM && n == 4u);
     case ED_SET:
         return n == 4u;
-    case ED_STEP_GET: case ED_NAMES: case ED_SMP_BEGIN: case ED_SMP_ERASE:
+    case ED_STEP_GET: case ED_NAMES:
     case ED_UP_GET: case ED_UP_LOAD: case ED_UP_ERASE: case ED_WATCH: case ED_TRACK_DUMP: case ED_MENU_DESC:
         return n == 1u;
     case ED_MENU_SET:
@@ -411,7 +361,7 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
     const param_desc_t *d;
     if (!ed_args_ok(cmd, a, na))
         return;
-    if ((cmd >= ED_SMP_BEGIN && cmd <= ED_SMP_INFO) || (cmd >= ED_BACKUP_LIST && cmd <= ED_BACKUP_PUT))
+    if (cmd >= ED_BACKUP_LIST && cmd <= ED_BACKUP_PUT)
         autosave_hold();                                /* (a transfer: no autosave meanwhile, project.c) */
     ed_begin(cmd);
     if (ed_ui_handle(cmd, a, na)) { ed_send(); return; }
@@ -426,7 +376,7 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
         } else if (na > 1u && chain_busy()) rc = 3;
         else if (na > 1u) {
             if (a[1] == 1u) motion_set_enabled(t, a[2]);
-            else if (a[1] == 2u) { load_begin(t, UNDO_PAT); motion_clear(t); load_end(t); }
+            else if (a[1] == 2u) { load_begin(t, LOAD_PAT); motion_clear(t); load_end(t); }
             else if (a[1] == 3u) rc = motion_set_event(t, a[2], a[3], (int16_t)ed_rv(a + 4));
             else if (a[1] == 4u && a[2] < NSTEP && motion_param(a[3])) motion_delete_event(t, a[2], a[3]);
             else if (a[1] == 5u) rc = motion_set_lock(t, a[2], a[3], (int16_t)ed_rv(a + 4));
@@ -472,10 +422,8 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
                 ed_load_after(&b);
             } else if (d->max > d->min) {
                 *vp = (int16_t)enum_orig(d, clamp(ed_rv(a + 2), d->min, d->max));
-                if (a[0] == 0) {
+                if (a[0] == 0)
                     (void)motion_capture(TSEL, a[1], *vp);
-                    load_extend(TSEL);                      /* (ui.c undo: an audition's values after G_ENGSEL) */
-                }
             }
             ui.force = 1;
             ed_w.v[a[0] ? P_COUNT + a[1] : a[1]] = *vp;   /* the editor's own change: no push */
@@ -566,60 +514,6 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
             ed_str(ENGINES[a[0]]->presets[i].name, 12);
         for (i = 0; i < 2u; i++)                           /* then the two edit-page titles */
             ed_str(ENGINES[a[0]]->page_title[i], 8);
-        break;
-    case ED_SMP_BEGIN:                                     /* slot -> slot, rc */
-    case ED_SMP_ERASE:
-        if (na < 1u || a[0] >= SMP_USER_SLOTS || !flash_ok)
-            return;
-        ed_b(a[0]);
-        ed_b(ed_flash_stop() || ed_smp_erase(a[0], cmd == ED_SMP_ERASE) ? 1u : 0u);
-        break;
-    case ED_SMP_WRITE: {                                   /* slot, off (3 x 7 bit), pack7 data -> slot, off, rc */
-        uint32_t off, len, rc = 0, took;
-        if (na < 5u || a[0] >= SMP_USER_SLOTS || !flash_ok)
-            return;
-        off = (uint32_t)a[1] | (uint32_t)a[2] << 7 | (uint32_t)a[3] << 14;
-        len = ed_unpack7(a + 4, na - 4u, ed_smp_buf, 256u);
-        if (off < SMP_USER_DATA || (off & 0xFFu) || !len || off + len > SMP_USER_SIZE)
-            rc = 1;
-        else if (usr_nz[a[0]])
-            rc = 4;                                        /* slot in use: SMP_BEGIN first (voices read it) */
-        else if (ed_flash_stop())
-            rc = 1;
-        else {
-            if (!(off & 0xFFFu)) {                         /* first write into a sector: erase it */
-                audio_silence();
-                rc = fl_erase4k(ed_smp_slot(a[0]) + off, &took) ? 2u : 0u;
-            }
-            if (!rc && fl_write(ed_smp_slot(a[0]) + off, ed_smp_buf, len))
-                rc = 3;
-        }
-        ed_b(a[0]);
-        ed_b(off);
-        ed_b(off >> 7);
-        ed_b(off >> 14);
-        ed_b(rc);
-        break;
-    }
-    case ED_SMP_END:                                       /* slot, pack7 header -> slot, rc */
-        if (na < 2u || a[0] >= SMP_USER_SLOTS || !flash_ok)
-            return;
-        ed_b(a[0]);
-        ed_b((uint32_t)ed_smp_end(a[0], a + 1, na - 1u));
-        break;
-    case ED_SMP_INFO:                                      /* -> per slot: zones (0 = empty), name, data KiB */
-        ed_b(SMP_USER_SLOTS);
-        ed_b(SMP_USER_SIZE / 1024u);
-        for (i = 0; i < SMP_USER_SLOTS; i++) {
-            const smp_user_hdr_t *h = (const smp_user_hdr_t *)smp_user_xip(i);
-            char nm[9] = {0};
-            uint32_t j;
-            ed_b(usr_nz[i]);
-            for (j = 0; usr_nz[i] && j < 8u; j++)
-                nm[j] = h->name[j] >= 32 && h->name[j] < 127 ? h->name[j] : 0;
-            ed_str(nm, 8);
-            ed_b(usr_nz[i] ? (h->data_len + 1023u) / 1024u : 0u);
-        }
         break;
     case ED_UP_LIST: {                                     /* start, count -> start, count, total, per slot: used, engine, name */
         uint32_t s0, cnt;
@@ -831,7 +725,7 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
                 c.count = a[1];
                 for (i = 0; i < c.count; i++) {
                     c.row[i].slot = a[2u + 2u * i];
-                    c.row[i].repeat = a[3u + 2u * i];
+                    c.row[i].bars = a[3u + 2u * i];
                 }
                 if (!chain_valid(&c)) rc = 1;
                 else if (chain_busy()) rc = 2;
@@ -842,7 +736,7 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
         ed_b(op); ed_b(rc); ed_b(chain_config.count);
         ed_b(chain.running); ed_b(chain.row); ed_b(chain.remaining);
         for (i = 0; i < chain_config.count; i++) {
-            ed_b(chain_config.row[i].slot); ed_b(chain_config.row[i].repeat);
+            ed_b(chain_config.row[i].slot); ed_b(chain_config.row[i].bars);
         }
         break;
     }
@@ -861,7 +755,7 @@ static void ed_service(void)
     if (!ota_frame_get(&p, &n) || n < 4u || p[0] != ED_HDR0 || p[1] != ED_HDR1 || p[2] != ED_HDR2)
         return;
     ed_w.last_ms = fm1_ms;                                 /* any request keeps WATCH alive */
-    if (p[3] >= ED_SMP_BEGIN) {                            /* large frames: handled in place, then freed */
+    if (p[3] >= ED_UP_LIST) {                              /* large frames: handled in place, then freed */
         ed_handle(p, n);
         ota_frame_done();
         return;

@@ -592,9 +592,9 @@ static void keys(void)
         }
     }
     bad += drum_keys(&trk[0], 7) != 36;
-    bad += ENGINES[ENGI_DRUM] != &ENG_DRUM || ENGINES[ENGI_PHYS] != &ENG_PHYS || ENG_PHYS.keys != 0;
+    bad += ENGINES[ENGI_DRUM] != &ENG_DRUM || ENGINES[ENGI_PHYS] != &ENG_PHYS_GONE || ENG_PHYS_GONE.keys != 0;
     printf("drum_test: keys: the GM drum map, the first C plays KICK, KICK picks the kick; DRUM is engine "
-           "%u, PHYS (%u) keeps the keyboard: %s\n", ENGI_DRUM, ENGI_PHYS, bad ? "FAIL" : "ok");
+           "%u, PHYS (%u, retired) keeps the keyboard: %s\n", ENGI_DRUM, ENGI_PHYS, bad ? "FAIL" : "ok");
     fails += bad != 0;
 }
 
@@ -1293,12 +1293,12 @@ static void retired(void)
             bad += v != ORDER[i];
             v = param_turn(d, v, 1);
         }
-        bad += v != DK_77 || param_turn(d, DK_80, -1) != DK_STD || param_turn(d, DK_STD, -1) != DK_STD;
+        bad += v != DK_X || param_turn(d, DK_80, -1) != DK_STD || param_turn(d, DK_STD, -1) != DK_STD;   /* (X: DRUM-X) */
     }
     for (r = 1; r < 4u; r++)
         bad += strcmp(d->names[r], d->names[MAP[r]]) != 0 || enum_orig(d, (int32_t)r) != MAP[r] ||
                param_fit(d, (int32_t)r) != MAP[r];
-    bad += param_fit(d, 99) != DK_77 || param_fit(d, -5) != DK_STD || enum_orig(d, DK_55) != DK_55;
+    bad += param_fit(d, 99) != DK_X || param_fit(d, -5) != DK_STD || enum_orig(d, DK_55) != DK_55;
     bad += param_fit(&TP[P_LEVEL], 77) != 77;
     {   /* a motion event of KIT 2 (CYM): stored and played as 10 */
         host_tracks_init();

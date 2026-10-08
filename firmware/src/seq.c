@@ -601,8 +601,8 @@ static void keyboard_block(void)
         kb_prev = cur;
         return;
     }
-    lay = (fm1_in.buttons & kb_mask) || kb_lock;  /* (#83: kb_lock, a layer locked open with no button held) */
-    fx = (fm1_in.buttons & perf_mask) || (kb_lock & 2u);
+    lay = (fm1_in.buttons & kb_mask) != 0u;
+    fx = (fm1_in.buttons & perf_mask) != 0u;
     for (k = 0; k < 27u; k++) {
         if (!((ch >> k) & 1u))
             continue;
@@ -822,7 +822,7 @@ static void seq_tick(track_t *t, uint32_t n)
         uint32_t cur_len = step_samples(t, period, t->seq_idx);
         if (t->seq_pos < cur_len && t->seq_pos != 0x7FFFFFFFu + n)
             break;
-        t->seq_pos = t->seq_pos >= 0x7FFFFFFFu ? (chain.running ? chain.carry : 0u) : t->seq_pos - cur_len;
+        t->seq_pos = t->seq_pos >= 0x7FFFFFFFu ? chain.carry : t->seq_pos - cur_len;   /* (a start: 0; a section in: its carry) */
         t->seq_idx = (uint16_t)((t->seq_idx + 1u) % (len ? len : 1u));
         rec_hold(t, t->seq_idx, len ? len : 1u);
         {
@@ -832,7 +832,7 @@ static void seq_tick(track_t *t, uint32_t n)
              * automation and the locks before the notes, so a note-on reads them (eng_drum's KIT, ..) */
             if (step_chance(s) < 100u && rng() % 100u >= step_chance(s))
                 skip = SEQ_MISS;
-            motion_step(t, t->seq_idx, chain.running ? &chain.source[chain.slot].motion : &motion, skip == SEQ_ROLLED);
+            motion_step(t, t->seq_idx, &motion, skip == SEQ_ROLLED);   /* (a song: its section's motion is the motion) */
             if (t->rskip_n && t->rskip_idx == t->seq_idx) {
                 for (k = 0; k < t->rskip_n; k++) {
                     for (i = 0; i < s->n; i++)
@@ -1053,3 +1053,5 @@ static void events_block(uint32_t n)
     if (song.playing)
         song.tick++;
 }
+
+#include "song_play.c"                           /* the song: the ISR's part (song_chain.c) */

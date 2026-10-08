@@ -164,7 +164,7 @@ static int fun7_89(void)
     chain_config.count = 1; chain_config.row[0] = (chain_row_t){2, 1};
     ok = chain_prepare() == 0;
     bad += check("  SONG: an 89-parameter slot's motion plays at today's ids (E0 at P_E0)", ok &&
-        chain.source[2].motion.count == 3u && chain.source[2].motion.event[1].param == P_E0);
+        sec_stage.motion.count == 3u && sec_stage.motion.event[1].param == P_E0);
     seq_stop(); chain_config.count = 0; chain.armed = 0;
     m.event[1].param = 82;                                          /* (any id P_E0 .. P_E7 of then moves up) */
     pack_fun7_89(&old, &before, &m);
@@ -181,19 +181,19 @@ static int loads_and_song(void)
     apply_preset_to(t, 1);
     bad += check("1.1.5: a sound load of the same engine keeps the motion (both kinds, the engine's own E1 too), the pattern",
                  motion_count(t) == 2u && motion_lock_get(t, 1, P_E0, &v) && motion_enabled(t) && t->step[0].note[0] == 60);
-    undo_swap();                                   /* (back to the sound before it: REV 21) */
     set_engine_of(t, e1);
     bad += check("  another engine: the motion on the common parameters (REV) stays, the engine's own (E1) goes, PLAY ON",
                  motion_count(t) == 1u && !motion_lock_get(t, 1, P_E0, &v) && motion_enabled(t) && t->step[0].note[0] == 60);
-    undo_swap(); bad += check("sound undo restores the original motion pool and base", motion_count(t) == 2u && t->p[P_REV] == 21 &&
-                              t->eng_req == e0);
-    undo_swap(); bad += check("sound redo restores the loaded motion state", motion_count(t) == 1u && t->eng_req == e1);
-    undo_swap(); project_save(0);
+    (void)e0;
+    project_save(0);
     t->p[P_REV] = 43; t->step[0].note[0] = 72; chain_config.count = 1; chain_config.row[0] = (chain_row_t){0, 1};
-    bad += check("song preparation imports saved motion alongside steps", chain_prepare() == 0 && chain.source[0].motion.count == 2u);
+    bad += check("song preparation stages the saved section (its motion, its steps)", chain_prepare() == 0 &&
+                 sec_stage.motion.count == 1u && sec_stage.t[0].step[0].note[0] == 60);
     seq_start(); seq_tick(t, CTL);
-    bad += check("song plays saved automation with current instruments", chain.running && t->p[P_REV] == 100 && t->step[0].note[0] == 72);
-    seq_stop(); bad += check("song stop restores current base and editable pattern", t->p[P_REV] == 43 && t->step[0].note[0] == 72);
+    bad += check("song plays the section: its automation, its steps (TONIC: its sounds too)", chain.running &&
+                 t->p[P_REV] == 100 && t->step[0].note[0] == 60);
+    seq_stop(); song_poll();
+    bad += check("song stop brings back the music as it was before PLAY", t->p[P_REV] == 43 && t->step[0].note[0] == 72);
     return bad;
 }
 static int repeat_mode(void)
@@ -574,7 +574,7 @@ static int lock_project(void)
     }
     chain_config.count = 1; chain_config.row[0] = (chain_row_t){2, 1};
     motion_clear(t); t->p[P_REV] = 20;
-    bad += check("SONG: a slot's locks come with its motion", chain_prepare() == 0 && chain.source[2].motion.count == 3u);
+    bad += check("SONG: a slot's locks come with its motion", chain_prepare() == 0 && sec_stage.motion.count == 3u);
     seq_start(); seq_tick(t, CTL);
     lock_next(t); lock_next(t);
     ok = chain.running && t->seq_idx == 2u && t->p[P_REV] == 101;
@@ -677,7 +677,7 @@ static int lock_ui(void)
     song.playing = 0; chain.running = 0; song.rec = 0;
     return bad;
 }
-/* 1.1.5: lock edits by hand are one undo (SAVE held), redo too */
+/* lock edits by hand (TONIC: no undo; SAVE held does nothing to them) */
 static int lock_undo(void)
 {
     int bad = 0;
@@ -697,31 +697,20 @@ static int lock_undo(void)
     turn(EN_K1, 3);
     turn(EN_K1, 2);
     lk_up(k4);
-    bad += check("lock undo: a step held, KNOB 1 turned twice: one lock", motion_lock_get(t, 4, P_E1, &v) &&
+    bad += check("locks: a step held, KNOB 1 turned twice: one lock", motion_lock_get(t, 4, P_E1, &v) &&
         v == motion_base_value(t, P_E1) + 5);
     hold(B_SAVE);
-    bad += check("  SAVE held: the lock is gone (one undo for the whole turn), the step's hit stays",
-        !motion_lock_count(t) && (t->step[4].hit & 1u));
-    hold(B_SAVE);
-    bad += check("  held again (redo): the lock is back at its value", motion_lock_get(t, 4, P_E1, &v) &&
+    bad += check("  SAVE held (no undo in TONIC): the lock stays", motion_lock_get(t, 4, P_E1, &v) &&
         v == motion_base_value(t, P_E1) + 5);
     frames(2000);
     lk_down(k4);
     press(B_EDIT);
     lk_up(k4);
     bad += check("  a step held + [EDIT] clears it", !motion_lock_count(t) && str_eq(ui.msg, "LOCKS CLEARED"));
-    hold(B_SAVE);
-    bad += check("  SAVE held brings it back", motion_lock_get(t, 4, P_E1, &v) && v == motion_base_value(t, P_E1) + 5);
-    frames(2000);
     lk_down(k4);
     press(B_EDIT);
     lk_up(k4);
-    lk_down(k4);
-    press(B_EDIT);                                       /* (no lock there now: NO LOCKS, the undo copy kept) */
-    lk_up(k4);
-    hold(B_SAVE);
-    bad += check("  [EDIT] on a step without locks takes no undo copy (the clear before stays undoable)",
-        motion_lock_count(t) == 1u);
+    bad += check("  again: NO LOCKS", !motion_lock_count(t) && str_eq(ui.msg, "NO LOCKS"));
     return bad;
 }
 /* 1.1.5: SEQ > AUTO LIST (ui_events.c) */
@@ -779,17 +768,13 @@ static int auto_list(void)
     press(B_EDIT);
     bad += check("  EDIT: the row's record goes", motion_count(t) == 1u && !motion_lock_get(t, 2, ui.ev_id, &v) &&
         str_eq(ui.msg, "DELETED"));
-    hold(B_SAVE);
-    bad += check("  SAVE held: it is back", motion_count(t) == 2u);
-    hold(B_SAVE);
-    bad += check("  held again: gone again", motion_count(t) == 1u);
     frames(2000);
     turn(EN_K1, -5);
     v = motion.event[0].value;
     turn(EN_K4, 2); turn(EN_K4, 2); turn(EN_K4, 2);
     ok = motion.event[0].value == v + 6;
-    hold(B_SAVE);
-    bad += check("  KNOB 4 turned on (three turns): one undo", ok && motion.event[0].value == v);
+    bad += check("  KNOB 4 turned on (three turns): the value", ok);
+    v = motion.event[0].value;
     chain.running = 1;
     turn(EN_K4, 1);
     bad += check("  a song playing: STOP TO EDIT", motion.event[0].value == v && str_eq(ui.msg, "STOP TO EDIT"));

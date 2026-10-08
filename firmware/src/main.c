@@ -102,7 +102,7 @@ static void felucca_init(void)
     chain_defaults(&chain_config);
     for (i = 0; i < G_COUNT; i++)
         song.g[i] = GP[i].def;
-    undo_depth++;                             /* (no undo copy of the power-on loads) */
+    load_depth++;                             /* (the power-on loads: one outer load) */
     fm6_init();                               /* every track's FM6 patch: the init voice */
     for (i = 0; i < NTRK; i++) {
         track_t *t = &trk[i];
@@ -116,7 +116,7 @@ static void felucca_init(void)
         pat_sig[i] = steps_sig(t);            /* a default pattern, not the user's */
         pat_last[i] = TRK_DEF[i][2];
     }
-    undo_depth--;
+    load_depth--;
     song.sel = 0;
     song.master_q12 = 2048;                   /* (the pot's level replaces it before the audio starts: master_boot) */
     ui.home = 1;
@@ -274,6 +274,7 @@ static void fm1_main(void)
         ui_input();
         settings_poll();                              /* queued settings save: only while stopped */
         autosave_poll();                              /* (1.2) the music, stopped and idle: project.c */
+        song_poll();                                  /* the song: the next section staged, the music back after it */
         felucca_dbg.stage = 2;
         ui_leds();
         ui_draw();

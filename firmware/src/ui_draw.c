@@ -226,20 +226,17 @@ static int32_t head_hint_w(const char *s, int32_t maxw)
     return w + text_w(&AF_S, b);
 }
 /* a message / a layer's label at x, or centred on x 120 (x < 0), at most maxw px with its
- * icon (ui.c MSG_NOFILE: the accent's) and a locked layer's lock */
+ * icon (ui.c MSG_NOFILE: the accent's) */
 static void head_msg(int32_t x, int32_t maxw)
 {
     const char *m = ui.msg_t ? ui.msg : layer_head();
-    int lock = !ui.msg_t && layer_locked();   /* #83: locked open (a double tap): the lock after its name */
     int icon = m[0] == MSG_NOFILE[0];
-    int32_t lw = lock ? 15 : 0, iw = icon ? 16 + KH_GAP : 0;   /* the lock: its cell 6 px on, its ink to 15 */
+    int32_t lw = 0, iw = icon ? 16 + KH_GAP : 0;
     if (x < 0)
         x = 120 - HALF_UP(iw + head_hint_w(m + icon, maxw - lw - iw) + lw);
     if (icon)
         x += cv_icon_mid(x, H_HEAD / 2, 16, ICON_X_NOFILE, T_ACCENT, T_BG) + KH_GAP;
-    x = cv_free_hint(x, HEAD_SY, m + icon, T_TEXT, T_BG, maxw - lw - iw);   /* (may start with a keycap) */
-    if (lock)
-        cv_icon_mid(x + 6, H_HEAD / 2, 16, ICON_X_LOCK, T_THEME, T_BG);
+    (void)cv_free_hint(x, HEAD_SY, m + icon, T_TEXT, T_BG, maxw - lw - iw);   /* (may start with a keycap) */
 }
 /* the octave, or the song row while a song plays, its right end at HEAD_GRP_R */
 static void head_group(void)
@@ -269,7 +266,7 @@ static void draw_head(void)
     int32_t beat = -1;                                 /* the metronome stands still (its swing removed in 1.1.5) */
     uint32_t rec = (song.rec >> song.sel) & 1u ? 2u : song.rec != 0u;   /* 2 the selected track armed, 1 another */
     uint32_t sig = (uint32_t)song.playing * 3u + rec * 5u + (uint32_t)(song.octave + 8) * 11u + song.sel * 13131u +
-                   (ui.msg_t ? str_hash(7u, ui.msg) : ui.layer * 7919u + (uint32_t)layer_locked() * 3u) + (uint32_t)song.g[G_BPM] * 101u + (ui.bpm_t != 0) * 31u +
+                   (ui.msg_t ? str_hash(7u, ui.msg) : ui.layer * 7919u) + (uint32_t)song.g[G_BPM] * 101u + (ui.bpm_t != 0) * 31u +
                    (uint32_t)seq_counting() * 7u + (ui_prefs & PREF_BPM_LOCK) * 4099u +
                    (uint32_t)batt_shown() * 7777u + (chain.running ? (chain.row + 1u) * 104729u : 0u);
     int msg = ui.msg_t || ui.layer;
@@ -790,10 +787,10 @@ static void draw_columns(void)
         draw_column(0, "ROW", val, "", VAL(0u), -1, ICON_X_SONG);
         if (used) { val[0] = (char)('A' + chain_config.row[row].slot); val[1] = 0; }
         else str_cpy(val, "--", sizeof val);
-        draw_column(1, "PAT", val, "", used ? VAL(1u) : T_DIM, -1, ICON_X_PATTERN);
-        if (used) fmt_int(val, chain_config.row[row].repeat);
+        draw_column(1, "SECT", val, "", used ? VAL(1u) : T_DIM, -1, ICON_X_PATTERN);
+        if (used) fmt_int(val, chain_config.row[row].bars);
         else str_cpy(val, "--", sizeof val);
-        draw_column(2, "REPS", val, "", used ? VAL(2u) : T_DIM, -1, ICON_AUTO);
+        draw_column(2, "BARS", val, "", used ? VAL(2u) : T_DIM, -1, ICON_AUTO);
         draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
         return;
     }
@@ -911,26 +908,6 @@ static void draw_columns(void)
         draw_act_column(3, "SAVE", T_THEME, ICON_AUTO);
         return;
     }
-#if FELUCCA_SLICE
-    if (cur_page()->graph == GR_SLICES) {                /* SLICE POS, then SPLIT JOIN (ui_slice.c) */
-        uint32_t n = slice_count(), j = slice_sel(), src, div, ok = slice_src(&src, &div) && src;
-        char u[8];
-        if (j < n) {
-            fmt_int(val, (int32_t)j + 1);
-            str_cpy(u, "/", 8);
-            fmt_int(u + 1, (int32_t)n);
-        } else {
-            str_cpy(val, n ? "END" : "--", sizeof val);
-            u[0] = 0;
-        }
-        draw_column(0, "SLICE", val, u, VAL(0u), -1, ICON_SLICE);
-        slice_time(val, slice_mark(j));
-        draw_column(1, "POS", val, "S", ok ? VAL(1u) : T_DIM, -1, ICON_AUTO);
-        draw_act_column(2, "SPLIT", ok ? T_THEME : T_DIM, ICON_AUTO);
-        draw_act_column(3, "JOIN", ok ? T_THEME : T_DIM, ICON_AUTO);
-        return;
-    }
-#endif
     if (cur_page()->graph == GR_MOD) {                   /* SLOT, then that slot's SRC DST AMT */
         const track_t *t = TSEL;
         uint32_t id = P_M1SRC + 3u * mod_ui_slot;
@@ -1048,7 +1025,7 @@ static void draw_columns(void)
 /* The power-on splash (main.c fm1_main, web/emu felucca_web.c; 1.1.5): a RAISE square centred on the screen, square
  * corners (in every style; LINE too: RAISE from the palette's SURF), in it in AF_M, the ink SPL_PAD in from the left:
  * at the top the name and the version, the first line's capitals' top SPL_PAD down; at the bottom the maker and
- * "with community", the last line's capitals' bottom (its baseline) SPL_PAD up from the square's bottom. Both
+ * "based on Felucca", the last line's capitals' bottom (its baseline) SPL_PAD up from the square's bottom. Both
  * margins are measured to the capitals (the descender of "community" hangs into the bottom one, as off a baseline).
  * The square (176 x 176) is more than the canvas (CV_MAX, 240 x 124): it is filled straight on the screen and its
  * two text bands drawn on it as canvases, the top one from the square's top edge, the bottom one to its bottom edge.
@@ -1057,7 +1034,7 @@ static void draw_columns(void)
 #define SPL_X0 ((240u - SPL_SQ) / 2u)               /* its top-left on the screen (x and y) */
 #define SPL_PAD 16                                  /* the text's inset: left (its ink), top and bottom (the capitals) */
 #define SPL_PITCH 20                                /* line to line */
-static const char *const SPLASH_LINES[] = {"Felucca", FELUCCA_VERSION, "H\xFCgelton Instruments", "with community"};
+static const char *const SPLASH_LINES[] = {"JIANT", FELUCCA_VERSION, "for the FM-1", "based on Felucca"};
 /* a band of two lines, h tall, at y on the screen: the first line's top at ly; the two lines' capitals declared
  * against al0..al1 (mode: AL_V the band centred there, AL_B the last baseline on al1) */
 static void splash_band(uint32_t y, uint32_t h, int32_t ly, const char *const *l, uint32_t mode, int32_t al0,
