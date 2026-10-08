@@ -286,7 +286,7 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     if (n > CTL)
         n = CTL;
     if (drum_kit_plays(p[P_E0]) == DK_X) {              /* DRUM-X: SNAP is MORPH, TUNE TONE DECY move every lane */
-        dx_run(&DX_KIT_DEF[(uint32_t)v->s[0] & (DV_NLANE - 1u)], &L->x, p[P_E4], L->st * 16 + (p[P_E1] - 64) * 3,
+        dx_run(&dx_kit[(uint32_t)v->s[0] & (DV_NLANE - 1u)], &L->x, p[P_E4], L->st * 16 + (p[P_E1] - 64) * 3,
                p[P_E3] - 64, p[P_E2] - 64, y, n);
     } else {
         r = L->role;

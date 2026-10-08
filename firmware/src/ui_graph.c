@@ -582,7 +582,7 @@ static void graph_drumx(const track_t *t)
         }
     }
     {                                                    /* the hats' noise stipples the dorsal sepal */
-        const dx_lane_t *L = &DX_KIT_DEF[DV_HATC];
+        const dx_lane_t *L = &dx_kit[DV_HATC];
         int32_t n = L->a[DXP_NOISE] + ((L->b[DXP_NOISE] - L->a[DXP_NOISE]) * morph) / 127;
         og_stipple(cx, cy - 30 * u, 7 * u, 12 * u, (uint32_t)n / 3u, 0x9E3779B9u, ux_mix(T_SURF, cyan, 80));
     }
