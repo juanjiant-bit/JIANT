@@ -32,7 +32,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 | --- | --- |
 | Auditoría de Felucca, medidas de flash / RAM ([docs/TONIC-AUDIT.md](docs/TONIC-AUDIT.md)) | Hecho |
 | Limpieza para liberar recursos (PHYS, efectos de la capa FX, undo, lock de capas) | Hecho |
-| Song mode estilo SLOOP, 8 canciones × 4 variaciones ([docs/TONIC-SONG-PLAN.md](docs/TONIC-SONG-PLAN.md)) | En curso |
+| Song mode estilo SLOOP, 8 canciones × 4 variaciones ([docs/TONIC-SONG-PLAN.md](docs/TONIC-SONG-PLAN.md)) | Hecho (falta backup de todas las canciones) |
 | Escenas por paso de la cadena | Pendiente |
 | DRUM-X y mutes por grupo | Pendiente |
 | Master: clipper y PUNCH | Pendiente |

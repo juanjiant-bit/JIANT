@@ -54,7 +54,8 @@ terminar). La copia vieja de patrones (`chain.source`, 12,5 KB de `.bss`) ya no 
 - Pendiente: backup del editor de todas las canciones (hoy los ids 2–5 son las secciones de la canción
   actual) y renombrar canciones.
 
-### 4e. Escenas (Fase 5 de la spec)
+### 4e. Escenas (Fase 5 de la spec) — después de DRUM-X, mutes por grupo y macros
+Depende de los mutes por grupo (Fase 2) y de los macros (Fase 6): se hace cuando existan, para no rehacerla.
 - Cada fila de chain suma mutes de grupo (1 B), macros (4 B) y punch-in FX (1 B).
 
 ## Decisión de controles
