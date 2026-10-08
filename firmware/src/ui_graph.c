@@ -914,7 +914,7 @@ static uint32_t graph_signature(void)
     if (pg->graph == GR_SONG) {
         h ^= ui.song_row * 40503u + chain_config.count * 7919u;
         for (i = 0; i < CHAIN_ROWS; i++)
-            h = (h ^ (chain_config.row[i].slot + 4u * chain_config.row[i].repeat)) * 16777619u;
+            h = (h ^ (chain_config.row[i].slot + 4u * chain_config.row[i].bars)) * 16777619u;
         h ^= chain.running ? (chain.row + 1u) * 104729u + chain.remaining * 1299709u : 0u;
         for (i = 0; i < 4u; i++) h ^= (uint32_t)graph_project_used(i) << (24u + i);
         h += graph_pname_sig;
@@ -1419,13 +1419,12 @@ static void graph_scope(uint16_t c)
     }
 }
 
-/* SONG is a playing order of the four stored project patterns. Letters match
- * PROJECT A..D; loading a project still restores its sound, SONG borrows steps. */
+/* SONG: the rows, each a section (the saved project A..D, sounds and steps) and its bars (song_chain.c) */
 static void graph_song(void)
 {
     uint32_t first = ui.song_row > 2u ? ui.song_row - 2u : 0u, i;
     if (!chain_config.count) {
-        panel_note("PAT A x4 > B x1", "[K2] ADD PATTERN", "[SAVE] PROJECT A-D");
+        panel_note("A 4 BARS > B 2 BARS", "[K2] ADD SECTION", "[SAVE] PROJECT A-D");
         return;
     }
     for (i = first; i < CHAIN_ROWS && i < first + 7u; i++) {
@@ -1437,15 +1436,15 @@ static void graph_song(void)
         if (sel) cv_rrect(6, y, 228, 16, 4, T_THEME, T_SURF);
         if (chain.running && i == chain.row) cv_icon_on(9, y + 2, 12, ICON_X_RIGHT, sel ? T_INK : T_ACCENT, bg);
         fmt_int(b, (int32_t)i + 1); cv_text_on(24, y + 1, &AF_S, b, sel ? T_INK : T_MID, bg);
-        if (i == chain_config.count) { cv_text_on(54, y + 1, &AF_S, "+ ADD PATTERN", dim, bg); break; }
+        if (i == chain_config.count) { cv_text_on(54, y + 1, &AF_S, "+ ADD SECTION", dim, bg); break; }
         b[0] = (char)('A' + chain_config.row[i].slot); b[1] = 0;
         cv_text_on(54, y + 1, &AF_S, b, col, bg);
-        b[0] = 'x'; fmt_int(b + 1, chain_config.row[i].repeat);
+        fmt_int(b, chain_config.row[i].bars); str_cpy(b + str_len(b), " BAR", 8);
         cv_text_on(82, y + 1, &AF_S, b, col, bg);
         if (i + 1u < chain_config.count) cv_text_on(122, y + 1, &AF_S, ">", dim, bg);
         if (!graph_project_used(chain_config.row[i].slot)) cv_text_on(142, y + 1, &AF_S, "NOT SAVED", dim, bg);
         else if (chain.running && i == chain.row) {
-            fmt_int(b, chain.remaining); str_cpy(b + str_len(b), " LEFT", 8);
+            fmt_int(b, chain.remaining); str_cpy(b + str_len(b), " TO GO", 8);
             cv_text_on(142, y + 1, &AF_S, b, sel ? T_INK : T_THEME, bg);
         } else if (graph_project_name(chain_config.row[i].slot)[0]) {   /* the project's name, cut to fit */
             cv_free_text(142, y + 1, &AF_S, graph_project_name(chain_config.row[i].slot), sel ? T_INK : T_MID, bg, 232 - 142);

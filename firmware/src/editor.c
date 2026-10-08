@@ -829,7 +829,7 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
                 c.count = a[1];
                 for (i = 0; i < c.count; i++) {
                     c.row[i].slot = a[2u + 2u * i];
-                    c.row[i].repeat = a[3u + 2u * i];
+                    c.row[i].bars = a[3u + 2u * i];
                 }
                 if (!chain_valid(&c)) rc = 1;
                 else if (chain_busy()) rc = 2;
@@ -840,7 +840,7 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
         ed_b(op); ed_b(rc); ed_b(chain_config.count);
         ed_b(chain.running); ed_b(chain.row); ed_b(chain.remaining);
         for (i = 0; i < chain_config.count; i++) {
-            ed_b(chain_config.row[i].slot); ed_b(chain_config.row[i].repeat);
+            ed_b(chain_config.row[i].slot); ed_b(chain_config.row[i].bars);
         }
         break;
     }

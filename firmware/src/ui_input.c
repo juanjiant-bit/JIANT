@@ -675,14 +675,15 @@ static void edit_param(uint32_t slot, int32_t steps)
         if (ui.song_row >= chain_config.count) {
             chain_row_t *r = &chain_config.row[ui.song_row];
             r->slot = ui.song_row ? chain_config.row[ui.song_row - 1u].slot : 0u;
-            r->repeat = 1;
+            r->bars = 1;
             chain_config.count = ui.song_row + 1u;
             if (slot == 1u) return;
         }
         if (slot == 1u)
             chain_config.row[ui.song_row].slot = (uint8_t)clamp((int32_t)chain_config.row[ui.song_row].slot + steps, 0, 3);
         if (slot == 2u)
-            chain_config.row[ui.song_row].repeat = (uint8_t)clamp((int32_t)chain_config.row[ui.song_row].repeat + steps, 1, 16);
+            chain_config.row[ui.song_row].bars = (uint8_t)clamp((int32_t)chain_config.row[ui.song_row].bars + steps, 1,
+                                                                (int32_t)CHAIN_BARS);
         return;
     }
     if (chain_busy() && (pg->scope == SC_STEP || pg->graph == GR_STEPS ||

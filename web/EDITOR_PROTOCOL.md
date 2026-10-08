@@ -461,21 +461,20 @@ stay where they were. No trailing byte means no SONG command: hide its controls.
 
 | cmd | Request args | Reply args |
 | --- | --- | --- |
-| 33 SONG | op 0 query; op 1 set, count 0..16, count × (slot 0..3, repeat 1..16); op 2 start; op 3 stop | op, rc, count, running 0/1, row 0..15, remaining repeats, count × (slot, repeat) |
+| 33 SONG | op 0 query; op 1 set, count 0..16, count × (section 0..3, bars 1..64); op 2 start; op 3 stop | op, rc, count, running 0/1, row 0..15, bars to go, count × (section, bars) |
 
 A set must have exactly `2 + count × 2` argument bytes. rc 0 = accepted,
 1 = invalid rows (or an empty chain on start), 2 = busy, 3..6 = source slot 0..3
 is empty. Rejected sets keep every previous row. Set edits RAM; PROJECT save
 persists it, PROJECT load recalls it. A stop/start is acknowledged before the
 next audio block; query reports the actual running state. `row` and `remaining`
-are meaningful only while running. Rows always start from 0, with track 1's
-loop as the repeat and transition boundary; the last row stops.
+are meaningful only while running. Rows always start from 0; the last row stops.
 
-A row takes all four tracks' steps (with their chance) and LEN / DIV / SWING / GATE from its saved
-project slot, retaining the current sounds, mix, ARP, scales and effects. The
-four sources are copied before starting, with no flash operation in playback.
-Original editable patterns and timing are restored on stop. Sources are shared
-project slots; overwriting a slot changes its uses on the next start.
+**JIANT (FELUCCA TONIC):** a row is a section (the saved project slot 0..3 = A..D) and the bars it plays (1..64, a
+4/4 bar of 1/16 steps at the tempo); before, its second byte was the repeats of track 1's loop (1..16). A section is
+the whole project: the four tracks' sounds (engine, parameters, FM6 patch), steps and motion, swapped in on the bar,
+every track from its step 0; the song's tempo and globals stay. The music as it was before the start comes back when
+the song ends or stops. Sources are shared project slots; overwriting a slot changes its uses on the next start.
 
 STEP_GET / TRACK_STEP and WATCH report the playing source. During chain
 playback, STEP_SET / TRACK_STEP writes, SET / TRACK_PARAM writes to

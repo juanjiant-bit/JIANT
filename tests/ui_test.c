@@ -1969,10 +1969,10 @@ static void chain_screens(const char *dir)
 
 static int test_chain(void)
 {
-    uint32_t i, k, period, last, n = 32u;
+    uint32_t i, k, period, n = 32u;
     int bad = 0, ok;
     step_t before[NTRK][NSTEP];
-    int16_t timing[NTRK][4], sounds[NTRK][P_COUNT];
+    int16_t timing[NTRK][4];
     ui_power_on();
     bad += check("SONG empty: PLAY does not start", chain_prepare() == 1 && !transport_req);
     for (k = 0; k < 2u; k++) {
@@ -1988,7 +1988,6 @@ static int test_chain(void)
         trk[i].p[P_SLEN] = 9;
         memcpy(before[i], trk[i].step, sizeof before[i]);
         memcpy(timing[i], &trk[i].p[P_SLEN], sizeof timing[i]);
-        memcpy(sounds[i], trk[i].p, sizeof sounds[i]);
     }
     chain_config.count = 2;
     chain_config.row[0] = (chain_row_t){0, 2};
@@ -2000,50 +1999,54 @@ static int test_chain(void)
     chain_defaults(&chain_config);
     project_load(2);
     bad += check("SONG rows saved and loaded with their project", chain_config.count == 2 &&
-        chain_config.row[0].repeat == 2 && chain_config.row[1].slot == 1);
+        chain_config.row[0].bars == 2 && chain_config.row[1].slot == 1);
     song.rec = 3;
     bad += check("SONG prepares while stopped, no starts over a pending start", chain_prepare() == 0 && chain_prepare() == 2);
     events_block(n);
-    bad += check("SONG starts all tracks at source step 0, recording paused", chain.running && song.playing &&
-        !song.rec && trk[0].seq_idx == 0 && seq_steps(&trk[0])[0].note[0] == 60 && trk[0].seq_notes[0] == 60);
-    period = div_samples((uint32_t)trk[0].p[P_SDIV]);
-    events_block(period);
-    events_block(period);
-    bad += check("SONG first row repeats without a gap", chain.row == 0 && chain.remaining == 1 && trk[0].seq_idx == 0);
-    events_block(period);
+    bad += check("SONG starts all tracks at the section's step 0, recording paused", chain.running && song.playing &&
+        !song.rec && trk[0].seq_idx == 0 && seq_steps(&trk[0])[0].note[0] == 60 && trk[0].seq_notes[0] == 60 &&
+        trk[0].p[P_SLEN] == 2);
+    song_poll();                                        /* (the main loop: the next row's section staged) */
+    bad += check("SONG the next row's section staged ahead", sec_stage.ready && sec_stage.row == 1u);
+    period = chain_bar();
+    events_block(period - n);
+    bad += check("SONG first row: its first bar played, one to go", chain.row == 0 && chain.remaining == 1);
     events_block(period);
     ok = chain.row == 1 && chain.remaining == 1;
-    for (i = 0; i < NTRK; i++) {
+    for (i = 0; i < NTRK; i++)
         ok &= trk[i].seq_idx == 0 && trk[i].p[P_SLEN] == 3 && seq_steps(&trk[i])[0].note[0] == 65;
-        for (k = 0; k < P_COUNT; k++)
-            if (k < P_SLEN || k > P_SGATE) ok &= trk[i].p[k] == sounds[i][k];
+    bad += check("SONG row change after its bars: four tracks together, the section's steps and LEN", ok);
+    {
+        step_t now[NSTEP];
+        memcpy(now, trk[0].step, sizeof now);
+        open_family(FAM_SEQ);
+        for (k = 0; k < NPAGES && cur_page()->scope != SC_STEP; k++) open_family(FAM_SEQ);
+        turn(EN_K2, 1); press(B_EDIT); hold(B_REC); hold(B_SAVE);
+        bad += check("SONG playing: step edits, clears and recording are blocked", !memcmp(trk[0].step, now, sizeof now) &&
+                     !ui.confirm);
     }
-    bad += check("SONG row change: four tracks together, sounds unchanged", ok);
-    open_family(FAM_SEQ);
-    for (k = 0; k < NPAGES && cur_page()->scope != SC_STEP; k++) open_family(FAM_SEQ);
-    turn(EN_K2, 1); press(B_EDIT); hold(B_REC); hold(B_SAVE);
-    bad += check("SONG playing: step edits, clears, recording and undo are blocked", !memcmp(trk[0].step, before[0], sizeof before[0]) && !ui.confirm);
-    events_block(period);
-    events_block(period);
     events_block(period);
     ok = !song.playing && !chain.running && song.rec == 3;
+    song_poll();                                        /* (the main loop: the music back) */
     for (i = 0; i < NTRK; i++) ok &= !trk[i].seq_n && !memcmp(trk[i].step, before[i], sizeof before[i]) &&
         !memcmp(&trk[i].p[P_SLEN], timing[i], sizeof timing[i]);
-    bad += check("SONG end: stops and restores editable patterns, timing and record arms", ok);
+    bad += check("SONG end: stops, the music as before PLAY back (patterns, timing), record arms back", ok &&
+                 msg_is("SONG END"));
     bad += check("SONG source projects stay unchanged", project_used(0) && project_used(1) && stored_note(0, 0, 0) == 60);
-    chain_config.row[0].repeat = 1;
+    chain_config.row[0].bars = 1;
     chain_prepare(); events_block(n);
-    trk[0].seq_idx = 1;
-    last = step_samples(&trk[0], div_samples((uint32_t)trk[0].p[P_SDIV]), 1);
-    trk[0].seq_pos = last - n + 19u;
+    song_poll();
+    chain.bar_pos = chain_bar() - n + 19u;              /* the bar line 19 samples before the next block ends */
     events_block(n);
     ok = chain.row == 1;
     for (i = 0; i < NTRK; i++) ok &= trk[i].seq_pos == 19u && trk[i].seq_idx == 0;
     bad += check("SONG transition preserves fractional block time on all tracks", ok);
-    transport_req = 2; events_block(n);
-    bad += check("SONG manual STOP restores the previous pattern", !chain.running && !song.playing && !memcmp(trk[0].step, before[0], sizeof before[0]));
+    transport_req = 2; events_block(n); song_poll();
+    bad += check("SONG manual STOP brings the music back", !chain.running && !song.playing &&
+                 !memcmp(trk[0].step, before[0], sizeof before[0]));
     chain_prepare(); events_block(n);
     project_load(0);
+    song_poll();                                        /* (the load wins: nothing comes back over it) */
     bad += check("PROJECT load during SONG stops it before loading new timing", !chain.running && !song.playing &&
         trk[0].p[P_SLEN] == 2 && trk[0].step[0].note[0] == 60 && !chain_config.count);
     ui_power_on();
@@ -2052,10 +2055,10 @@ static int test_chain(void)
     press(B_PLAY);
     bad += check("SONG page empty PLAY explains how to start", msg_is("ADD A SONG ROW") && !transport_req);
     turn(EN_K2, 1);
-    bad += check("SONG SLOT knob adds the first row with one repeat", chain_config.count == 1 && !chain_config.row[0].slot && chain_config.row[0].repeat == 1);
+    bad += check("SONG SLOT knob adds the first row with one repeat", chain_config.count == 1 && !chain_config.row[0].slot && chain_config.row[0].bars == 1);
     turn(EN_K1, 1); turn(EN_K2, 1); turn(EN_K2, 1); turn(EN_K3, 2);
     bad += check("SONG row, slot and repeat knobs build a chain", chain_config.count == 2 && ui.song_row == 1 &&
-        chain_config.row[1].slot == 1 && chain_config.row[1].repeat == 3);
+        chain_config.row[1].slot == 1 && chain_config.row[1].bars == 3);
     turn(EN_K4, 30);
     project_save(0);
     chain_config.count = 1;
@@ -3514,7 +3517,7 @@ static int test_bughunt_ui(void)
     press(B_OCTUP);
     ok &= !ui.confirm && msg_is("NOTHING TO CLEAR");
     track_defaults_steps(TSEL);
-    chain_config.count = 1; chain_config.row[0].slot = 0; chain_config.row[0].repeat = 1;
+    chain_config.count = 1; chain_config.row[0].slot = 0; chain_config.row[0].bars = 1;
     turn(EN_K1, 1);                                     /* CLEAR PAT on an empty track, the song with a row */
     ok &= !act_ready();
     press(B_OCTUP);

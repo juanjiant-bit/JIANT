@@ -286,7 +286,7 @@ int main(void)
         q.sum = proj_sum(&q);
         bad += check("FUN6: chain round trip", proj_import(&q2, &q, sizeof q) &&
             !memcmp(&q.chain, &q2.chain, sizeof q.chain));
-        q.chain.row[0].repeat = 0;
+        q.chain.row[0].bars = 0;
         q.sum = proj_sum(&q);
         bad += check("FUN6: invalid row refused even with a correct checksum", !proj_import(&q2, &q, sizeof q));
         chain_defaults(&q.chain);

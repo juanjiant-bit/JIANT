@@ -899,6 +899,7 @@ static int project_restore_runtime(const project_t *input)
     fm1_irq_off();                                      /* the audio ISR must not see half a project */
     seq_stop();
     transport_req = 0;
+    chain.ended = 0;                                    /* (a song stopped by this load: the load wins, song_poll keeps out) */
     chain_config = p->chain;
     motion = p->motion;
     memset(motion_active, 0, sizeof motion_active);
@@ -1015,50 +1016,7 @@ static void persist_boot(void)                    /* before settings_init / pane
 
 static int project_used(uint32_t slot) { return proj_import(&proj_scratch, &proj_slot[slot & 3u], sizeof(project_store_t)); }
 
-/* Main loop only: no flash access or copies when the ISR changes rows. */
-static uint32_t chain_prepare(void)
-{
-    uint32_t i, k, j, used = 0;
-    if (transport_busy())
-        return 2;
-    if (!chain_valid(&chain_config) || !chain_config.count)
-        return 1;
-    for (i = 0; i < chain_config.count; i++) {
-        uint32_t s = chain_config.row[i].slot;
-        if (!project_used(s))
-            return 3u + s;
-        used |= 1u << s;
-    }
-    chain.config = chain_config;
-    for (i = 0; i < 4u; i++)
-        if ((used >> i) & 1u) {
-            project_t *p = &proj_scratch;
-            if (!proj_import(p, &proj_slot[i], sizeof(project_store_t))) return 3u + i;
-            chain.source[i].motion = p->motion;
-            /* A song keeps its current instruments. Engine-specific motion from
-             * another instrument would change a kit/wave/algorithm unexpectedly. */
-            {
-                motion_store_t *m = &chain.source[i].motion; uint32_t n = 0;
-                for (uint32_t e = 0; e < m->count; e++) {
-                    const motion_event_t *v = &m->event[e]; uint32_t owner = v->place >> 6;
-                    if (MOTION_ID(v) >= P_FM1_ATK && p->t[owner].engine != trk[owner].eng_req) continue;
-                    m->event[n++] = *v;
-                }
-                m->count = (uint8_t)n;
-            }
-            for (k = 0; k < NTRK; k++) {
-                memcpy(chain.source[i].step[k], p->t[k].step, sizeof p->t[k].step);
-                proj_steps(chain.source[i].step[k]);
-                for (j = 0; j < 4u; j++)
-                    chain.source[i].timing[k][j] = (int16_t)clamp(p->t[k].p[P_SLEN + j],
-                        TP[P_SLEN + j].min, TP[P_SLEN + j].max);
-            }
-        }
-    RING_PUBLISH();
-    chain.armed = 1;
-    transport_req = 1;
-    return 0;
-}
+#include "song_main.c"                          /* the song: the main loop's part (song_chain.c) */
 
 static void settings_poll(void)
 {

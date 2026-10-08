@@ -10,9 +10,15 @@ Base: el song mode de SLOOP 2.4.1 (`isod89/sloop-fm1`, GPL-3.0-only, mismo linaj
 - La chain se guarda dentro de cada proyecto (FUN6+) y el editor la lee y escribe por SysEx (v6).
 - UI: página SONG (SEQ sostenido la abre), PLAY en esa página arranca la canción.
 
+## Implementación (4a + 4b)
+
+`firmware/src/song_chain.c` (estado y filas), `song_play.c` (ISR: reloj de compases, cambio de sección en el compás) y
+`song_main.c` (main loop: prepara la sección siguiente en `sec_stage`, guarda la música en `song_keep` y la devuelve al
+terminar). La copia vieja de patrones (`chain.source`, 12,5 KB de `.bss`) ya no existe. Una fila es `{sección, compases}`.
+
 ## Pasos
 
-### 4a. Arranger por compases
+### 4a. Arranger por compases — HECHO
 - Portar `arranger.h` de SLOOP tal cual (con crédito): reloj de compases (muestras × BPM, conserva el resto),
   entradas `{sección, compases 1–64}` y loop.
 - La fila de chain pasa de `{slot, repeat}` a `{sección, compases}`. Conversión de chains guardadas:
@@ -20,7 +26,7 @@ Base: el song mode de SLOOP 2.4.1 (`isod89/sloop-fm1`, GPL-3.0-only, mismo linaj
 - Página SONG: KNOB de compases en lugar de repeticiones. Protocolo del editor: la fila lleva compases (se sube
   la versión del protocolo).
 
-### 4b. Sección = proyecto completo
+### 4b. Sección = proyecto completo — HECHO
 - Las 4 secciones viven en RAM (como `proj_slot[4]` de SLOOP, ~16 KB del pool; hay 64 KB libres).
 - Al cambiar de sección cambian patrones **y sonidos** (engine, parámetros, patch FM6). La sección siguiente se
   prepara en el main loop y el ISR solo la aplica en el compás.

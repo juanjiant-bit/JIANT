@@ -254,7 +254,8 @@ typedef struct { uint8_t place, param; int16_t value; } motion_event_t;
 typedef struct { uint8_t count, on, rsv[2]; motion_event_t event[MOTION_MAX]; } motion_store_t;
 _Static_assert(sizeof(motion_store_t) == 260u, "motion disk layout");
 #define CHAIN_ROWS 16u
-typedef struct { uint8_t slot, repeat; } chain_row_t;
+typedef struct { uint8_t slot, bars; } chain_row_t;   /* a song row: section A..D (a project slot), 1..CHAIN_BARS bars */
+#define CHAIN_BARS 64u
 typedef struct {
     uint8_t count, rsv[3];
     chain_row_t row[CHAIN_ROWS];

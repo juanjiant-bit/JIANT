@@ -832,7 +832,7 @@ static void seq_tick(track_t *t, uint32_t n)
              * automation and the locks before the notes, so a note-on reads them (eng_drum's KIT, ..) */
             if (step_chance(s) < 100u && rng() % 100u >= step_chance(s))
                 skip = SEQ_MISS;
-            motion_step(t, t->seq_idx, chain.running ? &chain.source[chain.slot].motion : &motion, skip == SEQ_ROLLED);
+            motion_step(t, t->seq_idx, &motion, skip == SEQ_ROLLED);   /* (a song: its section's motion is the motion) */
             if (t->rskip_n && t->rskip_idx == t->seq_idx) {
                 for (k = 0; k < t->rskip_n; k++) {
                     for (i = 0; i < s->n; i++)
@@ -1053,3 +1053,5 @@ static void events_block(uint32_t n)
     if (song.playing)
         song.tick++;
 }
+
+#include "song_play.c"                           /* the song: the ISR's part (song_chain.c) */

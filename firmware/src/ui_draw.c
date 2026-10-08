@@ -787,10 +787,10 @@ static void draw_columns(void)
         draw_column(0, "ROW", val, "", VAL(0u), -1, ICON_X_SONG);
         if (used) { val[0] = (char)('A' + chain_config.row[row].slot); val[1] = 0; }
         else str_cpy(val, "--", sizeof val);
-        draw_column(1, "PAT", val, "", used ? VAL(1u) : T_DIM, -1, ICON_X_PATTERN);
-        if (used) fmt_int(val, chain_config.row[row].repeat);
+        draw_column(1, "SECT", val, "", used ? VAL(1u) : T_DIM, -1, ICON_X_PATTERN);
+        if (used) fmt_int(val, chain_config.row[row].bars);
         else str_cpy(val, "--", sizeof val);
-        draw_column(2, "REPS", val, "", used ? VAL(2u) : T_DIM, -1, ICON_AUTO);
+        draw_column(2, "BARS", val, "", used ? VAL(2u) : T_DIM, -1, ICON_AUTO);
         draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
         return;
     }
