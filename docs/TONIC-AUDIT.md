@@ -1,9 +1,8 @@
 # FELUCCA TONIC — Auditoría (Fase 0, en curso)
 
 Base: Felucca 1.1.5.1 (`README.md:8`). Este documento junta lo comprobado en el código para
-FELUCCA-TONIC-SPEC.md. Cada dato cita archivo y línea. Lo marcado **[ESTIMADO]** sale de una compilación
-de host (x86-64, `-Os`, `tests/hostsim.c`), no del chip: sirve para comparar módulos entre sí, no como
-valor absoluto. Los números exactos se completan cuando el toolchain de JieLi esté disponible.
+FELUCCA-TONIC-SPEC.md. Cada dato cita archivo y línea. Los tamaños salen del build real con el toolchain
+de JieLi (sección 2b).
 
 ## 1. Decisiones tomadas
 
@@ -29,7 +28,49 @@ valor absoluto. Los números exactos se completan cuando el toolchain de JieLi e
 | Matriz de modulación | 4 slots por track, 8 fuentes, 20 destinos | `web/EDITOR_PROTOCOL.md` (MOD) |
 | Límite del app | 0x8DFBC B (~568 KB) | `tools/fm1pkg_make.py:30`, `firmware/app.ld` |
 | RAM | 96 KB `.data/.bss` + pool 336 KB + noinit | `firmware/app.ld` |
-| Tamaño real del binario y CPU en el chip | **Pendiente**: requiere toolchain | — |
+| Tamaño real del binario | Ver sección 2b (build real) | `./build.sh` |
+| CPU en el chip | Pendiente de hardware; en el emulador la canción pesada usa 2,1 % de tiempo real en un PC (no representa el chip) | `web/emu/emu_test.mjs` |
+
+## 2b. Medidas reales (build de Felucca 1.1.5.1 con el toolchain JieLi, 2026-10-08)
+
+Salida de `./build.sh` y `nm -S build/felucca.elf`. Todos los tests de host pasan (`tests/run_tests.sh`) y el
+emulador compila y pasa `web/emu/emu_test.mjs`.
+
+| Recurso | Usado | Límite | Libre |
+|---|---|---|---|
+| App (flash de código) | 447 596 B | 581 564 B (0x8DFBC) | **133 968 B (23 %)** |
+| RAM `.data` + `.bss` | 91 220 B | 98 304 B | **7 084 B** |
+| Pool | 331 204 B | 344 064 B | **12 860 B** |
+| Paquete `.fwsc` | 610 086 B | — | — |
+
+**Conclusión: la RAM es el cuello de botella, no la flash de código.** Cualquier función nueva que use RAM
+(DRUM-X, canciones en RAM, mejores efectos) tiene que liberar RAM antes.
+
+Por engine/bloque (suma de sus símbolos):
+
+| Bloque | Flash | RAM (bss + pool) |
+|---|---|---|
+| Samples de fábrica (`SMP_DATA`) | 126 717 | — |
+| Fuentes de UI | 42 900 | — |
+| DRUM (`eng_drum.c` + `drum_voice.c`) | 13 159 | 7 296 |
+| FM6 | 13 125 | 9 433 |
+| PHYS | 9 053 | **51 552** |
+| SLICE | 6 514 | 8 616 |
+| PERFORM (capa FX) | 5 284 | 83 (usa `sl_buf`) |
+| GRAIN | 4 666 | **28 080** |
+| TRIO | 3 170 | 0 |
+| SAMPLE | 2 710 | 417 |
+| DIGITAL (conversión a FM6) | 2 514 | 0 |
+| NOISE | 2 144 | 0 |
+| VOICE (formant) | 2 058 | 4 |
+| ANALOG | 1 732 | 0 |
+| WHEEL | 1 682 | 0 |
+| FX buses (delay, chorus, reverb, dist) | 1 432 | **147 040** (delay 131 072) |
+| LOFI | 1 388 | 0 |
+| PHASE | 1 126 | 0 |
+| SLICER | 952 | **32 772** |
+| Canvas de pantalla (`cv_px`) | — | 59 520 |
+| Song chain actual (`chain`) | — | 12 512 |
 
 ## 3. Mapa de flash (datos)
 
@@ -69,22 +110,23 @@ reloj de `seq.c` de Felucca; el formato de proyecto y la UI son los de Felucca. 
   **Margen: 2 sectores.**
 - **Escena por entrada de chain:** sección + compases + mutes de grupo (1 B) + macros (4 B) + punch-in FX (1 B):
   ~8 B × 16 = ~130 B por canción.
-- **RAM:** solo la canción activa (4 variaciones, ~14,6 KB), reemplaza `chain.source[4]` (~13 KB).
+- **RAM:** solo la canción activa (4 variaciones, ~14,6 KB), reemplaza `chain` (12 512 B medidos): suma
+  ~2 KB a una RAM que tiene 7 KB libres en `.bss` y 12,8 KB en el pool.
 - **Cambio de canción:** solo con el transporte parado.
 
 ## 6. Recursos liberables
 
-### RAM [ESTIMADO]
+### RAM (medido, ver 2b)
 
 | Bloque | RAM | Nota |
 |---|---|---|
 | Delay | 128 KB | mono, 16 bit, 1,49 s (`fx.c:5`) |
-| PHYS | ~52 KB | |
+| PHYS | 50,3 KB | |
 | Buffer SLICER (compartido con la capa FX: REPEAT, REVERSE, TAPE, FREEZE, OCT) | 32 KB | `slicer.c:20`, `perform.c:17` |
-| GRAIN | ~29 KB | engine más caro en CPU (`tests/target_budget.txt`: grain_render 1731) |
-| Chain actual | ~12,5 KB | se reemplaza |
-| FM6 | ~9,6 KB | |
-| SLICE | ~9 KB | |
+| GRAIN | 27,4 KB | engine más caro en CPU (`tests/target_budget.txt`: grain_render 1731) |
+| Chain actual | 12,2 KB | se reemplaza |
+| FM6 | 9,2 KB | |
+| SLICE | 8,4 KB | |
 
 ### Flash de código
 
@@ -119,6 +161,8 @@ SAMPLE USR1–3, SRC USR de GRAIN, USR de SLICE, `slice_store.c`, subida/grabaci
 
 ## 9. Riesgos y decisiones abiertas
 
+0. **RAM:** 7 KB libres en `.bss` y 12,8 KB en el pool. DRUM-X y las canciones necesitan liberar RAM primero
+   (PHYS 50 KB, SLICER 32 KB, GRAIN 27 KB o el delay de 128 KB son las fuentes posibles).
 1. **Tamaño de proyecto:** un sector admite 3840 B; FUN9 usa 3648 (quedan 192 B). DRUM-X A/B por lane
    necesita ~160 B. Si no entra: comprimir pasos vacíos. Medir en Fase 1.
 2. **Botón de la capa de canción:** en SLOOP es SAVE sostenido; en Felucca SAVE sostenido es undo y SEQ
@@ -130,5 +174,13 @@ SAMPLE USR1–3, SRC USR de GRAIN, USR de SLICE, `slice_store.c`, subida/grabaci
 ## 10. Pendiente de la Fase 0
 
 - `CLAUDE.md` con arquitectura, build y mapa de módulos.
-- Tamaño real del binario, RAM y CPU en el chip (toolchain JieLi: `pkgman.jieliapp.com`, SDK: `gitee.com`).
+- CPU en el chip (solo con hardware; el emulador corre en el PC).
 - Informe de efectos y mapa completo de modulación y automatización.
+
+## 11. Entorno de build (sesión cloud)
+
+- Dominios habilitados: `pkgman.jieliapp.com`, `jl-update.oss-cn-shenzhen.aliyuncs.com` (toolchain),
+  `gitee.com` (SDK AC79).
+- Toolchain: `tools/get_toolchain.sh` → `~/.jieli/toolchain`. SDK: clon sparse de `cpu/wl82/tools` en
+  `~/fw-AC79_AIoT_SDK` (gitee corta clones grandes; el sparse funciona).
+- Emscripten: `emsdk` en `~/emsdk` (`source ~/emsdk/emsdk_env.sh`), luego `web/emu/build.sh`.
