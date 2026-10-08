@@ -1,6 +1,13 @@
-# JIANT
+# JIANT FM
+
+**Bio-synthetic operating system for the M-VAVE FM-1** — síntesis, secuencia, mutación, performance.
 
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
+
+![JIANT FM: concepto de la interfaz](docs/jiant-fm-ui-concept.jpg)
+
+*Concepto de la interfaz. Cada panel es una página o capa del firmware; abajo, en
+[La interfaz](#la-interfaz), qué hay hoy detrás de cada uno.*
 
 Firmware de vivo para el **M-VAVE FM-1**: un instrumento para componer y tocar canciones enteras sin
 computadora, con control directo de todo lo que suena. Es un fork de
@@ -39,7 +46,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 | Macros M1–M4 | Pendiente |
 | Punch-in FX MIDI y sus lanes | Pendiente |
 | Más modulación y mejores efectos | Pendiente |
-| Estética nueva de la interfaz | Más adelante |
+| Interfaz JIANT FM ([docs/TONIC-UI.md](docs/TONIC-UI.md)) | En diseño: concepto listo, falta decidir cómo entra en el flash |
 
 ### Qué cambió respecto de Felucca 1.1.5.1
 
@@ -66,7 +73,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 
 - **4 tracks**, cada uno con su engine y su sonido, 8 voces compartidas.
 - **12 engines:** ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, SAMPLE, VOICE, TRIO, WHEEL, GRAIN,
-  NOISE, SLICE y DRUM (kit de 8 lanes sintetizado, sin samples).
+  NOISE, SLICE y DRUM (kit de 8 lanes sintetizado, sin samples; con KIT X toca DRUM-X, con MORPH A↔B).
 - **Secuenciador:** 64 pasos por track con acordes, ties, accent, slide, chance y ratchets; piano roll;
   grilla de batería; parameter locks; automatización de perillas; grabación en vivo con overdub;
   metrónomo y count-in.
@@ -78,8 +85,36 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
   en el master.
 - **USB:** MIDI class-compliant y entrada de audio "Felucca" (el master en la computadora). MIDI por TRS,
   clock interno, USB o TRS.
-- **Proyectos y presets:** 4 proyectos y 32 presets de usuario, con nombre; autoguardado al apagar.
+- **Canciones y presets:** 8 canciones de 4 secciones (A–D) con su cadena de filas; 32 presets de usuario,
+  con nombre; autoguardado al apagar.
+- **Capa de canción** (SAVE sostenido): secciones en vivo en el próximo compás, quick chain, SONG REC,
+  STORE / RECALL, selector de canción.
 - **Editor web** de todos los parámetros (editor de patches FM6, grilla, mezcla, backup completo).
+
+## La interfaz
+
+La pantalla del FM-1 mide 240 × 240. El concepto de arriba se lleva a ella página por página: la ilustración
+de fondo y los valores vivos (tempo, sección, MORPH, pasos, niveles) dibujados encima por el firmware, con
+partes que reaccionan a los knobs. En el concepto, **PRJ** es la canción (1–8) y **VAR** la sección (A–D).
+FM1, FM2, FM3, DRUM y VOICE son ejemplos de engines: hay 4 tracks y cada uno puede usar cualquier engine.
+
+| Panel | Qué es en el firmware | Hoy |
+| --- | --- | --- |
+| 01 HOME | los 4 tracks con su engine, tempo, canción y sección | ✅ función, ⏳ diseño |
+| 02 TRACK · 03 FM ALGORITHM | EDIT del track; algoritmo y operadores de FM6 | ✅ función, ⏳ diseño |
+| 04 TRACK MAP | tracks y las 8 voces compartidas | ✅ función, ⏳ vista |
+| 05 SEQUENCER · 06 SEQ PERFORMANCE | grilla de batería de 8 lanes y 64 pasos; SEQ TOOLS, grabación y mutes en vivo | ✅ función, ⏳ diseño |
+| 07 DRUM-X · 08 DRUM MORPH | kit DRUM-X; un sonido con sus lados A / B y el MORPH | 🔶 Fase 1 (KIT X) |
+| 09 MACRO · 10 MACRO MAP | macros M1–M4 y lo que mueve cada una | ⏳ pendiente |
+| 11 PUNCH-IN FX | capa FX: REPEAT 1/8–1/32, LPF, HPF; después punch-in MIDI | 🔶 parcial |
+| 12 FX RACK · 13 MIXER | distorsión y envíos por track; nivel, pan, envíos, mute | ✅ función, ⏳ diseño |
+| 14 SONG · 19 SAVE / PROJECT | canción por compases y capa de canción; 8 canciones × A–D | ✅ función, ⏳ diseño |
+| 15 CHORD · 16 ARP · 17 AUTOMATION | acordes, arpegiador, automatización por paso y de knobs | ✅ función, ⏳ diseño |
+| 18 VISUALIZER | osciloscopio | ✅ sencillo |
+| 20 PERFORMANCE | tempo, sección, macros y punch-in en vivo | ⏳ pendiente |
+
+Las 20 pantallas están convertidas al formato de la pantalla en [assets/ui-art/](assets/ui-art/). Todavía no
+entran todas en el flash: el plan y las medidas están en [docs/TONIC-UI.md](docs/TONIC-UI.md).
 
 ## Controles
 
@@ -136,6 +171,8 @@ Seeed XIAO RP2040.
 | [FELUCCA-TONIC-SPEC.md](FELUCCA-TONIC-SPEC.md) | Las fases y las reglas de trabajo |
 | [docs/TONIC-AUDIT.md](docs/TONIC-AUDIT.md) | Auditoría: memoria, engines, efectos, song mode de SLOOP |
 | [docs/TONIC-SONG-PLAN.md](docs/TONIC-SONG-PLAN.md) | Plan del song mode |
+| [docs/TONIC-DRUMX.md](docs/TONIC-DRUMX.md) | DRUM-X: la voz, el kit por sección y las fases |
+| [docs/TONIC-UI.md](docs/TONIC-UI.md) | La interfaz JIANT FM: mapa de pantallas, formato, medidas de flash |
 | [BUILDING.md](BUILDING.md) | Toolchain, build, emulador y tests |
 | [web/EDITOR_PROTOCOL.md](web/EDITOR_PROTOCOL.md) | Protocolo SysEx del editor |
 | [LICENSING.md](LICENSING.md) | Licencias de cada parte |
