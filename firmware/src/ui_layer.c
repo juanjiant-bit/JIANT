@@ -12,25 +12,24 @@
  *   EDIT SET   the white keys from F3: the engines in PRESETS order (one key each, the NENG_SHOWN one can pick:
  *              engines.c eng_vis), the next white key INIT (LY_INIT: E5)
  *              (the dialog); KNOB 1 ENG, 2 No. (the engine's sounds), 3 FAV. Sound loads as on PRESETS: the steps
- *              stay, SAVE held undoes, the editor gets RELOAD; they apply while playing too
+ *              stay, the editor gets RELOAD; they apply while playing too
  *   SEQ  SET   (1.2, on the SEQ pages that show the pattern: STEP / the DRUM grid, PATTERN, CHANCE, AUTOMATION; elsewhere
  *              SEQ held opens SONG as before) TOOLS: the white keys from F3 the sequence tools (ui_tools.c: CLEAR,
  *              REVERSE, SHIFT < >, RANDOM, COOK; on a DRUM track BEAT and the lane's CLEAR REVERSE FILL RANDOM), black
- *              keys 1..8 the lane (DRUM); KNOB 1..4 the PATTERN page's LEN DIV SWING GATE. Each action one undo (SAVE
- *              held), OCT- the track as the layer opened (tl_open)
+ *              keys 1..8 the lane (DRUM); KNOB 1..4 the PATTERN page's LEN DIV SWING GATE. No undo (TONIC: the song
+ *              layer's RECALL)
  *   REC  SET   (1.1.5, on every page; REC's tap still arms / disarms) the white keys from F3: CLEAR (the selected
- *              track's steps and automation, no dialog: one undo, SAVE held), CLICK (OFF REC ON), COUNT-IN (OFF 1 BAR
+ *              track's steps and automation, no dialog), CLICK (OFF REC ON), COUNT-IN (OFF 1 BAR
  *              2 BARS), CLICK LEVEL (LOW MID HIGH), each press the next value; KNOB 1..3 the same three. The settings
- *              are MENU > AUDIO's (ui.c rp_get / rp_put: one store), saved when the layer closes; OCT- puts back the
- *              settings and the track as the layer opened (tl_open). Replaces the old REC held on SEQ (Discussion #91:
+ *              are MENU > AUDIO's (ui.c rp_get / rp_put: one store), saved when the layer closes.
+ *              Replaces the old REC held on SEQ (Discussion #91:
  *              the CLEAR Tn SEQUENCE? dialog and its "HOLD: CLEAR" hint)
  * The gesture: let go before HOLD (the menu: 0.3 .. 0.6 s) with nothing else touched: a tap, the button's page.
  * Held past HOLD alone: the map (a peek), letting go does nothing. A key, a knob or a button meanwhile: a combo,
  * the map at once, no tap. Keys pressed with the button down are the layer's (seq.c keyboard_block): silent, no
  * MIDI, never recorded; keys held before stay notes. Only one layer at a time: a second layer button is ignored.
  * PLAY and REC work in every layer (GLO + PLAY: RESTART); SAVE, HOME, SEQ and the other page buttons are swallowed. In SET
- * layers OCT± do not shift the octave: OCT- (on release, not with OCT+) puts back what the layer changed since it
- * opened. A HOLD key's effect lasts until the key is let go, the map with it. No layer in the menu, a dialog,
+ * layers OCT± do not shift the octave (TONIC: OCT- no longer puts back what the layer changed: no undo). A HOLD key's effect lasts until the key is let go, the map with it. No layer in the menu, a dialog,
  * NAME or the UPDATE MODE countdown. After a tap, until the layer has been opened once: "HOLD [GLO] QUICK"
  * (the seen bits are kept with the settings, favorites.c spare byte).
  * The lock (Discussion #83): a double tap (the second press within LY_DTAP_MS of the first tap, both let go before
@@ -52,11 +51,11 @@ typedef struct {
 static const layer_t LAYERS[LAYER_N] = {
     {0, 0, 0, "", {{0, 0}, {0, 0}, {0, 0}}},
     {B_FX, LK_HOLD, FAM_HOME, "[FX] HOLD", {{KC_KEYS, "EFFECTS"}, {KC_K14, "MACROS"}, {0, 0}}},   /* (LET GO: the header's HOLD) */
-    {B_GLO, LK_SET, FAM_HOME, "[GLO] SET", {{KC_PLAY, "RESTART"}, {KC_OCTDN, "UNDO"}, {KC_GLO, "DONE"}}},
-    {B_SCL, LK_SET, FAM_SCL, "[SCL] SET", {{KC_KEYS, "ROOT"}, {KC_OCTDN, "UNDO"}, {KC_SCL, "DONE"}}},
-    {B_EDIT, LK_SET, FAM_HOME, "[EDIT] SET", {{KC_KEYS, "ENGINE"}, {KC_OCTDN, "UNDO"}, {KC_EDIT, "DONE"}}},
-    {B_SEQ, LK_SET, FAM_SEQ, "[SEQ] TOOLS", {{KC_KEYS, "TOOLS"}, {KC_OCTDN, "UNDO"}, {KC_SEQ, "DONE"}}},
-    {B_REC, LK_SET, FAM_HOME, "[REC] SET", {{KC_KEYS, "RECORDING"}, {KC_OCTDN, "UNDO"}, {KC_REC, "DONE"}}},
+    {B_GLO, LK_SET, FAM_HOME, "[GLO] SET", {{KC_PLAY, "RESTART"}, {KC_GLO, "DONE"}, {0, 0}}},
+    {B_SCL, LK_SET, FAM_SCL, "[SCL] SET", {{KC_KEYS, "ROOT"}, {KC_SCL, "DONE"}, {0, 0}}},
+    {B_EDIT, LK_SET, FAM_HOME, "[EDIT] SET", {{KC_KEYS, "ENGINE"}, {KC_EDIT, "DONE"}, {0, 0}}},
+    {B_SEQ, LK_SET, FAM_SEQ, "[SEQ] TOOLS", {{KC_KEYS, "TOOLS"}, {KC_SEQ, "DONE"}, {0, 0}}},
+    {B_REC, LK_SET, FAM_HOME, "[REC] SET", {{KC_KEYS, "RECORDING"}, {KC_REC, "DONE"}, {0, 0}}},
 };
 static const uint8_t LY_KC[LAYER_N] = {0, KC_FX, KC_GLO, KC_SCL, KC_EDIT, KC_SEQ, KC_REC};
 /* SCL's knobs: the key and its chord (cur_page() while the layer edits or draws them: page_over) */
@@ -73,12 +72,9 @@ typedef char ly_init_fits[LY_INIT < 16u ? 1 : -1];   /* (a white key: F3 .. G5) 
 static const khint_t FX_LATCH_FOOT[3] = {{KC_KEYS, "ON / OFF"}, {KC_K14, "MACROS"}, {KC_OCTDN, "ALL OFF"}};
 
 static struct {
-    uint8_t l, trk, loaded, oct;       /* SET: the layer and the track of the snapshot; EDIT: a sound loaded since
-                                        * it opened (SEQ: a tool used); OCT- / OCT+ pressed in a SET layer (bits) */
+    uint8_t l, oct;                    /* the layer open; OCT- / OCT+ pressed in a SET layer (bits) */
     uint8_t cook;                      /* SEQ: COOK pressed since it opened */
     uint8_t rp_dirty;                  /* REC: a setting changed (settings_save when the layer lets go) */
-    int16_t v[9];                      /* the values when it opened: GLO mutes, levels, BPM; SCL ROOT..TRN, CHRD VOIC;
-                                        * SEQ LEN DIV SWING GATE; REC the settings (ui_rec_prefs) */
     uint32_t solo;                     /* GLO: the keys held that solo */
     uint32_t tap[4];                   /* GLO TAP: the last taps (fm1_ms) */
     uint8_t ntap;
@@ -212,35 +208,15 @@ static void layer_lock(uint32_t l, uint32_t now)
     layer_opened(l);
 }
 
-/* the layer opened: once seen, no more hint; SET: what OCT- will put back */
+/* the layer opened: once seen, no more hint */
 static void layer_opened(uint32_t l)
 {
-    uint32_t k;
     if (!((layer_seen >> l) & 1u)) {
         layer_seen |= (uint8_t)(1u << l);
         settings_save();                                /* (deferred while playing) */
     }
     lys.l = (uint8_t)l;
-    lys.trk = song.sel;
-    lys.loaded = 0;
     lys.cook = 0;
-    if (l == LAYER_SEQ || l == LAYER_REC) {             /* the track as it is now (OCT-) */
-        memcpy(tl_open.step, TSEL->step, sizeof tl_open.step);
-        motion_snapshot_track(TSEL, &tl_open.mo);
-    }
-    for (k = 0; k < 4u; k++)
-        if (l == LAYER_SEQ) {
-            lys.v[k] = TSEL->p[P_SLEN + k];
-        } else if (l == LAYER_GLO) {
-            lys.v[k] = trk[k].p[P_MUTE];
-            lys.v[4u + k] = trk[k].p[P_LEVEL];
-        } else {
-            lys.v[k] = TSEL->p[P_ROOT + k];
-            lys.v[4u + k] = k < 2u ? TSEL->p[P_CHRD + k] : 0;
-        }
-    lys.v[8] = song.g[G_BPM];
-    if (l == LAYER_REC)
-        lys.v[0] = ui_rec_prefs;
 }
 
 /* the armed button: 0, or the layer whose button was tapped (let go) */
@@ -323,14 +299,10 @@ static void layer_tap(uint32_t l)
     }
 }
 
-/* EDIT: a sound load in the layer. The first one takes the undo copy as the track is now (when the layer
- * opened, unless KNOB 2 / 3 had loaded already), so OCT- and SAVE held go back to it */
 static uint32_t snd_id(void) { return TSEL->eng_req | (uint32_t)TSEL->preset << 8 | (uint32_t)TSEL->user << 16; }
+/* EDIT: a sound load in the layer */
 static void edit_load(uint32_t e, int32_t step)
 {
-    uint32_t id = snd_id();
-    if (!lys.loaded)
-        undo.keep = 0;
     if (e < NENGINES) {
         if (e == TSEL->eng_req % NENGINES)
             return;                                     /* its engine already: the sound stays */
@@ -339,7 +311,6 @@ static void edit_load(uint32_t e, int32_t step)
     } else {
         eng_list_step(step);
     }
-    lys.loaded |= snd_id() != id;
 }
 
 /* GLO TAP: from the third tap the tempo of the taps (the last 4); 2 s without one starts over. INT clock only */
@@ -386,14 +357,11 @@ static void tools_key(uint32_t p)
     } else {
         ui_message(m);
     }
-    if (!lys.loaded)                                    /* (the first one: how to take it back) */
-        str_cpy(ui.msg2, "[SAVE] HOLD TO UNDO", sizeof ui.msg2);
-    lys.loaded = 1;
     ui.force = 1;
 }
 
-/* REC: CLEAR, the selected track's steps and automation (and ARP's latched chord): one undo (SAVE held), no dialog,
- * as SEQ TOOLS' CLEAR (up to 1.1.4 REC held on SEQ asked first, CF_CLEAR_SEQ). Its own undo copy (not a sound load's) */
+/* REC: CLEAR, the selected track's steps and automation (and ARP's latched chord), no dialog, as SEQ TOOLS' CLEAR
+ * (up to 1.1.4 REC held on SEQ asked first, CF_CLEAR_SEQ) */
 static void rec_clear(void)
 {
     track_t *t = TSEL;
@@ -405,16 +373,12 @@ static void rec_clear(void)
         ui_message("NOTHING TO CLEAR");
         return;
     }
-    undo.keep = 0;
-    load_begin(t, UNDO_PAT);
+    load_begin(t, LOAD_PAT);
     track_defaults_steps(t);
     load_end(t);
     t->nheld = 0;
     t->arp_phys = 0;
     ui_message("SEQUENCE CLEARED");
-    if (!lys.loaded)                                    /* (the first one: how to take it back) */
-        str_cpy(ui.msg2, "[SAVE] HOLD TO UNDO", sizeof ui.msg2);
-    lys.loaded = 1;
     ui.force = 1;
 }
 /* REC's settings, row r (G3 A3 B3, KNOB 1..3): CLICK, COUNT-IN, CLICK LEVEL as MENU > AUDIO steps them (ui.c rp_*) */
@@ -553,59 +517,17 @@ static void layer_oct_open(uint32_t pressed)
     }
 }
 
-/* OCT- / OCT+ in a SET layer: no octave; OCT- let go puts back what the layer changed. Returns the taps left */
+/* OCT- / OCT+ in a SET layer: no octave (TONIC: no put back; FX LATCH: OCT- all off). Returns the taps left */
 static uint32_t layer_oct(uint32_t pressed, uint32_t oct)
 {
-    uint32_t dn = panel.btn[B_OCTDN], up = panel.btn[B_OCTUP], k, mine;
+    uint32_t dn = panel.btn[B_OCTDN], up = panel.btn[B_OCTUP], mine;
     if (layer_set_open())
         lys.oct |= (uint8_t)(((pressed >> dn) & 1u) | ((pressed >> up) & 1u) << 1);
     mine = oct & lys.oct;
-    if (mine & 1u) {                                    /* OCT-: back to when it opened */
-        if (lys.l == LAYER_FX) {                        /* (FX LATCH) every effect and macro off */
-            perf_latched = 0;
-            perf_k[0] = perf_k[1] = perf_k[2] = perf_k[3] = 0;
-            ui_message("FX ALL OFF");
-        } else if (lys.l == LAYER_EDIT) {
-            if (lys.loaded)
-                undo_swap();                            /* (the copy from its first load) */
-            lys.loaded = 0;
-        } else if (lys.l == LAYER_SEQ || lys.l == LAYER_REC) {
-            track_t *t = &trk[lys.trk % NTRK];
-            if (lys.loaded && chain_busy()) {
-                ui_message("STOP TO EDIT");
-            } else {
-                if (lys.loaded) {                       /* (SAVE held then: the tools / the clear again) */
-                    tl_undo_take(t);
-                    memcpy(t->step, tl_open.step, sizeof t->step);
-                    if (motion_replace_track(t, &tl_open.mo))
-                        motion_full = 1;
-                }
-                if (lys.l == LAYER_REC) {               /* REC: the settings as it opened */
-                    lys.rp_dirty |= (uint8_t)(ui_rec_prefs != (uint8_t)lys.v[0]);
-                    ui_rec_prefs = (uint8_t)lys.v[0];
-                    rp_apply();
-                } else {
-                    for (k = 0; k < 4u; k++)
-                        t->p[P_SLEN + k] = lys.v[k];
-                }
-                lys.loaded = 0;
-                lys.cook = 0;
-                ui_message(lys.l == LAYER_REC ? "REC PUT BACK" : "SEQUENCE PUT BACK");
-            }
-        } else if (lys.l == LAYER_GLO) {
-            for (k = 0; k < NTRK; k++) {
-                trk[k].p[P_MUTE] = lys.v[k];
-                trk[k].p[P_LEVEL] = lys.v[4u + k];
-            }
-            song.g[G_BPM] = lys.v[8];
-            ui_message("MIX PUT BACK");
-        } else {
-            for (k = 0; k < 4u; k++)
-                trk[lys.trk % NTRK].p[P_ROOT + k] = lys.v[k];
-            trk[lys.trk % NTRK].p[P_CHRD] = lys.v[4];
-            trk[lys.trk % NTRK].p[P_VOIC] = lys.v[5];
-            ui_message("SCALE PUT BACK");
-        }
+    if ((mine & 1u) && lys.l == LAYER_FX) {             /* OCT- (FX LATCH): every effect and macro off */
+        perf_latched = 0;
+        perf_k[0] = perf_k[1] = perf_k[2] = perf_k[3] = 0;
+        ui_message("FX ALL OFF");
     }
     lys.oct &= (uint8_t)(((fm1_in.buttons >> dn) & 1u) | ((fm1_in.buttons >> up) & 1u) << 1);
     return oct & ~mine;

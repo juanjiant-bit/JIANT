@@ -38,12 +38,12 @@ Multi-engine synthesizer firmware for the M-VAVE FM-1. Please report what you fi
 - **Parameter locks:** hold a step on SEQ > STEP (or the drum grid) and turn a knob to set that
   parameter for that step only; EDIT with the step held clears its locks. **SEQ > AUTO LIST** lists the
   track's locks and automation, step by step, to change their step, parameter or value, turn a lock into
-  automation or back, add or delete one. SAVE held undoes lock edits. Loading another sound keeps the locks
+  automation or back, add or delete one. Loading another sound keeps the locks
   that still mean the same (all of them for the same engine)
 - **SEQ TOOLS:** hold SEQ on STEP, PATTERN, CHANCE or AUTOMATION for tools on the keys: CLEAR, REVERSE,
   SHIFT < / >, **RANDOM** (a new beat, or new notes in the scale on the same rhythm) and **COOK** (changes
   the pattern a little each press); on a DRUM track also BEAT and each lane's CLEAR, REVERSE, FILL and
-  RANDOM. Each tool is one undo (SAVE held); OCT− puts the track back as the layer found it
+  RANDOM. No undo (TONIC): the song layer's RECALL is coming in its place
 - **Metronome and count-in:** CLICK (OFF, while recording, or always) with three levels, and a count-in
   of 1 or 2 bars before recording from stop; the click goes to the headphones and speaker only, never to
   USB audio or into a pattern
@@ -61,7 +61,7 @@ Multi-engine synthesizer firmware for the M-VAVE FM-1. Please report what you fi
   reverse, tape stop, freeze and the harmonizer)
 - **Quick layers:** hold FX, GLO, SCL or EDIT for shortcuts on the keys and knobs, or double-tap it to
   keep the layer open; hold REC for the REC layer (CLEAR the track's sequence, CLICK, COUNT-IN, CLICK
-  LEVEL) and SEQ on the SEQ pages for SEQ TOOLS; one-step undo (SAVE held); REC on every page; OCT+
+  LEVEL) and SEQ on the SEQ pages for SEQ TOOLS; REC on every page; OCT+
   confirms, OCT- goes back; what can be pressed breathes softly instead of blinking
 - **Presets:** factory presets, 32 user preset slots and 4 projects, named on the device (an FM6
   sound keeps its own patch in both); projects from every earlier version load. The PRESETS knob
@@ -95,9 +95,9 @@ Multi-engine synthesizer firmware for the M-VAVE FM-1. Please report what you fi
 ![FM-1 controls with Felucca](docs/controls.jpg)
 
 - Tap a page button for its page, again for the next; HOME returns home
-- Hold FX, GLO, SCL or EDIT for its quick layer; hold SAVE to undo, HOME for the menu, SEQ for the song
+- Hold FX, GLO, SCL or EDIT for its quick layer; HOME for the menu (SAVE held: reserved for TONIC's song layer), SEQ for the song
   (on STEP, PATTERN, CHANCE and AUTOMATION, SEQ held opens SEQ TOOLS instead)
-- Hold REC on any page for the REC layer: F3 clears the track's sequence (SAVE held undoes it), G3 CLICK,
+- Hold REC on any page for the REC layer: F3 clears the track's sequence, G3 CLICK,
   A3 COUNT-IN, B3 CLICK LEVEL. A tap of REC arms the track as before
 - Double-tap FX, GLO, SCL, EDIT, REC or SEQ (TOOLS) to keep its layer open without holding; tap it again to close
 - On SEQ > STEP, hold a step and turn KNOB 1–4 to lock those parameters on that step

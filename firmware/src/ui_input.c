@@ -51,8 +51,8 @@ static uint32_t oct_leds(void)
 {
     if (name_on() && !ui.confirm && !ui.menu)           /* NAME: OCT- cancels, OCT+ (breathing) writes */
         return 1u | OCT_BREATH;
-    if (layer_set_open())                               /* a SET layer: OCT- puts back (UNDO), OCT+ nothing */
-        return 1u;
+    if (layer_set_open())                               /* a SET layer: OCT± do nothing (TONIC: no put back); */
+        return ui.layer == LAYER_FX ? 1u : 0u;          /* FX LATCH: OCT- all off, lit */
     if (ui.menu && !ui.confirm)
         return ui.menu >= 2u ? 1u :                    /* (ABOUT: OCT- back, lit) */
                ui.menu_sel >= MI_VALUES ? OCT_BREATH :  /* CALIBRATION / ABOUT: OCT+ opens */
@@ -574,7 +574,6 @@ static void lock_turn(uint32_t k, int32_t s, uint64_t held)
     ui.plk_rm &= ~held;                                 /* (held for a lock: its hit stays) */
     d = track_desc(t, id);
     s = accel(EN_K1 + k, s, d->fmt == F_ENUM ? 0 : d->max - d->min);
-    motion_undo_take(t, 0x100u | k);                    /* (1.1.5: SAVE held takes the locks back) */
     for (i = 0; i < NSTEP; i++) {
         int16_t v;
         if (!((held >> i) & 1u))
@@ -584,7 +583,6 @@ static void lock_turn(uint32_t k, int32_t s, uint64_t held)
         if (motion_set_lock(t, i, id, (int16_t)param_turn(d, v, s)) == 2)
             break;                                      /* (full: ui_notices says so) */
     }
-    motion_undo_done(t);
 }
 
 /* [EDIT] with the steps `held` held: their locks go */
@@ -596,11 +594,9 @@ static void lock_clear(uint64_t held)
         ui_message("NO LOCKS");
         return;
     }
-    motion_undo_take(TSEL, 0);                          /* (1.1.5: SAVE held brings them back) */
     for (i = 0; i < NSTEP; i++)
         if ((held >> i) & 1u)
             n += motion_clear_locks(TSEL, i);
-    motion_undo_done(TSEL);
     ui_message(n ? "LOCKS CLEARED" : "NO LOCKS");
 }
 
@@ -905,7 +901,7 @@ static void seq_entry(uint32_t pressed)
  *   the list / action pages USER, PROJECT, PHRASES, SONG: the selection, as their KNOB 1; TOOLS and SLICES: nothing
  *   HOME, PRESETS and every other page (EDIT, ENV, LFO, FX, SCL, ARP, MIXER, GLOBAL, ...): the selected track's
  *     sound, one list over every engine, then the used user presets (preset_step). A sound load keeps the steps
- *     (SAVE held undoes it). Up to 1.0.3 it did that on HOME and PRESETS only */
+ *     . Up to 1.0.3 it did that on HOME and PRESETS only */
 static void presets_turn(int32_t s)
 {
     const page_t *pg = cur_page();
@@ -1069,7 +1065,7 @@ static void ui_input(void)
     home = btn_hold(&ui.home_t0, B_HOME, now, 1);
     rec = btn_hold(&ui.rec_t0, B_REC, now, 0);          /* (a tap; held, the REC layer: ui_layer.c) */
     seq = btn_hold(&ui.seq_t0, B_SEQ, now, !ui.menu && !ui.confirm);
-    save = btn_hold(&ui.save_t0, B_SAVE, now, !ui.menu && !ui.confirm);   /* held: UNDO (ui.c undo_swap) */
+    save = btn_hold(&ui.save_t0, B_SAVE, now, !ui.menu && !ui.confirm);   /* held: nothing yet (the song layer) */
     layer_lock_input(pressed);                          /* (#83: a button closes a locked layer) */
     layer_arm(pressed, now);
     if (((pressed >> panel.btn[B_REC]) & 1u) && ui.ly == LAYER_REC)
@@ -1162,11 +1158,8 @@ static void ui_input(void)
         name_input(notes, oct);
         return;
     }
-    if (save == BT_HOLD && chain_busy())
-        ui_message("STOP TO UNDO");
-    else if (save == BT_HOLD)                                /* SAVE held: undo the last sound load */
-        undo_swap();
-    else if (save == BT_TAP && !ui.confirm)             /* SAVE acts on release (a hold is the undo) */
+    if (save == BT_TAP && !ui.confirm)                  /* SAVE acts on release (held: reserved for TONIC's song
+                                                         * layer, docs/TONIC-SONG-PLAN.md 4c; Felucca's undo is gone) */
         open_family(FAM_SAVE);
     if (ui.confirm) {                                   /* OCT- cancels, OCT+ does it; nothing else reacts */
         if (oct & 2u) {
@@ -1181,10 +1174,9 @@ static void ui_input(void)
                 up_ui(1u, ui.confirm_trk);
             } else if (kind == CF_LOAD_PAT) {
                 pat_load_ui(&trk[ui.confirm_trk % NTRK], pat_pick());
-                str_cpy(ui.msg2, "[SAVE] HOLD TO UNDO", sizeof ui.msg2);
             } else if (kind == CF_CLEAR_MOTION) {
                 track_t *t = &trk[ui.confirm_trk % NTRK];
-                if (!chain_busy()) { load_begin(t, UNDO_PAT); motion_clear(t); load_end(t); ui_message("AUTOMATION CLEARED"); }
+                if (!chain_busy()) { load_begin(t, LOAD_PAT); motion_clear(t); load_end(t); ui_message("AUTOMATION CLEARED"); }
             } else if (kind == CF_DEL_ROW) {
                 uint32_t r = ui.confirm_trk;
                 if (!chain_busy() && r < chain_config.count) {
@@ -1199,7 +1191,7 @@ static void ui_input(void)
                 if (!chain_busy()) { set_engine(TSEL->eng_req); ui_message("SOUND INIT"); }
             } else {
                 track_t *t = &trk[ui.confirm_trk % NTRK];
-                load_begin(t, UNDO_PAT);
+                load_begin(t, LOAD_PAT);
                 track_defaults_steps(t);
                 load_end(t);
                 t->nheld = 0;                           /* and the latched arp chord */

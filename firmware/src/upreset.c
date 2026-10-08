@@ -401,7 +401,7 @@ static int up_load(uint32_t k)
         return 1;
     r = up_rec(k);
     up_values(r, v);
-    load_begin(t, UNDO_SOUND);                          /* (ui.c: the copy for SAVE held = undo) */
+    load_begin(t, LOAD_SOUND);
     panic_req |= (uint8_t)(1u << song.sel);
 #if !FELUCCA_FM4
     if (r->engine == ENGI_DIGITAL) {                    /* a DIGITAL sound (kept as it was stored): FM6 */
@@ -459,7 +459,7 @@ static uint32_t up_pat_rank(uint32_t slot)     /* ones that hold a pattern befor
 }
 
 /* slot k's pattern -> track t's steps 1..16 (the rest cleared), with the record's LEN (at most 16), DIV,
- * SWING and GATE; the sound stays (ui.c pat_load: the undo copy) */
+ * SWING and GATE; the sound stays (ui.c pat_load) */
 static void up_pat_load(track_t *t, uint32_t k)
 {
     const up_rec_t *r;

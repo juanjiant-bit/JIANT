@@ -5,17 +5,17 @@
  *   F3 CLEAR  G3 REVERSE  A3 SHIFT <  B3 SHIFT >       the whole sequence
  *   C4 RANDOM D4 COOK     E4 BEAT (DRUM)                 new / a little changed
  *   G4 CLEAR  A4 REVERSE  B4 FILL  C5 RANDOM             the selected lane (DRUM: ui.lane, black keys 1..8 pick it)
- * Each works on the selected track's steps 1..LEN (the steps past LEN stay) and is one undo: SAVE held swaps back
- * the copy taken just before it (ui.c undo, UNDO_PAT; unlike a load the track's automation stays), so after a few
- * COOKs SAVE held takes back the last one only; the layer's OCT- puts back the track as the layer opened (tl_open).
+ * Each works on the selected track's steps 1..LEN (the steps past LEN stay); the track's automation stays. No undo
+ * (TONIC): the song layer's RECALL brings the section back as it was stored.
  * A step that held something and is empty after loses its locks (as EDIT's step clear); REVERSE and SHIFT move the
  * steps' automation and locks with them. RANDOM and COOK draw from libc.c rng(): no seed is kept, each press
  * differs. A sequence of ties reversed keeps its note first: N T T -> N T T at the mirrored place */
 enum { TL_CLEAR, TL_REV, TL_LEFT, TL_RIGHT, TL_RANDOM, TL_COOK, TL_BEAT, TL_GAP, TL_LCLR, TL_LREV, TL_LFILL, TL_LRND,
        TL_N };
 
-/* the track as the layer opened (OCT-): in the pool (RAM's .bss is tight), taken by layer_opened */
-static struct { step_t step[NSTEP]; motion_store_t mo; } tl_open __attribute__((section(".pool")));
+/* the steps as they were just before an action (tl_take): what REVERSE and SHIFT read; in the pool (RAM's .bss is
+ * tight) */
+static step_t tl_src[NSTEP] __attribute__((section(".pool")));
 
 static uint32_t tl_len(const track_t *t) { return (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP); }
 static uint32_t tl_rnd(uint32_t n) { return n ? rng() % n : 0u; }
@@ -24,24 +24,8 @@ static uint32_t tl_lane(const step_t *s, uint32_t l) { return (step_lanes(s) >> 
 /* place p's action is there for this track (the lane row and BEAT: DRUM only) */
 static int tl_cell(const track_t *t, uint32_t p) { return p < TL_N && p != TL_GAP && (p < TL_BEAT || drum_track(t)); }
 
-/* the undo copy of t as it is now (ui.c load_begin, but the automation is copied and stays): one action */
-static void tl_undo_take(track_t *t)
-{
-    uint32_t i = trk_index(t);
-    undo.trk = (uint8_t)(i + 1u);
-    undo.what = UNDO_PAT;
-    undo.keep = 0;                                      /* (the next load or action takes its own copy) */
-    undo.eng = t->eng_req;
-    undo.preset = t->preset;
-    undo.user = t->user;
-    memcpy(undo.p, t->p, sizeof undo.p);
-    memcpy(undo.step, t->step, sizeof undo.step);
-    memcpy(undo.fm6, fm6_patch[i], FP_SIZE);
-    undo.fm6_slot = fm6_slot[i];
-    undo.pat = pat_sig[i];
-    undo.patn = pat_last[i];
-    motion_snapshot_track(t, &undo.motion_backup);
-}
+/* the steps of t as they are now, before an action */
+static void tl_take(const track_t *t) { memcpy(tl_src, t->step, sizeof tl_src); }
 
 /* steps 1..len of t that are not empty (a REST); after the action the ones emptied lose their locks */
 static uint64_t tl_used(const track_t *t, uint32_t len)
@@ -61,13 +45,13 @@ static void tl_unlock(track_t *t, uint64_t was, uint32_t len)
             (void)motion_clear_locks(t, i);
 }
 
-/* step j of t becomes the undo copy's step src[j] (taken just before), its automation and locks with it */
+/* step j of t becomes the step src[j] as it was (tl_src), its automation and locks with it */
 static void tl_order(track_t *t, uint32_t len, const uint8_t *src)
 {
     uint8_t to[NSTEP];
     uint32_t j, k = trk_index(t), f;
     for (j = 0; j < len; j++) {
-        t->step[j] = undo.step[src[j]];
+        t->step[j] = tl_src[src[j]];
         to[src[j]] = (uint8_t)j;
     }
     f = motion_guard();
@@ -87,11 +71,11 @@ static void tl_reverse(track_t *t, uint32_t len)
     for (j = 0; j < len; j++)
         src[j] = (uint8_t)(len - 1u - j);
     for (j = 0; j < len; j++) {
-        for (e = j; e < len && undo.step[src[e]].time == ST_TIE; e++)
+        for (e = j; e < len && tl_src[src[e]].time == ST_TIE; e++)
             ;
         if (e == j)
             continue;
-        if (e < len && undo.step[src[e]].time == ST_NOTE) {   /* ties j .. e - 1, their note at e: the note to j */
+        if (e < len && tl_src[src[e]].time == ST_NOTE) {   /* ties j .. e - 1, their note at e: the note to j */
             for (h = src[e], x = e; x > j; x--)
                 src[x] = src[x - 1u];
             src[j] = h;
@@ -337,7 +321,7 @@ static const char *tl_do(track_t *t, uint32_t p, uint32_t l)
     int drum = drum_track(t);
     const char *msg = 0;
     l %= NLANE;
-    if (p == TL_COOK) {                                 /* (nothing there: nothing to cook, no undo copy) */
+    if (p == TL_COOK) {                                 /* (nothing there: nothing to cook) */
         for (i = 0; i < len; i++)
             n += drum ? (uint32_t)__builtin_popcount(step_lanes(&t->step[i])) : (uint32_t)tl_gate(&t->step[i]);
         if (!n) {
@@ -345,7 +329,7 @@ static const char *tl_do(track_t *t, uint32_t p, uint32_t l)
             return 0;
         }
     }
-    tl_undo_take(t);
+    tl_take(t);
     switch (p) {
     case TL_CLEAR:
         for (i = 0; i < len; i++)
@@ -390,7 +374,7 @@ static const char *tl_do(track_t *t, uint32_t p, uint32_t l)
             msg = " CLEARED";
         } else if (p == TL_LREV) {
             for (i = 0; i < len; i++) {
-                const step_t *s = &undo.step[len - 1u - i];
+                const step_t *s = &tl_src[len - 1u - i];
                 grid_hit(t, i, l, tl_lane(s, l));
                 if (tl_lane(s, l))
                     grid_acc(t, i, l, (step_accents(s) >> l) & 1u);

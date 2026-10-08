@@ -931,8 +931,7 @@ static int project_restore_runtime(const project_t *input)
     fm1_irq_on();
     proj_name_get(proj_name, (const uint8_t *)p->name);
     proj_cur = PROJ_NO_SLOT;                            /* (project_load: its slot) */
-    undo.trk = 0;                                       /* (ui.c) the undo copy belongs to the old project */
-    undo_depth++;                                       /* and these loads take none */
+    load_depth++;                                       /* (ui.c) these loads are the project's, not the user's */
     for (k = 0; k < NTRK; k++) {                        /* the power-on sounds: format 1 (tracks 2..4), old drums */
         track_t *t = &trk[k];
         int16_t keep[P_COUNT];
@@ -950,7 +949,7 @@ static int project_restore_runtime(const project_t *input)
         }
         pat_sig[k] = ~steps_sig(t);                     /* a project's steps are the user's */
     }
-    undo_depth--;
+    load_depth--;
     sync_reload = 1;
     ui.force = 1;
     ui_message("LOADED");
