@@ -56,9 +56,9 @@ Multi-engine synthesizer firmware for the M-VAVE FM-1. Please report what you fi
 - **Modulation matrix:** 4 slots per track, MIDI controllers as sources
 - **Effects:** distortion and the SLICER per track; chorus, delay and reverb sends (the reverb as
   ROOM or SPRING); master limiter
-- **FX layer:** hold FX for repeat, reverse, filter sweeps, tape stop, freeze and a harmonizer
-  (OCT UP / OCT DN with shimmer), and mutes on the black keys; MENU > FX LATCH makes them toggle, so
-  nothing has to stay held
+- **FX layer:** hold FX for repeat (1/8, 1/16, 1/32: F3 G3 A3) and filter sweeps (LPF B3, HPF C4), and
+  mutes on the black keys; MENU > FX LATCH makes them toggle, so nothing has to stay held (TONIC removed
+  reverse, tape stop, freeze and the harmonizer)
 - **Quick layers:** hold FX, GLO, SCL or EDIT for shortcuts on the keys and knobs, or double-tap it to
   keep the layer open; hold REC for the REC layer (CLEAR the track's sequence, CLICK, COUNT-IN, CLICK
   LEVEL) and SEQ on the SEQ pages for SEQ TOOLS; one-step undo (SAVE held); REC on every page; OCT+

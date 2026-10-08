@@ -979,8 +979,8 @@ static void setup(int s)
         go_page(GR_SONG); chain_prepare(); events_block(32); go_home(); ui.msg_t = 0;
         break;
     /* the FX layer's map: held alone; REPEAT 1/16 + LPF + a mute playing with the macros turned;
-     * at 72 BPM: a REPEAT 1/16 waiting for its 1/16 (shown THEME) beside TAPE STOP playing, and REPEAT 1/8
-     * held, too long at that tempo (it and REVERSE dimmed) */
+     * at 72 BPM: a REPEAT 1/16 waiting for its 1/16 (shown THEME) beside LPF playing, and REPEAT 1/8
+     * held, too long at that tempo (dimmed) */
     case S_FX_PEEK: go_title("ENV"); ui.layer = LAYER_FX; break;
     case S_FX_HELD:
         go_home(); ui.layer = LAYER_FX;
@@ -989,13 +989,12 @@ static void setup(int s)
         break;
     case S_FX_WAIT:
         song.playing = 1; song.g[G_BPM] = 72; ui.layer = LAYER_FX;
-        perf_held = PF_BIT(PF_R16) | PF_BIT(PF_R8) | PF_BIT(PF_TAPE); perf_act = PF_BIT(PF_TAPE);
+        perf_held = PF_BIT(PF_R16) | PF_BIT(PF_R8) | PF_BIT(PF_LPF); perf_act = PF_BIT(PF_LPF);
         perf_k[2] = 100;
         break;
-    case S_FX_HARM:                                 /* OCT UP playing, KNOB 4 its shimmer; OCT DN held under it */
+    case S_FX_HARM:                                 /* (TONIC: no harmonizer) HPF playing, KNOB 4 DEPTH turned */
         song.playing = 1; ui.layer = LAYER_FX;
-        perf_ord[PF_ODN] = ++perf_seq; perf_ord[PF_OUP] = ++perf_seq;
-        perf_held = perf_act = PF_BIT(PF_OUP) | PF_BIT(PF_ODN);
+        perf_held = perf_act = PF_BIT(PF_HPF);
         perf_k[3] = 60; ui.hot_col = 3; ui.hot_t = 30;
         break;
     case S_REVERB: go_title("REVERB"); song.g[G_RTYPE] = 1; ui.hot_col = 0; ui.hot_t = 30; break;   /* TYPE: SPRING */

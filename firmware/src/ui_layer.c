@@ -498,7 +498,7 @@ static void layer_knob(uint32_t k, int32_t s)
 {
     uint32_t l = layer_open();
     if (l == LAYER_FX) {                                /* perform.c perf_k, not recorded */
-        if (k == 3u && !perf_harm_on())
+        if (k == 3u)
             s = -s;                                     /* DEPTH (100 - perf_k[3]) rises to the right (#40: it fell) */
         perf_k[k] = (int8_t)clamp(perf_k[k] + accel(EN_K1 + k, s, k ? 100 : 200), k ? 0 : -100, 100);   /* (#126) */
     } else if (l == LAYER_GLO) {                        /* T1..T4 LEVEL, recorded as on MIXER */
@@ -659,8 +659,7 @@ static uint32_t layer_leds(uint32_t *br)
  * (can be pressed), the selection's fill (the value now, SET), the accent (held, HOLD), DIM (cannot now: pressing
  * it says why), KEY (a muted track, as the MUTE badge); HOLD cells in a SET layer: a corner triangle */
 static const char *const PF_DIV[3] = {"1/8", "1/16", "1/32"};   /* the REPEATs (the other effects: their icon alone) */
-static const uint8_t PF_ICON[PF_M1] = {ICON_X_REPEAT, ICON_X_REPEAT, ICON_X_REPEAT, ICON_X_REVERSE, ICON_CUTOFF,
-    ICON_X_HPF, ICON_X_TSTOP, ICON_X_FREEZE, ICON_X_OCT_UP, ICON_X_OCT_DN};
+static const uint8_t PF_ICON[PF_M1] = {ICON_X_REPEAT, ICON_X_REPEAT, ICON_X_REPEAT, ICON_CUTOFF, ICON_X_HPF};
 static const char W_NOTE[16] = {'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G'};
 static const char B_NOTE[NTRK] = {'F', 'G', 'A', 'C'};  /* black keys 1..4: F# G# A# C# */
 #define LC_X(c) (6 + 58 * (int32_t)(c))                 /* cell column c: 54 px wide, 4 px apart */
@@ -763,7 +762,7 @@ static void layer_fx(void)
     uint32_t held = perf_kill ? 0u : perf_held | perf_latched, act = perf_act, ok = perf_avail(), e;
     char n[3] = {0, 0, 0};
     lc_w = LF_W;
-    for (e = 0; e < PF_M1; e++) {                       /* the effects of the white keys F3 .. A4, 5 a row */
+    for (e = 0; e < PF_M1; e++) {                       /* the effects of the white keys F3 .. C4, one row */
         if (e % 5u == 0u && !ux.style)                  /* (LINE: its rules are cells too) */
             GFX_HOOK_ALIGN(0, 0, 240, 0, AL_H | AL_CELLS | AL_N(5), "FX cells' row centred");
         uint32_t st = !((ok >> e) & 1u) ? LS_DIM : !((held >> e) & 1u) ? LS_OFF : (act >> e) & 1u ? LS_HELD : LS_WAIT;
@@ -905,14 +904,8 @@ static void layer_cards(uint32_t l)
         fmt_int(val, perf_k[2]);
         draw_column(2, "THROW", perf_k[2] ? val : "OFF", perf_k[2] ? "%" : "", perf_k[2] ? VAL(2u) : T_DIM,
                     perf_k[2] * 10, ICON_DELAY);
-        if (perf_harm_on()) {                           /* OCT UP / DN playing: KNOB 4 is its shimmer (SHIMR) */
-            fmt_int(val, perf_k[3]);
-            draw_column(3, "SHIMR", perf_k[3] ? val : "OFF", perf_k[3] ? "%" : "", perf_k[3] ? VAL(3u) : T_DIM,
-                        perf_k[3] * 10, ICON_FEEDBACK);
-        } else {
-            fmt_int(val, 100 - perf_k[3]);
-            draw_column(3, "DEPTH", val, "%", VAL(3u), (100 - perf_k[3]) * 10, ICON_MIX);
-        }
+        fmt_int(val, 100 - perf_k[3]);
+        draw_column(3, "DEPTH", val, "%", VAL(3u), (100 - perf_k[3]) * 10, ICON_MIX);
     } else if (l == LAYER_GLO) {                        /* T1..T4 LEVEL (the track's icon; muted: dim) */
         for (c = 0; c < NTRK; c++) {
             param_format(&TP[P_LEVEL], trk[c].p[P_LEVEL], val, &unit);
@@ -944,7 +937,7 @@ static void draw_layer(void)
     uint32_t l = ui.layer % LAYER_N, sig = l * 7919u + ux.gen * 977u;
     layer_cards(l);
     if (l == LAYER_FX)
-        sig += (perf_kill ? 0u : perf_held | perf_latched) * 31u + perf_latch_on * 11u + perf_act * 131u + perf_avail() * 7u + (uint32_t)perf_harm_on() * 3u;
+        sig += (perf_kill ? 0u : perf_held | perf_latched) * 31u + perf_latch_on * 11u + perf_act * 131u + perf_avail() * 7u;
     else if (l == LAYER_GLO)
         sig += perf_solo * 31u + (uint32_t)song.g[G_CLOCK] * 5u +
                (uint32_t)(trk[0].p[P_MUTE] | trk[1].p[P_MUTE] << 1 | trk[2].p[P_MUTE] << 2 | trk[3].p[P_MUTE] << 3) * 131u;

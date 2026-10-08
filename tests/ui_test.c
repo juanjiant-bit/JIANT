@@ -2514,28 +2514,23 @@ static int test_layer(void)
     song.playing = 0; song.rec = 0;
     /* FX let go first: the effect stays with its key, the map too; a key pressed now is a note */
     ui_power_on();
-    btn_down(B_FX); key_down(white(4)); frame();          /* white key 5 (C4): LPF */
+    btn_down(B_FX); key_down(white(3)); frame();          /* white key 4 (B3): LPF */
     btn_up(B_FX); frame();
     ok = (perf_held & PF_BIT(PF_LPF)) && ui.layer == LAYER_FX;
     key_down(white(0)); frame();
     ok &= gates() > 0 && !((kb_layer >> white(0)) & 1u);
-    key_up(white(0)); key_up(white(4)); frame();
+    key_up(white(0)); key_up(white(3)); frame();
     bad += check("FX let go first: the key holds its effect and the map; a new key is a note", ok && !ui.layer && !perf_held);
-    /* OCT UP (G4) and OCT DN (A4), the 9th and 10th white keys: held effects, silent; KNOB 4 the shimmer while
-     * held, back to 0 with FX; B4 on does nothing */
+    /* D4 on (the 6th white key and up) does nothing: TONIC kept only REPEAT and the filters; KNOB 4 (DEPTH) turns,
+     * back to 0 with FX */
     ui_power_on();
     usb.config = 1; mo = mo_w;
-    btn_down(B_FX); key_down(white(8)); frame();
-    ok = ui.layer == LAYER_FX && !gates() && mo_w == mo && perf_held == PF_BIT(PF_OUP);
-    perf_begin(CTL);                                    /* (an audio block: OCT UP runs, KNOB 4 is SHIMR) */
-    turn(EN_K4, 40);
+    btn_down(B_FX); key_down(white(5)); frame();
+    ok = ui.layer == LAYER_FX && !gates() && mo_w == mo && !perf_held && (kb_layer >> white(5)) & 1u;
+    turn(EN_K4, -40);
     ok &= perf_k[3] == 40;
-    key_up(white(8)); key_down(white(9)); frame();
-    ok &= perf_held == PF_BIT(PF_ODN) && !gates() && mo_w == mo;
-    key_up(white(9)); key_down(white(10)); frame();
-    ok &= !perf_held && (kb_layer >> white(10)) & 1u && !gates();
-    key_up(white(10)); btn_up(B_FX); frame();
-    bad += check("FX + G4 / A4: OCT UP / OCT DN held, silent, no MIDI; KNOB 4 turns; B4 nothing; FX let go: K4 back to 0",
+    key_up(white(5)); btn_up(B_FX); frame();
+    bad += check("FX + D4: nothing held, silent, no MIDI; KNOB 4 turns; FX let go: K4 back to 0",
                  ok && !perf_held && !ui.layer && !perf_k[3] && mo_w == mo);
     /* REVERB > TYPE (FX family, global): ROOM / SPRING on KNOB 1, kept by a project */
     ui_power_on();
@@ -2654,19 +2649,19 @@ static int test_layer(void)
         a = leds_at(0); b2 = leds_at(250);
         k = white(1);
         ok = ((a >> k) & 1u) && ((b2 >> k) & 1u);                    /* held: lit */
-        for (i = 0; i < 10u; i++)                                     /* the other effects (F3 .. A4): breathe */
+        for (i = 0; i < 5u; i++)                                      /* the other effects (F3 .. C4): breathe */
             ok &= i == 1u || ((a ^ b2) >> white(i)) & 1u;
-        for (i = 10; i < 16u; i++)                                    /* B4 .. G5: no effect, dark */
+        for (i = 5; i < 16u; i++)                                     /* D4 .. G5: no effect, dark */
             ok &= !((a | b2) >> white(i) & 1u);
         ok &= ((a ^ b2) >> key_at(1, 0)) & 1u && !((a | b2) >> key_at(1, 4) & 1u);   /* a mute breathes, a spare black dark */
         song.g[G_BPM] = 72;
         a = leds_at(0); b2 = leds_at(250);
-        ok &= !((a | b2) >> white(0) & 1u) && !((a | b2) >> white(3) & 1u);   /* 1/8, REVERSE: too long at 72 */
+        ok &= !((a | b2) >> white(0) & 1u);                          /* 1/8: too long at 72 */
         ok &= ((a ^ b2) >> white(2)) & 1u;                            /* 1/32 still blinks */
         song.g[G_BPM] = 120;
     }
     key_up(white(1)); btn_up(B_FX); frame();
-    bad += check("map LEDs: held lit, the 10 effects breathe, B4 .. G5 and a too-long REPEAT dark", ok);
+    bad += check("map LEDs: held lit, the 5 effects breathe, D4 .. G5 and a too-long REPEAT dark", ok);
     usb.config = 0;
     return bad;
 }
@@ -5812,9 +5807,9 @@ static int test_layer_lock(void)
     ui_power_on();
     go_title("ENV"); frame();
     press(B_FX); press(B_FX); frames(100);
-    key_down(white(4)); frame();                        /* C4: LPF while held */
+    key_down(white(3)); frame();                        /* B3: LPF while held */
     ok = (perf_held & PF_BIT(PF_LPF)) && !gates();
-    key_up(white(4)); frame();
+    key_up(white(3)); frame();
     ok &= !(perf_held & PF_BIT(PF_LPF));
     turn(EN_K2, 20);
     ok &= perf_k[1] == 20;
@@ -6150,17 +6145,14 @@ static int test_rec_layer(void)
 static int test_fx_latch(void)
 {
     int bad = 0, ok;
-    uint32_t lpf = white(4), m1 = black(0);
+    uint32_t lpf = white(3), m1 = black(0);
     ui_power_on();
     btn_down(B_FX); frame();
     turn(EN_K4, 5);  ok = perf_k[3] == 0;                         /* DEPTH 100 %: right stays at 100 */
     turn(EN_K4, -30); ok &= perf_k[3] == 30;                      /* left: 70 % */
     turn(EN_K4, 10); ok &= perf_k[3] == 20;                       /* right: 80 % */
-    key_down(white(8)); frame(); perf_begin(CTL);                 /* OCT UP: KNOB 4 is SHIMR, right is more */
-    turn(EN_K4, 10); ok &= perf_k[3] == 30;
-    key_up(white(8)); frame(); btn_up(B_FX); frame();
-    bad += check("#40 FX + KNOB 4: DEPTH rises to the right, falls to the left; SHIMR (OCT UP) rises to the right",
-                 ok && !perf_k[3]);
+    btn_up(B_FX); frame();
+    bad += check("#40 FX + KNOB 4: DEPTH rises to the right, falls to the left", ok && !perf_k[3]);
     /* OFF (the default; a byte older settings leave 0) */
     ui_power_on();
     ok = !(fx_latch & 1u);
@@ -6178,7 +6170,7 @@ static int test_fx_latch(void)
     btn_up(B_FX); frame();
     ok &= perf_latched == PF_BIT(PF_LPF) && perf_k[1] == 30 && !ui.layer;
     ok &= perf_begin(CTL) && (perf_act & PF_BIT(PF_LPF));                 /* it runs with nothing held */
-    bad += check("  FX LATCH ON: FX + C4 latches LPF, CRUSH stays at 30 after FX is let go", ok);
+    bad += check("  FX LATCH ON: FX + B3 latches LPF, CRUSH stays at 30 after FX is let go", ok);
     ui_leds();
     memset(led_pos, 0xFF, sizeof led_pos);
     led_pos[panel.btn[B_FX]] = 0u << 3 | 1u;
@@ -6186,10 +6178,10 @@ static int test_fx_latch(void)
     ok = (fm1_led[0] & 2u) != 0u;
     btn_down(B_FX); key_down(m1); frame(); key_up(m1); frame();   /* a mute latches too */
     ok &= perf_latched == (PF_BIT(PF_LPF) | PF_BIT(PF_M1));
-    key_down(lpf); frame(); key_up(lpf); frame();                 /* C4 again: LPF off */
+    key_down(lpf); frame(); key_up(lpf); frame();                 /* B3 again: LPF off */
     ok &= perf_latched == PF_BIT(PF_M1);
     btn_up(B_FX); frame();
-    bad += check("  the FX LED lit while something is on; a mute key latches; C4 again: LPF off", ok);
+    bad += check("  the FX LED lit while something is on; a mute key latches; B3 again: LPF off", ok);
     btn_down(B_FX); frame(); turn(EN_K1, -40);
     ok = song.octave == 0 && oct_leds() == 1u;
     btn_down(B_OCTDN); frame(); btn_up(B_OCTDN); frame();
