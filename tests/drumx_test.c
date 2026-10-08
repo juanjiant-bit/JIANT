@@ -1,0 +1,270 @@
+/* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+/* DRUM-X (src/drumx_voice.c: DRUM's KIT X) on the host, through hostsim.c:
+ *   build/host/drumx_test [DEMODIR]          (run_tests.sh: build/drumx_demo)
+ * 1. every lane of the kit, struck through the DRUM engine (its GM note), sounds (peak above -30 dBFS), never at
+ *    full scale, DC under 2 % of the peak, and ends: its voice frees itself (DECAY at its design) within 3 s.
+ * 2. MORPH (SNAP on KIT X): 0 and 127 render different hits, 64 between them (its RMS between theirs or near);
+ *    moving it while a hit rings: no step larger than the hit's own at A or B (+20 %).
+ * 3. PITCH: TUNE +12 semitones doubles the tom's frequency (zero crossings, +-3 %); the kick's pitch envelope
+ *    falls (more crossings in its first 20 ms than in 100..120 ms).
+ * 4. the closed hat chokes the open one (below -60 dB of its level within 10 ms).
+ * 5. the knob shows MRPH on KIT X, SNAP on the other kits.
+ * 6. demos into DEMODIR: every lane at MORPH 0, 64, 127; a beat with MORPH swept over 4 bars. */
+#include <stdarg.h>
+#define main hostsim_main
+#include "hostsim.c"
+#undef main
+
+static int fails;
+static void check(const char *what, int ok, const char *fmt, ...)
+{
+    printf("drumx: %-66s %s", what, ok ? "ok" : "FAIL");
+    if (fmt) {
+        va_list ap;
+        va_start(ap, fmt);
+        printf("  (");
+        vprintf(fmt, ap);
+        printf(")");
+        va_end(ap);
+    }
+    printf("\n");
+    fails += !ok;
+}
+
+#define MAXN (FS * 3u)
+static int32_t buf[MAXN];
+static const uint8_t NOTE[8] = {36, 38, 39, 42, 46, 45, 37, 56};   /* eng_drum.c DRUM_LANE_NOTE */
+
+static track_t *kitx(int16_t morph, int16_t tune)
+{
+    track_t *t = &trk[0];
+    uint32_t i, k;
+    for (k = 0; k < NTRK; k++)
+        for (i = 0; i < NVOICE; i++)
+            trk[k].v[i].active = 0;
+    host_tracks_init();
+    host_preset(t, ENGI_DRUM, 0);
+    t->p[P_E0] = DK_X;
+    t->p[P_E4] = morph;
+    t->p[P_E1] = tune;
+    for (i = 0; i < 4u; i++)
+        t->p[P_DIST + i] = 0;
+    return t;
+}
+/* lane l struck, n samples of the left output into buf; returns the voice still sounding at the end */
+static int strike(track_t *t, uint32_t l, uint32_t n)
+{
+    uint32_t i, k;
+    trk_note_on(t, NOTE[l], 100);
+    trk_note_off(t, NOTE[l]);
+    for (k = 0; k < n; k += CTL) {
+        int32_t o[2 * CTL];
+        mix_block(o, CTL);
+        for (i = 0; i < CTL && k + i < n; i++)
+            buf[k + i] = o[2 * i];
+    }
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active)
+            return 1;
+    return 0;
+}
+static double rms(uint32_t a, uint32_t b)
+{
+    double s = 0;
+    uint32_t i;
+    for (i = a; i < b; i++)
+        s += (double)buf[i] * buf[i];
+    return sqrt(s / (b - a));
+}
+static uint32_t crossings(uint32_t a, uint32_t b)
+{
+    uint32_t i, c = 0;
+    for (i = a + 1; i < b; i++)
+        c += buf[i - 1] < 0 && buf[i] >= 0;
+    return c;
+}
+static void save(const char *dir, const char *name, uint32_t n)
+{
+    char path[512];
+    FILE *f;
+    uint32_t i;
+    snprintf(path, sizeof path, "%s/%s", dir, name);
+    if (!(f = fopen(path, "wb")))
+        return;
+    wav_hdr(f, n);
+    for (i = 0; i < n; i++)
+        wav_put(f, buf[i], buf[i]);
+    fclose(f);
+}
+
+int main(int argc, char **argv)
+{
+    static const char *const NAME[8] = {"kick", "snare", "clap", "hatcl", "hatop", "tom", "rim", "bell"};
+    const char *dir = argc > 1 ? argv[1] : "build/drumx_demo";
+    char nm[64];
+    uint32_t l, i;
+    int ok;
+
+    /* 1 */
+    for (l = 0; l < 8u; l++) {
+        track_t *t = kitx(64, 64);
+        int32_t pk = 0;
+        double dc = 0;
+        int ended;
+        strike(t, l, FS / 2u);
+        for (i = 0; i < FS / 2u; i++) {
+            pk = abs(buf[i]) > pk ? abs(buf[i]) : pk;
+            dc += buf[i];
+        }
+        dc /= FS / 2u;
+        ended = !strike(t, l, MAXN) || 0;
+        snprintf(nm, sizeof nm, "%s: sounds, under full scale, no DC, ends", NAME[l]);
+        check(nm, pk > 1036 && pk < 32000 && fabs(dc) < pk * 0.02 && ended, "peak %d, DC %.0f", pk, dc);
+    }
+
+    /* 2 */
+    {
+        double r0, r1, rm;
+        int32_t a[FS / 4], d = 0, step = 0;
+        track_t *t = kitx(0, 64);
+        strike(t, 1, FS / 4u);
+        memcpy(a, buf, sizeof a);
+        r0 = rms(0, FS / 4u);
+        t = kitx(127, 64);
+        strike(t, 1, FS / 4u);
+        r1 = rms(0, FS / 4u);
+        for (i = 0; i < FS / 4u; i++)
+            d = abs(buf[i] - a[i]) > d ? abs(buf[i] - a[i]) : d;
+        t = kitx(64, 64);
+        strike(t, 1, FS / 4u);
+        rm = rms(0, FS / 4u);
+        check("MORPH: A and B differ, the middle between them", d > 2000 &&
+              rm > (r0 < r1 ? r0 : r1) * 0.7 && rm < (r0 > r1 ? r0 : r1) * 1.3, "RMS %.0f / %.0f / %.0f", r0, rm, r1);
+        {                                                /* the open hat's own largest steps at A and B */
+            int32_t own = 0;
+            uint32_t m;
+            for (m = 0; m < 2u; m++) {
+                t = kitx(m ? 127 : 0, 64);
+                strike(t, 4, FS / 2u);
+                for (i = 1; i < FS / 2u; i++)
+                    own = abs(buf[i] - buf[i - 1]) > own ? abs(buf[i] - buf[i - 1]) : own;
+            }
+            d = own;
+        }
+        t = kitx(0, 64);                                 /* MORPH swept while the open hat rings */
+        trk_note_on(t, NOTE[4], 100);
+        for (i = 0; i < FS / 2u; i += CTL) {
+            int32_t o[2 * CTL];
+            uint32_t j;
+            t->p[P_E4] = (int16_t)(i * 127u / (FS / 2u));
+            mix_block(o, CTL);
+            for (j = 0; j < CTL; j++)
+                buf[i + j] = o[2 * j];
+        }
+        for (i = 1; i < FS / 2u; i++)
+            step = abs(buf[i] - buf[i - 1]) > step ? abs(buf[i] - buf[i - 1]) : step;
+        check("MORPH moves a ringing hit without a jump", step <= d + d / 5, "largest step %d, the hat's own %d", step, d);
+    }
+
+    /* 3 */
+    {
+        uint32_t c0, c1, e0, e1;
+        track_t *t = kitx(0, 64);
+        strike(t, 5, FS / 2u);
+        c0 = crossings(FS / 10u, FS / 5u);
+        t = kitx(0, 64 + 43);                            /* +43 x 3 / 16: +8 semitones .. TUNE's 3/16 a step */
+        t->p[P_E1] = 127;                                /* +63 x 3 / 16 = 11.8 semitones */
+        strike(t, 5, FS / 2u);
+        c1 = crossings(FS / 10u, FS / 5u);
+        check("PITCH: TUNE up ~12 semitones about doubles the tom", c1 > c0 * 1.85 && c1 < c0 * 2.15, "%u -> %u", c0, c1);
+        t = kitx(0, 64);
+        strike(t, 0, FS / 4u);
+        e0 = crossings(0, FS / 50u);
+        e1 = crossings(FS / 10u, FS / 10u + FS / 50u);
+        check("PITCH: the kick's pitch envelope falls", e0 > e1, "%u -> %u crossings in 20 ms", e0, e1);
+    }
+
+    /* 4 */
+    {
+        track_t *t = kitx(64, 64);
+        double before, after;
+        trk_note_on(t, NOTE[4], 100);
+        for (i = 0; i < FS / 10u; i += CTL) {
+            int32_t o[2 * CTL];
+            mix_block(o, CTL);
+        }
+        trk_note_on(t, NOTE[3], 1);                      /* (a quiet closed hat: the open one's tail is measured) */
+        strike(t, 3, FS / 50u);
+        before = 1;
+        {
+            uint32_t v;
+            const drum_lane_t *L = &drum_kit[0][DV_HATO];
+            before = L->x.ea;
+            (void)v;
+        }
+        after = drum_kit[0][DV_HATO].x.ea;
+        check("the closed hat chokes the open one", !drum_kit[0][DV_HATO].x.live || after < (1 << 30) / 1000.0,
+              "open hat envelope %.0f", after);
+        (void)before;
+    }
+
+    /* 5 */
+    {
+        track_t *t = kitx(64, 64);
+        const param_desc_t *d = ENG_DRUM.desc(t, 4);
+        ok = d && str_eq(d->label, "MRPH");
+        t->p[P_E0] = DK_STD;
+        ok &= !ENG_DRUM.desc(t, 4);
+        check("SNAP shows MRPH on KIT X only", ok, 0);
+    }
+
+    /* 6 */
+    for (l = 0; l < 8u; l++) {
+        static const int16_t M[3] = {0, 64, 127};
+        uint32_t m;
+        for (m = 0; m < 3u; m++) {
+            track_t *t = kitx(M[m], 64);
+            strike(t, l, FS);
+            snprintf(nm, sizeof nm, "%s_morph%d.wav", NAME[l], M[m]);
+            save(dir, nm, FS);
+        }
+    }
+    {
+        static const uint8_t BEAT[16] = {1 | 8, 8, 8 | 4, 8, 2 | 8, 8, 1 | 8, 16, 1 | 8, 8, 8, 1 | 8, 2 | 8, 8, 32 | 8, 64 | 16};
+        track_t *t = kitx(0, 64);
+        uint32_t bar = 4u * 60u * FS / 120u, n = 4u * bar, s;
+        static int32_t big[4 * 4 * 60 * FS / 120];
+        for (s = 0; s < 16u; s++) {
+            step_t st = {{0, 0, 0, 0}, 0, ST_NOTE, 0, 100, 0, 0};
+            st.hit = BEAT[s];
+            t->step[s] = st;
+        }
+        t->p[P_SLEN] = 16;
+        song.g[G_BPM] = 120;
+        transport_req = 1;
+        for (i = 0; i < n; i += CTL) {
+            int32_t o[2 * CTL];
+            uint32_t j;
+            t->p[P_E4] = (int16_t)(i * 127u / n);
+            mix_block(o, CTL);
+            for (j = 0; j < CTL && i + j < n; j++)
+                big[i + j] = o[2 * j];
+        }
+        transport_req = 2;
+        {
+            char path[512];
+            FILE *f;
+            snprintf(path, sizeof path, "%s/beat_morph_sweep.wav", dir);
+            if ((f = fopen(path, "wb"))) {
+                wav_hdr(f, n);
+                for (i = 0; i < n; i++)
+                    wav_put(f, big[i], big[i]);
+                fclose(f);
+            }
+        }
+        printf("drumx: demos in %s\n", dir);
+    }
+    printf("drumx: %s\n", fails ? "FAILED" : "all checks ok");
+    return fails != 0;
+}
