@@ -11,7 +11,6 @@
 #include "eng_trio.c"
 #include "eng_wheel.c"
 #include "eng_grain.c"
-#include "eng_phys.c"           /* PHYS: DaisySP physical models (phys_dsp.c, MIT) */
 #include "eng_drum.c"           /* DRUM: the 8-lane kit (drum_voice.c) */
 #include "eng_noise.c"
 #include "eng_fm6.c"            /* FM6: 6-operator FM, msfa ported (fm6_core.c, Apache-2.0) */
@@ -22,6 +21,30 @@
 #if FELUCCA_SLICE
 #include "eng_slice.c"
 #endif
+
+/* PHYS (engine 9): retired in TONIC (its 50 KB of voice state went to the song and the drums). The number stays
+ * reserved, as DIGITAL's: the stores name engines by index and the table is append-only. ENG_PHYS_GONE below has no
+ * presets and is never offered (eng_ok); a PHYS sound that arrives anyway -- a project, a user preset, the editor's
+ * PRESET / SET G_ENGSEL, a backup -- plays as ANALOG's first preset (eng_live; project.c proj_phys_gone, ui.c
+ * set_engine_of, ui_input.c). A PHYS DRUM of before 1.0 still loads as DRUM first (core.h drum_from_phys) */
+static void phys_gone_note_on(struct track *t, voice_t *v) { (void)t; (void)v; }
+static void phys_gone_render(struct track *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
+{
+    (void)t; (void)v; (void)out; (void)n; (void)m;
+}
+static const engine_t ENG_PHYS_GONE = {
+    .name = "-",
+    .page_title = {"-", "-"},
+    .edit = {
+        {"-", F_INT, 0, 127, 0, 0, 0}, {"-", F_INT, 0, 127, 0, 0, 0}, {"-", F_INT, 0, 127, 0, 0, 0},
+        {"-", F_INT, 0, 127, 0, 0, 0}, {"-", F_INT, 0, 127, 0, 0, 0}, {"-", F_INT, 0, 127, 0, 0, 0},
+        {"-", F_INT, 0, 127, 0, 0, 0}, {"-", F_INT, 0, 127, 0, 0, 0},
+    },
+    .note_on = phys_gone_note_on,
+    .render = phys_gone_render,
+    .knob = {P_E0, P_E1, P_E2, P_E3},
+};
+#define ENGI_PHYS_TO 0u          /* the engine a PHYS sound plays as: ANALOG (its first preset) */
 
 /* the editor protocol, user presets and projects store these indices: append, never reorder */
 static const engine_t *const ENGINES[NENGINES] = {
@@ -38,7 +61,7 @@ static const engine_t *const ENGINES[NENGINES] = {
     &ENG_TRIO,                   /* 6 */
     &ENG_WHEEL,                  /* 7 */
     &ENG_GRAIN,                  /* 8 */
-    &ENG_PHYS,                   /* 9 (ENGI_PHYS) */
+    &ENG_PHYS_GONE,              /* 9: reserved (PHYS, retired in TONIC: its sounds play as ANALOG) */
     &ENG_DRUM,                   /* 10 (ENGI_DRUM) */
     &ENG_NOISE,                  /* 11 */
     &ENG_FM6,                    /* 12 (ENGI_FM6) */
@@ -80,7 +103,7 @@ static const uint8_t ENGINE_ORDER[NENG_SHOWN] = {
 #if FELUCCA_FM4
     1,                           /* DIGITAL */
 #endif
-    2, 3, 4, 5, 6, 7, 8, 9,      /* PHASE LOFI SAMPLE VOICE TRIO WHEEL GRAIN PHYS */
+    2, 3, 4, 5, 6, 7, 8,         /* PHASE LOFI SAMPLE VOICE TRIO WHEEL GRAIN */
     11,                          /* NOISE */
 #if FELUCCA_SLICE
     13,                          /* SLICE */
@@ -90,13 +113,17 @@ static const uint8_t ENGINE_ORDER[NENG_SHOWN] = {
 
 /* the engines one can pick (engine 1 only with FELUCCA_FM4), in ENGINE_ORDER: eng_ok(e), the n-th of them
  * eng_vis(n), e's place among them eng_rank(e), the next / previous one eng_step(e, dir) (wraps) */
-static int eng_ok(uint32_t e) { return e < NENGINES && (FELUCCA_FM4 || e != ENGI_DIGITAL); }
+static int eng_ok(uint32_t e) { return e < NENGINES && (FELUCCA_FM4 || e != ENGI_DIGITAL) && e != ENGI_PHYS; }
+/* the engine a stored engine number plays on: DIGITAL (without FELUCCA_FM4) FM6, PHYS ANALOG, a bad number ANALOG */
+static uint32_t eng_live(uint32_t e)
+{
+    return e >= NENGINES ? 0u : e == ENGI_PHYS ? ENGI_PHYS_TO : !eng_ok(e) ? ENGI_FM6 : e;
+}
 static uint32_t eng_vis(uint32_t n) { return ENGINE_ORDER[n % NENG_SHOWN]; }
 static uint32_t eng_rank(uint32_t e)
 {
     uint32_t n;
-    if (!eng_ok(e))
-        e = ENGI_FM6;                            /* (DIGITAL without FELUCCA_FM4: its sounds play as FM6) */
+    e = eng_live(e);                             /* (DIGITAL: FM6, PHYS: ANALOG) */
     for (n = 0; n < NENG_SHOWN && ENGINE_ORDER[n] != e; n++)
         ;
     return n < NENG_SHOWN ? n : 0u;

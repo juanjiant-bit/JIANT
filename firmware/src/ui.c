@@ -1045,6 +1045,10 @@ static void apply_preset_to(track_t *t, uint32_t pi)
         return;
     }
 #endif
+    if (t->eng_req % NENGINES == ENGI_PHYS) {         /* PHYS (retired, engines.c): ANALOG's first preset */
+        set_engine_of(t, ENGI_PHYS_TO);
+        return;
+    }
     if (t->eng_req % NENGINES == ENGI_SAMPLE && pi == SMP_SET_PERC) {   /* SAMPLE preset 4 was PERC (retired, a stored */
         set_engine_of(t, ENGI_DRUM);                  /* number: the editor's PRESET, a favourite): DRUM's kit */
         return;                                       /* (core.h drum_from_perc) */
@@ -1085,8 +1089,11 @@ static void apply_preset_to(track_t *t, uint32_t pi)
  * its values or the new one with its own (voice.c engine_block), never one with the other's */
 static void set_engine_of(track_t *t, uint32_t ei)
 {
-    const engine_t *e = ENGINES[ei % NENGINES];
+    const engine_t *e;
     uint32_t i;
+    if (ei % NENGINES == ENGI_PHYS)                  /* PHYS (retired, engines.c): ANALOG */
+        ei = ENGI_PHYS_TO;
+    e = ENGINES[ei % NENGINES];
 #if !FELUCCA_FM4
     if (ei % NENGINES == ENGI_DIGITAL) {             /* DIGITAL (retired): its first preset, as FM6 */
         fm4_load_preset(t, 0);

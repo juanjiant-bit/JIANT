@@ -31,7 +31,7 @@
  * as LEVEL and REV.
  *
  * The byte `phys` (reserved, always 0, before 1.0) says what a PHYS track's MODEL means: 0 MODEL 2 was
- * DUST (dropped: it loads as MODAL bowed, eng_phys.c phys_legacy); 1 MODEL 4 was DRUM (the kit is the DRUM
+ * DUST (dropped; PHYS itself is retired in TONIC: proj_phys_gone); 1 MODEL 4 was DRUM (the kit is the DRUM
  * engine since: such a track loads as DRUM, core.h drum_from_phys); 2 (PROJ_PHYS) as today. proj_phys.
  *
  * Format 8 ("FUN8", written since 1.0) = FUN7 with each track's FM6 patch (eng_fm6.c, the 128-byte packed
@@ -270,8 +270,6 @@ static void proj_phys(project_t *q)
         proj_trk_t *d = &q->t[k];
         if (d->engine != ENGI_PHYS)
             continue;
-        if (!q->phys)
-            phys_legacy(&d->p[P_E0]);
         if (drum_from_phys(d->engine, &d->p[P_E0])) {
             d->engine = ENGI_DRUM;
             d->preset = 0;
@@ -319,6 +317,42 @@ static void proj_fm4(project_t *q)
 #else
     (void)q;
 #endif
+}
+
+/* PHYS tracks (engine 9, retired in TONIC: engines.c ENG_PHYS_GONE) -> ANALOG with its first preset's EDIT values
+ * and envelope; the mix, the sends, the matrix and the steps stay. Their motion events on the EDIT values go (PHYS's
+ * meanings do not carry over). After proj_phys (a PHYS DRUM of before 1.0 is DRUM by then). Idempotent */
+static void proj_phys_gone(project_t *q)
+{
+    const preset_t *pr = &ENGINES[ENGI_PHYS_TO]->presets[0];
+    uint32_t k, i, n, hit = 0;
+    for (k = 0; k < NTRK; k++) {
+        proj_trk_t *d = &q->t[k];
+        if (d->engine != ENGI_PHYS)
+            continue;
+        d->engine = ENGI_PHYS_TO;
+        for (i = 0; i < 8u; i++)
+            d->p[P_E0 + i] = (int16_t)pr->e[i];
+        d->p[P_ATK] = pr->env[0];
+        d->p[P_DEC] = pr->env[1];
+        d->p[P_SUS] = pr->env[2];
+        d->p[P_REL] = pr->env[3];
+        if (d->preset < PROJ_DEF_KEEP)
+            d->preset = 0;
+        hit |= 1u << k;
+    }
+    if (!hit)
+        return;
+    for (i = n = 0; i < q->motion.count && i < MOTION_MAX; i++) {
+        const motion_event_t *e = &q->motion.event[i];
+        if (((hit >> (e->place >> 6)) & 1u) && MOTION_ID(e) >= P_E0)
+            continue;
+        q->motion.event[n++] = *e;
+    }
+    for (i = n; i < q->motion.count && i < MOTION_MAX; i++)
+        memset(&q->motion.event[i], 0, sizeof q->motion.event[i]);
+    q->motion.count = (uint8_t)n;
+    q->sum = proj_sum(q);
 }
 
 /* SAMPLE tracks of the retired PERC set (SET 4) -> DRUM with its default kit (see the top; core.h drum_from_perc,
@@ -467,6 +501,7 @@ static int proj_import(project_t *q, const void *b, int n)
     if (!proj_import_any(q, b, n) || !proj_engines_ok(q))
         return 0;
     proj_fm4(q);
+    proj_phys_gone(q);
     proj_perc(q);
     return 1;
 }
@@ -857,6 +892,7 @@ static int project_restore_runtime(const project_t *input)
     proj_drums_to_part(p);                              /* a RAM slot of firmware before 1.0 */
     proj_phys(p);                                       /* .. before PHYS lost DUST and DRUM */
     proj_fm4(p);                                        /* .. that had DIGITAL tracks */
+    proj_phys_gone(p);                                  /* .. or PHYS tracks (retired in TONIC) */
     proj_perc(p);                                       /* .. or SAMPLE PERC tracks */
     transport_req = 2;
     panic_req = (1u << NTRK) - 1u;
