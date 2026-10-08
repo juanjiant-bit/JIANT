@@ -46,7 +46,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 | Macros M1–M4 | Pendiente |
 | Punch-in FX MIDI y sus lanes | Pendiente |
 | Más modulación y mejores efectos | Pendiente |
-| Interfaz JIANT FM ([docs/TONIC-UI.md](docs/TONIC-UI.md)) | En diseño: concepto listo, falta decidir cómo entra en el flash |
+| Interfaz JIANT FM dibujada por código ([docs/TONIC-UI.md](docs/TONIC-UI.md)) | En curso: paleta JIANT y espécimen de DRUM-X |
 
 ### Qué cambió respecto de Felucca 1.1.5.1
 
@@ -104,7 +104,7 @@ FM1, FM2, FM3, DRUM y VOICE son ejemplos de engines: hay 4 tracks y cada uno pue
 | 02 TRACK · 03 FM ALGORITHM | EDIT del track; algoritmo y operadores de FM6 | ✅ función, ⏳ diseño |
 | 04 TRACK MAP | tracks y las 8 voces compartidas | ✅ función, ⏳ vista |
 | 05 SEQUENCER · 06 SEQ PERFORMANCE | grilla de batería de 8 lanes y 64 pasos; SEQ TOOLS, grabación y mutes en vivo | ✅ función, ⏳ diseño |
-| 07 DRUM-X · 08 DRUM MORPH | kit DRUM-X; un sonido con sus lados A / B y el MORPH | 🔶 Fase 1 (KIT X) |
+| 07 DRUM-X · 08 DRUM MORPH | kit DRUM-X; un sonido con sus lados A / B y el MORPH | ✅ 07 dibujada y animada, 🔶 08 en Fase 2 |
 | 09 MACRO · 10 MACRO MAP | macros M1–M4 y lo que mueve cada una | ⏳ pendiente |
 | 11 PUNCH-IN FX | capa FX: REPEAT 1/8–1/32, LPF, HPF; después punch-in MIDI | 🔶 parcial |
 | 12 FX RACK · 13 MIXER | distorsión y envíos por track; nivel, pan, envíos, mute | ✅ función, ⏳ diseño |
@@ -113,8 +113,14 @@ FM1, FM2, FM3, DRUM y VOICE son ejemplos de engines: hay 4 tracks y cada uno pue
 | 18 VISUALIZER | osciloscopio | ✅ sencillo |
 | 20 PERFORMANCE | tempo, sección, macros y punch-in en vivo | ⏳ pendiente |
 
-Las 20 pantallas están convertidas al formato de la pantalla en [assets/ui-art/](assets/ui-art/). Todavía no
-entran todas en el flash: el plan y las medidas están en [docs/TONIC-UI.md](docs/TONIC-UI.md).
+Todo se dibuja **por código** (`firmware/src/ui_organic.c`: curvas Bézier antialiasadas, contornos que se
+interpolan, punteado, letras de referencia), sin imágenes guardadas, y reacciona a los parámetros y a lo que
+suena. El estilo es el de las láminas anatómicas de los años 60: línea crema sobre negro, color solo en los
+detalles. La paleta **JIANT** es la de fábrica. Primera pantalla: el espécimen de DRUM-X, una orquídea cuyos
+órganos son los grupos del kit; el MORPH cambia su anatomía y cada golpe enciende sus vasos. Plan en
+[docs/TONIC-UI.md](docs/TONIC-UI.md).
+
+![DRUM-X en el firmware](docs/drumx-screen.png)
 
 ## Controles
 

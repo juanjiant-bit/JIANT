@@ -12,6 +12,7 @@
 #define GOY 11                                       /* graphs drawn on a 100 px scale sit at y 11..111 */
 /* the height ADSR and LFO are drawn on: 100 px, or (MENU > LARGE's strip: draw_graph) the strip's ~ 56 */
 static int32_t graph_ht = 100;
+#include "ui_organic.c"                              /* JIANT FM's organic line art (drawn by code) */
 
 /* Matches voice.c: attack is linear, decay and release are exponential
  * (env += (target - env) * k each tick, ~99 % after the set time). Time
@@ -532,6 +533,98 @@ static void graph_sample(uint16_t c)
     }
 }
 
+/* DRUM on KIT X (DRUM-X, docs/TONIC-UI.md panel 07): a specimen in the manner of the anatomical wall charts, an
+ * orchid whose organs are the kit's groups: the dorsal sepal the hats (cyan), the lateral petals SNARE and CLAP
+ * (yellow), the lower sepals the KICK (red), the lip and column the percussion (green). Its patches A and B are two
+ * anatomies: MORPH moves every outline point by point from one to the other. An organ's inner vessels light up
+ * when its group is struck and fade as it rings; the noise of the hats stipples their sepal. Cyan reference letters
+ * A and B on a dashed scale with the MORPH on it, a dash-dot axis through the specimen; it breathes (ui.frame) */
+static const int8_t DX_DORSAL[2][20] = {
+    {-8, -6, -22, -24, -16, -50, 0, -50, 16, -50, 22, -24, 8, -6, 4, -3, -4, -3, -8, -6},
+    {-5, -6, -14, -24, -6, -46, 0, -58, 6, -46, 14, -24, 5, -6, 3, -3, -3, -3, -5, -6},
+};
+static const int8_t DX_PETAL[2][20] = {                  /* the right one (mirrored: the left) */
+    {6, -6, 8, -30, 50, -38, 60, -16, 68, 4, 42, 24, 20, 18, 10, 14, 5, 6, 6, -6},
+    {6, -6, 16, -28, 46, -48, 64, -46, 60, -28, 34, 4, 16, 10, 10, 8, 5, 4, 6, -6},
+};
+static const int8_t DX_SEPAL[2][20] = {
+    {4, 10, 20, 14, 46, 28, 42, 44, 36, 58, 12, 54, 6, 30, 4, 22, 3, 16, 4, 10},
+    {4, 10, 16, 18, 32, 42, 30, 62, 22, 58, 10, 44, 6, 30, 4, 22, 3, 16, 4, 10},
+};
+static const int8_t DX_LIP[2][14] = {                    /* half (mirrored: the other half) */
+    {0, 6, 8, 4, 16, 14, 12, 22, 9, 28, 5, 32, 0, 32},
+    {0, 6, 10, 2, 20, 10, 18, 18, 12, 30, 4, 36, 0, 36},
+};
+static void graph_drumx(const track_t *t)
+{
+    static const uint8_t LANE_ORGAN[8] = {2, 1, 1, 0, 0, 3, 3, 3};   /* 0 dorsal, 1 petals, 2 sepals, 3 lip */
+    static const uint8_t ORGAN_COL[4] = {OG_TEAL, OG_MUSTARD, OG_CORAL, OG_MINT};
+    const drum_lane_t *K = drum_kit_of(t);
+    int32_t morph = clamp(t->p[P_E4], 0, 127), m = morph * 256 / 127, env[4] = {0, 0, 0, 0}, side, o;
+    int32_t cx = 120 * OG_Q, cy = 58 * OG_Q, u = 15 + (og_sin(ui.frame * 600u) >> 14);   /* (breathing: +-2 / 16) */
+    uint32_t l;
+    uint16_t cream = og_col(OG_CREAM), cyan = og_col(OG_TEAL), faint = ux_mix(T_SURF, T_TEXT, 30);
+    char b[16];
+    for (l = 0; l < 8u; l++)
+        if (K && K[l].x.live) {
+            int32_t e = K[l].x.ea >> 22;                 /* 0..256 */
+            env[LANE_ORGAN[l]] = e > env[LANE_ORGAN[l]] ? e : env[LANE_ORGAN[l]];
+        }
+    og_dash(cx, 2 * OG_Q, cx, 120 * OG_Q, faint, 6, 3);   /* the axis */
+    og_dash(38 * OG_Q, 14 * OG_Q, 202 * OG_Q, 14 * OG_Q, faint, 2, 3);   /* the MORPH scale, A .. B */
+    og_node((38 + morph * 164 / 127) * OG_Q, 14 * OG_Q, 2, og_col(OG_CORAL));
+    og_label(22, 14, "A", morph < 64 ? cyan : T_DIM);
+    og_label(218, 14, "B", morph >= 64 ? cyan : T_DIM);
+    for (o = 0; o < 4; o++) {                            /* the organs, then their vessels */
+        const int8_t *sa = o == 0 ? DX_DORSAL[0] : o == 1 ? DX_PETAL[0] : o == 2 ? DX_SEPAL[0] : DX_LIP[0];
+        const int8_t *sb = o == 0 ? DX_DORSAL[1] : o == 1 ? DX_PETAL[1] : o == 2 ? DX_SEPAL[1] : DX_LIP[1];
+        uint32_t nseg = o == 3 ? 2u : 3u;
+        uint16_t col = og_col(ORGAN_COL[o]), line = env[o] ? ux_mix(cream, og_col(OG_CORAL), env[o] * 160 / 256) : cream;
+        for (side = 1; side >= (o == 0 ? 1 : -1); side -= 2) {
+            og_xf_t f = {(int16_t)cx, (int16_t)cy, (int16_t)u, (int16_t)side, 0, 0, 256};
+            f.ax = sa[0];                                /* the vessels shrink toward the organ's base */
+            f.ay = sa[1];
+            og_path(&f, sa, sb, nseg, m, line, 256);
+            f.k = 208;
+            og_path(&f, sa, sb, nseg, m, col, 150 + env[o] * 106 / 256);
+            if (env[o]) {                                /* struck: more vessels, brighter */
+                f.k = 160;
+                og_path(&f, sa, sb, nseg, m, col, env[o]);
+                f.k = 112;
+                og_path(&f, sa, sb, nseg, m, col, env[o] * 3 / 4);
+            }
+            {                                            /* the organ's tip: red, as the charts' */
+                int32_t tx, ty;
+                f.k = 256;
+                og_pt(&f, sa, sb, m, o == 3 ? 4u : 3u, &tx, &ty);
+                og_node(tx, ty, env[o] > 96 ? 2 : 1, og_col(OG_CORAL));
+            }
+        }
+    }
+    {                                                    /* the hats' noise stipples the dorsal sepal */
+        const dx_lane_t *L = &DX_KIT_DEF[DV_HATC];
+        int32_t n = L->a[DXP_NOISE] + ((L->b[DXP_NOISE] - L->a[DXP_NOISE]) * morph) / 127;
+        og_stipple(cx, cy - 30 * u, 7 * u, 12 * u, (uint32_t)n / 3u, 0x9E3779B9u, ux_mix(T_SURF, cyan, 80));
+    }
+    for (side = -1; side <= 1; side += 2) {              /* two tendrils from the column, swaying */
+        int32_t w = og_sin(ui.frame * 380u + (uint32_t)(side + 1) * 12000u) >> 11;   /* +-16: a pixel */
+        og_cubic_a(cx + side * 3 * u, cy - 2 * u, cx + side * 16 * u + w, cy - 14 * u, cx + side * 26 * u - w,
+                   cy - 2 * u + w, cx + side * 20 * u, cy - 10 * u, og_col(OG_MINT), 12, 200);
+        og_ring(cx + side * 20 * u, cy - 10 * u, 2 * u, og_col(OG_MINT));
+    }
+    og_ring(cx, cy, 4 * u, cream);                       /* the column: pollinia yellow, its tip red */
+    og_line(cx - 2 * u, cy - 1 * u, cx + 2 * u, cy - 1 * u, cream);
+    og_line(cx - 2 * u, cy + 1 * u, cx + 2 * u, cy + 1 * u, cream);
+    og_node(cx - 1 * u, cy - 2 * u, 1, og_col(OG_MUSTARD));
+    og_node(cx + 1 * u, cy - 2 * u, 1, og_col(OG_MUSTARD));
+    og_node(cx, cy + 3 * u, 1, og_col(OG_CORAL));
+    str_cpy(b, "MORPH ", sizeof b);
+    fmt_int(b + 6, morph * 100 / 127);
+    str_cpy(b + str_len(b), "%", sizeof b - str_len(b));
+    cv_text_r(230, 104, &AF_S, b, T_MID, T_SURF);
+    cv_text(10, 104, &AF_S, "DRUM-X", T_MID);
+}
+
 /* WHEEL: the nine drawbars as rounded bars over RAISE slots (the bars of the knob just turned: the accent),
  * their footages under them */
 static void graph_wheel(const track_t *t, uint16_t c)
@@ -879,6 +972,8 @@ static uint32_t graph_signature(void)
     if (pg->scope == SC_ENGINE && (ENGINES[t->eng_req % NENGINES] == &ENG_WHEEL || t->eng_req % NENGINES == ENGI_FM6 ||
                                    (FELUCCA_FM4 && t->eng_req % NENGINES == ENGI_DIGITAL)))
         h ^= (ui.hot_t ? ui.hot_col + 1u : 0u) * 65537u;
+    if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_DRUM && drum_kit_plays(t->p[P_E0]) == DK_X)
+        h ^= ui.frame * 2654435761u;                 /* DRUM-X: the flower moves every frame */
     if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_FM6)   /* the patch (PAT's algorithm, levels, FB) */
         h ^= (fm6_pgen[(t - trk) % NTRK] + 1u) * 2246822519u;
     if (pg->scope == SC_ENGINE && ENGINES[t->eng_req % NENGINES] == &ENG_SAMPLE) h ^= sample_wave.pos * 13u + sample_wave.key;
@@ -1486,6 +1581,10 @@ static void draw_graph(void)
             if (pg->scope == SC_ENGINE && ENGINES[t->eng_req % NENGINES] == &ENG_WHEEL) graph_wheel(t, c);
             else if (pg->scope == SC_ENGINE && ENGINES[t->eng_req % NENGINES] == &ENG_SAMPLE && sample_wave.ready) graph_sample(c);
             else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_FM6) graph_fm6(t, c);   /* EDIT 1 and 2 */
+            else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_DRUM && drum_kit_plays(t->p[P_E0]) == DK_X) {
+                cv_oy = 0;
+                graph_drumx(t);
+            }
 #if FELUCCA_FM4
             else if ((pg->scope == SC_ENGINE || pg->id[0] == P_FM1_LEVEL) && t->eng_req % NENGINES == ENGI_DIGITAL)
                 graph_fm(t, c);                      /* (OP LEVEL too: the levels on the chart) */
