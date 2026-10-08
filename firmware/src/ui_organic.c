@@ -204,3 +204,33 @@ static void og_label(int32_t cx, int32_t cy, const char *s, uint16_t c)
     og_ring(cx * OG_Q, cy * OG_Q, 7 * OG_Q, c);
     cv_text_in(cx - 7, cy - 7 + CAP_IN(S, 15), 15, &AF_S, s, c, cv_bg);
 }
+
+/* a shape from assets/ui-shapes (tools/gen_ui_shapes.py: build/gen/ui_shapes.h) */
+typedef struct {
+    uint8_t nseg, mirror;
+    const int8_t *a, *b;
+} og_shape_t;
+#include "ui_shapes.h"
+/* shape sh morphed m (0..256) with f, and mirrored when the shape says so; strength al */
+static void og_shape(const og_shape_t *sh, og_xf_t f, int32_t m, uint16_t c, int32_t al)
+{
+    og_path(&f, sh->a, sh->b, sh->nseg, m, c, al);
+    if (sh->mirror) {
+        f.mx = (int16_t)-f.mx;
+        og_path(&f, sh->a, sh->b, sh->nseg, m, c, al);
+    }
+}
+/* the shape's tip: its point farthest from its first (its base), morphed m, placed by f (mirrored by f.mx) */
+static void og_tip(const og_shape_t *sh, const og_xf_t *f, int32_t m, int32_t *x, int32_t *y)
+{
+    uint32_t i, n = 3u * sh->nseg + 1u, best = 0;
+    int32_t bd = -1, x0, y0;
+    og_pt(f, sh->a, sh->b, m, 0, &x0, &y0);
+    for (i = 1; i < n; i += 3u) {                        /* (the segments' ends, not their handles) */
+        int32_t px, py, d;
+        og_pt(f, sh->a, sh->b, m, i + 2u, &px, &py);
+        d = (px - x0) / 4 * ((px - x0) / 4) + (py - y0) / 4 * ((py - y0) / 4);
+        if (d > bd) { bd = d; best = i + 2u; }
+    }
+    og_pt(f, sh->a, sh->b, m, best, x, y);
+}

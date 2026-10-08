@@ -539,22 +539,6 @@ static void graph_sample(uint16_t c)
  * anatomies: MORPH moves every outline point by point from one to the other. An organ's inner vessels light up
  * when its group is struck and fade as it rings; the noise of the hats stipples their sepal. Cyan reference letters
  * A and B on a dashed scale with the MORPH on it, a dash-dot axis through the specimen; it breathes (ui.frame) */
-static const int8_t DX_DORSAL[2][20] = {
-    {-8, -6, -22, -24, -16, -50, 0, -50, 16, -50, 22, -24, 8, -6, 4, -3, -4, -3, -8, -6},
-    {-5, -6, -14, -24, -6, -46, 0, -58, 6, -46, 14, -24, 5, -6, 3, -3, -3, -3, -5, -6},
-};
-static const int8_t DX_PETAL[2][20] = {                  /* the right one (mirrored: the left) */
-    {6, -6, 8, -30, 50, -38, 60, -16, 68, 4, 42, 24, 20, 18, 10, 14, 5, 6, 6, -6},
-    {6, -6, 16, -28, 46, -48, 64, -46, 60, -28, 34, 4, 16, 10, 10, 8, 5, 4, 6, -6},
-};
-static const int8_t DX_SEPAL[2][20] = {
-    {4, 10, 20, 14, 46, 28, 42, 44, 36, 58, 12, 54, 6, 30, 4, 22, 3, 16, 4, 10},
-    {4, 10, 16, 18, 32, 42, 30, 62, 22, 58, 10, 44, 6, 30, 4, 22, 3, 16, 4, 10},
-};
-static const int8_t DX_LIP[2][14] = {                    /* half (mirrored: the other half) */
-    {0, 6, 8, 4, 16, 14, 12, 22, 9, 28, 5, 32, 0, 32},
-    {0, 6, 10, 2, 20, 10, 18, 18, 12, 30, 4, 36, 0, 36},
-};
 static void graph_drumx(const track_t *t)
 {
     static const uint8_t LANE_ORGAN[8] = {2, 1, 1, 0, 0, 3, 3, 3};   /* 0 dorsal, 1 petals, 2 sepals, 3 lip */
@@ -576,29 +560,25 @@ static void graph_drumx(const track_t *t)
     og_label(22, 14, "A", morph < 64 ? cyan : T_DIM);
     og_label(218, 14, "B", morph >= 64 ? cyan : T_DIM);
     for (o = 0; o < 4; o++) {                            /* the organs, then their vessels */
-        const int8_t *sa = o == 0 ? DX_DORSAL[0] : o == 1 ? DX_PETAL[0] : o == 2 ? DX_SEPAL[0] : DX_LIP[0];
-        const int8_t *sb = o == 0 ? DX_DORSAL[1] : o == 1 ? DX_PETAL[1] : o == 2 ? DX_SEPAL[1] : DX_LIP[1];
-        uint32_t nseg = o == 3 ? 2u : 3u;
+        static const og_shape_t *const ORGAN[4] = {&SH_DRUMX_DORSAL, &SH_DRUMX_PETAL, &SH_DRUMX_SEPAL, &SH_DRUMX_LIP};
+        const og_shape_t *sh = ORGAN[o];
         uint16_t col = og_col(ORGAN_COL[o]), line = env[o] ? ux_mix(cream, og_col(OG_CORAL), env[o] * 160 / 256) : cream;
-        for (side = 1; side >= (o == 0 ? 1 : -1); side -= 2) {
-            og_xf_t f = {(int16_t)cx, (int16_t)cy, (int16_t)u, (int16_t)side, 0, 0, 256};
-            f.ax = sa[0];                                /* the vessels shrink toward the organ's base */
-            f.ay = sa[1];
-            og_path(&f, sa, sb, nseg, m, line, 256);
-            f.k = 208;
-            og_path(&f, sa, sb, nseg, m, col, 150 + env[o] * 106 / 256);
-            if (env[o]) {                                /* struck: more vessels, brighter */
-                f.k = 160;
-                og_path(&f, sa, sb, nseg, m, col, env[o]);
-                f.k = 112;
-                og_path(&f, sa, sb, nseg, m, col, env[o] * 3 / 4);
-            }
-            {                                            /* the organ's tip: red, as the charts' */
-                int32_t tx, ty;
-                f.k = 256;
-                og_pt(&f, sa, sb, m, o == 3 ? 4u : 3u, &tx, &ty);
-                og_node(tx, ty, env[o] > 96 ? 2 : 1, og_col(OG_CORAL));
-            }
+        og_xf_t f = {(int16_t)cx, (int16_t)cy, (int16_t)u, 1, sh->a[0], sh->a[1], 256};   /* (vessels: toward the base) */
+        og_shape(sh, f, m, line, 256);
+        f.k = 208;
+        og_shape(sh, f, m, col, 150 + env[o] * 106 / 256);
+        if (env[o]) {                                    /* struck: more vessels, brighter */
+            f.k = 160;
+            og_shape(sh, f, m, col, env[o]);
+            f.k = 112;
+            og_shape(sh, f, m, col, env[o] * 3 / 4);
+        }
+        for (side = 1; side >= (sh->mirror ? -1 : 1); side -= 2) {   /* the organ's tip: red, as the charts' */
+            int32_t tx, ty;
+            f.k = 256;
+            f.mx = (int16_t)side;
+            og_tip(sh, &f, m, &tx, &ty);
+            og_node(tx, ty, env[o] > 96 ? 2 : 1, og_col(OG_CORAL));
         }
     }
     {                                                    /* the hats' noise stipples the dorsal sepal */

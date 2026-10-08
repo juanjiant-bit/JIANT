@@ -59,8 +59,28 @@ referencia cyan en círculos; ejes punteados; punteado para sombrear. Nada de fl
 | --- | --- | --- |
 | 07 DRUM-X | EDIT de DRUM con KIT X | Una orquídea anatómica. Sus órganos son los grupos del kit: sépalo dorsal = hats (cyan), pétalos laterales = snare y clap (amarillo), sépalos inferiores = kick (rojo), labelo y columna = percusión (verde). A y B son dos anatomías y el MORPH mueve cada contorno punto por punto. Cada golpe enciende los vasos interiores de su órgano, que se apagan con la caída. El ruido de los hats punteado en su sépalo. Escala A–B con el MORPH encima, eje punteado; respira y los zarcillos se mecen |
 
-Las formas son tablas de puntos de control (int8): un órgano ocupa 20 bytes por lado (A y B). Costo total de la
+Las formas vienen de `assets/ui-shapes/drumx.svg` (ver abajo): un órgano ocupa 20 bytes por lado (A y B). Costo total de la
 pantalla y la librería: ≈ 3 KB de flash, 0 de RAM.
+
+## Cómo reemplazar los dibujos (vectores propios)
+
+Los dibujos actuales son **bocetos**. Las formas no están en el código: son SVG en `assets/ui-shapes/`, uno por
+pantalla, y el build los convierte (`tools/gen_ui_shapes.py` → `build/gen/ui_shapes.h`). Para cambiarlos alcanza
+con reemplazar los SVG respetando esto:
+
+- `viewBox="-64 -64 128 128"`: una unidad es un paso guardado (int8) y el origen es el punto de anclaje que usa el
+  firmware (en DRUM-X, la columna, el centro del espécimen). Y crece hacia abajo, como en SVG.
+- Un `<path>` por forma, con `id`. Si la forma cambia con el MORPH (u otro parámetro), van dos: `NOMBRE_a` y
+  `NOMBRE_b`, **con la misma cantidad de segmentos** (el firmware mueve cada punto de A a B). Una forma fija va con
+  un solo path, sin sufijo.
+- `data-mirror="1"`: el firmware también la dibuja reflejada (la mitad de un órgano simétrico, o uno de un par).
+- Un solo subpath por path: `M` y luego `C S Q T L H V` (absolutos o relativos) y `Z`. Las líneas y cuadráticas se
+  convierten en cúbicas. Los atributos de estilo (color, grosor) se ignoran: los colores los pone el firmware.
+- Cada punto ocupa 2 bytes. El espécimen de DRUM-X entero son 148 bytes.
+
+Las formas de DRUM-X y sus ids: `dorsal` (hats), `petal` (snare y clap, reflejado), `sepal` (kick, reflejado),
+`lip` (percusión, reflejado). Si cambian la cantidad o los nombres de las formas de una pantalla, hay que ajustar
+su función de dibujo (en DRUM-X, `graph_drumx` en `ui_graph.c`).
 
 ## Pasos
 
