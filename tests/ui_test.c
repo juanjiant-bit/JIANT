@@ -2192,7 +2192,8 @@ static int test_product_ux(void)
     press(B_GLO); ok &= cur_page()->graph == GR_TRK;
     bad += check("GLO cycles MIXER > GLOBAL > SYSTEM > MIXER", ok);
     go_home(); hold(B_SEQ);
-    bad += check("long SEQ goes directly to SONG with no tap on release", cur_page()->graph == GR_SONG);
+    bad += check("long SEQ off the SEQ pages is a tap (no SONG: SAVE held, G5)", cur_page()->graph != GR_SONG);
+    go_page(GR_SONG);
     song.rec = 1; chain.armed = 1; press(B_REC);
     bad += check("REC cannot write borrowed patterns while SONG is armed", song.rec == 1 && msg_is("STOP TO RECORD"));
     ui_power_on(); open_family(FAM_EDIT);
@@ -2589,8 +2590,7 @@ static int test_layer(void)
     bad += check("EDIT on STEP clears the step when let go (not on press)", ok && !step_on(&TSEL->step[0]) && ui.cursor == 1);
     ui_power_on(); hold(B_HOME);
     ok = ui.menu == 1; hold(B_HOME); ok &= !ui.menu;
-    go_home(); hold(B_SEQ); ok &= cur_page()->graph == GR_SONG;
-    bad += check("HOME (menu) and SEQ (SONG) holds of 0.7 s unchanged", ok);
+    bad += check("HOME (menu) hold of 0.7 s unchanged", ok);
     /* no layer in the menu or a dialog: FX + a key is a note */
     ui_power_on(); hold(B_HOME);
     btn_down(B_FX); frame(); key_down(white(3)); frame();
@@ -5461,7 +5461,7 @@ static int test_seq_tools(void)
     uint32_t i, k, a, b2, pg, seed;
     step_t ref[NSTEP], mid[NSTEP];
 
-    /* where it opens: the SEQ pages that show the pattern; elsewhere SEQ held opens SONG as before */
+    /* where it opens: the SEQ pages that show the pattern; elsewhere SEQ held is a tap (SONG: SAVE held, G5) */
     ok = 1;
     for (i = 0; i < 4u; i++) {
         ui_power_on();
@@ -5481,12 +5481,12 @@ static int test_seq_tools(void)
         btn_down(B_SEQ);
         for (flash = 0, k = 0; k < 60u; k++) { frame(); flash |= ui.layer; }
         btn_up(B_SEQ); frame();
-        ok &= !flash && cur_page()->graph == GR_SONG && !ui.home;
+        ok &= !flash && !ui.home;                     /* (a tap: the next SEQ page) */
     }
     ui_power_on();
     go_title("ENV"); frame(); hold(B_SEQ);
-    ok &= cur_page()->graph == GR_SONG && !ui.layer;
-    bad += check("  elsewhere (PHRASES, SONG, MIXER, HOME, ENV) SEQ held opens SONG, no map", ok);
+    ok &= cur_page()->graph != GR_SONG && !ui.layer;
+    bad += check("  elsewhere (PHRASES, SONG, MIXER, HOME, ENV) SEQ held is a tap: no SONG, no map", ok);
     ui_power_on();
     go_page(GR_ROLL); frame();
     press(B_SEQ); frames(320);
@@ -5672,6 +5672,122 @@ static int test_seq_tools(void)
     return bad;
 }
 
+
+/* JIANT: the song layer (SAVE held, ui_layer.c song_key; song_chain.c): sections A..D on the next bar (stopped: at once),
+ * STORE (RAM at once, flash once stopped), RECALL, a quick chain, SONG REC, LOOP / SONG; SAVE tapped: its pages */
+static void sl_play(uint32_t samples)               /* the audio and the main loop, as on the device */
+{
+    uint32_t done;
+    for (done = 0; done < samples; done += 128u) {
+        events_block(128u);
+        if (!(done & 1023u))
+            song_poll();
+    }
+    song_poll();
+}
+static void sl_steps(uint32_t base)                 /* every track: step 1 holds note base + track */
+{
+    uint32_t i;
+    for (i = 0; i < NTRK; i++) {
+        track_defaults_steps(&trk[i]);
+        trk[i].p[P_SLEN] = 16;
+        trk[i].step[0] = (step_t){{(uint8_t)(base + i), 0, 0, 0}, 1, ST_NOTE, 0, 96, 0, 0};
+    }
+}
+static void sl_key(uint32_t w)                      /* SAVE held, a white key tapped, SAVE let go */
+{
+    btn_down(B_SAVE); frame();
+    key_down(white(w)); frame(); key_up(white(w)); frame();
+    btn_up(B_SAVE); frame();
+}
+static int test_song_layer(void)
+{
+    int bad = 0, ok;
+    uint32_t bar, i;
+    ui_power_on();
+    sl_steps(60); project_save(0);                      /* A: notes 60.. */
+    sl_steps(70); project_save(1);                      /* B: notes 70.. */
+    sl_steps(80);                                       /* the music now: 80.. */
+    btn_down(B_SAVE); frames(800);
+    ok = ui.layer == LAYER_SAVE && str_eq(layer_head(), "[SAVE] SONG");
+    btn_up(B_SAVE); frame();
+    ok &= ui.home && !ui.layer;
+    press(B_SAVE);
+    ok &= !ui.home && cur_page()->fam == FAM_SAVE;      /* (a tap: the SAVE pages, as before) */
+    bad += check("SONG LAYER: SAVE held opens it ([SAVE] SONG); SAVE tapped opens the SAVE pages", ok);
+    go_home();
+    sl_key(0);                                          /* F3: section A, stopped: at once */
+    bad += check("  stopped: F3 loads section A at once (its steps, the song's rows kept)",
+                 live.cur == 0 && trk[0].step[0].note[0] == 60 && trk[3].step[0].note[0] == 63 && !song.playing);
+    sl_key(2);                                          /* A3: section C is empty */
+    bad += check("  an empty section: it says so, nothing changes", msg_is("C IS EMPTY") && live.cur == 0);
+    transport_req = 1; sl_play(256);
+    bar = chain_bar();
+    sl_key(1);                                          /* G3: section B on the next bar */
+    ok = live.req == 1 && sec_stage.ready && sec_stage.row == SEC_LIVE && trk[0].step[0].note[0] == 60;
+    sl_play(bar);
+    ok &= live.cur == 1 && live.req < 0 && trk[0].step[0].note[0] == 70 && song.playing;
+    for (i = 0; i < NTRK; i++)
+        ok &= trk[i].seq_idx < 2u;                      /* (every track from its step 0, on the bar) */
+    bad += check("  playing: G3 asks for B, it goes in on the next bar, every track from step 0", ok);
+    trk[0].step[0].note[0] = 99;                        /* an edit of what plays */
+    btn_down(B_SAVE); frame(); press(B_OCTUP); btn_up(B_SAVE); frame();
+    ok = (live.dirty & 2u) && live.cur == 1 && msg_is("STORED B");
+    project_load(1);                                    /* (stopped by it: the slot holds the stored edit) */
+    ok &= trk[0].step[0].note[0] == 99 && !song.playing;
+    song_poll();
+    ok &= !FELUCCA_FLASH || !(live.dirty & 2u);         /* (stopped: in flash too; no flash: RAM only) */
+    bad += check("  SAVE + OCT+ stores the music into the section playing (RAM at once, flash once stopped)", ok);
+    transport_req = 1; sl_play(256);
+    live.cur = 1;
+    trk[0].step[0].note[0] = 55;                        /* played with, then RECALL */
+    btn_down(B_SAVE); frame(); press(B_OCTDN); btn_up(B_SAVE); frame();
+    ok = live.req == 1;
+    sl_play(bar);
+    bad += check("  SAVE + OCT- RECALLs the section as stored, on the next bar", ok && trk[0].step[0].note[0] == 99);
+    btn_down(B_SAVE); frame();                          /* a quick chain: A then B in one hold */
+    key_down(white(0)); frame(); key_up(white(0)); frame();
+    key_down(white(1)); frame(); key_up(white(1)); frame();
+    ok = msg_is("CHAIN A B");
+    btn_up(B_SAVE); frame();
+    ok &= chain.armed_bar && chain.loop && chain.config.count == 2 && chain.config.row[0].slot == 0 &&
+          chain.config.row[0].bars == 1;                /* (a 16-step pattern of 1/16: one bar) */
+    sl_play(bar);
+    ok &= chain.running && chain.row == 0 && trk[0].step[0].note[0] == 60;
+    sl_play(bar);
+    ok &= chain.row == 1 && trk[0].step[0].note[0] == 99;
+    sl_play(bar);
+    ok &= chain.row == 0 && trk[0].step[0].note[0] == 60;
+    bad += check("  two sections tapped in one hold: a quick chain, each its pattern's bars, round and round", ok);
+    sl_key(1);                                          /* a single section ends the chain */
+    sl_play(bar);
+    bad += check("  a single section tapped ends the quick chain (that section on the next bar)",
+                 !chain.running && live.cur == 1 && trk[0].step[0].note[0] == 99);
+    sl_key(13);                                         /* E5: SONG REC, from the next bar */
+    ok = live.srec == 1u;
+    sl_play(bar);                                       /* B: recording from here */
+    ok &= live.srec == 2u;
+    sl_play(bar);                                       /* B, one bar */
+    sl_key(0);                                          /* A on the next bar */
+    sl_play(bar);
+    sl_play(bar / 2u);                                  /* A, half a bar */
+    transport_req = 2; sl_play(128);                    /* STOP: the begun bar counts */
+    ok &= !live.srec && chain_config.count == 2 && chain_config.row[0].slot == 1 && chain_config.row[0].bars == 2 &&
+          chain_config.row[1].slot == 0 && chain_config.row[1].bars == 1 && msg_is("SONG ROWS 2");
+    bad += check("  E5 SONG REC: the sections played and their bars become the song's rows (STOP: the begun bar counts)",
+                 ok);
+    sl_key(12);                                         /* D5: SONG */
+    ok = live.mode == 1u;
+    sl_steps(80);
+    press(B_PLAY); sl_play(256);
+    ok &= chain.running && !chain.loop && chain.row == 0 && trk[0].step[0].note[0] == 99;
+    transport_req = 2; sl_play(128);
+    ok &= trk[0].step[0].note[0] == 80;                 /* (the music before the song back) */
+    sl_key(12);
+    ok &= !live.mode;
+    bad += check("  D5 LOOP / SONG: in SONG, PLAY plays the song from any page; the music back after it", ok);
+    return bad;
+}
 
 /* 1.1.5: the REC layer (ui_layer.c). REC held past HOLD on any page opens it (up to 1.1.4 REC held on SEQ asked "CLEAR Tn
  * SEQUENCE?", Discussion #91: gone, and its "HOLD: CLEAR" hint and the footer's REC + trash with it); a tap still
@@ -6986,6 +7102,7 @@ int main(void)
     bad += test_layer_knob_race();
     bad += test_fx_latch();
     bad += test_rec_layer();
+    bad += test_song_layer();
     bad += test_seq_tools();
     bad += test_menu_prefs();
     bad += test_style();

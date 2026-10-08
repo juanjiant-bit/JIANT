@@ -47,8 +47,11 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
   primer preset de ANALOG.
 - **Capa FX:** quedan REPEAT 1/8, 1/16, 1/32 y los filtros LPF / HPF. Se fueron REVERSE, TAPE STOP,
   FREEZE y el armonizador.
-- **Sin undo.** SAVE sostenido ya no deshace (queda para la capa de canción) y OCT− ya no "devuelve" en
-  las capas. En su lugar viene el RECALL de la capa de canción.
+- **Sin undo.** SAVE sostenido abre la capa de canción; OCT− ya no "devuelve" en las capas. En su lugar,
+  dentro de la capa de canción, OCT+ guarda la sección que suena y OCT− la recupera (STORE / RECALL).
+- **Canción por compases, estilo SLOOP.** Una fila es {sección A–D, compases 1–64} y cada sección es el
+  proyecto completo (sonidos, patrones, automatización). Live sections, quick chain y SONG REC en SAVE
+  sostenido. SEQ sostenido ya no abre la canción.
 - **Sin lock de capas** por doble toque: una capa está abierta mientras se mantiene su botón.
 - **Capa REC:** CLEAR y CLICK. COUNT-IN y CLICK LEVEL siguen en MENU > AUDIO.
 - El splash y ABOUT dicen JIANT. Los nombres USB siguen siendo "Felucca" para que el editor web conecte.
@@ -84,10 +87,10 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 | **GLO** | Teclas negras 1–4 mute (fijo), F3–B3 solo mientras se mantiene, C4 unmute, F4 tap tempo | Nivel de T1–T4 |
 | **SCL** | Cualquier tecla elige la raíz | ROOT, SCL, CHRD, VOIC |
 | **EDIT** | Las teclas blancas eligen el engine; la siguiente, INIT | Engine, sonido, favorito |
-| **SEQ** | En las páginas SEQ: SEQ TOOLS (fuera de ellas abre la canción) | LEN, DIV, SWING, GATE |
+| **SEQ** | En las páginas SEQ: SEQ TOOLS | LEN, DIV, SWING, GATE |
 | **REC** | F3 CLEAR del track, G3 CLICK | CLICK |
 | **HOME** | Menú | — |
-| **SAVE** | Reservado para la capa de canción | — |
+| **SAVE** | Capa de canción: F3–B3 tocan A–D en el próximo compás (varias en un mismo hold: quick chain), C4–F4 guardan en A–D, D5 LOOP / SONG, E5 SONG REC, G5 página SONG; OCT+ guarda la sección que suena, OCT− la recupera | — |
 
 Otros: **PLAY** arranca y para; **REC** arma el track elegido; **SELECT** cambia el tempo; **ALGORITHM**
 elige el track en todas las páginas; **PRESETS** cambia el sonido; **OCT− / OCT+** la octava (en páginas

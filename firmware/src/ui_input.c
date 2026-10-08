@@ -1065,10 +1065,12 @@ static void ui_input(void)
     home = btn_hold(&ui.home_t0, B_HOME, now, 1);
     rec = btn_hold(&ui.rec_t0, B_REC, now, 0);          /* (a tap; held, the REC layer: ui_layer.c) */
     seq = btn_hold(&ui.seq_t0, B_SEQ, now, !ui.menu && !ui.confirm);
-    save = btn_hold(&ui.save_t0, B_SAVE, now, !ui.menu && !ui.confirm);   /* held: nothing yet (the song layer) */
+    save = btn_hold(&ui.save_t0, B_SAVE, now, 0);       /* (a tap; held, the song layer: ui_layer.c) */
     layer_arm(pressed, now);
     if (((pressed >> panel.btn[B_REC]) & 1u) && ui.ly == LAYER_REC)
         ui.rec_t0 |= 2u;                                /* (REC is its layer's button now: its tap is layer_tap's) */
+    if (((pressed >> panel.btn[B_SAVE]) & 1u) && ui.ly == LAYER_SAVE)
+        ui.save_t0 |= 2u;                               /* (SAVE too: layer_tap opens its pages) */
     layer_oct_open(pressed);                            /* (OCT± with a SET layer's button down: it opens now) */
     oct = oct_taps(pressed, ui.menu || ui.confirm || act_cols() || name_on() || layer_set_open());
     oct = layer_oct(pressed, oct);                      /* (a SET layer's OCT-: put back) */
@@ -1157,8 +1159,7 @@ static void ui_input(void)
         name_input(notes, oct);
         return;
     }
-    if (save == BT_TAP && !ui.confirm)                  /* SAVE acts on release (held: reserved for TONIC's song
-                                                         * layer, docs/TONIC-SONG-PLAN.md 4c; Felucca's undo is gone) */
+    if (save == BT_TAP && !ui.confirm)                  /* SAVE let go (not its layer's: that tap is layer_tap's) */
         open_family(FAM_SAVE);
     if (ui.confirm) {                                   /* OCT- cancels, OCT+ does it; nothing else reacts */
         if (oct & 2u) {
@@ -1213,12 +1214,8 @@ static void ui_input(void)
     }
     if (lytap)                                          /* a layer's button acts on release (held: the layer) */
         layer_tap(lytap);
-    if (seq == BT_HOLD) {
-        for (k = 0; k < NPAGES; k++) if (PAGES[k].graph == GR_SONG) break;
-        ui.home = 0; ui.page = (uint8_t)k; page_entered();
-    } else if (seq == BT_TAP) {
+    if (seq == BT_TAP || seq == BT_HOLD)                /* (SONG: SAVE held, G5) */
         open_family(FAM_SEQ);
-    }
     if (home == BT_TAP)                                 /* HOME acts on release: a hold opens the menu */
         go_home();
     cursor_fix();                                       /* LEN may have changed (knob, editor, load) */
@@ -1232,7 +1229,7 @@ static void ui_input(void)
                 break;
             if (song.playing || chain_busy() || seq_counting())   /* (a count-in: PLAY stops it) */
                 transport_req = 2;
-            else if (!ui.home && cur_page()->graph == GR_SONG)
+            else if ((!ui.home && cur_page()->graph == GR_SONG) || live.mode)   /* (the song layer's SONG mode) */
                 chain_play_ui();
             else
                 transport_req = 1;

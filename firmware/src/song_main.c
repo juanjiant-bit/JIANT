@@ -4,13 +4,14 @@
 /* The song, the main loop's part (song_chain.c: what it is). Included by project.c. */
 static project_store_t song_keep __attribute__((section(".pool")));   /* the music as it was before PLAY */
 
-/* section s (a project slot) into sec_stage for row `row`; 0 = staged */
+/* section s (a project slot) into sec_stage for row `row` (SEC_LIVE: a live jump); 0 = staged */
 static int song_stage(uint32_t s, uint32_t row)
 {
     project_t *p = &proj_scratch;
     uint32_t k, i;
     if (!proj_import(p, &proj_slot[s & 3u], sizeof(project_store_t)))
         return 1;
+    sec_stage.ready = 0;
     for (k = 0; k < NTRK; k++) {
         sec_trk_t *d = &sec_stage.t[k];
         const proj_trk_t *t = &p->t[k];
@@ -27,9 +28,25 @@ static int song_stage(uint32_t s, uint32_t row)
     }
     sec_stage.motion = p->motion;
     sec_stage.row = (uint8_t)row;
+    sec_stage.section = (uint8_t)(s & 3u);
     RING_PUBLISH();
     sec_stage.ready = 1;
     return 0;
+}
+
+/* the bars section s's loop takes: its longest pattern (LEN steps of its DIV) in bars, rounded up, 1..CHAIN_BARS */
+static uint32_t section_bars(uint32_t s)
+{
+    project_t *p = &proj_scratch;
+    uint32_t k, bars = 1, bar = 16u * div_samples(2);
+    if (!bar || !proj_import(p, &proj_slot[s & 3u], sizeof(project_store_t)))
+        return 1;
+    for (k = 0; k < NTRK; k++) {
+        uint32_t len = (uint32_t)clamp(p->t[k].p[P_SLEN], 1, NSTEP);
+        uint32_t b = (len * div_samples((uint32_t)p->t[k].p[P_SDIV]) + bar - 1u) / bar;
+        bars = b > bars ? b : bars;
+    }
+    return bars > CHAIN_BARS ? CHAIN_BARS : bars;
 }
 
 /* Main loop only: PLAY a song. 0 = armed, 1 = no rows, 2 = busy, 3 + s = section s not saved */
@@ -46,6 +63,7 @@ static uint32_t chain_prepare(void)
     project_capture(&proj_scratch);                   /* the music as it is: back when the song ends */
     chain.kept = (uint8_t)proj_pack(&song_keep, &proj_scratch);
     chain.config = chain_config;
+    chain.loop = 0;
     chain.ended = 0;
     if (song_stage(chain.config.row[0].slot, 0))
         return 3u + chain.config.row[0].slot;
@@ -55,7 +73,135 @@ static uint32_t chain_prepare(void)
     return 0;
 }
 
-/* Main loop, each pass: the next section staged; the music back after the song */
+/* section s as the music now, the song's rows kept (a section is a project: its own rows are not the song's) */
+static int section_load(uint32_t s)
+{
+    chain_config_t keep = chain_config;
+    uint8_t row = ui.song_row;
+    if (!proj_import(&proj_scratch, &proj_slot[s & 3u], sizeof(project_store_t)) || project_restore_runtime(&proj_scratch))
+        return 1;
+    chain_config = keep;
+    ui.song_row = row;
+    proj_cur = (uint8_t)(s & 3u);
+    live.cur = (int8_t)(s & 3u);
+    return 0;
+}
+
+/* the song layer (ui_layer.c), main loop. Section s: in on the next bar (stopped: now). 0 done */
+static int section_jump(uint32_t s)
+{
+    char b[8] = "A";
+    s &= 3u;
+    b[0] = (char)('A' + s);
+    if (chain.running && !chain.loop) {
+        ui_message("STOP THE SONG FIRST");
+        return 1;
+    }
+    if (!project_used(s)) {
+        ui_say(b, " IS EMPTY");
+        return 1;
+    }
+    if (!song.playing && !transport_busy()) {
+        if (section_load(s))
+            return 1;
+        ui_say("SECTION ", b);
+        return 0;
+    }
+    fm1_irq_off();                                    /* (the ISR may be applying one) */
+    chain.running = 0;                                /* (a single section ends a quick chain) */
+    chain.armed_bar = 0;
+    live.req = -1;
+    fm1_irq_on();
+    if (song_stage(s, SEC_LIVE))
+        return 1;
+    live.req = (int8_t)s;
+    ui_say(b, " NEXT BAR");
+    return 0;
+}
+/* the music now into section s: RAM at once (playing too), flash once stopped (song_poll) */
+static void section_store(uint32_t s)
+{
+    char b[8] = "A";
+    s &= 3u;
+    b[0] = (char)('A' + s);
+    project_capture(&proj_scratch);
+    if (!proj_pack(&proj_slot[s], &proj_scratch)) {
+        ui_message("SAVE FORMAT ERROR");
+        return;
+    }
+    live.cur = (int8_t)s;
+    live.dirty |= (uint8_t)(1u << s);
+    ui_say("STORED ", b);
+}
+/* RECALL: the section playing back as it was stored */
+static void section_recall(void)
+{
+    if (live.cur < 0) {
+        ui_message("NO SECTION YET");
+        return;
+    }
+    if (!section_jump((uint32_t)live.cur))
+        str_cpy(ui.msg2, "RECALL", sizeof ui.msg2);
+}
+/* a quick chain of n sections (n >= 2), each its longest pattern's bars, round and round */
+static void quick_chain(const uint8_t *s, uint32_t n)
+{
+    uint32_t i;
+    if (chain.running && !chain.loop) {
+        ui_message("STOP THE SONG FIRST");
+        return;
+    }
+    for (i = 0; i < n; i++)
+        if (!project_used(s[i])) {
+            char b[8] = "A";
+            b[0] = (char)('A' + (s[i] & 3u));
+            ui_say(b, " IS EMPTY");
+            return;
+        }
+    fm1_irq_off();
+    chain.running = 0;
+    chain.armed_bar = 0;
+    live.req = -1;
+    fm1_irq_on();
+    chain_defaults(&chain.config);
+    chain.config.count = (uint8_t)n;
+    for (i = 0; i < n; i++) {
+        chain.config.row[i].slot = (uint8_t)(s[i] & 3u);
+        chain.config.row[i].bars = (uint8_t)section_bars(s[i]);
+    }
+    chain.loop = 1;
+    chain.kept = 0;
+    chain.ended = 0;
+    if (song_stage(chain.config.row[0].slot, 0))
+        return;
+    RING_PUBLISH();
+    if (song.playing)
+        chain.armed_bar = 1;                          /* on the next bar */
+    else {
+        chain.armed = 1;                              /* from the top, now */
+        transport_req = 1;
+    }
+    ui_message("QUICK CHAIN");
+}
+/* SONG REC on / off */
+static void song_rec_toggle(void)
+{
+    if (chain.running && !chain.loop) {
+        ui_message("STOP THE SONG FIRST");
+        return;
+    }
+    fm1_irq_off();
+    if (live.srec)
+        srec_stop();
+    else
+        live.srec = 1;
+    fm1_irq_on();
+    if (live.srec)
+        ui_message(song.playing ? "SONG REC NEXT BAR" : "SONG REC: PLAY");
+}
+
+/* Main loop, each pass: the next section staged; the music back after the song; SONG REC's rows; stored sections
+ * into flash once stopped */
 static void song_poll(void)
 {
     uint32_t k;
@@ -66,8 +212,29 @@ static void song_poll(void)
         sync_reload = 1;
         ui.force = 1;
     }
-    if (chain.running && !sec_stage.ready && chain.row + 1u < chain.config.count)
-        (void)song_stage(chain.config.row[chain.row + 1u].slot, chain.row + 1u);
+    if (chain.running && !sec_stage.ready) {
+        uint32_t next = chain.row + 1u;
+        if (next >= chain.config.count && chain.loop)
+            next = 0;
+        if (next < chain.config.count)
+            (void)song_stage(chain.config.row[next].slot, next);
+    }
+    if (live.rec_done) {
+        uint32_t n = live.rec_done;
+        live.rec_done = 0;
+        if (n == 0xFFu) {
+            ui_message("NO SONG");
+        } else {
+            char b[8];
+            chain_defaults(&chain_config);
+            chain_config.count = (uint8_t)n;
+            for (k = 0; k < n; k++)
+                chain_config.row[k] = live.rec[k];
+            ui.song_row = 0;
+            fmt_int(b, (int32_t)n);
+            ui_say("SONG ROWS ", b);
+        }
+    }
     if (chain.ended && !song.playing) {
         uint8_t cur = proj_cur;
         char name[PROJ_NAME_LEN + 1u];
@@ -80,4 +247,12 @@ static void song_poll(void)
             ui_message("SONG END");
         }
     }
+#if FELUCCA_FLASH
+    if (live.dirty && flash_ok && !transport_busy())
+        for (k = 0; k < 4u; k++)
+            if (((live.dirty >> k) & 1u) && !st_save(OBJ_PROJECT0 + k, &proj_slot[k], sizeof proj_slot[k]))
+                live.dirty &= (uint8_t)~(1u << k);    /* (a failed write stays dirty: tried again) */
+#else
+    live.dirty = 0;
+#endif
 }

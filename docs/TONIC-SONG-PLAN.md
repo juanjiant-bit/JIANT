@@ -32,12 +32,13 @@ terminar). La copia vieja de patrones (`chain.source`, 12,5 KB de `.bss`) ya no 
   prepara en el main loop y el ISR solo la aplica en el compás.
 - Song backup: tocar la canción aparta el loop y lo devuelve al parar (SLOOP `song_backup` / `song_restore`).
 
-### 4c. Live sections, quick chain y SONG REC (capa de canción)
+### 4c. Live sections, quick chain y SONG REC (capa de canción) — HECHO
 - Con el botón de la capa sostenido:
   - teclas 1–4: saltar a A–D en el próximo compás (parado: carga la sección);
   - teclas 5–8: guardar el loop en A–D (RAM al instante, flash con el transporte parado);
   - varias teclas 1–4 sin soltar el botón: **quick chain** (hasta 8, en loop, cada una dura su patrón);
-  - tecla 13: loop / song; tecla 14: SONG REC (graba sección + compases tocados en la chain).
+  - D5: loop / song; E5: SONG REC (graba sección + compases tocados en la chain); G5: página SONG;
+  - OCT+: guardar el loop en la sección que suena; OCT−: volver a ella como estaba guardada (en el compás).
 
 ### 4d. 8 canciones
 - Sacar los slots de samples de usuario (SAMPLE USR1–3, GRAIN USR, SLICE USR, `slice_store.c`, subida y
@@ -50,6 +51,7 @@ terminar). La copia vieja de patrones (`chain.source`, 12,5 KB de `.bss`) ya no 
 
 ## Decisión de controles
 
-En SLOOP la capa de canción es **SAVE sostenido**, y así lo pide la spec ("mantener SAVE y tocar A B B C").
-En Felucca SAVE sostenido es **undo**. Propuesta: SAVE sostenido abre la capa de canción y, dentro de ella,
-**OCT− hace el undo** (el undo sigue en SAVE). Pendiente de confirmación.
+La capa de canción es **SAVE sostenido**, como en SLOOP y como pide la spec ("mantener SAVE y tocar A B B C").
+El undo de Felucca se sacó: en su lugar, dentro de la capa, OCT+ guarda la sección que suena y OCT− la recupera
+(`ui_layer.c` layer_oct, `song_main.c` section_store / section_recall). Tocar SAVE y soltarlo sigue abriendo la
+página de guardado.

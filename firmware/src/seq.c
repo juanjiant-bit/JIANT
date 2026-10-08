@@ -822,7 +822,7 @@ static void seq_tick(track_t *t, uint32_t n)
         uint32_t cur_len = step_samples(t, period, t->seq_idx);
         if (t->seq_pos < cur_len && t->seq_pos != 0x7FFFFFFFu + n)
             break;
-        t->seq_pos = t->seq_pos >= 0x7FFFFFFFu ? (chain.running ? chain.carry : 0u) : t->seq_pos - cur_len;
+        t->seq_pos = t->seq_pos >= 0x7FFFFFFFu ? chain.carry : t->seq_pos - cur_len;   /* (a start: 0; a section in: its carry) */
         t->seq_idx = (uint16_t)((t->seq_idx + 1u) % (len ? len : 1u));
         rec_hold(t, t->seq_idx, len ? len : 1u);
         {
