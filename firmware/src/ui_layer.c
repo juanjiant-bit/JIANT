@@ -19,8 +19,8 @@
  *              keys 1..8 the lane (DRUM); KNOB 1..4 the PATTERN page's LEN DIV SWING GATE. No undo (TONIC: the song
  *              layer's RECALL)
  *   REC  SET   (1.1.5, on every page; REC's tap still arms / disarms) the white keys from F3: CLEAR (the selected
- *              track's steps and automation, no dialog), CLICK (OFF REC ON), COUNT-IN (OFF 1 BAR
- *              2 BARS), CLICK LEVEL (LOW MID HIGH), each press the next value; KNOB 1..3 the same three. The settings
+ *              track's steps and automation, no dialog), CLICK (OFF REC ON, each press the next value); KNOB 1 the
+ *              same (TONIC: COUNT-IN and CLICK LEVEL only in MENU > AUDIO). The settings
  *              are MENU > AUDIO's (ui.c rp_get / rp_put: one store), saved when the layer closes.
  *              Replaces the old REC held on SEQ (Discussion #91:
  *              the CLEAR Tn SEQUENCE? dialog and its "HOLD: CLEAR" hint)
@@ -32,15 +32,7 @@
  * layers OCT± do not shift the octave (TONIC: OCT- no longer puts back what the layer changed: no undo). A HOLD key's effect lasts until the key is let go, the map with it. No layer in the menu, a dialog,
  * NAME or the UPDATE MODE countdown. After a tap, until the layer has been opened once: "HOLD [GLO] QUICK"
  * (the seen bits are kept with the settings, favorites.c spare byte).
- * The lock (Discussion #83): a double tap (the second press within LY_DTAP_MS of the first tap, both let go before
- * HOLD, nothing else touched) opens the map and keeps it open with no button held (ui.lock): ly_down() counts the
- * lock as the button held, so the keys (seq.c keyboard_block: kb_lock), KNOB 1..4, OCT-, PLAY act exactly as held.
- * A tap of its button closes it (the press hands it back to the button: held on, a peek; let go, closed; never a
- * tap), so do another page button, HOME, SAVE, SEQ (each then acts as always), the menu, a dialog, NAME. The first
- * tap is not deferred (a single tap opens its page at once, no lag): it opens the page and remembers the page it
- * left (lys.nv); the second tap locks the layer over that page, put back, so a double tap leaves the page as it was.
- * A first tap that acted instead of opening a page (EDIT on STEP: clear the step; on USER / PROJECT: rename) arms no
- * double tap: two quick taps there still act twice. */
+ * TONIC: no lock (Felucca's double tap, Discussion #83, is gone): a layer is open while its button is held. */
 #include "ui_tools.c"                                   /* SEQ TOOLS' actions */
 enum { LK_HOLD, LK_SET };
 typedef struct {
@@ -80,14 +72,8 @@ static struct {
     uint8_t ntap;
     uint8_t quiet;                     /* #39: a layer closed after it opened: KNOB 1..4 do nothing until quiet_t + */
     uint32_t quiet_t;                  /* LY_QUIET_MS (fm1_ms) */
-    uint8_t dt_l, dt_hint, dtap;       /* #83: the layer of the last tap that opened a page (0 none), its hint said; the
-                                        * press now armed is that tap's second (a double tap) */
-    uint32_t dt_ms;                    /* .. when that tap was let go (fm1_ms) */
-    struct { uint8_t home, page, act, seq, fam[FAM_COUNT], rec, go; } nv;   /* .. the page it left (put back by the
-                                        * lock); REC: the arming before its tap, the transport that tap started */
 } lys;
 #define LY_QUIET_MS 250u
-#define LY_DTAP_MS 300u                /* #83: the second press of a double tap at most this long after the first tap */
 
 static int layer_allowed(void) { return !ui.menu && !ui.confirm && !ui.uboot && !name_on(); }
 static uint32_t ly_bit(uint32_t l) { return 1u << panel.btn[LAYERS[l].btn]; }
@@ -99,7 +85,7 @@ static int tools_page(void)
            (pg->graph == GR_ROLL || pg->graph == GR_STEPS || pg->graph == GR_CHANCE || pg->graph == GR_MOTION);
 }
 static int ly_avail(uint32_t l) { return l != LAYER_SEQ || tools_page(); }   /* (REC: on every page) */
-static uint32_t ly_down(uint32_t l) { return l && ((fm1_in.buttons & ly_bit(l)) != 0u || ui.lock == l); }   /* (locked: held) */
+static uint32_t ly_down(uint32_t l) { return l && (fm1_in.buttons & ly_bit(l)) != 0u; }
 static uint32_t layer_bits(void)
 {
     uint32_t l, m = 0;
@@ -126,7 +112,6 @@ static void layer_masks(void)
                : ui.ly ? ly_bit(ui.ly) : layer_bits() & ~fm1_in.buttons;
     kb_mask = m;
     perf_mask = m & ly_bit(LAYER_FX);
-    kb_lock = (uint8_t)(m && ui.lock ? 1u | (ui.lock == LAYER_FX ? 2u : 0u) : 0u);   /* (no button held: the ISR's) */
 }
 
 /* a layer button pressed (its edge) while none is armed: it is now, a dead one where no layer opens */
@@ -139,13 +124,11 @@ static void layer_arm(uint32_t pressed, uint32_t now)
         if ((pressed & ly_bit(l)) && ly_avail(l)) {
             ui.ly = (uint8_t)l;
             ui.ly_t0 = (now & ~15u) | 1u | (layer_allowed() ? 0u : LY_DEAD);
-            lys.dtap = lys.dt_l == l && fm1_ms - lys.dt_ms <= LY_DTAP_MS;   /* (#83: the second tap of a double tap?) */
-            lys.dt_l = 0;
             return;
         }
 }
 
-/* the armed layer lets go (its button up, or its lock closed): FX's macros snap back (FX LATCH: they stay); one that
+/* the armed layer lets go (its button up): FX's macros snap back (FX LATCH: they stay); one that
  * opened, or a combo: KNOB 1..4 quiet for a while (#39: the knob still turning is not the page's) */
 static void layer_let_go(uint32_t quiet)
 {
@@ -161,51 +144,6 @@ static void layer_let_go(uint32_t quiet)
     }
     ui.ly_t0 = 0;
     ui.ly = 0;
-    ui.lock = 0;
-}
-
-/* #83, each pass before the layer's buttons are read: a locked layer closes. Its own button pressed: the lock goes,
- * the button held keeps it open (a peek: let go, it closes, no tap). Another button but PLAY, REC and OCT- / OCT+
- * (another page button, another layer's, HOME, SAVE, SEQ): closed now, and that button acts as always. Any other
- * button pressed between the taps of a double tap: no double tap */
-static void layer_lock_input(uint32_t pressed)
-{
-    uint32_t keep = 1u << panel.btn[B_PLAY] | 1u << panel.btn[B_REC] | 1u << panel.btn[B_OCTDN] | 1u << panel.btn[B_OCTUP];
-    if (lys.dt_l && (pressed & ~ly_bit(lys.dt_l)))
-        lys.dt_l = 0;
-    if (!ui.lock)
-        return;
-    if (pressed & ly_bit(ui.lock))
-        ui.lock = 0;
-    else if (pressed & ~keep)
-        layer_let_go(1);
-}
-static int layer_locked(void) { return ui.lock && ui.layer == ui.lock; }   /* (the map's header: the lock's mark) */
-
-static void layer_opened(uint32_t l);
-/* #83: the second tap of a double tap: the page the first one left comes back, and the layer locks open over it */
-static void layer_lock(uint32_t l, uint32_t now)
-{
-    ui.home = lys.nv.home;
-    ui.page = lys.nv.page;
-    memcpy(ui.fam_last, lys.nv.fam, sizeof ui.fam_last);
-    ui.act = lys.nv.act;
-    song.seq_mode = lys.nv.seq;
-    ui.entry_open = 0;
-    if (lys.dt_hint || l == LAYER_REC)
-        ui.msg_t = 0;                                   /* (the first tap's "HOLD [..] QUICK", REC's) */
-    if (l == LAYER_REC) {                               /* REC: the arming as before the first tap, and the */
-        song.rec = lys.nv.rec;                          /* transport it started stopped again */
-        if (lys.nv.go && transport_req == 1u)
-            transport_req = 0;
-        else if (lys.nv.go && (song.playing || seq_counting()))
-            transport_req = 2;
-        ui.force = 1;
-    }
-    ui.lock = (uint8_t)l;
-    ui.ly_t0 = (now & ~15u) | 1u | LY_OPEN;
-    ui.force = 1;
-    layer_opened(l);
 }
 
 /* the layer opened: once seen, no more hint */
@@ -225,10 +163,8 @@ static uint32_t layer_gesture(uint32_t now, uint32_t combo)
     uint32_t *t0 = &ui.ly_t0, l = ui.ly;
     if (!l)
         return 0;
-    if (!layer_allowed()) {
+    if (!layer_allowed())
         *t0 |= LY_DEAD;
-        ui.lock = 0;                                    /* (the menu, a dialog, NAME: the lock closes) */
-    }
     if (ly_down(l)) {
         if (!(*t0 & (LY_OPEN | LY_DEAD)) &&
             (combo || now - (*t0 & ~15u) >= (uint32_t)HOLD_MS[settings_hold % 4u] * 1000u * FM1_TICKS_PER_US)) {
@@ -238,11 +174,6 @@ static uint32_t layer_gesture(uint32_t now, uint32_t combo)
         return 0;
     }
     l = *t0 & (LY_OPEN | LY_DEAD) || combo ? 0u : l;   /* (a knob turned as it was let go: a combo, no tap) */
-    if (l && lys.dtap) {                                /* #83: a double tap: locked open (no tap) */
-        lys.dtap = 0;
-        layer_lock(l, now);
-        return 0;
-    }
     layer_let_go(*t0 & LY_OPEN || combo);
     return l;
 }
@@ -272,30 +203,14 @@ static void layer_show(void)
 static void layer_tap(uint32_t l)
 {
     uint8_t m = ui.msg_t;
-    int acted;
-    lys.nv.home = ui.home;                              /* (#83: the page this tap leaves, for a double tap) */
-    lys.nv.page = ui.page;
-    lys.nv.act = ui.act;
-    lys.nv.seq = song.seq_mode;
-    memcpy(lys.nv.fam, ui.fam_last, sizeof lys.nv.fam);
-    lys.nv.rec = song.rec;
-    if (l == LAYER_REC) {                               /* REC: arms / disarms (no page); said nothing: no double tap */
-        uint32_t idle = !song.playing && !seq_counting() && transport_req != 1u;
-        acted = !rec_tap();
-        lys.nv.go = (uint8_t)(idle && transport_req == 1u);
-    } else {
-        acted = page_tap(LAYERS[l].btn);
-    }
-    lys.dt_hint = 0;
+    if (l == LAYER_REC)                                 /* REC: arms / disarms (no page) */
+        (void)rec_tap();
+    else
+        (void)page_tap(LAYERS[l].btn);
     if (!((layer_seen >> l) & 1u) && ui.msg_t == m && !name_on() && !ui.confirm && !ui.menu) {
         ui_say("HOLD [", KC[LY_KC[l]].label);
         str_cpy(ui.msg + str_len(ui.msg), "] QUICK", sizeof ui.msg - str_len(ui.msg));
         ui.msg_t = 90;                                  /* ~1.5 s */
-        lys.dt_hint = 1;
-    }
-    if (!acted && !name_on() && !ui.confirm && !ui.menu) {   /* a page opened: a second tap soon locks the layer */
-        lys.dt_l = (uint8_t)l;
-        lys.dt_ms = fm1_ms;
     }
 }
 
@@ -381,14 +296,13 @@ static void rec_clear(void)
     ui_message("SEQUENCE CLEARED");
     ui.force = 1;
 }
-/* REC's settings, row r (G3 A3 B3, KNOB 1..3): CLICK, COUNT-IN, CLICK LEVEL as MENU > AUDIO steps them (ui.c rp_*) */
-static const uint8_t RL_F[3] = {RP_CLICK, RP_COUNTIN, RP_LEVEL};
-static const char *const RL_LABEL[3] = {"CLICK", "COUNT", "LEVEL"};   /* (COUNT-IN: too wide for a card or a key cell) */
-static const uint8_t RL_ICON[3] = {ICON_TEMPO, ICON_TIME, ICON_LEVEL};
-static const char *rl_name(uint32_t r, uint32_t v)
-{
-    return (r == 0u ? CLICK_N : r == 1u ? COUNTIN_N : CLKLVL_N)[v % 3u];
-}
+/* REC's settings, row r (G3, KNOB 1): CLICK as MENU > AUDIO steps it (ui.c rp_*). TONIC: COUNT-IN and CLICK LEVEL
+ * left the layer (MENU > AUDIO still has them) */
+#define RL_N 1u
+static const uint8_t RL_F[RL_N] = {RP_CLICK};
+static const char *const RL_LABEL[RL_N] = {"CLICK"};
+static const uint8_t RL_ICON[RL_N] = {ICON_TEMPO};
+static const char *rl_name(uint32_t r, uint32_t v) { (void)r; return CLICK_N[v % 3u]; }
 static void rec_set(uint32_t r, uint32_t v)
 {
     if (v == rp_get(RL_F[r]))
@@ -405,7 +319,7 @@ static void rec_key(uint32_t p)
     }
     v = (rp_get(RL_F[r]) + 1u) % 3u;                    /* the next value, round */
     rec_set(r, v);
-    ui_say(r == 2u ? "CLICK LEVEL " : r ? "COUNT-IN " : "CLICK ", rl_name(r, v));
+    ui_say("CLICK ", rl_name(r, v));
 }
 
 /* a key pressed in layer l (k: 0 = F3 .. 26 = G5) */
@@ -434,7 +348,7 @@ static void layer_key(uint32_t l, uint32_t k)
         else if (p == LY_INIT)
             confirm_open(CF_INIT_SOUND, song.sel);      /* (the dialog closes the layer) */
     } else if (l == LAYER_REC) {
-        if (!key_black(k) && p < 4u)
+        if (!key_black(k) && p < 1u + RL_N)
             rec_key(p);
     } else if (l == LAYER_SEQ) {
         if (!key_black(k))
@@ -477,8 +391,8 @@ static void layer_knob(uint32_t k, int32_t s)
             edit_load(NENGINES, s);
         else if (k == 2u)
             preset_mark(s > 0);
-    } else if (l == LAYER_REC) {                        /* CLICK, COUNT-IN, LEVEL (KNOB 4: none) */
-        if (k < 3u)
+    } else if (l == LAYER_REC) {                        /* CLICK (KNOB 2..4: none) */
+        if (k < RL_N)
             rec_set(k, (uint32_t)clamp((int32_t)rp_get(RL_F[k]) + s, 0, 2));
     } else if (l) {                                     /* the page's knobs, wherever the page is */
         uint8_t h = ui.home, pg = ui.page;
@@ -561,9 +475,8 @@ static uint32_t layer_leds(uint32_t *br)
         } else if (l == LAYER_SEQ) {                    /* the tools breathe (not while a song plays); DRUM: the lane */
             on = b && p < NLANE && drum_track(TSEL) && p == ui.lane;   /* lit, the other lanes breathe */
             can = b ? p < NLANE && drum_track(TSEL) : tl_cell(TSEL, p) && !chain_busy();
-        } else if (l == LAYER_REC && !b && p < 4u) {    /* a setting on (LEVEL: the click on) lit, the rest breathe; */
-            on = p == 1u ? rp_get(RP_CLICK) != 0u : p == 2u ? rp_get(RP_COUNTIN) != 0u :   /* CLEAR: something to */
-                 p == 3u && rp_get(RP_CLICK) != 0u;    /* clear, not while a song plays */
+        } else if (l == LAYER_REC && !b && p < 1u + RL_N) {   /* the click on: lit, else it breathes; CLEAR: */
+            on = p == 1u && rp_get(RP_CLICK) != 0u;    /* something to clear, not while a song plays */
             can = p ? 1u : !chain_busy() && rec_clearable();
         }
         m |= on << k;
@@ -779,7 +692,7 @@ static void layer_rec(void)
 {
     uint32_t r, v;
     char n[3] = {0, 0, 0}, b[16];
-    for (r = 0; r < 4u; r++) {
+    for (r = 0; r < 1u + RL_N; r++) {
         int32_t y = 4 + (LR_H + 4) * (int32_t)r, x = 6, vx = 6 + LR_KW + 4;
         uint32_t dim = r == 0u && (chain_busy() || !rec_clearable());
         uint16_t ink, fill = lc_box(x, y, LR_KW, LR_H, lc_fill(dim ? LS_DIM : LS_OFF, &ink));
@@ -836,12 +749,14 @@ static void layer_cards(uint32_t l)
         }
     } else if (l == LAYER_EDIT) {
         engine_columns();
-    } else if (l == LAYER_REC) {                        /* CLICK COUNT-IN LEVEL, an empty card */
-        for (c = 0; c < 3u; c++) {
-            uint32_t v = rp_get(RL_F[c]);
-            draw_column(c, RL_LABEL[c], rl_name(c, v), "", c < 2u && !v ? T_DIM : VAL(c), (int32_t)v * 500, RL_ICON[c]);
+    } else if (l == LAYER_REC) {                        /* CLICK, then empty cards */
+        for (c = 0; c < NTRK; c++) {
+            uint32_t v = c < RL_N ? rp_get(RL_F[c]) : 0u;
+            if (c < RL_N)
+                draw_column(c, RL_LABEL[c], rl_name(c, v), "", !v ? T_DIM : VAL(c), (int32_t)v * 500, RL_ICON[c]);
+            else
+                draw_column(c, "", "", "", T_THEME, -1, ICON_NONE);
         }
-        draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
     } else {                                            /* the page's four (SCL: LY_SCL) */
         uint8_t h = ui.home, pg = ui.page;
         ui.home = 0;

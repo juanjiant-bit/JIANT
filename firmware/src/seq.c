@@ -601,8 +601,8 @@ static void keyboard_block(void)
         kb_prev = cur;
         return;
     }
-    lay = (fm1_in.buttons & kb_mask) || kb_lock;  /* (#83: kb_lock, a layer locked open with no button held) */
-    fx = (fm1_in.buttons & perf_mask) || (kb_lock & 2u);
+    lay = (fm1_in.buttons & kb_mask) != 0u;
+    fx = (fm1_in.buttons & perf_mask) != 0u;
     for (k = 0; k < 27u; k++) {
         if (!((ch >> k) & 1u))
             continue;

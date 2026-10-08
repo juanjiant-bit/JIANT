@@ -226,20 +226,17 @@ static int32_t head_hint_w(const char *s, int32_t maxw)
     return w + text_w(&AF_S, b);
 }
 /* a message / a layer's label at x, or centred on x 120 (x < 0), at most maxw px with its
- * icon (ui.c MSG_NOFILE: the accent's) and a locked layer's lock */
+ * icon (ui.c MSG_NOFILE: the accent's) */
 static void head_msg(int32_t x, int32_t maxw)
 {
     const char *m = ui.msg_t ? ui.msg : layer_head();
-    int lock = !ui.msg_t && layer_locked();   /* #83: locked open (a double tap): the lock after its name */
     int icon = m[0] == MSG_NOFILE[0];
-    int32_t lw = lock ? 15 : 0, iw = icon ? 16 + KH_GAP : 0;   /* the lock: its cell 6 px on, its ink to 15 */
+    int32_t lw = 0, iw = icon ? 16 + KH_GAP : 0;
     if (x < 0)
         x = 120 - HALF_UP(iw + head_hint_w(m + icon, maxw - lw - iw) + lw);
     if (icon)
         x += cv_icon_mid(x, H_HEAD / 2, 16, ICON_X_NOFILE, T_ACCENT, T_BG) + KH_GAP;
-    x = cv_free_hint(x, HEAD_SY, m + icon, T_TEXT, T_BG, maxw - lw - iw);   /* (may start with a keycap) */
-    if (lock)
-        cv_icon_mid(x + 6, H_HEAD / 2, 16, ICON_X_LOCK, T_THEME, T_BG);
+    (void)cv_free_hint(x, HEAD_SY, m + icon, T_TEXT, T_BG, maxw - lw - iw);   /* (may start with a keycap) */
 }
 /* the octave, or the song row while a song plays, its right end at HEAD_GRP_R */
 static void head_group(void)
@@ -269,7 +266,7 @@ static void draw_head(void)
     int32_t beat = -1;                                 /* the metronome stands still (its swing removed in 1.1.5) */
     uint32_t rec = (song.rec >> song.sel) & 1u ? 2u : song.rec != 0u;   /* 2 the selected track armed, 1 another */
     uint32_t sig = (uint32_t)song.playing * 3u + rec * 5u + (uint32_t)(song.octave + 8) * 11u + song.sel * 13131u +
-                   (ui.msg_t ? str_hash(7u, ui.msg) : ui.layer * 7919u + (uint32_t)layer_locked() * 3u) + (uint32_t)song.g[G_BPM] * 101u + (ui.bpm_t != 0) * 31u +
+                   (ui.msg_t ? str_hash(7u, ui.msg) : ui.layer * 7919u) + (uint32_t)song.g[G_BPM] * 101u + (ui.bpm_t != 0) * 31u +
                    (uint32_t)seq_counting() * 7u + (ui_prefs & PREF_BPM_LOCK) * 4099u +
                    (uint32_t)batt_shown() * 7777u + (chain.running ? (chain.row + 1u) * 104729u : 0u);
     int msg = ui.msg_t || ui.layer;
