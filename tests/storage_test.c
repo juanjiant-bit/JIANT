@@ -106,23 +106,40 @@ int main(void)
     /* the user presets' FM6 patches (1.0.3) in the two sectors of the retired FM6 bank: 0x9F000 (after the projects)
      * and 0xFE000 (after the settings); the two objects share them, told apart by the commit record's type */
     bad += check("FM6 user preset patches (and the retired bank) in the sectors 0x9F000 / 0xFE000",
-                 OBJ_UPFM6 == OBJ_COUNT - 2 && OBJ_FM6BANK == OBJ_UPFM6 - 1 && st_sector(OBJ_UPFM6, 0) == 0x9F000u &&
+                 OBJ_UPFM6 == OBJ_AUTOSAVE - 1 && OBJ_FM6BANK == OBJ_UPFM6 - 1 && st_sector(OBJ_UPFM6, 0) == 0x9F000u &&
                      st_sector(OBJ_PROJECT0 + 3, 1) + 4096 == 0x9F000u && st_sector(OBJ_UPFM6, 1) == 0xFE000u &&
                      st_sector(OBJ_FM6BANK, 0) == 0x9F000u && st_sector(OBJ_FM6BANK, 1) == 0xFE000u &&
                      st_sector(OBJ_SETTINGS, 1) + 4096 == 0xFE000u);
     /* the autosave (1.2, project.c): its own pair 0xE5000 / 0xE6000, above the OTA staging, apart from every other
      * object; a save there touches no other object */
     {
-        uint32_t o, c, ok = OBJ_AUTOSAVE == OBJ_COUNT - 1 && st_sector(OBJ_AUTOSAVE, 0) == 0xE5000u &&
+        uint32_t o, c, ok = OBJ_SONGIDX == OBJ_AUTOSAVE + 1 && st_sector(OBJ_AUTOSAVE, 0) == 0xE5000u &&
                                st_sector(OBJ_AUTOSAVE, 1) == 0xE6000u;
         static uint8_t snap[0x100000];
-        for (o = 0; o < OBJ_AUTOSAVE; o++)
+        for (o = 0; o < OBJ_COUNT; o++)
+            if (o != OBJ_AUTOSAVE)
             for (c = 0; c < 2u; c++)
-                ok &= st_sector(o, c) + 4096u <= 0xE5000u || st_sector(o, c) >= 0xE7000u;
+                    ok &= st_sector(o, c) + 4096u <= 0xE5000u || st_sector(o, c) >= 0xE7000u;
         memcpy(snap, nor, sizeof nor);
         ok &= st_save(OBJ_AUTOSAVE, a, sizeof a) == 0 && st_load(OBJ_AUTOSAVE, got, sizeof got) == (int)sizeof a &&
               !memcmp(got, a, sizeof a) && !memcmp(snap, nor, 0xE5000u) && !memcmp(snap + 0xE7000u, nor + 0xE7000u, 0x19000u);
         bad += check("the autosave in its own sectors 0xE5000 / 0xE6000, nothing else touched", ok);
+    }
+    /* JIANT's songs: song 1 is the four project slots; songs 2..8 (28 objects) at 0xA0000..0xD7FFF, the index at
+     * 0xD8000 / 0xD9000; every object's pair apart from every other one's, all in the store below 0xE0000 */
+    {
+        uint32_t o, c, p, q, ok = OBJ_COUNT == OBJ_SONG1 + 28 && st_sector(OBJ_SONG1, 0) == 0xA0000u &&
+                                  st_sector(OBJ_COUNT - 1, 1) + 4096u == 0xD8000u && st_sector(OBJ_SONGIDX, 0) == 0xD8000u &&
+                                  st_sector(OBJ_SONGIDX, 1) == 0xD9000u;
+        for (o = OBJ_SONGIDX; o < OBJ_COUNT; o++)
+            for (c = 0; c < 2u; c++) {
+                ok &= st_sector(o, c) >= 0xA0000u && st_sector(o, c) + 4096u <= 0xDC000u;
+                for (p = 0; p < OBJ_COUNT; p++)
+                    for (q = 0; q < 2u; q++)
+                        ok &= (p == o && q == c) || st_sector(p, q) != st_sector(o, c) ||
+                              (p == OBJ_FM6BANK && o == OBJ_UPFM6) || (o == OBJ_FM6BANK && p == OBJ_UPFM6);
+            }
+        bad += check("songs 2..8 and the song index: their own sectors in the freed sample area", ok);
     }
     {
         static uint8_t bank[3472], back[3728], tab[3728];

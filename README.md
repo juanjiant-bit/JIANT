@@ -49,6 +49,8 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
   desde el editor, la página EDIT > SLICES y las slices manuales (MAN). Los samples de fábrica, BREAK y
   PIANO siguen. Un sonido viejo en USR suena con un set de fábrica. Libera 240 KB de flash para las
   canciones.
+- **8 canciones.** Cada una con sus 4 secciones (A–D) y sus filas. La canción 1 son los 4 proyectos de
+  siempre, así que lo guardado con Felucca aparece ahí.
 - **Capa FX:** quedan REPEAT 1/8, 1/16, 1/32 y los filtros LPF / HPF. Se fueron REVERSE, TAPE STOP,
   FREEZE y el armonizador.
 - **Sin undo.** SAVE sostenido abre la capa de canción; OCT− ya no "devuelve" en las capas. En su lugar,
@@ -94,7 +96,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 | **SEQ** | En las páginas SEQ: SEQ TOOLS | LEN, DIV, SWING, GATE |
 | **REC** | F3 CLEAR del track, G3 CLICK | CLICK |
 | **HOME** | Menú | — |
-| **SAVE** | Capa de canción: F3–B3 tocan A–D en el próximo compás (varias en un mismo hold: quick chain), C4–F4 guardan en A–D, D5 LOOP / SONG, E5 SONG REC, G5 página SONG; OCT+ guarda la sección que suena, OCT− la recupera | — |
+| **SAVE** | Capa de canción: F3–B3 tocan A–D en el próximo compás (varias en un mismo hold: quick chain), C4–F4 guardan en A–D, D5 LOOP / SONG, E5 SONG REC, G5 página SONG; OCT+ guarda la sección que suena, OCT− la recupera | KNOB 1: canción 1–8 (entra al soltar SAVE, parado) |
 
 Otros: **PLAY** arranca y para; **REC** arma el track elegido; **SELECT** cambia el tempo; **ALGORITHM**
 elige el track en todas las páginas; **PRESETS** cambia el sonido; **OCT− / OCT+** la octava (en páginas

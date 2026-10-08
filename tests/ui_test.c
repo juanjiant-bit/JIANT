@@ -1993,9 +1993,8 @@ static int test_chain(void)
         !memcmp(trk[0].step, before[0], sizeof before[0]));
     chain_config.row[1].slot = 1;
     project_save(2);
-    chain_defaults(&chain_config);
     project_load(2);
-    bad += check("SONG rows saved and loaded with their project", chain_config.count == 2 &&
+    bad += check("SONG rows are the song's: a section's load keeps them", chain_config.count == 2 &&
         chain_config.row[0].bars == 2 && chain_config.row[1].slot == 1);
     song.rec = 3;
     bad += check("SONG prepares while stopped, no starts over a pending start", chain_prepare() == 0 && chain_prepare() == 2);
@@ -2045,7 +2044,7 @@ static int test_chain(void)
     project_load(0);
     song_poll();                                        /* (the load wins: nothing comes back over it) */
     bad += check("PROJECT load during SONG stops it before loading new timing", !chain.running && !song.playing &&
-        trk[0].p[P_SLEN] == 2 && trk[0].step[0].note[0] == 60 && !chain_config.count);
+        trk[0].p[P_SLEN] == 2 && trk[0].step[0].note[0] == 60 && chain_config.count == 2);   /* (the rows: the song's) */
     ui_power_on();
     open_family(FAM_SEQ);
     for (k = 0; k < NPAGES && cur_page()->graph != GR_SONG; k++) open_family(FAM_SEQ);
@@ -5625,6 +5624,16 @@ static int test_song_layer(void)
     sl_key(12);
     ok &= !live.mode;
     bad += check("  D5 LOOP / SONG: in SONG, PLAY plays the song from any page; the music back after it", ok);
+    btn_down(B_SAVE); frame();                          /* KNOB 1: song 2, in when SAVE lets go */
+    turn(EN_K1, 1); frame();
+    ok = song_cur == 0 && lys.song == 2u;
+    turn(EN_K1, 1); turn(EN_K1, -1); frame();
+    ok &= lys.song == 2u;
+    btn_up(B_SAVE); frame();
+    ok &= song_cur == 1 && !chain_config.count && msg_is("SONG 2");
+    btn_down(B_SAVE); frame(); turn(EN_K1, -1); frame(); btn_up(B_SAVE); frame();
+    ok &= song_cur == 0;
+    bad += check("  KNOB 1: the song, in when SAVE lets go (stopped)", ok);
     return bad;
 }
 

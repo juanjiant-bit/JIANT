@@ -40,11 +40,19 @@ terminar). La copia vieja de patrones (`chain.source`, 12,5 KB de `.bss`) ya no 
   - D5: loop / song; E5: SONG REC (graba sección + compases tocados en la chain); G5: página SONG;
   - OCT+: guardar el loop en la sección que suena; OCT−: volver a ella como estaba guardada (en el compás).
 
-### 4d. 8 canciones
+### 4d. 8 canciones — HECHO (salvo backup completo)
 - HECHO: sacar los slots de samples de usuario (SAMPLE USR1–3, GRAIN USR, SLICE USR, `slice_store.c`, subida y
   grabación del editor, comandos SysEx de samples).
-- Flash: 8 canciones × 4 secciones × A/B = 64 sectores + índice A/B = 66 de 68 disponibles.
-- Selector de canción (solo con el transporte parado), nombre por canción, backup / restore del editor.
+- HECHO: 8 canciones en flash. La canción 1 son los 4 slots de proyecto de siempre (0x97000, los datos de
+  Felucca quedan); las canciones 2–8 son 28 objetos A/B en 0xA0000–0xD7FFF; el índice A/B (filas de cada
+  canción y canción actual) en 0xD8000. Las filas son de la canción, no de una sección: cargar una sección
+  ya no las cambia. El primer arranque toma las filas de la canción 1 de su sección A (la canción de Felucca).
+- HECHO: selector: SAVE sostenido + KNOB 1 elige la canción, entra al soltar SAVE (solo parado). Guarda
+  primero las secciones y filas de la canción que se deja, carga las 4 secciones y las filas de la nueva y
+  su sección A pasa a ser la música (canción vacía: la música queda, para guardar secciones en ella).
+  Nombre de la canción: el de su sección A (si no tiene, "SONG n").
+- Pendiente: backup del editor de todas las canciones (hoy los ids 2–5 son las secciones de la canción
+  actual) y renombrar canciones.
 
 ### 4e. Escenas (Fase 5 de la spec)
 - Cada fila de chain suma mutes de grupo (1 B), macros (4 B) y punch-in FX (1 B).

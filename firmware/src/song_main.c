@@ -4,6 +4,57 @@
 /* The song, the main loop's part (song_chain.c: what it is). Included by project.c. */
 static project_store_t song_keep __attribute__((section(".pool")));   /* the music as it was before PLAY */
 
+/* ---- the songs (NSONG, four sections each: storage.c) */
+static uint8_t song_idx_dirty;                    /* the index changed (rows, the current song), not in flash yet */
+static uint32_t song_idx_t;                       /* .. since (fm1_ms): written once the rows rest a while */
+
+static void song_rows_fix(chain_config_t *c)      /* a song's rows as chain_config takes them */
+{
+    if (!chain_valid(c))
+        chain_defaults(c);
+}
+/* persist_boot, before the slots are filled: the index from flash (none or broken: song 1, its rows taken from its
+ * section A at song_index_boot: Felucca's song, kept in the project) */
+static void song_index_load(void)
+{
+    uint32_t k;
+#if FELUCCA_FLASH
+    if (st_load(OBJ_SONGIDX, &song_idx, sizeof song_idx) == (int)sizeof song_idx && song_idx.magic == SONG_MAGIC &&
+        song_idx.version == 1u && song_idx.cur < NSONG) {
+        for (k = 0; k < NSONG; k++)
+            song_rows_fix(&song_idx.rows[k]);
+        song_cur = song_idx.cur;
+        return;
+    }
+#endif
+    memset(&song_idx, 0, sizeof song_idx);
+    song_idx.magic = SONG_MAGIC;
+    song_idx.version = 1;
+    for (k = 0; k < NSONG; k++)
+        chain_defaults(&song_idx.rows[k]);
+    song_cur = 0;
+    song_idx.rsv[0] = 1;                          /* (no index yet: song_index_boot takes section A's rows) */
+}
+/* persist_boot, after the slots: the current song's rows */
+static void song_index_boot(void)
+{
+    if (song_idx.rsv[0]) {
+        song_idx.rsv[0] = 0;
+        if (proj_import(&proj_scratch, &proj_slot[0], sizeof(project_store_t)) && chain_valid(&proj_scratch.chain))
+            song_idx.rows[0] = proj_scratch.chain;
+    }
+    chain_config = song_idx.rows[song_cur];
+}
+/* the current song's name: its section A's, else SONG n (b: PROJ_NAME_LEN + 1 bytes) */
+static void song_name(char *b)
+{
+    if (!project_name(0, b) || !b[0]) {
+        str_cpy(b, "SONG ", PROJ_NAME_LEN + 1u);
+        b[5] = (char)('1' + song_cur);
+        b[6] = 0;
+    }
+}
+
 /* section s (a project slot) into sec_stage for row `row` (SEC_LIVE: a live jump); 0 = staged */
 static int song_stage(uint32_t s, uint32_t row)
 {
@@ -200,6 +251,76 @@ static void song_rec_toggle(void)
         ui_message(song.playing ? "SONG REC NEXT BAR" : "SONG REC: PLAY");
 }
 
+/* the current song's stored sections into flash: 0 done (or no flash) */
+static int song_flush(void)
+{
+    uint32_t k;
+#if FELUCCA_FLASH
+    if (!flash_ok)
+        return 0;
+    for (k = 0; k < 4u; k++)
+        if (((live.dirty >> k) & 1u) && st_save(proj_obj(k), &proj_slot[k], sizeof proj_slot[k]))
+            return 1;
+#else
+    (void)k;
+#endif
+    live.dirty = 0;
+    return 0;
+}
+/* the index into flash (the songs' rows, the current song): 0 done (or no flash) */
+static int song_index_save(void)
+{
+    song_idx.rows[song_cur] = chain_config;
+    song_idx.cur = song_cur;
+#if FELUCCA_FLASH
+    if (flash_ok && st_save(OBJ_SONGIDX, &song_idx, sizeof song_idx))
+        return 1;
+#endif
+    song_idx_dirty = 0;
+    return 0;
+}
+/* song n (0..NSONG - 1) in, stopped only: the current one kept first, then n's sections and rows; its section A
+ * becomes the music (an empty song: the music stays, a new song to store sections into). 0 done */
+static int song_select(uint32_t n)
+{
+    char nm[PROJ_NAME_LEN + 1u];
+    uint32_t k;
+    if (n >= NSONG || n == song_cur)
+        return 1;
+    if (transport_busy()) {
+        ui_message("STOP TO CHANGE SONG");
+        return 1;
+    }
+    if (song_flush()) {
+        ui_message("SAVE ERROR");
+        return 1;
+    }
+    song_idx.rows[song_cur] = chain_config;           /* (the rows of the song left) */
+    song_cur = (uint8_t)n;
+    chain_config = song_idx.rows[n];
+    if (song_index_save()) {                          /* (failed: written again by song_poll) */
+        song_idx_dirty = 1;
+        song_idx_t = fm1_ms;
+    }
+    for (k = 0; k < 4u; k++) {
+        memset(proj_slot[k].raw, 0, 4);
+#if FELUCCA_FLASH
+        if (flash_ok)
+            proj_fetch(k);
+#endif
+    }
+    ui.song_row = 0;
+    live.cur = -1;
+    live.req = -1;
+    if (project_used(0))
+        (void)section_load(0);
+    else
+        proj_cur = PROJ_NO_SLOT;
+    song_name(nm);
+    ui_say(nm, "");
+    return 0;
+}
+
 /* Main loop, each pass: the next section staged; the music back after the song; SONG REC's rows; stored sections
  * into flash once stopped */
 static void song_poll(void)
@@ -247,12 +368,21 @@ static void song_poll(void)
             ui_message("SONG END");
         }
     }
+    if (memcmp(&chain_config, &song_idx.rows[song_cur], sizeof chain_config)) {   /* the rows changed */
+        song_idx.rows[song_cur] = chain_config;
+        song_idx_dirty = 1;
+        song_idx_t = fm1_ms;
+    }
 #if FELUCCA_FLASH
+    if (song_idx_dirty && flash_ok && !transport_busy() && (uint32_t)(fm1_ms - song_idx_t) >= 2000u &&
+        song_index_save())
+        song_idx_t = fm1_ms;                          /* (failed: tried again later) */
     if (live.dirty && flash_ok && !transport_busy())
         for (k = 0; k < 4u; k++)
-            if (((live.dirty >> k) & 1u) && !st_save(OBJ_PROJECT0 + k, &proj_slot[k], sizeof proj_slot[k]))
+            if (((live.dirty >> k) & 1u) && !st_save(proj_obj(k), &proj_slot[k], sizeof proj_slot[k]))
                 live.dirty &= (uint8_t)~(1u << k);    /* (a failed write stays dirty: tried again) */
 #else
     live.dirty = 0;
+    song_idx_dirty = 0;
 #endif
 }

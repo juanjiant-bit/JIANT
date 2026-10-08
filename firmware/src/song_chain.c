@@ -18,7 +18,16 @@
  *               (song_play.c). A row whose section is not staged in time plays its section another bar
  * This file: the state and the rows; song_play.c (included at the end of seq.c): the ISR's part; song_main.c
  * (included by project.c): the main loop's. */
-static chain_config_t chain_config;
+static chain_config_t chain_config;           /* the current song's rows */
+#define NSONG 8u                              /* songs: four sections each (storage.c: where they are kept) */
+#define SONG_MAGIC 0x474E4F53u                /* "SONG" */
+typedef struct {                              /* the song index (flash: OBJ_SONGIDX) */
+    uint32_t magic;
+    uint8_t version, cur, rsv[2];
+    chain_config_t rows[NSONG];               /* each song's rows (the current one's: chain_config, kept here) */
+} song_index_t;
+static song_index_t song_idx;
+static uint8_t song_cur;                      /* the song whose sections proj_slot holds (0: the four project slots) */
 #define SEC_LIVE 0xFEu                /* sec_stage.row: a live jump (the song layer), not a song row */
 typedef struct {                      /* a track of a section, as the ISR puts it in */
     int16_t p[P_COUNT];

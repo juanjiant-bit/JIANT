@@ -718,6 +718,15 @@ static char proj_name[PROJ_NAME_LEN + 1u]    /* the name of the music as it is n
 #define PROJ_NO_SLOT 0xFFu
 static uint8_t proj_cur = PROJ_NO_SLOT;      /* the slot the music was loaded from or last saved to (a rename of it
                                               * renames the music too); PROJ_NO_SLOT none (the editor's restore) */
+/* the flash object of section `slot` of the current song (storage.c: song 1 is the four project slots) */
+#if FELUCCA_FLASH
+static uint32_t proj_obj(uint32_t slot)
+{
+    return song_cur ? OBJ_SONG1 + (song_cur - 1u) * 4u + (slot & 3u) : OBJ_PROJECT0 + (slot & 3u);
+}
+#else
+#define proj_obj(slot) (slot)                /* (no flash: nothing stored) */
+#endif
 static union {                               /* serialized main-loop work; no retained expansion */
     project_store_t s;
     uint8_t raw[3840];                         /* (the staging of a backup object, up to a storage object: editor_backup.c) */
@@ -763,7 +772,7 @@ static void proj_fetch(uint32_t slot)
     project_store_t *q = &proj_slot[slot & 3u];
     int n;
     proj_wire_gen++;
-    n = st_load(OBJ_PROJECT0 + (slot & 3u), &proj_wire, sizeof proj_wire);
+    n = st_load(proj_obj(slot), &proj_wire, sizeof proj_wire);
     if (!proj_import(&proj_scratch, &proj_wire, n))
         memset(q->raw, 0, 4);
     else {
@@ -819,7 +828,7 @@ static int project_save_as(uint32_t slot, const char *name)
 
 #if FELUCCA_FLASH
     if (flash_ok) {
-        if (st_save(OBJ_PROJECT0 + (slot & 3u), &proj_wire, sizeof proj_wire)) {
+        if (st_save(proj_obj(slot), &proj_wire, sizeof proj_wire)) {
             ui_message("SAVE ERROR");
             return 2;
         }
@@ -868,7 +877,7 @@ static int project_rename(uint32_t slot, const char *name)
     proj_wire_gen++;
     if (!proj_pack(&proj_wire, p)) { ui_message("SAVE FORMAT ERROR"); return 2; }
 #if FELUCCA_FLASH
-    if (flash_ok && st_save(OBJ_PROJECT0 + (slot & 3u), &proj_wire, sizeof proj_wire)) {
+    if (flash_ok && st_save(proj_obj(slot), &proj_wire, sizeof proj_wire)) {
         ui_message("SAVE ERROR");
         return 2;
     }
@@ -900,7 +909,7 @@ static int project_restore_runtime(const project_t *input)
     seq_stop();
     transport_req = 0;
     chain.ended = 0;                                    /* (a song stopped by this load: the load wins, song_poll keeps out) */
-    chain_config = p->chain;
+                                                        /* (the rows are the song's, not a section's: kept) */
     motion = p->motion;
     memset(motion_active, 0, sizeof motion_active);
     motion_base_valid = 0;
@@ -977,6 +986,9 @@ static uint8_t persist_pending;                 /* 1 requested, 2 waiting after 
 static uint32_t persist_retry_ms;
 #endif
 
+static void song_index_load(void);                /* song_main.c */
+static void song_index_boot(void);
+
 static void persist_boot(void)                    /* before settings_init / panel_init */
 {
 #if FELUCCA_FLASH
@@ -991,12 +1003,14 @@ static void persist_boot(void)                    /* before settings_init / pane
         if (settings_import(&p, n))
             persist_saved = p;
     }
+    song_index_load();                             /* the current song: whose sections fill the slots */
     {   /* projects: fill empty RAM slots from flash, so the slot list is right after power-on */
         uint32_t i;
         for (i = 0; i < 4u; i++)
             if (!proj_import(&proj_scratch, &proj_slot[i], sizeof(project_store_t)))
                 proj_fetch(i);
     }
+    song_index_boot();                             /* the current song's rows */
     up_boot();                                     /* user presets */
 #endif
 }

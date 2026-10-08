@@ -97,7 +97,7 @@ static uint32_t ed_bk_commit(void)
             if (!ed_bk_len) return 2;
             return project_restore_runtime(&proj_scratch) ? 2u : 0u;
         }
-        obj = OBJ_PROJECT0 + ed_bk_id - 2u;
+        obj = proj_obj(ed_bk_id - 2u);             /* (the current song's sections) */
     } else if (ed_bk_id == 1u) {
         const persist_t *p = (const persist_t *)raw;
         if (ed_bk_len != sizeof *p || p->magic != PERSIST_MAGIC || !palette_stored_ok(p->palette) ||

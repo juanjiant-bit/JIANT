@@ -40,6 +40,7 @@ static void section_store(uint32_t s);
 static void section_recall(void);
 static void quick_chain(const uint8_t *s, uint32_t n);
 static void song_rec_toggle(void);
+static int song_select(uint32_t n);
 static int project_used(uint32_t slot);
 enum { LK_HOLD, LK_SET };
 typedef struct {
@@ -75,6 +76,7 @@ static struct {
     uint8_t l, oct;                    /* the layer open; OCT- / OCT+ pressed in a SET layer (bits) */
     uint8_t cook;                      /* SEQ: COOK pressed since it opened */
     uint8_t qc[8], nqc;                /* SAVE: the sections tapped in this hold (two or more: a quick chain) */
+    uint8_t song;                      /* SAVE: the song KNOB 1 picked (+ 1; 0 none): in when SAVE lets go */
     uint8_t rp_dirty;                  /* REC: a setting changed (settings_save when the layer lets go) */
     uint32_t solo;                     /* GLO: the keys held that solo */
     uint32_t tap[4];                   /* GLO TAP: the last taps (fm1_ms) */
@@ -143,7 +145,10 @@ static void layer_let_go(uint32_t quiet)
 {
     if (ui.ly == LAYER_SAVE && lys.nqc >= 2u)           /* SAVE: two or more sections tapped: a quick chain */
         quick_chain(lys.qc, lys.nqc);
+    if (ui.ly == LAYER_SAVE && lys.song && lys.song - 1u != song_cur)   /* SAVE: KNOB 1 picked another song */
+        (void)song_select(lys.song - 1u);
     lys.nqc = 0;
+    lys.song = 0;
     if (ui.ly == LAYER_FX && !perf_latch_on)
         perf_k[0] = perf_k[1] = perf_k[2] = perf_k[3] = 0;
     if (lys.rp_dirty) {                                 /* REC: its settings kept, as MENU does when it closes */
@@ -168,6 +173,7 @@ static void layer_opened(uint32_t l)
     lys.l = (uint8_t)l;
     lys.cook = 0;
     lys.nqc = 0;
+    lys.song = 0;
 }
 
 /* the armed button: 0, or the layer whose button was tapped (let go) */
@@ -450,6 +456,10 @@ static void layer_knob(uint32_t k, int32_t s)
             edit_load(NENGINES, s);
         else if (k == 2u)
             preset_mark(s > 0);
+    } else if (l == LAYER_SAVE) {                       /* KNOB 1: the song (in when SAVE lets go); 2..4: none */
+        if (k == 0u)
+            lys.song = (uint8_t)(clamp((int32_t)(lys.song ? lys.song - 1u : song_cur) + (s > 0 ? 1 : -1), 0,
+                                       NSONG - 1) + 1);
     } else if (l == LAYER_REC) {                        /* CLICK (KNOB 2..4: none) */
         if (k < RL_N)
             rec_set(k, (uint32_t)clamp((int32_t)rp_get(RL_F[k]) + s, 0, 2));
@@ -868,16 +878,15 @@ static void layer_cards(uint32_t l)
     } else if (l == LAYER_EDIT) {
         engine_columns();
     } else if (l == LAYER_SAVE) {                       /* the section, LOOP / SONG, SONG REC, the song row */
+        uint32_t n = lys.song ? lys.song - 1u : song_cur;
+        fmt_int(val, (int32_t)n + 1);
+        draw_column(0, "SONG", val, n != song_cur ? "NEXT" : "", VAL(0u), (int32_t)(n * 1000u / (NSONG - 1u)),
+                    ICON_X_SONG);
         val[0] = live.cur >= 0 ? (char)('A' + live.cur) : '-'; val[1] = 0;
-        draw_column(0, "SECT", val, "", live.cur >= 0 ? VAL(0u) : T_DIM, -1, ICON_X_PATTERN);
-        draw_column(1, "PLAY", live.mode ? "SONG" : "LOOP", "", VAL(1u), -1, ICON_LOOP);
-        draw_column(2, "REC", live.srec == 2u ? "ON" : live.srec ? "ARM" : "OFF", "", live.srec ? VAL(2u) : T_DIM, -1,
+        draw_column(1, "SECT", val, "", live.cur >= 0 ? VAL(1u) : T_DIM, -1, ICON_X_PATTERN);
+        draw_column(2, "PLAY", live.mode ? "SONG" : "LOOP", "", VAL(2u), -1, ICON_LOOP);
+        draw_column(3, "REC", live.srec == 2u ? "ON" : live.srec ? "ARM" : "OFF", "", live.srec ? VAL(3u) : T_DIM, -1,
                     ICON_X_REC);
-        if (chain.running)
-            fmt_int(val, (int32_t)chain.row + 1);
-        else
-            str_cpy(val, "--", sizeof val);
-        draw_column(3, "ROW", val, "", chain.running ? VAL(3u) : T_DIM, -1, ICON_X_SONG);
     } else if (l == LAYER_REC) {                        /* CLICK, then empty cards */
         for (c = 0; c < NTRK; c++) {
             uint32_t v = c < RL_N ? rp_get(RL_F[c]) : 0u;
@@ -913,7 +922,8 @@ static void draw_layer(void)
         sig += (uint32_t)ui_rec_prefs * 31u + (uint32_t)chain_busy() * 3u + (uint32_t)rec_clearable() * 5u + song.sel * 977u;
     else if (l == LAYER_SAVE)
         sig += (uint32_t)(live.cur + 1) * 31u + (uint32_t)(live.req + 1) * 131u + live.srec * 7u + live.mode * 11u +
-               live.dirty * 977u + lys.nqc * 4099u + (chain.running ? chain.row * 13u + chain.remaining * 17u : 0u);
+               live.dirty * 977u + lys.nqc * 4099u + (chain.running ? chain.row * 13u + chain.remaining * 17u : 0u) +
+               (lys.song * 8u + song_cur) * 65537u;
     else if (l == LAYER_SEQ)
         sig += (uint32_t)drum_track(TSEL) * 31u + ui.lane * 5u + (uint32_t)chain_busy() * 3u + (uint32_t)TSEL->p[P_E0] * 131u + song.sel * 977u;
     else

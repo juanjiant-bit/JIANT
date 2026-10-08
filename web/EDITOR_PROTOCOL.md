@@ -585,7 +585,7 @@ this firmware sends 3. Requests name objects, never flash addresses.
 | --- | --- | --- |
 | 0 | runtime: the music being played now, as a FUN9 project (1.0.x: FUN8, 3584; firmware before FM6: FUN7, 3388) | 3648 |
 | 1 | settings (palette, speaker, HOLD time, favorites, panel calibration, ...) | the settings record's size |
-| 2..5 | PROJECT slots 1..4 (FUN9; 1.0.x: FUN8, 3584) | 3648, or 0 if empty |
+| 2..5 | PROJECT slots 1..4 (FUN9; 1.0.x: FUN8, 3584); JIANT: sections A..D of the current song | 3648, or 0 if empty |
 | 6, 7 | user preset banks (slots 1..16, 17..32) | the bank's size, or 0 if empty |
 | 8 | the FM6 patch bank of 1.0..1.0.2 (B1..B27). Since 1.0.3 always listed empty (see below) | 3472, or 0 if empty |
 | 9 | the user presets' FM6 patches (1.0.3; `up_fm6.c`: per slot a tag and the packed patch) | 3728, or 0 if none |
