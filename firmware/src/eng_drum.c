@@ -55,6 +55,7 @@ static volatile uint16_t dx_mute;                       /* DXG_* groups | DXM_LA
 static void dx_mute_set(uint32_t m) { dx_mute = (uint16_t)(m & DXM_ALL); }
 static int dx_lane_muted(uint32_t l) { return (DXG_LANE[l & 7u] & dx_mute) || (dx_mute & DXM_LANE(l & 7u)); }
 
+static int16_t clip_eff, pnch_eff;   /* G_CLIP / G_PUNCH as the master plays them (mod.c macro_master) */
 /* The drum bus (JIANT, MENU-less: FX > MASTER). PUNCH (G_PUNCH 0..100, after Ableton's Drum Buss, no detector: each
  * hit's own age): a hit's first 12 blocks (~9 ms) up to +6 dB, then over 24 blocks down to its tail at up to -5 dB
  * (tighter, compressed). DUCK (G_DUCK, fx.c): a kick struck on any DRUM track (its group not muted) ducks the other
@@ -259,7 +260,7 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     }
     {                                                    /* PUNCH: on the block's amplitude ramp (after the knee:
                                                           * its transient kept; no work per sample) */
-        int32_t pu = song.g[G_PUNCH];
+        int32_t pu = pnch_eff;
         if (pu > 0) {                                    /* (amp <= 32767, the gain >> 1 <= 32784) */
             int32_t a0 = (m->amp0 * (punch_gain(L->age, pu) >> 1)) >> 14;
             ml.amp1 = (m->amp1 * (punch_gain(L->age + 1u, pu) >> 1)) >> 14;

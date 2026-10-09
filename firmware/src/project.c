@@ -53,7 +53,7 @@
  * flash object holds 3840); the serialized part still ends by 3120 (FUN9's 48 spare bytes stay). FUN9 is read
  * (its kit: the factory one, DX_KIT_DEF), as every older format. JIANT 0.1 also keeps the punch-in lane (pfx.c) in
  * the 48 spare bytes before the kit: 64 nibbles at PROJ_PFX_OFF (3072), its tracks at 3104 (a FUN9 or an earlier
- * FUNA has zeros there: no lane).
+ * FUNA has zeros there: no lane), and the macros M1..M4 (mod.c macro_v, one byte each) right after, at 3105.
  *
  * Parameter locks (1.1, core.h MOTION_LOCK) are motion records with bit 7 of their id byte set (P_COUNT 99 < 128:
  * the bit is free): no byte moved for them, and every project before 1.1 has none. FUN9 holds them. A FUN8 / FUN7
@@ -114,6 +114,7 @@ typedef struct {
     uint16_t dx_mute;                          /* its mutes (eng_drum.c: the groups DXG_* in the first reserved byte, the
                                                 * sounds' DXM_LANE in the second) */
     uint8_t pfx_lane[32], pfx_ltgt;            /* the punch-in lane (pfx.c), in FUN9's spare bytes (PROJ_PFX_OFF) */
+    uint8_t macro[4];                          /* the macros M1..M4 (mod.c macro_v), 0..127: after the lane's tracks */
     char name[PROJ_NAME_LEN];                  /* the project's name: upper-case ASCII 32..126, 0-padded; "" = none */
     uint32_t sum;
 } project_t;
@@ -638,6 +639,8 @@ static int proj_pack(project_store_t *out, const project_t *q)
     memcpy(b + pos, &q->motion, sizeof q->motion);
     memcpy(b + PROJ_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJ_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
+    for (i = 0; i < 4u; i++)
+        b[PROJ_PFX_OFF + sizeof q->pfx_lane + 1u + i] = q->macro[i] & 127u;
     memcpy(b + PROJ_DX_OFF, q->dx, sizeof q->dx);
     b[PROJ_DX_OFF + sizeof q->dx] = q->dx_mute & DXG_ALL;
     b[PROJ_DX_OFF + sizeof q->dx + 1u] = (uint8_t)(q->dx_mute >> 8);
@@ -714,10 +717,13 @@ static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
     }
     memset(q->pfx_lane, 0, sizeof q->pfx_lane);
     q->pfx_ltgt = 0;
+    memset(q->macro, 0, sizeof q->macro);
     if (va) {                                           /* the punch-in lane (JIANT's; a FUN9's spare is zeros) */
         uint32_t lo = end - 48u;
         memcpy(q->pfx_lane, b + lo, sizeof q->pfx_lane);
         q->pfx_ltgt = b[lo + sizeof q->pfx_lane] > 2u ? 0u : b[lo + sizeof q->pfx_lane];
+        for (i = 0; i < 4u; i++)                        /* the macros (0 before them) */
+            q->macro[i] = b[lo + sizeof q->pfx_lane + 1u + i] & 127u;
     }
     if (va) {                                           /* the DRUM-X kit (a broken one: not a project) */
         memcpy(q->dx, b + end, sizeof q->dx);
@@ -860,6 +866,7 @@ static void project_capture(project_t *p)
     p->dx_mute = dx_mute;
     memcpy(p->pfx_lane, pfx_lane, sizeof p->pfx_lane);
     p->pfx_ltgt = pfx_ltgt;
+    memcpy(p->macro, macro_v, sizeof p->macro);
     motion_unguard(f);
     memcpy(p->name, proj_name, str_len(proj_name));
     p->sum = proj_sum(p);
@@ -1019,6 +1026,8 @@ static int project_restore_runtime(const project_t *input)
     dx_mute_set(p->dx_mute);
     memcpy(pfx_lane, p->pfx_lane, sizeof pfx_lane);    /* (the section's punch-in lane) */
     pfx_ltgt = p->pfx_ltgt > 2u ? 0u : p->pfx_ltgt;
+    for (i = 0; i < 4u; i++)
+        macro_v[i] = p->macro[i] & 127u;            /* (the macros: a load sets them; a section jump keeps them) */
                                                         /* (the rows are the song's, not a section's: kept) */
     motion = p->motion;
     memset(motion_active, 0, sizeof motion_active);

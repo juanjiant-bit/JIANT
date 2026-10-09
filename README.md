@@ -3,132 +3,129 @@
 **Bio-synthetic operating system for the M-VAVE FM-1** — síntesis, secuencia, mutación, performance.
 
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
+[![Emulador](https://img.shields.io/badge/probalo-en%20el%20navegador-ff7a00.svg)](https://juanjiant-bit.github.io/JIANT/)
 
-![JIANT FM: concepto de la interfaz](docs/jiant-fm-ui-concept.jpg)
+![JIANT FM en el emulador](docs/jiant-screens.png)
 
-*Concepto de la interfaz. Cada panel es una página o capa del firmware; abajo, en
-[La interfaz](#la-interfaz), qué hay hoy detrás de cada uno.*
+*HOME, DRUM-X, la capa MACRO, los punch-in FX, el piano roll y la capa de canción, tal como los dibuja el
+firmware (paleta térmica JIANT).*
 
-Firmware de vivo para el **M-VAVE FM-1**: un instrumento para componer y tocar canciones enteras sin
-computadora, con control directo de todo lo que suena. Es un fork de
-[Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 de Hügelton Instruments (GPL-3.0), y toma de
+JIANT FM es un firmware alternativo para el **M-VAVE FM-1**, pensado para tocar en vivo y armar canciones enteras
+sin computadora. Batería sintetizada con morph, efectos que se tocan con las teclas y se graban, macros, canciones
+por compases y un master con carácter, todo a mano en el aparato.
+
+Es un fork de [Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 de Hügelton Instruments (GPL-3.0) y toma de
 [SLOOP](https://github.com/isod89/sloop-fm1) el sistema de canciones.
 
 **▶ [Probalo en el navegador](https://juanjiant-bit.github.io/JIANT/)**: el emulador corre el mismo código que el
-FM-1 (teclado de la compu o mouse, sonido incluido). Se actualiza con cada cambio que entra a `main`; usalo para
-revisar todo antes de flashear el aparato.
+FM-1, con sonido, y se maneja con el teclado de la compu o el mouse. Se actualiza solo con cada cambio que entra a
+`main`.
 
-> **Estado: en desarrollo (v0.1).** Compila y pasa todos los tests de Felucca y los propios, pero
-> **todavía no se probó en un FM-1 real**. No lo instales sin hacer antes un backup del flash.
+> **Estado: en desarrollo (v0.1).** Compila y pasa todos los tests (los de Felucca y los propios), pero
+> **todavía no se probó en un FM-1 real**. Antes de instalarlo, hacé un backup del flash.
 
-## La idea
+## Qué lo hace distinto
 
-- **Muchas canciones dentro del aparato.** 8 canciones, cada una con 4 variaciones (A–D) y una cadena
-  de partes al estilo SLOOP: quick chain, SONG REC y guardar / recuperar el estado de una parte.
-- **Canciones que evolucionan.** Cada paso de la cadena puede cambiar mutes, macros y efectos (escenas):
-  no quedar preso de un loop donde solo se mueve un cutoff.
-- **Batería tipo Microtonic (DRUM-X).** Síntesis en tiempo real con morph A↔B por sonido, mutes por grupo
-  (KICK, SNARE, HAT, PERCS).
-- **Deformación en vivo.** Punch-in FX que actúan sobre las notas (octava, stutter, arp, decay, random)
-  y se pueden secuenciar; 4 macros en los knobs; master con clipper y PUNCH.
-- **Menos engines, pero más profundos.** Se recorta lo que ocupa memoria sin aportar, y se suma
-  modulación a lo que queda.
+### DRUM-X: batería sintetizada con morph
+Un kit de 8 sonidos (BD SD CP CH OH TM RS CB) generado en tiempo real, sin samples, al estilo Microtonic.
+- Cada sonido tiene dos lados, **A** y **B**; **MORPH** (KNOB 1, siempre a mano) se mueve entre los dos.
+- **WARP** deforma todo el kit con FM y feedback; además TUNE, TONE, DECAY, NOISE, ACCENT y DRIVE.
+- **Mutes por grupo** (KICK, SNARE, HAT, PERC) con GLO sostenido, y **mute por sonido** con EDIT sostenido.
+- **EDIT sostenido → INIT / RECALL**: el kit vuelve al de fábrica o al guardado en la sección.
 
-La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) y el orden de trabajo en
-[FELUCCA-TONIC-SPEC.md](FELUCCA-TONIC-SPEC.md).
+### Punch-in FX: los efectos se tocan y se graban
+Con FX sostenido, las teclas son efectos que actúan mientras se mantienen y al soltar todo vuelve exacto.
+- **De audio**: REPEAT 1/8 · 1/16 · 1/32, LPF y HPF.
+- **Sobre las notas, tipo OP-Z**: OCT− y OCT+, 1/2 TEMPO, DECAY corto y largo, STUTTER 1/16 · 1/32 · tresillo, ARP
+  momentáneo y RANDOM.
+- **Objetivo**: A#4 elige si afectan a todo, solo a los sintes o solo a la batería.
+- **Automatizables**: con REC armado se graban en una lane de 4 compases por sección.
+- **Perillas**: FILTER, CRUSH, THROW y DEPTH.
+
+### Macros M1–M4
+LFO sostenido abre la capa **MACRO**: las cuatro perillas son M1–M4 y la pantalla muestra a dónde va cada una
+("T1 CUT+62 T4 MRPH−31").
+- **Asignar una macro**: en la página MOD de un track elegí SRC M1…M4 y su destino, con amount de −100 a +100.
+- **Destinos**: pitch, filtro, forma, amplitud, pan, envíos, LFO, cualquiera de los 8 parámetros del engine (MORPH,
+  WARP, …) y el master (CLIP y PNCH).
+- **Alcance**: una macro puede mover varias cosas en varios tracks a la vez.
+- **Guardado**: se guardan con el proyecto.
+
+### Secuencias que se mueven
+- **SEQ > SHIFT**: corre la secuencia de cada track en pasos (**OFS**) y en altura (**PIT**). Los dos son
+  automatizables; también están en SCL sostenido.
+- **ARP TRNS**: con el arpegiador en TRNS, las teclas transponen la secuencia sin tocar notas.
+- **Edición**: 64 pasos por track, piano roll, grilla de batería, parameter locks, chance, ratchets, slide y
+  automatización de perillas.
+- **Grabación**: en vivo con overdub, metrónomo y count-in.
+- **SEQ + REC** borra todas las secuencias de una vez para empezar de cero.
+
+### Canciones dentro del aparato
+**8 canciones**, cada una con **4 secciones (A–D)** y una cadena de filas por compases, al estilo SLOOP. Con SAVE
+sostenido:
+- **Secciones en vivo**: se lanzan y entran en el próximo compás.
+- **Quick chain**: varias secciones tocadas en un mismo hold quedan en loop.
+- **SONG REC**: graba la canción mientras la tocás.
+- **STORE / RECALL**: guarda la sección que suena o vuelve a como estaba guardada.
+
+### Master con carácter (FX > MASTER)
+- **CLIP**: satura la mezcla antes del limiter.
+- **PNCH**: bus de batería con más ataque y cola más corta.
+- **DUCK**: el bombo baja a los demás tracks, con su release.
+
+## Lo que trae
+
+- **4 tracks** con 8 voces compartidas.
+- **12 engines**: ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, SAMPLE, VOICE, TRIO, WHEEL, GRAIN, NOISE, SLICE y
+  DRUM (DRUM-X).
+- **Modulación**: 4 slots por track. Fuentes: LFO, ENV, VEL, KEY, RAND, controladores MIDI y las 4 macros.
+- **Efectos**: distorsión y SLICER por track; envíos a chorus, delay y reverb (ROOM o SPRING); master con CLIP,
+  PNCH, DUCK y limiter.
+- **Arpegiador** con 16 modos y 16 escalas con modo de teclas blancas; glide; POLY, MONO, LEGATO y UNISON.
+- **Conexiones**:
+  - USB: MIDI class-compliant y audio (el master llega a la computadora).
+  - MIDI por TRS.
+  - Clock interno, USB o TRS.
+- **Guardado**: 32 presets de usuario con nombre y autoguardado al apagar.
+- **Editor web** de todos los parámetros: patches FM6, grilla, mezcla y backup completo.
 
 ## Estado
 
 | Objetivo | Estado |
 | --- | --- |
-| Auditoría de Felucca, medidas de flash / RAM ([docs/TONIC-AUDIT.md](docs/TONIC-AUDIT.md)) | Hecho |
-| Limpieza para liberar recursos (PHYS, efectos de la capa FX, undo, lock de capas) | Hecho |
-| Song mode estilo SLOOP, 8 canciones × 4 variaciones ([docs/TONIC-SONG-PLAN.md](docs/TONIC-SONG-PLAN.md)) | Hecho (falta backup de todas las canciones) |
-| Escenas por paso de la cadena | Pendiente |
-| DRUM-X y mutes por grupo ([docs/TONIC-DRUMX.md](docs/TONIC-DRUMX.md)) | En curso (motor y mutes por grupo hechos; los kits de Felucca, retirados) |
-| Master: CLIP, PNCH (bus de batería) y DUCK (página FX > MASTER) | Hecho |
-| Macros M1–M4 | Pendiente |
-| Punch-in FX MIDI y sus lanes | Hecho: 10 efectos en la capa FX y una lane de 4 compases por sección |
-| Más modulación y mejores efectos | Pendiente |
-| Interfaz JIANT FM dibujada por código ([docs/TONIC-UI.md](docs/TONIC-UI.md)) | En curso: paleta JIANT y espécimen de DRUM-X |
+| Song mode estilo SLOOP: 8 canciones × 4 secciones | ✅ (falta el backup de todas las canciones) |
+| DRUM-X: motor, MORPH, WARP, mutes por grupo y por sonido, INIT / RECALL | ✅ |
+| Master: CLIP, PNCH, DUCK | ✅ |
+| Punch-in FX de audio y MIDI, con su lane automatizable | ✅ |
+| Macros M1–M4 con su capa y su mapa | ✅ |
+| SHIFT (OFS / PIT), ARP TRNS, SEQ + REC | ✅ |
+| Paleta térmica JIANT | ✅ |
+| Escenas por fila de la cadena (mutes, macros, punch-in) | ⏳ siguiente |
+| Más modulación y mejores efectos | ⏳ |
+| Interfaz orgánica con las ilustraciones ([docs/TONIC-UI.md](docs/TONIC-UI.md)) | ⏸ después de sonido y performance |
 
-### Qué cambió respecto de Felucca 1.1.5.1
+<details>
+<summary><b>Qué cambió respecto de Felucca 1.1.5.1</b></summary>
 
-- **Master (FX > MASTER):** **CLIP** satura la mezcla antes del limiter (x1 a x4, el nivel se mantiene);
-  **PNCH** es el bus de batería: cada golpe de DRUM gana hasta +6 dB en sus primeros ~9 ms y su cola baja hasta
-  −5 dB, sin detector de audio; **DUCK** hace que el bombo baje los demás tracks hasta −18 dB, con **REL** como
-  release (40–600 ms). Todo en 0 queda fuera de la cadena. Se guardan con el proyecto.
-- **PHYS** se retiró (liberó 50 KB de RAM). Un sonido PHYS de un proyecto o preset viejo suena como el
-  primer preset de ANALOG.
-- **Sin samples de usuario.** Se fueron los slots USR1–3 (SAMPLE, GRAIN, SLICE), la subida y grabación
-  desde el editor, la página EDIT > SLICES y las slices manuales (MAN). Los samples de fábrica, BREAK y
-  PIANO siguen. Un sonido viejo en USR suena con un set de fábrica. Libera 240 KB de flash para las
-  canciones.
-- **8 canciones.** Cada una con sus 4 secciones (A–D) y sus filas. La canción 1 son los 4 proyectos de
-  siempre, así que lo guardado con Felucca aparece ahí.
-- **Capa FX:** quedan REPEAT 1/8, 1/16, 1/32 y los filtros LPF / HPF. Se fueron REVERSE, TAPE STOP,
-  FREEZE y el armonizador.
-- **Sin undo.** SAVE sostenido abre la capa de canción; OCT− ya no "devuelve" en las capas. En su lugar,
-  dentro de la capa de canción, OCT+ guarda la sección que suena y OCT− la recupera (STORE / RECALL).
-- **Canción por compases, estilo SLOOP.** Una fila es {sección A–D, compases 1–64} y cada sección es el
-  proyecto completo (sonidos, patrones, automatización). Live sections, quick chain y SONG REC en SAVE
-  sostenido. SEQ sostenido ya no abre la canción.
-- **Sin lock de capas** por doble toque: una capa está abierta mientras se mantiene su botón.
-- **Capa REC:** CLEAR y CLICK. COUNT-IN y CLICK LEVEL siguen en MENU > AUDIO.
-- El splash y ABOUT dicen JIANT. Los nombres USB siguen siendo "Felucca" para que el editor web conecte.
+- **DRUM** es DRUM-X; los kits de Felucca se retiraron.
+- **CHORD** se retiró; sus dos parámetros son ahora SHIFT (OFS / PIT).
+- **PHYS** se retiró, lo que liberó 50 KB de RAM. Un sonido PHYS viejo suena como el primer preset de ANALOG.
+- **Sin samples de usuario**, para hacer lugar a las canciones:
+  - se fueron USR1–3 y la subida o grabación de samples desde el editor;
+  - siguen los samples de fábrica;
+  - un sonido viejo en USR suena con un set de fábrica.
+- **8 canciones**: la canción 1 son los 4 proyectos de siempre, así que lo guardado con Felucca aparece ahí.
+- **Capa FX**:
+  - se fueron REVERSE, TAPE STOP, FREEZE y el armonizador;
+  - entraron los punch-in MIDI.
+- **Sin undo**: en SAVE sostenido, OCT+ guarda la sección que suena y OCT− la recupera.
+- **Sin lock de capas**: una capa está abierta mientras se mantiene su botón.
+- **EDIT sostenido**: hace INIT / RECALL en lugar del selector de voces.
+- **Capa REC**: CLEAR y CLICK.
+- **Paleta**: JIANT, térmica, viene de fábrica.
+- **Nombres USB**: siguen siendo "Felucca" para que el editor web conecte.
 
-## Lo que tiene hoy
-
-- **4 tracks**, cada uno con su engine y su sonido, 8 voces compartidas.
-- **12 engines:** ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, SAMPLE, VOICE, TRIO, WHEEL, GRAIN,
-  NOISE, SLICE y DRUM (DRUM-X: kit de 8 lanes sintetizado, sin samples, con MORPH A↔B por sonido y WARP, que deforma todo el kit con FM y feedback).
-- **Secuenciador:** 64 pasos por track con acordes, ties, accent, slide, chance y ratchets; piano roll;
-  grilla de batería; parameter locks; automatización de perillas; grabación en vivo con overdub;
-  metrónomo y count-in.
-- **SEQ TOOLS:** CLEAR, REVERSE, SHIFT, RANDOM y COOK sobre el patrón (BEAT y herramientas por lane en
-  DRUM).
-- **SHIFT** (SEQ > SHIFT y capa SCL): desfase de la secuencia en pasos (OFS) y en altura (PIT), automatizable;
-  arpegiador con modo TRNS, 16 escalas con modo de teclas blancas, glide, MONO / LEGATO / UNISON.
-- **Modulación:** 4 slots por track, con controladores MIDI como fuentes.
-- **Efectos:** distorsión y SLICER por track; envíos a chorus, delay y reverb (ROOM o SPRING); limiter
-  en el master.
-- **USB:** MIDI class-compliant y entrada de audio "Felucca" (el master en la computadora). MIDI por TRS,
-  clock interno, USB o TRS.
-- **Canciones y presets:** 8 canciones de 4 secciones (A–D) con su cadena de filas; 32 presets de usuario,
-  con nombre; autoguardado al apagar.
-- **Capa de canción** (SAVE sostenido): secciones en vivo en el próximo compás, quick chain, SONG REC,
-  STORE / RECALL, selector de canción.
-- **Editor web** de todos los parámetros (editor de patches FM6, grilla, mezcla, backup completo).
-
-## La interfaz
-
-La pantalla del FM-1 mide 240 × 240. El concepto de arriba se lleva a ella página por página: la ilustración
-de fondo y los valores vivos (tempo, sección, MORPH, pasos, niveles) dibujados encima por el firmware, con
-partes que reaccionan a los knobs. En el concepto, **PRJ** es la canción (1–8) y **VAR** la sección (A–D).
-FM1, FM2, FM3, DRUM y VOICE son ejemplos de engines: hay 4 tracks y cada uno puede usar cualquier engine.
-
-| Panel | Qué es en el firmware | Hoy |
-| --- | --- | --- |
-| 01 HOME | los 4 tracks con su engine, tempo, canción y sección | ✅ función, ⏳ diseño |
-| 02 TRACK · 03 FM ALGORITHM | EDIT del track; algoritmo y operadores de FM6 | ✅ función, ⏳ diseño |
-| 04 TRACK MAP | tracks y las 8 voces compartidas | ✅ función, ⏳ vista |
-| 05 SEQUENCER · 06 SEQ PERFORMANCE | grilla de batería de 8 lanes y 64 pasos; SEQ TOOLS, grabación y mutes en vivo | ✅ función, ⏳ diseño |
-| 07 DRUM-X · 08 DRUM MORPH | kit DRUM-X; un sonido con sus lados A / B y el MORPH | ✅ 07 dibujada y animada, 🔶 08 en Fase 2 |
-| 09 MACRO · 10 MACRO MAP | macros M1–M4 y lo que mueve cada una | ⏳ pendiente |
-| 11 PUNCH-IN FX | capa FX: REPEAT 1/8–1/32, LPF, HPF; después punch-in MIDI | 🔶 parcial |
-| 12 FX RACK · 13 MIXER | distorsión y envíos por track; nivel, pan, envíos, mute | ✅ función, ⏳ diseño |
-| 14 SONG · 19 SAVE / PROJECT | canción por compases y capa de canción; 8 canciones × A–D | ✅ función, ⏳ diseño |
-| 15 SHIFT · 16 ARP · 17 AUTOMATION | desfase OFS / PIT (en lugar de CHORD), arpegiador, automatización por paso y de knobs | ✅ función, ⏳ diseño |
-| 18 VISUALIZER | osciloscopio | ✅ sencillo |
-| 20 PERFORMANCE | tempo, sección, macros y punch-in en vivo | ⏳ pendiente |
-
-Por ahora la interfaz usa los gráficos funcionales con la **paleta térmica** JIANT (de fábrica): negro, índigo,
-violeta, rojo, naranja, amarillo y blanco; cyan para los valores. Las barras de las tarjetas toman el calor de su
-valor y la página de DRUM-X muestra los 8 sonidos como columnas que se encienden con cada golpe, con la barra de
-MORPH arriba. Los dibujos orgánicos quedan para después de cerrar sonido y performance. Plan en
-[docs/TONIC-UI.md](docs/TONIC-UI.md).
-
-![DRUM-X en el firmware](docs/drumx-screen.png)
+</details>
 
 ## Controles
 
@@ -142,6 +139,7 @@ MORPH arriba. Los dibujos orgánicos quedan para después de cerrar sonido y per
 | **ARP TRNS** | Con el modo de ARP en TRNS, las teclas (y el MIDI que entra) transponen la secuencia del track según su intervalo desde C4, sin tocar notas; la transposición queda al soltar | — |
 | **SEQ > SHIFT** | OFS corre la secuencia del track de −32 a +32 pasos (dentro de LEN; grabar en vivo escribe donde se escucha) y PIT la transpone ±24 semitonos (no en kits). Los dos se automatizan y están también en la capa SCL (KNOB 3 / 4) | OFS, PIT |
 | **SEQ + REC** | Mantener SEQ y apretar REC: CLEAR ALL SEQUENCES? (OCT+ confirma): borra los pasos y la automatización de los 4 tracks y la lane de punch-in | — |
+| **LFO** | — (capa **MACRO**: abajo, a dónde va cada macro) | M1, M2, M3, M4 |
 | **GLO** | Teclas negras 1–4 mute de T1–T4 (fijo); 5–8 mute de grupo de DRUM: KICK, SNARE, HAT, PERC; F3–B3 solo mientras se mantiene; C4 desmutea todo; F4 tap tempo | Nivel de T1–T4 |
 | **SCL** | Cualquier tecla elige la raíz | ROOT, SCL, OFS, PIT |
 | **EDIT** | F3 **INIT**: el sonido del track vuelve al de fábrica (en DRUM, también el kit DRUM-X). G3 **RECALL**: vuelve al sonido guardado en la sección (en DRUM, con su kit). Los dos piden confirmación y no tocan los pasos. En un track DRUM, las teclas negras 1–8 mutean cada sonido de DRUM-X. El engine y los sonidos se eligen en PRESETS | Las 4 primeras perillas de EDIT del engine |

@@ -11,6 +11,8 @@
  *   RAND  a new random value per note-on (its own generator: the shared rng is not touched), bipolar
  *   MODW  MIDI CC1, AT channel aftertouch, EXPR CC11 of the track's channel (seq.c), 0..1; until a
  *         controller arrives (and after CC121 RESET ALL CONTROLLERS) MODW and AT are 0, EXPR 1
+ *   M1..M4 (JIANT) the project's macros (macro_v, the knobs with LFO held), 0..1: the same for every track, so a
+ *         macro reaches as many destinations as the slots that name it
  * Destinations:
  *   per voice (vmod_t, like the fixed routings):
  *     PITCH  AMT 63 at a full source = +-11.8 semitones (as LFO DEST PIT)
@@ -21,6 +23,8 @@
  *   per track, once per block: PAN, DIST CHO DLY REV (the sends), RATE (LFO rate), VIB (LFO DEST PIT, the
  *     vibrato depth), E1..E8 (the engine's parameters P_E0..P_E7, named by the engine): AMT 64 at a full
  *     source = the parameter's whole range; the sum is clamped to its range
+ *   the master (JIANT): CLIP and PNCH (G_CLIP, G_PUNCH, FX > MASTER), from any track's slot, AMT 64 at a full
+ *     source = 0..100; the slots of all tracks add (macro_master, once an audio block)
  * A per-voice source on a per-block destination takes the latest note-on's value (VEL, KEY, RAND), ENV the
  * envelope of the latest note-on's voice (one block late, 0 when it has ended).
  *
@@ -30,9 +34,10 @@
  * presets read and write t->p from the main loop, which the ISR preempts; TIMER5 only fills the MIDI rings),
  * and the engines read t->p as before. An engine reads its parameters in note_on (events_block) unmodulated.
  * Nothing active (every slot with SRC, DST or AMT at 0): no work, and the sound is bit-identical. */
-enum { MS_OFF, MS_LFO, MS_ENV, MS_VEL, MS_KEY, MS_RAND, MS_MODW, MS_AT, MS_EXPR, MS_N };
+enum { MS_OFF, MS_LFO, MS_ENV, MS_VEL, MS_KEY, MS_RAND, MS_MODW, MS_AT, MS_EXPR, MS_M1, MS_N = MS_M1 + 4 };
 enum { MD_OFF, MD_PITCH, MD_CUT, MD_SHP, MD_AMP, MD_PAN, MD_DIST, MD_CHO, MD_DLY, MD_REV, MD_RATE, MD_VIB, MD_E1,
-       MD_N = MD_E1 + 8 };
+       MD_CLIP = MD_E1 + 8, MD_PNCH, MD_N };
+static uint8_t macro_v[4];       /* (JIANT) the macros M1..M4, 0..127: the project's (project.c), LFO held turns them */
 _Static_assert(NELEM(N_MSRC) == MS_N && NELEM(N_MDST) == MD_N, "N_MSRC / N_MDST == MS_* / MD_*");
 _Static_assert(P_M2SRC == P_M1SRC + 3 && P_M4AMT == P_M1SRC + 11 && P_M4AMT + 1 == P_FM1_ATK, "matrix slots: 3 ids each");
 #define NMSLOT 4u
@@ -87,8 +92,10 @@ static int32_t mod_tsrc(const track_t *t, uint32_t s, int32_t lfo)
         return t->mw * 258;
     case MS_AT:
         return t->at * 258;
-    default:
+    case MS_EXPR:
         return (127 - t->ex_off) * 258;
+    default:
+        return macro_v[(s - MS_M1) & 3u] * 258;
     }
 }
 
@@ -135,7 +142,7 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
     for (; k < NMSLOT; k++) {
         uint32_t s = (uint32_t)p[P_M1SRC + 3u * k], d = (uint32_t)p[P_M1DST + 3u * k];
         int32_t a = p[P_M1AMT + 3u * k], x;
-        if (!s || !d || !a || s >= MS_N || d >= MD_N)
+        if (!s || !d || !a || s >= MS_N || d >= MD_CLIP)   /* (the master's: macro_master) */
             continue;
         if (d <= MD_AMP) {                              /* per voice */
             mod.amp |= d == MD_AMP;
@@ -169,6 +176,25 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
         t->p[id] = (int16_t)clamp(mod.keep[j] + off[j], pd->min, pd->max);
     }
     return 1;
+}
+
+/* (JIANT) once an audio block, before the parts (fx.c): CLIP and PUNCH as the master plays them, the stored
+ * values plus every track's slots on them (per-voice sources: the latest note-on's value; LFO: the block before) */
+static __attribute__((noinline)) void macro_master(void)
+{
+    int32_t off[2] = {0, 0};
+    uint32_t i, k;
+    for (i = 0; i < NTRK; i++) {
+        const track_t *t = &trk[i];
+        for (k = 0; k < NMSLOT; k++) {
+            uint32_t s = (uint32_t)t->p[P_M1SRC + 3u * k], d = (uint32_t)t->p[P_M1DST + 3u * k];
+            int32_t a = t->p[P_M1AMT + 3u * k];
+            if (s && a && s < MS_N && (d == MD_CLIP || d == MD_PNCH))
+                off[d - MD_CLIP] += (((mod_tsrc(t, s, mulq15(t->lfo_val, t->lfo_fade)) * a) >> 6) * 100) >> 15;
+        }
+    }
+    clip_eff = (int16_t)clamp(song.g[G_CLIP] + off[0], 0, 100);
+    pnch_eff = (int16_t)clamp(song.g[G_PUNCH] + off[1], 0, 100);
 }
 
 /* after the part's block (when mod.on): the stored values back */
@@ -236,7 +262,7 @@ static __attribute__((noinline)) void mod_midi(track_t *t, uint32_t st, uint32_t
 static const char *mod_dst_name(const track_t *t, int32_t v)
 {
     v = clamp(v, 0, MD_N - 1);
-    if (v >= MD_E1) {
+    if (v >= MD_E1 && v < MD_CLIP) {
         const char *l = track_desc(t, P_E0 + (uint32_t)(v - MD_E1))->label;
         if (l && l[0] && l[0] != '-')
             return l;

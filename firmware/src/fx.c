@@ -89,7 +89,7 @@ static __attribute__((noinline)) void clip_block(uint32_t n)
 }
 static __attribute__((noinline)) void master_begin(void)
 {
-    int32_t a = song.g[G_CLIP];
+    int32_t a = clip_eff;
     clip_g = a > 0 ? 4096 + a * 12288 / 100 : 0;
     if (clip_g)
         clip_mk = (int32_t)((19661u << 15) / (uint32_t)softclip((19661 * clip_g) >> 12));
@@ -463,6 +463,7 @@ static void mix_block(int32_t *out, uint32_t n)
         send_c[i] = send_d[i] = send_r[i] = mix_l[i] = mix_r[i] = 0;
     pfx_block(n, perf_kill ? 0u : (perf_held | perf_latched) & PF_MIDI);
     events_block(n);
+    macro_master();                                     /* CLIP / PNCH with the matrix (mod.c) */
     master_begin();
     duck_block();
     perf = perf_begin(n);                               /* the FX hold layer at work (perform.c) */

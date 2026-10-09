@@ -2569,13 +2569,13 @@ static int test_layer(void)
             ok &= ui.home;
             btn_up(PB[i]); frame();
             ok &= !ui.home && (PB[i] == B_GLO ? cur_page()->graph == GR_TRK : cur_page()->fam == PF[i]);
-            if (PB[i] == B_SCL || PB[i] == B_GLO || PB[i] == B_EDIT)
-                continue;                             /* (a layer of their own: held long is a peek) */
+            if (PB[i] == B_SCL || PB[i] == B_GLO || PB[i] == B_EDIT || PB[i] == B_LFO)
+                continue;                             /* (a layer of their own: held long is a peek; LFO: MACRO) */
             ui_power_on();
             hold(PB[i]);                              /* (no layer of their own: a long press is a tap too) */
             ok &= !ui.home && cur_page()->fam == PF[i];
         }
-        bad += check("ENV LFO SCL ARP GLO EDIT act when let go, not on press (ENV LFO ARP held long: the same)", ok);
+        bad += check("ENV LFO SCL ARP GLO EDIT act when let go, not on press (ENV ARP held long: the same)", ok);
     }
     ui_power_on();
     go_page(GR_ROLL); my_steps(TSEL); ui.cursor = 0;
@@ -3381,6 +3381,53 @@ static int test_bughunt_ui(void)
     press(B_EDIT);
     bad += check("EDIT tap = RENAME on USER: no layer hint over NAME (elsewhere the hint as before)",
                  ok && msg_is("HOLD [EDIT] QUICK"));
+    return bad;
+}
+
+/* MACRO (JIANT): LFO held is the macros' layer, KNOB 1..4 M1..M4; a MOD slot with SRC M1..M4 moves its destination
+ * by the macro (an engine parameter, the master's CLIP); the project keeps them */
+static int test_macro_layer(void)
+{
+    int bad = 0, ok;
+    track_t *t;
+    project_t a, b;
+    project_store_t st;
+    ui_power_on();
+    t = TSEL;
+    memset(macro_v, 0, sizeof macro_v);
+    go_home(); frame();
+    btn_down(B_LFO); frames(800);
+    ok = ui.layer == LAYER_MACRO;
+    turn(EN_K1, 10); frame();
+    turn(EN_K4, 3); frame();
+    ok &= macro_v[0] == 10 && macro_v[3] == 3 && macro_v[1] == 0;
+    btn_up(B_LFO); frame();
+    bad += check("MACRO: LFO held opens it, KNOB 1 / 4 turn M1 / M4", ok && !ui.layer);
+    t->p[P_M1SRC] = MS_M1; t->p[P_M1DST] = MD_E1; t->p[P_M1AMT] = 64;
+    macro_v[0] = 127;
+    {
+        const param_desc_t *pd = &ENGINES[t->engine]->edit[0];
+        int16_t keep = t->p[P_E0] = (int16_t)pd->min;
+        ok = mod_begin(t) && t->p[P_E0] >= pd->max - 1;
+        mod_end(t);
+        ok &= t->p[P_E0] == keep;
+        macro_v[0] = 0;
+        ok &= !mod_begin(t) || t->p[P_E0] == keep;
+        mod_end(t);
+    }
+    bad += check("  M1 -> E1 AMT 64: M1 full takes the parameter to its top for the block, then it is back", ok);
+    t->p[P_M1DST] = MD_CLIP; song.g[G_CLIP] = 10;
+    macro_v[0] = 127; macro_master();
+    ok = clip_eff >= 99 && song.g[G_CLIP] == 10;
+    macro_v[0] = 0; macro_master();
+    bad += check("  M1 -> CLIP: the master's clip rises with the macro, the stored CLIP untouched", ok && clip_eff == 10);
+    t->p[P_M1SRC] = 0; song.g[G_CLIP] = 0;
+    macro_v[0] = 5; macro_v[1] = 66; macro_v[2] = 127; macro_v[3] = 0;
+    project_capture(&a);
+    ok = proj_pack(&st, &a) && proj_import(&b, &st, sizeof st) && !memcmp(b.macro, macro_v, 4);
+    memset(macro_v, 0, sizeof macro_v);
+    (void)project_restore_runtime(&b);
+    bad += check("  the project keeps M1..M4 (saved, loaded back)", ok && macro_v[1] == 66 && macro_v[2] == 127);
     return bad;
 }
 
@@ -6985,6 +7032,7 @@ int main(void)
     bad += test_sample_alert();
     bad += test_quick_layers();
     bad += test_shift_page();
+    bad += test_macro_layer();
     bad += test_bughunt_ui();
     bad += test_bughunt_ui2();
     bad += test_piano_roll();
