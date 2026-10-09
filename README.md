@@ -121,11 +121,10 @@ FM1, FM2, FM3, DRUM y VOICE son ejemplos de engines: hay 4 tracks y cada uno pue
 | 18 VISUALIZER | osciloscopio | ✅ sencillo |
 | 20 PERFORMANCE | tempo, sección, macros y punch-in en vivo | ⏳ pendiente |
 
-Todo se dibuja **por código** (`firmware/src/ui_organic.c`: curvas Bézier antialiasadas, contornos que se
-interpolan, punteado, letras de referencia), sin imágenes guardadas, y reacciona a los parámetros y a lo que
-suena. El estilo es el de las láminas anatómicas de los años 60: línea crema sobre negro, color solo en los
-detalles. La paleta **JIANT** es la de fábrica. Primera pantalla: el espécimen de DRUM-X, una orquídea cuyos
-órganos son los grupos del kit; el MORPH cambia su anatomía y cada golpe enciende sus vasos. Plan en
+Por ahora la interfaz usa los gráficos funcionales con la **paleta térmica** JIANT (de fábrica): negro, índigo,
+violeta, rojo, naranja, amarillo y blanco; cyan para los valores. Las barras de las tarjetas toman el calor de su
+valor y la página de DRUM-X muestra los 8 sonidos como columnas que se encienden con cada golpe, con la barra de
+MORPH arriba. Los dibujos orgánicos quedan para después de cerrar sonido y performance. Plan en
 [docs/TONIC-UI.md](docs/TONIC-UI.md).
 
 ![DRUM-X en el firmware](docs/drumx-screen.png)

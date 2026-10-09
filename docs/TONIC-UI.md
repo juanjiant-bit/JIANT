@@ -53,24 +53,22 @@ sobre negro; color solo en los detalles (puntas rojas, vasos amarillos, cyan y v
 referencia cyan en círculos; ejes punteados; punteado para sombrear. Nada de flores genéricas: cada pantalla es un
 **espécimen** cuyos órganos son partes del instrumento, y cuya anatomía cambia con los parámetros.
 
-## Pantallas hechas (con las láminas: `firmware/src/ui_plates.c`)
+## Hoy: paleta térmica, gráficos funcionales
 
-Paleta JIANT = la de las láminas: fondo negro, línea blanca, cyan para los valores, rojo para lo activo, y los demás
-roles (teal, verde, amarillo, naranja, violeta) en `og_role`. En las otras paletas, mezclas de sus propios colores; en
-GREY y MONO, grises.
+Por decisión del usuario, los dibujos quedan **en pausa** hasta terminar sonido y performance: las páginas usan otra
+vez los gráficos funcionales (onda, envolvente, LFO, FX, algoritmo) y solo se aplica la **paleta térmica**.
 
-| Página | Lámina | Qué se mueve |
-| --- | --- | --- |
-| DRUM (EDIT) | 4 iris | sus 8 nodos cyan son los 8 sonidos: se encienden con cada golpe y se apagan con la caída (un sonido muteado queda oscuro); el MORPH abre la flor (A cerrada, B abierta); el WARP la hace temblar; escala A–B arriba |
-| EDIT > SOUND | 4 iris | el nodo del sonido editado encendido, los demás quietos; el lado A/B abajo |
-| LFO, LFO DEST | 10 y 11 | los cinco nadadores son las cinco ondas (SIN TRI SAW SQR S&H, anillos cyan violeta rojo naranja amarillo): la elegida brilla, las otras se apagan; las colas nadan a la velocidad del LFO, más abiertas con más profundidad |
-| ENV, ENV DEST | 15 curvas | las curvas quietas, la envolvente real (ATK DEC SUS REL) dibujada en blanco dentro de la caja |
-| FX | 8 ala | la membrana cyan, los envíos; las venas rojas, la distorsión; tiembla con el delay |
-| ARP | 6 planta | sus nodos se encienden uno tras otro con los pasos del arpegio; apagada sin ARP |
-| VOICE | 2 vaso | sus nodos teal son las voces del track, encendidas mientras suenan |
-| EDIT de cada sinte | ANALOG 13, PHASE 1, LOFI 2, VOICE 17, TRIO 7, WHEEL 12, GRAIN 16, NOISE 5 | brilla con el nivel del track, se mece con su LFO |
+- **Paleta JIANT** (la de fábrica): fondo negro, superficie índigo casi negra, texto blanco cálido, cyan para los
+  valores y el tema, naranja para lo activo.
+- **Rampa de calor** `heat_col` (`ui_graph.c`): índigo → violeta → rojo → naranja → amarillo → blanco. En JIANT la
+  barra de cada tarjeta toma el color de su valor (bajo violeta, alto amarillo); en las otras paletas, el color de
+  tema de siempre, y la rampa va de su superficie a su acento y su texto.
+- **DRUM** (EDIT del track de batería): 8 columnas, una por sonido (BD SD CP CH OH TM RS CB), cuya altura y calor
+  siguen el golpe y su caída; un sonido muteado queda tachado; arriba, la barra de MORPH de A a B. En EDIT > SOUND,
+  el sonido editado en cyan.
 
-FM6 (el algoritmo), WHEEL (drawbars, en su página propia), SAMPLE y SLICE (la onda) conservan su gráfico funcional.
+Las láminas (`assets/ui-shapes/plates.svg`), su conversor y `og_ill` siguen en el repo para retomarlas después; el
+firmware ya no las incluye (−11 KB de flash).
 
 ## Cómo reemplazar los dibujos (vectores propios)
 

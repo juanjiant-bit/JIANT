@@ -49,10 +49,10 @@ PALETTES = [
     ("NIGHT",  (0, 0, 0),       (0, 24, 10),     (150, 230, 170), (56, 220, 100),  (255, 255, 255)),
     # 1.0.2: black and white (the derived tokens are set, not blended: bw()); the old MONO is GREY (id 0)
     ("MONO",   (0, 0, 0),       (0, 0, 0),       (255, 255, 255), (255, 255, 255), (255, 255, 255)),
-    # JIANT FM (docs/TONIC-UI.md): the user's plates (assets/ui-shapes/plates.svg): black, a white line, cyan values,
-    # red for the one active thing; the default since JIANT 0.1 (src/panel.c). The plates' other roles (teal, green,
-    # yellow, orange, violet): src/ui_organic.c og_role
-    ("JIANT",  (0, 0, 0),       (14, 15, 17),    (250, 250, 250), (0, 205, 255),   (255, 40, 16)),
+    # JIANT FM (docs/TONIC-UI.md): thermal. Black, a warm white line, cyan for what is selected (the cold), orange for
+    # the one active thing; values as heat (ui_graph.c heat_col: indigo violet red orange yellow white). The default
+    # since JIANT 0.1 (src/panel.c)
+    ("JIANT",  (0, 0, 0),       (16, 12, 22),    (244, 241, 234), (0, 210, 255),   (255, 122, 0)),
 ]
 BW = "MONO"
 BW_GREY = (82, 82, 82)             # MONO's one mid grey (RGB565 10/20/10): DIM LINE RAISE LANE
