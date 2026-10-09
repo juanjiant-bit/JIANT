@@ -13,6 +13,21 @@
 /* the height ADSR and LFO are drawn on: 100 px, or (MENU > LARGE's strip: draw_graph) the strip's ~ 56 */
 static int32_t graph_ht = 100;
 #include "ui_organic.c"                              /* JIANT FM's organic line art (drawn by code) */
+static uint16_t heat_col(int32_t v);
+/* JIANT (thermal): a curve's colour at canvas row y, hot at the top (y0) and cold at the bottom (y1); else c */
+static uint16_t heat_y(int32_t y, int32_t y0, int32_t y1, uint16_t c)
+{
+    return settings.palette == UI_JIANT_INDEX && y1 > y0 ? heat_col(24 + (y1 - y) * 232 / (y1 - y0)) : c;
+}
+/* JIANT: a hit or note as hot as it plays (velocity x chance; an accent white hot); else ACCENT or c */
+static uint16_t step_heat(const step_t *st, int acc, uint16_t c)
+{
+    int32_t v = (st->vel ? st->vel : 100) * (int32_t)step_chance(st) / 100;
+    if (settings.palette != UI_JIANT_INDEX)
+        return acc ? T_ACCENT : c;
+    return heat_col(acc ? 236 : 40 + v * 160 / 127);
+}
+#include "ui_being.c"                                /* (JIANT 0.5) the beings: the engine pages' creatures */
 
 /* Matches voice.c: attack is linear, decay and release are exponential
  * (env += (target - env) * k each tick, ~99 % after the set time). Time
@@ -26,24 +41,24 @@ static void graph_adsr(const track_t *t, uint16_t c)
     int32_t e = 32768;                                                  /* exp(-4.6 u), Q15 */
 #define EGY(lvl) (bot - (lvl) * (bot - top) / 1000)
     cv_rect(PANEL_X0, bot + 2, PANEL_W, 1, T_RAISE);
-    cv_line_t(x0, bot, x1, top, c, 2);                                  /* attack: linear */
+    cv_line_t(x0, bot, x1, top, heat_y((bot + top) / 2, top, bot, c), 2);                                  /* attack: linear */
     px = x1;
     py = top;
     for (i = 1; i <= d; i++) {                                          /* decay: exponential to SUS */
         int32_t lvl;
         e = (e * (32768 - 150733 / d)) >> 15;           /* k^d = exp(-4.6) */
         lvl = sus + ((1000 - sus) * e >> 15);
-        cv_line_t(px, py, x1 + i, EGY(lvl), c, 2);
+        cv_line_t(px, py, x1 + i, EGY(lvl), heat_y(py, top, bot, c), 2);
         px = x1 + i;
         py = EGY(lvl);
     }
-    cv_line_t(px, py, x3, EGY(sus), c, 2);                               /* sustain */
+    cv_line_t(px, py, x3, EGY(sus), heat_y(py, top, bot, c), 2);                               /* sustain */
     px = x3;
     py = EGY(sus);
     e = 32768;
     for (i = 1; i <= r; i++) {                                          /* release: exponential to 0 */
         e = (e * (32768 - 150733 / r)) >> 15;
-        cv_line_t(px, py, x3 + i, EGY(sus * e >> 15), c, 2);
+        cv_line_t(px, py, x3 + i, EGY(sus * e >> 15), heat_y(py, top, bot, c), 2);
         px = x3 + i;
         py = EGY(sus * e >> 15);
     }
@@ -60,7 +75,7 @@ static void graph_lfo(const track_t *t, uint16_t c)
         if (t->p[P_LWAVE] == 4)
             y = cy - ((int32_t)((x / 20 * 2654435761u) >> 16) - 32768) * a / 32768;
         if (x)
-            cv_line_t(PANEL_X0 + x - 1, py, PANEL_X0 + x, y, c, 2);
+            cv_line_t(PANEL_X0 + x - 1, py, PANEL_X0 + x, y, heat_y(y, cy - a, cy + a, c), 2);
         py = y;
     }
 }
@@ -84,7 +99,7 @@ static void graph_steps(const track_t *t, uint16_t c)
         if (i % 16u == 0u && i + 16u <= len)
             GFX_HOOK_ALIGN(0, 0, 240, 0, AL_H | AL_CELLS | AL_N(16), "step bars' row centred");
         if (step_on(st))
-            cv_rrect(x, y, 9, bh, 2, (st->flags & SF_ACCENT) ? T_ACCENT : c, T_SURF);
+            cv_rrect(x, y, 9, bh, 2, step_heat(st, st->flags & SF_ACCENT, c), T_SURF);
         else if (st->time == ST_TIE)
             cv_rrect(x, y + bh - 6, 9, 6, 1, T_MID, T_SURF);
         else
@@ -266,7 +281,7 @@ static void graph_roll(const track_t *t, uint16_t c)
         if (s == NSTEP)
             continue;                                 /* a REST, empty, or a TIE after one */
         st = &seq_steps(t)[s];
-        col = s == ui.cursor || si == ui.cursor ? T_ACCENT : c;
+        col = s == ui.cursor || si == ui.cursor ? T_ACCENT : step_heat(st, 0, c);   /* (JIANT: as hot as it plays) */
         if (s == si)
             pr_bars(st, x + 2, 9, col, (st->flags & SF_ACCENT) != 0u, &y, step_ratchet(st));
         else                                          /* a TIE: the bars on through the gap before */
@@ -305,9 +320,9 @@ static void graph_grid(const track_t *t, uint16_t c)
             uint32_t b = 1u << l;
             int32_t x = 40 + (int32_t)i * 12;
             if ((step_lanes(st) & b) && step_ratchet(st) > 1u)
-                pr_split(x, y + 2, 10, 10, (step_accents(st) & b) ? T_ACCENT : c, step_ratchet(st));
+                pr_split(x, y + 2, 10, 10, step_heat(st, step_accents(st) & b, c), step_ratchet(st));
             else if (step_lanes(st) & b)
-                cv_rrect(x, y + 2, 10, 10, 2, (step_accents(st) & b) ? T_ACCENT : c, row);
+                cv_rrect(x, y + 2, 10, 10, 2, step_heat(st, step_accents(st) & b, c), row);
             else
                 cv_rect(x + 4, y + 6, 2, 2, i % 4u == 0u || sel ? T_MID : T_DIM);
             if (sel && base + i == ui.cursor)          /* the cursor: a 1 px frame */
@@ -699,17 +714,17 @@ static void page_title(char *ti)
     }
 }
 /* the strip's title: L centred (M when L lacks a glyph or is too wide) */
-/* the thermal ramp (JIANT): a value 0..256 as heat, indigo .. violet .. red .. orange .. yellow .. white (other
- * palettes: their surface toward their accent and text) */
+/* the thermal ramp (JIANT): a value 0..256 as heat, as a thermal camera sees it: cyan (cold) .. blue .. violet .. red
+ * .. orange .. yellow .. white (other palettes: their surface toward their accent and text) */
 static uint16_t heat_col(int32_t v)
 {
-    static const uint16_t H[6] = {0x2008u, 0x895Fu, 0xF943u, 0xFBC0u, 0xFEA0u, 0xFFFFu};
+    static const uint16_t H[7] = {0x069Fu, 0x59FFu, 0xB19Cu, 0xF146u, 0xFBC0u, 0xFEA0u, 0xFFFFu};
     int32_t k;
     v = clamp(v, 0, 256);
     if (settings.palette != UI_JIANT_INDEX)
         return v < 128 ? ux_mix(T_SURF, T_ACCENT, v * 100 / 128) : ux_mix(T_ACCENT, T_TEXT, (v - 128) * 100 / 128);
-    k = v * 5 / 257;
-    return ux_mix(H[k], H[k + 1], (v * 5 - k * 256) * 100 / 256);
+    k = v * 6 / 257;
+    return ux_mix(H[k], H[k + 1], (v * 6 - k * 256) * 100 / 256);
 }
 
 /* DRUM (DRUM-X): the eight sounds as columns, each as high and as hot as its hit now (a muted one crossed); the MORPH
@@ -1270,8 +1285,9 @@ static void graph_scope(uint16_t c)
     cv_rect(PANEL_X0, cy, PANEL_W, 1, T_RAISE);
     for (x = 0; x < PANEL_W; x++) {
         int32_t y = cy - snap[trig + (uint32_t)x] * a / peak;    /* auto-scaled */
-        if (x)
-            cv_line_t(PANEL_X0 - 1 + x, py, PANEL_X0 + x, y, c, 2);
+        if (x)                                                   /* JIANT: each stroke as hot as it is loud */
+            cv_line_t(PANEL_X0 - 1 + x, py, PANEL_X0 + x, y, settings.palette == UI_JIANT_INDEX ?
+                      heat_col(40 + (y > cy ? y - cy : cy - y) * 216 / a) : c, 2);
         py = y;
     }
 }
@@ -1439,7 +1455,7 @@ static void draw_graph(void)
             else if ((pg->scope == SC_ENGINE || pg->id[0] == P_FM1_LEVEL) && t->eng_req % NENGINES == ENGI_DIGITAL)
                 graph_fm(t, c);                      /* (OP LEVEL too: the levels on the chart) */
 #endif
-            else { cv_oy = 0; graph_scope(c); }
+            else { cv_oy = 0; graph_being(t); }       /* (JIANT 0.5: the being, was the scope) */
             break;
         }
     }

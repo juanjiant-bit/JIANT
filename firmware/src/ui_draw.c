@@ -397,7 +397,12 @@ static void card_mot_of(const int16_t *vp)
 /* a card's gauge: JIANT (thermal) its value as heat, violet .. yellow; another palette its theme colour */
 static uint16_t gauge_col(int32_t ratio)
 {
-    return settings.palette == UI_JIANT_INDEX ? heat_col(48 + clamp(ratio, 0, 1000) * 200 / 1000) : T_THEME;
+    return settings.palette == UI_JIANT_INDEX ? heat_col(clamp(ratio, 0, 1000) * 256 / 1000) : T_THEME;
+}
+/* a card's value colour: JIANT its heat (lifted a fifth toward the text, so the cold end reads on the card); else vc */
+static uint16_t value_col(uint16_t vc, int32_t ratio)
+{
+    return settings.palette == UI_JIANT_INDEX && vc == T_THEME && ratio >= 0 ? ux_mix(gauge_col(ratio), T_TEXT, 20) : vc;
 }
 static void draw_column_tall(uint32_t c, const char *label, const char *val, const char *unit, uint16_t vc, int32_t ratio,
                              uint32_t icon, int hot, int mot, int32_t kid)
@@ -493,6 +498,7 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
     const aafont_t *vf = &AF_M;
     uint32_t n, kn;
     int32_t kid = kc_tag(val, &kn);
+    vc = value_col(vc, ratio);
     fmt_named = 0;                                      /* (params.c: a name, for this card only) */
     card_mot_next = 0;                                  /* (the same: MOTION, this card only) */
     card_mot = (uint8_t)((card_mot & ~(1u << c)) | (uint32_t)mot << c);

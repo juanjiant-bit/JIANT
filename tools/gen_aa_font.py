@@ -4,13 +4,14 @@
 """Pre-rasterise TTF fonts into anti-aliased 4-bit alpha glyph tables for the UI (run by
 tools/build.py generate() with --preset inter-tight).
 
-  gen_aa_font.py OUT.h --preset standin|inter-tight [--tracking EM] [--gamma G] [--kern-min N]
+  gen_aa_font.py OUT.h --preset standin|inter-tight|chakra-petch [--tracking EM] [--gamma G] [--kern-min N]
   gen_aa_font.py OUT.h --face NAME=FONT[#index]:PX:FIRST-LAST[+0xNN,...] ...   (explicit faces)
 
 Faces of the presets (S labels, M values/headers, L big numerals / titles):
   standin     an installed Inter (~/Library/Fonts/Inter.ttc, else Inter in fonts/ next to tools/) with
               -2.5 % tracking: a stand-in for Inter Tight, for previews only.
   inter-tight assets/fonts/InterTight[wght].ttf (SIL OFL 1.1, Google Fonts) at weights 400 / 500 / 600.
+  chakra-petch assets/fonts/ChakraPetch-Medium / SemiBold / Bold.ttf (SIL OFL 1.1): JIANT's face since 0.5.
 
 Output (a C header; the glyph / font types live in the renderer, firmware/src/gfx.c):
   AF_<N>_DATA   4-bit alpha, trimmed to the ink box, rows back to back, each glyph a byte-aligned bit stream
@@ -47,10 +48,16 @@ HUFF = [("M", "L")]
 # graph_title: # . / J W too; a value with another character is set in M): a sparse face of those glyphs, the
 # space as its range and the rest as extras
 # (ui_test.c checks that every L string is covered)
+UI_PRESET = "chakra-petch"            # the firmware's faces (tools/build.py; tests/text_spacing_test.py)
 L_CHARS = " #+-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXY"
 
 
 def preset(name):
+    if name == "chakra-petch":                 # JIANT 0.5: a tech face (SIL OFL 1.1, Google Fonts)
+        v = str(FONTS.parent / "assets" / "fonts" / "ChakraPetch-")
+        return [("S", v + "Medium.ttf", 12, (32, 126), EXTRAS, -0.055, PHASES),
+                ("M", v + "SemiBold.ttf", 15, (32, 126), EXTRAS, -0.05, PHASES),
+                ("L", v + "Bold.ttf", 28, (32, 32), [ord(c) for c in L_CHARS[1:]], 0.0, PHASES_L)]
     if name == "inter-tight":
         v = str(FONTS.parent / "assets" / "fonts" / "InterTight[wght].ttf")   # SIL OFL 1.1, Google Fonts
         return [("S", v + "@400", 12, (32, 126), EXTRAS, 0.0, PHASES),
@@ -231,7 +238,7 @@ def emit(face, tracking, gamma, kern_min):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("out")
-    ap.add_argument("--preset", choices=["standin", "inter-tight"])
+    ap.add_argument("--preset", choices=["standin", "inter-tight", "chakra-petch"])
     ap.add_argument("--face", action="append", default=[])
     ap.add_argument("--tracking", type=float, default=0.0, help="extra advance per glyph in em")
     ap.add_argument("--gamma", type=float, default=1.0, help="coverage curve; <1 thickens light-on-dark text")
