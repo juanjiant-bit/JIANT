@@ -3147,93 +3147,50 @@ static int test_quick_layers(void)
     btn_up(B_SCL); frame();
     bad += check("  OCT- in SCL: nothing put back (TONIC)", ok && TSEL->p[P_ROOT] == 0 && TSEL->p[P_SCALE] == 5);
 
-    /* EDIT: the engines from F3 (NENGINES of them), sound loads with UNDO, INIT with the dialog */
+    /* EDIT (JIANT): F3 INIT, G3 RECALL (the section's stored sound), each with its dialog; KNOB 1..4 EDIT's four */
     ui_power_on();
-    set_engine_of(TSEL, 0); go_home(); frame();
-    my_steps(TSEL); TSEL->p[P_SLCR] = SL_STUT; song.playing = 1;
+    set_engine_of(TSEL, ENGI_DRUM); go_home(); frame();
+    my_steps(TSEL);
     before = *TSEL;
-    sync_reload = 0;
-    lay_combo(B_EDIT, white(eng_rank(2)));             /* (the keys: the engines one can pick, engines.c eng_vis) */
-    ok = TSEL->eng_req == 2u && TSEL->preset == 0u && ui.layer == LAYER_EDIT && sync_reload && !gates();
-    key_up(white(eng_rank(2))); frame();
-    key_down(white(1)); key_up(white(1)); frame();
-    ok &= TSEL->eng_req == ENGI_FM6;                    /* (G3: FM6, second in ENGINE_ORDER) */
-    key_down(white(NENG_SHOWN - 1u)); key_up(white(NENG_SHOWN - 1u)); frame();
-    ok &= TSEL->eng_req == ENGI_DRUM;                   /* (the last key: DRUM) */
-    ok &= !memcmp(TSEL->step, before.step, sizeof before.step) && TSEL->p[P_SLEN] == before.p[P_SLEN] &&
-          TSEL->p[P_SLCR] == SL_STUT;
+    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+    live.cur = -1;
+    lay_combo(B_EDIT, white(1)); key_up(white(1)); btn_up(B_EDIT); frame();
+    ok = !ui.confirm && msg_is("NOTHING SAVED");
+    btn_down(B_EDIT); frame(); turn(EN_K1, 5);
+    ok &= TSEL->p[P_E0] > before.p[P_E0];               /* KNOB 1: EDIT 1's first (DRUM: MRPH) */
     btn_up(B_EDIT); frame();
-    bad += check("EDIT + white key n: the n-th engine shown (FM6 2nd, DRUM last), while playing; steps, LEN, SLICER stay", ok);
-    hold(B_SAVE);
-    bad += check("  SAVE held (no undo): the sound stays, the steps untouched",
-                 TSEL->eng_req == ENGI_DRUM && !memcmp(TSEL->step, before.step, sizeof before.step));
-    a = 0;
+    bad += check("EDIT: G3 RECALL with no section stored: NOTHING SAVED; KNOB 1 the EDIT page's first (MRPH)", ok);
+    project_save(0);                                    /* the safe state: the section, stored (the music's slot) */
     ok = 1;
-    btn_down(B_EDIT); frames(480);
-    for (i = 0; i < LY_INIT; i++) {
-        key_down(white(i)); key_up(white(i)); frame();
-        a += i < NENG_SHOWN ? TSEL->eng_req == eng_vis(i) : 0u;
-        ok &= eng_ok(TSEL->eng_req);
-    }
-    btn_up(B_EDIT); frame();
-    bad += check("  every engine one can pick has its white key from F3 (NENG_SHOWN, not a fixed count; never DIGITAL)",
-                 ok && a == NENG_SHOWN);
-    set_engine_of(TSEL, 0);
-    lay_combo(B_EDIT, white(eng_rank(3))); key_up(white(eng_rank(3))); frame();
-    turn(EN_K2, 1);
-    ok = TSEL->eng_req == 3u && TSEL->preset == 1u;
-    turn(EN_K3, 1);
-    ok &= preset_favorite();
-    oct_back();
-    ok &= TSEL->eng_req == 3u && !memcmp(TSEL->step, before.step, sizeof before.step);
-    btn_up(B_EDIT); frame();
-    set_engine_of(TSEL, 0);
-    bad += check("  KNOB 2: the engine's next sound, KNOB 3 FAV; OCT-: nothing put back", ok && ui.home);
-    btn_down(B_EDIT); frame(); turn(EN_K1, 1);
-    ok = TSEL->eng_req == eng_step(0, 1);
-    btn_up(B_EDIT); frame();
-    bad += check("  KNOB 1: the next engine", ok);
-    {                                                   /* #124: SAMPLE's alias (1 = PIANO) is not a stop on KNOB 2 */
-        uint32_t tot, n, c0, c1, c2, seen = 0, alias = 0;
-        set_engine_of(TSEL, ENGI_SAMPLE); go_home(); frame();
-        eng_list_pos(&tot);
-        btn_down(B_EDIT); frame();
-        c0 = eng_list_pos(&tot);
-        turn(EN_K2, 1);
-        ok = TSEL->preset == 2u && user_of(TSEL) >= UP_SLOTS;
-        c1 = eng_list_pos(&tot);
-        turn(EN_K2, 1);
-        ok &= TSEL->preset == 3u;
-        c2 = eng_list_pos(&tot);
-        ok &= c0 == 0u && c1 == 1u && c2 == 2u && tot >= SMP_NPRESETS - SMP_NALIAS;
-        apply_preset(0);
-        for (n = 0; n < tot; n++) {                     /* right: every sound once, back to the first */
-            turn(EN_K2, 1);
-            seen |= 1u << eng_list_pos(&tot);
-            alias |= user_of(TSEL) >= UP_SLOTS && TSEL->preset == 1u;
-        }
-        ok &= seen == (1u << tot) - 1u && TSEL->preset == 0u && user_of(TSEL) >= UP_SLOTS;
-        seen = 0;
-        for (n = 0; n < tot; n++) {                     /* left: the same, backwards */
-            turn(EN_K2, -1);
-            seen |= 1u << eng_list_pos(&tot);
-            alias |= user_of(TSEL) >= UP_SLOTS && TSEL->preset == 1u;
-        }
-        ok &= seen == (1u << tot) - 1u && TSEL->preset == 0u && !alias;
-        btn_up(B_EDIT); frame();
-        bad += check("  #124 SAMPLE: KNOB 2 right PIANO, FLUTE, SAX (No. 1 2 3), both ways round the list, never the alias", ok);
-    }
-    song.playing = 0;
-    lay_combo(B_EDIT, white(LY_INIT));
+    TSEL->p[P_E0] = 3; TSEL->p[P_E2] = 120;              /* the sound and the kit wander off */
+    dx_kit[1].a[DXP_PITCH] = 99;
+    lay_combo(B_EDIT, white(1));
+    ok &= ui.confirm == CF_RECALL_SOUND;
+    key_up(white(1)); btn_up(B_EDIT); frame();
+    press(B_OCTUP);
+    ok &= !ui.confirm && msg_is("SOUND RECALLED") && TSEL->p[P_E0] == before.p[P_E0] + 5 &&
+          TSEL->p[P_E2] == before.p[P_E2] && dx_kit[1].a[DXP_PITCH] == DX_KIT_DEF[1].a[DXP_PITCH] &&
+          !memcmp(TSEL->step, before.step, sizeof before.step) && TSEL->eng_req == ENGI_DRUM;
+    bad += check("  G3 RECALL (dialog, OCT+): the sound and the DRUM-X kit as the section stored them; the steps stay", ok);
+    TSEL->p[P_E0] = 3;
+    dx_kit[1].a[DXP_PITCH] = 99;
+    btn_down(B_EDIT); frame(); key_down(white(0)); frame();
     ok = ui.confirm == CF_INIT_SOUND;
     frame();
     ok &= !ui.layer;
-    key_up(white(LY_INIT)); btn_up(B_EDIT); frame();
+    key_up(white(0)); btn_up(B_EDIT); frame();
     ok &= ui.home && ui.confirm == CF_INIT_SOUND;
-    TSEL->p[P_E0] = (int16_t)(TSEL->p[P_E0] + 5);
     press(B_OCTUP);
-    bad += check("EDIT + the key after the engines: INITIALIZE SOUND? dialog (closes the layer, no tap); OCT+ inits", ok && !ui.confirm &&
-                 msg_is("SOUND INIT") && TSEL->p[P_E0] == ENGINES[eng_step(0, 1)]->presets[0].e[0]);
+    bad += check("  F3 INIT (dialog, closes the layer, no tap; OCT+): the engine's first preset, the factory kit", ok &&
+                 !ui.confirm && msg_is("SOUND INIT") && TSEL->p[P_E0] == ENG_DRUM.presets[0].e[0] &&
+                 dx_kit[1].a[DXP_PITCH] == DX_KIT_DEF[1].a[DXP_PITCH] && !memcmp(TSEL->step, before.step, sizeof before.step));
+    set_engine_of(TSEL, 0);
+    TSEL->p[P_E1] = (int16_t)(TSEL->p[P_E1] + 7);
+    btn_down(B_EDIT); frame(); key_down(white(0)); frame(); key_up(white(0)); btn_up(B_EDIT); frame();
+    press(B_OCTUP);
+    bad += check("  INIT on a synth: its first preset", msg_is("SOUND INIT") && TSEL->p[P_E1] == ENGINES[0]->presets[0].e[1]);
+    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+    live.cur = -1;
 
     /* no layer in the menu or a dialog: GLO + a key plays */
     ui_power_on(); hold(B_HOME);
@@ -3805,15 +3762,17 @@ static int test_bughunt_ui2(void)
         }
         bad += check("piano roll: the C-1 label stays inside the panel (every palette)", !out);
     }
-    {   /* 7. EDIT: INIT is drawn in the cell after the engines, and that cell's white key is the one that inits */
-        uint32_t p, ok = LY_INIT == NENG_SHOWN && LY_INIT < 16u;      /* (layer_edit: INIT in cell NENG_SHOWN) */
-        for (p = NENG_SHOWN; p < 16u; p++) {
+    {   /* 7. EDIT: only F3 (INIT) and G3 (RECALL) act; the other white keys do nothing */
+        uint32_t p, ok = 1;
+        for (p = 0; p < 16u; p++) {
             ui_power_on(); go_home(); frame();
+            live.cur = -1;
             btn_down(B_EDIT); key_down(white(p)); frame(); frames(50);
-            ok &= (ui.confirm == CF_INIT_SOUND) == (p == LY_INIT);
+            ok &= (ui.confirm == CF_INIT_SOUND) == (p == 0u) && ui.confirm != CF_RECALL_SOUND;
             key_up(white(p)); btn_up(B_EDIT); frame();
+            ui.confirm = 0;
         }
-        bad += check("EDIT: INIT's map cell (after the engines) and its key agree", ok);
+        bad += check("EDIT: F3 opens INIT, G3 RECALL (none stored: no dialog), the other keys nothing", ok);
     }
     return bad;
 }
@@ -5175,7 +5134,7 @@ static int test_layer_knob_race(void)
                     rc_run(LB[l], mode, k, pg, 0, &a0, &b0);
                     rc_run(LB[l], mode, k, pg, 1, &a1, &b1);
                     ok = !memcmp(&a0, &a1, sizeof a0) && !memcmp(&b0, &b1, sizeof b0) &&
-                         lk_same(LL[l] == LAYER_EDIT && k == 2u ? 0u : LL[l]) && song.sel == 0u &&
+                         lk_same(LL[l]) && song.sel == 0u &&
                          !perf_k[0] && !perf_k[1] && !perf_k[2] && !perf_k[3];
                     if (LL[l] == LAYER_FX)                  /* the layer's own control moved */
                         ok &= a1.k[k] == 3;
@@ -5183,8 +5142,8 @@ static int test_layer_knob_race(void)
                         ok &= a1.p[k][P_LEVEL] == lk_p[k][P_LEVEL] - 3;
                     else if (LL[l] == LAYER_SCL)
                         ok &= a1.p[0][LY_SCL.id[k]] != lk_p[0][LY_SCL.id[k]];
-                    else if (k < 2u)                        /* (EDIT KNOB 3 FAV: a mark, KNOB 4 nothing) */
-                        ok &= a1.snd[0] != rc_snd0;
+                    else                                    /* (EDIT: EDIT 1's four, the engine's first) */
+                        ok &= a1.p[0][P_E0 + k] != lk_p[0][P_E0 + k];
                     runs++;
                     if (!ok) {
                         fails++;

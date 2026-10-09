@@ -11,10 +11,11 @@
  *              GLO + PLAY: from the top without stopping
  *   SCL  SET   any key: its note name is ROOT; KNOB 1..4 ROOT SCL CHRD VOIC (LY_SCL: the SCL page's first two,
  *              the CHORD page's two; QNT TRN stay on SCL); the LEDs show the root lit and the scale's notes breathing
- *   EDIT SET   the white keys from F3: the engines in PRESETS order (one key each, the NENG_SHOWN one can pick:
- *              engines.c eng_vis), the next white key INIT (LY_INIT: E5)
- *              (the dialog); KNOB 1 ENG, 2 No. (the engine's sounds), 3 FAV. Sound loads as on PRESETS: the steps
- *              stay, the editor gets RELOAD; they apply while playing too
+ *   EDIT SET   (JIANT: Felucca's engine keys are gone, PRESETS picks engines and sounds) F3 INIT: the track's sound
+ *              to its engine's first preset, a DRUM track's DRUM-X kit to the factory one; G3 RECALL: the track's
+ *              sound (and a DRUM track's kit) as the section playing stored it, the safe state (project.c
+ *              project_recall_sound). Each asks first (the dialog closes the layer); the steps stay. KNOB 1..4 the
+ *              EDIT page's four (the engine's first)
  *   SEQ  SET   (1.2, on the SEQ pages that show the pattern: STEP / the DRUM grid, PATTERN, CHANCE, AUTOMATION; elsewhere
  *              SEQ held opens SONG as before) TOOLS: the white keys from F3 the sequence tools (ui_tools.c: CLEAR,
  *              REVERSE, SHIFT < >, RANDOM, COOK; on a DRUM track BEAT and the lane's CLEAR REVERSE FILL RANDOM), black
@@ -55,7 +56,7 @@ static const layer_t LAYERS[LAYER_N] = {
     {B_FX, LK_HOLD, FAM_HOME, "[FX] HOLD", {{KC_KEYS, "EFFECTS"}, {KC_K14, "MACROS"}, {0, 0}}},   /* (LET GO: the header's HOLD) */
     {B_GLO, LK_SET, FAM_HOME, "[GLO] SET", {{KC_PLAY, "RESTART"}, {KC_GLO, "DONE"}, {0, 0}}},
     {B_SCL, LK_SET, FAM_SCL, "[SCL] SET", {{KC_KEYS, "ROOT"}, {KC_SCL, "DONE"}, {0, 0}}},
-    {B_EDIT, LK_SET, FAM_HOME, "[EDIT] SET", {{KC_KEYS, "ENGINE"}, {KC_EDIT, "DONE"}, {0, 0}}},
+    {B_EDIT, LK_SET, FAM_EDIT, "[EDIT] SET", {{KC_KEYS, "INIT / RECALL"}, {KC_EDIT, "DONE"}, {0, 0}}},
     {B_SEQ, LK_SET, FAM_SEQ, "[SEQ] TOOLS", {{KC_KEYS, "TOOLS"}, {KC_SEQ, "DONE"}, {0, 0}}},
     {B_REC, LK_SET, FAM_HOME, "[REC] SET", {{KC_KEYS, "RECORDING"}, {KC_REC, "DONE"}, {0, 0}}},
     {B_SAVE, LK_SET, FAM_HOME, "[SAVE] SONG", {{KC_KEYS, "PLAY"}, {KC_OCTUP, "STORE"}, {KC_OCTDN, "RECALL"}}},
@@ -69,8 +70,7 @@ static const page_t *ly_page(uint32_t l) { return l == LAYER_SCL ? &LY_SCL : l =
 #define LY_OPEN 2u                     /* ui.ly_t0: the map opened (no tap any more) */
 #define LY_COMBO 4u                    /* .. by a combo */
 #define LY_DEAD 8u                     /* .. pressed where there is no layer: does nothing */
-#define LY_INIT ((uint32_t)NENG_SHOWN) /* EDIT: the white key of INIT, the one after the engines (13: E5), its map cell */
-typedef char ly_init_fits[LY_INIT < 16u ? 1 : -1];   /* (a white key: F3 .. G5) */
+enum { LY_INIT, LY_RECALL };          /* EDIT: the white keys F3 G3 */
 #define layer_seen (favorites.factory[15][31])   /* bit l: layer l opened once (a byte no engine uses) */
 static const khint_t FX_LATCH_FOOT[3] = {{KC_KEYS, "ON / OFF"}, {KC_K14, "MACROS"}, {KC_OCTDN, "ALL OFF"}};
 
@@ -238,18 +238,8 @@ static void layer_tap(uint32_t l)
 }
 
 static uint32_t snd_id(void) { return TSEL->eng_req | (uint32_t)TSEL->preset << 8 | (uint32_t)TSEL->user << 16; }
-/* EDIT: a sound load in the layer */
-static void edit_load(uint32_t e, int32_t step)
-{
-    if (e < NENGINES) {
-        if (e == TSEL->eng_req % NENGINES)
-            return;                                     /* its engine already: the sound stays */
-        select_engine(e);
-        preset_hinted();
-    } else {
-        eng_list_step(step);
-    }
-}
+/* EDIT RECALL: the section playing has a stored sound to come back to */
+static int edit_recallable(void) { return project_recall_slot() >= 0; }
 
 /* GLO TAP: from the third tap the tempo of the taps (the last 4); 2 s without one starts over. INT clock only */
 static void glo_tap(void)
@@ -408,13 +398,13 @@ static void layer_key(uint32_t l, uint32_t k)
         }
     } else if (l == LAYER_SCL) {
         TSEL->p[P_ROOT] = (int16_t)((k + 5u) % 12u);    /* the key's note name (F3 = F) */
-    } else if (l == LAYER_EDIT && !key_black(k)) {
-        if (p < NENG_SHOWN && p < LY_INIT)
-            edit_load(eng_vis(p), 0);
-        else if (p == LY_INIT && chain_busy())
+    } else if (l == LAYER_EDIT && !key_black(k) && p <= LY_RECALL) {
+        if (chain_busy())
             ui_message("STOP TO EDIT");
-        else if (p == LY_INIT)
-            confirm_open(CF_INIT_SOUND, song.sel);      /* (the dialog closes the layer) */
+        else if (p == LY_RECALL && !edit_recallable())
+            ui_message("NOTHING SAVED");
+        else
+            confirm_open(p == LY_INIT ? CF_INIT_SOUND : CF_RECALL_SOUND, song.sel);   /* (the dialog closes the layer) */
     } else if (l == LAYER_REC) {
         if (!key_black(k) && p < 1u + RL_N)
             rec_key(p);
@@ -454,13 +444,6 @@ static void layer_knob(uint32_t k, int32_t s)
         *vp = (int16_t)clamp(*vp + accel(EN_K1 + k, s, TP[P_LEVEL].max - TP[P_LEVEL].min), TP[P_LEVEL].min,
                              TP[P_LEVEL].max);
         motion_capture(&trk[k], P_LEVEL, *vp);
-    } else if (l == LAYER_EDIT) {                       /* ENG, No., FAV */
-        if (k == 0u)
-            edit_load(eng_step(TSEL->eng_req, s), 0);
-        else if (k == 1u)
-            edit_load(NENGINES, s);
-        else if (k == 2u)
-            preset_mark(s > 0);
     } else if (l == LAYER_SAVE) {                       /* KNOB 1: the song (in when SAVE lets go); 2..4: none */
         if (k == 0u)
             lys.song = (uint8_t)(clamp((int32_t)(lys.song ? lys.song - 1u : song_cur) + (s > 0 ? 1 : -1), 0,
@@ -560,9 +543,8 @@ static uint32_t layer_leds(uint32_t *br)
             e = (k + 5u + 12u - root) % 12u;
             on = e == 0u;
             can = (mask >> e) & 1u;
-        } else if (l == LAYER_EDIT && !b) {             /* the engine lit, the others and INIT breathe */
-            on = p < NENG_SHOWN && p < LY_INIT && eng_vis(p) == TSEL->eng_req % NENGINES;
-            can = p < NENG_SHOWN && p < LY_INIT ? 1u : p == LY_INIT && !chain_busy();
+        } else if (l == LAYER_EDIT && !b) {             /* INIT and RECALL breathe (RECALL: a stored section) */
+            can = !chain_busy() && (p == LY_INIT || (p == LY_RECALL && edit_recallable()));
         } else if (l == LAYER_SEQ) {                    /* the tools breathe (not while a song plays); DRUM: the lane */
             on = b && p < NLANE && drum_track(TSEL) && p == ui.lane;   /* lit, the other lanes breathe */
             can = b ? p < NLANE && drum_track(TSEL) : tl_cell(TSEL, p) && !chain_busy();
@@ -740,18 +722,11 @@ static void layer_scl(void)                             /* KNOB 2's scales, 4 x 
         cv_text_in(x, y + CAP_IN(S, 25), LC_W, &AF_S, TP[P_SCALE].names[i], ink, fill);
     }
 }
-static void layer_edit(void)                            /* the engines from F3, INIT next (LY_INIT), the sound under them */
-{                                                        /* (cells show the engine's icon, not the key's note) */
-    uint32_t n = NENG_SHOWN < LY_INIT ? NENG_SHOWN : LY_INIT, cells = n + 1u, i, h = cells > 12u ? 20u : 28u;   /* 4 rows of 20: 8 px clear above the sound row */
-    for (i = 0; i < cells; i++) {
-        int32_t x = LC_X(i % 4u), y = 4 + (int32_t)(h + 4u) * (int32_t)(i / 4u);
-        const engine_t *en = ENGINES[eng_vis(i) % NENGINES];
-        if (i < n)
-            lcell(x, y, (int32_t)h, 0, engine_icon(en->name), 0, h > 24u ? en->name : eng_abbr(en->name),
-                  eng_vis(i) == TSEL->eng_req % NENGINES ? LS_SEL : LS_OFF, 0);
-        else
-            lcell(x, y, (int32_t)h, 0, ICON_X_WARN, 0, "INIT", chain_busy() ? LS_DIM : LS_OFF, 0);
-    }
+static void layer_edit(void)                            /* F3 INIT, G3 RECALL (a DRUM track: with the kit), the sound */
+{
+    uint32_t dr = (uint32_t)drum_track(TSEL), st = chain_busy() ? LS_DIM : LS_OFF;
+    lcell(LC_X(0), 4, LC_H, "F", ICON_X_WARN, 0, dr ? "INIT+KIT" : "INIT", st, 0);
+    lcell(LC_X(1), 4, LC_H, "G", ICON_LOOP, 0, dr ? "RCL+KIT" : "RECALL", edit_recallable() ? st : LS_DIM, 0);
     engine_sound_row(104);
 }
 
@@ -896,8 +871,6 @@ static void layer_cards(uint32_t l)
             draw_column(c, "LEVEL", val, unit, glo_sounding(c) ? VAL(c) : T_DIM, RATIO(&TP[P_LEVEL], trk[c].p[P_LEVEL]),
                         trk_icon(c, 1));
         }
-    } else if (l == LAYER_EDIT) {
-        engine_columns();
     } else if (l == LAYER_SAVE) {                       /* the section, LOOP / SONG, SONG REC, the song row */
         uint32_t n = lys.song ? lys.song - 1u : song_cur;
         fmt_int(val, (int32_t)n + 1);
@@ -949,7 +922,8 @@ static void draw_layer(void)
     else if (l == LAYER_SEQ)
         sig += (uint32_t)drum_track(TSEL) * 31u + ui.lane * 5u + (uint32_t)chain_busy() * 3u + (uint32_t)TSEL->p[P_E0] * 131u + song.sel * 977u;
     else
-        sig += snd_id() * 31u + (uint32_t)preset_favorite() * 5u + (uint32_t)chain_busy() * 3u + up_gen * 101u;
+        sig += snd_id() * 31u + (uint32_t)chain_busy() * 3u + (uint32_t)(project_recall_slot() + 1) * 5u +
+               (uint32_t)drum_track(TSEL) * 11u + up_gen * 101u;
     if (ui.force || sig != ui.layer_sig) {
         ui.layer_sig = sig;
         cv_begin(240, H_GRAPH, T_BG);

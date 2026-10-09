@@ -922,6 +922,56 @@ static int project_rename(uint32_t slot, const char *name)
     return 0;
 }
 
+/* the section to RECALL from: the one playing (stored or jumped to), else the slot the music was loaded from or
+ * saved to; -1 none (or that slot empty) */
+static int project_recall_slot(void)
+{
+    int s = live.cur >= 0 ? live.cur : proj_cur < 4u ? (int)proj_cur : -1;
+    return s >= 0 && project_used((uint32_t)s) ? s : -1;
+}
+
+/* EDIT layer RECALL (JIANT): track k's sound as section slot stored it, the safe state to come back to: its engine
+ * and sound (the parameters a sound load sets: not LEVEL PAN MUTE, the pattern's, the SLICER: param_kept), its FM6
+ * patch; a DRUM track also the section's DRUM-X kit. The steps and the motion stay. 0 done, 1 nothing stored there */
+static int project_recall_sound(uint32_t slot, uint32_t k)
+{
+    project_t *p = &proj_scratch;
+    track_t *t = &trk[k % NTRK];
+    const proj_trk_t *s;
+    uint32_t i, e;
+    if (slot > 3u || !proj_import(p, &proj_slot[slot], sizeof(project_store_t)) || !proj_ok(p) || !proj_engines_ok(p))
+        return 1;
+    proj_phys(p);                                       /* (as project_restore_runtime: the old formats' tracks) */
+    proj_fm4(p);
+    proj_phys_gone(p);
+    proj_perc(p);
+    s = &p->t[k % NTRK];
+    e = s->engine;
+    load_begin(t, LOAD_SOUND);
+    panic_req |= (uint8_t)(1u << (k % NTRK));
+    fm1_irq_off();
+    t->eng_req = (uint8_t)e;
+    t->user = 0;
+    t->preset = (uint8_t)(ENGINES[e]->npresets ? (s->preset >= PROJ_DEF_KEEP ? 0u : s->preset) % ENGINES[e]->npresets : 0u);
+    for (i = 0; i < P_COUNT; i++)
+        if (!param_kept(i))
+            t->p[i] = (int16_t)param_fit(param_desc_of(e, i), s->p[i]);
+    {
+        uint8_t v[FP_SIZE + 1u];
+        fm6_unpack(p->fm6[k % NTRK], v);
+        fm6_set_patch(k % NTRK, v);
+        fm6_adopt(k % NTRK);
+    }
+    if (e == ENGI_DRUM)
+        memcpy(dx_kit, dx_kit_ok(p->dx) ? p->dx : DX_KIT_DEF, sizeof dx_kit);
+    fm1_irq_on();
+    if (t == TSEL)
+        sync_reload = 1;
+    load_end(t);
+    ui.force = 1;
+    return 0;
+}
+
 static int project_restore_runtime(const project_t *input)
 {
     project_t *p = &proj_scratch;

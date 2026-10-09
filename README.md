@@ -137,7 +137,7 @@ detalles. La paleta **JIANT** es la de fábrica. Primera pantalla: el espécimen
 | **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF; teclas negras 1–4: mute de T1–T4 | FILTER, CRUSH, THROW, DEPTH |
 | **GLO** | Teclas negras 1–4 mute de T1–T4 (fijo); 5–8 mute de grupo de DRUM: KICK, SNARE, HAT, PERC; F3–B3 solo mientras se mantiene; C4 desmutea todo; F4 tap tempo | Nivel de T1–T4 |
 | **SCL** | Cualquier tecla elige la raíz | ROOT, SCL, CHRD, VOIC |
-| **EDIT** | Las teclas blancas eligen el engine; la siguiente, INIT | Engine, sonido, favorito |
+| **EDIT** | F3 **INIT**: el sonido del track vuelve al de fábrica (en DRUM, también el kit DRUM-X). G3 **RECALL**: vuelve al sonido guardado en la sección (en DRUM, con su kit). Los dos piden confirmación y no tocan los pasos. El engine y los sonidos se eligen en PRESETS | Las 4 primeras perillas de EDIT del engine |
 | **SEQ** | En las páginas SEQ: SEQ TOOLS | LEN, DIV, SWING, GATE |
 | **REC** | F3 CLEAR del track, G3 CLICK | CLICK |
 | **HOME** | Menú | — |
