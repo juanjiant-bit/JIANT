@@ -3384,6 +3384,48 @@ static int test_bughunt_ui(void)
     return bad;
 }
 
+/* (JIANT) REC held, then a page button: that part's automation goes: EDIT (the engine's), FX (the sends and the
+ * punch-in lane), GLO (every track's LEVEL), ENV; the others stay, REC does not arm, no page opens */
+static int test_rec_combos(void)
+{
+    int bad = 0, ok;
+    track_t *t;
+    ui_power_on();
+    t = TSEL;
+    go_home(); frame();
+    motion_set_event(t, 2, P_E0, 40);
+    motion_set_lock(t, 5, P_E0 + 1, 20);
+    motion_set_event(t, 3, P_ATK, 10);
+    motion_set_event(t, 4, P_DIST, 50);
+    motion_set_event(&trk[(song.sel + 1u) % NTRK], 1, P_LEVEL, 30);
+    pfx_lane[0] = 0x11;
+    btn_down(B_REC); frame();
+    btn_down(B_EDIT); frame(); btn_up(B_EDIT); frame();
+    btn_up(B_REC); frames(20);
+    ok = motion_find(t, 2, P_E0) < 0 && motion_find(t, 5, P_E0 + 1) < 0 && motion_find(t, 3, P_ATK) >= 0 &&
+         motion_find(t, 4, P_DIST) >= 0 && !song.rec && ui.home && msg_is("EDIT AUTOMATION CLEARED");
+    bad += check("REC + EDIT: the engine's automation and locks go (ENV FX stay), REC not armed, no page", ok);
+    btn_down(B_REC); frame();
+    btn_down(B_FX); frame(); btn_up(B_FX); frame();
+    btn_up(B_REC); frames(20);
+    ok = motion_find(t, 4, P_DIST) < 0 && !pfx_lane[0] && motion_find(t, 3, P_ATK) >= 0 && !song.rec && ui.home;
+    bad += check("  REC + FX (REC first): the FX automation and the punch-in lane go, ENV stays, REC not armed", ok);
+    btn_down(B_REC); frame();
+    btn_down(B_GLO); frame(); btn_up(B_GLO); frame();
+    btn_up(B_REC); frames(20);
+    ok = motion_find(&trk[(song.sel + 1u) % NTRK], 1, P_LEVEL) < 0 && motion_find(t, 3, P_ATK) >= 0 && ui.home;
+    bad += check("  REC + GLO: every track's LEVEL automation goes", ok);
+    btn_down(B_REC); frame();
+    btn_down(B_ENV); frame(); btn_up(B_ENV); frame();
+    btn_up(B_REC); frames(20);
+    ok = motion_find(t, 3, P_ATK) < 0 && ui.home;
+    btn_down(B_REC); frame();
+    btn_down(B_ENV); frame(); btn_up(B_ENV); frame();
+    btn_up(B_REC); frames(20);
+    bad += check("  REC + ENV: the ENV automation goes (no page); again: NO ENV AUTOMATION", ok && msg_is("NO ENV AUTOMATION"));
+    return bad;
+}
+
 /* MACRO (JIANT): LFO held is the macros' layer, KNOB 1..4 M1..M4; a MOD slot with SRC M1..M4 moves its destination
  * by the macro (an engine parameter, the master's CLIP); the project keeps them */
 static int test_macro_layer(void)
@@ -7033,6 +7075,7 @@ int main(void)
     bad += test_quick_layers();
     bad += test_shift_page();
     bad += test_macro_layer();
+    bad += test_rec_combos();
     bad += test_bughunt_ui();
     bad += test_bughunt_ui2();
     bad += test_piano_roll();

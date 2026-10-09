@@ -58,7 +58,8 @@ LFO sostenido abre la capa **MACRO**: las cuatro perillas son M1–M4 y la panta
 - **Edición**: 64 pasos por track, piano roll, grilla de batería, parameter locks, chance, ratchets, slide y
   automatización de perillas.
 - **Grabación**: en vivo con overdub, metrónomo y count-in.
-- **SEQ + REC** borra todas las secuencias de una vez para empezar de cero.
+- **SEQ + REC** borra todas las secuencias de una vez para empezar de cero; **REC + FX / EDIT / ENV / LFO…** borra solo
+  la automatización de esa parte.
 
 ### Canciones dentro del aparato
 **8 canciones**, cada una con **4 secciones (A–D)** y una cadena de filas por compases, al estilo SLOOP. Con SAVE
@@ -138,6 +139,7 @@ sostenido:
 | **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. Punch-in MIDI: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 D5 STUTTER 1/16 · 1/32 · tresillo, E5 ARP, F5 RANDOM. Teclas negras 1–4: mute de T1–T4; A#4 elige a qué tracks afectan los MIDI (todos, sintes, batería). **Automatizar**: con REC armado y tocando, lo que mantengas queda grabado en la lane de la sección (64 pasos de 1/16); G5 la borra donde pasa, o entera con el transporte parado | FILTER, CRUSH, THROW, DEPTH |
 | **ARP TRNS** | Con el modo de ARP en TRNS, las teclas (y el MIDI que entra) transponen la secuencia del track según su intervalo desde C4, sin tocar notas; la transposición queda al soltar | — |
 | **SEQ > SHIFT** | OFS corre la secuencia del track de −32 a +32 pasos (dentro de LEN; grabar en vivo escribe donde se escucha) y PIT la transpone ±24 semitonos (no en kits). Los dos se automatizan y están también en la capa SCL (KNOB 3 / 4) | OFS, PIT |
+| **REC + otro botón** | Mantener REC y apretar FX, EDIT, ENV, LFO, SCL, ARP o GLO: borra la automatización de esa parte del track elegido (movimientos de perillas y locks por paso; los valores guardados quedan). FX: también la lane de punch-in. GLO: niveles y paneo de los 4 tracks. Al revés (FX sostenido y REC) arma la grabación, como siempre | — |
 | **SEQ + REC** | Mantener SEQ y apretar REC: CLEAR ALL SEQUENCES? (OCT+ confirma): borra los pasos y la automatización de los 4 tracks y la lane de punch-in | — |
 | **LFO** | — (capa **MACRO**: abajo, a dónde va cada macro) | M1, M2, M3, M4 |
 | **GLO** | Teclas negras 1–4 mute de T1–T4 (fijo); 5–8 mute de grupo de DRUM: KICK, SNARE, HAT, PERC; F3–B3 solo mientras se mantiene; C4 desmutea todo; F4 tap tempo | Nivel de T1–T4 |

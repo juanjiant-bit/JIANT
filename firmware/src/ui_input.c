@@ -835,6 +835,62 @@ static uint32_t oct_taps(uint32_t pressed, int here)
     return tap;
 }
 
+/* (JIANT) REC held, then a page button: that part's automation goes, both kinds (the knob moves and the
+ * step locks), the stored values stay. FX: the selected track's FX and SLICER and the punch-in lane; EDIT ENV LFO SCL
+ * ARP: the selected track's parameters of those pages; GLO: every track's LEVEL and PAN. No dialog (SEQ + REC, which
+ * clears every sequence, asks). The other order is REC in a layer: it arms, as always (FX: to record the punch-in lane) */
+static int rec_combo_btn(uint32_t b)
+{
+    return b == B_FX || b == B_EDIT || b == B_ENV || b == B_LFO || b == B_SCL || b == B_ARP || b == B_GLO;
+}
+/* REC held, then page button b pressed: REC's tap and layer dead (1 = rec_clear_auto's) */
+static int rec_first(uint32_t b)
+{
+    if (!rec_combo_btn(b) || ui.menu || ui.confirm || !((fm1_in.buttons >> panel.btn[B_REC]) & 1u))
+        return 0;
+    ui.rec_t0 |= 2u;
+    if (ui.ly == LAYER_REC)
+        ui.ly_t0 |= 8u;                                 /* (LY_DEAD: no REC map, no arming tap) */
+    return 1;
+}
+static void rec_clear_auto(uint32_t b)
+{
+    uint32_t m[(P_COUNT + 31u) / 32u], i, f, n = 0, k;
+    char msg[28];
+    const char *name = b == B_FX ? "FX" : b == B_EDIT ? "EDIT" : b == B_ENV ? "ENV" : b == B_LFO ? "LFO" :
+                       b == B_SCL ? "SCL" : b == B_ARP ? "ARP" : "MIX";
+    if (chain_busy()) {
+        ui_message("STOP TO EDIT");
+        return;
+    }
+    memset(m, 0, sizeof m);
+    if (b == B_GLO) {
+        m[P_LEVEL / 32u] |= 1u << (P_LEVEL % 32u);
+        m[P_PAN / 32u] |= 1u << (P_PAN % 32u);
+    } else {
+        for (f = FAM_HOME + 1u; f < FAM_COUNT && FAM_BTN[f] != b; f++)
+            ;
+        for (i = 0; i < NPAGES; i++)
+            if (PAGES[i].fam == f && (PAGES[i].scope == SC_TRACK || PAGES[i].scope == SC_ENGINE))
+                for (k = 0; k < 4u; k++)
+                    if (PAGES[i].id[k] < P_COUNT)
+                        m[PAGES[i].id[k] / 32u] |= 1u << (PAGES[i].id[k] % 32u);
+    }
+    for (k = 0; k < NTRK; k++)
+        if (b == B_GLO || k == song.sel)
+            n += motion_clear_ids(&trk[k], m);
+    if (b == B_FX)
+        for (i = 0; i < sizeof pfx_lane; i++) {
+            n += pfx_lane[i] != 0;
+            pfx_lane[i] = 0;
+        }
+    str_cpy(msg, n ? "" : "NO ", sizeof msg);
+    str_cpy(msg + str_len(msg), name, sizeof msg - str_len(msg));
+    str_cpy(msg + str_len(msg), n ? " AUTOMATION CLEARED" : " AUTOMATION", sizeof msg - str_len(msg));
+    ui_message(msg);
+    ui.force = 1;
+}
+
 /* SEQ step entry = step recording (1.2, Discussion #133: only with the track armed and the transport stopped), acid
  * style: the keys pressed together (POLY: up to 4 notes, MONO: the last one) become the cursor step; releasing all
  * keys moves on one step (wrapping inside LEN) */
@@ -1245,11 +1301,14 @@ static void ui_input(void)
             break;
         case B_SEQ:                                     /* tap: above; held, its layer (ui_layer.c) */
         case B_SAVE:
-        case B_FX:                                      /* the layers' buttons: ui_layer.c */
-        case B_GLO:
+        case B_HOME:
+            break;
+        case B_FX:                                      /* the layers' buttons: ui_layer.c; REC held first: */
+        case B_GLO:                                     /* their automation (rec_clear_auto) */
         case B_SCL:
         case B_EDIT:
-        case B_HOME:
+            if (rec_first(b))
+                rec_clear_auto(b);
             break;
         case B_OCTDN:
         case B_OCTUP: {
@@ -1263,6 +1322,10 @@ static void ui_input(void)
             break;
         }
         default:                                        /* page buttons (GLO SCL ENV LFO EDIT ARP): when let go */
+            if (rec_first(b)) {                         /* (REC held first: their automation) */
+                rec_clear_auto(b);
+                break;
+            }
             if (!lay)                                   /* (with FX held: swallowed) */
                 ui.pg_down |= (uint16_t)(1u << id);
             break;

@@ -362,6 +362,26 @@ static int motion_move(track_t *t, uint32_t i, uint32_t step, uint32_t id, int16
     return 0;
 }
 /* an id whose meaning is the engine's own: EDIT's E1..E8, DIGITAL's operators, DRUM's lane levels */
+/* (JIANT) track t's records (both kinds) on the ids of mask m (bit id): gone, the values back to what is stored.
+ * The records it removed */
+static uint32_t motion_clear_ids(track_t *t, const uint32_t m[(P_COUNT + 31u) / 32u])
+{
+    uint32_t f = motion_guard(), k = trk_index(t), i, n = 0, gone;
+    motion_restore(t);
+    for (i = 0; i < motion.count; i++) {
+        const motion_event_t *e = &motion.event[i];
+        uint32_t id = MOTION_ID(e);
+        if ((e->place >> 6) == k && id < P_COUNT && ((m[id / 32u] >> (id % 32u)) & 1u))
+            continue;
+        motion.event[n++] = *e;
+    }
+    gone = motion.count - n;
+    memset(motion.event + n, 0, (MOTION_MAX - n) * sizeof motion.event[0]);
+    motion.count = (uint8_t)n;
+    motion_full = 0;
+    motion_unguard(f);
+    return gone;
+}
 static int motion_engine_id(uint32_t id)
 {
     return (id >= P_E0 && id <= P_E7) || (id >= P_FM1_ATK && id <= P_FM4_LEVEL) || (id >= P_LN0 && id <= P_LN7);
