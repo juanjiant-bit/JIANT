@@ -1,60 +1,45 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * JIANT 0.5: the beings. A sound page without a graph of its own (the engine's EDIT pages) shows a creature seen by a
- * thermal camera: a cell of 3 x 3 px pixels on a 4 px grid (a sensor), each as hot as the being is there (heat_col).
- * One body per engine (a genome: how many spikes, how long, how many lobes, how stretched, how they twist), shaped
- * by the page's four knobs and breathing with the sound:
- *   KNOB 1  the spikes: more of them          KNOB 3  the membrane: it wobbles into lobes
- *   KNOB 2  the spikes: longer                KNOB 4  the nuclei: 1 .. 4, orbiting (a cell dividing)
- * The output's level warms it (and swells it) and drives its time: it moves while it sounds, in silence it rests. Integer maths only: the radius of the
- * membrane at the cell's angle (dsp.c's sine table), the spikes a power of a cosine round it, a bright wall, a cold
- * band under it, the nuclei hot. 55 x 28 pixels. */
-#define BG_CELL 4                                       /* px per sensor pixel (3 lit, 1 gap) */
-#define BG_CW 55                                        /* 220 px */
-#define BG_CH 28                                        /* 112 px */
-#define BG_X0 10
-#define BG_Y0 5
+ * JIANT 0.5: the beings, in lines. A sound page without a graph of its own (the engine's EDIT pages) shows a creature
+ * as a thermal camera's isotherms: four nested outlines of one body, each as hot as the being is there (heat_col:
+ * the outer membrane cold, the core hot), the nuclei hottest. Colour is intensity: the output's level warms every
+ * line (and swells the body); in silence it cools and rests. Antialiased lines only (ui_organic.c og_line), ~400 a
+ * frame. Each knob of the page shapes it by what it is (its label), else by its place:
+ *   CUT        the spikes: a round cell closed, opening into spikes as the filter lets the harmonics through
+ *   RES        the membrane rings: a fine ripple round the outline
+ *   DTN SPRD   two nuclei, apart (the beating of two oscillators)
+ *   NOIS RAND BRTH CRSH   the outline frays
+ *   WAVE       the body's lobes
+ *   (else)     KNOB 1 more spikes, 2 longer, 3 lobes wobbling, 4 more nuclei
+ * DRUM-X (graph_colony): the kit as a colony, a small being per sound, each swelling and warming as it hits (its
+ * voice's level now), its body by the sound (the kick round, the snare spiky, the hats a fringe ..), a muted one a
+ * dim outline. */
 typedef struct {
     uint8_t k0, kk;                                     /* spikes: k0 + KNOB 1 x kk */
     uint8_t ss;                                         /* their length at KNOB 2 full (16 = the radius x 1.6) */
     uint8_t lob;                                        /* lobes of the membrane */
-    uint8_t ax;                                         /* stretched: x / ax (16 = round) */
-    uint8_t tw;                                         /* the spikes twist with the distance (a spiral) */
+    uint8_t ax;                                         /* stretched: x * ax / 16 */
+    uint8_t tw;                                         /* the spikes twist */
     uint8_t sh;                                         /* their sharpness (a power of the cosine) */
-    uint8_t vac;                                        /* vacuoles: cold holes */
 } genome_t;
 static const genome_t GENOME[8] = {
-    {6, 18, 16, 3, 22, 0, 6, 0},                        /* a radiolarian: a sun of thin rays */
-    {3, 5, 14, 2, 26, 3, 2, 1},                         /* an amoeba: its arms swirl */
-    {4, 6, 10, 4, 16, 0, 1, 1},                         /* a diatom: blunt, square */
-    {10, 30, 8, 5, 19, 1, 10, 0},                       /* a ciliate: a fringe of hairs */
-    {5, 9, 12, 3, 18, 2, 4, 1},                         /* a spore */
-    {2, 4, 16, 2, 30, 1, 3, 0},                         /* a worm: long, two horns */
-    {8, 12, 12, 6, 16, 0, 8, 1},                        /* a pollen grain */
-    {3, 7, 15, 3, 20, 4, 5, 0},                         /* a hydra: curled tentacles */
+    {6, 18, 16, 3, 22, 0, 6},                           /* a radiolarian: a sun of thin rays */
+    {3, 5, 14, 2, 26, 3, 2},                            /* an amoeba: its arms swirl */
+    {4, 6, 10, 4, 18, 0, 1},                            /* a diatom: blunt */
+    {10, 30, 8, 5, 20, 1, 10},                          /* a ciliate: a fringe of hairs */
+    {5, 9, 12, 3, 19, 2, 4},                            /* a spore */
+    {2, 4, 16, 2, 30, 1, 3},                            /* a worm: long, two horns */
+    {8, 12, 12, 6, 17, 0, 8},                           /* a pollen grain */
+    {3, 7, 15, 3, 21, 4, 5},                            /* a hydra: curled tentacles */
 };
-static uint32_t bg_isqrt(uint32_t x)
+typedef struct {
+    int32_t spikes, len, wob, lob, nuc, sep, fray, ripple;   /* len wob sep fray ripple 0..256 */
+} bfeat_t;
+/* a line's colour: heat v; GREY and MONO its grey (their lines blend grey on grey: og_plot) */
+static uint16_t bg_col(int32_t v)
 {
-    uint32_t r = 0, b = 1u << 30;
-    while (b > x) b >>= 2;
-    while (b) {
-        if (x >= r + b) { x -= r + b; r = (r >> 1) + b; }
-        else r >>= 1;
-        b >>= 2;
-    }
-    return r;
-}
-/* atan2 as a 16-bit turn (0x10000 = 360 degrees), within ~0.2 degree */
-static uint32_t bg_atan2(int32_t y, int32_t x)
-{
-    int32_t ax = x < 0 ? -x : x, ay = y < 0 ? -y : y, t, a;
-    if (!ax && !ay) return 0;
-    t = ax > ay ? (ay << 15) / ax : (ax << 15) / ay;   /* 0..1, Q15 */
-    a = (t * (8192 + ((2847 * (32768 - t)) >> 15))) >> 15;
-    if (ay > ax) a = 16384 - a;
-    if (x < 0) a = 32768 - a;
-    if (y < 0) a = 65536 - a;
-    return (uint32_t)a & 0xFFFFu;
+    uint16_t c = heat_col(v);
+    return settings.palette == UI_GREY_INDEX || settings.palette == UI_BW_INDEX ? ux_gray(ux_luma(c) >> 3) : c;
 }
 static int32_t bg_sin(uint32_t ang) { return sine_i(ang << 16); }   /* Q15 */
 /* the output's level now, 0..256, slewed (fast up, slow down) */
@@ -73,68 +58,140 @@ static int32_t bg_energy(void)
     e += v > e ? (v - e) / 2 : (v - e) / 8;
     return e;
 }
-/* the being: genome g, the knobs k[0..3] (0..256), energy en (0..256), time t (a 16-bit turn) */
-static void being_draw(const genome_t *g, const int32_t *k, int32_t en, uint32_t t)
+#define BG_N 96                                         /* vertices of an outline */
+/* one outline: the body at (cx, cy), radius r (Q4), x stretched by ax/16; outer: with the spikes, the ripple, the
+ * fray. Colour c */
+static void bg_outline(const genome_t *g, const bfeat_t *f, int32_t cx, int32_t cy, int32_t r, int outer, uint32_t t,
+                       uint16_t c)
 {
-    int32_t i, j, n, nn = 1 + k[3] * 3 / 257, spikes = g->k0 + k[0] * g->kk / 256;
-    int32_t s = (48 + k[1] * 208 / 256) * g->ss / 16, w = 40 + k[2] * 216 / 256;   /* spike length (Q8 of x1.6), wobble */
-    int32_t r0 = BG_CH * 77 + BG_CH * 77 * en * 38 / 65536;   /* the radius (Q8 px of the grid): 0.3 of the height */
-    int32_t nx[4], ny[4], nr = r0 * 97 / 256;           /* the nuclei and their reach */
-    for (n = 0; n < nn; n++) {
-        uint32_t a = t + (uint32_t)n * 25033u;          /* (2.4 rad apart) */
-        nx[n] = n ? (bg_sin(a + 0x4000u) * (r0 * 115 >> 8)) >> 15 : 0;
-        ny[n] = n ? (bg_sin(a + t / 3u) * (r0 * 90 >> 8)) >> 15 : 0;
-    }
-    for (j = 0; j < BG_CH; j++)
-        for (i = 0; i < BG_CW; i++) {
-            int32_t dx = (2 * i + 1 - BG_CW) * 128 * 16 / g->ax, dy = (2 * j + 1 - BG_CH) * 128, v, c, p, r, rb;
-            int32_t d = (int32_t)bg_isqrt((uint32_t)(dx * dx + dy * dy));
-            uint32_t th = bg_atan2(dy, dx);
-            r = r0 + ((((r0 * w) >> 8) * ((9175 * bg_sin(g->lob * th + t) + 3932 * bg_sin((g->lob + 2u) * th - 2u * t)) >> 15)) >> 15);
-            c = bg_sin(((uint32_t)spikes * th >> 1) + (uint32_t)(g->tw * d * 6) + 0x4000u);
-            p = c > 0 ? c : 0;
+    int32_t i, px = 0, py = 0;
+    for (i = 0; i <= BG_N; i++) {
+        uint32_t th = (uint32_t)(i % BG_N) * 65536u / BG_N;
+        int32_t rr = r + ((((r * f->wob) >> 8) * ((9175 * bg_sin((uint32_t)f->lob * th + t) +
+                                                    3932 * bg_sin((uint32_t)(f->lob + 2) * th - 2u * t)) >> 15)) >> 15);
+        int32_t x, y;
+        if (outer) {
+            int32_t c2 = bg_sin(((uint32_t)f->spikes * th >> 1) + (uint32_t)g->tw * 3000u + 0x4000u), p = c2 > 0 ? c2 : 0, n;
             for (n = 1; n < g->sh; n++)
-                p = (p * c) >> 15;
+                p = (p * c2) >> 15;
             if (p < 0) p = 0;
-            rb = r + ((((r0 * s) >> 8) * p >> 15) * 26 >> 4);
-            if (d >= rb + 300) continue;                /* outside, beyond the halo */
-            if (d >= rb) v = 12;                        /* the halo: a faint ring */
-            else if (d > r) v = 20 + (rb - d) * 70 / (rb - r + 1);   /* a spike: warmer toward the body */
-            else if (d > r - 333) v = 150 + 60 * en / 256;   /* the wall */
-            else if (d > r - 666) v = 25;               /* the cold band under it */
-            else v = 30 + (256 - d * 256 / (rb + 1)) * (154 + 102 * en / 256) * 120 / 65536;
-            if (d < rb && !(d > r - 666 && d <= r)) {   /* the nuclei (not over the wall) */
-                for (n = 0; n < nn; n++) {
-                    int32_t ex = dx - nx[n] * 16 / g->ax, ey = dy - ny[n];
-                    int32_t nd = (int32_t)bg_isqrt((uint32_t)(ex * ex + ey * ey));
-                    if (nd < nr)
-                        v += (256 - nd * 256 / nr) * (128 + 128 * en / 256) * 130 / 65536;
-                }
-                if (g->vac && ((uint32_t)(i * 7919 + j * 104729) + t / 2048u) % 61u == 0u)
-                    v -= 60;                            /* a vacuole */
-            }
-            v += ((i * 7919 + j * 104729) % 13 - 6) * 3 / 2;   /* the sensor's grain */
-            cv_rect(BG_X0 + i * BG_CELL, BG_Y0 + j * BG_CELL, BG_CELL - 1, BG_CELL - 1,
-                    v < 16 ? ux_mix(T_SURF, heat_col(v), 33) : heat_col(v));
+            rr += (((r * f->len) >> 8) * p >> 15) * 26 >> 4;
+            rr += (((r * f->ripple) >> 8) * bg_sin(th * 18u + 3u * t) >> 15) / 14;
+            if (f->fray)
+                rr += ((int32_t)((((uint32_t)i * 2654435761u) + t * 40503u) >> 24) - 128) * ((r * f->fray) >> 8) / 1800;
         }
+        x = cx + ((rr * bg_sin(th + 0x4000u) >> 15) * g->ax >> 4);
+        y = cy + (rr * bg_sin(th) >> 15);
+        if (i)
+            og_line(px, py, x, y, c);
+        px = x;
+        py = y;
+    }
 }
-/* the page's being: its engine's genome, its four knobs */
+/* a small ring (a nucleus), Q4 */
+static void bg_ring(int32_t cx, int32_t cy, int32_t r, uint16_t c)
+{
+    int32_t i, px = cx + r, py = cy;
+    for (i = 1; i <= 12; i++) {
+        uint32_t th = (uint32_t)i * 65536u / 12u;
+        int32_t x = cx + (r * bg_sin(th + 0x4000u) >> 15), y = cy + (r * bg_sin(th) >> 15);
+        og_line(px, py, x, y, c);
+        px = x;
+        py = y;
+    }
+}
+/* the being: its isotherms (outer cold .. core hot, all warmer with en 0..256), then its nuclei. cx cy r in Q4 */
+static void being_lines(const genome_t *g, const bfeat_t *f, int32_t cx, int32_t cy, int32_t r, int32_t en, uint32_t t)
+{
+    static const int16_t SC[4] = {256, 180, 112, 52}, HT[4] = {28, 90, 150, 206};
+    int32_t i, n;
+    r += r * en * 30 / 65536;                            /* (it swells with the sound) */
+    for (i = 0; i < 4; i++)
+        bg_outline(g, f, cx, cy, r * SC[i] >> 8, !i, t, bg_col(HT[i] + en * 40 / 256));
+    for (n = 0; n < f->nuc; n++) {                       /* the nuclei: orbiting, DTN apart */
+        uint32_t a = t + (uint32_t)n * 65536u / (uint32_t)f->nuc;
+        int32_t d = f->nuc > 1 ? r * (24 + f->sep * 40 / 256) / 100 : 0;
+        int32_t x = cx + ((d * bg_sin(a + 0x4000u) >> 15) * g->ax >> 4), y = cy + (d * bg_sin(a) >> 15) * 7 / 10;
+        bg_ring(x, y, r * 15 / 100, bg_col(214 + en * 42 / 256));
+        bg_ring(x, y, r * 6 / 100, bg_col(240));
+    }
+}
+/* the page's knob c as 0..256 (none: -1) and its label */
+static int32_t bg_knob(uint32_t c, const char **lab)
+{
+    int16_t *vp;
+    const param_desc_t *d = page_desc(cur_page(), c, &vp);
+    int32_t r = d && d->label && d->label[0] != '-' ? RATIO(d, enum_rank(d, *vp)) : -1;
+    *lab = d && d->label ? d->label : "";
+    return r < 0 ? -1 : r * 256 / 1000;
+}
+/* the page's being: its engine's genome, its four knobs by what they are */
 static void graph_being(const track_t *t)
 {
-    const page_t *pg = cur_page();
-    int32_t k[4];
-    uint32_t c, e = t->eng_req % NENGINES;
+    static uint32_t tm, f0;                              /* its time runs with the sound: in silence it rests */
+    const genome_t *g = &GENOME[(t->eng_req % NENGINES + ui.page) % 8u];
+    int32_t en = bg_energy(), k[4];
+    const char *lab[4];
+    bfeat_t f;
+    uint32_t c;
     for (c = 0; c < 4u; c++) {
-        int16_t *vp;
-        const param_desc_t *d = page_desc(pg, c, &vp);
-        int32_t r = d && d->label && d->label[0] != '-' ? RATIO(d, enum_rank(d, *vp)) : -1;
-        k[c] = r < 0 ? 128 : r * 256 / 1000;
+        k[c] = bg_knob(c, &lab[c]);
+        if (k[c] < 0) k[c] = 128;
     }
-    {
-        static uint32_t tm, f0;                         /* its time runs with the sound: in silence it rests */
-        int32_t en = bg_energy();
-        if (en > 2) tm += (ui.frame - f0) * (uint32_t)(120 + en);
-        f0 = ui.frame;
-        being_draw(&GENOME[(e + ui.page) % 8u], k, en, tm);
+    f.spikes = g->k0 + k[0] * g->kk / 256;
+    f.len = 48 + k[1] * 208 / 256;
+    f.wob = 40 + k[2] * 216 / 256;
+    f.lob = g->lob;
+    f.nuc = 1 + k[3] * 3 / 257;
+    f.sep = 0;
+    f.fray = 0;
+    f.ripple = 0;
+    for (c = 0; c < 4u; c++) {                           /* a knob by what it is */
+        const char *l = lab[c];
+        if (str_eq(l, "CUT")) { f.spikes = 10 + k[c] * 22 / 256; f.len = k[c] * k[c] / 256; }
+        else if (str_eq(l, "RES") || str_eq(l, "RESO")) f.ripple = k[c];
+        else if (str_eq(l, "DTN") || str_eq(l, "SPRD") || str_eq(l, "DTUNE")) { f.sep = k[c]; if (f.nuc < 2) f.nuc = 2; }
+        else if (str_eq(l, "NOIS") || str_eq(l, "RAND") || str_eq(l, "BRTH") || str_eq(l, "CRSH")) f.fray = k[c];
+        else if (str_eq(l, "WAVE")) f.lob = 2 + k[c] * 5 / 257;
+    }
+    if (en > 2) tm += (ui.frame - f0) * (uint32_t)(120 + en);
+    f0 = ui.frame;
+    being_lines(g, &f, 120 * 16, 61 * 16, 36 * 16, en, tm);
+}
+
+/* DRUM-X: the colony. Two rows of four, the sound's name under each */
+static const genome_t LANE_G[8] = {
+    {3, 0, 2, 2, 16, 0, 2},                             /* BD: round, heavy */
+    {12, 0, 14, 3, 16, 0, 6},                           /* SD: spiky */
+    {5, 0, 8, 5, 18, 2, 3},                             /* CP: a cluster */
+    {22, 0, 6, 4, 16, 0, 10},                           /* CH: a short fringe */
+    {18, 0, 12, 4, 16, 1, 8},                           /* OH: a longer fringe */
+    {4, 0, 4, 3, 17, 0, 2},                             /* TM: round, wobbly */
+    {4, 0, 9, 4, 16, 0, 1},                             /* RS: blunt, square */
+    {5, 0, 16, 5, 16, 0, 5},                            /* CB: a star */
+};
+static void graph_colony(const track_t *t, int32_t sel)
+{
+    const drum_lane_t *K = drum_kit_of(t);
+    int32_t morph = clamp(t->p[P_E0], 0, 127), mx = 30 + morph * 180 / 127;
+    uint32_t l;
+    cv_rect(30, 12, 180, 1, T_LINE);                     /* MORPH: A .. B */
+    cv_rect(30, 11, mx - 30, 3, heat_col(morph * 2));
+    cv_text(12, 8, &AF_S, "A", morph < 64 ? T_THEME : T_DIM);
+    cv_text_r(226, 8, &AF_S, "B", morph >= 64 ? T_THEME : T_DIM, T_SURF);
+    for (l = 0; l < 8u; l++) {
+        int32_t x = 33 + (int32_t)(l % 4u) * 58, y = 38 + (int32_t)(l / 4u) * 46;
+        int32_t e = K && K[l].x.live ? K[l].x.ea >> 22 : 0, muted = dx_lane_muted(l);
+        const genome_t *g = &LANE_G[l];
+        bfeat_t f = {g->k0, g->ss * 6, 40, g->lob, l == 2u ? 3 : 1, 160, 0, 0};
+        if (muted)
+            bg_outline(g, &f, x * 16, y * 16, 8 * 16, 1, l * 9000u, ux.mono || settings.palette == UI_BW_INDEX ? ux_gray(ux_luma(T_DIM) >> 3) : T_DIM);
+        else if (e) {
+            f.len = g->ss * 6 + e / 2;
+            f.wob = 40 + e / 2;
+            being_lines(g, &f, x * 16, y * 16, (8 + e * 5 / 256) * 16, e, ui.frame * 900u + l * 9000u);
+        } else
+            bg_outline(g, &f, x * 16, y * 16, 8 * 16, 1, l * 9000u, bg_col(24));
+        cv_text_in(x - 14, y + 14, 28, &AF_S, drum_lane_abbr(t, l), sel == (int32_t)l ? T_THEME : muted ? T_DIM : T_MID, T_SURF);
     }
 }

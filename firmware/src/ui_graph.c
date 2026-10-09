@@ -1470,7 +1470,7 @@ static void draw_graph(void)
             break;
         case GR_DXSND:                               /* EDIT > SOUND: the kit's lanes, the sound edited singled out */
             cv_oy = 0;
-            graph_drum(t, dx_ui_lane);
+            graph_colony(t, dx_ui_lane);
             break;
         case GR_TOOLS:
             cv_oy = 0;
@@ -1481,7 +1481,7 @@ static void draw_graph(void)
             else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_FM6) graph_fm6(t, c);   /* EDIT 1 and 2 */
             else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_DRUM) {
                 cv_oy = 0;
-                graph_drum(t, -1);
+                graph_colony(t, -1);
             }
 #if FELUCCA_FM4
             else if ((pg->scope == SC_ENGINE || pg->id[0] == P_FM1_LEVEL) && t->eng_req % NENGINES == ENGI_DIGITAL)
