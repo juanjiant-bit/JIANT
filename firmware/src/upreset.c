@@ -420,7 +420,7 @@ static int up_load(uint32_t k)
         t->preset = 0;
         fm1_irq_on();
         upf_track_load(t, k);                           /* FM6: the preset's own patch (up_fm6.c) */
-        if (r->engine == ENGI_PHYS)                     /* PHYS (retired, engines.c): ANALOG's first preset */
+        if (eng_gone(r->engine))                        /* a retired engine (core.h): ANALOG's first preset */
             set_engine_of(t, ENGI_PHYS_TO);
     }
     t->user = (uint8_t)(k + 1u);

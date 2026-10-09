@@ -6,11 +6,9 @@
 #include "eng_analog.c"
 #include "eng_phase.c"
 #include "eng_lofi.c"
-#include "eng_sample.c"
 #include "eng_formant.c"
 #include "eng_trio.c"
 #include "eng_wheel.c"
-#include "eng_grain.c"
 #include "eng_drum.c"           /* DRUM: the 8-lane DRUM-X kit (drumx_voice.c) */
 #include "eng_noise.c"
 #include "eng_fm6.c"            /* FM6: 6-operator FM, msfa ported (fm6_core.c, Apache-2.0) */
@@ -18,21 +16,19 @@
 #if FELUCCA_FM4
 #include "eng_digital.c"        /* DIGITAL: four-operator FM (retired; FELUCCA_FM4=1 builds it) */
 #endif
-#if FELUCCA_SLICE
-#include "eng_slice.c"
-#endif
 
-/* PHYS (engine 9): retired in TONIC (its 50 KB of voice state went to the song and the drums). The number stays
- * reserved, as DIGITAL's: the stores name engines by index and the table is append-only. ENG_PHYS_GONE below has no
- * presets and is never offered (eng_ok); a PHYS sound that arrives anyway -- a project, a user preset, the editor's
- * PRESET / SET G_ENGSEL, a backup -- plays as ANALOG's first preset (eng_live; project.c proj_phys_gone, ui.c
- * set_engine_of, ui_input.c). A PHYS DRUM of before 1.0 still loads as DRUM first (core.h drum_from_phys) */
+/* PHYS (engine 9): retired in TONIC (its 50 KB of voice state went to the song and the drums); SAMPLE (4), GRAIN (8) and
+ * SLICE (13): retired in JIANT (core.h eng_gone). The numbers stay reserved, as DIGITAL's: the stores name engines by
+ * index and the table is append-only. ENG_GONE below has no presets and is never offered (eng_ok); a sound of theirs
+ * that arrives anyway -- a project, a user preset, the editor's PRESET / SET G_ENGSEL, a backup -- plays as ANALOG's
+ * first preset (eng_live; project.c proj_phys_gone, ui.c set_engine_of, ui_input.c). A PHYS DRUM of before 1.0 and a
+ * SAMPLE PERC still load as DRUM first (core.h drum_from_phys, drum_from_perc) */
 static void phys_gone_note_on(struct track *t, voice_t *v) { (void)t; (void)v; }
 static void phys_gone_render(struct track *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
     (void)t; (void)v; (void)out; (void)n; (void)m;
 }
-static const engine_t ENG_PHYS_GONE = {
+static const engine_t ENG_GONE = {
     .name = "-",
     .page_title = {"-", "-"},
     .edit = {
@@ -44,7 +40,7 @@ static const engine_t ENG_PHYS_GONE = {
     .render = phys_gone_render,
     .knob = {P_E0, P_E1, P_E2, P_E3},
 };
-#define ENGI_PHYS_TO 0u          /* the engine a PHYS sound plays as: ANALOG (its first preset) */
+#define ENGI_PHYS_TO 0u          /* the engine a retired engine's sound plays as: ANALOG (its first preset) */
 
 /* the editor protocol, user presets and projects store these indices: append, never reorder */
 static const engine_t *const ENGINES[NENGINES] = {
@@ -56,43 +52,20 @@ static const engine_t *const ENGINES[NENGINES] = {
 #endif
     &ENG_PHASE,                  /* 2 */
     &ENG_LOFI,                   /* 3 */
-    &ENG_SAMPLE,                 /* 4 */
+    &ENG_GONE,                   /* 4: reserved (SAMPLE, retired in JIANT) */
     &ENG_FORMANT,                /* 5 VOICE (eng_formant.c: "voice" is a sounding note in voice.c) */
     &ENG_TRIO,                   /* 6 */
     &ENG_WHEEL,                  /* 7 */
-    &ENG_GRAIN,                  /* 8 */
-    &ENG_PHYS_GONE,              /* 9: reserved (PHYS, retired in TONIC: its sounds play as ANALOG) */
+    &ENG_GONE,                   /* 8: reserved (GRAIN, retired in JIANT) */
+    &ENG_GONE,                   /* 9: reserved (PHYS, retired in TONIC: its sounds play as ANALOG) */
     &ENG_DRUM,                   /* 10 (ENGI_DRUM) */
     &ENG_NOISE,                  /* 11 */
     &ENG_FM6,                    /* 12 (ENGI_FM6) */
-#if FELUCCA_SLICE
-    &ENG_SLICE,                  /* 13 (FELUCCA_SLICE=0 builds without it) */
-#endif
+    &ENG_GONE,                   /* 13: reserved (SLICE, retired in JIANT) */
 };
 
 /* a track's engine number as an index (the audio paths: a compare, cheaper than % NENGINES; a bad number: 0) */
 static inline uint32_t eng_idx(uint32_t e) { return e < NENGINES ? e : 0u; }
-
-/* the sample source a track's sound plays that has no data (SAMPLE's SET, GRAIN's SRC, SLICE's SRC: an empty or
- * invalid user slot, a set or PIANO this build lacks): its name (it plays a sine: eng_sample.c smp_sine), 0 = none;
- * *code a small number for it (1.., per engine and source) so the UI says it once (ui_input.c sample_notice) */
-static uint8_t snd_said[NTRK];   /* per track: the code last said, 0 = none (a project load clears them: said again) */
-static const char *snd_missing(const track_t *t, uint32_t *code)
-{
-    const engine_t *e = ENGINES[eng_idx(t->eng_req)];
-    uint32_t si = (uint32_t)t->p[P_E0] % SMP_NALL;
-#if FELUCCA_SLICE
-    if (e == &ENG_SLICE) {
-        si = slc_src_of(t->p);
-        *code = 64u + si;
-        return slc_get(si) ? 0 : N_SLC_SRC[si];
-    }
-#endif
-    if (e != &ENG_SAMPLE && e != &ENG_GRAIN)
-        return 0;
-    *code = (e == &ENG_GRAIN ? 32u : 1u) + si % 32u;
-    return smp_set_missing(si) ? SMP_ALL_NAMES[si] : 0;
-}
 
 /* the order the engines are shown in (PRESETS browsing and its ENG knob, the EDIT layer's keys, the editor's list):
  * engine indices, never DIGITAL's reserved 1 (with FELUCCA_FM4 it follows FM6). The indices stay as they are (the
@@ -103,21 +76,18 @@ static const uint8_t ENGINE_ORDER[NENG_SHOWN] = {
 #if FELUCCA_FM4
     1,                           /* DIGITAL */
 #endif
-    2, 3, 4, 5, 6, 7, 8,         /* PHASE LOFI SAMPLE VOICE TRIO WHEEL GRAIN */
+    2, 3, 5, 6, 7,               /* PHASE LOFI VOICE TRIO WHEEL */
     11,                          /* NOISE */
-#if FELUCCA_SLICE
-    13,                          /* SLICE */
-#endif
     10,                          /* DRUM */
 };
 
 /* the engines one can pick (engine 1 only with FELUCCA_FM4), in ENGINE_ORDER: eng_ok(e), the n-th of them
  * eng_vis(n), e's place among them eng_rank(e), the next / previous one eng_step(e, dir) (wraps) */
-static int eng_ok(uint32_t e) { return e < NENGINES && (FELUCCA_FM4 || e != ENGI_DIGITAL) && e != ENGI_PHYS; }
-/* the engine a stored engine number plays on: DIGITAL (without FELUCCA_FM4) FM6, PHYS ANALOG, a bad number ANALOG */
+static int eng_ok(uint32_t e) { return e < NENGINES && (FELUCCA_FM4 || e != ENGI_DIGITAL) && !eng_gone(e); }
+/* the engine a stored engine number plays on: DIGITAL (without FELUCCA_FM4) FM6, a retired one ANALOG, a bad number ANALOG */
 static uint32_t eng_live(uint32_t e)
 {
-    return e >= NENGINES ? 0u : e == ENGI_PHYS ? ENGI_PHYS_TO : !eng_ok(e) ? ENGI_FM6 : e;
+    return e >= NENGINES ? 0u : eng_gone(e) ? ENGI_PHYS_TO : !eng_ok(e) ? ENGI_FM6 : e;
 }
 static uint32_t eng_vis(uint32_t n) { return ENGINE_ORDER[n % NENG_SHOWN]; }
 static uint32_t eng_rank(uint32_t e)

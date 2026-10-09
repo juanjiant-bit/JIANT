@@ -46,7 +46,6 @@
 # REVERB (tests/reverb_test.c): REVERB TYPE (src/fx.c): ROOM bit for bit as before, SPRING's decay against SIZE,
 #                   its chirp (group delay rising with frequency), stability at the corners, level, a model change
 #                   without a click, its cost against ROOM (+30 % at most); demos in build/fx_demo/.
-# SLICE (tests/slice_test.c): BREAK's and PIANO's slice tables, reverse, keys, modes, the presets, the missing-sample
 #                   sine (builds without the CC0 samples); demos in build/slice_demo/.
 # INPUT (tests/input_test.c): the key / button debounce of hal/fm1_input.h against the TIMER5 scan and bouncing
 #                   contacts: a press within 2 scans (<= 2.3 ms), one note per bouncy press, no early or hanging
@@ -237,15 +236,6 @@ if [ -f build/gen/felucca_tables.h ]; then
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/fm6_test" tests/fm6_test.c -lm
     mkdir -p build/fm6_demo
     run "FM6: algorithms, envelopes, retrigger, DC, clipping, macros, patch formats, voices, cost, demos" "$OUT/fm6_test" build/fm6_demo
-    # SLICE is in the standard build (firmware/src/core.h): its test always runs (after #22 by andreahaku)
-    if grep -q '^#define SLC_BREAK_BPM ' build/gen/felucca_samples.h; then
-        mkdir -p build/slice_demo
-        $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/slice_test" tests/slice_test.c -lm
-        run "SLICE: tables, reverse, keys, modes, presets, demos" "$OUT/slice_test" build/slice_demo
-    else
-        echo "== SLICE: build/ was made with FELUCCA_SLICE=0 (no BREAK); run ./build.sh without it first"
-        fail=1
-    fi
 else
     echo "== skip hostsim (run ./build.sh once)"
 fi

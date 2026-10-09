@@ -48,6 +48,10 @@ takes P_COUNT and P_E0 from `INFO` keeps working (see the table below: in JIANT 
 levels), went in before the engine parameters, which moved from 83..90 to 91..98: P_COUNT 99, P_E0 91. No command
 changed; projects were FUN9 (3648 bytes, see "Projects (FUN9)"; JIANT writes FUNA). See "The DRUM lane levels" below.
 
+**JIANT 0.3: SAMPLE (4), GRAIN (8) and SLICE (13) retired.** Their numbers stay, named `-` in `INFO` and `G_ENGSEL`, with no
+presets (as PHYS, 9); a sound of theirs that arrives (a project, a user preset, `PRESET`, a `SET` of `G_ENGSEL`, a backup) plays as
+ANALOG's first preset, a SAMPLE PERC sound (SET 4) as DRUM's kit. The factory samples left the firmware.
+
 **JIANT FUNB (120 parameters, 32 globals):** 21 track parameters went in before the engine parameters, which moved from
 91..98 to 112..119: P_COUNT 120, P_E0 112. Five globals were added after the 27 a project's header holds: G_COUNT 32.
 No command changed; an editor that takes P_COUNT, G_COUNT and P_E0 from `INFO` keeps working.

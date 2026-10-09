@@ -99,8 +99,8 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
 ## Lo que trae
 
 - **4 tracks** con 8 voces compartidas.
-- **12 engines**: ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, SAMPLE, VOICE, TRIO, WHEEL, GRAIN, NOISE, SLICE y
-  DRUM (DRUM-X).
+- **9 engines**, todos de síntesis, sin samples: ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, VOICE, TRIO, WHEEL,
+  NOISE y DRUM (DRUM-X).
 - **Modulación**: 4 slots por track. Fuentes: LFO, ENV, VEL, KEY, RAND, controladores MIDI, las 4 macros y STEP (el
   secuenciador de modulación).
 - **Efectos**: distorsión de 5 tipos y SLICER por track; envíos a chorus, delay (con HPF) y reverb (ROOM o SPRING, con
@@ -135,10 +135,9 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
 - **DRUM** es DRUM-X; los kits de Felucca se retiraron.
 - **CHORD** se retiró; sus dos parámetros son ahora SHIFT (OFS / PIT).
 - **PHYS** se retiró, lo que liberó 50 KB de RAM. Un sonido PHYS viejo suena como el primer preset de ANALOG.
-- **Sin samples de usuario**, para hacer lugar a las canciones:
-  - se fueron USR1–3 y la subida o grabación de samples desde el editor;
-  - siguen los samples de fábrica;
-  - un sonido viejo en USR suena con un set de fábrica.
+- **Sin samples**: se fueron los samples de usuario (USR1–3, para hacer lugar a las canciones) y los engines de samples
+  SAMPLE, SLICE y GRAIN con sus samples de fábrica: 140 KB de flash y 32 KB de RAM para DRUM-X, los efectos y los
+  punch-in. Un sonido de esos engines carga como ANALOG; el viejo PERC de SAMPLE, como DRUM-X.
 - **8 canciones**: la canción 1 son los 4 proyectos de siempre, así que lo guardado con Felucca aparece ahí.
 - **Capa FX**:
   - se fueron REVERSE, TAPE STOP, FREEZE y el armonizador;
@@ -227,15 +226,13 @@ Seeed XIAO RP2040.
 - **[Felucca](https://github.com/hugelton/Felucca)** de [Hügelton Instruments](https://hugelton.com)
   (Leo Kuroshita, [@kurogedelic](https://github.com/kurogedelic)): la base completa de este firmware;
   las formas de onda de PHASE (port de [CrispyZebra](https://github.com/hugelton/CrispyZebra), GPL-3.0);
-  las voces y kits de DRUM; el Hügelton Sample Pack (GPL-3.0-only, no CC0); la fuente de íconos
+  las voces y kits de DRUM; la fuente de íconos
   [Fukiai](https://github.com/hugelton/Fukiai) ([MIT](LICENSES/MIT-Fukiai.txt)). Y quienes contribuyeron
   a Felucca: keremimo, ChanceTheMaker, andreahaku, spinkham, zednaked, jasonpersinger.
 - **[SLOOP](https://github.com/isod89/sloop-fm1)** de isod89 (GPL-3.0): el sistema de secciones,
   quick chain y SONG REC en el que se basa el song mode.
 - Fuentes: [Inter Tight](https://github.com/rsms/inter-tight) ([SIL OFL 1.1](LICENSES/OFL-InterTight.txt));
   en el emulador, [DotGothic16](https://github.com/fontworks-fonts/DotGothic16) ([SIL OFL 1.1](LICENSES/OFL-DotGothic16.txt)).
-- Samples: [Versilian Studios](https://versilian-studios.com/) VSCO-2 CE y VCSL, CC0 1.0
-  ([atribución](assets/samples-cc0/ATTRIBUTION.txt)).
 - VOICE: según [klattsch](https://github.com/tgies/klattsch) de Tony Gies (MIT); datos de formantes de
   Klatt (1980) y Hillenbrand et al. (1995).
 - FM6: msfa de [Dexed](https://github.com/asb2m10/dexed), Google Inc. y Pascal Gauthier

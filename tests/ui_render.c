@@ -655,8 +655,8 @@ enum { S_HOME, S_HOME_IDLE, S_MESSAGE, S_MESSAGE_KEY, S_MESSAGE_NOFILE, S_PRESET
 static const char *const S_NAME[S_COUNT] = {"home", "home_idle", "message", "message_key", "message_nofile", "presets", "presets_nofav", "user",
     "phrases", "project", "tools", "song_empty", "song", "step", "pattern", "chance", "motion", "drum",
     "drum_hand", "drum_cym", "mixer", "mixer_pan", "env", "env_dest", "lfo", "mod", "fx", "slicer", "dly", "scl", "shift", "arp",
-    "voice", "global", "system", "edit_analog", FELUCCA_FM4 ? "edit_digital" : "edit_fm6", "op_env", "edit_wheel", "edit_sample",
-    "edit_grain", "alg_1", "alg_2", "alg_3", "alg_4", "alg_5", "alg_6", "alg_7", "alg_8", "op_level", "fm6_alg_01", "fm6_alg_05", "fm6_alg_22", "fm6_alg_32", "drumx", "drumx_hit", "dx_sound", "dx_sound2", "confirm_seq", "confirm_project", "confirm_user", "confirm_pattern",
+    "voice", "global", "system", "edit_analog", FELUCCA_FM4 ? "edit_digital" : "edit_fm6", "op_env", "edit_wheel", "edit_voice",
+    "edit_noise", "alg_1", "alg_2", "alg_3", "alg_4", "alg_5", "alg_6", "alg_7", "alg_8", "op_level", "fm6_alg_01", "fm6_alg_05", "fm6_alg_22", "fm6_alg_32", "drumx", "drumx_hit", "dx_sound", "dx_sound2", "confirm_seq", "confirm_project", "confirm_user", "confirm_pattern",
     "confirm_motion", "confirm_erase", "menu", "menu_speaker", "about", "about_rec", "about_credits", "about_end", "uboot", "calibration", "splash",
     "batt_0", "batt_1", "batt_2", "batt_3", "batt_usb", "motion_rec", "motion_off", "motion_card", "song_home",
     "perform_peek", "perform_held", "perform_wait", "perform_harm", "menu_hold", "menu_leds", "menu_end", "menu_system", "menu_slide", "reverb_spring",
@@ -829,7 +829,7 @@ static void setup(int s)
     case S_HOME_IDLE: song.playing = 0; song.batt_raw = 570; ui.hot_col = 1; ui.hot_t = 30; break;
     case S_MESSAGE: ui_say("LOADED ", "07 A VERY LONG PATTERN NAME"); break;
     case S_MESSAGE_KEY: ui_message("[SAVE] HOLD TO UNDO"); break;            /* a message with a keycap */
-    case S_MESSAGE_NOFILE: ui_message(MSG_NO_SAMPLE); break;   /* a missing sample (ui_input.c sample_notice) */
+    case S_MESSAGE_NOFILE: ui_message(MSG_NOFILE "NO FILE"); break;   /* a message led by the no-file icon */
     case S_PRESETS: favorite_set(0, 4, 1); favorite_set(0, 5, 1); go_page(GR_BROWSE); break;
     case S_PRESETS_NOFAV: favorites.filter = 1; go_page(GR_BROWSE); break;
     case S_USER: song.playing = 0; up_store(3, "MY LONG BASS NAME"); up_store(4, "PAD"); ui.uslot = 3; go_page(GR_USER); break;
@@ -924,13 +924,8 @@ static void setup(int s)
     case S_EDIT_DIGITAL: eng(E_FM); go_title("EDIT 1"); break;
     case S_OP_ENV: eng(1); go_title("OP1 ENV"); break;
     case S_EDIT_WHEEL: eng(7); go_title("EDIT 1"); ui.hot_col = 1; ui.hot_t = 30; break;
-    case S_EDIT_SAMPLE: {
-        uint32_t i;
-        eng(4); go_title("EDIT 1"); last_note = 60;
-        for (i = 0; i < 4000u && !sample_wave.ready; i++) sample_wave_tick(TSEL);
-        break;
-    }
-    case S_EDIT_GRAIN: eng(8); go_title("EDIT 2"); break;
+    case S_EDIT_SAMPLE: eng(5); go_title("EDIT 1"); break;   /* (JIANT: SAMPLE retired; VOICE in its place) */
+    case S_EDIT_GRAIN: eng(11); go_title("EDIT 2"); break;   /* (GRAIN retired: NOISE's second page) */
     case S_ALG1: case S_ALG2: case S_ALG3: case S_ALG4: case S_ALG5: case S_ALG6: case S_ALG7: case S_ALG8:
         eng(1); TSEL->p[P_E0] = (int16_t)(s - S_ALG1);      /* the 8 DIGITAL charts; FB on the odd ones, IDX high .. 0 */
         TSEL->p[P_E6] = (s - S_ALG1) & 1 ? 40 : 0; TSEL->p[P_E4] = (int16_t)((S_ALG8 - s) * 18);
