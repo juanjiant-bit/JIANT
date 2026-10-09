@@ -49,10 +49,10 @@ PALETTES = [
     ("NIGHT",  (0, 0, 0),       (0, 24, 10),     (150, 230, 170), (56, 220, 100),  (255, 255, 255)),
     # 1.0.2: black and white (the derived tokens are set, not blended: bw()); the old MONO is GREY (id 0)
     ("MONO",   (0, 0, 0),       (0, 0, 0),       (255, 255, 255), (255, 255, 255), (255, 255, 255)),
-    # JIANT FM (docs/TONIC-UI.md): thermal. Black, a warm white line, cyan for what is selected (the cold), orange for
-    # the one active thing; values as heat (ui_graph.c heat_col: indigo violet red orange yellow white). The default
-    # since JIANT 0.1 (src/panel.c)
-    ("JIANT",  (0, 0, 0),       (16, 12, 22),    (244, 241, 234), (0, 210, 255),   (255, 122, 0)),
+    # JIANT FM (docs/TONIC-UI.md): a thermal camera. Black, white details, violet for what is selected, orange for the
+    # one active thing; every value, curve and hit as heat (ui_graph.c heat_col: cyan blue violet red orange yellow
+    # white). The default since JIANT 0.1 (src/panel.c); 0.5: violet selection (was cyan), the heat everywhere
+    ("JIANT",  (0, 0, 0),       (16, 12, 22),    (244, 241, 234), (184, 112, 255), (255, 122, 0)),
 ]
 BW = "MONO"
 BW_GREY = (82, 82, 82)             # MONO's one mid grey (RGB565 10/20/10): DIM LINE RAISE LANE
