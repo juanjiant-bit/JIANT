@@ -966,7 +966,6 @@ static void presets_turn(int32_t s)
 /* HOME / REC / SAVE: tap on release, hold 0.7 s fires once. t0 = press time | 1,
  * bit 1 = fired (or swallowed: then the release is no tap either) */
 enum { BT_NONE, BT_TAP, BT_HOLD };
-static uint32_t home_tap_ms;
 static uint32_t btn_hold(uint32_t *t0, uint32_t label, uint32_t now, int hold_ok)
 {
     uint32_t tap;
@@ -1308,15 +1307,8 @@ static void ui_input_frame(void)
         layer_tap(lytap);
     if (seq == BT_TAP || seq == BT_HOLD)                /* (SONG: SAVE held, G5) */
         open_family(FAM_SEQ);
-    if (home == BT_TAP) {                               /* HOME acts on release: a hold opens the menu */
-        if (ui.home && !home_mac)                       /* (JIANT 0.4) the sound's four: back to the macros */
-            home_mac = 1, home_tap_ms = 0;
-        else if (ui.home && home_tap_ms && fm1_ms - home_tap_ms < 450u)
-            home_mac = 0, home_tap_ms = 0;              /* .. a double tap on HOME: the sound's four */
-        else
-            home_tap_ms = fm1_ms | 1u;
+    if (home == BT_TAP)                                 /* HOME acts on release: a hold opens the menu */
         go_home();
-    }
     cursor_fix();                                       /* LEN may have changed (knob, editor, load) */
     for (id = 0; id < 14u; id++) {
         if (!((pressed >> id) & 1u))
@@ -1412,9 +1404,9 @@ static void ui_input_frame(void)
         presets_turn(s);
     if (!lay && (s = panel_enc(EN_ALGO)) != 0)     /* ALGORITHM: the selected track, on every page */
         track_select((uint32_t)clamp((int32_t)song.sel + (s > 0 ? 1 : -1), 0, NTRK - 1));
-    if (((lay && ui.ly == LAYER_MACRO) || (!lay && ui.home && home_mac && !ui.menu && !ui.confirm)) &&
+    if (((lay && ui.ly == LAYER_MACRO) || (!lay && mac_latch && !ui.menu && !ui.confirm)) &&
         (s = panel_enc(EN_SELECT)) != 0) {              /* (JIANT 0.4) the macros (HOME, LFO held): SELECT rolls their
-                                                         * routes again, once a turn (GLO + SELECT: the tempo) */
+                                                         * routes again, once a turn (latched: GLO + SELECT the tempo) */
         static uint32_t dice_ms;
         if (!dice_ms || fm1_ms - dice_ms > 400u) {
             if (chain_busy()) {
@@ -1442,6 +1434,10 @@ static void ui_input_frame(void)
         uint64_t held;
         if ((s = panel_enc(EN_K1 + k)) == 0)
             continue;
+        if (mac_latch && !ui.menu && !ui.confirm) {     /* (JIANT 0.4) the MACRO layer latched: M1..M4 */
+            macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
+            continue;
+        }
         if ((held = lock_held()) != 0u) {               /* a step held on STEP: KNOB k locks (parameter locks) */
             lock_turn(k, s, held);
             ui.hot_col = (uint8_t)k;
@@ -1454,9 +1450,7 @@ static void ui_input_frame(void)
             ui.hot_col = (uint8_t)k;
             ui.hot_t = 40;
         }
-        if (ui.home && home_mac) {                      /* (JIANT 0.4) HOME: M1..M4 */
-            macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
-        } else if (ui.home) {
+        if (ui.home) {
             int16_t *vp;
             const param_desc_t *d = home_param(k, &vp);
             *vp = (int16_t)param_turn(d, *vp, accel(EN_K1 + k, s, d->fmt == F_ENUM ? 0 : d->max - d->min));

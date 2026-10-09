@@ -53,13 +53,13 @@ Con FX sostenido, las teclas son efectos que actúan mientras se mantienen y al 
 ### Macros M1–M4: el sistema te invita a moverlo todo
 LFO sostenido abre la capa **MACRO**: las cuatro perillas son M1–M4 y la pantalla muestra a dónde va cada una
 ("T1 CUT+62 T4 MRPH−31").
-- **HOME es donde se mueve todo**: sus cuatro perillas y su pantalla son M1–M4. HOME dos veces pasa a las cuatro
-  perillas principales del sonido; HOME otra vez vuelve a las macros.
+- **Quedan fijas**: al soltar LFO las macros siguen en las perillas (en cualquier página) hasta volver a apretar LFO,
+  así se usan sin mantener nada apretado.
 - **Una sesión nueva ya viene modulada**: al encender, cada track sin rutas de macro recibe dos al azar hacia lo que su
   sonido tiene (parámetros del engine, CUT, SHP, envíos, algo de PITCH), repartidas para que cada macro mueva dos
   tracks. Girás M1–M4 y todo se deforma; después afinás en MOD o lo guardás con el proyecto.
-- **Dado**: en HOME (o con LFO sostenido) **SELECT** tira rutas nuevas; con LFO sostenido F3 también y G3 las borra
-  (las rutas propias de cada track quedan). En HOME el tempo queda en GLO + SELECT.
+- **Dado**: con las macros abiertas (LFO sostenido o fijas) **SELECT** tira rutas nuevas; con LFO sostenido F3 también y
+  G3 las borra (las rutas propias de cada track quedan). Mientras están fijas, el tempo queda en GLO + SELECT.
 - **Asignar una macro**: en la página MOD de un track elegí SRC M1…M4 y su destino, con amount de −100 a +100.
 - **Destinos**: pitch, filtro, forma, amplitud, pan, envíos, LFO, cualquiera de los 8 parámetros del engine (MORPH,
   WARP, …) y el master (CLIP y PNCH).
