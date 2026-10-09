@@ -178,7 +178,7 @@ static void og_ring(int32_t cx, int32_t cy, int32_t r, uint16_t c)
     int32_t px = cx + r, py = cy;
     uint32_t i;
     for (i = 1; i <= 20u; i++) {
-        uint32_t ang = i * 0x10000u / 20u;
+        uint32_t ang = i * (1u << 16) / 20u;
         int32_t x = cx + ((og_cos(ang) * r) >> 15), y = cy + ((og_sin(ang) * r) >> 15);
         og_line(px, py, x, y, c);
         px = x;
