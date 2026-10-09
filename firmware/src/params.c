@@ -33,12 +33,8 @@ static const char *const N_MSRC[] = {"OFF", "LFO", "ENV", "VEL", "KEY", "RAND", 
 static const char *const N_MDST[] = {"OFF", "PITCH", "CUT", "SHP", "AMP", "PAN", "DIST", "CHO", "DLY", "REV", "RATE",
                                      "VIB", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8",
                                      "CLIP", "PNCH"};   /* (JIANT: the master, FX > MASTER) */
-static const char *const N_ENGNAME[] = {"ANALOG", FELUCCA_FM4 ? "DIGITAL" : "-", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL", "GRAIN", "-",
-                                             "DRUM", "NOISE", "FM6",
-#if FELUCCA_SLICE
-                                             "SLICE",
-#endif
-};
+static const char *const N_ENGNAME[] = {"ANALOG", FELUCCA_FM4 ? "DIGITAL" : "-", "PHASE", "LOFI", "-", "VOICE", "TRIO", "WHEEL", "-", "-",
+                                             "DRUM", "NOISE", "FM6", "-"};   /* (JIANT: SAMPLE 4, GRAIN 8, SLICE 13 retired) */
 
 #define PD(l, f, mn, mx, df) {l, f, mn, mx, df, 0, 0}
 #define PE(l, n, df) {l, F_ENUM, 0, (int16_t)(sizeof(n) / sizeof(n[0]) - 1), df, n, 0}
@@ -181,30 +177,18 @@ static const param_desc_t *param_desc_of(uint32_t e, uint32_t id)
     return id >= P_E0 ? &ENGINES[e]->edit[id - P_E0] : &TP[id];
 }
 
-/* a retired F_ENUM value kept as an alias, so stored values stay valid: SAMPLE SET and GRAIN SRC 1, once
- * TRANH, and 4, once PERC (a SAMPLE sound of it loads as DRUM: core.h drum_from_perc), play PIANO
- * (tools/gen_samples.py SMP_SET_ORIG); SLICE SRC 1..3, once USR1..3, play BREAK.
- * It shows the original's name; knobs step over it and the editor's SET lands on the original. -> the value v
- * stands for */
-#if FELUCCA_SLICE
-#define SLC_SRC_NAMES N_SLC_SRC
-#else
-#define SLC_SRC_NAMES ((const char *const *)0 + 1)
-#endif
+/* a retired F_ENUM value kept as an alias (the sample engines' SET / SRC aliases left with them in JIANT): none now.
+ * -> the value v stands for */
 static int32_t enum_orig(const param_desc_t *d, int32_t v)
 {
-    if (d->names == SLC_SRC_NAMES)                     /* SLICE SRC 1..3, once USR1..3: BREAK */
-        return v >= 1 && v <= 3 ? 0 : v;
-    return d->names == SMP_ALL_NAMES && v >= 0 && v < SMP_NSETS ? SMP_SET_ORIG[v] : v;
+    (void)d;
+    return v;
 }
 
-/* a stored value as the parameter takes it (projects, user presets, motion): inside d's range, and a retired
- * SLICE SRC as the source it plays. (SAMPLE / GRAIN's aliases keep their
- * number: they are what the sound was saved with, and play the original anyway) */
+/* a stored value as the parameter takes it (projects, user presets, motion): inside d's range */
 static int32_t param_fit(const param_desc_t *d, int32_t v)
 {
-    v = clamp(v, d->min, d->max);
-    return d->names == SLC_SRC_NAMES ? enum_orig(d, v) : v;
+    return clamp(v, d->min, d->max);
 }
 
 /* a knob moved an F_ENUM from `from` to v: past any alias in that direction (back to `from` at the end) */

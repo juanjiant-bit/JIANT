@@ -14,12 +14,11 @@ import os
 import re
 import sys
 
-FUNCS = ["analog_render", "digital_render", "digital_render_legacy", "digital_render_custom", "phase_render", "lofi_render", "sample_render", "formant_render",
+FUNCS = ["analog_render", "digital_render", "digital_render_legacy", "digital_render_custom", "phase_render", "lofi_render", "formant_render",
          "trio_render", "trio_pass", "wheel_render", "wheel_block",
-         "grain_render", "grain_block", "drum_render", "noise_render", "fm6_render", "fm6_op_run", "fm6_op_fb",
+         "drum_render", "noise_render", "fm6_render", "fm6_op_run", "fm6_op_fb",
          "dx_run",                                          # DRUM-X (drumx_voice.c): a hit, osc + noise
          "slicer_track",
-         "slice_render", "slc_rev",                          # SLICE (eng_slice.c): the render, the reverse windows
          "fm1_alnk0_irq", "fm1_timer5_irq",               # the audio ISR; TIMER5: the key / LED scan (hal/fm1_input.h)
          "uac_tap48",                                       # the USB audio input at 48 kHz: the 44.1 -> 48 resampler (usb.c)
          "click_render",                                    # the metronome's click (click.c), while it sounds

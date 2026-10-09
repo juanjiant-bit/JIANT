@@ -13,17 +13,15 @@
 #define NTRK NPART               /* tracks (the formats and the protocol count these): every track is a part */
 #define NSTEP 64
 #define HALF_FRAMES 128          /* I2S half buffer: 2.9 ms at 44.1 kHz (a key waits 0..1 half, then plays 1 half later) */
-#ifndef FELUCCA_SLICE
-#define FELUCCA_SLICE 1          /* the SLICE engine (eng_slice.c), engine 13; FELUCCA_SLICE=0 builds without it */
-#endif
 #ifndef FELUCCA_FM4
 #define FELUCCA_FM4 0            /* the DIGITAL engine (eng_digital.c, four-operator FM): kept in the tree, not built
                                   * by default; replaced by FM6, its sounds convert (fm4_convert.c) */
 #endif
-#define NENGINES (13 + FELUCCA_SLICE)   /* SLICE (13) comes last: the other engines keep their numbers */
+#define NENGINES 14              /* the stores' engine numbers 0..13 (engines.c ENGINES[], append-only) */
 #define ENGI_DIGITAL 1u          /* reserved without FELUCCA_FM4: never selectable (eng_ok), its sounds load as FM6 */
-#define NENG_SHOWN (NENGINES - !FELUCCA_FM4 - 1)   /* the engines one can pick: PRESETS, the EDIT layer, the editor,
-                                                * in the display order of engines.c ENGINE_ORDER (PHYS, 9, retired) */
+#define NENG_SHOWN (NENGINES - !FELUCCA_FM4 - 4)   /* the engines one can pick: PRESETS, the EDIT layer, the editor,
+                                                * in the display order of engines.c ENGINE_ORDER (PHYS 9, and in
+                                                * JIANT SAMPLE 4, GRAIN 8, SLICE 13: retired) */
 #define UP_SLOTS 32u             /* user presets (upreset.c) */
 #define NELEM(a) (sizeof(a) / sizeof((a)[0]))
 
@@ -116,6 +114,14 @@ static void params_by_count(int16_t *out, const int16_t *in, uint32_t np, const 
 /* engine indices the stores name (engines.c ENGINES[]: append-only) */
 #define ENGI_PHYS 9u
 #define ENGI_DRUM 10u
+#define ENGI_GRAIN 8u
+#define ENGI_SLICE 13u
+#define ENGI_SAMPLE 4u
+/* (JIANT) the retired engines: PHYS, and the sample engines SAMPLE GRAIN SLICE (their 123 KB of samples and GRAIN's
+ * 27 KB of RAM went to DRUM-X and the effects). Their numbers stay reserved (engines.c ENG_GONE), never offered; a sound
+ * of theirs that arrives -- a project, a user preset, the editor -- plays as ANALOG's first preset (SAMPLE's old PERC
+ * set as DRUM first: drum_from_perc) */
+static inline int eng_gone(uint32_t e) { return e == ENGI_PHYS || e == ENGI_SAMPLE || e == ENGI_GRAIN || e == ENGI_SLICE; }
 /* PHYS MODEL DRUM (MODEL 4, before 1.0) -> the DRUM engine, its E values in place: {MODEL, TUNE, TONE, DECY,
  * SNAP, ACC, KICK, PERC} -> {MRPH 64, TUNE, TONE, DECY, NOIS 64, ACC, -, DRV 0}. 1 = it was one (its engine is
  * ENGI_DRUM now); projects (project.c) and user presets (upreset.c) */
@@ -134,7 +140,6 @@ static int drum_from_phys(uint32_t engine, int16_t *e)
  * values become the kit's, the rest of the sound (mix, sends, matrix, ..) stays. 1 = it was one (its engine is
  * ENGI_DRUM now); projects (project.c proj_perc), user presets (upreset.c up_migrate), factory preset 4 and
  * favourites (ui.c, settings_persist.c). Idempotent */
-#define ENGI_SAMPLE 4u
 #define SMP_SET_PERC 4u
 #define DRUM_KIT_E {64, 64, 70, 64, 64, 100, 0, 0}   /* {MRPH, TUNE, TONE, DECY, NOIS, ACC, WARP, DRV} (eng_drum.c) */
 static int drum_from_perc(uint32_t engine, int16_t *e)

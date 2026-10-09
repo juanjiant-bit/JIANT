@@ -352,16 +352,17 @@ static void proj_fm4(project_t *q)
 #endif
 }
 
-/* PHYS tracks (engine 9, retired in TONIC: engines.c ENG_PHYS_GONE) -> ANALOG with its first preset's EDIT values
+/* tracks of a retired engine (PHYS 9 in TONIC; SAMPLE 4, GRAIN 8, SLICE 13 in JIANT: core.h eng_gone) -> ANALOG with its first preset's EDIT values
  * and envelope; the mix, the sends, the matrix and the steps stay. Their motion events on the EDIT values go (PHYS's
- * meanings do not carry over). After proj_phys (a PHYS DRUM of before 1.0 is DRUM by then). Idempotent */
+ * meanings do not carry over). After proj_phys and proj_perc (a PHYS DRUM of before 1.0, a SAMPLE PERC are DRUM by
+ * then). Idempotent */
 static void proj_phys_gone(project_t *q)
 {
     const preset_t *pr = &ENGINES[ENGI_PHYS_TO]->presets[0];
     uint32_t k, i, n, hit = 0;
     for (k = 0; k < NTRK; k++) {
         proj_trk_t *d = &q->t[k];
-        if (d->engine != ENGI_PHYS)
+        if (!eng_gone(d->engine))
             continue;
         d->engine = ENGI_PHYS_TO;
         for (i = 0; i < 8u; i++)
@@ -536,8 +537,8 @@ static int proj_import(project_t *q, const void *b, int n)
     if (!proj_import_any(q, b, n) || !proj_engines_ok(q))
         return 0;
     proj_fm4(q);
+    proj_perc(q);                                       /* (SAMPLE PERC: DRUM, before the retired engines) */
     proj_phys_gone(q);
-    proj_perc(q);
     return 1;
 }
 static int proj_import_any(project_t *q, const void *b, int n)
@@ -997,8 +998,8 @@ static int project_recall_sound(uint32_t slot, uint32_t k)
         return 1;
     proj_phys(p);                                       /* (as project_restore_runtime: the old formats' tracks) */
     proj_fm4(p);
-    proj_phys_gone(p);
     proj_perc(p);
+    proj_phys_gone(p);
     s = &p->t[k % NTRK];
     e = s->engine;
     load_begin(t, LOAD_SOUND);
@@ -1035,8 +1036,8 @@ static int project_restore_runtime(const project_t *input)
     proj_drums_to_part(p);                              /* a RAM slot of firmware before 1.0 */
     proj_phys(p);                                       /* .. before PHYS lost DUST and DRUM */
     proj_fm4(p);                                        /* .. that had DIGITAL tracks */
-    proj_phys_gone(p);                                  /* .. or PHYS tracks (retired in TONIC) */
-    proj_perc(p);                                       /* .. or SAMPLE PERC tracks */
+    proj_perc(p);                                       /* .. or SAMPLE PERC tracks (DRUM) */
+    proj_phys_gone(p);                                  /* .. or tracks of a retired engine (core.h eng_gone: ANALOG) */
     transport_req = 2;
     panic_req = (1u << NTRK) - 1u;
     fm1_irq_off();                                      /* the audio ISR must not see half a project */
@@ -1103,7 +1104,6 @@ static int project_restore_runtime(const project_t *input)
     sync_reload = 1;
     ui.force = 1;
     ui_message("LOADED");
-    memset(snd_said, 0, sizeof snd_said);               /* a missing sample is said again, after LOADED */
     return 0;
 }
 static void project_load(uint32_t slot)

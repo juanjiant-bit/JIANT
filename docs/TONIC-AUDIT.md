@@ -151,12 +151,12 @@ SAMPLE USR1–3, SRC USR de GRAIN, USR de SLICE, `slice_store.c`, subida/grabaci
 
 | Engine | Propuesta |
 |---|---|
-| DRUM | Reemplazar por DRUM-X |
+| DRUM | Reemplazar por DRUM-X — **hecho** |
 | ANALOG, FM6, VOICE | Mantener |
 | TRIO | Fusionar con ANALOG |
-| SAMPLE, SLICE | Recortar |
+| SAMPLE, SLICE | Recortar — **retirados (JIANT 0.3)** con sus samples |
 | PHYS | Recortar (RAM) |
-| GRAIN | Decidir (depende de los samples de fábrica) |
+| GRAIN | Decidir (depende de los samples de fábrica) — **retirado (JIANT 0.3)** |
 | PHASE, LOFI, NOISE, WHEEL | Opcional (poca RAM) |
 
 ## 9. Riesgos y decisiones abiertas

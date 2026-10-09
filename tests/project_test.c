@@ -283,9 +283,9 @@ int main(void)
          steps_grid_same(q2.t[3].step, v3.t[0].step) && !memcmp(&q2.t[0], &q.t[0], sizeof q.t[0]);
     bad += check("FUN3 before 1.0: the drum track -> part 4 (LEVEL / REV from G_DRLVL / G_DRREV)", ok);
 
-    /* a FUN6 round trip: stored as is (a matrix slot set; an engine added since: SLICE, 8; a DRUM track with
-     * notes on its lanes stays so: only an older format is converted) */
-    q.t[1].engine = 8;
+    /* a FUN6 round trip: stored as is (a matrix slot set; another engine: WHEEL, 7 (GRAIN, 8, is retired in JIANT); a
+     * DRUM track with notes on its lanes stays so: only an older format is converted) */
+    q.t[1].engine = 7;
     q.t[2].p[P_M2SRC] = 6;
     q.t[2].p[P_M2DST] = 11;
     q.t[2].p[P_M2AMT] = -17;
@@ -293,8 +293,8 @@ int main(void)
     q.t[0].step[0] = (step_t){{36, 42, 0, 0}, 2, ST_NOTE, 0, 96, 1u << DV_SNARE, 1u << DV_SNARE};
     q.sum = proj_sum(&q);
     memcpy(&buf, &q, sizeof q);
-    bad += check("FUN6 -> FUN6: as stored (a matrix slot, engine 8, a DRUM step with notes and hits)",
-                 proj_import(&q2, &buf, (int)sizeof q) && !memcmp(&q, &q2, sizeof q) && q2.t[1].engine == 8 &&
+    bad += check("FUN6 -> FUN6: as stored (a matrix slot, engine 7, a DRUM step with notes and hits)",
+                 proj_import(&q2, &buf, (int)sizeof q) && !memcmp(&q, &q2, sizeof q) && q2.t[1].engine == 7 &&
                  q2.t[2].p[P_M2AMT] == -17 && q2.t[0].step[0].n == 2u && q2.t[0].step[0].hit == 1u << DV_SNARE);
     q.t[0].engine = 3;
     q.t[0].step[0] = q.t[0].step[1];
@@ -765,7 +765,7 @@ int main(void)
         a.t[2].preset = 4;
         a.t[2].step[0] = (step_t){{36, 42, 0, 0}, 2, ST_NOTE, SF_ACCENT, 100, 0, 0};
         a.t[2].step[4] = (step_t){{38, 49, 0, 0}, 2, ST_NOTE, 0, 90, 0, 0};
-        a.t[0].p[P_E0] = 2;                             /* track 1: FLUTE stays */
+        a.t[0].p[P_E0] = 2;                             /* track 1: FLUTE (SAMPLE retired in JIANT: ANALOG) */
         a.motion.count = 3;
         a.motion.event[0] = (motion_event_t){2u << 6 | 3u, P_E4, 20};          /* track 3: CUT: goes */
         a.motion.event[1] = (motion_event_t){2u << 6 | 5u, P_REV, 60};         /* track 3: a send: stays */
@@ -774,14 +774,14 @@ int main(void)
 #define PERC_OK(c) ((c).t[2].engine == ENGI_DRUM && (c).t[2].preset == 0u && !memcmp(&(c).t[2].p[P_E0], KIT, sizeof KIT) && \
                     !memcmp((c).t[2].p, a.t[2].p, P_E0 * sizeof(int16_t)) && \
                     !memcmp((c).t[2].step, a.t[2].step, sizeof a.t[2].step) && \
-                    (c).t[0].engine == ENGI_SAMPLE && (c).t[0].p[P_E0] == 2 && (c).t[1].engine == ENGI_SAMPLE)
+                    (c).t[0].engine == ENGI_PHYS_TO && (c).t[0].p[P_E0] == ENGINES[ENGI_PHYS_TO]->presets[0].e[0] && \
+                    (c).t[1].engine == ENGI_PHYS_TO)
         ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st);
-        bad += check("FUN8 with a SAMPLE PERC track: DRUM's kit, the rest of the sound and the steps kept", ok && PERC_OK(c) &&
+        bad += check("FUN8 with a SAMPLE PERC track: DRUM's kit, the rest of the sound and the steps kept; SAMPLE tracks ANALOG", ok && PERC_OK(c) &&
                      str_eq(ENGINES[ENGI_DRUM]->presets[0].name, "DRUM-X") &&
                      !memcmp(ENGINES[ENGI_DRUM]->presets[0].e, (int8_t[8])DRUM_KIT_E, 8));
-        bad += check("  its motion on CUT goes; a send's and the other track's stay",
-                     c.motion.count == 2u && c.motion.event[0].param == P_REV && c.motion.event[1].place == 3u &&
-                     motion_valid(&c.motion) && proj_ok(&c));
+        bad += check("  its motion on CUT goes, the retired SAMPLE track's too (ANALOG now); a send's stays",
+                     c.motion.count == 1u && c.motion.event[0].param == P_REV && motion_valid(&c.motion) && proj_ok(&c));
         bad += check("  imported again: as it is (DRUM now)", proj_import(&d, &c, sizeof c) && !memcmp(&d, &c, sizeof d));
         memset(&a.motion, 0, sizeof a.motion);
         a.sum = proj_sum(&a);
@@ -790,6 +790,28 @@ int main(void)
         ok = proj_import(&c, &buf, (int)sizeof w4) && PERC_OK(c);
         bad += check("FUN4 with a SAMPLE PERC track: DRUM's kit, the same", ok);
 #undef PERC_OK
+    }
+    {   /* (JIANT) GRAIN (8) and SLICE (13) tracks, retired: ANALOG's first preset, their engine motion gone, the rest kept */
+        static project_t g, h;
+        static project_store_t gs;
+        memset(&g, 0, sizeof g);
+        g.magic = PROJ_MAGIC; g.size = sizeof g; g.parts = NPART; g.phys = PROJ_PHYS;
+        chain_defaults(&g.chain);
+        for (t = 0; t < NTRK; t++) {
+            for (i = 0; i < P_COUNT; i++) g.t[t].p[i] = param_desc_of(0, i)->def;
+            memcpy(g.fm6[t], FM6_INIT, FM6_PACKED);
+            memcpy(g.dx, DX_KIT_DEF, sizeof g.dx);
+        }
+        g.t[1].engine = ENGI_GRAIN; g.t[2].engine = ENGI_SLICE; g.t[2].p[P_LEVEL] = 66;
+        g.motion.count = 2; g.motion.on = 4;
+        g.motion.event[0] = (motion_event_t){2u << 6 | 1u, P_E2, 30};
+        g.motion.event[1] = (motion_event_t){2u << 6 | 2u, P_REV, 40};
+        g.sum = proj_sum(&g);
+        ok = proj_pack(&gs, &g) && proj_import(&h, &gs, sizeof gs) && h.t[1].engine == ENGI_PHYS_TO &&
+             h.t[2].engine == ENGI_PHYS_TO && h.t[2].p[P_LEVEL] == 66 && h.motion.count == 1u && h.motion.event[0].param == P_REV &&
+             h.t[2].p[P_E0] == ENGINES[ENGI_PHYS_TO]->presets[0].e[0] && !eng_ok(ENGI_GRAIN) && !eng_ok(ENGI_SLICE) &&
+             !eng_ok(ENGI_SAMPLE) && eng_live(ENGI_SLICE) == ENGI_PHYS_TO;
+        bad += check("JIANT: GRAIN and SLICE tracks (retired) load as ANALOG, their engine motion gone, LEVEL and sends kept", ok);
     }
     printf("%s\n", bad ? "PROJECT FORMAT TEST FAILED" : "project format test passed");
     return bad != 0;

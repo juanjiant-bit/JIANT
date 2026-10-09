@@ -380,9 +380,6 @@ static void ui_say(const char *a, const char *b)
 static void ui_message(const char *s) { ui_say(s, ""); }
 /* a message led by an icon: its first byte (ui_draw.c draw_head draws the icon, then the words) */
 #define MSG_NOFILE "\x01"                      /* the no-file icon (ICON_X_NOFILE) */
-/* a missing sample (ui_input.c sample_notice): NO SAMPLE (SAMPLE NOT FOUND is 4 px too wide for the header's
- * 130 px after the icon) */
-#define MSG_NO_SAMPLE MSG_NOFILE "NO SAMPLE"
 
 static int chain_busy(void) { return chain.running || chain.armed; }
 /* Main loop only, with interrupts enabled. PLAY may be consumed between reads;
@@ -789,26 +786,11 @@ static int param_kept(uint32_t i)
            (i >= P_SLCR && i <= P_SLDEPTH) || i == P_SOFS || i == P_POFS;
 }
 
-/* a retired preset kept as an alias, so stored preset numbers stay valid: SAMPLE 1, once TRANH, is PIANO
- * (tools/gen_samples.py SMP_SET_ORIG). It loads as the original; browsing skips it. -> the preset k stands for.
- * (SAMPLE 4, once PERC, is past SMP_NPRESETS: apply_preset_to loads it as DRUM) */
-static uint32_t preset_orig(const engine_t *e, uint32_t k)
-{
-    return e->presets == SMP_PRESET_TABLE && k < SMP_NSETS ? SMP_SET_ORIG[k] : k;
-}
-
+/* a retired preset kept as an alias (SAMPLE's, gone with it in JIANT): none now. -> the preset k stands for */
+static uint32_t preset_orig(const engine_t *e, uint32_t k) { (void)e; return k; }
 /* the presets of engine e that browsing shows before preset k (k = npresets: all of them) */
-static uint32_t preset_rank(const engine_t *e, uint32_t k)
-{
-    uint32_t i, n = 0;
-    if (e->presets != SMP_PRESET_TABLE)
-        return k;
-    for (i = 0; i < k; i++)
-        n += preset_orig(e, i) == i;
-    return n;
-}
-
-#define preset_shown(e) (ENGINES[e]->npresets - (ENGINES[e]->presets == SMP_PRESET_TABLE ? SMP_NALIAS : 0u))
+static uint32_t preset_rank(const engine_t *e, uint32_t k) { (void)e; return k; }
+#define preset_shown(e) (ENGINES[e]->npresets)
 
 #if !FELUCCA_FM4
 /* DIGITAL (engine 1, retired): t's sound = p, values as DIGITAL has them, converted to FM6 with a patch of its own
@@ -864,13 +846,13 @@ static void apply_preset_to(track_t *t, uint32_t pi)
         return;
     }
 #endif
-    if (t->eng_req % NENGINES == ENGI_PHYS) {         /* PHYS (retired, engines.c): ANALOG's first preset */
-        set_engine_of(t, ENGI_PHYS_TO);
-        return;
-    }
     if (t->eng_req % NENGINES == ENGI_SAMPLE && pi == SMP_SET_PERC) {   /* SAMPLE preset 4 was PERC (retired, a stored */
         set_engine_of(t, ENGI_DRUM);                  /* number: the editor's PRESET, a favourite): DRUM's kit */
         return;                                       /* (core.h drum_from_perc) */
+    }
+    if (eng_gone(t->eng_req % NENGINES)) {            /* PHYS SAMPLE GRAIN SLICE (retired, core.h): ANALOG's first */
+        set_engine_of(t, ENGI_PHYS_TO);
+        return;
     }
     load_begin(t, LOAD_SOUND);
     panic_req |= (uint8_t)(1u << trk_index(t));       /* MONO/POLY may change: release what sounds */
@@ -910,7 +892,7 @@ static void set_engine_of(track_t *t, uint32_t ei)
 {
     const engine_t *e;
     uint32_t i;
-    if (ei % NENGINES == ENGI_PHYS)                  /* PHYS (retired, engines.c): ANALOG */
+    if (eng_gone(ei % NENGINES))                     /* PHYS SAMPLE GRAIN SLICE (retired, core.h): ANALOG */
         ei = ENGI_PHYS_TO;
     e = ENGINES[ei % NENGINES];
 #if !FELUCCA_FM4
