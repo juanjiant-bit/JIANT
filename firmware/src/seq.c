@@ -162,7 +162,9 @@ static int pfx_rec_ok(void) { return song.rec && song.playing && !chain.running;
  * C E C G (the bottom one); WALK a random step up or down the list (bouncing off its ends); CHORD all the held
  * notes together (the first 4), an octave higher each step through OCT */
 enum { AM_OFF, AM_UP, AM_DN, AM_UPDN, AM_RND, AM_ORD, AM_REPEAT, AM_DNUP, AM_UP8, AM_CONV, AM_DIVG, AM_PINKY,
-       AM_THUMB, AM_WALK, AM_CHORD };
+       AM_THUMB, AM_WALK, AM_CHORD,
+       AM_TRNS };   /* (JIANT) TRNS: a key no note but the track's sequence transposed by its interval from C4 (t->trn, kept
+                     * when let go: the next key moves it), MIDI in too; the steps' notes, never the lane hits */
 
 static void arp_forget(track_t *t)               /* (its notes ended otherwise: trk_all_off) */
 {
@@ -301,8 +303,8 @@ static void arp_step(track_t *t, uint32_t n, uint32_t gate_n)
         else
             t->arp_off -= gate_n;
     }
-    if (!t->p[P_AMODE] || !t->nheld) {
-        if (!t->nheld && t->arp_note)
+    if (!t->p[P_AMODE] || !t->nheld || t->p[P_AMODE] == AM_TRNS) {   /* (TRNS: no arpeggio) */
+        if ((!t->nheld || t->p[P_AMODE] == AM_TRNS) && t->arp_note)
             arp_off(t);
         return;
     }
@@ -506,6 +508,10 @@ static void input_on(track_t *t, uint32_t note, uint32_t vel)
     last_note = (uint8_t)note;
     if (cin_left)
         cin_keep(t, note, vel);
+    if (t->p[P_AMODE] == AM_TRNS) {                 /* ARP TRNS: the key transposes the sequence */
+        t->trn = (int8_t)clamp((int32_t)note - 60, -36, 36);
+        return;
+    }
     if (rec_on(t) && !t->p[P_AMODE])               /* (ARP on: arp_tick records its notes) */
         rec_note(t, note, vel);
     if (t->p[P_AMODE])
@@ -749,6 +755,8 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
     }
     for (i = 0; i < s->n && i < 4u; i++) {
         uint32_t x = s->note[i];
+        if (t->p[P_AMODE] == AM_TRNS)               /* ARP TRNS: the keys' interval */
+            x = (uint32_t)clamp((int32_t)x + t->trn, 0, 127);
         if (qseq) {                                 /* QNT SEQ: onto the scale now; two notes snapping */
             x = (uint32_t)clamp(scale_snap(t, (int32_t)x), 0, 127);   /* together play once */
             for (j = 0; j < m && nn[j] != x; j++)
