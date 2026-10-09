@@ -36,6 +36,7 @@ typedef struct {
     uint8_t owner;               /* the voice playing the lane: index + 1, 0 = none */
     int8_t st;                   /* its semitones from the lane's pitch (the GM map) */
     uint8_t mg;                  /* its group mute's fade: DXG_FADE (sounding) .. 0 (muted, silent) */
+    uint8_t age;                 /* blocks since the hit (255: and more): PUNCH's shape */
 } drum_lane_t;
 
 static drum_lane_t drum_kit[NPART][DV_NLANE] __attribute__((section(".pool")));
@@ -49,6 +50,17 @@ static const uint8_t DXG_LANE[DV_NLANE] = {DXG_KICK, DXG_SNARE, DXG_SNARE, DXG_H
 #define DXG_FADE 8u
 static volatile uint8_t dx_mute;
 static void dx_mute_set(uint32_t m) { dx_mute = (uint8_t)(m & DXG_ALL); }
+
+/* The drum bus (JIANT, MENU-less: FX > MASTER). PUNCH (G_PUNCH 0..100, after Ableton's Drum Buss, no detector: each
+ * hit's own age): a hit's first 12 blocks (~9 ms) up to +6 dB, then over 24 blocks down to its tail at up to -5 dB
+ * (tighter, compressed). DUCK (G_DUCK, fx.c): a kick struck on any DRUM track (its group not muted) ducks the other
+ * parts; duck_hit tells fx.c's mix_block */
+static volatile uint8_t duck_hit;
+static int32_t punch_gain(uint32_t age, int32_t p)     /* Q15 (32768 = 1, up to x2), p 0..100 */
+{
+    int32_t up = 32768 + p * 328, tail = 32768 - p * 145;   /* (+6 dB, -5 dB at 100) */
+    return age < 12u ? up : age < 36u ? up + (tail - up) * (int32_t)(age - 12u) / 24 : tail;
+}
 
 /* General MIDI notes 35..81 -> the lane (DV_*) and semitones from its pitch */
 static const int8_t DRUM_GM[47][2] = {
@@ -176,6 +188,9 @@ static void drum_note_on(track_t *t, voice_t *v)
                                                           * a key-off before the first block (zero-length MIDI
                                                           * notes) would end a fresh voice at env 0 in env_tick */
     L->mg = DXG_FADE;
+    L->age = 0;
+    if (lane == DV_KICK)
+        duck_hit = 1;
     dx_trigger(&L->x);
     if (lane == DV_HATC)                                 /* a closed hat chokes the open one */
         dx_choke(&K[DV_HATO].x);
@@ -232,11 +247,23 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
         n = CTL;
     dx_run(&dx_kit[(uint32_t)v->s[0] & (DV_NLANE - 1u)], &L->x, p[P_E0], L->st * 16 + (p[P_E1] - 64) * 3,
            p[P_E3] - 64, p[P_E2] - 64, p[P_E4] - 64, y, n);
-    for (i = 0; i < n; i++)                              /* ACC: up to x1.5 */
-        y[i] = (int32_t)(((int64_t)y[i] * ga) >> 15);
+    for (i = 0; i < n; i++)                              /* ACC: up to x1.5 (|y| < 2^17, ga >> 4 < 2^12) */
+        y[i] = (y[i] * (ga >> 4)) >> 11;
     if (drv > 0) {                                       /* DRV: x1..x4 into the soft clip, the level kept (Q12) */
         g = 4096 + drv * 3 * 4096 / 127;
         mk = (int32_t)((19661u << 15) / (uint32_t)softclip((19661 * g) >> 12));
+    }
+    {                                                    /* PUNCH: on the block's amplitude ramp (after the knee:
+                                                          * its transient kept; no work per sample) */
+        int32_t pu = song.g[G_PUNCH];
+        if (pu > 0) {                                    /* (amp <= 32767, the gain >> 1 <= 32784) */
+            int32_t a0 = (m->amp0 * (punch_gain(L->age, pu) >> 1)) >> 14;
+            ml.amp1 = (m->amp1 * (punch_gain(L->age + 1u, pu) >> 1)) >> 14;
+            ml.amp0 = a0;
+            m = &ml;
+        }
+        if (L->age < 255u)
+            L->age++;
     }
     for (i = 0; i < n; i++) {                            /* x1.25 and the knee below, in 32 bits */
         int32_t s = y[i];

@@ -46,7 +46,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 | Song mode estilo SLOOP, 8 canciones × 4 variaciones ([docs/TONIC-SONG-PLAN.md](docs/TONIC-SONG-PLAN.md)) | Hecho (falta backup de todas las canciones) |
 | Escenas por paso de la cadena | Pendiente |
 | DRUM-X y mutes por grupo ([docs/TONIC-DRUMX.md](docs/TONIC-DRUMX.md)) | En curso (motor y mutes por grupo hechos; los kits de Felucca, retirados) |
-| Master: clipper y PUNCH | Pendiente |
+| Master: CLIP, PNCH (bus de batería) y DUCK (página FX > MASTER) | Hecho |
 | Macros M1–M4 | Pendiente |
 | Punch-in FX MIDI y sus lanes | Pendiente |
 | Más modulación y mejores efectos | Pendiente |
@@ -54,6 +54,10 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 
 ### Qué cambió respecto de Felucca 1.1.5.1
 
+- **Master (FX > MASTER):** **CLIP** satura la mezcla antes del limiter (x1 a x4, el nivel se mantiene);
+  **PNCH** es el bus de batería: cada golpe de DRUM gana hasta +6 dB en sus primeros ~9 ms y su cola baja hasta
+  −5 dB, sin detector de audio; **DUCK** hace que el bombo baje los demás tracks hasta −18 dB, con **REL** como
+  release (40–600 ms). Todo en 0 queda fuera de la cadena. Se guardan con el proyecto.
 - **PHYS** se retiró (liberó 50 KB de RAM). Un sonido PHYS de un proyecto o preset viejo suena como el
   primer preset de ANALOG.
 - **Sin samples de usuario.** Se fueron los slots USR1–3 (SAMPLE, GRAIN, SLICE), la subida y grabación

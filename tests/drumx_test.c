@@ -13,6 +13,9 @@
  * 5b. the group mutes (dx_mute): a muted group's hits are silent (any kit), the others still sound; muting a
  *    ringing group fades it out: its voice ends within 10 ms, the output 26 dB under the unmuted hit's, no step
  *    larger than the hit's own; unmuting sounds again.
+ * 5c. the master (JIANT): PNCH 100 lifts a kick's first 8 ms (+30 %) and lowers its tail; DUCK 100: a held synth
+ *    note drops 10 dB or more 5..40 ms after a kick (against DUCK 0), and is back (within 1 dB) after the release;
+ *    CLIP 100: the loud mix saturates (crest factor down), never past full scale; CLIP 0 is out of the chain.
  * 6. demos into DEMODIR: every lane at MORPH 0, 64, 127; a beat with MORPH swept over 4 bars. */
 #include <stdarg.h>
 #define main hostsim_main
@@ -271,6 +274,73 @@ int main(int argc, char **argv)
             check(kit ? "group mutes (STD): unmuted, the kick sounds again" : "group mutes (X): unmuted, the kick sounds again",
                   rms(0, FS / 10u) > 300, 0);
         }
+    }
+
+    /* 5c */
+    {
+        double e0, e1, t0, t1, before, during, after, c0, c1;
+        int32_t o[2 * CTL], pk;
+        track_t *t = kitx(64, 64), *s2 = &trk[1];
+        uint32_t m;
+        song.g[G_PUNCH] = 0;
+        t->p[P_LEVEL] = 60;                              /* (under the master's limiter: PUNCH itself measured) */
+        strike(t, 0, FS / 4u);
+        e0 = rms(0, FS * 8u / 1000u);
+        t0 = rms(FS / 10u, FS / 5u);
+        t = kitx(64, 64);
+        song.g[G_PUNCH] = 100;
+        t->p[P_LEVEL] = 60;
+        strike(t, 0, FS / 4u);
+        e1 = rms(0, FS * 8u / 1000u);
+        t1 = rms(FS / 10u, FS / 5u);
+        song.g[G_PUNCH] = 0;
+        check("PNCH 100: the kick's first 8 ms louder, its tail lower", e1 > e0 * 1.3 && t1 < t0 * 0.8,
+              "attack RMS %.0f -> %.0f, tail %.0f -> %.0f", e0, e1, t0, t1);
+        for (m = 0; m < 2u; m++) {                       /* DUCK 0, then 100: a held synth note, a kick */
+            t = kitx(64, 64);
+            host_preset(s2, 0, 0);
+            for (i = 0; i < 4u; i++)
+                s2->p[P_DIST + i] = 0;
+            song.g[G_DUCK] = (int16_t)(m ? 100 : 0);
+            song.g[G_DREL] = 30;
+            t->p[P_LEVEL] = 0;                           /* (the kick itself out of the measure: only its duck) */
+            trk_note_on(s2, 60, 100);
+            for (i = 0; i < FS / 2u; i += CTL)
+                mix_block(o, CTL);
+            strike(t, 0, FS);
+            during = rms(FS * 5u / 1000u, FS * 40u / 1000u);
+            after = rms(FS * 8u / 10u, FS * 9u / 10u);
+            trk_note_off(s2, 60);
+            if (!m) {
+                before = during;                         /* (DUCK 0: the same windows, undisturbed) */
+                c0 = after;
+            } else {
+                c1 = after;
+                check("DUCK 100: the kick ducks the synth 10 dB or more, back after the release (vs DUCK 0)",
+                      during < before / 3.16 && fabs(20 * log10(c1 / c0)) < 1.0, "%.0f -> %.0f, after %.0f / %.0f",
+                      before, during, c0, c1);
+            }
+        }
+        song.g[G_DUCK] = 0;
+        host_preset(s2, 0, 0);
+        t = kitx(64, 64);                                /* CLIP: a loud mix (the kit's every lane at once) */
+        for (m = 0; m < 2u; m++) {
+            double r, p2 = 0;
+            t = kitx(64, 64);
+            song.g[G_CLIP] = (int16_t)(m ? 100 : 0);
+            for (l = 0; l < 8u; l++)
+                trk_note_on(t, NOTE[l], 127);
+            strike(t, 0, FS / 5u);
+            r = rms(0, FS / 5u);
+            for (pk = 0, i = 0; i < FS / 5u; i++)
+                pk = abs(buf[i]) > pk ? abs(buf[i]) : pk;
+            p2 = pk;
+            if (!m) c0 = p2 / r; else c1 = p2 / r;
+            if (m)
+                check("CLIP 100: the loud mix saturates (crest factor down), never past full scale", c1 < c0 * 0.9 &&
+                      pk <= 32767, "crest %.2f -> %.2f, peak %d", c0, c1, pk);
+        }
+        song.g[G_CLIP] = 0;
     }
 
     /* 6 */
