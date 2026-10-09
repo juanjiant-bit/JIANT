@@ -1313,11 +1313,20 @@ static void ui_draw_page(uint32_t counting)
         name_draw();
         return;
     }
-    if (ui.layer) {                                     /* a layer's map over the page (ui_layer.c) */
+    if (ui.layer || (ui.home && home_mac)) {           /* a layer's map over the page (ui_layer.c); (JIANT 0.4) HOME:
+                                                         * the macros' cards, drawn as the MACRO layer's (no layer open) */
+        uint8_t hm = !ui.layer;
+        static uint8_t hm_was;
+        if (hm != hm_was)
+            ui.force = 1, hm_was = hm;
+        if (hm)
+            ui.layer = LAYER_MACRO;
         if (ui.force)
             draw_frame();
         draw_head();
         draw_layer();
+        if (hm)
+            ui.layer = 0;
         if (ui.msg_t && !--ui.msg_t && ui.msg2[0]) {
             str_cpy(ui.msg, ui.msg2, sizeof ui.msg);
             ui.msg2[0] = 0;

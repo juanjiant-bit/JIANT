@@ -5,11 +5,14 @@
  * as it was. White keys after the audio ones (perform.c PF_*):
  *   D4 OCT-, E4 OCT+   every voice an octave down / up (both: none), at once, notes held too
  *   F4 1/2 TEMPO       the track's sequencer at half speed; let go, it is back where it would have been
- *   G4 DEC-, A4 DEC+   short / long decays: a synth's DEC and REL, DRUM's DECY (DEC- wins)
- *   B4 C5              STUTTER 1/16, 1/32: the notes the track struck last together (a step's chord, a
- *                      drum step's hits) again at the rate, gated half; the sequencer's own notes wait meanwhile
- *   D5 ATK+            (JIANT, was STUTTER 1/16T) every synth's attack slow (two thirds of the way to the longest)
- *   E5 ARP             those notes one at a time at 1/16, up two octaves (DRUM: its hits in turn)
+ *   G4 DEC-, A4 DEC+   short / long decays: a synth's DEC and REL, DRUM's DECY (DEC- wins); (JIANT 0.4) DEC- also
+ *                      takes a synth's sustain to 0: the whole instrument plucks
+ *   B4 C5              STUTTER 1/8, 1/16 (JIANT 0.4; were 1/16 1/32): the notes the track struck last together (a
+ *                      step's chord, a drum step's hits) again at the rate, gated half; the sequencer's own notes wait
+ *   D5 ATK+            (JIANT, was STUTTER 1/16T) every synth's attack slow (two thirds of the way to the longest);
+ *                      (0.4) a DRUM hit faded in over ~35 ms (eng_drum.c): everything softer
+ *   E5 ARP             those notes one at a time at 1/16, up two octaves; (JIANT 0.4) DRUM: a fill, a new one at
+ *                      every press (pfx_fill: snare, toms down, hats, claps, rim, rests, its own accents)
  *   F5 RANDOM          each new note: an octave, a fifth or a fourth away now and then (DRUM: +-3 semitones); and
  *                      (JIANT) the sequencer plays a step of its pattern at random now and then (seq.c seq_tick)
  * (JIANT) Quantized: an effect pressed while the transport runs goes in on the next 1/16 of the transport (clk_pos),
@@ -66,12 +69,28 @@ static void pfx_hush(track_t *t)
 static __attribute__((noinline)) void pfx_fire(track_t *t, int arp)
 {
     uint32_t i, n = t->pfx_lnn;
-    if (!n)
+    if (!n && !(arp && t->engine == ENGI_DRUM))         /* (a drum fill needs no notes struck) */
         return;
     pfx_hush(t);
     pfx_in = 1;
     t->pfx_rpit = 0;
-    if (arp) {
+    if (arp && t->engine == ENGI_DRUM) {               /* (JIANT 0.4) a fill: each press its own (pfx_seed runs on) */
+        static const uint8_t FILL[16] = {38, 38, 40, 38, 50, 48, 47, 45, 43, 41, 42, 42, 46, 39, 37, 36};
+        uint32_t r, note;
+        pfx_seed = pfx_seed * 1664525u + 1013904223u;
+        r = pfx_seed >> 24;
+        if (r < 40u) {                                  /* (a rest now and then) */
+            pfx_in = 0;
+            return;
+        }
+        note = r < 150u ? FILL[(pfx_seed >> 16) & 3u]  /* the snare, most */
+             : r < 215u ? FILL[4u + ((t->pfx_si + ((pfx_seed >> 16) & 1u)) % 6u)]   /* toms, mostly downwards */
+             : FILL[10u + ((pfx_seed >> 16) % 6u)];
+        t->pfx_si++;
+        trk_note_on(t, note, 60u + ((pfx_seed >> 8) & 63u) + (r & 1u ? 0u : 4u));
+        t->pfx_sn[0] = (uint8_t)note;
+        t->pfx_snn = 1;
+    } else if (arp) {
         uint32_t k = t->pfx_si++ % (t->engine == ENGI_DRUM ? n : 3u * n);
         uint32_t note = t->pfx_ln[k % n] + 12u * (k / n);
         note = note > 127u ? 127u : note;
@@ -89,7 +108,7 @@ static __attribute__((noinline)) void pfx_fire(track_t *t, int arp)
 }
 
 /* the values DEC- / DEC+ took out (pfx_end puts them back) */
-static int16_t pfx_keep[NTRK][3];   /* DEC, REL (DRUM: DECY); ATK */
+static int16_t pfx_keep[NTRK][4];   /* DEC, REL (DRUM: DECY); ATK; SUS (DEC-) */
 static uint32_t pfx_qon;            /* (JIANT) the effects in (quantized to the 1/16) */
 
 static int pfx_rec_ok(void);          /* seq.c: REC armed, not a song playing */
@@ -154,11 +173,11 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
         int drum = t->engine == ENGI_DRUM;
         uint32_t on = (!pfx_tgt || (pfx_tgt == 1u) == !drum ? held : 0u) | (!pfx_ltgt || (pfx_ltgt == 1u) == !drum ? lane : 0u);
         uint32_t old = t->pfx, f, rep, per = 0;
-        rep = on & (PF_BIT(PF_S32) | PF_BIT(PF_S16) | PF_BIT(PF_ARP));
-        per = (rep & PF_BIT(PF_S32)) ? b / 8u : b / 4u;
+        rep = on & (PF_BIT(PF_S16) | PF_BIT(PF_S8) | PF_BIT(PF_ARP));
+        per = (rep & (PF_BIT(PF_S16) | PF_BIT(PF_ARP))) ? b / 4u : b / 2u;   /* (JIANT 0.4: 1/8, 1/16; ARP 1/16) */
         t->pfx_pit = (int16_t)(((on >> PF_OCTU) & 1u) * 192 - ((on >> PF_OCTD) & 1u) * 192);
         f = ((on >> PF_RND) & 1u ? PFX_RND : 0u) | ((on >> PF_HALF) & 1u ? PFX_HALF : 0u) | (rep ? PFX_REP : 0u) |
-            (on & (PF_BIT(PF_DSHT) | PF_BIT(PF_DLNG)) ? PFX_DEC : 0u) | ((on >> PF_ATK) & 1u && !drum ? PFX_ATK : 0u);
+            (on & (PF_BIT(PF_DSHT) | PF_BIT(PF_DLNG)) ? PFX_DEC : 0u) | ((on >> PF_ATK) & 1u ? PFX_ATK : 0u);
         if ((f & PFX_HALF) && !(old & PFX_HALF) && song.playing) {   /* 1/2 TEMPO: where it was */
             t->pfx_idx0 = t->seq_idx;
             t->pfx_pos0 = t->seq_pos;
@@ -188,14 +207,17 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
             uint32_t a = drum ? P_E3 : P_DEC, c = drum ? P_E3 : P_REL;
             pfx_keep[k][0] = t->p[a];
             pfx_keep[k][1] = t->p[c];
+            pfx_keep[k][3] = t->p[P_SUS];
             if (drum) {
                 t->p[a] = (int16_t)clamp(t->p[a] + (sh ? -40 : 40), 0, 127);
             } else {
                 t->p[a] = (int16_t)(sh ? t->p[a] / 3 : t->p[a] + (127 - t->p[a]) * 2 / 3);
                 t->p[c] = (int16_t)(sh ? t->p[c] / 3 : t->p[c] + (127 - t->p[c]) * 2 / 3);
+                if (sh)
+                    t->p[P_SUS] = 0;                    /* (JIANT 0.4) DEC-: a pluck */
             }
         }
-        if (f & PFX_ATK) {                              /* (JIANT) ATK+: the attack slow */
+        if ((f & PFX_ATK) && !drum) {                   /* (JIANT) ATK+: the attack slow (DRUM: eng_drum.c) */
             pfx_keep[k][2] = t->p[P_ATK];
             t->p[P_ATK] = (int16_t)(t->p[P_ATK] + (127 - t->p[P_ATK]) * 2 / 3);
         }
@@ -213,8 +235,10 @@ static __attribute__((noinline)) void pfx_end(void)
             int drum = trk[k].engine == ENGI_DRUM;
             trk[k].p[drum ? P_E3 : P_DEC] = pfx_keep[k][0];
             trk[k].p[drum ? P_E3 : P_REL] = pfx_keep[k][1];
+            if (!drum)
+                trk[k].p[P_SUS] = pfx_keep[k][3];
         }
     for (k = 0; k < NTRK; k++)
-        if (trk[k].pfx & PFX_ATK)
+        if ((trk[k].pfx & PFX_ATK) && trk[k].engine != ENGI_DRUM)
             trk[k].p[P_ATK] = pfx_keep[k][2];
 }

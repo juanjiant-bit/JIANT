@@ -1101,6 +1101,10 @@ static uint32_t preset_visible(uint32_t cur, uint32_t total, uint32_t row)
     return first + row < total ? first + row : total;
 }
 
+/* (JIANT 0.4) HOME is where the whole instrument moves: M1..M4 on its knobs and screen (the MACRO layer's cards, drawn
+ * by ui_draw without a layer open: the keys stay notes, their LEDs theirs). HOME tapped twice there: the sound's four
+ * (home_param, as before) until HOME is tapped again there (ui_input.c) */
+static uint8_t home_mac = 1;
 /* HOME: what KNOB k edits: the engine's four main parameters */
 static const param_desc_t *home_param(uint32_t k, int16_t **vp)
 {

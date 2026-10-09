@@ -61,7 +61,7 @@ static const layer_t LAYERS[LAYER_N] = {
     {B_SEQ, LK_SET, FAM_SEQ, "[SEQ] TOOLS", {{KC_KEYS, "TOOLS"}, {KC_SEQ, "DONE"}, {0, 0}}},
     {B_REC, LK_SET, FAM_HOME, "[REC] SET", {{KC_KEYS, "RECORDING"}, {KC_REC, "DONE"}, {0, 0}}},
     {B_SAVE, LK_SET, FAM_HOME, "[SAVE] SONG", {{KC_KEYS, "PLAY"}, {KC_OCTUP, "STORE"}, {KC_OCTDN, "RECALL"}}},
-    {B_LFO, LK_SET, FAM_HOME, "[LFO] MACRO", {{KC_K14, "M1-M4"}, {KC_KEYS, "DICE / CLEAR"}, {KC_LFO, "DONE"}}},   /* JIANT (mod.c macro_v; F3 G3 macro_dice) */
+    {B_LFO, LK_SET, FAM_HOME, "[LFO] MACRO", {{KC_K14, "M1-M4"}, {KC_SELECT, "DICE"}, {KC_KEYS, "DICE / CLEAR"}}},   /* JIANT (mod.c macro_v; SELECT, F3: macro_dice, G3 clears) */
 };
 static const uint8_t LY_KC[LAYER_N] = {0, KC_FX, KC_GLO, KC_SCL, KC_EDIT, KC_SEQ, KC_REC, KC_SAVE, KC_LFO};
 /* SCL's knobs: the key and the sequence offset (cur_page() while the layer edits or draws them: page_over) */
@@ -75,7 +75,7 @@ static const page_t *ly_page(uint32_t l) { return l == LAYER_SCL ? &LY_SCL : l =
 enum { LY_INIT, LY_RECALL };          /* EDIT: the white keys F3 G3 */
 #define layer_seen (favorites.factory[15][31])   /* bit l: layer l opened once (a byte no engine uses) */
 static const khint_t FX_LATCH_FOOT[3] = {{KC_KEYS, "ON / OFF"}, {KC_K14, "MACROS"}, {KC_OCTDN, "ALL OFF"}};
-static const khint_t HOME_MAC_FOOT[3] = {{KC_K14, "M1-M4"}, {KC_HOME, "DONE"}, {0, 0}};   /* (HOME x2: latched) */
+static const khint_t HOME_MAC_FOOT[3] = {{KC_K14, "M1-M4"}, {KC_SELECT, "DICE"}, {KC_HOME, "x2 SOUND"}};   /* (HOME: the macros) */
 
 static struct {
     uint8_t l, oct;                    /* the layer open; OCT- / OCT+ pressed in a SET layer (bits) */
@@ -115,8 +115,8 @@ static const char *layer_head(void)                     /* FX: LATCH, and the MI
 {
     static const char *const H[2][3] = {{"[FX] HOLD", "[FX] HOLD SYN", "[FX] HOLD DRM"},
                                         {"[FX] LATCH", "[FX] LATCH SYN", "[FX] LATCH DRM"}};
-    if (ui.layer == LAYER_MACRO && !layer_open())       /* (JIANT 0.4) HOME's latched macros */
-        return "[HOME] MACRO";
+    if (ui.layer == LAYER_MACRO && !layer_open())       /* (JIANT 0.4) HOME: the macros */
+        return "HOME MACRO";
     return ui.layer == LAYER_FX ? H[perf_latch_on ? 1 : 0][pfx_tgt % 3u] : LAYERS[ui.layer % LAYER_N].head;
 }
 static uint32_t layer_open(void) { return ui.ly && (ui.ly_t0 & LY_OPEN) && ly_down(ui.ly) && layer_allowed() ? ui.ly : 0u; }
@@ -217,16 +217,13 @@ static int layer_knobs_quiet(void)
 {
     if (lys.quiet && fm1_ms - lys.quiet_t >= LY_QUIET_MS)
         lys.quiet = 0;
-    return layer_allowed() && (ui.ly || (ui.layer && !(ui.layer == LAYER_MACRO && home_mac && !ui.ly)) || lys.quiet);   /* (HOME's
-                                                         * latched macros: the knobs are theirs, ui_input) */
+    return layer_allowed() && (ui.ly || ui.layer || lys.quiet);
 }
 
 /* the map shows while the button is held open, and after it while its keys are still held */
 static void layer_show(void)
 {
     uint32_t show = layer_allowed() ? (layer_open() ? layer_open() : kb_layer ? ui.layer : 0u) : 0u;
-    if (!show && home_mac && ui.home && layer_allowed())   /* (JIANT 0.4) HOME's latched macros */
-        show = LAYER_MACRO;
     if (show != ui.layer) {
         ui.layer = (uint8_t)show;
         ui.force = 1;
@@ -658,7 +655,7 @@ static uint32_t layer_leds(uint32_t *br)
  * (can be pressed), the selection's fill (the value now, SET), the accent (held, HOLD), DIM (cannot now: pressing
  * it says why), KEY (a muted track, as the MUTE badge); HOLD cells in a SET layer: a corner triangle */
 static const char *const PF_NAME[PF_M1] = {"1/8", "1/16", "1/32", "LPF", "HPF",          /* the audio ones (perform.c) */
-    "OCT-", "OCT+", "1/2", "DEC-", "DEC+", "ST16", "ST32", "ATK+", "ARP", "RND"};            /* the MIDI ones (pfx.c) */
+    "OCT-", "OCT+", "1/2", "DEC-", "DEC+", "ST8", "ST16", "ATK+", "ARP", "RND"};            /* the MIDI ones (pfx.c) */
 static const char W_NOTE[16] = {'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G'};
 static const char B_NOTE[8] = {'F', 'G', 'A', 'C', 'D', 'F', 'G', 'A'};   /* black keys 1..8: F# G# A# C# D# F# G# A# */
 #define LC_X(c) (6 + 58 * (int32_t)(c))                 /* cell column c: 54 px wide, 4 px apart */

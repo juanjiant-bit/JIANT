@@ -966,9 +966,6 @@ static void presets_turn(int32_t s)
 /* HOME / REC / SAVE: tap on release, hold 0.7 s fires once. t0 = press time | 1,
  * bit 1 = fired (or swallowed: then the release is no tap either) */
 enum { BT_NONE, BT_TAP, BT_HOLD };
-/* (JIANT 0.4) HOME tapped twice on HOME: M1..M4 on HOME's knobs and screen (the MACRO layer, latched), until HOME is
- * tapped again there; another page and back keeps it */
-static uint8_t home_mac;
 static uint32_t home_tap_ms;
 static uint32_t btn_hold(uint32_t *t0, uint32_t label, uint32_t now, int hold_ok)
 {
@@ -989,6 +986,7 @@ static uint32_t btn_hold(uint32_t *t0, uint32_t label, uint32_t now, int hold_ok
 
 /* the quick layers: ui_layer.c (included after this file) */
 static void layer_masks(void);
+static void macro_dice(uint32_t mode);                  /* (JIANT 0.4) */
 static void layer_arm(uint32_t pressed, uint32_t now);
 static uint32_t layer_held(void);
 static int layer_knobs_quiet(void);
@@ -1311,10 +1309,10 @@ static void ui_input_frame(void)
     if (seq == BT_TAP || seq == BT_HOLD)                /* (SONG: SAVE held, G5) */
         open_family(FAM_SEQ);
     if (home == BT_TAP) {                               /* HOME acts on release: a hold opens the menu */
-        if (ui.home && home_mac)                        /* (JIANT 0.4) latched macros: off */
-            home_mac = 0, home_tap_ms = 0;
+        if (ui.home && !home_mac)                       /* (JIANT 0.4) the sound's four: back to the macros */
+            home_mac = 1, home_tap_ms = 0;
         else if (ui.home && home_tap_ms && fm1_ms - home_tap_ms < 450u)
-            home_mac = 1, home_tap_ms = 0;              /* .. a double tap on HOME: on */
+            home_mac = 0, home_tap_ms = 0;              /* .. a double tap on HOME: the sound's four */
         else
             home_tap_ms = fm1_ms | 1u;
         go_home();
@@ -1414,7 +1412,20 @@ static void ui_input_frame(void)
         presets_turn(s);
     if (!lay && (s = panel_enc(EN_ALGO)) != 0)     /* ALGORITHM: the selected track, on every page */
         track_select((uint32_t)clamp((int32_t)song.sel + (s > 0 ? 1 : -1), 0, NTRK - 1));
-    if ((s = glo ? sel : panel_enc(EN_SELECT)) != 0) {   /* SELECT knob = global tempo; */
+    if (((lay && ui.ly == LAYER_MACRO) || (!lay && ui.home && home_mac && !ui.menu && !ui.confirm)) &&
+        (s = panel_enc(EN_SELECT)) != 0) {              /* (JIANT 0.4) the macros (HOME, LFO held): SELECT rolls their
+                                                         * routes again, once a turn (GLO + SELECT: the tempo) */
+        static uint32_t dice_ms;
+        if (!dice_ms || fm1_ms - dice_ms > 400u) {
+            if (chain_busy()) {
+                ui_message("STOP TO EDIT");
+            } else {
+                macro_dice(1);
+                ui_message("MACROS DICED");
+            }
+        }
+        dice_ms = fm1_ms | 1u;
+    } else if ((s = glo ? sel : panel_enc(EN_SELECT)) != 0) {   /* SELECT knob = global tempo; */
         if (glo || !(ui_prefs & PREF_BPM_LOCK)) {
             song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + accel(EN_SELECT, s, 200), GP[G_BPM].min, GP[G_BPM].max);
             ui.bpm_t = 40;                              /* the header's BPM lights up; no message over the header */
@@ -1443,7 +1454,7 @@ static void ui_input_frame(void)
             ui.hot_col = (uint8_t)k;
             ui.hot_t = 40;
         }
-        if (ui.home && home_mac) {                      /* (JIANT 0.4) latched macros: M1..M4 */
+        if (ui.home && home_mac) {                      /* (JIANT 0.4) HOME: M1..M4 */
             macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
         } else if (ui.home) {
             int16_t *vp;

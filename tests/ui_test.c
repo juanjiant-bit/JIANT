@@ -144,6 +144,8 @@ static void ui_power_on(void)
     memset(&favorites, 0, sizeof favorites);
     ui_prefs = PREF_ACCEL_OFF;                    /* (the tests turn a detent a frame: one step each; KNOB ACCEL, ON on the
                                                    * device by default, has its own test) */
+    home_mac = 0;                                 /* (HOME's knobs the sound's, as the tests were written; HOME's macros,
+                                                   * the device's default, have their own test: test_organic) */
     memset(pat_last, 0, sizeof pat_last);
     memset(proj_slot, 0, sizeof proj_slot);
     memset(up_bank, 0, sizeof up_bank);
@@ -6963,21 +6965,25 @@ static int test_organic(void)
     uint32_t k, j, routes = 0, per[4] = {0, 0, 0, 0}, bad_dst = 0;
     int16_t cut;
     ui_power_on();
+    home_mac = 1;                                  /* (the device's power-on) */
     go_home(); frames(400);
-    press(B_HOME); frames(160); press(B_HOME); frames(64);
-    ok = home_mac && ui.layer == LAYER_MACRO && str_eq(layer_head(), "[HOME] MACRO");
+    ok = home_mac && !ui.layer;                   /* (the macros' cards drawn, no layer open: the keys stay notes) */
     macro_v[0] = 0;
     cut = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
     turn(EN_K1, 5);
-    ok &= macro_v[0] == 5 && TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == cut;   /* (M1, not HOME's KNOB 1) */
+    ok &= macro_v[0] == 5 && TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == cut;   /* (M1, not the sound's KNOB 1) */
     go_page(GR_ADSR); frames(64);
-    ok &= ui.layer != LAYER_MACRO;                 /* another page: its own */
-    press(B_HOME); frames(64);
-    ok &= home_mac && ui.layer == LAYER_MACRO;     /* back HOME: still latched */
+    ok &= !ui.home;                                 /* another page: its own */
+    press(B_HOME); frames(600);
+    ok &= home_mac && ui.home;                      /* back HOME: the macros */
+    press(B_HOME); frames(160); press(B_HOME); frames(64);
+    ok &= !home_mac;                                /* tapped twice: the sound's four */
+    turn(EN_K1, 3);
+    ok &= macro_v[0] == 5 && TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] != cut;
     frames(600);
     press(B_HOME); frames(64);
-    ok &= !home_mac && ui.layer != LAYER_MACRO;    /* tapped again there: off */
-    bad += check("HOME x2: M1..M4 latched on HOME's knobs and screen; another page and back keeps it; HOME again: off", ok);
+    ok &= home_mac;                                 /* tapped again: the macros */
+    bad += check("HOME: M1..M4 on its knobs and screen (power-on); x2 the sound's four; HOME again: the macros", ok);
     ui_power_on();
     for (k = 0; k < NTRK; k++)
         for (j = 0; j < 12u; j++)
@@ -7013,6 +7019,22 @@ static int test_organic(void)
     ok &= j == 8u;
     btn_up(B_LFO); frames(400);
     bad += check("MACRO layer: G3 clears the macros' routes (others kept), F3 rolls new ones", ok);
+    {   /* SELECT on HOME's macros: the routes rolled again (once a turn), the tempo untouched; on the sound's four: tempo */
+        int16_t bpm = song.g[G_BPM], before[NTRK][12];
+        uint32_t diff = 0;
+        home_mac = 1;
+        go_home(); frames(64);
+        for (k = 0; k < NTRK; k++)
+            for (j = 0; j < 12u; j++) before[k][j] = trk[k].p[P_M1SRC + j];
+        turn(EN_SELECT, 1); turn(EN_SELECT, 1);
+        for (k = 0; k < NTRK; k++)
+            for (j = 0; j < 12u; j++) diff += before[k][j] != trk[k].p[P_M1SRC + j];
+        ok = diff > 0u && song.g[G_BPM] == bpm;
+        home_mac = 0;
+        turn(EN_SELECT, 1);
+        ok &= song.g[G_BPM] == bpm + 1;
+        bad += check("SELECT on HOME's macros rolls the dice (the tempo kept); on the sound's four, the tempo", ok);
+    }
     return bad;
 }
 

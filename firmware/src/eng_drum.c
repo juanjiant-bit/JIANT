@@ -61,6 +61,7 @@ static int16_t clip_eff, pnch_eff;   /* G_CLIP / G_PUNCH as the master plays the
  * drive), then over 24 blocks down to its tail at up to -14 dB (tight, compressed). DUCK (G_DUCK, fx.c): a kick struck on any DRUM track (its group not muted) ducks the other
  * parts; duck_hit tells fx.c's mix_block */
 static volatile uint8_t duck_hit;
+#define DRUM_ATK_BLK 48u                                 /* (JIANT 0.4) ATK+ on a DRUM track: a hit's fade-in, blocks */
 static int32_t punch_gain(uint32_t age, int32_t p)     /* Q15 (32768 = 1, up to x3.5), p 0..100 */
 {
     int32_t up = 32768 + p * 819, tail = 32768 - p * 262;   /* (JIANT, Drum Buss strong: +11 dB, -14 dB at 100) */
@@ -269,6 +270,12 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
             }
             pb0 = g0 > 32768 ? g0 >> 3 : 4096;           /* Q12 */
             pb1 = g1 > 32768 ? g1 >> 3 : 4096;
+        }
+        if ((t->pfx & PFX_ATK) && L->age < DRUM_ATK_BLK) {   /* (JIANT 0.4) ATK+: the hit faded in (~35 ms), softer */
+            int32_t a0 = m->amp0 * (int32_t)L->age / (int32_t)DRUM_ATK_BLK;
+            ml.amp1 = m->amp1 * (int32_t)(L->age + 1u) / (int32_t)DRUM_ATK_BLK;
+            ml.amp0 = a0;
+            m = &ml;
         }
         if (L->age < 255u)
             L->age++;
