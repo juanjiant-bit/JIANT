@@ -87,7 +87,8 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
   metrónomo y count-in.
 - **SEQ TOOLS:** CLEAR, REVERSE, SHIFT, RANDOM y COOK sobre el patrón (BEAT y herramientas por lane en
   DRUM).
-- **Teclas de acordes**, arpegiador, 16 escalas con modo de teclas blancas, glide, MONO / LEGATO / UNISON.
+- **SHIFT** (SEQ > SHIFT y capa SCL): desfase de la secuencia en pasos (OFS) y en altura (PIT), automatizable;
+  arpegiador con modo TRNS, 16 escalas con modo de teclas blancas, glide, MONO / LEGATO / UNISON.
 - **Modulación:** 4 slots por track, con controladores MIDI como fuentes.
 - **Efectos:** distorsión y SLICER por track; envíos a chorus, delay y reverb (ROOM o SPRING); limiter
   en el master.
@@ -117,7 +118,7 @@ FM1, FM2, FM3, DRUM y VOICE son ejemplos de engines: hay 4 tracks y cada uno pue
 | 11 PUNCH-IN FX | capa FX: REPEAT 1/8–1/32, LPF, HPF; después punch-in MIDI | 🔶 parcial |
 | 12 FX RACK · 13 MIXER | distorsión y envíos por track; nivel, pan, envíos, mute | ✅ función, ⏳ diseño |
 | 14 SONG · 19 SAVE / PROJECT | canción por compases y capa de canción; 8 canciones × A–D | ✅ función, ⏳ diseño |
-| 15 CHORD · 16 ARP · 17 AUTOMATION | acordes, arpegiador, automatización por paso y de knobs | ✅ función, ⏳ diseño |
+| 15 SHIFT · 16 ARP · 17 AUTOMATION | desfase OFS / PIT (en lugar de CHORD), arpegiador, automatización por paso y de knobs | ✅ función, ⏳ diseño |
 | 18 VISUALIZER | osciloscopio | ✅ sencillo |
 | 20 PERFORMANCE | tempo, sección, macros y punch-in en vivo | ⏳ pendiente |
 
@@ -139,9 +140,10 @@ MORPH arriba. Los dibujos orgánicos quedan para después de cerrar sonido y per
 | --- | --- | --- |
 | **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. Punch-in MIDI: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 D5 STUTTER 1/16 · 1/32 · tresillo, E5 ARP, F5 RANDOM. Teclas negras 1–4: mute de T1–T4; A#4 elige a qué tracks afectan los MIDI (todos, sintes, batería). **Automatizar**: con REC armado y tocando, lo que mantengas queda grabado en la lane de la sección (64 pasos de 1/16); G5 la borra donde pasa, o entera con el transporte parado | FILTER, CRUSH, THROW, DEPTH |
 | **ARP TRNS** | Con el modo de ARP en TRNS, las teclas (y el MIDI que entra) transponen la secuencia del track según su intervalo desde C4, sin tocar notas; la transposición queda al soltar | — |
+| **SEQ > SHIFT** | OFS corre la secuencia del track de −32 a +32 pasos (dentro de LEN; grabar en vivo escribe donde se escucha) y PIT la transpone ±24 semitonos (no en kits). Los dos se automatizan y están también en la capa SCL (KNOB 3 / 4) | OFS, PIT |
 | **SEQ + REC** | Mantener SEQ y apretar REC: CLEAR ALL SEQUENCES? (OCT+ confirma): borra los pasos y la automatización de los 4 tracks y la lane de punch-in | — |
 | **GLO** | Teclas negras 1–4 mute de T1–T4 (fijo); 5–8 mute de grupo de DRUM: KICK, SNARE, HAT, PERC; F3–B3 solo mientras se mantiene; C4 desmutea todo; F4 tap tempo | Nivel de T1–T4 |
-| **SCL** | Cualquier tecla elige la raíz | ROOT, SCL, CHRD, VOIC |
+| **SCL** | Cualquier tecla elige la raíz | ROOT, SCL, OFS, PIT |
 | **EDIT** | F3 **INIT**: el sonido del track vuelve al de fábrica (en DRUM, también el kit DRUM-X). G3 **RECALL**: vuelve al sonido guardado en la sección (en DRUM, con su kit). Los dos piden confirmación y no tocan los pasos. En un track DRUM, las teclas negras 1–8 mutean cada sonido de DRUM-X. El engine y los sonidos se eligen en PRESETS | Las 4 primeras perillas de EDIT del engine |
 | **SEQ** | En las páginas SEQ: SEQ TOOLS | LEN, DIV, SWING, GATE |
 | **REC** | F3 CLEAR del track, G3 CLICK | CLICK |

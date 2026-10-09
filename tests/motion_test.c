@@ -107,7 +107,7 @@ static int compact_project(void)
         step_chance(&t->step[3]) == 25u && t->p[P_FM1_LEVEL] == 80);
     return bad;
 }
-/* a project of 89 parameters (before the chord keys P_CHRD / P_VOIC; today's FUN9 frame): the engine's values at
+/* a project of 89 parameters (before the chord keys, now P_SOFS / P_POFS; today's FUN9 frame): the engine's values at
  * 81..88, motion ids from 81 on for E0..E7 (m: its events as that firmware numbered them) */
 static void pack_fun7_89(project_store_t *out, const project_t *q, const motion_store_t *m)
 {
@@ -149,10 +149,10 @@ static int fun7_89(void)
     for (k = 0; ok && k < NTRK; k++) {
         for (i = 0; i < 8u; i++) ok &= after.t[k].p[P_E0 + i] == before.t[k].p[P_E0 + i];
         for (i = 0; i < 81u; i++) ok &= after.t[k].p[i] == before.t[k].p[i];
-        ok &= after.t[k].p[P_CHRD] == 0 && after.t[k].p[P_VOIC] == 0;
+        ok &= after.t[k].p[P_SOFS] == 0 && after.t[k].p[P_POFS] == 0;
         for (i = P_LN0; i <= P_LN7; i++) ok &= after.t[k].p[i] == 127;
     }
-    bad += check("89 parameters: E0..E7 at P_E0.., the chord keys OFF / CLOSE, lanes 100 %, the rest in place", ok &&
+    bad += check("89 parameters: E0..E7 at P_E0.., the SHIFT offsets 0, lanes 100 %, the rest in place", ok &&
         after.t[0].p[P_FM1_ATK] == 33 && !memcmp(after.t[0].step, before.t[0].step, sizeof before.t[0].step));
     bad += check("  its motion: E0 (81) -> P_E0, REV and FM OP1 ATK (61) kept",
         after.motion.count == 3u && after.motion.event[0].param == P_REV && after.motion.event[1].param == P_E0 &&
@@ -801,10 +801,42 @@ static int auto_list(void)
     ui_prefs &= ~PREF_LARGE;
     return bad;
 }
+/* SHIFT (JIANT, the former chord keys): OFS plays the sequence that many steps later (wrapping in LEN; recording
+ * writes where it was heard), PIT moves its notes (not a kit's lanes); both automatable */
+static int seq_shift(void)
+{
+    int bad = 0, ok = 1; ui_power_on(); track_t *t = &trk[0];
+    uint32_t period = div_samples(2), i, at = 99;
+    memset(t->step, 0, sizeof t->step);
+    t->p[P_SLEN] = 16; t->p[P_SDIV] = 2; t->p[P_SSWING] = 0; song.g[G_SWING] = 0;
+    t->step[0] = (step_t){{60}, 1, ST_NOTE, 0, 100};
+    t->p[P_SOFS] = 2; t->p[P_POFS] = 5;
+    song.playing = 1; t->seq_idx = 15; t->seq_pos = 0;
+    for (i = 0; i < 16u; i++) {
+        seq_tick(t, period);
+        if (t->seq_n && t->seq_notes[0] == 65u && at == 99u)
+            at = t->seq_idx;
+    }
+    bad += check("SHIFT OFS +2, PIT +5: step 1's C4 plays at step 3 as F4", at == 2u);
+    t->p[P_SOFS] = -1;
+    ok &= seq_src(t, 15) == 0u && seq_src(t, 0) == 1u;
+    t->p[P_SOFS] = 18;                                   /* (wraps inside LEN) */
+    ok &= seq_src(t, 2) == 0u;
+    bad += check("  OFS -1 plays step 1 at step 16; OFS 18 in LEN 16 is +2", ok);
+    seq_release(t);
+    t->p[P_SOFS] = 2; t->seq_idx = 5; t->seq_pos = 0;
+    rec_note(t, 62, 100);
+    bad += check("  a note recorded at step 6 goes into step 4 (it plays where it was heard)",
+        t->step[3].n == 1u && t->step[3].note[0] == 62u && !t->step[5].n);
+    t->rh_n = 0;
+    song.playing = 0;
+    bad += check("  OFS and PIT are automatable", motion_param(P_SOFS) && motion_param(P_POFS));
+    return bad;
+}
 int main(void)
 {
     int bad = motion_recording() + motion_capacity() + probability_playback() + compact_project() + fun7_89() + loads_and_song() + repeat_mode();
-    bad += arp_new_modes();
+    bad += arp_new_modes() + seq_shift();
     bad += lock_playback() + lock_edit() + lock_project() + lock_ui() + lock_undo() + auto_list();
     printf("%s\n", bad ? "MOTION TEST FAILED" : "motion/chance/compact storage tests passed"); return bad != 0;
 }

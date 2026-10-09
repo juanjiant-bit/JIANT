@@ -172,7 +172,7 @@ int main(void)
     int bad = 0, ok;
 
     bad += check("layout: SLICER after DETUNE, then the matrix just before P_E0",
-                 P_SLCR == P_DETUNE + 1 && P_SLDEPTH + 1 == P_M1SRC && P_M4AMT + 1 == P_FM1_ATK && P_FM4_LEVEL + 1 == P_CHRD && P_VOIC + 1 == P_LN0 &&
+                 P_SLCR == P_DETUNE + 1 && P_SLDEPTH + 1 == P_M1SRC && P_M4AMT + 1 == P_FM1_ATK && P_FM4_LEVEL + 1 == P_SOFS && P_POFS + 1 == P_LN0 &&
                  P_LN7 + 1 == P_E0 && P_E0 == 91 && P_COUNT == PROJ_NP_V3 + 42u && PROJ_NP_V3 == PROJ_NP_V2 + 4u);
     bad += check("FUNA fits one flash object, the retained cache in NOINIT", sizeof(project_store_t) <= 4096u - 256u &&
                  sizeof(project_store_t) == 3744u && 0xC8u + 4u * sizeof(project_store_t) <= 0x3D50u);

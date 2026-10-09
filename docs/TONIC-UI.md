@@ -22,7 +22,7 @@ los dibuja el firmware encima, y algunas partes reaccionan a los knobs: arcos, p
 | 12 | FX RACK | efectos por track: distorsión, envíos a chorus, delay, reverb | existe |
 | 13 | MIXER | MIXER (GLO): nivel, pan, envíos, mute | existe |
 | 14 | SONG | página SONG y capa de canción (SAVE sostenido) | hecho |
-| 15 | CHORD | acordes y voicings (capa SCL, página CHORD) | existe |
+| 15 | CHORD → SHIFT | CHORD retirado; en su lugar el desfase OFS / PIT (capa SCL, SEQ > SHIFT) | existe |
 | 16 | ARP | arpegiador | existe |
 | 17 | AUTOMATION | automatización por paso y de knobs (AUTO LIST) | existe |
 | 18 | VISUALIZER | osciloscopio | existe (sencillo) |
@@ -119,7 +119,7 @@ numeran por filas (`SH_PLATES_1..17`, y las tablas `SH_PLATES_ILLS` / `SH_PLATES
 | 14 constelación | MOD MATRIX | las líneas punteadas, las rutas activas |
 | 15 curvas | ENV / curvas | la curva elegida encendida |
 | 16 capullo con rutas | PUNCH-IN FX | la ruta del efecto activo |
-| 17 semilla de 3 nodos | CHORD | un nodo por nota del acorde |
+| 17 semilla de 3 nodos | SHIFT | el desfase de la secuencia |
 
 ## Pasos
 

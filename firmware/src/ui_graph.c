@@ -91,7 +91,7 @@ static void graph_steps(const track_t *t, uint16_t c)
             cv_rrect(x, y + bh - 3, 9, 3, 1, T_RAISE, T_SURF);
         if (i == ui.cursor)
             cv_rect(x, y + bh + 2 - sm, 9, 2, T_ACCENT);
-        else if (song.playing && i == t->seq_idx)
+        else if (song.playing && i == seq_src(t, t->seq_idx))
             cv_rect(x, y + bh + 2 - sm, 9, 2, T_TEXT);
     }
 }
@@ -135,14 +135,13 @@ static uint32_t pr_src(const track_t *t, uint32_t si, uint32_t len)   /* the ste
 /* the rows lit by keys held on the selected track (bit r: row r from the top) */
 static uint32_t pr_held(void)
 {
-    uint32_t k, i, m = 0;
+    uint32_t k, m = 0;
     for (k = 0; k < 27u; k++)
-        if (kb_chn[k] && kb_trk[k] == song.sel)
-            for (i = 0; i < kb_chn[k]; i++) {
-                int32_t r = (int32_t)proll.lo + PR_ROWS - 1 - kb_chord[k][i];
-                if (r >= 0 && r < PR_ROWS)
-                    m |= 1u << r;
-            }
+        if (kb_on[k] && kb_trk[k] == song.sel) {
+            int32_t r = (int32_t)proll.lo + PR_ROWS - 1 - kb_snd[k];
+            if (r >= 0 && r < PR_ROWS)
+                m |= 1u << r;
+        }
     return m;
 }
 /* once a frame: the view toward the page's notes (centred; once there it stays while they fit); at once on a redraw
@@ -254,7 +253,7 @@ static void graph_roll(const track_t *t, uint16_t c)
         int32_t x = PR_X0 + (int32_t)i * PR_CW;
         if (si == ui.cursor)
             cv_frame(x, PR_Y0 - 2, PR_CW + 1, ybot - PR_Y0 + 4, T_TEXT);
-        if (song.playing && si == t->seq_idx)
+        if (song.playing && si == seq_src(t, t->seq_idx))
             cv_rect(x + 6, PR_Y0, 1, ybot - PR_Y0, T_ACCENT);
         if ((locks >> si) & 1u)                       /* a parameter lock: a mark under the step */
             cv_rect(x + 3, ybot + 3, 7, 2, T_ACCENT);
@@ -315,8 +314,8 @@ static void graph_grid(const track_t *t, uint16_t c)
                 cv_frame(x - 1, y + 1, 12, 12, T_TEXT);
         }
     }
-    if (song.playing && t->seq_idx < len && t->seq_idx / 16u == ui.bank)
-        cv_rect(40 + (int32_t)(t->seq_idx % 16u) * 12, y0 - 1, 10, 3, T_TEXT);
+    if (song.playing && seq_src(t, t->seq_idx) < len && seq_src(t, t->seq_idx) / 16u == ui.bank)
+        cv_rect(40 + (int32_t)(seq_src(t, t->seq_idx) % 16u) * 12, y0 - 1, 10, 3, T_TEXT);
 }
 /* SCL: the 12 keys as rounded bars (black keys high, white keys low): in the scale THEME, the root the
  * accent, out of the scale RAISE */
@@ -331,57 +330,8 @@ static void graph_scale(const track_t *t, uint16_t c)
         cv_rrect(x + 3, BLACK[i] ? 6 : 38, 10, 52, 3, col, T_SURF);
     }
 }
-/* CHORD (SCL 2): the chord's name ("Cm7": the last one the track played; before any, the one on its ROOT from
- * C4) over the keys from the C below its lowest note (two octaves, three for a wide one): its notes THEME, its
- * root's ACCENT, the others RAISE. OFF or a kit: what to do instead */
 static void panel_note(const char *a, const char *b, const char *c);
 static void panel_alert(uint32_t id, const char *a);
-static void graph_chord(const track_t *t, uint16_t c)
-{
-    static const uint8_t BLACK[12] = {0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0};
-    uint8_t nn[CHORD_MAX];
-    uint32_t n, i, j, k = trk_index(t), lo, cnt, w;
-    int32_t r;
-    uint16_t mask;
-    char b[12];
-    const char *cap = "LAST";
-    if (!t->p[P_CHRD]) {
-        panel_note("CHORD KEYS OFF", "[K1] DIA3: IN-KEY CHORDS", 0);   /* (the title says what they are) */
-        return;
-    }
-    if (chord_kit(t)) {
-        panel_note("NO CHORDS ON KITS", 0, 0);
-        return;
-    }
-    if (chord_last[k].n) {
-        r = chord_last[k].root;
-        mask = chord_last[k].mask;
-        n = chord_last[k].n;
-        for (i = 0; i < n; i++)
-            nn[i] = chord_last[k].note[i];
-    } else {
-        n = chord_make(t, (uint32_t)(60 + t->p[P_ROOT]), nn, &r, &mask);
-        cap = "ON ROOT";
-    }
-    if (trk_vmode(t) != V_POLY)
-        cap = "ROOT ONLY";                              /* MONO / LEGATO / UNISON */
-    chord_name(b, (uint32_t)r, mask);
-    cv_text_on(14, 8, &AF_M, b, T_TEXT, T_SURF);
-    GFX_HOOK_ALIGN(0, 0, 0, 8 + AF_M.asc, AL_B, "chord caption on the name's baseline");
-    cv_text_r(226, 8 + AF_M.asc - AF_S.asc, &AF_S, cap, T_MID, T_SURF);   /* on the name's baseline */
-    lo = nn[0] - nn[0] % 12u;
-    cnt = nn[n - 1u] - lo < 24u ? 24u : 36u;
-    w = 216u / cnt;
-    GFX_HOOK_ALIGN(0, 0, 240, 0, AL_H | AL_CELLS | AL_N(cnt), "chord keys centred");
-    for (i = 0; i < cnt; i++) {
-        uint32_t note = lo + i, on = 0;
-        int32_t x = 13 + (int32_t)(i * w);              /* (216 px of keys and their gaps: x 13 .. 227) */
-        for (j = 0; j < n; j++)
-            on |= nn[j] == note;
-        cv_rrect(x, BLACK[note % 12u] ? 36 : 62, (int32_t)w - 2, 48, w > 6u ? 3 : 2,
-                 !on ? T_RAISE : note % 12u == (uint32_t)r % 12u ? T_ACCENT : c, T_SURF);
-    }
-}
 /* the four sends as faders under their cards: a RAISE slot, the THEME fill from the bottom, a cap */
 static void graph_fx(const track_t *t, uint16_t c)
 {
@@ -883,12 +833,6 @@ static uint32_t graph_signature(void)
         h = (h ^ (uint32_t)t->p[i]) * 16777619u;
     h ^= (uint32_t)TSEL->preset * 7u + (uint32_t)song.g[G_SLOT] * 13u + TSEL->user * 257u + up_gen * 7919u + ui.uslot * 104729u +
          ui.ppick * 1299709u;
-    if (pg->graph == GR_CHORD) {                     /* the last chord played */
-        h = (h ^ (chord_last[song.sel].root + 131u * chord_last[song.sel].mask)) * 16777619u;
-        for (i = 0; i < CHORD_MAX; i++)
-            h = (h ^ chord_last[song.sel].note[i]) * 16777619u;
-        h ^= (uint32_t)t->engine * 389u;             /* (MONO and kits follow the sounding engine) */
-    }
     if (pg->graph == GR_SONG) {
         h ^= ui.song_row * 40503u + chain_config.count * 7919u;
         for (i = 0; i < CHAIN_ROWS; i++)
@@ -926,7 +870,7 @@ static uint32_t graph_signature(void)
         h ^= (fm6_pgen[(t - trk) % NTRK] + 1u) * 2246822519u;
     if (pg->scope == SC_ENGINE && ENGINES[t->eng_req % NENGINES] == &ENG_SAMPLE) h ^= sample_wave.pos * 13u + sample_wave.key;
     if (pg->graph == GR_STEPS || pg->graph == GR_ROLL || pg->graph == GR_CHANCE) {
-        uint32_t ph = song.playing ? t->seq_idx : 0xFFFFu;
+        uint32_t ph = song.playing ? seq_src(t, t->seq_idx) : 0xFFFFu;
         if (pg->graph != GR_STEPS && ph / 16u != ui.bank)
             ph = 0xFFFFu;                            /* the roll shows the cursor's bank only */
         h ^= steps_hash(t) + ph * 31u + ui.cursor * 7919u + ui.lane * 104723u + ui.bank * 613u;
@@ -1482,10 +1426,6 @@ static void draw_graph(void)
             break;
         case GR_SCALE:
             graph_scale(t, c);
-            break;
-        case GR_CHORD:
-            cv_oy = 0;
-            graph_chord(t, c);
             break;
         case GR_FX:
             graph_fx(t, c);

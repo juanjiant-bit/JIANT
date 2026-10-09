@@ -115,7 +115,8 @@ static uint32_t kb_map(const track_t *t, uint32_t k)
     return (uint32_t)clamp(n + 12 * song.octave + t->p[P_TRANS], 0, 127);
 }
 
-#include "chord.c"
+/* the note key k started (kb_on 0: none) */
+static uint8_t kb_snd[27], kb_on[27];
 
 /* ------------------------------------------------------------- arp --- */
 static void arp_add(track_t *t, uint32_t note)
@@ -356,6 +357,14 @@ static uint32_t step_samples(const track_t *t, uint32_t period, uint32_t idx)
     return swing_step_len(t, period, idx);   /* core.h: own + global, at most 100 */
 }
 
+/* (JIANT) SHIFT OFS: the step whose notes play at place idx, the sequence OFS steps later (left with OFS < 0,
+ * wrapping inside LEN). Live recording writes there too, so a note recorded plays where it was heard */
+static uint32_t seq_src(const track_t *t, uint32_t idx)
+{
+    int32_t len = t->p[P_SLEN] > 0 ? t->p[P_SLEN] : 1, o = t->p[P_SOFS] % len;
+    return (uint32_t)(((int32_t)(idx % (uint32_t)len) - o + len) % len);
+}
+
 /* live recording: the note goes into the nearest step, as swung (the one playing, or
  * the next one when it is past the middle of the playing one). Overdub: a step that
  * holds notes gets this one added (a chord of up to 4; when full, the last note is
@@ -373,7 +382,7 @@ static void rec_note(track_t *t, uint32_t note, uint32_t vel)
     step_t *s;
     if (next)
         idx = (idx + 1u) % len;
-    s = &t->step[idx];
+    s = &t->step[seq_src(t, idx)];
     if (drum_track(t)) {                            /* DRUM: into the grid, no holds (hits) */
         uint32_t l = drum_lane(note);
         if (s->time != ST_NOTE || (!s->n && !s->hit)) {
@@ -458,9 +467,9 @@ static void rec_hold(track_t *t, uint32_t idx, uint32_t len)
     }
     if (idx == t->rh_start)
         return;                                     /* (recorded ahead into the step now starting) */
-    s = &t->step[idx];
+    s = &t->step[seq_src(t, idx)];
     t->rh_bak = *s;
-    t->rh_last = (uint8_t)idx;
+    t->rh_last = (uint8_t)seq_src(t, idx);
     t->rh_ties++;
     for (k = 0; k < 4u; k++)
         s->note[k] = 0;
@@ -480,7 +489,7 @@ static void rec_release(track_t *t, uint32_t note)
             t->rh_note[k++] = t->rh_note[i];
     if (k == t->rh_n || (t->rh_n = (uint8_t)k))
         return;                                     /* not one of them, or others still held */
-    if (t->rh_ties && t->seq_idx == t->rh_last &&
+    if (t->rh_ties && seq_src(t, t->seq_idx) == t->rh_last &&
         t->seq_pos < step_samples(t, div_samples((uint32_t)t->p[P_SDIV]), t->seq_idx) / 2u)
         t->step[t->rh_last] = t->rh_bak;            /* released early in it: not held into this step */
 }
@@ -545,35 +554,32 @@ static uint32_t perf_key(uint32_t k)
     return !key_black(k) ? (p < PF_M1 ? p : p == PF_M1 ? PF_CLR : PF_N) : p < NTRK ? PF_M1 + p : p == 7u ? PF_TGT : PF_N;
 }
 
-/* key k plays kb_note[k] on track t: its chord (chord.c; the note alone with CHRD OFF). A note another key
- * holds already sounds: it is not started again (nor sent to MIDI OUT); the key keeps its notes */
+/* key k plays kb_note[k] on track t. A note another key holds already sounds: it is not started again (nor sent
+ * to MIDI OUT); the key keeps its note */
 static void key_on(uint32_t k, track_t *t)
 {
-    uint32_t n = chord_build(t, kb_note[k], kb_chord[k]), i, mc = trk_midi_ch(trk_index(t));
-    kb_chn[k] = 0;
-    for (i = 0; i < n; i++) {
-        uint32_t x = kb_chord[k][i];
-        if (midi_local_held(t, x))
-            continue;
+    uint32_t x = kb_note[k], mc = trk_midi_ch(trk_index(t));
+    kb_on[k] = 0;
+    if (!midi_local_held(t, x)) {
         input_on(t, x, 100);
         midi_out_event(0x09u | (0x90u | mc) << 8 | x << 16 | 100u << 24);
     }
-    kb_chn[k] = (uint8_t)n;
+    kb_snd[k] = (uint8_t)x;
+    kb_on[k] = 1;
     last_note = kb_note[k];                         /* (step entry, the SAMPLE zone: the key's note) */
 }
 
-/* key k is up: the notes it started end, but those another key still holds */
+/* key k is up: the note it started ends, unless another key still holds it */
 static void key_off(uint32_t k, track_t *t)
 {
-    uint32_t n = kb_chn[k], i, mc = trk_midi_ch(trk_index(t));
-    kb_chn[k] = 0;
-    for (i = 0; i < n; i++) {
-        uint32_t x = kb_chord[k][i];
-        if (midi_local_held(t, x))
-            continue;
-        input_off(t, x);
-        midi_out_event(0x08u | (0x80u | mc) << 8 | x << 16);
-    }
+    uint32_t x = kb_snd[k], mc = trk_midi_ch(trk_index(t));
+    if (!kb_on[k])
+        return;
+    kb_on[k] = 0;
+    if (midi_local_held(t, x))
+        return;
+    input_off(t, x);
+    midi_out_event(0x08u | (0x80u | mc) << 8 | x << 16);
 }
 
 #ifdef FM1_INPUT_LAT
@@ -721,14 +727,17 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
     uint32_t vel = (s->flags & SF_ACCENT) ? 127u : (s->vel ? s->vel : 96u);
     uint32_t slide_in = t->seq_hold && t->seq_n && !(skip & SEQ_REP);
     uint32_t len = t->p[P_SLEN] ? (uint32_t)t->p[P_SLEN] : 1u;
-    uint32_t next_tie = seq_steps(t)[(t->seq_idx + 1u) % len].time == ST_TIE;
+    uint32_t next_tie = seq_steps(t)[seq_src(t, (t->seq_idx + 1u) % len)].time == ST_TIE;
     uint32_t hits = step_ratchet(s);
     uint8_t nn[4 + NLANE], vv[4 + NLANE];           /* the notes it plays: its notes, then its hits */
     uint32_t m = 0, sk = 0;
     /* QNT SEQ: the step's notes (not the lane hits) snap to the scale as they play; never on a drum kit, the slices
      * or another engine that maps the keys itself. seq_notes keeps the notes that sound: their note-offs match */
     const engine_t *e = ENGINES[eng_idx(t->eng_req)];
-    uint32_t qseq = t->p[P_QUANT] == QN_SEQ && !(e->keys && e->keys(t, 0) >= 0);
+    uint32_t kit = e->oneshot || (e->keys && e->keys(t, 0) >= 0);
+    uint32_t qseq = t->p[P_QUANT] == QN_SEQ && !kit;
+    int32_t up = (kit ? 0 : t->p[P_POFS]) +         /* SHIFT PIT: the notes up (a kit keeps its lanes) */
+                 (t->p[P_AMODE] == AM_TRNS ? t->trn : 0);   /* ARP TRNS: the keys' interval */
     if (!(skip & SEQ_REP)) {
         t->rat_left = 0;
         if ((skip & SEQ_MISS) ||
@@ -755,8 +764,7 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
     }
     for (i = 0; i < s->n && i < 4u; i++) {
         uint32_t x = s->note[i];
-        if (t->p[P_AMODE] == AM_TRNS)               /* ARP TRNS: the keys' interval */
-            x = (uint32_t)clamp((int32_t)x + t->trn, 0, 127);
+        x = (uint32_t)clamp((int32_t)x + up, 0, 127);
         if (qseq) {                                 /* QNT SEQ: onto the scale now; two notes snapping */
             x = (uint32_t)clamp(scale_snap(t, (int32_t)x), 0, 127);   /* together play once */
             for (j = 0; j < m && nn[j] != x; j++)
@@ -801,7 +809,7 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
  * The step is read again: an edit to fewer parts (or another source in a song) ends the repeats */
 static __attribute__((noinline)) void seq_ratchet(track_t *t, uint32_t period)
 {
-    const step_t *s = &seq_steps(t)[t->seq_idx];
+    const step_t *s = &seq_steps(t)[seq_src(t, t->seq_idx)];
     uint32_t hits = step_ratchet(s);
     if (t->rat_left >= hits) {
         t->rat_left = 0;
@@ -862,7 +870,7 @@ static void seq_tick(track_t *t, uint32_t n)
         t->seq_idx = (uint16_t)((t->seq_idx + 1u) % (len ? len : 1u));
         rec_hold(t, t->seq_idx, len ? len : 1u);
         {
-            const step_t *s = &seq_steps(t)[t->seq_idx];
+            const step_t *s = &seq_steps(t)[seq_src(t, t->seq_idx)];
             uint32_t skip = SEQ_ROLLED, i, k;
             /* the chance first (the one roll, as seq_step made it): a step that does not play applies no lock; the
              * automation and the locks before the notes, so a note-on reads them (eng_drum's KIT, ..) */
@@ -1012,7 +1020,6 @@ static void events_block(uint32_t n)
         memset(midi_sel_on, 0, sizeof midi_sel_on);
         memset(midi_ch, 0, sizeof midi_ch);
         memset(midi_owners, 0, sizeof midi_owners);
-        memset(mchord, 0, sizeof mchord);
         midi_hint = 0;
         for (i = 0; i < NTRK; i++) {
             trk[i].rh_n = trk[i].rskip_n = 0;
