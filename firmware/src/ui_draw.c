@@ -1313,8 +1313,8 @@ static void ui_draw_page(uint32_t counting)
         name_draw();
         return;
     }
-    if (ui.layer || (ui.home && home_mac)) {           /* a layer's map over the page (ui_layer.c); (JIANT 0.4) HOME:
-                                                         * the macros' cards, drawn as the MACRO layer's (no layer open) */
+    if (ui.layer || mac_latch) {                        /* a layer's map over the page (ui_layer.c); (JIANT 0.4) the MACRO
+                                                         * layer latched: its cards (no layer open) */
         uint8_t hm = !ui.layer;
         static uint8_t hm_was;
         if (hm != hm_was)

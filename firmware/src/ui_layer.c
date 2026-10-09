@@ -75,7 +75,7 @@ static const page_t *ly_page(uint32_t l) { return l == LAYER_SCL ? &LY_SCL : l =
 enum { LY_INIT, LY_RECALL };          /* EDIT: the white keys F3 G3 */
 #define layer_seen (favorites.factory[15][31])   /* bit l: layer l opened once (a byte no engine uses) */
 static const khint_t FX_LATCH_FOOT[3] = {{KC_KEYS, "ON / OFF"}, {KC_K14, "MACROS"}, {KC_OCTDN, "ALL OFF"}};
-static const khint_t HOME_MAC_FOOT[3] = {{KC_K14, "M1-M4"}, {KC_SELECT, "DICE"}, {KC_HOME, "x2 SOUND"}};   /* (HOME: the macros) */
+static const khint_t MAC_LATCH_FOOT[3] = {{KC_K14, "M1-M4"}, {KC_SELECT, "DICE"}, {KC_LFO, "DONE"}};   /* (MACRO latched) */
 
 static struct {
     uint8_t l, oct;                    /* the layer open; OCT- / OCT+ pressed in a SET layer (bits) */
@@ -115,8 +115,8 @@ static const char *layer_head(void)                     /* FX: LATCH, and the MI
 {
     static const char *const H[2][3] = {{"[FX] HOLD", "[FX] HOLD SYN", "[FX] HOLD DRM"},
                                         {"[FX] LATCH", "[FX] LATCH SYN", "[FX] LATCH DRM"}};
-    if (ui.layer == LAYER_MACRO && !layer_open())       /* (JIANT 0.4) HOME: the macros */
-        return "HOME MACRO";
+    if (ui.layer == LAYER_MACRO && !layer_open())       /* (JIANT 0.4) the MACRO layer latched */
+        return "[LFO] LATCH";
     return ui.layer == LAYER_FX ? H[perf_latch_on ? 1 : 0][pfx_tgt % 3u] : LAYERS[ui.layer % LAYER_N].head;
 }
 static uint32_t layer_open(void) { return ui.ly && (ui.ly_t0 & LY_OPEN) && ly_down(ui.ly) && layer_allowed() ? ui.ly : 0u; }
@@ -144,6 +144,13 @@ static void layer_arm(uint32_t pressed, uint32_t now)
     uint32_t l;
     if (ui.ly)
         return;
+    if (mac_latch && (pressed & ly_bit(LAYER_MACRO))) { /* (JIANT 0.4) LFO pressed again: the latch off, nothing else */
+        mac_latch = 0;
+        ui.force = 1;
+        ui.ly = LAYER_MACRO;
+        ui.ly_t0 = (now & ~15u) | 1u | LY_DEAD;
+        return;
+    }
     for (l = LAYER_FX; l < LAYER_N; l++)
         if ((pressed & ly_bit(l)) && ly_avail(l)) {
             ui.ly = (uint8_t)l;
@@ -164,6 +171,11 @@ static void layer_let_go(uint32_t quiet)
     lys.song = 0;
     if (ui.ly == LAYER_FX && !perf_latch_on)
         perf_k[0] = perf_k[1] = perf_k[2] = perf_k[3] = 0;
+    if (ui.ly == LAYER_MACRO && (ui.ly_t0 & LY_OPEN) && !(ui.ly_t0 & LY_DEAD)) {   /* (JIANT 0.4) MACRO opened, let go: */
+        mac_latch = 1;                                  /* latched (its knobs at once: no quiet time) */
+        quiet = 0;
+        ui.force = 1;
+    }
     if (lys.rp_dirty) {                                 /* REC: its settings kept, as MENU does when it closes */
         lys.rp_dirty = 0;
         settings_save();                                /* (deferred while playing) */
@@ -1111,7 +1123,7 @@ static void draw_layer(void)
     if (ui.force) {                                     /* the footer: what the keys, knobs and buttons do */
         cv_begin(240, H_FOOT, T_BG);
         const khint_t *ft = l == LAYER_FX && perf_latch_on ? FX_LATCH_FOOT :
-                            l == LAYER_MACRO && !layer_open() ? HOME_MAC_FOOT : LAYERS[l].foot;
+                            l == LAYER_MACRO && !layer_open() ? MAC_LATCH_FOOT : LAYERS[l].foot;
         cv_key_row(8, 232, 9, ft, ft[2].act ? 3u : 2u, 7u, T_BG);
         cv_blit(0, Y_FOOT);
         ui.foot_sig = 0;
