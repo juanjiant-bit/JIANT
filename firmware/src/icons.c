@@ -215,7 +215,7 @@ static uint32_t param_icon(const param_desc_t *d, int32_t v)
 static uint32_t mod_src_icon(int32_t s)
 {
     static const uint8_t I[MS_N] = {ICON_MOD, ICON_LFO_WAVE, ICON_ENV, ICON_ACCENT, ICON_KEYTRACK, ICON_PROB,
-                                    ICON_MOD, ICON_MIDI, ICON_LEVEL};
+                                    ICON_MOD, ICON_MIDI, ICON_LEVEL, ICON_MIX, ICON_MIX, ICON_MIX, ICON_MIX};   /* (M1..M4) */
     return I[clamp(s, 0, MS_N - 1)];
 }
 static uint32_t mod_dst_icon(const track_t *t, int32_t d)
@@ -226,6 +226,8 @@ static uint32_t mod_dst_icon(const track_t *t, int32_t d)
     d = clamp(d, 0, MD_N - 1);
     if (d < MD_E1)
         return I[d];
+    if (d >= MD_CLIP)                                   /* (the master's CLIP / PNCH) */
+        return d == MD_CLIP ? ICON_DIST : ICON_LEVEL;
     id = P_E0 + (uint32_t)(d - MD_E1);
     return param_icon(track_desc(t, id), t->p[id]);
 }

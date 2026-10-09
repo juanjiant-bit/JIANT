@@ -61,8 +61,9 @@ static const layer_t LAYERS[LAYER_N] = {
     {B_SEQ, LK_SET, FAM_SEQ, "[SEQ] TOOLS", {{KC_KEYS, "TOOLS"}, {KC_SEQ, "DONE"}, {0, 0}}},
     {B_REC, LK_SET, FAM_HOME, "[REC] SET", {{KC_KEYS, "RECORDING"}, {KC_REC, "DONE"}, {0, 0}}},
     {B_SAVE, LK_SET, FAM_HOME, "[SAVE] SONG", {{KC_KEYS, "PLAY"}, {KC_OCTUP, "STORE"}, {KC_OCTDN, "RECALL"}}},
+    {B_LFO, LK_SET, FAM_HOME, "[LFO] MACRO", {{KC_K14, "M1-M4"}, {KC_LFO, "DONE"}, {0, 0}}},   /* JIANT (mod.c macro_v) */
 };
-static const uint8_t LY_KC[LAYER_N] = {0, KC_FX, KC_GLO, KC_SCL, KC_EDIT, KC_SEQ, KC_REC, KC_SAVE};
+static const uint8_t LY_KC[LAYER_N] = {0, KC_FX, KC_GLO, KC_SCL, KC_EDIT, KC_SEQ, KC_REC, KC_SAVE, KC_LFO};
 /* SCL's knobs: the key and the sequence offset (cur_page() while the layer edits or draws them: page_over) */
 static const page_t LY_SCL = {"SCL", FAM_SCL, SC_TRACK, GR_SCALE, {P_ROOT, P_SCALE, P_SOFS, P_POFS}};
 /* SEQ TOOLS' knobs: the PATTERN page's (the length the tools work in) */
@@ -456,6 +457,8 @@ static void layer_knob(uint32_t k, int32_t s)
         if (k == 0u)
             lys.song = (uint8_t)(clamp((int32_t)(lys.song ? lys.song - 1u : song_cur) + (s > 0 ? 1 : -1), 0,
                                        NSONG - 1) + 1);
+    } else if (l == LAYER_MACRO) {                      /* M1..M4 (the project's; the MOD slots that name them) */
+        macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
     } else if (l == LAYER_REC) {                        /* CLICK (KNOB 2..4: none) */
         if (k < RL_N)
             rec_set(k, (uint32_t)clamp((int32_t)rp_get(RL_F[k]) + s, 0, 2));
@@ -784,6 +787,66 @@ static void layer_seq(void)
 #define LR_KW 78                                         /* the key's cell; the values 46 px each: x 6 .. 234 */
 #define LR_VW 46
 #define LR_H 26
+/* MACRO: the MOD slots (any track's) whose SRC is macro m: their number; b (n bytes): "T1 CUT+40 T4 MRPH-20 .." */
+#define LMC_TW 140                                       /* MACRO's routes: their width (x 92 .. 232) */
+static uint32_t macro_routes(uint32_t m, char *b, uint32_t n)
+{
+    uint32_t i, k, c = 0;
+    if (b)
+        b[0] = 0;
+    for (i = 0; i < NTRK; i++)
+        for (k = 0; k < 4u; k++) {
+            const int16_t *p = &trk[i].p[P_M1SRC + 3u * k];
+            if (p[0] != (int16_t)(MS_M1 + m) || !p[1] || !p[2])
+                continue;
+            c++;
+            if (b && str_len(b) + 12u < n) {           /* (as many as fit in LMC_TW; "+" when more) */
+                char e[16] = {'T', (char)('1' + i), ' ', 0};
+                uint32_t l0 = str_len(b);
+                str_cpy(e + 3, mod_dst_name(&trk[i], p[1]), sizeof e - 3);
+                str_cpy(e + str_len(e), p[2] > 0 ? "+" : "", sizeof e - str_len(e));
+                fmt_int(e + str_len(e), p[2] * 100 / 64);
+                if (l0)
+                    str_cpy(b + l0, " ", n - l0);
+                str_cpy(b + str_len(b), e, n - str_len(b));
+                if (text_w(&AF_S, b) > LMC_TW) {
+                    b[l0] = 0;
+                    str_cpy(b + l0, " +", n - l0);
+                    n = l0 + 3u;                        /* (nothing more goes in) */
+                }
+            }
+        }
+    return c;
+}
+static uint32_t macro_sig(void)
+{
+    uint32_t i, k, h = (uint32_t)macro_v[0] | (uint32_t)macro_v[1] << 8 | (uint32_t)macro_v[2] << 16 | (uint32_t)macro_v[3] << 24;
+    for (i = 0; i < NTRK; i++)
+        for (k = 0; k < 12u; k++)
+            h = (h ^ (uint32_t)trk[i].p[P_M1SRC + k]) * 16777619u;
+    return h + snd_id() * 31u;
+}
+/* MACRO's map: a row per macro, its value as a heat bar and where its MOD slots send it ("NO ROUTE": how to make one) */
+#define LMC_H 26
+static void layer_macro(void)
+{
+    uint32_t m;
+    char n[4] = {'M', 0, 0, 0}, b[48];
+    for (m = 0; m < 4u; m++) {
+        int32_t y = 4 + (LMC_H + 3) * (int32_t)m, w = macro_v[m] * 44 / 127;
+        uint32_t c = macro_routes(m, b, sizeof b);
+        uint16_t ink, fill = lc_box(6, y, 30, LMC_H, lc_fill(c ? LS_OFF : LS_DIM, &ink));
+        n[1] = (char)('1' + m);
+        GFX_HOOK_ALIGN(6, y, 36, y + LMC_H, AL_HV, "macro row name centred");
+        cv_text_in(6, y + CAP_IN(S, LMC_H), 30, &AF_S, n, ink, fill);
+        cv_rrect(42, y + LMC_H / 2 - 2, 44, 5, 2, T_RAISE, T_SURF);
+        if (w > 0)
+            cv_rrect(42, y + LMC_H / 2 - 2, w < 4 ? 4 : w, 5, 2, heat_col(48 + macro_v[m] * 200 / 127), T_SURF);
+        GFX_HOOK_ALIGN(0, y, 0, y + LMC_H, AL_V, "macro row routes on its middle");
+        cv_text_on(92, y + CAP_IN(S, LMC_H), &AF_S, c ? b : "NO ROUTE: MOD SRC", c ? T_TEXT : T_DIM, T_SURF);
+    }
+}
+
 static void layer_rec(void)
 {
     uint32_t r, v;
@@ -900,6 +963,12 @@ static void layer_cards(uint32_t l)
         draw_column(2, "PLAY", live.mode ? "SONG" : "LOOP", "", VAL(2u), -1, ICON_LOOP);
         draw_column(3, "REC", live.srec == 2u ? "ON" : live.srec ? "ARM" : "OFF", "", live.srec ? VAL(3u) : T_DIM, -1,
                     ICON_X_REC);
+    } else if (l == LAYER_MACRO) {                      /* M1..M4, 0..100 % */
+        static const char *const M[4] = {"M1", "M2", "M3", "M4"};
+        for (c = 0; c < 4u; c++) {
+            fmt_int(val, macro_v[c] * 100 / 127);
+            draw_column(c, M[c], val, "%", macro_routes(c, 0, 0) ? VAL(c) : T_DIM, macro_v[c] * 1000 / 127, ICON_MIX);
+        }
     } else if (l == LAYER_REC) {                        /* CLICK, then empty cards */
         for (c = 0; c < NTRK; c++) {
             uint32_t v = c < RL_N ? rp_get(RL_F[c]) : 0u;
@@ -938,6 +1007,8 @@ static void draw_layer(void)
         sig += (uint32_t)(live.cur + 1) * 31u + (uint32_t)(live.req + 1) * 131u + live.srec * 7u + live.mode * 11u +
                live.dirty * 977u + lys.nqc * 4099u + (chain.running ? chain.row * 13u + chain.remaining * 17u : 0u) +
                (lys.song * 8u + song_cur) * 65537u;
+    else if (l == LAYER_MACRO)
+        sig += macro_sig();
     else if (l == LAYER_SEQ)
         sig += (uint32_t)drum_track(TSEL) * 31u + ui.lane * 5u + (uint32_t)chain_busy() * 3u + (uint32_t)TSEL->p[P_E0] * 131u + song.sel * 977u;
     else
@@ -960,6 +1031,8 @@ static void draw_layer(void)
             layer_rec();
         else if (l == LAYER_SAVE)
             layer_song();
+        else if (l == LAYER_MACRO)
+            layer_macro();
         else
             layer_edit();
         cv_blit(0, Y_GRAPH);

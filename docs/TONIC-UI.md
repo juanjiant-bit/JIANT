@@ -16,8 +16,8 @@ los dibuja el firmware encima, y algunas partes reaccionan a los knobs: arcos, p
 | 06 | SEQ PERFORMANCE | capa SEQ: SEQ TOOLS, grabación y mutes en vivo | existe |
 | 07 | DRUM-X | el kit DRUM-X: un pétalo por sonido | hecho |
 | 08 | DRUM MORPH | edición de un sonido: lado A / B, MORPH, PITCH DECAY NOISE DRIVE PAN | Fase 2 |
-| 09 | MACRO | macros M1–M4 y sus destinos | pendiente (Fase 6) |
-| 10 | MACRO MAP | qué mueve cada macro | pendiente (Fase 6) |
+| 09 | MACRO | macros M1–M4 (LFO sostenido; fuentes M1–M4 en MOD) | existe |
+| 10 | MACRO MAP | qué mueve cada macro (el mapa de la capa MACRO) | existe |
 | 11 | PUNCH-IN FX | capa FX: hoy REPEAT 1/8, 1/16, 1/32, LPF, HPF; después los punch-in MIDI | parcial (Fase 7) |
 | 12 | FX RACK | efectos por track: distorsión, envíos a chorus, delay, reverb | existe |
 | 13 | MIXER | MIXER (GLO): nivel, pan, envíos, mute | existe |

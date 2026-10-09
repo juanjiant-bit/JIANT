@@ -595,6 +595,7 @@ static void state(void)                          /* a playing song with steps on
     uint32_t i;
     ui_power_on();
     dx_mute_set(0);
+    memset(macro_v, 0, sizeof macro_v);
     if (large_on) ui_prefs |= PREF_LARGE;
     song.playing = 1;
     song.g[G_BPM] = 124;
@@ -647,7 +648,7 @@ enum { S_HOME, S_HOME_IDLE, S_MESSAGE, S_MESSAGE_KEY, S_MESSAGE_NOFILE, S_PRESET
        S_NAME_USER, S_NAME_TYPING, S_NAME_123, S_NAME_EMPTY, S_NAME_FULL, S_NAME_PLAYING, S_PROJECT_NAMED, S_SONG_NAMED,
        S_USER_FOOT,
        S_ROLL_EMPTY, S_ROLL_ACID, S_ROLL_CHORDS, S_ROLL_TIES, S_ROLL_LEN32, S_ROLL_HIGH, S_ROLL_LOW, S_ROLL_WIDE, S_ROLL_PLAYING,
-       S_ROLL_LOCKS, S_ROLL_LOCK_HELD, S_DRUM_LOCKS, S_DRUM_LOCK_HELD, S_MOTION_LOCKS, S_AUTO_LIST, S_AUTO_LIST_ADD, S_AUTO_LIST_DRUM, S_REC_LAYER, S_REC_LAYER_SET, S_REC_LAYER_SONG,
+       S_ROLL_LOCKS, S_ROLL_LOCK_HELD, S_DRUM_LOCKS, S_DRUM_LOCK_HELD, S_MOTION_LOCKS, S_AUTO_LIST, S_AUTO_LIST_ADD, S_AUTO_LIST_DRUM, S_REC_LAYER, S_REC_LAYER_SET, S_REC_LAYER_SONG, S_MACRO_LAYER,
        S_COUNTIN, S_COUNTIN2, S_MENU_AUDIO, S_HEAD_PLAY_REC, S_HEAD_REC_OTHER, S_HEAD_BPM_TURN, S_HEAD_BPM_LOCK,
        S_HEAD_BPM_LOCKED, S_HEAD_GLO_TURN, S_HEAD_DOWNBEAT, S_HEAD_BEAT_2,
        S_MOCK_HOME, S_MOCK_PRESETS, S_MOCK_SEQ, S_MOCK_DRUM, S_MOCK_MIXER, S_MOCK_DIALOG, S_MOCK_MENU, S_COUNT };
@@ -665,7 +666,7 @@ static const char *const S_NAME[S_COUNT] = {"home", "home_idle", "message", "mes
     "name_user", "name_typing", "name_123", "name_empty", "name_full", "name_playing", "project_named", "song_named",
     "user_foot",
     "roll_empty", "roll_acid", "roll_chords", "roll_ties", "roll_len32_p2", "roll_high", "roll_low", "roll_wide", "roll_playing",
-    "roll_locks", "roll_lock_held", "drum_locks", "drum_lock_held", "motion_locks", "auto_list", "auto_list_add", "auto_list_drum", "layer_rec", "layer_rec_set", "layer_rec_song",
+    "roll_locks", "roll_lock_held", "drum_locks", "drum_lock_held", "motion_locks", "auto_list", "auto_list_add", "auto_list_drum", "layer_rec", "layer_rec_set", "layer_rec_song", "layer_macro",
     "countin", "countin_2bars", "menu_audio", "head_play_rec", "head_rec_other", "head_bpm_turn", "head_bpm_lock",
     "head_bpm_locked", "head_glo_turn", "head_downbeat", "head_beat_2",
     "mock_home", "mock_presets", "mock_seq", "mock_drum", "mock_mixer", "mock_dialog", "mock_menu"};
@@ -850,6 +851,14 @@ static void setup(int s)
      * over STEP armed, CLICK REC, COUNT-IN 2 BARS, LEVEL HIGH (KNOB 2 just turned); a song playing on an empty
      * track (CLEAR dimmed: STOP TO EDIT) */
     case S_REC_LAYER: go_home(); ui.layer = LAYER_REC; break;
+    case S_MACRO_LAYER:                              /* M1: T1 CUT and T4's MRPH; M2: CLIP; M3 at 0, M4 none */
+        go_home(); ui.layer = LAYER_MACRO;
+        macro_v[0] = 90; macro_v[1] = 40; macro_v[3] = 127;
+        trk[0].p[P_M1SRC] = MS_M1; trk[0].p[P_M1DST] = MD_CUT; trk[0].p[P_M1AMT] = 40;
+        trk[3].p[P_M2SRC] = MS_M1; trk[3].p[P_M2DST] = MD_E1; trk[3].p[P_M2AMT] = -20;
+        trk[1].p[P_M1SRC] = MS_M1 + 1; trk[1].p[P_M1DST] = MD_CLIP; trk[1].p[P_M1AMT] = 63;
+        trk[2].p[P_M1SRC] = MS_M1 + 2; trk[2].p[P_M1DST] = MD_REV; trk[2].p[P_M1AMT] = 30;
+        break;
     case S_REC_LAYER_SET: song.rec = 1; go_page(GR_ROLL); ui.cursor = 6; rp_put(RP_CLICK, 1u); rp_put(RP_COUNTIN, 2u);
         rp_put(RP_LEVEL, 2u); ui.layer = LAYER_REC; ui.hot_col = 1; ui.hot_t = 30; break;
     case S_REC_LAYER_SONG: drum(1); track_defaults_steps(TSEL); go_page(GR_SONG); chain.running = 1; ui.layer = LAYER_REC;
