@@ -139,6 +139,7 @@ detalles. La paleta **JIANT** es la de fábrica. Primera pantalla: el espécimen
 | Mantener | Teclas | Perillas |
 | --- | --- | --- |
 | **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. Punch-in MIDI: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 D5 STUTTER 1/16 · 1/32 · tresillo, E5 ARP, F5 RANDOM. Teclas negras 1–4: mute de T1–T4; A#4 elige a qué tracks afectan los MIDI (todos, sintes, batería). **Automatizar**: con REC armado y tocando, lo que mantengas queda grabado en la lane de la sección (64 pasos de 1/16); G5 la borra donde pasa, o entera con el transporte parado | FILTER, CRUSH, THROW, DEPTH |
+| **ARP TRNS** | Con el modo de ARP en TRNS, las teclas (y el MIDI que entra) transponen la secuencia del track según su intervalo desde C4, sin tocar notas; la transposición queda al soltar | — |
 | **SEQ + REC** | Mantener SEQ y apretar REC: CLEAR ALL SEQUENCES? (OCT+ confirma): borra los pasos y la automatización de los 4 tracks y la lane de punch-in | — |
 | **GLO** | Teclas negras 1–4 mute de T1–T4 (fijo); 5–8 mute de grupo de DRUM: KICK, SNARE, HAT, PERC; F3–B3 solo mientras se mantiene; C4 desmutea todo; F4 tap tempo | Nivel de T1–T4 |
 | **SCL** | Cualquier tecla elige la raíz | ROOT, SCL, CHRD, VOIC |

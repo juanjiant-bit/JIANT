@@ -53,14 +53,24 @@ sobre negro; color solo en los detalles (puntas rojas, vasos amarillos, cyan y v
 referencia cyan en círculos; ejes punteados; punteado para sombrear. Nada de flores genéricas: cada pantalla es un
 **espécimen** cuyos órganos son partes del instrumento, y cuya anatomía cambia con los parámetros.
 
-## Pantallas hechas
+## Pantallas hechas (con las láminas: `firmware/src/ui_plates.c`)
 
-| Panel | Página | Qué se mueve |
+Paleta JIANT = la de las láminas: fondo negro, línea blanca, cyan para los valores, rojo para lo activo, y los demás
+roles (teal, verde, amarillo, naranja, violeta) en `og_role`. En las otras paletas, mezclas de sus propios colores; en
+GREY y MONO, grises.
+
+| Página | Lámina | Qué se mueve |
 | --- | --- | --- |
-| 07 DRUM-X | EDIT de DRUM | Una orquídea anatómica. Sus órganos son los grupos del kit: sépalo dorsal = hats (cyan), pétalos laterales = snare y clap (amarillo), sépalos inferiores = kick (rojo), labelo y columna = percusión (verde). A y B son dos anatomías y el MORPH mueve cada contorno punto por punto. Cada golpe enciende los vasos interiores de su órgano, que se apagan con la caída. El ruido de los hats punteado en su sépalo. Escala A–B con el MORPH encima, eje punteado; respira y los zarcillos se mecen |
+| DRUM (EDIT) | 4 iris | sus 8 nodos cyan son los 8 sonidos: se encienden con cada golpe y se apagan con la caída (un sonido muteado queda oscuro); el MORPH abre la flor (A cerrada, B abierta); el WARP la hace temblar; escala A–B arriba |
+| EDIT > SOUND | 4 iris | el nodo del sonido editado encendido, los demás quietos; el lado A/B abajo |
+| LFO, LFO DEST | 10 y 11 | los cinco nadadores son las cinco ondas (SIN TRI SAW SQR S&H, anillos cyan violeta rojo naranja amarillo): la elegida brilla, las otras se apagan; las colas nadan a la velocidad del LFO, más abiertas con más profundidad |
+| ENV, ENV DEST | 15 curvas | las curvas quietas, la envolvente real (ATK DEC SUS REL) dibujada en blanco dentro de la caja |
+| FX | 8 ala | la membrana cyan, los envíos; las venas rojas, la distorsión; tiembla con el delay |
+| ARP | 6 planta | sus nodos se encienden uno tras otro con los pasos del arpegio; apagada sin ARP |
+| VOICE | 2 vaso | sus nodos teal son las voces del track, encendidas mientras suenan |
+| EDIT de cada sinte | ANALOG 13, PHASE 1, LOFI 2, VOICE 17, TRIO 7, WHEEL 12, GRAIN 16, NOISE 5 | brilla con el nivel del track, se mece con su LFO |
 
-Las formas vienen de `assets/ui-shapes/drumx.svg` (ver abajo): un órgano ocupa 20 bytes por lado (A y B). Costo total de la
-pantalla y la librería: ≈ 3 KB de flash, 0 de RAM.
+FM6 (el algoritmo), WHEEL (drawbars, en su página propia), SAMPLE y SLICE (la onda) conservan su gráfico funcional.
 
 ## Cómo reemplazar los dibujos (vectores propios)
 

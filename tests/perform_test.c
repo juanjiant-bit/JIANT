@@ -744,6 +744,27 @@ static int test_pfx(void)
         bad += check("RANDOM: some notes moved (octave, fifth, fourth), none past an octave; none without it",
                      moved > 3u && moved < 100u && !far);
     }
+    /* ARP TRNS: a key (F4: +5 from C4) transposes the track's sequence, plays nothing itself */
+    {
+        uint32_t seen = 0, wrong = 0, v;
+        song_setup();
+        t1->p[P_AMODE] = AM_TRNS;
+        input_on(t1, 65, 100);
+        input_off(t1, 65);
+        transport_req = 1;
+        for (i = 0; i < 4u * 22016u; i += CTL) {
+            mix_block(o, CTL);
+            for (v = 0; v < NVOICE; v++)
+                if (t1->v[v].active && t1->v[v].gate) {
+                    seen |= t1->v[v].note == 50u;           /* (step 1: A2 45, +5) */
+                    wrong |= t1->v[v].note == 45u || t1->v[v].note == 65u;
+                }
+        }
+        transport_req = 2;
+        mix_block(o, CTL);
+        bad += check("ARP TRNS: a key transposes the sequence by its interval from C4 (kept when let go), no note itself",
+                     t1->trn == 5 && seen && !wrong);
+    }
     /* the punch-in lane: REC armed, OCT+ held over steps 4..7 of the 64: recorded there (its tracks: DRM); the next
      * pass plays it on the drums (DRUM's pitch offset at step 5, none at step 10), not on the synths; stopped,
      * FX + G5 clears it */

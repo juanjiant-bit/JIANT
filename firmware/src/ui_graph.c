@@ -13,6 +13,7 @@
 /* the height ADSR and LFO are drawn on: 100 px, or (MENU > LARGE's strip: draw_graph) the strip's ~ 56 */
 static int32_t graph_ht = 100;
 #include "ui_organic.c"                              /* JIANT FM's organic line art (drawn by code) */
+#include "ui_plates.c"                               /* .. the pages drawn with the user's plates */
 
 /* Matches voice.c: attack is linear, decay and release are exponential
  * (env += (target - env) * k each tick, ~99 % after the set time). Time
@@ -533,81 +534,6 @@ static void graph_sample(uint16_t c)
     }
 }
 
-/* DRUM (DRUM-X, docs/TONIC-UI.md panel 07): a specimen in the manner of the anatomical wall charts, an
- * orchid whose organs are the kit's groups: the dorsal sepal the hats (cyan), the lateral petals SNARE and CLAP
- * (yellow), the lower sepals the KICK (red), the lip and column the percussion (green). Its patches A and B are two
- * anatomies: MORPH moves every outline point by point from one to the other. An organ's inner vessels light up
- * when its group is struck and fade as it rings; the noise of the hats stipples their sepal. Cyan reference letters
- * A and B on a dashed scale with the MORPH on it, a dash-dot axis through the specimen; it breathes (ui.frame) */
-static void graph_drumx(const track_t *t, int32_t sel)   /* sel: the sound edited (EDIT > SOUND), -1 none */
-{
-    static const uint8_t LANE_ORGAN[8] = {2, 1, 1, 0, 0, 3, 3, 3};   /* 0 dorsal, 1 petals, 2 sepals, 3 lip */
-    static const uint8_t ORGAN_COL[4] = {OG_TEAL, OG_MUSTARD, OG_CORAL, OG_MINT};
-    const drum_lane_t *K = drum_kit_of(t);
-    int32_t morph = clamp(t->p[P_E0], 0, 127), m = sel >= 0 ? dx_ui_side * 256 : morph * 256 / 127, env[4] = {0, 0, 0, 0}, side, o;
-    int32_t cx = 120 * OG_Q, cy = 58 * OG_Q, u = 15 + (og_sin(ui.frame * 600u) >> 14);   /* (breathing: +-2 / 16) */
-    uint32_t l;
-    uint16_t cream = og_col(OG_CREAM), cyan = og_col(OG_TEAL), faint = ux_mix(T_SURF, T_TEXT, 30);
-    char b[16];
-    for (l = 0; l < 8u; l++)
-        if (K && K[l].x.live) {
-            int32_t e = K[l].x.ea >> 22;                 /* 0..256 */
-            env[LANE_ORGAN[l]] = e > env[LANE_ORGAN[l]] ? e : env[LANE_ORGAN[l]];
-        }
-    og_dash(cx, 2 * OG_Q, cx, 120 * OG_Q, faint, 6, 3);   /* the axis */
-    og_dash(38 * OG_Q, 14 * OG_Q, 202 * OG_Q, 14 * OG_Q, faint, 2, 3);   /* the MORPH scale, A .. B */
-    og_node((38 + morph * 164 / 127) * OG_Q, 14 * OG_Q, 2, og_col(OG_CORAL));
-    og_label(22, 14, "A", morph < 64 ? cyan : T_DIM);
-    og_label(218, 14, "B", morph >= 64 ? cyan : T_DIM);
-    for (o = 0; o < 4; o++) {                            /* the organs, then their vessels */
-        static const og_shape_t *const ORGAN[4] = {&SH_DRUMX_DORSAL, &SH_DRUMX_PETAL, &SH_DRUMX_SEPAL, &SH_DRUMX_LIP};
-        const og_shape_t *sh = ORGAN[o];
-        uint16_t col = og_col(ORGAN_COL[o]), line = env[o] ? ux_mix(cream, og_col(OG_CORAL), env[o] * 160 / 256) : cream;
-        if (sel >= 0 && LANE_ORGAN[sel & 7] != (uint32_t)o)   /* (EDIT > SOUND: the other organs quiet) */
-            line = ux_mix(T_SURF, line, 45);
-        else if (sel >= 0)
-            line = og_col(OG_CORAL);
-        og_xf_t f = {(int16_t)cx, (int16_t)cy, (int16_t)u, 1, sh->a[0], sh->a[1], 256};   /* (vessels: toward the base) */
-        og_shape(sh, f, m, line, 256);
-        f.k = 208;
-        og_shape(sh, f, m, col, 150 + env[o] * 106 / 256);
-        if (env[o]) {                                    /* struck: more vessels, brighter */
-            f.k = 160;
-            og_shape(sh, f, m, col, env[o]);
-            f.k = 112;
-            og_shape(sh, f, m, col, env[o] * 3 / 4);
-        }
-        for (side = 1; side >= (sh->mirror ? -1 : 1); side -= 2) {   /* the organ's tip: red, as the charts' */
-            int32_t tx, ty;
-            f.k = 256;
-            f.mx = (int16_t)side;
-            og_tip(sh, &f, m, &tx, &ty);
-            og_node(tx, ty, env[o] > 96 ? 2 : 1, og_col(OG_CORAL));
-        }
-    }
-    {                                                    /* the hats' noise stipples the dorsal sepal */
-        const dx_lane_t *L = &dx_kit[DV_HATC];
-        int32_t n = L->a[DXP_NOISE] + ((L->b[DXP_NOISE] - L->a[DXP_NOISE]) * morph) / 127;
-        og_stipple(cx, cy - 30 * u, 7 * u, 12 * u, (uint32_t)n / 3u, 0x9E3779B9u, ux_mix(T_SURF, cyan, 80));
-    }
-    for (side = -1; side <= 1; side += 2) {              /* two tendrils from the column, swaying */
-        int32_t w = og_sin(ui.frame * 380u + (uint32_t)(side + 1) * 12000u) >> 11;   /* +-16: a pixel */
-        og_cubic_a(cx + side * 3 * u, cy - 2 * u, cx + side * 16 * u + w, cy - 14 * u, cx + side * 26 * u - w,
-                   cy - 2 * u + w, cx + side * 20 * u, cy - 10 * u, og_col(OG_MINT), 12, 200);
-        og_ring(cx + side * 20 * u, cy - 10 * u, 2 * u, og_col(OG_MINT));
-    }
-    og_ring(cx, cy, 4 * u, cream);                       /* the column: pollinia yellow, its tip red */
-    og_line(cx - 2 * u, cy - 1 * u, cx + 2 * u, cy - 1 * u, cream);
-    og_line(cx - 2 * u, cy + 1 * u, cx + 2 * u, cy + 1 * u, cream);
-    og_node(cx - 1 * u, cy - 2 * u, 1, og_col(OG_MUSTARD));
-    og_node(cx + 1 * u, cy - 2 * u, 1, og_col(OG_MUSTARD));
-    og_node(cx, cy + 3 * u, 1, og_col(OG_CORAL));
-    str_cpy(b, "MORPH ", sizeof b);
-    fmt_int(b + 6, morph * 100 / 127);
-    str_cpy(b + str_len(b), "%", sizeof b - str_len(b));
-    cv_text_r(230, 104, &AF_S, b, T_MID, T_SURF);
-    cv_text(10, 104, &AF_S, "DRUM-X", T_MID);
-}
 
 /* WHEEL: the nine drawbars as rounded bars over RAISE slots (the bars of the knob just turned: the accent),
  * their footages under them */
@@ -1500,11 +1426,13 @@ static void draw_graph(void)
         graph_scope(c);
     } else {
         switch (pg->graph) {
-        case GR_ADSR:
-            graph_adsr(t, c);
+        case GR_ADSR:                                /* (JIANT: the plates, ui_plates.c) */
+            cv_oy = 0;
+            graph_p_env(t);
             break;
         case GR_LFO:
-            graph_lfo(t, c);
+            cv_oy = 0;
+            graph_p_lfo(t);
             break;
         case GR_STEPS:
             graph_steps(t, c);
@@ -1525,7 +1453,8 @@ static void draw_graph(void)
             graph_chord(t, c);
             break;
         case GR_FX:
-            graph_fx(t, c);
+            cv_oy = 0;
+            graph_p_fx(t);
             break;
         case GR_SLCR:
             graph_slicer(t, c);
@@ -1560,7 +1489,7 @@ static void draw_graph(void)
             break;
         case GR_DXSND:                               /* EDIT > SOUND: the kit's specimen, the sound's organ singled out */
             cv_oy = 0;
-            graph_drumx(t, dx_ui_lane);
+            graph_p_drum(t, dx_ui_lane);
             break;
         case GR_TOOLS:
             cv_oy = 0;
@@ -1572,8 +1501,13 @@ static void draw_graph(void)
             else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_FM6) graph_fm6(t, c);   /* EDIT 1 and 2 */
             else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_DRUM) {
                 cv_oy = 0;
-                graph_drumx(t, -1);
+                graph_p_drum(t, -1);
             }
+            else if (pg->graph == GR_ARP) { cv_oy = 0; graph_p_arp(t); }
+            else if (pg->fam == FAM_LFO && pg->graph == GR_NONE) { cv_oy = 0; graph_p_lfo(t); }
+            else if (pg->fam == FAM_ENV && pg->graph == GR_NONE) { cv_oy = 0; graph_p_env(t); }
+            else if (pg->fam == FAM_EDIT && pg->id[0] == P_VOICE) { cv_oy = 0; graph_p_voices(t); }
+            else if (pg->scope == SC_ENGINE && plate_of(t)) { cv_oy = 0; graph_p_engine(t); }
 #if FELUCCA_FM4
             else if ((pg->scope == SC_ENGINE || pg->id[0] == P_FM1_LEVEL) && t->eng_req % NENGINES == ENGI_DIGITAL)
                 graph_fm(t, c);                      /* (OP LEVEL too: the levels on the chart) */

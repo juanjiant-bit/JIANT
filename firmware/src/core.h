@@ -328,6 +328,7 @@ typedef struct track {
     int16_t m_rnd;               /* .. its RAND */
     int32_t m_env;               /* the amp envelope of voice m_vi, last block (Q15) */
     /* the punch-in MIDI effects (pfx.c), the ISR's: what acts on this track this block, never saved */
+    int8_t trn;                  /* ARP TRNS (seq.c): the semitones the keys set (from C4), on the steps' notes */
     uint8_t pfx;                 /* PFX_* */
     int16_t pfx_pit;             /* OCT- / OCT+: 1/16 semitones on every voice */
     int16_t pfx_rpit;            /* RANDOM: the next note's offset (1/16 semitones), drawn by trk_note_on */

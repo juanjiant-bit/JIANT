@@ -6,7 +6,7 @@
  *   SOUND    LANE (the sound: BD .. CB; a key struck on the track picks its lane too), SIDE (patch A or B), PTCH, PMOD
  *   SOUND 2  DCAY, NOIS, COLR, MODE (the oscillator's wave, the noise filter, SNAP: 24 combinations)
  * The values are the side's; the MORPH plays between the two (EDIT 2 MRPH). The panel shows the kit's specimen
- * with the sound's organ singled out (ui_graph.c graph_drumx). */
+ * with the sound's organ singled out (ui_plates.c graph_p_drum: the iris, its node lit). */
 static uint8_t dx_ui_seen = 0xFFu;                   /* the last key note followed */
 static const char *const DX_LANE_ABBR[8] = {"BD", "SD", "CP", "CH", "OH", "TM", "RS", "CB"};
 
