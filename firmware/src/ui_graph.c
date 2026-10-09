@@ -62,22 +62,47 @@ static void graph_adsr(const track_t *t, uint16_t c)
         px = x3 + i;
         py = EGY(sus * e >> 15);
     }
+    if (pg->id[0] == P_ATK) {                           /* (JIANT 0.5) the track's envelope now: the loudest voice's */
+        const voice_t *bv = 0;                          /* level as a dot on the curve, a line down to the axis */
+        int32_t lvl, x;
+        for (i = 0; i < NVOICE; i++)
+            if (t->v[i].stage && t->v[i].stage < 4u && (!bv || t->v[i].env > bv->env))
+                bv = &t->v[i];
+        if (bv) {
+            lvl = (int32_t)(((int64_t)bv->env * 1000) >> 24);
+            if (bv->stage == 1u)
+                x = x0 + a * lvl / 1000;
+            else if (bv->stage == 2u)
+                x = x1 + (sus < 1000 ? clamp((1000 - lvl) * d / (1000 - sus), 0, d) : 0);
+            else
+                x = x3 + (sus > 0 ? clamp((sus - lvl) * r / sus, 0, r) : r);
+            cv_rect(x, EGY(lvl), 1, bot + 2 - EGY(lvl), T_MID);
+            cv_rrect(x - 3, EGY(lvl) - 3, 7, 7, 3, T_TEXT, T_SURF);
+        }
+    }
 #undef EGY
 }
 
+/* LFO: the wave as it runs (JIANT 0.5): the phase now at the playhead (a quarter in), two cycles across, scrolling
+ * at the LFO's own rate; behind the playhead dimmer (what it played), the level now a dot, its depth after FADE */
 static void graph_lfo(const track_t *t, uint16_t c)
 {
-    int32_t x, cy = graph_ht / 2, a = 38 * graph_ht / 100, py = cy;
-    uint32_t ph = (uint32_t)t->p[P_LPHASE] << 25;
+    int32_t x, cy = graph_ht / 2, a = 38 * graph_ht / 100, py = cy, xp = PANEL_W / 4;
+    uint32_t span = 0xFFFFFFFFu / (PANEL_W / 2u), ph = t->lfo_ph - (uint32_t)xp * span;
+    int32_t now = cy - mulq15(t->lfo_val, t->lfo_fade) * a / 32768;
     cv_rect(PANEL_X0, cy, PANEL_W, 1, T_RAISE);
-    for (x = 0; x < PANEL_W; x++) {                  /* two cycles (lfo_wave only reads the track) */
-        int32_t y = cy - lfo_wave((track_t *)t, ph + (uint32_t)x * (0xFFFFFFFFu / (PANEL_W / 2u))) * a / 32768;
-        if (t->p[P_LWAVE] == 4)
-            y = cy - ((int32_t)((x / 20 * 2654435761u) >> 16) - 32768) * a / 32768;
+    for (x = 0; x < PANEL_W; x++) {                  /* (lfo_wave only reads the track) */
+        uint32_t px = ph + (uint32_t)x * span;
+        int32_t y = cy - lfo_wave((track_t *)t, px) * a / 32768;
+        if (t->p[P_LWAVE] == 4)                      /* S&H: a value per cycle part, held */
+            y = cy - ((int32_t)((((px >> 29) + 1u) * 2654435761u) >> 16) - 32768) * a / 32768;
         if (x)
-            cv_line_t(PANEL_X0 + x - 1, py, PANEL_X0 + x, y, heat_y(y, cy - a, cy + a, c), 2);
+            cv_line_t(PANEL_X0 + x - 1, py, PANEL_X0 + x, y,
+                      x < xp ? ux_mix(T_SURF, heat_y(y, cy - a, cy + a, c), 45) : heat_y(y, cy - a, cy + a, c), 2);
         py = y;
     }
+    cv_rect(PANEL_X0 + xp, cy - a - 4, 1, 2 * a + 8, T_MID);   /* the playhead */
+    cv_rrect(PANEL_X0 + xp - 3, now - 3, 7, 7, 3, T_TEXT, T_SURF);
 }
 
 /* step bar x of step i of a 16-step row: 4 groups, as the footer (9 px bars, 13 px apart, 4 px between groups),
@@ -353,10 +378,11 @@ static void graph_fx(const track_t *t, uint16_t c)
     uint32_t i;
     for (i = 0; i < 4u; i++) {
         int32_t h = t->p[P_DIST + i] * 76 / 127, x = CARD_X(i) + 26;
+        uint16_t hc = settings.palette == UI_JIANT_INDEX ? heat_col(t->p[P_DIST + i] * 256 / 127) : c;   /* (JIANT: heat) */
         cv_rrect(x, 6, 4, 82, 2, T_RAISE, T_SURF);
         if (h > 3)
-            cv_rrect(x, 88 - h, 4, h, 2, c, T_RAISE);
-        cv_rrect(x - 4, 85 - h, 12, 6, 3, c, T_SURF);
+            cv_rrect(x, 88 - h, 4, h, 2, hc, T_RAISE);
+        cv_rrect(x - 4, 85 - h, 12, 6, 3, hc, T_SURF);
     }
 }
 /* SLICER page: the pattern's 16 steps, a 'x' step a full bar; a '.' step: GATE a bar as high as it stays
@@ -776,6 +802,11 @@ static uint32_t graph_signature(void)
     if (strip_kind() == SK_TITLE)                    /* MENU > LARGE: the page's title (its engine, its number) */
         return h ^ 0x5A17u;
     if (pg->graph == GR_NONE || pg->graph == GR_ARP || pg->graph == GR_MOTION) h ^= ui.frame / 2u;
+    if (pg->graph == GR_LFO)                         /* (JIANT 0.5) the LFO runs: its phase, its level */
+        h ^= (t->lfo_ph >> 23) * 2654435761u ^ (uint32_t)(t->lfo_val * t->lfo_fade >> 22);
+    if (pg->graph == GR_ADSR)                        /* the envelope's dot: every voice's stage and level */
+        for (i = 0; i < NVOICE; i++)
+            h = (h ^ ((uint32_t)t->v[i].stage << 24 | (uint32_t)t->v[i].env >> 16)) * 16777619u;
     for (i = 0; i < P_COUNT; i++)
         h = (h ^ (uint32_t)t->p[i]) * 16777619u;
     h ^= (uint32_t)TSEL->preset * 7u + (uint32_t)song.g[G_SLOT] * 13u + TSEL->user * 257u + up_gen * 7919u + ui.uslot * 104729u +
@@ -1346,6 +1377,7 @@ static void graph_song(void)
         }
     }
 }
+#include "ui_tech.c"                                /* (JIANT 0.5) the technical graphs (FX, DEST, VOICE, GLOBAL) */
 static void draw_graph(void)
 {
     const page_t *pg = cur_page();
@@ -1455,7 +1487,12 @@ static void draw_graph(void)
             else if ((pg->scope == SC_ENGINE || pg->id[0] == P_FM1_LEVEL) && t->eng_req % NENGINES == ENGI_DIGITAL)
                 graph_fm(t, c);                      /* (OP LEVEL too: the levels on the chart) */
 #endif
-            else { cv_oy = 0; graph_being(t); }       /* (JIANT 0.5: the being, was the scope) */
+            else if (pg->scope == SC_ENGINE) { cv_oy = 0; graph_being(t); }   /* (JIANT 0.5: the being, was the scope) */
+            else {                                   /* the FX, DEST, VOICE, GLOBAL pages: their graphs (else the scope) */
+                cv_oy = 0;
+                if (!graph_tech(t, pg))
+                    graph_scope(c);
+            }
             break;
         }
     }
