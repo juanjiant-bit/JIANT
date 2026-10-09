@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # The browser emulator (web/emu) on GitHub Pages: the firmware's sources compiled to WebAssembly, on every push to
-# main. Needs Settings > Pages > Source: "GitHub Actions" once. No JieLi toolchain: only the generated headers.
+# main. Needs Settings > Pages > Source: "GitHub Actions" once. The emulator needs only the generated headers; the
+# installer (webapp/installer) and the editor (webapp/editor) need the package, built with JieLi's toolchain (downloaded).
 name: emulator
 on:
   push:
@@ -29,6 +30,24 @@ jobs:
           version: 6.0.11                # (the version the emulator is tested with)
       - name: the emulator
         run: sh web/emu/build.sh
+      # (JIANT) the installer and the web editor next to the emulator: the package needs JieLi's toolchain (downloaded)
+      # and three files of their AC79 SDK (a partial clone: only those blobs). If any of it fails the emulator still goes up
+      - name: JieLi toolchain and SDK files
+        id: tc
+        continue-on-error: true
+        run: |
+          sh tools/get_toolchain.sh "$HOME/.jieli"
+          git clone --filter=blob:none --no-checkout --depth 1 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git "$HOME/fw-AC79_AIoT_SDK"
+          cd "$HOME/fw-AC79_AIoT_SDK" && git sparse-checkout set --no-cone /cpu/wl82/tools/uboot.boot /cpu/wl82/tools/cfg_tool.bin \
+            /cpu/wl82/tools/cfg/eq_cfg_hw.bin && git checkout
+      - name: the package, the installer and the editor
+        if: steps.tc.outcome == 'success'
+        continue-on-error: true
+        run: |
+          python3 tools/build.py
+          V=$(sed -n 's/^#define FELUCCA_VERSION "\(.*\)"/\1/p' firmware/src/felucca.c | head -1)
+          python3 web/make_site.py build/felucca.fwsc "${V:-dev}-${GITHUB_SHA::7}" build/site
+          cp -r build/site/webapp build/site/firmware build/emu/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/emu

@@ -17,7 +17,7 @@ por compases y un master con carácter, todo a mano en el aparato.
 Es un fork de [Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 de Hügelton Instruments (GPL-3.0) y toma de
 [SLOOP](https://github.com/isod89/sloop-fm1) el sistema de canciones.
 
-**▶ [Probalo en el navegador](https://juanjiant-bit.github.io/JIANT/)**: el emulador corre el mismo código que el
+**▶ [Probalo en el navegador](https://juanjiant-bit.github.io/JIANT/)** · **[Instalador web](https://juanjiant-bit.github.io/JIANT/webapp/installer/)** · **[Editor web](https://juanjiant-bit.github.io/JIANT/webapp/editor/)**: el emulador corre el mismo código que el
 FM-1, con sonido, y se maneja con el teclado de la compu o el mouse. Se actualiza solo con cada cambio que entra a
 `main`.
 
@@ -196,8 +196,9 @@ Settings → Pages → Source: **GitHub Actions**, una sola vez).
 
 1. Hacé un **backup del flash** antes de la primera instalación. **JIANT no tiene samples de usuario:** si venís de
    Felucca, los samples USR1–3 se pierden al instalar (ese flash ahora guarda las canciones). Guardá tus WAV.
-2. Instalá `build/felucca.fwsc` con `python3 tools/fm1_install.py build/felucca.fwsc` o con una copia local
-   del instalador web (ver [BUILDING.md](BUILDING.md)).
+2. Instalá desde el **[instalador web](https://juanjiant-bit.github.io/JIANT/webapp/installer/)** (Chrome o Edge, el FM-1 por
+   USB directo a la computadora), con el firmware que tenga (el oficial V15, Felucca o una versión anterior de JIANT). Se
+   arma solo con cada cambio que entra a `main`. Sin internet: `python3 tools/fm1_install.py build/felucca.fwsc`.
 3. Para volver al firmware oficial, usá el actualizador de M-VAVE o **Return to official V15** del
    instalador.
 
