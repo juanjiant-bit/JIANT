@@ -546,13 +546,18 @@ int main(void)
             {   /* (JIANT 0.3) the nine new globals round trip behind a 2; a FUNB of 0.2 (behind a 1: five) loads the
                  * other four at their defaults; DRUM's E5 (FM) kept behind the kit's marker 2, 0 behind a 1 */
                 uint32_t sm;
-                a.g[G_RPRE] = 40; a.g[G_RFILT] = -30; a.g[G_RWIDE] = 90; a.g[G_DPIT] = -7; a.g[G_DSPRY] = 55;
+                a.g[G_RPRE] = 40; a.g[G_RFILT] = -30; a.g[G_RWIDE] = 90; a.g[G_DPIT] = -7; a.g[G_DSPRY] = 55; a.g[G_STRN] = -3;
                 a.t[1].engine = ENGI_DRUM; a.t[1].p[P_E5] = 77;
                 a.sum = proj_sum(&a);
-                ok = proj_pack(&st, &a) && st.raw[PROJ_GX_OFF] == 2u && proj_import(&c, &st, sizeof st) &&
+                ok = proj_pack(&st, &a) && st.raw[PROJ_GX_OFF] == 3u && proj_import(&c, &st, sizeof st) &&
                      c.g[G_RPRE] == 40 && c.g[G_RFILT] == -30 && c.g[G_RWIDE] == 90 && c.g[G_DPIT] == -7 &&
-                     c.g[G_DSPRY] == 55 && c.t[1].p[P_E5] == 77;
-                bad += check("FUNB: the nine new globals round trip (FILT -30, PITCH -7: signed), DRUM's FM kept", ok);
+                     c.g[G_DSPRY] == 55 && c.g[G_STRN] == -3 && c.t[1].p[P_E5] == 77;
+                bad += check("FUNB: the ten new globals round trip (FILT -30, PITCH -7, STRN -3: signed), DRUM's FM kept", ok);
+                st.raw[PROJ_GX_OFF] = 2u;                   /* (0.3: nine; STRN at its default) */
+                sm = proj_hash(st.raw, PROJ_STORE_SIZE - 4u);
+                memcpy(st.raw + PROJ_STORE_SIZE - 4u, &sm, 4);
+                ok = proj_import(&c, &st, sizeof st) && c.g[G_DSPRY] == 55 && c.g[G_STRN] == 0;
+                bad += check("FUNB of JIANT 0.3 (marker 2): its nine globals, STRN at its default", ok);
                 st.raw[PROJ_GX_OFF] = 1u;
                 st.raw[PROJ_DX_OFF + 90u] = 1u;
                 sm = proj_hash(st.raw, PROJ_STORE_SIZE - 4u);
@@ -560,7 +565,7 @@ int main(void)
                 ok = proj_import(&c, &st, sizeof st) && c.g[G_RPRE] == 40 && c.g[G_RFILT] == GP[G_RFILT].def &&
                      c.g[G_RWIDE] == GP[G_RWIDE].def && c.g[G_DPIT] == 0 && c.g[G_DSPRY] == 0 && c.t[1].p[P_E5] == 0;
                 bad += check("FUNB of JIANT 0.2 (markers 1): its five globals, the four new at their defaults, DRUM's E5 (ACC) FM 0", ok);
-                a.g[G_RPRE] = a.g[G_RFILT] = a.g[G_RWIDE] = a.g[G_DPIT] = a.g[G_DSPRY] = 0;
+                a.g[G_RPRE] = a.g[G_RFILT] = a.g[G_RWIDE] = a.g[G_DPIT] = a.g[G_DSPRY] = a.g[G_STRN] = 0;
                 a.t[1].engine = ENGI_FM6; a.t[1].p[P_E5] = 0;
                 a.sum = proj_sum(&a);
             }

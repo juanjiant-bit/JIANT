@@ -15,8 +15,8 @@ fm6_render 372
 fm6_op_run 72
 fm6_op_fb 26
 dx_run 465
-slicer_track 655
-fm1_alnk0_irq 42598
+slicer_track 551
+fm1_alnk0_irq 42617
 fm1_timer5_irq 35134
 click_render 30
 mod_begin 171

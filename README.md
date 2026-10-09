@@ -39,8 +39,9 @@ Con FX sostenido, las teclas son efectos que actúan mientras se mantienen y al 
 - **De audio**: REPEAT 1/8 · 1/16 · 1/32, LPF y HPF.
 - **Sobre las notas, tipo OP-Z**: OCT− y OCT+, 1/2 TEMPO, DECAY corto y largo, STUTTER 1/16 · 1/32, **ATK+** (sube el
   ataque de todo), ARP momentáneo y RANDOM (mueve notas y también pasos).
-- **Cuantizados a la grilla**: un efecto entra en la próxima semicorchea del transporte y el REPEAT toma la grilla
-  del transporte, así no hay saltos al tocarlos.
+- **Cuantizados a la grilla**: un efecto entra en la próxima semicorchea del transporte; el REPEAT y el SLICER
+  (gates y stutters por track) siguen la grilla del transporte desde el primer momento, aunque cambies el RATE o el
+  tempo con la canción sonando, así no hay saltos al tocarlos.
 - **Objetivo**: A#4 elige si afectan a todo, solo a los sintes o solo a la batería.
 - **Automatizables**: con REC armado se graban en una lane de 4 compases por sección.
 - **Perillas**: FILTER, CRUSH, THROW y DEPTH.
@@ -54,9 +55,15 @@ LFO sostenido abre la capa **MACRO**: las cuatro perillas son M1–M4 y la panta
 - **Alcance**: una macro puede mover varias cosas en varios tracks a la vez.
 - **Guardado**: se guardan con el proyecto.
 
+### Perillas con aceleración
+Girar rápido barre el rango entero (hasta ×16 en los parámetros de 0 a 127); girar lento es ajuste fino, de a un
+paso. Viene encendido; se apaga en MENU > KNOB ACCEL.
+
 ### Secuencias que se mueven
 - **SEQ > SHIFT**: corre la secuencia de cada track en pasos (**OFS**) y en altura (**PIT**). Los dos son
   automatizables; también están en SCL sostenido.
+- **Una escala para todo**: ROOT y SCALE elegidos en cualquier track valen para todos los tracks melódicos (la batería
+  no usa escala). **STRN** (SCL 2) mueve todas las secuencias hacia arriba o abajo por los grados de esa escala.
 - **ARP TRNS**: con el arpegiador en TRNS, las teclas transponen la secuencia sin tocar notas.
 - **Edición**: 64 pasos por track, piano roll, grilla de batería, parameter locks, chance, ratchets, slide y
   automatización de perillas.

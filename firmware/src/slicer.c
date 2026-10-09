@@ -72,14 +72,38 @@ static void slicer_start(void)   /* seq_start: the next block starts step 0 of e
 
 static uint32_t sl_pattern(const track_t *t) { return SL_PAT[(uint32_t)(t->p[P_SLPAT] - 1) % SL_NPAT]; }
 
-/* the step clock enters the next step */
-static void sl_enter(const track_t *t, sl_t *s)
+/* the step clock enters the next step, at sample at of the block. (JIANT) While the transport runs it is the
+ * transport's grid (mod.c clk_n / clk_pos: the 1/16 steps since PLAY, through tempo changes and an external clock):
+ * the step and the place in it from there, so a SLICER switched on, its RATE changed or the tempo moved lands on
+ * the bar at once, not only after the next PLAY. Swing pairs two steps: their pair from the grid, the step in it */
+static __attribute__((noinline)) void sl_enter(const track_t *t, sl_t *s, uint32_t at)
 {
-    uint32_t mode = (uint32_t)t->p[P_SLCR];
+    uint32_t mode = (uint32_t)t->p[P_SLCR], den = SL_DEN[(uint32_t)t->p[P_SLRATE] % 6u];
     s->idx = (uint8_t)((s->idx + 1u) & 15u);
-    s->base = (uint32_t)FS * 60u / (uint32_t)song.g[G_BPM] / SL_DEN[(uint32_t)t->p[P_SLRATE] % 6u];
-    s->len = swing_step_len(t, s->base, s->idx);   /* core.h, as seq.c step_samples */
+    s->base = (uint32_t)FS * 60u / (uint32_t)song.g[G_BPM] / den;
     s->pos = 0;
+    if (song.playing && clk_pos != CLK_START) {
+        uint32_t p = div_samples(2), q = 4u * p, a, k, r, b, rp, l0;
+        a = ((clk_n % 192u) * p + clk_pos + at) * den;  /* (192 1/16s: a whole number of every RATE's 16 steps) */
+        k = a / q;                                      /* the step (no swing), exact in 1/(4p den) */
+        r = (a % q) / den;                              /* .. samples into it */
+        b = q / den;
+        s->base = b;
+        l0 = swing_step_len(t, b, 0);
+        rp = (k & 1u ? b : 0u) + r;                     /* into the swung pair */
+        k &= ~1u;
+        if (2u * b - rp <= 16u) {                       /* (a hair before a step's start: that start) */
+            k += 2u;
+            rp = 0;
+        } else if (rp < l0 && l0 - rp <= 16u) {
+            rp = l0;
+        }
+        s->idx = (uint8_t)((k + (rp >= l0)) & 15u);
+        s->pos = rp >= l0 ? rp - l0 : rp;
+    }
+    s->len = swing_step_len(t, s->base, s->idx);   /* core.h, as seq.c step_samples */
+    if (s->pos >= s->len)
+        s->pos = s->len - 1u;
     s->bit = (uint8_t)((sl_pattern(t) >> s->idx) & 1u);
     s->rp = 0;
     s->loop = 0;
@@ -153,7 +177,7 @@ static void slicer_track(const track_t *t, int32_t *b, uint32_t n)
     while (i < n) {
         uint32_t m;
         if (s->pos >= s->len)
-            sl_enter(t, s);
+            sl_enter(t, s, i);
         m = s->len - s->pos;
         if (m > n - i)
             m = n - i;

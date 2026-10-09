@@ -164,7 +164,7 @@ _Static_assert(sizeof(project_store_t) == 3840u && PROJ_STORE_V7 == sizeof(proje
 _Static_assert(sizeof(dx_lane_t[8]) == 88u && PROJ_DX_OFF == 3216u, "the kit's place: FUNA's, 96 bytes on");
 #define PROJ_GX_OFF (PROJ_PFX_OFF + 37u)        /* (FUNB) after the lane, its tracks and the macros: 1, then the globals */
 _Static_assert(37u + 1u + (G_COUNT - G_NSTORE) <= 48u, "the new globals in the punch-in block's spare bytes");
-_Static_assert(G_COUNT - G_NSTORE == 9u, "marker 2 holds nine new globals");
+_Static_assert(G_COUNT - G_NSTORE == 10u, "marker 3 holds ten new globals");
 _Static_assert(68u + NTRK * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + sizeof(motion_store_t) <= PROJ_PFX_OFF,
                "the punch-in lane after the serialized part");
 typedef struct {                               /* a track of format 4, read only */
@@ -657,8 +657,8 @@ static int proj_pack(project_store_t *out, const project_t *q)
     b[PROJ_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
     for (i = 0; i < 4u; i++)
         b[PROJ_PFX_OFF + sizeof q->pfx_lane + 1u + i] = q->macro[i] & 127u;
-    b[PROJ_GX_OFF] = 2u;                                /* the new globals (biased bytes, as the parameters; 1: the
-                                                         * first five, G_DHPF .. G_RPRE; 2: nine, to G_DSPRY) */
+    b[PROJ_GX_OFF] = 3u;                                /* the new globals (biased bytes, as the parameters; 1: the
+                                                         * first five, G_DHPF .. G_RPRE; 2: nine, to G_DSPRY; 3: ten, G_STRN) */
     for (i = G_NSTORE; i < G_COUNT; i++)
         b[PROJ_GX_OFF + 1u + i - G_NSTORE] = (uint8_t)(clamp(q->g[i], -64, 127) + 64);
     memcpy(b + PROJ_DX_OFF, q->dx, sizeof q->dx);
@@ -705,9 +705,9 @@ static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
         return 0;
     memset(q, 0, sizeof *q); q->magic = PROJ_MAGIC; q->size = sizeof *q;
     memcpy(q->g, b + 8, G_NSTORE * 2u); q->sel = b[62];
-    for (i = G_NSTORE; i < G_COUNT; i++) {              /* the new globals: FUNB's (marker 1: the first five, 2: nine), */
+    for (i = G_NSTORE; i < G_COUNT; i++) {              /* the new globals: FUNB's (marker 1: the first five, 2: nine, 3: ten), */
         uint32_t gm = vb ? b[end - 48u + 37u] : 0u;     /* else their defaults */
-        q->g[i] = gm && gm <= 2u && i < G_NSTORE + (gm == 1u ? 5u : 9u)
+        q->g[i] = gm && gm <= 3u && i < G_NSTORE + (gm == 1u ? 5u : gm == 2u ? 9u : 10u)
                       ? (int16_t)clamp((int32_t)b[end - 48u + 38u + i - G_NSTORE] - 64, GP[i].min, GP[i].max) : GP[i].def;
     }
     q->parts = b[63]; q->phys = b[64];

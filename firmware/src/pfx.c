@@ -12,7 +12,7 @@
  *   E5 ARP             those notes one at a time at 1/16, up two octaves (DRUM: its hits in turn)
  *   F5 RANDOM          each new note: an octave, a fifth or a fourth away now and then (DRUM: +-3 semitones); and
  *                      (JIANT) the sequencer plays a step of its pattern at random now and then (seq.c seq_tick)
- * (JIANT) Quantized: an effect pressed while the transport runs goes in on the next 1/16 of the transport (ms_clock),
+ * (JIANT) Quantized: an effect pressed while the transport runs goes in on the next 1/16 of the transport (clk_pos),
  * so a repeat starts on the grid; let go, at once. The lane records the presses as they were (to the nearest step).
  * Of the repeats (STUTTER, ARP) the fastest held plays. A#4 (black key 8) steps the tracks they act on: ALL,
  * SYN (the synths), DRM (DRUM tracks) (pfx_tgt; the layer's header says it).
@@ -111,7 +111,8 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
     pfx_qon &= held;                                    /* (JIANT) let go: at once; pressed: on the next 1/16 */
     nw = held & ~pfx_qon;
     if (nw) {
-        uint32_t s16 = b >= 4u ? b / 4u : 1u, pos = ms_clock, ph = pos % s16;   /* (the block's start: before fx.c adds it) */
+        uint32_t s16 = div_samples(2), ph = clk_pos == CLK_START ? 0u : (clk_pos + n) % s16;   /* (the transport's 1/16:
+                                                         * before events_block clk_pos is the last block's start) */
         if (!song.playing || !ph || s16 - ph < n)
             pfx_qon |= nw;
     }

@@ -142,6 +142,8 @@ static void ui_power_on(void)
     proj_name[0] = 0;
     proj_cur = PROJ_NO_SLOT;
     memset(&favorites, 0, sizeof favorites);
+    ui_prefs = PREF_ACCEL_OFF;                    /* (the tests turn a detent a frame: one step each; KNOB ACCEL, ON on the
+                                                   * device by default, has its own test) */
     memset(pat_last, 0, sizeof pat_last);
     memset(proj_slot, 0, sizeof proj_slot);
     memset(up_bank, 0, sizeof up_bank);
@@ -1350,11 +1352,12 @@ static int test_menu_tabs(void)
     turn(EN_ALGO, 1); ok &= ui.menu_sel == MI_LEDS;
     bad += check("MENU: ALGORITHM steps between the tabs and wraps, each tab back at its last row", ok && ui.menu == 1);
     turn(EN_ALGO, 1); turn(EN_PRESET, -1);            /* CONTROL: from FX LATCH up to KNOB ACCEL */
-    ok = ui.menu_sel == MI_ACCEL && !(ui_prefs & PREF_ACCEL);
+    ok = ui.menu_sel == MI_ACCEL;
     for (i = 0; i < 4u; i++) {                         /* any of KNOB 1..4: right ON, left OFF */
-        turn(EN_K1 + i, 1); ok &= (ui_prefs & PREF_ACCEL) != 0u;
-        turn(EN_K1 + i, -1); ok &= !(ui_prefs & PREF_ACCEL);
+        turn(EN_K1 + i, 1); ok &= !(ui_prefs & PREF_ACCEL_OFF);
+        turn(EN_K1 + i, -1); ok &= (ui_prefs & PREF_ACCEL_OFF) != 0u;
     }
+    ui_prefs |= PREF_ACCEL_OFF;
     turn(EN_ALGO, 1); turn(EN_PRESET, 1);             /* AUDIO: USB LEVEL */
     ok &= ui.menu_sel == MI_USB;
     turn(EN_K4, 1); ok &= (ui_prefs & PREF_USB_FIXED) && fx_usb_fixed;
@@ -4759,7 +4762,7 @@ static int test_scale_leds(void)
          !scale_leds(&root) && lit_keys(fm1_led_dim) == ALL && !lit_keys(fm1_led_mid);
     bad += check("#127 SCALE LEDS OFF (the default): every key glows as before", ok);
     menu_put(MI_SCLLED, menu_step(MI_SCLLED, 1));
-    ok = menu_get(MI_SCLLED) == 1u && (ui_rec_prefs & 0x40u) && !ui_prefs && str_eq(menu_vname(MI_SCLLED, 1), "ON");
+    ok = menu_get(MI_SCLLED) == 1u && (ui_rec_prefs & 0x40u) && !(ui_prefs & ~PREF_ACCEL_OFF) && str_eq(menu_vname(MI_SCLLED, 1), "ON");
     sc = scale_leds(&root);
     bad += check("#127 MENU > CONTROL > SCALE LEDS ON (a bit of its own); C major: the white keys, the root C4 C5",
                  ok && sc == white && root == C_KEYS);
@@ -4894,7 +4897,8 @@ static int lk_same(uint32_t l)                      /* nothing changed but the l
     for (i = 0; i < NTRK; i++)
         for (j = 0; j < P_COUNT; j++) {
             int own = (l == LAYER_GLO && j == P_LEVEL) ||
-                      (l == LAYER_SCL && i == 0u && (j == P_ROOT || j == P_SCALE || j == P_SOFS || j == P_POFS)) ||
+                      (l == LAYER_SCL && (j == P_ROOT || j == P_SCALE || (i == 0u && (j == P_SOFS || j == P_POFS)))) ||   /* (one
+                                                         * scale: every melodic track's ROOT and SCALE) */
                       (l == LAYER_EDIT && i == 0u && (j < P_AMODE || j > P_AORDER));   /* (a load keeps the ARP) */
             if (lk_p[i][j] != trk[i].p[j] && !own)
                 return 0;
@@ -5103,7 +5107,7 @@ static int test_layer_knob_race(void)
     bad += check("  HOME with REC: FX's KNOB 1..4, GLO's KNOB 2..4 record no automation, HOME's sound stays", ok);
     /* FX LATCH: the macro stays when FX is let go, HOME's KNOB 1 never moved; FX + OCT- turns it off */
     ui_power_on();
-    fx_latch = 1;
+    fx_latch = PREF_LATCH | PREF_ACCEL_OFF;
     go_home(); frames(64);
     {
         int16_t *vp, c;
@@ -5118,7 +5122,7 @@ static int test_layer_knob_race(void)
         btn_down(B_FX); frames(560); press(B_OCTDN); btn_up(B_FX); frames(400);
         ok &= !perf_k[0] && *vp == c;
     }
-    fx_latch = 0;
+    fx_latch = PREF_ACCEL_OFF;
     bad += check("  FX LATCH: FILTER stays after FX is let go, HOME's KNOB 1 never moves; FX + OCT- turns it off", ok);
     /* no layer: a late detent is HOME's KNOB 1's, once (the next pass) */
     ui_power_on();
@@ -5841,7 +5845,7 @@ static int test_fx_latch(void)
     bad += check("  FX LATCH OFF by default: a key's effect ends when it is let go", ok);
     /* ON */
     ui_power_on();
-    fx_latch = 1;
+    fx_latch = PREF_LATCH | PREF_ACCEL_OFF;
     frame();                                                      /* (ui_input hands the setting to the ISR) */
     btn_down(B_FX); key_down(lpf); frame(); key_up(lpf); frame();
     turn(EN_K2, 30);
@@ -5896,7 +5900,7 @@ static int test_fx_latch(void)
     press(B_OCTUP);
     ok &= song.octave == 0;
     bad += check("  FX LATCH: FX + OCT- in one frame / held: no octave; OCT- alone: the octave", ok);
-    fx_latch = 0;
+    fx_latch = PREF_ACCEL_OFF;
     frame();
     btn_down(B_FX); frame(); btn_down(B_OCTDN); frame(); btn_up(B_OCTDN); frame();
     ok = song.octave == -1 && ui.layer == LAYER_FX;               /* LATCH OFF: FX's HOLD layer, OCT- is the octave */
@@ -5918,7 +5922,7 @@ static int test_fx_latch(void)
     ok &= ui.home && !ui.layer;
     bad += check("  FX LATCH OFF: FX + OCT- quick / held shifts the octave (no page); FX tap: the FX page; "
                  "GLO + OCT- quick: no octave, nothing put back", ok);
-    fx_latch = 1;
+    fx_latch = PREF_LATCH | PREF_ACCEL_OFF;
     frame();
     btn_down(B_FX); key_down(lpf); frame(); key_up(lpf); frame(); btn_up(B_FX); frame();
     hold(B_HOME);
@@ -5934,16 +5938,16 @@ static int test_fx_latch(void)
                  ok && !ui.menu);
     {   /* kept with the settings, in the favorites record (an older one: OFF) */
         persist_t p;
-        fx_latch = 1;
+        fx_latch = PREF_LATCH | PREF_ACCEL_OFF;
         settings_export(&p);
-        fx_latch = 0;
+        fx_latch = PREF_ACCEL_OFF;
         ok = settings_import(&p, (int)sizeof p) == 1 && (fx_latch & 1u);
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;                                    /* PER3: no favorites */
         ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !(fx_latch & 1u);
         bad += check("  FX LATCH saved with the settings; settings from before it: OFF", ok);
     }
-    fx_latch = 0;
+    fx_latch = PREF_ACCEL_OFF;
     return bad;
 }
 
@@ -5998,9 +6002,9 @@ static int test_div_order(void)
     return bad;
 }
 
-/* #52 MENU > KNOB ACCEL (OFF by default, #23): ON, a sustained fast turn of a wide value goes x2..x4 (x8 over a range
- * above 64, #126); a slow turn, the start of a turn, a lone quick detent and a reversal are one step per detent; the
- * sign is always the detents' */
+/* #52 KNOB ACCEL (JIANT: ON by default; MENU > KNOB ACCEL OFF): a sustained fast turn of a wide value goes x2 .. x16
+ * by its speed (capped by the range: x2 up to 32, x4 up to 64, x8 up to 100, x16 above); a slow turn, the start of a
+ * turn, a lone quick detent and a reversal are one step per detent; the sign is always the detents' */
 static uint32_t acc_ms(uint32_t role, const uint16_t *gaps, uint32_t n, int32_t dir, int32_t range, int32_t *out)
 {
     uint32_t k, sum = 0;
@@ -6016,82 +6020,84 @@ static int test_knob_accel(void)
     int bad = 0, ok;
     uint32_t k, seed = 12345u;
     int32_t o[16];
-    static const uint16_t SLOW[8] = {500, 60, 60, 45, 41, 60, 80, 60}, MID[8] = {500, 30, 30, 30, 26, 30, 30, 30},
+    static const uint16_t SLOW[8] = {500, 80, 70, 65, 61, 90, 80, 70}, F40[8] = {500, 40, 40, 40, 40, 40, 40, 40},
                           F20[8] = {500, 20, 20, 20, 20, 20, 20, 20}, F10[8] = {500, 10, 10, 10, 10, 10, 10, 10},
                           BOUNCE[8] = {500, 2, 300, 1, 300, 3, 300, 2};
     ui_power_on();
-    ok = acc_ms(EN_K1, F10, 8, 1, 127, o) == 8u;                  /* OFF (the default) */
-    ui_prefs = PREF_ACCEL;
+    ui_prefs = PREF_ACCEL_OFF;
+    ok = acc_ms(EN_K1, F10, 8, 1, 127, o) == 8u;                  /* OFF */
+    ui_prefs = 0;                                                  /* ON (the device's default) */
     memset(ui.enc_t, 0, sizeof ui.enc_t);
-    ok &= acc_ms(EN_K1, SLOW, 8, 1, 127, o) == 8u && acc_ms(EN_K2, MID, 8, -1, 127, o) == 8u && o[7] == -1;
-    ok &= acc_ms(EN_K3, BOUNCE, 8, 1, 127, o) == 8u;
-    bad += check("#52 KNOB ACCEL: OFF by default; ON, slow (>= 26 ms a detent) and lone quick detents: 1 step each", ok);
+    ok &= acc_ms(EN_K1, SLOW, 8, 1, 127, o) == 8u && acc_ms(EN_K3, BOUNCE, 8, 1, 127, o) == 8u;
+    bad += check("#52 KNOB ACCEL: ON by default; OFF 1 step a detent; ON, slow (>= 60 ms a detent) and lone quick ones: 1 each", ok);
     fm1_ms += 1000;
-    acc_ms(EN_K1, F20, 8, 1, 64, o);
-    ok = o[0] == 1 && o[1] == 1 && o[2] == 2 && o[7] == 2;          /* 20 ms a detent: x2 from the third */
+    acc_ms(EN_K2, F40, 8, -1, 127, o);
+    ok = o[0] == -1 && o[1] == -1 && o[2] == -2 && o[7] == -2;      /* 40 ms a detent: x2 from the third */
+    acc_ms(EN_K1, F20, 8, 1, 127, o);
+    ok &= o[0] == 1 && o[1] == 1 && o[2] == 4 && o[7] == 4;         /* 20 ms: x4 */
     acc_ms(EN_K1, F10, 8, 1, 64, o);                               /* (a pause of 500 ms first: a new turn) */
-    ok &= o[0] == 1 && o[1] == 1 && o[2] == 4 && o[7] == 4;         /* 10 ms: x4 (the cap of a range <= 64) */
-    fm1_ms += 15; ok &= accel(EN_K1, 1, 64) == 3;                  /* 15 ms: x3 */
+    ok &= o[0] == 1 && o[1] == 1 && o[2] == 4 && o[7] == 4;         /* 10 ms: x8, capped x4 (a range <= 64) */
     fm1_ms += 10; ok &= accel(EN_K1, -1, 64) == -1;                /* reversed: one step, the right sign */
     fm1_ms += 10; ok &= accel(EN_K1, -1, 64) == -1;                /* (the turn starts again) */
     fm1_ms += 10; ok &= accel(EN_K1, -1, 64) == -4;
     fm1_ms += 30; ok &= accel(EN_K1, -3, 64) == -12;               /* 3 detents in one read (10 ms each): x4 */
-    bad += check("#52 KNOB ACCEL ON: 20 ms a detent x2, 15 ms x3, 10 ms x4 from a turn's third detent; reversal x1", ok);
-    {   /* #126 a range above 64: 10 ms x5, 8 ms x6, 6 ms and less x8; a flick of 12 detents in ~120 ms, faster in
-         * the middle, moves a -100..100 value ~50 (was 38); 12 even ones 52 */
-        static const uint16_t FLICK[12] = {500, 16, 12, 10, 8, 7, 7, 8, 10, 12, 16, 20}, F6[8] = {500, 6, 6, 5, 4, 6, 6, 6};
+    bad += check("#52 KNOB ACCEL ON: 40 ms a detent x2, 20 ms x4, 10 ms x8 (capped by the range) from a turn's third detent; reversal x1", ok);
+    {   /* a range above 100: 10 ms x8, 5 ms and less x16; a flick of 12 detents in ~120 ms sweeps most of 0..127 */
+        static const uint16_t FLICK[12] = {500, 16, 12, 10, 8, 7, 7, 8, 10, 12, 16, 20}, F5[8] = {500, 5, 5, 5, 4, 5, 5, 5};
         uint32_t f;
         fm1_ms += 1000;
-        f = acc_ms(EN_K2, FLICK, 12, 1, 200, o);
-        ok = f == 47u && o[0] == 1 && o[1] == 1;
+        f = acc_ms(EN_K2, FLICK, 12, 1, 127, o);
+        ok = f >= 70u && f <= 110u && o[0] == 1 && o[1] == 1;
         fm1_ms += 1000;
-        ok &= acc_ms(EN_K2, F10, 8, -1, 200, o) == 2u + 6u * 5u && o[7] == -5;
+        ok &= acc_ms(EN_K2, F10, 8, -1, 200, o) == 2u + 6u * 8u && o[7] == -8;
         fm1_ms += 1000;
-        ok &= acc_ms(EN_K2, F6, 8, 1, 127, o) == 2u + 6u * 8u;
+        ok &= acc_ms(EN_K2, F5, 8, 1, 127, o) == 2u + 6u * 16u;
         fm1_ms += 1000;
-        ok &= acc_ms(EN_K2, F6, 8, 1, 64, o) == 2u + 6u * 4u;      /* (a range <= 64: x4 at most) */
+        ok &= acc_ms(EN_K2, F5, 8, 1, 100, o) == 2u + 6u * 8u;      /* (a range <= 100: x8 at most) */
         fm1_ms += 1000;
-        ok &= acc_ms(EN_K2, F6, 8, 1, 0, o) == 8u;                  /* (a list) */
-        printf("  #126 a flick of 12 detents over %u ms on -100..100: %u steps\n", 126u, (unsigned)f);
-        bad += check("#126 KNOB ACCEL ON over a range above 64: 10 ms x5 .. 6 ms x8; a 12-detent flick ~120 ms: 47", ok);
+        ok &= acc_ms(EN_K2, F5, 8, 1, 24, o) == 2u + 6u * 2u;       /* (a range <= 32: x2 at most) */
+        fm1_ms += 1000;
+        ok &= acc_ms(EN_K2, F5, 8, 1, 0, o) == 8u;                  /* (a list) */
+        printf("  a flick of 12 detents over %u ms on 0..127: %u steps\n", 126u, (unsigned)f);
+        bad += check("KNOB ACCEL ON over a range above 100: 10 ms x8, 5 ms x16; a 12-detent flick sweeps 70..110 of 127", ok);
     }
-    fm1_ms += 1000; acc_ms(EN_K4, F10, 8, 1, 32, o);
-    ok = o[7] == 1;                                                /* a narrow range (<= 32): never */
+    fm1_ms += 1000; acc_ms(EN_K4, F10, 8, 1, 16, o);
+    ok = o[7] == 1;                                                /* a narrow range (<= 16): never */
     fm1_ms += 1000; acc_ms(EN_K4, F10, 8, 1, 0, o);
     ok &= o[7] == 1;                                               /* a list of names (range 0 at the callers) */
     for (k = 0; k < 20000u && ok; k++) {                           /* random turns: the sign is the detents', at */
-        int32_t s, r, gap;                                         /* most x8, a slow detent exactly one step */
+        int32_t s, r, gap;                                         /* most x16, a slow detent exactly one step */
         seed = seed * 1103515245u + 12345u;
         s = (int32_t)((seed >> 16) % 7u) - 3;
-        gap = (int32_t)((seed >> 8) % 90u);
+        gap = (int32_t)((seed >> 8) % 120u);
         fm1_ms += (uint32_t)gap;
         r = accel(EN_K1 + (seed & 3u), s, 127);
-        ok &= s ? (r > 0) == (s > 0) && r * s <= 8 * s * s && r * s >= s * s : r == 0;
-        if (gap >= 40 * (s < 0 ? -s : s) && r != s) ok = 0;
+        ok &= s ? (r > 0) == (s > 0) && r * s <= 16 * s * s && r * s >= s * s : r == 0;
+        if (gap >= 60 * (s < 0 ? -s : s) && r != s) ok = 0;
     }
-    bad += check("#52 KNOB ACCEL: never on narrow values or lists; 20000 random reads keep the sign, x1..x8, slow = x1", ok);
-    {   /* the real knob: LEVEL on MIXER, a detent a frame (16 ms): 1 + 1 + 3 x 6 = 20 for 8 detents; OFF: 8 */
+    bad += check("#52 KNOB ACCEL: never on narrow values or lists; 20000 random reads keep the sign, x1..x16, slow = x1", ok);
+    {   /* the real knob: LEVEL on MIXER (0..127), a detent a frame (16 ms): 1 + 1 + 5 x 6 = 32 for 8 detents; OFF: 8 */
         int16_t v0;
-        ui_power_on(); ui_prefs = PREF_ACCEL;
+        ui_power_on(); ui_prefs = 0;
         go_title("MIXER");
         TSEL->p[P_LEVEL] = 40; v0 = TSEL->p[P_LEVEL];
         fm1_ms += 1000;
         for (k = 0; k < 8u; k++) turn(EN_K1, 1);
-        ok = TSEL->p[P_LEVEL] - v0 == 20;
-        ui_prefs = 0; TSEL->p[P_LEVEL] = 40; fm1_ms += 1000;
+        ok = TSEL->p[P_LEVEL] - v0 == 32;
+        ui_prefs = PREF_ACCEL_OFF; TSEL->p[P_LEVEL] = 40; fm1_ms += 1000;
         for (k = 0; k < 8u; k++) turn(EN_K1, 1);
         ok &= TSEL->p[P_LEVEL] == 48;
-        bad += check("#52 KNOB ACCEL on MIXER LEVEL: a fast turn of 8 detents moves 20 (OFF: 8)", ok);
+        bad += check("#52 KNOB ACCEL on MIXER LEVEL: a fast turn of 8 detents moves 32 (OFF: 8)", ok);
     }
-    {   /* #126 the FX layer's KNOB 1 (FILTER -100..100): a flick of 12 detents 10 ms apart ~52 (was 12: the layer's
-         * knobs went round accel); OFF: 12; slow (60 ms): 12; 6 right then 6 left fast: back to 0; GLO's LEVEL too */
-        static const uint32_t GAP[4] = {10u, 10u, 60u, 10u};
+    {   /* #126 the FX layer's KNOB 1 (FILTER -100..100): a flick of 12 detents 10 ms apart; OFF: 12; slow (70 ms): 12;
+         * 6 right then 6 left fast: back to 0; GLO's LEVEL too */
+        static const uint32_t GAP[4] = {10u, 10u, 70u, 10u};
         static const uint32_t ON[4] = {1u, 0u, 1u, 1u};
         int32_t got[4], g;
         uint32_t c;
         for (c = 0; c < 4u; c++) {
             ui_power_on();
-            ui_prefs = ON[c] ? PREF_ACCEL : 0u;
+            ui_prefs = ON[c] ? 0u : PREF_ACCEL_OFF;
             go_home(); frames(64);
             btn_down(B_FX); frames(560);
             for (k = 0; k < 12u; k++) {
@@ -6102,10 +6108,10 @@ static int test_knob_accel(void)
             got[c] = perf_k[0];
             btn_up(B_FX); frames(400);
         }
-        printf("  #126 FX FILTER, 12 detents: ON 10 ms %d, OFF %d, ON 60 ms %d, ON 6 right 6 left %d\n", (int)got[0],
+        printf("  #126 FX FILTER, 12 detents: ON 10 ms %d, OFF %d, ON 70 ms %d, ON 6 right 6 left %d\n", (int)got[0],
                (int)got[1], (int)got[2], (int)got[3]);
-        ok = got[0] >= 35 && got[0] <= 60 && got[1] == 12 && got[2] == 12 && got[3] == 0;
-        ui_power_on(); ui_prefs = PREF_ACCEL;
+        ok = got[0] >= 50 && got[1] == 12 && got[2] == 12 && got[3] == 0;
+        ui_power_on(); ui_prefs = 0;
         go_home(); frames(64);
         trk[1].p[P_LEVEL] = 0;
         btn_down(B_GLO); frames(560);
@@ -6117,20 +6123,20 @@ static int test_knob_accel(void)
         g = trk[1].p[P_LEVEL];
         btn_up(B_GLO); frames(400);
         ok &= g > 12 + 12;
-        bad += check("#126 KNOB ACCEL on the FX layer (FILTER: a 12-detent flick >= 35, OFF 12, slow 12) and GLO LEVEL", ok);
+        bad += check("#126 KNOB ACCEL on the FX layer (FILTER: a 12-detent flick >= 50, OFF 12, slow 12) and GLO LEVEL", ok);
     }
-    {   /* saved with the settings; settings from before it: OFF */
+    {   /* saved with the settings; settings from before it: ON (the bit means OFF) */
         persist_t p;
-        ui_prefs = PREF_ACCEL;
+        ui_prefs = PREF_ACCEL_OFF;
         settings_export(&p);
         ui_prefs = 0;
-        ok = settings_import(&p, (int)sizeof p) == 1 && ui_prefs == PREF_ACCEL;
+        ok = settings_import(&p, (int)sizeof p) == 1 && ui_prefs == PREF_ACCEL_OFF;
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !ui_prefs;
-        bad += check("#52 KNOB ACCEL saved with the settings; settings from before it: OFF", ok);
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !(ui_prefs & PREF_ACCEL_OFF);
+        bad += check("#52 KNOB ACCEL OFF saved with the settings; settings from before it: ON", ok);
     }
-    ui_prefs = 0;
+    ui_prefs = PREF_ACCEL_OFF;
     return bad;
 }
 
@@ -6194,10 +6200,10 @@ static int test_usb_level(void)
         persist_t p;
         settings_export(&p);
         ui_prefs = 0;
-        ok &= settings_import(&p, (int)sizeof p) == 1 && ui_prefs == PREF_USB_FIXED;
+        ok &= settings_import(&p, (int)sizeof p) == 1 && (ui_prefs & ~PREF_ACCEL_OFF) == PREF_USB_FIXED;
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !ui_prefs;
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !(ui_prefs & ~PREF_ACCEL_OFF);
         frame();
         ok &= !fx_usb_fixed;
     }
@@ -6363,8 +6369,8 @@ static int test_usb_serial(void)
         persist_t p;
         settings_export(&p);
         ui_prefs = 0;
-        ok = settings_import(&p, (int)sizeof p) == 1 && ui_prefs == PREF_SERIAL_OFF;
-        ok &= settings_import(&p, (int)sizeof p) == 1 && ui_prefs == PREF_SERIAL_OFF;     /* (again: the same) */
+        ok = settings_import(&p, (int)sizeof p) == 1 && (ui_prefs & ~PREF_ACCEL_OFF) == PREF_SERIAL_OFF;
+        ok &= settings_import(&p, (int)sizeof p) == 1 && (ui_prefs & ~PREF_ACCEL_OFF) == PREF_SERIAL_OFF;     /* (again: the same) */
         /* boot (main.c): the settings, usb_serial_apply, then usb_start: the console-less descriptors from the start */
         usb_cdc_on = 1;
         usb.up = 0;
@@ -6418,7 +6424,7 @@ static int test_bpm_lock(void)
     press(B_OCTUP); ok &= (ui_prefs & PREF_BPM_LOCK) && ui.menu;      /* OCT+: ON */
     press(B_OCTDN); ok &= !(ui_prefs & PREF_BPM_LOCK) && ui.menu;     /* OCT-: OFF */
     press(B_OCTUP);
-    ok &= ui_prefs == PREF_BPM_LOCK;                                  /* (no other setting moved) */
+    ok &= (ui_prefs & ~PREF_ACCEL_OFF) == PREF_BPM_LOCK;                                  /* (no other setting moved) */
     press(B_HOME);
     bad += check("#58 MENU > BPM LOCK: KNOB 1 right / OCT+ ON, left / OCT- OFF; SELECT in the menu is no tempo", ok && !ui.menu);
 
@@ -6478,14 +6484,14 @@ static int test_bpm_lock(void)
         persist_t p, q;
         settings_export(&p);
         ui_prefs = 0;
-        ok = settings_import(&p, (int)sizeof p) == 1 && ui_prefs == PREF_BPM_LOCK;
+        ok = settings_import(&p, (int)sizeof p) == 1 && (ui_prefs & ~PREF_ACCEL_OFF) == PREF_BPM_LOCK;
         q = p;
-        ok &= settings_import(&q, (int)sizeof q) == 1 && ui_prefs == PREF_BPM_LOCK && !memcmp(&p, &q, sizeof p);
+        ok &= settings_import(&q, (int)sizeof q) == 1 && (ui_prefs & ~PREF_ACCEL_OFF) == PREF_BPM_LOCK && !memcmp(&p, &q, sizeof p);
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;                                        /* (PER3: before the favorites record) */
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !ui_prefs;
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !(ui_prefs & ~PREF_ACCEL_OFF);
         q = p;
-        ok &= settings_import(&q, (int)sizeof q) == 1 && !ui_prefs;
+        ok &= settings_import(&q, (int)sizeof q) == 1 && !(ui_prefs & ~PREF_ACCEL_OFF);
         frame();
         b0 = song.g[G_BPM];
         go_home(); frame();
@@ -6532,7 +6538,7 @@ static int test_large(void)
     press(B_OCTUP); ok &= (ui_prefs & PREF_LARGE) && ui.menu;     /* OCT+: ON */
     press(B_OCTDN); ok &= !(ui_prefs & PREF_LARGE) && ui.menu;    /* OCT-: OFF */
     press(B_OCTUP);
-    ok &= ui_prefs == PREF_LARGE && ui_style == ST_FLAT;          /* (no other setting moved) */
+    ok &= (ui_prefs & ~PREF_ACCEL_OFF) == PREF_LARGE && ui_style == ST_FLAT;          /* (no other setting moved) */
     press(B_HOME);
     bad += check("#15 MENU > LARGE: OFF by default, under STYLE; KNOB 1 right / OCT+ ON, left / OCT- OFF", ok && !ui.menu);
 
@@ -6587,14 +6593,14 @@ static int test_large(void)
         persist_t p, q;
         settings_export(&p);
         ui_prefs = 0;
-        ok = settings_import(&p, (int)sizeof p) == 1 && ui_prefs == PREF_LARGE;
+        ok = settings_import(&p, (int)sizeof p) == 1 && (ui_prefs & ~PREF_ACCEL_OFF) == PREF_LARGE;
         q = p;
-        ok &= settings_import(&q, (int)sizeof q) == 1 && ui_prefs == PREF_LARGE && !memcmp(&p, &q, sizeof p);
+        ok &= settings_import(&q, (int)sizeof q) == 1 && (ui_prefs & ~PREF_ACCEL_OFF) == PREF_LARGE && !memcmp(&p, &q, sizeof p);
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;                                    /* (PER3: before the favorites record) */
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !ui_prefs;
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !(ui_prefs & ~PREF_ACCEL_OFF);
         q = p;
-        ok &= settings_import(&q, (int)sizeof q) == 1 && !ui_prefs;
+        ok &= settings_import(&q, (int)sizeof q) == 1 && !(ui_prefs & ~PREF_ACCEL_OFF);
         ui.force = 1; frame();
         ok &= large_kind() == LK_OFF && lg_px(30, Y_SEP_END + 1) == T_BG;
         bad += check("#15 LARGE saved with the settings; settings from before it: OFF (idempotent)", ok);
@@ -6673,7 +6679,7 @@ static int test_menu_prefs(void)
         ok = settings_import(&p, (int)sizeof p) == 1 && (ui_prefs & PREF_ANIM_OFF);
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !ui_prefs;
+        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && !(ui_prefs & ~PREF_ACCEL_OFF);
         bad += check("#46 ANIM saved with the settings; settings from before it: ON", ok);
     }
     ui_prefs = 0;
@@ -6703,7 +6709,7 @@ static int test_style(void)
     press(B_OCTUP); ok &= ui_style == ST_LINE;
     press(B_OCTDN); ok &= ui_style == ST_FLAT && ux.style == ST_FLAT && ux.surf != ux.bg && ui.menu == 1u;
     press(B_OCTUP); ok &= ui_style == ST_LINE;
-    ok &= !(ui_prefs & 0xFFu) && settings_leds == LEDS_DIM;   /* (no other setting moved) */
+    ok &= !(ui_prefs & 0xFFu & ~PREF_ACCEL_OFF) && settings_leds == LEDS_DIM;   /* (no other setting moved) */
     hold(B_HOME);
     ok &= !ui.menu && ux.style == ST_LINE && host_screen[rule] == swap16(T_RULE);
     bad += check("MENU > STYLE: FLAT by default, KNOB 1 / OCT-+ FLAT / LINE, LINE drawn (rules, no SURF)", ok);
@@ -6912,6 +6918,43 @@ static int test_head_metronome(void)
     return bad;
 }
 
+/* (JIANT 0.4) one scale: ROOT / SCALE changed on the selected track become every melodic track's (not a DRUM
+ * track's; selecting a track changes nothing); STRN moves the notes along the scale */
+static int test_scale_link(void)
+{
+    int bad = 0, ok;
+    uint32_t k;
+    ui_power_on();
+    go_home(); frames(8);
+    for (k = 0; k < 3u; k++)
+        set_engine_of(&trk[k], ENGI_PHYS_TO);      /* (ANALOG) */
+    set_engine_of(&trk[3], ENGI_DRUM);
+    for (k = 0; k < NTRK; k++) { trk[k].p[P_ROOT] = 0; trk[k].p[P_SCALE] = 0; }
+    frames(48);
+    song.sel = 1; frames(48);
+    TSEL->p[P_ROOT] = 9; TSEL->p[P_SCALE] = 2;    /* (any path: a knob, the layer, the editor) */
+    frames(48);
+    ok = trk[0].p[P_ROOT] == 9 && trk[2].p[P_SCALE] == 2 && trk[1].p[P_ROOT] == 9 && trk[3].p[P_ROOT] == 0 && trk[3].p[P_SCALE] == 0;
+    trk[2].p[P_ROOT] = 4;                          /* another track's own value; selecting it moves nothing */
+    song.sel = 2; frames(48);
+    ok &= trk[0].p[P_ROOT] == 9 && trk[2].p[P_ROOT] == 4;
+    bad += check("SCALE: ROOT / SCALE on the selected track -> every melodic track (not DRUM); selecting moves nothing", ok);
+    trk[0].p[P_ROOT] = 0;                          /* C major (SCALE 1: check its mask) */
+    trk[0].p[P_SCALE] = 0;
+    {
+        int32_t a = scale_steps(&trk[0], 60, 2), b = scale_steps(&trk[0], 60, -1), c = scale_steps(&trk[0], 61, 0);
+        uint32_t m = scale_mask(&trk[0]);
+        ok = (m == 0xFFFu && a == 62 && b == 59 && c == 61) || (m == 0xAB5u && a == 64 && b == 59 && c == 60);
+        trk[0].p[P_SCALE] = 1;
+        m = scale_mask(&trk[0]);
+        a = scale_steps(&trk[0], 60, 7);           /* a 7-note scale: 7 steps = an octave */
+        ok &= __builtin_popcount(m) != 7 || a == 72;
+        printf("  STRN: masks %03x / %03x, C4 +2 -> %d\n", (unsigned)SCALE_MASK[0], (unsigned)m, (int)scale_steps(&trk[0], 60, 2));
+    }
+    bad += check("STRN: the notes up / down the scale's steps (a 7-note scale: 7 steps an octave)", ok);
+    return bad;
+}
+
 int main(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -6955,6 +6998,7 @@ int main(void)
     bad += test_head_metronome();
     bad += test_div_order();
     bad += test_knob_accel();
+    bad += test_scale_link();
     bad += test_usb_level();
     bad += test_click_menu();
     bad += test_usb_serial();

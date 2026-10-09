@@ -74,7 +74,10 @@ No command changed; an editor that takes P_COUNT, G_COUNT and P_E0 from `INFO` k
 | G 34 | PITCH | (0.3) the GRAIN delay, −12..12 semitones (fmt SEMI): each repeat through two grains this far up / down |
 | G 35 | SPRY | (0.3) its spray, 0..127: each grain from a random place up to ~190 ms back (PITCH and SPRY 0: the plain delay) |
 
-**JIANT 0.3: 36 globals.** G_COUNT 36 (G 32..35 above). DRUM's E6 (id P_E0 + 5) is FM, 0..127 (once ACC): its sounds through
+| G 36 | STRN | (0.4) every sequence (not a kit) this many steps up / down its scale, −14..14; ROOT and SCALE are one for every
+melodic track: set on one, the others follow |
+
+**JIANT 0.4: 37 globals** (G 36 STRN, stored behind a 3). **JIANT 0.3: 36 globals.** G_COUNT 36 (G 32..35 above). DRUM's E6 (id P_E0 + 5) is FM, 0..127 (once ACC): its sounds through
 harmonic FM, eight ratio bands; a project or user preset saved before loads its DRUM tracks with FM 0.
 
 Projects are FUNB (`46 55 4E 42`, 3840 bytes: FUNA's layout, 96 bytes longer, so everything after the data moved up by
