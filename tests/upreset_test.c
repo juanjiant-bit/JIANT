@@ -231,9 +231,30 @@ int main(void)
         st_save(OBJ_UPRESET0 + 1, &up_bank[1], sizeof up_bank[1]);
         memset(up_bank, 0, sizeof up_bank);
         up_bank_check(1, st_load(OBJ_UPRESET0 + 1, &up_bank[1], sizeof up_bank[1]));
-        ok = up_used(16) && up_value(up_rec(16), P_E5) == 0 && up_rec(16)->packed[UP_FM_AT] == UP_FM_MARK &&
+        ok = up_used(16) && up_value(up_rec(16), P_E5) == 0 && up_rec(16)->packed[UP_FM_AT] == UP_V04_MARK &&
              up_used(17) && up_value(up_rec(17), P_E5) == 100;
         bad += check("DRUM record before FM: its ACC (E5) loads as FM 0; one stored since keeps its FM", ok);
+    }
+
+    /* (JIANT 0.4) a LOFI record of 0.3 (no 0.4 mark): its TONE (E7) its CUT (E4), BEND MASK 0; an ANALOG one's KTR
+     * (E7) INT 0; marked records as they are */
+    {
+        up_rec_t lo = r, an = r, lo4 = r;
+        lo.engine = lo4.engine = 3; an.engine = 0;
+        up_set_value(&lo, P_E4, 30); up_set_value(&lo, P_E6, 2); up_set_value(&lo, P_E7, 90);
+        up_set_value(&lo4, P_E4, 30); up_set_value(&lo4, P_E6, 2); up_set_value(&lo4, P_E7, 90);
+        up_set_value(&an, P_E7, 64);
+        lo.packed[UP_FM_AT] = UP_FM_MARK; an.packed[UP_FM_AT] = 0; lo4.packed[UP_FM_AT] = UP_V04_MARK;
+        *up_rec(16) = lo;
+        *up_rec(17) = an;
+        *up_rec(18) = lo4;
+        st_save(OBJ_UPRESET0 + 1, &up_bank[1], sizeof up_bank[1]);
+        memset(up_bank, 0, sizeof up_bank);
+        up_bank_check(1, st_load(OBJ_UPRESET0 + 1, &up_bank[1], sizeof up_bank[1]));
+        ok = up_value(up_rec(16), P_E4) == 90 && up_value(up_rec(16), P_E6) == 0 && up_value(up_rec(16), P_E7) == 0 &&
+             up_value(up_rec(17), P_E7) == 0 && up_value(up_rec(18), P_E4) == 30 && up_value(up_rec(18), P_E7) == 90 &&
+             up_rec(16)->packed[UP_FM_AT] == UP_V04_MARK;
+        bad += check("0.3 records: LOFI TONE -> CUT, BEND MASK 0; ANALOG KTR -> INT 0; marked ones kept", ok);
     }
 
     /* SAMPLE SET 4 (PERC, the GM kit, retired after 1.0.2) -> the DRUM engine with its default kit: from flash (an

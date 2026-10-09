@@ -1453,15 +1453,15 @@ function makeMockDevice(opt = {}) {
   const P = (name, e, env = [10, 70, 90, 60], mono = 0, pat = 0) => ({ name, e, env, mono, pat });
   const ENG = [
     { name: "ANALOG", titles: ["OSC", "FLT"], edit: [E("WAVE", ["SAW", "SQR", "TRI", "SIN", "PWM", "SYNC", "RING", "SAW3"], 0), D("DTN", F.INT, 0, 127, 10, null, "ct"), D("MIX", F.PCT, 0, 127, 64),
-        D("NOIS", F.PCT, 0, 127, 0), D("CUT", F.CUTOFF, 0, 127, 90), D("RES", F.PCT, 0, 127, 30), D("DRV", F.PCT, 0, 127, 0), D("KTR", F.PCT, 0, 127, 64)],
-      presets: [P("SAW LEAD", [0, 12, 64, 0, 90, 30, 10, 64], [4, 70, 100, 50], 1, 4), P("SOFT PAD", [0, 20, 64, 4, 60, 10, 0, 32], [80, 90, 110, 95], 0, 5),
-        P("SQR BASS", [1, 0, 0, 0, 50, 70, 40, 64], [0, 60, 40, 30], 1, 2), P("PWM STR", [4, 8, 40, 0, 75, 20, 0, 48], [60, 80, 110, 85], 0, 5),
-        P("ACID", [0, 0, 0, 0, 50, 100, 25, 64], [0, 55, 20, 30], 1, 1), P("SINE KEY", [3, 6, 50, 0, 127, 0, 0, 0], [2, 80, 30, 70], 0, 6),
-        P("RAVE", [4, 30, 64, 0, 85, 20, 30, 64], [20, 80, 110, 60], 1, 13), P("SUB BASS", [3, 0, 0, 0, 40, 0, 20, 0], [0, 60, 100, 20], 1, 8),
-        P("PLUCK", [0, 8, 50, 0, 30, 40, 0, 64], [0, 88, 0, 60], 0, 3), P("BRASS", [0, 10, 64, 0, 45, 20, 10, 64], [35, 70, 90, 45], 0, 6),
-        P("WIND", [0, 0, 0, 90, 30, 90, 0, 0], [60, 90, 60, 80], 0, 5), P("STRINGS", [0, 25, 64, 0, 70, 10, 0, 32], [70, 90, 115, 90], 0, 5),
-        P("SYNC LEAD", [5, 11, 90, 0, 82, 30, 10, 64], [2, 70, 100, 40], 1, 4), P("RING BELL", [6, 18, 100, 0, 110, 20, 0, 32], [0, 92, 0, 80], 0, 7),
-        P("FAT BASS", [7, 9, 64, 0, 62, 45, 20, 64], [0, 62, 60, 25], 1, 2)] },
+        D("NOIS", F.PCT, 0, 127, 0), D("CUT", F.CUTOFF, 0, 127, 90), D("RES", F.PCT, 0, 127, 30), D("DRV", F.PCT, 0, 127, 0), D("INT", F.SEMI, -24, 24, 0)],   /* (JIANT 0.4: INT, osc 2's interval, was KTR) */
+      presets: [P("SAW LEAD", [0, 12, 64, 0, 90, 30, 10, 12], [4, 70, 100, 50], 1, 4), P("SOFT PAD", [0, 20, 64, 4, 60, 10, 0, 0], [80, 90, 110, 95], 0, 5),
+        P("SQR BASS", [1, 0, 0, 0, 50, 70, 40, 0], [0, 60, 40, 30], 1, 2), P("PWM STR", [4, 8, 40, 0, 75, 20, 0, 0], [60, 80, 110, 85], 0, 5),
+        P("ACID", [0, 0, 0, 0, 50, 100, 25, 0], [0, 55, 20, 30], 1, 1), P("SINE KEY", [3, 6, 50, 0, 127, 0, 0, 0], [2, 80, 30, 70], 0, 6),
+        P("RAVE", [4, 30, 64, 0, 85, 20, 30, 7], [20, 80, 110, 60], 1, 13), P("SUB BASS", [3, 0, 0, 0, 40, 0, 20, 0], [0, 60, 100, 20], 1, 8),
+        P("PLUCK", [0, 8, 50, 0, 30, 40, 0, 0], [0, 88, 0, 60], 0, 3), P("BRASS", [0, 10, 64, 0, 45, 20, 10, 0], [35, 70, 90, 45], 0, 6),
+        P("WIND", [0, 0, 0, 90, 30, 90, 0, 0], [60, 90, 60, 80], 0, 5), P("STRINGS", [0, 25, 64, 0, 70, 10, 0, 0], [70, 90, 115, 90], 0, 5),
+        P("SYNC LEAD", [5, 11, 90, 0, 82, 30, 10, 0], [2, 70, 100, 40], 1, 4), P("RING BELL", [6, 18, 100, 0, 110, 20, 0, 0], [0, 92, 0, 80], 0, 7),
+        P("FAT BASS", [7, 9, 64, 0, 62, 45, 20, -12], [0, 62, 60, 25], 1, 2)] },
     /* 1: reserved (DIGITAL, retired: src/fm4_convert.c ENG_FM4_GONE; its sounds load as FM6, FM4 above) */
     { name: "-", titles: ["-", "-"], edit: [D("-", F.INT, 0, 7, 0), D("-", F.INT, 0, 14, 1), D("-", F.INT, 0, 14, 1),
         D("-", F.INT, 0, 14, 1), D("-", F.PCT, 0, 127, 60), D("-", F.INT, 0, 127, 60), D("-", F.PCT, 0, 127, 0), NONE],
@@ -1473,12 +1473,12 @@ function makeMockDevice(opt = {}) {
         P("STRING", [0, 4, 50, 40, 12, 0, 0, 0], [40, 90, 100, 70], 0, 5), P("RESO", [5, 0, 60, 60, 0, 0, 0, 0], [0, 70, 30, 60], 0, 1),
         P("BELL", [6, 0, 80, 50, 0, 0, 0, 0], [0, 95, 0, 90], 0, 7), P("WIRE", [4, 7, 70, 40, 7, 0, 0, 0], [10, 80, 80, 60], 0, 4),
         P("GROWL", [0, 0, 70, 80, 0, 0, 40, 55], [2, 70, 90, 40], 1, 4), P("FB BASS", [1, 0, 45, 60, 0, 0, 70, 35], [0, 60, 60, 25], 1, 2)] },
-    { name: "LOFI", titles: ["CHIP", "MOTN"], edit: [E("CHIP", ["4BIT", "4B/2", "8BIT", "1BIT", "STEP"], 0), E("WAVE", ["PLS", "TRI", "SAW", "NOIS", "WRAM", "BYTE"], 0), D("DUTY", F.INT, 0, 127, 64),
-        D("CRSH", F.PCT, 0, 127, 0), D("SWP", F.PCT, 0, 127, 0), D("VIB", F.PCT, 0, 127, 0), E("ARP", ["OFF", "OCT", "MAJ", "MIN"], 0), D("TONE", F.PCT, 0, 127, 127)],
-      presets: [P("PULSE LD", [0, 0, 32, 0, 0, 20, 0, 127], [0, 60, 90, 30], 1, 4), P("WAVE BASS", [1, 1, 0, 0, 0, 0, 0, 90], [0, 50, 70, 20], 1, 2),
-        P("ARP 8BIT", [2, 0, 96, 0, 0, 0, 2, 110], [0, 60, 80, 40], 0, 13), P("WAVE LEAD", [0, 4, 92, 0, 0, 18, 0, 110], [0, 70, 90, 30], 1, 3),
-        P("STEP LEAD", [4, 0, 40, 34, 0, 16, 0, 127], [0, 64, 127, 55], 1, 4),
-        P("BYTEBEAT", [2, 5, 4, 0, 0, 0, 0, 120], [0, 80, 110, 40], 1, 4), P("BYTE VAR", [2, 5, 64, 40, 0, 0, 0, 100], [0, 80, 110, 50], 1, 3)] },
+    { name: "LOFI", titles: ["CHIP", "TONE"], edit: [E("CHIP", ["4BIT", "4B/2", "8BIT", "1BIT", "STEP"], 0), E("WAVE", ["PLS", "TRI", "SAW", "NOIS", "WRAM", "BYTE"], 0), D("DUTY", F.INT, 0, 127, 64),
+        D("CRSH", F.PCT, 0, 127, 0), D("CUT", F.CUTOFF, 0, 127, 110), D("VIB", F.PCT, 0, 127, 0), D("BEND", F.PCT, 0, 127, 0), D("MASK", F.PCT, 0, 127, 0)],   /* (JIANT 0.4: CUT BEND MASK) */
+      presets: [P("BYTEBEAT", [2, 5, 4, 0, 120, 0, 0, 0], [0, 80, 110, 40], 1, 4), P("BYTE VAR", [2, 5, 64, 40, 100, 0, 0, 0], [0, 80, 110, 50], 1, 3),
+        P("BYTE BENT", [2, 5, 16, 0, 96, 0, 70, 24], [0, 80, 110, 45], 1, 4), P("PULSE LD", [0, 0, 32, 0, 127, 20, 0, 0], [0, 60, 90, 30], 1, 4),
+        P("WAVE BASS", [1, 1, 0, 0, 90, 0, 0, 0], [0, 50, 70, 20], 1, 2), P("8BIT KEYS", [2, 0, 96, 0, 110, 0, 30, 0], [0, 60, 80, 40], 0, 13),
+        P("WAVE LEAD", [0, 4, 92, 0, 110, 18, 0, 0], [0, 70, 90, 30], 1, 3), P("STEP LEAD", [4, 0, 40, 34, 127, 16, 0, 0], [0, 64, 127, 55], 1, 4)] },
     /* 4: reserved (SAMPLE, retired in JIANT; its sounds load as ANALOG, its PERC set as DRUM) */
     { name: "-", titles: ["-", "-"], edit: [D("-", F.INT, 0, 127, 0), D("-", F.INT, 0, 127, 0), D("-", F.INT, 0, 127, 0),
         D("-", F.INT, 0, 127, 0), D("-", F.INT, 0, 127, 0), D("-", F.INT, 0, 127, 0), D("-", F.INT, 0, 127, 0), D("-", F.INT, 0, 127, 0)],
@@ -1667,7 +1667,7 @@ function makeMockDevice(opt = {}) {
     clearSteps(); st.p[29] = 16;
   });
   /* the power-on sounds (engines.c TRK_DEF): ACID, PAD, PULSE LD, DRUM-X */
-  [[1, FM6_E, 4], [2, 3, 0], [3, 10, 0], [0, 0, 4]].forEach(([i, e, p]) => { st.sel = i; setEngine(e); applyPreset(p); });
+  [[1, FM6_E, 4], [2, 3, 3], [3, 10, 0], [0, 0, 4]].forEach(([i, e, p]) => { st.sel = i; setEngine(e); applyPreset(p); });
   /* the device powers on with its sequencers empty; the mock starts as a little demo to look at: track 1 with
      the ACID pattern, track 4 with BEAT (as SEQ > PATTERNS would load them), pads left, lead right */
   st.sel = 3; loadPattern(11);
@@ -2120,6 +2120,7 @@ function enumShown(d) {
   const vals = [];
   for (let v = d.min; v <= d.max; v++) vals.push(v);
   const len = d.fmt === F.ENUM && d.names ? d.names.map(divLength) : [null];
+  if (d.names && d.names[5] === "BYTE" && d.names[0] === "PLS") return [vals[5], ...vals.slice(0, 5)];   /* (JIANT 0.4: LOFI's WAVE, BYTE first) */
   if (len.includes(null) && d.names && len.some((x) => x !== null) && d.names.every((n, i) => len[i] !== null || /^[\d.]+m?s$/.test(n)))
     return [...vals.filter((v) => len[v - d.min] !== null).sort((a, b) => len[b - d.min] - len[a - d.min] || a - b),
             ...vals.filter((v) => len[v - d.min] === null)];   /* (JIANT 0.4, the delay's TIME: the divisions, then free times) */
@@ -2536,7 +2537,7 @@ const LAYOUT = (pe0) => [
                                                     FELUCCA_FM4=1 firmware only: DIGITAL retired, its engine is "-") */
     ...[0, 1, 2, 3].map((k) => [`OP${k + 1}`, 0, [61 + 5 * k, 62 + 5 * k, 63 + 5 * k, 64 + 5 * k]]),
     ["OP LVL", 0, [65, 70, 75, 80]]] }] : []),
-  { t: "VOICE", pages: [["LEVEL", 0, [0]], ["VOICE", 0, [37, 38, 41, 42]], ["VOICE 2", 0, [43, 44, 39, 40]]] },
+  { t: "VOICE", pages: [["LEVEL", 0, [0]], ["VOICE", 0, [37, 38, 41, 42]]] },   /* (JIANT 0.4: no VOICE 2: PAN on MIXER, MUTE there and GLO) */
   { t: "FX", pages: [["FX", 0, [33, 34, 35, 36]], ...(pe0 >= 112 ? [["DIST", 0, [33, 91, 92]]] : []), ["SLICER", 0, [45, 46, 47, 48]],
     ["DLY", 1, [4, 5, 6, 7]], ...(pe0 >= 112 ? [["DLY 2", 1, [28, 34, 35]]] : []), ["REVERB", 1, pe0 >= 112 ? [24, 8, 9, 31] : [24, 8, 9]],
     ...(pe0 >= 112 ? [["REVERB 2", 1, [29, 30, 32, 33]]] : []), ["CHORUS", 1, [10, 11]], ["MASTER", 1, [21, 25, 26, 13]]] },   /* G_RTYPE 24: ROOM / SPRING; MASTER: CLIP PNCH DUCK REL */

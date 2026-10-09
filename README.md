@@ -135,10 +135,13 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
 - **4 tracks** con 8 voces compartidas.
 - **8 engines**, todos de síntesis, sin samples: ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, VOICE, WHEEL, NOISE
   y DRUM (DRUM-X).
-  - **ANALOG** suma las ondas de TRIO: **SYNC** (sync duro, DTN barre la relación), **RING** (modulación en anillo,
+  - **ANALOG**: el oscilador 2 tiene **INT** (intervalo de ±24 semitonos, como un sinte analógico clásico: quintas,
+    octavas) además de DTN. Suma las ondas de TRIO: **SYNC** (sync duro, DTN barre la relación), **RING** (modulación en anillo,
     campanas y metales) y **SAW3** (tres sierras desafinadas). Los sonidos de TRIO guardados cargan como ANALOG.
-  - **LOFI** tiene **BYTE**: bytebeat, 32 fórmulas de 8 bits elegidas con ALGO (DUTY) y una variable VAR (CRSH) que
-    las deforma; el tiempo sigue la nota tocada. Ningún otro firmware lo tiene.
+  - **LOFI** tiene **BYTE** (primera en la lista): bytebeat, 32 fórmulas de 8 bits elegidas con ALGO (DUTY) y una
+    variable VAR (CRSH) que las deforma; el tiempo sigue la nota tocada. Ningún otro firmware lo tiene. Para todas las
+    ondas: **CUT** (filtro resonante), **BEND** (en BYTE pliega el tiempo y salen melodías y ritmos nuevos de la misma
+    fórmula; en las otras dobla la fase) y **MASK** (corrupción de bits). VIB queda; SWP, ARP y TONE se fueron.
   - **PHASE** suma **FB**: la salida realimenta la fase, de un borde más duro a growl y ruido.
 - **Modulación**: 4 slots por track. Fuentes: LFO, ENV, VEL, KEY, RAND, controladores MIDI, las 4 macros y STEP (el
   secuenciador de modulación).

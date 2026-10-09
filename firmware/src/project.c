@@ -574,6 +574,12 @@ static int proj_import_any(project_t *q, const void *b, int n)
     if (!proj_import_old(q, b, n))
         return 0;
     proj_fm6_init(q);
+    {
+        uint32_t t;
+        for (t = 0; t < NTRK; t++)                      /* (JIANT 0.4) LOFI's, ANALOG's E values as today's */
+            sound_v04(q->t[t].engine, &q->t[t].p[P_E0]);
+        q->sum = proj_sum(q);
+    }
     return 1;
 }
 static int proj_import_old(project_t *q, const void *b, int n)
@@ -671,7 +677,8 @@ static int proj_pack(project_store_t *out, const project_t *q)
     memcpy(b + PROJ_DX_OFF, q->dx, sizeof q->dx);
     b[PROJ_DX_OFF + sizeof q->dx] = q->dx_mute & DXG_ALL;
     b[PROJ_DX_OFF + sizeof q->dx + 1u] = (uint8_t)(q->dx_mute >> 8);
-    b[PROJ_DX_OFF + sizeof q->dx + 2u] = 2u;                    /* 1 SHIFT: OFS / PIT where the chord keys were; 2 DRUM's E5 FM */
+    b[PROJ_DX_OFF + sizeof q->dx + 2u] = 3u;                    /* 1 SHIFT: OFS / PIT where the chord keys were; 2 DRUM's E5 FM;
+                                                                 * 3 (0.4) LOFI's and ANALOG's new E values (core.h sound_v04) */
     memcpy(b + PROJ_FM6_OFF, q->fm6, sizeof q->fm6);
     {   /* the name (0-padded; stops at the first 0) */
         char n[PROJ_NAME_LEN + 1u];
@@ -765,13 +772,16 @@ static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
         if (!dx_kit_ok(q->dx)) return 0;
         q->dx_mute = (uint16_t)((b[end + sizeof q->dx] & DXG_ALL) | b[end + sizeof q->dx + 1u] << 8);
     }
-    if (!va || (b[end + sizeof q->dx + 2u] != 1u && b[end + sizeof q->dx + 2u] != 2u))   /* written before SHIFT: */
+    if (!va || b[end + sizeof q->dx + 2u] < 1u || b[end + sizeof q->dx + 2u] > 3u)   /* written before SHIFT: */
         for (t = 0; t < NTRK; t++)                      /* its chord keys are no offset */
             q->t[t].p[P_SOFS] = q->t[t].p[P_POFS] = 0;
-    if (!va || b[end + sizeof q->dx + 2u] != 2u)        /* (JIANT) before FM: DRUM's E5 was ACC: FM off */
-        for (t = 0; t < NTRK; t++)
+    if (!va || (b[end + sizeof q->dx + 2u] != 2u && b[end + sizeof q->dx + 2u] != 3u))   /* (JIANT) before FM: DRUM's E5 */
+        for (t = 0; t < NTRK; t++)                      /* was ACC: FM off */
             if (q->t[t].engine == ENGI_DRUM)
                 q->t[t].p[P_E5] = 0;
+    if (!va || b[end + sizeof q->dx + 2u] != 3u)        /* (JIANT 0.4) LOFI's, ANALOG's E values as today's */
+        for (t = 0; t < NTRK; t++)
+            sound_v04(q->t[t].engine, &q->t[t].p[P_E0]);
     if (!va) {
         memcpy(q->dx, DX_KIT_DEF, sizeof q->dx);
         q->dx_mute = 0;

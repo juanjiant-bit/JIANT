@@ -683,7 +683,7 @@ static void test_byte(void)
         int32_t pk = 0;
         fresh(3, 0);
         trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 5; trk[0].p[P_E2] = (int16_t)(f * 4u); trk[0].p[P_E3] = 0;
-        trk[0].p[P_E7] = 127; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+        trk[0].p[P_E4] = 127; trk[0].p[P_E6] = trk[0].p[P_E7] = 0; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
         trk_note_on(&trk[0], 60, 110);
         for (b = 0; b < FS / 8u / CTL; b++) {
             blocks(1);
@@ -702,7 +702,7 @@ static void test_byte(void)
             double dv = 0;
             fresh(3, 0);
             trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 5; trk[0].p[P_E2] = (int16_t)(f * 4u); trk[0].p[P_E3] = 100;
-            trk[0].p[P_E7] = 127; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+            trk[0].p[P_E4] = 127; trk[0].p[P_E6] = trk[0].p[P_E7] = 0; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
             trk_note_on(&trk[0], 60, 110);
             for (b = 0; b < FS / 8u / CTL; b++) {
                 blocks(1);
@@ -785,6 +785,77 @@ static void test_phase_fb(void)
     }
     printf("mod:   (PHASE FB: difference from FB 0: 30 %.3g, 127 %.3g)\n", d1, d2);
     check("PHASE FB: more feedback, further from the plain wave; under full scale", d2 > d1 * 1.5 && d1 > 1e5 && pk < 32767);
+}
+
+/* (JIANT 0.4) LOFI's CUT (darker as it closes), BEND and MASK (each another sound, on BYTE and on a pulse); ANALOG's INT
+ * (osc 2 an octave up: more zero crossings, with MIX all osc 2: twice) */
+static double lo_render(int16_t wave, int16_t cut, int16_t bend, int16_t mask, int32_t *buf, uint32_t n)
+{
+    uint32_t b, i;
+    double z = 0;
+    fresh(3, 0);
+    trk[0].p[P_E0] = 2; trk[0].p[P_E1] = wave; trk[0].p[P_E2] = 16; trk[0].p[P_E3] = 0;
+    trk[0].p[P_E4] = cut; trk[0].p[P_E5] = 0; trk[0].p[P_E6] = bend; trk[0].p[P_E7] = mask;
+    trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+    trk_note_on(&trk[0], 57, 110);
+    for (b = 0; b < n / CTL; b++) {
+        blocks(1);
+        for (i = 0; i < CTL; i++) {
+            buf[b * CTL + i] = out_buf[2u * i];
+            if (b * CTL + i)
+                z += fabs((double)buf[b * CTL + i] - buf[b * CTL + i - 1u]);   /* (the slope: brightness) */
+        }
+    }
+    return z;
+}
+static void test_lofi_tone(void)
+{
+    static int32_t a[FS / 4], c[FS / 4];
+    double open = lo_render(0, 127, 0, 0, a, FS / 4u), shut = lo_render(0, 40, 0, 0, c, FS / 4u), db = 0, dm = 0, dbb = 0;
+    uint32_t i, w;
+    for (w = 0; w < 2u; w++) {
+        int16_t wave = w ? 5 : 0;
+        lo_render(wave, 127, 0, 0, a, FS / 4u);
+        lo_render(wave, 127, 90, 0, c, FS / 4u);
+        for (i = 0; i < FS / 4u; i++) *(w ? &dbb : &db) += fabs((double)c[i] - a[i]);
+        if (w) {
+            lo_render(wave, 127, 0, 100, c, FS / 4u);
+            for (i = 0; i < FS / 4u; i++) dm += fabs((double)c[i] - a[i]);
+        }
+    }
+    printf("mod:   (LOFI slope open %.3g, CUT 40 %.3g; BEND on PLS %.3g, on BYTE %.3g; MASK on BYTE %.3g)\n", open, shut, db, dbb, dm);
+    check("LOFI CUT darkens (less slope); BEND changes a pulse and BYTE; MASK changes BYTE",
+          shut < open * 0.5 && db > 1e6 && dbb > 1e6 && dm > 1e6);
+    {
+        uint32_t c0, c1;
+        static int32_t z0[FS / 4], z1[FS / 4];
+        {                                           /* (SIN, MIX 127: osc 2 alone) */
+            uint32_t b2, i2;
+            fresh(0, 0);
+            trk[0].p[P_E0] = 3; trk[0].p[P_E1] = 0; trk[0].p[P_E2] = 127; trk[0].p[P_E4] = 127; trk[0].p[P_E5] = 0;
+            trk[0].p[P_E7] = 12; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+            trk_note_on(&trk[0], 48, 110);
+            for (b2 = 0; b2 < FS / 4u / CTL; b2++) {
+                blocks(1);
+                for (i2 = 0; i2 < CTL; i2++) z1[b2 * CTL + i2] = out_buf[2u * i2];
+            }
+            fresh(0, 0);
+            trk[0].p[P_E0] = 3; trk[0].p[P_E1] = 0; trk[0].p[P_E2] = 127; trk[0].p[P_E4] = 127; trk[0].p[P_E5] = 0;
+            trk[0].p[P_E7] = 0; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+            trk_note_on(&trk[0], 48, 110);
+            for (b2 = 0; b2 < FS / 4u / CTL; b2++) {
+                blocks(1);
+                for (i2 = 0; i2 < CTL; i2++) z0[b2 * CTL + i2] = out_buf[2u * i2];
+            }
+        }
+        c0 = c1 = 0;
+        for (i = 1; i < FS / 4u; i++) {
+            c0 += z0[i - 1] < 0 && z0[i] >= 0;
+            c1 += z1[i - 1] < 0 && z1[i] >= 0;
+        }
+        printf("mod:   (ANALOG osc 2 alone, crossings: INT 0 %u, INT 12 %u)\n", c0, c1);
+        check("ANALOG INT: osc 2 an octave up at INT 12 (its crossings x2)", c1 > c0 * 1.8 && c1 < c0 * 2.2);
+    }
 }
 
 static void test_env_loop(void)
@@ -896,6 +967,7 @@ int main(int argc, char **argv)
     test_byte();
     test_analog_ext();
     test_phase_fb();
+    test_lofi_tone();
     if (argc > 1)
         check("demos written", demos(argv[1]));
     printf("%s\n", bad ? "MOD MATRIX TEST FAILED" : "mod matrix test passed");

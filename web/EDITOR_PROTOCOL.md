@@ -89,6 +89,11 @@ names say so); G 6 (once COLR) is TONE, 0..127: below 64 a low-pass, 64 open, ab
 no longer read. **DRUM-X kit mode byte:** bits 5..6 the pitch modulation (0 DECAY, 1 LONG, 2 NOISE, 3 SINE), bit 7
 DRIVE (firmware before 0.4 refuses a kit with them set).
 
+**JIANT 0.4 E values:** LOFI {CHIP WAVE DUTY CRSH CUT VIB BEND MASK} (CUT BEND MASK were SWP ARP TONE); ANALOG's E8
+is INT, osc 2's interval −24..24 (was KTR). A project (kit marker below 3, or an older format) or a user preset (no 0.4
+mark) stored before loads LOFI's TONE as CUT, BEND MASK 0, and ANALOG's KTR as INT 0. VOICE 2 (ALLOC DETUNE PAN MUTE)
+is no page any more: PAN and MUTE on MIXER, the others at their stored values.
+
 **JIANT 0.4: 37 globals** (G 36 STRN, stored behind a 3). **JIANT 0.3: 36 globals.** G_COUNT 36 (G 32..35 above). DRUM's E6 (id P_E0 + 5) is FM, 0..127 (once ACC): its sounds through
 harmonic FM, eight ratio bands; a project or user preset saved before loads its DRUM tracks with FM 0.
 
