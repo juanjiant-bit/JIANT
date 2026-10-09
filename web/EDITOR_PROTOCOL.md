@@ -84,6 +84,11 @@ starts its attack again at the sustain.
 nearest (core.h `analog_from_trio`). ANALOG's WAVE gains SYNC (5), RING (6), SAW3 (7); LOFI's WAVE gains BYTE (5:
 bytebeat, DUTY the formula, CRSH its variable); PHASE's E8 (once `-`, 0..0) is FB, 0..127.
 
+**JIANT 0.4 delay:** G 4 TIME's enum is the ten divisions, then 48 free times (values 10..57: 5 ms .. 1.48 s, the
+names say so); G 6 (once COLR) is TONE, 0..127: below 64 a low-pass, 64 open, above a low cut; G 27 (HPF) is stored and
+no longer read. **DRUM-X kit mode byte:** bits 5..6 the pitch modulation (0 DECAY, 1 LONG, 2 NOISE, 3 SINE), bit 7
+DRIVE (firmware before 0.4 refuses a kit with them set).
+
 **JIANT 0.4: 37 globals** (G 36 STRN, stored behind a 3). **JIANT 0.3: 36 globals.** G_COUNT 36 (G 32..35 above). DRUM's E6 (id P_E0 + 5) is FM, 0..127 (once ACC): its sounds through
 harmonic FM, eight ratio bands; a project or user preset saved before loads its DRUM tracks with FM 0.
 

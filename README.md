@@ -33,6 +33,9 @@ Un kit de 8 sonidos (BD SD CP CH OH TM RS CB) generado en tiempo real, sin sampl
   ratio, de grave y redondo a metálico); además TUNE, TONE, DECAY, NOISE y DRIVE.
 - **Mutes por grupo** (KICK, SNARE, HAT, PERC) con GLO sostenido, y **mute por sonido** con EDIT sostenido.
 - **EDIT sostenido → INIT / RECALL**: el kit vuelve al de fábrica o al guardado en la sección.
+- **EDIT > SOUND 3** (por sonido, como Microtonic): **PMOD** elige cómo se mueve el pitch (DECAY; LONG, el barrido
+  largo del 808; NOISE, pitch al azar para percusiones raras; SINE, un vaivén), **DRV** satura el oscilador para
+  kicks densos, y **WAVE** cambia la onda sola.
 
 ### Punch-in FX: los efectos se tocan y se graban
 Con FX sostenido, las teclas son efectos que actúan mientras se mantienen y al soltar todo vuelve exacto.
@@ -107,7 +110,9 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
 
 ### Efectos
 - **DIST** por track con **TYPE** (SOFT, HARD, FOLD, CRUSH, RECT) y **TONE** (más oscuro o más brillante): página FX > DIST.
-- **Delay**: además de COLR (agudos), **HPF** recorta los graves de las repeticiones (más dub, más fino).
+- **Delay**: **TIME** sincroniza con las divisiones y, pasando la última, sigue en tiempo libre de 5 ms a 1,48 s.
+  **TONE** es un solo filtro para las repeticiones: a la izquierda más oscuras, al centro abiertas, a la derecha sin
+  graves (antes eran dos perillas, COLR y HPF).
 - **WIDTH**: abre el estéreo. El eco derecho del delay llega un poco después y el chorus separa L y R. En 0 todo
   suena como antes.
 - **Reverb**: **PRE** (pre-delay de hasta 100 ms), y **MOD** y **RATE** modulan la red de resonancia. En ROOM se mueve

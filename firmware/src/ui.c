@@ -1130,7 +1130,8 @@ static void track_select(uint32_t i)
 #include "ui_events.c"                            /* SEQ > AUTO LIST: the locks and events as a list (an action page) */
 /* EDIT > SOUND / SOUND 2 (ui_dx.c, included by ui_input.c): the DRUM-X sound edited and its patch (0 A, 1 B) */
 static uint8_t dx_ui_lane, dx_ui_side;
-static uint32_t dx_page2(const page_t *pg) { return pg->title[5] == ' '; }   /* "SOUND 2" */
+static uint32_t dx_pagen(const page_t *pg) { return pg->title[5] == ' ' ? (uint32_t)(pg->title[6] - '0') : 1u; }   /* "SOUND 2" */
+static uint32_t dx_page2(const page_t *pg) { return dx_pagen(pg) == 2u; }
 static void dx_knob(const page_t *pg, uint32_t k, int32_t s);
 static void dx_cards(const page_t *pg);
 static uint32_t dx_sig(void);

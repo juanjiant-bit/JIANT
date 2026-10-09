@@ -64,7 +64,8 @@ static struct {
 static void ref_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t *rev_in, int32_t *wet, uint32_t n)
 {
     uint32_t i, k, dl = delay_samples();
-    int32_t fb = song.g[G_DFDBK] * 230, col = 2000 + song.g[G_DCOLOR] * 240;
+    int32_t fb = song.g[G_DFDBK] * 230, tn = song.g[G_DCOLOR] - 64;   /* (JIANT 0.4 TONE, its low-pass half) */
+    int32_t col = tn < 0 ? 500 + (64 + tn) * (64 + tn) * 8 : 32767;
     int32_t dmix = song.g[G_DMIX] * 258;
     int32_t size = 25000 + song.g[G_RSIZE] * 50, damp = 32767 - song.g[G_RDAMP] * 200;
     int32_t cdepth = song.g[G_CDEPTH] * 6;
@@ -463,7 +464,7 @@ static void jreset(void)
     fx.rf_lp = 0;
     song.g[G_DMIX] = 127;
     song.g[G_DFDBK] = 0;
-    song.g[G_DCOLOR] = 127;
+    song.g[G_DCOLOR] = 64;                         /* (TONE open) */
     song.g[G_DHPF] = 0;
     song.g[G_WIDTH] = 0;
     song.g[G_RPRE] = 0;

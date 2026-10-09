@@ -10,7 +10,10 @@
  *   NOISE  the mix: 0 the oscillator only .. 127 the noise only
  *   COLOR  the oscillator's FM index (SINE: its drive) and the noise filter's cutoff (30 Hz .. 16 kHz)
  * The mode: the oscillator (SINE, FM at 1:1, METAL at 1:1.47, BELL at 1:2.76), the noise filter (LP, BP, HP), the
- * noise's envelope (as the oscillator's, or SNAP: a quarter of its tau).
+ * noise's envelope (as the oscillator's, or SNAP: a quarter of its tau); (JIANT 0.4, the mode's free bits 5..7) the
+ * pitch modulation, as Microtonic's: DECAY (the envelope above), LONG (its tau half the decay's, up to 250 ms: the
+ * 808 boom), NOISE (a random pitch each block, scaled by the envelope: glitch, grit), SINE (a sine at 1/8 of the
+ * pitch, scaled by the envelope: wobble, laser); and DRIVE (the oscillator x3 into a soft clip: dense kicks, fat toms).
  * MORPH (0 A .. 127 B) mixes the two patches value by value, read every block: it may move while a hit rings.
  * Envelopes per block (Q30 values, Q16 factors, dv_kb), ramped linearly inside it; the pitch ramps too. A hit
  * that has rung out (-84 dB) stops computing (live 0) and writes zeros. Only 32-bit products. */
@@ -18,6 +21,8 @@ enum { DV_KICK, DV_SNARE, DV_CLAP, DV_HATC, DV_HATO, DV_TOM, DV_RIM, DV_BELL, DV
 enum { DXW_SINE, DXW_FM, DXW_METAL, DXW_BELL };
 enum { DXF_LP, DXF_BP, DXF_HP };
 #define DX_MODE(w, f, snap) ((uint8_t)((w) | (f) << 2 | (snap) << 4))
+enum { DXM_DECAY, DXM_LONG, DXM_NOISE, DXM_SINE };       /* (JIANT 0.4) the pitch modulation: mode bits 5..6 */
+#define DX_DRIVE 0x80u                                   /* .. the oscillator driven: bit 7 */
 enum { DXP_PITCH, DXP_PMOD, DXP_DECAY, DXP_NOISE, DXP_COLOR, DXP_N };
 typedef struct {
     uint8_t mode;
@@ -28,6 +33,7 @@ typedef struct {                                         /* a hit */
     int32_t ea, en, ep;                                  /* amplitude, noise (Q30), pitch (Q15) envelopes */
     int32_t ic1, ic2, rng;                               /* the noise filter's state, the noise */
     int32_t mo;                                          /* WARP: the modulator's last output (its feedback) */
+    uint32_t ph3;                                        /* (JIANT 0.4) the SINE pitch modulation's phase */
     uint8_t live, trig, choke;
 } dx_voice_t;
 
@@ -87,7 +93,8 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
     q[DXP_NOISE] = clamp(q[DXP_NOISE] + nofs, 0, 127);
     ta = dx_tau((uint32_t)q[DXP_DECAY]);
     tn = (L->mode >> 4) & 1u ? ta >> 2 : ta;
-    tp = clamp((int32_t)(ta / 6u), 1000, 40000);
+    tp = ((L->mode >> 5) & 3u) == DXM_LONG ? (uint32_t)clamp((int32_t)(ta / 2u), 4000, 250000)
+                                           : (uint32_t)clamp((int32_t)(ta / 6u), 1000, 40000);
     p16 = 384 + q[DXP_PITCH] * 12 + tune16;
     depth = q[DXP_PMOD] * 6;
     if (v->trig) {                                       /* the hit: from the top */
@@ -105,7 +112,19 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
     ea1 = mulq16(v->ea, kb);
     en1 = mulq16(v->en, v->choke ? kb : dv_kb(tn));
     ep1 = (int32_t)(((uint32_t)v->ep * dv_kb(tp)) >> 16);
-    inc1 = pitch_inc((uint32_t)clamp(p16 + ((depth * ep1) >> 15), 0, 2047));
+    {
+        uint32_t pm = (L->mode >> 5) & 3u;
+        int32_t off = (depth * ep1) >> 15;              /* DECAY, LONG: the envelope */
+        if (pm == DXM_NOISE) {                          /* (JIANT 0.4) a random pitch each block, the envelope's depth */
+            int32_t r = v->rng ? v->rng : 0x2545F491;
+            off = (off * ((int32_t)noise32(&r) >> 17)) >> 14;
+            v->rng = r;
+        } else if (pm == DXM_SINE) {                    /* .. a sine at 1/8 of the pitch */
+            v->ph3 += v->inc << 2;
+            off = (off * sine_i(v->ph3)) >> 15;
+        }
+        inc1 = pitch_inc((uint32_t)clamp(p16 + off, 0, 2047));
+    }
     ng = q[DXP_NOISE] * 258;
     og = ((32767 - ng) * 11) >> 4;                       /* (x 11 / 16: about the DRUM kits' level) */
     ng = (ng * 11) >> 4;
@@ -155,6 +174,9 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
             v->mo = mo;
         }
         v->ph = ph;
+        if (L->mode & DX_DRIVE)                         /* (JIANT 0.4) DRIVE: x3 into the soft clip, the level near */
+            for (i = 0; i < n; i++)
+                y[i] = (softclip(y[i] * 3) * 22000) >> 15;
     } else {
         for (i = 0; i < n; i++)
             y[i] = 0;
@@ -212,7 +234,7 @@ static int dx_kit_ok(const dx_lane_t *k)
 {
     uint32_t l, i;
     for (l = 0; l < 8u; l++) {
-        if ((k[l].mode & ~0x1Fu) || ((k[l].mode >> 2) & 3u) > DXF_HP)
+        if (((k[l].mode >> 2) & 3u) > DXF_HP)          /* (JIANT 0.4: bits 5..7 the pitch modulation, DRIVE) */
             return 0;
         for (i = 0; i < DXP_N; i++)
             if (k[l].a[i] > 127u || k[l].b[i] > 127u)

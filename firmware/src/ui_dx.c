@@ -5,6 +5,7 @@
  * (drumx_voice.c dx_kit, saved with the section: project.c FUNA):
  *   SOUND    LANE (the sound: BD .. CB; a key struck on the track picks its lane too), SIDE (patch A or B), PTCH, PMOD
  *   SOUND 2  DCAY, NOIS, COLR, MODE (the oscillator's wave, the noise filter, SNAP: 24 combinations)
+ *   SOUND 3  (JIANT 0.4) LANE again, PMOD's mode (DECAY LONG NOISE SINE), DRIVE (OFF / ON), the wave alone
  * The values are the side's; the MORPH plays between the two (EDIT 2 MRPH). The panel shows the kit's specimen
  * with the sound's organ singled out (ui_plates.c graph_p_drum: the iris, its node lit). */
 static uint8_t dx_ui_seen = 0xFFu;                   /* the last key note followed */
@@ -38,6 +39,17 @@ static void dx_knob(const page_t *pg, uint32_t k, int32_t s)
 {
     dx_lane_t *L = &dx_kit[dx_ui_lane & 7u];
     uint8_t *v = dx_ui_side ? L->b : L->a;
+    if (dx_pagen(pg) == 3u) {                           /* (JIANT 0.4) SOUND 3 */
+        if (k == 0u)
+            dx_ui_lane = (uint8_t)clamp((int32_t)dx_ui_lane + (s > 0 ? 1 : -1), 0, 7);
+        else if (k == 1u)
+            L->mode = (uint8_t)((L->mode & ~0x60u) | (uint32_t)clamp((int32_t)((L->mode >> 5) & 3u) + (s > 0 ? 1 : -1), 0, 3) << 5);
+        else if (k == 2u)
+            L->mode = (uint8_t)(s > 0 ? L->mode | DX_DRIVE : L->mode & ~DX_DRIVE);
+        else
+            L->mode = (uint8_t)((L->mode & ~3u) | (uint32_t)clamp((int32_t)(L->mode & 3u) + (s > 0 ? 1 : -1), 0, 3));
+        return;
+    }
     if (!dx_page2(pg)) {
         if (k == 0u)
             dx_ui_lane = (uint8_t)clamp((int32_t)dx_ui_lane + (s > 0 ? 1 : -1), 0, 7);
@@ -63,6 +75,16 @@ static void dx_cards(const page_t *pg)
     const uint8_t *v = dx_ui_side ? L->b : L->a;
     char val[12];
     dx_follow();
+    if (dx_pagen(pg) == 3u) {                           /* (JIANT 0.4) SOUND 3 */
+        static const char *const PM[4] = {"DECAY", "LONG", "NOISE", "SINE"}, *const W[4] = {"SIN", "FM", "MTL", "BEL"};
+        draw_column(0, "LANE", DX_LANE_ABBR[dx_ui_lane & 7u], "", VAL(0u), (int32_t)(dx_ui_lane & 7u) * 1000 / 7,
+                    ICON_X_PATTERN);
+        draw_column(1, "PMOD", PM[(L->mode >> 5) & 3u], "", VAL(1u), (int32_t)((L->mode >> 5) & 3u) * 333, ICON_ENV);
+        draw_column(2, "DRV", L->mode & DX_DRIVE ? "ON" : "OFF", "", L->mode & DX_DRIVE ? VAL(2u) : T_DIM,
+                    L->mode & DX_DRIVE ? 1000 : 0, ICON_DRIVE);
+        draw_column(3, "WAVE", W[L->mode & 3u], "", VAL(3u), (int32_t)(L->mode & 3u) * 333, ICON_WAVE);
+        return;
+    }
     if (!dx_page2(pg)) {
         draw_column(0, "LANE", DX_LANE_ABBR[dx_ui_lane & 7u], "", VAL(0u), (int32_t)(dx_ui_lane & 7u) * 1000 / 7,
                     ICON_X_PATTERN);

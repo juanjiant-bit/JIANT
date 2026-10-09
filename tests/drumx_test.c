@@ -304,6 +304,43 @@ int main(int argc, char **argv)
               e1 > e0 * 1.58 && t1 < t0 * 0.355, "attack %.0f -> %.0f, tail %.0f -> %.0f", e0, e1, t0, t1);
     }
 
+    /* 5m (JIANT 0.4): the pitch modulation's modes and DRIVE: LONG keeps the kick's pitch up for longer (more zero
+     * crossings 30..120 ms after); NOISE and SINE each another sound; DRIVE denser (a lower crest factor), under full
+     * scale; the kit back as it was */
+    {
+        static int32_t r[5][FS / 4];
+        static const uint8_t MD[5] = {0, 1u << 5, 2u << 5, 3u << 5, 0x80u};
+        double dn = 0, ds = 0, pk0 = 0, pk4 = 0, rm0 = 0, rm4 = 0;
+        uint32_t c0, c1, m, pkx = 0;
+        dx_lane_t keep = dx_kit[DV_KICK];
+        for (m = 0; m < 5u; m++) {
+            track_t *t = kitx(0, 64);
+            dx_kit[DV_KICK].mode = (uint8_t)((keep.mode & 0x1Fu) | MD[m]);
+            dx_kit[DV_KICK].a[DXP_PMOD] = 110;
+            strike(t, DV_KICK, FS / 4u);
+            memcpy(r[m], buf, sizeof r[m]);
+            for (i = 0; i < FS / 4u; i++)
+                pkx = (uint32_t)abs(buf[i]) > pkx ? (uint32_t)abs(buf[i]) : pkx;
+        }
+        dx_kit[DV_KICK] = keep;
+        memcpy(buf, r[0], sizeof r[0]); c0 = crossings(FS * 30u / 1000u, FS * 120u / 1000u);
+        memcpy(buf, r[1], sizeof r[1]); c1 = crossings(FS * 30u / 1000u, FS * 120u / 1000u);
+        for (i = 0; i < FS / 4u; i++) {
+            dn += fabs((double)r[2][i] - r[0][i]);
+            ds += fabs((double)r[3][i] - r[0][i]);
+            pk0 = fabs((double)r[0][i]) > pk0 ? fabs((double)r[0][i]) : pk0;
+            pk4 = fabs((double)r[4][i]) > pk4 ? fabs((double)r[4][i]) : pk4;
+            rm0 += (double)r[0][i] * r[0][i];
+            rm4 += (double)r[4][i] * r[4][i];
+        }
+        rm0 = sqrt(rm0 / (FS / 4u));
+        rm4 = sqrt(rm4 / (FS / 4u));
+        check("PMOD modes and DRIVE: LONG a longer sweep, NOISE and SINE their own, DRIVE denser, under full scale",
+              c1 > c0 + 2u && dn / (FS / 4u) > 200 && ds / (FS / 4u) > 200 && rm4 / pk4 > rm0 / pk0 * 1.15 && pkx < 32767u &&
+              !memcmp(&dx_kit[DV_KICK], &keep, sizeof keep),
+              "crossings 30-120 ms %u -> %u, crest %.2f -> %.2f", c0, c1, pk0 / rm0, pk4 / rm4);
+    }
+
     /* 5b */
     {
         uint32_t kit;

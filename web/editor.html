@@ -1408,6 +1408,7 @@ function fromPerc(pt, engines, pe0) {
 const engineLabel = (engines, e) => (e === 1 && (engines || [])[1] === "-" ? "FM6" : (engines || [])[e] ?? String(e));
 
 function makeMockDevice(opt = {}) {
+  const NDTIME = ["1/4", "1/8", "1/16", "1/32", "8T", "16T", "1/2", "1/1", "2BAR", "4BAR", "5ms", "6ms", "7ms", "8ms", "9ms", "10ms", "11ms", "12ms", "13ms", "15ms", "17ms", "19ms", "21ms", "24ms", "27ms", "31ms", "35ms", "39ms", "44ms", "50ms", "56ms", "64ms", "72ms", "81ms", "91ms", "103ms", "116ms", "131ms", "148ms", "167ms", "189ms", "213ms", "241ms", "272ms", "307ms", "346ms", "391ms", "441ms", "498ms", "562ms", "634ms", "716ms", "808ms", "912ms", "1.03s", "1.16s", "1.31s", "1.48s"];   /* (JIANT 0.4) the delay's TIME: the divisions, then free times */
   const NONOFF = ["OFF", "ON"], NDIV = ["1/4", "1/8", "1/16", "1/32", "8T", "16T", "1/2", "1/1", "2BAR", "4BAR"], NGO = ["--", "GO"], NDASH = ["--"];
   const D = (label, fmt, min, max, def, names = null, unit = "") => ({ label, fmt, min, max, def, names, unit });
   const E = (label, names, def) => D(label, F.ENUM, 0, names.length - 1, def, names);
@@ -1431,7 +1432,8 @@ function makeMockDevice(opt = {}) {
   ];
   const GP = [
     D("BPM", F.BPM, 40, 240, 120), D("SWG", F.PCT, 0, 100, 0), E("CLK", ["INT", "USB", "TRS"], 0), D("TUNE", F.INT, -50, 50, 0),
-    E("TIME", NDIV, 1), D("FDBK", F.PCT, 0, 120, 60), D("COLR", F.PCT, 0, 127, 70), D("MIX", F.PCT, 0, 127, 90),
+    E("TIME", NDTIME, 1), D("FDBK", F.PCT, 0, 120, 60), D("TONE", F.PCT, 0, 127, 64), D("MIX", F.PCT, 0, 127, 90),   /* (JIANT 0.4: free
+       times past the divisions; TONE: COLR + HPF in one) */
     D("SIZE", F.PCT, 0, 127, 90), D("DAMP", F.PCT, 0, 127, 60), D("CRT", F.LFOHZ, 0, 127, 40), D("CDP", F.PCT, 0, 127, 60),
     E("MIDI", ["USB", "TRS"], 0), D("REL", F.PCT, 0, 100, 30),   /* G_DREL (was SYNC): DUCK's release */ E("ROUT", ["CH1-4", "SEL"], 0), D("CPU", F.INT, 0, 0, 0),
     D("SLOT", F.INT, 1, 4, 1), E("NAME", NDASH, 0), E("LOAD", NGO, 0), E("SAVE", NGO, 0),
@@ -2118,6 +2120,9 @@ function enumShown(d) {
   const vals = [];
   for (let v = d.min; v <= d.max; v++) vals.push(v);
   const len = d.fmt === F.ENUM && d.names ? d.names.map(divLength) : [null];
+  if (len.includes(null) && d.names && len.some((x) => x !== null) && d.names.every((n, i) => len[i] !== null || /^[\d.]+m?s$/.test(n)))
+    return [...vals.filter((v) => len[v - d.min] !== null).sort((a, b) => len[b - d.min] - len[a - d.min] || a - b),
+            ...vals.filter((v) => len[v - d.min] === null)];   /* (JIANT 0.4, the delay's TIME: the divisions, then free times) */
   return len.includes(null) ? vals : vals.sort((a, b) => len[b - d.min] - len[a - d.min] || a - b);
 }
 
@@ -2533,7 +2538,7 @@ const LAYOUT = (pe0) => [
     ["OP LVL", 0, [65, 70, 75, 80]]] }] : []),
   { t: "VOICE", pages: [["LEVEL", 0, [0]], ["VOICE", 0, [37, 38, 41, 42]], ["VOICE 2", 0, [43, 44, 39, 40]]] },
   { t: "FX", pages: [["FX", 0, [33, 34, 35, 36]], ...(pe0 >= 112 ? [["DIST", 0, [33, 91, 92]]] : []), ["SLICER", 0, [45, 46, 47, 48]],
-    ["DLY", 1, [4, 5, 6, 7]], ...(pe0 >= 112 ? [["DLY 2", 1, [27, 28, 34, 35]]] : []), ["REVERB", 1, pe0 >= 112 ? [24, 8, 9, 31] : [24, 8, 9]],
+    ["DLY", 1, [4, 5, 6, 7]], ...(pe0 >= 112 ? [["DLY 2", 1, [28, 34, 35]]] : []), ["REVERB", 1, pe0 >= 112 ? [24, 8, 9, 31] : [24, 8, 9]],
     ...(pe0 >= 112 ? [["REVERB 2", 1, [29, 30, 32, 33]]] : []), ["CHORUS", 1, [10, 11]], ["MASTER", 1, [21, 25, 26, 13]]] },   /* G_RTYPE 24: ROOM / SPRING; MASTER: CLIP PNCH DUCK REL */
   { t: "SCL", pages: [["SCL", 0, [25, 26, 27, 28]], ["SCL 2", 1, [36]]] },   /* (JIANT 0.4) G_STRN 36: every sequence along the scale */
   { t: "ARP", pages: [["ARP", 0, [17, 18, 19, 20]], ["ARP 2", 0, [21, 22, 23, 24]]] },

@@ -2842,10 +2842,10 @@ static int test_edit_cycle(void)
     (void)CYC_D;
 #endif
     {   /* #97: a DRUM track's lane levels on EDIT > LANES (KICK SNARE CLAP HATCL) and LANES 2 (HATOP TOM RIM BELL) */
-        static const char *const CYC_K[] = {"EDIT 1", "EDIT 2", "LANES", "LANES 2", "SOUND", "SOUND 2", "VOICE", "VOICE 2",
-                                            "EDIT 1"};
+        static const char *const CYC_K[] = {"EDIT 1", "EDIT 2", "LANES", "LANES 2", "SOUND", "SOUND 2", "SOUND 3", "VOICE",
+                                            "VOICE 2", "EDIT 1"};
         set_engine_of(TSEL, ENGI_DRUM);
-        bad += check("EDIT cycle (DRUM): EDIT 1 EDIT 2 LANES LANES 2 SOUND SOUND 2 VOICE VOICE 2 EDIT 1",
+        bad += check("EDIT cycle (DRUM): EDIT 1 EDIT 2 LANES LANES 2 SOUND SOUND 2 SOUND 3 VOICE VOICE 2 EDIT 1",
                      engine_cycle(CYC_K, NELEM(CYC_K)));
         go_title("LANES 2"); frame();
         ok = TSEL->p[P_LN5] == 127;
@@ -5966,7 +5966,8 @@ static int test_div_order(void)
         int32_t v = d->def, n, seen = 0;
         uint32_t prev = 0xFFFFFFFFu, len;
         for (n = 0; n < 40; n++) v = param_turn(d, v, -1);
-        for (n = 0; n <= d->max - d->min; n++) {
+        for (n = 0; n <= (d == &GP[G_DTIME] ? DT_FREE - 1 : d->max - d->min); n++) {   /* (TIME: its divisions; the
+                                                         * free times past them: test_dtime_free) */
             len = d->names == N_SLDIV ? 1000000u / SL_DEN[v] : div_samples((uint32_t)v);
             if (!(len < prev && enum_rank(d, v) == d->min + n && !((seen >> v) & 1))) {
                 printf("  %s: %s (value %d, place %d, length %u) after %u\n", d->label, d->names[v], (int)v,
@@ -5977,7 +5978,23 @@ static int test_div_order(void)
             prev = len;
             v = param_turn(d, v, 1);
         }
-        ok &= seen == (1 << (d->max - d->min + 1)) - 1;
+        ok &= seen == (d == &GP[G_DTIME] ? (1 << DT_FREE) - 1 : (1 << (d->max - d->min + 1)) - 1);
+    }
+    {   /* (JIANT 0.4) TIME past the last division (1/32): the free times, 5 ms .. 1.48 s, each longer, the end holds */
+        int32_t v = 3, n;
+        uint32_t prev = 0;
+        int okf = 1;
+        for (n = 0; n < 48; n++) {
+            v = param_turn(&GP[G_DTIME], v, 1);
+            okf &= v == DT_FREE + n && DTIME_MS[n] > prev;
+            prev = DTIME_MS[n];
+        }
+        okf &= param_turn(&GP[G_DTIME], v, 1) == v && DTIME_MS[0] == 5u && DTIME_MS[47] == 1480u &&
+               str_eq(N_DTIME[DT_FREE], "5ms") && str_eq(N_DTIME[57], "1.48s");
+        song.g[G_DTIME] = DT_FREE + 47;
+        okf &= delay_samples() == 1480u * 441u / 10u;
+        song.g[G_DTIME] = 1;
+        bad += check("delay TIME: past 1/32 the free times 5 ms .. 1.48 s, each longer; the delay that long", okf);
     }
     ok &= str_eq(N_DIV[2], "1/16") && str_eq(N_DIV[4], "8T") && str_eq(N_DIV[9], "4BAR") && TP[P_SDIV].def == 2;
     ok &= param_turn(&TP[P_SDIV], 2, 1) == 5 && param_turn(&TP[P_SDIV], 2, -1) == 4 &&   /* 1/16: right 16T, left 8T */
@@ -5994,11 +6011,11 @@ static int test_div_order(void)
             if (!page_visible(id) || !(d = page_desc(cur_page(), c, &vp)) || !vp || !enum_order(d))
                 continue;
             found++;
-            *vp = d->names == N_DIV ? 2 : 1;        /* 1/16 */
+            *vp = d->names != N_SLDIV ? 2 : 1;      /* 1/16 */
             turn(EN_K1 + c, 1);
-            ok &= *vp == (d->names == N_DIV ? 5 : 4);  /* 16T */
+            ok &= *vp == (d->names != N_SLDIV ? 5 : 4);  /* 16T */
             turn(EN_K1 + c, -2);
-            ok &= *vp == (d->names == N_DIV ? 4 : 3);  /* 8T */
+            ok &= *vp == (d->names != N_SLDIV ? 4 : 3);  /* 8T */
         }
     bad += check("#48 the pages' knobs step the divisions by length (SEQ, ARP, DLY, SLICER)", ok && found >= 4u);
     return bad;
