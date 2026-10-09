@@ -307,7 +307,8 @@ static __attribute__((noinline)) int32_t dly_grain(uint32_t dl)
 
 static uint32_t delay_samples(void)
 {
-    uint32_t s = div_samples((uint32_t)song.g[G_DTIME]);
+    uint32_t g = (uint32_t)song.g[G_DTIME];
+    uint32_t s = g < DT_FREE ? div_samples(g) : (uint32_t)DTIME_MS[(g - DT_FREE) % 48u] * 441u / 10u;   /* (JIANT 0.4: free) */
     return s < 16u ? 16u : s >= DLY_LEN ? DLY_LEN - 1u : s;
 }
 
@@ -477,15 +478,18 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
                      uint32_t n)
 {
     uint32_t i, dl = delay_samples();
-    int32_t fb = song.g[G_DFDBK] * 230, col = 2000 + song.g[G_DCOLOR] * 240;
+    int32_t fb = song.g[G_DFDBK] * 230, tn = song.g[G_DCOLOR] - 64;   /* (JIANT 0.4) TONE: one knob, low-pass .. open .. low cut */
+    int32_t col = tn < 0 ? 500 + (64 + tn) * (64 + tn) * 8 : 32767;
     int32_t dmix = song.g[G_DMIX] * 258;
     int32_t cdepth = song.g[G_CDEPTH] * 6, rt;
     uint32_t cinc = LFO_INC[song.g[G_CRATE] & 127] / CTL;
-    int32_t hk = song.g[G_DHPF] * 44, wd = song.g[G_WIDTH];   /* (JIANT) HPF: off .. ~1.2 kHz; WIDTH */
+    int32_t hk = tn > 0 ? tn * tn * 4 : 0, wd = song.g[G_WIDTH];   /* (the low cut: up to ~3 kHz); WIDTH */
     int32_t gr = song.g[G_DPIT] || song.g[G_DSPRY];     /* (JIANT) the GRAIN delay */
     uint32_t dr = dl + (wd ? div_samples(3) * (uint32_t)wd / 127u : 0u);   /* the right echo: up to 1/32 later */
     if (dr >= DLY_LEN)
         dr = DLY_LEN - 1u;
+    if (!hk)
+        fx.dly_hp = 0;                                  /* (no low cut: none held over from one) */
     if (song.g[G_RFILT]) {                              /* (JIANT) the reverb's tone: FILT < 0 a low-pass (~12 kHz ..
                                                          * ~350 Hz), > 0 a low cut (~60 Hz .. ~1.5 kHz) */
         int32_t rf = song.g[G_RFILT], k = rf < 0 ? 32767 - (-rf) * 495 : 300 + rf * 110;
