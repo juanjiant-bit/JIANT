@@ -13,7 +13,6 @@
 /* the height ADSR and LFO are drawn on: 100 px, or (MENU > LARGE's strip: draw_graph) the strip's ~ 56 */
 static int32_t graph_ht = 100;
 #include "ui_organic.c"                              /* JIANT FM's organic line art (drawn by code) */
-#include "ui_plates.c"                               /* .. the pages drawn with the user's plates */
 
 /* Matches voice.c: attack is linear, decay and release are exponential
  * (env += (target - env) * k each tick, ~99 % after the set time). Time
@@ -818,6 +817,44 @@ static void page_title(char *ti)
     }
 }
 /* the strip's title: L centred (M when L lacks a glyph or is too wide) */
+/* the thermal ramp (JIANT): a value 0..256 as heat, indigo .. violet .. red .. orange .. yellow .. white (other
+ * palettes: their surface toward their accent and text) */
+static uint16_t heat_col(int32_t v)
+{
+    static const uint16_t H[6] = {0x2008u, 0x895Fu, 0xF943u, 0xFBC0u, 0xFEA0u, 0xFFFFu};
+    int32_t k;
+    v = clamp(v, 0, 256);
+    if (settings.palette != UI_JIANT_INDEX)
+        return v < 128 ? ux_mix(T_SURF, T_ACCENT, v * 100 / 128) : ux_mix(T_ACCENT, T_TEXT, (v - 128) * 100 / 128);
+    k = v * 5 / 257;
+    return ux_mix(H[k], H[k + 1], (v * 5 - k * 256) * 100 / 256);
+}
+
+/* DRUM (DRUM-X): the eight sounds as columns, each as high and as hot as its hit now (a muted one crossed); the MORPH
+ * A .. B above. sel: the sound edited (EDIT > SOUND), its name in the theme colour; -1 none */
+static void graph_drum(const track_t *t, int32_t sel)
+{
+    const drum_lane_t *K = drum_kit_of(t);
+    int32_t morph = clamp(t->p[P_E0], 0, 127), mx = 30 + morph * 180 / 127;
+    uint32_t l;
+    cv_rect(30, 12, 180, 1, T_LINE);
+    cv_rect(30, 11, mx - 30, 3, heat_col(morph * 2));
+    cv_text(12, 8, &AF_S, "A", morph < 64 ? T_THEME : T_DIM);
+    cv_text_r(226, 8, &AF_S, "B", morph >= 64 ? T_THEME : T_DIM, T_SURF);
+    for (l = 0; l < 8u; l++) {
+        int32_t x = 18 + (int32_t)l * 26, e = K && K[l].x.live ? K[l].x.ea >> 22 : 0, h = 4 + e * 66 / 256;
+        int muted = dx_lane_muted(l);
+        cv_rect(x, 94 - 70, 16, 70, T_SURF);
+        cv_rect(x + 7, 24, 2, 70, T_LINE);
+        if (!muted)
+            cv_rect(x, 94 - h, 16, h, e ? heat_col(e) : T_DIM);
+        else {
+            cv_rect(x + 2, 58, 12, 1, T_DIM);
+        }
+        cv_text_in(x - 4, 100, 24, &AF_S, drum_lane_abbr(t, l), sel == (int32_t)l ? T_THEME : muted ? T_DIM : T_MID, T_SURF);
+    }
+}
+
 static void graph_title(void)
 {
     char ti[20];
@@ -1426,13 +1463,11 @@ static void draw_graph(void)
         graph_scope(c);
     } else {
         switch (pg->graph) {
-        case GR_ADSR:                                /* (JIANT: the plates, ui_plates.c) */
-            cv_oy = 0;
-            graph_p_env(t);
+        case GR_ADSR:
+            graph_adsr(t, c);
             break;
         case GR_LFO:
-            cv_oy = 0;
-            graph_p_lfo(t);
+            graph_lfo(t, c);
             break;
         case GR_STEPS:
             graph_steps(t, c);
@@ -1453,8 +1488,7 @@ static void draw_graph(void)
             graph_chord(t, c);
             break;
         case GR_FX:
-            cv_oy = 0;
-            graph_p_fx(t);
+            graph_fx(t, c);
             break;
         case GR_SLCR:
             graph_slicer(t, c);
@@ -1487,9 +1521,9 @@ static void draw_graph(void)
             cv_oy = 0;
             graph_events();
             break;
-        case GR_DXSND:                               /* EDIT > SOUND: the kit's specimen, the sound's organ singled out */
+        case GR_DXSND:                               /* EDIT > SOUND: the kit's lanes, the sound edited singled out */
             cv_oy = 0;
-            graph_p_drum(t, dx_ui_lane);
+            graph_drum(t, dx_ui_lane);
             break;
         case GR_TOOLS:
             cv_oy = 0;
@@ -1501,13 +1535,8 @@ static void draw_graph(void)
             else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_FM6) graph_fm6(t, c);   /* EDIT 1 and 2 */
             else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_DRUM) {
                 cv_oy = 0;
-                graph_p_drum(t, -1);
+                graph_drum(t, -1);
             }
-            else if (pg->graph == GR_ARP) { cv_oy = 0; graph_p_arp(t); }
-            else if (pg->fam == FAM_LFO && pg->graph == GR_NONE) { cv_oy = 0; graph_p_lfo(t); }
-            else if (pg->fam == FAM_ENV && pg->graph == GR_NONE) { cv_oy = 0; graph_p_env(t); }
-            else if (pg->fam == FAM_EDIT && pg->id[0] == P_VOICE) { cv_oy = 0; graph_p_voices(t); }
-            else if (pg->scope == SC_ENGINE && plate_of(t)) { cv_oy = 0; graph_p_engine(t); }
 #if FELUCCA_FM4
             else if ((pg->scope == SC_ENGINE || pg->id[0] == P_FM1_LEVEL) && t->eng_req % NENGINES == ENGI_DIGITAL)
                 graph_fm(t, c);                      /* (OP LEVEL too: the levels on the chart) */

@@ -394,6 +394,11 @@ static void card_mot_of(const int16_t *vp)
 #define LG_VB 49                                        /* the value's band: L capitals rows 49..69 */
 #define LG_UY 73                                        /* the unit's line (S capitals rows 76..84) */
 #define LG_GY 92                                        /* the gauge, 3 px */
+/* a card's gauge: JIANT (thermal) its value as heat, violet .. yellow; another palette its theme colour */
+static uint16_t gauge_col(int32_t ratio)
+{
+    return settings.palette == UI_JIANT_INDEX ? heat_col(48 + clamp(ratio, 0, 1000) * 200 / 1000) : T_THEME;
+}
 static void draw_column_tall(uint32_t c, const char *label, const char *val, const char *unit, uint16_t vc, int32_t ratio,
                              uint32_t icon, int hot, int mot, int32_t kid)
 {
@@ -463,7 +468,7 @@ static void draw_column_tall(uint32_t c, const char *label, const char *val, con
     if (ratio >= 0) {
         int32_t gw = COL_W - 10, fx = ratio * gw / 1000;
         cv_rrect(5, LG_GY, gw, 3, 1, ux.style ? T_LINE : T_BG, T_SURF);
-        cv_rrect(5, LG_GY, fx < 3 ? 3 : fx, 3, 1, hot ? T_ACCENT : vc == T_DIM ? T_DIM : T_THEME, T_BG);
+        cv_rrect(5, LG_GY, fx < 3 ? 3 : fx, 3, 1, hot ? T_ACCENT : vc == T_DIM ? T_DIM : gauge_col(ratio), T_BG);
     }
     cv_blit((uint32_t)CARD_X(c), Y_LABEL);
 }
@@ -589,7 +594,7 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
         if (!strip && ratio >= 0) {
             int32_t gw = COL_W - 10, fx = ratio * gw / 1000;
             cv_rrect(5, 38, gw, 3, 1, ux.style ? T_LINE : T_BG, T_SURF);   /* (LINE: no card to cut it from) */
-            cv_rrect(5, 38, fx < 3 ? 3 : fx, 3, 1, hot ? T_ACCENT : vc == T_DIM ? T_DIM : T_THEME, T_BG);
+            cv_rrect(5, 38, fx < 3 ? 3 : fx, 3, 1, hot ? T_ACCENT : vc == T_DIM ? T_DIM : gauge_col(ratio), T_BG);
         }
     }
     cv_oy = 0;
