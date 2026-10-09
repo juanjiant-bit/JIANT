@@ -228,7 +228,7 @@ int main(void)
 
     bad += check("layout: SLICER after DETUNE, then the matrix just before P_E0",
                  P_SLCR == P_DETUNE + 1 && P_SLDEPTH + 1 == P_M1SRC && P_M4AMT + 1 == P_FM1_ATK && P_FM4_LEVEL + 1 == P_SOFS && P_POFS + 1 == P_LN0 &&
-                 P_LN7 + 1 == P_DTYPE && P_MS15 + 1 == P_FTYPE && P_FTYPE + 1 == P_E0 && P_E0 == 113 && P_COUNT == PROJ_NP_V3 + 64u &&
+                 P_LN7 + 1 == P_DTYPE && P_MS15 + 1 == P_FTYPE && P_FRES + 1 == P_E0 && P_E0 == 115 && P_COUNT == PROJ_NP_V3 + 66u &&
                  PROJ_NP_V3 == PROJ_NP_V2 + 4u);
     bad += check("FUNB fits one flash object (its whole payload), the retained cache in NOINIT",
                  sizeof(project_store_t) == 4096u - 256u && 0xC8u + 4u * sizeof(project_store_t) <= 0x3D50u);
@@ -481,9 +481,9 @@ int main(void)
         project_t a, c;
         project_store_t st, st2;
         uint32_t i, zero = 1;
-        bad += check("FUNB name at the end of the reserved tail, the FM6 patches and the kit before it, after the data (44 + 12 spare)",
+        bad += check("FUNB name at the end of the reserved tail, the FM6 patches and the kit before it, after the data (48: the punch-in block, no spare)",
                      PROJ_NAME_OFF == 3824u && PROJ_FM6_OFF == 3312u && PROJ_DX_OFF == 3216u &&
-                     68u + NTRK * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + sizeof(motion_store_t) + 44u + 12u ==
+                     68u + NTRK * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + sizeof(motion_store_t) + 48u ==
                      PROJ_DX_OFF);
         memset(&a, 0, sizeof a);
         a.magic = PROJ_MAGIC; a.size = sizeof a; a.parts = NPART; a.phys = PROJ_PHYS;

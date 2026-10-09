@@ -53,7 +53,7 @@ presets (as PHYS, 9); a sound of theirs that arrives (a project, a user preset, 
 ANALOG's first preset, a SAMPLE PERC sound (SET 4) as DRUM's kit. The factory samples left the firmware.
 
 **JIANT FUNB (120 parameters, 32 globals):** 21 track parameters went in before the engine parameters, which moved from
-91..98 to 112..119: P_COUNT 120, P_E0 112; JIANT 0.5 adds ANALOG's FILTER TYPE (112): P_COUNT 121, P_E0 113. Five globals were added after the 27 a project's header holds: G_COUNT 32.
+91..98 to 112..119: P_COUNT 120, P_E0 112; JIANT 0.5 adds the FILTER (112 TYPE, 113 CUT, 114 RES): P_COUNT 123, P_E0 115. Five globals were added after the 27 a project's header holds: G_COUNT 32.
 No command changed; an editor that takes P_COUNT, G_COUNT and P_E0 from `INFO` keeps working.
 
 | id | label | values |

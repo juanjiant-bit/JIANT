@@ -42,7 +42,8 @@ All by Hügelton Instruments (Leo Kuroshita), in this tree:
 
 | What | Licence | Where |
 | --- | --- | --- |
-| Inter Tight font by The Inter Project Authors: the UI text, rasterised into the firmware at build time (`tools/gen_aa_font.py`; the generated tables are not offered as a font, and the font declares no Reserved Font Name) | SIL OFL 1.1 | `assets/fonts/InterTight[wght].ttf`, `LICENSES/OFL-InterTight.txt` (also `assets/fonts/OFL.txt`) |
+| Chakra Petch font by The Chakra Petch Project Authors: the UI text since JIANT 0.5, rasterised into the firmware at build time (`tools/gen_aa_font.py --preset chakra-petch`; the generated tables are not offered as a font) | SIL OFL 1.1 | `assets/fonts/ChakraPetch-*.ttf`, `LICENSES/OFL-ChakraPetch.txt` (also `assets/fonts/OFL-ChakraPetch.txt`) |
+| Inter Tight font by The Inter Project Authors: the UI text up to JIANT 0.4 (kept for the `inter-tight` preset; the font declares no Reserved Font Name) | SIL OFL 1.1 | `assets/fonts/InterTight[wght].ttf`, `LICENSES/OFL-InterTight.txt` (also `assets/fonts/OFL.txt`) |
 | msfa by Google Inc. and Pascal Gauthier, from Dexed (<https://github.com/asb2m10/dexed>): the FM6 engine's synthesis, ported to integer C (Dexed itself is GPL-3.0; only msfa is used; the FM6 factory patches are Felucca's own) | Apache-2.0 | `firmware/src/fm6_core.c`, `LICENSES/Apache-2.0-msfa.txt` |
 | klattsch by Tony Gies (<https://github.com/tgies/klattsch>): design reference for the VOICE engine; no code copied. Formant data from Klatt (1980) / Hillenbrand et al. (1995) | MIT (klattsch) | credit only |
 | X0X by charlesvestal (<https://github.com/charlesvestal/fm1-x0x>), a Felucca fork: the design of the browser emulator (the worklet, the device clock driven by its audio, the exports); its files credit it in their headers | GPL-3.0 | `web/emu/` |

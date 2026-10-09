@@ -885,7 +885,8 @@ static void rec_clear_auto(uint32_t b)
         for (i = 0; i < NPAGES; i++)
             if (PAGES[i].fam == f && (PAGES[i].scope == SC_TRACK || PAGES[i].scope == SC_ENGINE))
                 for (k = 0; k < 4u; k++)
-                    if (PAGES[i].id[k] < P_COUNT)
+                    if (PAGES[i].id[k] < P_COUNT && !(f == FAM_EDIT && PAGES[i].id[k] == P_DIST))   /* (EDIT > FILTER's
+                                                         * DRV is the part's DIST: FX's) */
                         m[PAGES[i].id[k] / 32u] |= 1u << (PAGES[i].id[k] % 32u);
     }
     for (k = 0; k < NTRK; k++)

@@ -7,207 +7,169 @@
 
 ![JIANT FM en el emulador](docs/jiant-screens.png)
 
-*HOME, DRUM-X, la capa MACRO, los punch-in FX, el piano roll y la capa de canción, tal como los dibuja el
-firmware (paleta térmica JIANT).*
+*HOME (el ecosistema), el ser de ANALOG, la colonia de DRUM-X, el LFO corriendo, la curva de DIST y el compás de
+GLOBAL, tal como los dibuja el firmware.*
 
 JIANT FM es un firmware alternativo para el **M-VAVE FM-1**, pensado para tocar en vivo y armar canciones enteras
-sin computadora. Batería sintetizada con morph, efectos que se tocan con las teclas y se graban, macros, canciones
-por compases y un master con carácter, todo a mano en el aparato.
-
-Es un fork de [Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 de Hügelton Instruments (GPL-3.0) y toma de
-[SLOOP](https://github.com/isod89/sloop-fm1) el sistema de canciones.
+sin computadora. Es un fork de [Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 de Hügelton Instruments
+(GPL-3.0) y toma de [SLOOP](https://github.com/isod89/sloop-fm1) el sistema de canciones.
 
 **▶ [Probalo en el navegador](https://juanjiant-bit.github.io/JIANT/)** · **[Instalador web](https://juanjiant-bit.github.io/JIANT/webapp/installer/)** · **[Editor web](https://juanjiant-bit.github.io/JIANT/webapp/editor/)**: el emulador corre el mismo código que el
-FM-1, con sonido, y se maneja con el teclado de la compu o el mouse. Se actualiza solo con cada cambio que entra a
-`main`.
+FM-1, con sonido, y se maneja con el teclado de la compu o el mouse. El emulador, el instalador y el editor se
+actualizan solos con cada cambio que entra a `main`.
 
-> **Estado: en desarrollo (v0.1).** Compila y pasa todos los tests (los de Felucca y los propios), pero
-> **todavía no se probó en un FM-1 real**. Antes de instalarlo, hacé un backup del flash.
+> **Estado: en desarrollo (v0.5).** Compila y pasa todos los tests (los de Felucca y los propios), pero
+> **todavía no se probó a fondo en un FM-1 real**. Antes de instalarlo, hacé un backup del flash.
 
-## Qué lo hace distinto
+## La idea
 
-### DRUM-X: batería sintetizada con morph
-Un kit de 8 sonidos (BD SD CP CH OH TM RS CB) generado en tiempo real, sin samples, al estilo Microtonic.
-- Cada sonido tiene dos lados, **A** y **B**; **MORPH** (KNOB 1, siempre a mano) se mueve entre los dos.
-- **FOLD** pasa el oscilador de cada sonido por un wavefolder después de su envolvente (ataque brillante, cola limpia); **FM** cambia el timbre de cada sonido con FM armónica (8 bandas de
-  ratio, de grave y redondo a metálico); además TUNE, TONE, DECAY, NOISE y DRIVE.
-- **Mutes por grupo** (KICK, SNARE, HAT, PERC) con GLO sostenido, y **mute por sonido** con EDIT sostenido.
-- **EDIT sostenido → INIT / RECALL**: el kit vuelve al de fábrica o al guardado en la sección.
-- **EDIT > SOUND 3** (por sonido, como Microtonic): **PMOD** elige cómo se mueve el pitch (DECAY; LONG, el barrido
-  largo del 808; NOISE, pitch al azar para percusiones raras; SINE, un vaivén), **DRV** satura el oscilador para
-  kicks densos, y **WAVE** cambia la onda sola.
+Un sintetizador de bolsillo no debería sentirse como un menú. JIANT parte de una pregunta simple: ¿qué pasa si el
+aparato se comporta menos como una herramienta y más como un organismo?
 
-### Punch-in FX: los efectos se tocan y se graban
-Con FX sostenido, las teclas son efectos que actúan mientras se mantienen y al soltar todo vuelve exacto.
-- **De audio**: REPEAT 1/8 · 1/16 · 1/32, LPF y HPF.
-- **Sobre las notas, tipo OP-Z**: OCT− y OCT+, 1/2 TEMPO, DECAY corto (también baja el sustain: todo el sistema
-  queda en plucks) y largo, STUTTER 1/8 · 1/16, **ATK+** (sube el ataque de todo; en la batería suaviza cada golpe),
-  ARP momentáneo (en la batería, un fill distinto cada vez que lo tocás) y RANDOM (mueve notas y también pasos).
-- **Cuantizados a la grilla**: un efecto entra en la próxima semicorchea del transporte; el REPEAT y el SLICER
-  (gates y stutters por track) siguen la grilla del transporte desde el primer momento, aunque cambies el RATE o el
-  tempo con la canción sonando, así no hay saltos al tocarlos.
-- **Objetivo**: A#4 elige si afectan a todo, solo a los sintes o solo a la batería.
-- **Automatizables**: con REC armado se graban en una lane de 4 compases por sección.
-- **Perillas**: FILTER, CRUSH, THROW y DEPTH.
+Por eso todo en JIANT está vivo y es visible. La pantalla funciona como una **cámara térmica**: el color no es
+decoración, es intensidad. Lo frío es cian y violeta, lo caliente rojo, naranja, amarillo y blanco. Un parámetro
+alto quema; una voz que suena brilla; el silencio se enfría. Cada motor es un **ser**, un protozoo dibujado en líneas
+cuya forma sale de lo que estás tocando: abrís el filtro y le crecen espinas, subís la resonancia y la membrana
+vibra, desafinás los osciladores y sus núcleos se separan. HOME es un **ecosistema**: cuatro criaturas, una por
+track, que respiran con su propio audio. No hay que leer números para saber qué está pasando; se ve.
 
-### Macros M1–M4: el sistema te invita a moverlo todo
-LFO sostenido abre la capa **MACRO**: las cuatro perillas son M1–M4 y la pantalla muestra a dónde va cada una
-("T1 CUT+62 T4 MRPH−31").
-- **Quedan fijas**: al soltar LFO las macros siguen en las perillas (en cualquier página) hasta volver a apretar LFO,
-  así se usan sin mantener nada apretado.
-- **Una sesión nueva ya viene modulada**: al encender, cada track sin rutas de macro recibe dos al azar hacia lo que su
-  sonido tiene (parámetros del engine, CUT, SHP, envíos, algo de PITCH), repartidas para que cada macro mueva dos
-  tracks. Girás M1–M4 y todo se deforma; después afinás en MOD o lo guardás con el proyecto.
-- **Dado**: con las macros abiertas (LFO sostenido o fijas) **SELECT** tira rutas nuevas, solo sobre los tracks que
-  están sonando (los muteados o en silencio quedan sin rutas); con LFO sostenido F3 también y G3 las borra (las rutas
-  propias de cada track quedan). Mientras están fijas, el tempo queda en GLO + SELECT.
-- **Asignar una macro**: en la página MOD de un track elegí SRC M1…M4 y su destino, con amount de −100 a +100.
-- **Destinos**: pitch, filtro, forma, amplitud, pan, envíos, LFO, cualquiera de los 8 parámetros del engine (MORPH,
-  FOLD, …) y el master (CLIP y PNCH).
-- **Alcance**: una macro puede mover varias cosas en varios tracks a la vez.
-- **Guardado**: se guardan con el proyecto.
+Al mismo tiempo, lo que es técnico se muestra técnico. El LFO corre a su velocidad, la envolvente marca dónde está la
+voz, la distorsión dibuja su curva de transferencia, el delay sus ecos, la reverb su respuesta. Lo orgánico invita a
+jugar; lo técnico deja entender qué hiciste.
 
-### SELECT: tempo en HOME, dado de sonido en el resto
-El tempo se cambia con **SELECT** solo en HOME y en GLOBAL (o con GLO sostenido). En cualquier otra página SELECT tira
-el dado del sonido del track: en un sinte carga uno de sus presets de fábrica al azar y mueve cada parámetro del engine
-hasta un cuarto de su rango; en DRUM-X sortea los lados A y B de cada sonido alrededor del kit de fábrica.
+La segunda idea es que **el azar es una invitación, no un accidente**. Cada sesión arranca con macros sorteadas
+hacia lo que tus sonidos tienen; SELECT tira el dado del sonido en cualquier página; los dados de macros solo caen
+sobre lo que está sonando. El sistema te empuja a mover cosas y siempre te deja cerca de algo que funciona: los
+dados parten de presets de fábrica y varían alrededor, nunca del vacío.
+
+La tercera es que **todo se toca y todo se graba**. Los efectos se tocan con las teclas y quedan en una lane
+automatizable; las perillas graban su movimiento; las canciones se arman por compases y escenas, y se graban
+mientras las tocás. Sin computadora, sin samples: todo se sintetiza en tiempo real en un chip pensado para otra
+cosa.
+
+Y la última es una disciplina: **liviano**. Cada gráfico es un puñado de líneas, cada efecto cabe en el
+presupuesto de CPU del audio, la firma que aparece al encender son 428 bytes. Un instrumento que se siente grande
+dentro de un aparato chico.
+
+## El sistema
 
 ### Pantalla viva
-- **HOME** es el ecosistema: un ser por track (su engine, sus cuatro perillas), cada uno se calienta, se hincha y se
-  mueve con su propio audio; en silencio quedan quietos.
-- Las páginas de engine muestran su ser en líneas térmicas (isotermas: el borde frío, el núcleo caliente); CUT le abre
-  espinas, RES le hace vibrar la membrana, DTN separa sus núcleos. DRUM-X es una colonia, un ser por sonido.
-- LFO, ENV, FX, DEST, VOICE y GLOBAL tienen gráficos técnicos vivos (el LFO corre a su rate, la envolvente marca dónde
-  está la voz).
-- Al encender se escribe la firma "Jiant FM1" en colores térmicos.
+- **Paleta térmica**: valores, curvas, pasos, golpes y notas se colorean por intensidad (cian → azul → violeta →
+  rojo → naranja → amarillo → blanco). La selección es violeta y lo activo naranja. Letra
+  [Chakra Petch](https://github.com/m4rc1e/Chakra-Petch): técnica, legible, de tecnología primitiva.
+- **HOME, el ecosistema**: un ser por track (la especie según su engine, la forma según sus cuatro perillas). Cada uno
+  se calienta, se hincha y se mueve con su propio audio; el track elegido se ve más grande; los muteados quedan
+  apagados; en silencio todos quedan quietos.
+- **Páginas de engine**: el ser del sonido en isotermas (cuatro contornos del mismo cuerpo, el borde frío, el núcleo
+  caliente). Las perillas se leen por lo que son: **CUT** abre espinas (más armónicos, más espinoso), **RES** hace
+  vibrar la membrana, **DTN/SPRD** separa dos núcleos, **NOIS/RAND/CRSH** deshilacha el borde, **WAVE** cambia los
+  lóbulos.
+- **DRUM-X, la colonia**: un ser por sonido del kit, cada uno con su forma (kick redondo, snare espinoso, hats con
+  flecos, clap en racimo, cowbell en estrella) que se hincha y se calienta cuando golpea.
+- **Gráficos técnicos vivos**: LFO (la onda corre a su rate, con cabezal y valor actual), ENV (un punto recorre la
+  curva con la voz que suena), DIST (curva de transferencia según TYPE y respuesta de TONE), DLY y DLY 2 (los ecos, L
+  y R), REVERB y REVERB 2 (la respuesta al impulso, estéreo), CHORUS (las tres líneas moduladas), MASTER (curva del
+  clipper, forma del PUNCH, cuánto baja el DUCK), ENV/LFO DEST (columnas bipolares bajo cada perilla, encendidas por lo
+  que mandan), VOICE (una casilla por voz y la curva del glide), GLOBAL (el compás en barras térmicas con el swing, el
+  clock y la afinación).
+- **Encendido**: la firma "Jiant FM1" se escribe trazo a trazo en colores térmicos (MENU > ANIM OFF: aparece
+  entera).
 
-### Perillas con aceleración
-Girar rápido barre el rango entero (hasta ×16 en los parámetros de 0 a 127); girar lento es ajuste fino, de a un
-paso. Viene encendido; se apaga en MENU > KNOB ACCEL.
+### Motores
+Ocho engines, todos de síntesis, sin samples: **ANALOG, FM6, PHASE, LOFI, VOICE, WHEEL, NOISE y DRUM (DRUM-X)**.
+- **ANALOG**: dos osciladores con **INT** (intervalo de ±24 semitonos: quintas, octavas) y DTN; además de SAW, SQR, TRI,
+  SIN y PWM tiene **SYNC**, **RING** y **SAW3** (tres sierras). Su filtro es por voz.
+- **FM6**: el motor de Dexed (importa .syx), con sus algoritmos graficados.
+- **PHASE**: phase distortion con **FB** (la salida realimenta la fase: de borde duro a growl).
+- **LOFI**: chip de 1, 4 y 8 bits con **BYTE** (bytebeat: 32 fórmulas elegidas con ALGO y deformadas con VAR). En BYTE,
+  **BEND** pliega el tiempo, **RES** da resonancia al filtro y **LOOP** repite un tramo corto de la fórmula: el ruido se
+  vuelve un tono afinado a la nota.
+- **VOICE** (formantes, según klattsch), **WHEEL** (órgano de drawbars) y **NOISE** (ruido coloreado y metálico).
+- **FILTER en todos los motores** (EDIT > FILTER): **TYPE** LP, HP, BP o **COMB** (un comb afinado a la nota que estás
+  tocando; CUT lo mueve ±32 semitonos y RES es cuánto resuena), **CUT** y **RES**. En ANALOG es su filtro por voz, con
+  DRV; en los demás es un filtro sobre el track, que sigue al LFO y a la envolvente (LFO/ENV DEST FLT), y su DRV es el
+  DIST del track.
 
-### Secuencias que se mueven
-- **SEQ > SHIFT**: corre la secuencia de cada track en pasos (**OFS**) y en altura (**PIT**). Los dos son
-  automatizables; también están en SCL sostenido.
-- **Una escala para todo**: ROOT y SCALE elegidos en cualquier track valen para todos los tracks melódicos (la batería
-  no usa escala). **STRN** (SCL 2) mueve todas las secuencias hacia arriba o abajo por los grados de esa escala.
-- **ARP TRNS**: con el arpegiador en TRNS, las teclas transponen la secuencia sin tocar notas.
-- **Edición**: 64 pasos por track, piano roll, grilla de batería, parameter locks, chance, ratchets, slide y
-  automatización de perillas.
-- **Grabación**: en vivo con overdub, metrónomo y count-in.
-- **SEQ + REC** borra todas las secuencias de una vez para empezar de cero; **REC + FX / EDIT / ENV / LFO…** borra solo
-  la automatización de esa parte.
+### DRUM-X: batería sintetizada con morph
+Un kit de 8 sonidos (BD SD CP CH OH TM RS CB) generado en tiempo real, al estilo Microtonic.
+- Cada sonido tiene dos lados, **A** y **B**; **MORPH** (KNOB 1) se mueve entre los dos.
+- **FOLD** pasa el oscilador de cada sonido por un wavefolder después de su envolvente: el golpe arranca brillante y
+  la cola vuelve a la onda limpia. **FM** cambia el timbre con FM armónica en 8 bandas; además TUNE, TONE, DECAY,
+  NOISE y DRV.
+- **EDIT > SOUND 3** (por sonido): **PMOD** elige cómo se mueve el pitch (DECAY, LONG como el 808, NOISE al azar, SINE),
+  **DRV** satura el oscilador para kicks densos, y **WAVE** cambia la onda.
+- **Mutes por grupo** (KICK, SNARE, HAT, PERC) con GLO sostenido y **por sonido** con EDIT sostenido.
+
+### Dados: el sistema te invita a moverlo todo
+- **SELECT** cambia el tempo en HOME y GLOBAL (y con GLO sostenido). En cualquier otra página **tira el dado del
+  sonido** del track: un sinte carga uno de sus presets de fábrica al azar y mueve cada parámetro del engine hasta un
+  cuarto de su rango; DRUM-X sortea los lados A y B de cada sonido alrededor del kit de fábrica.
+- **Macros M1–M4** (LFO sostenido, y quedan fijas al soltar hasta volver a apretar LFO): cada sesión arranca con dos
+  rutas al azar por track hacia lo que su sonido tiene. Con las macros abiertas, **SELECT** tira rutas nuevas, solo
+  sobre los tracks que están sonando; F3 también, G3 las borra. Se asignan a mano en MOD (SRC M1…M4) y se guardan con
+  el proyecto.
+
+### Punch-in FX: los efectos se tocan y se graban
+Con FX sostenido las teclas son efectos que actúan mientras se mantienen; al soltar todo vuelve exacto.
+- **De audio**: REPEAT 1/8 · 1/16 · 1/32, LPF y HPF.
+- **Sobre las notas, tipo OP-Z**: OCT− y OCT+, 1/2 TEMPO, DECAY corto (también baja el sustain: plucks) y largo,
+  STUTTER 1/8 · 1/16, ATK+ (también en la batería), ARP momentáneo (en la batería, un fill distinto cada vez) y RANDOM.
+- **Cuantizados**: entran en la próxima semicorchea del transporte; REPEAT y SLICER siguen la grilla desde el primer
+  momento.
+- **Automatizables**: con REC armado quedan en una lane de 4 compases por sección. A#4 elige si afectan a todo, a los
+  sintes o a la batería.
+
+### Secuencias
+- 64 pasos por track, piano roll, grilla de batería, parameter locks, chance, ratchets, slide y automatización de
+  perillas; grabación en vivo con overdub, metrónomo y count-in.
+- **SHIFT**: corre la secuencia en pasos (OFS) y en altura (PIT), automatizable.
+- **Una escala para todo**: ROOT y SCALE valen para todos los tracks melódicos; **STRN** mueve todas las secuencias
+  por los grados de la escala. **ARP TRNS**: las teclas transponen la secuencia.
+- **SEQ + REC** borra todas las secuencias; **REC + FX / EDIT / ENV / LFO…** borra solo la automatización de esa parte.
 
 ### Canciones dentro del aparato
-**8 canciones**, cada una con **4 secciones (A–D)** y una cadena de filas por compases, al estilo SLOOP. Con SAVE
-sostenido:
-- **Secciones en vivo**: se lanzan y entran en el próximo compás.
-- **Quick chain**: varias secciones tocadas en un mismo hold quedan en loop.
-- **SONG REC**: graba la canción mientras la tocás.
-- **STORE / RECALL**: guarda la sección que suena o vuelve a como estaba guardada.
+**8 canciones**, cada una con **4 secciones (A–D)** y una cadena de filas por compases, al estilo SLOOP: secciones en
+vivo que entran en el próximo compás, quick chain, SONG REC y STORE / RECALL. Cada fila puede tener una **escena**
+(mutes, mutes de grupo de DRUM-X, macros y punch-in MIDI) que se guarda con KNOB 4 en la página SONG o sola al grabar
+con SONG REC.
 
-**Escenas**: cada fila de la canción puede tener una escena. Cuando la fila entra, pone los mutes de los tracks, los
-mutes de grupo de DRUM-X, las macros M1–M4 y los punch-in MIDI que estaban apretados (OCT+, 1/2 TEMPO, STUTTER…).
-La escena sigue vigente en las filas siguientes que no tengan una propia, y los efectos se apagan al parar la canción.
-- **Guardar una escena**: en la página SONG, KNOB 4 (SCENE) a la derecha guarda el estado de ese momento en la fila
-  elegida; a la izquierda la borra.
-- **Con SONG REC**: cada fila grabada guarda su escena sola, con el estado de cuando empezó. Tocás la canción con
-  mutes, macros y efectos, y queda grabada así.
+### Modulación
+- **Matriz MOD**: 4 slots por track. Fuentes: LFO, ENV, VEL, KEY, RAND, controladores MIDI, las 4 macros y STEP.
+- **MSEQ**: un secuenciador de modulación por track (16 niveles, LEN, DIV, SLEW), como un secuenciador de CV.
+- **ENV LOOP**: con la nota sostenida la envolvente vuelve al ataque al llegar al sustain: un LFO con forma de ADSR.
 
-### Envolventes con loop
-ENV DEST > **LOOP**: con la nota sostenida, la envolvente vuelve al ataque al llegar al sustain; es un LFO con forma de
-ADSR para amplitud, filtro, pitch y forma.
+### Efectos y master
+- **DIST** por track con TYPE (SOFT, HARD, FOLD, CRUSH, RECT) y TONE; **SLICER** por track.
+- **Delay**: TIME sincronizado o libre (5 ms a 1,48 s), un solo TONE, **grain delay** con PITCH y SPRAY (también en
+  tiempos largos), WIDTH estéreo.
+- **Reverb** ROOM o SPRING con pre-delay, modulación, filtro y width; **chorus**.
+- **Master**: **CLIP** (saturación con el nivel compensado: suma carácter, no volumen), **PNCH** (transientes de la
+  batería), **DUCK** (el kick baja lo demás) y un **nivelador siempre activo** (compresión 2:1 con make-up automático,
+  de −9 a +6 dB) antes del limitador y el soft clip: patches quietos y CLIP fuerte suenan a un volumen coherente.
 
-### Modulación secuenciada (LFO > MSEQ)
-Cada track tiene un secuenciador de modulación, como un secuenciador de CV: 16 niveles, **LEN** (1–16 pasos), **DIV**
-(el ritmo de los pasos) y **SLEW** (de saltos a glides; KNOB 4 en la página MSEQ). Corre con el transporte y en la matriz MOD es la fuente
-**STEP**: cualquier destino (filtro, pitch, MORPH, envíos, CLIP…) sigue la secuencia. En la página MSEQ, KNOB 1 elige
-el paso y KNOB 2 su nivel; los niveles también se automatizan.
+### Perillas con aceleración
+Girar rápido barre el rango entero; girar lento es ajuste fino. Se apaga en MENU > KNOB ACCEL.
 
-### Efectos
-- **DIST** por track con **TYPE** (SOFT, HARD, FOLD, CRUSH, RECT) y **TONE** (más oscuro o más brillante): página FX > DIST.
-- **Delay**: **TIME** sincroniza con las divisiones y, pasando la última, sigue en tiempo libre de 5 ms a 1,48 s.
-  **TONE** es un solo filtro para las repeticiones: a la izquierda más oscuras, al centro abiertas, a la derecha sin
-  graves (antes eran dos perillas, COLR y HPF).
-- **WIDTH**: abre el estéreo. El eco derecho del delay llega un poco después y el chorus separa L y R. En 0 todo
-  suena como antes.
-- **Reverb**: **PRE** (pre-delay de hasta 100 ms), y **MOD** y **RATE** modulan la red de resonancia. En ROOM se mueve
-  el largo de los combs hasta ~6 ms: la cola se desafina y se ensancha, como un chorus. En SPRING, un vaivén mucho
-  más profundo. En REVERB 2 también **FILT** (a la izquierda más oscura, a la derecha sin graves) y **WIDE** (abre la
-  reverb en estéreo).
-- **GRAIN delay** (DLY 2): **PITCH** pasa cada repetición por dos granos, ±12 semitonos (repeticiones que suben tipo
-  shimmer o que bajan), y **SPRY** los dispersa al azar (hasta ~190 ms). Con los dos en 0 es el delay de siempre. Usa
-  la misma memoria del delay: no ocupa RAM extra.
-
-### Master con carácter (FX > MASTER)
-- **CLIP**: satura la mezcla antes del limiter.
-- **PNCH**: bus de batería como el Drum Buss de Ableton: el ataque de cada golpe sube hasta +11 dB empujando la
-  saturación de la voz y la cola baja hasta −14 dB.
-- **DUCK**: el bombo baja a los demás tracks hasta −30 dB, los mantiene abajo ~25 ms y vuelven con una curva de
-  sidechain (bombeo), con su release.
-
-## Lo que trae
-
-- **4 tracks** con 8 voces compartidas.
-- **8 engines**, todos de síntesis, sin samples: ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, VOICE, WHEEL, NOISE
-  y DRUM (DRUM-X).
-  - **ANALOG**: el oscilador 2 tiene **INT** (intervalo de ±24 semitonos, como un sinte analógico clásico: quintas,
-    octavas) además de DTN. Suma las ondas de TRIO: **SYNC** (sync duro, DTN barre la relación), **RING** (modulación en anillo,
-    campanas y metales) y **SAW3** (tres sierras desafinadas); INT también mueve el oscilador 2 en SYNC y RING. Los
-    sonidos de TRIO guardados cargan como ANALOG. Página **FILTER** (EDIT): TYPE **LP**, **HP**, **BP** o **COMB** (un
-    comb afinado a la nota, CUT lo mueve ±32 semitonos y RES es su realimentación), con CUT, RES y DRV.
-  - **LOFI** tiene **BYTE** (primera en la lista): bytebeat, 32 fórmulas de 8 bits elegidas con ALGO (DUTY) y una
-    variable VAR (CRSH) que las deforma; el tiempo sigue la nota tocada. Ningún otro firmware lo tiene. Para todas las
-    ondas: **CUT** (filtro resonante), **BEND** (en BYTE pliega el tiempo y salen melodías y ritmos nuevos de la misma
-    fórmula; en las otras dobla la fase) y **MASK** (corrupción de bits). VIB queda; SWP, ARP y TONE se fueron. En
-    BYTE, **RES** (resonancia del filtro, en lugar de VIB) y **LOOP** (en lugar de MASK: repite un tramo corto de la
-    fórmula y el ruido se vuelve un tono afinado a la nota).
-  - **PHASE** suma **FB**: la salida realimenta la fase, de un borde más duro a growl y ruido.
-- **Modulación**: 4 slots por track. Fuentes: LFO, ENV, VEL, KEY, RAND, controladores MIDI, las 4 macros y STEP (el
-  secuenciador de modulación).
-- **Efectos**: distorsión de 5 tipos y SLICER por track; envíos a chorus, delay (con HPF) y reverb (ROOM o SPRING, con
-  pre-delay, modulación, filtro y width); grain delay; WIDTH estéreo; master con CLIP, PNCH, DUCK y limiter.
-- **Arpegiador** con 16 modos y 16 escalas con modo de teclas blancas; glide; POLY, MONO, LEGATO y UNISON.
-- **Conexiones**:
-  - USB: MIDI class-compliant y audio (el master llega a la computadora).
-  - MIDI por TRS.
-  - Clock interno, USB o TRS.
-- **Guardado**: 32 presets de usuario con nombre y autoguardado al apagar.
+### Conexiones y guardado
+- USB: MIDI class-compliant y audio (el master llega a la computadora); MIDI por TRS; clock interno, USB o TRS.
+- 32 presets de usuario con nombre y autoguardado al apagar.
 - **Editor web** de todos los parámetros: patches FM6, grilla, mezcla y backup completo (las 8 canciones con sus
   secciones, filas y escenas).
-
-## Estado
-
-| Objetivo | Estado |
-| --- | --- |
-| Song mode estilo SLOOP: 8 canciones × 4 secciones, con backup completo desde el editor | ✅ |
-| DRUM-X: motor, MORPH, FOLD, mutes por grupo y por sonido, INIT / RECALL | ✅ |
-| Master: CLIP, PNCH, DUCK | ✅ |
-| Punch-in FX de audio y MIDI, con su lane automatizable | ✅ |
-| Macros M1–M4 con su capa y su mapa | ✅ |
-| SHIFT (OFS / PIT), ARP TRNS, SEQ + REC | ✅ |
-| Paleta térmica JIANT | ✅ |
-| Escenas por fila de la cadena (mutes, macros, punch-in) | ✅ |
-| Secuenciador de modulación (STEP), DIST con tipos y tono, delay HPF, WIDTH, reverb MOD y PRE | ✅ |
-| Interfaz orgánica con las ilustraciones ([docs/TONIC-UI.md](docs/TONIC-UI.md)) | ⏸ después de sonido y performance |
 
 <details>
 <summary><b>Qué cambió respecto de Felucca 1.1.5.1</b></summary>
 
-- **DRUM** es DRUM-X; los kits de Felucca se retiraron.
-- **CHORD** se retiró; sus dos parámetros son ahora SHIFT (OFS / PIT).
-- **PHYS** se retiró, lo que liberó 50 KB de RAM. Un sonido PHYS viejo suena como el primer preset de ANALOG.
-- **Sin samples**: se fueron los samples de usuario (USR1–3, para hacer lugar a las canciones) y los engines de samples
-  SAMPLE, SLICE y GRAIN con sus samples de fábrica: 140 KB de flash y 32 KB de RAM para DRUM-X, los efectos y los
-  punch-in. Un sonido de esos engines carga como ANALOG; el viejo PERC de SAMPLE, como DRUM-X.
+- **Interfaz nueva**: paleta térmica, letra Chakra Petch, seres, ecosistema en HOME, gráficos técnicos vivos y firma
+  al encender.
+- **DRUM** es DRUM-X; los kits de Felucca se retiraron. **CHORD** se retiró (sus parámetros son SHIFT). **PHYS** y
+  **TRIO** se retiraron (TRIO vive dentro de ANALOG; un sonido PHYS suena como el primer preset de ANALOG).
+- **Sin samples**: se fueron los samples de usuario y los engines SAMPLE, SLICE y GRAIN, para hacer lugar a DRUM-X, los
+  efectos, los punch-in y las canciones. Un sonido de esos engines carga como ANALOG.
 - **8 canciones**: la canción 1 son los 4 proyectos de siempre, así que lo guardado con Felucca aparece ahí.
-- **Capa FX**:
-  - se fueron REVERSE, TAPE STOP, FREEZE y el armonizador;
-  - entraron los punch-in MIDI.
-- **Sin undo**: en SAVE sostenido, OCT+ guarda la sección que suena y OCT− la recupera.
-- **Sin lock de capas**: una capa está abierta mientras se mantiene su botón.
-- **EDIT sostenido**: hace INIT / RECALL en lugar del selector de voces.
-- **Capa REC**: CLEAR y CLICK.
-- **Paleta**: JIANT, térmica, viene de fábrica.
+- **Capa FX**: se fueron REVERSE, TAPE STOP, FREEZE y el armonizador; entraron los punch-in MIDI.
+- **SELECT** es tempo solo en HOME y GLOBAL; en el resto, el dado del sonido.
+- **EDIT sostenido**: INIT / RECALL en lugar del selector de voces. **Sin undo** (SAVE sostenido: OCT+ guarda la
+  sección, OCT− la recupera). **Sin lock de capas.**
 - **Nombres USB**: siguen siendo "Felucca" para que el editor web conecte.
 
 </details>
@@ -234,7 +196,7 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
 | **HOME** | Menú | — |
 | **SAVE** | Capa de canción (en la página SONG, KNOB 4 = SCENE): F3–B3 tocan A–D en el próximo compás (varias en un mismo hold: quick chain), C4–F4 guardan en A–D, D5 LOOP / SONG, E5 SONG REC, G5 página SONG; OCT+ guarda la sección que suena, OCT− la recupera | KNOB 1: canción 1–8 (entra al soltar SAVE, parado) |
 
-Otros: **PLAY** arranca y para; **REC** arma el track elegido; **SELECT** cambia el tempo; **ALGORITHM**
+Otros: **PLAY** arranca y para; **REC** arma el track elegido; **SELECT** cambia el tempo en HOME y GLOBAL y en el resto de las páginas tira el dado del sonido; **ALGORITHM**
 elige el track en todas las páginas; **PRESETS** cambia el sonido; **OCT− / OCT+** la octava (en páginas
 de acción y diálogos: volver / confirmar); GLO + PLAY reinicia desde el principio.
 
@@ -293,7 +255,8 @@ Seeed XIAO RP2040.
   a Felucca: keremimo, ChanceTheMaker, andreahaku, spinkham, zednaked, jasonpersinger.
 - **[SLOOP](https://github.com/isod89/sloop-fm1)** de isod89 (GPL-3.0): el sistema de secciones,
   quick chain y SONG REC en el que se basa el song mode.
-- Fuentes: [Inter Tight](https://github.com/rsms/inter-tight) ([SIL OFL 1.1](LICENSES/OFL-InterTight.txt));
+- Fuentes: [Chakra Petch](https://github.com/m4rc1e/Chakra-Petch) ([SIL OFL 1.1](LICENSES/OFL-ChakraPetch.txt)), la
+  letra de la interfaz; hasta la 0.4, [Inter Tight](https://github.com/rsms/inter-tight) ([SIL OFL 1.1](LICENSES/OFL-InterTight.txt));
   en el emulador, [DotGothic16](https://github.com/fontworks-fonts/DotGothic16) ([SIL OFL 1.1](LICENSES/OFL-DotGothic16.txt)).
 - VOICE: según [klattsch](https://github.com/tgies/klattsch) de Tony Gies (MIT); datos de formantes de
   Klatt (1980) y Hillenbrand et al. (1995).

@@ -50,10 +50,10 @@ static uint32_t lfo_rand(track_t *t)
 static int16_t comb_buf[NTRK][COMB_LEN];
 static uint16_t comb_w[NTRK];
 static int16_t comb_p16[NTRK];
-static __attribute__((noinline)) void track_comb(track_t *t, int32_t *out, uint32_t n)
+static __attribute__((noinline)) void track_comb(track_t *t, int32_t *out, uint32_t n, int32_t cut, int32_t res)
 {
     uint32_t ti = (uint32_t)(t - trk) % NTRK, i, per, age = 0, w = comb_w[ti];
-    int32_t p16 = comb_p16[ti], fb = 16000 + t->p[P_E5] * 130, g = 32768 - fb;
+    int32_t p16 = comb_p16[ti], fb = 16000 + res * 130, g = 32768 - fb;
     int16_t *b = comb_buf[ti];
     for (i = 0; i < NVOICE; i++)                        /* the newest note sounding */
         if (t->v[i].active && t->v[i].age >= age) {
@@ -61,7 +61,7 @@ static __attribute__((noinline)) void track_comb(track_t *t, int32_t *out, uint3
             p16 = t->v[i].pitch_cur;
         }
     comb_p16[ti] = (int16_t)p16;
-    p16 = clamp(p16 + (t->p[P_E4] - 64) * 8, 0, 2047);
+    p16 = clamp(p16 + (cut - 64) * 8, 0, 2047);
     per = 0xFFFFFFFFu / ((pitch_inc((uint32_t)p16) >> 8) | 1u);   /* the period, Q8 */
     per = per < (2u << 8) ? 2u << 8 : per > ((COMB_LEN - 2u) << 8) ? (COMB_LEN - 2u) << 8 : per;
     for (i = 0; i < n; i++) {
@@ -73,6 +73,35 @@ static __attribute__((noinline)) void track_comb(track_t *t, int32_t *out, uint3
         out[i] = soft_knee(mulq15(y, g) * 2 + (out[i] >> 2), 24000);
     }
     comb_w[ti] = (uint16_t)w;
+}
+
+/* (JIANT 0.5) the FILTER of every engine but ANALOG (its own, per voice): the part's sum through a drive (DRV: x1 ..
+ * x4 into the soft clip, the level kept) and a state-variable filter, LP HP BP at CUT (moved by the LFO and the loudest
+ * voice's envelope through LFO DEST / ENV DEST FLT) and RES; COMB the comb above (CUT about the newest note, RES its
+ * feedback). LP open (127), no drive: out of the chain */
+static int32_t tf_ic1[NTRK], tf_ic2[NTRK];
+static __attribute__((noinline)) void track_filter(track_t *t, int32_t *out, uint32_t n)
+{
+    const int16_t *p = t->p;
+    uint32_t ti = (uint32_t)(t - trk) % NTRK, ft = (uint32_t)p[P_FTYPE] & 3u, i;
+    int32_t cut = p[P_FCUT] << 8, envq = 0, ic1 = tf_ic1[ti], ic2 = tf_ic2[ti], k;
+    tsvf_t c;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active && t->v[i].stage && t->v[i].stage < 4u && (t->v[i].env >> 9) > envq)
+            envq = t->v[i].env >> 9;
+    if (ft == FT_COMB) {
+        track_comb(t, out, n, p[P_FCUT], p[P_FRES]);
+        return;
+    }
+    cut += ((mulq15(t->lfo_val, t->lfo_fade) * p[P_LD_FLT]) >> 7) + ((envq * p[P_ED_FLT]) >> 7);
+    if (ft == FT_LP && cut >= (127 << 8) && !p[P_FRES])
+        return;                                         /* (open: nothing to filter) */
+    tsvf_coef(&c, cut, p[P_FRES]);
+    k = 8192 - p[P_FRES] * 7600 / 127;
+    for (i = 0; i < n; i++)
+        out[i] = soft_knee(svf_mode(&c, out[i], &ic1, &ic2, ft, k), 30000);
+    tf_ic1[ti] = ic1;
+    tf_ic2[ti] = ic2;
 }
 
 static void track_lfo_tick(track_t *t)
@@ -635,7 +664,9 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
         nr++;
     }
     if (nr && e == &ENG_ANALOG && t->p[P_FTYPE] == FT_COMB)   /* (JIANT 0.5) FILTER TYPE COMB */
-        track_comb(t, out, n);
+        track_comb(t, out, n, t->p[P_E4], t->p[P_E5]);
+    else if (nr && e != &ENG_ANALOG && (t->p[P_FTYPE] || t->p[P_FCUT] < 127 || t->p[P_FRES]))
+        track_filter(t, out, n);                        /* (JIANT 0.5) every other engine's FILTER */
     if (fade) {
         for (i = 0; i < 8u; i++)
             t->p[P_E0 + i] = pe_new[i];

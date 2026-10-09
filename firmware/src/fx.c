@@ -133,8 +133,47 @@ static __attribute__((noinline)) void master_begin(void)
 {
     int32_t a = clip_eff;
     clip_g = a > 0 ? 4096 + a * 12288 / 100 : 0;
-    if (clip_g)
-        clip_mk = (int32_t)((19661u << 15) / (uint32_t)softclip((19661 * clip_g) >> 12));
+    if (clip_g)                                         /* (JIANT 0.5) made up at a mix's usual level (-15 dBFS), not near
+                                                         * full scale: CLIP adds saturation, not loudness (the leveler) */
+        clip_mk = (int32_t)((6000u << 15) / (uint32_t)softclip((6000 * clip_g) >> 12));
+}
+/* (JIANT 0.5) the LEVELER, always on: the mix (dry + wet, before the MASTER knob) followed block by block (its peak,
+ * ~5 ms up, ~400 ms down) and brought toward LEV_T at 2:1 (the gain the square root of LEV_T / level, -9 .. +6 dB),
+ * ramped across the block; the gain itself smoothed (~25 ms); below LEV_GATE (-40 dB) it eases back to unity, so a tail or silence is not
+ * pumped up. The peak
+ * limiter and the soft clip (master_out) after it catch what is left: quiet patches and CLIP's drive sit at one
+ * loudness */
+#define LEV_T 52000                                     /* (the mix's scale: Q15 x 4) ~ -8 dBFS */
+#define LEV_GATE 1300
+static int32_t lev_env, lev_g = 32768, lev_cur = 32768, lev_dg;   /* the gain now and its step a sample (master_out) */
+static __attribute__((noinline)) void lev_block(uint32_t n)
+{
+    uint32_t i;
+    int32_t pk = 0, g1;
+    for (i = 0; i < n; i++) {
+        int32_t l = mix_l[i] + wet[i], r = mix_r[i] + wet[i];
+        l = l < 0 ? -l : l;
+        r = r < 0 ? -r : r;
+        if (l > pk) pk = l;
+        if (r > pk) pk = r;
+    }
+    lev_env += pk > lev_env ? (pk - lev_env) >> 1 : -((lev_env - pk) >> 6);
+    g1 = 32768;                                         /* (below the gate: back to unity, slowly) */
+    if (lev_env > LEV_GATE) {
+        uint32_t q = ((uint32_t)LEV_T << 12) / (uint32_t)lev_env, rt = 0, b = 1u << 30;   /* LEV_T / level, Q12 */
+        q <<= 8;                                        /* (Q20: its square root Q10) */
+        while (b > q) b >>= 2;
+        while (b) {
+            if (q >= rt + b) { q -= rt + b; rt = (rt >> 1) + b; }
+            else rt >>= 1;
+            b >>= 2;
+        }
+        g1 = clamp((int32_t)rt << 5, 11500, 65536);     /* Q15: x0.35 .. x2 */
+    }
+    g1 = lev_g + ((g1 - lev_g) >> (lev_env > LEV_GATE ? 5 : 8));   /* (smoothed: ~25 ms; gated ~200 ms) */
+    lev_cur = lev_g;                                    /* (master_out ramps it across the block, after the DC block) */
+    lev_dg = (g1 - lev_g) / (int32_t)n;
+    lev_g = g1;
 }
 /* DUCK (G_DUCK 0..100, G_DREL its release 40 .. 600 ms): a kick (eng_drum.c duck_hit) takes the parts that are not
  * DRUM down by up to 30 dB in ~2 ms, holds them there ~25 ms, and they come back with the release, shaped as a
@@ -242,6 +281,9 @@ static inline void master_out(int32_t *l, int32_t *r)
         *r = lowcut1(*r, &lc_r1, &lce[2], sh);
         *r = lowcut1(*r, &lc_r2, &lce[3], sh) + b;
     }
+    *l = (clamp(*l, -262143, 262143) * (lev_cur >> 4)) >> 11;   /* (JIANT 0.5) the leveler's gain (lev_block) */
+    *r = (clamp(*r, -262143, 262143) * (lev_cur >> 4)) >> 11;
+    lev_cur += lev_dg;
     al = *l < 0 ? -*l : *l;
     ar = *r < 0 ? -*r : *r;
     a = al > ar ? al : ar;
@@ -685,6 +727,7 @@ static void mix_block(int32_t *out, uint32_t n)
     fx_buses(send_c, send_d, send_r, wet, n);
     if (clip_g)
         clip_block(n);
+    lev_block(n);                                       /* (JIANT 0.5) the leveler: the loudness held */
     if (perf) {
         perf_master(out, n);
         return;

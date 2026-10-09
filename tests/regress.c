@@ -34,7 +34,8 @@
 
 /* ------------------------------------------------------------- limits --- */
 #define LIM_NEAR 30000            /* |sample| at or above: "near full scale" (the limiter holds ~18000) */
-#define LIM_DC 400                /* |mean| of the sounding part, 16-bit units (1.2 %; the master blocks DC) */
+#define LIM_DC 800                /* |mean| of the sounding part, 16-bit units (2.4 %; the master blocks DC; JIANT 0.5: 400 before
+                                   * the leveler, which lifts a quiet part and its short-term mean with it) */
 #define LIM_PEAK_MIN 250          /* quieter than this (-42 dBFS): something is missing */
 #define LIM_TAIL 6                /* AC peak of the last 0.25 s, after the voices are free and the FX rang out */
 #define LIM_TAIL_DC 2             /* its constant part: the master DC blocker settles to 0 (error feedback; it

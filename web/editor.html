@@ -1552,8 +1552,9 @@ function makeMockDevice(opt = {}) {
   TP.push(E("TYPE", ["SOFT", "HARD", "FOLD", "CRUSH", "RECT"], 0), D("TONE", F.BIPCT, -64, 63, 0),   /* 91, 92: DIST (JIANT, FUNB) */
     D("LEN", F.STEPS, 1, 16, 16), E("DIV", NDIV, 2), D("SLEW", F.PCT, 0, 127, 0));   /* 93..95: the modulation sequence */
   for (let k = 0; k < 16; k++) TP.push(D("LVL", F.PCT, 0, 127, 0));                     /* 96..111: its levels */
-  TP.push(E("TYPE", ["LP", "HP", "BP", "COMB"], 0));                                    /* 112: ANALOG's FILTER (JIANT 0.5) */
-  const P_COUNT = 121, G_COUNT = 37, NSTEP = 64, P_E0 = 113, G_ENGSEL = 20, P_SLCR = 45;
+  TP.push(E("TYPE", ["LP", "HP", "BP", "COMB"], 0),                                    /* 112: the FILTER's type (JIANT 0.5) */
+    D("CUT", F.CUTOFF, 0, 127, 127), D("RES", F.PCT, 0, 127, 0));                       /* 113, 114: the other engines' */
+  const P_COUNT = 123, G_COUNT = 37, NSTEP = 64, P_E0 = 115, G_ENGSEL = 20, P_SLCR = 45;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const enumOrig = (d, v) => d.fmt === F.ENUM && d.names ? aliasOf(d.names, v - d.min) + d.min : v;   /* params.c enum_orig */
   /* four tracks (firmware v3), four synth parts (1.0); engine / preset / p / step below are the selected track's */

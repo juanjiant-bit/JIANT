@@ -264,20 +264,35 @@ static void tech_voice(const track_t *t)
     }
 }
 
-/* GLOBAL: a bar of sixteenths, the off-beats late by SWING; the playhead */
+/* GLOBAL (JIANT 0.5): the bar as 16 columns, one a sixteenth, in four beats; each as hot as the tempo (40 BPM cold ..
+ * 240 white), the downbeats taller, the off-beats late by SWING, the one playing now white; under them CLK's three
+ * sources (the one followed lit, its name over it) and TUNE as a bar from the middle (flat left, sharp right) */
 static void tech_global(void)
 {
-    int32_t sw = song.g[G_SWING], i, x0 = TK_X0 + 8, w = PANEL_W - 16, y = 40, step = w / 16;
-    cv_rect(x0, y + 20, w, 1, T_RAISE);
-    for (i = 0; i < 16; i++) {
-        int32_t x = x0 + i * step + ((i & 1) ? sw * step / 200 : 0), hh = i % 4 == 0 ? 30 : 16;
-        cv_rect(x, y + 20 - hh, 3, hh, i % 4 == 0 ? T_TEXT : heat_col(60 + (i & 1) * sw * 15 / 10));
-    }
+    int32_t sw = song.g[G_SWING], bpm = song.g[G_BPM], tune = song.g[G_TUNE], i, x0 = TK_X0 + 6, w = PANEL_W - 12;
+    int32_t step = w / 16, base = 60, hot = 40 + (bpm - 40) * 190 / 200, now = -1, cx, k;
+    static const char *const CK[3] = {"INT", "USB", "TRS"};
     if (song.playing) {
         uint32_t bar = div_samples(2) * 16u;
-        int32_t x = bar ? x0 + (int32_t)((ms_clock % bar) * (uint32_t)w / bar) : x0;
-        cv_rect(x, y - 16, 1, 50, T_ACCENT);
+        now = bar ? (int32_t)((ms_clock % bar) / div_samples(2)) : -1;
     }
+    cv_rect(x0, base + 1, w, 1, T_RAISE);
+    for (i = 0; i < 16; i++) {
+        int32_t x = x0 + i * step + ((i & 1) ? sw * step / 200 : 0), hh = i % 4 == 0 ? 46 : i % 2 == 0 ? 30 : 20;
+        uint16_t c = i == now ? T_TEXT : heat_col(hot - (i % 4 ? 30 : 0) + ((i & 1) ? sw / 2 : 0));
+        cv_rect(x + 2, base - hh, step - 5, hh, c);
+    }
+    for (k = 0; k < 3; k++) {                           /* CLK: the sources */
+        int32_t x = x0 + k * 40, on = song.g[G_CLOCK] == k;
+        cv_rrect(x, 74, 34, 6, 3, on ? heat_col(200) : T_RAISE, T_SURF);
+        cv_text_in(x, 82, 34, &AF_S, CK[k], on ? T_TEXT : T_DIM, T_SURF);
+    }
+    cx = x0 + 120 + (w - 120) / 2;                      /* TUNE: from the middle */
+    cv_rect(x0 + 124, 76, w - 124, 2, T_RAISE);
+    cv_rect(cx, 70, 1, 14, T_MID);
+    if (tune)
+        cv_rect(tune > 0 ? cx + 1 : cx + tune * ((w - 124) / 2) / 50, 74, (tune > 0 ? tune : -tune) * ((w - 124) / 2) / 50, 6,
+                heat_col(60 + (tune > 0 ? tune : -tune) * 180 / 50));
 }
 
 /* the page's technical graph, if it has one (1) */
