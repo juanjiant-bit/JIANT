@@ -4,11 +4,14 @@
 // 8: the FM6 patch bank of 1.0..1.0.2 (listed empty since 1.0.3: a restore of an older archive's bank moves its patches
 // into the user presets restored before it); 9: the user presets' FM6 patches (1.0.3).
 // 32..34 were the user sample slots (JIANT has none): an older archive's entries for them are skipped on read.
-export const BACKUP_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-const BACKUP_RETIRED = (id) => Number.isInteger(id) && id >= 32;
-const BACKUP_IDS_V2 = BACKUP_IDS.filter((id) => id !== 9);              // 1.0..1.0.2, and their archives
+// JIANT: 10 the song index (every song's rows and scenes), 40..71 every song's sections (40 + 4 x song + section); the
+// sections of each song are restored by its number, after 2..5 (the current song's, as before).
+const BACKUP_IDS_V3 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];                    // Felucca 1.0.3 .. JIANT 0.2, and their archives
+export const BACKUP_IDS = [...BACKUP_IDS_V3, 10, ...Array.from({ length: 32 }, (_, i) => 40 + i)];
+const BACKUP_RETIRED = (id) => Number.isInteger(id) && id >= 32 && id <= 34;
+const BACKUP_IDS_V2 = BACKUP_IDS_V3.filter((id) => id !== 9);           // 1.0..1.0.2, and their archives
 const BACKUP_IDS_V1 = BACKUP_IDS_V2.filter((id) => id !== 8);           // firmware before FM6, and its archives
-const idsOf = (n) => [BACKUP_IDS, BACKUP_IDS_V2, BACKUP_IDS_V1].find((ids) => ids.length === n) || null;
+const idsOf = (n) => [BACKUP_IDS, BACKUP_IDS_V3, BACKUP_IDS_V2, BACKUP_IDS_V1].find((ids) => ids.length === n) || null;
 export const BACKUP_CMD = { LIST: 65, GET: 66, PUT: 67 };
 const BACKUP_CHUNK = 256;
 export const bkU32 = (n) => Array.from({ length: 5 }, (_, i) => (n >>> (i * 7)) & (i === 4 ? 15 : 127));
@@ -111,7 +114,8 @@ export async function restoreBackup(request, file, onProgress = () => {}) {
   const put = async (args) => { const a = await ask([BACKUP_CMD.PUT, args]); bkCheck(a[2]); return a; };
   // Restore live music last. Other objects commit individually; a disconnect can leave a partial restore.
   for (const o of [...archive.objects.slice(2), archive.objects[1], archive.objects[0]]) {
-    if (o.id === 9) {                    // firmware before 1.0.3 does not take id 9 (rc 1 at begin, nothing written): skip it
+    if (o.id >= 9) {                     // firmware before 1.0.3 does not take id 9, before JIANT 0.3 the songs (10, 40..71):
+                                         // rc 1 at begin, nothing written: skip it
       const a = await ask([BACKUP_CMD.PUT, [0, o.id, ...bkU32(o.size), ...bkU32(o.crc)]]);
       if (a[2] === 1) { done += o.size; onProgress(done, total); continue; }
       bkCheck(a[2]);

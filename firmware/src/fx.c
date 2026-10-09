@@ -14,13 +14,14 @@ static union {                          /* ROOM's allpasses; SPRING's allpass ch
     int32_t sp[(556 + 441) / 2];
 } rev_u __attribute__((section(".pool")));
 #define rev_ap (rev_u.ap)
-#define RPRE_LEN 4096u                   /* (JIANT) the reverb's pre-delay line: up to 92 ms */
+#define RPRE_LEN 2048u                   /* (JIANT) the reverb's pre-delay line, at half rate (4 KB): up to 92 ms */
 static int16_t rpre_buf[RPRE_LEN] __attribute__((section(".pool")));
 static int32_t rpre_out[CTL];                     /* .. the block out of it (the reverb's input) */
 static struct {
     uint32_t dly_w, cho_w, cho_ph;
     int32_t dly_lp, dly_hp;              /* the delay's feedback: high cut (COLR), low cut (JIANT: HPF) */
-    uint32_t rpre_w, rm_ph;              /* (JIANT) the pre-delay's write index; the reverb modulation's phase */
+    uint32_t rpre_w, rm_ph;              /* (JIANT) the pre-delay's write count (samples); the reverb modulation's phase */
+    int32_t rpre_s;                      /* .. the even sample, averaged with the odd one into the line */
     uint16_t comb_i[4], ap_i[2];
     int32_t comb_lp[4];
     uint8_t rtype;                       /* the reverb model running (G_RTYPE: 0 ROOM, 1 SPRING) */
@@ -421,10 +422,15 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
     if (dr >= DLY_LEN)
         dr = DLY_LEN - 1u;
     if (song.g[G_RPRE]) {                               /* (JIANT) the reverb's pre-delay */
-        uint32_t pd = (uint32_t)song.g[G_RPRE] * 41u;   /* (ms -> samples: 4100 at 100) */
-        for (i = 0; i < n; i++) {
-            rpre_buf[fx.rpre_w & (RPRE_LEN - 1u)] = (int16_t)clamp(rev_in[i] >> 3, -32768, 32767);
-            rpre_out[i] = rpre_buf[(fx.rpre_w - pd) & (RPRE_LEN - 1u)] * 8;
+        uint32_t pd = (uint32_t)song.g[G_RPRE] * 20u;   /* (ms -> half-rate samples: 2000 at 100) */
+        for (i = 0; i < n; i++) {                       /* half rate: two samples averaged in, read back between */
+            uint32_t h = fx.rpre_w >> 1;
+            int32_t a = rpre_buf[(h - pd) & (RPRE_LEN - 1u)], b = rpre_buf[(h - pd + 1u) & (RPRE_LEN - 1u)];
+            if (fx.rpre_w & 1u)
+                rpre_buf[h & (RPRE_LEN - 1u)] = (int16_t)clamp((fx.rpre_s + (rev_in[i] >> 3)) >> 1, -32768, 32767);
+            else
+                fx.rpre_s = rev_in[i] >> 3;
+            rpre_out[i] = ((fx.rpre_w & 1u) ? (a + b) >> 1 : a) * 8;
             fx.rpre_w++;
         }
         rev_in = rpre_out;

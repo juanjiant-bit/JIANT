@@ -6,8 +6,17 @@
  * Id 8 (the FM6 patch bank of 1.0..1.0.2) is listed empty since 1.0.3; a PUT of it from an older archive moves its
  * patches into the user presets restored before it (ids 6, 7), as the first boot after the update does (up_fm6.c).
  * Id 9 is the user presets' FM6 patches (up_fm6.c), appended in 1.0.3.
+ * (JIANT) Id 10 is the song index (song_chain.c: every song's rows and scenes), ids 40..71 every song's sections
+ * (40 + 4 x song + section: the current song's from RAM, the others read from flash as they are asked for, into the
+ * storage driver's own buffer: no RAM of their own). Ids 2..5 stay the current song's sections, as before.
  */
-static const uint8_t ED_BK_IDS[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+#define ED_BK_SONG 40u                /* (JIANT) the first song section's id */
+static const uint8_t ED_BK_IDS[11 + NSONG * 4u] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71};
+_Static_assert(NSONG == 8u && sizeof(song_index_t) <= sizeof proj_wire_u.raw, "the songs' ids, the index staged");
+static int proj_store_len(uint32_t len);
+/* the flash object of song s's section k (storage.c: song 1 the four project slots) */
+static uint32_t ed_bk_song_obj(uint32_t s, uint32_t k) { return s ? OBJ_SONG1 + (s - 1u) * 4u + k : OBJ_PROJECT0 + k; }
 #define ED_BK_N ((uint32_t)sizeof ED_BK_IDS)
 #define ED_BK_MAX ((uint32_t)sizeof proj_wire_u.raw)
 #define ED_BK_RAW (proj_wire_u.raw)  /* reuse the existing serialized main-loop scratch */
@@ -49,6 +58,28 @@ static const uint8_t *ed_bk_object(uint32_t id, uint32_t *len)
     if (id == 9u) {                                 /* the user presets' FM6 patches */
         if (upf_valid(&upf)) *len = sizeof upf;
         return (const uint8_t *)&upf;
+    }
+    if (id == 10u) {                                /* (JIANT) the song index, the current rows in it */
+        song_idx.rows[song_cur] = chain_config;
+        *len = sizeof song_idx;
+        return (const uint8_t *)&song_idx;
+    }
+    if (id >= ED_BK_SONG && id < ED_BK_SONG + NSONG * 4u) {   /* (JIANT) a song's section */
+        uint32_t s = (id - ED_BK_SONG) / 4u, k = (id - ED_BK_SONG) % 4u;
+        if (s == song_cur) {
+            if (project_used(k)) *len = sizeof proj_slot[0];
+            return (const uint8_t *)&proj_slot[k];
+        }
+#if FELUCCA_FLASH
+        {
+            st_hdr_t h;
+            if (st_current(ed_bk_song_obj(s, k), &h) >= 0 && proj_store_len(h.len))
+                *len = h.len;                       /* (its body in st_buf until the next flash access) */
+        }
+        return st_buf;
+#else
+        return ED_BK_RAW;                           /* (no flash: only the current song's) */
+#endif
     }
     return 0;
 }
@@ -121,13 +152,43 @@ static uint32_t ed_bk_commit(void)
         if (ed_bk_len) memcpy(&upf, raw, sizeof upf); else upf_empty();
         sync_reload = 1; ui.force = 1;
         return upf_save() == 2 ? 4u : 0u;           /* (a failed write keeps the restored RAM copy) */
+    } else if (ed_bk_id == 10u) {                   /* (JIANT) the song index: rows and scenes; the current song stays */
+        const song_index_t *p = (const song_index_t *)raw;
+        uint32_t k;
+        if (ed_bk_len != sizeof *p || p->magic != SONG_MAGIC || p->version != 2u) return 2;
+        for (k = 0; k < NSONG; k++)
+            if (!chain_valid(&p->rows[k])) return 2;
+        obj = OBJ_SONGIDX;
+    } else if (ed_bk_id >= ED_BK_SONG && ed_bk_id < ED_BK_SONG + NSONG * 4u) {   /* (JIANT) a song's section */
+        uint32_t s = (ed_bk_id - ED_BK_SONG) / 4u, k = (ed_bk_id - ED_BK_SONG) % 4u;
+        if (ed_bk_len) {                            /* an older format becomes today's */
+            if (!proj_import(&proj_scratch, raw, (int)ed_bk_len)) return 2;
+            proj_bound(&proj_scratch);
+            if (!proj_pack((project_store_t *)raw, &proj_scratch)) return 2;
+            ed_bk_len = sizeof(project_store_t);
+        }
+        obj = ed_bk_song_obj(s, k);
     } else return 1;
 #if FELUCCA_FLASH
     if (!flash_ok || st_save(obj, raw, ed_bk_len)) return 4;
 #else
     (void)obj;
 #endif
-    if (ed_bk_id >= 2u && ed_bk_id <= 5u) {
+    if (ed_bk_id == 10u) {                          /* (JIANT) into RAM: the rows now, the song playing kept */
+        uint8_t cur = song_cur;
+        memcpy(&song_idx, raw, sizeof song_idx);
+        song_idx.cur = cur;
+        chain_config = song_idx.rows[cur];
+        ui.song_row = 0;
+    } else if (ed_bk_id >= ED_BK_SONG) {            /* (JIANT) a song's section: the current song's into RAM too */
+        uint32_t s = (ed_bk_id - ED_BK_SONG) / 4u, k = (ed_bk_id - ED_BK_SONG) % 4u;
+        if (s == song_cur) {
+            memset(&proj_slot[k], 0, sizeof proj_slot[0]);
+            if (proj_cur == k)
+                proj_cur = PROJ_NO_SLOT;
+            if (ed_bk_len) memcpy(&proj_slot[k], raw, ed_bk_len);
+        }
+    } else if (ed_bk_id >= 2u && ed_bk_id <= 5u) {
         memset(&proj_slot[ed_bk_id - 2u], 0, sizeof proj_slot[0]);
         if (proj_cur == ed_bk_id - 2u)
             proj_cur = PROJ_NO_SLOT;                     /* (another project there now: the music keeps its name) */
@@ -157,7 +218,7 @@ static int proj_store_len(uint32_t len)
 static uint32_t ed_bk_write(const uint8_t *a, uint32_t n)
 {
     /* the arguments first: a malformed request never stops the transport */
-    if (n < 2u || a[0] > 3u || a[1] > 9u) return 1;
+    if (n < 2u || a[0] > 3u || (a[1] > 10u && (a[1] < ED_BK_SONG || a[1] >= ED_BK_SONG + NSONG * 4u))) return 1;
     if (a[0] == 0u) {
         if (n != 12u || a[6] > 15u || a[11] > 15u) return 1;
         uint32_t len = ed_bk_r32(a + 2);
@@ -165,7 +226,8 @@ static uint32_t ed_bk_write(const uint8_t *a, uint32_t n)
             (a[1] == 1u && len != sizeof(persist_t)) ||
             (a[1] >= 2u && a[1] <= 5u && len && !proj_store_len(len)) ||
             ((a[1] == 6u || a[1] == 7u) && len && len != sizeof(up_bank_t)) ||
-            (a[1] == 8u && len && len != sizeof(fm6_bank_t)) || (a[1] == 9u && len && len != sizeof(upf_t))) return 1;
+            (a[1] == 8u && len && len != sizeof(fm6_bank_t)) || (a[1] == 9u && len && len != sizeof(upf_t)) ||
+            (a[1] == 10u && len != sizeof(song_index_t)) || (a[1] >= ED_BK_SONG && len && !proj_store_len(len))) return 1;
         if (ed_flash_stop()) return 3;
         ed_bk_valid = 0; ed_bk_put = 1; ed_bk_id = a[1]; ed_bk_len = len; ed_bk_gen = ++proj_wire_gen;
         ed_bk_crc = ed_bk_r32(a + 7); ed_bk_pos = 0;
