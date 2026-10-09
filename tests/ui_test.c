@@ -6955,6 +6955,67 @@ static int test_scale_link(void)
     return bad;
 }
 
+/* (JIANT 0.4) HOME tapped twice: M1..M4 latched on HOME (its knobs and screen) until HOME is tapped there again;
+ * MACRO DICE: routes from the macros to what each sound has, two a track; the session's only where none were */
+static int test_organic(void)
+{
+    int bad = 0, ok;
+    uint32_t k, j, routes = 0, per[4] = {0, 0, 0, 0}, bad_dst = 0;
+    int16_t cut;
+    ui_power_on();
+    go_home(); frames(400);
+    press(B_HOME); frames(160); press(B_HOME); frames(64);
+    ok = home_mac && ui.layer == LAYER_MACRO && str_eq(layer_head(), "[HOME] MACRO");
+    macro_v[0] = 0;
+    cut = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
+    turn(EN_K1, 5);
+    ok &= macro_v[0] == 5 && TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == cut;   /* (M1, not HOME's KNOB 1) */
+    go_page(GR_ADSR); frames(64);
+    ok &= ui.layer != LAYER_MACRO;                 /* another page: its own */
+    press(B_HOME); frames(64);
+    ok &= home_mac && ui.layer == LAYER_MACRO;     /* back HOME: still latched */
+    frames(600);
+    press(B_HOME); frames(64);
+    ok &= !home_mac && ui.layer != LAYER_MACRO;    /* tapped again there: off */
+    bad += check("HOME x2: M1..M4 latched on HOME's knobs and screen; another page and back keeps it; HOME again: off", ok);
+    ui_power_on();
+    for (k = 0; k < NTRK; k++)
+        for (j = 0; j < 12u; j++)
+            trk[k].p[P_M1SRC + j] = 0;
+    trk[2].p[P_M1SRC] = MS_LFO; trk[2].p[P_M1DST] = MD_CUT; trk[2].p[P_M1AMT] = 30;   /* (a route of its own: kept) */
+    session_dice(12345u);
+    for (k = 0; k < NTRK; k++)
+        for (j = 0; j < 4u; j++) {
+            int16_t *m = &trk[k].p[P_M1SRC + 3u * j];
+            if (m[0] >= MS_M1 && m[0] < MS_M1 + 4) {
+                const param_desc_t *pd = m[1] >= MD_E1 && m[1] < MD_E1 + 8 ? track_desc(&trk[k], P_E0 + (uint32_t)(m[1] - MD_E1)) : 0;
+                routes++;
+                per[m[0] - MS_M1]++;
+                bad_dst += !m[1] || !m[2] || (pd && (pd->max <= pd->min || pd->label[0] == '-'));
+            }
+        }
+    ok = routes == 8u && per[0] == 2u && per[1] == 2u && per[2] == 2u && per[3] == 2u && !bad_dst &&
+         trk[2].p[P_M1SRC] == MS_LFO && trk[2].p[P_M1AMT] == 30;
+    session_dice(999u);                            /* (a session restored: its routes stay, none added) */
+    for (k = 0, j = 0; k < NTRK * 4u; k++)
+        j += trk[k / 4u].p[P_M1SRC + 3u * (k % 4u)] >= MS_M1 && trk[k / 4u].p[P_M1SRC + 3u * (k % 4u)] < MS_M1 + 4;
+    ok &= j == 8u;
+    bad += check("MACRO DICE at power-on: 2 routes a track to what its sound has, each macro 2; own routes kept; restored: none added", ok);
+    go_home(); frames(64);
+    btn_down(B_LFO); frames(560);
+    key_down(white(1)); frame(); key_up(white(1)); frame();   /* G3: CLEAR */
+    for (k = 0, j = 0; k < NTRK * 4u; k++)
+        j += trk[k / 4u].p[P_M1SRC + 3u * (k % 4u)] >= MS_M1 && trk[k / 4u].p[P_M1SRC + 3u * (k % 4u)] < MS_M1 + 4;
+    ok = j == 0u && trk[2].p[P_M1SRC] == MS_LFO;
+    key_down(white(0)); frame(); key_up(white(0)); frame();   /* F3: DICE */
+    for (k = 0, j = 0; k < NTRK * 4u; k++)
+        j += trk[k / 4u].p[P_M1SRC + 3u * (k % 4u)] >= MS_M1 && trk[k / 4u].p[P_M1SRC + 3u * (k % 4u)] < MS_M1 + 4;
+    ok &= j == 8u;
+    btn_up(B_LFO); frames(400);
+    bad += check("MACRO layer: G3 clears the macros' routes (others kept), F3 rolls new ones", ok);
+    return bad;
+}
+
 int main(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -6999,6 +7060,7 @@ int main(void)
     bad += test_div_order();
     bad += test_knob_accel();
     bad += test_scale_link();
+    bad += test_organic();
     bad += test_usb_level();
     bad += test_click_menu();
     bad += test_usb_serial();

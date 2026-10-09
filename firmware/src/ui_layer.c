@@ -61,7 +61,7 @@ static const layer_t LAYERS[LAYER_N] = {
     {B_SEQ, LK_SET, FAM_SEQ, "[SEQ] TOOLS", {{KC_KEYS, "TOOLS"}, {KC_SEQ, "DONE"}, {0, 0}}},
     {B_REC, LK_SET, FAM_HOME, "[REC] SET", {{KC_KEYS, "RECORDING"}, {KC_REC, "DONE"}, {0, 0}}},
     {B_SAVE, LK_SET, FAM_HOME, "[SAVE] SONG", {{KC_KEYS, "PLAY"}, {KC_OCTUP, "STORE"}, {KC_OCTDN, "RECALL"}}},
-    {B_LFO, LK_SET, FAM_HOME, "[LFO] MACRO", {{KC_K14, "M1-M4"}, {KC_LFO, "DONE"}, {0, 0}}},   /* JIANT (mod.c macro_v) */
+    {B_LFO, LK_SET, FAM_HOME, "[LFO] MACRO", {{KC_K14, "M1-M4"}, {KC_KEYS, "DICE / CLEAR"}, {KC_LFO, "DONE"}}},   /* JIANT (mod.c macro_v; F3 G3 macro_dice) */
 };
 static const uint8_t LY_KC[LAYER_N] = {0, KC_FX, KC_GLO, KC_SCL, KC_EDIT, KC_SEQ, KC_REC, KC_SAVE, KC_LFO};
 /* SCL's knobs: the key and the sequence offset (cur_page() while the layer edits or draws them: page_over) */
@@ -75,6 +75,7 @@ static const page_t *ly_page(uint32_t l) { return l == LAYER_SCL ? &LY_SCL : l =
 enum { LY_INIT, LY_RECALL };          /* EDIT: the white keys F3 G3 */
 #define layer_seen (favorites.factory[15][31])   /* bit l: layer l opened once (a byte no engine uses) */
 static const khint_t FX_LATCH_FOOT[3] = {{KC_KEYS, "ON / OFF"}, {KC_K14, "MACROS"}, {KC_OCTDN, "ALL OFF"}};
+static const khint_t HOME_MAC_FOOT[3] = {{KC_K14, "M1-M4"}, {KC_HOME, "DONE"}, {0, 0}};   /* (HOME x2: latched) */
 
 static struct {
     uint8_t l, oct;                    /* the layer open; OCT- / OCT+ pressed in a SET layer (bits) */
@@ -109,10 +110,13 @@ static uint32_t layer_bits(void)
     return m;
 }
 static uint32_t layer_btn(void) { return LAYERS[ui.layer % LAYER_N].btn; }
+static uint32_t layer_open(void);
 static const char *layer_head(void)                     /* FX: LATCH, and the MIDI effects' tracks (A#4) */
 {
     static const char *const H[2][3] = {{"[FX] HOLD", "[FX] HOLD SYN", "[FX] HOLD DRM"},
                                         {"[FX] LATCH", "[FX] LATCH SYN", "[FX] LATCH DRM"}};
+    if (ui.layer == LAYER_MACRO && !layer_open())       /* (JIANT 0.4) HOME's latched macros */
+        return "[HOME] MACRO";
     return ui.layer == LAYER_FX ? H[perf_latch_on ? 1 : 0][pfx_tgt % 3u] : LAYERS[ui.layer % LAYER_N].head;
 }
 static uint32_t layer_open(void) { return ui.ly && (ui.ly_t0 & LY_OPEN) && ly_down(ui.ly) && layer_allowed() ? ui.ly : 0u; }
@@ -213,13 +217,16 @@ static int layer_knobs_quiet(void)
 {
     if (lys.quiet && fm1_ms - lys.quiet_t >= LY_QUIET_MS)
         lys.quiet = 0;
-    return layer_allowed() && (ui.ly || ui.layer || lys.quiet);
+    return layer_allowed() && (ui.ly || (ui.layer && !(ui.layer == LAYER_MACRO && home_mac && !ui.ly)) || lys.quiet);   /* (HOME's
+                                                         * latched macros: the knobs are theirs, ui_input) */
 }
 
 /* the map shows while the button is held open, and after it while its keys are still held */
 static void layer_show(void)
 {
     uint32_t show = layer_allowed() ? (layer_open() ? layer_open() : kb_layer ? ui.layer : 0u) : 0u;
+    if (!show && home_mac && ui.home && layer_allowed())   /* (JIANT 0.4) HOME's latched macros */
+        show = LAYER_MACRO;
     if (show != ui.layer) {
         ui.layer = (uint8_t)show;
         ui.force = 1;
@@ -385,6 +392,66 @@ static void song_key(uint32_t p)
 }
 
 /* a key pressed in layer l (k: 0 = F3 .. 26 = G5) */
+/* (JIANT 0.4) MACRO DICE: random routes from M1..M4 to what each track's sound has (its engine's parameters, CUT,
+ * SHP, the sends, a little PITCH), two a track into its free MOD slots, the macros spread so each moves two tracks:
+ * the instrument invites a turn from the start, the routes there to tune (MOD) or keep (saved with the project).
+ * mode 0 (each power-on, project.c autosave_boot then main.c): only a track with no macro route yet, so a session
+ * restored keeps its own; 1 (MACRO layer F3): the macros' routes rolled again; 2 (G3): the macros' routes cleared */
+static void macro_dice(uint32_t mode)
+{
+    static const uint8_t DST[] = {MD_CUT, MD_SHP, MD_E1, MD_E1 + 1, MD_E1 + 2, MD_E1 + 3, MD_E1 + 4, MD_E1 + 5, MD_E1 + 6,
+                                  MD_E1 + 7, MD_E1, MD_E1 + 1, MD_E1 + 2, MD_E1 + 3, MD_DLY, MD_REV, MD_PITCH, MD_DIST};   /* (the
+                                                         * engine's, its first four twice as likely) */
+    uint32_t k, j, n;
+    for (k = 0; k < NTRK; k++) {
+        track_t *t = &trk[k];
+        uint32_t has = 0, used = 0;
+        for (j = 0; j < 4u; j++) {
+            int16_t *m = &t->p[P_M1SRC + 3u * j];
+            if (m[0] >= MS_M1 && m[0] < MS_M1 + 4) {
+                if (mode) m[0] = m[1] = m[2] = 0;
+                else has = 1;
+            }
+            if (m[0]) used |= 1u << m[1];
+        }
+        if (has || mode == 2u)
+            continue;
+        for (j = 0, n = 0; j < 4u && n < 2u; j++) {
+            int16_t *m = &t->p[P_M1SRC + 3u * j];
+            uint32_t d, tries;
+            if (m[0])
+                continue;
+            for (tries = 0; tries < 16u; tries++) {     /* a destination the sound has, not used on this track */
+                const param_desc_t *pd;
+                d = DST[rng() % sizeof DST];
+                if ((used >> d) & 1u)
+                    continue;
+                if (d >= MD_E1 && d < MD_E1 + 8u &&
+                    ((pd = track_desc(t, P_E0 + (d - MD_E1))) == 0 || pd->max <= pd->min || pd->label[0] == '-'))
+                    continue;
+                break;
+            }
+            if (tries == 16u)
+                continue;
+            used |= 1u << d;
+            m[0] = (int16_t)(MS_M1 + (k + 2u * n) % 4u);
+            m[1] = (int16_t)d;
+            m[2] = (int16_t)((d == MD_PITCH ? 4 + (int32_t)(rng() % 9u) : 24 + (int32_t)(rng() % 40u)) * (rng() & 1u ? 1 : -1));
+            n++;
+        }
+    }
+}
+
+/* (JIANT 0.4) the session's macros (main.c after autosave_boot; the emulator too): the random numbers seeded by
+ * something of this power-on, then the routes the tracks have none of */
+static void session_dice(uint32_t seed)
+{
+    rng_state ^= seed * 2654435761u;
+    if (!rng_state)
+        rng_state = 0x1234567u;
+    macro_dice(0);
+}
+
 static void layer_key(uint32_t l, uint32_t k)
 {
     uint32_t p = key_place(k), i;
@@ -405,6 +472,13 @@ static void layer_key(uint32_t l, uint32_t k)
         }
     } else if (l == LAYER_SCL) {
         TSEL->p[P_ROOT] = (int16_t)((k + 5u) % 12u);    /* the key's note name (F3 = F) */
+    } else if (l == LAYER_MACRO && !key_black(k) && p < 2u) {   /* (JIANT 0.4) F3 DICE, G3 CLEAR */
+        if (chain_busy()) {
+            ui_message("STOP TO EDIT");
+        } else {
+            macro_dice(p ? 2u : 1u);
+            ui_message(p ? "MACROS CLEARED" : "MACROS DICED");
+        }
     } else if (l == LAYER_EDIT && key_black(k) && p < NLANE && drum_track(TSEL)) {
         dx_mute_set(dx_mute ^ DXM_LANE(p));             /* DRUM: black keys 1..8 mute each sound (lit = sounding) */
     } else if (l == LAYER_EDIT && !key_black(k) && p <= LY_RECALL) {
@@ -1039,7 +1113,8 @@ static void draw_layer(void)
     }
     if (ui.force) {                                     /* the footer: what the keys, knobs and buttons do */
         cv_begin(240, H_FOOT, T_BG);
-        const khint_t *ft = l == LAYER_FX && perf_latch_on ? FX_LATCH_FOOT : LAYERS[l].foot;
+        const khint_t *ft = l == LAYER_FX && perf_latch_on ? FX_LATCH_FOOT :
+                            l == LAYER_MACRO && !layer_open() ? HOME_MAC_FOOT : LAYERS[l].foot;
         cv_key_row(8, 232, 9, ft, ft[2].act ? 3u : 2u, 7u, T_BG);
         cv_blit(0, Y_FOOT);
         ui.foot_sig = 0;

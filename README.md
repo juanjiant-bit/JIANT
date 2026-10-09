@@ -46,9 +46,14 @@ Con FX sostenido, las teclas son efectos que actúan mientras se mantienen y al 
 - **Automatizables**: con REC armado se graban en una lane de 4 compases por sección.
 - **Perillas**: FILTER, CRUSH, THROW y DEPTH.
 
-### Macros M1–M4
+### Macros M1–M4: el sistema te invita a moverlo todo
 LFO sostenido abre la capa **MACRO**: las cuatro perillas son M1–M4 y la pantalla muestra a dónde va cada una
 ("T1 CUT+62 T4 MRPH−31").
+- **HOME dos veces**: las macros quedan fijas en HOME (perillas y pantalla) hasta tocar HOME otra vez.
+- **Una sesión nueva ya viene modulada**: al encender, cada track sin rutas de macro recibe dos al azar hacia lo que su
+  sonido tiene (parámetros del engine, CUT, SHP, envíos, algo de PITCH), repartidas para que cada macro mueva dos
+  tracks. Girás M1–M4 y todo se deforma; después afinás en MOD o lo guardás con el proyecto.
+- **Dado**: con LFO sostenido, F3 tira rutas nuevas y G3 las borra (las rutas propias de cada track quedan).
 - **Asignar una macro**: en la página MOD de un track elegí SRC M1…M4 y su destino, con amount de −100 a +100.
 - **Destinos**: pitch, filtro, forma, amplitud, pan, envíos, LFO, cualquiera de los 8 parámetros del engine (MORPH,
   WARP, …) y el master (CLIP y PNCH).
@@ -86,6 +91,10 @@ La escena sigue vigente en las filas siguientes que no tengan una propia, y los 
   elegida; a la izquierda la borra.
 - **Con SONG REC**: cada fila grabada guarda su escena sola, con el estado de cuando empezó. Tocás la canción con
   mutes, macros y efectos, y queda grabada así.
+
+### Envolventes con loop
+ENV DEST > **LOOP**: con la nota sostenida, la envolvente vuelve al ataque al llegar al sustain; es un LFO con forma de
+ADSR para amplitud, filtro, pitch y forma.
 
 ### Modulación secuenciada (LFO > MSEQ)
 Cada track tiene un secuenciador de modulación, como un secuenciador de CV: 16 niveles, **LEN** (1–16 pasos), **DIV**

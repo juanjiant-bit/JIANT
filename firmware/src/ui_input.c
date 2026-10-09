@@ -966,6 +966,10 @@ static void presets_turn(int32_t s)
 /* HOME / REC / SAVE: tap on release, hold 0.7 s fires once. t0 = press time | 1,
  * bit 1 = fired (or swallowed: then the release is no tap either) */
 enum { BT_NONE, BT_TAP, BT_HOLD };
+/* (JIANT 0.4) HOME tapped twice on HOME: M1..M4 on HOME's knobs and screen (the MACRO layer, latched), until HOME is
+ * tapped again there; another page and back keeps it */
+static uint8_t home_mac;
+static uint32_t home_tap_ms;
 static uint32_t btn_hold(uint32_t *t0, uint32_t label, uint32_t now, int hold_ok)
 {
     uint32_t tap;
@@ -1306,8 +1310,15 @@ static void ui_input_frame(void)
         layer_tap(lytap);
     if (seq == BT_TAP || seq == BT_HOLD)                /* (SONG: SAVE held, G5) */
         open_family(FAM_SEQ);
-    if (home == BT_TAP)                                 /* HOME acts on release: a hold opens the menu */
+    if (home == BT_TAP) {                               /* HOME acts on release: a hold opens the menu */
+        if (ui.home && home_mac)                        /* (JIANT 0.4) latched macros: off */
+            home_mac = 0, home_tap_ms = 0;
+        else if (ui.home && home_tap_ms && fm1_ms - home_tap_ms < 450u)
+            home_mac = 1, home_tap_ms = 0;              /* .. a double tap on HOME: on */
+        else
+            home_tap_ms = fm1_ms | 1u;
         go_home();
+    }
     cursor_fix();                                       /* LEN may have changed (knob, editor, load) */
     for (id = 0; id < 14u; id++) {
         if (!((pressed >> id) & 1u))
@@ -1432,7 +1443,9 @@ static void ui_input_frame(void)
             ui.hot_col = (uint8_t)k;
             ui.hot_t = 40;
         }
-        if (ui.home) {
+        if (ui.home && home_mac) {                      /* (JIANT 0.4) latched macros: M1..M4 */
+            macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
+        } else if (ui.home) {
             int16_t *vp;
             const param_desc_t *d = home_param(k, &vp);
             *vp = (int16_t)param_turn(d, *vp, accel(EN_K1 + k, s, d->fmt == F_ENUM ? 0 : d->max - d->min));
