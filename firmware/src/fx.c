@@ -663,8 +663,9 @@ static void mix_block(int32_t *out, uint32_t n)
         send_c[i] = send_d[i] = send_r[i] = mix_l[i] = mix_r[i] = 0;
     pfx_block(n, (perf_kill ? 0u : (perf_held | perf_latched) & PF_MIDI) | scene_pfx);
     events_block(n);
-    if (song.playing)
-        ms_clock += n;                                  /* (JIANT) the modulation sequences' clock (mod.c) */
+    if (song.playing)                                   /* (JIANT) the modulation sequences' clock (mod.c): the block's end on
+                                                         * the transport's grid (through tempo changes, an external clock) */
+        ms_clock = clk_pos == CLK_START ? ms_clock + n : clk_n * div_samples(2) + clk_pos + n;
     macro_master();                                     /* CLIP / PNCH with the matrix (mod.c) */
     master_begin();
     duck_block();

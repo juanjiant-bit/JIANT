@@ -38,7 +38,12 @@
  * Nothing active (every slot with SRC, DST or AMT at 0): no work, and the sound is bit-identical. */
 enum { MS_OFF, MS_LFO, MS_ENV, MS_VEL, MS_KEY, MS_RAND, MS_MODW, MS_AT, MS_EXPR, MS_M1, MS_STEP = MS_M1 + 4, MS_N };
 static uint32_t div_samples(uint32_t div);   /* fx.c */
-static uint32_t ms_clock;        /* (JIANT) samples since PLAY (fx.c mix_block; seq.c seq_start: 0): MS_STEP's place */
+#define CLK_START 0xFFFFFFFFu
+static uint32_t clk_pos = CLK_START, clk_step;  /* (seq.c click_tick) samples into the transport's 1/16 step, the step of
+                                                 * the bar (0..15); after events_block: the block's start */
+static uint32_t clk_n;                          /* (JIANT) .. the 1/16 steps since PLAY (the SLICER's and the FX layer's grid) */
+static uint32_t ms_clock;        /* (JIANT) samples since PLAY on the transport's grid (fx.c mix_block; seq.c seq_start:
+                                  * 0): MS_STEP's place */
 enum { MD_OFF, MD_PITCH, MD_CUT, MD_SHP, MD_AMP, MD_PAN, MD_DIST, MD_CHO, MD_DLY, MD_REV, MD_RATE, MD_VIB, MD_E1,
        MD_CLIP = MD_E1 + 8, MD_PNCH, MD_N };
 static uint8_t macro_v[4];       /* (JIANT) the macros M1..M4, 0..127: the project's (project.c), LFO held turns them */

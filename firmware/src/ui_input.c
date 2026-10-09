@@ -342,20 +342,21 @@ static void ui_leds(void)
 
 /* ---------------------------------------------------------- input --- */
 /* Predictable hardware response (#23): each decoded detent is one value step; a fast turn keeps its full signed
- * detent count. MENU > KNOB ACCEL ON (#52, OFF by default) multiplies a fast turn of a wide value (range > 32, not a
- * list of names; the FX and GLO layers' knobs too, #126) by 2..4, by up to 8 over a range above 64. The main loop
- * reads the knobs many times a frame (main.c), so a read holds one detent as a rule: the speed is the time per
- * detent, ACC_RATE / ms -> 25 ms x2, 16 ms x3, 12 ms x4, 10 ms x5 .. 6 ms or less x8 (a flick: 12 detents in 120 ms
- * move a -100..100 FX macro ~50). Only the longer of this read's and the previous read's time counts, and only while
- * the turn goes on (both under ACC_GAP ms) in one direction: a slow turn, the first two detents of a turn, a single
- * quick detent (a bounce) and a reversal are one step per detent, and the sign is always the detents'.
+ * detent count. KNOB ACCEL (#52; JIANT: ON by default, MENU > KNOB ACCEL OFF turns it off) multiplies a fast turn of a
+ * wide value (range > 16, not a list of names; the FX and GLO layers' knobs too, #126): the faster the turn the
+ * wider the sweep, a slow turn is fine tuning, one step per detent. The main loop reads the knobs many times a frame
+ * (main.c), so a read holds one detent as a rule: the speed is the time per detent, ACC_RATE / ms -> 40 ms x2,
+ * 27 ms x3, 20 ms x4, 10 ms x8, 5 ms x16; capped by the range: x2 up to 32, x4 up to 64, x8 up to 100, x16 above (a
+ * flick across 0..127 in a dozen detents). Only the longer of this read's and the previous read's time counts, and
+ * only while the turn goes on (both under ACC_GAP ms) in one direction: a slow turn, the first two detents of a turn,
+ * a single quick detent (a bounce) and a reversal are one step per detent, and the sign is always the detents'.
  * ui.enc_t[role]: bits 0..23 the ms of its last read, bit 24 its direction (+1), 25..31 its ms per detent (127 slow) */
-#define ACC_GAP 40u
-#define ACC_RATE 50u
+#define ACC_GAP 60u
+#define ACC_RATE 80u
 static int32_t accel(uint32_t role, int32_t s, int32_t range)
 {
     uint32_t now = fm1_ms & 0xFFFFFFu, st = ui.enc_t[role], up = s > 0, pi = st >> 25, a, i, m = 1;
-    if (!(ui_prefs & PREF_ACCEL) || range <= 32 || !s)
+    if ((ui_prefs & PREF_ACCEL_OFF) || range <= 16 || !s)
         return s;
     a = (uint32_t)(s < 0 ? -s : s);
     i = ((now - st) & 0xFFFFFFu) / a;                   /* ms per detent of this read */
@@ -363,7 +364,7 @@ static int32_t accel(uint32_t role, int32_t s, int32_t range)
         i = 127u;                                       /* a new turn, or reversed */
     else if (pi < ACC_GAP) {
         m = ACC_RATE / (i > pi ? i : pi ? pi : 1u);
-        a = range > 64 ? 8u : 4u;                       /* (the cap) */
+        a = range > 100 ? 16u : range > 64 ? 8u : range > 32 ? 4u : 2u;   /* (the cap) */
         m = m < 1u ? 1u : m > a ? a : m;
     }
     ui.enc_t[role] = now | up << 24 | (i ? i : 1u) << 25;
@@ -1059,7 +1060,40 @@ static void ui_notices(void)
     }
 }
 
+/* (JIANT 0.4) one scale for the whole instrument: ROOT or SCALE changed on the selected track (a knob, the SCL layer,
+ * the editor, MIDI, automation) -> every melodic track's (a DRUM track has none to follow). Selecting another track
+ * changes nothing; each track keeps its QNT and TRN */
+static void scale_link(void)
+{
+    static uint8_t sel_was = 0xFF;
+    static int16_t root_was, scale_was;
+    const track_t *t = TSEL;
+    uint32_t k;
+    if (song.sel != sel_was || drum_track(t)) {
+        sel_was = song.sel;
+        root_was = t->p[P_ROOT];
+        scale_was = t->p[P_SCALE];
+        return;
+    }
+    if (t->p[P_ROOT] == root_was && t->p[P_SCALE] == scale_was)
+        return;
+    root_was = t->p[P_ROOT];
+    scale_was = t->p[P_SCALE];
+    for (k = 0; k < NTRK; k++)
+        if (!drum_track(&trk[k])) {
+            trk[k].p[P_ROOT] = root_was;
+            trk[k].p[P_SCALE] = scale_was;
+        }
+}
+
+static void ui_input_frame(void);
 static void ui_input(void)
+{
+    ui_input_frame();
+    scale_link();                                       /* (JIANT 0.4) one scale for every melodic track (after the
+                                                         * frame's edits) */
+}
+static void ui_input_frame(void)
 {
     uint32_t pressed = fm1_input_edges(0), notes = fm1_input_note_edges(), now = fm1_ticks(), id, b, k;
     uint32_t home, rec, seq, save;

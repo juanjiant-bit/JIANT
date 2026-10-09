@@ -234,7 +234,35 @@ static int test_sync(void)
     }
     transport_req = 2;
     snprintf(what, sizeof what, "sync: 4 tracks, 131 BPM, swing per track: the sequencer's step at %u blocks x 4", blocks);
-    return check(what, !miss);
+    k = check(what, !miss);
+    {   /* (JIANT) the RATE changed mid-song (1/8T -> 1/16) and the tempo moved: on the grid from the next step on */
+        int32_t o[2 * CTL];
+        uint32_t m2 = 0, n2 = 0;
+        song_setup();
+        song.g[G_SWING] = 0;
+        trk[0].p[P_SSWING] = 0;
+        trk[0].p[P_SLEN] = 16;
+        set_slicer(&trk[0], SL_GATE, 3, 3, 127);   /* (RATE 3: 1/8T) */
+        song.g[G_BPM] = 97;
+        transport_req = 1;
+        for (f = 0; f < 3u * FS + 777u; f += CTL)
+            mix_block(o, CTL);
+        trk[0].p[P_SLRATE] = 1;                    /* 1/16 */
+        song.g[G_BPM] = 113;
+        for (f = 0; f < 4u * FS; f += CTL) {
+            mix_block(o, CTL);
+            if (f > FS / 2u) {                     /* (after the next step) */
+                uint32_t idx = sl[0].pos >= CTL ? sl[0].idx : (sl[0].idx + 15u) & 15u;
+                m2 += idx != trk[0].seq_idx % 16u;
+                n2++;
+            }
+        }
+        transport_req = 2;
+        snprintf(what, sizeof what, "sync: RATE 1/8T -> 1/16 and 97 -> 113 BPM while playing: on the sequencer's step (%u of %u)",
+                 n2 - m2, n2);
+        k |= check(what, !m2 && n2 > 100u);
+    }
+    return k;
 }
 
 /* ------------------------------------------------------- 4. OFF / STUT --- */
@@ -257,6 +285,7 @@ static int test_off_stut(void)
     /* STUT, pattern 7 (x...), 1/16 at 120 BPM, 100 %: the repeat steps play the live step again */
     set_slicer(t, SL_STUT, 7, 1, 127);
     slicer_start();
+    song.playing = 0;                              /* (its own clock: the transport's grid does not run here) */
     {
         static int32_t in[4u * 44100u], out[4u * 44100u];
         uint32_t len = (uint32_t)FS * 60u / 120u / 4u;

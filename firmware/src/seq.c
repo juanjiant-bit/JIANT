@@ -78,6 +78,21 @@ static int32_t scale_snap(const track_t *t, int32_t n)
 
 enum { QN_OFF, QN_SNAP, QN_WHITE, QN_SEQ };      /* P_QUANT */
 
+/* (JIANT 0.4) G_STRN: note n onto the track's scale (down), then d steps of the scale up (d > 0) or down */
+static int32_t scale_steps(const track_t *t, int32_t n, int32_t d)
+{
+    uint32_t mask = scale_mask(t);
+    int32_t r = t->p[P_ROOT];
+    n = scale_snap(t, n);
+    if (!(mask & 0xFFFu))
+        return n;
+    for (; d > 0; d--)
+        do n++; while (!((mask >> (uint32_t)((n - r + 120) % 12)) & 1u));
+    for (; d < 0; d++)
+        do n--; while (!((mask >> (uint32_t)((n - r + 120) % 12)) & 1u));
+    return n;
+}
+
 static uint32_t kb_map(const track_t *t, uint32_t k)
 {
     static const int8_t DEGREE[12] = {0, -1, 1, -1, 2, 3, -1, 4, -1, 5, -1, 6};
@@ -282,8 +297,7 @@ static volatile uint32_t beat_pos, beat_n;      /* samples into the beat, the be
  * records; the keys sound). A note into an armed track in the count-in's last eighth (the second half of its last
  * beat) is recorded onto step 1 when it starts (cin_keep, cin_flush), held on or let go as it was. An external clock
  * never counts in (its Start starts). STOP (seq_stop) cancels it. */
-#define CLK_START 0xFFFFFFFFu
-static uint32_t clk_pos = CLK_START, clk_step;  /* samples into the 1/16 step, the step of the bar (0..15) */
+/* (clk_pos, clk_step, clk_n: mod.c, read by the SLICER and the FX layer before this file) */
 static volatile uint8_t cin_left, cin_total;    /* the count-in's beats still to come (0: none), of how many */
 static volatile uint32_t cin_pos;               /* samples into its beat playing */
 static uint8_t cin_flush;                       /* the count-in ended in this block: record what was kept */
@@ -766,6 +780,8 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
     for (i = 0; i < s->n && i < 4u; i++) {
         uint32_t x = s->note[i];
         x = (uint32_t)clamp((int32_t)x + up, 0, 127);
+        if (song.g[G_STRN] && !kit)                 /* (JIANT 0.4) STRN: up / down the scale, every sequence */
+            x = (uint32_t)clamp(scale_steps(t, (int32_t)x, song.g[G_STRN]), 0, 127);
         if (qseq) {                                 /* QNT SEQ: onto the scale now; two notes snapping */
             x = (uint32_t)clamp(scale_snap(t, (int32_t)x), 0, 127);   /* together play once */
             for (j = 0; j < m && nn[j] != x; j++)
@@ -952,12 +968,14 @@ static void click_tick(uint32_t adv)
     if (clk_pos == CLK_START) {
         clk_pos = 0;
         clk_step = 0;
+        clk_n = 0;
         beat = 2;
     } else {
         clk_pos += adv;
         while (clk_pos >= p) {                      /* (as seq_tick: the remainder kept) */
             clk_pos -= p;
             clk_step = (clk_step + 1u) & 15u;
+            clk_n++;
             if (!(clk_step & 3u))
                 beat = clk_step ? 1u : 2u;
         }

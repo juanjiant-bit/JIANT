@@ -93,6 +93,7 @@ enum {                          /* global parameters */
     G_RPRE,                     /* its pre-delay */
     G_RFILT, G_RWIDE,           /* (JIANT 0.3) the reverb's tone (darker / brighter) and width, */
     G_DPIT, G_DSPRY,            /* the delay's grains: their pitch (0: a plain delay) and spray */
+    G_STRN,                     /* (JIANT 0.4) every sequence moved this many steps of its scale (seq.c seq_step) */
     G_COUNT
 };
 #define G_SYNC G_DREL                   /* (the old names, for the formats' importers and their tests) */

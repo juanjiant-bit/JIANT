@@ -215,8 +215,10 @@ static __attribute__((noinline)) int perf_begin(uint32_t n)
         pf.ph = 0;
         pf.sync = 0;
     }
-    ph0 = (song.playing ? (ms_clock >= n ? ms_clock - n : 0u) : pf.ph) % pf.P;   /* the 1/16 in this block (n: none); (JIANT)
-                                                     * playing: the transport's, so a REPEAT starts on the grid */
+    if (song.playing && clk_pos != CLK_START)       /* (JIANT) playing: the transport's 1/16 (seq.c click_tick, through
+                                                     * tempo changes and an external clock), so a REPEAT starts on the grid */
+        pf.P = div_samples(2);
+    ph0 = (song.playing && clk_pos != CLK_START ? clk_pos : pf.ph) % pf.P;   /* the 1/16 in this block (n: none) */
     bnd = ph0 ? (pf.P - ph0 < n ? pf.P - ph0 : n) : 0u;
     pf.ph += n;
     pf.act &= held;                                 /* let go: at once */
