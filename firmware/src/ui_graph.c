@@ -834,6 +834,8 @@ static uint32_t graph_signature(void)
     h ^= (uint32_t)TSEL->preset * 7u + (uint32_t)song.g[G_SLOT] * 13u + TSEL->user * 257u + up_gen * 7919u + ui.uslot * 104729u +
          ui.ppick * 1299709u;
     if (pg->graph == GR_SONG) {
+        for (uint32_t r = 0; r < CHAIN_ROWS; r++)
+            h = (h ^ (song_idx.scene[song_cur][r].on * (r + 1u))) * 16777619u;
         h ^= ui.song_row * 40503u + chain_config.count * 7919u;
         for (i = 0; i < CHAIN_ROWS; i++)
             h = (h ^ (chain_config.row[i].slot + 4u * chain_config.row[i].bars)) * 16777619u;
@@ -1364,6 +1366,8 @@ static void graph_song(void)
         fmt_int(b, chain_config.row[i].bars); str_cpy(b + str_len(b), " BAR", 8);
         cv_text_on(82, y + 1, &AF_S, b, col, bg);
         if (i + 1u < chain_config.count) cv_text_on(122, y + 1, &AF_S, ">", dim, bg);
+        if (song_idx.scene[song_cur][i].on)            /* (JIANT) the row has a scene: a dot */
+            cv_rrect(131, y + 5, 6, 6, 3, sel ? T_INK : T_ACCENT, bg);
         if (!graph_project_used(chain_config.row[i].slot)) cv_text_on(142, y + 1, &AF_S, "NOT SAVED", dim, bg);
         else if (chain.running && i == chain.row) {
             fmt_int(b, chain.remaining); str_cpy(b + str_len(b), " TO GO", 8);

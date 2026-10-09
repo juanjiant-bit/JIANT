@@ -69,6 +69,14 @@ sostenido:
 - **SONG REC**: graba la canción mientras la tocás.
 - **STORE / RECALL**: guarda la sección que suena o vuelve a como estaba guardada.
 
+**Escenas**: cada fila de la canción puede tener una escena. Cuando la fila entra, pone los mutes de los tracks, los
+mutes de grupo de DRUM-X, las macros M1–M4 y los punch-in MIDI que estaban apretados (OCT+, 1/2 TEMPO, STUTTER…).
+La escena sigue vigente en las filas siguientes que no tengan una propia, y los efectos se apagan al parar la canción.
+- **Guardar una escena**: en la página SONG, KNOB 4 (SCENE) a la derecha guarda el estado de ese momento en la fila
+  elegida; a la izquierda la borra.
+- **Con SONG REC**: cada fila grabada guarda su escena sola, con el estado de cuando empezó. Tocás la canción con
+  mutes, macros y efectos, y queda grabada así.
+
 ### Master con carácter (FX > MASTER)
 - **CLIP**: satura la mezcla antes del limiter.
 - **PNCH**: bus de batería con más ataque y cola más corta.
@@ -101,7 +109,7 @@ sostenido:
 | Macros M1–M4 con su capa y su mapa | ✅ |
 | SHIFT (OFS / PIT), ARP TRNS, SEQ + REC | ✅ |
 | Paleta térmica JIANT | ✅ |
-| Escenas por fila de la cadena (mutes, macros, punch-in) | ⏳ siguiente |
+| Escenas por fila de la cadena (mutes, macros, punch-in) | ✅ |
 | Más modulación y mejores efectos | ⏳ |
 | Interfaz orgánica con las ilustraciones ([docs/TONIC-UI.md](docs/TONIC-UI.md)) | ⏸ después de sonido y performance |
 
@@ -148,7 +156,7 @@ sostenido:
 | **SEQ** | En las páginas SEQ: SEQ TOOLS | LEN, DIV, SWING, GATE |
 | **REC** | F3 CLEAR del track, G3 CLICK | CLICK |
 | **HOME** | Menú | — |
-| **SAVE** | Capa de canción: F3–B3 tocan A–D en el próximo compás (varias en un mismo hold: quick chain), C4–F4 guardan en A–D, D5 LOOP / SONG, E5 SONG REC, G5 página SONG; OCT+ guarda la sección que suena, OCT− la recupera | KNOB 1: canción 1–8 (entra al soltar SAVE, parado) |
+| **SAVE** | Capa de canción (en la página SONG, KNOB 4 = SCENE): F3–B3 tocan A–D en el próximo compás (varias en un mismo hold: quick chain), C4–F4 guardan en A–D, D5 LOOP / SONG, E5 SONG REC, G5 página SONG; OCT+ guarda la sección que suena, OCT− la recupera | KNOB 1: canción 1–8 (entra al soltar SAVE, parado) |
 
 Otros: **PLAY** arranca y para; **REC** arma el track elegido; **SELECT** cambia el tempo; **ALGORITHM**
 elige el track en todas las páginas; **PRESETS** cambia el sonido; **OCT− / OCT+** la octava (en páginas

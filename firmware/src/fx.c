@@ -461,7 +461,7 @@ static void mix_block(int32_t *out, uint32_t n)
     int32_t mg = fx_usb_fixed ? MASTER_FULL : (int32_t)song.master_q12;   /* (USB LEVEL FIXED: MASTER after) */
     for (i = 0; i < n; i++)
         send_c[i] = send_d[i] = send_r[i] = mix_l[i] = mix_r[i] = 0;
-    pfx_block(n, perf_kill ? 0u : (perf_held | perf_latched) & PF_MIDI);
+    pfx_block(n, (perf_kill ? 0u : (perf_held | perf_latched) & PF_MIDI) | scene_pfx);
     events_block(n);
     macro_master();                                     /* CLIP / PNCH with the matrix (mod.c) */
     master_begin();

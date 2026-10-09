@@ -21,11 +21,34 @@
 static chain_config_t chain_config;           /* the current song's rows */
 #define NSONG 8u                              /* songs: four sections each (storage.c: where they are kept) */
 #define SONG_MAGIC 0x474E4F53u                /* "SONG" */
+/* (JIANT) a row's scene: when the row goes in (a song, not a quick chain) the tracks' mutes, DRUM's group mutes, the
+ * macros and the punch-in MIDI effects become what was stored; they stay through the rows after it that have none.
+ * Stored by KNOB 4 on SONG (the state now) or by SONG REC (the state as each row began) */
+typedef struct {
+    uint8_t on;                               /* 1 = the row has one */
+    uint8_t mute;                             /* bits 0..3 T1..T4 muted, 4..7 DRUM's groups (DXG_*) */
+    uint16_t pfx;                             /* the punch-in MIDI effects held: bit k = PF_OCTD + k */
+    uint8_t mac[4];                           /* M1..M4 (mod.c macro_v) */
+} scene_t;
 typedef struct {                              /* the song index (flash: OBJ_SONGIDX) */
     uint32_t magic;
     uint8_t version, cur, rsv[2];
     chain_config_t rows[NSONG];               /* each song's rows (the current one's: chain_config, kept here) */
+    scene_t scene[NSONG][CHAIN_ROWS];         /* (version 2, JIANT) their scenes; a version 1 index: none */
 } song_index_t;
+static void song_idx_touch(void);             /* song_main.c: the index changed, into flash soon */
+/* the state now as a scene (main loop: KNOB 4 on SONG; ISR: SONG REC) */
+static void scene_capture(scene_t *s)
+{
+    uint32_t i, m = dx_mute & DXG_ALL;
+    m <<= 4;
+    for (i = 0; i < NTRK; i++)
+        m |= (trk[i].p[P_MUTE] ? 1u : 0u) << i;
+    s->on = 1;
+    s->mute = (uint8_t)m;
+    s->pfx = (uint16_t)((((perf_held | perf_latched) & PF_MIDI) >> PF_OCTD) | (scene_pfx >> PF_OCTD));
+    memcpy(s->mac, macro_v, sizeof s->mac);
+}
 static song_index_t song_idx;
 static uint8_t song_cur;                      /* the song whose sections proj_slot holds (0: the four project slots) */
 #define SEC_LIVE 0xFEu                /* sec_stage.row: a live jump (the song layer), not a song row */
@@ -51,6 +74,7 @@ static struct {
     volatile uint8_t applied;         /* ISR: a section went in (song_poll: the FM6 SLOTs, the screen) */
     volatile uint8_t armed_bar;       /* a quick chain asked for while playing: it starts on the next bar */
     uint8_t loop;                     /* the quick chain: round and round (a song stops at its end) */
+    uint8_t scn;                      /* the row whose scene is in effect + 1 (0: none since the song began) */
     uint8_t rec, kept;
     uint32_t carry;                   /* samples past the bar line at the end of the block: the first step's */
     uint32_t bar_pos;                 /* samples into the bar (while playing) */
@@ -62,6 +86,7 @@ static struct {
     volatile uint8_t nrec;            /* .. its rows so far (the last one still growing) */
     volatile uint8_t rec_done;        /* .. ISR: written, n rows (0xFF: nothing played); song_poll takes them */
     chain_row_t rec[CHAIN_ROWS];
+    scene_t rec_scene[CHAIN_ROWS];    /* .. the scene as each row began */
     uint8_t dirty;                    /* sections stored in RAM, not in flash yet (bit s) */
     uint8_t mode;                     /* 1 SONG: PLAY plays the song; 0 LOOP */
 } live = {.req = -1, .cur = -1};

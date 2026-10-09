@@ -19,8 +19,14 @@ static void song_index_load(void)
 {
     uint32_t k;
 #if FELUCCA_FLASH
-    if (st_load(OBJ_SONGIDX, &song_idx, sizeof song_idx) == (int)sizeof song_idx && song_idx.magic == SONG_MAGIC &&
-        song_idx.version == 1u && song_idx.cur < NSONG) {
+    int n = st_load(OBJ_SONGIDX, &song_idx, sizeof song_idx);
+    if (song_idx.magic == SONG_MAGIC && song_idx.cur < NSONG &&
+        ((song_idx.version == 2u && n == (int)sizeof song_idx) ||
+         (song_idx.version == 1u && n == (int)__builtin_offsetof(song_index_t, scene)))) {
+        if (song_idx.version == 1u) {               /* (before the scenes: none) */
+            memset(song_idx.scene, 0, sizeof song_idx.scene);
+            song_idx.version = 2;
+        }
         for (k = 0; k < NSONG; k++)
             song_rows_fix(&song_idx.rows[k]);
         song_cur = song_idx.cur;
@@ -29,7 +35,7 @@ static void song_index_load(void)
 #endif
     memset(&song_idx, 0, sizeof song_idx);
     song_idx.magic = SONG_MAGIC;
-    song_idx.version = 1;
+    song_idx.version = 2;
     for (k = 0; k < NSONG; k++)
         chain_defaults(&song_idx.rows[k]);
     song_cur = 0;
@@ -271,6 +277,12 @@ static int song_flush(void)
     live.dirty = 0;
     return 0;
 }
+/* (JIANT) the index changed outside the rows (a scene): into flash as the rows go (song_poll) */
+static void song_idx_touch(void)
+{
+    song_idx_dirty = 1;
+    song_idx_t = fm1_ms;
+}
 /* the index into flash (the songs' rows, the current song): 0 done (or no flash) */
 static int song_index_save(void)
 {
@@ -353,8 +365,12 @@ static void song_poll(void)
             char b[8];
             chain_defaults(&chain_config);
             chain_config.count = (uint8_t)n;
-            for (k = 0; k < n; k++)
+            memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
+            for (k = 0; k < n; k++) {
                 chain_config.row[k] = live.rec[k];
+                song_idx.scene[song_cur][k] = live.rec_scene[k];   /* (each row's scene, as it began) */
+            }
+            song_idx_touch();
             ui.song_row = 0;
             fmt_int(b, (int32_t)n);
             ui_say("SONG ROWS ", b);

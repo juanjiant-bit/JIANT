@@ -666,7 +666,14 @@ static void edit_param(uint32_t slot, int32_t steps)
             return;
         }
         if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
-        if (slot == 3u) return;               /* PLAY is a button; no duplicate row-count knob */
+        if (slot == 3u) {                     /* (JIANT) SCENE: right stores the state now (mutes, macros, punch-in), */
+            scene_t *sc = &song_idx.scene[song_cur][ui.song_row % CHAIN_ROWS];   /* left takes it away */
+            if (ui.song_row >= chain_config.count) { ui_message("NO ROW"); return; }
+            if (steps > 0) { scene_capture(sc); ui_message("SCENE STORED"); }
+            else if (sc->on) { memset(sc, 0, sizeof *sc); ui_message("SCENE CLEARED"); }
+            song_idx_touch();
+            return;
+        }
         if (ui.song_row >= chain_config.count) {
             chain_row_t *r = &chain_config.row[ui.song_row];
             r->slot = ui.song_row ? chain_config.row[ui.song_row - 1u].slot : 0u;
@@ -1210,13 +1217,24 @@ static void ui_input(void)
             } else if (kind == CF_DEL_ROW) {
                 uint32_t r = ui.confirm_trk;
                 if (!chain_busy() && r < chain_config.count) {
-                    for (; r + 1u < chain_config.count; r++) chain_config.row[r] = chain_config.row[r + 1u];
+                    for (; r + 1u < chain_config.count; r++) {
+                        chain_config.row[r] = chain_config.row[r + 1u];
+                        song_idx.scene[song_cur][r] = song_idx.scene[song_cur][r + 1u];   /* (its scene with it) */
+                    }
+                    memset(&song_idx.scene[song_cur][r], 0, sizeof(scene_t));
+                    song_idx_touch();
                     chain_config.count--;
                     if (ui.song_row > chain_config.count) ui.song_row = chain_config.count;
                     ui_message("ROW DELETED");
                 }
             } else if (kind == CF_CLEAR_SONG) {
-                if (!chain_busy()) { chain_defaults(&chain_config); ui.song_row = 0; ui_message("SONG CLEARED"); }
+                if (!chain_busy()) {
+                    chain_defaults(&chain_config);
+                    memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
+                    song_idx_touch();
+                    ui.song_row = 0;
+                    ui_message("SONG CLEARED");
+                }
             } else if (kind == CF_CLEAR_ALL) {          /* SEQ + REC: every track's steps and automation, the lane */
                 if (!chain_busy()) {
                     uint32_t k;

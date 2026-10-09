@@ -41,11 +41,36 @@ static void sec_apply(void)
     sec_stage.ready = 0;
     chain.applied = 1;
 }
+/* (JIANT) the scene in effect onto what the section brought: its mutes; a row's own scene also the macros and the
+ * punch-in effects (which nothing else sets) */
+static void scene_apply(uint32_t row)
+{
+    const scene_t *s;
+    uint32_t i;
+    if (chain.loop || row >= CHAIN_ROWS)
+        return;                                       /* (a quick chain: no scenes) */
+    if (song_idx.scene[song_cur][row].on) {
+        s = &song_idx.scene[song_cur][row];
+        chain.scn = (uint8_t)(row + 1u);
+        memcpy(macro_v, s->mac, sizeof macro_v);
+        for (i = 0; i < 4u; i++)
+            macro_v[i] &= 127u;
+        scene_pfx = ((uint32_t)s->pfx << PF_OCTD) & PF_MIDI;
+    } else if (chain.scn) {
+        s = &song_idx.scene[song_cur][chain.scn - 1u];
+    } else {
+        return;
+    }
+    for (i = 0; i < NTRK; i++)
+        trk[i].p[P_MUTE] = (int16_t)((s->mute >> i) & 1u);
+    dx_mute_set((uint16_t)((dx_mute & ~DXG_ALL) | ((s->mute >> 4) & DXG_ALL)));
+}
 static void chain_apply(void)                         /* a song row's section in */
 {
     chain.row = sec_stage.row;
     chain.remaining = chain.config.row[chain.row].bars;
     sec_apply();
+    scene_apply(chain.row);
 }
 
 /* SONG REC: a row for section s, its bars counted from 0 */
@@ -53,8 +78,10 @@ static void srec_finish(void)
 {
     uint32_t i, n = 0;
     for (i = 0; i < live.nrec; i++)
-        if (live.rec[i].bars)
+        if (live.rec[i].bars) {
+            live.rec_scene[n] = live.rec_scene[i];
             live.rec[n++] = live.rec[i];
+        }
     live.rec_done = (uint8_t)(n ? n : 0xFFu);
     live.srec = 0;
     live.nrec = 0;
@@ -67,6 +94,7 @@ static void srec_add(uint32_t s)
     }
     live.rec[live.nrec].slot = (uint8_t)(s & 3u);
     live.rec[live.nrec].bars = 0;
+    scene_capture(&live.rec_scene[live.nrec]);       /* (JIANT: the row's scene, as it begins) */
     live.nrec++;
 }
 static void srec_bar(void)                            /* a bar ended */
@@ -108,6 +136,7 @@ static void chain_start(void)                         /* (seq_start) */
     chain.rec = song.rec;
     song.rec = 0;                                     /* a song plays, it does not record */
     chain.running = 1;
+    chain.scn = 0;
     chain_apply();
 }
 static void chain_stop(void)                          /* (seq_stop) */
@@ -120,6 +149,7 @@ static void chain_stop(void)                          /* (seq_stop) */
         return;
     song.rec = chain.rec;
     chain.running = 0;
+    scene_pfx = 0;                                    /* (a scene's punch-in effects end with the song) */
     chain.ended = chain.kept;                         /* (a quick chain keeps nothing: what plays stays) */
 }
 static void chain_tick(uint32_t n)

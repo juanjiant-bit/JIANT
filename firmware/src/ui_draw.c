@@ -800,7 +800,8 @@ static void draw_columns(void)
         if (used) fmt_int(val, chain_config.row[row].bars);
         else str_cpy(val, "--", sizeof val);
         draw_column(2, "BARS", val, "", used ? VAL(2u) : T_DIM, -1, ICON_AUTO);
-        draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
+        draw_column(3, "SCENE", used && song_idx.scene[song_cur][row].on ? "ON" : "--", "",
+                    used && song_idx.scene[song_cur][row].on ? VAL(3u) : T_DIM, -1, ICON_MIX);   /* (JIANT) */
         return;
     }
     if (cur_page()->graph == GR_CHANCE) {              /* STEP CHANCE RATCH: the cursor step's, of all of it */
