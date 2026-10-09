@@ -54,13 +54,5 @@ terminar). La copia vieja de patrones (`chain.source`, 12,5 KB de `.bss`) ya no 
 - Pendiente: backup del editor de todas las canciones (hoy los ids 2–5 son las secciones de la canción
   actual) y renombrar canciones.
 
-### 4e. Escenas (Fase 5 de la spec) — después de DRUM-X, mutes por grupo y macros
-Depende de los mutes por grupo (Fase 2) y de los macros (Fase 6): se hace cuando existan, para no rehacerla.
-- Cada fila de chain suma mutes de grupo (1 B), macros (4 B) y punch-in FX (1 B).
-
-## Decisión de controles
-
-La capa de canción es **SAVE sostenido**, como en SLOOP y como pide la spec ("mantener SAVE y tocar A B B C").
-El undo de Felucca se sacó: en su lugar, dentro de la capa, OCT+ guarda la sección que suena y OCT− la recupera
-(`ui_layer.c` layer_oct, `song_main.c` section_store / section_recall). Tocar SAVE y soltarlo sigue abriendo la
-página de guardado.
+### 4e. Escenas — hecho (JIANT)
+Cada fila de la canción tiene una escena opcional (`song_chain.c` `scene_t`): mutes de T1–T4 y de los grupos de DRUM-X, M1–M4 y los punch-in MIDI apretados. Se aplica al entrar la fila, sigue en las filas sin escena y la guardan KNOB 4 en SONG o SONG REC.

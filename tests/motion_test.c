@@ -196,6 +196,34 @@ static int loads_and_song(void)
     bad += check("song stop brings back the music as it was before PLAY", t->p[P_REV] == 43 && t->step[0].note[0] == 72);
     return bad;
 }
+/* (JIANT) a song row's scene: when the row goes in, the tracks' mutes, the macros and the punch-in MIDI effects are the
+ * stored ones; the song's end takes the effects away; SONG REC stores the state as each row begins */
+static int song_scenes(void)
+{
+    int bad = 0, ok; ui_power_on(); track_t *t = &trk[0];
+    scene_t *sc = &song_idx.scene[song_cur][0];
+    t->step[0] = (step_t){{60}, 1, ST_NOTE, 0, 100};
+    project_save(0);
+    chain_config.count = 1; chain_config.row[0] = (chain_row_t){0, 1};
+    memset(sc, 0, sizeof *sc);
+    sc->on = 1; sc->mute = 1u << 1 | (DXG_HAT << 4); sc->mac[0] = 99; sc->pfx = 1u << (PF_OCTU - PF_OCTD);
+    memset(macro_v, 0, sizeof macro_v);
+    ok = chain_prepare() == 0;
+    seq_start(); seq_tick(t, CTL);
+    ok &= chain.running && trk[1].p[P_MUTE] == 1 && !trk[0].p[P_MUTE] && macro_v[0] == 99 &&
+          (scene_pfx & PF_BIT(PF_OCTU)) && (dx_mute & DXG_HAT);
+    bad += check("SCENE: the row goes in with its mutes (T2, DRUM's HAT), M1 99 and OCT+ held", ok);
+    seq_stop(); song_poll();
+    bad += check("  the song's end: the scene's punch-in effect ends, the music comes back", !scene_pfx && !trk[1].p[P_MUTE]);
+    memset(sc, 0, sizeof *sc);
+    chain_config.count = 0;
+    trk[2].p[P_MUTE] = 1; macro_v[2] = 50;
+    live.nrec = 0; srec_add(1);
+    ok = live.nrec == 1u && live.rec_scene[0].on && ((live.rec_scene[0].mute >> 2) & 1u) && live.rec_scene[0].mac[2] == 50;
+    live.nrec = 0; trk[2].p[P_MUTE] = 0; macro_v[2] = 0;
+    bad += check("  SONG REC: a row begun stores the state then as its scene (T3 muted, M3 50)", ok);
+    return bad;
+}
 static int repeat_mode(void)
 {
     int bad = 0; ui_power_on(); track_t *t = &trk[0];
@@ -836,7 +864,7 @@ static int seq_shift(void)
 int main(void)
 {
     int bad = motion_recording() + motion_capacity() + probability_playback() + compact_project() + fun7_89() + loads_and_song() + repeat_mode();
-    bad += arp_new_modes() + seq_shift();
+    bad += arp_new_modes() + seq_shift() + song_scenes();
     bad += lock_playback() + lock_edit() + lock_project() + lock_ui() + lock_undo() + auto_list();
     printf("%s\n", bad ? "MOTION TEST FAILED" : "motion/chance/compact storage tests passed"); return bad != 0;
 }

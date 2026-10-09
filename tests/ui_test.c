@@ -3470,6 +3470,18 @@ static int test_macro_layer(void)
     memset(macro_v, 0, sizeof macro_v);
     (void)project_restore_runtime(&b);
     bad += check("  the project keeps M1..M4 (saved, loaded back)", ok && macro_v[1] == 66 && macro_v[2] == 127);
+    ui_power_on();                                     /* SONG KNOB 4: SCENE, the state now into the row */
+    chain_config.count = 2; chain_config.row[0] = (chain_row_t){0, 1}; chain_config.row[1] = (chain_row_t){1, 1};
+    memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
+    go_title("SONG"); ui.song_row = 1; frame();
+    trk[3].p[P_MUTE] = 1; macro_v[1] = 77;
+    turn(EN_K4, 1); frame();
+    ok = song_idx.scene[song_cur][1].on && ((song_idx.scene[song_cur][1].mute >> 3) & 1u) &&
+         song_idx.scene[song_cur][1].mac[1] == 77 && !song_idx.scene[song_cur][0].on && msg_is("SCENE STORED");
+    turn(EN_K4, -1); frame();
+    ok &= !song_idx.scene[song_cur][1].on;
+    trk[3].p[P_MUTE] = 0; chain_config.count = 0;
+    bad += check("SONG KNOB 4 SCENE: right stores the mutes and macros into the row, left takes it away", ok);
     return bad;
 }
 
