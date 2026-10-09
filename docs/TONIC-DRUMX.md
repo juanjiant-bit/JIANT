@@ -30,14 +30,19 @@ variación A–D puede tener su propio kit.
 
 ## Etapas
 
-- **Fase 1 — HECHO.** KIT X en DRUM toca el kit de fábrica `DX_KIT_DEF`. En KIT X, SNAP es el **MRPH**.
-  TUNE (PITCH global), TONE (COLOR) y DECY (DECAY) mueven todos los lanes. Lo cubre `tests/drumx_test.c`:
-  cada lane suena y termina, el MORPH funciona (también con el golpe sonando), el PITCH, el choke de hats, y
-  deja demos en `build/drumx_demo/`.
-- **Fase 2.** El kit pasa a guardarse en la sección (formato de proyecto nuevo, 88 B, conversión desde FUN9):
-  - una página de edición por lane (lado A/B, los 5 valores y el modo);
-  - MORPH y PITCH lockeables por paso;
-  - DRIVE y PAN;
-  - grupos KICK / SNARE / HAT / PERCS con mute en vivo;
-  - kits de fábrica que aproximan los kits de DRUM (STD, 80, 10, 66, 55, 77), y entonces se retiran las voces
-    viejas (`drum_voice.c`), lo que libera flash.
+- **Fase 1 — HECHO.** DRUM toca el kit de fábrica `DX_KIT_DEF`. Lo cubre `tests/drumx_test.c`:
+  cada lane suena y termina, el MORPH funciona (también con el golpe sonando), el PITCH, el NOIS, el choke de hats y
+  los mutes por grupo, y deja demos en `build/drumx_demo/`.
+- **Los kits de Felucca, retirados (JIANT 0.1).** STD y los kits de modelo (80 10 66 55 77, `drum_voice.c`) ya no
+  existen: DRUM es DRUM-X. Las perillas de DRUM (mismo lugar en el proyecto): **MRPH** (donde estaba KIT; KNOB 1),
+  TUNE, TONE (COLOR), DECY (DECAY), **NOIS** (donde estaba SNAP: mueve el ruido de todos los lanes), ACC (acento,
+  hasta +3,5 dB), DRV. El lugar de KICK queda libre. Un proyecto o sonido de Felucca con DRUM suena con DRUM-X.
+- **Fase 2.** El kit se guarda en la sección (88 B en el proyecto FUNA, conversión desde FUN9):
+  - **hecho:** una página de edición por lane (SOUND / SOUND 2: lado A/B, los 5 valores y el modo);
+  - MORPH (MRPH) y PITCH lockeables por paso (los locks de parámetros genéricos ya los cubren);
+  - DRIVE y PAN por sonido;
+  - **hecho:** grupos KICK (bombo) / SNARE (snare y clap) / HAT (los dos hats) / PERC (tom, rim, bell) con mute en
+    vivo: GLO sostenido + teclas negras 5–8 (D#4 F#4 G#4 A#4), LED apagado = muteado, C4 los desmutea con los tracks.
+    Un golpe nuevo de un grupo muteado no suena; lo que suena se apaga en ~6 ms
+    (sin click). Se guardan con la sección (byte 3208 del proyecto FUNA);
+  - más kits de fábrica de DRUM-X para elegir.

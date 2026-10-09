@@ -533,7 +533,7 @@ static void graph_sample(uint16_t c)
     }
 }
 
-/* DRUM on KIT X (DRUM-X, docs/TONIC-UI.md panel 07): a specimen in the manner of the anatomical wall charts, an
+/* DRUM (DRUM-X, docs/TONIC-UI.md panel 07): a specimen in the manner of the anatomical wall charts, an
  * orchid whose organs are the kit's groups: the dorsal sepal the hats (cyan), the lateral petals SNARE and CLAP
  * (yellow), the lower sepals the KICK (red), the lip and column the percussion (green). Its patches A and B are two
  * anatomies: MORPH moves every outline point by point from one to the other. An organ's inner vessels light up
@@ -544,7 +544,7 @@ static void graph_drumx(const track_t *t, int32_t sel)   /* sel: the sound edite
     static const uint8_t LANE_ORGAN[8] = {2, 1, 1, 0, 0, 3, 3, 3};   /* 0 dorsal, 1 petals, 2 sepals, 3 lip */
     static const uint8_t ORGAN_COL[4] = {OG_TEAL, OG_MUSTARD, OG_CORAL, OG_MINT};
     const drum_lane_t *K = drum_kit_of(t);
-    int32_t morph = clamp(t->p[P_E4], 0, 127), m = sel >= 0 ? dx_ui_side * 256 : morph * 256 / 127, env[4] = {0, 0, 0, 0}, side, o;
+    int32_t morph = clamp(t->p[P_E0], 0, 127), m = sel >= 0 ? dx_ui_side * 256 : morph * 256 / 127, env[4] = {0, 0, 0, 0}, side, o;
     int32_t cx = 120 * OG_Q, cy = 58 * OG_Q, u = 15 + (og_sin(ui.frame * 600u) >> 14);   /* (breathing: +-2 / 16) */
     uint32_t l;
     uint16_t cream = og_col(OG_CREAM), cyan = og_col(OG_TEAL), faint = ux_mix(T_SURF, T_TEXT, 30);
@@ -956,7 +956,7 @@ static uint32_t graph_signature(void)
     if (pg->scope == SC_ENGINE && (ENGINES[t->eng_req % NENGINES] == &ENG_WHEEL || t->eng_req % NENGINES == ENGI_FM6 ||
                                    (FELUCCA_FM4 && t->eng_req % NENGINES == ENGI_DIGITAL)))
         h ^= (ui.hot_t ? ui.hot_col + 1u : 0u) * 65537u;
-    if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_DRUM && drum_kit_plays(t->p[P_E0]) == DK_X)
+    if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_DRUM)
         h ^= ui.frame * 2654435761u;                 /* DRUM-X: the specimen moves every frame */
     if (pg->graph == GR_DXSND) h ^= ui.frame * 2654435761u ^ dx_sig();
     if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_FM6)   /* the patch (PAT's algorithm, levels, FB) */
@@ -1570,7 +1570,7 @@ static void draw_graph(void)
             if (pg->scope == SC_ENGINE && ENGINES[t->eng_req % NENGINES] == &ENG_WHEEL) graph_wheel(t, c);
             else if (pg->scope == SC_ENGINE && ENGINES[t->eng_req % NENGINES] == &ENG_SAMPLE && sample_wave.ready) graph_sample(c);
             else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_FM6) graph_fm6(t, c);   /* EDIT 1 and 2 */
-            else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_DRUM && drum_kit_plays(t->p[P_E0]) == DK_X) {
+            else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_DRUM) {
                 cv_oy = 0;
                 graph_drumx(t, -1);
             }

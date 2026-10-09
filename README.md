@@ -45,15 +45,19 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 | Limpieza para liberar recursos (PHYS, efectos de la capa FX, undo, lock de capas) | Hecho |
 | Song mode estilo SLOOP, 8 canciones × 4 variaciones ([docs/TONIC-SONG-PLAN.md](docs/TONIC-SONG-PLAN.md)) | Hecho (falta backup de todas las canciones) |
 | Escenas por paso de la cadena | Pendiente |
-| DRUM-X y mutes por grupo ([docs/TONIC-DRUMX.md](docs/TONIC-DRUMX.md)) | En curso (Fase 1 hecha: KIT X) |
-| Master: clipper y PUNCH | Pendiente |
+| DRUM-X y mutes por grupo ([docs/TONIC-DRUMX.md](docs/TONIC-DRUMX.md)) | En curso (motor y mutes por grupo hechos; los kits de Felucca, retirados) |
+| Master: CLIP, PNCH (bus de batería) y DUCK (página FX > MASTER) | Hecho |
 | Macros M1–M4 | Pendiente |
-| Punch-in FX MIDI y sus lanes | Pendiente |
+| Punch-in FX MIDI y sus lanes | Hecho: 10 efectos en la capa FX y una lane de 4 compases por sección |
 | Más modulación y mejores efectos | Pendiente |
 | Interfaz JIANT FM dibujada por código ([docs/TONIC-UI.md](docs/TONIC-UI.md)) | En curso: paleta JIANT y espécimen de DRUM-X |
 
 ### Qué cambió respecto de Felucca 1.1.5.1
 
+- **Master (FX > MASTER):** **CLIP** satura la mezcla antes del limiter (x1 a x4, el nivel se mantiene);
+  **PNCH** es el bus de batería: cada golpe de DRUM gana hasta +6 dB en sus primeros ~9 ms y su cola baja hasta
+  −5 dB, sin detector de audio; **DUCK** hace que el bombo baje los demás tracks hasta −18 dB, con **REL** como
+  release (40–600 ms). Todo en 0 queda fuera de la cadena. Se guardan con el proyecto.
 - **PHYS** se retiró (liberó 50 KB de RAM). Un sonido PHYS de un proyecto o preset viejo suena como el
   primer preset de ANALOG.
 - **Sin samples de usuario.** Se fueron los slots USR1–3 (SAMPLE, GRAIN, SLICE), la subida y grabación
@@ -77,7 +81,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 
 - **4 tracks**, cada uno con su engine y su sonido, 8 voces compartidas.
 - **12 engines:** ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, SAMPLE, VOICE, TRIO, WHEEL, GRAIN,
-  NOISE, SLICE y DRUM (kit de 8 lanes sintetizado, sin samples; con KIT X toca DRUM-X, con MORPH A↔B).
+  NOISE, SLICE y DRUM (DRUM-X: kit de 8 lanes sintetizado, sin samples, con MORPH A↔B por sonido).
 - **Secuenciador:** 64 pasos por track con acordes, ties, accent, slide, chance y ratchets; piano roll;
   grilla de batería; parameter locks; automatización de perillas; grabación en vivo con overdub;
   metrónomo y count-in.
@@ -134,10 +138,10 @@ detalles. La paleta **JIANT** es la de fábrica. Primera pantalla: el espécimen
 
 | Mantener | Teclas | Perillas |
 | --- | --- | --- |
-| **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF; teclas negras 1–4: mute de T1–T4 | FILTER, CRUSH, THROW, DEPTH |
-| **GLO** | Teclas negras 1–4 mute (fijo), F3–B3 solo mientras se mantiene, C4 unmute, F4 tap tempo | Nivel de T1–T4 |
+| **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. Punch-in MIDI: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 D5 STUTTER 1/16 · 1/32 · tresillo, E5 ARP, F5 RANDOM. Teclas negras 1–4: mute de T1–T4; A#4 elige a qué tracks afectan los MIDI (todos, sintes, batería). **Automatizar**: con REC armado y tocando, lo que mantengas queda grabado en la lane de la sección (64 pasos de 1/16); G5 la borra donde pasa, o entera con el transporte parado | FILTER, CRUSH, THROW, DEPTH |
+| **GLO** | Teclas negras 1–4 mute de T1–T4 (fijo); 5–8 mute de grupo de DRUM: KICK, SNARE, HAT, PERC; F3–B3 solo mientras se mantiene; C4 desmutea todo; F4 tap tempo | Nivel de T1–T4 |
 | **SCL** | Cualquier tecla elige la raíz | ROOT, SCL, CHRD, VOIC |
-| **EDIT** | Las teclas blancas eligen el engine; la siguiente, INIT | Engine, sonido, favorito |
+| **EDIT** | F3 **INIT**: el sonido del track vuelve al de fábrica (en DRUM, también el kit DRUM-X). G3 **RECALL**: vuelve al sonido guardado en la sección (en DRUM, con su kit). Los dos piden confirmación y no tocan los pasos. El engine y los sonidos se eligen en PRESETS | Las 4 primeras perillas de EDIT del engine |
 | **SEQ** | En las páginas SEQ: SEQ TOOLS | LEN, DIV, SWING, GATE |
 | **REC** | F3 CLEAR del track, G3 CLICK | CLICK |
 | **HOME** | Menú | — |

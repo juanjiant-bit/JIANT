@@ -147,9 +147,8 @@ global `G_CLOCK` (id 2, label "CLK") 3 (INT, USB, TRS). `G_MIDI` (id 12) is an e
 and the reply says so) and its knob steps over it. Of a repeated name, the original is the first value when that has
 the name, else the last one with it; an editor should list only the originals and show an alias by its name when
 it ever sees one. Today: SAMPLE SET and GRAIN SRC 1 and 4 (once TRANH, PERC) = 0 PIANO (5..7, once USR1..USR3, clamp
-to 4); SLICE SRC 1..3 (once USR1..USR3) = 0 BREAK, named "BREAK"; DRUM KIT (engine 10, E1)
-1, 2, 3 (once HAND, CYM, H+CYM; 1.0.5) = 6 (66), 5 (10), 8 (77): its names are STD 66 10 77 80 10 66 55 77, the
-device's knob steps STD 80 10 66 55 77. An editor of before 1.0.5 (first of a name = original) offers 66 10 77
+to 4); SLICE SRC 1..3 (once USR1..USR3) = 0 BREAK, named "BREAK". (Felucca's DRUM KIT, engine 10 E1, and its
+aliases are gone in JIANT: E1 is MRPH, see "DRUM is DRUM-X".) An editor of before 1.0.5 (first of a name = original) offers 66 10 77
 at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device answers with 6 5 8.
 
 ## Commands
@@ -235,21 +234,22 @@ numbered 0..31 (the device shows U01..U32).
   engine. A note with flag 4 is stored as a tie (note 0); flags on a rest are dropped.
 - **DRUM** (engine 10) was PHYS's MODEL 4 (DRUM) before 1.0. A record of PHYS with E1 (MODEL) = 4,
   stored then or sent by `UP_PUT` from an older editor, is the DRUM engine: the device rewrites it (engine
-  10; E1..E8 {MODEL, TUNE, TONE, DECY, SNAP, ACC, KICK 0..127, PERC 0..127} become {KIT = PERC / 32, TUNE,
-  TONE, DECY, SNAP, ACC, KICK 0 PUNCH / 1 ROUND (old ≥ 64), DRV 0}), and `UP_GET` / `UP_LIST` give it so.
+  10; E1..E8 {MODEL, TUNE, TONE, DECY, SNAP, ACC, KICK, PERC} become {MRPH 64, TUNE, TONE, DECY, NOIS 64, ACC,
+  0, DRV 0}), and `UP_GET` / `UP_LIST` give it so.
   Projects do the same. PHYS's MODEL is 0..3 (MODAL STRNG MEMB SYMP) now.
 - **SAMPLE SET 4** was PERC, the General MIDI drum kit, until 1.0.2. A record of SAMPLE (engine 4) with E1 (SET)
   = 4, stored then or sent by `UP_PUT`, is the DRUM engine with its default kit: the device rewrites it (engine 10,
-  E1..E8 = DRUM KIT's {0, 64, 70, 64, 64, 100, 0, 0}, the other values and the pattern as they were). Projects
+  E1..E8 = the DRUM-X preset's {64, 64, 70, 64, 64, 100, 0, 0}, the other values and the pattern as they were). Projects
   and `PRESET` 4 / 4 do the same (a project's track keeps its steps). SET 4 itself stays (`DESC` names it "PIANO":
   an alias, as SET 1; a `SET` of 4 lands on 0); GRAIN's SRC 4 plays PIANO. JIANT has no user sample slots: SET and
   GRAIN SRC end at 4, and a stored 5..7 (once USR1..USR3) clamps to 4 (PIANO).
 - **SLICE SRC 1..3** were USR1..USR3; JIANT has no user samples, so they are aliases of 0 (BREAK, named "BREAK";
   a `SET` of 1..3 lands on 0), and 4 stays PIANO. SLICE DIV is 0..4 (4, 8, 16, 32, AUTO): MAN (5, Felucca's slices
   set by hand on the EDIT > SLICES page for the user slots) is gone with that page; a stored 5 plays AUTO.
-- **DRUM KIT 1..3** were HAND, CYM and H+CYM until 1.0.4 (STD with a conga / claves, a cymbal, both). Since 1.0.5
-  they play the VA kits 66, 10 and 77, and a record holding one loads as that kit: `UP_GET` / `UP_LOAD` give KIT 6, 5
-  or 8 (the record itself is not rewritten). Projects, motion events and `SET` do the same.
+- **DRUM is DRUM-X (JIANT 0.1).** Felucca's kits (KIT STD 66 10 77 80 10 66 55 77, and 1..3 once HAND CYM H+CYM)
+  are retired. E1..E8 of DRUM are {MRPH (KIT's slot: the morph A..B of every sound), TUNE, TONE, DECY, NOIS (SNAP's
+  slot: moves every sound's noise, 64 = as the kit has it), ACC, "-" (KICK's slot, unused, 0..0), DRV}. A stored KIT
+  value plays as that MRPH; the kit's sounds are the section's DRUM-X kit (see "Projects (FUNA)").
 - `UP_STORE`: name "" stores with the automatic name the device uses (engine name + slot number,
   "ANALOG 07"). rc 1 for a bad slot or name.
 - rc 2 = the flash write failed or there is no flash. A failed flash write keeps the previous
@@ -287,8 +287,8 @@ grid lives in the steps themselves, so every engine has it:
 
 - **Hits.** Each step has a lane mask `hit` and an accent mask `acc` (bit l = lane l, `acc` only on
   lanes that hit). The lanes and the General MIDI note each plays: 0 KICK 36, 1 SNARE 38, 2 CLAP 39,
-  3 HAT CL 42, 4 HAT OP 46, 5 TOM 45, 6 RIM 37, 7 BELL 56 (a VA kit plays its own piece on each: KIT 66 a conga
-  on lane 5, 77 claves on lane 6, 10 and 77 a cymbal on lane 7). A NOTE step plays its notes and then its hits, on any engine (DRUM strikes its
+  3 HAT CL 42, 4 HAT OP 46, 5 TOM 45, 6 RIM 37, 7 BELL 56 (other GM notes play on their lane at their pitch:
+  congas on TOM, claves on RIM, cymbals on BELL). A NOTE step plays its notes and then its hits, on any engine (DRUM strikes its
   lanes, a synth plays the pitches); an accented hit at velocity 127, the others at
   the step's velocity (0 = 96). A TIE or REST step plays no hits.
 - **On the wire** (after `vel`): `hit & 127`, `acc & 127`, then `(hit >> 7) | (acc >> 7) << 1`. A
@@ -341,7 +341,7 @@ grid lives in the steps themselves, so every engine has it:
 ## v3: tracks
 
 - **Track 4 since 1.0** is a synth part like tracks 1..3: `DUMP` / `RELOAD` / `TRACK` / `TRACK_DUMP`
-  give its real engine byte (power-on: DRUM, preset DRUM KIT, the General MIDI map), and `PRESET`, `SET` of
+  give its real engine byte (power-on: DRUM, preset DRUM-X, the General MIDI map), and `PRESET`, `SET` of
   `G_ENGSEL`, `UP_LOAD` and `UP_STORE` work on it; its level is its `P_LEVEL`. The commands are byte for
   byte as before; only the meaning changed. Firmware before 1.0 had a GM drum track there: engine byte
   NENGINES, no presets (`UP_LOAD` / `UP_STORE` rc 1), its level the global `G_DRLVL`. Drums are now the
@@ -523,7 +523,8 @@ when the track's engine is not the saved one).
   `PROJECT` and the editor's project files carry the 3648 bytes; a backup `PUT` takes 3648, 3584 or 3388.
 - **Projects (FUNA, JIANT 0.1).** FUN9 with 96 more bytes, `46 55 4E 41` ("FUNA"), size 3744: the section's DRUM-X
   kit (8 sounds × 11 bytes: the mode, then PITCH PMOD DECAY NOISE COLOR of patch A and of patch B, each 0..127;
-  the mode: bits 0..1 the wave, 2..3 the noise filter 0..2, bit 4 SNAP) at 3120..3207, 8 reserved bytes (0), the FM6
+  the mode: bits 0..1 the wave, 2..3 the noise filter 0..2, bit 4 SNAP) at 3120..3207, then the group mutes at 3208 (bit 0 KICK, 1 SNARE + CLAP, 2 HATS, 3 TOM RIM BELL; the rest 0) and 7
+  reserved bytes (0), the FM6
   patches at 3216..3727, the name at 3728..3739, the hash last. FUN9 and older load with the factory kit. Backups,
   `PROJECT` and the editor's project files carry the 3744 bytes; a backup `PUT` also takes 3648, 3584 or 3388.
 - **MIDI clock** has no SysEx. `G_CLOCK` selects the source: 0 INT, 1 USB, 2 TRS. With 1 or 2 the sequencer

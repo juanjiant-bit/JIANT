@@ -930,19 +930,19 @@ static void setup(int s)
     /* FM6's algorithm charts: 1 as it is; 5 with FB +3 just turned; 22 on EDIT 2, DTUN just turned (the carriers);
      * 32 with operator 6 at output level 0, MLVL just turned (no routes: nothing in ACCENT but nothing either) */
     case S_FM6_ALG1: eng(ENGI_FM6); TSEL->p[P_E0] = 1; go_title("EDIT 1"); break;
-    /* DRUM-X (KIT X): the flower at rest; then a kick and a hat just struck (their petals swell and light up) */
-    case S_DRUMX: eng(ENGI_DRUM); TSEL->p[P_E0] = DK_X; TSEL->p[P_E4] = 40; go_title("EDIT 1"); break;
+    /* DRUM-X: the specimen at rest; then a kick and a hat just struck (their petals swell and light up) */
+    case S_DRUMX: eng(ENGI_DRUM); TSEL->p[P_E0] = 40; go_title("EDIT 1"); break;
     case S_DRUMX_HIT:
-        eng(ENGI_DRUM); TSEL->p[P_E0] = DK_X; TSEL->p[P_E4] = 100; go_title("EDIT 1");
+        eng(ENGI_DRUM); TSEL->p[P_E0] = 100; go_title("EDIT 1");
         trk_note_on(TSEL, 36, 120); trk_note_on(TSEL, 42, 100); events_block(256);
         break;
     /* EDIT > SOUND / SOUND 2: the snare's patch B (its organ singled out, the anatomy at B), PTCH just turned */
     case S_DX_SOUND:
-        eng(ENGI_DRUM); TSEL->p[P_E0] = DK_X; dx_ui_lane = 1; dx_ui_side = 1; dx_ui_seen = last_note;
+        eng(ENGI_DRUM); dx_ui_lane = 1; dx_ui_side = 1; dx_ui_seen = last_note;
         go_title("SOUND"); ui.hot_col = 2; ui.hot_t = 30;
         break;
     case S_DX_SOUND2:
-        eng(ENGI_DRUM); TSEL->p[P_E0] = DK_X; dx_ui_lane = 0; dx_ui_side = 0; dx_ui_seen = last_note;
+        eng(ENGI_DRUM); dx_ui_lane = 0; dx_ui_side = 0; dx_ui_seen = last_note;
         go_title("SOUND 2");
         break;
     case S_FM6_ALG5: eng(ENGI_FM6); TSEL->p[P_E0] = 5; TSEL->p[P_E1] = 3; go_title("EDIT 1"); ui.hot_col = 1; ui.hot_t = 30; break;

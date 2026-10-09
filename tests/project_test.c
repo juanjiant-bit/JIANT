@@ -193,8 +193,8 @@ int main(void)
     bad += check("FUN2 -> FUN6: converted, valid format 5 slot", ok && proj_ok(&q) && q.magic == PROJ_MAGIC);
     ok = q.sel == 2;
     for (i = 0; i < G_COUNT; i++)
-        ok &= q.g[i] == (i == G_RTYPE ? 0 : (int16_t)(500 + i));
-    bad += check("FUN2 -> FUN6: globals (id 24, the old drum channel: ROOM) and selected track", ok);
+        ok &= q.g[i] == (i == G_RTYPE || i == G_DRLVL || i == G_DRREV ? 0 : (int16_t)(500 + i));
+    bad += check("FUN2 -> FUN6: globals (id 24, the old drum channel: ROOM; 25 26, the drum part's: off) and selected track", ok);
     ok = 1;
     for (t = 0; t < NTRK; t++)
         ok &= track_ok(&q.t[t], &v2.t[t], t, t == 3u, 127, 127);   /* (G_DRLVL / G_DRREV 525 / 526: 127) */
@@ -385,9 +385,9 @@ int main(void)
         memcpy(&buf, &v4, sizeof v4);
         ok = proj_import(&q2, &buf, (int)sizeof v4) && proj_ok(&q2) && q2.phys == PROJ_PHYS &&
              q2.t[0].engine == ENGI_DRUM && q2.t[0].preset == 0 && str_eq(ENGINES[ENGI_DRUM]->name, "DRUM") &&
-             q2.t[0].p[P_E0] == 2 && q2.t[0].p[P_E6] == 1 && q2.t[0].p[P_E7] == 0;
+             q2.t[0].p[P_E0] == 64 && q2.t[0].p[P_E4] == 64 && q2.t[0].p[P_E6] == 0 && q2.t[0].p[P_E7] == 0;
         for (i = 1; i < 6u; i++)
-            ok &= q2.t[0].p[P_E0 + i] == E0[i];         /* TUNE TONE DECY SNAP ACC in place */
+            ok &= i == 4u || q2.t[0].p[P_E0 + i] == E0[i];   /* TUNE TONE DECY ACC in place (MRPH NOIS 64) */
         {   /* PHYS (retired in TONIC): ANALOG with its first preset's EDIT values, the rest of the track kept */
             const preset_t *an = &ENGINES[ENGI_PHYS_TO]->presets[0];
             uint32_t k2;
@@ -493,6 +493,17 @@ int main(void)
             ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st) && !memcmp(c.dx, a.dx, sizeof a.dx) &&
                  !memcmp(st.raw + PROJ_DX_OFF, a.dx, sizeof a.dx);
             bad += check("FUNA: the DRUM-X kit round trips (88 bytes at PROJ_DX_OFF)", ok);
+            a.dx_mute = DXG_SNARE | DXG_PERC;
+            a.sum = proj_sum(&a);
+            ok = proj_pack(&st, &a) && st.raw[PROJ_DX_OFF + 88u] == (DXG_SNARE | DXG_PERC) &&
+                 proj_import(&c, &st, sizeof st) && c.dx_mute == (DXG_SNARE | DXG_PERC);
+            bad += check("FUNA: the group mutes round trip (the kit's first reserved byte)", ok);
+            memset(a.pfx_lane, 0, sizeof a.pfx_lane);
+            a.pfx_lane[2] = 0x21; a.pfx_lane[31] = 0xA0; a.pfx_ltgt = 2;
+            a.sum = proj_sum(&a);
+            ok = proj_pack(&st, &a) && st.raw[PROJ_PFX_OFF + 2] == 0x21 && st.raw[PROJ_PFX_OFF + 32] == 2 &&
+                 proj_import(&c, &st, sizeof st) && !memcmp(c.pfx_lane, a.pfx_lane, sizeof a.pfx_lane) && c.pfx_ltgt == 2;
+            bad += check("FUNA: the punch-in lane round trips (FUN9's spare bytes at 3072)", ok);
             a.dx[2].a[DXP_PITCH] = 200;
             a.sum = proj_sum(&a);
             ok = !proj_pack(&st2, &a);
@@ -513,7 +524,7 @@ int main(void)
             memcpy(v9 + 4, &size9, 4);
             sum9 = proj_hash(v9, 3644u);
             memcpy(v9 + 3644u, &sum9, 4);
-            ok = proj_import(&c, v9, sizeof v9) && !memcmp(c.dx, DX_KIT_DEF, sizeof c.dx) &&
+            ok = proj_import(&c, v9, sizeof v9) && !c.dx_mute && !memcmp(c.dx, DX_KIT_DEF, sizeof c.dx) &&
                  !memcmp(c.fm6, a.fm6, sizeof c.fm6) && !memcmp(c.name, "FM SONG", 7);
             bad += check("FUN9 (Felucca 1.1) loads: its patches and name, the factory DRUM-X kit", ok);
         }
@@ -741,7 +752,7 @@ int main(void)
                     (c).t[0].engine == ENGI_SAMPLE && (c).t[0].p[P_E0] == 2 && (c).t[1].engine == ENGI_SAMPLE)
         ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st);
         bad += check("FUN8 with a SAMPLE PERC track: DRUM's kit, the rest of the sound and the steps kept", ok && PERC_OK(c) &&
-                     str_eq(ENGINES[ENGI_DRUM]->presets[0].name, "DRUM KIT") &&
+                     str_eq(ENGINES[ENGI_DRUM]->presets[0].name, "DRUM-X") &&
                      !memcmp(ENGINES[ENGI_DRUM]->presets[0].e, (int8_t[8])DRUM_KIT_E, 8));
         bad += check("  its motion on CUT goes; a send's and the other track's stay",
                      c.motion.count == 2u && c.motion.event[0].param == P_REV && c.motion.event[1].place == 3u &&

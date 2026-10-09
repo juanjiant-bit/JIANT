@@ -14,6 +14,7 @@
  * MORPH (0 A .. 127 B) mixes the two patches value by value, read every block: it may move while a hit rings.
  * Envelopes per block (Q30 values, Q16 factors, dv_kb), ramped linearly inside it; the pitch ramps too. A hit
  * that has rung out (-84 dB) stops computing (live 0) and writes zeros. Only 32-bit products. */
+enum { DV_KICK, DV_SNARE, DV_CLAP, DV_HATC, DV_HATO, DV_TOM, DV_RIM, DV_BELL, DV_NLANE };   /* the kit's lanes */
 enum { DXW_SINE, DXW_FM, DXW_METAL, DXW_BELL };
 enum { DXF_LP, DXF_BP, DXF_HP };
 #define DX_MODE(w, f, snap) ((uint8_t)((w) | (f) << 2 | (snap) << 4))
@@ -32,6 +33,26 @@ typedef struct {                                         /* a hit */
 /* the oscillator's modulator ratios (Q12), by wave */
 static const uint16_t DX_RATIO[4] = {4096, 4096, 6021, 11305};
 
+/* 2^(x / 4096), 0 <= x < 16 * 4096, Q16 (a cubic for the fraction: within 0.01 %) */
+static uint32_t dv_exp2(uint32_t x)
+{
+    uint32_t f = x & 4095u, m;
+    m = 65536u + ((f * (45594u + ((f * (14851u + ((f * 5092u) >> 12))) >> 12))) >> 12);
+    return m << (x >> 12);
+}
+/* tau (us) -> per-block decay, Q16: e^(-CTL / (tau fs)), to the fourth order */
+static uint32_t dv_kb(uint32_t us)
+{
+    uint32_t x = 47554467u / (us | 1u), x2, x3, x4, k;
+    if (x > 46000u)
+        x = 46000u;
+    x2 = (x * x) >> 16;
+    x3 = (x2 * x) >> 16;
+    x4 = (x3 * x) >> 16;
+    k = 65536u - x + (x2 >> 1) - x3 / 6u + x4 / 24u;
+    return k > 65535u ? 65535u : k;
+}
+
 static void dx_trigger(dx_voice_t *v) { v->trig = 1; v->choke = 0; }
 static void dx_choke(dx_voice_t *v) { if (v->live) v->choke = 1; }
 
@@ -39,10 +60,10 @@ static void dx_choke(dx_voice_t *v) { if (v->live) v->choke = 1; }
 static uint32_t dx_tau(uint32_t d) { return ((dv_exp2(d * 9u * 4096u / 127u) >> 8) * 3000u) >> 8; }
 
 /* one block of lane L's hit v into y (n <= CTL): Q15, peaks near full scale. morph 0..127; tune16 1/16 semitones;
- * dofs / cofs move DECAY / COLOR (-64..63). The oscillator and the noise each run their own loop (the wave and the
+ * dofs / cofs / nofs move DECAY / COLOR / NOISE (-64..63). The oscillator and the noise each run their own loop (the wave and the
  * filter picked once a block), skipped when the mix leaves them out; gains and the pitch step per sample */
 static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, int32_t morph, int32_t tune16,
-                                             int32_t dofs, int32_t cofs, int32_t *y, uint32_t n)
+                                             int32_t dofs, int32_t cofs, int32_t nofs, int32_t *y, uint32_t n)
 {
     int32_t q[DXP_N], p16, depth, ea1, en1, ep1, og, ng, ga, dga, gn, dgn, kd, inc, dinc;
     uint32_t i, k, wave = L->mode & 3u, flt = (L->mode >> 2) & 3u, ta, tn, tp, kb, inc1;
@@ -57,6 +78,7 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
         q[k] = L->a[k] + ((L->b[k] - L->a[k]) * morph) / 127;
     q[DXP_DECAY] = clamp(q[DXP_DECAY] + dofs, 0, 127);
     q[DXP_COLOR] = clamp(q[DXP_COLOR] + cofs, 0, 127);
+    q[DXP_NOISE] = clamp(q[DXP_NOISE] + nofs, 0, 127);
     ta = dx_tau((uint32_t)q[DXP_DECAY]);
     tn = (L->mode >> 4) & 1u ? ta >> 2 : ta;
     tp = clamp((int32_t)(ta / 6u), 1000, 40000);
@@ -148,7 +170,7 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
         v->live = 0;
 }
 
-/* the factory kit (DRUM's KIT X): {mode, A, B}, A and B {PITCH PMOD DECAY NOISE COLOR}. dx_kit is the music's
+/* the factory kit (DRUM's): {mode, A, B}, A and B {PITCH PMOD DECAY NOISE COLOR}. dx_kit is the music's
  * kit: a section's (project.c keeps it in the project, the song stages it with the section), edited on EDIT >
  * SOUND (ui_input.c); DX_KIT_DEF what a project without one gets */
 #define DX_KIT_INIT {                                                                                                     \

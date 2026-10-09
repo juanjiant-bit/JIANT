@@ -1164,7 +1164,10 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, "CLEAR SONG ORDER?", 24);
         break;
     case CF_INIT_SOUND:
-        str_cpy(a, "INITIALIZE SOUND?", 24);
+        str_cpy(a, drum_track(TSEL) ? "INIT SOUND + KIT?" : "INITIALIZE SOUND?", 24);
+        break;
+    case CF_RECALL_SOUND:
+        str_cpy(a, drum_track(TSEL) ? "RECALL SOUND + KIT?" : "RECALL SAVED SOUND?", 24);
         break;
     case CF_CLEAR_MOTION:
         str_cpy(a, "CLEAR T1 AUTOMATION?", 24); a[7] = (char)('1' + k % NTRK);

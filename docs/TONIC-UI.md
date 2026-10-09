@@ -14,7 +14,7 @@ los dibuja el firmware encima, y algunas partes reaccionan a los knobs: arcos, p
 | 04 | TRACK MAP | los tracks y las 8 voces compartidas (activas / libres / robadas) | existe (falta la vista) |
 | 05 | SEQUENCER | SEQ > STEP, grilla de batería de 8 lanes, 64 pasos | existe |
 | 06 | SEQ PERFORMANCE | capa SEQ: SEQ TOOLS, grabación y mutes en vivo | existe |
-| 07 | DRUM-X | el kit DRUM-X: un pétalo por sonido | Fase 1 hecha (KIT X) |
+| 07 | DRUM-X | el kit DRUM-X: un pétalo por sonido | hecho |
 | 08 | DRUM MORPH | edición de un sonido: lado A / B, MORPH, PITCH DECAY NOISE DRIVE PAN | Fase 2 |
 | 09 | MACRO | macros M1–M4 y sus destinos | pendiente (Fase 6) |
 | 10 | MACRO MAP | qué mueve cada macro | pendiente (Fase 6) |
@@ -57,7 +57,7 @@ referencia cyan en círculos; ejes punteados; punteado para sombrear. Nada de fl
 
 | Panel | Página | Qué se mueve |
 | --- | --- | --- |
-| 07 DRUM-X | EDIT de DRUM con KIT X | Una orquídea anatómica. Sus órganos son los grupos del kit: sépalo dorsal = hats (cyan), pétalos laterales = snare y clap (amarillo), sépalos inferiores = kick (rojo), labelo y columna = percusión (verde). A y B son dos anatomías y el MORPH mueve cada contorno punto por punto. Cada golpe enciende los vasos interiores de su órgano, que se apagan con la caída. El ruido de los hats punteado en su sépalo. Escala A–B con el MORPH encima, eje punteado; respira y los zarcillos se mecen |
+| 07 DRUM-X | EDIT de DRUM | Una orquídea anatómica. Sus órganos son los grupos del kit: sépalo dorsal = hats (cyan), pétalos laterales = snare y clap (amarillo), sépalos inferiores = kick (rojo), labelo y columna = percusión (verde). A y B son dos anatomías y el MORPH mueve cada contorno punto por punto. Cada golpe enciende los vasos interiores de su órgano, que se apagan con la caída. El ruido de los hats punteado en su sépalo. Escala A–B con el MORPH encima, eje punteado; respira y los zarcillos se mecen |
 
 Las formas vienen de `assets/ui-shapes/drumx.svg` (ver abajo): un órgano ocupa 20 bytes por lado (A y B). Costo total de la
 pantalla y la librería: ≈ 3 KB de flash, 0 de RAM.
@@ -82,18 +82,36 @@ Las formas de DRUM-X y sus ids: `dorsal` (hats), `petal` (snare y clap, reflejad
 `lip` (percusión, reflejado). Si cambian la cantidad o los nombres de las formas de una pantalla, hay que ajustar
 su función de dibujo (en DRUM-X, `graph_drumx` en `ui_graph.c`).
 
-## Ilustraciones (los especímenes del usuario)
+## Ilustraciones (las láminas del usuario)
 
-`assets/ui-shapes/specimens.svg` (del usuario, en progreso): tres especímenes en una lámina. Un SVG **sin ids** se
-importa como ilustración tal cual está: cada trazo (aunque esté exportado como contorno relleno) se dibuja como
-su contorno antialiasado, los círculos chicos pasan a ser nodos rellenos, y el color dice el rol (blanco: contorno,
-rojo: puntas y acentos, teal: nodos y vasos, cyan claro: brillos). Los dibujos separados en x son especímenes
-distintos, numerados desde la izquierda (`SH_SPECIMENS_1..3`). Cada uno se centra y escala a ±63 unidades; los
-tres ocupan 8,9 KB. `og_ill` los dibuja y puede encender un rol (los nodos teal, las puntas rojas) con un valor o un
-golpe.
+`assets/ui-shapes/plates.svg` (del usuario): 17 especímenes en una lámina ([docs/plates-sheet.png](plates-sheet.png), dibujados
+con el código del firmware). Un SVG **sin ids** se importa como ilustración: cada trazo se aplana y se simplifica a una
+polilínea con error menor a medio píxel (Ramer–Douglas–Peucker), los círculos chicos pasan a ser nodos rellenos, y el
+color dice el rol (0 blanco, 1 rojo, 2 teal, 3 cyan, 4 verde, 5 amarillo, 6 naranja, 7 azul / violeta). Los dibujos se
+separan en 2D (cajas a menos de 12 unidades = el mismo espécimen; un punto suelto se une al dibujo más cercano) y se
+numeran por filas (`SH_PLATES_1..17`, y las tablas `SH_PLATES_ILLS` / `SH_PLATES_LENS`). Las 17 ocupan 11 KB
+(los contornos tal cual eran 46 KB). `og_ill` las dibuja y puede encender un rol con un valor o un golpe.
 
-Para que una ilustración además **se mueva** (cambie de forma con un parámetro), cada parte que se mueve necesita un
-`id` y, si cambia de forma, sus dos versiones `_a` / `_b` con la misma cantidad de segmentos (ver arriba).
+### Qué lámina va en cada pantalla
+
+| Lámina | Pantalla | Qué se mueve |
+| --- | --- | --- |
+| 1 flor bilateral, 4 nodos rojos | HOME | un nodo rojo por track, late con sus voces |
+| 2 vaso, 8 nodos teal | TRACK MAP | las 8 voces compartidas: encendida = sonando |
+| 3 planta ramificada | FM6 algoritmo | los frondes por operador, su nivel |
+| 4 iris, 8 nodos cyan | DRUM-X | un nodo por lane, se enciende con el golpe; MORPH abre los pétalos |
+| 5 capullo cerrado | reposo / sin sección | — |
+| 6 planta chica | ARP / SEQ | los nodos por paso |
+| 7 cruz de 5 nodos | MACRO M1–M4 | cada nodo, el valor de su macro; el centro, el último tocado |
+| 8 ala | FX | el ala se abre con los envíos |
+| 9 vaina | SONG | los segmentos, las filas; la que suena encendida |
+| 10 y 11 cinco espermatozoides | LFO / fuentes de modulación | la onda de la cola, la velocidad |
+| 12 tallo con 4 puntas | MACRO MAP | cada punta, un destino; su brillo, el amount |
+| 13 loto | MIXER | los pétalos, los niveles |
+| 14 constelación | MOD MATRIX | las líneas punteadas, las rutas activas |
+| 15 curvas | ENV / curvas | la curva elegida encendida |
+| 16 capullo con rutas | PUNCH-IN FX | la ruta del efecto activo |
+| 17 semilla de 3 nodos | CHORD | un nodo por nota del acorde |
 
 ## Pasos
 

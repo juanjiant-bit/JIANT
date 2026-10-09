@@ -72,6 +72,50 @@ static void track_dist(track_t *t, int32_t *b, uint32_t n)
  * get quieter instead of crushed. */
 #define LIM_T 18000
 static int32_t lim_env = LIM_T;
+/* (JIANT) CLIP (G_CLIP 0..100): the mix driven x1 .. x4 into the soft clip ahead of the limiter, its level kept near
+ * -4 dBFS (as DRUM's DRV); 0: out of the chain. Set each block (master_begin) */
+static int32_t clip_g, clip_mk;
+/* the mix (dry + wet, before the MASTER knob: the same saturation at any volume) through CLIP, in place; wet
+ * cleared (it is in the mix now). Its own loop, only while CLIP is on: the ISR's master loop stays as it was */
+static int32_t mix_l[CTL], mix_r[CTL], wet[CTL];
+static __attribute__((noinline)) void clip_block(uint32_t n)
+{
+    uint32_t i;
+    for (i = 0; i < n; i++) {                           /* (>> 4: the sums may be far above Q15; << 2 back) */
+        mix_l[i] = ((softclip(((mix_l[i] + wet[i]) >> 4) * clip_g >> 10) * clip_mk) >> 15) << 2;
+        mix_r[i] = ((softclip(((mix_r[i] + wet[i]) >> 4) * clip_g >> 10) * clip_mk) >> 15) << 2;
+        wet[i] = 0;
+    }
+}
+static __attribute__((noinline)) void master_begin(void)
+{
+    int32_t a = song.g[G_CLIP];
+    clip_g = a > 0 ? 4096 + a * 12288 / 100 : 0;
+    if (clip_g)
+        clip_mk = (int32_t)((19661u << 15) / (uint32_t)softclip((19661 * clip_g) >> 12));
+}
+/* DUCK (G_DUCK 0..100, G_DREL its release 40 .. 600 ms): a kick (eng_drum.c duck_hit) takes the parts that are not
+ * DRUM down by up to 18 dB in ~2 ms; they come back with the release. duck_g0 / duck_g1: the gain (Q15) at the
+ * block's start and end, ramped by mix_part */
+static int32_t duck_env, duck_g0 = 32767, duck_g1 = 32767;
+static uint8_t duck_att;
+static __attribute__((noinline)) void duck_block(void)
+{
+    int32_t dep = song.g[G_DUCK] * 28639 / 100;          /* (1 - 0.126: -18 dB at 100) */
+    if (duck_hit) {
+        duck_hit = 0;
+        duck_att = 1;
+    }
+    duck_g0 = duck_g1;
+    if (duck_att) {
+        duck_env += (32767 - duck_env) >> 1;
+        if (duck_env > 31000)
+            duck_att = 0;
+    } else if (duck_env) {
+        duck_env = (int32_t)(((uint32_t)duck_env * dv_kb(40000u + (uint32_t)song.g[G_DREL] * 5600u)) >> 16);
+    }
+    duck_g1 = 32767 - mulq15(dep, duck_env);
+}
 /* MENU > USB LEVEL FIXED (for #42: record over USB with the speaker turned down): the mix goes to master_out at the
  * full MASTER level, USB audio takes that (audio.c uac_tap), and only then does MASTER scale what the DAC gets
  * (usb_fixed_dac). MASTER (0, the default): MASTER before master_out, as always (USB follows the knob) */
@@ -181,6 +225,7 @@ static uint32_t div_samples(uint32_t div)
 }
 
 #include "perform.c"                                 /* the FX hold layer's effects (the master) */
+#include "pfx.c"                                     /* .. its punch-in MIDI effects (on the notes) */
 #include "click.c"                                   /* the metronome's click (after the master: audio.c) */
 
 static uint32_t delay_samples(void)
@@ -335,7 +380,14 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
 /* one block of the whole mix (shared with hostsim.c): events -> each part (with its modulation matrix)
  * -> dist -> SLICER -> level / pan / sends -> buses -> master; out: stereo Q15 */
 static void events_block(uint32_t n);                    /* seq.c */
-static int32_t send_c[CTL], send_d[CTL], send_r[CTL], wet[CTL], mix_l[CTL], mix_r[CTL];
+static int32_t send_c[CTL], send_d[CTL], send_r[CTL];   /* (mix_l mix_r wet: above, clip_block) */
+/* a part's level (Q12) over the block, ducked: its start << 8, its step a sample in *dl (a block is CTL: no divide) */
+static __attribute__((noinline)) int32_t duck_ramp(int32_t lvl, int32_t *dl)
+{
+    int32_t l0 = ((lvl * (duck_g0 >> 3)) >> 12) << 8;
+    *dl = ((((lvl * (duck_g1 >> 3)) >> 12) << 8) - l0) >> CTL_LOG2;
+    return l0;
+}
 
 /* one synth part into the dry mix and the sends; a part with no voice sounding costs
  * the LFO tick and a cleared buffer only (after the DIST tail has run out) */
@@ -353,17 +405,19 @@ static void mix_part(track_t *t, uint32_t n)
         return;
     }
     {
-        int32_t lvl = LEVEL_Q12[t->p[P_LEVEL] & 127], pan = t->p[P_PAN];
+        int32_t lvl = LEVEL_Q12[t->p[P_LEVEL] & 127], pan = t->p[P_PAN], lq = lvl << 8, dl = 0;
         int32_t gl = 4096 - (pan > 0 ? pan * 64 : 0), gr = 4096 + (pan < 0 ? pan * 64 : 0);
         int32_t c = t->p[P_CHOR] * 258, d = t->p[P_DLY] * 258, r = t->p[P_REV] * 258, pk = t->peak;
         int32_t xmax = c > d ? c : d;
         xmax = 0x7FFFFFFF / ((xmax > r ? xmax : r) | 1);   /* sends: loud chords at a high LEVEL */
+        if ((duck_g0 < 32767 || duck_g1 < 32767) && ENGINES[t->engine] != &ENG_DRUM)   /* DUCK: the kick's */
+            lq = duck_ramp(lvl, &dl);
         track_dist(t, b, n);
         slicer_track(t, b, n);                          /* slicer.c: before the level, pan and sends */
         if ((pf.mute >> (t - trk)) & 1u)
             perf_mute((uint32_t)(t - trk), b, n);       /* perform.c: a black key in the FX layer */
-        for (i = 0; i < n; i++) {
-            int32_t x = ((b[i] >> 2) * lvl) >> 10, a = x < 0 ? -x : x;   /* pre-shift: 8 loud voices */
+        for (i = 0; i < n; i++, lq += dl) {
+            int32_t x = ((b[i] >> 2) * (lq >> 8)) >> 10, a = x < 0 ? -x : x;   /* pre-shift: 8 loud voices */
             int32_t xs = clamp(x, -xmax, xmax);         /* sends: mulq15 would overflow */
             if (a > pk)
                 pk = a;
@@ -407,13 +461,20 @@ static void mix_block(int32_t *out, uint32_t n)
     int32_t mg = fx_usb_fixed ? MASTER_FULL : (int32_t)song.master_q12;   /* (USB LEVEL FIXED: MASTER after) */
     for (i = 0; i < n; i++)
         send_c[i] = send_d[i] = send_r[i] = mix_l[i] = mix_r[i] = 0;
+    pfx_block(n, perf_kill ? 0u : (perf_held | perf_latched) & PF_MIDI);
     events_block(n);
+    master_begin();
+    duck_block();
     perf = perf_begin(n);                               /* the FX hold layer at work (perform.c) */
     for (i = 0; i < NPART; i++)
         mix_part(&trk[i], n);
+    if (pfx_any)
+        pfx_end();                                      /* (DEC- / DEC+ back) */
     if (perf)
         perf_pre(mix_l, mix_r, send_d, send_r, n);
     fx_buses(send_c, send_d, send_r, wet, n);
+    if (clip_g)
+        clip_block(n);
     if (perf) {
         perf_master(out, n);
         return;

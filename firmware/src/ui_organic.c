@@ -178,7 +178,7 @@ static void og_ring(int32_t cx, int32_t cy, int32_t r, uint16_t c)
     int32_t px = cx + r, py = cy;
     uint32_t i;
     for (i = 1; i <= 20u; i++) {
-        uint32_t ang = i * 0x10000u / 20u;
+        uint32_t ang = i * (1u << 16) / 20u;
         int32_t x = cx + ((og_cos(ang) * r) >> 15), y = cy + ((og_sin(ang) * r) >> 15);
         og_line(px, py, x, y, c);
         px = x;
@@ -235,7 +235,8 @@ static void og_tip(const og_shape_t *sh, const og_xf_t *f, int32_t m, int32_t *x
     og_pt(f, sh->a, sh->b, m, best, x, y);
 }
 /* an illustration (assets/ui-shapes, an SVG without ids: tools/gen_ui_shapes.py) at (cx, cy) (Q4), u Q4 per unit;
- * col[k] the colour of role k (0 cream, 1 coral, 2 teal, 4 mint); glow[k] (0..256) lights role k: its lines toward
+ * col[k] the colour of role k (tools/gen_ui_shapes.py colour_class: 0 cream, 1 red, 2 teal, 3 cyan, 4 green, 5 yellow,
+ * 6 orange, 7 blue / purple); parts are polylines (kind 2), dots (1) or cubic outlines (0); glow[k] (0..256) lights role k: its lines toward
  * cream, its dots a pixel larger (a hit, a value: the caller's) */
 static void og_ill(const uint8_t *b, uint32_t len, int32_t cx, int32_t cy, int32_t u, const uint16_t *col,
                    const int32_t *glow)
@@ -245,7 +246,15 @@ static void og_ill(const uint8_t *b, uint32_t len, int32_t cx, int32_t cy, int32
         uint32_t head = b[i], k = head & 7u;
         int32_t g = glow ? glow[k] : 0;
         uint16_t c = g ? ux_mix(col[k], T_TEXT, g * 50 / 256) : col[k];
-        if (head >> 4) {                                 /* a dot: radius, centre */
+        if (head >> 4 == 2u) {                           /* a polyline: n points */
+            uint32_t n = b[i + 1] | (uint32_t)b[i + 2] << 8, s;
+            const int8_t *p = (const int8_t *)(b + i + 3u);
+            if (i + 3u + 2u * n > len)
+                return;
+            for (s = 1; s < n; s++, p += 2)
+                og_line(cx + p[0] * u, cy + p[1] * u, cx + p[2] * u, cy + p[3] * u, c);
+            i += 3u + 2u * n;
+        } else if (head >> 4) {                          /* a dot: radius, centre */
             int32_t r = ((int32_t)b[i + 1] * u) >> 4;
             og_node(cx + (int8_t)b[i + 3] * u, cy + (int8_t)b[i + 4] * u, (r < 1 ? 1 : r) + (g > 128), c);
             i += 5u;

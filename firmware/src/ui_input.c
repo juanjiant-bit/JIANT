@@ -1168,8 +1168,18 @@ static void ui_input(void)
                 }
             } else if (kind == CF_CLEAR_SONG) {
                 if (!chain_busy()) { chain_defaults(&chain_config); ui.song_row = 0; ui_message("SONG CLEARED"); }
-            } else if (kind == CF_INIT_SOUND) {
-                if (!chain_busy()) { set_engine(TSEL->eng_req); ui_message("SOUND INIT"); }
+            } else if (kind == CF_INIT_SOUND) {         /* (DRUM: the factory DRUM-X kit too) */
+                if (!chain_busy()) {
+                    set_engine(TSEL->eng_req);
+                    if (drum_track(TSEL)) memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+                    ui_message("SOUND INIT");
+                }
+            } else if (kind == CF_RECALL_SOUND) {       /* the section's stored sound (ui_layer.c EDIT) */
+                if (!chain_busy()) {
+                    int sl = project_recall_slot();
+                    if (sl < 0 || project_recall_sound((uint32_t)sl, song.sel)) ui_message("NOTHING SAVED");
+                    else ui_message("SOUND RECALLED");
+                }
             } else {
                 track_t *t = &trk[ui.confirm_trk % NTRK];
                 load_begin(t, LOAD_PAT);

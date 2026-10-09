@@ -73,19 +73,24 @@ enum {                          /* global parameters */
     G_BPM, G_SWING, G_CLOCK, G_TUNE,
     G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX,
     G_RSIZE, G_RDAMP, G_CRATE, G_CDEPTH,
-    G_MIDI, G_SYNC, G_ROUTE, G_INFO,   /* G_ROUTE: MIDI IN, 0 CH1-4 (channels 1..4 -> parts 1..4, 5..16 ignored), 1 SEL (seq.c) */
+    G_MIDI, G_DREL, G_ROUTE, G_INFO,   /* G_DREL (JIANT): DUCK's release; was G_SYNC, a placeholder ("--", 0..0) */   /* G_ROUTE: MIDI IN, 0 CH1-4 (channels 1..4 -> parts 1..4, 5..16 ignored), 1 SEL (seq.c) */
     G_SLOT, G_NAME, G_LOAD, G_SAVE,
-    G_ENGSEL, G_ENGGO,          /* no page: the editor switches the engine with a SET of G_ENGSEL; G_ENGGO is
-                                 * unused (ids are fixed by the formats and the protocol) */
+    G_ENGSEL, G_CLIP,           /* no page: the editor switches the engine with a SET of G_ENGSEL. G_CLIP (JIANT):
+                                 * the master clipper; was G_ENGGO, unused (0..0) */
     G_CLRSEQ, G_INITSND,
     G_RTYPE,                    /* REVERB TYPE: 0 ROOM, 1 SPRING (fx.c). Was G_DRCH, the GM drum part's MIDI
                                  * channel (inert since 1.0, never read); projects of formats before FUN7 load it
                                  * as ROOM (project.c proj_rtype_room) */
-    G_DRLVL, G_DRREV,           /* inert (label "-", on no page): the GM drum part they set is gone; kept
-                                 * because the ids and G_COUNT are fixed by the formats and the protocol (only
-                                 * the import of an old project reads them: proj_drums_to_part) */
+    G_PUNCH, G_DUCK,            /* (JIANT) the drum bus's PUNCH and the kick's DUCK of the synths (fx.c, eng_drum.c).
+                                 * Were G_DRLVL / G_DRREV, inert since 1.0 (0..0): the GM drum part's level and
+                                 * reverb send, read only by the import of a project of before 1.0
+                                 * (proj_drums_to_part, which clears them after) */
     G_COUNT
 };
+#define G_SYNC G_DREL                   /* (the old names, for the formats' importers and their tests) */
+#define G_ENGGO G_CLIP
+#define G_DRLVL G_PUNCH
+#define G_DRREV G_DUCK
 
 /* stored parameters of an older layout -> today's P_* order. A store keeps np = the P_COUNT it was
  * written with; common parameters are only ever added just before P_E0, so the first np - 8 are
@@ -104,15 +109,14 @@ static void params_by_count(int16_t *out, const int16_t *in, uint32_t np, const 
 #define ENGI_PHYS 9u
 #define ENGI_DRUM 10u
 /* PHYS MODEL DRUM (MODEL 4, before 1.0) -> the DRUM engine, its E values in place: {MODEL, TUNE, TONE, DECY,
- * SNAP, ACC, KICK 0..127, PERC 0..127} -> {KIT, TUNE, TONE, DECY, SNAP, ACC, KICK 0..1, DRV 0}. 1 = it was one
- * (its engine is ENGI_DRUM now); projects (project.c) and user presets (upreset.c) */
+ * SNAP, ACC, KICK, PERC} -> {MRPH 64, TUNE, TONE, DECY, NOIS 64, ACC, -, DRV 0}. 1 = it was one (its engine is
+ * ENGI_DRUM now); projects (project.c) and user presets (upreset.c) */
 static int drum_from_phys(uint32_t engine, int16_t *e)
 {
     if (engine != ENGI_PHYS || e[0] != 4)
         return 0;
-    e[0] = (int16_t)((e[7] < 0 ? 0 : e[7] > 127 ? 127 : e[7]) >> 5);   /* PERC -> KIT: STD HAND CYM H+CYM */
-    e[6] = (int16_t)(e[6] >= 64);                                       /* KICK: PUNCH, ROUND */
-    e[7] = 0;
+    e[0] = e[4] = 64;
+    e[6] = e[7] = 0;
     return 1;
 }
 
@@ -124,7 +128,7 @@ static int drum_from_phys(uint32_t engine, int16_t *e)
  * favourites (ui.c, settings_persist.c). Idempotent */
 #define ENGI_SAMPLE 4u
 #define SMP_SET_PERC 4u
-#define DRUM_KIT_E {0, 64, 70, 64, 64, 100, 0, 0}   /* {KIT STD, TUNE, TONE, DECY, SNAP, ACC, KICK PUNCH, DRV} */
+#define DRUM_KIT_E {64, 64, 70, 64, 64, 100, 0, 0}   /* {MRPH, TUNE, TONE, DECY, NOIS, ACC, -, DRV} (eng_drum.c) */
 static int drum_from_perc(uint32_t engine, int16_t *e)
 {
     static const int16_t KIT[8] = DRUM_KIT_E;
@@ -323,7 +327,21 @@ typedef struct track {
     uint8_t m_vel, m_key, m_vi;  /* the latest note-on: velocity, note, voice index (per-block destinations) */
     int16_t m_rnd;               /* .. its RAND */
     int32_t m_env;               /* the amp envelope of voice m_vi, last block (Q15) */
+    /* the punch-in MIDI effects (pfx.c), the ISR's: what acts on this track this block, never saved */
+    uint8_t pfx;                 /* PFX_* */
+    int16_t pfx_pit;             /* OCT- / OCT+: 1/16 semitones on every voice */
+    int16_t pfx_rpit;            /* RANDOM: the next note's offset (1/16 semitones), drawn by trk_note_on */
+    uint8_t pfx_half;            /* 1/2 TEMPO: the odd sample carried; pfx_rs: let go, back to the real place */
+    uint8_t pfx_rs;
+    uint16_t pfx_idx0;           /* .. where it was pressed (step, samples into it) and the samples since */
+    uint32_t pfx_pos0, pfx_el;
+    uint8_t pfx_ln[4], pfx_lv[4], pfx_lnn;   /* the last notes struck together (a step's), STUTTER / ARP repeat them */
+    uint32_t pfx_lblk;           /* .. the block they were struck in */
+    uint8_t pfx_sn[4], pfx_snn;  /* the notes a repeat holds now */
+    uint8_t pfx_si;              /* ARP: the next of them */
+    uint32_t pfx_sc;             /* samples since the last repeat */
 } track_t;
+enum { PFX_RND = 1, PFX_HALF = 2, PFX_REP = 4, PFX_DEC = 8 };   /* (track_t.pfx) */
 
 typedef struct {
     int16_t g[G_COUNT];
