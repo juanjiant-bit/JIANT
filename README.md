@@ -5,10 +5,7 @@
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
 [![Emulador](https://img.shields.io/badge/probalo-en%20el%20navegador-ff7a00.svg)](https://juanjiant-bit.github.io/JIANT/)
 
-![JIANT FM en el emulador](docs/jiant-screens.png)
-
-*HOME (el ecosistema), el ser de ANALOG, la colonia de DRUM-X, el LFO corriendo, la curva de DIST y el compás de
-GLOBAL, tal como los dibuja el firmware.*
+![JIANT FM: la firma, las pantallas y lo nuevo de la 0.5](docs/jiant-hero.png)
 
 JIANT FM es un firmware alternativo para el **M-VAVE FM-1**, pensado para tocar en vivo y armar canciones enteras
 sin computadora. Es un fork de [Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 de Hügelton Instruments
@@ -54,6 +51,12 @@ dentro de un aparato chico.
 ## El sistema
 
 ### Pantalla viva
+
+![HOME, ANALOG, DRUM-X, LFO, DIST y GLOBAL](docs/jiant-screens.png)
+
+*HOME (el ecosistema), el ser de ANALOG, la colonia de DRUM-X, el LFO corriendo, la curva de DIST y el compás de
+GLOBAL, tal como los dibuja el firmware.*
+
 - **Paleta térmica**: valores, curvas, pasos, golpes y notas se colorean por intensidad (cian → azul → violeta →
   rojo → naranja → amarillo → blanco). La selección es violeta y lo activo naranja. Letra
   [Chakra Petch](https://github.com/m4rc1e/Chakra-Petch): técnica, legible, de tecnología primitiva.
