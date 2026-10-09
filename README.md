@@ -14,6 +14,10 @@ computadora, con control directo de todo lo que suena. Es un fork de
 [Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 de Hügelton Instruments (GPL-3.0), y toma de
 [SLOOP](https://github.com/isod89/sloop-fm1) el sistema de canciones.
 
+**▶ [Probalo en el navegador](https://juanjiant-bit.github.io/JIANT/)**: el emulador corre el mismo código que el
+FM-1 (teclado de la compu o mouse, sonido incluido). Se actualiza con cada cambio que entra a `main`; usalo para
+revisar todo antes de flashear el aparato.
+
 > **Estado: en desarrollo (v0.1).** Compila y pasa todos los tests de Felucca y los propios, pero
 > **todavía no se probó en un FM-1 real**. No lo instales sin hacer antes un backup del flash.
 
@@ -153,11 +157,15 @@ web/emu/build.sh           # emulador en el navegador: build/emu
 tests/run_tests.sh         # tests de host, editor web y emulador
 ```
 
-Todo cambio se prueba primero en el emulador.
+Todo cambio se prueba primero en el emulador. La versión publicada
+([juanjiant-bit.github.io/JIANT](https://juanjiant-bit.github.io/JIANT/)) la arma
+[.github/workflows/emulator.yml](.github/workflows/emulator.yml) en cada push a `main` (en el repositorio:
+Settings → Pages → Source: **GitHub Actions**, una sola vez).
 
 ## Instalar (bajo tu riesgo)
 
-1. Hacé un **backup del flash** antes de la primera instalación.
+1. Hacé un **backup del flash** antes de la primera instalación. **JIANT no tiene samples de usuario:** si venís de
+   Felucca, los samples USR1–3 se pierden al instalar (ese flash ahora guarda las canciones). Guardá tus WAV.
 2. Instalá `build/felucca.fwsc` con `python3 tools/fm1_install.py build/felucca.fwsc` o con una copia local
    del instalador web (ver [BUILDING.md](BUILDING.md)).
 3. Para volver al firmware oficial, usá el actualizador de M-VAVE o **Return to official V15** del

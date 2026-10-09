@@ -51,15 +51,20 @@ function bkCheck(rc) {
 export function bkManifest(a) {
   if (a[0] !== 1) throw new Error("Unsupported archive protocol");
   bkCheck(a[1]);
-  const ids = idsOf(a[2]);
-  if (!ids || a.length !== 3 + a[2] * 11) throw new Error("Incomplete archive manifest");
-  return ids.map((id, i) => {
+  if (a.length !== 3 + a[2] * 11) throw new Error("Incomplete archive manifest");
+  const all = Array.from({ length: a[2] }, (_, i) => {
     const p = 3 + i * 11;
-    if (a[p] !== id) throw new Error("Unexpected archive object");
-    const size = bkR32(a, p + 1), crc = bkR32(a, p + 6);
-    if (size > 3840 || (!size && crc)) throw new Error("Archive object too large");
-    return { id, size, crc };
+    return { id: a[p], size: bkR32(a, p + 1), crc: bkR32(a, p + 6) };
   });
+  // A device on Felucca lists its user sample slots (32..34): JIANT has none, they are left out (the installer says so)
+  const kept = all.filter((o) => !BACKUP_RETIRED(o.id)), ids = idsOf(kept.length);
+  if (!ids) throw new Error("Incomplete archive manifest");
+  kept.forEach((o, i) => {
+    if (o.id !== ids[i]) throw new Error("Unexpected archive object");
+    if (o.size > 3840 || (!o.size && o.crc)) throw new Error("Archive object too large");
+  });
+  kept.skipped = all.length - kept.length;
+  return kept;
 }
 const bkBase64 = (bytes) => { let s = ""; for (const b of bytes) s += String.fromCharCode(b); return btoa(s); };
 export function readBackup(file) {

@@ -57,6 +57,13 @@ ok(throws(() => readBackup(bad)), "backup: a damaged file is refused");
 const noRun = JSON.parse(JSON.stringify(file)); noRun.objects[0] = { ...noRun.objects[0], size: 0, crc: 0, data: "" };
 ok(throws(() => readBackup(noRun)), "backup: a file without the current music is refused");
 ok(throws(() => bkManifest([1, 0, 3])), "backup: a short manifest is refused");
+{ // a device still on Felucca lists its user sample slots (ids 32..34, up to 80 KiB each): left out, the rest kept
+  const ids = [...BACKUP_IDS, 32, 33, 34], a = [1, 0, ids.length];
+  for (const id of ids) a.push(id, ...bkU32(id >= 32 ? 81920 : 100 + id), ...bkU32(id + 1));
+  const m = bkManifest(a);
+  ok(m.length === BACKUP_IDS.length && m.skipped === 3 && m.every((o, i) => o.id === BACKUP_IDS[i] && o.size === 100 + o.id),
+     "backup: a Felucca manifest with sample slots: they are skipped, the rest kept");
+}
 
 const target = device([]);
 const damaged = JSON.parse(JSON.stringify(file)); damaged.objects[6].crc ^= 1;
