@@ -60,7 +60,7 @@ static void fresh(void)
     transport_req = panic_req = 0;
     seq_stop();
     clk_pos = CLK_START; clk_step = 0;
-    lim_env = LIM_T; dc_l = dc_r = dce_l = dce_r = 0;
+    lim_env = LIM_T; lev_env = 0; lev_g = lev_cur = 32768; lev_dg = 0; dc_l = dc_r = dce_l = dce_r = 0;
     memset(&clk, 0, sizeof clk);
     click_req = 0; click_mode = CLICK_OFF; click_lvl = 1; cin_bars = 0;
     fx_usb_fixed = 0;

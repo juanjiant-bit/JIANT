@@ -124,7 +124,7 @@ static void felucca_init(void)
 }
 
 /* The power-on LED sweep (1.1, hal/fm1_led_anim.h: a soft light over the keys left to right, then the buttons swell
- * and settle on the glow; ~0.70 s), started before the scan and run by it: nothing waits for it, the splash's 430 ms
+ * and settle on the glow; ~0.70 s), started before the scan and run by it: nothing waits for it, the splash's ~0.93 s (JIANT 0.5: the signature written)
  * and the first ~0.27 s of the UI go by under it (the UI's LEDs from its end, or at once on a key or a button down).
  * Every LEDS setting: it is no idle glow; with DIM HI / DIM LO it ends on that glow (and is drawn over that glow
  * level), with OFF / INV dark. Not with MENU > ANIM OFF (no motion: the LEDs as the UI has them at once), not after a crash (a crash record newer than the last boot saw: the crash screen's
@@ -154,6 +154,7 @@ static void fm1_main(void)
     settings_init();
     usb_serial_apply();                                 /* (#67: the saved USB SERIAL before usb_start) */
     lcd_init();
+    spl_anim = 1;                                       /* (JIANT 0.5) the signature written: splash_write */
     draw_splash();                                      /* ui_draw.c (1.1.5) */
     if (felucca_dbg.magic != DBG_MAGIC) {
         memset(&felucca_dbg, 0, sizeof felucca_dbg);
@@ -190,7 +191,10 @@ static void fm1_main(void)
     }
     autosave_boot(boot_clean);                /* (1.2) the last session's music, under the splash */
     session_dice(fm1_ticks() ^ (uint32_t)fm1_adc_read(FM1_ADC_BATT) << 16);   /* (JIANT 0.4) this session's macros */
-    for (ms = 0; ms < 400u; ms += 10u) {      /* the splash; the pot followed (MIDI IN plays under it) */
+    for (ms = 0; ms < SPL_WRITE + SPL_HOLD; ms += 10u) {   /* the splash, its signature written (JIANT 0.5: was 400 ms);
+                                               * the pot followed (MIDI IN plays under it) */
+        if (!(ms % 20u))
+            splash_write(ms);
         fm1_delay_ms(10);
         master_poll();
     }

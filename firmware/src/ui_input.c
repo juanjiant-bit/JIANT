@@ -885,7 +885,8 @@ static void rec_clear_auto(uint32_t b)
         for (i = 0; i < NPAGES; i++)
             if (PAGES[i].fam == f && (PAGES[i].scope == SC_TRACK || PAGES[i].scope == SC_ENGINE))
                 for (k = 0; k < 4u; k++)
-                    if (PAGES[i].id[k] < P_COUNT)
+                    if (PAGES[i].id[k] < P_COUNT && !(f == FAM_EDIT && PAGES[i].id[k] == P_DIST))   /* (EDIT > FILTER's
+                                                         * DRV is the part's DIST: FX's) */
                         m[PAGES[i].id[k] / 32u] |= 1u << (PAGES[i].id[k] % 32u);
     }
     for (k = 0; k < NTRK; k++)
@@ -961,6 +962,46 @@ static void presets_turn(int32_t s)
     } else if (g != GR_TOOLS) {
         preset_step(s);
     }
+}
+
+/* (JIANT 0.5) SELECT off HOME: the selected track's sound diced. DRUM-X: both patches (A, B) of every sound, each
+ * value moved up to +-40 from the factory kit's, the wave changed one time in five; a synth: one of its engine's
+ * factory presets, then each engine parameter moved up to a quarter of its range (an ENUM: another value, one time in
+ * three). Musical by construction: always near a sound that works */
+static int32_t dice_by(int32_t v, int32_t lo, int32_t hi, int32_t span)
+{
+    return clamp(v + (int32_t)(rng() % (uint32_t)(2 * span + 1)) - span, lo, hi);
+}
+static void sound_dice(void)
+{
+    track_t *t = TSEL;
+    uint32_t e = t->eng_req % NENGINES, i, l;
+    if (e == ENGI_DRUM) {
+        for (l = 0; l < 8u; l++) {
+            const dx_lane_t *D = &DX_KIT_DEF[l];
+            dx_lane_t *L = &dx_kit[l];
+            for (i = 0; i < DXP_N; i++) {
+                L->a[i] = (uint8_t)dice_by(D->a[i], 0, 127, 40);
+                L->b[i] = (uint8_t)dice_by(D->b[i], 0, 127, 40);
+            }
+            L->mode = (uint8_t)((D->mode & ~3u) | (rng() % 5u ? (D->mode & 3u) : rng() % 4u));
+        }
+        ui_message("KIT DICED");
+        return;
+    }
+    if (ENGINES[e]->npresets)
+        apply_preset(rng() % ENGINES[e]->npresets);
+    for (i = 0; i < 8u; i++) {
+        const param_desc_t *d = track_desc(t, P_E0 + i);
+        int32_t span = (d->max - d->min) / 4;
+        if (!d->label || d->label[0] == '-' || d->max <= d->min)
+            continue;
+        if (d->fmt == F_ENUM)
+            t->p[P_E0 + i] = (int16_t)(rng() % 3u ? t->p[P_E0 + i] : d->min + (int32_t)(rng() % (uint32_t)(d->max - d->min + 1)));
+        else
+            t->p[P_E0 + i] = (int16_t)dice_by(t->p[P_E0 + i], d->min, d->max, span ? span : 1);
+    }
+    ui_message("SOUND DICED");
 }
 
 /* HOME / REC / SAVE: tap on release, hold 0.7 s fires once. t0 = press time | 1,
@@ -1417,7 +1458,17 @@ static void ui_input_frame(void)
             }
         }
         dice_ms = fm1_ms | 1u;
-    } else if ((s = glo ? sel : panel_enc(EN_SELECT)) != 0) {   /* SELECT knob = global tempo; */
+    } else if ((s = glo ? sel : panel_enc(EN_SELECT)) != 0 && !glo && !ui.home &&
+               !(cur_page()->scope == SC_GLOBAL && cur_page()->id[0] == G_BPM)) {   /* (JIANT 0.5) off HOME (and GLOBAL,
+                                                         * BPM's page): SELECT dices the track's sound, once a turn (menus,
+                                                         * dialogs: nothing) */
+        static uint32_t sd_ms;
+        if (!ui.menu && !ui.confirm && (!sd_ms || fm1_ms - sd_ms > 400u)) {
+            if (chain_busy()) ui_message("STOP TO EDIT");
+            else sound_dice();
+        }
+        sd_ms = fm1_ms | 1u;
+    } else if (s != 0) {                                /* SELECT knob = global tempo: on HOME, GLOBAL (or GLO held) */
         if (glo || !(ui_prefs & PREF_BPM_LOCK)) {
             song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + accel(EN_SELECT, s, 200), GP[G_BPM].min, GP[G_BPM].max);
             ui.bpm_t = 40;                              /* the header's BPM lights up; no message over the header */

@@ -35,7 +35,7 @@ static double tone_db(uint32_t mode, double f)     /* gain of a -9 dB sine throu
     lc_l1 = lc_l2 = lc_r1 = lc_r2 = dc_l = dc_r = dce_l = dce_r = 0;
     memset(lce, 0, sizeof lce);
     sb_lp1 = sb_lp2 = sb_lp3 = sb_lp4 = sb_env = sb_h1 = sb_h2 = sb_hl = 0;
-    lim_env = LIM_T;
+    lim_env = LIM_T; lev_env = 0; lev_g = lev_cur = 32768; lev_dg = 0;
     for (i = 0; i < n; i++) {
         int32_t l = (int32_t)(6000.0 * sin(2.0 * M_PI * f * i / FS)), r = l;
         if (i >= skip)
@@ -79,7 +79,7 @@ int main(void)
     for (mode = 0; mode < 3u; mode++) {
         fx_lowcut = (uint8_t)mode;
         lc_l1 = lc_l2 = lc_r1 = lc_r2 = 0;
-        lim_env = LIM_T;
+        lim_env = LIM_T; lev_env = 0; lev_g = lev_cur = 32768; lev_dg = 0;
         for (i = 0; i < FS; i++) {
             int32_t l = i < FS / 2u ? (int32_t)(12000.0 * sin(2.0 * M_PI * 55.0 * i / FS)) : 0, r = l;
             master_out(&l, &r);

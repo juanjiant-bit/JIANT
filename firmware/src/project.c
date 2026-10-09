@@ -56,7 +56,7 @@
  * FUNA has zeros there: no lane), and the macros M1..M4 (mod.c macro_v, one byte each) right after, at 3105.
  *
  * Format B ("FUNB", written since JIANT 0.2) = FUNA with 96 more bytes (3840: a flash object's whole payload): 21 track
- * parameters before P_E0 (DIST TYPE TONE, the modulation sequence's LEN DIV SLEW and 16 levels: P_COUNT 120, P_E0 112),
+ * parameters before P_E0 (DIST TYPE TONE, the modulation sequence's LEN DIV SLEW and 16 levels: P_COUNT 120, P_E0 112; JIANT 0.5: the FILTER TYPE CUT RES, 123 and 115, no spare byte left),
  * so the data ends at 3156 and everything after it moved up by 96 (the punch-in block at PROJ_PFX_OFF 3168, the kit at
  * 3216); and nine globals past the header's 27 (G_DHPF .. G_DSPRY) after the macros: a 2 at PROJ_GX_OFF (1: the
  * first five, G_DHPF .. G_RPRE, saved by JIANT 0.2), then biased

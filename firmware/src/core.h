@@ -66,6 +66,8 @@ enum {                          /* per-track parameters */
     P_DTYPE, P_DTONE,                          /* (JIANT, FUNB) DIST's type and tone (fx.c track_dist) */
     P_MSLEN, P_MSDIV, P_MSSLW,                 /* (JIANT, FUNB) the modulation sequence (mod.c MS_STEP): its length, */
     P_MS0, P_MS15 = P_MS0 + 15,                /* rate and slew, its 16 levels */
+    P_FTYPE,                                   /* (JIANT 0.5) the filter's type: LP HP BP COMB (eng_analog.c, voice.c) */
+    P_FCUT, P_FRES,                            /* .. every other engine's: a filter on the part's sum (voice.c track_filter) */
     P_E0, P_E1, P_E2, P_E3, P_E4, P_E5, P_E6, P_E7,
     P_COUNT
 };
@@ -116,6 +118,7 @@ static void params_by_count(int16_t *out, const int16_t *in, uint32_t np, const 
 }
 
 /* engine indices the stores name (engines.c ENGINES[]: append-only) */
+#define ENGI_ANALOG 0u           /* (JIANT 0.5: named for its FILTER page) */
 #define ENGI_PHYS 9u
 #define ENGI_DRUM 10u
 #define ENGI_GRAIN 8u

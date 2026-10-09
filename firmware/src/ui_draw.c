@@ -1052,40 +1052,79 @@ static void draw_columns(void)
 }
 
 
-/* The power-on splash (main.c fm1_main, web/emu felucca_web.c; 1.1.5): a RAISE square centred on the screen, square
- * corners (in every style; LINE too: RAISE from the palette's SURF), in it in AF_M, the ink SPL_PAD in from the left:
- * at the top the name and the version, the first line's capitals' top SPL_PAD down; at the bottom the maker and
- * "based on Felucca", the last line's capitals' bottom (its baseline) SPL_PAD up from the square's bottom. Both
- * margins are measured to the capitals (the descender of "community" hangs into the bottom one, as off a baseline).
- * The square (176 x 176) is more than the canvas (CV_MAX, 240 x 124): it is filled straight on the screen and its
- * two text bands drawn on it as canvases, the top one from the square's top edge, the bottom one to its bottom edge.
- * In the saved palette (settings_init before it) */
-#define SPL_SQ 176                                  /* the square (even: centred exactly) */
-#define SPL_X0 ((240u - SPL_SQ) / 2u)               /* its top-left on the screen (x and y) */
-#define SPL_PAD 16                                  /* the text's inset: left (its ink), top and bottom (the capitals) */
-#define SPL_PITCH 20                                /* line to line */
-static const char *const SPLASH_LINES[] = {"JIANT", FELUCCA_VERSION, "for the FM-1", "based on Felucca"};
-/* a band of two lines, h tall, at y on the screen: the first line's top at ly; the two lines' capitals declared
- * against al0..al1 (mode: AL_V the band centred there, AL_B the last baseline on al1) */
-static void splash_band(uint32_t y, uint32_t h, int32_t ly, const char *const *l, uint32_t mode, int32_t al0,
-                        int32_t al1, const char *tag)
+/* The power-on splash (main.c fm1_main, web/emu felucca_web.c; JIANT 0.5): the maker's signature ("Jiant FM1",
+ * tools/gen_signature.py: 24 strokes, 214 points) written in the thermal colours, stroke by stroke as the hand went:
+ * the line cold (cyan) where the pen started, hotter along its way (violet, red, orange) to yellow white where it
+ * ended, the pen's tip a white point while it writes; under it, small, the version and "based on Felucca". Written over
+ * SPL_WRITE ms (splash_write, main.c's splash loop; MENU > ANIM OFF: whole at once). Lines only, the canvas
+ * redrawn a step (~700 short lines). In the saved palette (settings_init before it) */
+#include "ui_signature.h"
+#define SPL_WRITE 700u                              /* ms: the signature written */
+#define SPL_HOLD 200u                               /* .. then shown whole, before the UI */
+#define SPL_SY 40                                   /* the signature's canvas on the screen (240 x SIG_H + 12) */
+#define SPL_TY 186                                  /* the two lines under it */
+static const char *const SPLASH_LINES[] = {FELUCCA_VERSION, "based on Felucca"};
+static uint8_t spl_anim;                            /* main.c: 1 = the signature to be written (splash_write) */
+static int32_t sig_seg(uint32_t i)                  /* segment i -> i + 1's length, px (0: a stroke starts at i + 1) */
 {
-    cv_begin(SPL_SQ, h, T_RAISE);
-    GFX_HOOK_ALIGN(0, al0, 0, al1, mode | AL_N(2), tag);
-    cv_text_on(SPL_PAD, ly, &AF_M, l[0], T_TEXT, T_RAISE);
-    cv_text_on(SPL_PAD, ly + SPL_PITCH, &AF_M, l[1], T_TEXT, T_RAISE);
-    cv_blit(SPL_X0, y);
+    int32_t dx = SIG_PTS[2u * i + 2u] - SIG_PTS[2u * i], dy = (SIG_PTS[2u * i + 3u] & 127) - (SIG_PTS[2u * i + 1u] & 127);
+    if (SIG_PTS[2u * i + 3u] & 128u)                /* (y's bit 7: a stroke starts) */
+        return 0;
+    dx = dx < 0 ? -dx : dx;
+    dy = dy < 0 ? -dy : dy;
+    return dx > dy ? dx + dy / 2 : dy + dx / 2;
+}
+static int32_t sig_len(void)
+{
+    static int32_t n;
+    uint32_t i;
+    if (!n)
+        for (i = 0; i + 1u < SIG_N; i++)
+            n += sig_seg(i);
+    return n;
+}
+/* the signature up to px of its length (>= sig_len(): whole) */
+static void splash_sig(int32_t px)
+{
+    int32_t tot = sig_len(), acc = 0, x0 = (240 - SIG_W) / 2 * 16, y0 = 6 * 16;
+    uint32_t i;
+    cv_begin(240, SIG_H + 12, T_BG);
+    for (i = 0; i + 1u < SIG_N && acc < px; i++) {
+        int32_t L = sig_seg(i), ax = x0 + SIG_PTS[2u * i] * 16, ay = y0 + (SIG_PTS[2u * i + 1u] & 127) * 16;
+        int32_t bx = x0 + SIG_PTS[2u * i + 2u] * 16, by = y0 + (SIG_PTS[2u * i + 3u] & 127) * 16;
+        uint16_t c;
+        if (!L)
+            continue;
+        if (acc + L > px) {                         /* the pen is here: the segment so far, its tip */
+            bx = ax + (bx - ax) * (px - acc) / L;
+            by = ay + (by - ay) * (px - acc) / L;
+        }
+        c = ux.mono || settings.palette == UI_BW_INDEX ? T_TEXT : heat_col(24 + acc * 220 / (tot ? tot : 1));
+        og_line(ax, ay, bx, by, c);
+        og_line(ax + 10, ay + 10, bx + 10, by + 10, c);   /* (two lines: a 2 px pen) */
+        acc += L;
+        if (acc > px)
+            cv_rrect(bx / 16 - 2, by / 16 - 2, 5, 5, 2, T_TEXT, T_BG);
+    }
+    cv_blit(0, SPL_SY);
 }
 static void draw_splash(void)
 {
-    int32_t h = SPL_PAD - AF_M_CAP_Y + SPL_PITCH + AF_M.h;     /* a band: its two lines, the descenders in */
-    int32_t lb = h - SPL_PAD - AF_M_CAP_H - AF_M_CAP_Y;         /* the bottom band's last line: its top */
+    uint32_t k;
     lcd_fill(0, 0, 240, 240, T_BG);
-    lcd_fill(SPL_X0, SPL_X0, SPL_SQ, SPL_SQ, T_RAISE);
-    splash_band(SPL_X0, (uint32_t)h, SPL_PAD - AF_M_CAP_Y, SPLASH_LINES, AL_V, SPL_PAD,
-                SPL_PAD + SPL_PITCH + AF_M_CAP_H, "splash name + version SPL_PAD from the top");
-    splash_band(SPL_X0 + SPL_SQ - (uint32_t)h, (uint32_t)h, lb - SPL_PITCH, SPLASH_LINES + 2, AL_B, 0, h - SPL_PAD,
-                "splash maker's baseline SPL_PAD from the bottom");
+    cv_begin(240, 36, T_BG);
+    for (k = 0; k < 2u; k++)
+        cv_text_in(0, (int32_t)k * 16, 240, &AF_S, SPLASH_LINES[k], k ? T_DIM : T_MID, T_BG);
+    cv_blit(0, SPL_TY);
+    splash_sig(spl_anim && !(ui_prefs & PREF_ANIM_OFF) ? 0 : 0x7FFFFFFF);
+    lcd_sync();
+}
+/* main.c's splash loop: the signature as written ms after the start */
+static void splash_write(uint32_t ms)
+{
+    if (!spl_anim || (ui_prefs & PREF_ANIM_OFF))
+        return;
+    splash_sig(ms >= SPL_WRITE ? 0x7FFFFFFF : (int32_t)((int64_t)sig_len() * ms / SPL_WRITE));
     lcd_sync();
 }
 

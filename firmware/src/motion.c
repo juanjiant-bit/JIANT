@@ -38,7 +38,7 @@ static int motion_param(uint32_t id)
     return id < P_COUNT && (id <= P_REL || (id >= P_ED_FLT && id <= P_LD_AMP) ||
         (id >= P_DIST && id <= P_REV) || id == P_GLIDE || id == P_PAN ||
         id == P_DETUNE || (id >= P_FM1_ATK && id <= P_FM4_LEVEL) || (id >= P_SOFS && id <= P_LN7) ||
-        id == P_DTONE || id == P_MSSLW || (id >= P_MS0 && id <= P_MS15) || id >= P_E0);   /* (the sequence offset OFS
+        id == P_DTONE || id == P_MSSLW || id == P_FCUT || id == P_FRES || (id >= P_MS0 && id <= P_MS15) || id >= P_E0);   /* (the sequence offset OFS
         * PIT, the DRUM lane levels, DIST's TONE, the modulation sequence's slew and levels, E0..E7) */
 }
 static int motion_valid(const motion_store_t *m)

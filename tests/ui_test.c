@@ -2815,8 +2815,9 @@ static int engine_cycle(const char *const *want, uint32_t n)   /* EDIT tapped fr
 }
 static int test_edit_cycle(void)
 {
-    static const char *const CYC_A[] = {"EDIT 1", "EDIT 2", "VOICE", "EDIT 1"};
-    static const char *const CYC_D[] = {"EDIT 1", "EDIT 2", "OP1 ENV", "OP2 ENV", "OP3 ENV", "OP4 ENV",
+    static const char *const CYC_A[] = {"EDIT 1", "EDIT 2", "FILTER", "VOICE", "EDIT 1"};   /* (JIANT 0.5: ANALOG's FILTER) */
+    static const char *const CYC_F[] = {"EDIT 1", "EDIT 2", "FILTER", "VOICE", "EDIT 1"};   /* (the part's FILTER) */
+    static const char *const CYC_D[] = {"EDIT 1", "EDIT 2", "FILTER", "OP1 ENV", "OP2 ENV", "OP3 ENV", "OP4 ENV",
                                         "OP LEVEL", "VOICE", "EDIT 1"};
     int bad = 0, ok;
     uint32_t i;
@@ -2829,22 +2830,22 @@ static int test_edit_cycle(void)
         ok &= !str_eq(PAGES[i].title, "ENGINE");
     bad += check("no ENGINE page (engines are the EDIT layer's)", ok);
     set_engine_of(TSEL, 0);
-    bad += check("EDIT cycle (ANALOG): EDIT 1 EDIT 2 VOICE EDIT 1", engine_cycle(CYC_A, NELEM(CYC_A)));
+    bad += check("EDIT cycle (ANALOG): EDIT 1 EDIT 2 FILTER VOICE EDIT 1", engine_cycle(CYC_A, NELEM(CYC_A)));
 #if FELUCCA_FM4
     set_engine_of(TSEL, 1);
-    bad += check("EDIT cycle (DIGITAL): EDIT 1 EDIT 2 OP1..OP4 ENV OP LEVEL VOICE EDIT 1",
+    bad += check("EDIT cycle (DIGITAL): EDIT 1 EDIT 2 FILTER OP1..OP4 ENV OP LEVEL VOICE EDIT 1",
                  engine_cycle(CYC_D, NELEM(CYC_D)));
 #else
     set_engine_of(TSEL, ENGI_DIGITAL);
-    bad += check("EDIT cycle (engine 1 asked for: FM6, DIGITAL retired): EDIT 1 EDIT 2 VOICE EDIT 1",
-                 TSEL->eng_req == ENGI_FM6 && engine_cycle(CYC_A, NELEM(CYC_A)));
+    bad += check("EDIT cycle (engine 1 asked for: FM6, DIGITAL retired): EDIT 1 EDIT 2 FILTER VOICE EDIT 1",
+                 TSEL->eng_req == ENGI_FM6 && engine_cycle(CYC_F, NELEM(CYC_F)));
     (void)CYC_D;
 #endif
     {   /* #97: a DRUM track's lane levels on EDIT > LANES (KICK SNARE CLAP HATCL) and LANES 2 (HATOP TOM RIM BELL) */
-        static const char *const CYC_K[] = {"EDIT 1", "EDIT 2", "LANES", "LANES 2", "SOUND", "SOUND 2", "SOUND 3", "VOICE",
+        static const char *const CYC_K[] = {"EDIT 1", "EDIT 2", "FILTER", "LANES", "LANES 2", "SOUND", "SOUND 2", "SOUND 3", "VOICE",
                                             "EDIT 1"};
         set_engine_of(TSEL, ENGI_DRUM);
-        bad += check("EDIT cycle (DRUM): EDIT 1 EDIT 2 LANES LANES 2 SOUND SOUND 2 SOUND 3 VOICE EDIT 1",
+        bad += check("EDIT cycle (DRUM): EDIT 1 EDIT 2 FILTER LANES LANES 2 SOUND SOUND 2 SOUND 3 VOICE EDIT 1",
                      engine_cycle(CYC_K, NELEM(CYC_K)));
         go_title("LANES 2"); frame();
         ok = TSEL->p[P_LN5] == 127;
@@ -6446,11 +6447,10 @@ static int test_bpm_lock(void)
     press(B_HOME);
     bad += check("#58 MENU > BPM LOCK: KNOB 1 right / OCT+ ON, left / OCT- OFF; SELECT in the menu is no tempo", ok && !ui.menu);
 
-    /* ON: no tempo from SELECT on HOME and the pages; "BPM LOCKED" once per burst */
+    /* ON: no tempo from SELECT on HOME and GLOBAL; "BPM LOCKED" once per burst (JIANT 0.5: the other pages dice) */
     ok = 1;
-    for (i = 0; i < 3u; i++) {
-        if (i == 1u) go_title("ENV");
-        if (i == 2u) go_title("STEP");
+    for (i = 0; i < 2u; i++) {
+        if (i == 1u) go_title("GLOBAL");
         frame();
         ui.msg_t = 0; fm1_ms += 1200u;
         b0 = song.g[G_BPM];
@@ -6464,7 +6464,23 @@ static int test_bpm_lock(void)
     turn(EN_SELECT, 1);
     ok &= msg_is("BPM LOCKED");                                       /* (a new burst: said again) */
     ok &= text_w(&AF_S, "BPM LOCKED") <= 236 - 106;                   /* (fits the header's message zone) */
-    bad += check("#58 BPM LOCK ON: SELECT leaves the tempo on HOME and the pages, \"BPM LOCKED\" once per turn burst", ok);
+    bad += check("#58 BPM LOCK ON: SELECT leaves the tempo on HOME and GLOBAL, \"BPM LOCKED\" once per turn burst", ok);
+    /* (JIANT 0.5) SELECT off HOME and GLOBAL: the track's sound diced (a synth: its engine's parameters move; DRUM-X:
+     * the kit), never the tempo; once a turn burst */
+    {
+        int16_t before[8];
+        uint32_t j, moved = 0;
+        go_title("ENV"); frame();
+        for (j = 0; j < 8u; j++) before[j] = TSEL->p[P_E0 + j];
+        b0 = song.g[G_BPM]; fm1_ms += 1200u;
+        turn(EN_SELECT, 1);
+        for (j = 0; j < 8u; j++) moved += TSEL->p[P_E0 + j] != before[j];
+        ok = song.g[G_BPM] == b0 && msg_is("SOUND DICED") && moved > 0u;
+        for (j = 0; j < 8u; j++) before[j] = TSEL->p[P_E0 + j];
+        turn(EN_SELECT, 1);                                           /* (the same burst: no second dice) */
+        for (j = 0; j < 8u; j++) ok &= TSEL->p[P_E0 + j] == before[j];
+        bad += check("JIANT 0.5: SELECT off HOME and GLOBAL dices the sound (not the tempo), once a turn burst", ok);
+    }
 
     /* ON: GLO > GLOBAL's BPM knob */
     go_title("GLOBAL"); frame();
@@ -7024,6 +7040,10 @@ static int test_organic(void)
     ok &= j == 8u;
     bad += check("MACRO DICE at power-on: 2 routes a track to what its sound has, each macro 2; own routes kept; restored: none added", ok);
     go_home(); frames(64);
+    song.playing = 1;                              /* (JIANT 0.5: a reroll routes the tracks that sound: playing, their steps) */
+    for (k = 0; k < NTRK; k++) {
+        trk[k].step[0].time = ST_NOTE; trk[k].step[0].n = 1; trk[k].step[0].note[0] = 60; trk[k].step[0].hit = 1;
+    }
     btn_down(B_LFO); frames(560);
     key_down(white(1)); frame(); key_up(white(1)); frame();   /* G3: CLEAR */
     for (k = 0, j = 0; k < NTRK * 4u; k++)
@@ -7035,6 +7055,22 @@ static int test_organic(void)
     ok &= j == 8u;
     btn_up(B_LFO); frames(400);
     bad += check("MACRO layer: G3 clears the macros' routes (others kept), F3 rolls new ones", ok);
+    {   /* (JIANT 0.5) a reroll: only the tracks that sound now (track 2 muted: none) */
+        trk[1].p[P_MUTE] = 1;
+        macro_dice(2); macro_dice(1);
+        for (k = 0, j = 0; k < 4u; k++)
+            j += trk[1].p[P_M1SRC + 3u * k] >= MS_M1 && trk[1].p[P_M1SRC + 3u * k] < MS_M1 + 4;
+        ok = j == 0u && trk[0].p[P_M1SRC] >= MS_M1;
+        song.playing = 0;
+        macro_dice(2); macro_dice(1);              /* (stopped, silent: nothing sounds, no routes) */
+        for (k = 0, j = 0; k < NTRK * 4u; k++)
+            j += trk[k / 4u].p[P_M1SRC + 3u * (k % 4u)] >= MS_M1 && trk[k / 4u].p[P_M1SRC + 3u * (k % 4u)] < MS_M1 + 4;
+        ok &= j == 0u;
+        trk[1].p[P_MUTE] = 0;
+        song.playing = 1;
+        macro_dice(1);
+        bad += check("JIANT 0.5: the macro dice routes only the tracks that sound now (a muted or silent one: none)", ok);
+    }
     {   /* SELECT on HOME's macros: the routes rolled again (once a turn), the tempo untouched; on the sound's four: tempo */
         int16_t bpm = song.g[G_BPM], before[NTRK][12];
         uint32_t diff = 0;
@@ -7049,6 +7085,7 @@ static int test_organic(void)
         mac_latch = 0;
         turn(EN_SELECT, 1);
         ok &= song.g[G_BPM] == bpm + 1;
+        song.playing = 0;
         bad += check("SELECT on the latched macros rolls the dice (the tempo kept); not latched, the tempo", ok);
     }
     return bad;

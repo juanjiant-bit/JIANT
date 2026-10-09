@@ -1476,9 +1476,10 @@ function makeMockDevice(opt = {}) {
     { name: "LOFI", titles: ["CHIP", "TONE"], edit: [E("CHIP", ["4BIT", "4B/2", "8BIT", "1BIT", "STEP"], 0), E("WAVE", ["PLS", "TRI", "SAW", "NOIS", "WRAM", "BYTE"], 0), D("DUTY", F.INT, 0, 127, 64),
         D("CRSH", F.PCT, 0, 127, 0), D("CUT", F.CUTOFF, 0, 127, 110), D("VIB", F.PCT, 0, 127, 0), D("BEND", F.PCT, 0, 127, 0), D("MASK", F.PCT, 0, 127, 0)],   /* (JIANT 0.4: CUT BEND MASK) */
       presets: [P("BYTEBEAT", [2, 5, 4, 0, 120, 0, 0, 0], [0, 80, 110, 40], 1, 4), P("BYTE VAR", [2, 5, 64, 40, 100, 0, 0, 0], [0, 80, 110, 50], 1, 3),
-        P("BYTE BENT", [2, 5, 16, 0, 96, 0, 70, 24], [0, 80, 110, 45], 1, 4), P("PULSE LD", [0, 0, 32, 0, 127, 20, 0, 0], [0, 60, 90, 30], 1, 4),
+        P("BYTE BENT", [2, 5, 16, 0, 96, 60, 70, 0], [0, 80, 110, 45], 1, 4), P("PULSE LD", [0, 0, 32, 0, 127, 20, 0, 0], [0, 60, 90, 30], 1, 4),
         P("WAVE BASS", [1, 1, 0, 0, 90, 0, 0, 0], [0, 50, 70, 20], 1, 2), P("8BIT KEYS", [2, 0, 96, 0, 110, 0, 30, 0], [0, 60, 80, 40], 0, 13),
-        P("WAVE LEAD", [0, 4, 92, 0, 110, 18, 0, 0], [0, 70, 90, 30], 1, 3), P("STEP LEAD", [4, 0, 40, 34, 127, 16, 0, 0], [0, 64, 127, 55], 1, 4)] },
+        P("WAVE LEAD", [0, 4, 92, 0, 110, 18, 0, 0], [0, 70, 90, 30], 1, 3), P("STEP LEAD", [4, 0, 40, 34, 127, 16, 0, 0], [0, 64, 127, 55], 1, 4),
+        P("BYTE TONE", [2, 5, 40, 30, 90, 90, 0, 80], [0, 70, 100, 40], 1, 4)] },
     /* 4: reserved (SAMPLE, retired in JIANT; its sounds load as ANALOG, its PERC set as DRUM) */
     { name: "-", titles: ["-", "-"], edit: [D("-", F.INT, 0, 127, 0), D("-", F.INT, 0, 127, 0), D("-", F.INT, 0, 127, 0),
         D("-", F.INT, 0, 127, 0), D("-", F.INT, 0, 127, 0), D("-", F.INT, 0, 127, 0), D("-", F.INT, 0, 127, 0), D("-", F.INT, 0, 127, 0)],
@@ -1507,7 +1508,7 @@ function makeMockDevice(opt = {}) {
       presets: [] },
     { name: "DRUM", titles: ["KIT", "HIT"], edit: [D("MRPH", F.PCT, 0, 127, 64), D("TUNE", F.PCT, 0, 127, 64),
         D("TONE", F.PCT, 0, 127, 64), D("DECY", F.PCT, 0, 127, 64), D("NOIS", F.PCT, 0, 127, 64), D("FM", F.PCT, 0, 127, 0),
-        D("WARP", F.PCT, 0, 127, 0), D("DRV", F.PCT, 0, 127, 0)],
+        D("FOLD", F.PCT, 0, 127, 0), D("DRV", F.PCT, 0, 127, 0)],
       presets: [P("DRUM-X", [64, 64, 70, 64, 64, 0, 0, 0], [0, 100, 127, 100], 0, 12)] },
     { name: "NOISE", titles: ["SRC", "MOVE"], edit: [E("MODE", ["ANLG", "DUST", "LFSR", "META"], 0), D("COLR", F.PCT, 0, 127, 64),
         D("FREQ", F.CUTOFF, 0, 127, 80), D("RES", F.PCT, 0, 127, 30), D("TRK", F.PCT, 0, 127, 64), D("DENS", F.PCT, 0, 127, 0),
@@ -1551,7 +1552,9 @@ function makeMockDevice(opt = {}) {
   TP.push(E("TYPE", ["SOFT", "HARD", "FOLD", "CRUSH", "RECT"], 0), D("TONE", F.BIPCT, -64, 63, 0),   /* 91, 92: DIST (JIANT, FUNB) */
     D("LEN", F.STEPS, 1, 16, 16), E("DIV", NDIV, 2), D("SLEW", F.PCT, 0, 127, 0));   /* 93..95: the modulation sequence */
   for (let k = 0; k < 16; k++) TP.push(D("LVL", F.PCT, 0, 127, 0));                     /* 96..111: its levels */
-  const P_COUNT = 120, G_COUNT = 37, NSTEP = 64, P_E0 = 112, G_ENGSEL = 20, P_SLCR = 45;
+  TP.push(E("TYPE", ["LP", "HP", "BP", "COMB"], 0),                                    /* 112: the FILTER's type (JIANT 0.5) */
+    D("CUT", F.CUTOFF, 0, 127, 127), D("RES", F.PCT, 0, 127, 0));                       /* 113, 114: the other engines' */
+  const P_COUNT = 123, G_COUNT = 37, NSTEP = 64, P_E0 = 115, G_ENGSEL = 20, P_SLCR = 45;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const enumOrig = (d, v) => d.fmt === F.ENUM && d.names ? aliasOf(d.names, v - d.min) + d.min : v;   /* params.c enum_orig */
   /* four tracks (firmware v3), four synth parts (1.0); engine / preset / p / step below are the selected track's */

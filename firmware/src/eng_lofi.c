@@ -57,6 +57,10 @@ static const char *const N_BYTE[] = {"B01", "B02", "B03", "B04", "B05", "B06", "
                                      "B23", "B24", "B25", "B26", "B27", "B28", "B29", "B30", "B31", "B32", 0};
 static const param_desc_t LOFI_ALGO = {"ALGO", F_INT, 0, 127, 64, N_BYTE, 0};    /* = edit[2] (BYTE) */
 static const param_desc_t LOFI_VAR = {"VAR", F_PCT, 0, 127, 0, 0, 0};            /* = edit[3] (BYTE) */
+/* (JIANT 0.5) BYTE's own: RES the filter's resonance (VIB's slot), LOOP (MASK's slot) t held in a window of 2^17 ..
+ * 2^5 steps: the formula's long evolution (0: free) folded into a short cycle repeating at the note: a pitched tone */
+static const param_desc_t LOFI_RES = {"RES", F_PCT, 0, 127, 0, 0, 0};             /* = edit[5] (BYTE) */
+static const param_desc_t LOFI_LOOP = {"LOOP", F_PCT, 0, 127, 0, 0, 0};           /* = edit[7] (BYTE) */
 static __attribute__((noinline)) uint32_t lofi_byte(uint32_t f, uint32_t t, uint32_t a)
 {
     switch (f & 31u) {
@@ -124,15 +128,16 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
     uint32_t f = (uint32_t)p[P_E2] >> 2, a = 1u + ((uint32_t)p[P_E3] >> 3), tt = (uint32_t)v->s[2], tf = v->ph[0], i;
     uint32_t ti = (inc >> 8) * 31u;                     /* t a sample, Q24: C4 (inc ~2.55e7) ~0.18 = 8 kHz */
     uint32_t bs = p[P_E6] ? 13u - (uint32_t)p[P_E6] / 11u : 0u;   /* BEND: the fold's shift, 13 .. 2 (0: none) */
-    int32_t held = v->s[0], cnt = v->s[1], ic1 = v->s[4], ic2 = v->s[5], msk = p[P_E7] >> 1;
+    int32_t held = v->s[0], cnt = v->s[1], ic1 = v->s[4], ic2 = v->s[5];
+    uint32_t lm = p[P_E7] ? (1u << (17u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: t's window */
     for (i = 0; i < n; i++) {
         if (--cnt <= 0) {
-            uint32_t tw = bs ? tt ^ (tt >> bs) : tt;
+            uint32_t tl = tt & lm, tw = bs ? tl ^ (tl >> bs) : tl;
             int32_t s = (int32_t)(lofi_byte(f, tw, a) & 255u) * 256 - 32640;
             cnt = hold;
             if (bits < 8)
                 s = ((s + (1 << (15 - bits))) >> (16 - bits)) << (16 - bits);
-            held = lofi_mask(s, msk);
+            held = s;
         }
         tf += ti;
         tt += tf >> 24;
@@ -151,6 +156,8 @@ static const param_desc_t *lofi_desc(const track_t *t, uint32_t k)
 {
     if (t->p[P_E1] == RW_BYTE && (k == 2u || k == 3u))
         return k == 2u ? &LOFI_ALGO : &LOFI_VAR;
+    if (t->p[P_E1] == RW_BYTE && (k == 5u || k == 7u))
+        return k == 5u ? &LOFI_RES : &LOFI_LOOP;
     if (k == 2u && t->p[P_E1] == RW_WRAM)
         return &LOFI_WAVNUM;
     if (k == 3u && t->p[P_E0] == CHIP_STEP)
@@ -240,10 +247,11 @@ static void lofi_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
         wdc = bits == 1 ? sum * 32767 / 32 : sum * 2 * Q4 / 32;   /* (2 v - 15) Q4, or +-32767 at 1 bit */
     }
     inc = pitch_inc(clamp(m->pitch16, 0, 2047));       /* (the vibrato below; the track's LFO in m->pitch16 already) */
-    tsvf_coef(&flt, (p[P_E4] << 8) + m->cutoff, 50);    /* CUT, a little resonance */
+    tsvf_coef(&flt, (p[P_E4] << 8) + m->cutoff, wave == RW_BYTE ? 50 + p[P_E5] * 77 / 127 : 50);   /* CUT, a little
+                                                         * resonance (BYTE: RES up to the edge) */
     if (p[P_E6])
         lofi_bend_set(&bd, p[P_E6]);
-    if (p[P_E5])
+    if (p[P_E5] && wave != RW_BYTE)                     /* (BYTE: VIB's slot is RES) */
         inc += (uint32_t)(((int32_t)(inc >> 12) * (((osc_sine(v->ph[1]) >> 8) * p[P_E5]) >> 4)) >> 4);   /* no overflow */
     v->ph[1] += 0x01000000u;
     if (wave == RW_BYTE) {                              /* (JIANT 0.4) bytebeat */
@@ -306,10 +314,10 @@ static void lofi_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
 
 static const preset_t LOFI_PRESETS[] = {
     /* name, {CHIP, WAVE, DUTY, CRSH, CUT, VIB, BEND, MASK} (JIANT 0.4: BYTE first; CUT BEND MASK were SWP ARP TONE) */
-    /* BYTE: 8 bits, ALGO B02 (DUTY 4 / 4 = 1); B17 (64 / 4 = 16) with VAR 40 (a = 6); B05 folded (BEND) and masked */
+    /* BYTE: 8 bits, ALGO B02 (DUTY 4 / 4 = 1); B17 (64 / 4 = 16) with VAR 40 (a = 6); B05 folded (BEND), resonant */
     {"BYTEBEAT", {2, 5, 4, 0, 120, 0, 0, 0}, {0, 80, 110, 40}, 0, 1, FX(0, 0, 25, 20), PAT(4)},
     {"BYTE VAR", {2, 5, 64, 40, 100, 0, 0, 0}, {0, 80, 110, 50}, 0, 1, FX(0, 20, 30, 25), PAT(3)},
-    {"BYTE BENT", {2, 5, 16, 0, 96, 0, 70, 24}, {0, 80, 110, 45}, 0, 1, FX(10, 10, 30, 25), PAT(4)},
+    {"BYTE BENT", {2, 5, 16, 0, 96, 60, 70, 0}, {0, 80, 110, 45}, 0, 1, FX(10, 10, 30, 25), PAT(4)},   /* (0.5: RES 60) */
     {"PULSE LD", {0, 0, 32, 0, 127, 20, 0, 0}, {0, 60, 90, 30}, 0, 1, FX(0, 0, 40, 20), PAT(4)},
     {"WAVE BASS", {1, 1, 0, 0, 90, 0, 0, 0}, {0, 50, 70, 20}, 0, 1, FX(0, 0, 10, 0), PAT(2)},
     {"8BIT KEYS", {2, 0, 96, 0, 110, 0, 30, 0}, {0, 60, 80, 40}, 0, 0, FX(0, 0, 30, 20), PAT(13)},
@@ -317,6 +325,8 @@ static const preset_t LOFI_PRESETS[] = {
     {"WAVE LEAD", {0, 4, 92, 0, 110, 18, 0, 0}, {0, 70, 90, 30}, 0, 1, FX(0, 0, 40, 25), PAT(3)},
     /* STEP: 25 % pulse, DCY 34 = D7 (a 15-step decay over 0.5 s), REL ~54 ms of staircase after note-off */
     {"STEP LEAD", {4, 0, 40, 34, 127, 16, 0, 0}, {0, 64, 127, 55}, 0, 1, FX(0, 0, 40, 20), PAT(4)},
+    /* (JIANT 0.5, appended: the stored numbers stay) BYTE B11 looped (LOOP 80: a short cycle, a tone at the note), resonant */
+    {"BYTE TONE", {2, 5, 40, 30, 90, 90, 0, 80}, {0, 70, 100, 40}, 0, 1, FX(0, 0, 30, 20), PAT(4)},
 };
 
 static const engine_t ENG_LOFI = {
