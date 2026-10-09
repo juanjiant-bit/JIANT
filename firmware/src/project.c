@@ -49,7 +49,7 @@
  * slot 1 still starts with the older record, read as above).
  *
  * Format A ("FUNA", written since JIANT 0.1) = FUN9 with 96 more bytes: the section's DRUM-X kit (drumx_voice.c
- * dx_lane_t[8], 88 bytes, then the group mutes (dx_mute, 1 byte) and 7 reserved, written 0) at PROJ_DX_OFF, just before the FM6 patches. 3744 bytes (a
+ * dx_lane_t[8], 88 bytes, then the group mutes, the sounds' mutes (dx_mute, 2 bytes) and 6 reserved, written 0) at PROJ_DX_OFF, just before the FM6 patches. 3744 bytes (a
  * flash object holds 3840); the serialized part still ends by 3120 (FUN9's 48 spare bytes stay). FUN9 is read
  * (its kit: the factory one, DX_KIT_DEF), as every older format. JIANT 0.1 also keeps the punch-in lane (pfx.c) in
  * the 48 spare bytes before the kit: 64 nibbles at PROJ_PFX_OFF (3072), its tracks at 3104 (a FUN9 or an earlier
@@ -111,7 +111,8 @@ typedef struct {
     motion_store_t motion;
     uint8_t fm6[NTRK][FM6_PACKED];             /* each track's FM6 patch, packed (eng_fm6.c) */
     dx_lane_t dx[8];                           /* the DRUM-X kit (drumx_voice.c) */
-    uint8_t dx_mute;                           /* its group mutes (drumx_voice.c DXG_*), stored in the first reserved byte */
+    uint16_t dx_mute;                          /* its mutes (eng_drum.c: the groups DXG_* in the first reserved byte, the
+                                                * sounds' DXM_LANE in the second) */
     uint8_t pfx_lane[32], pfx_ltgt;            /* the punch-in lane (pfx.c), in FUN9's spare bytes (PROJ_PFX_OFF) */
     char name[PROJ_NAME_LEN];                  /* the project's name: upper-case ASCII 32..126, 0-padded; "" = none */
     uint32_t sum;
@@ -639,6 +640,7 @@ static int proj_pack(project_store_t *out, const project_t *q)
     b[PROJ_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
     memcpy(b + PROJ_DX_OFF, q->dx, sizeof q->dx);
     b[PROJ_DX_OFF + sizeof q->dx] = q->dx_mute & DXG_ALL;
+    b[PROJ_DX_OFF + sizeof q->dx + 1u] = (uint8_t)(q->dx_mute >> 8);
     memcpy(b + PROJ_FM6_OFF, q->fm6, sizeof q->fm6);
     {   /* the name (0-padded; stops at the first 0) */
         char n[PROJ_NAME_LEN + 1u];
@@ -719,7 +721,7 @@ static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
     if (va) {                                           /* the DRUM-X kit (a broken one: not a project) */
         memcpy(q->dx, b + end, sizeof q->dx);
         if (!dx_kit_ok(q->dx)) return 0;
-        q->dx_mute = b[end + sizeof q->dx] & DXG_ALL;
+        q->dx_mute = (uint16_t)((b[end + sizeof q->dx] & DXG_ALL) | b[end + sizeof q->dx + 1u] << 8);
     } else {
         memcpy(q->dx, DX_KIT_DEF, sizeof q->dx);
         q->dx_mute = 0;
@@ -1009,7 +1011,7 @@ static int project_restore_runtime(const project_t *input)
     transport_req = 0;
     chain.ended = 0;                                    /* (a song stopped by this load: the load wins, song_poll keeps out) */
     memcpy(dx_kit, dx_kit_ok(p->dx) ? p->dx : DX_KIT_DEF, sizeof dx_kit);   /* (the section's DRUM-X kit) */
-    dx_mute_set(p->dx_mute & DXG_ALL);
+    dx_mute_set(p->dx_mute);
     memcpy(pfx_lane, p->pfx_lane, sizeof pfx_lane);    /* (the section's punch-in lane) */
     pfx_ltgt = p->pfx_ltgt > 2u ? 0u : p->pfx_ltgt;
                                                         /* (the rows are the song's, not a section's: kept) */

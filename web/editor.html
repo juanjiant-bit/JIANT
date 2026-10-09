@@ -1498,7 +1498,7 @@ function makeMockDevice(opt = {}) {
       presets: [] },
     { name: "DRUM", titles: ["KIT", "HIT"], edit: [D("MRPH", F.PCT, 0, 127, 64), D("TUNE", F.PCT, 0, 127, 64),
         D("TONE", F.PCT, 0, 127, 64), D("DECY", F.PCT, 0, 127, 64), D("NOIS", F.PCT, 0, 127, 64), D("ACC", F.PCT, 0, 127, 100),
-        D("-", F.INT, 0, 0, 0), D("DRV", F.PCT, 0, 127, 0)],
+        D("WARP", F.PCT, 0, 127, 0), D("DRV", F.PCT, 0, 127, 0)],
       presets: [P("DRUM-X", [64, 64, 70, 64, 64, 100, 0, 0], [0, 100, 127, 100], 0, 12)] },
     { name: "NOISE", titles: ["SRC", "MOVE"], edit: [E("MODE", ["ANLG", "DUST", "LFSR", "META"], 0), D("COLR", F.PCT, 0, 127, 64),
         D("FREQ", F.CUTOFF, 0, 127, 80), D("RES", F.PCT, 0, 127, 30), D("TRK", F.PCT, 0, 127, 64), D("DENS", F.PCT, 0, 127, 0),

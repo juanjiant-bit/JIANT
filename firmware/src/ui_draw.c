@@ -1166,6 +1166,9 @@ static void confirm_text(char *a, char *b)
     case CF_INIT_SOUND:
         str_cpy(a, drum_track(TSEL) ? "INIT SOUND + KIT?" : "INITIALIZE SOUND?", 24);
         break;
+    case CF_CLEAR_ALL:
+        str_cpy(a, "CLEAR ALL SEQUENCES?", 24);
+        break;
     case CF_RECALL_SOUND:
         str_cpy(a, drum_track(TSEL) ? "RECALL SOUND + KIT?" : "RECALL SAVED SOUND?", 24);
         break;

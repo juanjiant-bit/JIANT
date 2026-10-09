@@ -27,6 +27,7 @@ typedef struct {                                         /* a hit */
     uint32_t ph, ph2, inc;                               /* the phases; the last block's end increment */
     int32_t ea, en, ep;                                  /* amplitude, noise (Q30), pitch (Q15) envelopes */
     int32_t ic1, ic2, rng;                               /* the noise filter's state, the noise */
+    int32_t mo;                                          /* WARP: the modulator's last output (its feedback) */
     uint8_t live, trig, choke;
 } dx_voice_t;
 
@@ -60,10 +61,11 @@ static void dx_choke(dx_voice_t *v) { if (v->live) v->choke = 1; }
 static uint32_t dx_tau(uint32_t d) { return ((dv_exp2(d * 9u * 4096u / 127u) >> 8) * 3000u) >> 8; }
 
 /* one block of lane L's hit v into y (n <= CTL): Q15, peaks near full scale. morph 0..127; tune16 1/16 semitones;
- * dofs / cofs / nofs move DECAY / COLOR / NOISE (-64..63). The oscillator and the noise each run their own loop (the wave and the
+ * dofs / cofs / nofs move DECAY / COLOR / NOISE (-64..63). warp (DRUM's WARP, 0..127): every wave through the FM
+ * loop, its index deeper, its modulator's ratio higher (inharmonic) and fed back on itself; 0: the patch as it is. The oscillator and the noise each run their own loop (the wave and the
  * filter picked once a block), skipped when the mix leaves them out; gains and the pitch step per sample */
 static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, int32_t morph, int32_t tune16,
-                                             int32_t dofs, int32_t cofs, int32_t nofs, int32_t *y, uint32_t n)
+                                             int32_t dofs, int32_t cofs, int32_t nofs, int32_t warp, int32_t *y, uint32_t n)
 {
     int32_t q[DXP_N], p16, depth, ea1, en1, ep1, og, ng, ga, dga, gn, dgn, kd, inc, dinc;
     uint32_t i, k, wave = L->mode & 3u, flt = (L->mode >> 2) & 3u, ta, tn, tp, kb, inc1;
@@ -111,18 +113,19 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
     dinc = ((int32_t)(inc1 >> 4) - inc) / (int32_t)n;
     if (og) {                                            /* the oscillator */
         uint32_t ph = v->ph;
-        if (wave == DXW_SINE && q[DXP_COLOR]) {          /* drive x1 .. x2.5 into the soft clip */
+        warp = clamp(warp, 0, 127);
+        if (wave == DXW_SINE && q[DXP_COLOR] && !warp) {   /* drive x1 .. x2.5 into the soft clip */
             int32_t g = 4096 + q[DXP_COLOR] * 48;
             for (i = 0; i < n; i++, inc += dinc, ga += dga) {
                 y[i] = mulq15(softclip((sine_i(ph) * g) >> 12), ga >> 8);
                 ph += (uint32_t)inc << 4;
             }
-        } else if (wave == DXW_SINE) {
+        } else if (wave == DXW_SINE && !warp) {
             for (i = 0; i < n; i++, inc += dinc, ga += dga) {
                 y[i] = mulq15(sine_i(ph), ga >> 8);
                 ph += (uint32_t)inc << 4;
             }
-        } else {                                         /* FM: up to ~1.5 cycles of phase */
+        } else if (!warp) {                              /* FM: up to ~1.5 cycles of phase */
             uint32_t ph2 = v->ph2, ratio = DX_RATIO[wave];
             int32_t idx = q[DXP_COLOR] * 3;
             for (i = 0; i < n; i++, inc += dinc, ga += dga) {
@@ -131,6 +134,17 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
                 ph2 += ((uint32_t)inc >> 8) * ratio;
             }
             v->ph2 = ph2;
+        } else {                                         /* WARP: FM with feedback on every wave */
+            uint32_t ph2 = v->ph2, ratio = DX_RATIO[wave] + (uint32_t)warp * 70u, fb = (uint32_t)warp << 10;
+            int32_t idx = q[DXP_COLOR] * 3 + warp * 3, mo = v->mo;
+            for (i = 0; i < n; i++, inc += dinc, ga += dga) {
+                mo = sine_i(ph2 + (uint32_t)mo * fb);    /* (up to a turn of feedback; uint32: wraps as a phase) */
+                y[i] = mulq15(sine_i(ph + (uint32_t)(mo * idx) * 512u), ga >> 8);
+                ph += (uint32_t)inc << 4;
+                ph2 += ((uint32_t)inc >> 8) * ratio;
+            }
+            v->ph2 = ph2;
+            v->mo = mo;
         }
         v->ph = ph;
     } else {

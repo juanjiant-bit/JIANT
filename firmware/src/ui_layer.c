@@ -15,7 +15,8 @@
  *              to its engine's first preset, a DRUM track's DRUM-X kit to the factory one; G3 RECALL: the track's
  *              sound (and a DRUM track's kit) as the section playing stored it, the safe state (project.c
  *              project_recall_sound). Each asks first (the dialog closes the layer); the steps stay. KNOB 1..4 the
- *              EDIT page's four (the engine's first)
+ *              EDIT page's four (the engine's first); on a DRUM track black keys 1..8 mute each DRUM-X sound
+ *              (eng_drum.c DXM_LANE, saved with the section; lit = sounding)
  *   SEQ  SET   (1.2, on the SEQ pages that show the pattern: STEP / the DRUM grid, PATTERN, CHANCE, AUTOMATION; elsewhere
  *              SEQ held opens SONG as before) TOOLS: the white keys from F3 the sequence tools (ui_tools.c: CLEAR,
  *              REVERSE, SHIFT < >, RANDOM, COOK; on a DRUM track BEAT and the lane's CLEAR REVERSE FILL RANDOM), black
@@ -403,6 +404,8 @@ static void layer_key(uint32_t l, uint32_t k)
         }
     } else if (l == LAYER_SCL) {
         TSEL->p[P_ROOT] = (int16_t)((k + 5u) % 12u);    /* the key's note name (F3 = F) */
+    } else if (l == LAYER_EDIT && key_black(k) && p < NLANE && drum_track(TSEL)) {
+        dx_mute_set(dx_mute ^ DXM_LANE(p));             /* DRUM: black keys 1..8 mute each sound (lit = sounding) */
     } else if (l == LAYER_EDIT && !key_black(k) && p <= LY_RECALL) {
         if (chain_busy())
             ui_message("STOP TO EDIT");
@@ -550,6 +553,8 @@ static uint32_t layer_leds(uint32_t *br)
             can = (mask >> e) & 1u;
         } else if (l == LAYER_EDIT && !b) {             /* INIT and RECALL breathe (RECALL: a stored section) */
             can = !chain_busy() && (p == LY_INIT || (p == LY_RECALL && edit_recallable()));
+        } else if (l == LAYER_EDIT && p < NLANE && drum_track(TSEL)) {   /* DRUM: a sound sounding lit, muted dark */
+            on = !dx_lane_muted(p);
         } else if (l == LAYER_SEQ) {                    /* the tools breathe (not while a song plays); DRUM: the lane */
             on = b && p < NLANE && drum_track(TSEL) && p == ui.lane;   /* lit, the other lanes breathe */
             can = b ? p < NLANE && drum_track(TSEL) : tl_cell(TSEL, p) && !chain_busy();
@@ -734,6 +739,13 @@ static void layer_edit(void)                            /* F3 INIT, G3 RECALL (a
     uint32_t dr = (uint32_t)drum_track(TSEL), st = chain_busy() ? LS_DIM : LS_OFF;
     lcell(LC_X(0), 4, LC_H, "F", ICON_X_WARN, 0, dr ? "INIT+KIT" : "INIT", st, 0);
     lcell(LC_X(1), 4, LC_H, "G", ICON_LOOP, 0, dr ? "RCL+KIT" : "RECALL", edit_recallable() ? st : LS_DIM, 0);
+    if (dr) {                                           /* DRUM: the 8 sounds of black keys 1..8, muted: the mute's fill */
+        uint32_t l;
+        lc_w = 26;
+        for (l = 0; l < NLANE; l++)
+            lcell(6 + 29 * (int32_t)l, 54, 24, 0, ICON_COUNT, 0, drum_lane_abbr(TSEL, l), dx_lane_muted(l) ? LS_MUTE : LS_OFF, 0);
+        lc_w = LC_W;
+    }
     engine_sound_row(104);
 }
 
@@ -929,7 +941,7 @@ static void draw_layer(void)
     else if (l == LAYER_SEQ)
         sig += (uint32_t)drum_track(TSEL) * 31u + ui.lane * 5u + (uint32_t)chain_busy() * 3u + (uint32_t)TSEL->p[P_E0] * 131u + song.sel * 977u;
     else
-        sig += snd_id() * 31u + (uint32_t)chain_busy() * 3u + (uint32_t)(project_recall_slot() + 1) * 5u +
+        sig += snd_id() * 31u + (uint32_t)chain_busy() * 3u + (uint32_t)(project_recall_slot() + 1) * 5u + dx_mute * 7919u +
                (uint32_t)drum_track(TSEL) * 11u + up_gen * 101u;
     if (ui.force || sig != ui.layer_sig) {
         ui.layer_sig = sig;
