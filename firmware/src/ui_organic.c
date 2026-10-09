@@ -234,3 +234,30 @@ static void og_tip(const og_shape_t *sh, const og_xf_t *f, int32_t m, int32_t *x
     }
     og_pt(f, sh->a, sh->b, m, best, x, y);
 }
+/* an illustration (assets/ui-shapes, an SVG without ids: tools/gen_ui_shapes.py) at (cx, cy) (Q4), u Q4 per unit;
+ * col[k] the colour of role k (0 cream, 1 coral, 2 teal, 4 mint); glow[k] (0..256) lights role k: its lines toward
+ * cream, its dots a pixel larger (a hit, a value: the caller's) */
+static void og_ill(const uint8_t *b, uint32_t len, int32_t cx, int32_t cy, int32_t u, const uint16_t *col,
+                   const int32_t *glow)
+{
+    uint32_t i = 0;
+    while (i + 3u <= len) {
+        uint32_t head = b[i], k = head & 7u;
+        int32_t g = glow ? glow[k] : 0;
+        uint16_t c = g ? ux_mix(col[k], T_TEXT, g * 50 / 256) : col[k];
+        if (head >> 4) {                                 /* a dot: radius, centre */
+            int32_t r = ((int32_t)b[i + 1] * u) >> 4;
+            og_node(cx + (int8_t)b[i + 3] * u, cy + (int8_t)b[i + 4] * u, (r < 1 ? 1 : r) + (g > 128), c);
+            i += 5u;
+        } else {                                         /* an outline: n cubic segments */
+            uint32_t n = b[i + 1] | (uint32_t)b[i + 2] << 8, s;
+            const int8_t *p = (const int8_t *)(b + i + 3u);
+            if (i + 3u + 2u * (3u * n + 1u) > len)
+                return;
+            for (s = 0; s < n; s++, p += 6)
+                og_cubic_a(cx + p[0] * u, cy + p[1] * u, cx + p[2] * u, cy + p[3] * u, cx + p[4] * u, cy + p[5] * u,
+                           cx + p[6] * u, cy + p[7] * u, c, 6, 256);
+            i += 3u + 2u * (3u * n + 1u);
+        }
+    }
+}

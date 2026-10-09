@@ -82,6 +82,19 @@ Las formas de DRUM-X y sus ids: `dorsal` (hats), `petal` (snare y clap, reflejad
 `lip` (percusión, reflejado). Si cambian la cantidad o los nombres de las formas de una pantalla, hay que ajustar
 su función de dibujo (en DRUM-X, `graph_drumx` en `ui_graph.c`).
 
+## Ilustraciones (los especímenes del usuario)
+
+`assets/ui-shapes/specimens.svg` (del usuario, en progreso): tres especímenes en una lámina. Un SVG **sin ids** se
+importa como ilustración tal cual está: cada trazo (aunque esté exportado como contorno relleno) se dibuja como
+su contorno antialiasado, los círculos chicos pasan a ser nodos rellenos, y el color dice el rol (blanco: contorno,
+rojo: puntas y acentos, teal: nodos y vasos, cyan claro: brillos). Los dibujos separados en x son especímenes
+distintos, numerados desde la izquierda (`SH_SPECIMENS_1..3`). Cada uno se centra y escala a ±63 unidades; los
+tres ocupan 8,9 KB. `og_ill` los dibuja y puede encender un rol (los nodos teal, las puntas rojas) con un valor o un
+golpe.
+
+Para que una ilustración además **se mueva** (cambie de forma con un parámetro), cada parte que se mueve necesita un
+`id` y, si cambia de forma, sus dos versiones `_a` / `_b` con la misma cantidad de segmentos (ver arriba).
+
 ## Pasos
 
 1. HOME: los 4 tracks como un organismo (un nodo por track, latido con sus voces), tempo, canción y sección.

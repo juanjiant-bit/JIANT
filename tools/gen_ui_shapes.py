@@ -15,6 +15,12 @@ Every SVG in SVG_DIR is a screen; every <path> with an id in it is a shape. Conv
     A closed path (Z) ends where it started
 Out: per shape, static const int8_t SH_<SCREEN>_<NAME>_PTS[2][n] (A then B: a start point, three points a cubic
 segment) and static const og_shape_t SH_<SCREEN>_<NAME> = {segments, mirror, A, B}.
+Illustrations (a drawing exported as it is, no ids: the specimens of the plates): every path is a part, its
+colour its role (white / cream: the outline, red: tips and accents, teal: nodes and vessels, light cyan: highlights);
+a filled outline of a stroke is drawn as its contour (at the screen's scale both sides fall on one pixel), a small
+round closed path becomes a dot. Drawings far apart in x are separate specimens, numbered from the left. Out per
+SVG: SH_<SCREEN>_<n>_ILL[] (bytes: per part a head (kind << 4 | colour), its segment count (2 bytes) or a dot's
+radius, then int8 points, each specimen centred and scaled to +-63 units), SH_<SCREEN>_<n>_LEN, SH_<SCREEN>_COUNT.
 """
 import re
 import sys
@@ -107,6 +113,84 @@ def flat(start, segs):
     return vals
 
 
+def colour_of(el, parents):
+    """the fill (or stroke) of a path, its own or inherited -> 0 cream, 1 coral, 2 teal, 4 mint"""
+    for e in [el] + parents[::-1]:
+        st = (e.get("style") or "") + ";fill:" + (e.get("fill") or "") + ";stroke:" + (e.get("stroke") or "")
+        m = re.search(r"(?:fill|stroke)\s*:\s*(?:rgb\((\d+),\s*(\d+),\s*(\d+)\)|#([0-9a-fA-F]{6}))", st)
+        if m:
+            if m.group(4):
+                r, g, b = (int(m.group(4)[i:i + 2], 16) for i in (0, 2, 4))
+            else:
+                r, g, b = (int(m.group(i)) for i in (1, 2, 3))
+            if r > 180 and g > 180 and b > 180:
+                return 0
+            if r > 180 and g < 120:
+                return 1
+            if g > 200 and b > 180:
+                return 4
+            if g > 90 and b > 90:
+                return 2
+            return 0
+    return 0
+
+
+def illustration(svg, screen, lines):
+    """an SVG without ids: its parts, grouped into specimens (see the top); returns the bytes written"""
+    parts = []
+    def walk(el, parents):
+        for ch in el:
+            tag = ch.tag.split("}")[-1]
+            if tag == "path" and ch.get("d"):
+                start, segs = cubics(ch.get("d"))
+                segs = [g for g in segs if not all(abs(p[0] - start[0]) < 1e-6 and abs(p[1] - start[1]) < 1e-6
+                                                   for p in g)] or segs
+                pts = [start] + [p for g in segs for p in g]
+                xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+                parts.append(dict(start=start, segs=segs, col=colour_of(ch, parents),
+                                  bb=(min(xs), min(ys), max(xs), max(ys))))
+            walk(ch, parents + [ch])
+    walk(ET.parse(svg).getroot(), [])
+    parts.sort(key=lambda q: q["bb"][0])
+    groups = []
+    for q in parts:                                      # specimens: overlapping x extents (a margin of 12)
+        if groups and q["bb"][0] <= groups[-1]["bb"][2] + 12:
+            g = groups[-1]
+            g["parts"].append(q)
+            g["bb"] = (min(g["bb"][0], q["bb"][0]), min(g["bb"][1], q["bb"][1]), max(g["bb"][2], q["bb"][2]),
+                       max(g["bb"][3], q["bb"][3]))
+        else:
+            groups.append(dict(parts=[q], bb=q["bb"]))
+    total = 0
+    for n, g in enumerate(groups):
+        x0, y0, x1, y1 = g["bb"]
+        cx, cy, half = (x0 + x1) / 2, (y0 + y1) / 2, max(x1 - x0, y1 - y0) / 2
+        k = 63.0 / half
+        def q8(v):
+            return max(-127, min(127, int(round(v))))
+        out = []
+        for q in g["parts"]:
+            bx0, by0, bx1, by1 = q["bb"]
+            w, h = (bx1 - bx0) * k, (by1 - by0) * k
+            if w < 14 and h < 14 and 0.7 < (w + 1e-6) / (h + 1e-6) < 1.4 and len(q["segs"]) >= 3:   # a dot
+                out += [1 << 4 | q["col"], q8(max(w, h) / 2 * 2) & 255, 0,
+                        q8(((bx0 + bx1) / 2 - cx) * k) & 255, q8(((by0 + by1) / 2 - cy) * k) & 255]
+                continue
+            pts = [q["start"]] + [p for s in q["segs"] for p in s]
+            out += [q["col"], len(q["segs"]) & 255, len(q["segs"]) >> 8]
+            for x, y in pts:
+                out += [q8((x - cx) * k) & 255, q8((y - cy) * k) & 255]
+        name = f"SH_{screen}_{n + 1}"
+        lines.append(f"static const uint8_t {name}_ILL[{len(out)}] = {{")
+        for i in range(0, len(out), 24):
+            lines.append("    " + ", ".join(map(str, out[i:i + 24])) + ",")
+        lines.append("};")
+        lines.append(f"#define {name}_LEN {len(out)}u")
+        total += len(out)
+    lines.append(f"#define SH_{screen}_COUNT {len(groups)}u")
+    return total
+
+
 def main():
     out = Path(sys.argv[1])
     src = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(__file__).resolve().parent.parent / "assets" / "ui-shapes"
@@ -119,6 +203,12 @@ def main():
         for el in ET.parse(svg).iter():
             if el.tag.split("}")[-1] == "path" and el.get("id"):
                 paths[el.get("id")] = el
+        if not paths:                                    # no ids: an illustration
+            try:
+                total += illustration(svg, screen, lines)
+            except ValueError as e:
+                raise SystemExit(f"{svg.name}: {e}")
+            continue
         names = []
         for pid in paths:
             base = pid[:-2] if pid.endswith(("_a", "_b")) else pid
