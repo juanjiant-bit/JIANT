@@ -1257,6 +1257,38 @@ static void draw_tracks(void)
             cv_keycap(5, 21 + AF_S_CAP_Y + HALF_UP(AF_S_CAP_H - KC_H), KC_MUTE, hot == 4u ? T_ACCENT : T_KEY, T_INK, T_SURF);
         else
             cv_free_text(5, 21, &AF_S, b, mute ? T_DIM : sel ? T_TEXT : T_MID, T_SURF, CARD_W - 10);
+        if (ux.chamfer && !ux.style) {               /* (JIANT 0.5) a thermal column: LEVEL as lit segments (cold at the
+                                                         * bottom, hot at the top), the output's meter brighter over them;
+                                                         * PAN from the middle and the REV send as bars beside it */
+            char v[8];
+            int32_t k, lv = (int32_t)lvl * 17 / 127, mt = ts.meter[c] * 17 / TS_MH, pw = 22, px = 31;
+            uint16_t lc = hot == 1u ? T_ACCENT : lvl ? (mute ? T_DIM : T_TEXT) : T_DIM;
+            for (k = 0; k < 17; k++) {
+                int32_t sy = 108 - k * 4;
+                uint16_t sc = heat_col(20 + k * 220 / 16);
+                sc = mute ? (k < lv ? T_DIM : T_RAISE) : k < mt ? sc : k < lv ? ux_mix(T_SURF, sc, 42) : T_RAISE;
+                cv_rect(6, sy, 18, 3, sc);
+            }
+            if (lvl) {
+                int32_t d = LEVEL_DB_X10[lvl];
+                fmt_int(v, (d + (d < 0 ? -5 : 5)) / 10);
+            } else {
+                str_cpy(v, "OFF", sizeof v);
+            }
+            cv_text_in(px - 2, 40, pw + 4, &AF_S, v, lc, T_SURF);
+            cv_text_in(px - 2, 54, pw + 4, &AF_S, "dB", T_DIM, T_SURF);
+            cv_text_in(px - 2, 72, pw + 4, &AF_S, "PAN", hot == 2u ? T_ACCENT : T_DIM, T_SURF);
+            cv_rect(px, 88, pw, 3, T_RAISE);
+            cv_rect(px + pw / 2, 86, 1, 7, T_MID);
+            if (pan)
+                cv_rect(pan > 0 ? px + pw / 2 + 1 : px + pw / 2 + pan * (pw / 2) / 64, 88, (pan > 0 ? pan : -pan) * (pw / 2) / 64 + 1,
+                        3, mute ? T_DIM : heat_col(70 + (pan > 0 ? pan : -pan) * 2));
+            cv_text_in(px - 2, 96, pw + 4, &AF_S, "REV", hot == 3u ? T_ACCENT : T_DIM, T_SURF);
+            cv_rect(px, 112, pw, 3, T_RAISE);
+            if (rv)
+                cv_rect(px, 112, rv * pw / 127 + 1, 3, mute ? T_DIM : heat_col(40 + rv * 3 / 2));
+        } else
+        {
         {   /* LEVEL: the knob, its dB inside (OFF at 0), and the meter of the output */
             char v[8];
             knob(KB_X, KB_Y, KNOB_BIG_R, KNOB_BIG_COV, KNOB_BIG_ANG, (int32_t)lvl, 0, 127, hot == 1u ? T_ACCENT : vc);
@@ -1290,6 +1322,7 @@ static void draw_tracks(void)
             fmt_int(v, (rv * 100 + 63) / 127);
             GFX_HOOK_ALIGN(42 - KNOB_SMALL_R, 0, 42 + KNOB_SMALL_R, 0, AL_H, "mixer value under its knob");
             cv_text_in(42 - KNOB_SMALL_R, KS_Y + 17, 2 * KNOB_SMALL_R, &AF_S, v, rc, T_SURF);
+        }
         }
         cv_blit((uint32_t)CARD_X(c), Y_GRAPH);
     }

@@ -32,6 +32,10 @@ static const genome_t GENOME[8] = {
     {8, 12, 12, 6, 17, 0, 8},                           /* a pollen grain */
     {3, 7, 15, 3, 21, 4, 5},                            /* a hydra: curled tentacles */
 };
+/* (JIANT 0.5) a species per engine: ANALOG the radiolarian, PHASE the swirling amoeba, LOFI the blunt diatom, VOICE the
+ * hydra (a mouth of tentacles), WHEEL the ciliate (a fringe of pipes), NOISE the spore, FM6 the pollen grain (its
+ * operators' geometry), the retired slots the worm */
+static const uint8_t EGEN[NENGINES] = {0, 5, 1, 2, 5, 7, 5, 3, 5, 5, 0, 4, 6, 5};
 static const genome_t LANE_G_HOME = {12, 0, 10, 3, 18, 0, 6};   /* HOME: a DRUM-X track's being (spiky, a beat) */
 typedef struct {
     int32_t spikes, len, wob, lob, nuc, sep, fray, ripple;   /* len wob sep fray ripple 0..256 */
@@ -56,7 +60,7 @@ static int32_t bg_energy(void)
     }
     v = pk * 256 / 12000;
     if (v > 256) v = 256;
-    e += v > e ? (v - e) / 2 : (v - e) / 8;
+    e += v > e ? (v - e) * 3 / 4 : (v - e) / 6;
     return e;
 }
 #define BG_N 96                                         /* vertices of an outline */
@@ -153,18 +157,29 @@ static void bg_feat(const track_t *t, const genome_t *g, const uint8_t *ids, bfe
         else if (str_eq(l, "WAVE")) f->lob = 2 + k[c] * 5 / 257;
     }
 }
+/* (JIANT 0.5) the sound exaggerated on a being: at energy en (0..256) it bulges (its lobes), its spikes shoot out, its
+ * membrane shivers and frays; a hit is seen at once */
+static void bg_excite(bfeat_t *f, int32_t en, int32_t k)
+{
+    f->wob = clamp(f->wob + en * k / 4, 0, 256);
+    f->len = clamp(f->len + en * k / 3, 0, 420);
+    f->ripple = clamp(f->ripple + en * k / 3, 0, 256);
+    f->fray = clamp(f->fray + en * k / 6, 0, 256);
+}
 /* the page's being: its engine's genome, its four knobs by what they are */
 static void graph_being(const track_t *t)
 {
     static uint32_t tm, f0;                              /* its time runs with the sound: in silence it rests */
-    const genome_t *g = &GENOME[(t->eng_req % NENGINES + ui.page) % 8u];
+    const genome_t *g = &GENOME[EGEN[t->eng_req % NENGINES]];
     const page_t *pg = cur_page();
     int32_t en = bg_energy();
     bfeat_t f;
     bg_feat(t, g, pg->id, &f);
-    if (en > 2) tm += (ui.frame - f0) * (uint32_t)(120 + en);
+    f.lob += (int32_t)(ui.page & 1u);                    /* (the engine's second page: a lobe more, the same species) */
+    bg_excite(&f, en, 2);
+    if (en > 2) tm += (ui.frame - f0) * (uint32_t)(160 + en * 3);
     f0 = ui.frame;
-    being_lines(g, &f, 120 * 16, 61 * 16, 36 * 16, en, tm);
+    being_lines(g, &f, 120 * 16, 61 * 16, (36 * 16) * (256 + en / 3) / 256, en, tm);
 }
 
 /* (JIANT 0.5) HOME: the system as an ecosystem. A being per track (its engine's genome, its HOME knobs by what they
@@ -173,29 +188,62 @@ static void graph_being(const track_t *t)
 static void graph_ecosys(void)
 {
     static const int16_t PX[NTRK] = {52, 128, 186, 92}, PY[NTRK] = {40, 34, 74, 88};
-    static int32_t en[NTRK];
+    static int32_t en[NTRK], sx[NTRK], sy[NTRK], vx[NTRK], vy[NTRK];   /* (positions and speeds, Q8 px; a frame) */
     static uint32_t tm[NTRK], f0;
-    uint32_t c;
+    static uint8_t init;
+    uint32_t c, k, dt = ui.frame - f0, still = (ui_prefs & PREF_ANIM_OFF) != 0u;
+    if (!init) {
+        init = 1;
+        for (c = 0; c < NTRK; c++) {
+            sx[c] = PX[c] << 8; sy[c] = PY[c] << 8;
+            vx[c] = (c & 1u) ? 90 : -110; vy[c] = (c & 2u) ? 70 : -60;
+        }
+    }
+    if (dt > 8u) dt = 8u;
+    if (still) dt = 0;
+    for (k = 0; k < 22u; k++) {                         /* the cytoplasm: granules drifting */
+        uint32_t h = k * 2654435761u;
+        int32_t gx = 10 + (int32_t)((h >> 8) % 220u + ui.frame * (1u + (h >> 28)) / 6u) % 220;
+        int32_t gy = 6 + (int32_t)(((h >> 16) % 110u) + (still ? 0 : (uint32_t)(bg_sin((uint32_t)(ui.frame * 300u + h)) >> 13))) % 110;
+        cv_rect(gx, gy, 1 + (int32_t)(h >> 31), 1 + (int32_t)(h >> 31), ux_mix(T_SURF, T_THEME, 22 + (int32_t)(h >> 29) * 4));
+    }
     for (c = 0; c < NTRK; c++) {
         track_t *t = &trk[c];
         uint32_t e = t->eng_req % NENGINES;
-        const genome_t *g = e == ENGI_DRUM ? &LANE_G_HOME : &GENOME[e % 8u];
-        int32_t v = t->peak * 256 / 14000, r = (c == song.sel ? 19 : 14) * 16;
+        const genome_t *g = e == ENGI_DRUM ? &LANE_G_HOME : &GENOME[EGEN[e]];
+        int32_t v = t->peak * 256 / 7000, r = (c == song.sel ? 19 : 14) * 16, rad, sp;
         uint8_t ids[4];
         bfeat_t f;
         char num[2] = {(char)('1' + c), 0};
         t->peak = 0;
         if (v > 256) v = 256;
-        en[c] += v > en[c] ? (v - en[c]) / 2 : (v - en[c]) / 6;
-        if (en[c] > 2) tm[c] += (ui.frame - f0) * (uint32_t)(140 + en[c]);
+        en[c] = v > en[c] ? v : en[c] + (v - en[c]) / 4;   /* (a hit at once, a quick fall) */
+        if (en[c] > 2) tm[c] += dt * (uint32_t)(200 + en[c] * 5);
+        else tm[c] += dt * 60u;                     /* (silent: it still breathes, slowly) */
         for (v = 0; v < 4; v++) ids[v] = (uint8_t)ENGINES[e]->knob[v];
         bg_feat(t, g, ids, &f);
+        bg_excite(&f, en[c], 4);                    /* (HOME: the most excited) */
+        r = r * (256 + en[c] * 5 / 4 + (bg_sin(tm[c] / 3u) >> 11)) / 256;   /* (it pulses, and swells up to ~2.2 x) */
+        rad = r >> 4;
+        sp = 256 + en[c] * 6;                       /* (it swims; a hit kicks it on, up to ~7 x) */
+        for (k = 0; k < dt; k++) {                  /* swimming in the panel, bouncing off its walls, wandering */
+            vx[c] += bg_sin(ui.frame * 211u + c * 16000u + k * 977u) >> 12;
+            vy[c] += bg_sin(ui.frame * 157u + c * 23000u + k * 613u) >> 12;
+            vx[c] = clamp(vx[c], -140, 140);
+            vy[c] = clamp(vy[c], -110, 110);
+            sx[c] += vx[c] * sp >> 8;
+            sy[c] += vy[c] * sp >> 8;
+            if (sx[c] < (rad + 8) << 8) { sx[c] = (rad + 8) << 8; vx[c] = -vx[c]; }
+            if (sx[c] > (232 - rad) << 8) { sx[c] = (232 - rad) << 8; vx[c] = -vx[c]; }
+            if (sy[c] < (rad + 4) << 8) { sy[c] = (rad + 4) << 8; vy[c] = -vy[c]; }
+            if (sy[c] > (104 - rad) << 8) { sy[c] = (104 - rad) << 8; vy[c] = -vy[c]; }
+        }
         if (t->p[P_MUTE])
-            bg_outline(g, &f, PX[c] * 16, PY[c] * 16, r, 1, tm[c], ux.mono || settings.palette == UI_BW_INDEX ?
+            bg_outline(g, &f, sx[c] >> 4, sy[c] >> 4, r, 1, tm[c], ux.mono || settings.palette == UI_BW_INDEX ?
                        ux_gray(ux_luma(T_DIM) >> 3) : T_DIM);
         else
-            being_lines(g, &f, PX[c] * 16, PY[c] * 16, r, en[c], tm[c] + c * 20000u);
-        cv_text_in(PX[c] - 30, PY[c] + 14 + (c == song.sel ? 5 : 0), 60, &AF_S, num,
+            being_lines(g, &f, sx[c] >> 4, sy[c] >> 4, r, en[c], tm[c] + c * 20000u);
+        cv_text_in((sx[c] >> 8) - 30, clamp((sy[c] >> 8) + rad / 2 + 4, 4, 104), 60, &AF_S, num,
                    c == song.sel ? T_THEME : t->p[P_MUTE] ? T_DIM : T_MID, T_SURF);
     }
     f0 = ui.frame;
@@ -229,9 +277,10 @@ static void graph_colony(const track_t *t, int32_t sel)
         if (muted)
             bg_outline(g, &f, x * 16, y * 16, 8 * 16, 1, l * 9000u, ux.mono || settings.palette == UI_BW_INDEX ? ux_gray(ux_luma(T_DIM) >> 3) : T_DIM);
         else if (e) {
-            f.len = g->ss * 6 + e / 2;
-            f.wob = 40 + e / 2;
-            being_lines(g, &f, x * 16, y * 16, (8 + e * 5 / 256) * 16, e, ui.frame * 900u + l * 9000u);
+            f.len = g->ss * 6 + e;
+            f.wob = 40 + e * 3 / 4;
+            f.ripple = e / 2;
+            being_lines(g, &f, x * 16, y * 16, (8 + e * 8 / 256) * 16, e, ui.frame * 1500u + l * 9000u);
         } else
             bg_outline(g, &f, x * 16, y * 16, 8 * 16, 1, l * 9000u, bg_col(24));
         cv_text_in(x - 14, y + 14, 28, &AF_S, drum_lane_abbr(t, l), sel == (int32_t)l ? T_THEME : muted ? T_DIM : T_MID, T_SURF);
