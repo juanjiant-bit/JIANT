@@ -45,7 +45,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 | Limpieza para liberar recursos (PHYS, efectos de la capa FX, undo, lock de capas) | Hecho |
 | Song mode estilo SLOOP, 8 canciones × 4 variaciones ([docs/TONIC-SONG-PLAN.md](docs/TONIC-SONG-PLAN.md)) | Hecho (falta backup de todas las canciones) |
 | Escenas por paso de la cadena | Pendiente |
-| DRUM-X y mutes por grupo ([docs/TONIC-DRUMX.md](docs/TONIC-DRUMX.md)) | En curso (Fase 1 hecha: KIT X) |
+| DRUM-X y mutes por grupo ([docs/TONIC-DRUMX.md](docs/TONIC-DRUMX.md)) | En curso (Fase 1: KIT X; mutes por grupo hechos) |
 | Master: clipper y PUNCH | Pendiente |
 | Macros M1–M4 | Pendiente |
 | Punch-in FX MIDI y sus lanes | Pendiente |
@@ -135,7 +135,7 @@ detalles. La paleta **JIANT** es la de fábrica. Primera pantalla: el espécimen
 | Mantener | Teclas | Perillas |
 | --- | --- | --- |
 | **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF; teclas negras 1–4: mute de T1–T4 | FILTER, CRUSH, THROW, DEPTH |
-| **GLO** | Teclas negras 1–4 mute (fijo), F3–B3 solo mientras se mantiene, C4 unmute, F4 tap tempo | Nivel de T1–T4 |
+| **GLO** | Teclas negras 1–4 mute de T1–T4 (fijo); 5–8 mute de grupo de DRUM: KICK, SNARE, HAT, PERC; F3–B3 solo mientras se mantiene; C4 desmutea todo; F4 tap tempo | Nivel de T1–T4 |
 | **SCL** | Cualquier tecla elige la raíz | ROOT, SCL, CHRD, VOIC |
 | **EDIT** | Las teclas blancas eligen el engine; la siguiente, INIT | Engine, sonido, favorito |
 | **SEQ** | En las páginas SEQ: SEQ TOOLS | LEN, DIV, SWING, GATE |

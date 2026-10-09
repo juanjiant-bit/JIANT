@@ -39,6 +39,7 @@ static struct {
     sec_trk_t t[NTRK];
     motion_store_t motion;
     dx_lane_t dx[8];                  /* the section's DRUM-X kit */
+    uint8_t dx_mute;                  /* .. its group mutes */
     volatile uint8_t ready;           /* main: staged; ISR: taken (0) */
     uint8_t row, section;             /* the song row it is for (SEC_LIVE: a live jump), the section (0..3) */
 } sec_stage __attribute__((section(".pool")));

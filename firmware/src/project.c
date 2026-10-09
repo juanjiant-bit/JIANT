@@ -49,7 +49,7 @@
  * slot 1 still starts with the older record, read as above).
  *
  * Format A ("FUNA", written since JIANT 0.1) = FUN9 with 96 more bytes: the section's DRUM-X kit (drumx_voice.c
- * dx_lane_t[8], 88 bytes, then 8 reserved, written 0) at PROJ_DX_OFF, just before the FM6 patches. 3744 bytes (a
+ * dx_lane_t[8], 88 bytes, then the group mutes (dx_mute, 1 byte) and 7 reserved, written 0) at PROJ_DX_OFF, just before the FM6 patches. 3744 bytes (a
  * flash object holds 3840); the serialized part still ends by 3120 (FUN9's 48 spare bytes stay). FUN9 is read
  * (its kit: the factory one, DX_KIT_DEF), as every older format.
  *
@@ -109,6 +109,7 @@ typedef struct {
     motion_store_t motion;
     uint8_t fm6[NTRK][FM6_PACKED];             /* each track's FM6 patch, packed (eng_fm6.c) */
     dx_lane_t dx[8];                           /* the DRUM-X kit (drumx_voice.c) */
+    uint8_t dx_mute;                           /* its group mutes (drumx_voice.c DXG_*), stored in the first reserved byte */
     char name[PROJ_NAME_LEN];                  /* the project's name: upper-case ASCII 32..126, 0-padded; "" = none */
     uint32_t sum;
 } project_t;
@@ -492,6 +493,7 @@ static void proj_fm6_init(project_t *q)
     for (t = 0; t < NTRK; t++)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);
     memcpy(q->dx, DX_KIT_DEF, sizeof q->dx);
+    q->dx_mute = 0;
     q->sum = proj_sum(q);
 }
 static int proj_import_old(project_t *q, const void *b, int n);
@@ -626,6 +628,7 @@ static int proj_pack(project_store_t *out, const project_t *q)
     memcpy(b + pos, &q->chain, sizeof q->chain); pos += sizeof q->chain;
     memcpy(b + pos, &q->motion, sizeof q->motion);
     memcpy(b + PROJ_DX_OFF, q->dx, sizeof q->dx);
+    b[PROJ_DX_OFF + sizeof q->dx] = q->dx_mute & DXG_ALL;
     memcpy(b + PROJ_FM6_OFF, q->fm6, sizeof q->fm6);
     {   /* the name (0-padded; stops at the first 0) */
         char n[PROJ_NAME_LEN + 1u];
@@ -699,8 +702,10 @@ static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
     if (va) {                                           /* the DRUM-X kit (a broken one: not a project) */
         memcpy(q->dx, b + end, sizeof q->dx);
         if (!dx_kit_ok(q->dx)) return 0;
+        q->dx_mute = b[end + sizeof q->dx] & DXG_ALL;
     } else {
         memcpy(q->dx, DX_KIT_DEF, sizeof q->dx);
+        q->dx_mute = 0;
     }
     {
         char n[PROJ_NAME_LEN + 1u];
@@ -828,6 +833,7 @@ static void project_capture(project_t *p)
     }
     p->motion = motion;
     memcpy(p->dx, dx_kit, sizeof p->dx);
+    p->dx_mute = dx_mute;
     motion_unguard(f);
     memcpy(p->name, proj_name, str_len(proj_name));
     p->sum = proj_sum(p);
@@ -934,6 +940,7 @@ static int project_restore_runtime(const project_t *input)
     transport_req = 0;
     chain.ended = 0;                                    /* (a song stopped by this load: the load wins, song_poll keeps out) */
     memcpy(dx_kit, dx_kit_ok(p->dx) ? p->dx : DX_KIT_DEF, sizeof dx_kit);   /* (the section's DRUM-X kit) */
+    dx_mute_set(p->dx_mute & DXG_ALL);
                                                         /* (the rows are the song's, not a section's: kept) */
     motion = p->motion;
     memset(motion_active, 0, sizeof motion_active);

@@ -6,6 +6,8 @@
  *   FX   HOLD  the performance effects (perform.c) and the track mutes while held; KNOB 1..4 its macros
  *   GLO  SET   black keys 1..4 (F#3 G#3 A#3 C#4) T1..T4 MUTE (latched; lit = sounding), F3..B3 SOLO T1..T4 while
  *              held (HOLD cells, a corner triangle), C4 UNMUTE ALL, F4 TAP tempo; KNOB 1..4 T1..T4 LEVEL;
+ *              black keys 5..8 (D#4 F#4 G#4 A#4) the DRUM group mutes KICK SNARE HAT PERC (eng_drum.c dx_mute; the
+ *              row shows while a track plays DRUM; C4 unmutes them too);
  *              GLO + PLAY: from the top without stopping
  *   SCL  SET   any key: its note name is ROOT; KNOB 1..4 ROOT SCL CHRD VOIC (LY_SCL: the SCL page's first two,
  *              the CHORD page's two; QNT TRN stay on SCL); the LEDs show the root lit and the scale's notes breathing
@@ -393,11 +395,14 @@ static void layer_key(uint32_t l, uint32_t k)
         if (key_black(k)) {
             if (p < NTRK)
                 trk[p].p[P_MUTE] = (int16_t)!trk[p].p[P_MUTE];
+            else if (p < NTRK + 4u)
+                dx_mute_set(dx_mute ^ (1u << (p - NTRK)));
         } else if (p < NTRK) {
             lys.solo |= 1u << k;                        /* (layer_masks: perf_solo while held) */
         } else if (p == 4u) {
             for (i = 0; i < NTRK; i++)
                 trk[i].p[P_MUTE] = 0;
+            dx_mute_set(0);
         } else if (p == 7u) {
             glo_tap();
         }
@@ -528,6 +533,14 @@ static uint32_t layer_oct(uint32_t pressed, uint32_t oct)
 /* lit = in effect now (held, the value, a track sounding), breathing = can be pressed (*br: dark .. ~60 % and
  * back, ~1.1 s, hal/fm1_input.h fm1_led_breath; was a hard 250 ms blink, #119), dark = nothing there */
 static int glo_sounding(uint32_t t) { return !trk[t].p[P_MUTE] && (!perf_solo || ((perf_solo >> t) & 1u)); }
+static int glo_drums(void)                              /* a track plays DRUM: GLO shows its group mutes */
+{
+    uint32_t i;
+    for (i = 0; i < NTRK; i++)
+        if (drum_track(&trk[i]))
+            return 1;
+    return 0;
+}
 static int rec_clearable(void) { return !seq_is_empty(TSEL) || motion_count(TSEL) != 0u; }
 static uint32_t layer_leds(uint32_t *br)
 {
@@ -540,7 +553,8 @@ static uint32_t layer_leds(uint32_t *br)
             can = e < PF_N && ((ok >> e) & 1u);
             on = can && ((held >> e) & 1u);
         } else if (l == LAYER_GLO) {                    /* sounding lit; SOLO held lit, the others, C4, F4 breathe */
-            on = b ? p < NTRK && glo_sounding(p) : p < NTRK && ((lys.solo >> k) & 1u);
+            on = b ? (p < NTRK && glo_sounding(p)) || (p >= NTRK && p < NTRK + 4u && !((dx_mute >> (p - NTRK)) & 1u))
+                   : p < NTRK && ((lys.solo >> k) & 1u);      /* (a group sounding: lit) */
             can = !b && (p < NTRK || p == 4u || (p == 7u && !song.g[G_CLOCK]));
         } else if (l == LAYER_SCL) {                    /* the root lit, the scale's notes breathe */
             e = (k + 5u + 12u - root) % 12u;
@@ -577,7 +591,7 @@ static uint32_t layer_leds(uint32_t *br)
 static const char *const PF_DIV[3] = {"1/8", "1/16", "1/32"};   /* the REPEATs (the other effects: their icon alone) */
 static const uint8_t PF_ICON[PF_M1] = {ICON_X_REPEAT, ICON_X_REPEAT, ICON_X_REPEAT, ICON_CUTOFF, ICON_X_HPF};
 static const char W_NOTE[16] = {'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G'};
-static const char B_NOTE[NTRK] = {'F', 'G', 'A', 'C'};  /* black keys 1..4: F# G# A# C# */
+static const char B_NOTE[8] = {'F', 'G', 'A', 'C', 'D', 'F', 'G', 'A'};   /* black keys 1..8: F# G# A# C# D# F# G# A# */
 #define LC_X(c) (6 + 58 * (int32_t)(c))                 /* cell column c: 54 px wide, 4 px apart */
 #define LC_W 54
 #define LC_H 42                                          /* the big cells: rows at y 4 and 50 */
@@ -691,18 +705,25 @@ static void layer_fx(void)
         lcell(LC_X(e), LM_Y, LM_H, n, ICON_MUTE, trk_icon(e, 0), 0, (held >> (PF_M1 + e)) & 1u ? LS_MUTE : LS_OFF, 0);
     }
 }
+/* a track playing DRUM: the rows shrink (28, 28, 24 px) and the group mutes take the third */
+static const char *const GLO_GROUP[4] = {"KICK", "SNR", "HAT", "PERC"};
 static void layer_glo(void)
 {
-    uint32_t e;
+    uint32_t e, dr = (uint32_t)glo_drums();
+    int32_t h = dr ? 28 : LC_H, y2 = dr ? 36 : 50;
     char n[3] = {0, 0, 0};
     for (e = 0; e < NTRK; e++) {                        /* F3 .. B3: SOLO while held */
         n[0] = W_NOTE[e];
-        lcell(LC_X(e), 4, LC_H, n, trk_icon(e, 0), 0, "SOLO", (perf_solo >> e) & 1u ? LS_HELD : LS_OFF, 1);
+        lcell(LC_X(e), 4, h, n, trk_icon(e, 0), 0, "SOLO", (perf_solo >> e) & 1u ? LS_HELD : LS_OFF, 1);
     }
     n[0] = 'C';
-    lcell(LC_X(0), 50, LC_H, n, ICON_MUTE, 0, "ALL", LS_OFF, 0);   /* (unmute all) */
+    lcell(LC_X(0), y2, h, n, ICON_MUTE, 0, "ALL", LS_OFF, 0);   /* (unmute all) */
     n[0] = 'F';
-    lcell(LC_X(3), 50, LC_H, n, ICON_TEMPO, 0, "TAP", song.g[G_CLOCK] ? LS_DIM : LS_OFF, 0);
+    lcell(LC_X(3), y2, h, n, ICON_TEMPO, 0, "TAP", song.g[G_CLOCK] ? LS_DIM : LS_OFF, 0);
+    for (e = 0; dr && e < 4u; e++) {                    /* black keys 5..8: the DRUM groups, latched */
+        bnote(n, NTRK + e);
+        lcell(LC_X(e), 68, 24, n, 0, 0, GLO_GROUP[e], (dx_mute >> e) & 1u ? LS_MUTE : LS_OFF, 0);
+    }
     for (e = 0; e < NTRK; e++) {                        /* the black keys 1..4: MUTE, latched */
         bnote(n, e);
         lcell(LC_X(e), LM_Y, LM_H, n, ICON_MUTE, trk_icon(e, 0), 0, trk[e].p[P_MUTE] ? LS_MUTE : LS_OFF, 0);
@@ -915,7 +936,8 @@ static void draw_layer(void)
         sig += (perf_kill ? 0u : perf_held | perf_latched) * 31u + perf_latch_on * 11u + perf_act * 131u + perf_avail() * 7u;
     else if (l == LAYER_GLO)
         sig += perf_solo * 31u + (uint32_t)song.g[G_CLOCK] * 5u +
-               (uint32_t)(trk[0].p[P_MUTE] | trk[1].p[P_MUTE] << 1 | trk[2].p[P_MUTE] << 2 | trk[3].p[P_MUTE] << 3) * 131u;
+               (uint32_t)(trk[0].p[P_MUTE] | trk[1].p[P_MUTE] << 1 | trk[2].p[P_MUTE] << 2 | trk[3].p[P_MUTE] << 3) * 131u +
+               ((uint32_t)dx_mute * 2u + (uint32_t)glo_drums()) * 4099u;
     else if (l == LAYER_SCL)
         sig += (uint32_t)TSEL->p[P_SCALE] * 31u;
     else if (l == LAYER_REC)

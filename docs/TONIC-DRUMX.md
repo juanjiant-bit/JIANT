@@ -38,6 +38,9 @@ variación A–D puede tener su propio kit.
   - una página de edición por lane (lado A/B, los 5 valores y el modo);
   - MORPH y PITCH lockeables por paso;
   - DRIVE y PAN;
-  - grupos KICK / SNARE / HAT / PERCS con mute en vivo;
+  - **hecho:** grupos KICK (bombo) / SNARE (snare y clap) / HAT (los dos hats) / PERC (tom, rim, bell) con mute en
+    vivo: GLO sostenido + teclas negras 5–8 (D#4 F#4 G#4 A#4), LED apagado = muteado, C4 los desmutea con los tracks.
+    Valen para cualquier kit de DRUM. Un golpe nuevo de un grupo muteado no suena; lo que suena se apaga en ~6 ms
+    (sin click). Se guardan con la sección (byte 3208 del proyecto FUNA);
   - kits de fábrica que aproximan los kits de DRUM (STD, 80, 10, 66, 55, 77), y entonces se retiran las voces
     viejas (`drum_voice.c`), lo que libera flash.

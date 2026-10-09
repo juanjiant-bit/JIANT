@@ -10,6 +10,9 @@
  *    falls (more crossings in its first 20 ms than in 100..120 ms).
  * 4. the closed hat chokes the open one (below -60 dB of its level within 10 ms).
  * 5. the knob shows MRPH on KIT X, SNAP on the other kits.
+ * 5b. the group mutes (dx_mute): a muted group's hits are silent (any kit), the others still sound; muting a
+ *    ringing group fades it out: its voice ends within 10 ms, the output 26 dB under the unmuted hit's, no step
+ *    larger than the hit's own; unmuting sounds again.
  * 6. demos into DEMODIR: every lane at MORPH 0, 64, 127; a beat with MORPH swept over 4 bars. */
 #include <stdarg.h>
 #define main hostsim_main
@@ -217,6 +220,53 @@ int main(int argc, char **argv)
         t->p[P_E0] = DK_STD;
         ok &= !ENG_DRUM.desc(t, 4);
         check("SNAP shows MRPH on KIT X only", ok, 0);
+    }
+
+    /* 5b */
+    {
+        uint32_t kit;
+        for (kit = 0; kit < 2u; kit++) {
+            track_t *t = kitx(64, 64);
+            double r, ref;
+            int32_t step = 0, own = 0, o[2 * CTL], act = 0;
+            if (kit)
+                t->p[P_E0] = DK_STD;
+            dx_mute_set(DXG_SNARE);
+            for (i = 0; i < FS * 2u; i += CTL)          /* (the earlier hits' tails out) */
+                mix_block(o, CTL);
+            strike(t, 1, FS / 10u);
+            r = rms(0, FS / 10u);
+            strike(t, 0, FS / 10u);
+            snprintf(nm, sizeof nm, "group mutes (%s): SNARE muted, silent; KICK sounds", kit ? "STD" : "X");
+            check(nm, r < 1.0 && rms(0, FS / 10u) > 300, "snare RMS %.1f, kick %.0f", r, rms(0, FS / 10u));
+            dx_mute_set(0);
+            strike(t, 0, FS / 10u);                     /* the kick's own largest step, then muted while it rings */
+            for (i = 1; i < FS / 10u; i++)
+                own = abs(buf[i] - buf[i - 1]) > own ? abs(buf[i] - buf[i - 1]) : own;
+            ref = rms(FS / 50u + FS / 100u, FS / 25u);  /* (30 .. 40 ms after the hit, unmuted) */
+            trk_note_on(t, NOTE[0], 100);
+            for (i = 0; i < FS / 50u; i += CTL)
+                mix_block(o, CTL);
+            dx_mute_set(DXG_KICK);
+            for (i = 0; i < FS / 50u; i += CTL) {
+                uint32_t j;
+                mix_block(o, CTL);
+                for (j = 0; j < CTL; j++)
+                    buf[i + j] = o[2 * j];
+            }
+            for (i = 1; i < FS / 50u; i++)
+                step = abs(buf[i] - buf[i - 1]) > step ? abs(buf[i] - buf[i - 1]) : step;
+            r = rms(FS / 100u, FS / 50u);                /* (the same window, muted at 20 ms) */
+            for (i = 0; i < NVOICE; i++)
+                act |= t->v[i].active;
+            snprintf(nm, sizeof nm, "group mutes (%s): a ringing kick muted: ends, no click", kit ? "STD" : "X");
+            check(nm, !act && r < ref / 20 && step <= own + own / 5, "RMS %.0f (unmuted %.0f), step %d (own %d)", r, ref,
+                  step, own);
+            dx_mute_set(0);
+            strike(t, 0, FS / 10u);
+            check(kit ? "group mutes (STD): unmuted, the kick sounds again" : "group mutes (X): unmuted, the kick sounds again",
+                  rms(0, FS / 10u) > 300, 0);
+        }
     }
 
     /* 6 */

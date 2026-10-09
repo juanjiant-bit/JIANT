@@ -58,10 +58,20 @@ typedef struct {
     uint8_t owner;               /* the voice playing the lane: index + 1, 0 = none */
     uint8_t role;                /* the drum struck (DVT_*) */
     int8_t st;                   /* its semitones from the designed pitch (the GM map) */
-    uint8_t pad;
+    uint8_t mg;                  /* its group mute's fade: DXG_FADE (sounding) .. 0 (muted, silent) */
 } drum_lane_t;
 
 static drum_lane_t drum_kit[NPART][DV_NLANE] __attribute__((section(".pool")));
+
+/* The group mutes (JIANT): KICK (the kick), SNARE (snare and clap), HAT (both hats), PERCS (tom, rim, bell), on every
+ * DRUM track, any kit. A section's (project.c keeps them with its DRUM-X kit, the song stages them); set live on the
+ * GLO layer (ui_layer.c). A muted group's new hits do not sound (voice.c trk_note_on); what rings when it is muted
+ * fades out (drum_render: DXG_FADE blocks, ~5 ms, no click, any kit), then ends */
+enum { DXG_KICK = 1, DXG_SNARE = 2, DXG_HAT = 4, DXG_PERC = 8, DXG_ALL = 15 };
+static const uint8_t DXG_LANE[DV_NLANE] = {DXG_KICK, DXG_SNARE, DXG_SNARE, DXG_HAT, DXG_HAT, DXG_PERC, DXG_PERC, DXG_PERC};
+#define DXG_FADE 8u
+static volatile uint8_t dx_mute;
+static void dx_mute_set(uint32_t m) { dx_mute = (uint8_t)(m & DXG_ALL); }
 
 /* 1..3 named as the kit they play: aliases, never shown or offered (EDITOR_PROTOCOL.md: retired values) */
 static const char *const N_DRUM_KIT[] = {"STD", "66", "10", "77", "80", "10", "66", "55", "77", "X"};
@@ -105,6 +115,9 @@ static uint32_t drum_lane(uint32_t note)
     uint32_t n = note >= 35u && note <= 81u ? note : 36u + (note + 120u - 36u) % 12u;
     return DV_TYPE_LANE[DRUM_GM[n - 35u][0]];
 }
+
+/* a note of a muted group (dx_mute): voice.c trk_note_on drops it */
+static int drum_muted(uint32_t note) { return (DXG_LANE[drum_lane(note)] & dx_mute) != 0; }
 
 /* KIT's swaps of lanes 6..8 (1 TOM -> CONGA, 2 RIM -> CLAVE, 4 BELL -> CYM) */
 static uint32_t drum_swaps(const track_t *t)
@@ -225,6 +238,7 @@ static void drum_note_on(track_t *t, voice_t *v)
         v->s[0] = (int32_t)lane;
         v->env_out = v->vel * 258;
         v->env = 1 << 24;
+        L->mg = DXG_FADE;
         dx_trigger(&L->x);
         if (lane == DV_HATC)
             dx_choke(&K[DV_HATO].x);
@@ -242,6 +256,7 @@ static void drum_note_on(track_t *t, voice_t *v)
     v->env = 1 << 24;                                    /* the ADSR held at full from here, not from drum_amp:
                                                           * a key-off before the first block (zero-length MIDI
                                                           * notes) would end a fresh voice at env 0 in env_tick */
+    L->mg = DXG_FADE;
     dv_trigger(&L->v);
     if (lane == DV_HATC && K[DV_HATO].v.live)            /* a closed hat chokes the open one */
         dv_choke(&K[DV_HATO].v);
@@ -276,6 +291,19 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     vmod_t ml;                                           /* (only its amplitude ramp is read: voice_amp) */
     if (!L)
         return;
+    if ((DXG_LANE[(uint32_t)v->s[0] & (DV_NLANE - 1u)] & dx_mute) || L->mg < DXG_FADE) {   /* its group muted:
+                                                          * fading (to the end, if unmuted meanwhile), then ended */
+        uint32_t g0 = L->mg;
+        if (!g0) {
+            L->x.live = L->x.trig = 0;                   /* (drum_amp ends the voice) */
+            L->v.live = L->v.trig = 0;
+            return;
+        }
+        L->mg = (uint8_t)(g0 - 1u);
+        ml.amp0 = m->amp0 * (int32_t)g0 / (int32_t)DXG_FADE;
+        ml.amp1 = m->amp1 * (int32_t)(g0 - 1u) / (int32_t)DXG_FADE;
+        m = &ml;
+    }
     if (lv < 127) {                                      /* the lane's LEVEL (square law) on the block's amplitude
                                                           * ramp, not per sample; 100 %: the ramp as it was */
         int32_t gl = lv * lv * 2 + (lv * lv >> 6);       /* Q15, 127: 32508 (not used), 64: 8256 */

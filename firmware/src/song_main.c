@@ -79,6 +79,7 @@ static int song_stage(uint32_t s, uint32_t row)
     }
     sec_stage.motion = p->motion;
     memcpy(sec_stage.dx, p->dx, sizeof sec_stage.dx);
+    sec_stage.dx_mute = p->dx_mute & DXG_ALL;
     sec_stage.row = (uint8_t)row;
     sec_stage.section = (uint8_t)(s & 3u);
     RING_PUBLISH();

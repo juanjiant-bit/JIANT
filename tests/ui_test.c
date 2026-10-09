@@ -3054,6 +3054,18 @@ static int test_quick_layers(void)
     key_up(black(1)); btn_up(B_GLO); frame();
     bad += check("GLO + black key 2: T2 MUTE latched (SET), silent, no MIDI; LEDs: sounding lit, muted dark", ok &&
                  trk[1].p[P_MUTE] == 1 && !ui.layer);
+    lay_combo(B_GLO, black(4)); key_up(black(4)); frame();       /* black keys 5..8: the DRUM group mutes */
+    lay_combo(B_GLO, black(6)); key_up(black(6));
+    a = leds_at(0); b2 = leds_at(250);
+    ok = dx_mute == (DXG_KICK | DXG_HAT) && ((a & b2) >> black(5)) & 1u && !(((a | b2) >> black(4)) & 1u) &&
+         !(((a | b2) >> black(6)) & 1u) && trk[1].p[P_MUTE] == 1;
+    btn_up(B_GLO); frame();
+    lay_combo(B_GLO, black(6)); key_up(black(6)); btn_up(B_GLO); frame();
+    ok &= dx_mute == DXG_KICK;
+    lay_combo(B_GLO, white(4)); key_up(white(4)); btn_up(B_GLO); frame();
+    ok &= dx_mute == 0;
+    bad += check("GLO + black keys 5..8: KICK SNARE HAT PERC group mutes latched (lit = sounding), C4 clears them", ok);
+    lay_combo(B_GLO, black(1)); key_up(black(1)); btn_up(B_GLO); frame();   /* (T2 muted again, as the test goes on) */
     lay_combo(B_GLO, black(1)); key_up(black(1)); frame();
     key_down(white(4)); key_up(white(4)); frame();
     lay_combo(B_GLO, black(2)); key_up(black(2)); frame();

@@ -493,6 +493,11 @@ int main(void)
             ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st) && !memcmp(c.dx, a.dx, sizeof a.dx) &&
                  !memcmp(st.raw + PROJ_DX_OFF, a.dx, sizeof a.dx);
             bad += check("FUNA: the DRUM-X kit round trips (88 bytes at PROJ_DX_OFF)", ok);
+            a.dx_mute = DXG_SNARE | DXG_PERC;
+            a.sum = proj_sum(&a);
+            ok = proj_pack(&st, &a) && st.raw[PROJ_DX_OFF + 88u] == (DXG_SNARE | DXG_PERC) &&
+                 proj_import(&c, &st, sizeof st) && c.dx_mute == (DXG_SNARE | DXG_PERC);
+            bad += check("FUNA: the group mutes round trip (the kit's first reserved byte)", ok);
             a.dx[2].a[DXP_PITCH] = 200;
             a.sum = proj_sum(&a);
             ok = !proj_pack(&st2, &a);
@@ -513,7 +518,7 @@ int main(void)
             memcpy(v9 + 4, &size9, 4);
             sum9 = proj_hash(v9, 3644u);
             memcpy(v9 + 3644u, &sum9, 4);
-            ok = proj_import(&c, v9, sizeof v9) && !memcmp(c.dx, DX_KIT_DEF, sizeof c.dx) &&
+            ok = proj_import(&c, v9, sizeof v9) && !c.dx_mute && !memcmp(c.dx, DX_KIT_DEF, sizeof c.dx) &&
                  !memcmp(c.fm6, a.fm6, sizeof c.fm6) && !memcmp(c.name, "FM SONG", 7);
             bad += check("FUN9 (Felucca 1.1) loads: its patches and name, the factory DRUM-X kit", ok);
         }
