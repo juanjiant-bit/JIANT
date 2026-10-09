@@ -45,7 +45,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 | Limpieza para liberar recursos (PHYS, efectos de la capa FX, undo, lock de capas) | Hecho |
 | Song mode estilo SLOOP, 8 canciones × 4 variaciones ([docs/TONIC-SONG-PLAN.md](docs/TONIC-SONG-PLAN.md)) | Hecho (falta backup de todas las canciones) |
 | Escenas por paso de la cadena | Pendiente |
-| DRUM-X y mutes por grupo ([docs/TONIC-DRUMX.md](docs/TONIC-DRUMX.md)) | En curso (Fase 1: KIT X; mutes por grupo hechos) |
+| DRUM-X y mutes por grupo ([docs/TONIC-DRUMX.md](docs/TONIC-DRUMX.md)) | En curso (motor y mutes por grupo hechos; los kits de Felucca, retirados) |
 | Master: clipper y PUNCH | Pendiente |
 | Macros M1–M4 | Pendiente |
 | Punch-in FX MIDI y sus lanes | Pendiente |
@@ -77,7 +77,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 
 - **4 tracks**, cada uno con su engine y su sonido, 8 voces compartidas.
 - **12 engines:** ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, SAMPLE, VOICE, TRIO, WHEEL, GRAIN,
-  NOISE, SLICE y DRUM (kit de 8 lanes sintetizado, sin samples; con KIT X toca DRUM-X, con MORPH A↔B).
+  NOISE, SLICE y DRUM (DRUM-X: kit de 8 lanes sintetizado, sin samples, con MORPH A↔B por sonido).
 - **Secuenciador:** 64 pasos por track con acordes, ties, accent, slide, chance y ratchets; piano roll;
   grilla de batería; parameter locks; automatización de perillas; grabación en vivo con overdub;
   metrónomo y count-in.

@@ -2886,9 +2886,11 @@ static int test_edit_cycle(void)
     (void)CYC_D;
 #endif
     {   /* #97: a DRUM track's lane levels on EDIT > LANES (KICK SNARE CLAP HATCL) and LANES 2 (HATOP TOM RIM BELL) */
-        static const char *const CYC_K[] = {"EDIT 1", "EDIT 2", "LANES", "LANES 2", "VOICE", "VOICE 2", "EDIT 1"};
+        static const char *const CYC_K[] = {"EDIT 1", "EDIT 2", "LANES", "LANES 2", "SOUND", "SOUND 2", "VOICE", "VOICE 2",
+                                            "EDIT 1"};
         set_engine_of(TSEL, ENGI_DRUM);
-        bad += check("EDIT cycle (DRUM): EDIT 1 EDIT 2 LANES LANES 2 VOICE VOICE 2 EDIT 1", engine_cycle(CYC_K, NELEM(CYC_K)));
+        bad += check("EDIT cycle (DRUM): EDIT 1 EDIT 2 LANES LANES 2 SOUND SOUND 2 VOICE VOICE 2 EDIT 1",
+                     engine_cycle(CYC_K, NELEM(CYC_K)));
         go_title("LANES 2"); frame();
         ok = TSEL->p[P_LN5] == 127;
         turn(EN_K2, -3);
@@ -5557,16 +5559,19 @@ static int test_dx_sound(void)
     int bad = 0, ok;
     uint32_t k, seen = 0;
     ui_power_on();
+    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);         /* (earlier tests may have turned SOUND's knobs) */
     set_engine_of(TSEL, ENGI_DRUM);
-    TSEL->p[P_E0] = DK_STD;
     open_family(FAM_EDIT);
     for (k = 0; k < 12u; k++) { seen |= cur_page()->graph == GR_DXSND; open_family(FAM_EDIT); }
-    ok = !seen;
-    TSEL->p[P_E0] = DK_X;
+    ok = seen;
+    set_engine_of(TSEL, 0);
+    open_family(FAM_EDIT);
     for (seen = 0, k = 0; k < 12u; k++) { seen |= cur_page()->graph == GR_DXSND; open_family(FAM_EDIT); }
-    bad += check("EDIT > SOUND / SOUND 2: only on a DRUM track playing KIT X", ok && seen);
+    ok &= !seen;
+    set_engine_of(TSEL, ENGI_DRUM);
+    bad += check("EDIT > SOUND / SOUND 2: on a DRUM track only", ok);
     go_title("SOUND");
-    dx_ui_lane = 0; dx_ui_side = 0;
+    dx_ui_lane = 0; dx_ui_side = 0; dx_ui_seen = last_note;   /* (no key since: the page keeps its lane) */
     turn(EN_K1, 1); turn(EN_K1, 1);                    /* LANE: CP */
     turn(EN_K2, 1);                                    /* SIDE: B */
     k = dx_kit[2].b[DXP_PITCH];

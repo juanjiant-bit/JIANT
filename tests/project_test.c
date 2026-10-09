@@ -385,9 +385,9 @@ int main(void)
         memcpy(&buf, &v4, sizeof v4);
         ok = proj_import(&q2, &buf, (int)sizeof v4) && proj_ok(&q2) && q2.phys == PROJ_PHYS &&
              q2.t[0].engine == ENGI_DRUM && q2.t[0].preset == 0 && str_eq(ENGINES[ENGI_DRUM]->name, "DRUM") &&
-             q2.t[0].p[P_E0] == 2 && q2.t[0].p[P_E6] == 1 && q2.t[0].p[P_E7] == 0;
+             q2.t[0].p[P_E0] == 64 && q2.t[0].p[P_E4] == 64 && q2.t[0].p[P_E6] == 0 && q2.t[0].p[P_E7] == 0;
         for (i = 1; i < 6u; i++)
-            ok &= q2.t[0].p[P_E0 + i] == E0[i];         /* TUNE TONE DECY SNAP ACC in place */
+            ok &= i == 4u || q2.t[0].p[P_E0 + i] == E0[i];   /* TUNE TONE DECY ACC in place (MRPH NOIS 64) */
         {   /* PHYS (retired in TONIC): ANALOG with its first preset's EDIT values, the rest of the track kept */
             const preset_t *an = &ENGINES[ENGI_PHYS_TO]->presets[0];
             uint32_t k2;
@@ -746,7 +746,7 @@ int main(void)
                     (c).t[0].engine == ENGI_SAMPLE && (c).t[0].p[P_E0] == 2 && (c).t[1].engine == ENGI_SAMPLE)
         ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st);
         bad += check("FUN8 with a SAMPLE PERC track: DRUM's kit, the rest of the sound and the steps kept", ok && PERC_OK(c) &&
-                     str_eq(ENGINES[ENGI_DRUM]->presets[0].name, "DRUM KIT") &&
+                     str_eq(ENGINES[ENGI_DRUM]->presets[0].name, "DRUM-X") &&
                      !memcmp(ENGINES[ENGI_DRUM]->presets[0].e, (int8_t[8])DRUM_KIT_E, 8));
         bad += check("  its motion on CUT goes; a send's and the other track's stay",
                      c.motion.count == 2u && c.motion.event[0].param == P_REV && c.motion.event[1].place == 3u &&

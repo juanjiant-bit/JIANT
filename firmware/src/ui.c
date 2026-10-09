@@ -343,11 +343,11 @@ static uint32_t layer_leds(uint32_t *br);
 static uint32_t layer_btn(void);
 
 /* FM operator pages belong to DIGITAL; they never appear on other instruments (without FELUCCA_FM4: never). LANES /
- * LANES 2 a DRUM track's (its lane levels); SOUND / SOUND 2 a DRUM track's on KIT X (DRUM-X: ui_dx.c) */
+ * LANES 2 a DRUM track's (its lane levels); SOUND / SOUND 2 a DRUM track's (DRUM-X: ui_dx.c) */
 static int page_visible(uint32_t i)
 {
     if (PAGES[i].graph == GR_DXSND)
-        return TSEL->eng_req % NENGINES == ENGI_DRUM && drum_kit_plays(TSEL->p[P_E0]) == DK_X;
+        return TSEL->eng_req % NENGINES == ENGI_DRUM;
     if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] >= P_LN0 && PAGES[i].id[0] <= P_LN7)
         return TSEL->eng_req % NENGINES == ENGI_DRUM;
     return !(PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] >= P_FM1_ATK &&

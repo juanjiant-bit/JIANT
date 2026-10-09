@@ -14,7 +14,7 @@ los dibuja el firmware encima, y algunas partes reaccionan a los knobs: arcos, p
 | 04 | TRACK MAP | los tracks y las 8 voces compartidas (activas / libres / robadas) | existe (falta la vista) |
 | 05 | SEQUENCER | SEQ > STEP, grilla de batería de 8 lanes, 64 pasos | existe |
 | 06 | SEQ PERFORMANCE | capa SEQ: SEQ TOOLS, grabación y mutes en vivo | existe |
-| 07 | DRUM-X | el kit DRUM-X: un pétalo por sonido | Fase 1 hecha (KIT X) |
+| 07 | DRUM-X | el kit DRUM-X: un pétalo por sonido | hecho |
 | 08 | DRUM MORPH | edición de un sonido: lado A / B, MORPH, PITCH DECAY NOISE DRIVE PAN | Fase 2 |
 | 09 | MACRO | macros M1–M4 y sus destinos | pendiente (Fase 6) |
 | 10 | MACRO MAP | qué mueve cada macro | pendiente (Fase 6) |
@@ -57,7 +57,7 @@ referencia cyan en círculos; ejes punteados; punteado para sombrear. Nada de fl
 
 | Panel | Página | Qué se mueve |
 | --- | --- | --- |
-| 07 DRUM-X | EDIT de DRUM con KIT X | Una orquídea anatómica. Sus órganos son los grupos del kit: sépalo dorsal = hats (cyan), pétalos laterales = snare y clap (amarillo), sépalos inferiores = kick (rojo), labelo y columna = percusión (verde). A y B son dos anatomías y el MORPH mueve cada contorno punto por punto. Cada golpe enciende los vasos interiores de su órgano, que se apagan con la caída. El ruido de los hats punteado en su sépalo. Escala A–B con el MORPH encima, eje punteado; respira y los zarcillos se mecen |
+| 07 DRUM-X | EDIT de DRUM | Una orquídea anatómica. Sus órganos son los grupos del kit: sépalo dorsal = hats (cyan), pétalos laterales = snare y clap (amarillo), sépalos inferiores = kick (rojo), labelo y columna = percusión (verde). A y B son dos anatomías y el MORPH mueve cada contorno punto por punto. Cada golpe enciende los vasos interiores de su órgano, que se apagan con la caída. El ruido de los hats punteado en su sépalo. Escala A–B con el MORPH encima, eje punteado; respira y los zarcillos se mecen |
 
 Las formas vienen de `assets/ui-shapes/drumx.svg` (ver abajo): un órgano ocupa 20 bytes por lado (A y B). Costo total de la
 pantalla y la librería: ≈ 3 KB de flash, 0 de RAM.

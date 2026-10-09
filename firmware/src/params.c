@@ -168,8 +168,7 @@ static const param_desc_t *param_desc_of(uint32_t e, uint32_t id)
 
 /* a retired F_ENUM value kept as an alias, so stored values stay valid: SAMPLE SET and GRAIN SRC 1, once
  * TRANH, and 4, once PERC (a SAMPLE sound of it loads as DRUM: core.h drum_from_perc), play PIANO
- * (tools/gen_samples.py SMP_SET_ORIG); SLICE SRC 1..3, once USR1..3, play BREAK; DRUM KIT 1..3, once HAND CYM
- * H+CYM, play 66 10 77 (eng_drum.c DK_PLAYS).
+ * (tools/gen_samples.py SMP_SET_ORIG); SLICE SRC 1..3, once USR1..3, play BREAK.
  * It shows the original's name; knobs step over it and the editor's SET lands on the original. -> the value v
  * stands for */
 #if FELUCCA_SLICE
@@ -179,20 +178,18 @@ static const param_desc_t *param_desc_of(uint32_t e, uint32_t id)
 #endif
 static int32_t enum_orig(const param_desc_t *d, int32_t v)
 {
-    if (d->names == N_DRUM_KIT)
-        return v >= 0 && v < DK_COUNT ? (int32_t)DK_PLAYS[v] : v;
     if (d->names == SLC_SRC_NAMES)                     /* SLICE SRC 1..3, once USR1..3: BREAK */
         return v >= 1 && v <= 3 ? 0 : v;
     return d->names == SMP_ALL_NAMES && v >= 0 && v < SMP_NSETS ? SMP_SET_ORIG[v] : v;
 }
 
 /* a stored value as the parameter takes it (projects, user presets, motion): inside d's range, and a retired
- * DRUM KIT (1..3) as the kit it plays, so KIT never holds one again. (SAMPLE / GRAIN's aliases keep their
+ * SLICE SRC as the source it plays. (SAMPLE / GRAIN's aliases keep their
  * number: they are what the sound was saved with, and play the original anyway) */
 static int32_t param_fit(const param_desc_t *d, int32_t v)
 {
     v = clamp(v, d->min, d->max);
-    return d->names == N_DRUM_KIT || d->names == SLC_SRC_NAMES ? enum_orig(d, v) : v;
+    return d->names == SLC_SRC_NAMES ? enum_orig(d, v) : v;
 }
 
 /* a knob moved an F_ENUM from `from` to v: past any alias in that direction (back to `from` at the end) */
@@ -371,7 +368,7 @@ static const page_t PAGES[] = {
     {"EDIT 2", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E4, P_E5, P_E6, P_E7}},
     {"LANES", FAM_EDIT, SC_TRACK, GR_NONE, {P_LN0, P_LN1, P_LN2, P_LN3}},   /* DRUM only: the lane levels */
     {"LANES 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_LN4, P_LN5, P_LN6, P_LN7}},
-    {"SOUND", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* DRUM KIT X: a sound of the kit (ui_dx.c) */
+    {"SOUND", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* DRUM: a sound of the kit (ui_dx.c) */
     {"SOUND 2", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},
     {"OP1 ENV", FAM_EDIT, SC_TRACK, GR_ADSR, {P_FM1_ATK, P_FM1_DEC, P_FM1_SUS, P_FM1_REL}},
     {"OP2 ENV", FAM_EDIT, SC_TRACK, GR_ADSR, {P_FM2_ATK, P_FM2_DEC, P_FM2_SUS, P_FM2_REL}},
