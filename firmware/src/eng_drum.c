@@ -14,7 +14,7 @@
  *
  * Parameters (stored as before: KIT's slot is MRPH, SNAP's NOIS, KICK's WARP): MRPH the MORPH A..B of every
  * lane; TUNE (+-12 semitones), TONE (COLOR), DECY (DECAY) and NOIS (NOISE) move every lane from its patch (64: as
- * the kit has it); ACC the accent at full velocity (velocity scales it, up to +3.5 dB); WARP every sound through FM with feedback, deeper and inharmonic (0: as the kit has it); DRV a soft clip on every hit
+ * the kit has it); FM (JIANT, once ACC) every sound through harmonic FM, eight ratio bands (drumx_voice.c dx_run); WARP every sound through FM with feedback, deeper and inharmonic (0: as the kit has it); DRV a soft clip on every hit
  * (x1..x4, level kept). Each lane has its LEVEL (P_LN0..P_LN7, EDIT > LANES / LANES 2, #97: square law, 100 % the
  * default) on the voice amplitude after the knee. The knobs move a hit while it rings.
  *
@@ -57,14 +57,14 @@ static int dx_lane_muted(uint32_t l) { return (DXG_LANE[l & 7u] & dx_mute) || (d
 
 static int16_t clip_eff, pnch_eff;   /* G_CLIP / G_PUNCH as the master plays them (mod.c macro_master) */
 /* The drum bus (JIANT, MENU-less: FX > MASTER). PUNCH (G_PUNCH 0..100, after Ableton's Drum Buss, no detector: each
- * hit's own age): a hit's first 12 blocks (~9 ms) up to +6 dB, then over 24 blocks down to its tail at up to -5 dB
- * (tighter, compressed). DUCK (G_DUCK, fx.c): a kick struck on any DRUM track (its group not muted) ducks the other
+ * hit's own age): a hit's first 10 blocks (~7 ms) up to +11 dB into the voice's knee (saturated, as Drum Buss's
+ * drive), then over 24 blocks down to its tail at up to -14 dB (tight, compressed). DUCK (G_DUCK, fx.c): a kick struck on any DRUM track (its group not muted) ducks the other
  * parts; duck_hit tells fx.c's mix_block */
 static volatile uint8_t duck_hit;
-static int32_t punch_gain(uint32_t age, int32_t p)     /* Q15 (32768 = 1, up to x2), p 0..100 */
+static int32_t punch_gain(uint32_t age, int32_t p)     /* Q15 (32768 = 1, up to x3.5), p 0..100 */
 {
-    int32_t up = 32768 + p * 328, tail = 32768 - p * 145;   /* (+6 dB, -5 dB at 100) */
-    return age < 12u ? up : age < 36u ? up + (tail - up) * (int32_t)(age - 12u) / 24 : tail;
+    int32_t up = 32768 + p * 819, tail = 32768 - p * 262;   /* (JIANT, Drum Buss strong: +11 dB, -14 dB at 100) */
+    return age < 10u ? up : age < 34u ? up + (tail - up) * (int32_t)(age - 10u) / 24 : tail;
 }
 
 /* General MIDI notes 35..81 -> the lane (DV_*) and semitones from its pitch */
@@ -223,8 +223,8 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
 {
     const int16_t *p = t->p;
     drum_lane_t *L = drum_lane_of(t, v);
-    int32_t y[CTL], acc = clamp(p[P_E5] * v->vel * 4, 0, 65536), drv = p[P_E7], g = 0, mk = 0;   /* acc Q16 */
-    int32_t lv = clamp(p[P_LN0 + ((uint32_t)v->s[0] & (DV_NLANE - 1u))], 0, 127), ga = 32768 + (acc >> 2);
+    int32_t y[CTL], drv = p[P_E7], g = 0, mk = 0, pb0 = 4096, pb1 = 4096;
+    int32_t lv = clamp(p[P_LN0 + ((uint32_t)v->s[0] & (DV_NLANE - 1u))], 0, 127);
     uint32_t i;
     vmod_t ml;                                           /* (only its amplitude ramp is read: voice_amp) */
     if (!L)
@@ -251,21 +251,24 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     if (n > CTL)
         n = CTL;
     dx_run(&dx_kit[(uint32_t)v->s[0] & (DV_NLANE - 1u)], &L->x, p[P_E0], L->st * 16 + (p[P_E1] - 64) * 3 + t->pfx_pit,
-           p[P_E3] - 64, p[P_E2] - 64, p[P_E4] - 64, p[P_E6], y, n);
-    for (i = 0; i < n; i++)                              /* ACC: up to x1.5 (|y| < 2^17, ga >> 4 < 2^12) */
-        y[i] = (y[i] * (ga >> 4)) >> 11;
+           p[P_E3] - 64, p[P_E2] - 64, p[P_E4] - 64, p[P_E6], p[P_E5], y, n);
     if (drv > 0) {                                       /* DRV: x1..x4 into the soft clip, the level kept (Q12) */
         g = 4096 + drv * 3 * 4096 / 127;
         mk = (int32_t)((19661u << 15) / (uint32_t)softclip((19661 * g) >> 12));
     }
-    {                                                    /* PUNCH: on the block's amplitude ramp (after the knee:
-                                                          * its transient kept; no work per sample) */
+    {                                                    /* PUNCH: the boost before the knee (driven into it, as
+                                                          * Drum Buss), the tail's cut on the amplitude ramp */
         int32_t pu = pnch_eff;
-        if (pu > 0) {                                    /* (amp <= 32767, the gain >> 1 <= 32784) */
-            int32_t a0 = (m->amp0 * (punch_gain(L->age, pu) >> 1)) >> 14;
-            ml.amp1 = (m->amp1 * (punch_gain(L->age + 1u, pu) >> 1)) >> 14;
-            ml.amp0 = a0;
-            m = &ml;
+        if (pu > 0) {
+            int32_t g0 = punch_gain(L->age, pu), g1 = punch_gain(L->age + 1u, pu);
+            if (g0 < 32768 || g1 < 32768) {              /* (gains < 1: amp stays <= 32767) */
+                int32_t a0 = (m->amp0 * (g0 < 32768 ? g0 : 32768)) >> 15;
+                ml.amp1 = (m->amp1 * (g1 < 32768 ? g1 : 32768)) >> 15;
+                ml.amp0 = a0;
+                m = &ml;
+            }
+            pb0 = g0 > 32768 ? g0 >> 3 : 4096;           /* Q12 */
+            pb1 = g1 > 32768 ? g1 >> 3 : 4096;
         }
         if (L->age < 255u)
             L->age++;
@@ -274,6 +277,8 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
         int32_t s = y[i];
         if (g)
             s = (softclip((s * g) >> 12) * mk) >> 15;
+        if (pb0 != 4096 || pb1 != 4096)
+            s = (s * (pb0 + (((pb1 - pb0) * (int32_t)i) >> CTL_LOG2))) >> 12;
         out[i] += voice_amp(soft_knee(s + (s >> 2), 24000), m, i) << 1;
     }
 }
@@ -285,7 +290,7 @@ static int32_t drum_keys(const track_t *t, uint32_t k)
     return clamp(29 + 12 * song.octave + (int32_t)k, 0, 127);
 }
 
-/* {MRPH, TUNE, TONE, DECY, NOIS, ACC, WARP, DRV}; the kit suggests the BEAT pattern (GM notes) */
+/* {MRPH, TUNE, TONE, DECY, NOIS, FM, WARP, DRV}; the kit suggests the BEAT pattern (GM notes) */
 static const preset_t DRUM_PRESETS[] = {
     {"DRUM-X", DRUM_KIT_E, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 20), PAT(12)},   /* (core.h: SAMPLE PERC's too) */
 };
@@ -299,7 +304,7 @@ static const engine_t ENG_DRUM = {
         {"TONE", F_PCT, 0, 127, 64, 0, 0},
         {"DECY", F_PCT, 0, 127, 64, 0, 0},
         {"NOIS", F_PCT, 0, 127, 64, 0, 0},
-        {"ACC", F_PCT, 0, 127, 100, 0, 0},
+        {"FM", F_PCT, 0, 127, 0, 0, 0},                 /* (JIANT: was ACC) */
         {"WARP", F_PCT, 0, 127, 0, 0, 0},
         {"DRV", F_PCT, 0, 127, 0, 0, 0},
     },

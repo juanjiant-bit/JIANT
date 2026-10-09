@@ -58,7 +58,8 @@
  * Format B ("FUNB", written since JIANT 0.2) = FUNA with 96 more bytes (3840: a flash object's whole payload): 21 track
  * parameters before P_E0 (DIST TYPE TONE, the modulation sequence's LEN DIV SLEW and 16 levels: P_COUNT 120, P_E0 112),
  * so the data ends at 3156 and everything after it moved up by 96 (the punch-in block at PROJ_PFX_OFF 3168, the kit at
- * 3216); and five globals past the header's 27 (G_DHPF .. G_RPRE) after the macros: a 1 at PROJ_GX_OFF, then biased
+ * 3216); and nine globals past the header's 27 (G_DHPF .. G_DSPRY) after the macros: a 2 at PROJ_GX_OFF (1: the
+ * first five, G_DHPF .. G_RPRE, saved by JIANT 0.2), then biased
  * bytes. FUNA (99 parameters, no new globals) and older load mapped by count, the new values their defaults.
  *
  * Parameter locks (1.1, core.h MOTION_LOCK) are motion records with bit 7 of their id byte set (P_COUNT 99 < 128:
@@ -163,6 +164,7 @@ _Static_assert(sizeof(project_store_t) == 3840u && PROJ_STORE_V7 == sizeof(proje
 _Static_assert(sizeof(dx_lane_t[8]) == 88u && PROJ_DX_OFF == 3216u, "the kit's place: FUNA's, 96 bytes on");
 #define PROJ_GX_OFF (PROJ_PFX_OFF + 37u)        /* (FUNB) after the lane, its tracks and the macros: 1, then the globals */
 _Static_assert(37u + 1u + (G_COUNT - G_NSTORE) <= 48u, "the new globals in the punch-in block's spare bytes");
+_Static_assert(G_COUNT - G_NSTORE == 9u, "marker 2 holds nine new globals");
 _Static_assert(68u + NTRK * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + sizeof(motion_store_t) <= PROJ_PFX_OFF,
                "the punch-in lane after the serialized part");
 typedef struct {                               /* a track of format 4, read only */
@@ -655,13 +657,14 @@ static int proj_pack(project_store_t *out, const project_t *q)
     b[PROJ_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
     for (i = 0; i < 4u; i++)
         b[PROJ_PFX_OFF + sizeof q->pfx_lane + 1u + i] = q->macro[i] & 127u;
-    b[PROJ_GX_OFF] = 1u;                                /* the new globals (biased bytes, as the parameters) */
+    b[PROJ_GX_OFF] = 2u;                                /* the new globals (biased bytes, as the parameters; 1: the
+                                                         * first five, G_DHPF .. G_RPRE; 2: nine, to G_DSPRY) */
     for (i = G_NSTORE; i < G_COUNT; i++)
         b[PROJ_GX_OFF + 1u + i - G_NSTORE] = (uint8_t)(clamp(q->g[i], -64, 127) + 64);
     memcpy(b + PROJ_DX_OFF, q->dx, sizeof q->dx);
     b[PROJ_DX_OFF + sizeof q->dx] = q->dx_mute & DXG_ALL;
     b[PROJ_DX_OFF + sizeof q->dx + 1u] = (uint8_t)(q->dx_mute >> 8);
-    b[PROJ_DX_OFF + sizeof q->dx + 2u] = 1u;                    /* SHIFT: OFS / PIT where the chord keys were */
+    b[PROJ_DX_OFF + sizeof q->dx + 2u] = 2u;                    /* 1 SHIFT: OFS / PIT where the chord keys were; 2 DRUM's E5 FM */
     memcpy(b + PROJ_FM6_OFF, q->fm6, sizeof q->fm6);
     {   /* the name (0-padded; stops at the first 0) */
         char n[PROJ_NAME_LEN + 1u];
@@ -702,9 +705,12 @@ static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
         return 0;
     memset(q, 0, sizeof *q); q->magic = PROJ_MAGIC; q->size = sizeof *q;
     memcpy(q->g, b + 8, G_NSTORE * 2u); q->sel = b[62];
-    for (i = G_NSTORE; i < G_COUNT; i++)                /* the new globals: FUNB's, else their defaults */
-        q->g[i] = vb && b[end - 48u + 37u] == 1u ? (int16_t)clamp((int32_t)b[end - 48u + 38u + i - G_NSTORE] - 64,
-                                                                  GP[i].min, GP[i].max) : GP[i].def; q->parts = b[63]; q->phys = b[64];
+    for (i = G_NSTORE; i < G_COUNT; i++) {              /* the new globals: FUNB's (marker 1: the first five, 2: nine), */
+        uint32_t gm = vb ? b[end - 48u + 37u] : 0u;     /* else their defaults */
+        q->g[i] = gm && gm <= 2u && i < G_NSTORE + (gm == 1u ? 5u : 9u)
+                      ? (int16_t)clamp((int32_t)b[end - 48u + 38u + i - G_NSTORE] - 64, GP[i].min, GP[i].max) : GP[i].def;
+    }
+    q->parts = b[63]; q->phys = b[64];
     if (v7 && (q->g[G_RTYPE] < 0 || q->g[G_RTYPE] > 1))   /* a FUN7 may still hold the old drum channel there */
         proj_rtype_room(q->g);
     for (t = 0; t < NTRK; t++) {
@@ -752,9 +758,13 @@ static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
         if (!dx_kit_ok(q->dx)) return 0;
         q->dx_mute = (uint16_t)((b[end + sizeof q->dx] & DXG_ALL) | b[end + sizeof q->dx + 1u] << 8);
     }
-    if (!va || b[end + sizeof q->dx + 2u] != 1u)        /* written before SHIFT: its chord keys are no offset */
-        for (t = 0; t < NTRK; t++)
+    if (!va || (b[end + sizeof q->dx + 2u] != 1u && b[end + sizeof q->dx + 2u] != 2u))   /* written before SHIFT: */
+        for (t = 0; t < NTRK; t++)                      /* its chord keys are no offset */
             q->t[t].p[P_SOFS] = q->t[t].p[P_POFS] = 0;
+    if (!va || b[end + sizeof q->dx + 2u] != 2u)        /* (JIANT) before FM: DRUM's E5 was ACC: FM off */
+        for (t = 0; t < NTRK; t++)
+            if (q->t[t].engine == ENGI_DRUM)
+                q->t[t].p[P_E5] = 0;
     if (!va) {
         memcpy(q->dx, DX_KIT_DEF, sizeof q->dx);
         q->dx_mute = 0;

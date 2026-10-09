@@ -425,7 +425,8 @@ int main(void)
              q2.t[0].engine == ENGI_DRUM && q2.t[0].preset == 0 && str_eq(ENGINES[ENGI_DRUM]->name, "DRUM") &&
              q2.t[0].p[P_E0] == 64 && q2.t[0].p[P_E4] == 64 && q2.t[0].p[P_E6] == 0 && q2.t[0].p[P_E7] == 0;
         for (i = 1; i < 6u; i++)
-            ok &= i == 4u || q2.t[0].p[P_E0 + i] == E0[i];   /* TUNE TONE DECY ACC in place (MRPH NOIS 64) */
+            ok &= i == 4u || q2.t[0].p[P_E0 + i] == (i == 5u ? 0 : E0[i]);   /* TUNE TONE DECY in place (MRPH NOIS 64;
+                                                         * E5, ACC then, FM now: 0) */
         {   /* PHYS (retired in TONIC): ANALOG with its first preset's EDIT values, the rest of the track kept */
             const preset_t *an = &ENGINES[ENGI_PHYS_TO]->presets[0];
             uint32_t k2;
@@ -542,6 +543,27 @@ int main(void)
             ok = proj_pack(&st, &a) && st.raw[PROJ_PFX_OFF + 2] == 0x21 && st.raw[PROJ_PFX_OFF + 32] == 2 &&
                  proj_import(&c, &st, sizeof st) && !memcmp(c.pfx_lane, a.pfx_lane, sizeof a.pfx_lane) && c.pfx_ltgt == 2;
             bad += check("FUNA: the punch-in lane round trips (the spare bytes at PROJ_PFX_OFF)", ok);
+            {   /* (JIANT 0.3) the nine new globals round trip behind a 2; a FUNB of 0.2 (behind a 1: five) loads the
+                 * other four at their defaults; DRUM's E5 (FM) kept behind the kit's marker 2, 0 behind a 1 */
+                uint32_t sm;
+                a.g[G_RPRE] = 40; a.g[G_RFILT] = -30; a.g[G_RWIDE] = 90; a.g[G_DPIT] = -7; a.g[G_DSPRY] = 55;
+                a.t[1].engine = ENGI_DRUM; a.t[1].p[P_E5] = 77;
+                a.sum = proj_sum(&a);
+                ok = proj_pack(&st, &a) && st.raw[PROJ_GX_OFF] == 2u && proj_import(&c, &st, sizeof st) &&
+                     c.g[G_RPRE] == 40 && c.g[G_RFILT] == -30 && c.g[G_RWIDE] == 90 && c.g[G_DPIT] == -7 &&
+                     c.g[G_DSPRY] == 55 && c.t[1].p[P_E5] == 77;
+                bad += check("FUNB: the nine new globals round trip (FILT -30, PITCH -7: signed), DRUM's FM kept", ok);
+                st.raw[PROJ_GX_OFF] = 1u;
+                st.raw[PROJ_DX_OFF + 90u] = 1u;
+                sm = proj_hash(st.raw, PROJ_STORE_SIZE - 4u);
+                memcpy(st.raw + PROJ_STORE_SIZE - 4u, &sm, 4);
+                ok = proj_import(&c, &st, sizeof st) && c.g[G_RPRE] == 40 && c.g[G_RFILT] == GP[G_RFILT].def &&
+                     c.g[G_RWIDE] == GP[G_RWIDE].def && c.g[G_DPIT] == 0 && c.g[G_DSPRY] == 0 && c.t[1].p[P_E5] == 0;
+                bad += check("FUNB of JIANT 0.2 (markers 1): its five globals, the four new at their defaults, DRUM's E5 (ACC) FM 0", ok);
+                a.g[G_RPRE] = a.g[G_RFILT] = a.g[G_RWIDE] = a.g[G_DPIT] = a.g[G_DSPRY] = 0;
+                a.t[1].engine = ENGI_FM6; a.t[1].p[P_E5] = 0;
+                a.sum = proj_sum(&a);
+            }
             a.dx[2].a[DXP_PITCH] = 200;
             a.sum = proj_sum(&a);
             ok = !proj_pack(&st2, &a);

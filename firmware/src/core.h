@@ -91,6 +91,8 @@ enum {                          /* global parameters */
     G_WIDTH,                    /* the buses' stereo width (the delay's right echo later, the chorus's taps apart), */
     G_RMOD, G_RRATE,            /* the reverb's modulation (ROOM: its combs' lengths; SPRING: its wobble) depth, rate, */
     G_RPRE,                     /* its pre-delay */
+    G_RFILT, G_RWIDE,           /* (JIANT 0.3) the reverb's tone (darker / brighter) and width, */
+    G_DPIT, G_DSPRY,            /* the delay's grains: their pitch (0: a plain delay) and spray */
     G_COUNT
 };
 #define G_SYNC G_DREL                   /* (the old names, for the formats' importers and their tests) */
@@ -123,14 +125,14 @@ static void params_by_count(int16_t *out, const int16_t *in, uint32_t np, const 
  * set as DRUM first: drum_from_perc) */
 static inline int eng_gone(uint32_t e) { return e == ENGI_PHYS || e == ENGI_SAMPLE || e == ENGI_GRAIN || e == ENGI_SLICE; }
 /* PHYS MODEL DRUM (MODEL 4, before 1.0) -> the DRUM engine, its E values in place: {MODEL, TUNE, TONE, DECY,
- * SNAP, ACC, KICK, PERC} -> {MRPH 64, TUNE, TONE, DECY, NOIS 64, ACC, -, DRV 0}. 1 = it was one (its engine is
+ * SNAP, ACC, KICK, PERC} -> {MRPH 64, TUNE, TONE, DECY, NOIS 64, FM 0, -, DRV 0}. 1 = it was one (its engine is
  * ENGI_DRUM now); projects (project.c) and user presets (upreset.c) */
 static int drum_from_phys(uint32_t engine, int16_t *e)
 {
     if (engine != ENGI_PHYS || e[0] != 4)
         return 0;
     e[0] = e[4] = 64;
-    e[6] = e[7] = 0;
+    e[5] = e[6] = e[7] = 0;                             /* (ACC is gone: E5 is FM now, off) */
     return 1;
 }
 
@@ -141,7 +143,7 @@ static int drum_from_phys(uint32_t engine, int16_t *e)
  * ENGI_DRUM now); projects (project.c proj_perc), user presets (upreset.c up_migrate), factory preset 4 and
  * favourites (ui.c, settings_persist.c). Idempotent */
 #define SMP_SET_PERC 4u
-#define DRUM_KIT_E {64, 64, 70, 64, 64, 100, 0, 0}   /* {MRPH, TUNE, TONE, DECY, NOIS, ACC, WARP, DRV} (eng_drum.c) */
+#define DRUM_KIT_E {64, 64, 70, 64, 64, 0, 0, 0}   /* {MRPH, TUNE, TONE, DECY, NOIS, FM, WARP, DRV} (eng_drum.c) */
 static int drum_from_perc(uint32_t engine, int16_t *e)
 {
     static const int16_t KIT[8] = DRUM_KIT_E;
@@ -358,7 +360,7 @@ typedef struct track {
     uint8_t pfx_si;              /* ARP: the next of them */
     uint32_t pfx_sc;             /* samples since the last repeat */
 } track_t;
-enum { PFX_RND = 1, PFX_HALF = 2, PFX_REP = 4, PFX_DEC = 8 };   /* (track_t.pfx) */
+enum { PFX_RND = 1, PFX_HALF = 2, PFX_REP = 4, PFX_DEC = 8, PFX_ATK = 16 };   /* (track_t.pfx) */
 
 typedef struct {
     int16_t g[G_COUNT];

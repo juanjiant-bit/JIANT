@@ -44,6 +44,8 @@
 #define UP_VER 4u                                /* 2 since 1.0; 1 is read too (PHYS MODEL 2 was DUST) */
 #define UP_VER_GRID 5u                           /* 2 with a drum grid as the pattern (see the top) */
 #define UP_BANK_MAGIC 0x31425055u                /* "UPB1" */
+#define UP_FM_AT (UP_PMAX * 2u - 1u)             /* (JIANT 0.3) packed[]'s last byte (past P_COUNT): UP_FM_MARK = DRUM's */
+#define UP_FM_MARK 0x46u                         /* E5 is FM; a DRUM record without it held ACC there: FM off */
 typedef struct {
     uint8_t used, ver, engine, np;               /* UP_USED, UP_VER, engine, P_COUNT when stored */
     char name[12];                               /* ASCII 32..126, 0-padded (no 0 when 12 long) */
@@ -58,6 +60,7 @@ typedef struct {
 } up_bank_t;
 _Static_assert(sizeof(up_rec_t) == 192, "user preset record layout");
 _Static_assert(P_COUNT <= UP_PMAX * 2u && P_COUNT < 128, "user preset record: P_COUNT");
+_Static_assert(P_COUNT <= UP_FM_AT, "user preset record: the FM mark past the parameters");
 static up_bank_t up_bank[UP_SLOTS / UP_PER_BANK];
 
 static up_rec_t *up_rec(uint32_t k) { return &up_bank[k / UP_PER_BANK].r[k % UP_PER_BANK]; }
@@ -87,6 +90,11 @@ static void up_migrate(up_rec_t *r)
     if (drum_from_phys(r->engine, e) || drum_from_perc(r->engine, e)) {   /* (SAMPLE PERC: see the top) */
         r->engine = ENGI_DRUM;
         for (k = 0; k < 8u; k++) up_set_value(r, r->np - 8u + k, e[k]);
+    }
+    if (r->engine == ENGI_DRUM && !(r->ver >= 4u && r->np <= UP_FM_AT && r->packed[UP_FM_AT] == UP_FM_MARK)) {
+        up_set_value(r, r->np - 3u, 0);                 /* (JIANT 0.3) ACC there: FM off; marked (packed records) */
+        if (r->ver >= 4u && r->np <= UP_FM_AT)
+            r->packed[UP_FM_AT] = UP_FM_MARK;
     }
 }
 
@@ -194,6 +202,7 @@ static int up_parse(const uint8_t *a, uint32_t na, up_rec_t *r, uint32_t *slot)
     r->ver = UP_VER;
     r->engine = a[1];
     r->np = P_COUNT;
+    r->packed[UP_FM_AT] = UP_FM_MARK;
     for (i = 0; i < n; i++)
         r->name[i] = (char)a[2 + i];
     for (i = 0; i < P_COUNT; i++, k += 2u)
@@ -349,6 +358,7 @@ static int up_store(uint32_t k, const char *name)
     r.ver = UP_VER;
     r.engine = TSEL->eng_req;
     r.np = P_COUNT;
+    r.packed[UP_FM_AT] = UP_FM_MARK;
     up_set_name(&r, k, name);
     for (i = 0; i < P_COUNT; i++)
         up_set_value(&r, i, motion_base_value(TSEL, i));

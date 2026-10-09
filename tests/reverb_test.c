@@ -18,6 +18,8 @@
  * 6. a model change while the bus rings: no click (the old one's block fades out), the new one starts silent.
  * 7. cost: host instructions per sample of the reverb alone (rev_room, rev_spring): SPRING at most ROOM + 30 %;
  *    and of the whole bus stage (fx_buses), with the device estimate (1.7 % per 100, drum_test's ratio).
+ * 8. (JIANT 0.3) the GRAIN delay's PITCH (an octave up / down) and SPRY (bounded with feedback), the reverb's FILT
+ *    and WIDE, MOD's depth (~5.7 ms), DUCK's depth and hold.
  * Demos (WAV) into DEMODIR: a drum pattern and a pluck through SPRING, the drums through ROOM to compare. */
 #define main hostsim_main
 #include "hostsim.c"
@@ -426,6 +428,153 @@ static void demo(const char *dir, const char *name, int rtype, int pluck)
     printf("reverb: demo %s\n", path);
 }
 
+/* ------------------------------------------------- JIANT 0.3: the new FX --- */
+/* the buses on sends (chorus 0, delay d(t), reverb r(t)) for nb blocks; out: wet into w (n samples), mix_l - mix_r
+ * (the side) energy into *side */
+static int32_t jw[FS * 2];
+static void jrun(int32_t (*d)(uint32_t), int32_t (*r)(uint32_t), uint32_t n, double *side)
+{
+    static int32_t c[CTL], dd[CTL], rr[CTL];
+    uint32_t t, i;
+    *side = 0;
+    for (t = 0; t + CTL <= n; t += CTL) {
+        for (i = 0; i < CTL; i++) {
+            c[i] = 0;
+            dd[i] = d ? d(t + i) : 0;
+            rr[i] = r ? r(t + i) : 0;
+            mix_l[i] = mix_r[i] = 0;
+        }
+        fx_buses(c, dd, rr, jw + t, CTL);
+        for (i = 0; i < CTL; i++)
+            *side += (double)(mix_l[i] - mix_r[i]) * (mix_l[i] - mix_r[i]);
+    }
+}
+static int32_t sine500(uint32_t t) { return (int32_t)(40000.0 * sin(2.0 * M_PI * 500.0 * t / FS)); }
+static int32_t burst(uint32_t t) { return t < FS / 10u ? noise(80000) : 0; }
+static void jreset(void)
+{
+    uint32_t i;
+    host_tracks_init();
+    for (i = 0; i < DLY_LEN; i++)
+        dly_buf[i] = 0;
+    rev_clear();
+    fx.rtype = 0;
+    memset(fx.rm_m, 0, sizeof fx.rm_m);
+    fx.rf_lp = 0;
+    song.g[G_DMIX] = 127;
+    song.g[G_DFDBK] = 0;
+    song.g[G_DCOLOR] = 127;
+    song.g[G_DHPF] = 0;
+    song.g[G_WIDTH] = 0;
+    song.g[G_RPRE] = 0;
+    xs = 0x1234567u;
+}
+static double band_e(uint32_t a, uint32_t b) { double e = 0; for (; a < b; a++) e += (double)jw[a] * jw[a]; return e; }
+static uint32_t jcross(uint32_t a, uint32_t b) { uint32_t c = 0; for (a++; a < b; a++) c += jw[a - 1] < 0 && jw[a] >= 0; return c; }
+static void test_jiant(void)
+{
+    double side, e0, e1, e2;
+    uint32_t c0, c1, c2, k;
+    int32_t pk = 0;
+    /* GRAIN: PITCH +12 an octave up, -12 down (the echo's zero crossings), SPRY scatters it, bounded */
+    jreset();
+    jrun(sine500, 0, FS, &side);
+    c0 = jcross(FS / 2u, FS);
+    jreset();
+    song.g[G_DPIT] = 12;
+    jrun(sine500, 0, FS, &side);
+    c1 = jcross(FS / 2u, FS);
+    jreset();
+    song.g[G_DPIT] = -12;
+    jrun(sine500, 0, FS, &side);
+    c2 = jcross(FS / 2u, FS);
+    check("GRAIN delay: PITCH +12 the echo an octave up, -12 down (its zero crossings: x2, x0.5 +-15 %)",
+          c0 > 200 && c1 > c0 * 1.7 && c1 < c0 * 2.3 && c2 > c0 * 0.35 && c2 < c0 * 0.65);
+    printf("reverb:   (crossings in 0.5 s: plain %u, +12 %u, -12 %u)\n", c0, c1, c2);
+    jreset();
+    song.g[G_DPIT] = 7;
+    song.g[G_DSPRY] = 127;
+    song.g[G_DFDBK] = 120;
+    jrun(burst, 0, FS * 2u, &side);
+    for (k = 0; k < FS * 2u; k++)
+        pk = abs(jw[k]) > pk ? abs(jw[k]) : pk;
+    e0 = band_e(FS, FS * 2u);
+    check("GRAIN delay: PITCH 7, SPRY 127, feedback 120: bounded, still repeating after 1 s", pk < 1 << 20 && e0 > 0);
+    /* the reverb's FILT (darker / thinner: less energy from white noise) and WIDE (a side, none at 0) */
+    for (k = 0; k < 3u; k++) {
+        double *e = k == 0u ? &e0 : k == 1u ? &e1 : &e2;
+        jreset();
+        song.g[G_DMIX] = 0;
+        song.g[G_RFILT] = (int16_t)(k == 0u ? 0 : k == 1u ? -64 : 63);
+        jrun(0, burst, FS, &side);
+        *e = band_e(0, FS);
+    }
+    check("reverb FILT: -64 (low-pass) and 63 (low cut) each take energy out of a noise burst's tail",
+          e1 < e0 * 0.7 && e2 < e0 * 0.9 && e1 > 0 && e2 > 0);
+    {
+        double sd;
+        jreset();
+        song.g[G_DMIX] = 0;
+        song.g[G_RTYPE] = 0;
+        song.g[G_RWIDE] = 127;
+        jrun(0, burst, FS, &side);
+        sd = side;
+        jreset();
+        song.g[G_DMIX] = 0;
+        song.g[G_RWIDE] = 0;
+        jrun(0, burst, FS, &side);
+        check("reverb WIDE: ROOM 127 a side (left and right apart), 0 none", sd > band_e(0, FS) * 0.05 && side == 0);
+    }
+    jreset();
+    song.g[G_DMIX] = 0;
+    song.g[G_RTYPE] = 1;
+    fx.rtype = 1;
+    song.g[G_RWIDE] = 127;
+    jrun(0, burst, FS, &side);
+    check("reverb WIDE: SPRING 127 a side too", side > 0);
+    /* MOD: the combs' read offsets swing up to ~5.7 ms at 127 (0.25 .. 1.3 ms before 0.3), no step between samples */
+    {
+        uint32_t b, mx[2] = {0, 0}, kk;
+        for (kk = 0; kk < 2u; kk++) {
+            jreset();
+            song.g[G_DMIX] = 0;
+            song.g[G_RMOD] = (int16_t)(kk ? 127 : 16);
+            song.g[G_RRATE] = 127;
+            for (b = 0; b < 4u * FS / CTL; b++) {
+                static int32_t z[CTL], w[CTL];
+                rev_room_mod(z, w, CTL, 0);
+                mx[kk] = (uint32_t)fx.rm_m[0] > mx[kk] ? (uint32_t)fx.rm_m[0] : mx[kk];
+            }
+        }
+        printf("reverb:   (MOD: the offset's swing 16: %u, 127: %u samples)\n", mx[0] >> 8, mx[1] >> 8);
+        check("reverb MOD: 127 swings the combs ~5.7 ms (240 samples or more), 16 a few", mx[1] >> 8 >= 240u && mx[0] >> 8 < 8u);
+    }
+    /* DUCK 100: the gain down past -26 dB within 3 ms, held there at 20 ms, back up after the release */
+    {
+        int32_t g3, g20, gend;
+        uint32_t b;
+        host_tracks_init();
+        song.g[G_DUCK] = 100;
+        song.g[G_DREL] = 0;
+        duck_env = 0;
+        duck_g1 = 32767;
+        duck_hit = 1;
+        for (b = 0; b < 4u; b++)
+            duck_block();
+        g3 = duck_g1;
+        for (; b < 28u; b++)
+            duck_block();
+        g20 = duck_g1;
+        for (; b < 600u; b++)
+            duck_block();
+        gend = duck_g1;
+        check("DUCK 100: below -26 dB in 3 ms, still there at 20 ms (the hold), back to unity after the release",
+              g3 < 1640 && g20 < 1640 && gend > 32000);
+        printf("reverb:   (DUCK gain: %d at 3 ms, %d at 20 ms, %d at 0.4 s)\n", g3, g20, gend);
+        song.g[G_DUCK] = 0;
+    }
+}
+
 int main(int argc, char **argv)
 {
     test_room_identical();
@@ -433,6 +582,7 @@ int main(int argc, char **argv)
     test_clear();
     test_switch();
     test_cost();
+    test_jiant();
     if (argc > 1) {
         demo(argv[1], "spring_drums", 1, 0);
         demo(argv[1], "spring_pluck", 1, 1);

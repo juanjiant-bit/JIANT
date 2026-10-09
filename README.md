@@ -29,15 +29,18 @@ FM-1, con sonido, y se maneja con el teclado de la compu o el mouse. Se actualiz
 ### DRUM-X: batería sintetizada con morph
 Un kit de 8 sonidos (BD SD CP CH OH TM RS CB) generado en tiempo real, sin samples, al estilo Microtonic.
 - Cada sonido tiene dos lados, **A** y **B**; **MORPH** (KNOB 1, siempre a mano) se mueve entre los dos.
-- **WARP** deforma todo el kit con FM y feedback; además TUNE, TONE, DECAY, NOISE, ACCENT y DRIVE.
+- **WARP** deforma todo el kit con FM y feedback; **FM** cambia el timbre de cada sonido con FM armónica (8 bandas de
+  ratio, de grave y redondo a metálico); además TUNE, TONE, DECAY, NOISE y DRIVE.
 - **Mutes por grupo** (KICK, SNARE, HAT, PERC) con GLO sostenido, y **mute por sonido** con EDIT sostenido.
 - **EDIT sostenido → INIT / RECALL**: el kit vuelve al de fábrica o al guardado en la sección.
 
 ### Punch-in FX: los efectos se tocan y se graban
 Con FX sostenido, las teclas son efectos que actúan mientras se mantienen y al soltar todo vuelve exacto.
 - **De audio**: REPEAT 1/8 · 1/16 · 1/32, LPF y HPF.
-- **Sobre las notas, tipo OP-Z**: OCT− y OCT+, 1/2 TEMPO, DECAY corto y largo, STUTTER 1/16 · 1/32 · tresillo, ARP
-  momentáneo y RANDOM.
+- **Sobre las notas, tipo OP-Z**: OCT− y OCT+, 1/2 TEMPO, DECAY corto y largo, STUTTER 1/16 · 1/32, **ATK+** (sube el
+  ataque de todo), ARP momentáneo y RANDOM (mueve notas y también pasos).
+- **Cuantizados a la grilla**: un efecto entra en la próxima semicorchea del transporte y el REPEAT toma la grilla
+  del transporte, así no hay saltos al tocarlos.
 - **Objetivo**: A#4 elige si afectan a todo, solo a los sintes o solo a la batería.
 - **Automatizables**: con REC armado se graban en una lane de 4 compases por sección.
 - **Perillas**: FILTER, CRUSH, THROW y DEPTH.
@@ -79,7 +82,7 @@ La escena sigue vigente en las filas siguientes que no tengan una propia, y los 
 
 ### Modulación secuenciada (LFO > MSEQ)
 Cada track tiene un secuenciador de modulación, como un secuenciador de CV: 16 niveles, **LEN** (1–16 pasos), **DIV**
-(el ritmo de los pasos) y **SLEW** (de saltos a glides). Corre con el transporte y en la matriz MOD es la fuente
+(el ritmo de los pasos) y **SLEW** (de saltos a glides; KNOB 4 en la página MSEQ). Corre con el transporte y en la matriz MOD es la fuente
 **STEP**: cualquier destino (filtro, pitch, MORPH, envíos, CLIP…) sigue la secuencia. En la página MSEQ, KNOB 1 elige
 el paso y KNOB 2 su nivel; los niveles también se automatizan.
 
@@ -89,12 +92,19 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
 - **WIDTH**: abre el estéreo. El eco derecho del delay llega un poco después y el chorus separa L y R. En 0 todo
   suena como antes.
 - **Reverb**: **PRE** (pre-delay de hasta 100 ms), y **MOD** y **RATE** modulan la red de resonancia. En ROOM se mueve
-  el largo de los combs: menos metálico, una cola más ancha. En SPRING, un vaivén más profundo.
+  el largo de los combs hasta ~6 ms: la cola se desafina y se ensancha, como un chorus. En SPRING, un vaivén mucho
+  más profundo. En REVERB 2 también **FILT** (a la izquierda más oscura, a la derecha sin graves) y **WIDE** (abre la
+  reverb en estéreo).
+- **GRAIN delay** (DLY 2): **PITCH** pasa cada repetición por dos granos, ±12 semitonos (repeticiones que suben tipo
+  shimmer o que bajan), y **SPRY** los dispersa al azar (hasta ~190 ms). Con los dos en 0 es el delay de siempre. Usa
+  la misma memoria del delay: no ocupa RAM extra.
 
 ### Master con carácter (FX > MASTER)
 - **CLIP**: satura la mezcla antes del limiter.
-- **PNCH**: bus de batería con más ataque y cola más corta.
-- **DUCK**: el bombo baja a los demás tracks, con su release.
+- **PNCH**: bus de batería como el Drum Buss de Ableton: el ataque de cada golpe sube hasta +11 dB empujando la
+  saturación de la voz y la cola baja hasta −14 dB.
+- **DUCK**: el bombo baja a los demás tracks hasta −30 dB, los mantiene abajo ~25 ms y vuelven con una curva de
+  sidechain (bombeo), con su release.
 
 ## Lo que trae
 
@@ -104,7 +114,7 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
 - **Modulación**: 4 slots por track. Fuentes: LFO, ENV, VEL, KEY, RAND, controladores MIDI, las 4 macros y STEP (el
   secuenciador de modulación).
 - **Efectos**: distorsión de 5 tipos y SLICER por track; envíos a chorus, delay (con HPF) y reverb (ROOM o SPRING, con
-  pre-delay y modulación); WIDTH estéreo; master con CLIP, PNCH, DUCK y limiter.
+  pre-delay, modulación, filtro y width); grain delay; WIDTH estéreo; master con CLIP, PNCH, DUCK y limiter.
 - **Arpegiador** con 16 modos y 16 escalas con modo de teclas blancas; glide; POLY, MONO, LEGATO y UNISON.
 - **Conexiones**:
   - USB: MIDI class-compliant y audio (el master llega a la computadora).
@@ -159,7 +169,7 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
 
 | Mantener | Teclas | Perillas |
 | --- | --- | --- |
-| **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. Punch-in MIDI: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 D5 STUTTER 1/16 · 1/32 · tresillo, E5 ARP, F5 RANDOM. Teclas negras 1–4: mute de T1–T4; A#4 elige a qué tracks afectan los MIDI (todos, sintes, batería). **Automatizar**: con REC armado y tocando, lo que mantengas queda grabado en la lane de la sección (64 pasos de 1/16); G5 la borra donde pasa, o entera con el transporte parado | FILTER, CRUSH, THROW, DEPTH |
+| **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. Punch-in MIDI: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 STUTTER 1/16 · 1/32, D5 ATK+ (ataque de todo arriba), E5 ARP, F5 RANDOM (notas y pasos). Todo entra en la próxima 1/16 del transporte. Teclas negras 1–4: mute de T1–T4; A#4 elige a qué tracks afectan los MIDI (todos, sintes, batería). **Automatizar**: con REC armado y tocando, lo que mantengas queda grabado en la lane de la sección (64 pasos de 1/16); G5 la borra donde pasa, o entera con el transporte parado | FILTER, CRUSH, THROW, DEPTH |
 | **ARP TRNS** | Con el modo de ARP en TRNS, las teclas (y el MIDI que entra) transponen la secuencia del track según su intervalo desde C4, sin tocar notas; la transposición queda al soltar | — |
 | **SEQ > SHIFT** | OFS corre la secuencia del track de −32 a +32 pasos (dentro de LEN; grabar en vivo escribe donde se escucha) y PIT la transpone ±24 semitonos (no en kits). Los dos se automatizan y están también en la capa SCL (KNOB 3 / 4) | OFS, PIT |
 | **REC + otro botón** | Mantener REC y apretar FX, EDIT, ENV, LFO, SCL, ARP o GLO: borra la automatización de esa parte del track elegido (movimientos de perillas y locks por paso; los valores guardados quedan). FX: también la lane de punch-in. GLO: niveles y paneo de los 4 tracks. Al revés (FX sostenido y REC) arma la grabación, como siempre | — |

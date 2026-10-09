@@ -69,9 +69,17 @@ No command changed; an editor that takes P_COUNT, G_COUNT and P_E0 from `INFO` k
 | G 29 | MOD | the reverb's modulation depth, 0..127 (ROOM: its combs' lengths drift; SPRING: its wobble deeper) |
 | G 30 | RATE | its rate (fmt LFOHZ, default 30) |
 | G 31 | PRE | the reverb's pre-delay, 0..100 ms |
+| G 32 | FILT | (0.3) the reverb's tone, −64..63 (fmt BIPCT): below 0 a low-pass into it (darker), above a low cut (thinner) |
+| G 33 | WIDE | (0.3) the reverb's width, 0..127: ROOM's combs 1, 3 against 2, 4, SPRING's taps, as a side |
+| G 34 | PITCH | (0.3) the GRAIN delay, −12..12 semitones (fmt SEMI): each repeat through two grains this far up / down |
+| G 35 | SPRY | (0.3) its spray, 0..127: each grain from a random place up to ~190 ms back (PITCH and SPRY 0: the plain delay) |
+
+**JIANT 0.3: 36 globals.** G_COUNT 36 (G 32..35 above). DRUM's E6 (id P_E0 + 5) is FM, 0..127 (once ACC): its sounds through
+harmonic FM, eight ratio bands; a project or user preset saved before loads its DRUM tracks with FM 0.
 
 Projects are FUNB (`46 55 4E 42`, 3840 bytes: FUNA's layout, 96 bytes longer, so everything after the data moved up by
-96; the five globals as biased bytes after the punch-in lane's tracks and the macros, behind a 1). FUNA (3744, 99
+96; the new globals as biased bytes after the punch-in lane's tracks and the macros, behind a 1 for the first five or,
+since 0.3, a 2 for all nine). FUNA (3744, 99
 parameters) and every older format load mapped by count, the new values at their defaults.
 
 ## Framing
@@ -259,8 +267,8 @@ numbered 0..31 (the device shows U01..U32).
   engine. A note with flag 4 is stored as a tie (note 0); flags on a rest are dropped.
 - **DRUM** (engine 10) was PHYS's MODEL 4 (DRUM) before 1.0. A record of PHYS with E1 (MODEL) = 4,
   stored then or sent by `UP_PUT` from an older editor, is the DRUM engine: the device rewrites it (engine
-  10; E1..E8 {MODEL, TUNE, TONE, DECY, SNAP, ACC, KICK, PERC} become {MRPH 64, TUNE, TONE, DECY, NOIS 64, ACC,
-  0, DRV 0}), and `UP_GET` / `UP_LIST` give it so.
+  10; E1..E8 {MODEL, TUNE, TONE, DECY, SNAP, ACC, KICK, PERC} become {MRPH 64, TUNE, TONE, DECY, NOIS 64, FM 0
+  (ACC until 0.3), 0, DRV 0}), and `UP_GET` / `UP_LIST` give it so.
   Projects do the same. PHYS's MODEL is 0..3 (MODAL STRNG MEMB SYMP) now.
 - **SAMPLE SET 4** was PERC, the General MIDI drum kit, until 1.0.2. A record of SAMPLE (engine 4) with E1 (SET)
   = 4, stored then or sent by `UP_PUT`, is the DRUM engine with its default kit: the device rewrites it (engine 10,
@@ -273,7 +281,8 @@ numbered 0..31 (the device shows U01..U32).
   set by hand on the EDIT > SLICES page for the user slots) is gone with that page; a stored 5 plays AUTO.
 - **DRUM is DRUM-X (JIANT 0.1).** Felucca's kits (KIT STD 66 10 77 80 10 66 55 77, and 1..3 once HAND CYM H+CYM)
   are retired. E1..E8 of DRUM are {MRPH (KIT's slot: the morph A..B of every sound), TUNE, TONE, DECY, NOIS (SNAP's
-  slot: moves every sound's noise, 64 = as the kit has it), ACC, "-" (KICK's slot, unused, 0..0), DRV}. A stored KIT
+  slot: moves every sound's noise, 64 = as the kit has it), FM (ACC until JIANT 0.3; a DRUM record stored before loads
+  with FM 0), WARP (KICK's slot), DRV}. A stored KIT
   value plays as that MRPH; the kit's sounds are the section's DRUM-X kit (see "Projects (FUNA)").
 - `UP_STORE`: name "" stores with the automatic name the device uses (engine name + slot number,
   "ANALOG 07"). rc 1 for a bad slot or name.

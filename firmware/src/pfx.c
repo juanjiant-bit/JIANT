@@ -6,10 +6,14 @@
  *   D4 OCT-, E4 OCT+   every voice an octave down / up (both: none), at once, notes held too
  *   F4 1/2 TEMPO       the track's sequencer at half speed; let go, it is back where it would have been
  *   G4 DEC-, A4 DEC+   short / long decays: a synth's DEC and REL, DRUM's DECY (DEC- wins)
- *   B4 C5 D5           STUTTER 1/16, 1/32, 1/16T: the notes the track struck last together (a step's chord, a
+ *   B4 C5              STUTTER 1/16, 1/32: the notes the track struck last together (a step's chord, a
  *                      drum step's hits) again at the rate, gated half; the sequencer's own notes wait meanwhile
+ *   D5 ATK+            (JIANT, was STUTTER 1/16T) every synth's attack slow (two thirds of the way to the longest)
  *   E5 ARP             those notes one at a time at 1/16, up two octaves (DRUM: its hits in turn)
- *   F5 RANDOM          each new note: an octave, a fifth or a fourth away now and then (DRUM: +-3 semitones)
+ *   F5 RANDOM          each new note: an octave, a fifth or a fourth away now and then (DRUM: +-3 semitones); and
+ *                      (JIANT) the sequencer plays a step of its pattern at random now and then (seq.c seq_tick)
+ * (JIANT) Quantized: an effect pressed while the transport runs goes in on the next 1/16 of the transport (ms_clock),
+ * so a repeat starts on the grid; let go, at once. The lane records the presses as they were (to the nearest step).
  * Of the repeats (STUTTER, ARP) the fastest held plays. A#4 (black key 8) steps the tracks they act on: ALL,
  * SYN (the synths), DRM (DRUM tracks) (pfx_tgt; the layer's header says it).
  * The punch-in lane (the automation): a section's 64 steps of 1/16 (4 bars, from the transport's start or the
@@ -85,7 +89,8 @@ static __attribute__((noinline)) void pfx_fire(track_t *t, int arp)
 }
 
 /* the values DEC- / DEC+ took out (pfx_end puts them back) */
-static int16_t pfx_keep[NTRK][2];
+static int16_t pfx_keep[NTRK][3];   /* DEC, REL (DRUM: DECY); ATK */
+static uint32_t pfx_qon;            /* (JIANT) the effects in (quantized to the 1/16) */
 
 static int pfx_rec_ok(void);          /* seq.c: REC armed, not a song playing */
 static uint8_t pfx_rh, pfx_rs0, pfx_rst, pfx_rold;   /* recording the lane: a press on, its first step, the step being
@@ -101,11 +106,19 @@ static void pfx_lane_put(uint32_t s, uint32_t v)
 /* each block, before the events (fx.c mix_block). held: the effects held (PF_* bits) */
 static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
 {
-    uint32_t k, b = beat_samples(), lane = 0;
+    uint32_t k, b = beat_samples(), lane = 0, raw = held, nw;
     pfx_blk++;
+    pfx_qon &= held;                                    /* (JIANT) let go: at once; pressed: on the next 1/16 */
+    nw = held & ~pfx_qon;
+    if (nw) {
+        uint32_t s16 = b >= 4u ? b / 4u : 1u, pos = ms_clock, ph = pos % s16;   /* (the block's start: before fx.c adds it) */
+        if (!song.playing || !ph || s16 - ph < n)
+            pfx_qon |= nw;
+    }
+    held = pfx_qon;
     if (song.playing && b >= 4u) {                      /* the lane: record, or play */
         uint32_t s16 = b / 4u, st = (pfx_lph / s16) & 63u, half = pfx_lph % s16 >= s16 / 2u;
-        uint32_t w = pfx_rec_ok() && (held || pfx_clr) ? (held ? (uint32_t)__builtin_ctz(held) - PF_OCTD + 1u : 0u) : 16u;
+        uint32_t w = pfx_rec_ok() && (raw || pfx_clr) ? (raw ? (uint32_t)__builtin_ctz(raw) - PF_OCTD + 1u : 0u) : 16u;
         pfx_lph += n;
         if (w < 16u) {                                  /* recording, to the nearest step: a press in a step's second */
             if (!pfx_rh) {                              /* half starts at the next one */
@@ -120,7 +133,7 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
                 }
                 pfx_lane_put(st, w);
             }
-            if (held)
+            if (raw)
                 pfx_ltgt = pfx_tgt;
         } else {
             if (pfx_rh && st == pfx_rst && !half && st != pfx_rs0)
@@ -132,7 +145,7 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
     } else if (pfx_clr) {
         memset(pfx_lane, 0, sizeof pfx_lane);
     }
-    if (!held && !pfx_any && !lane)
+    if (!held && !pfx_any && !lane && !nw)
         return;
     pfx_any = 0;
     for (k = 0; k < NTRK; k++) {
@@ -140,11 +153,11 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
         int drum = t->engine == ENGI_DRUM;
         uint32_t on = (!pfx_tgt || (pfx_tgt == 1u) == !drum ? held : 0u) | (!pfx_ltgt || (pfx_ltgt == 1u) == !drum ? lane : 0u);
         uint32_t old = t->pfx, f, rep, per = 0;
-        rep = on & (PF_BIT(PF_S32) | PF_BIT(PF_S16T) | PF_BIT(PF_S16) | PF_BIT(PF_ARP));
-        per = (rep & PF_BIT(PF_S32)) ? b / 8u : (rep & PF_BIT(PF_S16T)) ? b / 6u : b / 4u;
+        rep = on & (PF_BIT(PF_S32) | PF_BIT(PF_S16) | PF_BIT(PF_ARP));
+        per = (rep & PF_BIT(PF_S32)) ? b / 8u : b / 4u;
         t->pfx_pit = (int16_t)(((on >> PF_OCTU) & 1u) * 192 - ((on >> PF_OCTD) & 1u) * 192);
         f = ((on >> PF_RND) & 1u ? PFX_RND : 0u) | ((on >> PF_HALF) & 1u ? PFX_HALF : 0u) | (rep ? PFX_REP : 0u) |
-            (on & (PF_BIT(PF_DSHT) | PF_BIT(PF_DLNG)) ? PFX_DEC : 0u);
+            (on & (PF_BIT(PF_DSHT) | PF_BIT(PF_DLNG)) ? PFX_DEC : 0u) | ((on >> PF_ATK) & 1u && !drum ? PFX_ATK : 0u);
         if ((f & PFX_HALF) && !(old & PFX_HALF) && song.playing) {   /* 1/2 TEMPO: where it was */
             t->pfx_idx0 = t->seq_idx;
             t->pfx_pos0 = t->seq_pos;
@@ -181,6 +194,10 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
                 t->p[c] = (int16_t)(sh ? t->p[c] / 3 : t->p[c] + (127 - t->p[c]) * 2 / 3);
             }
         }
+        if (f & PFX_ATK) {                              /* (JIANT) ATK+: the attack slow */
+            pfx_keep[k][2] = t->p[P_ATK];
+            t->p[P_ATK] = (int16_t)(t->p[P_ATK] + (127 - t->p[P_ATK]) * 2 / 3);
+        }
         if (f || t->pfx_rs || t->pfx_pit)
             pfx_any = 1;
     }
@@ -196,4 +213,7 @@ static __attribute__((noinline)) void pfx_end(void)
             trk[k].p[drum ? P_E3 : P_DEC] = pfx_keep[k][0];
             trk[k].p[drum ? P_E3 : P_REL] = pfx_keep[k][1];
         }
+    for (k = 0; k < NTRK; k++)
+        if (trk[k].pfx & PFX_ATK)
+            trk[k].p[P_ATK] = pfx_keep[k][2];
 }

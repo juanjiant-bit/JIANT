@@ -655,6 +655,27 @@ static void test_jiant_fx(void)
     for (k = 1; k < 5u; k++)
         ok &= h[k] != h[0] && h[k] != h[k - 1u];
     check("DIST TYPE: SOFT HARD FOLD CRUSH RECT each sound their own (SOFT, the old drive: the goldens)", ok);
+    {   /* their levels: each within 6 dB of SOFT at the same drive (CRUSH was 12 dB down) */
+        double rms[5];
+        for (k = 0; k < 5u; k++) {
+            uint32_t b, i;
+            double e = 0;
+            fresh(0, 0);
+            trk[0].p[P_DIST] = 90;
+            trk[0].p[P_DTYPE] = (int16_t)k;
+            trk_note_on(&trk[0], 48, 110);
+            for (b = 0; b < FS / 2u / CTL; b++) {
+                blocks(1);
+                for (i = 0; i < 2u * CTL; i++)
+                    e += (double)out_buf[i] * out_buf[i];
+            }
+            rms[k] = e;
+        }
+        ok = 1;
+        for (k = 1; k < 5u; k++)
+            ok &= rms[k] > rms[0] / 4.0 && rms[k] < rms[0] * 4.0;
+        check("DIST TYPE: HARD FOLD CRUSH RECT within 6 dB of SOFT (CRUSH levelled)", ok);
+    }
     fresh(0, 0);
     trk[0].p[P_DIST] = 90; trk[0].p[P_DTONE] = -60;
     h0 = phrase();

@@ -62,11 +62,15 @@ static uint32_t dx_tau(uint32_t d) { return ((dv_exp2(d * 9u * 4096u / 127u) >> 
 
 /* one block of lane L's hit v into y (n <= CTL): Q15, peaks near full scale. morph 0..127; tune16 1/16 semitones;
  * dofs / cofs / nofs move DECAY / COLOR / NOISE (-64..63). warp (DRUM's WARP, 0..127): every wave through the FM
- * loop, its index deeper, its modulator's ratio higher (inharmonic) and fed back on itself; 0: the patch as it is. The oscillator and the noise each run their own loop (the wave and the
+ * loop, its index deeper, its modulator's ratio higher (inharmonic) and fed back on itself; 0: the patch as it is.
+ * fm (DRUM's FM, JIANT, 0..127): every wave through FM with a harmonic modulator, its ratio in eight bands (x0.5 1 1.5
+ * 2 3 4 5 7: the timbre's family) and, inside a band, its index rising (subtle .. hard); with WARP the two add. The oscillator and the noise each run their own loop (the wave and the
  * filter picked once a block), skipped when the mix leaves them out; gains and the pitch step per sample */
 static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, int32_t morph, int32_t tune16,
-                                             int32_t dofs, int32_t cofs, int32_t nofs, int32_t warp, int32_t *y, uint32_t n)
+                                             int32_t dofs, int32_t cofs, int32_t nofs, int32_t warp, int32_t fm, int32_t *y,
+                                             uint32_t n)
 {
+    static const uint16_t FM_RATIO[8] = {128, 256, 384, 512, 768, 1024, 1280, 1792};   /* Q8 of the carrier */
     int32_t q[DXP_N], p16, depth, ea1, en1, ep1, og, ng, ga, dga, gn, dgn, kd, inc, dinc;
     uint32_t i, k, wave = L->mode & 3u, flt = (L->mode >> 2) & 3u, ta, tn, tp, kb, inc1;
     tsvf_t c;
@@ -114,6 +118,9 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
     if (og) {                                            /* the oscillator */
         uint32_t ph = v->ph;
         warp = clamp(warp, 0, 127);
+        fm = clamp(fm, 0, 127);
+        if (fm)
+            warp |= 0x100;                               /* (FM: the FM loop below, as WARP; the flag stripped there) */
         if (wave == DXW_SINE && q[DXP_COLOR] && !warp) {   /* drive x1 .. x2.5 into the soft clip */
             int32_t g = 4096 + q[DXP_COLOR] * 48;
             for (i = 0; i < n; i++, inc += dinc, ga += dga) {
@@ -134,9 +141,10 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
                 ph2 += ((uint32_t)inc >> 8) * ratio;
             }
             v->ph2 = ph2;
-        } else {                                         /* WARP: FM with feedback on every wave */
-            uint32_t ph2 = v->ph2, ratio = DX_RATIO[wave] + (uint32_t)warp * 70u, fb = (uint32_t)warp << 10;
-            int32_t idx = q[DXP_COLOR] * 3 + warp * 3, mo = v->mo;
+        } else {                                         /* WARP: FM with feedback on every wave; FM: harmonic */
+            uint32_t w = (uint32_t)warp & 127u;
+            uint32_t ph2 = v->ph2, ratio = (fm ? FM_RATIO[(uint32_t)fm >> 4] : DX_RATIO[wave]) + w * 70u, fb = w << 10;
+            int32_t idx = q[DXP_COLOR] * 3 + (int32_t)w * 3 + (fm ? (((fm & 15) + 4) * 24) : 0), mo = v->mo;
             for (i = 0; i < n; i++, inc += dinc, ga += dga) {
                 mo = sine_i(ph2 + (uint32_t)mo * fb);    /* (up to a turn of feedback; uint32: wraps as a phase) */
                 y[i] = mulq15(sine_i(ph + (uint32_t)(mo * idx) * 512u), ga >> 8);
