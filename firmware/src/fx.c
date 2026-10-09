@@ -143,8 +143,8 @@ static __attribute__((noinline)) void master_begin(void)
  * pumped up. The peak
  * limiter and the soft clip (master_out) after it catch what is left: quiet patches and CLIP's drive sit at one
  * loudness */
-#define LEV_T 52000                                     /* (the mix's scale: Q15 x 4) ~ -8 dBFS */
-#define LEV_GATE 1300
+#define LEV_T 16000                                     /* (the mix's scale: Q15 at MASTER full) ~ -6 dBFS: headroom */
+#define LEV_GATE 400                                    /* -38 dB */
 static int32_t lev_env, lev_g = 32768, lev_cur = 32768, lev_dg;   /* the gain now and its step a sample (master_out) */
 static __attribute__((noinline)) void lev_block(uint32_t n)
 {

@@ -2817,7 +2817,7 @@ static int test_edit_cycle(void)
 {
     static const char *const CYC_A[] = {"EDIT 1", "EDIT 2", "FILTER", "VOICE", "EDIT 1"};   /* (JIANT 0.5: ANALOG's FILTER) */
     static const char *const CYC_F[] = {"EDIT 1", "EDIT 2", "FILTER", "VOICE", "EDIT 1"};   /* (the part's FILTER) */
-    static const char *const CYC_D[] = {"EDIT 1", "EDIT 2", "OP1 ENV", "OP2 ENV", "OP3 ENV", "OP4 ENV",
+    static const char *const CYC_D[] = {"EDIT 1", "EDIT 2", "FILTER", "OP1 ENV", "OP2 ENV", "OP3 ENV", "OP4 ENV",
                                         "OP LEVEL", "VOICE", "EDIT 1"};
     int bad = 0, ok;
     uint32_t i;
@@ -2833,7 +2833,7 @@ static int test_edit_cycle(void)
     bad += check("EDIT cycle (ANALOG): EDIT 1 EDIT 2 FILTER VOICE EDIT 1", engine_cycle(CYC_A, NELEM(CYC_A)));
 #if FELUCCA_FM4
     set_engine_of(TSEL, 1);
-    bad += check("EDIT cycle (DIGITAL): EDIT 1 EDIT 2 OP1..OP4 ENV OP LEVEL VOICE EDIT 1",
+    bad += check("EDIT cycle (DIGITAL): EDIT 1 EDIT 2 FILTER OP1..OP4 ENV OP LEVEL VOICE EDIT 1",
                  engine_cycle(CYC_D, NELEM(CYC_D)));
 #else
     set_engine_of(TSEL, ENGI_DIGITAL);
