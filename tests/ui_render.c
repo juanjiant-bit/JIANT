@@ -1033,7 +1033,7 @@ static void setup(int s)
     case S_EDIT_ACTIVE: eng(E_FM); apply_preset_to(TSEL, 2); favorite_set(E_FM, 2, 1); go_home(); ui.layer = LAYER_EDIT;
         ui.hot_col = 0; ui.hot_t = 30; break;
     case S_EDIT_DRUM: eng(ENGI_DRUM); go_home(); dx_mute_set(DXM_LANE(2) | DXM_LANE(6)); ui.layer = LAYER_EDIT; break;
-    case S_EDIT_USER: song.playing = 0; eng(6); up_store(6, "MY LONG TRIO NAME"); up_load(6); favorite_set(NENGINES, 6, 1);
+    case S_EDIT_USER: song.playing = 0; eng(7); up_store(6, "MY LONG WHEEL NAME"); up_load(6); favorite_set(NENGINES, 6, 1);
         go_home(); ui.layer = LAYER_EDIT; break;
     case S_LAYER_HINT: go_page(GR_TRK); ui.msg_t = 0; layer_tap(LAYER_GLO); break;
     /* #83: locked open by a double tap (the lock after the header's name): EDIT and FX */

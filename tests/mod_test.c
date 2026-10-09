@@ -12,7 +12,7 @@
  *    channel the selected track).
  * 4. cost: instructions per sample (kernel-counted) of a heavy GRAIN preset (PHYS, retired in TONIC, was here) and of a 4-part mix with every
  *    slot of every part active, against the same with the matrix off; fails above MOD_COST_MAX.
- * 5. demos: LFO -> CUT, VEL -> AMP, MODW -> VIB, LFO -> TRIO PW, AT -> WHEEL DRV as WAVs in DEMO_DIR. */
+ * 5. demos: LFO -> CUT, VEL -> AMP, MODW -> VIB, LFO -> ANALOG SYNC DTN, AT -> WHEEL DRV as WAVs in DEMO_DIR. */
 #define main hostsim_main
 #include "hostsim.c"
 #undef main
@@ -312,25 +312,25 @@ static void test_math(void)
     check("every per-block value restored", t->p[P_DIST] == 64 && t->p[P_CHOR] == 64 && t->p[P_LRATE] == 100 && t->p[P_LD_PIT] == 0);
 
     /* an engine parameter: its descriptor's range */
-    e_trio = eng_by_name("TRIO");
-    k_pw = edit_by_label(e_trio, "PW", 7);
+    e_trio = eng_by_name("WHEEL");                 /* (JIANT 0.4: TRIO folded into ANALOG; WHEEL's DRV 0..127, SUB -8..8) */
+    k_pw = edit_by_label(e_trio, "DRV", 6);
     fresh(e_trio, 0);
     lfo_at(t, 32767);
     t->p[P_E0 + k_pw] = 100;
     slot(t, 0, MS_LFO, MD_E1 + (int32_t)k_pw, 40);
     mod_begin(t);
-    check("LFO -> TRIO PW: clamped to its range (0..127)", t->p[P_E0 + k_pw] == 127);
+    check("LFO -> WHEEL DRV: clamped to its range (0..127)", t->p[P_E0 + k_pw] == 127);
     mod_end(t);
-    t->p[P_E0 + 1] = 0;                            /* INT2: -24..24 */
+    t->p[P_E0 + 1] = 0;                            /* SUB: -8..8 */
     slot(t, 0, MS_MODW, MD_E1 + 1, -32);
     t->mw = 127;
     mod_begin(t);
-    check("MODW -> E2 -32: half its range down (TRIO INT2 -24..24: -24)",
+    check("MODW -> E2 -32: half its range down (WHEEL SUB -8..8: -8)",
           t->p[P_E0 + 1] == (((((127 * 258) * -32) >> 6) * (ENGINES[e_trio]->edit[1].max - ENGINES[e_trio]->edit[1].min)) >> 15) &&
-          t->p[P_E0 + 1] < -10);
+          t->p[P_E0 + 1] < -3);
     mod_end(t);
     check("the engine parameters restored", t->p[P_E0 + k_pw] == 100 && t->p[P_E0 + 1] == 0);
-    check("DST names: E1..E8 by the engine's labels", str_eq(mod_dst_name(t, MD_E1 + (int32_t)k_pw), "PW") &&
+    check("DST names: E1..E8 by the engine's labels", str_eq(mod_dst_name(t, MD_E1 + (int32_t)k_pw), "DRV") &&
                                                           str_eq(mod_dst_name(t, MD_CUT), "CUT"));
 
     /* per-voice sources on a per-block destination: the latest note-on */
@@ -578,15 +578,15 @@ static int demos(const char *dir)
         fclose(f);
         n++;
     }
-    /* LFO -> TRIO PW: TRIO ARP LEAD's pulse width swept by a triangle LFO */
-    e = eng_by_name("TRIO");
-    fresh(e, preset_by_name(e, "ARP LEAD"));
+    /* LFO -> ANALOG DTN: SYNC LEAD's sync ratio swept by a triangle LFO (TRIO's sync, in ANALOG since 0.4) */
+    e = eng_by_name("ANALOG");
+    fresh(e, preset_by_name(e, "SYNC LEAD"));
     t->p[P_LRATE] = 45;
     t->p[P_LWAVE] = 1;
     t->p[P_AMODE] = 0;
     t->p[P_VOICE] = V_POLY;
-    slot(t, 0, MS_LFO, MD_E1 + (int32_t)edit_by_label(e, "PW", 7), 40);
-    if ((f = demo_open(dir, "lfo_trio_pw", 5u * FS / CTL * CTL))) {
+    slot(t, 0, MS_LFO, MD_E1 + (int32_t)edit_by_label(e, "DTN", 1), 40);
+    if ((f = demo_open(dir, "lfo_sync_dtn", 5u * FS / CTL * CTL))) {
         trk_note_on(t, 57, 100);
         demo_blocks(f, 4u * FS / CTL);
         trk_note_off(t, 57);
@@ -616,7 +616,7 @@ static int demos(const char *dir)
         fclose(f);
         n++;
     }
-    printf("mod: %u demos in %s (lfo_cut, vel_amp, modw_vib, lfo_trio_pw, at_wheel_drv)\n", n, dir);
+    printf("mod: %u demos in %s (lfo_cut, vel_amp, modw_vib, lfo_sync_dtn, at_wheel_drv)\n", n, dir);
     return n == 5u;
 }
 
@@ -672,6 +672,121 @@ static uint32_t env_rises(int16_t loop, int *ended)
         *ended &= !trk[0].v[i].active;
     return rises;
 }
+/* (JIANT 0.4) LOFI BYTE: each of the 32 bytebeat formulas sounds, under full scale, unlike its neighbour; VAR moves
+ * the ones that read it; t follows the note (an octave up: about twice the zero crossings) */
+static void test_byte(void)
+{
+    static int32_t prev[FS / 8];
+    uint32_t f, b, i, sound = 0, differ = 0, over = 0, var = 0;
+    for (f = 0; f < 32u; f++) {
+        double e = 0, d = 0;
+        int32_t pk = 0;
+        fresh(3, 0);
+        trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 5; trk[0].p[P_E2] = (int16_t)(f * 4u); trk[0].p[P_E3] = 0;
+        trk[0].p[P_E7] = 127; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+        trk_note_on(&trk[0], 60, 110);
+        for (b = 0; b < FS / 8u / CTL; b++) {
+            blocks(1);
+            for (i = 0; i < CTL; i++) {
+                int32_t x = out_buf[2u * i];
+                e += (double)x * x;
+                d += fabs((double)x - prev[b * CTL + i]);
+                prev[b * CTL + i] = x;
+                pk = abs(x) > pk ? abs(x) : pk;
+            }
+        }
+        sound += e / (FS / 8u) > 300.0 * 300.0;
+        differ += f == 0u || d / (FS / 8u) > 100.0;
+        over += pk >= 32767;
+        if (f >= 16u) {                            /* the VAR ones: VAR 100 another sound */
+            double dv = 0;
+            fresh(3, 0);
+            trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 5; trk[0].p[P_E2] = (int16_t)(f * 4u); trk[0].p[P_E3] = 100;
+            trk[0].p[P_E7] = 127; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+            trk_note_on(&trk[0], 60, 110);
+            for (b = 0; b < FS / 8u / CTL; b++) {
+                blocks(1);
+                for (i = 0; i < CTL; i++)
+                    dv += fabs((double)out_buf[2u * i] - prev[b * CTL + i]);
+            }
+            var += dv / (FS / 8u) > 100.0;
+        }
+    }
+    printf("mod:   (BYTE: %u of 32 sound, %u differ from the one before, %u clip; VAR moves %u of 16)\n", sound, differ, over, var);
+    check("LOFI BYTE: the 32 bytebeat formulas sound (30+), each its own, none clips; VAR moves the VAR ones (14+)",
+          sound >= 30u && differ == 32u && !over && var >= 14u);
+}
+
+/* (JIANT 0.4) ANALOG SYNC RING SAW3 (TRIO folded in): each sounds, each its own, none clips; SYNC's DTN moves it */
+static double an_render(int16_t wave, int16_t dtn, int32_t *buf, uint32_t n, int32_t *pk)
+{
+    uint32_t b, i;
+    double e = 0;
+    fresh(0, 0);
+    trk[0].p[P_E0] = wave; trk[0].p[P_E1] = dtn; trk[0].p[P_E2] = 90; trk[0].p[P_E4] = 110; trk[0].p[P_E5] = 20;
+    trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+    trk_note_on(&trk[0], 48, 110);
+    *pk = 0;
+    for (b = 0; b < n / CTL; b++) {
+        blocks(1);
+        for (i = 0; i < CTL; i++) {
+            int32_t x = out_buf[2u * i];
+            buf[b * CTL + i] = x;
+            e += (double)x * x;
+            *pk = abs(x) > *pk ? abs(x) : *pk;
+        }
+    }
+    return sqrt(e / n);
+}
+static void test_analog_ext(void)
+{
+    static int32_t a0[FS / 4], a1[FS / 4], a2[FS / 4], a3[FS / 4];
+    int32_t p0, p1, p2, p3;
+    double r0 = an_render(0, 10, a0, FS / 4u, &p0), r1 = an_render(5, 20, a1, FS / 4u, &p1);
+    double r2 = an_render(6, 20, a2, FS / 4u, &p2), r3 = an_render(7, 12, a3, FS / 4u, &p3), d01 = 0, d12 = 0, d13 = 0, ds = 0;
+    uint32_t i;
+    for (i = 0; i < FS / 4u; i++) {
+        d01 += fabs((double)a1[i] - a0[i]);
+        d12 += fabs((double)a2[i] - a1[i]);
+        d13 += fabs((double)a3[i] - a1[i]);
+    }
+    an_render(5, 60, a0, FS / 4u, &p0);
+    for (i = 0; i < FS / 4u; i++)
+        ds += fabs((double)a0[i] - a1[i]);
+    printf("mod:   (ANALOG RMS: SAW %.0f, SYNC %.0f, RING %.0f, SAW3 %.0f)\n", r0, r1, r2, r3);
+    check("ANALOG SYNC RING SAW3: each sounds, each its own, none clips; SYNC's DTN moves it",
+          r1 > 1000 && r2 > 500 && r3 > 1000 && d01 > 1e6 && d12 > 1e6 && d13 > 1e6 && ds > 1e6 &&
+          p1 < 32767 && p2 < 32767 && p3 < 32767);
+}
+
+/* (JIANT 0.4) PHASE FB: 0 the sound as before (bit for bit), more feedback further from it, bounded */
+static void test_phase_fb(void)
+{
+    static int32_t a[3][FS / 4];
+    int32_t pk = 0;
+    uint32_t k, b, i;
+    double d1 = 0, d2 = 0;
+    for (k = 0; k < 3u; k++) {
+        fresh(2, 0);
+        trk[0].p[P_E7] = (int16_t)(k == 0u ? 0 : k == 1u ? 30 : 127);
+        trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+        trk_note_on(&trk[0], 48, 110);
+        for (b = 0; b < FS / 4u / CTL; b++) {
+            blocks(1);
+            for (i = 0; i < CTL; i++) {
+                a[k][b * CTL + i] = out_buf[2u * i];
+                pk = abs(out_buf[2u * i]) > pk ? abs(out_buf[2u * i]) : pk;
+            }
+        }
+    }
+    for (i = 0; i < FS / 4u; i++) {
+        d1 += fabs((double)a[1][i] - a[0][i]);
+        d2 += fabs((double)a[2][i] - a[0][i]);
+    }
+    printf("mod:   (PHASE FB: difference from FB 0: 30 %.3g, 127 %.3g)\n", d1, d2);
+    check("PHASE FB: more feedback, further from the plain wave; under full scale", d2 > d1 * 1.5 && d1 > 1e5 && pk < 32767);
+}
+
 static void test_env_loop(void)
 {
     int e0, e1;
@@ -778,6 +893,9 @@ int main(int argc, char **argv)
     test_cost();
     test_jiant_fx();
     test_env_loop();
+    test_byte();
+    test_analog_ext();
+    test_phase_fb();
     if (argc > 1)
         check("demos written", demos(argv[1]));
     printf("%s\n", bad ? "MOD MATRIX TEST FAILED" : "mod matrix test passed");

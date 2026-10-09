@@ -62,7 +62,7 @@ jobs:
           JIELI_TOOLCHAIN: /home/runner/.jieli/toolchain
         run: |
           python3 tools/build.py
-          V=$(sed -n 's/^#define FELUCCA_VERSION "\(.*\)"/\1/p' firmware/src/felucca.c | head -1)
+          V=$(sed -n 's/^#define FELUCCA_VERSION "\([^"]*\)".*/\1/p' firmware/src/felucca.c | head -1)
           python3 web/make_site.py build/felucca.fwsc "${V:-dev}-${GITHUB_SHA::7}" build/site
           cp -r build/site/webapp build/site/firmware build/emu/
       - uses: actions/upload-pages-artifact@v3

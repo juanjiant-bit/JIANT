@@ -5,7 +5,10 @@
  * author's own phase-distortion core: a -cos table read through a bent phase whose
  * bend is DCW. WAVE2 alternates with WAVE every other cycle. A second
  * line (DTN) can be mixed or ring-modulated; SUB adds a sine an octave down.
- * Envelopes are Felucca's own (ADSR, ENV -> DCW). */
+ * Envelopes are Felucca's own (ADSR, ENV -> DCW).
+ * (JIANT 0.4) FB: phase feedback, line 1's output (the mean of its last two samples, as a DX operator's) bends its
+ * own phase further, up to a quarter cycle: from a harder edge through growl to noise; the ENV / LFO / matrix move it
+ * as E8. */
 static const char *const N_PD_WAVE[] = {"SAW", "SQR", "PLS", "DSIN", "SPLS", "RSAW", "RTRI", "RTRP"};
 static const char *const N_PD_WAVE2[] = {"-", "SAW", "SQR", "PLS", "DSIN", "SPLS", "RSAW", "RTRI", "RTRP"};
 static const char *const N_PD_LINE[] = {"MIX", "RING"};
@@ -121,6 +124,7 @@ static void phase_note_on(track_t *t, voice_t *v)
     v->ph[2] = 0;
     v->s[0] = 0;                 /* WAVE / WAVE2 toggle, line 1 */
     v->s[1] = 0;                 /* line 2 */
+    v->s[2] = v->s[3] = 0;       /* (FB) line 1's last two samples */
 }
 
 static void phase_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
@@ -134,6 +138,7 @@ static void phase_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
                                                                  * compiler makes the loop slower with it) */
     uint32_t ph0 = v->ph[0], ph1 = v->ph[1], ph2 = v->ph[2];
     int32_t tg0 = v->s[0], tg1 = v->s[1];                    /* WAVE / WAVE2 toggles */
+    int32_t fb = p[P_E7], f1 = v->s[2], f2 = v->s[3];        /* (JIANT 0.4) FB and its two samples */
     pd_t b1, b2;
     depth = clamp(depth + (m->shape - (64 << 8)), 0, 127 << 8);
     dcw = (uint32_t)depth * 65535u / (127u << 8);
@@ -145,7 +150,9 @@ static void phase_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
     for (i = 0; i < n; i++) {
         uint32_t old = ph0;
         int32_t s;
-        s = pd_wave(tg0 ? &b2 : &b1, ph0 >> 16);
+        s = pd_wave(tg0 ? &b2 : &b1, ((ph0 >> 16) + (uint32_t)((((f1 + f2) >> 1) * fb) >> 8)) & 0xFFFFu);
+        f2 = f1;
+        f1 = s;
         ph0 += inc;
         if (ph0 < old)
             tg0 ^= 1;
@@ -168,6 +175,8 @@ static void phase_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
     v->ph[2] = ph2;
     v->s[0] = tg0;
     v->s[1] = tg1;
+    v->s[2] = f1;
+    v->s[3] = f2;
 }
 
 static const preset_t PHASE_PRESETS[] = {
@@ -178,6 +187,9 @@ static const preset_t PHASE_PRESETS[] = {
     {"RESO", {5, 0, 60, 60, 0, 0, 0, 0}, {0, 70, 30, 60}, 0, 0, FX(0, 0, 40, 40), PAT(1)},
     {"BELL", {6, 0, 80, 50, 0, 0, 0, 0}, {0, 95, 0, 90}, 0, 0, FX(0, 0, 30, 70), PAT(7)},
     {"WIRE", {4, 7, 70, 40, 7, 0, 0, 0}, {10, 80, 80, 60}, 0, 0, FX(15, 30, 30, 40), PAT(4)},
+    /* (JIANT 0.4) FB: the phase fed back */
+    {"GROWL", {0, 0, 70, 80, 0, 0, 40, 55}, {2, 70, 90, 40}, 0, 1, FX(20, 10, 30, 30), PAT(4)},
+    {"FB BASS", {1, 0, 45, 60, 0, 0, 70, 35}, {0, 60, 60, 25}, 0, 1, FX(10, 0, 10, 10), PAT(2)},
 };
 
 static const engine_t ENG_PHASE = {
@@ -191,7 +203,7 @@ static const engine_t ENG_PHASE = {
         {"DTN", F_INT, 0, 127, 0, 0, "ct"},
         {"LINE", F_ENUM, 0, 1, 0, N_PD_LINE, 0},
         {"SUB", F_PCT, 0, 127, 0, 0, 0},
-        {"-", F_INT, 0, 0, 0, 0, 0},
+        {"FB", F_PCT, 0, 127, 0, 0, 0},
     },
     .presets = PHASE_PRESETS,
     .npresets = NELEM(PHASE_PRESETS),

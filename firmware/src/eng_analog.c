@@ -1,8 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* ANALOG: two band-limited oscillators (saw / square / tri / sine / PWM),
- * noise, drive and a trapezoidal low-pass. */
-static const char *const N_ANALOG_WAVE[] = {"SAW", "SQR", "TRI", "SIN", "PWM"};
+ * noise, drive and a trapezoidal low-pass. (JIANT 0.4, TRIO folded in: TRIO's sounds play here, project.c) three more
+ * WAVEs in a loop of their own (analog_ext): SYNC (osc 2's saw restarted by osc 1, DTN its ratio 1 .. 8.9: the sync
+ * lead's sweep), RING (osc 1's saw times osc 2's sine at that ratio: bells, metal), SAW3 (three saws, osc 2 DTN cents up,
+ * osc 3 down: TRIO's fat stack). MIX: osc 1 against the other(s) as before. */
+static const char *const N_ANALOG_WAVE[] = {"SAW", "SQR", "TRI", "SIN", "PWM", "SYNC", "RING", "SAW3"};
+enum { AW_SYNC = 5, AW_RING, AW_SAW3 };
 
 static void analog_note_on(track_t *t, voice_t *v)
 {
@@ -13,9 +17,56 @@ static void analog_note_on(track_t *t, voice_t *v)
         v->s[2] = 0x1234567 + (int32_t)v->age;        /* noise state */
 }
 
+/* SYNC RING SAW3 (see the top): a render of their own (the other WAVEs' loop untouched), the same noise, drive and
+ * filter */
+static __attribute__((noinline)) void analog_ext(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
+{
+    const int16_t *p = t->p;
+    uint32_t wave = (uint32_t)p[P_E0], i, inc1 = m->inc, ph0 = v->ph[0], ph1 = v->ph[1], ph2 = v->ph[2], r, inc2, inc3;
+    int32_t det = p[P_E1], m2 = p[P_E2] * 258, m1 = 32767 - m2, nz = p[P_E3] * 200, drv = p[P_E6];
+    int32_t drive = 32768 + drv * 512, cut = (p[P_E4] << 8) + m->cutoff + (p[P_E7] * (v->pitch16 - 60 * 16) >> 4);
+    int32_t ic1 = v->s[0], ic2 = v->s[1], nst = v->s[2];
+    tsvf_t flt;
+    tsvf_coef(&flt, cut, p[P_E5]);
+    r = 16u + (uint32_t)det;                            /* SYNC / RING: osc 2 at r / 16 of osc 1 (1 .. 8.9) */
+    inc2 = wave == AW_SAW3 ? cents_inc(m->pitch16, det, 0) : (inc1 >> 4) * r;
+    inc3 = wave == AW_SAW3 ? cents_inc(m->pitch16, -det, 0) : 0u;
+    for (i = 0; i < n; i++) {
+        int32_t a = osc_saw(ph0, inc1), b, s;
+        if (wave == AW_SAW3) {
+            b = (osc_saw(ph1, inc2) + osc_saw(ph2, inc3)) >> 1;
+            ph2 += inc3;
+        } else if (wave == AW_SYNC) {
+            b = osc_saw(ph1, inc2);
+        } else {
+            b = ((a >> 1) * (osc_sine(ph1) >> 1)) >> 13;   /* RING (32 bits) */
+        }
+        ph1 += inc2;
+        if (wave == AW_SYNC && ph0 + inc1 < ph0)        /* osc 1 starts a cycle: osc 2 with it */
+            ph1 = ((ph0 + inc1) >> 4) * r;              /* (the new cycle's fraction, at osc 2's rate) */
+        ph0 += inc1;
+        s = mulq15(a, m1) + mulq15(b, m2);
+        if (nz)
+            s += mulq15((int32_t)(noise32(&nst) >> 17) - 16384, nz);
+        if (drv)
+            s = softclip(((s >> 2) * (drive >> 2)) >> 11);
+        out[i] += voice_amp(soft_knee(tsvf_lp(&flt, s >> 1, &ic1, &ic2), 16000) << 1, m, i) << 1;
+    }
+    v->ph[0] = ph0;
+    v->ph[1] = ph1;
+    v->ph[2] = ph2;
+    v->s[0] = ic1;
+    v->s[1] = ic2;
+    v->s[2] = nst;
+}
+
 static void analog_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
     const int16_t *p = t->p;
+    if ((uint32_t)p[P_E0] >= AW_SYNC) {                 /* (JIANT 0.4) SYNC RING SAW3 */
+        analog_ext(t, v, out, n, m);
+        return;
+    }
     uint32_t wave = (uint32_t)p[P_E0], i;
     int32_t det = p[P_E1], mix = p[P_E2], noise = p[P_E3];
     int32_t cut = (p[P_E4] << 8) + m->cutoff + (p[P_E7] * (v->pitch16 - 60 * 16) >> 4);
@@ -91,13 +142,17 @@ static const preset_t ANALOG_PRESETS[] = {
     {"BRASS", {0, 10, 64, 0, 45, 20, 10, 64}, {35, 70, 90, 45}, 40, 0, FX(0, 20, 20, 40), PAT(6)},
     {"WIND", {0, 0, 0, 90, 30, 90, 0, 0}, {60, 90, 60, 80}, 50, 0, FX(0, 30, 30, 70), PAT(5)},
     {"STRINGS", {0, 25, 64, 0, 70, 10, 0, 32}, {70, 90, 115, 90}, 5, 0, FX(0, 60, 20, 70), PAT(5)},
+    /* (JIANT 0.4: TRIO's, folded in) SYNC (ratio 1 + 11/16), RING (1 + 18/16), SAW3 (9 ct a side) */
+    {"SYNC LEAD", {5, 11, 90, 0, 82, 30, 10, 64}, {2, 70, 100, 40}, 18, 1, FX(0, 10, 40, 25), PAT(4)},
+    {"RING BELL", {6, 18, 100, 0, 110, 20, 0, 32}, {0, 92, 0, 80}, 0, 0, FX(0, 20, 35, 55), PAT(7)},
+    {"FAT BASS", {7, 9, 64, 0, 62, 45, 20, 64}, {0, 62, 60, 25}, 40, 1, FX(10, 0, 10, 10), PAT(2)},
 };
 
 static const engine_t ENG_ANALOG = {
     .name = "ANALOG",
     .page_title = {"OSC", "FLT"},
     .edit = {
-        {"WAVE", F_ENUM, 0, 4, 0, N_ANALOG_WAVE, 0},
+        {"WAVE", F_ENUM, 0, 7, 0, N_ANALOG_WAVE, 0},
         {"DTN", F_INT, 0, 127, 10, 0, "ct"},
         {"MIX", F_PCT, 0, 127, 64, 0, 0},
         {"NOIS", F_PCT, 0, 127, 0, 0, 0},

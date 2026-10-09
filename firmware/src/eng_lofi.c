@@ -9,10 +9,10 @@
  * ADSR curve (lofi_amp), the triangle becomes a 32-step 4-bit staircase, the pulse
  * duties are 12.5 / 25 / 50 / 75 %; CRSH then sets the envelope (shown as "DCY"). */
 static const char *const N_CHIP[] = {"4BIT", "4B/2", "8BIT", "1BIT", "STEP"};
-static const char *const N_RWAVE[] = {"PLS", "TRI", "SAW", "NOIS", "WRAM"};
+static const char *const N_RWAVE[] = {"PLS", "TRI", "SAW", "NOIS", "WRAM", "BYTE"};
 static const char *const N_RARP[] = {"OFF", "OCT", "MAJ", "MIN"};
 enum { CHIP_4BIT, CHIP_4B2, CHIP_8BIT, CHIP_1BIT, CHIP_STEP };
-enum { RW_PLS, RW_TRI, RW_SAW, RW_NOIS, RW_WRAM };
+enum { RW_PLS, RW_TRI, RW_SAW, RW_NOIS, RW_WRAM, RW_BYTE };
 
 /* wave RAM: 16 tables x 32 samples x 4 bits, two samples a byte (high nibble first);
  * our own shapes, from simple formulas (squares, sine, triangle, saws, harmonic sums,
@@ -47,8 +47,87 @@ static const char *const N_DCY[] = {"CONST", "D0", "D1", "D2", "D3", "D4", "D5",
 static const param_desc_t LOFI_WAVNUM = {"WAV#", F_INT, 0, 127, 64, N_WRAM, 0};   /* = edit[2] but the names */
 static const param_desc_t LOFI_DCY = {"DCY", F_INT, 0, 127, 0, N_DCY, 0};        /* = edit[3] but the names */
 
+/* (JIANT 0.4) WAVE = BYTE: bytebeat, an 8-bit formula of the time t played as the wave (after viznut's 2011
+ * one-liners: the music is in the formula). DUTY picks one of 32 (ALGO, DUTY / 4), CRSH is the formulas' variable
+ * a (VAR: 1 .. 16); t runs with the note played (C4: ~8 kHz, the classic rate; an octave up twice as fast), restarts
+ * at each note-on; the hold (4B/2), the bits (CHIP), TONE and the rest as for the other waves. Our own picks and
+ * variations; each a few operations a sample */
+static const char *const N_BYTE[] = {"B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09", "B10", "B11",
+                                     "B12", "B13", "B14", "B15", "B16", "B17", "B18", "B19", "B20", "B21", "B22",
+                                     "B23", "B24", "B25", "B26", "B27", "B28", "B29", "B30", "B31", "B32", 0};
+static const param_desc_t LOFI_ALGO = {"ALGO", F_INT, 0, 127, 64, N_BYTE, 0};    /* = edit[2] (BYTE) */
+static const param_desc_t LOFI_VAR = {"VAR", F_PCT, 0, 127, 0, 0, 0};            /* = edit[3] (BYTE) */
+static __attribute__((noinline)) uint32_t lofi_byte(uint32_t f, uint32_t t, uint32_t a)
+{
+    switch (f & 31u) {
+    case 0: return t * (42u & t >> 10);
+    case 1: return t * ((t >> 12 | t >> 8) & 63u & t >> 4);
+    case 2: return t * (t >> 5 | t >> 8) >> (t >> 16 & 7u);
+    case 3: return t * (t >> 11 & t >> 8 & 123u & t >> 3);
+    case 4: return (t >> 6 | t | t >> (t >> 16 & 15u)) * 10u + (t >> 11 & 7u);
+    case 5: return (t * 5u & t >> 7) | (t * 3u & t * 4u >> 10);
+    case 6: return (t * 9u & t >> 4) | (t * 5u & t >> 7) | (t * 3u & t >> 10);
+    case 7: return (t * (t >> 9 | t >> 13) & 16u) * 15u;
+    case 8: return t & t >> 8;
+    case 9: return (t >> 7 | t | t >> 6) * 10u + 4u * ((t & t >> 13) | t >> 6);
+    case 10: return (t * (0xCA98u >> (t >> 9 & 14u) & 15u)) | t >> 8;
+    case 11: return (t * (t >> 8 | t >> 9) & 46u & t >> 8) ^ ((t & t >> 13) | t >> 6);
+    case 12: return (t * 3u & t >> 8) | (t >> 4 & t * 7u);
+    case 13: return t * (t >> (t >> 9 & 7u) & 63u & t >> 4);
+    case 14: return (t >> 4) * (13u & 0x8898A989u >> (t >> 11 & 30u));
+    case 15: return t * ((t >> 3 | t >> 9) & 82u & t >> 9);
+    case 16: return t * (a & t >> 10);                                  /* (a: VAR) */
+    case 17: return t * ((t >> (a & 15u) | t >> 8) & 63u & t >> 4);
+    case 18: return (t * a & t >> 7) | (t * 3u & t >> 10);
+    case 19: return (t >> a | t) * (t >> 9 & 7u);
+    case 20: return t * (t >> 8 & a) ^ t >> 4;
+    case 21: return (t * a & t >> 8) * (t >> 12 & 3u);
+    case 22: return t * (0x9AD5u >> (t >> (8u + (a & 3u)) & 14u) & 15u);
+    case 23: return (t ^ t >> a) * (t >> 10 & 5u);
+    case 24: return t >> 2 & (t * a >> 6 | t >> 9);
+    case 25: return (t | t >> a | t >> 7) * (t >> 13 & 7u);
+    case 26: return t * ((t >> 11 & 3u) + a) & t >> 6;
+    case 27: return (t * (a | 1u) % (257u - (t >> 10 & 127u))) & 255u;
+    case 28: return t * (t >> 10 & 7u & a) | t >> 5;
+    case 29: return (t >> 5 & t >> 7) * a + (t >> 9 & 32u);
+    case 30: return t * (t >> 12 & a ? 3u : 2u) & t >> 6;
+    default: return (t * a >> 4 | t >> 3) ^ (t >> 7 & t >> 11);
+    }
+}
+/* BYTE's samples (lofi_render's set-up done: inc the note's, the hold, the bits): t in v->s[2], its fraction (Q24) in
+ * v->ph[0] */
+static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, int32_t *out, uint32_t n,
+                                                      const vmod_t *m, uint32_t inc, int32_t hold, int32_t bits, int32_t lpk)
+{
+    const int16_t *p = t->p;
+    uint32_t f = (uint32_t)p[P_E2] >> 2, a = 1u + ((uint32_t)p[P_E3] >> 3), tt = (uint32_t)v->s[2], tf = v->ph[0], i;
+    uint32_t ti = (inc >> 8) * 31u;                     /* t a sample, Q24: C4 (inc ~2.55e7) ~0.18 = 8 kHz */
+    int32_t held = v->s[0], cnt = v->s[1], lp = v->s[4];
+    for (i = 0; i < n; i++) {
+        if (--cnt <= 0) {
+            int32_t s = (int32_t)(lofi_byte(f, tt, a) & 255u) * 256 - 32640;
+            cnt = hold;
+            if (bits < 8)
+                s = ((s + (1 << (15 - bits))) >> (16 - bits)) << (16 - bits);
+            held = s;
+        }
+        tf += ti;
+        tt += tf >> 24;
+        tf &= 0xFFFFFFu;
+        lp += mulq15(held - lp, lpk);
+        out[i] += voice_amp(lp, m, i);
+    }
+    v->s[0] = held;
+    v->s[1] = cnt;
+    v->s[2] = (int32_t)tt;
+    v->s[4] = lp;
+    v->ph[0] = tf;
+}
+
 static const param_desc_t *lofi_desc(const track_t *t, uint32_t k)
 {
+    if (t->p[P_E1] == RW_BYTE && (k == 2u || k == 3u))
+        return k == 2u ? &LOFI_ALGO : &LOFI_VAR;
     if (k == 2u && t->p[P_E1] == RW_WRAM)
         return &LOFI_WAVNUM;
     if (k == 3u && t->p[P_E0] == CHIP_STEP)
@@ -66,7 +145,7 @@ static void lofi_note_on(track_t *t, voice_t *v)
 {
     v->s[0] = 0;                 /* held sample */
     v->s[1] = 0;                 /* hold counter */
-    v->s[2] = 0x7FFF;            /* LFSR */
+    v->s[2] = t->p[P_E1] == RW_BYTE ? 0 : 0x7FFF;   /* LFSR (BYTE: its time t, from 0) */
     v->s[3] = 0;                 /* sweep, 1/16 st */
     v->s[4] = 0;                 /* 1-pole lp state */
     v->s[5] = 0;                 /* arp counter */
@@ -149,6 +228,10 @@ static void lofi_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     v->ph[1] += 0x01000000u;
     if (lpk > 32767)
         lpk = 32767;
+    if (wave == RW_BYTE) {                              /* (JIANT 0.4) bytebeat */
+        lofi_byte_render(t, v, out, n, m, inc, 1 + (chip == 1u ? 1 : 0), bits, lpk);
+        return;
+    }
     for (i = 0; i < n; i++) {
         int32_t s;
         if (--cnt <= 0) {
@@ -211,6 +294,9 @@ static const preset_t LOFI_PRESETS[] = {
     {"WAVE LEAD", {0, 4, 92, 0, 0, 18, 0, 110}, {0, 70, 90, 30}, 0, 1, FX(0, 0, 40, 25), PAT(3)},
     /* STEP: 25 % pulse, DCY 34 = D7 (a 15-step decay over 0.5 s), REL ~54 ms of staircase after note-off */
     {"STEP LEAD", {4, 0, 40, 34, 0, 16, 0, 127}, {0, 64, 127, 55}, 0, 1, FX(0, 0, 40, 20), PAT(4)},
+    /* (JIANT 0.4) BYTE: 8 bits, ALGO B02 (DUTY 4 / 4 = 1); B17 (64 / 4 = 16) with VAR 40 (a = 6) */
+    {"BYTEBEAT", {2, 5, 4, 0, 0, 0, 0, 120}, {0, 80, 110, 40}, 0, 1, FX(0, 0, 25, 20), PAT(4)},
+    {"BYTE VAR", {2, 5, 64, 40, 0, 0, 0, 100}, {0, 80, 110, 50}, 0, 1, FX(0, 20, 30, 25), PAT(3)},
 };
 
 static const engine_t ENG_LOFI = {
@@ -218,7 +304,7 @@ static const engine_t ENG_LOFI = {
     .page_title = {"CHIP", "MOTN"},
     .edit = {
         {"CHIP", F_ENUM, 0, 4, 0, N_CHIP, 0},
-        {"WAVE", F_ENUM, 0, 4, 0, N_RWAVE, 0},
+        {"WAVE", F_ENUM, 0, 5, 0, N_RWAVE, 0},
         {"DUTY", F_INT, 0, 127, 64, 0, 0},              /* WRAM: the table, DUTY / 8 (lofi_desc) */
         {"CRSH", F_PCT, 0, 127, 0, 0, 0},               /* STEP: the envelope (lofi_desc) */
         {"SWP", F_PCT, 0, 127, 0, 0, 0},

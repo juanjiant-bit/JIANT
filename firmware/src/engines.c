@@ -7,7 +7,6 @@
 #include "eng_phase.c"
 #include "eng_lofi.c"
 #include "eng_formant.c"
-#include "eng_trio.c"
 #include "eng_wheel.c"
 #include "eng_drum.c"           /* DRUM: the 8-lane DRUM-X kit (drumx_voice.c) */
 #include "eng_noise.c"
@@ -54,7 +53,7 @@ static const engine_t *const ENGINES[NENGINES] = {
     &ENG_LOFI,                   /* 3 */
     &ENG_GONE,                   /* 4: reserved (SAMPLE, retired in JIANT) */
     &ENG_FORMANT,                /* 5 VOICE (eng_formant.c: "voice" is a sounding note in voice.c) */
-    &ENG_TRIO,                   /* 6 */
+    &ENG_GONE,                   /* 6: reserved (TRIO, folded into ANALOG in JIANT 0.4: core.h analog_from_trio) */
     &ENG_WHEEL,                  /* 7 */
     &ENG_GONE,                   /* 8: reserved (GRAIN, retired in JIANT) */
     &ENG_GONE,                   /* 9: reserved (PHYS, retired in TONIC: its sounds play as ANALOG) */
@@ -76,7 +75,7 @@ static const uint8_t ENGINE_ORDER[NENG_SHOWN] = {
 #if FELUCCA_FM4
     1,                           /* DIGITAL */
 #endif
-    2, 3, 5, 6, 7,               /* PHASE LOFI VOICE TRIO WHEEL */
+    2, 3, 5, 7,                  /* PHASE LOFI VOICE WHEEL */
     11,                          /* NOISE */
     10,                          /* DRUM */
 };
