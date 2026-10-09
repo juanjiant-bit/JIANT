@@ -14,6 +14,10 @@ computadora, con control directo de todo lo que suena. Es un fork de
 [Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 de Hügelton Instruments (GPL-3.0), y toma de
 [SLOOP](https://github.com/isod89/sloop-fm1) el sistema de canciones.
 
+**▶ [Probalo en el navegador](https://juanjiant-bit.github.io/JIANT/)**: el emulador corre el mismo código que el
+FM-1 (teclado de la compu o mouse, sonido incluido). Se actualiza con cada cambio que entra a `main`; usalo para
+revisar todo antes de flashear el aparato.
+
 > **Estado: en desarrollo (v0.1).** Compila y pasa todos los tests de Felucca y los propios, pero
 > **todavía no se probó en un FM-1 real**. No lo instales sin hacer antes un backup del flash.
 
@@ -46,7 +50,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 | Macros M1–M4 | Pendiente |
 | Punch-in FX MIDI y sus lanes | Pendiente |
 | Más modulación y mejores efectos | Pendiente |
-| Interfaz JIANT FM ([docs/TONIC-UI.md](docs/TONIC-UI.md)) | En diseño: concepto listo, falta decidir cómo entra en el flash |
+| Interfaz JIANT FM dibujada por código ([docs/TONIC-UI.md](docs/TONIC-UI.md)) | En curso: paleta JIANT y espécimen de DRUM-X |
 
 ### Qué cambió respecto de Felucca 1.1.5.1
 
@@ -104,7 +108,7 @@ FM1, FM2, FM3, DRUM y VOICE son ejemplos de engines: hay 4 tracks y cada uno pue
 | 02 TRACK · 03 FM ALGORITHM | EDIT del track; algoritmo y operadores de FM6 | ✅ función, ⏳ diseño |
 | 04 TRACK MAP | tracks y las 8 voces compartidas | ✅ función, ⏳ vista |
 | 05 SEQUENCER · 06 SEQ PERFORMANCE | grilla de batería de 8 lanes y 64 pasos; SEQ TOOLS, grabación y mutes en vivo | ✅ función, ⏳ diseño |
-| 07 DRUM-X · 08 DRUM MORPH | kit DRUM-X; un sonido con sus lados A / B y el MORPH | 🔶 Fase 1 (KIT X) |
+| 07 DRUM-X · 08 DRUM MORPH | kit DRUM-X; un sonido con sus lados A / B y el MORPH | ✅ 07 dibujada y animada, 🔶 08 en Fase 2 |
 | 09 MACRO · 10 MACRO MAP | macros M1–M4 y lo que mueve cada una | ⏳ pendiente |
 | 11 PUNCH-IN FX | capa FX: REPEAT 1/8–1/32, LPF, HPF; después punch-in MIDI | 🔶 parcial |
 | 12 FX RACK · 13 MIXER | distorsión y envíos por track; nivel, pan, envíos, mute | ✅ función, ⏳ diseño |
@@ -113,8 +117,14 @@ FM1, FM2, FM3, DRUM y VOICE son ejemplos de engines: hay 4 tracks y cada uno pue
 | 18 VISUALIZER | osciloscopio | ✅ sencillo |
 | 20 PERFORMANCE | tempo, sección, macros y punch-in en vivo | ⏳ pendiente |
 
-Las 20 pantallas están convertidas al formato de la pantalla en [assets/ui-art/](assets/ui-art/). Todavía no
-entran todas en el flash: el plan y las medidas están en [docs/TONIC-UI.md](docs/TONIC-UI.md).
+Todo se dibuja **por código** (`firmware/src/ui_organic.c`: curvas Bézier antialiasadas, contornos que se
+interpolan, punteado, letras de referencia), sin imágenes guardadas, y reacciona a los parámetros y a lo que
+suena. El estilo es el de las láminas anatómicas de los años 60: línea crema sobre negro, color solo en los
+detalles. La paleta **JIANT** es la de fábrica. Primera pantalla: el espécimen de DRUM-X, una orquídea cuyos
+órganos son los grupos del kit; el MORPH cambia su anatomía y cada golpe enciende sus vasos. Plan en
+[docs/TONIC-UI.md](docs/TONIC-UI.md).
+
+![DRUM-X en el firmware](docs/drumx-screen.png)
 
 ## Controles
 
@@ -147,11 +157,15 @@ web/emu/build.sh           # emulador en el navegador: build/emu
 tests/run_tests.sh         # tests de host, editor web y emulador
 ```
 
-Todo cambio se prueba primero en el emulador.
+Todo cambio se prueba primero en el emulador. La versión publicada
+([juanjiant-bit.github.io/JIANT](https://juanjiant-bit.github.io/JIANT/)) la arma
+[.github/workflows/emulator.yml](.github/workflows/emulator.yml) en cada push a `main` (en el repositorio:
+Settings → Pages → Source: **GitHub Actions**, una sola vez).
 
 ## Instalar (bajo tu riesgo)
 
-1. Hacé un **backup del flash** antes de la primera instalación.
+1. Hacé un **backup del flash** antes de la primera instalación. **JIANT no tiene samples de usuario:** si venís de
+   Felucca, los samples USR1–3 se pierden al instalar (ese flash ahora guarda las canciones). Guardá tus WAV.
 2. Instalá `build/felucca.fwsc` con `python3 tools/fm1_install.py build/felucca.fwsc` o con una copia local
    del instalador web (ver [BUILDING.md](BUILDING.md)).
 3. Para volver al firmware oficial, usá el actualizador de M-VAVE o **Return to official V15** del

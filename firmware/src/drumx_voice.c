@@ -148,14 +148,31 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
         v->live = 0;
 }
 
-/* the kit DRUM-X's first step plays (DRUM KIT X): {mode, A, B}, A {PITCH PMOD DECAY NOISE COLOR} */
-static const dx_lane_t DX_KIT_DEF[8] = {
-    {DX_MODE(DXW_SINE, DXF_LP, 1), {9, 70, 72, 4, 20}, {14, 100, 88, 10, 60}},        /* KICK */
-    {DX_MODE(DXW_FM, DXF_BP, 0), {40, 30, 52, 80, 90}, {46, 18, 64, 104, 70}},       /* SNARE */
-    {DX_MODE(DXW_SINE, DXF_BP, 0), {60, 0, 46, 127, 84}, {54, 0, 58, 127, 76}},      /* CLAP */
-    {DX_MODE(DXW_METAL, DXF_HP, 0), {100, 0, 22, 96, 116}, {108, 0, 14, 112, 122}},  /* HAT CL */
-    {DX_MODE(DXW_METAL, DXF_HP, 0), {100, 0, 62, 96, 112}, {108, 0, 74, 112, 118}},  /* HAT OP */
-    {DX_MODE(DXW_SINE, DXF_LP, 1), {30, 40, 66, 10, 30}, {36, 60, 76, 20, 50}},      /* TOM */
-    {DX_MODE(DXW_BELL, DXF_HP, 1), {63, 10, 14, 16, 46}, {70, 24, 20, 30, 60}},     /* RIM */
-    {DX_MODE(DXW_METAL, DXF_BP, 0), {69, 0, 72, 0, 40}, {74, 0, 84, 12, 56}},        /* BELL */
-};
+/* the factory kit (DRUM's KIT X): {mode, A, B}, A and B {PITCH PMOD DECAY NOISE COLOR}. dx_kit is the music's
+ * kit: a section's (project.c keeps it in the project, the song stages it with the section), edited on EDIT >
+ * SOUND (ui_input.c); DX_KIT_DEF what a project without one gets */
+#define DX_KIT_INIT {                                                                                                     \
+    {DX_MODE(DXW_SINE, DXF_LP, 1), {9, 70, 72, 4, 20}, {14, 100, 88, 10, 60}},        /* KICK */                    \
+    {DX_MODE(DXW_FM, DXF_BP, 0), {40, 30, 52, 80, 90}, {46, 18, 64, 104, 70}},       /* SNARE */                    \
+    {DX_MODE(DXW_SINE, DXF_BP, 0), {60, 0, 46, 127, 84}, {54, 0, 58, 127, 76}},      /* CLAP */                     \
+    {DX_MODE(DXW_METAL, DXF_HP, 0), {100, 0, 22, 96, 116}, {108, 0, 14, 112, 122}},  /* HAT CL */                   \
+    {DX_MODE(DXW_METAL, DXF_HP, 0), {100, 0, 62, 96, 112}, {108, 0, 74, 112, 118}},  /* HAT OP */                   \
+    {DX_MODE(DXW_SINE, DXF_LP, 1), {30, 40, 66, 10, 30}, {36, 60, 76, 20, 50}},      /* TOM */                      \
+    {DX_MODE(DXW_BELL, DXF_HP, 1), {63, 10, 14, 16, 46}, {70, 24, 20, 30, 60}},     /* RIM */                       \
+    {DX_MODE(DXW_METAL, DXF_BP, 0), {69, 0, 72, 0, 40}, {74, 0, 84, 12, 56}},        /* BELL */                     \
+}
+static const dx_lane_t DX_KIT_DEF[8] = DX_KIT_INIT;
+static dx_lane_t dx_kit[8] = DX_KIT_INIT;
+/* a stored kit as the voice takes it: values 0..127, the mode's fields in range (wave 0..3, filter 0..2, snap) */
+static int dx_kit_ok(const dx_lane_t *k)
+{
+    uint32_t l, i;
+    for (l = 0; l < 8u; l++) {
+        if ((k[l].mode & ~0x1Fu) || ((k[l].mode >> 2) & 3u) > DXF_HP)
+            return 0;
+        for (i = 0; i < DXP_N; i++)
+            if (k[l].a[i] > 127u || k[l].b[i] > 127u)
+                return 0;
+    }
+    return 1;
+}

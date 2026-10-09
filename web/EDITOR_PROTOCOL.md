@@ -46,7 +46,7 @@ takes P_COUNT and P_E0 from `INFO` keeps working (see "The chord keys" below).
 
 **DRUM lane levels (99 parameters, 1.1):** eight track parameters, `KICK` .. `BELL` (83..90, the DRUM engine's lane
 levels), went in before the engine parameters, which moved from 83..90 to 91..98: P_COUNT 99, P_E0 91. No command
-changed; projects are FUN9 (3648 bytes, see "Projects (FUN9)"). See "The DRUM lane levels" below.
+changed; projects were FUN9 (3648 bytes, see "Projects (FUN9)"; JIANT writes FUNA). See "The DRUM lane levels" below.
 
 ## Framing
 
@@ -521,6 +521,11 @@ when the track's engine is not the saved one).
   91 parameters) loads mapped by count (the lane levels 127, the engine values and their motion events and locks
   from 83..90 to 91..98, a lock's bit 7 kept); FUN7 and older as before. Firmware 1.0.x refuses a FUN9 (its size, magic and P_COUNT). Backups,
   `PROJECT` and the editor's project files carry the 3648 bytes; a backup `PUT` takes 3648, 3584 or 3388.
+- **Projects (FUNA, JIANT 0.1).** FUN9 with 96 more bytes, `46 55 4E 41` ("FUNA"), size 3744: the section's DRUM-X
+  kit (8 sounds × 11 bytes: the mode, then PITCH PMOD DECAY NOISE COLOR of patch A and of patch B, each 0..127;
+  the mode: bits 0..1 the wave, 2..3 the noise filter 0..2, bit 4 SNAP) at 3120..3207, 8 reserved bytes (0), the FM6
+  patches at 3216..3727, the name at 3728..3739, the hash last. FUN9 and older load with the factory kit. Backups,
+  `PROJECT` and the editor's project files carry the 3744 bytes; a backup `PUT` also takes 3648, 3584 or 3388.
 - **MIDI clock** has no SysEx. `G_CLOCK` selects the source: 0 INT, 1 USB, 2 TRS. With 1 or 2 the sequencer
   steps on that port's Clock pulses (the other port's are ignored), Start (0xFA) restarts from step 0,
   Continue (0xFB) resumes and Stop (0xFC) stops; BPM follows the incoming tempo (40..240), and 500 ms
@@ -583,9 +588,9 @@ this firmware sends 3. Requests name objects, never flash addresses.
 
 | id | object | size |
 | --- | --- | --- |
-| 0 | runtime: the music being played now, as a FUN9 project (1.0.x: FUN8, 3584; firmware before FM6: FUN7, 3388) | 3648 |
+| 0 | runtime: the music being played now, as a FUNA project (Felucca 1.1: FUN9, 3648; 1.0.x: FUN8, 3584; before FM6: FUN7, 3388) | 3744 |
 | 1 | settings (palette, speaker, HOLD time, favorites, panel calibration, ...) | the settings record's size |
-| 2..5 | PROJECT slots 1..4 (FUN9; 1.0.x: FUN8, 3584); JIANT: sections A..D of the current song | 3648, or 0 if empty |
+| 2..5 | PROJECT slots 1..4 (FUNA; Felucca: FUN9 3648, FUN8 3584); JIANT: sections A..D of the current song | 3744, or 0 if empty |
 | 6, 7 | user preset banks (slots 1..16, 17..32) | the bank's size, or 0 if empty |
 | 8 | the FM6 patch bank of 1.0..1.0.2 (B1..B27). Since 1.0.3 always listed empty (see below) | 3472, or 0 if empty |
 | 9 | the user presets' FM6 patches (1.0.3; `up_fm6.c`: per slot a tag and the packed patch) | 3728, or 0 if none |
@@ -598,8 +603,8 @@ against the list; if it differs the device changed, so start again.
 
 Restoring: `BACKUP_PUT` takes ids 0..9 (firmware before 1.0.3: 0..8, id 9 answers rc 1 at begin and nothing is written).
 Ids 32..34 (Felucca's user sample slots) are retired with the slots: the web editor skips them when it reads an older
-archive and restores the rest. Begin: `0, id, size u32, crc u32`: size is 3648 (FUN9), 3584 (FUN8) or 3388 (FUN7, FUN6) for id 0,
-the settings record's size for id 1, 3648, 3584, 3388 or 0 (empty the slot) for ids 2..5, the bank's size or 0 for 6 and 7,
+archive and restores the rest. Begin: `0, id, size u32, crc u32`: size is 3744 (FUNA), 3648 (FUN9), 3584 (FUN8) or 3388 (FUN7, FUN6) for id 0,
+the settings record's size for id 1, 3744, 3648, 3584, 3388 or 0 (empty the slot) for ids 2..5, the bank's size or 0 for 6 and 7,
 3472 or 0 for 8 (the FM6 bank: its magic, layout and every byte below 128 are checked), 3728 or 0 for 9 (its magic,
 version and slot count checked; 0 clears the patches). FUN8, FUN7 and FUN6 become FUN9.
 An archive without id 8 (written before FM6) still restores; the web editor reads all three kinds (8, 9, 10 objects;

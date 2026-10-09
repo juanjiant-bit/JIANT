@@ -343,9 +343,11 @@ static uint32_t layer_leds(uint32_t *br);
 static uint32_t layer_btn(void);
 
 /* FM operator pages belong to DIGITAL; they never appear on other instruments (without FELUCCA_FM4: never). LANES /
- * LANES 2 a DRUM track's (its lane levels) */
+ * LANES 2 a DRUM track's (its lane levels); SOUND / SOUND 2 a DRUM track's on KIT X (DRUM-X: ui_dx.c) */
 static int page_visible(uint32_t i)
 {
+    if (PAGES[i].graph == GR_DXSND)
+        return TSEL->eng_req % NENGINES == ENGI_DRUM && drum_kit_plays(TSEL->p[P_E0]) == DK_X;
     if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] >= P_LN0 && PAGES[i].id[0] <= P_LN7)
         return TSEL->eng_req % NENGINES == ENGI_DRUM;
     return !(PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] >= P_FM1_ATK &&
@@ -1135,6 +1137,12 @@ static void track_select(uint32_t i)
 }
 
 #include "ui_events.c"                            /* SEQ > AUTO LIST: the locks and events as a list (an action page) */
+/* EDIT > SOUND / SOUND 2 (ui_dx.c, included by ui_input.c): the DRUM-X sound edited and its patch (0 A, 1 B) */
+static uint8_t dx_ui_lane, dx_ui_side;
+static uint32_t dx_page2(const page_t *pg) { return pg->title[5] == ' '; }   /* "SOUND 2" */
+static void dx_knob(const page_t *pg, uint32_t k, int32_t s);
+static void dx_cards(const page_t *pg);
+static uint32_t dx_sig(void);
 
 /* ---------------------------------------------------- action pages --- */
 /* Pages whose purpose is an action (SEQ > PATTERNS, SAVE > USER, PROJECT, TOOLS): the knobs pick,

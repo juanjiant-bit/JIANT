@@ -1290,10 +1290,11 @@ static int test_display_preferences(void)
                  settings.palette == 6 && T_BG == UI_PALETTES[6].bg && ux.light && ui.menu == 1 && !song.octave &&
                  memcmp(before, host_screen, sizeof before) && !memcmp(sounds, trk, sizeof sounds));
     turn(EN_K1, 1);
-    bad += check("COLOR KNOB 1 steps on to HI-CON, NIGHT (#50: true black), MONO (1.0.2: black and white), then wraps to GREY",
+    bad += check("COLOR KNOB 1 steps on to HI-CON, NIGHT (#50: true black), MONO (1.0.2: black and white), JIANT, then wraps to GREY",
                  settings.palette == 7 && (turn(EN_K1, 1), settings.palette == 8u) && T_BG == 0u &&
                  str_eq(UI_PALETTES[8].name, "NIGHT") && (turn(EN_K1, 1), settings.palette == UI_BW_INDEX) &&
                  str_eq(UI_PALETTES[UI_BW_INDEX].name, "MONO") && T_BG == 0u && T_TEXT == 0xFFFFu &&
+                 (turn(EN_K1, 1), settings.palette == UI_JIANT_INDEX) && str_eq(UI_PALETTES[UI_JIANT_INDEX].name, "JIANT") &&
                  (turn(EN_K1, 1), settings.palette == UI_GREY_INDEX) && str_eq(UI_PALETTES[UI_GREY_INDEX].name, "GREY"));
     settings.lowcut = 2;
     ui.menu_sel = MI_LOWCUT;
@@ -5538,6 +5539,46 @@ static void sl_key(uint32_t w)                      /* SAVE held, a white key ta
     key_down(white(w)); frame(); key_up(white(w)); frame();
     btn_up(B_SAVE); frame();
 }
+/* JIANT: EDIT > SOUND / SOUND 2 (ui_dx.c), the DRUM-X kit of the section */
+static int test_dx_sound(void)
+{
+    int bad = 0, ok;
+    uint32_t k, seen = 0;
+    ui_power_on();
+    set_engine_of(TSEL, ENGI_DRUM);
+    TSEL->p[P_E0] = DK_STD;
+    open_family(FAM_EDIT);
+    for (k = 0; k < 12u; k++) { seen |= cur_page()->graph == GR_DXSND; open_family(FAM_EDIT); }
+    ok = !seen;
+    TSEL->p[P_E0] = DK_X;
+    for (seen = 0, k = 0; k < 12u; k++) { seen |= cur_page()->graph == GR_DXSND; open_family(FAM_EDIT); }
+    bad += check("EDIT > SOUND / SOUND 2: only on a DRUM track playing KIT X", ok && seen);
+    go_title("SOUND");
+    dx_ui_lane = 0; dx_ui_side = 0;
+    turn(EN_K1, 1); turn(EN_K1, 1);                    /* LANE: CP */
+    turn(EN_K2, 1);                                    /* SIDE: B */
+    k = dx_kit[2].b[DXP_PITCH];
+    turn(EN_K3, 3);
+    ok = dx_ui_lane == 2u && dx_ui_side == 1u && dx_kit[2].b[DXP_PITCH] > k && dx_kit[2].a[DXP_PITCH] == DX_KIT_DEF[2].a[DXP_PITCH];
+    bad += check("  SOUND: LANE, SIDE, PTCH edit that sound's patch (the other patch stays)", ok);
+    go_title("SOUND 2");
+    turn(EN_K4, 1);
+    ok = dx_kit[2].mode != DX_KIT_DEF[2].mode && ((dx_kit[2].mode >> 2) & 3u) <= DXF_HP;
+    turn(EN_K1, -5);
+    ok &= dx_kit[2].b[DXP_DECAY] < DX_KIT_DEF[2].b[DXP_DECAY];
+    bad += check("  SOUND 2: MODE steps the wave / filter / SNAP, DCAY the side's decay", ok);
+    key_down(key_at(1, 3)); frame(); key_up(key_at(1, 3)); frame(); frame();   /* a key on the track: its lane */
+    ok = dx_ui_lane == drum_lane(last_note);
+    bad += check("  a key struck picks the sound it plays", ok);
+    project_save(0);
+    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+    project_load(0);
+    bad += check("  the kit is the section's: saved and loaded with it", dx_kit[2].b[DXP_PITCH] > DX_KIT_DEF[2].b[DXP_PITCH]);
+    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+    ui_power_on();
+    return bad;
+}
+
 static int test_song_layer(void)
 {
     int bad = 0, ok;
@@ -6951,6 +6992,7 @@ int main(void)
     bad += test_fx_latch();
     bad += test_rec_layer();
     bad += test_song_layer();
+    bad += test_dx_sound();
     bad += test_seq_tools();
     bad += test_menu_prefs();
     bad += test_style();

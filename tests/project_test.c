@@ -174,8 +174,8 @@ int main(void)
     bad += check("layout: SLICER after DETUNE, then the matrix just before P_E0",
                  P_SLCR == P_DETUNE + 1 && P_SLDEPTH + 1 == P_M1SRC && P_M4AMT + 1 == P_FM1_ATK && P_FM4_LEVEL + 1 == P_CHRD && P_VOIC + 1 == P_LN0 &&
                  P_LN7 + 1 == P_E0 && P_E0 == 91 && P_COUNT == PROJ_NP_V3 + 42u && PROJ_NP_V3 == PROJ_NP_V2 + 4u);
-    bad += check("FUN9 fits one flash object, the retained cache in NOINIT", sizeof(project_store_t) <= 4096u - 256u &&
-                 sizeof(project_store_t) == 3648u && 0xC8u + 4u * sizeof(project_store_t) <= 0x3D50u);
+    bad += check("FUNA fits one flash object, the retained cache in NOINIT", sizeof(project_store_t) <= 4096u - 256u &&
+                 sizeof(project_store_t) == 3744u && 0xC8u + 4u * sizeof(project_store_t) <= 0x3D50u);
 
     /* format 2, as written before the SLICER */
     memset(&v2, 0, sizeof v2);
@@ -422,9 +422,10 @@ int main(void)
         project_t a, c;
         project_store_t st, st2;
         uint32_t i, zero = 1;
-        bad += check("FUN9 name at the end of the reserved tail, the FM6 patches before it, after the data (48 spare)",
-                     PROJ_NAME_OFF == 3632u && PROJ_FM6_OFF == 3120u && 68u + NTRK * (P_COUNT + 2u + NSTEP * 9u) +
-                     sizeof(chain_config_t) + sizeof(motion_store_t) + 48u == PROJ_FM6_OFF);
+        bad += check("FUNA name at the end of the reserved tail, the FM6 patches and the kit before it, after the data (48 spare)",
+                     PROJ_NAME_OFF == 3728u && PROJ_FM6_OFF == 3216u && PROJ_DX_OFF == 3120u &&
+                     68u + NTRK * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + sizeof(motion_store_t) + 48u ==
+                     PROJ_DX_OFF);
         memset(&a, 0, sizeof a);
         a.magic = PROJ_MAGIC; a.size = sizeof a; a.parts = NPART; a.phys = PROJ_PHYS;
         chain_defaults(&a.chain);
@@ -473,14 +474,49 @@ int main(void)
         }
         memcpy(a.name, "FM SONG", 7);
         a.sum = proj_sum(&a);
-        ok = proj_pack(&st, &a) && ((uint32_t *)st.raw)[0] == 0x46554E39u && proj_import(&c, &st, sizeof st);
+        ok = proj_pack(&st, &a) && ((uint32_t *)st.raw)[0] == 0x46554E41u && proj_import(&c, &st, sizeof st);
         for (k = 0; k < NTRK; k++)
             ok &= !memcmp(c.fm6[k], FM6_FACTORY[k * 2u], FM6_PACKED) && c.t[k].engine == ENGI_FM6 &&
                   !memcmp(st.raw + PROJ_FM6_OFF + k * FM6_PACKED, FM6_FACTORY[k * 2u], FM6_PACKED);
-        bad += check("FUN9: the four FM6 patches round trip (bytes at PROJ_FM6_OFF)", ok && !memcmp(c.name, "FM SONG", 7));
+        bad += check("FUNA: the four FM6 patches round trip (bytes at PROJ_FM6_OFF)", ok && !memcmp(c.name, "FM SONG", 7));
         st.raw[PROJ_FM6_OFF + 5] ^= 1u;
-        bad += check("FUN9: a patch byte changed: the hash refuses it", !proj_import(&c, &st, sizeof st));
+        bad += check("FUNA: a patch byte changed: the hash refuses it", !proj_import(&c, &st, sizeof st));
         st.raw[PROJ_FM6_OFF + 5] ^= 1u;
+        {   /* FUNA's DRUM-X kit (JIANT): round trip; a value out of range refused; a FUN9 loads the factory kit */
+            static uint8_t v9[3648];
+            static project_store_t st2;
+            uint32_t magic9 = 0x46554E39u, size9 = 3648u, sum9;
+            memcpy(a.dx, DX_KIT_DEF, sizeof a.dx);
+            a.dx[3].b[DXP_COLOR] = 99;
+            a.dx[0].mode = DX_MODE(DXW_BELL, DXF_HP, 1);
+            a.sum = proj_sum(&a);
+            ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st) && !memcmp(c.dx, a.dx, sizeof a.dx) &&
+                 !memcmp(st.raw + PROJ_DX_OFF, a.dx, sizeof a.dx);
+            bad += check("FUNA: the DRUM-X kit round trips (88 bytes at PROJ_DX_OFF)", ok);
+            a.dx[2].a[DXP_PITCH] = 200;
+            a.sum = proj_sum(&a);
+            ok = !proj_pack(&st2, &a);
+            a.dx[2].a[DXP_PITCH] = 60;
+            a.sum = proj_sum(&a);
+            proj_pack(&st2, &a);
+            st2.raw[PROJ_DX_OFF + 7] = 0xC8;             /* (a value past 127, the hash made right) */
+            {
+                uint32_t h = proj_hash(st2.raw, PROJ_STORE_SIZE - 4u);
+                memcpy(st2.raw + PROJ_STORE_SIZE - 4u, &h, 4);
+            }
+            ok &= !proj_import(&c, &st2, sizeof st2);
+            bad += check("FUNA: a kit value out of range: not packed, not loaded", ok);
+            memcpy(v9, st.raw, PROJ_DX_OFF);              /* FUN9 = FUNA without the kit */
+            memcpy(v9 + PROJ_DX_OFF, st.raw + PROJ_FM6_OFF, NTRK * FM6_PACKED);
+            memcpy(v9 + 3632u, st.raw + PROJ_NAME_OFF, PROJ_NAME_LEN);
+            memcpy(v9, &magic9, 4);
+            memcpy(v9 + 4, &size9, 4);
+            sum9 = proj_hash(v9, 3644u);
+            memcpy(v9 + 3644u, &sum9, 4);
+            ok = proj_import(&c, v9, sizeof v9) && !memcmp(c.dx, DX_KIT_DEF, sizeof c.dx) &&
+                 !memcmp(c.fm6, a.fm6, sizeof c.fm6) && !memcmp(c.name, "FM SONG", 7);
+            bad += check("FUN9 (Felucca 1.1) loads: its patches and name, the factory DRUM-X kit", ok);
+        }
         {   /* FUN8 as 1.0.x wrote it (3584 bytes, 91 parameters: E0..E7 at 83..90, the patches at 3056): the DRUM
              * lane levels 100 %, E0..E7 and their motion at today's P_E0.., the patches and the name kept */
             static uint8_t v8[3584];

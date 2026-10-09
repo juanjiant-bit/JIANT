@@ -645,6 +645,10 @@ static void edit_param(uint32_t slot, int32_t steps)
         }
         return;
     }
+    if (pg->graph == GR_DXSND) {                          /* EDIT > SOUND: the DRUM-X kit (ui_dx.c) */
+        dx_knob(pg, slot, steps);
+        return;
+    }
     if (pg->graph == GR_EVENTS) {                         /* AUTO LIST (ui_events.c) */
         ev_knob(slot, steps);
         return;
@@ -1298,7 +1302,7 @@ static void ui_input(void)
         }
         if (ui.home || pg->scope == SC_STEP || pg->scope == SC_TRK || page_desc(pg, k, &hv) ||
             ((pg->graph == GR_USER || pg->graph == GR_MOD || pg->graph == GR_PATS) && k == 0u)
-            || pg->graph == GR_SONG) {   /* (not an empty column) */
+            || pg->graph == GR_SONG || pg->graph == GR_DXSND) {   /* (not an empty column) */
             ui.hot_col = (uint8_t)k;
             ui.hot_t = 40;
         }
@@ -1403,3 +1407,5 @@ timeout:
     ui.force = 1;
     ui_message("SETUP CANCELLED");
 }
+
+#include "ui_dx.c"                                  /* EDIT > SOUND / SOUND 2: the DRUM-X kit */

@@ -32,30 +32,72 @@ los dibuja el firmware encima, y algunas partes reaccionan a los knobs: arcos, p
 Equivalencias de nombres: en el concepto **PRJ** es la canción (1–8) y **VAR** la sección (A–D). FM1, FM2,
 FM3, DRUM y VOICE son ejemplos de engines: el firmware tiene 4 tracks y cualquier engine en cada uno.
 
-## Formato y medidas
+## Decisión: todo dibujado por código
 
-El paquete (`assets/ui-art/`) convierte cada pantalla a 16 colores, 4 bits por píxel y deflate crudo. Se
-descomprime una vez al cambiar de página, en un buffer de 28,8 KB en `.pool`.
+Medido: las 20 pantallas como imágenes (16 colores, deflate, ≈ 262 KB) desbordaban la región de la app por
+113 768 bytes. Decisión del usuario: **todo por código**, con animaciones que reaccionen a los parámetros, sin
+gastar memoria en lo visual. Las pantallas del concepto quedan como referencia en `assets/ui-art/art/`.
 
-Medido en este árbol (compilando las 20 con el firmware actual): **no entran**. La app desborda la región XIP
-por **113 768 bytes**. Hoy la app ocupa 431 KB de 568 KB. Las 20 pantallas comprimidas suman ≈ 262 KB, y
-todavía faltan DRUM-X completo, macros, punch-in y master.
+- **`firmware/src/ui_organic.c`**: líneas antialiasadas en subpíxel (Q4), curvas Bézier, pétalos con nervaduras,
+  anillos y nodos. Todo con enteros y la tabla de senos de `dsp.c`. Los colores (crema, coral, teal, mostaza,
+  menta) salen de la paleta: en GREY y MONO todo queda en grises.
+- **Paleta JIANT** (por defecto desde JIANT 0.1): fondo casi negro, línea crema, teal para los valores, coral
+  para lo activo. Las otras paletas siguen en MENU > COLOR.
+- **Animación**: el gráfico se redibuja cuando cambia su firma; las páginas vivas suman `ui.frame` a la firma.
+  Respiración y vaivén salen de senos de `ui.frame`; los golpes, de las envolventes de las voces.
 
-Caminos (para decidir):
+## Estilo: lámina anatómica
 
-1. **Solo las pantallas que usa el firmware**, con arte sin textos (los valores van encima). Unas 10 pantallas
-   de fondo ocupan ≈ 130 KB; puede entrar si se recorta otra cosa (por ejemplo los samples CC0, ~120 KB).
-2. **8 colores y arte más simple** (líneas sobre negro): comprime mucho mejor (a medir con el arte nuevo).
-3. **Dibujado por código:** las formas orgánicas como vectores (pétalos, tallos, arcos) con `cv_line` /
-   `cv_rrect` y una paleta JIANT. Casi no ocupa flash y todo puede reaccionar a los knobs, pero se parece menos
-   a la ilustración.
+Referencia del usuario: las láminas murales de anatomía (Deyrolle / Auzoux, años 60). Línea crema fina y cerrada
+sobre negro; color solo en los detalles (puntas rojas, vasos amarillos, cyan y verdes en paralelo); letras de
+referencia cyan en círculos; ejes punteados; punteado para sombrear. Nada de flores genéricas: cada pantalla es un
+**espécimen** cuyos órganos son partes del instrumento, y cuya anatomía cambia con los parámetros.
 
-Lo razonable parece una mezcla: una paleta y tipografía JIANT para todo el firmware (sin costo de flash),
-arte de fondo en 8 colores para las páginas principales (HOME, DRUM-X, SONG, PERFORMANCE) y elementos vivos
-dibujados por código.
+## Pantallas hechas
+
+| Panel | Página | Qué se mueve |
+| --- | --- | --- |
+| 07 DRUM-X | EDIT de DRUM con KIT X | Una orquídea anatómica. Sus órganos son los grupos del kit: sépalo dorsal = hats (cyan), pétalos laterales = snare y clap (amarillo), sépalos inferiores = kick (rojo), labelo y columna = percusión (verde). A y B son dos anatomías y el MORPH mueve cada contorno punto por punto. Cada golpe enciende los vasos interiores de su órgano, que se apagan con la caída. El ruido de los hats punteado en su sépalo. Escala A–B con el MORPH encima, eje punteado; respira y los zarcillos se mecen |
+
+Las formas vienen de `assets/ui-shapes/drumx.svg` (ver abajo): un órgano ocupa 20 bytes por lado (A y B). Costo total de la
+pantalla y la librería: ≈ 3 KB de flash, 0 de RAM.
+
+## Cómo reemplazar los dibujos (vectores propios)
+
+Los dibujos actuales son **bocetos**. Las formas no están en el código: son SVG en `assets/ui-shapes/`, uno por
+pantalla, y el build los convierte (`tools/gen_ui_shapes.py` → `build/gen/ui_shapes.h`). Para cambiarlos alcanza
+con reemplazar los SVG respetando esto:
+
+- `viewBox="-64 -64 128 128"`: una unidad es un paso guardado (int8) y el origen es el punto de anclaje que usa el
+  firmware (en DRUM-X, la columna, el centro del espécimen). Y crece hacia abajo, como en SVG.
+- Un `<path>` por forma, con `id`. Si la forma cambia con el MORPH (u otro parámetro), van dos: `NOMBRE_a` y
+  `NOMBRE_b`, **con la misma cantidad de segmentos** (el firmware mueve cada punto de A a B). Una forma fija va con
+  un solo path, sin sufijo.
+- `data-mirror="1"`: el firmware también la dibuja reflejada (la mitad de un órgano simétrico, o uno de un par).
+- Un solo subpath por path: `M` y luego `C S Q T L H V` (absolutos o relativos) y `Z`. Las líneas y cuadráticas se
+  convierten en cúbicas. Los atributos de estilo (color, grosor) se ignoran: los colores los pone el firmware.
+- Cada punto ocupa 2 bytes. El espécimen de DRUM-X entero son 148 bytes.
+
+Las formas de DRUM-X y sus ids: `dorsal` (hats), `petal` (snare y clap, reflejado), `sepal` (kick, reflejado),
+`lip` (percusión, reflejado). Si cambian la cantidad o los nombres de las formas de una pantalla, hay que ajustar
+su función de dibujo (en DRUM-X, `graph_drumx` en `ui_graph.c`).
+
+## Ilustraciones (los especímenes del usuario)
+
+`assets/ui-shapes/specimens.svg` (del usuario, en progreso): tres especímenes en una lámina. Un SVG **sin ids** se
+importa como ilustración tal cual está: cada trazo (aunque esté exportado como contorno relleno) se dibuja como
+su contorno antialiasado, los círculos chicos pasan a ser nodos rellenos, y el color dice el rol (blanco: contorno,
+rojo: puntas y acentos, teal: nodos y vasos, cyan claro: brillos). Los dibujos separados en x son especímenes
+distintos, numerados desde la izquierda (`SH_SPECIMENS_1..3`). Cada uno se centra y escala a ±63 unidades; los
+tres ocupan 8,9 KB. `og_ill` los dibuja y puede encender un rol (los nodos teal, las puntas rojas) con un valor o un
+golpe.
+
+Para que una ilustración además **se mueva** (cambie de forma con un parámetro), cada parte que se mueve necesita un
+`id` y, si cambia de forma, sus dos versiones `_a` / `_b` con la misma cantidad de segmentos (ver arriba).
 
 ## Pasos
 
-1. Paleta JIANT FM (fondo negro, línea crema, coral, teal, mostaza, menta) como tema del firmware.
-2. Arte sin texto de las pantallas elegidas, en el formato que se decida; tabla de zonas de texto por pantalla.
-3. Integración en `ui_draw.c` por página, con capturas en `tests/ui_render.c`.
+1. HOME: los 4 tracks como un organismo (un nodo por track, latido con sus voces), tempo, canción y sección.
+2. SONG y capa de canción: tallo con las filas como hojas, la que suena iluminada.
+3. DRUM MORPH (Fase 2 de DRUM-X): la edición de un sonido con sus lados A y B.
+4. PERFORMANCE, MACRO y PUNCH-IN cuando existan esas funciones.

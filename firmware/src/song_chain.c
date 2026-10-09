@@ -3,8 +3,8 @@
  * JIANT (FELUCCA TONIC): the song as SLOOP 2.4.1 plays it (isod89/sloop-fm1, GPL-3.0: arranger.h, arranger_scene.c,
  * its live sections, quick chain and SONG REC), rebuilt on Felucca's sequencer. */
 /* The song (docs/TONIC-SONG-PLAN.md). Four sections A..D, the four saved projects: a section is the whole project, the
- * four tracks' sounds (engine, parameters, FM6 patch), their steps and the motion; the tempo and the globals are the
- * song's (not the sections'). Sections go in on the bar (a 4/4 bar of 16 1/16 steps at the tempo), every track from
+ * four tracks' sounds (engine, parameters, FM6 patch), the DRUM-X kit, their steps and the motion; the tempo and the
+ * globals are the song's (not the sections'). Sections go in on the bar (a 4/4 bar of 16 1/16 steps at the tempo), every track from
  * its step 0, the remainder of the block carried.
  *   the song    up to CHAIN_ROWS rows, each a section and the bars it plays (1..CHAIN_BARS): PLAY on SONG (or anywhere
  *               in SONG mode) plays it from the top and keeps the music as it was (song_keep), which comes back when
@@ -38,6 +38,7 @@ typedef struct {                      /* a track of a section, as the ISR puts i
 static struct {
     sec_trk_t t[NTRK];
     motion_store_t motion;
+    dx_lane_t dx[8];                  /* the section's DRUM-X kit */
     volatile uint8_t ready;           /* main: staged; ISR: taken (0) */
     uint8_t row, section;             /* the song row it is for (SEC_LIVE: a live jump), the section (0..3) */
 } sec_stage __attribute__((section(".pool")));
