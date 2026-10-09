@@ -37,8 +37,9 @@ Un kit de 8 sonidos (BD SD CP CH OH TM RS CB) generado en tiempo real, sin sampl
 ### Punch-in FX: los efectos se tocan y se graban
 Con FX sostenido, las teclas son efectos que actúan mientras se mantienen y al soltar todo vuelve exacto.
 - **De audio**: REPEAT 1/8 · 1/16 · 1/32, LPF y HPF.
-- **Sobre las notas, tipo OP-Z**: OCT− y OCT+, 1/2 TEMPO, DECAY corto y largo, STUTTER 1/16 · 1/32, **ATK+** (sube el
-  ataque de todo), ARP momentáneo y RANDOM (mueve notas y también pasos).
+- **Sobre las notas, tipo OP-Z**: OCT− y OCT+, 1/2 TEMPO, DECAY corto (también baja el sustain: todo el sistema
+  queda en plucks) y largo, STUTTER 1/8 · 1/16, **ATK+** (sube el ataque de todo; en la batería suaviza cada golpe),
+  ARP momentáneo (en la batería, un fill distinto cada vez que lo tocás) y RANDOM (mueve notas y también pasos).
 - **Cuantizados a la grilla**: un efecto entra en la próxima semicorchea del transporte; el REPEAT y el SLICER
   (gates y stutters por track) siguen la grilla del transporte desde el primer momento, aunque cambies el RATE o el
   tempo con la canción sonando, así no hay saltos al tocarlos.
@@ -49,11 +50,13 @@ Con FX sostenido, las teclas son efectos que actúan mientras se mantienen y al 
 ### Macros M1–M4: el sistema te invita a moverlo todo
 LFO sostenido abre la capa **MACRO**: las cuatro perillas son M1–M4 y la pantalla muestra a dónde va cada una
 ("T1 CUT+62 T4 MRPH−31").
-- **HOME dos veces**: las macros quedan fijas en HOME (perillas y pantalla) hasta tocar HOME otra vez.
+- **HOME es donde se mueve todo**: sus cuatro perillas y su pantalla son M1–M4. HOME dos veces pasa a las cuatro
+  perillas principales del sonido; HOME otra vez vuelve a las macros.
 - **Una sesión nueva ya viene modulada**: al encender, cada track sin rutas de macro recibe dos al azar hacia lo que su
   sonido tiene (parámetros del engine, CUT, SHP, envíos, algo de PITCH), repartidas para que cada macro mueva dos
   tracks. Girás M1–M4 y todo se deforma; después afinás en MOD o lo guardás con el proyecto.
-- **Dado**: con LFO sostenido, F3 tira rutas nuevas y G3 las borra (las rutas propias de cada track quedan).
+- **Dado**: en HOME (o con LFO sostenido) **SELECT** tira rutas nuevas; con LFO sostenido F3 también y G3 las borra
+  (las rutas propias de cada track quedan). En HOME el tempo queda en GLO + SELECT.
 - **Asignar una macro**: en la página MOD de un track elegí SRC M1…M4 y su destino, con amount de −100 a +100.
 - **Destinos**: pitch, filtro, forma, amplitud, pan, envíos, LFO, cualquiera de los 8 parámetros del engine (MORPH,
   WARP, …) y el master (CLIP y PNCH).
@@ -190,7 +193,7 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
 
 | Mantener | Teclas | Perillas |
 | --- | --- | --- |
-| **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. Punch-in MIDI: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 STUTTER 1/16 · 1/32, D5 ATK+ (ataque de todo arriba), E5 ARP, F5 RANDOM (notas y pasos). Todo entra en la próxima 1/16 del transporte. Teclas negras 1–4: mute de T1–T4; A#4 elige a qué tracks afectan los MIDI (todos, sintes, batería). **Automatizar**: con REC armado y tocando, lo que mantengas queda grabado en la lane de la sección (64 pasos de 1/16); G5 la borra donde pasa, o entera con el transporte parado | FILTER, CRUSH, THROW, DEPTH |
+| **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. Punch-in MIDI: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 STUTTER 1/8 · 1/16, D5 ATK+ (ataque de todo arriba, batería incluida), E5 ARP (batería: un fill nuevo en cada toque), F5 RANDOM (notas y pasos). Todo entra en la próxima 1/16 del transporte. Teclas negras 1–4: mute de T1–T4; A#4 elige a qué tracks afectan los MIDI (todos, sintes, batería). **Automatizar**: con REC armado y tocando, lo que mantengas queda grabado en la lane de la sección (64 pasos de 1/16); G5 la borra donde pasa, o entera con el transporte parado | FILTER, CRUSH, THROW, DEPTH |
 | **ARP TRNS** | Con el modo de ARP en TRNS, las teclas (y el MIDI que entra) transponen la secuencia del track según su intervalo desde C4, sin tocar notas; la transposición queda al soltar | — |
 | **SEQ > SHIFT** | OFS corre la secuencia del track de −32 a +32 pasos (dentro de LEN; grabar en vivo escribe donde se escucha) y PIT la transpone ±24 semitonos (no en kits). Los dos se automatizan y están también en la capa SCL (KNOB 3 / 4) | OFS, PIT |
 | **REC + otro botón** | Mantener REC y apretar FX, EDIT, ENV, LFO, SCL, ARP o GLO: borra la automatización de esa parte del track elegido (movimientos de perillas y locks por paso; los valores guardados quedan). FX: también la lane de punch-in. GLO: niveles y paneo de los 4 tracks. Al revés (FX sostenido y REC) arma la grabación, como siempre | — |

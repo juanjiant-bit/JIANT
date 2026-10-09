@@ -694,14 +694,75 @@ static int test_pfx(void)
     song_setup();
     trk_note_on(td, 36, 100);
     mix_block(o, CTL);
-    perf_press(PF_S16, 1);
+    perf_press(PF_S8, 1);
     for (i = 0; i < 22016u; i += CTL) {
         mix_block(o, CTL);
         hits += drum_kit[3][DV_KICK].age == 1u;
     }
-    perf_press(PF_S16, 0);
+    perf_press(PF_S8, 0);
     mix_block(o, CTL);
-    bad += check("STUTTER 1/16: the last kick 4 times in a beat; let go: none more", hits == 4u && !(td->pfx & PFX_REP));
+    bad += check("STUTTER 1/8 (JIANT 0.4, was 1/16): the last kick twice in a beat; let go: none more", hits == 2u && !(td->pfx & PFX_REP));
+    /* (JIANT 0.4) ATK+ on the drums: a hit's first ms softer (faded in); DEC- on a synth: its sustain 0 (a pluck), put
+     * back after; ARP on the drums: a fill, each press another */
+    {
+        double e0 = 0, e1 = 0;
+        uint32_t m;
+        for (m = 0; m < 2u; m++) {
+            song_setup();
+            for (i = 0; i < 22016u; i += CTL) mix_block(o, CTL);
+            if (m) perf_press(PF_ATK, 1);
+            mix_block(o, CTL);
+            mix_block(o, CTL);
+            trk_note_on(td, 38, 110);
+            pfx_render(4416u, 0xFFFFFFFFu, 0xFFFFFFFFu, 0);
+            for (i = 0; i < 441u; i++) *(m ? &e1 : &e0) += (double)song_l[i] * song_l[i];
+            if (m) perf_press(PF_ATK, 0);
+        }
+        mix_block(o, CTL);
+        bad += check("ATK+ on the drums: a snare's first 10 ms softer (faded in)", e1 < e0 * 0.5 && e0 > 0);
+    }
+    {
+        int16_t s0;
+        song_setup();
+        s0 = t1->p[P_SUS] = 100;
+        perf_press(PF_DSHT, 1);
+        for (i = 0; i < 4u * CTL; i += CTL) mix_block(o, CTL);
+        {
+            int16_t during;
+            uint32_t v;
+            int32_t env = 0;
+            trk_note_on(t1, 60, 100);
+            for (i = 0; i < 22016u; i += CTL) mix_block(o, CTL);
+            for (v = 0; v < NVOICE; v++)
+                if (t1->v[v].active && t1->v[v].env > env) env = t1->v[v].env;
+            during = t1->p[P_SUS];
+            perf_press(PF_DSHT, 0);
+            mix_block(o, CTL);
+            bad += check("DEC- on a synth: its sustain 0 (a held note decays away), back after", env < (1 << 24) / 20 &&
+                         during == s0 && t1->p[P_SUS] == s0);
+            trk_note_off(t1, 60);
+        }
+    }
+    {
+        uint8_t f[2][16];
+        uint32_t m, n, same = 0, notes[2] = {0, 0};
+        for (m = 0; m < 2u; m++) {
+            song_setup();
+            perf_press(PF_ARP, 1);
+            for (n = 0; n < 16u; n++) {
+                f[m][n] = 0;
+                for (i = 0; i < 5504u; i += CTL) {
+                    mix_block(o, CTL);
+                    if (td->pfx_snn && !f[m][n]) { f[m][n] = td->pfx_sn[0]; notes[m]++; }
+                }
+            }
+            perf_press(PF_ARP, 0);
+            mix_block(o, CTL);
+        }
+        for (n = 0; n < 16u; n++) same += f[0][n] == f[1][n];
+        bad += check("ARP on the drums: a fill without a note struck first, another at the next press", notes[0] >= 8u &&
+                     notes[1] >= 8u && same < 12u);
+    }
     /* 1/2 TEMPO: the sequencer at half speed while held; let go, where it would have been */
     {
         uint16_t i0, ih;

@@ -22,7 +22,7 @@
  * master_out (the limiter); THROW and the mutes act before the buses (fx.c mix_block / mix_part).
  * Idle (no key, no knob, no ramp left) every stage is skipped: the output is bit-identical. */
 enum { PF_R8, PF_R16, PF_R32, PF_LPF, PF_HPF,
-       PF_OCTD, PF_OCTU, PF_HALF, PF_DSHT, PF_DLNG, PF_S16, PF_S32, PF_ATK, PF_ARP, PF_RND,   /* the MIDI ones: pfx.c */
+       PF_OCTD, PF_OCTU, PF_HALF, PF_DSHT, PF_DLNG, PF_S8, PF_S16, PF_ATK, PF_ARP, PF_RND,   /* the MIDI ones: pfx.c */
        PF_M1, PF_N = PF_M1 + NTRK, PF_TGT = PF_N + 1,     /* PF_TGT: A#4, the MIDI effects' tracks (pfx_tgt) */
        PF_CLR = PF_N + 2 };                                /* PF_CLR: G5, erases the punch-in lane (pfx.c) */
 #define PF_BIT(e) (1u << (e))
