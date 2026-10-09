@@ -214,7 +214,7 @@ at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device 
 | cmd (v7) | Request args | Reply args |
 | --- | --- | --- |
 | 64 MOTION | track (query); track, 1, on 0/1 (play on / off); track, 2 (clear); track, 3, step, id, v14 (set an event); track, 4, step, id (delete an event or a lock); (1.1) track, 5, step, id, v14 (set a lock); track, 6, step (clear the step's locks; step 127: every step's); track, 7 (query with the kinds) | track, rc, on (0/1), count (this track's events and locks), max (64), then count × (step, id, v14); after ops 5..7 (1.1) then count × kind (0 automation, 1 lock), in the same order |
-| 65 BACKUP_LIST | — | 1, rc, count (10), then per object: id, size u32, crc u32 |
+| 65 BACKUP_LIST | — | 1, rc, count (43; 10 before JIANT 0.3), then per object: id, size u32, crc u32 |
 | 66 BACKUP_GET | id, offset u32, count lo, count hi (≤ 256) | id, rc, offset u32, count lo, count hi, pack7 data |
 | 67 BACKUP_PUT | op 0 begin: 0, id, size u32, crc u32; op 1 data: 1, id, offset u32, pack7 data; op 2 commit: 2, id; op 3 abort: 3, id | op, id, rc |
 
@@ -624,6 +624,13 @@ they are in RAM or flash. Then `BACKUP_GET` reads an object in pieces: `id, offs
 against the list; if it differs the device changed, so start again.
 
 Restoring: `BACKUP_PUT` takes ids 0..9 (firmware before 1.0.3: 0..8, id 9 answers rc 1 at begin and nothing is written).
+
+**JIANT 0.3: every song.** Id 10 is the song index (`song_index_t`, version 2: every song's rows and scenes, 1328
+bytes); a restore keeps the song playing. Ids 40..71 are every song's sections, 40 + 4 × song + section (0 = A): the
+current song's come from RAM (as ids 2..5), the others are read from flash as they are asked for, into the storage
+driver's own buffer (no RAM of their own). A restore writes each into its song's flash object (an older project format
+becomes today's), the current song's into RAM too. Firmware before answers rc 1 at begin for 10 and 40..71, and the
+web editor skips them (as id 9).
 Ids 32..34 (Felucca's user sample slots) are retired with the slots: the web editor skips them when it reads an older
 archive and restores the rest. Begin: `0, id, size u32, crc u32`: size is 3744 (FUNA), 3648 (FUN9), 3584 (FUN8) or 3388 (FUN7, FUN6) for id 0,
 the settings record's size for id 1, 3744, 3648, 3584, 3388 or 0 (empty the slot) for ids 2..5, the bank's size or 0 for 6 and 7,

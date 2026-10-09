@@ -111,13 +111,14 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
   - MIDI por TRS.
   - Clock interno, USB o TRS.
 - **Guardado**: 32 presets de usuario con nombre y autoguardado al apagar.
-- **Editor web** de todos los parámetros: patches FM6, grilla, mezcla y backup completo.
+- **Editor web** de todos los parámetros: patches FM6, grilla, mezcla y backup completo (las 8 canciones con sus
+  secciones, filas y escenas).
 
 ## Estado
 
 | Objetivo | Estado |
 | --- | --- |
-| Song mode estilo SLOOP: 8 canciones × 4 secciones | ✅ (falta el backup de todas las canciones) |
+| Song mode estilo SLOOP: 8 canciones × 4 secciones, con backup completo desde el editor | ✅ |
 | DRUM-X: motor, MORPH, WARP, mutes por grupo y por sonido, INIT / RECALL | ✅ |
 | Master: CLIP, PNCH, DUCK | ✅ |
 | Punch-in FX de audio y MIDI, con su lane automatizable | ✅ |

@@ -51,8 +51,8 @@ terminar). La copia vieja de patrones (`chain.source`, 12,5 KB de `.bss`) ya no 
   primero las secciones y filas de la canción que se deja, carga las 4 secciones y las filas de la nueva y
   su sección A pasa a ser la música (canción vacía: la música queda, para guardar secciones en ella).
   Nombre de la canción: el de su sección A (si no tiene, "SONG n").
-- Pendiente: backup del editor de todas las canciones (hoy los ids 2–5 son las secciones de la canción
-  actual) y renombrar canciones.
+- HECHO: backup del editor de todas las canciones: id 10 el índice (filas y escenas), ids 40–71 las secciones de cada
+  canción (40 + 4 × canción + sección), leídas de flash al pedirlas (sin RAM propia). Pendiente: renombrar canciones.
 
 ### 4e. Escenas — hecho (JIANT)
 Cada fila de la canción tiene una escena opcional (`song_chain.c` `scene_t`): mutes de T1–T4 y de los grupos de DRUM-X, M1–M4 y los punch-in MIDI apretados. Se aplica al entrar la fila, sigue en las filas sin escena y la guardan KNOB 4 en SONG o SONG REC.

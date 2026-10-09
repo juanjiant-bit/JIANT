@@ -176,7 +176,7 @@ int main(void)
     reset();
     trk[0].step[0] = (step_t){{60}, 1, ST_NOTE, 0, 96, 0, 0};
     bad += check("LIST captures the runtime: 13 objects (id 8 empty, id 9 the FM6 patches), runtime 3840 B (FUNB)",
-                 list(0, &len, &crc) == 0 && rep[2] == 10u && len == sizeof(project_store_t) && len == 3840u &&
+                 list(0, &len, &crc) == 0 && rep[2] == 43u && len == sizeof(project_store_t) && len == 3840u &&
                  crc == st_crc32(ED_BK_RAW, len));
     bad += check("an empty project slot lists as length 0", list(2, &len, &crc) == 0 && len == 0);
     bad += check("GET of the runtime copy", get(0, 0, 64) == 0);
@@ -277,6 +277,26 @@ int main(void)
     bad += check("a FUN9 project restores into slot 3 (flash and RAM)",
                  put_all(4, &st, sizeof st, st_crc32(&st, sizeof st)) == 0 && project_used(2) &&
                  !memcmp(&proj_slot[2], &st, sizeof st) && st_load(OBJ_PROJECT0 + 2, &proj_wire, sizeof proj_wire) == (int)sizeof st);
+    {   /* (JIANT) the songs: a section of song 3 (id 40 + 4 * 2 + 1) into its flash object, read back by LIST / GET; the
+         * current song's (song 1) from RAM; the song index (id 10) with a scene, the song playing kept */
+        uint32_t len = 0, crc = 0;
+        song_index_t si;
+        bad += check("JIANT: a section of song 3 restores into its flash object (not the current song's RAM)",
+                     put_all(40u + 9u, &st, sizeof st, st_crc32(&st, sizeof st)) == 0 &&
+                     st_load(OBJ_SONG1 + 4u + 1u, &proj_wire, sizeof proj_wire) == (int)sizeof st && !song_cur);
+        bad += check("  LIST shows it (length and CRC of the flash copy), song 1's from RAM (id 42 = slot 3)",
+                     list(40u + 9u, &len, &crc) == 0 && len == sizeof st && crc == st_crc32(&st, sizeof st) &&
+                     list(42u, &len, &crc) == 0 && len == sizeof st);
+        bad += check("  GET of it: its bytes", get(40u + 9u, 256u, 64u) == 0 && rep[1] == 0);
+        si = song_idx;
+        si.magic = SONG_MAGIC; si.version = 2;
+        si.scene[2][0].on = 1; si.scene[2][0].mac[3] = 99; si.cur = 5;
+        bad += check("  the song index restores (a scene of song 3), the song playing stays",
+                     put_all(10u, &si, sizeof si, st_crc32(&si, sizeof si)) == 0 && song_idx.scene[2][0].mac[3] == 99 &&
+                     song_idx.cur == song_cur);
+        si.version = 7;
+        bad += check("  an index of another version is refused", put_all(10u, &si, sizeof si, st_crc32(&si, sizeof si)) == 2);
+    }
     {   /* FUN8 of 1.0.x (3584 bytes, 91 parameters, the patches at 3056): restores as FUN9, E0 at P_E0, lanes 100 % */
         static uint8_t v8[3584];
         uint32_t pos = 68u, pos9 = 68u, k, j, sum;
