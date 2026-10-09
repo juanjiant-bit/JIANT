@@ -409,6 +409,7 @@ int main(int argc, char **argv)
         for (m = 0; m < 2u; m++) {                       /* DUCK 0, then 100: a held synth note, a kick */
             t = kitx(64, 64);
             host_preset(s2, 0, 0);
+            s2->p[P_E7] = 0;                             /* (SAW LEAD with no octave on osc 2: no beating to measure) */
             for (i = 0; i < 4u; i++)
                 s2->p[P_DIST + i] = 0;
             song.g[G_DUCK] = (int16_t)(m ? 100 : 0);

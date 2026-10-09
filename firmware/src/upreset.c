@@ -46,6 +46,7 @@
 #define UP_BANK_MAGIC 0x31425055u                /* "UPB1" */
 #define UP_FM_AT (UP_PMAX * 2u - 1u)             /* (JIANT 0.3) packed[]'s last byte (past P_COUNT): UP_FM_MARK = DRUM's */
 #define UP_FM_MARK 0x46u                         /* E5 is FM; a DRUM record without it held ACC there: FM off */
+#define UP_V04_MARK 0x47u                        /* (JIANT 0.4) .. and LOFI's / ANALOG's E values today's (core.h sound_v04) */
 typedef struct {
     uint8_t used, ver, engine, np;               /* UP_USED, UP_VER, engine, P_COUNT when stored */
     char name[12];                               /* ASCII 32..126, 0-padded (no 0 when 12 long) */
@@ -95,10 +96,16 @@ static void up_migrate(up_rec_t *r)
         r->engine = 0;
         for (k = 0; k < 8u; k++) up_set_value(r, r->np - 8u + k, e[k]);
     }
-    if (r->engine == ENGI_DRUM && !(r->ver >= 4u && r->np <= UP_FM_AT && r->packed[UP_FM_AT] == UP_FM_MARK)) {
-        up_set_value(r, r->np - 3u, 0);                 /* (JIANT 0.3) ACC there: FM off; marked (packed records) */
-        if (r->ver >= 4u && r->np <= UP_FM_AT)
-            r->packed[UP_FM_AT] = UP_FM_MARK;
+    {
+        uint32_t mk = r->ver >= 4u && r->np <= UP_FM_AT ? r->packed[UP_FM_AT] : 0u;
+        if (r->engine == ENGI_DRUM && mk != UP_FM_MARK && mk != UP_V04_MARK)
+            up_set_value(r, r->np - 3u, 0);             /* (JIANT 0.3) ACC there: FM off */
+        if (mk != UP_V04_MARK && r->ver >= 4u && r->np <= UP_FM_AT) {   /* (0.4) LOFI, ANALOG: today's values (records */
+            for (k = 0; k < 8u; k++) e[k] = up_value(r, r->np - 8u + k);   /* before 1.0, unmarkable: as they are) */
+            sound_v04(r->engine, e);
+            for (k = 0; k < 8u; k++) up_set_value(r, r->np - 8u + k, e[k]);
+            r->packed[UP_FM_AT] = UP_V04_MARK;
+        }
     }
 }
 
@@ -206,7 +213,7 @@ static int up_parse(const uint8_t *a, uint32_t na, up_rec_t *r, uint32_t *slot)
     r->ver = UP_VER;
     r->engine = a[1];
     r->np = P_COUNT;
-    r->packed[UP_FM_AT] = UP_FM_MARK;
+    r->packed[UP_FM_AT] = UP_V04_MARK;
     for (i = 0; i < n; i++)
         r->name[i] = (char)a[2 + i];
     for (i = 0; i < P_COUNT; i++, k += 2u)
@@ -289,8 +296,10 @@ static int up_put(uint32_t k, const up_rec_t *r)
     bk->magic = UP_BANK_MAGIC;
     bk->rsize = sizeof(up_rec_t);
     bk->nslot = UP_PER_BANK;
-    if (r)
+    if (r) {
         *up_rec(k) = *r;
+        up_migrate(up_rec(k));                          /* (as a bank load would: RAM and flash the same record) */
+    }
     else
         memset(up_rec(k), 0, sizeof(up_rec_t));
 #if FELUCCA_FLASH
@@ -362,7 +371,7 @@ static int up_store(uint32_t k, const char *name)
     r.ver = UP_VER;
     r.engine = TSEL->eng_req;
     r.np = P_COUNT;
-    r.packed[UP_FM_AT] = UP_FM_MARK;
+    r.packed[UP_FM_AT] = UP_V04_MARK;
     up_set_name(&r, k, name);
     for (i = 0; i < P_COUNT; i++)
         up_set_value(&r, i, motion_base_value(TSEL, i));

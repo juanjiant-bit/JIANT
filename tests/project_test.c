@@ -107,6 +107,13 @@ static void to_v4(project_v4_t *v, const project_t *q)
 
 /* track t of the converted project has the old values where they belong; drum: track 4 was the drum part,
  * lvl / rev: its level and reverb send (the old globals) */
+/* (JIANT 0.4) a project's tracks as an older format's import leaves them: LOFI's and ANALOG's E values converted */
+static void v04_tracks(proj_trk_t *t)
+{
+    uint32_t k;
+    for (k = 0; k < NTRK; k++)
+        sound_v04(t[k].engine, &t[k].p[P_E0]);
+}
 static int track_ok(const proj_trk_t *n, const proj_trk_v2_t *o, uint32_t t, int drum, int16_t lvl, int16_t rev)
 {
     uint32_t k;
@@ -118,8 +125,13 @@ static int track_ok(const proj_trk_t *n, const proj_trk_v2_t *o, uint32_t t, int
           n->p[P_SLDEPTH] == TP[P_SLDEPTH].def;
     for (k = P_M1SRC; k <= P_M4AMT; k++)
         ok &= n->p[k] == 0;                     /* every matrix slot OFF */
-    for (k = 0; k < 8u; k++)
-        ok &= n->p[P_E0 + k] == oldv(t, 45u + k);
+    {
+        int16_t e[8];                           /* (JIANT 0.4: LOFI's and ANALOG's E values as today's, core.h sound_v04) */
+        for (k = 0; k < 8u; k++) e[k] = oldv(t, 45u + k);
+        sound_v04(n->engine, e);
+        for (k = 0; k < 8u; k++)
+            ok &= n->p[P_E0 + k] == e[k];
+    }
     return ok;
 }
 
@@ -149,8 +161,13 @@ static int track_v3_ok(const proj_trk_t *n, const proj_trk_v3_t *o, uint32_t t)
         ok &= n->p[k] == oldv3(t, k);           /* up to the SLICER: the same ids */
     for (k = P_M1SRC; k <= P_M4AMT; k++)
         ok &= n->p[k] == TP[k].def && TP[k].def == 0;
-    for (k = 0; k < 8u; k++)
-        ok &= n->p[P_E0 + k] == oldv3(t, 49u + k);
+    {
+        int16_t e[8];                           /* (JIANT 0.4: as today's) */
+        for (k = 0; k < 8u; k++) e[k] = oldv3(t, 49u + k);
+        sound_v04(n->engine, e);
+        for (k = 0; k < 8u; k++)
+            ok &= n->p[P_E0 + k] == e[k];
+    }
     return ok;
 }
 
@@ -198,6 +215,7 @@ int main(void)
     static project_v2_t v2;
     static project_v1_t v1;
     static project_t q, q2;
+    static proj_trk_t qx[NTRK];                         /* (JIANT 0.4: what an older format's import leaves) */
     static union {
         project_t v5;
         project_v4_t v4;
@@ -314,7 +332,7 @@ int main(void)
         old.size = sizeof old;
         old.sum = proj_hash(&old, sizeof old - 4u);
         bad += check("FUN5 -> FUN6: sounds, grid and reserved lane bytes kept, no chain",
-            proj_import(&q2, &old, sizeof old) && !memcmp(q2.t, q.t, sizeof q.t) &&
+            proj_import(&q2, &old, sizeof old) && (memcpy(qx, q.t, sizeof q.t), v04_tracks(qx), !memcmp(q2.t, qx, sizeof q.t)) &&
             !q2.chain.count && chain_valid(&q2.chain));
         old.sum ^= 1u;
         bad += check("FUN5: damaged checksum refused", !proj_import(&q2, &old, sizeof old));
@@ -337,8 +355,10 @@ int main(void)
     memcpy(&buf, &v4, sizeof v4);
     ok = proj_import(&q2, &buf, (int)sizeof v4) && proj_ok(&q2) && q2.magic == PROJ_MAGIC && q2.sel == q.sel &&
          !memcmp(q2.g, q.g, sizeof q.g);
+    memcpy(qx, q.t, sizeof q.t);
+    v04_tracks(qx);
     for (t = 0; t < NTRK; t++)
-        ok &= !memcmp(q2.t[t].p, q.t[t].p, sizeof q.t[t].p) && q2.t[t].engine == q.t[t].engine &&
+        ok &= !memcmp(q2.t[t].p, qx[t].p, sizeof q.t[t].p) && q2.t[t].engine == q.t[t].engine &&
               steps_same(q2.t[t].step, v4.t[t].step);
     bad += check("FUN4 -> FUN6: parameters, engines, globals; steps as they were, no hits", ok);
     {   /* track 2 a DRUM track: BEAT-like steps, a chord, a low tom 41, a crash 49, a step accent, a TIE */

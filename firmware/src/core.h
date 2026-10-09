@@ -130,6 +130,18 @@ static inline int eng_gone(uint32_t e)
 {
     return e == ENGI_PHYS || e == ENGI_SAMPLE || e == ENGI_GRAIN || e == ENGI_SLICE || e == ENGI_TRIO;
 }
+/* (JIANT 0.4) a sound stored before 0.4 -> today's E values, in place: LOFI (3) {.., SWP, VIB, ARP, TONE} -> {.., CUT
+ * (its TONE), VIB, BEND 0, MASK 0}; ANALOG (0) KTR -> INT 0 (the key tracking fixed at its old default). Projects
+ * (project.c: the kit's marker below 3, or an older format) and user presets (upreset.c: no UP_V04_MARK) */
+static void sound_v04(uint32_t engine, int16_t *e)
+{
+    if (engine == 3u) {
+        e[4] = e[7];
+        e[6] = e[7] = 0;
+    } else if (engine == 0u) {
+        e[7] = 0;
+    }
+}
 /* (JIANT 0.4) TRIO (engine 6) folded into ANALOG: its sound's E values -> ANALOG's, in place, the nearest WAVE (its
  * three saws SAW3, its sync sets SYNC, its ring sets RING, pulses PWM, triangles TRI, noise as NOIS), INT2 as the
  * SYNC / RING ratio (DTN: 16 x (2^(st/12) - 1)), DTN, CUT and RES kept; 1 = it was TRIO (its engine is ANALOG now):
