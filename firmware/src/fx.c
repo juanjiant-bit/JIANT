@@ -292,6 +292,8 @@ static __attribute__((noinline)) int32_t dly_grain(uint32_t dl)
         int32_t a, b, w;
         if (ph < 65536u / GR_LEN)                       /* this grain starts again: its spray */
             fx.gr_sp[j] = song.g[G_DSPRY] ? rng() % ((uint32_t)song.g[G_DSPRY] * 64u + 1u) : 0u;
+        if (dl + fx.gr_sp[j] > DLY_LEN - 2u - GR_LEN * 2u)   /* (JIANT 0.5) a long TIME (1/1 and up: the whole line): */
+            dl = DLY_LEN - 2u - GR_LEN * 2u - fx.gr_sp[j];  /* room for the sweep, else the read point sat clamped (no pitch) */
         d = ((dl + fx.gr_sp[j]) << 8) + ((e * ((s > 0 ? 65535u - ph : ph) >> 4)) >> 12);   /* Q8: up, the delay
                                                          * shrinks over the grain; down, it grows */
         di = d >> 8;

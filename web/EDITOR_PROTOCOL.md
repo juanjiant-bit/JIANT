@@ -53,7 +53,7 @@ presets (as PHYS, 9); a sound of theirs that arrives (a project, a user preset, 
 ANALOG's first preset, a SAMPLE PERC sound (SET 4) as DRUM's kit. The factory samples left the firmware.
 
 **JIANT FUNB (120 parameters, 32 globals):** 21 track parameters went in before the engine parameters, which moved from
-91..98 to 112..119: P_COUNT 120, P_E0 112. Five globals were added after the 27 a project's header holds: G_COUNT 32.
+91..98 to 112..119: P_COUNT 120, P_E0 112; JIANT 0.5 adds ANALOG's FILTER TYPE (112): P_COUNT 121, P_E0 113. Five globals were added after the 27 a project's header holds: G_COUNT 32.
 No command changed; an editor that takes P_COUNT, G_COUNT and P_E0 from `INFO` keeps working.
 
 | id | label | values |
@@ -302,7 +302,7 @@ numbered 0..31 (the device shows U01..U32).
 - **DRUM is DRUM-X (JIANT 0.1).** Felucca's kits (KIT STD 66 10 77 80 10 66 55 77, and 1..3 once HAND CYM H+CYM)
   are retired. E1..E8 of DRUM are {MRPH (KIT's slot: the morph A..B of every sound), TUNE, TONE, DECY, NOIS (SNAP's
   slot: moves every sound's noise, 64 = as the kit has it), FM (ACC until JIANT 0.3; a DRUM record stored before loads
-  with FM 0), WARP (KICK's slot), DRV}. A stored KIT
+  with FM 0), FOLD (KICK's slot; was WARP), DRV}. A stored KIT
   value plays as that MRPH; the kit's sounds are the section's DRUM-X kit (see "Projects (FUNA)").
 - `UP_STORE`: name "" stores with the automatic name the device uses (engine name + slot number,
   "ANALOG 07"). rc 1 for a bad slot or name.

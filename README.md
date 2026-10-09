@@ -29,7 +29,7 @@ FM-1, con sonido, y se maneja con el teclado de la compu o el mouse. Se actualiz
 ### DRUM-X: batería sintetizada con morph
 Un kit de 8 sonidos (BD SD CP CH OH TM RS CB) generado en tiempo real, sin samples, al estilo Microtonic.
 - Cada sonido tiene dos lados, **A** y **B**; **MORPH** (KNOB 1, siempre a mano) se mueve entre los dos.
-- **WARP** deforma todo el kit con FM y feedback; **FM** cambia el timbre de cada sonido con FM armónica (8 bandas de
+- **FOLD** pasa el oscilador de cada sonido por un wavefolder después de su envolvente (ataque brillante, cola limpia); **FM** cambia el timbre de cada sonido con FM armónica (8 bandas de
   ratio, de grave y redondo a metálico); además TUNE, TONE, DECAY, NOISE y DRIVE.
 - **Mutes por grupo** (KICK, SNARE, HAT, PERC) con GLO sostenido, y **mute por sonido** con EDIT sostenido.
 - **EDIT sostenido → INIT / RECALL**: el kit vuelve al de fábrica o al guardado en la sección.
@@ -58,13 +58,28 @@ LFO sostenido abre la capa **MACRO**: las cuatro perillas son M1–M4 y la panta
 - **Una sesión nueva ya viene modulada**: al encender, cada track sin rutas de macro recibe dos al azar hacia lo que su
   sonido tiene (parámetros del engine, CUT, SHP, envíos, algo de PITCH), repartidas para que cada macro mueva dos
   tracks. Girás M1–M4 y todo se deforma; después afinás en MOD o lo guardás con el proyecto.
-- **Dado**: con las macros abiertas (LFO sostenido o fijas) **SELECT** tira rutas nuevas; con LFO sostenido F3 también y
-  G3 las borra (las rutas propias de cada track quedan). Mientras están fijas, el tempo queda en GLO + SELECT.
+- **Dado**: con las macros abiertas (LFO sostenido o fijas) **SELECT** tira rutas nuevas, solo sobre los tracks que
+  están sonando (los muteados o en silencio quedan sin rutas); con LFO sostenido F3 también y G3 las borra (las rutas
+  propias de cada track quedan). Mientras están fijas, el tempo queda en GLO + SELECT.
 - **Asignar una macro**: en la página MOD de un track elegí SRC M1…M4 y su destino, con amount de −100 a +100.
 - **Destinos**: pitch, filtro, forma, amplitud, pan, envíos, LFO, cualquiera de los 8 parámetros del engine (MORPH,
-  WARP, …) y el master (CLIP y PNCH).
+  FOLD, …) y el master (CLIP y PNCH).
 - **Alcance**: una macro puede mover varias cosas en varios tracks a la vez.
 - **Guardado**: se guardan con el proyecto.
+
+### SELECT: tempo en HOME, dado de sonido en el resto
+El tempo se cambia con **SELECT** solo en HOME y en GLOBAL (o con GLO sostenido). En cualquier otra página SELECT tira
+el dado del sonido del track: en un sinte carga uno de sus presets de fábrica al azar y mueve cada parámetro del engine
+hasta un cuarto de su rango; en DRUM-X sortea los lados A y B de cada sonido alrededor del kit de fábrica.
+
+### Pantalla viva
+- **HOME** es el ecosistema: un ser por track (su engine, sus cuatro perillas), cada uno se calienta, se hincha y se
+  mueve con su propio audio; en silencio quedan quietos.
+- Las páginas de engine muestran su ser en líneas térmicas (isotermas: el borde frío, el núcleo caliente); CUT le abre
+  espinas, RES le hace vibrar la membrana, DTN separa sus núcleos. DRUM-X es una colonia, un ser por sonido.
+- LFO, ENV, FX, DEST, VOICE y GLOBAL tienen gráficos técnicos vivos (el LFO corre a su rate, la envolvente marca dónde
+  está la voz).
+- Al encender se escribe la firma "Jiant FM1" en colores térmicos.
 
 ### Perillas con aceleración
 Girar rápido barre el rango entero (hasta ×16 en los parámetros de 0 a 127); girar lento es ajuste fino, de a un
@@ -137,11 +152,15 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
   y DRUM (DRUM-X).
   - **ANALOG**: el oscilador 2 tiene **INT** (intervalo de ±24 semitonos, como un sinte analógico clásico: quintas,
     octavas) además de DTN. Suma las ondas de TRIO: **SYNC** (sync duro, DTN barre la relación), **RING** (modulación en anillo,
-    campanas y metales) y **SAW3** (tres sierras desafinadas). Los sonidos de TRIO guardados cargan como ANALOG.
+    campanas y metales) y **SAW3** (tres sierras desafinadas); INT también mueve el oscilador 2 en SYNC y RING. Los
+    sonidos de TRIO guardados cargan como ANALOG. Página **FILTER** (EDIT): TYPE **LP**, **HP**, **BP** o **COMB** (un
+    comb afinado a la nota, CUT lo mueve ±32 semitonos y RES es su realimentación), con CUT, RES y DRV.
   - **LOFI** tiene **BYTE** (primera en la lista): bytebeat, 32 fórmulas de 8 bits elegidas con ALGO (DUTY) y una
     variable VAR (CRSH) que las deforma; el tiempo sigue la nota tocada. Ningún otro firmware lo tiene. Para todas las
     ondas: **CUT** (filtro resonante), **BEND** (en BYTE pliega el tiempo y salen melodías y ritmos nuevos de la misma
-    fórmula; en las otras dobla la fase) y **MASK** (corrupción de bits). VIB queda; SWP, ARP y TONE se fueron.
+    fórmula; en las otras dobla la fase) y **MASK** (corrupción de bits). VIB queda; SWP, ARP y TONE se fueron. En
+    BYTE, **RES** (resonancia del filtro, en lugar de VIB) y **LOOP** (en lugar de MASK: repite un tramo corto de la
+    fórmula y el ruido se vuelve un tono afinado a la nota).
   - **PHASE** suma **FB**: la salida realimenta la fase, de un borde más duro a growl y ruido.
 - **Modulación**: 4 slots por track. Fuentes: LFO, ENV, VEL, KEY, RAND, controladores MIDI, las 4 macros y STEP (el
   secuenciador de modulación).
@@ -161,7 +180,7 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
 | Objetivo | Estado |
 | --- | --- |
 | Song mode estilo SLOOP: 8 canciones × 4 secciones, con backup completo desde el editor | ✅ |
-| DRUM-X: motor, MORPH, WARP, mutes por grupo y por sonido, INIT / RECALL | ✅ |
+| DRUM-X: motor, MORPH, FOLD, mutes por grupo y por sonido, INIT / RECALL | ✅ |
 | Master: CLIP, PNCH, DUCK | ✅ |
 | Punch-in FX de audio y MIDI, con su lane automatizable | ✅ |
 | Macros M1–M4 con su capa y su mapa | ✅ |

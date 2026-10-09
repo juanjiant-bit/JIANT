@@ -899,8 +899,8 @@ static int drum_kit_retired(void)
     a[1] = P_E4;
     request(ED_DESC, a, 2);
     ok &= !strcmp((const char *)host_wire + 5 + 3 + 6, "NOIS");
-    ok &= !strcmp(ENG_DRUM.edit[6].label, "WARP");
-    bad += check("DESC of DRUM: MRPH (KIT's slot), NOIS (SNAP's), WARP (KICK's)", ok);
+    ok &= !strcmp(ENG_DRUM.edit[6].label, "FOLD");
+    bad += check("DESC of DRUM: MRPH (KIT's slot), NOIS (SNAP's), FOLD (KICK's)", ok);
     {   /* a project whose DRUM tracks hold KIT 0..3: loaded as MRPH 0..3 */
         static project_t p;
         for (r = 0; r < NTRK; r++) {

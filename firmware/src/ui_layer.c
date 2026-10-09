@@ -406,6 +406,21 @@ static void song_key(uint32_t p)
  * the instrument invites a turn from the start, the routes there to tune (MOD) or keep (saved with the project).
  * mode 0 (each power-on, project.c autosave_boot then main.c): only a track with no macro route yet, so a session
  * restored keeps its own; 1 (MACRO layer F3): the macros' routes rolled again; 2 (G3): the macros' routes cleared */
+/* (JIANT 0.5) a track that sounds now: not muted, and a voice of it ringing, or (playing) a step of its pattern on */
+static int track_sounding(const track_t *t)
+{
+    uint32_t i, len = (uint32_t)t->p[P_SLEN];
+    if (t->p[P_MUTE])
+        return 0;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].stage && t->v[i].stage < 4u)
+            return 1;
+    if (song.playing)
+        for (i = 0; i < len && i < NSTEP; i++)
+            if (step_on(&seq_steps(t)[i]))
+                return 1;
+    return 0;
+}
 static void macro_dice(uint32_t mode)
 {
     static const uint8_t DST[] = {MD_CUT, MD_SHP, MD_E1, MD_E1 + 1, MD_E1 + 2, MD_E1 + 3, MD_E1 + 4, MD_E1 + 5, MD_E1 + 6,
@@ -424,6 +439,8 @@ static void macro_dice(uint32_t mode)
             if (m[0]) used |= 1u << m[1];
         }
         if (has || mode == 2u)
+            continue;
+        if (mode == 1u && !track_sounding(t))           /* (JIANT 0.5) a reroll: only the tracks that sound now */
             continue;
         for (j = 0, n = 0; j < 4u && n < 2u; j++) {
             int16_t *m = &t->p[P_M1SRC + 3u * j];

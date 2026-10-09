@@ -67,8 +67,9 @@ static void dx_choke(dx_voice_t *v) { if (v->live) v->choke = 1; }
 static uint32_t dx_tau(uint32_t d) { return ((dv_exp2(d * 9u * 4096u / 127u) >> 8) * 3000u) >> 8; }
 
 /* one block of lane L's hit v into y (n <= CTL): Q15, peaks near full scale. morph 0..127; tune16 1/16 semitones;
- * dofs / cofs / nofs move DECAY / COLOR / NOISE (-64..63). warp (DRUM's WARP, 0..127): every wave through the FM
- * loop, its index deeper, its modulator's ratio higher (inharmonic) and fed back on itself; 0: the patch as it is.
+ * dofs / cofs / nofs move DECAY / COLOR / NOISE (-64..63). warp (DRUM's FOLD since JIANT 0.5, was WARP, 0..127): the
+ * oscillator through a wavefolder after its envelope, x1 .. x9 into three folds at +-T: the hit's loud start folds
+ * into bright partials, its tail unfolds back to the plain wave (a West Coast drum); 0: the patch as it is.
  * fm (DRUM's FM, JIANT, 0..127): every wave through FM with a harmonic modulator, its ratio in eight bands (x0.5 1 1.5
  * 2 3 4 5 7: the timbre's family) and, inside a band, its index rising (subtle .. hard); with WARP the two add. The oscillator and the noise each run their own loop (the wave and the
  * filter picked once a block), skipped when the mix leaves them out; gains and the pitch step per sample */
@@ -136,10 +137,9 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
     dinc = ((int32_t)(inc1 >> 4) - inc) / (int32_t)n;
     if (og) {                                            /* the oscillator */
         uint32_t ph = v->ph;
-        warp = clamp(warp, 0, 127);
+        int32_t fold = clamp(warp, 0, 127);
         fm = clamp(fm, 0, 127);
-        if (fm)
-            warp |= 0x100;                               /* (FM: the FM loop below, as WARP; the flag stripped there) */
+        warp = fm ? 0x100 : 0;                           /* (FM: the FM loop below; the flag stripped there) */
         if (wave == DXW_SINE && q[DXP_COLOR] && !warp) {   /* drive x1 .. x2.5 into the soft clip */
             int32_t g = 4096 + q[DXP_COLOR] * 48;
             for (i = 0; i < n; i++, inc += dinc, ga += dga) {
@@ -160,8 +160,8 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
                 ph2 += ((uint32_t)inc >> 8) * ratio;
             }
             v->ph2 = ph2;
-        } else {                                         /* WARP: FM with feedback on every wave; FM: harmonic */
-            uint32_t w = (uint32_t)warp & 127u;
+        } else {                                         /* FM: harmonic, every wave */
+            uint32_t w = 0u;
             uint32_t ph2 = v->ph2, ratio = (fm ? FM_RATIO[(uint32_t)fm >> 4] : DX_RATIO[wave]) + w * 70u, fb = w << 10;
             int32_t idx = q[DXP_COLOR] * 3 + (int32_t)w * 3 + (fm ? (((fm & 15) + 4) * 24) : 0), mo = v->mo;
             for (i = 0; i < n; i++, inc += dinc, ga += dga) {
@@ -177,6 +177,15 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
         if (L->mode & DX_DRIVE)                         /* (JIANT 0.4) DRIVE: x3 into the soft clip, the level near */
             for (i = 0; i < n; i++)
                 y[i] = (softclip(y[i] * 3) * 22000) >> 15;
+        if (fold) {                                      /* (JIANT 0.5) FOLD: after the envelope, so it follows it */
+            int32_t g = 16 + fold * 2;                   /* (x1 .. x16.9 / 16 .. 17 / 16: Q4) */
+            for (i = 0; i < n; i++) {
+                int32_t v = clamp((y[i] * g) >> 4, -5 * 16384, 5 * 16384), a;
+                for (a = 0; a < 3; a++)
+                    v = v > 16384 ? 32768 - v : v < -16384 ? -32768 - v : v;
+                y[i] = (v * 3) >> 1;
+            }
+        }
     } else {
         for (i = 0; i < n; i++)
             y[i] = 0;

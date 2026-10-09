@@ -32,6 +32,7 @@ static const genome_t GENOME[8] = {
     {8, 12, 12, 6, 17, 0, 8},                           /* a pollen grain */
     {3, 7, 15, 3, 21, 4, 5},                            /* a hydra: curled tentacles */
 };
+static const genome_t LANE_G_HOME = {12, 0, 10, 3, 18, 0, 6};   /* HOME: a DRUM-X track's being (spiky, a beat) */
 typedef struct {
     int32_t spikes, len, wob, lob, nuc, sep, fray, ripple;   /* len wob sep fray ripple 0..256 */
 } bfeat_t;
@@ -125,38 +126,79 @@ static int32_t bg_knob(uint32_t c, const char **lab)
     *lab = d && d->label ? d->label : "";
     return r < 0 ? -1 : r * 256 / 1000;
 }
+/* a being's features from four of its track's parameters (ids), each by what it is (its label), else by its place */
+static void bg_feat(const track_t *t, const genome_t *g, const uint8_t *ids, bfeat_t *f)
+{
+    int32_t k[4];
+    const char *lab[4];
+    uint32_t c;
+    for (c = 0; c < 4u; c++) {
+        const param_desc_t *d = ids[c] < P_COUNT ? track_desc(t, ids[c]) : 0;
+        int32_t r = d && d->label && d->label[0] != '-' ? RATIO(d, enum_rank(d, t->p[ids[c]])) : -1;
+        lab[c] = d && d->label ? d->label : "";
+        k[c] = r < 0 ? 128 : r * 256 / 1000;
+    }
+    f->spikes = g->k0 + k[0] * g->kk / 256;
+    f->len = 48 + k[1] * 208 / 256;
+    f->wob = 40 + k[2] * 216 / 256;
+    f->lob = g->lob;
+    f->nuc = 1 + k[3] * 3 / 257;
+    f->sep = f->fray = f->ripple = 0;
+    for (c = 0; c < 4u; c++) {                           /* a knob by what it is */
+        const char *l = lab[c];
+        if (str_eq(l, "CUT")) { f->spikes = 10 + k[c] * 22 / 256; f->len = k[c] * k[c] / 256; }
+        else if (str_eq(l, "RES") || str_eq(l, "RESO")) f->ripple = k[c];
+        else if (str_eq(l, "DTN") || str_eq(l, "SPRD") || str_eq(l, "DTUNE")) { f->sep = k[c]; if (f->nuc < 2) f->nuc = 2; }
+        else if (str_eq(l, "NOIS") || str_eq(l, "RAND") || str_eq(l, "BRTH") || str_eq(l, "CRSH")) f->fray = k[c];
+        else if (str_eq(l, "WAVE")) f->lob = 2 + k[c] * 5 / 257;
+    }
+}
 /* the page's being: its engine's genome, its four knobs by what they are */
 static void graph_being(const track_t *t)
 {
     static uint32_t tm, f0;                              /* its time runs with the sound: in silence it rests */
     const genome_t *g = &GENOME[(t->eng_req % NENGINES + ui.page) % 8u];
-    int32_t en = bg_energy(), k[4];
-    const char *lab[4];
+    const page_t *pg = cur_page();
+    int32_t en = bg_energy();
     bfeat_t f;
-    uint32_t c;
-    for (c = 0; c < 4u; c++) {
-        k[c] = bg_knob(c, &lab[c]);
-        if (k[c] < 0) k[c] = 128;
-    }
-    f.spikes = g->k0 + k[0] * g->kk / 256;
-    f.len = 48 + k[1] * 208 / 256;
-    f.wob = 40 + k[2] * 216 / 256;
-    f.lob = g->lob;
-    f.nuc = 1 + k[3] * 3 / 257;
-    f.sep = 0;
-    f.fray = 0;
-    f.ripple = 0;
-    for (c = 0; c < 4u; c++) {                           /* a knob by what it is */
-        const char *l = lab[c];
-        if (str_eq(l, "CUT")) { f.spikes = 10 + k[c] * 22 / 256; f.len = k[c] * k[c] / 256; }
-        else if (str_eq(l, "RES") || str_eq(l, "RESO")) f.ripple = k[c];
-        else if (str_eq(l, "DTN") || str_eq(l, "SPRD") || str_eq(l, "DTUNE")) { f.sep = k[c]; if (f.nuc < 2) f.nuc = 2; }
-        else if (str_eq(l, "NOIS") || str_eq(l, "RAND") || str_eq(l, "BRTH") || str_eq(l, "CRSH")) f.fray = k[c];
-        else if (str_eq(l, "WAVE")) f.lob = 2 + k[c] * 5 / 257;
-    }
+    bg_feat(t, g, pg->id, &f);
     if (en > 2) tm += (ui.frame - f0) * (uint32_t)(120 + en);
     f0 = ui.frame;
     being_lines(g, &f, 120 * 16, 61 * 16, 36 * 16, en, tm);
+}
+
+/* (JIANT 0.5) HOME: the system as an ecosystem. A being per track (its engine's genome, its HOME knobs by what they
+ * are), each warmed, swollen and moved by its own sound (the part's peak, slewed); a muted one a dim outline, the
+ * selected one larger, its number in the theme colour. Still in silence */
+static void graph_ecosys(void)
+{
+    static const int16_t PX[NTRK] = {52, 128, 186, 92}, PY[NTRK] = {40, 34, 74, 88};
+    static int32_t en[NTRK];
+    static uint32_t tm[NTRK], f0;
+    uint32_t c;
+    for (c = 0; c < NTRK; c++) {
+        track_t *t = &trk[c];
+        uint32_t e = t->eng_req % NENGINES;
+        const genome_t *g = e == ENGI_DRUM ? &LANE_G_HOME : &GENOME[e % 8u];
+        int32_t v = t->peak * 256 / 14000, r = (c == song.sel ? 19 : 14) * 16;
+        uint8_t ids[4];
+        bfeat_t f;
+        char num[2] = {(char)('1' + c), 0};
+        t->peak = 0;
+        if (v > 256) v = 256;
+        en[c] += v > en[c] ? (v - en[c]) / 2 : (v - en[c]) / 6;
+        if (en[c] > 2) tm[c] += (ui.frame - f0) * (uint32_t)(140 + en[c]);
+        for (v = 0; v < 4; v++) ids[v] = (uint8_t)ENGINES[e]->knob[v];
+        bg_feat(t, g, ids, &f);
+        if (t->p[P_MUTE])
+            bg_outline(g, &f, PX[c] * 16, PY[c] * 16, r, 1, tm[c], ux.mono || settings.palette == UI_BW_INDEX ?
+                       ux_gray(ux_luma(T_DIM) >> 3) : T_DIM);
+        else
+            being_lines(g, &f, PX[c] * 16, PY[c] * 16, r, en[c], tm[c] + c * 20000u);
+        cv_text_in(PX[c] - 30, PY[c] + 14 + (c == song.sel ? 5 : 0), 60, &AF_S, num,
+                   c == song.sel ? T_THEME : t->p[P_MUTE] ? T_DIM : T_MID, T_SURF);
+    }
+    f0 = ui.frame;
 }
 
 /* DRUM-X: the colony. Two rows of four, the sound's name under each */

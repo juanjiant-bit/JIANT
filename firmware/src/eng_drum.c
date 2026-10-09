@@ -14,7 +14,7 @@
  *
  * Parameters (stored as before: KIT's slot is MRPH, SNAP's NOIS, KICK's WARP): MRPH the MORPH A..B of every
  * lane; TUNE (+-12 semitones), TONE (COLOR), DECY (DECAY) and NOIS (NOISE) move every lane from its patch (64: as
- * the kit has it); FM (JIANT, once ACC) every sound through harmonic FM, eight ratio bands (drumx_voice.c dx_run); WARP every sound through FM with feedback, deeper and inharmonic (0: as the kit has it); DRV a soft clip on every hit
+ * the kit has it); FM (JIANT, once ACC) every sound through harmonic FM, eight ratio bands (drumx_voice.c dx_run); FOLD (JIANT 0.5, was WARP) every sound's oscillator through a wavefolder after its envelope: a bright attack folding back to the plain tail (0: as the kit has it); DRV a soft clip on every hit
  * (x1..x4, level kept). Each lane has its LEVEL (P_LN0..P_LN7, EDIT > LANES / LANES 2, #97: square law, 100 % the
  * default) on the voice amplitude after the knee. The knobs move a hit while it rings.
  *
@@ -297,7 +297,7 @@ static int32_t drum_keys(const track_t *t, uint32_t k)
     return clamp(29 + 12 * song.octave + (int32_t)k, 0, 127);
 }
 
-/* {MRPH, TUNE, TONE, DECY, NOIS, FM, WARP, DRV}; the kit suggests the BEAT pattern (GM notes) */
+/* {MRPH, TUNE, TONE, DECY, NOIS, FM, FOLD, DRV}; the kit suggests the BEAT pattern (GM notes) */
 static const preset_t DRUM_PRESETS[] = {
     {"DRUM-X", DRUM_KIT_E, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 20), PAT(12)},   /* (core.h: SAMPLE PERC's too) */
 };
@@ -312,7 +312,7 @@ static const engine_t ENG_DRUM = {
         {"DECY", F_PCT, 0, 127, 64, 0, 0},
         {"NOIS", F_PCT, 0, 127, 64, 0, 0},
         {"FM", F_PCT, 0, 127, 0, 0, 0},                 /* (JIANT: was ACC) */
-        {"WARP", F_PCT, 0, 127, 0, 0, 0},
+        {"FOLD", F_PCT, 0, 127, 0, 0, 0},              /* (JIANT 0.5: a wavefolder, was WARP) */
         {"DRV", F_PCT, 0, 127, 0, 0, 0},
     },
     .presets = DRUM_PRESETS,

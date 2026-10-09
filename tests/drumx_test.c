@@ -10,7 +10,7 @@
  *    falls (more crossings in its first 20 ms than in 100..120 ms).
  * 4. the closed hat chokes the open one (below -60 dB of its level within 10 ms).
  * 5. the knobs: MRPH on KNOB 1, NOIS moves every lane's noise.
- * 5w. WARP: every lane another sound at 127, never at full scale.
+ * 5w. FOLD: every lane another sound at 127, never at full scale.
  * 5b. the group mutes (dx_mute): a muted group's hits are silent (any kit), the others still sound; muting a
  *    ringing group fades it out: its voice ends within 10 ms, the output 26 dB under the unmuted hit's, no step
  *    larger than the hit's own; unmuting sounds again.
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
               "snare tail RMS %.0f / %.0f", r0, r1);
     }
 
-    /* 5w: WARP 0 the patch as it is; 127 another sound (every lane), no overflow, still ends */
+    /* 5w: FOLD 0 the patch as it is; 127 another sound (every lane), no overflow, still ends */
     {
         uint32_t lw, ok2 = 1;
         double d = 0;
@@ -253,7 +253,7 @@ int main(int argc, char **argv)
             }
             ok2 &= d / (FS / 8u) > 300 && pk < 32700;
         }
-        check("WARP 127: every lane a different sound, under full scale", ok2, 0);
+        check("FOLD 127: every lane a different sound, under full scale", ok2, 0);
     }
 
     /* 5f (JIANT 0.3): FM (E5, once ACC): 0 the patch as it is; its bands each another timbre, every lane, under full

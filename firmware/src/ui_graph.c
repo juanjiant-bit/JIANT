@@ -1408,7 +1408,7 @@ static void draw_graph(void)
         graph_ht = 100;
     } else if (ui.home) {
         cv_oy = 0;
-        graph_scope(c);
+        graph_ecosys();                              /* (JIANT 0.5: the system's beings, was the scope) */
     } else {
         switch (pg->graph) {
         case GR_ADSR:

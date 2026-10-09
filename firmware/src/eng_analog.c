@@ -8,6 +8,19 @@
  * from osc 1, as a classic two-oscillator synth (fifths, octaves; SAW3: its osc 2). */
 static const char *const N_ANALOG_WAVE[] = {"SAW", "SQR", "TRI", "SIN", "PWM", "SYNC", "RING", "SAW3"};
 enum { AW_SYNC = 5, AW_RING, AW_SAW3 };
+/* (JIANT 0.5) FILTER TYPE (P_FTYPE): LP as before (analog_render's loop); HP BP from the same state-variable filter
+ * (analog_ext's loop, every WAVE); COMB the filter open, the part's sum through a feedback comb tuned to the newest
+ * note and CUT (+-32 semitones about it), RES its feedback (voice.c track_comb) */
+enum { FT_LP, FT_HP, FT_BP, FT_COMB };
+static inline int32_t svf_mode(const tsvf_t *c, int32_t in, int32_t *ic1, int32_t *ic2, uint32_t ft, int32_t k)
+{
+    int32_t v3 = in - *ic2;
+    int32_t v1 = (c->a1 * *ic1 + c->a2 * v3) >> 13;
+    int32_t v2 = *ic2 + ((c->a2 * *ic1 + c->a3 * v3) >> 13);
+    *ic1 = clamp(2 * v1 - *ic1, -150000, 150000);
+    *ic2 = clamp(2 * v2 - *ic2, -150000, 150000);
+    return ft == FT_HP ? in - v2 - ((k * v1) >> 12) : ft == FT_BP ? (k * v1) >> 12 : ft == FT_COMB ? in : v2;
+}
 
 static void analog_note_on(track_t *t, voice_t *v)
 {
@@ -24,17 +37,33 @@ static __attribute__((noinline)) void analog_ext(track_t *t, voice_t *v, int32_t
 {
     const int16_t *p = t->p;
     uint32_t wave = (uint32_t)p[P_E0], i, inc1 = m->inc, ph0 = v->ph[0], ph1 = v->ph[1], ph2 = v->ph[2], r, inc2, inc3;
-    int32_t det = p[P_E1], m2 = p[P_E2] * 258, m1 = 32767 - m2, nz = p[P_E3] * 200, drv = p[P_E6];
+    uint32_t ft = (uint32_t)p[P_FTYPE] & 3u, pw = 0x80000000u + (uint32_t)((m->shape - (64 << 8)) << 15);
+    int32_t det = p[P_E1], m2 = p[P_E2] * 258, m1 = 32767 - m2, nz = p[P_E3] * 200, drv = p[P_E6], kd = 8192 - p[P_E5] * 7600 / 127;
     int32_t drive = 32768 + drv * 512, cut = (p[P_E4] << 8) + m->cutoff + ((v->pitch16 - 60 * 16) << 2);
     int32_t ic1 = v->s[0], ic2 = v->s[1], nst = v->s[2];
     tsvf_t flt;
     tsvf_coef(&flt, cut, p[P_E5]);
     r = 16u + (uint32_t)det;                            /* SYNC / RING: osc 2 at r / 16 of osc 1 (1 .. 8.9) */
     inc2 = wave == AW_SAW3 ? cents_inc(m->pitch16 + p[P_E7] * 16, det, 0) : (inc1 >> 4) * r;   /* (SAW3: osc 2 at INT) */
+    if (wave != AW_SAW3 && p[P_E7]) {                   /* (JIANT 0.5) SYNC / RING: INT moves osc 2 too, semitones */
+        inc2 = (cents_inc(m->pitch16 + p[P_E7] * 16, 0, 0) >> 4) * r;
+        r = inc1 >> 8 ? (inc2 / (inc1 >> 8)) >> 4 : r; /* (its ratio to osc 1, x16: the restart below) */
+        if (r < 1u) r = 1u;
+    }
     inc3 = wave == AW_SAW3 ? cents_inc(m->pitch16, -det, 0) : 0u;
+    if (wave < AW_SYNC)                                 /* (JIANT 0.5: HP BP COMB) the plain WAVEs: osc 2 as analog_render */
+        inc2 = det || p[P_E7] ? cents_inc(m->pitch16 + p[P_E7] * 16, det, 0) : inc1;
     for (i = 0; i < n; i++) {
         int32_t a = osc_saw(ph0, inc1), b, s;
-        if (wave == AW_SAW3) {
+        if (wave < AW_SYNC) {
+            switch (wave) {
+            case 1: a = osc_pulse(ph0, inc1, 0x80000000u); b = osc_pulse(ph1, inc2, 0x80000000u); break;
+            case 2: a = osc_tri(ph0); b = osc_tri(ph1); break;
+            case 3: a = osc_sine(ph0); b = osc_sine(ph1); break;
+            case 4: a = osc_pulse(ph0, inc1, pw); b = osc_pulse(ph1, inc2, pw); break;
+            default: b = osc_saw(ph1, inc2); break;
+            }
+        } else if (wave == AW_SAW3) {
             b = (osc_saw(ph1, inc2) + osc_saw(ph2, inc3)) >> 1;
             ph2 += inc3;
         } else if (wave == AW_SYNC) {
@@ -51,7 +80,7 @@ static __attribute__((noinline)) void analog_ext(track_t *t, voice_t *v, int32_t
             s += mulq15((int32_t)(noise32(&nst) >> 17) - 16384, nz);
         if (drv)
             s = softclip(((s >> 2) * (drive >> 2)) >> 11);
-        out[i] += voice_amp(soft_knee(tsvf_lp(&flt, s >> 1, &ic1, &ic2), 16000) << 1, m, i) << 1;
+        out[i] += voice_amp(soft_knee(svf_mode(&flt, s >> 1, &ic1, &ic2, ft, kd), 16000) << 1, m, i) << 1;
     }
     v->ph[0] = ph0;
     v->ph[1] = ph1;
@@ -61,13 +90,9 @@ static __attribute__((noinline)) void analog_ext(track_t *t, voice_t *v, int32_t
     v->s[2] = nst;
 }
 
-static void analog_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
+static __attribute__((noinline)) void analog_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
     const int16_t *p = t->p;
-    if ((uint32_t)p[P_E0] >= AW_SYNC) {                 /* (JIANT 0.4) SYNC RING SAW3 */
-        analog_ext(t, v, out, n, m);
-        return;
-    }
     uint32_t wave = (uint32_t)p[P_E0], i;
     int32_t det = p[P_E1], mix = p[P_E2], noise = p[P_E3];
     int32_t cut = (p[P_E4] << 8) + m->cutoff + ((v->pitch16 - 60 * 16) << 2);
@@ -131,6 +156,16 @@ static void analog_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
     v->s[2] = nst;
 }
 
+/* the engine's render: SYNC RING SAW3 (0.4) and the FILTER TYPEs HP BP COMB (0.5) in analog_ext, the rest (LP) here
+ * (a dispatch of its own: analog_render's loop as before) */
+static void analog_dispatch(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
+{
+    if ((uint32_t)t->p[P_E0] >= AW_SYNC || t->p[P_FTYPE])
+        analog_ext(t, v, out, n, m);
+    else
+        analog_render(t, v, out, n, m);
+}
+
 static const preset_t ANALOG_PRESETS[] = {
     {"SAW LEAD", {0, 12, 64, 0, 90, 30, 10, 12}, {4, 70, 100, 50}, 20, 1, FX(0, 10, 45, 30), PAT(4)},
     {"SOFT PAD", {0, 20, 64, 4, 60, 10, 0, 0}, {80, 90, 110, 95}, 10, 0, FX(0, 60, 20, 70), PAT(5)},
@@ -167,7 +202,7 @@ static const engine_t ENG_ANALOG = {
     .presets = ANALOG_PRESETS,
     .npresets = NELEM(ANALOG_PRESETS),
     .note_on = analog_note_on,
-    .render = analog_render,
+    .render = analog_dispatch,
     .knob = {P_E4, P_E5, P_ATK, P_REL},
     .keep = 0x03,                /* the filter */
 };
