@@ -539,12 +539,12 @@ static void graph_sample(uint16_t c)
  * anatomies: MORPH moves every outline point by point from one to the other. An organ's inner vessels light up
  * when its group is struck and fade as it rings; the noise of the hats stipples their sepal. Cyan reference letters
  * A and B on a dashed scale with the MORPH on it, a dash-dot axis through the specimen; it breathes (ui.frame) */
-static void graph_drumx(const track_t *t)
+static void graph_drumx(const track_t *t, int32_t sel)   /* sel: the sound edited (EDIT > SOUND), -1 none */
 {
     static const uint8_t LANE_ORGAN[8] = {2, 1, 1, 0, 0, 3, 3, 3};   /* 0 dorsal, 1 petals, 2 sepals, 3 lip */
     static const uint8_t ORGAN_COL[4] = {OG_TEAL, OG_MUSTARD, OG_CORAL, OG_MINT};
     const drum_lane_t *K = drum_kit_of(t);
-    int32_t morph = clamp(t->p[P_E4], 0, 127), m = morph * 256 / 127, env[4] = {0, 0, 0, 0}, side, o;
+    int32_t morph = clamp(t->p[P_E4], 0, 127), m = sel >= 0 ? dx_ui_side * 256 : morph * 256 / 127, env[4] = {0, 0, 0, 0}, side, o;
     int32_t cx = 120 * OG_Q, cy = 58 * OG_Q, u = 15 + (og_sin(ui.frame * 600u) >> 14);   /* (breathing: +-2 / 16) */
     uint32_t l;
     uint16_t cream = og_col(OG_CREAM), cyan = og_col(OG_TEAL), faint = ux_mix(T_SURF, T_TEXT, 30);
@@ -563,6 +563,10 @@ static void graph_drumx(const track_t *t)
         static const og_shape_t *const ORGAN[4] = {&SH_DRUMX_DORSAL, &SH_DRUMX_PETAL, &SH_DRUMX_SEPAL, &SH_DRUMX_LIP};
         const og_shape_t *sh = ORGAN[o];
         uint16_t col = og_col(ORGAN_COL[o]), line = env[o] ? ux_mix(cream, og_col(OG_CORAL), env[o] * 160 / 256) : cream;
+        if (sel >= 0 && LANE_ORGAN[sel & 7] != (uint32_t)o)   /* (EDIT > SOUND: the other organs quiet) */
+            line = ux_mix(T_SURF, line, 45);
+        else if (sel >= 0)
+            line = og_col(OG_CORAL);
         og_xf_t f = {(int16_t)cx, (int16_t)cy, (int16_t)u, 1, sh->a[0], sh->a[1], 256};   /* (vessels: toward the base) */
         og_shape(sh, f, m, line, 256);
         f.k = 208;
@@ -953,7 +957,8 @@ static uint32_t graph_signature(void)
                                    (FELUCCA_FM4 && t->eng_req % NENGINES == ENGI_DIGITAL)))
         h ^= (ui.hot_t ? ui.hot_col + 1u : 0u) * 65537u;
     if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_DRUM && drum_kit_plays(t->p[P_E0]) == DK_X)
-        h ^= ui.frame * 2654435761u;                 /* DRUM-X: the flower moves every frame */
+        h ^= ui.frame * 2654435761u;                 /* DRUM-X: the specimen moves every frame */
+    if (pg->graph == GR_DXSND) h ^= ui.frame * 2654435761u ^ dx_sig();
     if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_FM6)   /* the patch (PAT's algorithm, levels, FB) */
         h ^= (fm6_pgen[(t - trk) % NTRK] + 1u) * 2246822519u;
     if (pg->scope == SC_ENGINE && ENGINES[t->eng_req % NENGINES] == &ENG_SAMPLE) h ^= sample_wave.pos * 13u + sample_wave.key;
@@ -1553,6 +1558,10 @@ static void draw_graph(void)
             cv_oy = 0;
             graph_events();
             break;
+        case GR_DXSND:                               /* EDIT > SOUND: the kit's specimen, the sound's organ singled out */
+            cv_oy = 0;
+            graph_drumx(t, dx_ui_lane);
+            break;
         case GR_TOOLS:
             cv_oy = 0;
             panel_note("TURN TO PICK", "[OCT+] CONFIRM", 0);
@@ -1563,7 +1572,7 @@ static void draw_graph(void)
             else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_FM6) graph_fm6(t, c);   /* EDIT 1 and 2 */
             else if (pg->scope == SC_ENGINE && t->eng_req % NENGINES == ENGI_DRUM && drum_kit_plays(t->p[P_E0]) == DK_X) {
                 cv_oy = 0;
-                graph_drumx(t);
+                graph_drumx(t, -1);
             }
 #if FELUCCA_FM4
             else if ((pg->scope == SC_ENGINE || pg->id[0] == P_FM1_LEVEL) && t->eng_req % NENGINES == ENGI_DIGITAL)

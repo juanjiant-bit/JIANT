@@ -780,6 +780,10 @@ static void draw_columns(void)
         }
         return;
     }
+    if (cur_page()->graph == GR_DXSND) {               /* EDIT > SOUND (ui_dx.c) */
+        dx_cards(cur_page());
+        return;
+    }
     if (cur_page()->graph == GR_SONG) {
         uint32_t row = ui.song_row < CHAIN_ROWS ? ui.song_row : CHAIN_ROWS - 1u;
         int used = row < chain_config.count;
