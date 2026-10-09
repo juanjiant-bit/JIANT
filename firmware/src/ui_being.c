@@ -56,7 +56,7 @@ static int32_t bg_energy(void)
     }
     v = pk * 256 / 12000;
     if (v > 256) v = 256;
-    e += v > e ? (v - e) / 2 : (v - e) / 8;
+    e += v > e ? (v - e) * 3 / 4 : (v - e) / 6;
     return e;
 }
 #define BG_N 96                                         /* vertices of an outline */
@@ -153,6 +153,15 @@ static void bg_feat(const track_t *t, const genome_t *g, const uint8_t *ids, bfe
         else if (str_eq(l, "WAVE")) f->lob = 2 + k[c] * 5 / 257;
     }
 }
+/* (JIANT 0.5) the sound exaggerated on a being: at energy en (0..256) it bulges (its lobes), its spikes shoot out, its
+ * membrane shivers and frays; a hit is seen at once */
+static void bg_excite(bfeat_t *f, int32_t en, int32_t k)
+{
+    f->wob = clamp(f->wob + en * k / 4, 0, 256);
+    f->len = clamp(f->len + en * k / 3, 0, 420);
+    f->ripple = clamp(f->ripple + en * k / 3, 0, 256);
+    f->fray = clamp(f->fray + en * k / 6, 0, 256);
+}
 /* the page's being: its engine's genome, its four knobs by what they are */
 static void graph_being(const track_t *t)
 {
@@ -162,9 +171,10 @@ static void graph_being(const track_t *t)
     int32_t en = bg_energy();
     bfeat_t f;
     bg_feat(t, g, pg->id, &f);
-    if (en > 2) tm += (ui.frame - f0) * (uint32_t)(120 + en);
+    bg_excite(&f, en, 2);
+    if (en > 2) tm += (ui.frame - f0) * (uint32_t)(160 + en * 3);
     f0 = ui.frame;
-    being_lines(g, &f, 120 * 16, 61 * 16, 36 * 16, en, tm);
+    being_lines(g, &f, 120 * 16, 61 * 16, (36 * 16) * (256 + en / 3) / 256, en, tm);
 }
 
 /* (JIANT 0.5) HOME: the system as an ecosystem. A being per track (its engine's genome, its HOME knobs by what they
@@ -180,16 +190,18 @@ static void graph_ecosys(void)
         track_t *t = &trk[c];
         uint32_t e = t->eng_req % NENGINES;
         const genome_t *g = e == ENGI_DRUM ? &LANE_G_HOME : &GENOME[e % 8u];
-        int32_t v = t->peak * 256 / 14000, r = (c == song.sel ? 19 : 14) * 16;
+        int32_t v = t->peak * 256 / 7000, r = (c == song.sel ? 19 : 14) * 16;
         uint8_t ids[4];
         bfeat_t f;
         char num[2] = {(char)('1' + c), 0};
         t->peak = 0;
         if (v > 256) v = 256;
-        en[c] += v > en[c] ? (v - en[c]) / 2 : (v - en[c]) / 6;
-        if (en[c] > 2) tm[c] += (ui.frame - f0) * (uint32_t)(140 + en[c]);
+        en[c] = v > en[c] ? v : en[c] + (v - en[c]) / 4;   /* (a hit at once, a quick fall) */
+        if (en[c] > 2) tm[c] += (ui.frame - f0) * (uint32_t)(200 + en[c] * 5);
         for (v = 0; v < 4; v++) ids[v] = (uint8_t)ENGINES[e]->knob[v];
         bg_feat(t, g, ids, &f);
+        bg_excite(&f, en[c], 4);                    /* (HOME: the most excited) */
+        r = r * (256 + en[c] * 3 / 4) / 256;         /* (it swells up to ~1.75 x) */
         if (t->p[P_MUTE])
             bg_outline(g, &f, PX[c] * 16, PY[c] * 16, r, 1, tm[c], ux.mono || settings.palette == UI_BW_INDEX ?
                        ux_gray(ux_luma(T_DIM) >> 3) : T_DIM);
@@ -229,9 +241,10 @@ static void graph_colony(const track_t *t, int32_t sel)
         if (muted)
             bg_outline(g, &f, x * 16, y * 16, 8 * 16, 1, l * 9000u, ux.mono || settings.palette == UI_BW_INDEX ? ux_gray(ux_luma(T_DIM) >> 3) : T_DIM);
         else if (e) {
-            f.len = g->ss * 6 + e / 2;
-            f.wob = 40 + e / 2;
-            being_lines(g, &f, x * 16, y * 16, (8 + e * 5 / 256) * 16, e, ui.frame * 900u + l * 9000u);
+            f.len = g->ss * 6 + e;
+            f.wob = 40 + e * 3 / 4;
+            f.ripple = e / 2;
+            being_lines(g, &f, x * 16, y * 16, (8 + e * 8 / 256) * 16, e, ui.frame * 1500u + l * 9000u);
         } else
             bg_outline(g, &f, x * 16, y * 16, 8 * 16, 1, l * 9000u, bg_col(24));
         cv_text_in(x - 14, y + 14, 28, &AF_S, drum_lane_abbr(t, l), sel == (int32_t)l ? T_THEME : muted ? T_DIM : T_MID, T_SURF);

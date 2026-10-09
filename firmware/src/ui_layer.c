@@ -730,6 +730,27 @@ static uint16_t lc_box(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t fill
         if (y > 4)
             cv_rule(x > 7 ? x - 4 : x, y - 2, w + (x > 7 ? 4 : 0), 1);
     }
+    if (ux.chamfer && !ux.style) {                       /* (JIANT 0.5) a pad: an idle cell its outline (violet, cut corners)
+                                                         * on a faint tint; a held one hot (orange .. yellow) */
+        if (fill == T_RAISE) {
+            uint16_t ol = ux_mix(T_SURF, T_THEME, 48), in = ux_mix(T_SURF, T_THEME, 9);
+            int32_t k;
+            cv_rrect(x, y, w, h, 4, in, T_SURF);         /* (one box: the lint's cell) and its outline in lines */
+            cv_rect(x + 3, y, w - 6, 1, ol);
+            cv_rect(x + 3, y + h - 1, w - 6, 1, ol);
+            cv_rect(x, y + 3, 1, h - 6, ol);
+            cv_rect(x + w - 1, y + 3, 1, h - 6, ol);
+            for (k = 0; k < 3; k++) {
+                cv_pset(x + k, y + 3 - k, ol);
+                cv_pset(x + w - 1 - k, y + 3 - k, ol);
+                cv_pset(x + k, y + h - 4 + k, ol);
+                cv_pset(x + w - 1 - k, y + h - 4 + k, ol);
+            }
+            return in;
+        }
+        if (fill == T_ACCENT)
+            fill = heat_col(200);
+    }
     cv_rrect(x, y, w, h, 4, fill, T_SURF);
     return fill;
 }
