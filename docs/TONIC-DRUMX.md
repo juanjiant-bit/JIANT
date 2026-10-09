@@ -36,7 +36,8 @@ variación A–D puede tener su propio kit.
 - **Los kits de Felucca, retirados (JIANT 0.1).** STD y los kits de modelo (80 10 66 55 77, `drum_voice.c`) ya no
   existen: DRUM es DRUM-X. Las perillas de DRUM (mismo lugar en el proyecto): **MRPH** (donde estaba KIT; KNOB 1),
   TUNE, TONE (COLOR), DECY (DECAY), **NOIS** (donde estaba SNAP: mueve el ruido de todos los lanes), ACC (acento,
-  hasta +3,5 dB), DRV. El lugar de KICK queda libre. Un proyecto o sonido de Felucca con DRUM suena con DRUM-X.
+  hasta +3,5 dB; en JIANT 0.3 su lugar es **FM**: FM armónica en cada sonido, 8 bandas de ratio, 0 = el patch como
+  está), DRV. El lugar de KICK queda libre. Un proyecto o sonido de Felucca con DRUM suena con DRUM-X.
 - **Fase 2.** El kit se guarda en la sección (88 B en el proyecto FUNA, conversión desde FUN9):
   - **hecho:** una página de edición por lane (SOUND / SOUND 2: lado A/B, los 5 valores y el modo);
   - MORPH (MRPH) y PITCH lockeables por paso (los locks de parámetros genéricos ya los cubren);

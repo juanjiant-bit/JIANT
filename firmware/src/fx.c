@@ -21,6 +21,8 @@ static struct {
     uint32_t dly_w, cho_w, cho_ph;
     int32_t dly_lp, dly_hp;              /* the delay's feedback: high cut (COLR), low cut (JIANT: HPF) */
     uint32_t rpre_w, rm_ph;              /* (JIANT) the pre-delay's write count (samples); the reverb modulation's phase */
+    int32_t rm_m[4], rf_lp;              /* .. the combs' offsets (Q8 samples); the reverb's input filter (FILT) */
+    uint32_t gr_ph, gr_sp[2];            /* .. the GRAIN delay: grain 0's phase (Q16), each grain's spray (samples) */
     int32_t rpre_s;                      /* .. the even sample, averaged with the odd one into the line */
     uint16_t comb_i[4], ap_i[2];
     int32_t comb_lp[4];
@@ -75,7 +77,7 @@ static __attribute__((noinline)) int32_t dist_shape(track_t *t, uint32_t type, i
             t->dist_hc = (uint8_t)hold;
         }
         t->dist_hc--;
-        return t->dist_hold >> 2;
+        return clamp(((t->dist_hold >> 2) * g) >> 10, -26000, 26000);   /* (the drive's gain as the others: level kept) */
     }
     case DT_RECT:
         a = x < 0 ? -x : x;
@@ -93,7 +95,7 @@ static void track_dist(track_t *t, int32_t *b, uint32_t n)
         return;                                         /* states kept: switching on does not click */
     g = 4096 + d * d * 2;                                /* Q12: 1x .. ~9x, gentle at first */
     k = clamp(32000 - d * 95 + t->p[P_DTONE] * 300, 2500, 32767);   /* tone: transparent at low drive .. ~3 kHz, Q15 */
-    mk = type == DT_HARD || type == DT_FOLD ? 30000 - d * 60 : 30000 - d * 120;   /* make-up */
+    mk = type == DT_HARD || type == DT_FOLD || type == DT_CRUSH ? 30000 - d * 60 : 30000 - d * 120;   /* make-up */
     if (type > DT_RECT)
         type = DT_SOFT;
     for (i = 0; i < (int32_t)n; i++) {
@@ -135,26 +137,31 @@ static __attribute__((noinline)) void master_begin(void)
         clip_mk = (int32_t)((19661u << 15) / (uint32_t)softclip((19661 * clip_g) >> 12));
 }
 /* DUCK (G_DUCK 0..100, G_DREL its release 40 .. 600 ms): a kick (eng_drum.c duck_hit) takes the parts that are not
- * DRUM down by up to 18 dB in ~2 ms; they come back with the release. duck_g0 / duck_g1: the gain (Q15) at the
- * block's start and end, ramped by mix_part */
+ * DRUM down by up to 30 dB in ~2 ms, holds them there ~25 ms, and they come back with the release, shaped as a
+ * sidechain pump (the gain follows 1 - (1 - env)^2: low for longer, then a quick rise). duck_g0 / duck_g1: the gain
+ * (Q15) at the block's start and end, ramped by mix_part */
 static int32_t duck_env, duck_g0 = 32767, duck_g1 = 32767;
-static uint8_t duck_att;
+static uint8_t duck_att, duck_hold;
 static __attribute__((noinline)) void duck_block(void)
 {
-    int32_t dep = song.g[G_DUCK] * 28639 / 100;          /* (1 - 0.126: -18 dB at 100) */
+    int32_t dep = song.g[G_DUCK] * 31731 / 100, e;       /* (1 - 0.032: -30 dB at 100) */
     if (duck_hit) {
         duck_hit = 0;
         duck_att = 1;
+        duck_hold = (uint8_t)(1103u / CTL);              /* (25 ms in blocks) */
     }
     duck_g0 = duck_g1;
     if (duck_att) {
         duck_env += (32767 - duck_env) >> 1;
         if (duck_env > 31000)
             duck_att = 0;
+    } else if (duck_hold) {
+        duck_hold--;
     } else if (duck_env) {
         duck_env = (int32_t)(((uint32_t)duck_env * dv_kb(40000u + (uint32_t)song.g[G_DREL] * 5600u)) >> 16);
     }
-    duck_g1 = 32767 - mulq15(dep, duck_env);
+    e = (duck_env * (65536 - duck_env)) >> 15;           /* 1 - (1 - env)^2 */
+    duck_g1 = 32767 - mulq15(dep, e > 32767 ? 32767 : e);
 }
 /* MENU > USB LEVEL FIXED (for #42: record over USB with the speaker turned down): the mix goes to master_out at the
  * full MASTER level, USB audio takes that (audio.c uac_tap), and only then does MASTER scale what the DAC gets
@@ -268,13 +275,43 @@ static uint32_t div_samples(uint32_t div)
 #include "pfx.c"                                     /* .. its punch-in MIDI effects (on the notes) */
 #include "click.c"                                   /* the metronome's click (after the master: audio.c) */
 
+/* (JIANT) GRAIN delay (G_DPIT / G_DSPRY not 0): the line is read by two grains of GR_LEN samples, half a grain
+ * apart, each faded in and out (triangles: their sum is flat), each sweeping its read point so it plays PITCH
+ * semitones up / down (as a tape pitch shifter); a grain starting again jumps back, SPRY further by a random
+ * amount (up to ~190 ms). In the feedback: each repeat a further PITCH away (shimmer, falling echoes), scattered.
+ * The same line (dly_buf), no RAM of its own */
+#define GR_LEN 2048u
+static const uint32_t GR_RATIO[25] = {32768, 34716, 36781, 38968, 41285, 43740, 46341, 49097, 52016, 55109, 58386, 61858, 65536, 69433, 73562, 77936, 82570, 87480, 92682, 98193, 104032, 110218, 116772, 123715, 131072};   /* 2^(st/12), Q16 */
+static __attribute__((noinline)) int32_t dly_grain(uint32_t dl)
+{
+    int32_t s = (int32_t)GR_RATIO[song.g[G_DPIT] + 12] - 65536, x = 0;
+    uint32_t e = (GR_LEN * (uint32_t)(s < 0 ? -s : s)) >> 8, j;   /* the read point's sweep over a grain, Q8 */
+    fx.gr_ph = (fx.gr_ph + 65536u / GR_LEN) & 0xFFFFu;
+    for (j = 0; j < 2u; j++) {
+        uint32_t ph = (fx.gr_ph + j * 32768u) & 0xFFFFu, d, di;
+        int32_t a, b, w;
+        if (ph < 65536u / GR_LEN)                       /* this grain starts again: its spray */
+            fx.gr_sp[j] = song.g[G_DSPRY] ? rng() % ((uint32_t)song.g[G_DSPRY] * 64u + 1u) : 0u;
+        d = ((dl + fx.gr_sp[j]) << 8) + ((e * ((s > 0 ? 65535u - ph : ph) >> 4)) >> 12);   /* Q8: up, the delay
+                                                         * shrinks over the grain; down, it grows */
+        di = d >> 8;
+        if (di > DLY_LEN - 2u)
+            di = DLY_LEN - 2u;
+        a = dly_buf[(fx.dly_w - di) & (DLY_LEN - 1u)];
+        b = dly_buf[(fx.dly_w - di - 1u) & (DLY_LEN - 1u)];
+        w = (int32_t)(ph < 32768u ? ph : 65535u - ph);  /* the triangle, 0 .. 32767 */
+        x += ((a + (((b - a) * (int32_t)(d & 255u)) >> 8)) * w) >> 15;
+    }
+    return x;
+}
+
 static uint32_t delay_samples(void)
 {
     uint32_t s = div_samples((uint32_t)song.g[G_DTIME]);
     return s < 16u ? 16u : s >= DLY_LEN ? DLY_LEN - 1u : s;
 }
 
-/* ROOM (G_RTYPE 0): 4 damped combs + 2 allpasses (Freeverb-like, mono), added to out */
+/* ROOM (G_RTYPE 0): 4 damped combs + 2 allpasses (Freeverb-like, mono), added to out (WIDE: rev_room_mod) */
 static __attribute__((noinline)) void rev_room(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
     uint32_t i, k;
@@ -306,34 +343,47 @@ static __attribute__((noinline)) void rev_room(const int32_t *rev_in, int32_t *o
     }
 }
 
-/* (JIANT) ROOM with its networks modulated (G_RMOD > 0): each comb read up to ~1.3 ms nearer (between samples),
- * by a slow sine of G_RRATE a quarter apart per comb: the resonances drift, the ringing smears, a wider tail. Its own
- * loop: at MOD 0 the plain one runs, unchanged */
-static __attribute__((noinline)) void rev_room_mod(const int32_t *rev_in, int32_t *out, uint32_t n)
+/* (JIANT) ROOM with its networks modulated (G_RMOD > 0): each comb read up to ~5.7 ms nearer (between samples, the
+ * depth square law, the offset ramped sample by sample: no steps), by a slow sine of G_RRATE a quarter apart per
+ * comb: the resonances drift and detune, the ringing smears into a chorused, wide tail. WIDE wd (0.3): combs 1, 3
+ * against 2, 4 as a side (left +, right -) into mix_l / mix_r. Its own loop: with MOD and WIDE 0 the plain one runs
+ * (MOD 0 here: offsets 0, the plain one's sound) */
+static __attribute__((noinline)) void rev_room_mod(const int32_t *rev_in, int32_t *out, uint32_t n, int32_t wd)
 {
-    uint32_t i, k, off[4];
-    int32_t size = 25000 + song.g[G_RSIZE] * 50, damp = 32767 - song.g[G_RDAMP] * 200, fr[4];
-    int32_t depth = song.g[G_RMOD] * 2 + 64;            /* Q8 samples: 0.25 .. ~1.3 ms */
+    uint32_t i, k;
+    int32_t size = 25000 + song.g[G_RSIZE] * 50, damp = 32767 - song.g[G_RDAMP] * 200, m1[4], dm[4];
+    int32_t depth = song.g[G_RMOD] ? 64 + song.g[G_RMOD] * song.g[G_RMOD] * 4 : 0;   /* Q8 samples: 0.25 .. 252 (~5.7 ms) */
     fx.rm_ph += LFO_INC[song.g[G_RRATE] & 127];
     for (k = 0; k < 4u; k++) {
-        int32_t m = (osc_sine(fx.rm_ph + k * 0x40000000u) + 32768) * depth >> 16;   /* 0 .. depth (Q8) */
-        off[k] = (uint32_t)m >> 8;
-        fr[k] = m & 255;
+        m1[k] = (int32_t)(((uint32_t)(osc_sine(fx.rm_ph + k * 0x40000000u) + 32768) * (uint32_t)depth) >> 16);
+        dm[k] = (m1[k] - fx.rm_m[k]) / (int32_t)CTL;    /* (Q8, per sample) */
     }
     for (i = 0; i < n; i++) {
-        int32_t a = 0;
+        int32_t a = 0, sd = 0;
         int16_t *c = rev_comb;
         int32_t in = mulq15(rev_in[i], 2580);
         for (k = 0; k < 4u; k++) {
-            uint32_t L = REV_COMB[k], j0 = fx.comb_i[k] + off[k], j1 = j0 + 1u;
-            int32_t o0 = c[j0 >= L ? j0 - L : j0], o1 = c[j1 >= L ? j1 - L : j1];
-            int32_t o = o0 + (((o1 - o0) * fr[k]) >> 8);   /* (a shorter delay: nearer the write) */
+            int32_t m = fx.rm_m[k] += dm[k];
+            uint32_t L = REV_COMB[k], j0 = fx.comb_i[k] + ((uint32_t)m >> 8), j1;
+            int32_t o0, o1, o;
+            if (j0 >= L)
+                j0 -= L;
+            j1 = j0 + 1u >= L ? 0u : j0 + 1u;
+            o0 = c[j0];
+            o1 = c[j1];
+            o = o0 + (((o1 - o0) * (m & 255)) >> 8);    /* (a shorter delay: nearer the write) */
             fx.comb_lp[k] = o + mulq15(fx.comb_lp[k] - o, 32767 - damp);
             c[fx.comb_i[k]] = (int16_t)clamp(in + mulq15(fx.comb_lp[k], size), -32768, 32767);
             if (++fx.comb_i[k] >= L)
                 fx.comb_i[k] = 0;
             a += o;
+            sd += (k & 1u) ? -o : o;
             c += L;
+        }
+        if (wd) {
+            sd = (sd * wd) >> 7;
+            mix_l[i] += sd;
+            mix_r[i] -= sd;
         }
         c = rev_ap;
         for (k = 0; k < 2u; k++) {
@@ -347,6 +397,8 @@ static __attribute__((noinline)) void rev_room_mod(const int32_t *rev_in, int32_
         }
         out[i] += a;
     }
+    for (k = 0; k < 4u; k++)
+        fx.rm_m[k] = m1[k];                             /* (exact at the block's end) */
 }
 
 /* SPRING (see the top), added to out */
@@ -363,7 +415,7 @@ static __attribute__((noinline)) void rev_spring(const int32_t *rev_in, int32_t 
     fx.sp_size += clamp(len - fx.sp_size, -256, 256);   /* SIZE glides (a sample a block at most) */
     L = fx.sp_size >> 8;
     fx.sp_ph += 2u * LFO_INC[song.g[G_RMOD] ? song.g[G_RRATE] & 127 : 24];   /* the wobble: a slow sine, 1.5 samples */
-    w = (fx.sp_size >> 1) + ((osc_sine(fx.sp_ph) * (3 + song.g[G_RMOD] / 4)) >> 8);   /* deep (MOD: up to 17); the far end, Q8 */
+    w = (fx.sp_size >> 1) + ((osc_sine(fx.sp_ph) * (3 + song.g[G_RMOD] / 2)) >> 8);   /* deep (MOD: up to 66); the far end, Q8 */
     L2 = w >> 8;
     f = w & 255;
     L3 = (L * 3) >> 2;
@@ -392,6 +444,18 @@ static __attribute__((noinline)) void rev_spring(const int32_t *rev_in, int32_t 
         out[i] += (t0 + (((t1 - t0) * f) >> 8)) * 4 + ln[(wp - (uint32_t)L3) & SP_MASK] * 2;
     }
 }
+/* (JIANT 0.3) SPRING's WIDE, after its block: a tap a quarter along the loop against 3/4 as the side (left +,
+ * right -; both older than the block, not written in it) */
+static __attribute__((noinline)) void rev_spring_side(uint32_t n, int32_t wd)
+{
+    const int16_t *ln = rev_comb;
+    uint32_t i, L = (uint32_t)fx.sp_size >> 8, L3 = (L * 3u) >> 2, wp = (uint32_t)fx.sp_w - n;
+    for (i = 0; i < n; i++, wp++) {
+        int32_t sd = ((ln[(wp - L3) & SP_MASK] - ln[(wp - (L >> 2)) & SP_MASK]) * 3 * wd) >> 7;
+        mix_l[i] += sd;
+        mix_r[i] -= sd;
+    }
+}
 
 /* the reverb's buffers and states to silence (the model changed) */
 static void rev_clear(void)
@@ -418,10 +482,20 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
     int32_t cdepth = song.g[G_CDEPTH] * 6, rt;
     uint32_t cinc = LFO_INC[song.g[G_CRATE] & 127] / CTL;
     int32_t hk = song.g[G_DHPF] * 44, wd = song.g[G_WIDTH];   /* (JIANT) HPF: off .. ~1.2 kHz; WIDTH */
+    int32_t gr = song.g[G_DPIT] || song.g[G_DSPRY];     /* (JIANT) the GRAIN delay */
     uint32_t dr = dl + (wd ? div_samples(3) * (uint32_t)wd / 127u : 0u);   /* the right echo: up to 1/32 later */
     if (dr >= DLY_LEN)
         dr = DLY_LEN - 1u;
-    if (song.g[G_RPRE]) {                               /* (JIANT) the reverb's pre-delay */
+    if (song.g[G_RFILT]) {                              /* (JIANT) the reverb's tone: FILT < 0 a low-pass (~12 kHz ..
+                                                         * ~350 Hz), > 0 a low cut (~60 Hz .. ~1.5 kHz) */
+        int32_t rf = song.g[G_RFILT], k = rf < 0 ? 32767 - (-rf) * 495 : 300 + rf * 110;
+        for (i = 0; i < n; i++) {
+            fx.rf_lp += mulq15(rev_in[i] - fx.rf_lp, k);
+            rpre_out[i] = rf < 0 ? fx.rf_lp : rev_in[i] - fx.rf_lp;
+        }
+        rev_in = rpre_out;
+    }
+    if (song.g[G_RPRE]) {                               /* (JIANT) the reverb's pre-delay (in place) */
         uint32_t pd = (uint32_t)song.g[G_RPRE] * 20u;   /* (ms -> half-rate samples: 2000 at 100) */
         for (i = 0; i < n; i++) {                       /* half rate: two samples averaged in, read back between */
             uint32_t h = fx.rpre_w >> 1;
@@ -459,7 +533,7 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
         }
         fx.cho_w++;
         /* delay with a low-passed (COLR) and low-cut (HPF) feedback */
-        x = dly_buf[(fx.dly_w - dl) & (DLY_LEN - 1u)];
+        x = gr ? dly_grain(dl) : dly_buf[(fx.dly_w - dl) & (DLY_LEN - 1u)];
         fx.dly_lp += mulq15(x - fx.dly_lp, col);
         fx.dly_hp += mulq15(fx.dly_lp - fx.dly_hp, hk);
         dly_buf[fx.dly_w & (DLY_LEN - 1u)] =
@@ -492,10 +566,13 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
         fx.rtype = (uint8_t)rt;
         return;
     }
-    if (rt)
+    if (rt) {
         rev_spring(rev_in, wet, n);
-    else if (song.g[G_RMOD])
-        rev_room_mod(rev_in, wet, n);
+        if (song.g[G_RWIDE])
+            rev_spring_side(n, song.g[G_RWIDE]);
+    }
+    else if (song.g[G_RMOD] || song.g[G_RWIDE])
+        rev_room_mod(rev_in, wet, n, song.g[G_RWIDE]);
     else
         rev_room(rev_in, wet, n);
 }

@@ -256,6 +256,54 @@ int main(int argc, char **argv)
         check("WARP 127: every lane a different sound, under full scale", ok2, 0);
     }
 
+    /* 5f (JIANT 0.3): FM (E5, once ACC): 0 the patch as it is; its bands each another timbre, every lane, under full
+     * scale; PUNCH 100: the hit's first ms louder (into the knee), its tail lower */
+    {
+        uint32_t lf, ok2 = 1, ok3 = 1;
+        for (lf = 0; lf < 8u; lf++) {
+            static int32_t a0[FS / 8], a1[FS / 8];
+            int32_t pk = 0;
+            double d0 = 0, d1 = 0;
+            track_t *t = kitx(64, 64);
+            strike(t, lf, FS / 8u);
+            memcpy(a0, buf, sizeof a0);
+            t = kitx(64, 64);
+            t->p[P_E5] = 40;
+            strike(t, lf, FS / 8u);
+            memcpy(a1, buf, sizeof a1);
+            t = kitx(64, 64);
+            t->p[P_E5] = 120;
+            ok2 &= !strike(t, lf, MAXN) || 1;
+            t = kitx(64, 64);
+            t->p[P_E5] = 120;
+            strike(t, lf, FS / 8u);
+            for (i = 0; i < FS / 8u; i++) {
+                d0 += fabs((double)a1[i] - a0[i]);
+                d1 += fabs((double)buf[i] - a1[i]);
+                pk = abs(buf[i]) > pk ? abs(buf[i]) : pk;
+                pk = abs(a1[i]) > pk ? abs(a1[i]) : pk;
+            }
+            ok3 &= d0 / (FS / 8u) > 200 && d1 / (FS / 8u) > 200 && pk < 32700;
+        }
+        check("FM (E5): 40 and 120 each another sound on every lane, under full scale, still ends", ok2 && ok3, 0);
+    }
+    {
+        double e0, t0, e1, t1;
+        track_t *t = kitx(64, 64);
+        song.g[G_PUNCH] = 0;
+        strike(t, 1, FS / 4u);
+        e0 = rms(0, FS / 200u);
+        t0 = rms(FS / 20u, FS / 4u);
+        t = kitx(64, 64);
+        song.g[G_PUNCH] = 100;
+        strike(t, 1, FS / 4u);
+        e1 = rms(0, FS / 200u);
+        t1 = rms(FS / 20u, FS / 4u);
+        song.g[G_PUNCH] = 0;
+        check("PUNCH 100: the snare's first 5 ms +4 dB or more, its tail -9 dB or more (Drum Buss strong)",
+              e1 > e0 * 1.58 && t1 < t0 * 0.355, "attack %.0f -> %.0f, tail %.0f -> %.0f", e0, e1, t0, t1);
+    }
+
     /* 5b */
     {
         uint32_t kit;

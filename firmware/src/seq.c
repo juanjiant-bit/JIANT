@@ -871,7 +871,8 @@ static void seq_tick(track_t *t, uint32_t n)
         t->seq_idx = (uint16_t)((t->seq_idx + 1u) % (len ? len : 1u));
         rec_hold(t, t->seq_idx, len ? len : 1u);
         {
-            const step_t *s = &seq_steps(t)[seq_src(t, t->seq_idx)];
+            const step_t *s = &seq_steps(t)[(t->pfx & PFX_RND) && !(rng() & 1u)   /* (JIANT) RANDOM held: half the */
+                                            ? rng() % (len ? len : 1u) : seq_src(t, t->seq_idx)];   /* steps, any */
             uint32_t skip = SEQ_ROLLED, i, k;
             /* the chance first (the one roll, as seq_step made it): a step that does not play applies no lock; the
              * automation and the locks before the notes, so a note-on reads them (eng_drum's KIT, ..) */

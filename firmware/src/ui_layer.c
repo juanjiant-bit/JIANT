@@ -584,7 +584,7 @@ static uint32_t layer_leds(uint32_t *br)
  * (can be pressed), the selection's fill (the value now, SET), the accent (held, HOLD), DIM (cannot now: pressing
  * it says why), KEY (a muted track, as the MUTE badge); HOLD cells in a SET layer: a corner triangle */
 static const char *const PF_NAME[PF_M1] = {"1/8", "1/16", "1/32", "LPF", "HPF",          /* the audio ones (perform.c) */
-    "OCT-", "OCT+", "1/2", "DEC-", "DEC+", "ST16", "ST32", "ST3", "ARP", "RND"};            /* the MIDI ones (pfx.c) */
+    "OCT-", "OCT+", "1/2", "DEC-", "DEC+", "ST16", "ST32", "ATK+", "ARP", "RND"};            /* the MIDI ones (pfx.c) */
 static const char W_NOTE[16] = {'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G'};
 static const char B_NOTE[8] = {'F', 'G', 'A', 'C', 'D', 'F', 'G', 'A'};   /* black keys 1..8: F# G# A# C# D# F# G# A# */
 #define LC_X(c) (6 + 58 * (int32_t)(c))                 /* cell column c: 54 px wide, 4 px apart */

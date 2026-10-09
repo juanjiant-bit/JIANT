@@ -147,7 +147,8 @@ static int fun7_89(void)
     pack_fun7_89(&old, &before, &m);
     ok = proj_import(&after, &old, sizeof old);
     for (k = 0; ok && k < NTRK; k++) {
-        for (i = 0; i < 8u; i++) ok &= after.t[k].p[P_E0 + i] == before.t[k].p[P_E0 + i];
+        for (i = 0; i < 8u; i++)                                   /* (DRUM's E5, ACC then, FM now: 0) */
+            ok &= after.t[k].p[P_E0 + i] == (i == 5u && trk[k].engine == ENGI_DRUM ? 0 : before.t[k].p[P_E0 + i]);
         for (i = 0; i < 81u; i++) ok &= after.t[k].p[i] == before.t[k].p[i];
         ok &= after.t[k].p[P_SOFS] == 0 && after.t[k].p[P_POFS] == 0;
         for (i = P_LN0; i <= P_LN7; i++) ok &= after.t[k].p[i] == 127;

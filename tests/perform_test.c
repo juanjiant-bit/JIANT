@@ -72,6 +72,7 @@ static void run(uint32_t bpm, int playing, const ev_t *ev, uint32_t nev, uint32_
     song.g[G_BPM] = (int16_t)bpm;
     song.playing = (uint8_t)playing;
     perf_start();
+    ms_clock = 0;                                  /* (the transport's clock: mix_block counts it before perf_begin) */
     busy_seen = 0;
     for (t = 0; t < t1; t += CTL) {
         while (k < nev && ev[k].t <= t) {
@@ -80,6 +81,7 @@ static void run(uint32_t bpm, int playing, const ev_t *ev, uint32_t nev, uint32_
         }
         memcpy(out_l + t, in_l + t, CTL * 4);
         memcpy(out_r + t, in_r + t, CTL * 4);
+        ms_clock += CTL;
         if (perf_begin(CTL)) {
             busy_seen = 1;
             perf_block(out_l + t, out_r + t, CTL);

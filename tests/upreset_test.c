@@ -181,7 +181,7 @@ int main(void)
 
     /* PHYS MODEL DRUM (before 1.0) -> the DRUM engine: from flash (a record of an older layout too), by UP_PUT */
     {
-        static const int16_t OLD[8] = {4, 70, 80, 60, 50, 110, 100, 70}, NEW[8] = {64, 70, 80, 60, 64, 110, 0, 0};
+        static const int16_t OLD[8] = {4, 70, 80, 60, 50, 110, 100, 70}, NEW[8] = {64, 70, 80, 60, 64, 0, 0, 0};   /* (E5: ACC then, FM now, off) */
         up_rec_t d = r, m = r, o = r;
         uint32_t k;
         d.engine = ENGI_PHYS;
@@ -215,6 +215,25 @@ int main(void)
         for (k = 0; k < 8u; k++)
             ok &= up_value(&got, P_E0 + k) == NEW[k];
         bad += check("UP_PUT of PHYS DRUM -> DRUM engine", ok);
+    }
+
+    /* (JIANT 0.3) a DRUM record stored before FM (E5 ACC, no mark): FM 0 when its bank loads, marked; one stored
+     * since (marked): its FM kept */
+    {
+        up_rec_t d = r, f = r;
+        d.engine = f.engine = ENGI_DRUM;
+        up_set_value(&d, P_E5, 100);
+        up_set_value(&f, P_E5, 100);
+        d.packed[UP_FM_AT] = 0;
+        f.packed[UP_FM_AT] = UP_FM_MARK;
+        *up_rec(16) = d;
+        *up_rec(17) = f;
+        st_save(OBJ_UPRESET0 + 1, &up_bank[1], sizeof up_bank[1]);
+        memset(up_bank, 0, sizeof up_bank);
+        up_bank_check(1, st_load(OBJ_UPRESET0 + 1, &up_bank[1], sizeof up_bank[1]));
+        ok = up_used(16) && up_value(up_rec(16), P_E5) == 0 && up_rec(16)->packed[UP_FM_AT] == UP_FM_MARK &&
+             up_used(17) && up_value(up_rec(17), P_E5) == 100;
+        bad += check("DRUM record before FM: its ACC (E5) loads as FM 0; one stored since keeps its FM", ok);
     }
 
     /* SAMPLE SET 4 (PERC, the GM kit, retired after 1.0.2) -> the DRUM engine with its default kit: from flash (an
