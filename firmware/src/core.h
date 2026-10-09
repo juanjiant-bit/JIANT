@@ -65,6 +65,9 @@ enum {                          /* per-track parameters */
     P_FM4_ATK, P_FM4_DEC, P_FM4_SUS, P_FM4_REL, P_FM4_LEVEL,
     P_SOFS, P_POFS,                            /* (JIANT; the former chord keys) the sequence offset: OFS steps, PIT semitones */
     P_LN0, P_LN1, P_LN2, P_LN3, P_LN4, P_LN5, P_LN6, P_LN7,   /* DRUM lane levels (eng_drum.c, #97): KICK .. BELL */
+    P_DTYPE, P_DTONE,                          /* (JIANT, FUNB) DIST's type and tone (fx.c track_dist) */
+    P_MSLEN, P_MSDIV, P_MSSLW,                 /* (JIANT, FUNB) the modulation sequence (mod.c MS_STEP): its length, */
+    P_MS0, P_MS15 = P_MS0 + 15,                /* rate and slew, its 16 levels */
     P_E0, P_E1, P_E2, P_E3, P_E4, P_E5, P_E6, P_E7,
     P_COUNT
 };
@@ -85,6 +88,11 @@ enum {                          /* global parameters */
                                  * Were G_DRLVL / G_DRREV, inert since 1.0 (0..0): the GM drum part's level and
                                  * reverb send, read only by the import of a project of before 1.0
                                  * (proj_drums_to_part, which clears them after) */
+    G_NSTORE,                   /* the 27 a project's header holds (FUN7 on: their ids kept) */
+    G_DHPF = G_NSTORE,          /* (JIANT, FUNB: after the punch-in lane, project.c) the delay's feedback low cut, */
+    G_WIDTH,                    /* the buses' stereo width (the delay's right echo later, the chorus's taps apart), */
+    G_RMOD, G_RRATE,            /* the reverb's modulation (ROOM: its combs' lengths; SPRING: its wobble) depth, rate, */
+    G_RPRE,                     /* its pre-delay */
     G_COUNT
 };
 #define G_SYNC G_DREL                   /* (the old names, for the formats' importers and their tests) */
@@ -315,6 +323,9 @@ typedef struct track {
     /* mix runtime */
     int32_t peak;
     int32_t dist_hp, dist_lp1, dist_lp2;   /* DIST insert state (fx.c) */
+    int32_t dist_dc, dist_hold;  /* (JIANT) RECT's DC; CRUSH's held sample */
+    uint8_t dist_hc;             /* .. CRUSH's hold count */
+    int32_t ms_v;                /* (JIANT) the modulation sequence's level now (mod.c MS_STEP, Q15, slewed) */
     uint8_t tail;                /* blocks to mix after the last voice (the DIST tail) */
     int16_t armp, aholdp;        /* P_AMODE / P_AHOLD as last seen by the ISR */
     /* engine switch (voice.c engine_block): the old engine's voices fade out, then it switches */

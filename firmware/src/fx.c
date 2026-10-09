@@ -14,9 +14,13 @@ static union {                          /* ROOM's allpasses; SPRING's allpass ch
     int32_t sp[(556 + 441) / 2];
 } rev_u __attribute__((section(".pool")));
 #define rev_ap (rev_u.ap)
+#define RPRE_LEN 4096u                   /* (JIANT) the reverb's pre-delay line: up to 92 ms */
+static int16_t rpre_buf[RPRE_LEN] __attribute__((section(".pool")));
+static int32_t rpre_out[CTL];                     /* .. the block out of it (the reverb's input) */
 static struct {
     uint32_t dly_w, cho_w, cho_ph;
-    int32_t dly_lp;
+    int32_t dly_lp, dly_hp;              /* the delay's feedback: high cut (COLR), low cut (JIANT: HPF) */
+    uint32_t rpre_w, rm_ph;              /* (JIANT) the pre-delay's write index; the reverb modulation's phase */
     uint16_t comb_i[4], ap_i[2];
     int32_t comb_lp[4];
     uint8_t rtype;                       /* the reverb model running (G_RTYPE: 0 ROOM, 1 SPRING) */
@@ -47,20 +51,55 @@ _Static_assert(sizeof rev_comb / 2u >= SP_LEN && sizeof rev_u.sp / 4u >= 4u * (S
  * (a little bias = even harmonics) -> tone low-pass that closes with drive ->
  * make-up gain (straight into tanh over the full band, it would sound like a
  * broken digital fuzz). State per part (track_t dist_*). */
+/* (JIANT) DIST TYPE (P_DTYPE): SOFT the biased tanh as before; HARD a hard clip; FOLD a triangle wavefolder (the drive
+ * folds the wave back on itself: more partials as it rises); CRUSH fewer bits and a held sample (the drive takes both
+ * down); RECT full-wave rectified (an octave up, fuzz), its DC taken out. Then the two-pole low-pass, TONE (P_DTONE)
+ * moving it darker / brighter, and the make-up. DRIVE 0: out of the chain */
+enum { DT_SOFT, DT_HARD, DT_FOLD, DT_CRUSH, DT_RECT };
+static __attribute__((noinline)) int32_t dist_shape(track_t *t, uint32_t type, int32_t x, int32_t g, int32_t d)
+{
+    int32_t v = ((x >> 2) * g) >> 10, a;
+    switch (type) {
+    case DT_HARD:
+        return clamp(v, -22000, 22000);
+    case DT_FOLD:                                        /* folded back at +-T (T 22000), up to 5T: three folds */
+        v = clamp(v, -110000, 110000);
+        for (a = 0; a < 3; a++)
+            v = v > 22000 ? 44000 - v : v < -22000 ? -44000 - v : v;
+        return v;
+    case DT_CRUSH: {
+        uint32_t hold = 1u + (uint32_t)d / 12u, sh = 4u + (uint32_t)d / 12u;   /* (up to 11x held, 4 .. 14 bits off) */
+        if (!t->dist_hc) {
+            t->dist_hold = (int32_t)((uint32_t)(clamp(x, -131072, 131068) >> sh) << sh);
+            t->dist_hc = (uint8_t)hold;
+        }
+        t->dist_hc--;
+        return t->dist_hold >> 2;
+    }
+    case DT_RECT:
+        a = x < 0 ? -x : x;
+        t->dist_dc += (a - t->dist_dc) >> 9;             /* (its mean: the DC the rectifier adds) */
+        return softclip((((a - t->dist_dc) >> 2) * g) >> 10);
+    default:
+        return softclip(v + 2400) - softclip(2400);
+    }
+}
 static void track_dist(track_t *t, int32_t *b, uint32_t n)
 {
-    int32_t d = t->p[P_DIST], i, g, k, mk, bias = 2400, b0;
+    int32_t d = t->p[P_DIST], i, g, k, mk, b0 = softclip(2400);
+    uint32_t type = (uint32_t)t->p[P_DTYPE];
     if (!d)
         return;                                         /* states kept: switching on does not click */
     g = 4096 + d * d * 2;                                /* Q12: 1x .. ~9x, gentle at first */
-    k = 32000 - d * 95;                                  /* tone: transparent at low drive .. ~3 kHz, Q15 */
-    mk = 30000 - d * 120;                                /* make-up */
-    b0 = softclip(bias);
+    k = clamp(32000 - d * 95 + t->p[P_DTONE] * 300, 2500, 32767);   /* tone: transparent at low drive .. ~3 kHz, Q15 */
+    mk = type == DT_HARD || type == DT_FOLD ? 30000 - d * 60 : 30000 - d * 120;   /* make-up */
+    if (type > DT_RECT)
+        type = DT_SOFT;
     for (i = 0; i < (int32_t)n; i++) {
         int32_t x = b[i], y;
         t->dist_hp += (x - t->dist_hp + 64) >> 7;           /* ~55 Hz low cut: keep the bass out of the clipper */
         x = clamp(x - t->dist_hp, -230000, 230000);         /* (x >> 2) * g fits 32 bits; the clip is flat out there */
-        y = softclip((((x >> 2) * g) >> 10) + bias) - b0;   /* >> 2 first: no overflow for loud poly */
+        y = type == DT_SOFT ? softclip((((x >> 2) * g) >> 10) + 2400) - b0 : dist_shape(t, type, x, g, d);
         t->dist_lp1 += mulq15(y - t->dist_lp1, k);         /* two poles: tames the fizz */
         t->dist_lp2 += mulq15(t->dist_lp1 - t->dist_lp2, k);
         b[i] = mulq15(t->dist_lp2, mk);
@@ -266,6 +305,49 @@ static __attribute__((noinline)) void rev_room(const int32_t *rev_in, int32_t *o
     }
 }
 
+/* (JIANT) ROOM with its networks modulated (G_RMOD > 0): each comb read up to ~1.3 ms nearer (between samples),
+ * by a slow sine of G_RRATE a quarter apart per comb: the resonances drift, the ringing smears, a wider tail. Its own
+ * loop: at MOD 0 the plain one runs, unchanged */
+static __attribute__((noinline)) void rev_room_mod(const int32_t *rev_in, int32_t *out, uint32_t n)
+{
+    uint32_t i, k, off[4];
+    int32_t size = 25000 + song.g[G_RSIZE] * 50, damp = 32767 - song.g[G_RDAMP] * 200, fr[4];
+    int32_t depth = song.g[G_RMOD] * 2 + 64;            /* Q8 samples: 0.25 .. ~1.3 ms */
+    fx.rm_ph += LFO_INC[song.g[G_RRATE] & 127];
+    for (k = 0; k < 4u; k++) {
+        int32_t m = (osc_sine(fx.rm_ph + k * 0x40000000u) + 32768) * depth >> 16;   /* 0 .. depth (Q8) */
+        off[k] = (uint32_t)m >> 8;
+        fr[k] = m & 255;
+    }
+    for (i = 0; i < n; i++) {
+        int32_t a = 0;
+        int16_t *c = rev_comb;
+        int32_t in = mulq15(rev_in[i], 2580);
+        for (k = 0; k < 4u; k++) {
+            uint32_t L = REV_COMB[k], j0 = fx.comb_i[k] + off[k], j1 = j0 + 1u;
+            int32_t o0 = c[j0 >= L ? j0 - L : j0], o1 = c[j1 >= L ? j1 - L : j1];
+            int32_t o = o0 + (((o1 - o0) * fr[k]) >> 8);   /* (a shorter delay: nearer the write) */
+            fx.comb_lp[k] = o + mulq15(fx.comb_lp[k] - o, 32767 - damp);
+            c[fx.comb_i[k]] = (int16_t)clamp(in + mulq15(fx.comb_lp[k], size), -32768, 32767);
+            if (++fx.comb_i[k] >= L)
+                fx.comb_i[k] = 0;
+            a += o;
+            c += L;
+        }
+        c = rev_ap;
+        for (k = 0; k < 2u; k++) {
+            int32_t o = c[fx.ap_i[k]];
+            int32_t v = a + (o >> 1);
+            c[fx.ap_i[k]] = (int16_t)clamp(v, -32768, 32767);
+            a = o - a;
+            if (++fx.ap_i[k] >= REV_AP[k])
+                fx.ap_i[k] = 0;
+            c += REV_AP[k];
+        }
+        out[i] += a;
+    }
+}
+
 /* SPRING (see the top), added to out */
 static __attribute__((noinline)) void rev_spring(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
@@ -279,8 +361,8 @@ static __attribute__((noinline)) void rev_spring(const int32_t *rev_in, int32_t 
         fx.sp_size = len;
     fx.sp_size += clamp(len - fx.sp_size, -256, 256);   /* SIZE glides (a sample a block at most) */
     L = fx.sp_size >> 8;
-    fx.sp_ph += 2u * LFO_INC[24];                       /* the wobble: a slow sine, 1.5 samples deep */
-    w = (fx.sp_size >> 1) + ((osc_sine(fx.sp_ph) * 3) >> 8);   /* the far end, Q8 */
+    fx.sp_ph += 2u * LFO_INC[song.g[G_RMOD] ? song.g[G_RRATE] & 127 : 24];   /* the wobble: a slow sine, 1.5 samples */
+    w = (fx.sp_size >> 1) + ((osc_sine(fx.sp_ph) * (3 + song.g[G_RMOD] / 4)) >> 8);   /* deep (MOD: up to 17); the far end, Q8 */
     L2 = w >> 8;
     f = w & 255;
     L3 = (L * 3) >> 2;
@@ -334,8 +416,21 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
     int32_t dmix = song.g[G_DMIX] * 258;
     int32_t cdepth = song.g[G_CDEPTH] * 6, rt;
     uint32_t cinc = LFO_INC[song.g[G_CRATE] & 127] / CTL;
+    int32_t hk = song.g[G_DHPF] * 44, wd = song.g[G_WIDTH];   /* (JIANT) HPF: off .. ~1.2 kHz; WIDTH */
+    uint32_t dr = dl + (wd ? div_samples(3) * (uint32_t)wd / 127u : 0u);   /* the right echo: up to 1/32 later */
+    if (dr >= DLY_LEN)
+        dr = DLY_LEN - 1u;
+    if (song.g[G_RPRE]) {                               /* (JIANT) the reverb's pre-delay */
+        uint32_t pd = (uint32_t)song.g[G_RPRE] * 41u;   /* (ms -> samples: 4100 at 100) */
+        for (i = 0; i < n; i++) {
+            rpre_buf[fx.rpre_w & (RPRE_LEN - 1u)] = (int16_t)clamp(rev_in[i] >> 3, -32768, 32767);
+            rpre_out[i] = rpre_buf[(fx.rpre_w - pd) & (RPRE_LEN - 1u)] * 8;
+            fx.rpre_w++;
+        }
+        rev_in = rpre_out;
+    }
     for (i = 0; i < n; i++) {
-        int32_t y = 0, x, r;
+        int32_t y = 0, x, r, side = 0;
         /* chorus: modulated short delay, 5..15 ms */
         cho_buf[fx.cho_w & (CHO_LEN - 1u)] = (int16_t)clamp(cho_in[i] >> 1, -32768, 32767);
         fx.cho_ph += cinc;
@@ -344,17 +439,37 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
             uint32_t ri = (uint32_t)r >> 8;
             int32_t f = r & 255, c0 = cho_buf[(fx.cho_w - ri) & (CHO_LEN - 1u)];
             int32_t c1 = cho_buf[(fx.cho_w - ri - 1u) & (CHO_LEN - 1u)];
-            y += (c0 + (((c1 - c0) * f) >> 8)) << 1;
+            int32_t cl = c0 + (((c1 - c0) * f) >> 8);
+            y += cl << 1;
+            if (wd) {                                   /* (JIANT) WIDTH: a second tap, the LFO opposite, right */
+                int32_t r2 = (400 << 8) + ((32768 - osc_sine(fx.cho_ph)) * cdepth >> 8);
+                uint32_t r2i = (uint32_t)r2 >> 8;
+                int32_t f2 = r2 & 255, d0 = cho_buf[(fx.cho_w - r2i) & (CHO_LEN - 1u)];
+                int32_t d1 = cho_buf[(fx.cho_w - r2i - 1u) & (CHO_LEN - 1u)];
+                int32_t sc = ((cl - (d0 + (((d1 - d0) * f2) >> 8))) * wd) >> 7;   /* (L 2cl, R 2cr at 127) */
+                y -= sc;
+                side += sc;
+            }
         }
         fx.cho_w++;
-        /* delay with a low-passed feedback */
+        /* delay with a low-passed (COLR) and low-cut (HPF) feedback */
         x = dly_buf[(fx.dly_w - dl) & (DLY_LEN - 1u)];
         fx.dly_lp += mulq15(x - fx.dly_lp, col);
+        fx.dly_hp += mulq15(fx.dly_lp - fx.dly_hp, hk);
         dly_buf[fx.dly_w & (DLY_LEN - 1u)] =
-            (int16_t)clamp((dly_in[i] >> 1) + mulq15(fx.dly_lp, fb), -32768, 32767);
+            (int16_t)clamp((dly_in[i] >> 1) + mulq15(fx.dly_lp - fx.dly_hp, fb), -32768, 32767);
+        if (wd) {                                       /* (JIANT) the right echo later: mid and side */
+            int32_t xr = dly_buf[(fx.dly_w - dr) & (DLY_LEN - 1u)];
+            side += mulq15(x - xr, dmix);
+            x = (x + xr) >> 1;
+        }
         fx.dly_w++;
         y += mulq15(x << 1, dmix);
         wet[i] = y;
+        if (side) {                                     /* (the side: left +, right -) */
+            mix_l[i] += side;
+            mix_r[i] -= side;
+        }
     }
     rt = song.g[G_RTYPE] == 1;
     if (rt != fx.rtype) {                               /* the model changed: the old one's block fades out, */
@@ -373,6 +488,8 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
     }
     if (rt)
         rev_spring(rev_in, wet, n);
+    else if (song.g[G_RMOD])
+        rev_room_mod(rev_in, wet, n);
     else
         rev_room(rev_in, wet, n);
 }
@@ -463,6 +580,8 @@ static void mix_block(int32_t *out, uint32_t n)
         send_c[i] = send_d[i] = send_r[i] = mix_l[i] = mix_r[i] = 0;
     pfx_block(n, (perf_kill ? 0u : (perf_held | perf_latched) & PF_MIDI) | scene_pfx);
     events_block(n);
+    if (song.playing)
+        ms_clock += n;                                  /* (JIANT) the modulation sequences' clock (mod.c) */
     macro_master();                                     /* CLIP / PNCH with the matrix (mod.c) */
     master_begin();
     duck_block();

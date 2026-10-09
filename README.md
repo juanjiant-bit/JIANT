@@ -77,6 +77,20 @@ La escena sigue vigente en las filas siguientes que no tengan una propia, y los 
 - **Con SONG REC**: cada fila grabada guarda su escena sola, con el estado de cuando empezó. Tocás la canción con
   mutes, macros y efectos, y queda grabada así.
 
+### Modulación secuenciada (LFO > MSEQ)
+Cada track tiene un secuenciador de modulación, como un secuenciador de CV: 16 niveles, **LEN** (1–16 pasos), **DIV**
+(el ritmo de los pasos) y **SLEW** (de saltos a glides). Corre con el transporte y en la matriz MOD es la fuente
+**STEP**: cualquier destino (filtro, pitch, MORPH, envíos, CLIP…) sigue la secuencia. En la página MSEQ, KNOB 1 elige
+el paso y KNOB 2 su nivel; los niveles también se automatizan.
+
+### Efectos
+- **DIST** por track con **TYPE** (SOFT, HARD, FOLD, CRUSH, RECT) y **TONE** (más oscuro o más brillante): página FX > DIST.
+- **Delay**: además de COLR (agudos), **HPF** recorta los graves de las repeticiones (más dub, más fino).
+- **WIDTH**: abre el estéreo. El eco derecho del delay llega un poco después y el chorus separa L y R. En 0 todo
+  suena como antes.
+- **Reverb**: **PRE** (pre-delay de hasta 100 ms), y **MOD** y **RATE** modulan la red de resonancia. En ROOM se mueve
+  el largo de los combs: menos metálico, una cola más ancha. En SPRING, un vaivén más profundo.
+
 ### Master con carácter (FX > MASTER)
 - **CLIP**: satura la mezcla antes del limiter.
 - **PNCH**: bus de batería con más ataque y cola más corta.
@@ -87,9 +101,10 @@ La escena sigue vigente en las filas siguientes que no tengan una propia, y los 
 - **4 tracks** con 8 voces compartidas.
 - **12 engines**: ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, SAMPLE, VOICE, TRIO, WHEEL, GRAIN, NOISE, SLICE y
   DRUM (DRUM-X).
-- **Modulación**: 4 slots por track. Fuentes: LFO, ENV, VEL, KEY, RAND, controladores MIDI y las 4 macros.
-- **Efectos**: distorsión y SLICER por track; envíos a chorus, delay y reverb (ROOM o SPRING); master con CLIP,
-  PNCH, DUCK y limiter.
+- **Modulación**: 4 slots por track. Fuentes: LFO, ENV, VEL, KEY, RAND, controladores MIDI, las 4 macros y STEP (el
+  secuenciador de modulación).
+- **Efectos**: distorsión de 5 tipos y SLICER por track; envíos a chorus, delay (con HPF) y reverb (ROOM o SPRING, con
+  pre-delay y modulación); WIDTH estéreo; master con CLIP, PNCH, DUCK y limiter.
 - **Arpegiador** con 16 modos y 16 escalas con modo de teclas blancas; glide; POLY, MONO, LEGATO y UNISON.
 - **Conexiones**:
   - USB: MIDI class-compliant y audio (el master llega a la computadora).
@@ -110,7 +125,7 @@ La escena sigue vigente en las filas siguientes que no tengan una propia, y los 
 | SHIFT (OFS / PIT), ARP TRNS, SEQ + REC | ✅ |
 | Paleta térmica JIANT | ✅ |
 | Escenas por fila de la cadena (mutes, macros, punch-in) | ✅ |
-| Más modulación y mejores efectos | ⏳ |
+| Secuenciador de modulación (STEP), DIST con tipos y tono, delay HPF, WIDTH, reverb MOD y PRE | ✅ |
 | Interfaz orgánica con las ilustraciones ([docs/TONIC-UI.md](docs/TONIC-UI.md)) | ⏸ después de sonido y performance |
 
 <details>

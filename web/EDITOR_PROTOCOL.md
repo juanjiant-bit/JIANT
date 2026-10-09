@@ -48,6 +48,28 @@ takes P_COUNT and P_E0 from `INFO` keeps working (see the table below: in JIANT 
 levels), went in before the engine parameters, which moved from 83..90 to 91..98: P_COUNT 99, P_E0 91. No command
 changed; projects were FUN9 (3648 bytes, see "Projects (FUN9)"; JIANT writes FUNA). See "The DRUM lane levels" below.
 
+**JIANT FUNB (120 parameters, 32 globals):** 21 track parameters went in before the engine parameters, which moved from
+91..98 to 112..119: P_COUNT 120, P_E0 112. Five globals were added after the 27 a project's header holds: G_COUNT 32.
+No command changed; an editor that takes P_COUNT, G_COUNT and P_E0 from `INFO` keeps working.
+
+| id | label | values |
+| --- | --- | --- |
+| 91 | TYPE | DIST's type, enum: 0 SOFT (the drive as before), 1 HARD, 2 FOLD (wavefolder), 3 CRUSH (bits and a held sample), 4 RECT (full-wave rectifier, an octave up) |
+| 92 | TONE | DIST's tone, −64..63 (fmt BIPCT): darker / brighter |
+| 93 | LEN | the modulation sequence's length, 1..16 steps |
+| 94 | DIV | its step rate, the `N_DIV` enum (default 1/16) |
+| 95 | SLEW | its glide between steps, 0..127 (0: steps) |
+| 96..111 | LVL | its 16 levels, 0..127; the matrix reads the step playing as the source `STEP` (SRC 13) |
+| G 27 | HPF | the delay's feedback low cut, 0..127 (off .. ~1.2 kHz; COLR is its high cut) |
+| G 28 | WIDE | the buses' width, 0..127: the delay's right echo up to 1/32 later, the chorus's second tap opposite |
+| G 29 | MOD | the reverb's modulation depth, 0..127 (ROOM: its combs' lengths drift; SPRING: its wobble deeper) |
+| G 30 | RATE | its rate (fmt LFOHZ, default 30) |
+| G 31 | PRE | the reverb's pre-delay, 0..100 ms |
+
+Projects are FUNB (`46 55 4E 42`, 3840 bytes: FUNA's layout, 96 bytes longer, so everything after the data moved up by
+96; the five globals as biased bytes after the punch-in lane's tracks and the macros, behind a 1). FUNA (3744, 99
+parameters) and every older format load mapped by count, the new values at their defaults.
+
 ## Framing
 
 A request is `F0 7D 46 4C <cmd> <args...> F7`:

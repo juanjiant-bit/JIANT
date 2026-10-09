@@ -620,12 +620,103 @@ static int demos(const char *dir)
     return n == 5u;
 }
 
+/* (JIANT) the new sound: DIST TYPE (each type its own sound, SOFT as before), the modulation sequence (STEP), the
+ * buses' WIDTH (left and right apart), the delay's HPF, the reverb's MOD and pre-delay (each changes the sound) */
+static uint64_t phrase_lr(int32_t *diff)
+{
+    uint32_t b, i;
+    track_t *t = &trk[0];
+    *diff = 0;
+    trk_note_on(t, 60, 110);
+    for (b = 0; b < FS / CTL; b++) {
+        if (b == FS / 4u / CTL)
+            trk_note_off(t, 60);
+        blocks(1);
+        for (i = 0; i < CTL; i++) {
+            int32_t d = out_buf[2u * i] - out_buf[2u * i + 1u];
+            *diff += d < 0 ? -d : d > 0 ? d : 0;
+            if (*diff > 1 << 28)
+                *diff = 1 << 28;
+        }
+    }
+    return hash;
+}
+static void test_jiant_fx(void)
+{
+    uint64_t h[5], h0, h1;
+    int32_t d0, d1;
+    uint32_t k, ok = 1;
+    for (k = 0; k < 5u; k++) {
+        fresh(0, 0);
+        trk[0].p[P_DIST] = 90;
+        trk[0].p[P_DTYPE] = (int16_t)k;
+        h[k] = phrase();
+    }
+    for (k = 1; k < 5u; k++)
+        ok &= h[k] != h[0] && h[k] != h[k - 1u];
+    check("DIST TYPE: SOFT HARD FOLD CRUSH RECT each sound their own (SOFT, the old drive: the goldens)", ok);
+    fresh(0, 0);
+    trk[0].p[P_DIST] = 90; trk[0].p[P_DTONE] = -60;
+    h0 = phrase();
+    check("DIST TONE darker: another sound", h0 != h[0]);
+    fresh(0, 0);
+    {
+        track_t *t = &trk[0];
+        slot(t, 0, MS_STEP, MD_E1, 64);
+        t->p[P_MSLEN] = 4; t->p[P_MSDIV] = 2; t->p[P_MSSLW] = 0;
+        t->p[P_MS0] = 0; t->p[P_MS0 + 1] = 127; t->p[P_MS0 + 2] = 64;
+        song.playing = 1;
+        ms_clock = div_samples(2) + 5u;                 /* (in step 2) */
+        ms_tick(t);
+        ok = t->ms_v == 127 * 258;
+        ms_clock = 6u * div_samples(2);                 /* (step 7 of LEN 4: step 3) */
+        ms_tick(t);
+        ok &= t->ms_v == 64 * 258;
+        t->p[P_MSSLW] = 100;
+        ms_clock = div_samples(2) + 5u;
+        ms_tick(t);
+        ok &= t->ms_v > 64 * 258 && t->ms_v < 127 * 258;   /* (slewed: on its way) */
+        song.playing = 0;
+        check("MSEQ: STEP reads the level of the step now (LEN wraps), SLEW glides to it", ok);
+    }
+    fresh(0, 0);
+    trk[0].p[P_DLY] = 110; trk[0].p[P_CHOR] = 90; song.g[G_WIDTH] = 0;
+    h0 = phrase_lr(&d0);
+    fresh(0, 0);
+    trk[0].p[P_DLY] = 110; trk[0].p[P_CHOR] = 90; song.g[G_WIDTH] = 127;
+    h1 = phrase_lr(&d1);
+    check("WIDTH 0: left = right (the buses mono, as before); 127: left and right apart", d0 == 0 && d1 > 1000 && h0 != h1);
+    song.g[G_WIDTH] = 0;
+    fresh(0, 0);
+    trk[0].p[P_DLY] = 110; song.g[G_DFDBK] = 100;
+    h0 = phrase();
+    fresh(0, 0);
+    trk[0].p[P_DLY] = 110; song.g[G_DFDBK] = 100; song.g[G_DHPF] = 100;
+    check("delay HPF: the repeats thinner (another sound)", phrase() != h0);
+    song.g[G_DHPF] = 0;
+    for (k = 0; k < 2u; k++) {
+        fresh(0, 0);
+        trk[0].p[P_REV] = 120; song.g[G_RTYPE] = (int16_t)k;
+        h0 = phrase();
+        fresh(0, 0);
+        trk[0].p[P_REV] = 120; song.g[G_RTYPE] = (int16_t)k; song.g[G_RMOD] = 100;
+        h1 = phrase();
+        fresh(0, 0);
+        trk[0].p[P_REV] = 120; song.g[G_RTYPE] = (int16_t)k; song.g[G_RPRE] = 60;
+        check(k ? "SPRING: MOD (its wobble deeper) and PRE each change the tail" : "ROOM: MOD (its combs drift) and PRE each change the tail",
+              h1 != h0 && phrase() != h0);
+        song.g[G_RMOD] = song.g[G_RPRE] = 0;
+    }
+    song.g[G_RTYPE] = 0;
+}
+
 int main(int argc, char **argv)
 {
     test_off();
     test_math();
     test_midi();
     test_cost();
+    test_jiant_fx();
     if (argc > 1)
         check("demos written", demos(argv[1]));
     printf("%s\n", bad ? "MOD MATRIX TEST FAILED" : "mod matrix test passed");

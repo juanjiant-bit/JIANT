@@ -833,6 +833,8 @@ static uint32_t graph_signature(void)
         h = (h ^ (uint32_t)t->p[i]) * 16777619u;
     h ^= (uint32_t)TSEL->preset * 7u + (uint32_t)song.g[G_SLOT] * 13u + TSEL->user * 257u + up_gen * 7919u + ui.uslot * 104729u +
          ui.ppick * 1299709u;
+    if (pg->graph == GR_MSEQ)                        /* (JIANT) the step picked, the one playing, the level now */
+        h ^= (ms_ui_step + 1u) * 40503u + (song.playing ? ui.frame * 2654435761u : 0u);
     if (pg->graph == GR_SONG) {
         for (uint32_t r = 0; r < CHAIN_ROWS; r++)
             h = (h ^ (song_idx.scene[song_cur][r].on * (r + 1u))) * 16777619u;
@@ -1344,6 +1346,26 @@ static void graph_scope(uint16_t c)
 }
 
 /* SONG: the rows, each a section (the saved project A..D, sounds and steps) and its bars (song_chain.c) */
+/* (JIANT) MSEQ: the 16 levels as bars (past LEN dim), the step KNOB 1 picked framed, the one playing in the accent, and
+ * the level the matrix reads now (STEP, slewed) as a line */
+static void graph_mseq(const track_t *t, uint16_t c)
+{
+    uint32_t i, len = t->p[P_MSLEN] > 0 ? (uint32_t)t->p[P_MSLEN] : 1u;
+    uint32_t per = div_samples((uint32_t)t->p[P_MSDIV]), now = song.playing && per ? ms_clock / per % len : 0xFFu;
+    int32_t y0 = 92, hmax = 80;
+    for (i = 0; i < 16u; i++) {
+        int32_t x = 13 + (int32_t)i * 13, h = t->p[P_MS0 + i] * hmax / 127;
+        uint16_t col = i >= len ? T_RAISE : i == now ? T_ACCENT : settings.palette == UI_JIANT_INDEX ?
+                       heat_col(48 + t->p[P_MS0 + i] * 200 / 127) : c;
+        cv_rrect(x, y0 - hmax, 10, hmax, 2, T_RAISE, T_SURF);
+        if (h > 0)
+            cv_rrect(x, y0 - (h < 3 ? 3 : h), 10, h < 3 ? 3 : h, 2, col, T_RAISE);
+        if (i == ms_ui_step)
+            cv_rect(x, y0 + 3, 10, 2, T_TEXT);
+    }
+    if (song.playing)
+        cv_rect(13, y0 - t->ms_v * hmax / 32767, 205, 1, T_TEXT);
+}
 static void graph_song(void)
 {
     uint32_t first = ui.song_row > 2u ? ui.song_row - 2u : 0u, i;
@@ -1452,6 +1474,9 @@ static void draw_graph(void)
         case GR_USER:
             cv_oy = 0;
             graph_user();
+            break;
+        case GR_MSEQ:
+            graph_mseq(t, c);
             break;
         case GR_SONG:
             cv_oy = 0;

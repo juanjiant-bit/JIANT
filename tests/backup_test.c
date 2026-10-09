@@ -175,8 +175,8 @@ int main(void)
 
     reset();
     trk[0].step[0] = (step_t){{60}, 1, ST_NOTE, 0, 96, 0, 0};
-    bad += check("LIST captures the runtime: 13 objects (id 8 empty, id 9 the FM6 patches), runtime 3744 B (FUNA)",
-                 list(0, &len, &crc) == 0 && rep[2] == 10u && len == sizeof(project_store_t) && len == 3744u &&
+    bad += check("LIST captures the runtime: 13 objects (id 8 empty, id 9 the FM6 patches), runtime 3840 B (FUNB)",
+                 list(0, &len, &crc) == 0 && rep[2] == 10u && len == sizeof(project_store_t) && len == 3840u &&
                  crc == st_crc32(ED_BK_RAW, len));
     bad += check("an empty project slot lists as length 0", list(2, &len, &crc) == 0 && len == 0);
     bad += check("GET of the runtime copy", get(0, 0, 64) == 0);
@@ -286,7 +286,7 @@ int main(void)
         memcpy(v8, st.raw, 68);
         v8[66] = 91;
         for (k = 0; k < NTRK; k++) {
-            for (j = 0; j < 91u; j++) v8[pos++] = st.raw[pos9 + (j < 83u ? j : j + 8u)];
+            for (j = 0; j < 91u; j++) v8[pos++] = st.raw[pos9 + (j < 83u ? j : P_E0 + j - 83u)];
             pos9 += P_COUNT;
             memcpy(v8 + pos, st.raw + pos9, 2u + NSTEP * 9u);
             pos += 2u + NSTEP * 9u; pos9 += 2u + NSTEP * 9u;
@@ -305,7 +305,7 @@ int main(void)
     memset(&v6, 0, sizeof v6);                           /* FUN6: 69 parameters, steps out of range */
     v6.magic = PROJ_MAGIC_V6;
     v6.size = sizeof v6;
-    for (uint32_t i = 0; i < G_COUNT; i++)
+    for (uint32_t i = 0; i < G_NSTORE; i++)
         v6.g[i] = GP[i].def;
     for (uint32_t i = 0; i < NTRK; i++)
         v6.t[i].engine = trk[i].engine;
