@@ -6,7 +6,7 @@
  * by the page's four knobs and breathing with the sound:
  *   KNOB 1  the spikes: more of them          KNOB 3  the membrane: it wobbles into lobes
  *   KNOB 2  the spikes: longer                KNOB 4  the nuclei: 1 .. 4, orbiting (a cell dividing)
- * The output's level warms it (and swells it); it moves every other frame. Integer maths only: the radius of the
+ * The output's level warms it (and swells it) and drives its time: it moves while it sounds, in silence it rests. Integer maths only: the radius of the
  * membrane at the cell's angle (dsp.c's sine table), the spikes a power of a cosine round it, a bright wall, a cold
  * band under it, the nuclei hot. 55 x 28 pixels. */
 #define BG_CELL 4                                       /* px per sensor pixel (3 lit, 1 gap) */
@@ -130,5 +130,11 @@ static void graph_being(const track_t *t)
         int32_t r = d && d->label && d->label[0] != '-' ? RATIO(d, enum_rank(d, *vp)) : -1;
         k[c] = r < 0 ? 128 : r * 256 / 1000;
     }
-    being_draw(&GENOME[(e + ui.page) % 8u], k, bg_energy(), ui.frame * 211u);
+    {
+        static uint32_t tm, f0;                         /* its time runs with the sound: in silence it rests */
+        int32_t en = bg_energy();
+        if (en > 2) tm += (ui.frame - f0) * (uint32_t)(120 + en);
+        f0 = ui.frame;
+        being_draw(&GENOME[(e + ui.page) % 8u], k, en, tm);
+    }
 }
