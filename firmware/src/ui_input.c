@@ -70,7 +70,7 @@ static uint32_t grid_leds(void)
 {
     const track_t *t = TSEL;
     uint32_t k, m = 0, len = (uint32_t)t->p[P_SLEN], b = 1u << ui.lane, acc = (uint32_t)black_held(GK_ACC);
-    uint32_t ph = song.playing && t->seq_idx < len && t->seq_idx / 16u == ui.bank ? t->seq_idx % 16u : 0xFFu;
+    uint32_t ph = song.playing && seq_src(t, t->seq_idx) < len && seq_src(t, t->seq_idx) / 16u == ui.bank ? seq_src(t, t->seq_idx) % 16u : 0xFFu;
     for (k = 0; k < 27u; k++) {
         uint32_t p = key_place(k), on;
         if (!key_black(k)) {
@@ -94,7 +94,7 @@ static uint32_t grid_beats(void)
 {
     const track_t *t = TSEL;
     uint32_t k, m = 0, len = (uint32_t)t->p[P_SLEN], b = 1u << ui.lane, acc = (uint32_t)black_held(GK_ACC);
-    uint32_t ph = song.playing && t->seq_idx < len && t->seq_idx / 16u == ui.bank ? t->seq_idx % 16u : 0xFFu;
+    uint32_t ph = song.playing && seq_src(t, t->seq_idx) < len && seq_src(t, t->seq_idx) / 16u == ui.bank ? seq_src(t, t->seq_idx) % 16u : 0xFFu;
     for (k = 0; k < 27u; k++) {
         uint32_t p = key_place(k), i = ui.bank * 16u + p;
         if (key_black(k) || p % 4u || i >= len || p == ph)
@@ -837,18 +837,14 @@ static uint32_t oct_taps(uint32_t pressed, int here)
 
 /* SEQ step entry = step recording (1.2, Discussion #133: only with the track armed and the transport stopped), acid
  * style: the keys pressed together (POLY: up to 4 notes, MONO: the last one) become the cursor step; releasing all
- * keys moves on one step (wrapping inside LEN). With CHRD on a key writes what it sounds, as live recording does:
- * POLY its chord, MONO the chord's root */
+ * keys moves on one step (wrapping inside LEN) */
 static void seq_entry(uint32_t pressed)
 {
     track_t *t = TSEL;
     step_t *st = &t->step[ui.cursor];
     uint32_t k;
     for (k = 0; k < 27u; k++) {
-        uint8_t ch[CHORD_MAX];
-        int32_t r;
-        uint16_t mask;
-        uint32_t note, n, i, j;
+        uint32_t note, j;
         if (!((pressed >> k) & 1u))
             continue;
         note = kb_map(t, k);
@@ -859,17 +855,14 @@ static void seq_entry(uint32_t pressed)
             st->n = 0;
             st->time = ST_NOTE;
         }
-        n = chord_make(t, note, ch, &r, &mask);        /* (CHRD OFF, a kit: the note alone; MONO: the root) */
         if (t->p[P_VOICE] && !ENGINES[t->engine]->oneshot) {   /* (drums: hits stack as a chord) */
-            st->note[0] = ch[0];
+            st->note[0] = (uint8_t)note;
             st->n = 1;
-        } else {
-            for (i = 0; i < n && st->n < 4u; i++) {
-                for (j = 0; j < st->n && st->note[j] != ch[i]; j++)
-                    ;
-                if (j == st->n)
-                    st->note[st->n++] = ch[i];
-            }
+        } else if (st->n < 4u) {
+            for (j = 0; j < st->n && st->note[j] != note; j++)
+                ;
+            if (j == st->n)
+                st->note[st->n++] = (uint8_t)note;
         }
         last_note = (uint8_t)note;
     }

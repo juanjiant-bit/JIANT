@@ -665,7 +665,7 @@ static void draw_foot(void)
     str_cpy(s + str_len(s), pn, 16);
     str_cpy(s + str_len(s), ti, sizeof ti);
     {   /* step markers: the playhead only when it is in the shown bank, the cursor only in SEQ */
-        uint32_t ph = song.playing && t->seq_idx / 16u == ui.bank ? t->seq_idx : 0xFFu;
+        uint32_t ph = song.playing && seq_src(t, t->seq_idx) / 16u == ui.bank ? seq_src(t, t->seq_idx) : 0xFFu;
         sig = str_hash(0x9E3779B9u, s) + ph * 97u + (song.seq_mode ? ui.cursor : 0xFFu) * 3001u + steps_hash(t) +
               (ui.home ? 0u : page_icon(pg)) * 7121u +
               ui.bank * 7u + (uint32_t)t->p[P_SLEN] * 13u;
@@ -723,7 +723,7 @@ static void draw_foot(void)
                 cv_rrect(sx, 9, 9, 3, 1, st->time == ST_TIE ? T_MID : T_RAISE, T_BG);
             if (song.seq_mode && si == ui.cursor)
                 cv_rect(sx, 14, 9, 2, T_ACCENT);        /* the step edited */
-            else if (song.playing && si == t->seq_idx)
+            else if (song.playing && si == seq_src(t, t->seq_idx))
                 cv_rect(sx, 14, 9, 2, T_TEXT);          /* the step sounding */
         }
     }

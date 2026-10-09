@@ -298,7 +298,7 @@ static const page_t *page_over;   /* a quick layer's own four knobs (ui_layer.c)
 static const page_t *cur_page(void) { return page_over ? page_over : &PAGES[ui.page]; }
 
 /* MENU > LARGE (#15, Discussion #80: what KNOB 1..4 do, in bigger type). Per page type:
- *   LK_TALL  HOME and the value pages (EDIT ENV LFO MOD FX SLICER SCL CHORD ARP VOICE PATTERN STEP's knobs, MIXER,
+ *   LK_TALL  HOME and the value pages (EDIT ENV LFO MOD FX SLICER SCL SHIFT ARP VOICE PATTERN STEP's knobs, MIXER,
  *            GLOBAL, SYSTEM, TOOLS, MOTION): tall cards (a K1..K4 keycap, the icon, the label in M, the value in L,
  *            in M or S when L is too wide or lacks a glyph, the unit under it, the gauge), the panel a strip: HOME's
  *            scope, ENV's ADSR, LFO's wave, PATTERN's 64 steps, MIXER's four tracks (name, state, meter) small; the
@@ -785,7 +785,7 @@ static void pat_load_ui(track_t *t, uint32_t n)
 static int param_kept(uint32_t i)
 {
     return i == P_LEVEL || i == P_PAN || i == P_MUTE || (i >= P_AMODE && i <= P_SGATE) ||
-           (i >= P_SLCR && i <= P_SLDEPTH) || i == P_CHRD || i == P_VOIC;
+           (i >= P_SLCR && i <= P_SLDEPTH) || i == P_SOFS || i == P_POFS;
 }
 
 /* a retired preset kept as an alias, so stored preset numbers stay valid: SAMPLE 1, once TRANH, is PIANO

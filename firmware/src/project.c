@@ -49,7 +49,7 @@
  * slot 1 still starts with the older record, read as above).
  *
  * Format A ("FUNA", written since JIANT 0.1) = FUN9 with 96 more bytes: the section's DRUM-X kit (drumx_voice.c
- * dx_lane_t[8], 88 bytes, then the group mutes, the sounds' mutes (dx_mute, 2 bytes) and 6 reserved, written 0) at PROJ_DX_OFF, just before the FM6 patches. 3744 bytes (a
+ * dx_lane_t[8], 88 bytes, then the group mutes, the sounds' mutes (dx_mute, 2 bytes), 1 = the SHIFT offsets (P_SOFS P_POFS, once the chord keys: 0 before it) and 5 reserved, written 0) at PROJ_DX_OFF, just before the FM6 patches. 3744 bytes (a
  * flash object holds 3840); the serialized part still ends by 3120 (FUN9's 48 spare bytes stay). FUN9 is read
  * (its kit: the factory one, DX_KIT_DEF), as every older format. JIANT 0.1 also keeps the punch-in lane (pfx.c) in
  * the 48 spare bytes before the kit: 64 nibbles at PROJ_PFX_OFF (3072), its tracks at 3104 (a FUN9 or an earlier
@@ -641,6 +641,7 @@ static int proj_pack(project_store_t *out, const project_t *q)
     memcpy(b + PROJ_DX_OFF, q->dx, sizeof q->dx);
     b[PROJ_DX_OFF + sizeof q->dx] = q->dx_mute & DXG_ALL;
     b[PROJ_DX_OFF + sizeof q->dx + 1u] = (uint8_t)(q->dx_mute >> 8);
+    b[PROJ_DX_OFF + sizeof q->dx + 2u] = 1u;                    /* SHIFT: OFS / PIT where the chord keys were */
     memcpy(b + PROJ_FM6_OFF, q->fm6, sizeof q->fm6);
     {   /* the name (0-padded; stops at the first 0) */
         char n[PROJ_NAME_LEN + 1u];
@@ -722,7 +723,11 @@ static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
         memcpy(q->dx, b + end, sizeof q->dx);
         if (!dx_kit_ok(q->dx)) return 0;
         q->dx_mute = (uint16_t)((b[end + sizeof q->dx] & DXG_ALL) | b[end + sizeof q->dx + 1u] << 8);
-    } else {
+    }
+    if (!va || b[end + sizeof q->dx + 2u] != 1u)        /* written before SHIFT: its chord keys are no offset */
+        for (t = 0; t < NTRK; t++)
+            q->t[t].p[P_SOFS] = q->t[t].p[P_POFS] = 0;
+    if (!va) {
         memcpy(q->dx, DX_KIT_DEF, sizeof q->dx);
         q->dx_mute = 0;
     }

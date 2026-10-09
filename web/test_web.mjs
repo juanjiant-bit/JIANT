@@ -86,17 +86,17 @@ async function editorMock() {
       "editor: a factory preset turns every matrix slot off");
   }
   {
-    /* the chord keys (core.h P_CHRD, P_VOIC = 81, 82, just before P_E0 83): the track's, a factory preset keeps them */
+    /* SHIFT (core.h P_SOFS, P_POFS = 81, 82, just before P_E0 83; once the chord keys): the track's, a factory preset keeps them */
     const c0 = E.parse[E.CMD.DESC](await rq(E.req.desc(0, 81)));
     const c1 = E.parse[E.CMD.DESC](await rq(E.req.desc(0, 82)));
-    ok(c0.label === "CHRD" && c0.names.join() === "OFF,DIA3,DIA7,MAJ,MIN,DOM7,MAJ7,MIN7,SUS4,POW" && c0.def === 0 &&
-       c1.label === "VOIC" && c1.names.join() === "CLOSE,OPEN,INV1,INV2,+OCT" && c1.def === 0,
-      "editor: the chord keys 81, 82 over DESC");
+    ok(c0.label === "OFS" && c0.min === -32 && c0.max === 32 && c0.def === 0 &&
+       c1.label === "PIT" && c1.min === -24 && c1.max === 24 && c1.def === 0,
+      "editor: SHIFT OFS PIT 81, 82 over DESC");
     await rq(E.req.set(0, 81, 2));
     await rq(E.req.set(0, 82, 4));
     await rq(E.req.preset(0, 3));
     const kept = E.parse[E.CMD.DUMP](await rq(E.req.dump()), info);
-    ok(kept.p[81] === 2 && kept.p[82] === 4 && kept.preset === 3, "editor: a factory preset keeps CHRD and VOIC (the track's)");
+    ok(kept.p[81] === 2 && kept.p[82] === 4 && kept.preset === 3, "editor: a factory preset keeps OFS and PIT (the track's)");
     await rq(E.req.set(0, 81, 0));
     /* the DRUM lane levels (core.h P_LN0..P_LN7 = 83..90, just before P_E0 91): percents, 100 % by default; the sound's,
        a factory preset sets them back */
@@ -600,7 +600,7 @@ async function editorLibrarian() {
   await rq(E.req.stepSet(20, { n: 1, notes: [50, 0, 0, 0], time: 0, flags: 0, vel: 90 }));
   await rq(E.req.set(0, 29, 24));               /* the track's own: LEN 24, ARP MODE 2 */
   await rq(E.req.set(0, 17, 2));
-  await rq(E.req.set(0, 81, 1));                /* CHRD DIA3: the track's too */
+  await rq(E.req.set(0, 81, 1));                /* OFS 1: the track's too */
   const seqBefore = [];
   for (let i = 0; i < 24; i++) seqBefore.push(E.parse[C.STEP_GET](await rq(E.req.stepGet(i))));
   const flashBefore = js(m.state.bank);
@@ -637,7 +637,7 @@ async function editorLibrarian() {
   const ctx = { keys, engines: info.engines, firmware: info.version, pe0: info.pe0 };
   const pts = [cap, { ...bass, engineName: info.engines[bass.engine], tags: ["bass", "device"] }];
   const file = JSON.parse(JSON.stringify(E.libraryFile("library", pts, ctx)));
-  ok(file.format === "felucca-library" && file.version === 1 && file.pCount === 99 && file.paramLabels.length === 99 && file.paramLabels[81] === "CHRD" && file.paramLabels[82] === "VOIC" &&
+  ok(file.format === "felucca-library" && file.version === 1 && file.pCount === 99 && file.paramLabels.length === 99 && file.paramLabels[81] === "OFS" && file.paramLabels[82].startsWith("PIT#") &&
     file.paramLabels[83] === "KICK" && file.paramLabels[90] === "BELL" && file.engines.length === 14,
     "library file: versioned, with P_COUNT, labels and engines");
   const back = E.readLibraryFile(file, ctx);
@@ -666,7 +666,7 @@ async function editorLibrarian() {
     ok(good(sp) && good(lp) && good(nk), "library file: 69-parameter files (patch, labelled, unlabelled) map the engine's 8 to 91..98");
   }
   {   /* files from the 89-parameter firmware (P_E0 81, before the chord keys): the engine's 8 land on 91..98, the FM
-         op ENV in place, CHRD VOIC unset (left as the track has them), the lane levels unset */
+         op ENV in place, OFS PIT (once CHRD VOIC) unset (left as the track has them), the lane levels unset */
     const p89 = [...cap.p.slice(0, 81), ...cap.p.slice(91, 99)];
     const keys89 = [...keys.slice(0, 81), ...keys.slice(91)];
     const sp = E.readLibraryFile({ format: "felucca-patch", version: 1, engine: cap.engine, engineName: info.engines[cap.engine], p: p89 }, ctx).patches[0].p;

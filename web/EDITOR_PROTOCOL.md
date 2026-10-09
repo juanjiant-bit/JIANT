@@ -42,7 +42,7 @@ project (bit 7 of a motion record's id); 1.1 projects are FUN9 for the DRUM lane
 
 **Chord keys (91 parameters, 1.0):** two track parameters, `CHRD` (81) and `VOIC` (82), went in before the
 engine parameters, which moved from 81..88 to 83..90: P_COUNT 91, P_E0 83. No command changed; an editor that
-takes P_COUNT and P_E0 from `INFO` keeps working (see "The chord keys" below).
+takes P_COUNT and P_E0 from `INFO` keeps working (see the table below: in JIANT they are SHIFT's OFS / PIT).
 
 **DRUM lane levels (99 parameters, 1.1):** eight track parameters, `KICK` .. `BELL` (83..90, the DRUM engine's lane
 levels), went in before the engine parameters, which moved from 83..90 to 91..98: P_COUNT 99, P_E0 91. No command
@@ -123,13 +123,12 @@ The chord keys (SCL > CHORD on the device, `firmware/src/chord.c`) are two track
 
 | id | label | values |
 | --- | --- | --- |
-| 81 | CHRD | enum: 0 OFF, 1 DIA3, 2 DIA7 (the triad / seventh of the track's ROOT and SCALE on the key: every tone in key), 3 MAJ, 4 MIN, 5 DOM7, 6 MAJ7, 7 MIN7, 8 SUS4, 9 POW (fixed shapes) |
-| 82 | VOIC | enum: 0 CLOSE, 1 OPEN (1-5-3), 2 INV1, 3 INV2, 4 +OCT (the root an octave down; a seventh drops its fifth) |
+| 81 | OFS | -32..32 steps (JIANT; the chord keys' CHRD before): the sequence plays OFS steps later, wrapping inside LEN |
+| 82 | PIT | -24..24 semitones (JIANT; VOIC before): the sequence's notes move up / down (a kit's lanes do not) |
 
-With CHRD on, a key, a MIDI note of that track and so the arp's held notes play the chord (at most 4 notes),
-and live recording writes it into one step; MONO / LEGATO / UNISON play its root; a kit (DRUM, SLICE)
-ignores it. Both defaults are 0: nothing changes until CHRD is set. They are the track's, like ARP and SCL: a
-sound load (a factory preset, `UP_LOAD`, an audition) keeps them, and motion never records them.
+**JIANT:** the chord keys are gone; their two ids are SEQ > SHIFT, the sequence offset. Live recording writes where
+it is heard. They are the track's, like ARP and SCL: a sound load keeps them. Unlike the chord keys, motion records
+them (they are automatable). A project written before SHIFT (no mark in its DRUM-X block) loads them at 0.
 
 The DRUM lane levels (EDIT > LANES / LANES 2 on the device, `firmware/src/eng_drum.c`) are eight track parameters at
 ids 83..90, one per lane: 83 KICK, 84 SNARE, 85 CLAP, 86 HATCL, 87 HATOP, 88 TOM, 89 RIM, 90 BELL. Percent (`F_PCT`),

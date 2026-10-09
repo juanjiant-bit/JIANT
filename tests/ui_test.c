@@ -175,9 +175,7 @@ static void ui_power_on(void)
     memset(midi_owners, 0, sizeof midi_owners);
     memset(midi_bend_q8, 0, sizeof midi_bend_q8);
     memset(midi_bend_target, 0, sizeof midi_bend_target);
-    memset(kb_chn, 0, sizeof kb_chn);                   /* chord.c: no key, MIDI chord or last chord */
-    memset(mchord, 0, sizeof mchord);
-    memset(chord_last, 0, sizeof chord_last);
+    memset(kb_on, 0, sizeof kb_on);                     /* no key held */
     perf_held = perf_act = kb_layer = perf_mask = 0;      /* the FX layer: nothing held */
     perf_kill = 0;
     perf_mask = 1u << panel.btn[B_FX];                  /* (ui_input sets them every frame) */
@@ -2130,8 +2128,8 @@ static int test_presets_knob(void)
             }
         }
     }
-    bad += check("#92 PRESETS on STEP, PATTERN, CHANCE, AUTOMATION: the step cursor; the sound and the steps stay",
-                 cur_ok && n_cur == 4u);
+    bad += check("#92 PRESETS on STEP, PATTERN, SHIFT, CHANCE, AUTOMATION: the step cursor; the sound and the steps stay",
+                 cur_ok && n_cur == 5u);
     bad += check("#94 PRESETS on USER, PROJECT, PHRASES, SONG: the selection (KNOB 1's); nothing loaded", sel_ok);
     bad += check("#94 PRESETS on TOOLS does nothing", tools_ok);
     bad += check("#94 PRESETS elsewhere (EDIT, ENV, LFO, FX, SCL, ARP, MIXER, GLOBAL, ...): the next sound, the steps stay",
@@ -3386,60 +3384,34 @@ static int test_bughunt_ui(void)
     return bad;
 }
 
-/* the chord keys on the device (chord.c): SCL tapped again is the CHORD page, KNOB 1 CHRD, KNOB 2 VOIC, the graph
- * names the last chord (MONO gray); a sound load keeps them; the SCL layer's KNOB 3 / 4 are CHRD / VOIC, OCT-
- * puts them back */
-static int test_chord_page(void)
+/* SHIFT (JIANT, in the chord keys' place): SEQ's SHIFT page (OFS PIT, the pattern graph); a sound load keeps them;
+ * the SCL layer's KNOB 3 / 4 are OFS / PIT */
+static int test_shift_page(void)
 {
     int bad = 0, ok;
     track_t *t;
     ui_power_on();
     t = TSEL;
-    t->p[P_VOICE] = V_POLY;
     go_home(); frame();
-    press(B_SCL); frames(400);
-    ok = str_eq(cur_page()->title, "SCL");
-    press(B_SCL); frames(400);
-    ok &= str_eq(cur_page()->title, "CHORD") && cur_page()->graph == GR_CHORD && cur_page()->fam == FAM_SCL;
-    bad += check("SCL tapped again: the CHORD page (CHRD VOIC, the chord graph)", ok && cur_page()->id[0] == P_CHRD &&
-                 cur_page()->id[1] == P_VOIC);
-    memset(host_screen, 0, sizeof host_screen); ui.force = 1; ui_draw();
-    bad += check("  CHRD OFF: the page says what to do, MONO gray", screen_gray());
-    turn(EN_K1, 1); frame();
-    turn(EN_K2, 1); frame();
-    bad += check("  KNOB 1: CHRD DIA3, KNOB 2: VOIC OPEN", t->p[P_CHRD] == CH_DIA3 && t->p[P_VOIC] == VC_OPEN);
-    key_down(7); frame();                                          /* C4 in C (SCALE CHR: the major of C) */
-    ok = gates() == 3u && chord_last[song.sel].root == 60;
-    memset(host_screen, 0, sizeof host_screen); ui.force = 1; ui_draw();
-    ok &= screen_gray();
-    key_up(7); frame();
-    bad += check("  a key plays the chord, the graph shows it (C), MONO gray", ok && !gates());
-    t->p[P_CHRD] = CH_MIN7; t->p[P_VOIC] = VC_BASS;
+    go_title("SHIFT"); frame();
+    ok = str_eq(cur_page()->title, "SHIFT") && cur_page()->fam == FAM_SEQ && cur_page()->id[0] == P_SOFS &&
+         cur_page()->id[1] == P_POFS;
+    turn(EN_K1, 3); frame();
+    turn(EN_K2, -2); frame();
+    bad += check("SHIFT page: KNOB 1 OFS +3, KNOB 2 PIT -2", ok && t->p[P_SOFS] == 3 && t->p[P_POFS] == -2);
     apply_preset_to(t, 1);
-    bad += check("  a sound load keeps CHRD and VOIC (SCL settings)", t->p[P_CHRD] == CH_MIN7 && t->p[P_VOIC] == VC_BASS);
-    set_engine_of(t, ENGI_DRUM); t->engine = t->eng_req; frame();
-    memset(host_screen, 0, sizeof host_screen); ui.force = 1; ui_draw();
-    bad += check("  a kit (DRUM): the page says so, MONO gray", chord_kit(t) && screen_gray());
+    bad += check("  a sound load keeps OFS and PIT (sequence settings)", t->p[P_SOFS] == 3 && t->p[P_POFS] == -2);
     ui_power_on();
     t = TSEL;
-    t->p[P_CHRD] = CH_OFF; t->p[P_VOIC] = VC_CLOSE;
     go_home(); frame();
     btn_down(B_SCL); frames(800);
     ok = ui.layer == LAYER_SCL;
     turn(EN_K3, 2); frame();
-    turn(EN_K4, 1); frame();
-    ok &= t->p[P_CHRD] == CH_DIA7 && t->p[P_VOIC] == VC_OPEN && t->p[P_QUANT] == 0 && t->p[P_TRANS] == 0;
-    turn(EN_K1, 2); frame();
-    ok &= t->p[P_ROOT] == 2;
+    turn(EN_K4, 5); frame();
+    ok &= t->p[P_SOFS] == 2 && t->p[P_POFS] == 5 && t->p[P_QUANT] == 0 && t->p[P_TRANS] == 0;
     oct_back();
     btn_up(B_SCL); frame();
-    bad += check("SCL layer: KNOB 1 ROOT, 3 CHRD, 4 VOIC (QNT TRN untouched); OCT- puts nothing back", ok &&
-                 t->p[P_CHRD] == CH_DIA7 && t->p[P_VOIC] == VC_OPEN && t->p[P_ROOT] == 2 && ui.home);
-    btn_down(B_SCL); frames(800);
-    memset(host_screen, 0, sizeof host_screen); ui.force = 1; ui_draw();
-    ok = screen_gray();
-    btn_up(B_SCL); frame();
-    bad += check("  its map and cards MONO gray", ok);
+    bad += check("SCL layer: KNOB 3 OFS, KNOB 4 PIT (QNT TRN untouched)", ok && t->p[P_SOFS] == 2 && t->p[P_POFS] == 5);
     return bad;
 }
 
@@ -3489,7 +3461,7 @@ static int test_step_rec(void)
     frame();
     memcpy(before, t->step, sizeof before);
     key_down(7); frame();
-    ok = kb_chn[7] != 0u;                                             /* it sounds */
+    ok = kb_on[7] != 0u;                                             /* it sounds */
     key_up(7); frame();
     ok &= !memcmp(before, t->step, sizeof before) && ui.cursor == 3u && !song.rec && !transport_req;
     bad += check("#133 STEP, not armed, stopped: a key sounds, writes nothing, the cursor stays", ok);
@@ -3611,9 +3583,9 @@ static int test_piano_roll(void)
     song.rec = 1;                                                     /* (#133: armed, the key writes the step) */
     key_down(7); frames(200);                                         /* a key held: its row lit on the strip */
     {
-        int32_t r = (int32_t)proll.lo + PR_ROWS - 1 - (int32_t)kb_chord[7][0];
+        int32_t r = (int32_t)proll.lo + PR_ROWS - 1 - (int32_t)kb_snd[7];
         uint16_t c = r >= 0 && r < PR_ROWS ? swap16(host_screen[(Y_GRAPH + PR_Y0 + (uint32_t)r * PR_RH + 1u) * 240u + PR_KX + 7]) : 0;
-        bad += check("  a key held: its row on the keyboard strip is the accent", kb_chn[7] && c == T_ACCENT);
+        bad += check("  a key held: its row on the keyboard strip is the accent", kb_on[7] && c == T_ACCENT);
     }
     key_up(7); frames(100);
     song.rec = 0;
@@ -3653,30 +3625,6 @@ static int test_bughunt_ui2(void)
             bad += check(i ? "dead GLO held from a dialog: no map, the key plays a note"
                            : "dead FX held from a dialog: no map, the key plays a note, no effect", ok);
         }
-    }
-    {   /* 2. STEP entry with CHRD on writes what the key sounds, as live recording does */
-        static const uint32_t KEY[2] = {7u, 8u};                      /* C4, C#4 (out of C major) */
-        uint32_t v, j, ok = 1;
-        for (v = 0; v < 2u; v++)
-            for (j = 0; j < 2u; j++) {
-                track_t *t;
-                step_t e, r;
-                ui_power_on(); t = TSEL; t->p[P_VOICE] = v ? V_MONO : V_POLY; t->p[P_CHRD] = CH_DIA3; t->p[P_SCALE] = 1;
-                track_defaults_steps(t); go_page(GR_ROLL); cursor_set(0); frame(); song.rec = 1;   /* (#133: armed) */
-                key_down(KEY[j]); frame();
-                e = t->step[0];
-                key_up(KEY[j]); frame(); song.rec = 0;
-                ok &= e.n == (v ? 1u : 3u) && e.note[0] == 60u && (v || (e.note[1] == 64u && e.note[2] == 67u));
-                ui_power_on(); t = TSEL; t->p[P_VOICE] = v ? V_MONO : V_POLY; t->p[P_CHRD] = CH_DIA3; t->p[P_SCALE] = 1;
-                track_defaults_steps(t); go_home(); frame();
-                song.rec = 1; song.playing = 1; t->seq_idx = 3; t->seq_pos = 0;
-                fm1_in.notes = 1u << KEY[j]; keyboard_block();
-                r = t->step[3];
-                fm1_in.notes = 0; keyboard_block();
-                song.rec = 0; song.playing = 0;
-                ok &= r.n == e.n && !memcmp(r.note, e.note, e.n);
-            }
-        bad += check("STEP entry with CHRD: POLY the chord, MONO its root, as live recording writes", ok);
     }
     {   /* 3. MIXER: the knob just turned is the one drawn in the accent (K1 LEVEL, K2 PAN, K3 REV, K4 the MUTE badge) */
         uint32_t k, a[4][4], ok = 1;
@@ -4965,7 +4913,7 @@ static int lk_same(uint32_t l)                      /* nothing changed but the l
     for (i = 0; i < NTRK; i++)
         for (j = 0; j < P_COUNT; j++) {
             int own = (l == LAYER_GLO && j == P_LEVEL) ||
-                      (l == LAYER_SCL && i == 0u && (j == P_ROOT || j == P_SCALE || j == P_CHRD || j == P_VOIC)) ||
+                      (l == LAYER_SCL && i == 0u && (j == P_ROOT || j == P_SCALE || j == P_SOFS || j == P_POFS)) ||
                       (l == LAYER_EDIT && i == 0u && (j < P_AMODE || j > P_AORDER));   /* (a load keeps the ARP) */
             if (lk_p[i][j] != trk[i].p[j] && !own)
                 return 0;
@@ -5302,6 +5250,8 @@ static int test_seq_tools(void)
     go_page(GR_ROLL); frame();
     press(B_SEQ); frames(320);
     ok = cur_page()->graph == GR_STEPS && msg_is("HOLD [SEQ] QUICK");
+    press(B_SEQ); frames(320);
+    ok &= str_eq(cur_page()->title, "SHIFT");          /* (JIANT: PATTERN, then SHIFT) */
     press(B_SEQ); frames(320);
     ok &= cur_page()->graph == GR_PATS;
     bad += check("  a tap on STEP: the next SEQ page, as always (the hint until the layer was opened)", ok);
@@ -7034,7 +6984,7 @@ int main(void)
     bad += test_edit_cycle();
     bad += test_sample_alert();
     bad += test_quick_layers();
-    bad += test_chord_page();
+    bad += test_shift_page();
     bad += test_bughunt_ui();
     bad += test_bughunt_ui2();
     bad += test_piano_roll();
