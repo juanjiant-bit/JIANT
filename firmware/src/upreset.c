@@ -91,6 +91,10 @@ static void up_migrate(up_rec_t *r)
         r->engine = ENGI_DRUM;
         for (k = 0; k < 8u; k++) up_set_value(r, r->np - 8u + k, e[k]);
     }
+    if (analog_from_trio(r->engine, e)) {               /* (JIANT 0.4) TRIO: ANALOG's nearest */
+        r->engine = 0;
+        for (k = 0; k < 8u; k++) up_set_value(r, r->np - 8u + k, e[k]);
+    }
     if (r->engine == ENGI_DRUM && !(r->ver >= 4u && r->np <= UP_FM_AT && r->packed[UP_FM_AT] == UP_FM_MARK)) {
         up_set_value(r, r->np - 3u, 0);                 /* (JIANT 0.3) ACC there: FM off; marked (packed records) */
         if (r->ver >= 4u && r->np <= UP_FM_AT)

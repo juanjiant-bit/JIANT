@@ -32,7 +32,7 @@ static int check(const char *what, int ok)
 /* the value parameter k (old id) of track t had in the old project */
 static int16_t oldv(uint32_t t, uint32_t k) { return (int16_t)(t * 100u + k * 3u + 1u); }
 
-static const uint8_t OLD_ENG[NTRK] = {7, 0, 6, 0};   /* WHEEL, ANALOG, TRIO; the drum track: 0 (no engine) */
+static const uint8_t OLD_ENG[NTRK] = {7, 0, 5, 0};   /* WHEEL, ANALOG, VOICE; the drum track: 0 (no engine) */
 static void fill_v2_track(proj_trk_v2_t *d, uint32_t t)
 {
     uint32_t k;
@@ -130,7 +130,7 @@ static void fill_v3_track(proj_trk_v3_t *d, uint32_t t)
     uint32_t k;
     for (k = 0; k < PROJ_NP_V3; k++)
         d->p[k] = oldv3(t, k);
-    d->engine = (uint8_t)(t == 3u ? 11u : t * 3u);   /* (0 3 6 11: not PHYS, 9, retired) */
+    d->engine = (uint8_t)(t == 3u ? 11u : t == 2u ? 7u : t * 3u);   /* (0 3 7 11: not a retired one, PHYS 9, TRIO 6) */
     d->preset = (uint8_t)(t + 1u);
     for (k = 0; k < NSTEP; k++) {
         step8_t *s = &d->step[k];
@@ -238,9 +238,9 @@ int main(void)
         ok &= track_ok(&q.t[t], &v2.t[t], t, t == 3u, 127, 127);   /* (G_DRLVL / G_DRREV 525 / 526: 127) */
     bad += check("FUN2 -> FUN6: every parameter mapped, SLICER and matrix OFF (4 tracks)", ok);
 
-    bad += check("FUN2 -> FUN6: engine bytes kept (WHEEL 7, ANALOG 0, TRIO 6)",
-                 q.t[0].engine == 7 && q.t[1].engine == 0 && q.t[2].engine == 6 &&
-                 str_eq(ENGINES[7]->name, "WHEEL") && str_eq(ENGINES[6]->name, "TRIO") && NENGINES > 8);
+    bad += check("FUN2 -> FUN6: engine bytes kept (WHEEL 7, ANALOG 0, VOICE 5)",
+                 q.t[0].engine == 7 && q.t[1].engine == 0 && q.t[2].engine == 5 &&
+                 str_eq(ENGINES[7]->name, "WHEEL") && str_eq(ENGINES[5]->name, "VOICE") && NENGINES > 8);
     bad += check("FUN2 -> FUN6: the drum track -> part 4, DRUM (its kit on load), steps kept (lanes as hits)",
                  q.parts == NPART && q.t[3].engine == ENGI_DRUM && str_eq(ENGINES[ENGI_DRUM]->name, "DRUM") &&
                  TRK_DEF[3][0] == ENGI_DRUM && q.t[3].preset == PROJ_DEF_KEEP &&
@@ -566,6 +566,23 @@ int main(void)
                      c.g[G_RWIDE] == GP[G_RWIDE].def && c.g[G_DPIT] == 0 && c.g[G_DSPRY] == 0 && c.t[1].p[P_E5] == 0;
                 bad += check("FUNB of JIANT 0.2 (markers 1): its five globals, the four new at their defaults, DRUM's E5 (ACC) FM 0", ok);
                 a.g[G_RPRE] = a.g[G_RFILT] = a.g[G_RWIDE] = a.g[G_DPIT] = a.g[G_DSPRY] = a.g[G_STRN] = 0;
+            }
+            {   /* (JIANT 0.4) a TRIO track (engine 6, folded into ANALOG): ANALOG's nearest, CUT RES kept, envelope kept */
+                static const int16_t TS[8] = {9, 9, 0, 0, 0, 82, 30, 64};   /* SYNC LEAD: WAVE SYNC, INT2 9 */
+                uint32_t i;
+                a.t[2].engine = ENGI_TRIO;
+                for (i = 0; i < 8u; i++) a.t[2].p[P_E0 + i] = TS[i];
+                a.t[2].p[P_ATK] = 2; a.t[2].p[P_REL] = 40;
+                a.sum = proj_sum(&a);
+                ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st) && c.t[2].engine == 0 &&
+                     c.t[2].p[P_E0] == 5 && c.t[2].p[P_E0 + 1] == 11 && c.t[2].p[P_E0 + 4] == 82 && c.t[2].p[P_E0 + 5] == 30 &&
+                     c.t[2].p[P_ATK] == 2 && c.t[2].p[P_REL] == 40;
+                bad += check("TRIO (engine 6, folded in): ANALOG SYNC (its INT2 9 the ratio, DTN 11), CUT RES and the envelope kept", ok);
+                a.t[2].engine = ENGI_FM6;                   /* (as it was: FM6, E7 its patch 4) */
+                for (i = 0; i < 8u; i++) a.t[2].p[P_E0 + i] = (int16_t)(i == 7u ? 4 : 0);
+                a.t[2].p[P_ATK] = a.t[2].p[P_REL] = 0;
+                a.sum = proj_sum(&a);
+                proj_pack(&st, &a);                         /* (st as before: the older images below are made of it) */
                 a.t[1].engine = ENGI_FM6; a.t[1].p[P_E5] = 0;
                 a.sum = proj_sum(&a);
             }

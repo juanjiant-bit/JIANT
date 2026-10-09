@@ -366,6 +366,13 @@ static void proj_phys_gone(project_t *q)
         proj_trk_t *d = &q->t[k];
         if (!eng_gone(d->engine))
             continue;
+        if (analog_from_trio(d->engine, &d->p[P_E0])) { /* (JIANT 0.4) TRIO: ANALOG's nearest, its envelope kept */
+            d->engine = ENGI_PHYS_TO;
+            if (d->preset < PROJ_DEF_KEEP)
+                d->preset = 0;
+            hit |= 1u << k;
+            continue;
+        }
         d->engine = ENGI_PHYS_TO;
         for (i = 0; i < 8u; i++)
             d->p[P_E0 + i] = (int16_t)pr->e[i];

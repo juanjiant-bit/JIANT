@@ -80,6 +80,10 @@ melodic track: set on one, the others follow |
 Track parameter 8 (once ENV DEST FX, read by nothing) is **LOOP** since 0.4: OFF / ON (enum); ON, a held note's envelope
 starts its attack again at the sustain.
 
+**JIANT 0.4 engines:** TRIO (6) is folded into ANALOG: `INFO` names it `-`, a TRIO sound that arrives loads as ANALOG's
+nearest (core.h `analog_from_trio`). ANALOG's WAVE gains SYNC (5), RING (6), SAW3 (7); LOFI's WAVE gains BYTE (5:
+bytebeat, DUTY the formula, CRSH its variable); PHASE's E8 (once `-`, 0..0) is FB, 0..127.
+
 **JIANT 0.4: 37 globals** (G 36 STRN, stored behind a 3). **JIANT 0.3: 36 globals.** G_COUNT 36 (G 32..35 above). DRUM's E6 (id P_E0 + 5) is FM, 0..127 (once ACC): its sounds through
 harmonic FM, eight ratio bands; a project or user preset saved before loads its DRUM tracks with FM 0.
 

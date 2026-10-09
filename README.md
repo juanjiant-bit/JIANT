@@ -125,8 +125,13 @@ el paso y KNOB 2 su nivel; los niveles también se automatizan.
 ## Lo que trae
 
 - **4 tracks** con 8 voces compartidas.
-- **9 engines**, todos de síntesis, sin samples: ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, VOICE, TRIO, WHEEL,
-  NOISE y DRUM (DRUM-X).
+- **8 engines**, todos de síntesis, sin samples: ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, VOICE, WHEEL, NOISE
+  y DRUM (DRUM-X).
+  - **ANALOG** suma las ondas de TRIO: **SYNC** (sync duro, DTN barre la relación), **RING** (modulación en anillo,
+    campanas y metales) y **SAW3** (tres sierras desafinadas). Los sonidos de TRIO guardados cargan como ANALOG.
+  - **LOFI** tiene **BYTE**: bytebeat, 32 fórmulas de 8 bits elegidas con ALGO (DUTY) y una variable VAR (CRSH) que
+    las deforma; el tiempo sigue la nota tocada. Ningún otro firmware lo tiene.
+  - **PHASE** suma **FB**: la salida realimenta la fase, de un borde más duro a growl y ruido.
 - **Modulación**: 4 slots por track. Fuentes: LFO, ENV, VEL, KEY, RAND, controladores MIDI, las 4 macros y STEP (el
   secuenciador de modulación).
 - **Efectos**: distorsión de 5 tipos y SLICER por track; envíos a chorus, delay (con HPF) y reverb (ROOM o SPRING, con

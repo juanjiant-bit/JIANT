@@ -19,7 +19,7 @@
 #endif
 #define NENGINES 14              /* the stores' engine numbers 0..13 (engines.c ENGINES[], append-only) */
 #define ENGI_DIGITAL 1u          /* reserved without FELUCCA_FM4: never selectable (eng_ok), its sounds load as FM6 */
-#define NENG_SHOWN (NENGINES - !FELUCCA_FM4 - 4)   /* the engines one can pick: PRESETS, the EDIT layer, the editor,
+#define NENG_SHOWN (NENGINES - !FELUCCA_FM4 - 5)   /* the engines one can pick: PRESETS, the EDIT layer, the editor,
                                                 * in the display order of engines.c ENGINE_ORDER (PHYS 9, and in
                                                 * JIANT SAMPLE 4, GRAIN 8, SLICE 13: retired) */
 #define UP_SLOTS 32u             /* user presets (upreset.c) */
@@ -121,11 +121,39 @@ static void params_by_count(int16_t *out, const int16_t *in, uint32_t np, const 
 #define ENGI_GRAIN 8u
 #define ENGI_SLICE 13u
 #define ENGI_SAMPLE 4u
+#define ENGI_TRIO 6u             /* (JIANT 0.4) folded into ANALOG (analog_from_trio) */
 /* (JIANT) the retired engines: PHYS, and the sample engines SAMPLE GRAIN SLICE (their 123 KB of samples and GRAIN's
  * 27 KB of RAM went to DRUM-X and the effects). Their numbers stay reserved (engines.c ENG_GONE), never offered; a sound
  * of theirs that arrives -- a project, a user preset, the editor -- plays as ANALOG's first preset (SAMPLE's old PERC
  * set as DRUM first: drum_from_perc) */
-static inline int eng_gone(uint32_t e) { return e == ENGI_PHYS || e == ENGI_SAMPLE || e == ENGI_GRAIN || e == ENGI_SLICE; }
+static inline int eng_gone(uint32_t e)
+{
+    return e == ENGI_PHYS || e == ENGI_SAMPLE || e == ENGI_GRAIN || e == ENGI_SLICE || e == ENGI_TRIO;
+}
+/* (JIANT 0.4) TRIO (engine 6) folded into ANALOG: its sound's E values -> ANALOG's, in place, the nearest WAVE (its
+ * three saws SAW3, its sync sets SYNC, its ring sets RING, pulses PWM, triangles TRI, noise as NOIS), INT2 as the
+ * SYNC / RING ratio (DTN: 16 x (2^(st/12) - 1)), DTN, CUT and RES kept; 1 = it was TRIO (its engine is ANALOG now):
+ * projects, user presets, the editor's PRESET and SET (project.c, upreset.c, ui.c). {WAVE INT2 INT3 DTN MODE CUT RES
+ * PW} -> {WAVE DTN MIX NOIS CUT RES DRV KTR} */
+static int analog_from_trio(uint32_t engine, int16_t *e)
+{
+    static const uint8_t W[16] = {7, 4, 4, 7, 2, 0, 1, 4, 0, 5, 5, 5, 6, 6, 6, 6};
+    static const uint8_t R[25] = {0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 14, 16, 18, 20, 22, 25, 27, 30, 34, 37, 41, 45, 49,
+                                  54};   /* (16 x (2^(st/12) - 1), st 0..24) */
+    uint32_t w = (uint32_t)e[0] & 15u;
+    int32_t st = e[1] < 0 ? -e[1] : e[1];
+    if (engine != ENGI_TRIO)
+        return 0;
+    e[0] = W[w];
+    e[1] = W[w] >= 5u ? (int16_t)R[st > 24 ? 24 : st] : (int16_t)(e[3] > 0 ? e[3] : 6);
+    e[2] = (int16_t)(w == 8u ? 0 : 64);
+    e[3] = (int16_t)(w == 7u ? 60 : w == 8u ? 100 : 0);
+    e[4] = e[5];                                        /* CUT */
+    e[5] = e[6];                                        /* RES */
+    e[6] = 0;
+    e[7] = 64;
+    return 1;
+}
 /* PHYS MODEL DRUM (MODEL 4, before 1.0) -> the DRUM engine, its E values in place: {MODEL, TUNE, TONE, DECY,
  * SNAP, ACC, KICK, PERC} -> {MRPH 64, TUNE, TONE, DECY, NOIS 64, FM 0, -, DRV 0}. 1 = it was one (its engine is
  * ENGI_DRUM now); projects (project.c) and user presets (upreset.c) */
