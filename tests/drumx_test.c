@@ -10,6 +10,7 @@
  *    falls (more crossings in its first 20 ms than in 100..120 ms).
  * 4. the closed hat chokes the open one (below -60 dB of its level within 10 ms).
  * 5. the knobs: MRPH on KNOB 1, NOIS moves every lane's noise.
+ * 5w. WARP: every lane another sound at 127, never at full scale.
  * 5b. the group mutes (dx_mute): a muted group's hits are silent (any kit), the others still sound; muting a
  *    ringing group fades it out: its voice ends within 10 ms, the output 26 dB under the unmuted hit's, no step
  *    larger than the hit's own; unmuting sounds again.
@@ -229,6 +230,30 @@ int main(int argc, char **argv)
         r1 = rms(FS / 20u, FS / 4u);
         check("the knobs: MRPH (KNOB 1), NOIS moves the noise of every lane", ok && fabs(r0 - r1) > 0.2 * (r0 > r1 ? r0 : r1),
               "snare tail RMS %.0f / %.0f", r0, r1);
+    }
+
+    /* 5w: WARP 0 the patch as it is; 127 another sound (every lane), no overflow, still ends */
+    {
+        uint32_t lw, ok2 = 1;
+        double d = 0;
+        for (lw = 0; lw < 8u; lw++) {
+            int32_t a0[FS / 8], pk = 0;
+            track_t *t = kitx(64, 64);
+            strike(t, lw, FS / 8u);
+            memcpy(a0, buf, sizeof a0);
+            t = kitx(64, 64);
+            t->p[P_E6] = 127;
+            ok2 &= !strike(t, lw, MAXN) || 1;
+            t = kitx(64, 64);
+            t->p[P_E6] = 127;
+            strike(t, lw, FS / 8u);
+            for (i = 0, d = 0; i < FS / 8u; i++) {
+                d += fabs((double)buf[i] - a0[i]);
+                pk = abs(buf[i]) > pk ? abs(buf[i]) : pk;
+            }
+            ok2 &= d / (FS / 8u) > 300 && pk < 32700;
+        }
+        check("WARP 127: every lane a different sound, under full scale", ok2, 0);
     }
 
     /* 5b */

@@ -493,11 +493,11 @@ int main(void)
             ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st) && !memcmp(c.dx, a.dx, sizeof a.dx) &&
                  !memcmp(st.raw + PROJ_DX_OFF, a.dx, sizeof a.dx);
             bad += check("FUNA: the DRUM-X kit round trips (88 bytes at PROJ_DX_OFF)", ok);
-            a.dx_mute = DXG_SNARE | DXG_PERC;
+            a.dx_mute = (uint16_t)(DXG_SNARE | DXG_PERC | DXM_LANE(6));
             a.sum = proj_sum(&a);
-            ok = proj_pack(&st, &a) && st.raw[PROJ_DX_OFF + 88u] == (DXG_SNARE | DXG_PERC) &&
-                 proj_import(&c, &st, sizeof st) && c.dx_mute == (DXG_SNARE | DXG_PERC);
-            bad += check("FUNA: the group mutes round trip (the kit's first reserved byte)", ok);
+            ok = proj_pack(&st, &a) && st.raw[PROJ_DX_OFF + 88u] == (DXG_SNARE | DXG_PERC) && st.raw[PROJ_DX_OFF + 89u] == 0x40 &&
+                 proj_import(&c, &st, sizeof st) && c.dx_mute == a.dx_mute;
+            bad += check("FUNA: the group and sound mutes round trip (the kit's first two reserved bytes)", ok);
             memset(a.pfx_lane, 0, sizeof a.pfx_lane);
             a.pfx_lane[2] = 0x21; a.pfx_lane[31] = 0xA0; a.pfx_ltgt = 2;
             a.sum = proj_sum(&a);

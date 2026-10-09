@@ -5511,6 +5511,53 @@ static void sl_key(uint32_t w)                      /* SAVE held, a white key ta
     key_down(white(w)); frame(); key_up(white(w)); frame();
     btn_up(B_SAVE); frame();
 }
+/* JIANT: EDIT held on a DRUM track: black keys 1..8 mute each DRUM-X sound (lit = sounding); saved with the section */
+static int test_lane_mutes(void)
+{
+    int bad = 0, ok;
+    uint32_t a, b2;
+    project_t p;
+    ui_power_on();
+    set_engine_of(TSEL, ENGI_DRUM); go_home(); frame();
+    dx_mute_set(0);
+    btn_down(B_EDIT); frame(); key_down(black(2)); frame(); key_up(black(2));
+    a = leds_at(0); b2 = leds_at(250);
+    ok = (dx_mute & DXM_LANE(2)) && drum_muted(39) && !drum_muted(38) && !((a | b2) >> black(2) & 1u) &&
+         ((a & b2) >> black(1)) & 1u;
+    btn_up(B_EDIT); frame();
+    project_capture(&p);
+    ok &= (p.dx_mute & DXM_LANE(2)) != 0;
+    lay_combo(B_EDIT, black(2)); key_up(black(2)); btn_up(B_EDIT); frame();
+    ok &= !dx_mute;
+    bad += check("EDIT + black keys 1..8 on DRUM: each sound muted (CP here), lit = sounding; in the section", ok);
+    return bad;
+}
+
+/* JIANT: SEQ + REC held: CLEAR ALL SEQUENCES? (every track's steps and automation, the punch-in lane); OCT+ clears.
+ * Neither SEQ's tap (SONG) nor REC's (arm) happens */
+static int test_clear_all(void)
+{
+    int bad = 0, ok;
+    uint32_t k, any = 0;
+    ui_power_on();
+    for (k = 0; k < NTRK; k++)
+        my_steps(&trk[k]);
+    pfx_lane[3] = 0x22;
+    go_home(); frame();
+    btn_down(B_SEQ); frame();
+    btn_down(B_REC); frame();
+    ok = ui.confirm == CF_CLEAR_ALL;
+    btn_up(B_REC); frame();
+    btn_up(B_SEQ); frame();
+    ok &= ui.confirm == CF_CLEAR_ALL && !song.rec && ui.home;
+    press(B_OCTUP);
+    for (k = 0; k < NTRK; k++)
+        any |= !seq_is_empty(&trk[k]);
+    bad += check("SEQ + REC: CLEAR ALL SEQUENCES? (no SONG page, REC not armed); OCT+: every track empty, the lane too",
+                 ok && !ui.confirm && !any && !pfx_lane[3] && msg_is("ALL CLEARED"));
+    return bad;
+}
+
 /* JIANT: EDIT > SOUND / SOUND 2 (ui_dx.c), the DRUM-X kit of the section */
 static int test_dx_sound(void)
 {
@@ -6968,6 +7015,8 @@ int main(void)
     bad += test_rec_layer();
     bad += test_song_layer();
     bad += test_dx_sound();
+    bad += test_clear_all();
+    bad += test_lane_mutes();
     bad += test_seq_tools();
     bad += test_menu_prefs();
     bad += test_style();

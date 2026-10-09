@@ -1168,6 +1168,20 @@ static void ui_input(void)
                 }
             } else if (kind == CF_CLEAR_SONG) {
                 if (!chain_busy()) { chain_defaults(&chain_config); ui.song_row = 0; ui_message("SONG CLEARED"); }
+            } else if (kind == CF_CLEAR_ALL) {          /* SEQ + REC: every track's steps and automation, the lane */
+                if (!chain_busy()) {
+                    uint32_t k;
+                    for (k = 0; k < NTRK; k++) {
+                        load_begin(&trk[k], LOAD_PAT);
+                        track_defaults_steps(&trk[k]);
+                        motion_clear(&trk[k]);
+                        load_end(&trk[k]);
+                        trk[k].nheld = 0;
+                        trk[k].arp_phys = 0;
+                    }
+                    memset(pfx_lane, 0, sizeof pfx_lane);
+                    ui_message("ALL CLEARED");
+                }
             } else if (kind == CF_INIT_SOUND) {         /* (DRUM: the factory DRUM-X kit too) */
                 if (!chain_busy()) {
                     set_engine(TSEL->eng_req);
@@ -1225,8 +1239,18 @@ static void ui_input(void)
             else
                 transport_req = 1;
             break;
-        case B_SEQ:
-        case B_REC:                                     /* tap: above; held, its layer (ui_layer.c) */
+        case B_REC:                                     /* (JIANT) with SEQ held: CLEAR ALL? (every track's steps) */
+            if ((fm1_in.buttons >> panel.btn[B_SEQ]) & 1u && !ui.menu && !ui.confirm) {
+                ui.seq_t0 |= 2u;                        /* (SEQ: neither its tap nor its hold now) */
+                if (ui.ly)
+                    ui.ly_t0 |= 2u | 4u;                 /* (LY_OPEN LY_COMBO: the armed layer, no tap when let go) */
+                if (chain_busy())
+                    ui_message("STOP TO EDIT");
+                else
+                    confirm_open(CF_CLEAR_ALL, song.sel);
+            }
+            break;
+        case B_SEQ:                                     /* tap: above; held, its layer (ui_layer.c) */
         case B_SAVE:
         case B_FX:                                      /* the layers' buttons: ui_layer.c */
         case B_GLO:

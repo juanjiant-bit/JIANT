@@ -128,7 +128,7 @@ static int drum_from_phys(uint32_t engine, int16_t *e)
  * favourites (ui.c, settings_persist.c). Idempotent */
 #define ENGI_SAMPLE 4u
 #define SMP_SET_PERC 4u
-#define DRUM_KIT_E {64, 64, 70, 64, 64, 100, 0, 0}   /* {MRPH, TUNE, TONE, DECY, NOIS, ACC, -, DRV} (eng_drum.c) */
+#define DRUM_KIT_E {64, 64, 70, 64, 64, 100, 0, 0}   /* {MRPH, TUNE, TONE, DECY, NOIS, ACC, WARP, DRV} (eng_drum.c) */
 static int drum_from_perc(uint32_t engine, int16_t *e)
 {
     static const int16_t KIT[8] = DRUM_KIT_E;

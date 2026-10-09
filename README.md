@@ -81,7 +81,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 
 - **4 tracks**, cada uno con su engine y su sonido, 8 voces compartidas.
 - **12 engines:** ANALOG, FM6 (Dexed, importa .syx), PHASE, LOFI, SAMPLE, VOICE, TRIO, WHEEL, GRAIN,
-  NOISE, SLICE y DRUM (DRUM-X: kit de 8 lanes sintetizado, sin samples, con MORPH A↔B por sonido).
+  NOISE, SLICE y DRUM (DRUM-X: kit de 8 lanes sintetizado, sin samples, con MORPH A↔B por sonido y WARP, que deforma todo el kit con FM y feedback).
 - **Secuenciador:** 64 pasos por track con acordes, ties, accent, slide, chance y ratchets; piano roll;
   grilla de batería; parameter locks; automatización de perillas; grabación en vivo con overdub;
   metrónomo y count-in.
@@ -139,9 +139,10 @@ detalles. La paleta **JIANT** es la de fábrica. Primera pantalla: el espécimen
 | Mantener | Teclas | Perillas |
 | --- | --- | --- |
 | **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. Punch-in MIDI: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 D5 STUTTER 1/16 · 1/32 · tresillo, E5 ARP, F5 RANDOM. Teclas negras 1–4: mute de T1–T4; A#4 elige a qué tracks afectan los MIDI (todos, sintes, batería). **Automatizar**: con REC armado y tocando, lo que mantengas queda grabado en la lane de la sección (64 pasos de 1/16); G5 la borra donde pasa, o entera con el transporte parado | FILTER, CRUSH, THROW, DEPTH |
+| **SEQ + REC** | Mantener SEQ y apretar REC: CLEAR ALL SEQUENCES? (OCT+ confirma): borra los pasos y la automatización de los 4 tracks y la lane de punch-in | — |
 | **GLO** | Teclas negras 1–4 mute de T1–T4 (fijo); 5–8 mute de grupo de DRUM: KICK, SNARE, HAT, PERC; F3–B3 solo mientras se mantiene; C4 desmutea todo; F4 tap tempo | Nivel de T1–T4 |
 | **SCL** | Cualquier tecla elige la raíz | ROOT, SCL, CHRD, VOIC |
-| **EDIT** | F3 **INIT**: el sonido del track vuelve al de fábrica (en DRUM, también el kit DRUM-X). G3 **RECALL**: vuelve al sonido guardado en la sección (en DRUM, con su kit). Los dos piden confirmación y no tocan los pasos. El engine y los sonidos se eligen en PRESETS | Las 4 primeras perillas de EDIT del engine |
+| **EDIT** | F3 **INIT**: el sonido del track vuelve al de fábrica (en DRUM, también el kit DRUM-X). G3 **RECALL**: vuelve al sonido guardado en la sección (en DRUM, con su kit). Los dos piden confirmación y no tocan los pasos. En un track DRUM, las teclas negras 1–8 mutean cada sonido de DRUM-X. El engine y los sonidos se eligen en PRESETS | Las 4 primeras perillas de EDIT del engine |
 | **SEQ** | En las páginas SEQ: SEQ TOOLS | LEN, DIV, SWING, GATE |
 | **REC** | F3 CLEAR del track, G3 CLICK | CLICK |
 | **HOME** | Menú | — |
