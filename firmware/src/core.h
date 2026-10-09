@@ -327,7 +327,21 @@ typedef struct track {
     uint8_t m_vel, m_key, m_vi;  /* the latest note-on: velocity, note, voice index (per-block destinations) */
     int16_t m_rnd;               /* .. its RAND */
     int32_t m_env;               /* the amp envelope of voice m_vi, last block (Q15) */
+    /* the punch-in MIDI effects (pfx.c), the ISR's: what acts on this track this block, never saved */
+    uint8_t pfx;                 /* PFX_* */
+    int16_t pfx_pit;             /* OCT- / OCT+: 1/16 semitones on every voice */
+    int16_t pfx_rpit;            /* RANDOM: the next note's offset (1/16 semitones), drawn by trk_note_on */
+    uint8_t pfx_half;            /* 1/2 TEMPO: the odd sample carried; pfx_rs: let go, back to the real place */
+    uint8_t pfx_rs;
+    uint16_t pfx_idx0;           /* .. where it was pressed (step, samples into it) and the samples since */
+    uint32_t pfx_pos0, pfx_el;
+    uint8_t pfx_ln[4], pfx_lv[4], pfx_lnn;   /* the last notes struck together (a step's), STUTTER / ARP repeat them */
+    uint32_t pfx_lblk;           /* .. the block they were struck in */
+    uint8_t pfx_sn[4], pfx_snn;  /* the notes a repeat holds now */
+    uint8_t pfx_si;              /* ARP: the next of them */
+    uint32_t pfx_sc;             /* samples since the last repeat */
 } track_t;
+enum { PFX_RND = 1, PFX_HALF = 2, PFX_REP = 4, PFX_DEC = 8 };   /* (track_t.pfx) */
 
 typedef struct {
     int16_t g[G_COUNT];

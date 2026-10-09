@@ -180,7 +180,7 @@ static void drum_note_on(track_t *t, voice_t *v)
     if (L->owner == i + 1u)                              /* this voice played another lane: it stops there */
         L->owner = 0;
     L = &K[lane];
-    L->st = DRUM_GM[drum_gm_ix(v->note)][1];
+    L->st = (int8_t)(DRUM_GM[drum_gm_ix(v->note)][1] + t->pfx_rpit / 16);   /* (pfx.c RANDOM) */
     L->owner = (uint8_t)(i + 1u);                        /* (its last voice, if another, ends: drum_amp) */
     v->s[0] = (int32_t)lane;
     v->env_out = v->vel * 258;                           /* the hit starts at its level (no ramp from 0) */
@@ -245,7 +245,7 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     }
     if (n > CTL)
         n = CTL;
-    dx_run(&dx_kit[(uint32_t)v->s[0] & (DV_NLANE - 1u)], &L->x, p[P_E0], L->st * 16 + (p[P_E1] - 64) * 3,
+    dx_run(&dx_kit[(uint32_t)v->s[0] & (DV_NLANE - 1u)], &L->x, p[P_E0], L->st * 16 + (p[P_E1] - 64) * 3 + t->pfx_pit,
            p[P_E3] - 64, p[P_E2] - 64, p[P_E4] - 64, y, n);
     for (i = 0; i < n; i++)                              /* ACC: up to x1.5 (|y| < 2^17, ga >> 4 < 2^12) */
         y[i] = (y[i] * (ga >> 4)) >> 11;

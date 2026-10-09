@@ -535,7 +535,7 @@ static void input_off(track_t *t, uint32_t note)
 static uint32_t perf_key(uint32_t k)
 {
     uint32_t p = key_place(k);
-    return !key_black(k) ? (p < PF_M1 ? p : PF_N) : p < NTRK ? PF_M1 + p : PF_N;
+    return !key_black(k) ? (p < PF_M1 ? p : PF_N) : p < NTRK ? PF_M1 + p : p == 7u ? PF_TGT : PF_N;
 }
 
 /* key k plays kb_note[k] on track t: its chord (chord.c; the note alone with CHRD OFF). A note another key
@@ -804,9 +804,36 @@ static __attribute__((noinline)) void seq_ratchet(track_t *t, uint32_t period)
     seq_step(t, s, period, SEQ_REP);
 }
 
+/* 1/2 TEMPO let go (pfx.c): the track back where it would be had it run on, from where it was pressed */
+static __attribute__((noinline)) void pfx_resync(track_t *t, uint32_t period, uint32_t len)
+{
+    uint32_t idx = t->pfx_idx0 % (len ? len : 1u), pos = t->pfx_pos0 >= 0x7FFFFFFFu ? 0u : t->pfx_pos0;
+    pos += t->pfx_el;
+    for (;;) {
+        uint32_t cur = step_samples(t, period, idx);
+        if (!cur || pos < cur)
+            break;
+        pos -= cur;
+        idx = (idx + 1u) % (len ? len : 1u);
+    }
+    t->seq_idx = (uint16_t)idx;
+    t->seq_pos = pos;
+}
+
 static void seq_tick(track_t *t, uint32_t n)
 {
     uint32_t period, len;
+    if (t->pfx_rs) {                                  /* 1/2 TEMPO let go */
+        t->pfx_rs = 0;
+        if (song.playing)
+            pfx_resync(t, div_samples((uint32_t)t->p[P_SDIV]), (uint32_t)t->p[P_SLEN]);
+    }
+    if ((t->pfx & PFX_HALF) && song.playing) {        /* 1/2 TEMPO held: half the samples (the odd one carried) */
+        uint32_t h = n + t->pfx_half;
+        t->pfx_el += n;
+        t->pfx_half = (uint8_t)(h & 1u);
+        n = h >> 1;
+    }
     if (t->seq_n && !t->seq_hold) {
         if (t->seq_off <= n)
             seq_release(t);

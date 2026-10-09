@@ -2493,16 +2493,16 @@ static int test_layer(void)
     ok &= gates() > 0 && !((kb_layer >> white(0)) & 1u);
     key_up(white(0)); key_up(white(3)); frame();
     bad += check("FX let go first: the key holds its effect and the map; a new key is a note", ok && !ui.layer && !perf_held);
-    /* D4 on (the 6th white key and up) does nothing: TONIC kept only REPEAT and the filters; KNOB 4 (DEPTH) turns,
-     * back to 0 with FX */
+    /* G5 (the 16th white key) does nothing (F3 .. C4 the audio effects, D4 .. F5 the MIDI ones: pfx.c); KNOB 4 (DEPTH)
+     * turns, back to 0 with FX */
     ui_power_on();
     usb.config = 1; mo = mo_w;
-    btn_down(B_FX); key_down(white(5)); frame();
-    ok = ui.layer == LAYER_FX && !gates() && mo_w == mo && !perf_held && (kb_layer >> white(5)) & 1u;
+    btn_down(B_FX); key_down(white(15)); frame();
+    ok = ui.layer == LAYER_FX && !gates() && mo_w == mo && !perf_held && (kb_layer >> white(15)) & 1u;
     turn(EN_K4, -40);
     ok &= perf_k[3] == 40;
-    key_up(white(5)); btn_up(B_FX); frame();
-    bad += check("FX + D4: nothing held, silent, no MIDI; KNOB 4 turns; FX let go: K4 back to 0",
+    key_up(white(15)); btn_up(B_FX); frame();
+    bad += check("FX + G5: nothing held, silent, no MIDI; KNOB 4 turns; FX let go: K4 back to 0",
                  ok && !perf_held && !ui.layer && !perf_k[3] && mo_w == mo);
     /* REVERB > TYPE (FX family, global): ROOM / SPRING on KNOB 1, kept by a project */
     ui_power_on();
@@ -2620,10 +2620,9 @@ static int test_layer(void)
         a = leds_at(0); b2 = leds_at(250);
         k = white(1);
         ok = ((a >> k) & 1u) && ((b2 >> k) & 1u);                    /* held: lit */
-        for (i = 0; i < 5u; i++)                                      /* the other effects (F3 .. C4): breathe */
+        for (i = 0; i < 15u; i++)                                     /* the other effects (F3 .. F5): breathe */
             ok &= i == 1u || ((a ^ b2) >> white(i)) & 1u;
-        for (i = 5; i < 16u; i++)                                     /* D4 .. G5: no effect, dark */
-            ok &= !((a | b2) >> white(i) & 1u);
+        ok &= !((a | b2) >> white(15) & 1u);                          /* G5: no effect, dark */
         ok &= ((a ^ b2) >> key_at(1, 0)) & 1u && !((a | b2) >> key_at(1, 4) & 1u);   /* a mute breathes, a spare black dark */
         song.g[G_BPM] = 72;
         a = leds_at(0); b2 = leds_at(250);
@@ -2632,7 +2631,7 @@ static int test_layer(void)
         song.g[G_BPM] = 120;
     }
     key_up(white(1)); btn_up(B_FX); frame();
-    bad += check("map LEDs: held lit, the 5 effects breathe, D4 .. G5 and a too-long REPEAT dark", ok);
+    bad += check("map LEDs: held lit, the 15 effects breathe, G5 and a too-long REPEAT dark", ok);
     usb.config = 0;
     return bad;
 }

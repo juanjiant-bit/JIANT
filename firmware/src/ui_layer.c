@@ -107,7 +107,12 @@ static uint32_t layer_bits(void)
     return m;
 }
 static uint32_t layer_btn(void) { return LAYERS[ui.layer % LAYER_N].btn; }
-static const char *layer_head(void) { return ui.layer == LAYER_FX && perf_latch_on ? "[FX] LATCH" : LAYERS[ui.layer % LAYER_N].head; }
+static const char *layer_head(void)                     /* FX: LATCH, and the MIDI effects' tracks (A#4) */
+{
+    static const char *const H[2][3] = {{"[FX] HOLD", "[FX] HOLD SYN", "[FX] HOLD DRM"},
+                                        {"[FX] LATCH", "[FX] LATCH SYN", "[FX] LATCH DRM"}};
+    return ui.layer == LAYER_FX ? H[perf_latch_on ? 1 : 0][pfx_tgt % 3u] : LAYERS[ui.layer % LAYER_N].head;
+}
 static uint32_t layer_open(void) { return ui.ly && (ui.ly_t0 & LY_OPEN) && ly_down(ui.ly) && layer_allowed() ? ui.ly : 0u; }
 static int layer_set_open(void)                 /* (FX LATCH: FX is one too, OCT- turns all off) */
 {
@@ -570,8 +575,8 @@ static uint32_t layer_leds(uint32_t *br)
  * REPEATs' division in the other corner); the footer the keycaps. A cell: RAISE
  * (can be pressed), the selection's fill (the value now, SET), the accent (held, HOLD), DIM (cannot now: pressing
  * it says why), KEY (a muted track, as the MUTE badge); HOLD cells in a SET layer: a corner triangle */
-static const char *const PF_DIV[3] = {"1/8", "1/16", "1/32"};   /* the REPEATs (the other effects: their icon alone) */
-static const uint8_t PF_ICON[PF_M1] = {ICON_X_REPEAT, ICON_X_REPEAT, ICON_X_REPEAT, ICON_CUTOFF, ICON_X_HPF};
+static const char *const PF_NAME[PF_M1] = {"1/8", "1/16", "1/32", "LPF", "HPF",          /* the audio ones (perform.c) */
+    "OCT-", "OCT+", "1/2", "DEC-", "DEC+", "ST16", "ST32", "ST3", "ARP", "RND"};            /* the MIDI ones (pfx.c) */
 static const char W_NOTE[16] = {'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G'};
 static const char B_NOTE[8] = {'F', 'G', 'A', 'C', 'D', 'F', 'G', 'A'};   /* black keys 1..8: F# G# A# C# D# F# G# A# */
 #define LC_X(c) (6 + 58 * (int32_t)(c))                 /* cell column c: 54 px wide, 4 px apart */
@@ -674,12 +679,14 @@ static void layer_fx(void)
     uint32_t held = perf_kill ? 0u : perf_held | perf_latched, act = perf_act, ok = perf_avail(), e;
     char n[3] = {0, 0, 0};
     lc_w = LF_W;
-    for (e = 0; e < PF_M1; e++) {                       /* the effects of the white keys F3 .. C4, one row */
+    for (e = 0; e < PF_M1; e++) {                       /* the effects of the white keys F3 .. F5, 5 a row */
         if (e % 5u == 0u && !ux.style)                  /* (LINE: its rules are cells too) */
             GFX_HOOK_ALIGN(0, 0, 240, 0, AL_H | AL_CELLS | AL_N(5), "FX cells' row centred");
-        uint32_t st = !((ok >> e) & 1u) ? LS_DIM : !((held >> e) & 1u) ? LS_OFF : (act >> e) & 1u ? LS_HELD : LS_WAIT;
+        uint32_t st = !((ok >> e) & 1u) ? LS_DIM : !((held >> e) & 1u) ? LS_OFF :
+                      (act >> e) & 1u || ((PF_MIDI >> e) & 1u) ? LS_HELD : LS_WAIT;
         n[0] = W_NOTE[e];
-        lcell(LF_X(e % 5u), e < 5u ? 4 : 50, LC_H, n, PF_ICON[e], 0, e < 3u ? PF_DIV[e] : 0, st, 0);
+        lcell(LF_X(e % 5u), 4 + 28 * (int32_t)(e / 5u), 24, 0, ICON_COUNT, 0, PF_NAME[e], st, 0);   /* (its name alone: the
+                                                         * cells stand where the keys do, 5 a row) */
     }
     lc_w = LC_W;
     for (e = 0; e < NTRK; e++) {                        /* the mutes of the black keys 1..4 */

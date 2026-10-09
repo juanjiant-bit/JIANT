@@ -13,6 +13,9 @@
  * 6. idle: nothing held, nothing ramping, the mix is bit-identical (and the goldens of regress.c too).
  * 7. no clicks, no overflow; the filters, the CRUSH and THROW macros and the mutes do what they say.
  * 8. cost: instructions per sample of the song, idle and with every effect at once (proc_pid_rusage).
+ * 9. the punch-in MIDI effects (pfx.c): OCT+ doubles a held note's frequency and lets it back; A#4 DRM leaves a synth
+ *    alone; DEC- shortens a kick's tail (DECY back after the block); STUTTER 1/16 strikes a kick 4 times a beat;
+ *    1/2 TEMPO slows the sequencer and, let go, puts it where it would have been; RANDOM moves some notes.
  * Demos (WAV) into DEMO_DIR. TONIC removed REVERSE, TAPE STOP, FREEZE and OCT UP / DN (perform.c). */
 #define main hostsim_main
 #include "hostsim.c"
@@ -48,6 +51,9 @@ static void perf_reset(void)
     perf_held = perf_act = 0;
     perf_kill = 0;
     memset((void *)perf_k, 0, sizeof perf_k);
+    perf_latched = 0;
+    pfx_tgt = 0;
+    pfx_any = 0;
     sl_lent = 0;
     memset(sl, 0, sizeof sl);
 }
@@ -361,8 +367,9 @@ static int test_keys(void)
             ok &= !kb_layer && !perf_held && mo_w == mo0;
         }
         fm1_in.buttons = 0;
-        bad += check("the keys without an effect (11 white from D4, 7 black from D#4): silent, nothing held",
-                     ok && assigned == 0x1FFu);   /* F3 .. C#4 */
+        bad += check("the keys without an effect (G5, the black keys past the mutes): silent, nothing held",
+                     ok && (uint32_t)__builtin_popcount(assigned) == PF_N);   /* (15 white F3 .. F5, 4 black) */
+        pfx_tgt = 0;                                /* (A#4 stepped it) */
         kb_mask = perf_mask = 0;
     }
     usb.config = 0;
@@ -612,6 +619,134 @@ static void demos(const char *dir)
     printf("perform: demo %s (REPEAT 1/8, a 1/16 -> 1/32 roll, LPF, HPF, MUTE 1, KNOB 3 THROW)\n", path);
 }
 
+/* ------------------------------------------------- 9. punch-in MIDI --- */
+static uint32_t zc(const int32_t *x, uint32_t a, uint32_t b)   /* zero crossings, low-passed (~350 Hz, 2 poles) */
+{
+    uint32_t i, c = 0;
+    int32_t y1 = 0, y2 = 0, p = 0;
+    for (i = a; i < b; i++) {
+        y1 += (x[i] - y1) >> 5;
+        y2 += (y1 - y2) >> 5;
+        if (i > a + 400u)
+            c += p < 0 && y2 >= 0;
+        p = y2;
+    }
+    return c;
+}
+static void pfx_render(uint32_t frames, uint32_t press_at, uint32_t free_at, uint32_t e)
+{
+    uint32_t t, i;
+    int32_t o[2 * CTL];
+    for (t = 0; t < frames; t += CTL) {
+        if (t == press_at)
+            perf_press(e, 1);
+        if (t == free_at)
+            perf_press(e, 0);
+        mix_block(o, CTL);
+        for (i = 0; i < CTL; i++)
+            song_l[t + i] = o[2 * i];
+    }
+}
+static int test_pfx(void)
+{
+    int bad = 0;
+    uint32_t c0, c1, c2, i, hits = 0;
+    track_t *t1 = &trk[0], *td = &trk[3];
+    int32_t o[2 * CTL];
+    /* OCT+ on a held note; then with DRM: the synth untouched */
+    song_setup();
+    for (i = 0; i < NTRK; i++) trk[i].p[P_DIST] = trk[i].p[P_CHOR] = trk[i].p[P_DLY] = trk[i].p[P_REV] = 0;
+    host_preset(t1, 0, 1);
+    trk_note_on(t1, 45, 100);
+    pfx_render(4u * 44032u, 88064u, 132096u, PF_OCTU);   /* (its first second: the sound settles) */
+    c0 = zc(song_l, 66048u, 88064u);
+    c1 = zc(song_l, 110080u, 132096u);
+    c2 = zc(song_l, 154112u, 176128u);
+    bad += check("OCT+: a held note an octave up while held, back after", c1 > c0 * 1.7 && c1 < c0 * 2.3 &&
+                 c2 > c0 * 0.85 && c2 < c0 * 1.15 && !t1->pfx_pit);
+    pfx_tgt = 2;
+    pfx_render(2u * 44032u, 22016u, 88064u, PF_OCTU);
+    c1 = zc(song_l, 44032u, 66048u);
+    c0 = c2;
+    bad += check("  A#4 DRM: OCT+ leaves the synth alone", c1 > c0 * 0.85 && c1 < c0 * 1.15 && !t1->pfx_pit);
+    pfx_tgt = 0;
+    trk_note_off(t1, 45);
+    /* DEC- on a kick: the tail shorter; DECY as it was outside the block */
+    {
+        double r0 = 0, r1 = 0;
+        int16_t d0 = td->p[P_E3];
+        uint32_t m;
+        for (m = 0; m < 2u; m++) {
+            for (i = 0; i < 44100u; i += CTL) mix_block(o, CTL);
+            if (m) perf_press(PF_DSHT, 1);
+            mix_block(o, CTL);                          /* (the effect in) */
+            trk_note_on(td, 36, 100);
+            pfx_render(11008u, 0xFFFFFFFFu, 0xFFFFFFFFu, 0);
+            for (i = 2205u; i < 8820u; i++) *(m ? &r1 : &r0) += (double)song_l[i] * song_l[i];
+            if (m) perf_press(PF_DSHT, 0);
+        }
+        mix_block(o, CTL);
+        bad += check("DEC-: a kick's tail shorter; DECY as stored outside the ISR", r1 < r0 * 0.5 && td->p[P_E3] == d0);
+    }
+    /* STUTTER 1/16 on the drums: the last kick 4 times a beat (120 BPM: 22050 samples) */
+    song_setup();
+    trk_note_on(td, 36, 100);
+    mix_block(o, CTL);
+    perf_press(PF_S16, 1);
+    for (i = 0; i < 22016u; i += CTL) {
+        mix_block(o, CTL);
+        hits += drum_kit[3][DV_KICK].age == 1u;
+    }
+    perf_press(PF_S16, 0);
+    mix_block(o, CTL);
+    bad += check("STUTTER 1/16: the last kick 4 times in a beat; let go: none more", hits == 4u && !(td->pfx & PFX_REP));
+    /* 1/2 TEMPO: the sequencer at half speed while held; let go, where it would have been */
+    {
+        uint16_t i0, ih;
+        uint32_t p0;
+        song_setup();
+        song_render(4u * 22016u, 0);
+        i0 = trk[0].seq_idx; p0 = trk[0].seq_pos;
+        song_setup();
+        transport_req = 1;
+        for (i = 0; i < 4u * 22016u; i += CTL) {
+            if (i == 22016u) perf_press(PF_HALF, 1);
+            if (i == 3u * 22016u) { ih = trk[0].seq_idx; perf_press(PF_HALF, 0); }
+            mix_block(o, CTL);
+        }
+        transport_req = 2;
+        mix_block(o, CTL);
+        bad += check("1/2 TEMPO: half the steps while held; let go, the sequencer where it would have been",
+                     (uint16_t)(ih - 4u) <= 5u && trk[0].seq_idx == i0 && trk[0].seq_pos == p0);
+    }
+    /* RANDOM: some notes moved (an octave, a fifth, a fourth), none without it */
+    {
+        uint32_t moved = 0, far = 0, m;
+        song_setup();
+        host_preset(t1, 0, 1);
+        for (m = 0; m < 2u; m++) {
+            if (m) perf_press(PF_RND, 1);
+            mix_block(o, CTL);
+            for (i = 0; i < 24u; i++) {
+                uint32_t v;
+                trk_note_on(t1, 57, 100);
+                for (v = 0; v < NVOICE; v++)
+                    if (t1->v[v].active && t1->v[v].note == 57 && t1->v[v].gate) {
+                        int32_t d = t1->v[v].pitch16 - 57 * 16;
+                        moved += m ? d != 0 : (uint32_t)(d != 0) * 100u;
+                        far += d > 12 * 16 || d < -12 * 16;
+                    }
+                trk_note_off(t1, 57);
+                mix_block(o, CTL);
+            }
+            if (m) perf_press(PF_RND, 0);
+        }
+        bad += check("RANDOM: some notes moved (octave, fifth, fourth), none past an octave; none without it",
+                     moved > 3u && moved < 100u && !far);
+    }
+    return bad;
+}
+
 int main(int argc, char **argv)
 {
     int bad = 0;
@@ -622,6 +757,7 @@ int main(int argc, char **argv)
     bad += test_keys();
     bad += test_idle();
     bad += test_misc();
+    bad += test_pfx();
     bad += test_cost();
     if (argc > 1)
         demos(argv[1]);
