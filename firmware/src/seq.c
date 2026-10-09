@@ -662,6 +662,7 @@ static void keyboard_block(void)
 static void seq_start(void)
 {
     uint32_t i;
+    ms_clock = 0;                                  /* (JIANT) the modulation sequences from their step 0 */
     motion_begin();
     chain_start();
     for (i = 0; i < NTRK; i++) {                   /* every track from its step 0, together */

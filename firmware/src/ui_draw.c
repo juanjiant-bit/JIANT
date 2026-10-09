@@ -918,6 +918,20 @@ static void draw_columns(void)
         draw_act_column(3, "SAVE", T_THEME, ICON_AUTO);
         return;
     }
+    if (cur_page()->graph == GR_MSEQ) {                  /* (JIANT) STEP, its LVL, LEN, DIV */
+        const track_t *t = TSEL;
+        uint32_t id = P_MS0 + (ms_ui_step & 15u);
+        fmt_int(val, (int32_t)ms_ui_step + 1);
+        draw_column(0, "STEP", val, "/16", ms_ui_step < (uint32_t)t->p[P_MSLEN] ? VAL(0u) : T_DIM,
+                    (int32_t)ms_ui_step * 1000 / 15, ICON_AUTO);
+        param_format(&TP[id], t->p[id], val, &unit);
+        draw_column(1, "LVL", val, unit, VAL(1u), RATIO(&TP[id], t->p[id]), ICON_LEVEL);
+        param_format(&TP[P_MSLEN], t->p[P_MSLEN], val, &unit);
+        draw_column(2, "LEN", val, unit, VAL(2u), RATIO(&TP[P_MSLEN], t->p[P_MSLEN]), ICON_AUTO);
+        param_format(&TP[P_MSDIV], t->p[P_MSDIV], val, &unit);
+        draw_column(3, "DIV", val, unit, VAL(3u), -1, ICON_RATE);
+        return;
+    }
     if (cur_page()->graph == GR_MOD) {                   /* SLOT, then that slot's SRC DST AMT */
         const track_t *t = TSEL;
         uint32_t id = P_M1SRC + 3u * mod_ui_slot;

@@ -2385,7 +2385,7 @@ static int test_layer(void)
     bad += check("FX tap: nothing on press, the FX page when let go", ok && !ui.home && cur_page()->fam == FAM_FX);
     frames(320);                                       /* (not a double tap: #83) */
     press(B_FX);
-    bad += check("  a second tap: the next page of the family (SLICER)", str_eq(cur_page()->title, "SLICER"));
+    bad += check("  a second tap: the next page of the family (DIST)", str_eq(cur_page()->title, "DIST"));
     ui_power_on();
     btn_down(B_FX);
     for (flash = 0, i = 0; i < 22u; i++) { frame(); flash |= ui.layer; }      /* 0.35 s */
@@ -3482,6 +3482,14 @@ static int test_macro_layer(void)
     ok &= !song_idx.scene[song_cur][1].on;
     trk[3].p[P_MUTE] = 0; chain_config.count = 0;
     bad += check("SONG KNOB 4 SCENE: right stores the mutes and macros into the row, left takes it away", ok);
+    ui_power_on();                                     /* (JIANT) LFO > MSEQ: KNOB 1 the step, 2 its level, 3 LEN */
+    ms_ui_step = 0;
+    go_title("MSEQ"); frame();
+    turn(EN_K1, 3); frame();
+    turn(EN_K2, 10); frame();
+    turn(EN_K3, -4); frame();
+    bad += check("MSEQ: KNOB 1 picks step 4, KNOB 2 its level, KNOB 3 LEN", ms_ui_step == 3u && TSEL->p[P_MS0 + 3] == 10 &&
+                 TSEL->p[P_MS0] == 0 && TSEL->p[P_MSLEN] == 12);
     return bad;
 }
 

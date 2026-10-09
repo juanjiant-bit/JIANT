@@ -55,6 +55,12 @@
  * the 48 spare bytes before the kit: 64 nibbles at PROJ_PFX_OFF (3072), its tracks at 3104 (a FUN9 or an earlier
  * FUNA has zeros there: no lane), and the macros M1..M4 (mod.c macro_v, one byte each) right after, at 3105.
  *
+ * Format B ("FUNB", written since JIANT 0.2) = FUNA with 96 more bytes (3840: a flash object's whole payload): 21 track
+ * parameters before P_E0 (DIST TYPE TONE, the modulation sequence's LEN DIV SLEW and 16 levels: P_COUNT 120, P_E0 112),
+ * so the data ends at 3156 and everything after it moved up by 96 (the punch-in block at PROJ_PFX_OFF 3168, the kit at
+ * 3216); and five globals past the header's 27 (G_DHPF .. G_RPRE) after the macros: a 1 at PROJ_GX_OFF, then biased
+ * bytes. FUNA (99 parameters, no new globals) and older load mapped by count, the new values their defaults.
+ *
  * Parameter locks (1.1, core.h MOTION_LOCK) are motion records with bit 7 of their id byte set (P_COUNT 99 < 128:
  * the bit is free): no byte moved for them, and every project before 1.1 has none. FUN9 holds them. A FUN8 / FUN7
  * record of a 1.1 development build may hold some: on load their ids move to today's positions as the others do,
@@ -77,7 +83,9 @@
  *
  * Built on the Mac too (tests/project_test.c, -DPROJ_HOST): the part above the #ifndef
  * PROJ_HOST needs core.h, params.c (TP) and engines.c. */
-#define PROJ_MAGIC 0x46554E41u                 /* "FUNA": FUN9 + the DRUM-X kit (JIANT) */
+#define PROJ_MAGIC 0x46554E42u                 /* "FUNB": FUNA, 96 bytes longer (JIANT: DIST TYPE TONE, the modulation
+                                                * sequence: 120 parameters; the buses' new globals) */
+#define PROJ_MAGIC_VA 0x46554E41u              /* "FUNA": FUN9 + the DRUM-X kit (JIANT 0.1) */
 #define PROJ_MAGIC_V9 0x46554E39u              /* "FUN9": FUN8, 64 bytes longer (the DRUM lane levels, 99 parameters) */
 #define PROJ_MAGIC_V8 0x46554E38u              /* "FUN8": FUN7 + the tracks' FM6 patches */
 #define PROJ_MAGIC_V7 0x46554E37u              /* "FUN7": serialized (byte params, packed steps), chain, motion */
@@ -123,12 +131,12 @@ typedef struct { uint8_t note[4], n, time, flags, vel, hit, acc; } step10_t;
 typedef struct { int16_t p[69]; uint8_t engine, preset; step10_t step[NSTEP]; uint8_t lane[NLANE][5]; } proj_trk_v5_t;
 typedef struct {                               /* format 5, before the song chain */
     uint32_t magic, size;
-    int16_t g[G_COUNT];
+    int16_t g[PROJ_NG_V2];
     uint8_t sel, parts, phys, rsv;
     proj_trk_v5_t t[NTRK];
     uint32_t sum;
 } project_v5_t;
-typedef struct { uint32_t magic, size; int16_t g[G_COUNT]; uint8_t sel, parts, phys, rsv;
+typedef struct { uint32_t magic, size; int16_t g[PROJ_NG_V2]; uint8_t sel, parts, phys, rsv;
     proj_trk_v5_t t[NTRK]; chain_config_t chain; uint32_t sum; } project_v6_t;
 _Static_assert(sizeof(project_v5_t) == 3352u && sizeof(project_v6_t) == 3388u, "frozen formats 5 / 6 sizes");
 /* Serialized FUN7 keeps the retained cache's exact extent. Params are biased
@@ -138,7 +146,8 @@ _Static_assert(sizeof(project_v5_t) == 3352u && sizeof(project_v6_t) == 3388u, "
  * never reads them, so every FUN7 file stays valid both ways; FUN6..FUN1 imports get no name.
  * FUN8: the same, 3584 bytes, the four packed FM6 patches at PROJ_FM6_OFF (before the name); 16 bytes of the
  * reserved tail were left for parameters added later. FUN9: the same, 3648 bytes (see the top). */
-#define PROJ_STORE_SIZE 3744u                  /* FUNA */
+#define PROJ_STORE_SIZE 3840u                  /* FUNB (a flash object's whole payload) */
+#define PROJ_STORE_VA 3744u                    /* FUNA */
 #define PROJ_STORE_V9 3648u                    /* FUN9 */
 #define PROJ_STORE_V8 3584u                    /* FUN8 */
 #define PROJ_STORE_V7 3388u                    /* FUN7 */
@@ -149,9 +158,11 @@ _Static_assert(sizeof(project_v5_t) == 3352u && sizeof(project_v6_t) == 3388u, "
 #define PROJ_PFX_OFF (PROJ_DX_OFF - 48u)        /* the punch-in lane (32) and its tracks (1): FUN9's 48 spare bytes, 0 in
                                                  * every FUN9 / FUNA written before it (proj_pack clears the store) */
 typedef union { uint32_t align; uint8_t raw[PROJ_STORE_SIZE]; } project_store_t;
-_Static_assert(G_COUNT == 27u, "FUN7 globals retain original IDs");
-_Static_assert(sizeof(project_store_t) == 3744u && PROJ_STORE_V7 == sizeof(project_v6_t), "FUNA / FUN7 sizes");
-_Static_assert(sizeof(dx_lane_t[8]) == 88u && PROJ_DX_OFF == 3120u, "the kit's place: where FUN9's patches were");
+_Static_assert(G_NSTORE == 27u && G_NSTORE == PROJ_NG_V2, "FUN7 globals retain original IDs");
+_Static_assert(sizeof(project_store_t) == 3840u && PROJ_STORE_V7 == sizeof(project_v6_t), "FUNB / FUN7 sizes");
+_Static_assert(sizeof(dx_lane_t[8]) == 88u && PROJ_DX_OFF == 3216u, "the kit's place: FUNA's, 96 bytes on");
+#define PROJ_GX_OFF (PROJ_PFX_OFF + 37u)        /* (FUNB) after the lane, its tracks and the macros: 1, then the globals */
+_Static_assert(37u + 1u + (G_COUNT - G_NSTORE) <= 48u, "the new globals in the punch-in block's spare bytes");
 _Static_assert(68u + NTRK * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + sizeof(motion_store_t) <= PROJ_PFX_OFF,
                "the punch-in lane after the serialized part");
 typedef struct {                               /* a track of format 4, read only */
@@ -161,7 +172,7 @@ typedef struct {                               /* a track of format 4, read only
 } proj_trk_v4_t;
 typedef struct {                               /* format 4 (1.0 development builds), read only */
     uint32_t magic, size;
-    int16_t g[G_COUNT];
+    int16_t g[PROJ_NG_V2];
     uint8_t sel, parts, phys, rsv;
     proj_trk_v4_t t[NTRK];
     uint32_t sum;
@@ -173,7 +184,7 @@ typedef struct {                               /* a track of format 3, read only
 } proj_trk_v3_t;
 typedef struct {                               /* format 3 (0.9 .. 1.0), read only */
     uint32_t magic, size;
-    int16_t g[G_COUNT];
+    int16_t g[PROJ_NG_V2];
     uint8_t sel, parts, rsv[2];
     proj_trk_v3_t t[NTRK];
     uint32_t sum;
@@ -416,7 +427,7 @@ static int proj_from_v4(project_t *q, const project_v4_t *v4, int n)
     memset(q, 0, sizeof *q);
     q->magic = PROJ_MAGIC;
     q->size = sizeof *q;
-    memcpy(q->g, v4->g, sizeof q->g);
+    proj_g_from_v2(q->g, v4->g);
     proj_rtype_room(q->g);
     q->sel = v4->sel;
     q->parts = v4->parts;
@@ -438,7 +449,7 @@ static int proj_from_v3(project_t *q, const project_v3_t *v3, int n)
     memset(q, 0, sizeof *q);
     q->magic = PROJ_MAGIC;
     q->size = sizeof *q;
-    memcpy(q->g, v3->g, sizeof q->g);
+    proj_g_from_v2(q->g, v3->g);
     proj_rtype_room(q->g);
     q->sel = v3->sel;
     q->parts = v3->parts;
@@ -536,6 +547,8 @@ static int proj_import_any(project_t *q, const void *b, int n)
     if (n == PROJ_STORE_SIZE && ((const uint32_t *)b)[1] >= 8u && ((const uint32_t *)b)[1] < PROJ_STORE_SIZE)
         n = (int)((const uint32_t *)b)[1];      /* a retained slot holding an older, shorter record: its own size
                                                  * (every format checks its magic and hash) */
+    if (n == (int)PROJ_STORE_VA && ((const uint32_t *)b)[0] == PROJ_MAGIC_VA)
+        return proj_unpack(q, b, PROJ_STORE_VA);      /* (JIANT 0.1: 99 parameters, no new globals) */
     if (n == (int)PROJ_STORE_V9 && ((const uint32_t *)b)[0] == PROJ_MAGIC_V9)
         return proj_unpack(q, b, PROJ_STORE_V9);
     if (n == (int)PROJ_STORE_V8 && ((const uint32_t *)b)[0] == PROJ_MAGIC_V8)
@@ -564,7 +577,7 @@ static int proj_import_old(project_t *q, const void *b, int n)
             v->size == bytes && ((const uint32_t *)b)[bytes / 4u - 1u] == proj_hash(b, bytes - 4u)) {
             memset(q, 0, sizeof *q);
             q->magic = PROJ_MAGIC; q->size = sizeof *q;
-            memcpy(q->g, v->g, sizeof q->g);
+            proj_g_from_v2(q->g, v->g);
             proj_rtype_room(q->g);
             q->sel = v->sel; q->parts = v->parts; q->phys = v->phys;
             for (i = 0; i < NTRK; i++) {
@@ -615,7 +628,7 @@ static int proj_pack(project_store_t *out, const project_t *q)
             if (q->fm6[t][i] > 127u) return 0;
     if (!chain_valid(&q->chain) || !motion_valid(&q->motion) || P_COUNT > 127u) return 0;
     memset(out, 0, sizeof *out); memcpy(b, &magic, 4); memcpy(b + 4, &size, 4);
-    memcpy(b + 8, q->g, sizeof q->g); b[62] = q->sel; b[63] = q->parts; b[64] = q->phys; b[66] = P_COUNT;
+    memcpy(b + 8, q->g, G_NSTORE * 2u); b[62] = q->sel; b[63] = q->parts; b[64] = q->phys; b[66] = P_COUNT;
     for (t = 0; t < NTRK; t++) {
         for (i = 0; i < P_COUNT; i++) {
             if (q->t[t].p[i] < -64 || q->t[t].p[i] > 127) return 0;
@@ -641,6 +654,9 @@ static int proj_pack(project_store_t *out, const project_t *q)
     b[PROJ_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
     for (i = 0; i < 4u; i++)
         b[PROJ_PFX_OFF + sizeof q->pfx_lane + 1u + i] = q->macro[i] & 127u;
+    b[PROJ_GX_OFF] = 1u;                                /* the new globals (biased bytes, as the parameters) */
+    for (i = G_NSTORE; i < G_COUNT; i++)
+        b[PROJ_GX_OFF + 1u + i - G_NSTORE] = (uint8_t)(clamp(q->g[i], -64, 127) + 64);
     memcpy(b + PROJ_DX_OFF, q->dx, sizeof q->dx);
     b[PROJ_DX_OFF + sizeof q->dx] = q->dx_mute & DXG_ALL;
     b[PROJ_DX_OFF + sizeof q->dx + 1u] = (uint8_t)(q->dx_mute >> 8);
@@ -673,16 +689,21 @@ static int proj_motion_ids(motion_store_t *m, uint32_t np)
  * its tail 64 bytes shorter) or FUN7 (PROJ_STORE_V7: no patches, the init one) */
 static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
 {
-    uint32_t pos = 68u, t, i, magic, size, sum, np = b[66], v7 = st == PROJ_STORE_V7, va = st == PROJ_STORE_SIZE;
+    uint32_t pos = 68u, t, i, magic, size, sum, np = b[66], v7 = st == PROJ_STORE_V7;
+    uint32_t vb = st == PROJ_STORE_SIZE, va = vb || st == PROJ_STORE_VA;   /* (va: FUNA or FUNB, the kit's layout) */
     uint32_t name_off = st - 4u - PROJ_NAME_LEN, fm6_off = name_off - NTRK * FM6_PACKED;
     uint32_t end = v7 ? name_off : va ? fm6_off - PROJ_DX_SIZE : fm6_off;
     memcpy(&magic, b, 4); memcpy(&size, b + 4, 4); memcpy(&sum, b + st - 4u, 4);
-    if (magic != (v7 ? PROJ_MAGIC_V7 : st == PROJ_STORE_V8 ? PROJ_MAGIC_V8 : st == PROJ_STORE_V9 ? PROJ_MAGIC_V9 : PROJ_MAGIC) ||
+    if (magic != (v7 ? PROJ_MAGIC_V7 : st == PROJ_STORE_V8 ? PROJ_MAGIC_V8 : st == PROJ_STORE_V9 ? PROJ_MAGIC_V9 :
+                  st == PROJ_STORE_VA ? PROJ_MAGIC_VA : PROJ_MAGIC) ||
         size != st || sum != proj_hash(b, st - 4u) ||
         np < 8u || np > P_COUNT || 68u + NTRK * (np + 2u + NSTEP * 9u) + sizeof q->chain + sizeof q->motion > end)
         return 0;
     memset(q, 0, sizeof *q); q->magic = PROJ_MAGIC; q->size = sizeof *q;
-    memcpy(q->g, b + 8, sizeof q->g); q->sel = b[62]; q->parts = b[63]; q->phys = b[64];
+    memcpy(q->g, b + 8, G_NSTORE * 2u); q->sel = b[62];
+    for (i = G_NSTORE; i < G_COUNT; i++)                /* the new globals: FUNB's, else their defaults */
+        q->g[i] = vb && b[end - 48u + 37u] == 1u ? (int16_t)clamp((int32_t)b[end - 48u + 38u + i - G_NSTORE] - 64,
+                                                                  GP[i].min, GP[i].max) : GP[i].def; q->parts = b[63]; q->phys = b[64];
     if (v7 && (q->g[G_RTYPE] < 0 || q->g[G_RTYPE] > 1))   /* a FUN7 may still hold the old drum channel there */
         proj_rtype_room(q->g);
     for (t = 0; t < NTRK; t++) {

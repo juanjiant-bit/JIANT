@@ -11,6 +11,8 @@
  *   RAND  a new random value per note-on (its own generator: the shared rng is not touched), bipolar
  *   MODW  MIDI CC1, AT channel aftertouch, EXPR CC11 of the track's channel (seq.c), 0..1; until a
  *         controller arrives (and after CC121 RESET ALL CONTROLLERS) MODW and AT are 0, EXPR 1
+ *   STEP  (JIANT) the track's modulation sequence (LFO > MSEQ, a CV sequencer): the level of its step now (LEN steps of
+ *         DIV from PLAY; stopped: where it was), 0..1, slewed by SLEW (ms_tick, once a block when a slot reads it)
  *   M1..M4 (JIANT) the project's macros (macro_v, the knobs with LFO held), 0..1: the same for every track, so a
  *         macro reaches as many destinations as the slots that name it
  * Destinations:
@@ -34,7 +36,9 @@
  * presets read and write t->p from the main loop, which the ISR preempts; TIMER5 only fills the MIDI rings),
  * and the engines read t->p as before. An engine reads its parameters in note_on (events_block) unmodulated.
  * Nothing active (every slot with SRC, DST or AMT at 0): no work, and the sound is bit-identical. */
-enum { MS_OFF, MS_LFO, MS_ENV, MS_VEL, MS_KEY, MS_RAND, MS_MODW, MS_AT, MS_EXPR, MS_M1, MS_N = MS_M1 + 4 };
+enum { MS_OFF, MS_LFO, MS_ENV, MS_VEL, MS_KEY, MS_RAND, MS_MODW, MS_AT, MS_EXPR, MS_M1, MS_STEP = MS_M1 + 4, MS_N };
+static uint32_t div_samples(uint32_t div);   /* fx.c */
+static uint32_t ms_clock;        /* (JIANT) samples since PLAY (fx.c mix_block; seq.c seq_start: 0): MS_STEP's place */
 enum { MD_OFF, MD_PITCH, MD_CUT, MD_SHP, MD_AMP, MD_PAN, MD_DIST, MD_CHO, MD_DLY, MD_REV, MD_RATE, MD_VIB, MD_E1,
        MD_CLIP = MD_E1 + 8, MD_PNCH, MD_N };
 static uint8_t macro_v[4];       /* (JIANT) the macros M1..M4, 0..127: the project's (project.c), LFO held turns them */
@@ -94,6 +98,8 @@ static int32_t mod_tsrc(const track_t *t, uint32_t s, int32_t lfo)
         return t->at * 258;
     case MS_EXPR:
         return (127 - t->ex_off) * 258;
+    case MS_STEP:
+        return t->ms_v;
     default:
         return macro_v[(s - MS_M1) & 3u] * 258;
     }
@@ -120,6 +126,19 @@ static void mod_voice_add(uint32_t s, uint32_t d, int32_t x, int32_t a, int32_t 
         *gain = mulq15(*gain, mod_gain(s, x, a));
 }
 
+/* (JIANT) MS_STEP: the level of the step now towards t->ms_v, at SLEW's pace (0: at once; 127: ~1.5 s) */
+static __attribute__((noinline)) void ms_tick(track_t *t)
+{
+    const int16_t *p = t->p;
+    uint32_t per = div_samples((uint32_t)p[P_MSDIV]), len = p[P_MSLEN] > 0 ? (uint32_t)p[P_MSLEN] : 1u;
+    int32_t target = p[P_MS0 + (per ? ms_clock / per % len : 0u)] * 258, s = p[P_MSSLW];
+    if (!s) {
+        t->ms_v = target;
+        return;
+    }
+    t->ms_v += ((target - t->ms_v) * (32767 / (1 + s * s / 8))) >> 15;   /* (a block's step: 1 / (1 + s^2 / 8)) */
+}
+
 /* before a part's block (fx.c mix_part): the per-track offsets, the per-block destinations into t->p.
  * 0 = no slot active (then nothing changed) */
 static __attribute__((noinline)) int mod_begin(track_t *t)
@@ -134,6 +153,11 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
     if (k == NMSLOT)
         return 0;
     lfo = mulq15(t->lfo_val, t->lfo_fade);              /* (the LFO of the block before: track_render ticks it) */
+    for (j = k; j < NMSLOT; j++)
+        if (p[P_M1SRC + 3u * j] == MS_STEP && p[P_M1AMT + 3u * j]) {
+            ms_tick(t);                                 /* (once, for every slot reading it) */
+            break;
+        }
     mod.on = 1;
     mod.amp = 0;
     mod.nv = mod.nk = 0;

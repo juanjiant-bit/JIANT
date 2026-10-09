@@ -154,6 +154,43 @@ static int track_v3_ok(const proj_trk_t *n, const proj_trk_v3_t *o, uint32_t t)
     return ok;
 }
 
+/* (JIANT, FUNB) an older record of the project packed in st: np parameters a track (the first np - 8, then E0..E7;
+ * the motion's engine ids moved down with them), the layout of that size (FUNA: the punch-in block and the kit; FUN8 /
+ * FUN9: the FM6 patches; the name at the end), its magic and hash. old_motion: where its motion went */
+static uint32_t old_motion;
+static void old_image(uint8_t *o, const project_store_t *st, uint32_t np, uint32_t size, uint32_t magic)
+{
+    const uint8_t *b = st->raw;
+    uint32_t pos = 68u, src = 68u, t, j, sum, k;
+    uint32_t name = size - 4u - PROJ_NAME_LEN, fm6 = name - NTRK * FM6_PACKED;
+    memset(o, 0, size);
+    memcpy(o, b, 68);
+    memcpy(o, &magic, 4); memcpy(o + 4, &size, 4);
+    o[66] = (uint8_t)np;
+    for (t = 0; t < NTRK; t++) {
+        for (j = 0; j < np; j++) o[pos++] = b[src + (j < np - 8u ? j : P_E0 + j - (np - 8u))];
+        src += P_COUNT;
+        memcpy(o + pos, b + src, 2u + NSTEP * 9u);
+        pos += 2u + NSTEP * 9u; src += 2u + NSTEP * 9u;
+    }
+    memcpy(o + pos, b + src, sizeof(chain_config_t) + sizeof(motion_store_t));
+    old_motion = pos + sizeof(chain_config_t) + 4u;
+    for (k = 0; k < MOTION_MAX; k++) {
+        uint8_t *p = o + old_motion + k * 4u + 1u;
+        if ((*p & 0x7Fu) >= P_E0)
+            *p = (uint8_t)((*p & MOTION_LOCK) | ((*p & 0x7Fu) - (P_COUNT - np)));
+    }
+    if (size == PROJ_STORE_VA) {
+        memcpy(o + fm6 - 96u - 48u, b + PROJ_PFX_OFF, 37u);   /* (the lane, its tracks, the macros: no new globals) */
+        memcpy(o + fm6 - 96u, b + PROJ_DX_OFF, 96u);
+    }
+    if (size >= PROJ_STORE_V8)
+        memcpy(o + fm6, b + PROJ_FM6_OFF, NTRK * FM6_PACKED);
+    memcpy(o + name, b + PROJ_NAME_OFF, PROJ_NAME_LEN);
+    sum = proj_hash(o, size - 4u);
+    memcpy(o + size - 4u, &sum, 4);
+}
+
 int main(void)
 {
     static project_v4_t v4;
@@ -173,9 +210,10 @@ int main(void)
 
     bad += check("layout: SLICER after DETUNE, then the matrix just before P_E0",
                  P_SLCR == P_DETUNE + 1 && P_SLDEPTH + 1 == P_M1SRC && P_M4AMT + 1 == P_FM1_ATK && P_FM4_LEVEL + 1 == P_SOFS && P_POFS + 1 == P_LN0 &&
-                 P_LN7 + 1 == P_E0 && P_E0 == 91 && P_COUNT == PROJ_NP_V3 + 42u && PROJ_NP_V3 == PROJ_NP_V2 + 4u);
-    bad += check("FUNA fits one flash object, the retained cache in NOINIT", sizeof(project_store_t) <= 4096u - 256u &&
-                 sizeof(project_store_t) == 3744u && 0xC8u + 4u * sizeof(project_store_t) <= 0x3D50u);
+                 P_LN7 + 1 == P_DTYPE && P_MS15 + 1 == P_E0 && P_E0 == 112 && P_COUNT == PROJ_NP_V3 + 63u &&
+                 PROJ_NP_V3 == PROJ_NP_V2 + 4u);
+    bad += check("FUNB fits one flash object (its whole payload), the retained cache in NOINIT",
+                 sizeof(project_store_t) == 4096u - 256u && 0xC8u + 4u * sizeof(project_store_t) <= 0x3D50u);
 
     /* format 2, as written before the SLICER */
     memset(&v2, 0, sizeof v2);
@@ -192,7 +230,7 @@ int main(void)
     ok = proj_import(&q, &buf, (int)sizeof v2);
     bad += check("FUN2 -> FUN6: converted, valid format 5 slot", ok && proj_ok(&q) && q.magic == PROJ_MAGIC);
     ok = q.sel == 2;
-    for (i = 0; i < G_COUNT; i++)
+    for (i = 0; i < G_NSTORE; i++)
         ok &= q.g[i] == (i == G_RTYPE || i == G_DRLVL || i == G_DRREV ? 0 : (int16_t)(500 + i));
     bad += check("FUN2 -> FUN6: globals (id 24, the old drum channel: ROOM; 25 26, the drum part's: off) and selected track", ok);
     ok = 1;
@@ -212,7 +250,7 @@ int main(void)
     memset(&v3, 0, sizeof v3);
     v3.magic = PROJ_MAGIC_V3;
     v3.size = sizeof v3;
-    for (i = 0; i < G_COUNT; i++)
+    for (i = 0; i < G_NSTORE; i++)
         v3.g[i] = (int16_t)(600 + i);
     v3.sel = 3;
     v3.parts = NPART;
@@ -223,7 +261,7 @@ int main(void)
     memcpy(&buf, &v3, sizeof v3);
     ok = proj_import(&q, &buf, (int)sizeof v3) && proj_ok(&q) && q.magic == PROJ_MAGIC && q.sel == 3 &&
          q.parts == NPART;
-    for (i = 0; i < G_COUNT; i++)
+    for (i = 0; i < G_NSTORE; i++)
         ok &= q.g[i] == (i == G_RTYPE ? 0 : (int16_t)(600 + i));
     for (t = 0; t < NTRK; t++)
         ok &= track_v3_ok(&q.t[t], &v3.t[t], t);
@@ -422,9 +460,9 @@ int main(void)
         project_t a, c;
         project_store_t st, st2;
         uint32_t i, zero = 1;
-        bad += check("FUNA name at the end of the reserved tail, the FM6 patches and the kit before it, after the data (48 spare)",
-                     PROJ_NAME_OFF == 3728u && PROJ_FM6_OFF == 3216u && PROJ_DX_OFF == 3120u &&
-                     68u + NTRK * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + sizeof(motion_store_t) + 48u ==
+        bad += check("FUNB name at the end of the reserved tail, the FM6 patches and the kit before it, after the data (48 + 12 spare)",
+                     PROJ_NAME_OFF == 3824u && PROJ_FM6_OFF == 3312u && PROJ_DX_OFF == 3216u &&
+                     68u + NTRK * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + sizeof(motion_store_t) + 48u + 12u ==
                      PROJ_DX_OFF);
         memset(&a, 0, sizeof a);
         a.magic = PROJ_MAGIC; a.size = sizeof a; a.parts = NPART; a.phys = PROJ_PHYS;
@@ -474,7 +512,7 @@ int main(void)
         }
         memcpy(a.name, "FM SONG", 7);
         a.sum = proj_sum(&a);
-        ok = proj_pack(&st, &a) && ((uint32_t *)st.raw)[0] == 0x46554E41u && proj_import(&c, &st, sizeof st);
+        ok = proj_pack(&st, &a) && ((uint32_t *)st.raw)[0] == 0x46554E42u && proj_import(&c, &st, sizeof st);
         for (k = 0; k < NTRK; k++)
             ok &= !memcmp(c.fm6[k], FM6_FACTORY[k * 2u], FM6_PACKED) && c.t[k].engine == ENGI_FM6 &&
                   !memcmp(st.raw + PROJ_FM6_OFF + k * FM6_PACKED, FM6_FACTORY[k * 2u], FM6_PACKED);
@@ -503,7 +541,7 @@ int main(void)
             a.sum = proj_sum(&a);
             ok = proj_pack(&st, &a) && st.raw[PROJ_PFX_OFF + 2] == 0x21 && st.raw[PROJ_PFX_OFF + 32] == 2 &&
                  proj_import(&c, &st, sizeof st) && !memcmp(c.pfx_lane, a.pfx_lane, sizeof a.pfx_lane) && c.pfx_ltgt == 2;
-            bad += check("FUNA: the punch-in lane round trips (FUN9's spare bytes at 3072)", ok);
+            bad += check("FUNA: the punch-in lane round trips (the spare bytes at PROJ_PFX_OFF)", ok);
             a.dx[2].a[DXP_PITCH] = 200;
             a.sum = proj_sum(&a);
             ok = !proj_pack(&st2, &a);
@@ -517,16 +555,24 @@ int main(void)
             }
             ok &= !proj_import(&c, &st2, sizeof st2);
             bad += check("FUNA: a kit value out of range: not packed, not loaded", ok);
-            memcpy(v9, st.raw, PROJ_DX_OFF);              /* FUN9 = FUNA without the kit */
-            memcpy(v9 + PROJ_DX_OFF, st.raw + PROJ_FM6_OFF, NTRK * FM6_PACKED);
-            memcpy(v9 + 3632u, st.raw + PROJ_NAME_OFF, PROJ_NAME_LEN);
-            memcpy(v9, &magic9, 4);
-            memcpy(v9 + 4, &size9, 4);
-            sum9 = proj_hash(v9, 3644u);
-            memcpy(v9 + 3644u, &sum9, 4);
+            (void)magic9; (void)size9; (void)sum9;
+            old_image(v9, &st, 99u, 3648u, 0x46554E39u);  /* FUN9 = FUNA without the kit (99 parameters) */
             ok = proj_import(&c, v9, sizeof v9) && !c.dx_mute && !memcmp(c.dx, DX_KIT_DEF, sizeof c.dx) &&
-                 !memcmp(c.fm6, a.fm6, sizeof c.fm6) && !memcmp(c.name, "FM SONG", 7);
-            bad += check("FUN9 (Felucca 1.1) loads: its patches and name, the factory DRUM-X kit", ok);
+                 !memcmp(c.fm6, a.fm6, sizeof c.fm6) && !memcmp(c.name, "FM SONG", 7) && c.t[2].p[P_E7] == 4 &&
+                 c.t[0].p[P_MSLEN] == 16 && c.g[G_RRATE] == 30;
+            bad += check("FUN9 (Felucca 1.1) loads: its patches and name, the factory DRUM-X kit, the new values' defaults", ok);
+            {   /* FUNA (JIANT 0.1, 99 parameters): its kit, mutes and lane; the new parameters and globals their defaults */
+                static uint8_t va[3744];
+                a.dx_mute = DXG_SNARE; a.g[G_RMOD] = 77; a.t[1].p[P_DTYPE] = 3; a.sum = proj_sum(&a);
+                ok = proj_pack(&st2, &a);
+                old_image(va, &st2, 99u, 3744u, 0x46554E41u);
+                ok &= proj_import(&c, va, sizeof va) && c.dx_mute == DXG_SNARE && !memcmp(c.dx, a.dx, sizeof c.dx) &&
+                      c.t[2].p[P_E7] == 4 && c.t[1].p[P_DTYPE] == 0 && c.g[G_RMOD] == 0 && c.t[3].p[P_MSDIV] == 2;
+                bad += check("FUNA (JIANT 0.1) loads: kit, mutes, E0..E7 at P_E0; DIST TYPE, MSEQ, the new globals: defaults", ok);
+                ok = proj_import(&c, &st2, sizeof st2) && c.g[G_RMOD] == 77 && c.t[1].p[P_DTYPE] == 3;
+                bad += check("FUNB round trip: the new globals and parameters kept", ok);
+                a.dx_mute = 0; a.g[G_RMOD] = 0; a.t[1].p[P_DTYPE] = 0; a.sum = proj_sum(&a);
+            }
         }
         {   /* FUN8 as 1.0.x wrote it (3584 bytes, 91 parameters: E0..E7 at 83..90, the patches at 3056): the DRUM
              * lane levels 100 %, E0..E7 and their motion at today's P_E0.., the patches and the name kept */
@@ -552,24 +598,9 @@ int main(void)
             e.motion.event[2] = (motion_event_t){3u << 6 | 6u, (uint8_t)(P_E5 | MOTION_LOCK), -3};
             e.sum = proj_sum(&e);
             ok = proj_pack(&st, &e);
-            memset(v8, 0, sizeof v8);
-            memcpy(v8, st.raw, 68);
-            v8[66] = 91;
-            for (k = 0; k < NTRK; k++) {
-                for (j = 0; j < 91u; j++) v8[pos++] = st.raw[pos9 + (j < 83u ? j : j + 8u)];
-                pos9 += P_COUNT;
-                memcpy(v8 + pos, st.raw + pos9, 2u + NSTEP * 9u);
-                pos += 2u + NSTEP * 9u; pos9 += 2u + NSTEP * 9u;
-            }
-            memcpy(v8 + pos, st.raw + pos9, sizeof(chain_config_t) + sizeof(motion_store_t));
-            v8[pos + sizeof(chain_config_t) + 4u + 1u] = 83u + 3u;   /* its E3 then */
-            v8[pos + sizeof(chain_config_t) + 4u + 8u + 1u] = (83u + 5u) | MOTION_LOCK;   /* its E5 then, a lock */
-            memcpy(v8 + 3056u, st.raw + PROJ_FM6_OFF, NTRK * FM6_PACKED);
-            memcpy(v8 + 3568u, st.raw + PROJ_NAME_OFF, PROJ_NAME_LEN);
-            ((uint32_t *)v8)[0] = 0x46554E38u;
-            ((uint32_t *)v8)[1] = 3584u;
-            sum = proj_hash(v8, 3580u);
-            memcpy(v8 + 3580u, &sum, 4);
+            (void)pos; (void)pos9; (void)j;
+            old_image(v8, &st, 91u, 3584u, 0x46554E38u);  /* (its E3 then: 86, its E5 a lock: 88 | the bit) */
+            ok &= v8[old_motion + 1u] == 83u + 3u && v8[old_motion + 8u + 1u] == ((83u + 5u) | MOTION_LOCK);
             ok = ok && proj_import(&c, v8, sizeof v8);
             for (k = 0; ok && k < NTRK; k++) {
                 for (j = P_LN0; j <= P_LN7; j++) ok &= c.t[k].p[j] == 127;
@@ -588,13 +619,7 @@ int main(void)
             bad += check("  in a retained (longer) slot: loads", proj_import(&c, &slot, sizeof slot) && c.t[3].p[P_E3] == 30);
         }
         /* the same music as FUN7 (3388 bytes, no patches): the data where it was, the name at 3372 */
-        memcpy(v7, st.raw, PROJ_STORE_V7 - 16u);
-        memset(v7 + PROJ_FM6_OFF, 0, PROJ_STORE_V7 - 16u - PROJ_FM6_OFF);
-        memcpy(v7 + PROJ_STORE_V7 - 16u, st.raw + PROJ_NAME_OFF, 12);
-        ((uint32_t *)v7)[0] = 0x46554E37u;
-        ((uint32_t *)v7)[1] = PROJ_STORE_V7;
-        sum = proj_hash(v7, PROJ_STORE_V7 - 4u);
-        memcpy(v7 + PROJ_STORE_V7 - 4u, &sum, 4);
+        old_image(v7, &st, 99u, PROJ_STORE_V7, 0x46554E37u);
         ok = proj_import(&c, v7, sizeof v7);
         for (k = 0; k < NTRK; k++)
             init &= !memcmp(c.fm6[k], FM6_INIT, FM6_PACKED);
