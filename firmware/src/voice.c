@@ -489,6 +489,9 @@ static int32_t env_tick(track_t *t, voice_t *v)
         break;
     case 2:
         v->env += mulq16(sus - v->env, ENV_EXP[p[P_DEC] & 127]);
+        if (p[P_ELOOP] > 0 && v->gate && v->env - sus < (1 << 18))   /* (JIANT 0.4) LOOP: at the sustain (within
+                                                         * 1/64), held: the attack again from here (an ADSR-shaped LFO) */
+            v->stage = 1;
         break;
     case 3:
         v->env -= mulq16(v->env, ENV_EXP[p[P_REL] & 127]);

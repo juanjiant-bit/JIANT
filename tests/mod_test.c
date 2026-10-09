@@ -641,6 +641,45 @@ static uint64_t phrase_lr(int32_t *diff)
     }
     return hash;
 }
+/* (JIANT 0.4) ENV LOOP: held, the envelope starts its attack again at the sustain: the level rises and falls again
+ * and again (an ADSR-shaped LFO); OFF: one rise; released: it ends */
+static uint32_t env_rises(int16_t loop, int *ended)
+{
+    uint32_t b, i, rises = 0, up = 0;
+    int32_t last = 0;
+    fresh(0, 0);
+    trk[0].p[P_ATK] = 8; trk[0].p[P_DEC] = 30; trk[0].p[P_SUS] = 20; trk[0].p[P_REL] = 10;
+    trk[0].p[P_ELOOP] = loop;
+    trk_note_on(&trk[0], 60, 110);
+    for (b = 0; b < FS / CTL; b++) {               /* ~1 s held: the voice's envelope, block by block */
+        int32_t e = 0;
+        blocks(1);
+        for (i = 0; i < NVOICE; i++)
+            if (trk[0].v[i].active && trk[0].v[i].env > e)
+                e = trk[0].v[i].env;
+        if (e > last + (1 << 16)) {
+            if (!up) rises++;
+            up = 1;
+        } else if (e < last) {
+            up = 0;
+        }
+        last = e;
+    }
+    trk_note_off(&trk[0], 60);
+    blocks(FS / CTL);
+    *ended = 1;
+    for (i = 0; i < NVOICE; i++)
+        *ended &= !trk[0].v[i].active;
+    return rises;
+}
+static void test_env_loop(void)
+{
+    int e0, e1;
+    uint32_t r0 = env_rises(0, &e0), r1 = env_rises(1, &e1);
+    printf("mod:   (ENV rises in 1 s held: LOOP OFF %u, ON %u)\n", r0, r1);
+    check("ENV LOOP: held, the envelope rises again and again (OFF: once); let go, it ends", r0 <= 1u && r1 >= 3u && e0 && e1);
+}
+
 static void test_jiant_fx(void)
 {
     uint64_t h[5], h0, h1;
@@ -738,6 +777,7 @@ int main(int argc, char **argv)
     test_midi();
     test_cost();
     test_jiant_fx();
+    test_env_loop();
     if (argc > 1)
         check("demos written", demos(argv[1]));
     printf("%s\n", bad ? "MOD MATRIX TEST FAILED" : "mod matrix test passed");

@@ -77,6 +77,9 @@ No command changed; an editor that takes P_COUNT, G_COUNT and P_E0 from `INFO` k
 | G 36 | STRN | (0.4) every sequence (not a kit) this many steps up / down its scale, −14..14; ROOT and SCALE are one for every
 melodic track: set on one, the others follow |
 
+Track parameter 8 (once ENV DEST FX, read by nothing) is **LOOP** since 0.4: OFF / ON (enum); ON, a held note's envelope
+starts its attack again at the sustain.
+
 **JIANT 0.4: 37 globals** (G 36 STRN, stored behind a 3). **JIANT 0.3: 36 globals.** G_COUNT 36 (G 32..35 above). DRUM's E6 (id P_E0 + 5) is FM, 0..127 (once ACC): its sounds through
 harmonic FM, eight ratio bands; a project or user preset saved before loads its DRUM tracks with FM 0.
 
