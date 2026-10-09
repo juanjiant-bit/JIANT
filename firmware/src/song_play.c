@@ -31,6 +31,9 @@ static void sec_apply(void)
     motion = sec_stage.motion;
     memcpy(dx_kit, sec_stage.dx, sizeof dx_kit);
     dx_mute_set(sec_stage.dx_mute);
+    memcpy(pfx_lane, sec_stage.pfx_lane, sizeof pfx_lane);
+    pfx_ltgt = sec_stage.pfx_ltgt;
+    pfx_lph = 0;                                      /* (the lane from the section's start) */
     memset(motion_active, 0, sizeof motion_active);
     memset(motion_locked, 0, sizeof motion_locked);
     motion_base_valid = 0;

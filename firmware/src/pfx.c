@@ -12,6 +12,11 @@
  *   F5 RANDOM          each new note: an octave, a fifth or a fourth away now and then (DRUM: +-3 semitones)
  * Of the repeats (STUTTER, ARP) the fastest held plays. A#4 (black key 8) steps the tracks they act on: ALL,
  * SYN (the synths), DRM (DRUM tracks) (pfx_tgt; the layer's header says it).
+ * The punch-in lane (the automation): a section's 64 steps of 1/16 (4 bars, from the transport's start or the
+ * section's), one effect a step (pfx_lane: a nibble, 0 none, 1..10 D4 .. F5) and the tracks it acts on (pfx_ltgt).
+ * Recording (REC armed, playing, not a song): the steps that pass while a MIDI effect is held get it (the lowest held),
+ * with the tracks A#4 picked; G5 held erases them. Stopped, FX + G5 clears the lane. Played back with the held ones.
+ * Saved with the section (project.c FUNA: the 33 spare bytes at PROJ_PFX_OFF), staged by the song (song_chain.c).
  * In the ISR: pfx_block before the events (what acts on each track, the repeats, the decays put in), pfx_end after
  * the parts (the decays back: as mod.c, nothing outside the ISR sees them). Idle: one test a block. */
 static uint8_t pfx_in;                /* a repeat's own note-on (pfx_note lets it through) */
@@ -82,18 +87,59 @@ static __attribute__((noinline)) void pfx_fire(track_t *t, int arp)
 /* the values DEC- / DEC+ took out (pfx_end puts them back) */
 static int16_t pfx_keep[NTRK][2];
 
+static int pfx_rec_ok(void);          /* seq.c: REC armed, not a song playing */
+static uint8_t pfx_rh, pfx_rs0, pfx_rst, pfx_rold;   /* recording the lane: a press on, its first step, the step being
+                                                      * written and what it held before */
+/* the lane's step s: 0 none, else the effect (PF_OCTD + v - 1) */
+static uint32_t pfx_lane_at(uint32_t s) { return (pfx_lane[(s >> 1) & 31u] >> ((s & 1u) * 4u)) & 15u; }
+static void pfx_lane_put(uint32_t s, uint32_t v)
+{
+    uint8_t *p = &pfx_lane[(s >> 1) & 31u];
+    *p = (uint8_t)((*p & (s & 1u ? 0x0Fu : 0xF0u)) | (v & 15u) << ((s & 1u) * 4u));
+}
+
 /* each block, before the events (fx.c mix_block). held: the effects held (PF_* bits) */
 static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
 {
-    uint32_t k, b = beat_samples();
+    uint32_t k, b = beat_samples(), lane = 0;
     pfx_blk++;
-    if (!held && !pfx_any)
+    if (song.playing && b >= 4u) {                      /* the lane: record, or play */
+        uint32_t s16 = b / 4u, st = (pfx_lph / s16) & 63u, half = pfx_lph % s16 >= s16 / 2u;
+        uint32_t w = pfx_rec_ok() && (held || pfx_clr) ? (held ? (uint32_t)__builtin_ctz(held) - PF_OCTD + 1u : 0u) : 16u;
+        pfx_lph += n;
+        if (w < 16u) {                                  /* recording, to the nearest step: a press in a step's second */
+            if (!pfx_rh) {                              /* half starts at the next one */
+                pfx_rh = 1;
+                pfx_rs0 = (uint8_t)((st + half) & 63u);
+                pfx_rst = 0xFF;
+            }
+            if (st != ((pfx_rs0 - 1u) & 63u) || st == pfx_rs0) {
+                if (st != pfx_rst) {                    /* (a step new to this press: what it held, kept) */
+                    pfx_rst = (uint8_t)st;
+                    pfx_rold = (uint8_t)pfx_lane_at(st);
+                }
+                pfx_lane_put(st, w);
+            }
+            if (held)
+                pfx_ltgt = pfx_tgt;
+        } else {
+            if (pfx_rh && st == pfx_rst && !half && st != pfx_rs0)
+                pfx_lane_put(st, pfx_rold);             /* let go in a step's first half: that step as it was */
+            pfx_rh = 0;
+            if ((k = pfx_lane_at(st)) != 0u && k <= 10u)
+                lane = PF_BIT(PF_OCTD + k - 1u);
+        }
+    } else if (pfx_clr) {
+        memset(pfx_lane, 0, sizeof pfx_lane);
+    }
+    if (!held && !pfx_any && !lane)
         return;
     pfx_any = 0;
     for (k = 0; k < NTRK; k++) {
         track_t *t = &trk[k];
         int drum = t->engine == ENGI_DRUM;
-        uint32_t on = !pfx_tgt || (pfx_tgt == 1u) == !drum ? held : 0u, old = t->pfx, f, rep, per = 0;
+        uint32_t on = (!pfx_tgt || (pfx_tgt == 1u) == !drum ? held : 0u) | (!pfx_ltgt || (pfx_ltgt == 1u) == !drum ? lane : 0u);
+        uint32_t old = t->pfx, f, rep, per = 0;
         rep = on & (PF_BIT(PF_S32) | PF_BIT(PF_S16T) | PF_BIT(PF_S16) | PF_BIT(PF_ARP));
         per = (rep & PF_BIT(PF_S32)) ? b / 8u : (rep & PF_BIT(PF_S16T)) ? b / 6u : b / 4u;
         t->pfx_pit = (int16_t)(((on >> PF_OCTU) & 1u) * 192 - ((on >> PF_OCTD) & 1u) * 192);

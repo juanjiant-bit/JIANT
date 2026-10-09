@@ -744,6 +744,44 @@ static int test_pfx(void)
         bad += check("RANDOM: some notes moved (octave, fifth, fourth), none past an octave; none without it",
                      moved > 3u && moved < 100u && !far);
     }
+    /* the punch-in lane: REC armed, OCT+ held over steps 4..7 of the 64: recorded there (its tracks: DRM); the next
+     * pass plays it on the drums (DRUM's pitch offset at step 5, none at step 10), not on the synths; stopped,
+     * FX + G5 clears it */
+    {
+        uint32_t s16, st, ok = 1, pit5 = 0, pit10 = 1, syn = 0;
+        song_setup();
+        memset(pfx_lane, 0, sizeof pfx_lane);
+        s16 = beat_samples() / 4u;
+        song.rec = 1;
+        pfx_tgt = 2;
+        transport_req = 1;
+        for (i = 0; i < 64u * s16; i += CTL) {
+            st = (i / s16) & 63u;
+            if (st == 4u && !(perf_held & PF_BIT(PF_OCTU))) perf_press(PF_OCTU, 1);
+            if (st == 8u && (perf_held & PF_BIT(PF_OCTU))) perf_press(PF_OCTU, 0);
+            mix_block(o, CTL);
+        }
+        song.rec = 0;
+        pfx_tgt = 0;
+        for (st = 0; st < 64u; st++)
+            ok &= pfx_lane_at(st) == (st >= 4u && st < 8u ? (uint32_t)(PF_OCTU - PF_OCTD + 1) : 0u);
+        ok &= pfx_ltgt == 2u;
+        for (i = 64u * s16; i < 128u * s16; i += CTL) {
+            st = ((i - 64u * s16) / s16) & 63u;
+            mix_block(o, CTL);
+            if (st == 5u) pit5 = td->pfx_pit == 192, syn |= t1->pfx_pit != 0;
+            if (st == 10u) pit10 = td->pfx_pit;
+        }
+        transport_req = 2;
+        mix_block(o, CTL);
+        bad += check("punch-in lane: REC + OCT+ over steps 4..7 recorded (its tracks DRM); played back on the drums only",
+                     ok && pit5 && !pit10 && !syn);
+        perf_press(PF_CLR, 1);
+        mix_block(o, CTL);
+        perf_press(PF_CLR, 0);
+        for (ok = 1, st = 0; st < 64u; st++) ok &= !pfx_lane_at(st);
+        bad += check("  stopped, FX + G5 clears the lane", ok);
+    }
     return bad;
 }
 

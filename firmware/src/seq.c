@@ -151,6 +151,7 @@ static void arp_remove(track_t *t, uint32_t note)
 static void rec_note(track_t *t, uint32_t note, uint32_t vel);
 static void rec_release(track_t *t, uint32_t note);
 static int rec_on(const track_t *t) { return ((song.rec >> trk_index(t)) & 1u) && song.playing && !chain.running; }
+static int pfx_rec_ok(void) { return song.rec && song.playing && !chain.running; }   /* (pfx.c: the punch-in lane) */
 
 #include "motion.c"
 
@@ -535,7 +536,7 @@ static void input_off(track_t *t, uint32_t note)
 static uint32_t perf_key(uint32_t k)
 {
     uint32_t p = key_place(k);
-    return !key_black(k) ? (p < PF_M1 ? p : PF_N) : p < NTRK ? PF_M1 + p : p == 7u ? PF_TGT : PF_N;
+    return !key_black(k) ? (p < PF_M1 ? p : p == PF_M1 ? PF_CLR : PF_N) : p < NTRK ? PF_M1 + p : p == 7u ? PF_TGT : PF_N;
 }
 
 /* key k plays kb_note[k] on track t: its chord (chord.c; the note alone with CHRD OFF). A note another key

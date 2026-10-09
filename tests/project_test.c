@@ -498,6 +498,12 @@ int main(void)
             ok = proj_pack(&st, &a) && st.raw[PROJ_DX_OFF + 88u] == (DXG_SNARE | DXG_PERC) &&
                  proj_import(&c, &st, sizeof st) && c.dx_mute == (DXG_SNARE | DXG_PERC);
             bad += check("FUNA: the group mutes round trip (the kit's first reserved byte)", ok);
+            memset(a.pfx_lane, 0, sizeof a.pfx_lane);
+            a.pfx_lane[2] = 0x21; a.pfx_lane[31] = 0xA0; a.pfx_ltgt = 2;
+            a.sum = proj_sum(&a);
+            ok = proj_pack(&st, &a) && st.raw[PROJ_PFX_OFF + 2] == 0x21 && st.raw[PROJ_PFX_OFF + 32] == 2 &&
+                 proj_import(&c, &st, sizeof st) && !memcmp(c.pfx_lane, a.pfx_lane, sizeof a.pfx_lane) && c.pfx_ltgt == 2;
+            bad += check("FUNA: the punch-in lane round trips (FUN9's spare bytes at 3072)", ok);
             a.dx[2].a[DXP_PITCH] = 200;
             a.sum = proj_sum(&a);
             ok = !proj_pack(&st2, &a);

@@ -23,7 +23,8 @@
  * Idle (no key, no knob, no ramp left) every stage is skipped: the output is bit-identical. */
 enum { PF_R8, PF_R16, PF_R32, PF_LPF, PF_HPF,
        PF_OCTD, PF_OCTU, PF_HALF, PF_DSHT, PF_DLNG, PF_S16, PF_S32, PF_S16T, PF_ARP, PF_RND,   /* the MIDI ones: pfx.c */
-       PF_M1, PF_N = PF_M1 + NTRK, PF_TGT = PF_N + 1 };   /* PF_TGT: A#4, the MIDI effects' tracks (pfx_tgt) */
+       PF_M1, PF_N = PF_M1 + NTRK, PF_TGT = PF_N + 1,     /* PF_TGT: A#4, the MIDI effects' tracks (pfx_tgt) */
+       PF_CLR = PF_N + 2 };                                /* PF_CLR: G5, erases the punch-in lane (pfx.c) */
 #define PF_BIT(e) (1u << (e))
 #define PF_REPEAT 0x7u                                         /* the three REPEAT rates */
 #define PF_Q PF_REPEAT                                         /* start on the 1/16 */
@@ -102,10 +103,15 @@ static uint32_t perf_avail(void)
 
 /* seq.c keyboard_block: a layer key down / up (e: PF_*, PF_N = no effect) */
 static volatile uint8_t pfx_tgt;      /* main / keys: the MIDI effects' tracks, 0 ALL, 1 SYN, 2 DRM (pfx.c) */
+static volatile uint8_t pfx_clr;      /* keys: G5 held (pfx.c: the lane erased where it passes, or all of it) */
+static uint32_t pfx_lph;              /* samples into the punch-in lane (pfx.c): from the transport's start, a section's */
+static uint8_t pfx_lane[32], pfx_ltgt;   /* the section's punch-in lane (pfx.c), its tracks (as pfx_tgt) */
 static void perf_press(uint32_t e, int down)
 {
     if (e == PF_TGT && down)
         pfx_tgt = (uint8_t)((pfx_tgt + 1u) % 3u);
+    if (e == PF_CLR)
+        pfx_clr = (uint8_t)(down ? 1u : 0u);
     if (e >= PF_N)
         return;
     if (perf_latch_on) {                  /* FX LATCH: a press turns it on or off, letting go does nothing */
@@ -123,7 +129,7 @@ static void perf_press(uint32_t e, int down)
     }
 }
 
-static void perf_start(void) { pf.ph = 0; pf.sync = 1; }      /* seq_start: a 1/16 starts with the transport */
+static void perf_start(void) { pf.ph = 0; pf.sync = 1; pfx_lph = 0; }   /* seq_start: a 1/16 starts with the transport */
 
 /* the SLICER's recordings dropped (when the buffer is taken and given back) */
 static void perf_drop_slicer(void)

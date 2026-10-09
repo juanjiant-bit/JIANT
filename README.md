@@ -48,7 +48,7 @@ La visión completa está en [FELUCCA-TONIC-VISION.md](FELUCCA-TONIC-VISION.md) 
 | DRUM-X y mutes por grupo ([docs/TONIC-DRUMX.md](docs/TONIC-DRUMX.md)) | En curso (motor y mutes por grupo hechos; los kits de Felucca, retirados) |
 | Master: CLIP, PNCH (bus de batería) y DUCK (página FX > MASTER) | Hecho |
 | Macros M1–M4 | Pendiente |
-| Punch-in FX MIDI y sus lanes | Efectos en vivo hechos (capa FX); falta automatizarlos |
+| Punch-in FX MIDI y sus lanes | Hecho: 10 efectos en la capa FX y una lane de 4 compases por sección |
 | Más modulación y mejores efectos | Pendiente |
 | Interfaz JIANT FM dibujada por código ([docs/TONIC-UI.md](docs/TONIC-UI.md)) | En curso: paleta JIANT y espécimen de DRUM-X |
 
@@ -138,7 +138,7 @@ detalles. La paleta **JIANT** es la de fábrica. Primera pantalla: el espécimen
 
 | Mantener | Teclas | Perillas |
 | --- | --- | --- |
-| **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. Punch-in MIDI: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 D5 STUTTER 1/16 · 1/32 · tresillo, E5 ARP, F5 RANDOM. Teclas negras 1–4: mute de T1–T4; A#4 elige a qué tracks afectan los MIDI (todos, sintes, batería) | FILTER, CRUSH, THROW, DEPTH |
+| **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. Punch-in MIDI: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 D5 STUTTER 1/16 · 1/32 · tresillo, E5 ARP, F5 RANDOM. Teclas negras 1–4: mute de T1–T4; A#4 elige a qué tracks afectan los MIDI (todos, sintes, batería). **Automatizar**: con REC armado y tocando, lo que mantengas queda grabado en la lane de la sección (64 pasos de 1/16); G5 la borra donde pasa, o entera con el transporte parado | FILTER, CRUSH, THROW, DEPTH |
 | **GLO** | Teclas negras 1–4 mute de T1–T4 (fijo); 5–8 mute de grupo de DRUM: KICK, SNARE, HAT, PERC; F3–B3 solo mientras se mantiene; C4 desmutea todo; F4 tap tempo | Nivel de T1–T4 |
 | **SCL** | Cualquier tecla elige la raíz | ROOT, SCL, CHRD, VOIC |
 | **EDIT** | F3 **INIT**: el sonido del track vuelve al de fábrica (en DRUM, también el kit DRUM-X). G3 **RECALL**: vuelve al sonido guardado en la sección (en DRUM, con su kit). Los dos piden confirmación y no tocan los pasos. El engine y los sonidos se eligen en PRESETS | Las 4 primeras perillas de EDIT del engine |
