@@ -63,26 +63,31 @@ static const param_desc_t LOFI_RES = {"RES", F_PCT, 0, 127, 0, 0, 0};           
 static const param_desc_t LOFI_LOOP = {"LOOP", F_PCT, 0, 127, 0, 0, 0};           /* = edit[7] (BYTE) */
 /* (JIANT 0.5) E4 (CUT) left: the filter is the FILTER page's (TYPE, CUT, RES: P_FTYPE P_FCUT P_FRES), on every engine */
 static const param_desc_t LOFI_NONE = {"-", F_INT, 0, 0, 0, 0, 0};
+/* (JIANT 0.5.1) each formula's start, in 512 steps of t: where it is already moving (some sit silent for up to
+ * ~2 s from t = 0); a note starts there, LOOP's window too. The first 17 were rewritten in 0.5.1, away from the
+ * well-worn one-liners (t * (42 & t >> 10), t & t >> 8 ..): rhythms and arpeggios after Tejeez, xpansive's
+ * "lost in space", a melody of t >> 9 modulo 13, textures of t % 24 and t % 19 */
+static const uint8_t BYTE_T0[32] = {0, 0, 0, 0, 0, 0, 0, 31, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 16, 0, 7, 16, 0, 1, 8, 15, 8, 0, 15, 23, 8, 0};
 static __attribute__((noinline)) uint32_t lofi_byte(uint32_t f, uint32_t t, uint32_t a)
 {
     switch (f & 31u) {
-    case 0: return t * (42u & t >> 10);
-    case 1: return t * ((t >> 12 | t >> 8) & 63u & t >> 4);
-    case 2: return t * (t >> 5 | t >> 8) >> (t >> 16 & 7u);
-    case 3: return t * (t >> 11 & t >> 8 & 123u & t >> 3);
-    case 4: return (t >> 6 | t | t >> (t >> 16 & 15u)) * 10u + (t >> 11 & 7u);
-    case 5: return (t * 5u & t >> 7) | (t * 3u & t * 4u >> 10);
-    case 6: return (t * 9u & t >> 4) | (t * 5u & t >> 7) | (t * 3u & t >> 10);
-    case 7: return (t * (t >> 9 | t >> 13) & 16u) * 15u;
-    case 8: return t & t >> 8;
-    case 9: return (t >> 7 | t | t >> 6) * 10u + 4u * ((t & t >> 13) | t >> 6);
-    case 10: return (t * (0xCA98u >> (t >> 9 & 14u) & 15u)) | t >> 8;
-    case 11: return (t * (t >> 8 | t >> 9) & 46u & t >> 8) ^ ((t & t >> 13) | t >> 6);
-    case 12: return (t * 3u & t >> 8) | (t >> 4 & t * 7u);
-    case 13: return t * (t >> (t >> 9 & 7u) & 63u & t >> 4);
-    case 14: return (t >> 4) * (13u & 0x8898A989u >> (t >> 11 & 30u));
-    case 15: return t * ((t >> 3 | t >> 9) & 82u & t >> 9);
-    case 16: return t * (a & t >> 10);                                  /* (a: VAR) */
+    case 0: return (~t >> 2) * ((127u & t * (7u & t >> 10)) < (245u & t * (2u + (5u & t >> 14))));   /* (Tejeez) */
+    case 1: return (t * ((3u + (1u ^ (t >> 10 & 5u))) * (5u + (3u & t >> 14)))) >> (t >> 8 & 3u);   /* (Tejeez) */
+    case 2: return ((-t & 4095u) * (255u & t * (t & t >> 13)) >> 12) + (127u & t * (234u & t >> 8 & t >> 3) >> (3u & t >> 14));   /* (xpansive) */
+    case 3: return t * (((t >> 9) ^ ((t >> 9) - 1u) ^ 1u) % 13u);
+    case 4: return ((t >> 13 | t % 24u) & (t >> 7 | t % 19u)) << 3;
+    case 5: return t * (t ^ (t + (t >> 15 | 1u)) ^ (((t - 1280u) ^ t) >> 10));
+    case 6: return (t * (0xCA98u >> (t >> 9 & 14u) & 15u)) | t >> 8;
+    case 7: return (t * (t >> 8 | t >> 9) & 46u & t >> 8) ^ ((t & t >> 13) | t >> 6);
+    case 8: return (t >> 4) * (13u & 0x8898A989u >> (t >> 11 & 30u));
+    case 9: return t * (t >> ((8u * ((t >> 15) | (t >> 8))) & 31u) & (20u | (((t >> 19) * 5u) >> (t & 31u)) | t >> 3));
+    case 10: return (t & t % 255u) - (t * 3u & t >> 13 & t >> 6);
+    case 11: return (t * (t >> 9 | t >> 13) & (t >> 6 | t >> 11) & 127u) + ((t >> 4) * (3u + (t >> 12 & 3u)) & 64u);
+    case 12: return t + (t & (t ^ t >> 6)) - t * ((t >> 9) & (t % 16u ? 2u : 6u) & t >> 9);
+    case 13: return t * (t >> 11 & t >> 8 & 123u & t >> 3);
+    case 14: return (t * 9u & t >> 4) | (t * 5u & t >> 7) | (t * 3u & t >> 10);
+    case 15: return (t * ((t & 4096u ? (t % 65536u < 59392u ? 7u : t & 7u) : 16u) + (1u & t >> 14)) >> (3u & -t >> (t & 2048u ? 2 : 10))) | t >> (t & 16384u ? (t & 4096u ? 10 : 3) : 2);   /* (Tejeez) */
+    case 16: return (t * ((3u + (1u ^ (t >> 10 & 5u))) * (a + (3u & t >> 14)))) >> (t >> 8 & 3u);   /* (a: VAR) */
     case 17: return t * ((t >> (a & 15u) | t >> 8) & 63u & t >> 4);
     case 18: return (t * a & t >> 7) | (t * 3u & t >> 10);
     case 19: return (t >> a | t) * (t >> 9 & 7u);
@@ -103,18 +108,23 @@ static __attribute__((noinline)) uint32_t lofi_byte(uint32_t f, uint32_t t, uint
 /* (JIANT 0.5.1) WAVE = FLOAT: floatbeat, bytebeat's smooth sibling: a formula of sines instead of 8-bit integers. Its
  * phase pb runs at half the note (v->ph[0]), so every partial is an integer multiple of it and stays continuous
  * (2 pb: the note); its time T (v->s[2], samples since the note-on) moves the formula: arpeggios of harmonics, FM
- * indices that open and close, beating pairs, rhythms out of bytebeat logic. ALGO picks one of 16 (DUTY / 8), VAR
+ * indices that open and close, beating pairs, rhythms out of bytebeat logic. ALGO picks one of 32 (DUTY / 4; 0.5.1: 16 more), VAR
  * (a 1 .. 16) is its depth; BEND folds T, LOOP holds it in a short window, RES the filter's, as BYTE. Full
  * resolution: no bits, no hold (CHIP leaves it alone) */
 static const char *const N_FLOAT[] = {"F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09", "F10", "F11",
-                                      "F12", "F13", "F14", "F15", "F16", 0};
+                                      "F12", "F13", "F14", "F15", "F16", "F17", "F18", "F19", "F20", "F21", "F22",
+                                      "F23", "F24", "F25", "F26", "F27", "F28", "F29", "F30", "F31", "F32", 0};
 static const param_desc_t LOFI_FALGO = {"ALGO", F_INT, 0, 127, 64, N_FLOAT, 0};   /* = edit[2] (FLOAT) */
+/* .. its CHIP the resolution: 4 bits, 4 bits held over two samples, FULL (smooth, the default), 1 bit, STEP (4 bits and
+ * the stepped envelope) */
+static const char *const N_FCHIP[] = {"4BIT", "4B/2", "FULL", "1BIT", "STEP"};
+static const param_desc_t LOFI_FCHIP = {"CHIP", F_ENUM, 0, 4, 2, N_FCHIP, 0};    /* = edit[0] (FLOAT) */
 #define FPM(x, d) ((uint32_t)((x) * (d)) << 2)          /* a sine (Q15) times d (Q13 of a turn) as a phase */
 static __attribute__((noinline)) int32_t lofi_float(uint32_t f, uint32_t pb, uint32_t T, int32_t a)
 {
     static const uint8_t H[8] = {2, 3, 4, 5, 6, 4, 3, 8};
     uint32_t p2 = pb << 1;
-    switch (f & 15u) {
+    switch (f & 31u) {
     case 0: return sine_i(p2 + FPM(sine_i(p2 << 1), a * 512));                       /* FM 2:1, VAR the index */
     case 1: return sine_i(pb * H[(T >> (15u - (uint32_t)a / 3u)) & 3u]);             /* an arpeggio of harmonics */
     case 2: {                                                                          /* a swelling organ */
@@ -148,7 +158,53 @@ static __attribute__((noinline)) int32_t lofi_float(uint32_t f, uint32_t pb, uin
     }
     case 13: return (sine_i(p2) + sine_i(pb * 3u) + sine_i(p2 * 2u + T * (uint32_t)(a * 1500))) / 3;   /* a drifting pad */
     case 14: return softclip(sine_i(p2) * (1 + a / 2));                              /* a rounded square */
-    default: return sine_i(p2 + FPM((int32_t)(((T >> 8) & (T >> 11)) & 255u) * 128 - 16384, a * 256));   /* bytebeat FM */
+    case 15: return sine_i(p2 + FPM((int32_t)(((T >> 8) & (T >> 11)) & 255u) * 128 - 16384, a * 256));   /* bytebeat FM */
+    case 16: {                                                                         /* three, drifting apart */
+        uint32_t d = T * (uint32_t)(a * 2500);
+        return (sine_i(p2) + sine_i(p2 + d) + sine_i(p2 - d)) / 3;
+    }
+    case 17: return (sine_i(pb) + sine_i(p2) + mulq15(sine_i(pb * 3u), a * 2048)) / 3;   /* sub, note, fifth: an organ */
+    case 18: return sine_i(p2 + FPM(sine_i(p2 + FPM(sine_i(p2), a * 256)), a * 256));   /* FM on itself */
+    case 19: {                                                                         /* a glide through partials */
+        uint32_t x = T >> (6u - (uint32_t)a / 4u), k = 2u + ((x >> 10) & 7u);
+        int32_t w = (int32_t)(x & 1023u) << 5;
+        return mulq15(sine_i(pb * k), 32767 - w) + mulq15(sine_i(pb * (k + 1u)), w);
+    }
+    case 20: {                                                                         /* a gated rhythm, decaying */
+        uint32_t st = T >> 11, on = (0x9A5Bu >> (st & 15u)) & 1u;
+        int32_t e = 32767 - (int32_t)((T & 2047u) << 4);
+        return on ? mulq15(sine_i(p2 + FPM(sine_i(p2 * 2u), a * 256)), e) : 0;
+    }
+    case 21: {                                                                         /* phase distortion (CZ) */
+        uint32_t w = 0x80000000u - (uint32_t)a * 0x07000000u, q = p2;
+        q = q < w ? (uint32_t)(((uint64_t)q << 31) / w) : 0x80000000u + (uint32_t)(((uint64_t)(q - w) << 31) / (0u - w));
+        return sine_i(q);
+    }
+    case 22: return mulq15(sine_i(p2), (sine_i(pb * (uint32_t)(8 + a)) + sine_i(pb * (uint32_t)(20 + a * 2))) >> 1);   /* two formants */
+    case 23: {                                                                         /* a breath of noise in the phase */
+        uint32_t h = (T >> 3) * 2654435761u;
+        return sine_i(p2 + FPM((int32_t)(h >> 17) - 16384, a * 64));
+    }
+    case 24: return (sine_i(pb * 4u) + sine_i(pb * 5u) + sine_i(pb * 6u) + sine_i(p2) * (a / 4)) / (3 + a / 4);   /* a major triad */
+    case 25: return (sine_i(pb * 6u) + sine_i(pb * 7u) + sine_i(pb * 9u) + sine_i(p2) * (a / 4)) / (3 + a / 4);   /* 6:7:9 */
+    case 26: {                                                                         /* bells, breathing */
+        int32_t e = (sine_i(T << (9u + (uint32_t)a / 4u)) + 32768) >> 1;
+        return sine_i(p2 + FPM(sine_i(pb * 7u), mulq15(e, 8192)));
+    }
+    case 27: {                                                                         /* a stepped sine, a + 1 levels */
+        int32_t n = 1 + a / 2, x = sine_i(p2);
+        return (x * n / 32768) * 32767 / n;
+    }
+    case 28: return softclip((sine_i(p2) - mulq15(sine_i(T * (uint32_t)(a * 700)), 26000)) * 3);   /* PWM */
+    case 29: {                                                                         /* random partials, held */
+        uint32_t h = ((T >> 12) + 1u) * 2654435761u;
+        return sine_i(pb * (2u + (h >> 28) % (uint32_t)(1 + a / 2)));
+    }
+    case 30: return sine_i((uint32_t)(((uint64_t)p2 * (uint32_t)(8 + a)) >> 3));   /* sync: a sine reset each cycle */
+    default: {                                                                         /* three against four */
+        int32_t e3 = 32767 - (int32_t)((T % 3072u) * 10u), e4 = 32767 - (int32_t)((T & 4095u) << 3);
+        return (mulq15(sine_i(p2), e4) + mulq15(sine_i(pb * (uint32_t)(3 + a / 4)), e3 > 0 ? e3 : 0)) >> 1;
+    }
     }
 }
 #undef FPM
@@ -187,9 +243,10 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
     uint32_t bs = p[P_E6] ? 13u - (uint32_t)p[P_E6] / 11u : 0u;   /* BEND: the fold's shift, 13 .. 2 (0: none) */
     int32_t held = v->s[0], cnt = v->s[1], ic1 = v->s[4], ic2 = v->s[5], l1 = v->s[3], l2 = (int32_t)v->ph[2];
     uint32_t lm = p[P_E7] ? (1u << (17u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: t's window */
+    uint32_t t0 = (uint32_t)BYTE_T0[f & 31u] << 9;    /* (0.5.1: the formula's start) */
     for (i = 0; i < n; i++) {
         if (--cnt <= 0) {
-            uint32_t tl = tt & lm, tw = bs ? tl ^ (tl >> bs) : tl;
+            uint32_t tl = (tt & lm) + t0, tw = bs ? tl ^ (tl >> bs) : tl;
             int32_t s = (int32_t)(lofi_byte(f, tw, a) & 255u) * 256 - 32640;
             cnt = hold;
             if (bits < 8)
@@ -219,18 +276,27 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
                                                        const vmod_t *m, uint32_t inc, const tsvf_t *flt)
 {
     const int16_t *p = t->p;
-    uint32_t f = (uint32_t)p[P_E2] >> 3, pb = v->ph[0], T = (uint32_t)v->s[2], i, hi = inc >> 1;
+    uint32_t f = (uint32_t)p[P_E2] >> 2, pb = v->ph[0], T = (uint32_t)v->s[2], i, hi = inc >> 1;
     int32_t a = 1 + (p[P_E3] >> 3), ic1 = v->s[4], ic2 = v->s[5];
     uint32_t ft = (uint32_t)p[P_FTYPE] & 3u;
     int32_t rs = 50 + p[P_E5] * 77 / 127, kd = 8192 - (p[P_FRES] > rs ? p[P_FRES] : rs) * 7600 / 127;
     uint32_t bs = p[P_E6] ? 13u - (uint32_t)p[P_E6] / 11u : 0u;
     uint32_t lm = p[P_E7] ? (1u << (19u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;
+    uint32_t chip = (uint32_t)p[P_E0], qs = chip == CHIP_8BIT ? 0u : chip == CHIP_1BIT ? 15u : 12u;   /* (CHIP: the bits) */
+    int32_t held = v->s[0];
     for (i = 0; i < n; i++, T++, pb += hi) {
         uint32_t tl = T & lm, tw = bs ? tl ^ (tl >> bs) : tl;
-        int32_t s = lofi_float(f, pb, tw, a);
+        int32_t s = held;
+        if (chip != CHIP_4B2 || !(T & 1u)) {            /* (4B/2: held over two samples) */
+            s = lofi_float(f, pb, tw, a);
+            if (qs)
+                s = ((s + (1 << (qs - 1u))) >> qs) << qs;
+            held = s;
+        }
         out[i] += voice_amp(soft_knee(svf_mode(flt, s >> 1, &ic1, &ic2, ft, kd), 16000) << 1, m, i);
     }
     v->ph[0] = pb;
+    v->s[0] = held;
     v->s[2] = (int32_t)T;
     v->s[4] = ic1;
     v->s[5] = ic2;
@@ -238,8 +304,8 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
 
 static const param_desc_t *lofi_desc(const track_t *t, uint32_t k)
 {
-    if (t->p[P_E1] == RW_FLOAT && (k == 2u || k == 3u))
-        return k == 2u ? &LOFI_FALGO : &LOFI_VAR;
+    if (t->p[P_E1] == RW_FLOAT && (k == 0u || k == 2u || k == 3u))
+        return k == 0u ? &LOFI_FCHIP : k == 2u ? &LOFI_FALGO : &LOFI_VAR;
     if (t->p[P_E1] == RW_BYTE && (k == 2u || k == 3u))
         return k == 2u ? &LOFI_ALGO : &LOFI_VAR;
     if (k == 4u)
@@ -430,8 +496,8 @@ static const preset_t LOFI_PRESETS[] = {
     {"BYTE TONE", {2, 5, 40, 30, 90, 90, 0, 80}, {0, 70, 100, 40}, 0, 1, FX(0, 0, 30, 20), PAT(4)},
     /* (JIANT 0.5.1, appended) FLOAT: F01 FM 2:1 (VAR 40: a = 6); F02 an arpeggio of harmonics; F14 a drifting pad */
     {"FLOAT FM", {2, 6, 0, 40, 110, 20, 0, 0}, {0, 60, 90, 40}, 0, 1, FX(0, 15, 25, 25), PAT(4)},
-    {"FLOAT ARP", {2, 6, 8, 70, 110, 30, 0, 0}, {0, 50, 80, 50}, 0, 1, FX(0, 25, 30, 30), PAT(3)},
-    {"FLOAT PAD", {2, 6, 104, 30, 96, 10, 0, 0}, {60, 90, 110, 90}, 0, 1, FX(30, 10, 50, 40), PAT(3)},
+    {"FLOAT ARP", {2, 6, 4, 70, 110, 30, 0, 0}, {0, 50, 80, 50}, 0, 1, FX(0, 25, 30, 30), PAT(3)},
+    {"FLOAT PAD", {2, 6, 52, 30, 96, 10, 0, 0}, {60, 90, 110, 90}, 0, 1, FX(30, 10, 50, 40), PAT(3)},
 };
 
 static const engine_t ENG_LOFI = {

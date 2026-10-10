@@ -877,7 +877,7 @@ static void mix_part(track_t *t, uint32_t n)
  * it plays (ms_clock: in time with the bar), free while stopped; dx_mot_v (eng_drum.c) the MORPH offset, +-DPTH/2 */
 static uint32_t dx_mot_free, dx_mot_cyc;
 static int32_t dx_mot_sh;
-static void dx_mot_block(uint32_t n)
+static __attribute__((noinline)) void dx_mot_block(uint32_t n)
 {
     static const uint8_t Q8[9] = {0, 64, 32, 16, 8, 4, 2, 1, 1};   /* the cycle in 1/16 notes x 4 .. (1/32: half) */
     uint32_t r = dx_mot[XM_RATE], len, pos, ph, cyc;

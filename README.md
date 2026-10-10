@@ -15,12 +15,27 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.5.1).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.5.2).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
 
 ## Changelog
 
 Every update is listed here, newest first.
+
+### v0.5.2
+- **BYTE: new formulas, no silent starts.** The 17 most familiar one-liners (`t*(42&t>>10)`, `t&t>>8` and friends)
+  were replaced by less obvious ones: rhythms and arpeggios after Tejeez, xpansive's "lost in space", a melody of
+  `t>>9` modulo 13, textures built from `t%24` and `t%19`, and more. Each formula now starts where it is already
+  moving: 14 of the 32 used to sit silent for up to half a second after the note; now all 32 sound within 30 ms.
+- **FLOAT: 32 formulas** (16 new): drifting unison, sub-and-fifth organ, self-FM, glides through partials, gated
+  rhythms, CZ-style phase distortion, formants, breath, harmonic chords, breathing bells, stepped sines, PWM, random
+  held partials, hard sync, three-against-four. **CHIP now sets FLOAT's resolution**: FULL (smooth, the default),
+  4BIT, 4B/2, 1BIT, STEP.
+- **LOFI presets in order**: browsing shows the BYTE presets, then FLOAT, then the classic chip sounds.
+- **Parameter check**: NOISE's resonance is now **PEAK** (it sat next to the FILTER page's RES with the same name).
+- **Lighter audio interrupt**: 0.5.1's X-MOD LFO had been compiled into the audio interrupt's inner path with its
+  divisions (its cost estimate almost tripled); it now runs once per block, outside it, and the interrupt is back to
+  its 0.5 budget.
 
 ### v0.5.1
 - **Master no longer smears the mix.** The always-on leveler was riding every hit: measured on the demo song, its
@@ -108,7 +123,7 @@ Eight engines, all synthesis, no samples: **ANALOG, FM6, PHASE, LOFI, VOICE, WHE
 - **PHASE**: phase distortion with **FB** (the output feeds back into the phase: from hard edge to growl).
 - **LOFI**: 1, 4 and 8-bit chip with **BYTE** (bytebeat: 32 formulas picked with ALGO and bent with VAR). In BYTE,
   **BEND** folds time, **RES** adds filter resonance and **LOOP** repeats a short stretch of the formula: the noise
-  becomes a tone tuned to the note. **FLOAT** (0.5.1) is floatbeat: 16 smooth formulas of sines, tuned to the note.
+  becomes a tone tuned to the note. **FLOAT** (0.5.1) is floatbeat: 32 smooth formulas of sines, tuned to the note.
 - **VOICE** (formants, after klattsch), **WHEEL** (drawbar organ) and **NOISE** (coloured and metallic noise).
 - **FILTER on every engine** (EDIT > FILTER): **TYPE** LP, HP, BP or **COMB** (a comb tuned to the note you're
   playing; CUT moves it ±32 semitones and RES is how much it rings), **CUT** and **RES**. On ANALOG it's its per-voice
@@ -266,9 +281,11 @@ each layer.
 note. Use the FILTER page for the cutoff.
 
 **LOFI FLOAT** (WAVE on FLOAT): the same knobs, but the formulas are smooth sines instead of 8-bit integers. ALGO
-picks one of 16 (F01 FM, F02 harmonic arpeggio, F05 wavefold, F07 odd harmonics building up, F11 stacked FM, F13
-pluck, F14 drifting pad, F16 bytebeat-driven FM…), VAR is how deep or fast it moves, LOOP freezes its evolution into
-a short cycle.
+picks one of 32 (F01 FM, F02 harmonic arpeggio, F05 wavefold, F07 odd harmonics building up, F11 stacked FM, F13
+pluck, F14 drifting pad, F16 bytebeat-driven FM, F17 drifting unison, F19 self-FM, F21 rhythmic gate, F22 phase
+distortion, F25 major triad, F27 breathing bells, F29 PWM, F31 hard sync, F32 three against four…), VAR is how deep
+or fast it moves, LOOP freezes its evolution into a short cycle. CHIP sets the resolution: FULL is smooth, 4BIT and
+1BIT crush it.
 
 ### 4. DRUM-X drums
 - Set a track to DRUM. **KNOB 1 MORPH** goes from side A to side B of the whole kit: it's the knob to play live.
