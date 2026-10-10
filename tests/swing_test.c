@@ -106,11 +106,12 @@ static int test_slicer(void)
         host_tracks_init();
         song.g[G_BPM] = 97;
         set_swing(&trk[0], C[c][0], C[c][1]);
-        trk[0].p[P_SLRATE] = 1;
+        trk[0].p[P_SSWING] = 0;                      /* (JIANT 0.6.3: the bus follows the global SWING alone) */
+        song.g[G_SLRATE] = 1;
         memset(&s, 0, sizeof s);
         s.idx = 15;
         for (k = 0; k < 32u; k++) {
-            sl_enter(&trk[0], &s, 0);
+            sl_enter(&s, 0);
             lens += s.len != step_samples(&trk[0], s.base, s.idx);
         }
     }
@@ -118,14 +119,13 @@ static int test_slicer(void)
 
     host_tracks_init();
     song.g[G_BPM] = 131;
-    for (k = 0; k < NTRK; k++) {                     /* every track past 100 in sum, the SLICER on */
+    for (k = 0; k < NTRK; k++) {                     /* (JIANT 0.6.3: the bus follows the global SWING alone) */
         trk[k].p[P_SLEN] = 16;
-        trk[k].p[P_SLRATE] = 1;
-        trk[k].p[P_SLCR] = SL_GATE;
-        trk[k].p[P_SLPAT] = (int16_t)(3u + k);
-        trk[k].p[P_SLDEPTH] = 127;
-        trk[k].p[P_SSWING] = (int16_t)(40 + 20 * k);
+        trk[k].p[P_SSWING] = 0;
     }
+    song.g[G_SLMODE] = SL_GATE;
+    song.g[G_SLPAT] = 3;
+    song.g[G_SLRATE] = 1;
     song.g[G_SWING] = 100;
     slicer_reset();
     transport_req = 1;
@@ -134,12 +134,12 @@ static int test_slicer(void)
         mix_block(o, CTL);
         blocks++;
         for (k = 0; k < NTRK; k++) {                 /* the SLICER step that holds the block's first sample */
-            uint32_t idx = sl[k].pos >= CTL ? sl[k].idx : (sl[k].idx + 15u) & 15u;
+            uint32_t idx = sl.pos >= CTL ? sl.idx : (sl.idx + 15u) & 15u;
             miss += idx != trk[k].seq_idx % 16u;
         }
     }
     transport_req = 2;
-    bad += check("SLICER on the sequencer's step, SWG 40..100 + global 100, 131 BPM, 4 tracks", !miss && blocks > 1000u);
+    bad += check("SLICER on the sequencer's step, global SWING 100, 131 BPM, every track", !miss && blocks > 1000u);
     return bad;
 }
 

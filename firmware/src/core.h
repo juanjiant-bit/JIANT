@@ -97,8 +97,13 @@ enum {                          /* global parameters */
     G_RFILT, G_RWIDE,           /* (JIANT 0.3) the reverb's tone (darker / brighter) and width, */
     G_DPIT, G_DSPRY,            /* the delay's grains: their pitch (0: a plain delay) and spray */
     G_STRN,                     /* (JIANT 0.4) every sequence moved this many steps of its scale (seq.c seq_step) */
+    G_SLMODE, G_SLPAT, G_SLRATE, G_SLDEP,   /* (JIANT 0.6.3) the SLICER, one on a bus (slicer.c): OFF / GATE / STUT, its */
+    G_SLT1, G_SLT6 = G_SLT1 + 5, G_SLFX,    /* pattern, step, depth; which tracks go in (and FX: the delay, reverb and */
+    G_SLPLEN, G_SLPQ,                       /* chorus returns); the repeats' pitch sequence: its length, CHR / SCL, */
+    G_SLP0, G_SLP15 = G_SLP0 + 15,          /* its 16 steps (semitones) */
     G_COUNT
 };
+#define G_SL_N (G_SLP15 + 1 - G_SLMODE)     /* the SLICER's globals (stored together: project.c, song_chain.c) */
 #define G_SYNC G_DREL                   /* (the old names, for the formats' importers and their tests) */
 #define G_ENGGO G_CLIP
 #define G_DRLVL G_PUNCH

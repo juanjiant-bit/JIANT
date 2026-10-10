@@ -32,7 +32,7 @@
 #define FELUCCA_ID "FM-1_900"    /* package identity (build.py: the .fwsc marker string) */
 #endif
 #ifndef FELUCCA_VERSION
-#define FELUCCA_VERSION "v0.6.2" /* JIANT's (based on Felucca 1.1.5.1): the splash, the menu, the console, the editor */
+#define FELUCCA_VERSION "v0.6.3" /* JIANT's (based on Felucca 1.1.5.1): the splash, the menu, the console, the editor */
 #endif
 #if FELUCCA_OTA && !FELUCCA_FLASH
 #error "FELUCCA_OTA needs FELUCCA_FLASH"
@@ -62,7 +62,7 @@
 #include "params.c"
 #include "mod.c"               /* the modulation matrix, used by voice.c and fx.c */
 #include "voice.c"
-#include "slicer.c"              /* per-track SLICER insert, used by fx.c */
+#include "slicer.c"              /* the SLICER, one on a bus (JIANT 0.6.3), used by fx.c */
 #include "fx.c"
 
 /* ------------------------------------------------- MIDI, sequencer --- */

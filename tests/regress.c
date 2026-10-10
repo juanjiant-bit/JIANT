@@ -243,15 +243,15 @@ static void job_slicer(const job_t *j)
     host_tracks_init();
     host_preset(t, j->e, j->pi);
     t->p[P_AMODE] = 0;
-    for (i = 0; i < 4u; i++)
-        t->p[P_SLCR + i] = S[j->arg][i];
+    for (i = 0; i < 4u; i++)                     /* (JIANT 0.6.3: the bus's; everything in) */
+        song.g[G_SLMODE + i] = S[j->arg][i];
     phrase(t, 60);
 }
 
 /* the 4-track mix: T1 ANALOG ACID, T2 the power-on pad (TRK_DEF: FM6 PAD since DIGITAL was retired; DIGITAL PAD
  * before) (tied chords), T3 LOFI lead (12 steps against 16),
  * T4 DRUM drums (SAMPLE PERC until 1.0.2); 120 BPM, 4 bars (the hostsim TRACKS demo without the recording), stop, the tail.
- * arg 1: with the SLICER (GATE on the pad, STUT on the acid line and the drums, SWING 20 %) */
+ * arg 1: with the SLICER (0.6.3, the bus: STUT on the acid line and the drums, SWING 20 %) */
 static void job_song(const job_t *j)
 {
     static const uint8_t ACID[16] = {45, 45, 57, 45, 0, 48, 45, 55, 45, 0, 57, 52, 45, 48, 0, 50};
@@ -292,13 +292,12 @@ static void job_song(const job_t *j)
         put_step(td, i, k, n, k ? ST_NOTE : ST_REST, i % 4u == 0u ? SF_ACCENT : 0u);
     }
     if (j->arg) {
-        static const int16_t S[4][4] = {{SL_STUT, 9, 1, 127}, {SL_GATE, 1, 1, 127}, {0, 1, 1, 127},
-                                        {SL_STUT, 12, 2, 110}};
-        for (i = 0; i < NTRK; i++) {
-            uint32_t k;
-            for (k = 0; k < 4u; k++)
-                trk[i].p[P_SLCR + k] = S[i][k];
-        }
+        song.g[G_SLMODE] = SL_STUT;                /* (JIANT 0.6.3: the bus) STUT pattern 9, 1/16 on the acid line */
+        song.g[G_SLPAT] = 9;                       /* and the drums, the pad and the lead dry, the effects' tails free */
+        song.g[G_SLRATE] = 1;
+        song.g[G_SLDEP] = 127;
+        for (i = 0; i <= NTRK; i++)
+            song.g[G_SLT1 + i] = (int16_t)(i == 0u || i == 3u);
         song.g[G_SWING] = 20;
     }
     transport_req = 1;

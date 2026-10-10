@@ -94,7 +94,7 @@ is INT, osc 2's interval −24..24 (was KTR). A project (kit marker below 3, or 
 mark) stored before loads LOFI's TONE as CUT, BEND MASK 0, and ANALOG's KTR as INT 0. VOICE 2 (ALLOC DETUNE PAN MUTE)
 is no page any more: PAN and MUTE on MIXER, the others at their stored values.
 
-**JIANT 0.4: 37 globals** (G 36 STRN, stored behind a 3). **JIANT 0.3: 36 globals.** G_COUNT 36 (G 32..35 above). DRUM's E6 (id P_E0 + 5) is FM, 0..127 (once ACC): its sounds through
+**JIANT 0.6.3: 66 globals**: G 37..65 the SLICER bus (37 SLCR, 38 PAT, 39 RATE, 40 DEPTH, 41..46 T1..T6 and 47 FX ON/OFF, 48 LEN, 49 QNT, 50..65 the pitch steps, -24..24); the track parameters P_SLCR..P_SLDEPTH stay, unused. **JIANT 0.4: 37 globals** (G 36 STRN, stored behind a 3). **JIANT 0.3: 36 globals.** G_COUNT 36 (G 32..35 above). DRUM's E6 (id P_E0 + 5) is FM, 0..127 (once ACC): its sounds through
 harmonic FM, eight ratio bands; a project or user preset saved before loads its DRUM tracks with FM 0.
 
 Projects are FUNB (`46 55 4E 42`, 3840 bytes: FUNA's layout, 96 bytes longer, so everything after the data moved up by

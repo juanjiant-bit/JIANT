@@ -286,29 +286,25 @@ static void stut_at(uint32_t t)
     uint32_t k;
     if (t == 44032u)
         perf_press(PF_R16, 1);
-    if (t > 50000u && t < 80000u)
-        for (k = 0; k < NTRK; k++)
-            if (sl[k].rec_on || sl[k].loop)
-                slicer_ok = 0;
+    (void)k;
+    if (t > 50000u && t < 80000u && (sl.rec_on || sl.loop))
+        slicer_ok = 0;
     if (t > 50000u && t < 80000u && !sl_lent)
         slicer_ok = 0;
     if (t == 80000u)
         perf_press(PF_R16, 0);
-    if (t == 80000u + 320u)
-        for (k = 0; k < NTRK; k++)
-            if (sl_lent || sl[k].rec || sl[k].loop)
-                slicer_ok = 0;
+    if (t == 80000u + 320u && (sl_lent || sl.rec || sl.loop))
+        slicer_ok = 0;
 }
 static int test_slicer(void)
 {
     uint32_t k;
     song_setup();
-    for (k = 0; k < NTRK; k++) {
-        trk[k].p[P_SLCR] = SL_STUT;
-        trk[k].p[P_SLPAT] = 1;
-        trk[k].p[P_SLRATE] = 1;
-        trk[k].p[P_SLDEPTH] = 127;
-    }
+    (void)k;
+    song.g[G_SLMODE] = SL_STUT;                  /* (JIANT 0.6.3: the bus, everything in) */
+    song.g[G_SLPAT] = 1;
+    song.g[G_SLRATE] = 1;
+    song.g[G_SLDEP] = 127;
     slicer_ok = 1;
     song_render(120000, stut_at);
     return check("SLICER STUT: live (no recording, no repeat) while REPEAT has the buffer, dropped after", slicer_ok);
@@ -492,7 +488,7 @@ static int test_misc(void)
         bad += check(what, peak(out_l, 10000, 20000) < 3000);
     }
     {   /* THROW (KNOB 3): the dry mix into the delay and reverb sends; mutes: a track ramps out */
-        static int32_t ml[CTL], mr[CTL], sd[CTL], sr[CTL];
+        static int32_t ml[CTL], mr[CTL], sd[CTL], sr[CTL], z[CTL];
         uint32_t i;
         host_tracks_init();
         perf_reset();
@@ -502,7 +498,7 @@ static int test_misc(void)
             for (i = 0; i < CTL; i++)
                 ml[i] = mr[i] = 8000, sd[i] = sr[i] = 0;
             if (perf_begin(CTL))
-                perf_pre(ml, mr, sd, sr, CTL);
+                perf_pre(ml, mr, z, z, sd, sr, CTL);
         }
         bad += check("KNOB 3 THROW at 100: the dry mix into both sends, full, the dry mix untouched",
                      sd[CTL - 1] > 7900 && sr[CTL - 1] > 7900 && ml[CTL - 1] == 8000 && mr[CTL - 1] == 8000);
