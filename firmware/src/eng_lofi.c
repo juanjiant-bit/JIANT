@@ -9,10 +9,10 @@
  * ADSR curve (lofi_amp), the triangle becomes a 32-step 4-bit staircase, the pulse
  * duties are 12.5 / 25 / 50 / 75 %; CRSH then sets the envelope (shown as "DCY"). */
 static const char *const N_CHIP[] = {"4BIT", "4B/2", "8BIT", "1BIT", "STEP"};
-static const char *const N_RWAVE[] = {"PLS", "TRI", "SAW", "NOIS", "WRAM", "BYTE"};
+static const char *const N_RWAVE[] = {"PLS", "TRI", "SAW", "NOIS", "WRAM", "BYTE", "FLOAT"};
 static const char *const N_RARP[] = {"OFF", "OCT", "MAJ", "MIN"};
 enum { CHIP_4BIT, CHIP_4B2, CHIP_8BIT, CHIP_1BIT, CHIP_STEP };
-enum { RW_PLS, RW_TRI, RW_SAW, RW_NOIS, RW_WRAM, RW_BYTE };
+enum { RW_PLS, RW_TRI, RW_SAW, RW_NOIS, RW_WRAM, RW_BYTE, RW_FLOAT };
 
 /* wave RAM: 16 tables x 32 samples x 4 bits, two samples a byte (high nibble first);
  * our own shapes, from simple formulas (squares, sine, triangle, saws, harmonic sums,
@@ -100,6 +100,59 @@ static __attribute__((noinline)) uint32_t lofi_byte(uint32_t f, uint32_t t, uint
     default: return (t * a >> 4 | t >> 3) ^ (t >> 7 & t >> 11);
     }
 }
+/* (JIANT 0.5.1) WAVE = FLOAT: floatbeat, bytebeat's smooth sibling: a formula of sines instead of 8-bit integers. Its
+ * phase pb runs at half the note (v->ph[0]), so every partial is an integer multiple of it and stays continuous
+ * (2 pb: the note); its time T (v->s[2], samples since the note-on) moves the formula: arpeggios of harmonics, FM
+ * indices that open and close, beating pairs, rhythms out of bytebeat logic. ALGO picks one of 16 (DUTY / 8), VAR
+ * (a 1 .. 16) is its depth; BEND folds T, LOOP holds it in a short window, RES the filter's, as BYTE. Full
+ * resolution: no bits, no hold (CHIP leaves it alone) */
+static const char *const N_FLOAT[] = {"F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09", "F10", "F11",
+                                      "F12", "F13", "F14", "F15", "F16", 0};
+static const param_desc_t LOFI_FALGO = {"ALGO", F_INT, 0, 127, 64, N_FLOAT, 0};   /* = edit[2] (FLOAT) */
+#define FPM(x, d) ((uint32_t)((x) * (d)) << 2)          /* a sine (Q15) times d (Q13 of a turn) as a phase */
+static __attribute__((noinline)) int32_t lofi_float(uint32_t f, uint32_t pb, uint32_t T, int32_t a)
+{
+    static const uint8_t H[8] = {2, 3, 4, 5, 6, 4, 3, 8};
+    uint32_t p2 = pb << 1;
+    switch (f & 15u) {
+    case 0: return sine_i(p2 + FPM(sine_i(p2 << 1), a * 512));                       /* FM 2:1, VAR the index */
+    case 1: return sine_i(pb * H[(T >> (15u - (uint32_t)a / 3u)) & 3u]);             /* an arpeggio of harmonics */
+    case 2: {                                                                          /* a swelling organ */
+        int32_t w = (sine_i(T << (9u + (uint32_t)a / 3u)) + 32768) >> 1;   /* (VAR: the swell's speed) */
+        return (sine_i(p2) + mulq15(sine_i(p2 * 2u), w) + mulq15(sine_i(p2 * 3u), 32767 - w)) / 2;
+    }
+    case 3: {                                                                          /* a sub and a ringing bell */
+        int32_t e = 32767 - (int32_t)((T >> 2) < 32767u ? T >> 2 : 32767u);
+        return (sine_i(pb) + mulq15(sine_i(pb * (uint32_t)(5 + a)), mulq15(e, e))) >> 1;   /* (VAR: the bell's partial) */
+    }
+    case 4: return sine_i(FPM(sine_i(p2), 2048 + a * 512));                          /* a wavefolded sine */
+    case 5: return mulq15(sine_i(p2), sine_i(T * (uint32_t)(a * 20000)));            /* ring with a slow sine */
+    case 6: return (sine_i(p2) + sine_i(p2 + T * (uint32_t)(a * 9000))) >> 1;        /* a beating pair */
+    case 7: {                                                                          /* odd harmonics, built up */
+        uint32_t k, nh = 1u + ((T >> (15u - (uint32_t)a / 4u)) & 3u);
+        int32_t y = 0;
+        for (k = 0; k < nh; k++)
+            y += sine_i(p2 * (2u * k + 1u)) / (int32_t)(2u * k + 1u);
+        return y * 3 >> 2;
+    }
+    case 8: return sine_i(p2 + FPM(sine_i(p2 * 3u), (sine_i(T << 12) + 32768) * a >> 6));   /* FM 3:1, breathing */
+    case 9: return mulq15(sine_i(p2), sine_i(pb * (uint32_t)(8 + a * 2)));          /* a vowel-like buzz */
+    case 10: {                                                                         /* a melody of harmonics */
+        uint32_t sh = 14u - (uint32_t)a / 4u;
+        return sine_i(pb * H[((T >> sh) ^ (T >> (sh + 2u))) & 7u]);
+    }
+    case 11: return sine_i(p2 + FPM(sine_i(pb * 3u + FPM(sine_i(pb * 5u), a * 256)), a * 256));   /* FM, stacked */
+    case 12: {                                                                         /* a pluck: brightness decays */
+        int32_t e = 32767 - (int32_t)((T >> 1) < 32767u ? T >> 1 : 32767u);
+        return sine_i(p2 + FPM(sine_i(p2), mulq15(e, a * 1024)));
+    }
+    case 13: return (sine_i(p2) + sine_i(pb * 3u) + sine_i(p2 * 2u + T * (uint32_t)(a * 1500))) / 3;   /* a drifting pad */
+    case 14: return softclip(sine_i(p2) * (1 + a / 2));                              /* a rounded square */
+    default: return sine_i(p2 + FPM((int32_t)(((T >> 8) & (T >> 11)) & 255u) * 128 - 16384, a * 256));   /* bytebeat FM */
+    }
+}
+#undef FPM
+
 /* (JIANT 0.4) the filter and the deformations, for every wave: CUT a resonant low-pass (the ENV / LFO / matrix move it
  * as a synth's), BEND (BYTE: the time folded on itself, t ^ t >> s, new melodies and rhythms out of the same formula;
  * the other waves: the phase bent towards the cycle's start, as phase distortion: brighter, nasal), MASK (the 8-bit
@@ -161,13 +214,37 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
     v->ph[0] = tf;
 }
 
+/* FLOAT's samples (lofi_render's set-up done: inc the note's, the filter): pb in v->ph[0], T in v->s[2] */
+static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, int32_t *out, uint32_t n,
+                                                       const vmod_t *m, uint32_t inc, const tsvf_t *flt)
+{
+    const int16_t *p = t->p;
+    uint32_t f = (uint32_t)p[P_E2] >> 3, pb = v->ph[0], T = (uint32_t)v->s[2], i, hi = inc >> 1;
+    int32_t a = 1 + (p[P_E3] >> 3), ic1 = v->s[4], ic2 = v->s[5];
+    uint32_t ft = (uint32_t)p[P_FTYPE] & 3u;
+    int32_t rs = 50 + p[P_E5] * 77 / 127, kd = 8192 - (p[P_FRES] > rs ? p[P_FRES] : rs) * 7600 / 127;
+    uint32_t bs = p[P_E6] ? 13u - (uint32_t)p[P_E6] / 11u : 0u;
+    uint32_t lm = p[P_E7] ? (1u << (19u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;
+    for (i = 0; i < n; i++, T++, pb += hi) {
+        uint32_t tl = T & lm, tw = bs ? tl ^ (tl >> bs) : tl;
+        int32_t s = lofi_float(f, pb, tw, a);
+        out[i] += voice_amp(soft_knee(svf_mode(flt, s >> 1, &ic1, &ic2, ft, kd), 16000) << 1, m, i);
+    }
+    v->ph[0] = pb;
+    v->s[2] = (int32_t)T;
+    v->s[4] = ic1;
+    v->s[5] = ic2;
+}
+
 static const param_desc_t *lofi_desc(const track_t *t, uint32_t k)
 {
+    if (t->p[P_E1] == RW_FLOAT && (k == 2u || k == 3u))
+        return k == 2u ? &LOFI_FALGO : &LOFI_VAR;
     if (t->p[P_E1] == RW_BYTE && (k == 2u || k == 3u))
         return k == 2u ? &LOFI_ALGO : &LOFI_VAR;
     if (k == 4u)
         return &LOFI_NONE;
-    if (t->p[P_E1] == RW_BYTE && (k == 5u || k == 7u))
+    if ((t->p[P_E1] == RW_BYTE || t->p[P_E1] == RW_FLOAT) && (k == 5u || k == 7u))
         return k == 5u ? &LOFI_RES : &LOFI_LOOP;
     if (k == 2u && t->p[P_E1] == RW_WRAM)
         return &LOFI_WAVNUM;
@@ -186,7 +263,9 @@ static void lofi_note_on(track_t *t, voice_t *v)
 {
     v->s[0] = 0;                 /* held sample */
     v->s[1] = 0;                 /* hold counter */
-    v->s[2] = t->p[P_E1] == RW_BYTE ? 0 : 0x7FFF;   /* LFSR (BYTE: its time t, from 0) */
+    v->s[2] = t->p[P_E1] >= RW_BYTE ? 0 : 0x7FFF;   /* LFSR (BYTE, FLOAT: its time t, from 0) */
+    if (t->p[P_E1] == RW_FLOAT)
+        v->ph[0] = 0;                                    /* (FLOAT: its phase from the start) */
     v->s[3] = 0;                 /* (BYTE: its smoothing's first pole; SWEEP retired in 0.4) */
     v->ph[2] = 0;                /* (.. its second) */
     v->s[4] = v->s[5] = 0;       /* (JIANT 0.4) the filter's two states */
@@ -261,7 +340,7 @@ static void lofi_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     }
     inc = pitch_inc(clamp(m->pitch16, 0, 2047));       /* (the vibrato below; the track's LFO in m->pitch16 already) */
     {                                                   /* (JIANT 0.5) its RES the FILTER page's (or BYTE's, the more) */
-        int32_t rs = wave == RW_BYTE ? 50 + p[P_E5] * 77 / 127 : 50;
+        int32_t rs = wave >= RW_BYTE ? 50 + p[P_E5] * 77 / 127 : 50;
         if (p[P_FRES] > rs) rs = p[P_FRES];
         tsvf_coef(&flt, (p[P_FCUT] << 8) + m->cutoff, rs);   /* (JIANT 0.5: the FILTER page's CUT, was E4) */
         kd = 8192 - rs * 7600 / 127;
@@ -269,9 +348,13 @@ static void lofi_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
                                                          * resonance (BYTE: RES up to the edge) */
     if (p[P_E6])
         lofi_bend_set(&bd, p[P_E6]);
-    if (p[P_E5] && wave != RW_BYTE)                     /* (BYTE: VIB's slot is RES) */
+    if (p[P_E5] && wave < RW_BYTE)                      /* (BYTE, FLOAT: VIB's slot is RES) */
         inc += (uint32_t)(((int32_t)(inc >> 12) * (((osc_sine(v->ph[1]) >> 8) * p[P_E5]) >> 4)) >> 4);   /* no overflow */
     v->ph[1] += 0x01000000u;
+    if (wave == RW_FLOAT) {                             /* (JIANT 0.5.1) floatbeat */
+        lofi_float_render(t, v, out, n, m, inc, &flt);
+        return;
+    }
     if (wave == RW_BYTE) {                              /* (JIANT 0.4) bytebeat */
         lofi_byte_render(t, v, out, n, m, inc, 1 + (chip == 1u ? 1 : 0), bits, &flt);
         return;
@@ -345,6 +428,10 @@ static const preset_t LOFI_PRESETS[] = {
     {"STEP LEAD", {4, 0, 40, 34, 127, 16, 0, 0}, {0, 64, 127, 55}, 0, 1, FX(0, 0, 40, 20), PAT(4)},
     /* (JIANT 0.5, appended: the stored numbers stay) BYTE B11 looped (LOOP 80: a short cycle, a tone at the note), resonant */
     {"BYTE TONE", {2, 5, 40, 30, 90, 90, 0, 80}, {0, 70, 100, 40}, 0, 1, FX(0, 0, 30, 20), PAT(4)},
+    /* (JIANT 0.5.1, appended) FLOAT: F01 FM 2:1 (VAR 40: a = 6); F02 an arpeggio of harmonics; F14 a drifting pad */
+    {"FLOAT FM", {2, 6, 0, 40, 110, 20, 0, 0}, {0, 60, 90, 40}, 0, 1, FX(0, 15, 25, 25), PAT(4)},
+    {"FLOAT ARP", {2, 6, 8, 70, 110, 30, 0, 0}, {0, 50, 80, 50}, 0, 1, FX(0, 25, 30, 30), PAT(3)},
+    {"FLOAT PAD", {2, 6, 104, 30, 96, 10, 0, 0}, {60, 90, 110, 90}, 0, 1, FX(30, 10, 50, 40), PAT(3)},
 };
 
 static const engine_t ENG_LOFI = {
@@ -352,7 +439,7 @@ static const engine_t ENG_LOFI = {
     .page_title = {"CHIP", "TONE"},
     .edit = {
         {"CHIP", F_ENUM, 0, 4, 0, N_CHIP, 0},
-        {"WAVE", F_ENUM, 0, 5, 0, N_RWAVE, 0},
+        {"WAVE", F_ENUM, 0, 6, 0, N_RWAVE, 0},
         {"DUTY", F_INT, 0, 127, 64, 0, 0},              /* WRAM: the table, DUTY / 8 (lofi_desc) */
         {"CRSH", F_PCT, 0, 127, 0, 0, 0},               /* STEP: the envelope (lofi_desc) */
         {"CUT", F_CUTOFF, 0, 127, 110, 0, 0},          /* (JIANT 0.4: the filter, was SWP) */

@@ -269,7 +269,7 @@ static const genome_t LANE_G[8] = {
 static void graph_colony(const track_t *t, int32_t sel)
 {
     const drum_lane_t *K = drum_kit_of(t);
-    int32_t morph = clamp(t->p[P_E0], 0, 127), mx = 30 + morph * 180 / 127;
+    int32_t morph = clamp(t->p[P_E0] + dx_mot_v, 0, 127), mx = 30 + morph * 180 / 127;   /* (0.5.1: X-MOD live) */
     uint32_t l;
     cv_rect(30, 12, 180, 1, T_LINE);                     /* MORPH: A .. B */
     cv_rect(30, 11, mx - 30, 3, heat_col(morph * 2));

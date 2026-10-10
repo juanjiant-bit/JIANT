@@ -1314,7 +1314,10 @@ static void ui_input_frame(void)
             } else if (kind == CF_INIT_SOUND) {         /* (DRUM: the factory DRUM-X kit too) */
                 if (!chain_busy()) {
                     set_engine(TSEL->eng_req);
-                    if (drum_track(TSEL)) memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+                    if (drum_track(TSEL)) {
+                        memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+                        memset(dx_mot, 0, sizeof dx_mot);   /* (0.5.1: X-MOD off) */
+                    }
                     ui_message("SOUND INIT");
                 }
             } else if (kind == CF_RECALL_SOUND) {       /* the section's stored sound (ui_layer.c EDIT) */
