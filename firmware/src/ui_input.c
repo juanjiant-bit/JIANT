@@ -965,7 +965,8 @@ static void presets_turn(int32_t s)
 }
 
 /* (JIANT 0.5) SELECT off HOME: the selected track's sound diced. DRUM-X: both patches (A, B) of every sound, each
- * value moved up to +-40 from the factory kit's, the wave changed one time in five; a synth: one of its engine's
+ * value moved up to +-40 from the factory kit's (COLOR up 12 at most: no knife edges), the wave one time in five
+ * SINE or FM; a synth: one of its engine's
  * factory presets, then each engine parameter moved up to a quarter of its range (an ENUM: another value, one time in
  * three). Musical by construction: always near a sound that works */
 static int32_t dice_by(int32_t v, int32_t lo, int32_t hi, int32_t span)
@@ -980,11 +981,12 @@ static void sound_dice(void)
         for (l = 0; l < 8u; l++) {
             const dx_lane_t *D = &DX_KIT_DEF[l];
             dx_lane_t *L = &dx_kit[l];
-            for (i = 0; i < DXP_N; i++) {
-                L->a[i] = (uint8_t)dice_by(D->a[i], 0, 127, 40);
-                L->b[i] = (uint8_t)dice_by(D->b[i], 0, 127, 40);
-            }
-            L->mode = (uint8_t)((D->mode & ~3u) | (rng() % 5u ? (D->mode & 3u) : rng() % 4u));
+            for (i = 0; i < DXP_N; i++) {               /* (COLOR: the brightness, down 40 but up 12 at most) */
+                int32_t up = i == DXP_COLOR ? 12 : 127;
+                L->a[i] = (uint8_t)dice_by(D->a[i], 0, D->a[i] + up < 127 ? D->a[i] + up : 127, 40);
+                L->b[i] = (uint8_t)dice_by(D->b[i], 0, D->b[i] + up < 127 ? D->b[i] + up : 127, 40);
+            }                                            /* (a new wave: SINE or FM, the gentle two) */
+            L->mode = (uint8_t)((D->mode & ~3u) | (rng() % 5u ? (D->mode & 3u) : rng() % 2u));
         }
         ui_message("KIT DICED");
         return;

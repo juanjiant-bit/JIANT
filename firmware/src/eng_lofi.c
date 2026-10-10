@@ -132,7 +132,7 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
     uint32_t ft = (uint32_t)p[P_FTYPE] & 3u;            /* (JIANT 0.5) the FILTER's type (COMB: open, voice.c combs) */
     int32_t kd = 8192 - (p[P_FRES] > 50 + p[P_E5] * 77 / 127 ? p[P_FRES] : 50 + p[P_E5] * 77 / 127) * 7600 / 127;
     uint32_t bs = p[P_E6] ? 13u - (uint32_t)p[P_E6] / 11u : 0u;   /* BEND: the fold's shift, 13 .. 2 (0: none) */
-    int32_t held = v->s[0], cnt = v->s[1], ic1 = v->s[4], ic2 = v->s[5];
+    int32_t held = v->s[0], cnt = v->s[1], ic1 = v->s[4], ic2 = v->s[5], l1 = v->s[3], l2 = (int32_t)v->ph[2];
     uint32_t lm = p[P_E7] ? (1u << (17u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: t's window */
     for (i = 0; i < n; i++) {
         if (--cnt <= 0) {
@@ -146,8 +146,13 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
         tf += ti;
         tt += tf >> 24;
         tf &= 0xFFFFFFu;
-        out[i] += voice_amp(soft_knee(svf_mode(flt, held >> 1, &ic1, &ic2, ft, kd), 16000) << 1, m, i);
+        l1 += ((held >> 1) - l1) * 19500 >> 15;        /* (JIANT 0.5) the 8-bit steps rounded: two one-poles at
+                                                         * ~6 kHz before the filter (BYTE was knife-sharp) */
+        l2 += (l1 - l2) * 19500 >> 15;
+        out[i] += voice_amp(soft_knee(svf_mode(flt, l2, &ic1, &ic2, ft, kd), 16000) << 1, m, i);
     }
+    v->s[3] = l1;
+    v->ph[2] = (uint32_t)l2;
     v->s[0] = held;
     v->s[1] = cnt;
     v->s[2] = (int32_t)tt;
@@ -182,7 +187,8 @@ static void lofi_note_on(track_t *t, voice_t *v)
     v->s[0] = 0;                 /* held sample */
     v->s[1] = 0;                 /* hold counter */
     v->s[2] = t->p[P_E1] == RW_BYTE ? 0 : 0x7FFF;   /* LFSR (BYTE: its time t, from 0) */
-    v->s[3] = 0;                 /* (unused: SWEEP, retired in 0.4) */
+    v->s[3] = 0;                 /* (BYTE: its smoothing's first pole; SWEEP retired in 0.4) */
+    v->ph[2] = 0;                /* (.. its second) */
     v->s[4] = v->s[5] = 0;       /* (JIANT 0.4) the filter's two states */
     v->s[6] = 15 | (step_period(t->p[P_E3] >> 2) & 15) << 4;   /* stepped env: every note-on restarts it */
     v->s[7] = 0;

@@ -145,7 +145,7 @@ macros and MIDI punch-ins), saved with KNOB 4 on the SONG page or on its own whe
 - **Reverb** with five models: ROOM, SPRING, **SHIMR** (shimmer, goes up an octave on every pass), **RESO** (four
   strings tuned to the song's scale) and **CLOUD** (a granular cloud that can freeze); with pre-delay, modulation,
   filter and width; **chorus**.
-- **Master**: **CLIP** (saturation with level compensation: adds character, not volume), **PNCH** (drum transients),
+- **Master**: **CLIP** (saturation with level compensation: adds character, not volume), **PNCH** (drives the drums into saturation: denser, fatter body),
   **DUCK** (the kick pulls the rest down) and an **always-on leveler** (2:1 compression with automatic make-up, from
   −9 to +6 dB) before the limiter and the soft clip: quiet patches and heavy CLIP play at a consistent volume.
 
@@ -273,7 +273,7 @@ note. Use the FILTER page for the cutoff.
 PRE (pre-delay) and FILT (input tone) work on all of them. Ideas: RESO on the drums so the kit sings in the song's
 key; CLOUD with SIZE at max to freeze a chord and keep playing over it; SHIMR on a slow pad.
 
-**MASTER**: CLIP saturates without raising the volume (the leveler compensates), PNCH accents the drum attacks, DUCK
+**MASTER**: CLIP saturates without raising the volume (the leveler compensates), PNCH fattens the drums (more body and density, the tails stay whole), DUCK
 makes the kick pull the rest down. The leveler is always on: no need to babysit the volume between patches.
 
 ### 7. Sequencing and modulation

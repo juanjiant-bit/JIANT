@@ -34,6 +34,7 @@ typedef struct {                                         /* a hit */
     int32_t ic1, ic2, rng;                               /* the noise filter's state, the noise */
     int32_t mo;                                          /* WARP: the modulator's last output (its feedback) */
     uint32_t ph3;                                        /* (JIANT 0.4) the SINE pitch modulation's phase */
+    int32_t lp;                                          /* (JIANT 0.5) the output's one-pole low-pass state */
     uint8_t live, trig, choke;
 } dx_voice_t;
 
@@ -163,7 +164,8 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
         } else {                                         /* FM: harmonic, every wave */
             uint32_t w = 0u;
             uint32_t ph2 = v->ph2, ratio = (fm ? FM_RATIO[(uint32_t)fm >> 4] : DX_RATIO[wave]) + w * 70u, fb = w << 10;
-            int32_t idx = q[DXP_COLOR] * 3 + (int32_t)w * 3 + (fm ? (((fm & 15) + 4) * 24) : 0), mo = v->mo;
+            int32_t idx = q[DXP_COLOR] * 3 + (int32_t)w * 3 + (fm ? (((fm & 15) + 3) * 12) : 0), mo = v->mo;   /* (JIANT
+                                                          * 0.5: the band's index halved and more, no glassy edge) */
             for (i = 0; i < n; i++, inc += dinc, ga += dga) {
                 mo = sine_i(ph2 + (uint32_t)mo * fb);    /* (up to a turn of feedback; uint32: wraps as a phase) */
                 y[i] = mulq15(sine_i(ph + (uint32_t)(mo * idx) * 512u), ga >> 8);
@@ -178,7 +180,7 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
             for (i = 0; i < n; i++)
                 y[i] = (softclip(y[i] * 3) * 22000) >> 15;
         if (fold) {                                      /* (JIANT 0.5) FOLD: after the envelope, so it follows it */
-            int32_t g = 16 + fold * 2;                   /* (x1 .. x16.9 / 16 .. 17 / 16: Q4) */
+            int32_t g = 16 + (fold * 5 >> 3);            /* (JIANT 0.5: x1 .. x5.9, Q4; was x16.9: aliased hiss) */
             for (i = 0; i < n; i++) {
                 int32_t v = clamp((y[i] * g) >> 4, -5 * 16384, 5 * 16384), a;
                 for (a = 0; a < 3; a++)
@@ -214,6 +216,16 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
         v->ic1 = ic1;
         v->ic2 = ic2;
         v->rng = rng;
+    }
+    {                                                    /* (JIANT 0.5) the edge taken off: a one-pole low-pass at
+                                                          * ~8 kHz on the sound (FM, FOLD and bright noise at 16 kHz
+                                                          * were knife-sharp, the dice's above all) */
+        int32_t lp = v->lp;
+        for (i = 0; i < n; i++) {
+            lp += ((y[i] - lp) * 22300) >> 15;
+            y[i] = lp;
+        }
+        v->lp = lp;
     }
     v->ea = ea1;
     v->en = en1;
