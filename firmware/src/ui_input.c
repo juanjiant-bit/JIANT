@@ -43,6 +43,7 @@ static uint32_t cur_fam(void) { return ui.home ? FAM_HOME : cur_page()->fam; }
 /* (JIANT 0.6.6) a page button held + PRESETS: that family's pages one by one, forwards / back (GLO: the mixer and the
  * global pages), the page shown at once with its title; the button let go stays there (its tap, its layer: not now) */
 static uint8_t ly_used;                                  /* the held layer's knobs or keys used: PRESETS stays its */
+static uint8_t pj_btn = 0xFFu;                           /* the button a page jump was made with: no layer while held */
 static uint32_t held_family(void)
 {
     uint32_t f;
@@ -84,8 +85,23 @@ static void page_jump(uint32_t fam, int32_t s)
     ui.pg_down &= (uint16_t)~(1u << panel.btn[b]);     /* (the button let go: no next page) */
     if (b == B_SEQ) ui.seq_t0 |= 2u;
     if (b == B_SAVE) ui.save_t0 |= 2u;
-    if (ui.ly)                                          /* (a layer's button: no map, no tap) */
-        ui.ly_t0 = (ui.ly_t0 & ~2u) | 8u;               /* (ui_layer.c LY_OPEN off, LY_DEAD) */
+    pj_btn = (uint8_t)b;                                /* (its layer off until it is let go: pj_hold) */
+}
+/* every pass: while the button of a page jump is held its layer stays shut (no map at HOLD, no tap when let go), its
+ * page taps too; let go: free again */
+static void pj_hold(void)
+{
+    if (pj_btn == 0xFFu)
+        return;
+    if (!((fm1_in.buttons >> panel.btn[pj_btn]) & 1u)) {
+        pj_btn = 0xFFu;
+        return;
+    }
+    ui.pg_down &= (uint16_t)~(1u << panel.btn[pj_btn]);
+    if (pj_btn == B_SEQ) ui.seq_t0 |= 2u;
+    if (pj_btn == B_SAVE) ui.save_t0 |= 2u;
+    if (ui.ly)
+        ui.ly_t0 = (ui.ly_t0 & ~2u) | 8u;               /* (ui_layer.c: LY_OPEN off, LY_DEAD) */
 }
 
 static int layer_set_open(void);                       /* (ui_layer.c) */
@@ -1245,6 +1261,7 @@ static void ui_input_frame(void)
         if (f != FAM_COUNT && !ui.menu && !ui.confirm && !name_on() && !ly_used &&
             (ps = panel_enc(EN_PRESET)) != 0)           /* (a layer already used: PRESETS stays its, dropped) */
             page_jump(f, ps);
+        pj_hold();
     }
     lay = layer_held();
     glo = lay && ui.ly == LAYER_GLO;                    /* GLO held: SELECT is the tempo, BPM LOCK or not (#58) */

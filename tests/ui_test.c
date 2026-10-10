@@ -2971,6 +2971,23 @@ static int test_quick_layers(void)
         press(B_ENV); frames(8);
         ok &= str_eq(cur_page()->title, "ENV");         /* (a plain tap: the next page, as always) */
         bad += check("JIANT 0.6.6: a page button held + PRESETS jumps through its pages (no wrap); let go: no tap, no layer; a tap as before", ok);
+        {   /* (0.6.7) turned in the press's own frame, or before HOLD: the map never comes while it is held; held again
+             * afterwards: the layer as always */
+            static const uint8_t LB[5] = {B_FX, B_GLO, B_SCL, B_EDIT, B_LFO};
+            uint32_t q, f2, mx;
+            ok = 1;
+            for (q = 0; q < 5u; q++) {
+                ui_power_on(); go_home(); frames(64);
+                btn_down(LB[q]); turn(EN_PRESET, 1); frame();
+                for (f2 = 0, mx = 0; f2 < 120u; f2++) { frame(); mx |= ui.layer; }
+                btn_up(LB[q]); frames(100);
+                ok &= !mx && !ui.layer && !ui.home;
+                btn_down(LB[q]); frames(800);
+                ok &= ui.layer != 0;
+                btn_up(LB[q]); frames(200);
+            }
+            bad += check("  0.6.7: PRESETS turned as the button goes down: no map at HOLD while held; held again: the layer", ok);
+        }
     }
     /* GLO: mutes latch (lit = sounding), SOLO while held, UNMUTE ALL, TAP, levels, OCT- */
     ui_power_on();

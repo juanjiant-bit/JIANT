@@ -15,12 +15,17 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.6.6).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.6.7).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
 
 ## Changelog
 
 Every update is listed here, newest first.
+
+### v0.6.7
+- **Page jump fix**: once you turn PRESETS with a page button held, that button's layer (its map) stays off until you
+  let the button go, even if you keep holding past the HOLD time or the first turn came at the very moment you pressed
+  it. Hold it again afterwards and the layer works as always.
 
 ### v0.6.6
 - **Jump straight to a page**: hold a page button (ENV, LFO, FX, SCL, EDIT, GLO, SAVE, ARP, SEQ) and turn **PRESETS**
