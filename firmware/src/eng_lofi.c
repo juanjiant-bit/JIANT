@@ -529,10 +529,10 @@ static const preset_t LOFI_PRESETS[] = {
     {"STEP LEAD", {4, 0, 40, 34, 127, 16, 0, 0}, {0, 64, 127, 55}, 0, 1, FX(0, 0, 40, 20), PAT(4)},
     /* (JIANT 0.5, appended: the stored numbers stay) BYTE B11 looped (LOOP 80: a short cycle, a tone at the note), resonant */
     {"BYTE TONE", {2, 5, 40, 0, 64, 0, 0, 80}, {0, 70, 100, 40}, 0, 1, FX(0, 0, 30, 20), PAT(4)},
-    /* (JIANT 0.5.1, appended; 0.5.6 floatbeat) FLOAT: F02 FM whose index walks; F09 two arpeggios, folded a little;
+    /* (JIANT 0.5.1, appended; 0.5.6 floatbeat) FLOAT: F02 FM whose index walks; F03 a nibble-table melody;
      * F29 FM breathing at 1 Hz, slow */
     {"FLOAT FM", {2, 6, 4, 0, 64, 0, 0, 0}, {0, 60, 90, 40}, 0, 1, FX(0, 15, 25, 25), PAT(4)},
-    {"FLOAT ARP", {2, 6, 32, 0, 64, 20, 0, 0}, {0, 50, 80, 50}, 0, 1, FX(0, 25, 30, 30), PAT(3)},
+    {"FLOAT ARP", {2, 6, 8, 0, 64, 0, 0, 0}, {0, 50, 80, 50}, 0, 1, FX(0, 25, 30, 30), PAT(3)},
     {"FLOAT PAD", {2, 6, 112, 0, 40, 0, 0, 0}, {60, 90, 110, 90}, 0, 1, FX(30, 10, 50, 40), PAT(3)},
 };
 
