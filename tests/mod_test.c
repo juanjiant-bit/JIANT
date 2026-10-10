@@ -732,19 +732,18 @@ static void test_byte(void)
           sound >= 30u && early >= 30u && differ == 32u && !over && var >= 28u && motn >= 24u);
 }
 
-/* (JIANT 0.5.1; 0.5.5 intermodulations) LOFI FLOAT: each of the 32 patches sounds over a second (8 steps of 1/16 at
- * 120 BPM, VAR 64), under full scale, unlike its neighbour; its timbre moves from step to step (its brightness, the
- * mean step between samples over the mean level, takes 3+ values over the 8 steps on 24+ of them); VAR (the depth)
- * moves most; MOTN faster, more changes; with VAR 0 (no intermodulation) F01 is in tune with the note (an octave up:
- * about twice the zero crossings) */
-#define FL_N FS
+/* (JIANT 0.5.1; 0.5.6 floatbeat) LOFI FLOAT: each of the 32 formulas sounds over a second, under full scale, unlike its
+ * neighbour; it moves (its brightness, the mean step between samples over the mean level, takes 3+ values over 8
+ * slices of 2 s on 24+ of them); VAR (a mutation of t) moves most; MOTN another sound; F12 (a slow vibrato) in tune with the
+ * note (an octave up: about twice the zero crossings) */
+#define FL_N (2u * FS)
 static void float_run(uint32_t f, int32_t var, int32_t motn, uint32_t note, int32_t *buf)
 {
     uint32_t b, i;
     fresh(3, 0);
     song.g[G_BPM] = 120;
     trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 6; trk[0].p[P_E2] = (int16_t)(f * 4u); trk[0].p[P_E3] = (int16_t)var;
-    trk[0].p[P_E4] = (int16_t)motn; trk[0].p[P_E5] = 0; trk[0].p[P_E6] = trk[0].p[P_E7] = 0;
+    trk[0].p[P_E4] = (int16_t)motn; trk[0].p[P_E5] = 0; trk[0].p[P_E6] = trk[0].p[P_E7] = 0;   /* (DRV 0) */
     trk[0].p[P_FCUT] = 127; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
     trk_note_on(&trk[0], note, 110);
     for (b = 0; b < FL_N / CTL; b++) {
@@ -791,7 +790,7 @@ static void test_float(void)
     for (f = 0; f < 32u; f++) {
         double e = 0, d = 0, dv = 0;
         int32_t pk = 0;
-        float_run(f, 64, 64, 60, cur);
+        float_run(f, 0, 64, 60, cur);
         for (i = 0; i < FL_N; i++) {
             e += (double)cur[i] * cur[i];
             d += fabs((double)cur[i] - prev[i]);
@@ -801,26 +800,32 @@ static void test_float(void)
         differ += f == 0u || d / FL_N > 100.0;
         over += pk >= 32767;
         moving += fl_moves(cur, 8u) >= 3u;
-        float_run(f, 120, 64, 60, alt);
+        float_run(f, 100, 64, 60, alt);
         for (i = 0; i < FL_N; i++)
             dv += fabs((double)alt[i] - cur[i]);
         var += dv / FL_N > 100.0;
         memcpy(prev, cur, sizeof prev);
     }
-    float_run(0, 0, 64, 60, cur);
-    float_run(0, 0, 64, 72, alt);
+    float_run(11, 0, 64, 60, cur);
+    float_run(11, 0, 64, 72, alt);
     c60 = fl_cross(cur, 0, FL_N);
     c72 = fl_cross(alt, 0, FL_N);
-    float_run(0, 64, 64, 60, cur);
-    float_run(0, 64, 110, 60, alt);                     /* (MOTN 110: more steps a second, more changes) */
-    m64 = fl_moves(cur, 32u);
-    m100 = fl_moves(alt, 32u);
+    m64 = m100 = 0;
+    for (f = 0; f < 32u; f++) {                         /* (MOTN 110: its slow bits faster, another sound) */
+        double dm = 0;
+        float_run(f, 0, 64, 60, cur);
+        float_run(f, 0, 110, 60, alt);
+        for (i = 0; i < FL_N; i++)
+            dm += fabs((double)alt[i] - cur[i]);
+        m100 += dm / FL_N > 100.0;
+        m64++;
+    }
     printf("mod:   (FLOAT: %u of 32 sound, %u differ from the one before, %u clip, %u move through 3+ timbres; VAR moves %u; "
-           "crossings C4 %u, C5 %u (VAR 0); 32 slices: MOTN 64 %u timbres, 110 %u)\n",
-           sound, differ, over, moving, var, c60, c72, m64, m100);
-    check("LOFI FLOAT: 32 intermodulation patches sound, each its own, none clips, their timbre moves (24+ through 3+); VAR "
-          "moves most (26+); MOTN faster; in tune with the note",
-          sound >= 31u && differ >= 30u && !over && moving >= 24u && var >= 26u && m100 > m64 &&
+           "crossings C4 %u, C5 %u (F12); MOTN moves %u of %u)\n",
+           sound, differ, over, moving, var, c60, c72, m100, m64);
+    check("LOFI FLOAT: 32 floatbeat formulas sound, each its own, none clips, they move (24+ through 3+ timbres); VAR "
+          "mutates most (26+); MOTN moves most (24+); in tune with the note",
+          sound >= 31u && differ >= 30u && !over && moving >= 24u && var >= 26u && m100 >= 24u &&
           c72 > c60 * 17u / 10u && c72 < c60 * 23u / 10u);
 }
 

@@ -104,15 +104,13 @@ static __attribute__((noinline)) uint32_t lofi_byte(uint32_t f, uint32_t t, uint
     default: return (t * a >> 4 | t >> 3) ^ (t >> 7 & t >> 11);
     }
 }
-/* (JIANT 0.5.1; 0.5.5 a box of intermodulations) WAVE = FLOAT: floatbeat's sines made into a Pandora's box of timbre.
- * Each ALGO is its own patch of sines modulating sines (FM cascades, feedback FM gone chaotic, three-way rings, the
- * phases XORed and ANDed as integers, a logistic map and a Henon map run at audio rate, folds of folds, sync under FM,
- * phases quantized, FM by noise, grains, iterated sines ..), anchored on the key played (its partials whole multiples
- * of pb, half the note). A bytebeat-like control law steps through its intensity c and its ratio r, so the timbre
- * itself is sequenced, in time with the song (1/16 steps, MOTN slower or faster). VAR is the intermodulation's depth
- * (gentle .. extreme, chaotic), SHPE how the timbre goes from step to step (a jump, a glide across the step, or a
- * strike that decays), BEND mutates the control sequence (lofi_mut), LOOP holds it in a short phrase, RES the filter's,
- * CHIP the bits */
+/* (JIANT 0.5.1; 0.5.6 a floatbeat generator) WAVE = FLOAT: floatbeat, bytebeat's sibling in floats. Each ALGO is a
+ * formula of t, as BYTE's, but made of sines: sin(t x (t >> 11 ^ t >> 13 & 7)), FM whose index walks with t's bits,
+ * melodies read from nibble tables, kicks and noise hats inside the formula, folds and powers of sines .. rhythm,
+ * melody and timbre at once. t runs 32 steps a cycle of the note (the formula in tune with the key, its rhythm faster
+ * up the keyboard, as bytebeat's), with 8 bits of fraction for the sines (x = t in Q8; S(x) = sin(2 pi x / 32)).
+ * The same t as BYTE's: MOTN runs its slow bits at their own speed, VAR mutates it (lofi_mut), BEND folds it, LOOP
+ * holds it in a window; DRV (E5) folds the output, from clean to wild; CHIP the bits, RES the filter's */
 static const char *const N_FLOAT[] = {"F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09", "F10", "F11",
                                       "F12", "F13", "F14", "F15", "F16", "F17", "F18", "F19", "F20", "F21", "F22",
                                       "F23", "F24", "F25", "F26", "F27", "F28", "F29", "F30", "F31", "F32", 0};
@@ -125,8 +123,8 @@ static const param_desc_t LOFI_FCHIP = {"CHIP", F_ENUM, 0, 3, 2, N_FCHIP, 0};   
  * E5: the samples held longer, a rate crusher), DCY (FLOAT, E5: each step's decay) */
 static const param_desc_t LOFI_MOTN = {"MOTN", F_INT, 0, 127, 64, 0, 0};          /* = edit[4] (BYTE, FLOAT) */
 static const param_desc_t LOFI_GRIT = {"GRIT", F_PCT, 0, 127, 0, 0, 0};           /* = edit[5] (BYTE) */
-static const param_desc_t LOFI_FDCY = {"SHPE", F_PCT, 0, 127, 40, 0, 0};          /* = edit[5] (FLOAT: 0.5.5 the steps'
-                                                         * shape: 0 a jump .. 63 a glide; 64 .. 127 a strike decaying) */
+static const param_desc_t LOFI_FDCY = {"DRV", F_PCT, 0, 127, 0, 0, 0};            /* = edit[5] (FLOAT, 0.5.6: the output
+                                                         * folded, clean .. wild) */
 /* MOTN 0..127 -> the time's speed, Q8: x1/16 .. x1 (64) .. x15.5, exponential */
 static uint32_t lofi_motion(int32_t m)
 {
@@ -150,82 +148,79 @@ static uint32_t lofi_mut(uint32_t t, uint32_t v)
     default: return t ^ ((t >> 3) * ((k + 1u) * 0x9E3779B1u >> 24));
     }
 }
-#define FPM(x, d) ((uint32_t)((x) * (d)) << 2)          /* a sine (Q15) times d (Q15: up to a turn) as a phase */
-/* the control law of ALGO f at step s: the intensity c (Q15) and the ratio r (1..8), packed c | r << 16 */
-static __attribute__((noinline)) uint32_t lofi_flaw(uint32_t f, uint32_t s)
+#define S(x) sine_i((uint32_t)(x) << 19)                 /* sin of x (t in Q8): a turn every 32 t */
+#define PM(y, k) ((uint32_t)(((int32_t)(y) * (int32_t)(k)) >> 6))   /* a sine (Q15) times k: k / 16 of a turn */
+/* the floatbeat formula f at t (its integer) and x (t in Q8); aux: a formula's own state (a kick's phase) */
+static __attribute__((noinline)) int32_t lofi_float(uint32_t f, uint32_t t, uint32_t x, int32_t *aux)
 {
-    uint32_t c, r, h = (s + 1u) * 2654435761u;
-    switch ((f + (f >> 3)) & 3u) {
-    case 0: c = ((s * 7u ^ (s * 13u >> 2)) * 37u) & 255u; r = 1u + ((s ^ s >> 2) & 7u); break;   /* bytebeat */
-    case 1: c = ((s ^ (s >> 1)) & 7u) * 36u + 3u; r = 1u + ((s & (s >> 2)) & 3u) * 2u; break;   /* Gray code, Sierpinski */
-    case 2: c = h >> 24; r = 1u + ((h >> 20) & 7u); break;                                  /* at random */
-    default: c = ((s * 37u) & 31u) * 8u; r = 1u + s % 5u; break;                           /* ramps */
-    }
-    return (c << 7) | r << 16;
-}
-/* the patch f: phase pb (the note / 2), p2 (the note), T (samples since the note), the index M (Q15, the control
- * times VAR's depth), r its ratio, fb the last output, st its own state (the chaotic maps) */
-static __attribute__((noinline)) int32_t lofi_float(uint32_t f, uint32_t pb, uint32_t T, int32_t M, uint32_t r,
-                                                    int32_t fb, int32_t *st)
-{
-    uint32_t p2 = pb << 1, pr = pb * r;
-    int32_t a, b;
+    static const uint8_t R[8] = {16, 18, 20, 21, 24, 27, 30, 32};   /* just ratios, Q4: 1 9/8 5/4 4/3 3/2 5/3 15/8 2 */
+    uint32_t st = t >> 11, fr = t & 2047u, h;
+    int32_t E = 32767 - (int32_t)(fr << 4), a, b;          /* (a step's envelope: 1 .. 0) */
     switch (f & 31u) {
-    case 0: return sine_i(p2 + FPM(sine_i(pr + FPM(sine_i(pb * (r + 2u)), M)), M));          /* an FM cascade */
-    case 1: return sine_i(p2 * r + FPM(fb, M) * 2u);                                          /* feedback FM, chaos */
-    case 2: a = sine_i(p2) * sine_i(pr) >> 15; return a * sine_i(pb * (2u * r + 1u) + FPM(a, M)) >> 15;   /* a ring of 3 */
-    case 3: return sine_i(p2 ^ (pr & ((uint32_t)M << 17)));                                   /* phases XORed */
-    case 4: a = sine_i(FPM(sine_i(p2), 8192 + M)); return sine_i(FPM(a + (sine_i(pr) >> 1), 8192 + M / 2));   /* folds */
-    case 5: return sine_i((uint32_t)(((uint64_t)p2 * (8u + (uint32_t)M / 2048u)) >> 3) + FPM(sine_i(pr), M >> 1));   /* sync FM */
-    case 6: a = sine_i(T * (r * 37u + 11u) * 62528u + FPM(sine_i(p2 * 3u), M));   /* (30 .. 200 Hz, FM'd by the note) */
-            return sine_i(p2) * (32767 - mulq15(M, 32767 - a)) >> 15;   /* AM, audio rates */
-    case 7: {                                                                                  /* a logistic map */
-        int32_t x = *st ? *st : 16384, k = 98304 + M;                                         /* (k 3 .. 4, Q15: cycles .. chaos) */
-        x = (int32_t)(((int64_t)k * x >> 15) * (32768 - x) >> 15);
-        *st = x > 0 && x < 32768 ? x : 12345;
-        return (sine_i(p2) * (x - 16384)) >> 14;
+    case 0: return S(x * (((t >> 11) ^ (t >> 13)) & 7u) + x) * E >> 15;                       /* sin(t (t>>11 ^ t>>13 & 7)) */
+    case 1: return S(x + PM(S(x * 3u), (int32_t)((t >> 10) & 15u) * 3));                      /* FM, its index walking */
+    case 2: return S((x >> 4) * R[(0x36364689u >> ((st & 7u) * 4u)) & 7u]) * E >> 15;         /* a melody, a nibble table */
+    case 3: return S(x * (1u + ((t >> 12) & 3u))) * S(x * (((t >> 9) & 7u) + 1u)) >> 15;      /* a ring, rhythmic */
+    case 4: {                                                                                  /* a kick, a bass */
+        uint32_t k = fr < 1024u ? (1024u - fr) * (1024u - fr) >> 6 : 0u;
+        *aux += (int32_t)k + 40;
+        a = (st & 1u) ? 0 : sine_i((uint32_t)*aux << 13) * (int32_t)(1024u - (fr < 1024u ? fr : 1024u)) >> 10;
+        return (a + (S(x >> 1) >> 1)) >> 1;
     }
-    case 8: return sine_i(p2) * sine_i(pb * (4u + r * 2u + (uint32_t)M / 4096u)) >> 15;     /* a formant sweeping */
-    case 9: return sine_i(p2 * (1u + (((uint32_t)M >> 11) & 15u)));                           /* jumps in the spectrum */
-    case 10: return softclip((sine_i(p2) - sine_i(p2 + FPM(16384 + (M >> 1), 32767))) * 4);   /* a pulse, its width */
-    case 11: a = sine_i(p2 + FPM(*st, M)); *st = sine_i(pr + FPM(a, M)); return (a + *st) >> 1;   /* cross-modulated */
-    case 12: return sine_i(p2 + FPM(sine_i(pr) & ~(0x7FFF >> (1 + (M >> 12))), 32767));       /* the index crushed */
-    case 13: a = sine_i(p2); return a - (int32_t)((int64_t)a * a >> 15) * a / 32768 * M / 32768 * 3;   /* a cubic shaper */
-    case 14: b = 22 + M / 2700 > 30 ? 30 : 22 + M / 2700; return sine_i((p2 >> b) << b);   /* the phase quantized */
-    case 15: return sine_i(p2 + FPM((int32_t)(((T >> r) * 2654435761u) >> 17) - 16384, M));   /* FM by noise */
-    case 16: return sine_i(p2 + FPM((fb + sine_i(pr)) >> 1, M) * 2u);                         /* feedback and FM */
-    case 17: return (sine_i(p2) + sine_i(p2 + T * r * 3000u) + sine_i(pr + FPM(fb, M))) / 3;   /* a cluster, beating */
-    case 18: a = sine_i(pr); return sine_i(p2 + FPM(a * (a < 0 ? -a : a) >> 15, M) * 2u);      /* exponential FM */
-    case 19: return sine_i(pb * (2u * r + 1u) + FPM(fb, M)) * sine_i(pb * (2u * r + 3u) + FPM(sine_i(p2), M)) >> 15;   /* difference tones */
-    case 20: a = sine_i(p2 + FPM(sine_i(pr), M)); return sine_i(FPM(a, 8192 + M));            /* folded FM */
-    case 21: a = sine_i(p2 + FPM(sine_i(pr), M)); return (a < 0 ? -a : a) * 2 - 32767;       /* rectified FM */
-    case 22: return sine_i(p2 ^ (pr & ~(0xFFFFFFFFu >> (1u + (uint32_t)M / 2200u))));         /* XOR, the high bits */
-    case 23: return sine_i((p2 & (pr | (0xFFFFFFFFu >> (1u + (uint32_t)M / 2200u)))) + (pr >> 2));   /* AND */
-    case 24: {                                                                                  /* FM by the logistic map */
-        int32_t x = *st ? *st : 16384, k = 98304 + M;
-        x = (int32_t)(((int64_t)k * x >> 15) * (32768 - x) >> 15);
-        *st = x > 0 && x < 32768 ? x : 23456;
-        return sine_i(p2 + FPM(x - 16384, M));
+    case 5: return S(x * ((((t >> 9) & (t >> 11)) & 7u) | 1u)) * E >> 15;                     /* Sierpinski partials */
+    case 6: return softclip(S(x * (1u + (st & 1u))) * (1 + (int32_t)((t >> 11) & 7u) * 3) >> 1);   /* drive, rhythmic */
+    case 7: return S((x >> 4) * R[(st * 3u + (st >> 2)) & 7u] * (1u + (st & 1u)));            /* fifths and octaves */
+    case 8: {                                                                                  /* two arpeggios */
+        static const uint8_t H[8] = {2, 3, 4, 5, 6, 8, 5, 3};
+        return (S(x * H[(t >> 9) & 7u] >> 1) + S(x * H[(t >> 11) & 7u] >> 2)) >> 1;
     }
-    case 25: return sine_i(p2 + FPM(sine_i(pr & 0xF0000000u), M));                            /* FM held, stepped */
-    case 26: a = ((T >> (7u + (r & 3u))) & 3u) ? 32767 >> (1 + (r & 1u)) : 32767;               /* grains */
-        return sine_i(p2 + FPM(sine_i(pr), mulq15(M, a))) * a >> 15;
-    case 27: return sine_i(FPM(sine_i(FPM(sine_i(p2), 8192 + M)), 8192 + M));                 /* a sine of a sine of a sine */
-    case 28: return sine_i(p2 + FPM(fb * fb >> 15, M) * 3u);                                  /* FM by its own square */
-    case 29: return sine_i(p2 * (1u + (r & 7u))) * sine_i(pb + FPM(fb, M)) >> 15;             /* partials on a sub */
-    case 30: return softclip((sine_i(p2 + FPM(sine_i(pr), M)) + sine_i(pb * 3u + FPM(fb, M))) * 2);   /* two FMs, clipped */
-    default: {                                                                                 /* a Henon map */
-        int32_t x = (int16_t)(*st & 0xFFFF), y = *st >> 16, nx;
-        int32_t aa = 45875 + (M >> 3);                                                         /* (a 1.4 .., Q15) */
-        nx = 32768 - (int32_t)((int64_t)aa * ((int64_t)x * x >> 15) >> 15) + y;
-        y = (x * 9830) >> 15;                                                                  /* (b 0.3) */
-        nx = clamp(nx, -32767, 32767);
-        *st = (nx & 0xFFFF) | (y << 16);
-        return (sine_i(p2) + nx) >> 1;
+    case 9: h = (t * 2654435761u) >> 17;                                                       /* a snare, a tone */
+        a = (st & 1u) ? (int32_t)h - 16384 : 0;
+        return (mulq15(a, E) + S(x)) >> 1;
+    case 10: return S(x + PM(S(x * (((t >> 12) & 7u) + 1u)), E >> 10));                       /* a pluck of FM */
+    case 11: return S(x + PM(S(t << 2), 6));                                                  /* a vibrato, deep (4 Hz) */
+    case 12: return S((uint32_t)(S(x) * (2 + (int32_t)((t >> 11) & 7u))) >> 2);               /* folded, rhythmic */
+    case 13: a = S(x * (1u + (st & 1u))); b = S((x >> 4) * (24u + (st & 6u) * 4u));           /* rectified, leaping */
+             return (a < 0 ? -a : a) - (b < 0 ? -b : b);
+    case 14: return S(x & ~((1u << (4u + (st & 7u))) - 1u));                                  /* a staircase sine */
+    case 15: return S(x * (((t >> 8) % 7u) + 1u)) * E >> 15;                                  /* partials mod 7 */
+    case 16: {                                                                                 /* three against four */
+        int32_t e3 = 32767 - (int32_t)((t % 3072u) * 10u), e4 = E;
+        return (mulq15(S(x * (1u + (st & 1u))), e4) + mulq15(S((x >> 4) * (24u + (st & 2u) * 8u)), e3 > 0 ? e3 : 0)) >> 1;
     }
+    case 17: return S((x >> 6) * (64u + ((t >> 6) & 255u))) * E >> 15;                        /* a riser each bar */
+    case 18: return mulq15(S(x * (1u + st % 3u)) * ((t >> 10) & 1u ? 1 : 0) + S(x + (t << 2)), 16384);   /* beating, gated */
+    case 19: {                                                                                 /* odd partials, built up */
+        uint32_t k, n = 1u + ((t >> 11) & 3u);
+        for (a = 0, k = 0; k < n; k++)
+            a += S(x * (2u * k + 1u)) / (int32_t)(2u * k + 1u);
+        return a * 3 >> 2;
+    }
+    case 20: return S(x * (2u + ((st * 5u) & 7u)) >> 1);                                      /* leaps */
+    case 21: {                                                                                 /* a drum loop */
+        uint32_t k = fr < 768u ? (768u - fr) * (768u - fr) >> 6 : 0u;
+        *aux += (int32_t)k + 30;
+        a = (st & 3u) == 0u ? sine_i((uint32_t)*aux << 13) * (int32_t)(768u - (fr < 768u ? fr : 768u)) / 768 : 0;
+        b = (t >> (8u + (st & 3u))) & 1u ? (int32_t)(((t * 2654435761u) >> 17) - 16384u) * (int32_t)(1024u - (t & 1023u)) >> 12 : 0;
+        return (a + b + (S(x >> 1) >> 2)) >> 1;
+    }
+    case 22: return S(x * (1u + (((t >> 9) & (t >> 7)) & 7u)) + (((t >> 9) & (t >> 7) & 255u) << 9));   /* bytebeat in it */
+    case 23: return S(x * 2u + PM(S(x * 5u), (int32_t)((t >> 11) & 3u) * 8));                 /* FM 5:2, stepped */
+    case 24: a = S(x * (1u + (st & 3u))); return (int32_t)((int64_t)a * (a < 0 ? -a : a) >> 15) * E >> 15;   /* squared */
+    case 25: return S(x & ~(1u << (8u + (st & 7u)))) * E >> 15;                              /* a bit of t dropped: jumps */
+    case 26: return S((x >> 4) * (34u - ((t >> 11) & 15u)) >> 1) * E >> 15;                   /* a descending line */
+    case 27: return (S(x) + mulq15(S(x * (((t >> 13) & 3u) + 2u)), E)) >> 1;                   /* a partial, struck */
+    case 28: return S(x + PM(S(x * 2u), S(t) >> 10));                                         /* FM, its index a 1 Hz sine */
+    case 29: return S((x >> 4) * (16u + ((t >> 7) & 63u)));                                   /* a glide up partials */
+    case 30: h = ((st + 1u) * 2654435761u) >> 29; return S((x >> 4) * R[h]) * E >> 15;        /* a random line */
+    default: a = ((st * 5u) & 7u) < 5u ? E : 0;                                               /* euclid hats, a chord */
+        b = (int32_t)(((t * 2654435761u) >> 17) - 16384u) * (int32_t)(512u - (t & 511u)) >> 11;
+        h = (x >> 4) * R[(st >> 1) & 7u] >> 4;                                                 /* (the chord's root walks) */
+        return (S(h * 16u) + S(h * 20u) + S(h * 24u)) / 4 + (mulq15(b, a) >> 1);
     }
 }
-#undef FPM
+#undef S
+#undef PM
 
 /* (JIANT 0.4) the filter and the deformations, for every wave: CUT a resonant low-pass (the ENV / LFO / matrix move it
  * as a synth's), BEND (BYTE: the time folded on itself, t ^ t >> s, new melodies and rhythms out of the same formula;
@@ -295,64 +290,47 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
     v->ph[0] = tf;
 }
 
-/* FLOAT's samples (lofi_render's set-up done: inc the note's, the filter): pb in v->ph[0], the samples into the step
- * in v->ph[1], the step in v->s[1], the step's control c | r << 16 in v->s[3], the control now (Q23, gliding) in
- * v->s[6], its glide a sample in v->s[7], the patch's own state in v->ph[2], T in v->s[2], the last output v->s[0] */
-static uint32_t div_samples(uint32_t div);              /* fx.c: a 1/16 at the song's tempo */
+/* FLOAT's samples (lofi_render's set-up done: inc the note's, the filter): t in v->s[2], its fraction (Q24) in v->ph[0],
+ * MOTN's slow t (Q8) in v->ph[1], a formula's own state in v->s[3], the last output in v->s[0] (0.5.6) */
 static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, int32_t *out, uint32_t n,
                                                        const vmod_t *m, uint32_t inc, const tsvf_t *flt)
 {
     const int16_t *p = t->p;
-    uint32_t f = (uint32_t)p[P_E2] >> 2, pb = v->ph[0], pos = v->ph[1], st = (uint32_t)v->s[1], i, hi = inc >> 1;
-    uint32_t ctl = (uint32_t)v->s[3], T = (uint32_t)v->s[2], sh = (uint32_t)p[P_E5];
-    uint32_t len = (div_samples(2) << 8) / lofi_motion(p[P_E4]), gl, dk;
+    uint32_t f = (uint32_t)p[P_E2] >> 2, tt = (uint32_t)v->s[2], tf = v->ph[0], ts = v->ph[1], i;
+    uint32_t ti = inc >> 3;                             /* (t a sample, Q24: 32 a cycle of the note) */
+    uint32_t mul = lofi_motion(p[P_E4]), var = (uint32_t)p[P_E3];
+    uint32_t bs = p[P_E6] ? 13u - (uint32_t)p[P_E6] / 11u : 0u;   /* BEND: t ^ t >> 13 .. 2 */
+    uint32_t lm = p[P_E7] ? (1u << (17u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: t's window */
     uint32_t ft = (uint32_t)p[P_FTYPE] & 3u;
     int32_t rs = p[P_FRES] > 50 ? p[P_FRES] : 50, kd = 8192 - rs * 7600 / 127, y1 = v->s[4], y2 = v->s[5];
-    int32_t dep = 1500 + p[P_E3] * p[P_E3] * 4, cc = v->s[6], dc = v->s[7], fb = v->s[0], ps = (int32_t)v->ph[2];
-    uint32_t lm = p[P_E7] ? (1u << (7u - (uint32_t)p[P_E7] * 6u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: 128 .. 2 steps */
+    int32_t aux = v->s[3], fb = v->s[0], drv = p[P_E5];
     uint32_t chip = (uint32_t)p[P_E0], qs = chip == CHIP_8BIT ? 0u : chip == CHIP_1BIT ? 15u : 12u;   /* (CHIP: the bits) */
-    if (len < 48u) len = 48u;
-    gl = len * (sh < 64u ? sh : 63u) / 64u;               /* SHPE: the glide, 0 .. a step */
-    dk = sh > 64u ? (sh - 64u) * 32767u / 63u * 256u / len : 0u;   /* .. the strike's fall a sample, Q8 */
-    for (i = 0; i < n; i++, T++, pb += hi) {
-        int32_t s, M, c;
-        if (++pos >= len) {                              /* a step: the control law's next value */
-            uint32_t sl;
-            pos = 0;
-            st++;
-            sl = st & lm;
-            ctl = lofi_flaw(f, lofi_mut(sl, (uint32_t)p[P_E6]));   /* (BEND: the control sequence mutated) */
-            c = (int32_t)(ctl & 0xFFFFu) << 8;
-            if (gl) dc = (c - cc) / (int32_t)gl;
-            else { cc = c; dc = 0; }
-        }
-        if (pos < gl) cc += dc;
-        c = cc >> 8;
-        if (dk) {                                        /* (a strike: the index falls across the step) */
-            int32_t e = 32767 - (int32_t)((pos * dk) >> 8);
-            c = mulq15(c, e > 0 ? e : 0);
-        }
-        M = mulq15(c, dep > 32767 ? 32767 : dep);
-        s = lofi_float(f, pb, T, M, ctl >> 16, fb, &ps);
+    for (i = 0; i < n; i++) {
+        uint32_t te = mul == 256u ? tt : (tt & 255u) | ((ts >> 8) & ~255u), tl, tw;
+        int32_t s;
+        tl = lofi_mut(te & lm, var);
+        tw = bs ? tl ^ (tl >> bs) : tl;
+        s = lofi_float(f, tw, tw << 8 | tf >> 16, &aux);
+        if (drv)                                          /* DRV: the output folded, x1 .. x9 */
+            s = sine_i((uint32_t)(s * (8 + drv)) << 2);
         if (qs)
             s = ((s + (1 << (qs - 1u))) >> qs) << qs;
-        if (chip == CHIP_4B2 && (T & 1u))                /* (4B/2: held over two samples) */
+        if (chip == CHIP_4B2 && (tt & 1u))                /* (4B/2: held over two t) */
             s = fb;
-        if (T < 64u) s = s * (int32_t)T >> 6;            /* (no click at the note) */
         fb = s;
+        tf += ti;
+        tt += tf >> 24;
+        tf &= 0xFFFFFFu;
+        ts += ((ti >> 8) * mul) >> 16;
         out[i] += voice_amp(soft_knee(svf_mode(flt, s >> 1, &y1, &y2, ft, kd), 16000) << 1, m, i);
     }
-    v->ph[0] = pb;
-    v->ph[1] = pos;
-    v->ph[2] = (uint32_t)ps;
     v->s[0] = fb;
-    v->s[1] = (int32_t)st;
-    v->s[2] = (int32_t)T;
-    v->s[3] = (int32_t)ctl;
+    v->s[2] = (int32_t)tt;
+    v->s[3] = aux;
     v->s[4] = y1;
     v->s[5] = y2;
-    v->s[6] = cc;
-    v->s[7] = dc;
+    v->ph[0] = tf;
+    v->ph[1] = ts;
 }
 
 static const param_desc_t *lofi_desc(const track_t *t, uint32_t k)
@@ -385,17 +363,14 @@ static void lofi_note_on(track_t *t, voice_t *v)
     v->s[1] = 0;                 /* hold counter */
     v->s[2] = t->p[P_E1] >= RW_BYTE ? 0 : 0x7FFF;   /* LFSR (BYTE, FLOAT: its time t, from 0) */
     if (t->p[P_E1] >= RW_BYTE)                          /* (BYTE: its slow time; FLOAT: its phase, a step at once) */
-        v->ph[1] = t->p[P_E1] == RW_FLOAT ? 0xFFFFFFF0u : 0u;
+        v->ph[1] = 0u;
     v->s[3] = 0;                 /* (BYTE: its smoothing's first pole; SWEEP retired in 0.4) */
     v->ph[2] = 0;                /* (.. its second; FLOAT: its patch's own state) */
     v->s[4] = v->s[5] = 0;       /* (JIANT 0.4) the filter's two states */
     v->s[6] = 15 | (step_period(t->p[P_E3] >> 2) & 15) << 4;   /* stepped env: every note-on restarts it */
     v->s[7] = 0;
-    if (t->p[P_E1] == RW_FLOAT) {                       /* (0.5.5: its control in s[6], s[7]: no STEP envelope) */
-        v->ph[0] = 0;
-        v->s[1] = -1;
-        v->s[6] = (int32_t)(lofi_flaw((uint32_t)t->p[P_E2] >> 2, 0u) & 0xFFFFu) << 8;
-    }
+    if (t->p[P_E1] == RW_FLOAT)                         /* (0.5.6: its t from 0, its fraction too) */
+        v->ph[0] = v->ph[1] = 0;
 }
 
 /* CHIP = STEP: the voice amplitude is the stepped envelope, not the ADSR curve. The ADSR only
@@ -554,11 +529,11 @@ static const preset_t LOFI_PRESETS[] = {
     {"STEP LEAD", {4, 0, 40, 34, 127, 16, 0, 0}, {0, 64, 127, 55}, 0, 1, FX(0, 0, 40, 20), PAT(4)},
     /* (JIANT 0.5, appended: the stored numbers stay) BYTE B11 looped (LOOP 80: a short cycle, a tone at the note), resonant */
     {"BYTE TONE", {2, 5, 40, 0, 64, 0, 0, 80}, {0, 70, 100, 40}, 0, 1, FX(0, 0, 30, 20), PAT(4)},
-    /* (JIANT 0.5.1, appended; 0.5.5 intermodulations) FLOAT: F01 the FM cascade struck; F04 phases XORed, jumping;
-     * F12 cross-modulated, slow, gliding */
-    {"FLOAT FM", {2, 6, 0, 70, 64, 90, 0, 0}, {0, 60, 90, 40}, 0, 1, FX(0, 15, 25, 25), PAT(4)},
-    {"FLOAT ARP", {2, 6, 12, 60, 72, 0, 0, 0}, {0, 50, 80, 50}, 0, 1, FX(0, 25, 30, 30), PAT(3)},
-    {"FLOAT PAD", {2, 6, 44, 50, 40, 63, 0, 0}, {60, 90, 110, 90}, 0, 1, FX(30, 10, 50, 40), PAT(3)},
+    /* (JIANT 0.5.1, appended; 0.5.6 floatbeat) FLOAT: F02 FM whose index walks; F09 two arpeggios, folded a little;
+     * F29 FM breathing at 1 Hz, slow */
+    {"FLOAT FM", {2, 6, 4, 0, 64, 0, 0, 0}, {0, 60, 90, 40}, 0, 1, FX(0, 15, 25, 25), PAT(4)},
+    {"FLOAT ARP", {2, 6, 32, 0, 64, 20, 0, 0}, {0, 50, 80, 50}, 0, 1, FX(0, 25, 30, 30), PAT(3)},
+    {"FLOAT PAD", {2, 6, 112, 0, 40, 0, 0, 0}, {60, 90, 110, 90}, 0, 1, FX(30, 10, 50, 40), PAT(3)},
 };
 
 static const engine_t ENG_LOFI = {
