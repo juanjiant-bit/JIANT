@@ -2467,15 +2467,15 @@ static int test_layer(void)
          cur_page()->id[2] == G_RDAMP && song.g[G_RTYPE] == 0;
     turn(EN_K1, 1);
     ok &= song.g[G_RTYPE] == 1 && str_eq(GP[G_RTYPE].names[song.g[G_RTYPE]], "SPRING");
-    turn(EN_K1, 5);
-    ok &= song.g[G_RTYPE] == 1;
+    turn(EN_K1, 5);                                  /* (JIANT 0.5: SHIMR RESO CLOUD after it) */
+    ok &= song.g[G_RTYPE] == 4 && str_eq(GP[G_RTYPE].names[4], "CLOUD");
     song.playing = 0;
     project_save(2);
     turn(EN_K1, -1);
-    ok &= song.g[G_RTYPE] == 0;
+    ok &= song.g[G_RTYPE] == 3;
     project_load(2);
-    bad += check("REVERB page: TYPE ROOM -> SPRING on KNOB 1 (SIZE, DAMP beside it); a project keeps SPRING",
-                 ok && song.g[G_RTYPE] == 1);
+    bad += check("REVERB page: TYPE ROOM -> SPRING .. CLOUD on KNOB 1 (SIZE, DAMP beside it); a project keeps CLOUD",
+                 ok && song.g[G_RTYPE] == 4);
     go_title("CHORUS");
     bad += check("  CHORUS page: CRT CDP", cur_page()->fam == FAM_FX && cur_page()->id[0] == G_CRATE &&
                  cur_page()->id[1] == G_CDEPTH && cur_page()->id[2] == 0xFFu);
@@ -6882,9 +6882,10 @@ static int test_head_centres(void)
                 ui.force = 1; draw_head(); ui.force = 0;
                 ok &= head_centres(HS_NAME[s], pr);
                 okp = nhel > 0 && hel[0][0] == 4;      /* the track cushion first, its ink from x 4 */
-                if (s != HS_GLO_TURN) {                /* the battery last, in its cell; nothing between 208 and it */
+                if (s != HS_GLO_TURN) {                /* the battery last, in its cell; between 208 and it only the
+                                                        * load meter (JIANT 0.5: 3 px at 209) */
                     okp &= head_span2(HEAD_BAT_X, 239, &a, &b) && a >= 214 && b <= 236;
-                    okp &= !head_span2(HEAD_GRP_R, HEAD_BAT_X - 1, &a, &b);
+                    okp &= !head_span2(HEAD_GRP_R, HEAD_BAT_X - 6, &a, &b) && !head_span2(HEAD_BAT_X - 2, HEAD_BAT_X - 1, &a, &b);
                 } else {                               /* GLO, the tempo turned: the BPM, its lock, the label after */
                     head_geo_t g;
                     head_geo(&g, "124");

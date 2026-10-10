@@ -75,6 +75,7 @@ GLOBAL, tal como los dibuja el firmware.*
   clipper, forma del PUNCH, cuánto baja el DUCK), ENV/LFO DEST (columnas bipolares bajo cada perilla, encendidas por lo
   que mandan), VOICE (una casilla por voz y la curva del glide), GLOBAL (el compás en barras térmicas con el swing, el
   clock y la afinación).
+- **Medidor de carga**: cinco rayitas al lado de la batería con la carga de audio del momento.
 - **Encendido**: la firma "Jiant FM1" se escribe trazo a trazo en colores térmicos (MENU > ANIM OFF: aparece
   entera).
 
@@ -145,7 +146,9 @@ con SONG REC.
 - **DIST** por track con TYPE (SOFT, HARD, FOLD, CRUSH, RECT) y TONE; **SLICER** por track.
 - **Delay**: TIME sincronizado o libre (5 ms a 1,48 s), un solo TONE, **grain delay** con PITCH y SPRAY (también en
   tiempos largos), WIDTH estéreo.
-- **Reverb** ROOM o SPRING con pre-delay, modulación, filtro y width; **chorus**.
+- **Reverb** de cinco modelos: ROOM, SPRING, **SHIMR** (shimmer, sube una octava en cada vuelta), **RESO** (cuatro
+  cuerdas afinadas a la escala del tema) y **CLOUD** (nube granular que se congela); con pre-delay, modulación, filtro
+  y width; **chorus**.
 - **Master**: **CLIP** (saturación con el nivel compensado: suma carácter, no volumen), **PNCH** (transientes de la
   batería), **DUCK** (el kick baja lo demás) y un **nivelador siempre activo** (compresión 2:1 con make-up automático,
   de −9 a +6 dB) antes del limitador y el soft clip: patches quietos y CLIP fuerte suenan a un volumen coherente.
@@ -202,6 +205,110 @@ Girar rápido barre el rango entero; girar lento es ajuste fino. Se apaga en MEN
 Otros: **PLAY** arranca y para; **REC** arma el track elegido; **SELECT** cambia el tempo en HOME y GLOBAL y en el resto de las páginas tira el dado del sonido; **ALGORITHM**
 elige el track en todas las páginas; **PRESETS** cambia el sonido; **OCT− / OCT+** la octava (en páginas
 de acción y diálogos: volver / confirmar); GLO + PLAY reinicia desde el principio.
+
+## Manual de usuario
+
+Una guía práctica de lo nuevo, en el orden en que lo vas a ir encontrando. La tabla de [Controles](#controles) tiene
+el detalle de cada capa.
+
+### 1. Moverse
+- Cada botón de página (EDIT, ENV, LFO, FX, SEQ, SCL, ARP, GLO, SAVE) abre su primera página; apretarlo otra vez pasa a
+  la siguiente. El título arriba dice dónde estás. **HOME** vuelve al ecosistema.
+- **ALGORITHM** elige el track (T1–T4) desde cualquier página; las páginas de track muestran el track elegido.
+- Las cuatro perillas manejan las cuatro columnas de la pantalla. Girar rápido barre todo el rango, lento ajusta
+  fino.
+- **Mantener** un botón abre su capa (FX, GLO, SCL, LFO, EDIT, SAVE…): al soltar volvés a donde estabas.
+
+### 2. Leer la pantalla
+- **HOME**: cada ser es un track. Su especie dice el engine, su forma sale de sus cuatro perillas, se hincha y se
+  calienta con su propio audio. El más grande es el track elegido; uno apagado está muteado.
+- **Colores**: frío (cian, azul) es poco, caliente (naranja, amarillo, blanco) es mucho. Violeta es lo seleccionado,
+  naranja lo que está activo.
+- **Medidor de carga** (arriba a la derecha, al lado de la batería): cinco rayitas que muestran cuánto del tiempo de
+  audio está usando el sonido en este momento. La RAM del firmware se reserva entera al arrancar y no cambia, así que
+  lo que vale la pena mirar es esto: con las cinco encendidas (rojo, amarillo) estás cerca del límite y conviene
+  bajar voces, reverb CLOUD o efectos pesados.
+- **Encendido**: la firma se dibuja en unos dos segundos. Si querés arrancar directo: MENU > **ANIM OFF**.
+
+### 3. Hacer un sonido
+1. Elegí el track con ALGORITHM y el engine/preset con **PRESETS**.
+2. **EDIT** abre las páginas del engine. Cada engine tiene una página **FILTER**: KNOB 1 TYPE (LP, HP, BP, COMB),
+   KNOB 2 CUT, KNOB 3 RES y KNOB 4 DRV (en ANALOG la saturación del filtro; en los demás el DIST del track). COMB con
+   mucha RES y CUT cerca del centro vuelve metálico cualquier sonido, afinado a la nota.
+3. **ENV** y **LFO** tienen sus páginas DEST: cada columna manda a un destino (FLT mueve también el filtro de la
+   página FILTER). **ENV LOOP** convierte la envolvente en un LFO mientras la nota está sostenida.
+4. **¿Sin ideas?** **SELECT** (fuera de HOME y GLOBAL) tira el dado: carga un preset de fábrica al azar del engine y
+   mueve sus parámetros. Tiralo varias veces hasta que algo te guste y seguí desde ahí.
+5. **EDIT sostenido**: F3 INIT vuelve el sonido al de fábrica, G3 RECALL al que guardaste en la sección.
+
+**LOFI BYTE** (LOFI con WAVE en BYTE): ALGO elige una de 32 fórmulas de bytebeat, VAR la deforma, BEND pliega el
+tiempo (glitches), RES da resonancia al filtro y LOOP repite un tramo cortito: con LOOP alto el ruido se vuelve una
+nota afinada. Para el corte usá la página FILTER.
+
+### 4. Batería DRUM-X
+- Poné un track en DRUM. **KNOB 1 MORPH** va del lado A al lado B de todo el kit: es la perilla para tocar en vivo.
+- **FOLD** pliega la onda de cada golpe: el ataque brilla y la cola vuelve limpia. **FM** ensucia el timbre.
+- **EDIT > SOUND 1–3** edita cada sonido (BD, SD, CP, CH, OH, TM, RS, CB; KNOB 1 elige cuál). SOUND 3 tiene **PMOD**
+  (cómo cae el pitch: DECAY, LONG tipo 808, NOISE, SINE), DRV y WAVE.
+- Mutes: **GLO sostenido** + teclas negras 5–8 (KICK, SNARE, HAT, PERC); **EDIT sostenido** + teclas negras 1–8 (cada
+  sonido).
+- SELECT en un track DRUM sortea un kit nuevo alrededor del de fábrica.
+
+### 5. Macros (M1–M4)
+- **Mantené LFO**: las perillas pasan a ser M1–M4. Soltá LFO y quedan **fijas** (latch) hasta que vuelvas a apretar
+  LFO.
+- Cada sesión arranca con rutas al azar. Con las macros abiertas, **SELECT** tira rutas nuevas solo sobre los tracks
+  que están sonando; **F3** también, **G3** las borra.
+- Para elegirlas a mano: LFO > **MOD**, SRC M1…M4 hacia cualquier destino. Se guardan con el proyecto.
+
+### 6. Efectos
+- **FX sostenido** convierte el teclado en efectos que actúan mientras mantenés la tecla y entran a tempo: REPEAT,
+  LPF/HPF, octavas, stutter, decay corto/largo, ARP, RANDOM… (detalle en [Controles](#controles)). Con REC armado y
+  tocando, quedan grabados en la lane de la sección; G5 la borra.
+- Páginas **FX** (globales): DIST y SLICER por track, DLY / DLY 2, REVERB / REVERB 2, CHORUS y MASTER.
+
+**REVERB > TYPE** (KNOB 1) elige el modelo. Las mismas perillas cambian de sentido según el tipo:
+
+| TYPE | Qué es | SIZE | DAMP | MOD | RATE | WIDE |
+| --- | --- | --- | --- | --- | --- | --- |
+| **ROOM** | Sala clásica | Largo de la cola | Opaca los agudos | Modula la cola (chorus) | Velocidad de la modulación | Estéreo |
+| **SPRING** | Resorte de amplificador | Largo del resorte | Opaca | Cuánto se bambolea | Velocidad del bamboleo | Estéreo |
+| **SHIMR** (shimmer) | Sala que sube una octava en cada vuelta: cola angelical | Largo de la cola | Opaca | **Cuánto shimmer** (0 = ROOM) | — | — |
+| **RESO** | Cuatro cuerdas que resuenan **afinadas a la escala** (I, III, V y VII de ROOT/SCALE) | Cuánto sostienen | Oscurece las cuerdas | Más de la mitad: abre el acorde una octava | — | — |
+| **CLOUD** | Nube granular: granos del audio pasado, desparramados | Largo de los granos; **al máximo congela** la nube | Opaca | Cuántos granos cambian de altura (×2, ×½, quinta) | Densidad de granos | Estéreo |
+
+PRE (pre-delay) y FILT (tono de entrada) valen para todos. Ideas: RESO con la batería para que el kit cante en la
+tonalidad del tema; CLOUD con SIZE al máximo para congelar un acorde y seguir tocando encima; SHIMR con un pad lento.
+
+**MASTER**: CLIP satura sin subir el volumen (el nivelador lo compensa), PNCH marca los ataques de la batería, DUCK
+hace que el kick baje lo demás. El nivelador está siempre activo: no hace falta cuidar el volumen entre patches.
+
+### 7. Secuencias y modulación
+- **SEQ**: pasos, piano roll, locks por paso, chance, ratchets. **REC** arma la grabación en vivo; mover una perilla
+  mientras suena graba la automatización.
+- **SEQ > SHIFT**: OFS corre la secuencia en el tiempo, PIT la transpone. **SCL**: ROOT y SCALE valen para todos los
+  tracks (y para la reverb RESO).
+- **LFO > MSEQ**: un secuenciador de modulación de 16 pasos. KNOB 1 elige el paso, KNOB 2 su nivel, LEN y SLEW su
+  largo y suavidad; se manda a un destino desde MOD (SRC STEP).
+- Borrar: **REC + botón** borra la automatización de esa parte; **SEQ + REC** borra todas las secuencias.
+
+### 8. Canciones y escenas
+- **SAVE sostenido**: F3–B3 lanzan las secciones A–D en el próximo compás (varias seguidas arman una cadena), C4–F4
+  guardan la sección actual en A–D, D5 alterna LOOP / SONG, E5 graba la canción en vivo (SONG REC).
+- La página **SONG** arma la cadena de filas por compases; KNOB 4 guarda una **escena** (mutes, macros, punch-in) en
+  la fila.
+- 8 canciones: KNOB 1 con SAVE sostenido elige cuál (entra al soltar, con el transporte parado).
+
+### 9. Guardar
+- **Presets de sonido**: SAVE > **USER**: KNOB 1 elige el slot (32), KNOB 4 SAVE guarda el sonido del track, KNOB 2
+  LOAD lo carga, KNOB 3 ERASE lo borra. EDIT le pone nombre.
+- **Proyecto**: SAVE > PROJECT. Todo se autoguarda al apagar.
+- **Backup**: el editor web (USB) descarga y restaura todo: canciones, secciones, escenas y presets.
+
+### Presets personales hechos a medida
+Si querés presets propios dentro del firmware: armalos en el aparato, guardalos en USER, bajá el backup con el editor
+web y compartilo (o describí la idea: nombre, engine, para qué lo usás). Los mejores pueden entrar como presets de
+fábrica en la próxima versión.
 
 ## Compilar y probar
 

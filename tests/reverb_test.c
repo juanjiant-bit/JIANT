@@ -576,6 +576,40 @@ static void test_jiant(void)
     }
 }
 
+/* (JIANT 0.5) SHIMMER RESO CLOUD: a burst rings on (a tail), never runs away (the peak bounded), and dies (RESO's
+ * combs and SHIMMER's octave loop below 1; CLOUD's grains read only the last ~0.5 s); CLOUD FREEZE (SIZE full) holds */
+static void test_new_types(void)
+{
+    static const char *const NM[3] = {"SHIMMER", "RESO", "CLOUD"};
+    uint32_t k, i;
+    for (k = 0; k < 3u; k++) {
+        double side, early, late;
+        int32_t pk = 0;
+        jreset();
+        song.g[G_RTYPE] = (int16_t)(2 + k);
+        song.g[G_RSIZE] = 90; song.g[G_RDAMP] = 40; song.g[G_RMOD] = 80; song.g[G_RRATE] = 60; song.g[G_RWIDE] = 60;
+        jrun(0, burst, FS * 2u, &side);
+        for (i = 0; i < FS * 2u; i++) if (abs(jw[i]) > pk) pk = abs(jw[i]);
+        early = band_e(FS / 5u, FS * 3u / 5u);
+        late = band_e(FS * 8u / 5u, FS * 2u);
+        printf("reverb: %-8s peak %d, energy 0.2-0.6 s %.3g, 1.6-2 s %.3g, side %.3g\n", NM[k], pk, early, late, side);
+        {
+            char what[96];
+            snprintf(what, sizeof what, "%s: a burst rings on, bounded, and dies away", NM[k]);
+            check(what, early > 1e9 && pk < (1 << 20) && late < early * 0.25);
+        }
+    }
+    {   /* CLOUD FREEZE: SIZE full, the line stops being written: the cloud still sounds after 2 s */
+        double side;
+        jreset();
+        song.g[G_RTYPE] = 4; song.g[G_RSIZE] = 120; song.g[G_RRATE] = 80; song.g[G_RMOD] = 0; song.g[G_RWIDE] = 0;
+        jrun(0, burst, FS / 2u, &side);
+        song.g[G_RSIZE] = 127;                          /* (freeze once the burst is in) */
+        jrun(0, 0, FS * 2u, &side);
+        check("CLOUD: SIZE full freezes the cloud (it still sounds 2 s on)", band_e(FS * 3u / 2u, FS * 2u) > 1e8);
+    }
+    song.g[G_RTYPE] = 0; song.g[G_RWIDE] = 0; song.g[G_RMOD] = 0;
+}
 int main(int argc, char **argv)
 {
     test_room_identical();
@@ -584,6 +618,7 @@ int main(int argc, char **argv)
     test_switch();
     test_cost();
     test_jiant();
+    test_new_types();
     if (argc > 1) {
         demo(argv[1], "spring_drums", 1, 0);
         demo(argv[1], "spring_pluck", 1, 1);
