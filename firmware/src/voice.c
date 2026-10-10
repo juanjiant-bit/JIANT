@@ -104,6 +104,21 @@ static __attribute__((noinline)) void track_filter(track_t *t, int32_t *out, uin
     tf_ic2[ti] = ic2;
 }
 
+/* the FILTER after the voices: ANALOG's and LOFI's COMB here (their own filters are per voice), every other engine's
+ * whole filter (track_filter). Its own function: the audio ISR's loop stays as it was */
+static __attribute__((noinline)) void track_post(track_t *t, const engine_t *e, int32_t *out, uint32_t n)
+{
+    if (e == &ENG_ANALOG) {
+        if (t->p[P_FTYPE] == FT_COMB)
+            track_comb(t, out, n, t->p[P_E4], t->p[P_E5]);
+    } else if (e == &ENG_LOFI) {
+        if (t->p[P_FTYPE] == FT_COMB)
+            track_comb(t, out, n, t->p[P_FCUT], t->p[P_FRES]);
+    } else {
+        track_filter(t, out, n);
+    }
+}
+
 static void track_lfo_tick(track_t *t)
 {
     uint32_t old = t->lfo_ph;
@@ -663,10 +678,8 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
         e->render(t, v, out, n, &m);
         nr++;
     }
-    if (nr && e == &ENG_ANALOG && t->p[P_FTYPE] == FT_COMB)   /* (JIANT 0.5) FILTER TYPE COMB */
-        track_comb(t, out, n, t->p[P_E4], t->p[P_E5]);
-    else if (nr && e != &ENG_ANALOG && (t->p[P_FTYPE] || t->p[P_FCUT] < 127 || t->p[P_FRES]))
-        track_filter(t, out, n);                        /* (JIANT 0.5) every other engine's FILTER */
+    if (nr && (t->p[P_FTYPE] || t->p[P_FCUT] < 127 || t->p[P_FRES]))   /* (JIANT 0.5) the FILTER (track_post) */
+        track_post(t, e, out, n);
     if (fade) {
         for (i = 0; i < 8u; i++)
             t->p[P_E0 + i] = pe_new[i];

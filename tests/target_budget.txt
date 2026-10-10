@@ -3,21 +3,21 @@
 # Rewritten by BUDGET_UPDATE=1.
 analog_render 581
 phase_render 91
-lofi_render 204
+lofi_render 220
 formant_render 312
 wheel_render 267
 wheel_block 86
 analog_ext 782
-lofi_byte_render 109
+lofi_byte_render 123
 drum_render 83
 noise_render 259
 fm6_render 372
 fm6_op_run 72
 fm6_op_fb 26
 dx_run 350
-slicer_track 550
-fm1_alnk0_irq 43541
-fm1_timer5_irq 34494
+slicer_track 551
+fm1_alnk0_irq 45235
+fm1_timer5_irq 34577
 click_render 30
 mod_begin 166
 mod_voice 30
@@ -25,7 +25,7 @@ mod_end 7
 perf_begin 28
 perf_mute 21
 perf_pre 26
-perf_block 545
-perf_master 31
+perf_block 546
+perf_master 32
 rev_room 218
 rev_spring 127
