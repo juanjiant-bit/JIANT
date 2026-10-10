@@ -166,7 +166,8 @@ static __attribute__((noinline)) void lev_block(uint32_t n)
     lev_env += pk > lev_env ? (pk - lev_env) >> 6 : -((lev_env - pk) >> 11);   /* (0.5.1: ~45 ms up, ~1.5 s down: it
                                                          * rides the song's loudness, not each hit; was ~1 / ~46 ms) */
     g1 = 32768;                                         /* (below the gate: back to unity, slowly) */
-    if (lev_env > LEV_GATE) {
+    if (lev_env > LEV_GATE && pk > LEV_GATE) {         /* (0.5.1: the block itself above the gate too: a tail
+                                                         * dying under it is not lifted while the slow follower falls) */
         uint32_t q = ((uint32_t)LEV_T << 12) / (uint32_t)lev_env, rt = 0, b = 1u << 30;   /* LEV_T / level, Q12 */
         q <<= 8;                                        /* (Q20: its square root Q10) */
         while (b > q) b >>= 2;
@@ -177,7 +178,8 @@ static __attribute__((noinline)) void lev_block(uint32_t n)
         }
         g1 = clamp((int32_t)rt << 5, 11500, 65536);     /* Q15: x0.35 .. x2 */
     }
-    g1 = lev_g + ((g1 - lev_g) >> (lev_env > LEV_GATE ? 8 : 9));   /* (smoothed: ~190 ms; gated ~370 ms) */
+    g1 = lev_g + ((g1 - lev_g) >> (lev_env > LEV_GATE && pk > LEV_GATE ? 8 : 5));   /* (smoothed: ~190 ms; gated, under -38 dB: ~25 ms
+                                                         * back to unity, no gain left on a tail's offset) */
     lev_cur = lev_g;                                    /* (master_out ramps it across the block, after the DC block) */
     lev_dg = (g1 - lev_g) / (int32_t)n;
     lev_g = g1;
