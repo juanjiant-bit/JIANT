@@ -243,9 +243,10 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
     uint32_t bs = p[P_E6] ? 13u - (uint32_t)p[P_E6] / 11u : 0u;   /* BEND: the fold's shift, 13 .. 2 (0: none) */
     int32_t held = v->s[0], cnt = v->s[1], ic1 = v->s[4], ic2 = v->s[5], l1 = v->s[3], l2 = (int32_t)v->ph[2];
     uint32_t lm = p[P_E7] ? (1u << (17u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: t's window */
+    uint32_t t0 = (uint32_t)BYTE_T0[f & 31u] << 9;    /* (0.5.1: the formula's start) */
     for (i = 0; i < n; i++) {
         if (--cnt <= 0) {
-            uint32_t tl = (tt & lm) + ((uint32_t)BYTE_T0[f & 31u] << 9), tw = bs ? tl ^ (tl >> bs) : tl;
+            uint32_t tl = (tt & lm) + t0, tw = bs ? tl ^ (tl >> bs) : tl;
             int32_t s = (int32_t)(lofi_byte(f, tw, a) & 255u) * 256 - 32640;
             cnt = hold;
             if (bits < 8)

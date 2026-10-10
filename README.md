@@ -33,6 +33,9 @@ Every update is listed here, newest first.
   4BIT, 4B/2, 1BIT, STEP.
 - **LOFI presets in order**: browsing shows the BYTE presets, then FLOAT, then the classic chip sounds.
 - **Parameter check**: NOISE's resonance is now **PEAK** (it sat next to the FILTER page's RES with the same name).
+- **Lighter audio interrupt**: 0.5.1's X-MOD LFO had been compiled into the audio interrupt's inner path with its
+  divisions (its cost estimate almost tripled); it now runs once per block, outside it, and the interrupt is back to
+  its 0.5 budget.
 
 ### v0.5.1
 - **Master no longer smears the mix.** The always-on leveler was riding every hit: measured on the demo song, its
