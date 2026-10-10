@@ -191,12 +191,16 @@ static void fm1_main(void)
     }
     autosave_boot(boot_clean);                /* (1.2) the last session's music, under the splash */
     session_dice(fm1_ticks() ^ (uint32_t)fm1_adc_read(FM1_ADC_BATT) << 16);   /* (JIANT 0.4) this session's macros */
-    for (ms = 0; ms < SPL_WRITE + SPL_HOLD; ms += 10u) {   /* the splash, its signature written (JIANT 0.5: was 400 ms);
-                                               * the pot followed (MIDI IN plays under it) */
-        if (!(ms % 20u))
+    {                                         /* the splash, its signature written (JIANT 0.5: was 400 ms); the pot
+                                               * followed (MIDI IN plays under it). (0.5.2) On the clock: drawing the
+                                               * beings does not make it longer */
+        uint32_t t0 = fm1_ms, n;
+        for (n = 0; n < 600u && (ms = fm1_ms - t0) < SPL_WRITE + SPL_HOLD; n++) {   /* (600: a stalled clock still
+                                                                                   * ends it, in ~2.4 s) */
             splash_write(ms);
-        fm1_delay_ms(10);
-        master_poll();
+            fm1_delay_ms(4);
+            master_poll();
+        }
     }
     kb_boot_hold = 0;
     lcd_fill(0, 0, 240, 240, T_BG);

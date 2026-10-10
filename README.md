@@ -15,12 +15,20 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.5.2).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.5.3).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
 
 ## Changelog
 
 Every update is listed here, newest first.
+
+### v0.5.3
+- **A new power-on screen**, after feedback from the community: the signature used to be drawn as straight segments
+  (it looked like MS Paint next to the rest of the interface). Now each stroke is smoothed and drawn as a curve with a
+  round pen that tapers at the ends, like ink; the pen's tip is a glowing nucleus; and three small beings (a
+  radiolarian, an amoeba, a hydra) swim in from outside the screen and circle the signature while it is written,
+  warming up as it grows and pulsing once it is done. It costs 16 bytes of RAM, and the splash now runs on the clock
+  (drawing the beings does not make it longer). MENU > ANIM OFF still shows it whole at once.
 
 ### v0.5.2
 - **BYTE: new formulas, no silent starts.** The 17 most familiar one-liners (`t*(42&t>>10)`, `t&t>>8` and friends)
@@ -263,7 +271,7 @@ each layer.
   using right now. The firmware's RAM is reserved entirely at boot and doesn't change, so this is what's worth
   watching: with all five lit (red, yellow) you're close to the limit and should cut voices, the CLOUD reverb or heavy
   effects.
-- **Power-on**: the signature draws itself in about a second. To boot straight in: MENU > **ANIM OFF**.
+- **Power-on**: the signature draws itself in about a second, with beings swimming round it. To boot straight in: MENU > **ANIM OFF**.
 
 ### 3. Making a sound
 1. Pick the track with ALGORITHM and the engine/preset with **PRESETS**.
