@@ -1103,7 +1103,7 @@ static void graph_slots(void)
 #define KB_Y 37
 #define KS_Y 86                                      /* PAN / REV knobs: boxes 86..105, centres x 15 and 42 */
 static struct {
-    uint32_t col[4];                                 /* (the cards: the tracks from trk_base4) */
+    uint32_t col[NTRK];                              /* (the cards: JIANT's six columns, else the four from trk_base4) */
     uint8_t meter[NTRK];
 } ts;
 
@@ -1206,9 +1206,54 @@ static void track_strip(uint32_t c, uint32_t sel, uint32_t st, uint32_t mute, ui
         cv_rrect(5, TSS_MY, m < 3 ? 3 : m, 3, 1, T_MID, T_RAISE);
     cv_blit((uint32_t)CARD_X(c - trk_base4()), LG_Y_GRAPH);
 }
+/* (JIANT 0.6) the JIANT style's mixer: the six tracks side by side, 38 px each. The track's cushion (armed: a dot,
+ * red recording), the sound's name (muted: MUTE), LEVEL as the thermal column with the meter brighter over it, its dB
+ * beside it, PAN (from the middle) and the REV send as the two bars under it */
+#define T6_W 38
+#define T6_X(c) (3 + 39 * (int32_t)(c))
+static void track_col6(uint32_t c, uint32_t sel, uint32_t st, uint32_t mute, uint32_t hot, uint32_t lvl, int32_t pan,
+                       int32_t rv, const char *b)
+{
+    char v[8];
+    int32_t k, lv = (int32_t)lvl * 14 / 127, mt = ts.meter[c] * 14 / TS_MH, pw = T6_W - 8;
+    uint16_t lc = hot == 1u ? T_ACCENT : lvl ? (mute ? T_DIM : T_TEXT) : T_DIM;
+    cv_begin(T6_W, H_GRAPH, T_BG);
+    cv_rrect(0, 0, T6_W, H_GRAPH, 5, T_SURF, T_BG);
+    cv_icon_on(4, 5, 16, trk_icon(c, sel), sel ? T_ACCENT : mute ? T_DIM : T_MID, T_SURF);
+    if (st == 1u || st == 2u)                        /* armed: a dot (recording: red) */
+        cv_rrect(T6_W - 11, 10, 6, 6, 3, st == 1u ? T_REC : T_ACCENT, T_SURF);
+    if (mute)
+        cv_text_in(2, 22, T6_W - 4, &AF_S, "MUTE", hot == 4u ? T_ACCENT : T_KEY, T_SURF);
+    else
+        cv_free_text(4, 22, &AF_S, b, sel ? T_TEXT : T_MID, T_SURF, T6_W - 7);
+    for (k = 0; k < 14; k++) {                       /* LEVEL: cold at the bottom, hot at the top */
+        int32_t sy = 95 - k * 4;
+        uint16_t sc = heat_col(20 + k * 220 / 13);
+        sc = mute ? (k < lv ? T_DIM : T_RAISE) : k < mt ? sc : k < lv ? ux_mix(T_SURF, sc, 42) : T_RAISE;
+        cv_rect(4, sy, 12, 3, sc);
+    }
+    if (lvl) {
+        int32_t d = LEVEL_DB_X10[lvl];
+        fmt_int(v, (d + (d < 0 ? -5 : 5)) / 10);
+    } else {
+        str_cpy(v, "OFF", sizeof v);
+    }
+    cv_text_in(17, 44, T6_W - 18, &AF_S, v, lc, T_SURF);
+    cv_text_in(17, 58, T6_W - 18, &AF_S, "dB", T_DIM, T_SURF);
+    cv_rect(4, 104, pw, 3, T_RAISE);                 /* PAN, from the middle */
+    cv_rect(4 + pw / 2, 102, 1, 7, hot == 2u ? T_ACCENT : T_MID);
+    if (pan)
+        cv_rect(pan > 0 ? 4 + pw / 2 + 1 : 4 + pw / 2 + pan * (pw / 2) / 64, 104, (pan > 0 ? pan : -pan) * (pw / 2) / 64 + 1,
+                3, mute ? T_DIM : hot == 2u ? T_ACCENT : heat_col(70 + (pan > 0 ? pan : -pan) * 2));
+    cv_rect(4, 113, pw, 3, T_RAISE);                 /* the REV send */
+    if (rv)
+        cv_rect(4, 113, rv * pw / 127 + 1, 3, mute ? T_DIM : hot == 3u ? T_ACCENT : heat_col(40 + rv * 3 / 2));
+    cv_blit((uint32_t)T6_X(c), Y_GRAPH);
+}
 static void draw_tracks(void)
 {
-    uint32_t c, sk = strip_kind() == SK_TRK, b4 = trk_base4();
+    uint32_t c, sk = strip_kind() == SK_TRK, six = ux.chamfer && !ux.style && !sk;
+    uint32_t b4 = six ? 0u : trk_base4(), n = six ? NTRK : 4u;
     if (ui.force) {
         lcd_fill(0, graph_y(), 240, graph_h(), T_BG);
         if (ux.style)                                /* LINE: the strips divided as the cards above */
@@ -1216,7 +1261,7 @@ static void draw_tracks(void)
         for (c = 0; c < NTRK; c++)
             ts.meter[c] = 0;
     }
-    for (c = b4; c < b4 + 4u; c++) {                 /* (JIANT 0.6: four of the six) */
+    for (c = b4; c < b4 + n; c++) {                  /* (JIANT 0.6: the six, or four of them) */
         track_t *t = &trk[c];
         uint32_t sel = c == song.sel, lvl = trk_level(c), mute = t->p[P_MUTE] != 0;
         uint32_t arm = (song.rec >> c) & 1u, st = arm ? (song.playing ? 1u : 2u) : mute ? 3u : 0u, sig;
@@ -1232,12 +1277,17 @@ static void draw_tracks(void)
             m = ts.meter[c] - 1;                     /* falls ~2 dB a frame */
         ts.meter[c] = (uint8_t)(m < 0 ? 0 : m);
         sig = str_hash(1u + sel + st * 2u + (mute && arm) * 16u + hot * 32u, b) + lvl * 7919u +
-              ts.meter[c] * 131u + (uint32_t)(pan + 128) * 104729u + (uint32_t)rv * 1299709u + mute * 3u + sk * 0x9E37u + c * 0x51u;
+              ts.meter[c] * 131u + (uint32_t)(pan + 128) * 104729u + (uint32_t)rv * 1299709u + mute * 3u + sk * 0x9E37u + c * 0x51u +
+              six * 0x3C6Fu;
         if (!ui.force && sig == ts.col[c - b4])
             continue;
         ts.col[c - b4] = sig;
         if (sk) {
             track_strip(c, sel, st, mute, arm, hot, lvl, b);
+            continue;
+        }
+        if (six) {
+            track_col6(c, sel, st, mute, hot, lvl, pan, rv, b);
             continue;
         }
         cv_begin(CARD_W, H_GRAPH, T_BG);
@@ -1257,38 +1307,7 @@ static void draw_tracks(void)
             cv_keycap(5, 21 + AF_S_CAP_Y + HALF_UP(AF_S_CAP_H - KC_H), KC_MUTE, hot == 4u ? T_ACCENT : T_KEY, T_INK, T_SURF);
         else
             cv_free_text(5, 21, &AF_S, b, mute ? T_DIM : sel ? T_TEXT : T_MID, T_SURF, CARD_W - 10);
-        if (ux.chamfer && !ux.style) {               /* (JIANT 0.5) a thermal column: LEVEL as lit segments (cold at the
-                                                         * bottom, hot at the top), the output's meter brighter over them;
-                                                         * PAN from the middle and the REV send as bars beside it */
-            char v[8];
-            int32_t k, lv = (int32_t)lvl * 17 / 127, mt = ts.meter[c] * 17 / TS_MH, pw = 22, px = 31;
-            uint16_t lc = hot == 1u ? T_ACCENT : lvl ? (mute ? T_DIM : T_TEXT) : T_DIM;
-            for (k = 0; k < 17; k++) {
-                int32_t sy = 108 - k * 4;
-                uint16_t sc = heat_col(20 + k * 220 / 16);
-                sc = mute ? (k < lv ? T_DIM : T_RAISE) : k < mt ? sc : k < lv ? ux_mix(T_SURF, sc, 42) : T_RAISE;
-                cv_rect(6, sy, 18, 3, sc);
-            }
-            if (lvl) {
-                int32_t d = LEVEL_DB_X10[lvl];
-                fmt_int(v, (d + (d < 0 ? -5 : 5)) / 10);
-            } else {
-                str_cpy(v, "OFF", sizeof v);
-            }
-            cv_text_in(px - 2, 40, pw + 4, &AF_S, v, lc, T_SURF);
-            cv_text_in(px - 2, 54, pw + 4, &AF_S, "dB", T_DIM, T_SURF);
-            cv_text_in(px - 2, 72, pw + 4, &AF_S, "PAN", hot == 2u ? T_ACCENT : T_DIM, T_SURF);
-            cv_rect(px, 88, pw, 3, T_RAISE);
-            cv_rect(px + pw / 2, 86, 1, 7, T_MID);
-            if (pan)
-                cv_rect(pan > 0 ? px + pw / 2 + 1 : px + pw / 2 + pan * (pw / 2) / 64, 88, (pan > 0 ? pan : -pan) * (pw / 2) / 64 + 1,
-                        3, mute ? T_DIM : heat_col(70 + (pan > 0 ? pan : -pan) * 2));
-            cv_text_in(px - 2, 96, pw + 4, &AF_S, "REV", hot == 3u ? T_ACCENT : T_DIM, T_SURF);
-            cv_rect(px, 112, pw, 3, T_RAISE);
-            if (rv)
-                cv_rect(px, 112, rv * pw / 127 + 1, 3, mute ? T_DIM : heat_col(40 + rv * 3 / 2));
-        } else
-        {
+        {   /* (the JIANT style: track_col6) */
         {   /* LEVEL: the knob, its dB inside (OFF at 0), and the meter of the output */
             char v[8];
             knob(KB_X, KB_Y, KNOB_BIG_R, KNOB_BIG_COV, KNOB_BIG_ANG, (int32_t)lvl, 0, 127, hot == 1u ? T_ACCENT : vc);

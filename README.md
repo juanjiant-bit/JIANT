@@ -15,12 +15,17 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.6.0).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.6.1).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
 
 ## Changelog
 
 Every update is listed here, newest first.
+
+### v0.6.1
+- **MIXER: the six tracks at once** in the JIANT style, as six thermal columns (number, sound, LEVEL as the heat
+  column with the meter over it, its dB, PAN and REV as two bars underneath). The other styles keep four cards that
+  follow the selected track.
 
 ### v0.6.0
 - **Six tracks instead of four.** T5 starts on PHASE and T6 on WHEEL (any engine can go on any track, as always),
@@ -39,7 +44,7 @@ Every update is listed here, newest first.
 - **GLO** (held): black keys 1–6 mute T1–T6, 7–10 the DRUM groups (KICK, SNARE, HAT, PERC); white keys F3–D4 solo
   T1–T6 while held, E4 unmutes everything, F4 tap tempo. The four knobs are T1–T4's levels, or T3–T6's when T5 or
   T6 is selected. **FX** (held): black keys 1–6 mute T1–T6.
-- **MIXER** shows four tracks at a time and follows the selected one (T5 or T6 selected: T3–T6).
+- **MIXER** shows four tracks at a time and follows the selected one (T5 or T6 selected: T3–T6). (0.6.1: all six in the JIANT style.)
 - **HOME**: six beings in the ecosystem, a bit smaller.
 - **Song scenes** remember the mutes of T5 and T6 too. **Automation** (knobs and per-step locks) works on all six.
 - **MIDI IN**: ROUT **CH1-6** (was CH1-4): channels 1–6 play tracks 1–6, 7–16 stay free for other instruments.
