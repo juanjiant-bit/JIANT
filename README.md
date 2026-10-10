@@ -223,7 +223,7 @@ each layer.
   using right now. The firmware's RAM is reserved entirely at boot and doesn't change, so this is what's worth
   watching: with all five lit (red, yellow) you're close to the limit and should cut voices, the CLOUD reverb or heavy
   effects.
-- **Power-on**: the signature draws itself in about two seconds. To boot straight in: MENU > **ANIM OFF**.
+- **Power-on**: the signature draws itself in about a second. To boot straight in: MENU > **ANIM OFF**.
 
 ### 3. Making a sound
 1. Pick the track with ALGORITHM and the engine/preset with **PRESETS**.
