@@ -16,6 +16,7 @@ static void lcd_wake_now(void) {}
 static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *p)
 { (void)x; (void)y; (void)w; (void)h; (void)p; }
 #define FELUCCA_FLASH 1
+#define PROJ_FUNB_WRITER 1                       /* (JIANT 0.6) the FUN8 image below is made of a FUNB */
 #include "../firmware/src/gfx.c"
 #include "../firmware/src/panel.c"
 #include "../firmware/src/ui.c"
@@ -302,17 +303,17 @@ int main(void)
         uint32_t pos = 68u, pos9 = 68u, k, j, sum;
         trk[2].p[P_E0] = 2;
         project_capture(&proj_scratch);
-        proj_pack(&st, &proj_scratch);
+        proj_pack_vb(&st, &proj_scratch);               /* (a FUNB: its fixed places) */
         memcpy(v8, st.raw, 68);
         v8[66] = 91;
-        for (k = 0; k < NTRK; k++) {
+        for (k = 0; k < PROJ_LT; k++) {
             for (j = 0; j < 91u; j++) v8[pos++] = st.raw[pos9 + (j < 83u ? j : P_E0 + j - 83u)];
             pos9 += P_COUNT;
             memcpy(v8 + pos, st.raw + pos9, 2u + NSTEP * 9u);
             pos += 2u + NSTEP * 9u; pos9 += 2u + NSTEP * 9u;
         }
         memcpy(v8 + pos, st.raw + pos9, sizeof(chain_config_t) + sizeof(motion_store_t));
-        memcpy(v8 + 3056u, st.raw + PROJ_FM6_OFF, NTRK * FM6_PACKED);
+        memcpy(v8 + 3056u, st.raw + PROJ_FM6_OFF, PROJ_LT * FM6_PACKED);
         ((uint32_t *)v8)[0] = 0x46554E38u;
         ((uint32_t *)v8)[1] = 3584u;
         sum = proj_hash(v8, 3580u);
@@ -327,7 +328,7 @@ int main(void)
     v6.size = sizeof v6;
     for (uint32_t i = 0; i < G_NSTORE; i++)
         v6.g[i] = GP[i].def;
-    for (uint32_t i = 0; i < NTRK; i++)
+    for (uint32_t i = 0; i < PROJ_LT; i++)
         v6.t[i].engine = trk[i].engine;
     v6.t[0].step[0] = (step10_t){{255, 72}, 9, 7, 0, 96, 0, 0};
     v6.t[0].p[61] = 3;                                   /* old E0 */

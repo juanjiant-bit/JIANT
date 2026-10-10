@@ -186,10 +186,12 @@ static void section_store(uint32_t s)
     s &= 3u;
     b[0] = (char)('A' + s);
     project_capture(&proj_scratch);
-    if (!proj_pack(&proj_slot[s], &proj_scratch)) {
-        ui_message("SAVE FORMAT ERROR");
+    if (!proj_pack(&proj_wire, &proj_scratch)) {        /* (0.6: packed aside first, the section kept if it does not fit) */
+        ui_message(proj_full ? "SECTION FULL" : "SAVE FORMAT ERROR");
         return;
     }
+    proj_wire_gen++;
+    memcpy(&proj_slot[s], &proj_wire, sizeof proj_slot[s]);
     live.cur = (int8_t)s;
     live.dirty |= (uint8_t)(1u << s);
     ui_say("STORED ", b);

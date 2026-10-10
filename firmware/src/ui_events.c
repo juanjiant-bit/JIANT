@@ -133,7 +133,7 @@ static void ev_knob(uint32_t slot, int32_t s)
     }
     i = idx[r];
     e = &motion.event[i];
-    step = e->place & 63u;
+    step = MOTION_STEP(e);
     id = MOTION_ID(e);
     if (slot == 1u) {                                   /* the next step where its parameter is free */
         uint32_t top = ev_len(t) > step ? ev_len(t) : step + 1u, m = (uint32_t)(s > 0 ? s : -s);
@@ -148,7 +148,7 @@ static void ev_knob(uint32_t slot, int32_t s)
         }
         if (to == (int32_t)step)
             return;
-        (void)motion_move(t, i, (uint32_t)to, id, e->value);
+        (void)motion_move(t, i, (uint32_t)to, id, MOTION_VAL(e));
     } else if (slot == 2u) {                            /* another parameter, from the sound's own value */
         uint32_t to = id, m = (uint32_t)(s > 0 ? s : -s);
         while (m--)                                     /* a detent each: the next free parameter */
@@ -160,7 +160,7 @@ static void ev_knob(uint32_t slot, int32_t s)
     } else {                                            /* the value */
         d = track_desc(t, id);
         s = accel(EN_K1 + slot, s, d->fmt == F_ENUM ? 0 : d->max - d->min);
-        (void)motion_move(t, i, step, id, (int16_t)param_turn(d, e->value, s));
+        (void)motion_move(t, i, step, id, (int16_t)param_turn(d, MOTION_VAL(e), s));
     }
     ev_follow(i);
 }
@@ -196,7 +196,7 @@ static void ev_oct(void)
     {
         const motion_event_t e = motion.event[idx[r]];
         uint32_t lock = !(e.param & MOTION_LOCK);
-        (void)motion_put(t, e.place & 63u, MOTION_ID(&e), e.value, lock ? MOTION_LOCK : 0u);
+        (void)motion_put(t, MOTION_STEP(&e), MOTION_ID(&e), MOTION_VAL(&e), lock ? MOTION_LOCK : 0u);
         ui_message(lock ? "NOW A LOCK" : "NOW AUTOMATION");
     }
 }
@@ -215,7 +215,7 @@ static void ev_delete(void)
     if (ev_busy())
         return;
     e = &motion.event[idx[r]];
-    motion_delete_event(t, e->place & 63u, MOTION_ID(e));
+    motion_delete_event(t, MOTION_STEP(e), MOTION_ID(e));
     ui.ev_row = (uint8_t)r;                              /* (ev_row clamps it to the new count) */
     ui_message("DELETED");
 }

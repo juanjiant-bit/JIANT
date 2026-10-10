@@ -15,12 +15,35 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.5.5).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.6.0).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
 
 ## Changelog
 
 Every update is listed here, newest first.
+
+### v0.6.0
+- **Six tracks instead of four.** T5 starts on PHASE and T6 on WHEEL (any engine can go on any track, as always),
+  each with its own sequence, sound, effects sends and automation. **ALGORITHM** scrolls T1..T6.
+- **Same storage, everything kept**: still 8 songs × 4 sections plus the 4 project slots, and the song sequencer
+  (rows of sections with repeats and scenes) works as before, so you can build whole songs with intro, verse,
+  chorus and bridge. To fit six tracks in the same space, sections are now saved **compressed**: only the steps
+  that have something, and only the parameters you changed, are stored. The music at power-on takes about a
+  quarter of a section; even six tracks with 4-note chords on all 64 steps fit.
+- **A fill warning**: a moment after you stop editing, if the music is near the size of a section the screen says
+  **SECTION 90% FULL**; if it no longer fits, **TOO FULL TO SAVE**. Saving a section in that state says
+  **SECTION FULL** and changes nothing: the section already saved stays as it was. All memory is fixed at build
+  time (nothing is allocated while you play), so a full section can never crash the system.
+- **Projects and sections from 0.5 load as they were**: their four tracks keep their sound and steps, T5 and T6
+  start empty on their default sounds.
+- **GLO** (held): black keys 1–6 mute T1–T6, 7–10 the DRUM groups (KICK, SNARE, HAT, PERC); white keys F3–D4 solo
+  T1–T6 while held, E4 unmutes everything, F4 tap tempo. The four knobs are T1–T4's levels, or T3–T6's when T5 or
+  T6 is selected. **FX** (held): black keys 1–6 mute T1–T6.
+- **MIXER** shows four tracks at a time and follows the selected one (T5 or T6 selected: T3–T6).
+- **HOME**: six beings in the ecosystem, a bit smaller.
+- **Song scenes** remember the mutes of T5 and T6 too. **Automation** (knobs and per-step locks) works on all six.
+- **MIDI IN**: ROUT **CH1-6** (was CH1-4): channels 1–6 play tracks 1–6, 7–16 stay free for other instruments.
+- Web editor: six tracks in the track selector, the mixer and automation.
 
 ### v0.5.5
 - **FLOAT is a floatbeat generator now**: bytebeat's sibling in floats. Each of the 32 ALGOs is a formula of `t`
@@ -99,7 +122,7 @@ That's why everything in JIANT is alive and visible. The screen works like a **t
 decoration, it's intensity. Cold is cyan and violet, hot is red, orange, yellow and white. A high parameter burns; a
 sounding voice glows; silence cools down. Each engine is a **being**, a protozoan drawn in lines whose shape comes
 from what you're playing: open the filter and it grows spines, raise the resonance and its membrane vibrates, detune
-the oscillators and its nuclei drift apart. HOME is an **ecosystem**: four creatures, one per track, breathing with
+the oscillators and its nuclei drift apart. HOME is an **ecosystem**: six creatures, one per track, breathing with
 their own audio. You don't need to read numbers to know what's going on; you can see it.
 
 At the same time, what is technical is shown as technical. The LFO runs at its rate, the envelope shows where the
@@ -257,13 +280,13 @@ Turning fast sweeps the whole range; turning slowly is fine adjustment. Turn it 
 
 | Hold | Keys | Knobs |
 | --- | --- | --- |
-| **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. MIDI punch-ins: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 STUTTER 1/8 · 1/16, D5 ATK+ (everything's attack up, drums included), E5 ARP (drums: a new fill on every press), F5 RANDOM (notes and steps). Everything comes in on the transport's next 1/16. Black keys 1–4: mute T1–T4; A#4 chooses which tracks the MIDI ones affect (all, synths, drums). **Automate**: with REC armed and playing, whatever you hold is recorded in the section's lane (64 steps of 1/16); G5 erases it where the playhead passes, or entirely with the transport stopped | FILTER, CRUSH, THROW, DEPTH |
+| **FX** | F3 G3 A3 REPEAT 1/8, 1/16, 1/32; B3 LPF; C4 HPF. MIDI punch-ins: D4 OCT−, E4 OCT+, F4 1/2 TEMPO, G4 DEC−, A4 DEC+, B4 C5 STUTTER 1/8 · 1/16, D5 ATK+ (everything's attack up, drums included), E5 ARP (drums: a new fill on every press), F5 RANDOM (notes and steps). Everything comes in on the transport's next 1/16. Black keys 1–6: mute T1–T6; A#4 chooses which tracks the MIDI ones affect (all, synths, drums). **Automate**: with REC armed and playing, whatever you hold is recorded in the section's lane (64 steps of 1/16); G5 erases it where the playhead passes, or entirely with the transport stopped | FILTER, CRUSH, THROW, DEPTH |
 | **ARP TRNS** | With the ARP mode on TRNS, the keys (and incoming MIDI) transpose the track's sequence by their interval from C4, without playing notes; the transposition stays on release | — |
 | **SEQ > SHIFT** | OFS shifts the track's sequence from −32 to +32 steps (within LEN; live recording writes where you hear it) and PIT transposes it ±24 semitones (not on kits). Both can be automated and are also on the SCL layer (KNOB 3 / 4) | OFS, PIT |
-| **REC + another button** | Hold REC and press FX, EDIT, ENV, LFO, SCL, ARP or GLO: clears that part's automation on the selected track (knob movements and per-step locks; stored values stay). FX: the punch-in lane too. GLO: levels and pan of the 4 tracks. The other way round (FX held then REC) arms recording, as always | — |
-| **SEQ + REC** | Hold SEQ and press REC: CLEAR ALL SEQUENCES? (OCT+ confirms): clears the steps and automation of the 4 tracks and the punch-in lane | — |
+| **REC + another button** | Hold REC and press FX, EDIT, ENV, LFO, SCL, ARP or GLO: clears that part's automation on the selected track (knob movements and per-step locks; stored values stay). FX: the punch-in lane too. GLO: levels and pan of the 6 tracks. The other way round (FX held then REC) arms recording, as always | — |
+| **SEQ + REC** | Hold SEQ and press REC: CLEAR ALL SEQUENCES? (OCT+ confirms): clears the steps and automation of the 6 tracks and the punch-in lane | — |
 | **LFO** | — (**MACRO** layer: below, where each macro goes) | M1, M2, M3, M4 |
-| **GLO** | Black keys 1–4 mute T1–T4 (latched); 5–8 DRUM group mutes: KICK, SNARE, HAT, PERC; F3–B3 solo while held; C4 unmutes everything; F4 tap tempo | T1–T4 level |
+| **GLO** | Black keys 1–6 mute T1–T6 (latched); 7–10 DRUM group mutes: KICK, SNARE, HAT, PERC; F3–D4 solo T1–T6 while held; E4 unmutes everything; F4 tap tempo | T1–T4 level (with T5 or T6 selected: T3–T6) |
 | **SCL** | Any key picks the root | ROOT, SCL, OFS, PIT |
 | **EDIT** | F3 **INIT**: the track's sound goes back to factory (on DRUM, the DRUM-X kit too). G3 **RECALL**: back to the sound saved in the section (on DRUM, with its kit). Both ask for confirmation and leave the steps alone. On a DRUM track, black keys 1–8 mute each DRUM-X sound. The engine and sounds are picked in PRESETS | The engine's first 4 EDIT knobs |
 | **SEQ** | On the SEQ pages: SEQ TOOLS | LEN, DIV, SWING, GATE |
@@ -284,7 +307,7 @@ each layer.
 ### 1. Getting around
 - Each page button (EDIT, ENV, LFO, FX, SEQ, SCL, ARP, GLO, SAVE) opens its first page; pressing it again moves to the
   next one. The title at the top tells you where you are. **HOME** takes you back to the ecosystem.
-- **ALGORITHM** picks the track (T1–T4) from any page; track pages show the selected track.
+- **ALGORITHM** picks the track (T1–T6) from any page; track pages show the selected track.
 - The four knobs drive the four columns on screen. Turning fast sweeps the whole range, slowly fine-tunes.
 - **Holding** a button opens its layer (FX, GLO, SCL, LFO, EDIT, SAVE…): release it and you're back where you were.
 
@@ -329,7 +352,7 @@ locks it into a short window. CHIP sets the resolution: FULL is smooth, 4BIT and
 - **FOLD** folds each hit's wave: the attack shines and the tail comes back clean. **FM** dirties the timbre.
 - **EDIT > SOUND 1–3** edits each sound (BD, SD, CP, CH, OH, TM, RS, CB; KNOB 1 picks which). SOUND 3 has **PMOD**
   (how the pitch falls: DECAY, 808-style LONG, NOISE, SINE), DRV and WAVE.
-- Mutes: **GLO held** + black keys 5–8 (KICK, SNARE, HAT, PERC); **EDIT held** + black keys 1–8 (each sound).
+- Mutes: **GLO held** + black keys 7–10 (KICK, SNARE, HAT, PERC); **EDIT held** + black keys 1–8 (each sound).
 - SELECT on a DRUM track rolls a new kit around the factory one.
 - **EDIT > X-MOD** moves the kit by itself: **RATE** (OFF, 4 bars … 1/32, in time with the tempo), **DPTH** (how far
   it swings MORPH), **SHPE** (SINE, TRI, SAW, RAMP, S&H) and **RAND** (each hit gets its own MORPH and up to a

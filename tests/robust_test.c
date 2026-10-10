@@ -19,7 +19,7 @@ static int projects(void)
     reset();
     project_capture(&p);
     bad += check("a captured project packs and imports", proj_pack(&st, &p) && proj_import(&q, &st, PROJ_STORE_SIZE));
-    pos = 68u + st.raw[66];                                 /* track 1's engine byte (after its parameters) */
+    pos = 68u;                                              /* track 1's engine byte (FUNC: its first) */
     for (e0 = NENGINES; e0 < 256u; e0 += 37u) {
         st.raw[pos] = (uint8_t)e0;
         sum = proj_hash(st.raw, PROJ_STORE_SIZE - 4u);
@@ -30,7 +30,7 @@ static int projects(void)
     memset(&v5, 0, sizeof v5);                              /* FUN5 the same */
     v5.magic = PROJ_MAGIC_V5; v5.size = sizeof v5;
     for (i = 0; i < G_NSTORE; i++) v5.g[i] = GP[i].def;
-    for (i = 0; i < NTRK; i++) { v5.t[i].engine = trk[i].engine; memcpy(v5.t[i].p, trk[i].p, sizeof v5.t[i].p); }
+    for (i = 0; i < PROJ_LT; i++) { v5.t[i].engine = trk[i].engine; memcpy(v5.t[i].p, trk[i].p, sizeof v5.t[i].p); }
     v5.t[2].engine = NENGINES;
     v5.sum = proj_hash(&v5, sizeof v5 - 4u);
     bad += check("FUN5 with an engine past the last is not a project", !proj_import(&q, &v5, sizeof v5));

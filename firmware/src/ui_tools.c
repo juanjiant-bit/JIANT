@@ -57,8 +57,8 @@ static void tl_order(track_t *t, uint32_t len, const uint8_t *src)
     f = motion_guard();
     for (j = 0; j < motion.count; j++) {
         motion_event_t *e = &motion.event[j];
-        if ((e->place >> 6) == k && (e->place & 63u) < len)
-            e->place = (uint8_t)(k << 6 | to[e->place & 63u]);
+        if (MOTION_TRK(e) == k && MOTION_STEP(e) < len)
+            e->place = (uint8_t)((e->place & 0xC0u) | to[MOTION_STEP(e)]);   /* (the track's bits kept, MOTION_TRK) */
     }
     motion_unguard(f);
 }

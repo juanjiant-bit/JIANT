@@ -1059,14 +1059,14 @@ static void graph_events(void)
             char b[16], nm[12];
             const char *unit;
             const param_desc_t *d = track_desc(t, id);
-            b[0] = (char)('0' + ((e->place & 63u) + 1u) / 10u);
-            b[1] = (char)('0' + ((e->place & 63u) + 1u) % 10u);
+            b[0] = (char)('0' + (MOTION_STEP(e) + 1u) / 10u);
+            b[1] = (char)('0' + (MOTION_STEP(e) + 1u) % 10u);
             b[2] = 0;
             GFX_HOOK_ALIGN(0, y, 0, y + 16, AL_V, "list row text centred up/down");
             cv_text_on(14, y + CAP_IN(S, 16), &AF_S, lock ? "LOCK" : "AUTO", sel ? T_INK : lock ? T_ACCENT : T_MID, bg);
             GFX_HOOK_ALIGN(0, y, 0, y + 16, AL_V, "list row text centred up/down");
             cv_text_on(54, y + CAP_IN(S, 16), &AF_S, b, sel ? T_INK : T_MID, bg);
-            param_format(d, e->value, b, &unit);
+            param_format(d, MOTION_VAL(e), b, &unit);
             if (unit && unit[0] && str_len(b) + str_len(unit) < sizeof b)
                 str_cpy(b + str_len(b), unit, sizeof b - str_len(b));
             ev_name(t, id, nm);
@@ -1103,7 +1103,7 @@ static void graph_slots(void)
 #define KB_Y 37
 #define KS_Y 86                                      /* PAN / REV knobs: boxes 86..105, centres x 15 and 42 */
 static struct {
-    uint32_t col[NTRK];
+    uint32_t col[4];                                 /* (the cards: the tracks from trk_base4) */
     uint8_t meter[NTRK];
 } ts;
 
@@ -1204,11 +1204,11 @@ static void track_strip(uint32_t c, uint32_t sel, uint32_t st, uint32_t mute, ui
     cv_rrect(5, TSS_MY, gw, 3, 1, T_RAISE, T_SURF);
     if (m)
         cv_rrect(5, TSS_MY, m < 3 ? 3 : m, 3, 1, T_MID, T_RAISE);
-    cv_blit((uint32_t)CARD_X(c), LG_Y_GRAPH);
+    cv_blit((uint32_t)CARD_X(c - trk_base4()), LG_Y_GRAPH);
 }
 static void draw_tracks(void)
 {
-    uint32_t c, sk = strip_kind() == SK_TRK;
+    uint32_t c, sk = strip_kind() == SK_TRK, b4 = trk_base4();
     if (ui.force) {
         lcd_fill(0, graph_y(), 240, graph_h(), T_BG);
         if (ux.style)                                /* LINE: the strips divided as the cards above */
@@ -1216,7 +1216,7 @@ static void draw_tracks(void)
         for (c = 0; c < NTRK; c++)
             ts.meter[c] = 0;
     }
-    for (c = 0; c < NTRK; c++) {
+    for (c = b4; c < b4 + 4u; c++) {                 /* (JIANT 0.6: four of the six) */
         track_t *t = &trk[c];
         uint32_t sel = c == song.sel, lvl = trk_level(c), mute = t->p[P_MUTE] != 0;
         uint32_t arm = (song.rec >> c) & 1u, st = arm ? (song.playing ? 1u : 2u) : mute ? 3u : 0u, sig;
@@ -1232,10 +1232,10 @@ static void draw_tracks(void)
             m = ts.meter[c] - 1;                     /* falls ~2 dB a frame */
         ts.meter[c] = (uint8_t)(m < 0 ? 0 : m);
         sig = str_hash(1u + sel + st * 2u + (mute && arm) * 16u + hot * 32u, b) + lvl * 7919u +
-              ts.meter[c] * 131u + (uint32_t)(pan + 128) * 104729u + (uint32_t)rv * 1299709u + mute * 3u + sk * 0x9E37u;
-        if (!ui.force && sig == ts.col[c])
+              ts.meter[c] * 131u + (uint32_t)(pan + 128) * 104729u + (uint32_t)rv * 1299709u + mute * 3u + sk * 0x9E37u + c * 0x51u;
+        if (!ui.force && sig == ts.col[c - b4])
             continue;
-        ts.col[c] = sig;
+        ts.col[c - b4] = sig;
         if (sk) {
             track_strip(c, sel, st, mute, arm, hot, lvl, b);
             continue;
@@ -1324,7 +1324,7 @@ static void draw_tracks(void)
             cv_text_in(42 - KNOB_SMALL_R, KS_Y + 17, 2 * KNOB_SMALL_R, &AF_S, v, rc, T_SURF);
         }
         }
-        cv_blit((uint32_t)CARD_X(c), Y_GRAPH);
+        cv_blit((uint32_t)CARD_X(c - b4), Y_GRAPH);
     }
 }
 /* oscilloscope of the output, triggered on a rising zero crossing: a RAISE centre line, the trace 2 px (in silence

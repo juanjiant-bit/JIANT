@@ -62,7 +62,7 @@ static void scene_apply(uint32_t row)
         return;
     }
     for (i = 0; i < NTRK; i++)
-        trk[i].p[P_MUTE] = (int16_t)((s->mute >> i) & 1u);
+        trk[i].p[P_MUTE] = (int16_t)(i < 4u ? (s->mute >> i) & 1u : (s->on >> (i - 3u)) & 1u);
     dx_mute_set((uint16_t)((dx_mute & ~DXG_ALL) | ((s->mute >> 4) & DXG_ALL)));
 }
 static void chain_apply(void)                         /* a song row's section in */

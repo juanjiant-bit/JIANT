@@ -7,7 +7,7 @@ flash writes and live pushes (16-26, 32) have host coverage; that does not estab
 their hardware behavior. The step chance byte, motion (64) and the full backup (65-67) have host
 coverage only (`tests/editor_test.c`, `tests/backup_test.c`, `web/test_backup.mjs`).
 
-**v3 (four tracks):** the device has four tracks, each a synth part (since 1.0; before it, track 4
+**v3 (tracks):** the device has NTRK tracks (six since JIANT 0.6, four before), each a synth part (since 1.0; before it, track 4
 was a GM drum track: see "Track 4 since 1.0" below). One
 of them is *selected* (ALGORITHM on the device, or `TRACK`). Every v1 / v2 command acts on the
 selected track (its parameters, engine, preset, steps, the user presets it stores or loads); `TRACK`,
@@ -124,7 +124,7 @@ watches (v2, `WATCH`), the device also sends push frames (cmds 23, 24, 26) at an
 | u32 (v7) | 5 bytes, 7 bits each, LSB first; the last byte is 0..15. Used by the backup commands |
 | string | ASCII bytes, ended by a 0 byte |
 | scope | 0 = parameter of the selected track (`P_*`, 0..P_COUNT−1); 1 = global parameter (`G_*`, 0..G_COUNT−1) |
-| track | 0..3: tracks 1..4 (synth parts) |
+| track | 0..NTRK-1: tracks 1..6 (synth parts; JIANT 0.6: six, INFO's NTRK; before, four) |
 | engine byte | 0..NENGINES−1 (firmware before 1.0: NENGINES = its drum track, no engine). The numbers are fixed, new engines are appended: 0 ANALOG, 1 reserved (DIGITAL before 1.0: see below), 2 PHASE, 3 LOFI, 4 SAMPLE, 5 VOICE, 6 TRIO, 7 WHEEL, 8 GRAIN, 9 reserved (PHYS until FELUCCA TONIC: its sounds load as ANALOG's first preset), 10 DRUM, 11 NOISE, 12 FM6, 13 SLICE (NENGINES 14; a build with `FELUCCA_SLICE=0` has 13). The device and the editor list them in another order (ANALOG FM6 PHASE LOFI SAMPLE VOICE TRIO WHEEL GRAIN NOISE SLICE DRUM: `ENGINE_ORDER`); the numbers stay |
 
 The engine parameters are `P_E0..P_E7`: P_COUNT−8 .. P_COUNT−1 (91..98), and `INFO` gives `P_E0`.
@@ -208,7 +208,7 @@ at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device 
 
 | cmd | Request args | Reply args |
 | --- | --- | --- |
-| 1 INFO | — | version string, NENGINES, P_COUNT, G_COUNT, NSTEP, P_E0, then NENGINES engine-name strings, then (v3) NTRK (4), then (v6) CHAIN_ROWS (16), then the tagged blocks `55 01 uiCaps`, `4D 01 64 01`, `42 01 3`, `46 01 nfactory nbank`, `53 01 3`, (1.0.3) `50 01 3` and (1.0.4) `4E 01 count` (MENU settings; 12, 1.1: 15, 1.2: 17, 1.1.5: 18) and (1.0.5) `52 01 4` (ratchet) and (1.1) `4C 01 1` (parameter locks) (below); older firmware ends earlier |
+| 1 INFO | — | version string, NENGINES, P_COUNT, G_COUNT, NSTEP, P_E0, then NENGINES engine-name strings, then (v3) NTRK (6 since JIANT 0.6, 4 before), then (v6) CHAIN_ROWS (16), then the tagged blocks `55 01 uiCaps`, `4D 01 64 01`, `42 01 3`, `46 01 nfactory nbank`, `53 01 3`, (1.0.3) `50 01 3` and (1.0.4) `4E 01 count` (MENU settings; 12, 1.1: 15, 1.2: 17, 1.1.5: 18) and (1.0.5) `52 01 4` (ratchet) and (1.1) `4C 01 1` (parameter locks) (below); older firmware ends earlier |
 | 2 GET | scope, id | scope, id, v14 |
 | 3 SET | scope, id, v14 | scope, id, v14 (the value after clamping). Setting global `G_ENGSEL` (id from DESC label "ENG") changes the engine: its defaults, then its first preset (as on the device) |
 | 4 DUMP | — | engine, preset, then P_COUNT × v14 (the selected track), then G_COUNT × v14 (globals) |
@@ -452,7 +452,7 @@ grid lives in the steps themselves, so every engine has it:
   (3.20 with MENU > USB SERIAL OFF)); the MIDI port and this protocol are unchanged, and both
   work while the computer records.
 - **Global ids.** `G_ROUTE` (id 14, label "ROUT", GLO > SYSTEM) was a placeholder ("--", range 0..0);
-  since 1.0 it is the MIDI IN routing: 0 "CH1-4" (channels 1..4 → tracks 1..4; what projects stored
+  since 1.0 it is the MIDI IN routing: 0 "CH1-6" (JIANT 0.6; "CH1-4" before: channels 1..6 → tracks 1..6; what projects stored
   before. Until 1.0.2 every other channel played the selected track; since 1.0.3 channels 5..16 are
   ignored: notes, bend, CCs, aftertouch, panic and reset), 1 "SEL" (every channel → the selected track).
   Neither setting affects this SysEx protocol or MIDI clock. The

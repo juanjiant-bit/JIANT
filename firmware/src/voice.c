@@ -47,7 +47,7 @@ static uint32_t lfo_rand(track_t *t)
  * CUT (+-32 semitones; 64: the note: a resonance at the pitch), RES its feedback (up to ~0.99: long metallic rings);
  * the level kept about the dry's. One line a part (1024 samples: down to ~43 Hz) */
 #define COMB_LEN 1024u
-static int16_t comb_buf[NTRK][COMB_LEN];
+static int16_t comb_buf[NTRK][COMB_LEN] __attribute__((section(".pool")));   /* (0.6: six tracks, in the pool) */
 static uint16_t comb_w[NTRK];
 static int16_t comb_p16[NTRK];
 static __attribute__((noinline)) void track_comb(track_t *t, int32_t *out, uint32_t n, int32_t cut, int32_t res)

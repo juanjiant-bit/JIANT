@@ -227,12 +227,12 @@ async function editorMock() {
   const set = E.parse[E.CMD.SET](await rq(E.req.set(0, 3, 500)));
   ok(set.value === 127, "editor: SET clamps to the range");
   {
-    /* GLO > SYSTEM ROUT (G_ROUTE 14): MIDI IN CH1-4 (0, the default) / SEL (1); the id and G_COUNT unchanged */
+    /* GLO > SYSTEM ROUT (G_ROUTE 14): MIDI IN CH1-6 (0, the default) / SEL (1); the id and G_COUNT unchanged */
     const rd = E.parse[E.CMD.DESC](await rq(E.req.desc(1, 14)));
     const r1 = E.parse[E.CMD.SET](await rq(E.req.set(1, 14, 5)));
     const r0 = E.parse[E.CMD.SET](await rq(E.req.set(1, 14, 0)));
-    ok(rd.label === "ROUT" && rd.def === 0 && eq(rd.names, ["CH1-4", "SEL"]) && r1.value === 1 && r0.value === 0 && info.gcount === 37,
-      "editor: MIDI IN routing (ROUT CH1-4 / SEL, global id 14)");
+    ok(rd.label === "ROUT" && rd.def === 0 && eq(rd.names, ["CH1-6", "SEL"]) && r1.value === 1 && r0.value === 0 && info.gcount === 37,
+      "editor: MIDI IN routing (ROUT CH1-6 / SEL, global id 14)");
   }
   {
     /* FX > REVERB TYPE (G_RTYPE 24, the old drum channel's id): ROOM (0, the default) / SPRING (1) / SHIMR RESO CLOUD (JIANT 0.5); G_COUNT unchanged */
@@ -844,8 +844,8 @@ async function editorTracks() {
   const { m, rq, ev, done } = attachMock({ watchMs: 1000 });
   const info = E.parse[C.INFO](await rq(E.req.info()));
   const tr = E.parse[C.TRACK](await rq(E.req.track()));
-  ok(info.ntrk === 4 && tr.sel === 0 && tr.ntrk === 4 && tr.tracks[0].engine === 0 && tr.tracks[1].engine === 12
-    && tr.tracks[3].engine === 10 && tr.tracks[3].preset === 0, "tracks: INFO NTRK, TRACK lists 4 parts (track 4: DRUM)");
+  ok(info.ntrk === 6 && tr.sel === 0 && tr.ntrk === 6 && tr.tracks[0].engine === 0 && tr.tracks[1].engine === 12
+    && tr.tracks[3].engine === 10 && tr.tracks[3].preset === 0 && tr.tracks[4].engine === 2 && tr.tracks[5].engine === 7, "tracks: INFO NTRK, TRACK lists 6 parts (track 4: DRUM, 5 PHASE, 6 WHEEL)");
   /* the v1 commands follow the selected track */
   const d0 = E.parse[C.DUMP](await rq(E.req.dump()), info);
   const t1 = E.parse[C.TRACK](await rq(E.req.track(1)));
@@ -906,7 +906,7 @@ async function editorMixer() {
   const info = E.parse[C.INFO](await rq(E.req.info()));
   const PAN = 39, MUTE = 40;
   const m0 = await E.mixer.read(rq, info, { pan: PAN });
-  ok(m0.ntrk === 4 && m0.tracks.length === 4 && m0.tracks[1].pan === -24 && m0.tracks[2].pan === 20 && m0.tracks[3].engine === 10
+  ok(m0.ntrk === 6 && m0.tracks.length === 6 && m0.tracks[1].pan === -24 && m0.tracks[2].pan === 20 && m0.tracks[3].engine === 10
     && m0.tracks.every((x) => Number.isInteger(x.level) && (x.mute === 0 || x.mute === 1)), "mixer: read = TRACK + pan of every track (TRACK_DUMP)");
   /* level / mute of tracks that are not selected (clamped) */
   const a = await E.mixer.setMix(rq, 2, 70, 1);
@@ -973,8 +973,8 @@ async function editorTrackParam() {
   ok(g.track === 1 && g.id === PAN && g.value === -24 && p2 === -40 && p1 === 63 && alg.value === 32 && lv.value === 0 && td2.p[PAN] === -40
     && sel.sel === 0 && (sent[C.TRACK] || 0) === tracks0 + 1 && ev.pushes.length === pushes,
     "v4: TRACK_PARAM get / set on other tracks (clamped as SET, selection kept, no push)");
-  const bad = await rq(E.req.trackParam(4, PAN), { timeout: 60, retries: 0, quiet: true }).then(() => "reply", () => "none");
-  ok(bad === "none", "v4: TRACK_PARAM of track 5: no reply");
+  const bad = await rq(E.req.trackParam(6, PAN), { timeout: 60, retries: 0, quiet: true }).then(() => "reply", () => "none");
+  ok(bad === "none", "v4: TRACK_PARAM of track 7: no reply");
   /* device-side changes: CHANGED for the selected track, TRACK_CHANGED for the others */
   m.sim.param(2, PAN, 30);
   m.sim.param(3, MUTE, 1);

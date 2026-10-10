@@ -191,7 +191,7 @@ static void graph_being(const track_t *t)
  * selected one larger, its number in the theme colour. Still in silence */
 static void graph_ecosys(void)
 {
-    static const int16_t PX[NTRK] = {52, 128, 186, 92}, PY[NTRK] = {40, 34, 74, 88};
+    static const int16_t PX[NTRK] = {44, 120, 196, 64, 146, 206}, PY[NTRK] = {34, 28, 40, 84, 78, 86};
     static int32_t en[NTRK], sx[NTRK], sy[NTRK], vx[NTRK], vy[NTRK];   /* (positions and speeds, Q8 px; a frame) */
     static uint32_t tm[NTRK], f0;
     static uint8_t init;
@@ -215,7 +215,7 @@ static void graph_ecosys(void)
         track_t *t = &trk[c];
         uint32_t e = t->eng_req % NENGINES;
         const genome_t *g = e == ENGI_DRUM ? &LANE_G_HOME : &GENOME[EGEN[e]];
-        int32_t v = t->peak * 256 / 7000, r = (c == song.sel ? 19 : 14) * 16, rad, sp;
+        int32_t v = t->peak * 256 / 7000, r = (c == song.sel ? 17 : 12) * 16, rad, sp;
         uint8_t ids[4];
         bfeat_t f;
         char num[2] = {(char)('1' + c), 0};

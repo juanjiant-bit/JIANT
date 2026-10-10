@@ -306,11 +306,11 @@ static void ed_motion_reply(uint32_t k, uint32_t rc, uint32_t kinds)
     ed_b(k); ed_b(rc); ed_b(motion_enabled(t)); ed_b(motion_count(t)); ed_b(MOTION_MAX);
     for (i = 0; i < motion.count; i++) {
         const motion_event_t *e = &motion.event[i];
-        if ((e->place >> 6) != k) continue;
-        ed_b(e->place & 63u); ed_b(MOTION_ID(e)); ed_v(e->value);
+        if (MOTION_TRK(e) != k) continue;
+        ed_b(MOTION_STEP(e)); ed_b(MOTION_ID(e)); ed_v(MOTION_VAL(e));
     }
     for (i = 0; kinds && i < motion.count; i++)
-        if ((motion.event[i].place >> 6) == k)
+        if (MOTION_TRK(&motion.event[i]) == k)
             ed_b((motion.event[i].param & MOTION_LOCK) != 0u);
 }
 static int ed_args_ok(uint32_t cmd, const uint8_t *a, uint32_t n)

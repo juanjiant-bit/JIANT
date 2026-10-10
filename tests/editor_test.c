@@ -474,11 +474,11 @@ static int fm6_patches(void)
     a[1] = 5;
     request(ED_FM6_GET, a, 2);
     bad += check("an erased preset's patch is gone (GET rc 2)", host_wire[7] == 2u);
-    a[0] = ED_FM6_TRACK; a[1] = 4;
+    a[0] = ED_FM6_TRACK; a[1] = NTRK;
     request(ED_FM6_PUT, a, sizeof a);
     i = host_wire[7];
     request(ED_FM6_PUT, a, 20);
-    bad += check("FM6_PUT: a fifth track or a short record: rc 1", i == 1u && host_wire[7] == 1u);
+    bad += check("FM6_PUT: a seventh track or a short record: rc 1", i == 1u && host_wire[7] == 1u);
     a[0] = 4; a[1] = 0;
     request(ED_FM6_GET, a, 2);
     bad += check("FM6_GET of an unknown target: rc 1", host_wire[7] == 1u);
