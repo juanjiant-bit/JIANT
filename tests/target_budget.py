@@ -18,7 +18,7 @@ FUNCS = ["analog_render", "digital_render", "digital_render_legacy", "digital_re
          "wheel_render", "wheel_block", "analog_ext", "lofi_byte_render",   # (JIANT 0.4: SYNC RING SAW3, BYTE)
          "drum_render", "noise_render", "fm6_render", "fm6_op_run", "fm6_op_fb",
          "dx_run",                                          # DRUM-X (drumx_voice.c): a hit, osc + noise
-         "slicer_track",
+         "slicer_bus",                                      # (JIANT 0.6.3) the SLICER, one on a bus
          "fm1_alnk0_irq", "fm1_timer5_irq",               # the audio ISR; TIMER5: the key / LED scan (hal/fm1_input.h)
          "uac_tap48",                                       # the USB audio input at 48 kHz: the 44.1 -> 48 resampler (usb.c)
          "click_render",                                    # the metronome's click (click.c), while it sounds

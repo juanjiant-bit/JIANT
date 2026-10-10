@@ -627,6 +627,31 @@ static void test_new_types(void)
         }
         check("SIZE 126: every model bounded under 2 s of loud noise, its tail long and dying", ok);
     }
+    {   /* (0.6.5) RESO's PITCH (PRE's slot): the chord up the scale; FOLW (DAMP's slot): built on a track's note; a glide */
+        double side;
+        uint32_t p0, p2, pf, pg;
+        jreset();
+        song.g[G_RTYPE] = 3; song.g[G_RSIZE] = 90; song.g[G_RMOD] = 0; song.g[G_RPRE] = 0; song.g[G_RDAMP] = 0;
+        trk[0].p[P_ROOT] = 0; trk[0].p[P_SCALE] = 1;    /* (C major) */
+        jrun(0, burst, FS / 2u, &side);
+        p0 = fx.rs_per[0];
+        song.g[G_RPRE] = 2;                             /* two steps up: E */
+        jrun(0, burst, FS / 2u, &side);
+        p2 = fx.rs_per[0];
+        song.g[G_RPRE] = 0; song.g[G_RDAMP] = 1;        /* FOLW T1: its note G (67) */
+        trk[0].v[0].active = 1; trk[0].v[0].gate = 1; trk[0].v[0].note = 67;
+        jrun(0, burst, FS / 2u, &side);
+        pf = fx.rs_per[0];
+        trk[0].v[0].active = trk[0].v[0].gate = 0;      /* let go: the chord stays */
+        jrun(0, burst, FS / 2u, &side);
+        pg = fx.rs_per[0];
+        printf("reverb: RESO bass string period C %u, +2 steps %u (%.3f), FOLW G %u (%.3f), held %u\n", p0, p2,
+               (double)p0 / p2, pf, (double)p0 / pf, pg);
+        check("RESO: PITCH +2 steps on C major = E (x1.26), FOLW T1 on G = G (x1.50), held after the note ends",
+              fabs((double)p0 / p2 - 1.2599) < 0.02 && fabs((double)p0 / pf - 1.4983) < 0.02 && pg == pf && fx.rs_root == 68);
+        song.g[G_RDAMP] = 0;
+        fx.rs_root = 0;
+    }
     song.g[G_RTYPE] = 0; song.g[G_RWIDE] = 0; song.g[G_RMOD] = 0;
 }
 int main(int argc, char **argv)

@@ -449,6 +449,9 @@ static const page_t PAGES[] = {
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))
 static uint8_t mod_ui_slot;      /* the MOD page: the matrix slot (0..3) KNOB 2..4 edit */
 static uint8_t ms_ui_step;       /* (JIANT) the MSEQ page: the step (0..15) KNOB 2 edits */
+static const char *const N_RFOLW[] = {"OFF", "T1", "T2", "T3", "T4", "T5", "T6"};
+static const param_desc_t RESO_PITCH = PD("PITCH", F_INT, 0, 14, 0);   /* (0.6.5) RESO: the chord's steps up the scale (G_RPRE) */
+static const param_desc_t RESO_FOLW = PE("FOLW", N_RFOLW, 0);          /* .. the track whose notes it follows (G_RDAMP) */
 static uint8_t sl_ui_step;       /* (JIANT 0.6.3) the SL PITCH page: the step KNOB 2 edits */
 
 static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **valp)
@@ -466,6 +469,8 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         if (pg->graph == GR_SLPIT && id == G_SLP0)    /* the pitch of the step shown */
             id += sl_ui_step & 15u;
         *valp = &song.g[id];
+        if (song.g[G_RTYPE] == 3 && (id == G_RPRE || id == G_RDAMP))   /* (0.6.5) RESO: PITCH, FOLW in their slots */
+            return id == G_RPRE ? &RESO_PITCH : &RESO_FOLW;
         return &GP[id];
     }
     if (pg->graph == GR_MOD)                          /* SRC DST AMT of the slot shown */

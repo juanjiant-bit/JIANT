@@ -40,6 +40,54 @@ static const uint8_t FAM_BTN[FAM_COUNT] = {B_HOME, B_ENV, B_LFO, B_FX, B_SCL, B_
 
 static uint32_t cur_fam(void) { return ui.home ? FAM_HOME : cur_page()->fam; }
 
+/* (JIANT 0.6.6) a page button held + PRESETS: that family's pages one by one, forwards / back (GLO: the mixer and the
+ * global pages), the page shown at once with its title; the button let go stays there (its tap, its layer: not now) */
+static uint8_t ly_used;                                  /* the held layer's knobs or keys used: PRESETS stays its */
+static uint32_t held_family(void)
+{
+    uint32_t f;
+    for (f = FAM_ENV; f < FAM_COUNT; f++)
+        if (f != FAM_TRK && (fm1_in.buttons >> panel.btn[FAM_BTN[f]]) & 1u)
+            return f;
+    return FAM_COUNT;
+}
+static int page_in(uint32_t i, uint32_t fam)
+{
+    return (PAGES[i].fam == fam || (fam == FAM_GLO && PAGES[i].fam == FAM_TRK)) && page_visible(i);
+}
+static void page_jump(uint32_t fam, int32_t s)
+{
+    uint32_t b = FAM_BTN[fam], i = ui.page, j;
+    if (ui.home || !page_in(ui.page, fam)) {          /* (from elsewhere: the family's first page, then the turns) */
+        for (i = 0; i < NPAGES && !page_in(i, fam); i++)
+            ;
+        if (i == NPAGES)
+            return;
+        s += s > 0 ? -1 : 1;
+    }
+    while (s) {                                         /* (no wrap: its first and last pages are where it stops) */
+        for (j = i; ; ) {
+            j = s > 0 ? j + 1u : j - 1u;
+            if (j >= NPAGES || page_in(j, fam))
+                break;
+        }
+        if (j >= NPAGES)
+            break;
+        i = j;
+        s += s > 0 ? -1 : 1;
+    }
+    ui.page = (uint8_t)i;
+    ui.fam_last[PAGES[i].fam] = ui.page;
+    ui.home = 0;
+    page_entered();
+    ui_message(PAGES[i].title);
+    ui.pg_down &= (uint16_t)~(1u << panel.btn[b]);     /* (the button let go: no next page) */
+    if (b == B_SEQ) ui.seq_t0 |= 2u;
+    if (b == B_SAVE) ui.save_t0 |= 2u;
+    if (ui.ly)                                          /* (a layer's button: no map, no tap) */
+        ui.ly_t0 = (ui.ly_t0 & ~2u) | 8u;               /* (ui_layer.c LY_OPEN off, LY_DEAD) */
+}
+
 static int layer_set_open(void);                       /* (ui_layer.c) */
 /* the OCT LEDs, bit 0 OCT- lit, bit 1 OCT+ lit, OCT_BREATH OCT+ breathing (can be pressed: dark .. ~60 %,
  * hal/fm1_input.h fm1_led_breath, #119). In the dialogs and on action pages OCT- (back) is lit and OCT+ breathes
@@ -1150,6 +1198,19 @@ static void ui_input_frame(void)
     int32_t s, sel = 0, ks[4] = {0, 0, 0, 0};
     static uint32_t lock_ms;                            /* BPM LOCK: the last locked SELECT turn (fm1_ms | 1; 0 none) */
     fm6_poll();                                         /* FM6: PTCH turned -> its patch */
+    {   /* (JIANT 0.6.5) RESO's PITCH and FOLW live in PRE's and DAMP's slots: into RESO a ROOM's values become theirs
+         * (DAMP past FOLW's T6: OFF; PRE past 14: 14), out of it the reverb's own defaults back */
+        static uint8_t rt0 = 0xFFu;
+        uint32_t rt = (uint32_t)song.g[G_RTYPE];
+        if (rt == 3u) {
+            if (song.g[G_RDAMP] > 6) song.g[G_RDAMP] = 0;
+            if (song.g[G_RPRE] > 14) song.g[G_RPRE] = 14;
+        } else if (rt0 == 3u) {
+            song.g[G_RDAMP] = GP[G_RDAMP].def;
+            song.g[G_RPRE] = GP[G_RPRE].def;
+        }
+        rt0 = (uint8_t)rt;
+    }
 #if !FELUCCA_FM4
     for (k = 0; k < NTRK; k++)                          /* a DIGITAL sound any other way (the paths convert it */
         if (trk[k].eng_req == ENGI_DIGITAL)             /* already): FM6 (fm4_convert.c) */
@@ -1178,6 +1239,13 @@ static void ui_input_frame(void)
     oct = oct_taps(pressed, ui.menu || ui.confirm || act_cols() || name_on() || layer_set_open());
     oct = layer_oct(pressed, oct);                      /* (a SET layer's OCT-: put back) */
     layer_masks();                                      /* seq.c: keys pressed with a layer's button are its own */
+    {   /* (0.6.6) a page button held + PRESETS: its pages (page_jump); not in the menu, a dialog, NAME */
+        uint32_t f = held_family();
+        int32_t ps;
+        if (f != FAM_COUNT && !ui.menu && !ui.confirm && !name_on() && !ly_used &&
+            (ps = panel_enc(EN_PRESET)) != 0)           /* (a layer already used: PRESETS stays its, dropped) */
+            page_jump(f, ps);
+    }
     lay = layer_held();
     glo = lay && ui.ly == LAYER_GLO;                    /* GLO held: SELECT is the tempo, BPM LOCK or not (#58) */
     if (!layer_allowed()) {
@@ -1218,6 +1286,10 @@ static void ui_input_frame(void)
             if (panel_enc(EN_K1 + k) != 0)
                 combo = 1;                              /* (with the button let go this frame: no tap) */
     }
+    if (!lay)
+        ly_used = 0;
+    else if (combo)
+        ly_used = 1;
     lytap = layer_gesture(now, combo);
     layer_show();
     layer_keys(lkeys);

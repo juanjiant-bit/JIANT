@@ -110,7 +110,8 @@ static __attribute__((noinline)) uint32_t lofi_byte(uint32_t f, uint32_t t, uint
  * melody and timbre at once. t runs 32 steps a cycle of the note (the formula in tune with the key, its rhythm faster
  * up the keyboard, as bytebeat's), with 8 bits of fraction for the sines (x = t in Q8; S(x) = sin(2 pi x / 32)).
  * The same t as BYTE's: MOTN runs its slow bits at their own speed, VAR mutates it (lofi_mut), BEND folds it, LOOP
- * holds it in a window; DRV (E5) folds the output, from clean to wild; CHIP the bits, RES the filter's */
+ * holds it in a window; FBK (E5, 0.6.4) feeds the output back into t, from a shimmer to chaos; CHIP the bits, RES the
+ * filter's */
 static const char *const N_FLOAT[] = {"F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09", "F10", "F11",
                                       "F12", "F13", "F14", "F15", "F16", "F17", "F18", "F19", "F20", "F21", "F22",
                                       "F23", "F24", "F25", "F26", "F27", "F28", "F29", "F30", "F31", "F32", 0};
@@ -120,11 +121,11 @@ static const param_desc_t LOFI_FALGO = {"ALGO", F_INT, 0, 127, 64, N_FLOAT, 0}; 
 static const char *const N_FCHIP[] = {"4BIT", "4B/2", "FULL", "1BIT"};
 static const param_desc_t LOFI_FCHIP = {"CHIP", F_ENUM, 0, 3, 2, N_FCHIP, 0};    /* = edit[0] (FLOAT; 0.5.5: no STEP) */
 /* (0.5.4) BYTE's and FLOAT's own second page: MOTN (E4, where CUT was: the time's speed, 64 as written), GRIT (BYTE,
- * E5: the samples held longer, a rate crusher), DCY (FLOAT, E5: each step's decay) */
+ * E5: the samples held longer, a rate crusher), FBK (FLOAT, E5: the output back into the formula's time) */
 static const param_desc_t LOFI_MOTN = {"MOTN", F_INT, 0, 127, 64, 0, 0};          /* = edit[4] (BYTE, FLOAT) */
 static const param_desc_t LOFI_GRIT = {"GRIT", F_PCT, 0, 127, 0, 0, 0};           /* = edit[5] (BYTE) */
-static const param_desc_t LOFI_FDCY = {"DRV", F_PCT, 0, 127, 0, 0, 0};            /* = edit[5] (FLOAT, 0.5.6: the output
-                                                         * folded, clean .. wild) */
+static const param_desc_t LOFI_FDCY = {"FBK", F_PCT, 0, 127, 0, 0, 0};            /* = edit[5] (FLOAT, 0.6.4: was DRV, a
+                                                         * fold that silenced it and doubled the FILTER page's DIST) */
 /* MOTN 0..127 -> the time's speed, Q8: x1/16 .. x1 (64) .. x15.5, exponential */
 static uint32_t lofi_motion(int32_t m)
 {
@@ -303,16 +304,20 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
     uint32_t lm = p[P_E7] ? (1u << (17u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: t's window */
     uint32_t ft = (uint32_t)p[P_FTYPE] & 3u;
     int32_t rs = p[P_FRES] > 50 ? p[P_FRES] : 50, kd = 8192 - rs * 7600 / 127, y1 = v->s[4], y2 = v->s[5];
-    int32_t aux = v->s[3], fb = v->s[0], drv = p[P_E5];
+    int32_t aux = v->s[3], fb = v->s[0], fbk = p[P_E5];
     uint32_t chip = (uint32_t)p[P_E0], qs = chip == CHIP_8BIT ? 0u : chip == CHIP_1BIT ? 15u : 12u;   /* (CHIP: the bits) */
     for (i = 0; i < n; i++) {
         uint32_t te = mul == 256u ? tt : (tt & 255u) | ((ts >> 8) & ~255u), tl, tw;
         int32_t s;
         tl = lofi_mut(te & lm, var);
         tw = bs ? tl ^ (tl >> bs) : tl;
-        s = lofi_float(f, tw, tw << 8 | tf >> 16, &aux);
-        if (drv)                                          /* DRV: the output folded, x1 .. x9 */
-            s = sine_i((uint32_t)(s * (8 + drv)) << 2);
+        if (fbk) {                                        /* FBK: the last output moves t, up to +-16 t (half a turn of
+                                                         * the sines, Q8): the formula modulates itself, FM-like */
+            int32_t d = (fb * fbk) >> 10;
+            s = lofi_float(f, tw + (uint32_t)(d >> 8), (tw << 8 | tf >> 16) + (uint32_t)d, &aux);
+        } else {
+            s = lofi_float(f, tw, tw << 8 | tf >> 16, &aux);
+        }
         if (qs)
             s = ((s + (1 << (qs - 1u))) >> qs) << qs;
         if (chip == CHIP_4B2 && (tt & 1u))                /* (4B/2: held over two t) */

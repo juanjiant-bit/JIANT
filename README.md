@@ -15,12 +15,30 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.6.3).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.6.6).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
 
 ## Changelog
 
 Every update is listed here, newest first.
+
+### v0.6.6
+- **Jump straight to a page**: hold a page button (ENV, LFO, FX, SCL, EDIT, GLO, SAVE, ARP, SEQ) and turn **PRESETS**
+  to go through that button's pages forwards or back (FX has 12, EDIT up to 16), the title on screen; let go and you
+  stay on that page. It doesn't take anything away: with a button held, PRESETS did nothing before; a tap still goes to
+  the next page, and once you used a layer's knobs or keys while holding, PRESETS stays out of it.
+
+### v0.6.5
+- **RESO (reverb) changes chords now.** On RESO, the REVERB page's PRE knob becomes **PITCH** (the strings' chord
+  0–14 steps up the scale) and DAMP becomes **FOLW**: OFF, or T1–T6, the chord built on the lowest note that track
+  plays, so the strings follow your bass line or your chords, gliding from one to the next (the chord stays when the
+  track goes quiet). The pre-delay and the damping were barely used on RESO; ROOM, SPRING, SHIMMER and CLOUD keep them.
+
+### v0.6.4
+- **LOFI FLOAT: DRV is gone, FBK takes its place.** DRV had a scaling bug that silenced the engine as soon as it was
+  turned up, and it duplicated the DIST on the FILTER page anyway. **FBK** (feedback) sends the output back into the
+  formula's time: the floatbeat modulates itself like FM, from a slight shimmer to chaos, a different deformation on
+  every ALGO. Projects saved before keep their values (FBK starts where DRV was).
 
 ### v0.6.3
 - **The SLICER is now one slicer on a bus, like a sampler's chop.** Its settings (mode, pattern, rate, depth) are the
@@ -334,6 +352,7 @@ each layer.
 ### 1. Getting around
 - Each page button (EDIT, ENV, LFO, FX, SEQ, SCL, ARP, GLO, SAVE) opens its first page; pressing it again moves to the
   next one. The title at the top tells you where you are. **HOME** takes you back to the ecosystem.
+- **Jump to a page**: hold a page button (ENV, LFO, FX, SCL, EDIT, GLO, SAVE, ARP, SEQ) and turn **PRESETS**: its pages go by one by one, forwards or back, with the title on screen; let go and you stay there (no tap, no layer). A plain tap still steps to the next page.
 - **ALGORITHM** picks the track (T1–T6) from any page; track pages show the selected track.
 - The four knobs drive the four columns on screen. Turning fast sweeps the whole range, slowly fine-tunes.
 - **Holding** a button opens its layer (FX, GLO, SCL, LFO, EDIT, SAVE…): release it and you're back where you were.
@@ -371,7 +390,7 @@ note. Use the FILTER page for the cutoff and resonance.
 Sierpinski partials, F07 rhythmic drive, F10 a snare and a tone, F13 a fold, F15 a staircase sine, F19 odd partials
 building up, F22 a drum loop, F23 bytebeat inside the phase, F26 a dropped bit, F30 a glide up the partials, F32
 euclid hats over a walking chord…). Hold a key: the formula plays in that key. **VAR** mutates `t` like in BYTE,
-**MOTN** speeds its slow bits up or down, **DRV** folds the output (clean to wild), **BEND** folds `t`, **LOOP**
+**MOTN** speeds its slow bits up or down, **FBK** feeds the output back into the formula's time (from a shimmer to chaos), **BEND** folds `t`, **LOOP**
 locks it into a short window. CHIP sets the resolution: FULL is smooth, 4BIT and 1BIT crush it.
 
 ### 4. DRUM-X drums
@@ -405,7 +424,7 @@ tails. The other knobs change meaning with the type:
 | **ROOM** | Classic room | Decay | Darkens the highs | Modulates the tail (chorus) | Modulation speed | Stereo |
 | **SPRING** | Amp spring tank | Spring length and decay | Darkens | How much it wobbles | Wobble speed | Stereo |
 | **SHIMR** (shimmer) | A room that rises an octave on every pass: angelic tail | Decay | Darkens | **How much shimmer** (0 = ROOM) | — | — |
-| **RESO** | Four strings ringing **tuned to the scale** (I, III, V and VII of ROOT/SCALE) | Decay (how long they ring) | Darkens the strings | Past halfway: opens the chord an octave | — | — |
+| **RESO** | Four strings ringing **tuned to the scale** (I, III, V and VII of ROOT/SCALE). On RESO, PRE becomes **PITCH** (the chord 0–14 steps up the scale) and DAMP becomes **FOLW** (OFF / T1–T6: the chord follows the lowest note that track plays, gliding) | Decay (how long they ring) | FOLW | Past halfway: opens the chord an octave | — | — |
 | **CLOUD** | Granular wash: grains of the last ~0.7 s, scattered and bloomed into a reverb tail that feeds back into itself | Decay; **at max it freezes** the cloud | Darkens | How many grains change pitch (×2, ×½, fifth), plus a chorus on the tail | Grain density | Stereo spread of the grains and the tail |
 
 PRE (pre-delay) and FILT (input tone) work on all of them. Ideas: RESO on the drums so the kit sings in the song's
