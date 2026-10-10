@@ -15,12 +15,27 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.5.3).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.5.4).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
 
 ## Changelog
 
 Every update is listed here, newest first.
+
+### v0.5.4
+- **FLOAT makes patterns now, not just waveforms.** Every ALGO is a step sequencer: 8 patterns (an arpeggio, a
+  melody, a Sierpinski rhythm, a 5-in-8 euclid, a random walk, a `t>>9 % 13` line, a drone with 3-against-4 accents,
+  octave leaps) × 4 smooth timbres (sine, FM that darkens as each note falls, wavefold, hard sync sweeping down).
+  The notes are harmonics of the key you play (just intonation), the steps are the song's 1/16 notes.
+- **New knob, MOTN (motion)**, on BYTE and FLOAT, in the slot that was empty: the speed of the formula's time. In
+  FLOAT it goes from one step per bar to steps so fast the pattern turns into a timbre; in BYTE it speeds up or slows
+  down the formula's slow bits (its rhythm and melody) without changing the pitch. 64 is as written.
+- **VAR is drastic now**, on every BYTE and FLOAT formula: it mutates the formula's time in 8 different ways (stairs
+  that transpose as they go, xor and or with itself, holes in the rhythm, the phrase backwards, multiplied,
+  scrambled), so each formula gives many timbres and sequences.
+- **The second LOFI page cleaned up**: BYTE shows MOTN · GRIT · BEND · LOOP (GRIT holds samples longer, a rate
+  crusher), FLOAT MOTN · DCY · BEND · LOOP (DCY: from short plucks to legato). The second RES (already on the FILTER
+  page) and the empty slot are gone. Projects saved before keep their sound (MOTN set to 64, GRIT/DCY to 0).
 
 ### v0.5.3
 - **A new power-on screen**, after feedback from the community: the signature used to be drawn as straight segments
@@ -129,9 +144,10 @@ Eight engines, all synthesis, no samples: **ANALOG, FM6, PHASE, LOFI, VOICE, WHE
   TRI, SIN and PWM it has **SYNC**, **RING** and **SAW3** (three saws). Its filter is per voice.
 - **FM6**: Dexed's engine (imports .syx), with its algorithms drawn.
 - **PHASE**: phase distortion with **FB** (the output feeds back into the phase: from hard edge to growl).
-- **LOFI**: 1, 4 and 8-bit chip with **BYTE** (bytebeat: 32 formulas picked with ALGO and bent with VAR). In BYTE,
-  **BEND** folds time, **RES** adds filter resonance and **LOOP** repeats a short stretch of the formula: the noise
-  becomes a tone tuned to the note. **FLOAT** (0.5.1) is floatbeat: 32 smooth formulas of sines, tuned to the note.
+- **LOFI**: 1, 4 and 8-bit chip with **BYTE** (bytebeat: 32 formulas picked with ALGO and mutated with VAR). In
+  BYTE, **MOTN** sets the speed of the formula's rhythm, **GRIT** crushes its rate, **BEND** folds time and **LOOP**
+  repeats a short stretch of the formula: the noise becomes a tone tuned to the note. **FLOAT** is floatbeat as a
+  sequencer: 32 step patterns played with smooth timbres, in time with the song and in tune with the key.
 - **VOICE** (formants, after klattsch), **WHEEL** (drawbar organ) and **NOISE** (coloured and metallic noise).
 - **FILTER on every engine** (EDIT > FILTER): **TYPE** LP, HP, BP or **COMB** (a comb tuned to the note you're
   playing; CUT moves it ±32 semitones and RES is how much it rings), **CUT** and **RES**. On ANALOG it's its per-voice
@@ -284,16 +300,18 @@ each layer.
    engine and moves its parameters. Roll a few times until something clicks and carry on from there.
 5. **EDIT held**: F3 INIT puts the sound back to factory, G3 RECALL to the one you saved in the section.
 
-**LOFI BYTE** (LOFI with WAVE on BYTE): ALGO picks one of 32 bytebeat formulas, VAR bends it, BEND folds time
-(glitches), RES adds filter resonance and LOOP repeats a tiny stretch: with LOOP high the noise turns into a tuned
-note. Use the FILTER page for the cutoff.
+**LOFI BYTE** (LOFI with WAVE on BYTE): ALGO picks one of 32 bytebeat formulas and **VAR** mutates it (0–15 as
+written, then 7 more ways, each with 16 amounts: try sweeping it slowly). On the second page **MOTN** speeds the
+formula's rhythm up or down without changing the pitch (64 as written), **GRIT** holds each sample longer (a rate
+crusher), BEND folds time (glitches) and LOOP repeats a tiny stretch: with LOOP high the noise turns into a tuned
+note. Use the FILTER page for the cutoff and resonance.
 
-**LOFI FLOAT** (WAVE on FLOAT): the same knobs, but the formulas are smooth sines instead of 8-bit integers. ALGO
-picks one of 32 (F01 FM, F02 harmonic arpeggio, F05 wavefold, F07 odd harmonics building up, F11 stacked FM, F13
-pluck, F14 drifting pad, F16 bytebeat-driven FM, F17 drifting unison, F19 self-FM, F21 rhythmic gate, F22 phase
-distortion, F25 major triad, F27 breathing bells, F29 PWM, F31 hard sync, F32 three against four…), VAR is how deep
-or fast it moves, LOOP freezes its evolution into a short cycle. CHIP sets the resolution: FULL is smooth, 4BIT and
-1BIT crush it.
+**LOFI FLOAT** (WAVE on FLOAT): a sequencer of smooth notes. ALGO picks one of 32: F01–F08 are the 8 patterns
+(arpeggio, melody, Sierpinski, 5-in-8, random walk, `t>>9 % 13`, drone with accents, octave leaps) played with a sine,
+F09–F16 the same with FM, F17–F24 wavefolded, F25–F32 with a hard sync. Hold a key and the pattern plays on that note,
+in time with the song. **VAR** mutates the pattern (backwards, with holes, transposing stairs…), **MOTN** sets its
+speed (from a step a bar to audio rate), **DCY** each note's length (pluck to legato), **BEND** folds it and **LOOP**
+locks it into a short phrase. CHIP sets the resolution: FULL is smooth, 4BIT and 1BIT crush it.
 
 ### 4. DRUM-X drums
 - Set a track to DRUM. **KNOB 1 MORPH** goes from side A to side B of the whole kit: it's the knob to play live.

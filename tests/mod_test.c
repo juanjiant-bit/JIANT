@@ -677,13 +677,13 @@ static uint32_t env_rises(int16_t loop, int *ended)
 static void test_byte(void)
 {
     static int32_t prev[FS / 8];
-    uint32_t f, b, i, sound = 0, differ = 0, over = 0, var = 0, early = 0;
+    uint32_t f, b, i, sound = 0, differ = 0, over = 0, var = 0, early = 0, motn = 0;
     for (f = 0; f < 32u; f++) {
         double e = 0, d = 0, e30 = 0;
         int32_t pk = 0;
         fresh(3, 0);
         trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 5; trk[0].p[P_E2] = (int16_t)(f * 4u); trk[0].p[P_E3] = 0;
-        trk[0].p[P_E4] = 127; trk[0].p[P_E6] = trk[0].p[P_E7] = 0; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+        trk[0].p[P_E4] = 64; trk[0].p[P_E6] = trk[0].p[P_E7] = 0; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
         trk_note_on(&trk[0], 60, 110);
         for (b = 0; b < FS / 8u / CTL; b++) {
             blocks(1);
@@ -701,11 +701,11 @@ static void test_byte(void)
         early += e30 / (FS * 30u / 1000u) > 300.0 * 300.0;
         differ += f == 0u || d / (FS / 8u) > 100.0;
         over += pk >= 32767;
-        if (f >= 16u) {                            /* the VAR ones: VAR 100 another sound */
-            double dv = 0;
+        {                                          /* (0.5.4) every formula: VAR 100 another sound, MOTN 100 too */
+            double dv = 0, dm = 0;
             fresh(3, 0);
             trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 5; trk[0].p[P_E2] = (int16_t)(f * 4u); trk[0].p[P_E3] = 100;
-            trk[0].p[P_E4] = 127; trk[0].p[P_E6] = trk[0].p[P_E7] = 0; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+            trk[0].p[P_E4] = 64; trk[0].p[P_E6] = trk[0].p[P_E7] = 0; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
             trk_note_on(&trk[0], 60, 110);
             for (b = 0; b < FS / 8u / CTL; b++) {
                 blocks(1);
@@ -713,61 +713,106 @@ static void test_byte(void)
                     dv += fabs((double)out_buf[2u * i] - prev[b * CTL + i]);
             }
             var += dv / (FS / 8u) > 100.0;
+            fresh(3, 0);
+            trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 5; trk[0].p[P_E2] = (int16_t)(f * 4u); trk[0].p[P_E3] = 0;
+            trk[0].p[P_E4] = 110; trk[0].p[P_E6] = trk[0].p[P_E7] = 0; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+            trk_note_on(&trk[0], 60, 110);
+            for (b = 0; b < FS / 8u / CTL; b++) {
+                blocks(1);
+                for (i = 0; i < CTL; i++)
+                    dm += fabs((double)out_buf[2u * i] - prev[b * CTL + i]);
+            }
+            motn += dm / (FS / 8u) > 100.0;
         }
     }
-    printf("mod:   (BYTE: %u of 32 sound, %u in the first 30 ms, %u differ from the one before, %u clip; VAR moves %u of 16)\n",
-           sound, early, differ, over, var);
-    check("LOFI BYTE: the 32 bytebeat formulas sound (30+), from the start (0.5.1: 30+ in the first 30 ms), each its own, none clips; VAR moves the VAR ones (14+)",
-          sound >= 30u && early >= 30u && differ == 32u && !over && var >= 14u);
+    printf("mod:   (BYTE: %u of 32 sound, %u in the first 30 ms, %u differ from the one before, %u clip; VAR moves %u of 32, "
+           "MOTN %u of 32)\n", sound, early, differ, over, var, motn);
+    check("LOFI BYTE: the 32 bytebeat formulas sound (30+), from the start (30+ in the first 30 ms), each its own, none "
+          "clips; VAR mutates nearly all (28+, 0.5.4), MOTN moves most (24+)",
+          sound >= 30u && early >= 30u && differ == 32u && !over && var >= 28u && motn >= 24u);
 }
 
-/* (JIANT 0.5.1) LOFI FLOAT: each of the 32 floatbeat formulas sounds, under full scale, unlike its neighbour; VAR
- * moves them; the pitch follows the note (an octave up: about twice the zero crossings on F01) */
-static void float_run(uint32_t f, int32_t var, uint32_t note, int32_t *buf)
+/* (JIANT 0.5.1, patterns 0.5.4) LOFI FLOAT: each of the 32 (8 step patterns x 4 timbres) sounds over a second (8 steps
+ * of 1/16 at 120 BPM), under full scale, unlike its neighbour; its pitch moves from step to step (a pattern, not one
+ * wave: 3+ pitches over the 8 steps on 28+ of them); VAR (another mutation) moves most; MOTN faster, more steps; the
+ * pattern in tune with the note (an octave up: about twice the zero crossings) */
+#define FL_N FS
+static void float_run(uint32_t f, int32_t var, int32_t motn, uint32_t note, int32_t *buf)
 {
     uint32_t b, i;
     fresh(3, 0);
+    song.g[G_BPM] = 120;
     trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 6; trk[0].p[P_E2] = (int16_t)(f * 4u); trk[0].p[P_E3] = (int16_t)var;
-    trk[0].p[P_E5] = trk[0].p[P_E6] = trk[0].p[P_E7] = 0; trk[0].p[P_FCUT] = 127; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+    trk[0].p[P_E4] = (int16_t)motn; trk[0].p[P_E5] = 60; trk[0].p[P_E6] = trk[0].p[P_E7] = 0;
+    trk[0].p[P_FCUT] = 127; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
     trk_note_on(&trk[0], note, 110);
-    for (b = 0; b < FS / 8u / CTL; b++) {
+    for (b = 0; b < FL_N / CTL; b++) {
         blocks(1);
         for (i = 0; i < CTL; i++)
             buf[b * CTL + i] = out_buf[2u * i];
     }
 }
+static uint32_t fl_cross(const int32_t *x, uint32_t a, uint32_t n)
+{
+    uint32_t i, c = 0;
+    for (i = a + 1u; i < a + n; i++)
+        c += x[i - 1] < 0 && x[i] >= 0;
+    return c;
+}
 static void test_float(void)
 {
-    static int32_t prev[FS / 8], cur[FS / 8], alt[FS / 8];
-    uint32_t f, i, sound = 0, differ = 0, over = 0, var = 0, c60 = 0, c72 = 0;
+    static int32_t prev[FL_N], cur[FL_N], alt[FL_N];
+    uint32_t f, i, sound = 0, differ = 0, over = 0, var = 0, moving = 0, c60, c72, fast;
     for (f = 0; f < 32u; f++) {
         double e = 0, d = 0, dv = 0;
         int32_t pk = 0;
-        float_run(f, 20, 60, cur);
-        for (i = 0; i < FS / 8u; i++) {
+        uint32_t st, rates[8], nd = 0, k;
+        float_run(f, 0, 64, 60, cur);
+        for (i = 0; i < FL_N; i++) {
             e += (double)cur[i] * cur[i];
             d += fabs((double)cur[i] - prev[i]);
             pk = abs(cur[i]) > pk ? abs(cur[i]) : pk;
         }
-        sound += e / (FS / 8u) > 300.0 * 300.0;
-        differ += f == 0u || d / (FS / 8u) > 100.0;
+        sound += e / FL_N > 300.0 * 300.0;
+        differ += f == 0u || d / FL_N > 100.0;
         over += pk >= 32767;
-        float_run(f, 120, 60, alt);
-        for (i = 0; i < FS / 8u; i++)
+        for (st = 0; st < 8u; st++) {                   /* the pitch of each step: its zero crossings */
+            uint32_t c = fl_cross(cur, st * (FL_N / 8u) + 400u, FL_N / 8u - 800u), seen = 0;
+            for (k = 0; k < nd; k++)
+                seen |= c + 2u >= rates[k] && c <= rates[k] + 2u;
+            if (!seen && c > 2u)
+                rates[nd++] = c;
+        }
+        moving += nd >= 3u;
+        float_run(f, 100, 64, 60, alt);
+        for (i = 0; i < FL_N; i++)
             dv += fabs((double)alt[i] - cur[i]);
-        var += dv / (FS / 8u) > 100.0;
+        var += dv / FL_N > 100.0;
         memcpy(prev, cur, sizeof prev);
     }
-    float_run(0, 0, 60, cur);
-    float_run(0, 0, 72, alt);
-    for (i = 1; i < FS / 8u; i++) {
-        c60 += cur[i - 1] < 0 && cur[i] >= 0;
-        c72 += alt[i - 1] < 0 && alt[i] >= 0;
+    float_run(0, 0, 64, 60, cur);
+    float_run(0, 0, 64, 72, alt);
+    c60 = fl_cross(cur, 0, FL_N);
+    c72 = fl_cross(alt, 0, FL_N);
+    float_run(0, 0, 100, 60, alt);                      /* (MOTN 100: the arpeggio faster: more pitch changes) */
+    {
+        uint32_t st, ch = 0, ch0 = 0, lastc = 0, last0 = 0;
+        for (st = 0; st < 32u; st++) {
+            uint32_t c = fl_cross(alt, st * (FL_N / 32u), FL_N / 32u), c0 = fl_cross(cur, st * (FL_N / 32u), FL_N / 32u);
+            ch += st && (c > lastc + 1u || c + 1u < lastc);
+            ch0 += st && (c0 > last0 + 1u || c0 + 1u < last0);
+            lastc = c;
+            last0 = c0;
+        }
+        fast = ch > ch0;
+        printf("mod:   (FLOAT: %u of 32 sound, %u differ from the one before, %u clip, %u move through 3+ pitches; VAR moves %u; "
+               "crossings C4 %u, C5 %u; MOTN 100: %u pitch changes in 32 slices, 64: %u)\n",
+               sound, differ, over, moving, var, c60, c72, ch, ch0);
     }
-    printf("mod:   (FLOAT: %u of 32 sound, %u differ from the one before, %u clip; VAR moves %u; crossings C4 %u, C5 %u)\n",
-           sound, differ, over, var, c60, c72);
-    check("LOFI FLOAT: the 32 floatbeat formulas sound, each its own, none clips; VAR moves most (26+); in tune with the note",
-          sound >= 31u && differ == 32u && !over && var >= 26u && c72 > c60 * 17u / 10u && c72 < c60 * 23u / 10u);
+    check("LOFI FLOAT: 32 step patterns sound, each its own, none clips, they move (28+ through 3+ pitches); VAR mutates "
+          "most (26+); MOTN faster; in tune with the note",
+          sound >= 31u && differ >= 30u && !over && moving >= 28u && var >= 26u && fast &&
+          c72 > c60 * 17u / 10u && c72 < c60 * 23u / 10u);
 }
 
 /* (JIANT 0.4) ANALOG SYNC RING SAW3 (TRIO folded in): each sounds, each its own, none clips; SYNC's DTN moves it */
