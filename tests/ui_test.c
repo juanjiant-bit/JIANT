@@ -2948,6 +2948,30 @@ static int test_quick_layers(void)
         bad += check("JIANT 0.6: the music too full for a section: TOO FULL TO SAVE once; the power-on music ~1/4 full", ok);
         printf("ui:   (power-on music: %u %% of a section)\n", (unsigned)p0);
     }
+    {   /* (JIANT 0.6.6) a page button held + PRESETS: its pages one by one, the title said; let go: no tap, no layer */
+        const char *t1, *t3;
+        ui_power_on();
+        go_home(); frames(8);
+        btn_down(B_FX); frame();
+        turn(EN_PRESET, 1); frame();                    /* from HOME: FX's first page */
+        t1 = cur_page()->title;
+        turn(EN_PRESET, 2); frame();                    /* two on */
+        t3 = cur_page()->title;
+        ok = !ui.home && str_eq(t1, "FX") && str_eq(t3, "SLICER") && msg_is("SLICER");
+        frames(600);                                    /* (held past HOLD: still no map) */
+        ok &= !ui.layer;
+        btn_up(B_FX); frames(4);
+        ok &= str_eq(cur_page()->title, "SLICER") && !ui.layer;   /* (no tap: no next page) */
+        btn_down(B_FX); frame(); turn(EN_PRESET, -1); frame(); btn_up(B_FX); frames(4);
+        ok &= str_eq(cur_page()->title, "DIST");
+        btn_down(B_FX); frame(); turn(EN_PRESET, -9); frame(); btn_up(B_FX); frames(4);
+        ok &= str_eq(cur_page()->title, "FX");          /* (no wrap: it stops at the first) */
+        btn_down(B_ENV); frame(); turn(EN_PRESET, 1); frame(); turn(EN_PRESET, 1); frame(); btn_up(B_ENV); frames(4);
+        ok &= str_eq(cur_page()->title, "ENV DEST");    /* (ENV: no layer; its tap swallowed) */
+        press(B_ENV); frames(8);
+        ok &= str_eq(cur_page()->title, "ENV");         /* (a plain tap: the next page, as always) */
+        bad += check("JIANT 0.6.6: a page button held + PRESETS jumps through its pages (no wrap); let go: no tap, no layer; a tap as before", ok);
+    }
     /* GLO: mutes latch (lit = sounding), SOLO while held, UNMUTE ALL, TAP, levels, OCT- */
     ui_power_on();
     usb.config = 1; mo = mo_w;

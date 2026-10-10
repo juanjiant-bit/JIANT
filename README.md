@@ -15,12 +15,18 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.6.5).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.6.6).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
 
 ## Changelog
 
 Every update is listed here, newest first.
+
+### v0.6.6
+- **Jump straight to a page**: hold a page button (ENV, LFO, FX, SCL, EDIT, GLO, SAVE, ARP, SEQ) and turn **PRESETS**
+  to go through that button's pages forwards or back (FX has 12, EDIT up to 16), the title on screen; let go and you
+  stay on that page. It doesn't take anything away: with a button held, PRESETS did nothing before; a tap still goes to
+  the next page, and once you used a layer's knobs or keys while holding, PRESETS stays out of it.
 
 ### v0.6.5
 - **RESO (reverb) changes chords now.** On RESO, the REVERB page's PRE knob becomes **PITCH** (the strings' chord
@@ -346,6 +352,7 @@ each layer.
 ### 1. Getting around
 - Each page button (EDIT, ENV, LFO, FX, SEQ, SCL, ARP, GLO, SAVE) opens its first page; pressing it again moves to the
   next one. The title at the top tells you where you are. **HOME** takes you back to the ecosystem.
+- **Jump to a page**: hold a page button (ENV, LFO, FX, SCL, EDIT, GLO, SAVE, ARP, SEQ) and turn **PRESETS**: its pages go by one by one, forwards or back, with the title on screen; let go and you stay there (no tap, no layer). A plain tap still steps to the next page.
 - **ALGORITHM** picks the track (T1–T6) from any page; track pages show the selected track.
 - The four knobs drive the four columns on screen. Turning fast sweeps the whole range, slowly fine-tunes.
 - **Holding** a button opens its layer (FX, GLO, SCL, LFO, EDIT, SAVE…): release it and you're back where you were.
