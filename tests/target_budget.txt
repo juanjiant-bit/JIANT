@@ -8,7 +8,7 @@ formant_render 312
 wheel_render 267
 wheel_block 86
 analog_ext 782
-lofi_byte_render 146
+lofi_byte_render 164
 drum_render 83
 noise_render 259
 fm6_render 372
