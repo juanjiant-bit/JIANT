@@ -51,8 +51,12 @@ static int32_t bg_sin(uint32_t ang) { return sine_i(ang << 16); }   /* Q15 */
 static int32_t bg_energy(void)
 {
     static int32_t e;
+    static uint32_t fr = 0xFFFFFFFFu;
     uint32_t w = scope_w, i;
     int32_t pk = 0, v;
+    if (fr == ui.frame)                                 /* (once a frame: a redraw in the same frame draws the same) */
+        return e;
+    fr = ui.frame;
     for (i = 1; i <= 256u; i += 2u) {
         v = scope_buf[(w - i) & (SCOPE_N - 1u)];
         if (v < 0) v = -v;
@@ -215,9 +219,11 @@ static void graph_ecosys(void)
         uint8_t ids[4];
         bfeat_t f;
         char num[2] = {(char)('1' + c), 0};
-        t->peak = 0;
         if (v > 256) v = 256;
-        en[c] = v > en[c] ? v : en[c] + (v - en[c]) / 4;   /* (a hit at once, a quick fall) */
+        if (dt) {                                   /* (once a frame: a redraw in the same frame draws the same) */
+            t->peak = 0;
+            en[c] = v > en[c] ? v : en[c] + (v - en[c]) / 4;   /* (a hit at once, a quick fall) */
+        }
         if (en[c] > 2) tm[c] += dt * (uint32_t)(200 + en[c] * 5);
         else tm[c] += dt * 60u;                     /* (silent: it still breathes, slowly) */
         for (v = 0; v < 4; v++) ids[v] = (uint8_t)ENGINES[e]->knob[v];

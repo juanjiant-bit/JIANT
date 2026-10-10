@@ -665,7 +665,9 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
     }
     if (nr && e == &ENG_ANALOG && t->p[P_FTYPE] == FT_COMB)   /* (JIANT 0.5) FILTER TYPE COMB */
         track_comb(t, out, n, t->p[P_E4], t->p[P_E5]);
-    else if (nr && e != &ENG_ANALOG && (t->p[P_FTYPE] || t->p[P_FCUT] < 127 || t->p[P_FRES]))
+    else if (nr && e == &ENG_LOFI && t->p[P_FTYPE] == FT_COMB)   /* (LOFI: its own filter, the FILTER page's CUT and RES) */
+        track_comb(t, out, n, t->p[P_FCUT], t->p[P_FRES]);
+    else if (nr && e != &ENG_ANALOG && e != &ENG_LOFI && (t->p[P_FTYPE] || t->p[P_FCUT] < 127 || t->p[P_FRES]))
         track_filter(t, out, n);                        /* (JIANT 0.5) every other engine's FILTER */
     if (fade) {
         for (i = 0; i < 8u; i++)

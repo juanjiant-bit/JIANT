@@ -61,6 +61,8 @@ static const param_desc_t LOFI_VAR = {"VAR", F_PCT, 0, 127, 0, 0, 0};           
  * 2^5 steps: the formula's long evolution (0: free) folded into a short cycle repeating at the note: a pitched tone */
 static const param_desc_t LOFI_RES = {"RES", F_PCT, 0, 127, 0, 0, 0};             /* = edit[5] (BYTE) */
 static const param_desc_t LOFI_LOOP = {"LOOP", F_PCT, 0, 127, 0, 0, 0};           /* = edit[7] (BYTE) */
+/* (JIANT 0.5) E4 (CUT) left: the filter is the FILTER page's (TYPE, CUT, RES: P_FTYPE P_FCUT P_FRES), on every engine */
+static const param_desc_t LOFI_NONE = {"-", F_INT, 0, 0, 0, 0, 0};
 static __attribute__((noinline)) uint32_t lofi_byte(uint32_t f, uint32_t t, uint32_t a)
 {
     switch (f & 31u) {
@@ -127,6 +129,8 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
     const int16_t *p = t->p;
     uint32_t f = (uint32_t)p[P_E2] >> 2, a = 1u + ((uint32_t)p[P_E3] >> 3), tt = (uint32_t)v->s[2], tf = v->ph[0], i;
     uint32_t ti = (inc >> 8) * 31u;                     /* t a sample, Q24: C4 (inc ~2.55e7) ~0.18 = 8 kHz */
+    uint32_t ft = (uint32_t)p[P_FTYPE] & 3u;            /* (JIANT 0.5) the FILTER's type (COMB: open, voice.c combs) */
+    int32_t kd = 8192 - (p[P_FRES] > 50 + p[P_E5] * 77 / 127 ? p[P_FRES] : 50 + p[P_E5] * 77 / 127) * 7600 / 127;
     uint32_t bs = p[P_E6] ? 13u - (uint32_t)p[P_E6] / 11u : 0u;   /* BEND: the fold's shift, 13 .. 2 (0: none) */
     int32_t held = v->s[0], cnt = v->s[1], ic1 = v->s[4], ic2 = v->s[5];
     uint32_t lm = p[P_E7] ? (1u << (17u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: t's window */
@@ -142,7 +146,7 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
         tf += ti;
         tt += tf >> 24;
         tf &= 0xFFFFFFu;
-        out[i] += voice_amp(soft_knee(tsvf_lp(flt, held >> 1, &ic1, &ic2), 16000) << 1, m, i);
+        out[i] += voice_amp(soft_knee(svf_mode(flt, held >> 1, &ic1, &ic2, ft, kd), 16000) << 1, m, i);
     }
     v->s[0] = held;
     v->s[1] = cnt;
@@ -156,6 +160,8 @@ static const param_desc_t *lofi_desc(const track_t *t, uint32_t k)
 {
     if (t->p[P_E1] == RW_BYTE && (k == 2u || k == 3u))
         return k == 2u ? &LOFI_ALGO : &LOFI_VAR;
+    if (k == 4u)
+        return &LOFI_NONE;
     if (t->p[P_E1] == RW_BYTE && (k == 5u || k == 7u))
         return k == 5u ? &LOFI_RES : &LOFI_LOOP;
     if (k == 2u && t->p[P_E1] == RW_WRAM)
@@ -227,7 +233,8 @@ static void lofi_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     static const uint8_t STEP_DUTY[4] = {1, 2, 4, 6};   /* eighths: 12.5 / 25 / 50 / 75 % */
     const int16_t *p = t->p;
     uint32_t chip = (uint32_t)p[P_E0], wave = (uint32_t)p[P_E1], i;
-    uint32_t stepc = chip == CHIP_STEP;
+    uint32_t stepc = chip == CHIP_STEP, ft = (uint32_t)p[P_FTYPE] & 3u;   /* (JIANT 0.5) the FILTER's type */
+    int32_t kd;
     uint32_t duty = stepc ? 0x20000000u * STEP_DUTY[(p[P_E2] / 32) & 3]
                           : 0x20000000u * (1u + (uint32_t)p[P_E2] / 32u);   /* 12.5 / 25 / 37.5 / 50 % */
     int32_t crush = stepc ? 0 : p[P_E3];                /* STEP: CRSH is the envelope */
@@ -247,7 +254,12 @@ static void lofi_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
         wdc = bits == 1 ? sum * 32767 / 32 : sum * 2 * Q4 / 32;   /* (2 v - 15) Q4, or +-32767 at 1 bit */
     }
     inc = pitch_inc(clamp(m->pitch16, 0, 2047));       /* (the vibrato below; the track's LFO in m->pitch16 already) */
-    tsvf_coef(&flt, (p[P_E4] << 8) + m->cutoff, wave == RW_BYTE ? 50 + p[P_E5] * 77 / 127 : 50);   /* CUT, a little
+    {                                                   /* (JIANT 0.5) its RES the FILTER page's (or BYTE's, the more) */
+        int32_t rs = wave == RW_BYTE ? 50 + p[P_E5] * 77 / 127 : 50;
+        if (p[P_FRES] > rs) rs = p[P_FRES];
+        tsvf_coef(&flt, (p[P_FCUT] << 8) + m->cutoff, rs);   /* (JIANT 0.5: the FILTER page's CUT, was E4) */
+        kd = 8192 - rs * 7600 / 127;
+    }   /* CUT, a little
                                                          * resonance (BYTE: RES up to the edge) */
     if (p[P_E6])
         lofi_bend_set(&bd, p[P_E6]);
@@ -302,7 +314,7 @@ static void lofi_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
             held = lofi_mask(s, msk);
         }
         ph += inc;
-        out[i] += voice_amp(soft_knee(tsvf_lp(&flt, held >> 1, &ic1, &ic2), 16000) << 1, m, i);
+        out[i] += voice_amp(soft_knee(svf_mode(&flt, held >> 1, &ic1, &ic2, ft, kd), 16000) << 1, m, i);
     }
     v->ph[0] = ph;
     v->s[0] = held;

@@ -795,7 +795,7 @@ static double lo_render(int16_t wave, int16_t cut, int16_t bend, int16_t mask, i
     double z = 0;
     fresh(3, 0);
     trk[0].p[P_E0] = 2; trk[0].p[P_E1] = wave; trk[0].p[P_E2] = 16; trk[0].p[P_E3] = 0;
-    trk[0].p[P_E4] = cut; trk[0].p[P_E5] = 0; trk[0].p[P_E6] = bend; trk[0].p[P_E7] = mask;
+    trk[0].p[P_FCUT] = cut; trk[0].p[P_E5] = 0;   /* (JIANT 0.5: LOFI's CUT is the FILTER page's) */ trk[0].p[P_E6] = bend; trk[0].p[P_E7] = mask;
     trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
     trk_note_on(&trk[0], 57, 110);
     for (b = 0; b < n / CTL; b++) {

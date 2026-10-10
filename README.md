@@ -90,7 +90,7 @@ Ocho engines, todos de síntesis, sin samples: **ANALOG, FM6, PHASE, LOFI, VOICE
 - **VOICE** (formantes, según klattsch), **WHEEL** (órgano de drawbars) y **NOISE** (ruido coloreado y metálico).
 - **FILTER en todos los motores** (EDIT > FILTER): **TYPE** LP, HP, BP o **COMB** (un comb afinado a la nota que estás
   tocando; CUT lo mueve ±32 semitonos y RES es cuánto resuena), **CUT** y **RES**. En ANALOG es su filtro por voz, con
-  DRV; en los demás es un filtro sobre el track, que sigue al LFO y a la envolvente (LFO/ENV DEST FLT), y su DRV es el
+  DRV; en LOFI también es por voz (su CUT y RES son los de esta página); en los demás es un filtro sobre el track, que sigue al LFO y a la envolvente (LFO/ENV DEST FLT), y su DRV es el
   DIST del track.
 
 ### DRUM-X: batería sintetizada con morph
