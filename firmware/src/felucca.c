@@ -32,7 +32,7 @@
 #define FELUCCA_ID "FM-1_900"    /* package identity (build.py: the .fwsc marker string) */
 #endif
 #ifndef FELUCCA_VERSION
-#define FELUCCA_VERSION "v0.6.6" /* JIANT's (based on Felucca 1.1.5.1): the splash, the menu, the console, the editor */
+#define FELUCCA_VERSION "v0.6.7" /* JIANT's (based on Felucca 1.1.5.1): the splash, the menu, the console, the editor */
 #endif
 #if FELUCCA_OTA && !FELUCCA_FLASH
 #error "FELUCCA_OTA needs FELUCCA_FLASH"
