@@ -255,7 +255,7 @@ static const engine_t ENG_NOISE = {
         {"MODE", F_ENUM, 0, 3, 0, N_NOISE_MODE, 0},
         {"COLR", F_PCT, 0, 127, 64, 0, 0},
         {"FREQ", F_CUTOFF, 0, 127, 80, 0, 0},
-        {"RES", F_PCT, 0, 127, 30, 0, 0},
+        {"PEAK", F_PCT, 0, 127, 30, 0, 0},   /* (0.5.1: was RES, beside the FILTER page's own RES) */
         {"TRK", F_PCT, 0, 127, 64, 0, 0},
         {"DENS", F_PCT, 0, 127, 0, 0, 0},           /* LFSR, META: the register (noise_desc) */
         {"DRFT", F_PCT, 0, 127, 0, 0, 0},

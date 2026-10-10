@@ -792,7 +792,23 @@ static int param_kept(uint32_t i)
 /* a retired preset kept as an alias (SAMPLE's, gone with it in JIANT): none now. -> the preset k stands for */
 static uint32_t preset_orig(const engine_t *e, uint32_t k) { (void)e; return k; }
 /* the presets of engine e that browsing shows before preset k (k = npresets: all of them) */
-static uint32_t preset_rank(const engine_t *e, uint32_t k) { (void)e; return k; }
+/* (0.5.1) browsing order: LOFI's BYTE presets, then FLOAT's (appended in 0.5.1: the stored numbers stay), then the
+ * rest; every other engine in its own order. preset_nth: the preset shown n-th */
+static const uint8_t LOFI_ORDER[12] = {0, 1, 2, 8, 9, 10, 11, 3, 4, 5, 6, 7};
+_Static_assert(sizeof LOFI_ORDER == NELEM(LOFI_PRESETS), "LOFI's browsing order: every preset once");
+static uint32_t preset_rank(const engine_t *e, uint32_t k)
+{
+    uint32_t i;
+    if (e == &ENG_LOFI)
+        for (i = 0; i < sizeof LOFI_ORDER; i++)
+            if (LOFI_ORDER[i] == k)
+                return i;
+    return k;
+}
+static uint32_t preset_nth(const engine_t *e, uint32_t n)
+{
+    return e == &ENG_LOFI && n < sizeof LOFI_ORDER ? LOFI_ORDER[n] : n;
+}
 #define preset_shown(e) (ENGINES[e]->npresets)
 
 #if !FELUCCA_FM4
@@ -961,9 +977,8 @@ static uint32_t preset_all_at(uint32_t n, uint32_t *k)
         return NENGINES;
     }
     e = eng_vis(r);
-    for (i = 0; preset_orig(ENGINES[e], i) != i || n--; i++)    /* the n-th shown preset */
-        ;
-    *k = i;
+    (void)i;
+    *k = preset_nth(ENGINES[e], n);                     /* the n-th shown preset */
     return e;
 }
 
@@ -1067,9 +1082,7 @@ static void eng_list_step(int32_t direction)         /* the next / previous soun
         return;
     n = (cur + (direction > 0 ? 1u : total - 1u)) % total;
     if (n < np) {
-        for (k = 0; preset_orig(ENGINES[e], k) != k || n--; k++)   /* the n-th shown preset */
-            ;
-        apply_preset(k);
+        apply_preset(preset_nth(ENGINES[e], n));        /* the n-th shown preset */
     } else {
         n -= np;
         for (k = 0; k < UP_SLOTS; k++)

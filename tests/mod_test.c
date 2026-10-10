@@ -677,9 +677,9 @@ static uint32_t env_rises(int16_t loop, int *ended)
 static void test_byte(void)
 {
     static int32_t prev[FS / 8];
-    uint32_t f, b, i, sound = 0, differ = 0, over = 0, var = 0;
+    uint32_t f, b, i, sound = 0, differ = 0, over = 0, var = 0, early = 0;
     for (f = 0; f < 32u; f++) {
-        double e = 0, d = 0;
+        double e = 0, d = 0, e30 = 0;
         int32_t pk = 0;
         fresh(3, 0);
         trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 5; trk[0].p[P_E2] = (int16_t)(f * 4u); trk[0].p[P_E3] = 0;
@@ -690,12 +690,15 @@ static void test_byte(void)
             for (i = 0; i < CTL; i++) {
                 int32_t x = out_buf[2u * i];
                 e += (double)x * x;
+                if (b * CTL + i < FS * 30u / 1000u)
+                    e30 += (double)x * x;
                 d += fabs((double)x - prev[b * CTL + i]);
                 prev[b * CTL + i] = x;
                 pk = abs(x) > pk ? abs(x) : pk;
             }
         }
         sound += e / (FS / 8u) > 300.0 * 300.0;
+        early += e30 / (FS * 30u / 1000u) > 300.0 * 300.0;
         differ += f == 0u || d / (FS / 8u) > 100.0;
         over += pk >= 32767;
         if (f >= 16u) {                            /* the VAR ones: VAR 100 another sound */
@@ -712,18 +715,19 @@ static void test_byte(void)
             var += dv / (FS / 8u) > 100.0;
         }
     }
-    printf("mod:   (BYTE: %u of 32 sound, %u differ from the one before, %u clip; VAR moves %u of 16)\n", sound, differ, over, var);
-    check("LOFI BYTE: the 32 bytebeat formulas sound (30+), each its own, none clips; VAR moves the VAR ones (14+)",
-          sound >= 30u && differ == 32u && !over && var >= 14u);
+    printf("mod:   (BYTE: %u of 32 sound, %u in the first 30 ms, %u differ from the one before, %u clip; VAR moves %u of 16)\n",
+           sound, early, differ, over, var);
+    check("LOFI BYTE: the 32 bytebeat formulas sound (30+), from the start (0.5.1: 30+ in the first 30 ms), each its own, none clips; VAR moves the VAR ones (14+)",
+          sound >= 30u && early >= 30u && differ == 32u && !over && var >= 14u);
 }
 
-/* (JIANT 0.5.1) LOFI FLOAT: each of the 16 floatbeat formulas sounds, under full scale, unlike its neighbour; VAR
+/* (JIANT 0.5.1) LOFI FLOAT: each of the 32 floatbeat formulas sounds, under full scale, unlike its neighbour; VAR
  * moves them; the pitch follows the note (an octave up: about twice the zero crossings on F01) */
 static void float_run(uint32_t f, int32_t var, uint32_t note, int32_t *buf)
 {
     uint32_t b, i;
     fresh(3, 0);
-    trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 6; trk[0].p[P_E2] = (int16_t)(f * 8u); trk[0].p[P_E3] = (int16_t)var;
+    trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 6; trk[0].p[P_E2] = (int16_t)(f * 4u); trk[0].p[P_E3] = (int16_t)var;
     trk[0].p[P_E5] = trk[0].p[P_E6] = trk[0].p[P_E7] = 0; trk[0].p[P_FCUT] = 127; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
     trk_note_on(&trk[0], note, 110);
     for (b = 0; b < FS / 8u / CTL; b++) {
@@ -736,7 +740,7 @@ static void test_float(void)
 {
     static int32_t prev[FS / 8], cur[FS / 8], alt[FS / 8];
     uint32_t f, i, sound = 0, differ = 0, over = 0, var = 0, c60 = 0, c72 = 0;
-    for (f = 0; f < 16u; f++) {
+    for (f = 0; f < 32u; f++) {
         double e = 0, d = 0, dv = 0;
         int32_t pk = 0;
         float_run(f, 20, 60, cur);
@@ -760,10 +764,10 @@ static void test_float(void)
         c60 += cur[i - 1] < 0 && cur[i] >= 0;
         c72 += alt[i - 1] < 0 && alt[i] >= 0;
     }
-    printf("mod:   (FLOAT: %u of 16 sound, %u differ from the one before, %u clip; VAR moves %u; crossings C4 %u, C5 %u)\n",
+    printf("mod:   (FLOAT: %u of 32 sound, %u differ from the one before, %u clip; VAR moves %u; crossings C4 %u, C5 %u)\n",
            sound, differ, over, var, c60, c72);
-    check("LOFI FLOAT: the 16 floatbeat formulas sound, each its own, none clips; VAR moves most (12+); in tune with the note",
-          sound == 16u && differ == 16u && !over && var >= 12u && c72 > c60 * 17u / 10u && c72 < c60 * 23u / 10u);
+    check("LOFI FLOAT: the 32 floatbeat formulas sound, each its own, none clips; VAR moves most (26+); in tune with the note",
+          sound >= 31u && differ == 32u && !over && var >= 26u && c72 > c60 * 17u / 10u && c72 < c60 * 23u / 10u);
 }
 
 /* (JIANT 0.4) ANALOG SYNC RING SAW3 (TRIO folded in): each sounds, each its own, none clips; SYNC's DTN moves it */
