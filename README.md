@@ -15,12 +15,18 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.6.3).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.6.4).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
 
 ## Changelog
 
 Every update is listed here, newest first.
+
+### v0.6.4
+- **LOFI FLOAT: DRV is gone, FBK takes its place.** DRV had a scaling bug that silenced the engine as soon as it was
+  turned up, and it duplicated the DIST on the FILTER page anyway. **FBK** (feedback) sends the output back into the
+  formula's time: the floatbeat modulates itself like FM, from a slight shimmer to chaos, a different deformation on
+  every ALGO. Projects saved before keep their values (FBK starts where DRV was).
 
 ### v0.6.3
 - **The SLICER is now one slicer on a bus, like a sampler's chop.** Its settings (mode, pattern, rate, depth) are the
@@ -371,7 +377,7 @@ note. Use the FILTER page for the cutoff and resonance.
 Sierpinski partials, F07 rhythmic drive, F10 a snare and a tone, F13 a fold, F15 a staircase sine, F19 odd partials
 building up, F22 a drum loop, F23 bytebeat inside the phase, F26 a dropped bit, F30 a glide up the partials, F32
 euclid hats over a walking chord…). Hold a key: the formula plays in that key. **VAR** mutates `t` like in BYTE,
-**MOTN** speeds its slow bits up or down, **DRV** folds the output (clean to wild), **BEND** folds `t`, **LOOP**
+**MOTN** speeds its slow bits up or down, **FBK** feeds the output back into the formula's time (from a shimmer to chaos), **BEND** folds `t`, **LOOP**
 locks it into a short window. CHIP sets the resolution: FULL is smooth, 4BIT and 1BIT crush it.
 
 ### 4. DRUM-X drums

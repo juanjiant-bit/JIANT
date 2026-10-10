@@ -221,7 +221,7 @@ static void sl_seg(sl_t *s, int32_t *bl, int32_t *br, uint32_t m)
 }
 
 /* the step clock over n samples and the SLICER on the bus l / r (fx.c mix_block: every block, on or not) */
-static void slicer_bus(int32_t *bl, int32_t *br, uint32_t n)
+static __attribute__((noinline)) void slicer_bus(int32_t *bl, int32_t *br, uint32_t n)
 {
     uint32_t i = 0;
     int act = slicer_on();

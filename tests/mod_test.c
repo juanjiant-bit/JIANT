@@ -737,13 +737,14 @@ static void test_byte(void)
  * slices of 2 s on 24+ of them); VAR (a mutation of t) moves most; MOTN another sound; F12 (a slow vibrato) in tune with the
  * note (an octave up: about twice the zero crossings) */
 #define FL_N (2u * FS)
+static int32_t fl_fbk;                               /* (0.6.4) FBK, E5 (was DRV) */
 static void float_run(uint32_t f, int32_t var, int32_t motn, uint32_t note, int32_t *buf)
 {
     uint32_t b, i;
     fresh(3, 0);
     song.g[G_BPM] = 120;
     trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 6; trk[0].p[P_E2] = (int16_t)(f * 4u); trk[0].p[P_E3] = (int16_t)var;
-    trk[0].p[P_E4] = (int16_t)motn; trk[0].p[P_E5] = 0; trk[0].p[P_E6] = trk[0].p[P_E7] = 0;   /* (DRV 0) */
+    trk[0].p[P_E4] = (int16_t)motn; trk[0].p[P_E5] = (int16_t)fl_fbk; trk[0].p[P_E6] = trk[0].p[P_E7] = 0;
     trk[0].p[P_FCUT] = 127; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
     trk_note_on(&trk[0], note, 110);
     for (b = 0; b < FL_N / CTL; b++) {
@@ -827,6 +828,34 @@ static void test_float(void)
           "mutates most (26+); MOTN moves most (24+); in tune with the note",
           sound >= 31u && differ >= 30u && !over && moving >= 24u && var >= 26u && m100 >= 24u &&
           c72 > c60 * 17u / 10u && c72 < c60 * 23u / 10u);
+    {   /* (0.6.4) FBK: the output back into t: every formula still sounds (DRV, before it, silenced them), none clips,
+         * and it changes the sound, more at 127 than at 40 */
+        uint32_t snd = 0, chg40 = 0, chg127 = 0, clip = 0;
+        for (f = 0; f < 32u; f++) {
+            double e = 0, d40 = 0, d127 = 0;
+            int32_t pk = 0;
+            fl_fbk = 0;
+            float_run(f, 0, 64, 60, prev);
+            fl_fbk = 40;
+            float_run(f, 0, 64, 60, alt);
+            fl_fbk = 127;
+            float_run(f, 0, 64, 60, cur);
+            for (i = 0; i < FL_N; i++) {
+                e += (double)cur[i] * cur[i];
+                pk = abs(cur[i]) > pk ? abs(cur[i]) : pk;
+                d40 += fabs((double)alt[i] - prev[i]);
+                d127 += fabs((double)cur[i] - prev[i]);
+            }
+            snd += e / FL_N > 300.0 * 300.0;
+            clip += pk >= 32767;
+            chg40 += d40 / FL_N > 100.0;
+            chg127 += d127 > d40 && d127 / FL_N > 300.0;
+        }
+        fl_fbk = 0;
+        printf("mod:   (FLOAT FBK 127: %u of 32 sound, %u clip; FBK 40 changes %u, 127 more on %u)\n", snd, clip, chg40, chg127);
+        check("LOFI FLOAT FBK (was DRV, which silenced it): every formula sounds at 127, none clips, it deforms them (40: 24+, "
+              "127 more: 24+)", snd >= 31u && !clip && chg40 >= 24u && chg127 >= 24u);
+    }
 }
 
 /* (JIANT 0.4) ANALOG SYNC RING SAW3 (TRIO folded in): each sounds, each its own, none clips; SYNC's DTN moves it */
