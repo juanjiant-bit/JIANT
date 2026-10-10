@@ -300,8 +300,8 @@ int main(int argc, char **argv)
         e1 = rms(0, FS / 200u);
         t1 = rms(FS / 20u, FS / 4u);
         song.g[G_PUNCH] = 0;
-        check("PUNCH 100: the snare's first 5 ms +4 dB or more, its tail -9 dB or more (Drum Buss strong)",
-              e1 > e0 * 1.58 && t1 < t0 * 0.355, "attack %.0f -> %.0f, tail %.0f -> %.0f", e0, e1, t0, t1);
+        check("PUNCH 100: the snare's first 5 ms +2 dB or more, its tail within 1 dB (JIANT 0.5: it fattens, full level: the limiter)",
+              e1 > e0 * 1.26 && t1 > t0 * 0.9, "attack %.0f -> %.0f, tail %.0f -> %.0f", e0, e1, t0, t1);
     }
 
     /* 5m (JIANT 0.4): the pitch modulation's modes and DRIVE: LONG keeps the kick's pitch up for longer (more zero
@@ -388,7 +388,7 @@ int main(int argc, char **argv)
 
     /* 5c */
     {
-        double e0, e1, t0, t1, before, during, after, c0, c1;
+        double e0, e1, t0, t1, b0, b1, before, during, after, c0, c1;
         int32_t o[2 * CTL], pk;
         track_t *t = kitx(64, 64), *s2 = &trk[1];
         uint32_t m;
@@ -396,16 +396,19 @@ int main(int argc, char **argv)
         t->p[P_LEVEL] = 60;                              /* (under the master's limiter: PUNCH itself measured) */
         strike(t, 0, FS / 4u);
         e0 = rms(0, FS * 8u / 1000u);
+        b0 = rms(FS / 50u, FS / 15u);
         t0 = rms(FS / 10u, FS / 5u);
         t = kitx(64, 64);
         song.g[G_PUNCH] = 100;
         t->p[P_LEVEL] = 60;
         strike(t, 0, FS / 4u);
         e1 = rms(0, FS * 8u / 1000u);
+        b1 = rms(FS / 50u, FS / 15u);
         t1 = rms(FS / 10u, FS / 5u);
         song.g[G_PUNCH] = 0;
-        check("PNCH 100: the kick's first 8 ms louder, its tail lower", e1 > e0 * 1.3 && t1 < t0 * 0.8,
-              "attack RMS %.0f -> %.0f, tail %.0f -> %.0f", e0, e1, t0, t1);
+        check("PNCH 100: the kick's first 8 ms louder, its body (20..67 ms) fuller, its tail whole",
+              e1 > e0 * 1.3 && b1 > b0 * 1.15 && t1 > t0 * 0.97,
+              "attack RMS %.0f -> %.0f, body %.0f -> %.0f, tail %.0f -> %.0f", e0, e1, b0, b1, t0, t1);
         for (m = 0; m < 2u; m++) {                       /* DUCK 0, then 100: a held synth note, a kick */
             t = kitx(64, 64);
             host_preset(s2, 0, 0);

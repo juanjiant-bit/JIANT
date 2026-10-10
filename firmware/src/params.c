@@ -160,7 +160,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_RTYPE] = PE("TYPE", N_RTYPE, 0),
     /* (JIANT) the drum bus and the kick's ducking (fx.c, eng_drum.c); the ids of the GM drum part's level and
      * reverb send, inert since 1.0 */
-    [G_PUNCH] = PD("PNCH", F_PCT, 0, 100, 0),    /* DRUM's transients: up to +6 dB the first 8 ms, the tail -5 dB */
+    [G_PUNCH] = PD("PNCH", F_PCT, 0, 100, 0),    /* DRUM fattened: up to +5 dB the first 4 ms, the body +3 dB (0.5) */
     [G_DUCK] = PD("DUCK", F_PCT, 0, 100, 0),     /* the kick ducks the other parts: up to -18 dB */
     /* (JIANT, FUNB) the buses: not in a project's header (project.c: after the punch-in lane) */
     [G_DHPF] = PD("HPF", F_PCT, 0, 127, 0),      /* the delay's feedback low cut: off .. ~1.2 kHz (COLR its high cut) */

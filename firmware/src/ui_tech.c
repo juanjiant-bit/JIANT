@@ -229,11 +229,11 @@ static void tech_master(void)
     }
     if (en > 2)
         tk_dot(x0 + s / 2 + en * (s / 2) / 256, cy - softclip(en * 128 * g >> 10) * (s / 2) / 32767);
-    {   /* PUNCH: a drum hit's envelope, its first 8 ms up to +6 dB, the tail down */
-        int32_t px0 = 136, pw = 60, b = y0 + s, py2 = b - 50;
+    {   /* PUNCH: a drum hit's envelope (~190 ms) times punch_gain (eng_drum.c): the push, the fuller body */
+        int32_t px0 = 136, pw = 60, b = y0 + s, py2 = b - 45;
         tk_axes(px0, y0 + 20, px0 + pw, b);
         for (i = 0; i <= pw; i++) {
-            int32_t e = 60 * (pw - i) / pw, y = b - e - (i < 8 ? punch * 20 / 100 : 0) + (i >= 8 ? punch * e / 400 : 0);
+            int32_t e = 45 * (pw - i) / pw, y = b - (e * punch_gain((uint32_t)i * 255u / (uint32_t)pw, punch) >> 15);
             if (i)
                 cv_line_t(px0 + i - 1, py2, px0 + i, y, heat_y(y, y0 + 20, b, T_THEME), 2);
             py2 = y;

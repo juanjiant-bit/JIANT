@@ -56,16 +56,18 @@ static void dx_mute_set(uint32_t m) { dx_mute = (uint16_t)(m & DXM_ALL); }
 static int dx_lane_muted(uint32_t l) { return (DXG_LANE[l & 7u] & dx_mute) || (dx_mute & DXM_LANE(l & 7u)); }
 
 static int16_t clip_eff, pnch_eff;   /* G_CLIP / G_PUNCH as the master plays them (mod.c macro_master) */
-/* The drum bus (JIANT, MENU-less: FX > MASTER). PUNCH (G_PUNCH 0..100, after Ableton's Drum Buss, no detector: each
- * hit's own age): a hit's first 10 blocks (~7 ms) up to +11 dB into the voice's knee (saturated, as Drum Buss's
- * drive), then over 24 blocks down to its tail at up to -14 dB (tight, compressed). DUCK (G_DUCK, fx.c): a kick struck on any DRUM track (its group not muted) ducks the other
- * parts; duck_hit tells fx.c's mix_block */
+/* The drum bus (JIANT, MENU-less: FX > MASTER). PUNCH (G_PUNCH 0..100, no detector: each hit's own age), made to
+ * fatten (JIANT 0.5; it was Drum Buss's +11 dB / -14 dB, which thinned everything out): the whole hit driven into the
+ * voice's knee, its first ~3 ms up to x1.45, its body (~15 .. 115 ms) up to x1.7, back to unity by ~180 ms: the peak
+ * held by the knee, the body denser and louder, the tail whole (the master's leveler does not pump on a spike). DUCK (G_DUCK, fx.c): a kick struck on any
+ * DRUM track (its group not muted) ducks the other parts; duck_hit tells fx.c's mix_block */
 static volatile uint8_t duck_hit;
 #define DRUM_ATK_BLK 48u                                 /* (JIANT 0.4) ATK+ on a DRUM track: a hit's fade-in, blocks */
-static int32_t punch_gain(uint32_t age, int32_t p)     /* Q15 (32768 = 1, up to x3.5), p 0..100 */
+static int32_t punch_gain(uint32_t age, int32_t p)     /* Q15 (32768 = 1, up to x1.7), p 0..100 */
 {
-    int32_t up = 32768 + p * 819, tail = 32768 - p * 262;   /* (JIANT, Drum Buss strong: +11 dB, -14 dB at 100) */
-    return age < 10u ? up : age < 34u ? up + (tail - up) * (int32_t)(age - 10u) / 24 : tail;
+    int32_t up = 32768 + p * 150, body = 32768 + p * 230;
+    return age < 4u ? up : age < 20u ? up + (body - up) * (int32_t)(age - 4u) / 16
+                       : age < 160u ? body : age < 250u ? body + (32768 - body) * (int32_t)(age - 160u) / 90 : 32768;
 }
 
 /* General MIDI notes 35..81 -> the lane (DV_*) and semitones from its pitch */
