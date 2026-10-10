@@ -29,7 +29,7 @@ for a,b,acc in segs:
 # title block
 d.text((690,70),"JIANT FM",font=ImageFont.truetype(FB,128),fill=TXT)
 d.text((696,215),"bio-synthetic operating system for the M-VAVE FM-1",font=ImageFont.truetype(FM,30),fill=MID)
-d.text((696,258),"firmware v0.5  ·  síntesis · secuencia · mutación · performance",font=ImageFont.truetype(FM,24),fill=DIM)
+d.text((696,258),"firmware v0.5  ·  synthesis · sequencing · mutation · performance",font=ImageFont.truetype(FM,24),fill=DIM)
 for i in range(W-140):
     d.line([(70+i,330),(70+i,335)],fill=heat(i/(W-140)))
 # big screens
@@ -39,7 +39,7 @@ def scr(name,x,y,s):
     im.paste(s_im,(x,y))
 cap=ImageFont.truetype(FS,22)
 y0=370
-big=[('home','HOME · el ecosistema'),('edit_analog','ANALOG · su ser'),('drumx','DRUM-X · la colonia')]
+big=[('home','HOME · the ecosystem'),('edit_analog','ANALOG · its being'),('drumx','DRUM-X · the colony')]
 for i,(n,c) in enumerate(big):
     x=70+i*500; scr(n,x,y0,2); d.text((x,y0+492),c,font=cap,fill=heat(0.15+0.3*i))
 # small strip
@@ -50,17 +50,17 @@ for i,(n,c) in enumerate(small):
     im.paste(s_im,(x,y1)); d.text((x,y1+222),c,font=ImageFont.truetype(FS,18),fill=MID)
 # feature cards
 y2=y1+275
-cards=[("VISIÓN TÉRMICA","El color es intensidad: frío cian,\ncaliente amarillo y blanco."),
-       ("SERES","Cada motor es un organismo que se\ndeforma con sus perillas y el audio."),
-       ("FILTER EN TODO","LP · HP · BP · COMB afinado a la\nnota, en los ocho motores."),
-       ("DADOS","SELECT sortea el sonido; las macros\ncaen solo sobre lo que suena."),
-       ("DRUM-X","Batería sintetizada: morph entre A y B,\nFOLD y FM, sin samples."),
-       ("MASTER NIVELADO","CLIP con carácter y un nivelador\nsiempre activo: volumen coherente.")]
+cards=[("THERMAL VISION","Colour is intensity: cold is cyan,\nhot is yellow and white."),
+       ("BEINGS","Each engine is an organism shaped\nby its knobs and its own audio."),
+       ("FILTER EVERYWHERE","LP · HP · BP · COMB tuned to the\nnote, on all eight engines."),
+       ("DICE","SELECT rolls the sound; macro dice\nonly land on what is playing."),
+       ("DRUM-X","Synthesized drums: morph from A to B,\nFOLD and FM, no samples."),
+       ("FIVE REVERBS","ROOM, SPRING, SHIMMER, RESO tuned\nto the scale and a granular CLOUD.")]
 ft=ImageFont.truetype(FS,27); fd=ImageFont.truetype(FM,20)
 for i,(t,txt) in enumerate(cards):
     cx=70+(i%3)*500; cy=y2+(i//3)*125
     d.rectangle([cx,cy,cx+5,cy+92],fill=heat(i/5))
     d.text((cx+22,cy-2),t,font=ft,fill=TXT)
     d.multiline_text((cx+22,cy+38),txt,font=fd,fill=MID,spacing=6)
-d.text((70,Hh-50),"GPL-3.0  ·  fork de Felucca (Hügelton Instruments)  ·  song mode de SLOOP  ·  juanjiant-bit.github.io/JIANT",font=ImageFont.truetype(FM,20),fill=DIM)
+d.text((70,Hh-50),"GPL-3.0  ·  fork of Felucca (Hügelton Instruments)  ·  song mode from SLOOP  ·  juanjiant-bit.github.io/JIANT",font=ImageFont.truetype(FM,20),fill=DIM)
 im.save(sys.argv[1]); print(im.size)
