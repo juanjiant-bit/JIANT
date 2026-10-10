@@ -942,6 +942,19 @@ static void draw_columns(void)
         draw_act_column(3, "SAVE", T_THEME, ICON_AUTO);
         return;
     }
+    if (cur_page()->graph == GR_SLPIT) {                 /* (JIANT 0.6.3) STEP, its PIT, LEN, QNT */
+        uint32_t id = G_SLP0 + (sl_ui_step & 15u);
+        fmt_int(val, (int32_t)sl_ui_step + 1);
+        draw_column(0, "STEP", val, "/16", sl_ui_step < (uint32_t)song.g[G_SLPLEN] ? VAL(0u) : T_DIM,
+                    (int32_t)sl_ui_step * 1000 / 15, ICON_AUTO);
+        param_format(&GP[id], song.g[id], val, &unit);
+        draw_column(1, "PIT", val, unit, song.g[id] ? VAL(1u) : T_DIM, RATIO(&GP[id], song.g[id]), ICON_AUTO);
+        param_format(&GP[G_SLPLEN], song.g[G_SLPLEN], val, &unit);
+        draw_column(2, "LEN", val, unit, VAL(2u), RATIO(&GP[G_SLPLEN], song.g[G_SLPLEN]), ICON_AUTO);
+        param_format(&GP[G_SLPQ], song.g[G_SLPQ], val, &unit);
+        draw_column(3, "QNT", val, unit, VAL(3u), -1, ICON_AUTO);
+        return;
+    }
     if (cur_page()->graph == GR_MSEQ) {                  /* (JIANT) STEP, its LVL, LEN, SLEW */
         const track_t *t = TSEL;
         uint32_t id = P_MS0 + (ms_ui_step & 15u);

@@ -385,27 +385,58 @@ static void graph_fx(const track_t *t, uint16_t c)
         cv_rrect(x - 4, 85 - h, 12, 6, 3, hc, T_SURF);
     }
 }
-/* SLICER page: the pattern's 16 steps, a 'x' step a full bar; a '.' step: GATE a bar as high as it stays
- * open (DEPTH), STUT hatched (it repeats the last 'x'); the step playing underlined. Grey when OFF. */
-static void graph_slicer(const track_t *t, uint16_t c)
+/* SLICER and SL BUS pages (JIANT 0.6.3: one, on a bus): the pattern's 16 steps, a 'x' step a full bar; a '.' step: GATE
+ * a bar as high as it stays open (DEPTH), STUT hatched (it repeats the last 'x'); the step playing underlined. Under
+ * them what goes in: T1..T6 and FX, lit ON. Grey when OFF */
+static void graph_slicer(uint16_t c)
 {
-    uint32_t i, pat = sl_pattern(t), mode = (uint32_t)t->p[P_SLCR], cur = sl[t - trk].idx;
-    int32_t open = 70 - t->p[P_SLDEPTH] * 70 / 127;      /* px a closed GATE step keeps */
+    uint32_t i, pat = sl_pattern(), mode = (uint32_t)song.g[G_SLMODE], cur = sl.idx;
+    int32_t open = 52 - song.g[G_SLDEP] * 52 / 127;     /* px a closed GATE step keeps */
     uint16_t col = mode == SL_OFF ? T_DIM : c;
     for (i = 0; i < 16u; i++) {
         int32_t x = bar_x(i), y;
         if ((pat >> i) & 1u) {
-            cv_rrect(x, 8, 9, 72, 2, mode == SL_OFF ? T_RAISE : col, T_SURF);
+            cv_rrect(x, 8, 9, 54, 2, mode == SL_OFF ? T_RAISE : col, T_SURF);
         } else if (mode == SL_STUT) {
-            for (y = 8; y < 80; y += 4)
+            for (y = 8; y < 62; y += 4)
                 cv_rect(x, y, 9, 1, col);
         } else {
-            cv_rrect(x, 77, 9, 3, 1, T_RAISE, T_SURF);
+            cv_rrect(x, 59, 9, 3, 1, T_RAISE, T_SURF);
             if (open > 3)
-                cv_rrect(x, 80 - open, 9, open, 2, T_RAISE, T_SURF);
+                cv_rrect(x, 62 - open, 9, open, 2, T_RAISE, T_SURF);
         }
         if (mode != SL_OFF && i == cur)
-            cv_rect(x, 84, 9, 2, T_ACCENT);
+            cv_rect(x, 65, 9, 2, T_ACCENT);
+    }
+    for (i = 0; i < NTRK + 1u; i++) {                   /* T1..T6, FX: in or not */
+        int32_t x = 8 + 32 * (int32_t)i, on = song.g[G_SLT1 + i] != 0;
+        uint16_t fill = on ? (mode == SL_OFF ? T_MID : c) : T_RAISE, ink = on ? T_INK : T_DIM;
+        char b[3] = {(char)('1' + i), 0, 0};
+        if (i == NTRK) { b[0] = 'F'; b[1] = 'X'; }
+        cv_rrect(x, 74, 26, 16, 4, fill, T_SURF);
+        GFX_HOOK_ALIGN(x, 74, x + 26, 90, AL_HV, "SLICER bus chip label centred");
+        cv_text_in(x, 74 + CAP_IN(S, 16), 26, &AF_S, b, ink, fill);
+    }
+}
+/* SL PITCH (JIANT 0.6.3): the repeats' 16 pitch steps as bars from the middle (+-24 semitones), past LEN dim, the one
+ * KNOB 2 edits underlined, the one playing (STUT running) lit */
+static void graph_slpitch(uint16_t c)
+{
+    uint32_t i, len = (uint32_t)clamp(song.g[G_SLPLEN], 1, 16), now = song.g[G_SLMODE] == SL_STUT ? sl.idx % len : 0xFFu;
+    int32_t y0 = 46, hmax = 38;
+    cv_rect(10, y0, 220, 1, T_RAISE);
+    for (i = 0; i < 16u; i++) {
+        int32_t x = bar_x(i), v = song.g[G_SLP0 + i], h = v * hmax / 24;
+        uint16_t col = i >= len ? T_RAISE : i == now ? T_ACCENT : settings.palette == UI_JIANT_INDEX ?
+                       heat_col(128 + v * 5) : c;
+        if (h > 0)
+            cv_rrect(x, y0 - h, 9, h, 2, col, T_SURF);
+        else if (h < 0)
+            cv_rrect(x, y0 + 1, 9, -h, 2, col, T_SURF);
+        else
+            cv_rect(x, y0 - 1, 9, 3, col);
+        if (i == sl_ui_step)
+            cv_rect(x, y0 + hmax + 6, 9, 2, T_TEXT);
     }
 }
 /* MOD page: the four slots as rows "1 LFO > CUT +50%", the one KNOB 2..4 edit selected, slots that do
@@ -825,8 +856,13 @@ static uint32_t graph_signature(void)
     }
     if (pg->graph == GR_MOD)
         h ^= (mod_ui_slot + 1u) * 40503u;
-    if (pg->graph == GR_SLCR && t->p[P_SLCR])        /* the SLICER's step playing */
-        h ^= (sl[song.sel].idx + 1u) * 2654435761u;
+    if ((pg->graph == GR_SLCR || pg->graph == GR_SLPIT) && song.g[G_SLMODE])   /* the SLICER's step playing */
+        h ^= (sl.idx + 1u) * 2654435761u;
+    if (pg->graph == GR_SLCR || pg->graph == GR_SLPIT)   /* (its globals: the page's knobs and the bus) */
+        for (i = 0; i < G_SL_N; i++)
+            h = (h ^ (uint32_t)song.g[G_SLMODE + i]) * 16777619u;
+    if (pg->graph == GR_SLPIT)
+        h ^= (sl_ui_step + 1u) * 40503u;
     if (pg->graph == GR_SLOTS) {                     /* (a checksum over each slot) */
         for (i = 0; i < 4u; i++)
             h ^= (uint32_t)graph_project_used(i) << (20u + i);
@@ -1487,7 +1523,10 @@ static void draw_graph(void)
             graph_fx(t, c);
             break;
         case GR_SLCR:
-            graph_slicer(t, c);
+            graph_slicer(c);
+            break;
+        case GR_SLPIT:
+            graph_slpitch(c);
             break;
         case GR_MOD:
             cv_oy = 0;

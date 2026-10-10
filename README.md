@@ -15,12 +15,27 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.6.2).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.6.3).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
 
 ## Changelog
 
 Every update is listed here, newest first.
+
+### v0.6.3
+- **The SLICER is now one slicer on a bus, like a sampler's chop.** Its settings (mode, pattern, rate, depth) are the
+  section's, and on **SL BUS** / **SL BUS 2** you choose with seven ON/OFF switches what goes in: **T1–T6** and
+  **FX** (the delay, reverb and chorus returns). Everything ON turns it into a **stutter sequencer for the whole mix,
+  after the effects**: the reverb and delay tails get cut too. With FX OFF the tails ring free over the cut.
+  The routed tracks enter after their DIST, filter, level and pan; their sends still go to the effects.
+- **SL PITCH**: the repeats (STUT) follow a **16-step pitch sequence** (±24 semitones, with the mod sequencer's page
+  layout: KNOB 1 the step, KNOB 2 its pitch, LEN, QNT). Played like a tape (higher = faster), the loop keeps the
+  step's rhythm; **QNT SCL** snaps the steps to the song's scale. One sample turns into an arpeggio.
+- No limit of tracks any more (STUT on four was the 0.6.2 compromise), the same memory as before (32 KB, now a
+  stereo recording of 371 ms), and less CPU: one slicer instead of one per track.
+- Each section of a song keeps its own SLICER settings. Projects from before load with their slicer settings turned
+  into the bus's: the first track that had it on gives the mode, pattern, rate and depth, the tracks that had it on
+  go in, FX stays out.
 
 ### v0.6.2
 - **SLICER memory shared**: GATE works on all six tracks as before; **STUT** (the one that records and repeats) can
@@ -248,7 +263,7 @@ macros and MIDI punch-ins), saved with KNOB 4 on the SONG page or on its own whe
 - **ENV LOOP**: with the note held, the envelope goes back to the attack when it reaches sustain: an ADSR-shaped LFO.
 
 ### Effects and master
-- **DIST** per track with TYPE (SOFT, HARD, FOLD, CRUSH, RECT) and TONE; **SLICER** per track (STUT on up to 4 tracks at once).
+- **DIST** per track with TYPE (SOFT, HARD, FOLD, CRUSH, RECT) and TONE; the **SLICER** on a bus: T1–T6 and the FX returns switched in (SL BUS), a pitch sequence for its repeats (SL PITCH).
 - **Delay**: synced or free TIME (5 ms to 1.48 s), a single TONE, **grain delay** with PITCH and SPRAY (at long times
   too), stereo WIDTH.
 - **Reverb** with five models: ROOM, SPRING, **SHIMR** (shimmer, goes up an octave on every pass), **RESO** (four
@@ -380,7 +395,7 @@ locks it into a short window. CHIP sets the resolution: FULL is smooth, 4BIT and
 - **FX held** turns the keyboard into effects that act while you hold the key and come in on tempo: REPEAT, LPF/HPF,
   octaves, stutter, short/long decay, ARP, RANDOM… (details in [Controls](#controls)). With REC armed and playing,
   they're recorded into the section's lane; G5 erases it.
-- **FX** pages: DIST and SLICER per track, and the global DLY / DLY 2, REVERB / REVERB 2, CHORUS and MASTER.
+- **FX** pages: DIST per track; SLICER, SL BUS, SL BUS 2 and SL PITCH (the slicer bus, per section); the global DLY / DLY 2, REVERB / REVERB 2, CHORUS and MASTER.
 
 **REVERB > TYPE** (KNOB 1) picks the model. **SIZE is the decay** on every model: the top of the knob gives very long
 tails. The other knobs change meaning with the type:

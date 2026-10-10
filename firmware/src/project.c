@@ -166,8 +166,9 @@ _Static_assert(G_NSTORE == 27u && G_NSTORE == PROJ_NG_V2, "FUN7 globals retain o
 _Static_assert(sizeof(project_store_t) == 3840u && PROJ_STORE_V7 == sizeof(project_v6_t), "FUNB / FUN7 sizes");
 _Static_assert(sizeof(dx_lane_t[8]) == 88u && PROJ_DX_OFF == 3216u, "the kit's place: FUNA's, 96 bytes on");
 #define PROJ_GX_OFF (PROJ_PFX_OFF + 37u)        /* (FUNB) after the lane, its tracks and the macros: 1, then the globals */
-_Static_assert(37u + 1u + (G_COUNT - G_NSTORE) <= 48u, "the new globals in the punch-in block's spare bytes");
-_Static_assert(G_COUNT - G_NSTORE == 10u, "marker 3 holds ten new globals");
+#define G_GX_END G_SLMODE                       /* (0.6.3: the SLICER's globals after them, in their own block) */
+_Static_assert(37u + 1u + (G_GX_END - G_NSTORE) <= 48u, "the new globals in the punch-in block's spare bytes");
+_Static_assert(G_GX_END - G_NSTORE == 10u, "marker 3 holds ten new globals");
 _Static_assert(68u + PROJ_LT * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + sizeof(motion_store_t) <= PROJ_PFX_OFF,
                "the punch-in lane after the serialized part");
 typedef struct {                               /* a track of format 4, read only */
@@ -558,10 +559,37 @@ static int proj_engines_ok(const project_t *q)
 }
 /* n bytes of a stored project (any format) -> q as today's, DIGITAL and SAMPLE PERC tracks converted; 0 = not a
  * project */
+/* (JIANT 0.6.3) a project of before the SLICER's bus (no block of it): the first track's SLICER that was on is the bus's
+ * (its mode, pattern, rate, depth), the tracks whose SLICER was on go in, the effects' returns not (the old one cut the
+ * dry sound before the sends); none on: the bus at its defaults (OFF, everything in) */
+static uint8_t proj_sl_found;                           /* proj_unpack_c read the SLICER's block */
+static void proj_sl_migrate(project_t *q)
+{
+    uint32_t i, first = NTRK;
+    for (i = 0; i < G_SL_N; i++)
+        q->g[G_SLMODE + i] = GP[G_SLMODE + i].def;
+    for (i = 0; i < NTRK; i++)
+        if (q->t[i].p[P_SLCR] > 0 && q->t[i].p[P_SLCR] <= 2 && first == NTRK)
+            first = i;
+    if (first == NTRK)
+        return;
+    q->g[G_SLMODE] = q->t[first].p[P_SLCR];
+    q->g[G_SLPAT] = (int16_t)clamp(q->t[first].p[P_SLPAT], 1, 16);
+    q->g[G_SLRATE] = (int16_t)clamp(q->t[first].p[P_SLRATE], 0, 5);
+    q->g[G_SLDEP] = (int16_t)clamp(q->t[first].p[P_SLDEPTH], 0, 127);
+    for (i = 0; i < NTRK; i++)
+        q->g[G_SLT1 + i] = (int16_t)(q->t[i].p[P_SLCR] > 0 && q->t[i].p[P_SLCR] <= 2);
+    q->g[G_SLFX] = 0;
+}
 static int proj_import(project_t *q, const void *b, int n)
 {
+    proj_sl_found = 0;
     if (!proj_import_any(q, b, n) || !proj_engines_ok(q))
         return 0;
+    if (!proj_sl_found) {
+        proj_sl_migrate(q);
+        q->sum = proj_sum(q);
+    }
     proj_fm4(q);
     proj_perc(q);                                       /* (SAMPLE PERC: DRUM, before the retired engines) */
     proj_phys_gone(q);
@@ -586,6 +614,7 @@ static int proj_import_any(project_t *q, const void *b, int n)
         return proj_unpack(q, b, PROJ_STORE_V7);
     if (n == (int)sizeof *q && proj_ok((const project_t *)b)) {
         memcpy(q, b, sizeof *q);
+        proj_sl_found = 1;                              /* (today's own: its SLICER globals) */
         proj_drums_to_part(q);
         proj_phys(q);
         return 1;
@@ -663,7 +692,7 @@ static uint32_t proj_name_get(char *d, const uint8_t *s)   /* its length */
  * engine's default ((np + 7) / 8 bytes) and those alone (biased bytes, +64); a 64-bit map of its steps that are not
  * empty (step_clear's) and those alone, each: n | time << 3 | flags << 5 | X << 7; with X a byte x (bit 0 hit and
  * accent follow, bit 1 the chance follows, bit 2 RATCH bit 1, bit 3 all four notes); its n notes (4 with x's bit 3);
- * velocity | RATCH bit 0 << 7; hit, accent; chance. Then the chain, the motion's 4 header bytes and its records. The tail at fixed places
+ * velocity | RATCH bit 0 << 7; hit, accent; chance. Then the chain, the motion's 4 header bytes and its records, (0.6.3) 'S' 'L' and the SLICER's globals. The tail at fixed places
  * from the end: the punch-in lane, the macros and the new globals (PROJC_PFX_OFF), the DRUM-X kit (PROJC_DX_OFF), the
  * name, the hash. A project too full to fit: proj_pack 0 and proj_full set (SECTION FULL) */
 #define PROJC_DX_OFF (PROJ_NAME_OFF - PROJ_DX_SIZE)
@@ -696,7 +725,7 @@ static int16_t proj_pdef(uint32_t engine, uint32_t i) { return param_desc_of(eng
 /* the bytes q takes as FUNC up to the tail (PROJC_PFX_OFF: the room); more than the room: SECTION FULL */
 static uint32_t proj_packed_size(const project_t *q)
 {
-    uint32_t n = 68u + sizeof q->chain + 4u + q->motion.count * sizeof q->motion.event[0], t, i;
+    uint32_t n = 68u + sizeof q->chain + 4u + q->motion.count * sizeof q->motion.event[0] + 2u + G_SL_N, t, i;
     for (t = 0; t < NTRK; t++) {
         uint32_t e = q->t[t].engine < NENGINES ? q->t[t].engine : 0u;
         n += 3u + PROJC_PMAP + 8u + (proj_fm_kept(q, t) ? FM6_PACKED : 0u);
@@ -761,12 +790,16 @@ static int proj_pack(project_store_t *out, const project_t *q)
     memcpy(b + pos, &q->chain, sizeof q->chain); pos += sizeof q->chain;
     mlen = 4u + q->motion.count * sizeof q->motion.event[0];
     memcpy(b + pos, &q->motion, mlen);
+    pos += mlen;
+    b[pos++] = 'S'; b[pos++] = 'L';                     /* (0.6.3) the SLICER's globals (biased bytes) */
+    for (i = 0; i < G_SL_N; i++)
+        b[pos++] = (uint8_t)(clamp(q->g[G_SLMODE + i], -64, 127) + 64);
     memcpy(b + PROJC_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJC_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
     for (i = 0; i < 4u; i++)
         b[PROJC_PFX_OFF + sizeof q->pfx_lane + 1u + i] = q->macro[i] & 127u;
     b[PROJC_GX_OFF] = 3u;                               /* the new globals (biased bytes, as FUNB's) */
-    for (i = G_NSTORE; i < G_COUNT; i++)
+    for (i = G_NSTORE; i < G_GX_END; i++)
         b[PROJC_GX_OFF + 1u + i - G_NSTORE] = (uint8_t)(clamp(q->g[i], -64, 127) + 64);
     memcpy(b + PROJC_DX_OFF, q->dx, sizeof q->dx);
     b[PROJC_DX_OFF + sizeof q->dx] = q->dx_mute & DXG_ALL;
@@ -819,7 +852,7 @@ static int proj_pack_vb(project_store_t *out, const project_t *q)
         b[PROJ_PFX_OFF + sizeof q->pfx_lane + 1u + i] = q->macro[i] & 127u;
     b[PROJ_GX_OFF] = 3u;                                /* the new globals (biased bytes, as the parameters; 1: the
                                                          * first five, G_DHPF .. G_RPRE; 2: nine, to G_DSPRY; 3: ten, G_STRN) */
-    for (i = G_NSTORE; i < G_COUNT; i++)
+    for (i = G_NSTORE; i < G_GX_END; i++)
         b[PROJ_GX_OFF + 1u + i - G_NSTORE] = (uint8_t)(clamp(q->g[i], -64, 127) + 64);
     memcpy(b + PROJ_DX_OFF, q->dx, sizeof q->dx);
     b[PROJ_DX_OFF + sizeof q->dx] = q->dx_mute & DXG_ALL;
@@ -918,7 +951,13 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
     memcpy(&q->motion, b + pos, 4u); pos += 4u;
     if (q->motion.count > MOTION_MAX || pos + q->motion.count * sizeof q->motion.event[0] > room) return 0;
     memcpy(q->motion.event, b + pos, q->motion.count * sizeof q->motion.event[0]);
+    pos += q->motion.count * sizeof q->motion.event[0];
     if (!chain_valid(&q->chain) || !motion_valid(&q->motion)) return 0;
+    if (pos + 2u + G_SL_N <= room && b[pos] == 'S' && b[pos + 1u] == 'L') {   /* (0.6.3) the SLICER's globals */
+        for (i = 0; i < G_SL_N; i++)
+            q->g[G_SLMODE + i] = (int16_t)clamp((int32_t)b[pos + 2u + i] - 64, GP[G_SLMODE + i].min, GP[G_SLMODE + i].max);
+        proj_sl_found = 1;
+    }
     proj_new_tracks(q, nt);                             /* (a FUNC of fewer tracks: the rest at power-on) */
     for (t = nt; t < NTRK; t++)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);

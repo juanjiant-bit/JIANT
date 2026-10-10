@@ -911,6 +911,27 @@ int main(void)
         ok = proj_pack_vb(&gs, &f) && proj_import(&h, &gs, sizeof gs) && !memcmp(h.t, f.t, PROJ_LT * sizeof f.t[0]) &&
              h.t[4].engine == trk_def_engine(4u) && h.t[5].engine == trk_def_engine(5u) && h.t[5].step[0].time == ST_REST;
         bad += check("FUNB (0.5) -> six tracks: its four kept, T5 / T6 at their power-on sounds, empty", ok);
+        {   /* (JIANT 0.6.3) the SLICER's bus: its globals round trip; a project of before it: from the tracks' SLICERs */
+            static project_t s1, s2;
+            s1 = f;
+            s1.g[G_SLMODE] = 2; s1.g[G_SLPAT] = 9; s1.g[G_SLRATE] = 4; s1.g[G_SLDEP] = 77;
+            for (k = 0; k <= NTRK; k++) s1.g[G_SLT1 + k] = (int16_t)(k & 1u);
+            s1.g[G_SLPLEN] = 5; s1.g[G_SLPQ] = 0;
+            for (k = 0; k < 16u; k++) s1.g[G_SLP0 + k] = (int16_t)((int)k * 3 - 24);
+            s1.sum = proj_sum(&s1);
+            ok = proj_pack(&fs, &s1) && proj_import(&s2, &fs, sizeof fs) &&
+                 !memcmp(&s2.g[G_SLMODE], &s1.g[G_SLMODE], G_SL_N * sizeof s1.g[0]);
+            bad += check("FUNC: the SLICER bus (mode, pattern, rate, depth, T1..T6 FX, pitch LEN QNT, 16 steps) round trips", ok);
+            s1 = f;
+            for (k = 0; k < NTRK; k++) s1.t[k].p[P_SLCR] = 0;
+            s1.t[1].p[P_SLCR] = SL_STUT; s1.t[1].p[P_SLPAT] = 12; s1.t[1].p[P_SLRATE] = 2; s1.t[1].p[P_SLDEPTH] = 90;
+            s1.t[3].p[P_SLCR] = SL_GATE;
+            s1.sum = proj_sum(&s1);
+            ok = proj_pack_vb(&gs, &s1) && proj_import(&s2, &gs, sizeof gs) && s2.g[G_SLMODE] == SL_STUT && s2.g[G_SLPAT] == 12 &&
+                 s2.g[G_SLRATE] == 2 && s2.g[G_SLDEP] == 90 && !s2.g[G_SLT1] && s2.g[G_SLT1 + 1] && !s2.g[G_SLT1 + 2] &&
+                 s2.g[G_SLT1 + 3] && !s2.g[G_SLT1 + 4] && !s2.g[G_SLFX];
+            bad += check("FUNB of 0.5: the tracks' SLICERs become the bus (T2's settings, T2 and T4 in, FX out)", ok);
+        }
         {   /* damaged on purpose with the hash made right: refused or loaded, never read past the room (ASan) */
             static project_store_t z;
             uint32_t r = 12345u, it, okz = 1, loaded = 0;

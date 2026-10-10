@@ -67,6 +67,7 @@ static struct {
     dx_lane_t dx[8];                  /* the section's DRUM-X kit */
     uint16_t dx_mute;                 /* .. its mutes (groups, sounds) */
     uint8_t pfx_lane[32], pfx_ltgt;   /* .. its punch-in lane (pfx.c) */
+    int16_t slg[G_SL_N];              /* .. (0.6.3) its SLICER (the globals G_SLMODE ..) */
     volatile uint8_t ready;           /* main: staged; ISR: taken (0) */
     uint8_t row, section;             /* the song row it is for (SEC_LIVE: a live jump), the section (0..3) */
 } sec_stage __attribute__((section(".pool")));

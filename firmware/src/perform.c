@@ -31,8 +31,8 @@ enum { PF_R8, PF_R16, PF_R32, PF_LPF, PF_HPF,
 #define PF_BUF PF_REPEAT                                       /* the buffer effects */
 #define PF_MUTE (((1u << NTRK) - 1u) << PF_M1)
 #define PF_MIDI (((1u << (PF_RND + 1)) - 1u) & ~((1u << PF_OCTD) - 1u))   /* PF_OCTD .. PF_RND: on the notes (pfx.c) */
-#define PB_FRAMES 8192u                       /* stereo frames in sl_buf (a power of 2: the mask), 371 ms at 22.05 kHz */
-_Static_assert(PB_FRAMES * 2u <= SL_SLOTS * SL_LEN && !(PB_FRAMES & (PB_FRAMES - 1u)), "the REPEAT loop in sl_buf");
+#define PB_FRAMES SL_FR                       /* stereo frames in sl_buf (a power of 2: the mask), 371 ms at 22.05 kHz */
+_Static_assert(PB_FRAMES <= SL_FR && !(PB_FRAMES & (PB_FRAMES - 1u)), "the REPEAT loop in sl_buf");
 #define PB_MAX (2u * PB_FRAMES)               /* the longest loop, 44.1 kHz samples */
 #define PF_TOP (63 << 8)                      /* filter cutoff index, Q8 (PF_SVF): the LPF's open end */
 #define PF_LOW (14 << 8)                      /* .. the LPF sweep's end, the HPF sweep's (and K1's) top */
@@ -134,12 +134,7 @@ static void perf_press(uint32_t e, int down)
 static void perf_start(void) { pf.ph = 0; pf.sync = 1; pfx_lph = 0; }   /* seq_start: a 1/16 starts with the transport */
 
 /* the SLICER's recordings dropped (when the buffer is taken and given back) */
-static void perf_drop_slicer(void)
-{
-    uint32_t k;
-    for (k = 0; k < NTRK; k++)
-        sl[k].rec = sl[k].loop = sl[k].rec_on = 0;
-}
+static void perf_drop_slicer(void) { slicer_drop(); }
 
 /* the buffer effect to play: the last pressed of those running */
 static uint32_t perf_pick(uint32_t a)
@@ -279,16 +274,16 @@ static __attribute__((noinline)) void perf_mute(uint32_t k, int32_t *b, uint32_t
     pf.mg[k] = g;
 }
 
-/* before the buses: THROW (KNOB 3) adds the dry mix to the delay and reverb sends */
-static __attribute__((noinline)) void perf_pre(const int32_t *ml, const int32_t *mr, int32_t *sd, int32_t *sr,
-                                               uint32_t n)
+/* before the buses: THROW (KNOB 3) adds the dry mix (and the SLICER's bus, bl / br) to the delay and reverb sends */
+static __attribute__((noinline)) void perf_pre(const int32_t *ml, const int32_t *mr, const int32_t *bl, const int32_t *br,
+                                               int32_t *sd, int32_t *sr, uint32_t n)
 {
     uint32_t i;
     int32_t m = perf_k[2] * 327;
     for (i = 0; i < n; i++) {
         pf.td += clamp(m - pf.td, -SL_SLOPE, SL_SLOPE);
         if (pf.td) {
-            int32_t x = mulq16((ml[i] + mr[i]) >> 1, (uint32_t)pf.td << 1);
+            int32_t x = mulq16((ml[i] + mr[i] + bl[i] + br[i]) >> 1, (uint32_t)pf.td << 1);
             sd[i] += x;
             sr[i] += x;
         }

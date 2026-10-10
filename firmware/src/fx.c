@@ -815,7 +815,7 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
 }
 
 /* one block of the whole mix (shared with hostsim.c): events -> each part (with its modulation matrix)
- * -> dist -> SLICER -> level / pan / sends -> buses -> master; out: stereo Q15 */
+ * -> dist -> level / pan / sends -> buses -> (the SLICER's bus) -> master; out: stereo Q15 */
 static void events_block(uint32_t n);                    /* seq.c */
 static int32_t send_c[CTL], send_d[CTL], send_r[CTL];   /* (mix_l mix_r wet: above, clip_block) */
 /* a part's level (Q12) over the block, ducked: its start << 8, its step a sample in *dl (a block is CTL: no divide) */
@@ -835,8 +835,7 @@ static void mix_part(track_t *t, uint32_t n)
     mod_begin(t);                                       /* the matrix's per-block values into t->p (mod.c) */
     if (track_render(t, b, n))
         t->tail = 16;                                   /* blocks of DIST state to run out after the last voice */
-    else if ((!t->tail || !t->p[P_DIST] || !--t->tail) && !slicer_busy(t)) {
-        slicer_track(t, 0, n);                          /* (the SLICER's step clock runs on) */
+    else if (!t->tail || !t->p[P_DIST] || !--t->tail) {
         if (mod.on)
             mod_end(t);
         return;
@@ -845,12 +844,15 @@ static void mix_part(track_t *t, uint32_t n)
         int32_t lvl = LEVEL_Q12[t->p[P_LEVEL] & 127], pan = t->p[P_PAN], lq = lvl << 8, dl = 0;
         int32_t gl = 4096 - (pan > 0 ? pan * 64 : 0), gr = 4096 + (pan < 0 ? pan * 64 : 0);
         int32_t c = t->p[P_CHOR] * 258, d = t->p[P_DLY] * 258, r = t->p[P_REV] * 258, pk = t->peak;
-        int32_t xmax = c > d ? c : d;
+        int32_t xmax = c > d ? c : d, *ol = mix_l, *or_ = mix_r;
+        if (slicer_routes((uint32_t)(t - trk))) {       /* (JIANT 0.6.3) into the SLICER's bus, not the dry mix */
+            ol = sl_l;
+            or_ = sl_r;
+        }
         xmax = 0x7FFFFFFF / ((xmax > r ? xmax : r) | 1);   /* sends: loud chords at a high LEVEL */
         if ((duck_g0 < 32767 || duck_g1 < 32767) && ENGINES[t->engine] != &ENG_DRUM)   /* DUCK: the kick's */
             lq = duck_ramp(lvl, &dl);
         track_dist(t, b, n);
-        slicer_track(t, b, n);                          /* slicer.c: before the level, pan and sends */
         if ((pf.mute >> (t - trk)) & 1u)
             perf_mute((uint32_t)(t - trk), b, n);       /* perform.c: a black key in the FX layer */
         for (i = 0; i < n; i++, lq += dl) {
@@ -864,8 +866,8 @@ static void mix_part(track_t *t, uint32_t n)
                 send_d[i] += mulq15(xs, d);
             if (r)
                 send_r[i] += mulq15(xs, r);
-            mix_l[i] += (x * gl) >> 12;
-            mix_r[i] += (x * gr) >> 12;
+            ol[i] += (x * gl) >> 12;
+            or_[i] += (x * gr) >> 12;
         }
         t->peak = pk;
     }
@@ -936,7 +938,7 @@ static void mix_block(int32_t *out, uint32_t n)
     int perf;
     int32_t mg = fx_usb_fixed ? MASTER_FULL : (int32_t)song.master_q12;   /* (USB LEVEL FIXED: MASTER after) */
     for (i = 0; i < n; i++)
-        send_c[i] = send_d[i] = send_r[i] = mix_l[i] = mix_r[i] = 0;
+        send_c[i] = send_d[i] = send_r[i] = mix_l[i] = mix_r[i] = sl_l[i] = sl_r[i] = 0;
     pfx_block(n, (perf_kill ? 0u : (perf_held | perf_latched) & PF_MIDI) | scene_pfx);
     events_block(n);
     if (song.playing)                                   /* (JIANT) the modulation sequences' clock (mod.c): the block's end on
@@ -952,8 +954,20 @@ static void mix_block(int32_t *out, uint32_t n)
     if (pfx_any)
         pfx_end();                                      /* (DEC- / DEC+ back) */
     if (perf)
-        perf_pre(mix_l, mix_r, send_d, send_r, n);
+        perf_pre(mix_l, mix_r, sl_l, sl_r, send_d, send_r, n);   /* (THROW: the SLICER's bus too) */
     fx_buses(send_c, send_d, send_r, wet, n);
+    if (slicer_fx())                                    /* (JIANT 0.6.3) FX ON: the returns through the SLICER */
+        for (i = 0; i < n; i++) {
+            sl_l[i] += wet[i];
+            sl_r[i] += wet[i];
+            wet[i] = 0;
+        }
+    slicer_bus(sl_l, sl_r, n);                          /* (its clock always; the bus when on) */
+    if (slicer_on())
+        for (i = 0; i < n; i++) {
+            mix_l[i] += sl_l[i];
+            mix_r[i] += sl_r[i];
+        }
     if (clip_g)
         clip_block(n);
     lev_block(n);                                       /* (JIANT 0.5) the leveler: the loudness held */

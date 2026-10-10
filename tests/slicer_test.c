@@ -8,9 +8,11 @@
  * 2. timing: a constant signal through GATE at 97 BPM with swing: every step's middle is open or
  *    closed as the pattern says, every closing ramp ends on the step boundary (sample exact, from the
  *    swung step lengths of seq.c).
- * 3. sync: the 4-track song with the transport: at every block the SLICER's step is the sequencer's.
+ * 3. sync: the song with the transport: at every block the SLICER's step is the sequencer's.
  * 4. OFF is transparent (the signal untouched), STUT repeats what the live step played.
- * 5. cost: instructions per sample of the mix, 4 SLICERs on against off (proc_pid_rusage).
+ * 5. (JIANT 0.6.3) the bus: the routed tracks through it, the others not; FX ON: the returns too; the repeats' pitch
+ *    sequence (+12: twice the frequency, the step's rhythm kept; QNT SCL snaps to the scale).
+ * 6. cost: instructions per sample of the mix, the SLICER on against off (proc_pid_rusage).
  * Demos (WAV, 44.1 kHz) into DEMO_DIR: dry / gated / stuttered versions of a pad, the acid line, the
  * drums (track 4: DRUM), and the song. */
 #define main hostsim_main
@@ -27,12 +29,21 @@ static int check(const char *what, int ok)
     return ok ? 0 : 1;
 }
 
+/* (JIANT 0.6.3: one SLICER, on a bus: its globals; t unused) */
 static void set_slicer(track_t *t, int mode, int pat, int rate, int depth)
 {
-    t->p[P_SLCR] = (int16_t)mode;
-    t->p[P_SLPAT] = (int16_t)pat;
-    t->p[P_SLRATE] = (int16_t)rate;
-    t->p[P_SLDEPTH] = (int16_t)depth;
+    (void)t;
+    song.g[G_SLMODE] = (int16_t)mode;
+    song.g[G_SLPAT] = (int16_t)pat;
+    song.g[G_SLRATE] = (int16_t)rate;
+    song.g[G_SLDEP] = (int16_t)depth;
+}
+/* a mono signal through the bus (both sides the same; the left back) */
+static void sl_mono(int32_t *b, uint32_t n)
+{
+    int32_t r[CTL];
+    memcpy(r, b, n * sizeof b[0]);
+    slicer_bus(b, r, n);
 }
 
 /* ---------------------------------------------------------- 1. clicks --- */
@@ -61,14 +72,14 @@ static int32_t sine_run(double secs, int turn, int32_t *in_step, int64_t *closed
             }
             pin = b[i];
         }
-        slicer_track(t, b, CTL);
+        sl_mono(b, CTL);
         for (i = 0; i < CTL; i++) {
             if (f + i) {
                 int32_t d = abs(b[i] - prev);
                 mx = d > mx ? d : mx;
             }
             prev = b[i];
-            if (!sl[0].bit && sl[0].pos > SL_RAMP + CTL)
+            if (!sl.bit && sl.pos > SL_RAMP + CTL)
                 *closed_energy += (int64_t)b[i] * b[i];
         }
     }
@@ -97,7 +108,7 @@ static int test_clicks(void)
         host_tracks_init();
         slicer_reset();
         song.g[G_BPM] = (int16_t)C[c].bpm;
-        trk[0].p[P_SSWING] = (int16_t)C[c].swing;
+        song.g[G_SWING] = (int16_t)C[c].swing;   /* (the bus: the global SWING) */
         set_slicer(&trk[0], C[c].mode, C[c].pat, C[c].rate, C[c].depth);
         out = sine_run(C[c].secs, 0, &in, &ce);
         snprintf(what, sizeof what, "no clicks: %s: largest step %d (sine %d, %.1f x)", C[c].name, out, in,
@@ -133,15 +144,14 @@ static int test_timing(void)
     host_tracks_init();
     slicer_reset();
     song.g[G_BPM] = 97;
-    song.g[G_SWING] = 10;
-    t->p[P_SSWING] = 20;
+    song.g[G_SWING] = 30;                          /* (the bus: the global SWING alone) */
     set_slicer(t, SL_GATE, (int)pat, 1, 127);
     slicer_start();
     while (f + CTL <= sizeof out / sizeof out[0]) {
         uint32_t i;
         for (i = 0; i < CTL; i++)
             out[f + i] = 16384;
-        slicer_track(t, out + f, CTL);
+        sl_mono(out + f, CTL);
         f += CTL;
     }
     for (k = 0; k < steps; k++) {                 /* the step lengths as seq.c step_samples has them */
@@ -160,7 +170,7 @@ static int test_timing(void)
             bad_edge++;                           /* opens from the boundary */
         b0 += len;
     }
-    snprintf(what, sizeof what, "timing: GATE at 97 BPM, swing 20 + 10 %%: %u steps open / closed as the pattern says",
+    snprintf(what, sizeof what, "timing: GATE at 97 BPM, swing 30 %%: %u steps open / closed as the pattern says",
              n);
     bad += check(what, !bad_mid && n > 32u);
     bad += check("timing: every ramp ends / starts on the swung step boundary (sample exact)", !bad_edge);
@@ -217,10 +227,10 @@ static int test_sync(void)
     song_setup();
     song.g[G_SWING] = 15;
     for (k = 0; k < NTRK; k++) {
-        trk[k].p[P_SSWING] = (int16_t)(10 * k);
+        trk[k].p[P_SSWING] = 0;                   /* (the bus follows the global SWING) */
         trk[k].p[P_SLEN] = 16;                    /* 16 steps of 1/16: the SLICER's bar */
-        set_slicer(&trk[k], k & 1u ? SL_STUT : SL_GATE, (int)(3u + k), 1, 127);
     }
+    set_slicer(&trk[0], SL_STUT, 3, 1, 127);
     song.g[G_BPM] = 131;
     transport_req = 1;
     for (f = 0; f < 12u * FS; f += CTL) {
@@ -228,12 +238,12 @@ static int test_sync(void)
         mix_block(o, CTL);
         blocks++;
         for (k = 0; k < NTRK; k++) {              /* the SLICER step that holds the block's first sample */
-            uint32_t idx = sl[k].pos >= CTL ? sl[k].idx : (sl[k].idx + 15u) & 15u;
+            uint32_t idx = sl.pos >= CTL ? sl.idx : (sl.idx + 15u) & 15u;
             miss += idx != trk[k].seq_idx % 16u;
         }
     }
     transport_req = 2;
-    snprintf(what, sizeof what, "sync: 4 tracks, 131 BPM, swing per track: the sequencer's step at %u blocks x 4", blocks);
+    snprintf(what, sizeof what, "sync: 131 BPM, swing 15 %%: every track's sequencer step at %u blocks", blocks);
     k = check(what, !miss);
     {   /* (JIANT) the RATE changed mid-song (1/8T -> 1/16) and the tempo moved: on the grid from the next step on */
         int32_t o[2 * CTL];
@@ -247,12 +257,12 @@ static int test_sync(void)
         transport_req = 1;
         for (f = 0; f < 3u * FS + 777u; f += CTL)
             mix_block(o, CTL);
-        trk[0].p[P_SLRATE] = 1;                    /* 1/16 */
+        song.g[G_SLRATE] = 1;                      /* 1/16 */
         song.g[G_BPM] = 113;
         for (f = 0; f < 4u * FS; f += CTL) {
             mix_block(o, CTL);
             if (f > FS / 2u) {                     /* (after the next step) */
-                uint32_t idx = sl[0].pos >= CTL ? sl[0].idx : (sl[0].idx + 15u) & 15u;
+                uint32_t idx = sl.pos >= CTL ? sl.idx : (sl.idx + 15u) & 15u;
                 m2 += idx != trk[0].seq_idx % 16u;
                 n2++;
             }
@@ -278,7 +288,7 @@ static int test_off_stut(void)
         int32_t b[CTL], c[CTL];
         for (i = 0; i < CTL; i++)
             b[i] = c[i] = (int32_t)((f + i) * 2654435761u >> 17) - 16384;
-        slicer_track(t, b, CTL);
+        sl_mono(b, CTL);
         same &= !memcmp(b, c, sizeof b);
     }
     bad += check("OFF: the signal is not touched", same);
@@ -292,7 +302,7 @@ static int test_off_stut(void)
         for (f = 0; f < sizeof in / sizeof in[0]; f++)
             in[f] = out[f] = (int32_t)(12000.0 * sin(2 * M_PI * 150.0 * f / FS));   /* 18.75 periods a step */
         for (f = 0; f + CTL <= sizeof in / sizeof in[0]; f += CTL)
-            slicer_track(t, out + f, CTL);
+            sl_mono(out + f, CTL);
         for (f = 0; f + 4u * len < sizeof in / sizeof in[0]; f += 4u * len)   /* steps 1..3 of every 4 = step 0 */
             for (i = 1; i < 4u; i++) {
                 uint32_t a = f + i * len + len / 2u, b = f + len / 2u;
@@ -325,8 +335,7 @@ static double cost_run(int on)
     uint64_t i0;
     int32_t o[2 * CTL];
     song_setup();
-    for (k = 0; k < NTRK; k++)
-        set_slicer(&trk[k], on ? (k & 1u ? SL_GATE : SL_STUT) : 0, 4, 1, 100);
+    set_slicer(&trk[0], on ? SL_STUT : 0, 4, 1, 100);   /* (everything in, FX too: the defaults) */
     transport_req = 1;
     for (f = 0; f < FS; f += CTL)
         mix_block(o, CTL);
@@ -345,13 +354,15 @@ static int test_cost(void)
         printf("slicer: cost: no instruction counter on this host\n");
         return 0;
     }
-    snprintf(what, sizeof what, "cost: the song, 4 SLICERs on: %.0f instructions / sample (off %.0f): +%.0f, %.0f a track",
-             on, off, on - off, (on - off) / 4);
-    return check(what, (on - off) / 4 < 60);
+    snprintf(what, sizeof what, "cost: the song, the SLICER on (everything in): %.0f instructions / sample (off %.0f): +%.0f",
+             on, off, on - off);
+    return check(what, on - off < 120);
 }
 
 /* ------------------------------------------------------------ demos --- */
-static void demo_song(const char *dir, const char *name, const int16_t (*s)[4], uint32_t solo)
+/* the song with the SLICER (mode, pattern, rate, depth) on the tracks of mask (bit k: track k + 1, bit 6: FX); solo: that
+ * track alone */
+static void demo_song(const char *dir, const char *name, int mode, int pat, int rate, int depth, uint32_t mask, uint32_t solo)
 {
     char path[512];
     FILE *w;
@@ -360,11 +371,12 @@ static void demo_song(const char *dir, const char *name, const int16_t (*s)[4], 
     if (!(w = fopen(path, "wb")))
         return;
     song_setup();
-    for (k = 0; k < NTRK; k++) {
-        set_slicer(&trk[k], s[k][0], s[k][1], s[k][2], s[k][3]);
+    set_slicer(&trk[0], mode, pat, rate, depth);
+    for (k = 0; k <= NTRK; k++)
+        song.g[G_SLT1 + k] = (int16_t)((mask >> k) & 1u);
+    for (k = 0; k < NTRK; k++)
         if (solo && k + 1u != solo)
             trk[k].p[P_LEVEL] = 0;
-    }
     transport_req = 1;
     wav_hdr(w, frames);
     for (f = 0; f < frames; f += CTL) {
@@ -376,65 +388,124 @@ static void demo_song(const char *dir, const char *name, const int16_t (*s)[4], 
     }
     transport_req = 2;
     fclose(w);
+    for (k = 0; k < G_SL_N; k++)
+        song.g[G_SLMODE + k] = GP[G_SLMODE + k].def;
 }
 
 static void demos(const char *dir)
 {
-    static const int16_t DRY[4][4] = {{0, 1, 1, 127}, {0, 1, 1, 127}, {0, 1, 1, 127}, {0, 1, 1, 127}};
-    static const int16_t PAD_GATE[4][4] = {{0, 1, 1, 127}, {SL_GATE, 1, 1, 127}, {0, 1, 1, 127}, {0, 1, 1, 127}};
-    static const int16_t PAD_GATE2[4][4] = {{0, 1, 1, 127}, {SL_GATE, 15, 2, 110}, {0, 1, 1, 127}, {0, 1, 1, 127}};
-    static const int16_t ACID_STUT[4][4] = {{SL_STUT, 7, 1, 127}, {0, 1, 1, 127}, {0, 1, 1, 127}, {0, 1, 1, 127}};
-    static const int16_t DRUM_STUT[4][4] = {{0, 1, 1, 127}, {0, 1, 1, 127}, {0, 1, 1, 127}, {SL_STUT, 12, 2, 127}};
-    static const int16_t DRUM_GATE[4][4] = {{0, 1, 1, 127}, {0, 1, 1, 127}, {0, 1, 1, 127}, {SL_GATE, 3, 1, 127}};
-    static const int16_t ALL[4][4] = {{SL_STUT, 9, 1, 127}, {SL_GATE, 1, 1, 127}, {SL_GATE, 14, 2, 90},
-                                      {SL_STUT, 12, 2, 110}};
-    demo_song(dir, "song_dry.wav", DRY, 0);
-    demo_song(dir, "song_slicers.wav", ALL, 0);
-    demo_song(dir, "pad_dry.wav", DRY, 2);
-    demo_song(dir, "pad_gate_p1_16th.wav", PAD_GATE, 2);
-    demo_song(dir, "pad_gate_p15_32nd.wav", PAD_GATE2, 2);
-    demo_song(dir, "acid_dry.wav", DRY, 1);
-    demo_song(dir, "acid_stut_p7.wav", ACID_STUT, 1);
-    demo_song(dir, "drums_dry.wav", DRY, 4);
-    demo_song(dir, "drums_gate_p3.wav", DRUM_GATE, 4);
-    demo_song(dir, "drums_stut_p12_32nd.wav", DRUM_STUT, 4);
-    printf("slicer: demos in %s (song_dry / song_slicers, pad, acid, drums: dry and sliced)\n", dir);
+    demo_song(dir, "song_dry.wav", 0, 1, 1, 127, 0x7Fu, 0);
+    demo_song(dir, "song_master_stut.wav", SL_STUT, 9, 1, 127, 0x7Fu, 0);     /* everything, FX too */
+    demo_song(dir, "song_drums_stut.wav", SL_STUT, 12, 2, 127, 1u << 3, 0);   /* the drums alone, the rest dry */
+    demo_song(dir, "pad_gate_p1_16th.wav", SL_GATE, 1, 1, 127, 0x7Fu, 2);
+    demo_song(dir, "acid_stut_p7.wav", SL_STUT, 7, 1, 127, 0x7Fu, 1);
+    song.g[G_SLPLEN] = 4; song.g[G_SLP0] = 0; song.g[G_SLP0 + 1] = 7; song.g[G_SLP0 + 2] = 12; song.g[G_SLP0 + 3] = -5;
+    demo_song(dir, "song_master_stut_pitch.wav", SL_STUT, 7, 1, 127, 0x7Fu, 0);   /* the repeats 0 +7 +12 -5 */
+    printf("slicer: demos in %s (song dry / the whole mix stuttered / the drums alone / pitched repeats)\n", dir);
 }
 
-/* (JIANT 0.6) four STUT recordings for the six tracks: the first four take one, the fifth plays live (no repeat),
- * one leaving STUT gives its own back at its next step; GATE takes none */
-static int test_slots(void)
+/* (JIANT 0.6.3) the bus: what goes in, FX, the pitch of the repeats */
+static int zc(const int32_t *b, uint32_t n)        /* rising zero crossings */
 {
-    uint32_t k, f, i, slots = 0, ok;
+    uint32_t i;
+    int c = 0;
+    for (i = 1; i < n; i++)
+        c += b[i - 1] < 0 && b[i] >= 0;
+    return c;
+}
+static int test_bus(void)
+{
     int bad = 0;
-    host_tracks_init();
-    slicer_reset();
-    slicer_start();
-    song.playing = 0;
-    for (k = 0; k < NTRK; k++)
-        set_slicer(&trk[k], k < 5u ? SL_STUT : SL_GATE, 7, 1, 127);
-    for (f = 0; f < FS / 2u; f += CTL)
-        for (k = 0; k < NTRK; k++) {
-            int32_t b[CTL];
-            for (i = 0; i < CTL; i++) b[i] = (int32_t)((f + i) * 37u % 2000u) - 1000;
-            slicer_track(&trk[k], b, CTL);
+    char what[160];
+    uint32_t f, i;
+    {   /* routing: GATE 100 % pattern 13 (.x.x): track 1 in chops, out does not */
+        int32_t o[2 * CTL];
+        uint64_t e_in = 0, e_out = 0;
+        song_setup();
+        for (i = 1; i < NTRK; i++) trk[i].p[P_LEVEL] = 0;
+        trk[0].p[P_DLY] = trk[0].p[P_REV] = trk[0].p[P_CHOR] = 0;
+        set_slicer(&trk[0], SL_GATE, 13, 1, 127);
+        for (i = 0; i <= NTRK; i++) song.g[G_SLT1 + i] = 0;
+        transport_req = 1;
+        for (f = 0; f < 4u * FS; f += CTL) {
+            mix_block(o, CTL);
+            if (!sl.bit && sl.pos > SL_RAMP + CTL)
+                for (i = 0; i < CTL; i++) e_out += (uint64_t)((int64_t)o[2 * i] * o[2 * i]);
         }
-    for (k = 0; k < NTRK; k++)
-        slots |= sl[k].slot < SL_SLOTS ? 1u << sl[k].slot : 0u;
-    ok = slots == 15u && sl[4].slot == SL_NONE && slicer_no_slot(&trk[4]) && !sl[4].loop && sl[5].slot == SL_NONE &&
-         !slicer_no_slot(&trk[5]);
-    for (k = 0; k < 4u; k++) ok &= sl[k].slot != SL_NONE;
-    bad += check("4 STUT recordings shared: tracks 1..4 hold one each, track 5 live (no repeat), GATE none", ok);
-    set_slicer(&trk[1], SL_OFF, 7, 1, 127);
-    for (f = 0; f < FS / 2u; f += CTL)
-        for (k = 0; k < NTRK; k++) {
-            int32_t b[CTL] = {0};
-            slicer_track(&trk[k], b, CTL);
+        transport_req = 2;
+        song_setup();
+        for (i = 1; i < NTRK; i++) trk[i].p[P_LEVEL] = 0;
+        trk[0].p[P_DLY] = trk[0].p[P_REV] = trk[0].p[P_CHOR] = 0;
+        set_slicer(&trk[0], SL_GATE, 13, 1, 127);
+        for (i = 0; i <= NTRK; i++) song.g[G_SLT1 + i] = (int16_t)(i == 0u);
+        transport_req = 1;
+        for (f = 0; f < 4u * FS; f += CTL) {
+            mix_block(o, CTL);
+            if (!sl.bit && sl.pos > SL_RAMP + CTL)
+                for (i = 0; i < CTL; i++) e_in += (uint64_t)((int64_t)o[2 * i] * o[2 * i]);
         }
-    bad += check("  track 2 leaves STUT: its recording goes to track 5 at its next step",
-                 sl[1].slot == SL_NONE && sl[4].slot != SL_NONE && !slicer_no_slot(&trk[4]));
-    for (k = 0; k < NTRK; k++)
-        set_slicer(&trk[k], SL_OFF, 7, 1, 127);
+        transport_req = 2;
+        snprintf(what, sizeof what, "bus: T1 out: its closed steps sound (%.0f), T1 in: silent (%.0f)", sqrt((double)e_out), sqrt((double)e_in));
+        bad += check(what, e_out > 1000000u && e_in * 100u < e_out);
+    }
+    {   /* FX ON / OFF: the reverb's tail in the closed steps, cut or ringing */
+        int32_t o[2 * CTL];
+        uint64_t e[2] = {0, 0};
+        uint32_t fx;
+        for (fx = 0; fx < 2u; fx++) {
+            song_setup();
+            for (i = 1; i < NTRK; i++) trk[i].p[P_LEVEL] = 0;
+            trk[0].p[P_REV] = 127; song.g[G_RSIZE] = 120;
+            set_slicer(&trk[0], SL_GATE, 7, 1, 127);
+            for (i = 0; i < NTRK; i++) song.g[G_SLT1 + i] = 1;
+            song.g[G_SLFX] = (int16_t)fx;
+            transport_req = 1;
+            for (f = 0; f < 4u * FS; f += CTL) {
+                mix_block(o, CTL);
+                if (!sl.bit && sl.pos > SL_RAMP + CTL)
+                    for (i = 0; i < CTL; i++) e[fx] += (uint64_t)((int64_t)o[2 * i] * o[2 * i]);
+            }
+            transport_req = 2;
+        }
+        snprintf(what, sizeof what, "bus: FX OFF the reverb rings in the closed steps (%.0f), FX ON cut too (%.0f)", sqrt((double)e[0]), sqrt((double)e[1]));
+        bad += check(what, e[0] > 100000u && e[1] * 100u < e[0]);
+    }
+    {   /* pitch: STUT pattern 7 (x...), the repeats +12: twice the crossings of the live step, the step's length kept */
+        static int32_t in[2u * 44100u], out0[2u * 44100u], out1[2u * 44100u];
+        uint32_t len = (uint32_t)FS * 60u / 120u / 4u, p;
+        int z_live = 0, z0 = 0, z1 = 0, zq = 0;
+        host_tracks_init();
+        song.g[G_BPM] = 120; song.g[G_SWING] = 0;
+        set_slicer(&trk[0], SL_STUT, 7, 1, 127);
+        song.playing = 0;
+        for (f = 0; f < sizeof in / sizeof in[0]; f++)
+            in[f] = (int32_t)(12000.0 * sin(2 * M_PI * 300.0 * f / FS));
+        for (p = 0; p < 3u; p++) {
+            int32_t *out = p == 1u ? out1 : out0;
+            static int32_t outq[2u * 44100u];
+            if (p == 2u) out = outq;
+            slicer_reset();
+            slicer_start();
+            song.g[G_SLPQ] = 0;
+            for (i = 0; i < 16u; i++) song.g[G_SLP0 + i] = (int16_t)(p == 1u ? 12 : p == 2u ? 1 : 0);
+            if (p == 2u) song.g[G_SLPQ] = 1;            /* (+1 on C major snaps to 0 or +2: never +1) */
+            for (i = 0; i < NTRK; i++) trk[i].p[P_SCALE] = 1;   /* (MAJ) */
+            memcpy(out, in, sizeof in);
+            for (f = 0; f + CTL <= sizeof in / sizeof in[0]; f += CTL)
+                sl_mono(out + f, CTL);
+            for (f = 4u * len; f + 4u * len < sizeof in / sizeof in[0]; f += 4u * len) {   /* step 2 of each 4 (a repeat) */
+                if (p == 0u) { z0 += zc(out + f + len + 200u, len - 400u); z_live += zc(in + f + 200u, len - 400u); }
+                if (p == 1u) z1 += zc(out + f + len + 200u, len - 400u);
+                if (p == 2u) zq += zc(out + f + len + 200u, len - 400u);
+            }
+        }
+        for (i = 0; i < 16u; i++) song.g[G_SLP0 + i] = 0;
+        song.g[G_SLPQ] = 1;
+        snprintf(what, sizeof what, "pitch: the repeats at 0 / +12: %d / %d crossings (live %d): an octave up", z0, z1, z_live);
+        bad += check(what, abs(z0 - z_live) <= z_live / 10 && abs(z1 - 2 * z0) <= z0 / 6);
+        snprintf(what, sizeof what, "  QNT SCL: +1 snaps to the scale (%d crossings, +1 would be %d)", zq, (int)(z0 * 1.0595));
+        bad += check(what, abs(zq - z0) <= z0 / 30 || abs(zq - (int)(z0 * 1.1225)) <= z0 / 30);
+    }
     return bad;
 }
 
@@ -445,7 +516,7 @@ int main(int argc, char **argv)
     bad += test_timing();
     bad += test_sync();
     bad += test_off_stut();
-    bad += test_slots();
+    bad += test_bus();
     bad += test_cost();
     if (argc > 1)
         demos(argv[1]);

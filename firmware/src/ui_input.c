@@ -730,6 +730,10 @@ static void edit_param(uint32_t slot, int32_t steps)
             ui.ppick = (uint8_t)clamp((int32_t)pat_pick() + steps, 0, (int32_t)pat_count() - 1);
         return;
     }
+    if (pg->graph == GR_SLPIT && slot == 0u) {           /* (JIANT 0.6.3) SL PITCH: KNOB 1 the step, 2 its pitch */
+        sl_ui_step = (uint8_t)clamp((int32_t)sl_ui_step + steps, 0, 15);
+        return;
+    }
     if (pg->graph == GR_MSEQ && slot == 0u) {            /* (JIANT) MSEQ: KNOB 1 the step, 2 its level */
         ms_ui_step = (uint8_t)clamp((int32_t)ms_ui_step + steps, 0, 15);
         return;
@@ -1146,17 +1150,6 @@ static void ui_input_frame(void)
     int32_t s, sel = 0, ks[4] = {0, 0, 0, 0};
     static uint32_t lock_ms;                            /* BPM LOCK: the last locked SELECT turn (fm1_ms | 1; 0 none) */
     fm6_poll();                                         /* FM6: PTCH turned -> its patch */
-    {   /* (JIANT 0.6) the selected track asks for STUT with the four SLICER recordings taken: said once */
-        static uint8_t said;                            /* (a step boundary hands a free one out: 300 ms first) */
-        static uint32_t since;
-        uint32_t full = (uint32_t)slicer_no_slot(TSEL);
-        if (!full)
-            since = fm1_ms, said = 0;
-        else if (!said && fm1_ms - since > 300u) {
-            ui_message("STUT: 4 TRACKS MAX");
-            said = 1;
-        }
-    }
 #if !FELUCCA_FM4
     for (k = 0; k < NTRK; k++)                          /* a DIGITAL sound any other way (the paths convert it */
         if (trk[k].eng_req == ENGI_DIGITAL)             /* already): FM6 (fm4_convert.c) */

@@ -33,6 +33,7 @@ static const char *const N_RTYPE[] = {"ROOM", "SPRING", "SHIMR", "RESO", "CLOUD"
 static const char *const N_GO[] = {"--", "GO"};
 static const char *const N_SLCR[] = {"OFF", "GATE", "STUT"};             /* SL_OFF .. SL_STUT (slicer.c) */
 static const char *const N_SLDIV[] = {"1/8", "1/16", "1/32", "8T", "16T", "32T"};   /* SL_DEN */
+static const char *const N_SLPQ[] = {"CHR", "SCL"};                      /* (JIANT 0.6.3) the SLICER's pitch steps */
 /* modulation matrix (mod.c): sources, destinations (E1..E8 = P_E0..P_E7: shown with the engine's labels) */
 static const char *const N_MSRC[] = {"OFF", "LFO", "ENV", "VEL", "KEY", "RAND", "MODW", "AT", "EXPR",
                                      "M1", "M2", "M3", "M4", "STEP"};   /* (JIANT: the macros, LFO held; the modulation sequence) */
@@ -173,6 +174,23 @@ static const param_desc_t GP[G_COUNT] = {
     [G_DPIT] = PD("PITCH", F_SEMI, -12, 12, 0),  /* the GRAIN delay: each repeat through two grains this far up / down */
     [G_DSPRY] = PD("SPRY", F_PCT, 0, 127, 0),    /* .. their spray: each grain from a random place (0: plain delay) */
     [G_STRN] = PD("STRN", F_INT, -14, 14, 0),    /* (JIANT 0.4) every sequence this many steps up / down its scale */
+    [G_SLMODE] = PE("SLCR", N_SLCR, 0),         /* (JIANT 0.6.3) the SLICER bus (slicer.c) */
+    [G_SLPAT] = PD("PAT", F_INT, 1, 16, 1),
+    [G_SLRATE] = PE("RATE", N_SLDIV, 1),
+    [G_SLDEP] = PD("DEPTH", F_PCT, 0, 127, 127),
+    [G_SLT1] = PE("T1", N_ONOFF, 1), [G_SLT1 + 1] = PE("T2", N_ONOFF, 1), [G_SLT1 + 2] = PE("T3", N_ONOFF, 1),
+    [G_SLT1 + 3] = PE("T4", N_ONOFF, 1), [G_SLT1 + 4] = PE("T5", N_ONOFF, 1), [G_SLT6] = PE("T6", N_ONOFF, 1),
+    [G_SLFX] = PE("FX", N_ONOFF, 1),            /* the delay, reverb and chorus returns: on, the tails cut too */
+    [G_SLPLEN] = PD("LEN", F_INT, 1, 16, 16),
+    [G_SLPQ] = PE("QNT", N_SLPQ, 1),            /* the pitch steps: every semitone / the scale's */
+    [G_SLP0] = PD("PIT", F_SEMI, -24, 24, 0), [G_SLP0 + 1] = PD("PIT", F_SEMI, -24, 24, 0),
+    [G_SLP0 + 2] = PD("PIT", F_SEMI, -24, 24, 0), [G_SLP0 + 3] = PD("PIT", F_SEMI, -24, 24, 0),
+    [G_SLP0 + 4] = PD("PIT", F_SEMI, -24, 24, 0), [G_SLP0 + 5] = PD("PIT", F_SEMI, -24, 24, 0),
+    [G_SLP0 + 6] = PD("PIT", F_SEMI, -24, 24, 0), [G_SLP0 + 7] = PD("PIT", F_SEMI, -24, 24, 0),
+    [G_SLP0 + 8] = PD("PIT", F_SEMI, -24, 24, 0), [G_SLP0 + 9] = PD("PIT", F_SEMI, -24, 24, 0),
+    [G_SLP0 + 10] = PD("PIT", F_SEMI, -24, 24, 0), [G_SLP0 + 11] = PD("PIT", F_SEMI, -24, 24, 0),
+    [G_SLP0 + 12] = PD("PIT", F_SEMI, -24, 24, 0), [G_SLP0 + 13] = PD("PIT", F_SEMI, -24, 24, 0),
+    [G_SLP0 + 14] = PD("PIT", F_SEMI, -24, 24, 0), [G_SLP15] = PD("PIT", F_SEMI, -24, 24, 0),
 };
 
 static const param_desc_t *track_desc(const track_t *t, uint32_t id)
@@ -362,7 +380,7 @@ enum { FAM_HOME, FAM_ENV, FAM_LFO, FAM_FX, FAM_SCL, FAM_EDIT, FAM_GLO, FAM_SAVE,
        FAM_COUNT };
 enum { SC_TRACK, SC_GLOBAL, SC_ENGINE, SC_STEP, SC_TRK };   /* SC_TRK: the TRACKS page (ui_input.c tracks_edit) */
 enum { GR_NONE, GR_ADSR, GR_LFO, GR_STEPS, GR_ARP, GR_SCALE, GR_FX, GR_ROLL, GR_BROWSE, GR_SLOTS, GR_USER, GR_TRK,
-       GR_SLCR, GR_MOD, GR_PATS, GR_SONG, GR_TOOLS, GR_CHANCE, GR_MOTION, GR_EVENTS, GR_DXSND, GR_MSEQ };
+       GR_SLCR, GR_MOD, GR_PATS, GR_SONG, GR_TOOLS, GR_CHANCE, GR_MOTION, GR_EVENTS, GR_DXSND, GR_MSEQ, GR_SLPIT };
 
 typedef struct {
     const char *title;
@@ -380,7 +398,10 @@ static const page_t PAGES[] = {
     {"MSEQ 2", FAM_LFO, SC_TRACK, GR_NONE, {P_MSDIV, 0xFF, 0xFF, 0xFF}},
     {"FX", FAM_FX, SC_TRACK, GR_FX, {P_DIST, P_CHOR, P_DLY, P_REV}},
     {"DIST", FAM_FX, SC_TRACK, GR_NONE, {P_DIST, P_DTYPE, P_DTONE, 0xFF}},   /* JIANT: the drive's type and tone */
-    {"SLICER", FAM_FX, SC_TRACK, GR_SLCR, {P_SLCR, P_SLPAT, P_SLRATE, P_SLDEPTH}},
+    {"SLICER", FAM_FX, SC_GLOBAL, GR_SLCR, {G_SLMODE, G_SLPAT, G_SLRATE, G_SLDEP}},   /* (0.6.3) one, on a bus */
+    {"SL BUS", FAM_FX, SC_GLOBAL, GR_SLCR, {G_SLT1, G_SLT1 + 1, G_SLT1 + 2, G_SLT1 + 3}},   /* what goes in */
+    {"SL BUS 2", FAM_FX, SC_GLOBAL, GR_SLCR, {G_SLT1 + 4, G_SLT6, G_SLFX, 0xFF}},
+    {"SL PITCH", FAM_FX, SC_GLOBAL, GR_SLPIT, {0xFF, G_SLP0, G_SLPLEN, G_SLPQ}},   /* KNOB 1 the step (sl_ui_step) */
     {"DLY", FAM_FX, SC_GLOBAL, GR_NONE, {G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX}},
     {"DLY 2", FAM_FX, SC_GLOBAL, GR_NONE, {G_WIDTH, G_DPIT, G_DSPRY, 0xFF}},   /* JIANT: width, the grains (0.4: the low cut
                                                                                  * in DLY's TONE; G_DHPF stored, unused) */
@@ -428,6 +449,7 @@ static const page_t PAGES[] = {
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))
 static uint8_t mod_ui_slot;      /* the MOD page: the matrix slot (0..3) KNOB 2..4 edit */
 static uint8_t ms_ui_step;       /* (JIANT) the MSEQ page: the step (0..15) KNOB 2 edits */
+static uint8_t sl_ui_step;       /* (JIANT 0.6.3) the SL PITCH page: the step KNOB 2 edits */
 
 static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **valp)
 {
@@ -441,6 +463,8 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         return 0;
     }
     if (pg->scope == SC_GLOBAL) {
+        if (pg->graph == GR_SLPIT && id == G_SLP0)    /* the pitch of the step shown */
+            id += sl_ui_step & 15u;
         *valp = &song.g[id];
         return &GP[id];
     }
