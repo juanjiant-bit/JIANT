@@ -679,7 +679,8 @@ static int proj_pack(project_store_t *out, const project_t *q)
     memcpy(b + PROJ_DX_OFF, q->dx, sizeof q->dx);
     b[PROJ_DX_OFF + sizeof q->dx] = q->dx_mute & DXG_ALL;
     b[PROJ_DX_OFF + sizeof q->dx + 1u] = (uint8_t)(q->dx_mute >> 8);
-    b[PROJ_DX_OFF + sizeof q->dx + 2u] = 3u;                    /* 1 SHIFT: OFS / PIT where the chord keys were; 2 DRUM's E5 FM;
+    b[PROJ_DX_OFF + sizeof q->dx + 2u] = 4u;                    /* 1 SHIFT: OFS / PIT where the chord keys were; 2 DRUM's E5 FM;
+                                                                 * 4 (0.5.4) LOFI BYTE / FLOAT's MOTN, GRIT / DCY;
                                                                  * 3 (0.4) LOFI's and ANALOG's new E values (core.h sound_v04) */
     memcpy(b + PROJ_DX_OFF + sizeof q->dx + 3u, q->dx_mot, sizeof q->dx_mot);   /* (0.5.1) X-MOD: 0 before it (off) */
     memcpy(b + PROJ_FM6_OFF, q->fm6, sizeof q->fm6);
@@ -780,16 +781,22 @@ static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
         q->dx_mot[XM_SHPE] = q->dx_mot[XM_SHPE] > 4u ? 0u : q->dx_mot[XM_SHPE];
         q->dx_mot[XM_RAND] &= 127u;
     }
-    if (!va || b[end + sizeof q->dx + 2u] < 1u || b[end + sizeof q->dx + 2u] > 3u)   /* written before SHIFT: */
+    if (!va || b[end + sizeof q->dx + 2u] < 1u || b[end + sizeof q->dx + 2u] > 4u)   /* written before SHIFT: */
         for (t = 0; t < NTRK; t++)                      /* its chord keys are no offset */
             q->t[t].p[P_SOFS] = q->t[t].p[P_POFS] = 0;
-    if (!va || (b[end + sizeof q->dx + 2u] != 2u && b[end + sizeof q->dx + 2u] != 3u))   /* (JIANT) before FM: DRUM's E5 */
+    if (!va || b[end + sizeof q->dx + 2u] < 2u || b[end + sizeof q->dx + 2u] > 4u)   /* (JIANT) before FM: DRUM's E5 */
         for (t = 0; t < NTRK; t++)                      /* was ACC: FM off */
             if (q->t[t].engine == ENGI_DRUM)
                 q->t[t].p[P_E5] = 0;
-    if (!va || b[end + sizeof q->dx + 2u] != 3u)        /* (JIANT 0.4) LOFI's, ANALOG's E values as today's */
+    if (!va || b[end + sizeof q->dx + 2u] < 3u || b[end + sizeof q->dx + 2u] > 4u)   /* (JIANT 0.4) LOFI's, ANALOG's E
+                                                         * values as today's */
         for (t = 0; t < NTRK; t++)
             sound_v04(q->t[t].engine, &q->t[t].p[P_E0]);
+    if (!va || b[end + sizeof q->dx + 2u] < 4u || b[end + sizeof q->dx + 2u] > 4u)   /* (0.5.4) a LOFI BYTE / FLOAT: E4 was
+                                                         * the old CUT (MOTN as written: 64), E5 its RES (GRIT, DCY: 0) */
+        for (t = 0; t < NTRK; t++)
+            if (q->t[t].engine == 3u && q->t[t].p[P_E1] >= 5)
+                q->t[t].p[P_E4] = 64, q->t[t].p[P_E5] = 0;
     if (!va) {
         memcpy(q->dx, DX_KIT_DEF, sizeof q->dx);
         q->dx_mute = 0;
