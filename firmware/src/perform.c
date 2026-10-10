@@ -10,7 +10,7 @@
  * REPEAT starts on the next 1/16 (at once while stopped); the filters at once; all end when let go, with a 2.9 ms
  * ramp. Effects of different kinds stack; of the REPEATs the last pressed plays, and letting it go returns to the
  * one held before.
- * The buffer: the SLICER's recordings (sl_buf, its first 32 KB) borrowed as one stereo loop of 8192 frames at 22.05 kHz
+ * The buffer: the SLICER's recordings (sl_buf, 32 KB) borrowed as one stereo loop of 8192 frames at 22.05 kHz
  * (371 ms). While borrowed, STUT tracks play live; their recordings are dropped afterwards. A REPEAT 1/8 longer
  * than the loop at the tempo (below 81 BPM) does nothing (the map shows it dimmed).
  * KNOB 1..4 with FX: the macros FILTER (the LPF / HPF), CRUSH, THROW (the dry mix into the delay and reverb
@@ -32,7 +32,7 @@ enum { PF_R8, PF_R16, PF_R32, PF_LPF, PF_HPF,
 #define PF_MUTE (((1u << NTRK) - 1u) << PF_M1)
 #define PF_MIDI (((1u << (PF_RND + 1)) - 1u) & ~((1u << PF_OCTD) - 1u))   /* PF_OCTD .. PF_RND: on the notes (pfx.c) */
 #define PB_FRAMES 8192u                       /* stereo frames in sl_buf (a power of 2: the mask), 371 ms at 22.05 kHz */
-_Static_assert(PB_FRAMES * 2u <= NTRK * SL_LEN && !(PB_FRAMES & (PB_FRAMES - 1u)), "the REPEAT loop in sl_buf");
+_Static_assert(PB_FRAMES * 2u <= SL_SLOTS * SL_LEN && !(PB_FRAMES & (PB_FRAMES - 1u)), "the REPEAT loop in sl_buf");
 #define PB_MAX (2u * PB_FRAMES)               /* the longest loop, 44.1 kHz samples */
 #define PF_TOP (63 << 8)                      /* filter cutoff index, Q8 (PF_SVF): the LPF's open end */
 #define PF_LOW (14 << 8)                      /* .. the LPF sweep's end, the HPF sweep's (and K1's) top */

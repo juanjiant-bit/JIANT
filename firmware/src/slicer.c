@@ -9,7 +9,9 @@
  *   P_SLDEPTH GATE: how far a '.' step closes (100 % = silent); STUT: the level of the repeat
  * GATE: the gain moves at most 1 / SL_RAMP per sample (2.9 ms from open to closed): a closing
  *   ramp ends on the step boundary, an opening one starts on it.
- * STUT: an 'x' step plays live and is recorded (22.05 kHz, 16 bit, SL_LEN samples a track); a '.'
+ * STUT: an 'x' step plays live and is recorded (22.05 kHz, 16 bit, SL_LEN samples a track; JIANT 0.6: SL_SLOTS
+ *   recordings shared by the six tracks, a STUT track takes a free one at a step's start and gives it back when it
+ *   leaves STUT; a fifth STUT track plays live, records nothing, and the screen says so); a '.'
  *   step plays that recording from its start, looped at the step length (halved until it fits the
  *   recording), cross-faded with the live sound by DEPTH. Every pass of the loop is windowed
  *   (SL_RAMP at both ends and at the step end), the cross-fade moves as the gate does.
@@ -45,7 +47,10 @@ static const uint16_t SL_PAT[SL_NPAT] = {
 };
 static const uint8_t SL_DEN[6] = {2, 4, 8, 3, 6, 12};   /* P_SLRATE (N_SLDIV): a step = 1 / DEN beats */
 
-static int16_t sl_buf[NTRK][SL_LEN] __attribute__((section(".pool")));
+#define SL_SLOTS 4u                     /* (JIANT 0.6) STUT recordings at once (GATE needs none): 32 KB, as with four
+                                         * tracks; perform.c borrows all of them as the REPEAT loop */
+#define SL_NONE 0xFFu
+static int16_t sl_buf[SL_SLOTS][SL_LEN] __attribute__((section(".pool")));
 typedef struct {
     uint32_t pos, len;           /* samples into the step, its length */
     uint32_t base;               /* the step without swing */
@@ -57,10 +62,18 @@ typedef struct {
     uint8_t idx;                 /* step 0..15 */
     uint8_t bit;                 /* this step's pattern bit (latched at its start) */
     uint8_t rec_on;              /* recording this step */
+    uint8_t slot;                /* its sl_buf (STUT), SL_NONE: none */
 } sl_t;
-static sl_t sl[NTRK];
+static sl_t sl[NTRK] = {[0 ... NTRK - 1] = {.slot = SL_NONE}};
 static uint8_t sl_lent;          /* perform.c has borrowed sl_buf: STUT plays live, records nothing */
 
+static void slicer_reset(void)   /* every track's clock and state cleared, no recording held (tests, power-on) */
+{
+    uint32_t k;
+    memset(sl, 0, sizeof sl);
+    for (k = 0; k < NTRK; k++)
+        sl[k].slot = SL_NONE;
+}
 static void slicer_start(void)   /* seq_start: the next block starts step 0 of every track */
 {
     uint32_t k;
@@ -108,7 +121,21 @@ static __attribute__((noinline)) void sl_enter(const track_t *t, sl_t *s, uint32
     s->rp = 0;
     s->loop = 0;
     s->rec_on = 0;
-    if (mode != SL_STUT || sl_lent) {
+    if (mode != SL_STUT && s->slot != SL_NONE) {
+        s->slot = SL_NONE;                          /* (out of STUT: its recording back) */
+    } else if (mode == SL_STUT && s->slot == SL_NONE) {
+        uint32_t k, used = 0;                       /* a free recording, if any */
+        for (k = 0; k < NTRK; k++)
+            if (sl[k].slot != SL_NONE)
+                used |= 1u << sl[k].slot;
+        for (k = 0; k < SL_SLOTS && ((used >> k) & 1u); k++)
+            ;
+        if (k < SL_SLOTS) {
+            s->slot = (uint8_t)k;
+            s->rec = 0;
+        }
+    }
+    if (mode != SL_STUT || sl_lent || s->slot == SL_NONE) {
         s->rec = 0;                                 /* nothing old to repeat when STUT comes on */
     } else if (s->bit) {
         s->rec = 0;                                 /* a live step: record it */
@@ -182,12 +209,17 @@ static void slicer_track(const track_t *t, int32_t *b, uint32_t n)
         if (m > n - i)
             m = n - i;
         if (act)
-            sl_seg(t, s, sl_buf[k], b + i, m);
+            sl_seg(t, s, sl_buf[s->slot < SL_SLOTS ? s->slot : 0u], b + i, m);   /* (no slot: no recording, no repeat) */
         s->pos += m;
         i += m;
     }
 }
 
+/* (JIANT 0.6) track t wants STUT but every recording is taken: it plays live (the screen says why) */
+static int slicer_no_slot(const track_t *t)
+{
+    return t->p[P_SLCR] == SL_STUT && sl[t - trk].slot == SL_NONE;
+}
 /* a silent part must still be rendered: a repeat is playing or fading (fx.c mix_part) */
 static int slicer_busy(const track_t *t)
 {
