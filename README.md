@@ -15,12 +15,22 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.5.4).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.5.5).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
 
 ## Changelog
 
 Every update is listed here, newest first.
+
+### v0.5.5
+- **FLOAT is a floatbeat generator now**: bytebeat's sibling in floats. Each of the 32 ALGOs is a formula of `t`
+  made of sines, as in the floatbeat scene: `sin(t·(t>>11 ^ t>>13 & 7))`, FM whose index walks with `t`'s bits,
+  melodies read from nibble tables, kicks, snares and hats inside the formula, Sierpinski partials, drive and folds,
+  staircase sines, xor'd and dropped bits, risers, polyrhythms, chords whose root walks… rhythm, melody and timbre at
+  once. `t` runs 32 steps per cycle of the note, so every formula plays in the key you hold (and, as in bytebeat, its
+  rhythm runs faster up the keyboard). It shares BYTE's controls: **VAR** mutates `t` (8 ways), **MOTN** runs its
+  slow bits faster or slower, **BEND** folds it, **LOOP** locks it into a short window; the new **DRV** folds the
+  output from clean to wild.
 
 ### v0.5.4
 - **FLOAT makes patterns now, not just waveforms.** Every ALGO is a step sequencer: 8 patterns (an arpeggio, a
@@ -146,8 +156,8 @@ Eight engines, all synthesis, no samples: **ANALOG, FM6, PHASE, LOFI, VOICE, WHE
 - **PHASE**: phase distortion with **FB** (the output feeds back into the phase: from hard edge to growl).
 - **LOFI**: 1, 4 and 8-bit chip with **BYTE** (bytebeat: 32 formulas picked with ALGO and mutated with VAR). In
   BYTE, **MOTN** sets the speed of the formula's rhythm, **GRIT** crushes its rate, **BEND** folds time and **LOOP**
-  repeats a short stretch of the formula: the noise becomes a tone tuned to the note. **FLOAT** is floatbeat as a
-  sequencer: 32 step patterns played with smooth timbres, in time with the song and in tune with the key.
+  repeats a short stretch of the formula: the noise becomes a tone tuned to the note. **FLOAT** is a floatbeat
+  generator: 32 formulas of `t` made of sines (rhythm, melody and timbre at once), in the key played.
 - **VOICE** (formants, after klattsch), **WHEEL** (drawbar organ) and **NOISE** (coloured and metallic noise).
 - **FILTER on every engine** (EDIT > FILTER): **TYPE** LP, HP, BP or **COMB** (a comb tuned to the note you're
   playing; CUT moves it ±32 semitones and RES is how much it rings), **CUT** and **RES**. On ANALOG it's its per-voice
@@ -306,12 +316,13 @@ formula's rhythm up or down without changing the pitch (64 as written), **GRIT**
 crusher), BEND folds time (glitches) and LOOP repeats a tiny stretch: with LOOP high the noise turns into a tuned
 note. Use the FILTER page for the cutoff and resonance.
 
-**LOFI FLOAT** (WAVE on FLOAT): a sequencer of smooth notes. ALGO picks one of 32: F01–F08 are the 8 patterns
-(arpeggio, melody, Sierpinski, 5-in-8, random walk, `t>>9 % 13`, drone with accents, octave leaps) played with a sine,
-F09–F16 the same with FM, F17–F24 wavefolded, F25–F32 with a hard sync. Hold a key and the pattern plays on that note,
-in time with the song. **VAR** mutates the pattern (backwards, with holes, transposing stairs…), **MOTN** sets its
-speed (from a step a bar to audio rate), **DCY** each note's length (pluck to legato), **BEND** folds it and **LOOP**
-locks it into a short phrase. CHIP sets the resolution: FULL is smooth, 4BIT and 1BIT crush it.
+**LOFI FLOAT** (WAVE on FLOAT): a floatbeat generator. ALGO picks one of 32 formulas of `t` made of sines (F01
+`sin(t·(t>>11^t>>13&7))`, F02 FM with a walking index, F03 a nibble-table melody, F05 a kick and a bass, F06
+Sierpinski partials, F07 rhythmic drive, F10 a snare and a tone, F13 a fold, F15 a staircase sine, F19 odd partials
+building up, F22 a drum loop, F23 bytebeat inside the phase, F26 a dropped bit, F30 a glide up the partials, F32
+euclid hats over a walking chord…). Hold a key: the formula plays in that key. **VAR** mutates `t` like in BYTE,
+**MOTN** speeds its slow bits up or down, **DRV** folds the output (clean to wild), **BEND** folds `t`, **LOOP**
+locks it into a short window. CHIP sets the resolution: FULL is smooth, 4BIT and 1BIT crush it.
 
 ### 4. DRUM-X drums
 - Set a track to DRUM. **KNOB 1 MORPH** goes from side A to side B of the whole kit: it's the knob to play live.
