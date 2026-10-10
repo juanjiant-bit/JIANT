@@ -44,6 +44,21 @@ static uint32_t batt_icon(int32_t lvl)
     static const uint8_t I[5] = {ICON_X_BAT0, ICON_X_BAT1, ICON_X_BAT3, ICON_X_BAT4, ICON_X_BAT_CHG};
     return I[clamp(lvl, 0, 4)];
 }
+/* (JIANT 0.5) the load: how much of the audio's time the sound takes now (audio.c song.cpu_q8, averaged), as five
+ * segments stacked left of the battery, lit from the bottom, cold to hot (JIANT; other palettes MID); 0..5 */
+static uint32_t head_load(void)
+{
+    uint32_t l = (song.cpu_q8 * 5u + 128u) >> 8;
+    return song.cpu_q8 && !l ? 1u : l > 5u ? 5u : l;
+}
+static void draw_load(int32_t x)
+{
+    uint32_t k, n = head_load();
+    for (k = 0; k < 5u; k++) {
+        uint16_t c = k < n ? (ux.chamfer ? heat_col(30 + (int32_t)k * 50) : T_MID) : T_RAISE;
+        cv_rect(x, 18 - (int32_t)k * 3, 3, 2, c);
+    }
+}
 static void draw_battery(int32_t bx)
 {
     int32_t lvl = batt_shown();
@@ -268,7 +283,8 @@ static void draw_head(void)
     uint32_t sig = (uint32_t)song.playing * 3u + rec * 5u + (uint32_t)(song.octave + 8) * 11u + song.sel * 13131u +
                    (ui.msg_t ? str_hash(7u, ui.msg) : ui.layer * 7919u) + (uint32_t)song.g[G_BPM] * 101u + (ui.bpm_t != 0) * 31u +
                    (uint32_t)seq_counting() * 7u + (ui_prefs & PREF_BPM_LOCK) * 4099u +
-                   (uint32_t)batt_shown() * 7777u + (chain.running ? (chain.row + 1u) * 104729u : 0u);
+                   (uint32_t)batt_shown() * 7777u + (chain.running ? (chain.row + 1u) * 104729u : 0u) +
+                   head_load() * 0x9E3779B1u;
     int msg = ui.msg_t || ui.layer;
     int centre = !msg || ui.bpm_t || ui.layer == LAYER_GLO;   /* the BPM being changed: it stays, the message right */
     if (song.g[G_BPM] != ui.roll_bpm) {
@@ -329,8 +345,10 @@ static void draw_head(void)
     }
     if (!msg && (chain.running || song.octave))
         head_group();
-    if (!(msg && centre))
+    if (!(msg && centre)) {
         draw_battery(HEAD_BAT_X);
+        draw_load(HEAD_BAT_X - 5);
+    }
     cv_blit(0, Y_HEAD);
 }
 /* LINE: 1 px dividers in the BG gaps between the strips, not around them: under the header, above and

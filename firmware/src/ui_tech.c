@@ -136,8 +136,37 @@ static void tech_rev(void)
 {
     int32_t size = song.g[G_RSIZE], damp = song.g[G_RDAMP], pre = song.g[G_RPRE], spring = song.g[G_RTYPE] == 1;
     int32_t x0 = TK_X0 + 6, w = PANEL_W - 12, base = TK_Y1 - 4, h = 92, len = 40 + size * (w - 50) / 127, gap = pre * 40 / 100;
-    int32_t i;
+    int32_t i, ty = song.g[G_RTYPE], mod = song.g[G_RMOD];
     tk_axes(x0, TK_Y0, x0 + w, base);
+    if (ty == 3) {                                      /* RESO: four strings, each a comb's teeth at its pitch, ringing as
+                                                         * long as SIZE lets them, as bright as DAMP leaves them */
+        for (i = 0; i < 4; i++) {
+            int32_t x = x0 + 30 + i * 44 + (mod > 64 && i >= 2 ? 10 : 0), k, hh = 30 + size * 55 / 127;
+            for (k = 0; k < 6; k++) {
+                int32_t th = hh - k * hh / (3 + (127 - size) / 20 + 1), yy;
+                if (th <= 0) break;
+                yy = base - th;
+                cv_rect(x + k * (6 + i), yy, 2, th, heat_col(clamp(220 - k * 30 - damp, 20, 236)));
+            }
+            cv_rect(x - 2, base - hh - 6, 1, hh + 6, T_MID);
+        }
+        return;
+    }
+    if (ty == 4) {                                      /* CLOUD: the grains, scattered back over SIZE, as many as RATE,
+                                                         * up (an octave), down and level by MOD; FREEZE: a line over them */
+        int32_t ng = 12 + song.g[G_RRATE] / 3, spread = 40 + size * (w - 40) / 127;
+        for (i = 0; i < ng; i++) {
+            uint32_t hsh = (uint32_t)(i + 1) * 2654435761u;
+            int32_t gx = x0 + w - 6 - (int32_t)((hsh >> 8) % (uint32_t)spread), lane = (int32_t)((hsh >> 20) % 100u) < mod * 3 / 4 ?
+                         (int32_t)((hsh >> 24) % 3u) + 1 : 0;
+            int32_t gy = base - 46 - (lane == 1 ? 26 : lane == 2 ? -26 : lane == 3 ? 14 : 0) + (int32_t)((hsh >> 4) % 9u) - 4;
+            int32_t gw = 6 + (int32_t)((hsh >> 12) % 10u);
+            cv_rect(gx - gw / 2, gy, gw, 3, heat_col(clamp(60 + (int32_t)((hsh >> 16) % 160u) - damp / 2, 10, 236)));
+        }
+        if (size >= 127)
+            cv_rect(x0 + 4, TK_Y0 + 4, w - 8, 1, T_ACCENT);
+        return;
+    }
     cv_rect(x0, base - h, 3, h, T_TEXT);                /* the dry hit */
     for (i = 0; i < len && x0 + 6 + gap + i < x0 + w; i += 2) {
         int32_t env = 1000 - i * 1000 / len, r = (int32_t)(((uint32_t)(i + 7) * 2654435761u) >> 22) % 1000;
@@ -147,6 +176,8 @@ static void tech_rev(void)
             bh = bh * (600 + (bg_sin((uint32_t)(i * i * 9)) >> 6) * 400 / 512) / 1000;
         if (bh > 0)
             cv_rect(x0 + 6 + gap + i, base - bh, 1, bh, heat_col(heat));
+        if (ty == 2 && mod && i % 6 == 0 && bh > 4)   /* SHIMMER: sparks an octave up over the tail, as many as MOD */
+            cv_rect(x0 + 6 + gap + i, base - bh - 6 - (i * 7 % 23) * mod / 127, 2, 2, heat_col(clamp(heat + 40, 0, 250)));
     }
 }
 

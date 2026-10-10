@@ -940,7 +940,12 @@ static void test_jiant_fx(void)
     trk[0].p[P_DLY] = 110; song.g[G_DFDBK] = 100; song.g[G_DHPF] = 100;
     check("delay HPF: the repeats thinner (another sound)", phrase() != h0);
     song.g[G_DHPF] = 0;
-    for (k = 0; k < 2u; k++) {
+    for (k = 0; k < 5u; k++) {                         /* (JIANT 0.5: + SHIMMER RESO CLOUD) */
+        static const char *const RT[5] = {"ROOM: MOD (its combs drift) and PRE each change the tail",
+                                          "SPRING: MOD (its wobble deeper) and PRE each change the tail",
+                                          "SHIMMER: MOD (the octave fed back) and PRE each change the tail",
+                                          "RESO: MOD (the voicing open) and PRE each change the tail",
+                                          "CLOUD: MOD (the grains' pitches) and PRE each change the tail"};
         fresh(0, 0);
         trk[0].p[P_REV] = 120; song.g[G_RTYPE] = (int16_t)k;
         h0 = phrase();
@@ -949,8 +954,7 @@ static void test_jiant_fx(void)
         h1 = phrase();
         fresh(0, 0);
         trk[0].p[P_REV] = 120; song.g[G_RTYPE] = (int16_t)k; song.g[G_RPRE] = 60;
-        check(k ? "SPRING: MOD (its wobble deeper) and PRE each change the tail" : "ROOM: MOD (its combs drift) and PRE each change the tail",
-              h1 != h0 && phrase() != h0);
+        check(RT[k], h1 != h0 && phrase() != h0);
         song.g[G_RMOD] = song.g[G_RPRE] = 0;
     }
     song.g[G_RTYPE] = 0;
