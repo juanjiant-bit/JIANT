@@ -1150,6 +1150,19 @@ static void ui_input_frame(void)
     int32_t s, sel = 0, ks[4] = {0, 0, 0, 0};
     static uint32_t lock_ms;                            /* BPM LOCK: the last locked SELECT turn (fm1_ms | 1; 0 none) */
     fm6_poll();                                         /* FM6: PTCH turned -> its patch */
+    {   /* (JIANT 0.6.5) RESO's PITCH and FOLW live in PRE's and DAMP's slots: into RESO a ROOM's values become theirs
+         * (DAMP past FOLW's T6: OFF; PRE past 14: 14), out of it the reverb's own defaults back */
+        static uint8_t rt0 = 0xFFu;
+        uint32_t rt = (uint32_t)song.g[G_RTYPE];
+        if (rt == 3u) {
+            if (song.g[G_RDAMP] > 6) song.g[G_RDAMP] = 0;
+            if (song.g[G_RPRE] > 14) song.g[G_RPRE] = 14;
+        } else if (rt0 == 3u) {
+            song.g[G_RDAMP] = GP[G_RDAMP].def;
+            song.g[G_RPRE] = GP[G_RPRE].def;
+        }
+        rt0 = (uint8_t)rt;
+    }
 #if !FELUCCA_FM4
     for (k = 0; k < NTRK; k++)                          /* a DIGITAL sound any other way (the paths convert it */
         if (trk[k].eng_req == ENGI_DIGITAL)             /* already): FM6 (fm4_convert.c) */

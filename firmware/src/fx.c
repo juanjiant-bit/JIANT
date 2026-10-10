@@ -29,6 +29,8 @@ static struct {
     uint8_t rtype;                       /* the reverb model running (G_RTYPE: 0 ROOM, 1 SPRING, 0.5: 2 SHIMMER 3 RESO 4 CLOUD) */
     uint32_t sh_w, sh_ph;                /* (JIANT 0.5) SHIMMER: its line's write count, the grains' phase */
     int32_t rs_lp[4];                    /* .. RESO: the combs' loop low-passes */
+    uint32_t rs_per[4];                  /* .. (0.6.5) their periods now (Q8), gliding to the chord's */
+    uint8_t rs_root;                     /* .. the note FOLW last heard + 1 (0: none yet) */
     uint16_t rs_w;                       /* .. their write index (each its own line, 1024) */
     uint32_t cl_w, cl_rng;               /* .. CLOUD: its line's write count (half rate), its random numbers */
     int32_t cl_next, cl_lp, cl_half;     /* .. the samples to the next grain, the output's low-pass, the odd sample */
@@ -558,18 +560,41 @@ static __attribute__((noinline)) void rev_shimmer(const int32_t *rev_in, int32_t
 }
 #define RS_LEN 1024u                                     /* each comb's line, in rev_comb: down to ~43 Hz */
 _Static_assert(sizeof rev_comb / 2u >= 4u * RS_LEN, "RESO in ROOM's buffers");
+/* (JIANT 0.6.5) RESO's two knobs of its own, in the slots of PRE and DAMP (no pre-delay, a fixed tone on RESO):
+ * PITCH (G_RPRE 0..14) the chord that many steps of the scale up; FOLW (G_RDAMP 0..6) OFF / T1..T6: the chord built on
+ * the lowest note that track sounds (held after it stops), so it moves with the sequence. The strings glide there */
+static uint32_t reso_pitch(void) { return song.g[G_RTYPE] == 3 ? (uint32_t)clamp(song.g[G_RPRE], 0, 14) : 0u; }
+static uint32_t reso_folw(void) { return song.g[G_RDAMP] >= 1 && song.g[G_RDAMP] <= 6 ? (uint32_t)song.g[G_RDAMP] : 0u; }
 static __attribute__((noinline)) void rev_reso(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
     const track_t *t = &trk[0];
-    uint32_t i, k, per[4], mask, s;
-    int32_t sz = song.g[G_RSIZE], dk = 32767 - song.g[G_RDAMP] * 200, note[4], deg = 0, nn;
+    uint32_t i, k, per[4], mask, s, fol = reso_folw(), up = reso_pitch();
+    int32_t sz = song.g[G_RSIZE], dk = 32767 - 60 * 200, note[4], deg = 0, nn;
     int32_t fb = sz <= 100 ? 26000 + sz * 52 : clamp(31200 + (sz - 100) * 58, 0, 32740);   /* (0.5.1: the top of SIZE
                                                          * rings on for tens of seconds: 0.9992 at 127, was 0.995) */
     for (k = 0; k < NTRK; k++)                           /* the song's scale: the first melodic track's (they share it) */
         if (ENGINES[eng_idx(trk[k].eng_req)] != &ENG_DRUM) { t = &trk[k]; break; }
     mask = scale_mask(t) & 0xFFFu;
     if (!mask) mask = 0xFFFu;
-    for (nn = 48 + t->p[P_ROOT], k = 0, s = 0; k < 4u && s < 48u; s++, nn++)   /* the I, III, V, VII from C3 up */
+    nn = 48 + t->p[P_ROOT];
+    if (fol) {                                           /* FOLW: the lowest note the track sounds */
+        const track_t *ft = &trk[fol - 1u];
+        uint32_t lo = 0xFFu;
+        for (k = 0; k < NVOICE; k++)
+            if (ft->v[k].active && ft->v[k].gate && ft->v[k].note < lo)
+                lo = ft->v[k].note;
+        if (lo != 0xFFu)
+            fx.rs_root = (uint8_t)(lo + 1u);
+        if (fx.rs_root) {
+            nn = 48 + (int32_t)(fx.rs_root - 1u) % 12;          /* (its pitch class from C3, down onto the scale) */
+            for (k = 0; k < 12u && !((mask >> (uint32_t)((nn - t->p[P_ROOT] + 120) % 12)) & 1u); k++)
+                nn--;
+        }
+    }
+    for (k = 0; k < up; nn++)                            /* PITCH: that many steps of the scale up */
+        if ((mask >> (uint32_t)((nn + 1 - t->p[P_ROOT] + 120) % 12)) & 1u)
+            k++;
+    for (k = 0, s = 0; k < 4u && s < 48u; s++, nn++)     /* the I, III, V, VII from there up */
         if ((mask >> (uint32_t)((nn - t->p[P_ROOT] + 120) % 12)) & 1u) {
             if (deg % 2 == 0)
                 note[k++] = nn;
@@ -581,6 +606,10 @@ static __attribute__((noinline)) void rev_reso(const int32_t *rev_in, int32_t *o
         uint32_t inc = pitch_inc((uint32_t)clamp(note[k] * 16, 0, 2047));
         per[k] = 0xFFFFFFFFu / ((inc >> 8) | 1u);          /* the period, Q8 */
         if (per[k] > (RS_LEN - 2u) << 8) per[k] = (RS_LEN - 2u) << 8;
+        if (!fx.rs_per[k])
+            fx.rs_per[k] = per[k];
+        fx.rs_per[k] += (uint32_t)(((int32_t)per[k] - (int32_t)fx.rs_per[k]) / 6);   /* (a glide, ~6 blocks) */
+        per[k] = fx.rs_per[k];
     }
     for (i = 0; i < n; i++) {
         int32_t in = mulq15(rev_in[i], 3600), a = 0;
@@ -753,7 +782,7 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
         }
         rev_in = rpre_out;
     }
-    if (song.g[G_RPRE]) {                               /* (JIANT) the reverb's pre-delay (in place) */
+    if (song.g[G_RPRE] && song.g[G_RTYPE] != 3) {       /* (JIANT) the reverb's pre-delay (in place; RESO: PITCH) */
         uint32_t pd = (uint32_t)song.g[G_RPRE] * 20u;   /* (ms -> half-rate samples: 2000 at 100) */
         for (i = 0; i < n; i++) {                       /* half rate: two samples averaged in, read back between */
             uint32_t h = fx.rpre_w >> 1;
