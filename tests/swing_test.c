@@ -127,7 +127,7 @@ static int test_slicer(void)
         trk[k].p[P_SSWING] = (int16_t)(40 + 20 * k);
     }
     song.g[G_SWING] = 100;
-    memset(sl, 0, sizeof sl);
+    slicer_reset();
     transport_req = 1;
     for (f = 0; f < 8u * FS; f += CTL) {
         int32_t o[2 * CTL];

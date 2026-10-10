@@ -55,7 +55,7 @@ static void perf_reset(void)
     pfx_tgt = 0;
     pfx_any = 0;
     sl_lent = 0;
-    memset(sl, 0, sizeof sl);
+    slicer_reset();
 }
 /* the stage alone on the test signal: samples [t0, t1); ev: press (+e + 1) / let go (-(e + 1)) at block bt */
 typedef struct { uint32_t t; int e; } ev_t;

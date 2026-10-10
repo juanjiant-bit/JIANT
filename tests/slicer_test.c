@@ -95,7 +95,7 @@ static int test_clicks(void)
         int32_t in, out;
         int64_t ce;
         host_tracks_init();
-        memset(sl, 0, sizeof sl);
+        slicer_reset();
         song.g[G_BPM] = (int16_t)C[c].bpm;
         trk[0].p[P_SSWING] = (int16_t)C[c].swing;
         set_slicer(&trk[0], C[c].mode, C[c].pat, C[c].rate, C[c].depth);
@@ -112,7 +112,7 @@ static int test_clicks(void)
         int32_t in, out;
         int64_t ce;
         host_tracks_init();
-        memset(sl, 0, sizeof sl);
+        slicer_reset();
         out = sine_run(10, 1, &in, &ce);
         snprintf(what, sizeof what, "no clicks: mode / pattern / depth / rate turned while it runs: %d (%.1f x)", out,
                  (double)out / in);
@@ -131,7 +131,7 @@ static int test_timing(void)
     char what[160];
     track_t *t = &trk[0];
     host_tracks_init();
-    memset(sl, 0, sizeof sl);
+    slicer_reset();
     song.g[G_BPM] = 97;
     song.g[G_SWING] = 10;
     t->p[P_SSWING] = 20;
@@ -177,7 +177,7 @@ static void song_setup(void)
     track_t *t1 = &trk[0], *t2 = &trk[1], *t3 = &trk[2], *td = &trk[3];
     uint32_t i;
     host_tracks_init();
-    memset(sl, 0, sizeof sl);
+    slicer_reset();
     song.g[G_BPM] = 120;
     host_preset(t1, 0, 4);
     host_preset(t2, 1, 5);
@@ -272,7 +272,7 @@ static int test_off_stut(void)
     track_t *t = &trk[0];
     int bad = 0;
     host_tracks_init();
-    memset(sl, 0, sizeof sl);
+    slicer_reset();
     slicer_start();
     for (f = 0; f < FS; f += CTL) {               /* OFF: untouched */
         int32_t b[CTL], c[CTL];
@@ -401,6 +401,43 @@ static void demos(const char *dir)
     printf("slicer: demos in %s (song_dry / song_slicers, pad, acid, drums: dry and sliced)\n", dir);
 }
 
+/* (JIANT 0.6) four STUT recordings for the six tracks: the first four take one, the fifth plays live (no repeat),
+ * one leaving STUT gives its own back at its next step; GATE takes none */
+static int test_slots(void)
+{
+    uint32_t k, f, i, slots = 0, ok;
+    int bad = 0;
+    host_tracks_init();
+    slicer_reset();
+    slicer_start();
+    song.playing = 0;
+    for (k = 0; k < NTRK; k++)
+        set_slicer(&trk[k], k < 5u ? SL_STUT : SL_GATE, 7, 1, 127);
+    for (f = 0; f < FS / 2u; f += CTL)
+        for (k = 0; k < NTRK; k++) {
+            int32_t b[CTL];
+            for (i = 0; i < CTL; i++) b[i] = (int32_t)((f + i) * 37u % 2000u) - 1000;
+            slicer_track(&trk[k], b, CTL);
+        }
+    for (k = 0; k < NTRK; k++)
+        slots |= sl[k].slot < SL_SLOTS ? 1u << sl[k].slot : 0u;
+    ok = slots == 15u && sl[4].slot == SL_NONE && slicer_no_slot(&trk[4]) && !sl[4].loop && sl[5].slot == SL_NONE &&
+         !slicer_no_slot(&trk[5]);
+    for (k = 0; k < 4u; k++) ok &= sl[k].slot != SL_NONE;
+    bad += check("4 STUT recordings shared: tracks 1..4 hold one each, track 5 live (no repeat), GATE none", ok);
+    set_slicer(&trk[1], SL_OFF, 7, 1, 127);
+    for (f = 0; f < FS / 2u; f += CTL)
+        for (k = 0; k < NTRK; k++) {
+            int32_t b[CTL] = {0};
+            slicer_track(&trk[k], b, CTL);
+        }
+    bad += check("  track 2 leaves STUT: its recording goes to track 5 at its next step",
+                 sl[1].slot == SL_NONE && sl[4].slot != SL_NONE && !slicer_no_slot(&trk[4]));
+    for (k = 0; k < NTRK; k++)
+        set_slicer(&trk[k], SL_OFF, 7, 1, 127);
+    return bad;
+}
+
 int main(int argc, char **argv)
 {
     int bad = 0;
@@ -408,6 +445,7 @@ int main(int argc, char **argv)
     bad += test_timing();
     bad += test_sync();
     bad += test_off_stut();
+    bad += test_slots();
     bad += test_cost();
     if (argc > 1)
         demos(argv[1]);

@@ -15,12 +15,19 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.6.1).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.6.2).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
 
 ## Changelog
 
 Every update is listed here, newest first.
+
+### v0.6.2
+- **SLICER memory shared**: GATE works on all six tracks as before; **STUT** (the one that records and repeats) can
+  run on **up to 4 tracks at once**. A fifth STUT track plays live without repeats and the screen says
+  **STUT: 4 TRACKS MAX**; when one of the four leaves STUT, the waiting one takes its place on the next step. Each
+  track keeps its own pattern, rate and depth, and its sends still follow the chopped sound. This frees 16 KB of
+  the big-buffer memory (pool now at 92 %, 25 KB free) for future effects.
 
 ### v0.6.1
 - **MIXER: the six tracks at once** in the JIANT style, as six thermal columns (number, sound, LEVEL as the heat
@@ -241,7 +248,7 @@ macros and MIDI punch-ins), saved with KNOB 4 on the SONG page or on its own whe
 - **ENV LOOP**: with the note held, the envelope goes back to the attack when it reaches sustain: an ADSR-shaped LFO.
 
 ### Effects and master
-- **DIST** per track with TYPE (SOFT, HARD, FOLD, CRUSH, RECT) and TONE; **SLICER** per track.
+- **DIST** per track with TYPE (SOFT, HARD, FOLD, CRUSH, RECT) and TONE; **SLICER** per track (STUT on up to 4 tracks at once).
 - **Delay**: synced or free TIME (5 ms to 1.48 s), a single TONE, **grain delay** with PITCH and SPRAY (at long times
   too), stereo WIDTH.
 - **Reverb** with five models: ROOM, SPRING, **SHIMR** (shimmer, goes up an octave on every pass), **RESO** (four
