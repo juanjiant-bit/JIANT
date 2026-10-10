@@ -152,9 +152,17 @@ static void tech_rev(void)
         }
         return;
     }
-    if (ty == 4) {                                      /* CLOUD: the grains, scattered back over SIZE, as many as RATE,
+    if (ty == 4) {                                      /* CLOUD: its bloom, the grains scattered back over SIZE, as many as RATE,
                                                          * up (an octave), down and level by MOD; FREEZE: a line over them */
         int32_t ng = 12 + song.g[G_RRATE] / 3, spread = 40 + size * (w - 40) / 127;
+        for (i = 0; i < w - 8; i += 2) {                 /* (0.5.1) the bloom: the network's tail under the grains,
+                                                         * longer with SIZE */
+            int32_t env = 1000 - i * 1000 / (40 + size * (w - 40) / 127 + 1), bh;
+            if (env <= 0)
+                break;
+            bh = env * (28 + (int32_t)(((uint32_t)(i + 3) * 2654435761u) >> 27)) / 1000;
+            cv_rect(x0 + 6 + i, base - bh, 1, bh, heat_col(clamp(env * 120 / 1000 - damp / 4, 6, 236)));
+        }
         for (i = 0; i < ng; i++) {
             uint32_t hsh = (uint32_t)(i + 1) * 2654435761u;
             int32_t gx = x0 + w - 6 - (int32_t)((hsh >> 8) % (uint32_t)spread), lane = (int32_t)((hsh >> 20) % 100u) < mod * 3 / 4 ?

@@ -67,7 +67,7 @@ static void ref_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_
     int32_t fb = song.g[G_DFDBK] * 230, tn = song.g[G_DCOLOR] - 64;   /* (JIANT 0.4 TONE, its low-pass half) */
     int32_t col = tn < 0 ? 500 + (64 + tn) * (64 + tn) * 8 : 32767;
     int32_t dmix = song.g[G_DMIX] * 258;
-    int32_t size = 25000 + song.g[G_RSIZE] * 50, damp = 32767 - song.g[G_RDAMP] * 200;
+    int32_t size = 25000 + song.g[G_RSIZE] * 40 + song.g[G_RSIZE] * song.g[G_RSIZE] / 7, damp = 32767 - song.g[G_RDAMP] * 200;
     int32_t cdepth = song.g[G_CDEPTH] * 6;
     uint32_t cinc = LFO_INC[song.g[G_CRATE] & 127] / CTL;
     for (i = 0; i < n; i++) {
@@ -452,6 +452,7 @@ static void jrun(int32_t (*d)(uint32_t), int32_t (*r)(uint32_t), uint32_t n, dou
 }
 static int32_t sine500(uint32_t t) { return (int32_t)(40000.0 * sin(2.0 * M_PI * 500.0 * t / FS)); }
 static int32_t burst(uint32_t t) { return t < FS / 10u ? noise(80000) : 0; }
+static int32_t noise_on(uint32_t t) { (void)t; return noise(120000); }
 static void jreset(void)
 {
     uint32_t i;
@@ -607,6 +608,26 @@ static void test_new_types(void)
         song.g[G_RSIZE] = 127;                          /* (freeze once the burst is in) */
         jrun(0, 0, FS * 2u, &side);
         check("CLOUD: SIZE full freezes the cloud (it still sounds 2 s on)", band_e(FS * 3u / 2u, FS * 2u) > 1e8);
+    }
+    {   /* (0.5.1) SIZE 126, every model: 2 s of loud noise stay bounded; then 2 s alone: the tail long but dying */
+        static const char *const N5[5] = {"ROOM", "SPRING", "SHIMMER", "RESO", "CLOUD"};
+        int ok = 1;
+        for (k = 0; k < 5u; k++) {
+            double side, e0, e1;
+            int32_t pk = 0;
+            jreset();
+            song.g[G_RTYPE] = (int16_t)k;
+            song.g[G_RSIZE] = 126; song.g[G_RDAMP] = 30; song.g[G_RMOD] = 60; song.g[G_RRATE] = 60; song.g[G_RWIDE] = 80;
+            jrun(0, noise_on, FS * 2u, &side);
+            for (i = 0; i < FS * 2u; i++) if (abs(jw[i]) > pk) pk = abs(jw[i]);
+            jrun(0, 0, FS * 2u, &side);
+            e0 = band_e(0, FS / 2u);
+            e1 = band_e(FS * 3u / 2u, FS * 2u);
+            printf("reverb: SIZE 126 %-8s peak %d under noise, tail 0-0.5 s %.3g, 1.5-2 s %.3g (%.1f dB)\n", N5[k], pk, e0, e1,
+                   10 * log10((e1 + 1) / (e0 + 1)));
+            ok &= pk < (1 << 20) && e0 > 1e9 && e1 < e0;
+        }
+        check("SIZE 126: every model bounded under 2 s of loud noise, its tail long and dying", ok);
     }
     song.g[G_RTYPE] = 0; song.g[G_RWIDE] = 0; song.g[G_RMOD] = 0;
 }

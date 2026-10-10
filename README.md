@@ -143,7 +143,7 @@ macros and MIDI punch-ins), saved with KNOB 4 on the SONG page or on its own whe
 - **Delay**: synced or free TIME (5 ms to 1.48 s), a single TONE, **grain delay** with PITCH and SPRAY (at long times
   too), stereo WIDTH.
 - **Reverb** with five models: ROOM, SPRING, **SHIMR** (shimmer, goes up an octave on every pass), **RESO** (four
-  strings tuned to the song's scale) and **CLOUD** (a granular cloud that can freeze); with pre-delay, modulation,
+  strings tuned to the song's scale) and **CLOUD** (a granular wash that blooms into a tail and can freeze); with pre-delay, modulation,
   filter and width; **chorus**.
 - **Master**: **CLIP** (saturation with level compensation: adds character, not volume), **PNCH** (drives the drums into saturation: denser, fatter body),
   **DUCK** (the kick pulls the rest down) and an **always-on leveler** (2:1 compression with automatic make-up, from
@@ -260,15 +260,16 @@ note. Use the FILTER page for the cutoff.
   they're recorded into the section's lane; G5 erases it.
 - **FX** pages: DIST and SLICER per track, and the global DLY / DLY 2, REVERB / REVERB 2, CHORUS and MASTER.
 
-**REVERB > TYPE** (KNOB 1) picks the model. The same knobs change meaning with the type:
+**REVERB > TYPE** (KNOB 1) picks the model. **SIZE is the decay** on every model: the top of the knob gives very long
+tails. The other knobs change meaning with the type:
 
 | TYPE | What it is | SIZE | DAMP | MOD | RATE | WIDE |
 | --- | --- | --- | --- | --- | --- | --- |
-| **ROOM** | Classic room | Tail length | Darkens the highs | Modulates the tail (chorus) | Modulation speed | Stereo |
-| **SPRING** | Amp spring tank | Spring length | Darkens | How much it wobbles | Wobble speed | Stereo |
-| **SHIMR** (shimmer) | A room that rises an octave on every pass: angelic tail | Tail length | Darkens | **How much shimmer** (0 = ROOM) | — | — |
-| **RESO** | Four strings ringing **tuned to the scale** (I, III, V and VII of ROOT/SCALE) | How long they sustain | Darkens the strings | Past halfway: opens the chord an octave | — | — |
-| **CLOUD** | Granular cloud: grains of past audio, scattered | Grain length; **at max it freezes** the cloud | Darkens | How many grains change pitch (×2, ×½, fifth) | Grain density | Stereo |
+| **ROOM** | Classic room | Decay | Darkens the highs | Modulates the tail (chorus) | Modulation speed | Stereo |
+| **SPRING** | Amp spring tank | Spring length and decay | Darkens | How much it wobbles | Wobble speed | Stereo |
+| **SHIMR** (shimmer) | A room that rises an octave on every pass: angelic tail | Decay | Darkens | **How much shimmer** (0 = ROOM) | — | — |
+| **RESO** | Four strings ringing **tuned to the scale** (I, III, V and VII of ROOT/SCALE) | Decay (how long they ring) | Darkens the strings | Past halfway: opens the chord an octave | — | — |
+| **CLOUD** | Granular wash: grains of the last ~0.7 s, scattered and bloomed into a reverb tail that feeds back into itself | Decay; **at max it freezes** the cloud | Darkens | How many grains change pitch (×2, ×½, fifth), plus a chorus on the tail | Grain density | Stereo spread of the grains and the tail |
 
 PRE (pre-delay) and FILT (input tone) work on all of them. Ideas: RESO on the drums so the kit sings in the song's
 key; CLOUD with SIZE at max to freeze a chord and keep playing over it; SHIMR on a slow pad.

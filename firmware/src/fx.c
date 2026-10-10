@@ -361,11 +361,17 @@ static uint32_t delay_samples(void)
     return s < 16u ? 16u : s >= DLY_LEN ? DLY_LEN - 1u : s;
 }
 
+/* (JIANT 0.5) the combs' feedback from SIZE: 0.76 .. 0.99, the top of the knob a long tail (was 0.957 at most) */
+static int32_t rev_size(void)
+{
+    int32_t g = song.g[G_RSIZE];
+    return 25000 + g * 40 + g * g / 7;
+}
 /* ROOM (G_RTYPE 0): 4 damped combs + 2 allpasses (Freeverb-like, mono), added to out (WIDE: rev_room_mod) */
 static __attribute__((noinline)) void rev_room(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
     uint32_t i, k;
-    int32_t size = 25000 + song.g[G_RSIZE] * 50, damp = 32767 - song.g[G_RDAMP] * 200;
+    int32_t size = rev_size(), damp = 32767 - song.g[G_RDAMP] * 200;
     for (i = 0; i < n; i++) {
         int32_t a = 0;
         int16_t *c = rev_comb;
@@ -401,7 +407,7 @@ static __attribute__((noinline)) void rev_room(const int32_t *rev_in, int32_t *o
 static __attribute__((noinline)) void rev_room_mod(const int32_t *rev_in, int32_t *out, uint32_t n, int32_t wd)
 {
     uint32_t i, k;
-    int32_t size = 25000 + song.g[G_RSIZE] * 50, damp = 32767 - song.g[G_RDAMP] * 200, m1[4], dm[4];
+    int32_t size = rev_size(), damp = 32767 - song.g[G_RDAMP] * 200, m1[4], dm[4];
     int32_t depth = song.g[G_RMOD] ? 64 + song.g[G_RMOD] * song.g[G_RMOD] * 4 : 0;   /* Q8 samples: 0.25 .. 252 (~5.7 ms) */
     fx.rm_ph += LFO_INC[song.g[G_RRATE] & 127];
     for (k = 0; k < 4u; k++) {
@@ -455,7 +461,7 @@ static __attribute__((noinline)) void rev_room_mod(const int32_t *rev_in, int32_
 static __attribute__((noinline)) void rev_spring(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
     uint32_t i, k, s = (uint32_t)song.g[G_RSIZE];
-    int32_t g = 19661 + (int32_t)s * 85;                /* the loop's gain: 0.6 .. 0.93 */
+    int32_t g = 19661 + (int32_t)s * 85 + (int32_t)(s * s) / 16;   /* the loop's gain: 0.6 .. 0.96 (0.5: was 0.93) */
     int32_t kl = 26000 - song.g[G_RDAMP] * 160;         /* its low-pass: ~9 kHz .. ~1.3 kHz */
     int32_t len = (int32_t)(1323u + ((s * 1323u) >> 7)) << 8, L, L2, L3, f, w;
     int16_t *ln = rev_comb;
@@ -586,23 +592,30 @@ static __attribute__((noinline)) void rev_reso(const int32_t *rev_in, int32_t *o
     }
 }
 #define CL_LEN 16384u                                    /* half rate: ~0.74 s */
-#define CL_N 6u
+#define CL_N 8u
 static int16_t cloud_buf[CL_LEN] __attribute__((section(".pool")));
-static struct { uint32_t pos, inc; uint16_t len, age; int8_t side; } cl_g[CL_N];
+static struct { uint32_t pos, inc; uint16_t len, age; int16_t pl, pr; } cl_g[CL_N];
 static uint32_t cl_rand(void) { fx.cl_rng = fx.cl_rng * 1664525u + 1013904223u; return fx.cl_rng >> 8; }
+/* CLOUD (G_RTYPE 4, JIANT 0.5, made wet in 0.5.1): a granular wash. The input and the cloud's own tail fed back
+ * (SIZE: up to ~0.19, the wash builds on itself) are written at half rate into a 0.74 s line; up to 8 overlapping
+ * grains (RATE: their density; 45 .. 140 ms long, triangle windows) read it from anywhere behind the write, MOD of
+ * them an octave up, down or a fifth up; each grain panned at random (WIDE: how far, left and right). The grains go
+ * through ROOM's network (SIZE its decay, DAMP its tone; MOD chorusing it, WIDE its combs apart): the grains are not
+ * heard dry, they bloom into a tail around the sound. SIZE full freezes the line (the cloud holds) */
 static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
     static const uint32_t PITCH[4] = {65536u, 131072u, 32768u, 98184u};   /* x1, an octave up, down, a fifth up (Q16) */
-    uint32_t i, k, freeze = song.g[G_RSIZE] >= 127, back = 600u + (uint32_t)song.g[G_RSIZE] * 120u;
-    int32_t gap = 9000 - song.g[G_RRATE] * 66, dk = 32767 - song.g[G_RDAMP] * 220, wd = song.g[G_RWIDE];
-    if (gap < 400) gap = 400;
+    uint32_t i, k, freeze = song.g[G_RSIZE] >= 127;
+    int32_t gap = 2600 - song.g[G_RRATE] * 18, dk = 32767 - song.g[G_RDAMP] * 220, wd = song.g[G_RWIDE];
+    int32_t fb = song.g[G_RSIZE] * 48, g[CTL], t[CTL];   /* (Q15: the tail into the line, up to ~0.19) */
     for (i = 0; i < n; i++) {
-        int32_t l = 0, r = 0;
-        if (!freeze) {                                   /* the line: two samples averaged into one */
+        int32_t l = 0, r = 0, m;
+        if (!freeze) {                                   /* the line: the input and the tail, two samples into one */
+            int32_t x = (rev_in[i] >> 1) + mulq15(shim_fb[i], fb);
             if (fx.cl_w & 1u)
-                cloud_buf[(fx.cl_w >> 1) & (CL_LEN - 1u)] = (int16_t)clamp((fx.cl_half + (rev_in[i] >> 2)) >> 1, -32768, 32767);
+                cloud_buf[(fx.cl_w >> 1) & (CL_LEN - 1u)] = (int16_t)clamp((fx.cl_half + x) >> 1, -32768, 32767);
             else
-                fx.cl_half = rev_in[i] >> 2;
+                fx.cl_half = x;
             fx.cl_w++;
         }
         if (--fx.cl_next <= 0) {                         /* a grain is born, in the first one free */
@@ -610,11 +623,14 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
             for (k = 0; k < CL_N && cl_g[k].len; k++) {}
             if (k < CL_N) {
                 uint32_t pk = cl_rand() % 100u < (uint32_t)song.g[G_RMOD] * 3u / 4u ? 1u + cl_rand() % 3u : 0u;
-                cl_g[k].len = (uint16_t)(3000u + (uint32_t)song.g[G_RSIZE] * 104u + cl_rand() % 2000u);
-                cl_g[k].pos = ((fx.cl_w >> 1) - 64u - cl_rand() % back) << 16;
+                int32_t pan = (int32_t)(cl_rand() % 257u) - 128;   /* -128 .. 128, times WIDE */
+                pan = pan * wd >> 7;
+                cl_g[k].len = (uint16_t)(2000u + cl_rand() % 4200u);
+                cl_g[k].pos = ((fx.cl_w >> 1) - 200u - cl_rand() % (CL_LEN - 6000u)) << 16;
                 cl_g[k].inc = PITCH[pk] >> 1;            /* (the line at half rate) */
                 cl_g[k].age = 0;
-                cl_g[k].side = (int8_t)((cl_rand() & 1u) ? 1 : -1);
+                cl_g[k].pl = (int16_t)(128 - pan);       /* (0 .. 256: 128 the centre) */
+                cl_g[k].pr = (int16_t)(128 + pan);
             }
         }
         for (k = 0; k < CL_N; k++) {
@@ -624,19 +640,29 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
                 int32_t x0 = cloud_buf[p & (CL_LEN - 1u)], x1 = cloud_buf[(p + 1u) & (CL_LEN - 1u)];
                 int32_t x = x0 + (((x1 - x0) * (int32_t)f) >> 8), w = (int32_t)((a < L - a ? a : L - a) * 2u * 256u / L);
                 x = (x * w) >> 8;
-                l += x;
-                r += cl_g[k].side * x;
+                l += (x * cl_g[k].pl) >> 7;
+                r += (x * cl_g[k].pr) >> 7;
                 cl_g[k].pos += cl_g[k].inc;
                 if (++cl_g[k].age >= cl_g[k].len) cl_g[k].len = 0;
             }
         }
-        fx.cl_lp = l + mulq15(fx.cl_lp - l, 32767 - dk);
-        out[i] += fx.cl_lp;
-        if (wd) {                                        /* WIDE: the grains apart, left and right (a side) */
-            int32_t sd = (r * wd) >> 8;
+        m = (l + r) >> 1;
+        fx.cl_lp = m + mulq15(fx.cl_lp - m, 32767 - dk);
+        g[i] = fx.cl_lp * 2;                             /* (into the network: its input is 1/8 at -4 dB) */
+        t[i] = 0;
+        if (wd) {                                        /* the grains' own place, left and right (a side) */
+            int32_t sd = ((l - r) * wd) >> 9;
             mix_l[i] += sd;
             mix_r[i] -= sd;
         }
+    }
+    if (song.g[G_RMOD] || wd)
+        rev_room_mod(g, t, n, wd);
+    else
+        rev_room(g, t, n);
+    for (i = 0; i < n; i++) {
+        out[i] += t[i] + (g[i] >> 3);                    /* the bloom, a breath of the grains themselves */
+        shim_fb[i] = t[i];                               /* (the tail into the line, next block) */
     }
 }
 /* the model ty's block into out */
