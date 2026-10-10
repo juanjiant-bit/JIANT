@@ -14,6 +14,7 @@
  * The editor protocol (STEP_SET / TRACK_STEP, INFO 52 01 04) is in tests/editor_test.c. Built and run by
  * tests/run_tests.sh. */
 #define UI_TEST_NO_MAIN 1
+#define PROJ_FUNB_WRITER 1                               /* (JIANT 0.6) the byte checks below read a FUNB */
 #include "ui_test.c"
 
 /* track 1 alone, a one-step loop: step 0 NOTE 60 (flags), RATCH hits, GATE 64, no swing; the transport started */
@@ -172,6 +173,7 @@ static int projects(void)
               after.t[0].step[i].vel == before.t[0].step[i].vel;
     bad += check("FUN8: x1..x4 round trip with their velocity, accent, chance (0 and 30 %) and lane hits", ok &&
                  step_ratchet(&after.t[3].step[5]) == 4u && after.t[3].step[5].hit == 0x81);
+    proj_pack_vb(&packed, &before);                  /* (FUNB: fixed places) */
     pos = 68u + P_COUNT + 2u + 3u * 9u;              /* step 3 of track 1: x4 -> bit 7 of its velocity and chance */
     bad += check("  x4 is bit 7 of the velocity and the chance bytes", (packed.raw[pos + 5] & 128u) && (packed.raw[pos + 8] & 128u) &&
                  (packed.raw[pos + 5] & 127u) == before.t[0].step[3].vel);
@@ -179,9 +181,9 @@ static int projects(void)
         for (i = 0; i < NSTEP; i++)
             trk[k].step[i].flags &= (uint8_t)~SF_RATCH;
     project_capture(&before);
-    proj_pack(&packed, &before);
+    proj_pack_vb(&packed, &before);
     ok = 1;
-    for (k = 0, pos = 68u; k < NTRK; k++, pos += P_COUNT + 2u + NSTEP * 9u)
+    for (k = 0, pos = 68u; k < PROJ_LT; k++, pos += P_COUNT + 2u + NSTEP * 9u)
         for (i = 0; i < NSTEP; i++)
             ok &= packed.raw[pos + P_COUNT + 2u + i * 9u + 5u] < 128u && packed.raw[pos + P_COUNT + 2u + i * 9u + 8u] < 128u;
     bad += check("  a project without ratchets: every velocity and chance byte below 128, as firmware before wrote", ok);
@@ -194,7 +196,7 @@ static int projects(void)
         memset(old.raw + PROJ_STORE_V7 - 4u - PROJ_NAME_LEN, 0, PROJ_NAME_LEN);
         sum = proj_hash(old.raw, PROJ_STORE_V7 - 4u); memcpy(old.raw + PROJ_STORE_V7 - 4u, &sum, 4);
         ok = proj_import(&fun7, &old, PROJ_STORE_V7);
-        for (k = 0; ok && k < NTRK; k++)
+        for (k = 0; ok && k < PROJ_LT; k++)
             for (i = 0; i < NSTEP; i++)
                 ok &= step_ratchet(&fun7.t[k].step[i]) == 1u;
         bad += check("  FUN7 of before: every step x1", ok && fun7.t[0].step[1].flags == SF_ACCENT);
@@ -205,7 +207,7 @@ static int projects(void)
         v6.magic = PROJ_MAGIC_V6; v6.size = sizeof v6; v6.parts = NPART; v6.phys = PROJ_PHYS;
         memcpy(v6.g, before.g, sizeof v6.g);
         chain_defaults(&v6.chain);
-        for (k = 0; k < NTRK; k++) {
+        for (k = 0; k < PROJ_LT; k++) {
             for (i = 0; i < 69u; i++) v6.t[k].p[i] = TP[i < 61u ? i : i - 61u + P_E0].def;
             v6.t[k].step[0] = (step10_t){{60}, 1, ST_NOTE, 0xFBu, 100, 0, 0};   /* (stray high bits) */
         }

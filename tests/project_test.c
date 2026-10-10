@@ -21,6 +21,7 @@
 #include "hostsim.c"
 #undef main
 #define PROJ_HOST 1                             /* (trk_def_engine: engines.c, through hostsim.c) */
+#define PROJ_FUNB_WRITER 1                      /* (JIANT 0.6) proj_pack_vb: the older formats are made of a FUNB */
 #include "../firmware/src/project.c"
 
 static int check(const char *what, int ok)
@@ -32,7 +33,7 @@ static int check(const char *what, int ok)
 /* the value parameter k (old id) of track t had in the old project */
 static int16_t oldv(uint32_t t, uint32_t k) { return (int16_t)(t * 100u + k * 3u + 1u); }
 
-static const uint8_t OLD_ENG[NTRK] = {7, 0, 5, 0};   /* WHEEL, ANALOG, VOICE; the drum track: 0 (no engine) */
+static const uint8_t OLD_ENG[PROJ_LT] = {7, 0, 5, 0};   /* WHEEL, ANALOG, VOICE; the drum track: 0 (no engine) */
 static void fill_v2_track(proj_trk_v2_t *d, uint32_t t)
 {
     uint32_t k;
@@ -89,7 +90,7 @@ static void to_v4(project_v4_t *v, const project_t *q)
     v->sel = q->sel;
     v->parts = q->parts;
     v->phys = q->phys;
-    for (t = 0; t < NTRK; t++) {
+    for (t = 0; t < PROJ_LT; t++) {
         for (k = 0; k < 61u; k++) v->t[t].p[k] = q->t[t].p[k];
         for (k = 0; k < 8u; k++) v->t[t].p[61u + k] = q->t[t].p[P_E0 + k];
         v->t[t].engine = q->t[t].engine;
@@ -111,7 +112,7 @@ static void to_v4(project_v4_t *v, const project_t *q)
 static void v04_tracks(proj_trk_t *t)
 {
     uint32_t k;
-    for (k = 0; k < NTRK; k++)
+    for (k = 0; k < PROJ_LT; k++)
         sound_v04(t[k].engine, &t[k].p[P_E0]);
 }
 static int track_ok(const proj_trk_t *n, const proj_trk_v2_t *o, uint32_t t, int drum, int16_t lvl, int16_t rev)
@@ -179,12 +180,12 @@ static void old_image(uint8_t *o, const project_store_t *st, uint32_t np, uint32
 {
     const uint8_t *b = st->raw;
     uint32_t pos = 68u, src = 68u, t, j, sum, k;
-    uint32_t name = size - 4u - PROJ_NAME_LEN, fm6 = name - NTRK * FM6_PACKED;
+    uint32_t name = size - 4u - PROJ_NAME_LEN, fm6 = name - PROJ_LT * FM6_PACKED;
     memset(o, 0, size);
     memcpy(o, b, 68);
     memcpy(o, &magic, 4); memcpy(o + 4, &size, 4);
     o[66] = (uint8_t)np;
-    for (t = 0; t < NTRK; t++) {
+    for (t = 0; t < PROJ_LT; t++) {
         for (j = 0; j < np; j++) o[pos++] = b[src + (j < np - 8u ? j : P_E0 + j - (np - 8u))];
         src += P_COUNT;
         memcpy(o + pos, b + src, 2u + NSTEP * 9u);
@@ -202,7 +203,7 @@ static void old_image(uint8_t *o, const project_store_t *st, uint32_t np, uint32
         memcpy(o + fm6 - 96u, b + PROJ_DX_OFF, 96u);
     }
     if (size >= PROJ_STORE_V8)
-        memcpy(o + fm6, b + PROJ_FM6_OFF, NTRK * FM6_PACKED);
+        memcpy(o + fm6, b + PROJ_FM6_OFF, PROJ_LT * FM6_PACKED);
     memcpy(o + name, b + PROJ_NAME_OFF, PROJ_NAME_LEN);
     sum = proj_hash(o, size - 4u);
     memcpy(o + size - 4u, &sum, 4);
@@ -240,7 +241,7 @@ int main(void)
     for (i = 0; i < PROJ_NG_V2; i++)
         v2.g[i] = (int16_t)(500 + i);
     v2.sel = 2;
-    for (t = 0; t < NTRK; t++)
+    for (t = 0; t < PROJ_LT; t++)
         fill_v2_track(&v2.t[t], t);
     v2.sum = proj_hash(&v2, sizeof v2 - 4u);
     bad += check("FUN2 image is 2552 bytes (as stored)", sizeof v2 == 2552u);
@@ -252,7 +253,7 @@ int main(void)
         ok &= q.g[i] == (i == G_RTYPE || i == G_DRLVL || i == G_DRREV ? 0 : (int16_t)(500 + i));
     bad += check("FUN2 -> FUN6: globals (id 24, the old drum channel: ROOM; 25 26, the drum part's: off) and selected track", ok);
     ok = 1;
-    for (t = 0; t < NTRK; t++)
+    for (t = 0; t < PROJ_LT; t++)
         ok &= track_ok(&q.t[t], &v2.t[t], t, t == 3u, 127, 127);   /* (G_DRLVL / G_DRREV 525 / 526: 127) */
     bad += check("FUN2 -> FUN6: every parameter mapped, SLICER and matrix OFF (4 tracks)", ok);
 
@@ -272,7 +273,7 @@ int main(void)
         v3.g[i] = (int16_t)(600 + i);
     v3.sel = 3;
     v3.parts = NPART;
-    for (t = 0; t < NTRK; t++)
+    for (t = 0; t < PROJ_LT; t++)
         fill_v3_track(&v3.t[t], t);
     v3.sum = proj_hash(&v3, sizeof v3 - 4u);
     bad += check("FUN3 image is 2584 bytes (as stored)", sizeof v3 == 2584u);
@@ -281,7 +282,7 @@ int main(void)
          q.parts == NPART;
     for (i = 0; i < G_NSTORE; i++)
         ok &= q.g[i] == (i == G_RTYPE ? 0 : (int16_t)(600 + i));
-    for (t = 0; t < NTRK; t++)
+    for (t = 0; t < PROJ_LT; t++)
         ok &= track_v3_ok(&q.t[t], &v3.t[t], t);
     bad += check("FUN3 -> FUN6: every parameter kept, the matrix OFF, steps, globals (24: ROOM)", ok);
 
@@ -322,7 +323,7 @@ int main(void)
         project_v5_t old;
         memset(&old, 0, sizeof old);
         memcpy(old.g, q.g, sizeof old.g); old.sel = q.sel; old.parts = q.parts; old.phys = q.phys;
-        for (uint32_t k = 0; k < NTRK; k++) {
+        for (uint32_t k = 0; k < PROJ_LT; k++) {
             for (uint32_t j = 0; j < 61u; j++) old.t[k].p[j] = q.t[k].p[j];
             for (uint32_t j = 0; j < 8u; j++) old.t[k].p[61u + j] = q.t[k].p[P_E0 + j];
             old.t[k].engine = q.t[k].engine; old.t[k].preset = q.t[k].preset;
@@ -332,7 +333,7 @@ int main(void)
         old.size = sizeof old;
         old.sum = proj_hash(&old, sizeof old - 4u);
         bad += check("FUN5 -> FUN6: sounds, grid and reserved lane bytes kept, no chain",
-            proj_import(&q2, &old, sizeof old) && (memcpy(qx, q.t, sizeof q.t), v04_tracks(qx), !memcmp(q2.t, qx, sizeof q.t)) &&
+            proj_import(&q2, &old, sizeof old) && (memcpy(qx, q.t, sizeof q.t), v04_tracks(qx), !memcmp(q2.t, qx, PROJ_LT * sizeof q.t[0])) &&
             !q2.chain.count && chain_valid(&q2.chain));
         old.sum ^= 1u;
         bad += check("FUN5: damaged checksum refused", !proj_import(&q2, &old, sizeof old));
@@ -357,7 +358,7 @@ int main(void)
          !memcmp(q2.g, q.g, sizeof q.g);
     memcpy(qx, q.t, sizeof q.t);
     v04_tracks(qx);
-    for (t = 0; t < NTRK; t++)
+    for (t = 0; t < PROJ_LT; t++)
         ok &= !memcmp(q2.t[t].p, qx[t].p, sizeof q.t[t].p) && q2.t[t].engine == q.t[t].engine &&
               steps_same(q2.t[t].step, v4.t[t].step);
     bad += check("FUN4 -> FUN6: parameters, engines, globals; steps as they were, no hits", ok);
@@ -413,7 +414,7 @@ int main(void)
     memcpy(&buf, &v1, sizeof v1);
     ok = proj_import(&q, &buf, (int)sizeof v1) && proj_ok(&q) && track_ok(&q.t[0], &v1.t, 0, 0, 0, 0) && q.g[5] == 705 &&
          q.parts == NPART;
-    for (t = 1; t < NTRK; t++)
+    for (t = 1; t < PROJ_LT; t++)
         ok &= q.t[t].preset == PROJ_DEF_SOUND && q.t[t].engine == trk_def_engine(t) && q.t[t].p[P_SLCR] == 0 && q.t[t].p[P_LEVEL] == TP[P_LEVEL].def &&
               q.t[t].p[P_E0] == ENGINES[trk_def_engine(t)]->edit[0].def && q.t[t].step[0].time == ST_REST;
     bad += check("FUN1 -> FUN6: track 1 mapped, tracks 2..4 defaults", ok);
@@ -483,26 +484,26 @@ int main(void)
         uint32_t i, zero = 1;
         bad += check("FUNB name at the end of the reserved tail, the FM6 patches and the kit before it, after the data (48: the punch-in block, no spare)",
                      PROJ_NAME_OFF == 3824u && PROJ_FM6_OFF == 3312u && PROJ_DX_OFF == 3216u &&
-                     68u + NTRK * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + sizeof(motion_store_t) + 48u ==
+                     68u + PROJ_LT * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + sizeof(motion_store_t) + 48u ==
                      PROJ_DX_OFF);
         memset(&a, 0, sizeof a);
         a.magic = PROJ_MAGIC; a.size = sizeof a; a.parts = NPART; a.phys = PROJ_PHYS;
         chain_defaults(&a.chain);
         a.t[1].p[P_LEVEL] = 99;
         a.sum = proj_sum(&a);
-        ok = proj_pack(&st, &a);
+        ok = proj_pack_vb(&st, &a);
         for (i = 0; i < PROJ_NAME_LEN; i++) zero &= st.raw[PROJ_NAME_OFF + i] == 0u;
         bad += check("FUN7 no name: the tail all zero (as firmware before wrote it)", ok && zero);
         bad += check("FUN7 of before names (zero tail): loads, no name", proj_import(&c, &st, sizeof st) && !c.name[0] &&
                      c.t[1].p[P_LEVEL] == 99);
         memcpy(a.name, "lofi jam", 8);
         a.sum = proj_sum(&a);
-        ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st);
+        ok = proj_pack_vb(&st, &a) && proj_import(&c, &st, sizeof st);
         bad += check("FUN7 name round trip (upper case, 0-padded)", ok && !memcmp(c.name, "LOFI JAM\0\0\0\0", 12) &&
                      !memcmp(st.raw + PROJ_NAME_OFF, "LOFI JAM\0\0\0\0", 12));
         memcpy(a.name, "ABCDEFGHIJKL", 12);         /* 12: no 0 */
         a.sum = proj_sum(&a);
-        ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st);
+        ok = proj_pack_vb(&st, &a) && proj_import(&c, &st, sizeof st);
         bad += check("FUN7 name of 12 characters (no terminator)", ok && !memcmp(c.name, "ABCDEFGHIJKL", 12));
         st2 = st;
         st2.raw[PROJ_NAME_OFF + 3] ^= 1u;
@@ -526,15 +527,15 @@ int main(void)
         memset(&a, 0, sizeof a);
         a.magic = PROJ_MAGIC; a.size = sizeof a; a.parts = NPART; a.phys = PROJ_PHYS;
         chain_defaults(&a.chain);
-        for (k = 0; k < NTRK; k++) {
+        for (k = 0; k < PROJ_LT; k++) {
             memcpy(a.fm6[k], FM6_FACTORY[k * 2u], FM6_PACKED);
             a.t[k].engine = ENGI_FM6;
             a.t[k].p[P_E7] = (int16_t)(k * 2u);
         }
         memcpy(a.name, "FM SONG", 7);
         a.sum = proj_sum(&a);
-        ok = proj_pack(&st, &a) && ((uint32_t *)st.raw)[0] == 0x46554E42u && proj_import(&c, &st, sizeof st);
-        for (k = 0; k < NTRK; k++)
+        ok = proj_pack_vb(&st, &a) && ((uint32_t *)st.raw)[0] == 0x46554E42u && proj_import(&c, &st, sizeof st);
+        for (k = 0; k < PROJ_LT; k++)
             ok &= !memcmp(c.fm6[k], FM6_FACTORY[k * 2u], FM6_PACKED) && c.t[k].engine == ENGI_FM6 &&
                   !memcmp(st.raw + PROJ_FM6_OFF + k * FM6_PACKED, FM6_FACTORY[k * 2u], FM6_PACKED);
         bad += check("FUNA: the four FM6 patches round trip (bytes at PROJ_FM6_OFF)", ok && !memcmp(c.name, "FM SONG", 7));
@@ -549,18 +550,18 @@ int main(void)
             a.dx[3].b[DXP_COLOR] = 99;
             a.dx[0].mode = DX_MODE(DXW_BELL, DXF_HP, 1);
             a.sum = proj_sum(&a);
-            ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st) && !memcmp(c.dx, a.dx, sizeof a.dx) &&
+            ok = proj_pack_vb(&st, &a) && proj_import(&c, &st, sizeof st) && !memcmp(c.dx, a.dx, sizeof a.dx) &&
                  !memcmp(st.raw + PROJ_DX_OFF, a.dx, sizeof a.dx);
             bad += check("FUNA: the DRUM-X kit round trips (88 bytes at PROJ_DX_OFF)", ok);
             a.dx_mute = (uint16_t)(DXG_SNARE | DXG_PERC | DXM_LANE(6));
             a.sum = proj_sum(&a);
-            ok = proj_pack(&st, &a) && st.raw[PROJ_DX_OFF + 88u] == (DXG_SNARE | DXG_PERC) && st.raw[PROJ_DX_OFF + 89u] == 0x40 &&
+            ok = proj_pack_vb(&st, &a) && st.raw[PROJ_DX_OFF + 88u] == (DXG_SNARE | DXG_PERC) && st.raw[PROJ_DX_OFF + 89u] == 0x40 &&
                  proj_import(&c, &st, sizeof st) && c.dx_mute == a.dx_mute;
             bad += check("FUNA: the group and sound mutes round trip (the kit's first two reserved bytes)", ok);
             memset(a.pfx_lane, 0, sizeof a.pfx_lane);
             a.pfx_lane[2] = 0x21; a.pfx_lane[31] = 0xA0; a.pfx_ltgt = 2;
             a.sum = proj_sum(&a);
-            ok = proj_pack(&st, &a) && st.raw[PROJ_PFX_OFF + 2] == 0x21 && st.raw[PROJ_PFX_OFF + 32] == 2 &&
+            ok = proj_pack_vb(&st, &a) && st.raw[PROJ_PFX_OFF + 2] == 0x21 && st.raw[PROJ_PFX_OFF + 32] == 2 &&
                  proj_import(&c, &st, sizeof st) && !memcmp(c.pfx_lane, a.pfx_lane, sizeof a.pfx_lane) && c.pfx_ltgt == 2;
             bad += check("FUNA: the punch-in lane round trips (the spare bytes at PROJ_PFX_OFF)", ok);
             {   /* (JIANT 0.3) the nine new globals round trip behind a 2; a FUNB of 0.2 (behind a 1: five) loads the
@@ -569,7 +570,7 @@ int main(void)
                 a.g[G_RPRE] = 40; a.g[G_RFILT] = -30; a.g[G_RWIDE] = 90; a.g[G_DPIT] = -7; a.g[G_DSPRY] = 55; a.g[G_STRN] = -3;
                 a.t[1].engine = ENGI_DRUM; a.t[1].p[P_E5] = 77;
                 a.sum = proj_sum(&a);
-                ok = proj_pack(&st, &a) && st.raw[PROJ_GX_OFF] == 3u && proj_import(&c, &st, sizeof st) &&
+                ok = proj_pack_vb(&st, &a) && st.raw[PROJ_GX_OFF] == 3u && proj_import(&c, &st, sizeof st) &&
                      c.g[G_RPRE] == 40 && c.g[G_RFILT] == -30 && c.g[G_RWIDE] == 90 && c.g[G_DPIT] == -7 &&
                      c.g[G_DSPRY] == 55 && c.g[G_STRN] == -3 && c.t[1].p[P_E5] == 77;
                 bad += check("FUNB: the ten new globals round trip (FILT -30, PITCH -7, STRN -3: signed), DRUM's FM kept", ok);
@@ -594,7 +595,7 @@ int main(void)
                 for (i = 0; i < 8u; i++) a.t[2].p[P_E0 + i] = TS[i];
                 a.t[2].p[P_ATK] = 2; a.t[2].p[P_REL] = 40;
                 a.sum = proj_sum(&a);
-                ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st) && c.t[2].engine == 0 &&
+                ok = proj_pack_vb(&st, &a) && proj_import(&c, &st, sizeof st) && c.t[2].engine == 0 &&
                      c.t[2].p[P_E0] == 5 && c.t[2].p[P_E0 + 1] == 11 && c.t[2].p[P_E0 + 4] == 82 && c.t[2].p[P_E0 + 5] == 30 &&
                      c.t[2].p[P_ATK] == 2 && c.t[2].p[P_REL] == 40;
                 bad += check("TRIO (engine 6, folded in): ANALOG SYNC (its INT2 9 the ratio, DTN 11), CUT RES and the envelope kept", ok);
@@ -602,16 +603,16 @@ int main(void)
                 for (i = 0; i < 8u; i++) a.t[2].p[P_E0 + i] = (int16_t)(i == 7u ? 4 : 0);
                 a.t[2].p[P_ATK] = a.t[2].p[P_REL] = 0;
                 a.sum = proj_sum(&a);
-                proj_pack(&st, &a);                         /* (st as before: the older images below are made of it) */
+                proj_pack_vb(&st, &a);                         /* (st as before: the older images below are made of it) */
                 a.t[1].engine = ENGI_FM6; a.t[1].p[P_E5] = 0;
                 a.sum = proj_sum(&a);
             }
             a.dx[2].a[DXP_PITCH] = 200;
             a.sum = proj_sum(&a);
-            ok = !proj_pack(&st2, &a);
+            ok = !proj_pack_vb(&st2, &a);
             a.dx[2].a[DXP_PITCH] = 60;
             a.sum = proj_sum(&a);
-            proj_pack(&st2, &a);
+            proj_pack_vb(&st2, &a);
             st2.raw[PROJ_DX_OFF + 7] = 0xC8;             /* (a value past 127, the hash made right) */
             {
                 uint32_t h = proj_hash(st2.raw, PROJ_STORE_SIZE - 4u);
@@ -622,13 +623,13 @@ int main(void)
             (void)magic9; (void)size9; (void)sum9;
             old_image(v9, &st, 99u, 3648u, 0x46554E39u);  /* FUN9 = FUNA without the kit (99 parameters) */
             ok = proj_import(&c, v9, sizeof v9) && !c.dx_mute && !memcmp(c.dx, DX_KIT_DEF, sizeof c.dx) &&
-                 !memcmp(c.fm6, a.fm6, sizeof c.fm6) && !memcmp(c.name, "FM SONG", 7) && c.t[2].p[P_E7] == 4 &&
+                 !memcmp(c.fm6, a.fm6, PROJ_LT * sizeof c.fm6[0]) && !memcmp(c.name, "FM SONG", 7) && c.t[2].p[P_E7] == 4 &&
                  c.t[0].p[P_MSLEN] == 16 && c.g[G_RRATE] == 30;
             bad += check("FUN9 (Felucca 1.1) loads: its patches and name, the factory DRUM-X kit, the new values' defaults", ok);
             {   /* FUNA (JIANT 0.1, 99 parameters): its kit, mutes and lane; the new parameters and globals their defaults */
                 static uint8_t va[3744];
                 a.dx_mute = DXG_SNARE; a.g[G_RMOD] = 77; a.t[1].p[P_DTYPE] = 3; a.sum = proj_sum(&a);
-                ok = proj_pack(&st2, &a);
+                ok = proj_pack_vb(&st2, &a);
                 old_image(va, &st2, 99u, 3744u, 0x46554E41u);
                 ok &= proj_import(&c, va, sizeof va) && c.dx_mute == DXG_SNARE && !memcmp(c.dx, a.dx, sizeof c.dx) &&
                       c.t[2].p[P_E7] == 4 && c.t[1].p[P_DTYPE] == 0 && c.g[G_RMOD] == 0 && c.t[3].p[P_MSDIV] == 2;
@@ -653,20 +654,20 @@ int main(void)
                 f.motion.event[2] = (motion_event_t){3u << 6 | 5u, (uint8_t)(P_LN2 | MOTION_LOCK), 40};
                 f.motion.event[3] = (motion_event_t){3u << 6 | 6u, (uint8_t)(P_E5 | MOTION_LOCK), -3};
                 f.sum = proj_sum(&f);
-                ok = proj_pack(&st, &f) && proj_import(&g, &st, sizeof st) && !memcmp(&f.motion, &g.motion, sizeof f.motion);
+                ok = proj_pack_vb(&st, &f) && proj_import(&g, &st, sizeof st) && !memcmp(&f.motion, &g.motion, sizeof f.motion);
                 bad += check("FUN9 round trip: locks on a lane level (P_LN2) and an engine value (P_E5) kept", ok &&
-                             st.raw[68u + NTRK * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + 4u + 8u + 1u] ==
+                             st.raw[68u + PROJ_LT * (P_COUNT + 2u + NSTEP * 9u) + sizeof(chain_config_t) + 4u + 8u + 1u] ==
                              (P_LN2 | MOTION_LOCK) && g.motion.event[3].param == (P_E5 | MOTION_LOCK));
             }
             e.motion.count = 3;   /* a FUN8 of a 1.1 development build (91 parameters) could hold a lock: its E5 then */
             e.motion.event[2] = (motion_event_t){3u << 6 | 6u, (uint8_t)(P_E5 | MOTION_LOCK), -3};
             e.sum = proj_sum(&e);
-            ok = proj_pack(&st, &e);
+            ok = proj_pack_vb(&st, &e);
             (void)pos; (void)pos9; (void)j;
             old_image(v8, &st, 91u, 3584u, 0x46554E38u);  /* (its E3 then: 86, its E5 a lock: 88 | the bit) */
             ok &= v8[old_motion + 1u] == 83u + 3u && v8[old_motion + 8u + 1u] == ((83u + 5u) | MOTION_LOCK);
             ok = ok && proj_import(&c, v8, sizeof v8);
-            for (k = 0; ok && k < NTRK; k++) {
+            for (k = 0; ok && k < PROJ_LT; k++) {
                 for (j = P_LN0; j <= P_LN7; j++) ok &= c.t[k].p[j] == 127;
                 ok &= !memcmp(c.fm6[k], FM6_FACTORY[k * 2u], FM6_PACKED);
             }
@@ -685,7 +686,7 @@ int main(void)
         /* the same music as FUN7 (3388 bytes, no patches): the data where it was, the name at 3372 */
         old_image(v7, &st, 99u, PROJ_STORE_V7, 0x46554E37u);
         ok = proj_import(&c, v7, sizeof v7);
-        for (k = 0; k < NTRK; k++)
+        for (k = 0; k < PROJ_LT; k++)
             init &= !memcmp(c.fm6[k], FM6_INIT, FM6_PACKED);
         bad += check("FUN7 -> FUN9: the music and name kept, every track the init patch",
                      ok && init && c.t[2].engine == ENGI_FM6 && c.t[2].p[P_E7] == 4 && !memcmp(c.name, "FM SONG", 7));
@@ -713,12 +714,12 @@ int main(void)
         bad += check("a retained slot of garbage is empty", !proj_import(&c, &slot, sizeof slot));
         for (i = 0; i < FM6_PACKED; i++) a.fm6[1][i] = (uint8_t)(i | 0x80u);
         a.sum = proj_sum(&a);
-        bad += check("FUN8: a patch byte above 127 cannot be packed", !proj_pack(&st, &a));
+        bad += check("FUN8: a patch byte above 127 cannot be packed", !proj_pack_vb(&st, &a));
         memcpy(a.fm6[1], FM6_INIT, FM6_PACKED);
         a.t[0].step[3].n = 1; a.t[0].step[3].note[0] = 200; a.t[0].step[3].note[2] = 128;
         a.t[0].step[3].vel = 255; a.t[0].step[3].hit = 0x05; a.t[0].step[3].acc = 0xF7;
         a.sum = proj_sum(&a);
-        ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st);
+        ok = proj_pack_vb(&st, &a) && proj_import(&c, &st, sizeof st);
         bad += check("FUN8: a step out of range packs inside it (note, velocity 127; accents on hits): it loads",
                      ok && c.t[0].step[3].note[0] == 127u && c.t[0].step[3].note[2] == 127u && c.t[0].step[3].vel == 127u &&
                      c.t[0].step[3].hit == 0x05u && c.t[0].step[3].acc == 0x05u);
@@ -738,7 +739,7 @@ int main(void)
         memset(&a, 0, sizeof a);
         a.magic = PROJ_MAGIC; a.size = sizeof a; a.parts = NPART; a.phys = PROJ_PHYS;
         chain_defaults(&a.chain);
-        for (t = 0; t < NTRK; t++) {
+        for (t = 0; t < PROJ_LT; t++) {
             for (i = 0; i < P_COUNT; i++)
                 a.t[t].p[i] = param_desc_of(t == 1u ? ENGI_DIGITAL : 0u, i)->def;
             a.t[t].engine = t == 1u ? ENGI_DIGITAL : 0u;
@@ -761,7 +762,7 @@ int main(void)
         a.sum = proj_sum(&a);
 #define FM4_OK(c) ((c).t[1].engine == ENGI_FM6 && (c).t[1].preset == 4u && !memcmp((c).fm6[1], pk, FM6_PACKED) && \
                    !memcmp((c).t[1].p, p, sizeof p) && (c).t[0].engine == 0u && !memcmp((c).fm6[0], FM6_INIT, FM6_PACKED))
-        ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st);
+        ok = proj_pack_vb(&st, &a) && proj_import(&c, &st, sizeof st);
         bad += check("FUN8 with a DIGITAL track: FM6, the converted patch its own, PTCH / preset FM6 PAD", ok && FM4_OK(c));
         bad += check("  its motion on INDEX / OP LEVEL / E7 goes; a send's and the other track's stay",
                      c.motion.count == 2u && c.motion.event[0].param == P_CHOR && c.motion.event[1].place == 3u &&
@@ -817,7 +818,7 @@ int main(void)
         memset(&a, 0, sizeof a);
         a.magic = PROJ_MAGIC; a.size = sizeof a; a.parts = NPART; a.phys = PROJ_PHYS;
         chain_defaults(&a.chain);
-        for (t = 0; t < NTRK; t++) {
+        for (t = 0; t < PROJ_LT; t++) {
             for (i = 0; i < P_COUNT; i++)
                 a.t[t].p[i] = param_desc_of(ENGI_SAMPLE, i)->def;
             a.t[t].engine = ENGI_SAMPLE;
@@ -840,7 +841,7 @@ int main(void)
                     !memcmp((c).t[2].step, a.t[2].step, sizeof a.t[2].step) && \
                     (c).t[0].engine == ENGI_PHYS_TO && (c).t[0].p[P_E0] == ENGINES[ENGI_PHYS_TO]->presets[0].e[0] && \
                     (c).t[1].engine == ENGI_PHYS_TO)
-        ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st);
+        ok = proj_pack_vb(&st, &a) && proj_import(&c, &st, sizeof st);
         bad += check("FUN8 with a SAMPLE PERC track: DRUM's kit, the rest of the sound and the steps kept; SAMPLE tracks ANALOG", ok && PERC_OK(c) &&
                      str_eq(ENGINES[ENGI_DRUM]->presets[0].name, "DRUM-X") &&
                      !memcmp(ENGINES[ENGI_DRUM]->presets[0].e, (int8_t[8])DRUM_KIT_E, 8));
@@ -861,7 +862,7 @@ int main(void)
         memset(&g, 0, sizeof g);
         g.magic = PROJ_MAGIC; g.size = sizeof g; g.parts = NPART; g.phys = PROJ_PHYS;
         chain_defaults(&g.chain);
-        for (t = 0; t < NTRK; t++) {
+        for (t = 0; t < PROJ_LT; t++) {
             for (i = 0; i < P_COUNT; i++) g.t[t].p[i] = param_desc_of(0, i)->def;
             memcpy(g.fm6[t], FM6_INIT, FM6_PACKED);
             memcpy(g.dx, DX_KIT_DEF, sizeof g.dx);
@@ -871,11 +872,75 @@ int main(void)
         g.motion.event[0] = (motion_event_t){2u << 6 | 1u, P_E2, 30};
         g.motion.event[1] = (motion_event_t){2u << 6 | 2u, P_REV, 40};
         g.sum = proj_sum(&g);
-        ok = proj_pack(&gs, &g) && proj_import(&h, &gs, sizeof gs) && h.t[1].engine == ENGI_PHYS_TO &&
+        ok = proj_pack_vb(&gs, &g) && proj_import(&h, &gs, sizeof gs) && h.t[1].engine == ENGI_PHYS_TO &&
              h.t[2].engine == ENGI_PHYS_TO && h.t[2].p[P_LEVEL] == 66 && h.motion.count == 1u && h.motion.event[0].param == P_REV &&
              h.t[2].p[P_E0] == ENGINES[ENGI_PHYS_TO]->presets[0].e[0] && !eng_ok(ENGI_GRAIN) && !eng_ok(ENGI_SLICE) &&
              !eng_ok(ENGI_SAMPLE) && eng_live(ENGI_SLICE) == ENGI_PHYS_TO;
         bad += check("JIANT: GRAIN and SLICE tracks (retired) load as ANALOG, their engine motion gone, LEVEL and sends kept", ok);
+    }
+    {   /* (JIANT 0.6) FUNC: six tracks in FUNB's 3840 bytes, only the steps that are not empty stored */
+        static project_t f, g, h;
+        static project_store_t fs, gs;
+        uint32_t k, i, n;
+        memset(&f, 0, sizeof f);
+        f.magic = PROJ_MAGIC; f.size = sizeof f; f.parts = NPART; f.phys = PROJ_PHYS;
+        chain_defaults(&f.chain);
+        proj_new_tracks(&f, 0u);
+        for (k = 0; k < NTRK; k++) memcpy(f.fm6[k], FM6_INIT, FM6_PACKED);
+        for (k = 0; k < G_COUNT; k++) f.g[k] = GP[k].def;
+        memcpy(f.dx, DX_KIT_DEF, sizeof f.dx);
+        for (k = 0; k < NTRK; k++)                      /* a typical song: 16 steps a track, T5 a chord on all 64 */
+            for (i = 0; i < (k == 4u ? NSTEP : 16u); i++) {
+                step_t *s = &f.t[k].step[i];
+                s->time = ST_NOTE; s->n = (uint8_t)(k == 4u ? 3u : 1u); s->vel = (uint8_t)(60u + k);
+                s->note[0] = (uint8_t)(40u + i); s->note[1] = 64; s->note[2] = 67;
+                if (i == 3u) step_set_ratchet(s, 3u), step_set_chance(s, 40u);
+            }
+        f.t[5].p[P_LEVEL] = 77; f.t[4].engine = ENGI_FM6; memcpy(f.fm6[4], FM6_FACTORY[3], FM6_PACKED);
+        motion_at(&f.motion.event[0], 5u << 6 | 9u, 33); f.motion.event[0].param = P_LEVEL;
+        motion_at(&f.motion.event[1], 4u << 6 | 2u, -20); f.motion.event[1].param = P_PAN | MOTION_LOCK;
+        f.motion.count = 2; f.motion.on = 0x30;
+        memcpy(f.name, "SIX", 3);
+        f.sum = proj_sum(&f);
+        ok = proj_pack(&fs, &f) && ((uint32_t *)fs.raw)[0] == PROJ_MAGIC && fs.raw[67] == NTRK && proj_import(&g, &fs, sizeof fs);
+        ok &= !memcmp(g.t, f.t, sizeof f.t) && !memcmp(g.fm6, f.fm6, sizeof f.fm6) && !memcmp(&g.motion, &f.motion, sizeof f.motion) &&
+              !memcmp(g.name, "SIX", 3) && !memcmp(g.g, f.g, sizeof f.g) && !memcmp(g.dx, f.dx, sizeof f.dx);
+        ok &= MOTION_TRK(&g.motion.event[0]) == 5u && MOTION_STEP(&g.motion.event[0]) == 9u && MOTION_VAL(&g.motion.event[0]) == 33 &&
+              MOTION_TRK(&g.motion.event[1]) == 4u && MOTION_VAL(&g.motion.event[1]) == -20;
+        bad += check("FUNC: six tracks round trip (steps, ratchet, chance, patches, T5 / T6 motion, name, globals)", ok);
+        ok = proj_pack_vb(&gs, &f) && proj_import(&h, &gs, sizeof gs) && !memcmp(h.t, f.t, PROJ_LT * sizeof f.t[0]) &&
+             h.t[4].engine == trk_def_engine(4u) && h.t[5].engine == trk_def_engine(5u) && h.t[5].step[0].time == ST_REST;
+        bad += check("FUNB (0.5) -> six tracks: its four kept, T5 / T6 at their power-on sounds, empty", ok);
+        {   /* damaged on purpose with the hash made right: refused or loaded, never read past the room (ASan) */
+            static project_store_t z;
+            uint32_t r = 12345u, it, okz = 1, loaded = 0;
+            for (it = 0; it < 20000u; it++) {
+                uint32_t hz, nfl = 1u + (r >> 29), q2i;
+                z = fs;
+                for (q2i = 0; q2i < nfl; q2i++) {
+                    r = r * 1664525u + 1013904223u;
+                    z.raw[68u + (r >> 8) % (PROJC_PFX_OFF - 68u)] = (uint8_t)(r >> 24);
+                }
+                hz = proj_hash(z.raw, PROJ_STORE_SIZE - 4u); memcpy(z.raw + PROJ_STORE_SIZE - 4u, &hz, 4);
+                if (proj_import(&h, &z, sizeof z)) {
+                    loaded++;
+                    okz &= proj_ok(&h);
+                }
+            }
+            bad += check("FUNC: 20000 damaged sections (hash right): refused or loaded valid, nothing read past", okz && loaded < 20000u);
+        }
+        fs.raw[100] ^= 1u;
+        bad += check("FUNC: a byte changed: the hash refuses it", !proj_import(&g, &fs, sizeof fs));
+        for (k = 0, n = 1; k < NTRK; k++)               /* every step of every track a chord: too much for one slot */
+            for (i = 0; i < NSTEP; i++) {
+                f.t[k].step[i].time = ST_NOTE; f.t[k].step[i].n = 4; f.t[k].step[i].hit = 3; f.t[k].step[i].acc = 1;
+                step_set_chance(&f.t[k].step[i], 50u); step_set_ratchet(&f.t[k].step[i], 4u);
+            }
+        f.sum = proj_sum(&f);
+        ok = !proj_pack(&fs, &f) && proj_full;
+        f.t[0].step[0].n = 9;                           /* (a value out of range: not for room) */
+        ok &= !proj_pack(&fs, &f) && !proj_full;
+        bad += check("FUNC: six full tracks do not fit: not packed, proj_full (SECTION FULL); a bad value: not proj_full", ok && n);
     }
     printf("%s\n", bad ? "PROJECT FORMAT TEST FAILED" : "project format test passed");
     return bad != 0;

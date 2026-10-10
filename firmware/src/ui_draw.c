@@ -854,9 +854,9 @@ static void draw_columns(void)
             fmt_int(val, (int32_t)r + 1);
             str_cpy(val + str_len(val), "/", 4);
             fmt_int(val + str_len(val), (int32_t)n);
-            step = e->place & 63u;
+            step = MOTION_STEP(e);
             id = MOTION_ID(e);
-            v = e->value;
+            v = MOTION_VAL(e);
         } else {
             ev_fix();
             str_cpy(val, "ADD", sizeof val);

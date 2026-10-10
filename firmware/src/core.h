@@ -9,7 +9,7 @@
 
 /* ------------------------------------------------------------ sizes --- */
 #define NVOICE 8                 /* voices per part, and the budget shared by all parts */
-#define NPART 4                  /* synth parts: tracks 1..4 */
+#define NPART 6                  /* synth parts: tracks 1..6 (JIANT 0.6: was 4) */
 #define NTRK NPART               /* tracks (the formats and the protocol count these): every track is a part */
 #define NSTEP 64
 #define HALF_FRAMES 128          /* I2S half buffer: 2.9 ms at 44.1 kHz (a key waits 0..1 half, then plays 1 half later) */
@@ -308,14 +308,25 @@ static void step_set_ratchet(step_t *s, uint32_t hits)
     s->flags = (uint8_t)((s->flags & ~SF_RATCH) | ((hits < 1u ? 0u : hits > 4u ? 3u : hits - 1u) << SF_RATCH_SH));
 }
 #define MOTION_MAX 64u
-/* Four tracks x64 steps fit one byte. Values retain their signed parameter range.
+/* Four tracks x64 steps fit one byte (JIANT 0.6, six tracks: the track's bit 2 is value's bit 12 flipped against its
+ * sign, MOTION_TRK; values stay within -64..127, so an old record reads as track 0..3). Values retain their signed parameter range.
  * param: the P_* id (< 128: P_COUNT is at most 127, project.c), bit 7 (MOTION_LOCK, 1.1) a parameter lock: the value
  * sounds on that step only and goes back after it (motion.c motion_step); without it an automation event, the
  * value holds until another one changes it. One record per (track, step, id), of either kind */
 #define MOTION_LOCK 0x80u
 #define MOTION_ID(e) ((uint32_t)(e)->param & 0x7Fu)
+#define MOTION_HI(e) ((uint32_t)(((e)->value >> 12) ^ ((e)->value >> 15)) & 1u)
+#define MOTION_TRK(e) ((uint32_t)(e)->place >> 6 | MOTION_HI(e) << 2)
+#define MOTION_STEP(e) ((uint32_t)(e)->place & 63u)
+#define MOTION_PLACE(e) (MOTION_TRK(e) << 6 | MOTION_STEP(e))   /* track << 6 | step */
+#define MOTION_VAL(e) ((int16_t)((e)->value ^ (int32_t)(MOTION_HI(e) << 12)))
 typedef struct { uint8_t place, param; int16_t value; } motion_event_t;
 typedef struct { uint8_t count, on, rsv[2]; motion_event_t event[MOTION_MAX]; } motion_store_t;
+static void motion_at(motion_event_t *e, uint32_t place, int16_t v)   /* place: track << 6 | step; v: the value */
+{
+    e->place = (uint8_t)(place & 255u);
+    e->value = (int16_t)(v ^ (int32_t)(((place >> 8) & 1u) << 12));
+}
 _Static_assert(sizeof(motion_store_t) == 260u, "motion disk layout");
 #define CHAIN_ROWS 16u
 typedef struct { uint8_t slot, bars; } chain_row_t;   /* a song row: section A..D (a project slot), 1..CHAIN_BARS bars */

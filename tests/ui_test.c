@@ -456,7 +456,7 @@ static int test_sound_loads(void)
     legacy.magic = PROJ_MAGIC_V6; legacy.size = sizeof legacy;
     legacy.parts = 0; legacy.phys = PROJ_PHYS;
     memcpy(legacy.g, decoded.g, sizeof legacy.g);
-    for (uint32_t ti = 0; ti < NTRK; ti++) {
+    for (uint32_t ti = 0; ti < PROJ_LT; ti++) {
         memcpy(legacy.t[ti].p, decoded.t[ti].p, 61u * sizeof(int16_t));
         memcpy(legacy.t[ti].p + 61, decoded.t[ti].p + P_E0, 8u * sizeof(int16_t));
         legacy.t[ti].engine = decoded.t[ti].engine; legacy.t[ti].preset = decoded.t[ti].preset;
@@ -2589,7 +2589,7 @@ static int test_layer(void)
         for (i = 0; i < 15u; i++)                                     /* the other effects (F3 .. F5): breathe */
             ok &= i == 1u || ((a ^ b2) >> white(i)) & 1u;
         ok &= !((a | b2) >> white(15) & 1u);                          /* G5: no effect, dark */
-        ok &= ((a ^ b2) >> key_at(1, 0)) & 1u && !((a | b2) >> key_at(1, 4) & 1u);   /* a mute breathes, a spare black dark */
+        ok &= ((a ^ b2) >> key_at(1, 0)) & 1u && !((a | b2) >> key_at(1, 6) & 1u);   /* a mute breathes, a spare black dark */
         song.g[G_BPM] = 72;
         a = leds_at(0); b2 = leds_at(250);
         ok &= !((a | b2) >> white(0) & 1u);                          /* 1/8: too long at 72 */
@@ -2928,6 +2928,26 @@ static int test_quick_layers(void)
                      settings_import(&p, sizeof p) && layer_seen == 0x1Cu);
     }
 
+    {   /* (JIANT 0.6) how full the music is for a section: said once, 1.5 s after the last change */
+        uint32_t k2, i2, p0;
+        ui_power_on(); ui.msg_t = 0;
+        proj_fill_poll(autosave_sig()); fm1_ms += 2000u; proj_fill_poll(autosave_sig());
+        p0 = proj_fill_pct();
+        ok = !ui.msg_t && p0 < 35u;
+        for (k2 = 0; k2 < NTRK; k2++)                   /* every step a chord on every track: more than a section */
+            for (i2 = 0; i2 < NSTEP; i2++) {
+                trk[k2].step[i2].time = ST_NOTE; trk[k2].step[i2].n = 4; trk[k2].step[i2].vel = 100;
+                trk[k2].step[i2].hit = 1; step_set_chance(&trk[k2].step[i2], 50u);   /* (chords alone fit: 6 bytes a step) */
+            }
+        proj_fill_poll(autosave_sig());
+        ok &= !ui.msg_t;                                /* (not at once) */
+        fm1_ms += 2000u; proj_fill_poll(autosave_sig());
+        ok &= msg_is("TOO FULL TO SAVE") && proj_fill_pct() > 100u;
+        ui.msg_t = 0; fm1_ms += 2000u; proj_fill_poll(autosave_sig());
+        ok &= !ui.msg_t;                                /* (said once) */
+        bad += check("JIANT 0.6: the music too full for a section: TOO FULL TO SAVE once; the power-on music ~1/4 full", ok);
+        printf("ui:   (power-on music: %u %% of a section)\n", (unsigned)p0);
+    }
     /* GLO: mutes latch (lit = sounding), SOLO while held, UNMUTE ALL, TAP, levels, OCT- */
     ui_power_on();
     usb.config = 1; mo = mo_w;
@@ -2935,29 +2955,29 @@ static int test_quick_layers(void)
     ok = trk[1].p[P_MUTE] == 1 && ui.layer == LAYER_GLO && !gates() && mo_w == mo;
     a = leds_at(0); b2 = leds_at(250);
     ok &= ((a & b2) >> black(0)) & 1u && !(((a | b2) >> black(1)) & 1u);           /* T1 sounding lit, T2 muted dark */
-    ok &= ((a ^ b2) >> white(0)) & 1u && ((a ^ b2) >> white(7)) & 1u && !(((a | b2) >> white(5)) & 1u);
+    ok &= ((a ^ b2) >> white(0)) & 1u && ((a ^ b2) >> white(7)) & 1u && !(((a | b2) >> white(8)) & 1u);
     key_up(black(1)); btn_up(B_GLO); frame();
     bad += check("GLO + black key 2: T2 MUTE latched (SET), silent, no MIDI; LEDs: sounding lit, muted dark", ok &&
                  trk[1].p[P_MUTE] == 1 && !ui.layer);
-    lay_combo(B_GLO, black(4)); key_up(black(4)); frame();       /* black keys 5..8: the DRUM group mutes */
-    lay_combo(B_GLO, black(6)); key_up(black(6));
+    lay_combo(B_GLO, black(6)); key_up(black(6)); frame();       /* black keys 7..10: the DRUM group mutes */
+    lay_combo(B_GLO, black(8)); key_up(black(8));
     a = leds_at(0); b2 = leds_at(250);
-    ok = dx_mute == (DXG_KICK | DXG_HAT) && ((a & b2) >> black(5)) & 1u && !(((a | b2) >> black(4)) & 1u) &&
-         !(((a | b2) >> black(6)) & 1u) && trk[1].p[P_MUTE] == 1;
+    ok = dx_mute == (DXG_KICK | DXG_HAT) && ((a & b2) >> black(7)) & 1u && !(((a | b2) >> black(6)) & 1u) &&
+         !(((a | b2) >> black(8)) & 1u) && trk[1].p[P_MUTE] == 1;
     btn_up(B_GLO); frame();
-    lay_combo(B_GLO, black(6)); key_up(black(6)); btn_up(B_GLO); frame();
+    lay_combo(B_GLO, black(8)); key_up(black(8)); btn_up(B_GLO); frame();
     ok &= dx_mute == DXG_KICK;
-    lay_combo(B_GLO, white(4)); key_up(white(4)); btn_up(B_GLO); frame();
+    lay_combo(B_GLO, white(6)); key_up(white(6)); btn_up(B_GLO); frame();
     ok &= dx_mute == 0;
-    bad += check("GLO + black keys 5..8: KICK SNARE HAT PERC group mutes latched (lit = sounding), C4 clears them", ok);
+    bad += check("GLO + black keys 7..10: KICK SNARE HAT PERC group mutes latched (lit = sounding), E4 clears them", ok);
     lay_combo(B_GLO, black(1)); key_up(black(1)); btn_up(B_GLO); frame();   /* (T2 muted again, as the test goes on) */
     lay_combo(B_GLO, black(1)); key_up(black(1)); frame();
-    key_down(white(4)); key_up(white(4)); frame();
+    key_down(white(6)); key_up(white(6)); frame();
     lay_combo(B_GLO, black(2)); key_up(black(2)); frame();
     ok = trk[1].p[P_MUTE] == 0 && trk[2].p[P_MUTE] == 1;
-    key_down(white(4)); frame(); key_up(white(4)); frame();
+    key_down(white(6)); frame(); key_up(white(6)); frame();
     btn_up(B_GLO); frame();
-    bad += check("  again: unmuted; C4: UNMUTE ALL", ok && !trk[2].p[P_MUTE] && !trk[1].p[P_MUTE]);
+    bad += check("  again: unmuted; E4: UNMUTE ALL", ok && !trk[2].p[P_MUTE] && !trk[1].p[P_MUTE]);
     lay_combo(B_GLO, white(2));
     perf_begin(CTL);
     ok = perf_solo == 4u && ((perf_act >> PF_M1) & 15u) == 0xBu;   /* T3 solo: T1 T2 T4 muted */
@@ -7043,13 +7063,13 @@ static int test_organic(void)
                 bad_dst += !m[1] || !m[2] || (pd && (pd->max <= pd->min || pd->label[0] == '-'));
             }
         }
-    ok = routes == 8u && per[0] == 2u && per[1] == 2u && per[2] == 2u && per[3] == 2u && !bad_dst &&
+    ok = routes == 2u * NTRK && per[0] == NTRK / 2u && per[1] == NTRK / 2u && per[2] == NTRK / 2u && per[3] == NTRK / 2u && !bad_dst &&
          trk[2].p[P_M1SRC] == MS_LFO && trk[2].p[P_M1AMT] == 30;
     session_dice(999u);                            /* (a session restored: its routes stay, none added) */
     for (k = 0, j = 0; k < NTRK * 4u; k++)
         j += trk[k / 4u].p[P_M1SRC + 3u * (k % 4u)] >= MS_M1 && trk[k / 4u].p[P_M1SRC + 3u * (k % 4u)] < MS_M1 + 4;
-    ok &= j == 8u;
-    bad += check("MACRO DICE at power-on: 2 routes a track to what its sound has, each macro 2; own routes kept; restored: none added", ok);
+    ok &= j == 2u * NTRK;
+    bad += check("MACRO DICE at power-on: 2 routes a track to what its sound has, each macro 3; own routes kept; restored: none added", ok);
     go_home(); frames(64);
     song.playing = 1;                              /* (JIANT 0.5: a reroll routes the tracks that sound: playing, their steps) */
     for (k = 0; k < NTRK; k++) {
@@ -7063,7 +7083,7 @@ static int test_organic(void)
     key_down(white(0)); frame(); key_up(white(0)); frame();   /* F3: DICE */
     for (k = 0, j = 0; k < NTRK * 4u; k++)
         j += trk[k / 4u].p[P_M1SRC + 3u * (k % 4u)] >= MS_M1 && trk[k / 4u].p[P_M1SRC + 3u * (k % 4u)] < MS_M1 + 4;
-    ok &= j == 8u;
+    ok &= j == 2u * NTRK;
     btn_up(B_LFO); frames(400);
     bad += check("MACRO layer: G3 clears the macros' routes (others kept), F3 rolls new ones", ok);
     {   /* (JIANT 0.5) a reroll: only the tracks that sound now (track 2 muted: none) */

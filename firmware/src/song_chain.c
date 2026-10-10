@@ -25,7 +25,7 @@ static chain_config_t chain_config;           /* the current song's rows */
  * macros and the punch-in MIDI effects become what was stored; they stay through the rows after it that have none.
  * Stored by KNOB 4 on SONG (the state now) or by SONG REC (the state as each row began) */
 typedef struct {
-    uint8_t on;                               /* 1 = the row has one */
+    uint8_t on;                               /* bit 0 = the row has one; (JIANT 0.6) bits 1, 2: T5, T6 muted */
     uint8_t mute;                             /* bits 0..3 T1..T4 muted, 4..7 DRUM's groups (DXG_*) */
     uint16_t pfx;                             /* the punch-in MIDI effects held: bit k = PF_OCTD + k */
     uint8_t mac[4];                           /* M1..M4 (mod.c macro_v) */
@@ -40,11 +40,14 @@ static void song_idx_touch(void);             /* song_main.c: the index changed,
 /* the state now as a scene (main loop: KNOB 4 on SONG; ISR: SONG REC) */
 static void scene_capture(scene_t *s)
 {
-    uint32_t i, m = dx_mute & DXG_ALL;
+    uint32_t i, m = dx_mute & DXG_ALL, on = 1u;
     m <<= 4;
     for (i = 0; i < NTRK; i++)
-        m |= (trk[i].p[P_MUTE] ? 1u : 0u) << i;
-    s->on = 1;
+        if (trk[i].p[P_MUTE]) {
+            if (i < 4u) m |= 1u << i;
+            else on |= 1u << (i - 3u);
+        }
+    s->on = (uint8_t)on;
     s->mute = (uint8_t)m;
     s->pfx = (uint16_t)((((perf_held | perf_latched) & PF_MIDI) >> PF_OCTD) | (scene_pfx >> PF_OCTD));
     memcpy(s->mac, macro_v, sizeof s->mac);
