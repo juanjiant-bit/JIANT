@@ -51,6 +51,7 @@ static track_t *kitx(int16_t morph, int16_t tune)
         for (i = 0; i < NVOICE; i++)
             trk[k].v[i].active = 0;
     host_tracks_init();
+    lev_env = 0; lev_g = lev_cur = 32768; lev_dg = 0; lim_env = LIM_T;   /* (0.5.1: the slow leveler from rest each time) */
     host_preset(t, ENGI_DRUM, 0);
     t->p[P_E0] = morph;
     t->p[P_E1] = tune;
@@ -302,6 +303,31 @@ int main(int argc, char **argv)
         song.g[G_PUNCH] = 0;
         check("PUNCH 100: the snare's first 5 ms +2 dB or more, its tail within 1 dB (JIANT 0.5: it fattens, full level: the limiter)",
               e1 > e0 * 1.26 && t1 > t0 * 0.9, "attack %.0f -> %.0f, tail %.0f -> %.0f", e0, e1, t0, t1);
+    }
+
+    {   /* (0.5.1) X-MOD: off, two hits alike; RAND 120, two hits apart; the LFO (1/4 SAW, DPTH 127) moves MORPH between hits */
+        static int32_t a0[FS / 8];
+        double d0 = 0, d1 = 0, d2 = 0;
+        track_t *t;
+        dx_lane_t keep = dx_kit[DV_KICK];
+        dx_kit[DV_KICK].a[DXP_NOISE] = dx_kit[DV_KICK].b[DXP_NOISE] = 0;   /* (no noise: two plain hits are alike) */
+        memset(dx_mot, 0, sizeof dx_mot);
+        t = kitx(64, 64); strike(t, DV_KICK, FS / 8u); memcpy(a0, buf, sizeof a0);
+        t = kitx(64, 64); strike(t, DV_KICK, FS / 8u);
+        for (i = 0; i < FS / 8u; i++) d0 += fabs((double)buf[i] - a0[i]);
+        dx_mot[XM_RAND] = 120;
+        t = kitx(64, 64); strike(t, DV_KICK, FS / 8u); memcpy(a0, buf, sizeof a0);
+        t = kitx(64, 64); strike(t, DV_KICK, FS / 8u);
+        for (i = 0; i < FS / 8u; i++) d1 += fabs((double)buf[i] - a0[i]);
+        dx_mot[XM_RAND] = 0; dx_mot[XM_RATE] = 5; dx_mot[XM_DPTH] = 127; dx_mot[XM_SHPE] = 2;
+        t = kitx(64, 64); strike(t, DV_KICK, FS / 8u); memcpy(a0, buf, sizeof a0);
+        t = kitx(64, 64); strike(t, DV_KICK, FS / 5u);      /* (another place in the LFO's cycle) */
+        for (i = 0; i < FS / 8u; i++) d2 += fabs((double)buf[i] - a0[i]);
+        memset(dx_mot, 0, sizeof dx_mot);
+        dx_kit[DV_KICK] = keep;
+        check("X-MOD: off, hits alike (within 5 %); RAND, each hit its own; the LFO moves MORPH between hits",
+              d0 * 20 < d1 && d0 * 20 < d2 && d1 / (FS / 8u) > 50, "diff off %.0f, RAND %.0f, LFO %.0f",
+              d0 / (FS / 8u), d1 / (FS / 8u), d2 / (FS / 8u));
     }
 
     /* 5m (JIANT 0.4): the pitch modulation's modes and DRIVE: LONG keeps the kick's pitch up for longer (more zero

@@ -143,12 +143,13 @@ static __attribute__((noinline)) void master_begin(void)
         clip_mk = (int32_t)((6000u << 15) / (uint32_t)softclip((6000 * clip_g) >> 12));
 }
 /* (JIANT 0.5) the LEVELER, always on: the mix (dry + wet, before the MASTER knob) followed block by block (its peak,
- * ~5 ms up, ~400 ms down) and brought toward LEV_T at 2:1 (the gain the square root of LEV_T / level, -9 .. +6 dB),
- * ramped across the block; the gain itself smoothed (~25 ms); below LEV_GATE (-40 dB) it eases back to unity, so a tail or silence is not
+ * ~45 ms up, ~1.5 s down: no pumping) and brought toward LEV_T at 2:1 (the gain the square root of LEV_T / level, -9 .. +6 dB),
+ * ramped across the block; the gain itself smoothed (~190 ms); below LEV_GATE (-40 dB) it eases back to unity, so a tail or silence is not
  * pumped up. The peak
  * limiter and the soft clip (master_out) after it catch what is left: quiet patches and CLIP's drive sit at one
  * loudness */
-#define LEV_T 16000                                     /* (the mix's scale: Q15 at MASTER full) ~ -6 dBFS: headroom */
+#define LEV_T 12000                                     /* (the mix's scale: Q15 at MASTER full) ~ -9 dBFS peaks: the
+                                                         * limiter's headroom (0.5.1: was 16000, it limited 95 % of the time) */
 #define LEV_GATE 400                                    /* -38 dB */
 static int32_t lev_env, lev_g = 32768, lev_cur = 32768, lev_dg;   /* the gain now and its step a sample (master_out) */
 static __attribute__((noinline)) void lev_block(uint32_t n)
@@ -162,9 +163,11 @@ static __attribute__((noinline)) void lev_block(uint32_t n)
         if (l > pk) pk = l;
         if (r > pk) pk = r;
     }
-    lev_env += pk > lev_env ? (pk - lev_env) >> 1 : -((lev_env - pk) >> 6);
+    lev_env += pk > lev_env ? (pk - lev_env) >> 6 : -((lev_env - pk) >> 11);   /* (0.5.1: ~45 ms up, ~1.5 s down: it
+                                                         * rides the song's loudness, not each hit; was ~1 / ~46 ms) */
     g1 = 32768;                                         /* (below the gate: back to unity, slowly) */
-    if (lev_env > LEV_GATE) {
+    if (lev_env > LEV_GATE && pk > LEV_GATE) {         /* (0.5.1: the block itself above the gate too: a tail
+                                                         * dying under it is not lifted while the slow follower falls) */
         uint32_t q = ((uint32_t)LEV_T << 12) / (uint32_t)lev_env, rt = 0, b = 1u << 30;   /* LEV_T / level, Q12 */
         q <<= 8;                                        /* (Q20: its square root Q10) */
         while (b > q) b >>= 2;
@@ -175,7 +178,8 @@ static __attribute__((noinline)) void lev_block(uint32_t n)
         }
         g1 = clamp((int32_t)rt << 5, 11500, 65536);     /* Q15: x0.35 .. x2 */
     }
-    g1 = lev_g + ((g1 - lev_g) >> (lev_env > LEV_GATE ? 5 : 8));   /* (smoothed: ~25 ms; gated ~200 ms) */
+    g1 = lev_g + ((g1 - lev_g) >> (lev_env > LEV_GATE && pk > LEV_GATE ? 8 : 5));   /* (smoothed: ~190 ms; gated, under -38 dB: ~25 ms
+                                                         * back to unity, no gain left on a tail's offset) */
     lev_cur = lev_g;                                    /* (master_out ramps it across the block, after the DC block) */
     lev_dg = (g1 - lev_g) / (int32_t)n;
     lev_g = g1;
@@ -295,7 +299,7 @@ static inline void master_out(int32_t *l, int32_t *r)
     if (a > lim_env)
         lim_env += (a - lim_env) >> 2;
     else if (lim_env > LIM_T)
-        lim_env -= ((lim_env - LIM_T) >> 12) + 1;
+        lim_env -= ((lim_env - LIM_T) >> 11) + 1;   /* (0.5.1: ~45 ms back, was ~90) */
     if (lim_env > LIM_T) {
         int32_t g = (int32_t)(((uint32_t)LIM_T << 15) / (uint32_t)lim_env);   /* < 32768 */
         *l = ((*l >> 4) * g) >> 11;                      /* >> 4 first: |l| may be far above Q15 */
@@ -558,7 +562,9 @@ static __attribute__((noinline)) void rev_reso(const int32_t *rev_in, int32_t *o
 {
     const track_t *t = &trk[0];
     uint32_t i, k, per[4], mask, s;
-    int32_t fb = 26000 + song.g[G_RSIZE] * 52, dk = 32767 - song.g[G_RDAMP] * 200, note[4], deg = 0, nn;
+    int32_t sz = song.g[G_RSIZE], dk = 32767 - song.g[G_RDAMP] * 200, note[4], deg = 0, nn;
+    int32_t fb = sz <= 100 ? 26000 + sz * 52 : clamp(31200 + (sz - 100) * 58, 0, 32740);   /* (0.5.1: the top of SIZE
+                                                         * rings on for tens of seconds: 0.9992 at 127, was 0.995) */
     for (k = 0; k < NTRK; k++)                           /* the song's scale: the first melodic track's (they share it) */
         if (ENGINES[eng_idx(trk[k].eng_req)] != &ENG_DRUM) { t = &trk[k]; break; }
     mask = scale_mask(t) & 0xFFFu;
@@ -592,12 +598,13 @@ static __attribute__((noinline)) void rev_reso(const int32_t *rev_in, int32_t *o
     }
 }
 #define CL_LEN 16384u                                    /* half rate: ~0.74 s */
-#define CL_N 8u
+#define CL_N 12u
 static int16_t cloud_buf[CL_LEN] __attribute__((section(".pool")));
 static struct { uint32_t pos, inc; uint16_t len, age; int16_t pl, pr; } cl_g[CL_N];
 static uint32_t cl_rand(void) { fx.cl_rng = fx.cl_rng * 1664525u + 1013904223u; return fx.cl_rng >> 8; }
 /* CLOUD (G_RTYPE 4, JIANT 0.5, made wet in 0.5.1): a granular wash. The input and the cloud's own tail fed back
- * (SIZE: up to ~0.19, the wash builds on itself) are written at half rate into a 0.74 s line; up to 8 overlapping
+ * (SIZE: the tail ~0.09, the grains ~0.43: the wash builds on itself) are written at half rate into a 0.74 s line;
+ * up to 12 overlapping
  * grains (RATE: their density; 45 .. 140 ms long, triangle windows) read it from anywhere behind the write, MOD of
  * them an octave up, down or a fifth up; each grain panned at random (WIDE: how far, left and right). The grains go
  * through ROOM's network (SIZE its decay, DAMP its tone; MOD chorusing it, WIDE its combs apart): the grains are not
@@ -606,12 +613,13 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
 {
     static const uint32_t PITCH[4] = {65536u, 131072u, 32768u, 98184u};   /* x1, an octave up, down, a fifth up (Q16) */
     uint32_t i, k, freeze = song.g[G_RSIZE] >= 127;
-    int32_t gap = 2600 - song.g[G_RRATE] * 18, dk = 32767 - song.g[G_RDAMP] * 220, wd = song.g[G_RWIDE];
-    int32_t fb = song.g[G_RSIZE] * 48, g[CTL], t[CTL];   /* (Q15: the tail into the line, up to ~0.19) */
+    int32_t gap = 1700 - song.g[G_RRATE] * 11, dk = 32767 - song.g[G_RDAMP] * 220, wd = song.g[G_RWIDE];
+    int32_t fb = song.g[G_RSIZE] * 24, fg = song.g[G_RSIZE] * 110, g[CTL], t[CTL];   /* (Q15: the tail, ~0.09, and the
+                                                         * grains themselves, ~0.66, back into the line) */
     for (i = 0; i < n; i++) {
         int32_t l = 0, r = 0, m;
         if (!freeze) {                                   /* the line: the input and the tail, two samples into one */
-            int32_t x = (rev_in[i] >> 1) + mulq15(shim_fb[i], fb);
+            int32_t x = (rev_in[i] >> 1) + mulq15(shim_fb[i], fb) + mulq15(fx.cl_lp, fg);
             if (fx.cl_w & 1u)
                 cloud_buf[(fx.cl_w >> 1) & (CL_LEN - 1u)] = (int16_t)clamp((fx.cl_half + x) >> 1, -32768, 32767);
             else
@@ -627,7 +635,8 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
                 pan = pan * wd >> 7;
                 cl_g[k].len = (uint16_t)(2000u + cl_rand() % 4200u);
                 cl_g[k].pos = ((fx.cl_w >> 1) - 200u - cl_rand() % (CL_LEN - 6000u)) << 16;
-                cl_g[k].inc = PITCH[pk] >> 1;            /* (the line at half rate) */
+                cl_g[k].inc = (PITCH[pk] >> 1) + (cl_rand() % 129u) - 64u;   /* (the line at half rate; each grain
+                                                         * a few cents off: a chorused shimmer, not one pitch) */
                 cl_g[k].age = 0;
                 cl_g[k].pl = (int16_t)(128 - pan);       /* (0 .. 256: 128 the centre) */
                 cl_g[k].pr = (int16_t)(128 + pan);
@@ -661,7 +670,7 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
     else
         rev_room(g, t, n);
     for (i = 0; i < n; i++) {
-        out[i] += t[i] + (g[i] >> 3);                    /* the bloom, a breath of the grains themselves */
+        out[i] += t[i] + (t[i] >> 1) + (g[i] >> 2);      /* the bloom (+3.5 dB, 0.5.1), the grains themselves under it */
         shim_fb[i] = t[i];                               /* (the tail into the line, next block) */
     }
 }
@@ -700,6 +709,23 @@ static void rev_clear(void)
 }
 
 static int32_t part_buf[CTL];                            /* a part's block (mix_part); the fade of a model change */
+
+/* (0.5.1) the chorus ensemble: three taps of buf (written at w), the LFO phase ph a third apart each, base delays
+ * 300 / 420 / 540 samples plus the sweep (depth Q8); returns the middle (Q15 x2 at unity), *sd the left - right */
+static inline int32_t cho_tap(const int16_t *buf, uint32_t w, int32_t r)
+{
+    uint32_t ri = (uint32_t)r >> 8;
+    int32_t f = r & 255, c0 = buf[(w - ri) & (CHO_LEN - 1u)], c1 = buf[(w - ri - 1u) & (CHO_LEN - 1u)];
+    return c0 + (((c1 - c0) * f) >> 8);
+}
+static inline int32_t cho_ens(const int16_t *buf, uint32_t w, uint32_t ph, int32_t depth, int32_t *sd)
+{
+    int32_t a = cho_tap(buf, w, (300 << 8) + ((osc_sine(ph) + 32768) * depth >> 8));
+    int32_t b = cho_tap(buf, w, (420 << 8) + ((osc_sine(ph + 0x55555555u) + 32768) * depth >> 8));
+    int32_t c = cho_tap(buf, w, (540 << 8) + ((osc_sine(ph + 0xAAAAAAAAu) + 32768) * depth >> 8));
+    *sd = a - b;
+    return ((a + b + c) * 21845) >> 15;                 /* (x2 / 3 each: the sum at x2, as the one tap was) */
+}
 
 /* process the three buses for one block; sends in, wet stereo-equal out */
 static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t *rev_in, int32_t *wet,
@@ -742,26 +768,16 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
         rev_in = rpre_out;
     }
     for (i = 0; i < n; i++) {
-        int32_t y = 0, x, r, side = 0;
-        /* chorus: modulated short delay, 5..15 ms */
+        int32_t y = 0, x, side = 0;
+        /* chorus (0.5.1: an ensemble): three taps of the line, ~7, 9.5 and 12 ms, each swept by the LFO a third of a
+         * turn apart; the first left, the second right, the third in the middle: always stereo (WIDTH wider) */
         cho_buf[fx.cho_w & (CHO_LEN - 1u)] = (int16_t)clamp(cho_in[i] >> 1, -32768, 32767);
         fx.cho_ph += cinc;
-        r = (400 << 8) + ((osc_sine(fx.cho_ph) + 32768) * cdepth >> 8);   /* Q8 delay: read between samples */
         {
-            uint32_t ri = (uint32_t)r >> 8;
-            int32_t f = r & 255, c0 = cho_buf[(fx.cho_w - ri) & (CHO_LEN - 1u)];
-            int32_t c1 = cho_buf[(fx.cho_w - ri - 1u) & (CHO_LEN - 1u)];
-            int32_t cl = c0 + (((c1 - c0) * f) >> 8);
-            y += cl << 1;
-            if (wd) {                                   /* (JIANT) WIDTH: a second tap, the LFO opposite, right */
-                int32_t r2 = (400 << 8) + ((32768 - osc_sine(fx.cho_ph)) * cdepth >> 8);
-                uint32_t r2i = (uint32_t)r2 >> 8;
-                int32_t f2 = r2 & 255, d0 = cho_buf[(fx.cho_w - r2i) & (CHO_LEN - 1u)];
-                int32_t d1 = cho_buf[(fx.cho_w - r2i - 1u) & (CHO_LEN - 1u)];
-                int32_t sc = ((cl - (d0 + (((d1 - d0) * f2) >> 8))) * wd) >> 7;   /* (L 2cl, R 2cr at 127) */
-                y -= sc;
-                side += sc;
-            }
+            int32_t sd;
+            y += cho_ens(cho_buf, fx.cho_w, fx.cho_ph, cdepth, &sd);
+            sd = (sd * (80 + wd / 2)) >> 7;
+            side += sd;
         }
         fx.cho_w++;
         /* delay with a low-passed (COLR) and low-cut (HPF) feedback */
@@ -857,6 +873,45 @@ static void mix_part(track_t *t, uint32_t n)
         mod_end(t);                                     /* the stored values back */
 }
 
+/* (JIANT 0.5.1) DRUM-X X-MOD's LFO, a block: its cycle RATE's bars or notes of the tempo, on the transport's grid while
+ * it plays (ms_clock: in time with the bar), free while stopped; dx_mot_v (eng_drum.c) the MORPH offset, +-DPTH/2 */
+static uint32_t dx_mot_free, dx_mot_cyc;
+static int32_t dx_mot_sh;
+static void dx_mot_block(uint32_t n)
+{
+    static const uint8_t Q8[9] = {0, 64, 32, 16, 8, 4, 2, 1, 1};   /* the cycle in 1/16 notes x 4 .. (1/32: half) */
+    uint32_t r = dx_mot[XM_RATE], len, pos, ph, cyc;
+    int32_t w;
+    dx_mot_free += n;
+    if (!r || r > 8u || !dx_mot[XM_DPTH]) {
+        dx_mot_v = 0;
+        return;
+    }
+    len = beat_samples() * Q8[r] / 4u;                  /* (a quarter = 4 sixteenths) */
+    if (r == 8u)
+        len = beat_samples() / 8u;
+    if (len < 64u)
+        len = 64u;
+    pos = song.playing ? ms_clock : dx_mot_free;
+    cyc = pos / len;
+    ph = (uint32_t)(((uint64_t)(pos % len) << 32) / len);
+    switch (dx_mot[XM_SHPE]) {
+    case 1: w = ph < 0x80000000u ? (int32_t)(ph >> 15) - 32768 : 98303 - (int32_t)(ph >> 15); break;   /* TRI */
+    case 2: w = (int32_t)(ph >> 16) - 32768; break;                                                   /* SAW */
+    case 3: w = 32767 - (int32_t)(ph >> 16); break;                                                   /* RAMP */
+    case 4:                                                                                             /* S&H */
+        if (cyc != dx_mot_cyc) {
+            dx_mot_rng = dx_mot_rng * 1664525u + 1013904223u;
+            dx_mot_sh = (int32_t)(dx_mot_rng >> 16) - 32768;
+        }
+        w = dx_mot_sh;
+        break;
+    default: w = osc_sine(ph); break;                                                                  /* SINE */
+    }
+    dx_mot_cyc = cyc;
+    dx_mot_v = (w * dx_mot[XM_DPTH]) >> 16;             /* (+-DPTH / 2) */
+}
+
 /* the master with the FX layer's effects between its level and master_out (perform.c) */
 static __attribute__((noinline)) void perf_master(int32_t *out, uint32_t n)
 {
@@ -888,6 +943,7 @@ static void mix_block(int32_t *out, uint32_t n)
                                                          * the transport's grid (through tempo changes, an external clock) */
         ms_clock = clk_pos == CLK_START ? ms_clock + n : clk_n * div_samples(2) + clk_pos + n;
     macro_master();                                     /* CLIP / PNCH with the matrix (mod.c) */
+    dx_mot_block(n);                                    /* (0.5.1) DRUM-X X-MOD's LFO */
     master_begin();
     duck_block();
     perf = perf_begin(n);                               /* the FX hold layer at work (perform.c) */

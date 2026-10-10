@@ -15,8 +15,32 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-> **Status: in development (v0.5).** It builds and passes every test (Felucca's and its own), but **it has not been
+> **Status: in development (v0.5.1).** It builds and passes every test (Felucca's and its own), but **it has not been
 > tested thoroughly on a real FM-1 yet**. Back up the flash before installing it.
+
+## Changelog
+
+Every update is listed here, newest first.
+
+### v0.5.1
+- **Master no longer smears the mix.** The always-on leveler was riding every hit: measured on the demo song, its
+  gain swung about 5 dB inside each beat and the limiter was working 95 % of the time. Now it follows the song's
+  loudness over about a second and a half (0.3 dB of movement per beat) and leaves the limiter more headroom (active
+  less than half as often, and lighter). Same loudness, transients and space come back.
+- **CLOUD is bigger**: 12 overlapping grains instead of 8, each one a few cents off (a chorused shimmer), the grains
+  fed back into the cloud so it keeps building, and a louder bloom.
+- **RESO rings much longer**: the top of SIZE now sustains for many seconds.
+- **Chorus rebuilt as an ensemble**: three voices swept a third of a cycle apart, left, right and centre: stereo
+  even with WIDTH at 0, wider with it.
+- **New LOFI wave: FLOAT** (floatbeat, bytebeat's smooth sibling): 16 formulas made of sines (FM, harmonic
+  arpeggios, folded sines, beating pairs, plucks, pads), tuned to the note; VAR, BEND, RES and LOOP as in BYTE.
+  Three new presets: FLOAT FM, FLOAT ARP, FLOAT PAD.
+- **New DRUM-X page: X-MOD**, a modulator for the whole kit: a tempo-synced LFO on MORPH (RATE from 4 bars to
+  1/32, DPTH, SHPE: sine, triangle, saw, ramp, sample & hold) and RAND (every hit its own MORPH and tune). Saved
+  with the kit; the A–B bar shows the morph moving.
+
+### v0.5
+First public release.
 
 ## The idea
 
@@ -84,7 +108,7 @@ Eight engines, all synthesis, no samples: **ANALOG, FM6, PHASE, LOFI, VOICE, WHE
 - **PHASE**: phase distortion with **FB** (the output feeds back into the phase: from hard edge to growl).
 - **LOFI**: 1, 4 and 8-bit chip with **BYTE** (bytebeat: 32 formulas picked with ALGO and bent with VAR). In BYTE,
   **BEND** folds time, **RES** adds filter resonance and **LOOP** repeats a short stretch of the formula: the noise
-  becomes a tone tuned to the note.
+  becomes a tone tuned to the note. **FLOAT** (0.5.1) is floatbeat: 16 smooth formulas of sines, tuned to the note.
 - **VOICE** (formants, after klattsch), **WHEEL** (drawbar organ) and **NOISE** (coloured and metallic noise).
 - **FILTER on every engine** (EDIT > FILTER): **TYPE** LP, HP, BP or **COMB** (a comb tuned to the note you're
   playing; CUT moves it ±32 semitones and RES is how much it rings), **CUT** and **RES**. On ANALOG it's its per-voice
@@ -100,6 +124,7 @@ An 8-sound kit (BD SD CP CH OH TM RS CB) generated in real time, Microtonic styl
 - **EDIT > SOUND 3** (per sound): **PMOD** picks how the pitch moves (DECAY, LONG like the 808, random NOISE, SINE),
   **DRV** saturates the oscillator for dense kicks, and **WAVE** changes the waveform.
 - **Group mutes** (KICK, SNARE, HAT, PERC) with GLO held and **per-sound mutes** with EDIT held.
+- **EDIT > X-MOD** (0.5.1): a tempo-synced LFO on MORPH and RAND, which gives every hit its own MORPH and tune.
 
 ### Dice: the system invites you to move everything
 - **SELECT** changes the tempo on HOME and GLOBAL (and with GLO held). On any other page it **rolls the track's sound
@@ -144,10 +169,10 @@ macros and MIDI punch-ins), saved with KNOB 4 on the SONG page or on its own whe
   too), stereo WIDTH.
 - **Reverb** with five models: ROOM, SPRING, **SHIMR** (shimmer, goes up an octave on every pass), **RESO** (four
   strings tuned to the song's scale) and **CLOUD** (a granular wash that blooms into a tail and can freeze); with pre-delay, modulation,
-  filter and width; **chorus**.
+  filter and width; **chorus**, a three-voice stereo ensemble.
 - **Master**: **CLIP** (saturation with level compensation: adds character, not volume), **PNCH** (drives the drums into saturation: denser, fatter body),
-  **DUCK** (the kick pulls the rest down) and an **always-on leveler** (2:1 compression with automatic make-up, from
-  −9 to +6 dB) before the limiter and the soft clip: quiet patches and heavy CLIP play at a consistent volume.
+  **DUCK** (the kick pulls the rest down) and an **always-on leveler** (a slow 2:1 rider with automatic make-up, from
+  −9 to +6 dB: it follows the song, not each hit) before the limiter and the soft clip: quiet patches and heavy CLIP play at a consistent volume.
 
 ### Knob acceleration
 Turning fast sweeps the whole range; turning slowly is fine adjustment. Turn it off in MENU > KNOB ACCEL.
@@ -240,6 +265,11 @@ each layer.
 (glitches), RES adds filter resonance and LOOP repeats a tiny stretch: with LOOP high the noise turns into a tuned
 note. Use the FILTER page for the cutoff.
 
+**LOFI FLOAT** (WAVE on FLOAT): the same knobs, but the formulas are smooth sines instead of 8-bit integers. ALGO
+picks one of 16 (F01 FM, F02 harmonic arpeggio, F05 wavefold, F07 odd harmonics building up, F11 stacked FM, F13
+pluck, F14 drifting pad, F16 bytebeat-driven FM…), VAR is how deep or fast it moves, LOOP freezes its evolution into
+a short cycle.
+
 ### 4. DRUM-X drums
 - Set a track to DRUM. **KNOB 1 MORPH** goes from side A to side B of the whole kit: it's the knob to play live.
 - **FOLD** folds each hit's wave: the attack shines and the tail comes back clean. **FM** dirties the timbre.
@@ -247,6 +277,9 @@ note. Use the FILTER page for the cutoff.
   (how the pitch falls: DECAY, 808-style LONG, NOISE, SINE), DRV and WAVE.
 - Mutes: **GLO held** + black keys 5–8 (KICK, SNARE, HAT, PERC); **EDIT held** + black keys 1–8 (each sound).
 - SELECT on a DRUM track rolls a new kit around the factory one.
+- **EDIT > X-MOD** moves the kit by itself: **RATE** (OFF, 4 bars … 1/32, in time with the tempo), **DPTH** (how far
+  it swings MORPH), **SHPE** (SINE, TRI, SAW, RAMP, S&H) and **RAND** (each hit gets its own MORPH and up to a
+  semitone of tune: no two hits alike, great on hats and percussion). INIT turns it off.
 
 ### 5. Macros (M1–M4)
 - **Hold LFO**: the knobs become M1–M4. Release LFO and they stay **latched** until you press LFO again.

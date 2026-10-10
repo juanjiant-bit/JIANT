@@ -2476,6 +2476,16 @@ static int test_layer(void)
     project_load(2);
     bad += check("REVERB page: TYPE ROOM -> SPRING .. CLOUD on KNOB 1 (SIZE, DAMP beside it); a project keeps CLOUD",
                  ok && song.g[G_RTYPE] == 4);
+    {   /* (0.5.1) the DRUM-X kit's X-MOD kept by a project (the kit's reserved bytes) */
+        static const uint8_t XM[4] = {6, 90, 4, 70};
+        memcpy(dx_mot, XM, 4);
+        song.playing = 0;
+        project_save(2);
+        memset(dx_mot, 0, 4);
+        project_load(2);
+        bad += check("X-MOD: a project keeps the kit's RATE DPTH SHPE RAND", !memcmp(dx_mot, XM, 4));
+        memset(dx_mot, 0, 4);
+    }
     go_title("CHORUS");
     bad += check("  CHORUS page: CRT CDP", cur_page()->fam == FAM_FX && cur_page()->id[0] == G_CRATE &&
                  cur_page()->id[1] == G_CDEPTH && cur_page()->id[2] == 0xFFu);
@@ -2842,10 +2852,10 @@ static int test_edit_cycle(void)
     (void)CYC_D;
 #endif
     {   /* #97: a DRUM track's lane levels on EDIT > LANES (KICK SNARE CLAP HATCL) and LANES 2 (HATOP TOM RIM BELL) */
-        static const char *const CYC_K[] = {"EDIT 1", "EDIT 2", "FILTER", "LANES", "LANES 2", "SOUND", "SOUND 2", "SOUND 3", "VOICE",
-                                            "EDIT 1"};
+        static const char *const CYC_K[] = {"EDIT 1", "EDIT 2", "FILTER", "LANES", "LANES 2", "SOUND", "SOUND 2", "SOUND 3", "X-MOD",
+                                            "VOICE", "EDIT 1"};
         set_engine_of(TSEL, ENGI_DRUM);
-        bad += check("EDIT cycle (DRUM): EDIT 1 EDIT 2 FILTER LANES LANES 2 SOUND SOUND 2 SOUND 3 VOICE EDIT 1",
+        bad += check("EDIT cycle (DRUM): EDIT 1 EDIT 2 FILTER LANES LANES 2 SOUND SOUND 2 SOUND 3 X-MOD VOICE EDIT 1",
                      engine_cycle(CYC_K, NELEM(CYC_K)));
         go_title("LANES 2"); frame();
         ok = TSEL->p[P_LN5] == 127;

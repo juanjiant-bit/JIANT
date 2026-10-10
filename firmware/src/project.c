@@ -122,6 +122,7 @@ typedef struct {
     dx_lane_t dx[8];                           /* the DRUM-X kit (drumx_voice.c) */
     uint16_t dx_mute;                          /* its mutes (eng_drum.c: the groups DXG_* in the first reserved byte, the
                                                 * sounds' DXM_LANE in the second) */
+    uint8_t dx_mot[4];                         /* (0.5.1) the kit's X-MOD (eng_drum.c), in its reserved bytes 3..6 */
     uint8_t pfx_lane[32], pfx_ltgt;            /* the punch-in lane (pfx.c), in FUN9's spare bytes (PROJ_PFX_OFF) */
     uint8_t macro[4];                          /* the macros M1..M4 (mod.c macro_v), 0..127: after the lane's tracks */
     char name[PROJ_NAME_LEN];                  /* the project's name: upper-case ASCII 32..126, 0-padded; "" = none */
@@ -525,6 +526,7 @@ static void proj_fm6_init(project_t *q)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);
     memcpy(q->dx, DX_KIT_DEF, sizeof q->dx);
     q->dx_mute = 0;
+    memset(q->dx_mot, 0, sizeof q->dx_mot);
     q->sum = proj_sum(q);
 }
 static int proj_import_old(project_t *q, const void *b, int n);
@@ -679,6 +681,7 @@ static int proj_pack(project_store_t *out, const project_t *q)
     b[PROJ_DX_OFF + sizeof q->dx + 1u] = (uint8_t)(q->dx_mute >> 8);
     b[PROJ_DX_OFF + sizeof q->dx + 2u] = 3u;                    /* 1 SHIFT: OFS / PIT where the chord keys were; 2 DRUM's E5 FM;
                                                                  * 3 (0.4) LOFI's and ANALOG's new E values (core.h sound_v04) */
+    memcpy(b + PROJ_DX_OFF + sizeof q->dx + 3u, q->dx_mot, sizeof q->dx_mot);   /* (0.5.1) X-MOD: 0 before it (off) */
     memcpy(b + PROJ_FM6_OFF, q->fm6, sizeof q->fm6);
     {   /* the name (0-padded; stops at the first 0) */
         char n[PROJ_NAME_LEN + 1u];
@@ -771,6 +774,11 @@ static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
         memcpy(q->dx, b + end, sizeof q->dx);
         if (!dx_kit_ok(q->dx)) return 0;
         q->dx_mute = (uint16_t)((b[end + sizeof q->dx] & DXG_ALL) | b[end + sizeof q->dx + 1u] << 8);
+        memcpy(q->dx_mot, b + end + sizeof q->dx + 3u, sizeof q->dx_mot);
+        q->dx_mot[XM_RATE] = q->dx_mot[XM_RATE] > 8u ? 0u : q->dx_mot[XM_RATE];   /* (out of range: off) */
+        q->dx_mot[XM_DPTH] &= 127u;
+        q->dx_mot[XM_SHPE] = q->dx_mot[XM_SHPE] > 4u ? 0u : q->dx_mot[XM_SHPE];
+        q->dx_mot[XM_RAND] &= 127u;
     }
     if (!va || b[end + sizeof q->dx + 2u] < 1u || b[end + sizeof q->dx + 2u] > 3u)   /* written before SHIFT: */
         for (t = 0; t < NTRK; t++)                      /* its chord keys are no offset */
@@ -785,6 +793,7 @@ static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
     if (!va) {
         memcpy(q->dx, DX_KIT_DEF, sizeof q->dx);
         q->dx_mute = 0;
+        memset(q->dx_mot, 0, sizeof q->dx_mot);
     }
     {
         char n[PROJ_NAME_LEN + 1u];
@@ -913,6 +922,7 @@ static void project_capture(project_t *p)
     p->motion = motion;
     memcpy(p->dx, dx_kit, sizeof p->dx);
     p->dx_mute = dx_mute;
+    memcpy(p->dx_mot, dx_mot, sizeof p->dx_mot);
     memcpy(p->pfx_lane, pfx_lane, sizeof p->pfx_lane);
     p->pfx_ltgt = pfx_ltgt;
     memcpy(p->macro, macro_v, sizeof p->macro);
@@ -1044,8 +1054,10 @@ static int project_recall_sound(uint32_t slot, uint32_t k)
         fm6_set_patch(k % NTRK, v);
         fm6_adopt(k % NTRK);
     }
-    if (e == ENGI_DRUM)
+    if (e == ENGI_DRUM) {
         memcpy(dx_kit, dx_kit_ok(p->dx) ? p->dx : DX_KIT_DEF, sizeof dx_kit);
+        memcpy(dx_mot, p->dx_mot, sizeof dx_mot);
+    }
     fm1_irq_on();
     if (t == TSEL)
         sync_reload = 1;
@@ -1073,6 +1085,7 @@ static int project_restore_runtime(const project_t *input)
     chain.ended = 0;                                    /* (a song stopped by this load: the load wins, song_poll keeps out) */
     memcpy(dx_kit, dx_kit_ok(p->dx) ? p->dx : DX_KIT_DEF, sizeof dx_kit);   /* (the section's DRUM-X kit) */
     dx_mute_set(p->dx_mute);
+    memcpy(dx_mot, p->dx_mot, sizeof dx_mot);           /* (0.5.1: the kit's X-MOD) */
     memcpy(pfx_lane, p->pfx_lane, sizeof pfx_lane);    /* (the section's punch-in lane) */
     pfx_ltgt = p->pfx_ltgt > 2u ? 0u : p->pfx_ltgt;
     for (i = 0; i < 4u; i++)

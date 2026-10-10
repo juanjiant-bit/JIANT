@@ -717,6 +717,55 @@ static void test_byte(void)
           sound >= 30u && differ == 32u && !over && var >= 14u);
 }
 
+/* (JIANT 0.5.1) LOFI FLOAT: each of the 16 floatbeat formulas sounds, under full scale, unlike its neighbour; VAR
+ * moves them; the pitch follows the note (an octave up: about twice the zero crossings on F01) */
+static void float_run(uint32_t f, int32_t var, uint32_t note, int32_t *buf)
+{
+    uint32_t b, i;
+    fresh(3, 0);
+    trk[0].p[P_E0] = 2; trk[0].p[P_E1] = 6; trk[0].p[P_E2] = (int16_t)(f * 8u); trk[0].p[P_E3] = (int16_t)var;
+    trk[0].p[P_E5] = trk[0].p[P_E6] = trk[0].p[P_E7] = 0; trk[0].p[P_FCUT] = 127; trk[0].p[P_ATK] = 0; trk[0].p[P_SUS] = 127;
+    trk_note_on(&trk[0], note, 110);
+    for (b = 0; b < FS / 8u / CTL; b++) {
+        blocks(1);
+        for (i = 0; i < CTL; i++)
+            buf[b * CTL + i] = out_buf[2u * i];
+    }
+}
+static void test_float(void)
+{
+    static int32_t prev[FS / 8], cur[FS / 8], alt[FS / 8];
+    uint32_t f, i, sound = 0, differ = 0, over = 0, var = 0, c60 = 0, c72 = 0;
+    for (f = 0; f < 16u; f++) {
+        double e = 0, d = 0, dv = 0;
+        int32_t pk = 0;
+        float_run(f, 20, 60, cur);
+        for (i = 0; i < FS / 8u; i++) {
+            e += (double)cur[i] * cur[i];
+            d += fabs((double)cur[i] - prev[i]);
+            pk = abs(cur[i]) > pk ? abs(cur[i]) : pk;
+        }
+        sound += e / (FS / 8u) > 300.0 * 300.0;
+        differ += f == 0u || d / (FS / 8u) > 100.0;
+        over += pk >= 32767;
+        float_run(f, 120, 60, alt);
+        for (i = 0; i < FS / 8u; i++)
+            dv += fabs((double)alt[i] - cur[i]);
+        var += dv / (FS / 8u) > 100.0;
+        memcpy(prev, cur, sizeof prev);
+    }
+    float_run(0, 0, 60, cur);
+    float_run(0, 0, 72, alt);
+    for (i = 1; i < FS / 8u; i++) {
+        c60 += cur[i - 1] < 0 && cur[i] >= 0;
+        c72 += alt[i - 1] < 0 && alt[i] >= 0;
+    }
+    printf("mod:   (FLOAT: %u of 16 sound, %u differ from the one before, %u clip; VAR moves %u; crossings C4 %u, C5 %u)\n",
+           sound, differ, over, var, c60, c72);
+    check("LOFI FLOAT: the 16 floatbeat formulas sound, each its own, none clips; VAR moves most (12+); in tune with the note",
+          sound == 16u && differ == 16u && !over && var >= 12u && c72 > c60 * 17u / 10u && c72 < c60 * 23u / 10u);
+}
+
 /* (JIANT 0.4) ANALOG SYNC RING SAW3 (TRIO folded in): each sounds, each its own, none clips; SYNC's DTN moves it */
 static double an_render(int16_t wave, int16_t dtn, int32_t *buf, uint32_t n, int32_t *pk)
 {
@@ -926,12 +975,22 @@ static void test_jiant_fx(void)
         check("MSEQ: STEP reads the level of the step now (LEN wraps), SLEW glides to it", ok);
     }
     fresh(0, 0);
-    trk[0].p[P_DLY] = 110; trk[0].p[P_CHOR] = 90; song.g[G_WIDTH] = 0;
+    trk[0].p[P_DLY] = 110; trk[0].p[P_CHOR] = 0; song.g[G_WIDTH] = 0;
     h0 = phrase_lr(&d0);
     fresh(0, 0);
-    trk[0].p[P_DLY] = 110; trk[0].p[P_CHOR] = 90; song.g[G_WIDTH] = 127;
+    trk[0].p[P_DLY] = 110; trk[0].p[P_CHOR] = 0; song.g[G_WIDTH] = 127;
     h1 = phrase_lr(&d1);
-    check("WIDTH 0: left = right (the buses mono, as before); 127: left and right apart", d0 == 0 && d1 > 1000 && h0 != h1);
+    check("WIDTH 0: the delay mono (left = right); 127: left and right apart", d0 == 0 && d1 > 1000 && h0 != h1);
+    {   /* (0.5.1) the chorus an ensemble: stereo already at WIDTH 0, wider at 127 */
+        int32_t d2, d3;
+        fresh(0, 0);
+        trk[0].p[P_CHOR] = 90; song.g[G_WIDTH] = 0;
+        (void)phrase_lr(&d2);
+        fresh(0, 0);
+        trk[0].p[P_CHOR] = 90; song.g[G_WIDTH] = 127;
+        (void)phrase_lr(&d3);
+        check("CHORUS: a stereo ensemble at WIDTH 0, wider at 127", d2 > 1000 && d3 > d2);
+    }
     song.g[G_WIDTH] = 0;
     fresh(0, 0);
     trk[0].p[P_DLY] = 110; song.g[G_DFDBK] = 100;
@@ -969,6 +1028,7 @@ int main(int argc, char **argv)
     test_jiant_fx();
     test_env_loop();
     test_byte();
+    test_float();
     test_analog_ext();
     test_phase_fb();
     test_lofi_tone();
