@@ -2255,10 +2255,11 @@ static void persist_boot(void)                    /* before settings_init / pane
 #if FELUCCA_FLASH
     persist_t p;
     uint32_t f = irq_save();
-    flash_ok = FL_FAR(fl_jedec_ram)() == 0x856014u;       /* the expected 1 MiB part, else stay RAM-only */
+    flash_ok = FL_JEDEC_OK(FL_FAR(fl_jedec_ram)());      /* the expected 1 MiB part, else stay RAM-only */
     irq_restore(f);
     if (!flash_ok)
         return;
+    st_owner_check();                              /* SMK: never parse another ported firmware's store (storage.c) */
     {
         int n = st_load(OBJ_SETTINGS, &p, sizeof p);
         if (settings_import(&p, n)) {
@@ -2297,7 +2298,7 @@ static uint32_t lib_scan(uint32_t n, char *b)
         return m;
     }
 #if FELUCCA_FLASH
-    if (!flash_ok || n >= NSONG)
+    if (!flash_ok || n >= SONG_STORED)
         return 0;
     for (k = 0; k < 4u; k++) {
         uint32_t obj = n ? OBJ_SONG1 + (n - 1u) * 4u + k : OBJ_PROJECT0 + k;

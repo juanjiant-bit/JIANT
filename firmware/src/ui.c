@@ -1640,7 +1640,7 @@ static void midi_pc_poll(void)
         midi_song_req = 0;
         if (n < 4u)
             (void)section_jump(n);
-        else if (n >= 16u && n < 16u + NSONG)
+        else if (n >= 16u && n < 16u + SONG_STORED)
             (void)song_select(n - 16u);
     }
     for (i = 0; i < NTRK; i++)
