@@ -1835,6 +1835,7 @@ static void song_index_boot(void);
 
 static void persist_boot(void)                    /* before settings_init / panel_init */
 {
+    chain_defaults(&chain_config);                 /* no flash: an empty arrangement; a saved index replaces it */
 #if FELUCCA_FLASH
     persist_t p;
     uint32_t f = irq_save();
