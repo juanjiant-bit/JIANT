@@ -143,7 +143,34 @@ static int32_t menu_document(int32_t y, int draw)
         str_cpy(b, "LATE ", sizeof b); fmt_int(n, (int32_t)load_diag.late); str_cpy(b + str_len(b), n, 12);
         str_cpy(b + str_len(b), "  SHED ", 8); fmt_int(n, (int32_t)load_diag.shed); str_cpy(b + str_len(b), n, 12);
         y = menu_text(b, y, T_TEXT, draw);
-        y = menu_text(mc_status(), y, T_TEXT, draw) - 216 + 8;   /* (0.6.71) the second core (fx.c) */
+        y = menu_text(mc_status(), y, T_TEXT, draw);
+        /* Existing per-block scheduler timings, read while main is running:
+         * audio IRQ dispatches and joins core 1 before returning to this UI.
+         * These elapsed times overlap across cores; do not add them as load. */
+        {
+            uint32_t k;
+            char d[96];
+            str_cpy(d, "VOICES ", sizeof d); fmt_int(n, voices_busy()); str_cpy(d+str_len(d), n, 12);
+            str_cpy(d+str_len(d), " CAP ", 6); fmt_int(n, voice_cap()); str_cpy(d+str_len(d), n, 12);
+            y = menu_text(d, y, T_TEXT, draw);
+            str_cpy(d, "ALLOC CUT ", sizeof d); fmt_int(n, voice_kills-voice_trims-shed_count); str_cpy(d+str_len(d), n, 12);
+            str_cpy(d+str_len(d), " TRIM ", 7); fmt_int(n, voice_trims); str_cpy(d+str_len(d), n, 12);
+            y = menu_text(d, y, T_TEXT, draw);
+            str_cpy(d, "FX ", sizeof d); fmt_int(n, mc_fx_tk/24u); str_cpy(d+str_len(d), n, 12);
+            str_cpy(d+str_len(d), " us/block", 10);
+            y = menu_text(d, y, T_TEXT, draw);
+            for (k=0; k<trk_live && k<NTRK; k++) {
+                uint32_t v, live=0;
+                for (v=0; v<NVOICE; v++) live += trk[k].v[v].active;
+                str_cpy(d, "T", sizeof d); fmt_int(n, k+1); str_cpy(d+str_len(d), n, 12);
+                str_cpy(d+str_len(d), " ", 2); str_cpy(d+str_len(d), ENGINES[trk[k].engine]->name, 20);
+                str_cpy(d+str_len(d), " V", 3); fmt_int(n, live); str_cpy(d+str_len(d), n, 12);
+                str_cpy(d+str_len(d), " ", 2); fmt_int(n, mc_tk[k]/24u); str_cpy(d+str_len(d), n, 12);
+                str_cpy(d+str_len(d), " us", 4);
+                y = menu_text(d, y, T_TEXT, draw);
+            }
+        }
+        y = y - 216 + 8;   /* (0.6.71) the second core (fx.c) */
     }
     y = menu_text("CREDITS", y + 216, T_THEME, draw) + 8;
     for (i = 0; i < NELEM(MENU_CREDITS); i++) {
@@ -308,7 +335,7 @@ static void draw_menu(void)
           ui_rec_prefs * 92821u + ui_scr * 131071u + ui.mlv * 0x9E3779B1u +   /* (#157: SCREEN OFF's value redraws its row) */
           (ui.menu == 2 ? ui.menu_scroll * 48611u : 0u) +
           (ui.menu == 2 ? (song.cpu_q8 >> 3) * 7741u + load_diag.peak * 3329u + load_diag.late * 1931u +
-                          load_diag.shed * 2671u : 0u);   /* (0.6.19) ABOUT's AUDIO LOAD: live (NOW in ~3 % steps) */
+                          load_diag.shed * 2671u + (audio_halves / 64u) * 4657u : 0u);   /* (0.6.19) ABOUT's AUDIO LOAD: live (NOW in ~3 % steps) */
     draw_head();                                      /* (0.8.5: the pages' header, "MENU . DISPLAY") */
     if (!ui.force && sig == ui.menu_sig)
         return;

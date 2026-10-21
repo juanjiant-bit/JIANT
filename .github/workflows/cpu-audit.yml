@@ -2,12 +2,12 @@
 name: 0.9.9 CPU and RAM audit
 on:
   push:
-    branches: [codex/fm1-v099-cpu4]
+    branches: [codex/fm1-v099-cpu5]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: firmware-cpu4-audit
+  group: firmware-cpu5-audit
   cancel-in-progress: true
 jobs:
   build:
@@ -81,7 +81,7 @@ jobs:
           printf '%s\n' "$GITHUB_SHA" > build/SOURCE_COMMIT
       - uses: actions/upload-artifact@v4
         with:
-          name: fm1-v099-cpu4-audit
+          name: fm1-v099-cpu5-audit
           if-no-files-found: error
           path: |
             build/felucca.fwsc

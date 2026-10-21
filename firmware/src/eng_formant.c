@@ -313,7 +313,7 @@ static void formant_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, con
     uint32_t inc = m->inc, i, te, tp, rp, rn, ratio, bws, f0;
     uint32_t ph = v->ph[0];
     int32_t y1 = v->s[0], y2 = v->s[1], y3 = v->s[2], y4 = v->s[3], y5 = v->s[4], y6 = v->s[5];
-    int32_t y7 = (int32_t)v->ph[1], y8 = (int32_t)v->ph[2], lp = v->s[6], nst = formant_nz;
+    int32_t y7 = (int32_t)v->ph[1], y8 = (int32_t)v->ph[2], lp = v->s[6], nst = 0;
 
     if (p[P_VLANG]) {                                   /* (0.8.5) WORDS */
         formant_word_render(t, v, out, n, m);
@@ -378,6 +378,7 @@ static void formant_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, con
     rn = (1u << 30) / (((te - tp) >> 16) | 1u);
     gv = 32767 - p[P_E5] * p[P_E5] * 2;                 /* BREATH: voicing fades at the top */
     gn = p[P_E5] * 258;                                 /* noise: Q15, up to 1.0 */
+    if (gn) nst = formant_nz;
     og = 13000 - ((p[P_E6] - 64) * 50);                 /* output: narrower bands ring louder */
     og = (int32_t)(((int64_t)og * fmt_ratio((60 * 16 - v->pitch_cur) / 4)) >> 16);   /* 1.5 dB / oct: low notes are sparse pulses */
     ogk = (og >> 2) * (4 + (buzz >> 10));               /* presence k = 1 .. 4.9 */
@@ -418,7 +419,7 @@ static void formant_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, con
     v->ph[0] = ph;
     v->ph[1] = (uint32_t)y7;
     v->ph[2] = (uint32_t)y8;
-    formant_nz = nst;
+    if (gn) formant_nz = nst;
     v->s[0] = y1;
     v->s[1] = y2;
     v->s[2] = y3;

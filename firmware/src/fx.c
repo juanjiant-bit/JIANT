@@ -2219,6 +2219,18 @@ static int mc_rng_part(uint32_t i)
             return 1;
     return t->lfo_ph + LFO_INC[t->p[P_LRATE] & 127] < t->lfo_ph;
 }
+/* LANG OFF with BREATH exactly zero never consumes or writes breath noise.
+ * Note-on RNG runs before dispatch. Fades and a live matrix destination that
+ * could open BREATH remain grouped, regardless of the stored zero value. */
+static int mc_voice_noise(const track_t *t)
+{
+    uint32_t k;
+    if (t->p[P_VLANG] || t->p[P_E5] || t->xf_on) return 1;
+    for (k = 0; k < NMSLOT; k++)
+        if (t->p[P_M1SRC + 3u*k] && t->p[P_M1AMT + 3u*k] &&
+            t->p[P_M1DST + 3u*k] == MD_E1 + 5u) return 1;
+    return 0;
+}
 /* The greedy measured-cost split keeps dependency groups together: DRUM's kit, VOICE's breath noise, AUTO PAN's
  * random stream. Shared-rng LFOs follow the buses on core 1. As in SLOOP's units_split, ownership outranks cost. */
 static __attribute__((noinline)) uint32_t mc_split(uint32_t c1)   /* c1: what core 1 has already (0.6.75: the buses) */
@@ -2229,8 +2241,8 @@ static __attribute__((noinline)) uint32_t mc_split(uint32_t c1)   /* c1: what co
         uint32_t bit = 1u << i;
         unit[i] = bit; cost[i] = 0;
         if (ENGINES[t->engine] == &ENG_DRUM) dep[0] |= bit;
-        if (ENGINES[t->engine] == &ENG_FORMANT) dep[1] |= bit;
-        if (t->p[P_APDEP] || t->xf_on) dep[2] |= bit;
+        if (ENGINES[t->engine] == &ENG_FORMANT && mc_voice_noise(t)) dep[1] |= bit;
+        if ((t->p[P_APDEP] && t->p[P_APWAVE] >= 4) || t->xf_on) dep[2] |= bit;
         if (mc_rng_part(i)) fixed |= bit;
         /* Parts put to sleep still fade: render that transition serially, including voice_kill's counters. */
         if (i >= trk_live)

@@ -84,12 +84,23 @@ int main(int argc, char **argv)
      * twelve voices, regardless of the device's two-core admission policy. */
     if (!strcmp(scene, "polyphony")) voice_headroom = 1;
     for (k = 0; k < NTRK; k++) {
-        uint32_t e = !strcmp(scene, "voice") ? ENGI_VOICE : !strcmp(scene, "parallel") ? (k & 1u ? ENGI_ANALOG : ENGI_FM6) : EN[k];
+        uint32_t e = (!strcmp(scene, "voice") || !strcmp(scene, "cleanvoice") || !strcmp(scene, "noisemod")) ? ENGI_VOICE : (!strcmp(scene, "parallel") || !strcmp(scene, "pan")) ? (k & 1u ? ENGI_ANALOG : ENGI_FM6) : EN[k];
         if (!strcmp(scene, "twovoice") && k == 4u) e = ENGI_VOICE;
         if (!strcmp(scene, "polyphony")) e = k & 1u ? ENGI_VOICE : ENGI_FM6;
         host_preset(&trk[k], e, 0);
         trk[k].p[P_VOICE] = !strcmp(scene, "polyphony") ? V_POLY : V_MONO;
         trk[k].p[P_SUS] = 127;
+        if (!strcmp(scene, "cleanvoice")) {
+            trk[k].p[P_VLANG]=0; trk[k].p[P_E5]=0;
+            trk[k].p[P_APDEP]=70; trk[k].p[P_APWAVE]=1;
+        }
+        if (!strcmp(scene, "pan")) {
+            trk[k].p[P_APDEP]=70; trk[k].p[P_APWAVE]=1;
+        }
+        if (!strcmp(scene, "noisemod")) {
+            trk[k].p[P_VLANG]=0; trk[k].p[P_E5]=0;
+            trk[k].p[P_M1SRC]=MS_LFO; trk[k].p[P_M1DST]=MD_E1+5; trk[k].p[P_M1AMT]=30;
+        }
         if (!strcmp(scene, "shared")) {
             trk[k].p[P_APDEP] = 70; trk[k].p[P_APWAVE] = 4; trk[k].p[P_APRATE] = 127;
             trk[k].p[P_LRATE] = k == 1u ? -1 : 127; trk[k].lfo_ph = 0xFFFFFFF0u;
@@ -120,7 +131,7 @@ int main(int argc, char **argv)
         pthread_join(worker, 0);
     }
     if (fail_at && (failures != 1u || mc_host || jobs != fail_at)) return 1;
-    if (!fail_at && mc_host && !strcmp(scene, "parallel") && !both) return 1;
+    if (!fail_at && mc_host && (!strcmp(scene, "parallel") || !strcmp(scene, "pan") || !strcmp(scene, "cleanvoice")) && !both) return 1;
     printf("mc-thread: %s %s hash=%016llx jobs=%u failures=%u overlap=%u\n", mode, scene, (unsigned long long)hash, jobs, failures, both);
     return 0;
 }
