@@ -337,14 +337,22 @@ static void formant_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, con
         v0 += ((rv - v0) * p[P_E7] * 258) >> 15;
         v1 += ((rv - v1) * p[P_E7] * 258) >> 15;
         vowel_at(v0 + m->cutoff, fa, ba);
-        vowel_at(v1 + m->cutoff, fb, bb);
+        /* TALK=0 (or its exact onset): only the first vowel contributes.
+         * Avoid preparing and blending a second unused formant set. */
+        if (k) {
+            vowel_at(v1 + m->cutoff, fb, bb);
+            for (j = 0; j < 3; j++) {
+                fa[j] += ((fb[j] - fa[j]) * k) >> 15;
+                ba[j] += ((bb[j] - ba[j]) * k) >> 15;
+            }
+        }
     }
     /* SHIFT (semitones) and FOLOW (key tracking around C4, fixed), one ratio for all four */
     ratio = fmt_ratio(p[P_E3] * 16 + ((FMT_FOLOW * (v->pitch_cur - 60 * 16) * 516) >> 16));   /* FOLOW / 127 */
     bws = fmt_ratio((64 - p[P_E6]) * 4);                /* Q: bandwidth x2.5 .. x0.4 */
     f0 = (uint32_t)(((uint64_t)inc * 705600u) >> 32);   /* F0 in Hz * 16 */
     for (j = 0; j < 3; j++) {
-        int32_t f = fa[j] + (((fb[j] - fa[j]) * k) >> 15), b = ba[j] + (((bb[j] - ba[j]) * k) >> 15);
+        int32_t f = fa[j], b = ba[j];
         f = (int32_t)(((int64_t)f * ratio) >> 16);
         b = (int32_t)(((((int64_t)b * ratio) >> 16) * bws) >> 16);
         if (j == 0 && (uint32_t)f < f0 + (f0 >> 4) && f > 0) {   /* sung high: F1 follows F0 (sopranos do), */

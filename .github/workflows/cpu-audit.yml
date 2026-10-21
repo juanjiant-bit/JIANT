@@ -2,12 +2,12 @@
 name: 0.9.9 CPU and RAM audit
 on:
   push:
-    branches: [codex/fm1-v099-cpu2]
+    branches: [codex/fm1-v099-cpu3]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: firmware-cpu2-audit
+  group: firmware-cpu3-audit
   cancel-in-progress: true
 jobs:
   build:
@@ -50,13 +50,17 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build/host
-          for suite in fm6_env_compare fm6_test voice_test audio_test regress; do
+          for suite in fm6_env_compare fm6_test voice_test audio_test voice_fairness_test regress; do
             cc -O2 -w -Ibuild/gen -Ifirmware/src "tests/$suite.c" -lm -o "build/host/$suite"
           done
+          cc -O2 -w -Ibuild/gen -Ifirmware/src tests/chorus_sleep_test.c -lm -o build/host/chorus_sleep_test
+          python3 tests/chorus_sleep_test.py build/host/chorus_sleep_test
           build/host/fm6_env_compare
           build/host/fm6_test
           build/host/voice_test
           build/host/audio_test
+          build/host/voice_fairness_test 8
+          build/host/voice_fairness_test 12
           build/host/regress tests/golden.txt tests/cpu_baseline.txt
           cc -O2 -w -pthread -Ibuild/gen -Ifirmware/src tests/mc_thread_test.c -lm -o build/host/mc_thread_test
           python3 tests/mc_thread_test.py build/host/mc_thread_test
@@ -75,7 +79,7 @@ jobs:
           printf '%s\n' "$GITHUB_SHA" > build/SOURCE_COMMIT
       - uses: actions/upload-artifact@v4
         with:
-          name: fm1-v099-cpu2-audit
+          name: fm1-v099-cpu3-audit
           if-no-files-found: error
           path: |
             build/felucca.fwsc
@@ -86,3 +90,7 @@ jobs:
             LICENSE
             LICENSING.md
             LICENSES/
+      - name: Research only - compile the existing four-operator DIGITAL engine
+        env:
+          FELUCCA_FM4: "1"
+        run: python3 tools/build.py

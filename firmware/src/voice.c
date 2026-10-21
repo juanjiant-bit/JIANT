@@ -455,7 +455,19 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
     }
     if (nfree && (voices_busy() >= voice_cap() || load_tight)) {   /* (0.6.16: the load budget too; 0.6.18: a dying tail) */
         track_t *vp = 0;
-        uint32_t full = voices_busy() >= voice_cap(), k = full ? voice_victim(t, 0, &vp) : quiet_tail(&vp);
+        uint32_t full = voices_busy() >= voice_cap(), k, own = np;
+        /* At capacity, this part's released slot can be retriggered in place.
+         * Taking another part's release instead both cuts its tail and renders
+         * an extra fading voice for several blocks. Held notes stay protected. */
+        if (full) {
+            for (i = 0; i < np; i++)
+                if (t->v[i].active && !t->v[i].gate && t->v[i].stage != 4u &&
+                    (own == np || t->v[i].age < t->v[own].age))
+                    own = i;
+            if (own < np)
+                return &t->v[own];
+        }
+        k = full ? voice_victim(t, 0, &vp) : quiet_tail(&vp);
         if (k < np && vp == t)
             return &t->v[k];                            /* our own: restart it in place (no click) */
         if (k < NVOICE) {

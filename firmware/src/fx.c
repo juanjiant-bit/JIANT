@@ -13,6 +13,16 @@ static union {
 #define dly_buf (dly_u.s)
 _Static_assert((DLY_LEN & (DLY_LEN - 1u)) == 0u && DLY_LEN >= 16384u, "DLY_LEN: a power of two, whole 32 KB chunks");
 static int16_t cho_buf[CHO_LEN] __attribute__((section(".pool")));
+/* A full ring of zero input proves every tap is exactly zero. Keep its
+ * write/LFO/glide clocks running, but avoid the three interpolated reads. */
+static uint32_t cho_zeros = CHO_LEN;
+/* Control work once per block, outside the RAM-resident sample kernel. */
+static __attribute__((noinline)) uint32_t cho_admit(int32_t input, uint32_t n)
+{
+    uint32_t run = input || cho_zeros < CHO_LEN;
+    cho_zeros = input ? 0u : cho_zeros + n < CHO_LEN ? cho_zeros + n : CHO_LEN;
+    return run;
+}
 static const uint16_t REV_COMB[4] = {1116, 1188, 1277, 1356};
 static const uint16_t REV_AP[2] = {556, 441};
 static int16_t rev_comb[1116 + 1188 + 1277 + 1356] __attribute__((section(".pool")));
@@ -1488,12 +1498,15 @@ static int32_t fx_glide(int32_t cur, int32_t to, uint32_t n)
 static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t *rev_in, int32_t *wet,
                      uint32_t n)
 {
-    uint32_t i, dl = delay_samples();
+    uint32_t i, dl = delay_samples(), cho_run;
     int32_t dcd, dcw, ddm;
     {   /* (0.6.14) anything sent to the buses this block: their gate open (fx_gate) */
-        int32_t any = 0;
-        for (i = 0; i < n; i++)
+        int32_t any = 0, ci = 0;
+        for (i = 0; i < n; i++) {
             any |= cho_in[i] | dly_in[i] | rev_in[i];
+            ci |= cho_in[i];
+        }
+        cho_run = cho_admit(ci, n);
         fxg_quiet = any ? 0u : fxg_quiet < 0xFFFFFFu ? fxg_quiet + 1u : fxg_quiet;
     }                                                   /* (0.6.19: it opens over ~6 ms, fx_gate: at once, the
                                                          * residue in the lines stepped in: a tick on the next note) */
@@ -1512,7 +1525,7 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
     int32_t png = song.g[G_DPING] == 1 && !gr, fb2 = (int32_t)(((int64_t)fb * fb) >> 15);
     if (dig && fb > 32767) fb = 32767;                  /* (0.6.90) DIGITAL: 100 % at most, a repeat held for ever */
     if (dig && fb2 > 32767) fb2 = 32767;
-    int32_t cho = sys_load != LOAD_ECO;                /* (0.6.30) LOAD ECO: no chorus */
+    int32_t cho = sys_load != LOAD_ECO && cho_run;                /* (0.6.30) LOAD ECO: no chorus */
     int32_t cs = song.g[G_CSTER], cw = 80 + wd / 2;    /* (0.6.9) the chorus's side: 0 as before, - to mono, + ~2x */
     cw = cs >= 0 ? cw + cs * 2 : (cw * (64 + cs)) >> 6;
     uint32_t dro = wd && !png ? div_samples(3) * (uint32_t)wd / 127u : 0u, dr;   /* the right echo: up to 1/32 later */
@@ -2290,6 +2303,7 @@ static __attribute__((noinline)) void fx_trip(uint32_t c1, uint32_t n)
     fx.dsw = 0; fx.din_g = 0;
     for (i = 0; i < CHO_LEN; i++)
         cho_buf[i] = 0;
+    cho_zeros = CHO_LEN;
     rev_clear();                                         /* (the pre-delay's line too: rev_x) */
     fx.dt1 = fx.dt2 = fx.rt1 = fx.rt2 = 0;
     fx.dly_lp = fx.dly_hp = fx.rf_lp = fx.rpre_s = fx.cl_lp = fx.cl_half = 0;
