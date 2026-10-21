@@ -4,7 +4,7 @@
  * Runs in the audio ISR.
  *
  * Each synth part has its own NVOICE voices (so MONO / LEGATO / UNISON keep using
- * v[0..]), but only NVOICE of all the parts' voices sound at once: a part that starts
+ * v[0..]), but all parts share a measured-load budget (8 by default, up to 12 in FULL): a part that starts
  * a voice while the budget is full takes one from any part (voice_victim): the oldest
  * released voice, else the oldest extra UNISON voice, else the oldest held voice of a
  * POLY part that is not its lowest note. A voice taken from another part fades out
@@ -303,12 +303,20 @@ static uint32_t trk_vmode(const track_t *t)
  * first) instead of adding one (voice_room), CLOUD spawns half its grains (fx.c). Ahead of the overload guard (80 %:
  * a voice faded) and of a late half (a click): the load stops climbing before it gets there */
 static volatile uint8_t load_tight;
+/* Extra shared voices are admitted only after the audio ISR establishes
+ * sustained deadline headroom on two healthy cores. No extra per-part slots. */
+static uint8_t voice_headroom;
+#define FULL_VOICES 12u
 /* (0.6.17) what the audio did since power-on, for MENU > ABOUT (audio.c fills it): the slowest half's share of its
  * time (%), the halves that came late (each a click), the voices the overload guard faded */
 static struct { volatile uint32_t peak, late, shed; } load_diag;
 /* (JIANT 0.6.70) the budget shared by all parts: NVOICE, LOAD ECO ECO_VOICES (4 parts with reverb and delay still
  * crackled on ECO: the peaks are the voices, a tail ringing on each part as the next hits come) */
-static uint32_t voice_cap(void) { return sys_load == LOAD_ECO ? ECO_VOICES : NVOICE; }
+static uint32_t voice_cap(void)
+{
+    return sys_load == LOAD_ECO ? ECO_VOICES :
+           sys_load == LOAD_FULL && voice_headroom ? FULL_VOICES : NVOICE;
+}
 static uint32_t voices_busy(void)                       /* sounding voices of all parts (not the fading ones) */
 {
     uint32_t p, i, n = 0;

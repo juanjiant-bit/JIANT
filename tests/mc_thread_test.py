@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 binary = sys.argv[1]
-for scene in ("mixed", "voice", "twovoice", "parallel", "shared", "transition", "fade"):
+for scene in ("mixed", "voice", "twovoice", "parallel", "shared", "transition", "fade", "polyphony"):
     hashes = []
     for mode in ("serial", "deferred", "threaded", "chaos"):
         result = subprocess.run([binary, mode, scene], text=True, capture_output=True)

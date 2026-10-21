@@ -80,11 +80,15 @@ int main(int argc, char **argv)
     chaos = !strcmp(mode, "chaos");
     fail_at = !strcmp(mode, "timeout") ? 17u : 0u;
     host_tracks_init(); mc_host = strcmp(mode, "serial") != 0;
+    /* Force admission in the serial reference too: compare exactly the same
+     * twelve voices, regardless of the device's two-core admission policy. */
+    if (!strcmp(scene, "polyphony")) voice_headroom = 1;
     for (k = 0; k < NTRK; k++) {
         uint32_t e = !strcmp(scene, "voice") ? ENGI_VOICE : !strcmp(scene, "parallel") ? (k & 1u ? ENGI_ANALOG : ENGI_FM6) : EN[k];
         if (!strcmp(scene, "twovoice") && k == 4u) e = ENGI_VOICE;
+        if (!strcmp(scene, "polyphony")) e = k & 1u ? ENGI_VOICE : ENGI_FM6;
         host_preset(&trk[k], e, 0);
-        trk[k].p[P_VOICE] = V_MONO;
+        trk[k].p[P_VOICE] = !strcmp(scene, "polyphony") ? V_POLY : V_MONO;
         trk[k].p[P_SUS] = 127;
         if (!strcmp(scene, "shared")) {
             trk[k].p[P_APDEP] = 70; trk[k].p[P_APWAVE] = 4; trk[k].p[P_APRATE] = 127;
@@ -92,6 +96,7 @@ int main(int argc, char **argv)
             trk[k].p[P_LWAVE] = 4;
         }
         trk_note_on(&trk[k], e == ENGI_DRUM ? DRUM_LANE_NOTE[0] : 48 + k * 2, 100);
+        if (!strcmp(scene, "polyphony")) trk_note_on(&trk[k], 55 + k * 2, 100);
     }
     if (!strcmp(scene, "shared")) {
         trk[0].p[P_M1SRC] = MS_LFO; trk[0].p[P_M1DST] = MD_RATE; trk[0].p[P_M1AMT] = 30;
@@ -103,6 +108,7 @@ int main(int argc, char **argv)
         if (!strcmp(scene, "transition") && b == 128u) trk_live = 4;
         if (!strcmp(scene, "transition") && b == 256u) trk_live = 6;
         mix_block(out, CTL);
+        if (!strcmp(scene, "polyphony") && b == 127u && (voices_busy() != 12u || voice_kills)) return 1;
         if (mc_mask_last && mc_mask_last != (1u << NPART) - 1u) both++;
         for (k = 0; k < 2u * CTL; k++) hash = (hash ^ (uint32_t)out[k]) * 1099511628211ull;
     }

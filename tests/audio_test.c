@@ -50,7 +50,7 @@ static void fresh(void)
     audio_cpu_rem = audio_halves = audio_max_us = 0;
     shed_req = 0; shed_count = 0; shed_over = 0;
     audio_last_half = 2u; audio_lost = 0;
-    load_tight = 0; tight_calm = 0; memset((void *)&load_diag, 0, sizeof load_diag);
+    load_tight = 0; voice_headroom = poly_calm = 0; tight_calm = 0; memset((void *)&load_diag, 0, sizeof load_diag);
     host_clock = host_us = host_half_reads = host_dma_advanced = host_acks = host_nest = 0;
     host_pending = FM1_AUDIO_HALF;
     transport_req = panic_req = 0;
@@ -352,6 +352,50 @@ static void boot_keys(void)
           ref > 100.0 && fabs(quiet - ref) < 1e-9 && silent == 0.0);
 }
 
+/* Admission changes the total budget, never the per-engine slots or the
+ * overload guard. Six two-note parts expose the old global-eight restriction. */
+static void polyphony_headroom(void)
+{
+    uint32_t k, i, kills, gates = 0;
+    int32_t out[2 * CTL];
+    fresh(); mc_host = 1; mc_off = 0; sys_load = LOAD_FULL;
+    check("polyphony: starts with the conservative eight-voice budget", voice_cap() == 8);
+    for (i = 0; i < 15; i++) shed_check(TIGHT_ON_ECO - 1);
+    check("polyphony: one short calm interval cannot expand admission", voice_cap() == 8);
+    shed_check(TIGHT_ON_ECO - 1);
+    check("polyphony: 16 calm halves on two cores admit 12 shared voices", voice_cap() == 12);
+    for (k = 0; k < NPART; k++) {
+        host_preset(&trk[k], k & 1 ? ENGI_VOICE : ENGI_FM6, 0);
+        trk[k].p[P_VOICE] = V_POLY; trk[k].p[P_SUS] = 127;
+        trk_note_on(&trk[k], 48, 100); trk_note_on(&trk[k], 55, 100);
+    }
+    kills = voice_kills;
+    check("polyphony: six FM6/VOICE parts keep both notes (12 voices)", voices_busy() == 12);
+    for (i = 0; i < 128; i++) mix_block(out, CTL);
+    for (k = 0; k < NPART; k++)
+        for (i = 0; i < NVOICE; i++) gates += trk[k].v[i].active && trk[k].v[i].gate;
+    check("polyphony: rendering retains all 12 gates without stealing", gates == 12 && voice_kills == kills);
+    shed_check(TIGHT_ON + 1);
+    check("polyphony: higher measured load closes extra admission without killing held notes",
+          voice_cap() == 8 && voices_busy() == 12 && voice_kills == kills);
+    voice_headroom = poly_calm = 0;
+    for (i = 0; i < 32; i++) { t5_nested_ticks = TIGHT_ON; shed_check(TIGHT_ON + 1); }
+    check("polyphony: nested IRQ load cannot open extra admission", voice_cap() == 8);
+    t5_nested_ticks = 0; sys_load = LOAD_LITE;
+    for (i = 0; i < 32; i++) shed_check(0);
+    check("polyphony: LITE stays at eight", voice_cap() == 8);
+    sys_load = LOAD_ECO;
+    for (i = 0; i < 32; i++) shed_check(0);
+    check("polyphony: ECO stays at six", voice_cap() == 6);
+    sys_load = LOAD_FULL; mc_host = 0;
+    for (i = 0; i < 32; i++) shed_check(0);
+    check("polyphony: single-core fallback stays at eight", voice_cap() == 8);
+    fresh(); mc_host = 1; mc_off = 1;
+    for (i = 0; i < 32; i++) shed_check(0);
+    check("polyphony: disabled second core cannot open extra admission", voice_cap() == 8);
+    mc_host = mc_off = 0; sys_load = LOAD_FULL; fresh();
+}
+
 int main(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -359,6 +403,7 @@ int main(void)
     boot_keys();
     overload(); dma();
     usb_in();                                          /* (last: its reverb tail would reach the tests after it) */
+    polyphony_headroom();
     printf(bad ? "audio: %d FAILED\n" : "audio: all passed\n", bad);
     return bad != 0;
 }

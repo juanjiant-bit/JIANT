@@ -71,12 +71,24 @@ static uint32_t shed_count;
 #define TIGHT_OFF ((HALF_FRAMES * 1000000u / FS) * 60u / 100u * FM1_TICKS_PER_US)
 #define TIGHT_ON_ECO ((HALF_FRAMES * 1000000u / FS) * 50u / 100u * FM1_TICKS_PER_US)   /* (0.6.70) LOAD ECO: the budget */
 #define TIGHT_OFF_ECO ((HALF_FRAMES * 1000000u / FS) * 45u / 100u * FM1_TICKS_PER_US)  /* sooner: room kept for the peaks */
+static uint8_t poly_calm;                             /* consecutive halves with room for extra voices */
 static uint8_t tight_calm;                             /* halves in a row under 60 % */
 static __attribute__((noinline)) uint32_t shed_check(uint32_t all)
 {
     uint32_t r = all - t5_nested_ticks;                /* (0.6.19) the budget on the render alone: a key scan or
                                                          * USB burst nested in it is not the sound's */
     uint32_t eco = sys_load == LOAD_ECO;
+    /* Admission hysteresis: include nested interrupts in the spare-time test.
+     * Existing notes are never killed merely because this admission closes.
+     * Only FULL and a healthy second core may grow beyond the original eight. */
+    if (sys_load != LOAD_FULL || !mc_live() || mc_off || all > TIGHT_ON) {
+        voice_headroom = poly_calm = 0;
+    } else if (!voice_headroom) {
+        if (all < TIGHT_ON_ECO) {
+            if (++poly_calm >= 16u) voice_headroom = 1;
+        } else poly_calm = 0;
+    }
+
     if (r > (eco ? TIGHT_ON_ECO : TIGHT_ON)) {         /* (voice.c load_tight: no voice added while set) */
         load_tight = 1;
         tight_calm = 0;

@@ -75,10 +75,11 @@ static inline int32_t fm6_sin(int32_t ph)
 
 /* ------------------------------------------------------------ envelope --- */
 typedef struct {                 /* msfa Env: level in Q24 log2 (2^24 = 6 dB), 16 more bits than the original */
-    int32_t level, target, inc, statc;
+    int32_t level, target, step; /* >0: increment; <0: remaining static samples (mutually exclusive) */
     int16_t outlevel;            /* microsteps (99 * 32 = full) */
     uint8_t rscale, ix, rising, down;
 } fm6_env_t;
+_Static_assert(sizeof(fm6_env_t) == 20, "compact FM6 envelope RAM budget");
 
 static const uint8_t FM6_LEVELLUT[20] = {0, 5, 9, 13, 17, 20, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 42, 43, 45, 46};
 static int32_t fm6_scaleout(int32_t ol) { return ol >= 20 ? 28 + ol : FM6_LEVELLUT[ol < 0 ? 0 : ol]; }
@@ -106,16 +107,15 @@ static void fm6_env_advance(fm6_env_t *e, const uint8_t *op, uint32_t ix)
     e->rising = e->target > e->level;
     qrate = ((op[FP_R1 + ix] * 41) >> 6) + e->rscale;
     qrate = qrate > 63 ? 63 : qrate;
+    e->step = (4 + (qrate & 3)) << (2 + FM6_LG_N + (qrate >> 2));
     if (e->target == e->level || (ix == 0u && lv == 0)) {
         int32_t sr = op[FP_R1 + ix] + e->rscale;
         sr = sr > 99 ? 99 : sr;
-        e->statc = sr < 77 ? FM6_STATICS[sr] : 20 * (99 - sr);
+        int32_t samples = sr < 77 ? FM6_STATICS[sr] : 20 * (99 - sr);
         if (sr < 77 && ix == 0u && lv == 0)
-            e->statc /= 20;                     /* the attack is scaled faster (a stage change, not per sample) */
-    } else {
-        e->statc = 0;
+            samples /= 20;                     /* the attack is scaled faster (a stage change, not per sample) */
+        if (samples) e->step = -samples;
     }
-    e->inc = (4 + (qrate & 3)) << (2 + FM6_LG_N + (qrate >> 2));
 }
 
 static void fm6_env_init(fm6_env_t *e, const uint8_t *op, int32_t outlevel, int32_t rate_scaling)
@@ -129,26 +129,26 @@ static void fm6_env_init(fm6_env_t *e, const uint8_t *op, int32_t outlevel, int3
 
 static int32_t fm6_env_get(fm6_env_t *e, const uint8_t *op)
 {
-    if (e->statc) {
-        e->statc -= FM6_N;
-        if (e->statc <= 0) {
-            e->statc = 0;
+    if (e->step < 0) {
+        e->step += FM6_N;
+        if (e->step >= 0) {
+            e->step = 0;
             fm6_env_advance(e, op, e->ix + 1u);
         }
     }
     if (e->ix < 3u || (e->ix < 4u && !e->down)) {
-        if (e->statc) {
+        if (e->step < 0) {
             ;
         } else if (e->rising) {
             if (e->level < (1716 << 16))
                 e->level = 1716 << 16;
-            e->level += (((17 << 24) - e->level) >> 24) * e->inc;
+            e->level += (((17 << 24) - e->level) >> 24) * e->step;
             if (e->level >= e->target) {
                 e->level = e->target;
                 fm6_env_advance(e, op, e->ix + 1u);
             }
         } else {
-            e->level -= e->inc;
+            e->level -= e->step;
             if (e->level <= e->target) {
                 e->level = e->target;
                 fm6_env_advance(e, op, e->ix + 1u);
@@ -308,10 +308,13 @@ static const uint8_t FM6_ALG[32][6] = {      /* per operator (the sixth first): 
  * isCarrier also counts the modulators that add into bus 1 or 2) */
 static uint32_t fm6_carriers(uint32_t a)
 {
-    uint32_t k, c = 0;
-    for (k = 0; k < 6u; k++)
-        c |= ((FM6_ALG[a & 31u][k] & 3u) ? 0u : 1u) << k;
-    return c;
+    /* Immutable algorithm metadata: avoid scanning six operators for each
+     * voice's compute/done checks and the track's macro synchronization. */
+    static const uint8_t CARRIER_MASK[32] = {
+        0x28, 0x28, 0x24, 0x24, 0x2a, 0x2a, 0x28, 0x28, 0x28, 0x24, 0x24, 0x28, 0x28, 0x28, 0x28, 0x20,
+        0x20, 0x20, 0x26, 0x34, 0x36, 0x2e, 0x36, 0x3e, 0x3e, 0x34, 0x34, 0x29, 0x3a, 0x39, 0x3e, 0x3f
+    };
+    return CARRIER_MASK[a & 31u];
 }
 
 /* ------------------------------------------------------- the operators --- */
@@ -406,7 +409,7 @@ static int fm6_core_render(int32_t *out, fm6_op_t *op, uint32_t alg, int32_t *fb
 }
 
 /* ------------------------------------------------------------ the note --- */
-typedef struct {                 /* a sounding note (msfa's note): 244 bytes */
+typedef struct {                 /* a sounding note (msfa's note): 272 bytes */
     fm6_env_t env[6];
     fm6_op_t op[6];
     int32_t base[6];             /* the operator's pitch: ratio: log2 offset from the note's (Q24); fixed: log2 Hz */
