@@ -326,11 +326,18 @@ static uint32_t voices_busy(void)                       /* sounding voices of al
     return n;
 }
 
+/* Key-up ends a melodic hold, but a one-shot drum is still a live hit.
+ * Allocation/shedding must not confuse its key-up with a disposable release. */
+static int voice_held(const track_t *t, const voice_t *v)
+{
+    return v->gate || ENGINES[t->engine]->oneshot;
+}
+
 static uint32_t lowest_held(const track_t *t)           /* index of the lowest held note (the bass), NVOICE = none */
 {
     uint32_t i, low = NVOICE;
     for (i = 0; i < NVOICE; i++)
-        if (t->v[i].active && t->v[i].gate && (low == NVOICE || t->v[i].note < t->v[low].note))
+        if (t->v[i].active && t->v[i].stage != 4u && voice_held(t, &t->v[i]) && (low == NVOICE || t->v[i].note < t->v[low].note))
             low = i;
     return low;
 }
@@ -352,7 +359,7 @@ static uint32_t voice_victim(const track_t *self, int soft, track_t **pp)
             uint32_t c;
             if (!v->active || v->stage == 4u)
                 continue;
-            if (!v->gate)
+            if (!voice_held(t, v))
                 c = 1;                                  /* released */
             else if (mode != V_POLY && i > 0)
                 c = 2;                                  /* extra UNISON, or a voice left by a mode / cap change */
@@ -394,7 +401,7 @@ static uint32_t quiet_tail(track_t **pp)
     for (p = 0; p < NPART; p++)
         for (i = 0; i < NVOICE; i++) {
             const voice_t *v = &trk[p].v[i];
-            if (!v->active || v->gate || v->stage == 4u || v->env_out >= 104)
+            if (!v->active || voice_held(&trk[p], v) || v->stage == 4u || v->env_out >= 104)
                 continue;
             if (best == NVOICE || v->age < (*pp)->v[best].age) {
                 best = i;
@@ -461,7 +468,7 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
          * an extra fading voice for several blocks. Held notes stay protected. */
         if (full) {
             for (i = 0; i < np; i++)
-                if (t->v[i].active && !t->v[i].gate && t->v[i].stage != 4u &&
+                if (t->v[i].active && !voice_held(t, &t->v[i]) && t->v[i].stage != 4u &&
                     (own == np || t->v[i].age < t->v[own].age))
                     own = i;
             if (own < np)
@@ -499,10 +506,10 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
     if (best < np)
         return &t->v[best];
     for (i = 0; i < np; i++)                             /* the lowest held note is protected */
-        if (t->v[i].gate && (low == np || t->v[i].note < t->v[low].note))
+        if (t->v[i].active && t->v[i].stage != 4u && voice_held(t, &t->v[i]) && (low == np || t->v[i].note < t->v[low].note))
             low = i;
     for (i = 0; i < np; i++)                             /* oldest released (not one fading out for another part) */
-        if (!t->v[i].gate && t->v[i].stage != 4u && (best == np || t->v[i].age < t->v[best].age))
+        if (!voice_held(t, &t->v[i]) && t->v[i].stage != 4u && (best == np || t->v[i].age < t->v[best].age))
             best = i;
     if (best == np)
         for (i = 0; i < np; i++)                         /* oldest held, not the bass */

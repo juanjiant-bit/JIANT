@@ -396,6 +396,45 @@ static void polyphony_headroom(void)
     mc_host = mc_off = 0; sys_load = LOAD_FULL; fresh();
 }
 
+/* A drum's MIDI key-up is not the end of its sound: its one-shot envelope
+ * still owns a live hit. Reproduce loss with DRUM-X plus three synth tracks. */
+static void drum_budget(void)
+{
+    uint32_t p, i;
+    voice_t *kick, *hat;
+    int32_t out[2*CTL];
+    fresh(); host_preset(&trk[0], ENGI_DRUM, 0);
+    trk_note_on(&trk[0], 36, 100); trk_note_off(&trk[0], 36);
+    for(p=1;p<4;p++) {
+        host_preset(&trk[p],p&1?ENGI_FM6:ENGI_VOICE,0);
+        trk[p].p[P_VOICE]=V_MONO; trk_note_on(&trk[p],60+p,100);
+    }
+    for(i=0;i<8;i++) mix_block(out,CTL);
+    kick=held(&trk[0],36); shed_voice();
+    check("DRUM-X + 3 tracks: overload cannot shed the last live hit just because its key is up",
+          kick && kick->active && kick->stage!=4 && shed_count==0);
+
+    fresh(); host_preset(&trk[0], ENGI_DRUM, 0);
+    trk_note_on(&trk[0],36,100); trk_note_off(&trk[0],36);
+    voice_trims=0; load_tight=1; trk[1].p[P_VOICE]=V_MONO; trk_note_on(&trk[1],60,100);
+    kick=held(&trk[0],36);
+    check("DRUM-X: an unrendered pending hit is not a quiet release tail",kick && kick->stage!=4 && voice_trims==0);
+
+    fresh(); host_preset(&trk[0], ENGI_DRUM, 0);
+    trk_note_on(&trk[0],36,100); trk_note_off(&trk[0],36);
+    for(p=1;p<4;p++) {
+        host_preset(&trk[p],p&1?ENGI_FM6:ENGI_VOICE,0);
+        trk[p].p[P_VOICE]=V_POLY;
+        trk_note_on(&trk[p],48+p,100); trk_note_off(&trk[p],48+p);
+        trk_note_on(&trk[p],60+p,100);
+    }
+    trk_note_on(&trk[1],67,100); /* eight admitted voices, including released synth tails */
+    kick=held(&trk[0],36); trk_note_on(&trk[0],42,100); hat=held(&trk[0],42);
+    check("DRUM-X: new hat at capacity retains the kick and takes a released synth tail",
+          kick && kick->active && kick->note==36 && kick->stage!=4 && hat && hat!=kick && voices_busy()==8);
+    fresh();
+}
+
 int main(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -404,6 +443,7 @@ int main(void)
     overload(); dma();
     usb_in();                                          /* (last: its reverb tail would reach the tests after it) */
     polyphony_headroom();
+    drum_budget();
     printf(bad ? "audio: %d FAILED\n" : "audio: all passed\n", bad);
     return bad != 0;
 }

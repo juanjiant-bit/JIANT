@@ -104,6 +104,6 @@ sends/ANALOG/delay 5ebd484c59feca70
 sends/ANALOG/reverb e1e6e6d17f9b8fa0
 sends/ANALOG/all 997099e82e79b5bc
 sends/ANALOG/dist 47321429dc80d1dc
-song/4track_mix ca6bee236cc26791
+song/4track_mix 641c08995a23f18a
 slicer/gate/ANALOG_ACID dd6d9804458bdb98
-slicer/song_gate_stut 36c3210d0d7fbe73
+slicer/song_gate_stut 580864ca592a8167

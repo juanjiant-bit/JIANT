@@ -296,6 +296,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "four single-note tracks: own release before cross-track stealing (budget 12)" "$OUT/voice_fairness_test" 12
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/chorus_sleep_test" tests/chorus_sleep_test.c -lm
     run "chorus: exact zero-ring shortcut, tails and restart, unchanged state" python3 tests/chorus_sleep_test.py "$OUT/chorus_sleep_test"
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/empty_fx_test" tests/empty_fx_test.c -lm
+    run "empty FX: exact zero-state shortcuts, wake and model changes" python3 tests/empty_fx_test.py "$OUT/empty_fx_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/regress" tests/regress.c -lm
     run "regression: golden renders, health, voices, CPU budget" "$OUT/regress" tests/golden.txt tests/cpu_baseline.txt
     $CC -O2 -w -pthread -Ibuild/gen -Ifirmware/src -o "$OUT/mc_thread_test" tests/mc_thread_test.c -lm

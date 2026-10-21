@@ -23,6 +23,7 @@ static __attribute__((noinline)) uint32_t cho_admit(int32_t input, uint32_t n)
     cho_zeros = input ? 0u : cho_zeros + n < CHO_LEN ? cho_zeros + n : CHO_LEN;
     return run;
 }
+static uint8_t room_used, dly_used; /* conservative zero-state certificates; never discard a tail */
 static const uint16_t REV_COMB[4] = {1116, 1188, 1277, 1356};
 static const uint16_t REV_AP[2] = {556, 441};
 static int16_t rev_comb[1116 + 1188 + 1277 + 1356] __attribute__((section(".pool")));
@@ -706,9 +707,29 @@ static int32_t rev_size(void)
     int32_t g = GFX(GF_RSIZE);
     return 25000 + g * 40 + g * g / 7;
 }
+/* A never-excited (or explicitly cleared) ROOM has exactly zero buffers and
+ * filter states. Advance its read/write clocks without six sample networks.
+ * After any input, normal rendering remains enabled for the whole tail. */
+static __attribute__((noinline)) int room_zero(const int32_t *in, uint32_t n)
+{
+    uint32_t i;
+    if (room_used) return 0;
+    for (i = 0; i < n; i++) if (in[i]) { room_used = 1; return 0; }
+    for (i = 0; i < 4u; i++) {
+        uint32_t k = fx.comb_i[i] + n;
+        fx.comb_i[i] = (uint16_t)(k >= REV_COMB[i] ? k - REV_COMB[i] : k);
+    }
+    for (i = 0; i < 2u; i++) {
+        uint32_t k = fx.ap_i[i] + n;
+        fx.ap_i[i] = (uint16_t)(k >= REV_AP[i] ? k - REV_AP[i] : k);
+    }
+    return 1;
+}
+
 /* ROOM (G_RTYPE 0): 4 damped combs + 2 allpasses (Freeverb-like, mono), added to out (WIDE: rev_room_mod) */
 static __attribute__((noinline)) void rev_room(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
+    if (room_zero(rev_in, n)) return;
     uint32_t i;
     int32_t size = rev_size(), dk = GFX(GF_RDAMP) * 200;   /* (32767 - damp) */
     /* (0.7.9) the combs' and allpasses' indices and low-passes in registers through the block (they were loaded and
@@ -758,6 +779,7 @@ static __attribute__((noinline)) void rev_room(const int32_t *rev_in, int32_t *o
  * (MOD 0 here: offsets 0, the plain one's sound) */
 static __attribute__((noinline)) void rev_room_mod(const int32_t *rev_in, int32_t *out, uint32_t n, int32_t wd)
 {
+    room_used = 1;
     uint32_t i, k;
     int32_t size = rev_size(), damp = 32767 - GFX(GF_RDAMP) * 200, m1[4], dm[4];
     int32_t depth = song.g[G_RMOD] ? 64 + song.g[G_RMOD] * song.g[G_RMOD] * 4 : 0;   /* Q8 samples: 0.25 .. 252 (~5.7 ms) */
@@ -823,6 +845,7 @@ static __attribute__((noinline)) void sp_chain(int32_t *ap, uint32_t ns)
 /* SPRING (see the top), added to out */
 static __attribute__((noinline)) void rev_spring(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
+    room_used = 1;
     uint32_t i, k, s = (uint32_t)GFX(GF_RSIZE);
     int32_t g = 19661 + (int32_t)s * 85 + (int32_t)(s * s) / 16;   /* the loop's gain: 0.6 .. 0.96 (0.5: was 0.93) */
     int32_t kl = 26000 - GFX(GF_RDAMP) * 160;         /* its low-pass: ~9 kHz .. ~1.3 kHz */
@@ -909,6 +932,7 @@ static int32_t rev_air(void)
 static int32_t sh_tlp;                                  /* (0.6.12) SHIMMER's tone: AIR's low-pass / its shelf */
 static __attribute__((noinline)) void rev_shimmer(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
+    room_used = 1;
     int32_t in[CTL], t[CTL], amt = song.g[G_RMOD] * 190;   /* Q15: up to ~0.74 */
     int32_t air = rev_air(), st = clamp(12 + air, -12, 24), tk = air < 0 ? 32767 + air * 1150 : 9000;
     int32_t step = (int32_t)semi_q16(st) - 65536;       /* (the delay changes by 1 - speed a sample, Q16) */
@@ -947,6 +971,7 @@ static uint32_t reso_pitch(void) { return song.g[G_RTYPE] == 3 ? (uint32_t)clamp
 static uint32_t reso_folw(void) { return GFX(GF_RDAMP) >= 1 && GFX(GF_RDAMP) <= 6 ? (uint32_t)GFX(GF_RDAMP) : 0u; }
 static __attribute__((noinline)) void rev_reso(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
+    room_used = 1;
     const track_t *t = &trk[0];
     uint32_t i, k, per[4], mask, s, fol = reso_folw(), up = reso_pitch();
     int32_t sz = GFX(GF_RSIZE), dk = 32767 - 60 * 200, note[4], deg = 0, nn;
@@ -1018,6 +1043,7 @@ static uint32_t cl_rand(void) { fx.cl_rng = fx.cl_rng * 1664525u + 1013904223u; 
  * heard dry, they bloom into a tail around the sound. SIZE full freezes the line (the cloud holds) */
 static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
+    room_used = 1;
     static const uint32_t PITCH[4] = {65536u, 131072u, 32768u, 98184u};   /* x1, an octave up, down, a fifth up (Q16) */
     uint32_t i, k, freeze = GFX(GF_RSIZE) >= 127;
     int32_t gap = 1700 - song.g[G_RRATE] * 11, dk = 32767 - GFX(GF_RDAMP) * 220, wd = song.g[G_RWIDE], air = rev_air();
@@ -1124,6 +1150,7 @@ static void rev_run(uint32_t ty, const int32_t *rev_in, int32_t *out, uint32_t n
 static void rev_state_clear(void)
 {
     uint32_t i;
+    room_used = 0;
     for (i = 0; i < sizeof rev_comb / 2u; i++)
         rev_comb[i] = 0;
     for (i = 0; i < sizeof rev_u.ap / 2u; i++)          /* (int16: 997 of them, an odd count the int32 view misses one of) */
@@ -1495,6 +1522,23 @@ static int32_t fx_glide(int32_t cur, int32_t to, uint32_t n)
     if (s * (int32_t)n < d && d < 0) s = d / (int32_t)n;
     return s;
 }
+/* Full-rate, mono, non-granular delay with a proven zero line and filters.
+ * All other configurations conservatively keep the original processing.
+ * This is not a send-level bypass: a single real input disables it until an
+ * explicit FX reset, so long echoes, feedback and low-level tails survive. */
+static __attribute__((noinline)) int delay_zero(const int32_t *in, uint32_t n, uint32_t low, int32_t ping, int32_t wide)
+{
+    uint32_t i;
+    if (dly_used) return 0;
+    if (low || ping || wide || fx.dsw || fx.dr_sh || fx.gr_on || fx.gr_old ||
+        fx.dr_xf || fx.dr_now != fx.dl_now) { dly_used = 1; return 0; }
+    for (i = 0; i < n; i++) if (in[i]) { dly_used = 1; return 0; }
+    for (i = 0; i < n; i++) dlo_x[i] = dlo_xr[i] = 0;
+    fx.dly_w += n;
+    fx.dl_xf = fx.dl_xf > n ? fx.dl_xf - n : 0;
+    return 1;
+}
+
 static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t *rev_in, int32_t *wet,
                      uint32_t n)
 {
@@ -1586,7 +1630,9 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
         }
         rev_in = rpre_out;
     }
-    if (dly_lo_on) {                                    /* (0.8.4) the delay at half / a quarter rate, or changing its
+    if (delay_zero(dly_in, n, (uint32_t)dly_lo_on, png, wd)) {
+        dly_lo_on = 1; /* existing loop consumes an exact zero stereo block */
+    } else if (dly_lo_on) {                             /* (0.8.4) the delay at half / a quarter rate, or changing its
                                                          * rate: its block first (dly_lo), the loop below takes it */
         dlyk_t k;
         k.fb = fb; k.fb2 = fb2; k.hk = hk << fx.dr_sh; k.dig = dig; k.dton = dton; k.png = png; k.wd = wd;
@@ -2307,6 +2353,7 @@ static __attribute__((noinline)) void fx_trip(uint32_t c1, uint32_t n)
     rev_clear();                                         /* (the pre-delay's line too: rev_x) */
     fx.dt1 = fx.dt2 = fx.rt1 = fx.rt2 = 0;
     fx.dly_lp = fx.dly_hp = fx.rf_lp = fx.rpre_s = fx.cl_lp = fx.cl_half = 0;
+    dly_used = 0;
     fx_bad = 0;
     fx_trips++;
     if (c1) {

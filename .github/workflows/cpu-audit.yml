@@ -2,12 +2,12 @@
 name: 0.9.9 CPU and RAM audit
 on:
   push:
-    branches: [codex/fm1-v099-cpu3]
+    branches: [codex/fm1-v099-cpu4]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: firmware-cpu3-audit
+  group: firmware-cpu4-audit
   cancel-in-progress: true
 jobs:
   build:
@@ -55,6 +55,8 @@ jobs:
           done
           cc -O2 -w -Ibuild/gen -Ifirmware/src tests/chorus_sleep_test.c -lm -o build/host/chorus_sleep_test
           python3 tests/chorus_sleep_test.py build/host/chorus_sleep_test
+          cc -O2 -w -Ibuild/gen -Ifirmware/src tests/empty_fx_test.c -lm -o build/host/empty_fx_test
+          python3 tests/empty_fx_test.py build/host/empty_fx_test
           build/host/fm6_env_compare
           build/host/fm6_test
           build/host/voice_test
@@ -79,7 +81,7 @@ jobs:
           printf '%s\n' "$GITHUB_SHA" > build/SOURCE_COMMIT
       - uses: actions/upload-artifact@v4
         with:
-          name: fm1-v099-cpu3-audit
+          name: fm1-v099-cpu4-audit
           if-no-files-found: error
           path: |
             build/felucca.fwsc
@@ -90,7 +92,3 @@ jobs:
             LICENSE
             LICENSING.md
             LICENSES/
-      - name: Research only - compile the existing four-operator DIGITAL engine
-        env:
-          FELUCCA_FM4: "1"
-        run: python3 tools/build.py
