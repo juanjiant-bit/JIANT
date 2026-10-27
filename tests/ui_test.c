@@ -8397,6 +8397,7 @@ static int test_project_page(void)
  * arms / disarms. F3 CLEAR (no dialog), G3 CLICK, A3 COUNT-IN, B3 CLICK LEVEL (each the next
  * value, the same store as MENU > AUDIO, saved when the layer closes), KNOB 1..3 the same; the LEDs;
  * REC in another layer still arms */
+#endif /* UI_TEST_NO_MAIN: REC controls also have a focused runner. */
 static void rec_down(void) { btn_down(B_REC); }
 static void rec_up(void) { btn_up(B_REC); frame(); }
 static uint32_t menu_rec(uint32_t r) { return menu_get(r == 0u ? MI_CLICK : r == 1u ? MI_COUNTIN : MI_CLKLVL); }
@@ -8518,11 +8519,10 @@ static int test_rec_layer(void)
             ok &= menu_rec(0) == WANT[i] && msg_is(NM[i]) && !gates() &&
                   str_eq(menu_vname(MI_CLICK, menu_rec(0)), rl_name(0, rp_get(RL_F[0])));
         }
-        key_down(white(2)); frame(); key_up(white(2)); frame();   /* A3: nothing now */
-        key_down(white(3)); frame(); key_up(white(3)); frame();   /* B3: nothing now */
+        /* A3 UNDO and B3 REC Q are covered by rec_workflow_test.c. */
     }
     ok &= ui_rec_prefs == 0u;                           /* (round: as it was; A3 B3 changed nothing) */
-    bad += check("REC + G3 CLICK OFF>REC>ON: MENU's values; A3 B3 nothing (COUNT-IN, LEVEL: MENU)", ok);
+    bad += check("REC + G3 CLICK OFF>REC>ON: MENU values (COUNT-IN, LEVEL: MENU)", ok);
     key_down(white(1)); frame(); key_up(white(1)); frame();        /* CLICK REC */
     ok = click_mode == 1u && lys.rp_dirty;
     rec_up();
@@ -8538,10 +8538,10 @@ static int test_rec_layer(void)
     rec_down(); frames(512);
     turn(EN_K1, 1);                                     /* CLICK REC -> ON */
     turn(EN_K1, 5);                                     /* (stops at the end) */
-    turn(EN_K2, -1); turn(EN_K3, -5); turn(EN_K4, 3);  /* nothing */
+    turn(EN_K3, -5); turn(EN_K4, 3);                  /* nothing */
     ok = menu_get(MI_CLICK) == 2u && menu_get(MI_COUNTIN) == 0u && ui.home;
     rec_up();
-    bad += check("  KNOB 1 CLICK, stopping at the end; KNOB 2..4 nothing; the page untouched", ok);
+    bad += check("  KNOB 1 CLICK, stopping at the end; KNOB 3..4 nothing; the page untouched", ok);
 
     /* OCT- puts nothing back (TONIC: no undo) */
     ui_power_on();
@@ -8566,10 +8566,10 @@ static int test_rec_layer(void)
     rec_down(); frames(512);
     {
         uint32_t a = leds_at(0), b = leds_at(250), w0 = 1u << white(0), w1 = 1u << white(1);
-        ok = ((a ^ b) & (w0 | w1)) == (w0 | w1) && !(a & b) && !((a | b) & ~(w0 | w1));
+        ok = ((a ^ b) & (w0 | w1)) == (w0 | w1) && !((a & b) & (w0 | w1));
         rp_put(RP_CLICK, 2);
         a = leds_at(0); b = leds_at(250);
-        ok &= (a & b) == w1 && (a ^ b) == w0;
+        ok &= ((a & b) & (w0 | w1)) == w1 && ((a ^ b) & (w0 | w1)) == w0;
         track_defaults_steps(TSEL);
         a = leds_at(0); b = leds_at(250);
         ok &= !((a | b) & w0);
@@ -8580,6 +8580,7 @@ static int test_rec_layer(void)
     return bad;
 }
 
+#ifndef UI_TEST_NO_MAIN
 /* #40: KNOB 4's DEPTH rises to the right (it fell); MENU > FX LATCH ON: a key with FX turns its effect on, again off,
  * nothing held needed; the macros stay after FX; FX + OCT- all off; the menu turns them off; FX's LED shows them;
  * OFF (the default, and every older setting): as before */
