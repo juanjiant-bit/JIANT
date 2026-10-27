@@ -70,7 +70,7 @@ The [emulator](https://juanjiant-bit.github.io/JIANT/emu/) shows **Sample bank**
 - **Kit 2 · Voices + instruments (7)** loads the seven-sound bank with VOICE 06, VOICE 10 and VOICE 14.
 - **Kit 1 · Synth (12)** loads the original synthetic factory bank.
 
-A newly chosen kit starts on **T1 / SAMPLE / KIT KEYS**; slots begin at C4. A status line reports the number of samples actually indexed by the firmware. When preserving a saved session, press **Play kit on T1** to select the kit explicitly; this changes T1’s current sound.
+A newly chosen kit starts on **T1 / SAMPLE / KIT KEYS**; slots begin at C4. A status line reports the number of samples actually indexed by the firmware. When preserving a saved session, press **Play kit on T1** to select the kit explicitly; this changes T1’s current sound and resets its audition level, mute, arpeggiator, transpose and quantization. Undo with **GLO + G4**.
 Reload the page to choose another bank. The selected bank is kept in this browser when local storage is available.
 It changes only the emulator's sample storage, never a connected FM-1.
 Playback uses the existing firmware; this does not add the offline preview's interpolation.

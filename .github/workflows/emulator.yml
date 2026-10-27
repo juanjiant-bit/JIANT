@@ -64,6 +64,11 @@ jobs:
           shutil.copy("web/emu/worklet.js", "build/emu/worklet.js")
           PY
           node web/emu/sample-bank-test.mjs build/emu/felucca.wasm
+      - name: Browser sampler audio
+        timeout-minutes: 4
+        run: |
+          pip install --timeout 30 --retries 2 playwright==1.58.0
+          python3 -u web/emu/browser-sample-test.py
       # (JIANT) the installer and the web editor next to the emulator: the package needs JieLi's toolchain (downloaded)
       # and three files of their AC79 SDK (a partial clone: only those blobs). A firmware build failure stops deployment.
       - name: JieLi toolchain and SDK files (cached)
