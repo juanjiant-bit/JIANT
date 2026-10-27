@@ -236,9 +236,9 @@ Object.assign(TEXT.en, {
   reportTitle: "Log and report.",
   reportWhy: "If it does not work, press COPY REPORT and paste it into your message when you ask for help (GitHub, Instagram, YouTube).",
   copyReport: "COPY REPORT", copied: "Copied: paste it in your message.", copyFail: "Could not copy: select the text below and copy it.",
-  editionSample: "SAMPLE beta (par13b): sample playback replaces ADD. Load samples in the web editor. Back up projects before switching editions; ADD sounds are not converted into samples.",
+  editionSample: "SAMPLE (par13b): sample playback replaces ADD. Load samples in the web editor. Back up projects before switching editions; ADD sounds are not converted into samples.",
   editionAdd: "ADD (par10): additive synthesis, without SAMPLE. This earlier firmware has a different feature set. Back up projects before switching; sample audio is not included in project backups.",
-  editionStandard: "Choose SAMPLE beta for samples or ADD par10 for additive synthesis. Stable par12 has neither engine. Back up projects before changing versions.",
+  editionStandard: "Choose SAMPLE for samples or ADD par10 for additive synthesis. Stable par12 has neither engine. Back up projects before changing versions.",
   chStable: "Public installer: stable and alternative editions.", chPreview: "PREVIEW channel: main as it is now, not approved yet.",
   toPreview: "Preview installer (next version)", toStable: "Stable installer",
   bootCheck: "Is it in boot mode (WL80UBOOT)?",
@@ -403,9 +403,9 @@ TEXT.es = {
   reportTitle: "Registro e informe.",
   reportWhy: "Si no funciona, apretá COPIAR INFORME y pegalo en tu mensaje cuando pidas ayuda (GitHub, Instagram, YouTube).",
   copyReport: "COPIAR INFORME", copied: "Copiado: pegalo en tu mensaje.", copyFail: "No se pudo copiar: seleccioná el texto de abajo y copialo.",
-  editionSample: "SAMPLE beta (par13b): reproduce samples en lugar de ADD. Cargalos desde el editor web. Hacé backup antes de cambiar de edición; los sonidos ADD no se convierten en samples.",
+  editionSample: "SAMPLE (par13b): reproduce samples en lugar de ADD. Cargalos desde el editor web. Hacé backup antes de cambiar de edición; los sonidos ADD no se convierten en samples.",
   editionAdd: "ADD (par10): síntesis aditiva, sin SAMPLE. Es una versión anterior con diferencias de funciones. Hacé backup antes de cambiar; el audio de samples no está incluido en los backups de proyectos.",
-  editionStandard: "Elegí SAMPLE beta para samples o ADD par10 para síntesis aditiva. La estable par12 no incluye ninguno de esos motores. Hacé backup antes de cambiar de versión.",
+  editionStandard: "Elegí SAMPLE para samples o ADD par10 para síntesis aditiva. La estable par12 no incluye ninguno de esos motores. Hacé backup antes de cambiar de versión.",
   chStable: "Instalador público: versión estable y ediciones alternativas.", chPreview: "Canal PREVIEW: main tal como está ahora, todavía sin aprobar.",
   toPreview: "Instalador preview (la próxima versión)", toStable: "Instalador estable",
   bootCheck: "¿Está en modo boot (WL80UBOOT)?",
@@ -523,11 +523,12 @@ const versions = meta.versions && meta.versions.length ? meta.versions : [{ vers
 const productOfVersion = (v) => v.product || meta.product;
 let product = meta.product;
 let loadEpoch = 0;
+const versionLabel = (v) => v.edition === "SAMPLE" ? v.version.replace(/-preview$/, "") : v.version;
 function fillVersions() {
   const sel = $("ver"), at = sel.selectedIndex;
   sel.textContent = "";
   versions.forEach((v, i) => { const o = document.createElement("option"); o.value = i;
-    o.textContent = `${v.edition ? v.edition + " · " : ""}${v.version}${v.status === "beta" ? " · BETA" : ""}${i ? "" : " (" + t("latest") + ")"}`; sel.appendChild(o); });
+    o.textContent = `${v.edition ? v.edition + " · " : ""}${versionLabel(v)}${v.status === "beta" ? " · BETA" : ""}${i ? "" : " (" + t("latest") + ")"}`; sel.appendChild(o); });
   sel.selectedIndex = at > 0 ? at : 0;
   showEdition();
 }
@@ -546,7 +547,7 @@ async function loadVersion(i) {
       if (epoch !== loadEpoch) return;
       if (productOf(pkg) !== productOfVersion(v)) { sayK("badpkg"); showTip("badpkg"); log(`package ${v.pkg}: ${productOf(pkg)}`); return; }
       image = logicalImage(pkg); product = productOfVersion(v);
-      say(`JIANT FM ${v.version}`); showTip(null);
+      say(`JIANT FM ${v.edition ? v.edition + " · " : ""}${versionLabel(v)}`); showTip(null);
       $("go").disabled = writing;
       return;
     } catch (e) {

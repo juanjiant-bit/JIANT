@@ -19,8 +19,8 @@ editor update themselves with every change merged into `main`.
 
 | Where | Version |
 |---|---|
-| **Public installer** | **SAMPLE par13b** (beta, first/default), **ADDITIVE par10**, then **STANDARD par12** (stable) |
-| **Beta installer and emulator** | **0.9.9-par13b** — SAMPLE engine |
+| **Public installer** | **SAMPLE par13b** (first/default), **ADDITIVE par10**, then **STANDARD par12** (stable) |
+| **Preview installer and emulator** | **0.9.9-par13b** — SAMPLE engine |
 | Earlier versions the public installer also offers | 0.9.9-par8, 0.9.9-gen2 (*ULTRA STABLE*), 0.9.9-par6, 0.9.9-par5, 0.9.17, 0.9.14, 0.9.9, 0.8.9 … |
 
 [Public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) · [Beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/) · [Emulator](https://juanjiant-bit.github.io/JIANT/emu/)
@@ -35,7 +35,7 @@ one to go back to.
 
 The [public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) now offers these clearly labelled choices in its **Version** selector:
 
-- **SAMPLE · par13b · BETA** (first/default): sample playback; load your own WAVs or a supplied bank from the editor.
+- **SAMPLE · par13b** (first/default): sample playback; load your own WAVs or a supplied bank from the editor.
 - **ADDITIVE · par10** (second): the last version with the additive synthesis engine, without SAMPLE.
 - **STANDARD · par12** (after these two): stable; neither ADD nor the new SAMPLE engine.
 
@@ -43,10 +43,10 @@ These are existing firmware revisions, not two builds with otherwise identical f
 Back up projects before switching: engine slot 13 means ADD in par10 and SAMPLE in par13b; sounds are not converted between them.
 Project backups do not include the sample audio bank; keep original WAVs. Earlier versions remain available.
 
-## SAMPLE sampler — beta 0.9.9-par13b
+## SAMPLE sampler — 0.9.9-par13b
 
-The **beta** adds **SAMPLE**, a lo-fi sample playback engine. It is not included in the stable par12 firmware.
-Install it with the [beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/);
+The **par13b release** adds **SAMPLE**, a lo-fi sample playback engine. It is not included in the stable par12 firmware.
+Choose **SAMPLE** in the [public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/);
 manage its bank from the [web editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/#sound).
 Back up your projects before updating.
 
@@ -72,10 +72,10 @@ See [factory sounds, rates and source](web/FACTORY-SAMPLES.md).
 - **Project backups do not include the SAMPLE audio bank. Keep your original WAV files.**
   Loading a bank does not change a track's engine or preset automatically.
 - Browser/mock-MIDI and native sampler checks pass. Transfer over real FM-1 USB and persistence after power cycling
-  still need hardware confirmation; this remains a beta.
+  have received owner testing; flash persistence after power cycling still needs explicit confirmation.
 
 If automatic editor detection fails, use its **manual MIDI input/output selection**.
-The sampler panel requires the beta firmware; updating the web page alone does not add SAMPLE to stable firmware.
+The sampler panel requires SAMPLE firmware; updating the web page alone does not add SAMPLE to stable firmware.
 
 ## What's new in 0.9.9-par9
 
@@ -334,7 +334,7 @@ VOICE singing its lyric, in the COLORS skin, exactly as the firmware draws them 
 
 ### Engines
 The stable par12 line has ten synthesis engines: **DRUM (DRUM-X), VOICE, ANIMAL, LOFI, ANALOG, FM6, PHASE, WHEEL, NOISE
-and STRING**. ADD is available in par10; SAMPLE replaces it in the par13b beta. The synthesis engines are listed in the order PRESETS shows them (0.9.9-par; the first six are the tracks at power-on, T1–T6).
+and STRING**. ADD is available in par10; SAMPLE replaces it in par13b. The synthesis engines are listed in the order PRESETS shows them (0.9.9-par; the first six are the tracks at power-on, T1–T6).
 - **ANALOG**: two oscillators with **INT** (an interval of ±24 semitones: fifths, octaves) and DTN; besides SAW, SQR,
   TRI, SIN and PWM it has **SYNC**, **RING** and **SAW3** (three saws). Its filter is per voice.
 - **FM6**: Dexed's engine (imports .syx), with its algorithms drawn. Fully editable on the device (from Felucca 1.5):
@@ -504,7 +504,7 @@ Turning fast sweeps the whole range; turning slowly is fine adjustment. Turn it 
   **TRIO** were retired (TRIO lives inside ANALOG; a PHYS sound plays as ANALOG's first preset).
 - **Legacy sample engines**: the old Felucca SAMPLE, SLICE and GRAIN engines were retired to make room for DRUM-X,
   the effects, punch-ins and songs; their old sounds load as ANALOG. The **par13b beta** introduces a new SAMPLE engine
-  and bank format (see [SAMPLE sampler](#sample-sampler--beta-099-par13b)); it does not restore the old banks.
+  and bank format (see [SAMPLE sampler](#sample-sampler--099-par13b)); it does not restore the old banks.
 - **8 songs**: song 1 is the usual 4 projects, so whatever you saved with Felucca shows up there.
 - **FX layer**: REVERSE, TAPE STOP, FREEZE and the harmonizer are gone; the MIDI punch-ins came in.
 - **SELECT**: walks the section's pages; with a button held: HOME GEN, EDIT / SEQ / LFO / FX their dice, GLO the
