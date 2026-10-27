@@ -157,7 +157,7 @@
       <span id="mock" class="dim" hidden data-t="mock"></span>
     </div>
     <div id="status"></div>
-    <details id="midiports"><summary data-t="midiPorts"></summary><p class="bar">
+    <details id="midiports"><summary data-t="midiPorts"></summary><p id="midiportcounts" class="dim"></p><p class="dim" data-t="midiPortHelp"></p><p class="bar">
       <label><span data-t="midiInput"></span> <select id="midiinput"><option value="">Auto</option></select></label>
       <label><span data-t="midiOutput"></span> <select id="midioutput"><option value="">Auto</option></select></label>
     </p></details>
@@ -2625,7 +2625,7 @@ const TEXT = {
     fm6Init: "初期音色", fm6Voice: "ボイス", fm6Ops: "オペレーター", fm6Carriers: "キャリア", fm6Feedback: "フィードバック",
     fm6PitchEg: "ピッチ EG", fm6Freq: "周波数",
     fm6Legend: "R1〜R4 / L1〜L4: EG のレートとレベル、BP LD RD LC RC: キーボードレベルスケーリング、RS: レートスケーリング、AMS: LFO 音量変調、KVS: ベロシティ、OL: 出力レベル、MODE: 比率 / 固定、FC FF: 周波数（粗・細）、DET: デチューン（7 が中央）。● はキャリア。",
-    midiPorts: "MIDI ポート（自動接続できない場合）", midiInput: "入力", midiOutput: "出力", smpFactory: "工場サンプルを読み込む", smpFactoryReady: "送信ボタンで本体のバンクを置き換えます。", smpReplace: "本体のサンプルをすべて置き換えますか？プロジェクトのバックアップにはサンプル音声は含まれません。", smpT: "SAMPLE: 自分のサンプル", smpHelp: "SAMPLE エンジン用の超ローファイなサンプル。WAV を選び（モノ、無音カット、ノーマライズ）、レートを選んで送ります。8 kHz で合計約 1.5 秒、2 kHz なら約 6 秒（暗く、ザラついた音）、15 スロット。入らない部分はカットされます。電源を切っても本体に残ります。", smpAdd: "オーディオファイルを追加", smpRate: "レート", smpClear: "クリア", smpSend: "本体へ送る", smpUsed: "バンク:", smpNow: "本体:", smpNone: "送るものがありません", smpFail: "サンプルを送れませんでした (rc ", smpSent: "サンプルを送りました:",
+    midiPorts: "MIDI ポート（自動接続できない場合）", midiPortHelp: "ブラウザが認識したポートです。入力と出力が両方必要です。空の場合は MIDI ポートが認識されていません。", midiInput: "入力", midiOutput: "出力", smpFactory: "工場サンプルを読み込む", smpFactoryReady: "送信ボタンで本体のバンクを置き換えます。", smpReplace: "本体のサンプルをすべて置き換えますか？プロジェクトのバックアップにはサンプル音声は含まれません。", smpT: "SAMPLE: 自分のサンプル", smpHelp: "SAMPLE エンジン用の超ローファイなサンプル。WAV を選び（モノ、無音カット、ノーマライズ）、レートを選んで送ります。8 kHz で合計約 1.5 秒、2 kHz なら約 6 秒（暗く、ザラついた音）、15 スロット。入らない部分はカットされます。電源を切っても本体に残ります。", smpAdd: "オーディオファイルを追加", smpRate: "レート", smpClear: "クリア", smpSend: "本体へ送る", smpUsed: "バンク:", smpNow: "本体:", smpNone: "送るものがありません", smpFail: "サンプルを送れませんでした (rc ", smpSent: "サンプルを送りました:",
     fm6BankSend: "本体のボイスバンクへ送る (B1–B32)", fm6BankSent: "ボイスバンクを送りました:", fm6BankFail: "ボイスバンクを送れませんでした (rc ", fm6BankNow: "本体のボイスバンク:", fm6BankNone: "なし",
     fm6Pick: "読み込んだファイルの音色（押すと編集へ）:", fm6Picked: "編集中:", fm6Sent: "トラックへ送りました:", fm6Read: "トラックから読みました",
     fm6Loaded: "読み込みました", fm6BadSum: "チェックサム不一致あり",
@@ -2729,7 +2729,7 @@ const TEXT = {
     fm6Init: "Init voice", fm6Voice: "Voice", fm6Ops: "Operators", fm6Carriers: "carriers", fm6Feedback: "feedback",
     fm6PitchEg: "Pitch EG", fm6Freq: "Frequency",
     fm6Legend: "R1..R4 / L1..L4: EG rates and levels; BP LD RD LC RC: keyboard level scaling; RS: rate scaling; AMS: LFO amplitude modulation; KVS: velocity; OL: output level; MODE: ratio / fixed; FC FF: coarse / fine frequency; DET: detune (7 = centre). ● = carrier.",
-    midiPorts: "MIDI ports (choose manually if Auto fails)", midiInput: "Input", midiOutput: "Output", smpFactory: "Load factory samples", smpFactoryReady: "Factory bank ready. Press Send to the device to replace the bank.", smpReplace: "Replace ALL samples stored on the FM1? Existing samples cannot be restored from a project backup.", smpT: "SAMPLE: your samples", smpHelp: "Hyper lo-fi samples for the SAMPLE engine: pick WAV files (mono, trimmed, normalised), choose a rate and send them. About 1.5 s in all at 8 kHz, ~6 s at 2 kHz (darker, crunchier: as if sent sped up and slowed down on the device), 15 slots; what does not fit is cut. They stay on the device after power-off.", smpAdd: "Add audio files", smpRate: "Rate", smpClear: "Clear", smpSend: "Send to the device", smpUsed: "Bank:", smpNow: "On the device:", smpNone: "Nothing to send", smpFail: "The samples were not sent (rc ", smpSent: "Samples sent:",
+    midiPorts: "MIDI ports (choose manually if Auto fails)", midiPortHelp: "These are the ports reported by the browser. Both an input and an output are required; empty lists mean the browser is not seeing a MIDI port.", midiInput: "Input", midiOutput: "Output", smpFactory: "Load factory samples", smpFactoryReady: "Factory bank ready. Press Send to the device to replace the bank.", smpReplace: "Replace ALL samples stored on the FM1? Existing samples cannot be restored from a project backup.", smpT: "SAMPLE: your samples", smpHelp: "Hyper lo-fi samples for the SAMPLE engine: pick WAV files (mono, trimmed, normalised), choose a rate and send them. About 1.5 s in all at 8 kHz, ~6 s at 2 kHz (darker, crunchier: as if sent sped up and slowed down on the device), 15 slots; what does not fit is cut. They stay on the device after power-off.", smpAdd: "Add audio files", smpRate: "Rate", smpClear: "Clear", smpSend: "Send to the device", smpUsed: "Bank:", smpNow: "On the device:", smpNone: "Nothing to send", smpFail: "The samples were not sent (rc ", smpSent: "Samples sent:",
     fm6BankSend: "Send to the device's voice bank (B1–B32)", fm6BankSent: "Voice bank sent:", fm6BankFail: "The voice bank was not sent (rc ", fm6BankNow: "The device's voice bank:", fm6BankNone: "none",
     fm6Pick: "Voices of the imported file (click to edit):", fm6Picked: "Editing:", fm6Sent: "Sent to track", fm6Read: "Read from track",
     fm6Loaded: "Loaded", fm6BadSum: "a checksum did not match",
@@ -3056,6 +3056,7 @@ let connecting = false, portsClosing = Promise.resolve();
 const portStates = new Map();
 function renderMidiPorts() {
   if (!access) return;
+  $("midiportcounts").textContent = `${t("midiInput")}: ${[...access.inputs.values()].filter(p=>p.state!=="disconnected").length} · ${t("midiOutput")}: ${[...access.outputs.values()].filter(p=>p.state!=="disconnected").length}`;
   for (const [id, ports] of [["midiinput",access.inputs],["midioutput",access.outputs]]) {
     const box=$(id), value=box.value;
     box.replaceChildren(el("option",{value:"",text:"Auto (JIANT / FM1)"}), ...[...ports.values()].filter(p=>p.state!=="disconnected").map(p=>el("option",{value:p.id,text:p.name || p.id})));

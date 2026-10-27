@@ -34,7 +34,11 @@ jobs:
           build/host/factory_bank_test build/host/factory-samples.bin
           cc -O2 -w -Ibuild/gen -Ifirmware/src tests/sample_test.c -lm -o build/host/sample_test
           build/host/sample_test
-      - run: |
-          pip install playwright==1.58.0
-          command -v google-chrome || python3 -m playwright install --with-deps chromium
-          python3 tests/browser_sampler.py
+      - name: Install browser driver
+        run: pip install --timeout 30 --retries 2 playwright==1.58.0
+      - name: Browser availability
+        timeout-minutes: 5
+        run: command -v google-chrome || python3 -m playwright install chromium
+      - name: Chromium connection and factory transfer
+        timeout-minutes: 3
+        run: timeout 120s python3 -u tests/browser_sampler.py

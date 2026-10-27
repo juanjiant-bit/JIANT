@@ -12,7 +12,7 @@ with sync_playwright() as p:
   if not f.is_file(): r.fulfill(status=404,body='');return
   body=f.read_bytes()
   if path=='editor.html':
-   body=body.decode().replace('</script>','\nwindow.__test={makeMockDevice,smpBank,connect,disconnect,getDevice:()=>dev};\n</script>').encode()
+   body=body.decode(); at=body.rfind('})();'); body=(body[:at]+'\nwindow.__test={makeMockDevice,smpBank,connect,disconnect,getDevice:()=>dev};\n'+body[at:]).encode()
   mime='text/html' if path.endswith('html') else 'application/javascript' if path.endswith('js') else 'application/json' if path.endswith('json') else 'font/ttf'
   r.fulfill(status=200,body=body,content_type=mime)
  page.route('https://jiant.test/**',route)
