@@ -156,6 +156,10 @@
       <span id="mock" class="dim" hidden data-t="mock"></span>
     </div>
     <div id="status"></div>
+    <details id="midiports"><summary data-t="midiPorts"></summary><p class="bar">
+      <label><span data-t="midiInput"></span> <select id="midiinput"><option value="">Auto</option></select></label>
+      <label><span data-t="midiOutput"></span> <select id="midioutput"><option value="">Auto</option></select></label>
+    </p></details>
     <nav class="tabs" id="tabs" role="tablist">
       <button role="tab" data-tab="sound" data-t="sound" data-ic="symbol_audio"></button>
       <button role="tab" data-tab="fm6" data-t="tabFm6" data-ic="ui_knob"></button>
@@ -195,7 +199,7 @@
         <input type="file" id="smpfile" accept="audio/*,.wav,.WAV" multiple hidden>
         <label><span data-t="smpRate"></span> <select id="smprate"><option value="2000">2 kHz (x4 ~6 s)</option><option value="3000">3 kHz</option><option value="4000">4 kHz</option><option value="6000">6 kHz</option>
           <option value="8000" selected>8 kHz</option><option value="11025">11 kHz</option><option value="16000">16 kHz</option></select></label>
-        <button id="smpclear" data-t="smpClear"></button> <button id="smpsend" data-t="smpSend"></button></p>
+        <button id="smpfactory" data-t="smpFactory"></button> <button id="smpclear" data-t="smpClear"></button> <button id="smpsend" data-t="smpSend"></button></p>
       <div id="smplist"></div></div>
   </section>
 
@@ -798,6 +802,32 @@ class Link {
   }
 }
 
+const editorPort = (p) => /felucca|jiant|fm[ _-]*1|m[ _-]*vave/i.test(p.name || "") && p.state !== "disconnected";
+async function openEditorMidi(access, hooks = {}, selected = {}) {
+  const select = (ports, id) => [...ports.values()].filter(p => p.state !== "disconnected" && (id ? p.id === id : editorPort(p)));
+  const inputs = select(access.inputs, selected.input), outputs = select(access.outputs, selected.output);
+  if (!inputs.length || !outputs.length) throw new Error("no MIDI ports");
+  const pairs = inputs.flatMap(input => outputs.map(output => ({ input, output,
+    score: (input.name === output.name ? 2 : 0) + (input.manufacturer && input.manufacturer === output.manufacturer ? 1 : 0) })));
+  pairs.sort((a,b) => b.score-a.score);
+  let last;
+  for (const {input, output} of pairs) {
+    const link = new Link(d => output.send(d), { ...hooks, timeout: 600 });
+    try {
+      if (input.open) await input.open();
+      if (output.open) await output.open();
+      input.onmidimessage = e => link.receive(e.data);
+      const info = parse[CMD.INFO](await link.request(req.info(), { timeout: 800, retries: 2, quiet: true }));
+      if (!/^(?:JIANT|FELUCCA)\b/i.test(info.version || "")) throw new Error("Not a JIANT editor device");
+      return {input, output, link, info};
+    } catch (e) {
+      last = e; link.close(); input.onmidimessage = null;
+      await Promise.allSettled([input.close?.(), output.close?.()]);
+    }
+  }
+  throw last;
+}
+
 /* ------------------------------------------------------------- formatting --- */
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = (n) => NOTE_NAMES[n % 12] + (Math.floor(n / 12) - 1);   /* 60 = C4 */
@@ -1122,15 +1152,30 @@ const smpBank = {
     dv.setUint32(12, crc32(b.subarray(16, this.HEAD + at)), true);
     return { bytes: b, count, used: this.HEAD + at };
   },
+  resample(x, from, rate) {
+    if (from === rate) return x;
+    const y = new Float32Array(Math.ceil(x.length * rate / from));
+    const ratio = rate / from, radius = Math.ceil(16 / Math.min(1, ratio)), cutoff = Math.min(1, ratio) * 0.9;
+    for (let k = 0; k < y.length; k++) {
+      const at = k / ratio, center = Math.floor(at); let sum = 0, weight = 0;
+      for (let j = Math.max(0, center - radius); j <= Math.min(x.length - 1, center + radius); j++) {
+        const d = j - at, z = Math.PI * cutoff * d;
+        const w = (z ? Math.sin(z) / z : 1) * (0.5 + 0.5 * Math.cos(Math.PI * d / radius));
+        sum += x[j] * w; weight += w;
+      }
+      y[k] = weight ? sum / weight : 0;
+    }
+    return y;
+  },
   /* an audio file -> mono Int16 at rate, its silence at both ends trimmed, the peak at -1 dB */
   async decode(file, rate) {
     const ac = new (window.AudioContext || window.webkitAudioContext)();
     let buf;
     try { buf = await ac.decodeAudioData(await file.arrayBuffer()); } finally { ac.close && ac.close(); }
-    const len = Math.max(1, Math.ceil(buf.duration * rate));
-    const oc = new OfflineAudioContext(1, len, rate), src = oc.createBufferSource();
+    const renderRate = Math.max(8000, rate), len = Math.max(1, Math.ceil(buf.duration * renderRate));
+    const oc = new OfflineAudioContext(1, len, renderRate), src = oc.createBufferSource();
     src.buffer = buf; src.connect(oc.destination); src.start();
-    const y = (await oc.startRendering()).getChannelData(0);
+    const y = this.resample((await oc.startRendering()).getChannelData(0), renderRate, rate);
     let peak = 0, a = 0, z = y.length;
     for (const v of y) peak = Math.max(peak, Math.abs(v));
     const th = peak * 0.02;
@@ -2201,6 +2246,30 @@ function makeMockDevice(opt = {}) {
         b(a[0]); stepOut(x, b, a.length === 22 || (cmd === CMD.STEP_GET && a.length === 2 && a[1] === 1));
         break;
       }
+      case CMD.SMPB_BEGIN: st.smpTx = new Uint8Array(smpBank.SIZE); b(a.length ? 1 : 0); break;
+      case CMD.SMPB_WRITE: {
+        const off = a[0] | a[1] << 7 | a[2] << 14, n = (a.length - 3) / 2;
+        let rc = !st.smpTx ? 5 : a.length < 5 || a.length > 131 || n % 1 || off + n > smpBank.SIZE || a.slice(3).some(x=>x>15) ? 1 : 0;
+        if (!rc) for (let k=0; k<n; k++) st.smpTx[off+k] = a[3+2*k] | a[4+2*k]<<4;
+        b(rc); break;
+      }
+      case CMD.SMPB_END: {
+        const crc = a.reduce((n,x,k)=> n | x << (7*k),0) >>> 0;
+        let rc = !st.smpTx ? 5 : a.length !== 5 || a[4]>15 ? 1 : crc32(st.smpTx)!==crc ? 2 : 0;
+        if (!rc) { st.smp = st.smpTx; st.smpTx = null; }
+        b(rc); b(st.smp ? new DataView(st.smp.buffer).getUint16(6,true) : 0); break;
+      }
+      case CMD.SMPB_LIST: {
+        b(smpBank.SLOTS); b(smpBank.SIZE/64);
+        const dv=st.smp && new DataView(st.smp.buffer);
+        for(let k=0;k<smpBank.SLOTS;k++) {
+          const e=16+k*16, used=!!dv && k<dv.getUint16(6,true);
+          const n=used?dv.getUint16(e+2,true):0;
+          b(+used); s(used?String.fromCharCode(...st.smp.slice(e+6,e+15)).replace(/\0.*$/, ""):"");
+          b(n&127);b(n>>7&127);b(n>>14);b(used?Math.floor(dv.getUint16(e+4,true)/100)&127:0);
+        }
+        break;
+      }
       case CMD.FM6B_BEGIN: case CMD.FM6B_WRITE: case CMD.FM6B_END: case CMD.FM6B_LIST: {   /* (0.6.11) fm6_vbank.c */
         if (opt.noFm6 || !st.uiCaps) return null;
         const vb = st.vbank;
@@ -2555,7 +2624,7 @@ const TEXT = {
     fm6Init: "初期音色", fm6Voice: "ボイス", fm6Ops: "オペレーター", fm6Carriers: "キャリア", fm6Feedback: "フィードバック",
     fm6PitchEg: "ピッチ EG", fm6Freq: "周波数",
     fm6Legend: "R1〜R4 / L1〜L4: EG のレートとレベル、BP LD RD LC RC: キーボードレベルスケーリング、RS: レートスケーリング、AMS: LFO 音量変調、KVS: ベロシティ、OL: 出力レベル、MODE: 比率 / 固定、FC FF: 周波数（粗・細）、DET: デチューン（7 が中央）。● はキャリア。",
-    smpT: "SAMPLE: 自分のサンプル", smpHelp: "SAMPLE エンジン用の超ローファイなサンプル。WAV を選び（モノ、無音カット、ノーマライズ）、レートを選んで送ります。8 kHz で合計約 1.5 秒、2 kHz なら約 6 秒（暗く、ザラついた音）、15 スロット。入らない部分はカットされます。電源を切っても本体に残ります。", smpAdd: "オーディオファイルを追加", smpRate: "レート", smpClear: "クリア", smpSend: "本体へ送る", smpUsed: "バンク:", smpNow: "本体:", smpNone: "送るものがありません", smpFail: "サンプルを送れませんでした (rc ", smpSent: "サンプルを送りました:",
+    midiPorts: "MIDI ポート（自動接続できない場合）", midiInput: "入力", midiOutput: "出力", smpFactory: "工場サンプルを読み込む", smpFactoryReady: "送信ボタンで本体のバンクを置き換えます。", smpReplace: "本体のサンプルをすべて置き換えますか？プロジェクトのバックアップにはサンプル音声は含まれません。", smpT: "SAMPLE: 自分のサンプル", smpHelp: "SAMPLE エンジン用の超ローファイなサンプル。WAV を選び（モノ、無音カット、ノーマライズ）、レートを選んで送ります。8 kHz で合計約 1.5 秒、2 kHz なら約 6 秒（暗く、ザラついた音）、15 スロット。入らない部分はカットされます。電源を切っても本体に残ります。", smpAdd: "オーディオファイルを追加", smpRate: "レート", smpClear: "クリア", smpSend: "本体へ送る", smpUsed: "バンク:", smpNow: "本体:", smpNone: "送るものがありません", smpFail: "サンプルを送れませんでした (rc ", smpSent: "サンプルを送りました:",
     fm6BankSend: "本体のボイスバンクへ送る (B1–B32)", fm6BankSent: "ボイスバンクを送りました:", fm6BankFail: "ボイスバンクを送れませんでした (rc ", fm6BankNow: "本体のボイスバンク:", fm6BankNone: "なし",
     fm6Pick: "読み込んだファイルの音色（押すと編集へ）:", fm6Picked: "編集中:", fm6Sent: "トラックへ送りました:", fm6Read: "トラックから読みました",
     fm6Loaded: "読み込みました", fm6BadSum: "チェックサム不一致あり",
@@ -2659,7 +2728,7 @@ const TEXT = {
     fm6Init: "Init voice", fm6Voice: "Voice", fm6Ops: "Operators", fm6Carriers: "carriers", fm6Feedback: "feedback",
     fm6PitchEg: "Pitch EG", fm6Freq: "Frequency",
     fm6Legend: "R1..R4 / L1..L4: EG rates and levels; BP LD RD LC RC: keyboard level scaling; RS: rate scaling; AMS: LFO amplitude modulation; KVS: velocity; OL: output level; MODE: ratio / fixed; FC FF: coarse / fine frequency; DET: detune (7 = centre). ● = carrier.",
-    smpT: "SAMPLE: your samples", smpHelp: "Hyper lo-fi samples for the SAMPLE engine: pick WAV files (mono, trimmed, normalised), choose a rate and send them. About 1.5 s in all at 8 kHz, ~6 s at 2 kHz (darker, crunchier: as if sent sped up and slowed down on the device), 15 slots; what does not fit is cut. They stay on the device after power-off.", smpAdd: "Add audio files", smpRate: "Rate", smpClear: "Clear", smpSend: "Send to the device", smpUsed: "Bank:", smpNow: "On the device:", smpNone: "Nothing to send", smpFail: "The samples were not sent (rc ", smpSent: "Samples sent:",
+    midiPorts: "MIDI ports (choose manually if Auto fails)", midiInput: "Input", midiOutput: "Output", smpFactory: "Load factory samples", smpFactoryReady: "Factory bank ready. Press Send to the device to replace the bank.", smpReplace: "Replace ALL samples stored on the FM1? Existing samples cannot be restored from a project backup.", smpT: "SAMPLE: your samples", smpHelp: "Hyper lo-fi samples for the SAMPLE engine: pick WAV files (mono, trimmed, normalised), choose a rate and send them. About 1.5 s in all at 8 kHz, ~6 s at 2 kHz (darker, crunchier: as if sent sped up and slowed down on the device), 15 slots; what does not fit is cut. They stay on the device after power-off.", smpAdd: "Add audio files", smpRate: "Rate", smpClear: "Clear", smpSend: "Send to the device", smpUsed: "Bank:", smpNow: "On the device:", smpNone: "Nothing to send", smpFail: "The samples were not sent (rc ", smpSent: "Samples sent:",
     fm6BankSend: "Send to the device's voice bank (B1–B32)", fm6BankSent: "Voice bank sent:", fm6BankFail: "The voice bank was not sent (rc ", fm6BankNow: "The device's voice bank:", fm6BankNone: "none",
     fm6Pick: "Voices of the imported file (click to edit):", fm6Picked: "Editing:", fm6Sent: "Sent to track", fm6Read: "Read from track",
     fm6Loaded: "Loaded", fm6BadSum: "a checksum did not match",
@@ -2842,9 +2911,10 @@ function renderSmp() {
   rows.push(el("p", { class: "dim", text: `${t("smpNow")} ${dl.length ? dl.map((x, k) => `${k + 1} ${x.name}`).join(" · ") : "-"}` }));
   $("smplist").replaceChildren(...rows);
 }
-async function smpRefresh() {
+async function smpRefresh(d = dev) {
   if (!smpOk()) return;
-  smpDevice = await smpBank.list((r, o) => sessionRequest(dev, r, o));
+  assertSession(d);
+  smpDevice = await smpBank.list((r, o) => sessionRequest(d, r, o));
   renderSmp();
 }
 $("smpadd").addEventListener("click", () => $("smpfile").click());
@@ -2857,13 +2927,33 @@ $("smpfile").addEventListener("change", (e) => op(async () => {
   e.target.value = "";
   renderSmp();
 }));
+$("smpfactory").addEventListener("click", () => op(async () => {
+  const d = dev;
+  const response = await fetch("factory-samples.json", { cache: "no-cache" });
+  if (!response.ok) throw new Error("Factory samples: HTTP " + response.status);
+  const bank = await response.json();
+  assertSession(d);
+  if (bank.format !== "jiant-factory-pcm" || bank.version !== 1 || !Array.isArray(bank.samples) || bank.samples.length > smpBank.SLOTS)
+    throw new Error("Invalid factory bank");
+  const picked = bank.samples.map(s => {
+    if (!Number.isInteger(s.rate) || s.rate < 1000 || s.rate > 16000 || !Array.isArray(s.pcm) || s.pcm.length < 16 ||
+        s.pcm.some(x => !Number.isInteger(x) || x < -32768 || x > 32767)) throw new Error("Invalid factory sample");
+    return { name: s.name, rate: s.rate, pcm: Int16Array.from(s.pcm) };
+  });
+  const built = smpBank.build(picked);
+  if (built.count !== picked.length || built.used > smpBank.SIZE || picked.reduce((n,s)=>n+Math.ceil(s.pcm.length/2),smpBank.HEAD) > smpBank.SIZE)
+    throw new Error("Factory samples exceed the bank");
+  smpPicked = picked; renderSmp(); sayK("smpFactoryReady");
+}));
 $("smpclear").addEventListener("click", () => { smpPicked = []; renderSmp(); });
 $("smpsend").addEventListener("click", () => op(async () => {
+  const d = dev;
   const built = smpBank.build(smpPicked);
   if (!built.count) { sayK("smpNone"); return; }
-  const rc = await smpBank.send((r, o) => sessionRequest(dev, r, o), built.bytes);
+  if (!window.confirm(t("smpReplace"))) return;
+  const rc = await smpBank.send((r, o) => sessionRequest(d, r, o), built.bytes);
   if (rc) { sayK("smpFail", `${rc})`); return; }
-  await smpRefresh();
+  await smpRefresh(d);
   sayK("smpSent", ` ${built.count}`);
 }));
 $("tabs").addEventListener("click", (e) => { const b = e.target.closest("button[data-tab]"); if (b) showTab(b.dataset.tab); });
@@ -2961,7 +3051,16 @@ const pById = (label, def) => { const i = dev.pdesc.findIndex((d, k) => d && k <
 const pPan = () => pById("PAN", 39), pMute = () => pById("MUTE", 40);
 
 /* -------------------------------------------------------------- MIDI --- */
-let connecting = false;
+let connecting = false, portsClosing = Promise.resolve();
+const portStates = new Map();
+function renderMidiPorts() {
+  if (!access) return;
+  for (const [id, ports] of [["midiinput",access.inputs],["midioutput",access.outputs]]) {
+    const box=$(id), value=box.value;
+    box.replaceChildren(el("option",{value:"",text:"Auto (JIANT / FM1)"}), ...[...ports.values()].filter(p=>p.state!=="disconnected").map(p=>el("option",{value:p.id,text:p.name || p.id})));
+    if ([...box.options].some(o=>o.value===value)) box.value=value;
+  }
+}
 async function connect() {
   if (connecting || dev) return;
   connecting = true;
@@ -2979,30 +3078,25 @@ async function connect() {
       }
       access.onstatechange = onState;
     }
-    const isF = (p) => /felucca|jiant/i.test(p.name || "") && p.state !== "disconnected";
-    const input = [...access.inputs.values()].find(isF);
-    const output = [...access.outputs.values()].find(isF);
-    if (!input || !output) { sayK("nodevice"); return; }
-    const link = new Link((d) => output.send(d), {
-      timeout: 300,
-      onUnknown: (f) => console.debug("ignored reply", f),
-      onTimeout: () => sayK("noreply"),
-      onPush: (f) => onPush(f),
-      onGap: () => { rewatch = true; },
-    });
-    input.onmidimessage = (e) => link.receive(e.data);
-    if (input.open) await input.open().catch(() => {});
-    dev = { link, input, output, info: null, pdesc: [], gdesc: [], names: [], dump: null, steps: [], slotUsed: [null, null, null, null],
+    await portsClosing;
+    renderMidiPorts();
+    for (const p of [...access.inputs.values(), ...access.outputs.values()]) portStates.set(p.id, p.state);
+    const opened = await openEditorMidi(access, {
+      onUnknown: f => console.debug("ignored reply", f), onTimeout: () => sayK("noreply"),
+      onPush: f => onPush(f), onGap: () => { rewatch = true; },
+    }, {input: $("midiinput").value, output: $("midioutput").value});
+    dev = { ...opened, pdesc: [], gdesc: [], names: [], dump: null, steps: [], slotUsed: [null, null, null, null],
       keys: null, watch: false, bank: null };
     connectedDevice = dev;
     setLabel($("connect"), t("disconnect"));
     await load(connectedDevice);
   } catch (e) {
     console.error(e);
-    if (connectedDevice && connectedDevice === dev) { /* an old connection must not close a replacement */
+    if (!connectedDevice || connectedDevice === dev) {
       const timeout = /^timeout/.test(e.message);
-      disconnect();
-      sayK(timeout ? "noreply" : "error", timeout ? "" : e.message);
+      if (connectedDevice) disconnect();
+      if (e.message === "no MIDI ports") $("midiports").open = true;
+      sayK(e.message === "no MIDI ports" ? "nodevice" : timeout ? "noreply" : "error", timeout ? "" : e.message);
     }
   } finally {
     connecting = false;
@@ -3014,8 +3108,10 @@ function disconnect(reasonKey = "disconnected") {
   if (dev) {
     dev.link.close();
     dev.input.onmidimessage = null;
+    portsClosing = Promise.allSettled([dev.input.close?.(), dev.output.close?.()]);
   }
   dev = null;
+  smpDevice = null; smpAsked = false;
   resetBusy();
   needReload = false;
   renderPanels();
@@ -3032,7 +3128,12 @@ function disconnect(reasonKey = "disconnected") {
 
 function onState(e) {
   const p = e.port;
-  if (!p || !/felucca|jiant/i.test(p.name || "")) return;
+  if (!p) return;
+  const chosen = p.id === $("midiinput").value || p.id === $("midioutput").value || dev && (p.id===dev.input.id || p.id===dev.output.id);
+  if (!chosen && !editorPort({name:p.name,state:"connected"})) return;
+  if (portStates.get(p.id) === p.state) return; /* open/close is not a physical reconnect */
+  portStates.set(p.id, p.state);
+  renderMidiPorts();
   if (dev && p.state === "disconnected" && (p.id === dev.input.id || p.id === dev.output.id)) {
     disconnect("lost");
   } else if (!dev && wantConnected && p.state === "connected" && p.type === "output") {
@@ -3058,7 +3159,7 @@ async function load(d) {
   const releaseBusy = beginBusy();
   try {
     /* the first frame after opening the port can be lost: a few tries */
-    d.info = parse[CMD.INFO](await sessionRequest(d, req.info(), { timeout: 500, retries: 3 }));
+    d.info = d.info || parse[CMD.INFO](await sessionRequest(d, req.info(), { timeout: 800, retries: 3 }));
     $("version").textContent = d.info.version;
     const total = d.info.pcount + d.info.gcount;
     for (let i = 0; i < d.info.pcount; i++) { sayK("reading", `${i + 1}/${total}`); d.pdesc[i] = await getDescOrNull(0, i, d); }
@@ -4792,3 +4893,4 @@ if (!MOCK && !navigator.requestMIDIAccess) sayK("nomidi");
 </script>
 </body>
 </html>
+
