@@ -19,8 +19,8 @@ editor update themselves with every change merged into `main`.
 
 | Where | Version |
 |---|---|
-| **Public installer** (stable) | **0.9.9-par9** |
-| **Beta installer and emulator** | **0.9.9-par9** |
+| **Public installer** (stable) | **0.9.9-par12** |
+| **Beta installer and emulator** | **0.9.9-par13b** — SAMPLE engine |
 | Earlier versions the public installer also offers | 0.9.9-par8, 0.9.9-gen2 (*ULTRA STABLE*), 0.9.9-par6, 0.9.9-par5, 0.9.17, 0.9.14, 0.9.9, 0.8.9 … |
 
 [Public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) · [Beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/) · [Emulator](https://juanjiant-bit.github.io/JIANT/emu/)
@@ -30,6 +30,40 @@ The installed line is **0.9.9-par**: 0.9.9's stable core with the new sequencer 
 line, which parts of the text below describe; features marked *"in the 0.9.1x line"* that par has not taken yet are
 not in the installer's version. If a version gives you trouble, **0.9.9-gen2** in the list of earlier versions is the
 one to go back to.
+
+## SAMPLE sampler — beta 0.9.9-par13b
+
+The **beta** adds **SAMPLE**, a lo-fi sample playback engine. It is not included in the stable par12 firmware.
+Install it with the [beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/);
+manage its bank from the [web editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/#sound).
+Back up your projects before updating.
+
+### Load the factory bank
+
+1. Connect the FM-1 in the editor and open **Sound**. The sample controls appear when the connected firmware supports SAMPLE.
+2. Choose **Load factory samples** to stage the bank in the browser.
+3. Review the list and choose **Send to the device**. Confirm only if you want to **replace the entire stored sample bank**.
+4. On an FM-1 track, select **SAMPLE** and its **KIT KEYS** preset. The twelve sounds play across **C4–B4**.
+
+The bank contains **KICK, SNARE, HAT, CLAP, TOM, AAH, BIRD, PIANO, FLUTE, VINYL, BASS and CHORD**:
+twelve original synthetic recordings, dedicated to the public domain under CC0-1.0.
+You can also import your own WAV files in the editor.
+See [factory sounds, rates and source](web/FACTORY-SAMPLES.md).
+
+### Storage and current limits
+
+- **Up to 15 mono samples** share a **6144-byte bank**, including its header, using IMA ADPCM.
+  Duration depends on the chosen sample rates; this is a small lo-fi bank, not long-form audio storage.
+- The factory bank uses **5406 bytes**, with sounds at **2, 4 and 8 kHz**, without truncating any slot.
+- Factory samples live on the website and are sent to the device's sample storage; they do not occupy the firmware image.
+  **They are not installed automatically** by the installer.
+- **Project backups do not include the SAMPLE audio bank. Keep your original WAV files.**
+  Loading a bank does not change a track's engine or preset automatically.
+- Browser/mock-MIDI and native sampler checks pass. Transfer over real FM-1 USB and persistence after power cycling
+  still need hardware confirmation; this remains a beta.
+
+If automatic editor detection fails, use its **manual MIDI input/output selection**.
+The sampler panel requires the beta firmware; updating the web page alone does not add SAMPLE to stable firmware.
 
 ## What's new in 0.9.9-par9
 
@@ -75,7 +109,7 @@ master that wrote or read where it should not. **Take a photo of it**, then powe
 the CRASH line (VEC / PC / SP / bus) until power-off. Report both, with the version you installed, in a
 [GitHub issue](https://github.com/juanjiant-bit/JIANT/issues/new/choose) (the bug report template asks for the rest).
 
-> **Status of `main`: the 0.9.18 development line (the text below).** The public installer ships 0.9.9-beta4a and the beta installer 0.9.9-seq2b: see *Current versions* above. It builds and passes every test (Felucca's and its own). Back up the flash before installing it.
+> **Status of `main`: the 0.9.18 development line (the text below).** The public and beta installers use separately pinned 0.9.9-par revisions: see *Current versions* above. It builds and passes every test (Felucca's and its own). Back up the flash before installing it.
   **RATCH and ARP spill over the steps** (0.9.18) *(in the 0.9.1x line, installer: 0.9.17; not yet in 0.9.9-beta4a)*: RATCH x1–x8 (ECHO folded in: FLAT, FADE, RISE, a pitch step) and
   ARP one note at a time at its RATE play on past their step; OCT an octave a lap; SEQ › COMP frames the step it edits;
   the SEQ › BAR page is gone.
@@ -209,7 +243,7 @@ presets and vary around them, never from nothing.
 
 The third is that **everything is playable and everything is recordable**. Effects are played on the keys and land
 in an automation lane; knobs record their movement; songs are built from bars and scenes, and recorded while you
-play them. No computer, no samples: everything is synthesized in real time on a chip designed for something else.
+play them. The synthesis engines run in real time on a chip designed for something else; the par13b beta also adds SAMPLE playback (see above).
 
 And the last one is a discipline: **lightweight**. Every graphic is a handful of lines, every effect fits in the
 audio CPU budget, the signature shown at power-on is 428 bytes. An instrument that feels big inside a small device.
@@ -287,7 +321,7 @@ VOICE singing its lyric, in the COLORS skin, exactly as the firmware draws them 
   up whole).
 
 ### Engines
-Eleven engines, all synthesis, no samples: **DRUM (DRUM-X), VOICE, ANIMAL, LOFI, ANALOG, FM6, PHASE, WHEEL, NOISE,
+The stable par12 line has eleven synthesis engines: **DRUM (DRUM-X), VOICE, ANIMAL, LOFI, ANALOG, FM6, PHASE, WHEEL, NOISE,
 STRING and ADD**, in the order PRESETS shows them (0.9.9-par; the first six are the tracks at power-on, T1–T6).
 - **ANALOG**: two oscillators with **INT** (an interval of ±24 semitones: fifths, octaves) and DTN; besides SAW, SQR,
   TRI, SIN and PWM it has **SYNC**, **RING** and **SAW3** (three saws). Its filter is per voice.
@@ -456,8 +490,9 @@ Turning fast sweeps the whole range; turning slowly is fine adjustment. Turn it 
   beings, HOME ecosystem, live technical graphs and a power-on signature; navigation by six rules (0.9.2).
 - **DRUM** is DRUM-X; Felucca's kits were retired. **CHORD** was retired (its parameters are SHIFT). **PHYS** and
   **TRIO** were retired (TRIO lives inside ANALOG; a PHYS sound plays as ANALOG's first preset).
-- **No samples**: user samples and the SAMPLE, SLICE and GRAIN engines are gone, to make room for DRUM-X, the effects,
-  the punch-ins and the songs. A sound from those engines loads as ANALOG.
+- **Legacy sample engines**: the old Felucca SAMPLE, SLICE and GRAIN engines were retired to make room for DRUM-X,
+  the effects, punch-ins and songs; their old sounds load as ANALOG. The **par13b beta** introduces a new SAMPLE engine
+  and bank format (see [SAMPLE sampler](#sample-sampler--beta-099-par13b)); it does not restore the old banks.
 - **8 songs**: song 1 is the usual 4 projects, so whatever you saved with Felucca shows up there.
 - **FX layer**: REVERSE, TAPE STOP, FREEZE and the harmonizer are gone; the MIDI punch-ins came in.
 - **SELECT**: walks the section's pages; with a button held: HOME GEN, EDIT / SEQ / LFO / FX their dice, GLO the
@@ -669,8 +704,9 @@ Settings → Pages → Source: **GitHub Actions**, once).
 
 ## Installing (at your own risk)
 
-1. **Back up the flash** before the first install. **JIANT has no user samples:** if you're coming from Felucca,
-   samples USR1–3 are lost on install (that flash now stores the songs). Keep your WAVs.
+1. **Back up the flash** before the first install. If you're coming from Felucca, its
+   samples USR1–3 are lost on install (that flash now stores the songs). Keep your WAVs: the beta's new SAMPLE engine
+   does not migrate the legacy sample bank.
 2. **Coming from another custom firmware (Felucca, baudgirl or any other)? Return to official V15 first** (the
    installer's **Return to official V15 first** button, which also saves a complete backup), then install JIANT: writing
    it straight over another custom firmware has bricked an FM-1. From official V15 or an earlier JIANT, install
