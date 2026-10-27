@@ -36,5 +36,5 @@ jobs:
           build/host/sample_test
       - run: |
           pip install playwright==1.58.0
-          python3 -m playwright install --with-deps chromium
+          command -v google-chrome || python3 -m playwright install --with-deps chromium
           python3 tests/browser_sampler.py

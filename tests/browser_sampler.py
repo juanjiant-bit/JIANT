@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-only
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-import json
+import json, os, shutil
 root=Path(__file__).resolve().parents[1]/'web'
 with sync_playwright() as p:
- b=p.chromium.launch(headless=True,args=['--no-sandbox'])
+ b=p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH') or shutil.which('google-chrome'),headless=True,args=['--no-sandbox'])
  page=b.new_page()
  def route(r):
   path=r.request.url.split('https://jiant.test/',1)[-1].split('?')[0]
@@ -17,7 +17,7 @@ with sync_playwright() as p:
   r.fulfill(status=200,body=body,content_type=mime)
  page.route('https://jiant.test/**',route)
  errors=[];page.on('pageerror',lambda e:(errors.append(str(e)),print('PAGE ERROR',e)))
- page.goto('https://jiant.test/editor.html');page.wait_for_function('!!window.__test')
+ page.goto('https://jiant.test/editor.html#projects');page.wait_for_function('!!window.__test')
  print('audio support',page.evaluate('''() => [2000,3000,4000,8000].map(rate=>{try{new OfflineAudioContext(1,100,rate);return[rate,true]}catch(e){return[rate,e.name]}})'''))
  page.evaluate('''() => { const m=__test.makeMockDevice({auto:false});Object.defineProperty(navigator,'requestMIDIAccess',{value:async()=>m.access});window.mock=m; }''')
  print('low-rate decode',page.evaluate("""async()=>{
@@ -35,4 +35,10 @@ with sync_playwright() as p:
  assert not errors,errors
  page.click('#connect');page.click('#connect');page.wait_for_function('__test.getDevice()?.dump && !document.querySelector("#connect").disabled',timeout=30000)
  print('reconnect PASS')
+ page.evaluate("() => {window.installerBroadcast=new BroadcastChannel('jiant-midi');window.installerBroadcast.postMessage({type:'installer',busy:true});}")
+ page.wait_for_function('!__test.getDevice()')
+ page.click('#connect');page.wait_for_timeout(200)
+ assert page.locator('#status').inner_text().find('installer')>=0
+ assert page.evaluate('!__test.getDevice()')
+ print('installer/editor port coordination PASS')
  b.close()

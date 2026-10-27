@@ -1,6 +1,7 @@
 <!doctype html>
 <!-- SPDX-License-Identifier: GPL-3.0-only
-     Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments -->
+     Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+     Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) -->
 <!-- Felucca web editor. One file, no libraries. Protocol: EDITOR_PROTOCOL.md.
      Add ?mock=1 to the URL to use a built-in simulated device. -->
 <html lang="ja">
@@ -2675,7 +2676,7 @@ const TEXT = {
     denied: "MIDI（SysEx）の使用が許可されませんでした。",
     nodevice: "JIANT が見つかりません。USB で接続して、もう一度押してください。",
     connecting: "接続中", reading: "読み込み中 ", steploading: "ステップを読み込み中 ",
-    ready: "接続しました", disconnected: "切断されました", lost: "JIANT が外されました",
+    ready: "接続しました", disconnected: "切断されました", lost: "JIANT が外されました", instbusy: "別のタブでインストーラーが書き込み中です。終わってから接続してください。",
     noreply: "応答がありません", error: "エラー: ", busy: "処理中",
     applying: "書き込み中 ", applied: "読み込みました", badfile: "ファイルを読み込めません: ",
     savedSlot: "保存しました: スロット ", loadedSlot: "読み込みました: スロット ", emptySlot: "空のスロットです: ",
@@ -2779,7 +2780,7 @@ const TEXT = {
     denied: "MIDI (SysEx) access was not allowed.",
     nodevice: "JIANT not found. Connect it by USB and press Connect again.",
     connecting: "Connecting", reading: "Reading ", steploading: "Reading steps ",
-    ready: "Connected", disconnected: "Disconnected", lost: "JIANT was unplugged",
+    ready: "Connected", disconnected: "Disconnected", lost: "JIANT was unplugged", instbusy: "The installer is writing in another tab: connect when it has finished.",
     noreply: "No reply from the device", error: "Error: ", busy: "Busy",
     applying: "Writing ", applied: "Loaded", badfile: "Cannot read the file: ",
     savedSlot: "Saved to slot ", loadedSlot: "Loaded slot ", emptySlot: "Empty slot: ",
@@ -3061,8 +3062,23 @@ function renderMidiPorts() {
     if ([...box.options].some(o=>o.value===value)) box.value=value;
   }
 }
+/* (0.9.11) the web installer in another tab of this browser (web/index_pkg.html): while it writes, the editor lets the
+ * FM-1 go and does not reconnect by itself (the update loader's port is a "JIANT" one too); it says it is here */
+let installerUntil = 0;
+try {
+  const bc = new BroadcastChannel("jiant-midi");
+  bc.onmessage = (e) => {
+    const m = e.data || {};
+    if (m.type === "who") bc.postMessage({ type: "editor", connected: !!dev });
+    if (m.type === "installer") {
+      installerUntil = m.busy ? Date.now() + 60000 : 0;
+      if (m.busy) { wantConnected = false; if (dev) disconnect("instbusy"); }
+    }
+  };
+} catch (_) {}
 async function connect() {
   if (connecting || dev) return;
+  if (Date.now() < installerUntil) { sayK("instbusy"); return; }
   connecting = true;
   let connectedDevice = null;
   wantConnected = true;
