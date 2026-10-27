@@ -35,11 +35,15 @@
   .diag button { font-size: 13px; padding: 4px 12px; margin: 0 6px 6px 0; }
   a { color: inherit; }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Instrument+Sans:wght@400;500;600&amp;display=swap">
+<style id="jiant-brand">/*JIANT_UI*/</style>
 </head>
-<body>
+<body class="jiant-installer">
 <main>
   <nav class="lang" id="lang" aria-label="Language"><button data-lang="es" lang="es">Español</button><button data-lang="en" lang="en">English</button><button data-lang="ja" lang="ja">日本語</button></nav>
-  <h1>JIANT FM</h1>
+  <h1 class="jiant-wordmark"><a href="https://juanjiant-bit.github.io/JIANT/" aria-label="JIANT FM home">JIANT<span class="fm">FM</span></a><span class="jiant-tool">INSTALLER</span></h1>
   <p data-t="intro"></p>
   <p data-t="warn"></p>
   <p data-t="samples" style="color:#ec6e50"></p>
@@ -48,7 +52,7 @@
   <p class="small" data-t="beta"></p>
   <p class="small"><span data-t="brick"></span>
     <a href="https://github.com/kurogedelic/FM-1-transporter" target="_blank" rel="noopener" style="color:inherit">FM-1-transporter</a></p>
-  <div style="border:2px solid #ec6e50;padding:12px 14px;margin:0 0 16px">
+  <div class="jiant-notice">
     <p style="margin:0 0 8px;font-weight:600" data-t="firstTitle"></p>
     <p class="small" style="margin:0 0 10px" data-t="firstText"></p>
     <p style="margin:0 0 10px"><button id="first-stock" data-t="firstStock"></button></p>
@@ -57,7 +61,7 @@
   <p class="small"><label><span data-t="verLabel"></span> <select id="ver" style="font:inherit"></select></label>
     <br><span data-t="verOld"></span></p>
   <!-- (0.8.5) the release's notice, before 0.8.5 is written (releaseNotice) -->
-  <div id="notice" hidden style="border:2px solid #ec6e50;padding:12px 14px;margin:0 0 16px">
+  <div id="notice" class="jiant-notice" hidden>
     <p style="margin:0 0 8px;font-weight:600" data-t="n085Title"></p>
     <p class="small" style="margin:0 0 8px" data-t="n085What"></p>
     <p class="small" style="margin:0 0 8px" data-t="n085Risk"></p>
@@ -670,3 +674,4 @@ $("stock-go").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+

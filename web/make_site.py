@@ -133,7 +133,8 @@ def main(pkg, version, out, prev=None):
         d.mkdir(parents=True, exist_ok=True)
     for f in fw.glob("felucca-*.fwsc"):            # the current package and the earlier ones kept, nothing else
         f.unlink()
-    (inst / "index.html").write_text(html, encoding="utf-8")
+    brand = (HERE / "jiant-ui.css").read_text(encoding="utf-8")
+    (inst / "index.html").write_text(html.replace("/*JIANT_UI*/", brand), encoding="utf-8")
     shutil.copy(pkg, fw / name)
     for e, src in old:
         shutil.copy(src, fw / e["file"])
@@ -150,7 +151,8 @@ def main(pkg, version, out, prev=None):
         encoding="utf-8")
     for doc in ("LICENSE", "LICENSING.md"):
         shutil.copy(HERE.parent / doc, fw / doc)
-    shutil.copy(HERE / "editor.html", ed / "index.html")
+    editor = (HERE / "editor.html").read_text(encoding="utf-8").replace("/*JIANT_UI*/", brand)
+    (ed / "index.html").write_text(editor, encoding="utf-8")
     for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js", "factory-samples.json", "FACTORY-SAMPLES.md"):
         if (HERE / f).exists():
             shutil.copy(HERE / f, ed / f)
@@ -170,3 +172,4 @@ if __name__ == "__main__":
     if len(sys.argv) not in (4, 5):
         sys.exit(__doc__)
     main(*sys.argv[1:5])
+
