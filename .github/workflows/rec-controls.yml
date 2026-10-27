@@ -70,4 +70,6 @@ jobs:
             build/felucca.fwsc
             build/felucca.check.txt
             build/felucca.map
+            build/layout.ld
+            build/felucca.o
             build/rec/*.log
