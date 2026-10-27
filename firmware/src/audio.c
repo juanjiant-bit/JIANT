@@ -57,47 +57,49 @@ static void audio_block(int32_t *out, uint32_t n)       /* mix (fx.c), then Q15 
     }
 }
 
-/* Overload: two halves in a row above 80 % (0.6.15: was 85, too late: a click first, the UI starved) (the render plus TIMER5 nested in it), fade one voice over the
- * next block, and one more each half while it lasts. Keep each part's
- * lowest POLY note and MONO / LEGATO / UNISON lead, as the shared budget does. */
+/* Overload, the last resort: a half that came late (the DMA moved on while it rendered: a click) fades one voice over
+ * the next block, and one more for each late half while it lasts. Keep each part's lowest POLY note and MONO / LEGATO /
+ * UNISON lead, as the shared budget does. (Until 0.9.9 cpu5 it fired on two halves in a row over 80 %: a 2.9 ms half's
+ * measurement is noisy, a chord's note-ons or a cache miss pushed two over and a tail was cut with nothing late yet.
+ * The averaged guard, voice.c load_half, now stops the load growing ahead of this.) */
 static volatile uint8_t shed_req;
-static uint8_t shed_over;                              /* bit k: the half k halves ago was over 80 % */
-#define SHED_TICKS ((HALF_FRAMES * 1000000u / FS) * 80u / 100u * FM1_TICKS_PER_US)   /* 80 % of a half */
 static uint32_t shed_count;
 
-/* end of a half: all = its ticks, TIMER5 nested in it included -> the render alone in us. The deadline sees
- * both; shed after 2 overloaded halves in a row (out of line: keeps the ISR's render loops as they were) */
-#define TIGHT_ON ((HALF_FRAMES * 1000000u / FS) * 65u / 100u * FM1_TICKS_PER_US)    /* (0.6.16) the load budget (0.6.17: 65 %, was 70) */
-#define TIGHT_OFF ((HALF_FRAMES * 1000000u / FS) * 60u / 100u * FM1_TICKS_PER_US)
-#define TIGHT_ON_ECO ((HALF_FRAMES * 1000000u / FS) * 50u / 100u * FM1_TICKS_PER_US)   /* (0.6.70) LOAD ECO: the budget */
-#define TIGHT_OFF_ECO ((HALF_FRAMES * 1000000u / FS) * 45u / 100u * FM1_TICKS_PER_US)  /* sooner: room kept for the peaks */
-static uint8_t tight_calm;                             /* halves in a row under 60 % */
+/* end of a half: all = its ticks, TIMER5 nested in it included -> the render alone in us. The deadline sees both.
+ * The render's share of the half goes to the guard (voice.c load_half: an average, not one half; the admission's
+ * prediction); the admission of the extra voices (12) opens on the average with the nested interrupts included:
+ * a key scan or USB burst nested in the render is not the sound's, but it is the deadline's (out of line: keeps the
+ * ISR's render loops as they were) */
+#define HALF_TICKS ((HALF_FRAMES * 1000000u / FS) * FM1_TICKS_PER_US)   /* a half's time in TIMER4 ticks */
+#define HEAD_ON 50u                                    /* the extra voices: the whole half's average under 50 % .. */
+#define HEAD_OFF 65u                                   /* .. for 16 halves; over 65 % (or the guard on) they close */
+static uint8_t poly_calm;                             /* consecutive halves with room for extra voices */
 static __attribute__((noinline)) uint32_t shed_check(uint32_t all)
 {
-    uint32_t r = all - t5_nested_ticks;                /* (0.6.19) the budget on the render alone: a key scan or
-                                                         * USB burst nested in it is not the sound's */
-    uint32_t eco = sys_load == LOAD_ECO;
-    if (r > (eco ? TIGHT_ON_ECO : TIGHT_ON)) {         /* (voice.c load_tight: no voice added while set) */
-        load_tight = 1;
-        tight_calm = 0;
-    } else if (load_tight && r < (eco ? TIGHT_OFF_ECO : TIGHT_OFF) && ++tight_calm >= 16u) {
-        load_tight = 0;
+    uint32_t r = all - t5_nested_ticks;                /* (0.6.19) the budget on the render alone */
+    load_half(r * 100u / HALF_TICKS, all * 100u / HALF_TICKS, mc_live() && !mc_off);
+    /* Admission hysteresis: include nested interrupts in the spare-time test.
+     * Existing notes are never killed merely because this admission closes.
+     * Only FULL and a healthy second core may grow beyond the original eight. */
+    if (sys_load != LOAD_FULL || !mc_live() || mc_off || load_tight || load_all_q8 > (HEAD_OFF << 8)) {
+        voice_headroom = poly_calm = 0;
+    } else if (!voice_headroom) {
+        if (load_all_q8 < (HEAD_ON << 8)) {
+            if (++poly_calm >= 16u) voice_headroom = 1;
+        } else poly_calm = 0;
     }
-    shed_over = (uint8_t)(shed_over << 1 | (all > SHED_TICKS));
-    if ((shed_over & 3u) == 3u)                        /* (0.6.19: two in a row again, as before 0.6.17: one
-                                                         * spike shed a voice every 2.9 ms, tails cut, clicks) */
-        shed_req = 1;
-    return (all - t5_nested_ticks) / FM1_TICKS_PER_US;
+    return r / FM1_TICKS_PER_US;
 }
 
-static void shed_voice(void)
+/* Rare overload control stays out of the audio ISR's hot instruction loop. */
+static __attribute__((noinline)) void shed_voice(void)
 {
     uint32_t p, i;
     voice_t *best = 0;
     for (p = 0; p < NPART; p++)
         for (i = 0; i < NVOICE; i++) {
             voice_t *v = &trk[p].v[i];
-            if (v->active && !v->gate && v->stage != 4u && (!best || v->env < best->env))
+            if (v->active && !voice_held(&trk[p], v) && v->stage != 4u && !v->sub && (!best || v->env < best->env))
                 best = v;
         }
     if (best) {
@@ -110,7 +112,7 @@ static void shed_voice(void)
         uint32_t mode = trk_vmode(t), low = mode == V_POLY ? lowest_held(t) : 0u;
         for (i = 0; i < NVOICE; i++) {
             voice_t *v = &trk[p].v[i];
-            if (v->active && v->gate && v->stage != 4u &&
+            if (v->active && voice_held(t, v) && v->stage != 4u &&
                 ((mode == V_POLY && i != low) || (mode != V_POLY && i > 0u))) {
                 if (!best || v->age < best->age)
                     best = v;
@@ -164,9 +166,11 @@ void fm1_alnk0_irq(void)                       /* via isr_alnk0 (hal/fm1_isr.S) 
             song.cpu_q8 = load / CPU_AVG;
             audio_cpu_rem = load % CPU_AVG;
         }
-        if (fm1_audio_free_half() != half)
+        if (fm1_audio_free_half() != half) {
             felucca_dbg.late++;                         /* the DMA moved on while we rendered (0.8.9: caught up at
                                                          * once, its half pending; a click only past ~1.7 halves) */
+            shed_req = 1;                               /* (cpu5: the last resort, a voice faded: only a late half) */
+        }
         {   /* (0.6.17) MENU > ABOUT's numbers (voice.c load_diag) */
             uint32_t pc = us * 100u / (HALF_FRAMES * 1000000u / FS);
             if (pc > load_diag.peak) load_diag.peak = pc;

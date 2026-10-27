@@ -474,7 +474,7 @@ static uint32_t gen_text(uint32_t lang, uint32_t lyr, uint32_t theme, uint32_t n
     memset(trk, 0, sizeof trk);
     host_tracks_init();
     host_preset(&trk[0], eng_voice(), 7);
-    trk[0].p[P_E1] = (int16_t)(theme * 16u + 8u);
+    trk[0].p[P_E1] = (int16_t)(theme & 0x100u ? theme & 127u : theme * 16u + 8u);   /* (0x100: THEME's value) */
     trk[0].p[P_SLEN] = 16;
     for (k = 0; k < 16u; k++) {                          /* pl NOTE steps */
         trk[0].step[k].time = k < pl ? ST_NOTE : ST_REST;
@@ -856,7 +856,7 @@ static void check_singer(void)
         b = k;                                           /* the first on E4 */
         for (k = a + 1u; k <= b; k++) {
             mono &= pq[k] >= pq[k - 1u];
-            bigstep |= pq[k] - pq[k - 1u] > 2 * 256;
+            bigstep |= pq[k] - pq[k - 1u] > 2 * 256 * (int32_t)CTL / 32;   /* (1/8 st a block of 32) */
         }
         q25 = (pq[a + (b - a) / 4u] - pq[a]) / (double)(pq[b] - pq[a]);
         q75 = (pq[a + 3u * (b - a) / 4u] - pq[a]) / (double)(pq[b] - pq[a]);
@@ -883,7 +883,7 @@ static void check_singer(void)
                 int16_t f0[3] = {sing[0].f[0], sing[0].f[1], sing[0].f[2]};
                 trk_note_on(&trk[0], 64, 100);
                 trk_note_off(&trk[0], 57);
-                for (k = 0; k < 200u; k++) {
+                for (k = 0; k < 200u * 32u / CTL; k++) {   /* (~145 ms: the glide and after) */
                     vrender(0, CTL);
                     for (i = 0; i < 3u; i++)
                         okf &= abs(sing[0].f[i] - f0[i]) <= 2;
@@ -892,10 +892,10 @@ static void check_singer(void)
         }
         printf("voice:   glide A3 -> E4 (TIME 36): %u blocks, at 1/4 of its time %.1f %% of the way, at 3/4 %.1f %%, F1's key "
                "tracking x%.3f, at most %.2f %% a block\n", b - a, q25 * 100, q75 * 100, (double)f1b / f1a, jmax * 100);
-        snprintf(what, sizeof what, "glide as sung: an S-curve (%u blocks, 163 +- 2; %.0f %% at 1/4 of its time, %.0f %% at 3/4), "
-                 "monotonic, smooth; formants continuous across it", b - a, q25 * 100, q75 * 100);
-        check(what, a && b - a >= 161u && b - a <= 165u && mono && !bigstep && q25 <= 0.20 && q25 >= 0.08 && q75 >= 0.80 &&
-                    q75 <= 0.92 && jmax < 0.004 && okf && f1b > f1a);
+        snprintf(what, sizeof what, "glide as sung: an S-curve (%u blocks of %u, 163 +- 2 of 32; %.0f %% at 1/4 of its time, %.0f %% at 3/4), "
+                 "monotonic, smooth; formants continuous across it", b - a, (unsigned)CTL, q25 * 100, q75 * 100);
+        check(what, a && b - a >= 161u * 32u / CTL && b - a <= 165u * 32u / CTL && mono && !bigstep && q25 <= 0.20 && q25 >= 0.08 && q75 >= 0.80 &&
+                    q75 <= 0.92 && jmax < 0.004 * CTL / 32 && okf && f1b > f1a);
         {   /* GLIDE 0, words, legato: a singer's ~60 ms */
             static const snt_t GW[] = {{60, 4, 1}, {64, 4, 0}};
             vsetup(preset_of("CANTOR ES"), LG_ES, "la la");
@@ -905,9 +905,9 @@ static void check_singer(void)
                     a = k - 1u;
             for (k = a; k < n / CTL && pq[k] != 64 * 16 * 256; k++)
                 ;
-            snprintf(what, sizeof what, "a legato word with GLIDE 0 slides as sung: %u blocks (~80, ~60 ms), a syllable on it",
-                     k - a);
-            check(what, a && k - a >= 76u && k - a <= 84u && nsy[k] == 2u);
+            snprintf(what, sizeof what, "a legato word with GLIDE 0 slides as sung: %u blocks of %u (~80 of 32, ~60 ms), a syllable on it",
+                     k - a, (unsigned)CTL);
+            check(what, a && k - a >= 76u * 32u / CTL && k - a <= 84u * 32u / CTL && nsy[k] == 2u);
         }
     }
     {   /* vibrato: a held vowel at C4, 2.4 s: F0 steady in its first 0.25 s (within 6 ct: the jitter), then from ~0.7 s
@@ -1255,6 +1255,66 @@ static void check_seek_cycles(void)
     check("POS cycle skipping preserves the original singer and phoneme state at every position", errors == 0);
 }
 
+/* (p1, main 0.9.16) THEME: a name a detent (the knob, params.c param_turn), and swept while a note is held the voice goes on as
+ * it was, bit for bit: THEME is the next words', never the sound (voice.c engine_block dipped at every value: crackle);
+ * the other named values (LOFI WAV#, NOISE LEN) a name a detent too, a new name still a dip */
+static void check_theme(void)
+{
+    static double a[FS], b[FS];
+    const param_desc_t *d = &FMT_WDESC[1];
+    uint32_t i, k, dips = 0, names = 1, ok = 1;
+    int32_t v = 0, w;
+    char nm[8], prev[8];
+    const char *u;
+    for (i = 0; i < 2u; i++) {
+        vsetup(0, LG_ES, "laaa");
+        trk[0].p[P_E1] = 0;
+        trk_note_on(&trk[0], 60, 100);
+        for (k = 0; k < FS; k += CTL) {
+            if (i && k >= FS / 4)
+                trk[0].p[P_E1] = (int16_t)((k / CTL) % 128u);   /* a value a block: swept back and forth */
+            engine_block(&trk[0]);
+            dips += trk[0].xf_dip;
+            vrender(i ? b + k : a + k, CTL);
+        }
+    }
+    for (k = 0; k < FS; k++)
+        ok &= a[k] == b[k];
+    check("THEME swept every block over a held note: no dip, the voice bit for bit as without it", ok && !dips);
+    param_format(d, 0, prev, &u);
+    for (k = 0; k < 7u; k++) {                           /* a detent: the next name, onto its middle */
+        w = param_turn(d, v, 1);
+        param_format(d, w, nm, &u);
+        names += strcmp(nm, prev) != 0;
+        ok &= w == (int32_t)(16u * (k + 1u) + 8u);
+        memcpy(prev, nm, sizeof prev);
+        v = w;
+    }
+    ok &= names == 8u && param_turn(d, v, 1) == 120 && param_turn(d, 64, 1) == 88 && param_turn(d, 64, -1) == 56 &&
+          param_turn(d, 127, -2) == 88;
+    check("THEME: LOVE .. FIRE in 7 detents, each onto its name's middle (stored 0..127 as before)", ok);
+    ok = param_turn(&FMT_WDESC[7], 0, 1) == 38 && param_turn(&LOFI_WAVNUM, 64, 1) == 76 && param_turn(&NOISE_LONG, 0, 3) == 56 &&
+         param_turn(&FMT_WDESC[0], 5, 1) == 6;       /* (LOOP 5 names; WAV# 16; LEN 8; POS no names: a value) */
+    check("  the other named values a name a detent (LOOP, LOFI WAV#, NOISE LEN); POS a value a detent", ok);
+    {                                                    /* (0.9.17) between the detents: the blend */
+        static char t8[2048], tv[2048];
+        uint32_t s1, l, same = 1, diff = 1;
+        for (l = LG_ES; l <= LG_JA; l++) {
+            gen_text(l, 1, 0, 6, 9, t8, sizeof t8, &s1);
+            for (k = 0; k <= 8u; k += 4u) {              /* a name's low half: its words, bit for bit (projects) */
+                gen_text(l, 1, 0x100u + k, 6, 9, tv, sizeof tv, &s1);
+                same &= !strcmp(t8, tv);
+            }
+            gen_text(l, 1, 0x100u + 15u, 6, 9, tv, sizeof tv, &s1);
+            diff &= strcmp(t8, tv) != 0 && s1;           /* the top: the next theme's words in it, phrases whole */
+            gen_text(l, 1, 1, 6, 9, t8, sizeof t8, &s1);
+            gen_text(l, 1, 0x100u + 16u, 6, 9, tv, sizeof tv, &s1);
+            same &= !strcmp(t8, tv);
+        }
+        check("  THEME between detents: 0..8 of a name its words as at the detent, 15 a blend with the next", same && diff);
+    }
+}
+
 int main(int argc, char **argv)
 {
     if (argc > 2 && !strcmp(argv[1], "--g2p")) {
@@ -1273,6 +1333,7 @@ int main(int argc, char **argv)
     check_singer();
     check_presets();
     check_lyric();
+    check_theme();
     check_cost();
     if (argc > 1)
         demos(argv[1]);

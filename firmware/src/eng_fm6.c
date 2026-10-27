@@ -31,7 +31,7 @@
  * matrix's CUT), SHP the feedback, PIT the pitch (bend, glide, tune: the voice's pitch and fine factor).
  * Six voices per part at most (engine_t.poly).
  *
- * State: per voice an fm6_note_t (fm6_note, 244 bytes, a side array as PHYS's slots: voice_t.s[] is too
+ * State: per voice an fm6_note_t (fm6_note, 272 bytes, a side array as PHYS's slots: voice_t.s[] is too
  * small), per part the patch, the patch through the macros (fm6_eff, rebuilt in the audio ISR when either
  * changes) and the LFO (once a block). */
 #include "fm6_core.c"
@@ -358,7 +358,8 @@ static void fm6_sync(const track_t *t)
                                                          * a decaying patch can be held too) */
                     op[FP_L1 + 2u] = (uint8_t)(t->p[P_SUS] > 0 ? 50 + clamp(t->p[P_SUS], 0, 126) * 49 / 126 : 0);   /* (the
                                                          * EG's levels are logarithmic, ~0.75 dB a step: 50..99) */
-                op[FP_R1 + 3u] = (uint8_t)clamp(op[FP_R1 + 3u] - clamp(t->p[P_REL], 0, 127) * 90 / 127, 1, 99);
+                op[FP_R1 + 3u] = (uint8_t)clamp(op[FP_R1 + 3u] - clamp(t->p[P_REL], 0, 127) * 90 / 127, 12, 99);   /* (beta3: R4 floor 12,
+                                                         * ~25 s at REL 127; at 1 a released voice rendered for minutes) */
                 continue;
             }
             if (!op[FP_MODE])
@@ -482,23 +483,23 @@ _Static_assert(NELEM(N_FM6_PATCH) == FM6_OWN + FM6_NBANK + 2u, "a SLOT name per 
 
 /* {ALG, FB, MLVL, MRAT, MEG, VMOD, DTUN, SLOT}: the factory patch F1..F8 as it is, DTUN on the pad */
 static const preset_t FM6_PRESETS[] = {
-    {"TINE EP", {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 127, 0}, 0, 0, FX(0, 45, 25, 35), PAT(6)},
-    {"BELL", {0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 127, 0}, 0, 0, FX(0, 10, 30, 70), PAT(7)},
-    {"FM BASS", {0, 0, 0, 0, 0, 0, 0, 2}, {0, 0, 127, 0}, 0, 1, FX(0, 0, 10, 10), PAT(2)},
-    {"BRASS", {0, 0, 0, 0, 0, 0, 0, 3}, {0, 0, 127, 0}, 0, 0, FX(0, 25, 20, 40), PAT(4)},
-    {"PAD", {0, 0, 0, 0, 0, 0, 30, 4}, {0, 0, 127, 0}, 0, 0, FX(0, 60, 30, 70), PAT(5)},
-    {"MARIMBA", {0, 0, 0, 0, 0, 0, 0, 5}, {0, 0, 127, 0}, 0, 0, FX(0, 0, 25, 40), PAT(3)},
-    {"ORGAN", {0, 0, 0, 0, 0, 0, 0, 6}, {0, 0, 127, 0}, 0, 0, FX(10, 40, 0, 30), PAT(6)},
-    {"PLUCK", {0, 0, 0, 0, 0, 0, 0, 7}, {0, 0, 127, 0}, 0, 0, FX(0, 20, 35, 30), PAT(13)},
+    {"TINE EP", {0, 0, 0, 0, 0, 0, 0, 0}, {0, 0, 127, 0}, 0, TAG(KEYS), FX(0, 45, 25, 35), PAT(6)},
+    {"BELL", {0, 0, 0, 0, 0, 0, 0, 1}, {0, 0, 127, 0}, 0, TAG(BELL), FX(0, 10, 30, 70), PAT(7)},
+    {"FM BASS", {0, 0, 0, 0, 0, 0, 0, 2}, {0, 0, 127, 0}, 0, 1 | TAG(BASS), FX(0, 0, 10, 10), PAT(2)},
+    {"BRASS", {0, 0, 0, 0, 0, 0, 0, 3}, {0, 0, 127, 0}, 0, TAG(LEAD), FX(0, 25, 20, 40), PAT(4)},
+    {"PAD", {0, 0, 0, 0, 0, 0, 30, 4}, {0, 0, 127, 0}, 0, TAG(PAD), FX(0, 60, 30, 70), PAT(5)},
+    {"MARIMBA", {0, 0, 0, 0, 0, 0, 0, 5}, {0, 0, 127, 0}, 0, TAG(PLUCK), FX(0, 0, 25, 40), PAT(3)},
+    {"ORGAN", {0, 0, 0, 0, 0, 0, 0, 6}, {0, 0, 127, 0}, 0, TAG(KEYS), FX(10, 40, 0, 30), PAT(6)},
+    {"PLUCK", {0, 0, 0, 0, 0, 0, 0, 7}, {0, 0, 127, 0}, 0, TAG(PLUCK), FX(0, 20, 35, 30), PAT(13)},
     /* (0.7.0) the factory patches bent a little: an ice bell and a soft bell from BELL, DX keys from TINE EP, a pluck
      * and wood from PLUCK and MARIMBA, strings from PAD, a hard bass */
-    {"ICE BELL", {0, 0, -20, 0, 0, 0, 45, 1}, {0, 0, 127, 0}, 0, 0, FX(0, 60, 30, 80), PAT(5)},
-    {"DX KEYS", {0, 0, 12, 0, 0, 0, 10, 0}, {0, 0, 127, 0}, 0, 0, FX(0, 40, 25, 40), PAT(6)},
-    {"FM PLUCK", {0, 0, 20, 0, -20, 0, 0, 7}, {0, 0, 127, 0}, 0, 0, FX(0, 20, 45, 35), PAT(3)},
-    {"SOFT BELL", {0, 0, -25, 0, 0, 0, 20, 1}, {0, 0, 127, 0}, 0, 0, FX(0, 20, 35, 75), PAT(7)},
-    {"FM STRINGS", {0, 0, -10, 0, 0, 0, 35, 4}, {0, 0, 127, 0}, 0, 0, FX(0, 55, 25, 65), PAT(5)},
-    {"HARD BASS", {0, 2, 25, 0, 0, 0, 0, 2}, {0, 0, 127, 0}, 0, 1, FX(15, 0, 10, 5), PAT(2)},
-    {"WOOD", {0, 0, -15, 0, 0, 0, 0, 5}, {0, 0, 127, 0}, 0, 0, FX(0, 10, 30, 45), PAT(3)},
+    {"ICE BELL", {0, 0, -20, 0, 0, 0, 45, 1}, {0, 0, 127, 0}, 0, TAG(BELL), FX(0, 60, 30, 80), PAT(5)},
+    {"DX KEYS", {0, 0, 12, 0, 0, 0, 10, 0}, {0, 0, 127, 0}, 0, TAG(KEYS), FX(0, 40, 25, 40), PAT(6)},
+    {"FM PLUCK", {0, 0, 20, 0, -20, 0, 0, 7}, {0, 0, 127, 0}, 0, TAG(PLUCK), FX(0, 20, 45, 35), PAT(3)},
+    {"SOFT BELL", {0, 0, -25, 0, 0, 0, 20, 1}, {0, 0, 127, 0}, 0, TAG(BELL), FX(0, 20, 35, 75), PAT(7)},
+    {"FM STRINGS", {0, 0, -10, 0, 0, 0, 35, 4}, {0, 0, 127, 0}, 0, TAG(PAD), FX(0, 55, 25, 65), PAT(5)},
+    {"HARD BASS", {0, 2, 25, 0, 0, 0, 0, 2}, {0, 0, 127, 0}, 0, 1 | TAG(BASS), FX(15, 0, 10, 5), PAT(2)},
+    {"WOOD", {0, 0, -15, 0, 0, 0, 0, 5}, {0, 0, 127, 0}, 0, TAG(PLUCK), FX(0, 10, 30, 45), PAT(3)},
 };
 
 static const engine_t ENG_FM6 = {
@@ -518,6 +519,7 @@ static const engine_t ENG_FM6 = {
     .npresets = NELEM(FM6_PRESETS),
     .note_on = fm6_note_on,
     .render = fm6_render,
+    .whole = 1,                                         /* (ctl64) its operators render FM6_N at a time */
     .knob = {P_E2, P_E3, P_E4, P_E7},
     .poly = FM6_POLY,
     .block = fm6_block,

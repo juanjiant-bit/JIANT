@@ -1,0 +1,44 @@
+name: Sampler editor and factory bank
+on:
+  push:
+    branches: [codex/sampler-editor-stock]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: |
+          mkdir -p build/gen build/host
+          python3 tools/gen_tables.py build/gen/felucca_tables.h
+          python3 tools/gen_fm6_patches.py build/gen/felucca_fm6.h
+          python3 tools/gen_lyrics.py build/gen/felucca_lyrics.h
+          python3 tools/gen_drum_maps.py firmware/src/gen_tables.c firmware/src/song_dice.c build/gen/gen_drum_maps.h build/gen/dice_bars.h build/gen/gen_bass.h
+          cc -O2 -w -Ibuild/gen -Ifirmware/src tests/descdump.c -lm -o build/host/descdump
+          build/host/descdump > build/host/desc.json
+          cc -O2 -w -Ibuild/gen -Ifirmware/src tools/gen_factory_samples.c -lm -o build/host/gen_factory_samples
+          build/host/gen_factory_samples > build/host/generated-factory.json
+          cmp web/factory-samples.json build/host/generated-factory.json
+          node web/test_web.mjs
+          node web/test_backup.mjs
+          node web/test_sampler.mjs
+          cc -O2 -w -Ibuild/gen -Ifirmware/src tests/factory_bank_test.c -lm -o build/host/factory_bank_test
+          build/host/factory_bank_test build/host/factory-samples.bin
+          cc -O2 -w -Ibuild/gen -Ifirmware/src tests/sample_test.c -lm -o build/host/sample_test
+          build/host/sample_test
+      - name: Install browser driver
+        run: pip install --timeout 30 --retries 2 playwright==1.58.0
+      - name: Browser availability
+        timeout-minutes: 5
+        run: command -v google-chrome || python3 -m playwright install chromium
+      - name: Chromium connection and factory transfer
+        timeout-minutes: 3
+        run: timeout 120s python3 -u tests/browser_sampler.py

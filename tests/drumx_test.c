@@ -60,6 +60,16 @@ static track_t *kitx(int16_t morph, int16_t tune)
         t->p[P_DIST + i] = 0;
     return t;
 }
+/* (ctl64) the kit's noise from its seed at the next hit (drumx_voice.c dx_run: an empty generator takes the constant): two
+ * strikes compared sample for sample, or in a short window (a clap's first ms, a snare's first 5 ms), hear the same noise.
+ * Without it each strike drew another realization and those windows differed up to x5 strike to strike (the probe on
+ * the 32-sample build too): the checks passed or failed with the generator's position */
+static void same_noise(track_t *t)
+{
+    uint32_t l;
+    for (l = 0; l < DV_NLANE; l++)
+        drum_kit[t - trk][l].x.rng = 0;
+}
 /* lane l struck, n samples of the left output into buf; returns the voice still sounding at the end */
 static int strike(track_t *t, uint32_t l, uint32_t n)
 {
@@ -317,6 +327,49 @@ int main(int argc, char **argv)
             dx_tone = 0;
             check("TONE (0.6.36): BP on the hats, rim and cowbell only; FEEDBK moves every sound, under full scale", okb && okf, 0);
         }
+        {   /* (0.9.9-snd1) FEEDBK and FM ENV on curves (drumx_voice.c DX_FB_CURVE, dx_fm_env, dx_fm_lim): monotonic, most
+             * of the travel musical, the extreme in the last steps; the tom's brightness (the first difference's energy
+             * over the signal's) rising with each, at half of the knob well under its top; FM's index kept under the
+             * half rate's Nyquist on a high hit, a low one as it is */
+            static const int16_t FB[5] = {0, 4, 8, 12, 15}, FMV[5] = {0, 32, 64, 95, 127};
+            double br[2][5];
+            uint32_t k2, kk;
+            int mono = 1, okc = 1;
+            for (k2 = 1; k2 < 16u; k2++)
+                okc &= DX_FB_CURVE[k2] > DX_FB_CURVE[k2 - 1u];
+            for (k2 = 1; k2 < 128u; k2++)
+                okc &= dx_fm_env((int32_t)k2) >= dx_fm_env((int32_t)k2 - 1);
+            okc &= DX_FB_CURVE[12] * 2 < DX_FB_CURVE[15] && dx_fm_env(114) * 2 < dx_fm_env(127) && dx_fm_env(64) * 8 < 64 * 3;
+            for (kk = 0; kk < 2u; kk++)
+                for (k2 = 0; k2 < 5u; k2++) {
+                    track_t *t = kitx(64, 64);
+                    double e = 0, d = 0;
+                    if (kk)
+                        t->p[P_E5] = FMV[k2];
+                    else
+                        dx_tone = (uint8_t)(FB[k2] << 4);
+                    same_noise(t);
+                    strike(t, DV_TOM, FS / 8u);
+                    for (i = 1; i < FS / 8u; i++) {
+                        e += (double)buf[i] * buf[i];
+                        d += ((double)buf[i] - buf[i - 1]) * ((double)buf[i] - buf[i - 1]);
+                    }
+                    br[kk][k2] = d / (e + 1);
+                    if (k2 && br[kk][k2] < br[kk][k2 - 1] * 0.8)   /* (the tom's noise: another each hit) */
+                        mono = 0;
+                    dx_tone = 0;
+                }
+            check("FEEDBK, FM ENV on curves (0.9.9-snd1): monotonic, the extreme only in the last steps", okc,
+                  "FEEDBK beta %.2f at 8, %.2f at 12, %.2f at 15; FM ENV index %.2f rad at 64, %.2f at 114, %.2f at 127",
+                  DX_FB_CURVE[8] * M_PI / 65536, DX_FB_CURVE[12] * M_PI / 65536, DX_FB_CURVE[15] * M_PI / 65536,
+                  dx_fm_env(64) * 0.02454, dx_fm_env(114) * 0.02454, dx_fm_env(127) * 0.02454);
+            check("  the tom brighter as each rises, half the knob well under the top", mono && br[0][2] < br[0][4] * 0.5 &&
+                  br[1][2] < br[1][4] * 0.5, "FEEDBK 0 4 8 12 15: %.4f %.4f %.4f %.4f %.4f; FM ENV 0 32 64 95 127: %.4f %.4f %.4f %.4f %.4f",
+                  br[0][0], br[0][1], br[0][2], br[0][3], br[0][4], br[1][0], br[1][1], br[1][2], br[1][3], br[1][4]);
+            check("  FM ENV's index under Nyquist: a C2 hit's as it is, an 8 kHz one's eased",
+                  dx_fm_lim(200, pitch_inc(36u * 16u), 4096u) >= 195 && dx_fm_lim(200, pitch_inc(120u * 16u), 4096u) < 100, "%d %d",
+                  dx_fm_lim(200, pitch_inc(36u * 16u), 4096u), dx_fm_lim(200, pitch_inc(120u * 16u), 4096u));
+        }
         {   /* (0.7.9) KIT 3 > HANDS: more hands, more of the clap after its strike (each hand the noise struck again in
              * its first ~50 ms, then dying as the hit), the strike itself as it was, under full scale; the kick untouched */
             static int32_t r1[FS / 8];
@@ -325,8 +378,10 @@ int main(int argc, char **argv)
             uint32_t h;
             int other;
             for (h = 0; h < 2u; h++) {
+                track_t *tk = kitx(64, 64);
                 dx_hands = (uint8_t)(h ? 15 : 0);
-                strike(kitx(64, 64), DV_CLAP, FS / 8u);
+                same_noise(tk);
+                strike(tk, DV_CLAP, FS / 8u);
                 for (i = 0; i < FS / 8u; i++) {
                     double x = buf[i];
                     if (i < FS / 1000u) a0[h] += x * x;            /* its first ms: the strike */
@@ -334,9 +389,13 @@ int main(int argc, char **argv)
                     if (h && abs(buf[i]) > pk2) pk2 = abs(buf[i]);
                 }
             }
-            dx_hands = 15; strike(kitx(64, 64), DV_KICK, FS / 8u); memcpy(r1, buf, sizeof r1);
-            dx_hands = 0; strike(kitx(64, 64), DV_KICK, FS / 8u);
-            {   /* (the kick: its energy the same, within 1 %: its noise is another each strike) */
+            {
+                track_t *tk = kitx(64, 64);
+                dx_hands = 15; same_noise(tk); strike(tk, DV_KICK, FS / 8u); memcpy(r1, buf, sizeof r1);
+                tk = kitx(64, 64);
+                dx_hands = 0; same_noise(tk); strike(tk, DV_KICK, FS / 8u);
+            }
+            {   /* (the kick: its energy the same, within 1 %) */
                 double k0 = 0, k1 = 0;
                 for (i = 0; i < FS / 8u; i++) { k0 += (double)buf[i] * buf[i]; k1 += (double)r1[i] * r1[i]; }
                 other = k1 < k0 * 1.01 && k1 > k0 * 0.99;
@@ -352,11 +411,13 @@ int main(int argc, char **argv)
         double e0, t0, e1, t1;
         track_t *t = kitx(64, 64);
         song.g[G_PUNCH] = 0;
+        same_noise(t);
         strike(t, 1, FS / 4u);
         e0 = rms(0, FS / 200u);
         t0 = rms(FS / 20u, FS / 4u);
         t = kitx(64, 64);
         song.g[G_PUNCH] = 100;
+        same_noise(t);
         strike(t, 1, FS / 4u);
         e1 = rms(0, FS / 200u);
         t1 = rms(FS / 20u, FS / 4u);
@@ -541,6 +602,60 @@ int main(int argc, char **argv)
                       pk <= 32767, "crest %.2f -> %.2f, peak %d", c0, c1, pk);
         }
         song.g[G_CLIP] = 0;
+    }
+
+    /* (0.9.9-snd1) GLUE, on the bus itself (eng_drum.c drum_bus -> drum_glue; the mix's leveler and the kit's noise
+     * kept out): a loud kit's sum (eight hits, bursts of decaying noise and a kick's sine, DRV up) at 0 / 8 / 15: the
+     * crest factor down as it rises, the peak never up; OFF bit for bit what the bus gave without it (fresh, and after
+     * it was on); bounded under full scale at 15 (the project: ui_test) */
+    {
+        static int32_t in[FS / 2u], ref[FS / 2u];
+        double cr[3];
+        int32_t pkg[3];
+        uint32_t m, k, j, nn = FS / 2u, bad0 = 0;
+        static const uint8_t G[3] = {0, 8, 15};
+        track_t *t = kitx(64, 64);
+        uint32_t seed = 1u;
+        dx_xon = 0;
+        for (i = 0; i < nn; i++) {                       /* a hit every 1/8 s: kick (sine 55 Hz) + snare (noise) */
+            uint32_t ph = i % (FS / 8u);
+            double e = exp(-(double)ph / (FS * 0.06)), en = exp(-(double)ph / (FS * 0.02));
+            seed = seed * 1664525u + 1013904223u;
+            in[i] = (int32_t)(e * 60000 * sin(2 * M_PI * 55.0 * ph / FS) + en * 40000 * ((int32_t)(seed >> 16) - 32768) / 32768.0);
+        }
+        t->p[P_E7] = 40;
+        for (m = 0; m < 3u; m++) {
+            double r = 0;
+            dx_glue = G[m];
+            for (k = 0; k < nn; k += CTL) {
+                for (j = 0; j < CTL; j++)
+                    buf[k + j] = in[k + j];
+                drum_bus(t, buf + k, CTL);
+            }
+            for (pkg[m] = 0, i = 0; i < nn; i++) {
+                pkg[m] = abs(buf[i]) > pkg[m] ? abs(buf[i]) : pkg[m];
+                r += (double)buf[i] * buf[i];
+                if (!m) ref[i] = buf[i];
+            }
+            cr[m] = pkg[m] / sqrt(r / nn);
+            if (m == 1u) {                               /* GLUE turned OFF after it was on: as fresh */
+                dx_glue = 0;
+                for (k = 0; k < nn; k += CTL) {
+                    for (j = 0; j < CTL; j++)
+                        buf[k + j] = in[k + j];
+                    drum_bus(t, buf + k, CTL);
+                }
+                for (i = 0; i < nn; i++)
+                    bad0 += buf[i] != ref[i];
+            }
+        }
+        check("GLUE 0 / 8 / 15 on a loud kit's bus: the crest factor down, the peak never up, under full scale",
+              cr[1] < cr[0] * 0.97 && cr[2] < cr[1] * 0.95 && pkg[1] <= pkg[0] && pkg[2] <= pkg[0] && pkg[2] < 65536,
+              "crest %.2f -> %.2f -> %.2f, peak %d %d %d (x2 scale)", cr[0], cr[1], cr[2], pkg[0], pkg[1], pkg[2]);
+        check("GLUE OFF: the bus bit for bit as without it (the goldens: OFF is the kit as before), also after it was on",
+              bad0 == 0u, "%u samples differ", bad0);
+        dx_glue = 0;
+        t->p[P_E7] = 0;
     }
 
     /* 6 */

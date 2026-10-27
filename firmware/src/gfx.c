@@ -5,7 +5,7 @@
  * byte-swapped (the panel takes RGB565 big-endian).
  * Text and icons are 4-bit alpha bitmaps made at build time (tools/gen_aa_font.py: Inter Tight;
  * tools/gen_aa_icons.py: Fukiai). A glyph is trimmed to its ink box, advances are in 1/16 px, and
- * each glyph is rasterised at 1 << psh horizontal phases (S M 4, L 2: drawn at a pen of +0, +1/4 .. px);
+ * each glyph is rasterised at 1 << psh horizontal phases (S M L 2, S M 4 until 0.9.9-snd3: drawn at a pen of +0, +1/2 px);
  * cv_text takes the phase that puts it within a phase step of its true place. Blending uses a 16-entry
  * ramp per (ink, background) pair, cached, so a pixel costs a nibble read and a store. Colours come from the theme tokens. */
 typedef struct { uint16_t off, adv; int8_t bx; uint8_t by, bw, bh; } aag_t;   /* a glyph at a phase (ag) */
@@ -320,16 +320,17 @@ static void cv_blit_from(uint32_t x, uint32_t y, uint32_t r0)
  * them, but only what changed goes to the panel (at 12 MHz the whole screen took ~77 ms, the UI ~12 frames a second). Each
  * strip is cut in 8 x 4 cells, a hash of each kept; the runs of cells whose hash changed are sent (cv_blit_cells), a row
  * of them a window. A frame drawn in full (dc_frame(1): ui.force, a page change, a wake, a blit outside the cells) sends
- * them all. Exact by construction: a cell goes out when any of its pixels changed (a 32-bit hash: a change missed about once
- * in 4e9 changed cells, until that cell changes again) */
+ * them all. A cell goes out when any of its pixels changed (a 16-bit hash, snd7: 3.8 kB of the pool back; a change missed
+ * about once in 65536 changed cells, and one cell of each strip a frame sent anyway, in turn: a miss mended within seconds) */
 #ifndef DC_CW
 #define DC_CW 8u                        /* a cell: 8 x 4 (8 x 8 sent ~15 % more, 4 x 4 wants twice the hashes) */
 #define DC_CH 4u
 #endif
 #define DC_MAX 1920u                    /* cells: HUD's HOME has 1878 (header 180, tabs 150, the panel 1140, the knobs 4 x 72,
-                                         * the footer 120): 7.5 kB of the pool */
+                                         * the footer 120): 3.8 kB of the pool */
 #define DC_STRIPS 10u
-static uint32_t dc_hash[DC_MAX] __attribute__((section(".pool")));
+static uint16_t dc_hash[DC_MAX] __attribute__((section(".pool")));
+static uint16_t dc_roll __attribute__((section(".pool")));   /* (the cell sent anyway, in turn) */
 static struct { int16_t x, y, w, h; uint16_t base, n; } dc_st[DC_STRIPS] __attribute__((section(".pool")));
 static uint8_t dc_n __attribute__((section(".pool")));
 static uint8_t dc_all __attribute__((section(".pool")));
@@ -367,10 +368,10 @@ static uint32_t dc_cell(uint32_t cx, uint32_t cy)     /* the hash of canvas cell
     }
     return hs;
 }
-static void cv_blit_cells(uint32_t x, uint32_t y)
+static __attribute__((noinline)) void cv_blit_cells(uint32_t x, uint32_t y)   /* (snd7: out of the recorded code) */
 {
     uint32_t i, ncx = (cv_w + DC_CW - 1u) / DC_CW, ncy = (cv_h + DC_CH - 1u) / DC_CH, cx, cy, base;
-    uint32_t *hp;
+    uint16_t *hp;
     GFX_HOOK_BLIT(x, y, 0u);                            /* (the screen shows the whole strip after it) */
     for (i = 0; i < dc_n; i++)
         if (dc_st[i].x == (int16_t)x && dc_st[i].y == (int16_t)y && dc_st[i].w == (int16_t)cv_w && dc_st[i].h == (int16_t)cv_h)
@@ -389,14 +390,16 @@ static void cv_blit_cells(uint32_t x, uint32_t y)
         dc_n++;
     } else if (!dc_all) {
         hp = dc_hash + dc_st[i].base;
+        base = ++dc_roll % (ncx * ncy);
         for (cy = 0; cy < ncy; cy++) {                  /* each row of cells: its runs of changed cells, a window each */
             uint32_t y0 = cy * DC_CH, h = cv_h - y0 < DC_CH ? cv_h - y0 : DC_CH, run = 0xFFFFu;
             for (cx = 0; cx <= ncx; cx++) {
                 uint32_t ch = 0;
                 if (cx < ncx) {
                     uint32_t hs = dc_cell(cx, cy);
-                    ch = hp[cy * ncx + cx] != hs;
-                    hp[cy * ncx + cx] = hs;
+                    hs = (hs ^ hs >> 16) & 0xFFFFu;
+                    ch = hp[cy * ncx + cx] != hs || cy * ncx + cx == base;
+                    hp[cy * ncx + cx] = (uint16_t)hs;
                 }
                 if (ch && run == 0xFFFFu)
                     run = cx;
@@ -411,8 +414,10 @@ static void cv_blit_cells(uint32_t x, uint32_t y)
     }
     hp = dc_hash + dc_st[i].base;                       /* every cell: hashed, the strip sent whole */
     for (cy = 0; cy < ncy; cy++)
-        for (cx = 0; cx < ncx; cx++)
-            hp[cy * ncx + cx] = dc_cell(cx, cy);
+        for (cx = 0; cx < ncx; cx++) {
+            uint32_t hs = dc_cell(cx, cy);
+            hp[cy * ncx + cx] = (uint16_t)(hs ^ hs >> 16);
+        }
     dc_send(x, y, 0u, 0u, cv_w, cv_h);
 }
 
@@ -633,7 +638,8 @@ static void cv_alpha(int32_t x, int32_t y, uint32_t w, uint32_t h, const uint8_t
  * stream is read in order, so rows outside the clip are decoded and dropped; a run spans rows */
 #define HC_FONTS 4                       /* the codes: the faces M and L (gen_aa_font.py HUFF), the icons, the keycaps */
 static struct { const uint8_t *hc; uint16_t lut[256]; } hc_tab[HC_FONTS]
-    __attribute__((section(".pool")));     /* (the drawing's, main loop only: 0.8.4 LOWBUF, was .bss; 0.8.5 the pool, LOWBUF full) */
+    __attribute__((section(".lowbuf")));   /* (the drawing's, main loop only: 0.8.4 LOWBUF, was .bss; 0.8.5 the pool, LOWBUF
+                                            * full; 0.9.9-beta4 LOWBUF again, 4 KiB wider: the pool's top went to the RAM code) */
 static const uint16_t *hc_lut(const uint8_t *hc)
 {
     uint32_t k, len, code = 0, sym = 15, i;

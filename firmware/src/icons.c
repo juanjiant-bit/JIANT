@@ -160,6 +160,8 @@ static const icon_map_t ICON_MAP[] = {
     {"PRESS", ICON_LEVEL}, {"CHAOS", ICON_PROB}, {"SWEEP", ICON_SWEEP}, {"GROUP", ICON_STEPS}, {"TEMP", ICON_TUNE},
     {"TOUCH", ICON_ACCENT}, {"COUPLE", ICON_MOD}, {"CAP", ICON_PULSE}, {"HYST", ICON_SHAPE}, {"FM", ICON_MOD},
     {"DOPPLR", ICON_SWEEP}, {"MOUTH", ICON_VOICE}, {"ROUGH", ICON_NOISE}, {"AIR", ICON_NOISE},   /* (0.8.3) ANIMAL */
+    {"EXCITE", ICON_MIX}, {"BRIGHT", ICON_TONE}, {"STRETCH", ICON_SHAPE}, {"EVEN", ICON_SHAPE}, {"PEAK", ICON_RESO},
+    {"FORMNT", ICON_VOICE},                              /* (0.9.9-snd5) STRING, ADD */
                                                        /* FM6 (ALG, FB: above) */
     /* fixed columns drawn by ui_draw.c (STEP page, preset browser, SYSTEM) */
     {"NOTE", ICON_PITCH}, {"STEP", ICON_STEPS}, {"FLAG", ICON_ACCENT}, {"ACC", ICON_ACCENT}, {"LANE", ICON_DRUM}, {"HIT", ICON_GATE}, {"SLD", ICON_SLIDE}, {"USB", ICON_MIDI},
@@ -251,6 +253,8 @@ static uint32_t engine_icon(const char *name)
         {"NOISE", ICON_NOISE},
         {"FM6", ICON_MOD},                    /* (symbol_modular: six operators patched; a glyph of its own wanted) */
         {"ANIMAL", ICON_PHYS},                /* (0.8.3: a physical model, as PHYS was) */
+        {"STRING", ICON_PHYS},                /* (0.9.9-snd5: a physical model too) */
+        {"ADD", ICON_WAVE},
     };
     uint32_t i;
     for (i = 0; i < sizeof M / sizeof M[0]; i++)
@@ -271,6 +275,7 @@ static uint32_t page_icon(const page_t *pg)
     case GR_SONG: return ICON_X_SONG;         /* SONG: the disc */
     case GR_CHANCE: return ICON_PROB;         /* CHANCE: the die */
     case GR_COMP: return ICON_ARP;            /* (0.6.39) COMP: the step components */
+    case GR_GCOMP: return ICON_ARP;           /* (0.9.9-seq2f) GLO > COMPS: the global ones */
     case GR_MUTATE: return ICON_PROB;         /* (0.6.43) MUTATE */
     case GR_FUGUE: return ICON_X_PATTERN;     /* (0.6.52) FUGUE */
     case GR_SHAPE: return ICON_X_REPEAT;      /* (0.6.85) STRETCH */

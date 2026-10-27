@@ -99,7 +99,7 @@ int main(void)
             printf(",\"env\":");
             js_ints(v, 4);
             printf(",\"xp\":%u", (unsigned)p->xp);   /* (0.8.5) VOICE: LANG | LYRIC << 2 */
-            printf(",\"mono\":%d,\"pat\":%d}", p->mono, p->pat);
+            printf(",\"mono\":%d,\"pat\":%d}", p->mono & 1, p->pat);
         }
         printf("]}");
     }
@@ -150,7 +150,7 @@ int main(void)
         js_ints(v, 4);
         for (i = 0; i < 4u; i++)
             v[i] = p->fx[i];
-        printf(",\"fenv\":%d,\"mono\":%d,\"fx\":", p->fenv, p->mono);
+        printf(",\"fenv\":%d,\"mono\":%d,\"fx\":", p->fenv, p->mono & 1);
         js_ints(v, 4);
         printf(",\"pat\":%d}", p->pat);
     }

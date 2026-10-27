@@ -257,7 +257,11 @@ static int ota_ufw(uint8_t *hdr, uint32_t *fl_off, uint32_t *fl_len, uint32_t *o
 
 static int ota_stage(void)                       /* steps 1..6; 0 = host said success */
 {
+#ifdef MSCR                                      /* (seq2h) core.h mscr: the main loop's scratch, hdr step 1's only */
+    uint8_t *hdr = mscr.ota.hdr, *b = mscr.ota.blk.b, *mine = mscr.ota.blk.mine;
+#else
     static uint8_t hdr[0x400], b[512], mine[512];
+#endif
     uint32_t i, n, ota_off, ota_len, fl_off, fl_len, c, len, own, official;
     int rc;
     /* 1. UFW header + entry list */

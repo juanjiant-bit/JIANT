@@ -19,23 +19,29 @@ FUNCS = ["analog_render", "digital_render", "digital_render_legacy", "digital_re
          "drum_render", "noise_render", "fm6_render", "fm6_op_run", "fm6_op_fb",
          "dx_run", "dx_layer",                              # DRUM-X (drumx_voice.c): a hit, osc + noise; (0.6.49) LAYER
          "drum_side_add", "drum_mix", "drum_bus",           # (JIANT 0.6.48) DRUM-X IMAGE and SENDs; (0.7.9) the kit's curve
+         "drum_glue",                                       # (0.9.9-snd1) DRUM-X GLUE, while it is on
          "slicer_bus",                                      # (JIANT 0.6.3) the SLICER, one on a bus
          "fm1_alnk0_irq", "fm1_timer5_irq",               # the audio ISR; TIMER5: the key / LED scan (hal/fm1_input.h)
+         "ep4_tx", "ep4_fill",                              # (p1, main 0.9.12) TIMER5's USB audio refill, nested in the
+                                                            # render (usb.c: the poll, and the packet once a ms)
          "uac_rs_run",                                      # the USB audio input at 48 kHz: the 44.1 -> 48 resampler (usb.c;
                                                             # 0.8.9: in RAM, on core 1 with CORES 2; was uac_tap48)
          "click_render",                                    # the metronome's click (click.c), while it sounds
          "mod_begin", "mod_voice", "mod_end",                 # the modulation matrix (mod.c), called when active
-         "perf_begin", "perf_mute", "perf_pre", "perf_block", "perf_master",   # the FX layer (perform.c), when busy
+         "perf_begin", "perf_mute", "perf_pre", "perf_block", "perf_master", "perf_buf", "perf_glt",   # the FX layer (perform.c), when busy (snd2: its buffer effects out of perf_block, GLITCH)
          "rev_room", "rev_spring", "dist_amp", "dx_hands_step", "drw_dust",                # the reverb bus (fx.c): REVERB TYPE ROOM / SPRING
          "dly_lo",                                          # (0.8.4) the delay at half / a quarter rate (fx.c)
          "animal_render",                                   # (JIANT 0.8.3) ANIMAL (eng_animal.c): its five sources (one loop a voice)
+         "string_render",                                   # (0.9.9-snd5) STRING (its loop at 1 / 2^d; par11: ADD retired)
          "formant_word_render", "formant_block",           # (JIANT 0.8.5) VOICE singing words (eng_formant.c, sing.c)
-         "djf_block"]                                      # (0.9.1) the master DJ FILTER (fx.c), while it is off the middle
+         "djf_block",                                      # (0.9.1) the master DJ FILTER (fx.c), while it is off the middle
+         "track_comb", "tf_run", "tf_ms20"]                 # (0.9.9-snd1) the FILTER after the voices: COMB / COMB-, the SVF, MS20
 # built only with FELUCCA_FM4=1 (DIGITAL, src/eng_digital.c; not in the default build, so not in BUDGET): absent,
 # they are skipped; present, checked against these (their budget lines until the engine was retired in 1.0)
 OPTIONAL = {"digital_render": 12, "digital_render_legacy": 333, "digital_render_custom": 558,
-            "uac_rs_run": 558}          # (absent from a FELUCCA_UAC_48K=0 or FELUCCA_UAC=0 build; 0.8.9: four taps a pass, so
-                                        # the static count is up, ~185 instructions an output frame run against ~230)
+            "uac_rs_run": 838}          # (absent from a FELUCCA_UAC_48K=0 or FELUCCA_UAC=0 build; 0.8.9: four taps a pass, so
+                                        # the static count is up, ~185 instructions an output frame run against ~230;
+                                        # 0.9.9-stab: its products two taps a call, uac_mac2: 558 -> 838)
 TOL = 0.10                      # exact (no noise): small edits pass, a grown render loop does not
 DIV_W = 8                       # a divide weighs 1 + 8 instructions
 NEST = 4                        # an instruction in a loop inside a loop weighs 4, two deep 16, ...

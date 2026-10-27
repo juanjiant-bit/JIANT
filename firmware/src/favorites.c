@@ -7,6 +7,16 @@ typedef struct {
     uint32_t user, filter;
 } favorites_t;
 static favorites_t favorites;
+/* (0.9.9-snd5) the stars of GRAIN's and SLICE's numbers (retired) cleared once: they are STRING's and ADD's now (ui.c
+ * prefs_update: the settings' revision 3) */
+static void settings_save(void);
+static __attribute__((noinline)) void fav_rows_new(void)
+{
+    memset(favorites.factory[8], 0, sizeof favorites.factory[8]);           /* (core.h ENGI_STRING) */
+    memset(favorites.factory[13], 0, sizeof favorites.factory[13]);         /* (core.h ENGI_ADD) */
+    favorites.factory[15][25] = 3u;                    /* (prefs_rev) */
+    settings_save();
+}
 static int favorite_has(uint32_t engine, uint32_t preset)
 {
     if (engine == NENGINES)

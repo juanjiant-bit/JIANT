@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * (JIANT 0.6.11: from Felucca 1.5.1; its record type OBJ_FM6VB is 64 here, storage.c) */
 /* The FM6 voice bank (1.4.1, Discussion #168): 32 voices loaded at once from the web editor (a 32-voice .syx, its
  * 128-byte packed records as they are), picked on the device with FM6's SLOT B1..B32 (eng_fm6.c). A voice is read
@@ -109,9 +110,24 @@ static int fvb_read(uint32_t k, uint8_t *pk)
     return 0;
 }
 
-/* up_boot, and after a bank was staged: a staged bank newer than 0xE7000's is copied there; then the voices of the
- * bank at 0xE7000 (none without one) */
-static void fvb_boot(void)
+/* (JIANT 0.9.12) 0xE7000 is this firmware's or empty: its commit record still erased (no bank yet, or a copy cut
+ * before the record, which goes last) or the bank's header (FVB_MAGIC at FVB_INFO, written first: a copy cut inside the
+ * record too). Anything else is another firmware's: Skiff keeps its pattern bank there (its own record, "SKB1", at 0
+ * and its payload from 256: after Skiff by illuminus5). That reads as no bank (fvb_valid) and the power-on never erases
+ * it to finish a copy; only a bank the user sends (FM6B_END) writes over it */
+static int fvb_home_ours(void)
+{
+    uint32_t w[8], i, x = 0xFFFFFFFFu, m;
+    if (st_read(FVB_HOME, w, sizeof w) || st_read(FVB_HOME + FVB_INFO, &m, 4))
+        return 0;
+    for (i = 0; i < 8u; i++)
+        x &= w[i];
+    return x == 0xFFFFFFFFu || m == FVB_MAGIC;
+}
+
+/* up_boot (user 0), and after a bank was staged (user 1): a staged bank newer than 0xE7000's is copied there (at
+ * power-on only over a sector of ours: fvb_home_ours); then the voices of the bank at 0xE7000 (none without one) */
+static __attribute__((noinline)) void fvb_settle(int user)   /* (p1: out of line, fm1_main's room is pinned) */
 {
     st_hdr_t h, s, t;
     uint32_t c, best = 2u;
@@ -127,12 +143,14 @@ static void fvb_boot(void)
             s = t;
             best = c;
         }
-    if (best < 2u && !fvb_valid(st_sector(OBJ_AUTOSAVE, best), 1, &s) && !st_erase(FVB_HOME) &&
+    if (best < 2u && (user || fvb_home_ours()) && !fvb_valid(st_sector(OBJ_AUTOSAVE, best), 1, &s) && !st_erase(FVB_HOME) &&
         !fvb_prog(FVB_HOME + FVB_INFO, st_buf, FVB_LEN))
         fvb_commit(FVB_HOME, 0, s.seq);
     if (!fvb_valid(FVB_HOME, 0, &h))
         fm6_bank_used = ((const fvb_info_t *)st_buf)->used;
 }
+static __attribute__((noinline)) void fvb_boot(void) { fvb_settle(0); }   /* (p1: calls as before, fm1_main's */
+static __attribute__((noinline)) void fvb_user(void) { fvb_settle(1); }   /* and ed_handle's room pinned) */
 
 /* the transfer's sector holds only what it wrote: no autosave took it since FM6B_BEGIN (its commit record still
  * erased); else the transfer ends */
@@ -217,7 +235,7 @@ static uint32_t fvb_end(const uint8_t *name, uint32_t crc)
         in->name[k] = (char)(name[k] >= 32u && name[k] <= 126u ? name[k] : ' ');
     if (fvb_prog(base + FVB_INFO, in, sizeof *in) || fvb_commit(base, 1, seq) || fvb_valid(base, 1, &h))
         return 4;
-    fvb_boot();                                              /* the copy to 0xE7000, the voices */
+    fvb_user();                                              /* the copy to 0xE7000 (the user's: over anything), the voices */
     fm6_bank_changed();
     return fvb_valid(FVB_HOME, 0, &h) || h.seq != seq ? 4u : 0u;
 }

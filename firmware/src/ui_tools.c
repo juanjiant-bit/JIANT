@@ -14,9 +14,9 @@
 enum { TL_CLEAR, TL_REV, TL_LEFT, TL_RIGHT, TL_RANDOM, TL_COOK, TL_BEAT, TL_CAUTO, TL_LCLR, TL_LREV, TL_LFILL, TL_LRND,
        TL_N };
 
-/* the steps as they were just before an action (tl_take): what REVERSE and SHIFT read; in the pool (RAM's .bss is
- * tight) */
-static step_t tl_src[NSTEP] __attribute__((section(".pool")));
+/* the steps as they were just before an action (tl_take): what REVERSE and SHIFT read; (seq2d) in .bss again (it was
+ * the pool, RAM's .bss tight): the pool's headroom paid for step_t's four bytes of components v2 (proj_scratch) */
+#define tl_src (mscr.tl_src)          /* (seq2h) core.h mscr: one action's, the main loop's scratch */
 
 static uint32_t tl_len(const track_t *t) { return (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP); }
 static uint32_t tl_rnd(uint32_t n) { return n ? rng() % n : 0u; }

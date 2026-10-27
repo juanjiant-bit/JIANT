@@ -89,7 +89,8 @@ static int32_t menu_text(const char *s, int32_t y, uint16_t col, int draw)
             line[n + 1u] = 0;
             pen += (prev ? kern(&AF_S, prev, c) : 0) + AF_S.gh[glyph(&AF_S, c) >> AF_S.psh].adv;
             prev = c;
-            if ((pen + 8) >> 4 > 226)
+            if (pen >= 227 * 16 - 8)                     /* (pen + 8) >> 4 > 226; (0.9.9-snd4) 2 phases of S made this
+                                                            function 2 B longer and its hole before the sound has none */
                 break;
             if (s[n] == ' ')
                 space = n;
@@ -107,6 +108,53 @@ static int32_t menu_text(const char *s, int32_t y, uint16_t col, int draw)
     return y;
 }
 
+/* MENU > ABOUT: the clock and the rails, the crash since power-on; (p1, main 0.9.12) the last crash kept in the settings
+ * (cpu_safe.c) */
+static __attribute__((noinline)) int32_t about_cpu(int32_t y, int draw)
+{
+    char b[40], n[12];
+    (void)n;
+#if defined(FM1_IRQ_TARGET)
+    {   /* (0.9.9-stab) the clock (MENU > SYSTEM > CPU CLOCK, hal/fm1_sys.h fm1_clk_320) and the core supplies' steps
+         * as reached, and as the boot loader left them (fm1_rails_boot: V15's 7 / 15 wanted; the boot loader's 3 / 11) */
+        static const char RL[4][3] = {"S ", "/", " (", "/"};
+        uint32_t i;
+        str_cpy(b, fm1_clk_320() ? "CPU 320 MHZ  RAIL" : "CPU 360 MHZ  RAIL", sizeof b);
+        for (i = 0; i < 4u; i++) {
+            str_cpy(b + str_len(b), RL[i], 4);
+            fmt_int(n, fm1_rails[(i + 2u) & 3u]);
+            str_cpy(b + str_len(b), n, 4);
+        }
+        str_cpy(b + str_len(b), ")", 2);
+        y = menu_text(b, y, T_TEXT, draw);
+        if (fm1_crash.magic == FM1_CRASH_MAGIC && fm1_crash.count) {   /* (0.9.9-stab) the last crash since power-on
+                                                     * (.noinit, hal/fm1_irq.h): what its red screen showed, in hex */
+            static const char *const CL[6] = {"CRASH ", " VEC ", "PC ", " SP ", "C2 ", " BUS "};
+            const uint32_t cv[6] = {fm1_crash.count, fm1_crash.vec, fm1_crash.pc, fm1_crash.sp, fm1_crash.other_pc,
+                                    fm1_crash.bus[5] | fm1_crash.bus[3]};
+            for (i = 0; i < 6u; i++) {
+                uint32_t k, v = cv[i];
+                if (!(i & 1u))
+                    b[0] = 0;
+                str_cpy(b + str_len(b), CL[i], 7);
+                if (i == 0) {
+                    fmt_int(n, (int32_t)v);
+                    str_cpy(b + str_len(b), n, 8);
+                } else {
+                    for (k = str_len(b) + 8u; k > str_len(b); k--, v >>= 4)
+                        b[k - 1u] = "0123456789ABCDEF"[v & 15u];
+                    b[k + 8u] = 0;
+                }
+                if (i & 1u)
+                    y = menu_text(b, y, T_TEXT, draw);
+            }
+        }
+    }
+#endif
+    y = menu_text("LAST CRASH", y + 4, T_THEME, draw);   /* (p1, main 0.9.12) kept across power-off (cpu_safe.c) */
+    y = menu_text(crash_log_get(b) ? b : "NONE", y, T_TEXT, draw);
+    return y;
+}
 static int32_t menu_document(int32_t y, int draw)
 {
     uint32_t i;
@@ -143,7 +191,35 @@ static int32_t menu_document(int32_t y, int draw)
         str_cpy(b, "LATE ", sizeof b); fmt_int(n, (int32_t)load_diag.late); str_cpy(b + str_len(b), n, 12);
         str_cpy(b + str_len(b), "  SHED ", 8); fmt_int(n, (int32_t)load_diag.shed); str_cpy(b + str_len(b), n, 12);
         y = menu_text(b, y, T_TEXT, draw);
-        y = menu_text(mc_status(), y, T_TEXT, draw) - 216 + 8;   /* (0.6.71) the second core (fx.c) */
+        y = menu_text(cpu_status(), y, T_TEXT, draw);   /* (the second core: fx.c; p1: MENU > CPU CORES, cpu_safe.c) */
+        /* Existing per-block scheduler timings, read while main is running:
+         * audio IRQ dispatches and joins core 1 before returning to this UI.
+         * These elapsed times overlap across cores; do not add them as load. */
+        {
+            uint32_t k;
+            char d[96];
+            str_cpy(d, "VOICES ", sizeof d); fmt_int(n, voices_busy()); str_cpy(d+str_len(d), n, 12);
+            str_cpy(d+str_len(d), " CAP ", 6); fmt_int(n, voice_cap()); str_cpy(d+str_len(d), n, 12);
+            y = menu_text(d, y, T_TEXT, draw);
+            str_cpy(d, "ALLOC CUT ", sizeof d); fmt_int(n, voice_kills-voice_trims-shed_count); str_cpy(d+str_len(d), n, 12);
+            str_cpy(d+str_len(d), " TRIM ", 7); fmt_int(n, voice_trims); str_cpy(d+str_len(d), n, 12);
+            y = menu_text(d, y, T_TEXT, draw);
+            str_cpy(d, "FX ", sizeof d); fmt_int(n, mc_fx_tk/24u); str_cpy(d+str_len(d), n, 12);
+            str_cpy(d+str_len(d), " us/block", 10);
+            y = menu_text(d, y, T_TEXT, draw);
+            for (k=0; k<trk_live && k<NTRK; k++) {
+                uint32_t v, live=0;
+                for (v=0; v<NVOICE; v++) live += trk[k].v[v].active;
+                str_cpy(d, "T", sizeof d); fmt_int(n, k+1); str_cpy(d+str_len(d), n, 12);
+                str_cpy(d+str_len(d), " ", 2); str_cpy(d+str_len(d), ENGINES[trk[k].engine]->name, 20);
+                str_cpy(d+str_len(d), " V", 3); fmt_int(n, live); str_cpy(d+str_len(d), n, 12);
+                str_cpy(d+str_len(d), " ", 2); fmt_int(n, mc_tk[k]/24u); str_cpy(d+str_len(d), n, 12);
+                str_cpy(d+str_len(d), " us", 4);
+                y = menu_text(d, y, T_TEXT, draw);
+            }
+        }
+        y = about_cpu(y, draw);                     /* (p1: out of line, menu_document's room is pinned) */
+        y = y - 216 + 8;
     }
     y = menu_text("CREDITS", y + 216, T_THEME, draw) + 8;
     for (i = 0; i < NELEM(MENU_CREDITS); i++) {
@@ -189,7 +265,7 @@ static const char *menu_short(uint32_t row)          /* a card's label: the row'
 {
     static const struct { uint8_t row; char s[9]; } SH[] = {
         {MI_SCROFF, "SCR OFF"}, {MI_ACCEL, "ACCEL"}, {MI_SCLLED, "SCL LEDS"}, {MI_LOWCUT, "SPK EQ"}, {MI_USB, "USB LVL"},
-        {MI_CLKLVL, "CLICK LV"}, {MI_RESTORE, "RESTORE"}, {MI_PANEL, "CALIBR"}, {MI_INIT, "INIT SYS"}};
+        {MI_CLKLVL, "CLICK LV"}, {MI_RESTORE, "RESTORE"}, {MI_CPU, "CORES"}, {MI_CLOCK, "CPU MHZ"}, {MI_PANEL, "CALIBR"}, {MI_INIT, "INIT SYS"}};
     uint32_t k;
     for (k = 0; k < NELEM(SH); k++)
         if (SH[k].row == row)
@@ -237,7 +313,7 @@ static void menu_panel(void)
                 lz_uline(x + 5, y + 12, &AF_X, MTAB_NAME[k], T_THEME);
             for (r = 0; r < mtab_rows(k); r++) {
                 uint32_t row = mtab_first(k) + r;
-                int32_t ry = y + 15 + (int32_t)r * (mtab_rows(k) > 7u ? 7 : 8);   /* (0.9.7: DISPLAY's eight 7 apart) */
+                int32_t ry = y + 15 + (int32_t)r * (mtab_rows(k) > 6u ? 7 : 8);   /* (0.9.7: DISPLAY's eight 7 apart; p1: seven too, a bottom tile's) */
                 uint16_t bg = lz_tile_bg();
                 menu_val(row, v);
                 cv_clip_text(x + 5, ry - AF_X_CAP_Y, &AF_X, menu_short(row), T_DIM, bg, 64);
@@ -308,7 +384,7 @@ static void draw_menu(void)
           ui_rec_prefs * 92821u + ui_scr * 131071u + ui.mlv * 0x9E3779B1u +   /* (#157: SCREEN OFF's value redraws its row) */
           (ui.menu == 2 ? ui.menu_scroll * 48611u : 0u) +
           (ui.menu == 2 ? (song.cpu_q8 >> 3) * 7741u + load_diag.peak * 3329u + load_diag.late * 1931u +
-                          load_diag.shed * 2671u : 0u);   /* (0.6.19) ABOUT's AUDIO LOAD: live (NOW in ~3 % steps) */
+                          load_diag.shed * 2671u + (audio_halves / 64u) * 4657u : 0u);   /* (0.6.19) ABOUT's AUDIO LOAD: live (NOW in ~3 % steps) */
     draw_head();                                      /* (0.8.5: the pages' header, "MENU . DISPLAY") */
     if (!ui.force && sig == ui.menu_sig)
         return;
@@ -367,6 +443,7 @@ static void enc_drop(void)                             /* knob turns nobody take
 
 static void menu_close(void)
 {
+    ml_menu_closed();                                  /* (p1) MENU > CONTROL > LEARN armed, or CLEAR ALL */
     settings_save();                                   /* palette / panel table, if changed */
     ui.menu = 0;
     ui.force = 1;

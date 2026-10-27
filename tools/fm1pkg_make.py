@@ -27,7 +27,11 @@ import os
 import struct
 from pathlib import Path
 
-APP_SLOT = 0x8DFBC
+# (JIANT 0.9.13) the app slot grows from the stock 0x8DFBC to 0x8EA90 (+2772 B): the encrypted region (app_area_head
+# block + cfg_tool.bin + the cfg directory with eq_cfg_hw.bin) now ends at 0x92FFE, inside flash.bin [0, 0x93000)
+# that every Felucca/JIANT loader already writes whole (0xFF padding up to 0x93000 until 0.9.12): no loader change.
+# firmware/app.ld's XIP LENGTH is this value (tools/build.py checks it).
+APP_SLOT = 0x8EA90
 FLASH_SIZE = 0x93000
 KEY = 0x980F
 # flash header: JieLi SDK defaults (burner_size 544, VID "0.01", flash_size 0xFF000,
@@ -147,8 +151,14 @@ def flash_image(app, key):
     cfg_body = eq_e + eq
     cfg = entry(crc16(cfg_body), 0x20, 0x20 + len(cfg_body), 0x83, 0xFF, 1, "cfg") + cfg_body
     region = bytearray(area + cfg)
+    if 0x4000 + len(region) > FLASH_SIZE:               # the loaders write flash.bin [0x4000, FLASH_SIZE) only
+        raise SystemExit(f"app region ends at {0x4000 + len(region):#x}, past flash.bin ({FLASH_SIZE:#x})")
     sfc(region, 0, len(region), 0, key)
     f[0x4000:0x4000 + len(region)] = region
+    for s in range(0x5000, FLASH_SIZE + 1, 0x1000):     # no 4K-256 slot of the image may read as an update record
+        r = f[s - 0x100:s - 0x100 + 80]                  # (what the SPL and ldr_core.c look for: magic + CRC16)
+        if r[6] == 0x41 and r[7] == 0x54 and (r[0] | r[1]) and struct.unpack_from("<H", r)[0] == crc16(r[2:80]):
+            raise SystemExit(f"the image has an update-record look-alike at {s - 0x100:#x}")
     return bytes(f)
 
 

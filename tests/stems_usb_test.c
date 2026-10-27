@@ -5,18 +5,23 @@
  * (android/stems: usbstream.c's isochronous URBs, each packet's buffer the endpoint's wMaxPacketSize, then
  * StemSplitter's frames), in ns:
  *   the FM-1     halves of HALF_FRAMES at 44,117.6 Hz (its clock is fast: the ring's fill climbs, packets of 46 come
- *                often), renders of a heavy song (~70 % of a half, ~4 % late, up to 131 %), TIMER5 every 0.5 ms nested
- *                in them queueing the next packet (uac_service).
- *   the host     an IN token each 1 ms of its own clock (+-500 ppm). A packet longer than wMaxPacketSize is babble, as an
- *                xHCI controller has it: the packet cut to wMaxPacketSize and flagged, the endpoint halted and
- *                restarted 1..3 ms later (no tokens meanwhile).
+ *                often), renders of a heavy song (~70 % of a half, ~4 % late, up to 131 %), TIMER5 every tick
+ *                (UAC_POLL_HZ, 0.9.10; its period off by +-1667 ppm or none, 0..20 us late) nested in them queueing the
+ *                next packet (uac_service) once TxPktRdy has cleared, its 20 ms stall count as ep4_tx's.
+ *   the host     an IN token each 1 ms of its own clock (+-500 ppm), 30..40 us into the frame; the packet then on the
+ *                wire (TxPktRdy still set) for its (bytes + 9) x 8 x 1.04 / 12 MHz (0.9.10: 920 bytes ~0.65 ms). A
+ *                packet longer than wMaxPacketSize is babble, as an xHCI controller has it: the packet cut to
+ *                wMaxPacketSize and flagged, the endpoint halted and restarted 1..3 ms later (no tokens meanwhile).
  * Each channel of each frame holds the frame's number (channel c: (f + 4099 c) & 0x7FFF), so the host sees exactly
  * which frame came, in which channel: every frame the FM-1 rendered must reach the app's lanes once, in order, every
  * channel in its own lane (no slip, no repeat, no channel moved), and no packet may be babble. 0.9.7's descriptor
  * (720 bytes for 8 channels, while the stream sends 46-frame packets of 736) is run too, to show what it did: blocks
  * dropped by the hundred, as in a field take (TOMA_03: T1..T6 and FX broken at ~120 block edges a second, the same
  * instants in every channel). Then starvation (renders of 150..190 % for 50 ms): the underrun repeats are made up
- * with the frame spread over a packet (uac_squeeze), not skipped: every channel continuous (a 441..1323 Hz sine each). */
+ * with the frame spread over a packet (uac_squeeze), not skipped: every channel continuous (a 441..1323 Hz sine each).
+ * (0.9.10) 0.9.9's poll every 5th tick (2 kHz) is run too: the next packet could only be queued in the ~0.35 ms
+ * between one leaving the wire and the next token, and whenever the poll's phase drifted into it tokens found none,
+ * the ring overran and blocks were dropped in bursts in every channel (a STEMS+IN take's rhythmic glitch). */
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -31,8 +36,10 @@
 #define FELUCCA_UAC 1
 static void fm1_delay_ms(uint32_t ms) { (void)ms; }
 #pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
-static uint8_t t_stems;                                  /* fx.c's fx_stems: 1 the 8 channels, 2 the 10 */
+static volatile uint8_t t_stems;                         /* match fx.c: the render must read the current USB mode */
+#ifndef UAC_STEMS
 #define UAC_STEMS() t_stems
+#endif
 #define UAC_STEMS_SRC 1
 static int32_t stem_buf[7][32], stem_fx[2][32];
 static int32_t uin_l[64], uin_r[64];
@@ -49,7 +56,11 @@ static void check(const char *what, int ok)
 static uint32_t lcg = 0x13579BDu;
 static double rnd(void) { lcg = lcg * 1664525u + 1013904223u; return (lcg >> 8) / 16777216.0; }
 
-static struct { double fs, ppm, load, p_late, late_max; uint32_t maxp; int starve, sine; } M;
+static struct {
+    double fs, ppm, load, p_late, late_max;
+    double t5_ppm, t5_phase, poll_hz;                    /* TIMER5's period error, its first tick (ns), uac_service's rate */
+    uint32_t maxp; int starve, sine;
+} M;
 static struct {
     uint64_t rendered, sent, pkts, babble, stall_ns, missed, tokens;
     uint64_t got, slips, lost, repeats, moved, partial, jumps, maxjump_x100;
@@ -132,8 +143,9 @@ static void app_frames(const uint8_t *b, uint32_t bytes)
     }
 }
 
-/* ---- the host: an IN token; babble (> wMaxPacketSize): cut, flagged, the endpoint halted 1..3 ms */
-static double stall_until;
+/* ---- the host: an IN token; the packet on the wire until tx_end; babble (> wMaxPacketSize): cut, flagged, the
+ * endpoint halted 1..3 ms */
+static double stall_until, tx_end;
 static void host_token(double t)
 {
     uint32_t bytes;
@@ -155,15 +167,22 @@ static void host_token(double t)
         stall_until = t + s;
         bytes = M.maxp;
     }
+    tx_end = t + (bytes + 9u) * 8.0 * 1.04 / 12e6 * 1e9;   /* (sync, PID, CRC, EOP; ~4 % bit stuffing) */
     app_frames((const uint8_t *)pkt, bytes);
 }
 
-static void poll(void)                                 /* TIMER5's uac_service, the SIE left out */
+static void poll(double t)                             /* TIMER5's uac_service: TxPktRdy set while queued or on the wire */
 {
-    if (queued)
+    if (queued || t < tx_end) {
+        if (uac.wait < 255u && ++uac.wait == (uint32_t)M.poll_hz / 50u && uac.flowing) {   /* (ep4_tx: 20 ms) */
+            uac.flowing = 0;
+            uac.stalls++;
+        }
         return;
+    }
     if (R.pkts)
         uac.flowing = 1;
+    uac.wait = 0;
     pkt_n = uac_packet(pkt);
     queued = 1;
 }
@@ -174,8 +193,12 @@ static void sim(double secs, double *now)
     static double next_flip, next_poll, next_sof, next_tok, isr_free, dl, blk_t[HALF_FRAMES / 32u];
     static uint32_t blocks, pending, starve_left;
     static double next_starve;
+    static uint64_t tick;
+    double tp = 1e9 / M.poll_hz * (1.0 + M.t5_ppm * 1e-6);
     if (*now == 0) {
-        next_flip = th; next_poll = 500000; next_sof = 0; next_tok = 200000; isr_free = 0; blocks = pending = 0;
+        next_flip = th; next_sof = 0; next_tok = 30000; isr_free = 0; blocks = pending = 0;
+        tick = 0;
+        next_poll = M.t5_phase;
         next_starve = 3e9;
     }
     while (*now < end) {
@@ -226,14 +249,14 @@ static void sim(double secs, double *now)
             continue;
         }
         if (tn == next_poll) {
-            next_poll += 500000 + (rnd() - 0.5) * 80000;
-            poll();
+            next_poll = M.t5_phase + (double)++tick * tp + rnd() * 20000;   /* (a hardware period; the ISR 0..20 us late) */
+            poll(tn);
             continue;
         }
         if (tn == next_tok) {
             host_token(tn);
             next_sof += tf;
-            next_tok = next_sof + 50000 + rnd() * 350000;
+            next_tok = next_sof + 30000 + rnd() * 10000;
             continue;
         }
     }
@@ -266,19 +289,33 @@ static void reset(uint32_t ch, double ppm, uint32_t maxp)
     last_f = -1;
     have_v = 0;
     f_render = 0;
-    stall_until = 0;
+    stall_until = tx_end = 0;
+    M.poll_hz = UAC_POLL_HZ;
+    M.t5_ppm = 0;
+    M.t5_phase = 123456;
     memset(sine_ph, 0, sizeof sine_ph);
     M.ppm = ppm;
     M.maxp = maxp ? maxp : desc_maxp();
 }
 
+/* the poll's drift against the host's frames: TIMER5 off by -+1667 ppm (PRD 600 against 601) sweeps its phase through
+ * the frame every ~0.3 s; none, it can sit in the gap after a packet left the wire (stuck: the worst case at 2 kHz) */
+static const struct { double host, t5; int gap; } CASE[3] = {{-500.0, 1667.0, 0}, {500.0, -1667.0, 0}, {0.0, 0.0, 1}};
+static void reset_case(uint32_t ch, uint32_t k)
+{
+    reset(ch, CASE[k].host, 0);
+    M.t5_ppm = CASE[k].t5;
+    if (CASE[k].gap)                                     /* (a 2 kHz poll just after the token: the next one too early) */
+        M.t5_phase = 35000 + ((M.maxp + 9u) * 8.0 * 1.04 / 12e6 * 1e9 - 500000.0) / 2;
+}
+
 int main(void)
 {
-    static const double PPM[2] = {-500.0, 500.0};
     static const uint32_t CH[2] = {8, 10};
     char s[240];
     uint32_t k, m;
-    printf("-- USB STEMS / STEMS+IN at 44.1 kHz: minutes of the stream into the app's lanes\n");
+    printf("-- USB STEMS / STEMS+IN at 44.1 kHz: minutes of the stream into the app's lanes (uac_service at %u Hz)\n",
+           UAC_POLL_HZ);
     M.fs = 44117.6;
     M.load = 0.70;
     M.p_late = 0.043;
@@ -288,18 +325,18 @@ int main(void)
         reset(CH[m], 0, 0);
         snprintf(s, sizeof s, "%u ch: EP4 IN wMaxPacketSize %u = 46 frames of %u bytes (44.1 kHz's 45 + 1)", CH[m], M.maxp, CH[m] * 2u);
         check(s, M.maxp == want && M.maxp >= 46u * CH[m] * 2u);
-        for (k = 0; k < 2u; k++) {
+        for (k = 0; k < 3u; k++) {
             double now = 0;
             uint64_t sizes46 = 0;
-            reset(CH[m], PPM[k], 0);
+            reset_case(CH[m], k);
             sim(1.0, &now);                              /* (settled: the first token comes before any packet) */
             R.missed = R.babble = 0;
             sim(120.0, &now);
             sizes46 = uac.adj_up;
-            snprintf(s, sizeof s, "%u ch, host %+.0f ppm, 2 min: %llu packets (%llu one frame longer), %llu babble, %llu tokens with none",
-                     CH[m], PPM[k], (unsigned long long)R.pkts, (unsigned long long)sizes46, (unsigned long long)R.babble,
-                     (unsigned long long)R.missed);
-            check(s, R.babble == 0 && R.missed == 0 && sizes46 > 0);
+            snprintf(s, sizeof s, "%u ch, host %+.0f ppm, TIMER5 %+.0f ppm%s, 2 min: %llu packets (%llu one frame longer), %llu babble, "
+                     "%llu tokens with none", CH[m], CASE[k].host, CASE[k].t5, CASE[k].gap ? " (in the gap)" : "",
+                     (unsigned long long)R.pkts, (unsigned long long)sizes46, (unsigned long long)R.babble, (unsigned long long)R.missed);
+            check(s, R.babble == 0 && R.missed == 0 && sizes46 > 0 && !uac.stalls);
             snprintf(s, sizeof s, "  every frame in the lanes once, in order, each channel its own: %llu frames, %llu slips (%llu lost), "
                      "%llu repeated, %llu moved", (unsigned long long)R.got, (unsigned long long)R.slips, (unsigned long long)R.lost,
                      (unsigned long long)R.repeats, (unsigned long long)R.moved);
@@ -307,6 +344,19 @@ int main(void)
                      !uac.overruns && !uac.underruns);
         }
     }
+    for (m = 0; m < 2u; m++)                             /* what 0.9.9 did: uac_service every 5th tick */
+        for (k = 0; k < 3u; k++) {
+            double now = 0;
+            reset_case(CH[m], k);
+            M.poll_hz = 2000;
+            sim(1.0, &now);
+            R.missed = 0;
+            sim(30.0, &now);
+            snprintf(s, sizeof s, "0.9.9's 2 kHz poll, %u ch, TIMER5 %+.0f ppm%s, 30 s: %.1f %% of the tokens with none, %u overruns: "
+                     "%.1f slips/s, %.2f %% of the frames lost", CH[m], CASE[k].t5, CASE[k].gap ? " (in the gap)" : "",
+                     100.0 * R.missed / R.tokens, uac.overruns, R.slips / 30.0, 100.0 * R.lost / (R.lost + R.got));
+            check(s, R.missed > 30u && (CH[m] == 8u || R.slips > 30u));   /* (10 ch: the take's bursts; 0.9.10 above: none) */
+        }
     {   /* what 0.9.7 did: 720 bytes for 8 channels */
         double now = 0;
         reset(8, 0, 720u);

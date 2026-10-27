@@ -59,7 +59,7 @@ static drum_lane_t drum_kit[NPART][DV_NLANE];   /* (0.6.53: in .bss, was .pool: 
  * fades out (drum_render: DXG_FADE blocks, ~5 ms, no click), then ends */
 enum { DXG_KICK = 1, DXG_SNARE = 2, DXG_HAT = 4, DXG_PERC = 8, DXG_ALL = 15 };
 static const uint8_t DXG_LANE[DV_NLANE] = {DXG_KICK, DXG_SNARE, DXG_SNARE, DXG_HAT, DXG_HAT, DXG_PERC, DXG_PERC, DXG_PERC};
-#define DXG_FADE 8u
+#define DXG_FADE (256u / CTL)
 /* .. and each sound's own mute (EDIT held + black keys 1..8 on a DRUM track, ui_layer.c): bit 8 + lane */
 #define DXM_LANE(l) (1u << (8u + (l)))
 #define DXM_ALL 0xFF0Fu
@@ -74,10 +74,11 @@ static int16_t clip_eff, pnch_eff;   /* G_CLIP / G_PUNCH as the master plays the
  * held by the knee, the body denser and louder, the tail whole (the master's leveler does not pump on a spike). DUCK (G_DUCK, fx.c): a kick struck on any
  * DRUM track (its group not muted) ducks the other parts; duck_hit tells fx.c's mix_block */
 static volatile uint8_t duck_hit;
-#define DRUM_ATK_BLK 48u                                 /* (JIANT 0.4) ATK+ on a DRUM track: a hit's fade-in, blocks */
-static int32_t punch_gain(uint32_t age, int32_t p)     /* Q15 (32768 = 1, up to x1.7), p 0..100 */
+#define DRUM_ATK_BLK (1536u / CTL)                       /* (JIANT 0.4) ATK+ on a DRUM track: a hit's fade-in, blocks (~35 ms) */
+static int32_t punch_gain(uint32_t age, int32_t p)     /* Q15 (32768 = 1, up to x1.7), p 0..100; age in blocks */
 {
     int32_t up = 32768 + p * 150, body = 32768 + p * 230;
+    age *= CTL / 32u;                                    /* (the shape in blocks of 32) */
     return age < 4u ? up : age < 20u ? up + (body - up) * (int32_t)(age - 4u) / 16
                        : age < 160u ? body : age < 250u ? body + (32768 - body) * (int32_t)(age - 160u) / 90 : 32768;
 }
@@ -97,15 +98,18 @@ static uint32_t drum_gm_ix(uint32_t note) { return (note >= 35u && note <= 81u ?
 
 /* (JIANT 0.8.5) the octaves of the kit. OCT 0, where the keys play the GM map (key 7 the kick, 36), is the kit as it
  * always was. The other octaves play the same sounds on the same keys (drum_keys: OCT no longer moves the notes).
- * Above, ratcheted in time while held (seq.c dxo_tick): x2 at OCT +1, x4 at +2, x8 at +3; recorded as the hit and the
- * step's RATCH x2 / x4, at +3 its ECHO x8 EVEN (core.h CP_ECHO_EVEN: the eight at one level). Below, each hit with a
+ * Above, repeated in time while held (seq.c dxo_tick; p1, as main 0.9.13 / 0.9.17: twice over half as fast, x2 at
+ * OCT +1 already too fast to play): OCT +1 the hit every other step (REPEAT 1/2), +2 once a step (REPEAT: a roll at the
+ * step rate), +3 x2 a step (RATCHET x2); recorded as the hit on each step entered while held (+1 every other one) and,
+ * at +3, its lane's x2 (seq.c rec_lmode). Below, each hit with a
  * TOUCH (drum_lane_t.dm; the step's TOUCH component, core.h CP_TOUCH, when recorded): OCT -1 SHORT (half the decay),
  * -2 GHOST (short, darker, at ~45 % of its level: a ghost note), -3 FLAM (a soft grace hit, then the hit itself
  * DXO_FLAM later, ~20 ms whatever the tempo). MIDI keeps the GM map on 35..81, as ever; the notes around it, which
  * played their octave of 36..47 plain, are those octaves' bands: 23..34 -1, 11..22 -2, 0..10 -3, 82..93 +1, 94..105
- * +2, 106..127 +3, each by its pitch class (84 the kick x2, 24 the kick SHORT). dx_in_tch: a live hit's TOUCH,
+ * +2, 106..127 +3, each by its pitch class (84 the kick REPEAT 1/2, 24 the kick SHORT). dx_in_tch: a live hit's TOUCH,
  * track_t.dtch: a step's */
-static const uint8_t DXO_RAT[4] = {1, 2, 4, 8};          /* OCT 0 +1 +2 +3: hits a step */
+static const uint8_t DXO_RAT[4] = {1, 1, 1, 2};          /* OCT 0 +1 +2 +3: hits a step (p1, main 0.9.13 / 0.9.17: was 1 2 4
+                                                          * 8; +1 every other step: seq.c dxo_t.half) */
 static const int8_t DXO_DEC[4] = {0, -14, -14, 0};       /* TOUCH 0..3: on DECAY (14: half the decay time, dx_tau) */
 static const int8_t DXO_TON[4] = {0, 0, -24, 0};         /* .. on TONE (COLOR: the lane's filter, its drive) */
 static const uint8_t DXO_VEL[4] = {128, 128, 58, 58};    /* .. on the velocity, /128 (FLAM: its grace hit's) */
@@ -134,7 +138,7 @@ static uint32_t drum_oct_note(uint32_t note, int32_t o)
 }
 static const char *drum_oct_name(int32_t o)              /* what OCT does on a DRUM track (ui_input.c) */
 {
-    static const char *const N[7] = {"FLAM", "GHOST", "SHORT", "DRUM-X KIT", "RATCHET x2", "RATCHET x4", "RATCHET x8"};
+    static const char *const N[7] = {"FLAM", "GHOST", "SHORT", "DRUM-X KIT", "REPEAT 1/2", "REPEAT", "RATCHET x2"};
     return N[clamp(o, -3, 3) + 3];
 }
 
@@ -327,7 +331,7 @@ static dx_core_t dx_core[2];
 #define dx_xon (DXC.xon)
 static int8_t dx_pcur[NTRK][DV_NLANE];                   /* (0.6.81) each part's pans as they are, slewed toward the
                                                           * knob's: a turn of IMAGE jumped a sound across (a click) */
-#define DX_PSLEW 2                                       /* (a pan's step a block at most: across in ~45 ms) */
+#define DX_PSLEW (2 * (int32_t)CTL / 32)                 /* (a pan's step a block at most: across in ~45 ms) */
 /* IMAGE img 1..127 -> lane l's pan, -64..64: each sound on a sine of its own rate over the knob (1 to 9 turns), so a
  * sweep goes through the kit's placings one after another, every one coming back at the same value; the first 16 open
  * it from the middle; the kick a quarter as far (the low end stays centred) */
@@ -346,7 +350,7 @@ static int32_t dx_img_k(const track_t *t)
     int32_t k = 256 - clamp(t->p[P_E7], 0, 127) * 160 / 127, d = clamp(t->p[P_DIST], 0, 64);
     if (d)
         k = k * (256 - d * 3) >> 8;
-    if (t->p[P_FTYPE] == FT_COMB)                        /* (0.6.81: the other filters shape the sides too, voice.c
+    if (FT_POST(ft_of(t->p)))                          /* (0.6.81: the other filters shape the sides too, voice.c
                                                           * tf_sides: the image stays whole through them) */
         k >>= 2;
     return k;
@@ -410,12 +414,11 @@ static __attribute__((noinline)) void drum_side_add(int32_t *y, int32_t *out, ui
     }
 }
 /* (0.6.81) .. its pan moving (IMAGE turned): both sides fed, each ramped across the block (only while it slews) */
-static __attribute__((noinline)) void drum_side_ramp(dx_core_t *dc, int32_t *y, int32_t *out, uint32_t n,
+static __attribute__((noinline)) void drum_side_ramp(int32_t *sl, int32_t *sr, int32_t *y, int32_t *out, uint32_t n,
                                                      const vmod_t *m, const int32_t *g, int32_t *d2, int32_t a)
 {
     uint32_t i;
     int32_t gl = g[0] << CTL_LOG2, dgl = g[1] - g[0], gr = g[2] << CTL_LOG2, dgr = g[3] - g[2];   /* (Q6 + CTL_LOG2) */
-    int32_t *sl = dc->sl, *sr = dc->sr;                  /* (this core's) */
     for (i = 0; i < n; i++, gl += dgl, gr += dgr) {
         int32_t s = y[i], o = voice_amp(s + (s >> 2), m, i) << 1;
         out[i] += o;
@@ -512,11 +515,12 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     {
         int32_t *d2, g[4], a;
         dx_core_t *dc = &DXC;                            /* (0.7.8: this core's, read once) */
+        uint32_t vo = vo_off_c[MC_CPU() & 1u];           /* (ctl64) the voice's first sample in the part's block */
         if (dc->xon && drum_side_of(dc, (uint32_t)v->s[0], g, &d2, &a)) {   /* (0.6.48) IMAGE, SEND: the same loop */
             if (g[0] != g[1] || g[2] != g[3])
-                drum_side_ramp(dc, y, out, n, m, g, d2, a);
+                drum_side_ramp(dc->sl + vo, dc->sr + vo, y, out, n, m, g, d2 + vo, a);
             else
-                drum_side_add(y, out, n, m, g[0] ? dc->sl : g[2] ? dc->sr : dx_dump, g[0] | g[2], d2, a);
+                drum_side_add(y, out, n, m, (g[0] ? dc->sl : g[2] ? dc->sr : dx_dump) + vo, g[0] | g[2], d2 + vo, a);
             return;
         }
     }
@@ -526,6 +530,9 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     }
 }
 
+static uint8_t dx_glue;                                 /* (0.9.9-snd1) GLUE, below */
+static int32_t glue_g[NTRK];                            /* .. a DRUM track's gain at the last block's end, Q15 (0: rest) */
+static __attribute__((noinline)) void drum_glue(uint32_t ti, int32_t *out, uint32_t n, uint32_t side);
 /* (JIANT 0.6.16) the kit's sum, once a block (voice.c track_render): DRV x1..x4 into the soft clip, its level kept,
  * and the knee (were each hit's: eight lanes, two curves a sample each; now the bus's, a glue) */
 static __attribute__((noinline)) void drum_bus(const track_t *t, int32_t *out, uint32_t n)
@@ -554,6 +561,53 @@ static __attribute__((noinline)) void drum_bus(const track_t *t, int32_t *out, u
             sr[i] = ((sr[i] >> 2) * k) >> 10;
         }
     }
+    if (dx_glue)                                        /* (0.9.9-snd1) GLUE, on */
+        drum_glue((uint32_t)(t - trk) % NTRK, out, n, side);
+    else
+        glue_g[(uint32_t)(t - trk) % NTRK] = 0;
+}
+
+/* (0.9.9-snd1) GLUE (KIT 3 KNOB 4, the kit's: 0 OFF .. 15), the owner's "a one-knob glue / limiter on the DRUM-X bus".
+ * After the bus's DRV and knee (drum_bus), only when on (OFF: not run, the kit bit for bit as before): the block's peak,
+ * a gain toward the curve's (over T: (T + (pk - T) s) / pk; T 24000 .. 10000 (by 2x - x^2: the middle's ~13000), s 1 - x: 2:1 at the middle, a limit at
+ * the top; x = GLUE / 15) at once down (from the block's first sample: its peak caught) and ~93 ms back up, the makeup (x1 .. x1.6) and a
+ * soft clip whose knee comes down with it (24000 .. 16000: the top a hard limit and a clip). The IMAGE's sides through
+ * the gain the sum got, as drum_bus's (every 4th sample) */
+static __attribute__((noinline)) void drum_glue(uint32_t ti, int32_t *out, uint32_t n, uint32_t side)
+{
+    int32_t x = (int32_t)dx_glue * 256 / 15, th = 24000 - (2 * x - ((x * x) >> 8)) * 14000 / 256, pk = 0, g0, g1, tg = 32768, dg, kn, mk;
+    int32_t k = 4096, *sl = dx_sl, *sr = dx_sr;
+    uint32_t i;
+    for (i = 0; i < n; i++) {                           /* the peak (the sum's, as drum_bus left it: x2) */
+        int32_t a = out[i] < 0 ? -out[i] : out[i];
+        pk = a > pk ? a : pk;
+    }
+    pk = clamp(pk >> 1, 0, 131071);
+    if (pk > th)                                        /* (num <= pk: num << 14 fits) */
+        tg = ((th + (((pk - th) * (256 - x)) >> 8)) << 14) / pk << 1;
+    g0 = glue_g[ti] ? glue_g[ti] : 32768;
+    g1 = tg < g0 ? tg : g0 + ((tg - g0) >> 6);          /* down at once, up over ~64 blocks */
+    dg = (g1 - g0) / (int32_t)(n ? n : 1u);             /* (up: over the block) */
+    if (g1 < g0) {                                      /* (down: from the block's first sample, its peak caught: a
+                                                         * limiter's; a ramp let a hit's onset through) */
+        g0 = g1;
+        dg = 0;
+    }
+    mk = 4096 + ((((x * x) >> 8) * x >> 8) * 2458 >> 8);   /* the makeup, Q12: 1 + 0.6 x^3 (the middle's peaks no
+                                                         * higher, the top's limit loud) */
+    kn = 24000 - x * 8000 / 256;
+    for (i = 0; i < n; i++) {
+        int32_t s = out[i] >> 1, gm = ((g0 + dg * (int32_t)(i + 1u)) * mk) >> 12;   /* Q15, < 2^16 */
+        int32_t y = soft_knee((clamp(s, -65535, 65535) * (gm >> 1)) >> 14, kn);
+        out[i] = y << 1;
+        if (side) {
+            if ((s > 256 || s < -256) && !(i & 3u))
+                k = clamp((y << 12) / s, 0, 16384);
+            sl[i] = ((sl[i] >> 2) * k) >> 10;
+            sr[i] = ((sr[i] >> 2) * k) >> 10;
+        }
+    }
+    glue_g[ti] = g1;
 }
 
 /* the GM drum map, the first C (key 7) is the kick (C2, 36), at every OCT (0.8.5: the octaves, above) */
@@ -565,15 +619,15 @@ static int32_t drum_keys(const track_t *t, uint32_t k)
 
 /* {MRPH, TUNE, TONE, DECY, NOIS, FM, FOLD, DRV}; the kit suggests the BEAT pattern (GM notes) */
 static const preset_t DRUM_PRESETS[] = {                /* (0.7.2) one a factory kit: drumx_voice.c DX_KITS, this order */
-    {"DRUM-X", DRUM_KIT_E, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 20), PAT(12)},   /* (core.h: SAMPLE PERC's too) */
-    {"909 CLUB", {60, 64, 76, 64, 64, 0, 0, 10}, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 16), PAT(12)},
-    {"808 BOOM", {58, 60, 56, 76, 60, 0, 0, 0}, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 24), PAT(12)},
-    {"LOFI DUST", {70, 64, 50, 54, 76, 0, 0, 20}, {0, 100, 127, 100}, 0, 0, FX(8, 0, 0, 18), PAT(12)},
-    {"INDUSTRIAL", {72, 66, 88, 70, 74, 20, 0, 40}, {0, 100, 127, 100}, 0, 0, FX(16, 0, 10, 30), PAT(12)},
-    {"ACOUSTIC", {56, 64, 58, 62, 64, 0, 0, 0}, {0, 100, 127, 100}, 0, 0, FX(0, 0, 0, 34), PAT(12)},
-    {"DUB ROOTS", {60, 60, 52, 70, 60, 0, 0, 0}, {0, 100, 127, 100}, 0, 0, FX(0, 0, 18, 36), PAT(12)},
-    {"TECHNO RAW", {66, 64, 80, 62, 66, 10, 0, 30}, {0, 100, 127, 100}, 0, 0, FX(10, 0, 0, 14), PAT(12)},
-    {"BREAKS", {62, 66, 72, 62, 70, 0, 0, 10}, {0, 100, 127, 100}, 0, 0, FX(4, 0, 0, 22), PAT(12)},
+    {"DRUM-X", DRUM_KIT_E, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 20), PAT(12)},   /* (core.h: SAMPLE PERC's too) */
+    {"909 CLUB", {60, 64, 76, 64, 64, 0, 0, 10}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 16), PAT(12)},
+    {"808 BOOM", {58, 60, 56, 76, 60, 0, 0, 0}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 24), PAT(12)},
+    {"LOFI DUST", {70, 64, 50, 54, 76, 0, 0, 20}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(8, 0, 0, 18), PAT(12)},
+    {"INDUSTRIAL", {72, 66, 88, 70, 74, 20, 0, 40}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(16, 0, 10, 30), PAT(12)},
+    {"ACOUSTIC", {56, 64, 58, 62, 64, 0, 0, 0}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 34), PAT(12)},
+    {"DUB ROOTS", {60, 60, 52, 70, 60, 0, 0, 0}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 18, 36), PAT(12)},
+    {"TECHNO RAW", {66, 64, 80, 62, 66, 10, 0, 30}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(10, 0, 0, 14), PAT(12)},
+    {"BREAKS", {62, 66, 72, 62, 70, 0, 0, 10}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(4, 0, 0, 22), PAT(12)},
 };
 _Static_assert(sizeof DRUM_PRESETS / sizeof DRUM_PRESETS[0] == sizeof DX_KITS / sizeof DX_KITS[0], "a DRUM preset a kit");
 /* (0.7.2) a factory kit into the section's: the sounds, their LAYERs, their SENDs (the project saves them) */

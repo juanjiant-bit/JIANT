@@ -1078,14 +1078,73 @@ static int32_t crumb_count(char *b)
     fmt_int(b + str_len(b), (int32_t)n);
     return text_w(&AF_X, b);
 }
+/* (0.9.9-seq2g: the 0.6's footer back, as the owner asked) the 16 steps of the bar the cursor is in, on every page: a step
+ * with a note (DRUM: any lane hitting there) a lit bar (THEME; accented ACCENT), an empty one a stub (a tie MID), under
+ * them the step sounding (TEXT; it moves a step at a time: a function of the step, never of the frame) and in SEQ the
+ * step edited (ACCENT, over it); the bars of the pattern as tiny 3 x 3 dots at the strip's right end (the one shown TEXT,
+ * the one playing THEME when it is another). The normal footer: row 1, x 12 .. 228 as 0.6's (the dots in a column at
+ * x 233); a lens footer (one row of 15 px): a compact strip before the breadcrumb, which shortens to the page's name */
+static uint32_t foot_ph(const track_t *t, uint32_t *len)
+{
+    *len = t->p[P_SLEN] > 0 ? (uint32_t)t->p[P_SLEN] : 1u;
+    return song.playing ? seq_src(t, t->seq_idx) : 0xFFu;
+}
+static uint32_t foot_strip_sig(void)
+{
+    const track_t *t = TSEL;
+    uint32_t len, ph = foot_ph(t, &len), bk = ui.bank;
+    return steps_hash(t) + (len * 131u + bk) * 2654435761u + (ph / 16u == bk ? ph % 16u + 1u : 0u) * 40503u +
+           (ph < len ? ph / 16u + 1u : 0u) * 977u + (song.seq_mode ? ui.cursor + 1u : 0u) * 3001u;
+}
+static int32_t foot_strip(int32_t x0, int32_t y, int lens)
+{
+    const track_t *t = TSEL;
+    uint32_t len, ph = foot_ph(t, &len), nb = (len + 15u) / 16u, i;
+    int32_t w = lens ? 4 : 9, hb = lens ? 7 : 11, my = lens ? y + 9 : y + 13, x = x0;
+    for (i = 0; i < 16u; i++) {
+        uint32_t si = ui.bank * 16u + i;
+        const step_t *st = &seq_steps(t)[si];
+        x = lens ? x0 + (int32_t)i * 5 + (int32_t)(i / 4u) * 2 : 12 + (int32_t)i * 13 + (int32_t)(i / 4u) * 4;
+        if (si >= len)
+            continue;
+        if (step_on(st))
+            cv_rect(x, y, w, hb, (st->flags & SF_ACCENT) || st->acc ? T_ACCENT : T_THEME);
+        else
+            cv_rect(x, y + hb - 3, w, 3, st->time == ST_TIE ? T_MID : T_RAISE);
+        if (song.seq_mode && si == ui.cursor)
+            cv_rect(x, my, w, 2, T_ACCENT);
+        else if (si == ph)
+            cv_rect(x, my, w, 2, T_TEXT);
+    }
+    x += w + 4;
+    for (i = 0; nb > 1u && i < nb; i++) {
+        uint16_t c = i == ui.bank ? T_TEXT : ph < len && i == ph / 16u ? T_THEME : T_RAISE;
+        if (lens)
+            cv_rect(x + (int32_t)i * 4, y + 2, 3, 3, c);
+        else
+            cv_rect(233, y + (int32_t)i * 4, 3, 3, c);
+    }
+    return lens ? x + (nb > 1u ? (int32_t)nb * 4 + 3 : 0) : x;
+}
+/* (0.9.9-seq2h) SEQ's clipboard holding n steps: "[n]" at the footer's right, before the count (ui_input.c cp_copy) */
+static int clip_tag(char *b)
+{
+    if (!clip.n || ui.home || ui.menu || !song.seq_mode)
+        return 0;
+    b[0] = '[';
+    fmt_int(b + 1, clip.n);
+    str_cpy(b + str_len(b), "]", 2);
+    return 1;
+}
 static __attribute__((noinline)) void draw_crumbs(int32_t y, uint16_t fg, uint16_t last)
 {
-    char cnt[8];
+    char cnt[8], ct[8];
     int32_t cw = crumb_count(cnt), mx = cw ? 234 - cw - 8 : 234;
     char b[48];
     uint32_t i, k = 0;
-    int32_t x;
+    int32_t x, x0;
     const aafont_t *f = lz_on() ? &AF_X : &AF_S;        /* (0.8.5: a lens page, the mock-up's small mono) */
+    x0 = f == &AF_X ? foot_strip(6, y + AF_X_CAP_Y, 1) : 8;   /* (seq2g, a lens footer: the steps first, on the capitals) */
     foot_crumbs(b, sizeof b);
     for (i = 0; b[i]; i++)                              /* (the last part: after the last dot) */
         if ((uint8_t)b[i] == 0xB7u)
@@ -1098,43 +1157,21 @@ static __attribute__((noinline)) void draw_crumbs(int32_t y, uint16_t fg, uint16
         GFX_HOOK_ALIGN(0, y + AF_S_CAP_Y, 0, y + AF_S_CAP_Y + AF_S_CAP_H, AL_V, "footer breadcrumb on its line");
     if (cw)
         cv_text_r(234, y, f, cnt, f == &AF_X ? T_TEXT : fg, T_BG);   /* (0.8.9, the skins' mock-up: the count TEXT) */
-    if (f == &AF_X && k) {                              /* (0.8.9) "LENTE" DIM, the level THEME, the set TEXT (as `last` if
-                                                         * that is not DIM) */
-        uint32_t j = 0;
-        char c;
-        for (i = 0; b[i] && i + 2u < k && !j; i++)      /* (the end of the first part) */
-            if ((uint8_t)b[i] == 0xB7u)
-                j = i + 2u;
-        if (j && j < k) {
-            uint32_t d = j;                             /* (the level's end: the second dot) */
-            while ((uint8_t)b[d] != 0xB7u)
-                d++;
-            c = b[j];
-            b[j] = 0;
-            x = cv_text_on(6, y, f, b, fg, T_BG);
-            b[j] = c;
-            c = b[d];                                   /* (the level, then the dot before the set) */
-            b[d] = 0;
-            x = cv_text_on(x, y, f, b + j, T_THEME, T_BG);
-            b[d] = c;
-            c = b[d + 2u];
-            b[d + 2u] = 0;
-            x = cv_text_on(x, y, f, b + d, fg, T_BG);
-            b[d + 2u] = c;
-            cv_free_text(x, y, f, b + d + 2u, last == fg ? T_TEXT : last, T_BG, mx - x);
-            return;
-        }
-        if (last == fg)                                 /* (two parts, "FX . BUSES": the level THEME) */
-            last = T_THEME;
+    if (clip_tag(ct))
+        mx = cv_text_r(mx, y, f, ct, T_THEME, T_BG) - 6;   /* (seq2h) the clipboard's [n] */
+    if (f == &AF_X && k) {                              /* (seq2g) a lens footer: the page's name alone after the steps
+                                                         * (TEXT, as `last` if that is not DIM) */
+        cv_free_text(x0, y, f, b + k, last == fg ? T_TEXT : last, T_BG, mx - x0);
+        return;
     }
     if (last == fg || !k) {
-        cv_free_text(6, y, f, b, fg, T_BG, mx - 6);
+        cv_free_text(x0, y, f, b, fg, T_BG, mx - x0);
         return;
     }
     {
         char c = b[k];
         b[k] = 0;
-        x = cv_text_on(6, y, f, b, fg, T_BG);
+        x = cv_text_on(x0, y, f, b, fg, T_BG);
         b[k] = c;
         cv_free_text(x, y, f, b + k, last, T_BG, mx - x);
     }
@@ -1151,17 +1188,13 @@ static void draw_foot(void)
         str_cpy(ti, "HOME", sizeof ti);
     else
         page_title(ti);
-    {   /* step markers: the playhead only when it is in the shown bank, the cursor only in SEQ */
-        uint32_t ph = song.playing && seq_src(t, t->seq_idx) / 16u == ui.bank ? seq_src(t, t->seq_idx) : 0xFFu;
-        sig = str_hash(0x9E3779B9u, s) + str_hash(7u, ti) + (lz ? 0u : ph * 97u + (song.seq_mode ? ui.cursor : 0xFFu) * 3001u +
-              steps_hash(t) + ui.bank * 7u + (uint32_t)t->p[P_SLEN] * 13u) + (uint32_t)lz * 104729u;
-    }
+    sig = str_hash(0x9E3779B9u, s) + str_hash(7u, ti) + (uint32_t)lz * 104729u + foot_strip_sig();   /* (seq2g) the steps */
     if (act_cols() && !lz) {                           /* the hint, and whether OCT+ would act */
         char ha[16], hb[16];
         foot_hint(ha, hb);
         sig += str_hash(str_hash(act_ready() ? 7u : 3u, ha), hb);
     }
-    sig += (uint32_t)accw * 977u;
+    sig += (uint32_t)accw * 977u + (uint32_t)clip.n * 7919u;   /* (seq2h) the clipboard's [n] */
     if (!ui.force && sig == ui.foot_sig)
         return;
     ui.foot_sig = sig;
@@ -1175,31 +1208,17 @@ static void draw_foot(void)
         kh[0] = (khint_t){KC_OCTUP, ha + 5};
         kh[1] = (khint_t){KC_OCTDN, hb + 5};
         cv_key_row(8, 232, 2, kh, 2, act_ready() ? 3u : 2u, T_BG);
-    } else {
-        uint32_t i;
+    } else {                                          /* row 1: the cursor's bar, 16 steps in 4 groups (seq2g, 0.6's) */
         if ((ui.bank + 1u) * 16u <= (uint32_t)t->p[P_SLEN])
-            GFX_HOOK_ALIGN(CARD_X(0) + 5, 0, CARD_X(3) + 5 + 48, 0, AL_H | AL_CELLS | AL_N(16), "footer step bars under the cards");
-        for (i = 0; i < 16u; i++) {                   /* row 1: the cursor's bank, 16 bars, four under each card */
-            uint32_t si = ui.bank * 16u + i;
-            int32_t sx = CARD_X(i / 4u) + 5 + (int32_t)(i % 4u) * 13;
-            const step_t *st = &seq_steps(t)[si];
-            if (si >= (uint32_t)t->p[P_SLEN])
-                continue;
-            if (step_on(st))                          /* a note: a bar (accented: the accent) */
-                cv_rect(sx, 1, 9, 11, (st->flags & SF_ACCENT) ? T_ACCENT : T_THEME);
-            else                                      /* empty: a stub (a tie: brighter) */
-                cv_rect(sx, 9, 9, 3, st->time == ST_TIE ? T_MID : T_RAISE);
-            if (song.seq_mode && si == ui.cursor)
-                cv_rect(sx, 14, 9, 2, T_ACCENT);        /* the step edited */
-            else if (song.playing && si == seq_src(t, t->seq_idx))
-                cv_rect(sx, 14, 9, 2, T_TEXT);          /* the step sounding */
-        }
+            GFX_HOOK_ALIGN(0, 0, 240, 0, AL_H | AL_CELLS | AL_N(16), "footer step bars centred");
+        (void)foot_strip(12, 1, 0);
     }
     draw_crumbs(ry, hud_cap(T_DIM), accw ? T_ACCENT : hud_cap(T_DIM));   /* (0.9.0 HUD's HOME: TEXT, over the beings) */   /* (0.8.5) row 2: the breadcrumb (the track's engine and sound:
                                                          * the header's centre) */
     lz_blit(0, foot_y());
 }
-/* the EDIT layer's cards (ui_layer.c): ENG (the engine), No. (its sounds: KNOB 2's list), FAV, an empty card */
+/* the EDIT layer's cards (ui_layer.c; 0.9.9-seq2f): ENG, No. (the engine's sounds: PRESETS' list, ui.c eng_list_pos),
+ * FAV (PRESETS' KNOB 3 marks it), an empty card. KNOB 1..4 are MOMENTARY there (ui_layer.c mom_knob); SELECT the dice */
 static void engine_columns(void)
 {
     uint32_t total, cur = eng_list_pos(&total), e = trk_eng(TSEL);
@@ -1207,11 +1226,80 @@ static void engine_columns(void)
     fmt_int(val, (int32_t)cur + 1);
     str_cpy(u, "/", 8);
     fmt_int(u + 1, (int32_t)total);
+    if (cur + 1u >= 100u && total >= 100u) u[0] = 0;
     draw_column(0, "ENG", ENGINES[e]->name, "", VAL(0u), (int32_t)eng_rank(e) * 1000 / (NENG_SHOWN > 1 ? NENG_SHOWN - 1 : 1),
                 engine_icon(ENGINES[e]->name));
     draw_column(1, "No.", val, u, VAL(1u), total > 1u ? (int32_t)(cur * 1000u / (total - 1u)) : 0, ICON_NONE);
     draw_column(2, "FAV", preset_favorite() ? "ON" : "OFF", "", VAL(2u), -1, ICON_X_STAR);
     draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
+}
+/* (0.9.9-seq2d / seq2f) the step components' cards: GLO > COMPS / COMPS 2, SEQ > COMP / COMP 2. (gen3) Its own function,
+ * out of draw_columns: new code lands past the pinned sound (tools/build.py), draw_columns' run before it stays as long */
+/* (gen3) KNOB 4's card: ARP's ORDER DOWN UP-DN as DN UD, the RATE beside them (here: comp_vname's code pinned in its run,
+ * its ORD ui_input.c ENT_ORD's twin, one table) */
+static void comp_value(const step_t *s, uint32_t a, uint32_t v, char *lb, char *val, char *un)
+{
+    comp_vname(TSEL, s, a, v, lb, val, un);
+    if (a == CA_ARP && (val[0] == 'D' || val[2] == '-'))
+        val[1] = val[0] == 'D' ? 'N' : 'D', val[2] = 0;
+}
+static __attribute__((noinline)) void comp_columns(void)
+{
+    char val[12];
+    if (cur_page()->graph == GR_GCOMP) {               /* (0.9.9-seq2f) GLO > COMPS: the lane's step; COMPS 2 its tracks */
+        const gcomp_t *gc = &glane[gl_cur % GL_N];
+        uint32_t a = CO_ACT(gc->comp) % CA_N;
+        char lb[10], un[8];
+        if (gco_slot()) {
+            fmt_int(val, (int32_t)gl_cur + 1);
+            draw_column(0, "STEP", val, "", VAL(0u), -1, ICON_AUTO);
+            val[0] = 'T'; fmt_int(val + 1, (int32_t)gl_trk + 1);
+            draw_column(1, "TRACK", val, "", VAL(1u), -1, ICON_NONE);
+            draw_column(2, "APPLIES", (gc->mask >> gl_trk) & 1u ? "ON" : "OFF", "", a ? VAL(2u) : T_DIM, -1, ICON_NONE);
+            draw_column(3, "MODE", gl_mono ? "MONO" : "POLY", "", VAL(3u), -1, ICON_ORDER);
+            return;
+        }
+        draw_column(0, "ACTION", CA_NAMES[a], "", a ? VAL(0u) : T_DIM, -1, ICON_ARP);
+        if (a && a != CA_JUMP) {
+            fmt_int(val, (int32_t)gc->len + 1);
+            draw_column(1, "LENGTH", val, "ST", VAL(1u), -1, ICON_RATE);   /* (gen3: "32 ST" in M) */
+        } else
+            draw_column(1, "LENGTH", "-", "", T_DIM, -1, ICON_RATE);
+        if (a) {
+            cond_name(CO_COND(gc->comp), gc->nm, val);
+            draw_column(2, "COND", val, "", CO_COND(gc->comp) ? VAL(2u) : T_DIM, -1, ICON_PROB);   /* (gen3: MONO / POLY on
+                                                         * COMPS 2, the value whole) */
+            comp_value(TSEL->step, a, gc->val, lb, val, un);
+            draw_column(3, lb, val, un, lb[0] ? VAL(3u) : T_DIM, -1, ICON_ORDER);
+        } else {
+            draw_column(2, "COND", "", "", T_DIM, -1, ICON_PROB);
+            draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
+        }
+        return;
+    }
+    {                                                   /* (seq2d) the cursor step's C1 / C2: ACTION LENGTH COND VALUE */
+        const step_t *cs = &TSEL->step[ui.cursor];
+        uint32_t a = comp_view(), k = comp_slot(), c = CO_COND(k ? cs->comp2 : cs->comp), l = cs->clen[k & 1u];
+        char lb[10], un[8];
+        draw_column(0, k ? "ACTION 2" : "ACTION", CA_NAMES[a], "", a ? VAL(0u) : T_DIM, -1, ICON_ARP);
+        if (a && a != CA_JUMP) {
+            fmt_int(val, (int32_t)(l < CL_MAX ? l + 1u : 1u));
+            draw_column(1, "LENGTH", val, "ST", VAL(1u), -1, ICON_RATE);
+        } else
+            draw_column(1, "LENGTH", "-", "", T_DIM, -1, ICON_RATE);
+        if (a) {
+            cond_name(c, cs->cnm[k & 1u], val);
+            /* (gen3) MONO / POLY the label (it took the value's room as its unit: "AL..", "!1.."), the condition whole */
+            draw_column(2, CO_COND(cs->comp2) == CC_ELSE && CO_ACT(cs->comp2) ? "MONO" : CO_ACT(cs->comp) && CO_ACT(cs->comp2) ?
+                        "POLY" : "COND", val, "", c ? VAL(2u) : T_DIM, -1, ICON_PROB);
+            comp_value(cs, a, comp_arg(cs), lb, val, un);
+            draw_column(3, lb, val, un, lb[0] ? VAL(3u) : T_DIM, -1, ICON_ORDER);
+        } else {
+            draw_column(2, "COND", "", "", T_DIM, -1, ICON_PROB);
+            draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
+        }
+        return;
+    }
 }
 static void draw_columns(void)
 {
@@ -1235,6 +1323,10 @@ static void draw_columns(void)
             card_mot_of(vp);
             draw_column(c, d->label, val, unit, VAL(c), RATIO(d, enum_rank(d, *vp)), param_icon(d, *vp));
         }
+        return;
+    }
+    if (cur_page()->graph == GR_LIVE) {                /* (p2) GLO > LIVE (ui_live.c) */
+        live_cards();
         return;
     }
     if (cur_page()->graph == GR_FOCUS) {               /* (0.8.5) EDIT > FOCUS: PARAM, its value, SRC, AMT */
@@ -1337,75 +1429,8 @@ static void draw_columns(void)
         draw_column(3, "INTVL", val, "DEG", f->rate ? VAL(3u) : T_DIM, (int32_t)(f->ivl + 14) * 1000 / 28, ICON_PITCH);
         return;
     }
-    if (cur_page()->graph == GR_COMP) {                /* (0.6.39) STEP TYPE and the TYPE's two values */
-        const step_t *cs = &TSEL->step[ui.cursor];
-        uint32_t v = comp_view(), ca = comp_arg(cs), ct = comp_type(cs);
-        static const char *const ORD[4] = {"UP", "DOWN", "UP-DN", "RND"};
-        fmt_int(val, (int32_t)ui.cursor + 1);
-        draw_column(0, "STEP", val, "", VAL(0u), -1, ICON_AUTO);
-        draw_column(1, v >= COMP_ARPN && v <= COMP_ARPS ? "ARP" : "TYPE", COMP_NAMES[v], "", v ? VAL(1u) : T_DIM, -1,
-                    v == COMP_CHANCE ? ICON_PROB : v == COMP_RATCH ? ICON_X_REPEAT : ICON_ARP);
-        if (v == COMP_CHANCE) {
-            fmt_int(val, (int32_t)step_chance(cs));
-            draw_column(2, "CHANCE", val, "%", VAL(2u), -1, ICON_PROB);
-        } else if (v == COMP_RATCH) {
-            val[0] = 'x'; val[1] = (char)('0' + step_ratchet(cs)); val[2] = 0;
-            draw_column(2, "RATCH", val, "", VAL(2u), -1, ICON_X_REPEAT);
-        } else if (v == COMP_TRIG) {
-            const uint8_t *c = CP_TRIGS[ca % CP_NTRIG];
-            if (!c[0]) str_cpy(val, c[1] == 1u ? "FIRST" : "!1ST", sizeof val);
-            else { val[0] = (char)('0' + c[0]); val[1] = ':'; val[2] = (char)('0' + c[1]); val[3] = 0; }
-            draw_column(2, "COND", val, "", VAL(2u), -1, ICON_PROB);
-        } else if (v > COMP_TRIG) {                    /* (0.6.42) the others' one value */
-            static const char *const OCTN[6] = {"+1", "-1", "+1/2", "-1/2", "ALT", "RND"};
-            int32_t a = (int32_t)ca;
-            const char *lb = "", *un = "";
-            val[0] = 0;
-            switch (v) {
-            case COMP_RAND: lb = "RANGE"; fmt_int(val, a); un = "DEG"; break;
-            case COMP_OCT: lb = "MODE"; str_cpy(val, OCTN[a % 6], sizeof val); un = "OCT"; break;
-            case COMP_TONAL: lb = "SHIFT"; a -= 7; val[0] = a < 0 ? '-' : '+'; fmt_int(val + 1, a < 0 ? -a : a); un = "DEG"; break;
-            case COMP_BEND: lb = "BEND"; a -= 12; val[0] = a < 0 ? '-' : '+'; fmt_int(val + 1, a < 0 ? -a : a); un = "ST"; break;
-            case COMP_ECHO: lb = "REPEAT"; val[0] = 'x'; fmt_int(val + 1, 2 + (a & 127) % 7); un = a & 128 ? "EVEN" : ""; break;
-            case COMP_TOUCH: { static const char *const TN[3] = {"SHORT", "GHOST", "FLAM"}; lb = "HIT"; str_cpy(val, TN[a % 3], sizeof val); break; }   /* (0.8.5) */
-            case COMP_PULSE: lb = "EVERY"; fmt_int(val, 1 + a % 4); un = a ? "STEPS" : "STEP"; break;
-            case COMP_JUMP: lb = "TO STEP"; fmt_int(val, (int32_t)CP_JTO(a) + 1); break;
-            case COMP_WALK: case COMP_CLIMB: {          /* (0.6.98) MODE and RANGE in one: the range as the unit */
-                static const char *const WM[4] = {"UP", "DOWN", "UP-DN", "RND"};
-                char u[8];
-                lb = "MODE"; str_cpy(val, WM[CP_WMODE(a)], sizeof val);
-                fmt_int(u, v == COMP_WALK ? (int32_t)CP_WDEGS[CP_WRNG(a)] : (int32_t)CP_WRNG(a) + 1);
-                str_cpy(u + str_len(u), v == COMP_WALK ? " DEG" : " OCT", 5);
-                draw_column(2, lb, val, u, VAL(2u), -1, ICON_ORDER);
-                lb = "";
-                break;
-            }
-            default: break;
-            }
-            if (lb[0]) draw_column(2, lb, val, un, VAL(2u), -1, ICON_X_REPEAT);
-            else if (v != COMP_WALK && v != COMP_CLIMB) draw_column(2, "", "", "", T_THEME, -1, ICON_NONE);
-        } else if (v != COMP_OFF) {                    /* (0.6.92) an ARP: ORDER and RANGE in one (the range as the label) */
-            char lb[10];
-            fmt_int(lb, v == COMP_ARPS ? CP_DEGS[CP_RNG(ca)] : (int32_t)CP_RNG(ca) + 1);
-            str_cpy(lb + str_len(lb), v == COMP_ARPS ? " DEG" : " OCT", 5);
-            draw_column(2, lb, ORD[CP_ORD(ca)], "", VAL(2u), -1, ICON_ORDER);
-        } else
-            draw_column(2, "", "", "", T_THEME, -1, ICON_NONE);
-        if (v == COMP_WALK || v == COMP_CLIMB) {       /* (0.6.98) RATE: a move every so many loops */
-            uint32_t r = CP_WRATES[CP_WRATE(ca) % CP_NWRATE];
-            fmt_int(val, (int32_t)r);
-            draw_column(3, "EVERY", val, r == 1u ? "LOOP" : "LOOPS", VAL(3u), -1, ICON_RATE);
-        } else if (v >= COMP_ARPN && v <= COMP_ARPS && comp_slot() == 0u) {   /* (0.6.92) RATE as a note value of the track's DIV */
-            rate_name(TSEL, CP_RATES[CP_RATE(ca) % CP_NRATE], val);
-            draw_column(3, "RATE", val, "", VAL(3u), -1, ICON_RATE);
-        } else if ((v == COMP_RATCH || v == COMP_ECHO) && comp_slot() == 0u) {   /* (0.6.82) the parts' spacing */
-            if (CT_DIV(cs)) rate_name(TSEL, CT_DIVS[CT_DIV(cs) % CT_NDIV], val); else str_cpy(val, "FIT", sizeof val);
-            draw_column(3, "RATE", val, "", CT_DIV(cs) ? VAL(3u) : T_DIM, -1, ICON_RATE);
-        } else {                                       /* (0.6.92) EVERY: the loops the step's components play on */
-            uint32_t ev = ST_EVERY(cs) % EV_N;
-            draw_column(3, "EVERY", EV_NAMES[ev], "", ev ? VAL(3u) : T_DIM, -1, ICON_PROB);
-        }
-        (void)ct;
+    if (cur_page()->graph == GR_GCOMP || cur_page()->graph == GR_COMP) {
+        comp_columns();
         return;
     }
     if (cur_page()->graph == GR_CHANCE) {              /* STEP CHANCE RATCH: the cursor step's, of all of it */
@@ -1469,7 +1494,7 @@ static void draw_columns(void)
         fmt_int(val, (int32_t)n);
         draw_column(2, pfx_rec_ok() ? "REC" : song.playing ? "PLAY" : "STEPS", pfx_rec_ok() ? "ON" : song.playing ? "ON" : val, "",
                     pfx_rec_ok() ? T_ACCENT : T_MID, -1, pfx_rec_ok() ? ICON_X_REC : ICON_NONE);
-        draw_act_column(3, "CLEAR", n ? T_MID : T_DIM, ICON_X_MOTION_DEL);
+        draw_act_column(3, "CLR AUTO", n ? T_MID : T_DIM, ICON_X_MOTION_DEL);   /* (snd2: the lane only) */
         return;
     }
     if (cur_page()->graph == GR_MOTION) {
@@ -1517,7 +1542,7 @@ static void draw_columns(void)
         draw_column(0, "No.", val, u, VAL(0u), -1, ICON_NONE);
         draw_column(1, "ENG", ENGINES[TSEL->eng_req]->name, "", VAL(1u), -1, engine_icon(ENGINES[TSEL->eng_req]->name));
         draw_column(2, "FAV", preset_favorite() ? "ON" : "OFF", "", VAL(2u), -1, ICON_X_STAR);
-        draw_column(3, "LIST", favorites.filter ? "FAV" : "ALL", "", VAL(3u), -1, ICON_X_FOLDER);
+        draw_column(3, "LIST", N_LIST[list_get()], "", VAL(3u), -1, ICON_X_FOLDER);
         return;
     }
     if (cur_page()->graph == GR_PATS) {                  /* PAT, then LOAD (a GO button) */
@@ -1725,6 +1750,11 @@ static void draw_columns(void)
             continue;
         }
         if (cur_page()->id[c] == G_MIDI && cur_page()->scope == SC_GLOBAL) {
+            if (c) {                                     /* (0.9.9-snd8) SYSTEM 2's KNOB 2: the TRS messages come in */
+                fmt_int(val, (int32_t)(um.msgs % 10000u));
+                draw_column(c, "TRS IN", val, "MSG", T_THEME, -1, ICON_AUTO);
+                continue;
+            }
             str_cpy(val, !usb.up ? "OFF" : usb.config ? "MIDI" : usb.setups ? "ENUM" : usb.sof_seen ? "BUS" : "WAIT", 12);
             unit = "USB";
             draw_column(c, "USB", val, unit, T_THEME, -1, ICON_AUTO);
@@ -1747,7 +1777,7 @@ static void draw_columns(void)
                 unit = "ECO";                           /* (0.6.30) no chorus: the send goes nowhere */
         }
         card_mot_of(vp);                                /* (a global: never) */
-        draw_column(c, d->label, val, unit, VAL(c), d->fmt == F_ENUM && d->max < 2 ? -1 : RATIO(d, enum_rank(d, *vp)),
+        draw_column(c, d->label, val, unit, vp == &lphase_ui && TSEL->p[P_LPHASE] < 0 ? T_DIM : VAL(c), d->fmt == F_ENUM && d->max < 2 ? -1 : RATIO(d, enum_rank(d, *vp)),
                     param_icon(d, *vp));
     }
 }
@@ -2029,6 +2059,10 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, "BUILD CPU TEST SONG?", 24);
         str_cpy(b, "UNDO AFTER: GLO + G4", 24);
         break;
+    case CF_LIVE_COMMIT:                             /* (p2) GLO > LIVE (k: the tracks) */
+        str_cpy(a, "WRITE LIVE CHANGES?", 24);
+        str_cpy(b, "UNDO AFTER: GLO + G4", 24);
+        break;
     case CF_MUT_BACK:                                /* (0.9.3) MUTATE turned OFF on track k (project.c mut_ask_poll) */
         str_cpy(a, "BACK TO BEFORE MUTATE?", 24);
         str_cpy(b, "T1: SOUND AND PATTERN", 24);
@@ -2057,7 +2091,7 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, "CLEAR T1 AUTOMATION?", 24); a[7] = (char)('1' + k % NTRK);
         break;
     case CF_CLEAR_PFX:
-        str_cpy(a, "CLEAR THE PUNCH LANE?", 24);
+        str_cpy(a, "CLEAR PUNCH AUTOMATION?", 24);   /* (snd2: the lane only) */
         break;
     case CF_OVR_USER:
         str_cpy(a, "OVERWRITE ", 24);
@@ -2256,6 +2290,8 @@ static void ui_draw(void)
     static uint8_t counting;
     style_apply();
     ui.frame++;
+    if (!ANIM_OFF())                                    /* (0.9.9-beta4) the animation's frame (ui.c anim_fr): this one, */
+        anim_at = ui.frame;                             /* or the last it moved on while held */
     if (counting != (uint8_t)seq_counting()) {          /* a count-in began or ended: the page drawn again after it */
         counting = (uint8_t)seq_counting();
         ui.force = 1;

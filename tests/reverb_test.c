@@ -87,6 +87,9 @@ static void ref_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_
     int32_t dcd = fx_glide(rf.cd, cdepth, n), ddm = fx_glide(rf.dm, dmix, n);
     if (!rf.dl_now) { rf.dl_now = dl; rf.cd = cdepth; rf.dm = dmix; }   /* (the first block: fx.primed) */
     if (!rf.dl_xf && dl != rf.dl_now) { rf.dl_old = rf.dl_now; rf.dl_now = dl; rf.dl_xf = DXF_LEN; }
+    int32_t cr[3], cdr[3] = {0, 0, 0};                          /* (0.9.9-snd2: the chorus's LFO a segment, fx.c) */
+    uint32_t clg = song.g[G_CRATE] < 64 ? 6u : song.g[G_CRATE] < 96 ? 4u : song.g[G_CRATE] < 120 ? 3u : 2u;
+    cho_lfo(rf.cho_ph, rf.cd, cr);
     for (i = 0; i < n; i++) {
         int32_t y = 0, x, r, a;
         rf.cd += dcd; rf.dm += ddm;
@@ -94,7 +97,13 @@ static void ref_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_
         rf.cho_ph += cinc;
         {                                                       /* (0.5.1: the chorus is the ensemble, its middle) */
             int32_t sd;
-            y += cho_ens(ref_cho, rf.cho_w, rf.cho_ph, rf.cd, &sd);
+            if (!(i & ((1u << clg) - 1u))) {
+                int32_t ce[3];
+                cho_lfo(rf.cho_ph - cinc + (cinc << clg), rf.cd - dcd + dcd * (1 << clg), ce);
+                for (k = 0; k < 3u; k++) cdr[k] = (ce[k] - cr[k]) >> clg;
+            }
+            for (k = 0; k < 3u; k++) cr[k] += cdr[k];
+            y += cho_ens(ref_cho, rf.cho_w, cr, &sd);
             (void)r;
         }
         rf.cho_w++;
@@ -757,13 +766,13 @@ static void test_jiant(void)
         duck_env = 0;
         duck_g1 = 32767;
         duck_hit = 1;
-        for (b = 0; b < 4u; b++)
+        for (b = 0; b < 4u * 32u / CTL; b++)             /* (the moments in blocks of 32: 3 ms, 20 ms, 0.4 s) */
             duck_block();
         g3 = duck_g1;
-        for (; b < 28u; b++)
+        for (; b < 28u * 32u / CTL; b++)
             duck_block();
         g20 = duck_g1;
-        for (; b < 600u; b++)
+        for (; b < 600u * 32u / CTL; b++)
             duck_block();
         gend = duck_g1;
         check("DUCK 100: below -26 dB in 3 ms, still there at 20 ms (the hold), back to unity after the release",

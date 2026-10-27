@@ -8,3 +8,7 @@
 #pragma once
 
 #define FM1_INLINE static inline __attribute__((always_inline))
+/* FM1_OPAQUE(v): v as the compiler cannot know it (an empty asm): a function pointer through it is called through a
+ * register, never as a direct call (JIANT 0.9.9-snd8: RAM code reaching a function in the flash past the tables, out of
+ * a direct call's reach) */
+#define FM1_OPAQUE(v) __asm__("" : "+r"(v))

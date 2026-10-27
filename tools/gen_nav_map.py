@@ -87,7 +87,7 @@ L = {
          'LFO': ('MACROS M1–M4', 'LFO dice'), 'SCL': ('ROOT on the keys', 'walk this chain'), 'ARP': (None, 'walk this chain'),
          'SAVE': ('sections live · NAME', 'walk this chain')},
   notes={'HOME': 'GEN 1–3: PRESETS the genre, OCT+ makes the piece, OCT− back to ECO.',
-         'SEQ': 'PRESETS: the patterns (PHRASES). KNOB 1: the bar on BAR, all 64 steps on STEP.',
+         'SEQ': 'PRESETS: the patterns (PHRASES). KNOB 1: all 64 steps on STEP, bar after bar.',
          'EDIT': 'TONE pages only where the engine has them: MORPH (ANALOG PHASE LOFI), RETRIG (LOFI), ROTOR (WHEEL), WORDS (VOICE). DRUM-X: KNOB 1 picks the kit\'s sound on SOUND.',
          'FX': 'CHORUS and SLICER are hidden with LOAD ECO; the chain skips them.',
          'SAVE': 'From outside, USER and SECTIONS come with SAVE armed: SAVE · OCT+ · OCT+.',
@@ -131,7 +131,7 @@ L = {
          'LFO': ('MACROS M1–M4', 'dados de LFO'), 'SCL': ('ROOT en las teclas', 'recorre esta cadena'),
          'ARP': (None, 'recorre esta cadena'), 'SAVE': ('secciones en vivo · NAME', 'recorre esta cadena')},
   notes={'HOME': 'GEN 1–3: PRESETS el género, OCT+ arma la pieza, OCT− vuelve a ECO.',
-         'SEQ': 'PRESETS: los patrones (PHRASES). KNOB 1: el compás en BAR, los 64 pasos en STEP.',
+         'SEQ': 'PRESETS: los patrones (PHRASES). KNOB 1: los 64 pasos en STEP, compás tras compás.',
          'EDIT': 'Las páginas de TONE solo donde el motor las tiene: MORPH (ANALOG PHASE LOFI), RETRIG (LOFI), ROTOR (WHEEL), WORDS (VOICE). DRUM-X: KNOB 1 elige el sonido del kit en SOUND.',
          'FX': 'CHORUS y SLICER se ocultan con LOAD ECO; la cadena los saltea.',
          'SAVE': 'Desde afuera, USER y SECTIONS llegan con SAVE elegido: SAVE · OCT+ · OCT+.',
@@ -163,7 +163,7 @@ COND = {('EDIT', 'MORPH'), ('EDIT', 'RETRIG'), ('EDIT', 'ROTOR'), ('EDIT', 'WORD
         ('FX', 'SL BUS'), ('FX', 'SL BUS 2'), ('FX', 'SL PITCH')}
 
 # the map's rows: the sections in each (EDIT: its three chains side by side) and their accent (KNOB 1..4 colours)
-ROWS = [['HOME', 'SEQ', 'SCL'], ['EDIT'], ['FX', 'GLO'], ['ENV', 'LFO', 'ARP', 'SAVE']]
+ROWS = [['HOME', 'SCL'], ['SEQ'], ['EDIT'], ['FX', 'GLO'], ['ENV', 'LFO', 'ARP', 'SAVE']]   # (0.9.9-seq2: SEQ's seven tabs on a row of their own)
 ACCENT = {'HOME': K[0], 'SEQ': K[2], 'SCL': K[3], 'EDIT': K[1], 'FX': K[3], 'GLO': K[0], 'ENV': K[1], 'LFO': K[2],
           'ARP': K[0], 'SAVE': K[1]}
 

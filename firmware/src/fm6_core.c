@@ -26,12 +26,12 @@
  *     arrive as the note's pitch in 1/16 semitone plus a fine factor: fm6_note_logfreq);
  *   - the sine is Felucca's 1024-point SINE (Q15), linearly interpolated, scaled by the Q24 gain to msfa's
  *     Q24 operator output;
- *   - a block is CTL (32) samples (msfa: 64);
+ *   - a block is CTL (64; 32 until 0.9.9 ctl64) samples (msfa: 64);
  *   - no portamento, no operator switches, no controllers (mod wheel, breath, ...): Felucca's matrix does that.
  * The patch is the 155-byte single-voice layout (FP_* below), operator 0 = the sixth operator, as msfa. */
 
 #define FM6_N CTL
-#define FM6_LG_N 5
+#define FM6_LG_N 6
 #if (1 << FM6_LG_N) != FM6_N
 #error "FM6_LG_N does not match CTL"
 #endif
@@ -49,7 +49,7 @@ enum {
 static inline uint32_t fm6_mant(int32_t x)
 {
     uint32_t f = (uint32_t)x & 0xFFFFFFu, k = f >> 14, a = FM6_EXP2[k];
-    return (1u << 30) + a + (uint32_t)(((uint64_t)(FM6_EXP2[k + 1u] - a) * (f & 0x3FFFu)) >> 14);
+    return (1u << 30) + a + (uint32_t)(umul64(FM6_EXP2[k + 1u] - a, f & 0x3FFFu) >> 14);
 }
 static inline int32_t fm6_exp2(int32_t x)
 {
@@ -61,7 +61,7 @@ static inline int32_t fm6_exp2(int32_t x)
 static inline int32_t fm6_freq(int32_t x)
 {
     int32_t i = x >> 24;
-    uint32_t q = (uint32_t)(((uint64_t)fm6_mant(x) * FM6_FREQ_R) >> 25);    /* 2^(i + 21) Hz units */
+    uint32_t q = (uint32_t)(umul64(fm6_mant(x), FM6_FREQ_R) >> 25);    /* 2^(i + 21) Hz units */
     if (i < 0)
         return 0;
     return (int32_t)(q >> (21 - (i > 21 ? 21 : i)));
@@ -75,10 +75,11 @@ static inline int32_t fm6_sin(int32_t ph)
 
 /* ------------------------------------------------------------ envelope --- */
 typedef struct {                 /* msfa Env: level in Q24 log2 (2^24 = 6 dB), 16 more bits than the original */
-    int32_t level, target, inc, statc;
+    int32_t level, target, step; /* >0: increment; <0: remaining static samples (mutually exclusive) */
     int16_t outlevel;            /* microsteps (99 * 32 = full) */
     uint8_t rscale, ix, rising, down;
 } fm6_env_t;
+_Static_assert(sizeof(fm6_env_t) == 20, "compact FM6 envelope RAM budget");
 
 static const uint8_t FM6_LEVELLUT[20] = {0, 5, 9, 13, 17, 20, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 42, 43, 45, 46};
 static int32_t fm6_scaleout(int32_t ol) { return ol >= 20 ? 28 + ol : FM6_LEVELLUT[ol < 0 ? 0 : ol]; }
@@ -106,16 +107,15 @@ static void fm6_env_advance(fm6_env_t *e, const uint8_t *op, uint32_t ix)
     e->rising = e->target > e->level;
     qrate = ((op[FP_R1 + ix] * 41) >> 6) + e->rscale;
     qrate = qrate > 63 ? 63 : qrate;
+    e->step = (4 + (qrate & 3)) << (2 + FM6_LG_N + (qrate >> 2));
     if (e->target == e->level || (ix == 0u && lv == 0)) {
         int32_t sr = op[FP_R1 + ix] + e->rscale;
         sr = sr > 99 ? 99 : sr;
-        e->statc = sr < 77 ? FM6_STATICS[sr] : 20 * (99 - sr);
+        int32_t samples = sr < 77 ? FM6_STATICS[sr] : 20 * (99 - sr);
         if (sr < 77 && ix == 0u && lv == 0)
-            e->statc /= 20;                     /* the attack is scaled faster (a stage change, not per sample) */
-    } else {
-        e->statc = 0;
+            samples /= 20;                     /* the attack is scaled faster (a stage change, not per sample) */
+        if (samples) e->step = -samples;
     }
-    e->inc = (4 + (qrate & 3)) << (2 + FM6_LG_N + (qrate >> 2));
 }
 
 static void fm6_env_init(fm6_env_t *e, const uint8_t *op, int32_t outlevel, int32_t rate_scaling)
@@ -129,26 +129,26 @@ static void fm6_env_init(fm6_env_t *e, const uint8_t *op, int32_t outlevel, int3
 
 static int32_t fm6_env_get(fm6_env_t *e, const uint8_t *op)
 {
-    if (e->statc) {
-        e->statc -= FM6_N;
-        if (e->statc <= 0) {
-            e->statc = 0;
+    if (e->step < 0) {
+        e->step += FM6_N;
+        if (e->step >= 0) {
+            e->step = 0;
             fm6_env_advance(e, op, e->ix + 1u);
         }
     }
     if (e->ix < 3u || (e->ix < 4u && !e->down)) {
-        if (e->statc) {
+        if (e->step < 0) {
             ;
         } else if (e->rising) {
             if (e->level < (1716 << 16))
                 e->level = 1716 << 16;
-            e->level += (((17 << 24) - e->level) >> 24) * e->inc;
+            e->level += (((17 << 24) - e->level) >> 24) * e->step;
             if (e->level >= e->target) {
                 e->level = e->target;
                 fm6_env_advance(e, op, e->ix + 1u);
             }
         } else {
-            e->level -= e->inc;
+            e->level -= e->step;
             if (e->level <= e->target) {
                 e->level = e->target;
                 fm6_env_advance(e, op, e->ix + 1u);
@@ -308,10 +308,13 @@ static const uint8_t FM6_ALG[32][6] = {      /* per operator (the sixth first): 
  * isCarrier also counts the modulators that add into bus 1 or 2) */
 static uint32_t fm6_carriers(uint32_t a)
 {
-    uint32_t k, c = 0;
-    for (k = 0; k < 6u; k++)
-        c |= ((FM6_ALG[a & 31u][k] & 3u) ? 0u : 1u) << k;
-    return c;
+    /* Immutable algorithm metadata: avoid scanning six operators for each
+     * voice's compute/done checks and the track's macro synchronization. */
+    static const uint8_t CARRIER_MASK[32] = {
+        0x28, 0x28, 0x24, 0x24, 0x2a, 0x2a, 0x28, 0x28, 0x28, 0x24, 0x24, 0x28, 0x28, 0x28, 0x28, 0x20,
+        0x20, 0x20, 0x26, 0x34, 0x36, 0x2e, 0x36, 0x3e, 0x3e, 0x34, 0x34, 0x29, 0x3a, 0x39, 0x3e, 0x3f
+    };
+    return CARRIER_MASK[a & 31u];
 }
 
 /* ------------------------------------------------------- the operators --- */
@@ -331,7 +334,7 @@ typedef struct {                 /* msfa FmOpParams */
 #define FM6_OP_LOOP(PH, STORE)                                                    \
     for (i = 0; i < FM6_N; i++) {                                               \
         g += dg;                                                                \
-        out[i] STORE (int32_t)(((int64_t)fm6_sin(PH) * g) >> 15);               \
+        out[i] STORE mul64_sh15(fm6_sin(PH), g);                                \
         phase = (int32_t)((uint32_t)phase + (uint32_t)freq);                    \
     }
 static __attribute__((noinline)) void fm6_op_run(int32_t *out, const int32_t *in, int32_t phase, int32_t freq,
@@ -359,7 +362,7 @@ static __attribute__((noinline)) void fm6_op_fb(int32_t *out, int32_t phase, int
         int32_t s = (y0 + y) >> (shift + 1);
         g += dg;
         y0 = y;
-        y = (int32_t)(((int64_t)fm6_sin(phase + s) * g) >> 15);
+        y = mul64_sh15(fm6_sin(phase + s), g);
         out[i] = add ? out[i] + y : y;
         phase = (int32_t)((uint32_t)phase + (uint32_t)freq);
     }
@@ -406,7 +409,7 @@ static int fm6_core_render(int32_t *out, fm6_op_t *op, uint32_t alg, int32_t *fb
 }
 
 /* ------------------------------------------------------------ the note --- */
-typedef struct {                 /* a sounding note (msfa's note): 244 bytes */
+typedef struct {                 /* a sounding note (msfa's note): 272 bytes */
     fm6_env_t env[6];
     fm6_op_t op[6];
     int32_t base[6];             /* the operator's pitch: ratio: log2 offset from the note's (Q24); fixed: log2 Hz */
@@ -508,7 +511,7 @@ static void fm6_note_key(fm6_note_t *n, const uint8_t *p, int down)
  * unison detune, tune and bend below 1/16 semitone): log2(1 + x) ~ x / ln 2 for these small factors */
 static int32_t fm6_note_logfreq(int32_t pitch16, int32_t fine)
 {
-    return FM6_LOGF0 + (int32_t)(((int64_t)pitch16 * ((1 << 24) / 12)) >> 4) + fine * 5909;
+    return FM6_LOGF0 + (int32_t)(mul64(pitch16, (1 << 24) / 12) >> 4) + fine * 5909;
 }
 
 /* one block (msfa note compute): the LFO's value and delay (Q24), the note's log2 frequency, the patch's
@@ -520,22 +523,22 @@ static int fm6_note_compute(fm6_note_t *n, const uint8_t *p, int32_t *out, int32
 {
     uint32_t pmd = (uint32_t)((p[FP_LPMD] % 100u) * 165u >> 6) * (uint32_t)lfo_delay;   /* Q32 */
     int32_t senslfo = FM6_PMS[p[FP_LPMS] & 7u] * (lfo_val - (1 << 23));
-    int32_t pmod = (int32_t)(((int64_t)pmd * senslfo) >> 39), pitch_mod;
+    int32_t pmod = (int32_t)(mul64_us(pmd, senslfo) >> 39), pitch_mod;
     uint32_t amd = (uint32_t)((p[FP_LAMD] % 100u) * 165u >> 6), amod, car = fm6_carriers(alg), k;
     pmod = pmod < 0 ? -pmod : pmod;
     pitch_mod = fm6_penv_get(&n->penv, p) + (senslfo < 0 ? -pmod : pmod);
-    amod = (uint32_t)(((int64_t)amd * lfo_delay) >> 8);                 /* Q24 */
-    amod = (uint32_t)(((int64_t)amod * ((1 << 24) - lfo_val)) >> 24);
+    amod = (uint32_t)(mul64_us(amd, lfo_delay) >> 8);                 /* Q24 */
+    amod = (uint32_t)(mul64_us(amod, (1 << 24) - lfo_val) >> 24);
     for (k = 0; k < 6u; k++) {
         const uint8_t *op = p + k * FP_OP;
         int32_t level = fm6_env_get(&n->env[k], op);
         uint32_t ams = FM6_AMSENS[op[FP_AMS] & 3u];
         n->op[k].freq = fm6_freq((n->fixed >> k) & 1u ? n->base[k] : logfreq + n->base[k] + pitch_mod + dt[k]);
         if (ams) {                                 /* msfa: pt = exp(sensamp / 262144 * 0.07 + 12.2) */
-            uint32_t sensamp = (uint32_t)(((uint64_t)amod * ams) >> 24);
-            int32_t lg = FM6_AMS_C0 + (int32_t)(((uint64_t)sensamp * FM6_AMS_K) >> 10);
+            uint32_t sensamp = (uint32_t)(umul64(amod, ams) >> 24);
+            int32_t lg = FM6_AMS_C0 + (int32_t)(umul64(sensamp, FM6_AMS_K) >> 10);
             uint32_t pt = fm6_mant(lg) << ((lg >> 24) - 16);   /* (2^17.6 .. 2^24.1: shift 1..8) */
-            level -= (int32_t)(((uint64_t)(uint32_t)level * ((uint64_t)pt << 4)) >> 28);
+            level -= (int32_t)(umul64((uint32_t)level, pt << 4) >> 28);
         }
         if (!((car >> k) & 1u))
             level += modlvl;
@@ -553,7 +556,8 @@ static int fm6_note_done(const fm6_note_t *n, const uint8_t *p, uint32_t alg)
         const fm6_env_t *e = &n->env[k];
         if (!((car >> k) & 1u))
             continue;
-        if (n->op[k].gain_out >= FM6_DONE)
+        if (n->op[k].gain_out >= (e->ix == 3u && !e->down ? FM6_THRESH * 2 : FM6_DONE))   /* (beta3: a released note
+                                                         * ends sooner, ~6 dB over the skip threshold) */
             return 0;
         if (e->ix < 3u)
             return 0;

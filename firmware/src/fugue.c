@@ -100,6 +100,7 @@ static void fg_play(track_t *t, fg_head_t *h, const fg_set_t *f, uint32_t i, uin
     h->off = (uint32_t)((uint64_t)steplen * (uint32_t)clamp(t->p[P_SGATE], 1, 127) / 128u);
     if (h->off < CTL)
         h->off = CTL;
+    h->off += ev_off;                                    /* (ctl64: from the step's sample) */
 }
 /* once a block a track (seq_tick, after the sequencer): each head on */
 static __attribute__((noinline)) void fugue_tick(track_t *t, uint32_t n, uint32_t period, uint32_t len)
@@ -109,25 +110,32 @@ static __attribute__((noinline)) void fugue_tick(track_t *t, uint32_t n, uint32_
         const fg_set_t *f = &fg_set[ti][k];
         fg_head_t *h = &fg_head[ti][k];
         uint32_t steplen, guard;
-        if (h->n) {
-            if (h->off <= n)
-                fg_release(t, h);
-            else
-                h->off -= n;
-        }
-        if (!f->rate || f->rate >= FG_NRATE || !len)
-            continue;
+        if (f->rate && f->rate < FG_NRATE && len) {
         steplen = (uint32_t)((uint64_t)period * FG_DEN[f->rate] / FG_NUM[f->rate]);
         if (steplen < CTL)
             steplen = CTL;
-        if (h->pos == 0x7FFFFFFFu)                       /* (the start: its first step now) */
-            h->pos = steplen;
-        else
-            h->pos += n;
-        for (guard = 0; h->pos >= steplen && guard < 4u; guard++) {
-            h->pos -= steplen;
+        if (h->pos == 0x7FFFFFFFu) {                     /* (the start: its first step now) */
+            h->pos = 0;
             h->idx = (uint16_t)fg_next(h, f->dir, len);
             fg_play(t, h, f, h->idx, steplen);
+        } else {
+            h->pos += n;
+            for (guard = 0; h->pos >= steplen && guard < 4u; guard++) {
+                h->pos -= steplen;
+                ev_at(h->pos >= n ? 0u : n - h->pos);    /* (ctl64) each step at its sample */
+                h->idx = (uint16_t)fg_next(h, f->dir, len);
+                fg_play(t, h, f, h->idx, steplen);
+                ev_off = 0;
+            }
+        }
+        }
+        if (h->n) {                                      /* (ctl64) the gate's end, after the step: from its sample */
+            if (h->off <= n) {
+                ev_at(h->off);
+                fg_release(t, h);
+                ev_off = 0;
+            } else
+                h->off -= n;
         }
     }
 }

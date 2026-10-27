@@ -60,27 +60,37 @@ static const nv_t CE_DIG[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("
                               NV("OP4 ENV", 0, 2, 2), NV("OP LEVEL", 0, 2, 2)};
 static const ng_t CG_DIG[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}};
 enum { LV_PAT, LV_BAR, LV_STEP, LV_N };                 /* SEQ's pictures: the bars, the roll, the step large */
-static const nv_t CE_SEQ[] = {NV("PATTERN", 0, 0, LV_PAT), NV("STRETCH", 0, 0, LV_PAT), NV("PLAYHEADS", 0, 0, LV_PAT),
-                              NV("TRACK", 0, 1, LV_PAT), NV("MUTATE", 0, 1, LV_PAT), NV("BAR", 0, 2, LV_PAT),
-                              NV("STEP", 0, 2, LV_BAR), NV("NOTE", 0, 2, LV_BAR), NV("COMP", 0, 3, LV_STEP),
-                              NV("COMP 2", 0, 3, LV_STEP), NV("AUTOMATION", 0, 4, LV_BAR), NV("AUTO LIST", 0, 4, LV_BAR)};
-static const ng_t CG_SEQ[] = {{"PATTERN", "PATT"}, {"TRACK", 0}, {"BAR", 0}, {"STEP", 0}, {"AUTO", 0}};
+/* (0.9.9-seq2, the approved mock-up) SEQ's chain in seven tabs: STEP . LENGTH (the PATTERN page, then TRACK) . MUTATE .
+ * PLAYHEADS . STRETCH . COMP (COMP 2 after it, by SELECT as before) . AUTO (AUTOMATION, AUTO LIST). BAR and NOTE stay pages
+ * (code puts them) but out of the chain, until the step held opens its own (the mock-up's slice 5) */
+static const nv_t CE_SEQ[] = {NV("STEP", 0, 0, LV_BAR), NV("PATTERN", "LENGTH", 1, LV_PAT), NV("TRACK", 0, 1, LV_PAT),
+                              NV("MUTATE", 0, 2, LV_PAT), NV("MUTATE 2", 0, 2, LV_PAT),
+                              NV("PLAYHEADS", 0, 3, LV_PAT), NV("STRETCH", 0, 4, LV_PAT),
+                              NV("COMP", 0, 5, LV_STEP), NV("COMP 2", 0, 5, LV_STEP), NV("AUTOMATION", 0, 6, LV_BAR),
+                              NV("AUTO LIST", 0, 6, LV_BAR)};
+static const ng_t CG_SEQ[] = {{"STEP", 0}, {"LENGTH", "LEN"}, {"MUTATE", "MUT"}, {"PLAYHEADS", "HEAD"}, {"STRETCH", "STR"},
+                              {"COMP", 0}, {"AUTO", 0}};   /* (seven tabs: a short form of 4 letters at most fits one) */
 enum { FXL_TRACK, FXL_BUSES, FXL_EFFECT };
 static const nv_t CE_FX[] = {NV("FX", "SENDS", 0, FXL_TRACK), NV("DIST", 0, 0, FXL_TRACK), NV("AUTO PAN", 0, 0, FXL_TRACK),
                              NV("BUSES", 0, 1, FXL_BUSES), NV("DLY", 0, 2, FXL_EFFECT), NV("DLY 2", 0, 2, FXL_EFFECT),
                              NV("DLY 3", 0, 2, FXL_EFFECT), NV("REVERB", 0, 3, FXL_EFFECT), NV("REVERB 2", 0, 3, FXL_EFFECT),
                              NV("CHORUS", 0, 4, FXL_EFFECT), NV("SLICER", 0, 5, FXL_EFFECT), NV("SL BUS", 0, 5, FXL_EFFECT),
-                             NV("SL BUS 2", 0, 5, FXL_EFFECT), NV("SL PITCH", 0, 5, FXL_EFFECT), NV("MASTER", 0, 6, FXL_EFFECT),
-                             NV("PUNCH", 0, 7, FXL_EFFECT)};
+                             NV("SL BUS 2", 0, 5, FXL_EFFECT), NV("SL PITCH", 0, 5, FXL_EFFECT), NV("PUNCH", 0, 6, FXL_EFFECT),
+                             NV("MASTER", 0, 7, FXL_EFFECT), NV("TAPE", 0, 7, FXL_EFFECT),
+                             NV("EQ", 0, 7, FXL_EFFECT)};   /* (p9: the master's EQ) */   /* (0.9.9-snd2: MASTER last, the
+                                                         * end of the chain; snd8: its TAPE) */
 static const ng_t CG_FX[] = {{"TRACK", "TRK"}, {"BUSES", "BUS"}, {"DELAY", "DLY"}, {"REVERB", "REV"}, {"CHORUS", "CHO"},
-                             {"SLICER", "SLC"}, {"MASTER", "MST"}, {"PUNCH", "PCH"}};
-static const nv_t CE_GLO[] = {NV("MIXER", 0, 0, 0), NV("SENDS", 0, 0, 0), NV("GLOBAL", 0, 1, 1), NV("SYSTEM", 0, 2, 2)};
-static const ng_t CG_GLO[] = {{"MIX", 0}, {"GLOBAL", 0}, {"SYSTEM", 0}};
+                             {"SLICER", "SLC"}, {"PUNCH", "PCH"}, {"MASTER", "MST"}};
+static const nv_t CE_GLO[] = {NV("MANO", 0, 0, 0), NV("RIELES", 0, 0, 0), NV("MIXER", 0, 1, 0), NV("SENDS", 0, 1, 0),
+                              NV("GLOBAL", 0, 2, 1), NV("SYSTEM", 0, 3, 2), NV("SYSTEM 2", 0, 3, 2),
+                              NV("COMPS", 0, 4, 3), NV("COMPS 2", 0, 4, 3)};   /* (0.9.9-seq2f) the global lane; (p2) LIVE first
+                                                         * (ui_live.c) */
+static const ng_t CG_GLO[] = {{"LIVE", 0}, {"MIX", 0}, {"GLOBAL", 0}, {"SYSTEM", 0}, {"COMPS", "CMP"}};
 static const nv_t CE_ENV[] = {NV("ENV", "TRACKS", 0, 0), NV("ENV DEST", "TRACKS DEST", 0, 0), NV("ENV", 0, 1, 1),
                               NV("ENV DEST", 0, 1, 1), NV("STAGE", 0, 2, 2)};
 static const ng_t CG_ENV[] = {{"TRACKS", 0}, {"ENV", 0}, {"STAGE", 0}};
-static const nv_t CE_LFO[] = {NV("MOD", 0, 0, 0), NV("LFO", 0, 1, 1), NV("LFO DEST", 0, 1, 1), NV("MSEQ", 0, 2, 2),
-                              NV("MSEQ 2", 0, 2, 2)};
+static const nv_t CE_LFO[] = {NV("MOD", 0, 0, 0), NV("LFO", 0, 1, 1), NV("LFO 2", 0, 1, 1), NV("LFO DEST", 0, 1, 1),
+                              NV("MSEQ", 0, 2, 2), NV("MSEQ 2", 0, 2, 2)};   /* (0.9.18: LFO 2, PHASE) */
 static const ng_t CG_LFO[] = {{"MOD", 0}, {"LFO", 0}, {"MSEQ", 0}};
 static const nv_t CE_SCL[] = {NV("SCL", 0, 0, 0), NV("CHORD", 0, 1, 1)};
 static const ng_t CG_SCL[] = {{"KEY", 0}, {"CHORD", 0}};
@@ -96,8 +106,9 @@ static const ch_t CHAINS[NAV_KEYS] = {CH(CE_HOME, CG_HOME), CH(CE_SYN, CG_SYN), 
                                       CH(CE_GLO, CG_GLO), CH(CE_ENV, CG_ENV), CH(CE_LFO, CG_LFO), CH(CE_SCL, CG_SCL),
                                       CH(CE_ARP, CG_ARP), CH(CE_SAVE, CG_SAVE), CH(CE_FM6, CG_FM6), CH(CE_DRM, CG_DRM),
                                       CH(CE_DIG, CG_DIG)};
-/* the page each opens on at power-on (the mock-up's): SEQ its STEP, ENV its ENV, LFO its LFO; ui.nmem holds it ^ this */
-static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 6, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0};
+/* the page each opens on at power-on (the mock-up's): SEQ its STEP, ENV its ENV, LFO its LFO, (p2) GLO its MIXER (LIVE's
+ * pages before it: a GLO tap inside, rule 2); ui.nmem holds it ^ this */
+static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 2, 2, 1, 0, 0, 0, 0, 0, 0};
 static uint32_t nav_key(uint32_t sec) { uint32_t k = sec == SEC_EDIT ? edit_kind() : 0u; return k ? SEC_N - 1u + k : sec; }
 static const ch_t *nav_ch(uint32_t sec) { return &CHAINS[nav_key(sec)]; }
 static uint32_t nav_mem(uint32_t key) { return (uint32_t)(ui.nmem[key] ^ NAV_DEF[key]); }
@@ -165,7 +176,10 @@ static uint32_t save_level(void) { return nav_lv(); }
 static uint32_t home_level(void) { return gen_on() ? 2u : ui.hlv ? 1u : 0u; }
 static uint32_t home_set(void) { return ui.hset[home_level() & 1u] & 1u; }
 static int home_macros(void) { return ui.home && !ui.menu && !gen_on() && home_set(); }   /* MACROS / ROUTES: M1..M4 */
-/* the entries shown now (on this track, at this LOAD), in order: their indices in v; how many */
+/* the entries shown now (on this track, at this LOAD), in order: their indices in v (NAV_MAX at most: the longest chain,
+ * FX's 17 since snd8's TAPE, fits: ui_test checks every chain against it; snd8b's 17th page overran a 16 and crashed
+ * FX); how many */
+#define NAV_MAX 24u
 static uint32_t nav_list(uint32_t sec, uint8_t *v)
 {
     const ch_t *c = nav_ch(sec);
@@ -253,7 +267,7 @@ static void nav_button(uint32_t sec)
 /* rule 1: SELECT, s detents along the chain (no wrap) */
 static void nav_select(int32_t s)
 {
-    uint8_t v[16];
+    uint8_t v[NAV_MAX];
     uint32_t sec = nav_sec(), n = nav_list(sec, v), e = nav_cur(), i;
     int32_t at = -1, to;
     for (i = 0; i < n; i++)
@@ -279,7 +293,7 @@ static void nav_jump(uint32_t sec, int32_t s)
  * one's pages (cnt) and chain index of the first (first); the chain's place *i of *m */
 static uint32_t nav_groups(uint8_t *cnt, uint8_t *gi, uint32_t *g, uint32_t *p, uint32_t *i, uint32_t *m)
 {
-    uint8_t v[16];
+    uint8_t v[NAV_MAX];
     uint32_t sec = nav_sec(), n = nav_list(sec, v), e = nav_cur(), k, ng = 0, last = 0xFFu;
     const ch_t *c = nav_ch(sec);
     *g = *p = *i = 0;

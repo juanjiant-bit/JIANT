@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* FM-1 interrupt / exception HAL.
  *
  *   fm1_irq_init()        first thing in cstart: all ICFG off, pendings and
@@ -49,7 +50,25 @@ typedef struct {
     uint32_t magic, count, vec, pc, rets, emu, dbg, sp, psr, icfg, uptime_ms;
     uint32_t etm[4];
     uint32_t early;                          /* consecutive crashes < 3 s after boot */
+    /* (JIANT 0.9.9-stab, 0.9.19's) appended (.noinit: the fields above keep their places) */
+    uint32_t cnum, usp, ssp;                 /* the core that took it; both stack pointers as it found them (which stack
+                                              * the main loop runs on: crash audit, cause 6) */
+    uint32_t other_pc, other;                /* the other core's PC (PCRS, read after pausing it), 1 = read, 0 = not
+                                              * running / not read */
+    uint32_t bus[8];                         /* the debug unit's culprit registers 0x1EEE360..0x1EEE37C: C0 / C1 / PRP
+                                              * _WR_LIMIT_ERR_NUM, PRP_WR_LIMIT_ID, AXI_RD_INV_ID, AXI_WR_INV_ID,
+                                              * PRP_MMU_ERR_WID / RID (the bus master of the bad access) */
+    uint32_t app;                            /* the application's (main.c fm1_fault: the audio interrupt running, the main
+                                              * loop's stage and page) */
 } fm1_crash_t;
+/* (0.9.19) each core's EMU bank (core 0 0x1EEF000, core 1 0x1EEF200): PCRS its current PC (+0x7C), CMD_PAUSE (+0x98,
+ * written -1 stops it at an instruction boundary). As the AC79 SDK's exception handler uses them on the other core
+ * (cpu/wl82/debug.c: pause it, hold it, log its PC) */
+#define FM1_PCRS(c) (*(volatile uint32_t *)(0x1EEF07Cu + 0x200u * ((c) & 1u)))
+#define FM1_CMD_PAUSE(c) (*(volatile uint32_t *)(0x1EEF098u + 0x200u * ((c) & 1u)))
+#define FM1_DBG_ID(i) (*(volatile uint32_t *)(0x1EEE360u + 4u * (i)))
+static volatile uint8_t fm1_other_live;      /* core 1 started and not held (hal/fm1_multicore.h): only then is it paused
+                                              * and its PC read */
 /* Not static: .noinit holds whatever the last run (or power-on) left, and a
  * file-local object would let the compiler assume its zero initial value and
  * fold the magic check away. */
@@ -99,15 +118,22 @@ static void fm1_irq_enable_all(void)
  * holds core 1, clears those bits and resumes (fm1_vec.S). Core 1 may also take an exception itself: it records it and
  * stops there, never drawing the crash screen or resetting the unit under core 0, which gives the job up when it does
  * not come back. (Melodee found both: keremimo/melodee#17) */
-static struct { volatile uint32_t count; uint32_t cpu, dbg, pc; } fm1_core1_fault;
+static struct { volatile uint32_t count; uint32_t cpu, dbg, pc, pc1, wr; } fm1_core1_fault;   /* (pc: the PC of the core
+                                              * that took the exception, core 0's when the debug unit raised it there;
+                                              * 0.9.9-stab pc1: core 1's own, PCRS; wr: C1_WR_LIMIT_ERR_NUM, the window
+                                              * it wrote into (fm1_guard.h), when DBG bit 11 says so) */
 static int fm1_core1_fault_c(const uint32_t *f)   /* 1: core 1's, core 0 resumes */
 {
 #if FELUCCA_DUAL_CORE
     uint32_t cpu = fm1_cnum(), dbg = FM1_DBG_MSG;
     if (!cpu && ((dbg & FM1_DBG_C0) || !(dbg & FM1_DBG_C1) || fm1_core1_fault.count >= 16u))
         return 0;                                   /* core 0's own (or a hold that did not take): the crash report */
-    if (!cpu)
+    if (!cpu) {
+        fm1_core1_fault.pc1 = FM1_PCRS(1);          /* (where core 1 is, before it is held) */
         fm1_core1_stop();                            /* core 1 publishes its fault and waits; core 0 performs the hold */
+    }
+    fm1_other_live = 0;
+    fm1_core1_fault.wr = dbg & (1u << 11) ? FM1_DBG_ID(1) : 0u;
     fm1_core1_fault.cpu = cpu;
     fm1_core1_fault.dbg = dbg;
     fm1_core1_fault.pc = f[16];
@@ -155,6 +181,29 @@ void fm1_fault_c(uint32_t *f)
     for (i = 0; i < 4u; i++)
         fm1_crash.etm[i] = FM1_ETM_PC(i);
     fm1_crash.early = fm1_crash.uptime_ms < 3000u ? early + 1u : 0u;
+    fm1_crash.cnum = fm1_cnum();                /* (0.9.9-stab, 0.9.19's record) */
+    fm1_crash.usp = f[22];
+    fm1_crash.ssp = f[23];
+    for (i = 0; i < 8u; i++)
+        fm1_crash.bus[i] = FM1_DBG_ID(i);
+    fm1_crash.app = 0;
+    fm1_crash.other = fm1_crash.other_pc = 0;
+#if FELUCCA_DUAL_CORE
+    if (fm1_other_live) {                     /* the other core stopped and where it is noted (the SDK's order: pause,
+                                               * hold, then its PC), after the record is whole: CMD_PAUSE and PCRS are
+                                               * the SDK's registers as read from its handler; were one wrong, the fault
+                                               * in here resets at once (in_fault) and the next boot still logs the crash */
+        uint32_t o = fm1_cnum() ^ 1u, t0 = *(volatile uint32_t *)0x10804u;
+        FM1_CMD_PAUSE(o) = 0xFFFFFFFFu;
+        while (*(volatile uint32_t *)0x10804u - t0 < 240u)   /* (10 us: it stops) */
+            ;
+        if (o)
+            fm1_core1_stop();
+        fm1_other_live = 0;
+        fm1_crash.other_pc = FM1_PCRS(o);
+        fm1_crash.other = 1;
+    }
+#endif
     fm1_fault(&fm1_crash);
     for (;;)
         ;

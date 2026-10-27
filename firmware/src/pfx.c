@@ -4,7 +4,8 @@
  * the sound of the tracks while their key is held (or latched: FX LATCH), never on what is stored: let go, all is
  * as it was. White keys after the audio ones (perform.c PF_*):
  *   D4 OCT-, E4 OCT+   every voice an octave down / up (both: none), at once, notes held too
- *   F4 1/2 TEMPO       the track's sequencer at half speed; let go, it is back where it would have been
+ *   F4 1/2 TEMPO       the track's sequencer at half speed; let go, it is back where it would have been (p2: LIVE's
+ *                      RATE /2, seq_live.c; the LOOPs a LIVE LOOP of the last N steps)
  *   G4 DEC-, A4 DEC+   short / long decays: a synth's DEC and REL, DRUM's DECY (DEC- wins); (JIANT 0.4) DEC- also
  *                      takes a synth's sustain to 0: the whole instrument plucks
  *   B4 C5              STUTTER 1/8, 1/16 (JIANT 0.4; were 1/16 1/32): the notes the track struck last together (a
@@ -154,6 +155,9 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
             pfx_qon |= nw;
     }
     held = pfx_qon;
+    if (pfx_clr && !(song.playing && pfx_rec_ok()))     /* (snd2) G5 CLR AUTO, not recording: the whole lane (only it: the
+                                                         * tracks' automation stays) */
+        memset(pfx_lane, 0, sizeof pfx_lane);
     if (song.playing && b >= 4u) {                      /* the lane: record, or play; (0.6.99) its LEN and RES */
         uint32_t s16 = pfx_lane_step(b), len = pfx_lane_len(), st = (pfx_lph / s16) % len, half = pfx_lph % s16 >= s16 / 2u;
         uint32_t w = pfx_rec_ok() && (raw || pfx_clr) ? (raw ? (uint32_t)__builtin_ctz(raw) - PF_OCTD + 1u : 0u) : 16u;
@@ -180,8 +184,6 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
             if ((k = pfx_lane_at(st)) != 0u && k <= 10u)
                 lane = PF_BIT(PF_OCTD + k - 1u);
         }
-    } else if (pfx_clr) {
-        memset(pfx_lane, 0, sizeof pfx_lane);
     }
     if (!held && !pfx_any && !lane && !nw)
         return;
@@ -194,16 +196,21 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
         rep = on & (PF_BIT(PF_S16) | PF_BIT(PF_S8) | PF_BIT(PF_ARP));
         per = (rep & (PF_BIT(PF_S16) | PF_BIT(PF_ARP))) ? b / 4u : b / 2u;   /* (JIANT 0.4: 1/8, 1/16; ARP 1/16) */
         t->pfx_pit = (int16_t)(((on >> PF_OCTU) & 1u) * 192 - ((on >> PF_OCTD) & 1u) * 192);
+        uint32_t lpn = (on >> PF_LP3) & 1u ? 3u : (on >> PF_LP5) & 1u ? 5u : (on >> PF_LP7) & 1u ? 7u : 0u;   /* (snd2) LOOP
+                                                         * 3 / 5 / 7 (the shortest held wins) */
         f = ((on >> PF_RND) & 1u ? PFX_RND : 0u) | ((on >> PF_HALF) & 1u ? PFX_HALF : 0u) | (rep ? PFX_REP : 0u) |
-            (on & (PF_BIT(PF_DSHT) | PF_BIT(PF_DLNG)) ? PFX_DEC : 0u) | ((on >> PF_ATK) & 1u ? PFX_ATK : 0u);
-        if ((f & PFX_HALF) && !(old & PFX_HALF) && song.playing) {   /* 1/2 TEMPO: where it was */
-            t->pfx_idx0 = t->seq_idx;
-            t->pfx_pos0 = t->seq_pos;
-            t->pfx_el = 0;
-            t->pfx_half = 0;
-        } else if (!(f & PFX_HALF) && (old & PFX_HALF)) {
-            t->pfx_rs = 1;                              /* (seq.c seq_tick: back to the real place) */
+            (on & (PF_BIT(PF_DSHT) | PF_BIT(PF_DLNG)) ? PFX_DEC : 0u) | ((on >> PF_ATK) & 1u ? PFX_ATK : 0u) |
+            (lpn && song.playing ? PFX_LOOP : 0u);
+        /* (p2) 1/2 TEMPO and LOOP are LIVE's RATE /2 and a LOOP (seq_live.c live_q): its ghost keeps where the track
+         * would be, let go it is back there */
+        if ((f & PFX_LOOP) && !(old & PFX_LOOP)) {      /* (snd2) LOOP N: the last N steps, the one playing the last of
+                                                         * them; its next step is the first again (not on the bar: a 3
+                                                         * or a 5 against the 4 of the bar) */
+            uint32_t len = t->p[P_SLEN] > 0 ? (uint32_t)t->p[P_SLEN] : 1u;
+            t->pfx_lps = (uint16_t)(((uint32_t)t->seq_idx % len + lpn * len - (lpn - 1u)) % len);
         }
+        if (lpn)
+            t->pfx_lpn = (uint8_t)lpn;
         if (rep && !(old & PFX_REP)) {
             t->pfx_si = 0;
             t->pfx_sc = per;                            /* (the first repeat now) */
@@ -239,7 +246,7 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
             pfx_keep[k][2] = t->p[P_ATK];
             t->p[P_ATK] = (int16_t)(t->p[P_ATK] + (127 - t->p[P_ATK]) * 2 / 3);
         }
-        if (f || t->pfx_rs || t->pfx_pit)
+        if (f || t->pfx_pit)
             pfx_any = 1;
     }
 }

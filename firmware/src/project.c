@@ -121,7 +121,8 @@ typedef struct {
     uint8_t parts;                             /* NPART; 0: track 4 is the old GM drum part (see the top) */
     uint8_t phys;                              /* PROJ_PHYS: PHYS MODEL values as today; 1: MODEL 4 was DRUM;
                                                 * 0 (a reserved byte before 1.0): MODEL 2 was DUST */
-    uint8_t rsv;
+    uint8_t gmode;                             /* (0.9.9-seq2f) the global components' MONO (1) / POLY (0); reserved, 0
+                                                * before */
     proj_trk_t t[NTRK];
     chain_config_t chain;
     motion_store_t motion;
@@ -131,7 +132,9 @@ typedef struct {
                                                 * sounds' DXM_LANE in the second) */
     uint8_t dx_mot[4];                         /* (0.5.1) the kit's X-MOD (eng_drum.c), in its reserved bytes 3..6 */
     uint8_t dx_tone;                           /* (0.6.36) the kit's TONE (drumx_voice.c: BP, FEEDBK), its byte 7 */
-    uint8_t dx_hands;                          /* (0.7.9) the kit's HANDS (drumx_voice.c), byte 0's high nibble (0 before) */
+    uint8_t dx_hands;                          /* (0.7.9) the kit's HANDS (drumx_voice.c), byte 0's high nibble (0 before);
+                                                * (0.9.9-snd1) its high nibble here GLUE (eng_drum.c dx_glue): FUNC's 'D' 'G'
+                                                * block, 0 before */
     uint8_t dx_snd[8];                         /* (0.6.48) its sounds' SENDs (eng_drum.c): FUNC's 'D' 'S' block, 0 before */
     uint8_t dx_lay[8];                         /* (0.6.49) its sounds' LAYER, FEEDBK (drumx_voice.c): 'D' 'L', 0 before */
     uint8_t fugue[NTRK][3][2];                 /* (0.6.52) SEQ > FUGUE's heads (fugue.c): RATE | DIR << 4, INTERVAL (int8);
@@ -139,9 +142,12 @@ typedef struct {
     uint8_t pfx_lane[32], pfx_ltgt;            /* the punch-in lane (pfx.c), in FUN9's spare bytes (PROJ_PFX_OFF) */
     uint8_t macro[4];                          /* the macros M1..M4 (mod.c macro_v), 0..127: after the lane's tracks */
     char lyr[NTRK][LYR_LEN];                   /* (0.8.5) VOICE's lyrics (sing.c lyr_txt): FUNC's 'L' 'Y' blocks, "" before */
+    uint8_t gl[GL_N][5];                       /* (0.9.9-seq2f) GLO > COMPS, the global lane (seq.c glane): FUNC's 'G' 'C'
+                                                * block, empty before */
     char name[PROJ_NAME_LEN];                  /* the project's name: upper-case ASCII 32..126, 0-padded; "" = none */
     uint32_t sum;
 } project_t;
+_Static_assert(sizeof(gcomp_t) == 5u, "the global lane as stored");
 /* Historical FUN5/6 types are frozen, independent of today's P_COUNT/step_t. */
 typedef struct { uint8_t note[4], n, time, flags, vel, hit, acc; } step10_t;
 typedef struct { int16_t p[69]; uint8_t engine, preset; step10_t step[NSTEP]; uint8_t lane[NLANE][5]; } proj_trk_v5_t;
@@ -247,6 +253,52 @@ static int proj_ok(const project_t *q) { return q->magic == PROJ_MAGIC && q->siz
  * format before FUN7 may hold any channel there. FUN7 came after it was inert (always 0), so only those imports
  * set it: ROOM, the only reverb they knew */
 static void proj_rtype_room(int16_t *g) { g[G_RTYPE] = 0; }
+/* (0.9.9-snd8) the master's TAPE block ('T' 'P' DRIVE WOW, only when on). The live TAPE (params.c tape_v), not the
+ * project's: not in project_t (its size is recorded code's); a project is only packed from the live state and only
+ * unpacked to be opened (an UNDO, MUTATE's anchor: the TAPE as it was then). b 0: its size; room 0: written at b + pos;
+ * else read from there (absent: TAPE out): the bytes taken. Out of the recorded code: project.c's layout holds */
+static __attribute__((noinline)) uint32_t proj_tp(const project_t *q, const uint8_t *bc, uint32_t pos, uint32_t room)
+{
+    uint8_t *b = (uint8_t *)(uintptr_t)bc;               /* (written only when writing: room 0) */
+    (void)q;
+    if (!room) {
+        if (!tape_v[0] && !tape_v[1]) return 0;
+        if (b) {
+            b[pos] = 'T'; b[pos + 1u] = 'P';
+            b[pos + 2u] = (uint8_t)tape_v[0]; b[pos + 3u] = (uint8_t)tape_v[1];
+        }
+        return 4u;
+    }
+    if (pos + 4u > room || b[pos] != 'T' || b[pos + 1u] != 'P') {
+        tape_v[0] = tape_v[1] = 0;
+        return 0;
+    }
+    tape_v[0] = b[pos + 2u] > 100u ? 100 : b[pos + 2u];
+    tape_v[1] = b[pos + 3u] > 100u ? 100 : b[pos + 3u];
+    return 4u;
+}
+
+/* (p9) the master's EQ: 'E' 'Q' and its four gains (-12 .. 12, a byte each), when any is set; a project without it
+ * opens flat (as proj_tp) */
+static __attribute__((noinline)) uint32_t proj_eq(const uint8_t *bc, uint32_t pos, uint32_t room)
+{
+    uint8_t *b = (uint8_t *)(uintptr_t)bc;
+    uint32_t k;
+    if (!room) {
+        if (!eq_v[0] && !eq_v[1] && !eq_v[2] && !eq_v[3]) return 0;
+        if (b) {
+            b[pos] = 'E'; b[pos + 1u] = 'Q';
+            for (k = 0; k < 4u; k++) b[pos + 2u + k] = (uint8_t)(eq_v[k] + 12);
+        }
+        return 6u;
+    }
+    if (pos + 6u > room || b[pos] != 'E' || b[pos + 1u] != 'Q') {
+        eq_v[0] = eq_v[1] = eq_v[2] = eq_v[3] = 0;
+        return 0;
+    }
+    for (k = 0; k < 4u; k++) eq_v[k] = (int16_t)(b[pos + 2u + k] > 24u ? 0 : b[pos + 2u + k] - 12);
+    return 6u;
+}
 
 /* the globals of formats 1 and 2 (G_* unchanged since; any added later: their defaults) */
 static void proj_g_from_v2(int16_t *g, const int16_t *g2)
@@ -564,7 +616,7 @@ static void proj_fm6_init(project_t *q)
 }
 static int proj_import_old(project_t *q, const void *b, int n);
 static int proj_import_any(project_t *q, const void *b, int n);
-static int proj_unpack_c(project_t *q, const uint8_t *b);
+static __attribute__((noinline)) int proj_unpack_c(project_t *q, const uint8_t *b);   /* (snd8: out of proj_import's recorded code) */
 /* every track's engine one this firmware has (DIGITAL, 1, is one: it converts): a project of another number
  * is not one (it never was: no engine number past the last was ever stored) */
 static int proj_engines_ok(const project_t *q)
@@ -735,7 +787,16 @@ static uint8_t proj_full;                               /* the last proj_pack fa
 static int proj_step_empty(const step_t *s)
 {
     return !s->n && s->time == ST_REST && !s->flags && !s->vel && !s->hit && !s->acc && !s->probability && !s->comp &&
-           !s->comp2 && !s->cwhen && !s->ctime && !step_lm_any(s);
+           !s->comp2 && !s->cwhen && !s->ctime && !step_lm_any(s) && !s->clen[0] && !s->clen[1] && !s->cnm[0] && !s->cnm[1];
+}
+/* (0.9.9-seq2d) components v2: x bit 7, four bytes after the lanes' modes: C1's and C2's LENGTH - 1, their N:M. Every step
+ * with a component has it (so firmware before seq2d refuses the project, as any newer format); a step with a component
+ * and no x bit 7 is a project before seq2d: its CP_* migrate as it loads (seq.c comp_migrate). proj_comp_legacy (the
+ * tests): written as before seq2d, the step's comp bytes as they are */
+static uint8_t proj_comp_legacy;
+static int proj_step_v2(const step_t *s)
+{
+    return !proj_comp_legacy && (comp_any(s) || s->clen[0] || s->clen[1] || s->cnm[0] || s->cnm[1]);
 }
 static uint32_t proj_step_x(const step_t *s, uint32_t *nn)   /* its x byte (0: none), *nn the notes stored */
 {
@@ -746,13 +807,14 @@ static uint32_t proj_step_x(const step_t *s, uint32_t *nn)   /* its x byte (0: n
     return (s->hit || s->acc ? 1u : 0u) | (s->probability ? 2u : 0u) | (r & 2u ? 4u : 0u) | (all ? 8u : 0u) |
            (s->comp ? 16u : 0u) |                       /* (0.6.39) a component: two bytes, its type and arguments */
            (s->comp2 || s->cwhen || s->ctime ? 32u : 0u) |   /* (0.6.82) the second, WHEN, DIV / LEN: four more */
-           (step_lm_any(s) ? 64u : 0u);                 /* (0.8.5) the lanes' modes: three more (firmware before refuses) */
+           (step_lm_any(s) ? 64u : 0u) |                /* (0.8.5) the lanes' modes: three more (firmware before refuses) */
+           (proj_step_v2(s) ? 128u : 0u);               /* (seq2d) components v2: four more */
 }
 static uint32_t proj_step_size(const step_t *s)
 {
     uint32_t nn, x = proj_step_x(s, &nn);
     return 2u + nn + (x ? 1u + (x & 1u ? 2u : 0u) + (x & 2u ? 1u : 0u) + (x & 16u ? 2u : 0u) + (x & 32u ? 4u : 0u) +
-                          (x & 64u ? 3u : 0u) : 0u);
+                          (x & 64u ? 3u : 0u) + (x & 128u ? 4u : 0u) : 0u);
 }
 static int proj_fm_kept(const project_t *q, uint32_t t)
 {
@@ -806,6 +868,13 @@ static uint32_t proj_bits(uint32_t m)
         n += m & 1u;
     return n;
 }
+static int proj_gl_used(const project_t *q)            /* (0.9.9-seq2f) a global component, or MONO: its block */
+{
+    uint32_t i;
+    for (i = 0; i < GL_N; i++)
+        if (q->gl[i][0]) return 1;
+    return q->gmode != 0u;
+}
 static uint32_t proj_packed_size(const project_t *q)
 {
     uint32_t n = 68u + sizeof q->chain + 4u + q->motion.count * sizeof q->motion.event[0] + 2u + G_SL_N, t, i;
@@ -813,6 +882,14 @@ static uint32_t proj_packed_size(const project_t *q)
         n += 3u;
     if (proj_mf_tracks(q))                              /* (0.9.1) MICRO's 64ths: their block */
         n += 3u + 16u * proj_bits(proj_mf_tracks(q));
+    if (proj_gl_used(q))                                /* (seq2f) the global lane's */
+        n += 3u + sizeof q->gl;
+    if (q->dx_hands >> 4)                               /* (snd1) the kit's GLUE, when on */
+        n += 3u;
+    if (q->g[G_DDRV])                                   /* (snd2) the delay's DRIVE, when on */
+        n += 3u;
+    n += proj_tp(q, 0, 0, 0);                           /* (snd8) the master's TAPE, when on */
+    n += proj_eq(0, 0, 0);                              /* (p9) its EQ, when set */
     if (q->g[G_DMOD] != GP[G_DMOD].def)                 /* (0.6.86) the delay's MOD's, when not the default */
         n += 3u;
     if (q->g[G_DTYPE] || q->g[G_DPING])                 /* (0.6.90) its TYPE and PING-PONG's */
@@ -851,7 +928,10 @@ static int proj_pack(project_store_t *out, const project_t *q)
         for (i = 0; i < NSTEP; i++) {
             const step_t *s = &q->t[t].step[i];
             if (s->n > 4u || s->time > ST_REST || (s->flags & ~(3u | SF_RATCH | SF_MFINE)) || s->probability > 101u ||
-                s->comp >= CP_N || s->comp2 >= CP_N || CT_DIV(s) >= CT_NDIV || s->ctime > 127u) return 0;
+                CT_DIV(s) >= CT_NDIV || s->ctime > 127u) return 0;
+            if (proj_comp_legacy ? s->comp >= CP_N || s->comp2 >= CP_N :
+                CO_ACT(s->comp) >= CA_N || CO_COND(s->comp) >= CC_N || CO_ACT(s->comp2) >= CA_N ||
+                CO_COND(s->comp2) >= CC_N || s->clen[0] >= CL_MAX || s->clen[1] >= CL_MAX) return 0;
         }
     }
     if (!chain_valid(&q->chain) || !motion_valid(&q->motion) || P_COUNT > 127u || !dx_kit_ok(q->dx)) return 0;
@@ -891,6 +971,7 @@ static int proj_pack(project_store_t *out, const project_t *q)
             if (x & 16u) { b[pos++] = s->comp; b[pos++] = s->carg; }
             if (x & 32u) { b[pos++] = s->comp2; b[pos++] = s->carg2; b[pos++] = s->cwhen; b[pos++] = s->ctime; }
             if (x & 64u) { b[pos++] = s->lm[0]; b[pos++] = s->lm[1]; b[pos++] = s->lm[2]; }
+            if (x & 128u) { b[pos++] = s->clen[0]; b[pos++] = s->clen[1]; b[pos++] = s->cnm[0]; b[pos++] = s->cnm[1]; }
         }
     }
     memcpy(b + pos, &q->chain, sizeof q->chain); pos += sizeof q->chain;
@@ -967,6 +1048,22 @@ static int proj_pack(project_store_t *out, const project_t *q)
             pos += 16u;
         }
     }
+    if (proj_gl_used(q)) {                              /* (0.9.9-seq2f) the global lane, last: firmware before stops
+                                                         * reading at it, the rest loads */
+        b[pos++] = 'G'; b[pos++] = 'C'; b[pos++] = (uint8_t)(q->gmode & 1u);
+        memcpy(b + pos, q->gl, sizeof q->gl);
+        pos += sizeof q->gl;
+    }
+    if (q->dx_hands >> 4) {                             /* (0.9.9-snd1) the kit's GLUE, when on (after the lane: seq2h
+                                                         * stops at it, the rest loads; a project without it as before) */
+        b[pos++] = 'D'; b[pos++] = 'G'; b[pos++] = (uint8_t)(q->dx_hands >> 4);
+    }
+    if (q->g[G_DDRV]) {                                 /* (0.9.9-snd2) the delay's DRIVE, when on (after GLUE's: snd1 stops
+                                                         * at it, the rest loads) */
+        b[pos++] = 'D'; b[pos++] = 'D'; b[pos++] = (uint8_t)clamp(q->g[G_DDRV], 0, 100);
+    }
+    pos += proj_tp(q, b, pos, 0);                       /* (0.9.9-snd8) the master's TAPE, when on (after DRIVE's) */
+    pos += proj_eq(b, pos, 0);                          /* (p9) its EQ, when set */
     memcpy(b + PROJC_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJC_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
     for (i = 0; i < 4u; i++)
@@ -1048,7 +1145,7 @@ static int proj_pack_vb(project_store_t *out, const project_t *q)
 /* a FUNC store (3840 bytes) -> q; 0 = not one (its hash, a value out of range, a length past its room) */
 static int proj_unpack_c(project_t *q, const uint8_t *b)
 {
-    uint32_t pos = 68u, t, i, size, sum, np = b[66], nt = b[67], room = PROJC_PFX_OFF;
+    uint32_t pos = 68u, t, i, size, sum, np = b[66], nt = b[67], room = PROJC_PFX_OFF, glue = 0;
     memcpy(&size, b + 4, 4); memcpy(&sum, b + PROJ_STORE_SIZE - 4u, 4);
     if (size != PROJ_STORE_SIZE || sum != proj_hash(b, PROJ_STORE_SIZE - 4u) || np < 8u || np > P_COUNT || !nt || nt > NTRK)
         return 0;
@@ -1102,7 +1199,7 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
             if (meta & 128u) {
                 if (pos + 1u > room) return 0;
                 x = b[pos++];
-                if (!x || (x & ~127u)) return 0;
+                if (!x) return 0;
                 if (x & 8u) nn = 4u;
             }
             if (pos + nn + 1u > room) return 0;
@@ -1118,27 +1215,38 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
                 if (pos + 1u > room || (s->probability = b[pos++]) > 101u || !s->probability) return 0;
             }
             s->comp = s->carg = 0;
-            if (x & 16u) {                              /* (0.6.39) a component */
-                if (pos + 2u > room || (s->comp = b[pos++]) >= CP_N || !s->comp) return 0;
+            if (x & 16u) {                              /* (0.6.39) a component (seq2d: v2 with x bit 7, else a CP_*) */
+                if (pos + 2u > room || !(s->comp = b[pos++]) ||
+                    (x & 128u ? CO_ACT(s->comp) >= CA_N || CO_COND(s->comp) >= CC_N : s->comp >= CP_N)) return 0;
                 s->carg = b[pos++];
             }
             s->comp2 = s->carg2 = s->cwhen = s->ctime = 0;
             if (x & 32u) {                              /* (0.6.82) the second component, WHEN, DIV and LEN */
-                if (pos + 4u > room || (s->comp2 = b[pos++]) >= CP_N) return 0;
+                if (pos + 4u > room) return 0;
+                s->comp2 = b[pos++];
+                if (x & 128u ? CO_ACT(s->comp2) >= CA_N || CO_COND(s->comp2) >= CC_N : s->comp2 >= CP_N) return 0;
                 s->carg2 = b[pos++]; s->cwhen = b[pos++]; s->ctime = b[pos++];
                 if (CT_DIV(s) >= CT_NDIV || s->ctime > 127u) return 0;
             }
             s->lm[0] = s->lm[1] = s->lm[2] = 0;
-            if (x & 64u) {                              /* (0.8.5) the lanes' modes (a 7: none) */
-                uint32_t l;
+            if (x & 64u) {                              /* (0.8.5) the lanes' modes (p1: a 7, LM_ONCE, kept as it is) */
                 if (pos + 3u > room) return 0;
                 s->lm[0] = b[pos++]; s->lm[1] = b[pos++]; s->lm[2] = b[pos++];
-                for (l = 0; l < NLANE; l++)
-                    step_set_lmode(s, l, step_lmode(s, l));
+            }
+            s->clen[0] = s->clen[1] = s->cnm[0] = s->cnm[1] = 0;
+            if (x & 128u) {                             /* (seq2d) components v2: LENGTHs and N:Ms */
+                if (pos + 4u > room) return 0;
+                s->clen[0] = b[pos++]; s->clen[1] = b[pos++]; s->cnm[0] = b[pos++]; s->cnm[1] = b[pos++];
+                if (s->clen[0] >= CL_MAX || s->clen[1] >= CL_MAX) return 0;
+            } else {                                    /* (before seq2d: its CP_*, EVERY, migrated below) */
+                if (s->comp) s->clen[0] = CL_LEGACY;
+                if (s->comp2) s->clen[1] = CL_LEGACY;
+                if (!s->comp && !s->comp2) s->cwhen &= 0xF0u;
             }
             r |= (x >> 1) & 2u;
             step_set_ratchet(s, r + 1u);
         }
+        comp_migrate(q->t[t].step, (uint32_t)clamp(q->t[t].p[P_SLEN], 1, NSTEP));   /* (seq2d) a CP_* of before */
     }
     if (pos + sizeof q->chain + 4u > room) return 0;
     memcpy(&q->chain, b + pos, sizeof q->chain); pos += sizeof q->chain;
@@ -1223,6 +1331,26 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
             pos += 16u;
         }
     }
+    if (pos + 3u + sizeof q->gl <= room && b[pos] == 'G' && b[pos + 1u] == 'C') {   /* (0.9.9-seq2f) the global lane
+                                                         * (else empty, POLY) */
+        if (b[pos + 2u] > 1u) return 0;
+        q->gmode = b[pos + 2u];
+        memcpy(q->gl, b + pos + 3u, sizeof q->gl);
+        for (i = 0; i < GL_N; i++)
+            if (CO_ACT(q->gl[i][0]) >= CA_N || CO_COND(q->gl[i][0]) >= CC_N || q->gl[i][2] >= CL_MAX ||
+                (q->gl[i][4] >> NTRK)) return 0;
+        pos += 3u + sizeof q->gl;
+    }
+    if (pos + 3u <= room && b[pos] == 'D' && b[pos + 1u] == 'G') {   /* (0.9.9-snd1) the kit's GLUE (else OFF) */
+        glue = b[pos + 2u] > 15u ? 15u : b[pos + 2u];
+        pos += 3u;
+    }
+    if (pos + 3u <= room && b[pos] == 'D' && b[pos + 1u] == 'D') {   /* (0.9.9-snd2) the delay's DRIVE (else 0) */
+        q->g[G_DDRV] = (int16_t)(b[pos + 2u] > 100u ? 100u : b[pos + 2u]);
+        pos += 3u;
+    }
+    pos += proj_tp(q, b, pos, room);                    /* (0.9.9-snd8) the master's TAPE (else 0) */
+    pos += proj_eq(b, pos, room);                       /* (p9) its EQ (else flat) */
     proj_new_tracks(q, nt);                             /* (a FUNC of fewer tracks: the rest at power-on) */
     for (t = nt; t < NTRK; t++)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);
@@ -1235,7 +1363,7 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
     q->dx_mute = (uint16_t)((b[PROJC_DX_OFF + sizeof q->dx] & DXG_ALL) | b[PROJC_DX_OFF + sizeof q->dx + 1u] << 8);
     memcpy(q->dx_mot, b + PROJC_DX_OFF + sizeof q->dx + 3u, sizeof q->dx_mot);
     q->dx_tone = b[PROJC_DX_OFF + sizeof q->dx + 7u];
-    q->dx_hands = b[PROJC_DX_OFF + sizeof q->dx] >> 4;   /* (0.7.9) */
+    q->dx_hands = (uint8_t)(b[PROJC_DX_OFF + sizeof q->dx] >> 4 | glue << 4);   /* (0.7.9; snd1: GLUE) */
     q->dx_mot[XM_RATE] = q->dx_mot[XM_RATE] > 8u ? 0u : q->dx_mot[XM_RATE];
     q->dx_mot[XM_DPTH] &= 127u;
     q->dx_mot[XM_SHPE] = q->dx_mot[XM_SHPE] > 4u ? 0u : q->dx_mot[XM_SHPE];
@@ -1395,7 +1523,7 @@ static void proj_legacy_drums(track_t *t)
     t->p[P_SUS] = pr->env[2];
     t->p[P_REL] = pr->env[3];
     t->p[P_ED_FLT] = pr->fenv;
-    t->p[P_VOICE] = pr->mono ? V_LEGATO : V_POLY;
+    t->p[P_VOICE] = PR_MONO(pr) ? V_LEGATO : V_POLY;
     for (i = 0; i < 4u; i++)
         t->p[P_DIST + i] = (int16_t)(pr->fx[i] ? pr->fx[i] - 1 : FX_DEF[i]);
 }
@@ -1477,11 +1605,12 @@ static void project_capture(project_t *p)
     uint32_t i;
     uint32_t f = motion_guard();
     memset(p, 0, sizeof *p);
+       /* (snd8) the master's TAPE */
     p->magic = PROJ_MAGIC;
     p->size = sizeof *p;
     for (i = 0; i < G_COUNT; i++)
-        p->g[i] = song.g[i];
-    p->g[G_DJF] = motion_djf_value();                   /* (0.9.1) the knob's, not what its automation set */
+        p->g[i] = mom_base(MOM_G, i, song.g[i]);       /* (0.9.9-seq2e: a MOMENTARY value: the one kept) */
+    p->g[G_DJF] = mom_base(MOM_G, G_DJF, motion_djf_value());                   /* (0.9.1) the knob's, not what its automation set */
     p->sel = song.sel;
     p->parts = NPART;
     p->phys = PROJ_PHYS;
@@ -1498,7 +1627,7 @@ static void project_capture(project_t *p)
     p->dx_mute = dx_mute;
     memcpy(p->dx_mot, dx_mot, sizeof p->dx_mot);
     p->dx_tone = dx_tone;
-    p->dx_hands = dx_hands;                             /* (0.7.9) */
+    p->dx_hands = (uint8_t)(dx_hands | dx_glue << 4);   /* (0.7.9; snd1: GLUE) */
     memcpy(p->dx_snd, dx_snd, sizeof p->dx_snd);        /* (0.6.48) */
     memcpy(p->dx_lay, dx_lay, sizeof p->dx_lay);        /* (0.6.49) */
     {                                                   /* (0.6.52) FUGUE */
@@ -1512,6 +1641,8 @@ static void project_capture(project_t *p)
     memcpy(p->pfx_lane, pfx_lane, sizeof p->pfx_lane);
     p->pfx_ltgt = pfx_ltgt;
     memcpy(p->macro, macro_v, sizeof p->macro);
+    memcpy(p->gl, glane, sizeof p->gl);                 /* (0.9.9-seq2f) the global lane */
+    p->gmode = gl_mono;
     for (i = 0; i < NTRK; i++)                          /* (0.8.5) VOICE's lyrics */
         memcpy(p->lyr[i], lyr_get(i), LYR_LEN);
     motion_unguard(f);
@@ -1657,6 +1788,7 @@ static void sound_put(project_t *p, uint32_t k)
         memcpy(dx_mot, p->dx_mot, sizeof dx_mot);
         dx_tone = p->dx_tone;
         dx_hands = p->dx_hands & 15u;
+        dx_glue = p->dx_hands >> 4;
         memcpy(dx_snd, p->dx_snd, sizeof dx_snd);
         memcpy(dx_lay, p->dx_lay, sizeof dx_lay);
     }
@@ -1679,6 +1811,8 @@ static void fg_load(const project_t *p)
             fg_set[a][h].ivl = (int8_t)clamp((int32_t)(int8_t)p->fugue[a][h][1], -14, 14);
         }
 }
+static uint8_t proj_lfo_keep;                          /* (0.9.18) song_main.c section_load (a song's next section), undo_do: the
+                                                         * music going on: the LFOs' FADE not again */
 static int project_restore_runtime(const project_t *input)
 {
     project_t *p = &proj_scratch;
@@ -1701,6 +1835,7 @@ static int project_restore_runtime(const project_t *input)
     memcpy(dx_mot, p->dx_mot, sizeof dx_mot);           /* (0.5.1: the kit's X-MOD) */
     dx_tone = p->dx_tone;                               /* (0.6.36: its TONE) */
     dx_hands = p->dx_hands & 15u;                       /* (0.7.9: its HANDS) */
+    dx_glue = p->dx_hands >> 4;                         /* (snd1: its GLUE) */
     memcpy(dx_snd, p->dx_snd, sizeof dx_snd);           /* (0.6.48: its SENDs) */
     memcpy(dx_lay, p->dx_lay, sizeof dx_lay);           /* (0.6.49: its LAYERs) */
     fg_load(p);                                         /* (0.6.52: its FUGUE) */
@@ -1708,6 +1843,9 @@ static int project_restore_runtime(const project_t *input)
     pfx_ltgt = p->pfx_ltgt > 2u ? 0u : p->pfx_ltgt;
     for (i = 0; i < 4u; i++)
         macro_v[i] = p->macro[i] & 127u;            /* (the macros: a load sets them; a section jump keeps them) */
+    memcpy(glane, p->gl, sizeof glane);                 /* (0.9.9-seq2f) the global lane (none: an older project) */
+    gl_mono = p->gmode & 1u;
+    gl_touch();
     for (k = 0; k < NTRK; k++) {                        /* (0.8.5) VOICE's lyrics (none: an older project) */
         char ly[LYR_LEN];
         memcpy(ly, p->lyr[k], LYR_LEN);
@@ -1751,6 +1889,8 @@ static int project_restore_runtime(const project_t *input)
         }
     }
     song.sel = (uint8_t)(p->sel < NTRK ? p->sel : 0u);
+    if (!proj_lfo_keep)
+        lfo_fade_restart((1u << NTRK) - 1u);            /* (0.9.18) the LFOs' FADE from 0 (MODE FREE: only now) */
     fm1_irq_on();
     proj_name_get(proj_name, (const uint8_t *)p->name);
     proj_cur = PROJ_NO_SLOT;                            /* (project_load: its slot) */
@@ -1789,26 +1929,35 @@ static project_store_t undo_st[2] __attribute__((section(".lowbuf")));   /* (0.6
  * the macros at 0, the punch-in lane clear, the factory DRUM-X kit (X-MOD, TONE off, nothing muted), every FM6 patch
  * the init voice. What is saved (projects, user presets) and the setup (CLOCK, TUNE, MIDI, ROUTE, the project slot,
  * MENU) stay */
-static void system_init(void)
+static __attribute__((noinline)) void system_init(void)   /* (snd8: out of its callers' recorded code) */
 {
     static const uint8_t KEEP[5] = {G_CLOCK, G_TUNE, G_MIDI, G_ROUTE, G_SLOT};
     int16_t kept[5];
     uint32_t i;
     for (i = 0; i < 5u; i++) kept[i] = song.g[KEEP[i]];
     for (i = 0; i < G_COUNT; i++) song.g[i] = GP[i].def;
+    tape_v[0] = tape_v[1] = 0;                          /* (snd8) the master's TAPE out */
+    eq_v[0] = eq_v[1] = eq_v[2] = eq_v[3] = 0;          /* (p9) its EQ flat */
     for (i = 0; i < 5u; i++) song.g[KEEP[i]] = kept[i];
+    kept[0] = dice_secs;
     chain_defaults(&chain_config);
+    dice_secs = (uint8_t)kept[0];                       /* (gen6c) whose the sections in flash are: unchanged */
     memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
     memset(pfx_lane, 0, sizeof pfx_lane);
     for (i = 0; i < 4u; i++) macro_v[i] = 0;
     for (i = 0; i < NTRK; i++) lyr_set(i, "");          /* (0.8.5) no lyrics */
+    memset(glane, 0, sizeof glane);                     /* (0.9.9-seq2f) no global component, POLY */
+    gl_mono = 0;
+    gl_touch();
     memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
     memset(dx_mot, 0, sizeof dx_mot);
     dx_tone = 0;
     dx_hands = 0;
+    dx_glue = 0;
     memset(dx_snd, 0, sizeof dx_snd);
     memcpy(dx_lay, DX_LAY_DEF, sizeof dx_lay);
     memset(fg_set, 0, sizeof fg_set);                   /* (0.6.52) no FUGUE */
+    live_reset();                                       /* (p2) no LIVE modifier (seq_live.c) */
     dx_mute_set(0);
     fm6_init();
     for (i = 0; i < NTRK; i++) {
@@ -1827,6 +1976,14 @@ static void system_init(void)
     mut_forget();                                       /* (0.9.3: the anchor is the old music's) */
     ui.force = 1;
 }
+/* (0.9.9-gen1) GEN's clean base (gen.c gen_clean): NEW PROJECT's state, the music's name kept */
+static void system_init_named(void)
+{
+    char nm[sizeof proj_name];
+    memcpy(nm, proj_name, sizeof nm);
+    system_init();
+    memcpy(proj_name, nm, sizeof nm);
+}
 /* (JIANT 0.6.43) MUTATE: each track's SOUND and PATTERN change by themselves every OFF / 1 .. 32 bars, on the bar (the
  * change made in the bar before's last sixteenth, so it lands on the one), by AMOUNT, in the clock with the rest of the
  * gear. ORBIT (the default): around the anchor, the music as it was when MUTATE came on, PLAY started or KEEP (the
@@ -1842,11 +1999,30 @@ static struct { uint8_t ok, playing, moved, ask, stale; uint32_t en, done, sig[N
                                                          * music's (a load, NEW PROJECT): REVERT says NO ANCHOR */
 static const uint8_t MUT_COMMON[7] = {P_FCUT, P_FRES, P_ED_FLT, P_DEC, P_REL, P_DLY, P_REV};   /* SOUND's, past the eight */
 static uint32_t mut_every(const track_t *t, uint32_t id) { return MUT_BARS[(uint32_t)clamp(t->p[id], 0, 6)]; }
+/* (0.9.9-seq2c) a track's MUTATE: on (WHAT, or 0.6.43's periods), the bars each result lasts (0: HOLD) */
+static uint32_t mut_on(const track_t *t) { return MUT_WHAT(t) || mut_every(t, P_MSND) || mut_every(t, P_MPAT); }
+static uint32_t mut_period(const track_t *t)
+{
+    uint32_t s, q;
+    if (MUT_WHAT(t))
+        return MUT_LOOP(t) >= ML_HOLD ? 0u : MUT_LOOP(t) + 1u;
+    s = mut_every(t, P_MSND); q = mut_every(t, P_MPAT);
+    return s && q ? (s < q ? s : q) : s ? s : q;
+}
+/* WHAT = PARAM's list (MUTATE 2 KNOB 1): CUT RES ENV DEC REL DLY REV, the engine's first knob; ANALOG's CUT RES its own */
+static const uint8_t MUT_PIDS[8] = {P_FCUT, P_FRES, P_ED_FLT, P_DEC, P_REL, P_DLY, P_REV, P_E0};
+static uint32_t mut_pid(const track_t *t)
+{
+    uint32_t id = MUT_PIDS[MUT_PARAM(t)];
+    if (trk_eng(t) == ENGI_ANALOG && (id == P_FCUT || id == P_FRES))
+        id = id == P_FCUT ? P_E4 : P_E5;
+    return id;
+}
 static uint32_t mut_enabled(void)
 {
     uint32_t k, m = 0;
     for (k = 0; k < NTRK; k++)
-        if (k < trk_live && (mut_every(&trk[k], P_MSND) || mut_every(&trk[k], P_MPAT)))
+        if (k < trk_live && mut_on(&trk[k]))
             m |= 1u << k;
     return m;
 }
@@ -1886,7 +2062,10 @@ static void mut_sound(track_t *t, const proj_trk_t *a)
         if (!(e == ENGI_ANALOG && (COMMON[i] == P_FCUT || COMMON[i] == P_FRES)))   /* (ANALOG: its own CUT RES) */
             mut_value(t, COMMON[i], base, amt);
 }
-static void mut_pattern(track_t *t, const proj_trk_t *a)
+#define MF_NOTES 1u                                     /* mut_pattern: the pitches, */
+#define MF_RHYTHM 2u                                    /* .. which steps play and their accents, */
+#define MF_CHROM 4u                                     /* .. the pitches by semitones (SCALE OFF) */
+static void mut_pattern(track_t *t, const proj_trk_t *a, uint32_t f)
 {
     uint32_t i, len = t->p[P_SLEN] > 0 ? (uint32_t)t->p[P_SLEN] : 1u, amt = (uint32_t)clamp(t->p[P_MAMT], 0, 127), l;
     int kit = drum_track(t);
@@ -1898,7 +2077,7 @@ static void mut_pattern(track_t *t, const proj_trk_t *a)
     for (i = 0; i < len && i < NSTEP; i++) {
         step_t s = a ? a->step[i] : t->step[i];
         if (kit) {                                      /* hits on and off, the kick never */
-            for (l = 1; l < NLANE; l++)
+            for (l = 1; l < NLANE && (f & MF_RHYTHM); l++)
                 if (rng() % 640u < amt) {
                     s.hit ^= (uint8_t)(1u << l);
                     s.acc &= s.hit;
@@ -1907,19 +2086,19 @@ static void mut_pattern(track_t *t, const proj_trk_t *a)
             if (!s.hit && !s.n) s.time = ST_REST;
         } else if (s.time == ST_NOTE && s.n) {
             uint32_t j;
-            if (i % 4u && rng() % 1024u < amt) {        /* one taken (never on a beat) */
+            if ((f & MF_RHYTHM) && i % 4u && rng() % 1024u < amt) {   /* one taken (never on a beat) */
                 s.n = 0; s.time = ST_REST;
             } else {
-                if (rng() % 256u < amt) {               /* up / down the scale */
+                if ((f & MF_NOTES) && rng() % 256u < amt) {   /* up / down the scale (SCALE OFF: semitones) */
                     int32_t d = mut_rr(-2, 2);
                     if (!d) d = 1;
                     for (j = 0; j < s.n && j < 4u; j++)
-                        s.note[j] = (uint8_t)clamp(scale_steps(t, s.note[j], d), 0, 127);
+                        s.note[j] = (uint8_t)clamp(f & MF_CHROM ? s.note[j] + d : scale_steps(t, s.note[j], d), 0, 127);
                 }
-                if (rng() % 512u < amt) s.flags ^= SF_ACCENT;
+                if ((f & MF_RHYTHM) && rng() % 512u < amt) s.flags ^= SF_ACCENT;
                 last = s.note[0];
             }
-        } else if (s.time == ST_REST && (i & 1u) && last >= 0 && rng() % 1024u < amt) {   /* one added, off the beat */
+        } else if ((f & MF_RHYTHM) && s.time == ST_REST && (i & 1u) && last >= 0 && rng() % 1024u < amt) {   /* one added, off the beat */
             memset(&s, 0, sizeof s);
             s.n = 1; s.time = ST_NOTE; s.vel = 90;
             s.note[0] = (uint8_t)clamp(scale_steps(t, last, mut_rr(-1, 1)), 0, 127);
@@ -1930,10 +2109,10 @@ static void mut_pattern(track_t *t, const proj_trk_t *a)
 static uint32_t mut_progress(uint32_t k)
 {
     const track_t *t = &trk[k % NTRK];
-    uint32_t s = mut_every(t, P_MSND), q = mut_every(t, P_MPAT), e = s && q ? (s < q ? s : q) : s ? s : q;
-    if (!e || k >= trk_live)
+    uint32_t e = mut_period(t);
+    if (!mut_on(t) || k >= trk_live)
         return 0xFFFFu;
-    if (!song.playing || mut_freeze)
+    if (!song.playing || mut_freeze || !e)
         return 0;
     return (((bar_n % e) * 4u + beat_n) * 256u) / (e * 4u);
 }
@@ -2061,13 +2240,26 @@ static void mutate_poll(void)
         }
     for (k = 0; k < NTRK; k++) {
         track_t *t = &trk[k];
-        uint32_t s = mut_every(t, P_MSND), q = mut_every(t, P_MPAT), hit = 0;
-        const proj_trk_t *a = anc && !t->p[P_MMODE] && proj_scratch.t[k].engine == trk_eng(t) ?
+        uint32_t s = mut_every(t, P_MSND), q = mut_every(t, P_MPAT), hit = 0, w = MUT_WHAT(t), e = mut_period(t);
+        const proj_trk_t *a = anc && !MUT_DRIFT(t) && proj_scratch.t[k].engine == trk_eng(t) ?
                               &proj_scratch.t[k] : 0;  /* (ORBIT, the same engine: around it; else from now) */
         if (!((en >> k) & 1u))
             continue;
-        if (s && nx % s == 0u) { mut_sound(t, a); hit = 1; }
-        if (q && nx % q == 0u) { mut_pattern(t, a); hit = 1; }
+        if (w) {                                        /* (0.9.9-seq2c) WHAT, every LOOP + 1 bars; HOLD: none */
+            if (!e || nx % e)
+                continue;
+            if (w == MW_SOUND || w == MW_ALL) mut_sound(t, a);
+            if (w == MW_PARAM) {
+                uint32_t id = mut_pid(t);
+                mut_value(t, id, a ? a->p : t->p, (uint32_t)clamp(t->p[P_MAMT], 0, 127));
+            }
+            if (w != MW_SOUND && w != MW_PARAM)
+                mut_pattern(t, a, (w == MW_RHYTHM ? 0u : MF_NOTES) | (w == MW_NOTES ? 0u : MF_RHYTHM) |
+                                  (MUT_CHROM(t) ? MF_CHROM : 0u));
+            hit = 1;
+        }
+        if (s && !w && nx % s == 0u) { mut_sound(t, a); hit = 1; }
+        if (q && !w && nx % q == 0u) { mut_pattern(t, a, MF_NOTES | MF_RHYTHM); hit = 1; }
         if (hit) { mut_flash[k] = 12; mut.moved |= (uint8_t)(1u << k); }
     }
     for (k = 0; k < NTRK; k++)
@@ -2090,7 +2282,11 @@ static int undo_do(void)                                /* 0: done */
     str_cpy(name, proj_name, sizeof name);
     {
         uint8_t st = mut.stale, mv = mut.moved;         /* (0.9.3) the same music: its anchor still holds */
-        if (project_restore_runtime(&proj_scratch))
+        int rc;
+        proj_lfo_keep = 1;                              /* (0.9.18: it plays on, MODE FREE's LFOs not faded again) */
+        rc = project_restore_runtime(&proj_scratch);
+        proj_lfo_keep = 0;
+        if (rc)
             return 1;
         mut.stale = st;
         mut.moved = mv;
@@ -2292,12 +2488,14 @@ static uint32_t autosave_sig(void)
     }
     for (i = 0; i < G_COUNT; i++)
         if (i != G_SLOT && i != G_LOAD && i != G_SAVE) {
-            int16_t v = i == G_DJF ? motion_djf_value() : song.g[i];   /* (0.9.1: the knob's, not its records') */
+            int16_t v = mom_base(MOM_G, i, i == G_DJF ? motion_djf_value() : song.g[i]);   /* (0.9.1: the knob's, not its records') */
             h = as_mix(h, &v, sizeof v);
         }
     h = as_mix(h, &motion, sizeof motion);
     h = as_mix(h, &chain_config, sizeof chain_config);
     h = as_mix(h, lyr_txt, sizeof lyr_txt);             /* (0.8.5) VOICE's lyrics */
+    h = as_mix(h, glane, sizeof glane);                 /* (0.9.9-seq2f) the global lane */
+    h = as_mix(h, &gl_mono, 1);
     return as_mix(h, proj_name, sizeof proj_name);
 }
 

@@ -13,6 +13,17 @@ static union {
 #define dly_buf (dly_u.s)
 _Static_assert((DLY_LEN & (DLY_LEN - 1u)) == 0u && DLY_LEN >= 16384u, "DLY_LEN: a power of two, whole 32 KB chunks");
 static int16_t cho_buf[CHO_LEN] __attribute__((section(".pool")));
+/* A full ring of zero input proves every tap is exactly zero. Keep its
+ * write/LFO/glide clocks running, but avoid the three interpolated reads. */
+static uint32_t cho_zeros = CHO_LEN;
+/* Control work once per block, outside the RAM-resident sample kernel. */
+static __attribute__((noinline)) uint32_t cho_admit(int32_t input, uint32_t n)
+{
+    uint32_t run = input || cho_zeros < CHO_LEN;
+    cho_zeros = input ? 0u : cho_zeros + n < CHO_LEN ? cho_zeros + n : CHO_LEN;
+    return run;
+}
+static uint8_t room_used, dly_used; /* conservative zero-state certificates; never discard a tail */
 static const uint16_t REV_COMB[4] = {1116, 1188, 1277, 1356};
 static const uint16_t REV_AP[2] = {556, 441};
 static int16_t rev_comb[1116 + 1188 + 1277 + 1356] __attribute__((section(".pool")));
@@ -41,6 +52,9 @@ static int32_t rpre_out[CTL];                     /* .. the block out of it (the
 static struct {
     uint32_t dly_w, cho_w, cho_ph;
     int32_t dly_lp, dly_hp;              /* the delay's feedback: high cut (COLR), low cut (JIANT: HPF) */
+    int32_t db_h, db_l1, db_l2;          /* (snd2) the loop's band (dly_band): its low cut (Q3), its two low-pass poles */
+    uint16_t db_t;                       /* .. blocks it is held after THROW let go (0: not); */
+    int16_t db_a;                        /* .. its share, 0..256 (0: out of the loop) */
     uint32_t rpre_w, rm_ph;              /* (JIANT) the pre-delay's write count (samples); the reverb modulation's phase */
     int32_t rm_m[4], rf_lp;              /* .. the combs' offsets (Q8 samples); the reverb's input filter (FILT) */
     uint32_t gr_ph, gr_sp[2];            /* .. the GRAIN delay: grain 0's phase (Q16), each grain's spray (samples) */
@@ -68,6 +82,9 @@ static struct {
     uint16_t rs_w;                       /* .. their write index (each its own line, 1024) */
     uint32_t cl_w, cl_rng;               /* .. CLOUD: its line's write count (half rate), its random numbers */
     int32_t cl_next, cl_lp, cl_half, cl_gl, cl_gr;     /* .. the samples to the next grain, the output's low-pass, the odd sample */
+    int32_t cl_dc;                       /* .. (p1, main 0.9.14) its loop's DC (Q8 samples) */
+    uint16_t cl_fill;                    /* .. (p1, main 0.9.16) sound written into its line since it was cleared (full-rate
+                                         * samples, to 32768) */
     uint16_t sp_w;                       /* SPRING: the loop's write index (SP_MASK) */
     uint8_t sp_ns;                       /* (0.6.70) SPRING's allpass stages last block (SP_N, LOAD ECO SP_N_ECO) */
     int32_t sp_lp, sp_hp, sp_he, sp_size;   /* .. its loop low-pass, low cut (and its remainder), the loop
@@ -243,6 +260,114 @@ static __attribute__((noinline)) void clip_block(uint32_t n)
         wet[i] = 0;
     }
 }
+/* (0.9.9-snd8) the master's TAPE (FX > TAPE: tape_v, params.c, 0..100; both 0: out of the chain, not run), ahead of CLIP:
+ * WOW reads the mix from a short line at a delay swinging 0 .. 2 x (a wow ~0.55 Hz and a drift, up to ~40 samples: a few
+ * cents; a flutter ~7 Hz, ~3 samples), 0 at WOW 0 (no jump when it comes in), with a faint hiss; TAPE drives it x1 .. x4
+ * into the soft clip with a bias (even harmonics; made up at a mix's usual level, as CLIP), loses the highs (a one-pole
+ * down to ~7 kHz) and lifts the low end (a band about 60..100 Hz, up to ~+3 dB). Both knobs smoothed block to block */
+#define TP_LEN 128u
+#ifndef FM1_OPAQUE
+#define FM1_OPAQUE(v) ((void)(v))                    /* (the host: no reach to mind) */
+#endif
+static struct {
+    int32_t buf[2][TP_LEN];
+    uint32_t w, ph_w, ph_d, ph_f;
+    int32_t d, wa, lp[2], b1[2], b2[2], noise;
+    int32_t drv, wow;                                   /* the knobs smoothed (Q8: 0 .. 100 << 8) */
+} tp __attribute__((section(".pool")));
+static __attribute__((noinline)) void tape_block(uint32_t n)
+{
+    uint32_t i, c;
+    int32_t dv, wv, g, bias, mk, hf, bump, d0, d1, wa;
+    dv = (clamp(tape_v[0], 0, 100) << 8) - tp.drv;
+    wv = (clamp(tape_v[1], 0, 100) << 8) - tp.wow;
+    tp.drv += dv > -8 && dv < 8 ? dv : dv >> 2;
+    tp.wow += wv > -8 && wv < 8 ? wv : wv >> 2;
+    dv = tp.drv >> 8;
+    wv = tp.wow >> 8;
+    g = 4096 + dv * 36864 / 100;                        /* the drive, Q12 (p9b: x10 at 100, was x4) */
+    bias = dv * 1600 / 100;                             /* (Q15: the curve's offset, its DC taken back) */
+    mk = (int32_t)((6000u << 15) / (uint32_t)(softclip(((6000 * g) >> 12) + bias) - softclip(bias)));
+    hf = 32767 - dv * 190;                              /* the highs: a one-pole's coefficient, Q15 (p9b: darker) */
+    bump = dv * 300 / 100;                              /* the head bump's gain, Q8 (p9b: more) */
+    d0 = tp.d;                                          /* the delay at the block's start and end (Q8 samples) */
+    tp.ph_w += 52u * n << 10;                           /* (0.55 Hz, 0.13 Hz, 7 Hz: 2^32 / 44100 a sample = 97391) */
+    tp.ph_d += 13u * n << 10;
+    tp.ph_f += 682u * n << 10;
+    wa = wv * 64 * 256 / 100;                           /* (p9b: x1.6 the wow; with the flutter ~105 samples of TP_LEN) */
+    d1 = ((wa * (32768 - sine_i(tp.ph_w + 0x40000000u))) >> 16) + ((wa * (32768 - sine_i(tp.ph_d))) >> 17) +
+         (((wv * 2304 / 100) * (32768 - sine_i(tp.ph_f))) >> 16);   /* (p9b: thrice the flutter) */
+    tp.d = d1;
+    for (i = 0; i < n; i++) {
+        int32_t x[2], d = d0 + (d1 - d0) * (int32_t)i / (int32_t)n, di = d >> 8, fr = d & 255;
+        x[0] = (mix_l[i] + wet[i] + 2) >> 2;
+        x[1] = (mix_r[i] + wet[i] + 2) >> 2;
+        wet[i] = 0;
+        tp.w = (tp.w + 1u) & (TP_LEN - 1u);
+        for (c = 0; c < 2u; c++) {
+            int32_t y = x[c], a, b;
+            tp.buf[c][tp.w] = y;
+            if (wv) {
+                a = tp.buf[c][(tp.w - (uint32_t)di) & (TP_LEN - 1u)];
+                b = tp.buf[c][(tp.w - (uint32_t)di - 1u) & (TP_LEN - 1u)];
+                y = a + (((b - a) * fr) >> 8) + (int32_t)((noise32(&tp.noise) >> 28) - 8u) * wv / 50;
+            }
+            if (dv) {
+                y = clamp(y, -131071, 131071);
+                y = (((softclip(((y * (g >> 2)) >> 10) + bias) - softclip(bias)) >> 1) * mk) >> 14;
+                tp.lp[c] += (((y - tp.lp[c]) >> 1) * hf) >> 14;
+                y = tp.lp[c];
+                tp.b1[c] += (y - tp.b1[c]) >> 6;            /* (~110 Hz and ~27 Hz: their difference the bump) */
+                tp.b2[c] += (y - tp.b2[c]) >> 8;
+                y += ((tp.b1[c] - tp.b2[c]) * bump) >> 8;
+            }
+            x[c] = y;
+        }
+        mix_l[i] = x[0] * 4;
+        mix_r[i] = x[1] * 4;
+    }
+}
+/* (p9) the master's EQ (FX > EQ, params.c eq_v): three one-pole low-passes (~200 Hz, ~1 kHz, ~4 kHz) split the mix into
+ * four bands that sum back to it exactly; each band's gain - 1 added (eq_gain: -12 .. +12 dB, Q12), the gains moved to
+ * their knobs a block at a time. ~10 multiplies a sample and channel; every knob at 0 (and settled): not run */
+static struct { int32_t lp[2][3], g[4]; } eqs __attribute__((section(".bss.tape")));
+static __attribute__((noinline)) int32_t eq_gain(int32_t db)   /* 10^(db / 20) - 1, Q12 */
+{
+    static const int16_t UP[13] __attribute__((section(".rodata.tape"))) =
+        {0, 500, 1061, 1690, 2396, 3188, 4077, 5074, 6193, 7448, 8857, 10437, 12210};
+    static const int16_t DN[13] __attribute__((section(".rodata.tape"))) =
+        {0, -445, -845, -1202, -1520, -1803, -2055, -2280, -2481, -2660, -2819, -2961, -3088};
+    db = clamp(db, -12, 12);
+    return db >= 0 ? UP[db] : DN[-db];
+}
+static __attribute__((noinline)) void eq_block(uint32_t n)
+{
+    static const int16_t A[3] __attribute__((section(".rodata.tape"))) = {922, 4349, 14220};   /* (Q15: 1 - e^(-2 pi f / FS)) */
+    int32_t g0[4], dg[4];
+    uint32_t i, c, k;
+    for (k = 0; k < 4u; k++) {
+        g0[k] = eqs.g[k];
+        dg[k] = (eq_gain(eq_v[k]) - g0[k]) / (int32_t)n;
+        eqs.g[k] = g0[k] + dg[k] * (int32_t)n;
+    }
+    for (i = 0; i < n; i++) {
+        int32_t x[2];
+        x[0] = mix_l[i] + wet[i];
+        x[1] = mix_r[i] + wet[i];
+        wet[i] = 0;
+        for (c = 0; c < 2u; c++) {
+            int32_t *lp = eqs.lp[c], b0, b1, b2, b3, y = x[c];
+            for (k = 0; k < 3u; k++)
+                lp[k] += ((y - lp[k]) >> 3) * A[k] >> 12;
+            b0 = lp[0]; b1 = lp[1] - lp[0]; b2 = lp[2] - lp[1]; b3 = y - lp[2];
+            y += ((b0 >> 4) * (g0[0] + dg[0] * (int32_t)i) >> 8) + ((b1 >> 4) * (g0[1] + dg[1] * (int32_t)i) >> 8) +
+                 ((b2 >> 4) * (g0[2] + dg[2] * (int32_t)i) >> 8) + ((b3 >> 4) * (g0[3] + dg[3] * (int32_t)i) >> 8);
+            x[c] = y;
+        }
+        mix_l[i] = x[0];
+        mix_r[i] = x[1];
+    }
+}
 /* (0.9.1) the master DJ FILTER (G_DJF, GLO > MIXER KNOB 4): one bipolar knob on the whole mix, just before CLIP and the
  * leveler. 0: out of the chain, not run at all (the mix bit for bit as without it). Below 0 a low-pass sweeping down
  * (darker), above 0 a high-pass sweeping up (thinner): a trapezoidal SVF (A. Simper's, as dsp.c tsvf) in 64-bit products,
@@ -255,7 +380,7 @@ static __attribute__((noinline)) void clip_block(uint32_t n)
 #define DJF_HI 107                                      /* the high-pass's (~6 kHz) */
 #define DJF_KMAX 5689                                   /* damping (Q12) near the middle: Q 0.72 */
 #define DJF_KMIN 3724                                   /* .. at the ends: Q 1.1 */
-#define DJF_XB 8                                        /* blocks of a crossfade (8 x CTL = 256 samples) */
+#define DJF_XB (256 / CTL)                              /* blocks of a crossfade (256 samples) */
 #define DJF_SL 4                                        /* the mix << 4 in the states */
 #define DJF_MAX (1 << 28)                               /* (the states' bound: far past any mix, never an overflow) */
 /* v (-64..63, not 0) -> its cutoff (CUTOFF_HZ index, Q8) */
@@ -305,7 +430,7 @@ static __attribute__((noinline)) void djf_block(uint32_t n)
     w0 = djf.w;
     if (dm == djf.mode) {                               /* its side: the filter in, the cutoff toward the knob's */
         int32_t e = djf_cut(v) - djf.cut;
-        djf.cut += e / 8 ? e / 8 : e;                   /* (an eighth a block: ~6 ms) */
+        djf.cut += e / (256 / (int32_t)CTL) ? e / (256 / (int32_t)CTL) : e;   /* (an eighth a block of 32: ~6 ms) */
         w1 = w0 + 4096 / DJF_XB > 4096 ? 4096 : w0 + 4096 / DJF_XB;
     } else {                                            /* the middle, or the other side: out first (then in, there) */
         w1 = w0 - 4096 / DJF_XB < 0 ? 0 : w0 - 4096 / DJF_XB;
@@ -315,6 +440,19 @@ static __attribute__((noinline)) void djf_block(uint32_t n)
     for (i = 0; i < 3u; i++)                            /* (ramped across the block: a step a sample) */
         d[i] = (c[i] - djf.a[i]) / (int32_t)n;
     dw = (w1 - w0) / (int32_t)n;
+    {   /* (cpu5) at rest: nothing in, its states 0, its coefficients and share where they were: 0 in, 0 out, the
+         * states stay 0 (the loop below would compute exactly that): not run */
+        int32_t z = djf.ic[0] | djf.ic[1] | djf.ic[2] | djf.ic[3] | (w1 - w0) | (k - djf.k) | (c[0] - djf.a[0]) |
+                    (c[1] - djf.a[1]) | (c[2] - djf.a[2]);
+        for (i = 0; i < n && !z; i++)
+            z |= mix_l[i] | mix_r[i] | wet[i];
+        if (!z) {
+            djf.w = w1;
+            if (!w1 && dm != djf.mode)
+                djf.mode = 0;
+            return;
+        }
+    }
     {
         int32_t a1 = djf.a[0], a2 = djf.a[1], a3 = djf.a[2], w = w0, l1 = djf.ic[0], l2 = djf.ic[1], r1 = djf.ic[2];
         int32_t r2 = djf.ic[3], kq = djf.k << 8, dk = ((k - djf.k) << 8) / (int32_t)n, hp = djf.mode > 0;
@@ -324,20 +462,20 @@ static __attribute__((noinline)) void djf_block(uint32_t n)
             int32_t sr = clamp(xr, -DJF_MAX >> DJF_SL, DJF_MAX >> DJF_SL) << DJF_SL;
             a1 += d[0]; a2 += d[1]; a3 += d[2]; w += dw; kq += dk;
             v3 = sl - l2;
-            v1 = (int32_t)(((int64_t)a1 * l1 + (int64_t)a2 * v3) >> 28);
-            v2 = l2 + (int32_t)(((int64_t)a2 * l1 + (int64_t)a3 * v3) >> 28);
+            v1 = (int32_t)(mac2_64(a1, l1, a2, v3) >> 28);
+            v2 = l2 + (int32_t)(mac2_64(a2, l1, a3, v3) >> 28);
             l1 = clamp(2 * v1 - l1, -DJF_MAX, DJF_MAX);
             l2 = clamp(2 * v2 - l2, -DJF_MAX, DJF_MAX);
-            yl = hp ? sl - v2 - (int32_t)(((int64_t)kq * v1) >> 20) : v2;
+            yl = hp ? sl - v2 - (int32_t)(mul64(kq, v1) >> 20) : v2;
             v3 = sr - r2;
-            v1 = (int32_t)(((int64_t)a1 * r1 + (int64_t)a2 * v3) >> 28);
-            v2 = r2 + (int32_t)(((int64_t)a2 * r1 + (int64_t)a3 * v3) >> 28);
+            v1 = (int32_t)(mac2_64(a1, r1, a2, v3) >> 28);
+            v2 = r2 + (int32_t)(mac2_64(a2, r1, a3, v3) >> 28);
             r1 = clamp(2 * v1 - r1, -DJF_MAX, DJF_MAX);
             r2 = clamp(2 * v2 - r2, -DJF_MAX, DJF_MAX);
-            yr = hp ? sr - v2 - (int32_t)(((int64_t)kq * v1) >> 20) : v2;
+            yr = hp ? sr - v2 - (int32_t)(mul64(kq, v1) >> 20) : v2;
             /* the dry mix exact, plus the filter's difference by its share */
-            mix_l[i] = xl + (int32_t)(((int64_t)(clamp(yl, -DJF_MAX, DJF_MAX) - sl) * w) >> (12 + DJF_SL));
-            mix_r[i] = xr + (int32_t)(((int64_t)(clamp(yr, -DJF_MAX, DJF_MAX) - sr) * w) >> (12 + DJF_SL));
+            mix_l[i] = xl + (int32_t)(mul64(clamp(yl, -DJF_MAX, DJF_MAX) - sl, w) >> (12 + DJF_SL));
+            mix_r[i] = xr + (int32_t)(mul64(clamp(yr, -DJF_MAX, DJF_MAX) - sr, w) >> (12 + DJF_SL));
             wet[i] = 0;
         }
         djf.ic[0] = l1; djf.ic[1] = l2; djf.ic[2] = r1; djf.ic[3] = r2;
@@ -369,35 +507,40 @@ static __attribute__((noinline)) void master_begin(void)
 static int32_t lev_env, lev_g = 32768, lev_cur = 32768, lev_dg;   /* the gain now and its step a sample (master_out) */
 static __attribute__((noinline)) void lev_block(uint32_t n)
 {
-    uint32_t i;
-    int32_t pk = 0, g1;
-    for (i = 0; i < n; i++) {
-        int32_t l = mix_l[i] + wet[i], r = mix_r[i] + wet[i];
-        l = l < 0 ? -l : l;
-        r = r < 0 ? -r : r;
-        if (l > pk) pk = l;
-        if (r > pk) pk = r;
-    }
-    lev_env += pk > lev_env ? (pk - lev_env) >> 6 : -((lev_env - pk) >> 11);   /* (0.5.1: ~45 ms up, ~1.5 s down: it
-                                                         * rides the song's loudness, not each hit; was ~1 / ~46 ms) */
-    g1 = 32768;                                         /* (below the gate: back to unity, slowly) */
-    if (lev_env > LEV_GATE && pk > LEV_GATE) {         /* (0.5.1: the block itself above the gate too: a tail
-                                                         * dying under it is not lifted while the slow follower falls) */
-        uint32_t q = ((uint32_t)LEV_T << 12) / (uint32_t)lev_env, rt = 0, b = 1u << 30;   /* LEV_T / level, Q12 */
-        q <<= 8;                                        /* (Q20: its square root Q10) */
-        while (b > q) b >>= 2;
-        while (b) {
-            if (q >= rt + b) { q -= rt + b; rt = (rt >> 1) + b; }
-            else rt >>= 1;
-            b >>= 2;
+    uint32_t i, j;
+    int32_t g0 = lev_g;
+    for (j = 0; j < n; j += 32u) {                      /* (ctl64) every 32 samples, as with blocks of 32: the peak of
+                                                         * them, the follower, the gain (a bass note's cycle read over 64
+                                                         * samples peaks higher: the leveler lifted it less); the gain
+                                                         * then ramps across the whole block (master_out) */
+        int32_t pk = 0, g1;
+        for (i = j; i < j + 32u && i < n; i++) {
+            int32_t l = mix_l[i] + wet[i], r = mix_r[i] + wet[i];
+            l = l < 0 ? -l : l;
+            r = r < 0 ? -r : r;
+            if (l > pk) pk = l;
+            if (r > pk) pk = r;
         }
-        g1 = clamp((int32_t)rt << 5, 11500, 65536);     /* Q15: x0.35 .. x2 */
+        lev_env += pk > lev_env ? (pk - lev_env) >> 6 : -((lev_env - pk) >> 11);   /* (0.5.1: ~45 ms up, ~1.5 s down: it
+                                                         * rides the song's loudness, not each hit; was ~1 / ~46 ms) */
+        g1 = 32768;                                     /* (below the gate: back to unity, slowly) */
+        if (lev_env > LEV_GATE && pk > LEV_GATE) {     /* (0.5.1: the block itself above the gate too: a tail
+                                                         * dying under it is not lifted while the slow follower falls) */
+            uint32_t q = ((uint32_t)LEV_T << 12) / (uint32_t)lev_env, rt = 0, b = 1u << 30;   /* LEV_T / level, Q12 */
+            q <<= 8;                                    /* (Q20: its square root Q10) */
+            while (b > q) b >>= 2;
+            while (b) {
+                if (q >= rt + b) { q -= rt + b; rt = (rt >> 1) + b; }
+                else rt >>= 1;
+                b >>= 2;
+            }
+            g1 = clamp((int32_t)rt << 5, 11500, 65536); /* Q15: x0.35 .. x2 */
+        }
+        lev_g += (g1 - lev_g) >> (lev_env > LEV_GATE && pk > LEV_GATE ? 8 : 5);   /* (smoothed: ~190 ms; gated, under
+                                                         * -38 dB: ~25 ms back to unity, no gain left on a tail's offset) */
     }
-    g1 = lev_g + ((g1 - lev_g) >> (lev_env > LEV_GATE && pk > LEV_GATE ? 8 : 5));   /* (smoothed: ~190 ms; gated, under -38 dB: ~25 ms
-                                                         * back to unity, no gain left on a tail's offset) */
-    lev_cur = lev_g;                                    /* (master_out ramps it across the block, after the DC block) */
-    lev_dg = (g1 - lev_g) / (int32_t)n;
-    lev_g = g1;
+    lev_cur = g0;                                       /* (master_out ramps it across the block, after the DC block) */
+    lev_dg = (lev_g - g0) / (int32_t)n;
 }
 /* DUCK (G_DUCK 0..100, G_DREL its release 40 .. 600 ms): a kick (eng_drum.c duck_hit) takes the parts that are not
  * DRUM down by up to 30 dB in ~2 ms, holds them there ~25 ms, and they come back with the release, shaped as a
@@ -415,7 +558,11 @@ static __attribute__((noinline)) void duck_block(void)
     }
     duck_g0 = duck_g1;
     if (duck_att) {
-        duck_env += (32767 - duck_env) >> 1;
+#if CTL == 32
+        duck_env += (32767 - duck_env) >> 1;            /* (~2 ms) */
+#else
+        duck_env += ((32767 - duck_env) * 3) >> 2;      /* (the same ~2 ms in blocks of 64) */
+#endif
         if (duck_env > 31000)
             duck_att = 0;
     } else if (duck_hold) {
@@ -618,6 +765,63 @@ static inline int32_t dly_sat(int32_t u)            /* Q15 in, out within +-3276
     if (a > 32767) a = 32767;
     return u < 0 ? -a : a;
 }
+/* (0.9.9-snd2) DRIVE: the loop's repeat x g (1 .. 4: DRIVE 0 .. 100) into a soft clip (u - 4/27 u^3, flat from 1.5),
+ * then / g: a quiet repeat comes back as it went, a loud one rounded and pressed down, a little more grit and a little
+ * less level each pass (a tape driven, a BBD's input pushed). x within +-32767; g Q12, gi = 1 / g Q15. DRIVE 0: not
+ * called (the loop as before, bit for bit) */
+static inline int32_t dly_drive(int32_t x, int32_t g, int32_t gi)
+{
+    int32_t u = (x * g) >> 12, u3;
+    if (u > 49152) u = 49152;
+    else if (u < -49152) u = -49152;
+    u3 = (((u * u) >> 15) * (u >> 2)) >> 13;
+    return mulq15(u - ((u3 * 4855) >> 15), gi);
+}
+/* (0.9.9-snd2) the loop's band, tape-echo style: while THROW (the FX layer's KNOB 3: the punch-in delay) sends the
+ * whole mix in, and DB_HOLD blocks after (its tail), the repeat goes
+ * through a low cut (~180 Hz, one pole) and a low-pass (two poles at ~4.8 kHz, closing to ~3 kHz with FEEDBK at 100 %
+ * and to ~1.8 kHz over the tail's hold), mixed in by the share a: each pass loses a hat's / a snare's noise energy
+ * (most of it above the low-pass) much faster than a note's (in the band), so a thrown drum loop rings out as echoes,
+ * not as a wash. a 0: not run (the loop as before, bit for bit). ah / al Q15 one-pole coefficients at the line's rate */
+#define DB_HOLD 8268u                    /* 12 s of blocks of 64 */
+typedef struct { int32_t ah, al, a; } dband_t;
+static inline int32_t dly_band(int32_t x, const dband_t *b)
+{
+    int32_t h;
+    fx.db_h += (((x << 3) - fx.db_h) * b->ah + 16384) >> 15;
+    h = clamp(x - (fx.db_h >> 3), -32767, 32767);
+    fx.db_l1 += ((h - fx.db_l1) * b->al + 16384) >> 15;
+    fx.db_l2 += ((fx.db_l1 - fx.db_l2) * b->al + 16384) >> 15;
+    return x + (((fx.db_l2 - x) * b->a) >> 8);
+}
+static uint32_t db_coef(uint32_t hz, uint32_t fse)   /* a one-pole's coefficient, w / (1 + w), Q15; hz <= 5 kHz */
+{
+    uint32_t w = 205887u * hz / fse;                 /* (2 pi hz / fse, Q15) */
+    return (w << 15) / (32768u + w);
+}
+/* the block's band: from THROW (pf.td, perform.c), its hold, FEEDBK (fb Q15); sh the line's rate (0 full) */
+static __attribute__((noinline)) void db_block(dband_t *b, int32_t fb, uint32_t sh)   /* (out of the RAM code: once a block) */
+{
+    int32_t t = 0, lp;
+    if (pf.td > 0) {
+        fx.db_t = DB_HOLD;
+        t = 256;
+    } else if (fx.db_t) {
+        fx.db_t--;
+        t = fx.db_t > 256u ? 256 : (int32_t)fx.db_t;   /* (its last 0.4 s: out again, slowly) */
+    }
+    fx.db_a = (int16_t)(t > fx.db_a + 4 ? fx.db_a + 4 : t < fx.db_a - 4 ? fx.db_a - 4 : t);
+    b->a = fx.db_a;
+    if (!b->a) {
+        fx.db_h = fx.db_l1 = fx.db_l2 = 0;
+        return;
+    }
+    lp = 4800 - 1800 * (fb > 32767 ? 32767 : fb) / 32767;
+    if (!(pf.td > 0) && fx.db_t)
+        lp -= 1200 * (int32_t)(DB_HOLD - fx.db_t) / (int32_t)DB_HOLD;
+    b->ah = (int32_t)db_coef(180u, FS >> sh);
+    b->al = (int32_t)db_coef((uint32_t)lp, FS >> sh);
+}
 /* (0.6.86) TONE / FILT resonant: one knob, the middle open; one way a low-pass sweeping down, the other a low cut
  * sweeping up, both resonant (Q 0.7 near the middle, up to qmax from a third of the way): the band at the cutoff
  * stands out, so the knob carves where the repeats / the room sit. The level evened out (x 1/Q: the peak about
@@ -696,9 +900,47 @@ static int32_t rev_size(void)
     int32_t g = GFX(GF_RSIZE);
     return 25000 + g * 40 + g * g / 7;
 }
+/* A never-excited (or explicitly cleared) reverb has exactly zero buffers and filter states (room_used: the
+ * certificate). With no input this block its output is exactly 0 and its states stay 0: the sample networks are not
+ * run, only what moves by the block or the sample whatever the sound (the clocks below: read / write indices, the
+ * LFOs' phases, SIZE's glide, CLOUD's grain scheduler and its random numbers) is advanced, so that the first input
+ * finds every state as the full kernel would have left it: bit for bit the same from there on (tests/empty_fx_test.c).
+ * After any input, normal rendering remains enabled for the whole tail (cpu4: ROOM alone; cpu5: every model) */
+static void room_clock(uint32_t n)                      /* ROOM's combs' and allpasses' indices, n samples on */
+{
+    uint32_t i;
+    for (i = 0; i < 4u; i++) {
+        uint32_t k = fx.comb_i[i] + n;
+        fx.comb_i[i] = (uint16_t)(k >= REV_COMB[i] ? k - REV_COMB[i] : k);
+    }
+    for (i = 0; i < 2u; i++) {
+        uint32_t k = fx.ap_i[i] + n;
+        fx.ap_i[i] = (uint16_t)(k >= REV_AP[i] ? k - REV_AP[i] : k);
+    }
+}
+static __attribute__((noinline)) int room_zero(const int32_t *in, uint32_t n)
+{
+    uint32_t i;
+    if (room_used) return 0;
+    for (i = 0; i < n; i++) if (in[i]) { room_used = 1; return 0; }
+    room_clock(n);
+    return 1;
+}
+/* ROOM with MOD / WIDE (rev_room_mod) at rest: its LFO's phase on, the combs' offsets where the block's end puts them */
+static void room_mod_clock(uint32_t n)
+{
+    uint32_t k;
+    int32_t depth = song.g[G_RMOD] ? 64 + song.g[G_RMOD] * song.g[G_RMOD] * 4 : 0;
+    fx.rm_ph += LFO_INC[song.g[G_RRATE] & 127];
+    for (k = 0; k < 4u; k++)
+        fx.rm_m[k] = (int32_t)(((uint32_t)(osc_sine(fx.rm_ph + k * 0x40000000u) + 32768) * (uint32_t)depth) >> 16);
+    room_clock(n);
+}
+
 /* ROOM (G_RTYPE 0): 4 damped combs + 2 allpasses (Freeverb-like, mono), added to out (WIDE: rev_room_mod) */
 static __attribute__((noinline)) void rev_room(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
+    if (room_zero(rev_in, n)) return;
     uint32_t i;
     int32_t size = rev_size(), dk = GFX(GF_RDAMP) * 200;   /* (32767 - damp) */
     /* (0.7.9) the combs' and allpasses' indices and low-passes in registers through the block (they were loaded and
@@ -811,26 +1053,33 @@ static __attribute__((noinline)) void sp_chain(int32_t *ap, uint32_t ns)
     fx.sp_ns = (uint8_t)ns;
 }
 /* SPRING (see the top), added to out */
+/* SPRING's block: SIZE's glide, the wobble's phase, the chain's length (LOAD); returns the stages */
+static uint32_t spring_block(void)
+{
+    uint32_t s = (uint32_t)GFX(GF_RSIZE), ns = sys_load == LOAD_ECO ? SP_N_ECO : SP_N;   /* (0.6.70) LOAD ECO: a shorter chain */
+    int32_t len = (int32_t)(1323u + ((s * 1323u) >> 7)) << 8;
+    if (!fx.sp_size)
+        fx.sp_size = len;
+    fx.sp_size += clamp(len - fx.sp_size, -(8 * (int32_t)CTL), 8 * (int32_t)CTL);   /* SIZE glides (a sample a block of 32 at most) */
+    fx.sp_ph += 2u * LFO_INC[song.g[G_RMOD] ? song.g[G_RRATE] & 127 : 24];   /* the wobble: a slow sine, 1.5 samples */
+    if (ns != fx.sp_ns)
+        sp_chain(rev_u.sp, ns);
+    return ns;
+}
 static __attribute__((noinline)) void rev_spring(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
     uint32_t i, k, s = (uint32_t)GFX(GF_RSIZE);
     int32_t g = 19661 + (int32_t)s * 85 + (int32_t)(s * s) / 16;   /* the loop's gain: 0.6 .. 0.96 (0.5: was 0.93) */
     int32_t kl = 26000 - GFX(GF_RDAMP) * 160;         /* its low-pass: ~9 kHz .. ~1.3 kHz */
-    int32_t len = (int32_t)(1323u + ((s * 1323u) >> 7)) << 8, L, L2, L3, f, w;
+    int32_t L, L2, L3, f, w;
     int16_t *ln = rev_comb;
     int32_t *ap = rev_u.sp;
-    uint32_t ns = sys_load == LOAD_ECO ? SP_N_ECO : SP_N;   /* (0.6.70) LOAD ECO: a shorter chain */
-    if (!fx.sp_size)
-        fx.sp_size = len;
-    fx.sp_size += clamp(len - fx.sp_size, -256, 256);   /* SIZE glides (a sample a block at most) */
+    uint32_t ns = spring_block();
     L = fx.sp_size >> 8;
-    fx.sp_ph += 2u * LFO_INC[song.g[G_RMOD] ? song.g[G_RRATE] & 127 : 24];   /* the wobble: a slow sine, 1.5 samples */
     w = (fx.sp_size >> 1) + ((osc_sine(fx.sp_ph) * (3 + song.g[G_RMOD] / 2)) >> 8);   /* deep (MOD: up to 66); the far end, Q8 */
     L2 = w >> 8;
     f = w & 255;
     L3 = (L * 3) >> 2;
-    if (ns != fx.sp_ns)
-        sp_chain(ap, ns);
     for (i = 0; i < n; i++) {
         uint32_t wp = fx.sp_w, j = (wp & 3u) * (SP_N + 1u);
         int32_t x = mulq15(rev_in[i], 2580), r = ln[(wp - (uint32_t)L) & SP_MASK], p, o;
@@ -935,13 +1184,12 @@ _Static_assert(sizeof rev_comb / 2u >= 4u * RS_LEN, "RESO in ROOM's buffers");
  * the lowest note that track sounds (held after it stops), so it moves with the sequence. The strings glide there */
 static uint32_t reso_pitch(void) { return song.g[G_RTYPE] == 3 ? (uint32_t)clamp(song.g[G_RPRE], 0, 14) : 0u; }
 static uint32_t reso_folw(void) { return GFX(GF_RDAMP) >= 1 && GFX(GF_RDAMP) <= 6 ? (uint32_t)GFX(GF_RDAMP) : 0u; }
-static __attribute__((noinline)) void rev_reso(const int32_t *rev_in, int32_t *out, uint32_t n)
+/* RESO's block: the chord (ROOT, SCALE, PITCH, FOLW) into the strings' periods, gliding (per[]) */
+static void reso_block(uint32_t *per)
 {
     const track_t *t = &trk[0];
-    uint32_t i, k, per[4], mask, s, fol = reso_folw(), up = reso_pitch();
-    int32_t sz = GFX(GF_RSIZE), dk = 32767 - 60 * 200, note[4], deg = 0, nn;
-    int32_t fb = sz <= 100 ? 26000 + sz * 52 : clamp(31200 + (sz - 100) * 58, 0, 32740);   /* (0.5.1: the top of SIZE
-                                                         * rings on for tens of seconds: 0.9992 at 127, was 0.995) */
+    uint32_t k, mask, s, fol = reso_folw(), up = reso_pitch();
+    int32_t note[4], deg = 0, nn;
     for (k = 0; k < NTRK; k++)                           /* the song's scale: the first melodic track's (they share it) */
         if (ENGINES[eng_idx(trk[k].eng_req)] != &ENG_DRUM) { t = &trk[k]; break; }
     mask = scale_mask(t) & 0xFFFu;
@@ -978,9 +1226,17 @@ static __attribute__((noinline)) void rev_reso(const int32_t *rev_in, int32_t *o
         if (per[k] > (RS_LEN - 2u) << 8) per[k] = (RS_LEN - 2u) << 8;
         if (!fx.rs_per[k])
             fx.rs_per[k] = per[k];
-        fx.rs_per[k] += (uint32_t)(((int32_t)per[k] - (int32_t)fx.rs_per[k]) / 6);   /* (a glide, ~6 blocks) */
+        fx.rs_per[k] += (uint32_t)(((int32_t)per[k] - (int32_t)fx.rs_per[k]) / (192 / (int32_t)CTL));   /* (a glide, ~6 blocks of 32) */
         per[k] = fx.rs_per[k];
     }
+}
+static __attribute__((noinline)) void rev_reso(const int32_t *rev_in, int32_t *out, uint32_t n)
+{
+    uint32_t i, k, per[4];
+    int32_t sz = GFX(GF_RSIZE), dk = 32767 - 60 * 200;
+    int32_t fb = sz <= 100 ? 26000 + sz * 52 : clamp(31200 + (sz - 100) * 58, 0, 32740);   /* (0.5.1: the top of SIZE
+                                                         * rings on for tens of seconds: 0.9992 at 127, was 0.995) */
+    reso_block(per);
     for (i = 0; i < n; i++) {
         int32_t in = mulq15(rev_in[i], 3600), a = 0;
         for (k = 0; k < 4u; k++) {
@@ -997,6 +1253,19 @@ static __attribute__((noinline)) void rev_reso(const int32_t *rev_in, int32_t *o
     }
 }
 #define CL_N 12u                                         /* (its line, CL_LEN: rev_x, at the top) */
+#define CL_WMAX 320                                      /* (p1, main 0.9.14 / 0.9.16) the grains' windows summed: 1.25
+                                                         * grains' worth at most (rev_cloud) */
+#define CL_BACK (CL_LEN - 6000u - 1024u)                 /* .. the farthest back a grain may start (cl_spawn) */
+/* (p1, main 0.9.14) CLOUD's line written through a soft knee: linear to -2.5 dBFS (bit for bit as before there), then
+ * tanh up to ~-0.1 dB: a hot send rounds off like tape, never a hard clamp in the loop */
+static inline int32_t rv_knee(int32_t x)
+{
+    int32_t a = x < 0 ? -x : x;
+    if (a <= 24576)
+        return x;
+    a = 24576 + (softclip(clamp(a - 24576, 0, 16384) * 4) >> 2);
+    return x < 0 ? -a : a;
+}
 static struct { uint32_t pos, inc; uint16_t len, age; int16_t pl, pr; } cl_g[CL_N];
 static uint32_t cl_rand(void) { fx.cl_rng = fx.cl_rng * 1664525u + 1013904223u; return fx.cl_rng >> 8; }
 /* CLOUD (G_RTYPE 4, JIANT 0.5, made wet in 0.5.1): a granular wash. The input and the cloud's own tail fed back
@@ -1006,10 +1275,71 @@ static uint32_t cl_rand(void) { fx.cl_rng = fx.cl_rng * 1664525u + 1013904223u; 
  * them an octave up, down or a fifth up; each grain panned at random (WIDE: how far, left and right). The grains go
  * through ROOM's network (SIZE its decay, DAMP its tone; MOD chorusing it, WIDE its combs apart): the grains are not
  * heard dry, they bloom into a tail around the sound. SIZE full freezes the line (the cloud holds) */
-static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *out, uint32_t n)
+/* a grain born (the scheduler's sample came): the next drawn, the first slot free takes its place, pitch, length and
+ * pan (its random numbers drawn whether a slot is free or not: the sequence is the clock's) */
+static void cl_spawn(int32_t gap, int32_t wd, uint32_t ar)
 {
     static const uint32_t PITCH[4] = {65536u, 131072u, 32768u, 98184u};   /* x1, an octave up, down, a fifth up (Q16) */
-    uint32_t i, k, freeze = GFX(GF_RSIZE) >= 127;
+    uint32_t k, cap = load_tight ? CL_N / 2u : CL_N;    /* (0.6.16: the load budget: half the grains) */
+    fx.cl_next = gap / 2 + (int32_t)(cl_rand() % (uint32_t)gap);
+    for (k = 0; k < cap && cl_g[k].len; k++) {}
+    if (k < cap) {
+        uint32_t pk = cl_rand() % 100u < (uint32_t)song.g[G_RMOD] * 3u / 4u ? 1u + cl_rand() % 3u : 0u;
+        int32_t pan = (int32_t)(cl_rand() % 257u) - 128;   /* -128 .. 128, times WIDE */
+        pan = pan * wd >> 7;
+        uint32_t inc = (uint32_t)(umul64(PITCH[pk] >> 1, ar) >> 16), back;
+        cl_g[k].len = (uint16_t)(2000u + cl_rand() % 4200u);
+        if (inc > 32768u && (uint32_t)(umul64(cl_g[k].len, inc - 32768u) >> 16) > CL_BACK)   /* (p1, main 0.9.14) AIR up: */
+            cl_g[k].len = (uint16_t)((CL_BACK << 16) / (inc - 32768u));   /* shorter, so that it fits behind the write
+                                                         * head (past CL_BACK the span below went negative: grains read
+                                                         * across the write, a click each) */
+        back = inc > 32768u ? (uint32_t)(umul64(cl_g[k].len, inc - 32768u) >> 16) : 0u;   /* (faster than
+                                                         * the line is written: started that much further back) */
+        cl_g[k].pos = ((fx.cl_w >> 1) - 200u - back - cl_rand() % (CL_LEN - 6000u - back)) << 16;
+        cl_g[k].inc = inc + (cl_rand() % 129u) - 64u;   /* (the line at half rate; each grain
+                                                         * a few cents off: a chorused shimmer, not one pitch) */
+        cl_g[k].age = 0;
+        cl_g[k].pl = (int16_t)(128 - pan);               /* (0 .. 256: 128 the centre) */
+        cl_g[k].pr = (int16_t)(128 + pan);
+    }
+}
+static void cl_age(void)                                 /* the grains two samples on (after their reads) */
+{
+    uint32_t k;
+    for (k = 0; k < CL_N; k++)
+        if (cl_g[k].len) {
+            cl_g[k].pos += cl_g[k].inc << 1;
+            cl_g[k].age = (uint16_t)(cl_g[k].age + 2u);
+            if (cl_g[k].age >= cl_g[k].len) cl_g[k].len = 0;
+        }
+}
+/* CLOUD at rest (room_used clear, no input): its line's clock, the scheduler (and its random numbers), the grains'
+ * ages, the network's clocks: everything that moves with no sound, nothing read or summed (all of it exactly 0) */
+static void cloud_clock(uint32_t n)
+{
+    uint32_t i, freeze = GFX(GF_RSIZE) >= 127 && fx.cl_fill >= 32768u, ar = semi_q16(rev_air());
+    int32_t gap = 1700 - song.g[G_RRATE] * 11, wd = song.g[G_RWIDE];
+    for (i = 0; i < n; i++) {
+        if (!freeze) {
+            fx.cl_w++;
+            if (fx.cl_fill && fx.cl_fill < 32768u) fx.cl_fill++;   /* (as rev_cloud's: a silent sample counts once
+                                                         * sound came) */
+        }
+        if (--fx.cl_next <= 0)
+            cl_spawn(gap, wd, ar);
+        if (!(i & 1u))
+            cl_age();
+    }
+    if (song.g[G_RMOD] || wd)
+        room_mod_clock(n);
+    else
+        room_clock(n);
+}
+static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *out, uint32_t n)
+{
+    uint32_t i, k, freeze = GFX(GF_RSIZE) >= 127 && fx.cl_fill >= 32768u;   /* (p1, main 0.9.16: a FREEZE of a
+                                                         * cleared line held silence, "CLOUD off at SIZE 100 %"; now the
+                                                         * line first takes a line's worth of sound, ~0.74 s, then holds) */
     int32_t gap = 1700 - song.g[G_RRATE] * 11, dk = 32767 - GFX(GF_RDAMP) * 220, wd = song.g[G_RWIDE], air = rev_air();
     uint32_t ar = semi_q16(air);                         /* (0.6.12) AIR: the grains up / down, the tone with them */
     if (air < 0) dk = clamp(dk + air * 1100, 1500, 32767);
@@ -1022,36 +1352,21 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
         int32_t l = 0, r = 0, m;
         if (!freeze) {                                   /* the line: the input and the tail, two samples into one */
             int32_t x = (rev_in[i] >> 1) + mulq15(shim_fb[i], fb) + mulq15(fx.cl_lp, fg);
+            fx.cl_dc += ((x << 8) - fx.cl_dc) >> 9;      /* (p1, main 0.9.14) a low cut (~14 Hz, Q8) in the loop: ROOM's */
+            x -= (fx.cl_dc + 128) >> 8;                  /* floors gave it a DC that went round for ever */
             if (fx.cl_w & 1u)
-                cloud_buf[(fx.cl_w >> 1) & (CL_LEN - 1u)] = (int16_t)clamp((fx.cl_half + x) >> 1, -32768, 32767);
+                cloud_buf[(fx.cl_w >> 1) & (CL_LEN - 1u)] = (int16_t)rv_knee((fx.cl_half + x) >> 1);
             else
                 fx.cl_half = x;
             fx.cl_w++;
+            if (fx.cl_fill < 32768u && (fx.cl_fill || x)) fx.cl_fill++;
         }
-        if (--fx.cl_next <= 0) {                         /* a grain is born, in the first one free */
-            fx.cl_next = gap / 2 + (int32_t)(cl_rand() % (uint32_t)gap);
-            uint32_t cap = load_tight ? CL_N / 2u : CL_N;   /* (0.6.16: the load budget: half the grains) */
-            for (k = 0; k < cap && cl_g[k].len; k++) {}
-            if (k < cap) {
-                uint32_t pk = cl_rand() % 100u < (uint32_t)song.g[G_RMOD] * 3u / 4u ? 1u + cl_rand() % 3u : 0u;
-                int32_t pan = (int32_t)(cl_rand() % 257u) - 128;   /* -128 .. 128, times WIDE */
-                pan = pan * wd >> 7;
-                uint32_t inc = (uint32_t)(((uint64_t)(PITCH[pk] >> 1) * ar) >> 16), back;
-                cl_g[k].len = (uint16_t)(2000u + cl_rand() % 4200u);
-                back = inc > 32768u ? (uint32_t)(((uint64_t)cl_g[k].len * (inc - 32768u)) >> 16) : 0u;   /* (faster than
-                                                         * the line is written: started that much further back) */
-                cl_g[k].pos = ((fx.cl_w >> 1) - 200u - back - cl_rand() % (CL_LEN - 6000u - back)) << 16;
-                cl_g[k].inc = inc + (cl_rand() % 129u) - 64u;   /* (the line at half rate; each grain
-                                                         * a few cents off: a chorused shimmer, not one pitch) */
-                cl_g[k].age = 0;
-                cl_g[k].pl = (int16_t)(128 - pan);       /* (0 .. 256: 128 the centre) */
-                cl_g[k].pr = (int16_t)(128 + pan);
-            }
-        }
+        if (--fx.cl_next <= 0)                           /* a grain is born, in the first one free */
+            cl_spawn(gap, wd, ar);
         if (!(i & 1u)) {                                 /* (0.6.12) the grains every other sample, as the line is
                                                          * written (half rate): half the work; in between, the two
                                                          * averaged (a linear step, half a sample late) */
-            int32_t gl = 0, gr = 0;
+            int32_t gl = 0, gr = 0, ws = 0;
             for (k = 0; k < CL_N; k++) {
                 if (!cl_g[k].len) continue;
                 {
@@ -1059,12 +1374,16 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
                     int32_t x0 = cloud_buf[p & (CL_LEN - 1u)], x1 = cloud_buf[(p + 1u) & (CL_LEN - 1u)];
                     int32_t x = x0 + (((x1 - x0) * (int32_t)f) >> 8), w = (int32_t)((a < L - a ? a : L - a) * 2u * 256u / L);
                     x = (x * w) >> 8;
+                    ws += w;
                     gl += (x * cl_g[k].pl) >> 7;
                     gr += (x * cl_g[k].pr) >> 7;
-                    cl_g[k].pos += cl_g[k].inc << 1;
-                    cl_g[k].age = (uint16_t)(a + 2u);
-                    if (cl_g[k].age >= cl_g[k].len) cl_g[k].len = 0;
                 }
+            }
+            cl_age();
+            if (ws > CL_WMAX) {                          /* (p1, main 0.9.14 / 0.9.16) the overlap at most CL_WMAX / 256 */
+                int32_t q = (CL_WMAX << 11) / ws;        /* grains' worth: the windows' sum grows with RATE (up to 12), */
+                gl = (gl * q) >> 11;                     /* and x SIZE's feedback (0.43) the loop's gain passed 1 from */
+                gr = (gr * q) >> 11;                     /* RATE ~90: the line ran away into its clamps, the crackle */
             }
             l = (gl + fx.cl_gl) >> 1;
             r = (gr + fx.cl_gr) >> 1;
@@ -1076,9 +1395,10 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
         }
         m = (l + r) >> 1;
         fx.cl_lp = m + mulq15(fx.cl_lp - m, 32767 - dk);
-        g[i] = fx.cl_lp * 2;                             /* (into the network: its input is 1/8 at -4 dB) */
+        g[i] = fx.cl_lp;                                 /* (into the network; p1, main 0.9.14: at half the level it
+                                                         * was, x2 at its output: 6 dB more room before ROOM's lines bend) */
         if (air > 0)                                     /* (AIR up: the grains' highs lifted) */
-            g[i] += ((m - fx.cl_lp) * air) / 12;
+            g[i] += ((m - fx.cl_lp) * air) / 24;
         t[i] = 0;
         if (wd) {                                        /* the grains' own place, left and right (a side) */
             int32_t sd = ((l - r) * wd) >> 9;
@@ -1087,17 +1407,50 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
         }
     }
     if (song.g[G_RMOD] || wd)
-        rev_room_mod(g, t, n, wd);
+        rev_room_mod(g, t, n, wd * 2);                   /* (its side x2 as well: the network at half the level) */
     else
         rev_room(g, t, n);
     for (i = 0; i < n; i++) {
-        out[i] += t[i] + (t[i] >> 1) + (g[i] >> 2);      /* the bloom (+3.5 dB, 0.5.1), the grains themselves under it */
+        out[i] += t[i] * 3 + (g[i] >> 1);                /* the bloom (+3.5 dB, 0.5.1), the grains themselves under it */
         shim_fb[i] = t[i];                               /* (the tail into the line, next block) */
     }
+}
+/* (cpu5) the reverb's certificate held (room_used clear) and nothing in this block: its clocks on, nothing rendered
+ * (its output is exactly 0, its states stay 0: see room_clock). Returns 0 with the certificate gone */
+static __attribute__((noinline)) int rev_idle(uint32_t ty, const int32_t *rev_in, uint32_t n)
+{
+    uint32_t i, per[4];
+    if (room_used) return 0;
+    for (i = 0; i < n; i++) if (rev_in[i]) { room_used = 1; return 0; }
+    switch (ty) {
+    case 1:                                             /* SPRING: SIZE's glide, the wobble, the loop's write index */
+        spring_block();
+        fx.sp_w = (uint16_t)(fx.sp_w + n);
+        break;
+    case 2:                                             /* SHIMMER: ROOM's clocks, its grains' phase, its line's */
+        room_clock(n);
+        fx.sh_ph += (uint32_t)((int32_t)semi_q16(clamp(12 + rev_air(), -12, 24)) - 65536) * n;
+        fx.sh_w += n;
+        break;
+    case 3:                                             /* RESO: the chord's glide, the strings' write index */
+        reso_block(per);
+        fx.rs_w = (uint16_t)(fx.rs_w + n);
+        break;
+    case 4:
+        cloud_clock(n);
+        break;
+    default:
+        if (song.g[G_RMOD] || song.g[G_RWIDE]) room_mod_clock(n);
+        else room_clock(n);
+        break;
+    }
+    return 1;
 }
 /* the model ty's block into out */
 static void rev_run(uint32_t ty, const int32_t *rev_in, int32_t *out, uint32_t n)
 {
+    if (rev_idle(ty, rev_in, n))
+        return;
     switch (ty) {
     case 1: rev_spring(rev_in, out, n); if (song.g[G_RWIDE]) rev_spring_side(n, song.g[G_RWIDE]); break;
     case 2: rev_shimmer(rev_in, out, n); break;
@@ -1114,6 +1467,7 @@ static void rev_run(uint32_t ty, const int32_t *rev_in, int32_t *out, uint32_t n
 static void rev_state_clear(void)
 {
     uint32_t i;
+    room_used = 0;
     for (i = 0; i < sizeof rev_comb / 2u; i++)
         rev_comb[i] = 0;
     for (i = 0; i < sizeof rev_u.ap / 2u; i++)          /* (int16: 997 of them, an odd count the int32 view misses one of) */
@@ -1127,6 +1481,8 @@ static void rev_state_clear(void)
     for (i = 0; i < CL_N; i++)
         cl_g[i].len = 0;
     fx.cl_gl = fx.cl_gr = 0;
+    fx.cl_dc = 0;
+    fx.cl_fill = 0;
     fx.cl_lp = fx.cl_half = 0;                          /* (0.8.4: CLOUD's tone and odd sample too; its tone's state
                                                          * was kept, a residue back into the next CLOUD's line) */
 }
@@ -1169,11 +1525,20 @@ static inline int32_t cho_tap(const int16_t *buf, uint32_t w, int32_t r)
     int32_t f = r & 255, c0 = buf[(w - ri) & (CHO_LEN - 1u)], c1 = buf[(w - ri - 1u) & (CHO_LEN - 1u)];
     return c0 + (((c1 - c0) * f) >> 8);
 }
-static inline int32_t cho_ens(const int16_t *buf, uint32_t w, uint32_t ph, int32_t depth, int32_t *sd)
+/* (0.9.9-snd2, lighter) the three read points at the LFO phase ph and depth (Q14 samples), into r: the LFO is read at a
+ * segment's ends only and the read points glide between (fx_buses): a segment 64 samples below RATE 64, 16 below 96, 8
+ * below 120, 4 above (the fast, deep sweeps bend most between two points): three sines a segment, not three a sample.
+ * Against the old (a saw through it): -63 dB at the default, about -58 at RATE 80 .. 100, -50 at the fastest and deepest
+ * (a 40 Hz sweep of 17 ms: an FM, not a chorus) (tests/delay_test.c test_chorus) */
+static __attribute__((noinline)) void cho_lfo(uint32_t ph, int32_t depth, int32_t *r)   /* (out of the RAM code) */
 {
-    int32_t a = cho_tap(buf, w, (300 << 8) + ((osc_sine(ph) + 32768) * depth >> 8));
-    int32_t b = cho_tap(buf, w, (420 << 8) + ((osc_sine(ph + 0x55555555u) + 32768) * depth >> 8));
-    int32_t c = cho_tap(buf, w, (540 << 8) + ((osc_sine(ph + 0xAAAAAAAAu) + 32768) * depth >> 8));
+    r[0] = ((300 << 8) + ((osc_sine(ph) + 32768) * depth >> 8)) << 6;   /* (Q14: the glide's step exact enough) */
+    r[1] = ((420 << 8) + ((osc_sine(ph + 0x55555555u) + 32768) * depth >> 8)) << 6;
+    r[2] = ((540 << 8) + ((osc_sine(ph + 0xAAAAAAAAu) + 32768) * depth >> 8)) << 6;
+}
+static inline int32_t cho_ens(const int16_t *buf, uint32_t w, const int32_t *r, int32_t *sd)
+{
+    int32_t a = cho_tap(buf, w, r[0] >> 6), b = cho_tap(buf, w, r[1] >> 6), c = cho_tap(buf, w, r[2] >> 6);
     *sd = a - b;
     return ((a + b + c) * 21845) >> 15;                 /* (x2 / 3 each: the sum at x2, as the one tap was) */
 }
@@ -1197,7 +1562,8 @@ static int32_t fxg_g = 32767;
  * over the floor went round the loop again: while that is within TIME, an echo is still to come back, the gate stays
  * open (a long delay's repeats come back at their level, not faded in after the gap). TIME up to 1.5 s as before */
 static uint32_t fxg_hold, fxg_dact;
-static uint8_t fxg_fb;
+#define FXG_STEP (1024 * (int32_t)CTL / 32)          /* (ctl64) the gate's step a block: 1024 of 32767 a block of 32 (~25 ms) */
+static uint8_t fxg_fb, fxg_dly;                      /* .. FEEDBK not 0; the delay's level over the floor (fx_rest) */
 static void fx_gate(int32_t *wet, uint32_t n)
 {
     int32_t pk = 0, g0 = fxg_g, d;
@@ -1209,17 +1575,18 @@ static void fx_gate(int32_t *wet, uint32_t n)
     int dly = fxg_dpk >= FXG_FLOOR && !fx.gr_on;       /* (0.6.89) a plain delay's tail still there: only the first floor
                                                          * (its residue: the loop's DC block keeps it under it); the
                                                          * higher ones cut a long FEEDBK tail off at 4 or 8 s */
+    fxg_dly = (uint8_t)dly;
     fxg_dact = !fxg_quiet || (dly && fxg_fb) ? 0u : fxg_dact < 0xFFFFFFu ? fxg_dact + 1u : fxg_dact;
     q = fxg_hold && fxg_dact <= fxg_hold ? 0u : fxg_quiet;
     fxg_dpk = 0;
     if (((q > FXG_QUIET && pk < FXG_FLOOR) || (!dly && q > FXG_QUIET2 && pk < FXG_FLOOR2) ||
          (!dly && q > FXG_QUIET3 && pk < FXG_FLOOR3)) &&
         !(song.g[G_RTYPE] == 4 && GFX(GF_RSIZE) >= 127))
-        fxg_g = g0 > 1024 ? g0 - 1024 : 0;
+        fxg_g = g0 > FXG_STEP ? g0 - FXG_STEP : 0;
     else if (g0 < 32767 && (g0 > 0 || fxg_quiet == 0u || dly))   /* (0.6.89: or the delay growing by itself) */   /* (0.6.19) closing and the residue swells again (a pitched
                                                          * delay's feedback): back up as it went down, ~25 ms (it
                                                          * snapped open: a click); */
-        fxg_g = g0 < 32767 - (fxg_quiet ? 1024 : 4096) ? g0 + (fxg_quiet ? 1024 : 4096) : 32767;
+        fxg_g = g0 < 32767 - (fxg_quiet ? FXG_STEP : 4 * FXG_STEP) ? g0 + (fxg_quiet ? FXG_STEP : 4 * FXG_STEP) : 32767;
     else if (g0 == 0 && !(song.g[G_RTYPE] == 4 && GFX(GF_RSIZE) >= 127))   /* .. closed: it stays closed until
                                                          * something is sent (CLOUD's FREEZE: open) */
         fxg_g = 0;                                      /* (something sent: the branch above opens it) */
@@ -1322,7 +1689,7 @@ static __attribute__((noinline)) void dly_line_clear(uint32_t from, uint32_t n)
         p[3] = 0;
     }
 }
-typedef struct { int32_t fb, fb2, hk, dig, dton, png, wd; tone_t tn; } dlyk_t;   /* the block's settings (fx_buses) */
+typedef struct { int32_t fb, fb2, hk, dig, dton, png, wd, dg, dgi; tone_t tn; dband_t db; } dlyk_t;   /* the block's settings (fx_buses) */
 /* the delay's block, when not plain at the full rate (fx_buses: dly_lo_on): into dx (the left / mid echo) and dxr (the
  * right), FS; as the full-rate loop in fx_buses, step for step (at FS: the same arithmetic) */
 static __attribute__((noinline)) void dly_lo(const int32_t *dly_in, int32_t *dx, int32_t *dxr, uint32_t n,
@@ -1386,7 +1753,10 @@ static __attribute__((noinline)) void dly_lo(const int32_t *dly_in, int32_t *dx,
             fx.dly_hp += (((lf << 8) - fx.dly_hp) * k->hk + 16384) >> 15;
             lf -= (fx.dly_hp + 128) >> 8;
             if (k->dton) lf = tone_run(&k->tn, lf, &fx.dt1, &fx.dt2);
-            w = u + mulq15(clamp(lf, -32767, 32767), k->png ? k->fb2 : k->fb);
+            lf = clamp(lf, -32767, 32767);
+            if (k->db.a) lf = dly_band(lf, &k->db);        /* (snd2) the band (THROW's) */
+            if (k->dg) lf = dly_drive(lf, k->dg, k->dgi);  /* (snd2) DRIVE */
+            w = u + mulq15(lf, k->png ? k->fb2 : k->fb);
             dly_buf[fx.dly_w & (DLY_LEN - 1u)] = (int16_t)(k->dig ? clamp(w, -32767, 32767) : dly_sat(w));
             fx.dly_w++;
             if (k->png)
@@ -1485,15 +1855,85 @@ static int32_t fx_glide(int32_t cur, int32_t to, uint32_t n)
     if (s * (int32_t)n < d && d < 0) s = d / (int32_t)n;
     return s;
 }
+/* Full-rate, mono, non-granular delay with a proven zero line and filters.
+ * All other configurations conservatively keep the original processing.
+ * This is not a send-level bypass: a single real input disables it until an
+ * explicit FX reset, so long echoes, feedback and low-level tails survive. */
+/* (cpu5) and the right echo (WIDE, PING-PONG: reads of the zero line), a read point's crossfade (between two zero
+ * reads: its count on) and the line at half / a quarter rate (dly_lo: its half-band filters' states are 0 as well, the
+ * line's write index on by the block's steps; a block is whole steps, so its decimation phase is where it would be).
+ * Not with the GRAIN read (its clock draws the shared random numbers: run, as before) nor through a rate change
+ * (the fades, the line being cleared): then run, the certificate kept */
+static __attribute__((noinline)) int delay_zero(const int32_t *in, uint32_t n, uint32_t low)
+{
+    uint32_t i;
+    if (dly_used) return 0;
+    for (i = 0; i < n; i++) if (in[i]) { dly_used = 1; return 0; }
+    if (fx.dsw || fx.din_g || fx.gr_on || fx.gr_old) return 0;
+    for (i = 0; i < n; i++) dlo_x[i] = dlo_xr[i] = 0;
+    fx.dly_w += low ? n >> fx.dr_sh : n;
+    fx.dl_xf = fx.dl_xf > n ? fx.dl_xf - n : 0;
+    fx.dr_xf = fx.dr_xf > n ? fx.dr_xf - n : 0;
+    return 1;
+}
+
+/* (cpu5, after 0.9.14's) the buses at rest: their gate shut (fx_gate: what they give is exactly 0 until something is
+ * sent), nothing sent this block, the delay's own level under the floor and its loop under 100 % (it cannot grow back),
+ * no rate change under way, the reverb's model not changing, CLOUD not frozen: not run. Stopped, or a silent stretch
+ * of a song, the three buses cost nothing: they were most of a stopped song's load. Their lines and states are
+ * silenced over the first six blocks of the rest (a part each: the reverb's states, the delay's line a quarter at a
+ * time, the reverb models' lines), and the certificates (room_used, dly_used, cho_zeros) hold from there: the next
+ * send starts from silence, exactly as a never-excited bus does. What the gate hid (a residue under -55 dB, a limit
+ * cycle of the feedback) is gone with it: it used to come back stepped in with the gate's reopening, a tick. What
+ * moves whatever the sound keeps moving meanwhile (the chorus's LFO and the glides, the delay's WOW: the clocks). */
+static uint8_t rest_ph;                                  /* the rest's clearing: 0 .. 6 (done) */
+static __attribute__((noinline)) int fx_rest(int32_t *wet, uint32_t n, uint32_t cinc, int32_t cdepth, int32_t cw,
+                                             int32_t dmix)
+{
+    uint32_t rt = (uint32_t)song.g[G_RTYPE] <= 4u ? (uint32_t)song.g[G_RTYPE] : 0u, ph = rest_ph, i;
+    int32_t wm, dwm;
+    if (fxg_g || fxg_dly || GFX(GF_DFDBK) >= 100 || fx.dsw || fx.din_g || (rt == 4u && GFX(GF_RSIZE) >= 127) ||
+        REV_LITE[sys_load % 3u][rt] != fx.rtype) {
+        rest_ph = 0;
+        return 0;
+    }
+    for (i = 0; i < n; i++)
+        wet[i] = 0;
+    if (ph == 0u) {
+        rev_state_clear();                              /* (room_used clear with it) */
+        memset(cho_buf, 0, sizeof cho_buf);
+        memset(&dlo, 0, sizeof dlo);
+        fx.dt1 = fx.dt2 = fx.rt1 = fx.rt2 = 0;
+        fx.dly_lp = fx.dly_hp = fx.rf_lp = fx.rpre_s = fx.cl_lp = fx.cl_half = 0;
+        fx.dl_xf = fx.dr_xf = 0;                        /* (a crossfade between two silent reads: nothing) */
+        cho_zeros = CHO_LEN;
+    } else if (ph <= 4u) {
+        dly_line_clear((ph - 1u) * (DLY_LEN / 4u), DLY_LEN / 4u);
+    } else if (ph == 5u) {
+        rev_line_clear(CL_LEN);                         /* (the pre-delay's line too) */
+        dly_used = 0;
+    }
+    if (ph < 6u)
+        rest_ph = (uint8_t)(ph + 1u);
+    fx.cho_ph += cinc * n;                              /* the clocks: as the loop would have moved them */
+    fx.cd_cur += fx_glide(fx.cd_cur, cdepth, n) * (int32_t)n;
+    fx.cw_cur += fx_glide(fx.cw_cur, cw, n) * (int32_t)n;
+    fx.dm_cur += fx_glide(fx.dm_cur, dmix, n) * (int32_t)n;
+    dly_wow_adv(n, &wm, &dwm);
+    return 1;
+}
 static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t *rev_in, int32_t *wet,
                      uint32_t n)
 {
-    uint32_t i, dl = delay_samples();
-    int32_t dcd, dcw, ddm;
+    uint32_t i, dl = delay_samples(), cho_run;
+    int32_t dcd, dcw, ddm, any = 0;
     {   /* (0.6.14) anything sent to the buses this block: their gate open (fx_gate) */
-        int32_t any = 0;
-        for (i = 0; i < n; i++)
+        int32_t ci = 0;
+        for (i = 0; i < n; i++) {
             any |= cho_in[i] | dly_in[i] | rev_in[i];
+            ci |= cho_in[i];
+        }
+        cho_run = cho_admit(ci, n);
         fxg_quiet = any ? 0u : fxg_quiet < 0xFFFFFFu ? fxg_quiet + 1u : fxg_quiet;
     }                                                   /* (0.6.19: it opens over ~6 ms, fx_gate: at once, the
                                                          * residue in the lines stepped in: a tick on the next note) */
@@ -1505,16 +1945,26 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
     int32_t cdepth = GFX(GF_CDEPTH) * 6, rt;
     uint32_t cinc = LFO_INC[GFX(GF_CRATE) & 127] / CTL;
     int32_t hk = 5, wd = song.g[G_WIDTH];             /* (the loop's DC block: ~1 Hz, 0.6.89); WIDTH */
+    int32_t dg = song.g[G_DDRV] > 0 ? 4096 + 123 * clamp(song.g[G_DDRV], 0, 100) : 0;   /* (snd2) DRIVE: x1 .. x4, Q12 */
+    int32_t dgi = dg ? (int32_t)(134217728u / (uint32_t)dg) : 0;
+    dband_t db;
     int32_t gr = !sys_load && (song.g[G_DPIT] || song.g[G_DSPRY]);   /* (JIANT) the GRAIN delay (LOAD LITE / ECO: plain) */
     /* (0.6.90) PING-PONG (not with the GRAIN): the line read at TIME (left) and twice TIME (right, the loop's tap), the
      * loop's gain squared, the right x FEEDBK: the repeats left, right, left .., each FEEDBK softer; TIME at most half
      * the line (0.8.4: of its longest, at a quarter rate, dly_rate); WIDE out of it */
-    int32_t png = song.g[G_DPING] == 1 && !gr, fb2 = (int32_t)(((int64_t)fb * fb) >> 15);
+    int32_t png = song.g[G_DPING] == 1 && !gr, fb2 = mul64_sh15(fb, fb);
     if (dig && fb > 32767) fb = 32767;                  /* (0.6.90) DIGITAL: 100 % at most, a repeat held for ever */
     if (dig && fb2 > 32767) fb2 = 32767;
-    int32_t cho = sys_load != LOAD_ECO;                /* (0.6.30) LOAD ECO: no chorus */
+    int32_t cho = sys_load != LOAD_ECO && cho_run;                /* (0.6.30) LOAD ECO: no chorus */
     int32_t cs = song.g[G_CSTER], cw = 80 + wd / 2;    /* (0.6.9) the chorus's side: 0 as before, - to mono, + ~2x */
     cw = cs >= 0 ? cw + cs * 2 : (cw * (64 + cs)) >> 6;
+#ifndef FX_REST_OFF                                     /* (tests/fx_rest_test.c: the reference without it) */
+    if (!any && fx.primed && fx_rest(wet, n, cinc, cdepth, cw, dmix)) {   /* (cpu5) at rest: not run */
+        fx.db_t = 0; fx.db_a = 0;                       /* (snd2: the tail gone, THROW's band with it) */
+        return;
+    }
+#endif
+    rest_ph = 0;
     uint32_t dro = wd && !png ? div_samples(3) * (uint32_t)wd / 127u : 0u, dr;   /* the right echo: up to 1/32 later */
     int dly_lo_on = dly_rate(&dl, &dr, dro, png, gr);   /* (0.8.4) the line's rate; TIME within what it holds */
     fxg_fb = fb > 0;
@@ -1527,6 +1977,7 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
                                                          * self-oscillate) */
     }
     if (!dton) fx.dt1 = fx.dt2 = 0;   /* (8 kHz .. 250 Hz | 73 Hz .. 3 kHz, Q 1.4) */
+    db_block(&db, fb, fx.dr_sh);  /* (snd2) the loop's band, THROW's */
     /* (0.6.81) a new read point (TIME, WIDE) or read (the GRAIN in or out): faded into over DXF_LEN samples from the
      * old one, the next change once that fade is done (each step of the knob jumped the read: a click) */
     if (!fx.primed) {
@@ -1573,13 +2024,20 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
         }
         rev_in = rpre_out;
     }
-    if (dly_lo_on) {                                    /* (0.8.4) the delay at half / a quarter rate, or changing its
+    if (delay_zero(dly_in, n, (uint32_t)dly_lo_on)) {
+        dly_lo_on = 1; /* existing loop consumes an exact zero stereo block */
+    } else if (dly_lo_on) {                             /* (0.8.4) the delay at half / a quarter rate, or changing its
                                                          * rate: its block first (dly_lo), the loop below takes it */
         dlyk_t k;
         k.fb = fb; k.fb2 = fb2; k.hk = hk << fx.dr_sh; k.dig = dig; k.dton = dton; k.png = png; k.wd = wd;
-        k.tn = dtn;
+        k.tn = dtn; k.dg = dg; k.dgi = dgi; k.db = db;
         dly_lo(dly_in, dlo_x, dlo_xr, n, &k, wm, dwm);
     }
+    int32_t cr[3], cdr[3] = {0, 0, 0};                  /* (snd2) the chorus's read points, their step a sample; */
+    uint32_t clg = GFX(GF_CRATE) < 64 ? 6u : GFX(GF_CRATE) < 96 ? 4u : GFX(GF_CRATE) < 120 ? 3u : 2u;   /* .. the LFO read
+                                                         * every 64 / 16 / 8 / 4 samples */
+    if (cho)
+        cho_lfo(fx.cho_ph, fx.cd_cur, cr);              /* (at the sample before the block: the loop steps first) */
     for (i = 0; i < n; i++) {
         int32_t y = 0, x, side = 0, xr = 0, wr = 0;
         /* chorus (0.5.1: an ensemble): three taps of the line, ~7, 9.5 and 12 ms, each swept by the LFO a third of a
@@ -1589,7 +2047,13 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
         fx.cd_cur += dcd; fx.cw_cur += dcw; fx.dm_cur += ddm;
         if (cho) {
             int32_t sd;
-            y += cho_ens(cho_buf, fx.cho_w, fx.cho_ph, fx.cd_cur, &sd);
+            if (!(i & ((1u << clg) - 1u))) {            /* (a segment: where the LFO will be at its end) */
+                int32_t ce[3];
+                cho_lfo(fx.cho_ph - cinc + (cinc << clg), fx.cd_cur - dcd + dcd * (1 << clg), ce);
+                cdr[0] = (ce[0] - cr[0]) >> clg; cdr[1] = (ce[1] - cr[1]) >> clg; cdr[2] = (ce[2] - cr[2]) >> clg;
+            }
+            cr[0] += cdr[0]; cr[1] += cdr[1]; cr[2] += cdr[2];
+            y += cho_ens(cho_buf, fx.cho_w, cr, &sd);
             sd = (sd * fx.cw_cur) >> 7;
             side += sd;
         }
@@ -1639,7 +2103,10 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
             {
                 int32_t lf = (wr == 2 ? xr : x) - ((fx.dly_hp + 128) >> 8), w;
                 if (dton) lf = tone_run(&dtn, lf, &fx.dt1, &fx.dt2);
-                w = (dly_in[i] >> 1) + mulq15(clamp(lf, -32767, 32767), wr == 2 ? fb2 : fb);
+                lf = clamp(lf, -32767, 32767);
+                if (db.a) lf = dly_band(lf, &db);           /* (snd2) the band (THROW's) */
+                if (dg) lf = dly_drive(lf, dg, dgi);        /* (snd2) DRIVE */
+                w = (dly_in[i] >> 1) + mulq15(lf, wr == 2 ? fb2 : fb);
                 dly_buf[fx.dly_w & (DLY_LEN - 1u)] = (int16_t)(dig ? clamp(w, -32767, 32767) : dly_sat(w));   /* (DIGITAL: clean, a clip
                                                              * at full scale only) */
             }
@@ -1856,7 +2323,7 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
     mod_begin(t);                                       /* the matrix's per-block values into t->p (mod.c) */
     int uin = uin_on && (uint32_t)(t - trk) + 1u == trk_live;   /* (0.7.5) USB IN+OUT: the host's audio comes in here */
     if (track_render(t, b, n))
-        t->tail = 16;                                   /* blocks of DIST state to run out after the last voice */
+        t->tail = (uint8_t)(512u / CTL);                /* blocks of DIST state to run out after the last voice */
     else if (!uin && (!t->tail || !t->p[P_DIST] || !--t->tail)) {
         mp_seen[(uint32_t)(t - trk) % NTRK] = 0;       /* (silent: the next sound at its LEVEL and PAN) */
         if (MOD.on)
@@ -1875,8 +2342,8 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
         }
         l0 = mp_lvl[ti];
         p0 = mp_pan[ti];
-        mp_lvl[ti] += (lvl - l0) >> 2;
-        mp_pan[ti] += (pan - p0) >> 2;
+        mp_lvl[ti] += (lvl - l0) >> (7 - CTL_LOG2);       /* (a quarter a block of 32: ~3 ms) */
+        mp_pan[ti] += (pan - p0) >> (7 - CTL_LOG2);
         if (mp_lvl[ti] - lvl < 256 && lvl - mp_lvl[ti] < 256) mp_lvl[ti] = lvl;   /* (there: exactly) */
         if (mp_pan[ti] - pan < 64 && pan - mp_pan[ti] < 64) mp_pan[ti] = pan;
         lq = l0;
@@ -2097,13 +2564,20 @@ static uint8_t mc_mask_last;                             /* the parts core 1 had
 static uint32_t mc_jobs;                                 /* (0.6.72) blocks core 1 rendered parts in (console status) */
 static void mix_part_m(track_t *t, uint32_t n);         /* (below) */
 #define MC_FX 0x80u                                       /* (0.6.75) mc_job: the buses too */
+#if FELUCCA_HOTRAM
+static void fx_run0(uint32_t n);                         /* (below) */
+#define fx_run fx_run0                                   /* (the tests' name for it) */
+#else
 static void fx_run(uint32_t n);                          /* (below) */
+#endif
 static __attribute__((noinline)) void mc_job(uint32_t a)  /* core 1: the buses (MC_FX), the parts of mask a & 0x3F, a >> 8
                                                          * samples */
 {
     uint32_t i, n = a >> 8;
     if (a & MC_FX)
-        fx_run(n);
+        fx_run0(n);                                     /* (0.9.9-beta4) the RAM copy on this core too: its block code (the
+                                                         * delay, the reverbs, the chorus) is in RAM for either core now
+                                                         * (build.py HOT_FNS), out of the I-cache the engines share */
     for (i = 0; i < n; i++)
         c1_mix.l[i] = c1_mix.r[i] = c1_mix.c[i] = c1_mix.d[i] = c1_mix.rv[i] = c1_mix.sl[i] = c1_mix.sr[i] = 0;
     for (i = 0; i < NPART; i++)
@@ -2160,6 +2634,18 @@ static int mc_rng_part(uint32_t i)
             return 1;
     return t->lfo_ph + LFO_INC[t->p[P_LRATE] & 127] < t->lfo_ph;
 }
+/* LANG OFF with BREATH exactly zero never consumes or writes breath noise.
+ * Note-on RNG runs before dispatch. Fades and a live matrix destination that
+ * could open BREATH remain grouped, regardless of the stored zero value. */
+static int mc_voice_noise(const track_t *t)
+{
+    uint32_t k;
+    if (t->p[P_VLANG] || t->p[P_E5] || t->xf_on) return 1;
+    for (k = 0; k < NMSLOT; k++)
+        if (t->p[P_M1SRC + 3u*k] && t->p[P_M1AMT + 3u*k] &&
+            t->p[P_M1DST + 3u*k] == MD_E1 + 5u) return 1;
+    return 0;
+}
 /* The greedy measured-cost split keeps dependency groups together: DRUM's kit, VOICE's breath noise, AUTO PAN's
  * random stream. Shared-rng LFOs follow the buses on core 1. As in SLOOP's units_split, ownership outranks cost. */
 static __attribute__((noinline)) uint32_t mc_split(uint32_t c1)   /* c1: what core 1 has already (0.6.75: the buses) */
@@ -2170,8 +2656,8 @@ static __attribute__((noinline)) uint32_t mc_split(uint32_t c1)   /* c1: what co
         uint32_t bit = 1u << i;
         unit[i] = bit; cost[i] = 0;
         if (ENGINES[t->engine] == &ENG_DRUM) dep[0] |= bit;
-        if (ENGINES[t->engine] == &ENG_FORMANT) dep[1] |= bit;
-        if (t->p[P_APDEP] || t->xf_on) dep[2] |= bit;
+        if (ENGINES[t->engine] == &ENG_FORMANT && mc_voice_noise(t)) dep[1] |= bit;
+        if ((t->p[P_APDEP] && t->p[P_APWAVE] >= 4) || t->xf_on) dep[2] |= bit;
         if (mc_rng_part(i)) fixed |= bit;
         /* Parts put to sleep still fade: render that transition serially, including voice_kill's counters. */
         if (i >= trk_live)
@@ -2241,10 +2727,10 @@ static inline __attribute__((always_inline)) void fx_run_t(uint32_t n)
     d = MC_TICKS() - t0;
     mc_fx_tk = d > mc_fx_tk ? mc_fx_tk + ((d - mc_fx_tk) >> 1) : mc_fx_tk - ((mc_fx_tk - d) >> 3);
 }
-static void fx_run(uint32_t n) { fx_run_t(n); }         /* (core 1: from the flash) */
-#if FELUCCA_HOTRAM                                       /* (0.6.78) core 0's copy, in RAM */
+#if FELUCCA_HOTRAM                                       /* (0.6.78) the copy in RAM: core 0's; 0.9.9-beta4: core 1's too */
 static __attribute__((noinline)) void fx_run0(uint32_t n) { fx_run_t(n); }
 #else
+static void fx_run(uint32_t n) { fx_run_t(n); }         /* (from the flash) */
 #define fx_run0 fx_run
 #endif
 
@@ -2290,9 +2776,12 @@ static __attribute__((noinline)) void fx_trip(uint32_t c1, uint32_t n)
     fx.dsw = 0; fx.din_g = 0;
     for (i = 0; i < CHO_LEN; i++)
         cho_buf[i] = 0;
+    cho_zeros = CHO_LEN;
     rev_clear();                                         /* (the pre-delay's line too: rev_x) */
     fx.dt1 = fx.dt2 = fx.rt1 = fx.rt2 = 0;
     fx.dly_lp = fx.dly_hp = fx.rf_lp = fx.rpre_s = fx.cl_lp = fx.cl_half = 0;
+    dly_used = 0;
+    rest_ph = 6;                                         /* (all of it silenced here) */
     fx_bad = 0;
     fx_trips++;
     if (c1) {
@@ -2334,7 +2823,7 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
     if (fx_stems)                                       /* (0.7.1) a part not mixed this block: a silent stem */
         memset(stem_buf, 0, sizeof stem_buf);
     pfx_rec_held = perf_kill ? 0u : perf_held & PF_MIDI;
-    pfx_block(n, (perf_kill ? 0u : (perf_held | perf_latched) & PF_MIDI) | scene_pfx);
+    pfx_block(n, (perf_kill ? 0u : (perf_held | perf_latched) & (PF_MIDI | PF_LOOPS)) | scene_pfx);
     events_block(n);
     if (song.playing)                                   /* (JIANT) the modulation sequences' clock (mod.c): the block's end on
                                                          * the transport's grid (through tempo changes, an external clock) */
@@ -2400,6 +2889,17 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
     }
     if (song.g[G_DJF] || djf.mode)                      /* (0.9.1) the DJ FILTER; centred and out: not run */
         djf_block(n);
+    if (tape_v[0] || tape_v[1] || tp.drv || tp.wow) {   /* (0.9.9-snd8) TAPE; both 0 (and settled): not run */
+        void (*f)(uint32_t) = tape_block;
+        FM1_OPAQUE(f);                                  /* (through a register: mix_block runs from RAM, tape_block is in
+                                                         * the flash past the tables, out of a direct call's reach) */
+        f(n);
+    }
+    if (eq_v[0] || eq_v[1] || eq_v[2] || eq_v[3] || eqs.g[0] || eqs.g[1] || eqs.g[2] || eqs.g[3]) {   /* (p9) the EQ */
+        void (*f)(uint32_t) = eq_block;
+        FM1_OPAQUE(f);                                  /* (as tape_block: out of the RAM code's direct reach) */
+        f(n);
+    }
     if (clip_g)
         clip_block(n);
     lev_block(n);                                       /* (JIANT 0.5) the leveler: the loudness held */

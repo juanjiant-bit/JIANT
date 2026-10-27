@@ -101,9 +101,11 @@ static int32_t ed_resp(uint32_t ty, int32_t x, int32_t xc, int32_t res)
 {
     int32_t d = x - xc, a = d < 0 ? -d : d, pk = res * 46 / 1000, y;
     int32_t bump = pk * 64 / (64 + d * d / 2);
-    if (ty == 3u)                                       /* COMB: teeth CUT apart, as deep as RES */
-        return 62 - (int32_t)((og_cos((uint32_t)x * (uint32_t)(4096 + xc * 160)) * (8 + pk / 2)) >> 15);
-    y = ty == 0u ? (d > 0 ? 2 * d : 0) : ty == 1u ? (d < 0 ? 2 * a : 0) : 2 * a / 3;   /* LP HP BP */
+    if (ty == 3u || ty == 4u)                           /* COMB: teeth CUT apart, as deep as RES (COMB-: between) */
+        return 62 - (int32_t)(((ty == 4u ? -1 : 1) * og_cos((uint32_t)x * (uint32_t)(4096 + xc * 160)) * (8 + pk / 2)) >> 15);
+    if (ty == 5u)                                       /* (snd1) MS20: a low-pass, its peak higher */
+        bump += bump / 2;
+    y = ty == 0u || ty == 5u ? (d > 0 ? 2 * d : 0) : ty == 1u ? (d < 0 ? 2 * a : 0) : 2 * a / 3;   /* LP HP BP */
     return clamp(62 + y - bump - (ty == 2u ? pk / 3 : 0), 8, 104);
 }
 static void graph_filter_lz(const track_t *t, const page_t *pg)
@@ -112,7 +114,7 @@ static void graph_filter_lz(const track_t *t, const page_t *pg)
     int16_t *vp;
     const param_desc_t *d;
     int32_t r[4], x, py = 0, xc, k, nd;
-    uint32_t ty = (uint32_t)clamp(t->p[P_FTYPE], 0, 3);
+    uint32_t ty = ft_of(t->p);
     char b[32];
     for (k = 0; k < 4; k++) {
         d = page_desc(pg, (uint32_t)k, &vp);

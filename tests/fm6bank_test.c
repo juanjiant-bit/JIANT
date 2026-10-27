@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* FM6's voice bank (1.4.1, Discussion #168; src/fm6_vbank.c, the editor's FM6B_* in src/editor_fm6.c) against
  * simulated NOR flash: a bank written whole and read back, its sectors (0xE7000, staged in the autosave's older copy,
  * nothing else touched, the tail erased), a power cut after any programmed byte or during any erase (the old bank or
@@ -573,6 +574,64 @@ static int keep_test(void)
     return bad;
 }
 
+/* (JIANT 0.9.12) 0xE7000 holding another firmware's data (Skiff's pattern bank: its "SKB1" record at 0, a payload
+ * from 256; or anything not erased and not ours): no bank, the sector never erased or written at power-on (also with
+ * a staged bank of ours waiting in the autosave's sector), until the user sends a bank: that one replaces it */
+static void foreign_put(int skiff)
+{
+    uint32_t i;
+    memset(nor + 0xE7000u, 0xFF, 4096);
+    if (skiff) {
+        static const uint32_t H[8] = {0x31424B53u, 3, 77, 3552, 0x12345678u, 0xFFFFFFFFu, 0xFFFFFFFFu, 0x9ABCDEF0u};
+        memcpy(nor + 0xE7000u, H, sizeof H);
+        for (i = 256; i < 256u + 3552u; i++)
+            nor[0xE7000u + i] = (uint8_t)(i * 37u + 11u);
+    } else {
+        for (i = 0; i < 4096u; i++)
+            nor[0xE7000u + i] = (uint8_t)(i * 131u + 7u);
+    }
+}
+static int foreign_test(void)
+{
+    int bad = 0, ok = 1, k;
+    static bank_t a, b;
+    static uint8_t snap[4096];
+    make_bank(&a, 'A', 0x0000FFFFu, "OURS");
+    make_bank(&b, 'B', 0x00F0F0F0u, "AFTER");
+    for (k = 0; k < 4; k++) {                             /* Skiff's / garbage; without / with a staged bank of ours */
+        uint32_t e0, p0;
+        reset();
+        if (k & 2)
+            ok &= send_bank(&a, 0) == 0 && bank_is(&a);   /* (staged in the autosave's sector, copied home) */
+        foreign_put(!(k & 1));
+        memcpy(snap, nor + 0xE7000u, sizeof snap);
+        e0 = erases; p0 = progs;
+        memset(&fvb_tx, 0, sizeof fvb_tx);
+        fvb_boot();                                       /* the power-on */
+        ok &= !fvb_info() && !fm6_bank_used && fvb_read(0, a.v[0]) == 1 && erases == e0 && progs == p0 &&
+              !memcmp(snap, nor + 0xE7000u, sizeof snap);
+        fvb_boot();                                       /* (and the next) */
+        ok &= !fvb_info() && !memcmp(snap, nor + 0xE7000u, sizeof snap);
+    }
+    bad += check("0xE7000 with another firmware's data (Skiff's pattern bank, garbage): no bank, never erased at power-on", ok);
+    ok = send_bank(&b, 0) == 0 && bank_is(&b);
+    fvb_boot();
+    ok &= bank_is(&b);
+    bad += check("  .. a bank the user sends replaces it (and is the bank from then on)", ok);
+    {   /* our own sector cut short keeps finishing at power-on: erased (a cut before the record) and the header there */
+        reset();
+        ok = send_bank(&a, 0) == 0;
+        memset(nor + 0xE7000u, 0xFF, 32);                 /* the commit record lost: the copy finished at boot */
+        fvb_boot();
+        ok &= bank_is(&a);
+        nor[0xE7000u] = 0x00;                             /* .. a record half written */
+        fvb_boot();
+        ok &= bank_is(&a);
+        bad += check("  .. our own sector cut short (no record, half a record) is still finished at power-on", ok);
+    }
+    return bad;
+}
+
 int main(void)
 {
     int bad = 0;
@@ -580,6 +639,7 @@ int main(void)
     bad += cut_test();
     bad += slot_test();
     bad += keep_test();
+    bad += foreign_test();
     printf(bad ? "fm6bank: FAILED (%d)\n" : "fm6bank: all ok\n", bad);
     return bad ? 1 : 0;
 }

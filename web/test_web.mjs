@@ -172,8 +172,8 @@ async function editorMock() {
   inp.onmidimessage = (e) => link.receive(e.data);
   const rq = async (r, o) => link.request(r, o);
   const info = E.parse[E.CMD.INFO](await rq(E.req.info()));
-  ok(info.nengines === 15 && info.engines[1] === "-" && info.engines[12] === "FM6" && info.engines[13] === "-" && info.engines[14] === "ANIMAL"
- && info.engines[5] === "VOICE" && info.engines[6] === "-" && info.engines[7] === "WHEEL" && info.engines[8] === "-" && info.engines[9] === "-" && info.engines[10] === "DRUM" && info.engines[11] === "NOISE" && info.pcount === 123 && info.pe0 === 115 && info.engines[4] === "-",
+  ok(info.nengines === 15 && info.engines[1] === "-" && info.engines[12] === "FM6" && info.engines[13] === "SAMPLE" && info.engines[14] === "ANIMAL"
+ && info.engines[5] === "VOICE" && info.engines[6] === "-" && info.engines[7] === "WHEEL" && info.engines[8] === "STRING" && info.engines[9] === "-" && info.engines[10] === "DRUM" && info.engines[11] === "NOISE" && info.pcount === 123 && info.pe0 === 115 && info.engines[4] === "-",
     "editor: INFO");
   let descs = 0;
   for (let i = 0; i < info.pcount; i++) if (E.parse[E.CMD.DESC](await rq(E.req.desc(0, i))).label) descs++;
@@ -279,8 +279,8 @@ async function editorMock() {
   ok(!prefs.favorites[info.nengines][31] && !E.devicePresetRows(info, names, prefs).some((r) => r.user), "editor: erased slot disappears and loses star");
   {   /* the lists in the device's order (engines.c ENGINE_ORDER, 0.9.9): DRUM VOICE ANIMAL first, "-" never; the numbers stay */
     const shown = E.engineOrder(info.engines).map((i) => info.engines[i]);
-    ok(shown.join() === "DRUM,VOICE,ANIMAL,LOFI,ANALOG,FM6,PHASE,WHEEL,NOISE" &&
-       E.engineOrder(info.engines).join() === "10,5,14,3,0,12,2,7,11",
+    ok(shown.join() === "DRUM,VOICE,ANIMAL,LOFI,ANALOG,FM6,PHASE,WHEEL,NOISE,STRING,SAMPLE" &&
+       E.engineOrder(info.engines).join() === "10,5,14,3,0,12,2,7,11,8,13",
        "editor: engines listed DRUM VOICE ANIMAL LOFI ANALOG FM6 PHASE WHEEL NOISE (0.9.9; indices kept)");
     ok(E.engineOrder(["ANALOG", "X", "-", "DRUM", "FM6"]).join() === "3,0,4,1", "editor: an unknown engine follows the known ones");
     ok(E.engineOrder(["ANALOG", "DIGITAL", "FM6", "DRUM"]).join() === "3,0,2,1", "editor: DIGITAL (FELUCCA_FM4 builds) after the others");
@@ -288,7 +288,7 @@ async function editorMock() {
     await rq(E.req.uiSet(3, 0));
     prefs = await E.readDevicePreferences(rq, info, names, prefs);
     const rows = E.devicePresetRows(info, names, prefs).filter((r) => !r.user), eng = [...new Set(rows.map((r) => r.engine))];
-    ok(eng.join() === "10,5,14,3,0,12,2,7,11", "editor: device presets in the device's engine order (DRUM first, NOISE last)");
+    ok(eng.join() === "10,5,14,3,0,12,2,7,11,8,13", "editor: device presets in the device's engine order (DRUM first; snd5: STRING, par13: SAMPLE last)");
   }
   const none = await E.readDevicePreferences(() => { throw new Error("unexpected request"); }, { uiCaps: 0 }, []);
   ok(none === null, "editor: old firmware receives no unsupported preference requests");
@@ -360,7 +360,7 @@ async function editorMock() {
     const rd = E.parse[E.CMD.DESC](await rq(E.req.desc(1, 14)));
     const r1 = E.parse[E.CMD.SET](await rq(E.req.set(1, 14, 5)));
     const r0 = E.parse[E.CMD.SET](await rq(E.req.set(1, 14, 0)));
-    ok(rd.label === "ROUTE" && rd.def === 0 && eq(rd.names, ["CH1-6", "SEL"]) && r1.value === 1 && r0.value === 0 && info.gcount === 71,
+    ok(rd.label === "ROUTE" && rd.def === 0 && eq(rd.names, ["CH1-6", "SEL"]) && r1.value === 1 && r0.value === 0 && info.gcount === 72,
       "editor: MIDI IN routing (ROUT CH1-6 / SEL, global id 14)");
   }
   {
@@ -371,7 +371,7 @@ async function editorMock() {
     const inert = [25, 26].map(async (id) => E.parse[E.CMD.DESC](await rq(E.req.desc(1, id))));
     const [d25, d26] = await Promise.all(inert);
     ok(rd.label === "TYPE" && rd.def === 0 && eq(rd.names, ["ROOM", "SPRING", "SHIMR", "RESO", "CLOUD"]) && r1.value === 4 && r0.value === 0 &&
-       d25.label === "PUNCH" && d26.label === "DUCK" && d25.max === 100 && info.gcount === 71,
+       d25.label === "PUNCH" && d26.label === "DUCK" && d25.max === 100 && info.gcount === 72,
       "editor: REVERB TYPE (ROOM SPRING SHIMR RESO CLOUD, set 10 clamps to 4, global id 24; 25, 26 PNCH and DUCK, JIANT's master)");
   }
   const st = E.parse[E.CMD.STEP_SET](await rq(E.req.stepSet(5, { n: 2, notes: [60, 64], time: 0, flags: 1, vel: 100 })));
@@ -387,16 +387,16 @@ async function editorMock() {
 }
 
 async function editorSamplePresets() {
-  /* (JIANT) SAMPLE, GRAIN and SLICE are retired (core.h eng_gone): their numbers named "-", no presets; picking one gives
-   * ANALOG; SAMPLE's preset 4 (once PERC) still gives DRUM's kit */
+  /* (JIANT) SAMPLE and PHYS are retired (core.h eng_gone; GRAIN's 8 and SLICE's 13 are STRING and ADD since snd5): their
+   * numbers named "-", no presets; picking one gives ANALOG; SAMPLE's preset 4 (once PERC) still gives DRUM's kit */
   const C = E.CMD;
   const { rq, done } = attachMock();
   const info = E.parse[C.INFO](await rq(E.req.info()));
-  ok([4, 8, 13].every((e) => info.engines[e] === "-"), "JIANT: SAMPLE GRAIN SLICE retired: their numbers are \"-\"");
+  ok([4, 9].every((e) => info.engines[e] === "-"), "JIANT: SAMPLE PHYS retired: their numbers are \"-\"");
   const names = E.parse[C.NAMES](await rq(E.req.names(4)));
-  const g = E.parse[C.PRESET](await rq(E.req.preset(8, 0)));
-  const s = E.parse[C.PRESET](await rq(E.req.preset(13, 0)));
-  ok(!names.names.length && g.engine === 0 && s.engine === 0, "  no presets; a GRAIN or SLICE preset asked for: ANALOG");
+  const g = E.parse[C.PRESET](await rq(E.req.preset(9, 0)));
+  const s = E.parse[C.PRESET](await rq(E.req.preset(4, 1)));
+  ok(!names.names.length && g.engine === 0 && s.engine === 0, "  no presets; a PHYS or SAMPLE preset asked for: ANALOG");
   await rq(E.req.preset(10, 0));
   const kitD = E.parse[C.DESC](await rq(E.req.desc(0, info.pe0)));
   ok(kitD.label === "MORPH" && kitD.max === 127 && kitD.def === 64,

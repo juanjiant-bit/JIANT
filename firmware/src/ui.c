@@ -20,6 +20,8 @@ static void undo_mark(void);                    /* (0.6.21) project.c: the music
 static void system_init(void);                  /* (0.6.40) project.c: INIT SYSTEM */
 static uint32_t mut_progress(uint32_t k);       /* (0.6.43) project.c: MUTATE's next, 0..256 (0xFFFF: off) */
 static void mut_keep(void);                     /* .. the music now the anchor */
+static uint32_t mut_on(const track_t *t);        /* (0.9.9-seq2c) .. a track's MUTATE on, */
+static uint32_t mut_period(const track_t *t);    /* .. the bars a result lasts (0: HOLD) */
 static void mut_forget(void);                   /* (0.9.3) .. another music now: no going back to the anchor */
 static int mut_revert(uint32_t mask);           /* .. those tracks back to the anchor (0: done, 1: NO ANCHOR) */
 static void mut_revert_ui(int all);             /* .. REVERT (SEQ + D5) / REVERT ALL (GLO + B4), UNDO first */
@@ -62,6 +64,19 @@ static uint32_t user_of(const track_t *t)    /* user preset slot its sound came 
 }
 static uint32_t up_gen;                      /* bumped on every user bank change (redraws) */
 #include "favorites.c"
+/* (p1, main 0.9.12) PRESETS' LIST (KNOB 4): 0 ALL, 1 FAV (favorites.filter, saved as before), 2.. a sound type (core.h
+ * PT_*: every engine's presets of that type, after Skiff by illuminus5), the type in a byte no engine uses (engine 15's
+ * favourite byte 18: 0 in older settings, ALL / FAV as they were) */
+#define list_type (favorites.factory[15][18])
+_Static_assert(PT_N == 10, "settings_persist.c checks the LIST type against 10");
+static const char *const N_LIST[PT_N + 1] __attribute__((section(".rodata.ptlist"))) = {"ALL", "FAV", "BASS", "LEAD", "PAD",
+                                                                                         "KEYS", "PLUCK", "BELL", "VOX", "DRUM", "FX"};
+static uint32_t list_get(void) { return list_type && list_type < PT_N ? list_type + 1u : favorites.filter ? 1u : 0u; }
+static void list_put(uint32_t v)
+{
+    favorites.filter = v == 1u;
+    list_type = (uint8_t)(v >= 2u && v <= PT_N ? v - 1u : 0u);
+}
 /* MENU's two-valued settings (ui_menu.c MENU_FLAGS), a bit each in a byte no engine uses:
  * saved with the settings; 0 in older ones = every setting's default (append-only: a new setting takes a new bit,
  * its default is 0) */
@@ -73,7 +88,27 @@ static uint32_t up_gen;                      /* bumped on every user bank change
 #define PREF_ANIM_OFF 2u                       /* MENU > ANIM OFF (#46): values snap (no rolling digits, no glide) */
 /* (0.6.57) values snap: MENU > ANIM OFF, or LOAD LITE / ECO (the rolling digits, the roll's and the tabs' glides are
  * frames drawn again for a look: the time goes to the keys and knobs instead; the beings still move) */
-#define ANIM_SNAP() ((ui_prefs & PREF_ANIM_OFF) || sys_load)
+/* (0.9.9-beta4) the UI held while the music plays with the render's averaged share of a half (voice.c load_avg_q8, ~93
+ * ms) past UI_HOLD_ON %: frames every 50 ms instead of 15 and the animation off, as MENU > ANIM OFF (the HOME beings,
+ * the engines' creatures, the live graphs still: their signatures stop changing, nothing is drawn again), until it
+ * falls under UI_HOLD_OFF % or the music stops (ui_hold_poll, main.c: once a frame). The I-cache is one for both cores
+ * and the UI: a frame drawn is the engines' code evicted (Kirill's audit, LOOM-8) */
+static uint8_t ui_hold;
+static uint32_t anim_at;                               /* the last frame the animation moved on (ui_draw) .. */
+#define UI_HOLD_ON 60u
+#define UI_HOLD_OFF 50u
+#define ANIM_OFF() ((ui_prefs & PREF_ANIM_OFF) || ui_hold)
+#define anim_fr (ANIM_OFF() ? anim_at : ui.frame)      /* .. the animation's frame: ui.frame while it moves, that one while
+                                                        * still (the same frame draws the same picture, held or not) */
+#define ANIM_SNAP() (ANIM_OFF() || sys_load)
+static void ui_hold_poll(void)
+{
+    uint32_t pct = load_avg_q8 >> 8;
+    if (!song.playing || pct < UI_HOLD_OFF)
+        ui_hold = 0;
+    else if (pct >= UI_HOLD_ON)
+        ui_hold = 1;
+}
 #define PREF_ACCEL_OFF 4u                      /* MENU > KNOB ACCEL OFF (#52; JIANT: ON by default, the bit now means OFF):
                                                 * fast turns of wide values x2..x16 */
 #define PREF_USB_FIXED 8u                      /* MENU > USB LEVEL FIXED: USB audio at the full level, MASTER after */
@@ -104,6 +139,8 @@ static void prefs_update(void)
         prefs_rev = 2u;
         settings_save();
     }
+    if (prefs_rev < 3u)                                /* (0.9.9-snd5) STRING's and ADD's stars (favorites.c fav_rows_new) */
+        fav_rows_new();
 }
 /* MENU > AUDIO CLICK, CLICK LEVEL, COUNT-IN (1.1, Discussion #131; click.c, seq.c): two bits each in another byte no
  * engine uses, saved with the settings: bits 0-1 CLICK (OFF REC ON), 2-3 CLICK LEVEL (stored 0 MID, 1 LOW, 2 HIGH),
@@ -318,11 +355,21 @@ static uint16_t val_col(uint32_t c) { return c == ui.hot_col && ui.hot_t ? T_ACC
 enum { CF_NONE, CF_CLEAR_SEQ, CF_CLEAR_TRK, CF_OVR_PROJ, CF_OVR_USER, CF_LOAD_PAT,
        CF_DEL_ROW, CF_CLEAR_SONG, CF_INIT_SOUND, CF_CLEAR_MOTION, CF_ERASE_USER, CF_CLEAR_PFX,
        CF_RECALL_SOUND, CF_CLEAR_ALL, CF_DICE_ALL, CF_INIT_SYS, CF_DICE_SOUND, CF_DICE_SEQ, CF_DICE_LFO,
-       CF_DICE_FX, CF_CPU_TEST, CF_MUT_BACK };   /* ui.confirm: TOOLS' clears; (0.6.21) HOME + SELECT:
+       CF_DICE_FX, CF_CPU_TEST, CF_MUT_BACK, CF_LIVE_COMMIT };   /* ui.confirm: TOOLS' clears; (0.6.21) HOME + SELECT:
                                    * everything diced; (0.6.65) EDIT + SELECT: keep the diced sound?; (0.6.67) SEQ / LFO / FX + SELECT:
                                    * keep the diced sequence / LFO / effects?;
                                    * SAVE over a used slot; a pattern over the user's steps;
-                                   * USER ERASE; (0.9.3) MUTATE turned OFF: BACK TO BEFORE MUTATE? */
+                                   * USER ERASE; (0.9.3) MUTATE turned OFF: BACK TO BEFORE MUTATE?; (p2) LIVE's COMMIT */
+/* (p2, main 0.9.11) GLO > LIVE: MANO, RIELES (ui_live.c, included by ui_layer.c) */
+static int live_page(void);
+static int live_mano(void);
+static void live_frame(void);
+static void live_knob(uint32_t slot, int32_t steps);
+static void live_cards(void);
+static void graph_live(void);
+static uint32_t live_sig(uint32_t h);
+static uint32_t live_leds(void);
+static void live_commit(uint32_t m);
 
 /* MENU > DISPLAY > SCREEN OFF (1.1.5): after a while with no input on the panel the screen goes dark (the backlight
  * stays on: lcd.c lcd_power)
@@ -478,7 +525,7 @@ static uint32_t large_kind(void)
         return LK_TALL;
     g = cur_page()->graph;
     return g == GR_BROWSE || g == GR_SLOTS || g == GR_USER || g == GR_PATS || g == GR_SONG || g == GR_ROLL ||
-           g == GR_CHANCE || g == GR_COMP || g == GR_EVENTS || g == GR_LYRIC ? LK_LABEL : LK_TALL;
+           g == GR_CHANCE || g == GR_COMP || g == GR_EVENTS || g == GR_LYRIC || g == GR_LIVE ? LK_LABEL : LK_TALL;
 }
 /* the geometry of the page shown: the cards' height, the panel's top and height. (0.8.5) A lens page (lz_on): the
  * mock-up's (LZ_*), under its level tabs; a layer's map over it: the usual layout */
@@ -584,9 +631,9 @@ static int save_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam =
 static void page_entered(void);
 static void page_flash(void);
 #define FX_NMOD 6u
-static const char *const FX_MOD[FX_NMOD] = {"DELAY", "REVERB", "CHORUS", "SLICER", "MASTER", "PUNCH"};
-static const char *const FX_MHEAD[FX_NMOD] = {"DLY", "REVERB", "CHORUS", "SLICER", "MASTER", "PUNCH"};   /* its first page */
-static const uint8_t FX_MN[FX_NMOD] = {3, 2, 1, 4, 1, 1};   /* its pages, one after another in PAGES */
+static const char *const FX_MOD[FX_NMOD] = {"DELAY", "REVERB", "CHORUS", "SLICER", "PUNCH", "MASTER"};   /* (snd2: MASTER */
+static const char *const FX_MHEAD[FX_NMOD] = {"DLY", "REVERB", "CHORUS", "SLICER", "PUNCH", "MASTER"};   /* last) its first page */
+static const uint8_t FX_MN[FX_NMOD] = {3, 2, 1, 4, 1, 3};   /* its pages, one after another in PAGES (snd8: MASTER, TAPE; p9 EQ) */
 static int page_visible(uint32_t i);
 static int fx_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam == FAM_FX; }
 static uint32_t fx_page(const char *title)
@@ -684,6 +731,19 @@ static void ui_say(const char *a, const char *b)
 }
 
 static void ui_message(const char *s) { ui_say(s, ""); }
+#include "midi_learn.c"                       /* (p1, main 0.9.12) MIDI LEARN's UI (the map: midi_control.c) */
+
+/* (0.9.9-seq2h) SEQ's clipboard (ui_input.c cp_copy / cp_paste): up to a bar of steps, whole (notes, time, flags, the
+ * DRUM hits, accents and lane modes, the components), their parameter locks by offset; n 0: empty (the footer's [n]) */
+#define CLIP_LOCKS 32u
+static struct {
+    uint8_t n, drum, nl;                           /* steps held, from a DRUM track, locks held */
+    step_t st[16];
+    struct { uint8_t off, id; int16_t v; } lk[CLIP_LOCKS];
+} clip;
+static uint64_t cp_add, cp_add_acc;                /* DRUM grid: the steps whose hit (accent) a held key put there, on
+                                                    * lane cp_add_lane (undone by a copy / paste made with that key) */
+static uint8_t cp_add_lane;
 /* a message led by an icon: its first byte (ui_draw.c draw_head draws the icon, then the words) */
 #define MSG_NOFILE "\x01"                      /* the no-file icon (ICON_X_NOFILE) */
 
@@ -768,28 +828,30 @@ static uint32_t note_len(const track_t *t, uint32_t c, uint32_t len)
     return l;
 }
 
-enum { COMP_OFF, COMP_CHANCE, COMP_RATCH, COMP_ARPN, COMP_ARPQ, COMP_ARPS, COMP_TRIG, COMP_RAND, COMP_OCT, COMP_TONAL,
-       COMP_BEND, COMP_ECHO, COMP_PULSE, COMP_JUMP, COMP_REV, COMP_FILL, COMP_KILL, COMP_WALK, COMP_CLIMB, COMP_TOUCH, COMP_N };   /* (CP_* in order) */
-static const char *const EV_NAMES[EV_N] = {"ALWAYS", "1:2", "2:2", "SKIP", "1:3", "2:3", "3:3", "1:4", "2:4", "3:4", "4:4",
-                                           "1:8", "FIRST", "!FIRST"};   /* (0.6.92) EVERY */
-/* (0.6.92) a part of the step as a note value: n parts a step of the track's DIV (1/16: x2 1/32, x3 1/32T, x4 1/64 ..;
- * a triplet or a bar's DIV, or an odd count: "xn") */
+/* (0.6.92) a part of the step as a note value: n parts a step of the track's DIV (1/16: x2 32, x3 32T, x4 64 ..; a
+ * bar's DIV, an odd count or past 1/64: "xn"). (gen3) Short, as a card's unit beside its value: "16" for 1/16, "32T";
+ * x1 of an 8T / 16T DIV its name */
 static void rate_name(const track_t *t, uint32_t n, char *b)
 {
     static const uint8_t BASE[10] = {4, 8, 16, 32, 0, 0, 2, 1, 0, 0};   /* N_DIV: 1/4 1/8 1/16 1/32 8T 16T 1/2 1/1 2BAR 4BAR */
     uint32_t d = (uint32_t)clamp(t->p[P_SDIV], 0, 9), base = BASE[d], v = 0;
     const char *tr = "";
-    if (n == 1u && base) { str_cpy(b, N_DIV[d], 8); return; }
-    if (base && (n == 2u || n == 4u || n == 8u)) v = base * n;
+    if (n == 1u && (d == 4u || d == 5u)) { str_cpy(b, N_DIV[d], 8); return; }   /* (8T 16T; a bar DIV x1) */
+    if (base && (n == 1u || n == 2u || n == 4u || n == 8u)) v = base * n;
     else if (base && (n == 3u || n == 6u)) { v = base * n * 2u / 3u; tr = "T"; }
-    if (!v) { b[0] = 'x'; fmt_int(b + 1, (int32_t)n); return; }
-    b[0] = '1'; b[1] = '/'; fmt_int(b + 2, (int32_t)v); str_cpy(b + str_len(b), tr, 2);
+    if (!v || v > 64u) { b[0] = 'x'; fmt_int(b + 1, (int32_t)n); return; }   /* (past 1/64: "x6") */
+    fmt_int(b, (int32_t)v); str_cpy(b + str_len(b), tr, 2);
 }
-static const char *const COMP_NAMES[COMP_N] = {"OFF", "CHANCE", "RATCH", "NOTES", "SEQ", "SCALE", "TRIG", "RAND", "OCT",
-                                               "TONAL", "BEND", "ECHO", "PULSE", "JUMP", "REV", "FILL", "KILL", "WALK", "CLIMB",
-                                               "TOUCH"};
-/* (0.6.82) the COMP pages one after another: COMP (the step's first component), COMP 2 (its second), WHEN (theirs, and
- * the step's LEN): which this is (0..2) */
+/* (0.9.9-seq2d) SEQ > COMP / COMP 2: the step's C1 / C2 as ACTION LENGTH CONDITION VALUE (core.h CA_* CC_*) */
+/* (gen3) the names short, each read whole on its card: the value's M where it fits with its unit (COMP's 49 px), else S
+ * (ui_test test_comp_cards: every value of every knob, every page) */
+static const char *const CA_NAMES[CA_N] = {"OFF", "ARP", "SEQ", "OCT+", "OCT-", "RATCH", "STUT", "MUTE", "TRANS",
+                                           "RAND", "LOCK", "JUMP", "SOUND", "BEND"};
+static const char *const CC_NAMES[CC_NM] = {"ALWAYS", "25%", "50%", "75%", "1ST", "!1ST", "FILL", "!FILL", "PRE",
+                                            "!PRE", "NEI", "!NEI", "ELSE"};
+#define CCL_NM 135u                                     /* N:M, M 2..16, N 1..M */
+#define CCL_N (CC_NM + 2u * CCL_NM)                     /* KNOB 3's list: the thirteen, the N:Ms, the !N:Ms */
+/* the COMP pages one after another: COMP (the step's C1), COMP 2 (its C2): which this is (0..1) */
 static uint32_t comp_slot(void)
 {
     uint32_t i = ui.page, k = 0;
@@ -797,28 +859,183 @@ static uint32_t comp_slot(void)
         i--, k++;
     return k;
 }
-static uint32_t comp_type(const step_t *s) { return comp_slot() == 1u ? s->comp2 : s->comp; }   /* (the page's) */
+static uint32_t comp_type(const step_t *s) { return CO_ACT(comp_slot() == 1u ? s->comp2 : s->comp); }   /* (the page's) */
 static uint32_t comp_arg(const step_t *s) { return comp_slot() == 1u ? s->carg2 : s->carg; }
-static uint32_t comp_view1(void);
-static uint32_t comp_view(void)                         /* the TYPE shown for the cursor step: COMP 2's its second */
+static uint32_t comp_view(void)                         /* the ACTION shown for the cursor step */
 {
-    const step_t *s = &TSEL->step[ui.cursor];
-    if (comp_slot() == 1u)
-        return s->comp2 ? COMP_ARPN + s->comp2 - CP_ARPN : COMP_OFF;
-    return comp_view1();
+    return comp_type(&TSEL->step[ui.cursor]) % CA_N;
 }
-static uint32_t comp_view1(void)                        /* the first's, CHANCE and RATCH (read once a step) */
+/* a CONDITION (and its N:M) as KNOB 3's place in the list, and back */
+static uint32_t cond_idx(uint32_t c, uint32_t nm)
 {
-    const step_t *s = &TSEL->step[ui.cursor];
-    uint32_t at = (uint32_t)ui.cursor + 1u + (uint32_t)song.sel * 64u;
-    if (ui.comp_at != at || ui.comp_sel >= COMP_N) {
-        ui.comp_at = (uint16_t)at;
-        ui.comp_sel = (uint8_t)(s->comp ? COMP_ARPN + s->comp - CP_ARPN : step_chance(s) < 100u ? COMP_CHANCE :
-                                step_ratchet(s) > 1u ? COMP_RATCH : COMP_OFF);
+    uint32_t n = CNM_N(nm), m = CNM_M(nm);
+    if (c < CC_NM) return c;
+    if (m < 2u) m = 2u;
+    if (n > m) n = m;
+    return CC_NM + (c == CC_NNM ? CCL_NM : 0u) + (m - 1u) * m / 2u - 1u + n - 1u;
+}
+static void cond_at(uint32_t i, uint32_t *c, uint32_t *nm)
+{
+    uint32_t m = 2u, q;
+    if (i < CC_NM) { *c = i; *nm = 0; return; }
+    q = (i - CC_NM) % CCL_NM;
+    *c = i - CC_NM >= CCL_NM ? CC_NNM : CC_NM;
+    while (q >= m) { q -= m; m++; }
+    *nm = CNM_MAKE(q + 1u, m);
+}
+static void cond_name(uint32_t c, uint32_t nm, char *b)
+{
+    uint32_t k = 0;
+    if (c < CC_NM) { str_cpy(b, CC_NAMES[c], 8); return; }
+    if (c == CC_NNM) b[k++] = '!';
+    fmt_int(b + k, (int32_t)CNM_N(nm));
+    k = str_len(b); b[k++] = ':';
+    fmt_int(b + k, (int32_t)CNM_M(nm));
+}
+/* a VALUE as KNOB 4's place (0 .. CA_VMAX), and back: ARP its NOTES / SCALE, RANGE, ORDER, RATE (the knob's: x1 ..);
+ * RATCHET its hits and DECAY; TRANSPOSE its RANGE and move; the others as they are stored */
+static uint32_t comp_vidx(uint32_t a, uint32_t v)
+{
+    uint32_t r;
+    switch (a) {
+    case CA_ARP:
+        for (r = 0; r < CP_NRATE && CP_RATE_ORD[r] != CP_RATE(v) % CP_NRATE; r++) {}
+        return ((((v & CV_ARP_SCALE) ? 4u : 0u) + CP_RNG(v)) * 4u + CP_ORD(v)) * CP_NRATE + r % CP_NRATE;
+    case CA_RATCH: return ((v & 7u) % 7u) * 3u + CV_RAT_DEC(v);
+    case CA_TRANS: return (CV_TR_RANGE(v) - 1u) * 15u + (uint32_t)(CV_TR_MOVE(v) + 7);
+    default: return v;
     }
-    if (s->comp && ui.comp_sel != COMP_ARPN + s->comp - CP_ARPN)   /* (changed elsewhere: the editor, a dice) */
-        ui.comp_sel = (uint8_t)(COMP_ARPN + s->comp - CP_ARPN);
-    return ui.comp_sel;
+}
+static uint32_t comp_vat(uint32_t a, uint32_t i)
+{
+    switch (a) {
+    case CA_ARP: {
+        uint32_t r = i % CP_NRATE, o = i / CP_NRATE % 4u, g = i / CP_NRATE / 4u % 4u, sc = i / CP_NRATE / 16u;
+        return CP_ARG(o, CP_RATE_ORD[r], g) | (sc ? CV_ARP_SCALE : 0u);
+    }
+    case CA_RATCH: return i / 3u | (i % 3u) << 3;
+    case CA_TRANS: return CV_TR_MAKE((int32_t)(i % 15u) - 7, i / 15u + 1u);
+    default: return i;
+    }
+}
+static void rate_name(const track_t *t, uint32_t n, char *b);
+/* KNOB 4's column: its label, value, unit */
+static void comp_vname(const track_t *t, const step_t *s, uint32_t a, uint32_t v, char *lb, char *val, char *un)
+{
+    static const char *const ORD[4] = {"UP", "DOWN", "UP-DN", "RND"};
+    static const char *const DEC[3] = {"FLAT", "FADE", "RISE"};
+    static const char *const HIT[3] = {"SHORT", "GHOST", "FLAM"};
+    int32_t m;
+    lb[0] = val[0] = un[0] = 0;
+    switch (a) {
+    case CA_ARP:
+        str_cpy(lb, v & CV_ARP_SCALE ? "SCALE " : "NOTES ", 8);
+        fmt_int(lb + 6, v & CV_ARP_SCALE ? CP_DEGS[CP_RNG(v)] : (int32_t)CP_RNG(v) + 1);
+        str_cpy(val, ORD[CP_ORD(v)], 8);               /* (gen3: ui_draw.c comp_value says DOWN UP-DN as DN UD) */
+        rate_name(t, CP_RATES[CP_RATE(v) % CP_NRATE], un);
+        break;
+    case CA_SEQ: str_cpy(lb, "FROM", 8); fmt_int(val, (int32_t)(v & 63u) + 1); str_cpy(un, v & CV_SEQ_BOUNCE ? "PING" : "LOOP", 8); break;
+    case CA_OCTU: case CA_OCTD: str_cpy(lb, "OCTAVES", 8); fmt_int(val, (int32_t)(v % 3u) + 1); break;
+    case CA_RATCH: str_cpy(lb, "RATE", 8); val[0] = 'x'; fmt_int(val + 1, (int32_t)CV_RAT_HITS(v)); str_cpy(un, DEC[CV_RAT_DEC(v)], 8); break;
+    case CA_STUT: str_cpy(lb, "EVERY", 8); fmt_int(val, (int32_t)(v % 4u) + 1); str_cpy(un, v % 4u ? "STEPS" : "STEP", 8); break;
+    case CA_MUTE: str_cpy(lb, "MODE", 8); str_cpy(val, v ? "CUT" : "MUTE", 8); break;
+    case CA_TRANS:
+        str_cpy(lb, "MOVE", 8); m = CV_TR_MOVE(v);
+        val[0] = m < 0 ? '-' : '+'; fmt_int(val + 1, m < 0 ? -m : m);
+        if (CV_TR_RANGE(v) > 1u) { un[0] = 'R'; fmt_int(un + 1, (int32_t)CV_TR_RANGE(v)); } else str_cpy(un, "FIX", 8);
+        break;
+    case CA_RAND: str_cpy(lb, "RANGE", 8); fmt_int(val, (int32_t)(v % 7u) + 1); str_cpy(un, "DEG", 8); break;
+    case CA_LOCK: {
+        uint32_t id, n = 0;
+        int16_t lv;
+        for (id = 0; id < P_COUNT; id++) n += (uint32_t)motion_lock_get(t, (uint32_t)(s - t->step) % NSTEP, id, &lv);
+        str_cpy(lb, "LOCKS", 8); fmt_int(val, (int32_t)n);
+        break;
+    }
+    case CA_JUMP: str_cpy(lb, "TO STEP", 8); if (v >= CV_JUMP_REV) str_cpy(val, "REV", 8); else fmt_int(val, (int32_t)v + 1); break;
+    case CA_SOUND: str_cpy(lb, "HIT", 8); str_cpy(val, HIT[v % 3u], 8); break;
+    case CA_BEND: str_cpy(lb, "BEND", 8); m = (int32_t)(v % 25u) - 12; val[0] = m < 0 ? '-' : '+'; fmt_int(val + 1, m < 0 ? -m : m); str_cpy(un, "ST", 8); break;
+    default: break;
+    }
+}
+/* (0.9.9-seq2f) GLO > COMPS / COMPS 2: the global lane (seq.c glane). The 16 white keys pick its step (gl_cur), black
+ * keys 1..6 turn the tracks it applies to on and off; COMPS' KNOB 1..4 ACTION LENGTH CONDITION VALUE as COMP's (the
+ * actions that mean something for all: GA_LIST; no ELSE, no NEI), COMPS 2's STEP, TRACK, its ON / OFF, MONO / POLY */
+static uint8_t gl_cur, gl_trk;
+static const uint8_t GA_LIST[] = {CA_NONE, CA_MUTE, CA_STUT, CA_OCTU, CA_OCTD, CA_RATCH, CA_TRANS, CA_ARP, CA_JUMP, CA_RAND};
+static uint32_t gco_slot(void) { return ui.page > 0u && PAGES[ui.page - 1u].graph == GR_GCOMP; }
+static int gco_on(void) { return !ui.home && !ui.menu && !ui.confirm && !ui.layer && cur_page()->graph == GR_GCOMP; }
+static int ckeys_on(void) { return !ui.home && !ui.menu && !ui.confirm && !ui.layer && cur_page()->graph == GR_COMP; }   /* (seq2g) */
+static uint32_t ga_idx(uint32_t a)
+{
+    uint32_t i;
+    for (i = 0; i < sizeof GA_LIST && GA_LIST[i] != a; i++) {}
+    return i < sizeof GA_LIST ? i : 0u;
+}
+static void gco_knob(uint32_t slot, int32_t steps)
+{
+    gcomp_t *c = &glane[gl_cur % GL_N];
+    uint32_t a = CO_ACT(c->comp);
+    int32_t d = clamp(steps, -4, 4);
+    if (gco_slot()) {                                   /* COMPS 2 */
+        if (slot == 0u) gl_cur = (uint8_t)clamp((int32_t)gl_cur + d, 0, GL_N - 1);
+        else if (slot == 1u) gl_trk = (uint8_t)clamp((int32_t)gl_trk + d, 0, NTRK - 1);
+        else if (slot == 2u) {
+            if (!a) { ui_message("ACTION FIRST"); return; }
+            c->mask = (uint8_t)(steps > 0 ? c->mask | 1u << gl_trk : c->mask & ~(1u << gl_trk));
+        } else
+            gl_mono = steps > 0;
+        gl_touch();
+        return;
+    }
+    if (slot == 0u) {
+        uint32_t na = GA_LIST[clamp((int32_t)ga_idx(a) + d, 0, (int32_t)sizeof GA_LIST - 1)];
+        if (na == a) return;
+        if (!na) memset(c, 0, sizeof *c);
+        else {
+            c->comp = CO_MAKE(na, a ? CO_COND(c->comp) : CC_ALWAYS);
+            c->val = CA_VDEF[na];
+            if (!a) { c->len = 0; c->nm = CNM_MAKE(1u, 2u); c->mask = (uint8_t)((1u << NTRK) - 1u); }
+            if (na == CA_ARP || na == CA_STUT) c->len = 1;   /* (a STUTTER, an ARP: two steps to start with) */
+        }
+    } else if (!a) {
+        ui_message("ACTION FIRST");
+        return;
+    } else if (slot == 1u) {
+        if (a != CA_JUMP)
+            c->len = (uint8_t)clamp((int32_t)c->len + d, 0, CL_MAX - 1);
+    } else if (slot == 2u) {
+        uint32_t k, nm;
+        int32_t i = clamp((int32_t)cond_idx(CO_COND(c->comp), c->nm) + steps, 0, (int32_t)CCL_N - 1);
+        if (i >= CC_NEI && i <= CC_ELSE)               /* (no neighbour, no ELSE for the lane: NEI !NEI ELSE in a row) */
+            i = steps > 0 ? CC_ELSE + 1 : CC_NEI - 1;
+        cond_at((uint32_t)i, &k, &nm);
+        c->comp = CO_MAKE(a, k);
+        if (k >= CC_NM) c->nm = (uint8_t)nm;
+    } else {
+        int32_t i = clamp((int32_t)comp_vidx(a, c->val) + steps, 0, CA_VMAX[a]);
+        c->val = (uint8_t)comp_vat(a, (uint32_t)i);
+    }
+    gl_touch();
+}
+/* the keys on COMPS (presses): a white key the step, black keys 1..6 its tracks */
+static void gco_keys(uint32_t pressed)
+{
+    uint32_t k;
+    for (k = 0; k < 27u; k++) {
+        uint32_t p = key_place(k);
+        gcomp_t *c = &glane[gl_cur % GL_N];
+        if (!((pressed >> k) & 1u))
+            continue;
+        if (!key_black(k)) {
+            if (p < GL_N) gl_cur = (uint8_t)p;
+        } else if (p < NTRK) {
+            if (!CO_ACT(c->comp)) { ui_message("ACTION FIRST"); continue; }
+            c->mask ^= (uint8_t)(1u << p);
+            gl_trk = (uint8_t)p;
+            gl_touch();
+        }
+    }
 }
 static void step_clear(step_t *st)
 {
@@ -829,6 +1046,7 @@ static void step_clear(step_t *st)
     st->hit = st->acc = 0;
     st->comp = st->carg = 0;
     st->comp2 = st->carg2 = st->cwhen = st->ctime = 0;
+    st->clen[0] = st->clen[1] = st->cnm[0] = st->cnm[1] = 0;   /* (seq2d) */
     st->probability = 0;
     st->lm[0] = st->lm[1] = st->lm[2] = 0;                /* (0.8.5) */
 }
@@ -1174,7 +1392,7 @@ static int param_kept(uint32_t i)
            (!FELUCCA_FM4 && (i == P_HVEL || i == P_HTIM || i == P_HGAT || i == P_HRQ)) ||   /* (0.6.87) HUMAN: the sequencer's, a sound
                                                          * keeps it (FELUCCA_FM4: DIGITAL's OP SUS / LEVEL there) */
            (!FELUCCA_FM4 && (i == P_CHRD || i == P_CVOI || i == P_CSTR || i == P_CLEN || i == P_TCHAN ||
-                             i == P_MSND || i == P_MPAT || i == P_MAMT || i == P_MMODE));   /* (0.7.0) SCL > CHORD, C.LEN, CHANCE,
+                             i == P_MSND || i == P_MPAT || i == P_MAMT || i == P_MMODE || i == P_MCFG));   /* (0.7.0) SCL > CHORD, C.LEN, CHANCE,
                                                          * MUTATE: the sequencer's too (a community report: browsing
                                                          * presets switched CHORD off) */
 }
@@ -1284,7 +1502,7 @@ static void apply_preset_to(track_t *t, uint32_t pi)
     t->p[P_SUS] = e->presets[pi].env[2];
     t->p[P_REL] = e->presets[pi].env[3];
     t->p[P_ED_FLT] = e->presets[pi].fenv;
-    t->p[P_VOICE] = e->presets[pi].mono ? V_LEGATO : V_POLY;   /* mono presets keep the legato feel */
+    t->p[P_VOICE] = PR_MONO(&e->presets[pi]) ? V_LEGATO : V_POLY;   /* mono presets keep the legato feel */
     if (e == &ENG_FORMANT) {                          /* (0.8.5) VOICE's words: LANG, LYRIC (0: its vowels) */
         t->p[P_VLANG] = (int16_t)(e->presets[pi].xp & 3u);
         t->p[P_VLYR] = (int16_t)(e->presets[pi].xp >> 2);
@@ -1450,13 +1668,28 @@ static uint32_t preset_all_at_in(uint32_t n, uint32_t *k, const uint8_t *order)
 }
 static uint32_t preset_all_at(uint32_t n, uint32_t *k) { return preset_all_at_in(n, k, ENGINE_ORDER); }
 
+static __attribute__((noinline)) void list_turn(int32_t steps)   /* PRESETS' KNOB 4: ALL FAV BASS LEAD .. FX, no wrap */
+{
+    uint32_t v = (uint32_t)clamp((int32_t)list_get() + (steps > 0 ? 1 : -1), 0, PT_N);
+    if (v != list_get()) {
+        list_put(v);
+        ui.force = 1;
+        settings_save();
+    }
+}
+/* (p1) list index i's sound (engine e, its preset or user slot k) is in the LIST */
+static int preset_in(uint32_t e, uint32_t k)
+{
+    uint32_t v = list_get();
+    return v == 1u ? favorite_has(e, k) : e < NENGINES && PR_TAG(&ENGINES[e]->presets[k]) == v - 1u;
+}
 static uint32_t preset_pos(uint32_t *total)
 {
     uint32_t all, current = preset_all_pos(&all), n = 0, pos = 0xFFFFFFFFu;
-    if (!favorites.filter) { *total = all; return current; }
+    if (!list_get()) { *total = all; return current; }
     for (uint32_t i = 0; i < all; i++) {
         uint32_t k, e = preset_all_at(i, &k);
-        if (!favorite_has(e, k)) continue;
+        if (!preset_in(e, k)) continue;
         if (i == current) pos = n;
         n++;
     }
@@ -1466,11 +1699,11 @@ static uint32_t preset_pos(uint32_t *total)
 static uint32_t preset_at(uint32_t n, uint32_t *k)
 {
     uint32_t all;
-    if (!favorites.filter) return preset_all_at(n, k);
+    if (!list_get()) return preset_all_at(n, k);
     preset_all_pos(&all);
     for (uint32_t i = 0; i < all; i++) {
         uint32_t e = preset_all_at(i, k);
-        if (favorite_has(e, *k) && !n--) return e;
+        if (preset_in(e, *k) && !n--) return e;
     }
     *k = UP_SLOTS;
     return NENGINES;
@@ -1579,25 +1812,6 @@ static uint32_t eng_list_pos(uint32_t *total)
     return cur;
 }
 
-static void eng_list_step(int32_t direction)         /* the next / previous sound of the engine (wraps) */
-{
-    uint32_t total, cur = eng_list_pos(&total), e = trk_eng(TSEL), np = preset_shown(e), k, n;
-    if (total < 2u)
-        return;
-    n = (cur + (direction > 0 ? 1u : total - 1u)) % total;
-    if (n < np) {
-        apply_preset(preset_nth(ENGINES[e], n));        /* the n-th shown preset */
-    } else {
-        n -= np;
-        for (k = 0; k < UP_SLOTS; k++)
-            if (up_used(k) && up_engine(k) == e && !n--) {
-                up_load(k);
-                break;
-            }
-    }
-    preset_hinted();
-}
-
 static void preset_step(int32_t direction)
 {
     uint32_t total, cur = preset_pos(&total);
@@ -1612,7 +1826,7 @@ static uint32_t preset_visible(uint32_t cur, uint32_t total, uint32_t row)
 {
     uint32_t first, last;
     if (!total || row >= 7u) return total;
-    if (!favorites.filter)
+    if (!list_get())
         return (cur + total * 4u + row - 3u) % total;
     first = cur < total && cur > 3u ? cur - 3u : 0u;
     last = total > 7u ? total - 7u : 0u;
@@ -1642,6 +1856,10 @@ static void track_select(uint32_t i)
     ui.cursor = 0;
     ui.bank = 0;
     sync_reload = 1;
+    if (!ui.home && PAGES[ui.page].graph == GR_TRK)  /* (0.9.9-snd8) MIXER / SENDS: the six columns redraw what changed
+                                                     * (their signatures hold the selection); a forced frame blanked the
+                                                     * faders first, a flash at each track */
+        return;
     ui.force = 1;
     page_flash();                                    /* (0.6.51) the track's number and engine shown big */
 }
@@ -1710,7 +1928,8 @@ static const char *act_name(uint32_t c)          /* column c's action (the foote
 {
     static const char *const UP_GO[3] = {"LOAD", "ERASE", "SAVE"};
     uint32_t id = cur_page()->id[c & 3u];
-    if (cur_page()->graph == GR_MOTION || cur_page()->graph == GR_PUNCH) return "CLEAR";
+    if (cur_page()->graph == GR_PUNCH) return "CLR AUTO";   /* (snd2) the punch-in lane only */
+    if (cur_page()->graph == GR_MOTION) return "CLEAR";
     if (cur_page()->graph == GR_EVENTS) return ev_act_name();
     if (cur_page()->graph == GR_LYRIC) return "TYPE";
     if (cur_page()->graph == GR_TOOLS) {

@@ -37,6 +37,7 @@ All by Hügelton Instruments (Leo Kuroshita), in this tree:
 | The DRUM voices and kit | GPL-3.0-only | `firmware/src/drum_voice.c`, `firmware/src/eng_drum.c` |
 | The Hügelton Sample Pack: Felucca's drum sounds, made by `tools/gen_waves.py` (not CC0; JIANT builds none of them in: SLICE, which played its BREAK, is retired) | GPL-3.0-only | `tools/gen_waves.py` |
 | The Fukiai icon font (<https://github.com/hugelton/Fukiai>): the firmware's icons (rasterised at build time by `tools/gen_aa_icons.py`) and the web editor's | MIT | `web/fukiai.ttf`, `LICENSES/MIT-Fukiai.txt`, `web/FUKIAI-LICENSE.txt` |
+| fm1-clk320-probe by curist (<https://github.com/curist/fm1-clk320-probe>): the switch from the FM-1's 360 MHz to JieLi's rated 320 MHz behind MENU > SYSTEM > CPU CLOCK (JIANT 0.9.9-stab, as 0.9.12; the check of the clock registers and the switch), unchanged; its sequence after the JieLi AC79 SDK's `sys_clock_update` (Apache-2.0) | MIT | `firmware/hal/fm1_clk320.h`, `LICENSES/MIT-fm1-clk320.txt` |
 
 ## Third-party material
 

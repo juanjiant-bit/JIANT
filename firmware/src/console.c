@@ -204,10 +204,13 @@ static void con_status(void)
     con_kv("audio_max_us", (int32_t)felucca_dbg.max_us);
     con_kv("audio_late", (int32_t)felucca_dbg.late);
     con_kv("voices_shed", (int32_t)shed_count);
+    con_kv("guard_trips", (int32_t)guard_trips);        /* (cpu5) the averaged guard tripped (voice.c load_half) */
+    con_kv("load_avg_pct", (int32_t)(load_avg_q8 >> 8));   /* .. the render's share of a half, averaged (~93 ms) */
     con_kv("audio_lost", (int32_t)audio_lost);         /* (0.8.9) halves never rendered (a click each): a render > ~2 halves */
     con_kv("voices_given_up", (int32_t)voice_kills);    /* (0.8.9) events, one a voice: the three below */
     con_kv("voices_trimmed", (int32_t)voice_trims);     /* the load budget: a tail already under -50 dB, inaudible */
     con_kv("voices_stolen", (int32_t)(voice_kills - voice_trims - shed_count));   /* for a new note, the 8 all busy */
+    con_kv("load_steals", (int32_t)load_steals);        /* (cpu5) .. of them, the admission's: the prediction past LOAD_ADMIT */
     con_puts("cpu2 ");                                  /* (0.6.72) the second core (fx.c mc_status) */
     con_puts(mc_status());
     con_puts("\r\n");
@@ -331,6 +334,12 @@ static void con_inp(void)
 
 static void con_crash(void)
 {
+    char b[CRASH_LOG_N + 1u];
+    if (crash_log_get(b)) {                         /* (p1, main 0.9.12) the last one, kept in the settings */
+        con_puts("last ");
+        con_puts(b);
+        con_puts("\r\n");
+    }
     if (fm1_crash.magic != FM1_CRASH_MAGIC) {
         con_puts("no crash record\r\n");
         return;

@@ -5,6 +5,10 @@
  * it is let go (ui_input.c opens the layer and shows the map). The 5 white keys from the left (F3 .. C4):
  *   REPEAT 1/8 1/16 1/32, LPF | HPF; then (JIANT) the 10 punch-in MIDI effects D4 .. F5 (pfx.c); black keys 1..4
  *   (F#3 G#3 A#3 C#4): tracks 1..4 muted while held (not P_MUTE, never saved); A#4 the MIDI effects' tracks.
+ *   (0.9.9-snd2) G#4 C#5 D#5 LOOP 3 / 5 / 7: every track (of A#4's) plays its last 3 / 5 / 7 steps again while held, on
+ *   the transport's 1/16, not on the bar; let go, back where it would have been (pfx.c, seq.c seq_tick). F#5 GLITCH,
+ *   0.9.18's (its knobs at their defaults: DENS 50 PITCH 0 SIZE 0 VARI 1): a buffer effect as REPEAT. 0.9.18's TAPE STOP,
+ *   SHUFFLE, FREEZE and the sweeps are not here: the app slot (flash) has a few hundred bytes left.
  * TONIC keeps only the audio stutters (REPEAT): REVERSE, TAPE STOP, FREEZE and OCT UP / DN (the harmonizer) were
  * removed; the punch-in effects of TONIC act on the notes instead (FELUCCA-TONIC-SPEC.md).
  * REPEAT starts on the next 1/16 (at once while stopped); the filters at once; all end when let go, with a 2.9 ms
@@ -23,12 +27,15 @@
  * Idle (no key, no knob, no ramp left) every stage is skipped: the output is bit-identical. */
 enum { PF_R8, PF_R16, PF_R32, PF_LPF, PF_HPF,
        PF_OCTD, PF_OCTU, PF_HALF, PF_DSHT, PF_DLNG, PF_S8, PF_S16, PF_ATK, PF_ARP, PF_RND,   /* the MIDI ones: pfx.c */
-       PF_M1, PF_N = PF_M1 + NTRK, PF_TGT = PF_N + 1,     /* PF_TGT: A#4, the MIDI effects' tracks (pfx_tgt) */
+       PF_M1, PF_GLT = PF_M1 + NTRK,                      /* (0.9.9-snd2) F#5 GLITCH: 0.9.18's (a black key) */
+       PF_LP3, PF_LP5, PF_LP7,                             /* .. G#4 LOOP 3, C#5 LOOP 5, D#5 LOOP 7: the last steps again (pfx.c) */
+       PF_N, PF_TGT = PF_N + 1,                            /* PF_TGT: A#4, the MIDI effects' tracks (pfx_tgt) */
        PF_CLR = PF_N + 2 };                                /* PF_CLR: G5, erases the punch-in lane (pfx.c) */
 #define PF_BIT(e) (1u << (e))
 #define PF_REPEAT 0x7u                                         /* the three REPEAT rates */
-#define PF_Q PF_REPEAT                                         /* start on the 1/16 */
-#define PF_BUF PF_REPEAT                                       /* the buffer effects */
+#define PF_BUF (PF_REPEAT | PF_BIT(PF_GLT))                    /* the buffer effects: REPEAT, (snd2) GLITCH */
+#define PF_Q PF_BUF                                            /* start on the 1/16 */
+#define PF_LOOPS (PF_BIT(PF_LP3) | PF_BIT(PF_LP5) | PF_BIT(PF_LP7))             /* (snd2) on the sequencer (pfx.c), as the MIDI ones */
 #define PF_MUTE (((1u << NTRK) - 1u) << PF_M1)
 #define PF_MIDI (((1u << (PF_RND + 1)) - 1u) & ~((1u << PF_OCTD) - 1u))   /* PF_OCTD .. PF_RND: on the notes (pfx.c) */
 #define PB_FRAMES SL_FR                       /* stereo frames in sl_buf (a power of 2: the mask), 371 ms at 22.05 kHz */
@@ -36,7 +43,12 @@ _Static_assert(PB_FRAMES <= SL_FR && !(PB_FRAMES & (PB_FRAMES - 1u)), "the REPEA
 #define PB_MAX (2u * PB_FRAMES)               /* the longest loop, 44.1 kHz samples */
 #define PF_TOP (63 << 8)                      /* filter cutoff index, Q8 (PF_SVF): the LPF's open end */
 #define PF_LOW (14 << 8)                      /* .. the LPF sweep's end, the HPF sweep's (and K1's) top */
-enum { BM_NONE, BM_LOOP };
+#define PF_CSTEP (192 * (int32_t)CTL / 32)    /* (ctl64) a cutoff's step a block: 192 a block of 32, the range in ~45 ms */
+#define GL_SPAN 7680u                         /* (snd2) GLITCH: the longest slice it reads back (the loop holds two and a margin) */
+enum { BM_NONE, BM_LOOP, BM_GLT };
+enum { GA_PASS, GA_RPT, GA_REV, GA_UP, GA_DN, GA_GATE, GA_SKIP, GA_CRU };
+/* (0.9.9-snd2) GLITCH's knobs of 0.9.18 (ui_layer.c GX_K there), here fixed at its defaults: DENS 50 PITCH 0 SIZE 0 VARI 1 */
+enum { GX_DENS = 50, GX_PITCH = 0, GX_SIZE = 0, GX_VARI = 1 };
 
 static volatile uint32_t perf_mask;   /* main: the FX button's bit while its layer may own keys, 0 = none */
 static volatile uint32_t kb_mask;     /* main: the button bits whose hold makes keys a layer's (ui_layer.c), 0 = none */
@@ -79,6 +91,17 @@ static struct {
     uint32_t len, wr, rp;              /* loop length (samples), frames written, read (samples into the loop) */
     uint32_t xrp, xlen, xn;            /* the loop it switched from, faded over xn samples */
     int32_t w, tw, hl, hr;             /* the buffer's share and its target, Q15; the first of a pair */
+    int32_t yl, yr;                    /* (snd2) what GLITCH plays this sample */
+    uint32_t gs, gph;                  /* .. GLITCH: the transport's 1/16 (a count), samples into it */
+    struct {                           /* (snd2, 0.9.18's) GLITCH */
+        struct {                       /* GLITCH: the action, the crush's count, hold and shift; segment length, samples
+                                        * into it, segments past; the loop's sample at the slice's start, the span read;
+                                        * the read place at the segment's start (Q16) and its rate (Q16, signed) */
+            uint8_t a, n, h, sh;
+            uint32_t l, u, k, g0, sp, src;
+            int32_t rate, cl, cr;
+        } g;
+    } u;
     /* the filters, CRUSH, THROW, mutes */
     int32_t lc, hc, la, ha;            /* cutoffs (Q8 index) and shares (Q15) of LPF and HPF */
     int32_t lz[4], hz[4];              /* their states: L ic1 ic2, R ic1 ic2 */
@@ -141,12 +164,13 @@ static uint32_t perf_pick(uint32_t a)
 {
     uint32_t e, best = PF_N;
     a &= PF_BUF;
-    for (e = 0; e < PF_M1; e++)
+    for (e = 0; e < PF_N; e++)
         if (((a >> e) & 1u) && (best == PF_N || perf_ord[e] - perf_ord[best] < 0x80000000u))
             best = e;
     return best;
 }
 
+static void perf_glt_step(void);
 static void perf_buf_start(uint32_t e)
 {
     if (!sl_lent) {
@@ -158,9 +182,15 @@ static void perf_buf_start(uint32_t e)
     pf.wr = pf.rp = 0;
     pf.odd = 0;
     pf.xn = 0;
-    pf.mode = BM_LOOP;
+    pf.mode = e == PF_GLT ? BM_GLT : BM_LOOP;
     pf.state = 0;
     pf.len = perf_len(e);
+    memset(&pf.u, 0, sizeof pf.u);
+    memset(sl_buf[PB_FRAMES - 2u], 0, 2u * sizeof sl_buf[0]);   /* (what GLITCH reads before the start: quiet) */
+    if (e == PF_GLT) {                    /* its first 1/16: the transport's (this block's split starts the next one) */
+        pf.gs = song.playing && clk_pos != CLK_START ? clk_n + (pf.split ? 1u : 0u) : 0u;
+        perf_glt_step();
+    }
 }
 
 /* the buffer effect to play becomes e (at a 1/16): a shorter REPEAT of what is
@@ -210,7 +240,7 @@ static __attribute__((noinline)) void perf_unhush(void)   /* (out of perf_begin:
 }
 static __attribute__((noinline)) int perf_begin(uint32_t n)
 {
-    uint32_t held = perf_kill ? 0u : (perf_held | perf_latched | (perf_solo ? (~(uint32_t)perf_solo & ((1u << NTRK) - 1u)) << PF_M1 : 0u)) & perf_avail() & ~PF_MIDI;
+    uint32_t held = perf_kill ? 0u : (perf_held | perf_latched | (perf_solo ? (~(uint32_t)perf_solo & ((1u << NTRK) - 1u)) << PF_M1 : 0u)) & perf_avail() & ~(PF_MIDI | PF_LOOPS);
     uint32_t q, k, ph0, bnd;
     int32_t m;
     if (!held && !pf.busy && !(perf_k[0] | perf_k[1] | perf_k[2])) {   /* idle: the clock only */
@@ -260,8 +290,8 @@ static __attribute__((noinline)) int perf_begin(uint32_t n)
         }
         if (m > 0 && m * (PF_TOP - PF_LOW) / 100 > ht)
             ht = m * (PF_TOP - PF_LOW) / 100;
-        pf.lc += clamp(lt - pf.lc, -192, 192);      /* ~45 ms over the range */
-        pf.hc += clamp(ht - pf.hc, -192, 192);
+        pf.lc += clamp(lt - pf.lc, -PF_CSTEP, PF_CSTEP);   /* ~45 ms over the range */
+        pf.hc += clamp(ht - pf.hc, -PF_CSTEP, PF_CSTEP);
         for (k = 0; k < 3u; k++) {                  /* the coefficients, between two table rows */
             int32_t i = pf.lc >> 8, f = pf.lc & 255, j = pf.hc >> 8, g = pf.hc & 255;
             pf.lk[k] = (int16_t)(PF_SVF[i][k] + (((PF_SVF[i < 63 ? i + 1 : 63][k] - PF_SVF[i][k]) * f) >> 8));
@@ -372,6 +402,117 @@ static inline uint32_t pb_rec(uint32_t f, int32_t l, int32_t r)
     return f + 1u;
 }
 
+/* (0.9.18's) the loop as a ring (GLITCH: frames recorded on and on) at the place s (Q16 of a 44.1 kHz sample),
+ * between its two frames (linear): any speed, backwards too */
+static __attribute__((noinline)) void pb_ring_f(uint32_t s, int32_t *l, int32_t *r)
+{
+    uint32_t f = s >> 17;
+    int32_t fr = (int32_t)((s >> 2) & 0x7FFFu);
+    const int16_t *p = &sl_buf[f & (PB_FRAMES - 1u)][0], *q = &sl_buf[(f + 1u) & (PB_FRAMES - 1u)][0];
+    *l = 2 * (p[0] + (((q[0] - p[0]) * fr) >> 15));
+    *r = 2 * (p[1] + (((q[1] - p[1]) * fr) >> 15));
+}
+/* a slice's place in its 2-bar cycle (and its variation) to 32 random bits */
+static uint32_t pf_hash(uint32_t h)
+{
+    h *= 0x9E3779B1u;
+    h = (h ^ (h >> 15)) * 0x2C1B3C6Du;
+    return h ^ (h >> 13);
+}
+static uint32_t semi_q16(int32_t st);              /* fx.c: 2^(st / 12), Q16 */
+
+/* ------------------------------------------------------------------ GLITCH --- */
+/* (0.9.9-snd2, ported from 0.9.18) the master cut on the transport's 1/16s: each one, by a hash of its place in a 2-bar
+ * cycle (the same every time, so it grooves; half of them glitched, the beats a quarter), played live, or the last L
+ * repeated, the last 1/16 reversed, an octave up or down, gated, SKIP (a CD skipping: tiny fragments, 0.7 ms edges), or
+ * CRUSH (live, 6 .. 9 bits off, held 1 .. 6 samples). Every slice windowed (SL_RAMP). Below ~82 BPM only its gates,
+ * crushes and live slices (the loop holds 371 ms). An action by 4 bits of the hash: repeats most */
+static const uint8_t GA_OF[16] = {GA_RPT, GA_RPT, GA_RPT, GA_RPT, GA_RPT, GA_RPT, GA_REV, GA_REV, GA_UP, GA_DN,
+                                  GA_GATE, GA_GATE, GA_SKIP, GA_SKIP, GA_CRU, GA_CRU};
+/* a segment's start: where it reads (Q16) and how fast (SKIP: a place in the 1/16, two segments at each) */
+static __attribute__((noinline)) void perf_glt_seg(void)
+{
+    uint32_t a = pf.u.g.a, L = pf.u.g.l, g0 = pf.u.g.g0, s = g0 - L;
+    pf.u.g.rate = 65536;
+    if (a == GA_RPT) {
+        pf.u.g.rate = (int32_t)semi_q16(clamp((int32_t)(pf.u.g.k < 24u ? pf.u.g.k : 24u) * GX_PITCH, -24, 24));
+    } else if (a == GA_REV) {
+        s = g0 - 1u;
+        pf.u.g.rate = -65536;
+    } else if (a == GA_UP) {
+        s = g0 - 2u * L;
+        pf.u.g.rate = 131072;
+    } else if (a == GA_DN) {
+        pf.u.g.rate = 32768;
+    } else if (a == GA_SKIP) {
+        s = g0 - pf.u.g.sp + pf_hash(pf.gs * 64u + (pf.u.g.k >> 1)) % (pf.u.g.sp / L) * L;   /* (p9c: on its own grid,
+                                                         * a whole number of fragments into the 1/16, not any sample) */
+    }
+    pf.u.g.src = s << 16;
+}
+/* the next 1/16's slice */
+static __attribute__((noinline)) void perf_glt_step(void)
+{
+    uint32_t h = pf_hash((pf.gs & 31u) + 0x51u + ((uint32_t)(GX_VARI - 1) << 5)), s16 = pf.P ? pf.P : 1u,
+             sp = s16 < GL_SPAN ? s16 : GL_SPAN, d = GX_DENS, z = GX_SIZE, j = (h >> 12) % 3u, a, L;
+    a = ((h >> 24) * 100u >> 8) < (pf.gs & 3u ? d : d * d / 100u) ? GA_OF[(h >> 8) & 15u] : GA_PASS;
+    pf.u.g.g0 = 2u * pf.wr + pf.odd;                /* (the loop's sample now) */
+    if ((s16 + sp > PB_MAX - 512u || pf.u.g.g0 < sp) && a != GA_GATE && a != GA_CRU)
+        a = GA_PASS;                                /* (too slow: what it would read is gone; or not recorded yet) */
+    L = a == GA_RPT ? sp >> (z + j) : a == GA_GATE ? (s16 / 2u) >> (z / 2u + j % 2u) : a == GA_SKIP ? sp >> (3u + z / 2u + j % 2u)
+      : a == GA_UP ? sp / 2u : a == GA_CRU ? s16 : sp;
+    pf.u.g.a = (uint8_t)a;
+    pf.u.g.l = L < 2u * SL_RAMP ? 2u * SL_RAMP : L;
+    pf.u.g.sp = sp;
+    pf.u.g.h = (uint8_t)(1u + (h >> 14) % 6u);
+    pf.u.g.sh = (uint8_t)(6u + j + (h >> 20) % 2u);
+    pf.u.g.n = 255u;
+    pf.u.g.u = pf.u.g.k = pf.gph = 0;
+    perf_glt_seg();
+}
+/* GLITCH on one sample: 1 = it plays (pf.yl yr), 0 = live */
+static __attribute__((noinline)) int perf_glt(int32_t l, int32_t r)
+{
+    uint32_t u = pf.u.g.u, L = pf.u.g.l, a = pf.u.g.a, e = L - 1u - u < u ? L - 1u - u : u, g = 32768u;
+    pf.wr = pb_rec(pf.wr, l, r);
+    if (a != GA_PASS) {
+        if (a == GA_SKIP) {
+            if (e < SL_RAMP / 4u)
+                g = e << (17 - SL_RAMP_LOG2);
+        } else if (e < (uint32_t)SL_RAMP) {
+            g = e << (15 - SL_RAMP_LOG2);
+        }
+        if (a == GA_GATE) {
+            g = pf.u.g.k & 1u ? 0u : g;
+            pf.yl = mulq16(l, g << 1);
+            pf.yr = mulq16(r, g << 1);
+        } else if (a == GA_CRU) {
+            if (++pf.u.g.n >= pf.u.g.h) {
+                int32_t b = 1 << (pf.u.g.sh - 1u);
+                pf.u.g.n = 0;
+                pf.u.g.cl = ((l + b) >> pf.u.g.sh) << pf.u.g.sh;
+                pf.u.g.cr = ((r + b) >> pf.u.g.sh) << pf.u.g.sh;
+            }
+            pf.yl = mulq16(pf.u.g.cl, g << 1);
+            pf.yr = mulq16(pf.u.g.cr, g << 1);
+        } else {
+            pb_ring_f(pf.u.g.src + (uint32_t)((int32_t)u * (pf.u.g.rate >> 2)) * 4u, &pf.yl, &pf.yr);
+            pf.yl = mulq16(pf.yl, g << 1);
+            pf.yr = mulq16(pf.yr, g << 1);
+        }
+    }
+    if (++pf.u.g.u >= L) {
+        pf.u.g.u = 0;
+        pf.u.g.k++;
+        perf_glt_seg();
+    }
+    if (++pf.gph >= pf.P) {
+        pf.gs = song.playing && clk_pos != CLK_START ? clk_n + 1u : pf.gs + 1u;   /* (p9c: the transport's own 1/16, so its
+                                                         * 2-bar cycle stays on the bar) */
+        perf_glt_step();
+    }
+    return a != GA_PASS;
+}
 /* the buffer effect faded out: the next one, or the buffer back. Once per effect, out of the per-sample loop
  * (noinline: its calls stay out of perf_block's loop code) */
 static __attribute__((noinline)) void perf_buf_done(void)
@@ -387,8 +528,9 @@ static __attribute__((noinline)) void perf_buf_done(void)
     }
 }
 
-/* the buffer effect on one sample: the share pf.w of what it plays, the rest live */
-static inline void perf_buf(int32_t *pl, int32_t *pr)
+/* the buffer effect on one sample: the share pf.w of what it plays, the rest live (snd2: out of perf_block's loop, as
+ * 0.9.18's: the RAM code's room) */
+static __attribute__((noinline)) void perf_buf(int32_t *pl, int32_t *pr)
 {
     int32_t l = *pl, r = *pr, yl = 0, yr = 0, on = 0;
     if (pf.mode == BM_LOOP) {
@@ -413,6 +555,9 @@ static inline void perf_buf(int32_t *pl, int32_t *pr)
                 pf.rp = 0;
             on = 1;
         }
+    } else if ((on = perf_glt(l, r)) != 0) {        /* (snd2) GLITCH */
+        yl = pf.yl;
+        yr = pf.yr;
     }
     pf.tw = on && pf.src != PF_N ? 32768 - perf_k[3] * 327 : 0;
     pf.w += clamp(pf.tw - pf.w, -SL_SLOPE, SL_SLOPE);

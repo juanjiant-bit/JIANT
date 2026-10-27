@@ -183,7 +183,7 @@ static void fxg_punch(int32_t x, int32_t y, int32_t w, int32_t h)
         int on = pfx_lane_at((uint32_t)i) != 0u, at = song.playing && (uint32_t)i == pfx_lane_pos();   /* (the playhead) */
         if (on || at)                                   /* (0.8.9, the skins' mock-up: the open steps as lines, an empty one a
                                                          * tick at the foot) */
-            cv_rect(x + i * cw, y + 14, cw > 2 ? cw - 1 : 1, h - 20, at ? T_TEXT : FXG_H(179));
+            cv_rect(x + i * cw, y + (w > 120 ? 20 : 14), cw > 2 ? cw - 1 : 1, h - (w > 120 ? 26 : 20), at ? T_TEXT : FXG_H(179));
         else
             cv_rect(x + i * cw, y + h - 7, cw > 2 ? cw - 1 : 1, 1, T_LINE);
     }
@@ -195,7 +195,10 @@ static void fxg_punch(int32_t x, int32_t y, int32_t w, int32_t h)
         str_cpy(b + str_len(b), N_PFXRES[clamp(song.g[G_PFXRES], 0, 2)], 6);
         if (pfx_rec_ok()) str_cpy(b + str_len(b), " \xB7 REC", 7);
     }
-    fxg_label(x, y, b, T_MID, 0);
+    if (w > 120)                                        /* (snd2: the page's letters large, AF_M; the tile's as before) */
+        cv_text(x, y, &AF_M, b, T_MID);
+    else
+        fxg_label(x, y, b, T_MID, 0);
 }
 static void fxg_slpitch(int32_t x, int32_t y, int32_t w, int32_t h)
 {
@@ -280,8 +283,8 @@ static void fxg_mod(uint32_t m, int32_t x, int32_t y, int32_t w, int32_t h)
     case 1: fxg_reverb(x, y, w, h); break;
     case 2: fxg_chorus(x, y, w, h); break;
     case 3: if (cur_page()->graph == GR_SLPIT && w > 120) fxg_slpitch(x, y, w, h); else fxg_slicer(x, y, w, h); break;
-    case 4: fxg_master(x, y, w, h); break;
-    default: fxg_punch(x, y, w, h); break;
+    case 4: fxg_punch(x, y, w, h); break;
+    default: fxg_master(x, y, w, h); break;           /* (snd2: MASTER last) */
     }
 }
 /* the set's place: n dots (5 x 3, 7 apart) at the top left, k lit; its name at the right */

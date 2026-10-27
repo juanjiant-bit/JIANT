@@ -137,7 +137,7 @@ static uint32_t take(uint32_t nb, uint32_t cores, int tight, uint32_t *sounding,
 int main(void)
 {
     static const char *const LOADS[3] = {"FULL", "LITE", "ECO"};
-    static const uint32_t SEEDS[3] = {42, 3, 123};
+    static const uint32_t SEEDS[3] = {42, 11, 123};   /* (p4: EXPLORE sparser; 3 came to three tracks) */
     char s[200];
     uint32_t si, l, c, nb = (uint32_t)(4.0 * FS / CTL);   /* 4 s a take */
     printf("-- the stems (fx.c) against each track's solo render\n");
@@ -166,7 +166,7 @@ int main(void)
         size_t sz = sizeof(int32_t) * NCH * CTL * 2000u;
         int32_t (*d)[NCH] = mmap(0, sz, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
         uint32_t i, nz = 0, e = 0;
-        song_from(42, LOAD_FULL);
+        song_from(11, LOAD_FULL);   /* (p4: 42's T1 rests now) */
         for (i = 0; i < NSTEP; i++) trk[5].step[i].time = ST_REST;
         for (i = 0; i < NVOICE; i++) trk[5].v[i].active = 0;
         play(d, 2000u, 0, 1, 0);
@@ -181,7 +181,7 @@ int main(void)
         uint32_t v, i;
         for (v = 0; v < 4u; v++) {
             uint32_t snd, gave, sums, bad;
-            song_from(42, LOAD_FULL);
+            song_from(11, LOAD_FULL);   /* (p4: 42's T1 rests now) */
             song.g[G_SLMODE] = V[v].mode;
             song.g[G_SLFX] = V[v].fx;
             for (i = 0; i < NPART; i++)

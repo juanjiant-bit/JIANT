@@ -6,15 +6,17 @@
  * antialiased (ui_organic.c og_line), in the beings' thermal colours (bg_col: heat_col; GREY and MONO their greys),
  * from small point tables (int8) and the synthesis state the UI already reads; nothing in the audio path. Each moves
  * only with its sound: in silence it rests (its time runs with the level, as the beings').
- *   VOICE   a sagittal CT of a head in profile (the face left): skin, the skull's two tables, the brain's folds, the
- *           corpus callosum, the cerebellum, the spine, the nasal cavity and its turbinates, the palate, the velum, the
- *           tongue, the mandible, the lips, the pharynx, the larynx and the trachea, each as dense as it is in a scan
- *           (bone hottest, air black). The vocal tract sings: the tongue's height from F1 and its front / back from F2
- *           (the vowel sounding: sing_view's formants with WORDS on, VOWEL / VOWEL2 / TALK without), the jaw open with
- *           F1, the lips rounded (o u w sh) or closed (p b m), the lower lip on the teeth (f v), the tongue's tip, blade
- *           or body on the place of the consonant (sing.c PHON[].place), the velum down for m n ng, the vocal folds
- *           shaking and the trachea's rings pulsing with the voicing, turbulence at the constriction for the frication
- *           (s sh f x, the bursts) and at the glottis for the aspiration (h, BREATH); a scan line sweeps down slowly.
+ *   VOICE   (0.9.9, "Tracto vivo") the vocal tract, close (the mouth and the neck; the crown off the panel): the head's
+ *           outline a faint ghost, the tract a glowing tube of two walls from the lips over the palate and the velum
+ *           down the pharynx to the glottis, the trachea under it. The tongue (the tube's floor) takes its height from
+ *           F1 and its front / back from F2 (the vowel sounding: sing_view's formants with WORDS on, VOWEL / VOWEL2 /
+ *           TALK without), the jaw opens down (and forward) with F1, the lips round (o u w sh) or close (p b m), the
+ *           lower lip on the teeth (f v), the tongue's tip, blade or body on the place of the consonant (sing.c
+ *           PHON[].place), hot where it closes; the velum drops for m n ng and a branch to the nose opens. The voicing
+ *           sends glottal pulses up the tube (each a bulge, through the nose with m n ng), shakes the vocal folds (a V
+ *           opening and shutting) and sends sound waves out of the mouth (the nose); turbulence at the constriction for
+ *           the frication (s sh f x, the bursts) and at the glottis for the aspiration (h, BREATH); a damped nod at each
+ *           vowel's onset (WORDS off: a note's), a slow sway and breath with the level.
  *   ANIMAL  a creature between a bird, an insect and a mammal: its outline, legs, wing, antennae / ears / crest are
  *           the same points in the three (VX_AN), mixed by weights that glide (a metamorphosis, ~0.6 s) to the MODE's
  *           animal (CMOS WHSTL a bird, PULSE WING an insect, GLOTT a mammal), leaned by SIZE past its presets' sizes
@@ -52,11 +54,21 @@
  *   LOFI    ORGANISMO DE CIRCUITO: a caterpillar whose two skins are the last 256 samples out (the scope's: nothing more
  *           from the audio), 8 segments the byte's bits (BYTE: the highest next to the head; the legs lift with their bit,
  *           the antennae the two lowest), lit by the wave's level elsewhere (FLOAT, PLS TRI SAW NOIS WRAM)
+ * (JIANT 0.9.9-snd5) Two more, the same family's:
+ *   STRING  TEJEDORA: a spider on its web, one thread a voice sounding, each thread the string itself (its delay
+ *           line, one period of what the loop holds now: the real standing wave, ringing down as it decays); the
+ *           spider sits at POS on the top thread and plucks with a front leg at each note (saws while BOW feeds it), a
+ *           cocoon under the web as large as SIZE glows with BODY; BRIGHT warms the silk
+ *   ADD     MEDUSA: a jellyfish whose nine tentacles are the partials, each as long as its gain now (the voices' own:
+ *           they shrink as DECAY and DAMP take them, the highest first), waving as fast as its ratio; the bell's shape
+ *           MODE's (a dome, a box, a flat disc, a church bell, a tall bar, a drum's skin), pulsing at each note,
+ *           STRETCH spreading the tentacles, PEAK the one lit (FORMNT how much), its glow ring in the bell
  * Each takes a rectangle (vx_draw: EDIT's left panel, HOME's middle, or a whole panel) and scales to it.
  * State: vxs (in the pool: no global of the RAM region moves). MENU > ANIM OFF: they rest. */
 #define VX_POOL __attribute__((section(".pool")))
 #define VX_CODE __attribute__((noinline))                 /* (each creature its own function: its size on its own) */
-#define VX_NE 9                                          /* the creatures: VOICE ANIMAL DRUM-X ANALOG FM6 WHEEL NOISE PHASE LOFI */
+#define VX_NE 9                                          /* the creatures: VOICE ANIMAL DRUM-X ANALOG FM6 WHEEL NOISE PHASE LOFI
+                                                         * ((0.9.9-snd5) STRING ADD: PHASE's and WHEEL's slots, below) */
 #define VX_NSW 56                                        /* NOISE's swarm (the mock-up's 84: its cost) */
 typedef struct { int32_t cx, cy, s; } vxf_t;            /* a unit (Q4: 16) -> Q4 px: c + u * s / 256 */
 static struct {
@@ -71,9 +83,16 @@ static struct {
     int16_t bd[8];                                       /* LOFI: the byte's bits, slewed (0..256) */
     uint32_t crawl, cmt;                                 /* .. its crawl (16-bit turns), the time it was taken at */
     int16_t dal, frel;                                   /* lines drawn this much fainter (256 - alpha); OP ENV: the release from */
-    int32_t scan, scy;                                   /* VOICE: the scan line (Q4 units; as drawn, Q4 px: warmer there) */
-    int16_t js, jc;                                      /* .. the jaw's turn (sin, cos Q15) about the condyle */
     int16_t art[11];                                     /* VOICE: the articulation, slewed (vx_voice) */
+    int16_t js, jc, hs, hc, hk;                          /* .. the jaw's turn (sin, cos Q15) about the condyle; the head's
+                                                          * about the neck (the nod and the sway), its breath (Q15, - 1) */
+    int32_t nod, nodv;                                   /* .. the nod (Q15 rad) and its speed: a damped spring, struck at a
+                                                          * vowel's onset (WORDS off: a note's) */
+    uint32_t vmt, vph;                                   /* .. the mock-up's frames it has stepped; the sway's / breath's phase */
+    uint16_t pw[2][4];                                   /* .. the glottal pulses (how far up the tract, Q16; 0 none), the
+                                                          * waves leaving (their radius, Q4 units; 0 none) */
+    uint8_t wh[4], pwn[2], pwi[2], pwk[2], vow;          /* .. the waves' heat; the pulses' / waves' nose bits, the next slot
+                                                          * of each, the frames since the last; a vowel (1), its onset to come (2) */
     int16_t w[3];                                        /* ANIMAL: bird insect mammal weights (0..256) */
     uint8_t age[8], last;                                /* DRUM-X: each lane's age seen; the lane struck last */
     uint32_t hitm[8], tl[8], kms;                        /* .. its last hit (fm1_ms), its being's time; the ms drawn */
@@ -111,55 +130,35 @@ static uint16_t vk_heat(int32_t h)
 static void vx_line(const vxf_t *f, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t h)
 {
     int32_t X0 = f->cx + ((x0 * f->s) >> 8), Y0 = f->cy + ((y0 * f->s) >> 8);
-    int32_t X1 = f->cx + ((x1 * f->s) >> 8), Y1 = f->cy + ((y1 * f->s) >> 8), d = (Y0 + Y1) / 2 - vxs.scy;
-    if (d < 0) d = -d;
-    if (d < 7 * 16 && vxs.scy > 0 && !vxs.kc)            /* (the scan line warms what it crosses: VOICE) */
-        h += (7 * 16 - d) * 70 / (7 * 16);
+    int32_t X1 = f->cx + ((x1 * f->s) >> 8), Y1 = f->cy + ((y1 * f->s) >> 8);
     og_line_a(X0, Y0, X1, Y1, vx_col(h), 256 - vxs.dal);
 }
-/* fixed segments (units) */
-typedef struct { int8_t x0, y0, x1, y1; uint8_t h; } vxseg_t;
-static void vx_segs(const vxf_t *f, const vxseg_t *g, uint32_t n)
-{
-    for (; n--; g++)
-        vx_line(f, g->x0 * 16, g->y0 * 16, g->x1 * 16, g->y1 * 16, g->h);
-}
 /* a smooth curve through n points (Q4 units, x y pairs): quadratic arcs from midpoint to midpoint, each point their
- * control; closed or open (from the first point to the last) */
-static void vx_curve(const vxf_t *f, const int32_t *p, uint32_t n, int closed, int32_t h)
+ * control; closed or open (from the first point to the last). vx_bez: its 1 + 3 e points into o (e: its arcs, returned) */
+static uint32_t vx_bez(const int32_t *p, uint32_t n, int closed, int32_t *o)
 {
     uint32_t i, k, e = closed ? n : n - 1u;
-    int32_t px = 0, py = 0;
-    for (i = 0; i < e; i++) {
+    for (i = 0; i < e; i++, o += 6) {
         const int32_t *a = &p[2u * (i ? i - 1u : (closed ? n - 1u : 0u))], *b = &p[2u * i], *c = &p[2u * ((i + 1u) % n)];
         int32_t x0 = (a[0] + b[0]) / 2, y0 = (a[1] + b[1]) / 2, x1 = (b[0] + c[0]) / 2, y1 = (b[1] + c[1]) / 2;
         if (!closed && i == 0u) { x0 = b[0]; y0 = b[1]; }
         if (!closed && i + 1u == e) { x1 = c[0]; y1 = c[1]; }
-        if (i == 0u) { px = x0; py = y0; }
+        if (i == 0u) { o[0] = x0; o[1] = y0; }
         for (k = 1; k <= 3u; k++) {
             int32_t t = (int32_t)k * 85, u = 256 - t;   /* (t / 256: thirds) */
-            int32_t x = (u * u * x0 + 2 * u * t * b[0] + t * t * x1) >> 16, y = (u * u * y0 + 2 * u * t * b[1] + t * t * y1) >> 16;
-            if (k == 3u) { x = x1; y = y1; }
-            vx_line(f, px, py, x, y, h);
-            px = x;
-            py = y;
+            o[2u * k] = k == 3u ? x1 : (u * u * x0 + 2 * u * t * b[0] + t * t * x1) >> 16;
+            o[2u * k + 1u] = k == 3u ? y1 : (u * u * y0 + 2 * u * t * b[1] + t * t * y1) >> 16;
         }
     }
+    return e;
 }
-/* a table's n points (int8 units) scaled k / 256 about (ax, ay) (units), into p (Q4 units) */
-static void vx_pts(int32_t *p, const int8_t *t, uint32_t n, int32_t ax, int32_t ay, int32_t k)
+static void vx_curve(const vxf_t *f, const int32_t *p, uint32_t n, int closed, int32_t h)
 {
-    uint32_t i;
-    for (i = 0; i < n; i++) {
-        p[2u * i] = ax * 16 + (((t[2u * i] - ax) * 16 * k) >> 8);
-        p[2u * i + 1u] = ay * 16 + (((t[2u * i + 1u] - ay) * 16 * k) >> 8);
-    }
-}
-static void vx_tab(const vxf_t *f, const int8_t *t, uint32_t n, int closed, int32_t ax, int32_t ay, int32_t k, int32_t h)
-{
-    int32_t p[2 * 24];
-    vx_pts(p, t, n, ax, ay, k);
-    vx_curve(f, p, n, closed, h);
+    int32_t o[2 * (1 + 3 * 24)];                         /* (24 points closed at most: seq-v2's STRING draws 24, its
+                                                         * silk; main's 16 overran the stack: p2, ui_render under ASan) */
+    uint32_t i, e = 3u * vx_bez(p, n, closed, o);
+    for (i = 0; i < e; i++)
+        vx_line(f, o[2u * i], o[2u * i + 1u], o[2u * i + 2u], o[2u * i + 3u], h);
 }
 /* an ellipse (Q4 units), n sides, its top at angle a0 .. a1 (16-bit turns) */
 static void vx_arc(const vxf_t *f, int32_t cx, int32_t cy, int32_t rx, int32_t ry, uint32_t a0, uint32_t a1, uint32_t n,
@@ -190,7 +189,7 @@ static int32_t vx_level(const track_t *t, uint32_t k, int32_t en_home)
     if (dm > 100u) dm = 100u;                            /* (a pause: no jump) */
     if (vxs.en[k])                                       /* (0.9.6) the mock-up's time: 30 frames a second while it sounds */
         vxs.mt[k] += dm * 7680u / 1000u;
-    if (ui_prefs & PREF_ANIM_OFF)
+    if (ANIM_OFF())
         return vxs.en[k] = 0;                            /* (ANIM OFF: at rest) */
     if (en_home >= 0)
         v = en_home;                                     /* (HOME: its own, eco_step's) */
@@ -208,25 +207,39 @@ static int32_t vx_level(const track_t *t, uint32_t k, int32_t en_home)
 }
 
 /* ------------------------------------------------------------------------------------------------- VOICE --- */
-/* the head in units (x right = back of the head, y down; the face left), ~92 x 112 */
-static const int8_t VH_SKULL[] = {-34, -12, -32, -27, -23, -40, -7, -48, 12, -47, 27, -39, 37, -26, 41, -10, 39, 3, 32, 10};
+/* (0.9.9, the mock-up's variant C, "Tracto vivo") the head in units (x right = back of the head, y down; the face left),
+ * framed close (~80 x 62 about the mouth and the neck: vx_draw): its outline a ghost, the tract a tube */
 static const int8_t VH_SKIN[] = {-37, -20, -31, -35, -19, -48, 0, -54, 19, -52, 33, -43, 43, -28, 46, -11, 44, 3, 38, 15,
-                                 35, 27, 38, 40, 42, 58};
-static const int8_t VH_BASE[] = {-31, -9, -19, -8, -9, -7, -6, -3, -2, -3, -1, -7, 3, -4, 9, 7};   /* fossa, sella, clivus */
-static const int8_t VH_CEREB[] = {18, -2, 24, -7, 33, -6, 37, 2, 33, 9, 24, 10};                    /* cerebellum */
+                                 35, 27, 38, 40, 42, 58};                                            /* brow .. nape */
 static const int8_t VH_FACE[] = {-37, -20, -40, -9, -37, -4, -41, 6, -47, 16, -45, 21, -40, 22};      /* brow .. nose */
-static const int8_t VH_NAS[] = {-37, -3, -26, -7, -12, -6, -10, 4, -14, 18};                       /* the nasal cavity's roof */
-static const int8_t VH_CONCH[3][4] = {{-31, 2, 9, 3}, {-29, 9, 11, 3}, {-28, 15, 12, 2}};          /* turbinates x y w h */
+/* the tract's fixed points (Q4 units): the roof from the teeth over the palate (the velum's two its own, then) and down
+ * the pharynx's back wall to the glottis; the floor's from the epiglottis to the glottis; the air's way to the nose,
+ * from the glottis up the pharynx, through the velum's port and the nasal cavity to the nostril (the branch: its 5th
+ * point on) */
+static const int16_t VH_ROOF[] = {-592, 438, -570, 355, -528, 330, -352, 326, -224, 330, 0, 0, 0, 0, 5, 400, 10, 528,
+                                  14, 672, 14, 784, -22, 840};   /* (its 6th, 7th: the velum's) */
+static const int16_t VH_CHIN[] = {-576, 648, -600, 760, -496, 872, -304, 880, -192, 912};   /* the chin .. throat */
+static const int16_t VH_GLOT[] = {-96, 672, -138, 720, -154, 784, -154, 840};
+static const int16_t VH_NOSE[] = {-96, 832, -80, 736, -72, 640, -72, 528, -64, 400, -128, 272, -288, 184, -480, 184,
+                                  -624, 232, -714, 320};
+static const uint8_t VH_G[16] = {255, 250, 232, 206, 173, 139, 106, 77, 54, 35, 22, 13, 8, 4, 2, 0};   /* a pulse's bulge:
+                                                          * e^-(d / 1.6)^2 (Q8), d in quarters of a wall's point */
+#define VH_N 22                                          /* (the walls' points, evenly along them) */
 
 /* the articulation (vxs.art): 0 tongue x (front -), 1 its height (palate 19 .. low 32), 2 the tip's lift, 3 the jaw
  * (Q8 of its full opening), 4 lips round, 5 lips closed, 6 velum down, 7 lower lip to the teeth, 8 the constriction's
- * x, 9 its y (Q4 units), 10 how closed it is (0 open .. 256 shut) */
+ * x, 9 its y (Q4 units), 10 how closed it is (0 open .. 256 shut); returns the phoneme's class (PC_VOW without WORDS) */
+/* each place of articulation (sing.c PL_LAB .. PL_GLO): the tongue's body -x, y (units; 0: as the vowel), the tip's lift
+ * (/ 2), the jaw (0: as the vowel), the lips (1 closed, 2 the lower on the teeth), the constriction's -x, y (units) */
+static const uint8_t VH_PL[9][7] = {{0, 0, 0, 40, 1, 40, 30}, {0, 0, 0, 50, 2, 38, 28}, {26, 0, 150, 70, 0, 36, 27},
+                                    {0, 0, 128, 60, 0, 31, 22}, {24, 21, 85, 60, 0, 27, 21}, {24, 19, 0, 50, 0, 23, 20},
+                                    {12, 19, 0, 60, 0, 12, 21}, {9, 21, 0, 0, 0, 8, 24}, {0, 0, 0, 0, 0, 5, 51}};
 static void vx_vowel_xy(int32_t f1, int32_t f2, int32_t *x, int32_t *y)
 {
     *x = -11 * 16 - clamp(f2 - 800, 0, 1500) * 15 * 16 / 1500;      /* F2 800 .. 2300 Hz: back .. front */
     *y = 20 * 16 + clamp(f1 - 270, 0, 500) * 11 * 16 / 500;         /* F1 270 .. 770: high .. low */
 }
-static void vx_voice_target(const track_t *t, int16_t *a, int32_t *voi, int32_t *asp, int32_t *fri)
+static VX_CODE uint32_t vx_voice_target(const track_t *t, int16_t *a, int32_t *voi, int32_t *asp, int32_t *fri)
 {
     int32_t f1, f2, x, y, i;
     uint32_t pl = PL_NONE, cls = PC_VOW, rnd = 0;
@@ -274,192 +287,292 @@ static void vx_voice_target(const track_t *t, int16_t *a, int32_t *voi, int32_t 
     a[8] = (int16_t)(-30 * 16);                          /* (the constriction: the teeth by default) */
     a[9] = (int16_t)(27 * 16);
     a[10] = (int16_t)(pl == PL_NONE ? 0 : cls == PC_PLO || cls == PC_NAS || cls == PC_AFF ? 256 : cls == PC_FRI ? 190 : 110);
-    switch (pl) {                                        /* the place: what touches what */
-    case PL_LAB: a[5] = 256; a[3] = 40; a[8] = -40 * 16; a[9] = 30 * 16; break;
-    case PL_LABDEN: a[7] = 256; a[3] = 50; a[8] = -38 * 16; a[9] = 28 * 16; break;
-    case PL_DEN: a[2] = 300; a[0] = -26 * 16; a[3] = 70; a[8] = -36 * 16; a[9] = 27 * 16; break;
-    case PL_ALV: a[2] = 256; a[3] = 60; a[8] = -31 * 16; a[9] = 22 * 16; break;
-    case PL_POST: a[2] = 170; a[0] = -24 * 16; a[1] = 21 * 16; a[3] = 60; a[8] = -27 * 16; a[9] = 21 * 16; break;
-    case PL_PAL: a[0] = -24 * 16; a[1] = 19 * 16; a[3] = 50; a[8] = -23 * 16; a[9] = 20 * 16; break;
-    case PL_VEL: a[0] = -12 * 16; a[1] = 19 * 16; a[3] = 60; a[8] = -12 * 16; a[9] = 21 * 16; break;
-    case PL_UVU: a[0] = -9 * 16; a[1] = 21 * 16; a[8] = -8 * 16; a[9] = 24 * 16; break;
-    case PL_GLO: a[8] = -5 * 16; a[9] = 51 * 16; break;
-    default: break;
+    if (pl != PL_NONE && pl <= PL_GLO) {                 /* the place: what touches what (VH_PL) */
+        const uint8_t *g = VH_PL[pl - 1u];
+        if (g[0]) a[0] = (int16_t)(-g[0] * 16);
+        if (g[1]) a[1] = (int16_t)(g[1] * 16);
+        a[2] = (int16_t)(g[2] * 2);
+        if (g[3]) a[3] = g[3];
+        a[5] = (int16_t)((g[4] & 1u) << 8);
+        a[7] = (int16_t)((g[4] & 2u) << 7);
+        a[8] = (int16_t)(-g[5] * 16);
+        a[9] = (int16_t)(g[6] * 16);
     }
     for (i = 0; i < 11; i++)
         a[i] = (int16_t)clamp(a[i], -0x7000, 0x7000);
+    return cls;
 }
-/* the head's fixed lines: the stem, the cord, the palate (bone), the upper incisor, the epiglottis, the pharynx's back
- * wall, the trachea's walls, the oesophagus; the mandible (its symphysis to the angle and the ramus, its inner edge, the
- * lower incisor: turned with the jaw); a vertebra's outline */
-static const vxseg_t VH_SEG[] = {{3, -9, 13, 9, 120}, {9, -9, 19, 9, 120}, {14, 9, 17, 62, 100}, {19, 9, 21, 62, 100},
-                                 {-38, 19, -14, 19, 226}, {-37, 20, -15, 20, 190}, {-37, 21, -36, 27, 248}, {-35, 21, -35, 27, 220},
-                                 {-6, 42, -9, 37, 170}, {0, 14, 1, 50, 96}, {-10, 56, -10, 66, 110}, {-2, 55, -2, 66, 96},
-                                 {2, 51, 3, 66, 80}};
-static const int8_t VH_MAND[] = {-34, 33, -32, 46, -27, 51, -12, 49, 6, 42, 13, 10, -31, 36, -28, 45, -22, 47, -36, 29, -35, 35};
-static const int8_t VH_VERT[] = {-3, 0, 3, 0, 4, 1, 4, 5, 3, 6, -3, 6, -4, 5, -4, 1, -3, 0};
-/* n points (Q4 units) turned with the jaw about the condyle (14, 6) */
-static void vx_jaw(int32_t *p, uint32_t n)
+/* n points (Q4 units) turned with the head about the neck (8, 60): the nod and the sway, the breath a scale; the neck
+ * bending between (y 56 .. 66), below it still */
+static void vh_xf(int32_t *p, uint32_t n)
 {
     for (; n--; p += 2) {
-        int32_t x = p[0] - 14 * 16, y = p[1] - 6 * 16;
-        p[0] = 14 * 16 + ((x * vxs.jc - y * vxs.js) >> 15);
-        p[1] = 6 * 16 + ((x * vxs.js + y * vxs.jc) >> 15);
+        int32_t w = clamp((66 * 16 - p[1]) * 8 / 5, 0, 256), s = vxs.hs * w >> 8, k = 32768 + (vxs.hk * w >> 8);
+        int32_t c = 32768 - (((32768 - vxs.hc) * w * w) >> 16), dx = p[0] - 8 * 16, dy = p[1] - 60 * 16;
+        p[0] = 8 * 16 + ((((dx * c - dy * s) >> 15) * k) >> 15);
+        p[1] = 60 * 16 + ((((dx * s + dy * c) >> 15) * k) >> 15);
+    }
+}
+/* the point (x, y) (Q4 units) with the jaw: opened down about the condyle (14, 6), the condyle gliding forward as it
+ * opens (the chin drops more than it retreats) */
+static void vh_jaw(int32_t *p, int32_t x, int32_t y)
+{
+    x -= 14 * 16;
+    y -= 6 * 16;
+    p[0] = 14 * 16 + ((x * vxs.jc + y * vxs.js) >> 15) - ((vxs.js * 416) >> 15);
+    p[1] = 6 * 16 + ((y * vxs.jc - x * vxs.js) >> 15) + ((vxs.js * 48) >> 15);
+}
+static int32_t vh_len(int32_t dx, int32_t dy)            /* ~ the hypotenuse (the larger + 3/8 the smaller) */
+{
+    dx = dx < 0 ? -dx : dx;
+    dy = dy < 0 ? -dy : dy;
+    return dx > dy ? dx + dy * 3 / 8 : dy + dx * 3 / 8;
+}
+/* m points evenly along the polyline P (n points; m 1: the one at s, Q16 of the way) into o */
+static void vh_along(const int32_t *P, uint32_t n, int32_t *o, uint32_t m, uint32_t s)
+{
+    int32_t L[VH_N];
+    uint32_t i, k = 1;
+    L[0] = 0;
+    for (i = 1; i < n; i++)
+        L[i] = L[i - 1] + vh_len(P[2 * i] - P[2 * i - 2], P[2 * i + 1] - P[2 * i - 1]);
+    for (i = 0; i < m; i++) {
+        int32_t t = m > 1u ? L[n - 1u] * (int32_t)i / (int32_t)(m - 1u) : (int32_t)(((uint32_t)L[n - 1u] * s) >> 16), d, u;
+        while (k < n - 1u && L[k] < t) k++;
+        d = L[k] - L[k - 1u];
+        u = d ? (t - L[k - 1u]) * 256 / d : 0;
+        o[2 * i] = P[2 * k - 2] + (((P[2 * k] - P[2 * k - 2]) * u) >> 8);
+        o[2 * i + 1] = P[2 * k - 1] + (((P[2 * k + 1] - P[2 * k - 1]) * u) >> 8);
+    }
+}
+static void vh_poly(const vxf_t *f, int32_t *p, uint32_t n, int32_t h)   /* (turned with the head, then drawn) */
+{
+    uint32_t i;
+    vh_xf(p, n);
+    for (i = 1; i < n; i++)
+        vx_line(f, p[2 * i - 2], p[2 * i - 1], p[2 * i], p[2 * i + 1], h);
+}
+static void vh_curve(const vxf_t *f, int32_t *p, uint32_t n, int32_t h)   /* (turned with the head, then drawn) */
+{
+    vh_xf(p, n);
+    vx_curve(f, p, n, 0, h);
+}
+static void vh_line(const vxf_t *f, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t h)
+{
+    int32_t p[4] = {x0, y0, x1, y1};
+    vh_poly(f, p, 2, h);
+}
+static void vh_node(const vxf_t *f, int32_t x, int32_t y, int32_t r, int32_t h)
+{
+    int32_t p[2] = {x, y};
+    vh_xf(p, 1);
+    og_node(f->cx + ((p[0] * f->s) >> 8), f->cy + ((p[1] * f->s) >> 8), r, vx_col(h));
+}
+static uint32_t vx_age(const track_t *t, uint32_t k, int32_t *note);
+/* the frames of the mock-up's time (30 a second, with the sound) since it last ran: the nod's spring, the head's sway and
+ * breath, the glottal pulses up the tract (every 4th while it is voiced; up the nose with m n ng), the waves leaving
+ * the mouth (every 6th, the lips open; the nose's with m n ng) */
+static VX_CODE void vh_step(int32_t en, int32_t voi)
+{
+    uint32_t n = (vxs.mt[0] >> 8) - vxs.vmt, j, k;
+    vxs.vmt = vxs.mt[0] >> 8;
+    if (!en) {                                           /* (silence: nothing on its way, the nod as it lies) */
+        memset(vxs.pw, 0, sizeof vxs.pw);
+        vxs.vow &= 1u;
+        return;
+    }
+    for (n = n < 4u ? n : 4u; n; n--) {
+        vxs.vph += (uint32_t)(120 + en * 4);
+        if (vxs.vow & 2u) {
+            vxs.nodv -= (1049 * (en > 150 ? en : 150)) >> 8;   /* (~0.03 rad a frame: a damped nod, ~3 degrees) */
+            vxs.vow &= 1u;
+        }
+        vxs.nodv += (-vxs.nod * 23 - vxs.nodv * 49) / 256;     /* (w 0.3, damping 0.32, a frame) */
+        vxs.nod += vxs.nodv;
+        for (j = 0; j < 2u; j++) {                       /* (the pulses, the waves: each a ring, its slot 4 ago long gone) */
+            uint32_t lim = j ? 26u * 16u : 65536u, d = j ? 18u : 4915u + (uint32_t)(2294 * en >> 8);   /* (1.15 units;
+                                                          * 0.075 .. 0.11 of the way, a frame) */
+            if (vxs.pwk[j] < 255u) vxs.pwk[j]++;
+            if (voi > 30 + 10 * (int32_t)j && vxs.pwk[j] >= 4u + 2u * j && (!j || vxs.art[5] <= 160 || vxs.art[6] > 128)) {
+                k = vxs.pwi[j]++ & 3u;
+                vxs.pw[j][k] = 1;
+                vxs.pwn[j] = (uint8_t)(vxs.art[6] > 128 ? vxs.pwn[j] | 1u << k : vxs.pwn[j] & ~(1u << k));
+                vxs.pwk[j] = 0;
+                if (j) vxs.wh[k] = (uint8_t)(voi < 255 ? voi : 255);
+            }
+            for (k = 0; k < 4u; k++)
+                if (vxs.pw[j][k])
+                    vxs.pw[j][k] = (uint16_t)(vxs.pw[j][k] + d < lim ? vxs.pw[j][k] + d : 0u);
+        }
     }
 }
 static VX_CODE void vx_voice(const track_t *t, int32_t cx, int32_t cy, int32_t s, int32_t en_home)
 {
     vxf_t f = {cx, cy, s};
     int16_t tg[11], *a = vxs.art;
-    int32_t en = vx_level(t, 0, en_home), voi, asp, fri, i, p[2 * 16], q[2 * 9], jaw, hb;
-    uint32_t tm = vxs.tm[0], r;
-    vx_voice_target(t, tg, &voi, &asp, &fri);
-    if (!vxs.init) { vxs.init = 1; for (i = 0; i < 11; i++) a[i] = tg[i]; }
+    int32_t en = vx_level(t, 0, en_home), voi, asp, fri, i, j, hb, pr, uly, mid, bul[VH_N], ll[2], q[2 * 7], w[2 * VH_N];
+    int32_t W[4][2 * VH_N], *R = W[0], *F = W[1];        /* (the walls, roof and floor; their glows) */
+    uint32_t cls = vx_voice_target(t, tg, &voi, &asp, &fri), n0 = vxs.nms[0], r, k, nm[2] = {0, 0};
+    vx_age(t, 0, 0);                                     /* (a note newer than the last: WORDS off, the nod's onset) */
+    if (!vxs.init) {
+        vxs.init = 1;
+        for (i = 0; i < 11; i++) a[i] = tg[i];
+        vxs.nod = vxs.nodv = 0;
+        memset(vxs.pw, 0, sizeof vxs.pw);
+        vxs.pwk[0] = vxs.pwk[1] = 255;
+        vxs.vmt = vxs.mt[0] >> 8;
+    }
     if (en || t->p[P_VLANG])                             /* (it moves as it sings; still in silence) */
         for (i = 0; i < 11; i++) a[i] = (int16_t)(a[i] + (tg[i] - a[i]) / 2);
     voi = voi * en >> 8;
     asp = asp * en >> 8;
     fri = fri * en >> 8;
     hb = en * 50 / 256;                                  /* (the sound warms the tract) */
-    if (en) vxs.scan += 5 + en / 64;                     /* (the scan line runs with the sound) */
-    if (vxs.scan > 66 * 16 || vxs.scan < -56 * 16) vxs.scan = -56 * 16;
-    vxs.scy = cy + ((vxs.scan * s) >> 8);
-    og_line_a(cx - 46 * s / 16, vxs.scy, cx + 46 * s / 16, vxs.scy, vx_col(60 + en / 6), 110);   /* (faint) */
-    jaw = a[3];
-    vxs.js = (int16_t)(jaw * 5000 / 256);                /* (the jaw: up to ~9 degrees) */
-    vxs.jc = (int16_t)(32767 - ((vxs.js * vxs.js) >> 16));
-    /* skin: the head's outline (cold), its inner band */
-    vx_tab(&f, VH_SKIN, sizeof VH_SKIN / 2, 0, 0, 0, 256, 40);
-    vx_tab(&f, VH_SKIN, sizeof VH_SKIN / 2, 0, 2, -6, 236, 70);
-    vx_tab(&f, VH_FACE, sizeof VH_FACE / 2, 0, 0, 0, 256, 40);
-    /* the lips, the chin, the throat: the jaw's (rounded: forward and pursed; closed: together; f v: on the teeth) */
-    {
-        int32_t pr = a[4] * 3 / 256 * 16, ap = (256 - a[5]) * (2 + jaw * 6 / 256) / 256 * 16 - a[4] * 16 / 256;
-        int32_t lx = -41 * 16 - pr, ly = 31 * 16 + ap - a[7] * 3 / 256 * 16;
-        int32_t u[2 * 4] = {-40 * 16, 22 * 16, -42 * 16 - pr, 25 * 16, lx + 16, 27 * 16 + ap / 3, -37 * 16, 30 * 16};
-        int32_t l[2 * 7] = {lx + 16 + a[7] * 5 / 256 * 16, ly + 16, -40 * 16 - pr, 37 * 16, -36 * 16, 41 * 16, -37 * 16, 49 * 16,
-                            -30 * 16, 55 * 16, -18 * 16, 54 * 16};
-        vx_jaw(l, 6);
-        l[12] = -12 * 16; l[13] = 57 * 16;
-        vx_curve(&f, u, 4, 0, 46 + hb);                  /* the upper lip */
-        vx_curve(&f, l, 5, 0, 46 + hb);                  /* the lower lip, the chin */
-        vx_curve(&f, l + 8, 3, 0, 40);                   /* the throat */
-        vx_line(&f, -12 * 16, 57 * 16, -12 * 16, 66 * 16, 40);
+    k = t->p[P_VLANG] ? cls == PC_VOW : 0u;
+    if (t->p[P_VLANG] ? k && !(vxs.vow & 1u) : vxs.nms[0] != n0)
+        vxs.vow |= 2u;                                   /* (an onset: the nod struck at the next frame) */
+    vxs.vow = (uint8_t)((vxs.vow & 2u) | k);
+    vh_step(en, voi);
+    {   /* the head's turn now: the nod, the sway (~1.3 degrees at full level), the breath (~2 %) */
+        int32_t ph = vxs.nod * 7 / 10 + ((og_sin(vxs.vph * 230u >> 8) * (en * 721 >> 8)) >> 15);
+        uint32_t tn = (uint32_t)((ph * 10430) >> 15);    /* (Q15 rad: 16-bit turns) */
+        vxs.hs = (int16_t)og_sin(tn);
+        vxs.hc = (int16_t)og_cos(tn);
+        vxs.hk = (int16_t)((og_sin(vxs.vph * 435u >> 8) * (en * 590 >> 8)) >> 15);
+        tn = (uint32_t)clamp(a[3], 0, 256) * 2086u / 256u;   /* (the jaw: up to ~11.5 degrees) */
+        vxs.js = (int16_t)og_sin(tn);
+        vxs.jc = (int16_t)og_cos(tn);
     }
-    /* the skull: its outer table, the diploe, the inner table (bone: hottest); the base, the clivus */
-    vx_tab(&f, VH_SKULL, sizeof VH_SKULL / 2, 0, 2, -12, 256, 236);
-    vx_tab(&f, VH_SKULL, sizeof VH_SKULL / 2, 0, 2, -12, 243, 180);
-    vx_tab(&f, VH_SKULL, sizeof VH_SKULL / 2, 0, 2, -12, 230, 226);
-    vx_tab(&f, VH_BASE, sizeof VH_BASE / 2, 0, 0, 0, 256, 214);
-    /* the brain: its folded cortex under the inner table (gyri), the white matter's edge inside, a few sulci, the
-     * corpus callosum; the cerebellum's folia */
+    /* the lips: rounded (o u w sh) forward, closed (p b m) together, the lower one on the teeth (f v); the upper lip
+     * lifts a little as the jaw opens */
+    pr = a[4] * 3 / 16;
+    uly = 458 - ((a[3] * (256 - a[5])) >> 8) * 144 / 2560;
+    vh_jaw(ll, -659 - pr + a[7] / 4, 474 - a[7] * 35 / 256);
+    ll[1] = uly + (ll[1] - uly) * (256 - a[4] * 115 / 256) / 256;
+    ll[1] += (uly + 11 - ll[1]) * a[5] / 256;
+    ll[0] += (-659 - pr - ll[0]) * a[5] / 256;
+    mid = (uly + ll[1]) / 2;
+    /* the ghost: the skin, the brow .. the nose .. the upper lip, the lower lip and the chin (the jaw's) down the throat */
+    for (i = 0; i < 26; i++) w[i] = VH_SKIN[i] * 16;
+    vh_curve(&f, w, 13, 34);
+    for (i = 0; i < 14; i++) w[i] = VH_FACE[i] * 16;
+    w[14] = -678 - pr * 7 / 10; w[15] = 400; w[16] = -666 - pr; w[17] = uly;
+    vh_curve(&f, w, 9, 34);
+    w[0] = ll[0]; w[1] = ll[1];
+    vh_jaw(w + 2, -646 - pr * 3 / 5, 552);
+    for (i = 0; i < 5; i++)
+        vh_jaw(w + 4 + 2 * i, VH_CHIN[2 * i], VH_CHIN[2 * i + 1]);
+    w[12] = (w[12] - 192) / 2; w[13] = (w[13] + 912) / 2;   /* (the throat: half the jaw's) */
+    w[14] = -192; w[15] = 1056;
+    vh_curve(&f, w, 8, 40 + hb / 2);
+    /* the tract's walls: the roof (the upper lip, the teeth, the palate, the velum: down with m n ng, the pharynx's
+     * back wall) and the floor (the lower lip, the lower teeth, the tongue: its body at F1 F2 (moved 1.4 x), its tip and
+     * blade on the consonant's place; the epiglottis), each to the glottis, VH_N points evenly along */
+    i = a[6] * 104 / 256;                                /* (the velum's drop, x 1.3) */
+    w[0] = -666 - pr; w[1] = uly;
+    for (j = 0; j < 24; j++) w[2 + j] = VH_ROOF[j];
+    w[12] = -112; w[13] = 333 + i * 3 / 5; w[14] = -48 - i * 4 / 5; w[15] = 371 + i;
+    vh_along(w, 13, R, VH_N, 0);
     {
-        int32_t px = 0, py = 0, qx = 0, qy = 0;
-        for (i = 0; i <= 36; i++) {                      /* (from the frontal lobe's floor over the top to the occiput) */
-            uint32_t ang = 0x8A00u - (uint32_t)i * 0x0420u;
-            int32_t w = og_sin((uint32_t)i * 0x2E00u + (tm >> 6)), c = og_cos(ang), sn = og_sin(ang);
-            int32_t rx = 28 * 16 + ((w * 36) >> 15), ry = 19 * 16 + ((w * 30) >> 15);
-            int32_t x = 4 * 16 + ((rx * c) >> 15), y = -21 * 16 - ((ry * sn) >> 15);
-            int32_t x2 = 4 * 16 + (((rx * 3 / 4 - ((w * 30) >> 15)) * c) >> 15);
-            int32_t y2 = -19 * 16 - (((ry * 3 / 4 - ((w * 26) >> 15)) * sn) >> 15);
-            if (i) {
-                vx_line(&f, px, py, x, y, 142 + hb / 2);
-                if (i > 3 && i < 34) vx_line(&f, qx, qy, x2, y2, 100 + hb / 3);
+        int32_t bx = -288 + (a[0] + 288) * 7 / 5, by = 400 + (a[1] - 400) * 7 / 5, rx = -112 + (bx + 288) / 5;
+        vh_jaw(q, -480, 576);
+        vh_jaw(q + 2, -528 + a[2] / 8, 480);
+        q[3] -= a[2] / 2;
+        q[4] = (q[2] + bx) / 2; q[5] = (q[3] + by) / 2 - a[2] / 8 + 16;
+        q[6] = bx; q[7] = by + a[3] * 3 / 16;
+        q[8] = (bx + rx) / 2 + 32; q[9] = (by + 544) / 2 + a[3] / 8;
+        q[10] = rx; q[11] = 544; q[12] = -96; q[13] = 672;
+        vx_bez(q, 7, 0, W[2]);                           /* (the tongue: 19 points, the floor its 3rd .. 18th) */
+        w[0] = ll[0]; w[1] = ll[1];
+        vh_jaw(w + 2, -576, 464);
+        for (i = 0; i < 32; i++) w[4 + i] = W[2][4 + i];
+        for (i = 0; i < 8; i++) w[36 + i] = VH_GLOT[i];
+        vh_along(w, VH_N, F, VH_N, 0);
+    }
+    /* each glottal pulse a bulge travelling up the tube, the walls pushed apart by it (with the voicing); the inner
+     * glow a unit in from each wall; hotter where the pulse is, and at the constriction as it closes */
+    memset(bul, 0, sizeof bul);
+    for (k = 0; k < 4u; k++)
+        if (vxs.pw[0][k] && !(vxs.pwn[0] >> k & 1u)) {
+            int32_t u = ((65536 - vxs.pw[0][k]) * (VH_N - 1)) >> 8;   /* (Q8 points from the lips) */
+            for (i = 0; i < VH_N; i++) {
+                int32_t e = i * 256 - u;
+                e = (e < 0 ? -e : e) >> 4;               /* (sixteenths) */
+                if (e < 60)
+                    bul[i] += VH_G[e >> 2] + ((VH_G[(e >> 2) + 1] - VH_G[e >> 2]) * (e & 3)) / 4;
             }
-            if (i % 4 == 2 && i < 34)                    /* (a sulcus: from a valley inwards) */
-                vx_line(&f, x, y, (x * 3 + x2) / 4, (y * 3 + y2) / 4 + 8, 116);
-            px = x; py = y; qx = x2; qy = y2;
         }
-        vx_arc(&f, 5 * 16, -15 * 16, 14 * 16, 6 * 16, 0x8000u, 65536u, 10, 176);   /* corpus callosum */
-        vx_arc(&f, 5 * 16, -15 * 16, 12 * 16, 4 * 16, 0x8800u, 0xF800u, 8, 128);
-        vx_tab(&f, VH_CEREB, sizeof VH_CEREB / 2, 1, 27, 2, 256, 140);
-        for (i = 0; i < 3; i++)
-            vx_arc(&f, 27 * 16, 2 * 16, (8 - 2 * i) * 16, (6 - 2 * i) * 16, 0xA000u, 90112u, 6, 112);
-    }
-    vx_segs(&f, VH_SEG, NELEM(VH_SEG));
-    /* the spine: C2's dens, the bodies, the spinous processes (bone) */
-    vx_arc(&f, 8 * 16, 11 * 16, 2 * 16, 3 * 16, 0, 65536u, 8, 214);
-    for (i = 0; i < 6; i++) {
-        int32_t y = 15 + i * 8, x = 7 + i / 2;
-        uint32_t k;
-        for (k = 0; k < 8u; k++)
-            vx_line(&f, (x + VH_VERT[2 * k]) * 16, (y + VH_VERT[2 * k + 1]) * 16, (x + VH_VERT[2 * k + 2]) * 16,
-                    (y + VH_VERT[2 * k + 3]) * 16, 224);
-        vx_arc(&f, (x + 20) * 16, (y + 3) * 16, 3 * 16, 2 * 16, 0, 65536u, 6, 200);
-    }
-    /* the nasal cavity, its turbinates (warm with the air through them: m n ng) */
-    vx_tab(&f, VH_NAS, sizeof VH_NAS / 2, 0, 0, 0, 256, 150);
-    for (i = 0; i < 3; i++)
-        vx_arc(&f, VH_CONCH[i][0] * 16 + VH_CONCH[i][2] * 8, VH_CONCH[i][1] * 16, VH_CONCH[i][2] * 8, VH_CONCH[i][3] * 8, 0x8000u,
-               65536u + 0x2000u, 6, 128 + (a[6] * en >> 9));
-    /* the velum: from the palate's end, raised to the pharynx's wall, down (open to the nose) for m n ng */
-    {
-        int32_t d = a[6] * 5 / 256 * 16, vx2 = -3 * 16 - d, vy2 = 22 * 16 + d;
-        int32_t v[2 * 6] = {-14 * 16, 19 * 16, -7 * 16, 19 * 16 + d * 3 / 5, vx2, vy2, -14 * 16, 21 * 16, -8 * 16, 22 * 16 + d * 3 / 5,
-                            vx2 - 16, vy2 + 16};
-        vx_curve(&f, v, 3, 0, 160 + hb);
-        vx_curve(&f, v + 6, 3, 0, 140 + hb);
-    }
-    /* the mandible (bone), the lower incisor: turned with the jaw */
-    vx_pts(p, VH_MAND, 11, 0, 0, 256);
-    vx_jaw(p, 11);
-    vx_curve(&f, p, 6, 0, 230);
-    vx_curve(&f, p + 12, 3, 0, 200);
-    vx_line(&f, p[18], p[19], p[20], p[21], 248);
-    /* the tongue: tip, blade, the body's top (F1 F2), the root down to the epiglottis; its floor to the hyoid */
-    {
-        int32_t bx = a[0], by = a[1], tl = a[2], tx, ty, rx = -7 * 16 + (bx + 18 * 16) / 5, ry = 34 * 16;
-        int32_t fl[2 * 4] = {-30 * 16, 36 * 16, -24 * 16, 44 * 16, -14 * 16, 47 * 16, -7 * 16, 47 * 16};
-        q[0] = -30 * 16; q[1] = 36 * 16; q[2] = -33 * 16 + tl * 2 / 256 * 16; q[3] = 30 * 16;
-        vx_jaw(q, 2);
-        vx_jaw(fl, 2);
-        tx = q[2];
-        ty = q[3] - tl * 8 / 256 * 16;
-        q[3] = ty;
-        q[4] = (tx + bx) / 2; q[5] = (ty + by) / 2 - tl * 2 / 256 * 16 + 16;
-        q[6] = bx; q[7] = by + jaw * 3 * 16 / 256;
-        q[8] = (bx + rx) / 2 + 2 * 16; q[9] = (by + ry) / 2 + jaw * 2 * 16 / 256;
-        q[10] = rx; q[11] = ry; q[12] = -6 * 16; q[13] = 42 * 16;
-        vx_curve(&f, q, 7, 0, 186 + hb);
-        for (i = 1; i < 6; i++) {                         /* its inner band */
-            p[2 * i] = q[2 * i] + (i > 4 ? -8 : 24);
-            p[2 * i + 1] = q[2 * i + 1] + 3 * 16;
+    for (i = 0; i < 2 * VH_N; i += 2) {
+        int32_t dx = R[i] - F[i], dy = R[i + 1] - F[i + 1], l = vh_len(dx, dy) + 1, g = (bul[i / 2] * voi * 115) >> 19;
+        R[i] += dx * g / l; R[i + 1] += dy * g / l;
+        F[i] -= dx * g / l; F[i + 1] -= dy * g / l;
+        l = vh_len(dx = F[i] - R[i], dy = F[i + 1] - R[i + 1]) + 1;
+        l = l > 44 ? 4506 / l : 102;                     /* (1.1 units in, at most 0.4 of the way: Q8) */
+        W[2][i] = R[i] + (dx * l >> 8); W[2][i + 1] = R[i + 1] + (dy * l >> 8);
+        W[3][i] = F[i] - (dx * l >> 8); W[3][i + 1] = F[i + 1] - (dy * l >> 8);
+        for (j = 0; j < 2; j++) {
+            dx = W[j][i] - a[8]; dy = W[j][i + 1] - a[9];
+            nm[j] |= (uint32_t)(dx * dx + dy * dy < 96 * 96) << (i / 2);
         }
-        vx_curve(&f, p + 2, 5, 0, 150 + hb);
-        vx_curve(&f, fl, 4, 0, 120);
-        for (i = 0; i < 3; i++) {                        /* its fibres: a fan up from its floor (genioglossus) */
-            int32_t x0 = (fl[2] * (3 - i) + fl[4] * i) / 3, y0 = (fl[3] * (3 - i) + fl[5] * i) / 3 - 2 * 16;
-            vx_line(&f, x0, y0, (x0 + q[2 * (i + 2)] + 16) / 2 + 16, (y0 + q[2 * (i + 2) + 1] + 5 * 16) / 2, 84 + hb / 2);
-        }
-        vx_arc(&f, -7 * 16, 48 * 16, 2 * 16, 16, 0, 65536u, 6, 206);   /* the hyoid */
     }
-    /* the larynx: the thyroid, the vocal folds shaking with the voicing; the trachea's rings pulsing up */
-    {
-        int32_t sh = voi > 8 ? ((og_sin(ui.frame * 0x5300u) * voi) >> 20) : 0, k, g = 180 + voi / 4;
-        vx_arc(&f, -11 * 16, 50 * 16, 3 * 16, 5 * 16, 0x4000u, 0xC000u, 6, 170);
-        vx_line(&f, -9 * 16, 52 * 16 - sh, -3 * 16, 51 * 16 + sh, g);
-        vx_line(&f, -9 * 16, 54 * 16 + sh, -3 * 16, 53 * 16 - sh, g - 30);
-        for (k = 0; k < 4; k++) {
-            int32_t pu = voi ? ((og_sin(tm * 3u - (uint32_t)k * 0x3000u) + 32768) * voi) >> 16 : 0;
-            vx_arc(&f, -6 * 16, (57 + k * 3) * 16, 5 * 16 + pu / 40, 16, 0x4000u, 0xC000u, 4, 130 + pu / 3);
+    vh_xf(W[0], 4 * VH_N);
+    for (j = 0; j < 4; j++)
+        for (i = 1; i < VH_N; i++) {
+            int32_t b = (bul[i] + bul[i - 1]) / 2, h = j < 2 ? 150 + 10 * j + hb + ((b < 256 ? b : 256) * 70 * voi >> 16) +
+                        (nm[j] >> i & 1u ? a[10] * 60 / 256 : 0) : 70 + hb + (bul[i] * 60 * voi >> 16);
+            vx_line(&f, W[j][2 * i - 2], W[j][2 * i - 1], W[j][2 * i], W[j][2 * i + 1], h);
         }
+    vh_line(&f, -154, 872, -160, 1056, 110);             /* the trachea */
+    vh_line(&f, -26, 872, -32, 1056, 100);
+    /* the nose: a branch that opens as the velum drops (m n ng), the pulses through it */
+    if (a[6] > 31) {
+        int32_t v = a[6];
+        for (j = 0; j < 2; j++) {
+            for (i = 0; i < 6; i++) {
+                W[2][2 * i] = VH_NOSE[8 + 2 * i] + (i ? (j ? 32 : -16) : (j ? -120 : 120)) * v / 1280;
+                W[2][2 * i + 1] = VH_NOSE[9 + 2 * i] + (j ? v : -v) / 10;
+            }
+            vh_poly(&f, W[2], 6, 60 + v * (90 + hb) / 256);
+        }
+        for (i = 0; i < 20; i++) w[i] = VH_NOSE[i];
+        for (k = 0; k < 4u; k++)
+            if (vxs.pwn[0] >> k & 1u && vxs.pw[0][k] > 22938u) {   /* (past 0.35 of the way: in the branch) */
+                vh_along(w, 10, q, 1, vxs.pw[0][k]);
+                vh_node(&f, q[0], q[1], 1, 220);
+            }
+    }
+    {   /* the vocal folds: a V opening and shutting with the voicing (the commissure in front, the arytenoids behind) */
+        int32_t sn = og_sin(vxs.mt[0] * 21174u >> 8), o = voi > 8 ? ((voi * (11469 + (((sn < 0 ? -sn : sn) * 21299) >> 15))) >> 8) * 29 >> 15 : 2;
+        for (j = 0; j < 2; j++)
+            vh_line(&f, -154, 838, -51, j ? 838 + o : 838 - o, 200 - 20 * j + voi / 4);
     }
     /* the constriction: where the tract closes, a hot mark (p t k: shut; s sh f: a slit; l r y w: narrowed) */
     if (a[10] > 60)
-        og_node(cx + ((a[8] * s) >> 8), cy + ((a[9] * s) >> 8), 1 + a[10] / 128, vx_col(150 + a[10] / 3 + hb));
+        vh_node(&f, a[8], a[9], 1 + a[10] / 128, 150 + a[10] / 3 + hb);
     /* the air: turbulence from the constriction out through the mouth (frication), at the glottis (aspiration) */
     r = ui.frame * 2654435761u + 1u;
-    for (i = 0; i < fri / 10; i++) {                     /* (a jet: from the slit forward and out between the teeth) */
-        int32_t d = (int32_t)(vx_rnd(&r) & 255u), x = a[8] - d * 18 * 16 / 256;
-        int32_t y = a[9] + (29 * 16 - a[9]) * clamp(d * 2, 0, 256) / 256 + ((int32_t)((r >> 8) & 63u) - 32) * (16 + d / 8) / 64;
+    for (i = 0; i < fri / 14 && i < 12; i++) {           /* (a jet: from the slit forward and out between the teeth) */
+        int32_t e = (int32_t)(vx_rnd(&r) & 255u), x = a[8] - e * 18 * 16 / 256;
+        int32_t y = a[9] + (29 * 16 - a[9]) * clamp(e * 2, 0, 256) / 256 + ((int32_t)((r >> 8) & 63u) - 32) * (16 + e / 8) / 64;
         if (x > -52 * 16)
-            vx_line(&f, x, y, x - 2 * 16 - (int32_t)((r >> 16) & 15u), y + (int32_t)((r >> 20) & 15u) - 8, 236 - d / 3);
+            vh_line(&f, x, y, x - 2 * 16 - (int32_t)((r >> 16) & 15u), y + (int32_t)((r >> 20) & 15u) - 8, 236 - e / 3);
     }
-    for (i = 0; i < asp / 24; i++) {                     /* (breath at the folds, rising) */
-        int32_t d = (int32_t)(vx_rnd(&r) & 127u), x = -6 * 16 + (int32_t)((r >> 8) & 63u) - 32, y = 52 * 16 - d * 2;
-        vx_line(&f, x, y, x + (int32_t)((r >> 16) & 15u) - 8, y - 2 * 16, 190 - d / 2);
+    for (i = 0; i < asp / 24 && i < 3; i++) {            /* (breath at the folds, rising) */
+        int32_t e = (int32_t)(vx_rnd(&r) & 127u), x = -6 * 16 + (int32_t)((r >> 8) & 63u) - 32, y = 52 * 16 - e * 2;
+        vh_line(&f, x, y, x + (int32_t)((r >> 16) & 15u) - 8, y - 2 * 16, 190 - e / 2);
     }
-    vxs.scy = -0x7FFF;
+    /* the sound leaving: arcs from the mouth (the nose with m n ng), growing and cooling */
+    for (k = 0; k < 4u; k++)
+        if (vxs.pw[1][k]) {
+            int32_t rr = 32 + vxs.pw[1][k] * 11 / 10, nz = vxs.pwn[1] >> k & 1u;
+            uint32_t sp = nz ? 4589u : 5736u;           /* (+-0.44 / 0.55 rad) */
+            for (i = 0; i <= 5; i++) {
+                uint32_t an = 32768u - sp + 2u * sp * (uint32_t)i / 5u;
+                w[2 * i] = (nz ? -730 : -682 - pr) + ((rr * og_cos(an)) >> 15);
+                w[2 * i + 1] = (nz ? 326 : mid) + ((rr * 21 / 20 * og_sin(an)) >> 15);
+            }
+            vh_poly(&f, w, 6, (140 + vxs.wh[k] * 3 / 10) * (26 * 16 - vxs.pw[1][k]) / (26 * 16) + 30);
+        }
 }
 
 /* ------------------------------------------------------------------------------------------------ ANIMAL --- */
@@ -748,7 +861,7 @@ static void vx_kit(const track_t *t, int32_t cx, int32_t cy, int32_t s, int32_t 
     for (i = 0; i < 8; i++) {                            /* each lane's hit now: its envelope (velocity, accent, decay) */
         int32_t a = K ? K[i].age : 255;
         lt[i] = dx_lane_muted((uint32_t)i) ? -1 : i == sel;
-        e[i] = K && K[i].x.live && lt[i] >= 0 && !(ui_prefs & PREF_ANIM_OFF) ? clamp(K[i].x.ea >> 22, 0, 256) : 0;
+        e[i] = K && K[i].x.live && lt[i] >= 0 && !ANIM_OFF() ? clamp(K[i].x.ea >> 22, 0, 256) : 0;
         if (K && K[i].dm == 2u) e[i] = e[i] * 2 / 3;   /* (GHOST: a small squash) */
         if (K && a < vxs.age[i] && e[i]) {               /* a new hit (a FLAM's two, a ratchet's each) */
             vxs.hitm[i] = now;
@@ -1642,6 +1755,122 @@ static VX_CODE void vx_lofi(const track_t *t, const int32_t *A, int32_t en_home)
     vxs.kc = 0;
 }
 
+/* (0.9.9-snd5) STRING and ADD keep their time, level and newest note in vxs's slots of PHASE (7) and WHEEL (5): one creature
+ * is drawn at a time (EDIT's, HOME's), so a slot shared costs a glance at most when the track changes, and no byte of the
+ * pool (at its floor) */
+#define VX_K_STRING 7u
+#define VX_K_ADD 5u
+/* ---------------------------------------------------------------------------------------- (snd5) STRING --- */
+/* TEJEDORA II: a radial web, a ray a voice (its line, one period, along it); the spider stands on the newest ray at POS
+ * and plucks it with the exciter EXCITE draws; STRETCH warps the spiral, BODY and SIZE the cocoon hanging at the side */
+static VX_CODE void vx_string(const track_t *t, const int32_t *A, int32_t en_home)
+{
+    const int16_t *p = t->p;
+    vxf_t f = vx_uf(A, 95, 0);
+    int32_t en = vx_level(t, VX_K_STRING, en_home), silk = 30 + p[P_E2] / 2, st = p[P_E4], k, j, r, q[2 * 24], ux = 0, uy = 0;
+    int32_t cx = -6 * 16, cy = -6 * 16, R = 44, bow = 0, nw = -1;
+    uint32_t age = vx_age(t, VX_K_STRING, 0), mt = vxs.mt[VX_K_STRING], i, a, th = 0, na = 0, seen = 0;
+    vxs.kc = 1;
+    for (r = 10; r < R; r += 8) {                        /* the spiral, warped by STRETCH */
+        for (k = 0; k < 24; k++) {
+            int32_t rr = r * 16 + ((og_sin((uint32_t)k * 8192u + (uint32_t)r * 10430u) * st >> 15) * r * 16 * 31 >> 8) / 127;
+            a = (uint32_t)k * 65536u / 24u;
+            q[2 * k] = cx + ((og_cos(a) * rr) >> 15);
+            q[2 * k + 1] = cy + ((og_sin(a) * rr * 4 / 5) >> 15);
+        }
+        vx_curve(&f, q, 24, 1, silk - 10);
+    }
+    for (i = 0; i < NVOICE; i++)                         /* (the newest voice: the spider's ray) */
+        if (t->v[i].active && t->v[i].age >= na) { na = t->v[i].age; nw = (int32_t)i; }
+    for (i = 0; i < NVOICE + 6u; i++) {                  /* the rays: voice i on ray i % 6, a ray no voice holds still */
+        const voice_t *v = &t->v[i % NVOICE];
+        uint32_t ray = i < NVOICE ? i % 6u : i - NVOICE, live = i < NVOICE && v->active, n = 2u, w = 0, d;
+        const int16_t *b = live ? str_line(t, v) : 0;
+        int32_t pk = 0, rx, ry;
+        if (i >= NVOICE && (seen >> ray & 1u)) continue;
+        if (i < NVOICE && !live) continue;
+        seen |= 1u << ray;
+        a = 49152u + ray * 10923u + 3129u;
+        rx = og_cos(a);
+        ry = og_sin(a) * 4 / 5;
+        if (live) {
+            n = str_period(pitch_inc((uint32_t)clamp(v->pitch_cur, 0, 2047)), &d) >> 8;
+            n = n < 2u ? 2u : n;
+            w = v->ph[1] % ST_SL;
+            if ((int32_t)i == nw) { th = a; ux = rx; uy = ry; if (v->gate && p[P_E7]) bow = 1; }
+        }
+        for (j = 0; j <= 20; j++) {
+            int32_t s = live && j && j < 20 ? b[(w + ST_SL - n + (uint32_t)j * n / 21u) % ST_SL] : 0, dd = s * 7 >> 11;
+            pk = s > pk ? s : -s > pk ? -s : pk;
+            q[2 * j] = cx + ((rx * R * j / 20 * 16) >> 15) - ((ry * dd) >> 15);
+            q[2 * j + 1] = cy + ((ry * R * j / 20 * 16) >> 15) + ((rx * dd) >> 15);
+        }
+        vx_curve(&f, q, 21, 0, silk + ((pk >> 8) * 110 >> 7));
+    }
+    if (nw < 0) { th = 49152u + 3129u; ux = og_cos(th); uy = og_sin(th) * 4 / 5; }   /* (at rest: on the top ray) */
+    {   /* the spider at POS along its ray: two rings, eight legs, the front one plucking (sawing while BOW feeds it) */
+        int32_t pu = 26 + p[P_E3] * 205 / 127, sx = cx + ((ux * R * pu >> 8) * 16 >> 15), sy = cy + ((uy * R * pu >> 8) * 16 >> 15);
+        int32_t h = 150 + (en * 60 >> 8), pl = age < 200u ? (int32_t)(200u - age) * 256 / 200 : 0, bx, by, nx, ny, o, e;
+        vx_ring(&f, sx - (ux * 4 * 16 >> 15), sy - (uy * 4 * 16 >> 15), 4 * 16, 3 * 16, h);
+        vx_ring(&f, sx + (ux * 2 * 16 >> 15), sy + (uy * 2 * 16 >> 15), 40, 40, h + 20);
+        for (k = 0; k < 8; k++) {
+            int32_t sd = k < 4 ? -1 : 1, j4 = k & 3, fx, fy, kx, ky;
+            a = th + (uint32_t)(sd * (5215 + j4 * 3650));
+            fx = sx + og_cos(a) * (8 + j4) * 16 / 32768;
+            fy = sy + og_sin(a) * (7 + j4) * 16 / 32768;
+            if (k == 4) {
+                fx = sx + ((ux * 9 * 16 - uy * (pl * 4 * 16 >> 8)) >> 15);
+                fy = sy + ((uy * 9 * 16 + ux * (pl * 4 * 16 >> 8)) >> 15);
+                if (bow) fx += (og_sin(vx_ang(mt, 12000)) * 3 * 16) >> 15;
+            }
+            kx = (sx + fx) / 2 - ((uy * 3 * 16 * sd) >> 15);
+            ky = (sy + fy) / 2 + ((ux * 3 * 16 * sd) >> 15) - 32;
+            vx_line(&f, sx, sy, kx, ky, h - 20);
+            vx_line(&f, kx, ky, fx, fy, h - 35);
+        }
+        /* the exciter past the foot: NOISE dust, PLUCK a finger, PICK a plectrum, HAMMR a hammer, STICK a mallet */
+        nx = -uy; ny = ux;
+        o = (3 * 256 + 5 * (256 - (age < 250u ? 256 - (int32_t)age * 256 / 250 : 0))) * 16 >> 8;
+        bx = sx + ((ux * (10 * 16 - o)) >> 15);
+        by = sy + ((uy * (10 * 16 - o)) >> 15);
+#define XP(m, c) (bx - ((ux * (m) * 16 - nx * (c) * 16) >> 15)), (by - ((uy * (m) * 16 - ny * (c) * 16) >> 15))
+        e = clamp(p[P_E0], 0, SX_N - 1);
+        if (e == SX_NOISE)
+            for (k = 0; k < 9; k++)
+                vx_dot(&f, bx + (vx_hash((uint32_t)k + (mt >> 11)) - 128) * 9 * 16 / 256,
+                       by + (vx_hash((uint32_t)k * 7u + (mt >> 11) + 99u) - 128) * 9 * 16 / 256, 0, 190);
+        else if (e <= SX_PICK) {
+            int32_t c[8] = {XP(8, 2), XP(3, 3), XP(0, 0), XP(-2, 2)}, c2[6] = {XP(0, 0), XP(5, 3), XP(5, -3)};
+            if (e == SX_PLUCK) vx_curve(&f, c, 4, 0, 190); else vx_poly(&f, c2, 3, 1, 190);
+        } else {
+            int32_t c[4] = {XP(9 + (e == SX_MALLET), 0), XP(2, 0)};
+            vx_line(&f, c[0], c[1], c[2], c[3], 160);
+            vx_ring(&f, c[2] + ((ux * 16) >> 15), c[3] + ((uy * 16) >> 15), e == SX_HAMMER ? 3 * 16 : 2 * 16, e == SX_HAMMER ? 48 : 32, 190);
+        }
+#undef XP
+        sx += ux * 2 * 16 >> 15;
+        sy += (uy * 2 * 16 >> 15) - 8;
+        vx_face(&f, sx, sy, 31, 12, age < 120u, sy + 37, 12, pl > 64 ? 20 : 0, 16, 220, 220, 200);
+    }
+    {   /* the cocoon: SIZE its size, BODY its glow */
+        int32_t rx = (4 * 127 + p[P_E6] * 7) * 16 / 127, ry = (6 * 127 + p[P_E6] * 9) * 16 / 127, gl = p[P_E5] * (77 + en) / 127;
+        vx_line(&f, cx + 34 * 16, cy + 2 * 16, cx + 34 * 16, 46 * 16 - ry * 2, 40);
+        vx_ring(&f, cx + 34 * 16, 46 * 16 - ry, rx, ry, 60 + (gl * 170 >> 8));
+        vx_ring(&f, cx + 34 * 16, 46 * 16 - ry, rx * 55 / 100, ry * 6 / 10, 40 + (gl * 140 >> 8));
+    }
+    vxs.kc = 0;
+}
+
+/* ------------------------------------------------------------------------------------------- (snd5) ADD --- */
+/* log2 of a Q10 ratio (Q8) */
+static __attribute__((noinline)) int32_t vx_lg2(uint32_t r)   /* (noinline: inlined, its (m - 10) * 256 became a constant
+                                                         * in the chip ROM's range, which the build refuses) */
+{
+    uint32_t m = 0;
+    while ((r >> m) > 1u) m++;
+    return (int32_t)(m << 8) + (int32_t)(((r - (1u << m)) << 8) >> m) - 2560;
+}
+
 /* ------------------------------------------------------------------------------------------------ the glue --- */
 /* the engine's own creature in the rectangle x y w h (px: EDIT's left panel 8 14 108 112, HOME's middle 146 x 112, or a
  * whole panel: each fits itself to it), en_home: HOME's level for the track (-1: its own); 0 when the engine has none
@@ -1650,32 +1879,30 @@ static int32_t vx_fit(int32_t w, int32_t h, int32_t uw, int32_t uh)   /* a unit'
 {
     return w * 256 / uw < h * 256 / uh ? w * 256 / uw : h * 256 / uh;
 }
+typedef struct { const engine_t *e; void (*f)(const track_t *, const int32_t *, int32_t); } vxe_t;
+static const vxe_t VX_F[] = {{&ENG_ANALOG, vx_analog}, {&ENG_WHEEL, vx_wheel}, {&ENG_NOISE, vx_noise}, {&ENG_PHASE, vx_phase},
+                             {&ENG_LOFI, vx_lofi}, {&ENG_STRING, vx_string}};   /* (0.9.9-snd5; ADD's TOTEM gone in par11) */
 static int vx_draw(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h, int32_t en_home)
 {
     const engine_t *e = trk_engp(t);
     int32_t A[4] = {x, y, w, h}, cx = x * 16 + w * 8, cy = y * 16 + h * 8, s;
-    if (e == &ENG_FORMANT) {                             /* (the head ~97 x 117 units) */
-        s = vx_fit(w, h, 97, 117);
-        vx_voice(t, cx + 32 * s / 244, cy - 144 * s / 244, s, en_home);
+    if (e == &ENG_FORMANT) {                             /* (the tract ~80 x 62 units about (-20, 37): the crown off) */
+        s = vx_fit(w, h, 80, 62);
+        vx_voice(t, cx + 5 * s / 4, cy - 37 * s / 16, s, en_home);
     } else if (trk_eng(t) == ENGI_DRUM) {    /* (the kit ~128 x 92) */
         s = vx_fit(w, h, 128, 92);
         vx_kit(t, cx - (s >> 4), cy + (48 * s >> 8), s, en_home, -1);
     } else if (e == &ENG_ANIMAL)                        /* (the animal ~103 x 78) */
         vx_animal(t, cx, cy, vx_fit(w, h, 103, 78), en_home);
-    else if (e == &ENG_ANALOG)
-        vx_analog(t, A, en_home);
     else if (trk_eng(t) == ENGI_FM6)
         vx_fm6(t, A, en_home, 6u, 0);
-    else if (e == &ENG_WHEEL)
-        vx_wheel(t, A, en_home);
-    else if (e == &ENG_NOISE)
-        vx_noise(t, A, en_home);
-    else if (e == &ENG_PHASE)
-        vx_phase(t, A, en_home);
-    else if (e == &ENG_LOFI)
-        vx_lofi(t, A, en_home);
-    else
-        return 0;
+    else {                                               /* (0.9.9-snd5: the creatures drawn the same way, a table) */
+        uint32_t i;
+        for (i = 0; i < NELEM(VX_F) && VX_F[i].e != e; i++) {}
+        if (i == NELEM(VX_F))
+            return 0;
+        VX_F[i].f(t, A, en_home);
+    }
     return 1;
 }
 /* EDIT > KIT (lane -1) and SOUND 1..4 (a DRUM track): the kit large on the panel, KIT over it on the left; on the right

@@ -123,8 +123,8 @@ static void graph_mod_net(const track_t *t)
         const char *u = "";
         if (on) {
             og_quad_a(48 * 16, sy * 16, 110 * 16, sy * 16, 158 * 16, (y + 11) * 16, lc, 16u, 256);
-            if (sel && !(ui_prefs & PREF_ANIM_OFF)) {   /* (the pulse: a quadratic's point at u = frame) */
-                int32_t q = (int32_t)(ui.frame * 6u % 256u), r = 256 - q;
+            if (sel && !ANIM_OFF()) {               /* (the pulse: a quadratic's point at u = frame) */
+                int32_t q = (int32_t)(anim_fr * 6u % 256u), r = 256 - q;
                 og_node((48 * r * r + 2 * 110 * r * q + 158 * q * q) >> 12, (sy * r * r + 2 * sy * r * q + (y + 11) * q * q) >> 12,
                         2, T_TEXT);
             }
@@ -145,7 +145,7 @@ static void graph_mod_net(const track_t *t)
             cv_rect(w < 0 ? 196 + w : 196, y + 16, w < 0 ? -w : w, 4, p[2] < 0 ? T_ACCENT : T_THEME);
     }
 }
-static void lfo_cap(const track_t *t, int32_t x, int32_t y)   /* "1.18Hz . SIN" */
+static void lfo_cap(const track_t *t, int32_t x, int32_t y, int mode)   /* "1.18Hz . SIN" (mode: ". FREE" / ". TRIG") */
 {
     const char *u = "";
     char b[32], w[12];
@@ -154,13 +154,15 @@ static void lfo_cap(const track_t *t, int32_t x, int32_t y)   /* "1.18Hz . SIN" 
     str_cpy(b + str_len(b), " \xB7 ", 32 - str_len(b));
     param_format(&TP[P_LWAVE], t->p[P_LWAVE], w, &u);
     str_cpy(b + str_len(b), w, 32 - str_len(b));
+    if (mode)                                           /* (0.9.18) LFO, LFO 2: MODE too (LFO DEST: no room) */
+        str_cpy(b + str_len(b), t->p[P_LPHASE] < 0 ? " \xB7 FREE" : " \xB7 TRIG", 32 - str_len(b));
     ed_cap(x, y, b, T_TEXT);
 }
 static void graph_lfodest(const track_t *t, const page_t *pg)
 {
     int32_t x, py = 0, src = mulq15(t->lfo_val, t->lfo_fade), k;
     uint32_t span = 0xFFFFFFFFu / 40u, ph = t->lfo_ph - 20u * span;
-    lfo_cap(t, 10, 6);
+    lfo_cap(t, 10, 6, 0);
     cv_rect(10, 70, 80, 1, T_RAISE);
     for (x = 0; x < 80; x++) {                          /* (two cycles, the phase now a third in) */
         int32_t y = 70 - lfo_wave((track_t *)t, ph + (uint32_t)x * span) * 44 / 32768;
@@ -211,7 +213,7 @@ static int graph_mod_lz(const track_t *t, const page_t *pg)
     if (pg->graph == GR_MOD)
         graph_mod_net(t);
     else if (pg->graph == GR_LFO) {
-        lfo_cap(t, 10, 6);
+        lfo_cap(t, 10, 6, 1);
         cv_oy = GOY + 12;
         graph_lfo(t, T_THEME);
     } else if (pg->id[0] == P_LD_PIT)

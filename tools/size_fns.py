@@ -68,11 +68,12 @@ IR_REF = re.compile(r"@\"?([\w.]+)\"?")
 IR_GLOBAL = re.compile(r"^@\"?([\w.]+)\"? = [^\n]*", re.M)
 
 
-def isr_reach(ir):
+def isr_reach(ir, with_globals=False):
     """the functions an interrupt can run: ISR_ROOTS and, transitively, every function their bodies call or
     name (a pointer taken there counts as called), from the unoptimised IR (before inlining: a superset).
     (0.9.0) A global they name counts as its initialiser: a function in a table they read (an engine's hooks:
-    ENG[].block -> formant_block -> sing_block) is reached too"""
+    ENG[].block -> formant_block -> sing_block) is reached too. with_globals: the globals reached as well (the
+    constant tables the sound reads: tools/build.py's flash layout)"""
     body = {m.group(1): m.group(2) for m in IR_BODY.finditer(ir)}
     fns = set(body)
     for m in IR_GLOBAL.finditer(ir):
@@ -84,7 +85,7 @@ def isr_reach(ir):
             continue
         seen.add(f)
         todo += [g for g in IR_REF.findall(body[f]) if g in body and g not in seen]
-    return {f for f in seen if f in fns}
+    return seen if with_globals else {f for f in seen if f in fns}
 
 
 def main(src, dst):

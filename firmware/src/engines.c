@@ -12,6 +12,8 @@
 #include "eng_noise.c"
 #include "eng_fm6.c"            /* FM6: 6-operator FM, msfa ported (fm6_core.c, Apache-2.0) */
 #include "eng_animal.c"         /* (JIANT 0.8.3) ANIMAL: animal calls (CMOS PULSE WHSTL WING GLOTT) */
+#include "eng_string.c"         /* (JIANT 0.9.9-snd5) STRING: Karplus-Strong, in the COMB's lines (engine 8) */
+#include "eng_sample.c"         /* (JIANT 0.9.9-par13) SAMPLE: the owner's samples, hyper lo-fi (engine 13) */
 #include "fm4_convert.c"        /* DIGITAL's tables, and its sounds -> FM6 */
 #if FELUCCA_FM4
 #include "eng_digital.c"        /* DIGITAL: four-operator FM (retired; FELUCCA_FM4=1 builds it) */
@@ -56,12 +58,12 @@ static const engine_t *const ENGINES[NENGINES] = {
     &ENG_FORMANT,                /* 5 VOICE (eng_formant.c: "voice" is a sounding note in voice.c) */
     &ENG_GONE,                   /* 6: reserved (TRIO, folded into ANALOG in JIANT 0.4: core.h analog_from_trio) */
     &ENG_WHEEL,                  /* 7 */
-    &ENG_GONE,                   /* 8: reserved (GRAIN, retired in JIANT) */
+    &ENG_STRING,                 /* 8 (ENGI_STRING, 0.9.9-snd5; GRAIN's, retired in JIANT: its sounds play as STRING's) */
     &ENG_GONE,                   /* 9: reserved (PHYS, retired in TONIC: its sounds play as ANALOG) */
     &ENG_DRUM,                   /* 10 (ENGI_DRUM) */
     &ENG_NOISE,                  /* 11 */
     &ENG_FM6,                    /* 12 (ENGI_FM6) */
-    &ENG_GONE,                   /* 13: reserved (SLICE, retired in JIANT) */
+    &ENG_SAMPLE,                 /* 13 (ENGI_ADD: SAMPLE since par13; ADD's 0.9.9-snd5 .. par10, SLICE's before it) */
     &ENG_ANIMAL,                 /* 14 (ENGI_ANIMAL, JIANT 0.8.3) */
 };
 
@@ -82,6 +84,7 @@ static const uint8_t ENGINE_ORDER[NENG_SHOWN] = {
     ENGI_FM6,                    /* FM6 */
     ENGI_PHASE, ENGI_WHEEL,      /* PHASE WHEEL */
     ENGI_NOISE,                  /* NOISE */
+    ENGI_STRING, ENGI_ADD,       /* (0.9.9-snd5) STRING; (par13) SAMPLE at ADD's number */
 #if FELUCCA_FM4
     ENGI_DIGITAL,                /* DIGITAL (retired, FELUCCA_FM4 builds only): after the rest */
 #endif
@@ -95,6 +98,7 @@ static const uint8_t ENGINE_PC_ORDER[NENG_SHOWN] = {
     ENGI_DIGITAL,
 #endif
     ENGI_PHASE, ENGI_LOFI, ENGI_VOICE, ENGI_WHEEL, ENGI_NOISE, ENGI_DRUM, ENGI_ANIMAL,
+    ENGI_STRING, ENGI_ADD,       /* (0.9.9-snd5: after ANIMAL, every number before kept; par13: SAMPLE) */
 };
 
 /* the engines one can pick (engine 1 only with FELUCCA_FM4), in ENGINE_ORDER: eng_ok(e), the n-th of them

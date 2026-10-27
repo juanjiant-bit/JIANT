@@ -15,10 +15,12 @@
  *   fm1_updata_parm_clear()  zero the record (CRC 0: ignored on a warm reset)
  *   fm1_mailbox_clear()  zero 0x01C7FD80..0x01C7FDFF (boot info, mailbox) at cold start
  *   fm1_mem_readable(a, n) / fm1_peek8(a)   debug reads of RAM / XIP only
+ *   fm1_rails_boot()     (JIANT 0.9.9-stab) VDC14 and SYSVDD up to M-VAVE's V15 levels (1.60 V, 1.38 V), IRQs off
  */
 #pragma once
 #include <stdint.h>
 #include "fm1_cc.h"
+#include "fm1_time.h"                          /* (fm1_delay_us: the rails' steps) */
 
 #define FM1_P33_CON (*(volatile uint32_t *)0x13E08u)
 #define FM1_P33_DAT (*(volatile uint32_t *)0x13E0Cu)
@@ -77,6 +79,58 @@ static void fm1_p33_write(uint32_t a, uint8_t d) { fm1__p33_op(0, a, d); }
 static void fm1_p33_or(uint32_t a, uint8_t d) { fm1__p33_op(1, a, d); }
 static void fm1_p33_and(uint32_t a, uint8_t d) { fm1__p33_op(2, a, d); }
 
+/* ------------------------------------------------------- VDC14, SYSVDD --- */
+/* (JIANT 0.9.9-stab) the core supplies at M-VAVE's own levels. Ported from fm1-base (felucca-bsp, bsp/chip/fm1_sys.h
+ * and device/main_fm1.c, MPL-2.0: github.com/fc79/fm1-base), whose words follow.
+ * VDC14 (P3_ANA_CON6 [2:0]): 1.25 V + 50 mV a level; SYSVDD (P3_ANA_CON9 [3:0], the core and SRAM): 0.93 V + 30 mV a
+ * level. The boot loader leaves 3 (1.40 V) and 11 (1.26 V); M-VAVE's own firmware (V15) raises them to 7 (1.60 V) and
+ * 15 (1.38 V) as it starts, at the same 360 MHz (fm1-x0x#21, fc79's reading of its __hw_power_init). At the boot
+ * loader's, under load (both cores, or WiFi in fm1-radio), some units read flash and SRAM wrong. Up only, a level per
+ * 100 us, VDC14 first (SYSVDD is regulated from it). JIANT up to 0.9.9-cpu3 ran both cores at 360 MHz on the boot
+ * loader's 1.26 V, a configuration no M-VAVE firmware uses (its open one runs 320 MHz at 1.26 V): the second core's
+ * misreads and some of the crashes look like that margin. Call with interrupts off, before the second core and the
+ * audio start (main.c fm1_cstart); fm1_rails keeps what was found and what was reached, for MENU > ABOUT */
+#define FM1_P3_ANA_CON6 0x06u
+#define FM1_P3_ANA_CON9 0x09u
+#define FM1_VDC14_V15 7u
+#define FM1_SYSVDD_V15 15u
+static uint8_t fm1_rails[4];                  /* VDC14 and SYSVDD as the boot loader left them, then after the raise */
+static uint32_t fm1_vdc14(void) { return fm1_p33_read(FM1_P3_ANA_CON6) & 7u; }
+static void fm1_vdc14_raise(uint32_t level)
+{
+    uint32_t v = fm1_vdc14();
+    while (v < level && v < 7u) {
+        v++;
+        fm1_p33_write(FM1_P3_ANA_CON6, (uint8_t)((fm1_p33_read(FM1_P3_ANA_CON6) & ~7u) | v));
+        fm1_delay_us(100);
+    }
+}
+static uint32_t fm1_sysvdd(void) { return fm1_p33_read(FM1_P3_ANA_CON9) & 15u; }
+static void fm1_sysvdd_raise(uint32_t level)
+{
+    uint32_t v = fm1_sysvdd();
+    while (v < level && v < 15u) {
+        v++;
+        fm1_p33_write(FM1_P3_ANA_CON9, (uint8_t)((fm1_p33_read(FM1_P3_ANA_CON9) & ~15u) | v));
+        fm1_delay_us(100);
+    }
+}
+/* both rails to V15's levels, read back, a raise that did not take tried again (three tries, as fm1-base) */
+static void fm1_rails_boot(void)
+{
+    uint32_t tries;
+    fm1_rails[0] = (uint8_t)fm1_vdc14();
+    fm1_rails[1] = (uint8_t)fm1_sysvdd();
+    for (tries = 1; ; tries++) {
+        fm1_vdc14_raise(FM1_VDC14_V15);
+        fm1_sysvdd_raise(FM1_SYSVDD_V15);
+        fm1_rails[2] = (uint8_t)fm1_vdc14();
+        fm1_rails[3] = (uint8_t)fm1_sysvdd();
+        if ((fm1_rails[2] == FM1_VDC14_V15 && fm1_rails[3] == FM1_SYSVDD_V15) || tries == 3u)
+            break;
+    }
+}
+
 /* ------------------------------------------------------------ watchdog --- */
 #define FM1_P3_WDT_CON 0x80u
 #define FM1_P3_VLD_KEEP 0x17u
@@ -112,6 +166,10 @@ static void fm1_reset_reason(void)
  * or handed back to the boot loader. Harmless when it is not running */
 #include "fm1_core1_stop.h"
 
+/* (JIANT 0.9.9-stab, as 0.9.12) the core clock is JieLi's 320 MHz (PLL2's multiplier 240, field + 2; the boot stage's
+ * 360: 270): MENU > ABOUT. hal/fm1_clk320.h switches it */
+static inline int fm1_clk_320(void) { return ((*(volatile uint32_t *)0x119ACu) & 0xFFFu) == 238u; }
+
 static void fm1_reboot(void)
 {
     __asm__ volatile("cli");
@@ -127,10 +185,13 @@ static void fm1_enter_uboot(void)
     uint32_t i;
     __asm__ volatile("cli");
     fm1_core1_stop();
-    /* CPU0 write limits (fm1_guard.h) may cover the mailbox: drop them all */
+    /* CPU0 write limits (fm1_guard.h) may cover the mailbox: drop them all (0.9.9-stab: core 1's and the DMA's too, for
+     * the boot loader's own transfers) */
     if (!(*(volatile uint32_t *)0x1EEE240u & 1u))
         *(volatile uint32_t *)0x1EEE240u = 0xE7u;
     *(volatile uint32_t *)0x1EEE348u = 0;
+    *(volatile uint32_t *)0x1EEE34Cu = 0;
+    *(volatile uint32_t *)0x1EEE350u = 0;
     for (i = 0; i < 16u; i++)
         FM1_BOOT_STATE[i] = (uint8_t)k[i];
     fm1_p33_or(FM1_P3_PR_PWR, 0x10);
@@ -151,9 +212,11 @@ FM1_INLINE void fm1_enter_update(const uint8_t *parm)
 {
     uint32_t i;
     __asm__ volatile("cli");
-    if (!(*(volatile uint32_t *)0x1EEE240u & 1u))       /* drop CPU0 write limits, as fm1_enter_uboot */
+    if (!(*(volatile uint32_t *)0x1EEE240u & 1u))       /* drop the write limits, as fm1_enter_uboot */
         *(volatile uint32_t *)0x1EEE240u = 0xE7u;
     *(volatile uint32_t *)0x1EEE348u = 0;
+    *(volatile uint32_t *)0x1EEE34Cu = 0;
+    *(volatile uint32_t *)0x1EEE350u = 0;
     for (i = 0; i < FM1_UPDATA_PARM_LEN; i++)
         FM1_UPDATA_PARM[i] = parm[i];
     fm1_core_reset();

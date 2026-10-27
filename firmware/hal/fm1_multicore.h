@@ -9,6 +9,7 @@
  *   fm1_mc_done(j)   (0.8.9) job j (fm1_mc_box.job after its fm1_mc_run) is finished: a look, no wait
  *   fm1_mc_wait()    0 = done; -1 = it read a wrong job, faulted or did not finish: held for good, core 0 does the work
  *   fm1_mc_hold()    stop it for good (MENU > CORES 1, a fault)
+ *   fm1_mc_park()    (0.9.9-stab) wait its job out, and the cache idle: before the flash goes off (fm1_flash.h FL_PARK)
  *
  * Start: its interrupt bank all off, its entry address in the word the chip starts it from (0x01C7FFF8, in the
  * protected top of RAM: before fm1_guard_lock_top), bit 3 of 0x10008 held while it starts, C1_CON (0x1EEE004) bit 3
@@ -50,12 +51,21 @@ static uint8_t fm1_mc_on;                       /* answering: core 0 may hand it
 static uint8_t fm1_mc_lost;                     /* why it stopped: 1 a wrong job, 2 a job not back, 3 a fault */
 static uint32_t fm1_mc_max_ticks;               /* the longest wait for a job (TIMER4 ticks): MENU > ABOUT */
 
-/* carried across soft resets (a crash, the watchdog, an update), gone at power-off */
+/* carried across soft resets (a crash, the watchdog, an update), gone at power-off (main.c fm1_cstart clears it then).
+ * (0.9.9-stab, as 0.9.12) barred's bits: 0 barred; (p1) 1 core 1 started this run (a watchdog reset with it: main.c);
+ * 8..15 the crash's CR_* flags (main.c fm1_fault, cpu_safe.c); 16..17 the 320 MHz switch (main.c: 1 armed, 2 a reset in it). One
+ * word: .noinit's layout as before */
 #define FM1_MC_BAR_MAGIC 0x3152414Au            /* "JAR1" */
+#define FM1_MC_CLK_ARMED (1u << 16)             /* barred: the 320 MHz switch under way, */
+#define FM1_MC_CLK_TRIP (2u << 16)              /* .. a reset in it (main.c) */
 typedef struct { uint32_t magic, barred; } fm1_mc_bar_t;
 fm1_mc_bar_t fm1_mc_bar __attribute__((section(".noinit")));   /* (not static: no assumed zero start) */
-static inline int fm1_mc_barred(void) { return fm1_mc_bar.magic == FM1_MC_BAR_MAGIC && fm1_mc_bar.barred; }
-static inline void fm1_mc_bar_set(void) { fm1_mc_bar.magic = FM1_MC_BAR_MAGIC; fm1_mc_bar.barred = 1; }
+static inline int fm1_mc_barred(void) { return fm1_mc_bar.magic == FM1_MC_BAR_MAGIC && (fm1_mc_bar.barred & 1u); }
+static inline __attribute__((always_inline)) void fm1_mc_bar_set(void)   /* (p1: always inlined: fx.c mc_lost is pinned) */
+{
+    fm1_mc_bar.magic = FM1_MC_BAR_MAGIC;
+    fm1_mc_bar.barred |= 1u;
+}
 
 void fm1_c1_main(void);
 void __attribute__((section(".c1_text"), noinline, noreturn, used)) fm1_c1_main(void)
@@ -98,6 +108,7 @@ static void fm1_mc_hold(void)
 {
     fm1_core1_stop();
     fm1_mc_on = 0;
+    fm1_other_live = 0;                         /* (0.9.9-stab) fm1_irq.h: not paused for a crash's record any more */
 }
 
 static int fm1_mc_start(void)
@@ -127,7 +138,30 @@ static int fm1_mc_start(void)
         return 0;
     }
     fm1_mc_on = 1;
+    fm1_mc_bar.barred |= 2u;                    /* (p1, main 0.9.12) a watchdog reset from here on: beside core 1 (main.c) */
+    fm1_other_live = 1;                         /* (0.9.9-stab) a crash of core 0 pauses it and notes its PC (fm1_irq.h) */
     return 1;
+}
+
+/* (0.9.9-stab, as 0.9.12 / 0.9.19) before the flash goes off (hal/fm1_flash.h irq_save, FL_PARK): core 1 out of any job.
+ * Its loop waits in RAM (.c1_text) and a job's code runs from the flash: with USB audio at 48 kHz the resampler runs on
+ * it beside the main loop (usb.c uac_rs_job), and a job still running, or an exception of its, with the flash off would
+ * fetch garbage; the job waited for (2 ms: far past a block; longer, it is held as lost) */
+static __attribute__((noinline)) void fm1_mc_park(void)
+{
+    uint32_t t0 = FM1_C1_T4();
+    while (fm1_mc_on && fm1_mc_box.done != fm1_mc_box.job) {
+        FM1_C1_SYNC();
+        if (FM1_C1_T4() - t0 > 24000u * 2u) {
+            fm1_mc_lost = 2;
+            fm1_mc_hold();
+        }
+    }
+    /* and the cache idle after it, as the AC79 SDK's other-core handler waits before it acks a flash access
+     * (another_cpu_irq): a line core 1 was still filling from its job's code must land before the flash goes off */
+    FM1_C1_SYNC();
+    while (!(*(volatile uint32_t *)0x1EEE008u & 0x4000u))
+        ;
 }
 
 static inline int fm1_mc_run(void (*fn)(uint32_t), uint32_t arg)

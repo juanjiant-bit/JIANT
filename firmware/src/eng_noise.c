@@ -242,17 +242,17 @@ static void noise_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
 
 /* {MODE, COLR, FREQ, RES, TRK, DENS, DRFT, CRSH / CLK} */
 static const preset_t NOISE_PRESETS[] = {
-    {"WIND", {NZ_ANLG, 64, 70, 100, 127, 0, 70, 0}, {90, 90, 110, 90}, 0, 0, FX(0, 30, 20, 80), PAT(5)},
-    {"RAIN", {NZ_DUST, 30, 88, 80, 64, 105, 40, 0}, {10, 90, 127, 70}, 0, 0, FX(0, 0, 20, 70), PAT(5)},
+    {"WIND", {NZ_ANLG, 64, 70, 100, 127, 0, 70, 0}, {90, 90, 110, 90}, 0, TAG(FX), FX(0, 30, 20, 80), PAT(5)},
+    {"RAIN", {NZ_DUST, 30, 88, 80, 64, 105, 40, 0}, {10, 90, 127, 70}, 0, TAG(FX), FX(0, 0, 20, 70), PAT(5)},
     /* a 7-bit register (127 steps) clocked 84 semitones (7 octaves) above the key: one period per key period,
      * a pitched chip-style buzz */
-    {"ARCADE", {NZ_LFSR, 0, 127, 0, 127, 112, 0, 84}, {0, 80, 0, 50}, 0, 0, FX(0, 0, 10, 20), PAT(3)},
-    {"METAL", {NZ_META, 0, 100, 40, 100, 32, 0, 0}, {0, 75, 40, 60}, 10, 0, FX(0, 20, 30, 45), PAT(7)},
+    {"ARCADE", {NZ_LFSR, 0, 127, 0, 127, 112, 0, 84}, {0, 80, 0, 50}, 0, TAG(FX), FX(0, 0, 10, 20), PAT(3)},
+    {"METAL", {NZ_META, 0, 100, 40, 100, 32, 0, 0}, {0, 75, 40, 60}, 10, TAG(FX), FX(0, 20, 30, 45), PAT(7)},
     /* (0.7.0) textures for the generator: the sea, a hiss pad, vinyl crackle, tape air */
-    {"SEA", {NZ_ANLG, 40, 50, 60, 40, 0, 90, 0}, {100, 90, 120, 110}, 0, 0, FX(0, 20, 20, 80), PAT(5)},
-    {"HISS PAD", {NZ_ANLG, 90, 95, 110, 127, 0, 20, 0}, {80, 90, 115, 100}, 0, 0, FX(0, 40, 30, 85), PAT(5)},
-    {"CRACKLE", {NZ_DUST, 60, 100, 40, 64, 60, 20, 0}, {5, 90, 127, 60}, 0, 0, FX(0, 0, 20, 50), PAT(5)},
-    {"TAPE AIR", {NZ_ANLG, 75, 60, 20, 64, 0, 50, 10}, {90, 90, 120, 110}, 0, 0, FX(0, 30, 25, 70), PAT(5)},
+    {"SEA", {NZ_ANLG, 40, 50, 60, 40, 0, 90, 0}, {100, 90, 120, 110}, 0, TAG(FX), FX(0, 20, 20, 80), PAT(5)},
+    {"HISS PAD", {NZ_ANLG, 90, 95, 110, 127, 0, 20, 0}, {80, 90, 115, 100}, 0, TAG(PAD), FX(0, 40, 30, 85), PAT(5)},
+    {"CRACKLE", {NZ_DUST, 60, 100, 40, 64, 60, 20, 0}, {5, 90, 127, 60}, 0, TAG(FX), FX(0, 0, 20, 50), PAT(5)},
+    {"TAPE AIR", {NZ_ANLG, 75, 60, 20, 64, 0, 50, 10}, {90, 90, 120, 110}, 0, TAG(FX), FX(0, 30, 25, 70), PAT(5)},
 };
 
 static const engine_t ENG_NOISE = {

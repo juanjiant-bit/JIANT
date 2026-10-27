@@ -11,6 +11,7 @@
 static motion_store_t motion;
 static int16_t motion_base[NTRK][P_COUNT];
 static uint32_t motion_active[NTRK][(P_COUNT + 31u) / 32u];
+static uint8_t cx_lkhold;                       /* (seq2d) seq.c: a LOCK component holds the locks over this step */
 static uint32_t motion_locked[NTRK][(P_COUNT + 31u) / 32u];   /* the ids a lock holds now (put back at the next step) */
 static uint8_t motion_base_valid, motion_full;
 /* (0.9.1) the DJ FILTER's records (MOT_DJF): the global's value before they moved it (the knob's), and the tracks whose
@@ -133,12 +134,30 @@ static uint32_t motion_mask(uint32_t k, uint32_t m[(P_COUNT + 31u) / 32u])
     }
     return any;
 }
+/* (0.9.9-seq2e) MOMENTARY (ui_layer.c mom_*): EDIT held + KNOB 1..4 edits the page under the layer for as long as EDIT
+ * is held. Each parameter touched is kept here as it was when first touched (its track, or MOM_G a song global; its id;
+ * the value): EDIT let go, it glides back. What is saved (project_capture, the autosave's signature, a user preset, the
+ * editor's reads) is the kept value, never the momentary one: mom_base */
+#define MOM_N 16u
+#define MOM_G 0xFFu
+typedef struct { uint8_t t, id; int16_t v, from; } mom_t;
+static mom_t mom[MOM_N];
+static uint8_t mom_n, mom_on, mom_glide;          /* entries; EDIT held and a knob turned; gliding back (EDIT let go) */
+static uint32_t mom_t0;                           /* fm1_ms the glide began */
+static int16_t mom_base(uint32_t t, uint32_t id, int16_t v)
+{
+    uint32_t i;
+    for (i = 0; i < mom_n; i++)
+        if (mom[i].t == t && mom[i].id == id)
+            return mom[i].v;
+    return v;
+}
 static int16_t motion_base_value(const track_t *t, uint32_t id)
 {
     uint32_t k = trk_index(t);
     if (id == MOT_DJF)
         return motion_djf_value();
-    return (motion_active[k][id / 32u] >> (id % 32u)) & 1u ? motion_base[k][id] : t->p[id];
+    return (motion_active[k][id / 32u] >> (id % 32u)) & 1u ? motion_base[k][id] : mom_base(k, id, t->p[id]);
 }
 static void motion_restore(track_t *t)
 {
@@ -327,7 +346,7 @@ static __attribute__((noinline)) void motion_step(track_t *t, uint32_t step, con
     for (w = 0; w < (P_COUNT + 31u) / 32u; w++)
         any |= motion_locked[k][w];
     if (!step) motion_restore(t);
-    else if (any) motion_unlock(t, step, m);
+    else if (any && !cx_lkhold) motion_unlock(t, step, m);   /* (seq2d: a LOCK component holds them over its LENGTH) */
     for (i = 0; i < m->count; i++) {
         const motion_event_t *e = &m->event[i];
         uint32_t id = MOTION_ID(e);

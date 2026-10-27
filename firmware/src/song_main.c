@@ -141,7 +141,11 @@ static int section_load(uint32_t s)
 {
     chain_config_t keep = chain_config;
     uint8_t row = ui.song_row;
-    if (!proj_import(&proj_scratch, &proj_slot[s & 3u], sizeof(project_store_t)) || project_restore_runtime(&proj_scratch))
+    int rc;
+    proj_lfo_keep = 1;                                  /* (0.9.18: the song plays on, MODE FREE's LFOs not faded again) */
+    rc = !proj_import(&proj_scratch, &proj_slot[s & 3u], sizeof(project_store_t)) || project_restore_runtime(&proj_scratch);
+    proj_lfo_keep = 0;
+    if (rc)
         return 1;
     chain_config = keep;
     ui.song_row = row;
@@ -319,7 +323,6 @@ static int song_switch(uint32_t n, int load_a)
     }
     song_idx.rows[song_cur] = chain_config;           /* (the rows of the song left) */
     song_cur = (uint8_t)n;
-    dice_secs = 0;                                    /* (0.6.81) another project's sections: none DICE ALL's */
     chain_config = song_idx.rows[n];
     if (song_index_save()) {                          /* (failed: written again by song_poll) */
         song_idx_dirty = 1;

@@ -867,16 +867,17 @@ int main(void)
             memcpy(g.fm6[t], FM6_INIT, FM6_PACKED);
             memcpy(g.dx, DX_KIT_DEF, sizeof g.dx);
         }
-        g.t[1].engine = ENGI_GRAIN; g.t[2].engine = ENGI_SLICE; g.t[2].p[P_LEVEL] = 66;
+        g.t[1].engine = ENGI_SAMPLE; g.t[2].engine = ENGI_PHYS; g.t[2].p[P_LEVEL] = 66;   /* (0.9.9-snd5: GRAIN's and SLICE's numbers
+                                                         * are STRING and ADD now: two other retired ones) */
         g.motion.count = 2; g.motion.on = 4;
         g.motion.event[0] = (motion_event_t){2u << 6 | 1u, P_E2, 30};
         g.motion.event[1] = (motion_event_t){2u << 6 | 2u, P_REV, 40};
         g.sum = proj_sum(&g);
         ok = proj_pack_vb(&gs, &g) && proj_import(&h, &gs, sizeof gs) && h.t[1].engine == ENGI_PHYS_TO &&
              h.t[2].engine == ENGI_PHYS_TO && h.t[2].p[P_LEVEL] == 66 && h.motion.count == 1u && h.motion.event[0].param == P_REV &&
-             h.t[2].p[P_E0] == ENGINES[ENGI_PHYS_TO]->presets[0].e[0] && !eng_ok(ENGI_GRAIN) && !eng_ok(ENGI_SLICE) &&
-             !eng_ok(ENGI_SAMPLE) && eng_live(ENGI_SLICE) == ENGI_PHYS_TO;
-        bad += check("JIANT: GRAIN and SLICE tracks (retired) load as ANALOG, their engine motion gone, LEVEL and sends kept", ok);
+             h.t[2].p[P_E0] == ENGINES[ENGI_PHYS_TO]->presets[0].e[0] && !eng_ok(ENGI_PHYS) && eng_ok(ENGI_STRING) && eng_ok(ENGI_ADD) &&
+             !eng_ok(ENGI_SAMPLE) && eng_live(ENGI_PHYS) == ENGI_PHYS_TO;
+        bad += check("JIANT: SAMPLE and PHYS tracks (retired) load as ANALOG, their engine motion gone, LEVEL and sends kept", ok);
     }
     {   /* (JIANT 0.6) FUNC: six tracks in FUNB's 3840 bytes, only the steps that are not empty stored */
         static project_t f, g, h;

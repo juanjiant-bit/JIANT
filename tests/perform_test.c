@@ -898,9 +898,80 @@ static int test_pfx(void)
     return bad;
 }
 
+/* (0.9.9-snd2) LOOP 3 / 5 / 7 (G#4, C#5, D#5): pressed while step 8 plays, the steps after are 6 7 8 6 7 8 .. (4 5 6 7 8 ..),
+ * not on the bar; every track its own last steps; let go, the sequencer where it would have been */
+static int loop_case(uint32_t e, uint32_t nn, const uint8_t *want, uint32_t nw)
+{
+    static int32_t o[2 * CTL];
+    uint8_t got[16];
+    uint32_t i, k = 0, last = 0xFFFFu, pressed = 0, t0 = 0, ok;
+    uint16_t i0, id;
+    uint32_t p0;
+    song_setup();
+    transport_req = 1;
+    for (i = 0; i < 8u * 22016u && k < nw; i += CTL) {
+        if (!pressed && trk[0].seq_idx == 8u && trk[0].seq_pos > 2000u) { perf_press(e, 1); pressed = 1; t0 = i; }
+        mix_block(o, CTL);
+        if (pressed && trk[0].seq_idx != last && i > t0) got[k++] = (uint8_t)trk[0].seq_idx;
+        last = trk[0].seq_idx;
+    }
+    id = trk[3].seq_idx;                            /* (the drums too: the same window) */
+    perf_press(e, 0);
+    for (; i < 8u * 22016u; i += CTL)
+        mix_block(o, CTL);
+    transport_req = 2;
+    mix_block(o, CTL);
+    i0 = trk[0].seq_idx; p0 = trk[0].seq_pos;
+    song_setup();                                   /* (the reference: the same time without LOOP) */
+    song_render(8u * 22016u, 0);
+    ok = k == nw && !memcmp(got, want, nw) && id >= 8u - (nn - 1u) && id <= 8u;
+    printf("perform: LOOP %u: steps after the press", (unsigned)nn);
+    for (i = 0; i < k; i++) printf(" %u", got[i]);
+    printf("; let go: step %u (%u without it)\n", i0, trk[0].seq_idx);
+    return check(nn == 3u ? "LOOP 3: the last 3 steps again (6 7 8 6 7 8 ..), let go where it would have been"
+                 : nn == 5u ? "LOOP 5: the last 5 steps again (4 5 6 7 8 4 ..), let go where it would have been"
+                          : "LOOP 7: the last 7 steps again (2 .. 8 2 ..), let go where it would have been",
+                 ok && i0 == trk[0].seq_idx && p0 == trk[0].seq_pos);
+}
+/* (0.9.9-snd2) GLITCH (F#5), 0.9.18's: it cuts some 1/16s and leaves others live, the same every time (it grooves);
+ * let go, live again bit for bit */
+static int test_glt(void)
+{
+    static int32_t keep[8u * P16];
+    uint32_t j, live = 0, cut = 0;
+    int bad = 0, rep;
+    ev_t eg[] = {{P16, PF_GLT + 1}, {17u * P16, -(PF_GLT + 1)}};
+    test_signal(220.0, 12000.0, 330.0, 12000.0);
+    run_crush = run_k4 = 0;
+    run(120, 1, eg, 2, 20u * P16);
+    for (j = 2; j < 16u; j++) {                     /* each 1/16 of the held bar: live (as the input) or glitched */
+        if (same(j * P16 + 64u, (j + 1u) * P16 - 64u)) live++; else cut++;
+    }
+    memcpy(keep, out_l + P16, sizeof keep);
+    run(120, 1, eg, 2, 20u * P16);
+    rep = !memcmp(keep, out_l + P16, sizeof keep);
+    printf("perform: GLITCH: %u of 14 1/16s glitched, %u live; the same the second time: %s\n", (unsigned)cut,
+           (unsigned)live, rep ? "yes" : "no");
+    bad += check("GLITCH: some 1/16s cut, some live, the same every time; let go, live again", cut >= 3u && live >= 3u &&
+                 rep && same(18u * P16, 20u * P16));
+    return bad;
+}
+static int test_loops(void)
+{
+    static const uint8_t W3[9] = {6, 7, 8, 6, 7, 8, 6, 7, 8}, W5[10] = {4, 5, 6, 7, 8, 4, 5, 6, 7, 8};
+    static const uint8_t W7[14] = {2, 3, 4, 5, 6, 7, 8, 2, 3, 4, 5, 6, 7, 8};
+    int bad = 0;
+    bad += loop_case(PF_LP3, 3u, W3, 9u);
+    bad += loop_case(PF_LP5, 5u, W5, 10u);
+    bad += loop_case(PF_LP7, 7u, W7, 14u);
+    return bad;
+}
+
 int main(int argc, char **argv)
 {
     int bad = 0;
+    bad += test_loops();
+    bad += test_glt();
     bad += test_timing();
     bad += test_stereo();
     bad += test_too_long();

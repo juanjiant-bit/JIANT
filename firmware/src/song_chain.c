@@ -19,7 +19,9 @@
  * This file: the state and the rows; song_play.c (included at the end of seq.c): the ISR's part; song_main.c
  * (included by project.c): the main loop's. */
 static chain_config_t chain_config;           /* the current song's rows */
-static uint8_t dice_secs;                     /* (JIANT 0.6.81) the sections DICE ALL wrote (bit s; song_dice.c) */
+#define dice_secs (chain_config.rsv[1])       /* (JIANT 0.6.81) the sections DICE ALL / GEN wrote (bit s); (gen6c) kept with
+                                              * the song's rows in flash: after a power cycle GEN's FORM writes them again
+                                              * (in RAM they were lost, and every section looked the player's) */
 #define NSONG 8u                              /* songs: four sections each (storage.c: where they are kept) */
 #define SONG_MAGIC 0x474E4F53u                /* "SONG" */
 /* (JIANT) a row's scene: when the row goes in (a song, not a quick chain) the tracks' mutes, DRUM's group mutes, the

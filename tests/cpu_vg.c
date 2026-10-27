@@ -9,12 +9,21 @@
  *   eng/<ENGINE>   one part, 8 notes held (VOICE: 4), the engine's heaviest preset (hostsim.c's list)
  *   eng/ANIMAL.<MODE>  (0.8.3) ANIMAL's five sources at their heaviest: 8 notes, no gaps (GROUP HOLD), every option on
  *   rev/<TYPE>     a pad soaked in the reverb, each REVERB TYPE (ROOM SPRING SHIMR RESO CLOUD)
- *   dly/<RATE>     (0.8.4) a pad into the delay, its line at the full rate, half, a quarter (fx.c dly_lo)
- *   mix/full       six parts: four ANALOG / FM6 chords, drums, every FX on
+ *   dly/<RATE>     (0.8.4) a pad into the delay, its line at the full rate, half, a quarter (fx.c dly_lo); (snd2)
+ *                  .drive: DRIVE 100; .throw: THROW held (KNOB 3 of the FX layer at 100), the loop's band in
+ *   cho/pad        (snd2) a pad into the chorus only, RATE 40 (.fast: 127)
+ *   mix/full       six parts: four ANALOG / FM6 chords, drums, every FX on; (snd2) .repeat / .glitch: the FX layer's
+ *                  REPEAT 1/16 / GLITCH held on it
  *   seq/plain      the sequencer: six tracks of chords / hits on every step at 200 BPM
- *   seq/heavy      .. with two step components on each (ARP SEQ / ECHO x8, RAND / OCT), DIV, LEN, chord glides
+ *   seq/heavy      .. with two step components on each (ARP / RATCHET x8, RANDOM / OCT+ at 75 %), DIV, LEN, chord glides
+ *   seqtick/plain  (p2, main 0.9.11) the sequencer alone (events_block, no render): seq/plain's six tracks
+ *   seqtick/live   .. every track under GLO > LIVE's modifiers (seq_live.c: x2, a LOOP of 4, REV, THIN 30 %, GIRO +1)
  *   song/cputest   SAVE > TOOLS 6 CPU TEST's song (song_dice.c cpu_test_song), playing: what the device is measured on
  *   song/cputest.djf  (0.9.1) .. with the master DJ FILTER on (GLO > MIXER KNOB 4 at -24, a low-pass): its cost on top
+ *   mix/idle       (0.9.9 ctl64) nothing sounding, stopped: the fixed cost of a block (the events, the split, the buses,
+ *                  the buffers, the master)
+ *   seq/mono4      (0.9.9 ctl64) four MONO tracks (ANALOG FM6 VOICE WHEEL) at 1/16, 150 BPM, one note a step, each
+ *                  cutting the one before (GATE past the step: a legato retrigger each step), dry
  *   peak/VOICE.EN6 (0.9.0, last) six VOICE EN tracks starting a word in one block: that block's instructions, the worst
  *                  of 24 rounds (cpu_vg.py: not per sample) */
 #define UI_TEST_NO_MAIN
@@ -67,6 +76,30 @@ static void vg_part(uint32_t k, uint32_t e, uint32_t pr, uint32_t notes)
     for (i = 0; i < notes && i < 8u; i++)
         trk_note_on(t, e == ENGI_DRUM ? DRUM_LANE_NOTE[i] : N[i], 100);
 }
+static void vg_mono4(void)                          /* (0.9.9 ctl64) four MONO tracks cutting each other's notes */
+{
+    static const uint8_t EN[4] = {ENGI_ANALOG, ENGI_FM6, ENGI_VOICE, ENGI_WHEEL};
+    uint32_t k, i;
+    ui_power_on();
+    for (k = 0; k < NTRK; k++) {
+        track_t *t = &trk[k];
+        if (k >= 4u) { t->p[P_MUTE] = 1; continue; }
+        set_engine_of(t, EN[k]);
+        apply_preset_to(t, 0);
+        t->engine = t->eng_req;
+        t->p[P_VOICE] = V_MONO; t->p[P_SLEN] = 16; t->p[P_SGATE] = 127; t->p[P_SDIV] = 2;
+        t->p[P_MUTE] = 0; t->p[P_CHOR] = t->p[P_DLY] = t->p[P_REV] = 0;
+        for (i = 0; i < 16u; i++) {
+            step_t *st = &t->step[i];
+            memset(st, 0, sizeof *st);
+            st->time = ST_NOTE; st->vel = 100; st->n = 1;
+            st->note[0] = (uint8_t)(36 + 12 * k + (i * 5u + k) % 12u);
+            if (i & 1u) ST_MICRO_SET(st, (int32_t)((i * 7u) % 23u) - 11);   /* (off the grid: the starts inside blocks) */
+        }
+    }
+    song.g[G_BPM] = 150;
+    transport_req = 1; ui_input();
+}
 static void vg_seq(int heavy)
 {
     uint32_t k, i;
@@ -88,9 +121,9 @@ static void vg_seq(int heavy)
                 s->note[2] = (uint8_t)(55 + i % 12); s->note[3] = (uint8_t)(59 + i % 12);
             }
             if (heavy) {
-                s->comp = i % 3u == 0u ? CP_ARPQ : CP_ECHO;
-                s->carg = s->comp == CP_ARPQ ? CP_ARG(3u, 4u, 3u) : 6u;
-                s->comp2 = i % 2u ? CP_RAND : CP_OCT; s->carg2 = i % 2u ? 7u : 5u;
+                s->comp = CO_MAKE(i % 3u == 0u ? CA_ARP : CA_RATCH, CC_ALWAYS);   /* (seq2d: components v2) */
+                s->carg = i % 3u == 0u ? CP_ARG(3u, 4u, 3u) : 6u;
+                s->comp2 = CO_MAKE(i % 2u ? CA_RAND : CA_OCTU, CC_P75); s->carg2 = i % 2u ? 6u : 0u;
                 s->ctime = 5u | (6u << 3);
             }
         }
@@ -167,6 +200,32 @@ int main(void)
         trk[0].p[P_DLY] = 127;
         vg_section(DN[i]);
     }
+    for (i = 0; i < 2u; i++) {                          /* (0.9.9-snd2) .. with DRIVE 100 (the loop's soft clip) */
+        static const char *const DN[2] = {"dly/full.drive", "dly/half.drive"};
+        static const uint8_t DT[2] = {DT_FREE + 40, DT_FREE + 44};
+        vg_quiet();
+        song.g[G_DTIME] = DT[i]; song.g[G_DFDBK] = 70; song.g[G_DMOD] = 20; song.g[G_DDRV] = 100;
+        vg_part(0, ENGI_ANALOG, 0, 4);
+        trk[0].p[P_DLY] = 127;
+        vg_section(DN[i]);
+        song.g[G_DDRV] = 0;
+    }
+    vg_quiet();                                         /* (snd2) a pad into the chorus only (its LFO a segment: fx.c
+                                                         * cho_lfo), at the default RATE and at RATE 127 */
+    vg_part(0, ENGI_ANALOG, 0, 4);
+    trk[0].p[P_CHOR] = 127;
+    vg_section("cho/pad");
+    song.g[G_CRATE] = 127;
+    vg_section("cho/pad.fast");
+    song.g[G_CRATE] = 40;
+    trk[0].p[P_CHOR] = 0;
+    vg_quiet();                                         /* (snd2) THROW held (the FX layer's KNOB 3 at 100): the mix */
+    song.g[G_DTIME] = DT_FREE + 40; song.g[G_DFDBK] = 70; song.g[G_DMOD] = 20;   /* sent, the loop's band */
+    vg_part(0, ENGI_ANALOG, 0, 4);
+    trk[0].p[P_DLY] = 127;
+    perf_k[2] = 100;
+    vg_section("dly/full.throw");
+    perf_k[2] = 0;
     vg_quiet();
     for (i = 0; i < 4u; i++) {
         vg_part(i, i == 1u ? ENGI_FM6 : ENGI_ANALOG, 0, 4);
@@ -175,10 +234,35 @@ int main(void)
     vg_part(5, ENGI_DRUM, 0, 4);
     song.g[G_RTYPE] = 4;
     vg_section("mix/full");
+    perf_held = PF_BIT(PF_R16);                         /* (snd2) the FX layer's buffer: REPEAT 1/16, then GLITCH, on it */
+    vg_section("mix/full.repeat");
+    perf_held = PF_BIT(PF_GLT);
+    vg_section("mix/full.glitch");
+    perf_held = 0;
     vg_seq(0);
     vg_section("seq/plain");
     vg_seq(1);
     vg_section("seq/heavy");
+    {   /* (p2, main 0.9.11) the sequencer alone, plain and under LIVE's modifiers on every track */
+        uint32_t b, k, r;
+        for (r = 0; r < 2u; r++) {
+            vg_seq(0);
+            for (k = 0; k < NTRK && r; k++) {
+                lv.rate[k] = 2; lv.cut[k] = 7; lv.dn[k] = -3; lv.rot[k] = 1;
+                lv.here |= (uint8_t)(1u << k); lv.lt[8] |= (uint8_t)(1u << k);
+            }
+            live_publish();
+            for (b = 0; b < 64u; b++)
+                events_block(CTL);
+            CALLGRIND_ZERO_STATS;
+            CALLGRIND_START_INSTRUMENTATION;
+            for (b = 0; b < NB; b++)
+                events_block(CTL);
+            CALLGRIND_DUMP_STATS_AT(r ? "seqtick/live" : "seqtick/plain");
+            CALLGRIND_STOP_INSTRUMENTATION;
+            memset(&lv, 0, sizeof lv);
+        }
+    }
     ui_power_on();
     cpu_test_song();
     transport_req = 1; ui_input();
@@ -186,6 +270,32 @@ int main(void)
     song.g[G_DJF] = -24;                                /* (0.9.1) the same song through the DJ FILTER (a low-pass, ~1.4 kHz) */
     vg_section("song/cputest.djf");
     song.g[G_DJF] = 0;
+    {   /* (cpu5) the idle floor: mix/idle the power-on state 2 s on, nothing played (the buses never excited: cpu4's
+         * certificates); mix/idle.tail after a chord into CLOUD, the delay and the chorus has rung out and the buses'
+         * gate has shut (fx.c fx_rest), 6 s after the keys went up (the delay's FEEDBK holds the gate ~4 s) */
+        uint32_t b;
+        ui_power_on();
+        for (b = 0; b < 3000u; b++)
+            mix_block(vo, CTL);
+        vg_section("mix/idle");
+        ui_power_on();
+        song.g[G_RTYPE] = 4; song.g[G_DFDBK] = 60;
+        for (i = 0; i < 4u; i++) {                      /* (ANALOG: FM6's preset 0 never ends its release: sends on) */
+            vg_part(i, ENGI_ANALOG, 0, 3);
+            trk[i].p[P_DLY] = 60; trk[i].p[P_REV] = 60; trk[i].p[P_CHOR] = 60; trk[i].p[P_REL] = 40;
+        }
+        for (b = 0; b < 400u; b++)
+            mix_block(vo, CTL);
+        for (i = 0; i < 4u; i++)
+            trk_all_off(&trk[i]);
+        for (b = 0; b < (uint32_t)FS * 6u / CTL; b++)
+            mix_block(vo, CTL);
+        vg_section("mix/idle.tail");
+    }
+    transport_req = 2; ui_input();
+    vg_quiet();
+    vg_mono4();                                         /* (ctl64) four MONO tracks cutting each other's notes */
+    vg_section("seq/mono4");
     {   /* (0.9.0) peak/VOICE.EN6: six VOICE EN tracks starting a word in the same block (TEXT of one-syllable words on
          * three, W1 W9 S3 on the others), 24 times: the instructions of that one block, the worst of them */
         static const char *const TX[3] = {"love me now we go home", "strength through the night", "stay and fly so high"};

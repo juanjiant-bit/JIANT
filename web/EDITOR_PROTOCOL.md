@@ -61,7 +61,7 @@ takes P_COUNT and P_E0 from `INFO` keeps working (see the table below: in JIANT 
 levels), went in before the engine parameters, which moved from 83..90 to 91..98: P_COUNT 99, P_E0 91. No command
 changed; projects were FUN9 (3648 bytes, see "Projects (FUN9)"; JIANT writes FUNA). See "The DRUM lane levels" below.
 
-**JIANT 0.3: SAMPLE (4), GRAIN (8) and SLICE (13) retired.** Their numbers stay, named `-` in `INFO` and `G_ENGSEL`, with no
+**JIANT 0.3: SAMPLE (4), GRAIN (8) and SLICE (13) retired** (JIANT 0.9.9-snd5: 8 and 13 hold STRING and ADD again, named so). Their numbers stay, named `-` in `INFO` and `G_ENGSEL`, with no
 presets (as PHYS, 9); a sound of theirs that arrives (a project, a user preset, `PRESET`, a `SET` of `G_ENGSEL`, a backup) plays as
 ANALOG's first preset, a SAMPLE PERC sound (SET 4) as DRUM's kit. The factory samples left the firmware.
 
@@ -138,7 +138,7 @@ watches (v2, `WATCH`), the device also sends push frames (cmds 23, 24, 26) at an
 | string | ASCII bytes, ended by a 0 byte |
 | scope | 0 = parameter of the selected track (`P_*`, 0..P_COUNT−1); 1 = global parameter (`G_*`, 0..G_COUNT−1) |
 | track | 0..NTRK-1: tracks 1..6 (synth parts; JIANT 0.6: six, INFO's NTRK; before, four) |
-| engine byte | 0..NENGINES−1 (firmware before 1.0: NENGINES = its drum track, no engine). The numbers are fixed, new engines are appended: 0 ANALOG, 1 reserved (DIGITAL before 1.0: see below), 2 PHASE, 3 LOFI, 4 SAMPLE, 5 VOICE, 6 TRIO, 7 WHEEL, 8 GRAIN, 9 reserved (PHYS until FELUCCA TONIC: its sounds load as ANALOG's first preset), 10 DRUM, 11 NOISE, 12 FM6, 13 SLICE (retired in JIANT), 14 ANIMAL (JIANT 0.8.3; NENGINES 15, before it 14: an engine byte of 14 from a 0.8.3 store on older firmware is refused as any number past its last; a user-slot favourite (`FAV_GET` / `FAV_SET`, engine = NENGINES) is engine 15 from 0.8.3 on, read NENGINES from `INFO`). The device and the editor list them in another order (JIANT 0.9.9: DRUM VOICE ANIMAL LOFI ANALOG FM6 PHASE WHEEL NOISE, DIGITAL last in FELUCCA_FM4 builds: `ENGINE_ORDER`; 0.8.3 .. 0.9.8: ANALOG FM6 PHASE LOFI VOICE WHEEL NOISE DRUM ANIMAL, the order PROGRAM CHANGE still numbers the sounds in); the numbers stay. ANIMAL's EDIT values: MODE (0 CMOS, 1 PULSE, 2 WHSTL, 3 WING, 4 GLOTT), PRESS, CHAOS, SIZE, SWEEP (−64..63), RATE (the LFO's Hz scale), GROUP (0..15: HOLD TRILL 1+1 1+3 2+2 2+6 3+3 3+9 4+4 4+12 6+6 8+8 8+24 12+12 16+16 32+32), TEMP (0..40 °C); the device relabels some per MODE (`DESC` sends these, the engine's own) |
+| engine byte | 0..NENGINES−1 (firmware before 1.0: NENGINES = its drum track, no engine). The numbers are fixed, new engines are appended: 0 ANALOG, 1 reserved (DIGITAL before 1.0: see below), 2 PHASE, 3 LOFI, 4 SAMPLE, 5 VOICE, 6 TRIO, 7 WHEEL, 8 GRAIN, 9 reserved (PHYS until FELUCCA TONIC: its sounds load as ANALOG's first preset), 10 DRUM, 11 NOISE, 12 FM6, 13 SLICE (retired in JIANT), 14 ANIMAL (JIANT 0.8.3; NENGINES 15, before it 14: an engine byte of 14 from a 0.8.3 store on older firmware is refused as any number past its last; a user-slot favourite (`FAV_GET` / `FAV_SET`, engine = NENGINES) is engine 15 from 0.8.3 on, read NENGINES from `INFO`); JIANT 0.9.9-snd5 puts STRING in GRAIN's 8 and ADD in SLICE's 13 (both retired; NENGINES stays 15: a GRAIN or SLICE sound of an old store plays as STRING / ADD there). The device and the editor list them in another order (JIANT 0.9.9: DRUM VOICE ANIMAL LOFI ANALOG FM6 PHASE WHEEL NOISE, snd5: then STRING ADD, DIGITAL last in FELUCCA_FM4 builds: `ENGINE_ORDER`; 0.8.3 .. 0.9.8: ANALOG FM6 PHASE LOFI VOICE WHEEL NOISE DRUM ANIMAL, the order PROGRAM CHANGE still numbers the sounds in); the numbers stay. ANIMAL's EDIT values: MODE (0 CMOS, 1 PULSE, 2 WHSTL, 3 WING, 4 GLOTT), PRESS, CHAOS, SIZE, SWEEP (−64..63), RATE (the LFO's Hz scale), GROUP (0..15: HOLD TRILL 1+1 1+3 2+2 2+6 3+3 3+9 4+4 4+12 6+6 8+8 8+24 12+12 16+16 32+32), TEMP (0..40 °C); the device relabels some per MODE (`DESC` sends these, the engine's own). STRING's: EXCITE (0 NOISE, 1 PLUCK, 2 PICK, 3 HAMMR, 4 STICK), DECAY, BRIGHT, POS, STRETCH, BODY, SIZE, BOW (0..127). ADD's: MODE (0 HARM, 1 ODD, 2 WIDE, 3 BELL, 4 BAR, 5 DRUM), BRIGHT, EVEN (−64..63), STRETCH (−64..63), PEAK, FORMNT, DECAY (127: held), DAMP |
 
 The engine parameters are `P_E0..P_E7`: P_COUNT−8 .. P_COUNT−1 (91..98), and `INFO` gives `P_E0`.
 Their meaning, range and names depend on the current engine, so re-read `DESC` for them
@@ -459,9 +459,12 @@ grid lives in the steps themselves, so every engine has it:
   (about 10 ms each); with the next piece sent before the reply, every second piece was dropped.
 - **Following the device.** With v2 firmware, `WATCH` and `PING` (above). Older firmware pushes
   nothing (no reply to `PING`): poll `DUMP` about every 300–500 ms while the page is visible.
-- **Port.** The device's MIDI port is named "Felucca" (USB 1209:0001). Updates use the same
+- **Port.** The device's MIDI port is named "JIANT" (USB 1209:0001; JIANT 0.9.12, iProduct at string index 4;
+  JIANT 0.7.0 .. 0.9.11 "JIANT FM", Felucca "Felucca", both at index 2; Windows may still show the name it cached for
+  index 2). Match the port by name loosely (`/felucca|jiant/i`: Windows numbers ports "2- JIANT",
+  "MIDIIN2 (JIANT)") and tell the firmware by `INFO` / the identity reply, never by the name. Updates use the same
   port with other SysEx (the `F0 22 24 35 …` keys, `00 59 …` frames); never send those
-  from the editor. Since 1.0 the same USB device also has an audio input ("Felucca",
+  from the editor. Since 1.0 the same USB device also has an audio input (the same name,
   44.1 kHz stereo; bcdDevice 3.11; since 1.1 44.1 or 48 kHz, the host's choice, bcdDevice 3.21
   (3.20 with MENU > USB SERIAL OFF)); the MIDI port and this protocol are unchanged, and both
   work while the computer records.
@@ -946,6 +949,24 @@ the device's autosave took the transfer's flash between two requests, after 10 s
 - The editor's import (6-OP FM tab): a 32-voice file's voices, each packed as for a single voice (every value into
   its range); an empty slot of a shorter file is not written. Flash: the bank is at 0xE7000; a transfer is staged in
   the autosave's older sector first (0xE5000 / 0xE6000), which the next autosave writes over anyway.
+
+## SAMPLE bank (78-81; JIANT 0.9.9-par13)
+
+SAMPLE (engine 13) plays the owner's samples from one bank of 6144 bytes, the same in RAM and in flash (0xDA000,
+src/sample_bank.c). The editor builds the bank and sends it whole:
+
+- bytes 0..15: magic `0x504D534A` ("JSMP", little-endian), version 1 (u16), the slots used (u16, from 0), the data's
+  length in bytes (u32), the CRC-32 of bytes 16 .. 256 + length (u32);
+- bytes 16..255: 15 entries of 16 bytes: the sample's first byte in the data (u16), its samples (u16), its rate in Hz
+  (u16, 4000..16000), its name (10 bytes, ASCII, 0-padded; the knob shows 5);
+- bytes 256..: the samples, IMA ADPCM, 4 bits each (the low nibble first), each sample from predictor 0, step index 0.
+
+| Cmd | Args | Reply |
+|---|---|---|
+| 78 SMPB_BEGIN | — | rc. The RAM bank cleared; SAMPLE silent until END |
+| 79 SMPB_WRITE | offset (3 x 7 bits), then up to 64 bytes, each as two 7-bit bytes (its low nibble, its high nibble) | rc: 0, 1 bad arguments or out of the bank, 5 no transfer |
+| 80 SMPB_END | the CRC-32 of the whole bank (6144 bytes; 5 x 7 bits, low first) | rc, the slots playable. rc 0: it plays and is in flash; 2 the CRC or no bank in it (SAMPLE silent); 3 playback did not stop; 4 flash (it plays until power-off); 5 no transfer. Allow 2 s (two sectors erased) |
+| 81 SMPB_LIST | — | 15, the bank's size / 64, then per slot: used, its name (0-terminated), its samples (3 x 7 bits), its rate / 100 |
 
 ## VOICE words and LYRIC (39; JIANT 0.8.5)
 

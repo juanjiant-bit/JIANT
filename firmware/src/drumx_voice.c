@@ -39,7 +39,9 @@ typedef struct {                                         /* a hit */
     int32_t b1, b2;                                      /* (0.6.36) TONE's band-pass state */
     uint32_t ph4;                                        /* (0.6.49) LAYER's oscillator phase */
     uint8_t live, trig, choke;
-    uint16_t hpos, hsum, hseed;                          /* (0.7.9) CLAP's HANDS: half-rate samples since the hit, the
+    uint16_t hpos, hsum, hseed;
+    int16_t mo1;                                         /* (0.9.9-snd1) FEEDBK: the output a sample before mo (the mean
+                                                          * of the two fed back; in the struct's padding) */                          /* (0.7.9) CLAP's HANDS: half-rate samples since the hit, the
                                                           * hands come in so far (Q12, over the hit's own), this hit's dice */
 } dx_voice_t;
 
@@ -53,10 +55,46 @@ static uint32_t dv_exp2(uint32_t x)
     m = 65536u + ((f * (45594u + ((f * (14851u + ((f * 5092u) >> 12))) >> 12))) >> 12);
     return m << (x >> 12);
 }
-/* tau (us) -> per-block decay, Q16: e^(-CTL / (tau fs)), to the fourth order */
+/* (0.9.9-snd1) the owner: FEEDBK, FM ENV "too extreme, harsh noise, unusable"; "a SOPHIE-like palette: hard but
+ * musical, metallic, rubbery, clean transients". The knobs on curves, most of the travel musical, the extreme only in
+ * the last steps. FEEDBK (the kit's KIT 3 + the sound's SOUND 4, 0..15): the phase fed back per unit of the output, Q15
+ * x this = phase (2^32 a turn); beta (rad) 1.6 (k / 13)^1.5 up to 13 (0.77 at 8, 1.25 at 11, 1.6 at 13: a sine
+ * growing a saw's edge, rubber, metal), then 2.2 and 3.0 (noise, as most of it was: k x 4096, beta 1.2 at 6, 1.57 at 8);
+ * and fed back the mean of the last two
+ * outputs (the DX7's: the period-2 hunting of a one-sample loop gone: clean, no fizz) */
+static const uint16_t DX_FB_CURVE[16] = {0, 712, 2013, 3699, 5697, 7961, 10465, 13188, 16113, 19230, 22521, 25981, 29600,
+                                         33377, 45891, 62582};
+/* FM ENV (DRUM's E5, 0..127) -> the FM index the hit strikes with (dx_run's ix: 1 = 0.0245 rad): 3.26 (2^(6 x) - 1)
+ * up to 114 (x = FM ENV / 127: 0.56 rad at 64, ~3.3 at 114: a beater, a click, a metal edge), then a line to the old
+ * top (381, 9.3 rad: the noise) at 127; was 3 x FM ENV (4.7 rad at 64: a crunch) */
+static __attribute__((noinline)) int32_t dx_fm_env(int32_t fm)
+{
+    int32_t e;
+    fm = clamp(fm, 0, 127);
+    if (fm > 114)
+        return 133 + (fm - 114) * (381 - 133) / 13;
+    e = (int32_t)dv_exp2((uint32_t)(fm * 6 * 4096 / 127));
+    return (int32_t)(((uint32_t)(e - 65536) * 209u) >> 22);
+}
+/* .. and kept under the half rate's Nyquist (11 kHz): the hit's highest sideband (fc + (I + 1) fm, the carrier fc,
+ * the modulator fm = fc ratio / 4096) at ~10 kHz at most, softly (e lim / (e + lim): the low and middle hits as they
+ * are, the high ones not folded into hiss) */
+static __attribute__((noinline)) int32_t dx_fm_lim(int32_t e, uint32_t inc, uint32_t ratio)
+{
+    int32_t fc = (int32_t)(((inc >> 16) * 44100u) >> 16), fmh = (int32_t)(((uint32_t)fc * ratio) >> 12), lim;
+    if (e <= 0)
+        return 0;
+    if (fc >= 10000)
+        return 0;
+    lim = (10000 - fc) * 41 / (fmh > 0 ? fmh : 1) - 41;
+    if (lim <= 0)
+        return 0;
+    return lim > 4096 ? e : e * lim / (e + lim);
+}
+/* tau (us) -> per-block decay, Q16: e^(-CTL / (tau fs)), to the fourth order (2^16 CTL / FS us) */
 static uint32_t dv_kb(uint32_t us)
 {
-    uint32_t x = 47554467u / (us | 1u), x2, x3, x4, k;
+    uint32_t x = (uint32_t)(65536.0 * CTL / FS * 1000000.0) / (us | 1u), x2, x3, x4, k;
     if (x > 46000u)
         x = 46000u;
     x2 = (x * x) >> 16;
@@ -83,15 +121,16 @@ static inline int32_t dx_tri(uint32_t ph)
  * modulated by it, its index up as LAYER's square; up to ~70 % of the mix): a function of its own (dx_run's loops as
  * they were) */
 static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32_t n, uint32_t *php, uint32_t *ph2p,
-                                               int32_t *op, int32_t inc, int32_t dinc, int32_t ga, int32_t dga, int32_t ix,
-                                               int32_t dix, uint32_t ratio, int32_t fbk, int32_t lay)
+                                               int32_t *op, int32_t *o1p, int32_t inc, int32_t dinc, int32_t ga, int32_t dga,
+                                               int32_t ix, int32_t dix, uint32_t ratio, int32_t fbk, int32_t lay)
 {
     uint32_t i, ph = *php, ph2 = *ph2p, ph4 = v->ph4;
-    int32_t o = *op, lx = lay * lay * 600, lm = lay * 3;
+    int32_t o = *op, o1 = *o1p, lx = lay * lay * 600, lm = lay * 3, fh = fbk >> 1;   /* (snd1: FEEDBK's mean of two) */
     if (ix || dix)
         for (i = 0; i < n; i++, inc += dinc, ga += dga, ix += dix) {
-            int32_t o2;
-            o = sine_i(ph + (uint32_t)(sine_i(ph2) * ix) * 512u + (uint32_t)(o * fbk));
+            int32_t o2, f = o + o1;
+            o1 = o;
+            o = sine_i(ph + (uint32_t)(sine_i(ph2) * ix) * 512u + (uint32_t)(f * fh));
             o2 = dx_tri(ph4 + (uint32_t)(o * lx));
             y[i] = mulq15(o + (((o2 - o) * lm) >> 6), ga >> 8);
             ph += (uint32_t)inc << 4;
@@ -100,8 +139,9 @@ static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32
         }
     else                                                 /* (no FM on it: the modulator not run) */
         for (i = 0; i < n; i++, inc += dinc, ga += dga) {
-            int32_t o2;
-            o = sine_i(ph + (uint32_t)(o * fbk));
+            int32_t o2, f = o + o1;
+            o1 = o;
+            o = sine_i(ph + (uint32_t)(f * fh));
             o2 = dx_tri(ph4 + (uint32_t)(o * lx));
             y[i] = mulq15(o + (((o2 - o) * lm) >> 6), ga >> 8);
             ph += (uint32_t)inc << 4;
@@ -110,6 +150,7 @@ static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32
     *php = ph;
     *ph2p = ph2;
     *op = o;
+    *o1p = o1;
     v->ph4 = ph4;
 }
 
@@ -160,8 +201,8 @@ static __attribute__((noinline)) int32_t dx_hands_step(dx_voice_t *v, uint32_t n
     s = clamp(s, 0, 12 << 12);
     v->hsum = (uint16_t)(s > 65535 ? 65535 : s);
     v->hpos = (uint16_t)(p0 + n < 65535u ? p0 + n : 65535u);
-    *g1 = (int32_t)(((int64_t)*g1 * (4096 + s)) >> 12);
-    return (int32_t)(((int64_t)gn * (4096 + s0)) >> 12);
+    *g1 = (int32_t)(mul64(*g1, 4096 + s) >> 12);
+    return (int32_t)(mul64(gn, 4096 + s0) >> 12);
 }
 static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, int32_t morph, int32_t tune16,
                                              int32_t dofs, int32_t cofs, int32_t nofs, int32_t warp, int32_t fm, int32_t *y,
@@ -175,6 +216,11 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
     if (!v->live && !v->trig) {
         for (i = 0; i < n; i++)
             y[i] = 0;
+        return;
+    }
+    if (nf < 2u) {                                       /* (ctl64) one sample (a hit starting at a block's last sample,
+                                                          * voice.c track_render): the last one held, nothing moves */
+        y[0] = v->hl;
         return;
     }
     n >>= 1;                                             /* (0.6.17) at half rate (22 kHz): the hit is low-passed
@@ -201,6 +247,7 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
         v->ic1 = v->ic2 = 0;
         v->b1 = v->b2 = 0;
         v->mo = 0;
+        v->mo1 = 0;
         if (!v->rng)
             v->rng = 0x2545F491;
         v->hpos = v->hsum = 0;
@@ -269,20 +316,23 @@ static __attribute__((noinline)) void dx_run(const dx_lane_t *L, dx_voice_t *v, 
                                                           * as the modulator, the other waves their own ratio and
                                                           * COLOR's index under it */
             uint32_t ph2 = v->ph2, ratio = wave == DXW_SINE ? 8192u : DX_RATIO[wave];
-            int32_t base = wave == DXW_SINE ? 0 : q[DXP_COLOR] * 3;
-            int32_t ix = base + ((fm * 3 * v->ep) >> 15), dix = ((base + ((fm * 3 * ep1) >> 15)) - ix) / (int32_t)n;
-            int32_t o = v->mo, fbk = (lfb > 15 ? 15 : lfb) * 4096;   /* (FEEDBK: up to half a turn) */
+            int32_t base = wave == DXW_SINE ? 0 : q[DXP_COLOR] * 3, fe = dx_fm_lim(dx_fm_env(fm), inc1, ratio);   /* (snd1) */
+            int32_t ix = base + ((fe * v->ep) >> 15), dix = ((base + ((fe * ep1) >> 15)) - ix) / (int32_t)n;
+            int32_t o = v->mo, o1 = v->mo1, fbk = DX_FB_CURVE[lfb > 15 ? 15 : lfb];   /* (FEEDBK: on its curve, snd1) */
             if (lay) {                                   /* (0.6.49) LAYER: a second one at sqrt 2, FM'd by the first */
-                dx_layer(v, y, n, &ph, &ph2, &o, inc, dinc, ga, dga, ix, dix, ratio, fbk, lay);
+                dx_layer(v, y, n, &ph, &ph2, &o, &o1, inc, dinc, ga, dga, ix, dix, ratio, fbk, lay);
             } else
                 for (i = 0; i < n; i++, inc += dinc, ga += dga, ix += dix) {
-                    o = sine_i(ph + (uint32_t)(sine_i(ph2) * ix) * 512u + (uint32_t)(o * fbk));
+                    int32_t f = o + o1;                  /* (snd1: the mean of the last two, x2: fbk / 2 below) */
+                    o1 = o;
+                    o = sine_i(ph + (uint32_t)(sine_i(ph2) * ix) * 512u + (uint32_t)(f * (fbk >> 1)));
                     y[i] = mulq15(o, ga >> 8);
                     ph += (uint32_t)inc << 4;
                     ph2 += ((uint32_t)inc >> 8) * ratio;
                 }
             v->ph2 = ph2;
             v->mo = o;
+            v->mo1 = (int16_t)o1;
         }
         v->ph = ph;
         if (L->mode & DX_DRIVE)                         /* (JIANT 0.4) DRIVE: x3 into the soft clip, the level near */

@@ -56,7 +56,8 @@ static const layer_t LAYERS[LAYER_N] = {
     {B_FX, LK_HOLD, FAM_HOME, "[FX] HOLD", {{KC_KEYS, "EFFECTS"}, {KC_K14, "MACROS"}, {0, 0}}},   /* (LET GO: the header's HOLD) */
     {B_GLO, LK_SET, FAM_HOME, "[GLO] SET", {{KC_PLAY, "RESTART"}, {KC_GLO, "DONE"}, {0, 0}}},
     {B_SCL, LK_SET, FAM_SCL, "[SCL] SET", {{KC_KEYS, "ROOT"}, {KC_SCL, "DONE"}, {0, 0}}},
-    {B_EDIT, LK_SET, FAM_EDIT, "[EDIT] SET", {{KC_KEYS, "INIT / RECALL"}, {KC_EDIT, "DONE"}, {0, 0}}},
+    {B_EDIT, LK_SET, FAM_EDIT, "[EDIT] SET", {{KC_SELECT, "DICE"}, {KC_K14, "TWEAK"}, {KC_KEYS, "INIT / RECALL"}}},   /* (0.9.9-seq2e:
+                                                                     * KNOB 1..4 MOMENTARY: mom_knob; seq2f: SELECT the sound dice) */
     {B_SEQ, LK_SET, FAM_SEQ, "[SEQ] TOOLS", {{KC_REC, "CLEAR ALL"}, {KC_SEQ, "DONE"}, {0, 0}}},   /* (0.6.14: REC, all six
                                                                      * tracks cleared, shown: it was nowhere) */
     {B_REC, LK_SET, FAM_HOME, "[REC] SET", {{KC_KEYS, "RECORDING"}, {KC_REC, "DONE"}, {0, 0}}},
@@ -177,6 +178,150 @@ static void layer_arm(uint32_t pressed, uint32_t now)
         }
 }
 
+/* (0.9.9-seq2e) MOMENTARY, the owner's three EDIT gestures: a tap, EDIT's pages; held, its layer; held and KNOB 1..4
+ * turned (before the layer shows or after), the knob edits the page under it (the page shown before EDIT went down),
+ * live, recorded nowhere (no motion), and EDIT let go every parameter touched in the hold glides back over MOM_GLIDE_MS
+ * to its value when first touched (motion.c mom[]: up to MOM_N); a save meanwhile stores those values. The page under
+ * shows, "MOMENTARY" in the header; no tap, no layer after it. SELECT is the sound dice (0.9.9-seq2f; CF_DICE_SOUND) */
+#define MOM_GLIDE_MS 32u
+static void mom_release(void);
+static int16_t *mom_ptr(const mom_t *m) { return m->t == MOM_G ? &song.g[m->id] : &trk[m->t % NTRK].p[m->id]; }
+static void mom_finish(void)                            /* every value back, now */
+{
+    uint32_t i;
+    for (i = 0; i < mom_n; i++)
+        *mom_ptr(&mom[i]) = mom[i].v;
+    mom_n = 0;
+    mom_glide = 0;
+}
+static void mom_forget(uint32_t t)                      /* track t's sound replaced (EDIT + SELECT's dice): its own kept */
+{
+    uint32_t i, n = 0;
+    for (i = 0; i < mom_n; i++)
+        if (mom[i].t != t)
+            mom[n++] = mom[i];
+    mom_n = (uint8_t)n;
+}
+/* the knob k's value on the page under, if a plain parameter (a track's or a song global; not a list, an action, a step,
+ * the kit, an operator: those are not momentary) */
+static int16_t *mom_vp(uint32_t k, const param_desc_t **d)
+{
+    const page_t *pg = cur_page();
+    int16_t *vp = 0;
+    uint32_t i, g = pg->graph;
+    *d = 0;
+    if (ui.menu || ui.confirm || gen_on() || mac_latch || lock_held())
+        return 0;
+    if (ui.home) {
+        if (home_macros())
+            return 0;
+        *d = home_param(k, &vp);
+    } else {
+        if (pg->scope == SC_STEP || pg->scope == SC_TRK || ((act_cols() >> k) & 1u) || g == GR_COMP || g == GR_GCOMP || g == GR_SHAPE ||
+            g == GR_FUGUE || g == GR_CHANCE || g == GR_DXSND || g == GR_FOCUS || (g == GR_STAGE && k < 2u) ||
+            g == GR_EVENTS || g == GR_MOTION || g == GR_SONG || g == GR_BROWSE || g == GR_TOOLS || g == GR_SLOTS ||
+            g == GR_USER || g == GR_PATS || DX_KIT3(pg) || fop_page(g) ||
+            (k == 0u && (BAR_PAGE(pg) || g == GR_SLPIT || g == GR_MSEQ || g == GR_MOD)))
+            return 0;
+        *d = page_desc(pg, k, &vp);
+    }
+    if (!*d || !vp || (*d)->max == (*d)->min)
+        return 0;
+    for (i = 0; i < NTRK; i++)
+        if (vp >= trk[i].p && vp < trk[i].p + P_COUNT)
+            return vp;
+    return vp >= song.g && vp < song.g + G_COUNT && vp != &song.g[G_SLOT] && vp != &song.g[G_LOAD] &&
+           vp != &song.g[G_SAVE] ? vp : 0;
+}
+static int mom_keep(uint32_t t, uint32_t id)           /* (t, id) kept as it is now, once a hold; 0: no room */
+{
+    uint32_t i;
+    for (i = 0; i < mom_n; i++)
+        if (mom[i].t == t && mom[i].id == id)
+            return 1;
+    if (mom_n >= MOM_N)
+        return 0;
+    mom[i].t = (uint8_t)t;
+    mom[i].id = (uint8_t)id;
+    mom[i].v = t == MOM_G ? song.g[id] : trk[t % NTRK].p[id];
+    mom_n++;
+    return 1;
+}
+static void mom_knob(uint32_t k, int32_t s)
+{
+    const param_desc_t *d;
+    int16_t *vp;
+    uint32_t t, id;
+    if (!mom_on) {                                      /* the hold becomes MOMENTARY: no layer, no tap */
+        mom_finish();                                   /* (a glide still going: there now) */
+        mom_on = 1;
+        ui.ly_t0 = (ui.ly_t0 & ~LY_OPEN) | LY_DEAD;
+        ui_message("MOMENTARY");
+        ui.force = 1;
+    }
+    ui.hot_col = (uint8_t)k;
+    ui.hot_t = 40, ui.knob_ms = fm1_ms;
+    if ((vp = mom_vp(k, &d)) == 0) {
+        ui_message("NOT MOMENTARY HERE");
+        return;
+    }
+    for (t = 0; t < NTRK && !(vp >= trk[t].p && vp < trk[t].p + P_COUNT); t++)
+        ;
+    id = t < NTRK ? (uint32_t)(vp - trk[t].p) : (uint32_t)(vp - song.g);
+    if (t >= NTRK)
+        t = MOM_G;
+    if (t == MOM_G && id == G_RTYPE && mom_n + 3u > MOM_N) {
+        ui_message("MOMENTARY: 16 AT MOST");
+        return;
+    }
+    if (t == MOM_G && id == G_RTYPE) {                  /* (REVERB TYPE: PRE and DAMP change with it, ui_input.c) */
+        (void)mom_keep(MOM_G, G_RPRE);
+        (void)mom_keep(MOM_G, G_RDAMP);
+    }
+    if (!mom_keep(t, id)) {
+        ui_message("MOMENTARY: 16 AT MOST");
+        return;
+    }
+    if (ui.home)
+        *vp = (int16_t)param_turn(d, *vp, accel(EN_K1 + k, s, d->fmt == F_ENUM ? 0 : d->max - d->min));
+    else
+        edit_param(k, s);
+}
+static void mom_release(void)                           /* EDIT let go: the glide back begins (a list's value: at once) */
+{
+    uint32_t i;
+    mom_on = 0;
+    for (i = 0; i < mom_n; i++)
+        mom[i].from = *mom_ptr(&mom[i]);
+    mom_glide = mom_n != 0u;
+    mom_t0 = fm1_ms;
+    if (ui.msg_t && str_eq(ui.msg, "MOMENTARY"))
+        ui.msg_t = 0;
+    ui.force = 1;
+    mom_poll();
+}
+static void mom_poll(void)                              /* every pass */
+{
+    uint32_t i, dt;
+    if (mom_on) {
+        if (ui.msg_t < 8u)                              /* the header's tag, as long as it lasts */
+            ui_message("MOMENTARY");
+        return;
+    }
+    if (!mom_glide)
+        return;
+    if ((dt = fm1_ms - mom_t0) >= MOM_GLIDE_MS) {
+        mom_finish();
+        return;
+    }
+    for (i = 0; i < mom_n; i++) {
+        const mom_t *m = &mom[i];
+        const param_desc_t *d = m->t == MOM_G ? &GP[m->id] : track_desc(&trk[m->t % NTRK], m->id);
+        *mom_ptr(m) = d->fmt == F_ENUM ? m->v :
+                      (int16_t)(m->from + ((int32_t)m->v - m->from) * (int32_t)dt / (int32_t)MOM_GLIDE_MS);
+    }
+}
+
 /* the armed layer lets go (its button up): FX's macros snap back (FX LATCH: they stay); one that
  * opened, or a combo: KNOB 1..4 quiet for a while (#39: the knob still turning is not the page's) */
 static void layer_let_go(uint32_t quiet)
@@ -203,6 +348,8 @@ static void layer_let_go(uint32_t quiet)
         quiet = 0;
         ui.force = 1;
     }
+    if (ui.ly == LAYER_EDIT && mom_on)                  /* (0.9.9-seq2e) MOMENTARY: what was touched glides back */
+        mom_release();
     if (lys.rp_dirty) {                                 /* REC: its settings kept, as MENU does when it closes */
         lys.rp_dirty = 0;
         settings_save();                                /* (deferred while playing) */
@@ -241,7 +388,7 @@ static uint32_t layer_gesture(uint32_t now, uint32_t combo)
         return 0;
     }
     l = *t0 & (LY_OPEN | LY_DEAD) || combo ? 0u : l;   /* (a knob turned as it was let go: a combo, no tap) */
-    layer_let_go(*t0 & LY_OPEN || combo);
+    layer_let_go(*t0 & LY_OPEN || combo || mom_on);   /* (MOMENTARY: its knobs quiet too) */
     return l;
 }
 
@@ -847,6 +994,18 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
             str_cpy(nm, TG[pfx_tgt % 3u], 12);
             return LS_OFF;
         }
+        if (!blk && p == PF_M1) {                       /* (snd2) G5: CLEAR AUTOMATION, the punch-in lane's */
+            str_cpy(nm, "CLR AUTO", 12);
+            return pfx_clr ? LS_HELD : LS_OFF;
+        }
+        if (blk && p >= NTRK && p != 7u && p <= 10u) {  /* (snd2) G#4 LOOP 3, C#5 LOOP 5, D#5 LOOP 7, F#5 GLITCH */
+            static const char *const BN[4] = {"LOOP 3", "LOOP 5", "LOOP 7", "GLITCH"};
+            static const uint8_t BE[4] = {PF_LP3, PF_LP5, PF_LP7, PF_GLT};
+            uint32_t j = p == 6u ? 0u : p - 7u;
+            e = BE[j];
+            str_cpy(nm, BN[j], 12);
+            return !((held >> e) & 1u) ? LS_OFF : ((perf_act >> e) & 1u) || ((PF_LOOPS >> e) & 1u) ? LS_HELD : LS_WAIT;
+        }
         if (blk ? p >= NTRK : p >= PF_M1)
             return LS_OFF;
         if (blk) {
@@ -1043,6 +1202,8 @@ static void layer_cards(uint32_t l)
             else
                 draw_column(c, "", "", "", T_THEME, -1, ICON_NONE);
         }
+    } else if (l == LAYER_EDIT) {                       /* (0.9.9-seq2f) ENG, No. (PRESETS), FAV (ui_draw.c) */
+        engine_columns();
     } else {                                            /* the page's four (SCL: LY_SCL) */
         uint8_t h = ui.home, pg = ui.page, nm[sizeof ui.nmem];
         memcpy(nm, ui.nmem, sizeof nm);
@@ -1210,7 +1371,7 @@ static void draw_layer(void)
     else if (l == LAYER_SEQ)
         sig += (uint32_t)drum_track(TSEL) * 31u + ui.lane * 5u + (uint32_t)chain_busy() * 3u + (uint32_t)TSEL->p[P_E0] * 131u + song.sel * 977u;
     else
-        sig += snd_id() * 31u + (uint32_t)chain_busy() * 3u + (uint32_t)(project_recall_slot() + 1) * 5u + dx_mute * 7919u +
+        sig += snd_id() * 31u + (uint32_t)preset_favorite() * 13u + (uint32_t)chain_busy() * 3u + (uint32_t)(project_recall_slot() + 1) * 5u + dx_mute * 7919u +
                (uint32_t)drum_track(TSEL) * 11u + up_gen * 101u;
     sig += ui.lylv * 0x9E3779B1u + (ui.lylv == 1u ? str_hash(7u, ly_card[0].v) + str_hash(9u, ly_card[1].v) * 3u +
                                      str_hash(11u, ly_card[2].v) * 5u + str_hash(13u, ly_card[3].v) * 7u : 0u);
@@ -1231,3 +1392,5 @@ static void draw_layer(void)
     draw_tabs();                                        /* (0.8.5: MAP . KNOBS . STATE, the breadcrumb) */
     draw_foot();
 }
+
+#include "ui_live.c"                                    /* (p2, main 0.9.11) GLO > LIVE: MANO, RIELES */

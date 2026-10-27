@@ -20,6 +20,15 @@ typedef struct {
 #define JIANT_PAL_SEEN 0x4Au                    /* favorites.factory[15][23]: the palette set to JIANT once */
 
 /* Normalize in place; 1 = current, 2 = migrated, 0 = invalid. */
+/* (p1) settings_import's checks of engine 15's bytes, out of line (its room before the sound is pinned) */
+static __attribute__((noinline)) void settings_fix15(uint8_t *f)
+{
+    if (f[27] > 7u)                                 /* SCREEN OFF (1.1.5, ui.c SCR_CODE): unknown = 0 (NEVER since 1.1.5.1) */
+        f[27] = 0;
+    if (f[18] >= 10u)                               /* PRESETS' LIST type (p1, main 0.9.12, ui.c list_type; core.h PT_N):
+                                                     * unknown = none */
+        f[18] = 0;
+}
 static int settings_import(persist_t *p, int n)
 {
     int current = n == (int)sizeof *p && p->magic == PERSIST_MAGIC;
@@ -57,8 +66,7 @@ static int settings_import(persist_t *p, int n)
         p->favorites.factory[15][26] = 0;
     if (p->favorites.factory[15][24] > 3u)         /* MIDI OUT (JIANT 0.6.72, ui.c midi_out_mode): unknown = KEYS */
         p->favorites.factory[15][24] = 0;
-    if (p->favorites.factory[15][27] > 7u)         /* SCREEN OFF (1.1.5, ui.c SCR_CODE): unknown = 0 (NEVER since 1.1.5.1) */
-        p->favorites.factory[15][27] = 0;
+    settings_fix15(p->favorites.factory[15]);
     p->magic = PERSIST_MAGIC;
     p->palette = palette_to_stored(palette_from_stored(p->palette));
     settings.magic = SETTINGS_MAGIC;
@@ -76,7 +84,8 @@ static int settings_import(persist_t *p, int n)
         for (k = 0; k < FM4_NPRESETS; k++)
             if ((favorites.factory[ENGI_DIGITAL][0] >> k) & 1u)
                 favorites.factory[ENGI_FM6][FM4_TO_FM6[k] / 8u] |= (uint8_t)(1u << (FM4_TO_FM6[k] % 8u));
-        memset(favorites.factory[ENGI_DIGITAL], 0, sizeof favorites.factory[ENGI_DIGITAL]);
+        favorites.factory[ENGI_DIGITAL][0] = 0;   /* (p1, as main 0.9.12: the row's bytes 1..31 MIDI MAP and LEARN's,
+                                                   * midi_learn.c) */
     }
 #endif
 #ifdef SMP_SET_PERC

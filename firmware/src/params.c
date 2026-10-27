@@ -44,7 +44,8 @@ static const char *const N_PFXRES[] = {"1/8", "1/16", "1/32"};     /* (0.6.99) F
  * they play (seq.c seq_step; the steps keep what was written). Append-only: older projects hold 0..2 */
 static const char *const N_QUANT[] = {"OFF", "SNAP", "WHITE", "SEQ"};
 static const char *const N_DTYPE[] = {"SOFT", "HARD", "FOLD", "CRUSH", "RECT", "AMP"};   /* (JIANT) fx.c DT_*; 0.7.8 AMP */
-static const char *const N_FTYPE[] = {"LP", "HP", "BP", "COMB"};   /* (JIANT 0.5) P_FTYPE: eng_analog.c FT_* */
+static const char *const N_FTYPE[] = {"LP", "HP", "BP", "COMB", "COMB-", "MS20"};   /* (JIANT 0.5) P_FTYPE: eng_analog.c FT_*
+                                                         * (0.9.9-snd1: COMB- the negative comb, MS20) */
 static const char *const N_VOICE[] = {"POLY", "MONO", "LEG", "UNI"};   /* V_POLY .. V_UNISON */
 static const char *const N_GLMODE[] = {"RATE", "TIME"};
 static const char *const N_PRIO[] = {"LAST", "LOW", "HIGH"};
@@ -71,8 +72,9 @@ static const char *const N_MDST[] = {"OFF", "PITCH", "CUT", "SHP", "AMP", "PAN",
                                      "D.TIM", "D.FB", "D.TON", "D.MIX", "R.SIZ", "R.DMP", "C.RAT", "C.DEP"};   /* (0.7.0) the FX buses'
                                                          * globals (DELAY TIME FDBK TONE MIX, REVERB SIZE DAMP, CHORUS RATE
                                                          * DEPTH): mod.c macro_master, fx.c GFX() */
-static const char *const N_ENGNAME[] = {"ANALOG", FELUCCA_FM4 ? "DIGITAL" : "-", "PHASE", "LOFI", "-", "VOICE", "-", "WHEEL", "-", "-",
-                                             "DRUM", "NOISE", "FM6", "-", "ANIMAL"};   /* (JIANT: SAMPLE 4, GRAIN 8, SLICE 13 retired; 0.8.3 ANIMAL) */
+static const char *const N_ENGNAME[] = {"ANALOG", FELUCCA_FM4 ? "DIGITAL" : "-", "PHASE", "LOFI", "-", "VOICE", "-", "WHEEL", "STRING", "-",
+                                             "DRUM", "NOISE", "FM6", "SAMPLE", "ANIMAL"};   /* (JIANT: SAMPLE 4, GRAIN 8, SLICE 13 retired; 0.8.3 ANIMAL;
+                                                         * 0.9.9-snd5 STRING ADD) */
 
 #define PD(l, f, mn, mx, df) {l, f, mn, mx, df, 0, 0}
 #define PE(l, n, df) {l, F_ENUM, 0, (int16_t)(sizeof(n) / sizeof(n[0]) - 1), df, n, 0}
@@ -89,7 +91,8 @@ static const param_desc_t TP[P_COUNT] = {
     [P_ED_FX] = PE("LOOP", N_ONOFF, 0),          /* (JIANT 0.4, P_ELOOP) ON: held, the ENV starts again at the sustain */
     [P_LRATE] = PD("RATE", F_LFOHZ, -12, 127, 60),  /* (JIANT 0.6.51) below 0 in time: 4BAR .. 1/32 (N_LSYNC) */
     [P_LWAVE] = PE("WAVE", N_LWAVE, 0),
-    [P_LPHASE] = PD("PHASE", F_INT, -1, 127, 0),   /* (JIANT 0.6.51) -1: FREE, never restarted by a note */
+    [P_LPHASE] = PD("PHASE", F_INT, -1, 127, 0),   /* (JIANT 0.6.51) -1: FREE, never restarted by a note (0.9.18: nor its
+                                                     * FADE); the pages show it as MODE TRIG / FREE and PHASE 0..127 */
     [P_LFADE] = PD("FADE", F_TIME, 0, 127, 0),
     [P_LD_PIT] = PD("PITCH", F_BIPCT, -64, 63, 0),
     [P_LD_FLT] = PD("FILTER", F_BIPCT, -64, 63, 0),
@@ -201,6 +204,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_DPING] = {"PING", F_ENUM, 0, 1, 0, N_ONOFF, 0},   /* (0.6.90) PING-PONG: the repeats left, right, left .. */
     [G_PFXLEN] = PD("LEN", F_INT, 1, 64, 64),    /* (0.6.99) the punch-in lane: its steps and their size */
     [G_PFXRES] = {"RES", F_ENUM, 0, 2, 1, N_PFXRES, 0},
+    [G_DDRV] = PD("DRIVE", F_PCT, 0, 100, 0),    /* (snd2) the delay's loop driven: 0 clean as before, 100 x4 into the clip */
     [G_DMOD] = PD("MOD", F_PCT, 0, 127, 0),      /* (0.6.89: 0, the repeats exact copies, by default) */     /* (0.6.86) the delay's drift: WOW + FLUTTER (fx.c dly_wow_adv) */
     [G_RMOD] = PD("MOD", F_PCT, 0, 127, 0),      /* the reverb's modulation depth (ROOM: the combs, SPRING: its wobble) */
     [G_RRATE] = PD("RATE", F_LFOHZ, 0, 127, 30), /* .. its rate */
@@ -245,6 +249,29 @@ static const char *const N_MUTMODE[] = {"ORBIT", "DRIFT"};
 static const param_desc_t MUT_DESC[4] = {                /* (0.6.43) MUTATE: P_MSND P_MPAT P_MAMT P_MMODE */
     {"SOUND", F_ENUM, 0, 6, 0, N_MUTBARS, 0}, {"PATTERN", F_ENUM, 0, 6, 0, N_MUTBARS, 0},
     {"AMOUNT", F_PCT, 0, 127, 0, 0, 0}, {"MODE", F_ENUM, 0, 1, 0, N_MUTMODE, 0}};
+/* (0.9.9-seq2c) the MUTATE pages' own knobs (page_desc: ids ID_MUT0.., the values packed in P_MCFG / P_MMODE, core.h) */
+static const char *const N_MWHAT[] = {"OFF", "NOTES", "RHYTHM", "PATTERN", "SOUND", "PARAM", "ALL"};
+static const char *const N_MLOOP[] = {"OFF", "1", "2", "3", "4", "5", "HOLD"};
+static const char *const N_MPARAM[] = {"CUT", "RES", "ENV", "DEC", "REL", "DLY", "REV", "EDIT 1"};
+static const char *const N_MTURN[] = {"TURN"};
+enum { MK_WHAT, MK_DIR, MK_LOOP, MK_PARAM, MK_SCALE, MK_KEEP, MK_REV, MK_N };
+#define ID_MUT0 0xF0u                                   /* .. ID_MUT0 + MK_N - 1 */
+static const param_desc_t MUTK_DESC[MK_N + 1] = {
+    {"WHAT", F_ENUM, 0, MW_N - 1, 0, N_MWHAT, 0}, {"DIR", F_ENUM, 0, 1, 0, N_MUTMODE, 0},
+    {"LOOP", F_ENUM, 0, ML_HOLD, 0, N_MLOOP, 0}, {"PARAM", F_ENUM, 0, 7, 0, N_MPARAM, 0},
+    {"SCALE", F_ENUM, 0, 1, 1, N_ONOFF, 0}, {"KEEP", F_ENUM, 0, 0, 0, N_MTURN, 0}, {"REVERT", F_ENUM, 0, 0, 0, N_MTURN, 0},
+    {"EVERY", F_ENUM, 0, 6, 0, N_MUTBARS, 0}};          /* (LOOP of a 0.6.43 MUTATE: its bars, until a knob turns) */
+static int16_t mutk_v[MK_N];
+static const param_desc_t *mutk_desc(const track_t *t, uint32_t k, int16_t **valp)
+{
+    uint32_t leg = MUT_LEGACY(t), s = (uint32_t)clamp(t->p[P_MSND], 0, 6), q = (uint32_t)clamp(t->p[P_MPAT], 0, 6);
+    k %= MK_N;
+    mutk_v[k] = (int16_t)(k == MK_WHAT ? (leg ? (s && q ? MW_ALL : s ? MW_SOUND : MW_PATTERN) : MUT_WHAT(t)) :
+                          k == MK_DIR ? MUT_DRIFT(t) : k == MK_LOOP ? (leg ? (s && q ? (s < q ? s : q) : s ? s : q) : MUT_LOOP(t)) :
+                          k == MK_PARAM ? MUT_PARAM(t) : k == MK_SCALE ? !MUT_CHROM(t) : 0u);
+    *valp = &mutk_v[k];
+    return k == MK_LOOP && leg ? &MUTK_DESC[MK_N] : &MUTK_DESC[k];
+}
 static const char *const N_CHRD[] = {"OFF", "TRIAD", "7TH", "ADD9", "SUS2", "SUS4", "MAJ", "MIN", "7", "MAJ7", "MIN7",
                                      "POWER", 0};
 static const char *const N_CVOI[] = {"CLOSE", "LEAD", "OPEN", "+BASS", 0};
@@ -371,12 +398,28 @@ static int32_t enum_rank(const param_desc_t *d, int32_t v)   /* v's place in the
     return o ? r + d->min : v;
 }
 /* a knob turned `steps` (signed) from v: clamped, over the shown order, past aliases (enum_step) */
+/* (p1, main 0.9.16) a value with names (F_INT, its range split evenly over them: engine desc hooks): its name's index,
+ * *k the names */
+static uint32_t name_of(const param_desc_t *d, int32_t v, uint32_t *k)
+{
+    uint32_t n = 0;
+    while (d->names[n])
+        n++;
+    *k = n;
+    return (uint32_t)(clamp(v, d->min, d->max) - d->min) * n / (uint32_t)(d->max - d->min + 1);
+}
 static int32_t param_turn(const param_desc_t *d, int32_t v, int32_t steps)
 {
     const uint8_t *o = enum_order(d);
+    uint32_t k, i, w = (uint32_t)(d->max - d->min + 1);
     if (d->fmt == F_PCTINV) steps = -steps;         /* (right: more chance, less skipped) */
     if (o)
         return o[clamp(enum_rank(d, v) - d->min + steps, 0, d->max - d->min)] + d->min;
+    if (d->fmt == F_INT && d->names && (i = name_of(d, v, &k), k < w)) {   /* (p1, main 0.9.16) a name a detent (VOICE's
+                                                         * THEME was 16 detents a name), onto its middle */
+        i = (uint32_t)clamp((int32_t)i + steps, 0, (int32_t)k - 1);
+        return d->min + (int32_t)((2u * i + 1u) * w / (2u * k));
+    }
     return enum_step(d, v, clamp(v + steps, d->min, d->max));
 }
 
@@ -496,10 +539,8 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
         break;
     default:
         if (d->names) {                               /* F_INT with a 0-terminated name list: the range */
-            uint32_t k = 0;                           /* split evenly over the names (engine desc hooks) */
-            while (d->names[k])
-                k++;
-            str_cpy(val, d->names[(uint32_t)(clamp(v, d->min, d->max) - d->min) * k / (uint32_t)(d->max - d->min + 1)], 6);
+            uint32_t k;                               /* split evenly over the names (engine desc hooks) */
+            str_cpy(val, d->names[name_of(d, v, &k)], 6);
         } else {
             fmt_int(val, v);
         }
@@ -517,7 +558,7 @@ enum { GR_NONE, GR_ADSR, GR_LFO, GR_STEPS, GR_ARP, GR_SCALE, GR_FX, GR_ROLL, GR_
        GR_SLCR, GR_MOD, GR_PATS, GR_SONG, GR_TOOLS, GR_CHANCE, GR_MOTION, GR_EVENTS, GR_DXSND, GR_MSEQ, GR_SLPIT,
        GR_FMOP, GR_FMOP2, GR_FMENV,
        GR_COMP, GR_MUTATE, GR_MORPH, GR_DXIMG, GR_FUGUE, GR_SHAPE, GR_PUNCH, GR_BUSES, GR_FOCUS, GR_STAGE,
-       GR_LYRIC };   /* (0.8.5) EDIT > WORDS: VOICE's lyric (sing.c) */   /* (0.8.5:
+       GR_LYRIC, GR_GCOMP, GR_LIVE };   /* (p2, main 0.9.11) GLO > LIVE: MANO, RIELES (ui_live.c); the enum's last */   /* (0.8.5) EDIT > WORDS: VOICE's lyric (sing.c) */   /* (0.8.5:
                                                          * LENTE's EDIT > FOCUS, ENV > STAGE) */   /* (0.6.99) FX > PUNCH: the punch-in lane */   /* (JIANT 0.6.39) SEQ > COMP: the step components (ui_input.c comp_*, ui_graph.c graph_comp) */   /* (JIANT 0.6.10, from Felucca 1.5: FM6's operator pages, ui_fm6op.c) */
 
 typedef struct {
@@ -541,10 +582,37 @@ static int16_t trks_ui;
 static const char *const N_LOAD[] = {"ECO", "LITE", "FULL"};
 static const param_desc_t LOAD_DESC = PE("LOAD", N_LOAD, 2);
 static int16_t load_ui;
+/* (0.9.18) the LFO's MODE TRIG / FREE (LFO KNOB 3) and its PHASE (LFO 2 KNOB 1): views of P_LPHASE, whose -1 has been FREE
+ * since 0.6.51 (stored as ever: every project and preset opens as it was). page_desc reads them into lmode_ui / lphase_ui,
+ * a turn writes P_LPHASE back (ui_input.c lfo_view_put). FREE keeps no phase: the one TRIG had stays in lfo_ph_mem
+ * (RAM, a track each) for TRIG again, and PHASE turned in FREE moves only that (shown dimmed) */
+#define ID_LMODE 0xFBu
+#define ID_LPHS 0xFAu
+static const char *const N_LMODE[] = {"TRIG", "FREE"};
+static const param_desc_t LFO_MODE_DESC = PE("MODE", N_LMODE, 0);
+static const param_desc_t LFO_PHASE_DESC = PD("PHASE", F_INT, 0, 127, 0);
+static int16_t lmode_ui, lphase_ui;
+/* (0.9.9-snd8) the master's TAPE (FX > TAPE): its DRIVE and WOW, 0..100 (fx.c tape_block). Not song globals: song_t's size
+ * is the sound's (its fields' offsets in the recorded code); a project keeps them (project.c 'T' 'P') */
+#define ID_TAPE 0xF8u
+#define ID_TWOW 0xF9u
+static const param_desc_t TAPE_DESC __attribute__((section(".rodata.tape"))) = PD("TAPE", F_PCT, 0, 100, 0);
+static const param_desc_t TWOW_DESC __attribute__((section(".rodata.tape"))) = PD("WOW", F_PCT, 0, 100, 0);   /* (their own
+                                                         * section: out of the merged constants, whose places are recorded) */
+static int16_t tape_v[2] __attribute__((section(".bss.tape")));
+/* (p9, the owner: "a light 4-band EQ on the master, to refine the song") FX > EQ: LOW (under ~200 Hz), LO MID (200 Hz ..
+ * 1 kHz), HI MID (1 .. 4 kHz), HIGH (over 4 kHz), -12 .. +12 dB each (fx.c eq_block; all 0: not run). Kept with the
+ * project ('E' 'Q', project.c proj_eq) */
+#define ID_EQ0 0xE0u
+static const param_desc_t EQ_DESC[4] __attribute__((section(".rodata.tape"))) = {
+    PD("LOW", F_INT, -12, 12, 0), PD("LO MID", F_INT, -12, 12, 0), PD("HI MID", F_INT, -12, 12, 0), PD("HIGH", F_INT, -12, 12, 0)};
+static int16_t eq_v[4] __attribute__((section(".bss.tape")));   /* (out of the merged statics, as fx.c's djf) */
+static uint8_t lfo_ph_mem[NTRK];
+static int lfo_mode_of(const track_t *t) { return t->p[P_LPHASE] < 0; }   /* 1 FREE */
 static const page_t PAGES[] = {
     {"ENV", FAM_ENV, SC_TRACK, GR_ADSR, {P_ATK, P_DEC, P_SUS, P_REL}},
     {"ENV DEST", FAM_ENV, SC_TRACK, GR_NONE, {P_ED_FLT, P_ED_PIT, P_ED_SHP, P_ELOOP}},   /* JIANT 0.4: LOOP */
-    {"LFO", FAM_LFO, SC_TRACK, GR_LFO, {P_LRATE, P_LWAVE, P_LPHASE, P_LFADE}},
+    {"LFO", FAM_LFO, SC_TRACK, GR_LFO, {P_LRATE, P_LWAVE, ID_LMODE, P_LFADE}},   /* (0.9.18: MODE where PHASE was) */
     {"LFO DEST", FAM_LFO, SC_TRACK, GR_NONE, {P_LD_PIT, P_LD_FLT, P_LD_SHP, P_LD_AMP}},
     {"MOD", FAM_LFO, SC_TRACK, GR_MOD, {0xFF, P_M1SRC, P_M1DST, P_M1AMT}},   /* KNOB 1: the slot (mod_ui_slot) */
     {"MSEQ", FAM_LFO, SC_TRACK, GR_MSEQ, {0xFF, P_MS0, P_MSLEN, P_MSSLW}},   /* JIANT: KNOB 1 the step (ms_ui_step) */
@@ -552,12 +620,14 @@ static const page_t PAGES[] = {
     {"FX", FAM_FX, SC_TRACK, GR_FX, {P_DIST, P_CHOR, P_DLY, P_REV}},
     {"MASTER", FAM_FX, SC_GLOBAL, GR_NONE, {G_CLIP, G_PUNCH, G_DUCK, G_DREL}},   /* JIANT: clipper, drum bus, ducking;
                                                          * (0.7.6) FX's second page, at hand (was after SL PITCH) */
+    {"TAPE", FAM_FX, SC_GLOBAL, GR_NONE, {ID_TAPE, ID_TWOW, 0xFF, 0xFF}},
+    {"EQ", FAM_FX, SC_GLOBAL, GR_NONE, {ID_EQ0, ID_EQ0 + 1u, ID_EQ0 + 2u, ID_EQ0 + 3u}},   /* (p9) the master's EQ, last */   /* (0.9.9-snd8) the master's tape, after MASTER */
     {"DIST", FAM_FX, SC_TRACK, GR_NONE, {P_DIST, P_DTYPE, P_DTONE, 0xFF}},   /* JIANT: the drive's type and tone */
     {"AUTO PAN", FAM_FX, SC_TRACK, GR_NONE, {P_APDEP, P_APRATE, P_APSYNC, P_APWAVE}},   /* (JIANT 0.6.9) the track's pan swung */
     {"BUSES", FAM_FX, SC_GLOBAL, GR_BUSES, {G_DMIX, G_RSIZE, G_CDEPTH, G_SLDEP}},   /* (0.8.5) FX's lens: the buses' main values */
     {"DLY", FAM_FX, SC_GLOBAL, GR_NONE, {G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX}},
     {"DLY 2", FAM_FX, SC_GLOBAL, GR_NONE, {G_WIDTH, G_DPIT, G_DSPRY, G_DMOD}},
-    {"DLY 3", FAM_FX, SC_GLOBAL, GR_NONE, {G_DTYPE, G_DPING, 0xFF, 0xFF}},   /* (0.6.90) ANALOG / DIGITAL, PING-PONG */   /* JIANT: width, the grains (0.4: the low cut
+    {"DLY 3", FAM_FX, SC_GLOBAL, GR_NONE, {G_DTYPE, G_DPING, G_DDRV, 0xFF}},   /* (0.6.90) ANALOG / DIGITAL, PING-PONG */   /* JIANT: width, the grains (0.4: the low cut
                                                                                  * in DLY's TONE; G_DHPF stored, unused) */
     {"REVERB", FAM_FX, SC_GLOBAL, GR_NONE, {G_RTYPE, G_RSIZE, G_RDAMP, G_RPRE}},   /* TYPE: ROOM / SPRING */
     {"REVERB 2", FAM_FX, SC_GLOBAL, GR_NONE, {G_RMOD, G_RRATE, G_RFILT, G_RWIDE}},   /* JIANT: modulation, tone, width */
@@ -606,6 +676,11 @@ static const page_t PAGES[] = {
     {"GLOBAL", FAM_GLO, SC_GLOBAL, GR_NONE, {G_BPM, G_SWING, G_CLOCK, G_TUNE}},
     {"SYSTEM", FAM_GLO, SC_GLOBAL, GR_NONE, {G_TRKS, G_LOADP, G_ROUTE, G_INFO}},   /* (0.6.18) TRACKS 4 / 6; (0.6.30)
                                                          * LOAD ECO / LITE / FULL (the USB card: the header's icon) */
+    {"SYSTEM 2", FAM_GLO, SC_GLOBAL, GR_NONE, {G_MIDI, G_MIDI, 0xFF, 0xFF}},   /* (0.9.9-snd8) MIDI IN at a glance (ui_draw.c):
+                                                         * KNOB 1 USB's state OFF WAIT BUS ENUM MIDI, KNOB 2 the TRS messages come in */
+    {"COMPS", FAM_GLO, SC_GLOBAL, GR_GCOMP, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.9.9-seq2f) the global lane's step: ACTION
+                                                         * LENGTH CONDITION VALUE (ui_input.c gco_knob) */
+    {"COMPS 2", FAM_GLO, SC_GLOBAL, GR_GCOMP, {0xFF, 0xFF, 0xFF, 0xFF}},   /* .. its TRACKS, MONO / POLY */
     {"PRESETS", FAM_SAVE, SC_GLOBAL, GR_BROWSE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* browser: PRESETS knob / KNOB 1 */
     {"USER", FAM_SAVE, SC_GLOBAL, GR_USER, {0xFF, 0xFF, 0xFF, 0xFF}},       /* user presets: SLOT LOAD ERASE SAVE */
     {"PROJECT", FAM_SAVE, SC_GLOBAL, GR_SLOTS, {0xFF, G_SLOT, G_LOAD, G_SAVE}},   /* (0.6.12) PROJECT 1-8, SECT A-D */
@@ -637,7 +712,8 @@ static const page_t PAGES[] = {
     {"CHANCE", FAM_SEQ, SC_STEP, GR_CHANCE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* a step's CHANCE RATCH; 0.6.37: hidden */
     {"AUTOMATION", FAM_SEQ, SC_TRACK, GR_MOTION, {0xFF, 0xFF, 0xFF, 0xFF}},
     {"AUTO LIST", FAM_SEQ, SC_TRACK, GR_EVENTS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* 1.1.5: the locks and events, edited */
-    {"MUTATE", FAM_SEQ, SC_TRACK, GR_MUTATE, {P_MSND, P_MPAT, P_MAMT, P_MMODE}},   /* (0.6.43) project.c mutate_poll */
+    {"MUTATE", FAM_SEQ, SC_TRACK, GR_MUTATE, {ID_MUT0 + MK_WHAT, P_MAMT, ID_MUT0 + MK_DIR, ID_MUT0 + MK_LOOP}},   /* (0.6.43)
+                                                         * project.c mutate_poll; (0.9.9-seq2c) WHAT AMOUNT DIR LOOP */
     /* (0.8.5) LENTE everywhere (ui_lens.c): pages the mock-up added, appended (the table's order is no one's index) */
     {"VOICE 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_ALLOC, P_DETUNE, 0xFF, 0xFF}},   /* EDIT > TONE: ALLOC, UNISON's DETUNE (in
                                                          * TP since Felucca, on no page until now) */
@@ -650,6 +726,12 @@ static const page_t PAGES[] = {
     {"BAR", FAM_SEQ, SC_TRACK, GR_STEPS, {0xFF, P_SLEN, 0xFF, 0xFF}},   /* (0.9.2) SEQ > BAR: the pattern's bars, KNOB 1
                                                          * the bar (the cursor at its place in it; was PRESETS on PATTERN's
                                                          * level), KNOB 2 LEN (ui_input.c edit_param) */
+    {"MUTATE 2", FAM_SEQ, SC_TRACK, GR_MUTATE, {ID_MUT0 + MK_PARAM, ID_MUT0 + MK_SCALE, ID_MUT0 + MK_KEEP, ID_MUT0 + MK_REV}},
+                                                         /* (0.9.9-seq2c) PARAM SCALE, KEEP REVERT on the turn */
+    {"LFO 2", FAM_LFO, SC_TRACK, GR_LFO, {ID_LPHS, 0xFF, 0xFF, 0xFF}},   /* (0.9.18) PHASE: where TRIG starts (FREE: dimmed) */
+    {"MANO", FAM_GLO, SC_GLOBAL, GR_LIVE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (p2, main 0.9.11) GLO > LIVE: the keys a board of
+                                                         * live modifiers (ui_live.c, seq_live.c) */
+    {"RIELES", FAM_GLO, SC_GLOBAL, GR_LIVE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* .. the six sequences as rails, four knobs */
 };
 #define BAR_PAGE(pg) ((pg)->graph == GR_STEPS && (pg)->id[0] == 0xFFu)
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))
@@ -664,6 +746,25 @@ static const param_desc_t REV_AIR = PD("AIR", F_SEMI, -24, 24, 0);    /* (0.6.12
 static const param_desc_t AP_BEAT = PE("RATE", N_APDIV, 2);          /* (0.6.9) AUTO PAN's RATE on the tempo (SYNC BEAT) */
 static uint8_t sl_ui_step;       /* (JIANT 0.6.3) the SL PITCH page: the step KNOB 2 edits */
 
+/* page_desc's views (ids ID_TAPE .. ID_LMODE): (0.9.18) the LFO's MODE and PHASE, views of P_LPHASE; (0.9.9-snd8) the
+ * master's TAPE (noinline: page_desc is recorded code) */
+static __attribute__((noinline)) const param_desc_t *page_desc_v(uint32_t id, int16_t **valp)
+{
+    if (id >= ID_EQ0 && id < ID_EQ0 + 4u) {           /* (p9) the master's EQ */
+        *valp = &eq_v[id - ID_EQ0];
+        return &EQ_DESC[id - ID_EQ0];
+    }
+    if (id == ID_TAPE || id == ID_TWOW) {
+        *valp = &tape_v[id - ID_TAPE];
+        return id == ID_TAPE ? &TAPE_DESC : &TWOW_DESC;
+    } else {
+        int32_t ph = TSEL->p[P_LPHASE];
+        lmode_ui = (int16_t)(ph < 0);
+        lphase_ui = (int16_t)(ph < 0 ? lfo_ph_mem[song.sel % NTRK] : ph);
+        *valp = id == ID_LMODE ? &lmode_ui : &lphase_ui;
+        return id == ID_LMODE ? &LFO_MODE_DESC : &LFO_PHASE_DESC;
+    }
+}
 static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **valp)
 {
     uint32_t id = pg->id[slot];
@@ -679,6 +780,9 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         *valp = &trks_ui;
         return &TRKS_DESC;
     }
+    if ((id >= ID_TAPE && id <= ID_LMODE) || (id >= ID_EQ0 && id < ID_EQ0 + 4u))   /* (0.9.18) the LFO's MODE and PHASE;
+                                                         * (snd8) the master's TAPE; (p9) its EQ */
+        return page_desc_v(id, valp);
     if (id == G_LOADP) {                              /* (0.6.30) the same */
         *valp = &load_ui;
         return &LOAD_DESC;
@@ -701,6 +805,8 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         id += 3u * mod_ui_slot;
     if (pg->graph == GR_MSEQ && id == P_MS0)          /* the level of the step shown */
         id += ms_ui_step & 15u;
+    if (id >= ID_MUT0 && id < ID_MUT0 + MK_N)         /* (0.9.9-seq2c) MUTATE's packed knobs (ui_input.c mutk_put) */
+        return mutk_desc(TSEL, id - ID_MUT0, valp);
     *valp = &TSEL->p[id];
     if (id == P_APRATE && TSEL->p[P_APSYNC])         /* (0.6.9) AUTO PAN on the tempo: a division */
         return &AP_BEAT;

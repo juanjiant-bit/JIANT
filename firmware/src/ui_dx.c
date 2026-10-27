@@ -94,13 +94,15 @@ static void dx_knob(const page_t *pg, uint32_t k, int32_t s)
     else
         v[k == 2u ? DXP_PITCH : DXP_PMOD] = (uint8_t)clamp(v[k == 2u ? DXP_PITCH : DXP_PMOD] + accel(EN_K1 + k, s, 127), 0, 127);
 }
-/* KIT 3 (the whole kit): KNOB 1 BP, 2 FEEDBK (TONE's, dx_tone), (0.7.9) 3 HANDS (the CLAP's, dx_hands) */
+/* KIT 3 (the whole kit): KNOB 1 BP, 2 FEEDBK (TONE's, dx_tone), (0.7.9) 3 HANDS (the CLAP's, dx_hands), (0.9.9-snd1)
+ * 4 GLUE (the bus's, eng_drum.c dx_glue: KIT 3's free knob) */
 static void dx_kit3_knob(uint32_t k, int32_t s)
 {
     uint32_t bp = DX_TONE_BP(dx_tone), fb = DX_TONE_FB(dx_tone);
     if (k == 0u) bp = (uint32_t)clamp((int32_t)bp + (s > 0 ? 1 : -1), 0, 15);
     else if (k == 1u) fb = (uint32_t)clamp((int32_t)fb + (s > 0 ? 1 : -1), 0, 15);
     else if (k == 2u) dx_hands = (uint8_t)clamp((int32_t)dx_hands + (s > 0 ? 1 : -1), 0, 15);
+    else dx_glue = (uint8_t)clamp((int32_t)dx_glue + (s > 0 ? 1 : -1), 0, 15);
     dx_tone = (uint8_t)(bp | fb << 4);
 }
 static void dx_kit3_cards(void)
@@ -119,7 +121,8 @@ static void dx_kit3_cards(void)
     draw_column(1, "FEEDBK", fb ? val : "OFF", "", fb ? VAL(1u) : T_DIM, (int32_t)fb * 1000 / 15, ICON_DRIVE);
     fmt_int(val, (int32_t)dx_hands);                    /* (0.7.9) the CLAP's HANDS */
     draw_column(2, "HANDS", dx_hands ? val : "OFF", "", dx_hands ? VAL(2u) : T_DIM, (int32_t)dx_hands * 1000 / 15, ICON_AUTO);
-    draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
+    fmt_int(val, (int32_t)dx_glue);                     /* (0.9.9-snd1) the bus's GLUE */
+    draw_column(3, "GLUE", dx_glue ? val : "OFF", "", dx_glue ? VAL(3u) : T_DIM, (int32_t)dx_glue * 1000 / 15, ICON_LEVEL);
 }
 
 /* the four cards of a SOUND page or X-MOD */
@@ -195,7 +198,7 @@ static uint32_t dx_sig(void)
     const dx_lane_t *L = &dx_kit[dx_ui_lane & 7u];
     uint32_t h = (uint32_t)dx_ui_lane * 31u + dx_ui_side * 977u + L->mode * 131u, i;
     h ^= (uint32_t)dx_mot[0] << 24 ^ (uint32_t)dx_mot[1] << 16 ^ (uint32_t)dx_mot[2] << 8 ^ dx_mot[3];   /* (X-MOD) */
-    h = (h ^ dx_tone ^ (uint32_t)dx_hands << 8) * 2654435761u;   /* (TONE, HANDS) */
+    h = (h ^ dx_tone ^ (uint32_t)dx_hands << 8 ^ (uint32_t)dx_glue << 12) * 2654435761u;   /* (TONE, HANDS, GLUE) */
     for (i = 0; i < DV_NLANE; i++)                      /* (0.6.48) the SENDs, (0.6.49) the LAYERs */
         h = (h ^ dx_snd[i] ^ (uint32_t)dx_lay[i] << 8) * 16777619u;
     for (i = 0; i < DXP_N; i++)

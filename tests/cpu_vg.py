@@ -9,7 +9,12 @@ tolerance is small: a section more than TOL over its baseline fails; one far und
 import glob, os, re, subprocess, sys, tempfile
 
 TOL = 0.08                                    # +8 %: a real change, never noise
-SAMPLES = 256 * 32                            # cpu_vg.c NB blocks of CTL samples
+def ctl():                                    # (0.9.9 ctl64) CTL from the generated tables (64; 32 before)
+    try:
+        return int(re.search(r"^#define CTL (\d+)", open("build/gen/felucca_tables.h").read(), re.M).group(1))
+    except (OSError, AttributeError):
+        return 64
+SAMPLES = 256 * ctl()                         # cpu_vg.c NB blocks of CTL samples
 
 binary = sys.argv[1]
 base_path = sys.argv[2] if len(sys.argv) > 2 else "tests/cpu_baseline_vg.txt"

@@ -48,9 +48,10 @@ static void fresh(void)
     for (p = 0; p < NPART; p++) host_preset(&trk[p], 0, 0);
     memset(&felucca_dbg, 0, sizeof felucca_dbg);
     audio_cpu_rem = audio_halves = audio_max_us = 0;
-    shed_req = 0; shed_count = 0; shed_over = 0;
+    shed_req = 0; shed_count = 0;
     audio_last_half = 2u; audio_lost = 0;
-    load_tight = 0; tight_calm = 0; memset((void *)&load_diag, 0, sizeof load_diag);
+    load_tight = 0; voice_headroom = poly_calm = 0; memset((void *)&load_diag, 0, sizeof load_diag);
+    load_avg_q8 = load_all_q8 = load_pred_q8 = 0; guard_run = guard_cap = 0; guard_calm = guard_trips = 0;
     host_clock = host_us = host_half_reads = host_dma_advanced = host_acks = host_nest = 0;
     host_pending = FM1_AUDIO_HALF;
     transport_req = panic_req = 0;
@@ -126,17 +127,21 @@ static void dma(void)
     host_pending = FM1_AUDIO_HALF;
     host_us = 5000;
     fm1_alnk0_irq();
-    check("one slow half records elapsed load, tightens the budget, does not shed yet (0.6.19: two in a row again)",
-          host_acks == 1u && !shed_req && felucca_dbg.last_us == 5000u && !felucca_dbg.late && load_tight &&
+    check("one slow half records elapsed load, neither tightens the budget nor sheds (cpu5: one spike is no overload)",
+          host_acks == 1u && !shed_req && felucca_dbg.last_us == 5000u && !felucca_dbg.late && !load_tight &&
           load_diag.peak >= 80u);
     fm1_alnk0_irq();
-    check("a second slow half in a row requests shedding", host_acks == 2u && shed_req);
-    shed_req = 0;
+    check("a second slow half in a row: still nothing", host_acks == 2u && !shed_req && !load_tight);
+    fm1_alnk0_irq();
+    check("the third in a row trips the guard (GUARD_RUN), no voice shed: nothing came late",
+          host_acks == 3u && !shed_req && load_tight && guard_trips == 1u && guard_cap == GUARD_MIN);
     host_half_reads = 0; host_dma_advanced = 1; host_us = 100;
     fm1_alnk0_irq();
-    check("DMA advancing during a render is counted once", host_acks == 3u && felucca_dbg.late == 1u && !felucca_dbg.in_audio && !shed_req);
+    check("DMA advancing during a render is counted once, and is the last resort: a voice shed",
+          host_acks == 4u && felucca_dbg.late == 1u && !felucca_dbg.in_audio && shed_req);
+    shed_req = 0;
     check("(0.8.9) the half is acknowledged before it renders: a flip during a late render stays pending",
-          host_acks_at_start == host_acks && host_acks_at_start == 3u);
+          host_acks_at_start == host_acks && host_acks_at_start == 4u);
     {   /* the free half alternates: none lost; the same half twice in a row: the one between was never rendered */
         uint32_t lost0 = audio_lost;
         host_dma_advanced = 0;                         /* (free half 0 each time) */
@@ -146,12 +151,32 @@ static void dma(void)
     fresh();
     expected = HALF_FRAMES * 1000000u / FS;            /* the half's deadline in us */
     host_us = expected * 90u / 100u; host_nest = expected * 30u / 100u;   /* the render 60 %, TIMER5 nested 30 % */
-    fm1_alnk0_irq(); fm1_alnk0_irq();
-    check("TIMER5 nested in the render counts toward the deadline", shed_req && felucca_dbg.last_us == host_us - host_nest);
-    fresh();
+    for (i = 0; i < 64u; i++) fm1_alnk0_irq();
+    check("TIMER5 nested in the render counts toward the deadline (the extra voices), not toward the guard",
+          !shed_req && !load_tight && felucca_dbg.last_us == host_us - host_nest &&
+          load_all_q8 > (HEAD_OFF << 8) && load_avg_q8 < (GUARD_OFF << 8));
+    fresh(); host_nest = 0;
     host_us = 5000;
     fm1_alnk0_irq(); host_us = 100; fm1_alnk0_irq(); host_us = 5000; fm1_alnk0_irq();
-    check("a lone slow half between fast ones does not shed (0.6.19: a spike is not an overload)", !shed_req);
+    check("a lone slow half between fast ones does not shed (0.6.19: a spike is not an overload)", !shed_req && !load_tight);
+    fresh();                                           /* (cpu5) the averaged guard: a 95 % spike in a 70 % song is nothing */
+    host_us = expected * 70u / 100u;
+    for (i = 0; i < 256u; i++) fm1_alnk0_irq();
+    host_us = expected * 95u / 100u; fm1_alnk0_irq();
+    host_us = expected * 70u / 100u;
+    for (i = 0; i < 256u; i++) fm1_alnk0_irq();
+    check("guard: a song at 70 % with one 95 % half never trips (average 70, no run of 3)",
+          !load_tight && !guard_trips && !shed_req && load_avg_q8 / 256u >= 68u && load_avg_q8 / 256u <= 71u);
+    host_us = expected * 88u / 100u;                   /* .. at 88 % it does, on the average (no half past 92) */
+    for (i = 0; i < 256u && !load_tight; i++) fm1_alnk0_irq();
+    check("guard: the average past 85 % trips it (88 % halves, none past 92)", load_tight && guard_trips == 1u && i > 8u);
+    host_us = expected * 75u / 100u;                   /* .. and 75 % is not calm enough to let go */
+    for (i = 0; i < GUARD_STEP * 3u; i++) fm1_alnk0_irq();
+    check("guard: at 75 % it holds (calm is under 70)", load_tight);
+    host_us = expected * 50u / 100u;
+    for (i = 0; i < GUARD_STEP * (NVOICE - GUARD_MIN + 2u) && load_tight; i++) fm1_alnk0_irq();
+    check("guard: under 70 % it lets go a voice every half second, then clears",
+          !load_tight && !guard_cap && i >= GUARD_STEP * (NVOICE - GUARD_MIN) && !shed_req);
     fresh();
     host_us = 580;
     for (i = 0; i < 512u; i++) fm1_alnk0_irq();
@@ -352,6 +377,89 @@ static void boot_keys(void)
           ref > 100.0 && fabs(quiet - ref) < 1e-9 && silent == 0.0);
 }
 
+/* Admission changes the total budget, never the per-engine slots or the
+ * overload guard. Six two-note parts expose the old global-eight restriction. */
+static void polyphony_headroom(void)
+{
+    uint32_t k, i, kills, gates = 0;
+    int32_t out[2 * CTL];
+    fresh(); mc_host = 1; mc_off = 0; sys_load = LOAD_FULL;
+    check("polyphony: starts with the conservative eight-voice budget", voice_cap() == 8);
+    for (i = 0; i < 15; i++) shed_check(HALF_TICKS * 40u / 100u);
+    check("polyphony: one short calm interval cannot expand admission", voice_cap() == 8);
+    shed_check(HALF_TICKS * 40u / 100u);
+    check("polyphony: 16 calm halves on two cores admit 12 shared voices", voice_cap() == 12);
+    for (k = 0; k < NPART; k++) {
+        host_preset(&trk[k], k & 1 ? ENGI_VOICE : ENGI_FM6, 0);
+        trk[k].p[P_VOICE] = V_POLY; trk[k].p[P_SUS] = 127;
+        trk_note_on(&trk[k], 48, 100); trk_note_on(&trk[k], 55, 100);
+    }
+    kills = voice_kills;
+    check("polyphony: six FM6/VOICE parts keep both notes (12 voices)", voices_busy() == 12);
+    for (i = 0; i < 128; i++) mix_block(out, CTL);
+    for (k = 0; k < NPART; k++)
+        for (i = 0; i < NVOICE; i++) gates += trk[k].v[i].active && trk[k].v[i].gate;
+    check("polyphony: rendering retains all 12 gates without stealing", gates == 12 && voice_kills == kills);
+    for (i = 0; i < 96; i++) shed_check(HALF_TICKS * 70u / 100u);
+    check("polyphony: higher measured load (70 % on average) closes extra admission without killing held notes",
+          voice_cap() == 8 && voices_busy() == 12 && voice_kills == kills && !load_tight);
+    voice_headroom = poly_calm = 0;
+    for (i = 0; i < 64; i++) { t5_nested_ticks = HALF_TICKS * 60u / 100u; shed_check(HALF_TICKS * 70u / 100u); }
+    check("polyphony: nested IRQ load cannot open extra admission", voice_cap() == 8 && !load_tight);
+    t5_nested_ticks = 0; sys_load = LOAD_LITE;
+    for (i = 0; i < 32; i++) shed_check(0);
+    check("polyphony: LITE stays at eight", voice_cap() == 8);
+    sys_load = LOAD_ECO;
+    for (i = 0; i < 32; i++) shed_check(0);
+    check("polyphony: ECO stays at six", voice_cap() == 6);
+    sys_load = LOAD_FULL; mc_host = 0;
+    for (i = 0; i < 32; i++) shed_check(0);
+    check("polyphony: single-core fallback stays at eight", voice_cap() == 8);
+    fresh(); mc_host = 1; mc_off = 1;
+    for (i = 0; i < 32; i++) shed_check(0);
+    check("polyphony: disabled second core cannot open extra admission", voice_cap() == 8);
+    mc_host = mc_off = 0; sys_load = LOAD_FULL; fresh();
+}
+
+/* A drum's MIDI key-up is not the end of its sound: its one-shot envelope
+ * still owns a live hit. Reproduce loss with DRUM-X plus three synth tracks. */
+static void drum_budget(void)
+{
+    uint32_t p, i;
+    voice_t *kick, *hat;
+    int32_t out[2*CTL];
+    fresh(); host_preset(&trk[0], ENGI_DRUM, 0);
+    trk_note_on(&trk[0], 36, 100); trk_note_off(&trk[0], 36);
+    for(p=1;p<4;p++) {
+        host_preset(&trk[p],p&1?ENGI_FM6:ENGI_VOICE,0);
+        trk[p].p[P_VOICE]=V_MONO; trk_note_on(&trk[p],60+p,100);
+    }
+    for(i=0;i<8;i++) mix_block(out,CTL);
+    kick=held(&trk[0],36); shed_voice();
+    check("DRUM-X + 3 tracks: overload cannot shed the last live hit just because its key is up",
+          kick && kick->active && kick->stage!=4 && shed_count==0);
+
+    fresh(); host_preset(&trk[0], ENGI_DRUM, 0);
+    trk_note_on(&trk[0],36,100); trk_note_off(&trk[0],36);
+    voice_trims=0; load_tight=1; trk[1].p[P_VOICE]=V_MONO; trk_note_on(&trk[1],60,100);
+    kick=held(&trk[0],36);
+    check("DRUM-X: an unrendered pending hit is not a quiet release tail",kick && kick->stage!=4 && voice_trims==0);
+
+    fresh(); host_preset(&trk[0], ENGI_DRUM, 0);
+    trk_note_on(&trk[0],36,100); trk_note_off(&trk[0],36);
+    for(p=1;p<4;p++) {
+        host_preset(&trk[p],p&1?ENGI_FM6:ENGI_VOICE,0);
+        trk[p].p[P_VOICE]=V_POLY;
+        trk_note_on(&trk[p],48+p,100); trk_note_off(&trk[p],48+p);
+        trk_note_on(&trk[p],60+p,100);
+    }
+    trk_note_on(&trk[1],67,100); /* eight admitted voices, including released synth tails */
+    kick=held(&trk[0],36); trk_note_on(&trk[0],42,100); hat=held(&trk[0],42);
+    check("DRUM-X: new hat at capacity retains the kick and takes a released synth tail",
+          kick && kick->active && kick->note==36 && kick->stage!=4 && hat && hat!=kick && voices_busy()==8);
+    fresh();
+}
+
 int main(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -359,6 +467,8 @@ int main(void)
     boot_keys();
     overload(); dma();
     usb_in();                                          /* (last: its reverb tail would reach the tests after it) */
+    polyphony_headroom();
+    drum_budget();
     printf(bad ? "audio: %d FAILED\n" : "audio: all passed\n", bad);
     return bad != 0;
 }

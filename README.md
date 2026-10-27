@@ -16,6 +16,20 @@ the FM-1, with sound, and is played with your computer keyboard or the mouse. Th
 editor update themselves with every change merged into `main`.
 
 > **Status: in development (v0.9.9).** It builds and passes every test (Felucca's and its own). Back up the flash before installing it.
+  **GLO › LIVE: the six sequences in parallel, with live modifiers** (main 0.9.11, here since v0.9.9-par2), a new
+  first group of GLO (**LIVE · MIX · GLOBAL · SYSTEM · COMPS**; at power-on GLO still opens the MIXER). **MANO** makes
+  the keys a performance board: the black keys 1–6 pick the tracks while held (several at once, none = all), the white
+  keys are momentary modifiers (/2 x2 3/2 2/3, LOOP 8 4 2 1, REV, PING, RATCH x2 x3, THIN, OCT±, RETURN) with a LATCH
+  key, GIRO and RND; KNOB 1–3 RATE LOOP THIN, KNOB 4 the DJ FILTER; off the page the keys play notes again. **RIELES**
+  draws six rails, each loop at its own length with its playhead and its ghost; KNOB 1 PISTAS (ALL, T1 … T6, SYN, DRM),
+  KNOB 2 RATE (/4 … x4 with 2/3 and 3/2, on the next beat), KNOB 3 CORTE (the first N steps), KNOB 4 DENS (THIN ← →
+  RATCH x2–x4). One set of modifiers per track; never destructive: a ghost playhead keeps each track's true place; OCT−
+  tapped RETURNs on the next beat, held is BYPASS (the original), OCT+ twice COMMITs into DIV (or STRETCH), LEN, ROTATE
+  and CHANCE, with UNDO (GLO + G4). Recording while modified writes at the ghost's step. Not saved. The FX layer's 1/2
+  TEMPO and LOOP 3 / 5 / 7 are LIVE's RATE /2 and LOOP now (the same ghost; the PLAYHEADS keep in step). Only the
+  sequencer changed, nothing in the audio render. The manual's [§ 11](docs/MANUAL.md#11-performance).
+  **SEQ + SELECT dices with GEN's own generator** (main 0.9.18, v0.9.9-par2): the part on the song's harmony and in the
+  track's role where a GEN piece plays, never what was there before nor one of the last four (6 KB of flash back).
   **DRUM-X, VOICE and ANIMAL first** (0.9.9): the FM-1 powers on with T1 DRUM-X, T2 VOICE singing words, T3 ANIMAL's
   bird, T4 LOFI's bytebeat, T5 ANALOG's bass and T6 FM6's electric piano, and PRESETS lists the engines in that order.
   **A new skin, AIR** (0.9.7, the default of new settings): HUD's light look on every page with the knob row on top,
@@ -30,8 +44,9 @@ editor update themselves with every change merged into `main`.
   it, clear of the page's words; a page's hint comes only once you stay on it (never while SELECT walks past), at most
   twice ever; a layer button's tap no longer says "HOLD [X] QUICK". On JIANT each card's colour follows its value
   again, as in 0.6.
-  **Three engines draw their own creature** (0.9.4): VOICE a CT scan of a singing head (the tongue, jaw, lips and velum
-  move with the phoneme sung), ANIMAL a creature that metamorphoses between bird, insect and mammal, DRUM-X its kit as
+  **Three engines draw their own creature** (0.9.4): VOICE its vocal tract singing, a glowing tube in a ghost of a
+  head (main 0.9.10's "Tracto vivo", v0.9.9-par2: the tongue, jaw, lips and velum move with the phoneme sung, glottal
+  pulses travel up it, waves leave the mouth, the jaw opens downward), ANIMAL a creature that metamorphoses between bird, insect and mammal, DRUM-X its kit as
   little beings that squash, shut their eyes and shout with every hit.
   **MUTATE can go back** (0.9.3): turning MUTATE off asks to return the track to its anchor; SEQ + D5 REVERT, GLO + B4 REVERT ALL, undoable.
   **0.9.2 is driven by six rules** (see [Navigation](#navigation)): SELECT walks a section's pages as one chain, the
@@ -148,11 +163,11 @@ audio CPU budget, the signature shown at power-on is 428 bytes. An instrument th
 *Since 0.6.71, experimental.* The FM-1's chip (JieLi AC791N) has **two processor cores**; Felucca and JIANT up to
 0.6.70 used one, which ran everything: the sound, the screen, the keys. Now the second one helps with the sound:
 
-- **How the work is shared.** Every 0.7 ms block, the tracks are split between the two cores by how long each took to
+- **How the work is shared.** Every block (1.45 ms since 0.9.9, 0.7 ms before: see below), the tracks are split between the two cores by how long each took to
   render over the last blocks (timed as they play, since 0.6.73). While the first core renders its tracks, the second
   renders the others into buffers of its own; then they are added together and go through the master on the first
   core. The drum tracks go together, on one core or the other. Since 0.6.75 the second core also runs the effect
-  buses (chorus, delay, reverb), on the sends of the block before (0.7 ms later, inaudible), so they no longer wait.
+  buses (chorus, delay, reverb), on the sends of the block before (a block later, inaudible), so they no longer wait.
 - **The same sound.** The sum is exactly the one-core sum: a test plays a whole six-track song both ways and checks
   that the output is identical, bit for bit.
 - **More room.** With the second core doing part of the synth work, the load meter stays lower: more tracks, voices,
@@ -161,13 +176,43 @@ audio CPU budget, the signature shown at power-on is 428 bytes. An instrument th
 - **Units that cannot run it.** On some FM-1s the second core now and then reads a word of memory wrong, more often
   under load (found by the Melodee and fm1-x0x developers). JIANT guards against it: every job carries a check word,
   and if the second core reads a wrong one, faults or does not answer in time, it is **stopped at once and the first
-  core plays every track again**, with no crash (at most one 0.7 ms block of those tracks is lost). Since 0.6.76 the
+  core plays every track again**, with no crash (at most one block of those tracks is lost). Since 0.6.76 the
   effects' output is checked too: far out of range, the block is muted, their lines cleared and the second core stopped
   the same way. Such a unit
   then stays on one core **until it is switched off**, and so does any unit after a crash while both cores ran.
 - **What it says.** MENU > ABOUT, under AUDIO LOAD: **CORES 2**, or **CORES 1** with the reason: REC AT POWER-ON,
   BAD READ, NO ANSWER, FAULT, SINCE A FAULT (an earlier one this power-on), NO START.
 - **One core on purpose.** Hold **REC** while switching the FM-1 on: that session plays on one core, as before.
+- **The core supplies (0.9.9-stab).** Up to 0.9.9-cpu3 JIANT ran both cores at 360 MHz on the boot loader's core
+  voltages (1.40 V / 1.26 V), a configuration no M-VAVE firmware uses: M-VAVE's own firmware raises them to 1.60 V /
+  1.38 V as it starts, at the same 360 MHz. JIANT now does the same at boot, before the second core and the audio
+  (`firmware/hal/fm1_sys.h`, after fm1-base's code, MPL-2.0). MENU > ABOUT shows the steps reached: **RAILS 7/15**
+  (and the boot loader's 3/11).
+- **MENU > SYSTEM > CPU CLOCK: 360 MHZ / 320 MHZ (0.9.9-stab; editor id 24).** JieLi rates the chip at 320 MHz; the FM-1's
+  boot stage runs it at 360, and so does M-VAVE's firmware with the supplies above, so **360 MHZ stays the default**. 320
+  MHZ is the configuration of M-VAVE's open firmware and of Skiff: switched at power-on, before the audio and the second
+  core, with curist's switch from [fm1-clk320-probe](https://github.com/curist/fm1-clk320-probe) (MIT,
+  `firmware/hal/fm1_clk320.h`); ~11 % fewer cycles a block, so the load governor sheds voices sooner on the heaviest
+  songs. A change applies from the next power-on; ABOUT shows the clock it runs at (**CPU 360 MHZ** / **CPU 320 MHZ**).
+- **If it crashes (0.9.9-stab).** The red screen names its numbers (VEC PC EMU DBG RETS as before, then SP USP SSP, the
+  second core's PC and the bus master of a bad access) and stays 10 s for a photo; MENU > ABOUT repeats the main ones until
+  the unit is switched off. A hardware window now closes the RAM code and the first core's stacks to the second core and
+  to every DMA: a stray write there is caught at once and attributed, where before it was only seen afterwards as a
+  corrupted word.
+- **Blocks of 64 samples (0.9.9 "ctl64").** The audio is rendered in blocks: each one runs the sequencer, splits the
+  tracks between the cores, hands the second core its job and waits for it, clears and sums the buffers, runs the
+  effect buses and the master. Up to 0.9.8 a block was 32 samples (0.7 ms: four per 2.9 ms half of the output buffer);
+  since 0.9.9 it is 64 (1.45 ms, two per half), so that fixed work happens half as often: measured on the host, a
+  silent mixer costs 17 % less, four MONO tracks cutting each other's notes 21 % less, the whole test song 9 % less
+  (`docs/CPU3_PERFORMANCE.md`). Envelopes, LFOs, glides and fades tick at the new rate with their times unchanged.
+  The sequencer did not get coarser: a note that falls inside a block (an off-grid MICRO step, a strum, HUMAN time, a
+  ratchet, an ARP step, a gate's end) now starts or ends **at its own sample** within the block (before, at the
+  block's first sample: up to 0.7 ms off), for every engine but FM6, whose operators render whole blocks (its notes
+  start at the nearer block edge, within 0.7 ms, as every engine did before). A key or a MIDI note still plays at the
+  start of the next block, as before: its latency is set by the output buffer, not the block. What did change: the
+  effect buses run a block behind the dry sound, so their return is now 1.45 ms late instead of 0.7 (a shorter
+  pre-delay than any room has; with a sustained tone and a heavy send the dry and wet now add up with another phase,
+  and the master's leveler, which reads the peaks of the sum, can sit a few dB from where it did).
 - **Credits.** How to start the second core safely on the FM-1 and the guard against misreads come from
   [Melodee](https://github.com/keremimo/melodee) (keremimo) and [fm1-x0x](https://github.com/charlesvestal/fm1-x0x)
   (Charles Vestal), both GPL-3.0; JIANT's version is in `firmware/hal/fm1_multicore.h`.

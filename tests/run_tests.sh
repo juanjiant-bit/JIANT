@@ -38,9 +38,18 @@
 #                   (1.2: when it writes, the power-on restore, damaged copies, a write cut short, wear over a session),
 #                   malformed transfers, transport-stop timeouts, MIDI and UART recovery; the MENU settings over the
 #                   editor (MENU_DESC / MENU_SET: every item, clamping, unknown ids, saving, USB SERIAL applied later).
+# LIVE (tests/live_test.c, p2 from main 0.9.11): GLO > LIVE's modifiers (seq_live.c, ui_live.c): their timing, the ghost,
+#                   RETURN, BYPASS, COMMIT + UNDO, recording at the ghost, MANO's keys, RIELES' PISTAS, the GLO chain,
+#                   the PLAYHEADS under a slower RATE (the FX layer's 1/2 TEMPO and LOOP: perform_test).
 # RATCH (tests/ratchet_test.c): a step's ratchet (x1..x4): its parts in the sequencer (equal, gated, chords and drum
 #                   hits whole, one chance roll, swing, no slide or tie out, STOP), FUN8 round trip and older projects x1,
 #                   user preset patterns, SEQ > CHANCE KNOB 3 and the roll / grid drawing.
+# COMPONENTS (tests/comp_test.c, 0.9.9-seq2d): the step components v2 (ACTION LENGTH CONDITION VALUE): the mock-up's
+#                   16-bar cycle, every action over its LENGTH, conditions, MONO (C2 ELSE) / POLY, a v2 project round trip
+#                   and a project of before seq2d migrated (CP_*, EVERY), SEQ > COMP / COMP 2's knobs.
+# CTL64 (tests/ctl64_timing_test.c, 0.9.9): blocks of 64 samples (core.h CTL): every note of a MICRO-shifted pattern lands
+#                   in the rendered audio within 2 samples of where the sequencer puts it running a sample at a time
+#                   (voice.c track_render starts and releases a voice at its sample inside the block); POLY, MONO cuts, a kit.
 # MOD (tests/mod_test.c): the modulation matrix: slots that do nothing are bit-identical, every source on each
 #                   kind of destination, clamping, MIDI CC1 / CC11 / aftertouch routing, the cost of 4 active
 #                   slots (at most +5 %), demos in build/mod_demo/.
@@ -96,6 +105,9 @@
 #                   x8 in time while held (stopped and playing), -1 / -2 / -3 SHORT / GHOST / FLAM (length, level, tone,
 #                   the grace hit measured); real-time REC: the step's RATCH / ECHO x8 EVEN / TOUCH, the pass after the
 #                   very hits heard; MIDI's bands around 35..81, MIDI REC, a project round trip, the OCT message, COMP.
+# FILTER (tests/filter_test.c, 0.9.9-snd1): the part's FILTER (src/voice.c tf_run, track_comb): every TYPE bounded at RES
+#                   127 from C1 to C8 (3 engines), COMB / COMB- in tune with the note, no zipper sweeping CUT, RES the
+#                   ring's length, MS20 screaming under full scale; demos in build/filter_demo/.
 # DRUM-X (tests/drumx_test.c): the DRUM engine (src/drumx_voice.c): every lane sounds, stays under full scale and ends,
 #                   MORPH A <-> B (also while a hit rings), PITCH, the hat choke, MRPH on the knob; demos in build/drumx_demo/.
 # NOISE (tests/noise_test.c): the engine (src/eng_noise.c): COLR's slope (white, pink, brown), the filter and the
@@ -105,6 +117,10 @@
 #                   video (chirps at 1.0 .. 1.3 kHz with rising hooks, 2.4 .. 4.5 a second; a trill of 8 .. 10), the cricket's
 #                   carrier and chirp rate, TEMP (Dolbear), the Hopf whistle's onset by bifurcation and its pitch, every
 #                   preset sounding, no DC, ending, the same twice, no clipping at any mode's corners; demos in build/animal_demo/.
+# STRING / ADD (tests/string_add_test.c, 0.9.9-snd5): the Karplus-Strong string (src/eng_string.c) in tune over C1 .. C6 for every
+#                   EXCITE (the decimated loops too), DECAY's T60 rising and even over the keys, BRIGHT, a COMB TYPE turned BP;
+#                   the additive engine (src/eng_add.c): every MODE's partials at their ratios, BRIGHT's tilt, EVEN, DAMP, no
+#                   alias at the top; every preset of both sounding, no DC, the same twice, ending; the knobs' corners; demos.
 # VOICE words (tests/voice_test.c, 0.8.5): the VOICE engine singing (src/sing.c): Spanish by rules and Japanese romaji on word
 #                   lists (phonemes, syllables), English through its dictionary, every bank word's syllables; the lyric
 #                   generator (the same lyric per seed, phrases as long as the pattern's notes, bank words); the vowels' F1 / F2,
@@ -123,6 +139,8 @@
 # FM6 BANK (tests/fm6bank_test.c, JIANT 0.6.11 from Felucca 1.4.1): the voice bank (src/fm6_vbank.c) and its editor
 #                   commands against simulated NOR: write / read back, its sectors only, a power cut at any byte or erase
 #                   (the old bank or the new one), a wrong CRC, SLOT B1..B32, the SLOT values stored before as before.
+# TAPE (tests/tape_test.c, 0.9.9-snd8): the master's TAPE (src/fx.c tape_block, FX > TAPE): off never runs; TAPE's harmonics,
+#                   the highs lost, the head bump; WOW's few cents; no click turning them; kept in a project ('T' 'P').
 # DJ FILTER (tests/djf_test.c, 0.9.1): the master DJ FILTER (src/fx.c djf_block, GLO > MIXER KNOB 4): centred, a sequenced
 #                   mix bit for bit as 0.9.0 rendered it (never run); the low-pass / high-pass responses (pass band, 12 dB an
 #                   octave, the peak, the ends, stereo); no click crossing the middle, jumping sides, swept, automated; its
@@ -197,7 +215,18 @@ run "M-UPGRADE entry (own loader)" "$OUT/ota_test" build/felucca.fwsc
 head -c 200000 build/felucca.bin > "$OUT/old_app.bin"
 python3 tools/fm1pkg_make.py "$OUT/old_app.bin" build/loader/ota.bin "$OUT/old.fwsc" >/dev/null
 $CC -o "$OUT/ldr_test" tests/ldr_test.c
-run "update loader: other app -> this build" "$OUT/ldr_test" "$OUT/old.fwsc" build/felucca.fwsc
+SLOT=$(python3 -c 'import sys; sys.path.insert(0, "tools"); import fm1pkg_make; print(fm1pkg_make.APP_SLOT)')
+run "update loader: other app -> this build" "$OUT/ldr_test" "$OUT/old.fwsc" build/felucca.fwsc "$SLOT"
+# (0.9.13) an app that fills the whole grown slot (the region then ends at 0x92FFE), with today's loader
+python3 -c 'import os, sys; a = open(sys.argv[1], "rb").read(); n = int(sys.argv[3]); open(sys.argv[2], "wb").write(a + os.urandom(n - len(a)))' \
+    build/felucca.bin "$OUT/full_app.bin" "$SLOT"
+python3 tools/fm1pkg_make.py "$OUT/full_app.bin" build/loader/ota.bin "$OUT/full.fwsc" >/dev/null
+run "update loader: an app filling the whole slot" "$OUT/ldr_test" "$OUT/old.fwsc" "$OUT/full.fwsc" "$SLOT"
+run "update loader: full slot -> this build" "$OUT/ldr_test" "$OUT/full.fwsc" build/felucca.fwsc "$SLOT"
+python3 -c 'import sys; open(sys.argv[2], "wb").write(open(sys.argv[1], "rb").read() + b"\0")' "$OUT/full_app.bin" "$OUT/over_app.bin"
+if python3 tools/fm1pkg_make.py "$OUT/over_app.bin" build/loader/ota.bin "$OUT/over.fwsc" >/dev/null 2>&1; then
+    echo "FAIL: the packager took an app one byte past the slot"; fail=1
+else echo "ok: the packager refuses an app one byte past the slot"; fi
 
 if [ -f build/gen/felucca_tables.h ]; then
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/hostsim" tests/hostsim.c -lm
@@ -214,14 +243,26 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "motion, whole-step chance, FUN7 migration, song restore, ARP repeat and the 1.2 ARP modes" "$OUT/motion_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/djf_test" tests/djf_test.c -lm
     run "DJ FILTER (0.9.1): centred bit for bit 0.9.0, LP / HP response, no click crossing the middle, automation, old projects" "$OUT/djf_test"
+    $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/tape_test" tests/tape_test.c -lm
+    run "TAPE (0.9.9-snd8): off never runs, the drive's harmonics, the highs lost, the head bump, WOW's few cents, no click, kept in a project" "$OUT/tape_test"
+    $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/eq_test" tests/eq_test.c -lm
+    run "EQ (p9): the master's four bands, flat bit for bit, each band moving its tones, kept in a project" "$OUT/eq_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/micro_test" tests/micro_test.c -lm
     run "MICRO in 64ths (0.9.1): recorded within 1/64 of a step at any tempo / division, played there, REC Q 50 %, old projects, 'M' 'F'" "$OUT/micro_test"
+    $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/ctl64_timing_test" tests/ctl64_timing_test.c -lm
+    run "ctl64 (0.9.9): the rendered notes at the sequencer's sample (MICRO-shifted steps, POLY, MONO cuts, kit hits) in blocks of CTL" "$OUT/ctl64_timing_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/gen_test" tests/gen_test.c -lm
-    run "GEN (0.6.91): the song generator, every genre: deterministic, one scale, the kick anchored, the bass's roots, chord tones, forms, the screen" "$OUT/gen_test"
+    run "GEN (0.6.91): the song generator, every genre: deterministic, one scale, the kick anchored, the bass's roots, chord tones, forms, the screen; (0.9.9-gen1) the clean base, the archetypes, the CPU budget; (gen2) the 303 line and its legato slides, the leads' vibrato, the drums' decays; (gen3) the rules by role, the drums' share, the loudness" "$OUT/gen_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/stems_test" tests/stems_test.c -lm
     run "STEMS (0.9.8): DICE songs, each stem = its track's solo render (FULL LITE ECO, CORES 1 / 2), the sum = the mix, the SLICER" "$OUT/stems_test"
+    $CC -O1 -w -o "$OUT/cpu_safe_test" tests/cpu_safe_test.c
+    run "CPU safety (p1, main 0.9.12 / 0.9.13): crash code, the crash record (row 9), a crash logged (p2b: 2 CORES kept), MENU > SYSTEM > CPU CORES / CPU CLOCK" "$OUT/cpu_safe_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/ratchet_test" tests/ratchet_test.c -lm
     run "RATCH: x1..x4 in a step (notes, chords, drum hits), gates, chance, swing, projects, user presets, CHANCE page" "$OUT/ratchet_test"
+    $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/live_test" tests/live_test.c -lm
+    run "LIVE (p2, main 0.9.11, GLO > LIVE MANO / RIELES): RATE on the beat, CORTE / LOOP / RATCH / THIN / REV / PING on the 1/16, the ghost, RETURN, BYPASS, COMMIT + UNDO, REC at the ghost, PISTAS ALL..T6, MANO's keys only there, the chain, the PLAYHEADS" "$OUT/live_test"
+    $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/comp_test" tests/comp_test.c -lm
+    run "COMPONENTS v2 (seq2d): the 16-bar cycle, RATCHET STUTTER MUTE ARP SEQ JUMP over their LENGTH, MONO / POLY, migration, COMP pages; (seq2f) the global lane" "$OUT/comp_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/drumx_oct_test" tests/drumx_oct_test.c -lm
     run "DRUM-X OCTAVES (0.8.5): ratchets above the kit, SHORT GHOST FLAM below, live, recorded and played back as heard, MIDI bands" "$OUT/drumx_oct_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/midi_control_test" tests/midi_control_test.c -lm
@@ -241,13 +282,13 @@ if [ -f build/gen/felucca_tables.h ]; then
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/text_ref_test" tests/text_ref_test.c -lm
     run "text: pens, kerning and pixels equal the reference renderer" "$OUT/text_ref_test"
     if python3 -c "import PIL" 2>/dev/null; then
-        run "text spacing: glyph gaps against the font's own (16x supersampled), S M <= 0.25 px, L <= 0.5 px" \
+        run "text spacing: glyph gaps against the font's own (16x supersampled), a phase step (S M L <= 0.5 px)" \
             python3 tests/text_spacing_test.py build/gen/ui_fonts.h
     fi
     $CC -O1 -w -Ibuild/gen -o "$OUT/settings_test" tests/settings_test.c
     run "settings: PER1..PER4 migration, palette ids and preference preservation" "$OUT/settings_test"
     $CC -w -Ibuild/gen -Ifirmware/src -o "$OUT/ui_test" tests/ui_test.c -lm
-    run "UI: sounds keep steps, undo, recording, MIDI overflow, pending saves, panel recovery, drum grid, song chain, GREY gray, MONO neutral" "$OUT/ui_test"
+    run "UI: sounds keep steps, undo, recording, MIDI overflow, pending saves, panel recovery, drum grid, song chain, GREY gray, MONO neutral; (gen3) the COMP cards whole, every value" "$OUT/ui_test"
     FV=$(sed -n 's/^#define FELUCCA_VERSION "\([^"]*\)".*/\1/p' firmware/src/felucca.c)   # (the splash, ABOUT: the real version)
     $CC -O1 -w "-DFELUCCA_VERSION=\"$FV\"" -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/ui_render" tests/ui_render.c -lm
     mkdir -p build/ui_new/ppm build/ui_slot
@@ -289,8 +330,22 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "FX layer effects: on the 1/16, stereo, too-long REPEAT, SLICER, silent keys, idle bit-identical, clicks, cost, demos" "$OUT/perform_test" build/perform_demo
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/reverb_test" tests/reverb_test.c -lm
     run "REVERB TYPE: ROOM bit-identical, SPRING decay / chirp / stability / level, model change, cost, demos" "$OUT/reverb_test" build/fx_demo
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/cloud_hot_test" tests/cloud_hot_test.c -lm
+    run "CLOUD driven hot (p1, main 0.9.14 / 0.9.16): the loop never runs away (any SIZE / RATE), its line never clamps, no grain across the write head, no trip, SIZE max from a cleared line sounds" "$OUT/cloud_hot_test" build/fx_demo
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/delay_test" tests/delay_test.c -lm
     run "DELAY: no leak at the far end, the long times at half / quarter rate (timing, response, aliases, noise), no click on a rate change, MOD / GRAIN / FEEDBK there, demos" "$OUT/delay_test" build/fx_demo
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/voice_fairness_test" tests/voice_fairness_test.c -lm
+    run "four single-note tracks: own release before cross-track stealing (budget 8)" "$OUT/voice_fairness_test" 8
+    run "four single-note tracks: own release before cross-track stealing (budget 12)" "$OUT/voice_fairness_test" 12
+    run "four single-note tracks at 70..90 % (cpu5): no tail cut under the cap, a spike no trip, the guard keeps the leads, the prediction" "$OUT/voice_fairness_test" load
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/chorus_sleep_test" tests/chorus_sleep_test.c -lm
+    run "chorus: exact zero-ring shortcut, tails and restart, unchanged state" python3 tests/chorus_sleep_test.py "$OUT/chorus_sleep_test"
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/empty_fx_test" tests/empty_fx_test.c -lm
+    run "empty FX: exact zero-state shortcuts, wake and model changes" python3 tests/empty_fx_test.py "$OUT/empty_fx_test"
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/fx_rest_test" tests/fx_rest_test.c -lm
+    $CC -O2 -w -DFX_REST_OFF -Ibuild/gen -Ifirmware/src -o "$OUT/fx_rest_ref" tests/fx_rest_test.c -lm
+    run "FX at rest (cpu5): the gate shut, the buses not run and silenced, the same output before, zeros through, the wake" \
+        python3 tests/fx_rest_test.py "$OUT/fx_rest_test" "$OUT/fx_rest_ref"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/regress" tests/regress.c -lm
     run "regression: golden renders, health, voices, CPU budget" "$OUT/regress" tests/golden.txt tests/cpu_baseline.txt
     $CC -O2 -w -pthread -Ibuild/gen -Ifirmware/src -o "$OUT/mc_thread_test" tests/mc_thread_test.c -lm
@@ -298,6 +353,9 @@ if [ -f build/gen/felucca_tables.h ]; then
     $CC -w -Ibuild/gen -Ifirmware/src -o "$OUT/descdump" tests/descdump.c -lm
     echo "== parameter and engine tables as JSON (for the editor mock test)"
     "$OUT/descdump" > "$OUT/desc.json" || fail=1
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/filter_test" tests/filter_test.c -lm
+    run "FILTER: every TYPE bounded at RES 127 across the keyboard, COMB / COMB- in tune, no zipper, RES the ring, MS20, demos" \
+        "$OUT/filter_test" build/filter_demo
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/drumx_test" tests/drumx_test.c -lm
     mkdir -p build/drumx_demo
     run "DRUM-X: every lane sounds and ends, MORPH, PITCH, NOIS, hat choke, group mutes, demos" "$OUT/drumx_test" build/drumx_demo
@@ -307,9 +365,16 @@ if [ -f build/gen/felucca_tables.h ]; then
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/animal_test" tests/animal_test.c -lm
     mkdir -p build/animal_demo
     run "ANIMAL: CMOS on the key and the owner's video, cricket, TEMP, Hopf onset, presets, DC, clipping, retrigger, demos" "$OUT/animal_test" build/animal_demo
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/string_add_test" tests/string_add_test.c -lm
+    mkdir -p build/string_add_demo
+    run "STRING ADD (0.9.9-snd5): in tune C1 .. C6, DECAY's T60, BRIGHT, the COMB TYPE, partials, tilt, EVEN, DAMP, no alias, presets, corners, demos" "$OUT/string_add_test" build/string_add_demo
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/sample_test" tests/sample_test.c -lm
+    run "SAMPLE (par13): the bank indexed, PITCH, LOOP, LENGTH, KEYS SLOTS, BITS / RATE, the transfer and its CRC, a bad bank silent" "$OUT/sample_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/voice_test" tests/voice_test.c -lm
     mkdir -p build/voice_demo
     run "VOICE words: ES / JA / EN reading, the generator, formants, fricatives, plosives, clicks, DC, the lyric, POS, LOOP, demos" "$OUT/voice_test" build/voice_demo
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/fm6_env_compare" tests/fm6_env_compare.c -lm
+    run "FM6 compact envelope: original state machine and all carrier masks" "$OUT/fm6_env_compare"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/fm6_test" tests/fm6_test.c -lm
     mkdir -p build/fm6_demo
     run "FM6: algorithms, envelopes, retrigger, DC, clipping, macros, patch formats, voices, cost, demos" "$OUT/fm6_test" build/fm6_demo

@@ -41,7 +41,9 @@ FONTS = Path(__file__).resolve().parents[1] / "fonts"
 LOCAL_INTER = os.path.expanduser("~/Library/Fonts/Inter.ttc")   # 4.001: 0 Regular, 10 Medium, 12 SemiBold
 EXTRAS = [0xA9, 0xB0, 0xB7, 0xC4, 0xD6, 0xDC, 0xE4, 0xF6, 0xFC, 0x2026]  # (c) deg . A: O: U: a: o: u: (Latin-1), ...
 CODE = {0x2026: 0x85}                  # characters outside Latin-1 -> their one-byte code in the firmware
-PHASES, PHASES_L = 4, 2                # horizontal phases per glyph (aa_raster.raster_font): S M, L
+PHASES, PHASES_L = 2, 2                # horizontal phases per glyph (aa_raster.raster_font): S M, L. (JIANT 0.9.9-snd4, flash)
+                                       # S M 2, were 4: 12.9 KB less of the glyph tables; a glyph within 1/4 px of its
+                                       # place, a gap within 1/2 px (text_spacing_test.py, as L since 0.5)
 # faces stored Huffman-coded (--huff): M and L. S, the most drawn and the least compressible (-15 %), stays
 # 2 px per byte, so the labels draw at full speed
 HUFF = [("M", "L")]
@@ -67,8 +69,9 @@ def preset(name):
         f = FONTS.parent / "assets" / "fonts"  # for labels and (0.7.7, the polish) values again, Michroma for the big titles;
         # (0.8.9, the skins' mock-up "Sans 0.6") the values and the header's BPM in a rounded sans again, as the 0.6 had
         # them: Inter Tight SemiBold
-        return [("S", str(f / "ChakraPetch-Medium.ttf"), 12, (32, 126), EXTRAS, -0.055, PHASES),
-                ("M", str(f / "InterTight[wght].ttf") + "@600", 15, (32, 126), EXTRAS, 0.0, PHASES),
+        # (snd7: no lowercase: the UI folds every text to capitals, gfx.c fold; 6.7 KB of flash back)
+        return [("S", str(f / "ChakraPetch-Medium.ttf"), 12, (32, 95), EXTRAS, -0.055, PHASES),
+                ("M", str(f / "InterTight[wght].ttf") + "@600", 15, (32, 95), EXTRAS, 0.0, PHASES),
                 ("L", str(f / "Michroma-Regular.ttf"), 18, (32, 32), [ord(c) for c in L_CHARS[1:]], 0.0, PHASES_L)]
     if name == "inter-tight":
         v = str(FONTS.parent / "assets" / "fonts" / "InterTight[wght].ttf")   # SIL OFL 1.1, Google Fonts

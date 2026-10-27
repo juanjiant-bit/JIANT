@@ -84,9 +84,12 @@ static uint32_t v11_from_v10(const uint8_t *dev, const uint8_t *cfg, uint32_t n)
 static int same_as(const uint8_t *dev, const uint8_t *c, uint32_t n, const uint8_t *rdev, const uint8_t *rcfg,
                    uint32_t rn)
 {
+    uint8_t d10[18];
+    memcpy(d10, rdev, 18);
+    d10[15] = USB_STR_PRODUCT;                           /* (0.9.12) iProduct moved from index 2 (usb.c USB_STR_PRODUCT) */
     if (!AUDIO_48K)
-        return !memcmp(dev, rdev, 18) && n == rn && !memcmp(c, rcfg, n);
-    rn = v11_from_v10(rdev, rcfg, rn);
+        return !memcmp(dev, d10, 18) && n == rn && !memcmp(c, rcfg, n);
+    rn = v11_from_v10(d10, rcfg, rn);
     return !memcmp(dev, v11_dev, 18) && n == rn && !memcmp(c, v11_cfg, n);
 }
 
@@ -121,8 +124,20 @@ int main(void)
     else
         check(T_LAYOUT == 2 ? "bcdUSB 2.00, class 00 00 01" : "bcdUSB 2.00, class 00 00 00",
               le16(dev + 2) == 0x0200 && !dev[4] && !dev[5] && dev[6] == (T_LAYOUT == 2));
-    check("VID 1209 PID 0001, strings 1 2, one configuration",
-          le16(dev + 8) == 0x1209 && le16(dev + 10) == 1 && dev[14] == 1 && dev[15] == 2 && dev[17] == 1);
+    check("VID 1209 PID 0001, strings 1 4 (iProduct off Felucca's index 2), one configuration",
+          le16(dev + 8) == 0x1209 && le16(dev + 10) == 1 && dev[14] == 1 && dev[15] == 4 && dev[17] == 1);
+    {   /* (0.9.12) the names a host reads: manufacturer "Juan Jiant", product "JIANT" (UTF-16LE), nothing at index 2
+         * (Windows keeps the old "Felucca" / "JIANT FM" under index 2's name GUID), no serial */
+        static const uint8_t PROD[12] = {12, 3, 'J', 0, 'I', 0, 'A', 0, 'N', 0, 'T', 0};
+        static const uint8_t MANU[22] = {22, 3, 'J', 0, 'u', 0, 'a', 0, 'n', 0, ' ', 0, 'J', 0, 'i', 0, 'a', 0, 'n', 0, 't', 0};
+        const uint8_t *s;
+        uint16_t sl;
+        check("string 0: US English", get_desc(0x0300, &s, &sl) && sl == 4 && s[2] == 0x09 && s[3] == 0x04);
+        check("string 1 (manufacturer): \"Juan Jiant\"", get_desc(0x0301, &s, &sl) && sl == 22 && !memcmp(s, MANU, 22));
+        check("string 4 (product): \"JIANT\"", get_desc(0x0304, &s, &sl) && sl == 12 && !memcmp(s, PROD, 12));
+        check("strings 2 (the old product) and 3: none", !get_desc(0x0302, &s, &sl) && !get_desc(0x0303, &s, &sl));
+        check("no serial number (iSerial 0)", dev[16] == 0);
+    }
     snprintf(name, sizeof name, "bcdDevice 3.%02X", 0x10 * (T_UAC + AUDIO_48K) + (CDC_SHOWN ? 1 + 2 * T_LAYOUT : 0));
     check(name, le16(dev + 12) == 0x300u + 0x10 * (T_UAC + AUDIO_48K) + (CDC_SHOWN ? 1 + 2 * T_LAYOUT : 0));
 

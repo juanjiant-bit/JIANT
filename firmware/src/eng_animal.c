@@ -402,10 +402,10 @@ static void animal_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
         inc = an_inc(m->pitch16 + an_reg(p) + an_hook(v, dep) + (jw >> 8) + ((r * r >> 14) * 3 >> 14), m->fine);
         a2 = (r * p[P_E2]) >> 8;                         /* the second harmonic */
         v->ph[1] = (uint32_t)r;
-        k = r - r0;                                      /* (the ramp in Q19: exact over the CTL samples) */
-        r = r0 << 5;
+        k = r - r0;                                      /* (the ramp in Q(14 + CTL_LOG2): exact over the CTL samples) */
+        r = r0 << CTL_LOG2;
         for (i = 0; i < n; i++) {
-            int32_t y = (sine_i(ph) * (r >> 5)) >> 14;
+            int32_t y = (sine_i(ph) * (r >> CTL_LOG2)) >> 14;
             if (a2)
                 y += (sine_i(ph << 1) * a2) >> 15;
             ph += inc;
@@ -425,7 +425,7 @@ static void animal_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
             tg = (r & 0xFFFF0000u) | (55u + ((r >> 4) & 127u));
         }
         tg--;
-        dr += (((((int32_t)tg >> 16) * p[P_E2]) >> 9) - dr) >> 5;   /* (Q8 of 1/16 st: +-2 st at full) */
+        dr += (((((int32_t)tg >> 16) * p[P_E2]) >> 9) - dr) >> (10 - CTL_LOG2);   /* (Q8 of 1/16 st: +-2 st at full; a block's step) */
         if (g) {                                         /* the fly-by: higher coming, lower going (3u^2 - 2u^3) */
             int32_t u = (int32_t)((uint32_t)v->s[2] >> 17), s = (((u * u) >> 15) * (98304 - 2 * u)) >> 15;
             dop = (p[P_E4] * (32768 - 2 * s)) >> 14;
@@ -510,34 +510,34 @@ static void animal_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
 /* {MODE, PRESS, CHAOS, SIZE | SWEEP, RATE, GROUP, TEMP} (as each mode names them: animal_desc) */
 static const preset_t ANIMAL_PRESETS[] = {
     /* CMOS (as named there: TOUCH COUPLE CAP | HYST RATE GROUP FM): the owner's circuit, played an octave down */
-    {"CMOS BIRD", {AN_CMOS, 90, 0, 37, 16, 74, 0, 20}, {0, 64, 127, 40}, 0, 0, FX(0, 0, 25, 40), PAT(7)},
-    {"CMOS TRILL", {AN_CMOS, 70, 0, 50, 6, 94, 0, 6}, {0, 64, 127, 40}, 0, 0, FX(0, 0, 25, 40), PAT(7)},
-    {"CMOS MONKEY", {AN_CMOS, 110, 20, 80, -40, 70, 5, 28}, {0, 64, 127, 50}, 0, 0, FX(0, 10, 20, 45), PAT(3)},
-    {"CMOS BUG", {AN_CMOS, 60, 90, 20, 12, 104, 0, 16}, {0, 64, 127, 30}, 0, 0, FX(0, 0, 20, 30), PAT(7)},
+    {"CMOS BIRD", {AN_CMOS, 90, 0, 37, 16, 74, 0, 20}, {0, 64, 127, 40}, 0, TAG(FX), FX(0, 0, 25, 40), PAT(7)},
+    {"CMOS TRILL", {AN_CMOS, 70, 0, 50, 6, 94, 0, 6}, {0, 64, 127, 40}, 0, TAG(FX), FX(0, 0, 25, 40), PAT(7)},
+    {"CMOS MONKEY", {AN_CMOS, 110, 20, 80, -40, 70, 5, 28}, {0, 64, 127, 50}, 0, TAG(FX), FX(0, 10, 20, 45), PAT(3)},
+    {"CMOS BUG", {AN_CMOS, 60, 90, 20, 12, 104, 0, 16}, {0, 64, 127, 30}, 0, TAG(FX), FX(0, 0, 20, 30), PAT(7)},
     /* PULSE (CLICK Q SIZE | DETUNE RATE GROUP TEMP): Gryllus at ~4.8 kHz from C5, 26 syllables / s, 3 a chirp */
-    {"CRICKET", {AN_PULSE, 127, 100, 26, 0, 119, 7, 22}, {0, 64, 127, 30}, 0, 0, FX(0, 0, 0, 35), PAT(5)},
-    {"TREE CRICKT", {AN_PULSE, 127, 110, 32, 4, 102, 1, 22}, {0, 64, 127, 40}, 0, 0, FX(0, 0, 0, 45), PAT(5)},
-    {"KATYDID", {AN_PULSE, 10, 20, 24, 50, 80, 7, 22}, {0, 64, 127, 30}, 0, 0, FX(0, 0, 0, 35), PAT(5)},
-    {"CICADA", {AN_PULSE, 38, 85, 28, 14, 60, 0, 24}, {20, 64, 127, 60}, 0, 0, FX(0, 0, 0, 40), PAT(5)},
-    {"TREEFROG", {AN_PULSE, 106, 49, 41, 6, 127, 15, 26}, {0, 64, 127, 40}, 0, 0, FX(0, 0, 0, 40), PAT(5)},
-    {"TOAD", {AN_PULSE, 127, 80, 44, 8, 116, 1, 22}, {4, 64, 127, 50}, 0, 0, FX(0, 0, 0, 40), PAT(5)},
-    {"BULLFROG", {AN_PULSE, 70, 30, 53, 10, 52, 7, 22}, {2, 64, 127, 50}, 0, 0, FX(0, 0, 0, 40), PAT(8)},
+    {"CRICKET", {AN_PULSE, 127, 100, 26, 0, 119, 7, 22}, {0, 64, 127, 30}, 0, TAG(FX), FX(0, 0, 0, 35), PAT(5)},
+    {"TREE CRICKT", {AN_PULSE, 127, 110, 32, 4, 102, 1, 22}, {0, 64, 127, 40}, 0, TAG(FX), FX(0, 0, 0, 45), PAT(5)},
+    {"KATYDID", {AN_PULSE, 10, 20, 24, 50, 80, 7, 22}, {0, 64, 127, 30}, 0, TAG(FX), FX(0, 0, 0, 35), PAT(5)},
+    {"CICADA", {AN_PULSE, 38, 85, 28, 14, 60, 0, 24}, {20, 64, 127, 60}, 0, TAG(FX), FX(0, 0, 0, 40), PAT(5)},
+    {"TREEFROG", {AN_PULSE, 106, 49, 41, 6, 127, 15, 26}, {0, 64, 127, 40}, 0, TAG(FX), FX(0, 0, 0, 40), PAT(5)},
+    {"TOAD", {AN_PULSE, 127, 80, 44, 8, 116, 1, 22}, {4, 64, 127, 50}, 0, TAG(FX), FX(0, 0, 0, 40), PAT(5)},
+    {"BULLFROG", {AN_PULSE, 70, 30, 53, 10, 52, 7, 22}, {2, 64, 127, 50}, 0, TAG(FX), FX(0, 0, 0, 40), PAT(8)},
     /* WHSTL (PRESS CHAOS SIZE | SWEEP RATE GROUP TEMP) */
-    {"CANARY", {AN_WHSTL, 100, 20, 38, -30, 112, 14, 22}, {0, 64, 127, 30}, 0, 0, FX(0, 0, 20, 40), PAT(3)},
-    {"CARDINAL", {AN_WHSTL, 110, 6, 46, -40, 77, 10, 22}, {0, 64, 127, 30}, 0, 0, FX(0, 0, 20, 40), PAT(3)},
-    {"DOVE", {AN_WHSTL, 70, 10, 66, 15, 60, 9, 22}, {6, 64, 127, 50}, 0, 0, FX(0, 0, 15, 50), PAT(5)},
-    {"OWL", {AN_WHSTL, 80, 8, 68, -8, 68, 9, 22}, {4, 64, 127, 50}, 0, 0, FX(0, 0, 15, 55), PAT(8)},
-    {"PEEPER", {AN_WHSTL, 100, 4, 34, 30, 80, 3, 22}, {0, 64, 127, 30}, 0, 0, FX(0, 0, 10, 40), PAT(5)},
-    {"BAT", {AN_WHSTL, 120, 0, 40, -64, 127, 3, 22}, {0, 64, 127, 20}, 0, 0, FX(0, 0, 30, 30), PAT(7)},
+    {"CANARY", {AN_WHSTL, 100, 20, 38, -30, 112, 14, 22}, {0, 64, 127, 30}, 0, TAG(FX), FX(0, 0, 20, 40), PAT(3)},
+    {"CARDINAL", {AN_WHSTL, 110, 6, 46, -40, 77, 10, 22}, {0, 64, 127, 30}, 0, TAG(FX), FX(0, 0, 20, 40), PAT(3)},
+    {"DOVE", {AN_WHSTL, 70, 10, 66, 15, 60, 9, 22}, {6, 64, 127, 50}, 0, TAG(FX), FX(0, 0, 15, 50), PAT(5)},
+    {"OWL", {AN_WHSTL, 80, 8, 68, -8, 68, 9, 22}, {4, 64, 127, 50}, 0, TAG(FX), FX(0, 0, 15, 55), PAT(8)},
+    {"PEEPER", {AN_WHSTL, 100, 4, 34, 30, 80, 3, 22}, {0, 64, 127, 30}, 0, TAG(FX), FX(0, 0, 10, 40), PAT(5)},
+    {"BAT", {AN_WHSTL, 120, 0, 40, -64, 127, 3, 22}, {0, 64, 127, 20}, 0, TAG(FX), FX(0, 0, 30, 30), PAT(7)},
     /* WING (BUZZ DRIFT SIZE | DOPPLR RATE GROUP TEMP) */
-    {"MOSQUITO", {AN_WING, 30, 50, 64, 20, 40, 2, 22}, {10, 64, 127, 40}, 0, 0, FX(0, 0, 0, 30), PAT(5)},
-    {"BEE", {AN_WING, 90, 30, 75, 10, 40, 2, 22}, {10, 64, 127, 40}, 0, 0, FX(0, 0, 0, 30), PAT(5)},
-    {"FLY", {AN_WING, 70, 90, 78, 25, 50, 1, 22}, {10, 64, 127, 40}, 0, 0, FX(0, 0, 0, 30), PAT(5)},
+    {"MOSQUITO", {AN_WING, 30, 50, 64, 20, 40, 2, 22}, {10, 64, 127, 40}, 0, TAG(FX), FX(0, 0, 0, 30), PAT(5)},
+    {"BEE", {AN_WING, 90, 30, 75, 10, 40, 2, 22}, {10, 64, 127, 40}, 0, TAG(FX), FX(0, 0, 0, 30), PAT(5)},
+    {"FLY", {AN_WING, 70, 90, 78, 25, 50, 1, 22}, {10, 64, 127, 40}, 0, TAG(FX), FX(0, 0, 0, 30), PAT(5)},
     /* GLOTT (MOUTH ROUGH SIZE | SWEEP RATE GROUP AIR) */
-    {"WOLF", {AN_GLOTT, 0, 8, 64, 40, 50, 0, 5}, {20, 64, 127, 60}, 0, 1, FX(0, 0, 15, 60), PAT(5)},
-    {"DOG BARK", {AN_GLOTT, 100, 70, 64, -15, 85, 5, 6}, {0, 64, 127, 30}, 0, 0, FX(0, 0, 10, 30), PAT(3)},
-    {"ROAR", {AN_GLOTT, 110, 100, 100, -20, 50, 3, 9}, {6, 64, 127, 50}, 0, 1, FX(10, 0, 10, 40), PAT(8)},
-    {"PURR", {AN_GLOTT, 10, 60, 50, 0, 60, 1, 19}, {10, 64, 127, 40}, 0, 1, FX(0, 0, 0, 20), PAT(8)},
+    {"WOLF", {AN_GLOTT, 0, 8, 64, 40, 50, 0, 5}, {20, 64, 127, 60}, 0, 1 | TAG(FX), FX(0, 0, 15, 60), PAT(5)},
+    {"DOG BARK", {AN_GLOTT, 100, 70, 64, -15, 85, 5, 6}, {0, 64, 127, 30}, 0, TAG(FX), FX(0, 0, 10, 30), PAT(3)},
+    {"ROAR", {AN_GLOTT, 110, 100, 100, -20, 50, 3, 9}, {6, 64, 127, 50}, 0, 1 | TAG(FX), FX(10, 0, 10, 40), PAT(8)},
+    {"PURR", {AN_GLOTT, 10, 60, 50, 0, 60, 1, 19}, {10, 64, 127, 40}, 0, 1 | TAG(FX), FX(0, 0, 0, 20), PAT(8)},
 };
 
 static const engine_t ENG_ANIMAL = {

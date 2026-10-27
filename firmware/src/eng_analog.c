@@ -10,8 +10,23 @@ static const char *const N_ANALOG_WAVE[] = {"SAW", "SQR", "TRI", "SIN", "PWM", "
 enum { AW_SYNC = 5, AW_RING, AW_SAW3 };
 /* (JIANT 0.5) FILTER TYPE (P_FTYPE): LP as before (analog_render's loop); HP BP from the same state-variable filter
  * (analog_ext's loop, every WAVE); COMB the filter open, the part's sum through a feedback comb tuned to the newest
- * note and CUT (+-32 semitones about it), RES its feedback (voice.c track_comb) */
-enum { FT_LP, FT_HP, FT_BP, FT_COMB };
+ * note and CUT (+-32 semitones about it), RES its feedback (voice.c track_comb).
+ * (0.9.9-snd1) COMB- the same comb with its feedback negative: odd harmonics, hollow (its line half as long: the note
+ * where COMB's is). FT_POST(ft): a TYPE the part's (voice.c tf_run), every engine's own filter open under it */
+enum { FT_LP, FT_HP, FT_BP, FT_COMB, FT_COMBN, FT_MS20, FT_N };   /* (snd1: MS20, voice.c tf_ms20) */
+#define FT_IS_COMB(ft) ((ft) == FT_COMB || (ft) == FT_COMBN)
+#define FT_POST(ft) ((ft) >= FT_COMB)
+/* the TYPE stored, in range (was & 3: a value past the last read as another TYPE) */
+static inline uint32_t ft_of(const int16_t *p)
+{
+    return (uint32_t)clamp(p[P_FTYPE], 0, FT_N - 1);
+}
+/* the TYPE a voice's own filter plays (ANALOG, LOFI): LP HP BP, or open (FT_COMB in svf_mode) under a part's TYPE */
+static inline uint32_t ft_voice(const int16_t *p)
+{
+    uint32_t f = (uint16_t)p[P_FTYPE];                  /* (a stray negative one: open, as a part's) */
+    return f < FT_COMB ? f : FT_COMB;
+}
 static inline int32_t svf_mode(const tsvf_t *c, int32_t in, int32_t *ic1, int32_t *ic2, uint32_t ft, int32_t k)
 {
     int32_t v3 = in - *ic2;
@@ -65,7 +80,7 @@ static __attribute__((noinline)) void analog_morph(track_t *t, voice_t *v, int32
                                                    int32_t mpos0, int32_t mpos1)   /* (0.6.50: ramped mpos0 -> mpos1) */
 {
     const int16_t *p = t->p;
-    uint32_t i, inc1 = m->inc, ph0 = v->ph[0], ph1 = v->ph[1], ft = (uint32_t)p[P_FTYPE] & 3u;
+    uint32_t i, inc1 = m->inc, ph0 = v->ph[0], ph1 = v->ph[1], ft = ft_voice(p);
     uint32_t inc2 = p[P_E1] || p[P_E7] ? cents_inc(m->pitch16 + p[P_E7] * 16, p[P_E1], 0) : inc1;
     int32_t m2 = p[P_E2] * 258, m1 = 32767 - m2, nz = p[P_E3] * 200, drv = p[P_E6], kd = 8192 - p[P_E5] * 7600 / 127;
     int32_t drive = 32768 + drv * 512, cut = (p[P_E4] << 8) + m->cutoff + ((v->pitch16 - 60 * 16) << 2);
@@ -104,7 +119,7 @@ static __attribute__((noinline)) void analog_ext(track_t *t, voice_t *v, int32_t
 {
     const int16_t *p = t->p;
     uint32_t wave = (uint32_t)p[P_E0], i, inc1 = m->inc, ph0 = v->ph[0], ph1 = v->ph[1], ph2 = v->ph[2], r, inc2, inc3;
-    uint32_t ft = (uint32_t)p[P_FTYPE] & 3u, pw = an_pw(t, m);
+    uint32_t ft = ft_voice(p), pw = an_pw(t, m);
     int32_t mx = wave >= AW_SYNC ? an_mext(t->mo_cur, m) : 0;   /* (0.6.81) MORPH, SHAPE on SYNC RING SAW3 */
     int32_t det = p[P_E1] + (wave == AW_SAW3 ? mx * 40 / (127 << 8) : 0), m2 = p[P_E2] * 258, m1 = 32767 - m2, nz = p[P_E3] * 200, drv = p[P_E6], kd = 8192 - p[P_E5] * 7600 / 127;
     int32_t drive = 32768 + drv * 512, cut = (p[P_E4] << 8) + m->cutoff + ((v->pitch16 - 60 * 16) << 2);
@@ -241,34 +256,34 @@ static void analog_dispatch(track_t *t, voice_t *v, int32_t *out, uint32_t n, co
 }
 
 static const preset_t ANALOG_PRESETS[] = {
-    {"SAW LEAD", {0, 12, 64, 0, 90, 30, 10, 12}, {4, 70, 100, 50}, 20, 1, FX(0, 10, 45, 30), PAT(4)},
-    {"SOFT PAD", {0, 20, 64, 4, 60, 10, 0, 0}, {80, 90, 110, 95}, 10, 0, FX(0, 60, 20, 70), PAT(5)},
-    {"SQR BASS", {1, 0, 0, 0, 50, 70, 40, 0}, {0, 60, 40, 30}, 30, 1, FX(5, 0, 10, 10), PAT(2)},
-    {"PWM STR", {4, 8, 40, 0, 75, 20, 0, 0}, {60, 80, 110, 85}, 8, 0, FX(0, 50, 20, 60), PAT(5)},
-    {"ACID", {0, 0, 0, 0, 50, 100, 25, 0}, {0, 55, 20, 30}, 48, 1, FX(20, 0, 45, 15), PAT(1)},
-    {"SINE KEY", {3, 6, 50, 0, 127, 0, 0, 0}, {2, 80, 30, 70}, 0, 0, FX(0, 30, 25, 40), PAT(6)},
-    {"RAVE", {4, 30, 64, 0, 85, 20, 30, 7}, {20, 80, 110, 60}, 10, 1, FX(30, 40, 30, 30), PAT(13)},
-    {"SUB BASS", {3, 0, 0, 0, 40, 0, 20, 0}, {0, 60, 100, 20}, 0, 1, FX(0, 0, 0, 10), PAT(8)},
-    {"PLUCK", {0, 8, 50, 0, 30, 40, 0, 0}, {0, 88, 0, 60}, 55, 0, FX(0, 20, 50, 30), PAT(3)},
-    {"BRASS", {0, 10, 64, 0, 45, 20, 10, 0}, {35, 70, 90, 45}, 40, 0, FX(0, 20, 20, 40), PAT(6)},
-    {"WIND", {0, 0, 0, 90, 30, 90, 0, 0}, {60, 90, 60, 80}, 50, 0, FX(0, 30, 30, 70), PAT(5)},
-    {"STRINGS", {0, 25, 64, 0, 70, 10, 0, 0}, {70, 90, 115, 90}, 5, 0, FX(0, 60, 20, 70), PAT(5)},
+    {"SAW LEAD", {0, 12, 64, 0, 90, 30, 10, 12}, {4, 70, 100, 50}, 20, 1 | TAG(LEAD), FX(0, 10, 45, 30), PAT(4)},
+    {"SOFT PAD", {0, 20, 64, 4, 60, 10, 0, 0}, {80, 90, 110, 95}, 10, TAG(PAD), FX(0, 60, 20, 70), PAT(5)},
+    {"SQR BASS", {1, 0, 0, 0, 50, 70, 40, 0}, {0, 60, 40, 30}, 30, 1 | TAG(BASS), FX(5, 0, 10, 10), PAT(2)},
+    {"PWM STR", {4, 8, 40, 0, 75, 20, 0, 0}, {60, 80, 110, 85}, 8, TAG(PAD), FX(0, 50, 20, 60), PAT(5)},
+    {"ACID", {0, 0, 0, 0, 50, 100, 25, 0}, {0, 55, 20, 30}, 48, 1 | TAG(BASS), FX(20, 0, 45, 15), PAT(1)},
+    {"SINE KEY", {3, 6, 50, 0, 127, 0, 0, 0}, {2, 80, 30, 70}, 0, TAG(KEYS), FX(0, 30, 25, 40), PAT(6)},
+    {"RAVE", {4, 30, 64, 0, 85, 20, 30, 7}, {20, 80, 110, 60}, 10, 1 | TAG(LEAD), FX(30, 40, 30, 30), PAT(13)},
+    {"SUB BASS", {3, 0, 0, 0, 40, 0, 20, 0}, {0, 60, 100, 20}, 0, 1 | TAG(BASS), FX(0, 0, 0, 10), PAT(8)},
+    {"PLUCK", {0, 8, 50, 0, 30, 40, 0, 0}, {0, 88, 0, 60}, 55, TAG(PLUCK), FX(0, 20, 50, 30), PAT(3)},
+    {"BRASS", {0, 10, 64, 0, 45, 20, 10, 0}, {35, 70, 90, 45}, 40, TAG(LEAD), FX(0, 20, 20, 40), PAT(6)},
+    {"WIND", {0, 0, 0, 90, 30, 90, 0, 0}, {60, 90, 60, 80}, 50, TAG(FX), FX(0, 30, 30, 70), PAT(5)},
+    {"STRINGS", {0, 25, 64, 0, 70, 10, 0, 0}, {70, 90, 115, 90}, 5, TAG(PAD), FX(0, 60, 20, 70), PAT(5)},
     /* (JIANT 0.4: TRIO's, folded in) SYNC (ratio 1 + 11/16), RING (1 + 18/16), SAW3 (9 ct a side) */
-    {"SYNC LEAD", {5, 11, 90, 0, 82, 30, 10, 0}, {2, 70, 100, 40}, 18, 1, FX(0, 10, 40, 25), PAT(4)},
-    {"RING BELL", {6, 18, 100, 0, 110, 20, 0, 0}, {0, 92, 0, 80}, 0, 0, FX(0, 20, 35, 55), PAT(7)},
-    {"FAT BASS", {7, 9, 64, 0, 62, 45, 20, -12}, {0, 62, 60, 25}, 40, 1, FX(10, 0, 10, 10), PAT(2)},
+    {"SYNC LEAD", {5, 11, 90, 0, 82, 30, 10, 0}, {2, 70, 100, 40}, 18, 1 | TAG(LEAD), FX(0, 10, 40, 25), PAT(4)},
+    {"RING BELL", {6, 18, 100, 0, 110, 20, 0, 0}, {0, 92, 0, 80}, 0, TAG(BELL), FX(0, 20, 35, 55), PAT(7)},
+    {"FAT BASS", {7, 9, 64, 0, 62, 45, 20, -12}, {0, 62, 60, 25}, 40, 1 | TAG(BASS), FX(10, 0, 10, 10), PAT(2)},
     /* (0.7.0) a palette for the song generator and the player: pads, a reese, a hoover, a dub stab, a cello, an
      * arp pluck, a lead, keys, an organ */
-    {"JUNO PAD", {4, 14, 64, 2, 58, 12, 0, 0}, {45, 90, 115, 90}, 8, 0, FX(0, 70, 25, 60), PAT(5)},
-    {"REESE", {7, 22, 64, 0, 44, 20, 25, 0}, {2, 80, 110, 40}, 0, 1, FX(10, 20, 10, 10), PAT(2)},
-    {"HOOVER", {7, 40, 64, 0, 92, 15, 35, 12}, {10, 80, 110, 55}, 12, 1, FX(25, 50, 35, 35), PAT(13)},
-    {"DUB STAB", {1, 6, 64, 0, 52, 55, 10, 7}, {0, 50, 20, 45}, 50, 0, FX(0, 15, 60, 55), PAT(6)},
-    {"CELLO", {0, 4, 40, 2, 48, 18, 15, -12}, {30, 85, 110, 70}, 10, 0, FX(5, 30, 20, 55), PAT(5)},
-    {"ARP PLUCK", {1, 10, 50, 0, 44, 50, 0, 12}, {0, 62, 0, 40}, 60, 0, FX(0, 25, 55, 35), PAT(3)},
-    {"MOOG LEAD", {2, 6, 40, 0, 72, 40, 40, -12}, {6, 75, 100, 45}, 25, 1, FX(10, 0, 35, 25), PAT(4)},
-    {"DARK PAD", {0, 18, 64, 6, 38, 30, 10, -12}, {70, 95, 120, 100}, 12, 0, FX(0, 55, 30, 75), PAT(5)},
-    {"GLASS KEYS", {3, 8, 60, 0, 120, 0, 0, 19}, {0, 82, 20, 65}, 0, 0, FX(0, 35, 35, 50), PAT(6)},
-    {"ORGAN SQR", {1, 4, 64, 0, 100, 0, 5, 12}, {0, 64, 127, 30}, 0, 0, FX(0, 35, 10, 35), PAT(6)},
+    {"JUNO PAD", {4, 14, 64, 2, 58, 12, 0, 0}, {45, 90, 115, 90}, 8, TAG(PAD), FX(0, 70, 25, 60), PAT(5)},
+    {"REESE", {7, 22, 64, 0, 44, 20, 25, 0}, {2, 80, 110, 40}, 0, 1 | TAG(BASS), FX(10, 20, 10, 10), PAT(2)},
+    {"HOOVER", {7, 40, 64, 0, 92, 15, 35, 12}, {10, 80, 110, 55}, 12, 1 | TAG(LEAD), FX(25, 50, 35, 35), PAT(13)},
+    {"DUB STAB", {1, 6, 64, 0, 52, 55, 10, 7}, {0, 50, 20, 45}, 50, TAG(KEYS), FX(0, 15, 60, 55), PAT(6)},
+    {"CELLO", {0, 4, 40, 2, 48, 18, 15, -12}, {30, 85, 110, 70}, 10, TAG(PAD), FX(5, 30, 20, 55), PAT(5)},
+    {"ARP PLUCK", {1, 10, 50, 0, 44, 50, 0, 12}, {0, 62, 0, 40}, 60, TAG(PLUCK), FX(0, 25, 55, 35), PAT(3)},
+    {"MOOG LEAD", {2, 6, 40, 0, 72, 40, 40, -12}, {6, 75, 100, 45}, 25, 1 | TAG(LEAD), FX(10, 0, 35, 25), PAT(4)},
+    {"DARK PAD", {0, 18, 64, 6, 38, 30, 10, -12}, {70, 95, 120, 100}, 12, TAG(PAD), FX(0, 55, 30, 75), PAT(5)},
+    {"GLASS KEYS", {3, 8, 60, 0, 120, 0, 0, 19}, {0, 82, 20, 65}, 0, TAG(KEYS), FX(0, 35, 35, 50), PAT(6)},
+    {"ORGAN SQR", {1, 4, 64, 0, 100, 0, 5, 12}, {0, 64, 127, 30}, 0, TAG(KEYS), FX(0, 35, 10, 35), PAT(6)},
 };
 
 static const engine_t ENG_ANALOG = {

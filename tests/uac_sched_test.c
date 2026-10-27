@@ -10,7 +10,8 @@
  *   core 1       (-DT_C1=1, CORES 2) the 48 kHz half handed over at the render's end, done 150..400 us later, or at
  *                once when the next half's first block waits for it (mix_block's wait); T_C1=0: one core, each block
  *                resampled in the ISR.
- *   TIMER5       every 0.5 ms (+-40 us), nested in the render: the next packet as soon as the last went (uac_service).
+ *   TIMER5       every tick (UAC_POLL_HZ, 0.9.10; 0..20 us late), nested in the render: the next packet as soon as the
+ *                last left the wire (uac_service: TxPktRdy set for its (bytes + 9) x 8 x 1.04 / 12 MHz after the token).
  *   the host     an IN token each 1 ms frame of its own clock (+-500 ppm), 50..400 us into the frame; a token
  *                with no packet queued is a lost millisecond (a zero-length packet: the capture gets shorter).
  * Checked: every token finds a packet (no zero-length one), every packet n +- 1 frames, no overrun, no underrun in
@@ -110,6 +111,7 @@ static int32_t last_l;
 static int have_last;
 static uint32_t pkt[UA_MAXF * UA_W], pkt_n;
 static int queued;
+static double tx_end;                                  /* the packet on the wire until then */
 
 static void render_block(uint32_t n)
 {
@@ -132,6 +134,7 @@ static void host_take(void)
         return;
     }
     queued = 0;
+    tx_end = (double)now_ns + (pkt_n * 4u + 9u) * 8.0 * 1.04 / 12e6 * 1e9;
     R.pkts++;
     R.frames += pkt_n;
     if (pkt_n < 47u || pkt_n > 49u)
@@ -152,9 +155,9 @@ static void host_take(void)
     }
 }
 
-static void poll(void)                                 /* TIMER5's uac_service, the SIE left out */
+static void poll(void)                                 /* TIMER5's uac_service: TxPktRdy set while queued or on the wire */
 {
-    if (queued)
+    if (queued || (double)now_ns < tx_end)
         return;
     if (R.pkts)
         uac.flowing = 1;
@@ -174,11 +177,13 @@ static void sim(double secs, uint64_t *t)
     static double irqoff_end;
     static int init;
     static double next_tok;
+    static uint64_t tick;
     if (!init) {
         init = 1;
         next_flip = th;
         next_sof = 0;
-        next_poll = 500000;
+        tick = 0;
+        next_poll = 0;
 
         irqoff_end = 0;
     }
@@ -264,7 +269,7 @@ static void sim(double secs, uint64_t *t)
             continue;
         }
         if (tn == next_poll) {
-            next_poll += 500000 + (rnd() - 0.5) * 80000;
+            next_poll = (double)++tick * (1e9 / UAC_POLL_HZ) + rnd() * 20000;   /* (a hardware period, the ISR late) */
             if (irq)
                 poll();
             if (M.irqoff && (double)*t >= next_irqoff && !blocks) {
@@ -301,6 +306,7 @@ static void reset(double host_ppm)
     uac_stream(1);
     uac.flowing = 1;
     queued = 0;
+    tx_end = 0;
     have_last = 0;
     c1_fn = 0;
     c1_live = T_C1;

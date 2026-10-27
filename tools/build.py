@@ -33,11 +33,13 @@ LDR = OUT / "loader"
 sys.path.insert(0, str(SRC / "tools"))
 import fm1pkg_make  # noqa: E402
 import lz4blk  # noqa: E402
+import size_fns  # noqa: E402
 
 APP_XIP = 0x02000120                # app.bin offset 0 in the XIP map; the SPL jumps here
 APP_SLOT = fm1pkg_make.APP_SLOT
 LOADER_LOAD = 0x01C0A800
-POOL_END = 0x01C70000            # (JIANT 0.6.78) app.ld: POOL's end, RAMTEXT's start (0.6.97, 0.7.0: up 4 KiB each)
+POOL_END = 0x01C6D800            # (JIANT 0.6.78) app.ld: POOL's end, RAMTEXT's start (0.6.97, 0.7.0: up 4 KiB each; 0.9.9-beta4: 9 KiB lower;
+                                 # 0.9.9-stab: 1 KiB lower, the 320 MHz switch's RAM code)
 RAMTEXT_END = 0x01C76000         # .. RAMTEXT's end (the user stack's guard band)
 LOADER_NAME = b"usb_hid_ota.bin"    # the file name the SPL looks for
 DOCKER_IMAGE = os.environ.get("JIELI_DOCKER_IMAGE", "debian:bookworm-slim")
@@ -51,7 +53,7 @@ SDK_SHA256 = {
     "cfg/eq_cfg_hw.bin": "41167491bffed4651750719c973d2758adeb9021a5670d02d6a53c85ed80ea7d",
 }
 
-PRODUCT = "FM-1_900"                # package identity; release builds are FM-1_9XY
+PRODUCT = "FM-1_909"                # package identity; release builds are FM-1_9XY
 VERSION = None                      # FELUCCA_VERSION for release builds (default: firmware/src/felucca.c)
 
 
@@ -98,7 +100,7 @@ def generate():
     for old in ("felucca_font.h", "felucca_icons.h"):     # headers of the bitmap font and icon atlas
         (GEN / old).unlink(missing_ok=True)
     tools = SRC / "tools"
-    cmds = [[tools / "gen_aa_font.py", GEN / "ui_fonts.h", "--preset", "jiant-lab"],   # (gen_aa_font.UI_PRESET),
+    cmds = [[tools / "gen_aa_font.py", GEN / "ui_fonts.h", "--preset", "jiant-lab", "--kern-min", "4"],   # (snd7: pairs under 1/4 px dropped)   # (gen_aa_font.UI_PRESET),
             [tools / "gen_px_font.py", GEN / "ui_font_x.h"],
             [tools / "gen_aa_icons.py", GEN / "ui_icons.h"],
             [tools / "gen_aa_keycaps.py", GEN / "ui_keycaps.h"],
@@ -184,7 +186,13 @@ def build_loader():
 
 # (JIANT 0.6.78) core 0's hottest audio code, run from RAM (app.ld .hot_text, src/core.h FELUCCA_HOTRAM): the mix, the
 # master, the FX layer, the SLICER, and core 0's own copies of a part's mix and the buses (core 1 runs the flash ones)
-HOT_FNS = ("mix_block", "mix_part_m0", "fx_run0", "perf_begin", "perf_pre", "perf_block", "perf_master", "slicer_bus")
+# (0.9.9-beta4) and the buses' per-block code both cores run (fx.c fx_buses, from fx_run0 on either core): the delay's
+# line (dly_lo and its helpers), the reverb models and their dispatch, the chorus's admission, the DIST's shapers; the
+# I-cache (32 KiB, shared by both cores and the UI) kept for the engines (Kirill's audit, LOOM-8)
+HOT_FNS = ("mix_block", "mix_part_m0", "fx_run0", "perf_begin", "perf_pre", "perf_block", "perf_master", "slicer_bus",
+           "dly_lo", "dly_grain", "dly_grain_adv", "dly_wow_adv", "dly_line_clear", "dly_rate", "fx_rest",
+           "rev_run", "rev_idle", "rev_room", "rev_room_mod", "rev_spring", "rev_spring_side", "rev_cloud", "rev_shimmer",
+           "rev_reso", "cho_admit", "dist_shape", "dist_amp")
 
 
 def hot_sections(ir):
@@ -197,6 +205,154 @@ def hot_sections(ir):
         return f'{m.group(1)} section ".hot_text.{m.group(2)}" {{'
     ir = re.sub(r"^(define [^\n]*?@(" + "|".join(HOT_FNS) + r")\([^\n]*?)\s*\{$", put, ir, flags=re.M)
     return ir, found
+
+
+# (0.9.9-snd3) the flash layout of the sound, pinned: from 0.9.9 to 0.9.10 +6 KB of UI code moved every engine's render
+# 6 KB further through the XIP flash's small shared cache (none of the sound changed) and the owner's FM-1 went from fine to
+# 94 % load and crackling. tools/audio_layout.txt keeps the order of every code section in .text and the address of what
+# an interrupt reaches (tools/size_fns.py isr_reach: the audio ISR, TIMER5, the second core's jobs, the tables they read):
+# each run of the sound's code starts at its recorded address ('@', the linker script build/layout.ld places it there),
+# every audio function ('a') and constant table ('r') is checked at its address. Code the UI loses leaves a hole before
+# the next run: build.py fills it with the UI's constant tables ('n': fonts, icons, ...; moved out of .rodata into
+# .rodata.n.<name>), so the image shrinks while the sound stays where it was. FELUCCA_REPIN=1 records the layout anew
+# (after a change to the sound's code, which moves what follows it in its run)
+LAYOUT = SRC / "tools" / "audio_layout.txt"
+LAYOUT_LD = OUT / "layout.ld"
+
+
+def map_inputs(text):
+    """the linker map's input sections: [(section, address, size, object)]"""
+    out, pend = [], None
+    for ln in text.splitlines():
+        if pend:
+            m = re.match(r"^\s+0x([0-9a-f]+)\s+0x([0-9a-f]+)\s+(\S+)$", ln)
+            if m:
+                out.append((pend, int(m[1], 16), int(m[2], 16), m[3]))
+                pend = None
+                continue
+            pend = None
+        m = re.match(r"^ (\.\S+)\s+0x([0-9a-f]+)\s+0x([0-9a-f]+)\s+(\S+)$", ln)
+        if m:
+            out.append((m[1], int(m[2], 16), int(m[3], 16), m[4]))
+        else:
+            m = re.match(r"^ (\.\S+)$", ln)
+            pend = m[1] if m else None
+    return out
+
+
+def sym_table(syms):
+    """objdump -t: {name: address} of the symbols in .text"""
+    out = {}
+    for ln in syms.splitlines():
+        p = ln.split()
+        if len(p) >= 4 and p[-3] == ".text" and re.fullmatch(r"[0-9a-f]{8}", p[0]):
+            out.setdefault(p[-1], int(p[0], 16))
+    return out
+
+
+def layout_write(lines):
+    LAYOUT.write_text("# tools/build.py (FELUCCA_REPIN=1): the order of the code in .text and where the sound sits\n"
+                      "# offset in the image, @ a run of the sound's code pinned there, a its code, r its tables, c its merged\n"
+                      "# constants (all checked), - the UI's code (order only), n the UI's tables (moved to fill the holes)\n"
+                      + "\n".join(lines) + "\n")
+
+
+def layout_read():
+    rows = []
+    for ln in LAYOUT.read_text().splitlines():
+        if ln and not ln.startswith("#"):
+            off, flag, name = ln.split()
+            rows.append((int(off, 16), flag, name))
+    return rows
+
+
+def layout_record(mapt, syms, reach):
+    """tools/audio_layout.txt from a link in the compiler's order"""
+    ins = map_inputs(mapt)
+    text = [(a, n, o) for n, a, sz, o in ins if n.startswith(".text.") and n != ".text.crt0" and APP_XIP <= a < 0x02100000]
+    rodata = [(a, sz) for n, a, sz, o in ins if (n == ".rodata" or n.startswith(".rodata.cst")) and o.endswith("felucca.o")]
+    lines, prev = [], False
+    for a, n, o in text:
+        audio = n[6:] in reach or not o.endswith("felucca.o")     # (the ISR entries of hal/*.S: the sound's too)
+        lines.append(f"{a - APP_XIP:06x} {'@' if audio and not prev else 'a' if audio else '-'} {n[6:]}")
+        prev = audio
+    for name, a in sorted(sym_table(syms).items(), key=lambda kv: kv[1]):
+        if any(lo <= a < lo + sz for lo, sz in rodata) and not name.startswith("."):
+            cst = not (rodata[0][0] <= a < rodata[0][0] + rodata[0][1])
+            if name in reach or not cst:            # (the UI's small merged constants stay merged)
+                lines.append(f"{a - APP_XIP:06x} {'c' if cst else 'r' if name in reach else 'n'} {name}")
+    layout_write(lines)
+    print(f"layout: recorded {len(text)} code sections, {sum(1 for x in lines if ' @ ' in x)} runs of the sound pinned")
+
+
+# (0.9.9-gen1) main-loop code placed after the sound (never in the holes before its pinned runs): the song generator's
+# functions (firmware/src/gen.c), so it can change size without moving the sound and without the UI's room before it.
+# Only UI code ('-' rows): they leave the recorded order and land with the code not in the layout, past the tables
+LATE_SRC = ("gen.c", "favorites.c")   # (0.9.9-snd5: favorites.c fav_rows_new, once)
+
+
+def late_fns():
+    names = set()
+    for f in LATE_SRC:
+        names |= set(re.findall(r"^static [^;=()]*?\b(\w+)\((?![^)]*\)\s*;)", (FW / "src" / f).read_text(), flags=re.M))
+    return names
+
+
+def late_tables():
+    """the generator's own constant tables (gen.c, gen_tables.c): out of .rodata like the UI's recorded ones ('n'), so a
+    new one never moves the sound's merged constants after .rodata"""
+    names = set()
+    for f in ("gen.c", "gen_tables.c", "eng_string.c", "eng_sample.c", "ui_engvis.c"):   # (0.9.9-snd5: the two engines' own
+        # tables and descriptors, the creatures' new ones: out of .rodata too, the sound's tables where they were)
+        txt = (FW / "src" / f).read_text()
+        names |= set(re.findall(r"^static const [^=;(]*?\b(\w+)\s*\[", txt, flags=re.M))
+        names |= set(re.findall(r"^static const engine_t (\w+) =", txt, flags=re.M))
+    return names
+
+
+def layout_ld(rows, fills=None):
+    """build/layout.ld: the code sections in the recorded order, each run of the sound at its address; fills: {run: [n
+    sections]} put in the hole before it"""
+    out, k, late = [], 0, late_fns()
+    for off, flag, name in rows:
+        if flag == "@":
+            out += [f"*(.rodata.n.{f})" for f in (fills or {}).get(k, [])]
+            out += [f"_lay_gap{k} = .;", f". = {off:#x};"]
+            k += 1
+        if flag in "@a" or (flag == "-" and name not in late):
+            out.append(f"*(.text.{name})")
+    LAYOUT_LD.write_text("\n".join(out) + "\n")
+
+
+def layout_fills(rows, symt, ins, aligns):
+    """the holes before the pinned runs filled with the UI's tables, largest first (best fit)"""
+    pins = [off for off, flag, _ in rows if flag == "@"]
+    holes = [(k, symt[f"_lay_gap{k}"], APP_XIP + off) for k, off in enumerate(pins) if f"_lay_gap{k}" in symt]
+    items = sorted(((sz, n[10:]) for n, a, sz, o in ins if n.startswith(".rodata.n.")), reverse=True)
+    fills, used, lost = {}, set(), 0
+    for k, lo, hi in holes:
+        pos = lo
+        for sz, name in items:
+            if name in used:
+                continue
+            al = aligns.get(name, 4)
+            at = -(-pos // al) * al
+            if at + sz <= hi:
+                fills.setdefault(k, []).append(name)
+                used.add(name)
+                pos = at + sz
+        lost += hi - pos
+    return fills, sum(hi - lo for _, lo, hi in holes), lost
+
+
+def layout_check(rows, mapt, symt):
+    sect = {n[6:]: a for n, a, sz, o in map_inputs(mapt) if n.startswith(".text.")}
+    moved = []
+    for off, flag, name in rows:
+        at = sect.get(name) if flag in "@a" else symt.get(name) if flag in "rc" else None
+        if at is not None and at != APP_XIP + off:
+            moved.append(f"{name} {APP_XIP + off:#x} -> {at:#x}")
+    return moved
 
 
 def build_app():
@@ -236,13 +392,85 @@ def build_app():
             ir, n = hot_sections((OUT / "felucca_opt.ll").read_text())
             if n != len(HOT_FNS):
                 raise SystemExit(f"hot RAM code: {n} of the {len(HOT_FNS)} functions found in the IR ({HOT_FNS})")
-            (OUT / "felucca_hot.ll").write_text(ir)
-            tc("cc", *cf, "-Xclang", "-disable-llvm-optzns", "-c", OUT / "felucca_hot.ll", "-o", OUT / "felucca.o")
+            hot_ir = ir
         else:
             tc("cc", *cf, "-c", OUT / "felucca_size.ll", "-o", OUT / "felucca.o")
     elf = OUT / "felucca.elf"
-    tc("pi32v2/bin/ld", "-T", FW / "app.ld", OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o",
-       OUT / "felucca.o", "-o", elf)
+    objs = (OUT / "crt0.o", OUT / "fm1_vec.o", OUT / "fm1_isr.o", OUT / "felucca.o")
+
+    def link(probe=False):
+        """probe (0.9.9-gen1): the holes measured with the code moved past the sound (LATE_SRC) before the UI's tables
+        fill them, in an XIP region 1 MiB larger (the image would not fit with the holes still empty)"""
+        ld = FW / "app.ld"
+        if probe:
+            ld = OUT / "app_probe.ld"
+            ld.write_text(re.sub(r"(XIP\s+\(rx\)\s*:\s*ORIGIN = 0x[0-9A-Fa-f]+, LENGTH = )(0x[0-9A-Fa-f]+)",
+                                 lambda m: m[1] + hex(int(m[2], 16) + 0x100000), (FW / "app.ld").read_text()))
+        tc("pi32v2/bin/ld", "-T", ld, *objs, "-o", elf, "-Map", OUT / "felucca.map")
+        return (OUT / "felucca.map").read_text(), tc("common/bin/objdump", "-t", elf)
+
+    def compile_hot(rows):
+        """the hot IR, the UI's tables of the layout ('n') in sections of their own; {table: alignment}"""
+        tables, aligns = {name for _, flag, name in rows if flag == "n"}, {}
+        late = late_tables() - tables
+
+        def ir_bytes(ty):
+            """[N x iK] / [N x [M x iK]]: its size in bytes (None: another type)"""
+            m = re.fullmatch(r"\[(\d+) x (.+)\]", ty.strip())
+            if not m:
+                k = re.fullmatch(r"i(8|16|32|64)", ty.strip())
+                return int(k[1]) // 8 if k else None
+            inner = ir_bytes(m[2])
+            return int(m[1]) * inner if inner else None
+
+        def const(m):
+            if ' section "' in m.group(0):
+                return m.group(0)
+            if m.group(2) not in tables:
+                # (0.9.9-gen1) a generator table the layout has not recorded: out of .rodata too, unless the
+                # compiler merges it with the small constants (4 8 16 32 B: the sound's are checked after them)
+                ty = re.search(r" constant (\[[^\]]*(?:\][^\]]*)*?\]|i\d+) ", m.group(1) + " ")
+                if m.group(2) not in late or (ty and ir_bytes(ty[1]) in (4, 8, 16, 32)):   # (snd5: a struct's too)
+                    return m.group(0)
+            aligns[m.group(2)] = int(m.group(4))
+            return f'{m.group(1)}, section ".rodata.n.{m.group(2)}"{m.group(3)}'
+        ir = re.sub(r'^(@"?([\w.]+)"? = [^\n]*? constant [^\n]*?)(, align (\d+))$', const, hot_ir, flags=re.M)
+        (OUT / "felucca_hot.ll").write_text(ir)
+        tc("cc", *cf, "-Xclang", "-disable-llvm-optzns", "-c", OUT / "felucca_hot.ll", "-o", OUT / "felucca.o")
+        return aligns
+    if not hot:
+        LAYOUT_LD.write_text("*(.text*)\n")            # (FELUCCA_SIZE=0 / FELUCCA_HOTRAM=0: the compiler's order)
+        link()
+    else:
+        reach = size_fns.isr_reach((OUT / "felucca_size.ll").read_text(), True)
+        if os.environ.get("FELUCCA_REPIN") == "1" or not LAYOUT.exists():
+            compile_hot([])
+            LAYOUT_LD.write_text("*(.text*)\n")
+            mapt, syms = link()
+            layout_record(mapt, syms, reach)
+            rows = layout_read()          # (the merged constants' place once the UI's tables have left .rodata)
+            compile_hot(rows)
+            layout_ld(rows)
+            symt = sym_table(link(probe=True)[1])   # (p1) the UI's tables not yet in the holes: in the larger region
+            layout_write([f"{(symt[n] - APP_XIP) if f == 'c' else o:06x} {f} {n}" for o, f, n in rows])
+        rows = layout_read()
+        aligns = compile_hot(rows)
+        layout_ld(rows)
+        mapt, syms = link(probe=True)
+        fills, hole, lost = layout_fills(rows, sym_table(syms), map_inputs(mapt), aligns)
+        layout_ld(rows, fills)
+        mapt, syms = link()
+        moved = layout_check(rows, mapt, sym_table(syms))
+        new = [n for n in reach if f".text.{n}" in {s[0] for s in map_inputs(mapt)}
+               and n not in {name for _, _, name in rows}]
+        print(f"layout: {sum(1 for r in rows if r[1] == '@')} runs of the sound pinned, "
+              f"{sum(1 for r in rows if r[1] in '@a')} functions and {sum(1 for r in rows if r[1] in 'rc')} tables recorded; "
+              f"holes {hole} B, {sum(map(len, fills.values()))} UI tables moved into them, {lost} B left as padding")
+        if moved:
+            raise SystemExit("layout: the sound's code or tables moved (FELUCCA_REPIN=1 records the layout anew, only "
+                             "after a change to the sound itself): " + "; ".join(moved[:6]) + (" ..." if len(moved) > 6 else ""))
+        if new:
+            print(f"  note  sound functions not in the layout (placed after the tables; FELUCCA_REPIN=1): {sorted(new)[:6]}")
     for sect in ("text.bin", "data.bin", "ramtext.bin", "c1text.bin", "hottext.bin"):
         (OUT / sect).unlink(missing_ok=True)
     *_, syms, dis, rt = tc_all(("common/bin/objcopy", "-O", "binary", "-j", ".text", elf, OUT / "text.bin"),
@@ -276,8 +504,76 @@ def build_app():
     return bytes(img), syms, dis, rt
 
 
+# (0.9.9-stab) felucca-bsp docs/CPU.md: on the AC79 a 32 x 32 -> 64-bit multiply inlined beside loads (most of all 16-bit
+# ones) now and then leaves a register a bit off; src/core.h's helpers (mul64 ...) hold the audio path's. These keep theirs:
+# once a block or a frame, 64 x 64-bit products or the UI (the SDK's own 64-bit printf digits are the same case: not hot)
+MUL64_SKIP = {"djf_coef", "draw_graph", "graph_adsr", "vx_arc", "fm1_main", "fugue_tick", "midi_clock_pulse", "seq_step"}
+
+
+def mul64_near_loads(dis, window=4):
+    """(0.9.9-stab, after fm1-base's tools/build.py, MPL-2.0) functions with a load in flight beside a 32x32->64-bit multiply
+    (rN_rM = rA * rB): one up to two instructions before it, or one after it before its product is used (using it waits
+    for the multiply). On the FM-1 such code now and then leaves a register a bit off, most of all beside 16-bit loads
+    (felucca-bsp docs/CPU.md); a multiply in a helper of its own (noinline, src/core.h mul64) is clear of it.
+    [(function, sites, the nearest load's distance in instructions, 1 = a 16-bit load among them)]"""
+    found, fn, body = [], "", []
+
+    def scan():
+        sites, near, half = 0, 99, 0
+        for i, ins in enumerate(body):
+            m = re.match(r"(r\d+)_(r\d+) [+-]?= r\d+ \* r\d+", ins)
+            if not m:
+                continue
+            dst, hit = {m.group(1), m.group(2)}, 0
+            for d, b in enumerate(reversed(body[max(0, i - 2):i]), 1):
+                if re.search(r"\bcall\b", b):
+                    break
+                if re.search(r"= [hbd]?\[", b):
+                    hit, near = 1, min(near, d)
+                    half |= b.split("=", 1)[1].lstrip().startswith("h[")
+            for d, b in enumerate(body[i + 1:i + 1 + window], 1):
+                if any(re.search(r"\b" + r + r"\b", b) for r in dst):
+                    break                       # the product used: the multiply has finished
+                if re.search(r"= [hbd]?\[", b):
+                    hit, near = 1, min(near, d)
+                    half |= b.split("=", 1)[1].lstrip().startswith("h[")
+            sites += hit
+        return sites, near, half
+
+    for ln in dis.splitlines() + ["end:"]:
+        mm = LINE.match(ln)
+        if not mm:
+            m2 = re.match(r"^([A-Za-z_$][\w.$]*):$", ln.strip())
+            if m2:                              # (a label starting with '.': a jump table's piece, still the function)
+                if fn and not fn.startswith("__") and fn.split(".")[0] not in MUL64_SKIP:
+                    n, near, half = scan()
+                    if n:
+                        found.append((fn, n, near, half))
+                fn, body = m2.group(1), []
+            continue
+        body.append(mm.group(3))
+    return found
+
+
+SOFT_DOUBLE = ("__adddf3", "__subdf3", "__muldf3", "__divdf3", "__floatsidf", "__floatunsidf", "__fixdfsi",
+               "__fixunsdfsi", "__extendsfdf2", "__truncdfsf2", "__eqdf2", "__nedf2", "__gtdf2", "__gedf2", "__ltdf2", "__ledf2")
+
+
 def check(img, syms, dis, rt):
     errors, notes = [], []
+    mul64 = mul64_near_loads(dis)       # (0.9.9-stab) the CPU fault of felucca-bsp docs/CPU.md: a note, the code may be fine
+    if mul64:
+        notes.append("64-bit multiplies inlined beside loads (felucca-bsp docs/CPU.md: may corrupt a register; move them "
+                     "into src/core.h's mul64 helpers): " +
+                     ", ".join(f"{f} ({n} site{'s' if n > 1 else ''}, a load {d} insn{'s' if d > 1 else ''} away{', 16-bit' if h else ''})"
+                               for f, n, d, h in mul64[:8]) + (" ..." if len(mul64) > 8 else ""))
+    else:
+        notes.append("no 64-bit multiply inlined beside a load (src/core.h mul64 helpers; felucca-bsp docs/CPU.md)")
+    dbl = [n for n in SOFT_DOUBLE if re.search(r"\s" + n + r"$", syms, re.M)]
+    if dbl:                             # (0.9.9-stab) the pi32v2 has no double: a soft one is a slow mistake (fm1-base's check)
+        errors.append(f"soft-double routines linked (a double crept in): {dbl}")
+    else:
+        notes.append("no soft-double routine linked")
     m = re.search(r"^([0-9a-f]+) .*\s_start$", syms, re.M)
     if not m or int(m.group(1), 16) != APP_XIP:
         errors.append(f"_start is not at {APP_XIP:#x}")
@@ -298,6 +594,9 @@ def check(img, syms, dis, rt):
                 errors.append(f"reference to ROM address {val:#010x}")
     if len(img) > APP_SLOT:
         errors.append(f"image {len(img)} B exceeds the app slot")
+    ld = re.search(r"XIP\s*\(rx\)\s*:\s*ORIGIN = (0x[0-9A-Fa-f]+), LENGTH = (0x[0-9A-Fa-f]+)", (FW / "app.ld").read_text())
+    if not ld or int(ld[1], 16) != APP_XIP or int(ld[2], 16) != APP_SLOT:
+        errors.append(f"app.ld XIP must be ORIGIN {APP_XIP:#x}, LENGTH {APP_SLOT:#x} (fm1pkg_make.APP_SLOT)")
 
     def sym(name):
         mm = re.search(r"^([0-9a-f]+) .*\s" + name + r"$", syms, re.M)
@@ -305,11 +604,11 @@ def check(img, syms, dis, rt):
     bss = sym("_bss_end") - 0x01C08000
     pool = sym("_pool_end") - sym("_pool_start")
     pool_top = max(sym("_pool_end"), sym("_c1_stack_hi"))   # (the second core's stacks after the pool)
-    notes.append(f"image {len(img)} B; RAM .data+.bss {bss} B of 98304; pool {pool} B, spare {POOL_END - pool_top} B")
+    notes.append(f"image {len(img)} B of the {APP_SLOT} B slot ({APP_SLOT - len(img)} B free); RAM .data+.bss {bss} B of 98304; pool {pool} B, spare {POOL_END - pool_top} B")
     if bss > 96 * 1024:
         errors.append("RAM region overflow")
-    if POOL_END - pool_top < 8192:                # keep >= 8 KiB of the pool spare
-        errors.append(f"pool headroom {POOL_END - pool_top} B < 8192 B")
+    if POOL_END - pool_top < 4096:                # keep >= 4 KiB of the pool spare (par13: was 8 KiB; SAMPLE's bank took 6)
+        errors.append(f"pool headroom {POOL_END - pool_top} B < 4096 B")
     # (JIANT 0.6.78) the RAM code at the pool's top: a call reaches +-4 MiB (app.ld), so from the lowest RAM code
     # address the XIP image must end within 4 MiB; and the room left for RAM code
     # (0.7.5) what must be in reach is what RAM code calls, not the whole image: the calls in .ram_text (none),

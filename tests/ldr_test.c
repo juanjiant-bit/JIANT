@@ -3,7 +3,9 @@
 /* Host test of the Felucca update loader (firmware/loader/ldr_core.c): a fake
  * host serves a package over the SysEx protocol, the "device" flash starts as
  * another package's flash.bin (as if that firmware were installed).
- *   ldr_test OLD.fwsc NEW.fwsc */
+ *   ldr_test OLD.fwsc NEW.fwsc [APP_SLOT]
+ * (0.9.13) with APP_SLOT, the installed app area must declare an app.bin slot of that size, and the encrypted
+ * region (app_area_head block + cfg) must end inside [0x4000, 0x93000), the range today's loader writes. */
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -135,14 +137,42 @@ static uint32_t flash_off(const uint8_t *lg)        /* flash.bin offset in the l
 
 static int check(const char *what, int ok) { printf("%-56s %s\n", what, ok ? "ok" : "FAIL"); return ok ? 0 : 1; }
 
+/* the installed app area, decrypted with the chip key: app.bin's slot size and CRC, where the region ends */
+static int app_area(uint32_t want_slot)
+{
+    static uint8_t d[0x93000 - 0x4000];
+    uint32_t key, blk, app_sz, cfg_sz, end, i;
+    int bad = 0;
+    if (ldr_chip_key(&key)) return check("chip key from the installed head", 0);
+    memcpy(d, nor + 0x4000, sizeof d);
+    ldr_sfc(d, sizeof d, 0, key);                   /* (bytes past the region come out as noise: not read) */
+    blk = ota_rd32(d + 8);
+    app_sz = ota_rd32(d + 32 + 8);
+    bad += check("app_area_head and app.bin entries decrypt (CRC16)", ota_crc16(d + 2, 30, 0) == ota_rd16(d) &&
+                 ota_crc16(d + 34, 30, 0) == ota_rd16(d + 32) && ota_memeq(d + 32 + 16, (const uint8_t *)"app.bin", 8));
+    if (blk >= sizeof d - 32u) return bad + check("app_area_head block inside flash.bin", 0);
+    bad += check("app_area_head block CRC16", ota_crc16(d + 32, blk - 32u, 0) == ota_rd16(d + 2));
+    bad += check("app.bin CRC16 (the whole slot, as the SPL checks it)",
+                 0x120u + app_sz <= blk && ota_crc16(d + 0x120, app_sz, 0) == ota_rd16(d + 32 + 2));
+    cfg_sz = ota_rd32(d + blk + 8);
+    end = 0x4000u + blk + cfg_sz;
+    printf("  app.bin slot %u B (%#x), region [0x4000, %#x), %u B of 0xFF up to 0x93000\n", app_sz, app_sz, end, 0x93000u - end);
+    if (want_slot) bad += check("app.bin slot is the packager's APP_SLOT", app_sz == want_slot);
+    bad += check("cfg directory entry decrypts", ota_crc16(d + blk + 2, 30, 0) == ota_rd16(d + blk) &&
+                 ota_memeq(d + blk + 16, (const uint8_t *)"cfg", 4));
+    for (i = end; i < 0x93000u && nor[i] == 0xFF; i++) {}
+    bad += check("region ends inside the loader's range, then 0xFF", end <= 0x93000u && i == 0x93000u);
+    return bad;
+}
+
 int main(int argc, char **argv)
 {
     size_t olen;
-    static uint8_t user[0x1000];
+    static uint8_t user[0x1000], store[0x100000 - 0x93000];
     uint8_t *old, head[0x4000];
     uint32_t ofo, nfo, i;
     int bad = 0, rc;
-    if (argc < 3) { printf("usage: ldr_test OLD.fwsc NEW.fwsc\n"); return 2; }
+    if (argc < 3) { printf("usage: ldr_test OLD.fwsc NEW.fwsc [APP_SLOT]\n"); return 2; }
     old = load_logical(argv[1], &olen);
     logical = load_logical(argv[2], &logical_len);
     ofo = flash_off(old);
@@ -150,6 +180,7 @@ int main(int argc, char **argv)
     /* device: OLD installed, plus a valid update record at 0xE4F00 (Felucca's step 1) and 0xE8F00 (the stock
      * firmware's, a first install from it); user sample data in Felucca's store that looks like a record */
     memset(nor, 0xFF, sizeof nor);
+    for (i = 0x93000u; i < sizeof nor; i++) nor[i] = (uint8_t)(i * 13u ^ i >> 9);   /* store, globals: user data */
     memcpy(nor, old + ofo, 0x93000);
     memcpy(head, nor, sizeof head);
     {
@@ -161,6 +192,9 @@ int main(int argc, char **argv)
         for (i = 0; i < 0x1000u; i++) nor[0xA0000 + i] = (uint8_t)(i * 7u);
         memcpy(nor + 0xA0F00, r, sizeof r);
         memcpy(user, nor + 0xA0000, sizeof user);
+        memcpy(store, nor + 0x93000, sizeof store);
+        memset(store + 0xE4000 - 0x93000, 0xFF, 0x1000);   /* what the install may change: the two record sectors */
+        memset(store + 0xE8000 - 0x93000, 0xFF, 0x1000);
     }
     /* a damaged package (one byte deep in the app area): refused before anything is erased */
     {
@@ -187,6 +221,8 @@ int main(int argc, char **argv)
                  record_cleared && nor[0xE4F06] == 0xFF && nor[0xE8F06] == 0xFF);
     bad += check("user data in Felucca's store that looks like a record is kept", !memcmp(nor + 0xA0000, user, sizeof user));
     bad += check("no write outside the allowed windows", bad_range == 0);
+    bad += check("[0x93000, 1 MiB) byte-identical but the record sectors", !memcmp(nor + 0x93000, store, sizeof store));
+    bad += app_area(argc > 3 ? (uint32_t)strtoul(argv[3], NULL, 0) : 0u);
     /* same package again: nothing to erase */
     erases = 0; requests = 0;
     rc = ldr_session();

@@ -13,6 +13,16 @@
  *                     -> DBG_MSG bit 13. The top window is armed separately
  *                     with fm1_guard_lock_top() once every vector is
  *                     attached; fm1_guard_unlock_top() reopens it.
+ *                     (JIANT 0.9.9-stab) The same windows are per bus master
+ *                     (the SDK's debug.c: C0 / C1 / PRP _WR_LIMIT_EN over the
+ *                     one set of WR_LIMITn): window 3, the RAM code and both of
+ *                     core 0's stacks with their guards (_rt_start .. _sstack_top),
+ *                     is closed to the second core (DBG_MSG bit 11: held as a
+ *                     fault of its, fm1_irq.h) and to every DMA (bit 2: the crash
+ *                     report, PRP_WR_LIMIT_ID naming the master). Core 1 also
+ *                     gets windows 0 and 1. Neither ever writes there by design;
+ *                     a misread pointer of core 1 landing in core 0's stack was
+ *                     only seen afterwards, as the corrupted word.
  *   bus-invalid       fetch/read/write of unmapped space (NULL page, XIP
  *                     writes) -> DBG_MSG bits 4, 5, 16..21.
  *   PC limit          instruction fetch outside [0x02000120, _etext]
@@ -26,6 +36,8 @@
 #define FM1_WR_LIMIT_H(n) FM1_X2(0x280u + 4u * (n))
 #define FM1_WR_LIMIT_L(n) FM1_X2(0x2C0u + 4u * (n))
 #define FM1_C0_WR_LIMIT_EN FM1_X2(0x348u)
+#define FM1_C1_WR_LIMIT_EN FM1_X2(0x34Cu)      /* (0.9.9-stab) the SDK's COREX2 layout (sdk.elf's DWARF): DBG_CON 0x344, */
+#define FM1_PRP_WR_LIMIT_EN FM1_X2(0x350u)     /* C0 / C1 / PRP _WR_LIMIT_EN 0x348 / 0x34C / 0x350, PRP_WR_ALLOW_EN 0x354 */
 #define FM1_PC_LIMIT0_H FM1_X2(0x380u)
 #define FM1_PC_LIMIT0_L FM1_X2(0x384u)
 #define FM1_PC_LIMIT1_H FM1_X2(0x388u)
@@ -70,6 +82,10 @@ static void fm1_guard_enable(uint32_t which)
         FM1_WR_LIMIT_L(1) = (uint32_t)(uintptr_t)_guard1;
         FM1_WR_LIMIT_H(1) = (uint32_t)(uintptr_t)_sstack_lo - 1u;
         FM1_C0_WR_LIMIT_EN |= 3u;
+        FM1_WR_LIMIT_L(3) = (uint32_t)(uintptr_t)_rt_start;    /* (0.9.9-stab) the RAM code and core 0's stacks: */
+        FM1_WR_LIMIT_H(3) = (uint32_t)(uintptr_t)_sstack_top - 1u;
+        FM1_C1_WR_LIMIT_EN |= 0xBu;                             /* .. closed to the second core (and the guards), */
+        FM1_PRP_WR_LIMIT_EN |= 8u;                              /* .. and to the peripherals' DMA */
     }
     if (which & FM1_GUARD_BUS)
         FM1_DBG_EN |= (0x3Fu << 16) | (0x3u << 4);

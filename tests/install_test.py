@@ -67,8 +67,9 @@ class FakeFM1:
     """a MIDI backend with one FM-1 on it"""
 
     def __init__(self, image, identity="FM-1_015", name="FM-1", unplug_after=None, after_write="FM-1_900",
-                 stall_after=None, bad_addr=None):
+                 stall_after=None, bad_addr=None, loader_name="Felucca Update", after_name="Felucca"):
         self.image, self.unplug_after, self.after_write = image, unplug_after, after_write
+        self.loader_name, self.after_name = loader_name, after_name
         self.stall_after, self.bad_addr = stall_after, bad_addr
         self.served = self.bad = self.upgrades = 0
         self.sent, self.links, self.gen, self.lock = [], [], 0, threading.Lock()
@@ -123,9 +124,9 @@ class FakeFM1:
             if self.stall_after and self.served >= self.stall_after:
                 return
             if addr == I.FINISH_CHECK:
-                threading.Timer(0.05, self.boot, ("ota-FM-1_900", "Felucca Update")).start()
+                threading.Timer(0.05, self.boot, ("ota-FM-1_900", self.loader_name)).start()
             elif addr == I.FINISH_WRITE:
-                threading.Timer(0.05, self.boot, (self.after_write, "Felucca")).start()
+                threading.Timer(0.05, self.boot, (self.after_write, self.after_name)).start()
             else:
                 self.next()
 
@@ -205,6 +206,20 @@ def installs():
     dev = FakeFM1(image, identity="ota-FM-1_900", name="Felucca Update")
     rc, out, err = cli(["--info"], dev)
     ok(rc == 0 and "update loader" in out, "--info: device in update mode")
+
+    # (0.9.12) the USB names over the versions: "Felucca" / "Felucca Update" (Felucca), "JIANT FM" / "JIANT Update"
+    # (JIANT 0.7.0..0.9.11), "JIANT" / "JIANT Update" (0.9.12); what the device is comes from its identity, not the name
+    for name in ("JIANT", "JIANT FM", "Felucca", "2- JIANT", "MIDIIN2 (JIANT)"):
+        dev = FakeFM1(image, identity="FM-1_900", name=name, loader_name="JIANT Update", after_name="JIANT")
+        rc, out, err = cli([p, "--yes"], dev)
+        ok(rc == 0 and dev.bad == 0 and dev.upgrades == 2 and "done: the FM-1 runs FM-1_900" in out,
+           f"install: a port named {name!r} -> 'JIANT Update' -> 'JIANT'")
+    dev = FakeFM1(image, identity="ota-FM-1_900", name="JIANT Update", after_name="JIANT")
+    rc, out, err = cli(["--info"], dev)
+    ok(rc == 0 and "update loader" in out, "--info: 'JIANT Update' (ota-FM-1_900) is the update loader")
+    dev = FakeFM1(image, identity="FM-1_015", name="JIANT")
+    rc, out, err = cli(["--info"], dev)
+    ok(rc == 0 and "FM-1_015" in out and "update loader" not in out, "--info: a port named 'JIANT' answering FM-1_015 is that firmware")
 
     dev = FakeFM1(image, identity="\x1b[2J\x1b]0;x\x07FM-1_905", name="Felucca")
     rc, out, err = cli(["--info"], dev)

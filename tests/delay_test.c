@@ -21,6 +21,10 @@
 #include "hostsim.c"
 #undef main
 
+#ifndef DRIVE_HASHES                                /* (tests/delay_test.c test_drive: 0.9.9-snd1's, -DDRIVE_REF prints them) */
+#define DRIVE_HASHES 0x61b7f8c324f58397ull, 0x61b7f8c324f58397ull, 0x8ba209e7bf974d27ull, 0xa970e37d322ef1c9ull, \
+                     0x158c6ebbb0f6bdbfull, 0x5946fa168d9f7865ull, 0x50e06626e74308e7ull
+#endif
 static int bad;
 static void check(const char *what, int ok)
 {
@@ -50,6 +54,9 @@ static void dreset(void)
     fx.gr_on = fx.gr_old = 0;
     fx.primed = 0;
     fx.rtype = 0;
+#ifndef DRIVE_REF
+    fx.db_t = 0; fx.db_a = 0; fx.db_h = fx.db_l1 = fx.db_l2 = 0; pf.td = 0;   /* (snd2: THROW's band out) */
+#endif
     fxg_g = 32767; fxg_quiet = 0;
     song.g[G_DMIX] = 127; song.g[G_DFDBK] = 0; song.g[G_DCOLOR] = 64; song.g[G_DMOD] = 0; song.g[G_WIDTH] = 0;
     song.g[G_DPIT] = 0; song.g[G_DSPRY] = 0; song.g[G_DPING] = 0; song.g[G_DTYPE] = 0; song.g[G_RTYPE] = 0;
@@ -694,11 +701,192 @@ static void demos(const char *dir)
     drun(pluck, 0, 14u * FS);
     for (uint32_t i = 0; i < 14u * FS; i++) { L[i] += pluck(i) / 2; R[i] += pluck(i) / 2; }
     wav(dir, "delay_quarter_120bpm_2bar.wav", 14u * FS);
+#ifndef DRIVE_REF
+    for (uint32_t d = 0; d <= 100u; d += 50u) {        /* (snd2) DRIVE 0 / 50 / 100, FEEDBK 90 */
+        char nm[40];
+        dreset(); song.g[G_BPM] = 100; song.g[G_DTIME] = 4; song.g[G_DFDBK] = 90; song.g[G_DMOD] = 20; song.g[G_DMIX] = 100;
+        song.g[G_DDRV] = (int16_t)d;
+        drun(pluck, 0, 8u * FS);
+        for (uint32_t i = 0; i < 8u * FS; i++) { L[i] += pluck(i) / 2; R[i] += pluck(i) / 2; }
+        snprintf(nm, sizeof nm, "delay_drive_%03u.wav", (unsigned)d);
+        wav(dir, nm, 8u * FS);
+    }
+#endif
 }
 #endif
 
+/* (0.9.9-snd2) DRIVE: at 0 the loop bit for bit as before it (the hashes of 0.9.9-snd1's delay, these scenes: full
+ * rate ANALOG / DIGITAL / PING-PONG / WIDE + MOD, half and a quarter rate); up, a loud repeat pressed down and a quiet one
+ * as it was, FEEDBK 120 still bounded */
+static uint64_t dhash(uint32_t a, uint32_t b)
+{
+    uint64_t h = 1469598103934665603ull;
+    uint32_t i;
+    for (i = a; i < b; i++) { h = (h ^ (uint32_t)L[i]) * 1099511628211ull; h = (h ^ (uint32_t)R[i]) * 1099511628211ull; }
+    return h;
+}
+static void drive_scene(uint32_t k, int drv)
+{
+    dreset();
+    song.g[G_DFDBK] = k == 4u ? 100 : 80; song.g[G_DMOD] = k == 3u ? 20 : 0; song.g[G_DTIME] = 4;
+    song.g[G_DTYPE] = k == 1u; song.g[G_DPING] = k == 2u; song.g[G_WIDTH] = k == 3u ? 60 : 0;
+    song.g[G_DCOLOR] = k == 3u ? 40 : 64;
+    if (k == 5u) { song.g[G_BPM] = 60; song.g[G_DTIME] = 8; }   /* (1/2 at 60: half rate) */
+    if (k == 6u) { song.g[G_BPM] = 120; song.g[G_DTIME] = 11; }  /* (2BAR: a quarter) */
+#ifndef DRIVE_REF
+    song.g[G_DDRV] = (int16_t)drv;
+#else
+    (void)drv;
+#endif
+    xs = 0x2468aceu;
+    drun(burst_src, 0, 3u * FS);
+}
+static void test_drive(void)
+{
+    static const uint64_t REF[7] = {DRIVE_HASHES};
+    uint32_t k, same = 0;
+    for (k = 0; k < 7u; k++) {
+        uint64_t h;
+        drive_scene(k, 0);
+        h = dhash(0, 3u * FS);
+#ifdef DRIVE_REF
+        printf("0x%016llxull,\n", (unsigned long long)h);
+#endif
+        same += h == REF[k];
+    }
+    check("DRIVE 0: the loop bit for bit as 0.9.9-snd1's (7 scenes: ANALOG DIGITAL PING WIDE+MOD 100 % half quarter)", same == 7u);
+#ifndef DRIVE_REF
+    {   /* a 1 kHz sine at -3 dBFS sent once: DRIVE 100 presses the first repeats down; at -40 dBFS they are as at 0 */
+        double r0[2], r1[2];
+        int32_t pk;
+        uint32_t a, j, d;
+        for (j = 0; j < 2u; j++) {
+            dreset(); song.g[G_DFDBK] = 90; song.g[G_DTIME] = 4; song.g[G_DDRV] = 0;
+            d = delay_samples();
+            s_f = 1000.0; s_a = j ? 330.0 : 23000.0; s_len = FS / 20u;
+            drun(sine_src, 0, 4u * d + FS / 10u);
+            a = 3u * d;                                  /* (the third repeat) */
+            r0[j] = rms(L, a + 200u, a + s_len - 200u);
+            dreset(); song.g[G_DFDBK] = 90; song.g[G_DTIME] = 4; song.g[G_DDRV] = 100;
+            drun(sine_src, 0, 4u * d + FS / 10u);
+            r1[j] = rms(L, a + 200u, a + s_len - 200u);
+        }
+        printf("delay: DRIVE 100, the third repeat of a loud sine %.1f dB, of a quiet one %.2f dB (against DRIVE 0)\n",
+               20.0 * log10(r1[0] / r0[0]), 20.0 * log10(r1[1] / r0[1]));
+        check("DRIVE 100: a loud repeat pressed down (> 2 dB), a quiet one as it was (within 0.5 dB)",
+              r1[0] < r0[0] * 0.8 && fabs(20.0 * log10(r1[1] / r0[1])) < 0.5);
+        for (j = 0; j < 2u; j++) {
+            dreset(); song.g[G_DFDBK] = 120; song.g[G_DTIME] = 4; song.g[G_DDRV] = (int16_t)(j * 100u);
+            xs = 0x2468aceu;
+            drun(burst_src, 0, 6u * FS);
+            r0[j] = peak(L, 5u * FS, 6u * FS);
+        }
+        pk = (int32_t)r0[1];
+        printf("delay: FEEDBK 120, the line grown into itself after 5 s: peak %d at DRIVE 0, %d at DRIVE 100\n", (int)r0[0], (int)pk);
+        check("DRIVE 100 at FEEDBK 120: bounded, held lower than at DRIVE 0", pk > 1000 && pk <= (int32_t)r0[0]);
+    }
+#endif
+}
+
+/* (0.9.9-snd2) THROW's band in the loop: a white-noise burst's repeats (a hat, a snare) lose their energy much faster
+ * than a 440 Hz note's; without THROW both as before (the same decay); THROW let go, the band held over the tail */
+#ifndef DRIVE_REF
+static int32_t nz_src(uint32_t t) { return t < s_len ? noise(20000) : 0; }
+static void band_decay(int thr, int nz, double *drop)
+{
+    uint32_t d, k;
+    double r[7];
+    dreset(); song.g[G_DFDBK] = 85; song.g[G_DTIME] = 4;
+    d = delay_samples();
+    s_f = 440.0; s_a = 20000.0; s_len = FS / 20u; xs = 0x2468aceu;
+    pf.td = thr ? 32767 : 0;
+    drun(nz ? nz_src : sine_src, 0, 7u * d + FS / 10u);
+    for (k = 1; k <= 6u; k++)
+        r[k] = rms(L, k * d + 300u, k * d + s_len - 100u);
+    *drop = 20.0 * log10(r[6] / r[1]);
+    pf.td = 0;
+}
+static void test_band(void)
+{
+    double n0, t0, n1, t1;
+    band_decay(0, 1, &n0); band_decay(0, 0, &t0);
+    band_decay(1, 1, &n1); band_decay(1, 0, &t1);
+    printf("delay: repeats 1 -> 6 at FEEDBK 85: noise %.1f dB, 440 Hz %.1f dB; with THROW's band: noise %.1f dB, 440 Hz %.1f dB\n",
+           n0, t0, n1, t1);
+    check("THROW's band: the noise's repeats decay faster than a note's (6 dB more over five passes)", n1 < t1 - 6.0);
+    check("THROW's band: a note's repeats about as before (within 5 dB over five passes)", t1 > t0 - 5.0);
+    check("no THROW: noise and note decay alike (within 1.5 dB: the loop as before)", fabs(n0 - t0) < 1.5);
+    {   /* THROW let go: the band held over the tail, then out (DB_HOLD blocks and a fade) */
+        uint32_t i;
+        dreset(); song.g[G_DFDBK] = 85; song.g[G_DTIME] = 4; s_len = FS / 20u;
+        pf.td = 32767; drun(nz_src, 0, FS / 4u); pf.td = 0;
+        drun(nz_src, 0, FS);
+        i = fx.db_a == 256 && fx.db_t > 0u;
+        drun(nz_src, 0, FS + 13u * FS);
+        check("THROW let go: the band held over the tail (12 s), then out of the loop", i && fx.db_a == 0 && !fx.db_t);
+    }
+}
+#endif
+
+/* (0.9.9-snd2) the chorus lighter: its LFO read at the block's ends and the read points gliding between, against the
+ * read points as they were (three sines a sample, computed here on the same line): the difference at the fastest RATE
+ * and the deepest DEPTH, a 220 Hz saw through it */
+static int32_t saw_src(uint32_t t) { return (int32_t)((t * 220u * 65536u / FS) & 65535u) - 32768; }
+static double cho_diff(int32_t rate, int32_t depth)
+{
+    static int16_t ref_buf[CHO_LEN];
+    static int32_t c[CTL], d[CTL], r[CTL], w[CTL];
+    uint32_t t, i, wpos = 0, ph = 0;
+    double e = 0, sg = 0;
+    int32_t dep = depth * 6, cdcur;
+    dreset();
+    memset(ref_buf, 0, sizeof ref_buf);
+    song.g[G_CRATE] = (int16_t)rate; song.g[G_CDEPTH] = (int16_t)depth; song.g[G_CSTER] = 0;
+    fx.cho_w = 0; fx.cho_ph = 0;
+    for (t = 0; t < FS; t += CTL) {
+        uint32_t cinc = LFO_INC[rate] / CTL;
+        for (i = 0; i < CTL; i++) { c[i] = saw_src(t + i) / 2; d[i] = r[i] = 0; fx_sl[i] = fx_sr[i] = 0; }
+        if (!t) { fx.primed = 0; }
+        fx_buses(c, d, r, w, CTL);
+        cdcur = fx.cd_cur;
+        for (i = 0; i < CTL; i++) {                    /* the reference: three taps a sample, the LFO at each */
+            int32_t a, b, cc, y, rr[3];
+            ref_buf[wpos & (CHO_LEN - 1u)] = (int16_t)clamp(c[i] >> 1, -32768, 32767);
+            ph += cinc;
+            rr[0] = (300 << 8) + ((osc_sine(ph) + 32768) * dep >> 8);
+            rr[1] = (420 << 8) + ((osc_sine(ph + 0x55555555u) + 32768) * dep >> 8);
+            rr[2] = (540 << 8) + ((osc_sine(ph + 0xAAAAAAAAu) + 32768) * dep >> 8);
+            a = cho_tap(ref_buf, wpos, rr[0]); b = cho_tap(ref_buf, wpos, rr[1]); cc = cho_tap(ref_buf, wpos, rr[2]);
+            y = ((a + b + cc) * 21845) >> 15;
+            wpos++;
+            if (t >= FS / 4u) { e += (double)(w[i] - y) * (w[i] - y); sg += (double)y * y; }
+        }
+        (void)cdcur;
+    }
+    song.g[G_CRATE] = 40; song.g[G_CDEPTH] = 60;
+    return 10.0 * log10(e / (sg > 0 ? sg : 1) + 1e-30);
+}
+static void test_chorus(void)
+{
+    static const uint8_t RT[4] = {40, 80, 100, 127}, DP[4] = {60, 127, 127, 127};
+    double dd[4];
+    uint32_t k;
+    for (k = 0; k < 4u; k++)
+        dd[k] = cho_diff(RT[k], DP[k]);
+    printf("delay: the chorus lighter against three sines a sample (a 220 Hz saw): RATE 40 DEPTH 60 %.1f dB, 80/127 %.1f, "
+           "100/127 %.1f, 127/127 %.1f\n", dd[0], dd[1], dd[2], dd[3]);
+    check("the chorus lighter: within -60 dB of the old at the default, -50 dB at the deepest and fastest", dd[0] < -60.0 &&
+          dd[1] < -50.0 && dd[2] < -50.0 && dd[3] < -48.0);
+}
+
 int main(int argc, char **argv)
 {
+    test_drive();
+#ifndef DRIVE_REF
+    test_band();
+#endif
+    test_chorus();
+    if (argc > 2 && !strcmp(argv[2], "drive")) return bad != 0;
     test_leak();
 #ifdef DLY_SPAN
     test_times();
