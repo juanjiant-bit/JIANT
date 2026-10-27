@@ -153,7 +153,7 @@ def main(pkg, version, out, prev=None):
         shutil.copy(HERE.parent / doc, fw / doc)
     editor = (HERE / "editor.html").read_text(encoding="utf-8").replace("/*JIANT_UI*/", brand)
     (ed / "index.html").write_text(editor, encoding="utf-8")
-    for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js", "factory-samples.json", "FACTORY-SAMPLES.md"):
+    for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js", "factory-samples.json", "factory-voices.json", "FACTORY-VOICES.md", "FACTORY-SAMPLES.md"):
         if (HERE / f).exists():
             shutil.copy(HERE / f, ed / f)
     shutil.copy(HERE / "404.html", out / "404.html")
