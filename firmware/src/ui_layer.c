@@ -1172,6 +1172,23 @@ static void ly_piano(uint32_t l)
             cv_text_up(x0 + HALF_UP(10 - AF_X_CAP_H) - AF_X_CAP_Y, y + bh - 4, &AF_X, nm, fill == T_BG ? T_DIM : ink, fill, bh - 8);
     }
 }
+/* Draw REC controls separately so the pinned UI/audio boundary stays unchanged. */
+static __attribute__((noinline)) void rec_columns(void)
+{
+    char val[12];
+    uint32_t c;
+        for (c = 0; c < 4u; c++) {
+            uint32_t v = c < RL_N ? rp_get(RL_F[c]) : 0u;
+            if (c == 1u) {
+                int32_t q = TSEL->p[P_HRQ];
+                fmt_int(val, q * 100 / 127);
+                draw_column(c, "REC Q", q ? val : "OFF", q ? "%" : "", VAL(c), q * 1000 / 127, ICON_NONE);
+            } else if (c < RL_N)
+                draw_column(c, RL_LABEL[c], rl_name(c, v), "", !v ? T_DIM : VAL(c), (int32_t)v * 500, RL_ICON[c]);
+            else
+                draw_column(c, "", "", "", T_THEME, -1, ICON_NONE);
+        }
+}
 static void layer_cards(uint32_t l)
 {
     char val[12];
@@ -1214,17 +1231,7 @@ static void layer_cards(uint32_t l)
             draw_column(c, M[c], val, "%", macro_routes(c, 0, 0) ? VAL(c) : T_DIM, macro_v[c] * 1000 / 127, ICON_MIX);
         }
     } else if (l == LAYER_REC) {                        /* CLICK, then empty cards */
-        for (c = 0; c < 4u; c++) {
-            uint32_t v = c < RL_N ? rp_get(RL_F[c]) : 0u;
-            if (c == 1u) {
-                int32_t q = TSEL->p[P_HRQ];
-                fmt_int(val, q * 100 / 127);
-                draw_column(c, "REC Q", q ? val : "OFF", q ? "%" : "", VAL(c), q * 1000 / 127, ICON_NONE);
-            } else if (c < RL_N)
-                draw_column(c, RL_LABEL[c], rl_name(c, v), "", !v ? T_DIM : VAL(c), (int32_t)v * 500, RL_ICON[c]);
-            else
-                draw_column(c, "", "", "", T_THEME, -1, ICON_NONE);
-        }
+        rec_columns();
     } else if (l == LAYER_EDIT) {                       /* (0.9.9-seq2f) ENG, No. (PRESETS), FAV (ui_draw.c) */
         engine_columns();
     } else {                                            /* the page's four (SCL: LY_SCL) */
