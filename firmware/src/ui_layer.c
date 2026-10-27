@@ -513,6 +513,19 @@ static void tools_key(uint32_t p)
     ui.force = 1;
 }
 
+/* Shared by GLO + G4 and REC + A3. One global undo/redo snapshot. */
+static void undo_ui(void)
+{
+    if (chain_busy())
+        ui_message("STOP TO EDIT");
+    else if (undo_do())
+        ui_message("NOTHING TO UNDO");
+    else {
+        if (ui.ly == LAYER_REC) song.rec = 0; /* keep the recovered take safe */
+        ui_message("UNDONE (AGAIN: REDO)");
+    }
+}
+
 /* REC: CLEAR, the selected track's steps and automation (and ARP's latched chord), no dialog, as SEQ TOOLS' CLEAR
  * (up to 1.1.4 REC held on SEQ asked first, CF_CLEAR_SEQ) */
 static void rec_clear(void)
@@ -556,6 +569,11 @@ static void rec_set(uint32_t r, uint32_t v)
 static void rec_key(uint32_t p)
 {
     uint32_t r = p - 1u, v;
+    if (p == 2u) { undo_ui(); return; }       /* A3: UNDO / REDO */
+    if (p == 3u) {                         /* B3: hard quantization off / on */
+        TSEL->p[P_HRQ] = TSEL->p[P_HRQ] ? 0 : 127;
+        return;
+    }
     if (p == 0u) {
         rec_clear();
         return;
@@ -724,12 +742,7 @@ static void layer_key(uint32_t l, uint32_t k)
         } else if (p == GLO_RVA) {
             mut_revert_ui(1);
         } else if (p == GLO_UNDO) {
-            if (chain_busy())
-                ui_message("STOP TO EDIT");
-            else if (undo_do())
-                ui_message("NOTHING TO UNDO");
-            else
-                ui_message("UNDONE (AGAIN: REDO)");
+            undo_ui();
         }
     } else if (l == LAYER_SCL) {
         TSEL->p[P_ROOT] = (int16_t)((k + 5u) % 12u);    /* the key's note name (F3 = F) */
@@ -750,7 +763,7 @@ static void layer_key(uint32_t l, uint32_t k)
         else
             confirm_open(p == LY_INIT ? CF_INIT_SOUND : CF_RECALL_SOUND, song.sel);   /* (the dialog closes the layer) */
     } else if (l == LAYER_REC) {
-        if (!key_black(k) && p < 1u + RL_N)
+        if (!key_black(k) && p < 4u)
             rec_key(p);
     } else if (l == LAYER_SEQ) {
         if (!key_black(k) && p == TL_STEP)
@@ -801,8 +814,10 @@ static void layer_knob(uint32_t k, int32_t s)
                                        NSONG - 1) + 1);
     } else if (l == LAYER_MACRO) {                      /* M1..M4 (the project's; the MOD slots that name them) */
         macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
-    } else if (l == LAYER_REC) {                        /* CLICK (KNOB 2..4: none) */
-        if (k < RL_N)
+    } else if (l == LAYER_REC) {                        /* K1 CLICK, K2 REC Q */
+        if (k == 1u)
+            TSEL->p[P_HRQ] = (int16_t)clamp(TSEL->p[P_HRQ] + accel(EN_K2, s, 127), 0, 127);
+        else if (k < RL_N)
             rec_set(k, (uint32_t)clamp((int32_t)rp_get(RL_F[k]) + s, 0, 2));
     } else if (l) {                                     /* the page's knobs, wherever the page is */
         uint8_t h = ui.home, pg = ui.page, nm[sizeof ui.nmem];
@@ -915,9 +930,9 @@ static uint32_t layer_leds(uint32_t *br)
             on = (p < SK_STORE && live.cur == (int8_t)p) || (p == SK_REC && live.srec) ||   /* actions breathe */
                  (p == SK_MODE && live.mode);
             can = p < SK_STORE ? project_used(p) : p < SK_STORE + 4u || p == SK_MODE || p == SK_REC || p == SK_PAGE;
-        } else if (l == LAYER_REC && !b && p < 1u + RL_N) {   /* the click on: lit, else it breathes; CLEAR: */
-            on = p == 1u && rp_get(RP_CLICK) != 0u;    /* something to clear, not while a song plays */
-            can = p ? 1u : !chain_busy() && rec_clearable();
+        } else if (l == LAYER_REC && !b && p < 4u) {   /* the click on: lit, else it breathes; CLEAR: */
+            on = (p == 1u && rp_get(RP_CLICK) != 0u) || (p == 3u && !TSEL->p[P_HRQ]);    /* something to clear, not while a song plays */
+            can = p == 2u ? !chain_busy() && undo_ok : p ? 1u : !chain_busy() && rec_clearable();
         }
         m |= on << k;
         n |= (can & !on) << k;
@@ -1087,8 +1102,12 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
         return busy;
     }
     if (l == LAYER_REC) {
-        if (blk || p > RL_N)
+        if (blk || p > 3u)
             return LS_OFF;
+        if (p >= 2u) {
+            str_cpy(nm, p == 2u ? "UNDO" : TSEL->p[P_HRQ] ? "Q ON" : "Q OFF", 12);
+            return p == 2u ? (!undo_ok || chain_busy() ? LS_DIM : LS_OFF) : !TSEL->p[P_HRQ] ? LS_SEL : LS_OFF;
+        }
         str_cpy(nm, p ? "CLICK " : "CLEAR", 12);
         if (p)
             str_cpy(nm + 6, rl_name(0, rp_get(RL_F[0])), 6);
@@ -1197,7 +1216,11 @@ static void layer_cards(uint32_t l)
     } else if (l == LAYER_REC) {                        /* CLICK, then empty cards */
         for (c = 0; c < 4u; c++) {
             uint32_t v = c < RL_N ? rp_get(RL_F[c]) : 0u;
-            if (c < RL_N)
+            if (c == 1u) {
+                int32_t q = TSEL->p[P_HRQ];
+                fmt_int(val, q * 100 / 127);
+                draw_column(c, "REC Q", q ? val : "OFF", q ? "%" : "", VAL(c), q * 1000 / 127, ICON_NONE);
+            } else if (c < RL_N)
                 draw_column(c, RL_LABEL[c], rl_name(c, v), "", !v ? T_DIM : VAL(c), (int32_t)v * 500, RL_ICON[c]);
             else
                 draw_column(c, "", "", "", T_THEME, -1, ICON_NONE);
@@ -1312,6 +1335,8 @@ static void layer_state(uint32_t l)
         }
     } else if (l == LAYER_REC) {
         b[0] = 'T'; b[1] = (char)('1' + song.sel); b[2] = 0;
+        lst_chip("UNDO", undo_ok ? "READY" : "-", undo_ok);
+        lst_chip("REC Q", TSEL->p[P_HRQ] ? "ON" : "OFF", TSEL->p[P_HRQ] != 0);
         lst_chip("ARMED", b, (song.rec >> song.sel) & 1u);
         lst_chip(b, rec_clearable() ? "SEQUENCE" : "EMPTY", rec_clearable());
         lst_chip("CLICK", rl_name(0, rp_get(RP_CLICK)), rp_get(RP_CLICK) != 0u);

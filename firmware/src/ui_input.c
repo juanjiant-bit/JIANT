@@ -522,6 +522,7 @@ static int rec_tap(void)                                /* 1: the arming changed
         ui_message("[SEQ] TO RECORD");
         return 0;
     }
+    if (!(song.rec & bit)) undo_mark();  /* the music before arming this take */
     song.rec ^= bit;
     ui.force = 1;                                     /* also refresh the status on MENU / ABOUT */
     if ((song.rec & bit) && !song.playing && !seq_counting() && roll_on()) {
