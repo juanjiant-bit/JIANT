@@ -584,3 +584,5 @@ EXPORT uint32_t web_song_play(void) { return chain_prepare(); }   /* 0 = the son
 EXPORT void web_play(uint32_t on) { transport_req = (uint8_t)(on ? 1u : 2u); }
 EXPORT uint32_t web_beat_samples(void) { return beat_samples(); }
 EXPORT uint32_t web_trk_live(void) { return trk_live; }
+
+#include "sample-kit-api.h"

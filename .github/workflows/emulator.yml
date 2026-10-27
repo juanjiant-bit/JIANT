@@ -39,6 +39,8 @@ jobs:
           P=$(tr -d ' \n' < web/PREVIEW 2>/dev/null || true)
           if [ -n "$P" ] && git cat-file -e "$P^{commit}" 2>/dev/null; then
             rm -rf /tmp/emusrc; git worktree add -f --detach /tmp/emusrc "$P"
+            cp web/emu/sample-kit-api.h /tmp/emusrc/web/emu/sample-kit-api.h
+            printf '%s\n' '#include "sample-kit-api.h"' >> /tmp/emusrc/web/emu/felucca_web.c
             if (cd /tmp/emusrc && python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()" \
                 && sh web/emu/build.sh); then
               rm -rf build/emu; mkdir -p build; cp -r /tmp/emusrc/build/emu build/emu
@@ -59,7 +61,9 @@ jobs:
           shell = Path("web/emu/index.html").read_text().replace("@VERSION@", version).replace("@PREVIEW@", "")
           target.write_text(shell)
           shutil.copy("web/emu/sample-bank.js", "build/emu/sample-bank.js")
+          shutil.copy("web/emu/worklet.js", "build/emu/worklet.js")
           PY
+          node web/emu/sample-bank-test.mjs build/emu/felucca.wasm
       # (JIANT) the installer and the web editor next to the emulator: the package needs JieLi's toolchain (downloaded)
       # and three files of their AC79 SDK (a partial clone: only those blobs). A firmware build failure stops deployment.
       - name: JieLi toolchain and SDK files (cached)

@@ -89,3 +89,15 @@ export function withSampleBank(sectors, bank) {
   }
   return result;
 }
+
+export function hasSampleBank(sectors) {
+  const bank = new Uint8Array(6144).fill(255);
+  for (let i = 0; i < bank.length; i += 4096) {
+    const sector = sectors?.[0xDA000 + i];
+    if (sector?.length === 4096) bank.set(sector.subarray(0, Math.min(4096, bank.length-i)), i);
+  }
+  const d = new DataView(bank.buffer), len = d.getUint32(8, true);
+  return d.getUint32(0,true) === 0x504D534A && d.getUint16(4,true) === 1 &&
+    d.getUint16(6,true) > 0 && d.getUint16(6,true) <= 15 && len <= 5888 &&
+    crc32(bank.subarray(16,256+len)) === d.getUint32(12,true);
+}

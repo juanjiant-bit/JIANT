@@ -57,9 +57,11 @@ if (typeof registerProcessor === "function") {
           ex.web_master(m.master ?? 700);
           if (ex.web_seed) ex.web_seed((Math.random() * 4294967296) >>> 0);   // (JIANT 0.4) this session's macros
           ex.web_boot();
+          const samples = ex.web_sample_count ? ex.web_sample_count() : 0;
+          const kitReady = !!(samples && m.sampleKit && ex.web_sample_kit && !ex.web_sample_kit());
           this.ex = ex;
           this.sentWrites = ex.web_flash_writes_count();
-          this.port.postMessage({ type: "ready", rate: ex.web_sample_rate() });
+          this.port.postMessage({ type: "ready", rate: ex.web_sample_rate(), samples, kitReady });
         } catch (err) {
           this.port.postMessage({ type: "error", message: String(err && err.message || err) });
         }
@@ -67,7 +69,12 @@ if (typeof registerProcessor === "function") {
       }
       const ex = this.ex;
       if (!ex) return;
-      if (m.type === "buttons" || m.type === "keys") this.queue.push(m);
+      if (m.type === "sample-kit") {
+        const samples = ex.web_sample_count ? ex.web_sample_count() : 0;
+        const kitReady = !!(samples && ex.web_sample_kit && !ex.web_sample_kit());
+        this.port.postMessage({type:"sample-ready", samples, kitReady});
+      }
+      else if (m.type === "buttons" || m.type === "keys") this.queue.push(m);
       else if (m.type === "enc") ex.web_enc(m.role, m.n | 0);
       else if (m.type === "master") ex.web_master(m.value | 0);
       else if (m.type === "midi") ex.web_midi(m.data[0] | 0, m.data[1] | 0, m.data[2] | 0);

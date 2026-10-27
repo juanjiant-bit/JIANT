@@ -64,13 +64,13 @@ See [factory sounds, rates and source](web/FACTORY-SAMPLES.md).
 
 ### Try the kits in the online emulator
 
-Before pressing **Switch on** in the [emulator](https://juanjiant-bit.github.io/JIANT/emu/), use **Sample bank**:
+The [emulator](https://juanjiant-bit.github.io/JIANT/emu/) shows **Sample bank** above the instrument. Before pressing **Switch on**, choose:
 
-- **Keep saved bank** preserves the samples already saved in this browser.
+- **Saved bank / Kit 2 if empty** preserves a valid bank already saved in this browser, or loads Kit 2 when none is available.
 - **Kit 2 · Voices + instruments (7)** loads the seven-sound bank with VOICE 06, VOICE 10 and VOICE 14.
 - **Kit 1 · Synth (12)** loads the original synthetic factory bank.
 
-After switching on, select **SAMPLE → KIT KEYS** on the instrument; slots begin at C4.
+A newly chosen kit starts on **T1 / SAMPLE / KIT KEYS**; slots begin at C4. A status line reports the number of samples actually indexed by the firmware. When preserving a saved session, press **Play kit on T1** to select the kit explicitly; this changes T1’s current sound.
 Reload the page to choose another bank. The selected bank is kept in this browser when local storage is available.
 It changes only the emulator's sample storage, never a connected FM-1.
 Playback uses the existing firmware; this does not add the offline preview's interpolation.
