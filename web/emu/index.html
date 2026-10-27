@@ -66,6 +66,8 @@ a { color: inherit; }
 .start p { margin: 0; max-width: 32em; text-align: center; color: #fff; }
 .keys, footer { margin: 16px 0 0; color: var(--dim); text-align: center; }
 .keys span { white-space: nowrap; margin: 0 8px; }
+#sample-bank-controls span { display:block; white-space:normal; margin-top:8px; }
+#sample-bank-controls select { max-width:100%; font:inherit; }
 kbd { font: 600 11px ui-monospace, Menlo, monospace; border: 1px solid var(--rule); padding: 0 4px; color: var(--fg); }
 footer { margin-top: 12px; font-size: 12px; }
 footer nav a { margin: 0 6px; }
@@ -80,6 +82,12 @@ footer small { font-size: 11px; opacity: .8; }
   <div class="start" id="start"><button id="go" type="button">Switch on</button><p id="status" hidden></p></div>
 </div>
 
+<div class="keys" id="sample-bank-controls">
+  <label>Sample bank:
+    <select id="sample-bank"><option value="">Keep saved bank</option><option value="factory-voices.json">Kit 2 · Voices + instruments (7)</option><option value="factory-samples.json">Kit 1 · Synth (12)</option></select>
+  </label>
+  <span>Choose before Switch on. Then select SAMPLE → KIT KEYS on the instrument. To change banks, reload this page.</span>
+</div>
 <p class="keys">
   <span><kbd>Z</kbd>–<kbd>'</kbd> <kbd>Q</kbd>–<kbd>O</kbd> keys</span>
   <span><kbd>1</kbd>–<kbd>=</kbd> FX … REC</span>
@@ -101,6 +109,7 @@ footer small { font-size: 11px; opacity: .8; }
 </main>
 
 <script type="module">
+import { encodeSampleBank, withSampleBank } from "./sample-bank.js";
 const NS = "http://www.w3.org/2000/svg";
 // panel.c's labels (bit = label) and encoder roles
 const B = { FX: 0, SCL: 1, ENV: 2, LFO: 3, EDIT: 4, GLO: 5, HOME: 6, SAVE: 7, ARP: 8, SEQ: 9, PLAY: 10, REC: 11, "OCT-": 12, "OCT+": 13 };
@@ -454,6 +463,14 @@ async function switchOn() {
   go.textContent = "Starting…";
   try {
     const ac = new AudioContext({ sampleRate: 44100, latencyHint: "interactive" });
+    let sectors = loadFlash();
+    const sampleChoice = document.getElementById("sample-bank").value;
+    if (sampleChoice) {
+      if (!["factory-voices.json", "factory-samples.json"].includes(sampleChoice)) throw new Error("Invalid sample bank selection");
+      const response = await fetch("../webapp/editor/" + sampleChoice, { cache: "no-cache" });
+      if (!response.ok) throw new Error("Sample bank: HTTP " + response.status);
+      sectors = withSampleBank(sectors, encodeSampleBank(await response.json()));
+    }
     const [wasm] = await Promise.all([
       fetch("felucca.wasm", { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error(`felucca.wasm: ${r.status}`); return r.arrayBuffer(); }),
       ac.audioWorklet.addModule("worklet.js?v=" + Date.now())]);
@@ -474,9 +491,11 @@ async function switchOn() {
           }
         }
       };
-      node.port.postMessage({ type: "load", wasm, sectors: loadFlash(), master: masterValue }, [wasm]);
+      node.port.postMessage({ type: "load", wasm, sectors, master: masterValue }, [wasm]);
     });
     await ac.resume();
+    if (sampleChoice && !saveFlash(sectors)) console.warn("JIANT: sample bank is available for this session only.");
+    document.getElementById("sample-bank").disabled = true;
     document.getElementById("start").hidden = true;
     go.textContent = "On";
     if (ac.sampleRate !== 44100) console.warn(`JIANT: the browser plays at ${ac.sampleRate} Hz, the pitch is off by ${(1200 * Math.log2(ac.sampleRate / 44100)).toFixed(0)} cents.`);

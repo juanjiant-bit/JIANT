@@ -50,6 +50,16 @@ jobs:
           else
             sh web/emu/build.sh
           fi
+          # Use the current browser shell with the pinned firmware, preserving its version label.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, shutil
+          target = Path("build/emu/index.html")
+          version = re.search(r'<small class="version">(.*?)</small>', target.read_text()).group(1)
+          shell = Path("web/emu/index.html").read_text().replace("@VERSION@", version).replace("@PREVIEW@", "")
+          target.write_text(shell)
+          shutil.copy("web/emu/sample-bank.js", "build/emu/sample-bank.js")
+          PY
       # (JIANT) the installer and the web editor next to the emulator: the package needs JieLi's toolchain (downloaded)
       # and three files of their AC79 SDK (a partial clone: only those blobs). A firmware build failure stops deployment.
       - name: JieLi toolchain and SDK files (cached)
@@ -165,7 +175,7 @@ jobs:
       - name: the front page and the emulator under emu/
         run: |
           mkdir -p build/pages/emu
-          for f in index.html worklet.js fm1backup.js felucca.wasm fonts; do
+          for f in index.html worklet.js sample-bank.js fm1backup.js felucca.wasm fonts; do
             if [ -e "build/emu/$f" ]; then mv "build/emu/$f" build/pages/emu/; fi
           done
           cp -r build/emu/. build/pages/

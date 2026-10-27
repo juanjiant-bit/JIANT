@@ -62,6 +62,19 @@ twelve original synthetic recordings, dedicated to the public domain under CC0-1
 You can also import your own WAV files in the editor.
 See [factory sounds, rates and source](web/FACTORY-SAMPLES.md).
 
+### Try the kits in the online emulator
+
+Before pressing **Switch on** in the [emulator](https://juanjiant-bit.github.io/JIANT/emu/), use **Sample bank**:
+
+- **Keep saved bank** preserves the samples already saved in this browser.
+- **Kit 2 · Voices + instruments (7)** loads the seven-sound bank with VOICE 06, VOICE 10 and VOICE 14.
+- **Kit 1 · Synth (12)** loads the original synthetic factory bank.
+
+After switching on, select **SAMPLE → KIT KEYS** on the instrument; slots begin at C4.
+Reload the page to choose another bank. The selected bank is kept in this browser when local storage is available.
+It changes only the emulator's sample storage, never a connected FM-1.
+Playback uses the existing firmware; this does not add the offline preview's interpolation.
+
 ### Storage and current limits
 
 - **Up to 15 mono samples** share a **6144-byte bank**, including its header, using IMA ADPCM.
