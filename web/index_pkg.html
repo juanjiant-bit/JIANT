@@ -60,6 +60,7 @@
   </div>
   <p class="small"><label><span data-t="verLabel"></span> <select id="ver" style="font:inherit"></select></label>
     <br><span data-t="verOld"></span></p>
+  <p id="edition-info" class="small"></p>
   <!-- (0.8.5) the release's notice, before 0.8.5 is written (releaseNotice) -->
   <div id="notice" class="jiant-notice" hidden>
     <p style="margin:0 0 8px;font-weight:600" data-t="n085Title"></p>
@@ -235,7 +236,10 @@ Object.assign(TEXT.en, {
   reportTitle: "Log and report.",
   reportWhy: "If it does not work, press COPY REPORT and paste it into your message when you ask for help (GitHub, Instagram, YouTube).",
   copyReport: "COPY REPORT", copied: "Copied: paste it in your message.", copyFail: "Could not copy: select the text below and copy it.",
-  chStable: "Stable channel: the approved version.", chPreview: "PREVIEW channel: main as it is now, not approved yet.",
+  editionSample: "SAMPLE beta (par13b): sample playback replaces ADD. Load samples in the web editor. Back up projects before switching editions; ADD sounds are not converted into samples.",
+  editionAdd: "ADD (par10): additive synthesis, without SAMPLE. This earlier firmware has a different feature set. Back up projects before switching; sample audio is not included in project backups.",
+  editionStandard: "Choose SAMPLE beta for samples or ADD par10 for additive synthesis. The default stable par12 has neither engine. Back up projects before changing versions.",
+  chStable: "Public installer: stable and alternative editions.", chPreview: "PREVIEW channel: main as it is now, not approved yet.",
   toPreview: "Preview installer (next version)", toStable: "Stable installer",
   bootCheck: "Is it in boot mode (WL80UBOOT)?",
   bootFound: "The FM-1 is in the chip's boot mode (WL80UBOOT): its firmware does not start. Replug it with a good data cable straight into the computer and press Install again. If it stays like that, recovering it needs FM-1 Transporter (link above).",
@@ -399,7 +403,10 @@ TEXT.es = {
   reportTitle: "Registro e informe.",
   reportWhy: "Si no funciona, apretá COPIAR INFORME y pegalo en tu mensaje cuando pidas ayuda (GitHub, Instagram, YouTube).",
   copyReport: "COPIAR INFORME", copied: "Copiado: pegalo en tu mensaje.", copyFail: "No se pudo copiar: seleccioná el texto de abajo y copialo.",
-  chStable: "Canal estable: la versión aprobada.", chPreview: "Canal PREVIEW: main tal como está ahora, todavía sin aprobar.",
+  editionSample: "SAMPLE beta (par13b): reproduce samples en lugar de ADD. Cargalos desde el editor web. Hacé backup antes de cambiar de edición; los sonidos ADD no se convierten en samples.",
+  editionAdd: "ADD (par10): síntesis aditiva, sin SAMPLE. Es una versión anterior con diferencias de funciones. Hacé backup antes de cambiar; el audio de samples no está incluido en los backups de proyectos.",
+  editionStandard: "Elegí SAMPLE beta para samples o ADD par10 para síntesis aditiva. La estable par12 predeterminada no incluye ninguno de esos motores. Hacé backup antes de cambiar de versión.",
+  chStable: "Instalador público: versión estable y ediciones alternativas.", chPreview: "Canal PREVIEW: main tal como está ahora, todavía sin aprobar.",
   toPreview: "Instalador preview (la próxima versión)", toStable: "Instalador estable",
   bootCheck: "¿Está en modo boot (WL80UBOOT)?",
   bootFound: "El FM-1 está en el modo boot del chip (WL80UBOOT): su firmware no arranca. Volvé a conectarlo con un buen cable de datos directo a la computadora y apretá Instalar de nuevo. Si sigue así, recuperarlo necesita FM-1 Transporter (el enlace de arriba).",
@@ -520,8 +527,13 @@ function fillVersions() {
   const sel = $("ver"), at = sel.selectedIndex;
   sel.textContent = "";
   versions.forEach((v, i) => { const o = document.createElement("option"); o.value = i;
-    o.textContent = i ? v.version : `${v.version} (${t("latest")})`; sel.appendChild(o); });
+    o.textContent = `${v.edition ? v.edition + " · " : ""}${v.version}${v.status === "beta" ? " · BETA" : ""}${i ? "" : " (" + t("latest") + ")"}`; sel.appendChild(o); });
   sel.selectedIndex = at > 0 ? at : 0;
+  showEdition();
+}
+function showEdition() {
+  const v = versions[+$("ver").value] || versions[0];
+  $("edition-info").textContent = t(v.edition === "SAMPLE" ? "editionSample" : v.edition === "ADD" ? "editionAdd" : "editionStandard");
 }
 async function loadVersion(i) {
   const v = versions[i] || versions[0], epoch = ++loadEpoch;
@@ -554,7 +566,7 @@ const noticeOf = () => releaseNotice((versions[+$("ver").value] || versions[0]).
 const showNotice = () => { $("notice").hidden = !noticeOf(); };
 fillVersions();
 showNotice();
-$("ver").addEventListener("change", () => { showNotice(); if (!writing) loadVersion(+$("ver").value); });
+$("ver").addEventListener("change", () => { showNotice(); showEdition(); if (!writing) loadVersion(+$("ver").value); });
 (async () => {
   try { permission = (await navigator.permissions.query({ name: "midi", sysex: true })).state; } catch (_) {}
   if (!env.webmidi) { const k = nomidiCode(env); sayK(k); showTip(k); log(`no WebMIDI: ${k}`); return; }

@@ -128,6 +128,20 @@ jobs:
             git worktree remove -f /tmp/classic || true
           done < web/CLASSIC
           python3 -c 'import json,sys; L=[l.split() for l in open("build/prev/list") if l.strip()]; json.dump([{"version":v,"file":f} for v,f in L], open("build/prev/versions.json","w"))'
+          # Offer the already-built sampler preview alongside ADD in the public installer.
+          python3 - <<'PY'
+          import json, shutil
+          from pathlib import Path
+          previous = Path("build/prev")
+          entries = json.loads((previous / "versions.json").read_text())
+          preview = Path("build/site_preview/firmware")
+          sampler = json.loads((preview / "versions.json").read_text())[0]
+          shutil.copy(preview / sampler["file"], previous / sampler["file"])
+          # Keep ADD near the top even when the history list grows.
+          additive = [e for e in entries if e["version"].startswith("v0.9.9-par10-")]
+          rest = [e for e in entries if e not in additive and e["version"] != sampler["version"]]
+          (previous / "versions.json").write_text(json.dumps([sampler] + additive + rest) + "\n")
+          PY
           python3 web/make_site.py "$PKG" "${SV:-dev}-$SH" build/site build/prev
           cp -r build/site/webapp build/site/firmware build/emu/
       # (JIANT 0.7.9) the stems app's phase-0 probe (android/probe), next to the installer: app/jiant-probe.apk

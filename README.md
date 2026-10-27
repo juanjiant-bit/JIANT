@@ -19,7 +19,7 @@ editor update themselves with every change merged into `main`.
 
 | Where | Version |
 |---|---|
-| **Public installer** (stable) | **0.9.9-par12** |
+| **Public installer** | **STANDARD par12** (stable default), **SAMPLE par13b** (beta), **ADD par10** (additive synthesis) |
 | **Beta installer and emulator** | **0.9.9-par13b** — SAMPLE engine |
 | Earlier versions the public installer also offers | 0.9.9-par8, 0.9.9-gen2 (*ULTRA STABLE*), 0.9.9-par6, 0.9.9-par5, 0.9.17, 0.9.14, 0.9.9, 0.8.9 … |
 
@@ -30,6 +30,18 @@ The installed line is **0.9.9-par**: 0.9.9's stable core with the new sequencer 
 line, which parts of the text below describe; features marked *"in the 0.9.1x line"* that par has not taken yet are
 not in the installer's version. If a version gives you trouble, **0.9.9-gen2** in the list of earlier versions is the
 one to go back to.
+
+## Choose SAMPLE or ADD in the public installer
+
+The [public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) now offers these clearly labelled choices in its **Version** selector:
+
+- **STANDARD · par12**: the stable default; neither ADD nor the new SAMPLE engine.
+- **SAMPLE · par13b · BETA**: sample playback; load your own WAVs or a supplied bank from the editor.
+- **ADD · par10**: the last version with the additive synthesis engine, without SAMPLE.
+
+These are existing firmware revisions, not two builds with otherwise identical features.
+Back up projects before switching: engine slot 13 means ADD in par10 and SAMPLE in par13b; sounds are not converted between them.
+Project backups do not include the sample audio bank; keep original WAVs. Earlier versions remain available.
 
 ## SAMPLE sampler — beta 0.9.9-par13b
 
@@ -321,8 +333,8 @@ VOICE singing its lyric, in the COLORS skin, exactly as the firmware draws them 
   up whole).
 
 ### Engines
-The stable par12 line has eleven synthesis engines: **DRUM (DRUM-X), VOICE, ANIMAL, LOFI, ANALOG, FM6, PHASE, WHEEL, NOISE,
-STRING and ADD**, in the order PRESETS shows them (0.9.9-par; the first six are the tracks at power-on, T1–T6).
+The stable par12 line has ten synthesis engines: **DRUM (DRUM-X), VOICE, ANIMAL, LOFI, ANALOG, FM6, PHASE, WHEEL, NOISE
+and STRING**. ADD is available in par10; SAMPLE replaces it in the par13b beta. The synthesis engines are listed in the order PRESETS shows them (0.9.9-par; the first six are the tracks at power-on, T1–T6).
 - **ANALOG**: two oscillators with **INT** (an interval of ±24 semitones: fifths, octaves) and DTN; besides SAW, SQR,
   TRI, SIN and PWM it has **SYNC**, **RING** and **SAW3** (three saws). Its filter is per voice.
 - **FM6**: Dexed's engine (imports .syx), with its algorithms drawn. Fully editable on the device (from Felucca 1.5):
