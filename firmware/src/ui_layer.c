@@ -1379,7 +1379,7 @@ static void layer_state(uint32_t l)
                      l == LAYER_SEQ ? k == ui.lane % NLANE : !dx_lane_muted(k));
     }
 }
-static void draw_layer(void)
+static __attribute__((noinline)) void draw_layer(void)
 {
     uint32_t l = ui.layer % LAYER_N, sig = l * 7919u + ux.gen * 977u;
     layer_cards(l);
@@ -1393,7 +1393,8 @@ static void draw_layer(void)
     else if (l == LAYER_SCL)
         sig += (uint32_t)TSEL->p[P_SCALE] * 31u;
     else if (l == LAYER_REC)
-        sig += (uint32_t)ui_rec_prefs * 31u + (uint32_t)chain_busy() * 3u + (uint32_t)rec_clearable() * 5u + song.sel * 977u;
+        sig += (uint32_t)ui_rec_prefs * 31u + (uint32_t)chain_busy() * 3u + (uint32_t)rec_clearable() * 5u + song.sel * 977u +
+               (uint32_t)TSEL->p[P_HRQ] * 131u + (uint32_t)undo_ok * 4099u;
     else if (l == LAYER_SAVE)
         sig += (uint32_t)(live.cur + 1) * 31u + (uint32_t)(live.req + 1) * 131u + live.srec * 7u + live.mode * 11u +
                live.dirty * 977u + lys.nqc * 4099u + (chain.running ? chain.row * 13u + chain.remaining * 17u : 0u) +
