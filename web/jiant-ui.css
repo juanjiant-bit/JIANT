@@ -8,8 +8,8 @@
   --jiant-yellow:#ffe14d; --jiant-mag:#ff3ea5; --jiant-orange:#ff7a1a;
   --jiant-on-accent:#050409;
   --jiant-display:"Michroma","Arial Black",system-ui,sans-serif;
-  --jiant-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --jiant-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --jiant-body:"Instrument Sans","Noto Sans JP",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --jiant-mono:"IBM Plex Mono","Noto Sans JP",ui-monospace,Menlo,Consolas,monospace;
   --jiant-heat:linear-gradient(90deg,#9d97ff,#d39bff 22%,#ff9fd2 42%,#ff9a8a 60%,#ffc07a 78%,#fff3a8);
 }
 :root[data-theme="light"] {
@@ -121,3 +121,10 @@ input[type=range] { min-width:0; }
   .jiant-installer .jiant-notice,.jiant-installer .diag,.jiant-installer .tip { padding:14px; }
 }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
+
+/* Keep the legacy/unknown-firmware plain parameter list usable on desktop too. */
+.jiant-editor .group:has(> .row:nth-of-type(n+24)) { column-span:all; columns:290px; column-gap:24px; }
+.jiant-editor .group:has(> .row:nth-of-type(n+24)) > :is(h2,h3,p) { column-span:all; }
+.jiant-editor .row { break-inside:avoid; }
+.jiant-editor .row.pushed .v { font-weight:600; color:var(--jiant-cyan); }
+.jiant-editor .strip .rec.on { color:var(--jiant-mag); }
