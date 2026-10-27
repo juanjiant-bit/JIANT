@@ -238,7 +238,7 @@ Object.assign(TEXT.en, {
   copyReport: "COPY REPORT", copied: "Copied: paste it in your message.", copyFail: "Could not copy: select the text below and copy it.",
   editionSample: "SAMPLE beta (par13b): sample playback replaces ADD. Load samples in the web editor. Back up projects before switching editions; ADD sounds are not converted into samples.",
   editionAdd: "ADD (par10): additive synthesis, without SAMPLE. This earlier firmware has a different feature set. Back up projects before switching; sample audio is not included in project backups.",
-  editionStandard: "Choose SAMPLE beta for samples or ADD par10 for additive synthesis. The default stable par12 has neither engine. Back up projects before changing versions.",
+  editionStandard: "Choose SAMPLE beta for samples or ADD par10 for additive synthesis. Stable par12 has neither engine. Back up projects before changing versions.",
   chStable: "Public installer: stable and alternative editions.", chPreview: "PREVIEW channel: main as it is now, not approved yet.",
   toPreview: "Preview installer (next version)", toStable: "Stable installer",
   bootCheck: "Is it in boot mode (WL80UBOOT)?",
@@ -405,7 +405,7 @@ TEXT.es = {
   copyReport: "COPIAR INFORME", copied: "Copiado: pegalo en tu mensaje.", copyFail: "No se pudo copiar: seleccioná el texto de abajo y copialo.",
   editionSample: "SAMPLE beta (par13b): reproduce samples en lugar de ADD. Cargalos desde el editor web. Hacé backup antes de cambiar de edición; los sonidos ADD no se convierten en samples.",
   editionAdd: "ADD (par10): síntesis aditiva, sin SAMPLE. Es una versión anterior con diferencias de funciones. Hacé backup antes de cambiar; el audio de samples no está incluido en los backups de proyectos.",
-  editionStandard: "Elegí SAMPLE beta para samples o ADD par10 para síntesis aditiva. La estable par12 predeterminada no incluye ninguno de esos motores. Hacé backup antes de cambiar de versión.",
+  editionStandard: "Elegí SAMPLE beta para samples o ADD par10 para síntesis aditiva. La estable par12 no incluye ninguno de esos motores. Hacé backup antes de cambiar de versión.",
   chStable: "Instalador público: versión estable y ediciones alternativas.", chPreview: "Canal PREVIEW: main tal como está ahora, todavía sin aprobar.",
   toPreview: "Instalador preview (la próxima versión)", toStable: "Instalador estable",
   bootCheck: "¿Está en modo boot (WL80UBOOT)?",
@@ -486,7 +486,7 @@ log(`page ${location.href}`);
 log(`installer ${meta.version} ${meta.product} | ${env.browser} ${env.os} | webmidi ${env.webmidi ? "yes" : "NO"}`);
 
 /* (0.9.11) the channel: web/STABLE's approved version (webapp/installer) or main's preview (preview/webapp/installer) */
-const preview = /-preview$/.test(meta.version);
+const preview = meta.channel ? meta.channel === "preview" : /-preview$/.test(meta.version);
 function showChannel() {
   const p = $("channel"); p.textContent = t(preview ? "chPreview" : "chStable") + " ";
   const a = document.createElement("a");
@@ -533,7 +533,7 @@ function fillVersions() {
 }
 function showEdition() {
   const v = versions[+$("ver").value] || versions[0];
-  $("edition-info").textContent = t(v.edition === "SAMPLE" ? "editionSample" : v.edition === "ADD" ? "editionAdd" : "editionStandard");
+  $("edition-info").textContent = t(v.edition === "SAMPLE" ? "editionSample" : v.edition === "ADDITIVE" ? "editionAdd" : "editionStandard");
 }
 async function loadVersion(i) {
   const v = versions[i] || versions[0], epoch = ++loadEpoch;

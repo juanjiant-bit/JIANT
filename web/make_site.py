@@ -124,7 +124,14 @@ def main(pkg, version, out, prev=None):
     editions = json.loads((HERE / "EDITIONS.json").read_text(encoding="utf-8"))
     for entry in versions:
         entry.update(editions.get(entry["version"], {}))
-    meta = json.dumps({"version": version, "product": product, "pkg": "../../firmware/" + name,
+    # Public installer: SAMPLE first, ADDITIVE second, then stable/history.
+    if not version.endswith("-preview"):
+        priority = {"SAMPLE": 0, "ADDITIVE": 1}
+        versions.sort(key=lambda e: priority.get(e.get("edition"), 2))
+    selected = versions[0]
+    meta = json.dumps({"version": selected["version"], "product": selected["product"],
+                       "pkg": "../../firmware/" + selected["file"],
+                       "channel": "preview" if version.endswith("-preview") else "public",
                        "versions": [{"version": e["version"], "pkg": "../../firmware/" + e["file"], "product": e["product"],
                                      "edition": e.get("edition", ""), "status": e.get("status", "")}
                                     for e in versions]})

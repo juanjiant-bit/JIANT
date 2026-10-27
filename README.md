@@ -19,7 +19,7 @@ editor update themselves with every change merged into `main`.
 
 | Where | Version |
 |---|---|
-| **Public installer** | **STANDARD par12** (stable default), **SAMPLE par13b** (beta), **ADD par10** (additive synthesis) |
+| **Public installer** | **SAMPLE par13b** (beta, first/default), **ADDITIVE par10**, then **STANDARD par12** (stable) |
 | **Beta installer and emulator** | **0.9.9-par13b** — SAMPLE engine |
 | Earlier versions the public installer also offers | 0.9.9-par8, 0.9.9-gen2 (*ULTRA STABLE*), 0.9.9-par6, 0.9.9-par5, 0.9.17, 0.9.14, 0.9.9, 0.8.9 … |
 
@@ -35,9 +35,9 @@ one to go back to.
 
 The [public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) now offers these clearly labelled choices in its **Version** selector:
 
-- **STANDARD · par12**: the stable default; neither ADD nor the new SAMPLE engine.
-- **SAMPLE · par13b · BETA**: sample playback; load your own WAVs or a supplied bank from the editor.
-- **ADD · par10**: the last version with the additive synthesis engine, without SAMPLE.
+- **SAMPLE · par13b · BETA** (first/default): sample playback; load your own WAVs or a supplied bank from the editor.
+- **ADDITIVE · par10** (second): the last version with the additive synthesis engine, without SAMPLE.
+- **STANDARD · par12** (after these two): stable; neither ADD nor the new SAMPLE engine.
 
 These are existing firmware revisions, not two builds with otherwise identical features.
 Back up projects before switching: engine slot 13 means ADD in par10 and SAMPLE in par13b; sounds are not converted between them.
