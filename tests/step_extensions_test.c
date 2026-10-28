@@ -117,8 +117,25 @@ static int extended_ui(void)
     ok &= t->step[0].carg==CD_MIN-1 && strstr(ui.col[3],"MIN")!=0;
     return check("COMP controls expose SHIFT pass conditions and selectable CHORD shapes",ok);
 }
+static int shift_limits(void)
+{
+    uint8_t notes[64],nt[128];uint16_t at[128];uint32_t i,n;int bad=0,ok=1;track_t *t;
+    for(i=0;i<64;i++)notes[i]=(uint8_t)(24+i);
+    t=pat(64,notes);comp_set(&t->step[63],0,CA_SHIFT,CC_ALWAYS,0,1,0);
+    seq_start();n=run_at(t,64,nt,at,128);
+    bad+=check("SHIFT -63 anticipates the last of 64 steps onto the first",n==63 && nt[0]==87 && at[0]==0);
+    t=pat(64,notes);comp_set(&t->step[0],0,CA_SHIFT,CC_ALWAYS,0,1,126);
+    seq_start();n=run_at(t,64,nt,at,128);
+    bad+=check("SHIFT +63 moves first step to last and replaces it",n==63 && nt[62]==24 && at[62]==63);
+    t=pat(64,notes);comp_set(&t->step[0],0,CA_SHIFT,CC_NM,CNM_MAKE(16,16),32,126);
+    t->loops=15;memset(shift_valid,0,sizeof shift_valid);shift_prepare_pass(t,64,15);
+    for(i=0;i<31;i++)ok &= shift_step(t,i)==&t->step[i+1];
+    ok &= shift_step(t,31)->time==ST_REST && shift_step(t,63)==&t->step[0];
+    bad+=check("SHIFT maximum LENGTH 32 and N:M 16:16 wrap a 64-step pattern safely",ok);
+    return bad;
+}
 int main(void)
 {
-    int bad=original_comp_main();bad+=shift_tests()+chord_tests()+extended_format()+extended_ui();
+    int bad=original_comp_main();bad+=shift_tests()+chord_tests()+extended_format()+extended_ui()+shift_limits();
     printf("%s\n",bad?"STEP EXTENSIONS FAILED":"step extensions passed");return !!bad;
 }
