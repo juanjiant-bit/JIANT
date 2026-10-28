@@ -887,6 +887,11 @@ static __attribute__((noinline)) void unit_column(uint32_t c, const char *label,
     draw_column(c, label, value, unit, color, -1, ICON_NONE);
 }
 
+static __attribute__((noinline)) void hot_unit_column(uint32_t c, const char *label, const char *value, const char *unit)
+{
+    unit_column(c, label, value, unit, VAL(c));
+}
+
 /* Cards without units or a gauge share argument setup. Icons are unused by draw_column. */
 static __attribute__((noinline)) void text_column(uint32_t c, const char *label, const char *value, uint16_t color)
 {
@@ -1295,7 +1300,7 @@ static __attribute__((noinline)) void comp_columns(void)
         text_column(0, "ACTION", CA_NAMES[a], a ? VAL(0u) : T_DIM);
         if (a && a != CA_JUMP) {
             fmt_int(val, (int32_t)gc->len + 1);
-            unit_column(1, "LENGTH", val, "ST", VAL(1u));   /* (gen3: "32 ST" in M) */
+            hot_unit_column(1, "LENGTH", val, "ST");   /* (gen3: "32 ST" in M) */
         } else
             text_column(1, "LENGTH", "-", T_DIM);
         if (a) {
@@ -1317,7 +1322,7 @@ static __attribute__((noinline)) void comp_columns(void)
         text_column(0, k ? "ACTION 2" : "ACTION", CA_NAMES[a], a ? VAL(0u) : T_DIM);
         if (a && a != CA_JUMP) {
             fmt_int(val, (int32_t)(l < CL_MAX ? l + 1u : 1u));
-            unit_column(1, "LENGTH", val, "ST", VAL(1u));
+            hot_unit_column(1, "LENGTH", val, "ST");
         } else
             text_column(1, "LENGTH", "-", T_DIM);
         if (a) {
@@ -1469,7 +1474,7 @@ static void draw_columns(void)
         fmt_int(val, (int32_t)ui.cursor + 1);
         hot_text_column(0, "STEP", val);
         fmt_int(val, (int32_t)step_chance(&TSEL->step[ui.cursor]));
-        unit_column(1, "CHANCE", val, "%", VAL(1u));   /* the die */
+        hot_unit_column(1, "CHANCE", val, "%");   /* the die */
         val[0] = 'x';                                  /* x1 .. x4 */
         val[1] = (char)('0' + step_ratchet(&TSEL->step[ui.cursor]));
         val[2] = 0;
@@ -1568,7 +1573,7 @@ static void draw_columns(void)
         fmt_int(u + 1, (int32_t)total);
         if (!total || (cur + 1u >= 100u && total >= 100u)) u[0] = 0;   /* (0.7.0) "147/155" is too wide for the card: the
                                                          * number alone past 99 (every engine's presets counted) */
-        unit_column(0, "No.", val, u, VAL(0u));
+        hot_unit_column(0, "No.", val, u);
         hot_text_column(1, "ENG", ENGINES[TSEL->eng_req]->name);
         hot_text_column(2, "FAV", preset_favorite() ? "ON" : "OFF");
         hot_text_column(3, "LIST", N_LIST[list_get()]);
@@ -1623,7 +1628,7 @@ static void draw_columns(void)
         param_format(&GP[G_SLPLEN], song.g[G_SLPLEN], val, &unit);
         draw_column(2, "LEN", val, unit, VAL(2u), RATIO(&GP[G_SLPLEN], song.g[G_SLPLEN]), ICON_AUTO);
         param_format(&GP[G_SLPQ], song.g[G_SLPQ], val, &unit);
-        unit_column(3, "QUANT", val, unit, VAL(3u));
+        hot_unit_column(3, "QUANT", val, unit);
         return;
     }
     if (cur_page()->graph == GR_MSEQ) {                  /* (JIANT) STEP, its LVL, LEN, SLEW */
@@ -1697,7 +1702,7 @@ static void draw_columns(void)
         fmt_int(sn, (int32_t)ui.cursor + 1);
         str_cpy(sl, "/", 8);
         fmt_int(sl + 1, TSEL->p[P_SLEN]);
-        unit_column(0, "STEP", sn, sl, VAL(0u));
+        hot_unit_column(0, "STEP", sn, sl);
         hot_text_column(1, "LANE", drum_lane_name(TSEL, ui.lane));
         text_column(2, "HIT", GRID_HIT[grid_hit_of(st, ui.lane)], on ? VAL(2u) : T_DIM);   /* (0.8.5: its mode) */
         text_column(3, "ACC", ac ? "ON" : "--", ac ? VAL(3u) : T_DIM);
@@ -1754,9 +1759,9 @@ static void draw_columns(void)
             fmt_int(sl + 1, TSEL->p[P_SLEN]);
             if (nl > 1u) fmt_int(tv, (int32_t)nl);            /* (0.8.4) a NOTE's length: 3 ST (NOTE: one step) */
             else str_cpy(tv, TIME_N[st->time % 3u], sizeof tv);
-            unit_column(0, "STEP", sn, sl, VAL(0u));
+            hot_unit_column(0, "STEP", sn, sl);
             unit_column(1, "NOTE", val, u, step_on(st) ? VAL(1u) : T_DIM);
-            unit_column(2, "TIME", tv, nl > 1u ? "ST" : "", VAL(2u));
+            hot_unit_column(2, "TIME", tv, nl > 1u ? "ST" : "");
             hot_text_column(3, "FLAG", FLAG_N[(st->flags & SF_ACCENT ? 1u : 0u) | (st->flags & SF_SLIDE ? 2u : 0u)]);
         }
         return;
