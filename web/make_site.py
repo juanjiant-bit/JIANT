@@ -126,6 +126,8 @@ def main(pkg, version, out, prev=None):
         entry.update(editions.get(entry["version"], {}))
     # Public installer: SAMPLE first, ADDITIVE second, then stable/history.
     if not version.endswith("-preview"):
+        if any(e.get("status") == "beta" for e in versions):
+            raise SystemExit("beta firmware is forbidden in the public installer")
         priority = {"SAMPLE": 0, "ADDITIVE": 1}
         versions.sort(key=lambda e: priority.get(e.get("edition"), 2))
     selected = versions[0]

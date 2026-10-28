@@ -115,7 +115,20 @@ jobs:
           (cd "$PREVIEW_ROOT" && python3 tools/build.py)
           PV=$(ver "$PREVIEW_ROOT")
           V=$(ver .)
-          python3 web/make_site.py "$PREVIEW_ROOT/build/felucca.fwsc" "${PV:-dev}-${PREVIEW_SHA::7}-preview" build/site_preview
+          # Explicit beta-only editions: never read by the public installer.
+          mkdir -p build/beta; : > build/beta/list
+          while read -r C NOTE; do
+            case "$C" in ''|'#'*) continue;; esac
+            git cat-file -e "$C^{commit}"
+            git worktree add --detach /tmp/beta-edition "$C"
+            (cd /tmp/beta-edition && python3 tools/build.py)
+            BV=$(ver /tmp/beta-edition); BF="felucca-${BV}-${C::7}.fwsc"
+            cp /tmp/beta-edition/build/felucca.fwsc "build/beta/$BF"
+            printf '%s %s\n' "$BV-${C::7}" "$BF" >> build/beta/list
+            git worktree remove -f /tmp/beta-edition
+          done < web/BETA_VERSIONS
+          python3 -c 'import json; L=[l.split() for l in open("build/beta/list") if l.strip()]; json.dump([{"version":v,"file":f} for v,f in L], open("build/beta/versions.json","w"))'
+          python3 web/make_site.py "$PREVIEW_ROOT/build/felucca.fwsc" "${PV:-dev}-${PREVIEW_SHA::7}-preview" build/site_preview build/beta
           mkdir -p build/emu/preview
           cp -r build/site_preview/webapp build/site_preview/firmware build/emu/preview/
           printf '%s\n' "$PREVIEW_SHA" > build/emu/preview/firmware/SOURCE_COMMIT
@@ -147,17 +160,24 @@ jobs:
             git worktree remove -f /tmp/classic || true
           done < web/CLASSIC
           python3 -c 'import json,sys; L=[l.split() for l in open("build/prev/list") if l.strip()]; json.dump([{"version":v,"file":f} for v,f in L], open("build/prev/versions.json","w"))'
-          # Offer the already-built sampler preview alongside ADD in the public installer.
+          # Public SAMPLE has its own approved source, independent of PREVIEW.
+          PUBLIC_SAMPLE_SHA=$(tr -d ' \n' < web/PUBLIC_SAMPLE)
+          [[ "$PUBLIC_SAMPLE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git cat-file -e "$PUBLIC_SAMPLE_SHA^{commit}"
+          git worktree add --detach /tmp/public-sample "$PUBLIC_SAMPLE_SHA"
+          (cd /tmp/public-sample && python3 tools/build.py)
+          PSV=$(ver /tmp/public-sample)
+          PS_VERSION="${PSV}-${PUBLIC_SAMPLE_SHA::7}-preview"
+          PS_FILE="felucca-${PS_VERSION}.fwsc"
+          cp /tmp/public-sample/build/felucca.fwsc "build/prev/$PS_FILE"
+          export PS_VERSION PS_FILE
           python3 - <<'PY'
-          import json, shutil
+          import json, os
           from pathlib import Path
           previous = Path("build/prev")
           entries = json.loads((previous / "versions.json").read_text())
-          preview = Path("build/site_preview/firmware")
-          sampler = json.loads((preview / "versions.json").read_text())[0]
-          shutil.copy(preview / sampler["file"], previous / sampler["file"])
-          # Keep ADD near the top even when the history list grows.
-          additive = [e for e in entries if e["version"].startswith("v0.9.9-par10b-")]
+          sampler = {"version": os.environ["PS_VERSION"], "file": os.environ["PS_FILE"]}
+          additive = [e for e in entries if e["version"].startswith("v0.9.9-par10-")]
           rest = [e for e in entries if e not in additive and e["version"] != sampler["version"]]
           (previous / "versions.json").write_text(json.dumps([sampler] + additive + rest) + "\n")
           PY

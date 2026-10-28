@@ -19,8 +19,8 @@ editor update themselves with every change merged into `main`.
 
 | Where | Version |
 |---|---|
-| **Public installer** | **SAMPLE par13c** (first/default), **ADDITIVE par10b**, then **STANDARD par12** (stable) |
-| **Preview installer and emulator** | **0.9.9-par13c** — SAMPLE engine |
+| **Public installer** | **SAMPLE par13b** (first/default), **ADDITIVE par10**, then **STANDARD par12** (stable) |
+| **Preview installer and emulator** | **0.9.9-par14-beta1** — SAMPLE, new controls and step components (beta only) |
 | Earlier versions the public installer also offers | 0.9.9-par8, 0.9.9-gen2 (*ULTRA STABLE*), 0.9.9-par6, 0.9.9-par5, 0.9.17, 0.9.14, 0.9.9, 0.8.9 … |
 
 [Public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) · [Beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/) · [Emulator](https://juanjiant-bit.github.io/JIANT/emu/)
@@ -35,15 +35,15 @@ one to go back to.
 
 The [public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) now offers these clearly labelled choices in its **Version** selector:
 
-- **SAMPLE · par13c** (first/default): sample playback; load your own WAVs or a supplied bank from the editor.
-- **ADDITIVE · par10b** (second): additive synthesis, without SAMPLE; includes the new REC shortcuts.
+- **SAMPLE · par13b** (first/default): sample playback; load your own WAVs or a supplied bank from the editor.
+- **ADDITIVE · par10** (second): additive synthesis, without SAMPLE; includes the new REC shortcuts.
 - **STANDARD · par12** (after these two): stable; neither ADD nor the new SAMPLE engine.
 
 These are existing firmware revisions, not two builds with otherwise identical features.
 Back up projects before switching: engine slot 13 means ADD in par10 and SAMPLE in par13b; sounds are not converted between them.
 Project backups do not include the sample audio bank; keep original WAVs. Earlier versions remain available.
 
-## Recording shortcuts — SAMPLE par13c / ADDITIVE par10b
+## Recording shortcuts — beta only (SAMPLE par13c / par14, ADDITIVE par10b)
 
 - Hold **REC + A3** to undo the last edit/take; repeat to redo. **GLO + G4** remains available. One global undo/redo level.
 - Arming REC saves a snapshot before the take. Undo from REC disarms recording to protect the restored take.
@@ -55,7 +55,7 @@ See [REC controls and timing](docs/REC_CONTROLS.md). These releases add recordin
 
 ## Step components — SAMPLE par14-beta1 (experimental)
 
-Select **STEP COMPONENTS (SAMPLE) · par14-beta1 · BETA** in the public installer's version list to test these additions. The default SAMPLE par13c and ADDITIVE par10b releases keep their recording controls; this beta currently uses SAMPLE, not ADD.
+All new recording controls and step components are **beta only**. Use the [beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/): SAMPLE par14-beta1 includes SHIFT and CHORD; ADDITIVE par10b has the recording shortcuts. The public installer retains SAMPLE par13b and ADDITIVE par10.
 
 - **SHIFT** in SEQ > COMP / COMP 2: KNOB 4 moves an event -63..+63 track steps; 0 keeps it in place. The playhead stays on its grid. A moved event replaces the destination during playback; the saved pattern is unchanged. It wraps inside LEN. KNOB 3 offers ALWAYS, FIRST, !FIRST, N:M and !N:M; KNOB 2 sets the affected range. Edits while playing take effect on the next pass.
 - **CHORD**: select the chord shape with KNOB 4; the step's first note is its root. It reuses the existing scale/voicing generator and stacks with COMP 2 and the global/master lane, respecting MONO/POLY. It retains the existing mono/kit guards and four-note maximum.

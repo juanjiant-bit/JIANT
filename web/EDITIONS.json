@@ -4,8 +4,8 @@
     "status": "stable"
   },
   "v0.9.9-par10-30f05b3": {
-    "edition": "ADDITIVE (previous)",
-    "status": "previous"
+    "edition": "ADDITIVE",
+    "status": "public"
   },
   "v0.9.9-par13b-3641c02-preview": {
     "edition": "SAMPLE",
@@ -13,14 +13,22 @@
   },
   "v0.9.9-par10b-b588094": {
     "edition": "ADDITIVE",
-    "status": "public"
+    "status": "beta"
   },
   "v0.9.9-par13c-b932605-preview": {
     "edition": "SAMPLE",
-    "status": "public"
+    "status": "beta"
   },
   "v0.9.9-par14-beta1-86b85ad": {
     "edition": "STEP COMPONENTS (SAMPLE)",
+    "status": "beta"
+  },
+  "v0.9.9-par13c-b932605": {
+    "edition": "SAMPLE (REC controls)",
+    "status": "beta"
+  },
+  "v0.9.9-par14-beta1-86b85ad-preview": {
+    "edition": "SAMPLE + STEP COMPONENTS",
     "status": "beta"
   }
 }
