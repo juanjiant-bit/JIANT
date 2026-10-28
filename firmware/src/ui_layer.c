@@ -1176,13 +1176,18 @@ static void ly_piano(uint32_t l)
 static __attribute__((noinline)) void rec_columns(void)
 {
     char val[12];
-    int32_t q = TSEL->p[P_HRQ];
-    uint32_t click = rp_get(RP_CLICK);
-    draw_column(0, RL_LABEL[0], rl_name(0, click), "", click ? VAL(0) : T_DIM, click * 500, RL_ICON[0]);
-    fmt_int(val, q * 100 / 127);
-    draw_column(1, "REC Q", q ? val : "OFF", q ? "%" : "", VAL(1), q * 1000 / 127, ICON_NONE);
-    draw_column(2, "", "", "", T_THEME, -1, ICON_NONE);
-    draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
+    uint32_t c;
+    int32_t q = TSEL->p[P_HRQ] * 100 / 127;
+    fmt_int(val, q);
+    for (c = 0; c < 4u; c++) {
+        if (c == 1u)
+            draw_column(c, "REC Q", q ? val : "OFF", q ? "%" : "", VAL(c), q * 10, ICON_NONE);
+        else if (c == 0u) {
+            uint32_t v = rp_get(RP_CLICK);
+            draw_column(c, RL_LABEL[0], rl_name(0, v), "", v ? VAL(c) : T_DIM, v * 500, RL_ICON[0]);
+        } else
+            draw_column(c, "", "", "", T_THEME, -1, ICON_NONE);
+    }
 }
 static void layer_cards(uint32_t l)
 {
