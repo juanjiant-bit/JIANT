@@ -1412,10 +1412,10 @@ static int test_rec(void)
         track_select(2);
         open_family(FAMS[k]);
         press(B_REC);
-        bad += check(k == 0 ? "REC on TRACKS: arms the selected track, PLAY starts" :
+        bad += check(k == 0 ? "REC on TRACKS: arms independently, PLAY stays stopped" :
                      k == 1 ? "#133 REC on SEQ > STEP: arms the selected track for step recording, PLAY does not start" :
-                     "REC on ARP: arms the selected track, PLAY starts",
-                     song.rec == 4u && (k == 1u ? transport_req == 0u && msg_is("KEYS WRITE STEPS") : transport_req == 1u));
+                     "REC on ARP: arms independently, PLAY stays stopped",
+                     song.rec == 4u && transport_req == 0u && !song.playing && (k != 1u || msg_is("KEYS WRITE STEPS")));
         song.playing = 1;
         transport_req = 0;
         frames(400);                                   /* (not a double tap: that locks the REC layer) */
@@ -1429,7 +1429,7 @@ static int test_rec(void)
     }
     ui_power_on();
     press(B_REC);
-    bad += check("REC on HOME records without changing the screen", ui.home && song.rec == 1u && transport_req == 1u);
+    bad += check("REC on HOME records without changing the screen", ui.home && song.rec == 1u && transport_req == 0u);
     /* STEP page: armed + playing -> the keys record live only */
     ui_power_on();
     open_family(FAM_SEQ);
@@ -3422,7 +3422,7 @@ static int test_product_ux(void)
             ok &= song.rec == 0 && !transport_req && msg_is("[SEQ] TO RECORD");
         else if (PAGES[i].graph == GR_ROLL)            /* #133: STEP's roll arms step recording, stopped */
             ok &= song.rec == 1 && !transport_req && ui.page == i && !ui.home;
-        else ok &= song.rec == 1 && transport_req == 1 && ui.page == i && !ui.home;
+        else ok &= song.rec == 1 && transport_req == 0 && ui.page == i && !ui.home;
     }
     bad += check("REC stays on every page, SONG stopped asks for pattern recording (STEP: step recording, stopped)", ok);
     ui_power_on(); hold(B_HOME); press(B_REC);
@@ -4697,12 +4697,12 @@ static int test_bughunt_ui(void)
             ui_power_on();
             btn_down(LB[i]); frame();
             press(B_REC);
-            ok &= song.rec == 1u && transport_req == 1u && ui.layer != 0u;
+            ok &= song.rec == 1u && transport_req == 0u && ui.layer != 0u;
             btn_up(LB[i]); frame();
             ok &= ui.home;
         }
     }
-    bad += check("REC in every layer: arms the track and starts PLAY; the layer stays, no page", ok);
+    bad += check("REC in every layer: arms the track without starting PLAY; the layer stays, no page", ok);
     /* 8: the OCT LEDs dark in the SET layers (OCT± do nothing there since TONIC); FX (HOLD): the octave as usual */
     ok = 1;
     {
@@ -5202,7 +5202,7 @@ static int test_step_rec(void)
     key_down(7); frame(); key_up(7); frame();
     bad += check("#133 REC again disarms: the keys only play, nothing written",
                  !song.rec && !memcmp(before, t->step, sizeof before) && ui.cursor == 4u);
-    /* the DRUM grid as before: white keys are the steps (armed or not), REC from stop starts PLAY */
+    /* the DRUM grid as before: white keys are the steps (armed or not), REC arms without starting PLAY */
     ui_power_on();
     t = TSEL;
     set_engine_of(t, ENGI_DRUM);
@@ -5212,12 +5212,12 @@ static int test_step_rec(void)
     tap_key(key_at(0, 4));
     ok = grid_on() && t->step[4].hit != 0u;
     press(B_REC);
-    ok &= song.rec == 1u && transport_req == 1u && msg_is("LANE KEYS RECORD");
+    ok &= song.rec == 1u && transport_req == 0u && msg_is("LANE KEYS RECORD");
     transport_req = 0;                                                /* (armed, still stopped) */
     tap_key(key_at(0, 6));
     tap_key(key_at(0, 4));
     ok &= t->step[6].hit != 0u && !t->step[4].hit && ui.cursor == 4u;
-    bad += check("#133 the DRUM grid unchanged: white keys toggle steps armed or not, REC from stop starts PLAY", ok);
+    bad += check("#133 the DRUM grid unchanged: white keys toggle steps armed or not, REC arms without starting PLAY", ok);
     song.rec = 0;
     return bad;
 }
@@ -8438,7 +8438,7 @@ static int test_rec_layer(void)
     bad += check("  it opens after MENU > HOLD (0.3 .. 0.6 s), not the old 0.7 s", ok);
     ui_power_on();
     press(B_REC);
-    ok = ui.home && song.rec == 1u && transport_req == 1u && !ui.layer;
+    ok = ui.home && song.rec == 1u && transport_req == 0u && !ui.layer;
     frames(400); transport_req = 0; song.playing = 1;
     press(B_REC);
     ok &= song.rec == 0u && !ui.layer && song.playing;
@@ -8446,7 +8446,7 @@ static int test_rec_layer(void)
     go_page(GR_ROLL); frame(); frames(400);
     press(B_REC);
     ok &= song.rec == 1u && transport_req == 0u && msg_is("KEYS WRITE STEPS");
-    bad += check("  a tap still arms / disarms when let go (HOME starts PLAY, STEP: step recording)", ok);
+    bad += check("  a tap still arms / disarms when let go (HOME stays stopped, STEP: step recording)", ok);
     ui_power_on();
     rec_down(); frame();
     press(B_PLAY);                                      /* REC + PLAY: PLAY plays, REC let go arms (no map) */
