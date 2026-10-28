@@ -735,10 +735,10 @@ static void ui_message(const char *s) { ui_say(s, ""); }
 
 /* (0.9.9-seq2h) SEQ's clipboard (ui_input.c cp_copy / cp_paste): up to a bar of steps, whole (notes, time, flags, the
  * DRUM hits, accents and lane modes, the components), their parameter locks by offset; n 0: empty (the footer's [n]) */
-#define CLIP_LOCKS 32u
+#define CLIP_LOCKS MOTION_MAX
 static struct {
-    uint8_t n, drum, nl;                           /* steps held, from a DRUM track, locks held */
-    step_t st[16];
+    uint8_t n, drum, nl, engine;                           /* steps held, from a DRUM track, locks held */
+    step_t st[NSTEP];
     struct { uint8_t off, id; int16_t v; } lk[CLIP_LOCKS];
 } clip;
 static uint64_t cp_add, cp_add_acc;                /* DRUM grid: the steps whose hit (accent) a held key put there, on
