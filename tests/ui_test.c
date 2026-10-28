@@ -8,7 +8,7 @@
  *   PATTERNS   SEQ > PATTERNS: KNOB 1 PAT (factory patterns, then user presets that hold one), OCT+
  *              LOAD; over the user's steps the REPLACE? dialog (OCT- / OCT+); the PRESETS hint.
  *   UNDO       none (TONIC): SAVE held changes nothing; loads, tools and lock edits are final.
- *   REC        a tap on every screen arms the selected track and starts PLAY, without navigation.
+ *   REC        a tap arms the selected track without starting PLAY or changing the page.
  *              Long REC never clears. On STEP, armed and playing: keys do not write the
  *              cursor step. With the ARP on, the arp's notes are recorded, not the keys.
  *   MIDI IN    GLO > SYSTEM ROUT: CH1-4 (channels 5..16 ignored) / SEL, note-offs follow their note-ons.
@@ -5014,7 +5014,7 @@ static int pr_columns_match(const track_t *t, uint32_t *nbars)
 /* 1.2, Discussion #133: step recording on SEQ > STEP. Not armed, the keys only play (being on SEQ writes nothing);
  * REC there arms step recording without starting the transport; armed and stopped a key (keys held together: a
  * chord) writes the cursor step and letting go moves the cursor on one step, wrapping inside LEN; PLAY records live
- * (at the play head, not the cursor). The DRUM grid keeps its own keys (white keys = steps, REC starts PLAY) */
+ * (at the play head, not the cursor). The DRUM grid keeps its own keys (white keys = steps, REC only arms) */
 static int test_step_rec(void)
 {
     int bad = 0, ok;
@@ -5099,31 +5099,31 @@ static int test_step_rec(void)
         key_up(7); key_up(11); frame();
         bad += check("step recording: ARP ORDER DOWN (KNOB 2): the high note first",
                      t->step[0].note[0] == kb_map(t, 11) && t->step[1].note[0] == kb_map(t, 7) && ui.cursor == 2u);
-        {   /* (0.9.9-seq2c) SELECT's two roles while armed and stopped: a chord held, its LEN (as KNOB 1, the roll's bar
-             * growing); no key, the cursor a step either way, round in LEN; the page stays. Not armed: the pages */
+        {   /* (0.9.9-seq2c) step entry controls while armed and stopped: a chord held, KNOB 1 adjusts its LEN (the roll's bar
+             * growing); PRESET moves the cursor a step either way, round in LEN; the page stays. SELECT always changes pages */
             const page_t *pg0 = cur_page();
             uint32_t h0, h1;
             for (h0 = 0; h0 < NSTEP; h0++) step_clear(&t->step[h0]);
             cursor_set(2); frame();
             key_down(7); frame(); key_down(11); frame();
             h0 = graph_signature();
-            turn(EN_SELECT, 2);
+            turn(EN_K1, 2);
             h1 = graph_signature();
             ok = ui.ent_len == 3u && msg_is("LEN 3 STEPS") && cur_page() == pg0 && ui.cursor == 2u && h1 != h0;
             key_up(7); key_up(11); frame();
             ok &= t->step[2].n == 2u && t->step[3].time == ST_TIE && t->step[4].time == ST_TIE && t->step[5].time != ST_TIE &&
                   ui.cursor == 5u;
-            bad += check("seq2c step recording: a chord held + SELECT: its LEN (3, the bar on the roll), TIEs after, the page stays", ok);
-            turn(EN_SELECT, -1);
+            bad += check("seq2c step recording: a chord held + KNOB 1: its LEN (3, the bar on the roll), TIEs after, the page stays", ok);
+            turn(EN_PRESET, -1);
             ok = ui.cursor == 4u && cur_page() == pg0;
-            turn(EN_SELECT, 1); turn(EN_SELECT, 1);
+            turn(EN_PRESET, 1); turn(EN_PRESET, 1);
             ok &= ui.cursor == 6u;
             cursor_set(0); frame();
-            turn(EN_SELECT, -1);
+            turn(EN_PRESET, -1);
             ok &= ui.cursor == 15u && cur_page() == pg0;
-            turn(EN_SELECT, 1);
+            turn(EN_PRESET, 1);
             ok &= ui.cursor == 0u && cur_page() == pg0 && song.rec == 1u;
-            bad += check("seq2c step recording: no key + SELECT: the cursor a step left / right, round in LEN 16, the page stays", ok);
+            bad += check("seq2c step recording: PRESET: the cursor a step left / right, round in LEN 16, the page stays", ok);
             song.rec = 0;
             turn(EN_SELECT, 1);
             ok = cur_page() != pg0 && ui.cursor == 0u;
