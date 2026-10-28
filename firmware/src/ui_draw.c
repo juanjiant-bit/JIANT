@@ -871,6 +871,12 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
         cv_blit((uint32_t)CARD_X(c), card_y() + (strip ? (uint32_t)ry : 0u));
 }
 
+/* Shared empty card: keep the renderer and all of its state-reset behavior. */
+static __attribute__((noinline)) void empty_column(uint32_t c, uint16_t color)
+{
+    draw_column(c, "", "", "", color, -1, ICON_NONE);
+}
+
 /* an action's column (act_cols): picked, the OCT+ keycap (accent while it would do something); else "--" */
 static void draw_act_column(uint32_t c, const char *label, uint16_t vc, uint32_t icon)   /* icon: ICON_AUTO = by label */
 {
@@ -1231,7 +1237,7 @@ static void engine_columns(void)
                 engine_icon(ENGINES[e]->name));
     draw_column(1, "No.", val, u, VAL(1u), total > 1u ? (int32_t)(cur * 1000u / (total - 1u)) : 0, ICON_NONE);
     draw_column(2, "FAV", preset_favorite() ? "ON" : "OFF", "", VAL(2u), -1, ICON_X_STAR);
-    draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
+    empty_column(3, T_THEME);
 }
 /* (0.9.9-seq2d / seq2f) the step components' cards: GLO > COMPS / COMPS 2, SEQ > COMP / COMP 2. (gen3) Its own function,
  * out of draw_columns: new code lands past the pinned sound (tools/build.py), draw_columns' run before it stays as long */
@@ -1273,7 +1279,7 @@ static __attribute__((noinline)) void comp_columns(void)
             draw_column(3, lb, val, un, lb[0] ? VAL(3u) : T_DIM, -1, ICON_ORDER);
         } else {
             draw_column(2, "COND", "", "", T_DIM, -1, ICON_PROB);
-            draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
+            empty_column(3, T_THEME);
         }
         return;
     }
@@ -1296,7 +1302,7 @@ static __attribute__((noinline)) void comp_columns(void)
             draw_column(3, lb, val, un, lb[0] ? VAL(3u) : T_DIM, -1, ICON_ORDER);
         } else {
             draw_column(2, "COND", "", "", T_DIM, -1, ICON_PROB);
-            draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
+            empty_column(3, T_THEME);
         }
         return;
     }
@@ -1359,7 +1365,7 @@ static void draw_columns(void)
         draw_column(1, TP[id].label, val, unit, VAL(1u), RATIO(&TP[id], *vp), ICON_NONE);
         param_format(&TP[P_ELOOP], TSEL->p[P_ELOOP], val, &unit);
         draw_column(2, TP[P_ELOOP].label, val, unit, VAL(2u), RATIO(&TP[P_ELOOP], TSEL->p[P_ELOOP]), ICON_NONE);
-        draw_column(3, "", "", "", T_DIM, -1, ICON_NONE);
+        empty_column(3, T_DIM);
         return;
     }
     if (cur_page()->graph == GR_DXSND) {               /* EDIT > SOUND (ui_dx.c) */
@@ -1380,8 +1386,8 @@ static void draw_columns(void)
             else if (e >= 2u) { val[0] = 'x'; fmt_int(val + 1, (int32_t)e); }
             else str_cpy(val, "STOP", sizeof val);
             draw_column(1, "END", val, "", VAL(1u), -1, ICON_LOOP);
-            draw_column(2, "", "", "", T_THEME, -1, ICON_NONE);
-            draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
+            empty_column(2, T_THEME);
+            empty_column(3, T_THEME);
             return;
         }
         if (row == chain_config.count) str_cpy(val, "ADD", sizeof val);
@@ -1444,7 +1450,7 @@ static void draw_columns(void)
         val[1] = (char)('0' + step_ratchet(&TSEL->step[ui.cursor]));
         val[2] = 0;
         draw_column(2, "RATCH", val, "", rplays ? VAL(2u) : T_DIM, -1, ICON_X_REPEAT);
-        draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
+        empty_column(3, T_THEME);
         return;
     }
     if (cur_page()->graph == GR_EVENTS) {              /* AUTO LIST (ui_events.c): ROW STEP PARAM VALUE */
@@ -1618,7 +1624,7 @@ static void draw_columns(void)
             uint32_t ic;
             int on;
             if (!fop_ok()) {                             /* (the engine changed before ui_draw left the page) */
-                draw_column(c, "", "", "", T_THEME, -1, ICON_NONE);
+                empty_column(c, T_THEME);
                 continue;
             }
             on = fop_card(c, &lb, val, &u, &r, &ic);
@@ -2461,3 +2467,4 @@ static void ui_draw_body(uint32_t counting)
         draw_tabs();
     ui.force = 0;
 }
+

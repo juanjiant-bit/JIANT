@@ -1177,16 +1177,16 @@ static __attribute__((noinline)) void rec_columns(void)
 {
     char val[12];
     uint32_t c;
-    int32_t q = TSEL->p[P_HRQ] * 100 / 127;
+    int32_t raw = TSEL->p[P_HRQ], q = raw * 100 / 127;
     fmt_int(val, q);
     for (c = 0; c < 4u; c++) {
         if (c == 1u)
-            draw_column(c, "REC Q", q ? val : "OFF", q ? "%" : "", VAL(c), q * 10, ICON_NONE);
+            draw_column(c, "REC Q", raw ? val : "OFF", raw ? "%" : "", VAL(c), q * 10, ICON_NONE);
         else if (c == 0u) {
             uint32_t v = rp_get(RP_CLICK);
             draw_column(c, RL_LABEL[0], rl_name(0, v), "", v ? VAL(c) : T_DIM, v * 500, RL_ICON[0]);
         } else
-            draw_column(c, "", "", "", T_THEME, -1, ICON_NONE);
+            empty_column(c, T_THEME);
     }
 }
 static void layer_cards(uint32_t l)
@@ -1425,4 +1425,5 @@ static __attribute__((noinline)) void draw_layer(void)
 }
 
 #include "ui_live.c"                                    /* (p2, main 0.9.11) GLO > LIVE: MANO, RIELES */
+
 
