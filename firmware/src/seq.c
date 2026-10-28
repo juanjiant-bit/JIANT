@@ -1345,7 +1345,7 @@ static uint32_t comp_count(const track_t *t, const step_t *s, uint32_t k)
  * earlier destinations can be known before their source step is reached. */
 static uint8_t shift_map[2][NTRK][NSTEP], shift_len[2][NTRK];
 static uint16_t shift_pass[2][NTRK];
-static int shift_cond(const track_t *t, const step_t *s, uint32_t k, uint32_t p)
+static __attribute__((minsize)) int shift_cond(const track_t *t, const step_t *s, uint32_t k, uint32_t p)
 {
     uint32_t c = CO_COND(k ? s->comp2 : s->comp), nm = s->cnm[k];
     if (c == CC_ALWAYS) return 1;
@@ -1357,7 +1357,7 @@ static int shift_cond(const track_t *t, const step_t *s, uint32_t k, uint32_t p)
     }
     return 0; /* Conditions depending on future live events are not offered for SHIFT. */
 }
-static void shift_prepare_pass(const track_t *t, uint32_t len, uint32_t pass)
+static __attribute__((minsize)) void shift_prepare_pass(const track_t *t, uint32_t len, uint32_t pass)
 {
     uint32_t ti = trk_index(t) % NTRK, bank = pass & 1u, i, k, j;
     int16_t move[NSTEP] = {0};
@@ -1373,10 +1373,15 @@ static void shift_prepare_pass(const track_t *t, uint32_t len, uint32_t pass)
                 move[(i + j) % len] += (int16_t)d;
         }
     }
-    for (i = 0; i < len; i++) shift_map[bank][ti][i] = (uint8_t)(move[i] % (int32_t)len ? 255u : i);
-    for (i = 0; i < len; i++) if (move[i] % (int32_t)len) {
-        uint32_t dst = (uint32_t)(((int32_t)i + move[i] % (int32_t)len + (int32_t)len) % (int32_t)len);
-        shift_map[bank][ti][dst] = (uint8_t)i; /* Collisions: later source in score order replaces the destination. */
+    for (i = 0; i < len; i++) {
+        move[i] %= (int32_t)len;
+        shift_map[bank][ti][i] = (uint8_t)(move[i] ? 255u : i);
+    }
+    for (i = 0; i < len; i++) if (move[i]) {
+        int32_t dst = (int32_t)i + move[i];
+        if (dst < 0) dst += (int32_t)len;
+        if (dst >= (int32_t)len) dst -= (int32_t)len;
+        shift_map[bank][ti][dst] = (uint8_t)i; /* Later moved source wins a collision. */
     }
 }
 static const step_t *shift_step_pass(const track_t *t, uint32_t idx, uint32_t pass)
@@ -1395,10 +1400,10 @@ static const step_t *shift_ahead(const track_t *t, uint32_t offset, uint32_t len
 {
     uint32_t index = t->seq_idx + offset, pass;
     len = len ? len : 1u;
-    pass = t->loops + index / len;
-    if (pass > 65535u) pass = 65535u;
+    pass = t->loops;
+    if (index >= len) { index -= len; if (pass < 65535u) pass++; }
     shift_prepare_pass(t, len, pass);
-    return shift_step_pass(t, index % len, pass);
+    return shift_step_pass(t, index, pass);
 }
 /* SEQ's notes: the pattern's steps with notes (or hits), in order; the k-th of them (*cnt: how many) */
 static const step_t *seq_unit(const track_t *t, uint32_t len, uint32_t k, uint32_t *cnt)
