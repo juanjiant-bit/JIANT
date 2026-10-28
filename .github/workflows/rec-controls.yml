@@ -45,7 +45,9 @@ jobs:
           cp /tmp/rec-base/build/gen/* build/gen/
           cc -O1 -w -Ibuild/gen -Ifirmware/src -Itests tests/step_extensions_test.c -lm -o build/rec/step_extensions
           build/rec/step_extensions | tee build/rec/steps.log
-          python3 tools/build.py
+          cc -O1 -w -fsanitize=bounds -fno-sanitize-recover=bounds -Ibuild/gen -Ifirmware/src -Itests tests/sample_test.c -lm -o build/rec/sample_bounds
+          build/rec/sample_bounds | tee build/rec/sample-bounds.log
+          FELUCCA_REPIN=1 python3 tools/build.py
           mkdir -p build/rec
           BUDGET_UPDATE=1 python3 tests/target_budget.py /tmp/rec-base/build/felucca.dis /tmp/rec-base-budget.txt
           python3 tests/target_budget.py build/felucca.dis /tmp/rec-base-budget.txt

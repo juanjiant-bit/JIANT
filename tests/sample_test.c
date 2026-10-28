@@ -139,6 +139,20 @@ int main(void)
     char what[200];
     double f4, f5, r0, r1, mean = 0, top = 0;
     uint32_t i;
+    /* Exact final boundary: FULL occupies every available data nibble. */
+    memset(smp_bank.b,0,SMP_BANK);smp_bank.h.magic=SMP_MAGIC;smp_bank.h.ver=1;
+    smp_bank.h.len=put(0,SMP_DATA*2u,16000,"FULL",0);
+    smp_bank.h.crc=~st_crc32_add(0xFFFFFFFFu,smp_bank.b+16,SMP_HEAD-16u+smp_bank.h.len);smp_index();
+    setup((int16_t[8]){0,0,127,0,0,0,0,0});
+    {
+        voice_t v = {0}; v.note=60;sample_note_on(&trk[0],&v);
+        check("full LENGTH ends at the last sample, never one nibble past the bank",v.s[3]==(int32_t)(SMP_DATA*2u));
+    }
+    play(60,1.0,y,FS/10);
+    check("a completely full bank ends silently without an out-of-bounds read",rms(y,FS/10)<1e-4);
+    setup((int16_t[8]){0,127,127,1,0,0,127,1});
+    play(60,0.3,y,FS/10);
+    check("last START with LOOP and frozen GRAIN remains inside the final slot",isfinite(rms(y,FS/10)));
     build();
     smp_index();
     check("the bank indexed: three slots, SINE, NOISE and LOW (2 kHz)", smp_ix.count == 3 && !strcmp(smp_names[2], "LOW") && !strcmp(smp_names[0], "SINE") &&
@@ -245,3 +259,4 @@ int main(void)
     printf(bad ? "sample: %d FAILED\n" : "sample: all passed\n", bad);
     return bad != 0;
 }
+

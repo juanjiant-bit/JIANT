@@ -103,7 +103,7 @@ static void sample_note_on(track_t *t, voice_t *v)
     e = &smp_bank.h.e[s];
     n = e->n;
     st = (uint32_t)e->off * 2u + n * (uint32_t)clamp(p[P_E1], 0, 127) / 128u;
-    len = 1u + (((uint32_t)e->off * 2u + n - st) * (uint32_t)clamp(p[P_E2] + 1, 1, 128)) / 128u;
+    len = 1u + (((uint32_t)e->off * 2u + n - st - 1u) * (uint32_t)clamp(p[P_E2] + 1, 1, 128)) / 128u;
     smp_seek(v, s, st);
     v->s[3] = (int32_t)(st + len);
     v->s[4] = (int32_t)st;
@@ -215,3 +215,4 @@ static const engine_t ENG_SAMPLE = {
     .render = sample_render,
     .knob = {P_E0, P_E1, P_E2, P_E4},
 };
+
