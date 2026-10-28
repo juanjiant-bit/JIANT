@@ -1186,7 +1186,7 @@ static __attribute__((noinline)) void rec_columns(void)
             uint32_t v = rp_get(RP_CLICK);
             draw_column(c, RL_LABEL[0], rl_name(0, v), "", v ? VAL(c) : T_DIM, v * 500, RL_ICON[0]);
         } else
-            empty_column(c, T_THEME);
+            empty_column(c);
     }
 }
 static void layer_cards(uint32_t l)

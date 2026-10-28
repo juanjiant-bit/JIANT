@@ -286,13 +286,13 @@ static void menu_cards(void)
         menu_val(ui.menu_sel, v);
         draw_column(2, menu_short(ui.menu_sel), v, "", T_TEXT, ui.menu_sel < MI_VALUES && menu_n(ui.menu_sel) > 1u ?
                     (int32_t)menu_get(ui.menu_sel) * 1000 / (int32_t)(menu_n(ui.menu_sel) - 1u) : -1, ICON_NONE);
-        empty_column(3, T_DIM);
+        draw_column(3, "", "", "", T_DIM, -1, ICON_NONE);
         return;
     }
     for (c = 0; c < 4u; c++) {
         r = f + menu_set() * 4u + c;
         if (r >= f + n) {
-            empty_column(c, T_DIM);
+            draw_column(c, "", "", "", T_DIM, -1, ICON_NONE);
             continue;
         }
         menu_val(r, v);
