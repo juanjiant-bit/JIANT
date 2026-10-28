@@ -1557,8 +1557,8 @@ static void draw_columns(void)
         pat_label(k, tag, nm);
         draw_column(0, "PAT", tag, "", VAL(0u), (int32_t)k * 1000 / (int32_t)(n > 1u ? n - 1u : 1u), ICON_X_PATTERN);
         draw_act_column(1, "LOAD", T_THEME, ICON_AUTO);
-        draw_column(2, "", "", "", T_THEME, -1, ICON_AUTO);
-        draw_column(3, "", "", "", T_THEME, -1, ICON_AUTO);
+        empty_column(2);
+        empty_column(3);
         return;
     }
     if (cur_page()->graph == GR_SLOTS) {                 /* (0.6.12) PROJECT, SECT A-D, then LOAD and SAVE */
@@ -1655,7 +1655,7 @@ static void draw_columns(void)
             int16_t v;
             int on;
             if (id == 0xFFu) {
-                draw_column(c, "", "", "", T_THEME, -1, ICON_AUTO);
+                empty_column(c);
                 continue;
             }
             d = track_desc(TSEL, id);
@@ -1752,7 +1752,7 @@ static void draw_columns(void)
             continue;
         }
         if (!d || !d->label || d->label[0] == '-') {
-            draw_column(c, "", "", "", T_THEME, -1, ICON_AUTO);
+            empty_column(c);
             continue;
         }
         if (cur_page()->id[c] == G_MIDI && cur_page()->scope == SC_GLOBAL) {
