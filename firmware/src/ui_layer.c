@@ -1176,18 +1176,13 @@ static void ly_piano(uint32_t l)
 static __attribute__((noinline)) void rec_columns(void)
 {
     char val[12];
-    uint32_t c;
-        for (c = 0; c < 4u; c++) {
-            uint32_t v = c < RL_N ? rp_get(RL_F[c]) : 0u;
-            if (c == 1u) {
-                int32_t q = TSEL->p[P_HRQ];
-                fmt_int(val, q * 100 / 127);
-                draw_column(c, "REC Q", q ? val : "OFF", q ? "%" : "", VAL(c), q * 1000 / 127, ICON_NONE);
-            } else if (c < RL_N)
-                draw_column(c, RL_LABEL[c], rl_name(c, v), "", !v ? T_DIM : VAL(c), (int32_t)v * 500, RL_ICON[c]);
-            else
-                draw_column(c, "", "", "", T_THEME, -1, ICON_NONE);
-        }
+    int32_t q = TSEL->p[P_HRQ];
+    uint32_t click = rp_get(RP_CLICK);
+    draw_column(0, RL_LABEL[0], rl_name(0, click), "", click ? VAL(0) : T_DIM, click * 500, RL_ICON[0]);
+    fmt_int(val, q * 100 / 127);
+    draw_column(1, "REC Q", q ? val : "OFF", q ? "%" : "", VAL(1), q * 1000 / 127, ICON_NONE);
+    draw_column(2, "", "", "", T_THEME, -1, ICON_NONE);
+    draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
 }
 static void layer_cards(uint32_t l)
 {
@@ -1342,8 +1337,6 @@ static void layer_state(uint32_t l)
         }
     } else if (l == LAYER_REC) {
         b[0] = 'T'; b[1] = (char)('1' + song.sel); b[2] = 0;
-        lst_chip("UNDO", undo_ok ? "READY" : "-", undo_ok);
-        lst_chip("REC Q", TSEL->p[P_HRQ] ? "ON" : "OFF", TSEL->p[P_HRQ] != 0);
         lst_chip("ARMED", b, (song.rec >> song.sel) & 1u);
         lst_chip(b, rec_clearable() ? "SEQUENCE" : "EMPTY", rec_clearable());
         lst_chip("CLICK", rl_name(0, rp_get(RP_CLICK)), rp_get(RP_CLICK) != 0u);
@@ -1427,3 +1420,4 @@ static __attribute__((noinline)) void draw_layer(void)
 }
 
 #include "ui_live.c"                                    /* (p2, main 0.9.11) GLO > LIVE: MANO, RIELES */
+
