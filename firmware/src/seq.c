@@ -1345,7 +1345,7 @@ static uint32_t comp_count(const track_t *t, const step_t *s, uint32_t k)
  * earlier destinations can be known before their source step is reached. */
 static uint8_t shift_map[2][NTRK][NSTEP], shift_len[2][NTRK];
 static uint16_t shift_pass[2][NTRK];
-static __attribute__((minsize)) int shift_cond(const track_t *t, const step_t *s, uint32_t k, uint32_t p)
+static int shift_cond(const track_t *t, const step_t *s, uint32_t k, uint32_t p)
 {
     uint32_t c = CO_COND(k ? s->comp2 : s->comp), nm = s->cnm[k];
     if (c == CC_ALWAYS) return 1;
@@ -1357,7 +1357,7 @@ static __attribute__((minsize)) int shift_cond(const track_t *t, const step_t *s
     }
     return 0; /* Conditions depending on future live events are not offered for SHIFT. */
 }
-static __attribute__((minsize)) void shift_prepare_pass(const track_t *t, uint32_t len, uint32_t pass)
+static void shift_prepare_pass(const track_t *t, uint32_t len, uint32_t pass)
 {
     uint32_t ti = trk_index(t) % NTRK, bank = pass & 1u, i, k, j;
     int16_t move[NSTEP] = {0};
