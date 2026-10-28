@@ -90,6 +90,7 @@
     <pre id="log"></pre>
   </div>
   <p class="small" id="channel"></p>
+  <p class="small" data-t="par14Notice"></p>
   <p><a href="../editor/" style="color:inherit" data-t="editor"></a></p>
   <p><span data-t="manual"></span>
     <a href="https://github.com/juanjiant-bit/JIANT/blob/main/docs/MANUAL.md" target="_blank" rel="noopener" style="color:inherit">English</a> ·
@@ -457,6 +458,9 @@ for (const L of Object.values(TEXT)) {
   L.tip_badpkg = L.tip_loadfail;
   L.tip_stockError = L.tip_stockZip = L.tip_stockNotV15 = L.tip_stockOtherVer = L.tip_stockCustom = L.tip_stockModified = L.tip_stock;
 }
+Object.assign(TEXT.es, {par14Notice:"ADD es la edición principal. Par14 fue retirada tras un reporte de un FM-1 que no arranca; la causa está en investigación. SAMPLE par13b se conserva sin cambios."});
+Object.assign(TEXT.en, {par14Notice:"ADD is the primary edition. Par14 was withdrawn after a report of a non-booting FM-1; the cause is under investigation. SAMPLE par13b remains unchanged."});
+Object.assign(TEXT.ja, {par14Notice:"ADD がメイン版です。FM-1 が起動しなくなった報告を受け、par14 の配布を停止しました。原因は調査中です。SAMPLE par13b は変更しません。"});
 const LANGS = ["es", "en", "ja"];
 const navLang = (navigator.language || "en").toLowerCase();
 let lang = navLang.startsWith("ja") ? "ja" : navLang.startsWith("es") ? "es" : "en";
@@ -715,5 +719,6 @@ $("stock-go").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+
 
 

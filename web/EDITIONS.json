@@ -21,7 +21,7 @@
   },
   "v0.9.9-par14-beta1-86b85ad": {
     "edition": "STEP COMPONENTS (SAMPLE)",
-    "status": "beta"
+    "status": "withdrawn"
   },
   "v0.9.9-par13c-b932605": {
     "edition": "SAMPLE (REC controls)",
@@ -29,11 +29,11 @@
   },
   "v0.9.9-par14-beta1-86b85ad-preview": {
     "edition": "SAMPLE + STEP COMPONENTS",
-    "status": "beta"
+    "status": "withdrawn"
   },
   "v0.9.9-par14-beta2-4be8592-preview": {
     "edition": "SAMPLE + CONTROLS + STEP COMPONENTS",
-    "status": "beta"
+    "status": "withdrawn"
   },
   "v0.9.9-par10c-beta1-67cab79": {
     "edition": "ADDITIVE + CONTROLS",
@@ -41,9 +41,13 @@
   },
   "v0.9.9-par14-beta4-4d3156d-preview": {
     "edition": "SAMPLE + CONTROLS + STEP COMPONENTS + COPY SEQ",
-    "status": "beta"
+    "status": "withdrawn"
   },
   "v0.9.9-par10d-beta2-42947e9": {
+    "edition": "ADDITIVE + CONTROLS + COPY SEQ",
+    "status": "beta"
+  },
+  "v0.9.9-par10d-beta2-42947e9-preview": {
     "edition": "ADDITIVE + CONTROLS + COPY SEQ",
     "status": "beta"
   }

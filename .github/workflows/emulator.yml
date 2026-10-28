@@ -3,7 +3,7 @@
 # main. Needs Settings > Pages > Source: "GitHub Actions" once. The emulator needs only the generated headers; the
 # installer (webapp/installer) and the editor (webapp/editor) need the package, built with JieLi's toolchain (downloaded).
 # Two installers: preview/webapp/installer follows web/PREVIEW when set (otherwise main); webapp/installer follows
-# the approved web/STABLE commit. The browser emulator follows web/PREVIEW too (main without a pin).
+# the approved web/STABLE commit. web/EMULATOR independently freezes the browser-only SAMPLE source.
 name: emulator
 on:
   push:
@@ -29,16 +29,17 @@ jobs:
       - run: pip install Pillow==12.3.0 numpy==2.3.5 fonttools==4.61.1
       - name: generated headers (fonts, icons, palettes, shapes, tables, samples)
         run: python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()"
+      - name: Installer quarantine and edition ordering
+        run: python3 tests/test_installer_channels.py
       - name: Stock sample provisioning tests
         run: node web/test_samples.mjs
       - uses: mymindstorm/setup-emsdk@v14
         with:
           version: 6.0.11                # (the version the emulator is tested with)
       - name: the emulator
-        # (0.9.9-seq2) the emulator runs the beta's firmware (web/PREVIEW's commit, as the beta installer), main's if
-        # no pin is set or the pinned tree's emulator does not build
+        # The frozen browser SAMPLE source is separate from the ADD hardware beta pin.
         run: |
-          P=$(tr -d ' \n' < web/PREVIEW 2>/dev/null || true)
+          P=$(tr -d ' \n' < web/EMULATOR 2>/dev/null || tr -d ' \n' < web/PREVIEW)
           if [ -n "$P" ] && git cat-file -e "$P^{commit}" 2>/dev/null; then
             rm -rf /tmp/emusrc; git worktree add -f --detach /tmp/emusrc "$P"
             cp web/emu/sample-kit-api.h /tmp/emusrc/web/emu/sample-kit-api.h
@@ -46,7 +47,7 @@ jobs:
             if (cd /tmp/emusrc && python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()" \
                 && sh web/emu/build.sh); then
               rm -rf build/emu; mkdir -p build; cp -r /tmp/emusrc/build/emu build/emu
-              echo "emulator: web/PREVIEW ${P::7}"
+              echo "emulator: web/EMULATOR ${P::7}"
             else
               echo "emulator: ${P::7} did not build, main's instead"; sh web/emu/build.sh
             fi
@@ -233,4 +234,5 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
 

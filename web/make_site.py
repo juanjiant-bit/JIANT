@@ -104,6 +104,20 @@ def manual(out):
     print(f"site: {dst}: the manual, {len(names)} screens")
 
 
+def installable_versions(versions, preview):
+    """ADD is primary. par14 is quarantined after a tester reported a non-booting FM-1."""
+    versions = [e for e in versions if e.get("status") != "withdrawn" and
+                not re.match(r"^v?0\.9\.9-par14(?:-|$)", e["version"])]
+    if not versions:
+        raise SystemExit("no installable firmware remains")
+    if not preview and any(e.get("status") == "beta" for e in versions):
+        raise SystemExit("beta firmware is forbidden in the public installer")
+    def priority(e):
+        edition = e.get("edition", "")
+        return 0 if edition.startswith("ADDITIVE") else 1 if edition.startswith("SAMPLE") else 2
+    return sorted(versions, key=priority)
+
+
 def main(pkg, version, out, prev=None):
     pkg, out = Path(pkg), Path(out)
     raw = pkg.read_bytes()
@@ -126,12 +140,7 @@ def main(pkg, version, out, prev=None):
     editions = json.loads((HERE / "EDITIONS.json").read_text(encoding="utf-8"))
     for entry in versions:
         entry.update(editions.get(entry["version"], {}))
-    # Public installer: SAMPLE first, ADDITIVE second, then stable/history.
-    if not version.endswith("-preview"):
-        if any(e.get("status") == "beta" for e in versions):
-            raise SystemExit("beta firmware is forbidden in the public installer")
-        priority = {"SAMPLE": 0, "ADDITIVE": 1}
-        versions.sort(key=lambda e: priority.get(e.get("edition"), 2))
+    versions = installable_versions(versions, version.endswith("-preview"))
     selected = versions[0]
     meta = json.dumps({"version": selected["version"], "product": selected["product"],
                        "pkg": "../../firmware/" + selected["file"],
@@ -151,9 +160,12 @@ def main(pkg, version, out, prev=None):
         f.unlink()
     brand = (HERE / "jiant-ui.css").read_text(encoding="utf-8")
     (inst / "index.html").write_text(html.replace("/*JIANT_UI*/", brand), encoding="utf-8")
-    shutil.copy(pkg, fw / name)
+    allowed = {e["file"] for e in versions}
+    if name in allowed:
+        shutil.copy(pkg, fw / name)
     for e, src in old:
-        shutil.copy(src, fw / e["file"])
+        if e["file"] in allowed:
+            shutil.copy(src, fw / e["file"])
     (fw / "versions.json").write_text(json.dumps(versions, indent=1) + "\n", encoding="utf-8")
     lic = HERE.parent / "LICENSES"                  # the package holds JieLi SDK files (Apache-2.0): their
     (fw / "LICENSES").mkdir(exist_ok=True)          # licence travels next to it, with Felucca's own
@@ -188,5 +200,6 @@ if __name__ == "__main__":
     if len(sys.argv) not in (4, 5):
         sys.exit(__doc__)
     main(*sys.argv[1:5])
+
 
 

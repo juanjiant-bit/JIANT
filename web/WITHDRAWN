@@ -1,2 +1,6 @@
 # versions taken back: the installers no longer offer them (web/fetch_prev.py)
 0.6.59   # the organic boxes, reverted in 0.6.60
+
+0.9.9-par14-beta1 # tester report of non-booting FM-1; root cause unconfirmed
+0.9.9-par14-beta2 # par14 hardware line quarantined
+0.9.9-par14-beta4 # par14 hardware line quarantined
