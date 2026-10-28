@@ -19,8 +19,8 @@ editor update themselves with every change merged into `main`.
 
 | Where | Version |
 |---|---|
-| **Public installer** | **SAMPLE par13b** (first/default), **ADDITIVE par10**, then **STANDARD par12** (stable) |
-| **Preview installer and emulator** | **0.9.9-par13b** — SAMPLE engine |
+| **Public installer** | **SAMPLE par13c** (first/default), **ADDITIVE par10b**, then **STANDARD par12** (stable) |
+| **Preview installer and emulator** | **0.9.9-par13c** — SAMPLE engine |
 | Earlier versions the public installer also offers | 0.9.9-par8, 0.9.9-gen2 (*ULTRA STABLE*), 0.9.9-par6, 0.9.9-par5, 0.9.17, 0.9.14, 0.9.9, 0.8.9 … |
 
 [Public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) · [Beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/) · [Emulator](https://juanjiant-bit.github.io/JIANT/emu/)
@@ -35,13 +35,23 @@ one to go back to.
 
 The [public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) now offers these clearly labelled choices in its **Version** selector:
 
-- **SAMPLE · par13b** (first/default): sample playback; load your own WAVs or a supplied bank from the editor.
-- **ADDITIVE · par10** (second): the last version with the additive synthesis engine, without SAMPLE.
+- **SAMPLE · par13c** (first/default): sample playback; load your own WAVs or a supplied bank from the editor.
+- **ADDITIVE · par10b** (second): additive synthesis, without SAMPLE; includes the new REC shortcuts.
 - **STANDARD · par12** (after these two): stable; neither ADD nor the new SAMPLE engine.
 
 These are existing firmware revisions, not two builds with otherwise identical features.
 Back up projects before switching: engine slot 13 means ADD in par10 and SAMPLE in par13b; sounds are not converted between them.
 Project backups do not include the sample audio bank; keep original WAVs. Earlier versions remain available.
+
+## Recording shortcuts — SAMPLE par13c / ADDITIVE par10b
+
+- Hold **REC + A3** to undo the last edit/take; repeat to redo. **GLO + G4** remains available. One global undo/redo level.
+- Arming REC saves a snapshot before the take. Undo from REC disarms recording to protect the restored take.
+- Hold **REC + B3** to switch recording quantization off or to 100%.
+- Hold **REC + knob 2** to adjust REC Q for the selected track.
+- Unquantized recording retains timing in **1/64 of a track step** (about **1.953 ms at 120 BPM / DIV 1/16**). This is storage resolution, not measured physical input accuracy; notes in the same step share an offset.
+
+See [REC controls and timing](docs/REC_CONTROLS.md). These releases add recording controls; the proposed SHIFT / CHORD components are still separate development work.
 
 ## SAMPLE sampler — 0.9.9-par13b
 

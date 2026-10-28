@@ -157,7 +157,7 @@ jobs:
           sampler = json.loads((preview / "versions.json").read_text())[0]
           shutil.copy(preview / sampler["file"], previous / sampler["file"])
           # Keep ADD near the top even when the history list grows.
-          additive = [e for e in entries if e["version"].startswith("v0.9.9-par10-")]
+          additive = [e for e in entries if e["version"].startswith("v0.9.9-par10b-")]
           rest = [e for e in entries if e not in additive and e["version"] != sampler["version"]]
           (previous / "versions.json").write_text(json.dumps([sampler] + additive + rest) + "\n")
           PY

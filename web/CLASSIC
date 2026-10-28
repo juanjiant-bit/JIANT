@@ -1,3 +1,4 @@
+b58809447a1045d7946761426a6c5d3a8aecd455  # ADDITIVE par10b: REC undo/redo and recording quantization shortcuts
 # Earlier versions the public installer offers next to the current one (web/STABLE), each built from its own commit
 # by .github/workflows/emulator.yml (never a package taken from the live site). One per line: the commit, then a note.
 # Newest first. Up to make_site.py's KEEP_OLD are offered. A version in web/WITHDRAWN stays out.
