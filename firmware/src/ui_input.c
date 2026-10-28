@@ -505,8 +505,8 @@ static int roll_on(void)
 }
 
 /* REC tap on every page: arm / disarm recording on the selected track without navigating; arming while stopped
- * starts the transport too (live recording), except on STEP's piano roll (1.2, Discussion #133): there it arms step
- * recording and the transport stays stopped: the keys write the cursor step (seq_entry), PLAY then records live.
+ * never starts or stops the transport. On STEP's piano roll it arms step
+ * recording: the keys write the cursor step (seq_entry); PLAY separately starts live recording.
  * Armed and playing, STEP's keys record live (at the play head) instead of writing the cursor step */
 static int cp_paste_rec(void);
 static int rec_tap(void)                                /* 1: the arming changed */
@@ -529,8 +529,6 @@ static int rec_tap(void)                                /* 1: the arming changed
         ui_message("KEYS WRITE STEPS");               /* step recording: stopped, at the cursor */
         return 1;
     }
-    if ((song.rec & bit) && !song.playing && !seq_counting())
-        transport_req = 1;
     if ((song.rec & bit) && grid_on())
         ui_message("LANE KEYS RECORD");               /* (the white keys stay the steps) */
     else if ((song.rec & bit) && !ui.home && cur_page()->graph == GR_ROLL)
@@ -1717,6 +1715,12 @@ static void seq_entry(uint32_t pressed)
  * generator, MUTATE and the components make patterns enough) */
 static void presets_turn(int32_t s)
 {
+    if (gco_on()) {
+        gl_cur = (uint8_t)(((int32_t)gl_cur + s) & (GL_N - 1u));
+        ui.force = 1;
+        return;
+    }
+
     if (!ui.home && PAGES[ui.page].fam == FAM_SEQ) {
         char b[12];
         cursor_set((int32_t)ui.cursor + s);
@@ -2637,13 +2641,7 @@ static void ui_input_frame(void)
         uint64_t cph = cp_held();
         if (cph)                                        /* (seq2h) step keys held: COPY them (the range between) */
             cp_copy(cph);
-        else if (!ui.home && !ui.layer && !ui.confirm && song.seq_mode && cur_page()->graph == GR_ROLL && !song.grid &&
-            ((song.rec >> song.sel) & 1u) && !live_rec_sel() && !chain_busy()) {   /* (0.9.9-seq2c) step recording: */
-            if (ui.entry_open && lock_held())
-                ent_knob(0, s);                         /* a chord held: its LEN, as KNOB 1 (the roll's bar grows) */
-            else if (!(fm1_in.notes & ~kb_layer))
-                cursor_set((int32_t)ui.cursor + (s > 0 ? 1 : -1));   /* no key: the cursor a step (round in LEN) */
-        } else
+        else
             nav_select(s);
     }
     for (k = 0; k < 4u && !kq; k++) {
