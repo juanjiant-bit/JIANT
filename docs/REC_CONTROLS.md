@@ -1,3 +1,7 @@
+# Beta only
+
+Public editions remain SAMPLE par13b and ADDITIVE par10. The controls below are in SAMPLE par14-beta2 and ADDITIVE par10c-beta1.
+
 # REC controls and timing
 
 - Hold **REC + A3**: UNDO; repeat to REDO. **GLO + G4** remains available. There is one global undo/redo level, not a history stack.
@@ -28,3 +32,9 @@ A step has one shared microtiming offset; notes grouped into the same step share
 ## Validation
 
 The focused test exercises real button/key gestures, undo/redo of a take, arming/disarming, guards, click settings, quantization and layer labels. Timing tests are compared against each edition's exact source baseline. The baseline contains an old audio-hash assertion against 0.9.0 that may already fail; equality of complete timing output and exit status ensures this patch does not introduce another timing difference. Target image capacity, RAM and DSP budgets must pass before publication.
+
+## Independent transport and navigation
+
+- REC only arms/disarms; PLAY independently starts/stops the transport. Stopped step entry does not issue a PLAY request.
+- SELECT pages through SEQ even when recording is armed. PRESET keeps horizontal step selection.
+- PRESET selects the 16 global lane steps on both GLO > COMPS pages, with wrap. It does not load presets there.

@@ -30,5 +30,13 @@
   "v0.9.9-par14-beta1-86b85ad-preview": {
     "edition": "SAMPLE + STEP COMPONENTS",
     "status": "beta"
+  },
+  "v0.9.9-par14-beta2-4be8592-preview": {
+    "edition": "SAMPLE + CONTROLS + STEP COMPONENTS",
+    "status": "beta"
+  },
+  "v0.9.9-par10c-beta1-67cab79": {
+    "edition": "ADDITIVE + CONTROLS",
+    "status": "beta"
   }
 }
