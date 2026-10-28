@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+static uint8_t shift_valid[2][NTRK];
 /* Keyboard, scale, arpeggiator, sequencer and transport.
  * Everything here runs in the audio ISR, once per CTL-sample block (64 samples since 0.9.9 ctl64; the note-ons it
  * fires carry the sample within the block they fall on: ev_off, voice.c), and
@@ -246,13 +247,13 @@ static int32_t chord_pick(uint32_t mask, int32_t rel, const int8_t *p, uint32_t 
             return p[i];
     return -1;
 }
-static uint32_t chord_build(const track_t *t, uint32_t root, uint8_t *out)
+static uint32_t chord_build_mode(const track_t *t, uint32_t root, uint8_t *out, uint32_t mode)
 {
     static const int8_t DIA[5][4] = {{0, 2, 4, -1}, {0, 2, 4, 6}, {0, 2, 4, 8}, {0, 1, 4, -1}, {0, 3, 4, -1}};
     static const int8_t SHP[6][4] = {{0, 4, 7, -1}, {0, 3, 7, -1}, {0, 4, 7, 10}, {0, 4, 7, 11}, {0, 3, 7, 10},
                                      {0, 7, 12, -1}};
     const engine_t *e = ENGINES[eng_idx(t->eng_req)];
-    uint32_t mode = (uint32_t)t->p[P_CHRD], vc = (uint32_t)t->p[P_CVOI], n = 0, i, j, ti = trk_index(t) % NTRK;
+    uint32_t vc = (uint32_t)t->p[P_CVOI], n = 0, i, j, ti = trk_index(t) % NTRK;
     int32_t nt[KB_CH + 1], r = (int32_t)root;
     if (!mode || mode > CD_POW || e->oneshot || (e->keys && e->keys(t, 0) >= 0) || t->p[P_VOICE] != V_POLY) {
         out[0] = (uint8_t)root;
@@ -326,6 +327,10 @@ static uint32_t chord_build(const track_t *t, uint32_t root, uint8_t *out)
     for (i = 0; i < j; i++) chord_last[ti][i] = out[i];
     chord_nlast[ti] = (uint8_t)j;
     return j;
+}
+static uint32_t chord_build(const track_t *t, uint32_t root, uint8_t *out)
+{
+    return chord_build_mode(t, root, out, (uint32_t)t->p[P_CHRD]);
 }
 static uint32_t chord_gap(const track_t *t) { return (uint32_t)clamp(t->p[P_CSTR], 0, 127) * (FS / 2000u); }   /* (~0.5 ms a step) */
 
@@ -1244,6 +1249,7 @@ static void fg_reset(void);                         /* (fugue.c) */
 static void gl_reset(void);                         /* (seq2f: the global lane) */
 static void seq_start(void)
 {
+    memset(shift_valid, 0, sizeof shift_valid);
     uint32_t i;
     ms_clock = 0;                                  /* (JIANT) the modulation sequences from their step 0 */
     if (mo_clock_on()) {                           /* (0.6.72) MIDI OUT CLOCK / ALL: START, the clock from here */
@@ -1334,6 +1340,56 @@ static uint32_t comp_count(const track_t *t, const step_t *s, uint32_t k)
         return c == CC_NM ? h : p + 1u - h;
     default: return t->c_acc;
     }
+}
+/* SHIFT: a circular, non-destructive playback map. Conditions are pass based so
+ * earlier destinations can be known before their source step is reached. */
+static uint8_t shift_map[2][NTRK][NSTEP], shift_len[2][NTRK];
+static uint16_t shift_pass[2][NTRK];
+static int shift_cond(const track_t *t, const step_t *s, uint32_t k, uint32_t p)
+{
+    uint32_t c = CO_COND(k ? s->comp2 : s->comp), nm = s->cnm[k];
+    if (c == CC_ALWAYS) return 1;
+    if (c == CC_FIRST) return !p;
+    if (c == CC_NFIRST) return p != 0u;
+    if (c == CC_NM || c == CC_NNM) {
+        uint32_t n = CNM_N(nm), m = CNM_M(nm), ok = n <= m && p % m == n - 1u;
+        return c == CC_NM ? ok : !ok;
+    }
+    return 0; /* Conditions depending on future live events are not offered for SHIFT. */
+}
+static void shift_prepare_pass(const track_t *t, uint32_t len, uint32_t pass)
+{
+    uint32_t ti = trk_index(t) % NTRK, bank = pass & 1u, i, k, j;
+    int16_t move[NSTEP] = {0};
+    const step_t *st = seq_steps(t);
+    len = (uint32_t)clamp((int32_t)len, 1, NSTEP);
+    if (shift_valid[bank][ti] && shift_pass[bank][ti] == pass && shift_len[bank][ti] == len) return;
+    shift_valid[bank][ti] = 1; shift_pass[bank][ti] = (uint16_t)pass; shift_len[bank][ti] = (uint8_t)len;
+    for (i = 0; i < len; i++) for (k = 0; k < 2u; k++) {
+        uint32_t a = CO_ACT(k ? st[i].comp2 : st[i].comp);
+        if (a == CA_SHIFT && shift_cond(t, &st[i], k, pass)) {
+            int32_t d = (int32_t)((k ? st[i].carg2 : st[i].carg) % 127u) - 63;
+            for (j = 0; j <= st[i].clen[k] && j < CL_MAX; j++)
+                move[(i + j) % len] += (int16_t)d;
+        }
+    }
+    for (i = 0; i < len; i++) shift_map[bank][ti][i] = (uint8_t)(move[i] % (int32_t)len ? 255u : i);
+    for (i = 0; i < len; i++) if (move[i] % (int32_t)len) {
+        uint32_t dst = (uint32_t)(((int32_t)i + move[i] % (int32_t)len + (int32_t)len) % (int32_t)len);
+        shift_map[bank][ti][dst] = (uint8_t)i; /* Collisions: later source in score order replaces the destination. */
+    }
+}
+static const step_t *shift_step_pass(const track_t *t, uint32_t idx, uint32_t pass)
+{
+    static const step_t rest = {{0}, 0, ST_REST};
+    uint32_t ti = trk_index(t) % NTRK, bank = pass & 1u, src = seq_src(t, idx);
+    if (shift_valid[bank][ti]) src = shift_map[bank][ti][src];
+    return src == 255u ? &rest : &seq_steps(t)[src];
+}
+
+static const step_t *shift_step(const track_t *t, uint32_t idx)
+{
+    return shift_step_pass(t, idx, t->loops);
 }
 /* SEQ's notes: the pattern's steps with notes (or hits), in order; the k-th of them (*cnt: how many) */
 static const step_t *seq_unit(const track_t *t, uint32_t len, uint32_t k, uint32_t *cnt)
@@ -1509,7 +1565,7 @@ static __attribute__((noinline)) const step_t *comp_run(track_t *t, const step_t
                                                     * in mix_block's RAM code) */
 {
     uint32_t i, n = 0, k, acted = 0, rep = 0, rq = 0, rb = 0, arp = 0, av = 0, mute = 0, ti = trk_index(t) % NTRK, cnt;
-    uint32_t g = 0, gm = 0, ps, grep = 0;
+    uint32_t g = 0, gm = 0, ps, grep = 0, chord = 0;
     const step_t *src = s;
     t->cx_deg = t->cx_oct = 0;
     t->cx_rnd = t->cx_rat = t->cx_dec = t->cx_tch = t->cx_bend = t->cx_arp = t->cx_lock = 0;
@@ -1546,6 +1602,7 @@ static __attribute__((noinline)) const step_t *comp_run(track_t *t, const step_t
         cspan_t *c;
         if (!a || a >= CA_N)
             continue;
+        if (a == CA_SHIFT) { acted |= shift_cond(t, s, k, t->loops); continue; }
         ok = (uint32_t)comp_cond(t, s, k, acted);
         if (a == CA_TRANS) {
             mv = CV_TR_MOVE(v);
@@ -1605,12 +1662,13 @@ static __attribute__((noinline)) const step_t *comp_run(track_t *t, const step_t
         case CA_LOCK: if (j && t->cx_lock != 2u) t->cx_lock = 1; break;
         case CA_SOUND: t->cx_tch = (uint8_t)(1u + v % 3u); break;
         case CA_BEND: t->cx_bend = (uint8_t)(1u + v % 25u); break;
+        case CA_CHORD: chord = 1u + v % CD_POW; break;
         default: break;
         }
     }
     if (!arp)
         t->arp_from = 0;
-    if (!rep && !arp && !mute)
+    if (!rep && !arp && !mute && !chord)
         return s;
     if (rep == 2u || rep == 3u)                     /* STUTTER: its step again (3), or nothing between (2) */
         src = rep == 3u ? &t->cvp : s;
@@ -1632,6 +1690,9 @@ static __attribute__((noinline)) const step_t *comp_run(track_t *t, const step_t
         t->cvs.probability = 0;
         if (rep == 2u) { t->cvs.time = ST_REST; t->cvs.n = 0; t->cvs.hit = 0; }
     }
+    /* CHORD changes the rendered copy only. The track's CHORD page, root and source stay intact. */
+    if (chord && t->cvs.time == ST_NOTE && t->cvs.n)
+        t->cvs.n = (uint8_t)chord_build_mode(t, t->cvs.note[0], t->cvs.note, chord);
     t->cvs.comp = t->cvs.carg = t->cvs.comp2 = t->cvs.carg2 = 0;
     if (arp == 1u) {                                /* ARP: from here (seq_step: cva, arp_from) */
         t->cvs.comp = CO_MAKE(CA_ARP, 0u);
@@ -1776,7 +1837,11 @@ static uint32_t seq_early(const track_t *t, uint32_t period, uint32_t len)
     int32_t m;
     if (t->jump_to || t->rev || (t->pfx & PFX_RND) || (!ni && (chain.running || chain.armed)))
         return 0;
-    s = &seq_steps(t)[seq_src(t, ni)];
+    {
+        uint32_t pass = t->loops + (ni == 0u && t->loops < 65535u);
+        shift_prepare_pass(t, len, pass);
+        s = shift_step_pass(t, ni, pass);
+    }
     if (s->time != ST_NOTE || (!s->n && !s->hit))       /* (nothing to play there: never early) */
         return 0;
     m = ST_MICRO(s);
@@ -1986,7 +2051,7 @@ static uint32_t tie_span(const track_t *t, uint32_t period, uint32_t len)
     uint32_t n = step_samples(t, period, t->seq_idx), k;
     for (k = 1; k < len; k++) {
         uint32_t i = (t->seq_idx + k) % len;
-        if (seq_steps(t)[seq_src(t, i)].time != ST_TIE)
+        if (shift_step(t, i)->time != ST_TIE)
             break;
         n += step_samples(t, period, i);
     }
@@ -2068,7 +2133,7 @@ static int chord_auto(const track_t *t, uint32_t len)
     const step_t *nx;
     if (t->p[P_VOICE] != V_POLY || t->p[P_GLIDE] <= 0)
         return 0;
-    nx = &seq_steps(t)[seq_src(t, (t->seq_idx + 1u) % len)];
+    nx = shift_step(t, (t->seq_idx + 1u) % len);
     return nx->time == ST_NOTE && nx->n;
 }
 
@@ -2097,7 +2162,7 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
     uint32_t vel = (s->flags & SF_ACCENT) ? 127u : (s->vel ? s->vel : 96u);
     uint32_t slide_in = t->seq_hold && t->seq_n && !(skip & SEQ_REP);
     uint32_t len = t->p[P_SLEN] ? (uint32_t)t->p[P_SLEN] : 1u;
-    uint32_t next_tie = seq_steps(t)[seq_src(t, (t->seq_idx + 1u) % len)].time == ST_TIE;
+    uint32_t next_tie = shift_step(t, (t->seq_idx + 1u) % len)->time == ST_TIE;
     uint32_t div, hits = step_parts(t, s, &div);
     const step_t *arp = arp_owner(t, s);            /* (0.6.39) an ARP component: one of its notes a part */
     uint8_t aa = 0, ra = t->cx_rnd, ba = (uint8_t)(t->cx_bend ? t->cx_bend - 1u : 0u);   /* (seq2d: comp_run's) */
@@ -2514,8 +2579,9 @@ static void seq_tick(track_t *t, uint32_t n)
         if (trk_index(t) < NPART && dxo_n[trk_index(t)])
             dxo_rec_hold(t, t->seq_idx);                /* (0.8.5) a held ratchet records into it */
         {
-            const step_t *s = &seq_steps(t)[(t->pfx & PFX_RND) && !(rng() & 1u)   /* (JIANT) RANDOM held: half the */
-                                            ? rng() % (len ? len : 1u) : seq_src(t, t->seq_idx)];   /* steps, any */
+            shift_prepare_pass(t, len, t->loops);
+            const step_t *s = (t->pfx & PFX_RND) && !(rng() & 1u)   /* (JIANT) RANDOM held: half the */
+                                            ? &seq_steps(t)[rng() % (len ? len : 1u)] : shift_step(t, t->seq_idx);   /* steps, any */
             uint32_t skip = SEQ_ROLLED, i, k;
             t->mic = (int8_t)ST_MICRO(s);               /* (0.6.88) its own TIMING (late: seq_step) */
             s = comp_lane(t, s);                        /* (0.6.47) C.LEN: the lane's component on it */
@@ -2799,3 +2865,4 @@ static void events_block(uint32_t n)
 }
 
 #include "song_play.c"                           /* the song: the ISR's part (song_chain.c) */
+

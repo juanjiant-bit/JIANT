@@ -571,10 +571,15 @@ static int gl_ui(void)
     return bad;
 }
 
-int main(void)
+static int original_comp_main(void)
 {
     int bad = cycle() + actions() + mono_poly() + format() + comp_ui();
     bad += gl_example() + gl_mono_poly() + gl_empty() + gl_format() + gl_ui();
     printf("%s\n", bad ? "COMP TEST FAILED" : "comp tests passed");
     return bad != 0;
 }
+
+
+#ifndef STEP_EXTENSIONS_TEST
+int main(void) { return original_comp_main(); }
+#endif
