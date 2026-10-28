@@ -38,5 +38,13 @@
   "v0.9.9-par10c-beta1-67cab79": {
     "edition": "ADDITIVE + CONTROLS",
     "status": "beta"
+  },
+  "v0.9.9-par14-beta4-4d3156d-preview": {
+    "edition": "SAMPLE + CONTROLS + STEP COMPONENTS + COPY SEQ",
+    "status": "beta"
+  },
+  "v0.9.9-par10d-beta2-42947e9": {
+    "edition": "ADDITIVE + CONTROLS + COPY SEQ",
+    "status": "beta"
   }
 }

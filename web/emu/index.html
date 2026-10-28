@@ -78,7 +78,7 @@ footer small { font-size: 11px; opacity: .8; }
 <main>
 <div class="keys" id="sample-bank-controls">
   <label>Sample bank:
-    <select id="sample-bank"><option value="">Saved bank / Kit 2 if empty</option><option value="factory-voices.json">Kit 2 · Voices + instruments (7)</option><option value="factory-samples.json">Kit 1 · Synth (12)</option></select>
+    <select id="sample-bank"><option value="">Saved bank / Kit 3 if empty</option><option value="factory-pack3.json">Kit 3 · Uploaded pack (9)</option><option value="factory-voices.json">Kit 2 · Voices + instruments (7)</option><option value="factory-samples.json">Kit 1 · Synth (12)</option></select>
   </label>
   <span>Choose before Switch on. The loaded kit will be ready on T1. To change banks, reload this page.</span>
   <button id="sample-play" disabled>Play kit on T1</button>
@@ -472,9 +472,9 @@ async function switchOn() {
   try {
     const ac = new AudioContext({ sampleRate: 44100, latencyHint: "interactive" });
     let sectors = loadFlash();
-    const sampleChoice = document.getElementById("sample-bank").value || (!hasSampleBank(sectors) ? "factory-voices.json" : "");
+    const sampleChoice = document.getElementById("sample-bank").value || (!hasSampleBank(sectors) ? "factory-pack3.json" : "");
     if (sampleChoice) {
-      if (!["factory-voices.json", "factory-samples.json"].includes(sampleChoice)) throw new Error("Invalid sample bank selection");
+      if (!["factory-pack3.json", "factory-voices.json", "factory-samples.json"].includes(sampleChoice)) throw new Error("Invalid sample bank selection");
       const response = await fetch("../webapp/editor/" + sampleChoice, { cache: "no-cache" });
       if (!response.ok) throw new Error("Sample bank: HTTP " + response.status);
       sectors = withSampleBank(sectors, encodeSampleBank(await response.json()));
@@ -493,7 +493,10 @@ async function switchOn() {
           res();
         }
         else if (m.type === "sample-ready") showSampleStatus(m);
-        else if (m.type === "error") rej(new Error(m.message));
+        else if (m.type === "error") {
+          say("Emulator stopped: " + m.message + ". Reload the page to restart.");
+          rej(new Error(m.message));
+        }
         else if (m.type === "frame") {
           if (m.fb) drawScreen(m.fb);
           if (m.leds) drawLights(lastLeds = m.leds, m.anim);
@@ -527,3 +530,4 @@ document.addEventListener("visibilitychange", () => send({ type: "visible", on: 
 </script>
 </body>
 </html>
+

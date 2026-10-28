@@ -43,7 +43,13 @@ if (typeof registerProcessor === "function") {
       this.frames = 0;
       this.queue = [];                                // button / key changes, each held >= HOLD_MS of device time
       this.nextOk = 0;
-      this.port.onmessage = (e) => this.onMessage(e.data);
+      this.port.onmessage = async (e) => {
+        try { await this.onMessage(e.data); }
+        catch (error) {
+          this.ex = null;
+          this.port.postMessage({type:"error", message:String(error && error.message || error)});
+        }
+      };
     }
 
     async onMessage(m) {
@@ -127,6 +133,16 @@ if (typeof registerProcessor === "function") {
     }
 
     process(inputs, outputs) {
+      try { return this.renderBlock(inputs, outputs); }
+      catch (error) {
+        for (const channel of outputs[0] || []) channel.fill(0);
+        this.ex = null;
+        this.port.postMessage({type:"error", message:String(error && error.message || error)});
+        return false;
+      }
+    }
+
+    renderBlock(inputs, outputs) {
       const ex = this.ex;
       if (!ex) return true;
       if (this.queue.length) this.input();
@@ -146,3 +162,4 @@ if (typeof registerProcessor === "function") {
   }
   registerProcessor("felucca", Felucca);
 }
+

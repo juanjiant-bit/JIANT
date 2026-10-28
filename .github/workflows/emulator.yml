@@ -29,6 +29,8 @@ jobs:
       - run: pip install Pillow==12.3.0 numpy==2.3.5 fonttools==4.61.1
       - name: generated headers (fonts, icons, palettes, shapes, tables, samples)
         run: python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()"
+      - name: Stock sample provisioning tests
+        run: node web/test_samples.mjs
       - uses: mymindstorm/setup-emsdk@v14
         with:
           version: 6.0.11                # (the version the emulator is tested with)
@@ -231,3 +233,4 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+

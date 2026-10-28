@@ -204,7 +204,7 @@
         <input type="file" id="smpfile" accept="audio/*,.wav,.WAV" multiple hidden>
         <label><span data-t="smpRate"></span> <select id="smprate"><option value="2000">2 kHz (x4 ~6 s)</option><option value="3000">3 kHz</option><option value="4000">4 kHz</option><option value="6000">6 kHz</option>
           <option value="8000" selected>8 kHz</option><option value="11025">11 kHz</option><option value="16000">16 kHz</option></select></label>
-        <select id="smpfactorybank" aria-label="Factory sample bank"><option value="factory-samples.json">Synth (12)</option><option value="factory-voices.json">Voices + instruments (7)</option></select> <button id="smpfactory" data-t="smpFactory"></button> <button id="smpclear" data-t="smpClear"></button> <button id="smpsend" data-t="smpSend"></button></p>
+        <select id="smpfactorybank" aria-label="Factory sample bank"><option value="factory-pack3.json">Uploaded pack (9)</option><option value="factory-samples.json">Synth (12)</option><option value="factory-voices.json">Voices + instruments (7)</option></select> <button id="smpfactory" data-t="smpFactory"></button> <button id="smpclear" data-t="smpClear"></button> <button id="smpsend" data-t="smpSend"></button></p>
       <div id="smplist"></div></div>
   </section>
 
@@ -2935,7 +2935,7 @@ $("smpfile").addEventListener("change", (e) => op(async () => {
 $("smpfactory").addEventListener("click", () => op(async () => {
   const d = dev;
   const resource = $("smpfactorybank").value;
-  if (!["factory-samples.json", "factory-voices.json"].includes(resource)) throw new Error("Invalid factory bank selection");
+  if (!["factory-pack3.json", "factory-samples.json", "factory-voices.json"].includes(resource)) throw new Error("Invalid factory bank selection");
   const response = await fetch(resource, { cache: "no-cache" });
   if (!response.ok) throw new Error("Factory samples: HTTP " + response.status);
   const bank = await response.json();
@@ -4916,5 +4916,6 @@ if (!MOCK && !navigator.requestMIDIAccess) sayK("nomidi");
 </script>
 </body>
 </html>
+
 
 

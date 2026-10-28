@@ -204,6 +204,11 @@ const TEXT = {
 };
 /* (0.9.11) Spanish (most of JIANT's people), the messages of every failure the installer tells apart, and the
  * troubleshooting box of each (tip_<code>: the steps, split at "|") */
+Object.assign(TEXT.ja, {
+  editionSample: "SAMPLE: ADD の代わりにサンプルを再生します。エディターから読み込めます。エディション変更前にプロジェクトをバックアップしてください。",
+  editionAdd: "ADDITIVE: 加算合成を使います。SAMPLE はありません。変更前にバックアップしてください。",
+  editionStandard: "標準エディション。変更前にプロジェクトをバックアップしてください。",
+});
 Object.assign(TEXT.en, {
   intro: "Connect the FM-1 by USB. (Works in Chrome or Edge on a computer; Chrome on Android may work too. Not on iPhone/iPad.)",
   back: "Get official FM-1 V15 from M-VAVE and select the unmodified FM-1.fwsc. The browser validates it locally; it is not sent to a server.",
@@ -523,7 +528,7 @@ const versions = meta.versions && meta.versions.length ? meta.versions : [{ vers
 const productOfVersion = (v) => v.product || meta.product;
 let product = meta.product;
 let loadEpoch = 0;
-const versionLabel = (v) => v.edition === "SAMPLE" ? v.version.replace(/-preview$/, "") : v.version;
+const versionLabel = (v) => (v.edition || "").startsWith("SAMPLE") ? v.version.replace(/-preview$/, "") : v.version;
 function fillVersions() {
   const sel = $("ver"), at = sel.selectedIndex;
   sel.textContent = "";
@@ -534,7 +539,8 @@ function fillVersions() {
 }
 function showEdition() {
   const v = versions[+$("ver").value] || versions[0];
-  $("edition-info").textContent = t(v.edition === "SAMPLE" ? "editionSample" : v.edition === "ADDITIVE" ? "editionAdd" : "editionStandard");
+  $("edition-info").textContent = t((v.edition || "").startsWith("SAMPLE") ? "editionSample" : (v.edition || "").startsWith("ADDITIVE") ? "editionAdd" : "editionStandard");
+  if (preview && meta.stockSamples && (v.edition || "").startsWith("SAMPLE")) $("edition-info").textContent += lang === "es" ? " Incluye el kit de 9 samples si el banco está vacío; conserva tus samples existentes." : " Includes the 9-sample kit when the bank is empty; existing samples are preserved.";
 }
 async function loadVersion(i) {
   const v = versions[i] || versions[0], epoch = ++loadEpoch;
@@ -643,9 +649,31 @@ $("go").addEventListener("click", async () => {
   lockInstaller(true);
   try {
     const up = await begin();
-    await runInstall({ up, image, product, ui, state });
+    const selected = versions[+$("ver").value] || versions[0];
+    const stockBank = preview && meta.stockSamples && (selected.edition || "").startsWith("SAMPLE");
+    // Fetch and validate before writing firmware; a failed download must not start an update.
+    let bank = null;
+    if (stockBank) {
+      const response = await fetch(meta.stockSamples, {cache:"reload"});
+      if (!response.ok) throw new Error("Stock sample download: HTTP " + response.status);
+      bank = encodeSampleBank(await response.json());
+    }
+    const result = await runInstall({ up, image, product, ui, state });
+    if (result !== "done") return;
+    if (bank) {
+      say(lang === "es" ? "Firmware instalado. Revisando samples…" : "Firmware installed. Checking samples…");
+      try {
+        const samples = await provisionStockSamples(up, bank);
+        log("stock samples: " + samples.status);
+        if (samples.status === "unsupported") throw new Error("SAMPLE bank protocol unavailable");
+      } catch (error) {
+        log("stock samples: " + error.message);
+        say(lang === "es" ? "Firmware instalado; no se pudo cargar el kit. Reintentá desde Samples en el editor." : "Firmware installed; sample kit was not loaded. Retry from Samples in the editor.");
+        return;
+      }
+    }
     sayK("done");
-  } catch (e) { showError(e); }
+  } catch (e) { showError(e); } finally { lockInstaller(false); }
   log(`firmware: ${state.fw ? `${state.fw.kind} ${state.fw.text || ""} ${state.fw.version || ""}` : "-"}`);
   lockInstaller(false);
 });
@@ -687,4 +715,5 @@ $("stock-go").addEventListener("click", async () => {
 </script>
 </body>
 </html>
+
 

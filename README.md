@@ -20,7 +20,7 @@ editor update themselves with every change merged into `main`.
 | Where | Version |
 |---|---|
 | **Public installer** | **SAMPLE par13b** (first/default), **ADDITIVE par10**, then **STANDARD par12** (stable) |
-| **Preview installer and emulator** | **0.9.9-par14-beta2** — SAMPLE, new controls and step components (beta only) |
+| **Preview installer and emulator** | **0.9.9-par14-beta4** — SAMPLE, new controls and step components (beta only) |
 | Earlier versions the public installer also offers | 0.9.9-par8, 0.9.9-gen2 (*ULTRA STABLE*), 0.9.9-par6, 0.9.9-par5, 0.9.17, 0.9.14, 0.9.9, 0.8.9 … |
 
 [Public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) · [Beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/) · [Emulator](https://juanjiant-bit.github.io/JIANT/emu/)
@@ -51,7 +51,7 @@ Project backups do not include the sample audio bank; keep original WAVs. Earlie
 - Hold **REC + knob 2** to adjust REC Q for the selected track.
 - Unquantized recording retains timing in **1/64 of a track step** (about **1.953 ms at 120 BPM / DIV 1/16**). This is storage resolution, not measured physical input accuracy; notes in the same step share an offset.
 
-See [REC controls and timing](docs/REC_CONTROLS.md). The beta contains the new recording controls; SAMPLE par14-beta2 also includes SHIFT / CHORD. The public installer keeps yesterday's SAMPLE par13b and ADDITIVE par10.
+See [REC controls and timing](docs/REC_CONTROLS.md). The beta contains the new recording controls; SAMPLE par14-beta4 also includes SHIFT / CHORD. The public installer keeps yesterday's SAMPLE par13b and ADDITIVE par10.
 
 ### Beta panel controls
 
@@ -59,14 +59,28 @@ See [REC controls and timing](docs/REC_CONTROLS.md). The beta contains the new r
 - **SELECT changes SEQ pages**, even while REC is armed. **PRESET moves the selected step horizontally**.
 - In **GLO > COMPS / COMPS 2**, **PRESET selects the global step**, wrapping over its 16 steps; it does not load a sound.
 
-## Step components — SAMPLE par14-beta2 (experimental)
+## Step components — SAMPLE par14-beta4 (experimental)
 
-All new recording controls and step components are **beta only**. Use the [beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/): SAMPLE par14-beta2 includes SHIFT and CHORD; ADDITIVE par10c-beta1 has the recording shortcuts. The public installer retains SAMPLE par13b and ADDITIVE par10.
+All new recording controls and step components are **beta only**. Use the [beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/): SAMPLE par14-beta4 includes SHIFT and CHORD; ADDITIVE par10d-beta2 has the recording shortcuts. The public installer retains SAMPLE par13b and ADDITIVE par10.
 
 - **SHIFT** in SEQ > COMP / COMP 2: KNOB 4 moves an event -63..+63 track steps; 0 keeps it in place. The playhead stays on its grid. A moved event replaces the destination during playback; the saved pattern is unchanged. It wraps inside LEN. KNOB 3 offers ALWAYS, FIRST, !FIRST, N:M and !N:M; KNOB 2 sets the affected range. Edits while playing take effect on the next pass.
 - **CHORD**: select the chord shape with KNOB 4; the step's first note is its root. It reuses the existing scale/voicing generator and stacks with COMP 2 and the global/master lane, respecting MONO/POLY. It retains the existing mono/kit guards and four-note maximum.
 
 Playback, replacement, early notes, ratchets, N:M, chord shapes, COMP 2, master and project save/load have automated tests. Physical FM-1 testing is still pending. Back up projects before trying the beta; older firmware does not understand the two new action codes. See [component behavior and validation](docs/STEP_EXTENSIONS.md).
+
+## COPY SEQ / PASTE SEQ — beta only
+
+Hold **SEQ + E5** to **COPY SEQ**; select the destination track and hold **SEQ + F5** to **PASTE SEQ**. These commands are shown in the SEQ hold subpage. They copy up to 64 steps and LEN, including notes/hits, timing, components and compatible per-step locks. The destination engine, preset and sound stay unchanged. Locks for a different engine are skipped; continuous automation is not copied. Drum and melodic phrases cannot be pasted across those two formats. Paste replaces the destination sequence and supports UNDO (**REC + A3** or **GLO + G4**). Stop song-chain playback before pasting.
+
+Available in SAMPLE **par14-beta4** and ADDITIVE **par10d-beta2**, in the beta installer only.
+
+## Uploaded sample pack — Kit 3 (9 sounds)
+
+The emulator now offers **Kit 3 · Uploaded pack (9)**, alongside the previous kits. It is the default only when no valid saved bank exists. To replace a saved bank, choose Kit 3 before switching on. All nine supplied sounds fit in **6116 / 6144 bytes**, using shortened tails and different sample rates; see [the slot map and conversion](web/FACTORY-PACK3.md).
+
+The **beta SAMPLE installer** provisions this bank after a successful firmware update **only if the device reports an empty sample bank**. Existing samples are preserved. ADDITIVE and the public installer do not provision samples. The editor also offers this bank for explicit loading and sending.
+
+SAMPLE par14-beta4 corrects a one-sample overread at full LENGTH, verified with a bounds sanitizer. This is a confirmed defect; the reported screen freeze while changing SLOT is still under investigation. Automated playback and screen-refresh stress tests do not replace testing on the physical FM-1.
 
 ## SAMPLE sampler — 0.9.9-par13b
 
@@ -91,7 +105,7 @@ See [factory sounds, rates and source](web/FACTORY-SAMPLES.md).
 
 The [emulator](https://juanjiant-bit.github.io/JIANT/emu/) shows **Sample bank** above the instrument. Before pressing **Switch on**, choose:
 
-- **Saved bank / Kit 2 if empty** preserves a valid bank already saved in this browser, or loads Kit 2 when none is available.
+- **Saved bank / Kit 3 if empty** preserves a valid bank already saved in this browser, or loads Kit 2 when none is available.
 - **Kit 2 · Voices + instruments (7)** loads the seven-sound bank with VOICE 06, VOICE 10 and VOICE 14.
 - **Kit 1 · Synth (12)** loads the original synthetic factory bank.
 
@@ -3413,3 +3427,4 @@ Fixes from the first users' reports:
 
 ### v0.5
 First public release.
+

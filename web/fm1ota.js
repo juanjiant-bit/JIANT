@@ -282,6 +282,7 @@ export class Updater {
     if (!back) throw fail("noreturn", "the device did not come back: power-cycle it");
     back.link.close();
     if (back.id.text !== product) throw fail("mismatch", `installed, but the device reports ${back.id.text}`, back.id.text);
+    this.installedPorts = {input: back.link.input, output: back.link.output};
     step("done", back.id.text);
     return back.id.text;
   }
@@ -311,8 +312,10 @@ export class Updater {
       if (!back) throw fail("noreturn", "The FM-1 did not return after resuming the write.");
       back.link.close();
       if (back.id.text !== product) throw fail("mismatch", "The FM-1 reports a different firmware after resuming.", back.id.text);
-      step("done", back.id.text);
+      this.installedPorts = {input: back.link.input, output: back.link.output};
+    step("done", back.id.text);
     }
     return true;
   }
 }
+
