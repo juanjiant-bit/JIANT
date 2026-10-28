@@ -877,6 +877,11 @@ static __attribute__((noinline)) void gauge_column(uint32_t c, const char *label
     draw_column(c, label, value, "", color, ratio, ICON_NONE);
 }
 
+static __attribute__((noinline)) void hot_gauge_column(uint32_t c, const char *label, const char *value, int32_t ratio)
+{
+    gauge_column(c, label, value, VAL(c), ratio);
+}
+
 /* Cards without units or a gauge share argument setup. Icons are unused by draw_column. */
 static __attribute__((noinline)) void text_column(uint32_t c, const char *label, const char *value, uint16_t color)
 {
@@ -1358,7 +1363,7 @@ static void draw_columns(void)
         int16_t *vp = &TSEL->p[P_E0 + k];
         const param_desc_t *d = track_desc(TSEL, P_E0 + k);
         param_format(d, *vp, val, &unit);
-        gauge_column(0, "PARAM", d->label, VAL(0u), (int32_t)k * 1000 / 7);
+        hot_gauge_column(0, "PARAM", d->label, (int32_t)k * 1000 / 7);
         card_mot_of(vp);
         draw_column(1, d->label, val, unit, VAL(1u), RATIO(d, enum_rank(d, *vp)), ICON_NONE);
         text_column(2, "SRC", j < 0 ? "OFF" : N_MSRC[clamp(TSEL->p[P_M1SRC + 3u * (uint32_t)j], 0, MS_N - 1)], j < 0 ? T_DIM : VAL(2u));
@@ -1375,7 +1380,7 @@ static void draw_columns(void)
     if (cur_page()->graph == GR_STAGE) {               /* (0.8.5) ENV > STAGE: the stage, its value, LOOP */
         uint32_t id = P_ATK + (ui.stage & 3u);
         int16_t *vp = &TSEL->p[id];
-        gauge_column(0, "STAGE", TP[id].label, VAL(0u), (int32_t)(ui.stage & 3u) * 1000 / 3);
+        hot_gauge_column(0, "STAGE", TP[id].label, (int32_t)(ui.stage & 3u) * 1000 / 3);
         param_format(&TP[id], *vp, val, &unit);
         card_mot_of(vp);
         draw_column(1, TP[id].label, val, unit, VAL(1u), RATIO(&TP[id], *vp), ICON_NONE);
@@ -1441,7 +1446,7 @@ static void draw_columns(void)
     if (cur_page()->graph == GR_FUGUE) {               /* (0.6.52) HEAD RATE DIR INTERVAL */
         const fg_set_t *f = &fg_set[song.sel % NTRK][fg_ui % FG_HEADS];
         fmt_int(val, (int32_t)(fg_ui % FG_HEADS) + 2);
-        gauge_column(0, "HEAD", val, VAL(0u), (int32_t)(fg_ui % FG_HEADS) * 500);
+        hot_gauge_column(0, "HEAD", val, (int32_t)(fg_ui % FG_HEADS) * 500);
         gauge_column(1, "RATE", N_FGRATE[f->rate % FG_NRATE], f->rate ? VAL(1u) : T_DIM, (int32_t)f->rate * 1000 / 9);
         gauge_column(2, "DIR", N_FGDIR[f->dir & 3u], f->rate ? VAL(2u) : T_DIM, (int32_t)(f->dir & 3u) * 333);
         val[0] = f->ivl > 0 ? '+' : 0;
@@ -1568,7 +1573,7 @@ static void draw_columns(void)
         uint32_t n = pat_count(), k = pat_pick();
         char tag[4], nm[13];
         pat_label(k, tag, nm);
-        gauge_column(0, "PAT", tag, VAL(0u), (int32_t)k * 1000 / (int32_t)(n > 1u ? n - 1u : 1u));
+        hot_gauge_column(0, "PAT", tag, (int32_t)k * 1000 / (int32_t)(n > 1u ? n - 1u : 1u));
         draw_act_column(1, "LOAD", T_THEME, ICON_AUTO);
         empty_column(2);
         empty_column(3);
@@ -1580,15 +1585,15 @@ static void draw_columns(void)
         if (save_level() == SV_PROJ) {                   /* (0.8.5) SAVE > PROJECT's SECTIONS: SECT, its NAME */
             const char *nm;
             val[0] = (char)('A' + (k & 3u)); val[1] = 0;
-            gauge_column(0, "SECT", val, VAL(0u), (int32_t)(k & 3u) * 1000 / 3);
+            hot_gauge_column(0, "SECT", val, (int32_t)(k & 3u) * 1000 / 3);
             nm = used ? graph_project_name(k) : "";
             card_free_next = 1;
             text_column(1, "NAME", !used ? "--" : nm[0] ? nm : "USED", used ? T_THEME : T_DIM);
         } else {
             fmt_int(val, (int32_t)song_cur + 1);
-            gauge_column(0, "PROJECT", val, VAL(0u), (int32_t)song_cur * 1000 / (int32_t)(NSONG - 1u));
+            hot_gauge_column(0, "PROJECT", val, (int32_t)song_cur * 1000 / (int32_t)(NSONG - 1u));
             val[0] = (char)('A' + (k & 3u)); val[1] = 0;
-            gauge_column(1, "SECT", val, VAL(1u), (int32_t)(k & 3u) * 1000 / 3);
+            hot_gauge_column(1, "SECT", val, (int32_t)(k & 3u) * 1000 / 3);
         }
         draw_act_column(2, "LOAD", used ? T_THEME : T_DIM, ICON_AUTO);
         draw_act_column(3, "SAVE", T_THEME, ICON_AUTO);
@@ -1597,7 +1602,7 @@ static void draw_columns(void)
     if (cur_page()->graph == GR_USER) {                  /* SLOT, then three GO buttons */
         int used = up_used(ui.uslot);
         up_slot_label(val, ui.uslot);
-        gauge_column(0, "SLOT", val, VAL(0u), (int32_t)ui.uslot * 1000 / (int32_t)(UP_SLOTS - 1u));
+        hot_gauge_column(0, "SLOT", val, (int32_t)ui.uslot * 1000 / (int32_t)(UP_SLOTS - 1u));
         draw_act_column(1, "LOAD", used ? T_THEME : T_DIM, ICON_AUTO);
         draw_act_column(2, "ERASE", used ? T_THEME : T_DIM, ICON_AUTO);
         draw_act_column(3, "SAVE", T_THEME, ICON_AUTO);

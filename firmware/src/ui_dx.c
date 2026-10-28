@@ -140,7 +140,7 @@ static void dx_cards(const page_t *pg)
         gauge_column(0, "RATE", RT[dx_mot[XM_RATE] % 9u], dx_mot[XM_RATE] ? VAL(0u) : T_DIM, dx_mot[XM_RATE] * 125);
         fmt_int(val, dx_mot[XM_DPTH]);
         gauge_column(1, "DEPTH", val, dx_mot[XM_DPTH] ? VAL(1u) : T_DIM, dx_mot[XM_DPTH] * 1000 / 127);
-        gauge_column(2, "SHAPE", SH[dx_mot[XM_SHPE] % 5u], VAL(2u), dx_mot[XM_SHPE] * 250);
+        hot_gauge_column(2, "SHAPE", SH[dx_mot[XM_SHPE] % 5u], dx_mot[XM_SHPE] * 250);
         fmt_int(val, dx_mot[XM_RAND]);
         gauge_column(3, "RAND", val, dx_mot[XM_RAND] ? VAL(3u) : T_DIM, dx_mot[XM_RAND] * 1000 / 127);
         return;
@@ -151,7 +151,7 @@ static void dx_cards(const page_t *pg)
         ln[3] = dx_ui_side ? 'B' : 'A';
         ln[4] = 0;
     }
-    gauge_column(0, "SOUND", ln, VAL(0u), (int32_t)(dx_ui_lane & 7u) * 1000 / 7);
+    hot_gauge_column(0, "SOUND", ln, (int32_t)(dx_ui_lane & 7u) * 1000 / 7);
     if (pn == 8u) {                                     /* SOUND 4 */
         uint32_t ly = dx_lay[dx_ui_lane & 7u], la = DX_LAY_L(ly), fb = DX_LAY_FB(ly), sn = dx_snd[dx_ui_lane & 7u];
         int32_t ix = dx_send_ix(sn);
@@ -170,25 +170,25 @@ static void dx_cards(const page_t *pg)
     if (pn == 3u) {                                     /* SOUND 3 */
         static const char *const PM[4] = {"DECAY", "LONG", "NOISE", "SINE"};
         dx_mode_name(val, L->mode);
-        gauge_column(1, "MODE", val, VAL(1u), (int32_t)dx_mode_ix(L->mode) * 1000 / 23);
-        gauge_column(2, "PM.TYPE", PM[(L->mode >> 5) & 3u], VAL(2u), (int32_t)((L->mode >> 5) & 3u) * 333);
+        hot_gauge_column(1, "MODE", val, (int32_t)dx_mode_ix(L->mode) * 1000 / 23);
+        hot_gauge_column(2, "PM.TYPE", PM[(L->mode >> 5) & 3u], (int32_t)((L->mode >> 5) & 3u) * 333);
         gauge_column(3, "DRIVE", L->mode & DX_DRIVE ? "ON" : "OFF", L->mode & DX_DRIVE ? VAL(3u) : T_DIM, L->mode & DX_DRIVE ? 1000 : 0);
         return;
     }
     if (pn == 2u) {                                     /* SOUND 2 */
         fmt_int(val, v[DXP_DECAY]);
-        gauge_column(1, "DECAY", val, VAL(1u), v[DXP_DECAY] * 1000 / 127);
+        hot_gauge_column(1, "DECAY", val, v[DXP_DECAY] * 1000 / 127);
         fmt_int(val, v[DXP_NOISE]);
-        gauge_column(2, "NOISE", val, VAL(2u), v[DXP_NOISE] * 1000 / 127);
+        hot_gauge_column(2, "NOISE", val, v[DXP_NOISE] * 1000 / 127);
         fmt_int(val, v[DXP_COLOR]);
-        gauge_column(3, "COLOR", val, VAL(3u), v[DXP_COLOR] * 1000 / 127);
+        hot_gauge_column(3, "COLOR", val, v[DXP_COLOR] * 1000 / 127);
         return;
     }
-    gauge_column(1, "SIDE", dx_ui_side ? "B" : "A", VAL(1u), dx_ui_side ? 1000 : 0);   /* SOUND */
+    hot_gauge_column(1, "SIDE", dx_ui_side ? "B" : "A", dx_ui_side ? 1000 : 0);   /* SOUND */
     fmt_int(val, v[DXP_PITCH]);
-    gauge_column(2, "PITCH", val, VAL(2u), v[DXP_PITCH] * 1000 / 127);
+    hot_gauge_column(2, "PITCH", val, v[DXP_PITCH] * 1000 / 127);
     fmt_int(val, v[DXP_PMOD]);
-    gauge_column(3, "PMOD", val, VAL(3u), v[DXP_PMOD] * 1000 / 127);
+    hot_gauge_column(3, "PMOD", val, v[DXP_PMOD] * 1000 / 127);
 }
 /* what the cards and the panel show changed */
 static uint32_t dx_sig(void)
