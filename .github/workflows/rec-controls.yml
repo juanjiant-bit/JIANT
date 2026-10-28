@@ -49,7 +49,7 @@ jobs:
           build/rec/sample_bounds | tee build/rec/sample-bounds.log
           cc -O1 -w -fsanitize=bounds -fno-sanitize-recover=bounds -Ibuild/gen -Ifirmware/src -Itests tests/seq_clipboard_test.c -lm -o build/rec/seq_clipboard
           build/rec/seq_clipboard | tee build/rec/seq-clipboard.log
-          FELUCCA_REPIN=1 python3 tools/build.py
+          python3 tools/build.py
           mkdir -p build/rec
           BUDGET_UPDATE=1 python3 tests/target_budget.py /tmp/rec-base/build/felucca.dis /tmp/rec-base-budget.txt
           python3 tests/target_budget.py build/felucca.dis /tmp/rec-base-budget.txt
