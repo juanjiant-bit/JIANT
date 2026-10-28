@@ -35,6 +35,19 @@ static int shift_tests(void)
     comp_set(&t->step[0],1,CA_SHIFT,CC_ALWAYS,0,1,64);
     seq_start(); shift_prepare_pass(t,8,0);
     bad += check("two SHIFT components add their offsets",shift_step(t,3)==&t->step[0] && shift_step(t,0)->time==ST_REST);
+    t = pat(8,notes);
+    comp_set(&t->step[1],0,CA_SHIFT,CC_ALWAYS,0,1,65);
+    comp_set(&t->step[1],1,CA_OCTU,CC_ALWAYS,0,1,0);
+    step_set_ratchet(&t->step[1],2);
+    seq_start();n=run_at(t,8,nt,at,64);
+    {uint32_t i,hits=0;int ok=1;for(i=0;i<n;i++){if(nt[i]==74)hits++;if(nt[i]==65)ok=0;}
+     bad+=check("shifted ratchets repeat the moved note with C2, never the replaced note",ok && hits==2);}
+    t=pat(8,notes);
+    comp_set(&t->step[3],0,CA_SHIFT,CC_NM,CNM_MAKE(2,2),1,60);
+    ST_MICRO_SET(&t->step[3],-16);
+    seq_start();n=run_at(t,16,nt,at,64);
+    {uint32_t i,hits=0;int ok=1;for(i=0;i<n;i++)if(nt[i]==65){ok &= at[i]==(hits?7:2);hits++;}
+     bad+=check("SHIFT lookahead keeps early microtiming when N:M changes at a loop boundary",ok && hits==2);}
     return bad;
 }
 static int chord_tests(void)

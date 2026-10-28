@@ -871,10 +871,16 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
         cv_blit((uint32_t)CARD_X(c), card_y() + (strip ? (uint32_t)ry : 0u));
 }
 
+/* Gauge cards without units share their constant renderer arguments. */
+static __attribute__((noinline)) void gauge_column(uint32_t c, const char *label, const char *value, uint16_t color, int32_t ratio)
+{
+    draw_column(c, label, value, "", color, ratio, ICON_NONE);
+}
+
 /* Cards without units or a gauge share argument setup. Icons are unused by draw_column. */
 static __attribute__((noinline)) void text_column(uint32_t c, const char *label, const char *value, uint16_t color)
 {
-    draw_column(c, label, value, "", color, -1, ICON_NONE);
+    gauge_column(c, label, value, color, -1);
 }
 
 /* Shared empty card: keep the renderer and all of its state-reset behavior. */
@@ -1347,7 +1353,7 @@ static void draw_columns(void)
         int16_t *vp = &TSEL->p[P_E0 + k];
         const param_desc_t *d = track_desc(TSEL, P_E0 + k);
         param_format(d, *vp, val, &unit);
-        draw_column(0, "PARAM", d->label, "", VAL(0u), (int32_t)k * 1000 / 7, ICON_NONE);
+        gauge_column(0, "PARAM", d->label, VAL(0u), (int32_t)k * 1000 / 7);
         card_mot_of(vp);
         draw_column(1, d->label, val, unit, VAL(1u), RATIO(d, enum_rank(d, *vp)), ICON_NONE);
         text_column(2, "SRC", j < 0 ? "OFF" : N_MSRC[clamp(TSEL->p[P_M1SRC + 3u * (uint32_t)j], 0, MS_N - 1)], j < 0 ? T_DIM : VAL(2u));
@@ -1364,7 +1370,7 @@ static void draw_columns(void)
     if (cur_page()->graph == GR_STAGE) {               /* (0.8.5) ENV > STAGE: the stage, its value, LOOP */
         uint32_t id = P_ATK + (ui.stage & 3u);
         int16_t *vp = &TSEL->p[id];
-        draw_column(0, "STAGE", TP[id].label, "", VAL(0u), (int32_t)(ui.stage & 3u) * 1000 / 3, ICON_NONE);
+        gauge_column(0, "STAGE", TP[id].label, VAL(0u), (int32_t)(ui.stage & 3u) * 1000 / 3);
         param_format(&TP[id], *vp, val, &unit);
         card_mot_of(vp);
         draw_column(1, TP[id].label, val, unit, VAL(1u), RATIO(&TP[id], *vp), ICON_NONE);
@@ -1415,11 +1421,11 @@ static void draw_columns(void)
         int32_t k = shp_k(), r = (int32_t)shp_rep(), ofs = TSEL->p[P_SOFS];
         val[0] = k > 0 ? 'x' : '/';
         fmt_int(val + 1, k > 0 ? k : -k);
-        draw_column(0, "STRETCH", val, "", k != 1 ? VAL(0u) : T_DIM, (int32_t)shp_i * 1000 / 14, ICON_X_REPEAT);
+        gauge_column(0, "STRETCH", val, k != 1 ? VAL(0u) : T_DIM, (int32_t)shp_i * 1000 / 14);
         if (r == 1) str_cpy(val, "OFF", sizeof val);
         else if (r) { val[0] = 'x'; fmt_int(val + 1, r); }
         else str_cpy(val, "TO 64", sizeof val);
-        draw_column(1, "REPEAT", val, "", r != 1 ? VAL(1u) : T_DIM, (int32_t)shp_r * 1000 / 8, ICON_X_PATTERN);
+        gauge_column(1, "REPEAT", val, r != 1 ? VAL(1u) : T_DIM, (int32_t)shp_r * 1000 / 8);
         text_column(2, "NUDGE", "< >", VAL(2u));
         val[0] = ofs > 0 ? '+' : 0;
         fmt_int(val + (ofs > 0), ofs);
@@ -1430,10 +1436,9 @@ static void draw_columns(void)
     if (cur_page()->graph == GR_FUGUE) {               /* (0.6.52) HEAD RATE DIR INTERVAL */
         const fg_set_t *f = &fg_set[song.sel % NTRK][fg_ui % FG_HEADS];
         fmt_int(val, (int32_t)(fg_ui % FG_HEADS) + 2);
-        draw_column(0, "HEAD", val, "", VAL(0u), (int32_t)(fg_ui % FG_HEADS) * 500, ICON_X_PATTERN);
-        draw_column(1, "RATE", N_FGRATE[f->rate % FG_NRATE], "", f->rate ? VAL(1u) : T_DIM, (int32_t)f->rate * 1000 / 9,
-                    ICON_RATE);
-        draw_column(2, "DIR", N_FGDIR[f->dir & 3u], "", f->rate ? VAL(2u) : T_DIM, (int32_t)(f->dir & 3u) * 333, ICON_ORDER);
+        gauge_column(0, "HEAD", val, VAL(0u), (int32_t)(fg_ui % FG_HEADS) * 500);
+        gauge_column(1, "RATE", N_FGRATE[f->rate % FG_NRATE], f->rate ? VAL(1u) : T_DIM, (int32_t)f->rate * 1000 / 9);
+        gauge_column(2, "DIR", N_FGDIR[f->dir & 3u], f->rate ? VAL(2u) : T_DIM, (int32_t)(f->dir & 3u) * 333);
         val[0] = f->ivl > 0 ? '+' : 0;
         fmt_int(val + (f->ivl > 0), f->ivl);
         draw_column(3, "INTVL", val, "DEG", f->rate ? VAL(3u) : T_DIM, (int32_t)(f->ivl + 14) * 1000 / 28, ICON_PITCH);
@@ -1558,7 +1563,7 @@ static void draw_columns(void)
         uint32_t n = pat_count(), k = pat_pick();
         char tag[4], nm[13];
         pat_label(k, tag, nm);
-        draw_column(0, "PAT", tag, "", VAL(0u), (int32_t)k * 1000 / (int32_t)(n > 1u ? n - 1u : 1u), ICON_X_PATTERN);
+        gauge_column(0, "PAT", tag, VAL(0u), (int32_t)k * 1000 / (int32_t)(n > 1u ? n - 1u : 1u));
         draw_act_column(1, "LOAD", T_THEME, ICON_AUTO);
         empty_column(2);
         empty_column(3);
@@ -1570,15 +1575,15 @@ static void draw_columns(void)
         if (save_level() == SV_PROJ) {                   /* (0.8.5) SAVE > PROJECT's SECTIONS: SECT, its NAME */
             const char *nm;
             val[0] = (char)('A' + (k & 3u)); val[1] = 0;
-            draw_column(0, "SECT", val, "", VAL(0u), (int32_t)(k & 3u) * 1000 / 3, ICON_AUTO);
+            gauge_column(0, "SECT", val, VAL(0u), (int32_t)(k & 3u) * 1000 / 3);
             nm = used ? graph_project_name(k) : "";
             card_free_next = 1;
             text_column(1, "NAME", !used ? "--" : nm[0] ? nm : "USED", used ? T_THEME : T_DIM);
         } else {
             fmt_int(val, (int32_t)song_cur + 1);
-            draw_column(0, "PROJECT", val, "", VAL(0u), (int32_t)song_cur * 1000 / (int32_t)(NSONG - 1u), ICON_X_SONG);
+            gauge_column(0, "PROJECT", val, VAL(0u), (int32_t)song_cur * 1000 / (int32_t)(NSONG - 1u));
             val[0] = (char)('A' + (k & 3u)); val[1] = 0;
-            draw_column(1, "SECT", val, "", VAL(1u), (int32_t)(k & 3u) * 1000 / 3, ICON_AUTO);
+            gauge_column(1, "SECT", val, VAL(1u), (int32_t)(k & 3u) * 1000 / 3);
         }
         draw_act_column(2, "LOAD", used ? T_THEME : T_DIM, ICON_AUTO);
         draw_act_column(3, "SAVE", T_THEME, ICON_AUTO);
@@ -1587,7 +1592,7 @@ static void draw_columns(void)
     if (cur_page()->graph == GR_USER) {                  /* SLOT, then three GO buttons */
         int used = up_used(ui.uslot);
         up_slot_label(val, ui.uslot);
-        draw_column(0, "SLOT", val, "", VAL(0u), (int32_t)ui.uslot * 1000 / (int32_t)(UP_SLOTS - 1u), ICON_AUTO);
+        gauge_column(0, "SLOT", val, VAL(0u), (int32_t)ui.uslot * 1000 / (int32_t)(UP_SLOTS - 1u));
         draw_act_column(1, "LOAD", used ? T_THEME : T_DIM, ICON_AUTO);
         draw_act_column(2, "ERASE", used ? T_THEME : T_DIM, ICON_AUTO);
         draw_act_column(3, "SAVE", T_THEME, ICON_AUTO);
@@ -1700,8 +1705,7 @@ static void draw_columns(void)
         else text_column(0, "FOCUS", fo, on ? VAL(0u) : T_DIM);
         text_column(1, "PITCH", pn, on && !kit ? VAL(1u) : T_DIM);
         draw_column(2, "MOVE", kit ? "--" : sn, kit ? "" : "<>", on && !kit ? VAL(2u) : T_DIM, -1, ICON_AUTO);
-        draw_column(3, "MICRO", mo, "", on && m ? VAL(3u) : T_DIM, on ? (m - MICRO_MIN) * 1000 / (MICRO_MAX - MICRO_MIN) : -1,
-                    ICON_ORDER);
+        gauge_column(3, "MICRO", mo, on && m ? VAL(3u) : T_DIM, on ? (m - MICRO_MIN) * 1000 / (MICRO_MAX - MICRO_MIN) : -1);
         return;
     }
     if (cur_page()->scope == SC_STEP) {

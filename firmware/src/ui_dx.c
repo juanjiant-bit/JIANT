@@ -118,11 +118,11 @@ static void dx_kit3_cards(void)
     draw_column(0, "BP", val, bp ? (CUTOFF_HZ[78u + bp * 2u] < 1000u ? "Hz" : "kHz") : "", bp ? VAL(0u) : T_DIM,
                 (int32_t)bp * 1000 / 15, ICON_TONE);
     fmt_int(val, (int32_t)fb);
-    draw_column(1, "FEEDBK", fb ? val : "OFF", "", fb ? VAL(1u) : T_DIM, (int32_t)fb * 1000 / 15, ICON_DRIVE);
+    gauge_column(1, "FEEDBK", fb ? val : "OFF", fb ? VAL(1u) : T_DIM, (int32_t)fb * 1000 / 15);
     fmt_int(val, (int32_t)dx_hands);                    /* (0.7.9) the CLAP's HANDS */
-    draw_column(2, "HANDS", dx_hands ? val : "OFF", "", dx_hands ? VAL(2u) : T_DIM, (int32_t)dx_hands * 1000 / 15, ICON_AUTO);
+    gauge_column(2, "HANDS", dx_hands ? val : "OFF", dx_hands ? VAL(2u) : T_DIM, (int32_t)dx_hands * 1000 / 15);
     fmt_int(val, (int32_t)dx_glue);                     /* (0.9.9-snd1) the bus's GLUE */
-    draw_column(3, "GLUE", dx_glue ? val : "OFF", "", dx_glue ? VAL(3u) : T_DIM, (int32_t)dx_glue * 1000 / 15, ICON_LEVEL);
+    gauge_column(3, "GLUE", dx_glue ? val : "OFF", dx_glue ? VAL(3u) : T_DIM, (int32_t)dx_glue * 1000 / 15);
 }
 
 /* the four cards of a SOUND page or X-MOD */
@@ -137,13 +137,12 @@ static void dx_cards(const page_t *pg)
     if (pn == 4u) {                                     /* (JIANT 0.5.1) X-MOD */
         static const char *const RT[9] = {"OFF", "4BAR", "2BAR", "1BAR", "1/2", "1/4", "1/8", "1/16", "1/32"};
         static const char *const SH[5] = {"SINE", "TRI", "SAW", "RAMP", "S&H"};
-        draw_column(0, "RATE", RT[dx_mot[XM_RATE] % 9u], "", dx_mot[XM_RATE] ? VAL(0u) : T_DIM, dx_mot[XM_RATE] * 125,
-                    ICON_RATE);
+        gauge_column(0, "RATE", RT[dx_mot[XM_RATE] % 9u], dx_mot[XM_RATE] ? VAL(0u) : T_DIM, dx_mot[XM_RATE] * 125);
         fmt_int(val, dx_mot[XM_DPTH]);
-        draw_column(1, "DEPTH", val, "", dx_mot[XM_DPTH] ? VAL(1u) : T_DIM, dx_mot[XM_DPTH] * 1000 / 127, ICON_LEVEL);
-        draw_column(2, "SHAPE", SH[dx_mot[XM_SHPE] % 5u], "", VAL(2u), dx_mot[XM_SHPE] * 250, ICON_WAVE);
+        gauge_column(1, "DEPTH", val, dx_mot[XM_DPTH] ? VAL(1u) : T_DIM, dx_mot[XM_DPTH] * 1000 / 127);
+        gauge_column(2, "SHAPE", SH[dx_mot[XM_SHPE] % 5u], VAL(2u), dx_mot[XM_SHPE] * 250);
         fmt_int(val, dx_mot[XM_RAND]);
-        draw_column(3, "RAND", val, "", dx_mot[XM_RAND] ? VAL(3u) : T_DIM, dx_mot[XM_RAND] * 1000 / 127, ICON_NOISE);
+        gauge_column(3, "RAND", val, dx_mot[XM_RAND] ? VAL(3u) : T_DIM, dx_mot[XM_RAND] * 1000 / 127);
         return;
     }
     str_cpy(ln, DX_LANE_ABBR[dx_ui_lane & 7u], sizeof ln);   /* KNOB 1: the sound (SOUND 2 its side too: the values') */
@@ -152,14 +151,14 @@ static void dx_cards(const page_t *pg)
         ln[3] = dx_ui_side ? 'B' : 'A';
         ln[4] = 0;
     }
-    draw_column(0, "SOUND", ln, "", VAL(0u), (int32_t)(dx_ui_lane & 7u) * 1000 / 7, ICON_X_PATTERN);
+    gauge_column(0, "SOUND", ln, VAL(0u), (int32_t)(dx_ui_lane & 7u) * 1000 / 7);
     if (pn == 8u) {                                     /* SOUND 4 */
         uint32_t ly = dx_lay[dx_ui_lane & 7u], la = DX_LAY_L(ly), fb = DX_LAY_FB(ly), sn = dx_snd[dx_ui_lane & 7u];
         int32_t ix = dx_send_ix(sn);
         fmt_int(val, (int32_t)la);
-        draw_column(1, "LAYER", la ? val : "OFF", "", la ? VAL(1u) : T_DIM, (int32_t)la * 1000 / 15, ICON_WAVE);
+        gauge_column(1, "LAYER", la ? val : "OFF", la ? VAL(1u) : T_DIM, (int32_t)la * 1000 / 15);
         fmt_int(val, (int32_t)fb);
-        draw_column(2, "FEEDBK", fb ? val : "OFF", "", fb ? VAL(2u) : T_DIM, (int32_t)fb * 1000 / 15, ICON_DRIVE);
+        gauge_column(2, "FEEDBK", fb ? val : "OFF", fb ? VAL(2u) : T_DIM, (int32_t)fb * 1000 / 15);
         {
             char un[8];
             fmt_int(un, ix ? ((ix - 1) % 16 + 1) * 100 / 16 : 0);
@@ -171,26 +170,25 @@ static void dx_cards(const page_t *pg)
     if (pn == 3u) {                                     /* SOUND 3 */
         static const char *const PM[4] = {"DECAY", "LONG", "NOISE", "SINE"};
         dx_mode_name(val, L->mode);
-        draw_column(1, "MODE", val, "", VAL(1u), (int32_t)dx_mode_ix(L->mode) * 1000 / 23, ICON_WAVE);
-        draw_column(2, "PM.TYPE", PM[(L->mode >> 5) & 3u], "", VAL(2u), (int32_t)((L->mode >> 5) & 3u) * 333, ICON_ENV);
-        draw_column(3, "DRIVE", L->mode & DX_DRIVE ? "ON" : "OFF", "", L->mode & DX_DRIVE ? VAL(3u) : T_DIM,
-                    L->mode & DX_DRIVE ? 1000 : 0, ICON_DRIVE);
+        gauge_column(1, "MODE", val, VAL(1u), (int32_t)dx_mode_ix(L->mode) * 1000 / 23);
+        gauge_column(2, "PM.TYPE", PM[(L->mode >> 5) & 3u], VAL(2u), (int32_t)((L->mode >> 5) & 3u) * 333);
+        gauge_column(3, "DRIVE", L->mode & DX_DRIVE ? "ON" : "OFF", L->mode & DX_DRIVE ? VAL(3u) : T_DIM, L->mode & DX_DRIVE ? 1000 : 0);
         return;
     }
     if (pn == 2u) {                                     /* SOUND 2 */
         fmt_int(val, v[DXP_DECAY]);
-        draw_column(1, "DECAY", val, "", VAL(1u), v[DXP_DECAY] * 1000 / 127, ICON_DECAY);
+        gauge_column(1, "DECAY", val, VAL(1u), v[DXP_DECAY] * 1000 / 127);
         fmt_int(val, v[DXP_NOISE]);
-        draw_column(2, "NOISE", val, "", VAL(2u), v[DXP_NOISE] * 1000 / 127, ICON_NOISE);
+        gauge_column(2, "NOISE", val, VAL(2u), v[DXP_NOISE] * 1000 / 127);
         fmt_int(val, v[DXP_COLOR]);
-        draw_column(3, "COLOR", val, "", VAL(3u), v[DXP_COLOR] * 1000 / 127, ICON_TONE);
+        gauge_column(3, "COLOR", val, VAL(3u), v[DXP_COLOR] * 1000 / 127);
         return;
     }
-    draw_column(1, "SIDE", dx_ui_side ? "B" : "A", "", VAL(1u), dx_ui_side ? 1000 : 0, ICON_MIX);   /* SOUND */
+    gauge_column(1, "SIDE", dx_ui_side ? "B" : "A", VAL(1u), dx_ui_side ? 1000 : 0);   /* SOUND */
     fmt_int(val, v[DXP_PITCH]);
-    draw_column(2, "PITCH", val, "", VAL(2u), v[DXP_PITCH] * 1000 / 127, ICON_PITCH);
+    gauge_column(2, "PITCH", val, VAL(2u), v[DXP_PITCH] * 1000 / 127);
     fmt_int(val, v[DXP_PMOD]);
-    draw_column(3, "PMOD", val, "", VAL(3u), v[DXP_PMOD] * 1000 / 127, ICON_ENV);
+    gauge_column(3, "PMOD", val, VAL(3u), v[DXP_PMOD] * 1000 / 127);
 }
 /* what the cards and the panel show changed */
 static uint32_t dx_sig(void)
@@ -205,3 +203,4 @@ static uint32_t dx_sig(void)
         h = (h ^ (uint32_t)L->a[i] << 8 ^ L->b[i]) * 16777619u;
     return h;
 }
+

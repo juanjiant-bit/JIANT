@@ -281,11 +281,11 @@ static void menu_cards(void)
         fmt_int(k, (int32_t)(ui.menu_sel - f) + 1);
         str_cpy(k + str_len(k), "/", 2);
         fmt_int(k + str_len(k), (int32_t)n);
-        draw_column(0, "TAB", MTAB_NAME[t], "", T_TEXT, (int32_t)t * 1000 / 3, ICON_NONE);
-        draw_column(1, "ROW", k, "", T_TEXT, (int32_t)(ui.menu_sel - f) * 1000 / (int32_t)(n > 1u ? n - 1u : 1u), ICON_NONE);
+        gauge_column(0, "TAB", MTAB_NAME[t], T_TEXT, (int32_t)t * 1000 / 3);
+        gauge_column(1, "ROW", k, T_TEXT, (int32_t)(ui.menu_sel - f) * 1000 / (int32_t)(n > 1u ? n - 1u : 1u));
         menu_val(ui.menu_sel, v);
-        draw_column(2, menu_short(ui.menu_sel), v, "", T_TEXT, ui.menu_sel < MI_VALUES && menu_n(ui.menu_sel) > 1u ?
-                    (int32_t)menu_get(ui.menu_sel) * 1000 / (int32_t)(menu_n(ui.menu_sel) - 1u) : -1, ICON_NONE);
+        gauge_column(2, menu_short(ui.menu_sel), v, T_TEXT, ui.menu_sel < MI_VALUES && menu_n(ui.menu_sel) > 1u ?
+                    (int32_t)menu_get(ui.menu_sel) * 1000 / (int32_t)(menu_n(ui.menu_sel) - 1u) : -1);
         text_column(3, "", "", T_DIM);
         return;
     }
@@ -296,8 +296,8 @@ static void menu_cards(void)
             continue;
         }
         menu_val(r, v);
-        draw_column(c, menu_short(r), v, "", r == ui.menu_sel ? T_ACCENT : T_TEXT, r < MI_VALUES && menu_n(r) > 1u ?
-                    (int32_t)menu_get(r) * 1000 / (int32_t)(menu_n(r) - 1u) : -1, ICON_NONE);
+        gauge_column(c, menu_short(r), v, r == ui.menu_sel ? T_ACCENT : T_TEXT, r < MI_VALUES && menu_n(r) > 1u ?
+                    (int32_t)menu_get(r) * 1000 / (int32_t)(menu_n(r) - 1u) : -1);
     }
 }
 static void menu_panel(void)

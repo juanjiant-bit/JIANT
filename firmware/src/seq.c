@@ -1391,6 +1391,15 @@ static const step_t *shift_step(const track_t *t, uint32_t idx)
 {
     return shift_step_pass(t, idx, t->loops);
 }
+static const step_t *shift_ahead(const track_t *t, uint32_t offset, uint32_t len)
+{
+    uint32_t index = t->seq_idx + offset, pass;
+    len = len ? len : 1u;
+    pass = t->loops + index / len;
+    if (pass > 65535u) pass = 65535u;
+    shift_prepare_pass(t, len, pass);
+    return shift_step_pass(t, index % len, pass);
+}
 /* SEQ's notes: the pattern's steps with notes (or hits), in order; the k-th of them (*cnt: how many) */
 static const step_t *seq_unit(const track_t *t, uint32_t len, uint32_t k, uint32_t *cnt)
 {
@@ -1837,11 +1846,7 @@ static uint32_t seq_early(const track_t *t, uint32_t period, uint32_t len)
     int32_t m;
     if (t->jump_to || t->rev || (t->pfx & PFX_RND) || (!ni && (chain.running || chain.armed)))
         return 0;
-    {
-        uint32_t pass = t->loops + (ni == 0u && t->loops < 65535u);
-        shift_prepare_pass(t, len, pass);
-        s = shift_step_pass(t, ni, pass);
-    }
+    s = shift_ahead(t, 1u, len);
     if (s->time != ST_NOTE || (!s->n && !s->hit))       /* (nothing to play there: never early) */
         return 0;
     m = ST_MICRO(s);
@@ -2051,7 +2056,7 @@ static uint32_t tie_span(const track_t *t, uint32_t period, uint32_t len)
     uint32_t n = step_samples(t, period, t->seq_idx), k;
     for (k = 1; k < len; k++) {
         uint32_t i = (t->seq_idx + k) % len;
-        if (shift_step(t, i)->time != ST_TIE)
+        if (shift_ahead(t, k, len)->time != ST_TIE)
             break;
         n += step_samples(t, period, i);
     }
@@ -2133,7 +2138,7 @@ static int chord_auto(const track_t *t, uint32_t len)
     const step_t *nx;
     if (t->p[P_VOICE] != V_POLY || t->p[P_GLIDE] <= 0)
         return 0;
-    nx = shift_step(t, (t->seq_idx + 1u) % len);
+    nx = shift_ahead(t, 1u, len);
     return nx->time == ST_NOTE && nx->n;
 }
 
@@ -2162,7 +2167,7 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
     uint32_t vel = (s->flags & SF_ACCENT) ? 127u : (s->vel ? s->vel : 96u);
     uint32_t slide_in = t->seq_hold && t->seq_n && !(skip & SEQ_REP);
     uint32_t len = t->p[P_SLEN] ? (uint32_t)t->p[P_SLEN] : 1u;
-    uint32_t next_tie = shift_step(t, (t->seq_idx + 1u) % len)->time == ST_TIE;
+    uint32_t next_tie = shift_ahead(t, 1u, len)->time == ST_TIE;
     uint32_t div, hits = step_parts(t, s, &div);
     const step_t *arp = arp_owner(t, s);            /* (0.6.39) an ARP component: one of its notes a part */
     uint8_t aa = 0, ra = t->cx_rnd, ba = (uint8_t)(t->cx_bend ? t->cx_bend - 1u : 0u);   /* (seq2d: comp_run's) */
