@@ -40,7 +40,11 @@ jobs:
       - name: Target image, memory and DSP budgets
         run: |
           python3 tools/build.py
-          python3 tests/target_budget.py
+          git worktree add --detach /tmp/rec-base "$(cat tests/REC_BASE)"
+          (cd /tmp/rec-base && python3 tools/build.py)
+          mkdir -p build/rec
+          BUDGET_UPDATE=1 python3 tests/target_budget.py /tmp/rec-base/build/felucca.dis /tmp/rec-base-budget.txt
+          python3 tests/target_budget.py build/felucca.dis /tmp/rec-base-budget.txt
       - name: REC gesture and undo regression tests
         run: |
           mkdir -p build/rec
@@ -48,7 +52,6 @@ jobs:
           build/rec/rec_workflow | tee build/rec/controls.log
       - name: Timing compared against exact base
         run: |
-          git worktree add --detach /tmp/rec-base "$(cat tests/REC_BASE)"
           cc -O1 -w -Ibuild/gen -I/tmp/rec-base/firmware/src -I/tmp/rec-base/tests /tmp/rec-base/tests/micro_test.c -lm -o build/rec/micro_base
           cc -O1 -w -Ibuild/gen -Ifirmware/src -Itests tests/micro_test.c -lm -o build/rec/micro_new
           set +e
