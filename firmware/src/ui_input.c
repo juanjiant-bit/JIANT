@@ -774,6 +774,7 @@ static void cp_copy(uint64_t held)
     cp_keys_used(t, held);
     clip.n = (uint8_t)(hi - lo + 1u);
     clip.drum = (uint8_t)drum_track(t);
+    clip.engine = (uint8_t)eng_idx(t->eng_req);
     memcpy(clip.st, &t->step[lo], clip.n * sizeof clip.st[0]);
     clip.nl = 0;
     f = motion_guard();
@@ -790,38 +791,48 @@ static void cp_copy(uint64_t held)
     ui.force = 1;
 }
 
-/* REC tapped: 1 = it pasted (or refused), not an arming tap */
+/* Shared by range paste and SEQ > PASTE SEQ. One clipboard and one undo level. */
+static void cp_put(track_t *t, uint32_t a, uint32_t whole)
+{
+    uint32_t j, len = whole ? clip.n : (uint32_t)clamp(t->p[P_SLEN],1,NSTEP), n = clip.n < len ? clip.n : len;
+    if (clip.drum != (uint8_t)drum_track(t)) { ui_message("DRUM <-> NOTES: NO"); return; }
+    undo_mark();
+    if (whole) {
+        motion_clear_locks(t,NSTEP);
+        for(j=0;j<NSTEP;j++) step_clear(&t->step[j]);
+        t->p[P_SLEN]=(int16_t)len;
+        cursor_set(0);
+    }
+    for(j=0;j<n;j++) {
+        uint32_t d=(a+j)%len;
+        if(!whole) motion_clear_locks(t,d);
+        t->step[d]=clip.st[j];
+    }
+    for(j=0;j<clip.nl;j++)
+        if(clip.lk[j].off<n && (clip.engine==eng_idx(t->eng_req) || clip.lk[j].id<P_E0) &&
+           motion_set_lock(t,(a+clip.lk[j].off)%len,clip.lk[j].id,clip.lk[j].v)==2)break;
+    cp_say("PASTED ",n);str_cpy(ui.msg2,"UNDO: GLO + G4",sizeof ui.msg2);ui.force=1;
+}
+static void cp_seq(uint32_t paste)
+{
+    if(paste) {
+        if(!clip.n) ui_message("NOTHING COPIED");
+        else if(chain_busy()) ui_message("STOP TO EDIT");
+        else cp_put(TSEL,0,1);
+    } else {
+        uint32_t len=(uint32_t)clamp(TSEL->p[P_SLEN],1,NSTEP);
+        cp_add=cp_add_acc=0;
+        cp_copy(~(uint64_t)0 >> (NSTEP-len));
+    }
+}
+/* REC tapped: 1 = it pasted (or refused), not an arming tap. */
 static int cp_paste_rec(void)
 {
-    track_t *t = TSEL;
     uint64_t held = clip.n ? cp_held() : 0u;
-    uint32_t a, len, n, j;
-    if (!held)
-        return 0;
-    if (chain_busy()) {
-        ui_message("STOP TO EDIT");
-        return 1;
-    }
-    cp_keys_used(t, held);
-    if (clip.drum != (uint8_t)drum_track(t)) {
-        ui_message("DRUM <-> NOTES: NO");
-        return 1;
-    }
-    undo_mark();                                        /* (GLO + G4: UNDO, the music before the paste) */
-    a = (uint32_t)__builtin_ctzll(held);
-    len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP);
-    n = clip.n < len ? clip.n : len;
-    for (j = 0; j < n; j++) {
-        uint32_t d = (a + j) % len;
-        (void)motion_clear_locks(t, d);
-        t->step[d] = clip.st[j];
-    }
-    for (j = 0; j < clip.nl; j++)
-        if (clip.lk[j].off < n && motion_set_lock(t, (a + clip.lk[j].off) % len, clip.lk[j].id, clip.lk[j].v) == 2)
-            break;                                      /* (full: ui_notices says so) */
-    cp_say("PASTED ", n);
-    str_cpy(ui.msg2, "UNDO: GLO + G4", sizeof ui.msg2);
-    ui.force = 1;
+    if(!held) return 0;
+    if(chain_busy()) { ui_message("STOP TO EDIT"); return 1; }
+    cp_keys_used(TSEL,held);
+    cp_put(TSEL,(uint32_t)__builtin_ctzll(held),0);
     return 1;
 }
 
@@ -2777,3 +2788,4 @@ timeout:
 }
 
 #include "ui_dx.c"                                  /* EDIT > SOUND / SOUND 2: the DRUM-X kit */
+

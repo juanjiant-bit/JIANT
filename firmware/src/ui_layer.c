@@ -592,6 +592,8 @@ static void rec_key(uint32_t p)
 #define SK_REC 13u
 #define SK_PAGE 15u
 #define SK_NAME 11u                                     /* (0.9.2) C5: NAME, the slot's rename (EDIT's until 0.9.1) */
+#define TL_COPY 13u
+#define TL_PASTE 14u
 #define TL_STEP 15u                                     /* (0.9.2) SEQ's G5: CLR STEP (ui_input.c seq_clr_step) */
 #define TL_MREV 12u                                     /* (0.9.3) SEQ's D5: REVERT, the track back to MUTATE's anchor */
 static void song_key(uint32_t p)
@@ -766,7 +768,9 @@ static void layer_key(uint32_t l, uint32_t k)
         if (!key_black(k) && p < 4u)
             rec_key(p);
     } else if (l == LAYER_SEQ) {
-        if (!key_black(k) && p == TL_STEP)
+        if (!key_black(k) && (p == TL_COPY || p == TL_PASTE))
+            cp_seq(p == TL_PASTE);
+        else if (!key_black(k) && p == TL_STEP)
             seq_clr_step();                             /* (0.9.2) G5: CLR STEP (AUTO LIST: the record) */
         else if (!key_black(k) && p == TL_MREV)
             mut_revert_ui(0);                           /* (0.9.3) D5: REVERT (project.c) */
@@ -924,7 +928,7 @@ static uint32_t layer_leds(uint32_t *br)
             on = !dx_lane_muted(p);
         } else if (l == LAYER_SEQ) {                    /* the tools breathe (not while a song plays); DRUM: the lane */
             on = b && p < NLANE && drum_track(TSEL) && p == ui.lane;   /* lit, the other lanes breathe */
-            can = b ? p < NLANE && drum_track(TSEL) : p == TL_MREV ? mut_back_ok() : tl_cell(TSEL, p) && !chain_busy() &&
+            can = b ? p < NLANE && drum_track(TSEL) : p == TL_COPY ? 1u : p == TL_PASTE ? clip.n && !chain_busy() : p == TL_MREV ? mut_back_ok() : tl_cell(TSEL, p) && !chain_busy() &&
                   (p != TL_CAUTO || motion_count(TSEL));   /* (CLR AUTO: automation to clear; REVERT: an anchor) */
         } else if (l == LAYER_SAVE && !b) {             /* the section playing lit, the saved ones and the */
             on = (p < SK_STORE && live.cur == (int8_t)p) || (p == SK_REC && live.srec) ||   /* actions breathe */
@@ -1083,6 +1087,10 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
                 return p == ui.lane % NLANE ? LS_SEL : LS_OFF;
             }
             return LS_OFF;
+        }
+        if (p == TL_COPY || p == TL_PASTE) {
+            str_cpy(nm,p == TL_COPY ? "COPY SEQ" : "PASTE SEQ",12);
+            return p == TL_PASTE && (!clip.n || chain_busy()) ? LS_DIM : LS_OFF;
         }
         if (p == TL_MREV) {                             /* (0.9.3) D5 */
             str_cpy(nm, "REVERT", 12);
@@ -1420,4 +1428,5 @@ static __attribute__((noinline)) void draw_layer(void)
 }
 
 #include "ui_live.c"                                    /* (p2, main 0.9.11) GLO > LIVE: MANO, RIELES */
+
 

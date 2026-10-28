@@ -1,7 +1,7 @@
 name: REC shortcuts and timing
 on:
   push:
-    branches: [codex/rec-sample, codex/rec-add]
+    branches: [codex/add-copy-seq]
   workflow_dispatch:
 permissions:
   contents: read
@@ -37,6 +37,12 @@ jobs:
             git sparse-checkout set --no-cone /cpu/wl82/tools/uboot.boot /cpu/wl82/tools/cfg_tool.bin /cpu/wl82/tools/cfg/eq_cfg_hw.bin
             retry git checkout d179b4484759423312073f5fbb232501aa491047
           fi
+      - name: Whole sequence clipboard
+        run: |
+          python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()"
+          mkdir -p build/rec
+          cc -O1 -w -fsanitize=bounds -fno-sanitize-recover=bounds -Ibuild/gen -Ifirmware/src -Itests tests/seq_clipboard_test.c -lm -o build/rec/seq_clipboard
+          build/rec/seq_clipboard | tee build/rec/seq-clipboard.log
       - name: Target image, memory and DSP budgets
         run: |
           python3 tools/build.py
@@ -76,3 +82,4 @@ jobs:
             build/layout.ld
             build/felucca.o
             build/rec/*.log
+
