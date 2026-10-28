@@ -21,4 +21,4 @@ Not yet released or installed by the public installer. Target image capacity and
 
 ## Validation
 
-Host regressions cover positive and negative displacement on the first pass, replacement, wrap, N:M, C2, addition of shifts, all chord shapes, C2 ELSE, global POLY/MONO, mono voices and project save/load. These pass locally. Physical FM-1 tests and target capacity are still pending.
+Host regressions cover positive and negative displacement on the first pass, replacement, wrap, N:M, C2, addition of shifts, all chord shapes, C2 ELSE, global POLY/MONO, mono voices and project save/load. These pass locally and in CI. The target image, RAM, DSP budgets and timing comparison against the exact base also pass. Physical FM-1 tests are still pending. The beta uses 584228 of 584336 image bytes (108 bytes free), with 90508 bytes of .data + .bss; it does not add engines or increase polyphony.
