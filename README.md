@@ -53,6 +53,15 @@ Project backups do not include the sample audio bank; keep original WAVs. Earlie
 
 See [REC controls and timing](docs/REC_CONTROLS.md). These releases add recording controls; the proposed SHIFT / CHORD components are still separate development work.
 
+## Step components — SAMPLE par14-beta1 (experimental)
+
+Select **STEP COMPONENTS (SAMPLE) · par14-beta1 · BETA** in the public installer's version list to test these additions. The default SAMPLE par13c and ADDITIVE par10b releases keep their recording controls; this beta currently uses SAMPLE, not ADD.
+
+- **SHIFT** in SEQ > COMP / COMP 2: KNOB 4 moves an event -63..+63 track steps; 0 keeps it in place. The playhead stays on its grid. A moved event replaces the destination during playback; the saved pattern is unchanged. It wraps inside LEN. KNOB 3 offers ALWAYS, FIRST, !FIRST, N:M and !N:M; KNOB 2 sets the affected range. Edits while playing take effect on the next pass.
+- **CHORD**: select the chord shape with KNOB 4; the step's first note is its root. It reuses the existing scale/voicing generator and stacks with COMP 2 and the global/master lane, respecting MONO/POLY. It retains the existing mono/kit guards and four-note maximum.
+
+Playback, replacement, early notes, ratchets, N:M, chord shapes, COMP 2, master and project save/load have automated tests. Physical FM-1 testing is still pending. Back up projects before trying the beta; older firmware does not understand the two new action codes. See [component behavior and validation](docs/STEP_EXTENSIONS.md).
+
 ## SAMPLE sampler — 0.9.9-par13b
 
 The **par13b release** adds **SAMPLE**, a lo-fi sample playback engine. It is not included in the stable par12 firmware.

@@ -18,5 +18,9 @@
   "v0.9.9-par13c-b932605-preview": {
     "edition": "SAMPLE",
     "status": "public"
+  },
+  "v0.9.9-par14-beta1-86b85ad": {
+    "edition": "STEP COMPONENTS (SAMPLE)",
+    "status": "beta"
   }
 }
