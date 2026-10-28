@@ -1220,10 +1220,9 @@ static void layer_cards(uint32_t l)
         draw_column(0, "SONG", val, n != song_cur ? "NEXT" : "", VAL(0u), (int32_t)(n * 1000u / (NSONG - 1u)),
                     ICON_X_SONG);
         val[0] = live.cur >= 0 ? (char)('A' + live.cur) : '-'; val[1] = 0;
-        draw_column(1, "SECT", val, "", live.cur >= 0 ? VAL(1u) : T_DIM, -1, ICON_X_PATTERN);
-        draw_column(2, "PLAY", live.mode ? "SONG" : "LOOP", "", VAL(2u), -1, ICON_LOOP);
-        draw_column(3, "REC", live.srec == 2u ? "ON" : live.srec ? "ARM" : "OFF", "", live.srec ? VAL(3u) : T_DIM, -1,
-                    ICON_X_REC);
+        text_column(1, "SECT", val, live.cur >= 0 ? VAL(1u) : T_DIM);
+        text_column(2, "PLAY", live.mode ? "SONG" : "LOOP", VAL(2u));
+        text_column(3, "REC", live.srec == 2u ? "ON" : live.srec ? "ARM" : "OFF", live.srec ? VAL(3u) : T_DIM);
     } else if (l == LAYER_MACRO) {                      /* M1..M4, 0..100 % */
         static const char *const M[4] = {"M1", "M2", "M3", "M4"};
         for (c = 0; c < 4u; c++) {

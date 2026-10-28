@@ -87,8 +87,25 @@ static int extended_format(void)
     ok &= CO_ACT(t->step[0].comp2)==CA_CHORD && t->step[0].carg2==CD_MIN7-1 && CO_ACT(glane[0].comp)==CA_CHORD;
     return check("SHIFT and CHORD survive project save/load with N:M, C2 and master intact",ok);
 }
+static int extended_ui(void)
+{
+    static const uint8_t notes[4]={60,0,0,0};
+    track_t *t=pat(4,notes);int ok;
+    comp_set(&t->step[0],0,CA_BEND,CC_P50,0,1,12);
+    go_page(GR_COMP);
+    comp_knob(0,1);
+    ok=CO_ACT(t->step[0].comp)==CA_SHIFT && CO_COND(t->step[0].comp)==CC_ALWAYS;
+    comp_knob(2,1); ok &= CO_COND(t->step[0].comp)==CC_FIRST;
+    comp_knob(2,1); ok &= CO_COND(t->step[0].comp)==CC_NFIRST;
+    comp_knob(2,1); ok &= CO_COND(t->step[0].comp)==CC_NM && t->step[0].cnm[0]==CNM_MAKE(1,2);
+    comp_knob(3,-3); ok &= t->step[0].carg==60;
+    comp_knob(0,1); ok &= CO_ACT(t->step[0].comp)==CA_CHORD;
+    comp_knob(3,CD_MIN-1);frame();
+    ok &= t->step[0].carg==CD_MIN-1 && strstr(ui.col[3],"MIN")!=0;
+    return check("COMP controls expose SHIFT pass conditions and selectable CHORD shapes",ok);
+}
 int main(void)
 {
-    int bad=original_comp_main();bad+=shift_tests()+chord_tests()+extended_format();
+    int bad=original_comp_main();bad+=shift_tests()+chord_tests()+extended_format()+extended_ui();
     printf("%s\n",bad?"STEP EXTENSIONS FAILED":"step extensions passed");return !!bad;
 }

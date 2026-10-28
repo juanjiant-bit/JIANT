@@ -2415,7 +2415,7 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
  * The step is read again: an edit to fewer parts (or another source in a song) ends the repeats */
 static __attribute__((noinline)) void seq_ratchet(track_t *t, uint32_t period)
 {
-    const step_t *s = t->cv_on ? &t->cvs : &seq_steps(t)[seq_src(t, t->seq_idx)];   /* (0.6.47: C.LEN's) */
+    const step_t *s = t->cv_on ? &t->cvs : shift_step(t, t->seq_idx);   /* (0.6.47: C.LEN's) */
     uint32_t div, hits = step_parts(t, s, &div), q, at;
     if (t->rat_left >= hits) {
         t->rat_left = 0;
@@ -2436,7 +2436,7 @@ static __attribute__((noinline)) void seq_ratchet(track_t *t, uint32_t period)
  * the step read again (an edit ends it); n: the samples the step moved on in this block */
 static __attribute__((noinline)) void seq_lane_rat(track_t *t, uint32_t period, uint32_t n)
 {
-    const step_t *s = t->cv_on ? &t->cvs : &seq_steps(t)[seq_src(t, t->seq_idx)];
+    const step_t *s = t->cv_on ? &t->cvs : shift_step(t, t->seq_idx);
     uint32_t sl = step_samples(t, period, t->seq_idx), pos = t->seq_pos, prev, l, k, any = 0;
     uint32_t vel = (s->flags & SF_ACCENT) ? 127u : (s->vel ? s->vel : 96u);
     if (pos >= 0x7FFFFFFFu || s->time != ST_NOTE) {
@@ -2503,7 +2503,7 @@ static void seq_due(track_t *t, uint32_t n)
             ev_at(t->ss_due);
             t->dtch = t->ss_tch;
             if (trk_kit(t)) {                       /* (0.8.5) its lane's TOUCH, from the step playing */
-                const step_t *ps = t->cv_on ? &t->cvs : &seq_steps(t)[seq_src(t, t->seq_idx)];
+                const step_t *ps = t->cv_on ? &t->cvs : shift_step(t, t->seq_idx);
                 uint32_t lt = lm_touch(step_lmode(ps, drum_lane(t->ss_nn[t->ss_i])));
                 if (lt)
                     t->dtch = (uint8_t)lt;
