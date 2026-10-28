@@ -882,6 +882,11 @@ static __attribute__((noinline)) void hot_gauge_column(uint32_t c, const char *l
     gauge_column(c, label, value, VAL(c), ratio);
 }
 
+static __attribute__((noinline)) void unit_column(uint32_t c, const char *label, const char *value, const char *unit, uint16_t color)
+{
+    draw_column(c, label, value, unit, color, -1, ICON_NONE);
+}
+
 /* Cards without units or a gauge share argument setup. Icons are unused by draw_column. */
 static __attribute__((noinline)) void text_column(uint32_t c, const char *label, const char *value, uint16_t color)
 {
@@ -1290,7 +1295,7 @@ static __attribute__((noinline)) void comp_columns(void)
         text_column(0, "ACTION", CA_NAMES[a], a ? VAL(0u) : T_DIM);
         if (a && a != CA_JUMP) {
             fmt_int(val, (int32_t)gc->len + 1);
-            draw_column(1, "LENGTH", val, "ST", VAL(1u), -1, ICON_RATE);   /* (gen3: "32 ST" in M) */
+            unit_column(1, "LENGTH", val, "ST", VAL(1u));   /* (gen3: "32 ST" in M) */
         } else
             text_column(1, "LENGTH", "-", T_DIM);
         if (a) {
@@ -1298,7 +1303,7 @@ static __attribute__((noinline)) void comp_columns(void)
             text_column(2, "COND", val, CO_COND(gc->comp) ? VAL(2u) : T_DIM);   /* (gen3: MONO / POLY on
                                                          * COMPS 2, the value whole) */
             comp_value(TSEL->step, a, gc->val, lb, val, un);
-            draw_column(3, lb, val, un, lb[0] ? VAL(3u) : T_DIM, -1, ICON_ORDER);
+            unit_column(3, lb, val, un, lb[0] ? VAL(3u) : T_DIM);
         } else {
             text_column(2, "COND", "", T_DIM);
             empty_column(3);
@@ -1312,7 +1317,7 @@ static __attribute__((noinline)) void comp_columns(void)
         text_column(0, k ? "ACTION 2" : "ACTION", CA_NAMES[a], a ? VAL(0u) : T_DIM);
         if (a && a != CA_JUMP) {
             fmt_int(val, (int32_t)(l < CL_MAX ? l + 1u : 1u));
-            draw_column(1, "LENGTH", val, "ST", VAL(1u), -1, ICON_RATE);
+            unit_column(1, "LENGTH", val, "ST", VAL(1u));
         } else
             text_column(1, "LENGTH", "-", T_DIM);
         if (a) {
@@ -1321,7 +1326,7 @@ static __attribute__((noinline)) void comp_columns(void)
             text_column(2, CO_COND(cs->comp2) == CC_ELSE && CO_ACT(cs->comp2) ? "MONO" : CO_ACT(cs->comp) && CO_ACT(cs->comp2) ?
                         "POLY" : "COND", val, c ? VAL(2u) : T_DIM);
             comp_value(cs, a, comp_arg(cs), lb, val, un);
-            draw_column(3, lb, val, un, lb[0] ? VAL(3u) : T_DIM, -1, ICON_ORDER);
+            unit_column(3, lb, val, un, lb[0] ? VAL(3u) : T_DIM);
         } else {
             text_column(2, "COND", "", T_DIM);
             empty_column(3);
@@ -1464,7 +1469,7 @@ static void draw_columns(void)
         fmt_int(val, (int32_t)ui.cursor + 1);
         hot_text_column(0, "STEP", val);
         fmt_int(val, (int32_t)step_chance(&TSEL->step[ui.cursor]));
-        draw_column(1, "CHANCE", val, "%", VAL(1u), -1, ICON_PROB);   /* the die */
+        unit_column(1, "CHANCE", val, "%", VAL(1u));   /* the die */
         val[0] = 'x';                                  /* x1 .. x4 */
         val[1] = (char)('0' + step_ratchet(&TSEL->step[ui.cursor]));
         val[2] = 0;
@@ -1563,7 +1568,7 @@ static void draw_columns(void)
         fmt_int(u + 1, (int32_t)total);
         if (!total || (cur + 1u >= 100u && total >= 100u)) u[0] = 0;   /* (0.7.0) "147/155" is too wide for the card: the
                                                          * number alone past 99 (every engine's presets counted) */
-        draw_column(0, "No.", val, u, VAL(0u), -1, ICON_NONE);
+        unit_column(0, "No.", val, u, VAL(0u));
         hot_text_column(1, "ENG", ENGINES[TSEL->eng_req]->name);
         hot_text_column(2, "FAV", preset_favorite() ? "ON" : "OFF");
         hot_text_column(3, "LIST", N_LIST[list_get()]);
@@ -1618,7 +1623,7 @@ static void draw_columns(void)
         param_format(&GP[G_SLPLEN], song.g[G_SLPLEN], val, &unit);
         draw_column(2, "LEN", val, unit, VAL(2u), RATIO(&GP[G_SLPLEN], song.g[G_SLPLEN]), ICON_AUTO);
         param_format(&GP[G_SLPQ], song.g[G_SLPQ], val, &unit);
-        draw_column(3, "QUANT", val, unit, VAL(3u), -1, ICON_AUTO);
+        unit_column(3, "QUANT", val, unit, VAL(3u));
         return;
     }
     if (cur_page()->graph == GR_MSEQ) {                  /* (JIANT) STEP, its LVL, LEN, SLEW */
@@ -1692,7 +1697,7 @@ static void draw_columns(void)
         fmt_int(sn, (int32_t)ui.cursor + 1);
         str_cpy(sl, "/", 8);
         fmt_int(sl + 1, TSEL->p[P_SLEN]);
-        draw_column(0, "STEP", sn, sl, VAL(0u), -1, ICON_AUTO);
+        unit_column(0, "STEP", sn, sl, VAL(0u));
         hot_text_column(1, "LANE", drum_lane_name(TSEL, ui.lane));
         text_column(2, "HIT", GRID_HIT[grid_hit_of(st, ui.lane)], on ? VAL(2u) : T_DIM);   /* (0.8.5: its mode) */
         text_column(3, "ACC", ac ? "ON" : "--", ac ? VAL(3u) : T_DIM);
@@ -1714,7 +1719,7 @@ static void draw_columns(void)
         if (kit) hot_text_column(0, "STEP", sn);
         else text_column(0, "FOCUS", fo, on ? VAL(0u) : T_DIM);
         text_column(1, "PITCH", pn, on && !kit ? VAL(1u) : T_DIM);
-        draw_column(2, "MOVE", kit ? "--" : sn, kit ? "" : "<>", on && !kit ? VAL(2u) : T_DIM, -1, ICON_AUTO);
+        unit_column(2, "MOVE", kit ? "--" : sn, kit ? "" : "<>", on && !kit ? VAL(2u) : T_DIM);
         gauge_column(3, "MICRO", mo, on && m ? VAL(3u) : T_DIM, on ? (m - MICRO_MIN) * 1000 / (MICRO_MAX - MICRO_MIN) : -1);
         return;
     }
@@ -1749,9 +1754,9 @@ static void draw_columns(void)
             fmt_int(sl + 1, TSEL->p[P_SLEN]);
             if (nl > 1u) fmt_int(tv, (int32_t)nl);            /* (0.8.4) a NOTE's length: 3 ST (NOTE: one step) */
             else str_cpy(tv, TIME_N[st->time % 3u], sizeof tv);
-            draw_column(0, "STEP", sn, sl, VAL(0u), -1, ICON_AUTO);
-            draw_column(1, "NOTE", val, u, step_on(st) ? VAL(1u) : T_DIM, -1, ICON_AUTO);
-            draw_column(2, "TIME", tv, nl > 1u ? "ST" : "", VAL(2u), -1, ICON_AUTO);
+            unit_column(0, "STEP", sn, sl, VAL(0u));
+            unit_column(1, "NOTE", val, u, step_on(st) ? VAL(1u) : T_DIM);
+            unit_column(2, "TIME", tv, nl > 1u ? "ST" : "", VAL(2u));
             hot_text_column(3, "FLAG", FLAG_N[(st->flags & SF_ACCENT ? 1u : 0u) | (st->flags & SF_SLIDE ? 2u : 0u)]);
         }
         return;
@@ -1774,12 +1779,12 @@ static void draw_columns(void)
         if (cur_page()->id[c] == G_MIDI && cur_page()->scope == SC_GLOBAL) {
             if (c) {                                     /* (0.9.9-snd8) SYSTEM 2's KNOB 2: the TRS messages come in */
                 fmt_int(val, (int32_t)(um.msgs % 10000u));
-                draw_column(c, "TRS IN", val, "MSG", T_THEME, -1, ICON_AUTO);
+                unit_column(c, "TRS IN", val, "MSG", T_THEME);
                 continue;
             }
             str_cpy(val, !usb.up ? "OFF" : usb.config ? "MIDI" : usb.setups ? "ENUM" : usb.sof_seen ? "BUS" : "WAIT", 12);
             unit = "USB";
-            draw_column(c, "USB", val, unit, T_THEME, -1, ICON_AUTO);
+            unit_column(c, "USB", val, unit, T_THEME);
             continue;
         }
         if ((act_cols() >> c) & 1u) {
