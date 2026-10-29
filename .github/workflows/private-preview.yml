@@ -1,0 +1,81 @@
+name: Private ADDITIVE installer
+on:
+  push:
+    branches: [main]
+    paths: [web/PRIVATE_BUILD.json]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Validate candidate provenance
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          from pathlib import Path
+          m=json.loads(Path('web/PRIVATE_BUILD.json').read_text())
+          url=f'https://api.github.com/repos/{os.environ["GITHUB_REPOSITORY"]}/actions/runs/{m["run_id"]}'
+          req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          run=json.load(urllib.request.urlopen(req))
+          assert run['status']=='completed' and run['conclusion']=='success','candidate validation did not pass'
+          assert run['head_sha']==m['source'],'candidate run source mismatch'
+          assert run['head_branch']=='codex/add15-private','unexpected candidate branch'
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write(f'run_id={m["run_id"]}\n')
+          PY
+      - name: Frozen published site
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          run-id: 40763012981
+          github-token: ${{ github.token }}
+          path: build/frozen
+      - name: Exact validated firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: rec-firmware
+          run-id: ${{ steps.candidate.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: build/validated
+      - name: Verify package and update only preview
+        run: |
+          mkdir -p build/pages
+          tar -xf build/frozen/artifact.tar -C build/pages
+          node --input-type=module - <<'JS'
+          import fs from 'node:fs';
+          import {createHash} from 'node:crypto';
+          import {Package,crc16} from './web/fm1pkg.js';
+          const p=new Package(fs.readFileSync('build/validated/build/felucca.fwsc'));
+          if(p.product!=='FM-1_909'||p.flashSize!==0x93000||p.sfcEnd>p.flashSize)throw Error('Unexpected flash layout');
+          if(crc16(p.dec.subarray(p.appOff,p.appOff+p.app.size))!==p.app.dcrc)throw Error('Application CRC mismatch');
+          const entry=p.entries.find(e=>e.type!==0);
+          const loader=p.raw.subarray(entry.dataOff+p.skew,entry.dataOff+p.skew+entry.size);
+          if(createHash('sha256').update(loader).digest('hex')!=='ce8721ed1624b36c1b08f160b9d89a591ae42c7f23f9ce82ab963faeefa6a056')throw Error('OTA loader changed');
+          JS
+          python3 web/publish_private.py web/PRIVATE_BUILD.json build/pages build/validated/build/felucca.fwsc
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/pages
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

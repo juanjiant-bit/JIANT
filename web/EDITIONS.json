@@ -50,5 +50,9 @@
   "v0.9.9-par10d-beta2-42947e9-preview": {
     "edition": "ADDITIVE + CONTROLS + COPY SEQ",
     "status": "beta"
+  },
+  "v0.9.9-add15-beta1-857c86f-preview": {
+    "edition": "ADDITIVE \u00b7 ADD15 (MOVE + ACOUSTIC + STEP COMPONENTS)",
+    "status": "beta"
   }
 }

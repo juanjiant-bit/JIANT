@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 30219)
+Total output lines: 1414
+
 Warning: truncated output (original token count: 79905)
 Total output lines: 3440
 
@@ -26,12 +29,18 @@ A tester reported an FM-1 that would not boot after installing par14. The exact 
 
 The incident investigation is tracked in [the par14 audit](docs/PAR14_INCIDENT.md). Do not erase projects or attempt blind reflashing to diagnose a non-booting device; first record its screen and USB enumeration so the recovery path can be chosen for its actual state.
 
+## ADD15 private test build
+
+ADDITIVE development continues from public par10, with **ADD retained and no SAMPLE engine**. The private beta restores REC/undo/quantization shortcuts, independent REC/PLAY, cursor navigation, COPY/PASTE SEQ, SHIFT/CHORD components, STRING feedback MOVE and related amplifier/envelope improvements. DRUM-X adds a first synthesized ACOUSTIC macro on EDIT > KIT 4.
+
+The public installer and firmware, and the frozen SAMPLE emulator, are preserved byte for byte by a private-only deployment. See [the feature list, test procedure and compatibility limits](docs/ADD15_PRIVATE.md). This is a hardware test build, not a fix confirmed for the unresolved par14 incident. Back up projects before testing.
+
 ## Current versions
 
 | Where | Version |
 |---|---|
 | **Public installer** | **ADDITIVE par10** (first/default), **SAMPLE par13b**, then **STANDARD par12** (stable) |
-| **Preview installer** | **ADDITIVE par10d-beta2**, beta only; par14 withdrawn |
+| **Preview installer** | **ADDITIVE ADD15 beta1**, beta only; ADD par10d remains a rollback option; par14 withdrawn |
 | **Browser emulator** | Frozen SAMPLE par14-beta4, browser only; separate from the hardware installer |
 | Earlier versions the public installer also offers | 0.9.9-par8, 0.9.9-gen2 (*ULTRA STABLE*), 0.9.9-par6, 0.9.9-par5, 0.9.17, 0.9.14, 0.9.9, 0.8.9 … |
 
@@ -647,16 +656,7 @@ each layer; the complete manual is in **[docs/MANUAL.md](docs/MANUAL.md)** (en e
   using right now. The firmware's RAM is reserved entirely at boot and doesn't change, so this is what's worth
   watching: with all five lit (red, yellow) you're close to the limit and should cut voices, the CLOUD reverb or heavy
   effects. If it's often full: GLO > SYSTEM > **TRACKS 4** (the default; also MENU > AUDIO > TRACKS) leaves T5 and T6
-  asleep for headroom, and **LOAD** (next to it; also MENU > AUDIO > LOAD, SYSTEM until 0.9.11) lightens the sound: **FULL** everything as
-  set, **LITE** the heavy reverbs, the GRAIN delay and FM6 lightened (SHIMMER and CLOUD as ROOM, RESO as SPRING, the
-  GRAIN delay plain, FM6 two voices), **ECO** that plus every reverb a SPRING, no SLICER, no chorus (their pages
-  hidden) and at most 4 voices a synth track. The project keeps its settings: back on FULL it sounds as saved.
-- **Power-on**: the signature draws itself in about a second, with beings swimming round it. To boot straight in: MENU > SCREEN > **ANIMATION OFF**.
-
-### 3. Making a sound
-1. Pick the track with ALGORITHM and the engine/preset with **PRESETS**.
-2. **EDIT** opens the engine's pages. Every engine has a **FILTER** page: KNOB 1 TYPE (LP, HP, BP, COMB), KNOB 2 CUT,
-   KNOB 3 RES and KNOB 4 DRV (on ANALOG the filter's saturation;…49905 tokens truncated… the mix and the master, the
+  asleep for headroom, and **LOAD** (next to it; also MENU > …219 tokens truncated…the mix and the master, the
   FX layer, the SLICER, and the first core's copies of a track's mix and the effect buses. The second core keeps the
   flash copies (it now and then misreads RAM on some units). The code itself is the same as before (only its place
   changed), so the sound is identical; whether the peaks go down can only be measured on a real FM-1: compare PEAK,
@@ -1403,5 +1403,6 @@ Fixes from the first users' reports:
 
 ### v0.5
 First public release.
+
 
 
