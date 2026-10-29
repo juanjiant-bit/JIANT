@@ -93,7 +93,7 @@ jobs:
       - uses: mymindstorm/setup-emsdk@v14
         with:
           version: 6.0.11
-      - name: Fresh and saved-session boot in WASM
+      - name: Fresh and stored-project boot in WASM
         run: |
           sh web/emu/build.sh
           node tests/add15_boot_test.mjs build/emu/felucca.wasm
