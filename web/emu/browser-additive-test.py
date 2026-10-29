@@ -24,10 +24,12 @@ try:
         assert page.locator('#sample-bank-controls').count()==0
         page.click('#go');page.wait_for_function("document.querySelector('#go').textContent==='On'",timeout=30000)
         page.wait_for_timeout(4200)
-        # The default first track is DRUM. EDIT hold + KNOB 2 left wraps its engine to ADD.
-        box=page.locator('[role="button"][aria-label="EDIT"]').bounding_box()
-        page.mouse.move(box['x']+box['width']/2,box['y']+box['height']/2);page.mouse.down();page.wait_for_timeout(700)
-        page.locator('[role="slider"][aria-label="KNOB 2"]').focus();page.keyboard.press('ArrowLeft');page.wait_for_timeout(150);page.mouse.up();page.wait_for_timeout(150)
+        # Tap SAVE to open PRESETS; KNOB 2 selects the engine.
+        page.locator('[role="button"][aria-label="SAVE"]').click(delay=100)
+        page.wait_for_timeout(150)
+        page.locator('[role="slider"][aria-label="KNOB 2"]').focus()
+        page.keyboard.press('ArrowLeft');page.wait_for_timeout(150)
+        page.locator('[role="slider"][aria-label="KNOB 2"]').evaluate('(el)=>el.blur()')
         page.evaluate("__node.port.postMessage({type:'diagnostics'})")
         page.wait_for_function('window.__edition && __edition.additive===true && __edition.engine===13',timeout=5000)
         page.evaluate("""() => {const a=__node.context.createAnalyser();a.fftSize=512;__node.connect(a);window.__analyser=a;}""")
