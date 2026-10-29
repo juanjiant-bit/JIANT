@@ -45,13 +45,13 @@ jobs:
           build/rec/seq_clipboard | tee build/rec/seq-clipboard.log
       - name: Components, acoustic storage and audio
         run: |
-          for t in step_extensions acoustic_store drum_acoustic string_add; do
+          for t in step_extensions acoustic_store drum_acoustic string_add project; do
             cc -O1 -w -fsanitize=bounds -fno-sanitize-recover=bounds -Ibuild/gen -Ifirmware/src -Itests tests/${t}_test.c -lm -o build/rec/$t
             build/rec/$t | tee build/rec/$t.log
           done
       - name: Target image, memory and DSP budgets
         run: |
-          FELUCCA_REPIN=1 python3 tools/build.py
+          python3 tools/build.py
           git worktree add --detach /tmp/rec-base "$(cat tests/REC_BASE)"
           (cd /tmp/rec-base && python3 tools/build.py)
           mkdir -p build/rec
@@ -90,6 +90,13 @@ jobs:
           cat build/rec/timing-new.log
           test "$rec_new_exit" -le 1
           echo "Timing output and exit status match the original firmware exactly."
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.11
+      - name: Fresh and saved-session boot in WASM
+        run: |
+          sh web/emu/build.sh
+          node tests/add15_boot_test.mjs build/emu/felucca.wasm
       - uses: actions/upload-artifact@v4
         if: always()
         with:
