@@ -495,6 +495,11 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
         ml.amp1 = (m->amp1 >> 4) * gl >> 11;
         m = &ml;
     }
+    if(dx_acoustic) { /* Keep the harder acoustic hits below full scale without a per-sample stage. */
+        int32_t gain=32768-(int32_t)dx_acoustic*16;
+        int32_t a0=(m->amp0>>4)*gain>>11;
+        ml.amp1=(m->amp1>>4)*gain>>11;ml.amp0=a0;m=&ml;
+    }
     if (n > CTL)
         n = CTL;
     {   /* (0.6.81) the part's LFO on the kit (its hits never had a vmod's pitch or shape): PITCH tunes it, SHAPE moves
