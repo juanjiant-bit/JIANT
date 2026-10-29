@@ -227,7 +227,7 @@ static void string_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
                                                          * rides at the clip: -15 dB once bloomed, beside a pluck */
             int32_t c = clamp(((s * fdo) >> 8) + fdo * 3, -32767, 32767);
             c = ((3 * c - ((((c * c) >> 15) * c) >> 15)) >> 1) - fz0;   /* (less the bias's own: no step at the note) */
-            s = (c * fol) >> 15;
+            s = (((c * fol) >> 15) * (32 - ((bl * 26) >> 15))) >> 5;
         }
         dc += ((s << 12) - dc) >> 10;                    /* (the output's DC blocked: ~7 Hz; Q12, what sticks under a
                                                          * quarter of a step: rounded away) */

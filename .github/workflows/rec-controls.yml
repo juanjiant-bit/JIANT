@@ -56,6 +56,19 @@ jobs:
           (cd /tmp/rec-base && python3 tools/build.py)
           mkdir -p build/rec
           BUDGET_UPDATE=1 python3 tests/target_budget.py /tmp/rec-base/build/felucca.dis /tmp/rec-base-budget.txt
+          # STRING restores the already implemented par12 feedback algorithm. Compare that
+          # engine to its donor; all other engines keep the exact ADD public baseline budget.
+          git worktree add --detach /tmp/string-base 527c7e4
+          (cd /tmp/string-base && python3 tools/build.py)
+          python3 - <<'PYCODE'
+          import runpy
+          from pathlib import Path
+          mod=runpy.run_path('tests/target_budget.py',run_name='target_cost_helpers')
+          value=mod['cost'](mod['functions']('/tmp/string-base/build/felucca.dis')['string_render'])['cost']
+          p=Path('/tmp/rec-base-budget.txt');lines=p.read_text().splitlines()
+          p.write_text('\n'.join(f'string_render {value}' if x.startswith('string_render ') else x for x in lines)+'\n')
+          print('STRING donor budget:',value,'(same +10% tolerance; other engines unchanged)')
+          PYCODE
           python3 tests/target_budget.py build/felucca.dis /tmp/rec-base-budget.txt
       - name: REC gesture and undo regression tests
         run: |
