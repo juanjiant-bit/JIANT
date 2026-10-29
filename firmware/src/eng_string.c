@@ -151,7 +151,8 @@ static void string_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
         fk = (clamp(p[P_E4], 0, 127) * (bl >> 7)) >> 2;    /* GAIN x the bloom (Q15 / 4: a quarter at most a pass) */
         fdr = 256 + dv * 24;                               /* DIST: x1 .. x13 into the clip */
         fdo = 256 + ((dv * dv) >> 2);                      /* (par12) and the amp heard: x1 .. x17 into a fuzz */
-        fol = 8192 + 24576 * 256 / fdo;                    /* (its level kept: -11 dB at the most) */
+        fol = 8192 + 24576 * 256 / fdo;
+        fol = (fol * (32 - ((bl * 26) >> 15))) >> 5; /* one gain per block, not a second gain per sample */                    /* (its level kept: -11 dB at the most) */
         fz0 = clamp(fdo * 3, -32767, 32767);
         fz0 = (3 * fz0 - ((((fz0 * fz0) >> 15) * fz0) >> 15)) >> 1;
         mv += (uint32_t)(mk * mk) << 10;                   /* (par12) MOVE: ~0.07 .. 2.7 Hz, two sines: the speaker's
@@ -226,7 +227,7 @@ static void string_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
                                                          * rides at the clip: -15 dB once bloomed, beside a pluck */
             int32_t c = clamp(((s * fdo) >> 8) + fdo * 3, -32767, 32767);
             c = ((3 * c - ((((c * c) >> 15) * c) >> 15)) >> 1) - fz0;   /* (less the bias's own: no step at the note) */
-            s = (((c * fol) >> 15) * (32 - ((bl * 26) >> 15))) >> 5;
+            s = (c * fol) >> 15;
         }
         dc += ((s << 12) - dc) >> 10;                    /* (the output's DC blocked: ~7 Hz; Q12, what sticks under a
                                                          * quarter of a step: rounded away) */
