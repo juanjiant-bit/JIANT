@@ -1,4 +1,4 @@
-name: Private ADDITIVE installer
+name: Private ADDITIVE installer and emulator
 on:
   push:
     branches: [main]
@@ -35,13 +35,17 @@ jobs:
           assert run['status']=='completed' and run['conclusion']=='success','candidate validation did not pass'
           assert run['head_sha']==m['source'],'candidate run source mismatch'
           assert run['head_branch']=='codex/add15-private','unexpected candidate branch'
-          with open(os.environ['GITHUB_OUTPUT'],'a') as f:f.write(f'run_id={m["run_id"]}\n')
+          assert m['emulator_source']==m['source'],'emulator must match the beta'
+          assert Path('web/EMULATOR').read_text().strip()==m['source'],'emulator pin mismatch'
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+              f.write(f'run_id={m["run_id"]}\n')
+              f.write(f'emulator_source={m["emulator_source"]}\n')
           PY
       - name: Frozen published site
         uses: actions/download-artifact@v4
         with:
           name: github-pages
-          run-id: 40763012981
+          run-id: 40870214766
           github-token: ${{ github.token }}
           path: build/frozen
       - name: Exact validated firmware
@@ -67,6 +71,29 @@ jobs:
           if(createHash('sha256').update(loader).digest('hex')!=='ce8721ed1624b36c1b08f160b9d89a591ae42c7f23f9ce82ab963faeefa6a056')throw Error('OTA loader changed');
           JS
           python3 web/publish_private.py web/PRIVATE_BUILD.json build/pages build/validated/build/felucca.fwsc
+      - name: Emulator source matching validated beta
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.candidate.outputs.emulator_source }}
+          path: build/emulator-source
+          persist-credentials: false
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.11
+      - name: Build and verify ADDITIVE emulator
+        run: |
+          pip install Pillow==12.3.0 numpy==2.3.5 fonttools==4.61.1
+          (cd build/emulator-source && python3 -c "import sys;sys.path.insert(0,'tools');import build;build.generate()")
+          cp web/emu/additive-api.h build/emulator-source/web/emu/additive-api.h
+          cat web/emu/additive-api.h >> build/emulator-source/web/emu/felucca_web.c
+          (cd build/emulator-source && sh web/emu/build.sh)
+          node web/emu/additive-boot-test.mjs build/emulator-source/build/emu/felucca.wasm
+          python3 web/publish_emulator.py web/PRIVATE_BUILD.json build/pages build/emulator-source/build/emu
+      - name: Browser ADDITIVE audio and isolated saves
+        timeout-minutes: 4
+        run: |
+          pip install --timeout 30 --retries 2 playwright==1.58.0
+          python3 -u web/emu/browser-additive-test.py build/pages/emu
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/pages
@@ -79,3 +106,4 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+

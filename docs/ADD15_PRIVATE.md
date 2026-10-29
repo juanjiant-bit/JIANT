@@ -4,7 +4,7 @@ Base: public ADDITIVE par10 (`30f05b3`), through its controls/clipboard beta (`4
 
 Development source: [codex/add15-private](https://github.com/juanjiant-bit/JIANT/tree/codex/add15-private). The exact published commit and validation run are pinned in `web/PRIVATE_BUILD.json`.
 
-The public firmware and site are frozen. The private deployment copies a previously verified Pages artifact, replaces only `preview/`, and rejects any change outside that directory. Firmware comes from an exact successful candidate-validation run, checked against its source SHA and package SHA-256. The older ADD controls beta remains in the private selector as a rollback option. The browser SAMPLE emulator is not rebuilt or changed.
+The public firmware and site are frozen. The private deployment copies a previously verified Pages artifact, replaces only `preview/`, and preserves the public installer and firmware byte for byte. The emulator is built separately from the same validated ADD source. Firmware comes from an exact successful candidate-validation run, checked against its source SHA and package SHA-256. The older ADD controls beta remains in the private selector as a rollback option. The browser emulator now runs ADD15 without sampler controls. Its browser saves use a separate key; earlier SAMPLE saves are preserved and are not automatically reinterpreted as ADD.
 
 ## Included
 
@@ -33,3 +33,4 @@ Tests cover REC/undo, sequence clipboard, SHIFT/CHORD and project round trips, a
 Keep a backup of public-version projects before testing. Use a copy of a project for the trial. Projects using SHIFT/CHORD action codes may be rejected by the older public firmware; do not overwrite the only compatible copy. Par14 remains withdrawn and its tester incident has no confirmed root cause. Porting features to ADD does not establish that the prior incident is fixed.
 
 On the FM-1, start with one track, confirm REC/PLAY independence and the shortcuts, then test COPY/PASTE and STRING MOVE. Compare ACOUST 0% with 100% on the same DRUM-X pattern and read AUDIO LOAD/PEAK/LATE/SHED before and after adding tracks. Report the exact build label and those readings with any failure.
+

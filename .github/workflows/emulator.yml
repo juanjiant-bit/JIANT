@@ -40,17 +40,23 @@ jobs:
       - name: the emulator
         # The frozen browser SAMPLE source is separate from the ADD hardware beta pin.
         run: |
+          E=$(tr -d ' \n' < web/EMULATOR_EDITION)
           P=$(tr -d ' \n' < web/EMULATOR 2>/dev/null || tr -d ' \n' < web/PREVIEW)
           if [ -n "$P" ] && git cat-file -e "$P^{commit}" 2>/dev/null; then
             rm -rf /tmp/emusrc; git worktree add -f --detach /tmp/emusrc "$P"
-            cp web/emu/sample-kit-api.h /tmp/emusrc/web/emu/sample-kit-api.h
-            printf '%s\n' '#include "sample-kit-api.h"' >> /tmp/emusrc/web/emu/felucca_web.c
+            if [ "$E" = ADDITIVE ]; then
+              cp web/emu/additive-api.h /tmp/emusrc/web/emu/additive-api.h
+              cat web/emu/additive-api.h >> /tmp/emusrc/web/emu/felucca_web.c
+            else
+              cp web/emu/sample-kit-api.h /tmp/emusrc/web/emu/sample-kit-api.h
+              printf '%s\n' '#include "sample-kit-api.h"' >> /tmp/emusrc/web/emu/felucca_web.c
+            fi
             if (cd /tmp/emusrc && python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()" \
                 && sh web/emu/build.sh); then
               rm -rf build/emu; mkdir -p build; cp -r /tmp/emusrc/build/emu build/emu
               echo "emulator: web/EMULATOR ${P::7}"
             else
-              echo "emulator: ${P::7} did not build, main's instead"; sh web/emu/build.sh
+              echo "Pinned emulator ${P::7} did not build"; exit 1
             fi
             git worktree remove -f /tmp/emusrc || true
           else
@@ -62,17 +68,26 @@ jobs:
           import re, shutil
           target = Path("build/emu/index.html")
           version = re.search(r'<small class="version">(.*?)</small>', target.read_text()).group(1)
-          shell = Path("web/emu/index.html").read_text().replace("@VERSION@", version).replace("@PREVIEW@", "")
+          template = "web/emu/index-additive.html" if Path("web/EMULATOR_EDITION").read_text().strip() == "ADDITIVE" else "web/emu/index.html"
+          shell = Path(template).read_text().replace("@VERSION@", version).replace("@PREVIEW@", "")
           target.write_text(shell)
           shutil.copy("web/emu/sample-bank.js", "build/emu/sample-bank.js")
           shutil.copy("web/emu/worklet.js", "build/emu/worklet.js")
           PY
-          node web/emu/sample-bank-test.mjs build/emu/felucca.wasm
+          if [ "$E" = ADDITIVE ]; then
+            node web/emu/additive-boot-test.mjs build/emu/felucca.wasm
+          else
+            node web/emu/sample-bank-test.mjs build/emu/felucca.wasm
+          fi
       - name: Browser sampler audio
         timeout-minutes: 4
         run: |
           pip install --timeout 30 --retries 2 playwright==1.58.0
-          python3 -u web/emu/browser-sample-test.py
+          if [ "$(tr -d ' \n' < web/EMULATOR_EDITION)" = ADDITIVE ]; then
+            python3 -u web/emu/browser-additive-test.py build/emu
+          else
+            python3 -u web/emu/browser-sample-test.py
+          fi
       # (JIANT) the installer and the web editor next to the emulator: the package needs JieLi's toolchain (downloaded)
       # and three files of their AC79 SDK (a partial clone: only those blobs). A firmware build failure stops deployment.
       - name: JieLi toolchain and SDK files (cached)
@@ -235,6 +250,7 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
 
 
 

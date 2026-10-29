@@ -67,7 +67,7 @@ if (typeof registerProcessor === "function") {
           const kitReady = !!(samples && m.sampleKit && ex.web_sample_kit && !ex.web_sample_kit());
           this.ex = ex;
           this.sentWrites = ex.web_flash_writes_count();
-          this.port.postMessage({ type: "ready", rate: ex.web_sample_rate(), samples, kitReady });
+          this.port.postMessage({ type: "ready", rate: ex.web_sample_rate(), samples, kitReady, additive: !!(ex.web_additive_edition && ex.web_additive_edition()) });
         } catch (err) {
           this.port.postMessage({ type: "error", message: String(err && err.message || err) });
         }
@@ -80,6 +80,7 @@ if (typeof registerProcessor === "function") {
         const kitReady = !!(samples && ex.web_sample_kit && !ex.web_sample_kit());
         this.port.postMessage({type:"sample-ready", samples, kitReady});
       }
+      else if (m.type === "diagnostics") this.port.postMessage({type:"diagnostics", additive:!!(ex.web_additive_edition && ex.web_additive_edition()), engine:ex.web_selected_engine ? ex.web_selected_engine() : null});
       else if (m.type === "buttons" || m.type === "keys") this.queue.push(m);
       else if (m.type === "enc") ex.web_enc(m.role, m.n | 0);
       else if (m.type === "master") ex.web_master(m.value | 0);
@@ -162,4 +163,5 @@ if (typeof registerProcessor === "function") {
   }
   registerProcessor("felucca", Felucca);
 }
+
 
