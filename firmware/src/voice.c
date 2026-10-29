@@ -1444,7 +1444,7 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
                 v->env = v->env_out = 0;
                 return 0;
             }
-            if (v->stage != 4u) {                   /* (0.6.74: given up, env_tick's fade) */
+            if (v->stage != 4u && !e->amp) {        /* STRING FDBK keeps its ADSR through the amp hook. */
                 v->env = 1 << 24;                   /* (the ADSR's release never ends it) */
                 env = 32767;
             }
@@ -1626,3 +1626,4 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
         xf_snap_t = 0xFFu;                              /* (faded out: the snapshot done with) */
     return nr;
 }
+

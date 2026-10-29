@@ -1021,7 +1021,7 @@ static void comp_knob(uint32_t slot, int32_t steps)
         uint32_t na = (uint32_t)clamp((int32_t)a + d, 0, CA_N - 1);
         if (na == a) return;
         if (!na) { *cp = *ap = *lp = *np = 0; return; }
-        *cp = CO_MAKE(na, a ? CO_COND(*cp) : CC_ALWAYS);
+        *cp = CO_MAKE(na, a && na != CA_SHIFT ? CO_COND(*cp) : CC_ALWAYS);
         *ap = CA_VDEF[na];
         if (!a) { *lp = 0; *np = CNM_MAKE(1u, 2u); }
         if (na == CA_ARP || na == CA_STUT) *lp = 3;     /* (an ARP, a STUTTER: four steps to start with) */
@@ -1033,10 +1033,12 @@ static void comp_knob(uint32_t slot, int32_t steps)
             *lp = (uint8_t)clamp((int32_t)*lp + d, 0, CL_MAX - 1);
     } else if (slot == 2u) {
         uint32_t c, nm;
-        int32_t i = clamp((int32_t)cond_idx(CO_COND(*cp), *np) + steps, 0, (int32_t)CCL_N - 1);
-        if (!k && i == CC_ELSE)                         /* (ELSE: C2's, MONO) */
+        int32_t i = clamp((int32_t)(a == CA_SHIFT ? shift_cond_idx(CO_COND(*cp), *np) : cond_idx(CO_COND(*cp), *np)) + steps,
+                          0, (int32_t)(a == CA_SHIFT ? 3u + 2u * CCL_NM : CCL_N) - 1);
+        if (a != CA_SHIFT && !k && i == CC_ELSE)                         /* (ELSE: C2's, MONO) */
             i += steps > 0 ? 1 : -1;
-        cond_at((uint32_t)i, &c, &nm);
+        if (a == CA_SHIFT) shift_cond_at((uint32_t)i, &c, &nm);
+        else cond_at((uint32_t)i, &c, &nm);
         *cp = CO_MAKE(a, c);
         if (c >= CC_NM) *np = (uint8_t)nm;
     } else {

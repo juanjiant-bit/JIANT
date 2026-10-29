@@ -611,7 +611,7 @@ static int cp_isarp(uint32_t c) { return c >= CP_ARPN && c <= CP_ARPS; }
  * plays them), cnm[] N:M. Two a step: C1 first, then C2; C2's condition ELSE is MONO (it acts only when C1 did not),
  * any other POLY (both stack: C1 on the step, C2 over the result). seq.c comp_run */
 enum { CA_NONE, CA_ARP, CA_SEQ, CA_OCTU, CA_OCTD, CA_RATCH, CA_STUT, CA_MUTE, CA_TRANS, CA_RAND, CA_LOCK, CA_JUMP,
-       CA_SOUND, CA_BEND, CA_N };
+       CA_SOUND, CA_BEND, CA_SHIFT, CA_CHORD, CA_N };
 enum { CC_ALWAYS, CC_P25, CC_P50, CC_P75, CC_FIRST, CC_NFIRST, CC_FILL, CC_NFILL, CC_PRE, CC_NPRE, CC_NEI, CC_NNEI,
        CC_ELSE, CC_NM, CC_NNM, CC_N };
 #define CO_ACT(c) ((uint32_t)(c) & 15u)
@@ -635,8 +635,8 @@ enum { CC_ALWAYS, CC_P25, CC_P50, CC_P75, CC_FIRST, CC_NFIRST, CC_FILL, CC_NFILL
 #define CV_TR_RANGE(v) (((uint32_t)(v) >> 4) + 1u)
 #define CV_TR_MAKE(mv, rng) ((uint8_t)(((uint32_t)((mv) + 7) & 15u) | (((rng) - 1u) & 15u) << 4))
 #define CV_JUMP_REV 64u
-static const uint8_t CA_VMAX[CA_N] = {0, 191, 127, 2, 2, 20, 3, 1, 239, 6, 0, 64, 2, 24};   /* KNOB 4's list, 0.. */
-static const uint8_t CA_VDEF[CA_N] = {0, 0x08, 0, 0, 0, 0, 0, 0, 0x38, 1, 0, 0, 0, 14};    /* (stored VALUE) */
+static const uint8_t CA_VMAX[CA_N] = {0, 191, 127, 2, 2, 20, 3, 1, 239, 6, 0, 64, 2, 24, 126, 10};   /* KNOB 4's list, 0.. */
+static const uint8_t CA_VDEF[CA_N] = {0, 0x08, 0, 0, 0, 0, 0, 0, 0x38, 1, 0, 0, 0, 14, 63, 0};    /* (stored VALUE) */
 static int comp_any(const step_t *s) { return CO_ACT(s->comp) || CO_ACT(s->comp2); }
 typedef struct {                 /* a step as formats 1..4 (projects to FUN4) stored it: no hits */
     uint8_t note[4];
@@ -846,3 +846,4 @@ static volatile uint32_t fm1_ms;  /* milliseconds since boot (TIMER4-based, TIME
 /* boot-loop guard (main.c): two boots in a row that die in the first 30 s -> UBOOT */
 #define BOOTGUARD_MAGIC 0x42475244u
 struct { uint32_t magic, failed, pending; } bootguard __attribute__((section(".noinit")));
+

@@ -224,6 +224,15 @@ static void string_fdbk(void)
     check(what, r[0][1] < r[0][0] * 0.1 && r[1][1] > 0.02 && r[2][1] > r[1][1] * 0.8 && top < 1.0);
 }
 
+static void string_move(void)
+{
+    int16_t e[8]={SX_FDBK,90,70,0,70,70,40,60};double original[1024],delta=0;
+    EG=&ENG_STRING;setup(-1,e);voice_render(52,1.0,Y,1024);memcpy(original,Y,sizeof original);
+    e[3]=127;setup(-1,e);voice_render(52,1.0,Y,1024);
+    for(uint32_t i=0;i<1024;i++)delta+=fabs(Y[i]-original[i]);
+    check("STRING FDBK MOVE changes the feedback trajectory",delta>0.1);
+}
+
 static void string_tune(void)
 {
     static const int16_t E[SX_N][8] = {{SX_NOISE, 100, 90, 20, 0, 0, 40, 0}, {SX_PLUCK, 100, 90, 20, 0, 0, 40, 0},
@@ -502,6 +511,7 @@ int main(int argc, char **argv)
     string_bright();
     string_comb();
     string_fdbk();
+    string_move();
     add_partials();
     add_shape();
     add_alias();
@@ -514,3 +524,4 @@ int main(int argc, char **argv)
     printf(bad ? "strings: %d FAILED\n" : "strings: all passed\n", bad);
     return bad != 0;
 }
+

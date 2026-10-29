@@ -131,6 +131,7 @@ typedef struct {
     uint16_t dx_mute;                          /* its mutes (eng_drum.c: the groups DXG_* in the first reserved byte, the
                                                 * sounds' DXM_LANE in the second) */
     uint8_t dx_mot[4];                         /* (0.5.1) the kit's X-MOD (eng_drum.c), in its reserved bytes 3..6 */
+    uint8_t dx_acoustic; /* ADD15: optional final DA extension, 0 in older projects. */
     uint8_t dx_tone;                           /* (0.6.36) the kit's TONE (drumx_voice.c: BP, FEEDBK), its byte 7 */
     uint8_t dx_hands;                          /* (0.7.9) the kit's HANDS (drumx_voice.c), byte 0's high nibble (0 before);
                                                 * (0.9.9-snd1) its high nibble here GLUE (eng_drum.c dx_glue): FUNC's 'D' 'G'
@@ -607,6 +608,7 @@ static void proj_fm6_init(project_t *q)
     memcpy(q->dx, DX_KIT_DEF, sizeof q->dx);
     q->dx_mute = 0;
     memset(q->dx_mot, 0, sizeof q->dx_mot);
+    q->dx_acoustic = 0;
     q->dx_tone = 0;
     q->dx_hands = 0;
     memset(q->dx_snd, 0, sizeof q->dx_snd);
@@ -877,7 +879,7 @@ static int proj_gl_used(const project_t *q)            /* (0.9.9-seq2f) a global
 }
 static uint32_t proj_packed_size(const project_t *q)
 {
-    uint32_t n = 68u + sizeof q->chain + 4u + q->motion.count * sizeof q->motion.event[0] + 2u + G_SL_N, t, i;
+    uint32_t n = (q->dx_acoustic ? 3u : 0u) + 68u + sizeof q->chain + 4u + q->motion.count * sizeof q->motion.event[0] + 2u + G_SL_N, t, i;
     if (proj_djf_events(&q->motion))                    /* (0.9.1) the DJ FILTER's records: their block's head */
         n += 3u;
     if (proj_mf_tracks(q))                              /* (0.9.1) MICRO's 64ths: their block */
@@ -1063,7 +1065,8 @@ static int proj_pack(project_store_t *out, const project_t *q)
         b[pos++] = 'D'; b[pos++] = 'D'; b[pos++] = (uint8_t)clamp(q->g[G_DDRV], 0, 100);
     }
     pos += proj_tp(q, b, pos, 0);                       /* (0.9.9-snd8) the master's TAPE, when on (after DRIVE's) */
-    pos += proj_eq(b, pos, 0);                          /* (p9) its EQ, when set */
+    pos += proj_eq(b, pos, 0);
+    if(q->dx_acoustic) { b[pos++]='D';b[pos++]='A';b[pos++]=q->dx_acoustic&127u; }                          /* (p9) its EQ, when set */
     memcpy(b + PROJC_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJC_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
     for (i = 0; i < 4u; i++)
@@ -1350,7 +1353,8 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         pos += 3u;
     }
     pos += proj_tp(q, b, pos, room);                    /* (0.9.9-snd8) the master's TAPE (else 0) */
-    pos += proj_eq(b, pos, room);                       /* (p9) its EQ (else flat) */
+    pos += proj_eq(b, pos, room);
+    if(pos+3u<=room && b[pos]=='D' && b[pos+1u]=='A') q->dx_acoustic=b[pos+2u]&127u;                       /* (p9) its EQ (else flat) */
     proj_new_tracks(q, nt);                             /* (a FUNC of fewer tracks: the rest at power-on) */
     for (t = nt; t < NTRK; t++)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);
@@ -1488,7 +1492,8 @@ static int proj_unpack(project_t *q, const uint8_t *b, uint32_t st)
         memcpy(q->dx, DX_KIT_DEF, sizeof q->dx);
         q->dx_mute = 0;
         memset(q->dx_mot, 0, sizeof q->dx_mot);
-        q->dx_tone = 0;
+        q->dx_acoustic = 0;
+    q->dx_tone = 0;
         q->dx_hands = 0;
     }
     memset(q->dx_snd, 0, sizeof q->dx_snd);            /* (0.6.48: none before FUNC's block) */
@@ -1626,6 +1631,7 @@ static void project_capture(project_t *p)
     memcpy(p->dx, dx_kit, sizeof p->dx);
     p->dx_mute = dx_mute;
     memcpy(p->dx_mot, dx_mot, sizeof p->dx_mot);
+    p->dx_acoustic = dx_acoustic;
     p->dx_tone = dx_tone;
     p->dx_hands = (uint8_t)(dx_hands | dx_glue << 4);   /* (0.7.9; snd1: GLUE) */
     memcpy(p->dx_snd, dx_snd, sizeof p->dx_snd);        /* (0.6.48) */
@@ -1786,6 +1792,7 @@ static void sound_put(project_t *p, uint32_t k)
     if (e == ENGI_DRUM) {
         memcpy(dx_kit, dx_kit_ok(p->dx) ? p->dx : DX_KIT_DEF, sizeof dx_kit);
         memcpy(dx_mot, p->dx_mot, sizeof dx_mot);
+        dx_acoustic = p->dx_acoustic & 127u;
         dx_tone = p->dx_tone;
         dx_hands = p->dx_hands & 15u;
         dx_glue = p->dx_hands >> 4;
@@ -1833,6 +1840,7 @@ static int project_restore_runtime(const project_t *input)
     memcpy(dx_kit, dx_kit_ok(p->dx) ? p->dx : DX_KIT_DEF, sizeof dx_kit);   /* (the section's DRUM-X kit) */
     dx_mute_set(p->dx_mute);
     memcpy(dx_mot, p->dx_mot, sizeof dx_mot);           /* (0.5.1: the kit's X-MOD) */
+    dx_acoustic = p->dx_acoustic & 127u;
     dx_tone = p->dx_tone;                               /* (0.6.36: its TONE) */
     dx_hands = p->dx_hands & 15u;                       /* (0.7.9: its HANDS) */
     dx_glue = p->dx_hands >> 4;                         /* (snd1: its GLUE) */
@@ -1951,6 +1959,7 @@ static __attribute__((noinline)) void system_init(void)   /* (snd8: out of its c
     gl_touch();
     memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
     memset(dx_mot, 0, sizeof dx_mot);
+    dx_acoustic = 0;
     dx_tone = 0;
     dx_hands = 0;
     dx_glue = 0;
@@ -2496,6 +2505,7 @@ static uint32_t autosave_sig(void)
     h = as_mix(h, lyr_txt, sizeof lyr_txt);             /* (0.8.5) VOICE's lyrics */
     h = as_mix(h, glane, sizeof glane);                 /* (0.9.9-seq2f) the global lane */
     h = as_mix(h, &gl_mono, 1);
+    h = as_mix(h, &dx_acoustic, 1);
     return as_mix(h, proj_name, sizeof proj_name);
 }
 
@@ -2604,3 +2614,4 @@ _Static_assert(sizeof(project_store_t) <= ST_PAYLOAD_MAX, "project does not fit 
 _Static_assert(sizeof(persist_t) <= ST_PAYLOAD_MAX, "settings do not fit one flash sector");
 #endif
 #endif /* PROJ_HOST */
+

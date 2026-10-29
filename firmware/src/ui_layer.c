@@ -1184,13 +1184,18 @@ static void ly_piano(uint32_t l)
 static __attribute__((noinline)) void rec_columns(void)
 {
     char val[12];
-    int32_t q = TSEL->p[P_HRQ];
-    uint32_t click = rp_get(RP_CLICK);
-    draw_column(0, RL_LABEL[0], rl_name(0, click), "", click ? VAL(0) : T_DIM, click * 500, RL_ICON[0]);
-    fmt_int(val, q * 100 / 127);
-    draw_column(1, "REC Q", q ? val : "OFF", q ? "%" : "", VAL(1), q * 1000 / 127, ICON_NONE);
-    draw_column(2, "", "", "", T_THEME, -1, ICON_NONE);
-    draw_column(3, "", "", "", T_THEME, -1, ICON_NONE);
+    uint32_t c;
+    int32_t raw = TSEL->p[P_HRQ], q = raw * 100 / 127;
+    fmt_int(val, q);
+    for (c = 0; c < 4u; c++) {
+        if (c == 1u)
+            draw_column(c, "REC Q", raw ? val : "OFF", raw ? "%" : "", VAL(c), q * 10, ICON_NONE);
+        else if (c == 0u) {
+            uint32_t v = rp_get(RP_CLICK);
+            draw_column(c, RL_LABEL[0], rl_name(0, v), "", v ? VAL(c) : T_DIM, v * 500, RL_ICON[0]);
+        } else
+            empty_column(c);
+    }
 }
 static void layer_cards(uint32_t l)
 {
@@ -1223,10 +1228,9 @@ static void layer_cards(uint32_t l)
         draw_column(0, "SONG", val, n != song_cur ? "NEXT" : "", VAL(0u), (int32_t)(n * 1000u / (NSONG - 1u)),
                     ICON_X_SONG);
         val[0] = live.cur >= 0 ? (char)('A' + live.cur) : '-'; val[1] = 0;
-        draw_column(1, "SECT", val, "", live.cur >= 0 ? VAL(1u) : T_DIM, -1, ICON_X_PATTERN);
-        draw_column(2, "PLAY", live.mode ? "SONG" : "LOOP", "", VAL(2u), -1, ICON_LOOP);
-        draw_column(3, "REC", live.srec == 2u ? "ON" : live.srec ? "ARM" : "OFF", "", live.srec ? VAL(3u) : T_DIM, -1,
-                    ICON_X_REC);
+        text_column(1, "SECT", val, live.cur >= 0 ? VAL(1u) : T_DIM);
+        hot_text_column(2, "PLAY", live.mode ? "SONG" : "LOOP");
+        text_column(3, "REC", live.srec == 2u ? "ON" : live.srec ? "ARM" : "OFF", live.srec ? VAL(3u) : T_DIM);
     } else if (l == LAYER_MACRO) {                      /* M1..M4, 0..100 % */
         static const char *const M[4] = {"M1", "M2", "M3", "M4"};
         for (c = 0; c < 4u; c++) {

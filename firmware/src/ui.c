@@ -846,7 +846,7 @@ static void rate_name(const track_t *t, uint32_t n, char *b)
 /* (gen3) the names short, each read whole on its card: the value's M where it fits with its unit (COMP's 49 px), else S
  * (ui_test test_comp_cards: every value of every knob, every page) */
 static const char *const CA_NAMES[CA_N] = {"OFF", "ARP", "SEQ", "OCT+", "OCT-", "RATCH", "STUT", "MUTE", "TRANS",
-                                           "RAND", "LOCK", "JUMP", "SOUND", "BEND"};
+                                           "RAND", "LOCK", "JUMP", "SOUND", "BEND", "SHIFT", "CHORD"};
 static const char *const CC_NAMES[CC_NM] = {"ALWAYS", "25%", "50%", "75%", "1ST", "!1ST", "FILL", "!FILL", "PRE",
                                             "!PRE", "NEI", "!NEI", "ELSE"};
 #define CCL_NM 135u                                     /* N:M, M 2..16, N 1..M */
@@ -891,6 +891,16 @@ static void cond_name(uint32_t c, uint32_t nm, char *b)
     fmt_int(b + k, (int32_t)CNM_N(nm));
     k = str_len(b); b[k++] = ':';
     fmt_int(b + k, (int32_t)CNM_M(nm));
+}
+/* SHIFT has to be decided before an early destination: pass-only conditions. */
+static uint32_t shift_cond_idx(uint32_t c, uint32_t nm)
+{
+    return c >= CC_NM ? 3u + cond_idx(c, nm) - CC_NM : c == CC_FIRST ? 1u : c == CC_NFIRST ? 2u : 0u;
+}
+static void shift_cond_at(uint32_t i, uint32_t *c, uint32_t *nm)
+{
+    if (i < 3u) { *c = i == 1u ? CC_FIRST : i == 2u ? CC_NFIRST : CC_ALWAYS; *nm = 0; }
+    else cond_at(i - 3u + CC_NM, c, nm);
 }
 /* a VALUE as KNOB 4's place (0 .. CA_VMAX), and back: ARP its NOTES / SCALE, RANGE, ORDER, RATE (the knob's: x1 ..);
  * RATCHET its hits and DECAY; TRANSPOSE its RANGE and move; the others as they are stored */
@@ -954,6 +964,8 @@ static void comp_vname(const track_t *t, const step_t *s, uint32_t a, uint32_t v
     }
     case CA_JUMP: str_cpy(lb, "TO STEP", 8); if (v >= CV_JUMP_REV) str_cpy(val, "REV", 8); else fmt_int(val, (int32_t)v + 1); break;
     case CA_SOUND: str_cpy(lb, "HIT", 8); str_cpy(val, HIT[v % 3u], 8); break;
+    case CA_CHORD: str_cpy(lb, "CHORD", 8); str_cpy(val, N_CHRD[1u + v % CD_POW], 8); break;
+    case CA_SHIFT: str_cpy(lb, "MOVE", 8); m = (int32_t)(v % 127u) - 63; val[0] = m < 0 ? '-' : '+'; fmt_int(val + 1, m < 0 ? -m : m); str_cpy(un, "STEPS", 8); break;
     case CA_BEND: str_cpy(lb, "BEND", 8); m = (int32_t)(v % 25u) - 12; val[0] = m < 0 ? '-' : '+'; fmt_int(val + 1, m < 0 ? -m : m); str_cpy(un, "ST", 8); break;
     default: break;
     }
@@ -962,7 +974,7 @@ static void comp_vname(const track_t *t, const step_t *s, uint32_t a, uint32_t v
  * keys 1..6 turn the tracks it applies to on and off; COMPS' KNOB 1..4 ACTION LENGTH CONDITION VALUE as COMP's (the
  * actions that mean something for all: GA_LIST; no ELSE, no NEI), COMPS 2's STEP, TRACK, its ON / OFF, MONO / POLY */
 static uint8_t gl_cur, gl_trk;
-static const uint8_t GA_LIST[] = {CA_NONE, CA_MUTE, CA_STUT, CA_OCTU, CA_OCTD, CA_RATCH, CA_TRANS, CA_ARP, CA_JUMP, CA_RAND};
+static const uint8_t GA_LIST[] = {CA_NONE, CA_MUTE, CA_STUT, CA_OCTU, CA_OCTD, CA_RATCH, CA_TRANS, CA_ARP, CA_JUMP, CA_RAND, CA_CHORD};
 static uint32_t gco_slot(void) { return ui.page > 0u && PAGES[ui.page - 1u].graph == GR_GCOMP; }
 static int gco_on(void) { return !ui.home && !ui.menu && !ui.confirm && !ui.layer && cur_page()->graph == GR_GCOMP; }
 static int ckeys_on(void) { return !ui.home && !ui.menu && !ui.confirm && !ui.layer && cur_page()->graph == GR_COMP; }   /* (seq2g) */
