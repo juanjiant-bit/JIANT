@@ -212,6 +212,7 @@ Object.assign(TEXT.ja, {
 Object.assign(TEXT.en, {
   intro: "Connect the FM-1 by USB. (Works in Chrome or Edge on a computer; Chrome on Android may work too. Not on iPhone/iPad.)",
   back: "Get official FM-1 V15 from M-VAVE and select the unmodified FM-1.fwsc. The browser validates it locally; it is not sent to a server.",
+  stockV16: "Beta: official V16 (FM-1.fwsc, 718,196 bytes), the version M-VAVE offers today, is taken too.",
   stockWhere: "On M-VAVE's download page, find the FM-1, download firmware V15, unzip it and select the file FM-1.fwsc (699,956 bytes). This page cannot download it for you: the official firmware is M-VAVE's and not ours to redistribute.",
   notfound: "FM-1 not found: no MIDI port of an FM-1 answered.",
   nomidi: "This browser has no WebMIDI. Open the page in Chrome or Edge.",
@@ -280,6 +281,7 @@ Object.assign(TEXT.en, {
 });
 Object.assign(TEXT.ja, {
   intro: "FM-1 を USB で接続してください。（パソコンの Chrome か Edge で使えます。Android の Chrome でも動く場合があります。iPhone/iPad では使えません）",
+  stockV16: "ベータ版：現在 M-VAVE が配布している公式V16（FM-1.fwsc、718,196 バイト）も使えます。",
   stockWhere: "M-VAVE のダウンロードページで FM-1 のファームウェア V15 をダウンロードし、展開して FM-1.fwsc（699,956 バイト）を選んでください。公式ファームウェアは M-VAVE のもので再配布できないため、このページからはダウンロードできません。",
   notfound: "FM-1 が見つかりません。FM-1 の MIDI ポートが応答しませんでした。",
   nomidi: "このブラウザには WebMIDI がありません。Chrome か Edge で開いてください。",
@@ -363,6 +365,7 @@ TEXT.es = {
   brick: "Si una instalación falla y el FM-1 ya no arranca, recuperarlo necesita un Transporter:",
   beta: "JIANT FM es una versión en desarrollo; contanos los problemas en GitHub. El autor no se hace responsable si tu FM-1 se daña o funciona mal por este firmware custom. Usalo bajo tu propio riesgo.",
   back: "Conseguí el FM-1 V15 oficial de M-VAVE y elegí el FM-1.fwsc sin modificar. El navegador lo verifica localmente; no se envía a ningún servidor.",
+  stockV16: "Beta: también acepta el V16 oficial (FM-1.fwsc, 718.196 bytes), el que M-VAVE ofrece hoy.",
   stockWhere: "En la página de descargas de M-VAVE buscá el FM-1, bajá el firmware V15, descomprimilo y elegí el archivo FM-1.fwsc (699.956 bytes). Esta página no puede bajarlo por vos: el firmware oficial es de M-VAVE y no podemos redistribuirlo.",
   stockTitle: "Volver al V15 oficial", stockFile: "FM-1.fwsc oficial", stockGo: "Hacer backup y volver al V15 oficial",
   stockBackup: "Primero se guardan la música actual, la música guardada, los bancos de sonido y la configuración (sin los samples de usuario). Un firmware viejo necesita actualizarse para hacer backups completos. Para restaurar un archivo después, reinstalá JIANT y usá el editor.",
@@ -472,6 +475,10 @@ let lastKey = null, lastArg = "", tipKey = null;
 function applyLang() {
   document.documentElement.lang = lang;
   document.querySelectorAll("[data-t]").forEach((e) => { e.textContent = t(e.dataset.t); });
+  if (preview) {                                           /* (beta) official V16 too, the one M-VAVE offers now */
+    const w = document.querySelector('[data-t="stockWhere"]');
+    if (w) w.textContent += " " + t("stockV16");
+  }
   document.querySelectorAll("#lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
   if (lastKey) $("status").textContent = t(lastKey) + lastArg;
   if (tipKey) showTip(tipKey);

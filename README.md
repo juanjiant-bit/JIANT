@@ -41,8 +41,8 @@ ADDITIVE development continues with **ADD as engine 13 and no SAMPLE engine**: R
 | Where | Version |
 |---|---|
 | **Public installer** | **STANDARD par12** (stable, first/default), then the earlier versions (ADDITIVE par10, par11, gen2 *ULTRA STABLE* …) |
-| **Beta installer** | **ADDITIVE add15-beta5** (SAVE › TIMELINE), beta only |
-| **Browser emulator** | ADDITIVE add15-beta5 — the beta's source |
+| **Beta installer** | **ADDITIVE add15-beta6** (SAVE › TIMELINE; installs over official V16 and returns to it), beta only |
+| **Browser emulator** | ADDITIVE add15-beta6 — the beta's source |
 
 [Public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) · [Beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/) · [Emulator](https://juanjiant-bit.github.io/JIANT/emu/)
 
