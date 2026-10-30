@@ -91,7 +91,7 @@ static void graph_proj(int ar)
         uint32_t t = 0, acc = 0, played = 0, j;
         for (i = 0; i < n; i++) t += chain_config.row[i].bars;
         for (j = 0; j <= NTRK; j++)
-            cv_text(2, 4 + (int32_t)j * 17 + (j ? 4 : 3), &AF_X, LN[j], j == ui.song_tk ? T_THEME : T_DIM);
+            cv_text(5, 4 + (int32_t)j * 17 + (j ? 4 : 3), &AF_X, LN[j], j == ui.song_tk ? T_THEME : T_DIM);
         for (i = 0; i < n && t; i++) {
             const chain_row_t *r = &chain_config.row[i];
             uint32_t s = r->slot & 3u;
