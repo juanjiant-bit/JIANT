@@ -33,7 +33,7 @@ from gen_px_font import G as PXG  # noqa: E402  (the UI's 5 x 7 pixel face)
 
 LENS = R / 'firmware/src/ui_lens.c'
 FONT = R / 'assets/fonts/InterTight[wght].ttf'
-VERSION = re.search(r'FELUCCA_VERSION "(v[^"]+)"', (R / 'firmware/src/felucca.c').read_text()).group(1)
+VERSION = re.search(r'FELUCCA_VERSION "([vV][^"]+)"', (R / 'firmware/src/felucca.c').read_text()).group(1)
 
 # ------------------------------------------------------------------------------------------- the chains ---
 def parse():
