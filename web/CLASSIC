@@ -2,6 +2,7 @@
 # by .github/workflows/emulator.yml (never a package taken from the live site). One per line: the commit, then a note.
 # Newest first. Up to make_site.py's KEEP_OLD are offered. A version in web/WITHDRAWN stays out.
 # (0.9.9-beta4) one milestone per line of the history, so anyone can pick the version they liked.
+3641c027291a9b0a3d37e774d8205fcd1959f09e  # JIANT 0.9.9-par13b (2026-10-27): SAMPLE, the sampler edition (instead of ADD)
 fe81db8885d13d17f88b1268e3641c04f199b2d5  # JIANT 0.9.9-gen2 (2026-10-25): ULTRA STABLE, the public version before 0.9.9-par3 (the one to go back to)
 3d5566f389fa1c94cd2265a7f6c7c32c32f95149  # JIANT 0.9.9-par11 (2026-10-26): the public version before 0.9.9-par12
 30f05b37637da67e44bd8f33b4e90a0005f437f6  # JIANT 0.9.9-par10 (2026-10-26): the public version before 0.9.9-par11 (the last with ADD)

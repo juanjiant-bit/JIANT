@@ -8,12 +8,13 @@ site = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(site)
 
 class InstallerChannels(unittest.TestCase):
-    def test_public_add_first_sample_retained(self):
-        entries = [{'version':'v0.9.9-par13b-3641c02-preview','edition':'SAMPLE','status':'public'},
+    def test_public_stable_first_then_classic_order(self):
+        # (2026-10-30) the stable one (web/STABLE) stays the default; SAMPLE and ADDITIVE follow in web/CLASSIC's order
+        entries = [{'version':'v0.9.9-par12-527c7e4','edition':'STABLE','status':'stable'},
+                   {'version':'v0.9.9-par13b-3641c02','edition':'SAMPLE','status':'public'},
                    {'version':'v0.9.9-par10-30f05b3','edition':'ADDITIVE','status':'public'}]
         result = site.installable_versions(entries, False)
-        self.assertEqual([e['edition'] for e in result], ['ADDITIVE','SAMPLE'])
-        self.assertEqual(result[1], entries[0])
+        self.assertEqual([e['edition'] for e in result], ['STABLE','SAMPLE','ADDITIVE'])
 
     def test_all_par14_variants_blocked_even_if_mislabeled(self):
         add = {'version':'v0.9.9-par10d-beta2-42947e9-preview','edition':'ADDITIVE + CONTROLS','status':'beta'}

@@ -105,17 +105,15 @@ def manual(out):
 
 
 def installable_versions(versions, preview):
-    """ADD is primary. par14 is quarantined after a tester reported a non-booting FM-1."""
+    """(2026-10-30) the current one first (web/STABLE, or web/PREVIEW for the beta), then web/CLASSIC's order; par14 is
+    quarantined after a tester reported a non-booting FM-1."""
     versions = [e for e in versions if e.get("status") != "withdrawn" and
                 not re.match(r"^v?0\.9\.9-par14(?:-|$)", e["version"])]
     if not versions:
         raise SystemExit("no installable firmware remains")
     if not preview and any(e.get("status") == "beta" for e in versions):
         raise SystemExit("beta firmware is forbidden in the public installer")
-    def priority(e):
-        edition = e.get("edition", "")
-        return 0 if edition.startswith("ADDITIVE") else 1 if edition.startswith("SAMPLE") else 2
-    return sorted(versions, key=priority)
+    return versions
 
 
 def main(pkg, version, out, prev=None):

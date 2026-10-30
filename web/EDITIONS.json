@@ -1,58 +1,18 @@
 {
   "v0.9.9-par12-527c7e4": {
-    "edition": "STANDARD",
+    "edition": "STABLE",
     "status": "stable"
+  },
+  "v0.9.9-par13b-3641c02": {
+    "edition": "SAMPLE",
+    "status": "public"
   },
   "v0.9.9-par10-30f05b3": {
     "edition": "ADDITIVE",
     "status": "public"
   },
-  "v0.9.9-par13b-3641c02-preview": {
-    "edition": "SAMPLE",
-    "status": "public"
-  },
-  "v0.9.9-par10b-b588094": {
-    "edition": "ADDITIVE",
-    "status": "beta"
-  },
-  "v0.9.9-par13c-b932605-preview": {
-    "edition": "SAMPLE",
-    "status": "beta"
-  },
-  "v0.9.9-par14-beta1-86b85ad": {
-    "edition": "STEP COMPONENTS (SAMPLE)",
-    "status": "withdrawn"
-  },
-  "v0.9.9-par13c-b932605": {
-    "edition": "SAMPLE (REC controls)",
-    "status": "beta"
-  },
-  "v0.9.9-par14-beta1-86b85ad-preview": {
-    "edition": "SAMPLE + STEP COMPONENTS",
-    "status": "withdrawn"
-  },
-  "v0.9.9-par14-beta2-4be8592-preview": {
-    "edition": "SAMPLE + CONTROLS + STEP COMPONENTS",
-    "status": "withdrawn"
-  },
-  "v0.9.9-par10c-beta1-67cab79": {
-    "edition": "ADDITIVE + CONTROLS",
-    "status": "beta"
-  },
-  "v0.9.9-par14-beta4-4d3156d-preview": {
-    "edition": "SAMPLE + CONTROLS + STEP COMPONENTS + COPY SEQ",
-    "status": "withdrawn"
-  },
-  "v0.9.9-par10d-beta2-42947e9": {
-    "edition": "ADDITIVE + CONTROLS + COPY SEQ",
-    "status": "beta"
-  },
-  "v0.9.9-par10d-beta2-42947e9-preview": {
-    "edition": "ADDITIVE + CONTROLS + COPY SEQ",
-    "status": "beta"
-  },
-  "v0.9.9-add15-beta1-857c86f-preview": {
-    "edition": "ADDITIVE \u00b7 ADD15 (MOVE + ACOUSTIC + STEP COMPONENTS)",
+  "v0.9.9-add15-beta2-5386bf5-preview": {
+    "edition": "BETA \u00b7 ADDITIVE add15",
     "status": "beta"
   }
 }

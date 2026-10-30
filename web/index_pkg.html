@@ -90,7 +90,6 @@
     <pre id="log"></pre>
   </div>
   <p class="small" id="channel"></p>
-  <p class="small" data-t="par14Notice"></p>
   <p><a href="../editor/" style="color:inherit" data-t="editor"></a></p>
   <p><span data-t="manual"></span>
     <a href="https://github.com/juanjiant-bit/JIANT/blob/main/docs/MANUAL.md" target="_blank" rel="noopener" style="color:inherit">English</a> ·
@@ -208,7 +207,7 @@ const TEXT = {
 Object.assign(TEXT.ja, {
   editionSample: "SAMPLE: ADD の代わりにサンプルを再生します。エディターから読み込めます。エディション変更前にプロジェクトをバックアップしてください。",
   editionAdd: "ADDITIVE: 加算合成を使います。SAMPLE はありません。変更前にバックアップしてください。",
-  editionStandard: "標準エディション。変更前にプロジェクトをバックアップしてください。",
+  editionStandard: "安定版（おすすめ）。SAMPLE と ADDITIVE は以前のバージョンの一覧にあります。変更前にプロジェクトをバックアップしてください。",
 });
 Object.assign(TEXT.en, {
   intro: "Connect the FM-1 by USB. (Works in Chrome or Edge on a computer; Chrome on Android may work too. Not on iPhone/iPad.)",
@@ -242,10 +241,10 @@ Object.assign(TEXT.en, {
   reportTitle: "Log and report.",
   reportWhy: "If it does not work, press COPY REPORT and paste it into your message when you ask for help (GitHub, Instagram, YouTube).",
   copyReport: "COPY REPORT", copied: "Copied: paste it in your message.", copyFail: "Could not copy: select the text below and copy it.",
-  editionSample: "SAMPLE (par13b): sample playback replaces ADD. Load samples in the web editor. Back up projects before switching editions; ADD sounds are not converted into samples.",
+  editionSample: "SAMPLE: sample playback replaces ADD. Load samples in the web editor. Back up projects before switching editions; ADD sounds are not converted into samples.",
   editionAdd: "ADDITIVE: additive synthesis, without SAMPLE. Features depend on the selected revision. Back up projects before switching editions; sample audio is not converted into additive sounds.",
-  editionStandard: "Choose SAMPLE for samples or ADD par10 for additive synthesis. Stable par12 has neither engine. Back up projects before changing versions.",
-  chStable: "Public installer: stable and alternative editions.", chPreview: "PREVIEW channel: main as it is now, not approved yet.",
+  editionStandard: "The stable version, the one we recommend. SAMPLE (samples) and ADDITIVE (additive synthesis) are in the list of earlier versions. Back up your projects before changing versions.",
+  chStable: "Public installer: the stable version, and earlier ones.", chPreview: "PREVIEW channel: main as it is now, not approved yet.",
   toPreview: "Preview installer (next version)", toStable: "Stable installer",
   bootCheck: "Is it in boot mode (WL80UBOOT)?",
   bootFound: "The FM-1 is in the chip's boot mode (WL80UBOOT): its firmware does not start. Replug it with a good data cable straight into the computer and press Install again. If it stays like that, recovering it needs FM-1 Transporter (link above).",
@@ -409,9 +408,9 @@ TEXT.es = {
   reportTitle: "Registro e informe.",
   reportWhy: "Si no funciona, apretá COPIAR INFORME y pegalo en tu mensaje cuando pidas ayuda (GitHub, Instagram, YouTube).",
   copyReport: "COPIAR INFORME", copied: "Copiado: pegalo en tu mensaje.", copyFail: "No se pudo copiar: seleccioná el texto de abajo y copialo.",
-  editionSample: "SAMPLE (par13b): reproduce samples en lugar de ADD. Cargalos desde el editor web. Hacé backup antes de cambiar de edición; los sonidos ADD no se convierten en samples.",
+  editionSample: "SAMPLE: reproduce samples en lugar de ADD. Cargalos desde el editor web. Hacé backup antes de cambiar de edición; los sonidos ADD no se convierten en samples.",
   editionAdd: "ADDITIVE: síntesis aditiva, sin SAMPLE. Las funciones dependen de la revisión elegida. Hacé backup antes de cambiar de edición; los samples no se convierten en sonidos aditivos.",
-  editionStandard: "Elegí SAMPLE para samples o ADD par10 para síntesis aditiva. La estable par12 no incluye ninguno de esos motores. Hacé backup antes de cambiar de versión.",
+  editionStandard: "La versión estable, la que recomendamos. SAMPLE (samples) y ADDITIVE (síntesis aditiva) están en la lista de versiones anteriores. Hacé backup de tus proyectos antes de cambiar de versión.",
   chStable: "Instalador público: versión estable y ediciones alternativas.", chPreview: "Canal PREVIEW: main tal como está ahora, todavía sin aprobar.",
   toPreview: "Instalador preview (la próxima versión)", toStable: "Instalador estable",
   bootCheck: "¿Está en modo boot (WL80UBOOT)?",
@@ -458,9 +457,6 @@ for (const L of Object.values(TEXT)) {
   L.tip_badpkg = L.tip_loadfail;
   L.tip_stockError = L.tip_stockZip = L.tip_stockNotV15 = L.tip_stockOtherVer = L.tip_stockCustom = L.tip_stockModified = L.tip_stock;
 }
-Object.assign(TEXT.es, {par14Notice:"ADD es la edición principal. Par14 fue retirada tras un reporte de un FM-1 que no arranca; la causa está en investigación. SAMPLE par13b se conserva sin cambios."});
-Object.assign(TEXT.en, {par14Notice:"ADD is the primary edition. Par14 was withdrawn after a report of a non-booting FM-1; the cause is under investigation. SAMPLE par13b remains unchanged."});
-Object.assign(TEXT.ja, {par14Notice:"ADD がメイン版です。FM-1 が起動しなくなった報告を受け、par14 の配布を停止しました。原因は調査中です。SAMPLE par13b は変更しません。"});
 const LANGS = ["es", "en", "ja"];
 const navLang = (navigator.language || "en").toLowerCase();
 let lang = navLang.startsWith("ja") ? "ja" : navLang.startsWith("es") ? "es" : "en";
