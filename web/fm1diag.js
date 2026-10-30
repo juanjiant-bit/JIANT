@@ -31,6 +31,11 @@ export function classifyIdentity(text) {
   if (n >= 900) return "felucca9";
   return "otherfw";
 }
+/* (add15-beta6) a JIANT whose M-UPGRADE entry takes official V16's head: the add15 line from beta6 */
+export function jiantTakesV16(version) {
+  const m = /add(\d+)-beta(\d+)/i.exec(String(version || ""));
+  return !!m && (+m[1] > 15 || (+m[1] === 15 && +m[2] >= 6));
+}
 export function infoVersion(a) {
   const z = a.indexOf(0);
   return z < 0 ? "" : String.fromCharCode(...a.slice(0, z));
@@ -136,6 +141,10 @@ export async function runStock(ctx) {
     await up.install(stock.image, stock.product, ui.step);
     return "done";
   }
+  /* (add15-beta6) official V16 over JIANT: only a JIANT that takes V16's head (add15-beta6 and later); an older one
+   * refuses it after a few requests, so say so before anything (install the beta first) */
+  if (stock.product === "FM-1_016" && fw.kind === "jiant" && !jiantTakesV16(fw.version))
+    throw fail("needV16Jiant", `${fwName(fw)}: its update entry predates V16 (add15-beta6)`, fwName(fw));
   /* JIANT without the complete backup (before 0.3): update JIANT first, its songs then come along */
   if (fw.kind === "jiant" && !fw.backup) throw fail("stockUnsupported", `${fwName(fw)}: no complete backup`, fwName(fw));
   let archive = null;

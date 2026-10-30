@@ -1748,6 +1748,9 @@ async function installerFlows() {
   ok(x.r === "ok" && x.c.asked.join() === "officialConfirm", "installer: Return from V16 (newer official): a confirm, written");
   x = await stock("v15");
   ok(x.r === "ok" && x.c.asked.join() === "stockAgainConfirm", "installer: Return over V15 itself: asks first");
+  ok(D.jiantTakesV16("JIANT v0.9.9-add15-beta6") && D.jiantTakesV16("JIANT v0.9.9-add16-beta1") &&
+     !D.jiantTakesV16("JIANT v0.9.9-add15-beta1") && !D.jiantTakesV16("JIANT v0.9.9-par12"),
+     "installer: which JIANT takes official V16 (add15-beta6 and later)");
   x = await stock("jiant");
   ok(x.r === "ok" && x.c.saved.length === 1 && x.c.saved[0].objects.length === 43 && x.c.asked.join() === "stockConfirm",
     "installer: Return from JIANT: its complete backup, then V15");
@@ -1829,7 +1832,7 @@ function installerStrings() {
   ok(!miss("ja").length, `installer: Japanese has every string${miss("ja").length ? " (missing " + miss("ja").join(" ") + ")" : ""}`);
   const src = ["fm1ota.js", "fm1diag.js"].map((f) => readFileSync(join(HERE, f), "utf8")).join("\n");
   const codes = new Set([...src.matchAll(/fail\("([A-Za-z0-9]+)"/g)].map((m) => m[1]));
-  ["oldstock", "newstock", "stock16", "skiff", "felucca", "otherfw", "nomidiIos", "nomidiSafari", "nomidiFirefox", "nomidi", "blocked", "denied"].forEach((k) => codes.add(k));
+  ["oldstock", "newstock", "stock16", "needV16Jiant", "skiff", "felucca", "otherfw", "nomidiIos", "nomidiSafari", "nomidiFirefox", "nomidi", "blocked", "denied"].forEach((k) => codes.add(k));
   codes.delete("badreq");
   const noMsg = [...codes].filter((k) => !T.en[k]);
   ok(!noMsg.length, `installer: every failure code has a message${noMsg.length ? " (" + noMsg.join(" ") + ")" : ""}`);
