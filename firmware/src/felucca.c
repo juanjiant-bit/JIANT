@@ -38,7 +38,7 @@
 #define FELUCCA_ID "FM-1_900"    /* package identity (build.py: the .fwsc marker string) */
 #endif
 #ifndef FELUCCA_VERSION
-#define FELUCCA_VERSION "V10" /* (2026-10-30) JIANT FM V10: add15-beta6 as the new base (TIMELINE, VAR, ADD, official V16 both ways); the version history before it: the git log of the add15 line (codex/add15-private) */
+#define FELUCCA_VERSION "V10.1" /* (2026-10-30) V10.1: TIMELINE blocks fill the lanes (no black gaps between rows or tracks). (2026-10-30) JIANT FM V10: add15-beta6 as the new base (TIMELINE, VAR, ADD, official V16 both ways); the version history before it: the git log of the add15 line (codex/add15-private) */
 #endif
 #if FELUCCA_OTA && !FELUCCA_FLASH
 #error "FELUCCA_OTA needs FELUCCA_FLASH"

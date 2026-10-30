@@ -91,35 +91,42 @@ static void graph_proj(int ar)
         uint32_t t = 0, acc = 0, played = 0, j;
         for (i = 0; i < n; i++) t += chain_config.row[i].bars;
         for (j = 0; j <= NTRK; j++)
-            cv_text(2, 4 + (int32_t)j * 17 + 3, &AF_X, LN[j], j == ui.song_tk ? T_THEME : T_DIM);
+            cv_text(2, 4 + (int32_t)j * 17 + (j ? 4 : 3), &AF_X, LN[j], j == ui.song_tk ? T_THEME : T_DIM);
         for (i = 0; i < n && t; i++) {
             const chain_row_t *r = &chain_config.row[i];
             uint32_t s = r->slot & 3u;
-            int32_t x = 24 + (int32_t)(acc * 212u / t), w = 24 + (int32_t)((acc + r->bars) * 212u / t) - x - 1;
+            int32_t x = 24 + (int32_t)(acc * 212u / t), w = 24 + (int32_t)((acc + r->bars) * 212u / t) - x;
             if (w < 2) w = 2;
-            for (j = 0; j <= NTRK; j++) {
-                int32_t y = 4 + (int32_t)j * 17;
+            for (j = 0; j <= NTRK; j++) {          /* (V10.1) the lanes touch (SEC 2 px above the tracks), the rows touch:
+                                                    * a row's edge a 1 px line of its own colour darker, never black */
+                int32_t y = j ? 4 + (int32_t)j * 17 : 4, h = j ? 17 : 15;
                 uint32_t src = j ? row_src(i, j - 1u, s) : s, v = j ? row_var(i, j - 1u) : 0u, own = !j || src == s;
                 uint16_t c = j && own ? lz_sec(src, 1, 1) : sec_col(src);
-                if (v == RV_MUTE) cv_frame(x, y, w, 15, T_DIM);
-                else {
-                    cv_rect(x, y, w, 15, c);
+                if (v == RV_MUTE) {
+                    cv_rect(x, y, w, h, T_BG);
+                    cv_frame(x + 1, y + 1, w - 1, h - 2, T_DIM);
+                } else {
+                    cv_rect(x, y, w, h, c);
+                    if (i) cv_rect(x, y, 1, h, ux_mix(T_BG, c, 55));
                     if (w >= 12 && (!j || !own)) {
                         b[0] = (char)('A' + src); b[1] = 0;
                         if (!j && w >= 22) fmt_int(b + 1, r->bars);
-                        cv_text_on(x + 2, y + 2, &AF_X, b, T_INK, c);
+                        cv_text_on(x + 3, y + 2 + (h - 15) / 2, &AF_X, b, T_INK, c);
                     }
-                    if (v && v < RV_N && w >= 24) cv_text_r(x + w - 2, y + 2, &AF_X, RV_SH[v], T_INK, c);
+                    if (v && v < RV_N && w >= 24) cv_text_r(x + w - 2, y + 2 + (h - 15) / 2, &AF_X, RV_SH[v], T_INK, c);
                 }
             }
-            if (i == ui.song_row % (n ? n : 1u))
-                cv_frame(x - 1, 3 + (int32_t)ui.song_tk * 17, w + 2, 17, T_TEXT);
+            if (i == ui.song_row % (n ? n : 1u)) {
+                int32_t fy = ui.song_tk ? 4 + (int32_t)ui.song_tk * 17 : 4, fh = ui.song_tk ? 17 : 15;
+                cv_frame(x, fy, w, fh, T_TEXT);
+                cv_frame(x + 1, fy + 1, w - 2, fh - 2, T_TEXT);
+            }
             if (chain.running && i < chain.row) played += r->bars;
             acc += r->bars;
         }
         if (chain.running && chain.row < n && t) {         /* the playhead */
             played += chain_config.row[chain.row].bars - chain.remaining;
-            cv_rect(24 + (int32_t)(played * 212u / t), 2, 1, 7 * 17, T_TEXT);
+            cv_rect(24 + (int32_t)(played * 212u / t), 2, 1, 4 + 7 * 17, T_TEXT);
         }
         end = SONG_END(&chain_config);
         fmt_int(b, (int32_t)t);
