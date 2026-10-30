@@ -540,7 +540,6 @@ function fillVersions() {
 function showEdition() {
   const v = versions[+$("ver").value] || versions[0];
   $("edition-info").textContent = t((v.edition || "").startsWith("SAMPLE") ? "editionSample" : (v.edition || "").startsWith("ADDITIVE") ? "editionAdd" : "editionStandard");
-  if (preview && meta.stockSamples && (v.edition || "").startsWith("SAMPLE")) $("edition-info").textContent += lang === "es" ? " Incluye el kit de 9 samples si el banco está vacío; conserva tus samples existentes." : " Includes the 9-sample kit when the bank is empty; existing samples are preserved.";
 }
 async function loadVersion(i) {
   const v = versions[i] || versions[0], epoch = ++loadEpoch;
@@ -650,28 +649,8 @@ $("go").addEventListener("click", async () => {
   try {
     const up = await begin();
     const selected = versions[+$("ver").value] || versions[0];
-    const stockBank = preview && meta.stockSamples && (selected.edition || "").startsWith("SAMPLE");
-    // Fetch and validate before writing firmware; a failed download must not start an update.
-    let bank = null;
-    if (stockBank) {
-      const response = await fetch(meta.stockSamples, {cache:"reload"});
-      if (!response.ok) throw new Error("Stock sample download: HTTP " + response.status);
-      bank = encodeSampleBank(await response.json());
-    }
     const result = await runInstall({ up, image, product, ui, state });
     if (result !== "done") return;
-    if (bank) {
-      say(lang === "es" ? "Firmware instalado. Revisando samples…" : "Firmware installed. Checking samples…");
-      try {
-        const samples = await provisionStockSamples(up, bank);
-        log("stock samples: " + samples.status);
-        if (samples.status === "unsupported") throw new Error("SAMPLE bank protocol unavailable");
-      } catch (error) {
-        log("stock samples: " + error.message);
-        say(lang === "es" ? "Firmware instalado; no se pudo cargar el kit. Reintentá desde Samples en el editor." : "Firmware installed; sample kit was not loaded. Retry from Samples in the editor.");
-        return;
-      }
-    }
     sayK("done");
   } catch (e) { showError(e); } finally { lockInstaller(false); }
   log(`firmware: ${state.fw ? `${state.fw.kind} ${state.fw.text || ""} ${state.fw.version || ""}` : "-"}`);

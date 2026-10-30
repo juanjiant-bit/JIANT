@@ -28,44 +28,25 @@ editor update themselves with every change merged into `main`.
 
 A tester reported an FM-1 that would not boot after installing par14. The exact revision, symptoms and cause are not yet confirmed. **Do not install par14 on hardware.** All par14 packages have been removed from the generated installers, including direct firmware download files. Automated tests and a successful package build did not establish hardware safety.
 
-**ADD is the primary edition going forward:** public ADDITIVE par10 stays the default; the beta installer offers ADDITIVE par10d-beta2. Public SAMPLE par13b remains available unchanged as the alternative. SAMPLE development is paused. The SAMPLE browser emulator stays pinned separately through `web/EMULATOR`; this does not make par14 available for installation on an FM-1. SHIFT/CHORD below are archived descriptions of the withdrawn SAMPLE experiment, not current hardware install recommendations.
+**ADD is the line going forward; the SAMPLE edition is withdrawn** (2026-10-30: its par13b build, the editor's sample bank and the emulator's sample kits removed). par14 stays out of every installer.
 
 The incident investigation is tracked in [the par14 audit](docs/PAR14_INCIDENT.md). Do not erase projects or attempt blind reflashing to diagnose a non-booting device; first record its screen and USB enumeration so the recovery path can be chosen for its actual state.
 
-## ADD15 private test build
+## ADD15 beta
 
-ADDITIVE development continues from public par10, with **ADD retained and no SAMPLE engine**. The private beta restores REC/undo/quantization shortcuts, independent REC/PLAY, cursor navigation, COPY/PASTE SEQ, SHIFT/CHORD components, STRING feedback MOVE and related amplifier/envelope improvements. DRUM-X adds a first synthesized ACOUSTIC macro on EDIT > KIT 4.
-
-The public installer and firmware, are preserved byte for byte by a private-only deployment. The online emulator now follows the same ADD15 source as the beta, with separate browser saves from the earlier SAMPLE emulator. See [the feature list, test procedure and compatibility limits](docs/ADD15_PRIVATE.md). This is a hardware test build, not a fix confirmed for the unresolved par14 incident. Back up projects before testing.
+ADDITIVE development continues with **ADD as engine 13 and no SAMPLE engine**: REC/undo/quantization shortcuts, independent REC/PLAY, cursor navigation, COPY/PASTE SEQ, SHIFT/CHORD components, STRING feedback MOVE, DRUM-X's ACOUSTIC macro (EDIT > KIT 4), the USB name **FM-1** (beta2: found by the apps made for the FM-1) and **SAVE > ARRANGE 2** (beta3): each song row can take any track from another of the song's four sections (KNOB 1 the row, KNOB 2 the track, KNOB 3 FROM, KNOB 4 left resets the row). See [the feature list and test procedure](docs/ADD15_PRIVATE.md). Back up projects before testing.
 
 ## Current versions
 
 | Where | Version |
 |---|---|
-| **Public installer** | **ADDITIVE par10** (first/default), **SAMPLE par13b**, then **STANDARD par12** (stable) |
-| **Preview installer** | **ADDITIVE ADD15 beta1**, beta only; ADD par10d remains a rollback option; par14 withdrawn |
-| **Browser emulator** | ADDITIVE ADD15 beta1 — same source as the private beta; no sampler |
-| Earlier versions the public installer also offers | 0.9.9-par8, 0.9.9-gen2 (*ULTRA STABLE*), 0.9.9-par6, 0.9.9-par5, 0.9.17, 0.9.14, 0.9.9, 0.8.9 … |
+| **Public installer** | **STANDARD par12** (stable, first/default), then the earlier versions (ADDITIVE par10, par11, gen2 *ULTRA STABLE* …) |
+| **Beta installer** | **ADDITIVE add15-beta3** (ARRANGE 2), beta only |
+| **Browser emulator** | ADDITIVE add15-beta3 — the beta's source |
 
 [Public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) · [Beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/) · [Emulator](https://juanjiant-bit.github.io/JIANT/emu/)
 
-The installed line is **0.9.9-par**: 0.9.9's stable core with the new sequencer (seq2), the song generator rebuilt
-(gen), two new engines (snd) and 0.9.18's live features ported over (par). `main` also holds the 0.9.18 development
-line, which parts of the text below describe; features marked *"in the 0.9.1x line"* that par has not taken yet are
-not in the installer's version. If a version gives you trouble, **0.9.9-gen2** in the list of earlier versions is the
-one to go back to.
-
-## Choose SAMPLE or ADD in the public installer
-
-The [public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) now offers these clearly labelled choices in its **Version** selector:
-
-- **ADDITIVE · par10** (first/default): additive synthesis, without SAMPLE.
-- **SAMPLE · par13b** (alternative, unchanged): sample playback; load samples from the editor.
-- **STANDARD · par12** (after these two): stable; neither ADD nor the new SAMPLE engine.
-
-These are existing firmware revisions, not two builds with otherwise identical features.
-Back up projects before switching: engine slot 13 means ADD in par10 and SAMPLE in par13b; sounds are not converted between them.
-Project backups do not include the sample audio bank; keep original WAVs. Earlier versions remain available.
+If a version gives you trouble, **0.9.9-gen2** in the list of earlier versions is the one to go back to. Back up projects before switching editions: engine slot 13 is ADD in par10 and add15, nothing in par12.
 
 ## Recording controls — beta only
 
@@ -75,7 +56,7 @@ Project backups do not include the sample audio bank; keep original WAVs. Earlie
 - Hold **REC + knob 2** to adjust REC Q for the selected track.
 - Unquantized recording retains timing in **1/64 of a track step** (about **1.953 ms at 120 BPM / DIV 1/16**). This is storage resolution, not measured physical input accuracy; notes in the same step share an offset.
 
-See [REC controls and timing](docs/REC_CONTROLS.md). The beta contains the new recording controls; SAMPLE par14-beta4 also includes SHIFT / CHORD. The public installer keeps yesterday's SAMPLE par13b and ADDITIVE par10.
+See [REC controls and timing](docs/REC_CONTROLS.md). The beta contains the new recording controls.
 
 ### Beta panel controls
 
@@ -83,9 +64,9 @@ See [REC controls and timing](docs/REC_CONTROLS.md). The beta contains the new r
 - **SELECT changes SEQ pages**, even while REC is armed. **PRESET moves the selected step horizontally**.
 - In **GLO > COMPS / COMPS 2**, **PRESET selects the global step**, wrapping over its 16 steps; it does not load a sound.
 
-## Step components — SAMPLE par14-beta4 (experimental)
+## Step components — beta
 
-All new recording controls and step components are **beta only**. SAMPLE par14-beta4 included SHIFT and CHORD but is now withdrawn from hardware installation. The [beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/) offers ADDITIVE par10d-beta2 with recording shortcuts. The public installer retains SAMPLE par13b and ADDITIVE par10.
+All new recording controls and step components are **beta only**, in ADDITIVE add15 from the [beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/).
 
 - **SHIFT** in SEQ > COMP / COMP 2: KNOB 4 moves an event -63..+63 track steps; 0 keeps it in place. The playhead stays on its grid. A moved event replaces the destination during playback; the saved pattern is unchanged. It wraps inside LEN. KNOB 3 offers ALWAYS, FIRST, !FIRST, N:M and !N:M; KNOB 2 sets the affected range. Edits while playing take effect on the next pass.
 - **CHORD**: select the chord shape with KNOB 4; the step's first note is its root. It reuses the existing scale/voicing generator and stacks with COMP 2 and the global/master lane, respecting MONO/POLY. It retains the existing mono/kit guards and four-note maximum.
@@ -96,62 +77,7 @@ Playback, replacement, early notes, ratchets, N:M, chord shapes, COMP 2, master 
 
 Hold **SEQ + E5** to **COPY SEQ**; select the destination track and hold **SEQ + F5** to **PASTE SEQ**. These commands are shown in the SEQ hold subpage. They copy up to 64 steps and LEN, including notes/hits, timing, components and compatible per-step locks. The destination engine, preset and sound stay unchanged. Locks for a different engine are skipped; continuous automation is not copied. Drum and melodic phrases cannot be pasted across those two formats. Paste replaces the destination sequence and supports UNDO (**REC + A3** or **GLO + G4**). Stop song-chain playback before pasting.
 
-Available for hardware testing in ADDITIVE **par10d-beta2**, in the beta installer only. SAMPLE par14 is withdrawn.
-
-## Uploaded sample pack — Kit 3 (9 sounds)
-
-The emulator now offers **Kit 3 · Uploaded pack (9)**, alongside the previous kits. It is the default only when no valid saved bank exists. To replace a saved bank, choose Kit 3 before switching on. All nine supplied sounds fit in **6116 / 6144 bytes**, using shortened tails and different sample rates; see [the slot map and conversion](web/FACTORY-PACK3.md).
-
-The **beta SAMPLE installer** provisions this bank after a successful firmware update **only if the device reports an empty sample bank**. Existing samples are preserved. ADDITIVE and the public installer do not provision samples. The editor also offers this bank for explicit loading and sending.
-
-SAMPLE par14-beta4 corrects a one-sample overread at full LENGTH, verified with a bounds sanitizer. This is a confirmed defect; the reported screen freeze while changing SLOT is still under investigation. Automated playback and screen-refresh stress tests do not replace testing on the physical FM-1.
-
-## SAMPLE sampler — 0.9.9-par13b
-
-The **par13b release** adds **SAMPLE**, a lo-fi sample playback engine. It is not included in the stable par12 firmware.
-Choose **SAMPLE** in the [public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/);
-manage its bank from the [web editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/#sound).
-Back up your projects before updating.
-
-### Load the factory bank
-
-1. Connect the FM-1 in the editor and open **Sound**. The sample controls appear when the connected firmware supports SAMPLE.
-2. Choose **Load factory samples** to stage the bank in the browser.
-3. Review the list and choose **Send to the device**. Confirm only if you want to **replace the entire stored sample bank**.
-4. On an FM-1 track, select **SAMPLE** and its **KIT KEYS** preset. The twelve sounds play across **C4–B4**.
-
-The bank contains **KICK, SNARE, HAT, CLAP, TOM, AAH, BIRD, PIANO, FLUTE, VINYL, BASS and CHORD**:
-twelve original synthetic recordings, dedicated to the public domain under CC0-1.0.
-You can also import your own WAV files in the editor.
-See [factory sounds, rates and source](web/FACTORY-SAMPLES.md).
-
-### Try the kits in the online emulator
-
-The [emulator](https://juanjiant-bit.github.io/JIANT/emu/) shows **Sample bank** above the instrument. Before pressing **Switch on**, choose:
-
-- **Saved bank / Kit 3 if empty** preserves a valid bank already saved in this browser, or loads Kit 2 when none is available.
-- **Kit 2 · Voices + instruments (7)** loads the seven-sound bank with VOICE 06, VOICE 10 and VOICE 14.
-- **Kit 1 · Synth (12)** loads the original synthetic factory bank.
-
-A newly chosen kit starts on **T1 / SAMPLE / KIT KEYS**; slots begin at C4. A status line reports the number of samples actually indexed by the firmware. When preserving a saved session, press **Play kit on T1** to select the kit explicitly; this changes T1’s current sound and resets its audition level, mute, arpeggiator, transpose and quantization. Undo with **GLO + G4**.
-Reload the page to choose another bank. The selected bank is kept in this browser when local storage is available.
-It changes only the emulator's sample storage, never a connected FM-1.
-Playback uses the existing firmware; this does not add the offline preview's interpolation.
-
-### Storage and current limits
-
-- **Up to 15 mono samples** share a **6144-byte bank**, including its header, using IMA ADPCM.
-  Duration depends on the chosen sample rates; this is a small lo-fi bank, not long-form audio storage.
-- The factory bank uses **5406 bytes**, with sounds at **2, 4 and 8 kHz**, without truncating any slot.
-- Factory samples live on the website and are sent to the device's sample storage; they do not occupy the firmware image.
-  **They are not installed automatically** by the installer.
-- **Project backups do not include the SAMPLE audio bank. Keep your original WAV files.**
-  Loading a bank does not change a track's engine or preset automatically.
-- Browser/mock-MIDI and native sampler checks pass. Transfer over real FM-1 USB and persistence after power cycling
-  have received owner testing; flash persistence after power cycling still needs explicit confirmation.
-
-If automatic editor detection fails, use its **manual MIDI input/output selection**.
-The sampler panel requires SAMPLE firmware; updating the web page alone does not add SAMPLE to stable firmware.
+Available for hardware testing in ADDITIVE **add15**, in the beta installer only.
 
 ## What's new in 0.9.9-par9
 
@@ -331,7 +257,7 @@ presets and vary around them, never from nothing.
 
 The third is that **everything is playable and everything is recordable**. Effects are played on the keys and land
 in an automation lane; knobs record their movement; songs are built from bars and scenes, and recorded while you
-play them. The synthesis engines run in real time on a chip designed for something else; the par13b beta also adds SAMPLE playback (see above).
+play them. The synthesis engines run in real time on a chip designed for something else.
 
 And the last one is a discipline: **lightweight**. Every graphic is a handful of lines, every effect fits in the
 audio CPU budget, the signature shown at power-on is 428 bytes. An instrument that feels big inside a small device.
@@ -410,7 +336,7 @@ VOICE singing its lyric, in the COLORS skin, exactly as the firmware draws them 
 
 ### Engines
 The stable par12 line has ten synthesis engines: **DRUM (DRUM-X), VOICE, ANIMAL, LOFI, ANALOG, FM6, PHASE, WHEEL, NOISE
-and STRING**. ADD is available in par10; SAMPLE replaces it in par13b. The synthesis engines are listed in the order PRESETS shows them (0.9.9-par; the first six are the tracks at power-on, T1–T6).
+and STRING**. ADD is available in par10 and the add15 beta. The synthesis engines are listed in the order PRESETS shows them (0.9.9-par; the first six are the tracks at power-on, T1–T6).
 - **ANALOG**: two oscillators with **INT** (an interval of ±24 semitones: fifths, octaves) and DTN; besides SAW, SQR,
   TRI, SIN and PWM it has **SYNC**, **RING** and **SAW3** (three saws). Its filter is per voice.
 - **FM6**: Dexed's engine (imports .syx), with its algorithms drawn. Fully editable on the device (from Felucca 1.5):

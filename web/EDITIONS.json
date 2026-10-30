@@ -3,10 +3,6 @@
     "edition": "STABLE",
     "status": "stable"
   },
-  "v0.9.9-par13b-3641c02": {
-    "edition": "SAMPLE",
-    "status": "public"
-  },
   "v0.9.9-par10-30f05b3": {
     "edition": "ADDITIVE",
     "status": "public"

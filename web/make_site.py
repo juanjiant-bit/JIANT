@@ -129,9 +129,7 @@ def main(pkg, version, out, prev=None):
     lib = strip_module((HERE / "fm1pkg.js").read_text(encoding="utf-8")) + "\n" + \
         strip_module((HERE / "fm1ota.js").read_text(encoding="utf-8")) + "\n" + \
         strip_module((HERE / "fm1backup.js").read_text(encoding="utf-8")) + "\n" + \
-        strip_module((HERE / "fm1diag.js").read_text(encoding="utf-8")) + "\n" + \
-        strip_module((HERE / "emu/sample-bank.js").read_text(encoding="utf-8")) + "\n" + \
-        strip_module((HERE / "fm1samples.js").read_text(encoding="utf-8"))
+        strip_module((HERE / "fm1diag.js").read_text(encoding="utf-8"))
     name = f"felucca-{re.sub(r'[^A-Za-z0-9.-]', '-', version)}.fwsc"
     old = earlier(Path(prev), version, product) if prev else []
     versions = [{"version": version, "file": name, "product": product}] + [e for e, _ in old]
@@ -143,7 +141,6 @@ def main(pkg, version, out, prev=None):
     meta = json.dumps({"version": selected["version"], "product": selected["product"],
                        "pkg": "../../firmware/" + selected["file"],
                        "channel": "preview" if version.endswith("-preview") else "public",
-                       "stockSamples": "../editor/factory-pack3.json" if version.endswith("-preview") else "",
                        "versions": [{"version": e["version"], "pkg": "../../firmware/" + e["file"], "product": e["product"],
                                      "edition": e.get("edition", ""), "status": e.get("status", "")}
                                     for e in versions]})
@@ -179,7 +176,7 @@ def main(pkg, version, out, prev=None):
         shutil.copy(HERE.parent / doc, fw / doc)
     editor = (HERE / "editor.html").read_text(encoding="utf-8").replace("/*JIANT_UI*/", brand)
     (ed / "index.html").write_text(editor, encoding="utf-8")
-    for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js", "factory-samples.json", "factory-voices.json", "factory-pack3.json", "FACTORY-PACK3.md", "FACTORY-VOICES.md", "FACTORY-SAMPLES.md"):
+    for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js"):
         if (HERE / f).exists():
             shutil.copy(HERE / f, ed / f)
     shutil.copy(HERE / "404.html", out / "404.html")

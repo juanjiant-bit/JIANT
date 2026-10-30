@@ -32,8 +32,6 @@ jobs:
         run: python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()"
       - name: Installer quarantine and edition ordering
         run: python3 tests/test_installer_channels.py
-      - name: Stock sample provisioning tests
-        run: node web/test_samples.mjs
       - uses: mymindstorm/setup-emsdk@v14
         with:
           version: 6.0.11                # (the version the emulator is tested with)
@@ -47,9 +45,6 @@ jobs:
             if [ "$E" = ADDITIVE ]; then
               cp web/emu/additive-api.h /tmp/emusrc/web/emu/additive-api.h
               cat web/emu/additive-api.h >> /tmp/emusrc/web/emu/felucca_web.c
-            else
-              cp web/emu/sample-kit-api.h /tmp/emusrc/web/emu/sample-kit-api.h
-              printf '%s\n' '#include "sample-kit-api.h"' >> /tmp/emusrc/web/emu/felucca_web.c
             fi
             if (cd /tmp/emusrc && python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()" \
                 && sh web/emu/build.sh); then
@@ -71,22 +66,17 @@ jobs:
           template = "web/emu/index-additive.html" if Path("web/EMULATOR_EDITION").read_text().strip() == "ADDITIVE" else "web/emu/index.html"
           shell = Path(template).read_text().replace("@VERSION@", version).replace("@PREVIEW@", "")
           target.write_text(shell)
-          shutil.copy("web/emu/sample-bank.js", "build/emu/sample-bank.js")
           shutil.copy("web/emu/worklet.js", "build/emu/worklet.js")
           PY
           if [ "$E" = ADDITIVE ]; then
             node web/emu/additive-boot-test.mjs build/emu/felucca.wasm
-          else
-            node web/emu/sample-bank-test.mjs build/emu/felucca.wasm
           fi
-      - name: Browser sampler audio
+      - name: Browser emulator audio
         timeout-minutes: 4
         run: |
           pip install --timeout 30 --retries 2 playwright==1.58.0
           if [ "$(tr -d ' \n' < web/EMULATOR_EDITION)" = ADDITIVE ]; then
             python3 -u web/emu/browser-additive-test.py build/emu
-          else
-            python3 -u web/emu/browser-sample-test.py
           fi
       # (JIANT) the installer and the web editor next to the emulator: the package needs JieLi's toolchain (downloaded)
       # and three files of their AC79 SDK (a partial clone: only those blobs). A firmware build failure stops deployment.
@@ -179,7 +169,7 @@ jobs:
             git worktree remove -f /tmp/classic || true
           done < web/CLASSIC
           python3 -c 'import json,sys; L=[l.split() for l in open("build/prev/list") if l.strip()]; json.dump([{"version":v,"file":f} for v,f in L], open("build/prev/versions.json","w"))'
-          # (2026-10-30) one public list: web/STABLE first, then web/CLASSIC (SAMPLE par13b, ADD par10 among them)
+          # (2026-10-30) one public list: web/STABLE first, then web/CLASSIC (ADD par10 among them; the SAMPLE edition withdrawn)
           python3 web/make_site.py "$PKG" "${SV:-dev}-$SH" build/site build/prev
           cp -r build/site/webapp build/site/firmware build/emu/
       # (JIANT 0.7.9) the stems app's phase-0 probe (android/probe), next to the installer: app/jiant-probe.apk
@@ -203,7 +193,7 @@ jobs:
       - name: the front page and the emulator under emu/
         run: |
           mkdir -p build/pages/emu
-          for f in index.html worklet.js sample-bank.js fm1backup.js felucca.wasm fonts; do
+          for f in index.html worklet.js fm1backup.js felucca.wasm fonts; do
             if [ -e "build/emu/$f" ]; then mv "build/emu/$f" build/pages/emu/; fi
           done
           cp -r build/emu/. build/pages/
