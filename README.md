@@ -34,15 +34,15 @@ The incident investigation is tracked in [the par14 audit](docs/PAR14_INCIDENT.m
 
 ## ADD15 beta
 
-ADDITIVE development continues with **ADD as engine 13 and no SAMPLE engine**: REC/undo/quantization shortcuts, independent REC/PLAY, cursor navigation, COPY/PASTE SEQ, SHIFT/CHORD components, STRING feedback MOVE, DRUM-X's ACOUSTIC macro (EDIT > KIT 4), the USB name **FM-1** (beta2: found by the apps made for the FM-1) and **SAVE > ARRANGE 2** (beta3): each song row can take any track from another of the song's four sections (KNOB 1 the row, KNOB 2 the track, KNOB 3 FROM) and, in beta4, KNOB 4 **VAR**: the track's variation in that row (MUTE THIN FILL HALF REV SHIFT OCT+ OCT− VAR 1–4). See [the feature list and test procedure](docs/ADD15_PRIVATE.md). Back up projects before testing.
+ADDITIVE development continues with **ADD as engine 13 and no SAMPLE engine**: REC/undo/quantization shortcuts, independent REC/PLAY, cursor navigation, COPY/PASTE SEQ, SHIFT/CHORD components, STRING feedback MOVE, DRUM-X's ACOUSTIC macro (EDIT > KIT 4), the USB name **FM-1** (beta2: found by the apps made for the FM-1) and **SAVE > TIMELINE** (beta5, was ARRANGE 2): the song left to right as lanes, one for the rows and one per track; each row can take any track from another of the song's four sections (FROM) and vary it in that row only (VAR: MUTE THIN FILL HALF REV SHIFT OCT+ OCT− VAR 1–4). KNOB 1 the row, KNOB 2 the lane, KNOB 3 / 4 its two values. See [the feature list and test procedure](docs/ADD15_PRIVATE.md). Back up projects before testing.
 
 ## Current versions
 
 | Where | Version |
 |---|---|
 | **Public installer** | **STANDARD par12** (stable, first/default), then the earlier versions (ADDITIVE par10, par11, gen2 *ULTRA STABLE* …) |
-| **Beta installer** | **ADDITIVE add15-beta4** (ARRANGE 2 + VAR), beta only |
-| **Browser emulator** | ADDITIVE add15-beta4 — the beta's source |
+| **Beta installer** | **ADDITIVE add15-beta5** (SAVE › TIMELINE), beta only |
+| **Browser emulator** | ADDITIVE add15-beta5 — the beta's source |
 
 [Public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) · [Beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/) · [Emulator](https://juanjiant-bit.github.io/JIANT/emu/)
 
