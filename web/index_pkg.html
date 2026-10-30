@@ -222,6 +222,8 @@ Object.assign(TEXT.en, {
   busy: "The FM-1 is connected, but another program is using its MIDI port: ",
   noanswer: "There is an FM-1 port, but it does not answer: ",
   noupdate: "The FM-1 did not start the update: nothing was written. Found: ",
+  stock16: "This FM-1 runs official V16 (October 2026): nothing was written. Installing JIANT over V16 is being tested in the beta installer; this installer will take it once that is confirmed. Found: ",
+  tip_stock16: "Open the beta installer (link at the top of this page) to install JIANT over V16 now: it is new, back up first.|Or wait for this installer to support V16.|M-VAVE no longer offers V15, so you do not need it.",
   newstock: "This FM-1 runs an official firmware newer than V15, which this installer does not know yet: nothing was written. Return to official V15 first with the button below, then install again. Found: ",
   skiff: "This FM-1 runs Skiff (another custom firmware, a Felucca fork): nothing was written. Return to official V15 first with the button below (it saves Skiff's songs to a file first), then install. Found: ",
   felucca: "This FM-1 runs Felucca: nothing was written. Return to official V15 first with the button below (it saves a complete backup, user samples included), then install JIANT. Found: ",
@@ -288,6 +290,8 @@ Object.assign(TEXT.ja, {
   busy: "FM-1 は接続されていますが、別のプログラムがその MIDI ポートを使っています: ",
   noanswer: "FM-1 のポートはありますが応答しません: ",
   noupdate: "FM-1 が更新を始めませんでした。何も書き込んでいません。検出: ",
+  stock16: "この FM-1 には公式V16（2026年10月）が入っています。書き込みませんでした。V16 への JIANT のインストールはベータ版インストーラーで検証中です。確認でき次第、このインストーラーでも対応します。検出: ",
+  tip_stock16: "今すぐ V16 に JIANT を入れるには、ページ上部のリンクからベータ版インストーラーを開いてください（新しい機能なので、先にバックアップを）。|またはこのインストーラーの対応をお待ちください。|M-VAVE は V15 の配布を終了したので、V15 は不要です。",
   newstock: "この FM-1 には V15 より新しい公式ファームウェアが入っています（このインストーラーは未対応）。書き込みませんでした。下のボタンで先に公式V15に戻してから、もう一度インストールしてください。検出: ",
   skiff: "この FM-1 には Skiff（Felucca から派生した別のカスタムファームウェア）が入っています。書き込みませんでした。下のボタンで先に公式V15に戻してください（先に Skiff の曲をファイルに保存します）。それからインストールしてください。検出: ",
   felucca: "この FM-1 には Felucca が入っています。書き込みませんでした。下のボタンで先に公式V15に戻してください（ユーザーサンプルを含む全体バックアップを保存します）。それから JIANT をインストールしてください。検出: ",
@@ -389,6 +393,8 @@ TEXT.es = {
   badpkg: "El archivo a instalar está dañado. Recargá la página.",
   leave: "Escribiendo. No cierres la página.",
   license: "GPL-3.0, sin garantía. Código:",
+  stock16: "Este FM-1 tiene el V16 oficial (octubre 2026): no se escribió nada. Instalar JIANT sobre el V16 se está probando en el instalador beta; este instalador lo va a aceptar cuando esté confirmado. Encontrado: ",
+  tip_stock16: "Abrí el instalador beta (el link arriba de esta página) para instalar JIANT sobre el V16 ahora: es nuevo, hacé backup antes.|O esperá a que este instalador lo soporte.|M-VAVE ya no ofrece el V15: no lo necesitás.",
   newstock: "Este FM-1 tiene un firmware oficial más nuevo que el V15, que este instalador todavía no conoce: no se escribió nada. Primero volvé al V15 oficial con el botón de abajo y después instalá de nuevo. Encontrado: ",
   skiff: "Este FM-1 tiene Skiff (otro firmware custom, derivado de Felucca): no se escribió nada. Primero volvé al V15 oficial con el botón de abajo (antes guarda los temas de Skiff en un archivo) y después instalá. Encontrado: ",
   felucca: "Este FM-1 tiene Felucca: no se escribió nada. Primero volvé al V15 oficial con el botón de abajo (guarda un backup completo, samples de usuario incluidos) y después instalá JIANT. Encontrado: ",
@@ -649,7 +655,7 @@ $("go").addEventListener("click", async () => {
   try {
     const up = await begin();
     const selected = versions[+$("ver").value] || versions[0];
-    const result = await runInstall({ up, image, product, ui, state });
+    const result = await runInstall({ up, image, product, ui, state, allowV16: preview });
     if (result !== "done") return;
     sayK("done");
   } catch (e) { showError(e); } finally { lockInstaller(false); }
@@ -663,10 +669,10 @@ $("stock-file").addEventListener("change", async () => {
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
     log(`official file: ${file.name} ${bytes.length} B`);
-    const bad = stockFileProblem(file.name, bytes, STOCK_V15_SIZE);
+    const bad = stockFileProblem(file.name, bytes, STOCK_V15_SIZE, preview);
     if (bad) { if (epoch === stockFileEpoch) { sayK(bad.code, bad.detail); showTip(bad.code); } return; }
     let verified;
-    try { verified = await validateStockPackage(bytes); }
+    try { verified = await validateStockPackage(bytes, preview); }
     catch (e) { if (epoch === stockFileEpoch) { sayK("stockModified", e.message); showTip("stockModified"); } return; }
     if (epoch !== stockFileEpoch) return;
     stock = verified; sayK("stockValid"); showTip(null); lockInstaller(false);

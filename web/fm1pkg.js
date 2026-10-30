@@ -8,6 +8,9 @@ const BLOCKS = 20, BLK = 0x30, KEEP = 0x2F;
 export const STOCK_V15_SHA256 = "db1642b2b6fa5c2cccb11ffd13878068bb28601678d3644049f99dc40e7edb8a";
 export const STOCK_APP_SIZE = 0x8DFBC;
 export const STOCK_V15_SIZE = 699956;
+/* (2026-10-30) official V16 (2026-10-21): flash.bin 0xA9000 (the code grew past 0x93000), the same update loader as V15 */
+export const STOCK_V16_SHA256 = "d017fb65e70aca97ee29d944470c3515a74581df5c0576bf70de917c7b2b61d5";
+export const STOCK_V16_SIZE = 718196;
 
 const T = new Uint16Array(256);
 for (let i = 0; i < 256; i++) {
@@ -234,7 +237,14 @@ export async function sha256hex(bytes) {
 
 // Only the user's unmodified official V15 is accepted for a return to stock.
 // The digest pins every file, loader and flash layout; filenames are not evidence.
-export async function validateStockPackage(bytes) {
+export async function validateStockPackage(bytes, allowV16 = false) {
+  if (allowV16 && bytes.length === STOCK_V16_SIZE) {      /* (beta) official V16, pinned by its digest like V15 */
+    if (await sha256hex(bytes) !== STOCK_V16_SHA256) throw new Error("Select the unmodified official FM-1 V16 file (FM-1.fwsc).");
+    const p16 = new Package(bytes);
+    if (p16.product !== "FM-1_016" || !p16.entries.some((e) => e.type === 100 && e.name === "ota.bin" && e.size === 19969))
+      throw new Error("The official firmware has an unsupported FM-1 layout.");
+    return { product: p16.product, image: logicalImage(bytes), sha256: STOCK_V16_SHA256 };
+  }
   if (bytes.length !== STOCK_V15_SIZE || await sha256hex(bytes) !== STOCK_V15_SHA256)
     throw new Error("Select the unmodified official FM-1 V15 file (FM-1.fwsc).");
   const pkg = new Package(bytes);

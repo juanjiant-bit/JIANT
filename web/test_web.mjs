@@ -1663,8 +1663,9 @@ const codeOf = (p) => p.then(() => "ok", (e) => e.code || e.message);
 async function installerFlows() {
   /* what each identity is */
   const cls = ["FM-1_015", "FM-1_014", "FM-1_012", "FM-1_016", "FM-1_732", "FM-1_900", "FM-1_961", "FM-1_500", "FM1-V12", ""].map(D.classifyIdentity);
-  ok(js(cls) === js(["stock", "oldstock", "oldstock", "newstock", "skiff", "felucca9", "felucca9", "otherfw", "otherfw", "none"]),
-    "installer: identities: V15, older, newer, Skiff 7XY, Felucca 9XY, other");
+  ok(js(cls) === js(["stock", "oldstock", "oldstock", "stock16", "skiff", "felucca9", "felucca9", "otherfw", "otherfw", "none"]),
+    "installer: identities: V15, older, V16, Skiff 7XY, Felucca 9XY, other");
+  ok(D.classifyIdentity("FM-1_017") === "newstock", "installer: an official firmware newer than V16 is still 'newstock'");
 
   /* Install */
   const run = async (p, o = {}, answers) => { const dev = new FakeFM1(IMG, { ...PROFILES[p], after: "FM-1_900", ...o }); const c = flowCtx(dev, answers); return { dev, c, r: await codeOf(D.runInstall(c)) }; };
@@ -1688,7 +1689,14 @@ async function installerFlows() {
   ok(x.r === "felucca" && x.dev.served === 0, "installer: Felucca under JIANT's name is still Felucca (INFO decides)");
   x = await run("v15", { identity: "ota-FM-1_900", name: "Felucca Update" });
   ok(x.r === "ok" && x.c.state.fw.kind === "loader", "installer: the update loader as 'Felucca Update' (an older loader / a cached name): resumed");
-  for (const [p, code] of [["v14", "oldstock"], ["v13", "oldstock"], ["v16", "newstock"], ["skiff", "skiff"], ["skiffQuiet", "skiff"],
+  x = await run("v16");
+  ok(x.r === "stock16" && x.dev.served === 0 && x.dev.upgrades === 0 && !x.c.said.includes("openStock"),
+    "installer (stable): Install over official V16: 'stock16', nothing written, no Return to V15 offered");
+  { const dev = new FakeFM1(IMG, { ...PROFILES.v16, after: "FM-1_900" }), c = flowCtx(dev); c.allowV16 = true;
+    const r = await codeOf(D.runInstall(c));
+    ok(r === "ok" && c.state.fw.kind === "stock16" && dev.identity === "FM-1_900" && dev.bad === 0, "installer (beta): Install over official V16: written"); }
+  ok(D.stockFileProblem("FM-1.fwsc", new Uint8Array(718196), 699956) !== null, "installer (stable): a V16-sized file is not V15's");
+  for (const [p, code] of [["v14", "oldstock"], ["v13", "oldstock"], ["skiff", "skiff"], ["skiffQuiet", "skiff"],
     ["felucca", "felucca"], ["felucca10", "felucca"], ["baudgirl", "otherfw"], ["oddId", "otherfw"]]) {
     x = await run(p);
     ok(x.r === code && x.dev.served === 0 && x.dev.upgrades === 0 && x.c.said.includes("openStock"),
@@ -1821,7 +1829,7 @@ function installerStrings() {
   ok(!miss("ja").length, `installer: Japanese has every string${miss("ja").length ? " (missing " + miss("ja").join(" ") + ")" : ""}`);
   const src = ["fm1ota.js", "fm1diag.js"].map((f) => readFileSync(join(HERE, f), "utf8")).join("\n");
   const codes = new Set([...src.matchAll(/fail\("([A-Za-z0-9]+)"/g)].map((m) => m[1]));
-  ["oldstock", "newstock", "skiff", "felucca", "otherfw", "nomidiIos", "nomidiSafari", "nomidiFirefox", "nomidi", "blocked", "denied"].forEach((k) => codes.add(k));
+  ["oldstock", "newstock", "stock16", "skiff", "felucca", "otherfw", "nomidiIos", "nomidiSafari", "nomidiFirefox", "nomidi", "blocked", "denied"].forEach((k) => codes.add(k));
   codes.delete("badreq");
   const noMsg = [...codes].filter((k) => !T.en[k]);
   ok(!noMsg.length, `installer: every failure code has a message${noMsg.length ? " (" + noMsg.join(" ") + ")" : ""}`);

@@ -13,7 +13,9 @@ import { productOf } from "./fm1pkg.js";
 /* its identity (the update protocol's handshake, "FM-1_015"):
  *   FM-1_015            official V15                  -> Install writes over it
  *   FM-1_001..014       an older official firmware    -> Return to official V15 first (no backup: it cannot make one)
- *   FM-1_016..099       an official firmware newer than V15 (none known yet): Return to official V15 first
+ *   FM-1_016            official V16 (2026-10-21; its layout grew, its update loader is V15's): the beta
+ *                       installer writes JIANT over it (allowV16), the stable one asks to wait
+ *   FM-1_017..099       an official firmware newer than V16 (none known yet): Return to official first
  *   FM-1_7XY            Skiff (a Felucca fork: tools/build.py PRODUCT "FM-1_7" X Y)
  *   FM-1_9XY            JIANT, Felucca or another Felucca fork: the editor's INFO tells which
  *   anything else       another custom firmware */
@@ -22,6 +24,7 @@ export function classifyIdentity(text) {
   if (!m) return text ? "otherfw" : "none";
   const n = +m[1];
   if (n === 15) return "stock";
+  if (n === 16) return "stock16";
   if (n < 15) return "oldstock";
   if (n < 100) return "newstock";
   if (n >= 700 && n < 800) return "skiff";
@@ -56,7 +59,7 @@ export function archiveInfo(a) {
 }
 
 /* the running firmware: { kind, text (identity), version (INFO's), backup (a complete backup can be taken), port };
- * kind: none, stock, oldstock, newstock, jiant, felucca, skiff, otherfw. A Felucca-family firmware (7XY, 9XY) is asked
+ * kind: none, stock, stock16, oldstock, newstock, jiant, felucca, skiff, otherfw. A Felucca-family firmware (7XY, 9XY) is asked
  * the editor's INFO (retried: a busy firmware answers late); no answer: otherfw (or skiff), no backup */
 export async function fwKind(up) {
   const dev = await up.find((id) => !/^ota-/i.test(id.model), { tries: up.t.findTries });
@@ -103,10 +106,11 @@ export async function runInstall(ctx) {
   ui.say("checking");
   const fw = state.fw = await fwKind(up);
   if (fw.kind === "none") throw up.notFound();
-  if (fw.kind === "stock" || fw.kind === "jiant") {
+  if (fw.kind === "stock" || fw.kind === "jiant" || (fw.kind === "stock16" && ctx.allowV16)) {
     await up.install(ctx.image, ctx.product, ui.step);
     return "done";
   }
+  if (fw.kind === "stock16") throw fail("stock16", `nothing was written: this FM-1 runs ${fwName(fw)} (stock16)`, fwName(fw));
   ui.openStock();
   throw fail(fw.kind, `nothing was written: this FM-1 runs ${fwName(fw)} (${fw.kind})`, fwName(fw));
 }
@@ -127,7 +131,7 @@ export async function runStock(ctx) {
   const fw = state.fw = await fwKind(up);
   if (fw.kind === "none") throw up.notFound();
   /* an official firmware: nothing to back up (it does not answer the editor's backup), straight to V15 */
-  if (fw.kind === "stock" || fw.kind === "oldstock" || fw.kind === "newstock") {
+  if (fw.kind === "stock" || fw.kind === "stock16" || fw.kind === "oldstock" || fw.kind === "newstock") {
     if (!(await ui.confirm(fw.kind === "stock" ? "stockAgainConfirm" : "officialConfirm", fw.text))) return "cancel";
     await up.install(stock.image, stock.product, ui.step);
     return "done";
@@ -197,13 +201,14 @@ export async function midiAccess(nav, log = () => {}) {
 /* ------------------------------------------------------------- the official file --- */
 /* why a file picked for Return to official V15 is not FM-1.fwsc of V15 (size 699956): the ZIP as downloaded, another
  * official version, a JIANT / Felucca package, a modified file. null: worth the full check (validateStockPackage) */
-export function stockFileProblem(name, bytes, v15size) {
+export function stockFileProblem(name, bytes, v15size, allowV16 = false) {
   const n = String(name || "");
   if (bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4B && bytes[2] === 3 && bytes[3] === 4) return { code: "stockZip", detail: n };
   if (/\.(rar|7z|exe|dmg|pkg|apk)$/i.test(n)) return { code: "stockZip", detail: n };
   let product = "";
   try { product = bytes.length > 960 ? productOf(bytes) : ""; } catch (_) {}
   if (/^FM-1_9\d\d$|^FM-1_7\d\d$/.test(product) || /^(felucca|jiant|skiff)/i.test(n)) return { code: "stockCustom", detail: `${n} ${product}`.trim() };
+  if (allowV16 && product === "FM-1_016") return null;                  /* (beta) official V16: the full check next */
   if (/^FM-1_0\d\d$/.test(product) && product !== "FM-1_015") return { code: "stockOtherVer", detail: `${n}: ${product}` };
   if (bytes.length !== v15size) return { code: "stockNotV15", detail: `${n}: ${bytes.length} B` };
   return null;
