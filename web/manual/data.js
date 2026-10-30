@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // The interactive manual's content (web/manual/index.html), Spanish first, English second: every text is [es, en].
-// Written from docs/MANUAL.es.md / docs/MANUAL.md and README.md at firmware v0.9.16; the layer maps from the firmware's
+// Written from docs/MANUAL.es.md / docs/MANUAL.md and README.md at firmware v0.9.16 (SAVE › TIMELINE: V10.1); the layer maps from the firmware's
 // own MAP screens (tests/ui_render.c). A shot is a render in shots/ (tools/gen_manual.py copies them).
 // A combo k: "A+B" = hold A and press / turn B; "A" alone = press it. Tokens: the panel's names (SELECT, KNOB 1, OCT+ ...)
 // and the keys F3 .. G5 (sharps as F#3).
@@ -246,7 +246,7 @@ pages: {
   "SCL/SCL": ["ROOT", "SCALE", "QUANT", "ALL TR"], "SCL/CHORD": ["CHORD", "VOICING", "STRUM", "—"],
   "ARP/ARP": ["MODE", "RATE", "OCT", "GATE"], "ARP/ARP 2": ["SWING", "PROB", "HOLD", "ORDER"],
   "SAVE/USER": ["SLOT", "LOAD", "ERASE", "SAVE"], "SAVE/PRESETS": ["No.", "ENG", "FAV", "LIST"], "SAVE/SECTIONS": ["SECT", "NAME", "LOAD", "SAVE"],
-  "SAVE/ARRANGE": ["ROW", "SECT", "BARS", "SCENE"], "SAVE/PROJECTS": ["PROJECT", "SECT", "LOAD", "SAVE"], "SAVE/TOOLS": ["(la lista)", "", "", ""]
+  "SAVE/ARRANGE": ["ROW", "SECT", "BARS", "SCENE"], "SAVE/TIMELINE": ["ROW", "LANE", "SECT · FROM", "BARS · VAR"], "SAVE/PROJECTS": ["PROJECT", "SECT", "LOAD", "SAVE"], "SAVE/TOOLS": ["(la lista)", "", "", ""]
 },
 
 // ------------------------------------------------------------------------------------------- the command reference
@@ -490,6 +490,8 @@ commands: [
   // SONG
   {s: "song", k: "SAVE", shot: 'save_arrange', t: ["Armar la canción (ARRANGE)", "Build the song (ARRANGE)"],
    d: ["SAVE › ARRANGE: KNOB 1 la fila, KNOB 2 su sección (en END: STOP, x2–x8, LOOP), KNOB 3 compases (1–64), KNOB 4 escena. OCT+ agrega una fila; PLAY toca la canción. Se guarda solo.", "SAVE › ARRANGE: KNOB 1 the row, KNOB 2 its section (on END: STOP, x2–x8, LOOP), KNOB 3 bars (1–64), KNOB 4 scene. OCT+ adds a row; PLAY plays the song. It saves itself."]},
+  {s: "song", k: "SAVE", shot: 'save_timeline', t: ["Cada pista en su fila (TIMELINE)", "Each track on its row (TIMELINE)"],
+   d: ["SAVE › TIMELINE (V10), después de ARRANGE: el tema de izquierda a derecha, cada fila tan ancha como sus compases, en siete carriles: SEC y T1–T6. KNOB 1 la fila, KNOB 2 el carril. En SEC: KNOB 3 la sección, KNOB 4 los compases. En una pista: KNOB 3 FROM (ROW o A–D: de qué sección toca su parte) y KNOB 4 VAR, solo en esa fila: MUTE, THIN, FILL, HALF, REV, SHIFT, OCT+, OCT−, VAR 1–4. Oscura: sigue a su fila; brillante con letra: otra sección; marco vacío: muteada; la sigla de la VAR a la derecha.", "SAVE › TIMELINE (V10), after ARRANGE: the song left to right, each row as wide as its bars, in seven lanes: SEC and T1–T6. KNOB 1 the row, KNOB 2 the lane. On SEC: KNOB 3 the section, KNOB 4 the bars. On a track: KNOB 3 FROM (ROW or A–D: which section's part it plays) and KNOB 4 VAR, on that row only: MUTE, THIN, FILL, HALF, REV, SHIFT, OCT+, OCT−, VAR 1–4. Dark: follows its row; bright with a letter: another section; an empty frame: muted; the VAR's short name on the right."]},
   {s: "song", k: "SAVE+F3", shot: 'layer_song_chain', t: ["Tocar secciones en vivo y cadena rápida", "Play sections live and quick chain"],
    d: ["SAVE + F3–B3: toca A–D en el compás siguiente (parado: al instante). Dos o más en una misma mantenida: cadena rápida, en ronda.", "SAVE + F3–B3: plays A–D on the next bar (stopped: at once). Two or more in one hold: a quick chain, round and round."]},
   {s: "song", k: "SAVE+E5", t: ["Grabar la canción en vivo (SONG REC)", "Record the song live (SONG REC)"],
