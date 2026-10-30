@@ -124,18 +124,18 @@ int main(void)
     else
         check(T_LAYOUT == 2 ? "bcdUSB 2.00, class 00 00 01" : "bcdUSB 2.00, class 00 00 00",
               le16(dev + 2) == 0x0200 && !dev[4] && !dev[5] && dev[6] == (T_LAYOUT == 2));
-    check("VID 1209 PID 0001, strings 1 4 (iProduct off Felucca's index 2), one configuration",
-          le16(dev + 8) == 0x1209 && le16(dev + 10) == 1 && dev[14] == 1 && dev[15] == 4 && dev[17] == 1);
+    check("VID 1209 PID 0001, strings 1 5 (iProduct off Felucca's 2 and JIANT's 4), one configuration",
+          le16(dev + 8) == 0x1209 && le16(dev + 10) == 1 && dev[14] == 1 && dev[15] == 5 && dev[17] == 1);
     {   /* (0.9.12) the names a host reads: manufacturer "Juan Jiant", product "JIANT" (UTF-16LE), nothing at index 2
          * (Windows keeps the old "Felucca" / "JIANT FM" under index 2's name GUID), no serial */
-        static const uint8_t PROD[12] = {12, 3, 'J', 0, 'I', 0, 'A', 0, 'N', 0, 'T', 0};
+        static const uint8_t PROD[10] = {10, 3, 'F', 0, 'M', 0, '-', 0, '1', 0};
         static const uint8_t MANU[22] = {22, 3, 'J', 0, 'u', 0, 'a', 0, 'n', 0, ' ', 0, 'J', 0, 'i', 0, 'a', 0, 'n', 0, 't', 0};
         const uint8_t *s;
         uint16_t sl;
         check("string 0: US English", get_desc(0x0300, &s, &sl) && sl == 4 && s[2] == 0x09 && s[3] == 0x04);
         check("string 1 (manufacturer): \"Juan Jiant\"", get_desc(0x0301, &s, &sl) && sl == 22 && !memcmp(s, MANU, 22));
-        check("string 4 (product): \"JIANT\"", get_desc(0x0304, &s, &sl) && sl == 12 && !memcmp(s, PROD, 12));
-        check("strings 2 (the old product) and 3: none", !get_desc(0x0302, &s, &sl) && !get_desc(0x0303, &s, &sl));
+        check("string 5 (product): \"FM-1\" (2026-10-30: the FM-1 apps find it)", get_desc(0x0305, &s, &sl) && sl == 10 && !memcmp(s, PROD, 10));
+        check("strings 2, 4 (the old products) and 3: none", !get_desc(0x0302, &s, &sl) && !get_desc(0x0303, &s, &sl) && !get_desc(0x0304, &s, &sl));
         check("no serial number (iSerial 0)", dev[16] == 0);
     }
     snprintf(name, sizeof name, "bcdDevice 3.%02X", 0x10 * (T_UAC + AUDIO_48K) + (CDC_SHOWN ? 1 + 2 * T_LAYOUT : 0));

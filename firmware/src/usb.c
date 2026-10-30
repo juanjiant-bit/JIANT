@@ -302,8 +302,10 @@ static void midi_out_event(uint32_t pkt)            /* from the audio ISR */
  * (MediaCategories\{GUID}\Name) under a GUID made of VID, PID and this index only (ksmedia.h
  * INIT_USBAUDIO_PRODUCT_NAME), written the first time it sees the device and never again: every FM-1 that had
  * Felucca (1209:0001, index 2) kept showing "Felucca" in Live / Windows after JIANT's rename. A new index is a new
- * GUID, so the host reads the name again. Index 2 is no longer answered. Rename the product again: move it again. */
-#define USB_STR_PRODUCT 4u
+ * GUID, so the host reads the name again. Index 2 is no longer answered. Rename the product again: move it again.
+ * (2026-10-30) "FM-1" (was "JIANT", index 4): the apps made for the FM-1 (FM1 Swap, Firmware Hub, ...) look for its name,
+ * as Melodee's "Melodee FM-1"; on index 5, so Windows reads it afresh. */
+#define USB_STR_PRODUCT 5u
 #ifndef FELUCCA_USB_PID
 #define FELUCCA_USB_PID 0x0001   /* the update loader is 0x0002 */
 #endif
@@ -488,9 +490,9 @@ static const uint8_t STR1[] = {22, 3, 'J', 0, 'u', 0, 'a', 0, 'n', 0, ' ', 0, 'J
 /* the product (USB_STR_PRODUCT): Windows names the MIDI port after it, macOS the device and its port; no interface
  * or jack has a name of its own (iInterface / iJack 0). 0.7.0..0.9.11: "JIANT FM" (index 2); Felucca: "Felucca" */
 #ifdef FELUCCA_LOADER
-static const uint8_t STR_PROD[] = {26, 3, 'J', 0, 'I', 0, 'A', 0, 'N', 0, 'T', 0, ' ', 0, 'U', 0, 'p', 0, 'd', 0, 'a', 0, 't', 0, 'e', 0};
+static const uint8_t STR_PROD[] = {24, 3, 'F', 0, 'M', 0, '-', 0, '1', 0, ' ', 0, 'U', 0, 'p', 0, 'd', 0, 'a', 0, 't', 0, 'e', 0};
 #else
-static const uint8_t STR_PROD[] = {12, 3, 'J', 0, 'I', 0, 'A', 0, 'N', 0, 'T', 0};
+static const uint8_t STR_PROD[] = {10, 3, 'F', 0, 'M', 0, '-', 0, '1', 0};
 #endif
 
 static int get_desc(uint32_t wvalue, const uint8_t **d, uint16_t *l)

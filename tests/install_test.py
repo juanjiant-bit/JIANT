@@ -209,7 +209,7 @@ def installs():
 
     # (0.9.12) the USB names over the versions: "Felucca" / "Felucca Update" (Felucca), "JIANT FM" / "JIANT Update"
     # (JIANT 0.7.0..0.9.11), "JIANT" / "JIANT Update" (0.9.12); what the device is comes from its identity, not the name
-    for name in ("JIANT", "JIANT FM", "Felucca", "2- JIANT", "MIDIIN2 (JIANT)"):
+    for name in ("FM-1", "JIANT", "JIANT FM", "Felucca", "2- JIANT", "MIDIIN2 (JIANT)"):
         dev = FakeFM1(image, identity="FM-1_900", name=name, loader_name="JIANT Update", after_name="JIANT")
         rc, out, err = cli([p, "--yes"], dev)
         ok(rc == 0 and dev.bad == 0 and dev.upgrades == 2 and "done: the FM-1 runs FM-1_900" in out,
