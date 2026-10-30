@@ -1238,7 +1238,7 @@ static void edit_param(uint32_t slot, int32_t steps)
         else if (slot == 3u) ui.act = steps > 0 ? 4u : 0u;
         return;
     }
-    if (SONG_TRK(pg)) {                                 /* (add15) ARRANGE 2: ROW TRACK FROM, KNOB 4 left: all the row's */
+    if (SONG_TRK(pg)) {                                 /* (add15) ARRANGE 2: ROW TRACK FROM VAR (beta4) */
         uint32_t *m;
         if (slot == 0u) {
             ui.song_row = (uint8_t)clamp((int32_t)ui.song_row + steps, 0, chain_config.count ? chain_config.count - 1 : 0);
@@ -1255,9 +1255,10 @@ static void edit_param(uint32_t slot, int32_t steps)
         if (slot == 2u) {
             uint32_t sh = 3u * (ui.song_tk % NTRK), v = clamp((int32_t)(*m >> sh & 7u) + steps, 0, 4);
             *m = (*m & ~(7u << sh)) | v << sh;
-        } else if (slot == 3u && steps < 0 && *m) {
-            *m = 0;
-            ui_message("TRACKS FOLLOW ROW");
+        } else if (slot == 3u) {                        /* (beta4) VAR: the track's variation in the row */
+            uint32_t *w = &song_idx.tvar[song_cur][ui.song_row], sh = 4u * (ui.song_tk % NTRK);
+            uint32_t v = clamp((int32_t)(*w >> sh & 15u) + steps, 0, RV_N - 1);
+            *w = (*w & ~(15u << sh)) | v << sh;
         }
         song_idx_touch();
         return;
@@ -1289,6 +1290,7 @@ static void edit_param(uint32_t slot, int32_t steps)
             r->slot = ui.song_row ? chain_config.row[ui.song_row - 1u].slot : 0u;
             r->bars = 1;
             song_idx.tsrc[song_cur][ui.song_row] = 0;
+            song_idx.tvar[song_cur][ui.song_row] = 0;
             chain_config.count = ui.song_row + 1u;
             if (slot == 1u) return;
         }
@@ -1485,6 +1487,7 @@ static void act_do(void)
         r->bars = chain_config.count ? chain_config.row[chain_config.count - 1u].bars : 4u;
         memset(&song_idx.scene[song_cur][chain_config.count], 0, sizeof song_idx.scene[0][0]);   /* (no scene yet) */
         song_idx.tsrc[song_cur][chain_config.count] = 0;
+        song_idx.tvar[song_cur][chain_config.count] = 0;
         ui.song_row = chain_config.count++;
         song_idx_touch();
         ui_message("ROW ADDED");
@@ -2437,9 +2440,11 @@ static void ui_input_frame(void)
                         chain_config.row[r] = chain_config.row[r + 1u];
                         song_idx.scene[song_cur][r] = song_idx.scene[song_cur][r + 1u];   /* (its scene with it) */
                         song_idx.tsrc[song_cur][r] = song_idx.tsrc[song_cur][r + 1u];     /* (.. and its tracks') */
+                        song_idx.tvar[song_cur][r] = song_idx.tvar[song_cur][r + 1u];
                     }
                     memset(&song_idx.scene[song_cur][r], 0, sizeof(scene_t));
                     song_idx.tsrc[song_cur][r] = 0;
+                    song_idx.tvar[song_cur][r] = 0;
                     song_idx_touch();
                     chain_config.count--;
                     if (ui.song_row > chain_config.count) ui.song_row = chain_config.count;
@@ -2450,6 +2455,7 @@ static void ui_input_frame(void)
                     chain_defaults(&chain_config);
                     memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
                     memset(song_idx.tsrc[song_cur], 0, sizeof song_idx.tsrc[song_cur]);
+                    memset(song_idx.tvar[song_cur], 0, sizeof song_idx.tvar[song_cur]);
                     song_idx_touch();
                     ui.song_row = 0;
                     ui_message("SONG CLEARED");

@@ -73,6 +73,10 @@ static void chain_apply(void)                         /* a song row's section in
     chain.remaining = chain.config.row[chain.row].bars;
     sec_apply();
     scene_apply(chain.row);
+    if (!chain.loop)                                  /* (add15-beta4) ARRANGE 2's MUTE: over the scene, for the row */
+        for (uint32_t k = 0; k < NTRK; k++)
+            if (row_var(chain.row, k) == RV_MUTE)
+                trk[k].p[P_MUTE] = 1;
 }
 
 /* SONG REC: a row for section s, its bars counted from 0 */

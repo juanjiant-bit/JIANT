@@ -7121,9 +7121,12 @@ static int test_save_lens(void)
     turn(EN_K3, 1); frame(); turn(EN_K3, 1); frame(); turn(EN_K3, 1); frame();   /* FROM C */
     ok &= ui.song_row == 1u && ui.song_tk == 2u && song_idx.tsrc[song_cur][1] == 3u << 6 && !song_idx.tsrc[song_cur][0] &&
           row_src(1, 2, 1) == 2u && row_src(1, 0, 1) == 1u;
-    turn(EN_K4, -1); frame();
-    ok &= !song_idx.tsrc[song_cur][1];
-    bad += check("add15 SAVE > ARRANGE 2: ROW TRACK FROM a track's section (T3 from C), KNOB 4 left: all the row's", ok);
+    turn(EN_K4, 1); frame();                                                 /* (beta4) VAR: MUTE */
+    ok &= row_var(1, 2) == RV_MUTE && !row_var(1, 0) && !row_var(0, 2);
+    turn(EN_K4, 1); frame();
+    ok &= row_var(1, 2) == RV_THIN;
+    bad += check("add15 SAVE > ARRANGE 2: ROW TRACK FROM a track's section (T3 from C), VAR its variation (MUTE, THIN)", ok);
+    memset(song_idx.tvar[song_cur], 0, sizeof song_idx.tvar[song_cur]);
     chain_config.count = 0;
     ui_power_on();
     return bad;

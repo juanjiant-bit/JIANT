@@ -1486,6 +1486,9 @@ static uint32_t graph_signature(void)
         if (pg->graph == GR_USER || pg->graph == GR_BROWSE)
             h ^= bg_energy() > 2 ? anim_fr * 2654435761u : 0u;   /* (the being moves with the sound) */
         if (pg->graph == GR_SONG) {                  /* (ARRANGE: as SLOTS', the rows and where the song is) */
+            for (i = 0; i < CHAIN_ROWS; i++)         /* (add15: ARRANGE 2's tracks) */
+                h = (h ^ song_idx.tsrc[song_cur][i] ^ song_idx.tvar[song_cur][i] * 31u) * 16777619u;
+            h ^= (ui.song_tk + 1u) * 2654435761u;
             for (i = 0; i < 4u; i++) h ^= (uint32_t)graph_project_used(i) << (20u + i);
             h += graph_pname_sig + (uint32_t)(live.cur + 1) * 40503u;
         }

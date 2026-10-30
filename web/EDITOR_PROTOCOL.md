@@ -693,8 +693,9 @@ Restoring: `BACKUP_PUT` takes ids 0..9 (firmware before 1.0.3: 0..8, id 9 answer
 
 **JIANT 0.3: every song.** Id 10 is the song index (`song_index_t`, version 2: every song's rows and scenes, 1328
 bytes; add15, version 3: + each row's track sources for ARRANGE 2, a `uint32_t` per row, 3 bits a track (0 the row's
-section, 1..4 A..D), 1840 bytes; a version 2 index of 1328 bytes is still taken, every track its row's section); a
-restore keeps the song playing. Ids 40..71 are every song's sections, 40 + 4 × song + section (0 = A): the
+section, 1..4 A..D), 1840 bytes; add15-beta4, version 4: + each row's track variations (VAR), a `uint32_t` per row, 4 bits a track (0 none,
+1 MUTE, 2 THIN, 3 FILL, 4 HALF, 5 REV, 6 SHIFT, 7 OCT+, 8 OCT-, 9..12 VAR 1..4), 2352 bytes; version 2 (1328) and 3
+(1840) indexes are still taken, the missing parts empty); a restore keeps the song playing. Ids 40..71 are every song's sections, 40 + 4 × song + section (0 = A): the
 current song's come from RAM (as ids 2..5), the others are read from flash as they are asked for, into the storage
 driver's own buffer (no RAM of their own). A restore writes each into its song's flash object (an older project format
 becomes today's), the current song's into RAM too. Firmware before answers rc 1 at begin for 10 and 40..71, and the

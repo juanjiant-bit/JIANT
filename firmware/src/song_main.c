@@ -22,12 +22,15 @@ static void song_index_load(void)
     int n = st_load(OBJ_SONGIDX, &song_idx, sizeof song_idx);
     if (song_idx.magic == SONG_MAGIC && song_idx.cur < NSONG &&
         ((song_idx.version == SONG_IDX_V && n == (int)sizeof song_idx) ||
+         (song_idx.version == 3u && n == (int)__builtin_offsetof(song_index_t, tvar)) ||
          (song_idx.version == 2u && n == (int)__builtin_offsetof(song_index_t, tsrc)) ||
          (song_idx.version == 1u && n == (int)__builtin_offsetof(song_index_t, scene)))) {
         if (song_idx.version == 1u)                 /* (before the scenes: none) */
             memset(song_idx.scene, 0, sizeof song_idx.scene);
-        if (song_idx.version < SONG_IDX_V)          /* (add15: before ARRANGE 2, every track its row's section) */
+        if (song_idx.version < 3u)                  /* (add15: before ARRANGE 2, every track its row's section) */
             memset(song_idx.tsrc, 0, sizeof song_idx.tsrc);
+        if (song_idx.version < 4u)                  /* (add15-beta4: before VAR, no variations) */
+            memset(song_idx.tvar, 0, sizeof song_idx.tvar);
         song_idx.version = SONG_IDX_V;
         for (k = 0; k < NSONG; k++)
             song_rows_fix(&song_idx.rows[k]);
@@ -63,6 +66,57 @@ static void song_name(char *b)
     }
 }
 
+/* (add15-beta4) ARRANGE 2's VAR: track k's steps (the first len) as row `row` plays them. The same row, the same
+ * variation: VAR 1..4 draw from a seed of the song, the row and the track, never rng() */
+static void row_vary(step_t *st, uint32_t len, int kit, uint32_t v, uint32_t seed)
+{
+    static step_t tmp[NSTEP] __attribute__((section(".pool")));   /* (the main loop's, scratch) */
+    uint32_t i, h, n = len > NSTEP ? NSTEP : (len ? len : 1u), half = n / 2u ? n / 2u : 1u;
+    int32_t last = -1;
+    if (v == RV_NONE || v == RV_MUTE)
+        return;
+    memcpy(tmp, st, n * sizeof *st);
+    for (i = 0; i < n; i++) {
+        step_t s = tmp[i];
+        h = (seed ^ (i + 1u) * 2654435761u) * 2246822519u;
+        h ^= h >> 15;
+        switch (v) {
+        case RV_THIN:                                   /* the off-beats out (the 16ths between the 8ths) */
+            if (i & 1u) { s.time = ST_REST; s.n = 0; s.hit = s.acc = 0; }
+            break;
+        case RV_FILL:                                   /* the last beat: every step plays (a roll into the next row) */
+            if (i + 4u >= n) {
+                if (kit) { s.hit |= (uint8_t)((tmp[n - 1u].hit | 2u) & ~1u); s.time = ST_NOTE; }   /* (lane 1 and the last
+                                                         * step's, never the kick) */
+                else if (last >= 0 && s.time != ST_NOTE) { memset(&s, 0, sizeof s); s.n = 1; s.time = ST_NOTE; s.vel = 100; s.note[0] = (uint8_t)last; }
+            }
+            break;
+        case RV_HALF: s = tmp[i % half]; break;         /* the first half twice */
+        case RV_REV: s = tmp[n - 1u - i]; if (s.time == ST_TIE) s.time = ST_NOTE; break;
+        case RV_SHIFT: s = tmp[(i + n - (2u % n)) % n]; break;   /* an 8th late, round in LEN */
+        case RV_OCTU: case RV_OCTD:
+            if (!kit) for (uint32_t j = 0; j < s.n && j < 4u; j++) s.note[j] = (uint8_t)clamp(s.note[j] + (v == RV_OCTU ? 12 : -12), 0, 127);
+            break;
+        default: {                                      /* VAR 1..4: hits / notes moved, dropped, added */
+            uint32_t amt = 40u + 30u * (v - RV_MUT1);   /* (of 256) */
+            if (kit) {
+                for (uint32_t l = 1; l < NLANE; l++)
+                    if (((h >> (l * 3u)) & 255u) < amt / 2u) s.hit ^= (uint8_t)(1u << l);
+                s.acc &= s.hit;
+                s.time = s.hit || s.n ? ST_NOTE : ST_REST;
+            } else if (s.time == ST_NOTE && s.n) {
+                if ((i & 3u) && (h & 255u) < amt / 2u) { s.time = ST_REST; s.n = 0; }
+                else if (((h >> 8) & 255u) < amt / 2u)
+                    for (uint32_t j = 0; j < s.n && j < 4u; j++) s.note[j] = (uint8_t)clamp(s.note[j] + ((h >> 16) & 1u ? 12 : 7), 0, 127);
+            } else if (s.time == ST_REST && (i & 1u) && last >= 0 && (h & 255u) < amt / 3u) {
+                memset(&s, 0, sizeof s); s.n = 1; s.time = ST_NOTE; s.vel = 90; s.note[0] = (uint8_t)last;
+            }
+        } }
+        if (s.time == ST_NOTE && s.n) last = s.note[0];
+        st[i] = s;
+    }
+}
+
 /* section s (a project slot) into sec_stage for row `row` (SEC_LIVE: a live jump); 0 = staged. (add15) A song's row may
  * take tracks from other sections (ARRANGE 2: row_src): each of those is decoded in turn, its tracks (sound, steps, FM6
  * patch, automation; DRUM's kit with the DRUM track) taken from it; the row's own section last, with the rest */
@@ -94,6 +148,12 @@ static int song_stage(uint32_t s, uint32_t row)
                 d->p[i] = (int16_t)param_fit(param_desc_of(e, i), t->p[i]);
             memcpy(d->step, t->step, sizeof d->step);
             proj_steps(d->step);
+            if (row < CHAIN_ROWS && !chain.loop) {      /* (add15-beta4) ARRANGE 2's VAR */
+                uint32_t v = row_var(row, k);
+                row_vary(d->step, (uint32_t)d->p[P_SLEN], e == ENGI_DRUM, v,
+                         (song_cur + 1u) * 40503u ^ (row + 1u) * 104729u ^ (k + 1u) * 1299709u ^ v * 15485863u);
+                if (v == RV_MUTE) d->p[P_MUTE] = 1;
+            }
             fm6_unpack(p->fm6[k], d->fm6);
             fm6_sanitize(d->fm6);
             on |= p->motion.on & (1u << k);
@@ -414,6 +474,7 @@ static void song_poll(void)
             chain_config.count = (uint8_t)n;
             memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
             memset(song_idx.tsrc[song_cur], 0, sizeof song_idx.tsrc[song_cur]);   /* (SONG REC: whole sections) */
+            memset(song_idx.tvar[song_cur], 0, sizeof song_idx.tvar[song_cur]);
             for (k = 0; k < n; k++) {
                 chain_config.row[k] = live.rec[k];
                 song_idx.scene[song_cur][k] = live.rec_scene[k];   /* (each row's scene, as it began) */

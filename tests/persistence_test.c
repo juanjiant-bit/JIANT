@@ -740,6 +740,30 @@ int main(void)
         seq_stop();
         transport_req = 0;
         bad += check("ARRANGE 2: a track plays another section's, the rest the row's", ok && nb && na == 50);
+        {                                                      /* (beta4) VAR: THIN, MUTE, REV, a seeded VAR the same twice */
+            uint32_t i, thin = 1, rev, same;
+            static step_t a1[NSTEP];
+            for (i = 0; i < 16u; i++) { trk[1].step[i].time = ST_NOTE; trk[1].step[i].n = 1; trk[1].step[i].note[0] = (uint8_t)(48 + i); }
+            trk[1].p[P_SLEN] = 16;
+            project_save(0);
+            chain_config.count = 1; chain_config.row[0] = (chain_row_t){0, 1};
+            song_idx.tvar[song_cur][0] = RV_THIN << 4 | RV_MUTE << 8;   /* T2 THIN, T3 MUTE */
+            ok = chain_prepare() == 0;
+            for (i = 0; i < 16u; i++) thin &= (i & 1u) ? sec_stage.t[1].step[i].time == ST_REST : sec_stage.t[1].step[i].note[0] == 48 + i;
+            ok &= thin && sec_stage.t[2].p[P_MUTE] == 1;
+            seq_stop(); transport_req = 0;
+            song_idx.tvar[song_cur][0] = RV_REV << 4;
+            rev = chain_prepare() == 0 && sec_stage.t[1].step[0].note[0] == 63 && sec_stage.t[1].step[15].note[0] == 48;
+            seq_stop(); transport_req = 0;
+            song_idx.tvar[song_cur][0] = (RV_MUT1 + 2u) << 4;
+            same = chain_prepare() == 0;
+            memcpy(a1, sec_stage.t[1].step, sizeof a1);
+            seq_stop(); transport_req = 0;
+            same &= chain_prepare() == 0 && !memcmp(a1, sec_stage.t[1].step, sizeof a1);
+            seq_stop(); transport_req = 0;
+            song_idx.tvar[song_cur][0] = 0;
+            bad += check("ARRANGE 2 VAR: THIN the off-beats out, MUTE, REV backwards, VAR 3 the same each time", ok && rev && same);
+        }
     }
     {                                                          /* (add15) a version 2 index in flash (1328 bytes) */
         static song_index_t v2;

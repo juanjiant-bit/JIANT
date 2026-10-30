@@ -83,6 +83,27 @@ static void graph_proj(int ar)
 {
     uint32_t i, total = 0, played = 0, sel = (uint32_t)song.g[G_SLOT] - 1u, n = chain_config.count, end;
     char b[24];
+    if (ar == 2) {                                       /* (add15-beta4) ARRANGE 2: the row's six tracks, each its section
+                                                         * (its colour, its letter) and its VAR; the one KNOB 2 picks framed */
+        uint32_t r = ui.song_row < n ? ui.song_row : (n ? n - 1u : 0u), s = n ? chain_config.row[r].slot & 3u : 0u;
+        for (i = 0; i < NTRK; i++) {
+            int32_t x = 4 + (int32_t)i * 39;
+            uint32_t src = row_src(r, i, s), v = n ? row_var(r, i) : 0u;
+            int own = src == s, pick = i == ui.song_tk % NTRK;
+            uint16_t c = lz_sec(src, n != 0u, own ? 1 : 0), ink = n ? T_INK : T_DIM;
+            b[0] = 'T'; b[1] = (char)('1' + i); b[2] = 0;
+            cv_rect(x, 2, 36, 49, c);
+            cv_text_on(x + 4, 4, &AF_X, b, ink, c);
+            b[0] = (char)('A' + src); b[1] = 0;
+            cv_text_on(x + 12, 16, &AF_M, v == RV_MUTE ? "-" : b, ink, c);
+            if (v && v < RV_N)
+                cv_free_text(x + 3, 38, &AF_X, RV_NAME[v], ink, c, 32);
+            if (pick) {
+                cv_frame(x - 2, 0, 40, 53, T_TEXT);
+                cv_frame(x - 1, 1, 38, 51, T_TEXT);
+            }
+        }
+    } else
     for (i = 0; i < 4u; i++) {
         int32_t x = LZ_TX(i);
         int used = graph_project_used(i), pick = !ar && i == (sel & 3u);
@@ -101,7 +122,7 @@ static void graph_proj(int ar)
         }
     }
     GFX_HOOK_ALIGN(0, 58, 0, 67, AL_V | AL_PASS, "project arrange title");
-    cv_text(6, 58, &AF_X, "ARRANGE", ar ? T_THEME : T_DIM);
+    cv_text(6, 58, &AF_X, ar == 2 ? "ARRANGE 2" : "ARRANGE", ar ? T_THEME : T_DIM);
     for (i = 0; i < n && i < CHAIN_ROWS; i++) {
         const chain_row_t *r = &chain_config.row[i];
         int32_t x = 4 + (int32_t)(i % 8u) * 293 / 10, y = 72 + (int32_t)(i / 8u) * 22;
@@ -116,6 +137,8 @@ static void graph_proj(int ar)
             cv_frame(x - 1, y - 1, 29, 22, T_TEXT);
         if (song_idx.scene[song_cur][i].on)              /* a scene: a dot */
             cv_rect(x + 22, y + 3, 2, 2, T_TEXT);
+        if (song_idx.tsrc[song_cur][i] || song_idx.tvar[song_cur][i])   /* (add15) tracks of their own: a dot below */
+            cv_rect(x + 3, y + 15, 2, 2, T_TEXT);
         total += r->bars;
         if (chain.running && i < chain.row) played += r->bars;
     }
@@ -252,7 +275,7 @@ static void graph_save_lz(const page_t *pg)
 {
     uint32_t lv = save_level();
     if (pg->graph == GR_TOOLS) graph_lz_tools();
-    else if (pg->graph == GR_SONG) graph_proj(1);
+    else if (pg->graph == GR_SONG) graph_proj(SONG_TRK(pg) ? 2 : 1);
     else if (pg->graph == GR_SLOTS) { if (lv == SV_PROJ) graph_proj(0); else graph_lib(); }
     else if (pg->graph == GR_USER) graph_sound();
     else graph_lz_presets();

@@ -40,8 +40,15 @@ typedef struct {                              /* the song index (flash: OBJ_SONG
     scene_t scene[NSONG][CHAIN_ROWS];         /* (version 2, JIANT) their scenes; a version 1 index: none */
     uint32_t tsrc[NSONG][CHAIN_ROWS];         /* (version 3, add15) where each track plays from in the row: 3 bits a track,
                                               * 0 the row's section, 1..4 A..D (SAVE > ARRANGE 2); older: all 0 */
+    uint32_t tvar[NSONG][CHAIN_ROWS];         /* (version 4, add15-beta4) each track's variation in the row: 4 bits a track,
+                                              * RV_* (0 none); older: all 0 */
 } song_index_t;
-#define SONG_IDX_V 3u
+#define SONG_IDX_V 4u
+/* (add15-beta4) a row's variation of a track (ARRANGE 2's VAR): what its steps become when the row goes in (song_main.c
+ * row_vary), MUTE the track silent for the row */
+enum { RV_NONE, RV_MUTE, RV_THIN, RV_FILL, RV_HALF, RV_REV, RV_SHIFT, RV_OCTU, RV_OCTD, RV_MUT1, RV_N = RV_MUT1 + 4 };
+static const char *const RV_NAME[RV_N] = {"--", "MUTE", "THIN", "FILL", "HALF", "REV", "SHIFT", "OCT+", "OCT-",
+                                          "VAR 1", "VAR 2", "VAR 3", "VAR 4"};
 static void song_idx_touch(void);             /* song_main.c: the index changed, into flash soon */
 /* the state now as a scene (main loop: KNOB 4 on SONG; ISR: SONG REC) */
 static void scene_capture(scene_t *s)
@@ -65,6 +72,10 @@ static uint32_t row_src(uint32_t r, uint32_t k, uint32_t s)
 {
     uint32_t v = r < CHAIN_ROWS ? song_idx.tsrc[song_cur][r] >> (3u * k) & 7u : 0u;
     return v ? v - 1u : s & 3u;
+}
+static uint32_t row_var(uint32_t r, uint32_t k)
+{
+    return r < CHAIN_ROWS ? song_idx.tvar[song_cur][r] >> (4u * k) & 15u : 0u;
 }
 #define SEC_LIVE 0xFEu                /* sec_stage.row: a live jump (the song layer), not a song row */
 typedef struct {                      /* a track of a section, as the ISR puts it in */

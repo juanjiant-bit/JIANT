@@ -1410,12 +1410,11 @@ static void draw_columns(void)
     if (SONG_TRK(cur_page())) {                        /* (add15) ARRANGE 2: ROW TRACK FROM, the row's mix (T1..T6) */
         uint32_t row = ui.song_row < chain_config.count ? ui.song_row : chain_config.count - 1u, k, s, own;
         int used = chain_config.count != 0u;            /* (ARRANGE's ADD / END: its last row) */
-        char mix[NTRK + 1u];
         if (!used) {
             hot_text_column(0, "ROW", "--");
             text_column(1, "TRACK", "--", T_DIM);
             text_column(2, "FROM", "--", T_DIM);
-            text_column(3, "MIX", "NO ROWS", T_DIM);
+            text_column(3, "VAR", "NO ROWS", T_DIM);
             return;
         }
         s = chain_config.row[row].slot;
@@ -1429,9 +1428,8 @@ static void draw_columns(void)
         if (own) { str_cpy(val, "ROW ", sizeof val); val[4] = (char)('A' + s); val[5] = 0; }
         else { val[0] = (char)('A' + row_src(row, ui.song_tk % NTRK, s)); val[1] = 0; }
         text_column(2, "FROM", val, own ? T_DIM : VAL(2u));
-        for (k = 0; k < NTRK; k++) mix[k] = (char)('A' + row_src(row, k, s));
-        mix[NTRK] = 0;
-        text_column(3, "MIX", mix, song_idx.tsrc[song_cur][row] ? VAL(3u) : T_DIM);
+        k = row_var(row, ui.song_tk % NTRK);
+        text_column(3, "VAR", RV_NAME[k < RV_N ? k : 0], k ? VAL(3u) : T_DIM);   /* (beta4; the six: the graph) */
         return;
     }
     if (cur_page()->graph == GR_SONG) {

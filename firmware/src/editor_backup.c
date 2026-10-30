@@ -159,6 +159,11 @@ static uint32_t ed_bk_commit(void)
         song_index_t *w = (song_index_t *)raw;
         if (ed_bk_len == __builtin_offsetof(song_index_t, tsrc) && w->magic == SONG_MAGIC && w->version == 2u) {
             memset(w->tsrc, 0, sizeof w->tsrc);       /* (add15: a backup from before ARRANGE 2: every track its row's) */
+            w->version = 3u;
+            ed_bk_len = __builtin_offsetof(song_index_t, tvar);
+        }
+        if (ed_bk_len == __builtin_offsetof(song_index_t, tvar) && w->magic == SONG_MAGIC && w->version == 3u) {
+            memset(w->tvar, 0, sizeof w->tvar);       /* (add15-beta4: from before VAR: no variations) */
             w->version = SONG_IDX_V;
             ed_bk_len = sizeof *w;
         }
@@ -234,7 +239,8 @@ static uint32_t ed_bk_write(const uint8_t *a, uint32_t n)
             (a[1] >= 2u && a[1] <= 5u && len && !proj_store_len(len)) ||
             ((a[1] == 6u || a[1] == 7u) && len && len != sizeof(up_bank_t)) ||
             (a[1] == 8u && len && len != sizeof(fm6_bank_t)) || (a[1] == 9u && len && len != sizeof(upf_t)) ||
-            (a[1] == 10u && len != sizeof(song_index_t) && len != __builtin_offsetof(song_index_t, tsrc)) || (a[1] >= ED_BK_SONG && len && !proj_store_len(len))) return 1;
+            (a[1] == 10u && len != sizeof(song_index_t) && len != __builtin_offsetof(song_index_t, tsrc) &&
+             len != __builtin_offsetof(song_index_t, tvar)) || (a[1] >= ED_BK_SONG && len && !proj_store_len(len))) return 1;
         if (ed_flash_stop()) return 3;
         ed_bk_valid = 0; ed_bk_put = 1; ed_bk_id = a[1]; ed_bk_len = len; ed_bk_gen = ++proj_wire_gen;
         ed_bk_crc = ed_bk_r32(a + 7); ed_bk_pos = 0;

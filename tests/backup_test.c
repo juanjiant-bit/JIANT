@@ -295,7 +295,7 @@ int main(void)
         bad += check("  the song index restores (a scene of song 3, add15: a track's section), the song playing stays",
                      put_all(10u, &si, sizeof si, st_crc32(&si, sizeof si)) == 0 && song_idx.scene[2][0].mac[3] == 99 &&
                      song_idx.tsrc[2][0] == 4u << 3 && song_idx.cur == song_cur);
-        si.version = 2; si.scene[2][0].mac[3] = 98;
+        si.version = 2; si.scene[2][0].mac[3] = 98; si.tvar[2][0] = 0;
         bad += check("  (add15) a version 2 index (before ARRANGE 2) restores, every track its row's section",
                      put_all(10u, &si, __builtin_offsetof(song_index_t, tsrc),
                              st_crc32(&si, __builtin_offsetof(song_index_t, tsrc))) == 0 &&
