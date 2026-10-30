@@ -212,7 +212,7 @@ Object.assign(TEXT.ja, {
 Object.assign(TEXT.en, {
   intro: "Connect the FM-1 by USB. (Works in Chrome or Edge on a computer; Chrome on Android may work too. Not on iPhone/iPad.)",
   back: "Get official FM-1 V15 from M-VAVE and select the unmodified FM-1.fwsc. The browser validates it locally; it is not sent to a server.",
-  stockV16: "Beta: official V16 (FM-1.fwsc, 718,196 bytes), the version M-VAVE offers today, is taken too.",
+  stockV16: "Official V16 (FM-1.fwsc, 718,196 bytes), the version M-VAVE offers today, is taken too.",
   stockWhere: "On M-VAVE's download page, find the FM-1, download firmware V15, unzip it and select the file FM-1.fwsc (699,956 bytes). This page cannot download it for you: the official firmware is M-VAVE's and not ours to redistribute.",
   notfound: "FM-1 not found: no MIDI port of an FM-1 answered.",
   nomidi: "This browser has no WebMIDI. Open the page in Chrome or Edge.",
@@ -283,7 +283,7 @@ Object.assign(TEXT.en, {
 });
 Object.assign(TEXT.ja, {
   intro: "FM-1 を USB で接続してください。（パソコンの Chrome か Edge で使えます。Android の Chrome でも動く場合があります。iPhone/iPad では使えません）",
-  stockV16: "ベータ版：現在 M-VAVE が配布している公式V16（FM-1.fwsc、718,196 バイト）も使えます。",
+  stockV16: "現在 M-VAVE が配布している公式V16（FM-1.fwsc、718,196 バイト）も使えます。",
   stockWhere: "M-VAVE のダウンロードページで FM-1 のファームウェア V15 をダウンロードし、展開して FM-1.fwsc（699,956 バイト）を選んでください。公式ファームウェアは M-VAVE のもので再配布できないため、このページからはダウンロードできません。",
   notfound: "FM-1 が見つかりません。FM-1 の MIDI ポートが応答しませんでした。",
   nomidi: "このブラウザには WebMIDI がありません。Chrome か Edge で開いてください。",
@@ -369,7 +369,7 @@ TEXT.es = {
   brick: "Si una instalación falla y el FM-1 ya no arranca, recuperarlo necesita un Transporter:",
   beta: "JIANT FM es una versión en desarrollo; contanos los problemas en GitHub. El autor no se hace responsable si tu FM-1 se daña o funciona mal por este firmware custom. Usalo bajo tu propio riesgo.",
   back: "Conseguí el FM-1 V15 oficial de M-VAVE y elegí el FM-1.fwsc sin modificar. El navegador lo verifica localmente; no se envía a ningún servidor.",
-  stockV16: "Beta: también acepta el V16 oficial (FM-1.fwsc, 718.196 bytes), el que M-VAVE ofrece hoy.",
+  stockV16: "También acepta el V16 oficial (FM-1.fwsc, 718.196 bytes), el que M-VAVE ofrece hoy.",
   stockWhere: "En la página de descargas de M-VAVE buscá el FM-1, bajá el firmware V15, descomprimilo y elegí el archivo FM-1.fwsc (699.956 bytes). Esta página no puede bajarlo por vos: el firmware oficial es de M-VAVE y no podemos redistribuirlo.",
   stockTitle: "Volver al V15 oficial", stockFile: "FM-1.fwsc oficial", stockGo: "Hacer backup y volver al V15 oficial",
   stockBackup: "Primero se guardan la música actual, la música guardada, los bancos de sonido y la configuración (sin los samples de usuario). Un firmware viejo necesita actualizarse para hacer backups completos. Para restaurar un archivo después, reinstalá JIANT y usá el editor.",
@@ -481,10 +481,8 @@ let lastKey = null, lastArg = "", tipKey = null;
 function applyLang() {
   document.documentElement.lang = lang;
   document.querySelectorAll("[data-t]").forEach((e) => { e.textContent = t(e.dataset.t); });
-  if (preview) {                                           /* (beta) official V16 too, the one M-VAVE offers now */
-    const w = document.querySelector('[data-t="stockWhere"]');
-    if (w) w.textContent += " " + t("stockV16");
-  }
+  document.querySelectorAll('[data-t="stockWhere"]').forEach((w) => { w.textContent += " " + t("stockV16"); });   /* (V10)
+                                                         * official V16 too, the one M-VAVE offers now */
   document.querySelectorAll("#lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
   if (lastKey) $("status").textContent = t(lastKey) + lastArg;
   if (tipKey) showTip(tipKey);
@@ -547,7 +545,8 @@ const versions = meta.versions && meta.versions.length ? meta.versions : [{ vers
 const productOfVersion = (v) => v.product || meta.product;
 let product = meta.product;
 let loadEpoch = 0;
-const versionLabel = (v) => (v.edition || "").startsWith("SAMPLE") ? v.version.replace(/-preview$/, "") : v.version;
+/* (V10) the version without its build's commit: "V10-4b5f5c6" -> "V10" */
+const versionLabel = (v) => v.version.replace(/-preview$/, "").replace(/-[0-9a-f]{7}$/, "");
 function fillVersions() {
   const sel = $("ver"), at = sel.selectedIndex;
   sel.textContent = "";
@@ -668,7 +667,7 @@ $("go").addEventListener("click", async () => {
   try {
     const up = await begin();
     const selected = versions[+$("ver").value] || versions[0];
-    const result = await runInstall({ up, image, product, ui, state, allowV16: preview });
+    const result = await runInstall({ up, image, product, ui, state, allowV16: true });   /* (V10: V16 both channels) */
     if (result !== "done") return;
     sayK("done");
   } catch (e) { showError(e); } finally { lockInstaller(false); }
@@ -682,10 +681,10 @@ $("stock-file").addEventListener("change", async () => {
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
     log(`official file: ${file.name} ${bytes.length} B`);
-    const bad = stockFileProblem(file.name, bytes, STOCK_V15_SIZE, preview);
+    const bad = stockFileProblem(file.name, bytes, STOCK_V15_SIZE, true);
     if (bad) { if (epoch === stockFileEpoch) { sayK(bad.code, bad.detail); showTip(bad.code); } return; }
     let verified;
-    try { verified = await validateStockPackage(bytes, preview); }
+    try { verified = await validateStockPackage(bytes, true); }
     catch (e) { if (epoch === stockFileEpoch) { sayK("stockModified", e.message); showTip("stockModified"); } return; }
     if (epoch !== stockFileEpoch) return;
     stock = verified; sayK("stockValid"); showTip(null); lockInstaller(false);

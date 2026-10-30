@@ -33,8 +33,8 @@ export function classifyIdentity(text) {
 }
 /* (add15-beta6) a JIANT whose M-UPGRADE entry takes official V16's head: the add15 line from beta6 */
 export function jiantTakesV16(version) {
-  const m = /add(\d+)-beta(\d+)/i.exec(String(version || ""));
-  return !!m && (+m[1] > 15 || (+m[1] === 15 && +m[2] >= 6));
+  const v = String(version || ""), m = /add(\d+)-beta(\d+)/i.exec(v), n = /\bV(\d+)\b/.exec(v);   /* (V10 and later: "JIANT V10") */
+  return (!!m && (+m[1] > 15 || (+m[1] === 15 && +m[2] >= 6))) || (!!n && +n[1] >= 10);
 }
 export function infoVersion(a) {
   const z = a.indexOf(0);

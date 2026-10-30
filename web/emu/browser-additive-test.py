@@ -20,7 +20,7 @@ try:
           this.addEventListener('processorerror',()=>__audioErrors.push('processorerror'));
           this.port.addEventListener('message',e=>{if(e.data.type==='error')__audioErrors.push(e.data.message);if(e.data.type==='diagnostics')window.__edition=e.data;});this.port.start();}};""")
         page.goto(f'http://127.0.0.1:{server.server_port}/')
-        assert 'add15-beta' in page.locator('.version').inner_text()
+        assert 'V10' in page.locator('.version').inner_text()
         assert page.locator('#sample-bank-controls').count()==0
         page.click('#go');page.wait_for_function("document.querySelector('#go').textContent==='On'",timeout=30000)
         page.wait_for_timeout(4200)

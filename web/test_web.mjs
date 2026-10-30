@@ -1749,6 +1749,7 @@ async function installerFlows() {
   x = await stock("v15");
   ok(x.r === "ok" && x.c.asked.join() === "stockAgainConfirm", "installer: Return over V15 itself: asks first");
   ok(D.jiantTakesV16("JIANT v0.9.9-add15-beta6") && D.jiantTakesV16("JIANT v0.9.9-add16-beta1") &&
+     D.jiantTakesV16("JIANT V10") && D.jiantTakesV16("JIANT V11") &&
      !D.jiantTakesV16("JIANT v0.9.9-add15-beta1") && !D.jiantTakesV16("JIANT v0.9.9-par12"),
      "installer: which JIANT takes official V16 (add15-beta6 and later)");
   x = await stock("jiant");
