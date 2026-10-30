@@ -38,7 +38,10 @@ typedef struct {                              /* the song index (flash: OBJ_SONG
     uint8_t version, cur, rsv[2];
     chain_config_t rows[NSONG];               /* each song's rows (the current one's: chain_config, kept here) */
     scene_t scene[NSONG][CHAIN_ROWS];         /* (version 2, JIANT) their scenes; a version 1 index: none */
+    uint32_t tsrc[NSONG][CHAIN_ROWS];         /* (version 3, add15) where each track plays from in the row: 3 bits a track,
+                                              * 0 the row's section, 1..4 A..D (SAVE > ARRANGE 2); older: all 0 */
 } song_index_t;
+#define SONG_IDX_V 3u
 static void song_idx_touch(void);             /* song_main.c: the index changed, into flash soon */
 /* the state now as a scene (main loop: KNOB 4 on SONG; ISR: SONG REC) */
 static void scene_capture(scene_t *s)
@@ -57,6 +60,12 @@ static void scene_capture(scene_t *s)
 }
 static song_index_t song_idx;
 static uint8_t song_cur;                      /* the song whose sections proj_slot holds (0: the four project slots) */
+/* track k of the current song's row r: the section it plays (the row's own unless ARRANGE 2 gave it another) */
+static uint32_t row_src(uint32_t r, uint32_t k, uint32_t s)
+{
+    uint32_t v = r < CHAIN_ROWS ? song_idx.tsrc[song_cur][r] >> (3u * k) & 7u : 0u;
+    return v ? v - 1u : s & 3u;
+}
 #define SEC_LIVE 0xFEu                /* sec_stage.row: a live jump (the song layer), not a song row */
 typedef struct {                      /* a track of a section, as the ISR puts it in */
     int16_t p[P_COUNT];

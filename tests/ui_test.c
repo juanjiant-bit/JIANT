@@ -7066,7 +7066,7 @@ static void tl_drum(void)
  * the level's other set, SAVE from elsewhere always USER, PRESETS the slot / project) */
 static int test_save_lens(void)
 {
-    static const char *const CH[6] = {"USER", "PRESETS", "SECTIONS", "ARRANGE", "PROJECTS", "TOOLS"};
+    static const char *const CH[7] = {"USER", "PRESETS", "SECTIONS", "ARRANGE", "ARRANGE 2", "PROJECTS", "TOOLS"};
     static const char *const TP[2] = {"SECTIONS", "PROJECTS"};
     int bad = 0, ok;
     uint32_t pr;
@@ -7075,10 +7075,10 @@ static int test_save_lens(void)
     press(B_SAVE); frame();
     ok = save_on() && save_level() == SV_SOUND && cur_page()->graph == GR_USER && ui.act == 4u && lz_on() &&
          card_y() == LZ_CARD_Y && graph_y() == LZ_GRAPH_Y && foot_y() == LZ_FOOT_Y && lz_tab_lit(0) &&
-         lz_crumb_is("SAVE \xB7 SOUND \xB7 USER") && lz_count_is("1/6");
-    bad += check("0.9.2 SAVE from HOME at power-on: SOUND's USER, SAVE armed; the tabs (SOUND lit), the crumb, 1/6", ok);
-    bad += check("0.9.2 SAVE: one chain USER PRESETS SECTIONS ARRANGE PROJECTS TOOLS; a SAVE tap the next group, round",
-                 chain_walk(B_SAVE, CH, 6, TP, 2));
+         lz_crumb_is("SAVE \xB7 SOUND \xB7 USER") && lz_count_is("1/7");
+    bad += check("0.9.2 SAVE from HOME at power-on: SOUND's USER, SAVE armed; the tabs (SOUND lit), the crumb, 1/7", ok);
+    bad += check("0.9.2 SAVE: one chain USER PRESETS SECTIONS ARRANGE (add15: ARRANGE 2) PROJECTS TOOLS; a SAVE tap the next group, round",
+                 chain_walk(B_SAVE, CH, 7, TP, 2));
     ui_power_on(); go_home(); frame(); press(B_SAVE); frame();
     turn(EN_SELECT, 3); frame();                                             /* ARRANGE, left there */
     go_home(); frame(); press(B_SAVE); frame();
@@ -7087,7 +7087,7 @@ static int test_save_lens(void)
     ok &= cur_page()->graph == GR_SLOTS && save_level() == SV_PROJ && ui.act == 0u && lz_crumb_is("SAVE \xB7 PROJECT \xB7 SECTIONS");
     go_home(); frame(); press(B_SAVE); frame();
     ok &= cur_page()->graph == GR_SLOTS && ui.act == 4u;                     /* (SECTIONS from elsewhere: SAVE armed) */
-    turn(EN_SELECT, 2); frame();
+    turn(EN_SELECT, 3); frame();                                             /* (add15: past ARRANGE 2) */
     ok &= cur_page()->graph == GR_SLOTS && save_level() == SV_LIB && ui.act == 0u && lz_crumb_is("SAVE \xB7 LIBRARY \xB7 PROJECTS");
     bad += check("0.9.2 SAVE from elsewhere the page left (ARRANGE); USER and SECTIONS from elsewhere armed, inside not", ok);
     turn(EN_K1, 1); frame();                                                 /* LIBRARY: KNOB 1 the project */
@@ -7108,6 +7108,23 @@ static int test_save_lens(void)
     btn_up(B_GLO); frame(); frame();
     ok &= !ui.layer && lz_on() && card_y() == LZ_CARD_Y;
     bad += check("SAVE: the NAME screen keeps its own layout, a layer's map is its own lens (0.8.5)", ok);
+    ui_power_on();
+    go_home(); frame();                                                      /* (add15) ARRANGE 2 */
+    chain_config.count = 2;
+    chain_config.row[0] = (chain_row_t){0, 4}; chain_config.row[1] = (chain_row_t){1, 4};
+    memset(song_idx.tsrc[song_cur], 0, sizeof song_idx.tsrc[song_cur]);
+    press(B_SAVE); frame();
+    nav_put(SEC_SAVE, "ARRANGE 2"); frame();
+    ok = SONG_TRK(cur_page()) && !SONG_TRK(&PAGES[nv_page(SEC_SAVE, 3)]);
+    turn(EN_K1, 1); frame();                                                 /* row 2 */
+    turn(EN_K2, 1); frame(); turn(EN_K2, 1); frame();                        /* T3 */
+    turn(EN_K3, 1); frame(); turn(EN_K3, 1); frame(); turn(EN_K3, 1); frame();   /* FROM C */
+    ok &= ui.song_row == 1u && ui.song_tk == 2u && song_idx.tsrc[song_cur][1] == 3u << 6 && !song_idx.tsrc[song_cur][0] &&
+          row_src(1, 2, 1) == 2u && row_src(1, 0, 1) == 1u;
+    turn(EN_K4, -1); frame();
+    ok &= !song_idx.tsrc[song_cur][1];
+    bad += check("add15 SAVE > ARRANGE 2: ROW TRACK FROM a track's section (T3 from C), KNOB 4 left: all the row's", ok);
+    chain_config.count = 0;
     ui_power_on();
     return bad;
 }
@@ -8359,7 +8376,7 @@ static int test_project_page(void)
     song.g[G_SLOT] = 1;
     turn(EN_K2, 1); frame();                            /* LIBRARY: KNOB 2 the section */
     ok = song.g[G_SLOT] == 2 && save_level() == SV_LIB;
-    turn(EN_SELECT, -2); frame();                       /* (0.9.2) PROJECT's SECTIONS (two back): KNOB 1 the section */
+    turn(EN_SELECT, -3); frame();                       /* (0.9.2) PROJECT's SECTIONS (three back, add15: ARRANGE 2): KNOB 1 */
     ok &= save_level() == SV_PROJ && cur_page()->graph == GR_SLOTS;
     turn(EN_K1, 1); frame();
     ok &= song.g[G_SLOT] == 3;
@@ -8374,7 +8391,7 @@ static int test_project_page(void)
     for (k = 0; k < 8u && name_on(); k++) { press(B_OCTUP); frame(); }
     ok = project_used(2) && live.cur == 2;
     bad += check("  SAVE: the music into project 2's section C (the music's section: NOW)", ok);
-    turn(EN_SELECT, 2); frame();                        /* (back to LIBRARY's PROJECTS: KNOB 1 the project) */
+    turn(EN_SELECT, 3); frame();                        /* (back to LIBRARY's PROJECTS: KNOB 1 the project) */
     turn(EN_K1, -1); frame();
     ok = song_cur == 0 && (!FELUCCA_FLASH || project_used(0)) && !project_used(2) && chain_config.count == 2 &&
          trk[0].step[0].note[0] == 80;                  /* (no flash here: the sections were RAM only) */

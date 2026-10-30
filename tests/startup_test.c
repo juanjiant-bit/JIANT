@@ -14,7 +14,7 @@ static int startup_case(int saved, int restore, int noprefs)
     web_nor_erase();
     memset(&want, 0, sizeof want);
     want.magic = SONG_MAGIC;
-    want.version = 2;
+    want.version = SONG_IDX_V;
     want.cur = saved ? 2u : 0u;
     for (i = 0; i < NSONG; i++) chain_defaults(&want.rows[i]);
     if (saved) {
@@ -23,6 +23,7 @@ static int startup_case(int saved, int restore, int noprefs)
         want.rows[2].row[1] = (chain_row_t){1, 7};
         SONG_END(&want.rows[2]) = 3;
         want.scene[2][0] = (scene_t){1, 2, 4, {11, 22, 33, 44}};
+        want.tsrc[2][1] = 3u << 9;                     /* (add15) ARRANGE 2: T4 from C, kept through boot */
         want.rows[0].count = 1;
         want.rows[0].row[0] = (chain_row_t){3, 9};
         if (st_save(OBJ_SONGIDX, &want, sizeof want)) return 1;

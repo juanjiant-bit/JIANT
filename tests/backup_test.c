@@ -290,11 +290,16 @@ int main(void)
                      list(42u, &len, &crc) == 0 && len == sizeof st);
         bad += check("  GET of it: its bytes", get(40u + 9u, 256u, 64u) == 0 && rep[1] == 0);
         si = song_idx;
-        si.magic = SONG_MAGIC; si.version = 2;
-        si.scene[2][0].on = 1; si.scene[2][0].mac[3] = 99; si.cur = 5;
-        bad += check("  the song index restores (a scene of song 3), the song playing stays",
+        si.magic = SONG_MAGIC; si.version = SONG_IDX_V;
+        si.scene[2][0].on = 1; si.scene[2][0].mac[3] = 99; si.cur = 5; si.tsrc[2][0] = 4u << 3;
+        bad += check("  the song index restores (a scene of song 3, add15: a track's section), the song playing stays",
                      put_all(10u, &si, sizeof si, st_crc32(&si, sizeof si)) == 0 && song_idx.scene[2][0].mac[3] == 99 &&
-                     song_idx.cur == song_cur);
+                     song_idx.tsrc[2][0] == 4u << 3 && song_idx.cur == song_cur);
+        si.version = 2; si.scene[2][0].mac[3] = 98;
+        bad += check("  (add15) a version 2 index (before ARRANGE 2) restores, every track its row's section",
+                     put_all(10u, &si, __builtin_offsetof(song_index_t, tsrc),
+                             st_crc32(&si, __builtin_offsetof(song_index_t, tsrc))) == 0 &&
+                     song_idx.scene[2][0].mac[3] == 98 && !song_idx.tsrc[2][0] && song_idx.version == SONG_IDX_V);
         si.version = 7;
         bad += check("  an index of another version is refused", put_all(10u, &si, sizeof si, st_crc32(&si, sizeof si)) == 2);
     }

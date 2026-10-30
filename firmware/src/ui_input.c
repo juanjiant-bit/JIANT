@@ -1238,6 +1238,30 @@ static void edit_param(uint32_t slot, int32_t steps)
         else if (slot == 3u) ui.act = steps > 0 ? 4u : 0u;
         return;
     }
+    if (SONG_TRK(pg)) {                                 /* (add15) ARRANGE 2: ROW TRACK FROM, KNOB 4 left: all the row's */
+        uint32_t *m;
+        if (slot == 0u) {
+            ui.song_row = (uint8_t)clamp((int32_t)ui.song_row + steps, 0, chain_config.count ? chain_config.count - 1 : 0);
+            return;
+        }
+        if (slot == 1u) {
+            ui.song_tk = (uint8_t)clamp((int32_t)ui.song_tk + steps, 0, NTRK - 1);
+            return;
+        }
+        if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+        if (!chain_config.count) { ui_message("NO ROW"); return; }
+        if (ui.song_row >= chain_config.count) ui.song_row = chain_config.count - 1u;   /* (ARRANGE's ADD / END) */
+        m = &song_idx.tsrc[song_cur][ui.song_row];
+        if (slot == 2u) {
+            uint32_t sh = 3u * (ui.song_tk % NTRK), v = clamp((int32_t)(*m >> sh & 7u) + steps, 0, 4);
+            *m = (*m & ~(7u << sh)) | v << sh;
+        } else if (slot == 3u && steps < 0 && *m) {
+            *m = 0;
+            ui_message("TRACKS FOLLOW ROW");
+        }
+        song_idx_touch();
+        return;
+    }
     if (pg->graph == GR_SONG) {
         uint32_t end = song_end_row();                  /* (0.6.22) the rows, + ADD, then the song's END */
         if (slot == 0u) {
@@ -1264,6 +1288,7 @@ static void edit_param(uint32_t slot, int32_t steps)
             chain_row_t *r = &chain_config.row[ui.song_row];
             r->slot = ui.song_row ? chain_config.row[ui.song_row - 1u].slot : 0u;
             r->bars = 1;
+            song_idx.tsrc[song_cur][ui.song_row] = 0;
             chain_config.count = ui.song_row + 1u;
             if (slot == 1u) return;
         }
@@ -1459,6 +1484,7 @@ static void act_do(void)
         r->slot = chain_config.count ? chain_config.row[chain_config.count - 1u].slot : 0u;
         r->bars = chain_config.count ? chain_config.row[chain_config.count - 1u].bars : 4u;
         memset(&song_idx.scene[song_cur][chain_config.count], 0, sizeof song_idx.scene[0][0]);   /* (no scene yet) */
+        song_idx.tsrc[song_cur][chain_config.count] = 0;
         ui.song_row = chain_config.count++;
         song_idx_touch();
         ui_message("ROW ADDED");
@@ -2410,8 +2436,10 @@ static void ui_input_frame(void)
                     for (; r + 1u < chain_config.count; r++) {
                         chain_config.row[r] = chain_config.row[r + 1u];
                         song_idx.scene[song_cur][r] = song_idx.scene[song_cur][r + 1u];   /* (its scene with it) */
+                        song_idx.tsrc[song_cur][r] = song_idx.tsrc[song_cur][r + 1u];     /* (.. and its tracks') */
                     }
                     memset(&song_idx.scene[song_cur][r], 0, sizeof(scene_t));
+                    song_idx.tsrc[song_cur][r] = 0;
                     song_idx_touch();
                     chain_config.count--;
                     if (ui.song_row > chain_config.count) ui.song_row = chain_config.count;
@@ -2421,6 +2449,7 @@ static void ui_input_frame(void)
                 if (!chain_busy()) {
                     chain_defaults(&chain_config);
                     memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
+                    memset(song_idx.tsrc[song_cur], 0, sizeof song_idx.tsrc[song_cur]);
                     song_idx_touch();
                     ui.song_row = 0;
                     ui_message("SONG CLEARED");

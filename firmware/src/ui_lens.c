@@ -98,7 +98,8 @@ static const nv_t CE_ARP[] = {NV("ARP", 0, 0, 2), NV("ARP 2", 0, 0, 2)};
 static const ng_t CG_ARP[] = {{"ARP", 0}};
 enum { SV_LIB, SV_PROJ, SV_SOUND };
 static const nv_t CE_SAVE[] = {NV("USER", 0, 0, SV_SOUND), NV("PRESETS", 0, 0, SV_SOUND), NV("PROJECT", "SECTIONS", 1, SV_PROJ),
-                               NV("ARRANGE", 0, 1, SV_PROJ), NV("PROJECT", "PROJECTS", 2, SV_LIB), NV("TOOLS", 0, 2, SV_LIB)};
+                               NV("ARRANGE", 0, 1, SV_PROJ), NV("ARRANGE 2", 0, 1, SV_PROJ),
+                               NV("PROJECT", "PROJECTS", 2, SV_LIB), NV("TOOLS", 0, 2, SV_LIB)};
 static const ng_t CG_SAVE[] = {{"SOUND", 0}, {"PROJECT", 0}, {"LIBRARY", 0}};
 #define CH(e, g) {e, g, (uint8_t)NELEM(e), (uint8_t)NELEM(g)}
 #define NAV_KEYS (SEC_N + 3u)                           /* the sections' memories: EDIT's synth one, then FM6 DRUM DIGITAL */

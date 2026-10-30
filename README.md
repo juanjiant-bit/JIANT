@@ -359,6 +359,10 @@ With FX held the keys become effects that act while held; on release everything 
 live sections that come in on the next bar, quick chain, SONG REC and STORE / RECALL. Each row can hold a **scene**
 (mutes, DRUM-X group mutes, macros and MIDI punch-ins), saved with KNOB 4 on ARRANGE or on its own when recording with
 SONG REC. The song's END plays it once (STOP), x2..x8 or forever (LOOP).
+**Per-track patterns (beta add15)**: on SAVE > **ARRANGE 2** (SELECT after ARRANGE) each row can take any track from
+another section: KNOB 1 the row, KNOB 2 the track, KNOB 3 FROM (the row's own, or A–D), KNOB 4 left resets the row.
+MIX shows where all six come from (e.g. `AACBAA`: T3 plays section C's, T4 B's). A track brings its sound, steps,
+FM6 patch and automation; DRUM brings its kit. Quick chains and live jumps play whole sections as before.
 
 ### Modulation
 - **MOD matrix**: 4 slots per track. Sources: LFO, ENV, VEL, KEY, RAND, MIDI controllers, the 4 macros and STEP.

@@ -721,6 +721,37 @@ int main(void)
                   !memcmp(&sec_stage.t[0].step[0], &trk[0].step[0], sizeof(step_t)));
     seq_stop();
     transport_req = 0;
+    {                                                          /* (add15) ARRANGE 2: a row's tracks from other sections */
+        uint8_t na, nb;
+        trk[0].step[0].note[0] = 40; trk[2].step[0].note[0] = 41;
+        project_save(0);
+        trk[0].step[0].note[0] = 50; trk[2].step[0].note[0] = 51;
+        project_save(1);
+        na = trk[0].step[0].note[0];
+        chain_config.count = 1;
+        chain_config.row[0] = (chain_row_t){0, 1};
+        song_idx.tsrc[song_cur][0] = 2u << 6;                    /* T3 from B, the rest the row's A */
+        ok = chain_prepare() == 0 && sec_stage.t[0].step[0].note[0] == 40 && sec_stage.t[2].step[0].note[0] == 51 &&
+             sec_stage.section == 0u;
+        seq_stop();
+        transport_req = 0;
+        song_idx.tsrc[song_cur][0] = 0;
+        nb = (uint8_t)(chain_prepare() == 0 && sec_stage.t[2].step[0].note[0] == 41);
+        seq_stop();
+        transport_req = 0;
+        bad += check("ARRANGE 2: a track plays another section's, the rest the row's", ok && nb && na == 50);
+    }
+    {                                                          /* (add15) a version 2 index in flash (1328 bytes) */
+        static song_index_t v2;
+        v2 = song_idx;
+        v2.magic = SONG_MAGIC; v2.version = 2; v2.cur = 0; v2.scene[1][3].on = 1; v2.scene[1][3].mac[0] = 77;
+        st_save(OBJ_SONGIDX, &v2, __builtin_offsetof(song_index_t, tsrc));
+        song_idx.tsrc[1][3] = 0x12345u;
+        song_index_load();
+        bad += check("ARRANGE 2: a version 2 song index loads as 3, its scenes kept, every track its row's",
+                     song_idx.version == SONG_IDX_V && song_idx.scene[1][3].mac[0] == 77 && !song_idx.tsrc[1][3]);
+    }
+    transport_req = 0;
     memset(&r, 0, sizeof r);
     r.used = UP_USED;
     r.ver = UP_VER;

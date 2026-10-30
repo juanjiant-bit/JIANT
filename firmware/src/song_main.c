@@ -21,12 +21,14 @@ static void song_index_load(void)
 #if FELUCCA_FLASH
     int n = st_load(OBJ_SONGIDX, &song_idx, sizeof song_idx);
     if (song_idx.magic == SONG_MAGIC && song_idx.cur < NSONG &&
-        ((song_idx.version == 2u && n == (int)sizeof song_idx) ||
+        ((song_idx.version == SONG_IDX_V && n == (int)sizeof song_idx) ||
+         (song_idx.version == 2u && n == (int)__builtin_offsetof(song_index_t, tsrc)) ||
          (song_idx.version == 1u && n == (int)__builtin_offsetof(song_index_t, scene)))) {
-        if (song_idx.version == 1u) {               /* (before the scenes: none) */
+        if (song_idx.version == 1u)                 /* (before the scenes: none) */
             memset(song_idx.scene, 0, sizeof song_idx.scene);
-            song_idx.version = 2;
-        }
+        if (song_idx.version < SONG_IDX_V)          /* (add15: before ARRANGE 2, every track its row's section) */
+            memset(song_idx.tsrc, 0, sizeof song_idx.tsrc);
+        song_idx.version = SONG_IDX_V;
         for (k = 0; k < NSONG; k++)
             song_rows_fix(&song_idx.rows[k]);
         song_cur = song_idx.cur;
@@ -35,7 +37,7 @@ static void song_index_load(void)
 #endif
     memset(&song_idx, 0, sizeof song_idx);
     song_idx.magic = SONG_MAGIC;
-    song_idx.version = 2;
+    song_idx.version = SONG_IDX_V;
     for (k = 0; k < NSONG; k++)
         chain_defaults(&song_idx.rows[k]);
     song_cur = 0;
@@ -61,31 +63,55 @@ static void song_name(char *b)
     }
 }
 
-/* section s (a project slot) into sec_stage for row `row` (SEC_LIVE: a live jump); 0 = staged */
+/* section s (a project slot) into sec_stage for row `row` (SEC_LIVE: a live jump); 0 = staged. (add15) A song's row may
+ * take tracks from other sections (ARRANGE 2: row_src): each of those is decoded in turn, its tracks (sound, steps, FM6
+ * patch, automation; DRUM's kit with the DRUM track) taken from it; the row's own section last, with the rest */
 static int song_stage(uint32_t s, uint32_t row)
 {
     project_t *p = &proj_scratch;
-    uint32_t k, i;
-    if (!proj_import(p, &proj_slot[s & 3u], sizeof(project_store_t)))
-        return 1;
+    uint32_t k, i, u, n = 0, on = 0, dx_from = s & 3u, use = 0, srcs[NTRK];
     sec_stage.ready = 0;
     for (k = 0; k < NTRK; k++) {
-        sec_trk_t *d = &sec_stage.t[k];
-        const proj_trk_t *t = &p->t[k];
-        uint32_t e = eng_live(t->engine);
-        d->engine = (uint8_t)e;
-        d->preset = (uint8_t)(ENGINES[e]->npresets ? (t->preset >= PROJ_DEF_KEEP ? 0u : t->preset) % ENGINES[e]->npresets
-                                                   : 0u);
-        for (i = 0; i < P_COUNT; i++)
-            d->p[i] = (int16_t)param_fit(param_desc_of(e, i), t->p[i]);
-        memcpy(d->step, t->step, sizeof d->step);
-        proj_steps(d->step);
-        fm6_unpack(p->fm6[k], d->fm6);
-        fm6_sanitize(d->fm6);
+        srcs[k] = row < CHAIN_ROWS && !chain.loop ? row_src(row, k, s) : s & 3u;
+        use |= 1u << srcs[k];
     }
-    sec_stage.motion = p->motion;
-    memcpy(sec_stage.dx, p->dx, sizeof sec_stage.dx);
-    sec_stage.dx_mute = (uint16_t)(p->dx_mute & DXM_ALL);
+    for (u = 0; u < 5u; u++) {
+        uint32_t sec = u < 4u ? u : s & 3u;
+        if (u < 4u && (sec == (s & 3u) || !((use >> sec) & 1u)))
+            continue;                                 /* (the row's own goes last: its globals) */
+        if (!proj_import(p, &proj_slot[sec], sizeof(project_store_t)))
+            return 1;
+        for (k = 0; k < NTRK; k++) {
+            sec_trk_t *d = &sec_stage.t[k];
+            const proj_trk_t *t = &p->t[k];
+            uint32_t e = eng_live(t->engine);
+            if (srcs[k] != sec)
+                continue;
+            d->engine = (uint8_t)e;
+            d->preset = (uint8_t)(ENGINES[e]->npresets ? (t->preset >= PROJ_DEF_KEEP ? 0u : t->preset) % ENGINES[e]->npresets
+                                                       : 0u);
+            for (i = 0; i < P_COUNT; i++)
+                d->p[i] = (int16_t)param_fit(param_desc_of(e, i), t->p[i]);
+            memcpy(d->step, t->step, sizeof d->step);
+            proj_steps(d->step);
+            fm6_unpack(p->fm6[k], d->fm6);
+            fm6_sanitize(d->fm6);
+            on |= p->motion.on & (1u << k);
+            if (e == ENGI_DRUM && sec != (s & 3u))
+                dx_from = sec;
+        }
+        for (i = 0; i < p->motion.count && i < MOTION_MAX && n < MOTION_MAX; i++)
+            if (srcs[MOTION_TRK(&p->motion.event[i]) % NTRK] == sec)
+                sec_stage.motion.event[n++] = p->motion.event[i];
+        if (sec == dx_from) {
+            memcpy(sec_stage.dx, p->dx, sizeof sec_stage.dx);
+            sec_stage.dx_mute = (uint16_t)(p->dx_mute & DXM_ALL);
+        }
+    }
+    memset(sec_stage.motion.event + n, 0, (MOTION_MAX - n) * sizeof sec_stage.motion.event[0]);
+    sec_stage.motion.count = (uint8_t)n;
+    sec_stage.motion.on = (uint8_t)(on | (p->motion.on & ~((1u << NTRK) - 1u)));
+    memcpy(sec_stage.motion.rsv, p->motion.rsv, sizeof sec_stage.motion.rsv);
     memcpy(sec_stage.pfx_lane, p->pfx_lane, sizeof sec_stage.pfx_lane);
     memcpy(sec_stage.slg, &p->g[G_SLMODE], sizeof sec_stage.slg);   /* (0.6.3) the section's SLICER */
     sec_stage.pfx_ltgt = p->pfx_ltgt > 2u ? 0u : p->pfx_ltgt;
@@ -387,6 +413,7 @@ static void song_poll(void)
             chain_defaults(&chain_config);
             chain_config.count = (uint8_t)n;
             memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
+            memset(song_idx.tsrc[song_cur], 0, sizeof song_idx.tsrc[song_cur]);   /* (SONG REC: whole sections) */
             for (k = 0; k < n; k++) {
                 chain_config.row[k] = live.rec[k];
                 song_idx.scene[song_cur][k] = live.rec_scene[k];   /* (each row's scene, as it began) */
