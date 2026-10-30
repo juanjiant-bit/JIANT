@@ -219,6 +219,29 @@ int main(int argc, char **argv)
         bad += check("no 'success' -> -13, no commit, area clean", rc == -13 && !committed && area_erased());
     }
 
+    /* (add15-beta6) an official package over a device whose head is another: refused (-5, nothing staged) unless the
+     * package's head is M-VAVE's V15 or V16 (fingerprints in ota.c): JIANT over V15 -> official V16, and back */
+    {
+        uint32_t k, crc = ota_crc16(logical + 0x400, 0x4000, 0), fnv = 0x811C9DC5u;
+        int known;
+        for (k = 0; k < 0x4000u; k++)
+            fnv = (fnv ^ logical[0x400 + k]) * 0x01000193u;
+        known = (crc == 0x3FEEu && fnv == 0x7A2DDB89u) || (crc == 0x22B0u && fnv == 0xB6EE7DCEu);
+        reset_dev();
+        nor[0x200] ^= 0x5Au;                               /* the device's head differs from the package's */
+        rc = ota_session();
+#ifdef OWN_PKG
+        (void)known;
+        bad += check("own loader: another device head does not matter (not compared)", rc == 0 && committed);
+#else
+        if (known)
+            bad += check("official V15 / V16 head over another head: taken", rc == 0 && committed);
+        else
+            bad += check("official package, unknown head, another device head: -5, nothing staged",
+                         rc == -5 && !committed && area_erased());
+#endif
+    }
+
     printf("%s\n", bad ? "OTA TEST FAILED" : "ota test passed");
     return bad != 0;
 }

@@ -284,14 +284,21 @@ static int ota_stage(void)                       /* steps 1..6; 0 = host said su
         own = ota_memeq(b + i, (const uint8_t *)"FELUCCA-LOADER-1", 16) && ota_rd32(b + 0x20 + 4) <= 0x14000u;
     if (!official && !own)
         return -7;
-    if (official) {                    /* the official loader writes the head: it must equal ours */
+    if (official) {                    /* the official loader writes the head: it must equal ours, or be one of M-VAVE's
+                                        * own (add15-beta6: V15's or V16's, by two fingerprints): JIANT over V15 -> V16 */
+        uint32_t same = 1, crc = 0, fnv = 0x811C9DC5u, j;
         ota_show(2, 0);
         for (i = 0; i < 0x4000u; i += 512u) {
             if (ota_read(fl_off + i, b, 512) || ota_fread(i, mine, 512))
                 return -4;
-            if (!ota_memeq(b, mine, 512))
-                return -5;
+            same &= (uint32_t)ota_memeq(b, mine, 512);
+            crc = ota_crc16(b, 512, crc);
+            for (j = 0; j < 512u; j++)
+                fnv = (fnv ^ b[j]) * 0x01000193u;
         }
+        if (!same && !((crc == 0x3FEEu && fnv == 0x7A2DDB89u) ||        /* official V15's head */
+                       (crc == 0x22B0u && fnv == 0xB6EE7DCEu)))         /* official V16's head */
+            return -5;
     }
     /* 4. stage the package's loader: erase, body, verify, head last */
     ota_show(3, 0);
