@@ -1414,7 +1414,7 @@ static void draw_columns(void)
             hot_text_column(0, "ROW", "--");
             text_column(1, "TRACK", "--", T_DIM);
             text_column(2, "FROM", "--", T_DIM);
-            text_column(3, "VAR", "NO ROWS", T_DIM);
+            text_column(3, "VAR", "--", T_DIM);   /* (the graph says NO ROWS: OCT+ ADDS ONE) */
             return;
         }
         s = chain_config.row[row].slot;
