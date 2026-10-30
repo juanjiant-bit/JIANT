@@ -83,26 +83,52 @@ static void graph_proj(int ar)
 {
     uint32_t i, total = 0, played = 0, sel = (uint32_t)song.g[G_SLOT] - 1u, n = chain_config.count, end;
     char b[24];
-    if (ar == 2) {                                       /* (add15-beta4) ARRANGE 2: the row's six tracks, each its section
-                                                         * (its colour, its letter) and its VAR; the one KNOB 2 picks framed */
-        uint32_t r = ui.song_row < n ? ui.song_row : (n ? n - 1u : 0u), s = n ? chain_config.row[r].slot & 3u : 0u;
-        for (i = 0; i < NTRK; i++) {
-            int32_t x = 4 + (int32_t)i * 39;
-            uint32_t src = row_src(r, i, s), v = n ? row_var(r, i) : 0u;
-            int own = src == s, pick = i == ui.song_tk % NTRK;
-            uint16_t c = lz_sec(src, n != 0u, own ? 1 : 0), ink = n ? T_INK : T_DIM;
-            b[0] = 'T'; b[1] = (char)('1' + i); b[2] = 0;
-            cv_rect(x, 2, 36, 49, c);
-            cv_text_on(x + 4, 4, &AF_X, b, ink, c);
-            b[0] = (char)('A' + src); b[1] = 0;
-            cv_text_on(x + 12, 16, &AF_M, v == RV_MUTE ? "-" : b, ink, c);
-            if (v && v < RV_N)
-                cv_free_text(x + 3, 38, &AF_X, RV_NAME[v], ink, c, 32);
-            if (pick) {
-                cv_frame(x - 2, 0, 40, 53, T_TEXT);
-                cv_frame(x - 1, 1, 38, 51, T_TEXT);
+    if (ar == 2) {                                       /* (beta5) TIMELINE: the song left to right, its bars the width; a
+                                                         * lane for the rows (SEC) and one a track: its own section dim, another
+                                                         * bright with its letter, MUTE an empty frame, a VAR its short name */
+        static const char *const LN[NTRK + 1] = {"SEC", "T1", "T2", "T3", "T4", "T5", "T6"};
+        static const char *const RV_SH[RV_N] = {"", "", "TH", "FL", "HF", "RV", "SH", "+8", "-8", "V1", "V2", "V3", "V4"};
+        uint32_t t = 0, acc = 0, played = 0, j;
+        for (i = 0; i < n; i++) t += chain_config.row[i].bars;
+        for (j = 0; j <= NTRK; j++)
+            cv_text(2, 4 + (int32_t)j * 17 + 3, &AF_X, LN[j], j == ui.song_tk ? T_THEME : T_DIM);
+        for (i = 0; i < n && t; i++) {
+            const chain_row_t *r = &chain_config.row[i];
+            uint32_t s = r->slot & 3u;
+            int32_t x = 24 + (int32_t)(acc * 212u / t), w = 24 + (int32_t)((acc + r->bars) * 212u / t) - x - 1;
+            if (w < 2) w = 2;
+            for (j = 0; j <= NTRK; j++) {
+                int32_t y = 4 + (int32_t)j * 17;
+                uint32_t src = j ? row_src(i, j - 1u, s) : s, v = j ? row_var(i, j - 1u) : 0u, own = !j || src == s;
+                uint16_t c = j && own ? lz_sec(src, 1, 1) : sec_col(src);
+                if (v == RV_MUTE) cv_frame(x, y, w, 15, T_DIM);
+                else {
+                    cv_rect(x, y, w, 15, c);
+                    if (w >= 12 && (!j || !own)) {
+                        b[0] = (char)('A' + src); b[1] = 0;
+                        if (!j && w >= 22) fmt_int(b + 1, r->bars);
+                        cv_text_on(x + 2, y + 2, &AF_X, b, T_INK, c);
+                    }
+                    if (v && v < RV_N && w >= 24) cv_text_r(x + w - 2, y + 2, &AF_X, RV_SH[v], T_INK, c);
+                }
             }
+            if (i == ui.song_row % (n ? n : 1u))
+                cv_frame(x - 1, 3 + (int32_t)ui.song_tk * 17, w + 2, 17, T_TEXT);
+            if (chain.running && i < chain.row) played += r->bars;
+            acc += r->bars;
         }
+        if (chain.running && chain.row < n && t) {         /* the playhead */
+            played += chain_config.row[chain.row].bars - chain.remaining;
+            cv_rect(24 + (int32_t)(played * 212u / t), 2, 1, 7 * 17, T_TEXT);
+        }
+        end = SONG_END(&chain_config);
+        fmt_int(b, (int32_t)t);
+        str_cpy(b + str_len(b), " BARS \xB7 ", 9);
+        if (end == SONG_FOREVER) str_cpy(b + str_len(b), "LOOP", 6);
+        else if (end >= 2u) { uint32_t k = str_len(b); b[k] = 'x'; fmt_int(b + k + 1u, (int32_t)end); }
+        else str_cpy(b + str_len(b), "STOP", 6);
+        cv_text_r(236, 128, &AF_X, n ? b : "NO ROWS: OCT+ ADDS ONE", T_DIM, T_SURF);
+        return;
     } else
     for (i = 0; i < 4u; i++) {
         int32_t x = LZ_TX(i);

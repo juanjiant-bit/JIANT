@@ -1238,27 +1238,34 @@ static void edit_param(uint32_t slot, int32_t steps)
         else if (slot == 3u) ui.act = steps > 0 ? 4u : 0u;
         return;
     }
-    if (SONG_TRK(pg)) {                                 /* (add15) ARRANGE 2: ROW TRACK FROM VAR (beta4) */
-        uint32_t *m;
+    if (SONG_TRK(pg)) {                                 /* (beta5) TIMELINE: ROW LANE, then the lane's two: SEC (the row's
+                                                         * section, its bars) or a track (FROM, VAR) */
+        chain_row_t *r;
+        uint32_t k, sh;
         if (slot == 0u) {
             ui.song_row = (uint8_t)clamp((int32_t)ui.song_row + steps, 0, chain_config.count ? chain_config.count - 1 : 0);
             return;
         }
         if (slot == 1u) {
-            ui.song_tk = (uint8_t)clamp((int32_t)ui.song_tk + steps, 0, NTRK - 1);
+            ui.song_tk = (uint8_t)clamp((int32_t)ui.song_tk + steps, 0, NTRK);
             return;
         }
         if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
         if (!chain_config.count) { ui_message("NO ROW"); return; }
         if (ui.song_row >= chain_config.count) ui.song_row = chain_config.count - 1u;   /* (ARRANGE's ADD / END) */
-        m = &song_idx.tsrc[song_cur][ui.song_row];
-        if (slot == 2u) {
-            uint32_t sh = 3u * (ui.song_tk % NTRK), v = clamp((int32_t)(*m >> sh & 7u) + steps, 0, 4);
-            *m = (*m & ~(7u << sh)) | v << sh;
-        } else if (slot == 3u) {                        /* (beta4) VAR: the track's variation in the row */
-            uint32_t *w = &song_idx.tvar[song_cur][ui.song_row], sh = 4u * (ui.song_tk % NTRK);
-            uint32_t v = clamp((int32_t)(*w >> sh & 15u) + steps, 0, RV_N - 1);
-            *w = (*w & ~(15u << sh)) | v << sh;
+        r = &chain_config.row[ui.song_row];
+        k = ui.song_tk;
+        if (!k) {                                       /* SEC: the row's section, its bars */
+            if (slot == 2u) r->slot = (uint8_t)clamp((int32_t)r->slot + steps, 0, 3);
+            else r->bars = (uint8_t)clamp((int32_t)r->bars + steps, 1, (int32_t)CHAIN_BARS);
+        } else if (slot == 2u) {                        /* FROM: the row's own (0), A..D */
+            uint32_t *m = &song_idx.tsrc[song_cur][ui.song_row];
+            sh = 3u * (k - 1u);
+            *m = (*m & ~(7u << sh)) | (uint32_t)clamp((int32_t)(*m >> sh & 7u) + steps, 0, 4) << sh;
+        } else {                                        /* VAR */
+            uint32_t *w = &song_idx.tvar[song_cur][ui.song_row];
+            sh = 4u * (k - 1u);
+            *w = (*w & ~(15u << sh)) | (uint32_t)clamp((int32_t)(*w >> sh & 15u) + steps, 0, RV_N - 1) << sh;
         }
         song_idx_touch();
         return;

@@ -320,7 +320,7 @@ static struct {
     uint8_t uslot;               /* SAVE > USER: the selected user preset slot */
     uint8_t ppick;               /* SEQ > PATTERNS: the pattern picked (pat_count list index) */
     uint8_t song_row;            /* SONG: row selected, count selects the next empty row */
-    uint8_t song_tk;             /* (add15) ARRANGE 2: the track whose section KNOB 3 picks */
+    uint8_t song_tk;             /* (add15) TIMELINE: the lane KNOB 2 picks: 0 the rows (SEC), 1..6 T1..T6 */
     uint8_t ev_row;              /* SEQ > AUTO LIST (ui_input.c ev_*): the row selected (the track's count: + ADD LOCK) */
     uint8_t ev_step, ev_id;      /* .. + ADD LOCK: the step and the parameter a lock is added on */
     uint8_t uboot;               /* main.c: seconds left before UPDATE MODE (OCT- + OCT+ held), 0 = none */
@@ -1889,7 +1889,7 @@ static uint32_t dx_pagen(const page_t *pg)            /* SOUND 1..3; (0.5.1) X-M
 static void dx_knob(const page_t *pg, uint32_t k, int32_t s);
 static void dx_cards(const page_t *pg);
 static void dx_kit3_knob(uint32_t k, int32_t s);      /* (0.6.54) KIT 3: TONE's BP, FEEDBK */
-#define SONG_TRK(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'A' && (pg)->title[7])   /* (add15) ARRANGE 2 */
+#define SONG_TRK(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'T')   /* (add15-beta5) TIMELINE (was ARRANGE 2) */
 #define DX_KIT3(pg) ((pg)->graph == GR_DXIMG && (pg)->title[0] == 'K')   /* (0.6.58) GR_DXIMG: KIT 3, or STEREO (IMAGE) */
 static void dx_kit3_cards(void);
 static uint32_t dx_sig(void);

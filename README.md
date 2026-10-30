@@ -359,13 +359,14 @@ With FX held the keys become effects that act while held; on release everything 
 live sections that come in on the next bar, quick chain, SONG REC and STORE / RECALL. Each row can hold a **scene**
 (mutes, DRUM-X group mutes, macros and MIDI punch-ins), saved with KNOB 4 on ARRANGE or on its own when recording with
 SONG REC. The song's END plays it once (STOP), x2..x8 or forever (LOOP).
-**Per-track patterns (beta add15)**: on SAVE > **ARRANGE 2** (SELECT after ARRANGE) each row can take any track from
-another section: KNOB 1 the row, KNOB 2 the track, KNOB 3 FROM (the row's own, or A–D). A track brings its sound, steps,
+**Per-track patterns (beta add15)**: SAVE > **TIMELINE** (SELECT after ARRANGE; beta5, was ARRANGE 2) shows the song
+left to right, its bars the width: a lane for the rows (SEC) and one per track. KNOB 1 the row, KNOB 2 the lane; on SEC,
+KNOB 3 the row's section and KNOB 4 its bars; on a track, KNOB 3 FROM (the row's own, or A–D) and KNOB 4 VAR. A track brings its sound, steps,
 FM6 patch and automation; DRUM brings its kit. Quick chains and live jumps play whole sections as before.
-KNOB 4 **VAR** (beta4) varies the track in that row only, without touching the section: **MUTE**, **THIN** (off-beats
+**VAR** (beta4) varies the track in that row only, without touching the section: **MUTE**, **THIN** (off-beats
 out), **FILL** (the last beat rolls), **HALF** (the first half twice), **REV**, **SHIFT** (an 8th late), **OCT+ / OCT−**,
-**VAR 1–4** (seeded mutations, stronger each: the same row always sounds the same). The graph shows the row's six
-tracks: their section's colour and letter, their VAR, `-` muted.
+**VAR 1–4** (seeded mutations, stronger each: the same row always sounds the same). On the lanes a track that follows its row is dim, one
+from another section bright with its letter, a muted one an empty frame, a variation its short name (FL, TH, V2…).
 
 ### Modulation
 - **MOD matrix**: 4 slots per track. Sources: LFO, ENV, VEL, KEY, RAND, MIDI controllers, the 4 macros and STEP.

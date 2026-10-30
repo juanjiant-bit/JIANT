@@ -1407,29 +1407,34 @@ static void draw_columns(void)
         dx_kit3_cards();
         return;
     }
-    if (SONG_TRK(cur_page())) {                        /* (add15) ARRANGE 2: ROW TRACK FROM, the row's mix (T1..T6) */
-        uint32_t row = ui.song_row < chain_config.count ? ui.song_row : chain_config.count - 1u, k, s, own;
-        int used = chain_config.count != 0u;            /* (ARRANGE's ADD / END: its last row) */
-        if (!used) {
+    if (SONG_TRK(cur_page())) {                        /* (beta5) TIMELINE: ROW LANE, then SECT BARS or FROM VAR */
+        uint32_t row = ui.song_row < chain_config.count ? ui.song_row : chain_config.count - 1u, k = ui.song_tk, s, v;
+        if (!chain_config.count) {
             hot_text_column(0, "ROW", "--");
-            text_column(1, "TRACK", "--", T_DIM);
-            text_column(2, "FROM", "--", T_DIM);
-            text_column(3, "VAR", "--", T_DIM);   /* (the graph says NO ROWS: OCT+ ADDS ONE) */
+            empty_column(1); empty_column(2); empty_column(3);
             return;
         }
-        s = chain_config.row[row].slot;
+        s = chain_config.row[row].slot & 3u;
         fmt_int(val, (int32_t)row + 1);
         str_cpy(val + str_len(val), "/", 2);
         fmt_int(val + str_len(val), (int32_t)chain_config.count);
         hot_text_column(0, "ROW", val);
-        val[0] = 'T'; val[1] = (char)('1' + ui.song_tk % NTRK); val[2] = 0;
-        text_column(1, "TRACK", val, VAL(1u));
-        own = !(song_idx.tsrc[song_cur][row] >> (3u * (ui.song_tk % NTRK)) & 7u);
-        if (own) { str_cpy(val, "ROW ", sizeof val); val[4] = (char)('A' + s); val[5] = 0; }
-        else { val[0] = (char)('A' + row_src(row, ui.song_tk % NTRK, s)); val[1] = 0; }
-        text_column(2, "FROM", val, own ? T_DIM : VAL(2u));
-        k = row_var(row, ui.song_tk % NTRK);
-        text_column(3, "VAR", RV_NAME[k < RV_N ? k : 0], k ? VAL(3u) : T_DIM);   /* (beta4; the six: the graph) */
+        if (!k) str_cpy(val, "SEC", sizeof val);
+        else { val[0] = 'T'; val[1] = (char)('0' + k); val[2] = 0; }
+        text_column(1, "LANE", val, VAL(1u));
+        if (!k) {
+            val[0] = (char)('A' + s); val[1] = 0;
+            text_column(2, "SECT", val, VAL(2u));
+            fmt_int(val, chain_config.row[row].bars);
+            text_column(3, "BARS", val, VAL(3u));
+            return;
+        }
+        v = song_idx.tsrc[song_cur][row] >> (3u * (k - 1u)) & 7u;
+        if (!v) { str_cpy(val, "ROW ", sizeof val); val[4] = (char)('A' + s); val[5] = 0; }
+        else { val[0] = (char)('A' + v - 1u); val[1] = 0; }
+        text_column(2, "FROM", val, v ? VAL(2u) : T_DIM);
+        v = row_var(row, k - 1u);
+        text_column(3, "VAR", RV_NAME[v < RV_N ? v : 0], v ? VAL(3u) : T_DIM);
         return;
     }
     if (cur_page()->graph == GR_SONG) {

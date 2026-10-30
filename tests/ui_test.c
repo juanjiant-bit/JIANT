@@ -7066,7 +7066,7 @@ static void tl_drum(void)
  * the level's other set, SAVE from elsewhere always USER, PRESETS the slot / project) */
 static int test_save_lens(void)
 {
-    static const char *const CH[7] = {"USER", "PRESETS", "SECTIONS", "ARRANGE", "ARRANGE 2", "PROJECTS", "TOOLS"};
+    static const char *const CH[7] = {"USER", "PRESETS", "SECTIONS", "ARRANGE", "TIMELINE", "PROJECTS", "TOOLS"};
     static const char *const TP[2] = {"SECTIONS", "PROJECTS"};
     int bad = 0, ok;
     uint32_t pr;
@@ -7077,7 +7077,7 @@ static int test_save_lens(void)
          card_y() == LZ_CARD_Y && graph_y() == LZ_GRAPH_Y && foot_y() == LZ_FOOT_Y && lz_tab_lit(0) &&
          lz_crumb_is("SAVE \xB7 SOUND \xB7 USER") && lz_count_is("1/7");
     bad += check("0.9.2 SAVE from HOME at power-on: SOUND's USER, SAVE armed; the tabs (SOUND lit), the crumb, 1/7", ok);
-    bad += check("0.9.2 SAVE: one chain USER PRESETS SECTIONS ARRANGE (add15: ARRANGE 2) PROJECTS TOOLS; a SAVE tap the next group, round",
+    bad += check("0.9.2 SAVE: one chain USER PRESETS SECTIONS ARRANGE (add15: TIMELINE) PROJECTS TOOLS; a SAVE tap the next group, round",
                  chain_walk(B_SAVE, CH, 7, TP, 2));
     ui_power_on(); go_home(); frame(); press(B_SAVE); frame();
     turn(EN_SELECT, 3); frame();                                             /* ARRANGE, left there */
@@ -7087,7 +7087,7 @@ static int test_save_lens(void)
     ok &= cur_page()->graph == GR_SLOTS && save_level() == SV_PROJ && ui.act == 0u && lz_crumb_is("SAVE \xB7 PROJECT \xB7 SECTIONS");
     go_home(); frame(); press(B_SAVE); frame();
     ok &= cur_page()->graph == GR_SLOTS && ui.act == 4u;                     /* (SECTIONS from elsewhere: SAVE armed) */
-    turn(EN_SELECT, 3); frame();                                             /* (add15: past ARRANGE 2) */
+    turn(EN_SELECT, 3); frame();                                             /* (add15: past TIMELINE) */
     ok &= cur_page()->graph == GR_SLOTS && save_level() == SV_LIB && ui.act == 0u && lz_crumb_is("SAVE \xB7 LIBRARY \xB7 PROJECTS");
     bad += check("0.9.2 SAVE from elsewhere the page left (ARRANGE); USER and SECTIONS from elsewhere armed, inside not", ok);
     turn(EN_K1, 1); frame();                                                 /* LIBRARY: KNOB 1 the project */
@@ -7114,18 +7114,21 @@ static int test_save_lens(void)
     chain_config.row[0] = (chain_row_t){0, 4}; chain_config.row[1] = (chain_row_t){1, 4};
     memset(song_idx.tsrc[song_cur], 0, sizeof song_idx.tsrc[song_cur]);
     press(B_SAVE); frame();
-    nav_put(SEC_SAVE, "ARRANGE 2"); frame();
+    nav_put(SEC_SAVE, "TIMELINE"); frame();
     ok = SONG_TRK(cur_page()) && !SONG_TRK(&PAGES[nv_page(SEC_SAVE, 3)]);
     turn(EN_K1, 1); frame();                                                 /* row 2 */
-    turn(EN_K2, 1); frame(); turn(EN_K2, 1); frame();                        /* T3 */
+    turn(EN_K2, 1); frame(); turn(EN_K2, 1); frame(); turn(EN_K2, 1); frame();   /* lane T3 (0 is SEC) */
     turn(EN_K3, 1); frame(); turn(EN_K3, 1); frame(); turn(EN_K3, 1); frame();   /* FROM C */
-    ok &= ui.song_row == 1u && ui.song_tk == 2u && song_idx.tsrc[song_cur][1] == 3u << 6 && !song_idx.tsrc[song_cur][0] &&
+    ok &= ui.song_row == 1u && ui.song_tk == 3u && song_idx.tsrc[song_cur][1] == 3u << 6 && !song_idx.tsrc[song_cur][0] &&
           row_src(1, 2, 1) == 2u && row_src(1, 0, 1) == 1u;
     turn(EN_K4, 1); frame();                                                 /* (beta4) VAR: MUTE */
     ok &= row_var(1, 2) == RV_MUTE && !row_var(1, 0) && !row_var(0, 2);
     turn(EN_K4, 1); frame();
     ok &= row_var(1, 2) == RV_THIN;
-    bad += check("add15 SAVE > ARRANGE 2: ROW TRACK FROM a track's section (T3 from C), VAR its variation (MUTE, THIN)", ok);
+    turn(EN_K2, -3); frame();                                                /* (beta5) lane SEC: the row's section, its bars */
+    turn(EN_K3, 1); frame(); turn(EN_K4, 1); frame();
+    ok &= ui.song_tk == 0u && chain_config.row[1].slot == 2u && chain_config.row[1].bars == 5u;
+    bad += check("add15 SAVE > TIMELINE: lane T3 FROM C, VAR (MUTE, THIN); lane SEC the row's section and bars", ok);
     memset(song_idx.tvar[song_cur], 0, sizeof song_idx.tvar[song_cur]);
     chain_config.count = 0;
     ui_power_on();
@@ -8379,7 +8382,7 @@ static int test_project_page(void)
     song.g[G_SLOT] = 1;
     turn(EN_K2, 1); frame();                            /* LIBRARY: KNOB 2 the section */
     ok = song.g[G_SLOT] == 2 && save_level() == SV_LIB;
-    turn(EN_SELECT, -3); frame();                       /* (0.9.2) PROJECT's SECTIONS (three back, add15: ARRANGE 2): KNOB 1 */
+    turn(EN_SELECT, -3); frame();                       /* (0.9.2) PROJECT's SECTIONS (three back, add15: TIMELINE): KNOB 1 */
     ok &= save_level() == SV_PROJ && cur_page()->graph == GR_SLOTS;
     turn(EN_K1, 1); frame();
     ok &= song.g[G_SLOT] == 3;
