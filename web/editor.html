@@ -807,10 +807,23 @@ class Link {
   }
 }
 
-const editorPort = (p) => /felucca|jiant|fm[ _-]*1|m[ _-]*vave/i.test(p.name || "") && p.state !== "disconnected";
+/* the names an FM-1 shows under (the installer's fm1ota.js PORT_RE: JIANT, Felucca, Skiff, the stock firmware's, the
+   USB composite's, and the generic names Windows gives a USB MIDI device whose name it cached or never read) */
+const editorPort = (p) => /felucca|jiant|skiff|fm[ _-]*1|m[ _-]*vave|cuvave|composite|sinco|usb[ _-]*midi|usb audio/i.test(p.name || "") && p.state !== "disconnected";
+/* (2026-10-30) never asked: software ports and other makers' synths a user is likely to have plugged in */
+const notEditorPort = (p) => /wavetable|iac driver|midi through|loopmidi|loopbe|virtual|rtpmidi|network|bluetooth/i.test(p.name || "");
+let seenPorts = "";
 async function openEditorMidi(access, hooks = {}, selected = {}) {
-  const select = (ports, id) => [...ports.values()].filter(p => p.state !== "disconnected" && (id ? p.id === id : editorPort(p)));
-  const inputs = select(access.inputs, selected.input), outputs = select(access.outputs, selected.output);
+  const live = (ports) => [...ports.values()].filter(p => p.state !== "disconnected");
+  const select = (ports, id) => live(ports).filter(p => id ? p.id === id : editorPort(p));
+  let inputs = select(access.inputs, selected.input), outputs = select(access.outputs, selected.output);
+  seenPorts = [...new Set([...live(access.inputs), ...live(access.outputs)].map(p => p.name || p.id))].join(", ");
+  /* none under a name we know: every other port is asked (INFO, then the reply's "JIANT" / "FELUCCA" decides): a host
+     that shows the FM-1 under a name of its own still finds it */
+  if ((!inputs.length || !outputs.length) && !selected.input && !selected.output) {
+    inputs = live(access.inputs).filter(p => !notEditorPort(p));
+    outputs = live(access.outputs).filter(p => !notEditorPort(p));
+  }
   if (!inputs.length || !outputs.length) throw new Error("no MIDI ports");
   const pairs = inputs.flatMap(input => outputs.map(output => ({ input, output,
     score: (input.name === output.name ? 2 : 0) + (input.manufacturer && input.manufacturer === output.manufacturer ? 1 : 0) })));
@@ -2678,7 +2691,7 @@ const TEXT = {
     foot: "Chrome か Edge で使えます。", iconsCredit: "アイコン: Fukiai（MIT）Hügelton Instruments",
     nomidi: "このブラウザでは使えません。Chrome か Edge で開いてください。",
     denied: "MIDI（SysEx）の使用が許可されませんでした。",
-    nodevice: "JIANT が見つかりません。USB で接続して、もう一度押してください。",
+    nodevice: "JIANT が見つかりません。USB で接続して、もう一度押してください。", portsSeen: "見えている MIDI ポート:", portsNone: "MIDI ポートがありません。データ用ケーブルか、MENU > USB が CONSOLE か確認してください",
     connecting: "接続中", reading: "読み込み中 ", steploading: "ステップを読み込み中 ",
     ready: "接続しました", disconnected: "切断されました", lost: "JIANT が外されました", instbusy: "別のタブでインストーラーが書き込み中です。終わってから接続してください。",
     noreply: "応答がありません", error: "エラー: ", busy: "処理中",
@@ -2782,7 +2795,7 @@ const TEXT = {
     foot: "Works in Chrome or Edge.", iconsCredit: "Icons: Fukiai (MIT), Hügelton Instruments",
     nomidi: "This browser cannot do it. Open the page in Chrome or Edge.",
     denied: "MIDI (SysEx) access was not allowed.",
-    nodevice: "JIANT not found. Connect it by USB and press Connect again.",
+    nodevice: "JIANT not found. Connect it by USB and press Connect again.", portsSeen: "MIDI ports seen:", portsNone: "no MIDI port at all: check the cable carries data and MENU > USB is CONSOLE",
     connecting: "Connecting", reading: "Reading ", steploading: "Reading steps ",
     ready: "Connected", disconnected: "Disconnected", lost: "JIANT was unplugged", instbusy: "The installer is writing in another tab: connect when it has finished.",
     noreply: "No reply from the device", error: "Error: ", busy: "Busy",
@@ -3119,7 +3132,8 @@ async function connect() {
       const timeout = /^timeout/.test(e.message);
       if (connectedDevice) disconnect();
       if (e.message === "no MIDI ports") $("midiports").open = true;
-      sayK(e.message === "no MIDI ports" ? "nodevice" : timeout ? "noreply" : "error", timeout ? "" : e.message);
+      const notFound = e.message === "no MIDI ports" || /^Not a JIANT/.test(e.message) || timeout;
+      sayK(notFound ? "nodevice" : "error", notFound ? (seenPorts ? ` (${t("portsSeen")} ${seenPorts})` : ` (${t("portsNone")})`) : e.message);
     }
   } finally {
     connecting = false;

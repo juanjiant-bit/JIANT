@@ -1719,11 +1719,11 @@ async function installerFlows() {
   const NAMES = ["JIANT", "2- JIANT", "MIDIIN2 (JIANT)", "MIDIOUT2 (JIANT)", "JIANT MIDI 1", "JIANT 1", "JIANT FM", "JIANT Update",
     "Felucca", "Felucca Update", "2- Felucca"];
   const edSrc = readFileSync(join(HERE, "editor.html"), "utf8");
-  const edRes = [...edSrc.matchAll(/\/(felucca\|jiant)\/i\.test\(p\.name/g)].map((m) => new RegExp(m[1], "i"));
+  const edRes = [...edSrc.matchAll(/const editorPort = \(p\) => \/([^/]+)\/i\.test\(p\.name/g)].map((m) => new RegExp(m[1], "i"));
   ok(NAMES.every((n) => PORT_RE.test(n)) && !["IAC Driver Bus 1", "Microsoft GS Wavetable Synth", "Arturia KeyStep"].some((n) => PORT_RE.test(n)),
     "installer: PORT_RE takes JIANT, JIANT FM, Felucca and their update names (not other gear)");
-  ok(edRes.length === 2 && edRes.every((re) => NAMES.filter((n) => !/update/i.test(n)).every((n) => re.test(n)) && !re.test("IAC Driver Bus 1")),
-    "editor: its port filter (connect, reconnect) takes JIANT, JIANT FM and Felucca");
+  ok(edRes.length === 1 && ["USB Audio Device", "MIDIIN2 (USB Audio Device)", "FM-1", "SINCO FM-1"].every((n) => edRes[0].test(n)) && edRes.every((re) => NAMES.filter((n) => !/update/i.test(n)).every((n) => re.test(n)) && !re.test("IAC Driver Bus 1")),
+    "editor: its port filter (connect, reconnect) takes JIANT, JIANT FM, Felucca, the stock names and Windows' generic ones");
   ok(portBase("2- JIANT") === "jiant" && portBase("MIDIIN2 (JIANT)") === "jiant" && portBase("JIANT 1") === "jiant",
     "installer: port base names of JIANT's ports (Windows numbering)");
   ok(portBase("2- FM-1") === "fm-1" && portBase("FM-1 1") === "fm-1" &&
