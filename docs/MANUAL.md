@@ -1,11 +1,11 @@
 # JIANT FM — User Manual
 
-**Firmware v0.6.30 for the M-VAVE FM-1**
+**JIANT FM V10 for the M-VAVE FM-1**
 
 > *Versión en español: [MANUAL.es.md](MANUAL.es.md).*
 
 This manual is for musicians who have just installed JIANT FM and want to know how to play it, build songs with it
-and, above all, **save their work without losing anything**. It follows the firmware as it is in v0.6.30: every
+and, above all, **save their work without losing anything**. It follows the firmware as it is in V10: every
 button, knob and message is named exactly as the device shows it.
 
 If you only read one chapter, read [12. Saving and loading](#12-saving-and-loading).
@@ -36,13 +36,18 @@ If you only read one chapter, read [12. Saving and loading](#12-saving-and-loadi
 
 ### Install
 
-1. Open the **web installer** in Chrome or Edge: <https://juanjiant-bit.github.io/JIANT/webapp/installer/>
-2. Connect the FM-1 **directly** to the computer with a USB data cable.
-3. **Coming from another custom firmware (Felucca, baudgirl or any other)?** Return to the official V15 firmware
-   first, with the installer's **Return to official V15 first** button (it also saves a complete backup). Writing
-   JIANT straight over another custom firmware has left an FM-1 unable to start.
-4. Press **Install**. It first checks the FM-1's firmware and writes only over official V15 or JIANT (anything else: it
-sends you to Return to official V15 first). Don't unplug the cable while it writes.
+1. Open the **web installer** in Chrome or Edge on a computer, or Chrome on Android with a USB OTG cable (iPhone and
+   iPad have no Web MIDI): <https://juanjiant-bit.github.io/JIANT/webapp/installer/>
+2. Connect the FM-1 **directly** with a USB data cable.
+3. **Coming from another custom firmware (Felucca, Skiff, baudgirl or any other)?** Return to official first, with
+   the installer's **Return to official** button (it also saves that firmware's backup). Writing JIANT straight over
+   another custom firmware has left an FM-1 unable to start.
+4. Press **Install**. It first checks the FM-1's firmware and writes only over **official V16**, **official V15** or
+   JIANT (anything else: it sends you to Return to official first). Don't unplug the cable while it writes.
+
+**Return to official** takes M-VAVE's own `FM-1.fwsc` of **V16** (718,196 bytes, what M-VAVE offers now) or **V15**
+(699,956 bytes), unzipped from M-VAVE's download page and checked byte for byte. It saves a complete JIANT backup
+first; to come back, press Install and restore the backup with the editor.
 
 JIANT has no user samples: if you come from Felucca, its user samples (USR1–3) are lost on install. Keep your WAV
 files.
@@ -302,7 +307,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 | **LFO** | **MOD**: MOD — **LFO**: LFO · LFO DEST — **MSEQ**: MSEQ · MSEQ 2 | 5 |
 | **SCL** | **KEY**: SCL — **CHORD**: CHORD | 2 |
 | **ARP** | **ARP**: ARP · ARP 2 | 2 |
-| **SAVE** | **SOUND**: USER · PRESETS — **PROJECT**: SECTIONS · ARRANGE — **LIBRARY**: PROJECTS · TOOLS | 6 |
+| **SAVE** | **SOUND**: USER · PRESETS — **PROJECT**: SECTIONS · ARRANGE · TIMELINE — **LIBRARY**: PROJECTS · TOOLS | 7 |
 
 Where a page lived in 0.9.1: ENV's six-envelope views (the TRACKS level) are now pages of their own, **TRACKS** and
 **TRACKS DEST**, with ENV's and ENV DEST's knobs; **NOTE** appears once (the BAR group; its big-step picture is
@@ -1295,6 +1300,8 @@ A track clear says **T3 CLEARED** with **SEQ+REC: ALL TRACKS** under it as a rem
   automation, the DRUM-X kit and its mutes, the punch-in lane, the SLICER, the macros, plus the tempo and global effects.
 - Each project has one **arrangement**: up to **16 rows**, each a section played for **1–64 bars**, optionally with a
   **scene**, and an **END** rule.
+- (V10) In a row, each **track** can play another section's part (**FROM**) and a **variation** of it (**VAR**):
+  see [The TIMELINE page](#the-timeline-page-save--timeline).
 
 That's 32 sections in total (8 × 4).
 
@@ -1321,6 +1328,43 @@ strip (its rows by their length, a white line where it plays) with its length an
 - To delete a row you can also use SAVE > TOOLS > DELETE ROW (the row ARRANGE has selected). To delete the whole
   arrangement: TOOLS > CLEAR SONG (**CLEAR SONG ORDER?**). Neither can be undone.
 - The arrangement is saved automatically (about 2 seconds after a change, while stopped). See [12](#12-saving-and-loading).
+
+### The TIMELINE page (SAVE > TIMELINE)
+
+(V10) TIMELINE comes right after ARRANGE (SELECT). It draws the whole song **left to right**, each row as wide as its
+bars, in seven lanes: **SEC** (the rows: their section and bars, A8, B4…) and one lane per track, **T1–T6**.
+
+- A track that **follows its row** is drawn dim, in the row's colour.
+- A track that plays **another section's** part is bright, in that section's colour, with its letter.
+- A **muted** track is an empty frame.
+- A **variation** shows its short name at the right: FL, TH, HF, RV, SH, +8, −8, V1–V4.
+- While the song plays, a white line shows where it is.
+
+| Knob | On the SEC lane | On a track lane (T1–T6) |
+| --- | --- | --- |
+| KNOB 1 | the row | the row |
+| KNOB 2 | the lane | the lane |
+| KNOB 3 | the row's section A–D | **FROM**: ROW (the row's own section) or A–D |
+| KNOB 4 | the row's bars (1–64) | **VAR**: the track's variation in this row |
+
+A track taken from another section brings that section's sound, steps, FM6 patch and automation (a DRUM track also
+its kit); everything else (the punch-in lane, the SLICER) is the row's section's. **VAR** changes the track **in this
+row only**, never the section stored:
+
+| VAR | What the track plays |
+| --- | --- |
+| -- | its steps as they are |
+| MUTE | nothing (over the row's scene) |
+| THIN | the off-beat 16ths out |
+| FILL | the last beat filled: every step plays (a roll into the next row) |
+| HALF | its first half twice |
+| REV | backwards |
+| SHIFT | an 8th late, round within its length |
+| OCT+ / OCT− | an octave up / down (melodic tracks) |
+| VAR 1–4 | mutations, stronger each: hits and notes moved, dropped and added; the same row always plays the same |
+
+Quick chains and live jumps (the SAVE layer) play whole sections, without FROM or VAR. Rows added, deleted or
+recorded with SONG REC keep the tracks in step; CLEAR SONG clears them too.
 
 ### Scenes
 
@@ -1931,15 +1975,15 @@ This is the chapter to read carefully. JIANT keeps several kinds of data in diff
 
 ### SAVE's chain: SOUND · PROJECT · LIBRARY
 
-(0.9.2) SAVE is a chain of six pages in three groups, as every section: **SELECT** walks USER → PRESETS → SECTIONS →
-ARRANGE → PROJECTS → TOOLS, a **SAVE** tap jumps to the next group (round). The pages, their knobs, OCT+, the dialogs
+(0.9.2; V10: TIMELINE) SAVE is a chain of seven pages in three groups, as every section: **SELECT** walks USER →
+PRESETS → SECTIONS → ARRANGE → TIMELINE → PROJECTS → TOOLS, a **SAVE** tap jumps to the next group (round). The pages, their knobs, OCT+, the dialogs
 and the NAME screen are the ones they always were (until 0.9.1 SELECT zoomed LIBRARY ↔ PROJECT ↔ SOUND and the tap
 switched each level's two sets).
 
 | Group | Pages | What the screen shows | Knobs |
 | --- | --- | --- | --- |
 | **SOUND** | USER · PRESETS | The track's being (its engine's creature, alive with its sound), the track and its sound under it; at the right the 32 user slots (a stored one: its engine's creature small and its name) or the factory sounds. | SLOT, LOAD, ERASE, SAVE / No., ENG, FAV, LIST |
-| **PROJECT** | SECTIONS · ARRANGE | The project's four sections large, ARRANGE's rows as chips, the song as a strip (see [7](#7-arrange-songs-sections-and-scenes)). | SECT, NAME (shown; SAVE + C5 renames), LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ adds a row) |
+| **PROJECT** | SECTIONS · ARRANGE · TIMELINE | The project's four sections large, ARRANGE's rows as chips, the song as a strip; TIMELINE: the song as lanes (see [7](#7-arrange-songs-sections-and-scenes)). | SECT, NAME (shown; SAVE + C5 renames), LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ adds a row) / ROW, LANE, SECT or FROM, BARS or VAR |
 | **LIBRARY** | PROJECTS · TOOLS | The eight projects as tiles: the number, the name (its section A's), the four sections A–D as chips (stored: in the section's colour; empty: dark). The project open tinted and framed violet, its section picked framed white. / The six tools as a list. | PROJECT, SECT, LOAD, SAVE / the tool |
 
 - **SAVE from another page** comes back to the SAVE page you left; **USER** and **SECTIONS** come with their SAVE
@@ -1948,7 +1992,7 @@ switched each level's two sets).
   (KNOB 4 to the right).
 - The other projects' tiles are read from the flash a project a frame (the headers only: no loading, nothing the
   audio notices) and kept until a project is saved, loaded or renamed.
-- The footer says **SAVE · LIBRARY · PROJECTS  5/6**. The OCT+ / OCT− hints are not drawn on these pages: the armed
+- The footer says **SAVE · LIBRARY · PROJECTS  6/7**. The OCT+ / OCT− hints are not drawn on these pages: the armed
   card says OCT+.
 
 ### To save a project section
@@ -2299,13 +2343,14 @@ ALGORITHM; **Shift-click** holds a button. Great for learning the layers without
 
 ### Installer — <https://juanjiant-bit.github.io/JIANT/webapp/installer/>
 
-Chrome or Edge, the FM-1 connected straight to the computer.
+Chrome or Edge on a computer, or Chrome on Android (USB OTG), the FM-1 connected straight in.
 
-- **Install** JIANT (it checks the FM-1 first: official V15 or JIANT only).
-- **Return to official V15**: give it M-VAVE's unmodified **FM-1.fwsc** (checked locally in the browser). It first
-  saves a complete backup (current music, saved music, sound banks and settings; not user samples). Use this before
-  installing JIANT if your FM-1 runs **another custom firmware** (Felucca, baudgirl…), and whenever you want to go back
-  to stock. Official V15 cannot open JIANT music; to restore the backup later, reinstall JIANT and use the editor.
+- **Install** JIANT V10 (it checks the FM-1 first: official V16, official V15 or JIANT only).
+- **Return to official**: give it M-VAVE's unmodified **FM-1.fwsc** of **V16** or **V15** (checked locally in the
+  browser). It first saves a complete backup (current music, saved music, sound banks and settings). Use this before
+  installing JIANT if your FM-1 runs **another custom firmware** (Felucca, Skiff, baudgirl…), and whenever you want to
+  go back to stock. The official firmware cannot open JIANT music; to restore the backup later, reinstall JIANT and use
+  the editor.
 
 ### Editor — <https://juanjiant-bit.github.io/JIANT/webapp/editor/>
 
@@ -2342,12 +2387,13 @@ browser, the MIDI ports it saw, the FM-1's firmware, the step it stopped at).
   try **Is it in boot mode (WL80UBOOT)?**.
 - **Another program is using its MIDI port** (Windows: one program per port): close the M-VAVE app, the DAW, MIDI-OX
   and other tabs with the JIANT editor; replug, reload, press Install.
-- **An older official firmware (V14, V13…)**: Return to official V15 (no backup needed), then Install.
-- **Felucca, Skiff or another custom firmware**: Return to official V15 first. It saves that firmware's backup first
+- **An older official firmware (V14, V13…)**: Return to official (V16 or V15, no backup needed), then Install.
+- **Felucca, Skiff or another custom firmware**: Return to official first. It saves that firmware's backup first
   (Felucca's with its samples; Skiff's in its own format, for Skiff's editor) or, when it cannot make one, asks before
   going on without; then Install.
-- **Where is FM-1.fwsc?** M-VAVE's download page (<https://www.m-vave.com/download>): FM-1, firmware V15, unzip it, the
-  file FM-1.fwsc (699,956 bytes). We cannot host it: it is M-VAVE's. Picking the ZIP, another version or a JIANT
+- **Where is FM-1.fwsc?** M-VAVE's download page (<https://www.m-vave.com/download>): FM-1, firmware V16 (what it
+  offers now), unzip it, the file FM-1.fwsc (718,196 bytes; V15's, if you kept it, is 699,956 bytes). We cannot host
+  it: it is M-VAVE's. Picking the ZIP, another version or a JIANT
   package is told apart.
 - **Stopped half way** (update mode not found, stopped, connection lost): do not switch it off; replug and press the
   same button: it resumes. Windows may take a minute to install the update mode's driver the first time.
@@ -2429,10 +2475,10 @@ back up what you can with the editor and reinstall.
 deliberately from a running device, hold **OCT− + OCT+** for 5 seconds. If that isn't enough,
 [FM-1 Transporter](https://github.com/kurogedelic/FM-1-transporter) reads and writes the flash with a Seeed XIAO RP2040.
 
-**I want the factory firmware back.** Use the installer's **Return to official V15** section (it backs up first), or
-M-VAVE's own updater.
+**I want the factory firmware back.** Use the installer's **Return to official** section with M-VAVE's V16 or V15
+(it backs up first).
 
-**I came from baudgirl / Felucca. Can I install directly?** No: return to official V15 first with the installer, then
+**I came from baudgirl / Felucca / Skiff. Can I install directly?** No: return to official first with the installer, then
 install JIANT. Going straight from another custom firmware has bricked an FM-1.
 
 **Where did my Felucca samples go?** JIANT has no user samples; that flash now holds the songs.

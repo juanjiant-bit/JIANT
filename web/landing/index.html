@@ -242,7 +242,7 @@ footer .tm{flex-basis:100%;letter-spacing:0}
         <a class="btn" href="https://juanjiant-bit.github.io/JIANT/emu/" data-i18n="cta_emu">Try it in the browser</a>
         <a class="btn" href="https://juanjiant-bit.github.io/JIANT/webapp/editor/" data-i18n="cta_editor">Open the editor</a>
       </div>
-      <p class="ver"><span data-i18n="ver">Current version:</span> <b id="ver">v0.9.9-par9</b></p>
+      <p class="ver"><span data-i18n="ver">Current version:</span> <b id="ver">V10</b></p>
     </div>
     <figure class="device brk" style="margin:0">
       <canvas id="fm1" role="img" aria-label="Drawing of the M-VAVE FM-1: MASTER, SELECT, PRESETS and ALGORITHM knobs with OCT- and OCT+ on the left, a small square screen showing JIANT's HOME with one creature per track, KNOB1 to KNOB4 over a grid of twelve buttons (FX, SEL, ENV, LFO, EDIT, GLO, HOME, SAVE, ARP, SEQ, PLAY/STOP, REC), and two rows of touch keys that light orange as a demo arpeggio plays"></canvas>
@@ -268,7 +268,7 @@ footer .tm{flex-basis:100%;letter-spacing:0}
         <span class="no">02</span>
         <h3 data-i18n="st2_h">Install it on your FM-1</h3>
         <p data-i18n="st2_p">Open the installer in Chrome or Edge, connect the FM-1 with a USB data cable, press Install and wait without unplugging.</p>
-        <ul><li data-i18n="st2_a">The installer checks your FM-1 first and saves a backup</li><li data-i18n="st2_b">Coming from another custom firmware? Return to official V15 first, with the installer's button</li></ul>
+        <ul><li data-i18n="st2_a">The installer checks your FM-1 first and saves a backup</li><li data-i18n="st2_b">Coming from another custom firmware? Return to official first, with the installer's button (official V16 and V15 both work)</li></ul>
         <a class="btn" href="https://juanjiant-bit.github.io/JIANT/webapp/installer/" data-i18n="st2_go">Open the installer</a>
       </div>
       <div class="step brk">
@@ -404,7 +404,7 @@ footer .tm{flex-basis:100%;letter-spacing:0}
       <h2 data-i18n="q_h2">Before you install</h2>
     </div>
     <div class="faq">
-      <details class="brk"><summary data-i18n="q1">Can I go back to the official firmware?</summary><p data-i18n="a1">Yes. The installer has a button to return to the official V15 firmware (you choose the official FM-1.fwsc from M-VAVE). It saves a complete backup first.</p></details>
+      <details class="brk"><summary data-i18n="q1">Can I go back to the official firmware?</summary><p data-i18n="a1">Yes. The installer has a button to return to the official firmware, V16 or V15 (you choose M-VAVE's official FM-1.fwsc). It saves a complete backup first.</p></details>
       <details class="brk"><summary data-i18n="q2">Which browser do I need?</summary><p data-i18n="a2">Chrome or Edge on a computer, for the installer and the editor: they talk to the FM-1 over USB. The emulator also works in other browsers and on phones.</p></details>
       <details class="brk"><summary data-i18n="q3">Will I lose my sounds or projects?</summary><p data-i18n="a3">Back them up with the editor before installing or changing version. The installer can also install earlier versions, but a project saved by a newer version may not open right in an older one.</p></details>
       <details class="brk"><summary data-i18n="q4">The installer doesn't find my FM-1.</summary><p data-i18n="a4">Use a USB cable that carries data (many cables only charge), connect it straight to the computer without a hub, and close other programs that use the FM-1 over MIDI.</p></details>
@@ -571,7 +571,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
     cta_install:'Instalar en tu FM-1',cta_emu:'Probarlo en el navegador',cta_editor:'Abrir el editor',ver:'Versión actual:',dev_cap:'HOME: una criatura por pista, se hincha con su sonido',
     s_eb:'Empezá acá',s_h2:'Tres pasos, sin programar',s_in:'Todo funciona en el navegador. No hace falta instalar ningún programa, y podés probar JIANT antes de tocar tu FM-1.',
     st1_h:'Probalo en el navegador',st1_p:'El emulador corre el firmware real en tu compu o tu celular. Tocá con el teclado, cargá una canción, escuchá cada motor.',st1_a:'No necesitás un FM-1',st1_b:'Renderiza los stems de una canción desde tu backup',st1_go:'Abrir el emulador',
-    st2_h:'Instalalo en tu FM-1',st2_p:'Abrí el instalador en Chrome o Edge, conectá el FM-1 con un cable USB de datos, apretá Instalar y esperá sin desenchufar.',st2_a:'El instalador revisa tu FM-1 primero y guarda un backup',st2_b:'¿Venís de otro firmware custom? Volvé primero al oficial V15, con el botón del instalador',st2_go:'Abrir el instalador',
+    st2_h:'Instalalo en tu FM-1',st2_p:'Abrí el instalador en Chrome o Edge, conectá el FM-1 con un cable USB de datos, apretá Instalar y esperá sin desenchufar.',st2_a:'El instalador revisa tu FM-1 primero y guarda un backup',st2_b:'¿Venís de otro firmware custom? Volvé primero al oficial con el botón del instalador (sirven el V16 y el V15 oficiales)',st2_go:'Abrir el instalador',
     st3_h:'Editá y hacé backup',st3_p:'El editor web muestra tus sonidos y ajustes en la pantalla de la compu mientras el FM-1 sigue sonando.',st3_a:'Mandá bancos DX7 a FM6, organizá presets',st3_b:'Backup de todos tus proyectos con un clic',st3_go:'Abrir el editor',
     need:'Necesitás: Chrome o Edge en una computadora (WebUSB y Web MIDI) · un cable USB que pase datos, no solo carga.',
     i_eb:'Qué tiene adentro',i_h2:'Un organismo, nueve especies',i_in:'Cada motor es una especie, dibujada por el propio firmware. En HOME cada pista es una criatura de la especie de su motor: su forma sale de sus perillas, y se hincha y se calienta con su propio audio.',zoo_k:'Los nueve motores, como los dibuja el FM-1',
@@ -596,7 +596,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
     e_k:'Acceso anticipado',e_h3:'Quienes apoyan tocan cada versión nueva primero',e_p1:'Quienes apoyan JIANT en Ko-fi o Cafecito reciben las versiones nuevas antes de que salgan al público, y ayudan a decidir qué viene después.',e_go:'Sumate en Ko-fi',
     sup_eb:'Apoyar',sup_h2:'JIANT es gratis. Si hace música con vos, invitame un café.',sup_in:'JIANT lo hace Juan Jiant, muralista y artista visual de Buenos Aires. Cada aporte paga horas de desarrollo y mantiene el firmware gratis para todos.',
     k_z:'global · usd',k_p:'Desde cualquier país, con tarjeta o PayPal. Único o mensual, con acceso anticipado a las versiones nuevas.',c_z:'argentina · ars',cf_p:'Desde Argentina, en pesos, con Mercado Pago o tarjeta.',
-    q_h2:'Antes de instalar',q1:'¿Puedo volver al firmware oficial?',a1:'Sí. El instalador tiene un botón para volver al firmware oficial V15 (elegís el FM-1.fwsc oficial de M-VAVE). Antes guarda un backup completo.',
+    q_h2:'Antes de instalar',q1:'¿Puedo volver al firmware oficial?',a1:'Sí. El instalador tiene un botón para volver al firmware oficial, V16 o V15 (elegís el FM-1.fwsc oficial de M-VAVE). Antes guarda un backup completo.',
     q2:'¿Qué navegador necesito?',a2:'Chrome o Edge en una computadora, para el instalador y el editor: hablan con el FM-1 por USB. El emulador funciona también en otros navegadores y en celulares.',
     q3:'¿Pierdo mis sonidos o proyectos?',a3:'Hacé backup con el editor antes de instalar o cambiar de versión. El instalador también puede instalar versiones anteriores, pero un proyecto guardado por una versión más nueva puede no abrir bien en una más vieja.',
     q4:'El instalador no encuentra mi FM-1.',a4:'Usá un cable USB que pase datos (muchos solo cargan), conectalo directo a la compu sin hub, y cerrá otros programas que usen el FM-1 por MIDI.',
@@ -607,7 +607,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
     cta_install:'安装到你的 FM-1',cta_emu:'在浏览器里试玩',cta_editor:'打开编辑器',ver:'当前版本：',dev_cap:'HOME：每条音轨一个生物，随声音膨胀',
     s_eb:'从这里开始',s_h2:'三步完成，无需编程',s_in:'一切都在浏览器中运行。无需安装任何程序，还可以在动你的 FM-1 之前先试玩 JIANT。',
     st1_h:'在浏览器里试玩',st1_p:'模拟器在你的电脑或手机上运行真正的固件。用键盘演奏，载入一首歌，听听每一种引擎。',st1_a:'不需要 FM-1',st1_b:'可从你的备份渲染一首歌的分轨',st1_go:'打开模拟器',
-    st2_h:'安装到你的 FM-1',st2_p:'用 Chrome 或 Edge 打开安装器，用可传输数据的 USB 线连接 FM-1，点击安装，等待完成，期间不要拔线。',st2_a:'安装器会先检查你的 FM-1 并保存备份',st2_b:'用过其他自制固件？请先用安装器的按钮恢复到官方 V15',st2_go:'打开安装器',
+    st2_h:'安装到你的 FM-1',st2_p:'用 Chrome 或 Edge 打开安装器，用可传输数据的 USB 线连接 FM-1，点击安装，等待完成，期间不要拔线。',st2_a:'安装器会先检查你的 FM-1 并保存备份',st2_b:'用过其他自制固件？请先用安装器的按钮恢复到官方固件（V16 或 V15 均可）',st2_go:'打开安装器',
     st3_h:'编辑与备份',st3_p:'网页编辑器在电脑屏幕上显示你的音色和设置，FM-1 同时照常演奏。',st3_a:'把 DX7 音色库发送到 FM6，管理预设',st3_b:'一键备份所有工程',st3_go:'打开编辑器',
     need:'需要：电脑上的 Chrome 或 Edge（WebUSB 与 Web MIDI）· 一根能传数据的 USB 线，而不只是充电线。',
     i_eb:'里面有什么',i_h2:'一个有机体，九个物种',i_in:'每种引擎都是一个物种，由固件亲自绘制。在 HOME 页面，每条音轨都是其引擎物种的一个生物：形状来自它的旋钮，并随自身的音频膨胀、升温。',zoo_k:'九种引擎，正如 FM-1 所绘',
@@ -632,7 +632,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
     e_k:'抢先体验',e_h3:'支持者最先玩到每个新版本',e_p1:'在 Ko-fi 或 Cafecito 支持 JIANT 的朋友，会在公开发布前拿到新版本，并一起决定接下来做什么。',e_go:'在 Ko-fi 加入',
     sup_eb:'支持',sup_h2:'JIANT 是免费的。如果它陪你做音乐，请我喝杯咖啡吧。',sup_in:'JIANT 由 Juan Jiant 制作，他是来自布宜诺斯艾利斯的壁画家和视觉艺术家。每一份支持都用于开发时间，让固件对所有人保持免费。',
     k_z:'全球 · 美元',k_p:'任何国家都可以用银行卡或 PayPal 支持。一次性或按月，并可抢先体验新版本。',c_z:'阿根廷 · 比索',cf_p:'在阿根廷用比索支持，可用 Mercado Pago 或银行卡。',
-    q_h2:'安装之前',q1:'可以回到官方固件吗？',a1:'可以。安装器有一个按钮可以恢复到官方 V15 固件（需选择 M-VAVE 官方的 FM-1.fwsc）。它会先保存完整备份。',
+    q_h2:'安装之前',q1:'可以回到官方固件吗？',a1:'可以。安装器有一个按钮可以恢复到官方固件 V16 或 V15（需选择 M-VAVE 官方的 FM-1.fwsc）。它会先保存完整备份。',
     q2:'需要什么浏览器？',a2:'安装器和编辑器需要电脑上的 Chrome 或 Edge：它们通过 USB 与 FM-1 通信。模拟器在其他浏览器和手机上也能运行。',
     q3:'会丢失我的音色或工程吗？',a3:'安装或更换版本前，请先用编辑器备份。安装器也能安装旧版本，但新版本保存的工程在旧版本里可能无法正常打开。',
     q4:'安装器找不到我的 FM-1。',a4:'请使用能传输数据的 USB 线（很多线只能充电），直接连到电脑不要经过集线器，并关闭其他通过 MIDI 使用 FM-1 的程序。',
@@ -643,7 +643,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
     cta_install:'FM-1 にインストール',cta_emu:'ブラウザで試す',cta_editor:'エディターを開く',ver:'現在のバージョン：',dev_cap:'HOME：トラックごとに一匹の生き物、音にあわせてふくらむ',
     s_eb:'はじめに',s_h2:'3 ステップ、プログラミング不要',s_in:'すべてブラウザで動きます。ソフトのインストールは不要で、FM-1 に触れる前に JIANT を試せます。',
     st1_h:'ブラウザで試す',st1_p:'エミュレーターが本物のファームウェアをパソコンやスマホで動かします。キーボードで弾き、曲を読み込み、すべてのエンジンを聴けます。',st1_a:'FM-1 がなくても OK',st1_b:'バックアップから曲のステムを書き出せます',st1_go:'エミュレーターを開く',
-    st2_h:'FM-1 にインストール',st2_p:'Chrome か Edge でインストーラーを開き、データ通信できる USB ケーブルで FM-1 をつなぎ、「インストール」を押して、抜かずに待ちます。',st2_a:'インストーラーがまず FM-1 を確認し、バックアップを保存します',st2_b:'他のカスタムファームウェアから移る場合は、まずインストーラーのボタンで公式 V15 に戻してください',st2_go:'インストーラーを開く',
+    st2_h:'FM-1 にインストール',st2_p:'Chrome か Edge でインストーラーを開き、データ通信できる USB ケーブルで FM-1 をつなぎ、「インストール」を押して、抜かずに待ちます。',st2_a:'インストーラーがまず FM-1 を確認し、バックアップを保存します',st2_b:'他のカスタムファームウェアから移る場合は、まずインストーラーのボタンで公式ファームウェア（V16 または V15）に戻してください',st2_go:'インストーラーを開く',
     st3_h:'編集とバックアップ',st3_p:'Web エディターは、FM-1 が鳴り続けたまま、音色と設定をパソコンの画面に表示します。',st3_a:'DX7 のバンクを FM6 に送る、プリセットを整理する',st3_b:'すべてのプロジェクトをワンクリックでバックアップ',st3_go:'エディターを開く',
     need:'必要なもの：パソコンの Chrome または Edge（WebUSB と Web MIDI）· 充電専用ではない、データ通信できる USB ケーブル。',
     i_eb:'中身',i_h2:'ひとつの有機体、9 つの種',i_in:'エンジンはそれぞれひとつの種で、ファームウェア自身が描きます。HOME では各トラックがそのエンジンの種の生き物になり、形はノブから生まれ、自分の音でふくらみ、熱を帯びます。',zoo_k:'9 つのエンジン、FM-1 が描くとおりに',
@@ -668,7 +668,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
     e_k:'先行アクセス',e_h3:'サポーターは新バージョンをいちばん先に',e_p1:'Ko-fi や Cafecito で JIANT を支援してくれた方は、公開前に新バージョンを受け取り、次に作るものを一緒に決められます。',e_go:'Ko-fi で参加する',
     sup_eb:'支援',sup_h2:'JIANT は無料です。音楽づくりの役に立ったら、コーヒーを一杯おごってください。',sup_in:'JIANT を作っているのは、ブエノスアイレスの壁画家でビジュアルアーティストの Juan Jiant です。支援は開発の時間にあてられ、ファームウェアを誰にでも無料のままにします。',
     k_z:'世界 · usd',k_p:'どの国からでも、カードまたは PayPal で。1 回でも毎月でも、新バージョンへの先行アクセス付き。',c_z:'アルゼンチン · ars',cf_p:'アルゼンチンからペソで、Mercado Pago またはカードで。',
-    q_h2:'インストールの前に',q1:'公式ファームウェアに戻せますか？',a1:'はい。インストーラーに公式 V15 ファームウェアへ戻すボタンがあります（M-VAVE 公式の FM-1.fwsc を選びます）。先に完全なバックアップを保存します。',
+    q_h2:'インストールの前に',q1:'公式ファームウェアに戻せますか？',a1:'はい。インストーラーに公式ファームウェア（V16 または V15）へ戻すボタンがあります（M-VAVE 公式の FM-1.fwsc を選びます）。先に完全なバックアップを保存します。',
     q2:'どのブラウザが必要ですか？',a2:'インストーラーとエディターには、パソコンの Chrome か Edge が必要です（USB で FM-1 と通信します）。エミュレーターは他のブラウザやスマホでも動きます。',
     q3:'音色やプロジェクトは消えますか？',a3:'インストールやバージョン変更の前に、エディターでバックアップしてください。インストーラーは以前のバージョンも入れられますが、新しいバージョンで保存したプロジェクトは古いバージョンで正しく開けないことがあります。',
     q4:'インストーラーが FM-1 を見つけません。',a4:'データ通信できる USB ケーブルを使い（充電専用のケーブルが多いです）、ハブを通さずパソコンに直接つなぎ、MIDI で FM-1 を使う他のソフトを閉じてください。',
@@ -688,7 +688,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
   set(l);
   /* the version the installer offers now (firmware/versions.json, next to this page on the site) */
   fetch('firmware/versions.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(v=>{
-    if(Array.isArray(v)&&v[0]&&v[0].version)document.getElementById('ver').textContent='v'+String(v[0].version).replace(/^v/,'');
+    if(Array.isArray(v)&&v[0]&&v[0].version)document.getElementById('ver').textContent=String(v[0].version).replace(/-preview$/,'').replace(/-[0-9a-f]{7}$/,'');   /* (V10: "V10-4b5f5c6" -> "V10") */
   }).catch(()=>{});
 })();
 </script>

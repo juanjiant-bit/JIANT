@@ -24,97 +24,54 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
-## par14 hardware installation withdrawn — 2026-10-28
+## JIANT FM V10 — 2026-10-30
 
-A tester reported an FM-1 that would not boot after installing par14. The exact revision, symptoms and cause are not yet confirmed. **Do not install par14 on hardware.** All par14 packages have been removed from the generated installers, including direct firmware download files. Automated tests and a successful package build did not establish hardware safety.
+**V10 is the new base of JIANT FM**: one version, in both installers, tested on the FM-1. Earlier versions are no
+longer offered; from here on every update starts from V10.
 
-**ADD is the line going forward; the SAMPLE edition is withdrawn** (2026-10-30: its par13b build, the editor's sample bank and the emulator's sample kits removed). par14 stays out of every installer.
+[Install](https://juanjiant-bit.github.io/JIANT/webapp/installer/) · [Emulator](https://juanjiant-bit.github.io/JIANT/emu/) · [Editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/) · [Beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/)
 
-The incident investigation is tracked in [the par14 audit](docs/PAR14_INCIDENT.md). Do not erase projects or attempt blind reflashing to diagnose a non-booting device; first record its screen and USB enumeration so the recovery path can be chosen for its actual state.
+### Installing
 
-## ADD15 beta
+- **Official V16** (M-VAVE, October 2026; what a new FM-1 ships with): press **Install**. V16's own boot stage is
+  kept; JIANT runs on it.
+- **Official V15**: press **Install**.
+- **JIANT, any version**: press **Install**; your projects stay.
+- **Felucca, Skiff or another custom firmware**: open **Return to official** first (it saves that firmware's backup),
+  then Install.
+- **Back to official**: **Return to official** takes M-VAVE's own `FM-1.fwsc` of **V16** (718,196 bytes) or **V15**
+  (699,956 bytes), checked byte for byte. It saves a complete JIANT backup first; the editor restores it later.
 
-ADDITIVE development continues with **ADD as engine 13 and no SAMPLE engine**: REC/undo/quantization shortcuts, independent REC/PLAY, cursor navigation, COPY/PASTE SEQ, SHIFT/CHORD components, STRING feedback MOVE, DRUM-X's ACOUSTIC macro (EDIT > KIT 4), the USB name **FM-1** (beta2: found by the apps made for the FM-1) and **SAVE > TIMELINE** (beta5, was ARRANGE 2): the song left to right as lanes, one for the rows and one per track; each row can take any track from another of the song's four sections (FROM) and vary it in that row only (VAR: MUTE THIN FILL HALF REV SHIFT OCT+ OCT− VAR 1–4). KNOB 1 the row, KNOB 2 the lane, KNOB 3 / 4 its two values. See [the feature list and test procedure](docs/ADD15_PRIVATE.md). Back up projects before testing.
+Chrome or Edge on a computer, or Chrome on Android with a USB OTG cable (iPhone and iPad have no Web MIDI). Use a
+data USB cable straight into the computer, and keep it connected until the page says **Done**.
 
-## Current versions
+### What's in V10
 
-| Where | Version |
-|---|---|
-| **Public installer** | **STANDARD par12** (stable, first/default), then the earlier versions (ADDITIVE par10, par11, gen2 *ULTRA STABLE* …) |
-| **Beta installer** | **ADDITIVE add15-beta6** (SAVE › TIMELINE; installs over official V16 and returns to it), beta only |
-| **Browser emulator** | ADDITIVE add15-beta6 — the beta's source |
-
-[Public installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) · [Beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/) · [Emulator](https://juanjiant-bit.github.io/JIANT/emu/)
-
-If a version gives you trouble, **0.9.9-gen2** in the list of earlier versions is the one to go back to. Back up projects before switching editions: engine slot 13 is ADD in par10 and add15, nothing in par12.
-
-## Recording controls — beta only
-
-- Hold **REC + A3** to undo the last edit/take; repeat to redo. **GLO + G4** remains available. One global undo/redo level.
-- Arming REC saves a snapshot before the take. Undo from REC disarms recording to protect the restored take.
-- Hold **REC + B3** to switch recording quantization off or to 100%.
-- Hold **REC + knob 2** to adjust REC Q for the selected track.
-- Unquantized recording retains timing in **1/64 of a track step** (about **1.953 ms at 120 BPM / DIV 1/16**). This is storage resolution, not measured physical input accuracy; notes in the same step share an offset.
-
-See [REC controls and timing](docs/REC_CONTROLS.md). The beta contains the new recording controls.
-
-### Beta panel controls
-
-- **REC arms/disarms only. PLAY starts/stops playback independently.** You can enter steps with the transport stopped.
-- **SELECT changes SEQ pages**, even while REC is armed. **PRESET moves the selected step horizontally**.
-- In **GLO > COMPS / COMPS 2**, **PRESET selects the global step**, wrapping over its 16 steps; it does not load a sound.
-
-## Step components — beta
-
-All new recording controls and step components are **beta only**, in ADDITIVE add15 from the [beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/).
-
-- **SHIFT** in SEQ > COMP / COMP 2: KNOB 4 moves an event -63..+63 track steps; 0 keeps it in place. The playhead stays on its grid. A moved event replaces the destination during playback; the saved pattern is unchanged. It wraps inside LEN. KNOB 3 offers ALWAYS, FIRST, !FIRST, N:M and !N:M; KNOB 2 sets the affected range. Edits while playing take effect on the next pass.
-- **CHORD**: select the chord shape with KNOB 4; the step's first note is its root. It reuses the existing scale/voicing generator and stacks with COMP 2 and the global/master lane, respecting MONO/POLY. It retains the existing mono/kit guards and four-note maximum.
-
-Playback, replacement, early notes, ratchets, N:M, chord shapes, COMP 2, master and project save/load have automated tests. Physical FM-1 testing is still pending. Back up projects before trying the beta; older firmware does not understand the two new action codes. See [component behavior and validation](docs/STEP_EXTENSIONS.md).
-
-## COPY SEQ / PASTE SEQ — beta only
-
-Hold **SEQ + E5** to **COPY SEQ**; select the destination track and hold **SEQ + F5** to **PASTE SEQ**. These commands are shown in the SEQ hold subpage. They copy up to 64 steps and LEN, including notes/hits, timing, components and compatible per-step locks. The destination engine, preset and sound stay unchanged. Locks for a different engine are skipped; continuous automation is not copied. Drum and melodic phrases cannot be pasted across those two formats. Paste replaces the destination sequence and supports UNDO (**REC + A3** or **GLO + G4**). Stop song-chain playback before pasting.
-
-Available for hardware testing in ADDITIVE **add15**, in the beta installer only.
-
-## What's new in 0.9.9-par9
+**Songs**
+- **SAVE › TIMELINE**: the song left to right, its bars the width. A lane for the rows (their section and bars) and
+  one per track. Each row can take any track from another of the song's four sections (**FROM**) and vary it in that
+  row only (**VAR**: MUTE, THIN, FILL, HALF, REV, SHIFT, OCT+, OCT−, VAR 1–4, the same row always the same). A track
+  that follows its row is dim, one from another section bright with its letter, a muted one an empty frame.
+  KNOB 1 the row, KNOB 2 the lane, KNOB 3 / 4 the lane's two values.
+- 8 songs × 4 sections (A–D), up to 16 rows each, scenes per row, SONG REC, quick chains, the song's END.
 
 **Sound**
-- **Master EQ, 4 bands** (FX › EQ, after TAPE): LOW, LO MID, HI MID, HIGH, −12 … +12 dB each, wide and gentle
-  (~200 Hz, 1 kHz, 4 kHz). At 0 dB it is bit for bit transparent and costs nothing. Saved with the project.
-- **TAPE** on the master (FX › TAPE: TAPE, WOW): saturation, darker highs, a low bump, wow and flutter; much stronger
-  at 100 since par9.
-- **STRING**: a Karplus-Strong string (EXCITE NOISE / PLUCK / PICK / HAMMR / STICK, POS, STRETCH, BODY, SIZE, BOW).
-  RELEASE is its damper: it rings past the step and dies out when let go. NYLON, STEEL GTR, HARP, KOTO, PIANO, MARIMBA, BOWED…
-- **ADD**: additive synthesis, ten spectra (HARM ODD WIDE BELL BAR DRUM PRIME FIFTH SUB PLATE) with MORPH, PARTIAL,
-  SHIFT, COMB, DECAY and MOTION. Presets PRIME ORG, QUINT, DRONE, GONG, TOTEM…
-- **LOFI BYTE / FLOAT**: 48 formulas each (ALGO 0–191). MOTION past half is **SYNC**: the formula follows the bar,
-  so a note only transposes it and never changes its speed.
-- FILTER TYPE MS20 and COMB−, the delay's DRIVE, DRUM-X GLUE, LFO MODE TRIG / FREE.
+- Engines: DRUM-X, VOICE, ANIMAL, LOFI, ANALOG, FM6, PHASE, WHEEL, NOISE, **STRING** (Karplus-Strong, with **FDBK**:
+  guitar feedback, MOVE, bloom, fuzz, the envelope's attack and release) and **ADD** (additive, ten spectra).
+- DRUM-X **EDIT › KIT 4 › ACOUST**: a synthesized acoustic voicing of the kit, 0–100 %.
+- Master: leveler, CLIP, TAPE (drive and wow), a 4-band EQ; FX: delay, reverb (SHIMMER, RESO, CLOUD), chorus,
+  slicer, punch-in effects.
 
-**Performance**
-- **GLO › LIVE**: the six sequences in parallel with live modifiers (MANO: the keys as a performance board; RIELES:
-  six rails, each loop with its rate and length). Never destructive.
-- **FX layer**: LOOP 3 / 5 / 7 and **GLITCH**; since par9 GLITCH skips on the 1/16 grid with its cycle locked to the
-  bar. G5 clears the punch-in lane's automation.
-- **Live REC** places a note where you heard it (the output's latency taken into account on the FM-1).
-- **MIDI LEARN** with MIDI MAP FACTORY / CUSTOM ADD / CUSTOM; GLO › SYSTEM 2 shows MIDI IN at a glance.
+**Sequencer and recording**
+- Piano roll on every SEQ page; step components (SHIFT, CHORD, RATCHET, ARP…); MUTATE; PLAYHEADS; STRETCH.
+- **REC + A3** undo / redo, **REC + B3** quantize on/off, **REC + knob 2** REC Q; REC and PLAY independent.
+- **SEQ + E5 / F5** copy / paste a whole sequence.
+- GEN (HOME + SELECT): the song generator by genre; GLO › LIVE: the six sequences as a live board.
 
-**Generator (GEN, HOME + SELECT)**
-- Rebuilt by role and by genre, tuned on the owner's references: drums in front, leads under the bass, EXPLORE
-  calmer, TECHNO minimal 4×4, EBM at 92–104 BPM with six riffs and four basses that vary, DARKWAVE and ITALO a chord
-  every 2 bars, slow filter sweeps on bass and pads.
-- SEQ + SELECT dices a part with the same generator, on the song's harmony, never near its last 8 dicings.
+**Connection**
+- USB name **FM-1**, so the apps made for the FM-1 find it; USB STEMS (8 channels: T1–T6 + FX) for recording in a DAW.
 
-**Sequencer (seq2)**
-- One shared piano roll on every SEQ page; the chain **STEP · LENGTH/TRACK · MUTATE · PLAYHEADS · STRETCH · COMP · AUTO**;
-  step components v2 (ACTION LENGTH CONDITION VALUE, two a step); COPY / PASTE; the footer's 16 steps.
-
-**Stability**
-- Both cores by default (MENU › SYSTEM › CPU CORES); a crash no longer switches the FM-1 to one core for good.
-- The core supplies at M-VAVE's V15 levels, CPU CLOCK 360 / 320 MHz, the averaged overload guard, control rate 64.
+The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10.
 
 ## Reporting a crash
 
@@ -335,8 +292,8 @@ VOICE singing its lyric, in the COLORS skin, exactly as the firmware draws them 
   up whole).
 
 ### Engines
-The stable par12 line has ten synthesis engines: **DRUM (DRUM-X), VOICE, ANIMAL, LOFI, ANALOG, FM6, PHASE, WHEEL, NOISE
-and STRING**. ADD is available in par10 and the add15 beta. The synthesis engines are listed in the order PRESETS shows them (0.9.9-par; the first six are the tracks at power-on, T1–T6).
+V10 has eleven synthesis engines: **DRUM (DRUM-X), VOICE, ANIMAL, LOFI, ANALOG, FM6, PHASE, WHEEL, NOISE, STRING
+and ADD**. The synthesis engines are listed in the order PRESETS shows them (0.9.9-par; the first six are the tracks at power-on, T1–T6).
 - **ANALOG**: two oscillators with **INT** (an interval of ±24 semitones: fifths, octaves) and DTN; besides SAW, SQR,
   TRI, SIN and PWM it has **SYNC**, **RING** and **SAW3** (three saws). Its filter is per voice.
 - **FM6**: Dexed's engine (imports .syx), with its algorithms drawn. Fully editable on the device (from Felucca 1.5):
@@ -423,6 +380,17 @@ An 8-sound kit (BD SD CP CH OH TM RS CB) generated in real time, Microtonic styl
 With FX held the keys become effects that act while hel…8050 tokens truncated…er a pattern of another
   length they drift across the notes (polymeter, as the OP-Z's). The COMP page marks the lane and where it is.
   Automatable. Costs nothing on the audio: a copy of the step once per step.
+
+## Changelog
+
+### V10 — 2026-10-30
+- **The new base**: JIANT FM V10 replaces every earlier line in both installers (no earlier versions are offered).
+- **SAVE › TIMELINE**: the song as lanes; each row can take a track from another section (FROM) and vary it in that
+  row only (VAR: MUTE THIN FILL HALF REV SHIFT OCT+ OCT− VAR 1–4).
+- **Official V16**: JIANT installs over M-VAVE's V16 and returns to it (Return to official takes V16 or V15).
+- **USB name FM-1**, so the apps made for the FM-1 find it.
+- From the add15 line: REC undo / redo and REC Q shortcuts, independent REC and PLAY, COPY / PASTE SEQ, the SHIFT and
+  CHORD components, STRING FDBK (guitar feedback with MOVE), DRUM-X ACOUST, ADD kept as engine 13.
 
 ### v0.6.46
 Feedback from users (YouTube, Reddit):

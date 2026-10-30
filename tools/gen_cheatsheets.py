@@ -8,7 +8,7 @@ import html, os
 
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(R, 'docs', 'cheatsheet')
-VERSION = 'v0.9.9-par9'
+VERSION = 'V10'
 
 HEAT = ['#22d3ee', '#3b82f6', '#8b5cf6', '#d946ef', '#ef4444', '#ff7a00', '#facc15', '#f4f1ea']
 
@@ -169,7 +169,7 @@ def controls():
         ('LFO', 'MOD  |  LFO: LFO · LFO DEST  |  MSEQ: MSEQ · MSEQ 2', 'MACROS M1–M4 (stay latched)'),
         ('SCL', 'KEY  |  CHORD', 'ROOT by key'),
         ('ARP', 'ARP: ARP · ARP 2', '—'),
-        ('SAVE', 'SOUND: USER · PRESETS  |  PROJECT: SECTIONS · ARRANGE  |  LIBRARY: PROJECTS · TOOLS (from outside, USER / SECTIONS come armed)', 'SONG layer · C5 NAME'),
+        ('SAVE', 'SOUND: USER · PRESETS  |  PROJECT: SECTIONS · ARRANGE · TIMELINE  |  LIBRARY: PROJECTS · TOOLS (from outside, USER / SECTIONS come armed)', 'SONG layer · C5 NAME'),
         ('REC', '(transport)', 'CLEAR · CLICK'),
     ]
     t2 = ('<table class="pages"><tr><th>BUTTON</th><th>GROUPS (A TAP: THE NEXT) · PAGES (SELECT)</th><th>HOLD</th></tr>' +
@@ -274,7 +274,7 @@ def controls():
         ('GLO · SAVE', HEAT[6], [('MANO', 'RATE LOOP THIN DJ FILT (the keys: live modifiers)'), ('RIELES', 'PISTAS RATE CORTE DENS'),
                                  ('MIXER', 'LEVEL PAN REV DJ FILT'), ('GLOBAL', 'BPM SWING CLOCK TUNE'),
                                  ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('PRESETS', 'No. ENG FAV LIST'),
-                                 ('USER', 'SLOT LOAD ERASE SAVE'), ('PROJECTS', 'PROJECT SECT LOAD SAVE'), ('SECTIONS', 'SECT NAME LOAD SAVE'), ('ARRANGE', 'ROW SECT BARS SCENE (OCT+ adds a row)'),
+                                 ('USER', 'SLOT LOAD ERASE SAVE'), ('PROJECTS', 'PROJECT SECT LOAD SAVE'), ('SECTIONS', 'SECT NAME LOAD SAVE'), ('ARRANGE', 'ROW SECT BARS SCENE (OCT+ adds a row)'), ('TIMELINE', 'ROW LANE · SEC: SECT BARS · T1–T6: FROM VAR'),
                                  ('TOOLS', 'CLEAR SEQ · INIT SOUND · DEL ROW · CLEAR SONG · NEW PROJECT · CPU TEST: K1 picks, OCT+')]),
     ]
 
@@ -402,6 +402,7 @@ def sound():
                   'sequence)</p>'))
     b.append(card('SONGS', HEAT[6],
                   '<p><b>8 projects × 4 sections (A–D)</b>, a song of up to 16 rows by bars (SAVE › PROJECT › ARRANGE, OCT+ adds a row, PLAY plays; END: STOP, x2–x8, LOOP), SLOOP style. '
+                  '<b>TIMELINE</b> (V10, after ARRANGE): the song as lanes; per row each track can play another section (<b>FROM</b>) and a variation (<b>VAR</b>: MUTE THIN FILL HALF REV SHIFT OCT± VAR 1–4). '
                   'Each row can hold a <b>scene</b>: mutes, DRUM-X group mutes, macros and MIDI punch-ins. SAVE held '
                   'plays sections live on the next bar, stores them, records the song (SONG REC). Each section keeps its '
                   'sounds, steps, motion, kit and its SLICER.</p>'))
