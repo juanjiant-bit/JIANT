@@ -628,6 +628,8 @@ recipes: [
 
 // ------------------------------------------------------------------------------------------- what's new (README's changelog, digested)
 news: [
+  {v: "V10.9", items: [
+    ["MENU › LARGE muestra las animaciones: en HOME la franja bajo las tarjetas grandes muestra los seres de los seis tracks; en las páginas EDIT, el del motor, vivo, en vez del título.", "MENU › LARGE shows the animations: on HOME the strip under the big cards shows the six tracks' creatures; on EDIT pages, the engine's, alive, instead of the title."]]},
   {v: "V10.8", items: [
     ["GEN: una parte en OFF queda apagada (antes, con menos de dos partes melódicas, BASS y CHORDS volvían a prenderse); esa regla solo completa las partes en AUTO.", "GEN: a part set OFF stays off (before, with fewer than two melodic parts on, BASS and CHORDS were forced back on); that rule only fills in parts left on AUTO."],
     ["GEN conserva el GENRE elegido entre visitas (antes volvía a EXPLORE cada vez). Al encender y con NEW PROJECT arranca en EXPLORE.", "GEN keeps the GENRE you picked between visits (it went back to EXPLORE every time). Power-on and NEW PROJECT still start on EXPLORE."],

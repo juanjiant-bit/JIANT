@@ -2417,7 +2417,7 @@ configuración guardada ni para el editor.)
 | SCREEN › SCREEN | 1 | COLOR | GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT, MONO, **JIANT** (por defecto) |
 | | 2 | SKIN | **AIR** (por defecto en ajustes nuevos), COLORS, HUD — (0.8.9; AIR 0.9.7; BOTTOM se retiró en la 0.9.17: abre como AIR) ver [Pieles](#pieles-air-colors-hud-089-air-097) |
 | | 3 | STYLE | FLAT, LINE |
-| | 4 | LARGE | OFF, ON (etiquetas y valores grandes) |
+| | 4 | LARGE | OFF, ON (etiquetas y valores grandes; V10.9: la franja de abajo muestra los seres de HOME y el motor en EDIT) |
 | SCREEN › SCREEN 2 | 1 | SCOPE | **OFF** (por defecto), ON — (0.9.7) las páginas EDIT de un motor: OFF la criatura en todo el panel, centrada; ON la criatura a la izquierda, la tarjeta SCOPE y las fichas como antes |
 | | 2 | ANIMATION | ON, OFF (los valores saltan; la firma del encendido aparece entera) — era ANIM |
 | | 3 | SCREEN SLEEP | **NEVER** (por defecto), 5 MIN, 15 MIN, 30 MIN, 60 MIN — la pantalla se apaga tras ese tiempo sin tocar nada (era SCREEN OFF) |

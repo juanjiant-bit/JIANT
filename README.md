@@ -78,7 +78,7 @@ data USB cable straight into the computer, and keep it connected until the page 
 **Connection**
 - USB name **FM-1**, so the apps made for the FM-1 find it; USB STEMS (8 channels: T1–T6 + FX) for recording in a DAW.
 
-The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10 (V10.8).
+The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10 (V10.9).
 
 ## Reporting a crash
 
@@ -417,6 +417,11 @@ With FX held the keys become effects that act while hel…8050 tokens truncated�
   [el manual](docs/MANUAL.es.md#euclid-y-modes-v106).
 
 ## Changelog
+
+### V10.9
+- **MENU › LARGE shows the animations** (testers: with LARGE on they were hidden): HOME's strip under the tall
+  cards shows the six tracks' creatures in a row (the scope only if none has one); an EDIT page's strip shows the
+  engine's creature, alive, instead of the page's title.
 
 ### V10.8
 - **GEN: a part set OFF stays off**. BASS, CHORDS, ARP or LEAD set to OFF are never turned back on: before, with

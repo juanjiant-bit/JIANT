@@ -2275,7 +2275,7 @@ every setting, its values and its meaning: nothing changes in the saved settings
 | SCREEN › SCREEN | 1 | COLOR | GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT, MONO, **JIANT** (default) |
 | | 2 | SKIN | **AIR** (default of new settings), COLORS, HUD — (0.8.9; AIR 0.9.7; BOTTOM retired in 0.9.17: opens as AIR) see [Skins](#skins-air-colors-hud-089-air-097) |
 | | 3 | STYLE | FLAT, LINE |
-| | 4 | LARGE | OFF, ON (big labels and values) |
+| | 4 | LARGE | OFF, ON (big labels and values; V10.9: the strip under them shows HOME's creatures, EDIT's engine) |
 | SCREEN › SCREEN 2 | 1 | SCOPE | **OFF** (default), ON — (0.9.7) an engine's EDIT pages: OFF the creature on the whole panel, centred, the page's name and the sound's name small in its corners; ON the creature on the left, the SCOPE card and the chips as before. Settings saved before 0.9.7 load as OFF |
 | | 2 | ANIMATION | ON, OFF (values snap; the power-on signature appears whole) — was ANIM |
 | | 3 | SCREEN SLEEP | **NEVER** (default), 5 MIN, 15 MIN, 30 MIN, 60 MIN — the screen dark after that long without a touch (was SCREEN OFF) |
