@@ -95,7 +95,9 @@ static int ldr_prog(uint32_t off, const void *p, uint32_t n)
 {
     const uint8_t *s = p;
     uint32_t i;
-    if (off < 0x4000u || off + n > 0x93000u || ((off & 0xFFu) + n) > 256u) bad_range++;
+    if ((off < 0x4000u || off + n > 0x93000u) &&
+        !(off >= 0xE8000u && off + n <= 0xE8F00u)) bad_range++;   /* (V10.10: the stock VM sector put back but its record) */
+    if (((off & 0xFFu) + n) > 256u) bad_range++;
     for (i = 0; i < n; i++) nor[off + i] &= s[i];
     return 0;
 }
@@ -194,7 +196,8 @@ int main(int argc, char **argv)
         memcpy(user, nor + 0xA0000, sizeof user);
         memcpy(store, nor + 0x93000, sizeof store);
         memset(store + 0xE4000 - 0x93000, 0xFF, 0x1000);   /* what the install may change: the two record sectors */
-        memset(store + 0xE8000 - 0x93000, 0xFF, 0x1000);
+        memset(store + 0xE8F00 - 0x93000, 0xFF, 0x100);   /* (V10.10: the stock VM sector kept but its record's 256 B:
+                                                         * the radio's RF trims and BT address) */
     }
     /* a damaged package (one byte deep in the app area): refused before anything is erased */
     {
@@ -221,7 +224,7 @@ int main(int argc, char **argv)
                  record_cleared && nor[0xE4F06] == 0xFF && nor[0xE8F06] == 0xFF);
     bad += check("user data in Felucca's store that looks like a record is kept", !memcmp(nor + 0xA0000, user, sizeof user));
     bad += check("no write outside the allowed windows", bad_range == 0);
-    bad += check("[0x93000, 1 MiB) byte-identical but the record sectors", !memcmp(nor + 0x93000, store, sizeof store));
+    bad += check("[0x93000, 1 MiB) byte-identical but the record sectors (0xE8000's: only its record, the VM kept)", !memcmp(nor + 0x93000, store, sizeof store));
     bad += app_area(argc > 3 ? (uint32_t)strtoul(argv[3], NULL, 0) : 0u);
     /* same package again: nothing to erase */
     erases = 0; requests = 0;

@@ -174,8 +174,18 @@ static int ldr_session(void)
             continue;                                    /* Felucca's store: user data that may look like one */
         if (ldr_fread(s - 0x100u, r, 80))
             break;
-        if (ota_rd16(r + 6) == 0x5441u && ota_rd16(r) && ota_rd16(r) == ota_crc16(r + 2, 78, 0))
-            ldr_erase(s - 0x1000u);
+        if (ota_rd16(r + 6) == 0x5441u && ota_rd16(r) && ota_rd16(r) == ota_crc16(r + 2, 78, 0)) {
+            if (s - 0x1000u >= 0xE7000u && s - 0x1000u < 0xEA000u) {   /* (V10.10) the stock VM: the radio's RF trims
+                                                         * and BT address, the record at its tail (0xE8F00): the sector
+                                                         * kept but those 256 bytes (was: erased whole, the trims lost) */
+                if (ldr_fread(s - 0x1000u, cur, 0xF00u))
+                    continue;
+                if (!ldr_erase(s - 0x1000u))
+                    for (k = 0; k < 0xF00u; k += 256u)  /* (a page at a time) */
+                        (void)ldr_prog(s - 0x1000u + k, cur + k, 256);
+            } else
+                ldr_erase(s - 0x1000u);
+        }
     }
     return 0;
 }

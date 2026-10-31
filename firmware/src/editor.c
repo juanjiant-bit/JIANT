@@ -19,6 +19,8 @@ enum { ED_INFO = 1, ED_GET, ED_SET, ED_DUMP, ED_DESC, ED_STEP_GET, ED_STEP_SET, 
        ED_UI_STATE, ED_UI_SET, ED_UI_PALETTES, ED_FAV_GET, ED_FAV_SET,
        ED_LYRIC,                                                                /* (JIANT 0.8.5) VOICE's lyric */
        ED_MOTION = 64, ED_BACKUP_LIST, ED_BACKUP_GET, ED_BACKUP_PUT };                              /* v6: song chain */
+enum { ED_VM_READ = 80 };   /* (V10.10) read-only: 256 B of the stock VM (0xE7000 + 256 x a[0], a[0] < 48: the radio's
+                              * RF trims and BT address, web/btcheck.html); reply: a[0], then 256 x (hi nibble, lo nibble) */
 
 static uint8_t ed_out[600];
 static uint32_t ed_n;
@@ -782,6 +784,16 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
         for (i = 0; i < chain_config.count; i++) {
             ed_b(chain_config.row[i].slot); ed_b(chain_config.row[i].bars);
         }
+        break;
+    }
+    case ED_VM_READ: {
+        static uint8_t b[256];
+        if (na != 1u || a[0] >= 48u || !flash_ok || st_read(0xE7000u + a[0] * 256u, b, 256)) {
+            ed_b(127);                                  /* (refused: past the area, or no flash) */
+            break;
+        }
+        ed_b(a[0]);
+        for (i = 0; i < 256u; i++) { ed_b(b[i] >> 4); ed_b(b[i] & 15u); }
         break;
     }
     default:

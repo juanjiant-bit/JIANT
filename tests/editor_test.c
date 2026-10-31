@@ -58,7 +58,13 @@ static int fl_write(uint32_t off, const void *p, uint32_t n)
 {
     memcpy(host_flash_ptr(off), p, n); host_writes++; return 0;
 }
-static int st_read(uint32_t off, void *p, uint32_t n) { (void)off; (void)p; (void)n; return -1; }
+static int st_read(uint32_t off, void *p, uint32_t n)   /* (V10.10: the stock VM's 12 KB, a pattern; else none) */
+{
+    uint32_t i;
+    if (off < 0xE7000u || off + n > 0xEA000u) return -1;
+    for (i = 0; i < n; i++) ((uint8_t *)p)[i] = (uint8_t)((off + i) * 7u ^ (off + i) >> 8);
+    return 0;
+}
 static int st_prog(uint32_t off, const void *p, uint32_t n) { (void)off; (void)p; (void)n; return -1; }
 static int st_erase(uint32_t off) { (void)off; return -1; }
 #include "../firmware/src/storage.c"
@@ -197,6 +203,27 @@ static int preferences(void)
 
 /* (0.8.5) LYRIC (39): a track's lyric, read and written; ASCII kept, control bytes as spaces, cut at 63 (rc 1); a
  * project's capture / restore carries it (the runtime's FUNC 'L' 'Y' block) */
+static int vm_read(void)
+{   /* (V10.10) VM_READ (80): 256 B of 0xE7000 + 256 x i as nibbles, i < 48 only; nothing else of the flash */
+    int bad = 0, ok = 1;
+    uint8_t a[2];
+    uint32_t n, k;
+    reset();
+    a[0] = 16;                                          /* 0xE8000 */
+    n = request(ED_VM_READ, a, 1);
+    ok = n == 5u + 1u + 512u + 1u && host_wire[4] == ED_VM_READ && host_wire[5] == 16u;
+    for (k = 0; ok && k < 256u; k++) {
+        uint32_t off = 0xE8000u + k;
+        ok &= (uint8_t)(host_wire[6 + 2 * k] << 4 | host_wire[7 + 2 * k]) == (uint8_t)(off * 7u ^ off >> 8);
+    }
+    a[0] = 48;
+    n = request(ED_VM_READ, a, 1);
+    ok &= n == 7u && host_wire[5] == 127u;              /* (past the area: refused) */
+    a[0] = 0; a[1] = 0;
+    ok &= request(ED_VM_READ, a, 2) == 7u && host_wire[5] == 127u;
+    bad += check("VM_READ: the stock VM 256 B at a time as nibbles, past 0xE9FFF refused", ok);
+    return bad;
+}
 static int lyric_protocol(void)
 {
     int bad = 0;
@@ -1027,7 +1054,7 @@ int main(void)
 {
     int bad = preferences() + motion_locks() + framing() + uart_recovery() + steps() + stop_failures() + song_protocol() + malformed_saves() +
               fm6_patches() + user_preset_roundtrip() + live_sync() + usb_burst() + menu_protocol() + drum_kit_retired() +
-              lyric_protocol();
+              lyric_protocol() + vm_read();
     printf("%s\n", bad ? "EDITOR TEST FAILED" : "editor test passed");
     return bad != 0;
 }
