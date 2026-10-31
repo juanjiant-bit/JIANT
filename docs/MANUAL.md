@@ -94,7 +94,7 @@ The names below are the ones the firmware uses (the HARDWARE CALIBRATION screen 
 | --- | --- |
 | **SELECT** (encoder) | Alone (0.9.2): **walks the section's pages**, one page a detent, as one chain, stopping at its first and last page (no levels, no zoom; see [How navigation works](#how-navigation-works-six-rules-092)). In the MENU: its pages. With a button held: **HOME** + SELECT **GEN**, **EDIT / SEQ / LFO / FX** + SELECT that part's **dice**, **GLO** + SELECT the **tempo**, **ENV / SCL / ARP / SAVE** + SELECT walk that section's chain from wherever you are. |
 | **ALGORITHM** (encoder) | Selects the track from any page: T1–T6 (T1–T4 with TRACKS 4). The track is always ALGORITHM's (0.9.2: PRESETS no longer picks it on ENV, LFO, CHORD, ARP). In the MENU: the next / previous tab. With a layer held: its view, MAP ↔ KNOBS ↔ STATE. |
-| **PRESETS** (encoder) | **Always presets** (0.9.2): the selected track's sounds (every engine's factory presets, then your user presets) on every page; on the **SEQ** pages the **patterns** (it opens the PHRASES loader with the next pattern picked: OCT+ loads it, OCT− back to the SEQ page); on **GEN** the GENRE. In the MENU and with a button held it does nothing. It never changes page, track, module or row. |
+| **PRESETS** (encoder) | **Always presets** (0.9.2): the selected track's sounds (every engine's factory presets, then your user presets) on every page; on the **SEQ** pages the **patterns** (it opens the PHRASES loader with the next pattern picked: OCT+ loads it, OCT− back to the SEQ page); on **GEN** the GENRE. In the MENU and with a button held it does nothing, except **EDIT held** (V10.7): it jumps to the first sound of the next / previous engine, the engine's name on screen. It never changes page, track, module or row. |
 | **KNOB 1–4** | The four cards (columns) on screen. A page that picks something picks it with **KNOB 1** (the step, the bar, the slot, the stage, the operator, the kit's sound, the row). With a layer held, the layer's own knobs. Turning fast sweeps the whole range, slowly fine-tunes (MENU › SYSTEM › KNOB SPEEDUP turns this off). In the MENU: KNOB n the setting on card n. |
 | **MASTER** | The output volume. |
 
@@ -113,7 +113,7 @@ The names below are the ones the firmware uses (the HARDWARE CALIBRATION screen 
 | **ARP** | The ARP section (ARP · ARP 2, one group): from elsewhere the page last shown; inside, back to ARP. A chord held + ARP during step recording still arpeggiates it. | (no layer) |
 | **SEQ** | The SEQ section: from elsewhere the page last shown (at power-on STEP, the piano roll); inside the next group (V10.6): **STEP → LENGTH → EUCLID → PLAYHEADS → STRETCH → COMP → AUTO**, round. | **SEQ TOOLS** layer (on every SEQ page); G5 CLR STEP. |
 | **PLAY** | Start / stop. | — |
-| **REC** | Arms / disarms recording on the selected track. | **REC** layer: CLEAR, CLICK. |
+| **REC** | Arms / disarms recording on the selected track. | **REC** layer: CLEAR, CLICK. (V10.7) Held past HOLD and let go with nothing else touched: **UNDO** (again: redo). |
 | **OCT− / OCT+** | Keyboard octave (−3 to +3; both together: back to 0; on a DRUM track the kit stays on its keys: ratchets above, SHORT / GHOST / FLAM below, see [5](#5-drum-x)). On action pages and in dialogs: **OCT−** = back / NO, **OCT+** = do it / YES. | — |
 
 ### The keys
@@ -128,12 +128,14 @@ layer's shortcuts; on the DRUM grid they are steps and lanes; on the NAME screen
 | **GLO** held + **PLAY** | Restart from the top without stopping (internal clock). |
 | **GLO** held + **SELECT** | Tempo, from any page. |
 | **GLO** held + **G4** | **UNDO** the last big change (again: redo). |
+| **REC** held alone, let go | (V10.7) **UNDO** too: held past HOLD (~0.5 s) with no key, knob, button or OCT touched; again: redo. Anything used while held keeps it the REC layer; a tap still arms recording. |
 | **SEQ** held + **REC** | **CLEAR ALL SEQUENCES?** — all six tracks' steps and automation, and the punch-in lane. |
 | **REC** held + **FX / EDIT / ENV / LFO / SCL / ARP / GLO** | Clears that part's automation on the selected track (GLO: the level and pan automation of all tracks; FX: also the punch-in lane). No dialog. |
 | **SAVE** held + **OCT+** / **OCT−** | Store the music into the section playing / recall that section as stored. |
 | **HOME** held + **SELECT** | **GEN**, the song generator (HOME's last pages; see [8](#8-dice-and-undo)). |
 | **EDIT / SEQ / LFO / FX** held + **SELECT** | The dice: the sound / the sequence / the LFO / the effects (see [8](#8-dice-and-undo)). |
 | **ENV / SCL / ARP / SAVE** held + **SELECT** | Into that section and along its chain, as SELECT inside it. (0.9.2: a button held + **PRESETS** no longer walks pages.) |
+| **EDIT** held + **PRESETS** | (V10.7) The first sound of the next / previous **engine** (its name on screen), instead of every preset one by one. Not while a momentary tweak (EDIT held + a knob turned) is in progress. |
 | **SEQ** held + **G5** | **CLR STEP**: clears the cursor step and its locks (NOTE with a note in focus: that note; AUTO LIST: deletes the record). |
 | **SAVE** held + **C5** | **NAME**: renames the slot on SAVE > USER, the section or project on SECTIONS / PROJECTS. |
 | A step held (SEQ > STEP) + **KNOB 1–4** | A parameter lock on that step. |
@@ -269,7 +271,8 @@ knobs, their pictures and every function are the same, only the way between them
 5. **Hold = the layer.** Holding a button opens its layer of shortcuts, as before (past the HOLD time, MENU › SYSTEM › HOLD TIME,
    0.4 s by default: the keys and knobs change function while you hold it, a map shows what each key does; a key or a
    knob opens it at once; let go and you are back). Held + SELECT: **HOME** GEN, **EDIT / SEQ / LFO / FX** their dice,
-   **GLO** the tempo, **ENV / SCL / ARP / SAVE** walk their chain. (Held + PRESETS no longer walks pages: rule 3.)
+   **GLO** the tempo, **ENV / SCL / ARP / SAVE** walk their chain. (Held + PRESETS no longer walks pages: rule 3; V10.7:
+   EDIT held + PRESETS jumps engine to engine.)
 6. **The screen says where you are.** On top, the tabs are the section's **groups**, the one you are on lit and a dot
    for each of its pages. At the foot: **SECTION · GROUP · page** and **n/N**, the page's place in the chain:
    **FX · DELAY · DLY 2  6/16**. The same in AIR, COLORS and HUD, every palette.
@@ -474,7 +477,7 @@ them page by page, a **SEQ** tap jumps to the next group.
 | PATTERN | STRETCH | STRETCH (/8 … /2, x1, x2 … x8) | REPEAT (OFF, x2 … x8, TO 64) | NUDGE | ROTATE (−32 … +32) |
 | PATTERN | PLAYHEADS | HEAD | RATE | DIR | INTERVAL |
 | TRACK | TRACK | PITCH | CHANCE | HUMAN | REC Q |
-| EUCLID | EUCLID (V10.6) | HITS | STEPS (2–64) | ROTATE | LANE (DRUM-X) · VARY (melodic) |
+| EUCLID | EUCLID (V10.6) | HITS (DRUM-X LANE ALL: DENSITY, V10.7) | STEPS (2–64) | ROTATE | LANE (DRUM-X: ALL, BD … CB) · VARY (melodic) |
 | EUCLID | MODES (V10.6) | ACCENT · MOTION | GHOST · HARMONY | RATCHET · OCTAVE | VARY · SLIDE |
 | BAR | BAR (0.9.2) | BAR (the bar you edit) | LEN | — | — |
 | BAR | STEP (melodic: piano roll) | STEP (all 64, bar after bar) | NOTE | TIME (REST ← TIE ← NOTE → 2 ST … 16 ST: the note's length in steps; REST clears the step) | FLAG (– / ACC / SLD / A+S) |
@@ -550,7 +553,8 @@ alone; on AUTO LIST, **DEL REC**: deletes the row's record). **REC** (while SEQ 
 ALL. Knobs: LEN, DIV, SWING, GATE. These tools have no undo.
 
 **REC** — F3 **CLEAR** the selected track's steps and automation (no dialog; UNDO can bring it back), G3 **CLICK**
-(OFF / REC / ON). KNOB 1: CLICK.
+(OFF / REC / ON). KNOB 1: CLICK. (V10.7) REC held past HOLD and let go with **nothing else touched** is **UNDO** (held
+alone again: redo); once a key, knob, button or OCT is used while it is held, it is the REC layer as before.
 
 **SAVE — song layer** (details in [7](#7-arrange-songs-sections-and-scenes))
 
@@ -1188,7 +1192,8 @@ and ring). In its place in the SEQ chain, after TRACK, two pages under a tab of 
 
 | Page | Track | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- | --- |
-| EUCLID | DRUM-X | HITS | STEPS (2–64) | ROTATE | LANE (BD SD CP CH OH TM RS CB) |
+| EUCLID | DRUM-X, LANE ALL (V10.7) | DENSITY (1–8) | STEPS (2–64) | ROTATE | LANE (ALL BD SD CP CH OH TM RS CB) |
+| EUCLID | DRUM-X, one lane | HITS | STEPS (2–64) | ROTATE | LANE |
 | EUCLID | melodic | HITS | STEPS (2–64) | ROTATE | VARY (0–100) |
 | MODES | DRUM-X | ACCENT | GHOST | RATCHET | VARY |
 | MODES | melodic | MOTION | HARMONY | OCTAVE | SLIDE |
@@ -1196,12 +1201,23 @@ and ring). In its place in the SEQ chain, after TRACK, two pages under a tab of 
 - **HITS, STEPS, ROTATE**: the hits spread as evenly as the steps allow (a euclidean rhythm), ROTATE turns them round.
   On DRUM-X **each of the eight sounds has its own** HITS, STEPS and ROTATE (LANE picks the one the knobs edit); the
   pattern's length is their least common length, up to 64.
+- **LANE on DRUM-X** (V10.7): nine values, **ALL** (the default) then BD SD CP CH OH TM RS CB. Turning LANE itself
+  writes nothing.
+  - **ALL**: KNOB 1 is **DENSITY** (1–8, default 4) instead of HITS, and DENSITY, STEPS and ROTATE write a whole
+    kit that plays: a kick, the snare on the backbeat (steps 5 and 13 of 16), closed hats (the open hat chokes the
+    closed one), and as density rises sparser clap, open hat, tom, rim and bell. ROTATE turns the kick and the
+    percussion (the groove); the snare and the hats stay. Each density sets every lane's HITS / STEPS / ROTATE, so
+    picking a lane afterwards shows those values.
+  - **One lane**: HITS, STEPS and ROTATE (and MODES, OCT+ / OCT−) write **only that lane**; the other lanes stay
+    exactly as they were (if the lane's STEPS make the pattern longer, least common multiple up to 64, the others
+    repeat).
 - **MODES**: four amounts (0 = off) that add to what is generated. DRUM-X: **ACCENT** (a second euclid, of accents),
   **GHOST** (soft hits between), **RATCHET** (some hits x2 / x4), **VARY**. Melodic: **MOTION** (how far the melody
   moves: 0 a pedal note, higher bigger leaps), **HARMONY** (chords of the scale on the strong beats), **OCTAVE**
   (octave jumps), **SLIDE** (slides).
 - **VARY** loosens the even grid: some hits move a step (towards the offbeat, more in the second half, so it answers
-  the first), a pickup before a strong beat, a hit left out; on a melodic track, notes held over the gap after them.
+  the first); on a melodic track, notes held over the gap after them. (V10.7: VARY only moves hits, it no longer adds a
+  pickup or leaves a hit out, so **HITS is exactly the number of hits / notes that sound**: HITS 3, three hits.)
 - **A melodic track's notes**: inside the track's **SCL** (ROOT / SCALE) when it is set (the screen says **SCL**);
   else in the key the other tracks' notes fit best (**FROM T*n***); else a new scale and root (**NEW KEY**). The melody
   keeps the register the track had at the first turn (an empty track: around C4).
@@ -1612,6 +1628,8 @@ The same idea for the other parts of the selected track, each heard at once unde
   harmony when GEN made the piece (its plan, genre and the track's role), so it fits the others; else in the track's
   own key, a genre made up for it. Drums on a DRUM track, else the role its steps sound like (low notes: a bass line,
   chords: a pad, else a lead or an arp). Never the same part twice in a row. Its sound, mix and automation stay.
+  (V10.7) On a DRUM-X track it always plays a beat: before, a genre with no drums (NEO CLASSIC) or AMBIENT's sparse
+  map gave an empty or almost empty pattern; now a kit pattern that comes out with almost no hits is thrown again.
 - **LFO + SELECT**: the track's LFO: a rate in the middle of the range, any wave, MODE FREE or TRIG (half the time
   each; TRIG at any phase), a fade now and then, aimed
   mostly at the filter, a little at the shape, seldom at the pitch or the level.
@@ -1626,6 +1644,9 @@ G3 clears them. See [10](#10-modulation-and-macros).
 ### UNDO (GLO held + G4)
 
 One step back over the **last big change**. Pressing it again goes forward (redo). The transport keeps playing.
+(V10.7) **REC held alone** does the same: hold REC past HOLD (~0.5 s) and let go without touching anything else (no
+key, knob, button or OCT): UNDO; hold it alone again: redo. Used with anything else it stays the REC layer (CLICK,
+REC Q, A3 …), and a REC tap still arms recording. GLO + G4 still works.
 G4 breathes on the GLO map when there is something to undo; with nothing, it says **NOTHING TO UNDO**.
 
 **UNDO covers**: DICE ALL, a sound diced, a track cleared (REC F3, TOOLS CLEAR SEQ), CLEAR ALL SEQUENCES (SEQ + REC),

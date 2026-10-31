@@ -147,7 +147,7 @@ def controls():
         ('SELECT', '<b>Walks the section\'s pages</b>, a page a detent, stopping at the ends (the MENU: every row). Held with a button: '
                    'HOME <b>GEN</b>; EDIT · SEQ · LFO · FX their <b>dice</b> (OK keeps, CANCEL back); GLO the tempo; ENV · SCL · ARP · SAVE their chain.'),
         ('PRESETS', '<b>Always presets</b>: the sounds (factory and user) on every page; SEQ: the patterns (PHRASES); GEN: the genre. '
-                    'Nothing in the MENU or with a button held.'),
+                    'Nothing in the MENU or with a button held, except <b>EDIT</b> (V10.7): the first sound of the next / previous engine.'),
         ('ALGORITHM', 'Selects the track from any page: T1–T4, or T1–T6 with TRACKS 6. MENU: the tabs. A layer held: MAP · KNOBS · STATE.'),
         ('KNOB 1–4', 'The four columns on screen; KNOB 1 picks (step, bar, slot, row). Fast sweeps the whole range, slow fine-tunes. With a layer held: '
                      'the layer\'s.'),
@@ -170,7 +170,7 @@ def controls():
         ('SCL', 'KEY  |  CHORD', 'ROOT by key'),
         ('ARP', 'ARP: ARP · ARP 2', '—'),
         ('SAVE', 'SONG: TIMELINE · SECTIONS  |  PROJECT: PROJECTS · ARRANGE · TOOLS  |  SOUND: USER · PRESETS (from outside, USER / SECTIONS come armed)', 'SONG layer · C5 NAME'),
-        ('REC', '(transport)', 'CLEAR · CLICK'),
+        ('REC', '(transport)', 'CLEAR · CLICK · held alone: UNDO'),
     ]
     t2 = ('<table class="pages"><tr><th>BUTTON</th><th>GROUPS (A TAP: THE NEXT) · PAGES (SELECT)</th><th>HOLD</th></tr>' +
           ''.join(f'<tr><td class="n">{e(n)}</td><td>{e(p)}</td><td class="dim">{e(h)}</td></tr>' for n, p, h in pb) +
@@ -203,7 +203,7 @@ def controls():
                   'clears it.</p><h4>KNOBS</h4>' + knobs('FILTER', 'CRUSH', 'THROW', 'DEPTH')))
     b.append(card('GLO · MIX', HEAT[1], keyboard(glo_w, glo_b) +
                   '<p>Black 1–6 mute T1–T6 (latched), 7–10 the DRUM-X groups. White: solo while held, E4 unmutes all, '
-                  'F4 tap tempo, G4 <b>UNDO</b> the last big change (again: redo). SELECT: the tempo. PLAY: restart.</p><h4>KNOBS</h4>' +
+                  'F4 tap tempo, G4 <b>UNDO</b> the last big change (again: redo; V10.7: also REC held alone and let go). SELECT: the tempo. PLAY: restart.</p><h4>KNOBS</h4>' +
                   knobs('LEVEL T1', 'LEVEL T2', 'LEVEL T3', 'LEVEL T4') +
                   '<p class="dim" style="margin-top:4px">T5 or T6 selected: the knobs are T3–T6.</p>'))
     b.append(card('SAVE · SONG', HEAT[6], keyboard(sv_w, {}) +
@@ -267,7 +267,7 @@ def controls():
         ('SCL · ARP', HEAT[2], [('SCL', 'ROOT SCALE QUANT ALL TR'), ('CHORD', 'CHORD VOICING STRUM -'), ('ARP', 'MODE RATE OCT GATE'),
                                 ('ARP 2', 'SWING PROB HOLD ORDER')]),
         ('SEQ', HEAT[4], [('PATTERN', 'LEN DIV SWING GATE'), ('STRETCH', 'x/÷ REPEAT NUDGE ROTATE'), ('PLAYHEADS', 'HEAD RATE DIR INTVL'),
-                          ('TRACK', 'PITCH CHANCE HUMAN REC Q'), ('EUCLID', 'HITS STEPS ROTATE VARY'), ('EUCLID · DRUM', 'HITS STEPS ROTATE LANE'),
+                          ('TRACK', 'PITCH CHANCE HUMAN REC Q'), ('EUCLID', 'HITS STEPS ROTATE VARY'), ('EUCLID · DRUM', 'HITS STEPS ROTATE LANE'), ('EUCLID · DRUM ALL', 'DENSITY STEPS ROTATE LANE'),
                           ('MODES', 'MOTION HARMONY OCTAVE SLIDE'), ('MODES · DRUM', 'ACCENT GHOST RATCHET VARY'),
                           ('BAR', 'BAR LEN - -'), ('STEP', 'STEP NOTE TIME FLAG'), ('STEP · DRUM', 'STEP LANE HIT ACC'), ('NOTE', 'FOCUS PITCH MOVE MICRO'),
                           ('AUTOMATION', 'PLAY EVENT LOCK CLEAR'), ('AUTO LIST', 'ROW STEP PARAM VALUE'),
@@ -391,7 +391,7 @@ def sound():
     b.append('<div class="grid g3" style="margin-top:22px">')
     b.append(card('SEQUENCER', HEAT[4],
                   '<p>64 steps a track, up to 4 notes a step, piano roll and drum grid. One chain (V10.6): STEP (the roll / grid, K1 all 64 steps) · LENGTH · TRACK · EUCLID · MODES · PLAYHEADS · STRETCH · COMP · COMP 2 · AUTOMATION · AUTO LIST; SELECT walks, SEQ jumps to the next group, PRESETS loads a pattern. <b>Hold a step + turn a knob</b>: '
-                  'a parameter lock. Step recording: hold a chord + KNOB 1 its length; + ARP: arpeggiated (K1 rate, K2 order, K3 oct). COMP / COMP 2: two components a step (CHANCE, RATCH, ARP NOTES / SEQ / SCALE, TRIG, RAND, OCT, TONAL, BEND, ECHO, PULSE, JUMP, REV, FILL, KILL, WALK, CLIMB, TOUCH: a kit\'s SHORT / GHOST / FLAM); a TRIG or FILL wins; WALK / CLIMB: a degree / an octave further every N loops (K4), UP DOWN UP-DN RND over a range (K3), stackable; ARP: ORDER × range, RATE in note values (x1 1/32 1/32T 1/64 1/64T 1/128); RATCH / ECHO: DIV; EVERY (KNOB 4): the loops the step\'s components play on (ALWAYS 1:2 2:2 1:3 .. 4:4 1:8 FIRST !FIRST SKIP). TRACK: PITCH, CHANCE thins the whole track, HUMAN one amount (velocity, timing, gate, decay / release), REC Q. STRETCH / REPEAT act as the knob turns; ROTATE reads the sequence from another step; NOTE\'s MICRO moves a step off the grid in 64ths (±32/64; REC Q 0 % records where you played, to the 64th). <b>EUCLID</b> (V10.6, MUTATE\'s place): HITS, STEPS 2–64, ROTATE write the track\'s pattern live; K4 LANE (DRUM-X: each sound its own) or VARY; MODES adds ACCENT GHOST RATCHET VARY (DRUM-X) or MOTION HARMONY OCTAVE SLIDE; notes in the track\'s SCL, else the key the other tracks fit (FROM Tn), else NEW KEY; OCT+ a new variation, OCT− the one before. REC + knobs while playing: '
+                  'a parameter lock. Step recording: hold a chord + KNOB 1 its length; + ARP: arpeggiated (K1 rate, K2 order, K3 oct). COMP / COMP 2: two components a step (CHANCE, RATCH, ARP NOTES / SEQ / SCALE, TRIG, RAND, OCT, TONAL, BEND, ECHO, PULSE, JUMP, REV, FILL, KILL, WALK, CLIMB, TOUCH: a kit\'s SHORT / GHOST / FLAM); a TRIG or FILL wins; WALK / CLIMB: a degree / an octave further every N loops (K4), UP DOWN UP-DN RND over a range (K3), stackable; ARP: ORDER × range, RATE in note values (x1 1/32 1/32T 1/64 1/64T 1/128); RATCH / ECHO: DIV; EVERY (KNOB 4): the loops the step\'s components play on (ALWAYS 1:2 2:2 1:3 .. 4:4 1:8 FIRST !FIRST SKIP). TRACK: PITCH, CHANCE thins the whole track, HUMAN one amount (velocity, timing, gate, decay / release), REC Q. STRETCH / REPEAT act as the knob turns; ROTATE reads the sequence from another step; NOTE\'s MICRO moves a step off the grid in 64ths (±32/64; REC Q 0 % records where you played, to the 64th). <b>EUCLID</b> (V10.6, MUTATE\'s place): HITS, STEPS 2–64, ROTATE write the track\'s pattern live; K4 LANE (DRUM-X: each sound its own; V10.7 <b>ALL</b>, the default: K1 DENSITY 1–8 writes a whole kit, a lane picked writes only that lane) or VARY; MODES adds ACCENT GHOST RATCHET VARY (DRUM-X) or MOTION HARMONY OCTAVE SLIDE; notes in the track\'s SCL, else the key the other tracks fit (FROM Tn), else NEW KEY; OCT+ a new variation, OCT− the one before. REC + knobs while playing: '
                   'automation (64 records a section, MOTION page plays / clears them, AUTO LIST edits them).</p>'
                   '<h4>PATTERN · TRACK</h4>' + knobs('LEN', 'DIV', 'SWG', 'GATE') + knobs('PIT', 'CHN', 'HUM', 'RECQ')))
     b.append(card('SCALE · ARP', HEAT[0],

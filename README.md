@@ -65,7 +65,8 @@ data USB cable straight into the computer, and keep it connected until the page 
 **Sequencer and recording**
 - Piano roll on every SEQ page; step components (SHIFT, CHORD, RATCHET, ARP…); EUCLID and MODES; PLAYHEADS; STRETCH.
 - **SEQ › EUCLID and MODES** (V10.6, in MUTATE's place; MUTATE is gone): HITS, STEPS (2–64) and ROTATE write a
-  euclidean pattern, live; on DRUM-X each of the eight sounds its own (LANE), on a melodic track the notes in the
+  euclidean pattern, live; on DRUM-X each of the eight sounds its own (LANE; V10.7: LANE ALL, KNOB 1 DENSITY, writes
+  a whole kit), on a melodic track the notes in the
   track's SCL, or the key the other tracks fit, or a new one. MODES adds ACCENT, GHOST, RATCHET and VARY (DRUM-X) or
   MOTION, HARMONY, OCTAVE and SLIDE (melodic). OCT+ a new variation, OCT− the one before; GLO + G4 UNDO.
 - **REC + A3** undo / redo, **REC + B3** quantize on/off, **REC + knob 2** REC Q; REC and PLAY independent.
@@ -75,7 +76,7 @@ data USB cable straight into the computer, and keep it connected until the page 
 **Connection**
 - USB name **FM-1**, so the apps made for the FM-1 find it; USB STEMS (8 channels: T1–T6 + FX) for recording in a DAW.
 
-The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10 (V10.6).
+The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10 (V10.7).
 
 ## Reporting a crash
 
@@ -386,6 +387,25 @@ With FX held the keys become effects that act while hel…8050 tokens truncated�
   Automatable. Costs nothing on the audio: a copy of the step once per step.
 
 ## Changelog
+
+### V10.7
+- **SEQ › EUCLID on DRUM-X: LANE ALL**. KNOB 4 LANE has nine values, **ALL** (the default) then BD SD CP CH OH TM RS
+  CB. With ALL, KNOB 1 is **DENSITY** (1–8, default 4) instead of HITS, and DENSITY, STEPS and ROTATE write a whole
+  kit: a kick, the snare on the backbeat (steps 5 and 13 of 16), closed hats (the open hat chokes the closed one), and
+  sparser clap, open hat, tom, rim and bell as density rises; ROTATE turns the kick and the percussion (the groove),
+  the snare and hats stay. Each density sets every lane's HITS / STEPS / ROTATE, so picking a lane afterwards shows
+  them. With one lane picked, HITS / STEPS / ROTATE (and MODES, OCT+ / OCT−) write **only that lane**; the others stay
+  as they were (a longer lane, least common multiple up to 64, makes them repeat). Turning LANE writes nothing.
+- **EDIT held + PRESETS**: jumps to the first sound of the next / previous engine (its name on screen) instead of
+  scrolling through every preset. Not while a momentary tweak (EDIT held + a knob turned) is in progress.
+- **Fix**: SEQ + SELECT (the sequence dice) on a DRUM-X track gave an empty or almost empty pattern when the
+  generator's genre had no drums (NEO CLASSIC) or with AMBIENT's sparse map; it now always plays a beat (a kit
+  pattern that comes out with almost no hits is thrown again).
+- **EUCLID's VARY only moves hits** (a step); it no longer adds a pickup or drops hits, so **HITS is exactly the number
+  of hits / notes that sound** (HITS 3: three hits).
+- **REC held alone = UNDO**: hold REC past HOLD (~0.5 s) and let go without touching anything else (no key, knob,
+  button or OCT): UNDO of the last big change; hold it alone again: redo. Anything used while REC is held keeps it the
+  REC layer as before (CLICK, REC Q, A3 …); a REC tap still arms recording; GLO + G4 still works.
 
 ### V10.6
 - **SEQ › EUCLID and MODES replace MUTATE**: the SEQ chain is STEP · LENGTH · TRACK · EUCLID · MODES · PLAYHEADS ·

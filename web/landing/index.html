@@ -295,7 +295,7 @@ footer .tm{flex-basis:100%;letter-spacing:0}
     <div class="organs">
       <div class="org brk"><div class="hd"><span class="circ">A</span><span data-i18n="a_o">engines</span></div><h3 data-i18n="a_h">11 synthesis engines</h3><p data-i18n="a_p">ANALOG, FM6 (six operators, 32 algorithms, DX7 banks), PHASE, LOFI, VOICE (it sings words in Spanish, English and Japanese), WHEEL, NOISE, ANIMAL (birds, insects and frogs from physical models), STRING (a plucked, struck or bowed string), ADD (additive) and DRUM-X. No samples: everything is synthesized.</p></div>
       <div class="org brk"><div class="hd"><span class="circ">B</span><span data-i18n="b_o">heart</span></div><h3 data-i18n="b_h">DRUM-X</h3><p data-i18n="b_p">A drum kit of eight synthesized sounds, each with two sides: MORPH moves the whole kit from one to the other, live. In every octave the same keys: ratchets above, short, ghost and flam hits below.</p></div>
-      <div class="org brk"><div class="hd"><span class="circ">C</span><span data-i18n="c_o">nervous system</span></div><h3 data-i18n="c_h">64-step sequencer</h3><p data-i18n="c_p">A piano roll per track, chords, probability, ratchets, extra playheads, recording off the grid to a 64th of a step, and EUCLID, which writes euclidean patterns live: drums lane by lane, melodies in key.</p></div>
+      <div class="org brk"><div class="hd"><span class="circ">C</span><span data-i18n="c_o">nervous system</span></div><h3 data-i18n="c_h">64-step sequencer</h3><p data-i18n="c_p">A piano roll per track, chords, probability, ratchets, extra playheads, recording off the grid to a 64th of a step, and EUCLID, which writes euclidean patterns live: a whole drum kit from one DENSITY knob or lane by lane, melodies in key.</p></div>
       <div class="org brk"><div class="hd"><span class="circ">D</span><span data-i18n="d_o">membrane</span></div><h3 data-i18n="d_h">Effects and master</h3><p data-i18n="d_p">Delay, five reverbs (SHIMMER, RESO, CLOUD…), chorus, slicer, live punch-in effects, a DJ filter on the whole mix and a master with limiter, clip, punch, tape and a 4-band EQ.</p></div>
       <div class="org brk"><div class="hd"><span class="circ">E</span><span data-i18n="e_o">memory</span></div><h3 data-i18n="e_h">Songs and the generator</h3><p data-i18n="e_p">Four sections per project, an ARRANGE page to chain them, and a generator that writes a whole song idea: from a genre, or in EXPLORE, breaking every rule.</p></div>
       <div class="org brk"><div class="hd"><span class="circ">F</span><span data-i18n="f_o">roots</span></div><h3 data-i18n="f_h">USB audio and MIDI</h3><p data-i18n="f_p">The FM-1 becomes an audio interface that keeps its time: every track on its own channel into your DAW (STEMS), ready to record each part on its own. MIDI over USB, Bluetooth and TRS.</p><span class="go" data-i18n="f_go">A separate product: coming soon</span></div>
@@ -317,7 +317,7 @@ footer .tm{flex-basis:100%;letter-spacing:0}
       <div class="org brk"><div class="hd"><span class="circ">2</span><span data-i18n="nv2_o">button</span></div><h3 data-i18n="nv2_h">The button: in, or on</h3><p data-i18n="nv2_p">From another section, the page you left there. Inside, the first page of the next group, round.</p></div>
       <div class="org brk"><div class="hd"><span class="circ">3</span><span data-i18n="nv3_o">PRESETS</span></div><h3 data-i18n="nv3_h">PRESETS loads presets</h3><p data-i18n="nv3_p">The track's sounds everywhere, the patterns in SEQ, the genre in GEN. Never a page or a track.</p></div>
       <div class="org brk"><div class="hd"><span class="circ">4</span><span data-i18n="nv4_o">KNOB 1</span></div><h3 data-i18n="nv4_h">KNOB 1 picks</h3><p data-i18n="nv4_p">The step, the bar, the slot, the stage, the kit's sound. The track is always ALGORITHM's.</p></div>
-      <div class="org brk"><div class="hd"><span class="circ">5</span><span data-i18n="nv5_o">hold</span></div><h3 data-i18n="nv5_h">Hold = the layer</h3><p data-i18n="nv5_p">A button held puts its shortcuts on the keys: SEQ + G5 clears a step, SAVE + C5 names, GLO + G4 undoes. Held + SELECT: GEN, the dice, the tempo.</p></div>
+      <div class="org brk"><div class="hd"><span class="circ">5</span><span data-i18n="nv5_o">hold</span></div><h3 data-i18n="nv5_h">Hold = the layer</h3><p data-i18n="nv5_p">A button held puts its shortcuts on the keys: SEQ + G5 clears a step, SAVE + C5 names, REC held alone undoes (again: redo). EDIT + PRESETS jumps between engines; held + SELECT: GEN, the dice, the tempo.</p></div>
       <div class="org brk"><div class="hd"><span class="circ">6</span><span data-i18n="nv6_o">screen</span></div><h3 data-i18n="nv6_h">The screen says where</h3><p data-i18n="nv6_p">Tabs on top are the section's groups, a dot a page; the footer says SECTION · GROUP · page and n/N.</p></div>
     </div>
   </section>
@@ -577,7 +577,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
     i_eb:'Qué tiene adentro',i_h2:'Un organismo, nueve especies',i_in:'Cada motor es una especie, dibujada por el propio firmware. En HOME cada pista es una criatura de la especie de su motor: su forma sale de sus perillas, y se hincha y se calienta con su propio audio.',zoo_k:'Los nueve motores, como los dibuja el FM-1',
     a_o:'motores',a_h:'11 motores de síntesis',a_p:'ANALOG, FM6 (seis operadores, 32 algoritmos, bancos DX7), PHASE, LOFI, VOICE (canta palabras en castellano, inglés y japonés), WHEEL, NOISE, ANIMAL (pájaros, insectos y ranas con modelos físicos), STRING (una cuerda pulsada, golpeada o con arco), ADD (aditiva) y DRUM-X. Sin samples: todo es síntesis.',
     b_o:'corazón',b_h:'DRUM-X',b_p:'Una batería de ocho sonidos sintetizados, cada uno con dos caras: MORPH lleva todo el kit de una a la otra, en vivo. En cada octava, las mismas teclas: ratchets arriba, golpes cortos, ghost y flam abajo.',
-    c_o:'sistema nervioso',c_h:'Secuenciador de 64 pasos',c_p:'Un piano roll por pista, acordes, probabilidad, ratchets, cabezales extra, grabación fuera de la grilla hasta 1/64 de paso, y EUCLID, que escribe patrones euclidianos en vivo: la batería carril por carril, las melodías en tonalidad.',
+    c_o:'sistema nervioso',c_h:'Secuenciador de 64 pasos',c_p:'Un piano roll por pista, acordes, probabilidad, ratchets, cabezales extra, grabación fuera de la grilla hasta 1/64 de paso, y EUCLID, que escribe patrones euclidianos en vivo: la batería entera con una perilla DENSITY o carril por carril, las melodías en tonalidad.',
     d_o:'membrana',d_h:'Efectos y master',d_p:'Delay, cinco reverbs (SHIMMER, RESO, CLOUD…), chorus, slicer, efectos punch-in en vivo, un filtro DJ sobre toda la mezcla y un master con limiter, clip, punch, cinta (TAPE) y EQ de 4 bandas.',
     e_o:'memoria',e_h:'Canciones y generador',e_p:'Cuatro secciones por proyecto, una página ARRANGE para encadenarlas, y un generador que escribe una idea de canción entera: desde un género, o en EXPLORE, rompiendo todas las reglas.',
     f_o:'raíces',f_h:'Audio USB y MIDI',f_p:'El FM-1 se vuelve una interfaz de audio que no pierde el tiempo: cada pista en su propio canal hacia tu DAW (STEMS), listo para grabar cada parte por separado. MIDI por USB, Bluetooth y TRS.',f_go:'Producto aparte: muy pronto',
@@ -586,7 +586,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
     nv2_o:'botón',nv2_h:'El botón: entrar o saltar',nv2_p:'Desde otra sección, la página donde la dejaste. Adentro, la primera página del grupo siguiente, en ronda.',
     nv3_o:'PRESETS',nv3_h:'PRESETS carga presets',nv3_p:'Los sonidos de la pista en todos lados, los patrones en SEQ, el género en GEN. Nunca una página ni una pista.',
     nv4_o:'KNOB 1',nv4_h:'KNOB 1 elige',nv4_p:'El paso, el compás, el slot, la etapa, el sonido del kit. La pista, siempre ALGORITHM.',
-    nv5_o:'mantener',nv5_h:'Mantener = la capa',nv5_p:'Un botón mantenido pone sus atajos en las teclas: SEQ + G5 borra un paso, SAVE + C5 nombra, GLO + G4 deshace. Mantenido + SELECT: GEN, los dados, el tempo.',
+    nv5_o:'mantener',nv5_h:'Mantener = la capa',nv5_p:'Un botón mantenido pone sus atajos en las teclas: SEQ + G5 borra un paso, SAVE + C5 nombra, REC mantenido solo deshace (otra vez: rehace). EDIT + PRESETS salta entre motores; mantenido + SELECT: GEN, los dados, el tempo.',
     nv6_o:'pantalla',nv6_h:'La pantalla dice dónde',nv6_p:'Arriba las pestañas son los grupos de la sección, un punto por página; abajo, SECCIÓN · GRUPO · página y n/N.',
     m_eb:'Aprender',m_h2:'Manual y cheat sheets',m_in:'El manual completo explica cada página y cada perilla. Las cheat sheets resumen los controles y las páginas de sonido en una hoja cada una, para tener al lado del FM-1.',
     mi_k:'Nuevo · manual interactivo',mi_h:'El manual interactivo',mi_p:'Tocá cualquier control del FM-1 y mirá qué hace solo, mantenido y en combinación, con las pantallas reales del firmware. Buscá cada comando, seguí recetas paso a paso, ponete al día con las novedades.',mi_go:'Abrir el manual →',
@@ -613,7 +613,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
     i_eb:'里面有什么',i_h2:'一个有机体，九个物种',i_in:'每种引擎都是一个物种，由固件亲自绘制。在 HOME 页面，每条音轨都是其引擎物种的一个生物：形状来自它的旋钮，并随自身的音频膨胀、升温。',zoo_k:'九种引擎，正如 FM-1 所绘',
     a_o:'引擎',a_h:'11 种合成引擎',a_p:'ANALOG、FM6（六算子、32 种算法、DX7 音色库）、PHASE、LOFI、VOICE（能用西班牙语、英语和日语唱出歌词）、WHEEL、NOISE、ANIMAL（用物理模型模拟鸟、昆虫和青蛙的叫声）、STRING（拨奏、敲击或弓奏的琴弦）、ADD（加法合成）和 DRUM-X。没有采样：一切都是合成的。',
     b_o:'心脏',b_h:'DRUM-X',b_p:'由八种合成声音组成的鼓组，每种声音都有两面：MORPH 可以现场把整个鼓组从一面推到另一面。每个八度都是同样的琴键：往上是连击，往下是短击、幽灵音和装饰音（flam）。',
-    c_o:'神经系统',c_h:'64 步音序器',c_p:'每条音轨一个钢琴卷帘，和弦、概率、连击、额外播放头，精确到 1/64 步的离网格录音，以及实时生成欧几里得节奏型的 EUCLID：鼓逐轨生成，旋律保持在调内。',
+    c_o:'神经系统',c_h:'64 步音序器',c_p:'每条音轨一个钢琴卷帘，和弦、概率、连击、额外播放头，精确到 1/64 步的离网格录音，以及实时生成欧几里得节奏型的 EUCLID：一个 DENSITY 旋钮生成整套鼓，或逐轨生成，旋律保持在调内。',
     d_o:'细胞膜',d_h:'效果器与总线',d_p:'延迟、五种混响（SHIMMER、RESO、CLOUD…）、合唱、切片器、现场即时效果、作用于整个混音的 DJ 滤波器，以及带限幅、削波、冲击力、磁带饱和和四段均衡器的总线。',
     e_o:'记忆',e_h:'歌曲与生成器',e_p:'每个工程四个段落，用 ARRANGE 页面串联，还有一个写出完整歌曲构思的生成器：按曲风，或在 EXPLORE 模式下打破所有规则。',
     f_o:'根系',f_h:'USB 音频与 MIDI',f_p:'FM-1 变成一台时间稳定的音频接口：每条音轨各占一个通道送进你的 DAW（STEMS），可分别录制每一轨。支持 USB、蓝牙和 TRS MIDI。',f_go:'独立产品：即将推出',
@@ -622,7 +622,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
     nv2_o:'按键',nv2_h:'分区按键：进入或跳转',nv2_p:'从别的分区按下，回到你上次离开的页面；已在分区内，跳到下一组的第一页，循环。',
     nv3_o:'PRESETS',nv3_h:'PRESETS 载入预设',nv3_p:'到处都是音轨的音色，SEQ 里是节奏型，GEN 里是曲风。从不切换页面或音轨。',
     nv4_o:'KNOB 1',nv4_h:'KNOB 1 负责选择',nv4_p:'步、小节、槽位、阶段、鼓组里的声音。音轨永远由 ALGORITHM 选择。',
-    nv5_o:'按住',nv5_h:'按住 = 快捷层',nv5_p:'按住一个按键，琴键上就是它的快捷功能：SEQ + G5 清除一步，SAVE + C5 命名，GLO + G4 撤销。按住 + SELECT：GEN、骰子、速度。',
+    nv5_o:'按住',nv5_h:'按住 = 快捷层',nv5_p:'按住一个按键，琴键上就是它的快捷功能：SEQ + G5 清除一步，SAVE + C5 命名，单独按住 REC 撤销（再按住：重做）。EDIT + PRESETS 在引擎之间跳转；按住 + SELECT：GEN、骰子、速度。',
     nv6_o:'屏幕',nv6_h:'屏幕告诉你在哪',nv6_p:'顶部的标签是分区的分组，每页一个点；底部显示 分区 · 分组 · 页面 和 n/N。',
     m_eb:'学习',m_h2:'手册与速查表',m_in:'完整手册讲解每个页面和每个旋钮。速查表把控制和音色页面各浓缩成一张，方便放在 FM-1 旁边。',
     mi_k:'新 · 交互式手册',mi_h:'交互式手册',mi_p:'点击 FM-1 上的任意控件，查看它单独、按住和组合时的作用，并配有固件的真实画面。搜索每条命令，跟着分步教程操作，了解各版本的新内容（西班牙文 / 英文）。',mi_go:'打开手册 →',
@@ -649,7 +649,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
     i_eb:'中身',i_h2:'ひとつの有機体、9 つの種',i_in:'エンジンはそれぞれひとつの種で、ファームウェア自身が描きます。HOME では各トラックがそのエンジンの種の生き物になり、形はノブから生まれ、自分の音でふくらみ、熱を帯びます。',zoo_k:'9 つのエンジン、FM-1 が描くとおりに',
     a_o:'エンジン',a_h:'11 のシンセシスエンジン',a_p:'ANALOG、FM6（6 オペレーター、32 アルゴリズム、DX7 バンク）、PHASE、LOFI、VOICE（スペイン語・英語・日本語で歌詞を歌う）、WHEEL、NOISE、ANIMAL（物理モデルによる鳥・虫・カエルの声）、STRING（はじく・たたく・弓でこする弦）、ADD（加算合成）、DRUM-X。サンプルなし、すべてシンセシス。',
     b_o:'心臓',b_h:'DRUM-X',b_p:'8 つの合成サウンドのドラムキット。各サウンドに A と B の 2 つの顔があり、MORPH でキット全体をライブで行き来できます。どのオクターブでも同じ鍵盤：上はラチェット、下はショート・ゴースト・フラム。',
-    c_o:'神経系',c_h:'64 ステップのシーケンサー',c_p:'トラックごとのピアノロール、コード、確率、ラチェット、追加のプレイヘッド、1/64 ステップ単位でグリッドを外せる録音、そしてユークリッド・パターンをリアルタイムで書く EUCLID（ドラムはレーンごと、メロディーはキーの中で）。',
+    c_o:'神経系',c_h:'64 ステップのシーケンサー',c_p:'トラックごとのピアノロール、コード、確率、ラチェット、追加のプレイヘッド、1/64 ステップ単位でグリッドを外せる録音、そしてユークリッド・パターンをリアルタイムで書く EUCLID（ドラムは DENSITY ひとつでキット全体、またはレーンごと、メロディーはキーの中で）。',
     d_o:'膜',d_h:'エフェクトとマスター',d_p:'ディレイ、5 種類のリバーブ（SHIMMER、RESO、CLOUD…）、コーラス、スライサー、ライブのパンチインエフェクト、ミックス全体にかかる DJ フィルター、リミッター・クリップ・パンチ・テープ・4 バンド EQ 付きのマスター。',
     e_o:'記憶',e_h:'ソングとジェネレーター',e_p:'プロジェクトごとに 4 つのセクション、それをつなぐ ARRANGE ページ、そして曲のアイデアを丸ごと書くジェネレーター：ジャンルから、または EXPLORE ですべてのルールを破って。',
     f_o:'根',f_h:'USB オーディオと MIDI',f_p:'FM-1 がタイミングの正確なオーディオインターフェースに。各トラックを別々のチャンネルで DAW へ（STEMS）。パートごとに別々に録音できます。USB、Bluetooth、TRS の MIDI に対応。',f_go:'別製品：近日公開',
@@ -658,7 +658,7 @@ const energy=(k,t)=>reduce?.35:Math.exp(-(((t/BEAT)*DIV[k%9]/4)%1)*5);
     nv2_o:'ボタン',nv2_h:'ボタン：入る、または進む',nv2_p:'別のセクションからは、前回いたページへ。中にいれば、次のグループの最初のページへ（一巡します）。',
     nv3_o:'PRESETS',nv3_h:'PRESETS はプリセット',nv3_p:'どこでもトラックの音色、SEQ ではパターン、GEN ではジャンル。ページやトラックは変えません。',
     nv4_o:'KNOB 1',nv4_h:'KNOB 1 で選ぶ',nv4_p:'ステップ、小節、スロット、ステージ、キットの音。トラックは常に ALGORITHM で選びます。',
-    nv5_o:'長押し',nv5_h:'長押し = レイヤー',nv5_p:'ボタンを押さえると鍵盤がショートカットに：SEQ + G5 でステップ消去、SAVE + C5 で名前、GLO + G4 で UNDO。押さえて SELECT：GEN、ダイス、テンポ。',
+    nv5_o:'長押し',nv5_h:'長押し = レイヤー',nv5_p:'ボタンを押さえると鍵盤がショートカットに：SEQ + G5 でステップ消去、SAVE + C5 で名前、REC だけを長押しで UNDO（もう一度で REDO）。EDIT + PRESETS でエンジン間をジャンプ；押さえて SELECT：GEN、ダイス、テンポ。',
     nv6_o:'画面',nv6_h:'画面が居場所を示す',nv6_p:'上のタブはセクションのグループ（1 ページに 1 つの点）、下には セクション · グループ · ページ と n/N。',
     m_eb:'学ぶ',m_h2:'マニュアルとチートシート',m_in:'フルマニュアルはすべてのページとノブを説明します。チートシートは操作とサウンドのページをそれぞれ 1 枚にまとめたもので、FM-1 の横に置いておけます。',
     mi_k:'新着 · インタラクティブマニュアル',mi_h:'インタラクティブマニュアル',mi_p:'FM-1 のどの操作子でも触れると、単独・長押し・組み合わせで何をするかが、ファームウェアの実際の画面とともにわかります。すべてのコマンドを検索し、手順どおりのレシピや新機能も確認できます（スペイン語 / 英語）。',mi_go:'マニュアルを開く →',
