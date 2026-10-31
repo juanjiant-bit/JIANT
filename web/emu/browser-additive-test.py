@@ -24,11 +24,12 @@ try:
         assert page.locator('#sample-bank-controls').count()==0
         page.click('#go');page.wait_for_function("document.querySelector('#go').textContent==='On'",timeout=30000)
         page.wait_for_timeout(4200)
-        # Tap SAVE, then SELECT from USER to PRESETS; KNOB 2 selects the engine.
+        # Tap SAVE (V10.2: TIMELINE), then SELECT to the chain's last page, PRESETS; KNOB 2 selects the engine.
         page.locator('[role="button"][aria-label="SAVE"]').click(delay=100)
         page.wait_for_timeout(150)
         page.locator('[role="slider"][aria-label="SELECT"]').focus()
-        page.keyboard.press('ArrowRight');page.wait_for_timeout(150)
+        for _ in range(6):
+            page.keyboard.press('ArrowRight');page.wait_for_timeout(150)
         page.locator('[role="slider"][aria-label="KNOB 2"]').focus()
         page.keyboard.press('ArrowLeft');page.wait_for_timeout(150)
         page.locator('[role="slider"][aria-label="KNOB 2"]').evaluate('(el)=>el.blur()')
