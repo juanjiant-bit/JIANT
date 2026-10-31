@@ -161,7 +161,7 @@ def controls():
     pb = [
         ('HOME', 'ECO: ECO · MACROS  |  BEING: BEING · ROUTES  |  GEN: GEN 1 · GEN 2 · GEN 3', 'MENU'),
         ('EDIT', 'SOUND: EDIT 1 · EDIT 2  |  TONE: FILTER · MORPH · RETRIG · ROTOR · VOICE · VOICE 2 · WORDS  |  FOCUS (FM6: … OPERATOR: OPERATOR · OP ENV · OPERATOR 2; DRUM: KIT: KIT · KIT 2 · KIT 3  |  SOUND: SOUND 1–4  |  LEVELS 1–2  |  TONE: X-MOD · FILTER · STEREO · VOICE)', 'INIT · RECALL · sound mutes'),
-        ('SEQ', 'PATTERN: PATTERN · STRETCH · PLAYHEADS  |  TRACK: TRACK · MUTATE  |  BAR: BAR · STEP · NOTE  |  STEP: COMP · COMP 2  |  AUTO: AUTOMATION · AUTO LIST', 'SEQ TOOLS'),
+        ('SEQ', 'STEP  |  LENGTH: LENGTH · TRACK  |  EUCLID: EUCLID · MODES  |  PLAYHEADS  |  STRETCH  |  COMP: COMP · COMP 2  |  AUTO: AUTOMATION · AUTO LIST', 'SEQ TOOLS'),
         ('FX', 'TRACK: SENDS · DIST · AUTO PAN  |  BUSES  |  DELAY: DLY 1–3  |  REVERB 1–2  |  CHORUS  |  SLICER: SLICER · SL BUS 1–2 · SL PITCH  |  PUNCH  |  MASTER · TAPE · EQ',
          'PUNCH-IN FX'),
         ('GLO', 'LIVE: MANO · RIELES  |  MIX: MIXER · SENDS  |  GLOBAL  |  SYSTEM  |  COMPS (at power-on GLO opens MIXER)', 'MUTE · SOLO · LEVEL · TAP'),
@@ -187,7 +187,7 @@ def controls():
     fx_b = {'F#3': 'M1', 'G#3': 'M2', 'A#3': 'M3', 'C#4': 'M4', 'D#4': 'M5', 'F#4': 'M6', 'G#4': 'LOOP 3', 'A#4': 'TGT',
             'C#5': 'LOOP 5', 'D#5': 'LOOP 7', 'F#5': 'GLITCH'}
     glo_w = {'F3': 'SOLO 1', 'G3': 'SOLO 2', 'A3': 'SOLO 3', 'B3': 'SOLO 4', 'C4': 'SOLO 5', 'D4': 'SOLO 6',
-             'E4': 'ALL', 'F4': 'TAP', 'G4': 'UNDO', 'A4': 'FRZ', 'B4': 'RVRT ALL'}
+             'E4': 'ALL', 'F4': 'TAP', 'G4': 'UNDO'}
     glo_b = {'F#3': 'M1', 'G#3': 'M2', 'A#3': 'M3', 'C#4': 'M4', 'D#4': 'M5', 'F#4': 'M6', 'G#4': 'KICK',
              'A#4': 'SNR', 'C#5': 'HAT', 'D#5': 'PERC'}
     sv_w = {'F3': 'PLAY A', 'G3': 'PLAY B', 'A3': 'PLAY C', 'B3': 'PLAY D', 'C4': 'STORE A', 'D4': 'STORE B',
@@ -203,7 +203,7 @@ def controls():
                   'clears it.</p><h4>KNOBS</h4>' + knobs('FILTER', 'CRUSH', 'THROW', 'DEPTH')))
     b.append(card('GLO · MIX', HEAT[1], keyboard(glo_w, glo_b) +
                   '<p>Black 1–6 mute T1–T6 (latched), 7–10 the DRUM-X groups. White: solo while held, E4 unmutes all, '
-                  'F4 tap tempo, G4 <b>UNDO</b> the last big change (again: redo), A4 <b>FREEZE</b> MUTATE, B4 <b>REVERT ALL</b> (every track back to MUTATE\'s anchor). SELECT: the tempo. PLAY: restart.</p><h4>KNOBS</h4>' +
+                  'F4 tap tempo, G4 <b>UNDO</b> the last big change (again: redo). SELECT: the tempo. PLAY: restart.</p><h4>KNOBS</h4>' +
                   knobs('LEVEL T1', 'LEVEL T2', 'LEVEL T3', 'LEVEL T4') +
                   '<p class="dim" style="margin-top:4px">T5 or T6 selected: the knobs are T3–T6.</p>'))
     b.append(card('SAVE · SONG', HEAT[6], keyboard(sv_w, {}) +
@@ -219,7 +219,7 @@ def controls():
                                   'G3 clears them (only tracks that sound). LFO + SELECT: the track\'s LFO diced.', ('M1', 'M2', 'M3', 'M4')),
         ('SCL · SCALE', HEAT[0], 'Any key sets the ROOT. ROOT and SCALE are every melodic track\'s (and RESO\'s).',
          ('ROOT', 'SCL', 'OFS', 'PIT')),
-        ('SEQ · TOOLS', HEAT[4], 'On the SEQ pages: F3 CLEAR · G3 REVERSE · A3 B3 SHIFT · C4 RANDOM · D4 COOK · E4 BEAT · F4 CLR AUTO (the automation) · G5 CLR STEP (AUTO LIST: the record) · D5 REVERT (the track back to MUTATE\'s anchor; GLO + G4 undoes).',
+        ('SEQ · TOOLS', HEAT[4], 'On the SEQ pages: F3 CLEAR · G3 REVERSE · A3 B3 SHIFT · F4 CLR AUTO (the automation) · G5 CLR STEP (AUTO LIST: the record). DRUM: G4 CLR · A4 REV · B4 FILL the lane (black 1–8 pick it).',
          ('LEN', 'DIV', 'SWING', 'GATE')),
         ('REC · RECORD', '#ef4444', 'F3 CLEAR the track (at once; GLO + G4 undoes it), G3 the metronome CLICK.', ('CLICK', '-', '-', '-')),
     ]
@@ -267,7 +267,8 @@ def controls():
         ('SCL · ARP', HEAT[2], [('SCL', 'ROOT SCALE QUANT ALL TR'), ('CHORD', 'CHORD VOICING STRUM -'), ('ARP', 'MODE RATE OCT GATE'),
                                 ('ARP 2', 'SWING PROB HOLD ORDER')]),
         ('SEQ', HEAT[4], [('PATTERN', 'LEN DIV SWING GATE'), ('STRETCH', 'x/÷ REPEAT NUDGE ROTATE'), ('PLAYHEADS', 'HEAD RATE DIR INTVL'),
-                          ('TRACK', 'PITCH CHANCE HUMAN REC Q'), ('MUTATE', 'SOUND PATTERN AMOUNT MODE'),
+                          ('TRACK', 'PITCH CHANCE HUMAN REC Q'), ('EUCLID', 'HITS STEPS ROTATE VARY'), ('EUCLID · DRUM', 'HITS STEPS ROTATE LANE'),
+                          ('MODES', 'MOTION HARMONY OCTAVE SLIDE'), ('MODES · DRUM', 'ACCENT GHOST RATCHET VARY'),
                           ('BAR', 'BAR LEN - -'), ('STEP', 'STEP NOTE TIME FLAG'), ('STEP · DRUM', 'STEP LANE HIT ACC'), ('NOTE', 'FOCUS PITCH MOVE MICRO'),
                           ('AUTOMATION', 'PLAY EVENT LOCK CLEAR'), ('AUTO LIST', 'ROW STEP PARAM VALUE'),
                           ('COMP', 'STEP TYPE VAL EVERY'), ('COMP 2', 'STEP TYPE VAL EVERY')]),
@@ -389,8 +390,8 @@ def sound():
     b.append('</div>')
     b.append('<div class="grid g3" style="margin-top:22px">')
     b.append(card('SEQUENCER', HEAT[4],
-                  '<p>64 steps a track, up to 4 notes a step, piano roll and drum grid. One chain, five groups: PATTERN · TRACK · BAR (BAR: K1 the bar; STEP: the roll / grid, K1 all 64 steps; NOTE) · STEP (COMP: one step large, its chips) · AUTO; SELECT walks, SEQ jumps to the next group, PRESETS loads a pattern. <b>Hold a step + turn a knob</b>: '
-                  'a parameter lock. Step recording: hold a chord + KNOB 1 its length; + ARP: arpeggiated (K1 rate, K2 order, K3 oct). COMP / COMP 2: two components a step (CHANCE, RATCH, ARP NOTES / SEQ / SCALE, TRIG, RAND, OCT, TONAL, BEND, ECHO, PULSE, JUMP, REV, FILL, KILL, WALK, CLIMB, TOUCH: a kit\'s SHORT / GHOST / FLAM); a TRIG or FILL wins; WALK / CLIMB: a degree / an octave further every N loops (K4), UP DOWN UP-DN RND over a range (K3), stackable; ARP: ORDER × range, RATE in note values (x1 1/32 1/32T 1/64 1/64T 1/128); RATCH / ECHO: DIV; EVERY (KNOB 4): the loops the step\'s components play on (ALWAYS 1:2 2:2 1:3 .. 4:4 1:8 FIRST !FIRST SKIP). TRACK: PITCH, CHANCE thins the whole track, HUMAN one amount (velocity, timing, gate, decay / release), REC Q. STRETCH / REPEAT act as the knob turns; ROTATE reads the sequence from another step; NOTE\'s MICRO moves a step off the grid in 64ths (±32/64; REC Q 0 % records where you played, to the 64th). REC + knobs while playing: '
+                  '<p>64 steps a track, up to 4 notes a step, piano roll and drum grid. One chain (V10.6): STEP (the roll / grid, K1 all 64 steps) · LENGTH · TRACK · EUCLID · MODES · PLAYHEADS · STRETCH · COMP · COMP 2 · AUTOMATION · AUTO LIST; SELECT walks, SEQ jumps to the next group, PRESETS loads a pattern. <b>Hold a step + turn a knob</b>: '
+                  'a parameter lock. Step recording: hold a chord + KNOB 1 its length; + ARP: arpeggiated (K1 rate, K2 order, K3 oct). COMP / COMP 2: two components a step (CHANCE, RATCH, ARP NOTES / SEQ / SCALE, TRIG, RAND, OCT, TONAL, BEND, ECHO, PULSE, JUMP, REV, FILL, KILL, WALK, CLIMB, TOUCH: a kit\'s SHORT / GHOST / FLAM); a TRIG or FILL wins; WALK / CLIMB: a degree / an octave further every N loops (K4), UP DOWN UP-DN RND over a range (K3), stackable; ARP: ORDER × range, RATE in note values (x1 1/32 1/32T 1/64 1/64T 1/128); RATCH / ECHO: DIV; EVERY (KNOB 4): the loops the step\'s components play on (ALWAYS 1:2 2:2 1:3 .. 4:4 1:8 FIRST !FIRST SKIP). TRACK: PITCH, CHANCE thins the whole track, HUMAN one amount (velocity, timing, gate, decay / release), REC Q. STRETCH / REPEAT act as the knob turns; ROTATE reads the sequence from another step; NOTE\'s MICRO moves a step off the grid in 64ths (±32/64; REC Q 0 % records where you played, to the 64th). <b>EUCLID</b> (V10.6, MUTATE\'s place): HITS, STEPS 2–64, ROTATE write the track\'s pattern live; K4 LANE (DRUM-X: each sound its own) or VARY; MODES adds ACCENT GHOST RATCHET VARY (DRUM-X) or MOTION HARMONY OCTAVE SLIDE; notes in the track\'s SCL, else the key the other tracks fit (FROM Tn), else NEW KEY; OCT+ a new variation, OCT− the one before. REC + knobs while playing: '
                   'automation (64 records a section, MOTION page plays / clears them, AUTO LIST edits them).</p>'
                   '<h4>PATTERN · TRACK</h4>' + knobs('LEN', 'DIV', 'SWG', 'GATE') + knobs('PIT', 'CHN', 'HUM', 'RECQ')))
     b.append(card('SCALE · ARP', HEAT[0],

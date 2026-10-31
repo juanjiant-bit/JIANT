@@ -111,7 +111,7 @@ The names below are the ones the firmware uses (the HARDWARE CALIBRATION screen 
 | **GLO** | The GLO section: from elsewhere the page last shown (at power-on MIXER); inside **LIVE → MIX → GLOBAL → SYSTEM**, round (0.9.11: LIVE, the live sequences, first). | **GLO** layer: mutes, solos, levels, tap tempo, UNDO. |
 | **SAVE** | The SAVE section: from elsewhere the page last shown, and USER or SECTIONS come with their **SAVE already picked** (SAVE, OCT+, OCT+ as before); inside **SONG → PROJECT → SOUND**, round (V10.2: TIMELINE first). | **SAVE** layer: play/store sections live; C5 NAME. |
 | **ARP** | The ARP section (ARP · ARP 2, one group): from elsewhere the page last shown; inside, back to ARP. A chord held + ARP during step recording still arpeggiates it. | (no layer) |
-| **SEQ** | The SEQ section: from elsewhere the page last shown (at power-on STEP, the piano roll); inside the next group: **PATTERN → TRACK → BAR → STEP → AUTO**, round. | **SEQ TOOLS** layer (on every SEQ page); G5 CLR STEP. |
+| **SEQ** | The SEQ section: from elsewhere the page last shown (at power-on STEP, the piano roll); inside the next group (V10.6): **STEP → LENGTH → EUCLID → PLAYHEADS → STRETCH → COMP → AUTO**, round. | **SEQ TOOLS** layer (on every SEQ page); G5 CLR STEP. |
 | **PLAY** | Start / stop. | — |
 | **REC** | Arms / disarms recording on the selected track. | **REC** layer: CLEAR, CLICK. |
 | **OCT− / OCT+** | Keyboard octave (−3 to +3; both together: back to 0; on a DRUM track the kit stays on its keys: ratchets above, SHORT / GHOST / FLAM below, see [5](#5-drum-x)). On action pages and in dialogs: **OCT−** = back / NO, **OCT+** = do it / YES. | — |
@@ -231,9 +231,9 @@ around it, still moving.
 
 **Messages** (0.9.5): a message on a lens page shows as a small pill near the foot of the panel, over the page, which
 keeps drawing and moving behind it (the header says it as well; not over HOME's beings or a layer's map); nothing goes
-dark. The pill keeps clear of the page's own words: where the foot is written (AUTO LIST's rows, MUTATE's lines) it
+dark. The pill keeps clear of the page's own words: where the foot is written (AUTO LIST's rows) it
 sits in the nearest free rows, and on a page with no free rows it is left out and the header alone says it. A page's
-**hint** (MUTATE's "OCT+ KEEP  GLO+A4 FREEZE", MOTION's and PUNCH's "REC + PLAY ...") comes only once you stay on the
+**hint** (V10.6: EUCLID's "TURN A KNOB: A PATTERN", MOTION's and PUNCH's "REC + PLAY ...") comes only once you stay on the
 page for about 0.8 s, never while SELECT walks past it, and each one at most twice in all (counted with the settings,
 so not again after a reboot). SAVE › TOOLS › NEW PROJECT starts them over. Tapping a layer button says nothing (the
 "HOLD [X] QUICK" hints are gone): hold it and its layer shows itself.
@@ -300,7 +300,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 | **EDIT** (a synth) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · MORPH · RETRIG · ROTOR · VOICE · VOICE 2 · WORDS (those the engine has) — **FOCUS**: FOCUS | up to 10 |
 | **EDIT** (FM6) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · VOICE · VOICE 2 — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 | 8 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: X-MOD · FILTER · STEREO · VOICE | 13 |
-| **SEQ** | **PATTERN**: PATTERN · STRETCH · PLAYHEADS — **TRACK**: TRACK · MUTATE — **BAR**: BAR · STEP · NOTE — **STEP**: COMP · COMP 2 — **AUTO**: AUTOMATION · AUTO LIST | 12 |
+| **SEQ** | (V10.6) **STEP**: STEP — **LENGTH**: LENGTH · TRACK — **EUCLID**: EUCLID · MODES — **PLAYHEADS**: PLAYHEADS — **STRETCH**: STRETCH — **COMP**: COMP · COMP 2 — **AUTO**: AUTOMATION · AUTO LIST | 11 |
 | **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DLY 2 · DLY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SL BUS · SL BUS 2 · SL PITCH — **MASTER**: MASTER — **PUNCH**: PUNCH | 16 |
 | **GLO** | **LIVE**: MANO · RIELES — **MIX**: MIXER · SENDS — **GLOBAL**: GLOBAL — **SYSTEM**: SYSTEM | 6 |
 | **ENV** | **TRACKS**: TRACKS · TRACKS DEST — **ENV**: ENV · ENV DEST — **STAGE**: STAGE | 5 |
@@ -320,8 +320,8 @@ the bars with KNOB 1 the bar and KNOB 2 LEN.
   (0.9.7, "today's being with a face") Each being is its species' spiky outline (the spikes as it sounds) in **three
   isotherms**, coloured by **its own level** like a thermal camera (quiet: cyan and blue; loud: red, orange and
   yellow; the inner lines warmer), and where its nuclei were a **face**: two eyes that **shut on a hit**, a mouth that
-  **opens with the level**. A muted track's being sleeps (a dim outline, its eyes shut). When **MUTATE** changes a
-  track, its being **looks up**, its number lights **white** and one ring in the accent opens round it. The cytoplasm's
+  **opens with the level**. A muted track's being sleeps (a dim outline, its eyes shut). (V10.6: the look up and the ring
+  went with MUTATE.) The cytoplasm's
   granules drift behind them (drawn by the screen alone: nothing of the sound's time). **MACROS**:
   KNOB 1–4 are **M1–M4** (the macros, as LFO held), the routes counted at the top left, LATCH at the right.
 - **BEING**: the track's being large, its four HOME knobs as organs at the corners (a gauge each, its value, a vein to
@@ -474,7 +474,8 @@ them page by page, a **SEQ** tap jumps to the next group.
 | PATTERN | STRETCH | STRETCH (/8 … /2, x1, x2 … x8) | REPEAT (OFF, x2 … x8, TO 64) | NUDGE | ROTATE (−32 … +32) |
 | PATTERN | PLAYHEADS | HEAD | RATE | DIR | INTERVAL |
 | TRACK | TRACK | PITCH | CHANCE | HUMAN | REC Q |
-| TRACK | MUTATE | SOUND (every) | PATTERN (every) | AMOUNT | MODE |
+| EUCLID | EUCLID (V10.6) | HITS | STEPS (2–64) | ROTATE | LANE (DRUM-X) · VARY (melodic) |
+| EUCLID | MODES (V10.6) | ACCENT · MOTION | GHOST · HARMONY | RATCHET · OCTAVE | VARY · SLIDE |
 | BAR | BAR (0.9.2) | BAR (the bar you edit) | LEN | — | — |
 | BAR | STEP (melodic: piano roll) | STEP (all 64, bar after bar) | NOTE | TIME (REST ← TIE ← NOTE → 2 ST … 16 ST: the note's length in steps; REST clears the step) | FLAG (– / ACC / SLD / A+S) |
 | BAR | STEP (DRUM: grid) | STEP | LANE | HIT | ACC |
@@ -495,7 +496,7 @@ skins) **MAP** is the keyboard itself, F3 to G5: every key that does something i
 white keys, tinted on the black ones), the one held lit orange, the value now violet, a muted track pale, what cannot be
 pressed now dim, and each white key's note under it; **KNOBS**: the four as gauges in their knobs' colours (JIANT: their values' heat), the layer's
 key words under them (e.g. **PLAY RESTART · GLO DONE**); **STATE**: what is on, as chips (FX: the lock, the tracks, the
-latch, the effects held; GLO: each track ON / MUTE, the drum groups, UNDO, MUTATE; LFO: the latch and each macro's
+latch, the effects held; GLO: each track ON / MUTE, the drum groups, UNDO; LFO: the latch and each macro's
 routes; REC, SAVE, SCL, EDIT, SEQ theirs). The header names the layer in words, **[GLO] SET**. The footer is the
 breadcrumb, **FX · MAP**. The keys and knobs do exactly what they did.
 
@@ -541,8 +542,9 @@ voice, OP1 alone at full level; on DRUM the factory DRUM-X kit too), G3 **RECALL
 steps alone. On a DRUM track, black keys 1–8 mute each DRUM-X sound (BD SD CP CH OH TM RS CB). Knobs: EDIT 1's four.
 
 **SEQ TOOLS** (on every SEQ page) — F3 CLEAR, G3 REVERSE, A3 / B3 SHIFT left / right,
-C4 RANDOM, D4 COOK, E4 BEAT (DRUM), F4 CLR AUTO (the track's automation and locks; the steps stay). On a DRUM track the
-lane tools: G4 CLR, A4 REV, B4 FILL, C5 RND on the lane picked with black keys 1–8. **G5 CLR STEP** (0.9.2; was
+F4 CLR AUTO (the track's automation and locks; the steps stay). On a DRUM track the
+lane tools: G4 CLR, A4 REV, B4 FILL on the lane picked with black keys 1–8. (V10.6: C4 RANDOM, D4 COOK, E4 BEAT and
+C5, the lane's RANDOM, are gone; SEQ › EUCLID writes patterns, SEQ + SELECT still dices.) **G5 CLR STEP** (0.9.2; was
 the EDIT tap): clears the cursor step and its locks, the cursor on to the next (on NOTE with a note in focus: that note
 alone; on AUTO LIST, **DEL REC**: deletes the row's record). **REC** (while SEQ is held): CLEAR
 ALL. Knobs: LEN, DIV, SWING, GATE. These tools have no undo.
@@ -982,11 +984,14 @@ groups, **PATT · TRACK · BAR · STEP · AUTO**, the one you are on lit with a 
 tap went round each level's sets: the pages and their pictures are the same, only the way between them is new. The
 pattern's bars (up to four, at LEN 64) are drawn as small cells: the bar you edit tinted violet with its number violet,
 the number of the bar playing orange, a bar past LEN dark.
+(V10.6) The chain is **STEP · LENGTH · TRACK · EUCLID · MODES · PLAYHEADS · STRETCH · COMP · COMP 2 · AUTOMATION ·
+AUTO LIST**, eleven pages: EUCLID and MODES, under the tab **EUCLID** (**EUCL**), are where MUTATE and MUTATE 2 were.
 
 | Group | Pages | What the screen shows |
 | --- | --- | --- |
 | **PATTERN** | PATTERN · STRETCH · PLAYHEADS | (0.9.17) The roll, as every SEQ page. **PATTERN** draws the notes as long as **GATE** plays them and the odd steps late by **SWING**; steps past **LEN** are dark (in the strip, the bars past it). **PLAYHEADS** draws its extra heads over the roll as lines while they play, each as hot as its number (the head you edit 3 px wide). |
-| **TRACK** | TRACK · MUTATE | **TRACK** outlines where **PITCH** moves the notes (in grey, over the notes as written). **MUTATE** shows a chip at the roll's foot: the bars to the next mutation (**NEXT n BARS**), **FROZEN**, or **MUTATE OFF**. |
+| **TRACK** | TRACK | **TRACK** outlines where **PITCH** moves the notes (in grey, over the notes as written). |
+| **EUCLID** (V10.6) | EUCLID · MODES | A ring of the pattern's steps with the playhead; DRUM-X the eight lanes as rows, melodic the key and a small roll (see [EUCLID and MODES](#euclid-and-modes-v106)). |
 | **BAR** | STEP · NOTE | STEP's KNOB 1 walks **all 64 steps**, crossing into the next bar by itself (0.9.18: a fast turn several at a time, KNOB SPEEDUP; the BAR page with its bar knob is gone, LEN is PATTERN's); NOTE's note in focus orange. |
 | **STEP** | COMP · COMP 2 | (0.9.18) The step the component goes on framed violet with a tab at its foot (KNOB 1, at once); an orange bar over each step with the same component, a thin line over a step with another; a JUMP's step framed orange. |
 | **AUTO** | AUTOMATION · AUTO LIST | A mark under each step with a record (a lock orange, automation white); on AUTO LIST the record picked has its step framed violet, the cards giving its row, step, parameter and value. |
@@ -997,8 +1002,8 @@ tinted) and under it the bar's **piano roll** across the whole width: 30 semiton
 a frame round its column, the playhead an orange line, a step with a component a small mark on top, a parameter lock
 a mark at the foot, a key held on the track a mark at the left of its row (a DRUM track: the **grid**, with its
 keys). The page's own marks go over it (the table). Until 0.9.16 PATTERN's group drew the bars as big thumbnails with a
-"PLAYHEADS" roll under them, COMP the step large with its chips, PLAYHEADS three lanes, MUTATE and AUTO LIST panels of
-their own.
+"PLAYHEADS" roll under them, COMP the step large with its chips, PLAYHEADS three lanes, MUTATE (gone in V10.6) and AUTO
+LIST panels of their own.
 
 The roll has no keyboard strip nor the C rows' names since 0.8.5 (the mock-up's): the PITCH card says the note in
 focus.
@@ -1161,29 +1166,8 @@ recorded into the pattern, quantized to its steps, overdubbing. Knob moves on th
   value that moves along the pattern), and the parameter locks (a value a step, see below): this page shows how many
   of each the track holds and whether they play; the page's hint says so. AUTO LIST is where to see and edit each one.
 - **AUTO LIST**: every automation event and lock as a list. KNOB 1 the row, 2 the step, 3 the parameter, 4 the value.
-- **MUTATE**: the track changes by itself, in time with the clock, so a texture can evolve for minutes.
-  **SOUND** and **PATTERN**: every OFF, 1, 2, 4, 8, 16 or 32 bars (the change lands on the bar's one). **AMOUNT**: how
-  much (turning one on sets 50 %). The page (0.6.92) shows the selected track's next 32 bars as one strip, a mark on
-  each bar a change lands on (orange: SOUND, violet: PATTERN), the playhead on it, and a line saying what each knob
-  does. **MODE**: **ORBIT** varies around the anchor (the music as it was when MUTATE came
-  on, when PLAY started, when you pressed **OCT+** here: KEEP, or when you last wrote or cleared steps), so it never
-  loses itself, and a sequence you clear stays cleared; an empty pattern is never filled by MUTATE; **DRIFT** goes on from
-  what it is now. SOUND changes the engine's values, the filter, its envelope, DEC, REL and the sends (never LEVEL, PAN
-  or MUTE); PATTERN moves notes along the scale, flips accents, adds or takes a note off the beat (never on it); on
-  DRUM it flips hits, never the kick. **OCT−** here (or **GLO + A4**, FREEZE) stops every mutation until pressed again.
-  On HOME (0.9.7) the being a change lands on looks up, its number lights white and a ring in the accent opens round it.
-  **Going back** (0.9.3): MUTATE keeps its anchor, so a track can return to it. Turn a track's SOUND and PATTERN both
-  OFF after MUTATE has changed it and a NOTICE asks **BACK TO BEFORE MUTATE?**: **OCT+** (BACK) puts the track's sound
-  and steps back as the anchor holds them, **OCT−** (KEEP) leaves it as it is (if nothing changed, nothing is asked).
-  At any time **SEQ + D5** (**REVERT**, on every SEQ page) does the same for the selected track, and **GLO + B4**
-  (**REVERT ALL**, next to FREEZE) for every track that plays. OCT+ and OCT− stay KEEP and FREEZE on this page, so
-  going back is a layer key (rule 5). Only what MUTATE changes comes back: the engine's values, the filter, its
-  envelope, DEC, REL, the sends and the steps (notes, accents, hits); LEVEL, PAN, MUTE, the pattern's settings (LEN,
-  DIV …) and the other tracks stay (a track on another engine since: its steps only). The anchor is the point described
-  above (MUTATE on, PLAY, KEEP, steps written), in DRIFT too: after a long DRIFT, REVERT goes all the way back to that
-  point, not one change back; press KEEP to make the music now the point to return to. A revert is undone with
-  **GLO + G4** (UNDO). After a project or section load, or NEW PROJECT, the anchor belongs to other music: REVERT says
-  **NO ANCHOR** until MUTATE takes a new one.
+- **EUCLID** and **MODES** (V10.6, where MUTATE was; MUTATE is gone): a euclidean pattern written live from four
+  knobs, and four amounts that add to it. See [EUCLID and MODES](#euclid-and-modes-v106) below.
 - **PLAYHEADS** (the PATTERN group; it was FUGUE), after the Fugue Machine: three more **playheads** (heads 2, 3, 4) read the same steps
   as the track's sequencer. KNOB 1 **HEAD** picks one, KNOB 2 **RATE** (OFF, 1/4, 1/3, 1/2, 2/3, x1, 3/2, x2, x3, x4 of
   the track's), KNOB 3 **DIR** (FWD, REV, PING, RND), KNOB 4 **INTVL**, its interval in degrees of the scale (−14 to +14;
@@ -1193,6 +1177,43 @@ recorded into the pattern, quantized to its steps, overdubbing. Knob moves on th
   section; the heads start and stop with the transport.
 - **AUTO LIST**: on **+ ADD LOCK**, OCT+ adds a lock; on a record, OCT+ switches it between LOCK and AUTO; **SEQ +
   G5** (DEL REC; until 0.9.1 EDIT) deletes it.
+
+### EUCLID and MODES (V10.6)
+
+(V10.6) **MUTATE is gone** (its pages MUTATE and MUTATE 2, the changes every N bars, ORBIT / DRIFT, KEEP and the
+anchor, REVERT and **BACK TO BEFORE MUTATE?**, GLO + A4 FREEZE, GLO + B4 REVERT ALL, SEQ + D5 REVERT, HOME's look up
+and ring). In its place in the SEQ chain, after TRACK, two pages under a tab of their own, **EUCLID** (**EUCL**):
+**EUCLID** writes the selected track's pattern as a euclidean rhythm, **MODES** adds to it. The page's hint:
+**TURN A KNOB: A PATTERN** · **OCT+ NEW  OCT− BEFORE**.
+
+| Page | Track | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+| --- | --- | --- | --- | --- | --- |
+| EUCLID | DRUM-X | HITS | STEPS (2–64) | ROTATE | LANE (BD SD CP CH OH TM RS CB) |
+| EUCLID | melodic | HITS | STEPS (2–64) | ROTATE | VARY (0–100) |
+| MODES | DRUM-X | ACCENT | GHOST | RATCHET | VARY |
+| MODES | melodic | MOTION | HARMONY | OCTAVE | SLIDE |
+
+- **HITS, STEPS, ROTATE**: the hits spread as evenly as the steps allow (a euclidean rhythm), ROTATE turns them round.
+  On DRUM-X **each of the eight sounds has its own** HITS, STEPS and ROTATE (LANE picks the one the knobs edit); the
+  pattern's length is their least common length, up to 64.
+- **MODES**: four amounts (0 = off) that add to what is generated. DRUM-X: **ACCENT** (a second euclid, of accents),
+  **GHOST** (soft hits between), **RATCHET** (some hits x2 / x4), **VARY**. Melodic: **MOTION** (how far the melody
+  moves: 0 a pedal note, higher bigger leaps), **HARMONY** (chords of the scale on the strong beats), **OCTAVE**
+  (octave jumps), **SLIDE** (slides).
+- **VARY** loosens the even grid: some hits move a step (towards the offbeat, more in the second half, so it answers
+  the first), a pickup before a strong beat, a hit left out; on a melodic track, notes held over the gap after them.
+- **A melodic track's notes**: inside the track's **SCL** (ROOT / SCALE) when it is set (the screen says **SCL**);
+  else in the key the other tracks' notes fit best (**FROM T*n***); else a new scale and root (**NEW KEY**). The melody
+  keeps the register the track had at the first turn (an empty track: around C4).
+- **Live**: turning a knob writes the track's whole pattern again, at once (its automation stays). A new gesture
+  after two seconds is an UNDO point (**GLO + G4**). **OCT+** a new variation (the same rhythm settings, new notes and
+  details), **OCT−** the variation before. While a song (ARRANGE) plays the page says **STOP TO EDIT**.
+- **The screen**: a ring of the pattern's steps (DRUM-X: the lane picked; hits lit, accents bigger, ghosts small,
+  ratchets framed) and the playhead going round it. DRUM-X: the eight lanes as rows, their HITS / STEPS at the right;
+  melodic: the key (root and scale) inside the ring and the notes as a small roll at the right, with where the key came
+  from. MODES shows the same pattern, so you see each amount change it.
+- The EUCLID and MODES settings live in RAM for the session; the pattern itself is saved with the project like any
+  pattern.
 
 ### Parameter locks
 
@@ -1445,7 +1466,7 @@ broken as in 0.8.6–0.9.12; at the default **50** the pieces are adventurous bu
   scat), FM6, ANIMAL and VOICE on two tracks at most; DRUM-X's octaves per sound on the steps (x2 x4 x8, SHORT, GHOST,
   FLAM); wide pans, glides, vibratos, distortion types.
 - **Motion**: step components scattered (RAND, OCT, BEND, ECHO, PULSE, WALK, CLIMB, ARP, TONAL, JUMP, REV, some every
-  other loop), **PLAYHEADS** on a track or two, **MUTATE** on a track or two; the delay's grain pitch and spray,
+  other loop), **PLAYHEADS** on a track or two; the delay's grain pitch and spray,
   ping-pong, any reverb.
 - What it keeps: it always plays (two melodic parts at least, the genres' levels, the shared voice budget, the delay
   short of self-oscillation), the **SCALE page** and the **CHORD page** say the key and the chords it plays, and every
@@ -1457,7 +1478,7 @@ whatever the knob said: most pieces came out as wild as it gets. Now the knob is
 throws happens as often as COMPLEX says (at 50: half as often as at 100) — a track in a loop or a DIV of its own
 (and on at most 1 + COMPLEX / 20 tracks: three at 50), odd chord lengths and loops, the exotic modes (below 100 the
 commoner major, minor, dorian and mixolydian come up more), the borrowed and secondary colours, out-of-key chords,
-step components, PLAYHEADS, MUTATE, the delay's grain; ANIMAL and VOICE on one track each under COMPLEX 61; the tempo
+step components, PLAYHEADS, the delay's grain; ANIMAL and VOICE on one track each under COMPLEX 61; the tempo
 range narrows towards the middle. COMPLEX 100 is the full chaos again.
 
 **The CPU budget** (0.9.13). An EXPLORE piece is made to fit the FM-1's CPU: the generator estimates what the piece

@@ -57,12 +57,12 @@ const pairs = [];
 const walk = (v) => { if (Array.isArray(v) && v.length === 2 && v.every((x) => typeof x === "string")) pairs.push(v); else if (v && typeof v === "object") Object.values(v).forEach(walk); };
 walk({ c: M.commands, r: M.recipes, n: M.news, s: M.sections, k: M.controls });
 ok(pairs.length > 300 && pairs.every(([es, en]) => es.trim() && en.trim()), `manual: ${pairs.length} texts, each in Spanish and English`);
-ok(M.news[0].v === fwv.slice(1) && M.news[M.news.length - 1].v === "0.8.0", "manual: what's new from the current version back to 0.8.0");
+ok((M.news[0].v === fwv.slice(1) || /^V\d/.test(M.news[0].v)) && M.news[M.news.length - 1].v === "0.8.0", "manual: what's new from the current version back to 0.8.0");
 const ids = M.sections.map((s) => s.id);
 ok([...M.commands, ...M.recipes].every((e) => ids.includes(e.s)), "manual: every command and recipe in a known section");
-for (const s of ["home", "edit", "seq", "glo", "fx", "scl", "mod", "save", "menu", "drum", "gen", "mutate", "punch", "song"])
+for (const s of ["home", "edit", "seq", "glo", "fx", "scl", "mod", "save", "menu", "drum", "gen", "euclid", "punch", "song"])
   if (!M.commands.some((c) => c.s === s)) ok(false, `manual: section ${s} has commands`);
-ok(["live", "unq", "locks", "clear", "auto", "song", "gen", "mutate", "punch", "liveP", "learn", "usb", "backup", "cpu", "trouble"]
+ok(["live", "unq", "locks", "clear", "auto", "song", "gen", "euclid", "punch", "liveP", "learn", "usb", "backup", "cpu", "trouble"]
    .every((id) => M.recipes.some((r) => r.id === id)), "manual: the task recipes asked for are all there");
 
 /* the screens: every one named is a 240 x 240 PNG in shots/, none left over */

@@ -63,7 +63,11 @@ data USB cable straight into the computer, and keep it connected until the page 
   slicer, punch-in effects.
 
 **Sequencer and recording**
-- Piano roll on every SEQ page; step components (SHIFT, CHORD, RATCHET, ARP…); MUTATE; PLAYHEADS; STRETCH.
+- Piano roll on every SEQ page; step components (SHIFT, CHORD, RATCHET, ARP…); EUCLID and MODES; PLAYHEADS; STRETCH.
+- **SEQ › EUCLID and MODES** (V10.6, in MUTATE's place; MUTATE is gone): HITS, STEPS (2–64) and ROTATE write a
+  euclidean pattern, live; on DRUM-X each of the eight sounds its own (LANE), on a melodic track the notes in the
+  track's SCL, or the key the other tracks fit, or a new one. MODES adds ACCENT, GHOST, RATCHET and VARY (DRUM-X) or
+  MOTION, HARMONY, OCTAVE and SLIDE (melodic). OCT+ a new variation, OCT− the one before; GLO + G4 UNDO.
 - **REC + A3** undo / redo, **REC + B3** quantize on/off, **REC + knob 2** REC Q; REC and PLAY independent.
 - **SEQ + E5 / F5** copy / paste a whole sequence.
 - GEN (HOME + SELECT): the song generator by genre; GLO › LIVE: the six sequences as a live board.
@@ -71,7 +75,7 @@ data USB cable straight into the computer, and keep it connected until the page 
 **Connection**
 - USB name **FM-1**, so the apps made for the FM-1 find it; USB STEMS (8 channels: T1–T6 + FX) for recording in a DAW.
 
-The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10.
+The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10 (V10.6).
 
 ## Reporting a crash
 
@@ -87,13 +91,13 @@ the CRASH line (VEC / PC / SP / bus) until power-off. Report both, with the vers
   **Every SEQ page is the piano roll** (0.9.17) *(in the 0.9.1x line, installer: 0.9.17; not yet in 0.9.9-beta4a)*: the same bars' strip and roll (a kit: the grid) on all the pages,
   the values on top, each page marking what it does on the notes: PATTERN their GATE and SWING, TRACK the notes moved
   by PITCH, PLAYHEADS the extra heads as they play, COMP the steps with a component, AUTOMATION and AUTO LIST every
-  record, MUTATE when the next mutation comes. The BOTTOM skin is retired (a saved BOTTOM opens as AIR).
+  record (V10.6: EUCLID and MODES their pattern; MUTATE is gone). The BOTTOM skin is retired (a saved BOTTOM opens as AIR).
   **DRUM-X, VOICE and ANIMAL first** (0.9.9): the FM-1 powers on with T1 DRUM-X, T2 VOICE singing words, T3 ANIMAL's
   bird, T4 LOFI's bytebeat, T5 ANALOG's bass and T6 FM6's electric piano, and PRESETS lists the engines in that order.
   **A new skin, AIR** (0.9.7, the default of new settings): HUD's light look on every page with the knob row on top,
   the middle of the screen free; HOME's beings over the whole screen. **MENU › SCREEN › SCOPE** (OFF by default): an
   engine's EDIT pages give its creature the whole panel. **HOME's beings have faces**: three isotherms coloured by their
-  own level, eyes that shut on a hit, a mouth that opens with the sound, a look up when MUTATE changes them. 15 KB of
+  own level, eyes that shut on a hit, a mouth that opens with the sound (V10.6: the look up went with MUTATE). 15 KB of
   flash given back, nothing removed, the sound bit for bit.
   **Every engine draws its own creature** (0.9.6): ANALOG a cell whose membrane is its wave, FM6 its operators as
   little beings wired as the algorithm (also on OPERATOR and OP ENV), WHEEL nine tube worms, one a drawbar, NOISE a
@@ -107,13 +111,13 @@ the CRASH line (VEC / PC / SP / bus) until power-off. Report both, with the vers
   head (0.9.9; the tongue, jaw, lips and velum move with the phoneme sung, glottal pulses travel up it, waves leave the
   mouth), ANIMAL a creature that metamorphoses between bird, insect and mammal, DRUM-X its kit as
   little beings that squash, shut their eyes and shout with every hit.
-  **MUTATE can go back** (0.9.3): turning MUTATE off asks to return the track to its anchor; SEQ + D5 REVERT, GLO + B4 REVERT ALL, undoable.
+  **MUTATE can go back** (0.9.3): turning MUTATE off asks to return the track to its anchor; SEQ + D5 REVERT, GLO + B4 REVERT ALL, undoable. (V10.6: MUTATE, REVERT and REVERT ALL are gone; SEQ › EUCLID takes its place.)
   **0.9.2 is driven by six rules** (see [Navigation](#navigation)): SELECT walks a section's pages as one chain, the
   section's button jumps group to group, PRESETS always loads presets, KNOB 1 picks, a button held is its layer, and
   the tabs and the footer say where you are. Every page, knob and function is where it was; only the way between them
   changed.
   **The dice starts in EXPLORE** (0.8.6): HOME + SELECT opens GEN on a choice that follows no genre and breaks every
-  rule (any tempo, odd metres and polyrhythm, exotic modes, any engine on any role, DRUM-X octaves, PLAYHEADS, MUTATE),
+  rule (any tempo, odd metres and polyrhythm, exotic modes, any engine on any role, DRUM-X octaves, PLAYHEADS),
   each seed a very different piece, still in the key its SCALE and CHORD pages show. RANDOM and the 43 genres follow.
   **DRUM-X octaves** (0.8.5): the kit stays on its keys at every OCT; above the centre it repeats in time (0.9.13: once a step, x2, x4),
   below it plays SHORT, GHOST or FLAM, each sound its own on each step, and live recording keeps exactly what you
@@ -133,7 +137,7 @@ the CRASH line (VEC / PC / SP / bus) until power-off. Report both, with the vers
 > - **DRUM-X in every octave** (0.8.5): the kit stays on its keys; above the centre it ratchets (x2, x4, x8), below it
 >   plays SHORT, GHOST or FLAM, each sound its own on each step, recorded as you played.
 > - **The dice starts in EXPLORE** (0.8.6): HOME + SELECT opens GEN on a choice that follows no genre and breaks every
->   rule (odd metres, exotic modes, any engine on any role, PLAYHEADS, MUTATE); RANDOM and 43 genres follow.
+>   rule (odd metres, exotic modes, any engine on any role, PLAYHEADS); RANDOM and 43 genres follow.
 > - **A DJ FILTER on the master** (0.9.1, GLO › MIXER KNOB 4): low-pass to the left, high-pass to the right, out of
 >   the chain in the middle; automatable, saved with the project. **REC off the grid in 64ths** of a step (0.9.1):
 >   SEQ › NOTE's MICRO, −32/64 … +31/64.
@@ -271,8 +275,8 @@ VOICE singing its lyric, in the COLORS skin, exactly as the firmware draws them 
   pixel face, small captions in [Chakra Petch](https://github.com/m4rc1e/Chakra-Petch).
 - **HOME, the ecosystem**: one being per track (its species from its engine, its shape from its four knobs). Each one
   heats up, swells and moves with its own audio; the selected track is drawn bigger; muted ones go dark; in silence
-  they all stay still. (0.9.7) Each wears a little face: its eyes shut on a hit, its mouth opens with its level, it
-  looks up when MUTATE changes it; muted, it sleeps.
+  they all stay still. (0.9.7) Each wears a little face: its eyes shut on a hit, its mouth opens with its level;
+  muted, it sleeps.
 - **Engine pages**: each engine draws its own creature (0.9.4 / 0.9.6, [below](#v096)): VOICE a singing head, ANIMAL
   a bird / insect / mammal, DRUM-X its kit of little beings, ANALOG a cell, FM6 a colony of operators, WHEEL tube worms,
   NOISE a swarm, PHASE a snail, LOFI a caterpillar. (Before: the sound's being drawn in isotherms, four contours of
@@ -383,6 +387,15 @@ With FX held the keys become effects that act while hel…8050 tokens truncated�
 
 ## Changelog
 
+### V10.6
+- **SEQ › EUCLID and MODES replace MUTATE**: the SEQ chain is STEP · LENGTH · TRACK · EUCLID · MODES · PLAYHEADS ·
+  STRETCH · COMP · COMP 2 · AUTOMATION · AUTO LIST. EUCLID: HITS, STEPS (2–64), ROTATE and LANE (DRUM-X) or VARY
+  (melodic); MODES: ACCENT GHOST RATCHET VARY (DRUM-X) or MOTION HARMONY OCTAVE SLIDE (melodic). A knob turned writes
+  the track's pattern again, live; OCT+ a new variation, OCT− the one before; GLO + G4 UNDO.
+- **Gone**: MUTATE and MUTATE 2 (ORBIT / DRIFT, KEEP, REVERT, the BACK TO BEFORE MUTATE? dialog), GLO + A4 FREEZE,
+  GLO + B4 REVERT ALL, SEQ + D5 REVERT, HOME's mutation look up and ring; GEN no longer turns MUTATE on. SEQ TOOLS
+  loses C4 RANDOM, D4 COOK, E4 BEAT and C5 (the lane's RANDOM); SEQ + SELECT still dices with GEN's generator.
+
 ### V10 — 2026-10-30
 - **The new base**: JIANT FM V10 replaces every earlier line in both installers (no earlier versions are offered).
 - **SAVE › TIMELINE**: the song as lanes; each row can take a track from another section (FROM) and vary it in that
@@ -421,7 +434,8 @@ Feedback from users (YouTube, Reddit):
   themselves every 1 to 32 bars, on the bar, in time with the clock; **AMOUNT** how much; **ORBIT** varies around an
   anchor (KEEP: OCT+ on the page) so the music stays itself for minutes, **DRIFT** wanders on. Never LEVEL, PAN or
   MUTE, never the kick. **FREEZE** (OCT− on the page, or GLO + A4) stops it all. The page draws the next 32 bars of
-  every track; on HOME each being gets a ring filling up to its next change.
+  every track; on HOME each being gets a ring filling up to its next change. (V10.6: MUTATE is gone, FREEZE and the
+  ring with it; SEQ › EUCLID and MODES take its place.)
 
 ### v0.6.42
 - **Step components, the second set** (SEQ > COMP): **RAND** (the note at random in the scale), **OCT** (an octave,

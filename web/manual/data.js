@@ -14,7 +14,7 @@ sections: [
   {id: "edit", t: ["EDIT (motores)", "EDIT (engines)"]},
   {id: "drum", t: ["DRUM-X", "DRUM-X"]},
   {id: "seq", t: ["SEQ", "SEQ"]},
-  {id: "mutate", t: ["MUTATE", "MUTATE"]},
+  {id: "euclid", t: ["EUCLID · MODES", "EUCLID · MODES"]},
   {id: "glo", t: ["GLO · LIVE", "GLO · LIVE"]},
   {id: "fx", t: ["FX", "FX"]},
   {id: "punch", t: ["PUNCH-IN", "PUNCH-IN"]},
@@ -123,14 +123,12 @@ controls: {
     ]},
   "GLO": {kind: "button", sec: "glo", shot: 'mixer', layer: "GLO",
     alone: ["Sección GLO: LIVE → MIX → GLOBAL → SYSTEM (al encender, MIXER).", "The GLO section: LIVE → MIX → GLOBAL → SYSTEM (at power-on, MIXER)."],
-    held: ["Capa GLO: mutes, solos, mutes de grupos DRUM, TAP, UNDO, FREEZE, REVERT ALL; perillas: niveles.", "GLO layer: mutes, solos, DRUM group mutes, TAP, UNDO, FREEZE, REVERT ALL; knobs: levels."],
+    held: ["Capa GLO: mutes, solos, mutes de grupos DRUM, TAP, UNDO; perillas: niveles.", "GLO layer: mutes, solos, DRUM group mutes, TAP, UNDO; knobs: levels."],
     combos: [
       {k: "GLO+G4", t: ["UNDO del último cambio grande (otra vez: rehacer)", "UNDO the last big change (again: redo)"]},
       {k: "GLO+SELECT", t: ["tempo", "tempo"]},
       {k: "GLO+PLAY", t: ["reinicia desde el principio sin parar", "restart from the top without stopping"]},
       {k: "GLO+F4", t: ["tap tempo", "tap tempo"]},
-      {k: "GLO+A4", t: ["FREEZE: congela MUTATE", "FREEZE: MUTATE stops"]},
-      {k: "GLO+B4", t: ["REVERT ALL: todas las pistas vuelven de MUTATE", "REVERT ALL: every track back from MUTATE"]},
       {k: "REC+GLO", t: ["borra la automatización de nivel y paneo", "clear the level and pan automation"]}
     ]},
   "HOME": {kind: "button", sec: "home", shot: 'home', layer: "HOME",
@@ -154,13 +152,12 @@ controls: {
       {k: "REC+ARP", t: ["borra la automatización de ARP", "clear the ARP automation"]}
     ]},
   "SEQ": {kind: "button", sec: "seq", shot: 'lente_bar', layer: "SEQ",
-    alone: ["Sección SEQ: PATTERN → TRACK → BAR → STEP → AUTO (al encender, STEP: el piano roll).", "The SEQ section: PATTERN → TRACK → BAR → STEP → AUTO (at power-on STEP, the piano roll)."],
-    held: ["SEQ TOOLS (en las páginas SEQ): CLEAR, REVERSE, SHIFT, RANDOM, COOK, BEAT, CLR AUTO, REVERT, G5 CLR STEP; perillas LEN DIV SWING GATE.", "SEQ TOOLS (on the SEQ pages): CLEAR, REVERSE, SHIFT, RANDOM, COOK, BEAT, CLR AUTO, REVERT, G5 CLR STEP; knobs LEN DIV SWING GATE."],
+    alone: ["Sección SEQ (V10.6): STEP → LENGTH → EUCLID → PLAYHEADS → STRETCH → COMP → AUTO (al encender, STEP: el piano roll).", "The SEQ section (V10.6): STEP → LENGTH → EUCLID → PLAYHEADS → STRETCH → COMP → AUTO (at power-on STEP, the piano roll)."],
+    held: ["SEQ TOOLS (en las páginas SEQ): CLEAR, REVERSE, SHIFT, CLR AUTO, las herramientas de carril (DRUM), G5 CLR STEP; perillas LEN DIV SWING GATE.", "SEQ TOOLS (on the SEQ pages): CLEAR, REVERSE, SHIFT, CLR AUTO, the lane tools (DRUM), G5 CLR STEP; knobs LEN DIV SWING GATE."],
     combos: [
       {k: "SEQ+G5", t: ["CLR STEP: borra el paso del cursor y sus locks", "CLR STEP: clears the cursor step and its locks"]},
       {k: "SEQ+REC", t: ["CLEAR ALL SEQUENCES? (OCT+ confirma)", "CLEAR ALL SEQUENCES? (OCT+ confirms)"]},
-      {k: "SEQ+SELECT", t: ["dados de la secuencia", "sequence dice"]},
-      {k: "SEQ+D5", t: ["REVERT: la pista vuelve de MUTATE", "REVERT: the track back from MUTATE"]}
+      {k: "SEQ+SELECT", t: ["dados de la secuencia", "sequence dice"]}
     ]},
   "PLAY": {kind: "button", sec: "basic",
     alone: ["Arranca / para. En SONG (SAVE + D5) toca el arreglo.", "Start / stop. In SONG mode (SAVE + D5) plays the arrangement."],
@@ -185,13 +182,13 @@ layers: {
     "C#5": "SHUFFLE", "D#5": "CRUSH", "F#5": "THROW"}},
   GLO: {shot: 'layer_glo_active', t: ["GLO mantenido: mezcla", "GLO held: mix"], keys: {
     "F3": "SOLO T1", "G3": "SOLO T2", "A3": "SOLO T3", "B3": "SOLO T4", "C4": "SOLO T5", "D4": "SOLO T6", "E4": "UNMUTE",
-    "F4": "TAP", "G4": "UNDO", "A4": "FREEZE", "B4": "REVERT ALL",
+    "F4": "TAP", "G4": "UNDO",
     "F#3": "MUTE T1", "G#3": "MUTE T2", "A#3": "MUTE T3", "C#4": "MUTE T4", "D#4": "MUTE T5", "F#4": "MUTE T6",
     "G#4": "KICK", "A#4": "SNARE", "C#5": "HAT", "D#5": "PERC"}},
   SEQ: {shot: 'layer_seq_tools_drum', t: ["SEQ mantenido: SEQ TOOLS", "SEQ held: SEQ TOOLS"], keys: {
-    "F3": "CLEAR", "G3": "REVERSE", "A3": "SHIFT <", "B3": "SHIFT >", "C4": "RANDOM", "D4": "COOK", "E4": ["BEAT (DRUM)", "BEAT (DRUM)"],
+    "F3": "CLEAR", "G3": "REVERSE", "A3": "SHIFT <", "B3": "SHIFT >",
     "F4": "CLR AUTO", "G4": ["CLR carril", "CLR lane"], "A4": ["REV carril", "REV lane"], "B4": ["FILL carril", "FILL lane"],
-    "C5": ["RND carril", "RND lane"], "D5": "REVERT", "G5": "CLR STEP",
+    "G5": "CLR STEP",
     "F#3": "BD", "G#3": "SD", "A#3": "CP", "C#4": "CH", "D#4": "OH", "F#4": "TM", "G#4": "RS", "A#4": "CB"}},
   SAVE: {shot: 'layer_song', t: ["SAVE mantenido: canción", "SAVE held: song"], keys: {
     "F3": "PLAY A", "G3": "PLAY B", "A3": "PLAY C", "B3": "PLAY D", "C4": "STORE A", "D4": "STORE B", "E4": "STORE C", "F4": "STORE D",
@@ -227,7 +224,7 @@ pages: {
   "EDIT/SOUND 4": ["SOUND", "LAYER", "FEEDBK", "SEND"], "EDIT/LEVELS": ["KICK", "SNARE", "CLAP", "HATCL"], "EDIT/LEVELS 2": ["HATOP", "TOM", "RIM", "BELL"],
   "EDIT/X-MOD": ["RATE", "DEPTH", "SHAPE", "RAND"], "EDIT/STEREO": ["IMAGE", "—", "—", "—"],
   "SEQ/PATTERN": ["LEN", "DIV", "SWING", "GATE"], "SEQ/STRETCH": ["STRETCH", "REPEAT", "NUDGE", "ROTATE"], "SEQ/PLAYHEADS": ["HEAD", "RATE", "DIR", "INTERVAL"],
-  "SEQ/TRACK": ["PITCH", "CHANCE", "HUMAN", "REC Q"], "SEQ/MUTATE": ["SOUND", "PATTERN", "AMOUNT", "MODE"], "SEQ/BAR": ["BAR", "LEN", "—", "—"],
+  "SEQ/TRACK": ["PITCH", "CHANCE", "HUMAN", "REC Q"], "SEQ/EUCLID": ["HITS", "STEPS", "ROTATE", "LANE · VARY"], "SEQ/MODES": ["ACCENT · MOTION", "GHOST · HARMONY", "RATCHET · OCTAVE", "VARY · SLIDE"], "SEQ/BAR": ["BAR", "LEN", "—", "—"],
   "SEQ/STEP": ["STEP", "NOTE (DRUM: LANE)", "TIME (DRUM: HIT)", "FLAG (DRUM: ACC)"], "SEQ/NOTE": ["FOCUS", "PITCH", "MOVE", "MICRO"],
   "SEQ/COMP": ["STEP", "TYPE", "VALUE", "EVERY"], "SEQ/COMP 2": ["STEP", "TYPE", "VALUE", "EVERY"],
   "SEQ/AUTOMATION": ["PLAY", "EVENT", "LOCK", "CLEAR"], "SEQ/AUTO LIST": ["ROW", "STEP", "PARAM", "VALUE"],
@@ -265,7 +262,7 @@ commands: [
   {s: "basic", k: "GLO+PLAY", t: ["Arrancar, parar, reiniciar", "Start, stop, restart"],
    d: ["PLAY arranca y para. GLO mantenido + PLAY reinicia desde el principio sin parar (clock interno).", "PLAY starts and stops. GLO held + PLAY restarts from the top without stopping (internal clock)."]},
   {s: "basic", k: "GLO+G4", shot: 'layer_glo_active', t: ["Deshacer (UNDO) y rehacer", "Undo and redo"],
-   d: ["GLO mantenido + G4: vuelve atrás el último cambio grande (dados, GEN, un borrado, INIT, RECALL, cargar una sección, un REVERT). Otra vez: rehacer. Un solo paso, en RAM; no cubre giros de perillas ni guardados.", "GLO held + G4: takes back the last big change (dice, GEN, a clear, INIT, RECALL, loading a section, a REVERT). Again: redo. One step, in RAM; not knob turns or saves."]},
+   d: ["GLO mantenido + G4: vuelve atrás el último cambio grande (dados, GEN, un borrado, INIT, RECALL, cargar una sección, un patrón de EUCLID). Otra vez: rehacer. Un solo paso, en RAM; no cubre giros de perillas ni guardados.", "GLO held + G4: takes back the last big change (dice, GEN, a clear, INIT, RECALL, loading a section, an EUCLID pattern). Again: redo. One step, in RAM; not knob turns or saves."]},
   {s: "basic", k: "OCT-+OCT+", shot: 'calibration', t: ["Calibrar botones y perillas", "Calibrate buttons and knobs"],
    d: ["Mantené OCT− y OCT+ al encender (o MENU › SYSTEM › CONTROLS › CALIBRATION, KNOB 4 y OCT+): HARDWARE CALIBRATION pide cada botón y perilla. Una tecla cancela.", "Hold OCT− and OCT+ while powering on (or MENU › SYSTEM › CONTROLS › CALIBRATION, KNOB 4 then OCT+): HARDWARE CALIBRATION asks for each button and knob. A key cancels."]},
   {s: "basic", k: "OCT-+OCT+", shot: 'uboot', t: ["Entrar en modo actualización", "Enter update mode"],
@@ -335,7 +332,7 @@ commands: [
 
   // SEQ
   {s: "seq", k: "SEQ", shot: 'lente_bar', t: ["El secuenciador: grupos y páginas", "The sequencer: groups and pages"],
-   d: ["64 pasos por pista. Grupos (toque SEQ): PATTERN (PATTERN, STRETCH, PLAYHEADS), TRACK (TRACK, MUTATE), BAR (BAR, STEP, NOTE), STEP (COMP, COMP 2), AUTO (AUTOMATION, AUTO LIST). Al encender, STEP. Desde la 0.9.17 todas las páginas muestran el mismo piano roll (en DRUM la grilla), cada una con sus marcas encima: GATE y SWING en PATTERN, PITCH en TRACK, los cabezales en PLAYHEADS, los componentes en COMP, los registros en AUTO.", "64 steps a track. Groups (SEQ tap): PATTERN (PATTERN, STRETCH, PLAYHEADS), TRACK (TRACK, MUTATE), BAR (BAR, STEP, NOTE), STEP (COMP, COMP 2), AUTO (AUTOMATION, AUTO LIST). At power-on, STEP. Since 0.9.17 every page shows the same piano roll (a DRUM track: the grid), each with its marks on it: GATE and SWING on PATTERN, PITCH on TRACK, the heads on PLAYHEADS, the components on COMP, the records on AUTO."]},
+   d: ["64 pasos por pista. La cadena (V10.6): STEP · LENGTH · TRACK · EUCLID · MODES · PLAYHEADS · STRETCH · COMP · COMP 2 · AUTOMATION · AUTO LIST, en grupos (toque SEQ) STEP, LENGTH, EUCLID, PLAYHEADS, STRETCH, COMP, AUTO. Al encender, STEP. Desde la 0.9.17 todas las páginas muestran el mismo piano roll (en DRUM la grilla), cada una con sus marcas encima: GATE y SWING en PATTERN, PITCH en TRACK, los cabezales en PLAYHEADS, los componentes en COMP, los registros en AUTO.", "64 steps a track. The chain (V10.6): STEP · LENGTH · TRACK · EUCLID · MODES · PLAYHEADS · STRETCH · COMP · COMP 2 · AUTOMATION · AUTO LIST, in groups (SEQ tap) STEP, LENGTH, EUCLID, PLAYHEADS, STRETCH, COMP, AUTO. At power-on, STEP. Since 0.9.17 every page shows the same piano roll (a DRUM track: the grid), each with its marks on it: GATE and SWING on PATTERN, PITCH on TRACK, the heads on PLAYHEADS, the components on COMP, the records on AUTO."]},
   {s: "seq", k: "REC", shot: 'countin', t: ["Grabar en vivo", "Record live"],
    d: ["REC en cualquier página (no en STEP parado): arma la pista y arranca. Lo que tocás entra cuantizado, en overdub; mover una perilla graba automatización. CLICK y COUNT-IN en MENU › AUDIO › CLICK (o REC + G3).", "REC on any page (not STEP while stopped): arms the track and starts. What you play goes in quantized, overdubbing; turning a knob records automation. CLICK and COUNT-IN in MENU › AUDIO › CLICK (or REC + G3)."]},
   {s: "seq", k: "KNOB 4", shot: 'shift', t: ["Grabar sin cuantizar: REC Q", "Record unquantized: REC Q"],
@@ -358,8 +355,8 @@ commands: [
    d: ["REC mantenido + F3: borra pasos y automatización de la pista elegida, sin diálogo (UNDO la trae). También SEQ + F3 o SAVE › TOOLS › CLEAR SEQ.", "REC held + F3: clears the selected track's steps and automation, no dialog (UNDO brings it back). Also SEQ + F3 or SAVE › TOOLS › CLEAR SEQ."]},
   {s: "seq", k: "SEQ+REC", shot: 'confirm_seq', t: ["Borrar todas las secuencias", "Clear every sequence"],
    d: ["SEQ mantenido + REC: CLEAR ALL SEQUENCES?, OCT+ confirma: pasos y automatización de las seis pistas y el carril punch-in.", "SEQ held + REC: CLEAR ALL SEQUENCES?, OCT+ confirms: the six tracks' steps and automation and the punch-in lane."]},
-  {s: "seq", k: "SEQ+C4", shot: 'layer_seq_tools_drum', t: ["SEQ TOOLS: reverse, shift, random, cook", "SEQ TOOLS: reverse, shift, random, cook"],
-   d: ["SEQ mantenido: F3 CLEAR, G3 REVERSE, A3 / B3 SHIFT, C4 RANDOM, D4 COOK, E4 BEAT (DRUM), F4 CLR AUTO, D5 REVERT. En DRUM: G4 CLR, A4 REV, B4 FILL, C5 RND sobre el carril elegido con las negras 1–8. Sin undo.", "SEQ held: F3 CLEAR, G3 REVERSE, A3 / B3 SHIFT, C4 RANDOM, D4 COOK, E4 BEAT (DRUM), F4 CLR AUTO, D5 REVERT. On DRUM: G4 CLR, A4 REV, B4 FILL, C5 RND on the lane picked with black keys 1–8. No undo."]},
+  {s: "seq", k: "SEQ+G3", shot: 'layer_seq_tools_drum', t: ["SEQ TOOLS: clear, reverse, shift, carriles", "SEQ TOOLS: clear, reverse, shift, lanes"],
+   d: ["SEQ mantenido: F3 CLEAR, G3 REVERSE, A3 / B3 SHIFT, F4 CLR AUTO, G5 CLR STEP. En DRUM: G4 CLR, A4 REV, B4 FILL sobre el carril elegido con las negras 1–8. Sin undo. (V10.6: C4 RANDOM, D4 COOK, E4 BEAT, C5 y D5 REVERT ya no están; los patrones los escribe SEQ › EUCLID.)", "SEQ held: F3 CLEAR, G3 REVERSE, A3 / B3 SHIFT, F4 CLR AUTO, G5 CLR STEP. On DRUM: G4 CLR, A4 REV, B4 FILL on the lane picked with black keys 1–8. No undo. (V10.6: C4 RANDOM, D4 COOK, E4 BEAT, C5 and D5 REVERT are gone; SEQ › EUCLID writes patterns.)"]},
   {s: "seq", k: "SEQ+SELECT", shot: 'dlg_dice_seq', t: ["Dados de la secuencia", "Sequence dice"],
    d: ["SEQ + SELECT: una secuencia nueva en la escala (batería en DRUM, si no bajo, acordes o melodía según suene). OCT+ OK, OCT− CANCEL, SELECT otra.", "SEQ + SELECT: a new sequence in the scale (a beat on DRUM, else a bass, chords or lead by what it sounds like). OCT+ OK, OCT− CANCEL, SELECT another."]},
   {s: "seq", k: "PRESETS", shot: 'phrases', t: ["Cargar un patrón (PHRASES)", "Load a pattern (PHRASES)"],
@@ -383,13 +380,15 @@ commands: [
   {s: "seq", k: "REC+G3", t: ["Metrónomo y cuenta", "Metronome and count-in"],
    d: ["REC + G3: CLICK OFF / REC / ON. MENU › AUDIO › CLICK: CLICK, CLICK LEVEL, COUNT-IN (OFF, 1 BAR, 2 BARS).", "REC + G3: CLICK OFF / REC / ON. MENU › AUDIO › CLICK: CLICK, CLICK LEVEL, COUNT-IN (OFF, 1 BAR, 2 BARS)."]},
 
-  // MUTATE
-  {s: "mutate", k: "SEQ", shot: 'mutate', t: ["MUTATE: que la pista cambie sola", "MUTATE: let the track change by itself"],
-   d: ["SEQ › MUTATE: SOUND y PATTERN cada OFF, 1, 2, 4, 8, 16, 32 compases; AMOUNT; MODE ORBIT (varía alrededor del ancla) o DRIFT (sigue desde lo que es). En HOME la criatura mira arriba cuando cambia.", "SEQ › MUTATE: SOUND and PATTERN every OFF, 1, 2, 4, 8, 16, 32 bars; AMOUNT; MODE ORBIT (varies around the anchor) or DRIFT (goes on from what it is). On HOME the being looks up when it changes."]},
-  {s: "mutate", k: "OCT+", shot: 'toast_mutate_hint', t: ["KEEP y FREEZE", "KEEP and FREEZE"],
-   d: ["En MUTATE: OCT+ KEEP hace de la música actual el ancla; OCT− (o GLO + A4) FREEZE detiene todas las mutaciones hasta apretarlo otra vez.", "On MUTATE: OCT+ KEEP makes the music now the anchor; OCT− (or GLO + A4) FREEZE stops every mutation until pressed again."]},
-  {s: "mutate", k: "SEQ+D5", shot: 'dlg_mut_back', t: ["Volver de MUTATE (REVERT)", "Go back from MUTATE (REVERT)"],
-   d: ["Poné SOUND y PATTERN en OFF: BACK TO BEFORE MUTATE? (OCT+ BACK, OCT− KEEP). En cualquier momento SEQ + D5 REVERT (la pista) o GLO + B4 REVERT ALL. GLO + G4 deshace el revert.", "Turn SOUND and PATTERN OFF: BACK TO BEFORE MUTATE? (OCT+ BACK, OCT− KEEP). Any time SEQ + D5 REVERT (the track) or GLO + B4 REVERT ALL. GLO + G4 undoes the revert."]},
+  // EUCLID · MODES (V10.6: in MUTATE's place)
+  {s: "euclid", k: "SEQ", shot: 'euclid', t: ["EUCLID: un patrón euclidiano en vivo", "EUCLID: a euclidean pattern, live"],
+   d: ["(V10.6, donde estaba MUTATE) SEQ › EUCLID: KNOB 1 HITS, KNOB 2 STEPS (2–64), KNOB 3 ROTATE reparten los golpes tan parejo como dejan los pasos. KNOB 4: en DRUM-X LANE (BD SD CP CH OH TM RS CB: cada sonido sus HITS/STEPS/ROTATE; el largo es el mínimo común, hasta 64); en una pista melódica VARY (0–100). Girar una perilla reescribe todo el patrón de la pista en vivo (la automatización queda).", "(V10.6, in MUTATE's place) SEQ › EUCLID: KNOB 1 HITS, KNOB 2 STEPS (2–64), KNOB 3 ROTATE spread the hits as evenly as the steps allow. KNOB 4: on DRUM-X LANE (BD SD CP CH OH TM RS CB: each sound its own HITS/STEPS/ROTATE; the length is their least common length, up to 64); on a melodic track VARY (0–100). Turning a knob writes the track's whole pattern again, live (its automation stays)."]},
+  {s: "euclid", k: "SEQ", shot: 'euclid_modes', t: ["MODES: acentos, ghosts, armonía…", "MODES: accents, ghosts, harmony…"],
+   d: ["SEQ › MODES: cuatro cantidades (0 = apagado) que le suman a lo generado. DRUM-X: ACCENT (un segundo euclidiano de acentos), GHOST (golpes suaves en el medio), RATCHET (algunos x2/x4), VARY. Melódica: MOTION (0 una nota pedal, más alto saltos más grandes), HARMONY (acordes de la escala en los tiempos fuertes), OCTAVE (saltos de octava), SLIDE. VARY afloja la grilla: golpes corridos un paso, una anacrusa, un golpe que se saca; en melódica, notas sostenidas sobre el hueco.", "SEQ › MODES: four amounts (0 = off) that add to what is generated. DRUM-X: ACCENT (a second euclid of accents), GHOST (soft hits between), RATCHET (some x2/x4), VARY. Melodic: MOTION (0 a pedal note, higher bigger leaps), HARMONY (chords of the scale on strong beats), OCTAVE (octave jumps), SLIDE. VARY loosens the grid: hits moved a step, a pickup, a hit left out; melodic, notes held over the gap."]},
+  {s: "euclid", k: "OCT+", shot: 'euclid', t: ["Variación nueva o la de antes", "A new variation or the one before"],
+   d: ["En EUCLID / MODES: OCT+ una variación nueva (mismo ritmo, notas y detalles nuevos), OCT− la de antes. Un gesto nuevo después de dos segundos es un punto de UNDO (GLO + G4). Con una canción (ARRANGE) sonando: STOP TO EDIT. Los ajustes viven en RAM la sesión; el patrón se guarda con el proyecto.", "On EUCLID / MODES: OCT+ a new variation (same rhythm, new notes and details), OCT− the one before. A new gesture after two seconds is an UNDO point (GLO + G4). While a song (ARRANGE) plays: STOP TO EDIT. The settings live in RAM for the session; the pattern is saved with the project."]},
+  {s: "euclid", k: "KNOB 4", shot: 'euclid_modes', t: ["De dónde salen las notas", "Where the notes come from"],
+   d: ["Pista melódica: dentro de su SCL (ROOT/SCALE) si está puesto (la pantalla dice SCL); si no, la tonalidad donde mejor entran las otras pistas (FROM Tn); si no, escala y tónica nuevas (NEW KEY). Mantiene el registro que tenía la pista al primer giro (vacía: alrededor de C4). La pantalla: un anillo con los pasos y el cabezal; DRUM los ocho carriles con HITS/STEPS; melódica la tonalidad y un pequeño roll.", "Melodic track: inside its SCL (ROOT/SCALE) when set (the screen says SCL); else the key the other tracks fit best (FROM Tn); else a new scale and root (NEW KEY). It keeps the register the track had at the first turn (empty: around C4). The screen: a ring of the steps and the playhead; DRUM the eight lanes with HITS/STEPS; melodic the key and a small roll."]},
 
   // GLO / LIVE
   {s: "glo", k: "GLO", shot: 'mixer', t: ["Mezcla (MIXER, SENDS)", "Mix (MIXER, SENDS)"],
@@ -569,11 +568,11 @@ recipes: [
     ["OCT+: una pieza entera. PLAY. OCT+ otra vez: otra semilla.", "OCT+: a whole piece. PLAY. OCT+ again: another seed."],
     ["O elegí con PRESETS un género (43) o RANDOM; FORM PARTS / SONG arma secciones y ARRANGE.", "Or pick a genre (43) or RANDOM with PRESETS; FORM PARTS / SONG builds sections and ARRANGE."],
     ["SELECT a GEN 2 / GEN 3, bajá o subí una parte y OCT+: la misma pieza cambiada. OCT− sale; GLO + G4 vuelve a lo de antes.", "SELECT to GEN 2 / GEN 3, lower or raise a part and OCT+: the same piece changed. OCT− leaves; GLO + G4 goes back."]]},
-  {id: "mutate", s: "mutate", shots: ['mutate', 'dlg_mut_back'], t: ["MUTATE y REVERT", "MUTATE and REVERT"], steps: [
-    ["SEQ → TRACK → MUTATE. KNOB 1 SOUND y/o KNOB 2 PATTERN cada N compases; KNOB 3 AMOUNT; KNOB 4 ORBIT o DRIFT.", "SEQ → TRACK → MUTATE. KNOB 1 SOUND and/or KNOB 2 PATTERN every N bars; KNOB 3 AMOUNT; KNOB 4 ORBIT or DRIFT."],
-    ["PLAY: la pista cambia en el uno de cada compás marcado. OCT+ KEEP fija el ancla; OCT− (o GLO + A4) FREEZE.", "PLAY: the track changes on the one of each marked bar. OCT+ KEEP sets the anchor; OCT− (or GLO + A4) FREEZE."],
-    ["Volver: SOUND y PATTERN a OFF → BACK TO BEFORE MUTATE? OCT+. O SEQ + D5 REVERT / GLO + B4 REVERT ALL.", "Go back: SOUND and PATTERN OFF → BACK TO BEFORE MUTATE? OCT+. Or SEQ + D5 REVERT / GLO + B4 REVERT ALL."],
-    ["¿Te arrepentiste del revert? GLO + G4.", "Regret the revert? GLO + G4."]]},
+  {id: "euclid", s: "euclid", shots: ['euclid'], t: ["Un patrón con EUCLID", "A pattern with EUCLID"], steps: [
+    ["SEQ → EUCLID (V10.6). Elegí la pista con ALGORITHM; en DRUM-X, KNOB 4 LANE el sonido.", "SEQ → EUCLID (V10.6). Pick the track with ALGORITHM; on DRUM-X, KNOB 4 LANE the sound."],
+    ["KNOB 1 HITS, KNOB 2 STEPS, KNOB 3 ROTATE: el patrón se reescribe en vivo.", "KNOB 1 HITS, KNOB 2 STEPS, KNOB 3 ROTATE: the pattern is written again, live."],
+    ["SELECT a MODES: ACCENT / GHOST / RATCHET / VARY (DRUM-X) o MOTION / HARMONY / OCTAVE / SLIDE (melódica).", "SELECT to MODES: ACCENT / GHOST / RATCHET / VARY (DRUM-X) or MOTION / HARMONY / OCTAVE / SLIDE (melodic)."],
+    ["OCT+ otra variación, OCT− la de antes; GLO + G4 deshace.", "OCT+ another variation, OCT− the one before; GLO + G4 undoes."]]},
   {id: "punch", s: "punch", shots: ['perform_held', 'toast_punch'], t: ["Punch-in FX, grabarlos y engancharlos", "Punch-in FX, record and latch them"], steps: [
     ["Mantené FX y una tecla: el efecto actúa mientras la mantenés (REPEAT, GLITCH, TAPE STOP, FREEZE, SHUFFLE, OCT, STUTTER, ARP…); las negras D#5 F#5 barren CRUSH, THROW en 2 compases.", "Hold FX and a key: the effect acts while held (REPEAT, GLITCH, TAPE STOP, FREEZE, SHUFFLE, OCT, STUTTER, ARP…); black keys D#5 F#5 sweep CRUSH, THROW over 2 bars."],
     ["Perillas con FX: STEPS, TRANSPOSE, MUTATE, FILTER, a la derecha; girá cualquiera para atrás y vuelve todo al original de golpe.", "Knobs with FX: STEPS, TRANSPOSE, MUTATE, FILTER, to the right; turn any back and everything snaps back to the original."],
@@ -615,6 +614,9 @@ recipes: [
 
 // ------------------------------------------------------------------------------------------- what's new (README's changelog, digested)
 news: [
+  {v: "V10.6", items: [
+    ["SEQ › EUCLID y MODES en el lugar de MUTATE: HITS, STEPS, ROTATE y LANE (DRUM-X) o VARY (melódica); ACCENT GHOST RATCHET VARY o MOTION HARMONY OCTAVE SLIDE. En vivo; OCT+ nueva, OCT− la de antes.", "SEQ › EUCLID and MODES in MUTATE's place: HITS, STEPS, ROTATE and LANE (DRUM-X) or VARY (melodic); ACCENT GHOST RATCHET VARY or MOTION HARMONY OCTAVE SLIDE. Live; OCT+ new, OCT− the one before."],
+    ["MUTATE ya no está (ni FREEZE, REVERT, REVERT ALL ni la mirada de HOME); SEQ TOOLS pierde C4 RANDOM, D4 COOK, E4 BEAT y C5. SEQ + SELECT sigue con el generador de GEN.", "MUTATE is gone (and FREEZE, REVERT, REVERT ALL and HOME's look up); SEQ TOOLS loses C4 RANDOM, D4 COOK, E4 BEAT and C5. SEQ + SELECT still uses GEN's generator."]]},
   {v: "0.9.18", items: [
     ["RATCH y ECHO son uno: RATCH x1–x8, FLAT, FADE (el ECHO de antes) o RISE, con un paso de altura (+1 DEG, −1 DEG, +OCT). Sus golpes se derraman sobre los pasos siguientes (cuatro pasos en un sinte, dos en un kit); un golpe que cae en un paso con la misma nota se omite.", "RATCH and ECHO are one: RATCH x1–x8, FLAT, FADE (the old ECHO) or RISE, with a pitch step (+1 DEG, −1 DEG, +OCT). Its hits spill over the steps after it (four steps on a synth, two on a kit); a hit landing on a step with the same note is left out."],
     ["ARP toca las notas del paso de a una a su RATE (1/32 a 1/4), en su ORDER y octavas, a lo largo del paso y sus ties y más allá. ARP SCALE se carga como WALK; OCT es ahora una octava por vuelta (el CLIMB de antes); TOUCH pasa a los modos de los sonidos.", "ARP plays the step's notes one at a time at its RATE (1/32 to 1/4), in its ORDER and octaves, through the step and its TIEs and past them. ARP SCALE loads as a WALK; OCT is now an octave a lap (the old CLIMB); TOUCH becomes the sounds' modes."],
@@ -627,7 +629,7 @@ news: [
     ["Palabras enteras: ANIMATION, LED GLOW (LOW / HIGH / INVERT), SCREEN SLEEP, HOLD TIME, KNOB SPEEDUP, USB AUDIO, CPU CORES. Los ajustes guardados no cambian. INIT SYSTEM salió del MENU: es SAVE › TOOLS › NEW PROJECT.", "Whole words: ANIMATION, LED GLOW (LOW / HIGH / INVERT), SCREEN SLEEP, HOLD TIME, KNOB SPEEDUP, USB AUDIO, CPU CORES. Saved settings do not change. INIT SYSTEM left the MENU: it is SAVE › TOOLS › NEW PROJECT."]]},
   {v: "0.9.17", items: [
     ["El glitcher (capa FX): GLITCH con DENS PITCH SIZE VARI mientras lo mantenés, TAPE STOP con TIME CURVE y scratch con la KNOB 1 ya parado, SHUFFLE nuevo en C#5 (el último compás en otro orden), FREEZE nuevo en G#4 (granos). El barrido FILTER se fue: el filtro es la macro FILTER.", "The glitcher (FX layer): GLITCH with DENS PITCH SIZE VARI while held, TAPE STOP with TIME CURVE and KNOB 1 scratching once stopped, new SHUFFLE on C#5 (the last bar in another order), new FREEZE on G#4 (grains). The FILTER sweep is gone: the filter is the FILTER macro."],
-    ["Todas las páginas SEQ muestran el mismo piano roll, cada una con lo suyo encima (GATE y SWING, PITCH, cabezales, componentes, automatización, MUTATE). Los valores arriba en todas las pieles; BOTTOM se retiró (abre como AIR).", "Every SEQ page shows the same piano roll, each with its own marks on top (GATE and SWING, PITCH, heads, components, automation, MUTATE). The values on top in every skin; BOTTOM is retired (it opens as AIR)."],
+    ["Todas las páginas SEQ muestran el mismo piano roll, cada una con lo suyo encima (GATE y SWING, PITCH, cabezales, componentes, automatización, MUTATE, que ya no está desde la V10.6). Los valores arriba en todas las pieles; BOTTOM se retiró (abre como AIR).", "Every SEQ page shows the same piano roll, each with its own marks on top (GATE and SWING, PITCH, heads, components, automation, MUTATE, gone since V10.6). The values on top in every skin; BOTTOM is retired (it opens as AIR)."],
     ["SEQ + SELECT tira los dados con el generador de GEN: la parte que GEN escribiría para la pista, sobre la armonía de la canción; sonido, mezcla y automatización quedan.", "SEQ + SELECT dices with GEN's generator: the part GEN would write for the track, on the song's harmony; sound, mix and automation stay."],
     ["Los dados no se repiten: ni la parte, ni la semilla, ni el preset de la tirada anterior; GEN arranca cada sesión con otra SEED.", "The dice never repeat: not the part, the seed or the preset of the throw before; GEN starts each session on another SEED."],
     ["GEN: envolventes propias para lead y arpegio, filtros más oscuros que abren con envolvente, LFOs suaves o vibrato, envíos en la percusión; leads de cuatro compases (pregunta y respuesta) y tres órdenes nuevos de arpegio.", "GEN: lead and arp envelopes of their own, darker filters opening with an envelope, soft LFOs or vibrato, percussion sends; four-bar leads (call and answer) and three new arp orders."],
@@ -683,7 +685,7 @@ news: [
   {v: "0.9.6", items: [["Cada motor dibuja su criatura (célula, colonia, gusanos, enjambre, caracol, oruga).", "Every engine draws its creature (cell, colony, worms, swarm, snail, caterpillar)."]]},
   {v: "0.9.5", items: [["Los mensajes son una píldora sobre la página; las pistas de ayuda esperan a que te quedes.", "Messages are a pill over the page; hints wait for you to stay."]]},
   {v: "0.9.4", items: [["VOICE, ANIMAL y DRUM-X dibujan su propia criatura.", "VOICE, ANIMAL and DRUM-X draw their own creature."]]},
-  {v: "0.9.3", items: [["MUTATE puede volver: SEQ + D5 REVERT, GLO + B4 REVERT ALL, BACK TO BEFORE MUTATE?.", "MUTATE can go back: SEQ + D5 REVERT, GLO + B4 REVERT ALL, BACK TO BEFORE MUTATE?."]]},
+  {v: "0.9.3", items: [["MUTATE puede volver: SEQ + D5 REVERT, GLO + B4 REVERT ALL, BACK TO BEFORE MUTATE? (todo eso ya no está desde la V10.6).", "MUTATE can go back: SEQ + D5 REVERT, GLO + B4 REVERT ALL, BACK TO BEFORE MUTATE? (all gone since V10.6)."]]},
   {v: "0.9.2", items: [
     ["Navegación de seis reglas: SELECT recorre páginas, el botón salta de grupo, PRESETS carga presets, KNOB 1 elige, mantener = capa, la pantalla dice dónde.", "Six-rule navigation: SELECT walks pages, the button jumps groups, PRESETS loads presets, KNOB 1 picks, hold = layer, the screen says where."],
     ["Borrar un paso es SEQ + G5; renombrar SAVE + C5; SCL y ARP son dos secciones; GEN son tres páginas de HOME.", "Clearing a step is SEQ + G5; renaming SAVE + C5; SCL and ARP are two sections; GEN is three HOME pages."]]},

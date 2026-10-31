@@ -44,7 +44,7 @@ PAGE_SHOT = {
                'KIT 2': 'pg_kit2', 'KIT 3': 'pg_kit3', 'KIT 4': 'pg_kit4', 'LEVELS': 'pg_levels', 'LEVELS 2': 'pg_levels2',
                'X-MOD': 'pg_xmod'},
     'SEQ': {'PATTERN': 'lente_pattern', 'STRETCH': 'lente_stretch', 'PLAYHEADS': 'fugue', 'TRACK': 'shift',
-            'MUTATE': 'mutate', 'LENGTH': 'pg_length', 'MUTATE 2': 'pg_mutate2', 'STEP': 'lente_bar', 'NOTE': 'lente_step_note',
+            'EUCLID': 'euclid', 'LENGTH': 'pg_length', 'MODES': 'euclid_modes', 'STEP': 'lente_bar', 'NOTE': 'lente_step_note',
             'COMP': 'lente_step_comp', 'COMP 2': 'lente_step_comp2', 'AUTOMATION': 'motion', 'AUTO LIST': 'auto_list'},
     'FX': {'SENDS': 'fx_track_sends', 'DIST': 'fx_track_dist', 'AUTO PAN': 'fx_track_pan', 'BUSES': 'fx_buses',
            'DLY': 'fx_effect_delay', 'DLY 2': 'fx_effect_delay2', 'REVERB': 'fx_effect_reverb', 'REVERB 2': 'reverb2',

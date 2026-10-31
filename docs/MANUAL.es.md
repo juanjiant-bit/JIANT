@@ -114,7 +114,7 @@ Los nombres de abajo son los que usa el firmware (la pantalla HARDWARE CALIBRATI
 | **GLO** | La sección GLO: desde otro lado, la última página mostrada (al prender MIXER); adentro **LIVE → MIX → GLOBAL → SYSTEM**, en ronda (0.9.11: LIVE, las secuencias en vivo, primero). | Capa **GLO**: mutes, solos, niveles, tap tempo, UNDO. |
 | **SAVE** | La sección SAVE: desde otro lado, la última página mostrada, y USER o SECTIONS llegan con su **SAVE ya elegido** (SAVE, OCT+, OCT+ como antes); adentro **SONG → PROJECT → SOUND**, en ronda (V10.2: primero TIMELINE). | Capa **SAVE**: tocar/guardar secciones en vivo; C5 NAME. |
 | **ARP** | La sección ARP (ARP · ARP 2, un grupo): desde otro lado, la última página mostrada; adentro, vuelve a ARP. Un acorde mantenido + ARP al grabar por pasos lo sigue arpegiando. | (sin capa) |
-| **SEQ** | La sección SEQ: desde otro lado, la última página mostrada (al encender STEP, el piano roll); adentro el grupo siguiente: **PATTERN → TRACK → BAR → STEP → AUTO**, en ronda. | Capa **SEQ TOOLS** (en todas las páginas SEQ); G5 CLR STEP. |
+| **SEQ** | La sección SEQ: desde otro lado, la última página mostrada (al encender STEP, el piano roll); adentro el grupo siguiente (V10.6): **STEP → LENGTH → EUCLID → PLAYHEADS → STRETCH → COMP → AUTO**, en ronda. | Capa **SEQ TOOLS** (en todas las páginas SEQ); G5 CLR STEP. |
 | **PLAY** | Arranca / para. | — |
 | **REC** | Arma / desarma la grabación en la pista seleccionada. | Capa **REC**: CLEAR, CLICK. |
 | **OCT− / OCT+** | Octava del teclado (−3 a +3; los dos juntos: vuelve a 0; en una pista DRUM el kit queda en sus teclas: ratchets arriba, SHORT / GHOST / FLAM abajo, ver [5](#5-drum-x)). En páginas de acción y en diálogos: **OCT−** = atrás / NO, **OCT+** = hacerlo / YES. | — |
@@ -239,8 +239,8 @@ propio recuadro, sus pestañas y su ruta: la página sigue a la vista alrededor,
 **Mensajes** (0.9.5): un mensaje en una página con lente aparece como una pequeña píldora cerca del pie del panel, sobre
 la página, que sigue dibujándose y moviéndose detrás (el encabezado también lo dice; no sobre los seres de HOME ni el
 mapa de una capa); nada se oscurece. La píldora no tapa el texto de la página: si el pie está escrito (las filas de
-AUTO LIST, las líneas de MUTATE) se pone en las filas libres más cercanas, y en una página sin filas libres no aparece y
-lo dice solo el encabezado. La **ayuda** de una página (la de MUTATE "OCT+ KEEP  GLO+A4 FREEZE", la de MOTION y PUNCH
+AUTO LIST) se pone en las filas libres más cercanas, y en una página sin filas libres no aparece y
+lo dice solo el encabezado. La **ayuda** de una página (V10.6: la de EUCLID "TURN A KNOB: A PATTERN", la de MOTION y PUNCH
 "REC + PLAY ...") aparece solo si te quedás en la página unos 0,8 s, nunca mientras SELECT pasa por ella, y cada una
 como mucho dos veces en total (se cuentan con los ajustes: tampoco vuelven tras reiniciar). SAVE › TOOLS › NEW PROJECT
 las reinicia. Tocar un botón de capa no dice nada (ya no están las ayudas "HOLD [X] QUICK"): mantenelo y su capa se
@@ -311,7 +311,7 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 | **EDIT** (un sinte) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · MORPH · RETRIG · ROTOR · VOICE · VOICE 2 · WORDS (las que tenga el motor) — **FOCUS**: FOCUS | hasta 10 |
 | **EDIT** (FM6) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · VOICE · VOICE 2 — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 | 8 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: X-MOD · FILTER · STEREO · VOICE | 13 |
-| **SEQ** | **PATTERN**: PATTERN · STRETCH · PLAYHEADS — **TRACK**: TRACK · MUTATE — **BAR**: BAR · STEP · NOTE — **STEP**: COMP · COMP 2 — **AUTO**: AUTOMATION · AUTO LIST | 12 |
+| **SEQ** | (V10.6) **STEP**: STEP — **LENGTH**: LENGTH · TRACK — **EUCLID**: EUCLID · MODES — **PLAYHEADS**: PLAYHEADS — **STRETCH**: STRETCH — **COMP**: COMP · COMP 2 — **AUTO**: AUTOMATION · AUTO LIST | 11 |
 | **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DLY 2 · DLY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SL BUS · SL BUS 2 · SL PITCH — **MASTER**: MASTER — **PUNCH**: PUNCH | 16 |
 | **GLO** | **LIVE**: MANO · RIELES — **MIX**: MIXER · SENDS — **GLOBAL**: GLOBAL — **SYSTEM**: SYSTEM | 6 |
 | **ENV** | **TRACKS**: TRACKS · TRACKS DEST — **ENV**: ENV · ENV DEST — **STAGE**: STAGE | 5 |
@@ -331,9 +331,8 @@ nivel PROJECT) y **PROJECTS** (el nivel LIBRARY); EDIT 1 / EDIT 2 del kit DRUM s
   (0.9.7, "hoy con carita") Cada ser es el contorno con púas de su especie (las púas según suena) en **tres isotermas**,
   coloreadas por **su propio nivel** como una cámara térmica (bajito: cian y azul; fuerte: rojo, naranja y amarillo; las
   de adentro más calientes), y donde estaban sus núcleos una **carita**: dos ojos que **se cierran con un golpe** y una
-  boca que **se abre con el nivel**. El ser de una pista muteada duerme (un contorno apagado, los ojos cerrados). Cuando
-  **MUTATE** cambia una pista, su ser **mira para arriba**, su número se enciende **blanco** y se abre un anillo del
-  color de acento a su alrededor. Detrás derivan los gránulos del citoplasma (los dibuja solo la pantalla: nada del
+  boca que **se abre con el nivel**. El ser de una pista muteada duerme (un contorno apagado, los ojos cerrados). (V10.6: la
+  mirada para arriba y el anillo se fueron con MUTATE.) Detrás derivan los gránulos del citoplasma (los dibuja solo la pantalla: nada del
   tiempo del sonido). **MACROS**: KNOB 1–4 son **M1–M4** (las macros, como LFO
   mantenido), las rutas contadas arriba a la izquierda, LATCH a la derecha.
 - **BEING**: el ser de la pista grande, sus cuatro perillas de HOME como órganos en las esquinas (un medidor cada una,
@@ -489,7 +488,8 @@ recorre página por página, un toque de **SEQ** salta al grupo siguiente.
 | PATTERN | STRETCH | STRETCH (/8 … /2, x1, x2 … x8) | REPEAT (OFF, x2 … x8, TO 64) | NUDGE | ROTATE (−32 … +32) |
 | PATTERN | PLAYHEADS | HEAD | RATE | DIR | INTERVAL |
 | TRACK | TRACK | PITCH | CHANCE | HUMAN | REC Q |
-| TRACK | MUTATE | SOUND (cada) | PATTERN (cada) | AMOUNT | MODE |
+| EUCLID | EUCLID (V10.6) | HITS | STEPS (2–64) | ROTATE | LANE (DRUM-X) · VARY (melódica) |
+| EUCLID | MODES (V10.6) | ACCENT · MOTION | GHOST · HARMONY | RATCHET · OCTAVE | VARY · SLIDE |
 | BAR | BAR (0.9.2) | BAR (el compás que editás) | LEN | — | — |
 | BAR | STEP (melódica: piano roll) | STEP (los 64, compás tras compás) | NOTE | TIME (REST ← TIE ← NOTE → 2 ST … 16 ST: la duración de la nota en pasos; REST borra el paso) | FLAG (– / ACC / SLD / A+S) |
 | BAR | STEP (DRUM: grilla) | STEP | LANE | HIT | ACC |
@@ -511,7 +511,7 @@ ir **MAP · KNOBS · STATE** (recuerda el nivel; SELECT conserva sus combinacion
 muteada pálida, lo que ahora no se puede apagado, y la nota de cada blanca debajo; **KNOBS**: las cuatro como medidores
 en el color de su perilla (JIANT: el calor de su valor), con las palabras de las teclas de la capa debajo (p. ej. **PLAY RESTART · GLO DONE**);
 **STATE**: lo que está activo, como fichas (FX: el bloqueo, las pistas, el latch, los efectos mantenidos; GLO: cada
-pista ON / MUTE, los grupos de batería, UNDO, MUTATE; LFO: el latch y las rutas de cada macro; REC, SAVE, SCL, EDIT y
+pista ON / MUTE, los grupos de batería, UNDO; LFO: el latch y las rutas de cada macro; REC, SAVE, SCL, EDIT y
 SEQ las suyas). El encabezado nombra la capa en palabras, **[GLO] SET**. El pie es la miga de pan, **FX · MAP**. Las teclas y las perillas hacen exactamente lo mismo que antes.
 
 **FX — efectos punch-in** (detalles en [11](#11-tocar-en-vivo))
@@ -559,9 +559,10 @@ preguntan antes y no tocan los pasos. En una pista DRUM, las teclas negras 1–8
 CH OH TM RS CB). Perillas: las cuatro de EDIT 1.
 
 **SEQ TOOLS** (en todas las páginas SEQ) — F3 CLEAR, G3 REVERSE, A3 / B3 SHIFT a la izquierda /
-derecha, C4 RANDOM, D4 COOK, E4 BEAT (DRUM), F4 CLR AUTO (la automatización y los locks de la pista; los pasos quedan).
-En una pista DRUM, las herramientas de carril: G4 CLR, A4 REV, B4 FILL, C5 RND sobre el carril elegido con las teclas
-negras 1–8. **G5 CLR STEP** (0.9.2; antes el toque de EDIT): borra el paso del cursor y sus locks, y el cursor pasa al
+derecha, F4 CLR AUTO (la automatización y los locks de la pista; los pasos quedan).
+En una pista DRUM, las herramientas de carril: G4 CLR, A4 REV, B4 FILL sobre el carril elegido con las teclas
+negras 1–8. (V10.6: C4 RANDOM, D4 COOK, E4 BEAT y C5, el RANDOM del carril, ya no están; los patrones los escribe SEQ ›
+EUCLID, y SEQ + SELECT sigue tirando los dados.) **G5 CLR STEP** (0.9.2; antes el toque de EDIT): borra el paso del cursor y sus locks, y el cursor pasa al
 siguiente (en NOTE con una nota en foco: solo esa nota; en AUTO LIST, **DEL REC**: borra el registro de la fila).
 **REC** (con SEQ mantenido): CLEAR ALL. Perillas: LEN, DIV, SWING, GATE. Estas herramientas no tienen
 UNDO.
@@ -1024,11 +1025,14 @@ niveles (PATRÓN ↔ COMPÁS ↔ PASO, la LENTE de la 0.8.3) y el toque recorrí
 dibujos son los mismos, solo es nuevo el camino entre ellas. Los compases del patrón (hasta cuatro, con LEN 64) se
 dibujan como celdas chicas: el que editás teñido de violeta con su número en violeta, el número del que suena en
 naranja, un compás más allá de LEN oscuro.
+(V10.6) La cadena es **STEP · LENGTH · TRACK · EUCLID · MODES · PLAYHEADS · STRETCH · COMP · COMP 2 · AUTOMATION ·
+AUTO LIST**, once páginas: EUCLID y MODES, bajo la pestaña **EUCLID** (**EUCL**), están donde estaban MUTATE y MUTATE 2.
 
 | Grupo | Páginas | Qué muestra la pantalla |
 | --- | --- | --- |
 | **PATTERN** | PATTERN · STRETCH · PLAYHEADS | (0.9.17) El roll, como toda página SEQ. **PATTERN** dibuja las notas tan largas como las toca **GATE** y los pasos impares atrasados según **SWING**; los pasos más allá de **LEN** oscuros (en la tira, los compases más allá). **PLAYHEADS** dibuja sus cabezales extra sobre el roll como líneas mientras suenan, cada uno tan caliente como su número (el que editás de 3 px). |
-| **TRACK** | TRACK · MUTATE | **TRACK** contornea adónde lleva **PITCH** las notas (en gris, sobre las notas como están escritas). **MUTATE** muestra una ficha al pie del roll: los compases hasta la próxima mutación (**NEXT n BARS**), **FROZEN** o **MUTATE OFF**. |
+| **TRACK** | TRACK | **TRACK** contornea adónde lleva **PITCH** las notas (en gris, sobre las notas como están escritas). |
+| **EUCLID** (V10.6) | EUCLID · MODES | Un anillo con los pasos del patrón y el cabezal; DRUM-X los ocho carriles como filas, melódica la tonalidad y un pequeño roll (ver [EUCLID y MODES](#euclid-y-modes-v106)). |
 | **BAR** | STEP · NOTE | El KNOB 1 de STEP recorre **los 64 pasos** y entra solo en el compás siguiente (0.9.18: girado rápido avanza varios, KNOB SPEEDUP; la página BAR con su perilla del compás ya no está, LEN es de PATTERN); en NOTE la nota en foco en naranja. |
 | **STEP** | COMP · COMP 2 | (0.9.18) El paso donde va el componente enmarcado en violeta con una lengüeta al pie (KNOB 1, al instante); una barra naranja arriba de cada paso con el mismo componente, una línea fina arriba de uno con otro; el paso de un JUMP enmarcado en naranja. |
 | **AUTO** | AUTOMATION · AUTO LIST | Una marca debajo de cada paso con un registro (un lock naranja, automatización blanca); en AUTO LIST el registro elegido tiene su paso enmarcado en violeta, y las tarjetas dicen su fila, paso, parámetro y valor. |
@@ -1040,7 +1044,7 @@ escala teñidas, el cursor un marco alrededor de su columna, el cabezal una lín
 marquita arriba, un lock una marca al pie, una tecla apretada en la pista una marca a la izquierda de su fila (una
 pista DRUM: la **grilla**, con sus teclas). Las marcas propias de la página van encima (la tabla). Hasta la 0.9.16 el
 grupo PATTERN dibujaba los compases en miniaturas grandes con un roll "PLAYHEADS" debajo, COMP el paso grande con sus
-fichas, PLAYHEADS tres carriles, MUTATE y AUTO LIST paneles propios.
+fichas, PLAYHEADS tres carriles, MUTATE (que ya no está desde la V10.6) y AUTO LIST paneles propios.
 
 Desde la 0.8.5 el roll ya no tiene la tira de teclado ni los nombres de las filas de C (como la maqueta): la tarjeta
 PITCH dice la nota en foco.
@@ -1217,31 +1221,8 @@ seleccionada se graban como **automatización**. MENU › AUDIO › CLICK tiene 
 - **AUTO LIST**: cada evento de automatización y cada lock en forma de lista. KNOB 1 la fila, 2 el paso, 3 el
   parámetro, 4 el valor. En **+ ADD LOCK**, OCT+ agrega un lock; sobre un registro, OCT+ lo alterna entre LOCK y AUTO;
   **SEQ + G5** (DEL REC; hasta la 0.9.1 EDIT) lo borra.
-- **MUTATE**: la pista cambia sola, sincronizada con el clock, para que una textura evolucione durante minutos.
-  **SOUND** y **PATTERN**: cada OFF, 1, 2, 4, 8, 16 o 32 compases (el cambio cae en el 1 del compás). **AMOUNT**:
-  cuánto (al activar uno queda en 50 %). La página (0.6.92) muestra los próximos 32 compases de la pista elegida como
-  una sola tira, una marca en cada compás donde cae un cambio (naranja: SOUND, violeta: PATTERN), el cabezal encima y
-  una línea que dice qué hace cada perilla. **MODE**: **ORBIT** varía alrededor del ancla (la música como estaba al
-  activar MUTATE, al dar PLAY, cuando apretás **OCT+** acá: KEEP, o cuando escribiste o borraste pasos por última
-  vez), así nunca pierde su identidad y una secuencia que borrás queda borrada; MUTATE nunca llena un patrón vacío; **DRIFT** sigue desde
-  como está ahora. SOUND cambia los valores del motor, el filtro, su envolvente, DEC, REL y los envíos (nunca LEVEL, PAN
-  ni MUTE); PATTERN mueve notas por la escala, cambia acentos, agrega o saca una nota fuera del tiempo (nunca en el
-  tiempo); en DRUM cambia golpes, nunca el bombo. **OCT−** acá (o **GLO + A4**, FREEZE) frena todas las mutaciones
-  hasta volver a apretarlo. En HOME (0.9.7) el ser al que le llega un cambio mira para arriba, su número se enciende
-  blanco y se abre un anillo del color de acento a su alrededor.
-  **Volver atrás** (0.9.3): MUTATE guarda su ancla, así que una pista puede volver a ella. Si apagás SOUND y PATTERN de
-  una pista (los dos en OFF) después de que MUTATE la cambió, un aviso (NOTICE) pregunta **BACK TO BEFORE MUTATE?**:
-  **OCT+** (BACK) devuelve el sonido y los pasos de la pista como los tiene el ancla, **OCT−** (KEEP) la deja como está
-  (si nada cambió, no pregunta). En cualquier momento **SEQ + D5** (**REVERT**, en todas las páginas de SEQ) hace lo
-  mismo con la pista elegida, y **GLO + B4** (**REVERT ALL**, al lado de FREEZE) con todas las pistas que suenan. En
-  esta página OCT+ y OCT− siguen siendo KEEP y FREEZE, por eso volver es una tecla de capa (regla 5). Vuelve solo lo
-  que MUTATE cambia: los valores del motor, el filtro, su envolvente, DEC, REL, los envíos y los pasos (notas, acentos,
-  golpes); LEVEL, PAN, MUTE, los ajustes del patrón (LEN, DIV …) y las otras pistas quedan (una pista que cambió de
-  motor desde entonces: solo sus pasos). El ancla es el punto de arriba (MUTATE encendido, PLAY, KEEP, pasos escritos),
-  también en DRIFT: después de un DRIFT largo, REVERT vuelve hasta ese punto, no un cambio atrás; apretá KEEP para que
-  la música de ahora sea el punto al que volver. Un REVERT se deshace con **GLO + G4** (UNDO). Después de cargar un
-  proyecto o una sección, o de NEW PROJECT, el ancla es de otra música: REVERT dice **NO ANCHOR** hasta que MUTATE tome
-  una nueva.
+- **EUCLID** y **MODES** (V10.6, donde estaba MUTATE; MUTATE ya no está): un patrón euclidiano escrito en vivo con
+  cuatro perillas, y cuatro cantidades que le suman. Ver [EUCLID y MODES](#euclid-y-modes-v106) más abajo.
 - **PLAYHEADS** (grupo PATTERN; antes FUGUE), a la Fugue Machine: tres **cabezales** más (2, 3 y 4) leen los mismos pasos que el
   secuenciador de la pista. KNOB 1 **HEAD** elige uno, KNOB 2 **RATE** (OFF, 1/4, 1/3, 1/2, 2/3, x1, 3/2, x2, x3, x4 del
   de la pista), KNOB 3 **DIR** (FWD, REV, PING, RND), KNOB 4 **INTVL**, su intervalo en grados de la escala (−14 a +14; una
@@ -1249,6 +1230,47 @@ seleccionada se graban como **automatización**. MENU › AUDIO › CLICK tiene 
   y el GATE de la pista (sin components, locks ni ratchets: esos son del secuenciador): cánones, contrapunto, patrones
   que se desfasan consigo mismos. La página dibuja los pasos, el cabezal del secuenciador y dónde va cada cabezal. Se
   guarda con la sección; los cabezales arrancan y paran con el transporte.
+
+### EUCLID y MODES (V10.6)
+
+(V10.6) **MUTATE ya no está** (sus páginas MUTATE y MUTATE 2, los cambios cada N compases, ORBIT / DRIFT, KEEP y el
+ancla, REVERT y **BACK TO BEFORE MUTATE?**, GLO + A4 FREEZE, GLO + B4 REVERT ALL, SEQ + D5 REVERT, la mirada para
+arriba y el anillo de HOME). En su lugar en la cadena de SEQ, después de TRACK, hay dos páginas con su propia pestaña,
+**EUCLID** (**EUCL**): **EUCLID** escribe el patrón de la pista elegida como un ritmo euclidiano y **MODES** le suma
+cosas. La ayuda de la página: **TURN A KNOB: A PATTERN** · **OCT+ NEW  OCT− BEFORE**.
+
+| Página | Pista | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+| --- | --- | --- | --- | --- | --- |
+| EUCLID | DRUM-X | HITS | STEPS (2–64) | ROTATE | LANE (BD SD CP CH OH TM RS CB) |
+| EUCLID | melódica | HITS | STEPS (2–64) | ROTATE | VARY (0–100) |
+| MODES | DRUM-X | ACCENT | GHOST | RATCHET | VARY |
+| MODES | melódica | MOTION | HARMONY | OCTAVE | SLIDE |
+
+- **HITS, STEPS, ROTATE**: los golpes se reparten tan parejo como dejan los pasos (un ritmo euclidiano) y ROTATE los
+  gira. En DRUM-X **cada uno de los ocho sonidos tiene los suyos** HITS, STEPS y ROTATE (LANE elige cuál editan las
+  perillas); el largo del patrón es el mínimo común de sus largos, hasta 64.
+- **MODES**: cuatro cantidades (0 = apagado) que le suman a lo que se genera. DRUM-X: **ACCENT** (un segundo
+  euclidiano, de acentos), **GHOST** (golpes suaves en el medio), **RATCHET** (algunos golpes x2 / x4), **VARY**.
+  Melódica: **MOTION** (cuánto se mueve la melodía: 0 una nota pedal, más alto saltos más grandes), **HARMONY**
+  (acordes de la escala en los tiempos fuertes), **OCTAVE** (saltos de octava), **SLIDE** (slides).
+- **VARY** afloja la grilla pareja: algunos golpes se corren un paso (hacia el contratiempo, más en la segunda mitad,
+  así le contesta a la primera), una anacrusa antes de un tiempo fuerte, un golpe que se saca; en una pista melódica,
+  notas que se sostienen sobre el hueco que les sigue.
+- **Las notas de una pista melódica**: dentro del **SCL** de la pista (ROOT / SCALE) si está puesto (la pantalla dice
+  **SCL**); si no, en la tonalidad donde mejor entran las notas de las otras pistas (**FROM T*n***); si no, una escala
+  y una tónica nuevas (**NEW KEY**). La melodía se queda en el registro que tenía la pista al primer giro (una pista
+  vacía: alrededor de C4).
+- **En vivo**: girar una perilla vuelve a escribir todo el patrón de la pista, al instante (su automatización queda).
+  Un gesto nuevo después de dos segundos es un punto de UNDO (**GLO + G4**). **OCT+** una variación nueva (los mismos
+  ajustes de ritmo, notas y detalles nuevos), **OCT−** la variación de antes. Mientras suena una canción (ARRANGE) la
+  página dice **STOP TO EDIT**.
+- **La pantalla**: un anillo con los pasos del patrón (DRUM-X: el carril elegido; los golpes encendidos, los acentos
+  más grandes, los ghosts chiquitos, los ratchets enmarcados) y el cabezal dando la vuelta. DRUM-X: los ocho carriles
+  como filas, con sus HITS / STEPS a la derecha; melódica: la tonalidad (tónica y escala) adentro del anillo y las
+  notas como un pequeño roll a la derecha, con de dónde salió la tonalidad. MODES muestra el mismo patrón, así ves
+  cómo lo cambia cada cantidad.
+- Los ajustes de EUCLID y MODES viven en la RAM durante la sesión; el patrón en sí se guarda con el proyecto como
+  cualquier patrón.
 
 ### Parameter locks
 
@@ -1525,7 +1547,7 @@ musicales; más abajo, más simples todavía (ver *COMPLEX en EXPLORE* abajo):
   una frase o scat), FM6, ANIMAL y VOICE en dos pistas como mucho; las octavas de DRUM-X por sonido en los pasos (x2 x4
   x8, SHORT, GHOST, FLAM); paneos amplios, glides, vibratos, tipos de distorsión.
 - **Movimiento**: componentes de paso desparramados (RAND, OCT, BEND, ECHO, PULSE, WALK, CLIMB, ARP, TONAL, JUMP, REV,
-  algunos cada dos vueltas), **PLAYHEADS** en una o dos pistas, **MUTATE** en una o dos pistas; el pitch y el spray de
+  algunos cada dos vueltas), **PLAYHEADS** en una o dos pistas; el pitch y el spray de
   granos del delay, ping-pong, cualquier reverb.
 - Lo que respeta: siempre suena (al menos dos partes melódicas, los niveles de los géneros, el presupuesto de voces
   compartido, el delay sin llegar a auto-oscilar), la **página SCALE** y la **página CHORD** dicen la tonalidad y los
@@ -1538,7 +1560,7 @@ semilla, dijera lo que dijera la perilla: casi todas las piezas salían lo más 
 cuánto: cada tirada propia de EXPLORE pasa tan seguido como dice COMPLEX (en 50, la mitad que en 100) — una pista con
 su propio loop o DIV (y en 1 + COMPLEX / 20 pistas como mucho: tres en 50), largos de acorde y loops impares, los modos
 exóticos (debajo de 100 salen más los comunes: mayor, menor, dórico y mixolidio), los colores prestados y secundarios,
-los acordes fuera de la tonalidad, los componentes de paso, PLAYHEADS, MUTATE, los granos del delay; ANIMAL y VOICE en
+los acordes fuera de la tonalidad, los componentes de paso, PLAYHEADS, los granos del delay; ANIMAL y VOICE en
 una pista cada uno debajo de COMPLEX 61; el rango de tempo se cierra hacia el medio. COMPLEX 100 vuelve a ser el caos
 completo.
 
