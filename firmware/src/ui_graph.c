@@ -1318,8 +1318,9 @@ static uint32_t graph_signature(void)
                                                       * held, or ANIM OFF, the band is not drawn again) */
         return h ^ (anim_fr / 2u) ^ (home_level() * 7u + home_set()) * 104729u;
     h ^= (uint32_t)pg->graph * 131u + TSEL->eng_req + song.sel * 7777u + ui.page * 1291u;
-    if (strip_kind() == SK_TITLE)                    /* MENU > LARGE: the page's title (its engine, its number) */
-        return h ^ 0x5A17u;
+    if (strip_kind() == SK_TITLE)                    /* MENU > LARGE: the page's title (its engine, its number); (V10.8) an
+                                                      * EDIT page: the engine's creature, alive */
+        return h ^ 0x5A17u ^ (pg->fam == FAM_EDIT ? anim_fr / 2u * 2654435761u : 0u);
     if ((pg->graph == GR_NONE && !fx_on()) || pg->graph == GR_ARP ||
         (pg->graph == GR_MOTION && !seq_roll_view(pg))) h ^= anim_fr / 2u;   /* (0.9.9-seq2b: AUTOMATION the roll, still) */   /* (0.8.5:
                                                          * FX's lens pictures change with their values, */
@@ -2000,10 +2001,23 @@ static void draw_graph(void)
         uint32_t k = strip_kind();
         cv_oy = k == SK_ADSR || k == SK_LFO ? 3 : 0;
         graph_ht = LG_H_GRAPH - 6;
-        if (k == SK_SCOPE) graph_scope(c);
-        else if (k == SK_ADSR) graph_adsr(t, c);
+        if (k == SK_SCOPE) {                         /* (V10.8, testers: LARGE hid the animations) HOME: the tracks'
+                                                      * creatures in a row, the scope only if none has one */
+            uint32_t n = trk_live ? trk_live : 1u, i, w = 228u / n, any = 0;
+            vx_small = 1;
+            for (i = 0; i < n; i++)
+                any |= (uint32_t)vx_draw(&trk[i], 6 + (int32_t)(i * w), 2, (int32_t)w - 4, (int32_t)graph_ht - 4, -1);
+            vx_small = 0;
+            if (!any) graph_scope(c);
+        } else if (k == SK_ADSR) graph_adsr(t, c);
         else if (k == SK_LFO) graph_lfo(t, c);
-        else graph_title();
+        else {
+            int ok;
+            vx_small = 1;
+            ok = pg->fam == FAM_EDIT && vx_draw(t, 8, 2, 224, (int32_t)graph_ht - 4, -1);   /* (V10.8) EDIT: the creature */
+            vx_small = 0;
+            if (!ok) graph_title();
+        }
         graph_ht = 100;
     } else if (ui.confirm == CF_DICE_ALL) {          /* (0.8.5) GEN, HOME's lens's last level (gen.c) */
         cv_oy = 0;

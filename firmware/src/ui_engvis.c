@@ -986,8 +986,10 @@ static void vx_body(const vxf_t *f, const vxb_t *g, int32_t r, int32_t ri, uint3
     if (ri) vx_blob(f, g, ri, 0, t, ni, hi);
 }
 /* text s centred on (x, its capitals' top y) Q4 px */
+static uint8_t vx_small;                                 /* (V10.8) LARGE's strip: the creatures small, no labels */
 static void vx_text(int32_t x, int32_t y, const char *s, uint16_t c)
 {
+    if (vx_small) return;
     cv_text((x >> 4) - text_w(&AF_X, s) / 2, (y >> 4) - AF_X_CAP_Y, &AF_X, s, c);
 }
 
@@ -1264,7 +1266,8 @@ static VX_CODE void vx_fm6(const track_t *t, const int32_t *A, int32_t en_home, 
         const uint8_t *op = o.p + (5u - (uint32_t)k) * FP_OP;
         int32_t sh = op2 && (uint32_t)k == sel ? (op[FP_DET] > 7u ? op[FP_DET] - 7 : 7 - op[FP_DET]) * 8 : 0;
         vx_fm_bicho(&f, &o, (uint32_t)k, o.x[k], o.y[k], o.rad[k], age, mt, (uint32_t)k == sel, sh);
-        vx_fm_num(&f, &o, (uint32_t)k, o.x[k] - o.rad[k] - 64, o.y[k] - o.rad[k] + 16, (uint32_t)k == sel);
+        if (A[2] >= 80)                                  /* (V10.8: small, LARGE's strip, the numbers left out) */
+            vx_fm_num(&f, &o, (uint32_t)k, o.x[k] - o.rad[k] - 64, o.y[k] - o.rad[k] + 16, (uint32_t)k == sel);
         VX_FM6_HOOK(k, f.cx + ((o.x[k] * f.s) >> 8), f.cy + ((o.y[k] * f.s) >> 8), (145 * f.s) >> 8);   /* (the largest it gets) */
     }
     vxs.kc = 0;
