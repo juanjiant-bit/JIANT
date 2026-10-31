@@ -26,7 +26,11 @@ static const char *const N_DTIME[] = {"1/4", "1/8", "1/16", "1/32", "8T", "16T",
 #else
                                       , "2.95s"
 #endif
+                                      , "1/8D", "1/16D", "1/4D"   /* (V10.8) dotted, appended (the values before mean what
+                                                         * they did); DTIME_ORDER puts them by their divisions */
                                       };
+#define DT_DOT (DLY_LEN >= 65536u ? 70u : 64u)          /* the first dotted one */
+typedef char dt_dot_ok[NELEM(N_DTIME) == DT_DOT + 3u ? 1 : -1];
 static const uint16_t DTIME_MS[NELEM(N_DTIME) - DT_FREE] = {5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 17, 19, 21, 24, 27, 31, 35, 39, 44, 50, 56, 64, 72, 81, 91, 103, 116, 131, 148, 167, 189, 213, 241, 272, 307, 346, 391, 441, 498, 562, 634, 716, 808, 912, 1029, 1162, 1311, 1480,
                                       1670, 1885, 2128, 2402, 2711
 #if DLY_LEN >= 65536u
@@ -344,7 +348,7 @@ static const uint8_t DIV_ORDER[10] = {9, 8, 7, 6, 0, 1, 4, 2, 5, 3};   /* 4BAR 2
 static const uint8_t SLDIV_ORDER[6] = {0, 3, 1, 4, 2, 5};              /* 1/8 8T 1/16 16T 1/32 32T */
 static const uint8_t RWAVE_ORDER[7] = {5, 6, 0, 1, 2, 3, 4};   /* (JIANT 0.4) LOFI's WAVE: BYTE first (0.5.1: FLOAT
                                                          * next), then PLS .. WRAM */
-static const uint8_t DTIME_ORDER[NELEM(N_DTIME)] = {9, 8, 7, 6, 0, 1, 4, 2, 5, 3, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
+static const uint8_t DTIME_ORDER[NELEM(N_DTIME)] = {9, 8, 7, 6, DT_DOT + 2u, 0, DT_DOT, 1, DT_DOT + 1u, 4, 2, 5, 3, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
                                                  58, 59, 60, 61, 62
 #if DLY_LEN >= 65536u
                                                  , 63, 64, 65, 66, 67, 68, 69

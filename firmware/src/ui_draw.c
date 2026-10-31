@@ -1792,7 +1792,12 @@ static void draw_columns(void)
             hot_unit_column(0, "STEP", sn, sl);
             unit_column(1, "NOTE", val, u, step_on(st) ? VAL(1u) : T_DIM);
             hot_unit_column(2, "TIME", tv, nl > 1u ? "ST" : "");
-            hot_text_column(3, "FLAG", FLAG_N[(st->flags & SF_ACCENT ? 1u : 0u) | (st->flags & SF_SLIDE ? 2u : 0u)]);
+            {   /* (V10.8) VEL, past 127 the flags */
+                uint32_t f = (st->flags & SF_ACCENT ? 1u : 0u) | (st->flags & SF_SLIDE ? 2u : 0u);
+                char vv[8];
+                if (f) str_cpy(vv, FLAG_N[f], sizeof vv); else fmt_int(vv, st->vel ? st->vel : 96);
+                hot_text_column(3, "VEL", vv);
+            }
         }
         return;
     }

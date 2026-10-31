@@ -890,7 +890,8 @@ static inline int32_t dly_rd(uint32_t d, int32_t m) { return dly_rd_of(dly_buf, 
 static uint32_t delay_samples(void)
 {
     uint32_t g = (uint32_t)GFX(GF_DTIME);
-    uint32_t s = g < DT_FREE ? div_samples(g) : (uint32_t)DTIME_MS[(g - DT_FREE) % NELEM(DTIME_MS)] * 441u / 10u;   /* (JIANT 0.4: free) */
+    uint32_t s = g < DT_FREE ? div_samples(g) : g >= DT_DOT ? div_samples((0x021u >> ((g - DT_DOT) * 4u)) & 3u) * 3u / 2u
+               : (uint32_t)DTIME_MS[(g - DT_FREE) % NELEM(DTIME_MS)] * 441u / 10u;   /* (JIANT 0.4: free; V10.8: 1/8D 1/16D 1/4D) */
     return s < 16u ? 16u : s > DLY_MAX ? DLY_MAX : s;
 }
 

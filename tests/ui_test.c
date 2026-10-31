@@ -807,6 +807,28 @@ static int test_mutate(void)
         }
         bad += check("V10.7 the kit's SEQ dice: a beat in every genre (NEO CLASSIC's no drums too)", empty == 0u);
     }
+    {   /* (V10.8, testers) SEQ > STEP's KNOB 4: the step's velocity 1..127, a fast turn stops at 127, then ACC SLD A+S */
+        step_t *st;
+        ui_power_on();
+        set_engine_of(TSEL, ENGI_ANALOG);
+        my_steps(TSEL);
+        go_title("STEP"); frame();
+        ui.cursor = 0; st = &TSEL->step[0];
+        st->vel = 99; st->flags = 0;
+        turn(EN_K4, -1); frame();
+        ok = st->vel == 98u && !(st->flags & (SF_ACCENT | SF_SLIDE));
+        turn(EN_K4, 100); frame();
+        ok &= st->vel == 127u && !(st->flags & SF_ACCENT);
+        turn(EN_K4, 1); frame();
+        ok &= (st->flags & SF_ACCENT) && !(st->flags & SF_SLIDE);
+        turn(EN_K4, 1); frame();
+        ok &= !(st->flags & SF_ACCENT) && (st->flags & SF_SLIDE);
+        turn(EN_K4, 1); frame();
+        ok &= (st->flags & SF_ACCENT) && (st->flags & SF_SLIDE);
+        turn(EN_K4, -3); frame();
+        ok &= !(st->flags & (SF_ACCENT | SF_SLIDE)) && st->vel == 127u;
+        bad += check("V10.8 SEQ > STEP KNOB 4: VEL 1..127 (a fast turn stops at 127), then ACC SLD A+S, back down the same", ok);
+    }
     return bad;
 }
 
@@ -8636,26 +8658,31 @@ static int test_div_order(void)
     ui_power_on();
     for (k = 0; k < NELEM(LISTS); k++) {           /* left end -> right end: each one shorter than the one before */
         const param_desc_t *d = LISTS[k];
-        int32_t v = d->def, n, seen = 0;
+        int32_t v = d->def, n, nd = d == &GP[G_DTIME] ? DT_FREE + 3 : d->max - d->min + 1, cnt = 0;
+        uint8_t seen[96];
         uint32_t prev = 0xFFFFFFFFu, len;
+        memset(seen, 0, sizeof seen);
         for (n = 0; n < 40; n++) v = param_turn(d, v, -1);
-        for (n = 0; n <= (d == &GP[G_DTIME] ? DT_FREE - 1 : d->max - d->min); n++) {   /* (TIME: its divisions; the
+        for (n = 0; n < nd; n++) {                      /* (TIME: its divisions, V10.8 the dotted among them; the
                                                          * free times past them: test_dtime_free) */
-            len = d->names == N_SLDIV ? 1000000u / SL_DEN[v] : div_samples((uint32_t)v);
-            if (!(len < prev && enum_rank(d, v) == d->min + n && !((seen >> v) & 1))) {
+            len = d->names == N_SLDIV ? 1000000u / SL_DEN[v] :
+                  d == &GP[G_DTIME] && v >= (int32_t)DT_DOT ? div_samples((0x021u >> ((v - DT_DOT) * 4u)) & 3u) * 3u / 2u :
+                  div_samples((uint32_t)v);
+            if (!(len < prev && enum_rank(d, v) == d->min + n && !seen[v])) {
                 printf("  %s: %s (value %d, place %d, length %u) after %u\n", d->label, d->names[v], (int)v,
                        (int)enum_rank(d, v), len, prev);
                 ok = 0;
             }
-            seen |= 1 << v;
+            cnt += !seen[v];
+            seen[v] = 1;
             prev = len;
             v = param_turn(d, v, 1);
         }
-        ok &= seen == (d == &GP[G_DTIME] ? (1 << DT_FREE) - 1 : (1 << (d->max - d->min + 1)) - 1);
+        ok &= cnt == nd;
     }
     {   /* (JIANT 0.4) TIME past the last division (1/32): the free times, 5 ms .. 1.48 s, each longer, the end holds;
          * (0.8.4) past 1.48 s more, to the longest the delay's line holds (fx.c DLY_MAX), the ones before as they were */
-        int32_t v = 3, n, nf = (int32_t)NELEM(DTIME_MS);
+        int32_t v = 3, n, nf = (int32_t)NELEM(DTIME_MS) - 3;   /* (V10.8: the three dotted after them) */
         uint32_t prev = 0;
         int okf = 1;
         for (n = 0; n < nf; n++) {
@@ -8665,11 +8692,15 @@ static int test_div_order(void)
         }
         okf &= param_turn(&GP[G_DTIME], v, 1) == v && DTIME_MS[0] == 5u && DTIME_MS[47] == 1480u &&
                str_eq(N_DTIME[DT_FREE], "5ms") && str_eq(N_DTIME[57], "1.48s") && nf > 48 &&
-               NELEM(N_DTIME) == (uint32_t)(DT_FREE + nf) && DTIME_MS[nf - 1] * 441u / 10u <= DLY_MAX;
+               NELEM(N_DTIME) == (uint32_t)(DT_FREE + nf + 3) && DTIME_MS[nf - 1] * 441u / 10u <= DLY_MAX;
         song.g[G_DTIME] = DT_FREE + 47;
         okf &= delay_samples() == 1480u * 441u / 10u;
         song.g[G_DTIME] = (int16_t)(DT_FREE + nf - 1);
         okf &= delay_samples() == DTIME_MS[nf - 1] * 441u / 10u;
+        song.g[G_DTIME] = (int16_t)DT_DOT;              /* (V10.8) 1/8D: three 16ths */
+        okf &= str_eq(N_DTIME[DT_DOT], "1/8D") && delay_samples() == div_samples(1) * 3u / 2u;
+        song.g[G_DTIME] = (int16_t)(DT_DOT + 2u);
+        okf &= delay_samples() == div_samples(0) * 3u / 2u && param_turn(&GP[G_DTIME], 0, -1) == (int32_t)(DT_DOT + 2u);
         song.g[G_DTIME] = 1;
         bad += check("delay TIME: past 1/32 the free times 5 ms .. 1.48 s and on to the line's longest, each longer; the delay that long", okf);
     }
@@ -11320,6 +11351,20 @@ static int test_lz_home(void)
     press(B_OCTDN); frame();                                        /* OCT-: ECO */
     ok &= !ui.confirm && ui.home && home_level() == 0u && !home_set();
     bad += check("0.9.2 HOME: GEN is HOME's pages, not modal (ENV leaves it, HOME comes back to GEN 2, ALGORITHM works); OCT- ECO", ok);
+    {   /* (V10.8, testers) GEN's GENRE kept when GEN is left and opened again */
+        uint32_t g0;
+        turn(EN_SELECT, 4); frame();                    /* GEN 1 */
+        ok = gen_on() && gen_page() == 0u;
+        turn(EN_PRESET, 3); frame();
+        g0 = gp.genre;
+        press(B_OCTDN); frame();                        /* out (ECO) */
+        open_family(FAM_ENV); frame();
+        go_home(); frames(64);
+        turn(EN_SELECT, 4); frame();
+        ok &= gen_on() && gp.genre == g0 && g0 != GEN_EXPLORE;
+        press(B_OCTDN); frame();
+        bad += check("V10.8 GEN: the GENRE picked stays after leaving GEN (was EXPLORE again each visit)", ok);
+    }
     turn(EN_SELECT, 2); frame();                                    /* BEING */
     open_family(FAM_ENV); frame();
     ok = !ui.home;
@@ -12239,7 +12284,7 @@ static void tk_start(uint32_t from)                     /* 0 home, 1 seq, 2 fxdl
 }
 static int test_nav_tasks(void)
 {
-    static const uint8_t WANT[14] = {4, 3, 5, 6, 33, 10, 9, 2, 3, 1, 3, 8, 17, 4};   /* (V10.1: SAVE composes first, 106 -> 108) */   /* (seq2: task 5 by STEP's KNOB 1, no BAR;
+    static const uint8_t WANT[14] = {4, 3, 5, 6, 34, 10, 9, 2, 3, 1, 3, 8, 17, 4};   /* (V10.1: SAVE composes first, 106 -> 108) */   /* (seq2: task 5 by STEP's KNOB 1, no BAR;
                                                          * task 11 TRACK under LEN's tab; task 13 eight detents (seq2c:
                                                          * MUTATE 2); was 73) */
     uint32_t got[14], t, tot = 0;
@@ -12268,7 +12313,8 @@ static int test_nav_tasks(void)
             ok = str_eq(cur_page()->title, "STEP") && ui.cursor == 4u && note_len(TSEL, 4, 64) == 2u;
             break;
         case 4:                                         /* bar 3, an accent on its first step */
-            tk_start(1); tk_go(EN_K1, 32); tk_val(EN_K4, 1);   /* (seq2: no BAR page in the chain; STEP's KNOB 1 crosses bars) */
+            tk_start(1); tk_go(EN_K1, 32); tk_val(EN_K4, 40); tk_val(EN_K4, 1);   /* (seq2: no BAR page in the chain; STEP's KNOB 1 crosses bars;
+                                                         * V10.8: KNOB 4 VEL, past 127 ACC) */
             ok = str_eq(cur_page()->title, "STEP") && ui.cursor == 32u && (TSEL->step[32].flags & SF_ACCENT);
             break;
         case 5:                                         /* the sound into U05 */
@@ -12327,7 +12373,7 @@ static int test_nav_tasks(void)
     }
     printf("ui:   the race: %u %u %u %u %u %u %u %u %u %u %u %u %u %u = %u actions (0.9.1: 75)\n", got[0], got[1], got[2], got[3],
            got[4], got[5], got[6], got[7], got[8], got[9], got[10], got[11], got[12], got[13], tot);
-    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 108u);
+    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 109u);   /* (V10.8: an accent past VEL 127: +1) */
     ui_power_on();
     return bad;
 }

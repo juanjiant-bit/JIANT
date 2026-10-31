@@ -2323,8 +2323,8 @@ static void gen_make(void)
         for (k = 1; k < GP_N; k++) if (gs.amt[k]) { pri[np++] = PRI[k]; gs.act[PRI[k]] = 1; }
         nmel = np;
         if (nmel < 2u) {                                /* (never fewer than two voices: the bass, the chords) */
-            if (!gs.act[RL_BASS]) { gs.act[RL_BASS] = 1; gs.amt[GP_BASS] = 60; pri[np++] = RL_BASS; }
-            if (np < 2u && !gs.act[RL_PAD]) { gs.act[RL_PAD] = 1; gs.amt[GP_CHORDS] = 60; pri[np++] = RL_PAD; }
+            if (!gs.act[RL_BASS] && gp.amt[GP_BASS] == GA_AUTO) { gs.act[RL_BASS] = 1; gs.amt[GP_BASS] = 60; pri[np++] = RL_BASS; }
+            if (np < 2u && !gs.act[RL_PAD] && gp.amt[GP_CHORDS] == GA_AUTO) {   /* (V10.8: a part set OFF stays off) */ gs.act[RL_PAD] = 1; gs.amt[GP_CHORDS] = 60; pri[np++] = RL_PAD; }
         }
         for (k = 0; k < GP_N - 1u; k++) if (!gs.act[PRI[k + 1u]]) pri[np++] = PRI[k + 1u];   /* (the silent ones after) */
         for (k = 0; k < NTRK && dr == NTRK; k++) if (drum_track(&trk[k])) dr = k;
@@ -2650,8 +2650,8 @@ static void gen_open(void)
 {
     gp.hot = 0xFF;
     gen_fresh = 1;
-    gp.genre = GEN_EXPLORE;                             /* (0.6.93) opens on RANDOM: a genre is this visit's choice;
-                                                         * (0.8.6) on EXPLORE: the dice always starts there */
+    /* (V10.8) the GENRE kept from the visit before (was: EXPLORE each time GEN opened; testers: "it resets after
+     * switching pages"); power-on and NEW PROJECT: EXPLORE */
 }
 static void gen_amt_turn(uint8_t *v, int32_t s)         /* OFF, 10 .. 100, AUTO (above 100) */
 {

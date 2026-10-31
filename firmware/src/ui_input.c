@@ -947,6 +947,11 @@ static void micro_edit(int32_t steps)
     if (st->time != ST_NOTE || (!st->n && !st->hit)) { ui_message("NO NOTE HERE"); return; }
     ST_MICRO_SET(st, clamp(ST_MICRO(st) + accel(EN_K4, steps, MICRO_MAX - MICRO_MIN), MICRO_MIN, MICRO_MAX));
 }
+/* (V10.8) SEQ > STEP's KNOB 4: the step's velocity 1..127 (none recorded: 96, as it plays), 128 ACC, 129 SLD, 130 A+S */
+static int32_t step_velpos(const step_t *st)
+{
+    return (st->flags & SF_SLIDE) ? (st->flags & SF_ACCENT ? 130 : 129) : (st->flags & SF_ACCENT) ? 128 : st->vel ? st->vel : 96;
+}
 static void step_edit(uint32_t slot, int32_t steps)
 {
     step_t *st = &TSEL->step[ui.cursor];
@@ -996,10 +1001,16 @@ static void step_edit(uint32_t slot, int32_t steps)
         }
         break;
     }
-    default: {                                            /* FLAG: - / ACC / SLD / A+S */
-        uint32_t f = (st->flags & SF_ACCENT ? 1u : 0u) | (st->flags & SF_SLIDE ? 2u : 0u);
-        f = (uint32_t)clamp((int32_t)f + (steps > 0 ? 1 : -1), 0, 3);
-        st->flags = (uint8_t)((st->flags & ~(SF_ACCENT | SF_SLIDE)) | (f & 1u ? SF_ACCENT : 0u) | (f & 2u ? SF_SLIDE : 0u));
+    default: {                                            /* (V10.8) VEL 1..127, then ACC (127), SLD, A+S (was FLAG
+                                                           * - / ACC / SLD / A+S; testers: a step's velocity) */
+        int32_t pos = step_velpos(st);
+        pos = pos < 127 || (pos == 127 && steps < 0) ? clamp(pos + steps, 1, 127)   /* (a turn stops at 127 on its way
+                                                           * up or down: the flags past it on their own) */
+            : clamp(pos + steps, 127, 130);
+        if (pos <= 127) st->vel = (uint8_t)pos;
+        else if (!st->vel) st->vel = 96;
+        st->flags = (uint8_t)((st->flags & ~(SF_ACCENT | SF_SLIDE)) | (pos == 128 || pos == 130 ? SF_ACCENT : 0u) |
+                              (pos >= 129 ? SF_SLIDE : 0u));
         break;
     }
     }

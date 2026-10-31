@@ -1187,6 +1187,24 @@ int main(void)
         printf("gen:   drum rolls on their lanes: %u, steps with RATCH on a kit: %u\n", lrolls, stepr);
         bad += gcheck("GEN drums: rolls as the lanes' x2 / x4, no step RATCH on a kit", !stepr && lrolls > 0u);
     }
+    {   /* (V10.8) BASS CHORDS ARP LEAD all OFF: only the drums play (was: the bass and the chords forced back on,
+         * "never fewer than two voices"); AUTO still gets them back */
+        uint32_t g, k, i, full = 0, emp = 0;
+        for (g = 1; g <= 12u; g++) {
+            gp.genre = (uint8_t)g; gp.seed = (uint16_t)(g * 31u); gp.energy = 50; gp.form = 0;
+            gp.amt[GP_DRUMS] = 80; for (k = 1; k < GP_N; k++) gp.amt[k] = 0;
+            gp.complex = 50; gp.swing = GA_AUTO; gp.human = 30;
+            gen_go();
+            for (k = 0; k < NTRK; k++) {
+                uint32_t n = 0;
+                for (i = 0; i < NSTEP; i++) n += trk[k].step[i].time == ST_NOTE && (trk[k].step[i].n || trk[k].step[i].hit);
+                if (drum_track(&trk[k])) emp += !n; else full += n != 0u;
+            }
+        }
+        printf("gen:   all melodic OFF: melodic tracks with notes %u, empty kits %u\n", full, emp);
+        bad += gcheck("V10.8 GEN with BASS CHORDS ARP LEAD OFF: the drums alone", !full && !emp);
+        for (k = 0; k < GP_N; k++) gp.amt[k] = GA_AUTO;
+    }
     printf(bad ? "gen: %d FAILED\n" : "gen: all passed\n", bad);
     return bad ? 1 : 0;
 }
