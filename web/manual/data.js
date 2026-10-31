@@ -628,6 +628,8 @@ recipes: [
 
 // ------------------------------------------------------------------------------------------- what's new (README's changelog, digested)
 news: [
+  {v: "V10.11", items: [
+    ["Alimentación como el firmware de fábrica (el conversor DC-DC encendido), requisito de la radio Bluetooth; MENU › ABOUT muestra DC. La radio sigue apagada.", "Power supplies set up as the stock firmware does (the DC-DC on), the Bluetooth radio's prerequisite; MENU › ABOUT shows DC. The radio stays off."]]},
   {v: "V10.10", items: [
     ["La calibración de la radio Bluetooth se conserva al actualizar (antes el instalador podía borrarla). Página BT check: la lee por MIDI, también desde el celular.", "The Bluetooth radio's calibration is kept on update (the installer could erase it). BT check page: reads it over MIDI, from a phone too."]]},
   {v: "V10.9", items: [

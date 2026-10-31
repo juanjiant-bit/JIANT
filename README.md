@@ -78,7 +78,7 @@ data USB cable straight into the computer, and keep it connected until the page 
 **Connection**
 - USB name **FM-1**, so the apps made for the FM-1 find it; USB STEMS (8 channels: T1–T6 + FX) for recording in a DAW.
 
-The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10 (V10.10).
+The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10 (V10.11).
 
 ## Reporting a crash
 
@@ -417,6 +417,12 @@ With FX held the keys become effects that act while hel…8050 tokens truncated�
   [el manual](docs/MANUAL.es.md#euclid-y-modes-v106).
 
 ## Changelog
+
+### V10.11
+- **Power supplies set up as the stock firmware does** (the DC-DC converter on; ported from Melodee, GPL-3.0): the
+  radio's prerequisite for Bluetooth. MENU › ABOUT shows **DC** after the CPU and rail line when it took. Nothing
+  else changes: the radio stays off.
+- 0xEA000–0xFBFFF (72 KB) reserved for the Bluetooth code.
 
 ### V10.10
 - **The Bluetooth radio's calibration is kept on update.** The stock firmware keeps the radio's RF trims and
