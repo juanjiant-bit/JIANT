@@ -78,7 +78,7 @@ data USB cable straight into the computer, and keep it connected until the page 
 **Connection**
 - USB name **FM-1**, so the apps made for the FM-1 find it; USB STEMS (8 channels: T1–T6 + FX) for recording in a DAW.
 
-The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10 (V10.9).
+The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10 (V10.10).
 
 ## Reporting a crash
 
@@ -417,6 +417,14 @@ With FX held the keys become effects that act while hel…8050 tokens truncated�
   [el manual](docs/MANUAL.es.md#euclid-y-modes-v106).
 
 ## Changelog
+
+### V10.10
+- **The Bluetooth radio's calibration is kept on update.** The stock firmware keeps the radio's RF trims and
+  Bluetooth address at 0xE8000, with its update record at the end of that sector; JIANT's update loader erased the
+  whole sector to clear the record. It now keeps the sector and clears only the record's 256 bytes. (The first step
+  towards Bluetooth MIDI and a proximity sensor: see the BT check page, `webapp/btcheck/`.)
+- **BT check page** (read-only): over MIDI (Android Chrome too) or the serial console, it reads the 12 KB at
+  0xE7000–0xE9FFF and says whether the radio's calibration is there; the dump can be saved.
 
 ### V10.9
 - **MENU › LARGE shows the animations** (testers: with LARGE on they were hidden): HOME's strip under the tall

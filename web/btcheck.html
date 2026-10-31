@@ -34,11 +34,14 @@
 
   <div class="card">
     <ol>
-      <li>FM-1 con <b>JIANT V10.9</b> o posterior, conectado por USB. Con JIANT V10.9 or later, over USB.</li>
-      <li><b>MENU › SYSTEM › USB</b> en <b>CONSOLE</b> (es el valor de fábrica). Set to CONSOLE (the default).</li>
-      <li>Chrome o Edge en una computadora. Chrome or Edge on a computer.</li>
+      <li>FM-1 con <b>JIANT V10.10</b> o posterior, conectado por USB. With JIANT V10.10 or later, over USB.</li>
+      <li><b>Por MIDI</b> (celular Android o computadora, Chrome o Edge): tocá el primer botón y aceptá el permiso de MIDI.
+          Over MIDI (Android phone or computer): the first button.</li>
+      <li><b>Por consola</b> (solo computadora): MENU › SYSTEM › USB en CONSOLE (el valor de fábrica), el segundo botón.
+          Over the serial console (computer only).</li>
     </ol>
-    <button id="go">Conectar y leer · Connect and read</button>
+    <button id="gomidi">Leer por MIDI · Read over MIDI</button>
+    <button id="go">Leer por consola · Read over the console</button>
     <button id="save" disabled>Descargar copia (.bin) · Download dump</button>
     <progress id="prog" value="0" max="48" hidden></progress>
     <p id="status" class="dim"></p>
@@ -174,6 +177,50 @@ $("go").onclick = async () => {
   } finally {
     try { await port?.close(); } catch (e) { /* (already closed) */ }
     $("go").disabled = false;
+  }
+};
+async function readMidi() {                             /* (V10.10) editor command VM_READ (80): 256 B as nibbles */
+  const acc = await navigator.requestMIDIAccess({sysex: true});
+  const pick = (m) => [...m.values()].find((p) => /FM-1|JIANT|FM1/i.test(p.name)) || [...m.values()][0];
+  const out = pick(acc.outputs), inp = pick(acc.inputs);
+  if (!out || !inp) throw new Error("no se encontró el FM-1 por MIDI (¿conectado por USB?)");
+  log("MIDI: " + inp.name + " / " + out.name);
+  const buf = new Uint8Array(SIZE);
+  let want = -1, done = null;
+  inp.onmidimessage = (e) => {
+    const d = e.data;
+    if (d[0] !== 0xF0 || d[1] !== 0x7D || d[2] !== 0x46 || d[3] !== 0x4C || d[4] !== 80) return;
+    if (d[5] === 127) { done && done(new Error("el FM-1 rechazó la lectura")); return; }
+    if (d[5] !== want || d.length < 6 + 512 + 1) return;
+    for (let i = 0; i < 256; i++) buf[want * 256 + i] = d[6 + 2 * i] << 4 | d[7 + 2 * i];
+    done && done(null);
+  };
+  for (let k = 0; k < SIZE / CHUNK; k++) {
+    want = k;
+    await new Promise((res, rej) => {
+      const t = setTimeout(() => rej(new Error("sin respuesta: el FM-1 necesita JIANT V10.10 o posterior")), 2500);
+      done = (err) => { clearTimeout(t); err ? rej(err) : res(); };
+      out.send([0xF0, 0x7D, 0x46, 0x4C, 80, k, 0xF7]);
+    });
+    $("prog").value = k + 1;
+  }
+  inp.onmidimessage = null;
+  return buf;
+}
+$("gomidi").onclick = async () => {
+  if (!navigator.requestMIDIAccess) { $("status").textContent = "Este navegador no tiene Web MIDI: usá Chrome o Edge."; return; }
+  $("gomidi").disabled = true; $("prog").hidden = false; $("prog").value = 0; $("log").textContent = "";
+  try {
+    $("status").textContent = "Leyendo 0xE7000–0xE9FFF por MIDI…";
+    dump = await readMidi();
+    $("status").textContent = "Listo: 12 KB leídos, nada escrito. Done: 12 KB read, nothing written.";
+    $("save").disabled = false;
+    report(dump);
+  } catch (e) {
+    $("status").innerHTML = '<span class="bad">' + e.message + "</span>";
+    log("! " + e.message);
+  } finally {
+    $("gomidi").disabled = false;
   }
 };
 $("save").onclick = () => {

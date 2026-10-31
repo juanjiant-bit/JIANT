@@ -628,6 +628,8 @@ recipes: [
 
 // ------------------------------------------------------------------------------------------- what's new (README's changelog, digested)
 news: [
+  {v: "V10.10", items: [
+    ["La calibración de la radio Bluetooth se conserva al actualizar (antes el instalador podía borrarla). Página BT check: la lee por MIDI, también desde el celular.", "The Bluetooth radio's calibration is kept on update (the installer could erase it). BT check page: reads it over MIDI, from a phone too."]]},
   {v: "V10.9", items: [
     ["MENU › LARGE muestra las animaciones: en HOME la franja bajo las tarjetas grandes muestra los seres de los seis tracks; en las páginas EDIT, el del motor, vivo, en vez del título.", "MENU › LARGE shows the animations: on HOME the strip under the big cards shows the six tracks' creatures; on EDIT pages, the engine's, alive, instead of the title."]]},
   {v: "V10.8", items: [
