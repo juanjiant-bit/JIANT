@@ -2593,6 +2593,10 @@ static const char *dice_seq(track_t *t)
     gs.ba = gs.g->bass[rng() % 3u];
     if (gmut.lead == LD_NONE) gmut.lead = LD_HOOK;      /* (asked for: a lead) */
     lead0 = gmut.lead; arp0 = gmut.arp[0]; arp1 = gmut.arp[1]; pads0 = gmut.pads; drum0 = gmut.drum;
+    if (r == RL_DRUM && (gmut.drum >= DM_NONE || gmut.drum == DM_SPARSE))   /* (V10.7) a genre without drums
+                                                         * (NEO CLASSIC) or AMBIENT's three hits: the kit's dice seemed
+                                                         * to do nothing; a map that plays */
+        gmut.drum = (uint8_t)(rng() % DM_SPARSE);
     for (i = 0; i < GP_N; i++) if (!gs.amt[i]) gs.amt[i] = 60;
     gs.role[k] = (uint8_t)r; gs.act[r] = 1; gs.trk_of[r] = (uint8_t)k;
     len = (uint32_t)t->p[P_SLEN];

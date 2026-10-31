@@ -1760,6 +1760,23 @@ static void preset_go(uint32_t n)                    /* load list index n into t
     preset_hinted();
 }
 
+/* (V10.7) EDIT + PRESETS: the first sound of the next engine in the list (back: of the one before; the user slots one
+ * group), its name said */
+static void preset_engine_jump(int32_t dir)
+{
+    uint32_t total, cur = preset_pos(&total), k, e0, e = NENGINES, i, n = 0;
+    if (!total) return;
+    e0 = preset_at(cur < total ? cur : 0u, &k);
+    for (i = 1; i < total; i++) {
+        n = (cur + (dir > 0 ? i : total - i)) % total;
+        if ((e = preset_at(n, &k)) != e0) break;
+    }
+    if (i >= total) return;
+    while (n != cur && preset_at((n + total - 1u) % total, &k) == e) n = (n + total - 1u) % total;
+    preset_go(n);
+    ui_message(e == NENGINES ? "USER SOUNDS" : trk_engp(TSEL)->name);
+}
+
 /* (JIANT 0.6.72) PROGRAM CHANGE (midi_control.c midi_pc_req): the list's n-th sound into the track whose channel it
  * came on, the selection kept; out of the list's range, nothing. (0.9.9) The list in 0.9.8's engine order
  * (engines.c ENGINE_PC_ORDER), whatever the PRESETS page shows: a rig's program numbers keep their sounds. Every frame

@@ -2264,10 +2264,13 @@ static void ui_input_frame(void)
                 btn_used(FAM_BTN[f]);
             }
             pj_sel_ms = fm1_ms | 1u;
-        } else if (f != FAM_COUNT && !ui.menu && !dlg_on() && !name_on() && !ly_used && panel_enc(EN_PRESET) != 0) {
+        } else if (f != FAM_COUNT && !ui.menu && !dlg_on() && !name_on() && !ly_used && (s = panel_enc(EN_PRESET)) != 0) {
             btn_used(FAM_BTN[f]);                       /* (0.9.2, rule 3) a button held + PRESETS: nothing (until 0.9.1
                                                          * its pages); no tap after, no map while held. (A layer already
                                                          * used: PRESETS stays its, dropped) */
+            if (f == FAM_EDIT && !mom_on)               /* (V10.7) but EDIT + PRESETS: the next / previous engine (not
+                                                         * amid a MOMENTARY tweak: its values go back to this sound) */
+                preset_engine_jump(s);
         } else if (pj_sel_ms && fm1_ms - pj_sel_ms < 400u) {
             if (panel_enc(EN_SELECT))
                 pj_sel_ms = fm1_ms | 1u;                /* (dropped: still the paging turn) */

@@ -13,7 +13,7 @@
  * (the seed), OCT- the one before. The settings are the session's (RAM), the pattern is the track's as any other */
 #define EU_M 4u
 typedef struct { uint8_t h, n, r; } eul_t;
-typedef struct { uint8_t on, lane, vary, src, root, ctr; uint16_t mask, seed, prev; uint8_t m[EU_M]; eul_t l[NLANE]; } eu_t;
+typedef struct { uint8_t on, lane, vary, src, root, ctr; uint16_t mask, seed, prev; uint8_t m[EU_M]; eul_t a, l[NLANE]; } eu_t;   /* lane 0 ALL (a: DENSITY, STEPS, ROTATE), 1.. a lane */
 static eu_t eu[NTRK];
 static uint32_t eu_s, eu_ms;
 enum { EK_HITS, EK_STEPS, EK_ROT, EK_K4, EK_M0, EK_N = EK_M0 + EU_M };
@@ -22,17 +22,33 @@ static uint32_t eu_rnd(void) { eu_s ^= eu_s << 13; eu_s ^= eu_s >> 17; eu_s ^= e
 static uint32_t eu_ch(uint32_t pct) { return eu_rnd() % 100u < pct; }
 static uint32_t eu_hit(uint32_t i, const eul_t *l) { uint32_t n = l->n ? l->n : 1u, j = (i + n - l->r % n) % n; return l->h && (j * l->h) % n < l->h; }
 
-/* track k's settings, made the first time (a kit's four usual lanes; a melody of five in sixteen) */
+/* (V10.7) ALL: the kit a DENSITY (1..8) makes, in sixteen (scaled to STEPS): the kick, the backbeat, the hats, the rest
+ * sparse; ROTATE turns the kick and the percussion (the groove), the snare and the hats stay */
+static void eu_kit(eu_t *e)
+{
+    static const uint8_t KT[8][NLANE] = {{2, 0, 0, 4, 0, 0, 0, 0}, {3, 2, 0, 4, 0, 0, 0, 0}, {4, 2, 0, 8, 0, 0, 0, 0},
+        {4, 2, 1, 8, 2, 0, 0, 0}, {5, 2, 1, 8, 2, 0, 3, 0}, {5, 2, 1, 12, 2, 2, 3, 0}, {6, 3, 1, 12, 3, 2, 5, 2},
+        {7, 4, 2, 16, 4, 3, 5, 3}};
+    static const uint8_t KR[NLANE] = {0, 4, 12, 0, 6, 10, 3, 7};
+    uint32_t i, n = e->a.n ? e->a.n : 16u, d = (e->a.h ? e->a.h - 1u : 0u) & 7u, h;
+    for (i = 0; i < NLANE; i++) {
+        h = (KT[d][i] * n + 8u) / 16u;
+        e->l[i].h = (uint8_t)(h > n ? n : KT[d][i] && !h ? 1u : h);
+        e->l[i].n = (uint8_t)n;
+        e->l[i].r = (uint8_t)(((KR[i] * n + 8u) / 16u + ((0xE1u >> i) & 1u ? e->a.r : 0u)) % n);
+    }
+}
+
+/* track k's settings, made the first time (a kit: ALL, DENSITY 4; a melody of five in sixteen) */
 static eu_t *eu_of(uint32_t k)
 {
-    static const eul_t KIT[NLANE] = {{4, 16, 0}, {2, 16, 4}, {0, 16, 0}, {8, 16, 2}, {2, 16, 6}, {0, 16, 0}, {0, 16, 0}, {0, 16, 0}};
     eu_t *e = &eu[k % NTRK];
     if (!e->on) {
-        uint32_t i;
         e->on = 1;
         e->seed = e->prev = (uint16_t)(1u + k * 7u);
         e->vary = 40;
-        for (i = 0; i < NLANE; i++) e->l[i] = KIT[i];
+        e->a.h = 4; e->a.n = 16;
+        eu_kit(e);
         if (drum_track(&trk[k])) { e->m[0] = 40; e->m[3] = 30; }
         else { e->l[0].h = 5; e->m[0] = 45; e->m[1] = 20; e->m[2] = 10; e->m[3] = 15; }
     }
@@ -103,20 +119,27 @@ static int32_t eu_deg(const uint8_t *pc, uint32_t np, int32_t base, int32_t d)
     return base + 12 * o + pc[d - o * (int32_t)np];
 }
 
-static void eu_drums(track_t *t, eu_t *e)
+/* the kit (only 0: ALL, its lanes' least common length) or lane only-1 alone (the others as they are, the pattern
+ * as long as both need, up to 64) */
+static void eu_drums(track_t *t, eu_t *e, uint32_t only)
 {
     uint8_t on[64];
-    uint32_t l, i, len = 1, n;
+    uint32_t l, i, n, old = (uint32_t)clamp(t->p[P_SLEN], 1, 64), len = only ? old : 1u;
     for (l = 0; l < NLANE; l++) {                        /* the pattern: the lanes' least common length, up to 64 */
         uint32_t a = len, b = e->l[l].n;
-        if (!e->l[l].h) continue;
+        if (!e->l[l].h || (only && l != only - 1u)) continue;
         while (b) { uint32_t x = a % b; a = b; b = x; }
         len = len / a * e->l[l].n > 64u ? 64u : len / a * e->l[l].n;
     }
     if (len < 2u) len = 16;
-    for (i = 0; i < NSTEP; i++) step_clear(&t->step[i]);
+    for (i = 0; i < NSTEP; i++)
+        if (!only) step_clear(&t->step[i]);
+        else {
+            if (i >= old && i < len) t->step[i] = t->step[i % old];   /* (longer: the other lanes repeat) */
+            grid_hit(t, i, only - 1u, 0);
+        }
     t->p[P_SLEN] = (int16_t)len;
-    for (l = 0; l < NLANE; l++) {
+    for (l = only ? only - 1u : 0u; l < (only ? only : NLANE); l++) {
         const eul_t *L = &e->l[l];
         eul_t acc = {(uint8_t)(L->h * e->m[0] / 100u + (e->m[0] && L->h ? 1u : 0u)), L->n, (uint8_t)(L->r + 1u)};
         if (!L->h || !(n = L->n)) continue;
@@ -133,6 +156,8 @@ static void eu_drums(track_t *t, eu_t *e)
             }
         }
     }
+    for (i = 0; !only && i < len; i++)                   /* (ALL: the open hat chokes the closed one) */
+        if ((step_lanes(&t->step[i]) >> 4) & 1u) grid_hit(t, i, 3, 0);
 }
 
 static void eu_melody(uint32_t k, track_t *t, eu_t *e)
@@ -190,7 +215,7 @@ static void eu_gen(uint32_t k)
     if (fm1_ms - eu_ms > 2000u) undo_mark();             /* (a new gesture: an UNDO point) */
     eu_ms = fm1_ms;
     load_begin(t, LOAD_PAT);
-    if (drum_track(t)) eu_drums(t, e); else eu_melody(k, t, e);
+    if (drum_track(t)) eu_drums(t, e, e->lane % (NLANE + 1u)); else eu_melody(k, t, e);
     load_end(t);
     pat_sig[k % NTRK] = ~steps_sig(t);                   /* (the user's steps now) */
     ui.force = 1;
@@ -201,17 +226,19 @@ static int16_t eu_v[EK_N];
 static param_desc_t eu_d;
 static const param_desc_t *eu_desc(uint32_t k, int16_t **valp)
 {
-    static const char *const LN[NLANE] = {"BD", "SD", "CP", "CH", "OH", "TM", "RS", "CB"};
+    static const char *const LN[NLANE + 1] = {"ALL", "BD", "SD", "CP", "CH", "OH", "TM", "RS", "CB"};
     static const char *const MD[2][EU_M] = {{"MOTION", "HARMONY", "OCTAVE", "SLIDE"}, {"ACCENT", "GHOST", "RATCHET", "VARY"}};
     eu_t *e = eu_of(song.sel);
     uint32_t dr = drum_track(TSEL) != 0;
-    eul_t *L = &e->l[dr ? e->lane % NLANE : 0];
+    uint32_t al = dr && !(e->lane % (NLANE + 1u));
+    eul_t *L = al ? &e->a : &e->l[dr ? (e->lane + NLANE) % (NLANE + 1u) : 0];
     k %= EK_N;
     eu_d.fmt = F_INT; eu_d.min = 0; eu_d.def = 0; eu_d.names = 0; eu_d.unit = 0;
-    if (k == EK_HITS) { eu_d.label = "HITS"; eu_d.max = L->n; eu_v[k] = L->h; }
+    if (k == EK_HITS && al) { eu_d.label = "DENSITY"; eu_d.min = 1; eu_d.max = 8; eu_v[k] = L->h; }
+    else if (k == EK_HITS) { eu_d.label = "HITS"; eu_d.max = L->n; eu_v[k] = L->h; }
     else if (k == EK_STEPS) { eu_d.label = "STEPS"; eu_d.min = 2; eu_d.max = 64; eu_v[k] = L->n; }
     else if (k == EK_ROT) { eu_d.label = "ROTATE"; eu_d.max = L->n > 1u ? L->n - 1 : 0; eu_v[k] = L->r; }
-    else if (k == EK_K4 && dr) { eu_d.label = "LANE"; eu_d.fmt = F_ENUM; eu_d.max = NLANE - 1; eu_d.names = LN; eu_v[k] = e->lane; }
+    else if (k == EK_K4 && dr) { eu_d.label = "LANE"; eu_d.fmt = F_ENUM; eu_d.max = NLANE; eu_d.names = LN; eu_v[k] = e->lane; }
     else if (k == EK_K4) { eu_d.label = "VARY"; eu_d.max = 100; eu_v[k] = e->vary; }
     else { eu_d.label = MD[dr][k - EK_M0]; eu_d.max = 100; eu_v[k] = e->m[k - EK_M0]; }
     *valp = &eu_v[k];
@@ -222,13 +249,15 @@ static void eu_put(uint32_t k, int32_t v)
 {
     eu_t *e = eu_of(song.sel);
     uint32_t dr = drum_track(TSEL) != 0;
-    eul_t *L = &e->l[dr ? e->lane % NLANE : 0];
-    if (k == EK_K4 && dr) { e->lane = (uint8_t)clamp(v, 0, NLANE - 1); ui.force = 1; return; }
-    if (k == EK_HITS) L->h = (uint8_t)clamp(v, 0, L->n);
-    else if (k == EK_STEPS) { L->n = (uint8_t)clamp(v, 2, 64); if (L->h > L->n) L->h = L->n; if (L->r >= L->n) L->r = 0; }
+    uint32_t al = dr && !(e->lane % (NLANE + 1u));
+    eul_t *L = al ? &e->a : &e->l[dr ? (e->lane + NLANE) % (NLANE + 1u) : 0];
+    if (k == EK_K4 && dr) { e->lane = (uint8_t)clamp(v, 0, NLANE); ui.force = 1; return; }
+    if (k == EK_HITS) L->h = (uint8_t)clamp(v, al, al ? 8 : L->n);
+    else if (k == EK_STEPS) { L->n = (uint8_t)clamp(v, 2, 64); if (!al && L->h > L->n) L->h = L->n; if (L->r >= L->n) L->r = 0; }
     else if (k == EK_ROT) L->r = (uint8_t)clamp(v, 0, L->n - 1);
     else if (k == EK_K4) e->vary = (uint8_t)clamp(v, 0, 100);
     else e->m[(k - EK_M0) % EU_M] = (uint8_t)clamp(v, 0, 100);
+    if (al && k < EK_K4) eu_kit(e);                      /* (ALL: the kit again, of DENSITY, STEPS, ROTATE) */
     if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
     eu_gen(song.sel);
 }
@@ -248,36 +277,37 @@ static void eu_oct(int up)
  * STEPS) at the right; melodic: the key in the ring and the notes as a roll at the right, where the key came from */
 static void graph_euclid(const track_t *t)
 {
-    static const char *const LN[NLANE] = {"BD", "SD", "CP", "CH", "OH", "TM", "RS", "CB"};
+    static const char *const LN[NLANE + 1] = {"ALL", "BD", "SD", "CP", "CH", "OH", "TM", "RS", "CB"};
     static const char *const NN[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
     const eu_t *e = eu_of(song.sel);
-    uint32_t dr = drum_track(t) != 0, len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP), lane = e->lane % NLANE, i, n;
+    uint32_t dr = drum_track(t) != 0, len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP), sl = e->lane % (NLANE + 1u), lane = (sl + NLANE) % (NLANE + 1u), i, n;
     int32_t h = (int32_t)graph_h(), cy = h / 2, cx = 64, rad = h / 2 - 12 < 54 ? h / 2 - 12 : 54;
     uint32_t now = song.playing ? t->seq_idx % len : ~0u;
     char b[12];
-    n = dr ? (e->l[lane].n < len ? e->l[lane].n : len) : len;
+    n = dr && sl ? (e->l[lane].n < len ? e->l[lane].n : len) : len;
     for (i = 0; i < n; i++) {                            /* the ring */
         uint32_t a = i * 65536u / n + 49152u;
         int32_t x = cx + ((rad * og_cos(a)) >> 15), y = cy + ((rad * og_sin(a)) >> 15), r;
         const step_t *s = &t->step[i];
-        uint32_t hit = dr ? (step_lanes(s) >> lane) & 1u : s->time == ST_NOTE && s->n;
-        uint32_t acc = dr ? (step_accents(s) >> lane) & 1u : 0u, gh = dr && hit && step_lmode(s, lane) == LM_GHOST;
+        uint32_t hit = dr ? (step_lanes(s) >> lane) & (sl ? 1u : 0xFFu) : s->time == ST_NOTE && s->n;   /* (ALL: any) */
+        uint32_t acc = dr ? (step_accents(s) >> lane) & (sl ? 1u : 0xFFu) : 0u, gh = dr && sl && hit && step_lmode(s, lane) == LM_GHOST;
         r = !hit ? 1 : gh ? 2 : acc ? 5 : n > 24u ? 3 : 4;
         cv_rrect(x - r, y - r, 2 * r + 1, 2 * r + 1, r, !hit ? T_DIM : gh ? T_MID : dr ? T_ACCENT : T_THEME, T_SURF);
-        if (hit && dr && (step_lmode(s, lane) == LM_X2 || step_lmode(s, lane) == LM_X4))
+        if (hit && dr && sl && (step_lmode(s, lane) == LM_X2 || step_lmode(s, lane) == LM_X4))
             cv_frame(x - r - 2, y - r - 2, 2 * r + 5, 2 * r + 5, T_ACCENT);
         if (i == now) cv_frame(x - 7, y - 7, 15, 15, T_TEXT);
     }
     if (dr) {
-        cv_text_in(cx - 30, cy - 8, 60, &AF_M, LN[lane], T_ACCENT, T_SURF);
+        cv_text_in(cx - 30, cy - 8, 60, &AF_M, LN[sl], T_ACCENT, T_SURF);
         for (i = 0; i < NLANE; i++) {                    /* the lanes */
             int32_t y = 6 + (int32_t)i * (h - 12) / NLANE, rh = (h - 12) / NLANE - 2;
-            uint16_t c = i == lane ? T_TEXT : e->l[i].h ? T_MID : T_DIM;
-            if (i == lane) cv_rect(136, y, 98, rh, T_RAISE);
-            cv_rect(136, y, 3, rh, i == lane ? T_ACCENT : T_DIM);
+            uint32_t on = sl ? i == lane : e->l[i].h != 0u;   /* (ALL: the lanes it plays) */
+            uint16_t c = on ? T_TEXT : e->l[i].h ? T_MID : T_DIM;
+            if (sl && on) cv_rect(136, y, 98, rh, T_RAISE);
+            cv_rect(136, y, 3, rh, on ? T_ACCENT : T_DIM);
             cv_text(144, y + (rh - 8) / 2, &AF_X, LN[i], c);
             b[0] = 0; fmt_int(b, e->l[i].h); str_cpy(b + str_len(b), "/", 2); fmt_int(b + str_len(b), e->l[i].n);
-            cv_text_r(230, y + (rh - 8) / 2, &AF_X, b, c, i == lane ? T_RAISE : T_SURF);
+            cv_text_r(230, y + (rh - 8) / 2, &AF_X, b, c, sl && on ? T_RAISE : T_SURF);
         }
         return;
     }

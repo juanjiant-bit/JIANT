@@ -702,26 +702,44 @@ static int test_mutate(void)
     song.sel = 0; frame();
     go_title("EUCLID"); frame();
     ok = cur_page()->graph == GR_EUCLID && str_eq(PAGES[ui.page].title, "EUCLID");
-    turn(EN_K1, 1); frame();                             /* BD: 4 -> 5 hits in 16: the pattern written */
+    ok &= eu[0].lane == 0u;                              /* (V10.7) a kit: ALL */
+    turn(EN_K1, 1); frame();                             /* DENSITY 4 -> 5: the whole kit written */
     for (i = n = 0; i < 16u; i++) n += (step_lanes(&d->step[i]) >> DV_KICK) & 1u;
-    ok &= eu[0].l[DV_KICK].h == 5u && d->p[P_SLEN] == 16 && n == 5u && ((step_lanes(&d->step[0]) >> DV_KICK) & 1u);
+    ok &= eu[0].a.h == 5u && eu[0].l[DV_KICK].h == 5u && d->p[P_SLEN] == 16 && n == 5u && ((step_lanes(&d->step[0]) >> DV_KICK) & 1u);
+    ok &= ((step_lanes(&d->step[4]) >> DV_SNARE) & 1u) && ((step_lanes(&d->step[12]) >> DV_SNARE) & 1u);   /* the backbeat */
     for (i = n = 0; i < 16u; i++) n += (step_lanes(&d->step[i]) >> DV_HATC) & 1u;
-    ok &= n >= 6u && n <= 10u;                           /* (CH 8 of 16, VARY loosening a few) */
-    bad += check("V10.6 EUCLID on a kit: HITS writes the lane picked (BD 5 of 16), the other lanes theirs", ok);
+    ok &= n >= 4u && n <= 10u;                           /* (CH 8 of 16, VARY and the open hat taking a few) */
+    for (i = n = 0; i < 16u; i++) n += ((step_lanes(&d->step[i]) >> DV_HATC) & (step_lanes(&d->step[i]) >> DV_HATO) & 1u);
+    ok &= n == 0u;
+    bad += check("V10.7 EUCLID on a kit: ALL first, DENSITY writes a kit (kick, the backbeat, hats, the open one choking)", ok);
+    {
+        step_t was[16];
+        memcpy(was, d->step, sizeof was);
+        turn(EN_K4, 1); frame();                         /* LANE: BD */
+        ok = eu[0].lane == 1u + DV_KICK && !memcmp(was, d->step, sizeof was);
+        turn(EN_K1, 1); frame();                         /* BD 5 -> 6: that lane alone */
+        for (i = n = c = 0; i < 16u; i++) {
+            n += (step_lanes(&d->step[i]) >> DV_KICK) & 1u;
+            c += (step_lanes(&d->step[i]) & ~(1u << DV_KICK)) != (step_lanes(&was[i]) & ~(1u << DV_KICK));
+        }
+        ok &= eu[0].l[DV_KICK].h == 6u && n == 6u && c == 0u;
+        bad += check("V10.7 a LANE picked (nothing written): its HITS write that lane alone, the others as they were", ok);
+    }
     turn(EN_K4, 3); frame();                             /* LANE: CH */
-    ok = eu[0].lane == DV_HATC;
+    ok = eu[0].lane == 1u + DV_HATC;
     turn(EN_K2, -8); frame();                            /* CH's STEPS 16 -> 8: the pattern 16 (lcm) */
     ok &= eu[0].l[DV_HATC].n == 8u && d->p[P_SLEN] == 16;
-    turn(EN_K2, -2); frame();                            /* .. 6: lcm(16, 6) 48 */
-    ok &= eu[0].l[DV_HATC].n == 6u && d->p[P_SLEN] == 48;
-    bad += check("V10.6 KNOB 4 the LANE (no pattern written), each lane its STEPS: the pattern their least common length", ok);
+    turn(EN_K2, -2); frame();                            /* .. 6: lcm(16, 6) 48, the other lanes repeated */
+    ok &= eu[0].l[DV_HATC].n == 6u && d->p[P_SLEN] == 48 && ((step_lanes(&d->step[20]) >> DV_SNARE) & 1u) &&
+          ((step_lanes(&d->step[44]) >> DV_SNARE) & 1u);
+    bad += check("V10.6 KNOB 4 the LANE, each lane its STEPS: the pattern their least common length", ok);
     go_title("MODES"); frame();
     ok = str_eq(PAGES[ui.page].title, "MODES");
-    for (i = 0; i < 3u; i++) turn(EN_K1, 20);            /* ACCENT up */
+    for (i = 0; i < 3u; i++) turn(EN_K1, 20);            /* ACCENT up (CH's) */
     frame();
-    for (i = n = 0; i < 48u; i++) n += (step_accents(&d->step[i]) & 1u);
+    for (i = n = 0; i < 48u; i++) n += (step_accents(&d->step[i]) >> DV_HATC) & 1u;
     ok &= eu[0].m[0] > 40u && n > 0u;
-    bad += check("V10.6 MODES on a kit: ACCENT accents some hits", ok);
+    bad += check("V10.6 MODES on a kit: ACCENT accents some hits (of the lane picked)", ok);
     song.sel = 1; frame();                               /* a melodic track; SCL set: C MIN */
     m->p[P_SCALE] = 2; m->p[P_ROOT] = 0;
     go_title("EUCLID"); frame();
@@ -760,6 +778,16 @@ static int test_mutate(void)
         for (i = c = 0; i < 16u; i++) c += (m->step[i].time == ST_NOTE ? m->step[i].note[0] : 0u) != was[i];
         ok &= c == 0u;
         bad += check("V10.6 OCT+ a new variation, OCT- the one before (the same notes again)", ok);
+    }
+    {   /* (V10.7) SEQ + SELECT on a kit: hits, whatever the genre (one without drums: its empty map, every try) */
+        uint32_t g, empty = 0;
+        for (g = 0; g < NGENRE; g++) {
+            gs.g = &GENRE[g]; gs.gi = (uint8_t)g; gs.root = (uint8_t)(d->p[P_ROOT] + 1);
+            dice_seq(d);
+            for (i = n = 0; i < NSTEP; i++) n += step_lanes(&d->step[i]) != 0u;
+            empty += n < 4u;                            /* (NEO CLASSIC before: two hits at most) */
+        }
+        bad += check("V10.7 the kit's SEQ dice: a beat in every genre (NEO CLASSIC's no drums too)", empty == 0u);
     }
     return bad;
 }
@@ -4144,6 +4172,18 @@ static int test_quick_layers(void)
         press(B_ENV); frames(8);
         ok &= str_eq(cur_page()->title, "ENV");         /* (a plain tap: its page, as always) */
         bad += check("0.9.2: a page button held + PRESETS does nothing (was its pages); let go: no tap, no layer; a tap as before", ok);
+        {   /* (V10.7) EDIT held + PRESETS: the first sound of the next engine (back: the previous one's) */
+            uint32_t tot, e1, e2;
+            go_home(); frames(8);
+            e1 = TSEL->eng_req;
+            btn_down(B_EDIT); frame(); turn(EN_PRESET, 1); frame();
+            e2 = TSEL->eng_req;
+            ok = e2 != e1 && msg_is(trk_engp(TSEL)->name);
+            preset_pos(&tot);
+            turn(EN_PRESET, -1); frame(); btn_up(B_EDIT); frames(4);
+            ok &= TSEL->eng_req == e1 && !ui.layer;
+            bad += check("V10.7 EDIT held + PRESETS: the next engine's first sound, its name said; back: the one before", ok);
+        }
         {   /* (0.6.67) a button held + SELECT: ENV (no dice of its own) its pages, the turn's last detents after letting
              * go swallowed; SEQ, LFO, FX their dice under KEEP? (CANCEL: what was; OK: kept); GLO + SELECT the tempo */
             uint32_t j, sig, okk;
