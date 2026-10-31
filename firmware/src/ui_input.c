@@ -2646,7 +2646,12 @@ static void ui_input_frame(void)
     } else if (act_cols() && (oct & 1u)) {              /* OCT- drops it, or (none picked) goes HOME; PHRASES: back to */
         if (cur_page()->graph == GR_PATS && !ui.home)   /* the SEQ page it was opened on */
             nav_go(SEC_SEQ, nav_cur(), 0);
-        else if (ui.act)
+        else if (cur_page()->graph == GR_SONG) {         /* (V10.4) ARRANGE, TIMELINE: OCT+ adds a row, OCT- deletes
+                                                         * the one picked (DELETE ROW?, as TOOLS) */
+            if (chain_busy()) ui_message("STOP TO EDIT");
+            else if (ui.song_row < chain_config.count) confirm_open(CF_DEL_ROW, ui.song_row);
+            else ui_message("NOTHING TO DELETE");
+        } else if (ui.act)
             ui.act = 0;
         else
             go_home();

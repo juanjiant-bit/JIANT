@@ -7112,6 +7112,24 @@ static int test_save_lens(void)
     btn_up(B_GLO); frame(); frame();
     ok &= !ui.layer && lz_on() && card_y() == LZ_CARD_Y;
     bad += check("SAVE: the NAME screen keeps its own layout, a layer's map is its own lens (0.8.5)", ok);
+    ui_power_on();                                                           /* (V10.4) OCT- deletes the row picked */
+    go_home(); frame();
+    chain_config.count = 3;
+    chain_config.row[0] = (chain_row_t){0, 4}; chain_config.row[1] = (chain_row_t){1, 8}; chain_config.row[2] = (chain_row_t){2, 2};
+    press(B_SAVE); frame();
+    nav_put(SEC_SAVE, "ARRANGE"); frame();
+    ui.song_row = 1;
+    press(B_OCTDN); frame();
+    ok = ui.confirm == CF_DEL_ROW && chain_config.count == 3u;
+    press(B_OCTUP); frame();
+    ok &= !ui.confirm && chain_config.count == 2u && chain_config.row[1].slot == 2u && chain_config.row[1].bars == 2u;
+    nav_put(SEC_SAVE, "TIMELINE"); frame();
+    ui.song_row = 0;
+    press(B_OCTDN); frame(); press(B_OCTDN); frame();                        /* (OCT- in the dialog: NO) */
+    ok &= !ui.confirm && chain_config.count == 2u && SONG_TRK(cur_page());
+    press(B_OCTDN); frame(); press(B_OCTUP); frame();
+    ok &= chain_config.count == 1u && chain_config.row[0].slot == 2u;
+    bad += check("V10.4 ARRANGE / TIMELINE: OCT- asks DELETE ROW? for the row picked (OCT+ deletes, OCT- keeps it)", ok);
     ui_power_on();
     go_home(); frame();                                                      /* (add15) ARRANGE 2 */
     chain_config.count = 2;
