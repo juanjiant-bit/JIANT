@@ -179,6 +179,9 @@ def main(pkg, version, out, prev=None):
     for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js"):
         if (HERE / f).exists():
             shutil.copy(HERE / f, ed / f)
+    bt = out / "webapp" / "btcheck"                 # (V10.9) the radio calibration check, read-only (btcheck.html)
+    bt.mkdir(parents=True, exist_ok=True)
+    shutil.copy(HERE / "btcheck.html", bt / "index.html")
     shutil.copy(HERE / "404.html", out / "404.html")
     (out / "index.html").write_text(
         '<!doctype html><meta charset="utf-8"><title>Felucca</title>'
