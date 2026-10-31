@@ -73,8 +73,8 @@ Guardá tus archivos WAV.
    **PLAY**.
 2. ¿No te convence? Apretá **OCT+** otra vez: semilla nueva, pieza nueva. ¿Demasiado cargada? Girá **SELECT** un paso a la
    derecha para GEN 2 y bajá **DRUMS** o **ARP**, después OCT+: la misma pieza con eso cambiado. **OCT−** vuelve a ECO. Para volver a lo que había antes: mantené **GLO** y apretá **G4** (UNDO).
-3. ¿Te gusta? **Pará** (PLAY), apretá **SAVE** (abre USER, los sonidos de usuario) y apretá **SAVE** otra vez:
-   **SECTIONS**, del grupo PROJECT, las cuatro secciones del proyecto. Girá **KNOB 4** a la derecha para que su tarjeta diga
+3. ¿Te gusta? **Pará** (PLAY), apretá **SAVE** (abre TIMELINE, el tema) y girá **SELECT** un paso a la derecha:
+   **SECTIONS**, las cuatro secciones del proyecto. Girá **KNOB 4** a la derecha para que su tarjeta diga
    **OCT+** y apretá **OCT+**. Escribí un nombre con las teclas (o dejá el que te ofrece) y apretá **OCT+** otra vez. La
    pantalla dice **SAVED**.
 4. Hacé una variación (cambiá algunos pasos, muteá una pista) y guardala en la sección **B**: en SECTIONS girá
@@ -112,7 +112,7 @@ Los nombres de abajo son los que usa el firmware (la pantalla HARDWARE CALIBRATI
 | **SCL** | La sección SCL (0.9.2: propia, separada de ARP): **KEY ↔ CHORD**. | Capa **SCL**: las teclas fijan la tónica. |
 | **EDIT** | La sección EDIT: desde otro lado, la última página mostrada (una memoria para los sintes y una para FM6 y otra para DRUM); adentro el grupo siguiente: **SOUND → TONE → FOCUS** (FM6: SOUND → TONE → OPERATOR; DRUM: KIT → SOUND → LEVELS → TONE). Siempre EDIT (0.9.2: borrar un paso es SEQ + G5, renombrar SAVE + C5). Un paso mantenido + EDIT sigue borrando los locks de ese paso. | Capa **EDIT**: INIT, RECALL, mutes de los sonidos de DRUM-X. |
 | **GLO** | La sección GLO: desde otro lado, la última página mostrada (al prender MIXER); adentro **LIVE → MIX → GLOBAL → SYSTEM**, en ronda (0.9.11: LIVE, las secuencias en vivo, primero). | Capa **GLO**: mutes, solos, niveles, tap tempo, UNDO. |
-| **SAVE** | La sección SAVE: desde otro lado, la última página mostrada, y USER o SECTIONS llegan con su **SAVE ya elegido** (SAVE, OCT+, OCT+ como antes); adentro **SOUND → PROJECT → LIBRARY**, en ronda. | Capa **SAVE**: tocar/guardar secciones en vivo; C5 NAME. |
+| **SAVE** | La sección SAVE: desde otro lado, la última página mostrada, y USER o SECTIONS llegan con su **SAVE ya elegido** (SAVE, OCT+, OCT+ como antes); adentro **SONG → PROJECT → SOUND**, en ronda (V10.2: primero TIMELINE). | Capa **SAVE**: tocar/guardar secciones en vivo; C5 NAME. |
 | **ARP** | La sección ARP (ARP · ARP 2, un grupo): desde otro lado, la última página mostrada; adentro, vuelve a ARP. Un acorde mantenido + ARP al grabar por pasos lo sigue arpegiando. | (sin capa) |
 | **SEQ** | La sección SEQ: desde otro lado, la última página mostrada (al encender STEP, el piano roll); adentro el grupo siguiente: **PATTERN → TRACK → BAR → STEP → AUTO**, en ronda. | Capa **SEQ TOOLS** (en todas las páginas SEQ); G5 CLR STEP. |
 | **PLAY** | Arranca / para. | — |
@@ -318,7 +318,7 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 | **LFO** | **MOD**: MOD — **LFO**: LFO · LFO DEST — **MSEQ**: MSEQ · MSEQ 2 | 5 |
 | **SCL** | **KEY**: SCL — **CHORD**: CHORD | 2 |
 | **ARP** | **ARP**: ARP · ARP 2 | 2 |
-| **SAVE** | **SOUND**: USER · PRESETS — **PROJECT**: SECTIONS · ARRANGE · TIMELINE — **LIBRARY**: PROJECTS · TOOLS | 7 |
+| **SAVE** | **SONG**: TIMELINE · SECTIONS — **PROJECT**: PROJECTS · ARRANGE · TOOLS — **SOUND**: USER · PRESETS | 7 |
 
 Dónde vivía cada página en la 0.9.1: las vistas de seis envolventes de ENV (el nivel TRACKS) ahora son páginas propias,
 **TRACKS** y **TRACKS DEST**, con las perillas de ENV y ENV DEST; **NOTE** aparece una sola vez (el grupo BAR; su
@@ -1401,7 +1401,7 @@ largo y su END (**120 BARS · LOOP**).
 
 ### La página TIMELINE (SAVE > TIMELINE)
 
-(V10) TIMELINE viene justo después de ARRANGE (SELECT). Dibuja todo el tema **de izquierda a derecha**, cada fila tan
+(V10; V10.2: la primera página de SAVE) TIMELINE es la página con la que abre SAVE. Dibuja todo el tema **de izquierda a derecha**, cada fila tan
 ancha como sus compases, en siete carriles: **SEC** (las filas: su sección y compases, A8, B4…) y un carril por pista,
 **T1–T6**.
 
@@ -2098,33 +2098,34 @@ distintas.
 - Después de un crash, un cuelgue o un arranque fallido, el autoguardado no se restaura (la música que estaba sonando
   podría ser lo que causó el crash).
 
-### La cadena de SAVE: SOUND · PROJECT · LIBRARY
+### La cadena de SAVE: SONG · PROJECT · SOUND
 
-(0.9.2; V10: TIMELINE) SAVE es una cadena de siete páginas en tres grupos, como todas las secciones: **SELECT** recorre
-USER → PRESETS → SECTIONS → ARRANGE → TIMELINE → PROJECTS → TOOLS, un toque de **SAVE** salta al grupo siguiente (en ronda). Las páginas, sus
+(0.9.2; V10.2: primero componer) SAVE es una cadena de siete páginas en tres grupos, como todas las secciones:
+**SELECT** recorre TIMELINE → SECTIONS → PROJECTS → ARRANGE → TOOLS → USER → PRESETS, un toque de **SAVE** salta al
+grupo siguiente (en ronda). Al encender, SAVE abre **TIMELINE**. Las páginas, sus
 perillas, OCT+, los diálogos y la pantalla NAME son los de siempre (hasta la 0.9.1 SELECT hacía zoom LIBRARY ↔ PROJECT
 ↔ SOUND y el toque cambiaba los dos juegos de cada nivel).
 
 | Grupo | Páginas | Qué muestra la pantalla | Perillas |
 | --- | --- | --- | --- |
+| **SONG** | TIMELINE · SECTIONS | TIMELINE: el tema en carriles (ver [7](#7-arrange-canciones-secciones-y-escenas)). / Las cuatro secciones del proyecto en grande, el tema como una tira. | ROW, LANE, SECT o FROM, BARS o VAR / SECT, NAME (se muestra; SAVE + C5 lo renombra), LOAD, SAVE |
+| **PROJECT** | PROJECTS · ARRANGE · TOOLS | Los ocho proyectos como fichas: el número, el nombre (el de su sección A), sus cuatro secciones A–D como chips (guardadas: en el color de la sección; vacías: oscuras); el proyecto abierto teñido y enmarcado en violeta, su sección elegida enmarcada en blanco. / Las filas de ARRANGE como fichas. / Las seis herramientas en lista. | PROJECT, SECT, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ agrega una fila) / la herramienta |
 | **SOUND** | USER · PRESETS | El ser de la pista (la criatura de su motor, viva con su sonido), la pista y su sonido debajo; a la derecha los 32 lugares de usuario (uno guardado: la criatura de su motor en chiquito y su nombre) o los sonidos de fábrica. | SLOT, LOAD, ERASE, SAVE / No., ENG, FAV, LIST |
-| **PROJECT** | SECTIONS · ARRANGE · TIMELINE | Las cuatro secciones del proyecto en grande, las filas de ARRANGE como fichas, el tema como una tira; TIMELINE: el tema en carriles (ver [7](#7-arrange-canciones-secciones-y-escenas)). | SECT, NAME (se muestra; SAVE + C5 lo renombra), LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ agrega una fila) / ROW, LANE, SECT o FROM, BARS o VAR |
-| **LIBRARY** | PROJECTS · TOOLS | Los ocho proyectos como fichas: el número, el nombre (el de su sección A), sus cuatro secciones A–D como chips (guardadas: en el color de la sección; vacías: oscuras). El proyecto abierto teñido y enmarcado en violeta, su sección elegida enmarcada en blanco. / Las seis herramientas en lista. | PROJECT, SECT, LOAD, SAVE / la herramienta |
 
 - **SAVE desde otra página** vuelve a la página de SAVE que dejaste; **USER** y **SECTIONS** llegan con su SAVE ya
   elegido: SAVE, OCT+, OCT+ guarda el sonido (o la sección), como antes. Si dejaste SAVE en otra página, volvé a USER
-  con SELECT (o con un toque de SAVE desde LIBRARY, en ronda); llegando desde adentro, SAVE no queda elegido (KNOB 4
+  con SELECT (o con un toque de SAVE desde el grupo PROJECT); llegando desde adentro, SAVE no queda elegido (KNOB 4
   a la derecha).
 - Las fichas de los otros proyectos se leen de la flash de a un proyecto por cuadro (solo los encabezados: no se carga
   nada, el audio no lo nota) y se guardan hasta que se guarda, carga o renombra un proyecto.
-- El pie dice **SAVE · LIBRARY · PROJECTS  6/7**. Las ayudas OCT+ / OCT− no se dibujan en estas páginas: la tarjeta
+- El pie dice **SAVE · PROJECT · PROJECTS  3/7**. Las ayudas OCT+ / OCT− no se dibujan en estas páginas: la tarjeta
   armada dice OCT+.
 
 ### Para guardar una sección de un proyecto
 
 1. **Pará** el transporte (guardar necesita el transporte parado: si no, **STOP TO SAVE**).
-2. Apretá **SAVE** y después **SAVE** otra vez hasta el grupo siguiente (o girá **SELECT**): **SECTIONS** (el grupo
-   PROJECT) o **PROJECTS** (el grupo LIBRARY).
+2. Apretá **SAVE** y girá **SELECT** hasta **SECTIONS** (el grupo SONG, segunda página), o tocá **SAVE** otra vez
+   para **PROJECTS** (el grupo PROJECT).
 3. En **PROJECTS**, **KNOB 1**: el proyecto (1–8), su ficha enmarcada; **KNOB 2** su sección. Girar KNOB 1
    **no** cambia la música que estás tocando — solo elige dónde guardar. (Cambia de proyecto, así que hacelo con el
    transporte parado.)

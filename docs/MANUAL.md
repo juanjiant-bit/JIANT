@@ -71,8 +71,8 @@ files.
    or PRESETS first. A whole song idea appears: engines, sounds, parts, scale, tempo and effects. Press **PLAY**.
 2. Not your thing? Press **OCT+** again: a new seed, a new piece. Too busy? Turn **SELECT** one detent right for GEN 2 and lower
    **DRUMS** or **ARP**, then OCT+: the same piece with that changed. **OCT−** goes back to ECO. To go back to what was there before: hold **GLO** and press **G4** (UNDO).
-3. Like it? **Stop** (PLAY), then press **SAVE** (it opens USER, the user sounds) and press **SAVE** again: the
-   **PROJECT** group's **SECTIONS**, the project's four sections. Turn **KNOB 4** to the right so its card says **OCT+**, then press
+3. Like it? **Stop** (PLAY), then press **SAVE** (it opens TIMELINE, the song) and turn **SELECT** one detent right:
+   **SECTIONS**, the project's four sections. Turn **KNOB 4** to the right so its card says **OCT+**, then press
    **OCT+**. Type a name with the keys (or keep the one offered) and press **OCT+** again. The screen says **SAVED**.
 4. Make a variation (change some steps, mute a track) and save it into section **B**: on SECTIONS turn **KNOB 1** to
    **B**, then KNOB 4 and OCT+ as before.
@@ -109,7 +109,7 @@ The names below are the ones the firmware uses (the HARDWARE CALIBRATION screen 
 | **SCL** | The SCL section (0.9.2: its own, ARP apart): **KEY ↔ CHORD**. | **SCL** layer: keys set the root. |
 | **EDIT** | The EDIT section: from elsewhere the page last shown (one memory for the synths, one each for FM6 and DRUM); inside the next group: **SOUND → TONE → FOCUS** (FM6: SOUND → TONE → OPERATOR; DRUM: KIT → SOUND → LEVELS → TONE). Always EDIT (0.9.2: clearing a step is SEQ + G5, renaming SAVE + C5). A step held + EDIT still clears that step's locks. | **EDIT** layer: INIT, RECALL, DRUM-X sound mutes. |
 | **GLO** | The GLO section: from elsewhere the page last shown (at power-on MIXER); inside **LIVE → MIX → GLOBAL → SYSTEM**, round (0.9.11: LIVE, the live sequences, first). | **GLO** layer: mutes, solos, levels, tap tempo, UNDO. |
-| **SAVE** | The SAVE section: from elsewhere the page last shown, and USER or SECTIONS come with their **SAVE already picked** (SAVE, OCT+, OCT+ as before); inside **SOUND → PROJECT → LIBRARY**, round. | **SAVE** layer: play/store sections live; C5 NAME. |
+| **SAVE** | The SAVE section: from elsewhere the page last shown, and USER or SECTIONS come with their **SAVE already picked** (SAVE, OCT+, OCT+ as before); inside **SONG → PROJECT → SOUND**, round (V10.2: TIMELINE first). | **SAVE** layer: play/store sections live; C5 NAME. |
 | **ARP** | The ARP section (ARP · ARP 2, one group): from elsewhere the page last shown; inside, back to ARP. A chord held + ARP during step recording still arpeggiates it. | (no layer) |
 | **SEQ** | The SEQ section: from elsewhere the page last shown (at power-on STEP, the piano roll); inside the next group: **PATTERN → TRACK → BAR → STEP → AUTO**, round. | **SEQ TOOLS** layer (on every SEQ page); G5 CLR STEP. |
 | **PLAY** | Start / stop. | — |
@@ -307,7 +307,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 | **LFO** | **MOD**: MOD — **LFO**: LFO · LFO DEST — **MSEQ**: MSEQ · MSEQ 2 | 5 |
 | **SCL** | **KEY**: SCL — **CHORD**: CHORD | 2 |
 | **ARP** | **ARP**: ARP · ARP 2 | 2 |
-| **SAVE** | **SOUND**: USER · PRESETS — **PROJECT**: SECTIONS · ARRANGE · TIMELINE — **LIBRARY**: PROJECTS · TOOLS | 7 |
+| **SAVE** | **SONG**: TIMELINE · SECTIONS — **PROJECT**: PROJECTS · ARRANGE · TOOLS — **SOUND**: USER · PRESETS | 7 |
 
 Where a page lived in 0.9.1: ENV's six-envelope views (the TRACKS level) are now pages of their own, **TRACKS** and
 **TRACKS DEST**, with ENV's and ENV DEST's knobs; **NOTE** appears once (the BAR group; its big-step picture is
@@ -1331,7 +1331,7 @@ strip (its rows by their length, a white line where it plays) with its length an
 
 ### The TIMELINE page (SAVE > TIMELINE)
 
-(V10) TIMELINE comes right after ARRANGE (SELECT). It draws the whole song **left to right**, each row as wide as its
+(V10; V10.2: SAVE's first page) TIMELINE is the page SAVE opens on. It draws the whole song **left to right**, each row as wide as its
 bars, in seven lanes: **SEC** (the rows: their section and bars, A8, B4…) and one lane per track, **T1–T6**.
 
 - A track that **follows its row** is drawn dim, in the row's colour.
@@ -1973,33 +1973,34 @@ This is the chapter to read carefully. JIANT keeps several kinds of data in diff
 - After a crash, a hang or a failed start, the autosave is not restored (the music that was playing could be what
   crashed).
 
-### SAVE's chain: SOUND · PROJECT · LIBRARY
+### SAVE's chain: SONG · PROJECT · SOUND
 
-(0.9.2; V10: TIMELINE) SAVE is a chain of seven pages in three groups, as every section: **SELECT** walks USER →
-PRESETS → SECTIONS → ARRANGE → TIMELINE → PROJECTS → TOOLS, a **SAVE** tap jumps to the next group (round). The pages, their knobs, OCT+, the dialogs
+(0.9.2; V10.2: composing first) SAVE is a chain of seven pages in three groups, as every section: **SELECT** walks
+TIMELINE → SECTIONS → PROJECTS → ARRANGE → TOOLS → USER → PRESETS, a **SAVE** tap jumps to the next group (round). At
+power-on SAVE opens **TIMELINE**. The pages, their knobs, OCT+, the dialogs
 and the NAME screen are the ones they always were (until 0.9.1 SELECT zoomed LIBRARY ↔ PROJECT ↔ SOUND and the tap
 switched each level's two sets).
 
 | Group | Pages | What the screen shows | Knobs |
 | --- | --- | --- | --- |
+| **SONG** | TIMELINE · SECTIONS | TIMELINE: the song as lanes (see [7](#7-arrange-songs-sections-and-scenes)). / The project's four sections large, the song as a strip. | ROW, LANE, SECT or FROM, BARS or VAR / SECT, NAME (shown; SAVE + C5 renames), LOAD, SAVE |
+| **PROJECT** | PROJECTS · ARRANGE · TOOLS | The eight projects as tiles: the number, the name (its section A's), the four sections A–D as chips (stored: in the section's colour; empty: dark); the project open tinted and framed violet, its section picked framed white. / ARRANGE's rows as chips. / The six tools as a list. | PROJECT, SECT, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ adds a row) / the tool |
 | **SOUND** | USER · PRESETS | The track's being (its engine's creature, alive with its sound), the track and its sound under it; at the right the 32 user slots (a stored one: its engine's creature small and its name) or the factory sounds. | SLOT, LOAD, ERASE, SAVE / No., ENG, FAV, LIST |
-| **PROJECT** | SECTIONS · ARRANGE · TIMELINE | The project's four sections large, ARRANGE's rows as chips, the song as a strip; TIMELINE: the song as lanes (see [7](#7-arrange-songs-sections-and-scenes)). | SECT, NAME (shown; SAVE + C5 renames), LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ adds a row) / ROW, LANE, SECT or FROM, BARS or VAR |
-| **LIBRARY** | PROJECTS · TOOLS | The eight projects as tiles: the number, the name (its section A's), the four sections A–D as chips (stored: in the section's colour; empty: dark). The project open tinted and framed violet, its section picked framed white. / The six tools as a list. | PROJECT, SECT, LOAD, SAVE / the tool |
 
 - **SAVE from another page** comes back to the SAVE page you left; **USER** and **SECTIONS** come with their SAVE
   already picked: SAVE, OCT+, OCT+ stores the sound (or the section), as before. Left on another SAVE page, go back
-  to USER with SELECT (or a SAVE tap from the LIBRARY, round); reached from inside, SAVE is not picked for you
+  to USER with SELECT (or a SAVE tap from the PROJECT group); reached from inside, SAVE is not picked for you
   (KNOB 4 to the right).
 - The other projects' tiles are read from the flash a project a frame (the headers only: no loading, nothing the
   audio notices) and kept until a project is saved, loaded or renamed.
-- The footer says **SAVE · LIBRARY · PROJECTS  6/7**. The OCT+ / OCT− hints are not drawn on these pages: the armed
+- The footer says **SAVE · PROJECT · PROJECTS  3/7**. The OCT+ / OCT− hints are not drawn on these pages: the armed
   card says OCT+.
 
 ### To save a project section
 
 1. **Stop** the transport (saving needs it stopped: otherwise **STOP TO SAVE**).
-2. Press **SAVE**, then **SAVE** again to the next group (or turn **SELECT**): **SECTIONS** (the PROJECT group) or
-   **PROJECTS** (the LIBRARY group).
+2. Press **SAVE** and turn **SELECT** to **SECTIONS** (the SONG group, second page), or tap **SAVE** again for
+   **PROJECTS** (the PROJECT group).
 3. On **PROJECTS**, **KNOB 1**: the project (1–8), its tile framed; **KNOB 2** its section. Turning KNOB 1
    does **not** change the music you're playing — it only chooses where to save. (It switches projects, so do this
    stopped.)
@@ -2032,7 +2033,7 @@ when you stop**. If you power off before stopping, it's lost — so stop before 
 
 - **A section to another letter**: LOAD it, then SAVE it into the other letter.
 - **A section to another project**: LOAD it, turn KNOB 1 to the other project (the music stays), SAVE into a letter.
-- **"Save as" a new project**: with your music playing, stop, go to SAVE's LIBRARY, turn KNOB 1 to an empty project
+- **"Save as" a new project**: with your music playing, stop, go to SAVE's PROJECTS, turn KNOB 1 to an empty project
   and SAVE into A (SAVE > PROJECTS).
 
 ### Switching projects
