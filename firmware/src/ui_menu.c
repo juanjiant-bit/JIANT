@@ -125,7 +125,7 @@ static __attribute__((noinline)) int32_t about_cpu(int32_t y, int draw)
             fmt_int(n, fm1_rails[(i + 2u) & 3u]);
             str_cpy(b + str_len(b), n, 4);
         }
-        str_cpy(b + str_len(b), ")", 2);
+        str_cpy(b + str_len(b), fm1_power_ready ? ") DC" : ")", 5);   /* (V10.11) DC: the stock supply setup took */
         y = menu_text(b, y, T_TEXT, draw);
         if (fm1_crash.magic == FM1_CRASH_MAGIC && fm1_crash.count) {   /* (0.9.9-stab) the last crash since power-on
                                                      * (.noinit, hal/fm1_irq.h): what its red screen showed, in hex */

@@ -45,6 +45,11 @@ static inline void *fl_far(void *p) { void *volatile q = p; return q; }
 #define FL_AUTO_HI      0x000E7000u                /* the OTA staging */
 #define FL_VBANK_LO     0x000E7000u                /* (JIANT 0.6.11, Felucca 1.4.1) the FM6 voice bank (fm6_vbank.c), */
 #define FL_VBANK_HI     0x000E8000u                /* the sector above (below the stock OTA's VM backup, 0xE8000) */
+/* (V10.11) 0xE8000..0xE9FFF the stock firmware's VM (the radio's RF trims, its BT address: kept, never written);
+ * 0xEA000..0xFBFFF (72 KiB) reserved for the Bluetooth segment (docs/BLE_FEASIBILITY.md: the BLE stack linked with
+ * JIANT, run from flash there). Nothing of the app writes either: they are outside FL_RANGE_OK below */
+#define FL_EXT_LO       0x000EA000u
+#define FL_EXT_HI       0x000FC000u
 /* [off, off + n) inside [lo, hi), without wrapping: off + n can overflow, and
  * the 1 MiB part ignores the high address bits, so a wrapped range lands low. */
 #define FL_IN(off, n, lo, hi) ((uint32_t)(off) >= (lo) && (uint32_t)(off) <= (hi) && \

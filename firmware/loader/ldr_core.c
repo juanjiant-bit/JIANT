@@ -172,6 +172,8 @@ static int ldr_session(void)
         uint8_t r[80];
         if (s - 0x1000u >= LDR_DATA_LO && s - 0x1000u < LDR_DATA_HI)
             continue;                                    /* Felucca's store: user data that may look like one */
+        if (s - 0x1000u >= 0xEA000u && s - 0x1000u < 0xFC000u)
+            continue;                                    /* (V10.11) the Bluetooth segment: code, never a record */
         if (ldr_fread(s - 0x100u, r, 80))
             break;
         if (ota_rd16(r + 6) == 0x5441u && ota_rd16(r) && ota_rd16(r) == ota_crc16(r + 2, 78, 0)) {

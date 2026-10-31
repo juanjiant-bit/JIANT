@@ -506,6 +506,8 @@ void fm1_cstart(void)
 #endif
     for (s = _hot_load, d = _hot_start; d < _hot_end; s++, d++)
         *d = *s;                                /* (0.6.78) core 0's hottest audio code (core.h HOTRAM) */
+    fm1_power_ready = (uint8_t)fm1_power_init();   /* (V10.11) the supplies as stock V15 sets them (the DC-DC on:
+                                                 * hal/fm1_power.h, Melodee's sequence), the radio's prerequisite */
     fm1_rails_boot();                           /* (0.9.9-stab) the core supplies to M-VAVE's own levels (VDC14 1.60 V,
                                                  * SYSVDD 1.38 V, hal/fm1_sys.h) before the second core and the audio:
                                                  * up to here the chip ran on the boot loader's 1.26 V at 360 MHz */
