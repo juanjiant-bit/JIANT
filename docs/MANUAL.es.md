@@ -1386,6 +1386,7 @@ largo y su END (**120 BARS · LOOP**).
 | KNOB 1 | elige la fila | | |
 | KNOB 2 | su sección A–D; girada a la izquierda más allá de A: **DELETE SONG ROW?** | agrega una fila (misma sección que la fila de arriba, 1 compás) | **STOP**, **x2 … x8**, **LOOP** |
 | OCT+ | agrega una fila después de la última (su sección y sus compases) y la elige (0.8.5) | | |
+| OCT− | (V10.4) **DELETE ROW?** para la fila elegida: OCT+ la borra, OCT− la deja (parado; también en TIMELINE) | | |
 | KNOB 3 | sus compases (1–64) | agrega una fila | |
 | KNOB 4 | derecha: guarda una **escena** (SCENE STORED); izquierda: la borra | | |
 
@@ -2109,7 +2110,7 @@ perillas, OCT+, los diálogos y la pantalla NAME son los de siempre (hasta la 0.
 | Grupo | Páginas | Qué muestra la pantalla | Perillas |
 | --- | --- | --- | --- |
 | **SONG** | TIMELINE · SECTIONS | TIMELINE: el tema en carriles (ver [7](#7-arrange-canciones-secciones-y-escenas)). / Las cuatro secciones del proyecto en grande, el tema como una tira. | ROW, LANE, SECT o FROM, BARS o VAR / SECT, NAME (se muestra; SAVE + C5 lo renombra), LOAD, SAVE |
-| **PROJECT** | PROJECTS · ARRANGE · TOOLS | Los ocho proyectos como fichas: el número, el nombre (el de su sección A), sus cuatro secciones A–D como chips (guardadas: en el color de la sección; vacías: oscuras); el proyecto abierto teñido y enmarcado en violeta, su sección elegida enmarcada en blanco. / Las filas de ARRANGE como fichas. / Las seis herramientas en lista. | PROJECT, SECT, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ agrega una fila) / la herramienta |
+| **PROJECT** | PROJECTS · ARRANGE · TOOLS | Los ocho proyectos como fichas: el número, el nombre (el de su sección A), sus cuatro secciones A–D como chips (guardadas: en el color de la sección; vacías: oscuras); el proyecto abierto teñido y enmarcado en violeta, su sección elegida enmarcada en blanco. / Las filas de ARRANGE como fichas. / Las seis herramientas en lista. | PROJECT, SECT, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ agrega una fila, OCT− borra la elegida) / la herramienta |
 | **SOUND** | USER · PRESETS | El ser de la pista (la criatura de su motor, viva con su sonido), la pista y su sonido debajo; a la derecha los 32 lugares de usuario (uno guardado: la criatura de su motor en chiquito y su nombre) o los sonidos de fábrica. | SLOT, LOAD, ERASE, SAVE / No., ENG, FAV, LIST |
 
 - **SAVE desde otra página** vuelve a la página de SAVE que dejaste; **USER** y **SECTIONS** llegan con su SAVE ya

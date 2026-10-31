@@ -1317,6 +1317,7 @@ strip (its rows by their length, a white line where it plays) with its length an
 | KNOB 1 | choose the row | | |
 | KNOB 2 | its section A–D; turned left past A: **DELETE SONG ROW?** | adds a row (same section as the row above, 1 bar) | **STOP**, **x2 … x8**, **LOOP** |
 | OCT+ | adds a row after the last (its section and bars), and selects it (0.8.5) | | |
+| OCT− | (V10.4) **DELETE ROW?** for the row picked: OCT+ deletes it, OCT− keeps it (stopped; also on TIMELINE) | | |
 | KNOB 3 | its bars (1–64) | adds a row | |
 | KNOB 4 | right: store a **scene** (SCENE STORED); left: clear it | | |
 
@@ -1984,7 +1985,7 @@ switched each level's two sets).
 | Group | Pages | What the screen shows | Knobs |
 | --- | --- | --- | --- |
 | **SONG** | TIMELINE · SECTIONS | TIMELINE: the song as lanes (see [7](#7-arrange-songs-sections-and-scenes)). / The project's four sections large, the song as a strip. | ROW, LANE, SECT or FROM, BARS or VAR / SECT, NAME (shown; SAVE + C5 renames), LOAD, SAVE |
-| **PROJECT** | PROJECTS · ARRANGE · TOOLS | The eight projects as tiles: the number, the name (its section A's), the four sections A–D as chips (stored: in the section's colour; empty: dark); the project open tinted and framed violet, its section picked framed white. / ARRANGE's rows as chips. / The six tools as a list. | PROJECT, SECT, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ adds a row) / the tool |
+| **PROJECT** | PROJECTS · ARRANGE · TOOLS | The eight projects as tiles: the number, the name (its section A's), the four sections A–D as chips (stored: in the section's colour; empty: dark); the project open tinted and framed violet, its section picked framed white. / ARRANGE's rows as chips. / The six tools as a list. | PROJECT, SECT, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ adds a row, OCT− deletes the one picked) / the tool |
 | **SOUND** | USER · PRESETS | The track's being (its engine's creature, alive with its sound), the track and its sound under it; at the right the 32 user slots (a stored one: its engine's creature small and its name) or the factory sounds. | SLOT, LOAD, ERASE, SAVE / No., ENG, FAV, LIST |
 
 - **SAVE from another page** comes back to the SAVE page you left; **USER** and **SECTIONS** come with their SAVE

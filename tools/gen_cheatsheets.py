@@ -274,7 +274,7 @@ def controls():
         ('GLO · SAVE', HEAT[6], [('MANO', 'RATE LOOP THIN DJ FILT (the keys: live modifiers)'), ('RIELES', 'PISTAS RATE CORTE DENS'),
                                  ('MIXER', 'LEVEL PAN REV DJ FILT'), ('GLOBAL', 'BPM SWING CLOCK TUNE'),
                                  ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('PRESETS', 'No. ENG FAV LIST'),
-                                 ('USER', 'SLOT LOAD ERASE SAVE'), ('PROJECTS', 'PROJECT SECT LOAD SAVE'), ('SECTIONS', 'SECT NAME LOAD SAVE'), ('ARRANGE', 'ROW SECT BARS SCENE (OCT+ adds a row)'), ('TIMELINE', 'ROW LANE · SEC: SECT BARS · T1–T6: FROM VAR'),
+                                 ('USER', 'SLOT LOAD ERASE SAVE'), ('PROJECTS', 'PROJECT SECT LOAD SAVE'), ('SECTIONS', 'SECT NAME LOAD SAVE'), ('ARRANGE', 'ROW SECT BARS SCENE (OCT+ adds a row, OCT− deletes the one picked)'), ('TIMELINE', 'ROW LANE · SEC: SECT BARS · T1–T6: FROM VAR'),
                                  ('TOOLS', 'CLEAR SEQ · INIT SOUND · DEL ROW · CLEAR SONG · NEW PROJECT · CPU TEST: K1 picks, OCT+')]),
     ]
 
@@ -401,7 +401,7 @@ def sound():
                   'UP+8 CONV DIVG PINKY THUMB WALK CHORD <b style="color:#f4f1ea">TRNS</b> (the keys transpose the '
                   'sequence)</p>'))
     b.append(card('SONGS', HEAT[6],
-                  '<p><b>8 projects × 4 sections (A–D)</b>, a song of up to 16 rows by bars (SAVE › PROJECT › ARRANGE, OCT+ adds a row, PLAY plays; END: STOP, x2–x8, LOOP), SLOOP style. '
+                  '<p><b>8 projects × 4 sections (A–D)</b>, a song of up to 16 rows by bars (SAVE › PROJECT › ARRANGE, OCT+ adds a row, OCT− deletes one, PLAY plays; END: STOP, x2–x8, LOOP), SLOOP style. '
                   '<b>TIMELINE</b> (V10, after ARRANGE): the song as lanes; per row each track can play another section (<b>FROM</b>) and a variation (<b>VAR</b>: MUTE THIN FILL HALF REV SHIFT OCT± VAR 1–4). '
                   'Each row can hold a <b>scene</b>: mutes, DRUM-X group mutes, macros and MIDI punch-ins. SAVE held '
                   'plays sections live on the next bar, stores them, records the song (SONG REC). Each section keeps its '
