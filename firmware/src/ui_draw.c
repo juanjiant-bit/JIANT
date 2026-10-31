@@ -2125,11 +2125,6 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, "WRITE LIVE CHANGES?", 24);
         str_cpy(b, "UNDO AFTER: GLO + G4", 24);
         break;
-    case CF_MUT_BACK:                                /* (0.9.3) MUTATE turned OFF on track k (project.c mut_ask_poll) */
-        str_cpy(a, "BACK TO BEFORE MUTATE?", 24);
-        str_cpy(b, "T1: SOUND AND PATTERN", 24);
-        b[1] = (char)('1' + k % NTRK);
-        break;
     case CF_INIT_SYS:                                /* (0.6.40) SAVE > TOOLS 5 */
         str_cpy(a, "NEW PROJECT?", 24);
         str_cpy(b, "UNDO AFTER: GLO + G4", 24);
@@ -2303,8 +2298,8 @@ static void draw_confirm(void)
         GFX_HOOK_ALIGN(0, 0, 212, 0, AL_H, "dialog detail centred");
         cv_text_flags(ink_in(&AF_S, f, 212), 60, &AF_S, f, T_MID, cb, 8u | (f[str_len(f) - 1u] == ELLIPSIS));
     }
-    dlg_button(12, 92, 90, "OCT -", ui.confirm == CF_DICE_ALL ? "CANCEL" : ui.confirm == CF_MUT_BACK ? "KEEP" : "NO", 0, cb);
-    dlg_button(110, 92, 90, "OCT +", ui.confirm == CF_MUT_BACK ? "BACK" : "YES", 1, cb);
+    dlg_button(12, 92, 90, "OCT -", ui.confirm == CF_DICE_ALL ? "CANCEL" : "NO", 0, cb);
+    dlg_button(110, 92, 90, "OCT +", "YES", 1, cb);
     }
     cv_blit(14, 66);
     dlg_crumb("NOTICE", "CONFIRM");

@@ -2017,22 +2017,6 @@ static void gx_heads(void)
         n--;
     }
 }
-/* MUTATE on a track or two (SOUND or PATTERN every 2 .. 16 bars, ORBIT mostly: round the piece) */
-static void gx_mutate(uint32_t n)                       /* (0.9.9-gen1: n tracks; a genre's, the arp or the chords' pattern) */
-{
-    uint32_t tries;
-    for (tries = 0; tries < 16u && n; tries++) {
-        uint32_t ti = gr() % NTRK, r = gs.role[ti];
-        track_t *t = &trk[ti];
-        if (!gs.act[r] || t->p[P_MSND] || t->p[P_MPAT] || MUT_WHAT(t) || (!gx.on && r != RL_ARP && r != RL_PAD)) continue;
-        if (!gx.on) { t->p[P_MCFG] = (int16_t)(127 - (MW_PATTERN | 4u << 3)); t->p[P_MAMT] = (int16_t)grr(15, 30); n--; continue; }   /* (WHAT
-                                                         * PATTERN, LOOP 4 bars, ORBIT) */
-        if (r == RL_DRUM || gch(50)) t->p[P_MPAT] = (int16_t)grr(2, 5); else t->p[P_MSND] = (int16_t)grr(2, 5);
-        t->p[P_MAMT] = (int16_t)grr(20, 60);
-        t->p[P_MMODE] = (int16_t)(gch(75) ? 0 : 1);
-        n--;
-    }
-}
 
 /* --------------------------------------------------------------------------------------------- the piece --- */
 static void gen_post(void)
@@ -2469,13 +2453,8 @@ static void gen_make(void)
     }
     rng_state = gq | 1u;
     macro_dice(3);
-    /* (0.6.96) MUTATE off on every track (the clean base), its anchor the piece; (0.9.9-gen1) the genres that orbit:
-     * the arp's (or the chords') pattern every 4 bars */
-    if (gx.on || GG_MUT(GGR))                           /* (0.8.6) EXPLORE: MUTATE, PLAYHEADS (before the sections:
-                                                         * each holds them) */
-        gx_mutate(!gx.on ? 1u : gch(45) ? (gch(30) ? 2u : 1u) : 0u);
-    if (gx.on) gx_heads();
-    mut_keep();
+    if (gx.on) gx_heads();                              /* (0.8.6) EXPLORE: PLAYHEADS (before the sections: each holds
+                                                         * them); (V10.6) MUTATE gone */
     gen_parts();
 }
 /* the piece made from the settings (UNDO brings back what was there); the message */

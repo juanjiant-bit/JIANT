@@ -666,7 +666,7 @@ enum { S_HOME, S_HOME_IDLE, S_MESSAGE, S_MESSAGE_KEY, S_MESSAGE_NOFILE, S_PRESET
        S_TOAST_ENV, S_TOAST_MUTATE, S_TOAST_MUTATE_HINT, S_TOAST_MOTION, S_TOAST_MOTION_LOCKS, S_TOAST_PUNCH, S_TOAST_AUTO_LIST,
        S_TOAST_AUTO_LIST_DRUM, S_TOAST_PATTERN, S_TOAST_FM6_OP, S_TOAST_ANALOG, S_COUNT };
 static const char *const S_NAME[S_COUNT] = {"home", "home_idle", "message", "message_key", "message_nofile", "presets", "presets_nofav", "user",
-    "phrases", "project", "tools", "song_empty", "song", "step", "pattern", "chance", "comp", "comp_trig", "comp_echo", "mutate", "morph", "dx_image", "dx_send", "page_flash", "page_flash_home", "fugue", "motion", "drum",
+    "phrases", "project", "tools", "song_empty", "song", "step", "pattern", "chance", "comp", "comp_trig", "comp_echo", "euclid", "morph", "dx_image", "dx_send", "page_flash", "page_flash_home", "fugue", "motion", "drum",
     "drum_hand", "drum_cym", "mixer", "mixer_pan", "env", "env_dest", "lfo", "mod", "fx", "slicer", "slbus", "slpitch", "dly", "scl", "shift", "arp",
     "voice", "global", "system", "edit_analog", FELUCCA_FM4 ? "edit_digital" : "edit_fm6", "op_env", "edit_wheel", "edit_voice",
     "edit_noise", "alg_1", "alg_2", "alg_3", "alg_4", "alg_5", "alg_6", "alg_7", "alg_8", "op_level", "fm6_alg_01", "fm6_alg_05", "fm6_alg_22", "fm6_alg_32", "drumx", "drumx_hit", "dx_sound", "dx_sound2", "confirm_seq", "confirm_project", "confirm_user", "confirm_pattern",
@@ -686,12 +686,12 @@ static const char *const S_NAME[S_COUNT] = {"home", "home_idle", "message", "mes
     "roll_locks", "roll_lock_held", "drum_locks", "drum_lock_held", "motion_locks", "auto_list", "auto_list_add", "auto_list_drum", "layer_rec", "layer_rec_set", "layer_rec_song", "layer_macro", "mseq", "dist", "dly2", "reverb2", "chorus", "master", "lfo_dest", "lfo2", "lfo2_free",
     "countin", "countin_2bars", "menu_audio", "head_play_rec", "head_rec_other", "head_bpm_turn", "head_bpm_lock",
     "head_bpm_locked", "head_glo_turn", "head_downbeat", "head_beat_2",
-    "save_library", "save_tools", "save_project", "save_arrange", "save_sound", "save_presets", "save_timeline", "pg_retrig", "pg_rotor", "pg_length", "pg_mutate2", "pg_dly3", "pg_slbus", "pg_tape", "pg_eq", "pg_system2", "pg_comps", "pg_comps2", "pg_kit2", "pg_kit3", "pg_kit4", "pg_levels", "pg_levels2", "pg_xmod",
+    "save_library", "save_tools", "save_project", "save_arrange", "save_sound", "save_presets", "save_timeline", "pg_retrig", "pg_rotor", "pg_length", "pg_modes", "pg_dly3", "pg_slbus", "pg_tape", "pg_eq", "pg_system2", "pg_comps", "pg_comps2", "pg_kit2", "pg_kit3", "pg_kit4", "pg_levels", "pg_levels2", "pg_xmod",
     "fx_track_sends", "fx_track_dist", "fx_track_pan", "fx_buses", "fx_effect_delay", "fx_effect_delay2", "fx_effect_reverb",
     "fx_effect_slicer", "fx_effect_master",
     "home_macros", "home_being", "home_routes", "gen_lead",
     "ed_filter", "ed_filter_bp", "ed_voice2", "ed_focus", "ed_focus_mod", "ed_operator",
-    "env_tracks", "env_tracks_dest", "env_stage", "env_stage_sus", "mseq2", "key_chord", "key_chord_off", "key_arp", "key_arp2", "glo_sends", "menu_row", "menu_row_leds", "ly_fx_knobs", "ly_fx_state", "ly_glo_state", "dlg_dice_sound", "dlg_dice_seq", "dlg_dice_fx", "dlg_mut_back",
+    "env_tracks", "env_tracks_dest", "env_stage", "env_stage_sus", "mseq2", "key_chord", "key_chord_off", "key_arp", "key_arp2", "glo_sends", "menu_row", "menu_row_leds", "ly_fx_knobs", "ly_fx_state", "ly_glo_state", "dlg_dice_sound", "dlg_dice_seq", "dlg_dice_fx", "euclid_modes",
     "drum_hit_x4", "drum_hit_ghost", "drum_oct_x8", "drum_oct_flam", "comp_touch", "comp_echo_even", "gen_explore",
     "vx_head_a", "vx_head_i", "vx_head_u", "vx_head_s", "vx_head_m", "vx_head_k", "vx_head_t", "vx_head_f", "vx_head_vowel",
     "vx_head_home", "vx_head_quiet", "vx_bird", "vx_cmos", "vx_insect", "vx_wing", "vx_mammal", "vx_morph_insect_bird", "vx_morph_bird_mammal",
@@ -1121,9 +1121,9 @@ static void setup(int s)
     case S_MORPH:                                       /* (0.6.45) ANALOG SAW, MORPH 50 */
         set_engine_of(TSEL, ENGI_ANALOG); TSEL->p[P_E0] = 0; TSEL->p[P_MORPH] = 50; go_page(GR_MORPH);
         break;
-    case S_MUTATE:                                      /* (0.6.43) three tracks mutating, bar 5 */
-        trk[0].p[P_MSND] = 2; trk[0].p[P_MPAT] = 4; trk[1].p[P_MSND] = 3; trk[1].p[P_MMODE] = 1; trk[3].p[P_MPAT] = 1;
-        bar_n = 5; go_page(GR_MUTATE);
+    case S_MUTATE:                                      /* (V10.6) EUCLID on the kit: BD 5 of 16, the lanes at the right */
+        song.sel = 0; set_engine_of(TSEL, ENGI_DRUM); go_title("EUCLID");
+        eu_put(EK_HITS, 5);
         break;
     case S_CHANCE: go_page(GR_CHANCE); step_set_chance(&TSEL->step[0], 65); break;
     case S_COMP:                                        /* (0.6.39) an ARP NOTES step: UP-DN x6 over two octaves */
@@ -1206,13 +1206,12 @@ static void setup(int s)
         uint32_t k;
         for (k = 0; k < NTRK; k++) { trk[k].peak = (int32_t)(1200u + k * 1100u); trk[k].p[P_MSND] = 1; }
         trk[4].p[P_MUTE] = 1;
-        mut_flash[1] = 7;
         break;
     }
     case S_HOME_FACES: {                         /* (0.9.7) HOME A: the faces: T1 hit just now (its eyes shut), the others
                                                   * quiet .. loud (their mouths, their colours), T6 muted (asleep) */
         uint32_t k;
-        for (k = 0; k < NTRK; k++) { mut_flash[k] = 0; trk[k].peak = (int32_t)(k * 1700u); }
+        for (k = 0; k < NTRK; k++) trk[k].peak = (int32_t)(k * 1700u);
         trk[0].peak = 3500;
         eco.en[0] = 128;
         eco_fc.ms[0] = (uint16_t)fm1_ms;
@@ -1245,12 +1244,14 @@ static void setup(int s)
     case S_ENV_STAGE: case S_ENV_STAGE_SUS:
         go_title("STAGE"); ui.stage = s == S_ENV_STAGE ? 1 : 2; ui.hot_col = 1; ui.hot_t = 30; break;
     case S_MSEQ2: go_title("MSEQ 2"); break;
-    case S_DLG_MUT_BACK:                                /* (0.9.3) MUTATE turned OFF on T3 after mutating: the NOTICE */
-        song.sel = 2; trk[2].p[P_MSND] = 2; trk[2].p[P_MPAT] = 4; mut_keep();
-        trk[2].p[P_MSND] = trk[2].p[P_MPAT] = 0;
-        go_page(GR_MUTATE);
-        ui.confirm = CF_MUT_BACK; ui.confirm_trk = 2;
+    case S_DLG_MUT_BACK: {                              /* (V10.6) MODES on a melodic track in C minor: the ring, the notes */
+        uint32_t i;
+        song.sel = 1; set_engine_of(TSEL, ENGI_ANALOG); TSEL->p[P_SCALE] = 2; TSEL->p[P_ROOT] = 0;
+        go_title("MODES");
+        eu_put(EK_M0 + 1u, 60);                          /* HARMONY 60: chords on the strong beats */
+        (void)i;
         break;
+    }
     case S_DLG_DICE_SOUND: case S_DLG_DICE_SEQ: case S_DLG_DICE_FX: {   /* (0.8.5) the DICE dialog: BEFORE / NOW */
         uint32_t k = s == S_DLG_DICE_SOUND ? CF_DICE_SOUND : s == S_DLG_DICE_SEQ ? CF_DICE_SEQ : CF_DICE_FX;
         go_title("EDIT 1"); song.playing = 0;
@@ -1602,7 +1603,7 @@ static void setup(int s)
      * song B16 C16 A32 D8 C16 A32 (scenes on 2 and 4, END LOOP); seven user sounds */
     case S_PG0 ... S_PG_END: {   /* (V10.1) the pages the manual had no screen of: by title, on the engine they need */
         static const struct { const char *t; uint32_t e, sec; } PG[S_PG_END - S_PG0 + 1] =
-        {{"RETRIG", ENGI_LOFI, SEC_EDIT}, {"ROTOR", ENGI_WHEEL, SEC_EDIT}, {"LENGTH", 0xFFu, SEC_SEQ}, {"MUTATE 2", 0xFFu, SEC_SEQ}, {"DLY 3", 0xFFu, SEC_FX}, {"SL BUS", 0xFFu, SEC_FX}, {"TAPE", 0xFFu, SEC_FX}, {"EQ", 0xFFu, SEC_FX}, {"SYSTEM 2", 0xFFu, SEC_GLO}, {"COMPS", 0xFFu, SEC_GLO}, {"COMPS 2", 0xFFu, SEC_GLO}, {"KIT 2", ENGI_DRUM, SEC_EDIT}, {"KIT 3", ENGI_DRUM, SEC_EDIT}, {"KIT 4", ENGI_DRUM, SEC_EDIT}, {"LEVELS", ENGI_DRUM, SEC_EDIT}, {"LEVELS 2", ENGI_DRUM, SEC_EDIT}, {"X-MOD", ENGI_DRUM, SEC_EDIT}};
+        {{"RETRIG", ENGI_LOFI, SEC_EDIT}, {"ROTOR", ENGI_WHEEL, SEC_EDIT}, {"LENGTH", 0xFFu, SEC_SEQ}, {"MODES", 0xFFu, SEC_SEQ}, {"DLY 3", 0xFFu, SEC_FX}, {"SL BUS", 0xFFu, SEC_FX}, {"TAPE", 0xFFu, SEC_FX}, {"EQ", 0xFFu, SEC_FX}, {"SYSTEM 2", 0xFFu, SEC_GLO}, {"COMPS", 0xFFu, SEC_GLO}, {"COMPS 2", 0xFFu, SEC_GLO}, {"KIT 2", ENGI_DRUM, SEC_EDIT}, {"KIT 3", ENGI_DRUM, SEC_EDIT}, {"KIT 4", ENGI_DRUM, SEC_EDIT}, {"LEVELS", ENGI_DRUM, SEC_EDIT}, {"LEVELS 2", ENGI_DRUM, SEC_EDIT}, {"X-MOD", ENGI_DRUM, SEC_EDIT}};
         if (PG[s - S_PG0].e != 0xFFu) eng(PG[s - S_PG0].e);
         nav_scene(PG[s - S_PG0].sec, PG[s - S_PG0].t);
         break;

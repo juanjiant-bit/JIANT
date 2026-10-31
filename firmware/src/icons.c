@@ -276,7 +276,7 @@ static uint32_t page_icon(const page_t *pg)
     case GR_CHANCE: return ICON_PROB;         /* CHANCE: the die */
     case GR_COMP: return ICON_ARP;            /* (0.6.39) COMP: the step components */
     case GR_GCOMP: return ICON_ARP;           /* (0.9.9-seq2f) GLO > COMPS: the global ones */
-    case GR_MUTATE: return ICON_PROB;         /* (0.6.43) MUTATE */
+    case GR_EUCLID: return ICON_PROB;         /* (V10.6) EUCLID (was MUTATE) */
     case GR_FUGUE: return ICON_X_PATTERN;     /* (0.6.52) FUGUE */
     case GR_SHAPE: return ICON_X_REPEAT;      /* (0.6.85) STRETCH */
     case GR_MORPH: return ICON_LFO_WAVE;

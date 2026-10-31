@@ -62,6 +62,7 @@ static void lz_uline(int32_t x, int32_t y, const aafont_t *f, const char *s, uin
 /* the height ADSR and LFO are drawn on: 100 px, or (MENU > LARGE's strip: draw_graph) the strip's ~ 56 */
 static int32_t graph_ht = 100;
 #include "ui_organic.c"                              /* JIANT FM's organic line art (drawn by code) */
+#include "ui_euclid.c"                               /* (V10.6) SEQ > EUCLID / MODES: the generator, its graph */
 #include "ui_fm6op.c"                                /* (0.6.10, from Felucca 1.5) EDIT > OPERATOR, OP ENV, OPERATOR 2 */
 static uint16_t heat_col(int32_t v);
 /* (0.9.5, as the 0.6.36) JIANT (thermal): a card's colour its value as heat (ratio 0..1000, -1 none); bipolar (its range
@@ -1095,7 +1096,7 @@ static void graph_title(void)
  * a step, once motion.c keeps one; till then its records as marks at the roll's foot */
 static int seq_roll_view(const page_t *pg)
 {
-    return pg == &PAGES[ui.page] && lens_on() && pg->graph != GR_PATS && pg->graph != GR_SONG;
+    return pg == &PAGES[ui.page] && lens_on() && pg->graph != GR_PATS && pg->graph != GR_SONG && pg->graph != GR_EUCLID;
 }
 static int roll_view(const page_t *pg)
 {
@@ -1105,32 +1106,6 @@ static void seq_col(uint32_t dr, uint32_t i, int32_t *x, int32_t *w)
 {
     *x = dr ? 40 + (int32_t)i * 12 : PR_CX(i);
     *w = dr ? 10 : PR_CWI(i);
-}
-/* MUTATE's chip: when the next mutation comes (or OFF, FROZEN) */
-static void mut_chip(const track_t *t, char *m)
-{
-    uint32_t sb = MUT_BARS[(uint32_t)clamp(t->p[P_MSND], 0, 6)], qb = MUT_BARS[(uint32_t)clamp(t->p[P_MPAT], 0, 6)];
-    uint32_t now = song.playing ? bar_n : 0u, b = 1u, e = mut_period(t);
-    if (!mut_on(t) || song.sel >= trk_live)
-        str_cpy(m, "MUTATE OFF", 16);
-    else if (mut_freeze)
-        str_cpy(m, "FROZEN", 16);
-    else if (MUT_WHAT(t) && !e)                      /* (0.9.9-seq2c) LOOP HOLD: the result as it is */
-        str_cpy(m, "HOLD", 16);
-    else if (MUT_WHAT(t) && e > 1u) {                /* .. LOOP n: the bar of its n + 1 */
-        str_cpy(m, "LOOP ", 16);
-        fmt_int(m + 5, (int32_t)(now % e + 1u));
-        b = str_len(m);
-        m[b++] = '/';
-        fmt_int(m + b, (int32_t)e);
-    } else {
-        if (MUT_WHAT(t)) sb = 1u, qb = 0u;
-        while (b < 32u && !(sb && (now + b) % sb == 0u) && !(qb && (now + b) % qb == 0u))
-            b++;
-        str_cpy(m, "NEXT ", 16);
-        fmt_int(m + 5, (int32_t)b);
-        str_cpy(m + str_len(m), b > 1u ? " BARS" : " BAR", 6);
-    }
 }
 /* the page's marks over the roll / the grid (0.9.17's): PLAYHEADS FUGUE's heads on the grid too (the roll draws them on
  * every page); COMP the steps with the cursor's component a bar on top ACCENT, another component a thin MID one;
@@ -1168,13 +1143,6 @@ static void seq_overlay(const track_t *t, const page_t *pg)
             if (pg->graph == GR_EVENTS && k == cur)
                 cv_frame(x, top, w + 1, bot - top, T_THEME);
         }
-    } else if (pg->graph == GR_MUTATE) {
-        char m[16];
-        mut_chip(t, m);
-        w = text_w(&AF_X, m) + 8;
-        cv_rect(PR_RX + PR_RW - w, bot - 13, w, 13, T_RAISE);
-        GFX_HOOK_ALIGN(0, bot - 13, 0, bot, AL_V, "MUTATE chip text centred up/down");
-        cv_text_on(PR_RX + PR_RW - w + 4, bot - 13 + CAP_IN(X, 13), &AF_X, m, T_TEXT, T_RAISE);
     } else if (pg->id[0] == P_POFS && !dr && t->p[P_POFS]) {
         for (i = 0; i < 16u && base + i < len; i++) {
             const step_t *st = &seq_steps(t)[base + i];
@@ -1443,11 +1411,10 @@ static uint32_t graph_signature(void)
     if (pg->graph == GR_MORPH)                       /* (0.6.45) the wave, MORPH */
         h = (h ^ ((uint32_t)t->p[P_MORPH] << 16 | (uint32_t)t->p[P_E0] << 8 | (uint32_t)t->p[P_E1] |
                   (uint32_t)t->p[P_E2] << 24)) * 16777619u;
-    if (pg->graph == GR_MUTATE) {                    /* (0.6.43) the bar, the settings, FREEZE */
-        h = (h ^ (song.playing ? bar_n : 0u) * 2654435761u ^ mut_freeze * 977u ^ (uint32_t)mut_back_ok() * 131u) * 16777619u;
-        for (i = 0; i < NTRK; i++)
-            h = (h ^ ((uint32_t)trk[i].p[P_MSND] | (uint32_t)trk[i].p[P_MPAT] << 4 | (uint32_t)trk[i].p[P_MMODE] << 8 |
-                      (uint32_t)(uint8_t)trk[i].p[P_MCFG] << 16)) * 16777619u;
+    if (pg->graph == GR_EUCLID) {                    /* (V10.6) the pattern, the lane, the key, the step playing */
+        h = (h ^ steps_sig(t) ^ (uint32_t)t->p[P_SLEN] << 24) * 16777619u;
+        h = (h ^ eu[song.sel % NTRK].lane ^ (uint32_t)eu[song.sel % NTRK].src << 4 ^ (uint32_t)eu[song.sel % NTRK].root << 8 ^
+             (song.playing ? t->seq_idx + 1u : 0u) << 16) * 16777619u;
     }
     if (pg->graph == GR_GCOMP) {                     /* (0.9.9-seq2f) the global lane, its cursor, MONO, the step playing */
         h = (h ^ (gl_cur * 7919u + gl_trk * 31u + gl_mono * 977u + (song.playing ? gl_step_at(0) % GL_N + 1u : 0u))) *
@@ -1520,7 +1487,6 @@ static uint32_t graph_signature(void)
         if (seq_roll_view(pg)) {                     /* (0.9.9-seq2b) the roll: every playhead's step (the keys light
                                                        * what each sounds, in any bar: a step at a time), the page's marks */
             uint32_t k;
-            char m[16];
             for (k = 0; k <= FG_HEADS; k++)
                 h = (h ^ (pr_head_step(t, k) + 1u)) * 16777619u;
             h = (h ^ (pg->graph == GR_FUGUE ? fg_ui + 1u : 0u) ^ (uint32_t)(uint8_t)t->p[P_POFS] << 8) * 16777619u;
@@ -1528,10 +1494,6 @@ static uint32_t graph_signature(void)
                 h = (h ^ (uint32_t)(uint8_t)fg_set[song.sel % NTRK][k].ivl) * 16777619u;
             if (pg->graph == GR_COMP)
                 h = (h ^ (comp_slot() + 1u) * 40503u) * 16777619u;
-            if (pg->graph == GR_MUTATE) {
-                mut_chip(t, m);
-                h = str_hash(h, m);
-            }
             if (pg->graph == GR_MOTION || pg->graph == GR_EVENTS) {
                 uint8_t idx[MOTION_MAX];
                 uint32_t n = ev_rows(idx);
@@ -2053,6 +2015,9 @@ static void draw_graph(void)
     } else if (pg->graph == GR_LIVE) {               /* (p2) GLO > LIVE: the rails, MANO's board (ui_live.c) */
         cv_oy = 0;
         graph_live();
+    } else if (pg->graph == GR_EUCLID) {             /* (V10.6) SEQ > EUCLID / MODES: the ring, the lanes or the notes */
+        cv_oy = 0;
+        graph_euclid(t);
     } else if (seq_roll_view(pg)) {                  /* (0.9.9-seq2b) every SEQ page: the roll (a kit: the grid), its marks */
         cv_oy = 0;
         if (drum_track(t))

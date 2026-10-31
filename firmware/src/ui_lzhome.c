@@ -98,8 +98,7 @@ static uint32_t eco_step(void)
             eco_fc.c1[c] = vk_heat(h + st);
             eco_fc.c2[c] = vk_heat(h + 2 * st);
         }
-        eco_fc.fl[c] = (uint8_t)((mut_flash[c] ? EF_UP : 0u) |
-                                 ((uint16_t)((uint16_t)fm1_ms - eco_fc.ms[c]) < 100u && eco.en[c] > 77 ? EF_SHUT : 0u));
+        eco_fc.fl[c] = (uint8_t)((((uint16_t)((uint16_t)fm1_ms - eco_fc.ms[c]) < 100u && eco.en[c] > 77 ? EF_SHUT : 0u)));
         if (eco.en[c] > 2) eco.tm[c] += dt * (uint32_t)(200 + eco.en[c] * 5);
         else eco.tm[c] += dt * 60u;                     /* (silent: it still breathes, slowly) */
         r = r * (256 + eco.en[c] * 5 / 4 + (bg_sin(eco.tm[c] / 3u) >> 11)) / 256;
@@ -194,17 +193,6 @@ static void eco_being(uint32_t c, int32_t cx, int32_t cy, int32_t rq)
     for (i = 0; i < 3; i++)                             /* (their colours by its level: eco_step) */
         bg_outline(g, &f, cx, cy, rr * SC[i] >> 8, !i, t, col[i]);
     bg_nv_in = 0;
-    if (mut_flash[c]) {                                 /* MUTATE landed: one ring in the accent, opening and fading */
-        int32_t q = 256 - (int32_t)mut_flash[c] * 256 / 12, rad = rr * (294 + q * 282 / 256) >> 8, px = cx + rad, py = cy;
-        uint32_t k;
-        for (k = 1; k <= 20u; k++) {
-            uint32_t a = k * 65536u / 20u;
-            int32_t x = cx + ((rad * og_cos(a)) >> 15), y = cy + ((rad * og_sin(a)) >> 15);
-            og_line_a(px, py, x, y, T_ACCENT, 256 - q);
-            px = x;
-            py = y;
-        }
-    }
     eco_face(cx, cy, rr, 159, en, eco_fc.fl[c]);
 }
 
@@ -269,7 +257,7 @@ static void eco_draw(int32_t x0, int32_t y0, int words)
         eco_being(c, bx[c] - x0 * 16, by[c], eco.r[c]);
         ny = clamp(py + rad / 2 + 4, 4, bot);
         if (words && (!hud || (ny >= (int32_t)graph_y() + (home_set() ? 12 : 2) && ny + 14 <= (int32_t)(graph_y() + graph_h()))))
-            cv_text_in(px - 30 - x0, ny, 60, &AF_S, num, mut_flash[c] ? vk_heat(255) : c == song.sel ? T_THEME : eco_off(c) ? T_DIM :
+            cv_text_in(px - 30 - x0, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM :
                        hud ? T_TEXT : T_MID, T_SURF);   /* (0.9.0 HUD: TEXT, over the beings; 0.9.7: a mutation, white) */
     }
     if (words && home_set()) {                          /* MACROS: the routes, LATCH */

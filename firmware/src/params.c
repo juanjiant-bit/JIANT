@@ -244,34 +244,9 @@ static const char *const N_CLEN[] = {"OFF", "1", "2", "3", "4", "5", "6", "7", "
                                      "58", "59", "60", "61", "62", "63", "64", 0};
 static const param_desc_t CLEN_DESC = {"C.LEN", F_ENUM, 0, 64, 0, N_CLEN, 0};   /* (0.6.47) P_CLEN */
 static const param_desc_t DXIMG_DESC = {"IMAGE", F_INT, 0, 127, 0, 0, 0};       /* (0.6.48) P_DXIMG */
-static const char *const N_MUTBARS[] = {"OFF", "1", "2", "4", "8", "16", "32"};
-static const char *const N_MUTMODE[] = {"ORBIT", "DRIFT"};
-static const param_desc_t MUT_DESC[4] = {                /* (0.6.43) MUTATE: P_MSND P_MPAT P_MAMT P_MMODE */
-    {"SOUND", F_ENUM, 0, 6, 0, N_MUTBARS, 0}, {"PATTERN", F_ENUM, 0, 6, 0, N_MUTBARS, 0},
-    {"AMOUNT", F_PCT, 0, 127, 0, 0, 0}, {"MODE", F_ENUM, 0, 1, 0, N_MUTMODE, 0}};
-/* (0.9.9-seq2c) the MUTATE pages' own knobs (page_desc: ids ID_MUT0.., the values packed in P_MCFG / P_MMODE, core.h) */
-static const char *const N_MWHAT[] = {"OFF", "NOTES", "RHYTHM", "PATTERN", "SOUND", "PARAM", "ALL"};
-static const char *const N_MLOOP[] = {"OFF", "1", "2", "3", "4", "5", "HOLD"};
-static const char *const N_MPARAM[] = {"CUT", "RES", "ENV", "DEC", "REL", "DLY", "REV", "EDIT 1"};
-static const char *const N_MTURN[] = {"TURN"};
-enum { MK_WHAT, MK_DIR, MK_LOOP, MK_PARAM, MK_SCALE, MK_KEEP, MK_REV, MK_N };
-#define ID_MUT0 0xF0u                                   /* .. ID_MUT0 + MK_N - 1 */
-static const param_desc_t MUTK_DESC[MK_N + 1] = {
-    {"WHAT", F_ENUM, 0, MW_N - 1, 0, N_MWHAT, 0}, {"DIR", F_ENUM, 0, 1, 0, N_MUTMODE, 0},
-    {"LOOP", F_ENUM, 0, ML_HOLD, 0, N_MLOOP, 0}, {"PARAM", F_ENUM, 0, 7, 0, N_MPARAM, 0},
-    {"SCALE", F_ENUM, 0, 1, 1, N_ONOFF, 0}, {"KEEP", F_ENUM, 0, 0, 0, N_MTURN, 0}, {"REVERT", F_ENUM, 0, 0, 0, N_MTURN, 0},
-    {"EVERY", F_ENUM, 0, 6, 0, N_MUTBARS, 0}};          /* (LOOP of a 0.6.43 MUTATE: its bars, until a knob turns) */
-static int16_t mutk_v[MK_N];
-static const param_desc_t *mutk_desc(const track_t *t, uint32_t k, int16_t **valp)
-{
-    uint32_t leg = MUT_LEGACY(t), s = (uint32_t)clamp(t->p[P_MSND], 0, 6), q = (uint32_t)clamp(t->p[P_MPAT], 0, 6);
-    k %= MK_N;
-    mutk_v[k] = (int16_t)(k == MK_WHAT ? (leg ? (s && q ? MW_ALL : s ? MW_SOUND : MW_PATTERN) : MUT_WHAT(t)) :
-                          k == MK_DIR ? MUT_DRIFT(t) : k == MK_LOOP ? (leg ? (s && q ? (s < q ? s : q) : s ? s : q) : MUT_LOOP(t)) :
-                          k == MK_PARAM ? MUT_PARAM(t) : k == MK_SCALE ? !MUT_CHROM(t) : 0u);
-    *valp = &mutk_v[k];
-    return k == MK_LOOP && leg ? &MUTK_DESC[MK_N] : &MUTK_DESC[k];
-}
+/* (V10.6) SEQ > EUCLID / MODES' knobs (ui_euclid.c: ids ID_EU0 + EK_*, the views of the selected track's settings) */
+#define ID_EU0 0xF0u
+static const param_desc_t *eu_desc(uint32_t k, int16_t **valp);
 static const char *const N_CHRD[] = {"OFF", "TRIAD", "7TH", "ADD9", "SUS2", "SUS4", "MAJ", "MIN", "7", "MAJ7", "MIN7",
                                      "POWER", 0};
 static const char *const N_CVOI[] = {"CLOSE", "LEAD", "OPEN", "+BASS", 0};
@@ -303,10 +278,6 @@ static const param_desc_t *track_desc(const track_t *t, uint32_t id)
         return &TRK_CHANCE;
     if (!(FELUCCA_FM4 && t->eng_req % NENGINES == ENGI_DIGITAL))   /* (0.6.43) MUTATE's four */
         switch (id) {
-        case P_MSND: return &MUT_DESC[0];
-        case P_MPAT: return &MUT_DESC[1];
-        case P_MAMT: return &MUT_DESC[2];
-        case P_MMODE: return &MUT_DESC[3];
         case P_MORPH: return &MORPH_DESC;
         case P_CLEN: return &CLEN_DESC;
         case P_DXIMG: return &DXIMG_DESC;
@@ -557,7 +528,7 @@ enum { SC_TRACK, SC_GLOBAL, SC_ENGINE, SC_STEP, SC_TRK };   /* SC_TRK: the TRACK
 enum { GR_NONE, GR_ADSR, GR_LFO, GR_STEPS, GR_ARP, GR_SCALE, GR_FX, GR_ROLL, GR_BROWSE, GR_SLOTS, GR_USER, GR_TRK,
        GR_SLCR, GR_MOD, GR_PATS, GR_SONG, GR_TOOLS, GR_CHANCE, GR_MOTION, GR_EVENTS, GR_DXSND, GR_MSEQ, GR_SLPIT,
        GR_FMOP, GR_FMOP2, GR_FMENV,
-       GR_COMP, GR_MUTATE, GR_MORPH, GR_DXIMG, GR_FUGUE, GR_SHAPE, GR_PUNCH, GR_BUSES, GR_FOCUS, GR_STAGE,
+       GR_COMP, GR_EUCLID, GR_MORPH, GR_DXIMG, GR_FUGUE, GR_SHAPE, GR_PUNCH, GR_BUSES, GR_FOCUS, GR_STAGE,
        GR_LYRIC, GR_GCOMP, GR_LIVE };   /* (p2, main 0.9.11) GLO > LIVE: MANO, RIELES (ui_live.c); the enum's last */   /* (0.8.5) EDIT > WORDS: VOICE's lyric (sing.c) */   /* (0.8.5:
                                                          * LENTE's EDIT > FOCUS, ENV > STAGE) */   /* (0.6.99) FX > PUNCH: the punch-in lane */   /* (JIANT 0.6.39) SEQ > COMP: the step components (ui_input.c comp_*, ui_graph.c graph_comp) */   /* (JIANT 0.6.10, from Felucca 1.5: FM6's operator pages, ui_fm6op.c) */
 
@@ -713,8 +684,8 @@ static const page_t PAGES[] = {
     {"CHANCE", FAM_SEQ, SC_STEP, GR_CHANCE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* a step's CHANCE RATCH; 0.6.37: hidden */
     {"AUTOMATION", FAM_SEQ, SC_TRACK, GR_MOTION, {0xFF, 0xFF, 0xFF, 0xFF}},
     {"AUTO LIST", FAM_SEQ, SC_TRACK, GR_EVENTS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* 1.1.5: the locks and events, edited */
-    {"MUTATE", FAM_SEQ, SC_TRACK, GR_MUTATE, {ID_MUT0 + MK_WHAT, P_MAMT, ID_MUT0 + MK_DIR, ID_MUT0 + MK_LOOP}},   /* (0.6.43)
-                                                         * project.c mutate_poll; (0.9.9-seq2c) WHAT AMOUNT DIR LOOP */
+    {"EUCLID", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_EU0, ID_EU0 + 1u, ID_EU0 + 2u, ID_EU0 + 3u}},   /* (V10.6, MUTATE's place)
+                                                         * HITS STEPS ROTATE, LANE / VARY (ui_euclid.c) */
     /* (0.8.5) LENTE everywhere (ui_lens.c): pages the mock-up added, appended (the table's order is no one's index) */
     {"VOICE 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_ALLOC, P_DETUNE, 0xFF, 0xFF}},   /* EDIT > TONE: ALLOC, UNISON's DETUNE (in
                                                          * TP since Felucca, on no page until now) */
@@ -727,8 +698,8 @@ static const page_t PAGES[] = {
     {"BAR", FAM_SEQ, SC_TRACK, GR_STEPS, {0xFF, P_SLEN, 0xFF, 0xFF}},   /* (0.9.2) SEQ > BAR: the pattern's bars, KNOB 1
                                                          * the bar (the cursor at its place in it; was PRESETS on PATTERN's
                                                          * level), KNOB 2 LEN (ui_input.c edit_param) */
-    {"MUTATE 2", FAM_SEQ, SC_TRACK, GR_MUTATE, {ID_MUT0 + MK_PARAM, ID_MUT0 + MK_SCALE, ID_MUT0 + MK_KEEP, ID_MUT0 + MK_REV}},
-                                                         /* (0.9.9-seq2c) PARAM SCALE, KEEP REVERT on the turn */
+    {"MODES", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_EU0 + 4u, ID_EU0 + 5u, ID_EU0 + 6u, ID_EU0 + 7u}},   /* (V10.6) the four
+                                                         * modes' amounts */
     {"LFO 2", FAM_LFO, SC_TRACK, GR_LFO, {ID_LPHS, 0xFF, 0xFF, 0xFF}},   /* (0.9.18) PHASE: where TRIG starts (FREE: dimmed) */
     {"MANO", FAM_GLO, SC_GLOBAL, GR_LIVE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (p2, main 0.9.11) GLO > LIVE: the keys a board of
                                                          * live modifiers (ui_live.c, seq_live.c) */
@@ -808,8 +779,8 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         id += 3u * mod_ui_slot;
     if (pg->graph == GR_MSEQ && id == P_MS0)          /* the level of the step shown */
         id += ms_ui_step & 15u;
-    if (id >= ID_MUT0 && id < ID_MUT0 + MK_N)         /* (0.9.9-seq2c) MUTATE's packed knobs (ui_input.c mutk_put) */
-        return mutk_desc(TSEL, id - ID_MUT0, valp);
+    if (id >= ID_EU0 && id < ID_EU0 + 8u)            /* (V10.6) EUCLID's and MODES' views (ui_euclid.c eu_put) */
+        return eu_desc(id - ID_EU0, valp);
     *valp = &TSEL->p[id];
     if (id == P_APRATE && TSEL->p[P_APSYNC])         /* (0.6.9) AUTO PAN on the tempo: a division */
         return &AP_BEAT;

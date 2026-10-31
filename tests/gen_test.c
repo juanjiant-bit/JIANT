@@ -562,7 +562,7 @@ int main(void)
         trk[3].p[P_MSND] = 3; trk[0].p[P_MPAT] = 2;
         gen_go();
         for (k = 0; k < NTRK; k++) on += trk[k].p[P_MSND] || trk[k].p[P_MPAT];
-        bad += gcheck("a new piece: MUTATE SOUND / PATTERN OFF on every track, the anchor kept", !on && mut.ok);
+        bad += gcheck("a new piece: the retired MUTATE slots 0 on every track (V10.6: MUTATE gone)", !on);
     }
     /* ---- (0.6.95) a throw its own: HOUSE over twelve seeds takes more than one drum map and more than one chord
      * play; RANDOM over forty seeds throws mutants ("A+B") a third of the time or so, each playable and storable */
@@ -876,7 +876,6 @@ int main(void)
                     uint32_t r = gs.role[k], ri, ft, o, ok = 0;
                     const grecipe_t *a;
                     if (drum_track(t)) { dr = k; continue; }
-                    muts += MUT_WHAT(t) == MW_PATTERN;
                     if (!gs.act[r] || (r != RL_BASS && r != RL_LEAD)) continue;
                     ri = gs.g->snd[r == RL_BASS ? GP_BASS : GP_LEAD];
                     a = &RECIPE[ri];
@@ -889,8 +888,7 @@ int main(void)
                 }
                 if (dr < NTRK && gs.act[RL_DRUM] && dx_glue != GG_GLUE(gg) * 4u) glue_bad++;
                 if (dr < NTRK && !gs.act[RL_DRUM] && trk[dr].step[0].time == ST_NOTE) kit_bad++;
-                if (GG_MUT(gg) && (gs.act[RL_ARP] || gs.act[RL_PAD]) && muts != 1u) mut_bad++;
-                if (!GG_MUT(gg) && muts) mut_bad++;
+                (void)muts;                             /* (V10.6: MUTATE gone, no genre sets it) */
                 if (dr < NTRK && gs.act[RL_DRUM] && (gs.g->drum == DM_HOUSE || gs.g->drum == DM_TECHNO || gs.g->drum == DM_TECHHOUSE)) {
                     const track_t *d = &trk[dr];   /* (four on the floor, the clap or snare on 2 and 4) */
                     four_n++;
@@ -923,7 +921,7 @@ int main(void)
         printf("gen: archetypes: %u parts checked; engine %u, filter %u, wave %u off; GLUE %u, MUTATE %u off; four on the floor %u of %u\n",
                checks, eng_bad, flt_bad, wave_bad, glue_bad, mut_bad, four_ok, four_n);
         bad += gcheck("(0.9.9-gen1) archetypes: every genre's bass and lead on its engine, its filter type and wave", !eng_bad && !flt_bad && !wave_bad);
-        bad += gcheck("  the grammar: DRUM-X GLUE and MUTATE as the genre has them; 4/4 kick, 2/4 clap in house and techno",
+        bad += gcheck("  the grammar: DRUM-X GLUE as the genre has it; 4/4 kick, 2/4 clap in house and techno",
                       !glue_bad && !mut_bad && !kit_bad && four_ok == four_n && four_n);
         bad += gcheck("  ACID HOUSE: ANALOG saw/square, LP, RES >= 90, CUT low, ENV high, short over a sustain, LEGATO, glide TIME ~55 ms, slides ..",
                       acid_n && acid_ok == acid_n);

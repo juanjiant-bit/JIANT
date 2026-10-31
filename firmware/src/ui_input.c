@@ -1155,7 +1155,6 @@ static void focus_knob(uint32_t slot, int32_t steps)
     d = track_desc(TSEL, P_M1SRC + 3u * (uint32_t)j + (slot == 2u ? 0u : 2u));
     *p = (int16_t)param_turn(d, *p, slot == 2u ? (steps > 0 ? 1 : -1) : accel(EN_K1 + 3u, steps, d->max - d->min));
 }
-static void mutk_put(track_t *t, uint32_t k, int32_t v);
 static void edit_param(uint32_t slot, int32_t steps)
 {
     int16_t *vp;
@@ -1385,21 +1384,13 @@ static void edit_param(uint32_t slot, int32_t steps)
         mod_ui_slot = (uint8_t)clamp((int32_t)mod_ui_slot + (steps > 0 ? 1 : -1), 0, 3);
         return;
     }
-    if (pg->graph == GR_MUTATE && (pg->id[slot] == ID_MUT0 + MK_KEEP || pg->id[slot] == ID_MUT0 + MK_REV)) {
-        if (steps > 0 && pg->id[slot] == ID_MUT0 + MK_KEEP) {   /* (0.9.9-seq2c) MUTATE 2: KEEP, REVERT on the turn */
-            mut_keep();
-            ui_message("ANCHOR: THE MUSIC NOW");
-        } else if (steps > 0)
-            mut_revert_ui(0);
-        return;
-    }
     d = page_desc(pg, slot, &vp);
     if (!d || !vp || d->max == d->min)
         return;
     v = param_turn(d, *vp, accel(EN_K1 + slot, steps, d->fmt == F_ENUM ? 0 : d->max - d->min));
     *vp = (int16_t)v;
-    if (vp >= mutk_v && vp < mutk_v + MK_N) {           /* (0.9.9-seq2c) MUTATE's packed knobs */
-        mutk_put(TSEL, (uint32_t)(vp - mutk_v), v);
+    if (vp >= eu_v && vp < eu_v + EK_N) {               /* (V10.6) EUCLID / MODES: the setting, the pattern again */
+        eu_put((uint32_t)(vp - eu_v), v);
         return;
     }
     if (vp == &trks_ui) {                               /* (0.6.18) GLO > SYSTEM's TRKS: the MENU's setting, saved */
@@ -1425,29 +1416,6 @@ static void edit_param(uint32_t slot, int32_t steps)
         knob_cap(TSEL, (uint32_t)(vp - TSEL->p));
 }
 
-/* (0.9.9-seq2c) a MUTATE knob k (params.c MK_*) to v, packed into P_MCFG / P_MMODE. A 0.6.43 MUTATE (P_MSND / P_MPAT,
- * WHAT 0) turned: WHAT and LOOP as near as they say (SOUND / PATTERN / ALL, LOOP its bars - 1), the periods cleared */
-static void mutk_put(track_t *t, uint32_t k, int32_t v)
-{
-    uint32_t c = MUT_CFG(t), m = (uint32_t)clamp(t->p[P_MMODE], 0, 15), held = MUT_WHAT(t) && MUT_LOOP(t) >= ML_HOLD;
-    if (MUT_LEGACY(t)) {
-        uint32_t s = MUT_BARS[clamp(t->p[P_MSND], 0, 6)], q = MUT_BARS[clamp(t->p[P_MPAT], 0, 6)];
-        uint32_t e = s && q ? (s < q ? s : q) : s ? s : q;
-        c = (s && q ? MW_ALL : s ? MW_SOUND : MW_PATTERN) | (uint32_t)clamp((int32_t)e - 1, 0, 5) << 3 | (c & 64u);
-        t->p[P_MSND] = t->p[P_MPAT] = 0;
-        if (k == MK_LOOP) v = clamp(v, 0, 6) >= 4 ? 5 : (int32_t)(MUT_BARS[clamp(v, 0, 6)] ? MUT_BARS[clamp(v, 0, 6)] - 1u : 0u);
-    }
-    if (k == MK_WHAT) c = (c & ~7u) | (uint32_t)clamp(v, 0, MW_N - 1);
-    if (k == MK_LOOP) c = (c & ~56u) | (uint32_t)clamp(v, 0, ML_HOLD) << 3;
-    if (k == MK_SCALE) c = (c & ~64u) | (v ? 0u : 64u);
-    if (k == MK_DIR) m = (m & ~1u) | (uint32_t)(v & 1);
-    if (k == MK_PARAM) m = (m & 1u) | (uint32_t)clamp(v, 0, 7) << 1;
-    t->p[P_MCFG] = (int16_t)(127 - (int32_t)c);
-    t->p[P_MMODE] = (int16_t)m;
-    if (MUT_WHAT(t) && (MUT_LOOP(t) >= ML_HOLD) != held)
-        ui_message(held ? "MUTATE: FREE" : "MUTATE: HOLD");
-    ui.force = 1;
-}
 
 /* OCT+ on an action page: the picked action. A load stays picked (browse and load again); the others
  * are dropped once done. Flash writes only while stopped; over the user's data: the dialog */
@@ -2471,10 +2439,6 @@ static void ui_input_frame(void)
                 }
             } else if (kind == CF_LIVE_COMMIT) {        /* (p2) LIVE: the modifiers written (UNDO: marked above) */
                 live_commit(ui.confirm_trk);
-            } else if (kind == CF_MUT_BACK) {           /* (0.9.3) MUTATE OFF: the track as the anchor (UNDO: marked above) */
-                char mb[24] = "T1 BACK TO ANCHOR";
-                mb[1] = (char)('1' + ui.confirm_trk % NTRK);
-                ui_message(mut_revert(1u << (ui.confirm_trk % NTRK)) ? "NO ANCHOR" : mb);
             } else if (kind == CF_CPU_TEST) {           /* (0.6.83) SAVE > TOOLS 6: the heaviest song (UNDO: back) */
                 if (!chain_busy()) {
                     cpu_test_song();
@@ -2543,8 +2507,6 @@ static void ui_input_frame(void)
                 ui_message(dk_back(ui.confirm, ui.confirm_trk) ? "CAN'T UNDO" :
                            ui.confirm == CF_DICE_SEQ ? "SEQ BACK" : ui.confirm == CF_DICE_LFO ? "LFO BACK" :
                            ui.confirm == CF_DICE_FX ? "FX BACK" : "SOUND BACK");
-            else if (ui.confirm == CF_MUT_BACK)         /* (0.9.3) as it is (SEQ + D5 REVERT: later still) */
-                ui_message("KEPT AS IT IS");
             ui.confirm = 0;
             ui.force = 1;
         } else if (dice_kind(ui.confirm) && panel_enc(EN_SELECT)) {   /* (0.6.65) SELECT again: another dice
@@ -2606,9 +2568,8 @@ static void ui_input_frame(void)
                 break;
             if (live_page())                            /* (p2) LIVE: OCT- RETURN / held BYPASS, OCT+ COMMIT */
                 break;                                  /* (ui_live.c live_frame) */
-            if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_MUTATE) {   /* (0.6.43) KEEP, FREEZE */
-                if (b == B_OCTUP) { mut_keep(); ui_message("ANCHOR: THE MUSIC NOW"); }
-                else { mut_freeze = (uint8_t)!mut_freeze; ui_message(mut_freeze ? "MUTATE FROZEN" : "MUTATE FREE"); }
+            if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_EUCLID) {   /* (V10.6) EUCLID / MODES: */
+                eu_oct(b == B_OCTUP);                    /* OCT+ a new variation, OCT- the one before */
                 break;
             }
             if ((fm1_in.buttons & both) == both)

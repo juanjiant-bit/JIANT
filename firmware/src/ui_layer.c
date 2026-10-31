@@ -366,7 +366,6 @@ static void layer_let_go(uint32_t quiet)
 static void layer_opened(uint32_t l)
 {
     lys.l = (uint8_t)l;
-    lys.cook = 0;
     lys.nqc = 0;
     lys.song = 0;
 }
@@ -455,9 +454,9 @@ static void hint_tick(void)
         ui_message("REC + PLAY, TURN A KNOB");          /* (0.6.92) how it is recorded */
     else if (k == HK_PUNCH)
         ui_message("REC + PLAY, HOLD FX + A KEY");      /* (0.6.99) the lane's recording */
-    else {                                              /* HK_MUTATE */
-        ui_message("OCT+ KEEP  GLO+A4 FREEZE");
-        str_cpy(ui.msg2, "SEQ+D5 REVERT  GLO+B4 ALL", sizeof ui.msg2);   /* (0.9.3) back to the anchor */
+    else {                                              /* (V10.6) HK_EUCLID */
+        ui_message("TURN A KNOB: A PATTERN");
+        str_cpy(ui.msg2, "OCT+ NEW  OCT- BEFORE", sizeof ui.msg2);
     }
     ui.hint_pg = (uint8_t)at;                           /* (0.9.0: this page's only) */
 }
@@ -494,7 +493,6 @@ static void glo_tap(void)
 static void tools_key(uint32_t p)
 {
     const char *m;
-    char n[4];
     if (!tl_cell(TSEL, p))
         return;
     if (chain_busy()) {
@@ -503,13 +501,7 @@ static void tools_key(uint32_t p)
     }
     if (!(m = tl_do(TSEL, p, ui.lane)))
         return;
-    if (p == TL_COOK && lys.cook < 99u) {               /* "COOKED 3": the third since the layer opened */
-        lys.cook++;
-        fmt_int(n, lys.cook);
-        ui_say("COOKED ", n);
-    } else {
-        ui_message(m);
-    }
+    ui_message(m);
     ui.force = 1;
 }
 
@@ -595,7 +587,6 @@ static void rec_key(uint32_t p)
 #define TL_COPY 13u
 #define TL_PASTE 14u
 #define TL_STEP 15u                                     /* (0.9.2) SEQ's G5: CLR STEP (ui_input.c seq_clr_step) */
-#define TL_MREV 12u                                     /* (0.9.3) SEQ's D5: REVERT, the track back to MUTATE's anchor */
 static void song_key(uint32_t p)
 {
     uint32_t k;
@@ -719,8 +710,7 @@ static void session_dice(uint32_t seed)
 #define GLO_ALL ((uint32_t)NTRK)
 #define GLO_TAP 7u
 #define GLO_UNDO 8u                                     /* (0.6.21) G4: UNDO the last big change (project.c undo_do) */
-#define GLO_FRZ 9u                                      /* (0.6.43) A4: MUTATE frozen / free (project.c mutate_poll) */
-#define GLO_RVA 10u                                     /* (0.9.3) B4: REVERT ALL, every track back to MUTATE's anchor */
+                                                        /* (V10.6) A4 FREEZE, B4 REVERT ALL and SEQ's D5 REVERT gone with MUTATE */
 static void layer_key(uint32_t l, uint32_t k)
 {
     uint32_t p = key_place(k), i;
@@ -738,11 +728,6 @@ static void layer_key(uint32_t l, uint32_t k)
             dx_mute_set(0);
         } else if (p == GLO_TAP) {
             glo_tap();
-        } else if (p == GLO_FRZ) {
-            mut_freeze = (uint8_t)!mut_freeze;
-            ui_message(mut_freeze ? "MUTATE FROZEN" : "MUTATE FREE");
-        } else if (p == GLO_RVA) {
-            mut_revert_ui(1);
         } else if (p == GLO_UNDO) {
             undo_ui();
         }
@@ -772,8 +757,6 @@ static void layer_key(uint32_t l, uint32_t k)
             cp_seq(p == TL_PASTE);
         else if (!key_black(k) && p == TL_STEP)
             seq_clr_step();                             /* (0.9.2) G5: CLR STEP (AUTO LIST: the record) */
-        else if (!key_black(k) && p == TL_MREV)
-            mut_revert_ui(0);                           /* (0.9.3) D5: REVERT (project.c) */
         else if (!key_black(k))
             tools_key(p);
         else if (p < NLANE && drum_track(TSEL))
@@ -915,9 +898,8 @@ static uint32_t layer_leds(uint32_t *br)
             on = b ? (p < NTRK && glo_sounding(p)) || (p >= NTRK && p < NTRK + 4u && !((dx_mute >> (p - NTRK)) & 1u))
                    : p < NTRK && ((lys.solo >> k) & 1u);      /* (a group sounding: lit) */
             can = !b && ((p < NTRK && p < trk_live) || p == GLO_ALL || (p == GLO_TAP && !song.g[G_CLOCK]) ||
-                         (p == GLO_UNDO && undo_ok) || p == GLO_FRZ || (p == GLO_RVA && mut_back_ok()));
+                         (p == GLO_UNDO && undo_ok));
                                                         /* (the keys that do something breathe: not an asleep track's) */
-            on |= !b && p == GLO_FRZ && mut_freeze;      /* (0.6.43: FREEZE on: lit) */
         } else if (l == LAYER_SCL) {                    /* the root lit, the scale's notes breathe */
             e = (k + 5u + 12u - root) % 12u;
             on = e == 0u;
@@ -928,7 +910,7 @@ static uint32_t layer_leds(uint32_t *br)
             on = !dx_lane_muted(p);
         } else if (l == LAYER_SEQ) {                    /* the tools breathe (not while a song plays); DRUM: the lane */
             on = b && p < NLANE && drum_track(TSEL) && p == ui.lane;   /* lit, the other lanes breathe */
-            can = b ? p < NLANE && drum_track(TSEL) : p == TL_COPY ? 1u : p == TL_PASTE ? clip.n && !chain_busy() : p == TL_MREV ? mut_back_ok() : tl_cell(TSEL, p) && !chain_busy() &&
+            can = b ? p < NLANE && drum_track(TSEL) : p == TL_COPY ? 1u : p == TL_PASTE ? clip.n && !chain_busy() : tl_cell(TSEL, p) && !chain_busy() &&
                   (p != TL_CAUTO || motion_count(TSEL));   /* (CLR AUTO: automation to clear; REVERT: an anchor) */
         } else if (l == LAYER_SAVE && !b) {             /* the section playing lit, the saved ones and the */
             on = (p < SK_STORE && live.cur == (int8_t)p) || (p == SK_REC && live.srec) ||   /* actions breathe */
@@ -1053,10 +1035,8 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
             nm[6] = (char)('1' + p);
             return (perf_solo >> p) & 1u ? LS_HELD : p >= trk_live ? LS_DIM : LS_OFF;
         }
-        str_cpy(nm, p == GLO_ALL ? "UNMUTE" : p == GLO_TAP ? "TAP" : p == GLO_UNDO ? "UNDO" : p == GLO_FRZ ? "FREEZE" :
-                    p == GLO_RVA ? "REVERT ALL" : "", 12);
-        return p == GLO_TAP && song.g[G_CLOCK] ? LS_DIM : p == GLO_UNDO && !undo_ok ? LS_DIM : p == GLO_FRZ && mut_freeze ? LS_HELD :
-               p == GLO_RVA && !mut_back_ok() ? LS_DIM : LS_OFF;
+        str_cpy(nm, p == GLO_ALL ? "UNMUTE" : p == GLO_TAP ? "TAP" : p == GLO_UNDO ? "UNDO" : "", 12);
+        return p == GLO_TAP && song.g[G_CLOCK] ? LS_DIM : p == GLO_UNDO && !undo_ok ? LS_DIM : LS_OFF;
     }
     if (l == LAYER_SCL) {                               /* every key its note: the root lit, the scale's plain, the rest dim */
         static const uint8_t WN[16] = {5, 7, 9, 11, 0, 2, 4, 5, 7, 9, 11, 0, 2, 4, 5, 7};
@@ -1091,10 +1071,6 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
         if (p == TL_COPY || p == TL_PASTE) {
             str_cpy(nm,p == TL_COPY ? "COPY SEQ" : "PASTE SEQ",12);
             return p == TL_PASTE && (!clip.n || chain_busy()) ? LS_DIM : LS_OFF;
-        }
-        if (p == TL_MREV) {                             /* (0.9.3) D5 */
-            str_cpy(nm, "REVERT", 12);
-            return mut_back_ok() ? LS_OFF : LS_DIM;
         }
         if (p == TL_STEP) {                             /* (0.9.2) G5 */
             str_cpy(nm, cur_page()->graph == GR_EVENTS ? "DEL REC" : "CLR STEP", 12);
@@ -1339,7 +1315,6 @@ static void layer_state(uint32_t l)
         for (k = 0; glo_drums() && k < 4u; k++)
             lst_chip(GLO_GROUP[k], (dx_mute >> k) & 1u ? "MUTE" : "ON", !((dx_mute >> k) & 1u));
         lst_chip("UNDO", undo_ok ? "READY" : "-", undo_ok);
-        lst_chip("MUTATE", mut_freeze ? "FROZEN" : "FREE", mut_freeze);
     } else if (l == LAYER_MACRO) {                      /* the latch, each macro's routes */
         lst_chip("LATCH", mac_latch ? "ON" : "OFF", mac_latch);
         for (k = 0; k < 4u; k++) {

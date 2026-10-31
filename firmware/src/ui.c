@@ -18,17 +18,6 @@ static int section_jump(uint32_t s);    /* (song_main.c: 0.6.80, channel 16's PR
 static int song_select(uint32_t n);
 static void undo_mark(void);                    /* (0.6.21) project.c: the music before a change, */
 static void system_init(void);                  /* (0.6.40) project.c: INIT SYSTEM */
-static uint32_t mut_progress(uint32_t k);       /* (0.6.43) project.c: MUTATE's next, 0..256 (0xFFFF: off) */
-static void mut_keep(void);                     /* .. the music now the anchor */
-static uint32_t mut_on(const track_t *t);        /* (0.9.9-seq2c) .. a track's MUTATE on, */
-static uint32_t mut_period(const track_t *t);    /* .. the bars a result lasts (0: HOLD) */
-static void mut_forget(void);                   /* (0.9.3) .. another music now: no going back to the anchor */
-static int mut_revert(uint32_t mask);           /* .. those tracks back to the anchor (0: done, 1: NO ANCHOR) */
-static void mut_revert_ui(int all);             /* .. REVERT (SEQ + D5) / REVERT ALL (GLO + B4), UNDO first */
-static int mut_back_ok(void);                   /* .. an anchor to go back to */
-static uint8_t mut_flash[NTRK];                 /* .. a mutation just now: frames left of its flash (HOME) */
-static uint8_t mut_freeze;                      /* .. GLO + A4: no mutation until again */
-static const uint8_t MUT_BARS[7] = {0, 1, 2, 4, 8, 16, 32};   /* .. SOUND / PATTERN every (OFF, bars) */
 static int undo_do(void);                       /* .. back (and again: forward) */
 static uint8_t undo_ok;
 static int project_used(uint32_t slot);
@@ -272,7 +261,7 @@ static int32_t ratio_d(const param_desc_t *d, int32_t v) { return ratio_of(d->mi
  * while SELECT walks past it), each at most HINT_MAX times ever. The count kept with the settings, a byte a hint in engine
  * 15's spare favourite bytes 0..12 (no engine 15: 0 in older settings, a hint not yet given; 4..12 held the layer buttons'
  * "HOLD [X] QUICK" counts, gone: kept as saved, unused); INIT SYSTEM starts them over */
-enum { HK_NONE, HK_MOTION, HK_PUNCH, HK_MUTATE, HK_N };
+enum { HK_NONE, HK_MOTION, HK_PUNCH, HK_EUCLID, HK_N };
 #define HINT_DWELL_MS 800u
 #define HINT_MAX 2u
 #define hint_given(k) (favorites.factory[15][(k)])
@@ -809,7 +798,7 @@ static void page_entered(void)
         ui.plk_src = (uint8_t)(ui.page + 1u);
     song.seq_mode = !ui.home && pg->fam == FAM_SEQ;
     ui.hint_k = ui.home ? HK_NONE : pg->graph == GR_MOTION ? HK_MOTION : pg->graph == GR_PUNCH ? HK_PUNCH :
-                pg->graph == GR_MUTATE ? HK_MUTATE : HK_NONE;   /* (0.9.5: its hint once dwelt on: ui_layer.c hint_tick) */
+                pg->graph == GR_EUCLID ? HK_EUCLID : HK_NONE;   /* (0.9.5: its hint once dwelt on: ui_layer.c hint_tick) */
     ui.hint_at = (uint8_t)(ui.home ? 255u : ui.page + 1u);
     ui.hint_ms = fm1_ms;
     ui.entry_open = 0;
