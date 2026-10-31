@@ -1577,8 +1577,17 @@ static int test_save(void)
     uint32_t i;
     ui_power_on();
     trk[0].p[P_E0] = 5;
+    press(B_SAVE);                                        /* (V10.1) SAVE composes first: TIMELINE, then PROJECTS, then SOUND */
+    bad += check("V10.1 SAVE from HOME at power-on: TIMELINE (the song first), nothing armed",
+                 !ui.home && SONG_TRK(cur_page()) && ui.act == 0u);
     press(B_SAVE);
-    bad += check("SAVE opens USER with SAVE selected, without writing a slot",
+    bad += check("V10.1 SAVE again: the next group, PROJECT's PROJECTS", cur_page()->graph == GR_SLOTS &&
+                 save_level() == SV_LIB);
+    press(B_SAVE);
+    bad += check("V10.1 SAVE again: SOUND's USER, from inside: SAVE not armed", cur_page()->graph == GR_USER && ui.act == 0u);
+    go_home();
+    press(B_SAVE);
+    bad += check("SAVE from HOME back onto USER (the page left) with SAVE selected, without writing a slot",
                  !ui.home && cur_page()->graph == GR_USER && ui.act == 4u && !up_used(0));
     press(B_OCTUP);
     bad += check("SAVE then OCT+ opens NAME (the automatic name), writes nothing yet",
@@ -1591,17 +1600,12 @@ static int test_save(void)
         bad += check("..OCT+ again stores the edited sound with that name (SAVE, OCT+, OCT+)",
                      !name_on() && up_used(0) && up_value(up_rec(0), P_E0) == 5 && ui.act == 0u && str_eq(nmb, au));
     }
-    press(B_SAVE);                                        /* (0.9.2) a SAVE tap on SAVE: the next group (was the other set) */
-    bad += check("0.9.2 SAVE again: the next group, PROJECT's SECTIONS (was SOUND's other set, PRESETS)",
-                 cur_page()->graph == GR_SLOTS && save_level() == SV_PROJ && ui.act == 0u);
-    turn(EN_SELECT, -1);
-    bad += check("0.9.2 SELECT left: PRESETS (the chain: USER PRESETS SECTIONS ..)", cur_page()->graph == GR_BROWSE &&
-                 save_level() == SV_SOUND);
+    turn(EN_SELECT, 1);
+    bad += check("V10.1 SELECT right: PRESETS, the chain's last", cur_page()->graph == GR_BROWSE && save_level() == SV_SOUND);
     go_home();
     press(B_SAVE);
-    bad += check("0.9.2 SAVE from HOME: the page left, PRESETS (rule 2; was always USER)", cur_page()->graph == GR_BROWSE);
+    bad += check("0.9.2 SAVE from HOME: the page left, PRESETS (rule 2)", cur_page()->graph == GR_BROWSE);
     turn(EN_SELECT, -1);
-    bad += check("0.9.2 SELECT onto USER from inside: SAVE not armed", cur_page()->graph == GR_USER && ui.act == 0u);
     go_home();
     press(B_SAVE);
     bad += check("0.9.2 SAVE from HOME onto USER: SAVE armed (SAVE . OCT+ . OCT+ as before)",
@@ -7066,30 +7070,30 @@ static void tl_drum(void)
  * the level's other set, SAVE from elsewhere always USER, PRESETS the slot / project) */
 static int test_save_lens(void)
 {
-    static const char *const CH[7] = {"USER", "PRESETS", "SECTIONS", "ARRANGE", "TIMELINE", "PROJECTS", "TOOLS"};
-    static const char *const TP[2] = {"SECTIONS", "PROJECTS"};
+    static const char *const CH[7] = {"TIMELINE", "SECTIONS", "PROJECTS", "ARRANGE", "TOOLS", "USER", "PRESETS"};
+    static const char *const TP[2] = {"PROJECTS", "USER"};
     int bad = 0, ok;
     uint32_t pr;
     ui_power_on();
     go_home(); frame();
     press(B_SAVE); frame();
-    ok = save_on() && save_level() == SV_SOUND && cur_page()->graph == GR_USER && ui.act == 4u && lz_on() &&
+    ok = save_on() && save_level() == SV_PROJ && SONG_TRK(cur_page()) && ui.act == 0u && lz_on() &&
          card_y() == LZ_CARD_Y && graph_y() == LZ_GRAPH_Y && foot_y() == LZ_FOOT_Y && lz_tab_lit(0) &&
-         lz_crumb_is("SAVE \xB7 SOUND \xB7 USER") && lz_count_is("1/7");
-    bad += check("0.9.2 SAVE from HOME at power-on: SOUND's USER, SAVE armed; the tabs (SOUND lit), the crumb, 1/7", ok);
-    bad += check("0.9.2 SAVE: one chain USER PRESETS SECTIONS ARRANGE (add15: TIMELINE) PROJECTS TOOLS; a SAVE tap the next group, round",
+         lz_crumb_is("SAVE \xB7 SONG \xB7 TIMELINE") && lz_count_is("1/7");
+    bad += check("V10.1 SAVE from HOME at power-on: SONG's TIMELINE; the tabs (SONG lit), the crumb, 1/7", ok);
+    bad += check("V10.1 SAVE: one chain TIMELINE SECTIONS PROJECTS ARRANGE TOOLS USER PRESETS; a SAVE tap the next group, round",
                  chain_walk(B_SAVE, CH, 7, TP, 2));
     ui_power_on(); go_home(); frame(); press(B_SAVE); frame();
     turn(EN_SELECT, 3); frame();                                             /* ARRANGE, left there */
     go_home(); frame(); press(B_SAVE); frame();
-    ok = cur_page()->graph == GR_SONG && save_level() == SV_PROJ;            /* (the page left; was always USER) */
-    turn(EN_SELECT, -1); frame();
-    ok &= cur_page()->graph == GR_SLOTS && save_level() == SV_PROJ && ui.act == 0u && lz_crumb_is("SAVE \xB7 PROJECT \xB7 SECTIONS");
+    ok = cur_page()->graph == GR_SONG && !SONG_TRK(cur_page()) && save_level() == SV_PROJ;   /* (the page left) */
+    turn(EN_SELECT, -2); frame();
+    ok &= cur_page()->graph == GR_SLOTS && save_level() == SV_PROJ && ui.act == 0u && lz_crumb_is("SAVE \xB7 SONG \xB7 SECTIONS");
     go_home(); frame(); press(B_SAVE); frame();
     ok &= cur_page()->graph == GR_SLOTS && ui.act == 4u;                     /* (SECTIONS from elsewhere: SAVE armed) */
-    turn(EN_SELECT, 3); frame();                                             /* (add15: past TIMELINE) */
-    ok &= cur_page()->graph == GR_SLOTS && save_level() == SV_LIB && ui.act == 0u && lz_crumb_is("SAVE \xB7 LIBRARY \xB7 PROJECTS");
-    bad += check("0.9.2 SAVE from elsewhere the page left (ARRANGE); USER and SECTIONS from elsewhere armed, inside not", ok);
+    turn(EN_SELECT, 1); frame();
+    ok &= cur_page()->graph == GR_SLOTS && save_level() == SV_LIB && ui.act == 0u && lz_crumb_is("SAVE \xB7 PROJECT \xB7 PROJECTS");
+    bad += check("V10.1 SAVE from elsewhere the page left (ARRANGE); USER and SECTIONS from elsewhere armed, inside not", ok);
     turn(EN_K1, 1); frame();                                                 /* LIBRARY: KNOB 1 the project */
     ok = song_cur == 1u;
     turn(EN_K1, -1); frame();
@@ -7115,7 +7119,7 @@ static int test_save_lens(void)
     memset(song_idx.tsrc[song_cur], 0, sizeof song_idx.tsrc[song_cur]);
     press(B_SAVE); frame();
     nav_put(SEC_SAVE, "TIMELINE"); frame();
-    ok = SONG_TRK(cur_page()) && !SONG_TRK(&PAGES[nv_page(SEC_SAVE, 3)]);
+    ok = SONG_TRK(cur_page()) && !SONG_TRK(&PAGES[nv_page(SEC_SAVE, 3)]) && SONG_TRK(&PAGES[nv_page(SEC_SAVE, 0)]);
     turn(EN_K1, 1); frame();                                                 /* row 2 */
     turn(EN_K2, 1); frame(); turn(EN_K2, 1); frame(); turn(EN_K2, 1); frame();   /* lane T3 (0 is SEC) */
     turn(EN_K3, 1); frame(); turn(EN_K3, 1); frame(); turn(EN_K3, 1); frame();   /* FROM C */
@@ -8373,7 +8377,7 @@ static int test_project_page(void)
     chain_config.row[0] = (chain_row_t){0, 4}; chain_config.row[1] = (chain_row_t){1, 8};
     sl_steps(80);                                       /* the music now: 80.. */
     go_home(); frame(); press(B_SAVE); frame();
-    nav_put(SEC_SAVE, "PROJECTS"); frame();             /* (0.9.2: LIBRARY's PROJECTS, the chain's 5th) */
+    nav_put(SEC_SAVE, "PROJECTS"); frame();             /* (V10.1: PROJECT's PROJECTS, the chain's 3rd) */
     ok = cur_page()->graph == GR_SLOTS && PAGES[ui.page + 1u].graph == GR_SONG && str_eq(PAGES[ui.page + 1u].title, "ARRANGE");
     bad += check("PROJECT: SAVE > PROJECT, then ARRANGE (the project's song)", ok);
     turn(EN_K1, 1); frame();
@@ -8382,7 +8386,7 @@ static int test_project_page(void)
     song.g[G_SLOT] = 1;
     turn(EN_K2, 1); frame();                            /* LIBRARY: KNOB 2 the section */
     ok = song.g[G_SLOT] == 2 && save_level() == SV_LIB;
-    turn(EN_SELECT, -3); frame();                       /* (0.9.2) PROJECT's SECTIONS (three back, add15: TIMELINE): KNOB 1 */
+    turn(EN_SELECT, -1); frame();                       /* (V10.1) SONG's SECTIONS (one back): KNOB 1 */
     ok &= save_level() == SV_PROJ && cur_page()->graph == GR_SLOTS;
     turn(EN_K1, 1); frame();
     ok &= song.g[G_SLOT] == 3;
@@ -8397,7 +8401,7 @@ static int test_project_page(void)
     for (k = 0; k < 8u && name_on(); k++) { press(B_OCTUP); frame(); }
     ok = project_used(2) && live.cur == 2;
     bad += check("  SAVE: the music into project 2's section C (the music's section: NOW)", ok);
-    turn(EN_SELECT, 3); frame();                        /* (back to LIBRARY's PROJECTS: KNOB 1 the project) */
+    turn(EN_SELECT, 1); frame();                        /* (V10.1: back to PROJECTS, the next page: KNOB 1 the project) */
     turn(EN_K1, -1); frame();
     ok = song_cur == 0 && (!FELUCCA_FLASH || project_used(0)) && !project_used(2) && chain_config.count == 2 &&
          trk[0].step[0].note[0] == 80;                  /* (no flash here: the sections were RAM only) */
@@ -12372,7 +12376,7 @@ static void tk_start(uint32_t from)                     /* 0 home, 1 seq, 2 fxdl
 }
 static int test_nav_tasks(void)
 {
-    static const uint8_t WANT[14] = {4, 3, 5, 6, 33, 7, 10, 2, 3, 1, 3, 8, 17, 4};   /* (seq2: task 5 by STEP's KNOB 1, no BAR;
+    static const uint8_t WANT[14] = {4, 3, 5, 6, 33, 10, 9, 2, 3, 1, 3, 8, 17, 4};   /* (V10.1: SAVE composes first, 106 -> 108) */   /* (seq2: task 5 by STEP's KNOB 1, no BAR;
                                                          * task 11 TRACK under LEN's tab; task 13 eight detents (seq2c:
                                                          * MUTATE 2); was 73) */
     uint32_t got[14], t, tot = 0;
@@ -12405,11 +12409,14 @@ static int test_nav_tasks(void)
             ok = str_eq(cur_page()->title, "STEP") && ui.cursor == 32u && (TSEL->step[32].flags & SF_ACCENT);
             break;
         case 5:                                         /* the sound into U05 */
-            tk_start(0); tk_btn(B_SAVE); tk_go(EN_K1, 4); tk_btn(B_OCTUP); tk_btn(B_OCTUP);
+            tk_start(0); tk_btn(B_SAVE); tk_btn(B_SAVE); tk_btn(B_SAVE); tk_go(EN_K1, 4); tk_val(EN_K4, 1);   /* (V10.1:
+                                                         * TIMELINE first, the third tap SOUND's USER) */
+            tk_btn(B_OCTUP); tk_btn(B_OCTUP);
             ok = ui.uslot == 4u && up_used(4) && !name_on();
             break;
         case 6:                                         /* the sound into U05, SAVE left on ARRANGE */
-            tk_start(3); tk_btn(B_SAVE); tk_btn(B_SAVE); tk_btn(B_SAVE); tk_go(EN_K1, 4); tk_val(EN_K4, 1);
+            tk_start(3); tk_btn(B_SAVE); tk_btn(B_SAVE); tk_go(EN_K1, 4); tk_val(EN_K4, 1);   /* (V10.1: ARRANGE's
+                                                         * group, then SOUND's USER) */
             tk_btn(B_OCTUP); tk_btn(B_OCTUP);
             ok = ui.uslot == 4u && up_used(4) && !name_on();
             break;
@@ -12457,7 +12464,7 @@ static int test_nav_tasks(void)
     }
     printf("ui:   the race: %u %u %u %u %u %u %u %u %u %u %u %u %u %u = %u actions (0.9.1: 75)\n", got[0], got[1], got[2], got[3],
            got[4], got[5], got[6], got[7], got[8], got[9], got[10], got[11], got[12], got[13], tot);
-    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 106u);
+    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 108u);
     ui_power_on();
     return bad;
 }
@@ -12499,6 +12506,7 @@ static int test_nav_rules(void)
     ok &= str_eq(cur_page()->title, "EDIT 1");           /* (EDIT: EDIT) */
     bad += check("0.9.2 SEQ + G5: AUTO LIST's record, else the cursor step (CLR STEP); TIME = REST clears; EDIT opens EDIT", ok);
     ui_power_on(); go_home(); frame(); press(B_SAVE); frame();
+    nav_put(SEC_SAVE, "USER"); frame();                  /* (V10.1: SAVE opens TIMELINE) */
     btn_down(B_SAVE); frames(800);
     (void)ly_keyname(LAYER_SAVE, 0, 11u, kn);
     ok = ui.layer == LAYER_SAVE && str_eq(kn, "NAME");

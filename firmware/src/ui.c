@@ -625,7 +625,7 @@ static uint32_t page_first(uint32_t fam)
  * for the level it was on (lens_level, save_level, fx_level, pd_level, home_level):
  *   SEQ   PATTERN's bars (PATTERN STRETCH TRACK, the new BAR), the roll (STEP NOTE AUTOMATION AUTO LIST), the step
  *         large (COMP COMP 2); PHRASES (PRESETS' pattern loader) and SONG read as PATTERN, CHANCE as STEP
- *   SAVE  LIBRARY (PROJECTS TOOLS), PROJECT (SECTIONS ARRANGE: the PROJECT page's KNOB 1 the section), SOUND (USER PRESETS)
+ *   SAVE  (V10.2) SONG (TIMELINE SECTIONS), PROJECT (PROJECTS ARRANGE TOOLS: the PROJECT page's KNOB 1 the section), SOUND (USER PRESETS)
  *   FX    TRACK (SENDS DIST AUTO PAN), BUSES, the effects (ui.fxmod: the module shown last, BUSES' tile lit) */
 static int lens_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam == FAM_SEQ; }
 static int save_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam == FAM_SAVE; }

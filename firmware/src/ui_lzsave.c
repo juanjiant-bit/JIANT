@@ -97,9 +97,9 @@ static void graph_proj(int ar)
             uint32_t s = r->slot & 3u;
             int32_t x = 24 + (int32_t)(acc * 212u / t), w = 24 + (int32_t)((acc + r->bars) * 212u / t) - x;
             if (w < 2) w = 2;
-            for (j = 0; j <= NTRK; j++) {          /* (V10.1) the lanes touch (SEC 2 px above the tracks), the rows touch:
-                                                    * a row's edge a 1 px line of its own colour darker, never black */
-                int32_t y = j ? 4 + (int32_t)j * 17 : 4, h = j ? 17 : 15;
+            for (j = 0; j <= NTRK; j++) {          /* (V10.1) a 2 px black line between lanes; the rows touch: a row's
+                                                    * edge a 1 px line of its own colour darker, never black */
+                int32_t y = 4 + (int32_t)j * 17, h = 15;
                 uint32_t src = j ? row_src(i, j - 1u, s) : s, v = j ? row_var(i, j - 1u) : 0u, own = !j || src == s;
                 uint16_t c = j && own ? lz_sec(src, 1, 1) : sec_col(src);
                 if (v == RV_MUTE) {
@@ -117,7 +117,7 @@ static void graph_proj(int ar)
                 }
             }
             if (i == ui.song_row % (n ? n : 1u)) {
-                int32_t fy = ui.song_tk ? 4 + (int32_t)ui.song_tk * 17 : 4, fh = ui.song_tk ? 17 : 15;
+                int32_t fy = 4 + (int32_t)ui.song_tk * 17, fh = 15;
                 cv_frame(x, fy, w, fh, T_TEXT);
                 cv_frame(x + 1, fy + 1, w - 2, fh - 2, T_TEXT);
             }
