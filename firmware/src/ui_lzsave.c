@@ -97,8 +97,8 @@ static void graph_proj(int ar)
             uint32_t s = r->slot & 3u;
             int32_t x = 24 + (int32_t)(acc * 212u / t), w = 24 + (int32_t)((acc + r->bars) * 212u / t) - x;
             if (w < 2) w = 2;
-            for (j = 0; j <= NTRK; j++) {          /* (V10.1) a 2 px black line between lanes; the rows touch: a row's
-                                                    * edge a 1 px line of its own colour darker, never black */
+            for (j = 0; j <= NTRK; j++) {          /* (V10.3) the columns lead: a row's edge a 1 px line of its colour
+                                                    * well darker; between lanes 2 px of it only a little darker */
                 int32_t y = 4 + (int32_t)j * 17, h = 15;
                 uint32_t src = j ? row_src(i, j - 1u, s) : s, v = j ? row_var(i, j - 1u) : 0u, own = !j || src == s;
                 uint16_t c = j && own ? lz_sec(src, 1, 1) : sec_col(src);
@@ -107,7 +107,8 @@ static void graph_proj(int ar)
                     cv_frame(x + 1, y + 1, w - 1, h - 2, T_DIM);
                 } else {
                     cv_rect(x, y, w, h, c);
-                    if (i) cv_rect(x, y, 1, h, ux_mix(T_BG, c, 55));
+                    if (j < NTRK) cv_rect(x, y + h, w, 2, ux_mix(T_BG, c, 45));
+                    if (i) cv_rect(x, y, 1, j < NTRK ? h + 2 : h, ux_mix(T_BG, c, 15));
                     if (w >= 12 && (!j || !own)) {
                         b[0] = (char)('A' + src); b[1] = 0;
                         if (!j && w >= 22) fmt_int(b + 1, r->bars);
