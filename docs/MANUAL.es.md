@@ -79,7 +79,7 @@ Guardá tus archivos WAV.
    pantalla dice **SAVED**.
 4. Hacé una variación (cambiá algunos pasos, muteá una pista) y guardala en la sección **B**: en SECTIONS girá
    **KNOB 1** hasta **B** y después KNOB 4 y OCT+ como antes.
-5. Girá **SELECT** un paso a la derecha: **ARRANGE** (las filas del tema). Apretá **OCT+** para agregar una fila,
+5. Girá **SELECT** dos pasos a la derecha (pasando PROJECTS): **ARRANGE** (las filas del tema). Apretá **OCT+** para agregar una fila,
    elegí su sección con **KNOB 2** y su largo con **KNOB 3** (compases). Agregá una fila para A y otra para B. Apretá
    **PLAY**: el tema reproduce las filas en orden.
 
@@ -1243,6 +1243,29 @@ arriba y el anillo de HOME). En su lugar en la cadena de SEQ, después de TRACK,
 **EUCLID** (**EUCL**): **EUCLID** escribe el patrón de la pista elegida como un ritmo euclidiano y **MODES** le suma
 cosas. La ayuda de la página: **TURN A KNOB: A PATTERN** · **OCT+ NEW  OCT− BEFORE**.
 
+**EUCLID en un minuto**
+
+Batería (una pista DRUM-X):
+
+1. Elegí la pista con **ALGORITHM**, apretá **SEQ** y girá **SELECT** hasta **EUCLID** (o tocá SEQ hasta que se
+   prenda la pestaña **EUCL**).
+2. **KNOB 4 LANE** arranca en **ALL**: girá **KNOB 1 DENSITY** (1–8) para un kit entero, **KNOB 2 STEPS** y **KNOB 3
+   ROTATE** para su largo y su groove.
+3. Para retocar un sonido, **KNOB 4** a su carril (BD SD CP CH OH TM RS CB): HITS, STEPS y ROTATE escriben ahora solo
+   ese carril.
+4. **SELECT** un paso a la derecha, **MODES**: **ACCENT**, **GHOST**, **RATCHET**, **VARY**.
+5. **OCT+** una variación nueva, **OCT−** la de antes. Para deshacer: **GLO + G4**, o mantené **REC** solo y soltalo.
+
+Melódica (cualquier otra pista):
+
+1. Poné primero la tonalidad en **SCL** (ROOT, una SCALE que no sea CHR): la pantalla dice **SCL**. O dejalo: EUCLID
+   encuentra la tonalidad de las otras pistas (**FROM T*n***), y si no, elige una (**NEW KEY**).
+2. **SEQ › EUCLID**: **KNOB 1 HITS** (exactamente esa cantidad de notas), **KNOB 2 STEPS**, **KNOB 3 ROTATE**,
+   **KNOB 4 VARY**.
+3. **MODES**: **MOTION** (0 una nota pedal, más alto saltos más grandes), **HARMONY** (acordes en los tiempos fuertes),
+   OCTAVE, SLIDE.
+4. OCT+ / OCT− y el deshacer, como arriba. Pará antes el tema: mientras suena ARRANGE la página dice STOP TO EDIT.
+
 | Página | Pista | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- | --- |
 | EUCLID | DRUM-X, LANE ALL (V10.7) | DENSITY (1–8) | STEPS (2–64) | ROTATE | LANE (ALL BD SD CP CH OH TM RS CB) |
@@ -1416,9 +1439,41 @@ para todas las pistas.
 
 Son 32 secciones en total (8 × 4).
 
+### Tu primer tema, paso a paso
+
+1. **Hacé un loop**: grabalo (REC), escribí pasos, usá [EUCLID](#euclid-y-modes-v106) o GEN
+   ([Tu primer tema (5 minutos)](#tu-primer-tema-5-minutos)).
+2. **Guardalo como sección A**: mantené **SAVE** y apretá **C4**. La pantalla dice **STORED A**. Funciona sonando; lo
+   guardado llega a la flash cuando parás (pará antes de apagar). Para ponerle nombre, guardalo en SAVE › SECTIONS
+   ([12](#para-guardar-una-sección-de-un-proyecto)).
+3. **Hacé B, C, D**: cambiá la música (pasos, sonidos, una pista muteada…) y mantené SAVE + **D4** (STORED B), después
+   **E4** (C) y **F4** (D). SAVE + F3–B3 vuelve a tocar una sección para chequearla (sonando: en el compás siguiente).
+4. **Abrí el tema**: pará (PLAY) y apretá **SAVE**. Al encender abre en **TIMELINE**, la primera página; si vuelve a
+   otra página de SAVE, girá **SELECT** a la izquierda hasta TIMELINE. Sin filas dice **NO ROWS: OCT+ ADDS ONE**.
+5. **Agregá las filas**: **OCT+** agrega una fila (ROW ADDED): la primera es A, 4 compases; cada una nueva copia la
+   sección y los compases de la última. Con **KNOB 2** en el carril **SEC**: **KNOB 1** la fila, **KNOB 3** su sección
+   A–D, **KNOB 4** sus compases (1–64). Por ejemplo A 8 · B 8 · A 8 · C 4 · D 8.
+6. **Por pista (opcional)**: **KNOB 2** al carril de una pista, **T1–T6**. **KNOB 3 FROM**: ROW (la sección de la
+   fila) o A–D, la parte de esa sección para esta pista en esta fila. **KNOB 4 VAR**: MUTE, THIN, FILL, HALF, REV,
+   SHIFT, OCT+ / OCT−, VAR 1–4, solo en esta fila ([La página TIMELINE](#la-página-timeline-save--timeline)).
+7. **END y escenas en ARRANGE**: girá **SELECT** a la derecha pasando SECTIONS y PROJECTS hasta **ARRANGE** (o SAVE +
+   **G5**). **KNOB 1** más allá de la última fila es **+ ADD**, y después **END**: ahí **KNOB 2** elige **STOP** (una
+   vez), **x2–x8** o **LOOP**. Una escena: dejá los mutes (GLO mantenido + negras 1–6) y las macros como los querés,
+   **KNOB 1** a la fila, **KNOB 4** a la derecha: **SCENE STORED** (a la izquierda la borra).
+8. **Tocalo**: parado, apretá **PLAY** en ARRANGE o TIMELINE. El tema suena desde el principio (una línea blanca marca
+   por dónde va); PLAY otra vez lo para y vuelve la música que tenías antes. Desde cualquier otra página: mantené SAVE
+   + **D5** (**PLAY: THE SONG**) y PLAY toca el tema; SAVE + D5 otra vez vuelve a **PLAY: THE LOOP**. Una fila sobre
+   una sección vacía: el tema no arranca (**PATTERN A EMPTY**).
+9. **Borrá una fila**: parado, en ARRANGE o TIMELINE, **KNOB 1** a la fila, **OCT−**: **DELETE SONG ROW?**. **OCT+** la
+   borra, OCT− la deja. No se puede deshacer.
+10. **O grabalo en vivo: SONG REC.** Tocá una sección (SAVE + F3), mantené SAVE + **E5** (**SONG REC NEXT BAR**;
+    parado: **SONG REC: PLAY**) y tocá las secciones por turno con SAVE + F3–B3: cada una queda como una fila con los
+    compases que sonó y una escena. SAVE + E5 otra vez (o parar) termina. Reemplaza las filas que había.
+
 ### La página ARRANGE (SAVE > ARRANGE)
 
-ARRANGE es la segunda página del grupo PROJECT de SAVE (0.8.5; 0.9.2 SECTIONS → ARRANGE con SELECT): arriba las cuatro secciones del proyecto en grande
+ARRANGE es la segunda página del grupo PROJECT de SAVE (V10.2: la cadena de SAVE es TIMELINE → SECTIONS → PROJECTS →
+ARRANGE → TOOLS → USER → PRESETS; SELECT desde PROJECTS, o SAVE + G5 desde cualquier lado): arriba las cuatro secciones del proyecto en grande
 (guardadas: en su color, la que suena dice **NOW**), después **ARRANGE**: las filas del tema como fichas (**A16**: la
 sección y sus compases, en el color de la sección; una escena: un punto blanco; la fila en la que estás encendida y
 enmarcada), y debajo todo el tema como una sola tira (sus filas según su largo, una línea blanca donde suena) con su
@@ -1429,7 +1484,7 @@ largo y su END (**120 BARS · LOOP**).
 | KNOB 1 | elige la fila | | |
 | KNOB 2 | su sección A–D; girada a la izquierda más allá de A: **DELETE SONG ROW?** | agrega una fila (misma sección que la fila de arriba, 1 compás) | **STOP**, **x2 … x8**, **LOOP** |
 | OCT+ | agrega una fila después de la última (su sección y sus compases) y la elige (0.8.5) | | |
-| OCT− | (V10.4) **DELETE ROW?** para la fila elegida: OCT+ la borra, OCT− la deja (parado; también en TIMELINE) | | |
+| OCT− | (V10.4) **DELETE SONG ROW?** para la fila elegida: OCT+ la borra, OCT− la deja (parado; también en TIMELINE) | | |
 | KNOB 3 | sus compases (1–64) | agrega una fila | |
 | KNOB 4 | derecha: guarda una **escena** (SCENE STORED); izquierda: la borra | | |
 
@@ -1445,7 +1500,9 @@ largo y su END (**120 BARS · LOOP**).
 
 ### La página TIMELINE (SAVE > TIMELINE)
 
-(V10; V10.2: la primera página de SAVE) TIMELINE es la página con la que abre SAVE. Dibuja todo el tema **de izquierda a derecha**, cada fila tan
+(V10; V10.2: la primera página de SAVE, en el grupo SONG con SECTIONS) Al encender, SAVE abre en TIMELINE; después
+SAVE vuelve a la página de SAVE donde estabas. **OCT+** agrega una fila y **OCT−** borra la elegida, como en ARRANGE;
+**PLAY** toca el tema. Dibuja todo el tema **de izquierda a derecha**, cada fila tan
 ancha como sus compases, en siete carriles: **SEC** (las filas: su sección y compases, A8, B4…) y un carril por pista,
 **T1–T6**.
 

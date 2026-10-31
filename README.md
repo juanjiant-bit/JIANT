@@ -386,6 +386,33 @@ With FX held the keys become effects that act while hel…8050 tokens truncated�
   length they drift across the notes (polymeter, as the OP-Z's). The COMP page marks the lane and where it is.
   Automatable. Costs nothing on the audio: a copy of the step once per step.
 
+### Making a song (sections, TIMELINE, ARRANGE)
+
+- **Sections**: make a loop, hold **SAVE** + **C4** to store it as section **A** (D4–F4: B–D; it works while playing
+  and goes to flash when you stop). Change it and store B, C, D. SAVE + F3–B3 plays a section on the next bar.
+- **TIMELINE** (SAVE opens on it at power-on, SAVE's first page): **OCT+** adds a row; KNOB 1 the row, KNOB 2 the lane.
+  On **SEC**: KNOB 3 the section, KNOB 4 the bars. On a track lane (T1–T6): KNOB 3 **FROM** (another section's part),
+  KNOB 4 **VAR** (MUTE, THIN, FILL, HALF, REV, SHIFT, OCT±, VAR 1–4), in that row only.
+- **ARRANGE** (SELECT right past SECTIONS and PROJECTS, or SAVE + G5): KNOB 2 on **END** picks STOP, x2–x8 or LOOP;
+  KNOB 4 right stores a **scene** (mutes, macros) in the row.
+- **Play**: PLAY on ARRANGE or TIMELINE plays the song from the top; elsewhere SAVE + D5 (SONG mode) first.
+  **OCT−** on a row asks **DELETE SONG ROW?** (OCT+ deletes). **SAVE + E5 (SONG REC)** writes the sections you play
+  live into the rows instead.
+- Step by step: [the manual, § 7](docs/MANUAL.md#your-first-song-step-by-step) ·
+  [el manual, § 7](docs/MANUAL.es.md#tu-primer-tema-paso-a-paso).
+
+### EUCLID
+
+- **SEQ › EUCLID** (V10.6) writes the selected track's pattern as a euclidean rhythm, live; **MODES** (the next page)
+  adds to it.
+- **Drums**: LANE (KNOB 4) starts on **ALL**, where KNOB 1 **DENSITY** (1–8) writes a whole kit, with KNOB 2 STEPS and
+  KNOB 3 ROTATE. Pick a lane (BD SD CP CH OH TM RS CB) to change that sound alone. MODES: ACCENT, GHOST, RATCHET, VARY.
+- **Melodic**: KNOB 1 HITS (exactly that many notes), STEPS, ROTATE, KNOB 4 VARY; the notes stay in the SCL key, or in
+  the key the other tracks play (else a new one). MODES: MOTION, HARMONY, OCTAVE, SLIDE.
+- **OCT+** a new variation, **OCT−** the one before; **GLO + G4** (or REC held alone and let go) undoes.
+- In one minute: [the manual](docs/MANUAL.md#euclid-and-modes-v106) ·
+  [el manual](docs/MANUAL.es.md#euclid-y-modes-v106).
+
 ## Changelog
 
 ### V10.7
@@ -657,14 +684,14 @@ Feedback from users (YouTube, Reddit):
     section; the footer counts within the section.
 
 ### v0.6.23
-- **ARRANGE: delete a row right there**: KNOB 2 (SECT) turned left of A asks **DELETE ROW?** (OCT+ yes).
+- **ARRANGE: delete a row right there**: KNOB 2 (SECT) turned left of A asks **DELETE SONG ROW?** (OCT+ yes).
 
 ### v0.6.22
 - **ARRANGE (SEQ > SONG) redrawn, after SLOOP's arranger**: the song as a column of rows, each a coloured section chip
   (A, B, C, D each its own heat), its bars as blocks that fill as they play, the count on the right and a dot for its
   scene; a section with nothing stored says EMPTY. Under them **+ ADD** (how many rows of the 16 are used) and **END**.
   On the right the whole song as one strip (each row as long as its share of the bars, the play head on it) and the bars
-  in all. KNOB 1 the row, 2 its section (left of A: DELETE ROW?), 3 its bars, 4 its scene.
+  in all. KNOB 1 the row, 2 its section (left of A: DELETE SONG ROW?), 3 its bars, 4 its scene.
 - **END: STOP, x2 .. x8 or LOOP**: the song plays once, that many times, or round and round (KNOB 2 on END).
 - **Tracks asleep (TRACKS 4) in grey**: on HOME as a muted being, on the mixer greyed with OFF.
 

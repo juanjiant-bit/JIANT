@@ -76,7 +76,7 @@ files.
    **OCT+**. Type a name with the keys (or keep the one offered) and press **OCT+** again. The screen says **SAVED**.
 4. Make a variation (change some steps, mute a track) and save it into section **B**: on SECTIONS turn **KNOB 1** to
    **B**, then KNOB 4 and OCT+ as before.
-5. Turn **SELECT** one detent right: **ARRANGE** (the song's rows). Press **OCT+** to add a row, set its section with
+5. Turn **SELECT** two detents right (past PROJECTS): **ARRANGE** (the song's rows). Press **OCT+** to add a row, set its section with
    **KNOB 2** and its length with **KNOB 3** (bars). Add a row for A, one for B. Press **PLAY**: the song plays the
    rows in order.
 
@@ -1190,6 +1190,28 @@ and ring). In its place in the SEQ chain, after TRACK, two pages under a tab of 
 **EUCLID** writes the selected track's pattern as a euclidean rhythm, **MODES** adds to it. The page's hint:
 **TURN A KNOB: A PATTERN** · **OCT+ NEW  OCT− BEFORE**.
 
+**EUCLID in one minute**
+
+Drums (a DRUM-X track):
+
+1. Pick the track with **ALGORITHM**, press **SEQ** and turn **SELECT** to **EUCLID** (or tap SEQ until the **EUCL**
+   tab lights).
+2. **KNOB 4 LANE** starts on **ALL**: turn **KNOB 1 DENSITY** (1–8) for a whole kit, **KNOB 2 STEPS** and **KNOB 3
+   ROTATE** for its length and groove.
+3. To tweak one sound, **KNOB 4** to its lane (BD SD CP CH OH TM RS CB): HITS, STEPS and ROTATE now write that lane
+   only.
+4. **SELECT** one detent right, **MODES**: **ACCENT**, **GHOST**, **RATCHET**, **VARY**.
+5. **OCT+** a new variation, **OCT−** the one before. To undo: **GLO + G4**, or hold **REC** alone and let go.
+
+Melodic (any other track):
+
+1. Set the key first on **SCL** (ROOT, a SCALE other than CHR): the screen says **SCL**. Or leave it: EUCLID finds the
+   key of the other tracks (**FROM T*n***), else picks one (**NEW KEY**).
+2. **SEQ › EUCLID**: **KNOB 1 HITS** (exactly that many notes), **KNOB 2 STEPS**, **KNOB 3 ROTATE**, **KNOB 4 VARY**.
+3. **MODES**: **MOTION** (0 a pedal note, higher bigger leaps), **HARMONY** (chords on the strong beats), OCTAVE,
+   SLIDE.
+4. OCT+ / OCT− and the undo as above. Stop a song first: while ARRANGE plays the page says STOP TO EDIT.
+
 | Page | Track | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- | --- |
 | EUCLID | DRUM-X, LANE ALL (V10.7) | DENSITY (1–8) | STEPS (2–64) | ROTATE | LANE (ALL BD SD CP CH OH TM RS CB) |
@@ -1346,9 +1368,41 @@ A track clear says **T3 CLEARED** with **SEQ+REC: ALL TRACKS** under it as a rem
 
 That's 32 sections in total (8 × 4).
 
+### Your first song, step by step
+
+1. **Make a loop**: record it (REC), write steps, use [EUCLID](#euclid-and-modes-v106) or GEN
+   ([Your first song (5 minutes)](#your-first-song-5-minutes)).
+2. **Store it as section A**: hold **SAVE** and press **C4**. The screen says **STORED A**. It works while playing; the
+   store goes to flash when you stop (stop before switching off). To give it a name, save it on SAVE › SECTIONS
+   instead ([12](#to-save-a-project-section)).
+3. **Make B, C, D**: change the music (steps, sounds, a track muted…) and hold SAVE + **D4** (STORED B), then
+   **E4** (C) and **F4** (D). SAVE + F3–B3 plays a section back to check it (playing: on the next bar).
+4. **Open the song**: stop (PLAY), press **SAVE**. At power-on it opens on **TIMELINE**, the first page; if it comes
+   back to another SAVE page, turn **SELECT** left to TIMELINE. With no rows it says **NO ROWS: OCT+ ADDS ONE**.
+5. **Add the rows**: **OCT+** adds a row (ROW ADDED): the first is A, 4 bars; each next one copies the last row's
+   section and bars. With **KNOB 2** on the **SEC** lane: **KNOB 1** the row, **KNOB 3** its section A–D, **KNOB 4**
+   its bars (1–64). For example A 8 · B 8 · A 8 · C 4 · D 8.
+6. **Per track (optional)**: **KNOB 2** to a track's lane, **T1–T6**. **KNOB 3 FROM**: ROW (the row's own section) or
+   A–D, that section's part for this track in this row. **KNOB 4 VAR**: MUTE, THIN, FILL, HALF, REV, SHIFT, OCT+ /
+   OCT−, VAR 1–4, in this row only ([The TIMELINE page](#the-timeline-page-save--timeline)).
+7. **END and scenes on ARRANGE**: turn **SELECT** right past SECTIONS and PROJECTS to **ARRANGE** (or SAVE + **G5**).
+   **KNOB 1** past the last row is **+ ADD**, then **END**: there **KNOB 2** picks **STOP** (once), **x2–x8** or
+   **LOOP**. A scene: set the mutes (GLO held + black keys 1–6) and macros you want, **KNOB 1** to the row, **KNOB 4**
+   right: **SCENE STORED** (left clears it).
+8. **Play it**: stopped, press **PLAY** on ARRANGE or TIMELINE. The song plays from the top (a white line shows where);
+   PLAY again stops it and the music you had before comes back. From any other page: hold SAVE + **D5** (**PLAY: THE
+   SONG**) and PLAY plays the song; SAVE + D5 again goes back to **PLAY: THE LOOP**. A row on an empty section: the
+   song won't start (**PATTERN A EMPTY**).
+9. **Delete a row**: stopped, on ARRANGE or TIMELINE, **KNOB 1** to the row, **OCT−**: **DELETE SONG ROW?**. **OCT+**
+   deletes it, OCT− keeps it. It cannot be undone.
+10. **Or record it live: SONG REC.** Play a section (SAVE + F3), hold SAVE + **E5** (**SONG REC NEXT BAR**; stopped:
+    **SONG REC: PLAY**), then play the sections in turn with SAVE + F3–B3: each becomes a row with the bars it played
+    and a scene. SAVE + E5 again (or stopping) ends it. It replaces the rows there were.
+
 ### The ARRANGE page (SAVE > ARRANGE)
 
-ARRANGE is the second page of SAVE's PROJECT group (0.8.5; 0.9.2 SECTIONS → ARRANGE with SELECT): on top the project's four sections large (stored: in their
+ARRANGE is the second page of SAVE's PROJECT group (V10.2: SAVE's chain is TIMELINE → SECTIONS → PROJECTS → ARRANGE →
+TOOLS → USER → PRESETS; SELECT from PROJECTS, or SAVE + G5 from anywhere): on top the project's four sections large (stored: in their
 colour, the one playing says **NOW**), then **ARRANGE**: the song's rows as chips (**A16**: the section and its bars, in
 the section's colour; a scene: a white dot; the row you are on lit and framed), and under them the whole song as one
 strip (its rows by their length, a white line where it plays) with its length and its END (**120 BARS · LOOP**).
@@ -1358,7 +1412,7 @@ strip (its rows by their length, a white line where it plays) with its length an
 | KNOB 1 | choose the row | | |
 | KNOB 2 | its section A–D; turned left past A: **DELETE SONG ROW?** | adds a row (same section as the row above, 1 bar) | **STOP**, **x2 … x8**, **LOOP** |
 | OCT+ | adds a row after the last (its section and bars), and selects it (0.8.5) | | |
-| OCT− | (V10.4) **DELETE ROW?** for the row picked: OCT+ deletes it, OCT− keeps it (stopped; also on TIMELINE) | | |
+| OCT− | (V10.4) **DELETE SONG ROW?** for the row picked: OCT+ deletes it, OCT− keeps it (stopped; also on TIMELINE) | | |
 | KNOB 3 | its bars (1–64) | adds a row | |
 | KNOB 4 | right: store a **scene** (SCENE STORED); left: clear it | | |
 
@@ -1373,7 +1427,9 @@ strip (its rows by their length, a white line where it plays) with its length an
 
 ### The TIMELINE page (SAVE > TIMELINE)
 
-(V10; V10.2: SAVE's first page) TIMELINE is the page SAVE opens on. It draws the whole song **left to right**, each row as wide as its
+(V10; V10.2: SAVE's first page, in the SONG group with SECTIONS) At power-on SAVE opens on TIMELINE; afterwards SAVE
+comes back to the SAVE page you left. **OCT+** adds a row and **OCT−** deletes the one picked, as on ARRANGE; **PLAY**
+plays the song. It draws the whole song **left to right**, each row as wide as its
 bars, in seven lanes: **SEC** (the rows: their section and bars, A8, B4…) and one lane per track, **T1–T6**.
 
 - A track that **follows its row** is drawn dim, in the row's colour.
