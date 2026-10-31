@@ -480,7 +480,7 @@ them page by page, a **SEQ** tap jumps to the next group.
 | EUCLID | EUCLID (V10.6) | HITS (DRUM-X LANE ALL: DENSITY, V10.7) | STEPS (2–64) | ROTATE | LANE (DRUM-X: ALL, BD … CB) · VARY (melodic) |
 | EUCLID | MODES (V10.6) | ACCENT · MOTION | GHOST · HARMONY | RATCHET · OCTAVE | VARY · SLIDE |
 | BAR | BAR (0.9.2) | BAR (the bar you edit) | LEN | — | — |
-| BAR | STEP (melodic: piano roll) | STEP (all 64, bar after bar) | NOTE | TIME (REST ← TIE ← NOTE → 2 ST … 16 ST: the note's length in steps; REST clears the step) | FLAG (– / ACC / SLD / A+S) |
+| BAR | STEP (melodic: piano roll) | STEP (all 64, bar after bar) | NOTE | TIME (REST ← TIE ← NOTE → 2 ST … 16 ST: the note's length in steps; REST clears the step) | VEL (V10.8, was FLAG: 1–127, then ACC / SLD / A+S) |
 | BAR | STEP (DRUM: grid) | STEP | LANE | HIT | ACC |
 | BAR | NOTE | FOCUS | PITCH | MOVE | MICRO (−32/64 … +31/64; 0.9.1) |
 | STEP | COMP | STEP | TYPE | (its value; ARP: ORDER × RANGE; RATCH: x1–x8 × FLAT FADE RISE) | EVERY (ARP: RATE; RATCH: RATE and its pitch step) |
@@ -1023,7 +1023,11 @@ focus.
 ### Writing steps
 
 - **SEQ > STEP** on a melodic track is a **piano roll**. KNOB 1 moves the step cursor, KNOB 2 transposes the step,
-  KNOB 3 is **TIME**, KNOB 4 sets accent / slide. A step holds up to four notes.
+  KNOB 3 is **TIME**, KNOB 4 is **VEL** (below). A step holds up to four notes.
+- **VEL** (KNOB 4, V10.8; it was FLAG: – / ACC / SLD / A+S): **1–127** is the step's velocity (a step with none
+  recorded shows **96**, what it plays at). A turn stops at 127; past it, one detent each: **ACC** (accent, plays at
+  127), **SLD** (slide, keeps the velocity), **A+S** (both). Turning back down from ACC returns to VEL 127. (The
+  DRUM grid is unchanged: STEP, LANE, HIT, ACC.)
 - **A note's length** (0.8.4): KNOB 3 (TIME) is one range, REST ← TIE ← NOTE → 2 ST → … → 16 ST. On a note,
   turning right **lengthens** it: the steps after it become TIEs, one a detent (the card says **3 ST**, the roll draws
   the longer bar); a chord keeps all its notes. Turning left **shortens** it (its last TIEs become RESTs) down to
@@ -1210,7 +1214,7 @@ Melodic (any other track):
 2. **SEQ › EUCLID**: **KNOB 1 HITS** (exactly that many notes), **KNOB 2 STEPS**, **KNOB 3 ROTATE**, **KNOB 4 VARY**.
 3. **MODES**: **MOTION** (0 a pedal note, higher bigger leaps), **HARMONY** (chords on the strong beats), OCTAVE,
    SLIDE.
-4. OCT+ / OCT− and the undo as above. Stop a song first: while ARRANGE plays the page says STOP TO EDIT.
+4. OCT+ / OCT− and the undo as above. Stop a song first: while a song plays the page says SONG PLAYS: STOP IT TO EDIT.
 
 | Page | Track | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- | --- |
@@ -1245,7 +1249,7 @@ Melodic (any other track):
   keeps the register the track had at the first turn (an empty track: around C4).
 - **Live**: turning a knob writes the track's whole pattern again, at once (its automation stays). A new gesture
   after two seconds is an UNDO point (**GLO + G4**). **OCT+** a new variation (the same rhythm settings, new notes and
-  details), **OCT−** the variation before. While a song (ARRANGE) plays the page says **STOP TO EDIT**.
+  details), **OCT−** the variation before. While a song plays the page says **SONG PLAYS: STOP IT TO EDIT**.
 - **The screen**: a ring of the pattern's steps (DRUM-X: the lane picked; hits lit, accents bigger, ghosts small,
   ratchets framed) and the playhead going round it. DRUM-X: the eight lanes as rows, their HITS / STEPS at the right;
   melodic: the key (root and scale) inside the ring and the notes as a small roll at the right, with where the key came
@@ -1420,7 +1424,7 @@ strip (its rows by their length, a white line where it plays) with its length an
 - When the song ends (or you stop it), the music you had before pressing PLAY comes back (SONG END).
 - END: **STOP** plays the song once, **x2–x8** that many times, **LOOP** forever.
 - If a row points to an empty section the song won't start: the screen says **PATTERN A EMPTY** (or B, C, D).
-- While a song plays, step editing is blocked (**STOP TO EDIT**).
+- While a song plays, step editing, GEN and EUCLID are blocked (**SONG PLAYS: STOP IT TO EDIT**).
 - To delete a row you can also use SAVE > TOOLS > DELETE ROW (the row ARRANGE has selected). To delete the whole
   arrangement: TOOLS > CLEAR SONG (**CLEAR SONG ORDER?**). Neither can be undone.
 - The arrangement is saved automatically (about 2 seconds after a change, while stopped). See [12](#12-saving-and-loading).
@@ -1500,10 +1504,18 @@ ECO (the piece stays; **UNDO**, GLO + G4, brings back what was there before); ev
 their density and heat, the FORM's sections as coloured chips, the last piece and **OCT+ MAKE**. **PLAY** runs and stops
 the transport without leaving the screen (0.6.97).
 
+**GEN can't generate while a song plays** (SONG mode, SAVE + D5, ARRANGE / TIMELINE PLAY, or a quick chain): OCT+
+says **SONG PLAYS: STOP IT TO EDIT**. Stop the song, or turn SONG mode off with **SAVE + D5** so PLAY plays the loop.
+
+**A part set OFF stays off** (V10.8). The piece always has two melodic parts at least, but only parts left on
+**AUTO** are filled in for that (BASS first, then CHORDS); before V10.8 BASS and CHORDS came back on even when set
+OFF. **The GENRE is kept** between visits (V10.8; it used to go back to EXPLORE every time GEN opened); power-on and
+NEW PROJECT start on EXPLORE.
+
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|---|
-| 1/3 | **GENRE**: **EXPLORE** (the screen always opens on it: no genre, every rule broken, below), RANDOM (half its throws are mutants of two genres, named A+B) or one of 43, in that order | **SEED** 0000–9999 | **ENERGY** 0–100 % | **FORM**: LOOP, PARTS, SONG |
-| 2/3 | **DRUMS** | **BASS** | **CHORDS** | **ARP** — each OFF, 10–100 %, or **AUTO** (the genre's) |
+| 1/3 | **GENRE**: **EXPLORE** (power-on and NEW PROJECT start on it; V10.8: GEN keeps the one you picked between visits; no genre, every rule broken, below), RANDOM (half its throws are mutants of two genres, named A+B) or one of 43, in that order | **SEED** 0000–9999 | **ENERGY** 0–100 % | **FORM**: LOOP, PARTS, SONG |
+| 2/3 | **DRUMS** | **BASS** | **CHORDS** | **ARP** — each OFF, 10–100 %, or **AUTO** (the genre's); OFF stays off (V10.8) |
 | 3/3 | **LEAD** (as above) | **COMPLEX** 0–100 % | **SWING** AUTO or 0–100 % | **HUMAN** 0–100 % |
 
 The piece is **deterministic**: the same settings make the same piece every time, so a seed you like can be dialled
@@ -1519,8 +1531,8 @@ range, its scales and chord progressions, its drum map and kit, its bass archety
 and lead speak, which sound recipe each role takes, how human it plays and its space (reverb type, delay type and
 time, how wet).
 
-**EXPLORE** (0.8.6), the first choice and where the screen always opens (at power-on, after NEW PROJECT, every time
-you open GEN), follows **no genre** and breaks their rules on purpose, so every seed is a very different piece
+**EXPLORE** (0.8.6), the first choice and where GEN starts (at power-on and after NEW PROJECT; V10.8: no longer every
+time you open GEN), follows **no genre** and breaks their rules on purpose, so every seed is a very different piece
 (**LAST: EXPLORE 0421**). **How far it goes is COMPLEX** (page 3, KNOB 2; 0.9.13): at **100** every rule below is
 broken as in 0.8.6–0.9.12; at the default **50** the pieces are adventurous but musical; lower, plainer still (see
 *COMPLEX on EXPLORE* below):
@@ -1536,11 +1548,12 @@ broken as in 0.8.6–0.9.12; at the default **50** the pieces are adventurous bu
   DIV** (1/8, 1/32, 8T, 16T: polyrhythm), a track's own swing, drum hits off the grid.
 - **Sound**: **any engine on any role**, ANIMAL and VOICE included (VOICE singing words in ES / EN / JA, a phrase or
   scat), FM6, ANIMAL and VOICE on two tracks at most; DRUM-X's octaves per sound on the steps (x2 x4 x8, SHORT, GHOST,
-  FLAM); wide pans, glides, vibratos, distortion types.
+  FLAM); wide pans, glides, vibratos, detune, distortion types (V10.8: glide, vibrato and detune less often and
+  shallower: less pitch wobble).
 - **Motion**: step components scattered (RAND, OCT, BEND, ECHO, PULSE, WALK, CLIMB, ARP, TONAL, JUMP, REV, some every
-  other loop), **PLAYHEADS** on a track or two; the delay's grain pitch and spray,
+  other loop), **PLAYHEADS** on a track or two; the delay's grain pitch (V10.8: one piece in ten, an octave up or down) and spray,
   ping-pong, any reverb.
-- What it keeps: it always plays (two melodic parts at least, the genres' levels, the shared voice budget, the delay
+- What it keeps: it always plays (two melodic parts at least, from parts left on AUTO; the genres' levels, the shared voice budget, the delay
   short of self-oscillation), the **SCALE page** and the **CHORD page** say the key and the chords it plays, and every
   note is in that key but the coloured chords' own tones and the approaches. The same seed is the same piece; the
   genres' pieces are exactly as before. After an EXPLORE piece a genre's piece sets DIV back to 1/16 and PLAYHEADS off.
@@ -1690,7 +1703,8 @@ The same idea for the other parts of the selected track, each heard at once unde
   each; TRIG at any phase), a fade now and then, aimed
   mostly at the filter, a little at the shape, seldom at the pitch or the level.
 - **FX + SELECT**: the track's drive (half the time none), its chorus, delay and reverb sends, an AUTO PAN one time in
-  three, and the shared reverb's kind, size and damping and the delay's time and feedback (pitched one time in five).
+  three, and the shared reverb's kind, size and damping and the delay's time and feedback (pitched one time in ten, an octave up or down; V10.8, was one in five, with fifths
+  and fourths).
 
 ### Macro dice
 
@@ -1713,7 +1727,7 @@ kit, the punch-in lane, the macros, the tempo and global effects.
 **UNDO does not cover**: section jumps, quick chains and RECALL from the SAVE layer, switching project with the SAVE
 layer's KNOB 1, CLEAR SONG, deleting a row, SONG REC, anything saved (sections, user presets), user preset loads,
 sounds picked with PRESETS, SEQ TOOLS actions, or ordinary knob turns. It is not available while a song plays
-(**STOP TO EDIT**). It keeps only one step, in RAM: it's gone after power-off.
+(**SONG PLAYS: STOP IT TO EDIT**). It keeps only one step, in RAM: it's gone after power-off.
 
 ---
 
@@ -1762,7 +1776,9 @@ its page). PRESETS loads the track's sounds, as everywhere. The pages, their kno
 
 ### Delay
 
-- **DLY**: **TIME** (synced divisions 4BAR … 1/32, or free times from 5 ms to 2.95 s), **FEEDBK**, **TONE** (below the
+- **DLY**: **TIME** (synced divisions 4BAR … 1/32, or free times from 5 ms to 2.95 s; V10.8: the dotted **1/4D, 1/8D,
+  1/16D** too, placed by length: 4BAR, 2BAR, 1/1, 1/2, 1/4D, 1/4, 1/8D, 1/8, 1/16D, 8T, 1/16, 16T, 1/32; saved projects
+  keep their times), **FEEDBK**, **TONE** (below the
   middle darker, above thinner), **MIX**. FEEDBK behaves like an analog delay's (a tape, a PT2399; 0.6.86, 0.6.89):
   with **TONE in the middle (50 %)** each repeat is a copy of what went in; at **100 %** the echoes hold their level
   for a long time (they fade very slowly and are never cut off), and **past 100 %** they grow into themselves and
@@ -1880,7 +1896,8 @@ curve where the bar would be.
 - **Hold LFO**: KNOB 1–4 become M1–M4, and the map shows where each one goes ("NO ROUTE: MOD SRC" if nowhere).
 - Let go: they stay **latched** — KNOB 1–4 keep moving the macros on any page — until you press LFO again.
 - Every power-on starts with random routes (two per track) on tracks that have none. **F3** rolls new
-  routes on the tracks that are sounding; **G3** clears them.
+  routes on the tracks that are sounding; **G3** clears them. (V10.8) Random routes (power-on, F3, GEN, the dice)
+  never aim at **PITCH**: a macro drifting the pitch put whole tracks out of tune. Set a PITCH route by hand on LFO > MOD.
 - Routes are ordinary MOD slots (SRC M1–M4): edit them by hand on LFO > MOD. Macro values are saved with each section.
 
 ---
@@ -2560,7 +2577,9 @@ fewer FM6 tracks), lighter reverbs (CLOUD and SHIMMER are the heaviest). Check M
 **A song won't start: "PATTERN A EMPTY" / "ADD A SONG ROW".** A row points to an empty section, or there are no rows.
 Save music into that section, or change the row.
 
-**It says STOP TO EDIT.** A song (arrangement) or quick chain is playing; stop it to edit steps, use tools or UNDO.
+**It says SONG PLAYS: STOP IT TO EDIT.** A song (SONG mode, SAVE + D5, or ARRANGE /
+TIMELINE PLAY) or a quick chain is playing; stop it to edit steps, use GEN, EUCLID, tools or UNDO (or turn SONG mode
+off with SAVE + D5 so PLAY plays the loop).
 
 **The keys feel inverted / a button does the wrong thing.** Run HARDWARE CALIBRATION: hold OCT− and OCT+ while powering
 on (or MENU › SYSTEM › CONTROLS › CALIBRATION, KNOB 4 then OCT+) and teach each button and knob. A piano key cancels.

@@ -71,12 +71,14 @@ data USB cable straight into the computer, and keep it connected until the page 
   MOTION, HARMONY, OCTAVE and SLIDE (melodic). OCT+ a new variation, OCT− the one before; GLO + G4 UNDO.
 - **REC + A3** undo / redo, **REC + B3** quantize on/off, **REC + knob 2** REC Q; REC and PLAY independent.
 - **SEQ + E5 / F5** copy / paste a whole sequence.
-- GEN (HOME + SELECT): the song generator by genre; GLO › LIVE: the six sequences as a live board.
+- GEN (HOME + SELECT): the song generator by genre (V10.8: a part set OFF stays off, the GENRE is kept between
+  visits); GLO › LIVE: the six sequences as a live board.
+- **SEQ › STEP KNOB 4 VEL** (V10.8): the step's velocity 1–127, then ACC, SLD, A+S.
 
 **Connection**
 - USB name **FM-1**, so the apps made for the FM-1 find it; USB STEMS (8 channels: T1–T6 + FX) for recording in a DAW.
 
-The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10 (V10.7).
+The manual ([EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)) and the cheat sheets below describe V10 (V10.8).
 
 ## Reporting a crash
 
@@ -363,8 +365,9 @@ An 8-sound kit (BD SD CP CH OH TM RS CB) generated in real time, Microtonic styl
   quarter of its range; DRUM-X rolls the A and B sides of each sound around the factory kit. **SEQ / LFO / FX +
   SELECT** dice the sequence, the LFO, the effects, each shown **BEFORE** and **NOW** to keep or cancel; **GLO +
   SELECT** is the tempo. **HOME + SELECT** opens
-  **GEN**, the song generator (since 0.6.91; HOME's last three pages since 0.9.2): it opens on **EXPLORE** (0.8.6: no
-  genre, every rule broken: odd metres, exotic modes, any engine on any role), then RANDOM or a genre among 43 (house,
+  **GEN**, the song generator (since 0.6.91; HOME's last three pages since 0.9.2): it starts on **EXPLORE** (0.8.6: no
+  genre, every rule broken: odd metres, exotic modes, any engine on any role; at power-on and NEW PROJECT, V10.8:
+  after that it keeps the genre you picked), then RANDOM or a genre among 43 (house,
   techno, dub, UK garage, funk, post punk, jazz, ambient …), a seed, an energy, a form (a loop, parts, a club song); how much drums,
   bass, chords, arp and lead; complexity, swing, how human. **OCT+** writes the piece from them (OCT+ again: a new
   seed; a knob turned and OCT+: the same piece with that one thing changed), **OCT−** is done. Every piece has one
@@ -414,6 +417,25 @@ With FX held the keys become effects that act while hel…8050 tokens truncated�
   [el manual](docs/MANUAL.es.md#euclid-y-modes-v106).
 
 ## Changelog
+
+### V10.8
+- **GEN: a part set OFF stays off**. BASS, CHORDS, ARP or LEAD set to OFF are never turned back on: before, with
+  fewer than two melodic parts on, BASS and CHORDS were forced on. That rule now only fills in parts left on **AUTO**.
+- **GEN keeps the GENRE** you picked between visits (it went back to EXPLORE every time GEN opened). Power-on and
+  NEW PROJECT still start on EXPLORE.
+- **SEQ › STEP (melodic): KNOB 4 is VEL** (was FLAG): 1–127 is the step's velocity (a step with none recorded shows
+  96, what it plays at); a turn stops at 127, and past it, one detent each: **ACC** (accent, plays at 127), **SLD**
+  (slide, keeps the velocity), **A+S**. Turning back down returns to VEL 127. The DRUM grid is unchanged (STEP LANE
+  HIT ACC).
+- **FX › DLY TIME: dotted divisions 1/4D, 1/8D, 1/16D**, placed by length among the others (… 1/2, 1/4D, 1/4, 1/8D,
+  1/8, 1/16D, 8T, 1/16 …). Saved projects keep their times.
+- **Less pitch wobble from the generators** (a tester: GEN sounded like "a passing train"): the random macro routes
+  (GEN, the dice, the power-on macros) never aim at PITCH; GEN's EXPLORE uses a pitched delay seldom (one piece in
+  ten, octaves only) and less glide, vibrato and detune; the FX dice's pitched delay is one in ten, octaves only (was
+  one in five, with fifths and fourths).
+- **"STOP TO EDIT" now reads "SONG PLAYS: STOP IT TO EDIT"**: shown when a song (SONG mode, SAVE + D5, or ARRANGE /
+  TIMELINE PLAY) or a quick chain is playing; editing steps, GEN and EUCLID wait until it stops (or SONG mode is
+  turned off with SAVE + D5, so PLAY plays the loop).
 
 ### V10.7
 - **SEQ › EUCLID on DRUM-X: LANE ALL**. KNOB 4 LANE has nine values, **ALL** (the default) then BD SD CP CH OH TM RS
