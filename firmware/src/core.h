@@ -665,7 +665,10 @@ static void step_set_ratchet(step_t *s, uint32_t hits)
 #define MOTION_TRK(e) ((uint32_t)(e)->place >> 6 | MOTION_HI(e) << 2)
 #define MOTION_STEP(e) ((uint32_t)(e)->place & 63u)
 #define MOTION_PLACE(e) (MOTION_TRK(e) << 6 | MOTION_STEP(e))   /* track << 6 | step */
-#define MOTION_VAL(e) ((int16_t)((e)->value ^ (int32_t)(MOTION_HI(e) << 12)))
+/* (V10.5) bit 13 against the sign: a RAMP, the value glides there step by step from the record before (of its track and
+ * id; none: from step 0 and the sound's value); an old record has it clear, a hold */
+#define MOTION_RAMP(e) ((uint32_t)(((e)->value >> 13) ^ ((e)->value >> 15)) & 1u)
+#define MOTION_VAL(e) ((int16_t)((e)->value ^ (int32_t)(MOTION_HI(e) << 12) ^ (int32_t)(MOTION_RAMP(e) << 13)))
 /* (0.9.1) MOT_DJF: a record whose id is past every P_* is the master DJ FILTER's (G_DJF), automation only (no lock):
  * recorded on the selected track (GLO > MIXER KNOB 4), it sets song.g[G_DJF] at its step and the value holds as any
  * event's; a stop or the loop's restart puts back the knob's (motion.c). Stored in FUNC's block 'M' 'G' (project.c) */

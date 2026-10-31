@@ -1546,7 +1546,7 @@ static void draw_columns(void)
         hot_text_column(2, "PARAM", nm);
         d = track_desc(t, id);
         param_format(d, v, val, &unit);
-        draw_column(3, r == n ? "VALUE" : (motion.event[idx[r]].param & MOTION_LOCK) ? "LOCK" : "AUTO", val, unit,
+        draw_column(3, r == n ? "VALUE" : (motion.event[idx[r]].param & MOTION_LOCK) ? "LOCK" : MOTION_RAMP(&motion.event[idx[r]]) ? "RAMP" : "AUTO", val, unit,
                     r < n ? VAL(3u) : T_DIM, RATIO(d, enum_rank(d, v)), param_icon(d, v));
         return;
     }

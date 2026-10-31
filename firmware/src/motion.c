@@ -14,6 +14,7 @@ static uint32_t motion_active[NTRK][(P_COUNT + 31u) / 32u];
 static uint8_t cx_lkhold;                       /* (seq2d) seq.c: a LOCK component holds the locks over this step */
 static uint32_t motion_locked[NTRK][(P_COUNT + 31u) / 32u];   /* the ids a lock holds now (put back at the next step) */
 static uint8_t motion_base_valid, motion_full;
+static uint8_t motion_recd;                     /* (V10.5) tracks recorded into since their last thinning (motion_thin) */
 /* (0.9.1) the DJ FILTER's records (MOT_DJF): the global's value before they moved it (the knob's), and the tracks whose
  * record moved it this pass (bit per track; 0: song.g[G_DJF] is the knob's own) */
 static int16_t motion_djf_base __attribute__((section(".bss.djf")));   /* (as fx.c's djf: out of the merged statics) */
@@ -212,6 +213,82 @@ static void motion_clear(track_t *t)
     motion_unguard(f);
 }
 static void motion_reset(track_t *t) { motion_clear(t); }
+/* (V10.5) the value on a line from (s0, v0) to (s1, v1) at step s */
+static __attribute__((noinline)) int32_t motion_lin(int32_t v0, int32_t v1, int32_t s, int32_t s0, int32_t s1)
+{
+    return s1 > s0 ? v0 + (v1 - v0) * (s - s0) / (s1 - s0) : v1;
+}
+static uint32_t motion_rows(uint32_t k, uint8_t *idx);
+/* (V10.5) the thinning's work (main loop only): a curve's records by step, the values as they sound step by step */
+static struct { uint8_t ix[MOTION_MAX], st[MOTION_MAX], keep[MOTION_MAX], rp[MOTION_MAX]; int16_t vv[MOTION_MAX], dn[NSTEP]; } mt;
+/* records a..b as one stretch: 1 the value of a held to b, 2 a line from a to b, 0 neither (off by more than tol) */
+static uint32_t motion_seg(uint32_t a, uint32_t b, int32_t tol)
+{
+    uint32_t s, r = 3;
+    for (s = mt.st[a]; s < mt.st[b]; s++) {
+        int32_t e = mt.dn[s] - motion_lin(mt.vv[a], mt.vv[b], (int32_t)s, mt.st[a], mt.st[b]), h = mt.dn[s] - mt.vv[a];
+        if (e > tol || -e > tol) r &= 1u;
+        if (h > tol || -h > tol) r &= 2u;
+    }
+    return r & 1u ? 1u : r;
+}
+/* (V10.5) track k's automation on id (no locks, no DJ FILTER) thinned: what the knob drew in as few records as keep it
+ * within tol: from each record kept, the stretch as long as it holds its value (a hold) or runs along a line (a RAMP to
+ * its end). The records it removed */
+static __attribute__((noinline)) uint32_t motion_thin_id(uint32_t k, uint32_t id, int32_t tol)
+{
+    uint32_t n = 0, i, j, s, a = 0, r, gone = 0, f, all = motion_rows(k, mt.ix);
+    for (i = 0; i < all; i++) {                          /* its records by step (AUTO LIST's order, this id's) */
+        const motion_event_t *e = &motion.event[mt.ix[i]];
+        if (e->param != id) continue;
+        mt.ix[n] = mt.ix[i]; mt.st[n] = (uint8_t)MOTION_STEP(e); mt.vv[n] = MOTION_VAL(e);
+        mt.rp[n] = (uint8_t)MOTION_RAMP(e); mt.keep[n++] = 0;
+    }
+    if (n < 3u) return 0;
+    for (i = 0; i + 1u < n; i++)                          /* the values as they sound, step by step */
+        for (s = mt.st[i]; s < mt.st[i + 1u]; s++)
+            mt.dn[s] = (int16_t)(mt.rp[i + 1u] ? motion_lin(mt.vv[i], mt.vv[i + 1u], (int32_t)s, mt.st[i], mt.st[i + 1u]) : mt.vv[i]);
+    mt.keep[0] = 1;
+    for (i = 2; i <= n; i++)                              /* stretches as long as they go; the last record goes when it
+                                                         * only holds the value before (within tol) */
+        if (i == n || !motion_seg(a, i, tol)) {
+            if (i - 1u > a + 1u && (r = motion_seg(a, i - 1u, tol)) != 0u) mt.rp[i - 1u] = (uint8_t)(r == 2u);
+            r = (uint32_t)(mt.vv[i - 1u] - mt.vv[a] + tol);
+            mt.keep[i - 1u] = (uint8_t)(i < n || mt.rp[i - 1u] || r > 2u * (uint32_t)tol);
+            a = i - 1u;
+        }
+    f = motion_guard();
+    for (i = 0; i < n; i++) {                            /* the ones kept: their kind; the rest marked to go */
+        motion_event_t *e = &motion.event[mt.ix[i]];
+        if (!mt.keep[i]) { e->param = 0xFFu; gone++; }
+        else if (MOTION_RAMP(e) != mt.rp[i]) e->value ^= (int16_t)(1 << 13);
+    }
+    for (i = j = 0; i < motion.count; i++)
+        if (motion.event[i].param != 0xFFu) motion.event[j++] = motion.event[i];
+    memset(motion.event + j, 0, (MOTION_MAX - j) * sizeof motion.event[0]);
+    motion.count = (uint8_t)j;
+    motion_unguard(f);
+    return gone;
+}
+/* (V10.5) the tracks of mask m thinned (motion_thin_id on each automated id): the records removed */
+static uint32_t motion_thin(uint32_t m)
+{
+    uint32_t k, i, id, gone = 0, seen[4];
+    for (k = 0; k < NTRK; k++) {
+        if (!((m >> k) & 1u)) continue;
+        memset(seen, 0, sizeof seen);
+        for (i = 0; i < motion.count; i++) {
+            const motion_event_t *e = &motion.event[i];
+            id = e->param;
+            if (MOTION_TRK(e) != k || id >= P_COUNT || ((seen[id / 32u] >> (id % 32u)) & 1u)) continue;
+            seen[id / 32u] |= 1u << (id % 32u);
+            { const param_desc_t *d = motion_desc(&trk[k], id); gone += motion_thin_id(k, id, (d->max - d->min) / 32 + 1); }
+            i = (uint32_t)-1;                             /* (the records moved: from the start, the ids done skipped) */
+        }
+    }
+    motion_recd &= (uint8_t)~m;
+    return gone;
+}
 /* a record of kind 0 (automation) or MOTION_LOCK on track t's step / id: a new one, or the one there (of either kind)
  * becomes this. 0 ok, 1 invalid, 2 the 64 are used (motion_full: "AUTOMATION FULL") */
 static int motion_put(track_t *t, uint32_t step, uint32_t id, int16_t value, uint32_t kind)
@@ -294,6 +371,7 @@ static int motion_capture(track_t *t, uint32_t id, int16_t value)
         if (!motion_djf_on) motion_djf_base = value;
         motion_djf_on |= (uint8_t)(1u << k);
     } else if ((motion_base_valid >> k) & 1u) motion_active[k][id / 32u] |= 1u << (id % 32u);
+    motion_recd |= (uint8_t)(1u << k);
     motion_unguard(f);
     return motion_set_event(t, idx, id, value);
 }
@@ -348,17 +426,28 @@ static __attribute__((noinline)) void motion_step(track_t *t, uint32_t step, con
     if (!step) motion_restore(t);
     else if (any && !cx_lkhold) motion_unlock(t, step, m);   /* (seq2d: a LOCK component holds them over its LENGTH) */
     for (i = 0; i < m->count; i++) {
-        const motion_event_t *e = &m->event[i];
-        uint32_t id = MOTION_ID(e);
-        if (MOTION_PLACE(e) != (k << 6 | step) || ((e->param & MOTION_LOCK) && !play)) continue;
+        const motion_event_t *e = &m->event[i], *p = 0;
+        uint32_t id = MOTION_ID(e), se = MOTION_STEP(e), j;
+        int32_t v = MOTION_VAL(e);
+        if (MOTION_TRK(e) != k || ((e->param & MOTION_LOCK) && !play)) continue;
+        if (se != step) {                                /* (V10.5) a RAMP ahead: the value on its way there, from the
+                                                         * record before (none: step 0 and the sound's value) */
+            if (!MOTION_RAMP(e) || id != e->param || id >= P_COUNT || se < step) continue;
+            for (j = 0; j < m->count; j++) {
+                const motion_event_t *q = &m->event[j];
+                if (MOTION_TRK(q) == k && q->param == id && MOTION_STEP(q) < se && (!p || MOTION_STEP(q) > MOTION_STEP(p))) p = q;
+            }
+            if (p && MOTION_STEP(p) > step) continue;
+            v = motion_lin(p ? MOTION_VAL(p) : motion_base[k][id], v, (int32_t)step, p ? (int32_t)MOTION_STEP(p) : 0, (int32_t)se);
+        }
         if (id == MOT_DJF) {                            /* (0.9.1) the master DJ FILTER (a global) */
             if (!motion_djf_on) motion_djf_base = song.g[G_DJF];
             motion_djf_on |= (uint8_t)(1u << k);
-            song.g[G_DJF] = (int16_t)clamp(MOTION_VAL(e), -64, 63);
+            song.g[G_DJF] = (int16_t)clamp(v, -64, 63);
             continue;
         }
         const param_desc_t *d = param_desc_of(eng_idx(t->eng_req), id);
-        t->p[id] = (int16_t)param_fit(d, MOTION_VAL(e));
+        t->p[id] = (int16_t)param_fit(d, v);
         motion_active[k][id / 32u] |= 1u << (id % 32u);
         if (e->param & MOTION_LOCK)
             motion_locked[k][id / 32u] |= 1u << (id % 32u);

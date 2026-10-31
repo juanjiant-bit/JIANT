@@ -2129,6 +2129,8 @@ static void ui_notices(void)
 {
     static uint32_t midi_t, midi_last;
     if (motion_full) { motion_full = 0; ui_message("AUTOMATION FULL"); }
+    if (motion_recd && (!song.playing || motion.count > MOTION_MAX - 8u))   /* (V10.5) what was recorded thinned: at */
+        (void)motion_thin(motion_recd);                 /* the stop, and while recording before the 64 run out */
     if (midi_hint) {                                    /* MIDI notes into a track that is not selected */
         uint32_t h = midi_hint;
         midi_hint = 0;

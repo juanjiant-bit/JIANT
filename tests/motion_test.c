@@ -42,7 +42,8 @@ static int motion_recording(void)
 static int motion_capacity(void)
 {
     int bad = 0; ui_power_on();
-    for (uint32_t i = 0; i < MOTION_MAX; i++) bad += motion_set_event(&trk[0], i, P_REV, (int16_t)i);
+    for (uint32_t i = 0; i < MOTION_MAX; i++) bad += motion_set_event(&trk[0], i, P_REV, (int16_t)(i & 1u ? 100 : i / 2u));   /* (V10.5: a
+        * zigzag, nothing to thin: a straight line would have made room) */
     motion_store_t saved = motion;
     bad += check("full event pool refuses append without overwriting earlier events", motion_set_event(&trk[1], 0, P_REV, 90) == 2 &&
         !memcmp(&motion, &saved, sizeof saved));
@@ -872,9 +873,75 @@ static int seq_shift(void)
     bad += check("  OFS and PIT are automatable", motion_param(P_SOFS) && motion_param(P_POFS));
     return bad;
 }
+/* (V10.5) thinning: a knob's curve kept within 1/32 of the range in as few records as it takes, RAMPs between them */
+static int16_t thin_v[NSTEP];
+static void thin_play(track_t *t)
+{
+    for (uint32_t s = 0; s < NSTEP; s++) { motion_step(t, s, &motion, 1); thin_v[s] = t->p[P_REV]; }
+}
+static int thin_close(const int16_t *want, int32_t tol)
+{
+    for (uint32_t s = 0; s < NSTEP; s++) if (thin_v[s] - want[s] > tol || want[s] - thin_v[s] > tol) { printf("  step %u: %d, wanted %d\n", s, thin_v[s], want[s]); return 0; }
+    return 1;
+}
+static int motion_thinning(void)
+{
+    int bad = 0, ok = 1;
+    int16_t want[NSTEP];
+    track_t *t = &trk[0];
+    uint32_t s;
+    int16_t v;
+    ui_power_on();
+    for (v = -64; v <= 127; v++) { motion_event_t e; motion_at(&e, 5u << 6 | 3u, v); ok &= !MOTION_RAMP(&e) && MOTION_VAL(&e) == v && MOTION_TRK(&e) == 5u; }
+    bad += check("V10.5 a record written as before is a hold (RAMP clear), every value and track", ok);
+    motion_clear(t);
+    for (s = 0; s < NSTEP; s++) { want[s] = (int16_t)(s * 2u); motion_set_event(t, s, P_REV, want[s]); }
+    thin_play(t);
+    ok = thin_close(want, 0);
+    (void)motion_thin(1u);
+    thin_play(t);
+    bad += check("V10.5 a sweep of 64 records: 2, a RAMP, and it plays within 1/32 of the range", ok && motion_count(t) == 2u &&
+                 thin_close(want, 127 / 32));
+    motion_clear(t);
+    for (s = 0; s < NSTEP; s++) { want[s] = (int16_t)(s < 32u ? 20u + s * 3u : 20u + (63u - s) * 3u); motion_set_event(t, s, P_REV, want[s]); }
+    (void)motion_thin(1u);
+    thin_play(t);
+    bad += check("V10.5 up then down: 3 or 4 records, the shape kept", motion_count(t) <= 4u && thin_close(want, 127 / 32));
+    motion_clear(t);
+    for (s = 0; s < NSTEP; s++) { want[s] = (int16_t)(s < 16u || s >= 48u ? 10 : 100); motion_set_event(t, s, P_REV, want[s]); }
+    (void)motion_thin(1u);
+    thin_play(t);
+    bad += check("V10.5 jumps stay jumps (holds, no ramp across them); 64 records down to 3", motion_count(t) == 3u &&
+                 thin_close(want, 0));
+    motion_clear(t);
+    for (s = 0; s < NSTEP; s++) { want[s] = (int16_t)(60 + (s % 3u) - 1); motion_set_event(t, s, P_REV, want[s]); }
+    (void)motion_set_lock(t, 9, P_REV, 120);
+    (void)motion_thin(1u);
+    bad += check("V10.5 a knob held still (jitter of 1): 1 record, and a lock is never thinned",
+                 motion_count(t) == 2u && motion_lock_count(t) == 1u);
+    motion_clear(t);
+    song.playing = 1;
+    for (s = 0; s < 58u; s++) motion_set_event(t, s, P_REV, (int16_t)s);
+    motion_recd = 1u;
+    frame();
+    ok = motion_count(t) == 2u && !motion_recd && !motion_set_event(&trk[1], 0, P_REV, 90);
+    song.playing = 0;
+    bad += check("V10.5 recording near the 64 (over 56): thinned while it plays, room again (no AUTOMATION FULL)", ok && !motion_full &&
+                 motion_count(&trk[1]) == 1u);
+    motion_clear(t); motion_clear(&trk[1]);
+    song.rec = 1; song.sel = 0; seq_start(); seq_tick(t, CTL);
+    motion_capture(t, P_REV, 50); t->seq_idx = 5; motion_capture(t, P_REV, 51); t->seq_idx = 9; motion_capture(t, P_REV, 50);
+    ok = (motion_recd & 1u) != 0u;
+    seq_stop(); song.rec = 0;
+    ok &= motion_count(t) == 3u;
+    frame();
+    bad += check("V10.5 recorded then stopped: the recording thinned once (a knob held: 3 records, 1)", ok && !motion_recd && motion_count(t) == 1u);
+    motion_clear(t);
+    return bad;
+}
 int main(void)
 {
-    int bad = motion_recording() + motion_capacity() + probability_playback() + compact_project() + fun7_89() + loads_and_song() + repeat_mode();
+    int bad = motion_recording() + motion_capacity() + motion_thinning() + probability_playback() + compact_project() + fun7_89() + loads_and_song() + repeat_mode();
     bad += arp_new_modes() + seq_shift() + song_scenes();
     bad += lock_playback() + lock_edit() + lock_project() + lock_ui() + lock_undo() + auto_list();
     printf("%s\n", bad ? "MOTION TEST FAILED" : "motion/chance/compact storage tests passed"); return bad != 0;
