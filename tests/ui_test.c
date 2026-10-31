@@ -7680,7 +7680,7 @@ static int test_seq_tools(void)
     memcpy(ref, TSEL->step, sizeof ref);
     btn_down(B_SEQ); frame();
     tl_key(0);
-    ok = msg_is("STOP TO EDIT") && !memcmp(TSEL->step, ref, sizeof ref);
+    ok = msg_is("SONG PLAYS: STOP IT TO EDIT") && !memcmp(TSEL->step, ref, sizeof ref);
     btn_up(B_SEQ); frame();
     chain.running = 0;
     bad += check("  while a song plays: STOP TO EDIT, nothing changes", ok);
@@ -8414,7 +8414,7 @@ static int test_rec_layer(void)
     my_steps(&trk[1]);
     chain.running = 1;
     rec_down(); frame(); key_down(white(0)); frame();
-    ok &= msg_is("STOP TO EDIT") && !seq_is_empty(&trk[1]);
+    ok &= msg_is("SONG PLAYS: STOP IT TO EDIT") && !seq_is_empty(&trk[1]);
     key_up(white(0)); frame(); rec_up();
     chain.running = 0;
     song.playing = 1; song.rec = 2u;                    /* recording live: a retake, the arming and PLAY stay */

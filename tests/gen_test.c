@@ -791,8 +791,8 @@ int main(void)
     /* ---- the screen: HOME + SELECT opens GEN, the knobs set, SELECT pages, OCT+ makes, OCT- is done */
     {
         gen_reset();
-        gp.genre = 7; gp.energy = 50; gp.page = 0; gp.form = 0;   /* (0.6.93) a genre left from before: the screen opens
-                                                         * on RANDOM; (0.8.6) on EXPLORE */
+        gp.genre = GEN_EXPLORE; gp.energy = 50; gp.page = 0; gp.form = 0;   /* (V10.8: the GENRE is kept between visits;
+                                                         * EXPLORE as at power-on) */
         for (k = 0; k < GP_N; k++) gp.amt[k] = GA_AUTO;
         go_home(); frames(16);
         fm1_ms += 1200u;

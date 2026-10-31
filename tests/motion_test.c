@@ -816,7 +816,7 @@ static int auto_list(void)
     v = motion.event[0].value;
     chain.running = 1;
     turn(EN_K4, 1);
-    bad += check("  a song playing: STOP TO EDIT", motion.event[0].value == v && str_eq(ui.msg, "STOP TO EDIT"));
+    bad += check("  a song playing: STOP TO EDIT", motion.event[0].value == v && str_eq(ui.msg, "SONG PLAYS: STOP IT TO EDIT"));
     chain.running = 0;
     for (i = 0; motion.count < MOTION_MAX; i++)          /* the 64 used (track 2) */
         motion_set_event(&trk[1], i % NSTEP, i < NSTEP ? P_REV : P_DLY, 10);

@@ -213,7 +213,7 @@ static void test_times(void)
     printf("delay:   (* capped)\n");
     check("every long division its own length up to the longest the line holds, at the lowest rate that holds it", ok);
     {
-        uint32_t n = NELEM(DTIME_MS), last = DTIME_MS[n - 1u] * 441u / 10u, i, inc = 1;
+        uint32_t n = NELEM(DTIME_MS) - 3u, last = DTIME_MS[n - 1u] * 441u / 10u, i, inc = 1;
         for (i = 1; i < n; i++) inc &= DTIME_MS[i] > DTIME_MS[i - 1u];
         dreset();
         song.g[G_DTIME] = (int16_t)(DT_FREE + n - 1u);
@@ -222,7 +222,7 @@ static void test_times(void)
                DLY_SPAN(1u) / (double)FS);
         check("the free times past 1.48 s, each longer, the last within the line (its own length)",
               inc && n > 48u && DTIME_MS[47] == 1480u && last <= DLY_MAX && delay_samples() == last &&
-              NELEM(N_DTIME) == DT_FREE + n && (uint32_t)GP[G_DTIME].max == DT_FREE + n - 1u);
+              NELEM(N_DTIME) == DT_FREE + n + 3u && (uint32_t)GP[G_DTIME].max == DT_FREE + n + 2u);
     }
 }
 
@@ -448,7 +448,7 @@ static void test_clicks(void)
     uint32_t len;
     {   /* TIME through the free times, up past both boundaries and back, one step every 0.25 s, a sine playing */
         static uint8_t seq[64];
-        uint32_t i, n = 0, last = DT_FREE + NELEM(DTIME_MS) - 1u;
+        uint32_t i, n = 0, last = DT_FREE + NELEM(DTIME_MS) - 4u;   /* (V10.8: the three dotted after the free times) */
         for (i = DT_FREE + 40u; i <= last; i++) seq[n++] = (uint8_t)i;
         for (i = last; i >= DT_FREE + 40u && n < NELEM(seq); i--) seq[n++] = (uint8_t)i;
         dreset();

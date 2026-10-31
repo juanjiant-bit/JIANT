@@ -258,14 +258,14 @@ static void eu_put(uint32_t k, int32_t v)
     else if (k == EK_K4) e->vary = (uint8_t)clamp(v, 0, 100);
     else e->m[(k - EK_M0) % EU_M] = (uint8_t)clamp(v, 0, 100);
     if (al && k < EK_K4) eu_kit(e);                      /* (ALL: the kit again, of DENSITY, STEPS, ROTATE) */
-    if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+    if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
     eu_gen(song.sel);
 }
 /* OCT+ a new variation, OCT- the one before */
 static void eu_oct(int up)
 {
     eu_t *e = eu_of(song.sel);
-    if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+    if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
     if (up) { e->prev = e->seed; e->seed = (uint16_t)(e->seed * 25173u + 13849u); }
     else { uint16_t s = e->seed; e->seed = e->prev; e->prev = s; }
     eu_gen(song.sel);

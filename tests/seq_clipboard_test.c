@@ -24,7 +24,7 @@ int main(void)
     clip.n=0;ly_white(B_SEQ,TL_PASTE);
     bad+=check("PASTE SEQ refuses an empty clipboard without changing track",msg_is("NOTHING COPIED") && !memcmp(before,TSEL->step,sizeof before));
     clip.n=1;clip.drum=0;chain.running=1;ly_white(B_SEQ,TL_PASTE);
-    bad+=check("PASTE SEQ respects song-chain editing guard",msg_is("STOP TO EDIT") && !memcmp(before,TSEL->step,sizeof before));
+    bad+=check("PASTE SEQ respects song-chain editing guard",msg_is("SONG PLAYS: STOP IT TO EDIT") && !memcmp(before,TSEL->step,sizeof before));
     chain.running=0;
     printf("clipboard RAM bytes: %zu; step bytes: %zu\n",sizeof clip,sizeof(step_t));
     return !!bad;

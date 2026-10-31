@@ -107,7 +107,7 @@ static int ev_busy(void)
 {
     if (!chain_busy())
         return 0;
-    ui_message("STOP TO EDIT");
+    ui_message("SONG PLAYS: STOP IT TO EDIT");
     return 1;
 }
 

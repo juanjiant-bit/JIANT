@@ -1957,15 +1957,15 @@ static void gx_sound(track_t *t, uint32_t r)
 {
     if (t->eng_req == EG_VO && gch(70)) { t->p[P_VLANG] = (int16_t)grr(1, LG_N - 1); t->p[P_VLYR] = (int16_t)grr(1, LYR_N - 1); }
     if (t->p[P_DIST] && gch(50)) t->p[P_DTYPE] = (int16_t)grr(0, 5);
-    if ((r == RL_LEAD || r == RL_BASS) && gch(30)) t->p[P_GLIDE] = (int16_t)grr(20, 70);
-    if (r != RL_BASS && gch(25)) {                     /* (0.9.9-gen2) a vibrato on a line (shallow, ~5.5 Hz, faded in),
+    if ((r == RL_LEAD || r == RL_BASS) && gch(15)) t->p[P_GLIDE] = (int16_t)grr(15, 40);   /* (V10.8: was 30 %, 20..70) */
+    if (r != RL_BASS && gch(12)) {                     /* (V10.8: was 25 %) (0.9.9-gen2) a vibrato on a line (shallow, ~5.5 Hz, faded in),
                                                          * a slow drift on the rest (a detune moving), never a siren */
         uint32_t line = r == RL_LEAD || r == RL_ARP;
         t->p[P_LWAVE] = (int16_t)(gr() % 2u); t->p[P_LD_PIT] = 1;
         t->p[P_LRATE] = (int16_t)(line ? grr(GVIB_RLO, GVIB_RHI) : grr(30, 50));
         if (line) { t->p[P_LFADE] = (int16_t)grr(70, 84); t->p[P_LD_FLT] = 0; }
     }
-    if (gch(25)) t->p[P_DETUNE] = (int16_t)grr(10, 50);
+    if (gch(15)) t->p[P_DETUNE] = (int16_t)grr(8, 30);   /* (V10.8: was 25 %, 10..50) */
 }
 /* the step components scattered over the melodic tracks (a bass's never an arpeggio, a jump or a climb) */
 static void gx_comps(void)
@@ -2445,9 +2445,9 @@ static void gen_make(void)
     song.g[G_PUNCH] = (int16_t)(gs.act[RL_DRUM] ? grr(45, 85) : 0);
     if (gx.on) {                                        /* (0.8.6) EXPLORE: the grain delay's pitch and spray, a ping-pong,
                                                          * the feedback short of self-oscillation */
-        static const int8_t DP[6] = {-12, -7, -5, 5, 7, 12};
-        song.g[G_DPIT] = (int16_t)(gch(30) ? DP[gr() % 6u] : 0);
-        song.g[G_DSPRY] = (int16_t)(gch(25) ? grr(10, 80) : 0);
+        song.g[G_DPIT] = (int16_t)(gch(10) ? (gch(50) ? 12 : -12) : 0);   /* (V10.8: seldom, octaves only, spray
+                                                         * short: a pitched delay's cascade read as discord) */
+        song.g[G_DSPRY] = (int16_t)(gch(15) ? grr(10, 40) : 0);
         song.g[G_DPING] = (int16_t)(gr() % 2u);
         song.g[G_DFDBK] = (int16_t)clamp(song.g[G_DFDBK], 0, 85);
     }

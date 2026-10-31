@@ -28,7 +28,7 @@ int main(void)
     undo_mark(); trk[0].step[0].note[0] = 70; after = steps_sig(&trk[0]);
     chain.running = 1;
     ly_white(B_REC, 2);
-    bad += check("song-chain guard refuses undo without changing notes", msg_is("STOP TO EDIT") && steps_sig(&trk[0]) == after);
+    bad += check("song-chain guard refuses undo without changing notes", msg_is("SONG PLAYS: STOP IT TO EDIT") && steps_sig(&trk[0]) == after);
     chain.running = 0;
 
     ui_power_on(); song.sel = 2;

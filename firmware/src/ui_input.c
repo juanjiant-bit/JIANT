@@ -587,7 +587,7 @@ static void grid_keys(uint32_t pressed)
             continue;
         if (!key_black(k)) {
             uint32_t i = ui.bank * 16u + p;
-            if (chain_busy()) { ui_message("STOP TO EDIT"); continue; }
+            if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); continue; }
             if (i >= len)
                 continue;                               /* past LEN: no step there */
             {   /* a hit (an accent) there goes when the key is let go, unless it was held for a lock (lock_keys) */
@@ -688,7 +688,7 @@ static void lock_turn(uint32_t k, int32_t s, uint64_t held)
     uint32_t id = lock_id(k), i;
     const param_desc_t *d;
     if (chain_busy()) {
-        ui_message("STOP TO EDIT");
+        ui_message("SONG PLAYS: STOP IT TO EDIT");
         return;
     }
     if (id == 0xFFu)
@@ -817,7 +817,7 @@ static void cp_seq(uint32_t paste)
 {
     if(paste) {
         if(!clip.n) ui_message("NOTHING COPIED");
-        else if(chain_busy()) ui_message("STOP TO EDIT");
+        else if(chain_busy()) ui_message("SONG PLAYS: STOP IT TO EDIT");
         else cp_put(TSEL,0,1);
     } else {
         uint32_t len=(uint32_t)clamp(TSEL->p[P_SLEN],1,NSTEP);
@@ -830,7 +830,7 @@ static int cp_paste_rec(void)
 {
     uint64_t held = clip.n ? cp_held() : 0u;
     if(!held) return 0;
-    if(chain_busy()) { ui_message("STOP TO EDIT"); return 1; }
+    if(chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return 1; }
     cp_keys_used(TSEL,held);
     cp_put(TSEL,(uint32_t)__builtin_ctzll(held),0);
     return 1;
@@ -1027,7 +1027,7 @@ static void comp_knob(uint32_t slot, int32_t steps)
     int32_t d = clamp(steps, -4, 4);
     uint8_t *cp = k == 1u ? &st->comp2 : &st->comp, *ap = k == 1u ? &st->carg2 : &st->carg;
     uint8_t *lp = &st->clen[k & 1u], *np = &st->cnm[k & 1u];
-    if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+    if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
     if (slot == 0u) {
         uint32_t na = (uint32_t)clamp((int32_t)a + d, 0, CA_N - 1);
         if (na == a) return;
@@ -1081,7 +1081,7 @@ static void shape_apply(uint32_t which)
     track_t *t = TSEL;
     uint32_t was, n, f;
     char m[24];
-    if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+    if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
     if (!shp_base.valid || shp_base.trk != song.sel || shp_base.sig != steps_sig(t) || shp_base.which != which) {   /* the
                                                          * base: as it is now (the other knob's result included) */
         undo_mark();
@@ -1111,7 +1111,7 @@ static void shape_knob(uint32_t slot, int32_t steps)
     else if (slot == 1u) { shp_r = (uint8_t)clamp((int32_t)shp_r + d, 0, 8); shape_apply(1); }
     else if (slot == 2u) {
         track_t *t = TSEL;
-        if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
         tl_take(t);
         tl_shift(t, tl_len(t), d > 0 ? 1u : tl_len(t) - 1u);
         ui_message(d > 0 ? "NUDGED RIGHT" : "NUDGED LEFT");
@@ -1207,7 +1207,7 @@ static void edit_param(uint32_t slot, int32_t steps)
     if (pg->graph == GR_CHANCE) {
         if (slot == 0u) cursor_set(ui.cursor + steps);
         else if (slot == 1u || slot == 2u) {
-            if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+            if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
             step_t *st = &TSEL->step[ui.cursor];
             if (slot == 1u)
                 step_set_chance(st, (uint32_t)clamp((int32_t)step_chance(st) + steps, 0, 100));
@@ -1243,7 +1243,7 @@ static void edit_param(uint32_t slot, int32_t steps)
         return;
     }
     if (pg->graph == GR_MOTION) {
-        if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
         if (slot == 0u) motion_set_enabled(TSEL, steps > 0);
         else if (slot == 3u) ui.act = steps > 0 ? 4u : 0u;
         return;
@@ -1260,7 +1260,7 @@ static void edit_param(uint32_t slot, int32_t steps)
             ui.song_tk = (uint8_t)clamp((int32_t)ui.song_tk + steps, 0, NTRK);
             return;
         }
-        if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
         if (!chain_config.count) { ui_message("NO ROW"); return; }
         if (ui.song_row >= chain_config.count) ui.song_row = chain_config.count - 1u;   /* (ARRANGE's ADD / END) */
         r = &chain_config.row[ui.song_row];
@@ -1286,7 +1286,7 @@ static void edit_param(uint32_t slot, int32_t steps)
             ui.song_row = (uint8_t)clamp((int32_t)ui.song_row + steps, 0, (int32_t)end);
             return;
         }
-        if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
         if (ui.song_row >= end) {                       /* END: KNOB 2 STOP / x2 .. x8 / LOOP (the song's times) */
             if (slot == 1u) {
                 SONG_END(&chain_config) = (uint8_t)song_end_step(SONG_END(&chain_config), steps > 0 ? 1 : -1);
@@ -1324,7 +1324,7 @@ static void edit_param(uint32_t slot, int32_t steps)
     }
     if (chain_busy() && (pg->scope == SC_STEP || pg->graph == GR_STEPS ||
         0)) {
-        ui_message("STOP TO EDIT"); return;
+        ui_message("SONG PLAYS: STOP IT TO EDIT"); return;
     }
     if (pg->scope == SC_STEP) {
         step_edit(slot, steps);
@@ -1436,7 +1436,7 @@ static void act_do(void)
     if (!c--)
         return;
     if (cur_page()->graph == GR_MOTION) {
-        if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
         confirm_open(CF_CLEAR_MOTION, song.sel);
         return;
     }
@@ -1445,7 +1445,7 @@ static void act_do(void)
         return;
     }
     if (cur_page()->graph == GR_PUNCH) {                /* (0.6.99) the punch-in lane cleared (a dialog) */
-        if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
         confirm_open(CF_CLEAR_PFX, song.sel);
         return;
     }
@@ -1454,7 +1454,7 @@ static void act_do(void)
         return;
     }
     if (cur_page()->graph == GR_TOOLS) {
-        if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
         if (!act_ready()) {                               /* nothing there to clear or delete */
             ui_message(c == 2u ? "NOTHING TO DELETE" : "NOTHING TO CLEAR");
             return;
@@ -1466,7 +1466,7 @@ static void act_do(void)
     if (cur_page()->graph == GR_SONG) {                 /* (0.8.5) SAVE > PROJECT's ARRANGE: OCT+ adds a row after the
                                                          * last (its section and bars), the new one selected; PLAY plays */
         chain_row_t *r;
-        if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
         if (chain_config.count >= CHAIN_ROWS) { ui_message("16 ROWS"); return; }
         r = &chain_config.row[chain_config.count];
         r->slot = chain_config.count ? chain_config.row[chain_config.count - 1u].slot : 0u;
@@ -1480,7 +1480,7 @@ static void act_do(void)
         return;
     }
     if (cur_page()->graph == GR_PATS) {
-        if (chain_busy()) { ui_message("STOP TO EDIT"); return; }
+        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
         if (pat_needs_confirm(TSEL))                      /* the user's steps: the dialog */
             confirm_open(CF_LOAD_PAT, song.sel);
         else {                                            /* empty, or a pattern loaded and untouched */
@@ -1521,7 +1521,7 @@ static void act_do(void)
             name_open(NK_PROJ_SAVE, k);
         break;
     case G_CLRSEQ:
-        if (chain_busy()) { ui_message("STOP TO EDIT"); break; }
+        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); break; }
         confirm_open(CF_CLEAR_SEQ, song.sel);
         break;
     default:                                              /* G_INITSND */
@@ -1577,7 +1577,7 @@ static void rec_clear_auto(uint32_t b)
     const char *name = b == B_FX ? "FX" : b == B_EDIT ? "EDIT" : b == B_ENV ? "ENV" : b == B_LFO ? "LFO" :
                        b == B_SCL ? "SCL" : b == B_ARP ? "ARP" : "MIX";
     if (chain_busy()) {
-        ui_message("STOP TO EDIT");
+        ui_message("SONG PLAYS: STOP IT TO EDIT");
         return;
     }
     memset(m, 0, sizeof m);
@@ -1972,8 +1972,8 @@ static void fx_dice(track_t *t)
     song.g[G_RDAMP] = (int16_t)dk_rr(GP[G_RDAMP].min, GP[G_RDAMP].max);
     song.g[G_DTIME] = (int16_t)dk_rr(GP[G_DTIME].min, GP[G_DTIME].max);
     song.g[G_DFDBK] = (int16_t)dk_rr(20, 70);
-    {   static const int8_t PIT[4] = {-12, -5, 7, 12};
-        song.g[G_DPIT] = (int16_t)(rng() % 5u ? 0 : clamp(PIT[rng() % 4u], GP[G_DPIT].min, GP[G_DPIT].max)); }
+    song.g[G_DPIT] = (int16_t)(rng() % 10u ? 0 : (rng() & 1u ? 12 : -12));   /* (V10.8: one in ten, octaves; was 1/5 with
+                                                         * fifths and fourths) */
 }
 static void part_dice(uint32_t kind)
 {
@@ -1983,7 +1983,7 @@ static void part_dice(uint32_t kind)
     if (again && ui.confirm == kind)
         return;
     if (chain_busy()) {
-        ui_message("STOP TO EDIT");
+        ui_message("SONG PLAYS: STOP IT TO EDIT");
         return;
     }
     if (ui.confirm != kind) {
@@ -2058,7 +2058,7 @@ static int page_tap(uint32_t b)
 {
     uint32_t f;
     if (b == B_EDIT && song.seq_mode && !ui.home && cur_page()->graph == GR_ROLL && lock_held()) {
-        if (chain_busy()) ui_message("STOP TO EDIT");
+        if (chain_busy()) ui_message("SONG PLAYS: STOP IT TO EDIT");
         else lock_clear(lock_held());
         return 1;
     }
@@ -2077,7 +2077,7 @@ static void seq_clr_step(void)
     if (ui.home || pg->fam != FAM_SEQ)
         return;
     if (chain_busy()) {
-        ui_message("STOP TO EDIT");
+        ui_message("SONG PLAYS: STOP IT TO EDIT");
         return;
     }
     if (pg->graph == GR_EVENTS) {
@@ -2559,7 +2559,7 @@ static void ui_input_frame(void)
                 if (ui.ly)
                     ui.ly_t0 |= 2u | 4u;                 /* (LY_OPEN LY_COMBO: the armed layer, no tap when let go) */
                 if (chain_busy())
-                    ui_message("STOP TO EDIT");
+                    ui_message("SONG PLAYS: STOP IT TO EDIT");
                 else
                     confirm_open(CF_CLEAR_ALL, song.sel);
             }
@@ -2625,7 +2625,7 @@ static void ui_input_frame(void)
             nav_go(SEC_SEQ, nav_cur(), 0);
         else if (cur_page()->graph == GR_SONG) {         /* (V10.4) ARRANGE, TIMELINE: OCT+ adds a row, OCT- deletes
                                                          * the one picked (DELETE ROW?, as TOOLS) */
-            if (chain_busy()) ui_message("STOP TO EDIT");
+            if (chain_busy()) ui_message("SONG PLAYS: STOP IT TO EDIT");
             else if (ui.song_row < chain_config.count) confirm_open(CF_DEL_ROW, ui.song_row);
             else ui_message("NOTHING TO DELETE");
         } else if (ui.act)
@@ -2650,7 +2650,7 @@ static void ui_input_frame(void)
         else if (!chain_busy())
             seq_entry(notes);                           /* armed and stopped: step recording at the cursor */
         else if (notes)
-            ui_message("STOP TO EDIT");
+            ui_message("SONG PLAYS: STOP IT TO EDIT");
     }
 
     /* #102: the knobs a layer took above are not read again here. The TIMER5 scan (10 kHz) counts detents while this

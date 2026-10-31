@@ -497,14 +497,14 @@ static void glo_tap(void)
     }
 }
 
-/* SEQ TOOLS: white key place p's action on the selected track (ui_tools.c), "STOP TO EDIT" while a song plays */
+/* SEQ TOOLS: white key place p's action on the selected track (ui_tools.c), "SONG PLAYS: STOP IT TO EDIT" while a song plays */
 static void tools_key(uint32_t p)
 {
     const char *m;
     if (!tl_cell(TSEL, p))
         return;
     if (chain_busy()) {
-        ui_message("STOP TO EDIT");
+        ui_message("SONG PLAYS: STOP IT TO EDIT");
         return;
     }
     if (!(m = tl_do(TSEL, p, ui.lane)))
@@ -517,7 +517,7 @@ static void tools_key(uint32_t p)
 static void undo_ui(void)
 {
     if (chain_busy())
-        ui_message("STOP TO EDIT");
+        ui_message("SONG PLAYS: STOP IT TO EDIT");
     else if (undo_do())
         ui_message("NOTHING TO UNDO");
     else {
@@ -532,7 +532,7 @@ static void rec_clear(void)
 {
     track_t *t = TSEL;
     if (chain_busy()) {
-        ui_message("STOP TO EDIT");
+        ui_message("SONG PLAYS: STOP IT TO EDIT");
         return;
     }
     if (seq_is_empty(t) && !motion_count(t)) {
@@ -658,7 +658,8 @@ static int track_sounding(const track_t *t)
 static void macro_dice(uint32_t mode)
 {
     static const uint8_t DST[] = {MD_CUT, MD_SHP, MD_E1, MD_E1 + 1, MD_E1 + 2, MD_E1 + 3, MD_E1 + 4, MD_E1 + 5, MD_E1 + 6,
-                                  MD_E1 + 7, MD_E1, MD_E1 + 1, MD_E1 + 2, MD_E1 + 3, MD_DLY, MD_REV, MD_PITCH, MD_DIST};   /* (the
+                                  MD_E1 + 7, MD_E1, MD_E1 + 1, MD_E1 + 2, MD_E1 + 3, MD_DLY, MD_REV, MD_DIST};   /* (V10.8: no PITCH, the
+                                                         * macros' drift wobbled whole tracks out of tune; the
                                                          * engine's, its first four twice as likely) */
     uint32_t k, j, n;
     for (k = 0; k < NTRK; k++) {
@@ -743,7 +744,7 @@ static void layer_key(uint32_t l, uint32_t k)
         TSEL->p[P_ROOT] = (int16_t)((k + 5u) % 12u);    /* the key's note name (F3 = F) */
     } else if (l == LAYER_MACRO && !key_black(k) && p < 2u) {   /* (JIANT 0.4) F3 DICE, G3 CLEAR */
         if (chain_busy()) {
-            ui_message("STOP TO EDIT");
+            ui_message("SONG PLAYS: STOP IT TO EDIT");
         } else {
             macro_dice(p ? 2u : 1u);
             ui_message(p ? "MACROS CLEARED" : "MACROS DICED");
@@ -752,7 +753,7 @@ static void layer_key(uint32_t l, uint32_t k)
         dx_mute_set(dx_mute ^ DXM_LANE(p));             /* DRUM: black keys 1..8 mute each sound (lit = sounding) */
     } else if (l == LAYER_EDIT && !key_black(k) && p <= LY_RECALL) {
         if (chain_busy())
-            ui_message("STOP TO EDIT");
+            ui_message("SONG PLAYS: STOP IT TO EDIT");
         else if (p == LY_RECALL && !edit_recallable())
             ui_message("NOTHING SAVED");
         else

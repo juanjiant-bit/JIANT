@@ -251,7 +251,7 @@ static __attribute__((noinline)) void live_frame(void)
             for (i = 0; i < NTRK; i++)
                 any |= ((tg >> i) & 1u) && !lv_neutral(&lv.want[i]);
             if (!any || chain_busy())
-                ui_message(any ? "STOP TO EDIT" : "NOTHING TO COMMIT");
+                ui_message(any ? "SONG PLAYS: STOP IT TO EDIT" : "NOTHING TO COMMIT");
             else
                 confirm_open(CF_LIVE_COMMIT, tg);
         }
