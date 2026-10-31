@@ -1223,7 +1223,11 @@ use **SEQ › AUTO LIST**: each record is a row (KNOB 1 the row, 2 the step, 3 t
 it between LOCK and AUTO, and SEQ + G5 deletes it. **+ ADD LOCK** adds a lock on the cursor's step.
 
 Automation events and locks share **64 records per section** (all tracks together); when they run out the screen says
-**AUTOMATION FULL**.
+**AUTOMATION FULL**. (V10.5) What you record is **thinned** so far more fits: at the stop (and while recording, once over
+56 are used) each knob's curve keeps only the records it needs, within 1/32 of the knob's range. A stretch where the
+value stays put becomes one record that **holds** it; a stretch that moves steadily becomes one **RAMP** record, which
+glides there step by step from the record before. A sweep across 64 steps ends up as 2 records. Jumps stay jumps; locks
+and the DJ FILTER are never thinned. SEQ › AUTO LIST shows a RAMP's kind as **RAMP**.
 
 ### Scale
 

@@ -1284,7 +1284,12 @@ parámetro, 4 el valor), OCT+ lo cambia entre LOCK y AUTO, y SEQ + G5 lo borra. 
 paso del cursor.
 
 Los eventos de automatización y los locks comparten **64 registros por sección** (todas las pistas juntas); cuando se
-acaban, la pantalla dice **AUTOMATION FULL**.
+acaban, la pantalla dice **AUTOMATION FULL**. (V10.5) Lo que grabás se **adelgaza** para que entre mucho más: al parar
+(y mientras grabás, cuando pasan de 56) la curva de cada perilla se queda solo con los registros que necesita, dentro de
+1/32 del rango de la perilla. Un tramo donde el valor se queda quieto pasa a ser un registro que lo **mantiene**; un
+tramo que se mueve parejo pasa a ser un registro **RAMP**, que llega deslizándose paso a paso desde el registro anterior.
+Un barrido de 64 pasos queda en 2 registros. Los saltos siguen siendo saltos; los locks y el DJ FILTER nunca se
+adelgazan. SEQ › AUTO LIST muestra el tipo de una rampa como **RAMP**.
 
 ### Escala
 
