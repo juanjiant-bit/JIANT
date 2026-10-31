@@ -152,6 +152,8 @@ static void layer_masks(void)
 static void layer_arm(uint32_t pressed, uint32_t now)
 {
     uint32_t l;
+    if (ui.ly == LAYER_REC && (pressed & ~ly_bit(LAYER_REC)))
+        lys.used = 1;                                   /* (V10.7) REC held and another button: no UNDO at its let go */
     if (ui.ly)
         return;
     if (fx_lock && (pressed & ly_bit(LAYER_FX))) {      /* (0.6.44) FX pressed again: the lock off, nothing else */
@@ -322,6 +324,7 @@ static void mom_poll(void)                              /* every pass */
     }
 }
 
+static void undo_ui(void);
 /* the armed layer lets go (its button up): FX's macros snap back (FX LATCH: they stay); one that
  * opened, or a combo: KNOB 1..4 quiet for a while (#39: the knob still turning is not the page's) */
 static void layer_let_go(uint32_t quiet)
@@ -342,6 +345,11 @@ static void layer_let_go(uint32_t quiet)
         ui_message("FX LOCKED: [FX] TO UNLOCK");
         quiet = 0;
         ui.force = 1;
+    }
+    if (ui.ly == LAYER_REC && (ui.ly_t0 & LY_OPEN) && !(ui.ly_t0 & (LY_DEAD | LY_COMBO)) && !lys.used &&
+        layer_allowed()) {                              /* (V10.7) REC held alone and let go: UNDO (again: REDO) */
+        undo_ui();
+        quiet = 0;
     }
     if (ui.ly == LAYER_MACRO && (ui.ly_t0 & LY_OPEN) && !(ui.ly_t0 & LY_DEAD)) {   /* (JIANT 0.4) MACRO opened, let go: */
         mac_latch = 1;                                  /* latched (its knobs at once: no quiet time) */

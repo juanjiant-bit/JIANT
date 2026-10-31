@@ -2592,11 +2592,12 @@ static const char *dice_seq(track_t *t)
     }
     gs.ba = gs.g->bass[rng() % 3u];
     if (gmut.lead == LD_NONE) gmut.lead = LD_HOOK;      /* (asked for: a lead) */
-    lead0 = gmut.lead; arp0 = gmut.arp[0]; arp1 = gmut.arp[1]; pads0 = gmut.pads; drum0 = gmut.drum;
     if (r == RL_DRUM && (gmut.drum >= DM_NONE || gmut.drum == DM_SPARSE))   /* (V10.7) a genre without drums
                                                          * (NEO CLASSIC) or AMBIENT's three hits: the kit's dice seemed
-                                                         * to do nothing; a map that plays */
+                                                         * to do nothing; a map that plays (before drum0:
+                                                         * the retries' other maps are its neighbours) */
         gmut.drum = (uint8_t)(rng() % DM_SPARSE);
+    lead0 = gmut.lead; arp0 = gmut.arp[0]; arp1 = gmut.arp[1]; pads0 = gmut.pads; drum0 = gmut.drum;
     for (i = 0; i < GP_N; i++) if (!gs.amt[i]) gs.amt[i] = 60;
     gs.role[k] = (uint8_t)r; gs.act[r] = 1; gs.trk_of[r] = (uint8_t)k;
     len = (uint32_t)t->p[P_SLEN];
@@ -2606,12 +2607,18 @@ static const char *dice_seq(track_t *t)
     latch_drop_req |= (uint8_t)(1u << k);
     gs.vary = 1;
     for (cnt = 0; cnt < 12u; cnt++) {                   /* (eleven more tries at most) */
-        uint32_t j, same = 0;
+        uint32_t j, same = 0, hits = 0;
         for (i = 0; i < NSTEP; i++) step_clear(&t->step[i]);
         gen_role(t, k, len);
         h = dsq_shape(t, now, len);
         for (i = 0; i < len && plen == len; i++) same += now[i] == was[i];
+        for (i = 0; i < len; i++) hits += t->step[i].time == ST_NOTE && t->step[i].hit;
         for (j = 0; j < 4u && dsq_last[k][j] != h; j++) {}
+        if (r == RL_DRUM && hits < len / 8u + 2u && cnt < 11u) {   /* (V10.7) a kit's dice with a beat in it: AMBIENT's
+                                                         * energy left three hits; another map */
+            gmut.drum = (uint8_t)(rng() % DM_SPARSE);
+            continue;
+        }
         if (j == 4u && same * 10u < len * 9u && (cnt == 11u || !dsq_near(k, now, len))) break;
         gp.seed = (uint16_t)(rng() % 10000u);
         gs.ba = gs.g->bass[rng() % 3u];

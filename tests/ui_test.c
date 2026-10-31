@@ -724,6 +724,13 @@ static int test_mutate(void)
         }
         ok &= eu[0].l[DV_KICK].h == 6u && n == 6u && c == 0u;
         bad += check("V10.7 a LANE picked (nothing written): its HITS write that lane alone, the others as they were", ok);
+        for (c = 1, ok = 1; c <= 9u; c++) {            /* (V10.7) HITS is what sounds: VARY moves, adds none */
+            eu_put(EK_HITS, (int32_t)c); frame();
+            for (i = n = 0; i < 16u; i++) n += (step_lanes(&d->step[i]) >> DV_KICK) & 1u;
+            ok &= n == c;
+        }
+        eu_put(EK_HITS, 6); frame();
+        bad += check("V10.7 HITS 1..9 on a lane: that many hits exactly (VARY added a pickup: 3 sounded 4)", ok);
     }
     turn(EN_K4, 3); frame();                             /* LANE: CH */
     ok = eu[0].lane == 1u + DV_HATC;
@@ -750,6 +757,17 @@ static int test_mutate(void)
             c += (SCALE_MASK[2] >> (m->step[i].note[0] % 12u)) & 1u;
         }
     ok = n >= 4u && n <= 8u && c == n && eu[1].src == 0u && m->p[P_SLEN] == 16;
+    {
+        uint32_t h, ok2 = 1;
+        for (h = 1; h <= 9u; h++) {
+            uint32_t q;
+            eu_put(EK_HITS, (int32_t)h); frame();
+            for (i = q = 0; i < 16u; i++) q += m->step[i].time == ST_NOTE && m->step[i].n;
+            ok2 &= q == h;
+        }
+        eu_put(EK_HITS, 6); frame();
+        bad += check("V10.7 HITS 1..9 on a melodic track: that many notes exactly", ok2);
+    }
     bad += check("V10.6 EUCLID on a melodic track: about HITS notes, all in the track's SCL (C MIN), SCL the source", ok);
     m->p[P_SCALE] = 0;                                   /* no SCL: the key from the other tracks' notes */
     for (i = 0; i < 16u; i++) {
@@ -1465,6 +1483,7 @@ static int test_rec(void)
         press(B_REC);
         bad += check("REC again disarms (the transport runs on)", song.rec == 0u && transport_req == 0u);
         frames(400);
+        undo_ok = 0;                                   /* (V10.7: REC held alone UNDOes; nothing to undo here) */
         hold(B_REC);                                   /* 1.1.5: held, the REC layer (ui_layer.c); the arming stays */
         bad += check("REC held: its layer, closed when let go; no dialog, the arming as it was",
                      ui.confirm == CF_NONE && song.rec == 0u && !ui.layer && !transport_req);
@@ -4180,9 +4199,29 @@ static int test_quick_layers(void)
             e2 = TSEL->eng_req;
             ok = e2 != e1 && msg_is(trk_engp(TSEL)->name);
             preset_pos(&tot);
-            turn(EN_PRESET, -1); frame(); btn_up(B_EDIT); frames(4);
+            turn(EN_PRESET, -1); frame(); btn_up(B_EDIT); frames(64);
             ok &= TSEL->eng_req == e1 && !ui.layer;
             bad += check("V10.7 EDIT held + PRESETS: the next engine's first sound, its name said; back: the one before", ok);
+        }
+        {   /* (V10.7) REC held alone and let go: UNDO; again: REDO; REC held + a knob (the REC layer used): nothing */
+#define ON0 (TSEL->step[0].time == ST_NOTE && TSEL->step[0].note[0] == 40u)
+            go_home(); frames(64);
+            my_steps(TSEL);
+            undo_mark();
+            step_clear(&TSEL->step[0]);
+            ok = !ON0;
+            btn_down(B_REC); frames(600); btn_up(B_REC); frames(64);
+            ok &= ON0 && msg_is("UNDONE (AGAIN: REDO)") && !song.rec;
+            btn_down(B_REC); frames(600); btn_up(B_REC); frames(64);
+            ok &= !ON0;
+            btn_down(B_REC); frames(600); turn(EN_K2, 1); frame(); btn_up(B_REC); frames(64);
+            ok &= !ON0;
+            press(B_REC); frames(64);
+            ok &= !ON0;                                 /* (a tap: arms, as always) */
+            if (song.rec) press(B_REC);
+            frames(64);
+#undef ON0
+            bad += check("V10.7 REC held alone, let go: UNDO; held again: REDO; with a knob or tapped: no UNDO", ok);
         }
         {   /* (0.6.67) a button held + SELECT: ENV (no dice of its own) its pages, the turn's last detents after letting
              * go swallowed; SEQ, LFO, FX their dice under KEEP? (CANCEL: what was; OK: kept); GLO + SELECT the tempo */
@@ -8273,6 +8312,7 @@ static int test_rec_layer(void)
         frame();
         memcpy(before, trk[1].step, sizeof before);
         n = ui.page;
+        undo_ok = 0;                                    /* (V10.7: REC held alone UNDOes; nothing to undo here) */
         rec_down(); frames(512);
         ok &= ui.layer == LAYER_REC && ui.ly == LAYER_REC && !ui.confirm && song.rec == 0u && !transport_req &&
               !str_eq(ui.msg, "HOLD: CLEAR");

@@ -55,7 +55,8 @@ static eu_t *eu_of(uint32_t k)
     return e;
 }
 
-/* VARY on hits on[] of n steps (v 0..100); len[] (0: none) the steps each note holds */
+/* VARY on hits on[] of n steps (v 0..100): hits moved a step, never added or dropped (V10.7: HITS is what
+ * sounds); len[] (0: none) the steps each note holds */
 static void eu_vary(uint8_t *on, uint8_t *len, uint32_t n, uint32_t v)
 {
     uint32_t i, g;
@@ -64,9 +65,8 @@ static void eu_vary(uint8_t *on, uint8_t *len, uint32_t n, uint32_t v)
         if (eu_ch(v * (i >= n / 2u ? 7u : 4u) / 10u)) {   /* a step on (to the offbeat mostly) or back */
             uint32_t j = (i & 1u) ? (eu_ch(50) ? i + 1u : i - 1u) : (eu_ch(60) ? i + 1u : i - 1u);
             if (j > 0u && j < n && !on[j]) { on[i] = 0; on[j] = 2; }
-        } else if ((i & 3u) && eu_ch(v * 18u / 100u)) on[i] = 0;
+        }
     }
-    for (i = 3; i < n; i += 4u) if (!on[i] && eu_ch(v * 22u / 100u)) on[i] = 1;   /* a pickup */
     for (i = 0; len && i < n; i++) {
         len[i] = 1;
         if (!on[i]) continue;
