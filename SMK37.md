@@ -57,6 +57,15 @@ as before.
 | B | T5 level | T6 level | reverb return (full at power-on) | delay return (DLY MIX) |
 | C | selected track's cutoff | its DIST | its REV send | its DLY send |
 
+**Recording from stop (free take).** Off the SEQ pages, with the sequencer stopped, REC arms and waits for your first
+note on the selected track. On an **empty project** that starts a free take: play freely (no tempo, no click; the top
+bar counts the seconds), then press **REC on the "1" after your last bar**. The time from your first note to that
+press becomes the loop: 1, 2 or 4 bars at the tempo nearest the one set (within 3 % the set tempo is kept). Your notes
+go in quantised to 1/16 with their lengths and levels, every track takes the loop's length, the tempo is set and the
+loop plays at once. PLAY during a take drops it, a take closes by itself after 24 s, and REC before the first note
+disarms. On a project with notes (and MENU > CLICK > COUNT-IN OFF) the first note starts the loop at the tempo set and
+is recorded as step 1. On a SEQ page REC keeps JIANT's step recording. After SLOOP's free take.
+
 **MENU > MIDI > KEYBOARD:** KEY VELOCITY (DYNAMIC, SOFT, HARD, or FIXED 64 / 100 / 127) for the keys and the pads,
 BEND RANGE, and TRS MIDI OUT (ON by default). **MENU > MIDI > CHANNELS** (and CHANNEL2): the MIDI channel each track
 sends on, 1-16 (T1 = 1 .. T6 = 6 by default; MIDI IN is not affected). CHANNEL2's **T5 T6** = MIDI ONLY makes T5 and T6

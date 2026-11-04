@@ -146,3 +146,11 @@ trs_midi_out:               # docs/06 "TRS jack: MIDI out" (Snoop37 2.6.4 patter
 modes: {}                   # JIANT has one UI (skins are looks, not modes)
 
 open_questions:
+
+rec_free_take:              # owner's request 2026-11-04, after SLOOP's free take (isod89/sloop-fm1, GPL-3.0)
+  when: "REC from stop, off the SEQ pages, internal clock; the first note on the selected track starts it"
+  empty_project: "a free take: REC on the next downbeat closes the loop, its length sets the tempo"   # owner: empty project only
+  with_notes: "the first note starts the transport at the tempo set and is step 1 (COUNT-IN OFF; with a COUNT-IN, REC counts in as before)"
+  length: "1, 2 or 4 bars, the tempo nearest the one set; within 3 % the set tempo is kept"         # owner
+  other_tracks: "all tracks take the loop's length (1/16 steps)"                                     # owner
+  drop: "PLAY drops a take; it closes by itself after 24 s; REC while armed with no note disarms"

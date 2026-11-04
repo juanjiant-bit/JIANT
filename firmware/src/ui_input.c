@@ -16,6 +16,7 @@ static uint8_t smk_fbank, smk_fbank_new;           /* FADER BANK: A, B, C (smk_p
 static uint64_t smk_steps_held, smk_step_rm;       /* the step pads held; the filled steps tapped, cleared when let go
                                                     * unless held for a lock (smk_pads.c, lock_held, lock_turn) */
 static void smk_pad_leds(uint32_t r, uint32_t g, uint32_t b);   /* (smk_pads.c) */
+#include "smk_take_ui.c"                           /* REC from stop: the free take (seq.c smk_take.c) */
 static void led_pos_init(void) {}
 static void led_put(uint8_t *nl, uint32_t id, int on)
 {
@@ -594,6 +595,13 @@ static int rec_tap(void)                                /* 1: the arming changed
         ui_message("[SEQ] TO RECORD");
         return 0;
     }
+#if BOARD_SMK37
+    {
+        int r = smk_ft_rec_tap(bit);                /* stopped, off SEQ: the free take / the first note starts */
+        if (r >= 0)
+            return r;
+    }
+#endif
     song.rec ^= bit;
     ui.force = 1;                                     /* also refresh the status on MENU / ABOUT */
     if ((song.rec & bit) && !song.playing && !seq_counting() && roll_on()) {
@@ -2137,6 +2145,7 @@ static void ui_input_frame(void)
         ui_say("FADER BANK ", FB[smk_fbank]);
     }
     smk_steps_frame();                                  /* the step pads (smk_pads.c) */
+    smk_ft_poll();                                      /* the free take's top bar (smk_take_ui.c) */
     smk_cfg_poll();                                     /* MENU > MIDI > KEYBOARD to the keys, the wheel, the jack */
 #endif
     fm6_poll();                                         /* FM6: PTCH turned -> its patch */
@@ -2522,6 +2531,10 @@ static void ui_input_frame(void)
         case B_PLAY:
             if (layer_play())                           /* (GLO held: RESTART) */
                 break;
+#if BOARD_SMK37
+            if (smk_ft_play())                          /* (a free take: PLAY drops it) */
+                break;
+#endif
             if (song.playing || chain_busy() || seq_counting())   /* (a count-in: PLAY stops it) */
                 transport_req = 2;
             else if ((!ui.home && cur_page()->graph == GR_SONG) || live.mode)   /* (the song layer's SONG mode) */

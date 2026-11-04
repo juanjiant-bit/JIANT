@@ -822,9 +822,16 @@ static __attribute__((noinline)) void cin_keep(track_t *t, uint32_t note, uint32
     cin_up[i] &= (uint8_t)~(1u << k);
 }
 
+#if BOARD_SMK37
+static void step_clear(step_t *st);                 /* (ui.c) */
+#include "smk_take.c"                               /* SMK-37: REC from stop, the free take (after SLOOP's) */
+#endif
 static uint8_t in_norec;                            /* (0.6.84) input_on plays without recording (key_next) */
 static void input_on(track_t *t, uint32_t note, uint32_t vel)
 {
+#if BOARD_SMK37
+    int ft = ft_note_on(t, note, vel);              /* (the take has it: not recorded here) */
+#endif
     last_note = (uint8_t)note;
     if (cin_left)
         cin_keep(t, note, vel);
@@ -832,6 +839,11 @@ static void input_on(track_t *t, uint32_t note, uint32_t vel)
         t->trn = (int8_t)clamp((int32_t)note - 60, -36, 36);
         return;
     }
+#if BOARD_SMK37
+    if (ft)
+        ;
+    else
+#endif
     if (rec_on(t) && !t->p[P_AMODE] && !in_norec)  /* (ARP on: arp_tick records its notes; 0.6.84: a key's chord was
                                                      * recorded whole when the key went down) */
         rec_note(t, note, vel);
@@ -845,6 +857,9 @@ static int midi_note_held(const track_t *t, uint32_t note);
 static int midi_local_held(const track_t *t, uint32_t note);
 static void input_off(track_t *t, uint32_t note)
 {
+#if BOARD_SMK37
+    ft_note_off(t, note);                           /* (a free take: the note's length) */
+#endif
     if (midi_note_held(t, note))
         return;
     if (cin_left) {                                 /* a kept note let go before step 1: recorded, then let go */
@@ -1282,6 +1297,7 @@ static void keyboard_block(void)
     uint32_t lay, fx;
     keys_strum(CTL);                              /* (0.6.81) the chords' strums */
 #if BOARD_SMK37
+    ft_block();                                     /* (the free take: its time, REC, PLAY) */
     ext_keys_block();
     smk_drum_pads_block();
     smk_play_block();
