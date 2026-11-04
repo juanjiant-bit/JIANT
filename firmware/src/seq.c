@@ -74,6 +74,13 @@ static int drum_track(const track_t *t) { return ENGINES[eng_idx(t->eng_req)] ==
  * STOP, a panic or a change of setting */
 enum { MO_KEYS, MO_CLOCK, MO_ALL, MO_OFF };
 static volatile uint8_t mo_lvl;                    /* the setting (ui.c sets it every frame) */
+#if BOARD_SMK37
+/* SMK-37 MIDI ONLY (MENU > MIDI > CHANNEL2): such a track sends what it plays as ALL does, whatever MIDI OUT says but OFF */
+static uint32_t mo_lvl_of(uint32_t ti) { return ((smk_midi_only >> (ti % NTRK)) & 1u) && mo_lvl != MO_OFF ? MO_ALL : mo_lvl; }
+#define MO_LVL(t) mo_lvl_of(trk_index(t))
+#else
+#define MO_LVL(t) mo_lvl
+#endif
 static uint8_t mo_last;                            /* .. as the ISR last saw it */
 static uint8_t mo_out[NTRK][128];                  /* a played note's note sent on, + 1 (0: none) */
 static uint32_t mo_pulse_acc;                      /* (samples towards the next clock) */
@@ -90,7 +97,7 @@ static int mo_plays(const track_t *t, uint32_t note)   /* trk_note_on would soun
  * on it (pfx.c pfx_pit, pfx_rpit: drawn by trk_note_on) */
 static void seq_note_on(track_t *t, uint32_t note, uint32_t vel)
 {
-    uint32_t i = trk_index(t) % NTRK, send = mo_lvl == MO_ALL && note < 128u && mo_plays(t, note) && !pfx_holds(t);
+    uint32_t i = trk_index(t) % NTRK, send = MO_LVL(t) == MO_ALL && note < 128u && mo_plays(t, note) && !pfx_holds(t);
     trk_note_on(t, note, vel);
     if (send) {
         uint32_t x = (uint32_t)clamp((int32_t)note + (t->pfx_pit + t->pfx_rpit) / 16, 0, 127);
@@ -123,7 +130,7 @@ static __attribute__((noinline)) void mo_flush_of(uint32_t mask)   /* the notes 
 #define mo_flush() mo_flush_of(0xFFu)
 static void mo_key(const track_t *t, uint32_t pkt)   /* a key's note: not with OFF; with ALL, an arp sends its own */
 {
-    if (mo_lvl != MO_OFF && !(mo_lvl == MO_ALL && t->p[P_AMODE]))
+    if (MO_LVL(t) != MO_OFF && !(MO_LVL(t) == MO_ALL && t->p[P_AMODE]))
         midi_out_event(pkt);
 }
 static int mo_clock_on(void) { return (mo_lvl == MO_CLOCK || mo_lvl == MO_ALL) && !song.g[G_CLOCK]; }
@@ -1240,7 +1247,15 @@ static void smk_play(uint32_t ti, uint32_t note, uint32_t vel)   /* (the UI) */
 }
 static void smk_play_block(void)
 {
-    uint32_t i;
+    static uint8_t mo_was;
+    uint32_t i, ch = (uint32_t)(smk_midi_only ^ mo_was) & 0x3Fu;
+    for (i = 0; ch && i < NTRK; i++)                /* MIDI ONLY switched: what those tracks sent ends */
+        if ((ch >> i) & 1u) {
+            mo_flush_of(1u << i);
+            if (mo_lvl != MO_OFF)
+                midi_out_event(0x0Bu | (0xB0u | smk_mch[i]) << 8 | 123u << 16);
+        }
+    mo_was = smk_midi_only;
     for (i = 0; i < NTRK; i++) {                    /* MENU > MIDI > CHANNELS changed: the old channel's notes end */
         uint32_t r = smk_mch_req[i], want = r && r <= 16u ? r - 1u : i;
         if (want == smk_mch[i])
@@ -1924,7 +1939,7 @@ static void chord_glide(track_t *t, const uint8_t *nn, const uint8_t *vv, uint32
             v->pitch16 = ((int32_t)n[i] + tr) * 16 + t->pfx_rpit;
             d = v->pitch16 - v->pitch_cur;
             v->gstep = glide_q8(d, ticks);
-            if (mo_lvl == MO_ALL && mo_plays(t, n[i])) {
+            if (MO_LVL(t) == MO_ALL && mo_plays(t, n[i])) {
                 mo_out[ti][n[i]] = (uint8_t)(n[i] + 1u);
                 mo_send(0x90u | trk_midi_ch(ti), n[i], nv[i] ? nv[i] : 1u);
             }

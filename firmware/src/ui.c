@@ -138,6 +138,7 @@ static void prefs_update(void)
 #define smk_cfg (favorites.factory[15][13])
 #define smk_bendb (favorites.factory[15][14])
 #define SMK_CFG_TRS_OFF 8u
+#define SMK_CFG_T56_MIDI 16u                           /* bit 4: T5 T6 MIDI ONLY (hal/smk_input.h smk_midi_only) */
 /* MENU > MIDI > CHANNELS: track t's MIDI OUT channel + 1 (0 = its own, T1 = 1 .. T6 = 6, older settings too), in engine
  * 14's favourite bytes 24..29: its presets 192..207, which ANIMAL (24 presets) never has (favorites.c refuses them) */
 #define smk_mch_set(t) (favorites.factory[14][24u + (t) % 6u])

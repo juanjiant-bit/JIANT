@@ -168,6 +168,7 @@ static void smk_cfg_poll(void)
     smk_kvel_mode = (uint8_t)(kv <= 5u ? kv : 0u);
     smk_bend_semis = (uint8_t)(smk_bendb && smk_bendb <= 12u ? smk_bendb : 2u);
     smk_trs_set(!(smk_cfg & SMK_CFG_TRS_OFF));
+    smk_midi_only = (uint8_t)(smk_cfg & SMK_CFG_T56_MIDI ? 0x30u : 0u);   /* T5 T6 MIDI ONLY */
     {
         uint32_t t;
         for (t = 0; t < NTRK; t++)                      /* MENU > MIDI > CHANNELS (seq.c smk_play_block takes them) */

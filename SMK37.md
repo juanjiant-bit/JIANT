@@ -59,7 +59,9 @@ as before.
 
 **MENU > MIDI > KEYBOARD:** KEY VELOCITY (DYNAMIC, SOFT, HARD, or FIXED 64 / 100 / 127) for the keys and the pads,
 BEND RANGE, and TRS MIDI OUT (ON by default). **MENU > MIDI > CHANNELS** (and CHANNEL2): the MIDI channel each track
-sends on, 1-16 (T1 = 1 .. T6 = 6 by default; MIDI IN is not affected).
+sends on, 1-16 (T1 = 1 .. T6 = 6 by default; MIDI IN is not affected). CHANNEL2's **T5 T6** = MIDI ONLY makes T5 and T6
+MIDI tracks: no sound of their own, everything they play (keys, sequencer, arp, GEN, MUTATE, punch-ins) sent on
+their channels whatever MIDI OUT says (but OFF); a muted track sends nothing. It sets TRACKS to 6.
 
 ## MIDI
 

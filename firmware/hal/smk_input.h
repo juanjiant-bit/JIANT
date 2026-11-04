@@ -688,6 +688,8 @@ static int32_t smk_pad_take(uint32_t q)
 /* (the UI's settings for the audio side, ui_input.c smk_cfg_poll: MENU > MIDI > KEYBOARD) */
 static volatile uint8_t smk_kvel_mode;   /* KEY VELOCITY: 0 DYNAMIC, 1 SOFT, 2 HARD, 3 / 4 / 5 FIXED 64 / 100 / 127 */
 static volatile uint8_t smk_bend_semis = 2u;   /* BEND RANGE in semitones */
+static volatile uint8_t smk_midi_only;         /* bit t: track t plays MIDI OUT only (MENU > MIDI > CHANNEL2 T5 T6: 0x30;
+                                                * voice.c trk_note_on, fx.c mix_part, seq.c MO_LVL) */
 /* a key's or a pad's velocity 1..127 through KEY VELOCITY: SOFT reaches loud with a lighter touch, HARD needs more */
 static uint32_t smk_vel(uint32_t v)
 {

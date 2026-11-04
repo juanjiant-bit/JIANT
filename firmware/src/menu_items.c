@@ -20,6 +20,7 @@ enum { MI_COLOR, MI_SKIN, MI_SCOPE, MI_STYLE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCR
 #if BOARD_SMK37
        MI_KVEL, MI_BEND, MI_TRS,                        /* SMK-37: MENU > MIDI > KEYBOARD (ui.c smk_cfg, smk_bendb) */
        MI_CH1, MI_CH2, MI_CH3, MI_CH4, MI_CH5, MI_CH6,  /* .. > CHANNELS (ui.c smk_mch_set) */
+       MI_T56,                                          /* .. > CHANNEL2: T5 T6 SYNTH / MIDI ONLY (ui.c smk_cfg) */
 #endif
        MI_PANEL, MI_ABOUT, MI_COUNT };   /* (1.1: the metronome's rows; 1.2: RESTORE LAST, SCALE LEDS; 0.9.12: MIDI
                       * OUT, LEARN, LEARN CLEAR; CPU, CPU CLOCK, cpu_safe.c; 0.9.18: INIT SYSTEM gone, SAVE > TOOLS > NEW
@@ -36,6 +37,7 @@ static const char *const MI_NAME[MI_COUNT] = {"COLOR", "SKIN", "SCOPE", "STYLE",
 #if BOARD_SMK37
                                               "KEY VELOCITY", "BEND RANGE", "TRS MIDI OUT",
                                               "T1 CHANNEL", "T2 CHANNEL", "T3 CHANNEL", "T4 CHANNEL", "T5 CHANNEL", "T6 CHANNEL",
+                                              "T5 T6 SOUND",
 #endif
                                               "CALIBRATION", "ABOUT"};
 /* (0.9.18) the MENU as the rest of the system (rule 1..6): pages of four knobs, KNOB n the page's setting n, SELECT walks
@@ -61,7 +63,7 @@ static const menu_page_t MPAGE[MP_COUNT] = {   /* (a page opens on its first set
 #if BOARD_SMK37
     {"KEYBOARD", MTAB_MIDI, {MI_KVEL, MI_BEND, MI_TRS, MI_NONE}},   /* SMK-37: the keys' and pads' touch, the wheel, the jack */
     {"CHANNELS", MTAB_MIDI, {MI_CH1, MI_CH2, MI_CH3, MI_CH4}},      /* .. each track's MIDI OUT channel */
-    {"CHANNEL2", MTAB_MIDI, {MI_CH5, MI_CH6, MI_NONE, MI_NONE}},
+    {"CHANNEL2", MTAB_MIDI, {MI_CH5, MI_CH6, MI_T56, MI_NONE}},
 #endif
     {"USB", MTAB_USB, {MI_SERIAL, MI_USB, MI_NONE, MI_NONE}},
     {"CONTROLS", MTAB_SYSTEM, {MI_HOLD, MI_ACCEL, MI_LATCH, MI_PANEL}},
@@ -154,6 +156,7 @@ static const char *const MIDIOUT_N[4] = {"KEYS", "CLOCK", "ALL", "OFF"};
 static const char *const KVEL_N[6] = {"DYNAMIC", "SOFT", "HARD", "FIXED 64", "FIXED 100", "FIXED 127"};
 static const char *const BEND_N[7] = {"1", "2", "3", "4", "5", "7", "12"};
 static const uint8_t BEND_V[7] = {1, 2, 3, 4, 5, 7, 12};
+static const char *const T56_N[2] = {"SYNTH", "MIDI ONLY"};
 static const char *const MCH_N[16] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"};
 #define MI_IS_CH(row) ((row) >= MI_CH1 && (row) <= MI_CH6)
 static uint32_t bend_pos(void)                         /* BEND RANGE's place in the menu (0 stored = 2) */
@@ -238,6 +241,7 @@ static uint32_t menu_get(uint32_t row)
         uint32_t t = row - MI_CH1, c = smk_mch_set(t);
         return c && c <= 16u ? c - 1u : t;              /* (0..15: channel 1..16) */
     }
+    case MI_T56: return (smk_cfg & SMK_CFG_T56_MIDI) != 0u;
 #endif
     case MI_LEDS:
         while (i + 1u < LEDS_COUNT && LEDS_MENU[i] != settings_leds)
@@ -273,6 +277,7 @@ static const char *menu_vname(uint32_t row, uint32_t v)
     case MI_BEND: return BEND_N[v % NELEM(BEND_N)];
     case MI_TRS: return SCOPEOPT_N[v & 1u];             /* OFF ON */
     case MI_CH1: case MI_CH2: case MI_CH3: case MI_CH4: case MI_CH5: case MI_CH6: return MCH_N[v & 15u];
+    case MI_T56: return T56_N[v & 1u];
 #endif
     }
     return "";
@@ -325,6 +330,13 @@ static void menu_put(uint32_t row, uint32_t v)
     case MI_TRS: smk_cfg = (uint8_t)(v ? smk_cfg & ~SMK_CFG_TRS_OFF : smk_cfg | SMK_CFG_TRS_OFF); break;
     case MI_CH1: case MI_CH2: case MI_CH3: case MI_CH4: case MI_CH5: case MI_CH6:   /* (the track's own: stored 0) */
         smk_mch_set(row - MI_CH1) = (uint8_t)((v & 15u) == row - MI_CH1 ? 0u : (v & 15u) + 1u);
+        break;
+    case MI_T56:                                   /* MIDI ONLY: T5 and T6 awake too (TRACKS 6: voice.c trk_live) */
+        smk_cfg = (uint8_t)(v ? smk_cfg | SMK_CFG_T56_MIDI : smk_cfg & ~SMK_CFG_T56_MIDI);
+        if (v && !(ui_rec_prefs & (PREF_SIX >> 8))) {
+            ui_rec_prefs = (uint8_t)(ui_rec_prefs | (PREF_SIX >> 8));
+            ui_message("TRACKS SET TO 6");
+        }
         break;
 #endif                   /* (0.9.12: armed, or off; not saved) */   /* (seq.c reads it every frame: ui_input) */         /* (at once: voice.c sys_load) */
     }

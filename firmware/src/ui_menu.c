@@ -343,6 +343,7 @@ static const char *menu_short(uint32_t row)          /* a card's label: a whole 
 #if BOARD_SMK37
         {MI_KVEL, "VELOCITY"}, {MI_BEND, "BEND"}, {MI_TRS, "TRS OUT"},
         {MI_CH1, "T1"}, {MI_CH2, "T2"}, {MI_CH3, "T3"}, {MI_CH4, "T4"}, {MI_CH5, "T5"}, {MI_CH6, "T6"},
+        {MI_T56, "T5 T6"},
 #endif
         };                                              /* (no two alike on a
                                                          * page: tests/ui_test.c) */
@@ -411,6 +412,8 @@ static const struct { uint8_t row, v; const char *s; } MI_HELP[] = {
     {MI_CH4, 255, "THE MIDI CHANNEL T4 SENDS ON"},
     {MI_CH5, 255, "THE MIDI CHANNEL T5 SENDS ON"},
     {MI_CH6, 255, "THE MIDI CHANNEL T6 SENDS ON"},
+    {MI_T56, 0, "T5 AND T6 PLAY THEIR OWN SOUNDS"},
+    {MI_T56, 1, "T5 T6 SILENT, SENT AS MIDI ONLY"},
 #endif
 };
 static const char *menu_help(uint32_t row)
