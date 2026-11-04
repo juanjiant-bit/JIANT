@@ -59,6 +59,7 @@ pads:
     bottom_row: [BD, SD, CP, CH, OH, TM, RS, CB]    # the same sounds, side B
     lit: "the sound's colour dim, bright on a hit"
     rec: true               # only with T1 itself armed (REC), hits overdub into T1's pattern, quantized, with velocity (owner, 2026-11-04)
+    rec_side: "a recorded hit is a lane hit: a bottom-row (side B) hit plays back as side A (owner OK, 2026-11-04)"
   picker:
     enabled: false
   velocity: true
