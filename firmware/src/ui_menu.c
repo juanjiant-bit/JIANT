@@ -342,6 +342,7 @@ static const char *menu_short(uint32_t row)          /* a card's label: a whole 
         {MI_RESTORE, "RESTORE"}, {MI_CLOCK, "CPU MHZ"}, {MI_PANEL, "CALIB"}, {MI_LCLEAR, "CLEAR"},
 #if BOARD_SMK37
         {MI_KVEL, "VELOCITY"}, {MI_BEND, "BEND"}, {MI_TRS, "TRS OUT"},
+        {MI_CH1, "T1"}, {MI_CH2, "T2"}, {MI_CH3, "T3"}, {MI_CH4, "T4"}, {MI_CH5, "T5"}, {MI_CH6, "T6"},
 #endif
         };                                              /* (no two alike on a
                                                          * page: tests/ui_test.c) */
@@ -404,6 +405,12 @@ static const struct { uint8_t row, v; const char *s; } MI_HELP[] = {
     {MI_KVEL, 255, "EVERY KEY AND PAD AT ONE LEVEL"},
     {MI_BEND, 255, "THE PITCH WHEEL, IN SEMITONES"},
     {MI_TRS, 255, "MIDI OUT ON THE 3.5 MM JACK"},
+    {MI_CH1, 255, "THE MIDI CHANNEL T1 SENDS ON"},
+    {MI_CH2, 255, "THE MIDI CHANNEL T2 SENDS ON"},
+    {MI_CH3, 255, "THE MIDI CHANNEL T3 SENDS ON"},
+    {MI_CH4, 255, "THE MIDI CHANNEL T4 SENDS ON"},
+    {MI_CH5, 255, "THE MIDI CHANNEL T5 SENDS ON"},
+    {MI_CH6, 255, "THE MIDI CHANNEL T6 SENDS ON"},
 #endif
 };
 static const char *menu_help(uint32_t row)
@@ -493,6 +500,11 @@ static void draw_menu(void)
                           load_diag.shed * 2671u : 0u);   /* (0.6.19) ABOUT's AUDIO LOAD: live (NOW in ~3 % steps) */
 #if BOARD_SMK37
     sig += smk_cfg * 5381u + smk_bendb * 769u;          /* (MENU > MIDI > KEYBOARD) */
+    {
+        uint32_t t;
+        for (t = 0; t < 6u; t++)
+            sig += smk_mch_set(t) * (2654435761u >> t); /* (.. > CHANNELS) */
+    }
 #endif
     draw_head();                                      /* (0.8.5: the pages' header, "MENU . SCREEN") */
     if (!ui.force && sig == ui.menu_sig)

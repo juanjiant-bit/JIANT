@@ -138,6 +138,10 @@ static void prefs_update(void)
 #define smk_cfg (favorites.factory[15][13])
 #define smk_bendb (favorites.factory[15][14])
 #define SMK_CFG_TRS_OFF 8u
+/* MENU > MIDI > CHANNELS: track t's MIDI OUT channel + 1 (0 = its own, T1 = 1 .. T6 = 6, older settings too), in engine
+ * 14's favourite bytes 24..29: its presets 192..207, which ANIMAL (24 presets) never has (favorites.c refuses them) */
+#define smk_mch_set(t) (favorites.factory[14][24u + (t) % 6u])
+_Static_assert(NELEM(ANIMAL_PRESETS) <= 192u, "SMK-37 MIDI CHANNELS: ANIMAL's favourite bytes 24..29 are in use");
 #endif
 #define PREF_SIX (0x80u << 8)                  /* (JIANT 0.6.18) MENU > TRACKS 6: all six tracks play; clear (the
                                                 * default): 4, T5 and T6 asleep (voice.c trk_live) */

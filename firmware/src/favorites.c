@@ -18,6 +18,10 @@ static int favorite_set(uint32_t engine, uint32_t preset, int on)
 {
     if (engine > NENGINES || (engine == NENGINES ? preset >= UP_SLOTS : engine >= 16u || preset >= 256u))
         return 0;
+#if BOARD_SMK37
+    if (engine == 14u && preset >= 192u)            /* (SMK-37: those bytes hold MENU > MIDI > CHANNELS, ui.c) */
+        return 0;
+#endif
     if (favorite_has(engine, preset) == !!on) return 0;
     if (engine == NENGINES) {
         if (on) favorites.user |= 1u << preset;

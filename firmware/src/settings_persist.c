@@ -74,6 +74,12 @@ static int settings_import(persist_t *p, int n)
         p->favorites.factory[15][13] = 0;
     if (p->favorites.factory[15][14] > 12u)        /* SMK-37 BEND RANGE (ui.c smk_bendb): unknown = 2 */
         p->favorites.factory[15][14] = 0;
+    {
+        uint32_t t;
+        for (t = 0; t < 6u; t++)                    /* SMK-37 MIDI CHANNELS (ui.c smk_mch_set): unknown = the track's */
+            if (p->favorites.factory[14][24u + t] > 16u)
+                p->favorites.factory[14][24u + t] = 0;
+    }
 #endif
     p->magic = PERSIST_MAGIC;
     p->palette = palette_to_stored(palette_from_stored(p->palette));

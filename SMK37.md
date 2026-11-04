@@ -58,11 +58,12 @@ as before.
 | C | selected track's cutoff | its DIST | its REV send | its DLY send |
 
 **MENU > MIDI > KEYBOARD:** KEY VELOCITY (DYNAMIC, SOFT, HARD, or FIXED 64 / 100 / 127) for the keys and the pads,
-BEND RANGE, and TRS MIDI OUT (ON by default).
+BEND RANGE, and TRS MIDI OUT (ON by default). **MENU > MIDI > CHANNELS** (and CHANNEL2): the MIDI channel each track
+sends on, 1-16 (T1 = 1 .. T6 = 6 by default; MIDI IN is not affected).
 
 ## MIDI
 
-USB MIDI works as on the FM-1. The SMK-37's 3.5 mm TRS jack is a MIDI **output** (the FM-1's is an input): it sends the
+USB MIDI works as on the FM-1, each track on its own channel (MENU > MIDI > CHANNELS). The SMK-37's 3.5 mm TRS jack is a MIDI **output** (the FM-1's is an input): it sends the
 same stream as USB MIDI OUT, after MENU > MIDI OUT (KEYS, CLOCK, ALL or OFF), even with no computer connected. The
 jack is listed as type A; if a synth stays silent, try a type B adapter. There is no TRS MIDI IN on the SMK-37.
 

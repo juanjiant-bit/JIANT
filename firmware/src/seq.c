@@ -53,7 +53,17 @@ static volatile uint8_t midi_hint;       /* MIDI IN played track n - 1, which is
 
 static uint32_t trk_index(const track_t *t) { return (uint32_t)(t - trk); }
 
+#if BOARD_SMK37
+/* SMK-37: MENU > MIDI > CHANNELS, the channel each track sends on (MIDI OUT only: MIDI IN keeps G_ROUTE). The UI's
+ * choice (smk_mch_req: 0 = the track's own, else channel + 1) is taken here between blocks (smk_play_block), the notes
+ * sent on the old channel ended there first */
+_Static_assert(NTRK == 6, "SMK-37 MIDI CHANNELS: six tracks");
+static uint8_t smk_mch[NTRK] = {0, 1, 2, 3, 4, 5};
+static volatile uint8_t smk_mch_req[NTRK];
+static uint32_t trk_midi_ch(uint32_t i) { return smk_mch[i % NTRK]; }   /* MIDI channel 0..15 of track i (MIDI out) */
+#else
 static uint32_t trk_midi_ch(uint32_t i) { return i % NTRK; }   /* MIDI channel 0..15 of track i (keys -> MIDI out) */
+#endif
 
 static int drum_track(const track_t *t) { return ENGINES[eng_idx(t->eng_req)] == &ENG_DRUM; }
 
@@ -1230,6 +1240,16 @@ static void smk_play(uint32_t ti, uint32_t note, uint32_t vel)   /* (the UI) */
 }
 static void smk_play_block(void)
 {
+    uint32_t i;
+    for (i = 0; i < NTRK; i++) {                    /* MENU > MIDI > CHANNELS changed: the old channel's notes end */
+        uint32_t r = smk_mch_req[i], want = r && r <= 16u ? r - 1u : i;
+        if (want == smk_mch[i])
+            continue;
+        mo_flush_of(1u << i);                       /* (the notes MIDI OUT ALL sent, on the old channel) */
+        if (mo_lvl != MO_OFF)                       /* (and the keys': ALL NOTES OFF there) */
+            midi_out_event(0x0Bu | (0xB0u | smk_mch[i]) << 8 | 123u << 16);
+        smk_mch[i] = (uint8_t)want;
+    }
     while (smk_playq_r != smk_playq_w) {
         uint32_t e = smk_playq[smk_playq_r], ti = e >> 16, n = (e >> 8) & 0x7Fu, v = e & 0x7Fu;
         smk_playq_r = (uint8_t)((smk_playq_r + 1u) % SMK_PLAYQ);
