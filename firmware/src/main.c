@@ -83,40 +83,13 @@ static void timer5_start(void)                 /* OSC /4 = 6 MHz, PRD 600 -> 10 
 }
 
 #if BOARD_SMK37
-/* pads as a step grid (1-8 top row): the DRUM grid, NAME, the layers' tiles (not SCL: notes) */
+/* the pads' mode (ui_input.c smk_pads.c); as white keys, a step grid (1-8 top row): the DRUM grid, NAME, the layers'
+ * tiles (not SCL: notes) */
 static void smk_grid(void)
 {
     uint32_t l = ui.layer ? ui.layer : ui.ly;
+    smk_pads_mode();
     smk_pad_grid = (uint8_t)(grid_on() || (name_on() && !ui.menu) || (l && l != LAYER_SCL));
-}
-
-/* the SMK-37 Pro's 4 faders, tracks 1..4, by FADER BANK (ui_input.c smk_fbank), as the MIXER page: A LEVEL,
- * B PAN (the middle centre), C REV send, D DLY send. A fader takes over only once it moves (also after a bank
- * change), so nothing jumps. */
-static void smk_faders(void)
-{
-    static uint8_t last[4] = {0xFF, 0xFF, 0xFF, 0xFF};
-    uint32_t i;
-    if (smk_fbank_new) {                                  /* a new bank: wait for each fader to move */
-        smk_fbank_new = 0;
-        for (i = 0; i < 4u; i++)
-            last[i] = 0xFF;
-    }
-    for (i = 0; i < 4u && i < NTRK; i++) {
-        uint32_t v = fm1_in.fader[i];
-        int16_t *pv;
-        if (last[i] == 0xFF || fm1_in.frames < 200u) {   /* (the first readings settle) */
-            last[i] = (uint8_t)v;
-            continue;
-        }
-        if (v == last[i])
-            continue;
-        last[i] = (uint8_t)v;
-        pv = smk_fbank == 1 ? &trk[i].p[P_PAN] : smk_fbank == 2 ? &trk[i].p[P_REV] :
-             smk_fbank == 3 ? &trk[i].p[P_DLY] : &trk[i].p[P_LEVEL];
-        *pv = (int16_t)(smk_fbank == 1 ? (int32_t)v - 64 : (int32_t)v);   /* (PAN -64..63) */
-        ui.force = 1;
-    }
 }
 
 /* the wheels (stock: mux C address 4 = pitch, 5 = mod), self-calibrating: the pitch wheel's rest is its centre

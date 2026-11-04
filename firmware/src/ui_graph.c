@@ -380,7 +380,7 @@ static uint32_t pr_src(const track_t *t, uint32_t si, uint32_t len)   /* the ste
 static uint32_t pr_held(void)
 {
     uint32_t k, m = 0;
-    for (k = 0; k < 27u; k++)
+    for (k = 0; k < KB_NK; k++)
         if (kb_on[k] && kb_trk[k] == song.sel) {
             uint32_t i;
             for (i = 0; i < kb_on[k]; i++) {            /* (0.6.81: a chord's every note) */

@@ -103,6 +103,16 @@ static volatile uint8_t smk_pad_grid;   /* set by the UI: pads as a step grid, w
 static const int8_t SMK_PIANO_NOTE[SMK_NPAD] = {7, 9, 11, 12, 14, 16, 18, 19, 8, 10, -1, 13, 15, 17, -1, 20};
 static volatile uint8_t smk_pad_piano;
 static uint8_t smk_pad_note[SMK_NPAD];   /* the note key a pad pressed (+1; 0 = none): its release ends that one */
+/* the pads as pads (the UI sets smk_pad_raw, ui_input.c smk_pads.c): 0 the white keys above (the layers' tiles, NAME,
+ * LIVE MANO), SMK_PADS_STEPS the SEQ steps (queue 0, read by the UI), SMK_PADS_DRUMS T1's drum pads (queue 1, read by the
+ * audio block, seq.c). A press goes to the queue of the mode it was pressed in, its release follows it there. An event
+ * is pad << 8 | velocity (0 = released); pad 0..15 in reading order (0..7 the top row, left to right) */
+enum { SMK_PADS_KEYS, SMK_PADS_STEPS, SMK_PADS_DRUMS };
+#define SMK_PADQ 32u
+static volatile uint8_t smk_pad_raw;
+static volatile uint16_t smk_padq[2][SMK_PADQ];
+static volatile uint8_t smk_padq_w[2], smk_padq_r[2];
+static uint8_t smk_pad_to[SMK_NPAD];     /* the queue + 1 a pad's press went to (0: a white key) */
 #define SMK_WHITE_OF_PAD(p) (smk_pad_grid ? (p) : (p) < 8u ? (p) + 8u : (p) - 8u)
 
 #define SMK_TRIM_FLASH 0xC1000u   /* USRTRIM: the factory calibration record ("trimdat"), never written here */
@@ -435,10 +445,29 @@ static void fm1__frame(void)
 #define SMK_PAD_OFF 12u           /* below base + this: released */
 #define SMK_PAD_PEAKN 3u          /* samples (2.4 ms apart) for the peak */
 
+static void smk__pq(uint32_t q, uint32_t pad, uint32_t vel)   /* (a full queue drops the event) */
+{
+    uint8_t w = smk_padq_w[q];
+    if ((uint8_t)(w + 1u) % SMK_PADQ == smk_padq_r[q])
+        return;
+    smk_padq[q][w] = (uint16_t)(pad << 8 | vel);
+    smk_padq_w[q] = (uint8_t)((w + 1u) % SMK_PADQ);
+}
+
 static void smk__padq(uint32_t pad, uint32_t vel)     /* a pad hit (vel) or release (0): its white key */
 {
     int32_t n0 = smk_pad_piano ? SMK_PIANO_NOTE[pad] : (int32_t)SMK_WHITE_NOTE[SMK_WHITE_OF_PAD(pad)];
     uint32_t n, bit;
+    if (vel && smk_pad_raw != SMK_PADS_KEYS) {           /* a step or a drum pad: its queue */
+        smk_pad_to[pad] = smk_pad_raw;
+        smk__pq(smk_pad_raw - 1u, pad, vel);
+        return;
+    }
+    if (!vel && smk_pad_to[pad]) {
+        smk__pq(smk_pad_to[pad] - 1u, pad, 0);
+        smk_pad_to[pad] = 0;
+        return;
+    }
     if (vel) {
         if (n0 < 0)
             return;                                   /* (a gap of the piano layout) */
@@ -641,6 +670,34 @@ static int32_t smk_extkey_take(void)
         smk_extq_r = (uint8_t)((smk_extq_r + 1u) % SMK_EXTQ);
     }
     return v;
+}
+
+/* the next event of pad queue q (smk__padq: 0 the steps, 1 the drum pads), -1 if none */
+static int32_t smk_pad_take(uint32_t q)
+{
+    int32_t v = -1;
+    if (smk_padq_r[q] != smk_padq_w[q]) {
+        v = smk_padq[q][smk_padq_r[q]];
+        smk_padq_r[q] = (uint8_t)((smk_padq_r[q] + 1u) % SMK_PADQ);
+    }
+    return v;
+}
+
+/* (the UI's settings for the audio side, ui_input.c smk_cfg_poll: MENU > MIDI > KEYBOARD) */
+static volatile uint8_t smk_kvel_mode;   /* KEY VELOCITY: 0 DYNAMIC, 1 SOFT, 2 HARD, 3 / 4 / 5 FIXED 64 / 100 / 127 */
+static volatile uint8_t smk_bend_semis = 2u;   /* BEND RANGE in semitones */
+/* a key's or a pad's velocity 1..127 through KEY VELOCITY: SOFT reaches loud with a lighter touch, HARD needs more */
+static uint32_t smk_vel(uint32_t v)
+{
+    uint32_t m = smk_kvel_mode;
+    v = v ? (v > 127u ? 127u : v) : 1u;
+    if (m == 1u)
+        v = 127u - (127u - v) * (127u - v) / 127u;
+    else if (m == 2u)
+        v = v * v / 127u;
+    else if (m >= 3u)
+        v = m == 3u ? 64u : m == 4u ? 100u : 127u;
+    return v ? v : 1u;
 }
 
 /* LED of button id (0..17); note keys have no LED on the SMK (the pads show the step grid) */

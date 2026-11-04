@@ -12,7 +12,10 @@ static void pm_off(void);                               /* (0.9.14) ui_layer.c: 
  * take LED_KEY0 + k: ui_leds shows the white keys F3..G5 on the 16 RGB pads (smk_input.h SMK_WHITE_NOTE) */
 #define LED_BUF 64u
 #define LED_KEY0 32u
-static uint8_t smk_fbank, smk_fbank_new;           /* FADER BANK: 0 LEVEL, 1 PAN, 2 REV, 3 DLY (main.c smk_faders) */
+static uint8_t smk_fbank, smk_fbank_new;           /* FADER BANK: A, B, C (smk_pads.c smk_faders) */
+static uint64_t smk_steps_held, smk_step_rm;       /* the step pads held; the filled steps tapped, cleared when let go
+                                                    * unless held for a lock (smk_pads.c, lock_held, lock_turn) */
+static void smk_pad_leds(uint32_t r, uint32_t g, uint32_t b);   /* (smk_pads.c) */
 static void led_pos_init(void) {}
 static void led_put(uint8_t *nl, uint32_t id, int on)
 {
@@ -388,6 +391,10 @@ static void smk_leds(const uint8_t *nl, const uint8_t *nb, const uint8_t *nm, co
         fm1_led[SMK_BTN_KNOB_BANK] = ui.menu != 0;      /* KNOB BANK lit while the menu is up */
     if ((int32_t)(fm1_ms - padled_hold_until) < 0)      /* (console padtest has them) */
         return;
+    if (smk_pad_raw != SMK_PADS_KEYS) {                 /* the steps, the drum pads (smk_pads.c) */
+        smk_pad_leds(r, g, b);
+        return;
+    }
     for (c = 0; c < SMK_NPAD; c++) {                    /* white key c on its pad (the top row first) */
         uint32_t id = LED_KEY0 + SMK_WHITE_NOTE[c];
         uint32_t lv = nl[id] ? 256u : nb[id] ? br + 2u : nm[id] ? 64u : og[id] | sg[id] ? 16u : 0u;
@@ -700,6 +707,11 @@ static uint64_t lock_held(void)
     const track_t *t = TSEL;
     uint32_t k, len = (uint32_t)t->p[P_SLEN], keys = fm1_in.notes & ~kb_layer;
     uint64_t m = 0;
+#if BOARD_SMK37
+    if (smk_steps_held && !ui.home && !ui.menu && !ui.confirm && !ui.layer && song.seq_mode &&
+        cur_page()->graph == GR_ROLL)                   /* SMK-37: the step pads held (smk_pads.c) */
+        return smk_steps_held;
+#endif
     if (ui.home || ui.menu || ui.confirm || ui.layer || name_on() || !song.seq_mode || cur_page()->graph != GR_ROLL ||
         !keys)
         return 0;
@@ -740,6 +752,9 @@ static void lock_turn(uint32_t k, int32_t s, uint64_t held)
     if (id == 0xFFu)
         return;                                         /* (an empty card: nothing to lock) */
     ui.plk_rm &= ~held;                                 /* (held for a lock: its hit stays) */
+#if BOARD_SMK37
+    smk_step_rm &= ~held;                               /* (.. a step pad's note too) */
+#endif
     d = track_desc(t, id);
     s = accel(EN_K1 + k, s, d->fmt == F_ENUM ? 0 : d->max - d->min);
     for (i = 0; i < NSTEP; i++) {
@@ -773,6 +788,9 @@ static void lock_clear(uint64_t held)
 {
     uint32_t i, n = 0;
     ui.plk_rm &= ~held;
+#if BOARD_SMK37
+    smk_step_rm &= ~held;
+#endif
     if (!(motion_lock_steps(song.sel) & held)) {
         ui_message("NO LOCKS");
         return;
@@ -2077,12 +2095,18 @@ static void scale_link(void)
 }
 
 #if BOARD_SMK37
-/* SMK-37 Pro < / >: a page back / forward along the section's chain, as a SELECT detent (rule 1, ui_lens.c nav_select);
- * not while a quick layer's own knobs are up */
+#include "smk_pads.c"                               /* the pads' modes, the step pads, the faders' banks */
+/* SMK-37 Pro < / >: on a SEQ page the pads' bar back / forward (the grid's page, page_go: 1-16, 17-32, ..); elsewhere a
+ * page back / forward along the section's chain, as a SELECT detent (rule 1, ui_lens.c nav_select); not while a quick
+ * layer's own knobs are up */
 static void smk_page_step(int32_t d)
 {
     if (page_over)
         return;
+    if (smk_pad_raw == SMK_PADS_STEPS) {
+        page_go(d > 0 ? 1 : -1);
+        return;
+    }
     nav_select(d > 0 ? 1 : -1);
 }
 #endif
@@ -2107,11 +2131,12 @@ static void ui_input_frame(void)
     int32_t smk_lr = ((pressed >> SMK_BTN_RIGHT) & 1u) && smk_btn_free(SMK_BTN_RIGHT) ? 1 :
                      ((pressed >> SMK_BTN_LEFT) & 1u) && smk_btn_free(SMK_BTN_LEFT) ? -1 : 0;
     if (pressed & 1u << SMK_BTN_FADER_BANK) {           /* SMK-37 Pro FADER BANK: what the four faders set */
-        static const char *const FB[4] = {"A  LEVEL", "B  PAN", "C  REV", "D  DLY"};
-        smk_fbank = (uint8_t)((smk_fbank + 1u) % 4u);
+        static const char *const FB[SMK_FB_N] = {"A  T1-T4", "B  T5 T6 FX", "C  TRACK"};
+        smk_fbank = (uint8_t)((smk_fbank + 1u) % SMK_FB_N);
         smk_fbank_new = 1;
         ui_say("FADER BANK ", FB[smk_fbank]);
     }
+    smk_steps_frame();                                  /* the step pads (smk_pads.c) */
 #endif
     fm6_poll();                                         /* FM6: PTCH turned -> its patch */
     {   /* (JIANT 0.6.5) RESO's PITCH and FOLW live in PRE's and DAMP's slots: into RESO a ROOM's values become theirs

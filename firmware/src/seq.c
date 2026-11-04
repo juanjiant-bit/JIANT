@@ -34,11 +34,16 @@ static const uint16_t SCALE_MASK[] = {
 };
 
 #define KB_SILENT 255u
+#if BOARD_SMK37
+#define KB_NK 37u                                /* SMK-37: the FM-1's 27 keys, then the keybed's 10 outer ones (ext_keys_block) */
+#else
+#define KB_NK 27u
+#endif
 static uint32_t kb_prev;
 static volatile uint8_t kb_boot_hold;    /* #137: set from power-on to the end of the splash (main.c): the keys sound nothing,
                                           * and one held across its end stays silent until it is let go and pressed again */
-static uint8_t kb_note[27], kb_trk[27];  /* per key: the note it started and on which track */
-static int8_t kb_oct[27];                /* (0.8.5) .. on a DRUM track, the kit's octave it plays (OCT then: seq.c dxo_on) */
+static uint8_t kb_note[KB_NK], kb_trk[KB_NK];  /* per key: the note it started and on which track */
+static int8_t kb_oct[KB_NK];                /* (0.8.5) .. on a DRUM track, the kit's octave it plays (OCT then: seq.c dxo_on) */
 static volatile uint8_t kb_asleep;       /* MENU > SCREEN OFF (ui.c): the screen dark or waking, a key pressed now only
                                           * wakes it (silent, no layer, its release nothing) */
 static uint8_t last_note = 60;
@@ -230,8 +235,8 @@ static uint32_t kb_map(const track_t *t, uint32_t k)
 
 /* the notes key k plays (kb_sn: how many, its chord; kb_on: how many of them started, the rest strummed in later) */
 #define KB_CH 4u
-static uint8_t kb_snd[27][KB_CH], kb_sn[27], kb_on[27];
-static uint16_t kb_sdue[27];                    /* (0.6.81) samples to the strum's next note */
+static uint8_t kb_snd[KB_NK][KB_CH], kb_sn[KB_NK], kb_on[KB_NK];
+static uint16_t kb_sdue[KB_NK];                    /* (0.6.81) samples to the strum's next note */
 
 /* (JIANT 0.6.81) CHORD (SCL > CHORD; after the Omnichord and the Orchid, light): a key plays a chord on the track.
  * TRIAD 7TH ADD9 SUS2 SUS4 are built in the track's scale on the key (every tone in key; a key outside it takes the
@@ -1035,11 +1040,12 @@ static void latch_drop(track_t *t)
 }
 
 #if BOARD_SMK37
-/* SMK-37 Pro: velocity keys and pads. Key k's velocity (a pad: its white key's, smk_input.h) */
+/* SMK-37 Pro: velocity keys and pads. Key k's velocity (a pad: its white key's, smk_input.h; k 27.. the outer keys,
+ * ext_keys_block), through MENU > KEYBOARD > KEY VELOCITY (smk_vel) */
 static uint32_t key_vel(uint32_t k)
 {
-    uint32_t v = fm1_in.key_vel[SMK_KEY_F3 + k];
-    return v ? v : 100u;
+    uint32_t v = fm1_in.key_vel[k < 27u ? SMK_KEY_F3 + k : k < 32u ? k - 27u : k];
+    return smk_vel(v ? v : 100u);
 }
 #else
 #define key_vel(k) 100u                             /* the FM-1's keys have no velocity */
@@ -1090,7 +1096,7 @@ static void key_on(uint32_t k, track_t *t)
 static void keys_strum(uint32_t n)
 {
     uint32_t k;
-    for (k = 0; k < 27u; k++) {
+    for (k = 0; k < KB_NK; k++) {
         if (kb_on[k] >= kb_sn[k] || !kb_on[k])
             continue;
         if (kb_sdue[k] > n) {
@@ -1149,38 +1155,88 @@ static __attribute__((noinline)) void kb_lat(uint32_t k)
 #if BOARD_SMK37
 /* SMK-37 Pro: the keybed's 10 keys beyond the FM-1's 27 (C3..E3 below F3, G#5..C6 above G5) continue the keys: the
  * selected track's key map (kb_map: QNT, ROOT, SCALE, TRN, the octave; DRUM's GM drum map, SLICE's slices) past
- * either end, one note each at the key's velocity (no chord). They play only while the keys play: no layer held or
+ * either end, through the keys' own path (key_on / key_off: CHORD, STRUM, LATCH, the kit's octaves, recording, MIDI
+ * OUT), as keys 27..36 (KB_NK: keybed keys 0..4, then 32..36). They play only while the keys play: no layer held or
  * locked, no DRUM grid, NAME or SONG keys, not under the splash or waking the screen */
-static uint8_t ext_note[FM1_NKEY], ext_trk[FM1_NKEY];   /* note + 1 sounding, 0 = none */
 static volatile int16_t smk_bend14;             /* the pitch wheel, -8192..8191 (main.c smk_wheels) */
 static volatile uint8_t smk_modw;               /* the mod wheel, 0..127 */
 static void ext_keys_block(void)
 {
     int32_t e;
     while ((e = smk_extkey_take()) >= 0) {
-        uint32_t k = (uint32_t)e >> 8, v = (uint32_t)e & 0x7Fu, sel = song.sel % NTRK, n, mc;
-        if (k >= FM1_NKEY)
+        uint32_t b = (uint32_t)e >> 8, v = (uint32_t)e & 0x7Fu, sel = song.sel % NTRK, k;
+        if (b >= FM1_NKEY || (b >= SMK_KEY_F3 && b < SMK_KEY_F3 + 27u))
             continue;
+        k = b < SMK_KEY_F3 ? 27u + b : b;               /* its place after the 27 */
         if (!v) {
-            if (ext_note[k]) {
-                n = ext_note[k] - 1u;
-                mc = trk_midi_ch(ext_trk[k] % NTRK);
-                input_off(&trk[ext_trk[k] % NTRK], n);
-                midi_out_event(0x08u | (0x80u | mc) << 8 | n << 16);
-                ext_note[k] = 0;
+            key_off(k, &trk[kb_trk[k] % NTRK]);         /* (nothing when it started nothing) */
+            continue;
+        }
+        if (kb_on[k] || kb_boot_hold || kb_asleep || song.grid || (fm1_in.buttons & kb_mask) || fx_lock_on)
+            continue;
+        kb_trk[k] = (uint8_t)sel;
+        kb_note[k] = (uint8_t)kb_map(&trk[sel], (uint32_t)((int32_t)b - (int32_t)SMK_KEY_F3));
+        kb_oct[k] = (int8_t)(drum_track(&trk[sel]) ? song.octave : 0);   /* (as keyboard_block) */
+        if (kb_note[k] == KB_SILENT)
+            continue;
+        key_on(k, &trk[sel]);
+    }
+}
+
+/* SMK-37: the drum pads (smk_input.h SMK_PADS_DRUMS, ui_input.c smk_pads.c): T1's eight sounds, the top row their patch
+ * A, the bottom row patch B (eng_drum.c dx_in_side), each at the pad's velocity (KEY VELOCITY), to MIDI OUT as T1's
+ * keys; T1 armed and playing, recorded as its keys are (input_on). T1 not on DRUM: the lanes' notes on its sound */
+static uint8_t smk_dp_note[SMK_NPAD];           /* the note a drum pad started + 1, 0 none (the UI lights it) */
+static void smk_drum_pads_block(void)
+{
+    track_t *t = &trk[0];
+    uint32_t mc = trk_midi_ch(0);
+    int32_t e;
+    while ((e = smk_pad_take(1)) >= 0) {
+        uint32_t p = ((uint32_t)e >> 8) & 15u, v = (uint32_t)e & 0x7Fu, n;
+        if (!v) {
+            if (smk_dp_note[p]) {
+                n = smk_dp_note[p] - 1u;
+                smk_dp_note[p] = 0;
+                input_off(t, n);
+                mo_key(t, 0x08u | (0x80u | mc) << 8 | n << 16);
             }
             continue;
         }
-        if (ext_note[k] || kb_boot_hold || kb_asleep || song.grid || (fm1_in.buttons & kb_mask) || fx_lock_on)
+        if (smk_dp_note[p] || kb_boot_hold || kb_asleep)
             continue;
-        n = kb_map(&trk[sel], (uint32_t)((int32_t)k - (int32_t)SMK_KEY_F3));
-        if (n == KB_SILENT)
-            continue;
-        ext_note[k] = (uint8_t)(n + 1u);
-        ext_trk[k] = (uint8_t)sel;
-        mc = trk_midi_ch(sel);
-        input_on(&trk[sel], n, v);
-        midi_out_event(0x09u | (0x90u | mc) << 8 | n << 16 | v << 24);
+        n = DRUM_LANE_NOTE[p & 7u];
+        v = smk_vel(v);
+        dx_in_side = (uint8_t)(p >= 8u);
+        input_on(t, n, v);
+        dx_in_side = 0;
+        mo_key(t, 0x09u | (0x90u | mc) << 8 | n << 16 | v << 24);
+        smk_dp_note[p] = (uint8_t)(n + 1u);
+    }
+}
+
+/* SMK-37: what a step pad plays on SEQ (ui_input.c smk_pads.c, main loop -> here): track << 16 | note << 8 | velocity,
+ * 0 = its release. A preview: not recorded, not to MIDI OUT */
+#define SMK_PLAYQ 32u
+static volatile uint32_t smk_playq[SMK_PLAYQ];
+static volatile uint8_t smk_playq_w, smk_playq_r;
+static void smk_play(uint32_t ti, uint32_t note, uint32_t vel)   /* (the UI) */
+{
+    uint8_t w = smk_playq_w;
+    if ((uint8_t)(w + 1u) % SMK_PLAYQ == smk_playq_r)
+        return;
+    smk_playq[w] = (ti % NTRK) << 16 | (note & 0x7Fu) << 8 | (vel & 0x7Fu);
+    smk_playq_w = (uint8_t)((w + 1u) % SMK_PLAYQ);
+}
+static void smk_play_block(void)
+{
+    while (smk_playq_r != smk_playq_w) {
+        uint32_t e = smk_playq[smk_playq_r], ti = e >> 16, n = (e >> 8) & 0x7Fu, v = e & 0x7Fu;
+        smk_playq_r = (uint8_t)((smk_playq_r + 1u) % SMK_PLAYQ);
+        if (v)
+            trk_note_on(&trk[ti % NTRK], n, v);
+        else
+            trk_note_off(&trk[ti % NTRK], n);
     }
 }
 #endif
@@ -1192,6 +1248,8 @@ static void keyboard_block(void)
     keys_strum(CTL);                              /* (0.6.81) the chords' strums */
 #if BOARD_SMK37
     ext_keys_block();
+    smk_drum_pads_block();
+    smk_play_block();
 #endif
     ch = cur ^ kb_prev;                           /* keys also sound while entering steps */
     if (!ch)
@@ -2346,7 +2404,7 @@ static int32_t click_beat_now(void)
 /* everything that happens between two rendered blocks */
 #if BOARD_SMK37
 /* SMK-37 Pro: the wheels (main.c smk_wheels) as the selected track's own MIDI controllers, as if played on its
- * channel: the pitch wheel its pitch bend (the channel's bend range, RPN 0: 2 semitones unless set; a DRUM track
+ * channel: the pitch wheel its pitch bend (MENU > KEYBOARD > BEND RANGE, 2 semitones unless set; a DRUM track
  * ignores it, as it ignores MIDI bend), the mod wheel its CC1, the mod matrix's MODW source (mod.c). Both go to MIDI
  * OUT too. Another track selected: the one before is left unbent, its MODW at 0. Audio ISR, before the MIDI IN of
  * the block (an incoming bend or CC1 for the same track wins until the wheel moves again) */
@@ -2366,8 +2424,7 @@ static void smk_wheels_block(void)
         lm = 0xFF;
     }
     if (b != lb) {
-        const midi_channel_t *c = midi_channel(mc);
-        int32_t range = ((int32_t)c->semis * 100 + c->cents) * 256 / 100;
+        int32_t range = (int32_t)smk_bend_semis * 256;   /* (midi_control.c: 1/256 semitone) */
         uint32_t u = (uint32_t)(b + 8192);
         lb = b;
         if (!drum_track(&trk[sel]))
