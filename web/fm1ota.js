@@ -12,6 +12,10 @@ const UPGRADE = [0xF0, 0x22, 0x24, 0x35, 0x7F, 0xF7];
 const MAXDATA = 512;
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const IS_OTA = (id) => /^ota-/i.test(id.model);
+// the SMK-37 Pro, SMK-37 Elite, MKE-P37, Starrykey 37 Play and the SMK-37+VA mod: one keyboard under several model
+// names, so a package for one runs on all of them; an FM-1 is another device
+const SMK_FAMILY = /^(ota-)?(SMK-37[ +].*|MKE-P37|STARRYKEY-37.*)$/i;
+export const sameKeyboard = (a, b) => a === b || (SMK_FAMILY.test(a) && SMK_FAMILY.test(b));   // two models
 /* (0.9.11) every wait of the update, in ms; the pages keep these, a test passes short ones. Longer than before: a slow
  * USB hub, and Windows installing a driver the first time the update loader (another USB identity) appears, took
  * longer than the 30 s the loader had */
@@ -26,7 +30,7 @@ export const UPDATE_TIMES = {
 };
 /* the ports worth asking for an identity: the FM-1 (official: its own name or the USB composite's), JIANT, Felucca and
  * its forks, the update loaders. Other gear is not probed, except a port that appears while we wait for the loader */
-export const PORT_RE = /fm-?1|smk|felucca|jiant|skiff|ota|composite|sinco|usb-midi|m-?vave|cuvave/i;
+export const PORT_RE = /fm-?1|smk|elite|mke-p37|starry|felucca|jiant|skiff|ota|composite|sinco|usb-midi|m-?vave|cuvave/i;
 /* Windows names one device's ports "FM-1", "2- FM-1", "MIDIIN2 (FM-1)" / "MIDIOUT2 (FM-1)", "FM-1 1": the device's name */
 export const portBase = (name) => String(name || "").trim().replace(/^\d+\s*-\s*/, "")
   .replace(/^MIDI(?:IN|OUT)\d*\s*\((.*)\)$/i, "$1").replace(/\s+\d+$/, "").trim().toLowerCase();
@@ -254,7 +258,7 @@ export class Updater {
     const dev = await this.find((id) => !IS_OTA(id), { tries: this.t.findTries });
     if (!dev) throw this.notFound();
     const [model] = product.split("_");
-    if (dev.id.model !== model) { dev.link.close(); throw fail("model", `the device is ${dev.id.text}, the package is for ${product}`, dev.id.text); }
+    if (!sameKeyboard(dev.id.model, model)) { dev.link.close(); throw fail("model", `the device is ${dev.id.text}, the package is for ${product}`, dev.id.text); }
     step("start", dev.id.text);
     /* (0.9.11) a firmware that does not start reading after UPGRADE (busy, or the message lost on a hub) is asked
      * again; once it has read anything it is never asked twice */
@@ -272,7 +276,7 @@ export class Updater {
     if (!s1.finished) throw fail(s1.lost ? "lost" : "stopped", `the device ${s1.lost ? "was disconnected" : "stopped"} after ${s1.served} requests: nothing was written`);
     step("loader");
     await sleep(this.t.loaderSettle);
-    const ota = await this.waitFor((id) => id.model === "ota-" + model, this.t.loader);
+    const ota = await this.waitFor((id) => IS_OTA(id) && sameKeyboard(id.model.replace(/^ota-/i, ""), model), this.t.loader);
     if (!ota) throw fail("noloader", "the update loader did not appear. Replug the USB cable and press Install again: the device stays in update mode until it is finished.");
     const s2 = await this.write(ota, image, step);
     if (!s2.finished) throw fail(s2.lost ? "lost" : "stopped", `the loader ${s2.lost ? "was disconnected" : "stopped"} after ${s2.served} requests. Replug and press Install again to resume.`);
@@ -297,18 +301,29 @@ export class Updater {
     return s2;
   }
 
-  // resume: the device is already in update mode (loader) -> true when the write finished
-  async resume(image, onStep, product = null) {
-    const model = product && product.split("_")[0];
-    const ota = await this.find((id) => model ? id.model === "ota-" + model : IS_OTA(id), { tries: 2 });
+  // resume: the device is already in update mode (loader) -> true when the write finished. product: the
+  // package's identity; the loader's model must match it by install()'s rule (sameKeyboard): an SMK's loader
+  // never gets an FM-1 image, and without the identity nothing is written
+  async resume(image, onStep, product = "") {
+    const model = (product || "").split("_")[0];
+    const ota = await this.find(IS_OTA, { tries: 2 });
     if (!ota) return false;
+    if (!product || !sameKeyboard(ota.id.model.replace(/^ota-/i, ""), model)) {
+      ota.link.close();
+      throw fail("model", `the device is in the update mode of ${ota.id.text}, the package is for ${product || "an unknown model"}`, ota.id.text);
+    }
+    if (!ota) return false;
+    if (!product || !sameKeyboard(ota.id.model.replace(/^ota-/i, ""), model)) {
+      ota.link.close();
+      throw fail("model", `the device is in the update mode of ${ota.id.text}, the package is for ${product || "an unknown model"}`, ota.id.text);
+    }
     const step = onStep || (() => {});
     const result = await this.write(ota, image, step);
     if (!result.finished) return false;
     if (product) {
       step("reboot");
       await sleep(this.t.loaderSettle);
-      const back = await this.waitFor((id) => id.model === model, this.t.back);
+      const back = await this.waitFor((id) => !IS_OTA(id) && sameKeyboard(id.model, model), this.t.back);
       if (!back) throw fail("noreturn", "The FM-1 did not return after resuming the write.");
       back.link.close();
       if (back.id.text !== product) throw fail("mismatch", "The FM-1 reports a different firmware after resuming.", back.id.text);
