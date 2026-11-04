@@ -69,7 +69,7 @@ static uint32_t st_crc32_add(uint32_t c, const void *p, uint32_t n)   /* zlib CR
 static uint32_t st_crc32(const void *p, uint32_t n) { return ~st_crc32_add(0xFFFFFFFFu, p, n); }
 
 #if BOARD_SMK37
-/* SMK-37 Pro (see the fm1-to-smk37 guide; JIANT's layout: Israel Peña (pedeplei1281)). Every object has its A/B pair
+/* SMK-37 Pro (JIANT's layout: Israel Peña (pedeplei1281)). Every object has its A/B pair
  * inside the flash map's allow-list (fm1_flash_map.h FL_DATA, FL_SMP) and nowhere else:
  *   0x9D000..0xAEFFF  the layer's nine pairs, at the same places as in the other ported Felucca-family firmwares:
  *                     projects (song 1's four sections) 0x9D000..0xA4FFF, user preset banks 0xA5000..0xA8FFF, the
