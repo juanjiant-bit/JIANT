@@ -54,7 +54,7 @@ as before.
 | Bank | Fader 1 | Fader 2 | Fader 3 | Fader 4 |
 | --- | --- | --- | --- | --- |
 | A | T1 level | T2 level | T3 level | T4 level |
-| B | T5 level | T6 level | (nothing yet) | delay return (DLY MIX) |
+| B | T5 level | T6 level | reverb return (full at power-on) | delay return (DLY MIX) |
 | C | selected track's cutoff | its DIST | its REV send | its DLY send |
 
 **MENU > MIDI > KEYBOARD:** KEY VELOCITY (DYNAMIC, SOFT, HARD, or FIXED 64 / 100 / 127) for the keys and the pads,

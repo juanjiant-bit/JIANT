@@ -234,6 +234,10 @@ static int32_t mix_l[CTL], mix_r[CTL], wet[CTL];
  * apart until the next block's mix takes it: their sides (the chorus's, the delay's, the reverbs' WIDE: left and right
  * as they were added to mix_l / mix_r), their return; the sends they work on (the block before's); their scratch */
 static int32_t fx_sl[CTL], fx_sr[CTL], fx_wet[CTL], fxq_c[CTL], fxq_d[CTL], fxq_r[CTL], fx_tmp[CTL];
+#if BOARD_SMK37
+static int16_t smk_rev_ret = 127;               /* SMK-37: the reverb's return 0..127 (fader bank B 3, ui_input.c smk_pads.c;
+                                                 * not stored: full at power-on, as before) */
+#endif
 static __attribute__((noinline)) void clip_block(uint32_t n)
 {
     uint32_t i;
@@ -1752,6 +1756,25 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
     }
     {
         uint32_t t0 = PRF_T();
+#if BOARD_SMK37
+        int32_t rr = smk_rev_ret;
+        if (rr < 127) {                                 /* SMK-37 fader bank B 3: the reverb's return, its wet and its
+                                                         * sides (RWIDE) scaled after the model (its tail untouched) */
+            static int32_t sl0[CTL], sr0[CTL];
+            int32_t g = rr < 0 ? 0 : rr * 2 + (rr >> 6); /* 0..255 /256 */
+            for (i = 0; i < n; i++) {
+                fx_tmp[i] = 0;
+                sl0[i] = fx_sl[i];
+                sr0[i] = fx_sr[i];
+            }
+            rev_run(rt, rev_in, fx_tmp, n);
+            for (i = 0; i < n; i++) {
+                wet[i] += (fx_tmp[i] * g) >> 8;
+                fx_sl[i] = sl0[i] + (((fx_sl[i] - sl0[i]) * g) >> 8);
+                fx_sr[i] = sr0[i] + (((fx_sr[i] - sr0[i]) * g) >> 8);
+            }
+        } else
+#endif
         rev_run(rt, rev_in, wet, n);
         prf_blk[PRF_REV] = PRF_T() - t0;                /* (0.9.14) PROFILE: the reverb's share of the buses */
     }

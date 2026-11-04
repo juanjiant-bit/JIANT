@@ -171,8 +171,8 @@ static void smk_cfg_poll(void)
 }
 
 /* ---------------------------------------------------------------- faders --- */
-/* FADER BANK (smk37-port.yaml faders): A the levels of T1..T4; B T5's and T6's levels, the reverb's return (none in JIANT
- * yet: that fader does nothing) and the delay's (GLO > DLY MIX); C the selected track's filter cutoff (ANALOG's CUT, the
+/* FADER BANK (smk37-port.yaml faders): A the levels of T1..T4; B T5's and T6's levels, the reverb's return (fx.c
+ * smk_rev_ret, SMK only, full at power-on) and the delay's (GLO > DLY MIX); C the selected track's filter cutoff (ANALOG's CUT, the
  * other engines' part filter), DIST, REV send and DLY send. A fader acts only once it moves (also after a bank change):
  * nothing jumps. A move names what it set and its value on the top bar */
 enum { SMK_FB_A, SMK_FB_B, SMK_FB_C, SMK_FB_N };
@@ -190,8 +190,12 @@ static int16_t *smk_fader_target(uint32_t f, const param_desc_t **d, const char 
         return &trk[ti].p[P_LEVEL];
     }
     if (smk_fbank == SMK_FB_B) {
-        if (f == 2u)
-            return 0;                                   /* (the reverb's return: none) */
+        if (f == 2u) {                                  /* the reverb's return (fx.c smk_rev_ret: SMK only, not stored) */
+            static const param_desc_t REVRET = {"REV RET", F_PCT, 0, 127, 127, 0, 0};
+            *d = &REVRET;
+            *name = "REV RETURN ";
+            return &smk_rev_ret;
+        }
         *d = &GP[G_DMIX];
         *name = "DLY MIX ";
         return &song.g[G_DMIX];
