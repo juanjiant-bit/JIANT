@@ -319,6 +319,9 @@ static void fm1_main(void)
     if (flash_ok)                                   /* the factory key / pad velocity curves (USRTRIM, read only) */
         smk_trim_load(fm1_xip_ptr(SMK_TRIM_FLASH));
 #endif
+#if BOARD_SMK37
+    smk_trs_init();                                 /* the TRS jack's MIDI OUT (hal/smk_uart_tx.h; before TIMER5) */
+#endif
     panel_init();
     felucca_init();
     master_boot();

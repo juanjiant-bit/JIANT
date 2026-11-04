@@ -131,6 +131,14 @@ static void prefs_update(void)
                                                 * engine uses, 0 in older settings (0.6.29's 6 LITE: 1, LITE) */
 #define midi_out_mode (favorites.factory[15][24])   /* (JIANT 0.6.72) MENU > MIDI OUT (seq.c MO_*): 0 KEYS (older settings,
                                                 * as ever), 1 CLOCK, 2 ALL, 3 OFF; a byte no engine uses */
+#if BOARD_SMK37
+/* SMK-37: MENU > MIDI > KEYBOARD (menu_items.c), in two bytes no engine uses (engine 15's spare favourites past the
+ * hints; 0 in older settings = the defaults): smk_cfg bits 0-2 KEY VELOCITY (0 DYNAMIC, 1 SOFT, 2 HARD, 3 / 4 / 5 FIXED
+ * 64 / 100 / 127), bit 3 TRS MIDI OUT OFF; smk_bendb BEND RANGE in semitones (0 = 2) */
+#define smk_cfg (favorites.factory[15][13])
+#define smk_bendb (favorites.factory[15][14])
+#define SMK_CFG_TRS_OFF 8u
+#endif
 #define PREF_SIX (0x80u << 8)                  /* (JIANT 0.6.18) MENU > TRACKS 6: all six tracks play; clear (the
                                                 * default): 4, T5 and T6 asleep (voice.c trk_live) */
 enum { RP_CLICK, RP_LEVEL, RP_COUNTIN };

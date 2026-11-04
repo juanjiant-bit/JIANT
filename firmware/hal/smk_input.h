@@ -31,6 +31,7 @@
 #include "fm1_time.h"
 #include "fm1_gpio.h"
 #include "fm1_cc.h"
+#include "smk_uart_tx.h"          /* the TRS jack's MIDI OUT, drained from the tick below */
 
 #ifndef FM1_INPUT_IDLE
 #define FM1_INPUT_IDLE() ((void)0)
@@ -606,6 +607,7 @@ static void fm1_input_tick(void)
     if (next == 0u)
         fm1__frame();                                        /* (before the shift: column 0 carries the new LED group) */
     smk__shift(next);
+    smk_trs_tick();                                          /* the TRS jack: a byte when the last has gone */
 }
 
 /* one full frame, polled (recovery screen, power-on); calls FM1_INPUT_IDLE() while it waits */

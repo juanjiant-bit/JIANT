@@ -339,7 +339,11 @@ static const char *menu_short(uint32_t row)          /* a card's label: a whole 
     static const struct { uint8_t row; char s[9]; } SH[] = {
         {MI_LOWCUT, "SPEAKER"}, {MI_CPU, "CORES"}, {MI_CLKLVL, "LEVEL"}, {MI_USB, "LEVEL"}, {MI_SERIAL, "USB AUD"},
         {MI_ANIM, "ANIMATE"}, {MI_SCROFF, "SLEEP"}, {MI_HOLD, "HOLD"}, {MI_ACCEL, "SPEEDUP"}, {MI_SCLLED, "SCALE"},
-        {MI_RESTORE, "RESTORE"}, {MI_CLOCK, "CPU MHZ"}, {MI_PANEL, "CALIB"}, {MI_LCLEAR, "CLEAR"}};   /* (no two alike on a
+        {MI_RESTORE, "RESTORE"}, {MI_CLOCK, "CPU MHZ"}, {MI_PANEL, "CALIB"}, {MI_LCLEAR, "CLEAR"},
+#if BOARD_SMK37
+        {MI_KVEL, "VELOCITY"}, {MI_BEND, "BEND"}, {MI_TRS, "TRS OUT"},
+#endif
+        };                                              /* (no two alike on a
                                                          * page: tests/ui_test.c) */
     uint32_t k;
     for (k = 0; k < NELEM(SH); k++)
@@ -393,6 +397,14 @@ static const struct { uint8_t row, v; const char *s; } MI_HELP[] = {
     {MI_CLOCK, 255, "320 MHZ IF IT CRASHES (RESTART)"},
     {MI_PANEL, 255, "OCT+: TEACH EACH BUTTON AND KNOB"},
     {MI_ABOUT, 255, "OCT+: VERSION, LOAD, CREDITS"},
+#if BOARD_SMK37
+    {MI_KVEL, 0, "THE KEYS AND PADS FOLLOW TOUCH"},
+    {MI_KVEL, 1, "LOUD WITH A LIGHT TOUCH"},
+    {MI_KVEL, 2, "LOUD ONLY WHEN PLAYED HARD"},
+    {MI_KVEL, 255, "EVERY KEY AND PAD AT ONE LEVEL"},
+    {MI_BEND, 255, "THE PITCH WHEEL, IN SEMITONES"},
+    {MI_TRS, 255, "MIDI OUT ON THE 3.5 MM JACK"},
+#endif
 };
 static const char *menu_help(uint32_t row)
 {
@@ -479,6 +491,9 @@ static void draw_menu(void)
           (ui.menu >= 2 ? ui.menu_scroll * 48611u : 0u) + (ui.menu == 3 ? prf_seq * 2971u + 1u : 0u) +
           (ui.menu == 2 ? (song.cpu_q8 >> 3) * 7741u + load_diag.peak * 3329u + load_diag.late * 1931u +
                           load_diag.shed * 2671u : 0u);   /* (0.6.19) ABOUT's AUDIO LOAD: live (NOW in ~3 % steps) */
+#if BOARD_SMK37
+    sig += smk_cfg * 5381u + smk_bendb * 769u;          /* (MENU > MIDI > KEYBOARD) */
+#endif
     draw_head();                                      /* (0.8.5: the pages' header, "MENU . SCREEN") */
     if (!ui.force && sig == ui.menu_sig)
         return;

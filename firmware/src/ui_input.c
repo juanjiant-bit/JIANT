@@ -2137,6 +2137,7 @@ static void ui_input_frame(void)
         ui_say("FADER BANK ", FB[smk_fbank]);
     }
     smk_steps_frame();                                  /* the step pads (smk_pads.c) */
+    smk_cfg_poll();                                     /* MENU > MIDI > KEYBOARD to the keys, the wheel, the jack */
 #endif
     fm6_poll();                                         /* FM6: PTCH turned -> its patch */
     {   /* (JIANT 0.6.5) RESO's PITCH and FOLW live in PRE's and DAMP's slots: into RESO a ROOM's values become theirs

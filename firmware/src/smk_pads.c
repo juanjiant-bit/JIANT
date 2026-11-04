@@ -161,6 +161,15 @@ static void smk_pad_leds(uint32_t r, uint32_t g, uint32_t b)
     }
 }
 
+/* each frame (ui_input_frame): MENU > MIDI > KEYBOARD's settings to the audio side and the TRS jack */
+static void smk_cfg_poll(void)
+{
+    uint32_t kv = smk_cfg & 7u;
+    smk_kvel_mode = (uint8_t)(kv <= 5u ? kv : 0u);
+    smk_bend_semis = (uint8_t)(smk_bendb && smk_bendb <= 12u ? smk_bendb : 2u);
+    smk_trs_set(!(smk_cfg & SMK_CFG_TRS_OFF));
+}
+
 /* ---------------------------------------------------------------- faders --- */
 /* FADER BANK (smk37-port.yaml faders): A the levels of T1..T4; B T5's and T6's levels, the reverb's return (none in JIANT
  * yet: that fader does nothing) and the delay's (GLO > DLY MIX); C the selected track's filter cutoff (ANALOG's CUT, the
