@@ -29,6 +29,8 @@ static int seq_counting(void) { return 0; }
 static void step_clear(step_t *st) { memset(st, 0, sizeof *st); st->time = ST_REST; }
 static void rec_drum(track_t *t, step_t *s, uint32_t note, uint32_t vel, int32_t mic) { (void)t; (void)s; (void)note; (void)vel; (void)mic; }
 static void seq_start(void) { song.playing = 1; starts++; }
+static struct { uint32_t buttons; } fm1_in;            /* (REC is bit 0 here: ft_btn_mask) */
+static uint32_t fm1_ms;
 #include "../firmware/src/smk_take.c"
 
 static int bad;
@@ -68,8 +70,12 @@ static void take(double bpm, uint32_t quarters)
         ft_note_off(&trk[2], 60u + q % 12u);
         blocks(secs(beat / 2));
     }
-    ft_close_req = 1;
+    ft_btn_mask = 1u;                                   /* REC pressed on the downbeat, held 150 ms, let go */
+    fm1_in.buttons = 1u;
     ft_block();
+    blocks(secs(0.15));
+    fm1_in.buttons = 0;
+    blocks(2);
 }
 
 int main(void)
@@ -88,6 +94,9 @@ int main(void)
     }
     check("... a note on every 4th step, held a step longer (a TIE), rests between", ok);
     check("... the loop plays at once, REC off", starts == 1 && song.playing && !song.rec);
+    check("... closed on REC's press, not its release 150 ms later; the UI drops that press's tap",
+          ft_swallow == 1u && trk[2].p[P_SLEN] == 32);
+    ft_swallow = 0;
 
     reset(120);
     take(123.0, 8);

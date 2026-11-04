@@ -163,9 +163,25 @@ static void ft_close(void)
     seq_start();                                       /* this is the downbeat: the loop plays */
 }
 
+/* REC's button (the UI sets its bit: panel.btn[B_REC]). The take closes on its press, timed here, block by block, as
+ * SLOOP does: the UI's REC acts on the release (a layer button) a frame later, 100-200 ms after the "1" played, and a
+ * loop that much too long put the tempo low and the notes later and later on the grid. That press's tap is the take's
+ * (ft_swallow: smk_take_ui.c drops it) */
+static volatile uint32_t ft_btn_mask;
+static uint32_t ft_btn_prev;
+static volatile uint8_t ft_swallow;
+static volatile uint32_t ft_close_ms;
+
 /* once a block (keyboard_block): the take's time, its close (REC), its drop (PLAY), its 24 s */
 static void ft_block(void)
 {
+    uint32_t b = fm1_in.buttons & ft_btn_mask, press = b & ~ft_btn_prev;
+    ft_btn_prev = b;
+    if (ft_on && press) {                              /* REC down: the loop ends here */
+        ft_close_req = 1;
+        ft_swallow = 1;
+        ft_close_ms = fm1_ms;
+    }
     if (ft_arm && (song.playing || seq_counting()))
         ft_arm = FT_NONE;                              /* (started otherwise: PLAY, MIDI) */
     if (ft_drop_req) {

@@ -17,7 +17,12 @@ static int smk_project_empty(void)                     /* no track has a note or
 /* REC tapped (rec_tap, past its own checks): a take closed or cancelled, or one armed; -1 = not the take's (as ever) */
 static int smk_ft_rec_tap(uint32_t bit)
 {
-    if (ft_on) {                                        /* REC on the "1" after the last bar: the loop */
+    if (ft_swallow) {                                   /* the press that closed the take (seq.c ft_block): its tap */
+        ft_swallow = 0;
+        return 1;
+    }
+    if (ft_on) {                                        /* REC on the "1" after the last bar: the loop (a press the
+                                                         * audio side did not see) */
         ft_close_req = 1;
         return 1;
     }
@@ -56,6 +61,9 @@ static void smk_ft_poll(void)
     static uint32_t said = 0xFFFFFFFFu;
     uint32_t r = ft_res;
     char a[24], b[8];
+    ft_btn_mask = 1u << panel.btn[B_REC];               /* (the take closes on REC's press: seq.c ft_block) */
+    if (ft_swallow && !(fm1_in.buttons & ft_btn_mask) && fm1_ms - ft_close_ms > 1500u)
+        ft_swallow = 0;                                 /* (REC was held, not tapped: no tap to drop) */
     if (r) {
         ft_res = 0;
         if (r == 0xFFFFu)
