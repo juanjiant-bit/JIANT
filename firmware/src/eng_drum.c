@@ -115,6 +115,10 @@ static const int8_t DXO_TON[4] = {0, 0, -24, 0};         /* .. on TONE (COLOR: t
 static const uint8_t DXO_VEL[4] = {128, 128, 58, 58};    /* .. on the velocity, /128 (FLAM: its grace hit's) */
 #define DXO_FLAM ((FS * 20u / 1000u + CTL / 2u) / CTL)   /* FLAM: blocks from the grace hit to the hit (~20 ms) */
 static uint8_t dx_in_tch, dx_in_rat;                     /* the live note's TOUCH / RATCH (seq.c dxo_on; 0 none) */
+#if BOARD_SMK37
+static uint8_t dx_in_side;                               /* SMK-37: a drum pad of the bottom row, the sound's patch B
+                                                          * (its MORPH all the way: seq.c smk_drum_pads_block) */
+#endif
 static int32_t drum_oct_of(uint32_t note)                /* a MIDI note's octave of the kit */
 {
     if (note >= 35u && note <= 81u)
@@ -276,6 +280,10 @@ static void drum_note_on(track_t *t, voice_t *v)
     } else {
         L->rm = L->rt = 0;
     }
+#if BOARD_SMK37
+    if (dx_in_side)                                      /* (drum_render: MORPH clamped 0..127, B) */
+        L->rm = 127;
+#endif
     if (lane == DV_KICK)
         duck_hit = 1;
     dx_trigger(&L->x);

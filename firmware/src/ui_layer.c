@@ -705,7 +705,7 @@ static void layer_knob(uint32_t k, int32_t s)
     } else if (l == LAYER_SAVE) {                       /* KNOB 1: the song (in when SAVE lets go); 2..4: none */
         if (k == 0u)
             lys.song = (uint8_t)(clamp((int32_t)(lys.song ? lys.song - 1u : song_cur) + (s > 0 ? 1 : -1), 0,
-                                       NSONG - 1) + 1);
+                                       SONG_STORED - 1) + 1);
     } else if (l == LAYER_MACRO) {                      /* M1..M4 (the project's; the MOD slots that name them) */
         macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
     } else if (l == LAYER_REC) {                        /* CLICK (KNOB 2..4: none) */

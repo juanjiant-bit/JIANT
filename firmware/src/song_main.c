@@ -312,7 +312,7 @@ static int song_switch(uint32_t n, int load_a)
 {
     char nm[PROJ_NAME_LEN + 1u];
     uint32_t k;
-    if (n >= NSONG || n == song_cur)
+    if (n >= SONG_STORED || n == song_cur)
         return 1;
     if (transport_busy()) {
         ui_message(load_a ? "STOP TO CHANGE SONG" : "STOP TO CHANGE PROJECT");

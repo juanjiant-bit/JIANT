@@ -68,6 +68,118 @@ static uint32_t st_crc32_add(uint32_t c, const void *p, uint32_t n)   /* zlib CR
 }
 static uint32_t st_crc32(const void *p, uint32_t n) { return ~st_crc32_add(0xFFFFFFFFu, p, n); }
 
+#if BOARD_SMK37
+/* SMK-37 Pro (JIANT's layout: Israel Peña (pedeplei1281)). Every object has its A/B pair
+ * inside the flash map's allow-list (fm1_flash_map.h FL_DATA, FL_SMP) and nowhere else:
+ *   0x9D000..0xAEFFF  the layer's nine pairs, at the same places as in the other ported Felucca-family firmwares:
+ *                     projects (song 1's four sections) 0x9D000..0xA4FFF, user preset banks 0xA5000..0xA8FFF, the
+ *                     autosave 0xA9000 / 0xAA000, the user presets' FM6 patches (OBJ_UPFM6, the pair of the retired
+ *                     OBJ_FM6BANK) 0xAB000 / 0xAC000, settings 0xAD000 / 0xAE000
+ *   0xAF000           the store owner tag (st_owner_check), the same offset in every port
+ *   0xB0000           the FM6 voice bank (fm6_vbank.c FVB_HOME)
+ *   0xB1000..0xB2FFF  the song index (OBJ_SONGIDX)
+ *   0xB3000..0xBAFFF  song objects 0..3 (song 2's sections), up to FL_DATA's end
+ *   0xC2000..0xE9FFF  song objects 4..23 (songs 2..7), USRFLASH (FL_SMP; JIANT has no sampler)
+ * That is room for songs 1..7: song 8's four objects have no flash on the SMK (the owner's choice: no window is
+ * widened), ST_OBJ_LIMIT refuses them (st_head, st_load, st_save_to) and the UI does not offer song 8 (song_chain.c
+ * SONG_STORED). Never near BTIF / USRTRIM (0xC0000..0xC1FFF), USR (0xF4000..0xFDFFF) or key_mac (0xFF000). */
+#define ST_SMK_BASE 0x9D000u
+#define ST_SMK_PAIRS 9u
+#define ST_SMK_SECTORS (2u * ST_SMK_PAIRS)
+#define ST_SMK_VBANK 0xB0000u                  /* the FM6 voice bank (one sector) */
+#define ST_SMK_SONGIDX 0xB1000u                /* the song index's pair */
+#define ST_SMK_SONG_A 0xB3000u                 /* song objects 0..ST_SMK_SONGS_A - 1 */
+#define ST_SMK_SONGS_A 4u
+#define ST_SMK_SONG_B 0xC2000u                 /* the rest, in USRFLASH */
+#define ST_SMK_SONGS_B 20u
+#define ST_SMK_SONGS (ST_SMK_SONGS_A + ST_SMK_SONGS_B)   /* 24: songs 2..7, four sections each */
+#define ST_OBJ_LIMIT (OBJ_SONG1 + ST_SMK_SONGS)  /* the objects with flash (song 8's are not) */
+_Static_assert(OBJ_COUNT == OBJ_SONG1 + 7u * 4u && OBJ_SONG1 == 11u && OBJ_UPFM6 == OBJ_FM6BANK + 1u &&
+               OBJ_AUTOSAVE == OBJ_UPFM6 + 1u && OBJ_SONGIDX == OBJ_AUTOSAVE + 1u,
+               "SMK store: a new object needs a place");
+_Static_assert(ST_SMK_SONGS == 6u * 4u && ST_OBJ_LIMIT <= OBJ_COUNT, "SMK store: songs 1..7 (song 1: the projects)");
+_Static_assert(ST_SMK_BASE == FL_DATA_LO && ST_SMK_BASE + ST_SMK_SECTORS * ST_SECTOR == 0xAF000u,
+               "SMK store: the layer's objects end at the owner tag");
+_Static_assert(ST_SMK_VBANK == 0xAF000u + ST_SECTOR && ST_SMK_SONGIDX == ST_SMK_VBANK + ST_SECTOR &&
+               ST_SMK_SONG_A == ST_SMK_SONGIDX + 2u * ST_SECTOR, "SMK store: the voice bank, the index, the songs");
+_Static_assert(ST_SMK_SONG_A + ST_SMK_SONGS_A * 2u * ST_SECTOR == FL_DATA_HI, "SMK store: the songs fill FL_DATA");
+_Static_assert(ST_SMK_SONG_B == FL_SMP_LO && ST_SMK_SONG_B + ST_SMK_SONGS_B * 2u * ST_SECTOR == FL_SMP_HI,
+               "SMK store: the songs fill FL_SMP, never past it");
+static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy A (0) / B (1) */
+{
+    static const uint8_t ORDER[OBJ_SONGIDX] = {
+        [OBJ_PROJECT0] = 0, [OBJ_PROJECT0 + 1] = 1, [OBJ_PROJECT0 + 2] = 2, [OBJ_PROJECT0 + 3] = 3,
+        [OBJ_UPRESET0] = 4, [OBJ_UPRESET0 + 1] = 5, [OBJ_AUTOSAVE] = 6, [OBJ_FM6BANK] = 7, [OBJ_UPFM6] = 7,
+        [OBJ_SETTINGS] = 8};
+    uint32_t c = (copy & 1u) * ST_SECTOR, j;
+    if (obj < OBJ_SONGIDX)
+        return ST_SMK_BASE + ORDER[obj] * 2u * ST_SECTOR + c;
+    if (obj == OBJ_SONGIDX)
+        return ST_SMK_SONGIDX + c;
+    j = obj - OBJ_SONG1;
+    if (j < ST_SMK_SONGS_A)
+        return ST_SMK_SONG_A + j * 2u * ST_SECTOR + c;
+    if (j < ST_SMK_SONGS)
+        return ST_SMK_SONG_B + (j - ST_SMK_SONGS_A) * 2u * ST_SECTOR + c;
+    return 0xFFFFF000u;                         /* (song 8: refused before this; no flash window accepts it) */
+}
+
+/* The owner of the store. Several FM-1 firmwares are ported to the SMK-37 Pro with the same board layer and this
+ * same store area, each with its own object formats: a firmware must never parse another's data. The sector after
+ * the layer's objects (0xAF000, the same place in every port) holds "SMK37DATA" + the firmware family
+ * (FELUCCA_DATA_FAMILY, build.py; the SMK build: JIANT). Ours: load as ever. None (erased): data written before the
+ * tag existed, kept only with FELUCCA_DATA_UNTAGGED_OK (0 here: the SMK build never had untagged data, so an erased tag
+ * with objects present is another firmware's, or the stock firmware's settings). Another family's: clear FL_DATA's
+ * objects (0x9D000..0xAEFFF), the FM6 voice bank (0xB0000), the song index and the songs there (0xB1000..0xBAFFF),
+ * and take the store. In USRFLASH (0xC2000..) only the sectors that hold one of JIANT's own song records are cleared
+ * (data of an earlier JIANT, so a switch back starts clean): another firmware's data there (user samples, the stock
+ * firmware's) is left as it is, and never parses as a song (magic, type, slot and two CRCs). Calibration, BT pairing,
+ * USR and key_mac are outside every window: never touched. Called first in persist_boot (project.c), before any store
+ * read. */
+#ifndef FELUCCA_DATA_FAMILY
+#define FELUCCA_DATA_FAMILY "JIANT"
+#endif
+#ifndef FELUCCA_DATA_UNTAGGED_OK
+#define FELUCCA_DATA_UNTAGGED_OK 0
+#endif
+#define ST_OWNER_OFF 0xAF000u
+_Static_assert(ST_OWNER_OFF == ST_SMK_BASE + ST_SMK_SECTORS * ST_SECTOR && ST_OWNER_OFF != ST_SMK_VBANK,
+               "SMK store owner: the sector after the objects");
+static uint8_t st_owner_cleared;                /* (the UI may say so) */
+static int st_head(uint32_t obj, uint32_t copy, st_hdr_t *h);
+static void st_owner_check(void)
+{
+    static const char FAM[] = FELUCCA_DATA_FAMILY;
+    uint8_t tag[16], want[16];
+    uint32_t i, erased = 1, ours = 1, s;
+    for (i = 0; i < 16u; i++)
+        want[i] = i < 9u ? (uint8_t)"SMK37DATA"[i] : i - 9u < sizeof FAM - 1u ? (uint8_t)FAM[i - 9u] : 0u;
+    if (st_read(ST_OWNER_OFF, tag, 16))
+        return;
+    for (i = 0; i < 16u; i++) {
+        erased &= tag[i] == 0xFFu;
+        ours &= tag[i] == want[i];
+    }
+    if (ours)
+        return;
+    if (!erased || !FELUCCA_DATA_UNTAGGED_OK) {     /* another firmware's store (or untagged data): clear it */
+        st_hdr_t h;
+        for (s = 0; s < ST_SMK_SECTORS; s++)
+            st_erase(ST_SMK_BASE + s * ST_SECTOR);
+        for (s = ST_SMK_VBANK; s < FL_DATA_HI; s += ST_SECTOR)   /* the voice bank, the song index, songs in FL_DATA */
+            st_erase(s);
+        for (s = OBJ_SONG1 + ST_SMK_SONGS_A; s < ST_OBJ_LIMIT; s++)   /* songs in USRFLASH: JIANT's own records only */
+            for (i = 0; i < 2u; i++)
+                if (!st_head(s, i, &h))
+                    st_erase(st_sector(s, i));
+        st_owner_cleared = 1;
+    }
+    st_erase(ST_OWNER_OFF);
+    st_prog(ST_OWNER_OFF, want, 16);
+}
+#else
+#define ST_OBJ_LIMIT OBJ_COUNT                  /* (the FM-1: every object has its pair) */
+static void st_owner_check(void) {}
 static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy A (0) / B (1) */
 {
     if (obj == OBJ_SETTINGS)
@@ -84,13 +196,14 @@ static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy 
         return 0xDC000u + (obj - OBJ_UPRESET0) * 2u * ST_SECTOR + copy * ST_SECTOR;
     return 0x97000u + (obj - OBJ_PROJECT0) * 2u * ST_SECTOR + copy * ST_SECTOR;
 }
+#endif
 
 static uint8_t st_buf[ST_PAYLOAD_MAX] __attribute__((aligned(4), section(".lowbuf")));   /* (0.9.0: app.ld LOWBUF, was
                                                    * .bss: main loop only, zeroed at boot as .bss) */
 
 static int st_head(uint32_t obj, uint32_t copy, st_hdr_t *h)   /* commit record valid: 0 */
 {
-    if (obj >= OBJ_COUNT || copy > 1u)
+    if (obj >= ST_OBJ_LIMIT || copy > 1u)
         return -1;
     if (st_read(st_sector(obj, copy), h, sizeof *h))
         return -1;
@@ -137,7 +250,7 @@ static int st_load(uint32_t obj, void *dst, uint32_t max)
 {
     uint32_t i;
     st_hdr_t h;
-    if (obj >= OBJ_COUNT || st_current(obj, &h) < 0 || h.len > max)
+    if (obj >= ST_OBJ_LIMIT || st_current(obj, &h) < 0 || h.len > max)
         return -1;
     for (i = 0; i < h.len; i++)
         ((uint8_t *)dst)[i] = st_buf[i];
@@ -150,7 +263,7 @@ static int st_save_to(uint32_t obj, const void *src, uint32_t len, int to)
     uint32_t seq, base, off;
     int cur, rc;
     st_hdr_t h;
-    if (obj >= OBJ_COUNT || len > ST_PAYLOAD_MAX || to > 1)
+    if (obj >= ST_OBJ_LIMIT || len > ST_PAYLOAD_MAX || to > 1)
         return -1;
     cur = st_current(obj, &h);
     seq = cur < 0 ? 0u : h.seq;

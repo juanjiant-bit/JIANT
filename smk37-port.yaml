@@ -1,0 +1,156 @@
+# smk37-port.yaml: every decision for one SMK-37 port, in one place.
+#
+# Filled from the owner's answers (fm1-to-smk37 AGENTS.md, step 0). Change this file first, then the code.
+# Patterns: fm1-to-smk37 docs/06-mapping-patterns.md.
+
+firmware:
+  name: "JIANT FM"          # unchanged on the SMK-37: same name, logo and boot
+  upstream: "https://github.com/juanjiant-bit/JIANT"
+  base: "2aa2ff5 (V10.6c)"  # main at the time of the port
+  family: felucca           # a fork of Felucca 1.1.5.1 (with SLOOP's song system)
+  board_layer: felucca      # genkigenki/Felucca smk37 (on Felucca 1.6); JIANT's base is older than 1.6, so applied
+                            # as on the worked example rainbow-smk37 (a 1.1.5 fork), by area
+  lost_on_smk:
+    - TRS MIDI IN / MIDI clock in over TRS (PH8 is a key-matrix row on the SMK)
+    - the stock firmware's settings area is cleared on the port's first boot (calibration and return to stock kept)
+  priorities:
+    - the sequencer on the pads (steps that play what they hold)
+    - finger drumming on the pads outside the sequencer
+    - the FM-1 workflow and manual still valid (JIANT's own layout first)
+    - MIDI out on the TRS jack (new on the SMK: hardware synths without a computer)
+
+delivery:
+  mode: upstream            # a PR to juanjiant-bit/JIANT, hosted in the porter's fork until merged
+  pr: ""
+  fork: "pedeplei1281/JIANT, branch smk37"   # until merged; archived once the PR is merged
+  package: "jiant-smk37.fwsc, jiant-smk37-elite.fwsc, jiant-smk37-mke.fwsc"
+  usb_name: "JIANT"         # kept (loader: "JIANT Update"); the installers match /jiant|felucca/
+  data_family: "JIANT"      # own family: another firmware's data is cleared on a switch, and JIANT's on a switch back
+  copyright: "Israel Peña (pedeplei1281)"   # the porter, in the new SMK files' headers (no credit on screen)
+
+models:
+  - pro                     # SMK-37 Pro; also for Starrykey 37 Play
+  - elite                   # SMK-37 Elite
+  - mke                     # MKE-P37
+
+keys:
+  middle: fm1               # keys 5..31 (F3..G5) = the FM-1's 27 keys
+  outer: extend             # notes on the selected track, through JIANT's own key_on / key_off path (chords, ARP,
+                            # step REC, held-key lists see them); on every track type, no drums (the pads do drums)
+  outer_drums: {}
+  velocity: factory         # the unit's calibration curves (trimdat, read only)
+  velocity_setting: true    # MENU: KEY VELOCITY = DYNAMIC (default) | SOFT | HARD | FIXED 64 / 100 / 127, SMK only,
+                            # applied to keys and pads in one helper, stored in spare settings bits (0 = DYNAMIC)
+
+pads:
+  pattern: custom           # steps on SEQ pages, drum pads everywhere else
+  order: reading            # pads 1-8 top row (hardware pads 0..7), 9-16 bottom (8..15); one conversion for hits and LEDs
+  colours: screen           # the screen's track colours
+  idle: dark
+  playhead: bright
+  seq:                      # on every SEQ page: the 16 steps of the bar shown (1-16, 17-32, ...; < > pick the bar)
+    drum_track: "tap toggles the step's hit for the selected lane (as the FM-1 grid's white keys) and plays that lane"
+    melodic_track: "toggle + play: a tap on an empty step writes the last played note there; a tap on a filled step
+                    clears it; the step's note / chord plays either way"
+    hold: "a held step pad + KNOB 1-4 (K5-K8) is a parameter lock, as a held step on the FM-1"
+  drums:                    # outside the SEQ pages, and while KNOB BANK is held on a SEQ page
+    track: T1               # always T1 (a new project's DRUM-X track); T1 not on DRUM: the pads play T1's sound as notes
+    top_row: [BD, SD, CP, CH, OH, TM, RS, CB]       # the eight DRUM-X sounds, side A
+    bottom_row: [BD, SD, CP, CH, OH, TM, RS, CB]    # the same sounds, side B
+    lit: "the sound's colour dim, bright on a hit"
+    rec: true               # only with T1 itself armed (REC), hits overdub into T1's pattern, quantized, with velocity (owner, 2026-11-04)
+    rec_side: "a recorded hit is a lane hit: a bottom-row (side B) hit plays back as side A (owner OK, 2026-11-04)"
+  picker:
+    enabled: false
+  velocity: true
+
+faders:
+  pattern: banks
+  takeover: soft            # a fader acts only once it moves (also after a bank change)
+  bank_button: FADER BANK   # cycles A -> B -> C; LED lit off bank A
+  banks:
+    A: [level T1, level T2, level T3, level T4]
+    B: [level T5, level T6, reverb return, delay return]
+    C: [selected track filter, selected track drive / dist, selected track reverb send, selected track delay send]
+  screen: bar               # a short overlay naming the bank and the value
+
+wheels:
+  pitch:
+    target: bend
+    range_semitones: 2      # default; MENU: BEND RANGE 1, 2, 3, 4, 5, 7, 12 (SMK only, stored in a spare byte, 0 = 2)
+    applies_to: selected
+  mod:
+    target: macro
+    detail: "feeds JIANT's existing MOD source MODW (today MIDI CC1); each track routes it on LFO > MOD"
+  calibration: auto         # centre at power-on, range widens as seen, dead band
+
+rules:
+  no_doubles: true
+  doubles_allowed:
+    - "< > page back / forward outside SEQ (as SELECT): owner's OK"
+
+knobs:
+  layout: fm1
+  K1: master                # virtual MASTER pot
+  K2: select
+  K3: algorithm             # the track, T1-T6
+  K4: presets
+  K5: knob 1
+  K6: knob 2
+  K7: knob 3
+  K8: knob 4
+  step: detent
+  pages: {}
+
+buttons:
+  map: printed
+  names: firmware           # JIANT's: HOME ENV LFO FX SCL EDIT GLO SAVE ARP SEQ PLAY REC OCT- OCT+
+  extra:
+    KNOB BANK: "held on a SEQ page: the pads are drum pads (finger-drum without leaving SEQ); elsewhere nothing"
+    FADER BANK: "fader bank A, B, C"
+    "<": "on SEQ: the pads' bar back (steps 1-16 / 17-32 / ...); elsewhere page back (as SELECT)"
+    ">": "on SEQ: the pads' bar forward; elsewhere page forward (as SELECT)"
+
+screen:
+  style: keep               # JIANT's UI and its three skins (AIR, COLORS, HUD)
+  colours: "the screen's track colours, the same on the pads"
+  knob_labels: "on-screen KNOB 1-4 / K1-K4 shown as K5-K8 behind BOARD_SMK37, the same in SMK37.md"
+  rules:
+    - group screens by meaning; the knob block at the bottom of the screen
+    - the screen shows what you touch first (value next to the thing, a short hint line)
+    - same colours and same places on screen and panel
+    - no hidden modes; play first, few menus
+
+storage:                    # owner's decision: 7 songs on the SMK
+  songs: 7                  # songs 1..7 (song 1 = the four project slots); song 8 has no storage on the SMK. NSONG stays
+                            # 8 and every format (song index, editor / backup protocol) is unchanged; the UI and the
+                            # store refuse song 8 on the SMK. FM-1: 8 songs as ever.
+  layout: "38 -> 34 A/B pairs + the FM6 voice bank = 69 sectors, inside the layer's allow-list only:
+           0x9D000-0xAEFFF (18), owner tag 0xAF000, voice bank 0xB0000, 0xB1000-0xBAFFF (10), and the sample area
+           0xC2000-0xE9FFF (40; JIANT has no sampler). No widening of the allow-list, no protected range."
+
+pedal: none
+
+trs_midi_out:               # docs/06 "TRS jack: MIDI out" (Snoop37 2.6.4 pattern; not yet confirmed on a unit there)
+  enabled: true
+  pin: "PC7, UART1 TX at 31250 baud (the jack's MIDI IN on the FM-1, PH8, stays off: it is a matrix row)"
+  stream: "the same as USB MIDI out, after JIANT's MENU > MIDI > MIDI OUT filter (KEYS / CLOCK / ALL / OFF): notes on
+           each track's channel (T1 = ch 1 .. T6 = ch 6), clock, START / STOP; sent even with no USB host"
+  bytes: "per USB-MIDI packet by its CIN (channel messages, realtime, system common); SysEx and malformed packets dropped"
+  pacing: "256-byte ring of whole messages, drained one byte per 10 kHz tick (never a wait loop); a stuck UART gives up
+           after 3 ms, after 4 in a row the jack goes quiet until the setting is set again"
+  setting: "MENU > MIDI > TRS MIDI OUT ON / OFF, default ON, SMK builds only, stored in a spare settings bit (0 = ON)"
+  adapter: "SMK-37 listed as type A (community spec, not measured); SMK37.md says to try type B if a synth stays silent"
+  manual: "SMK37.md: MIDI OUT on the TRS jack works on the SMK (the FM-1 manual's 'not possible' is FM-1 only)"
+
+modes: {}                   # JIANT has one UI (skins are looks, not modes)
+
+open_questions:
+
+rec_free_take:              # owner's request 2026-11-04, after SLOOP's free take (isod89/sloop-fm1, GPL-3.0)
+  when: "REC from stop, off the SEQ pages, internal clock; the first note on the selected track starts it"
+  empty_project: "a free take: REC on the next downbeat closes the loop, its length sets the tempo"   # owner: empty project only
+  with_notes: "the first note starts the transport at the tempo set and is step 1 (COUNT-IN OFF; with a COUNT-IN, REC counts in as before)"
+  length: "1, 2 or 4 bars, the tempo nearest the one set; within 3 % the set tempo is kept"         # owner
+  other_tracks: "all tracks take the loop's length (1/16 steps)"                                     # owner
+  drop: "PLAY drops a take; it closes by itself after 24 s; REC while armed with no note disarms"

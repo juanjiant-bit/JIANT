@@ -679,6 +679,10 @@ static volatile uint8_t asleep_hit;                     /* (0.6.28) a note went 
 static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
 {
     uint32_t any = 0, i, mode = trk_vmode(t);
+#if BOARD_SMK37
+    if ((smk_midi_only >> ((uint32_t)(t - trk) % NTRK)) & 1u)
+        return;                                         /* SMK-37 MIDI ONLY: no sound of its own (seq.c sends it) */
+#endif
     if ((uint32_t)(t - trk) >= trk_live && !t->p[P_MUTE]) {
         asleep_hit = 1;                                 /* (0.6.28) a note for a track asleep: the UI says so */
         return;

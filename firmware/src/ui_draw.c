@@ -507,11 +507,15 @@ static void draw_column_tall(uint32_t c, const char *label, const char *val, con
     uint16_t lc = hot ? T_ACCENT : mot ? T_THEME : T_MID;
     const aafont_t *lf = &AF_M, *vf = &AF_L;
     int32_t ly = LG_LY, vy, lw = 0, mw;
+#if BOARD_SMK37
+    char k[3] = {'K', (char)('5' + c), 0};              /* SMK-37: KNOB 1..4 are its K5..K8 */
+#else
     char k[3] = {'K', (char)('1' + c), 0};
+#endif
     uint32_t ic = mot ? ICON_X_MOTION : icon, isz = 16u;
     cv_begin(COL_W, LG_CARD_H, T_BG);
     cv_rrect(0, 0, COL_W, LG_CARD_H, 4, T_SURF, T_BG);
-    {   /* the knob: "K1" .. "K4" on a pill */
+    {   /* the knob: "K1" .. "K4" on a pill (SMK-37: "K5" .. "K8") */
         uint16_t fill = hot ? T_ACCENT : label[0] || val[0] ? T_KEY : T_DIM;
         mw = ink_w(&AF_M, k) + 10;
         cv_rrect(5, LG_MY, mw, LG_MH, 5, fill, T_SURF);
