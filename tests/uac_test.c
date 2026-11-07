@@ -178,6 +178,59 @@ static double dup_run(double fd, uint32_t secs, uint32_t *under, uint32_t *over,
     free(ys); free(ts);
     return blocks;
 }
+/* (SMK-37, owner's iPad 2026-11-07) as the unit runs it: a DMA half of 128 frames rendered as four blocks of 32 back to
+ * back, the render taking render_s; the host's packets every 1 ms into EP4 OUT's one buffer. nested: TIMER5 takes each
+ * at once, render or not (main.c fm1_timer5_irq, SMK-37); else (as before) only after the render, a second packet
+ * while one waits lost. A 700 Hz sine (a lost 1 ms is a jump in it). -> lost packets; *under, *jump as dup_run */
+static uint32_t dup_burst(double fd, uint32_t secs, double render_s, int nested, uint32_t *under, int32_t *jump)
+{
+    static uint32_t pk[UI_MAXF], pend[UI_MAXF];
+    double th = 0, tp = 0, th0 = 0, f0 = 700.0;
+    uint32_t acc = 0, i, b, lost = 0, pend_n = 0, u0 = 0, seen = 0;
+    int32_t prev = 0;
+    memset(&uin, 0, sizeof uin);
+    ui_w = ui_r = 0;
+    usb.config = 1;
+    uin.alt = 1;
+    *jump = 0;
+    for (th0 = 0; th0 < secs; th0 += 128.0 / fd) {      /* a half starts at th0, its render ends at th0 + render_s */
+        while (tp < th0 + render_s) {                   /* the packets up to the render's end */
+            uint32_t f = 44u;
+            acc += 100u;
+            if (acc >= 1000u) { acc -= 1000u; f = 45u; }
+            for (i = 0; i < f; i++, th += 1.0 / 44100.0) {
+                int16_t l = (int16_t)lrint(20000.0 * sin(2.0 * M_PI * f0 * th));
+                pk[i] = (uint32_t)(uint16_t)l | (uint32_t)(uint16_t)l << 16;
+            }
+            if (nested || tp < th0) {                   /* taken at once (nested, or no render running) */
+                if (pend_n) { uin_take(pend, pend_n * 4u); pend_n = 0; }
+                uin_take(pk, f * 4u);
+            } else if (pend_n) {
+                lost++;                                 /* the buffer still full: this one is lost */
+            } else {
+                memcpy(pend, pk, f * 4u);
+                pend_n = f;
+            }
+            tp += 0.001;
+        }
+        for (b = 0; b < 4u; b++) {                      /* the half's four blocks, rendered at th0 */
+            uac_in_fill(32u);
+            if (th0 > secs / 2.0 && uin_on) {
+                if (!seen) { seen = 1; u0 = uin.underruns; }
+                for (i = 0; i < 32u; i++) {
+                    int32_t d = uin_l[i] - prev, a = d < 0 ? -d : d;
+                    if (a > *jump) *jump = a;
+                    prev = uin_l[i];
+                }
+            } else if (uin_on) {
+                prev = uin_l[31];
+            }
+        }
+        if (pend_n && !nested) { uin_take(pend, pend_n * 4u); pend_n = 0; }   /* usb_poll after the render */
+    }
+    *under = uin.underruns - u0;
+    return lost;
+}
 static void test_duplex(void)
 {
     const uint8_t *d; uint16_t l; uint32_t off, nif = 0, under, over;
@@ -218,6 +271,19 @@ static void test_duplex(void)
     dup_run(44117.6, 6, &under, &over, &fmin, &fmax, &snr, &jump, 1);
     printf("  host silent 200 ms: underruns %u, starts primed again %d, largest step %d\n", uin.underruns, uin.go, jump);
     check("in+out: the host silent 200 ms: one underrun (a fade out, no click), primed again and clean after", uin.underruns == 1u && uin.go && jump < 4000);
+    {   /* (SMK-37, owner's iPad) a half rendered in a burst taking 1.6 ms (the unit's PEAK 56 %) */
+        uint32_t lost;
+        lost = dup_burst(44117.6, 8, 0.0016, 0, &under, &jump);
+        printf("  render 1.6 ms, packets only after it: lost %u, underruns %u, largest step %d\n", lost, under, jump);
+        check("in+out (as before): a render over 1 ms loses packets, a click each (why the iPad crackled)",
+              lost > 100u && jump > 4000);
+        lost = dup_burst(44117.6, 8, 0.0016, 1, &under, &jump);
+        printf("  render 1.6 ms, packets taken nested: lost %u, underruns %u, largest step %d\n", lost, under, jump);
+        check("in+out (SMK-37, TIMER5 takes them nested): none lost, no underrun, no click", !lost && !under && jump < 4000);
+        lost = dup_burst(44060.0, 8, 0.0026, 1, &under, &jump);
+        check("in+out (nested): a render of 2.6 ms of the half's 2.9 and a slow clock: none lost, no underrun, no click",
+              !lost && !under && jump < 4000);
+    }
     {   /* a new stream (uin_stream: gen + 1) with the last one's frames still in the ring: dropped, primed afresh */
         static uint32_t pk[UI_MAXF];
         uint32_t k;

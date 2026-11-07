@@ -51,6 +51,13 @@ __attribute__((noinline)) void fm1_timer5_irq(void)
         felucca_dbg.nested++;
 #if FELUCCA_UAC
         uac_service();
+#if BOARD_SMK37
+        /* (SMK-37, owner's iPad 2026-11-07: IN+OUT / STEMS+IN crackled all the time) the host's audio taken nested too:
+         * EP4 OUT has one buffer, so a packet that came while the render ran over 1 ms was lost when the next one came
+         * (a 1 ms hole, a click); usb_poll took them only after the render. EP4 alone, INDEX set, as uac_service */
+        if (usb.config && uin.alt)
+            uin_rx();
+#endif
 #endif
         t5_nested_ticks += fm1_ticks() - t0;
         return;
