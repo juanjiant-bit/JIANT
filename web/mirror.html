@@ -62,6 +62,13 @@ const LOOKS = ["Sharp", "Smooth", "HQ"];
 let look = 0;
 try { look = Math.max(0, LOOKS.indexOf(localStorage.getItem("jiantMirrorLook") || "Sharp")); } catch (e) { /* none */ }
 let access = null, out = null, inp = null, keep = 0, dirty = false, frames = 0, lastRx = 0, wake = null;
+let bx0 = 0, by0 = 0, bx1 = 240, by1 = 240;            // the part of the picture changed since the last draw
+let lastDraw = 0, drawCost = 0;                        // (a slow phone: draws no closer than their own cost)
+function changed(x0, y0, x1, y1) {
+  if (!dirty) { bx0 = x0; by0 = y0; bx1 = x1; by1 = y1; dirty = true; return; }
+  bx0 = Math.min(bx0, x0); by0 = Math.min(by0, y0); bx1 = Math.max(bx1, x1); by1 = Math.max(by1, y1);
+}
+function changedAll() { changed(0, 0, 240, 240); }
 const RGB = new Uint32Array(65536);                     // RGB565 -> ABGR (little endian ImageData)
 for (let c = 0; c < 65536; c++) {
   const r = (c >> 11) & 31, gg = (c >> 5) & 63, b = c & 31;
@@ -88,9 +95,9 @@ function rect(d) {                                      // one RECT frame onto t
     else if (t === 0x61) {
       const c = d[i] | d[i + 1] << 7 | d[i + 2] << 14; i += 3;
       cache[(c ^ (c >> 5) ^ (c >> 11)) & 63] = c; prev = c; put(c);
-    } else return;                                      // not ours: drop the rest of the frame
+    } else break;                                       // not ours: drop the rest of the frame
   }
-  dirty = true;
+  changed(x, y, x + w, y + h);
 }
 function onMsg(e) {
   const d = e.data;
@@ -99,11 +106,11 @@ function onMsg(e) {
   if (d[4] === RECT) { rect(d); frames++; }
   else if (d[4] === MIRROR && !out) lock(e.target);
 }
-function scale2x(a, w, b) {                            // Scale2x (EPX): a w x w -> b 2w x 2w
+function scale2x(a, w, b, x0, y0, x1, y1) {            // Scale2x (EPX): a w x w -> b 2w x 2w, the pixels x0..x1, y0..y1
   const W = w * 2;
-  for (let y = 0; y < w; y++) {
+  for (let y = y0; y < y1; y++) {
     const yu = y ? y - 1 : 0, yd = y < w - 1 ? y + 1 : y;
-    for (let x = 0; x < w; x++) {
+    for (let x = x0; x < x1; x++) {
       const P = a[y * w + x], A = a[yu * w + x], D = a[yd * w + x];
       const C = a[y * w + (x ? x - 1 : 0)], B = a[y * w + (x < w - 1 ? x + 1 : x)];
       const o = (2 * y) * W + 2 * x;
@@ -116,13 +123,14 @@ function scale2x(a, w, b) {                            // Scale2x (EPX): a w x w
 }
 function fit() {                                        // the canvas at the screen's own pixels
   const r = cv.getBoundingClientRect(), d = Math.max(1, Math.round(r.width * (window.devicePixelRatio || 1)));
-  if (cv.width !== d) { cv.width = cv.height = d; dirty = true; }
+  if (cv.width !== d) { cv.width = cv.height = d; changedAll(); }
 }
 new ResizeObserver(fit).observe(cv);
-function draw() {
-  if (dirty) {
+function draw(now) {
+  if (dirty && now - lastDraw >= drawCost) {
+    const t0 = performance.now(), x0 = bx0, y0 = by0, x1 = bx1, y1 = by1;
     dirty = false;
-    sg.putImageData(img, 0, 0);
+    sg.putImageData(img, 0, 0, x0, y0, x1 - x0, y1 - y0);
     const D = cv.width;
     if (LOOKS[look] === "Sharp") {
       const k = Math.max(1, Math.floor(D / 240));
@@ -135,12 +143,17 @@ function draw() {
       g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
       g.drawImage(src, 0, 0, D, D);
     } else {
-      scale2x(px32, 240, s2);
-      scale2x(s2, 480, hq32);
-      hg.putImageData(hqImg, 0, 0);
+      // a pixel's Scale2x reads its four neighbours: the changed part and one pixel round it, at each step
+      const a0 = Math.max(0, x0 - 1), b0 = Math.max(0, y0 - 1), a1 = Math.min(240, x1 + 1), b1 = Math.min(240, y1 + 1);
+      scale2x(px32, 240, s2, a0, b0, a1, b1);
+      const c0 = Math.max(0, 2 * a0 - 1), d0 = Math.max(0, 2 * b0 - 1), c1 = Math.min(480, 2 * a1 + 1), d1 = Math.min(480, 2 * b1 + 1);
+      scale2x(s2, 480, hq32, c0, d0, c1, d1);
+      hg.putImageData(hqImg, 0, 0, 2 * c0, 2 * d0, 2 * (c1 - c0), 2 * (d1 - d0));
       g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
       g.drawImage(hq, 0, 0, D, D);
     }
+    lastDraw = now;
+    drawCost = Math.min(200, performance.now() - t0);
   }
   requestAnimationFrame(draw);
 }
@@ -194,7 +207,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && out) { ask(out, 3); wakeOn(); }
 });
 $("go").onclick = connect;
-function showLook() { $("look").textContent = LOOKS[look]; dirty = true; }
+function showLook() { $("look").textContent = LOOKS[look]; changedAll(); }
 $("look").onclick = () => {
   look = (look + 1) % LOOKS.length;
   try { localStorage.setItem("jiantMirrorLook", LOOKS[look]); } catch (e) { /* not kept */ }
