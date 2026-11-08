@@ -22,8 +22,7 @@
   button:active { background: #2c2c2c; }
   main { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 0 8px 8px; }
   canvas { background: #000; width: min(100%, calc(100dvh - 72px)); height: auto; aspect-ratio: 1 / 1;
-    image-rendering: pixelated; touch-action: manipulation; }
-  body.smooth canvas { image-rendering: auto; }
+    touch-action: manipulation; }
   body.full main { padding: 0; }
   body.full canvas { width: min(100vw, 100dvh); }
   #help { max-width: 34em; color: var(--dim); padding: 0 16px 12px; }
@@ -34,7 +33,7 @@
 <header id="bar">
   <button id="go">Connect</button>
   <span id="state">Plug the keyboard in, then Connect.</span>
-  <button id="look" title="Sharp or smooth pixels">Sharp</button>
+  <button id="look" title="How the 240 x 240 picture is enlarged: Sharp, Smooth or HQ">Sharp</button>
   <button id="full">Full screen</button>
 </header>
 <div id="help">
@@ -48,8 +47,20 @@
 // F0 7D 46 4C 50 on w h F7 is the reply; F0 7D 46 4C 51 x y w h o tokens F7 a window's pixels
 const HDR = [0x7D, 0x46, 0x4C], MIRROR = 80, RECT = 81;
 const $ = id => document.getElementById(id);
+// the keyboard's 240 x 240 picture (src), enlarged onto the page's canvas at the screen's own pixels (cv):
+// SHARP even blocks (nearest to a whole multiple), then a smooth step to the size; SMOOTH high-quality smoothing;
+// HQ Scale2x twice (the edges of flat shapes rounded, 960 x 960), then smoothed to the size
 const cv = $("scr"), g = cv.getContext("2d");
-let img = g.createImageData(240, 240), px32 = new Uint32Array(img.data.buffer);
+const src = document.createElement("canvas"); src.width = src.height = 240;
+const sg = src.getContext("2d");
+let img = sg.createImageData(240, 240), px32 = new Uint32Array(img.data.buffer);
+const mid = document.createElement("canvas"), mg = mid.getContext("2d");
+const hq = document.createElement("canvas"); hq.width = hq.height = 960;
+const hg = hq.getContext("2d"), hqImg = hg.createImageData(960, 960), hq32 = new Uint32Array(hqImg.data.buffer);
+const s2 = new Uint32Array(480 * 480);
+const LOOKS = ["Sharp", "Smooth", "HQ"];
+let look = 0;
+try { look = Math.max(0, LOOKS.indexOf(localStorage.getItem("jiantMirrorLook") || "Sharp")); } catch (e) { /* none */ }
 let access = null, out = null, inp = null, keep = 0, dirty = false, frames = 0, lastRx = 0, wake = null;
 const RGB = new Uint32Array(65536);                     // RGB565 -> ABGR (little endian ImageData)
 for (let c = 0; c < 65536; c++) {
@@ -88,8 +99,49 @@ function onMsg(e) {
   if (d[4] === RECT) { rect(d); frames++; }
   else if (d[4] === MIRROR && !out) lock(e.target);
 }
+function scale2x(a, w, b) {                            // Scale2x (EPX): a w x w -> b 2w x 2w
+  const W = w * 2;
+  for (let y = 0; y < w; y++) {
+    const yu = y ? y - 1 : 0, yd = y < w - 1 ? y + 1 : y;
+    for (let x = 0; x < w; x++) {
+      const P = a[y * w + x], A = a[yu * w + x], D = a[yd * w + x];
+      const C = a[y * w + (x ? x - 1 : 0)], B = a[y * w + (x < w - 1 ? x + 1 : x)];
+      const o = (2 * y) * W + 2 * x;
+      if (C === A && C !== D && A !== B) b[o] = A; else b[o] = P;
+      if (A === B && A !== C && B !== D) b[o + 1] = B; else b[o + 1] = P;
+      if (D === C && D !== B && C !== A) b[o + W] = C; else b[o + W] = P;
+      if (B === D && B !== A && D !== C) b[o + W + 1] = D; else b[o + W + 1] = P;
+    }
+  }
+}
+function fit() {                                        // the canvas at the screen's own pixels
+  const r = cv.getBoundingClientRect(), d = Math.max(1, Math.round(r.width * (window.devicePixelRatio || 1)));
+  if (cv.width !== d) { cv.width = cv.height = d; dirty = true; }
+}
+new ResizeObserver(fit).observe(cv);
 function draw() {
-  if (dirty) { g.putImageData(img, 0, 0); dirty = false; }
+  if (dirty) {
+    dirty = false;
+    sg.putImageData(img, 0, 0);
+    const D = cv.width;
+    if (LOOKS[look] === "Sharp") {
+      const k = Math.max(1, Math.floor(D / 240));
+      if (mid.width !== 240 * k) { mid.width = mid.height = 240 * k; }
+      mg.imageSmoothingEnabled = false;
+      mg.drawImage(src, 0, 0, 240 * k, 240 * k);
+      g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+      g.drawImage(mid, 0, 0, D, D);
+    } else if (LOOKS[look] === "Smooth") {
+      g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+      g.drawImage(src, 0, 0, D, D);
+    } else {
+      scale2x(px32, 240, s2);
+      scale2x(s2, 480, hq32);
+      hg.putImageData(hqImg, 0, 0);
+      g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+      g.drawImage(hq, 0, 0, D, D);
+    }
+  }
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
@@ -142,10 +194,13 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && out) { ask(out, 3); wakeOn(); }
 });
 $("go").onclick = connect;
+function showLook() { $("look").textContent = LOOKS[look]; dirty = true; }
 $("look").onclick = () => {
-  document.body.classList.toggle("smooth");
-  $("look").textContent = document.body.classList.contains("smooth") ? "Smooth" : "Sharp";
+  look = (look + 1) % LOOKS.length;
+  try { localStorage.setItem("jiantMirrorLook", LOOKS[look]); } catch (e) { /* not kept */ }
+  showLook();
 };
+showLook();
 $("full").onclick = async () => {
   try {
     if (!document.fullscreenElement) { await document.documentElement.requestFullscreen(); document.body.classList.add("full"); }
