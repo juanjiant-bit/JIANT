@@ -22,6 +22,9 @@
 #ifndef FELUCCA_UAC
 #define FELUCCA_UAC 1            /* USB audio input: the master output, 16-bit stereo 44.1 kHz (usb.c) */
 #endif
+#ifndef SCR_MIRROR
+#define SCR_MIRROR (BOARD_SMK37 && FELUCCA_OTA)   /* (SMK-37) SCREEN MIRROR: lcd.c's pixels to a web page too (scr_mirror.c) */
+#endif
 #ifndef FELUCCA_UAC_TONE
 #define FELUCCA_UAC_TONE 0       /* bench: the USB input sends test triangles instead of the music */
 #endif
@@ -129,6 +132,9 @@
 #include "ota.c"
 #include "ota_hw.c"
 #include "editor.c"              /* web editor SysEx (needs the OTA SysEx plumbing) */
+#if SCR_MIRROR
+#include "scr_mirror.c"          /* (SMK-37) SCREEN MIRROR (needs the editor's SysEx) */
+#endif
 #endif
 #if FELUCCA_CDC
 #include "console.c"

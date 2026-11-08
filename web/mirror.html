@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>JIANT Screen Mirror</title>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     (SMK-37) SCREEN MIRROR: the keyboard's screen, bigger, on a phone or a computer (Chrome with Web MIDI; on Android a
+     USB OTG cable). Read only: the keyboard is played as always. Protocol: firmware/src/scr_mirror.c. -->
+<style>
+  :root { --bg: #000; --fg: #d8d8d8; --dim: #8a8a8a; --accent: #f2a03d; --btn: #1e1e1e; --btn-b: #3a3a3a; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg);
+    font: 15px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { display: flex; flex-direction: column; overflow: hidden; }
+  header { display: flex; gap: 8px; align-items: center; padding: 8px 12px; flex-wrap: wrap; }
+  header.hidden { display: none; }
+  #state { flex: 1 1 auto; min-width: 0; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #state.live { color: var(--accent); }
+  button { background: var(--btn); color: var(--fg); border: 1px solid var(--btn-b); border-radius: 8px;
+    padding: 9px 14px; font: inherit; min-height: 40px; }
+  button:active { background: #2c2c2c; }
+  main { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; min-height: 0; padding: 0 8px 8px; }
+  canvas { background: #000; width: min(100%, calc(100dvh - 72px)); height: auto; aspect-ratio: 1 / 1;
+    image-rendering: pixelated; touch-action: manipulation; }
+  body.smooth canvas { image-rendering: auto; }
+  body.full main { padding: 0; }
+  body.full canvas { width: min(100vw, 100dvh); }
+  #help { max-width: 34em; color: var(--dim); padding: 0 16px 12px; }
+  #help b { color: var(--fg); }
+</style>
+</head>
+<body>
+<header id="bar">
+  <button id="go">Connect</button>
+  <span id="state">Plug the keyboard in, then Connect.</span>
+  <button id="look" title="Sharp or smooth pixels">Sharp</button>
+  <button id="full">Full screen</button>
+</header>
+<div id="help">
+  <b>Android:</b> keyboard → USB OTG cable → phone, then <b>Connect</b> and allow MIDI.
+  It mirrors the keyboard's screen; play the keyboard as always. Tap the picture to show or hide the buttons.
+</div>
+<main><canvas id="scr" width="240" height="240"></canvas></main>
+<script>
+"use strict";
+// the protocol (firmware/src/scr_mirror.c): F0 7D 46 4C 50 m F7 asks (1 on / 3 on + whole screen / 0 off);
+// F0 7D 46 4C 50 on w h F7 is the reply; F0 7D 46 4C 51 x y w h o tokens F7 a window's pixels
+const HDR = [0x7D, 0x46, 0x4C], MIRROR = 80, RECT = 81;
+const $ = id => document.getElementById(id);
+const cv = $("scr"), g = cv.getContext("2d");
+let img = g.createImageData(240, 240), px32 = new Uint32Array(img.data.buffer);
+let access = null, out = null, inp = null, keep = 0, dirty = false, frames = 0, lastRx = 0, wake = null;
+const RGB = new Uint32Array(65536);                     // RGB565 -> ABGR (little endian ImageData)
+for (let c = 0; c < 65536; c++) {
+  const r = (c >> 11) & 31, gg = (c >> 5) & 63, b = c & 31;
+  RGB[c] = 0xFF000000 | ((b * 527 + 23) >> 6) << 16 | ((gg * 259 + 33) >> 6) << 8 | ((r * 527 + 23) >> 6);
+}
+px32.fill(0xFF000000);
+
+function say(t, live) { $("state").textContent = t; $("state").classList.toggle("live", !!live); }
+function isOurs(d) { return d.length > 5 && d[0] === 0xF0 && d[1] === HDR[0] && d[2] === HDR[1] && d[3] === HDR[2]; }
+function ask(port, m) { try { port.send([0xF0, ...HDR, MIRROR, m, 0xF7]); } catch (e) { /* a port gone */ } }
+
+function rect(d) {                                      // one RECT frame onto the picture
+  const n = d.length - 1;
+  const x = d[5] | d[6] << 7, y = d[7] | d[8] << 7, w = d[9] | d[10] << 7, h = d[11] | d[12] << 7;
+  let o = d[13] | d[14] << 7 | d[15] << 14, prev = -1;
+  if (!w || !h || x + w > 240 || y + h > 240) return;
+  const end = w * h, cache = new Int32Array(64);
+  const put = c => { if (o < end) { px32[(y + ((o / w) | 0)) * 240 + x + (o % w)] = RGB[c]; o++; } };
+  for (let i = 16; i < n;) {
+    const t = d[i++];
+    if (t < 0x40) { prev = cache[t]; put(prev); }
+    else if (t < 0x60) { if (prev < 0) return; for (let k = t - 0x3F; k; k--) put(prev); }
+    else if (t === 0x60) { if (prev < 0) return; let k = d[i] | d[i + 1] << 7; i += 2; while (k--) put(prev); }
+    else if (t === 0x61) {
+      const c = d[i] | d[i + 1] << 7 | d[i + 2] << 14; i += 3;
+      cache[(c ^ (c >> 5) ^ (c >> 11)) & 63] = c; prev = c; put(c);
+    } else return;                                      // not ours: drop the rest of the frame
+  }
+  dirty = true;
+}
+function onMsg(e) {
+  const d = e.data;
+  if (!isOurs(d)) return;
+  lastRx = performance.now();
+  if (d[4] === RECT) { rect(d); frames++; }
+  else if (d[4] === MIRROR && !out) lock(e.target);
+}
+function draw() {
+  if (dirty) { g.putImageData(img, 0, 0); dirty = false; }
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+function lock(input) {                                  // the port that answered: its output by the same name
+  inp = input;
+  const outs = [...access.outputs.values()];
+  out = outs.find(o => o.name === input.name) || outs.find(o => o.manufacturer === input.manufacturer) || outs[0];
+  for (const i of access.inputs.values()) if (i !== inp) i.onmidimessage = null;
+  say("Mirroring " + (inp.name || "the keyboard"), true);
+  $("help").style.display = "none";
+  ask(out, 3);
+  clearInterval(keep);
+  keep = setInterval(() => {                           // every second: still wanted (the keyboard stops 3 s after the last)
+    if (!out) return;
+    ask(out, 1);
+    if (performance.now() - lastRx > 5000) say("No reply: is the cable in?", false);
+    else say("Mirroring " + (inp.name || "the keyboard"), true);
+  }, 1000);
+  wakeOn();
+}
+async function connect() {
+  if (!navigator.requestMIDIAccess) { say("This browser has no Web MIDI: use Chrome."); return; }
+  try { access = access || await navigator.requestMIDIAccess({ sysex: true }); }
+  catch (e) { say("MIDI not allowed. Allow it in the site settings, then Connect."); return; }
+  access.onstatechange = ev => {
+    if (out && ev.port.state === "disconnected" && (ev.port === out || ev.port === inp)) {
+      out = inp = null; say("Keyboard unplugged. Plug it in, then Connect.");
+    }
+  };
+  out = inp = null;
+  const ins = [...access.inputs.values()], outs = [...access.outputs.values()];
+  if (!ins.length || !outs.length) { say("No MIDI device. Is the keyboard on the OTG cable?"); return; }
+  for (const i of ins) i.onmidimessage = onMsg;
+  const likely = o => /JIANT|SMK|FM-1|Felucca/i.test(o.name || "");
+  const order = [...outs.filter(likely), ...outs.filter(o => !likely(o))];
+  say("Looking for the keyboard...");
+  for (const o of order) {                              // ask each until one answers
+    ask(o, 3);
+    await new Promise(r => setTimeout(r, 400));
+    if (out) return;
+  }
+  say("The keyboard did not answer. Its firmware needs the SCREEN MIRROR.");
+}
+async function wakeOn() {
+  try { if ("wakeLock" in navigator && !wake) { wake = await navigator.wakeLock.request("screen"); wake.onrelease = () => { wake = null; }; } }
+  catch (e) { /* not allowed: the phone may dim */ }
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && out) { ask(out, 3); wakeOn(); }
+});
+$("go").onclick = connect;
+$("look").onclick = () => {
+  document.body.classList.toggle("smooth");
+  $("look").textContent = document.body.classList.contains("smooth") ? "Smooth" : "Sharp";
+};
+$("full").onclick = async () => {
+  try {
+    if (!document.fullscreenElement) { await document.documentElement.requestFullscreen(); document.body.classList.add("full"); }
+    else { await document.exitFullscreen(); }
+  } catch (e) { /* not allowed here */ }
+};
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement) { document.body.classList.remove("full"); $("bar").classList.remove("hidden"); }
+});
+cv.onclick = () => { if (out) $("bar").classList.toggle("hidden"); };
+window.addEventListener("pagehide", () => { if (out) ask(out, 0); });
+</script>
+</body>
+</html>

@@ -11,6 +11,10 @@
 #define LCD_BAUD 4u                /* lsb/(BAUD+1): 4 = 12 MHz */
 #endif
 
+#if SCR_MIRROR
+static void scrm_fill(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint16_t c);   /* (SMK-37) SCREEN MIRROR */
+static void scrm_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px, uint32_t stride);
+#endif
 static uint8_t lcd_small[64];
 static uint8_t lcd_busy;           /* a lcd_data DMA may still run; CS is low */
 
@@ -85,6 +89,9 @@ static void lcd_fill(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint16_t c)
             k = n;
         lcd_data(lcd_fillbuf, k * 2u);
     }
+#if SCR_MIRROR
+    scrm_fill(x, y, w, h, c);
+#endif
 }
 
 static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px)
@@ -93,6 +100,9 @@ static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint1
         return;
     lcd_window(x, y, x + w - 1u, y + h - 1u);
     lcd_data(px, w * h * 2u);
+#if SCR_MIRROR
+    scrm_blit(x, y, w, h, px, w);       /* (while the DMA sends it) */
+#endif
 }
 /* (0.9.0) a w x h part of a wider buffer (stride px a row): one window, a transfer a row (as lcd_fill: the panel keeps
  * writing on through CS going high between them); gfx.c cv_blit_cells */
@@ -105,6 +115,9 @@ static void lcd_blit_stride(uint32_t x, uint32_t y, uint32_t w, uint32_t h, cons
     lcd_window(x, y, x + w - 1u, y + h - 1u);
     for (r = 0; r < h; r++)
         lcd_data(px + r * stride, w * 2u);
+#if SCR_MIRROR
+    scrm_blit(x, y, w, h, px, stride);
+#endif
 }
 
 #if BOARD_SMK37
