@@ -22,6 +22,12 @@
 static chain_config_t chain_config;           /* the current song's rows */
 static uint8_t dice_secs;                     /* (JIANT 0.6.81) the sections DICE ALL wrote (bit s; song_dice.c) */
 #define NSONG 8u                              /* songs: four sections each (storage.c: where they are kept) */
+#if BOARD_SMK37
+#define SONG_STORED 7u                        /* SMK-37 Pro: songs 1..7 have flash, song 8 none (storage.c
+                                              * ST_OBJ_LIMIT): never offered. NSONG and every format stay 8 */
+#else
+#define SONG_STORED NSONG
+#endif
 #define SONG_MAGIC 0x474E4F53u                /* "SONG" */
 /* (JIANT) a row's scene: when the row goes in (a song, not a quick chain) the tracks' mutes, DRUM's group mutes, the
  * macros and the punch-in MIDI effects become what was stored; they stay through the rows after it that have none.

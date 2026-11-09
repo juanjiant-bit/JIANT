@@ -57,6 +57,10 @@ void isr_alnk0(void) {}
 #include "../../firmware/src/audio.c"
 
 /* ------------------------------------------------------------ the panel --- */
+#ifndef FL_JEDEC_OK
+#define FL_JEDEC_OK(id) ((id) == 0x856014u)                          /* as hal/fm1_flash_map.h (FM-1) */
+#endif
+#define FM1_OCT_BOTH 3u                                              /* OCT- + OCT+, as hal/fm1_input.h (FM-1) */
 #define FM1_NCOL 11u
 static const int8_t FM1_KEYMAP[6][FM1_NCOL] = {      /* as hal/fm1_input.h: key id at (column, row bit) */
     {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},

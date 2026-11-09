@@ -68,6 +68,19 @@ static int settings_import(persist_t *p, int n)
     if (p->favorites.factory[15][18] >= 10u)       /* PRESETS' LIST type (JIANT 0.9.12, ui.c list_type; core.h PT_N): unknown
                                                      * = none */
         p->favorites.factory[15][18] = 0;
+#if BOARD_SMK37
+    if ((p->favorites.factory[15][13] & 7u) > 5u || p->favorites.factory[15][13] > 31u)   /* SMK-37 KEY VELOCITY, TRS MIDI
+                                                     * OUT, T5 T6 MIDI ONLY (ui.c smk_cfg): unknown = DYNAMIC, ON, SYNTH */
+        p->favorites.factory[15][13] = 0;
+    if (p->favorites.factory[15][14] > 12u)        /* SMK-37 BEND RANGE (ui.c smk_bendb): unknown = 2 */
+        p->favorites.factory[15][14] = 0;
+    {
+        uint32_t t;
+        for (t = 0; t < 6u; t++)                    /* SMK-37 MIDI CHANNELS (ui.c smk_mch_set): unknown = the track's */
+            if (p->favorites.factory[14][24u + t] > 16u)
+                p->favorites.factory[14][24u + t] = 0;
+    }
+#endif
     p->magic = PERSIST_MAGIC;
     p->palette = palette_to_stored(palette_from_stored(p->palette));
     settings.magic = SETTINGS_MAGIC;

@@ -16,7 +16,13 @@
 enum { MI_COLOR, MI_SKIN, MI_SCOPE, MI_STYLE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_HOLD, MI_ACCEL, MI_LATCH, MI_BPMLOCK, MI_SCLLED,
        MI_LOWCUT, MI_USB,
        MI_CLICK, MI_CLKLVL, MI_COUNTIN, MI_TRACKS, MI_LOAD, MI_MIDIOUT, MI_LEARN, MI_LCLEAR, MI_SERIAL, MI_RESTORE, MI_CPU,
-       MI_CLOCK, MI_PANEL, MI_ABOUT, MI_COUNT };   /* (1.1: the metronome's rows; 1.2: RESTORE LAST, SCALE LEDS; 0.9.12: MIDI
+       MI_CLOCK,
+#if BOARD_SMK37
+       MI_KVEL, MI_BEND, MI_TRS,                        /* SMK-37: MENU > MIDI > KEYBOARD (ui.c smk_cfg, smk_bendb) */
+       MI_CH1, MI_CH2, MI_CH3, MI_CH4, MI_CH5, MI_CH6,  /* .. > CHANNELS (ui.c smk_mch_set) */
+       MI_T56,                                          /* .. > CHANNEL2: T5 T6 SYNTH / MIDI ONLY (ui.c smk_cfg) */
+#endif
+       MI_PANEL, MI_ABOUT, MI_COUNT };   /* (1.1: the metronome's rows; 1.2: RESTORE LAST, SCALE LEDS; 0.9.12: MIDI
                       * OUT, LEARN, LEARN CLEAR; CPU, CPU CLOCK, cpu_safe.c; 0.9.18: INIT SYSTEM gone, SAVE > TOOLS > NEW
                       * PROJECT is the same) */
 #define MI_VALUES MI_PANEL
@@ -27,7 +33,13 @@ static const char *const MI_NAME[MI_COUNT] = {"COLOR", "SKIN", "SCOPE", "STYLE",
                                               "HOLD TIME", "KNOB SPEEDUP", "FX LATCH", "BPM LOCK", "SCALE LEDS",
                                               "SPEAKER EQ", "USB LEVEL", "CLICK", "CLICK LEVEL", "COUNT-IN", "TRACKS", "LOAD",
                                               "MIDI OUT", "LEARN", "LEARN CLEAR", "USB AUDIO",
-                                              "RESTORE LAST", "CPU CORES", "CPU CLOCK", "CALIBRATION", "ABOUT"};
+                                              "RESTORE LAST", "CPU CORES", "CPU CLOCK",
+#if BOARD_SMK37
+                                              "KEY VELOCITY", "BEND RANGE", "TRS MIDI OUT",
+                                              "T1 CHANNEL", "T2 CHANNEL", "T3 CHANNEL", "T4 CHANNEL", "T5 CHANNEL", "T6 CHANNEL",
+                                              "T5 T6 SOUND",
+#endif
+                                              "CALIBRATION", "ABOUT"};
 /* (0.9.18) the MENU as the rest of the system (rule 1..6): pages of four knobs, KNOB n the page's setting n, SELECT walks
  * the pages, ALGORITHM jumps to the next / previous tab; the tabs the groups (a dot a page), the footer MENU . TAB . page
  * n/N (a page named as its tab, or its tab and a number: MENU . page). Each row on one page (tests/ui_test.c checks it); the editor gets a row's tab after its MENU_DESC reply (tab
@@ -35,7 +47,11 @@ static const char *const MI_NAME[MI_COUNT] = {"COLOR", "SKIN", "SCOPE", "STYLE",
  * OCT+ does it */
 enum { MTAB_SCREEN, MTAB_AUDIO, MTAB_MIDI, MTAB_USB, MTAB_SYSTEM, MTAB_COUNT };
 static const char *const MTAB_NAME[MTAB_COUNT] = {"SCREEN", "AUDIO", "MIDI", "USB", "SYSTEM"};
+#if BOARD_SMK37
+#define MP_COUNT 12u
+#else
 #define MP_COUNT 9u
+#endif
 typedef struct { char name[9]; uint8_t tab, row[4]; } menu_page_t;
 static const menu_page_t MPAGE[MP_COUNT] = {   /* (a page opens on its first setting: a value, never an action) */
     {"SCREEN", MTAB_SCREEN, {MI_COLOR, MI_SKIN, MI_STYLE, MI_LARGE}},
@@ -44,6 +60,11 @@ static const menu_page_t MPAGE[MP_COUNT] = {   /* (a page opens on its first set
     {"AUDIO", MTAB_AUDIO, {MI_LOWCUT, MI_TRACKS, MI_LOAD, MI_BPMLOCK}},
     {"CLICK", MTAB_AUDIO, {MI_CLICK, MI_CLKLVL, MI_COUNTIN, MI_NONE}},
     {"MIDI", MTAB_MIDI, {MI_MIDIOUT, MI_LEARN, MI_LCLEAR, MI_NONE}},
+#if BOARD_SMK37
+    {"KEYBOARD", MTAB_MIDI, {MI_KVEL, MI_BEND, MI_TRS, MI_NONE}},   /* SMK-37: the keys' and pads' touch, the wheel, the jack */
+    {"CHANNELS", MTAB_MIDI, {MI_CH1, MI_CH2, MI_CH3, MI_CH4}},      /* .. each track's MIDI OUT channel */
+    {"CHANNEL2", MTAB_MIDI, {MI_CH5, MI_CH6, MI_T56, MI_NONE}},
+#endif
     {"USB", MTAB_USB, {MI_SERIAL, MI_USB, MI_NONE, MI_NONE}},
     {"CONTROLS", MTAB_SYSTEM, {MI_HOLD, MI_ACCEL, MI_LATCH, MI_PANEL}},
     {"SYSTEM", MTAB_SYSTEM, {MI_RESTORE, MI_CPU, MI_CLOCK, MI_ABOUT}},   /* (RESTORE LAST, CPU CORES, CPU CLOCK: at power-on) */
@@ -129,6 +150,23 @@ static const char *const SCROFF_N[5] = {"NEVER", "5 MIN", "15 MIN", "30 MIN", "6
 /* (JIANT 0.6.72) MIDI OUT over USB (ui.c midi_out_mode, seq.c MO_*): the keys; and the clock + START / STOP; and every
  * note the FM-1 plays; nothing */
 static const char *const MIDIOUT_N[4] = {"KEYS", "CLOCK", "ALL", "OFF"};
+#if BOARD_SMK37
+/* SMK-37: KEY VELOCITY (hal/smk_input.h smk_vel, the keys and the pads), BEND RANGE (the pitch wheel, seq.c
+ * smk_wheels_block), TRS MIDI OUT (hal/smk_uart_tx.h: the jack, the same stream as USB MIDI OUT) */
+static const char *const KVEL_N[6] = {"DYNAMIC", "SOFT", "HARD", "FIXED 64", "FIXED 100", "FIXED 127"};
+static const char *const BEND_N[7] = {"1", "2", "3", "4", "5", "7", "12"};
+static const uint8_t BEND_V[7] = {1, 2, 3, 4, 5, 7, 12};
+static const char *const T56_N[2] = {"SYNTH", "MIDI ONLY"};
+static const char *const MCH_N[16] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"};
+#define MI_IS_CH(row) ((row) >= MI_CH1 && (row) <= MI_CH6)
+static uint32_t bend_pos(void)                         /* BEND RANGE's place in the menu (0 stored = 2) */
+{
+    uint32_t i, s = smk_bendb ? smk_bendb : 2u;
+    for (i = 0; i + 1u < NELEM(BEND_V) && BEND_V[i] != s; i++)
+        ;
+    return i;
+}
+#endif
 
 /* MENU > USB SERIAL (#67). The serial console is a developer tool (README: FELUCCA_CDC). ON (the default) presents it,
  * the descriptors byte for byte as before; OFF re-enumerates as audio + MIDI only, device class 0 (the bytes of a
@@ -165,6 +203,12 @@ static const menu_flag_t *menu_flag(uint32_t row)
 /* a row's value as 0..menu_n(row) - 1 in the order the menu steps it (LEDS: OFF DIM LO DIM HI INV, LEDS_MENU) */
 static uint32_t menu_n(uint32_t row)
 {
+#if BOARD_SMK37
+    if (row == MI_KVEL || row == MI_BEND)
+        return row == MI_KVEL ? NELEM(KVEL_N) : NELEM(BEND_N);
+    if (MI_IS_CH(row))
+        return 16u;
+#endif
     return row == MI_COLOR ? NPALETTES : row == MI_SKIN ? SKIN_MENU_N : row == MI_LOWCUT || (row >= MI_CLICK && row <= MI_COUNTIN) || row == MI_LOAD ? 3u :
            row == MI_HOLD || row == MI_MIDIOUT ? 4u : row == MI_USB ? 6u : row == MI_SERIAL ? 5u : row == MI_LEDS ? LEDS_COUNT : row == MI_SCROFF ? NELEM(SCROFF_N) : 2u;
 }
@@ -189,6 +233,16 @@ static uint32_t menu_get(uint32_t row)
     case MI_MIDIOUT: return midi_out_mode & 3u;
     case MI_CPU: case MI_CLOCK: return cpu_get(row == MI_CLOCK);
     case MI_LEARN: return ml.on;
+#if BOARD_SMK37
+    case MI_KVEL: return (smk_cfg & 7u) < NELEM(KVEL_N) ? smk_cfg & 7u : 0u;
+    case MI_BEND: return bend_pos();
+    case MI_TRS: return !(smk_cfg & SMK_CFG_TRS_OFF);  /* (1 ON, the default) */
+    case MI_CH1: case MI_CH2: case MI_CH3: case MI_CH4: case MI_CH5: case MI_CH6: {
+        uint32_t t = row - MI_CH1, c = smk_mch_set(t);
+        return c && c <= 16u ? c - 1u : t;              /* (0..15: channel 1..16) */
+    }
+    case MI_T56: return (smk_cfg & SMK_CFG_T56_MIDI) != 0u;
+#endif
     case MI_LEDS:
         while (i + 1u < LEDS_COUNT && LEDS_MENU[i] != settings_leds)
             i++;
@@ -218,6 +272,13 @@ static const char *menu_vname(uint32_t row, uint32_t v)
     case MI_CPU: case MI_CLOCK: return CPU_N[row == MI_CLOCK][v & 1u];
     case MI_SCROFF: return SCROFF_N[v % NELEM(SCROFF_N)];
     case MI_LEDS: return LEDS_NAME[LEDS_MENU[v % LEDS_COUNT]];
+#if BOARD_SMK37
+    case MI_KVEL: return KVEL_N[v % NELEM(KVEL_N)];
+    case MI_BEND: return BEND_N[v % NELEM(BEND_N)];
+    case MI_TRS: return SCOPEOPT_N[v & 1u];             /* OFF ON */
+    case MI_CH1: case MI_CH2: case MI_CH3: case MI_CH4: case MI_CH5: case MI_CH6: return MCH_N[v & 15u];
+    case MI_T56: return T56_N[v & 1u];
+#endif
     }
     return "";
 }
@@ -262,7 +323,22 @@ static void menu_put(uint32_t row, uint32_t v)
     case MI_LOAD: load_put(v % 3u); break;
     case MI_CPU: case MI_CLOCK: cpu_put(row == MI_CLOCK, v & 1u); break;   /* (0.9.12, cpu_safe.c) */
     case MI_MIDIOUT: midi_out_mode = (uint8_t)(v & 3u); break;
-    case MI_LEARN: ml_set(v); break;                   /* (0.9.12: armed, or off; not saved) */   /* (seq.c reads it every frame: ui_input) */         /* (at once: voice.c sys_load) */
+    case MI_LEARN: ml_set(v); break;
+#if BOARD_SMK37
+    case MI_KVEL: smk_cfg = (uint8_t)((smk_cfg & ~7u) | (v % NELEM(KVEL_N))); break;   /* (ui_input.c smk_cfg_poll) */
+    case MI_BEND: smk_bendb = (uint8_t)(BEND_V[v % NELEM(BEND_V)] == 2u ? 0u : BEND_V[v % NELEM(BEND_V)]); break;
+    case MI_TRS: smk_cfg = (uint8_t)(v ? smk_cfg & ~SMK_CFG_TRS_OFF : smk_cfg | SMK_CFG_TRS_OFF); break;
+    case MI_CH1: case MI_CH2: case MI_CH3: case MI_CH4: case MI_CH5: case MI_CH6:   /* (the track's own: stored 0) */
+        smk_mch_set(row - MI_CH1) = (uint8_t)((v & 15u) == row - MI_CH1 ? 0u : (v & 15u) + 1u);
+        break;
+    case MI_T56:                                   /* MIDI ONLY: T5 and T6 awake too (TRACKS 6: voice.c trk_live) */
+        smk_cfg = (uint8_t)(v ? smk_cfg | SMK_CFG_T56_MIDI : smk_cfg & ~SMK_CFG_T56_MIDI);
+        if (v && !(ui_rec_prefs & (PREF_SIX >> 8))) {
+            ui_rec_prefs = (uint8_t)(ui_rec_prefs | (PREF_SIX >> 8));
+            ui_message("TRACKS SET TO 6");
+        }
+        break;
+#endif                   /* (0.9.12: armed, or off; not saved) */   /* (seq.c reads it every frame: ui_input) */         /* (at once: voice.c sys_load) */
     }
 }
 /* the menu's step, any of KNOB 1..4 or OCT+ (s > 0) / OCT- (s < 0): the next / previous value, stopping at the ends;

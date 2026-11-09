@@ -15,6 +15,8 @@ and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 the FM-1, with sound, and is played with your computer keyboard or the mouse. The emulator, the installer and the
 editor update themselves with every change merged into `main`.
 
+**M-Vave SMK-37:** see [SMK-37 instructions](SMK37.md).
+
 ## JIANT FM V10 — 2026-10-30
 
 **V10 is the new base of JIANT FM**: one version, in both installers, tested on the FM-1. Earlier versions are no

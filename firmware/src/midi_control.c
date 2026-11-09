@@ -72,7 +72,7 @@ static int midi_note_held(const track_t *t, uint32_t note)
 static int midi_local_held(const track_t *t, uint32_t note)
 {
     uint32_t k;
-    for (k = 0; k < 27u; k++)
+    for (k = 0; k < KB_NK; k++)
         if (kb_on[k] && kb_trk[k] == trk_index(t)) {   /* (0.6.81: a key's chord, the notes started) */
             uint32_t i;
             for (i = 0; i < kb_on[k]; i++)
