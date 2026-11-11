@@ -272,7 +272,7 @@ static void graph_sing(const track_t *t)
     char b[64];
     if (!lang) {
         cv_text_in(PANEL_X0, 44, PANEL_W, &AF_X, "LANG OFF: VOWELS", T_MID, bg);
-        cv_text_in(PANEL_X0, 58, PANEL_W, &AF_X, "LANG ES EN JA: WORDS", T_DIM, bg);
+        cv_text_in(PANEL_X0, 58, PANEL_W, &AF_X, "LANG ES EN JA: WORDS", T_MID, bg);
         return;
     }
     str_cpy(b, N_LANG[lang], sizeof b);
