@@ -52,8 +52,8 @@ static int settings_import(persist_t *p, int n)
         p->favorites.factory[15][20] = 0;
     if (p->favorites.factory[15][19] > 1u)         /* SCOPE (0.9.7, ui.c ui_scope): unknown = OFF (0, older settings too) */
         p->favorites.factory[15][19] = 0;
-    if (p->favorites.factory[15][29] > 1u)        /* STYLE (ui.c ui_style): 2, the retired PIXEL = LINE; unknown = FLAT */
-        p->favorites.factory[15][29] = p->favorites.factory[15][29] == 2u ? 1u : 0u;
+    p->favorites.factory[15][29] = 0;             /* STYLE (retired: 1 LINE, 2 PIXEL): FLAT, the one style (0, as older firmware
+                                                    * reads it) */
     {   /* CLICK, CLICK LEVEL, COUNT-IN (ui.c ui_rec_prefs): two bits each, 3 is no value: the default (0) */
         uint32_t b = p->favorites.factory[15][28], f;
         for (f = 0; f < 3u; f++)

@@ -1005,7 +1005,7 @@ before SCALE LEDS the first 16, before SCREEN OFF the first 17):
 | index | id | name | kind | values (min 0) | default | tab |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0 | 0 | COLOR | 0 | 0..6: JIANT SELVA CONTRAST BRASA ABISAL HUESO NEON (the order of `UI_PALETTES`) | JIANT | 0 DISPLAY |
-| 1 | 1 | STYLE | 0 | 0 FLAT, 1 LINE | FLAT | 0 DISPLAY |
+| 1 | 1 | STYLE | 0 | 0 FLAT (retired: LINE is gone, the device has no STYLE row; up to V10.7.18 also 1 LINE; a SET answers rc 0 and FLAT) | FLAT | 0 DISPLAY |
 | 2 | 2 | LARGE | 0 | 0 OFF, 1 ON | OFF | 0 DISPLAY |
 | 3 | 3 | ANIM | 0 | 0 ON, 1 OFF | ON | 0 DISPLAY |
 | 4 | 4 | LEDS | 0 | 0 OFF, 1 DIM LO, 2 DIM HI, 3 INV (darkest first, as the menu steps them) | DIM HI | 0 DISPLAY |

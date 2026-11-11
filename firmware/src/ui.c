@@ -200,11 +200,9 @@ static void rp_put(uint32_t f, uint32_t v)
     ui_rec_prefs = (uint8_t)((ui_rec_prefs & ~(3u << (2u * f))) | st << (2u * f));
     rp_apply();
 }
-/* MENU > STYLE (ui_menu.c): ST_FLAT ST_LINE (gfx.c) in another byte no engine uses, saved with the settings;
- * 0 in older ones = FLAT; 2, the retired PIXEL (1.0.1), reads as LINE; anything else unknown as FLAT (settings_persist.c). gfx.c draws from its copy, ux.style
- * (ui_draw.c style_apply) */
-#define ui_style (favorites.factory[15][29])
-/* (0.8.9) MENU > DISPLAY > SKIN (ui_menu.c): SKIN_COLORS SKIN_BOTTOM SKIN_HUD (gfx.c) in a byte no engine uses (engine 15,
+/* (favorites.factory[15][29]: MENU > STYLE until V10.7.18, 0 FLAT, 1 LINE, 2 the PIXEL of 1.0.1. Retired: FLAT is the
+ * one style; settings_persist.c writes 0 there, which older firmware reads as FLAT. The byte is not reused) */
+/* (0.8.9) MENU > DISPLAY > SKIN (ui_menu.c): SKIN_COLORS SKIN_AIR (gfx.c) in a byte no engine uses (engine 15,
  * byte 20), saved with the settings; 0 in older ones = COLORS, unknown = COLORS (settings_persist.c). gfx.c draws from its
  * copy, ux.skin (ui_draw.c style_apply) */
 #define ui_skin (favorites.factory[15][20])
@@ -212,7 +210,6 @@ static void rp_put(uint32_t f, uint32_t v)
  * the SCOPE card, the chips); 0 OFF (the default: new settings and older ones, which never held it), the creature on the
  * whole panel, centred, the page's and the sound's names in its corners. A byte no engine uses (engine 15) */
 #define ui_scope (favorites.factory[15][19])
-static void draw_rules(uint32_t y, uint32_t h);       /* (ui_draw.c) */
 
 static uint8_t sync_reload;                  /* engine / preset / project / user preset loaded: editor RELOAD push */
 

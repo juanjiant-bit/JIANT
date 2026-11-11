@@ -2719,16 +2719,16 @@ static int test_menu_tabs(void)
     }
     for (i = 0; i < MI_COUNT; i++) ok &= MI_TAB[i] < MTAB_COUNT;
     ui_prefs = 0;
-    bad += check("MENU tabs: DISPLAY CONTROL AUDIO SYSTEM (8 12 8 8 rows: 0.8.9 SKIN, 0.9.7 SCOPE, 0.9.9-stab CPU CLOCK, p1 CPU CORES, MIDI MAP, LEARN, LOAD in AUDIO; V10.12 BLUETOOTH; V10.6z4 OCT BEND in AUDIO; V10.6z6 VELOCITY VEL MIN AFTERTOUCH VEL LEARN in CONTROL), each in a run, their rows and values fit the lens's panel",
-                 ok && MTAB_COUNT == 4u && str_eq(MTAB_NAME[0], "DISPLAY") && mtab_rows(MTAB_DISPLAY) == 8u &&
+    bad += check("MENU tabs: DISPLAY CONTROL AUDIO SYSTEM (7 12 8 8 rows: STYLE retired; 0.8.9 SKIN, 0.9.7 SCOPE, 0.9.9-stab CPU CLOCK, p1 CPU CORES, MIDI MAP, LEARN, LOAD in AUDIO; V10.12 BLUETOOTH; V10.6z4 OCT BEND in AUDIO; V10.6z6 VELOCITY VEL MIN AFTERTOUCH VEL LEARN in CONTROL), each in a run, their rows and values fit the lens's panel",
+                 ok && MTAB_COUNT == 4u && str_eq(MTAB_NAME[0], "DISPLAY") && mtab_rows(MTAB_DISPLAY) == 7u &&
                  mtab_rows(MTAB_CONTROL) == 12u && mtab_rows(MTAB_AUDIO) == 8u && mtab_rows(MTAB_SYSTEM) == 8u);   /* (0.6.58: INIT SYSTEM;
                                                                          * 0.6.72: MIDI OUT in CONTROL; 0.9.9-stab: CPU CLOCK in SYSTEM) */
 
     ui_power_on();
     hold(B_HOME);
     ok = ui.menu == 1 && ui.menu_sel == MI_COLOR && menu_tab() == MTAB_DISPLAY;
-    for (i = 0; i < 7u; i++) turn(EN_SELECT, 1);     /* (0.9.2: SELECT every row, tab after tab; was PRESETS in a tab, round;
-                                                     * 0.9.7: SCOPE a row more) */
+    for (i = 0; i < 6u; i++) turn(EN_SELECT, 1);     /* (0.9.2: SELECT every row, tab after tab; was PRESETS in a tab, round;
+                                                     * 0.9.7: SCOPE a row more; STYLE retired: a row less) */
     ok &= ui.menu_sel == MI_SCROFF;
     turn(EN_SELECT, 1); ok &= ui.menu_sel == MI_HOLD && menu_tab() == MTAB_CONTROL;   /* (into the next tab) */
     turn(EN_SELECT, -1); ok &= ui.menu_sel == MI_SCROFF;
@@ -2804,7 +2804,7 @@ static int test_menu_tabs(void)
         want = menu_step(i, -1);                       /* a knob steps as OCT does */
         turn(EN_K3, -1); ok &= menu_get(i) == want && ui.menu == 1;
     }
-    ui_prefs = 0; settings_hold = HOLD_DEF; settings_leds = LEDS_DIM; ui_style = ST_FLAT;
+    ui_prefs = 0; settings_hold = HOLD_DEF; settings_leds = LEDS_DIM;
     settings.lowcut = 0; fx_lowcut = 0; menu_put(MI_COLOR, UI_JIANT_INDEX);
     bad += check("MENU: OCT+ / OCT- step every value row up / down (COLOR wraps, the rest stop), the menu stays", ok);
     {   /* the ON / OFF rows: up (a knob right, OCT+) is ON, the switch's knob to the right, whichever bit it is */
@@ -2817,9 +2817,6 @@ static int test_menu_tabs(void)
             turn(EN_K2, -1); ok &= str_eq(menu_vname(SW[i], menu_get(SW[i])), "OFF");
             turn(EN_K2, 1); ok &= str_eq(menu_vname(SW[i], menu_get(SW[i])), "ON");
         }
-        ui.menu_sel = MI_STYLE;
-        press(B_OCTUP); ok &= ui_style == ST_LINE;     /* (the others: up the second, LINE) */
-        press(B_OCTDN); ok &= ui_style == ST_FLAT;
         ui_prefs = 0;
         bad += check("MENU: on an ON / OFF row OCT+ / a knob right is ON, OCT- / left OFF (ANIM, RESTORE LAST too)", ok);
     }
@@ -2893,9 +2890,9 @@ static int test_menu_tabs(void)
     hold(B_HOME);
     frame();
     ok = ui.menu == 1 && ui.mlv == 1u && lz_on() && lz_fam() == LZ_MENU && lz_tabs() == 4u && lz_tab_lit(0) &&
-         lz_crumb_is("MENU \xB7 DISPLAY \xB7 COLOR") && lz_count_is("1/36");
+         lz_crumb_is("MENU \xB7 DISPLAY \xB7 COLOR") && lz_count_is("1/35");
     turn(EN_SELECT, 1); frame();
-    ok &= ui.mlv == 1u && lz_tab_lit(0) && lz_crumb_is("MENU \xB7 DISPLAY \xB7 SKIN") && lz_count_is("2/36");
+    ok &= ui.mlv == 1u && lz_tab_lit(0) && lz_crumb_is("MENU \xB7 DISPLAY \xB7 SKIN") && lz_count_is("2/35");
     turn(EN_ALGO, 1); frame();
     ok &= menu_tab() == MTAB_CONTROL && lz_tab_lit(1) && lz_crumb_is("MENU \xB7 CONTROL \xB7 HOLD");
     turn(EN_SELECT, 2); frame();
@@ -2904,7 +2901,7 @@ static int test_menu_tabs(void)
     ok &= (fx_latch & 1u) != 0u;
     turn(EN_K3, -1); frame();
     menu_close();
-    bad += check("0.9.2 MENU: four tabs (the row's lit), MENU . TAB . ROW and n/36 (0.9.7: SCOPE; 0.9.9-stab: CPU CLOCK; p1: CPU CORES, MIDI MAP, LEARN; V10.12: BLUETOOTH; V10.6z4: OCT BEND; V10.6z6: the keys' four); ALGORITHM the tab, any knob the value", ok && MI_COUNT == 36u);
+    bad += check("0.9.2 MENU: four tabs (the row's lit), MENU . TAB . ROW and n/35 (STYLE retired; 0.9.7: SCOPE; 0.9.9-stab: CPU CLOCK; p1: CPU CORES, MIDI MAP, LEARN; V10.12: BLUETOOTH; V10.6z4: OCT BEND; V10.6z6: the keys' four); ALGORITHM the tab, any knob the value", ok && MI_COUNT == 35u);
 
     /* (V10.12) MENU > SYSTEM > BLUETOOTH: OFF by default (no mark: older settings), refused while playing, ON kept in
      * TRIO's retired favourites row with its mark; here (no radio, no segment) ON reads MISSING (V10.7.10: was NO SEG)
@@ -7001,7 +6998,7 @@ static int test_screen_off(void)
     ui_power_on();                                    /* in the MENU: OCT+ / a knob step it */
     menu_put(MI_SCROFF, 3u);
     hold(B_HOME);
-    for (i = 0; i < 7u; i++) turn(EN_SELECT, 1);   /* (0.8.9: SKIN a row more; 0.9.2: SELECT, was PRESETS; 0.9.7: SCOPE) */
+    for (i = 0; i < 6u; i++) turn(EN_SELECT, 1);   /* (0.8.9: SKIN a row more; 0.9.2: SELECT, was PRESETS; 0.9.7: SCOPE; STYLE retired) */
     ok = ui.menu == 1 && ui.menu_sel == MI_SCROFF;
     press(B_OCTUP); ok &= scr_get() == 4u;
     press(B_OCTUP); ok &= scr_get() == 4u;           /* (stops at the end) */
@@ -11040,7 +11037,7 @@ static int test_large(void)
     frame();
     ok = !(ui_prefs & PREF_LARGE) && large_kind() == LK_OFF && card_h() == LZ_CARD_H && graph_y() == LZ_GRAPH_Y;   /* (HOME's
                                                          * lens) */
-    ok &= MI_LARGE == MI_STYLE + 1u && str_eq(MI_NAME[MI_LARGE], "LARGE") && menu_flag(MI_LARGE) &&
+    ok &= MI_LARGE == MI_SCOPE + 1u && str_eq(MI_NAME[MI_LARGE], "LARGE") && menu_flag(MI_LARGE) &&
           str_eq(menu_flag(MI_LARGE)->name[0], "OFF") && str_eq(menu_flag(MI_LARGE)->name[1], "ON");
     ui.force = 1; frame();
     memcpy(off, host_screen, sizeof off);
@@ -11051,9 +11048,9 @@ static int test_large(void)
     press(B_OCTUP); ok &= (ui_prefs & PREF_LARGE) && ui.menu;     /* OCT+: ON */
     press(B_OCTDN); ok &= !(ui_prefs & PREF_LARGE) && ui.menu;    /* OCT-: OFF */
     press(B_OCTUP);
-    ok &= (ui_prefs & ~PREF_ACCEL_OFF) == PREF_LARGE && ui_style == ST_FLAT;          /* (no other setting moved) */
+    ok &= (ui_prefs & ~PREF_ACCEL_OFF) == PREF_LARGE;                                  /* (no other setting moved) */
     press(B_HOME);
-    bad += check("#15 MENU > LARGE: OFF by default, under STYLE; KNOB 1 right / OCT+ ON, left / OCT- OFF", ok && !ui.menu);
+    bad += check("#15 MENU > LARGE: OFF by default, under SCOPE; KNOB 1 right / OCT+ ON, left / OCT- OFF", ok && !ui.menu);
 
     /* HOME (0.8.5: a lens): tall cards under its tabs (rows 42..146) and the strip (150..212); the footer as it was */
     frame();
@@ -11198,7 +11195,7 @@ static int test_skin(void)
     press(B_OCTDN); ok &= ui_skin == SKIN_AIR;                    /* (stops at the start) */
     press(B_OCTUP); ok &= ui_skin == SKIN_COLORS && ux.skin == SKIN_COLORS;
     press(B_OCTUP); ok &= ui_skin == SKIN_COLORS;
-    ok &= ui_style == ST_FLAT && (ui_prefs & ~PREF_ACCEL_OFF) == 0u;   /* (no other setting moved) */
+    ok &= (ui_prefs & ~PREF_ACCEL_OFF) == 0u;                          /* (no other setting moved) */
     press(B_HOME);
     bad += check("SKIN: under COLOR in DISPLAY; KNOB 1 / OCT+- AIR COLORS, stopping at the ends", ok && !ui.menu);
     {   /* (0.9.7) new settings (none saved: settings_fresh at power-on) are AIR; the editor's MENU_DESC lists AIR first */
@@ -11705,62 +11702,41 @@ static int test_menu_prefs(void)
     return bad;
 }
 
-/* MENU > STYLE (ui_menu.c, gfx.c ST_*): FLAT by default; KNOB 1 right LINE, left FLAT (stops at the ends), OCT+
- * toggles; drawn so from the next frame (ux.style, the tokens: LINE has no SURF, a rule over the panel); saved in a
- * spare byte of the settings and read back; settings from before it, and an unknown value, read as FLAT; 2, the
- * retired PIXEL (1.0.1), as LINE (again on a second import: idempotent) */
+/* MENU > STYLE is retired (V10.7.18 had FLAT / LINE): FLAT is the one style. No STYLE row in the menu (DISPLAY: COLOR
+ * SKIN SCOPE LARGE ANIM LEDS SCREEN OFF, the rows after renumbered); the settings' byte it lived in (engine 15's 29) reads
+ * as FLAT whatever it holds (1 LINE, 2 the PIXEL of 1.0.1, anything) and is written 0, which older firmware reads as
+ * FLAT; the record's size and version are as before; nothing of LINE is drawn (the cards filled, no rule in the gaps) */
 static int test_style(void)
 {
     int bad = 0, ok;
-    uint32_t rule;                                     /* (the rule over the panel: ui_draw.c draw_rules; 0.8.5: the header's
-                                                        * own rule at 22 in either style; HOME a lens: under its cards) */
+    uint32_t i, rule;
     ui_power_on();
     frame();
-    rule = (card_y() + card_h() + graph_y()) / 2u * 240u + 120u;
-    ok = ui_style == ST_FLAT && ux.style == ST_FLAT && ux.surf != ux.bg;
-    ui.force = 1; frame();
-    ok &= host_screen[rule] == swap16(T_BG);
-    hold(B_HOME); ui.menu_sel = MI_STYLE;
-    ok &= ui.menu == 1u && str_eq(MI_NAME[MI_STYLE], "STYLE");
-    turn(EN_K1, 1); ok &= ui_style == ST_LINE && ux.style == ST_LINE && ux.surf == ux.bg;
-    turn(EN_K1, 1); ok &= ui_style == ST_LINE;
-    turn(EN_K1, -1); ok &= ui_style == ST_FLAT;
-    turn(EN_K1, -1); ok &= ui_style == ST_FLAT;
-    press(B_OCTUP); ok &= ui_style == ST_LINE && ui.menu == 1u;
-    press(B_OCTUP); ok &= ui_style == ST_LINE;
-    press(B_OCTDN); ok &= ui_style == ST_FLAT && ux.style == ST_FLAT && ux.surf != ux.bg && ui.menu == 1u;
-    press(B_OCTUP); ok &= ui_style == ST_LINE;
-    ok &= !(ui_prefs & 0xFFu & ~PREF_ACCEL_OFF) && settings_leds == LEDS_DIM;   /* (no other setting moved) */
-    hold(B_HOME);
-    ok &= !ui.menu && ux.style == ST_LINE && host_screen[rule] == swap16(T_RULE);
-    bad += check("MENU > STYLE: FLAT by default, KNOB 1 / OCT-+ FLAT / LINE, LINE drawn (rules, no SURF)", ok);
+    for (ok = 1, i = 0; i < MI_COUNT; i++)
+        ok &= !str_eq(MI_NAME[i], "STYLE");
+    ok &= MI_COLOR == 0u && MI_SKIN == 1u && MI_SCOPE == 2u && MI_LARGE == 3u && MI_ANIM == 4u && MI_LEDS == 5u && MI_SCROFF == 6u &&
+          MI_HOLD == 7u && mtab_rows(MTAB_DISPLAY) == 7u && mtab_first(MTAB_CONTROL) == MI_HOLD;
+    bad += check("MENU: no STYLE row (FLAT the one style); DISPLAY's seven rows, the rest renumbered in order", ok);
     {
         persist_t p, q;
+        uint32_t v;
         settings_export(&p);
-        ui_style = ST_FLAT; frame();
-        ok = settings_import(&p, (int)sizeof p) == 1 && ui_style == ST_LINE;
-        frame();
-        ok &= ux.style == ST_LINE;
-        p.favorites.factory[15][29] = 7;                /* unknown: FLAT, and so again */
-        ok &= settings_import(&p, (int)sizeof p) == 1 && ui_style == ST_FLAT && !p.favorites.factory[15][29];
-        q = p;
-        ok &= settings_import(&q, (int)sizeof q) == 1 && ui_style == ST_FLAT && !memcmp(&p, &q, sizeof p);
-        p.favorites.factory[15][29] = 2;                /* the retired PIXEL: LINE, and so again */
-        ok &= settings_import(&p, (int)sizeof p) == 1 && ui_style == ST_LINE && p.favorites.factory[15][29] == ST_LINE;
-        q = p;
-        ok &= settings_import(&q, (int)sizeof q) == 1 && ui_style == ST_LINE && !memcmp(&p, &q, sizeof p);
-        frame();
-        ok &= ux.style == ST_LINE;
-        ui_style = 2; frame();                          /* (a live PIXEL byte, a restore: LINE) */
-        ok &= ui_style == ST_LINE && ux.style == ST_LINE;
-        ui_style = ST_LINE;
+        ok = sizeof p.favorites.factory[15] == 32u && p.magic == PERSIST_MAGIC;
+        for (v = 0; v < 256u; v++) {                    /* 1: a saved LINE; 2: PIXEL; anything: FLAT, written 0 */
+            p.favorites.factory[15][29] = (uint8_t)v;
+            ok &= settings_import(&p, (int)sizeof p) == 1 && p.favorites.factory[15][29] == 0u;
+            q = p;
+            ok &= settings_import(&q, (int)sizeof q) == 1 && !memcmp(&p, &q, sizeof p);   /* (idempotent) */
+            if (v < 3u) {
+                ui.force = 1; frame();
+                rule = (card_y() + card_h() + graph_y()) / 2u * 240u + 120u;
+                ok &= ux.surf != ux.bg && host_screen[rule] == swap16(T_BG) &&            /* (FLAT: SURF, no rule in the gap) */
+                      lg_px(CARD_X(0) + COL_W / 2, (int32_t)card_y() + 1) == T_RAISE;     /* (.. the cards filled) */
+            }
+        }
         settings_export(&p);
-        memset(&p.favorites, 0, sizeof p.favorites);
-        p.magic = 0x50455233u;                          /* settings from before STYLE (PER3) */
-        ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && ui_style == ST_FLAT;
-        frame();
-        ok &= ux.style == ST_FLAT && ux.surf != ux.bg;
-        bad += check("  STYLE saved with the settings and read back; older settings and unknown values: FLAT, PIXEL: LINE (idempotent)", ok);
+        ok &= p.favorites.factory[15][29] == 0u;
+        bad += check("  a saved LINE (or PIXEL, or any byte) loads as FLAT; the byte written 0, the record as before (idempotent)", ok);
     }
     ui_power_on(); frame();
     return bad;
@@ -11858,15 +11834,14 @@ static void head_clear(void)
 static int test_head_centres(void)
 {
     int bad = 0, ok = 1, place = 1;
-    uint32_t st, p, s;
-    for (st = ST_FLAT; st <= ST_LINE; st++)
+    uint32_t st = 0, p, s;
         for (p = 0; p < NPALETTES; p++)
             for (s = 0; s < HS_N; s++) {
                 int32_t a, b, c2, msg = s == HS_MSG || s == HS_KEYCAP || s == HS_NOFILE || s == HS_REC_LAYER ||
                                         s == HS_LAYER_LOCK || s == HS_MSG2;
                 int pr = !st && !p, okp;
                 ui_power_on();
-                ui_style = (uint8_t)st; style_apply();
+                style_apply();
                 settings.palette = p; palette_set(p);
                 head_state(s);
                 memset(host_screen, 0, sizeof host_screen);
@@ -11896,8 +11871,8 @@ static int test_head_centres(void)
                 place &= okp;
                 head_clear();
             }
-    ui_style = ST_FLAT; style_apply();
-    bad += check("header: every element's ink centred on row 11 (+-1 px) over its LINE rule, every state, FLAT and LINE, every palette", ok);
+    style_apply();
+    bad += check("header: every element's ink centred on row 11 (+-1 px) over its rule, every state, every palette", ok);
     bad += check("header: the track's box at 4, play state at 22, the centre / a message on x 120, octave to 196, load 200..218, battery 222..234 "
                  "(GLO with the tempo turned: the label right of the BPM and its lock)", place);
     ui_power_on();

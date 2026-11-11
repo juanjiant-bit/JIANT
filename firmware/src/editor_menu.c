@@ -13,7 +13,7 @@
 enum { ED_MENU_DESC = 72, ED_MENU_SET };
 enum { EDM_ENUM, EDM_INT };                            /* kind: names follow; or a unit (none yet) */
 static const uint8_t ED_MENU[][2] = {
-    {MI_COLOR, 0}, {MI_STYLE, 1}, {MI_LARGE, 2}, {MI_ANIM, 3}, {MI_LEDS, 4}, {MI_HOLD, 5}, {MI_ACCEL, 6},
+    {MI_COLOR, 0}, {MI_COUNT, 1} /* (STYLE, retired with LINE: FLAT, its one value; the index and the id stay) */, {MI_LARGE, 2}, {MI_ANIM, 3}, {MI_LEDS, 4}, {MI_HOLD, 5}, {MI_ACCEL, 6},
     {MI_LATCH, 7}, {MI_BPMLOCK, 8}, {MI_LOWCUT, 9}, {MI_USB, 10}, {MI_SERIAL, 11},
     {MI_CLICK, 12}, {MI_CLKLVL, 13}, {MI_COUNTIN, 14},
     {MI_RESTORE, 15},                                  /* 1.2 (Discussion #130), a row of SYSTEM */
@@ -64,6 +64,12 @@ static int ed_menu_handle(uint32_t cmd, const uint8_t *a, uint32_t n)
             return 1;
         }
         row = ED_MENU[a[0]][0];
+        if (row == MI_COUNT) {                         /* STYLE (retired): FLAT alone, so an editor of before lists it there */
+            ed_b(1); ed_b(EDM_ENUM); ed_v(0); ed_v(0); ed_v(0);
+            ed_str("STYLE", 12); ed_str("FLAT", 12);
+            ed_b(MTAB_DISPLAY); ed_str(MTAB_NAME[MTAB_DISPLAY], 12);
+            return 1;
+        }
         k = menu_n(row);
         ed_b(ED_MENU[a[0]][1]);
         ed_b(EDM_ENUM);
@@ -88,6 +94,10 @@ static int ed_menu_handle(uint32_t cmd, const uint8_t *a, uint32_t n)
         return 1;
     }
     row = ED_MENU[i][0];
+    if (row == MI_COUNT) {                             /* STYLE (retired): FLAT, whatever is asked */
+        ed_b(0); ed_b(a[0]); ed_v(0);
+        return 1;
+    }
     menu_put(row, (uint32_t)clamp(v, 0, (int32_t)menu_n(row) - 1));
     if (row == MI_SERIAL)
         menu_serial_at = fm1_ms | 1u;                  /* (applied 200 ms after this reply: usb_serial_apply) */

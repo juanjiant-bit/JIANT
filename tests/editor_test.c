@@ -839,7 +839,7 @@ static uint32_t menu_set(uint32_t id, int32_t v)            /* -> rc; host_wire[
 static int menu_protocol(void)
 {
     static const char *const WANT[20][2] = {
-        {"COLOR", 0}, {"STYLE", "FLAT,LINE"}, {"LARGE", "OFF,ON"}, {"ANIM", "ON,OFF"}, {"LEDS", "OFF,DIM LO,DIM HI,INV"},
+        {"COLOR", 0}, {"STYLE", "FLAT"} /* (retired with LINE: FLAT alone) */, {"LARGE", "OFF,ON"}, {"ANIM", "ON,OFF"}, {"LEDS", "OFF,DIM LO,DIM HI,INV"},
         {"HOLD", "0.3 s,0.4 s,0.5 s,0.6 s"}, {"KNOB ACCEL", "ON,OFF"}, {"FX LATCH", "OFF,ON"}, {"BPM LOCK", "OFF,ON"},
         {"SPEAKER EQ", "FLAT,LOWCUT,BASS+"}, {"USB LEVEL", "MASTER,FIXED,-6 dB,-12 dB,-18 dB,-24 dB"}, {"USB", "CONSOLE,STEREO,STEMS,IN+OUT,STEMS+IN"},
         {"CLICK", "OFF,REC,ON"}, {"CLICK LEVEL", "LOW,MID,HIGH"}, {"COUNT-IN", "OFF,1 BAR,2 BARS"},   /* (1.1: appended) */
@@ -936,7 +936,7 @@ static int menu_protocol(void)
     ui.force = 0;
     ok = menu_set(0, 2) == 3 && host_wire[6] == 0 && ed_rv(host_wire + 7) == 2 && settings.palette == 2u &&
          T_BG == UI_PALETTES[2].c[0] && ui.force;
-    ok &= menu_set(1, 1) == 3 && ui_style == ST_LINE;
+    ok &= menu_set(1, 1) == 0 && host_wire[6] == 1 && ed_rv(host_wire + 7) == 0;   /* (STYLE, retired: FLAT whatever is asked) */
     ok &= menu_set(2, 1) == 3 && (ui_prefs & PREF_LARGE);
     ok &= menu_set(3, 1) == 3 && (ui_prefs & PREF_ANIM_OFF);
     ok &= menu_set(4, 0) == 3 && settings_leds == LEDS_OFF && menu_set(4, 1) == 3 && settings_leds == LEDS_DIM_LO;
@@ -956,13 +956,13 @@ static int menu_protocol(void)
     ok &= menu_set(18, 1) == 3 && (ui_rec_prefs & 0x80u);   /* TRACKS 6 (0.6.18; rp_apply: the next frame) */
     ok &= menu_set(19, 0) == 3 && ui_load == 2u && sys_load == LOAD_ECO;   /* LOAD ECO (0.6.30) */
     for (i = 0; i < 20u; i++) {                         /* MENU_DESC reads them back */
-        static const int32_t SET[20] = {2, 1, 1, 1, 1, 3, 1, 1, 1, 2, 1, 0, 2, 0, 2, 1, 1, 2, 1, 0};
+        static const int32_t SET[20] = {2, 0 /* (STYLE, retired: FLAT) */, 1, 1, 1, 3, 1, 1, 1, 2, 1, 0, 2, 0, 2, 1, 1, 2, 1, 0};
         menu_desc(i, &it);
         ok &= it.value == SET[i];
     }
     bad += check("MENU_SET: every setting applied as the menu does (palette, EQ, USB LEVEL, CLICK, COUNT-IN at once, RESTORE LAST, SCALE LEDS, SCREEN OFF), read back", ok);
     ok = menu_set(3, 0) == 3 && !(ui_prefs & PREF_ANIM_OFF) && (ui_prefs & PREF_LARGE) && menu_set(10, 0) == 3 &&
-         !fx_usb_fixed && menu_set(1, 0) == 3 && ui_style == ST_FLAT;
+         !fx_usb_fixed && menu_set(1, 0) == 0;
     bad += check("MENU_SET: a flag back to its default leaves the other flags", ok);
 
     /* clamping: the reply carries the device's value */

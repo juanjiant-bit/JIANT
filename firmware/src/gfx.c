@@ -110,15 +110,10 @@ static const int8_t HALO_Y[HALO_N] = {-2, -2, -2, -1, -1, -1, -1, -1, 0, 0, 0, 0
 static struct {
     uint16_t bg, surf, text, theme, accent, mid, dim, line, sel, tint, rec, raise;
     uint16_t key, lane, grid;
-    uint8_t style;               /* MENU > STYLE (ui.c style_apply): ST_FLAT, ST_LINE */
     uint8_t skin;                /* (0.8.9) MENU > SKIN (ui_draw.c style_apply): SKIN_COLORS, SKIN_AIR */
     uint32_t gen;                /* bumped by palette_set (the text ramps follow) */
 } ux;
-/* STYLE: FLAT, the filled SURF cards and panels; LINE, no SURF (it is BG) and 1 px T_RULE dividers between the
- * areas instead (ui_draw.c draw_frame). (1.0.2: PIXEL, LINE un-antialiased, retired; a saved PIXEL reads as LINE.)
- * Selections, accents, keys and gauges keep their fills in every style */
-#define ST_FLAT 0u
-#define ST_LINE 1u
+/* (STYLE, 1.0: FLAT the filled SURF cards and panels, LINE 1 px dividers instead; LINE is retired, FLAT the one style) */
 /* (0.8.9) SKIN (the approved mock-up opciones_skin.html): COLORS, the lens's cards and panel in the 0.6 colours; (0.9.7)
  * AIR (the default of new settings): no panel, no boxes (SURF is BG), the words floating with a dark outline, the knobs'
  * row on top, right under the tabs, the middle free for the pictures, the breadcrumb at the foot; its HOME the beings
@@ -127,7 +122,6 @@ static struct {
 #define SKIN_AIR 3u
 #define SKIN_N 2u                /* (the menu's two) */
 #define T_K(c) UI_KNOBS[(c) & 3u]   /* KNOB c's colour (tools/gen_ui_palettes.py KNOBS): the skins' cards, as 0.6 */
-#define T_RULE ux.dim            /* LINE: the dividers (DIM: quieter than labels) */
 #define T_BG ux.bg               /* background */
 #define T_SURF ux.surf           /* dialogs, menu rows, mixer strips */
 #define T_TEXT ux.text           /* primary text */
@@ -162,7 +156,7 @@ static void palette_set(uint32_t i)
 {
     const ui_pal_t *p = &UI_PALETTES[i % NPALETTES];
     memcpy(&ux.bg, p->c, sizeof p->c);           /* the stored twelve */
-    if (ux.style || ux.skin) ux.surf = ux.bg;
+    if (ux.skin) ux.surf = ux.bg;                /* (AIR: no panel, no boxes) */
     ux.key = ux_mix(ux.bg, ux.text, UI_KEY_PCT);
     ux.lane = ux_mix(ux.surf, ux.theme, 10);
     ux.grid = ux_mix(ux.surf, ux.text, 6);
@@ -423,13 +417,6 @@ static void cv_rect(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c)
             cv_px[(uint32_t)y * cv_w + (uint32_t)i] = sc;
 }
 
-/* a divider (LINE): a 1 px T_RULE line on the canvas, a cell edge for the host lint */
-static void cv_rule(int32_t x, int32_t y, int32_t w, int32_t h)
-{
-    GFX_HOOK_CELL(x, y + cv_oy, x + w, y + h + cv_oy);
-    cv_rect(x, y, w, h, T_RULE);
-}
-
 /* a 1 px outline */
 static void cv_frame(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c)
 {
@@ -485,8 +472,7 @@ static void cv_rrect(int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, uint
 {
     int32_t i, j;
     GFX_HOOK_CELL(x, y + cv_oy, x + w, y + h + cv_oy);   /* (the lint: what is drawn on it stays inside it) */
-    if (r < 0) r = -r;                           /* (-r: rounded in every style: a keycap-like cushion) */
-    else if (ux.style == ST_LINE) r = 0;         /* LINE: square cursors, selections and fills (FLAT: rounded) */
+    if (r < 0) r = -r;                           /* (-r: as r; it was "rounded in LINE too", a keycap-like cushion) */
     if (r > w / 2) r = w / 2;
     if (r > h / 2) r = h / 2;
     if (r < 1) {

@@ -14,8 +14,8 @@
  * colour it is drawn on (gfx.c GFX_HOOK_INK: a text, icon or keycap label that cannot be seen).
  * Contrast: every text, icon and keycap label against what it is drawn on, per palette (INK_MIN; report.txt):
  * every pixel is neutral (R = B, G within 2 of 2 R).
- * MENU > STYLE LINE: every screen again in every palette, the same lint; a text or icon on a divider
- * (ui_draw.c lcd_rule, GFX_HOOK_RULE: the rules between the strips; cv_rule's are cells) is a finding too.
+ * (MENU > STYLE LINE is retired: FLAT is the one style.) A text or icon on a divider
+ * (GFX_HOOK_RULE: the header's rule) is a finding too.
  * Rolling digits: every frame of a header BPM roll and a card roll, up and down, in every palette (lint).
  * FM6 colonies (0.9.6, ui_engvis.c vx_fm6 on OPERATOR, each bicho through VX_FM6_HOOK), every algorithm: no two
  * operators' bichos overlapping or touching (as large as a full envelope makes them), every one inside the panel.
@@ -189,7 +189,7 @@ static void hk_cell(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
 }
 static void hk_blit(uint32_t x, uint32_t y, uint32_t r0, uint32_t w, uint32_t h);
 static void hk_fill(uint32_t x, uint32_t y, uint32_t w, uint32_t h);
-/* STYLE LINE: the dividers drawn on the screen (ui_draw.c lcd_rule) while no later blit or fill covers them */
+/* the dividers drawn on the screen (GFX_HOOK_RULE: the header's rule) while no later blit or fill covers them */
 static int16_t rules[32][4];
 static uint32_t nrules;
 static void hk_rule_k(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint32_t k);
@@ -2122,9 +2122,9 @@ static void align_sweeps(void)
     FILE *r0 = rep, *nul = fopen("/dev/null", "w");
     int32_t v;
     if (nul) rep = nul;                              /* (not lint scenes: their draws pile up) */
-    for (st = ST_FLAT; st <= ST_LINE; st++) {
+    for (st = 0; st < 1u; st++)             /* (FLAT, the one style: LINE is retired) */ {
         state(); pal(UI_JIANT_INDEX);
-        ui_style = (uint8_t)st; style_apply();
+        style_apply();
         cur_name = st ? "sweep LINE: cushions" : "sweep FLAT: cushions";
         for (k = 0; k < NTRK; k++)
             for (i = 0; i < 3u; i++) {
@@ -2241,7 +2241,7 @@ static void align_sweeps(void)
         ui_prefs = 0; ui.hot_t = 0;
         ui.force = 0;
     }
-    ui_style = ST_FLAT; style_apply();
+    style_apply();
     state();
     nscr = npend = nrules = 0;
     nfind = nf;
@@ -2323,8 +2323,8 @@ int main(int argc, char **argv)
         cv_text(4, 31, &AF_S, "SPILL", T_TEXT);
         cv_blit(4, Y_LABEL);
         lint();
-        nrules = 0;                                         /* a word on a divider (STYLE LINE) */
-        lcd_rule(0, 120, 240, 1);
+        nrules = 0;                                         /* a word on a divider (the header's rule) */
+        lcd_fill(0, 120, 240, 1, T_LINE); GFX_HOOK_RULE(0, 120, 240, 1);
         cv_begin(40, 16, T_BG);
         cv_text(2, 0, &AF_S, "RULE", T_TEXT);
         cv_blit(8, 112);
@@ -2363,41 +2363,13 @@ int main(int argc, char **argv)
             for (k = 0; k < sizeof SHOW / sizeof SHOW[0]; k++)
                 if (!strcmp(UI_PALETTES[p].name, SHOW[k])) write_ppm(out, SHOW[k], S_NAME[s]);
         }
-    {   /* STYLE LINE (gfx.c ST_*): every screen in every palette, linted (GREY: gray, MONO: neutral); GREY MONO NIGHT
-         * PAPER as OUTDIR/ppm/<STYLE>_<PALETTE>_<screen>.ppm (ui_render.py: sheet_<STYLE>_<PALETTE>.png) */
-        static const char *const ST_N[2] = {"FLAT", "LINE"}, *const ST_PAL[] = {"JIANT", "CONTRAST", "HUESO", "NEON"};
-        uint32_t st, k, n0 = nfind, nruled = 0;
-        for (st = ST_LINE; st <= ST_LINE; st++)
-            for (p = 0; p < NPALETTES; p++) {
-                for (k = 0; k < sizeof ST_PAL / sizeof ST_PAL[0] && strcmp(UI_PALETTES[p].name, ST_PAL[k]); k++) ;
-                for (s = 0; s < S_COUNT; s++) {
-                    char name[64], tag[24];
-                    if (!FELUCCA_FM4 && (s == S_OP_ENV || (s >= S_ALG1 && s <= S_OP_LEVEL)))
-                        continue;
-                    snprintf(tag, sizeof tag, "%s_%s", ST_N[st], UI_PALETTES[p].name);
-                    snprintf(name, sizeof name, "%s/%s", tag, S_NAME[s]);
-                    cur_name = name;
-                    setup((int)s);
-                    pal(p);
-                    ui_style = (uint8_t)st; style_apply();
-                    draw((int)s);
-                    if (ux.style != st) { fprintf(stderr, "ui_render: %s drawn in style %u\n", name, ux.style); return 1; }
-                    nruled += nrules != 0u;
-                    lint();
-                    if (k < sizeof ST_PAL / sizeof ST_PAL[0]) write_ppm(out, tag, S_NAME[s]);
-                }
-            }
-        ui_style = ST_FLAT; style_apply();
-        if (nruled < 100u) { fprintf(stderr, "ui_render: dividers on %u STYLE screens only\n", nruled); return 1; }
-        fprintf(rep, "STYLE LINE (every palette): %u lint findings\n", nfind - n0);
-    }
     {   /* MENU > LARGE (ui.c large_kind): every screen in every palette in FLAT and LINE, linted (GREY: gray, MONO:
          * neutral); GREY MONO in FLAT as OUTDIR/ppm/LARGE_<PALETTE>_<screen>.ppm (ui_render.py: sheet_LARGE_<PALETTE>.png),
          * LINE GREY as LARGE-LINE_GREY; the tall cards' value faces counted (lg_hook) */
         static const char *const ST_N[2] = {"LARGE", "LARGE-LINE"};
         uint32_t st, n0 = nfind, ntall = 0;
         large_on = 1;
-        for (st = ST_FLAT; st <= ST_LINE; st++)
+        for (st = 0; st < 1u; st++)             /* (FLAT, the one style: LINE is retired) */
             for (p = 0; p < NPALETTES; p++)
                 for (s = 0; s < S_COUNT; s++) {
                     char name[64], tag[24];
@@ -2409,18 +2381,18 @@ int main(int argc, char **argv)
                     setup((int)s);
                     ui_prefs |= PREF_LARGE;
                     pal(p);
-                    ui_style = (uint8_t)st; style_apply();
+                    style_apply();
                     draw((int)s);
                     ntall += !ui.menu && !ui.confirm && !name_on() && large_kind() == LK_TALL;
                     lint();
                     if ((p == UI_JIANT_INDEX || (!st && !strcmp(UI_PALETTES[p].name, "CONTRAST"))))
                         write_ppm(out, tag, S_NAME[s]);
                 }
-        ui_style = ST_FLAT; style_apply();
+        style_apply();
         sweep_columns();                                /* every value of every column, tall */
         large_on = 0;
         if (ntall < 100u) { fprintf(stderr, "ui_render: LARGE drew %u screens with tall cards only\n", ntall); return 1; }
-        fprintf(rep, "MENU > LARGE (FLAT and LINE, every palette, the page / value sweep): %u lint findings; %u screens with tall"
+        fprintf(rep, "MENU > LARGE (every palette, the page / value sweep): %u lint findings; %u screens with tall"
                 " cards\n", nfind - n0, ntall);
         fprintf(rep, "  tall card values: %llu in L, %llu in M (a glyph not in L: \"%s\"), %llu in M (L too wide), %llu in S\n",
                 (unsigned long long)lg_n[0], (unsigned long long)lg_n[1], lg_miss, (unsigned long long)lg_n[2],
@@ -2437,7 +2409,7 @@ int main(int argc, char **argv)
         static const char *const SK_N[4] = {"COLORS", "", "", "AIR"}, *const ST_N[3] = {"", "-LINE", "-LARGE"};
         uint32_t sk, st, n0 = nfind, nlow = 0, nhud = 0;
         for (sk = SKIN_AIR; sk <= SKIN_AIR; sk++)      /* (0.9.7: AIR, the knobs' row on top; BOTTOM and HUD retired) */
-            for (st = 0; st < 3u; st++)
+            for (st = 0; st < 3u; st += 2u)        /* (plain, LARGE) */
                 for (p = 0; p < NPALETTES; p++)
                     for (s = 0; s < S_COUNT; s++) {
                         char name[64], tag[24];
@@ -2450,7 +2422,7 @@ int main(int argc, char **argv)
                         if (st == 2u) ui_prefs |= PREF_LARGE;
                         pal(p);
                         ui_skin = (uint8_t)sk;
-                        ui_style = (uint8_t)(st == 1u); style_apply();
+                        style_apply();
                         draw((int)s);
                         if (ux.skin != sk) { fprintf(stderr, "ui_render: %s drawn in skin %u\n", name, ux.skin); return 1; }
                         nlow += (uint32_t)lz_low();
@@ -2459,9 +2431,9 @@ int main(int argc, char **argv)
                         if (!st)                         /* (AIR, the default skin: every palette of the family) */
                             write_ppm(out, tag, S_NAME[s]);
                     }
-        ui_skin = SKIN_COLORS; ui_style = ST_FLAT; style_apply();
+        ui_skin = SKIN_COLORS; style_apply();
         if (nlow < 1000u || nhud < 20u) { fprintf(stderr, "ui_render: SKIN drew %u screens low, %u HUD HOMEs only\n", nlow, nhud); return 1; }
-        fprintf(rep, "SKIN AIR (FLAT, LINE, LARGE, every palette): %u lint findings; %u screens with the knob row, %u HOMEs with "
+        fprintf(rep, "SKIN AIR (plain and LARGE, every palette): %u lint findings; %u screens with the knob row, %u HOMEs with "
                 "the beings over the whole screen\n", nfind - n0, nlow, nhud);
     }
     {   /* every FM6 colony (the lint above, fm6_hook, runs on each), in GREY: gray */

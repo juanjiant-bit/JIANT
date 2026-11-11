@@ -76,6 +76,8 @@ Everything since V10.6c, the last public version, in one list; each item links t
   palette saved before lands on the nearest one (GREY, MONO, NIGHT → HUESO; GREEN → SELVA; AMBER, ROSE → BRASA; ICE →
   ABISAL; VIOLET → JIANT; PAPER, HI-CON → CONTRAST).
 - **Two skins**: MENU > DISPLAY > SKIN is **AIR** or **COLORS**. BOTTOM and HUD are gone (a saved one loads as COLORS).
+- **No STYLE row**: the filled look (FLAT) is the one style; LINE is gone (a saved LINE loads as FLAT) and the menu has
+  a row less.
 
 **Sequencer**
 - Step component **RAMP** replaces JUMP (V10.6v): a step's parameter lock glides there over 1–32 steps or 1–16 bars.
@@ -2658,15 +2660,14 @@ track.
 **SELECT** walks every row (0.9.2), all four tabs in one chain (DISPLAY → CONTROL → AUDIO → SYSTEM; it stops at the
 first and the last), **ALGORITHM** jumps to the next / previous tab (its first row), **any knob** or **OCT+ / OCT−**
 changes the value; PRESETS does nothing here. HOME closes it (settings are saved then). The screen shows the tab's rows,
-the selected row's four as cards (ROWS 1–4 / ROWS 5–6; DISPLAY: ROWS 5–8; CONTROL also ROWS 9–12, the keys' four) with their knob's number; the tabs on top,
-the footer **MENU · DISPLAY · SKIN  2/26**. The header says MENU · DISPLAY.
+the selected row's four as cards (ROWS 1–4 / ROWS 5–6; DISPLAY: ROWS 5–7; CONTROL also ROWS 9–12, the keys' four) with their knob's number; the tabs on top,
+the footer **MENU · DISPLAY · SKIN  2/35**. The header says MENU · DISPLAY.
 
 | Tab | Row | Values |
 | --- | --- | --- |
 | DISPLAY | COLOR | **JIANT** (default), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — seven palettes of the same family, all dark, all with the thermal ramp |
 | DISPLAY | SKIN | **AIR** (default of new settings), COLORS — see [Skins](#skins-air-colors); a saved BOTTOM or HUD (0.8.9, retired) loads as COLORS |
 | DISPLAY | SCOPE | **OFF** (default), ON — (0.9.7) an engine's EDIT pages: OFF the creature on the whole panel, centred, the page's name and the sound's name small in its corners; ON the creature on the left, the SCOPE card and the chips as before. Settings saved before 0.9.7 load as OFF |
-| DISPLAY | STYLE | FLAT, LINE |
 | DISPLAY | LARGE | OFF, ON (big labels and values) |
 | DISPLAY | ANIM | ON, OFF (values snap; the power-on signature appears whole) |
 | DISPLAY | LEDS | OFF, DIM LO, **DIM HI** (default), INV — (0.7.3) the idle glow's LEDs take turns frame to frame, so the glow no longer hums through the speaker once the music stops |

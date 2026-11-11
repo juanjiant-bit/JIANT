@@ -4,7 +4,7 @@
 /* Felucca UI drawing: the header, the four knob cards, the footer (steps + engine / preset / page)
  * and the frame; the panel between the cards and the footer is ui_graph.c. The layout:
  * flat SURF cards and panels on BG,
- * rounded corners, no rules (MENU > STYLE LINE: no SURF, 1 px rules between the areas instead: draw_rules), colours from the theme tokens only (gfx.c T_*). Type: S (12 px) labels,
+ * rounded corners, no rules, colours from the theme tokens only (gfx.c T_*). Type: S (12 px) labels,
  * M (15 px) values and the header, L (28 px) big numerals. (JIANT 0.6.56: S Chakra Petch, M IBM Plex Mono, L Michroma 18 px;
  * the JIANT palette's boxes square with HUD corners, gfx.c cv_rrect). A card value too wide for M is set in S;
  * free text (names, messages) is ellipsised at its size. */
@@ -108,7 +108,7 @@ static void draw_battery(int32_t bx)
                                                          * label 4..10, the gauge 28..29) */
 #define CARD_VY (ROLL_Y - 1)                            /* the value's line (M) */
 #define CARD_XY 4                                       /* (0.8.5) a lens card's label (AF_X): its line, capitals rows 5..11 */
-#define CARD_BG (ux.style || lz_low() ? T_SURF : T_RAISE)   /* (0.8.5, the mock-up) a card: RAISE (LINE: no fill; 0.8.9 BOTTOM,
+#define CARD_BG (lz_low() ? T_SURF : T_RAISE)   /* (0.8.5, the mock-up) a card: RAISE (LINE: no fill; 0.8.9 BOTTOM,
                                                          * HUD: none, the knob row on the background) */
 static const uint8_t ROLL_EASE[17] = {0, 45, 84, 118, 147, 172, 193, 210, 223, 234, 242, 247, 251, 253, 254, 255, 255};
 
@@ -406,29 +406,6 @@ static void draw_head(void)
     }
     lz_blit(0, Y_HEAD);
 }
-/* LINE: 1 px dividers in the BG gaps between the strips, not around them: under the header, above and
- * below the panel, and between the four columns over rows y .. y + h (the cards; the mixer's strips too) */
-#define RULE_X0 CARD_X(0)
-#define RULE_W (CARD_X(3) + CARD_W - CARD_X(0))
-static void lcd_rule(uint32_t x, uint32_t y, uint32_t w, uint32_t h)
-{
-    lcd_fill(x, y, w, h, T_RULE);
-    GFX_HOOK_RULE(x, y, w, h);
-}
-static void draw_rules(uint32_t y, uint32_t h)
-{
-    uint32_t i;
-    if (y == card_y() && lz_low()) {                    /* (0.9.7) AIR: over the knobs' row and under it */
-        lcd_rule(RULE_X0, (LT_Y + LB_TAB_H + card_y()) / 2, RULE_W, 1);
-        lcd_rule(RULE_X0, (card_y() + card_h() + graph_y()) / 2, RULE_W, 1);
-    } else if (y == card_y()) {                         /* (LARGE: the geometry of the page, ui.c card_h; 0.8.5: a lens
-                                                         * page's; the header draws its own rule) */
-        lcd_rule(RULE_X0, (card_y() + card_h() + graph_y()) / 2, RULE_W, 1);
-        lcd_rule(RULE_X0, (graph_y() + graph_h() + foot_y()) / 2, RULE_W, 1);
-    }
-    for (i = 0; i < 3u; i++)
-        lcd_rule((uint32_t)(CARD_X(i) + CARD_W), y, 1, h);
-}
 /* full redraw: the strips (header, cards, panel, footer) cover the rest; only the BG between them is filled.
  * (0.8.5, the mock-up's skin) the cards RAISE boxes: no dividers between them (LINE: its rules) */
 static void draw_frame(void)
@@ -437,21 +414,13 @@ static void draw_frame(void)
                                                          * cards, a strip; 0.8.5 a lens page: the mock-up's) */
     if (hud_home())                                     /* (0.8.9) HUD's HOME: its strips cover the screen */
         return;
-    if (cy > gy) {                                      /* (0.8.9) BOTTOM, HUD: the panel, then the knobs' row */
-        lcd_fill(0, H_HEAD, 240, gy - H_HEAD, T_BG);
-        lcd_fill(0, gy + gh, 240, cy - gy - gh, T_BG);
-        lcd_fill(0, cy + ch, 240, fy - cy - ch, T_BG);
-    } else {
-        lcd_fill(0, H_HEAD, 240, cy - H_HEAD, T_BG);
-        lcd_fill(0, cy + ch, 240, gy - cy - ch, T_BG);
-        lcd_fill(0, gy + gh, 240, fy - gy - gh, T_BG);
-    }
+    lcd_fill(0, H_HEAD, 240, cy - H_HEAD, T_BG);
+    lcd_fill(0, cy + ch, 240, gy - cy - ch, T_BG);
+    lcd_fill(0, gy + gh, 240, fy - gy - gh, T_BG);
     lcd_fill(0, cy, (uint32_t)CARD_X(0), ch, T_BG);
     for (i = 0; i < 4u; i++)                            /* right of each card */
         lcd_fill((uint32_t)(CARD_X(i) + CARD_W), cy, i < 3u ? (uint32_t)(CARD_X(i + 1u) - CARD_X(i) - CARD_W) :
                  240u - (uint32_t)(CARD_X(i) + CARD_W), ch, T_BG);
-    if (ux.style)                                       /* LINE: the dividers in the gaps */
-        draw_rules(cy, ch);
 }
 
 /* MOTION on the cards (#63: values that move on their own): the selected track's motion-driven parameters
@@ -559,7 +528,7 @@ static void draw_column_tall(uint32_t c, const char *label, const char *val, con
     }
     if (ratio >= 0) {
         int32_t gw = COL_W - 10, fx = ratio * gw / 1000;
-        cv_rrect(5, LG_GY, gw, 3, 1, ux.style ? T_LINE : T_BG, T_SURF);
+        cv_rrect(5, LG_GY, gw, 3, 1, T_BG, T_SURF);
         cv_rrect(5, LG_GY, fx < 3 ? 3 : fx, 3, 1, hot ? T_ACCENT : vc == T_DIM ? T_DIM : gauge_col(ratio), T_BG);
     }
     cv_blit((uint32_t)CARD_X(c), card_y());
@@ -1010,7 +979,7 @@ static void draw_tabs(void)
     const char *nm[8], *tab[8];
     uint8_t cnt[8];
     uint32_t lv, at, n = tabs_now(nm, tab, cnt, &lv, &at), k,
-             sig = (lv + 1u) * 2654435761u + at * 40503u + ux.gen * 977u + ux.style * 7u + lz_fam() * 131u + 1u +
+             sig = (lv + 1u) * 2654435761u + at * 40503u + ux.gen * 977u + lz_fam() * 131u + 1u +
                    (uint32_t)hud_home() * 31u + n * 7919u;
     for (k = 0; k < n; k++)
         sig = (sig ^ str_hash(cnt[k], nm[k])) * 16777619u;
@@ -1997,11 +1966,7 @@ static __attribute__((noinline)) void draw_countin(void)
         char d[2] = {(char)('4' - j), 0};
         int now = j == e % 4u, gone = j < e % 4u;
         uint16_t fill = now ? T_THEME : T_SURF;
-        if (ux.style && !now) {                       /* LINE: no SURF card, a 1 px rule round it */
-            cv_rrect(x, 0, 48, CI_H, 8, T_RULE, T_BG);
-            cv_rrect(x + 1, 1, 46, CI_H - 2, 7, T_BG, T_RULE);
-        } else
-            cv_rrect(x, 0, 48, CI_H, 8, fill, T_BG);
+        cv_rrect(x, 0, 48, CI_H, 8, fill, T_BG);
         GFX_HOOK_ALIGN(x, 0, x + 48, CI_H, AL_HV, "count-in beat centred in its cell");
         cv_text_in(x, CAP_IN(L, CI_H), 48, &AF_L, d, now ? T_INK : gone ? T_DIM : T_TEXT, fill);
     }
@@ -2258,16 +2223,13 @@ static void draw_confirm(void)
     dlg_crumb("NOTICE", "CONFIRM");
 }
 
-/* the stored STYLE (ui_style: the menu, a settings import, a restore) and SKIN (0.8.9, ui_skin) into gfx.c's copies: the
+/* the stored SKIN (0.8.9, ui_skin: the menu, a settings import, a restore) into gfx.c's copy: the
  * tokens again, all redrawn */
 static void style_apply(void)
 {
-    if (ui_style > ST_LINE)                             /* 2, the retired PIXEL: LINE; unknown: FLAT */
-        ui_style = ui_style == 2u ? ST_LINE : ST_FLAT;
     if (ui_skin != SKIN_AIR)                            /* (0.8.9) SKIN: the retired BOTTOM and HUD, unknown: COLORS */
         ui_skin = SKIN_COLORS;
-    if (ux.style != ui_style || ux.skin != ui_skin) {
-        ux.style = ui_style;
+    if (ux.skin != ui_skin) {
         ux.skin = ui_skin;
         palette_set(settings.palette);
         ui.force = 1;

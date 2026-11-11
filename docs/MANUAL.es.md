@@ -81,6 +81,8 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
   HI-CON → CONTRAST).
 - **Dos pieles**: MENU > DISPLAY > SKIN es **AIR** o **COLORS**. BOTTOM y HUD ya no están (si tenías guardada alguna,
   cargás con COLORS).
+- **Sin la fila STYLE**: el aspecto relleno (FLAT) es el único estilo; LINE ya no está (si lo tenías guardado, cargás
+  con FLAT) y el menú tiene una fila menos.
 
 **Secuenciador**
 - El componente **RAMP** reemplaza a JUMP (V10.6v): el lock de parámetro de un paso se desliza hasta su valor en 1–32
@@ -2807,15 +2809,14 @@ la pista seleccionada.
 SYSTEM; frena en la primera y en la última), **ALGORITHM** salta a la pestaña siguiente / anterior (a su primera fila),
 **cualquier perilla** u **OCT+ / OCT−** cambia el valor; PRESETS acá no hace nada. HOME lo cierra (en ese momento se
 guarda la configuración). La pantalla muestra las filas de la pestaña, las cuatro de la fila elegida como tarjetas
-(ROWS 1–4 / ROWS 5–6; DISPLAY: ROWS 5–8; CONTROL también ROWS 9–12, las cuatro de las teclas) con el número de su perilla; las pestañas arriba, el pie **MENU · DISPLAY ·
-SKIN  2/26**. El encabezado dice MENU · DISPLAY.
+(ROWS 1–4 / ROWS 5–6; DISPLAY: ROWS 5–7; CONTROL también ROWS 9–12, las cuatro de las teclas) con el número de su perilla; las pestañas arriba, el pie **MENU · DISPLAY ·
+SKIN  2/35**. El encabezado dice MENU · DISPLAY.
 
 | Pestaña | Fila | Valores |
 | --- | --- | --- |
 | DISPLAY | COLOR | **JIANT** (por defecto), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — siete paletas de la misma familia, todas oscuras, todas con la rampa térmica |
 | DISPLAY | SKIN | **AIR** (de fábrica en los ajustes nuevos), COLORS — ver [Pieles](#pieles-air-colors); si tenías guardada BOTTOM o HUD (0.8.9, retiradas), cargás con COLORS |
 | DISPLAY | SCOPE | **OFF** (de fábrica), ON — (0.9.7) las páginas EDIT de un motor: OFF la criatura en todo el panel, centrada, el nombre de la página y el del sonido chiquitos en sus esquinas; ON la criatura a la izquierda, la carta SCOPE y las fichas como antes. Los ajustes guardados antes de 0.9.7 cargan OFF |
-| DISPLAY | STYLE | FLAT, LINE |
 | DISPLAY | LARGE | OFF, ON (etiquetas y valores grandes) |
 | DISPLAY | ANIM | ON, OFF (los valores saltan directo; la firma de encendido aparece entera) |
 | DISPLAY | LEDS | OFF, DIM LO, **DIM HI** (por defecto), INV — (0.7.3) los LEDs del brillo de reposo se turnan cuadro a cuadro, así el brillo ya no zumba por el parlante cuando la música para |

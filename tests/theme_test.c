@@ -53,17 +53,17 @@ int main(int argc, char **argv)
         assert(!memcmp(UI_PALETTES[UI_JIANT_INDEX].c, JIANT, sizeof JIANT));
         assert(&ux.raise - &ux.bg == 11 && &ux.grid - &ux.bg == 14);   /* (palette_set copies the stored twelve) */
     }
-    for (unsigned st = ST_FLAT; st <= ST_LINE; st++) {   /* the stored tokens as they are, in FLAT and LINE (SURF: BG) */
-        ux.style = (uint8_t)st;
+    for (unsigned sk = 0; sk < 2; sk++) {             /* the stored tokens as they are, in COLORS and AIR (SURF: BG) */
+        ux.skin = (uint8_t)(sk ? SKIN_AIR : SKIN_COLORS);
         for (unsigned p = 0; p < NPALETTES; p++) {
             const uint16_t *c = UI_PALETTES[p].c;
             palette_set(p);
-            assert(T_BG == c[0] && T_SURF == (st ? c[0] : c[1]) && T_TEXT == c[2] && T_THEME == c[3] && T_ACCENT == c[4] &&
+            assert(T_BG == c[0] && T_SURF == (sk ? c[0] : c[1]) && T_TEXT == c[2] && T_THEME == c[3] && T_ACCENT == c[4] &&
                    T_MID == c[5] && T_DIM == c[6] && T_LINE == c[7] && T_SEL == c[8] && T_TINT == c[9] && T_REC == c[10] &&
                    T_RAISE == c[11] && T_INK == 0u && T_K(0) == UI_KNOBS[0] && T_K(3) == UI_KNOBS[3]);
         }
     }
-    ux.style = ST_FLAT;
+    ux.skin = SKIN_COLORS;
     for (unsigned p = 0; p < NPALETTES; p++) {
         uint16_t *tok = &ux.bg;
         palette_set(p);
