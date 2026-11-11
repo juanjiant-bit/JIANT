@@ -55,7 +55,8 @@
 #                   slots (at most +5 %), demos in build/mod_demo/.
 # PERFORM (tests/perform_test.c): the FX hold layer (src/perform.c): 1/16 starts, stereo buffer effects, the
 #                   too-long REPEAT, the SLICER interplay, silent layer keys, idle bit-identical, cost; build/perform_demo/;
-# REVERB (tests/reverb_test.c): REVERB TYPE (src/fx.c): ROOM bit for bit as before, SPRING's decay against SIZE,
+# REVERB (tests/reverb_test.c): REVERB TYPE (src/fx.c): ROOM bit for bit as its reference (V10.7.17: a 4-line network),
+#                   its echo density, its decay as the old combs', its tail ending in exact 0; SPRING's decay against SIZE,
 #                   its chirp (group delay rising with frequency), stability at the corners, level, a model change
 #                   without a click, its cost against ROOM (+30 % at most); demos in build/fx_demo/.
 # DELAY (tests/delay_test.c, 0.8.4): the delay's line (src/fx.c dly_lo): no leak of the input at the longest TIME with MOD
@@ -354,7 +355,7 @@ if [ -f build/gen/felucca_tables.h ]; then
     mkdir -p build/perform_demo build/fx_demo
     run "FX layer effects: on the 1/16, stereo, too-long REPEAT, SLICER, silent keys, idle bit-identical, clicks, cost, demos" "$OUT/perform_test" build/perform_demo
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/reverb_test" tests/reverb_test.c -lm
-    run "REVERB TYPE: ROOM bit-identical, SPRING decay / chirp / stability / level, model change, cost, demos" "$OUT/reverb_test" build/fx_demo
+    run "REVERB TYPE: ROOM bit-identical, dense, clean end, SPRING decay / chirp / stability / level, model change, cost, demos" "$OUT/reverb_test" build/fx_demo
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/cloud_hot_test" tests/cloud_hot_test.c -lm
     run "CLOUD driven hot (p1, main 0.9.14 / 0.9.16): the loop never runs away (any SIZE / RATE), its line never clamps, no grain across the write head, no trip, SIZE max from a cleared line sounds" "$OUT/cloud_hot_test" build/fx_demo
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/delay_test" tests/delay_test.c -lm

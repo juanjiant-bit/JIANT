@@ -51,7 +51,7 @@ static void cl_reset(void)
     rev_clear();
     fx.rtype = 4;
     memset(fx.rm_m, 0, sizeof fx.rm_m);
-    memset(fx.comb_i, 0, sizeof fx.comb_i); memset(fx.ap_i, 0, sizeof fx.ap_i);
+    fx.rv_w = 0;
     fx.cl_w = 0; fx.cl_rng = 0; fx.cl_next = 0; fx.rm_ph = 0; fx.cl_lp = 0;
     fxg_g = 32767; fxg_quiet = 0;
     song.g[G_RTYPE] = 4;

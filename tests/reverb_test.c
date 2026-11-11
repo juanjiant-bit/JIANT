@@ -2,9 +2,10 @@
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* The reverb bus's two models (src/fx.c: REVERB TYPE, G_RTYPE) on the Mac, through hostsim.c as regress.c.
  *   build/host/reverb_test [DEMODIR]          (run_tests.sh: build/fx_demo)
- * 1. ROOM bit-identical: fx_buses against a copy of the buses as they were before SPRING (chorus, delay and the
- *    4-comb room in one loop), on noise sends with SIZE / DAMP / the delay and chorus settings changing, sample
- *    for sample. (The goldens of regress.c, all rendered with ROOM, say the same for the whole mix.)
+ * 1. ROOM bit-identical: fx_buses against a copy of the buses written out plainly (chorus, delay and the room in one
+ *    loop: V10.7.17's 4-line network, before it the 4 combs), on noise sends with SIZE / DAMP / the delay and chorus
+ *    settings changing, sample for sample. (The goldens of regress.c, most rendered with ROOM, say the same for the
+ *    whole mix.)
  * 2. SPRING decay: the impulse response's RT60 (Schroeder integral, -5 .. -35 dB) rises with SIZE, within
  *    0.15 .. 1 s at SIZE 0 and 2 .. 6 s at 127.
  * 3. SPRING dispersion: the group delay of the first arrival rises with frequency (1 .. 5 kHz, each band later
@@ -26,6 +27,10 @@
  * 8. (JIANT 0.3) the GRAIN delay's PITCH (an octave up / down) and SPRY (bounded with feedback), the reverb's FILT
  *    and WIDE, MOD's depth (~5.7 ms), DUCK's depth and hold.
  * 9. PRE: a plain delay at the full rate, no alias (src/fx.c: the half-rate line folded the send's highs down).
+ * 10. (V10.7.17) ROOM smooth: its impulse response's echo density (normalised, Abel & Huang: 1 a Gaussian tail; the
+ *    combs gave ~0.57) at least 0.85 over 0.1 .. 0.5 s; its decay (T30) within 12 % of the combs' at SIZE 0 .. 115;
+ *    and the tail's end clean: after bursts of noise, a low and a high sine (SIZE 0 .. 127, DAMP 0 .. 127) every line
+ *    and state exactly 0 within 28 s (no DC left by the roundings, no limit cycle: no buzz).
  * Demos (WAV) into DEMODIR: a drum pattern and a pluck through SPRING, the drums through ROOM to compare. */
 #define main hostsim_main
 #include "hostsim.c"
@@ -60,12 +65,12 @@ static int32_t noise(int32_t amp)
 }
 
 /* ------------------------------------------------- the buses before SPRING --- */
-static int16_t ref_dly[DLY_LEN], ref_cho[CHO_LEN], ref_comb[1116 + 1188 + 1277 + 1356], ref_ap[556 + 441];
+static int16_t ref_dly[DLY_LEN], ref_cho[CHO_LEN], ref_ring[4096], ref_ap[1024];
 static struct {
     uint32_t dly_w, cho_w, cho_ph;
     int32_t dly_lp, dly_hp, wm;          /* (0.6.86) the loop's low cut; the tape's drift (Q8) */
     uint32_t wph, fph;
-    uint16_t comb_i[4], ap_i[2];
+    uint32_t w;                          /* (V10.7.17) ROOM: the ring's write count */
     int32_t comb_lp[4];
     uint32_t dl_now, dl_old, dl_xf;      /* (0.6.81) TIME's crossfade; DEPTH and MIX gliding (fx.c) */
     int32_t cd, dm;
@@ -120,28 +125,33 @@ static void ref_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_
         ref_dly[rf.dly_w & (DLY_LEN - 1u)] = (int16_t)dly_sat((dly_in[i] >> 1) + mulq15(clamp(x - ((rf.dly_hp + 128) >> 8), -32767, 32767), fb));
         rf.dly_w++;
         y += mulq15(x << 1, rf.dm);
-        a = 0;
-        {
-            int16_t *c = ref_comb;
-            int32_t in = mulq15(rev_in[i], 2580);
-            for (k = 0; k < 4u; k++) {
-                int32_t o = c[rf.comb_i[k]];
-                rf.comb_lp[k] = o + mulq15(rf.comb_lp[k] - o, 32767 - damp);
-                c[rf.comb_i[k]] = (int16_t)clamp(in + mulq15(rf.comb_lp[k], size), -32768, 32767);
-                if (++rf.comb_i[k] >= REV_COMB[k])
-                    rf.comb_i[k] = 0;
-                a += o;
-                c += REV_COMB[k];
+        {   /* (V10.7.17) ROOM: the 4-line network, written out here as plainly as it reads (fx.c rev_room) */
+            static const uint32_t LEN[4] = {919, 997, 1061, 1119}, ALEN[2] = {577, 447};
+            uint32_t base = 0, ab = 0;
+            int32_t in = (rev_in[i] * 2120 + 16384) >> 15, o[4], s = 0, g = (32768 - (((32768 - size) * 28500) >> 15)) >> 1;
+            int32_t dk = song.g[G_RDAMP] * 166, ao[2];
+            rf.w--;
+            for (k = 0; k < 4u; k++) {                          /* each line's oldest sample */
+                o[k] = ref_ring[(rf.w + base + LEN[k]) & 4095u];
+                base += LEN[k];
+                int32_t d = rf.comb_lp[k] - o[k];               /* (its damping: rounded; within 1, o) */
+                rf.comb_lp[k] = abs(d) <= 1 ? o[k] : o[k] + (int32_t)floor(d * (double)dk / 32768.0 + 0.5);
+                s += rf.comb_lp[k];
             }
-            c = ref_ap;
+            for (k = base = 0; k < 4u; k++) {                   /* the Householder mix, SIZE's gain (rounded), the send */
+                int32_t v = (int32_t)floor((double)(2 * rf.comb_lp[k] - s) * g / 32768.0 + 0.5) + (k & 1u ? -in : in);
+                ref_ring[(rf.w + base) & 4095u] = (int16_t)clamp(v, -32768, 32767);
+                base += LEN[k];
+            }
+            a = rf.comb_lp[0] - rf.comb_lp[1] + rf.comb_lp[2] - rf.comb_lp[3];   /* (out: even lines against odd) */
             for (k = 0; k < 2u; k++) {
-                int32_t o = c[rf.ap_i[k]];
-                int32_t v = a + (o >> 1);
-                c[rf.ap_i[k]] = (int16_t)clamp(v, -32768, 32767);
-                a = o - a;
-                if (++rf.ap_i[k] >= REV_AP[k])
-                    rf.ap_i[k] = 0;
-                c += REV_AP[k];
+                ao[k] = ref_ap[(rf.w + ab + ALEN[k]) & 1023u];
+                ab += ALEN[k];
+            }
+            for (k = ab = 0; k < 2u; k++) {                     /* Freeverb's allpasses, o / 2 towards zero */
+                ref_ap[(rf.w + ab) & 1023u] = (int16_t)clamp(a + ao[k] / 2, -32768, 32767);
+                a = ao[k] - a;
+                ab += ALEN[k];
             }
         }
         y += a;
@@ -174,7 +184,7 @@ static void test_room_identical(void)
             diff += w0[i] != w1[i];
         }
     }
-    check("ROOM: the buses bit for bit as before SPRING (30 s of noise sends, settings changing)", !diff && !fx.rtype);
+    check("ROOM: the buses bit for bit as the reference (V10.7.17's network; 30 s of noise sends, settings changing)", !diff && !fx.rtype);
 }
 
 /* ------------------------------------------------------------- SPRING --- */
@@ -206,7 +216,7 @@ static void spring_run(const int32_t *x, uint32_t len, uint32_t n)
 }
 static double rt60(const int32_t *h, uint32_t n)       /* Schroeder: -5 .. -35 dB, x2 */
 {
-    static double e[IRN];
+    static double e[30u * FS];
     double s = 0, t5 = -1, t35 = -1;
     uint32_t i;
     for (i = n; i-- > 0;) {
@@ -939,9 +949,94 @@ static void test_pre(void)
     check(what, r > 0 && e < r * 1e-5);
     song.g[G_RPRE] = 0;
 }
+/* (V10.7.17) ROOM: echo density, decay, a clean end */
+static double ned_at(const int32_t *h, uint32_t c)      /* the normalised echo density, a 1024-sample window at c */
+{
+    uint32_t k, cnt = 0;
+    double s = 0;
+    for (k = c - 512u; k < c + 512u; k++) s += (double)h[k] * h[k];
+    s = sqrt(s / 1024);
+    for (k = c - 512u; k < c + 512u; k++) cnt += fabs((double)h[k]) > s;
+    return cnt / 1024.0 / 0.3173;                       /* (erfc(1 / sqrt 2): a Gaussian's share past its sigma) */
+}
+#define RLN (30u * FS / CTL * CTL)
+static int32_t rir[RLN];
+static void room_run(const int32_t *x, uint32_t len, uint32_t n, int32_t size, int32_t damp)
+{
+    static int32_t in[CTL];
+    uint32_t t, i;
+    host_tracks_init();
+    song.g[G_RSIZE] = (int16_t)size; song.g[G_RDAMP] = (int16_t)damp; song.g[G_RMOD] = song.g[G_RWIDE] = 0;
+    rev_clear();
+    fx.rtype = 0;
+    for (t = 0; t < n; t += CTL) {
+        for (i = 0; i < CTL; i++) {
+            in[i] = t + i < len ? x[t + i] : 0;
+            rir[t + i] = 0;
+        }
+        rev_room(in, rir + t, CTL);
+    }
+}
+static int room_silent(void)
+{
+    uint32_t i;
+    for (i = 0; i < sizeof rev_comb / 2u; i++) if (rev_comb[i]) return 0;
+    for (i = 0; i < 4u; i++) if (fx.comb_lp[i]) return 0;
+    return 1;
+}
+static void test_room_smooth(void)
+{
+    static const int32_t SZ[3] = {0, 90, 127}, DM[3] = {0, 60, 127};
+    static const double T30_COMBS[4] = {0.60, 1.10, 1.75, 4.40};   /* (the 4 combs' without their roundings' DC,
+                                                                     * SIZE 0 64 90 115, DAMP 60) */
+    static int32_t x[2u * FS];
+    char what[200];
+    double d = 0, t[4];
+    uint32_t i, k, j, nd = 0, dirty = 0, dt = 1;
+    int32_t worst = 0;
+    x[0] = 60000;
+    room_run(x, 1, IRN, 90, 60);
+    x[0] = 0;
+    for (i = FS / 10u; i < FS / 2u; i += 256u, nd++) d += ned_at(rir, i);
+    d /= nd;
+    snprintf(what, sizeof what, "ROOM: echo density 0.1-0.5 s %.2f (1: as dense as noise; the combs ~0.57), at 60 ms %.2f", d,
+             ned_at(rir, FS * 6u / 100u));
+    check(what, d >= 0.85);
+    for (k = 0; k < 4u; k++) {                         /* (from a burst's end: an impulse's deep tail is a few LSB) */
+        for (i = 0; i < FS / 4u; i++)
+            x[i] = noise(60000);
+        room_run(x, FS / 4u, IRN, k == 3u ? 115 : k == 2u ? 90 : k ? 64 : 0, 60);
+        t[k] = rt60(rir + FS / 4u, IRN - FS / 4u);
+        dt &= fabs(t[k] / T30_COMBS[k] - 1) <= 0.12;
+    }
+    snprintf(what, sizeof what, "  its decay as the combs': T30 %.2f %.2f %.2f %.2f s (SIZE 0 64 90 115; the combs %.2f %.2f %.2f %.2f)",
+             t[0], t[1], t[2], t[3], T30_COMBS[0], T30_COMBS[1], T30_COMBS[2], T30_COMBS[3]);
+    check(what, dt);
+    for (j = 0; j < 3u; j++)
+        for (k = 0; k < 3u; k++)
+            for (i = 0; i < 3u; i++) {
+                uint32_t n = 0, last = 0;
+                for (n = 0; n < 2u * FS; n++)
+                    x[n] = j == 0u ? noise(90000) : (int32_t)(60000 * sin(2 * M_PI * (j == 1u ? 110.0 : 3100.0) * n / FS));
+                room_run(x, FS / 2u, RLN, SZ[k], DM[i]);
+                for (n = 0; n < RLN; n++)
+                    if (rir[n]) last = n;
+                if (!room_silent() || last + FS > RLN) {
+                    dirty++;
+                    worst = (int32_t)last > worst ? (int32_t)last : worst;
+                }
+            }
+    x[0] = 0;
+    snprintf(what, sizeof what, "  its tail's end: 27 bursts (noise, 110 Hz, 3.1 kHz; SIZE 0 90 127, DAMP 0 60 127): all 0 within %u s: %u",
+             RLN / FS - 1u, 27u - dirty);
+    check(what, !dirty);
+    rev_clear();
+    song.g[G_RSIZE] = GP[G_RSIZE].def; song.g[G_RDAMP] = GP[G_RDAMP].def;
+}
 int main(int argc, char **argv)
 {
     test_room_identical();
+    test_room_smooth();
     test_pre();
     test_spring();
     test_clear();

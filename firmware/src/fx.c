@@ -24,14 +24,22 @@ static __attribute__((noinline)) uint32_t cho_admit(int32_t input, uint32_t n)
     return run;
 }
 static uint8_t room_used, dly_used; /* conservative zero-state certificates; never discard a tail */
-static const uint16_t REV_COMB[4] = {1116, 1188, 1277, 1356};
-static const uint16_t REV_AP[2] = {556, 441};
-static int16_t rev_comb[1116 + 1188 + 1277 + 1356] __attribute__((section(".pool")));
-static union {                          /* ROOM's allpasses; SPRING's allpass chain (int32: no clamps) */
-    int16_t ap[556 + 441];
-    int32_t sp[(556 + 441) / 2];
+/* (V10.7.17) ROOM's tank: a 4-line feedback delay network in one ring of RV_RING samples (the lines end to end, their
+ * lengths summing to it: one write count, each line's read the next one's write), then two allpasses in a ring of
+ * RV_APR after it (the same count). rev_u: SPRING's allpass chain (int32: no clamps) */
+#define RV_RING 4096u
+#define RV_APR 1024u
+#define RV_B1 919u                                      /* the lines' bases: lengths 919 997 1061 1119 (pairwise
+                                                         * coprime, their sum RV_RING) */
+#define RV_B2 1916u
+#define RV_B3 2977u
+#define RV_AP0 577u                                     /* the allpasses' lengths: 577, 1024 - 577 = 447 */
+static int16_t rev_comb[RV_RING + RV_APR] __attribute__((section(".pool")));
+static union {
+    int16_t ap[814];                     /* (ROOM's allpasses until V10.7.17, 556 + 441: with rev_comb the same 5934 samples) */
+    int32_t sp[814 / 2];
 } rev_u __attribute__((section(".pool")));
-#define rev_ap (rev_u.ap)
+_Static_assert(RV_B1 == 919u && RV_B2 == 919u + 997u && RV_B3 == RV_B2 + 1061u && RV_B3 + 1119u == RV_RING, "ROOM's ring");
 #define RPRE_LEN 8192u                   /* (JIANT) the reverb's pre-delay line, at the full rate (16 KB of rev_x's 32): up to
                                          * 186 ms (PRE 100: 91 ms) */
 #define SH_LEN 2048u                     /* (JIANT 0.5) SHIMMER's line (4 KB) */
@@ -72,7 +80,7 @@ static struct {
     int32_t dw_m;                        /* .. the read points' offset by them now (Q8 samples) */
     int32_t dt1, dt2, rt1, rt2;          /* .. (0.6.86) the resonant TONE (delay loop) and FILT (reverb input) filters */
     int32_t cd_cur, cw_cur, dm_cur;      /* .. the chorus's DEPTH, its side's width, the delay's MIX as they are (glide) */
-    uint16_t comb_i[4], ap_i[2];
+    uint16_t rv_w;                       /* (V10.7.17) ROOM's ring's write count (down by one a sample) */
     int32_t comb_lp[4];
     uint8_t rtype;                       /* the reverb model running (G_RTYPE: 0 ROOM, 1 SPRING, 0.5: 2 SHIMMER 3 RESO 4 CLOUD) */
     uint32_t sh_w, sh_ph;                /* (JIANT 0.5) SHIMMER: its line's write count, the grains' phase (Q16, 0.6.12) */
@@ -101,7 +109,7 @@ static struct {
  * (the first sound 15 .. 30 ms after the send: the tank's own pre-delay; a slow wobble of a sample or two
  * on it), plus a second, quieter pickup at three quarters (a shorter spring beside it: denser). SIZE sets
  * the loop's length (30 .. 60 ms) and its decay; DAMP the loop's low-pass. The allpasses' states: 4
- * samples each (int32), in rev_ap's memory. Changing the model fades the old one's block out and clears both buffers. */
+ * samples each (int32), in rev_u (sp). Changing the model fades the old one's block out and clears both buffers. */
 #define SP_LEN 4096u                     /* the loop's line in rev_comb (4937 samples) */
 #define SP_MASK (SP_LEN - 1u)
 #define SP_N 10u                         /* allpass stages */
@@ -924,11 +932,18 @@ static uint32_t delay_samples(void)
     return s < 16u ? 16u : s > DLY_MAX ? DLY_MAX : s;
 }
 
-/* (JIANT 0.5) the combs' feedback from SIZE: 0.76 .. 0.99, the top of the knob a long tail (was 0.957 at most) */
-static int32_t rev_size(void)
+/* (JIANT 0.5) the combs' feedback from SIZE: 0.76 .. 0.99, the top of the knob a long tail (was 0.957 at most).
+ * (V10.7.17) The network's lines are 0.83 of the old combs' lengths (1024 against 1234 on average): its loss a pass
+ * taken down about as much, g' = 1 - 0.87 (1 - g) (~g^0.87), the decay a second as the combs' (T30 within ~10 %,
+ * SIZE 0 .. 127); and halved (Q14: the network's products in 32 bits) */
+#define RV_KG 28500                                     /* (0.87, Q15) */
+#define RV_KD 166                                       /* DAMP's low-pass x 0.83 (200 before): the same darkening a second */
+#define RV_IN 2120                                      /* the send in, Q15 (2580 x 0.82: the tail's level as the combs') */
+static inline __attribute__((always_inline)) int32_t rev_size(void)   /* (inlined: the RAM code's reach) */
 {
     int32_t g = GFX(GF_RSIZE);
-    return 25000 + g * 40 + g * g / 7;
+    g = 25000 + g * 40 + g * g / 7;
+    return (32768 - (((32768 - g) * RV_KG) >> 15)) >> 1;
 }
 /* A never-excited (or explicitly cleared) reverb has exactly zero buffers and filter states (room_used: the
  * certificate). With no input this block its output is exactly 0 and its states stay 0: the sample networks are not
@@ -936,17 +951,9 @@ static int32_t rev_size(void)
  * LFOs' phases, SIZE's glide, CLOUD's grain scheduler and its random numbers) is advanced, so that the first input
  * finds every state as the full kernel would have left it: bit for bit the same from there on (tests/empty_fx_test.c).
  * After any input, normal rendering remains enabled for the whole tail (cpu4: ROOM alone; cpu5: every model) */
-static void room_clock(uint32_t n)                      /* ROOM's combs' and allpasses' indices, n samples on */
+static void room_clock(uint32_t n)                      /* ROOM's ring's write count, n samples on */
 {
-    uint32_t i;
-    for (i = 0; i < 4u; i++) {
-        uint32_t k = fx.comb_i[i] + n;
-        fx.comb_i[i] = (uint16_t)(k >= REV_COMB[i] ? k - REV_COMB[i] : k);
-    }
-    for (i = 0; i < 2u; i++) {
-        uint32_t k = fx.ap_i[i] + n;
-        fx.ap_i[i] = (uint16_t)(k >= REV_AP[i] ? k - REV_AP[i] : k);
-    }
+    fx.rv_w = (uint16_t)(fx.rv_w - n);
 }
 static __attribute__((noinline)) int room_zero(const int32_t *in, uint32_t n)
 {
@@ -956,7 +963,7 @@ static __attribute__((noinline)) int room_zero(const int32_t *in, uint32_t n)
     room_clock(n);
     return 1;
 }
-/* ROOM with MOD / WIDE (rev_room_mod) at rest: its LFO's phase on, the combs' offsets where the block's end puts them */
+/* ROOM with MOD / WIDE (rev_room_mod) at rest: its LFO's phase on, the lines' offsets where the block's end puts them */
 static void room_mod_clock(uint32_t n)
 {
     uint32_t k;
@@ -967,108 +974,116 @@ static void room_mod_clock(uint32_t n)
     room_clock(n);
 }
 
-/* ROOM (G_RTYPE 0): 4 damped combs + 2 allpasses (Freeverb-like, mono), added to out (WIDE: rev_room_mod) */
+/* ROOM (G_RTYPE 0), V10.7.17: a feedback delay network (was 4 parallel combs, Freeverb's: a tail of few echoes, its
+ * ringing metallic, echo density ~0.6 against ~1 now). The send into four lines (signs + - + -), each line's return
+ * through its damping low-pass (DAMP), the four mixed by a Householder reflection (x - sum / 2: each into all, the
+ * energy kept: the echoes multiply four times a pass) and scaled by SIZE's gain back into the lines; out: the even
+ * lines' returns against the odd ones' (the send's own pattern: the bass the combs had) through the two allpasses as
+ * before (Freeverb's: out = buf - in). The arithmetic: every rounding symmetric (the combs' floors left a DC that
+ * never died, up to ~100 LSB), the gain's product rounded to nearest (rounded, each comb alone held a residue: a buzz at
+ * ~-63 dB; mixed into the other lines a residue does not hold), DAMP's low-pass rounded but taking its target within
+ * 1 (its pole, up to 0.64, held a 1 for ever): the tail ends in exact 0 (tests/reverb_test.c: noise and sines, every
+ * corner of SIZE and DAMP); its error against itself in floating point 17 .. 30 dB under the combs'.
+ * Added to out (WIDE / MOD: rev_room_mod) */
+#define RV_HALF(o) (((o) - ((o) >> 31)) >> 1)            /* o / 2 rounded towards zero */
+#define RV_Q(p) (((p) + 16384) >> 15)                   /* (the gain's product rounded: see above) */
+/* DAMP's low-pass, l towards o by (32768 - dk) / 32768 of the way, rounded; within 1 of o it takes o (its pole up to
+ * 0.64: rounded, a residue of 1 would hold for ever) */
+#define RV_DAMP(L, O)                                                                                              \
+    {                                                                                                              \
+        int32_t o_ = (O), d_ = L - o_, r_ = (d_ * dk + 16384) >> 15;                                               \
+        if ((uint32_t)(d_ + 1) <= 2u)                                                                              \
+            r_ = 0;                                                                                                \
+        L = o_ + r_;                                                                                               \
+    }
+static inline int32_t rv_st(int32_t v) { return clamp(v, -32768, 32767); }
 static __attribute__((noinline)) void rev_room(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
     if (room_zero(rev_in, n)) return;
-    uint32_t i;
-    int32_t size = rev_size(), dk = GFX(GF_RDAMP) * 200;   /* (32767 - damp) */
-    /* (0.7.9) the combs' and allpasses' indices and low-passes in registers through the block (they were loaded and
-     * stored every sample); the same arithmetic, the same sound */
-    uint32_t i0 = fx.comb_i[0], i1 = fx.comb_i[1], i2 = fx.comb_i[2], i3 = fx.comb_i[3], a0 = fx.ap_i[0], a1 = fx.ap_i[1];
+    uint32_t i, w = fx.rv_w;
+    int32_t g = rev_size(), dk = GFX(GF_RDAMP) * RV_KD;
     int32_t l0 = fx.comb_lp[0], l1 = fx.comb_lp[1], l2 = fx.comb_lp[2], l3 = fx.comb_lp[3];
-    int16_t *c0 = rev_comb, *c1 = c0 + REV_COMB[0], *c2 = c1 + REV_COMB[1], *c3 = c2 + REV_COMB[2];
-    int16_t *p0 = rev_ap, *p1 = p0 + REV_AP[0];
-#define RV_COMB(C, I, L, K)                                                                                        \
-    {                                                                                                              \
-        int32_t o = C[I];                                                                                          \
-        L = o + mulq15(L - o, dk);                                                                                 \
-        C[I] = (int16_t)clamp(in + mulq15(L, size), -32768, 32767);                                                \
-        if (++I >= REV_COMB[K])                                                                                    \
-            I = 0;                                                                                                 \
-        a += o;                                                                                                    \
-    }
-#define RV_AP(P, I, K)                                                                                             \
-    {                                                                                                              \
-        int32_t o = P[I], v = a + (o >> 1);                                                                        \
-        P[I] = (int16_t)clamp(v, -32768, 32767);                                                                   \
-        a = o - a;                                      /* Freeverb: out = buf - in (o - v is a notch comb) */     \
-        if (++I >= REV_AP[K])                                                                                      \
-            I = 0;                                                                                                 \
-    }
+    int16_t *R = rev_comb, *A = rev_comb + RV_RING;
+#define RV_LP RV_DAMP
     for (i = 0; i < n; i++) {
-        int32_t a = 0, in = mulq15(rev_in[i], 2580);    /* 1/8 at -4 dB: level as before the allpass fix */
-        RV_COMB(c0, i0, l0, 0)
-        RV_COMB(c1, i1, l1, 1)
-        RV_COMB(c2, i2, l2, 2)
-        RV_COMB(c3, i3, l3, 3)
-        RV_AP(p0, a0, 0)
-        RV_AP(p1, a1, 1)
-        out[i] += a;
+        uint32_t a0 = --w & (RV_RING - 1u), a1 = (w + RV_B1) & (RV_RING - 1u), a2 = (w + RV_B2) & (RV_RING - 1u);
+        uint32_t a3 = (w + RV_B3) & (RV_RING - 1u), p0 = w & (RV_APR - 1u), p1 = (w + RV_AP0) & (RV_APR - 1u);
+        int32_t in = (rev_in[i] * RV_IN + 16384) >> 15, s, y, o0, o1;   /* (rounded) */
+        RV_LP(l0, R[a1])                                /* (line k read where line k + 1 writes) */
+        RV_LP(l1, R[a2])
+        RV_LP(l2, R[a3])
+        RV_LP(l3, R[a0])
+        s = l0 + l2;                                    /* (out: the even lines against the odd ones) */
+        y = l1 + l3;
+        R[a0] = (int16_t)rv_st(in + RV_Q((2 * l0 - s - y) * g));
+        R[a1] = (int16_t)rv_st(RV_Q((2 * l1 - s - y) * g) - in);
+        R[a2] = (int16_t)rv_st(in + RV_Q((2 * l2 - s - y) * g));
+        R[a3] = (int16_t)rv_st(RV_Q((2 * l3 - s - y) * g) - in);
+        s -= y;
+        o0 = A[p1];                                     /* the allpasses: 577 then 447 */
+        o1 = A[p0];
+        A[p0] = (int16_t)rv_st(s + RV_HALF(o0));
+        y = o0 - s;
+        A[p1] = (int16_t)rv_st(y + RV_HALF(o1));
+        out[i] += o1 - y;
     }
-#undef RV_COMB
-#undef RV_AP
-    fx.comb_i[0] = (uint16_t)i0; fx.comb_i[1] = (uint16_t)i1; fx.comb_i[2] = (uint16_t)i2; fx.comb_i[3] = (uint16_t)i3;
-    fx.ap_i[0] = (uint16_t)a0; fx.ap_i[1] = (uint16_t)a1;
+#undef RV_LP
+    fx.rv_w = (uint16_t)w;
     fx.comb_lp[0] = l0; fx.comb_lp[1] = l1; fx.comb_lp[2] = l2; fx.comb_lp[3] = l3;
 }
 
-/* (JIANT) ROOM with its networks modulated (G_RMOD > 0): each comb read up to ~5.7 ms nearer (between samples, the
+/* (JIANT) ROOM with its lines modulated (G_RMOD > 0): each line read up to ~5.7 ms nearer (between samples, the
  * depth square law, the offset ramped sample by sample: no steps), by a slow sine of G_RRATE a quarter apart per
- * comb: the resonances drift and detune, the ringing smears into a chorused, wide tail. WIDE wd (0.3): combs 1, 3
- * against 2, 4 as a side (left +, right -) into mix_l / mix_r. Its own loop: with MOD and WIDE 0 the plain one runs
- * (MOD 0 here: offsets 0, the plain one's sound) */
+ * line: the resonances drift and detune, the ringing smears into a chorused, wide tail. WIDE wd (0.3): lines 1, 2
+ * against 3, 4 as a side (left +, right -) into mix_l / mix_r. Its own loop: with MOD and WIDE 0 the plain one runs
+ * (MOD 0 here: offsets 0, the plain one's sound, bit for bit) */
 static __attribute__((noinline)) void rev_room_mod(const int32_t *rev_in, int32_t *out, uint32_t n, int32_t wd)
 {
-    uint32_t i, k;
-    int32_t size = rev_size(), damp = 32767 - GFX(GF_RDAMP) * 200, m1[4], dm[4];
+    static const uint16_t RV_B[4] = {RV_B1, RV_B2, RV_B3, RV_RING};   /* (each line's read: its base + its length) */
+    uint32_t i, k, w = fx.rv_w;
+    int32_t g = rev_size(), dk = GFX(GF_RDAMP) * RV_KD, m1[4], dm[4];
     int32_t depth = song.g[G_RMOD] ? 64 + song.g[G_RMOD] * song.g[G_RMOD] * 4 : 0;   /* Q8 samples: 0.25 .. 252 (~5.7 ms) */
+    int16_t *R = rev_comb, *A = rev_comb + RV_RING;
     fx.rm_ph += LFO_INC[song.g[G_RRATE] & 127];
     for (k = 0; k < 4u; k++) {
         m1[k] = (int32_t)(((uint32_t)(osc_sine(fx.rm_ph + k * 0x40000000u) + 32768) * (uint32_t)depth) >> 16);
         if ((uint32_t)fx.rm_m[k] > 0xFFFFu)             /* (0.6.76) past any depth (252 Q8): a wrong word would read */
-            fx.rm_m[k] = m1[k];                         /* far outside the combs; from the new offset */
+            fx.rm_m[k] = m1[k];                         /* far outside the lines; from the new offset */
         dm[k] = (m1[k] - fx.rm_m[k]) / (int32_t)CTL;    /* (Q8, per sample) */
     }
     for (i = 0; i < n; i++) {
-        int32_t a = 0, sd = 0;
-        int16_t *c = rev_comb;
-        int32_t in = mulq15(rev_in[i], 2580);
+        int32_t in = (rev_in[i] * RV_IN + 16384) >> 15, s = 0, sd = 0, y, o0, o1;
+        uint32_t p0, p1;
+        w--;
         for (k = 0; k < 4u; k++) {
             int32_t m = fx.rm_m[k] += dm[k];
-            uint32_t L = REV_COMB[k], j0 = fx.comb_i[k] + ((uint32_t)m >> 8), j1;
-            int32_t o0, o1, o;
-            if (j0 >= L)
-                j0 -= L;
-            j1 = j0 + 1u >= L ? 0u : j0 + 1u;
-            o0 = c[j0];
-            o1 = c[j1];
-            o = o0 + (((o1 - o0) * (m & 255)) >> 8);    /* (a shorter delay: nearer the write) */
-            fx.comb_lp[k] = o + mulq15(fx.comb_lp[k] - o, 32767 - damp);
-            c[fx.comb_i[k]] = (int16_t)clamp(in + mulq15(fx.comb_lp[k], size), -32768, 32767);
-            if (++fx.comb_i[k] >= L)
-                fx.comb_i[k] = 0;
-            a += o;
-            sd += (k & 1u) ? -o : o;
-            c += L;
+            uint32_t j0 = w + RV_B[k] - ((uint32_t)m >> 8);   /* (a shorter delay: nearer the write) */
+            int32_t a = R[j0 & (RV_RING - 1u)], b = R[(j0 - 1u) & (RV_RING - 1u)], l = fx.comb_lp[k];
+            RV_DAMP(l, a + (((b - a) * (m & 255)) >> 8))
+            fx.comb_lp[k] = l;
+            s += l;
+            sd += k & 2u ? -l : l;                      /* (the side: lines 1, 2 against 3, 4) */
         }
+        for (k = 0; k < 4u; k++) {
+            int32_t v = RV_Q((2 * fx.comb_lp[k] - s) * g);
+            R[(w + (k ? RV_B[k - 1u] : 0u)) & (RV_RING - 1u)] = (int16_t)rv_st(k & 1u ? v - in : v + in);
+        }
+        s = fx.comb_lp[0] - fx.comb_lp[1] + fx.comb_lp[2] - fx.comb_lp[3];
         if (wd) {
             sd = (sd * wd) >> 7;
             fx_sl[i] += sd;
             fx_sr[i] -= sd;
         }
-        c = rev_ap;
-        for (k = 0; k < 2u; k++) {
-            int32_t o = c[fx.ap_i[k]];
-            int32_t v = a + (o >> 1);
-            c[fx.ap_i[k]] = (int16_t)clamp(v, -32768, 32767);
-            a = o - a;
-            if (++fx.ap_i[k] >= REV_AP[k])
-                fx.ap_i[k] = 0;
-            c += REV_AP[k];
-        }
-        out[i] += a;
+        p0 = w & (RV_APR - 1u);
+        p1 = (w + RV_AP0) & (RV_APR - 1u);
+        o0 = A[p1];
+        o1 = A[p0];
+        A[p0] = (int16_t)rv_st(s + RV_HALF(o0));
+        y = o0 - s;
+        A[p1] = (int16_t)rv_st(y + RV_HALF(o1));
+        out[i] += o1 - y;
     }
+    fx.rv_w = (uint16_t)w;
     for (k = 0; k < 4u; k++)
         fx.rm_m[k] = m1[k];                             /* (exact at the block's end) */
 }
@@ -1500,7 +1515,7 @@ static void rev_state_clear(void)
     room_used = 0;
     for (i = 0; i < sizeof rev_comb / 2u; i++)
         rev_comb[i] = 0;
-    for (i = 0; i < sizeof rev_u.ap / 2u; i++)          /* (int16: 997 of them, an odd count the int32 view misses one of) */
+    for (i = 0; i < sizeof rev_u.ap / 2u; i++)          /* (int16: an odd count, 997 until V10.7.17, the int32 view missed one) */
         rev_u.ap[i] = 0;
     for (i = 0; i < 4u; i++)
         fx.comb_lp[i] = fx.rs_lp[i] = 0;

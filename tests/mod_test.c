@@ -83,7 +83,7 @@ static void fresh(uint32_t e, uint32_t pi)        /* the boot state (no FX tails
     memset(dly_buf, 0, sizeof dly_buf);
     memset(cho_buf, 0, sizeof cho_buf);
     memset(rev_comb, 0, sizeof rev_comb);
-    memset(rev_ap, 0, sizeof rev_ap);
+    memset(&rev_u, 0, sizeof rev_u);
     memset(&fx, 0, sizeof fx);
     memset(fxq_c, 0, sizeof fxq_c); memset(fxq_d, 0, sizeof fxq_d); memset(fxq_r, 0, sizeof fxq_r);   /* (0.6.75: the buses' queued sends) */
     lim_env = LIM_T; lev_env = 0; lev_g = lev_cur = 32768; lev_dg = 0;

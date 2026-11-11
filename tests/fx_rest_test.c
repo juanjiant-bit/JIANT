@@ -21,7 +21,7 @@ static uint64_t hash_bytes(uint64_t h, const void *p, size_t n)
 int main(int argc, char **argv)
 {
     uint64_t h = 1469598103934665603ull, hp = h;
-    uint32_t b, i, rng = 777, rest_at = 0, zeros = 0, worst = 0, first_rest = 0, leak = 0;
+    uint32_t b, i, rng = 777, rest_at = 0, zeros = 0, worst = 0, first_rest = 0, leak = 0, woke = 0;
     int reference = argc > 1 && !strcmp(argv[1], "reference");
     int32_t out[2 * CTL];
     host_tracks_init();
@@ -56,6 +56,9 @@ int main(int argc, char **argv)
                 if (a > worst) worst = a;
             }
             hp = hash_bytes(hp, fx_wet, sizeof fx_wet);
+            if (b == NB_SEND + NB_QUIET + 199u)          /* (the second chord's end: V10.7.17's ROOM network dies to
+                                                         * exact 0 and the rest may come back before the run's end) */
+                woke = room_used && dly_used;
         }
     }
     (void)out;
@@ -69,6 +72,6 @@ int main(int argc, char **argv)
     if (!first_rest || first_rest > rest_at + 2u) return 3;   /* (the rest follows the gate at once; the gate's own
                                                          * timing: ~4 s here, the delay's FEEDBK tail holds its second floor) */
 #endif
-    if (!room_used || !dly_used) return 4;               /* the wake: the second chord excited them again */
+    if (!woke) return 4;                                 /* the wake: the second chord excited them again */
     return 0;
 }

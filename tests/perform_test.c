@@ -634,13 +634,14 @@ static void demos(const char *dir)
 }
 
 /* ------------------------------------------------- 9. punch-in MIDI --- */
-static uint32_t zc(const int32_t *x, uint32_t a, uint32_t b)   /* zero crossings, low-passed (~350 Hz, 2 poles) */
+static uint32_t zc(const int32_t *x, uint32_t a, uint32_t b)   /* zero crossings, low-passed (2 poles; V10.7.17: half the
+                                                                * corner it was, the saw's own partials crossed too) */
 {
     uint32_t i, c = 0;
     int32_t y1 = 0, y2 = 0, p = 0;
     for (i = a; i < b; i++) {
-        y1 += (x[i] - y1) >> 5;
-        y2 += (y1 - y2) >> 5;
+        y1 += (x[i] - y1) >> 6;
+        y2 += (y1 - y2) >> 6;
         if (i > a + 400u)
             c += p < 0 && y2 >= 0;
         p = y2;
@@ -671,6 +672,8 @@ static int test_pfx(void)
     song_setup();
     for (i = 0; i < NTRK; i++) trk[i].p[P_DIST] = trk[i].p[P_CHOR] = trk[i].p[P_DLY] = trk[i].p[P_REV] = 0;
     host_preset(t1, 0, 1);
+    t1->p[P_CHOR] = t1->p[P_DLY] = t1->p[P_REV] = 0;   /* (V10.7.17: the preset's sends off too: a reverb's colour moved
+                                                         * the count, the dry one alone) */
     for (i = P_LD_PIT; i <= P_LD_AMP; i++) t1->p[i] = 0;   /* (V10.6i: presets that move, the LFO and the matrix on the */
     for (i = P_M1SRC; i <= P_M4AMT; i++) t1->p[i] = 0;     /* sound: a pitch counted by zero crossings must hold still) */
     trk_note_on(t1, 45, 100);
