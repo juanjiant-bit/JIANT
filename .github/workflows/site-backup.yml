@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
+# A copy of the live site (https://juanjiant-bit.github.io/JIANT/) as an ordinary artifact, kept 90 days: every file
+# tools/fetch_live_site.py finds, checked, with the full list in the log. It deploys nothing. Run it before a publish
+# that has to start from the live site (the previous deploy's Pages artifact expired) to see what would be recovered.
+name: Back up the live site
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/site-backup.yml]
+permissions:
+  contents: read
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: The recovery tool's own tests
+        run: python3 tests/test_fetch_live_site.py
+      - name: Fetch and check the live site
+        run: |
+          set -o pipefail
+          mkdir -p build
+          python3 tools/fetch_live_site.py fetch --out build/live-site --tar build/live-site.tar | tee build/live-site.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-site-backup
+          path: |
+            build/live-site.tar
+            build/live-site.log
+          retention-days: 90
