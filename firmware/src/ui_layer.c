@@ -20,9 +20,10 @@
  *              (eng_drum.c DXM_LANE, saved with the section; lit = sounding)
  *   SEQ  SET   (1.2, on the SEQ pages that show the pattern; 0.8.3: every page of LENTE's three levels, not PHRASES and
  *              SONG; elsewhere SEQ held is a tap) TOOLS: the white keys from F3 the sequence tools (ui_tools.c: CLEAR,
- *              REVERSE, SHIFT < >, RANDOM, COOK, CLR AUTO (0.6.8: the track's automation); on a DRUM track BEAT and the lane's CLEAR REVERSE FILL RANDOM), black
+ *              REVERSE, SHIFT < >, RANDOM, COOK, CLR AUTO (0.6.8: the track's automation); on a DRUM track BEAT and the lane's CLEAR REVERSE FILL RANDOM;
+ *              V10.7: E5 / F5 COPY / PASTE the cursor's 16-step page, after PR #169 by jmcn99), black
  *              keys 1..8 the lane (DRUM); KNOB 1..4 the PATTERN page's LEN DIV SWING GATE. No undo (TONIC: the song
- *              layer's RECALL)
+ *              layer's RECALL), but PASTE's (GLO + G4)
  *   REC  SET   (1.1.5, on every page; REC's tap still arms / disarms) the white keys from F3: CLEAR (the selected
  *              track's steps and automation, no dialog), CLICK (OFF REC ON, each press the next value); KNOB 1 the
  *              same (TONIC: COUNT-IN and CLICK LEVEL only in MENU > AUDIO). The settings
@@ -347,10 +348,23 @@ static void tools_key(uint32_t p)
 {
     const char *m;
     char n[4];
+    uint32_t lost = 0;
     if (!tl_cell(TSEL, p))
         return;
     if (chain_busy()) {
         ui_message("STOP TO EDIT");
+        return;
+    }
+    if (p == TL_COPY || p == TL_PASTE) {                /* (V10.7) the cursor's page */
+        if (!(m = p == TL_COPY ? tl_page_copy(TSEL, tl_page_now(TSEL)) : tl_page_paste(TSEL, tl_page_now(TSEL), &lost)))
+            return;
+        ui_message(m);
+        if (lost) {                                     /* "AUTO FULL: 3 LEFT OUT" */
+            str_cpy(ui.msg2, "AUTO FULL: ", sizeof ui.msg2);
+            fmt_int(ui.msg2 + str_len(ui.msg2), (int32_t)lost);
+            str_cpy(ui.msg2 + str_len(ui.msg2), " LEFT OUT", sizeof ui.msg2 - str_len(ui.msg2));
+        }
+        ui.force = 1;
         return;
     }
     if (!(m = tl_do(TSEL, p, ui.lane)))
@@ -817,7 +831,8 @@ static uint32_t layer_leds(uint32_t *br)
         } else if (l == LAYER_SEQ) {                    /* the tools breathe (not while a song plays); DRUM: the lane */
             on = b && p < NLANE && drum_track(TSEL) && p == ui.lane;   /* lit, the other lanes breathe */
             can = b ? p < NLANE && drum_track(TSEL) : p == TL_MREV ? mut_back_ok() : tl_cell(TSEL, p) && !chain_busy() &&
-                  (p != TL_CAUTO || motion_count(TSEL));   /* (CLR AUTO: automation to clear; REVERT: an anchor) */
+                  (p != TL_CAUTO || motion_count(TSEL)) && (p != TL_PASTE || tl_pg.valid);   /* (CLR AUTO: automation
+                                                         * to clear; REVERT: an anchor; PASTE: a page copied) */
         } else if (l == LAYER_SAVE && !b) {             /* the section playing lit, the saved ones and the */
             on = (p < SK_STORE && live.cur == (int8_t)p) || (p == SK_REC && live.srec) ||   /* actions breathe */
                  (p == SK_MODE && live.mode);
@@ -851,7 +866,7 @@ static const uint8_t PK_BLK[11] = {1, 2, 3, 5, 6, 8, 9, 10, 12, 13, 15};   /* a 
 enum { LS_OFF, LS_SEL, LS_HELD, LS_WAIT, LS_DIM, LS_MUTE };
 static const char *const GLO_GROUP[4] = {"KICK", "SNARE", "HAT", "PERC"};
 static const char *const TL_NAME[TL_N] = {"CLEAR", "REVERSE", "SHIFT <", "SHIFT >", "RANDOM", "COOK", "BEAT", "CLR AUTO",
-    "CLR", "REV", "FILL", "RND"};
+    "CLR", "REV", "FILL", "RND", [TL_COPY] = "COPY", [TL_PASTE] = "PASTE"};
 #define LMC_TW 140                                       /* MACRO's routes: their width (x 92 .. 232) */
 static uint32_t macro_routes(uint32_t m, char *b, uint32_t n)
 {
@@ -977,11 +992,11 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
         if (!tl_cell(TSEL, p))
             return LS_OFF;
         str_cpy(nm, TL_NAME[p], 12);
-        if (p >= TL_LCLR) {                             /* the lane's: "CLR BD" */
+        if (p >= TL_LCLR && p <= TL_LRND) {             /* the lane's: "CLR BD" */
             str_cpy(nm + str_len(nm), " ", 2);
             str_cpy(nm + str_len(nm), drum_lane_abbr(TSEL, ui.lane), 12 - str_len(nm));
         }
-        return busy;
+        return p == TL_PASTE && !tl_pg.valid ? LS_DIM : busy;   /* (V10.7: PASTE dark until a page is copied) */
     }
     if (l == LAYER_REC) {
         if (blk || p > RL_N)
@@ -1293,7 +1308,8 @@ static void draw_layer(void)
     else if (l == LAYER_MACRO)
         sig += macro_sig();
     else if (l == LAYER_SEQ)
-        sig += (uint32_t)drum_track(TSEL) * 31u + ui.lane * 5u + (uint32_t)chain_busy() * 3u + (uint32_t)TSEL->p[P_E0] * 131u + song.sel * 977u;
+        sig += (uint32_t)drum_track(TSEL) * 31u + ui.lane * 5u + (uint32_t)chain_busy() * 3u + (uint32_t)TSEL->p[P_E0] * 131u + song.sel * 977u +
+               (uint32_t)tl_pg.valid * 65537u;
     else
         sig += snd_id() * 31u + (uint32_t)chain_busy() * 3u + (uint32_t)(project_recall_slot() + 1) * 5u + dx_mute * 7919u +
                (uint32_t)drum_track(TSEL) * 11u + up_gen * 101u;

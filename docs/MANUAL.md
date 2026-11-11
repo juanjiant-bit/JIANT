@@ -674,8 +674,13 @@ F4 CLR AUTO (the track's automation and locks; the steps stay). On a DRUM track 
 lane tools: G4 CLR, A4 REV, B4 FILL on the lane picked with black keys 1–8. (V10.6: C4 RANDOM, D4 COOK, E4 BEAT and
 C5, the lane's RANDOM, are gone; SEQ › EUCLID writes patterns, SEQ + SELECT still dices.) **G5 CLR STEP** (0.9.2; was
 the EDIT tap): clears the cursor step and its locks, the cursor on to the next (on NOTE with a note in focus: that note
-alone; on AUTO LIST, **DEL REC**: deletes the row's record). **REC** (while SEQ is held): CLEAR
-ALL. Knobs: LEN, DIV, SWING, GATE. These tools have no undo.
+alone; on AUTO LIST, **DEL REC**: deletes the row's record). **E5 COPY / F5 PASTE** (V10.7): COPY keeps the
+16-step page the cursor is on (on a DRUM track, the page the grid shows), with its automation and locks; PASTE writes it
+over the cursor's page. Pasting onto a page that already holds the copy goes to the next page and LEN grows to cover
+it: copy page 1, press PASTE three times, and pages 2–4 are filled (LEN 16 → 64). DRUM pages paste onto DRUM tracks
+only, note pages onto melodic tracks only. If the 64 automation records run out, the ones that fit are pasted
+(**AUTO FULL: n LEFT OUT**). PASTE stays dark until something is copied. **REC** (while SEQ is held): CLEAR
+ALL. Knobs: LEN, DIV, SWING, GATE. These tools have no undo, except PASTE (GLO + G4 UNDO).
 
 **REC** — F3 **CLEAR** the selected track's steps and automation (no dialog; UNDO can bring it back), G3 **CLICK**
 (OFF / REC / ON). KNOB 1: CLICK. (V10.7) REC held past HOLD and let go with **nothing else touched** is **UNDO** (held

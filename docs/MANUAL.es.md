@@ -694,8 +694,14 @@ En una pista DRUM, las herramientas de carril: G4 CLR, A4 REV, B4 FILL sobre el 
 negras 1–8. (V10.6: C4 RANDOM, D4 COOK, E4 BEAT y C5, el RANDOM del carril, ya no están; los patrones los escribe SEQ ›
 EUCLID, y SEQ + SELECT sigue tirando los dados.) **G5 CLR STEP** (0.9.2; antes el toque de EDIT): borra el paso del cursor y sus locks, y el cursor pasa al
 siguiente (en NOTE con una nota en foco: solo esa nota; en AUTO LIST, **DEL REC**: borra el registro de la fila).
+**E5 COPY / F5 PASTE** (V10.7): COPY guarda la página de 16 pasos donde está el cursor (en una pista DRUM, la página
+que muestra la grilla), con su automatización y sus locks; PASTE la escribe sobre la página del cursor. Pegar sobre una
+página que ya tiene la copia la pega en la siguiente y LEN crece para cubrirla: copiás la página 1, apretás PASTE tres
+veces y quedan llenas las páginas 2–4 (LEN 16 → 64). Las páginas DRUM se pegan solo en pistas DRUM, y las de notas solo en
+pistas melódicas. Si se acaban los 64 registros de automatización, se pegan los que entran (**AUTO FULL: n LEFT OUT**).
+PASTE queda apagada hasta que copiás algo.
 **REC** (con SEQ mantenido): CLEAR ALL. Perillas: LEN, DIV, SWING, GATE. Estas herramientas no tienen
-UNDO.
+UNDO, salvo PASTE (GLO + G4 UNDO).
 
 **REC** — F3 **CLEAR** borra los pasos y la automatización de la pista seleccionada (sin diálogo; UNDO lo puede
 recuperar), G3 **CLICK** (OFF / REC / ON). KNOB 1: CLICK. (V10.7) REC mantenido más que HOLD y soltado **sin tocar
