@@ -2095,7 +2095,7 @@ static void draw_graph(void)
 {
     const page_t *pg = cur_page();
     const track_t *t = TSEL;
-    uint16_t c = ACC;
+    uint16_t c = ACC, surf;
     uint32_t sig;
     if (!ui.home && pg->graph == GR_TRK) {
         draw_tracks();
@@ -2122,12 +2122,10 @@ static void draw_graph(void)
         lz_blit(0, graph_y());
         return;
     }
-    if (lz_low())                                    /* (0.8.9) BOTTOM, HUD: no panel, the picture on the background */
-        ;
-    else if (lz_on())                                /* (0.8.5) a lens page: the mock-up's panel, 4 .. 236 (0.8.9 COLORS: */
-        cv_rrect(4, 0, 232, (int32_t)graph_h(), 6, T_SURF, T_BG);   /* rounded, as the 0.6's) */
-    else
-        cv_rrect(3, 0, 234, graph_h(), 5, T_SURF, T_BG);   /* the panel (MENU > LARGE: the strip) */
+    surf = ux.surf;                                  /* no panel box in any skin: the picture on the background, as AIR's
+                                                      * (COLORS had a rounded SURF panel, 4 .. 236). What the panel's
+                                                      * inside clears and writes on T_SURF lands on the background */
+    ux.surf = ux.bg;
     cv_bg = T_SURF;                                  /* (text drawn with cv_text lands on it) */
     if (drift_on())
         graph_drift();
@@ -2267,6 +2265,7 @@ static void draw_graph(void)
         }
     }
     cv_oy = 0;
+    ux.surf = surf;
     if (toast_on())                                  /* (0.9.5) a toast: a small pill near the panel's foot, over the page,
                                                       * which goes on drawing and moving behind it (0.8.5 .. 0.9.4: the
                                                       * panel cleared, the message boxed alone in it) */

@@ -282,7 +282,8 @@ COLORS.)
   centrado como PAN o DETUNE frío en el medio y caliente en los dos extremos, en todas las paletas), la carta de
   la perilla que girás enmarcada en su color; la pestaña del grupo rellena de violeta; el número de la pista en una
   cajita naranja, un ▶ violeta y el BPM grande en violeta en el encabezado; los seres con
-  el calor de la 0.6 (púas violetas, anillos rojo y naranja, núcleos crema).
+  el calor de la 0.6 (púas violetas, anillos rojo y naranja, núcleos crema). El dibujo de abajo de las cartas va sobre
+  el fondo (sin caja de panel), como en AIR.
 
 Los valores (cartas, el BPM del encabezado) vuelven a una sans redondeada (Inter Tight SemiBold), como en la 0.6; los
 nombres, las pestañas y la miga siguen con las letras de píxel de 5 x 7. **MENU > LARGE** deja sus cartas grandes arriba

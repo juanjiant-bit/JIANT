@@ -11058,14 +11058,8 @@ static int test_large(void)
          strip_kind() == SK_SCOPE;
     ok &= lg_px(30, LZ_CARD_Y + LZ_CARD_H + 2) == T_SURF && off[(LZ_CARD_Y + LZ_CARD_H + 2) * 240 + 30] == swap16(T_BG);   /* a
                                                          * card where the gap was */
-    {   /* a gap in the panel: the old panel's row read across it (8 .. 231), at least half of it SURF: HOME's moving
-         * dust (ui_being.c) and the beings sit on that row here and there */
-        uint32_t x, n = 0;
-        for (x = 8; x < 232u; x++)
-            n += off[(LZ_LG_Y_GRAPH - 2) * 240 + x] == swap16(T_SURF);
-        ok &= lg_px(30, LZ_LG_Y_GRAPH - 2) == T_BG && n >= 112u;
-    }
-    ok &= lg_px(30, LZ_LG_Y_GRAPH + 1) == T_SURF;
+    ok &= lg_px(30, LZ_LG_Y_GRAPH - 2) == T_BG;                   /* (a gap over the strip) */
+    ok &= lg_px(30, LZ_LG_Y_GRAPH + 1) == T_BG;                   /* (the strip: no panel box, the picture on the background) */
     for (c = 0; c < 4u; c++)                                      /* each column's K pill, over its knob */
         ok &= lg_px(CARD_X(c) + 8, LZ_CARD_Y + LG_MY + LG_MH / 2) == T_KEY;
     ok &= !memcmp(off + LZ_FOOT_Y * 240, host_screen + LZ_FOOT_Y * 240, 240u * LZ_FOOT_H * sizeof *off);
@@ -11487,7 +11481,7 @@ static uint32_t ha_eye_rows(uint32_t fl)                /* .. the rows of its ey
     }
     return n;
 }
-/* .. ECO's panel (COLORS: the graph's rows) at frame f, the animation held: its pixels not SURF away from every being (2 r +
+/* .. ECO's panel (COLORS: the graph's rows) at frame f, the animation held: its pixels not BG away from every being (2 r +
  * 14 px round it: its isotherms, face, number) */
 static uint32_t ha_loose(void)
 {
@@ -11500,7 +11494,7 @@ static uint32_t ha_loose(void)
                 int32_t rr = 2 * (eco.r[c] >> 4) + 14;
                 near |= dx * dx + dy * dy < rr * rr;
             }
-            n += !near && lg_px((int32_t)x, (int32_t)y) != T_SURF;
+            n += !near && lg_px((int32_t)x, (int32_t)y) != T_BG;   /* (no panel box: the water is the background) */
         }
     return n;
 }
@@ -11608,10 +11602,10 @@ static int test_scope(void)
             ui_scope = 1u; ui.force = 1; frame();
             on_tile = sc_rows((int32_t)gy + 2, (int32_t)gy + 60, T_RAISE);   /* (COLORS: the SCOPE card) */
             chips = sc_rows((int32_t)gy + 63, (int32_t)gy + 115, T_RAISE);   /* (.. the chips) */
-            on_mid = sc_count(117, (int32_t)gy + 20, 121, (int32_t)gy + 120, T_SURF, 0);   /* (the gap left of the card: clear) */
+            on_mid = sc_count(117, (int32_t)gy + 20, 121, (int32_t)gy + 120, T_BG, 0);   /* (the gap left of the card: clear) */
             ui_scope = 0u; ui.force = 1; frame();
             off_tile = sc_rows((int32_t)gy + 2, (int32_t)gy + 115, T_RAISE);   /* (no card, no chips) */
-            off_mid = sc_count(117, (int32_t)gy + 20, 121, (int32_t)gy + 120, T_SURF, 0);   /* (the creature across the middle) */
+            off_mid = sc_count(117, (int32_t)gy + 20, 121, (int32_t)gy + 120, T_BG, 0);   /* (the creature across the middle) */
             ok = on_mid == 0u && off_mid > 0u && off_tile == 0u && on_tile == 0u && chips == 0u;   /* (V10.7.19: no SCOPE card in any skin) */
             if (!ok) printf("  %s skin %u: on card %u chips %u mid %u, off card %u mid %u\n", ENGINES[e]->name, sk, on_tile, chips, on_mid,
                             off_tile, off_mid);

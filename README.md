@@ -65,6 +65,8 @@ risk: it is a custom firmware.
 - *(next version)* **Two skins**: MENU › DISPLAY › SKIN is AIR or COLORS; BOTTOM and HUD are gone (a saved one loads
   as COLORS).
 - *(next version)* **No STYLE row**: FLAT is the one style, LINE is gone (a saved LINE loads as FLAT).
+- *(next version)* **COLORS without the panel box**: the picture sits on the background, as in AIR (cards and tiles as
+  before).
 - **VOICE** no longer clips on open vowels; WORDS › CONS sets the consonants' length.
 - **NRPN** for every automatable parameter ([docs/NRPN.md](docs/NRPN.md)); the editor protocol is a versioned
   contract, 1.2 ([web/EDITOR_PROTOCOL.md](web/EDITOR_PROTOCOL.md)).

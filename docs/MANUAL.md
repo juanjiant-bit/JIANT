@@ -270,7 +270,8 @@ Vestal's, *Velo*, github.com/charlesvestal/fm1-velocity, GPL-3.0). JIANT reads i
   on its value and its bar (violet when low to yellow and cream when high, a centred one such as PAN or DETUNE cold in
   the middle and hot at either end, in every palette), the knob you turn framed in its colour; the
   group's tab filled violet; the selected track's number in an orange box, a violet ▶ and a big violet BPM in the header;
-  the beings in the 0.6 heat (violet spikes, red and orange rings, cream nuclei).
+  the beings in the 0.6 heat (violet spikes, red and orange rings, cream nuclei). The picture under the cards sits on
+  the background (no panel box), as in AIR.
 
 Values (cards, the header's BPM) are set in a rounded sans again (Inter Tight SemiBold), as in 0.6; names, tabs and the
 breadcrumb stay in the 5 x 7 pixel letters. **MENU > LARGE** keeps its big cards on top in every skin (the skin keeps
