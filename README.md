@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.17
+## This release: V10.7.18
 
 ### Installing
 
@@ -470,10 +470,14 @@ same license.
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
 
-### V10.7.17 — public (2026-11-11)
+### V10.7.18 — public (2026-11-11)
 
 - Reverb ROOM rebuilt: dense, smooth tails that end in real silence (no grain, no leftover hum). Same SIZE and DAMP feel; the top of the tail is a little darker, and long pads sit slightly lower in the reverb. SHIMMER and CLOUD use the new tank too; SPRING is unchanged.
 - Copyright notices corrected across the source (no change to the firmware itself).
+
+### V10.7.17 — public (2026-11-10)
+
+- MY LOOP: a loop with no notes no longer hangs; hidden tracks are left out of the analysis.
 
 ### V10.7.16 — public (2026-11-10)
 
