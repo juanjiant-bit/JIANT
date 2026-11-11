@@ -6,18 +6,9 @@ import hashlib
 import sys
 
 DOWNLOAD_WARN = (
-    'Object.assign(TEXT.es, {downloadFwWarn:"Importante: instalá este archivo solo con el botón Install de esta página. '
-    'Además de la app, el .fwsc trae la parte Bluetooth de la flash, donde viven GEN, el guardado de canciones y USB HOST. '
-    'Otro flasher o el actualizador de M-VAVE pueden saltearla: el FM-1 arranca, pero GEN no anda y dice BLUETOOTH PART '
-    'MISSING. Si te pasa, instalá de nuevo desde acá."});\n'
-    'Object.assign(TEXT.en, {downloadFwWarn:"Important: install this file only with this page\'s Install button. Besides '
-    'the app, the .fwsc carries the flash\'s Bluetooth part, where GEN, song saving and USB HOST live. Another flasher or '
-    'M-VAVE\'s updater may skip it: the FM-1 starts, but GEN does not work and says BLUETOOTH PART MISSING. If that '
-    'happens, install again from here."});\n'
-    'Object.assign(TEXT.ja, {downloadFwWarn:"重要: このファイルはこのページの Install ボタンでのみインストールしてください。'
-    '.fwsc にはアプリのほかにフラッシュの Bluetooth 部分が含まれ、GEN、ソングの保存、USB HOST はそこにあります。'
-    '他のフラッシャーや M-VAVE のアップデーターはこの部分を書き込まないことがあり、FM-1 は起動しても GEN が動かず '
-    'BLUETOOTH PART MISSING と表示されます。その場合はここからもう一度インストールしてください。"});\n'
+    'Object.assign(TEXT.es, {downloadFwWarn:"Este archivo trae todo: la app y la parte Bluetooth de la flash, donde viven GEN, el guardado de canciones y USB HOST. Se instala completo con el botón Install de esta página y con las herramientas que usan el protocolo de actualización del FM-1 (fm1buddy, fm1_ota.py). Las que escriben la flash directamente (FM-1 Transporter) o graban solo flash.bin dejan afuera la parte Bluetooth: el FM-1 arranca, pero GEN dice BLUETOOTH PART MISSING. Si te pasa, instalá de nuevo desde acá."});\n'
+    'Object.assign(TEXT.en, {downloadFwWarn:"This file has everything: the app and the flash\'s Bluetooth part, where GEN, song saving and USB HOST live. It installs whole with this page\'s Install button and with tools that use the FM-1\'s update protocol (fm1buddy, fm1_ota.py). Tools that write the flash directly (FM-1 Transporter) or write only flash.bin leave the Bluetooth part out: the FM-1 starts, but GEN says BLUETOOTH PART MISSING. If that happens, install again from here."});\n'
+    'Object.assign(TEXT.ja, {downloadFwWarn:"このファイルにはすべてが入っています: アプリと、GEN・ソングの保存・USB HOST があるフラッシュの Bluetooth 部分。このページの Install ボタンや、FM-1 のアップデートプロトコルを使うツール (fm1buddy、fm1_ota.py) なら完全にインストールされます。フラッシュに直接書き込むツール (FM-1 Transporter) や flash.bin だけを書くツールでは Bluetooth 部分が入らず、FM-1 は起動しても GEN が BLUETOOTH PART MISSING と表示します。その場合はここからもう一度インストールしてください。"});\n'
 )
 
 
