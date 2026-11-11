@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 # (JIANT 0.8.0) the tutorial film's script in English (tools/video/tutorial_script.py's chapters, ids, graphics and cues;
 # tutorial_voice.py ... en). SAY: how the voice says what the screen spells.
 CHAPTERS = [

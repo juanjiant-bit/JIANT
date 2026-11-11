@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * (JIANT 0.8.0) the beings of the design studies (firmware/src/ui_being.c, ported to the canvas, with organelles):
  * the palette, the heat ramp, the genomes, organism(); for the films (tools/video/tutorial.html) */
 /* ---------------------------------------------------------------- palette: JIANT + heat_col + the plates' inks --- */

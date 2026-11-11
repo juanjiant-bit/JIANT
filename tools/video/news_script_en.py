@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 # (JIANT 0.8.0) "In the lab": the film of what is being tested (stems over USB, the web editor, the voice through the
 # FM-1, the Android app, the live visuals, what comes next), in English, drawn by tools/video/tutorial.html as the tutorial is (tutorial_voice.py ... en news).
 from tutorial_script_en import SAY, say  # noqa: F401  (the same names spelt out)

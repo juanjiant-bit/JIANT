@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the record page. The meters of every channel the FM-1 sends (tap one to arm or disarm its lane), the
 // mic sent to the FM-1 (STEMS+IN: MIC on or off, its gain, the round trip's latency and MEASURE), REC and STOP. A
 // take stopped goes through the latency: measured in the take when the mic heard the speaker clearly, else the last

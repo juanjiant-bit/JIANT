@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * Exercise real key ownership, scheduler, rendering, locks and project codec. */
 #define DRUM_OCT_NO_MAIN 1
 #include "drumx_oct_test.c"

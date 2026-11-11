@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Probe: isochronous IN reads through usbfs on the file descriptor UsbDeviceConnection hands us (no root: the
 // app owns the device once the user grants it). Android's audio framework passes an 8-channel USB input on as stereo
 // on some phones (the rest zero); reading the FM-1's stream ourselves gets every channel, as the commercial

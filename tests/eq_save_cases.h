@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* The master's EQ and TAPE (params.c eq_v tape_v) through the save flows (Discord: "saving a project resets the
  * master EQ; sometimes it won't remember it on loading"). */
 static void eq_set(int a, int b, int c, int d) { eq_v[0] = (int16_t)a; eq_v[1] = (int16_t)b; eq_v[2] = (int16_t)c; eq_v[3] = (int16_t)d; }

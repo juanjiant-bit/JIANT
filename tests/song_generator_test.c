@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* GEN SONG: distinct parts, complete arranger playback, visible progress and
  * whole-song SAVE entry. Host UI model; persistence/NOR is tested separately. */
 #define UI_TEST_NO_MAIN 1

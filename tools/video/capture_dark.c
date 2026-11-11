@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * (JIANT 0.6.66) the v5 films' footage: a darkwave song in E minor at 132 BPM (a cold post-punk drum machine, an
  * 8th-note bass, chorused plucks, frozen strings, a choir and a melancholic lead: six tracks on six engines) played by
  * the real engines, the screen captured at 30 fps while a script goes through one film:

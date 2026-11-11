@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * USB workload regression: use the real firmware stream, count mode reads as
  * well as checking delivered frames. This is an operation budget, not measured
  * hardware CPU usage. The old loops exceed 600 reads per packet. */

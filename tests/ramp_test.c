@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (V10.6v) the step component RAMP (core.h CV_RAMP_*, seq.c ramp_run; JUMP's code): the step's LOCK glides there from the
  * knob's value (KNOB) or the other end (OPP) along its CURVE over its LENGTH (steps or bars), on the real sequencer,
  * motion, project and UI sources (the stubs of tests/ui_test.c):

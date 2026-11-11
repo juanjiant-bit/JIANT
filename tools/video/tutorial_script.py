@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 # (JIANT 0.8.0) the tutorial film's script, in Spanish: each chapter its number, title, the graphic tools/video/tutorial.html
 # draws beside the FM-1's screen, the screen's action (tools/video/capture_tutorial.c, by the chapter's number) and the
 # voice-over's lines. A line is (the words shown, cue): the cue is a step of the chapter's graphic (0, 1, 2 ...). What the

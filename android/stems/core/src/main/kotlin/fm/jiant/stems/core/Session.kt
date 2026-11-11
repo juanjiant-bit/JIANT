@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: a take on disk. A folder with one WAV a lane, exactly as recorded, and session.properties: the name,
 // the length, the trim, the measured latency and each lane's gain, pan, mute, solo and offset. Editing never
 // touches the WAVs: playback and the exports apply the session to them.

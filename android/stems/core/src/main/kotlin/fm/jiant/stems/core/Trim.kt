@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems (1.1): the editor's trim edges as numbers, apart from the view (LanesView draws and touches them), so the
 // JVM tests can drag them. 1.0 took a touch anywhere within 22 dp of an edge, on any lane, as a grab, and moved the edge
 // to the finger at the first jitter: a tap near the end to move the playhead cut the take short, and an edge dragged to

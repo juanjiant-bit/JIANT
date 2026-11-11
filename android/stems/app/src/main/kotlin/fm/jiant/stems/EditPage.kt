@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the session page. The lanes' waveforms on one timeline, PLAY / STOP of the mix, a lane's M and S, the
 // selected lane's GAIN, PAN and SHIFT on the FM-1's cards (drag, double-tap resets), the take's LATENCY (the voice
 // lanes' shift, by hand), the trim (the orange edges, or SET IN / SET OUT at the playhead), RENAME, EXPORT. Nothing

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (V10.6z4) the expression keys on the real sources (ui_test.c's): OCT- / OCT+ pressed while a key's note sounds
  * (ui_input.c oct_key, kx_frame; seq.c kx_block), MENU > AUDIO > OCT BEND, their recording and MIDI OUT.
  *   cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/expr_keys_test.c -lm

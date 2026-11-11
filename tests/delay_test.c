@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.8.4) The delay bus's line (src/fx.c: dly_buf, dly_lo) on the host, through hostsim.c as regress.c.
  *   build/host/delay_test [DEMODIR]          (run_tests.sh: build/fx_demo)
  * 1. no leak at the far end: at the longest TIME with MOD up (1/1 at 120 BPM; the full rate's own end; the longest of

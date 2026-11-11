@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* GEN FORM FROM LOOP (gen_loop.c): the loop made a song. The loop's key heard (C major, A minor, a DRUM-X 808 line
  * alone, drums without a tone: the genre's own; an aggressive phrygian loop, a power riff without a third, a dark
  * techno loop: phrygian, minor, never major), its chords made again each seed (every chord of the drop holding the

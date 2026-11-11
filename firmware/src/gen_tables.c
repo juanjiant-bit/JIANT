@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * JIANT (0.6.91) the song generator's knowledge, as constant tables (gen.c reads them; included by it). Everything a
  * genre knows is written here, nothing is computed: a genre is a row, its drums a map of priorities (after Mutable
  * Instruments' Grids: a level a step a lane, a hit where the level clears the density), its bass one of ~50 archetypes

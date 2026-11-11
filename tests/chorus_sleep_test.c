@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * Compare the zero-ring shortcut against forcing the original three taps.
  * Covers tails, restart after silence, parameter movement, and LOAD changes.
  */

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.9.9 ctl64) where the sequencer's notes land in the rendered audio, against where the sequencer puts them when it
  * runs a sample at a time (seq_tick(t, 1): micro_test's reference): a MICRO-shifted pattern (steps off the grid by
  * 64ths, as a live recording leaves them) on an ANALOG track with an instant attack, rendered through mix_block in

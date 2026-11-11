@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * (JIANT 0.8.0) the tutorial film, drawn frame by frame (tools/video/film.mjs "tutorial"): black, Chakra Petch, the
  * heat palette and the beings (tutorial.html carries their code, from the design studies), the FM-1's real screen at
  * three times its size on the right, each chapter's animated graphic on the left, the voice-over's words as subtitles,

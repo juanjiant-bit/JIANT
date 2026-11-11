@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * (cpu5) the buses at rest (fx.c fx_rest): a chord into CLOUD, the delay (FEEDBK 60) and the chorus, then silence.
  * Against the same run built with FX_REST_OFF (the reference, fx_rest_test.py builds both): the output is the same
  * sample for sample until the gate has shut and the rest begins; through the rest both give exact zeros; the rest

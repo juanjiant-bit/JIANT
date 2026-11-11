@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+# Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """VOICE words (JIANT 0.8.5): the phoneme codes, the English dictionary and the lyric generator's word banks as
 constant tables (firmware/src/sing.c reads them), from tools/lyrics/:
   en_dict.txt   the English words the device knows (a subset of the CMU Pronouncing Dictionary, BSD-2-Clause): each

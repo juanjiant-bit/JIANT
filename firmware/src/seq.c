@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* Optional keyboard split. Kept in the pool so DSP globals retain their addresses.
  * on, physical cut (0=13), low/high track, low/high signed octaves, MIDI channel, MIDI cut (0=60). */
 static uint8_t split_cfg[8] __attribute__((section(".pool")));

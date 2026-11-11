@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* ANIMAL (JIANT 0.8.3): animal calls from four cheap physical primitives (reports/Síntesis bioacústica de animales.md):
  * a source that oscillates or strikes, one or two resonators it excites, and a slow layer of pressure, tension and
  * rhythm. MODE picks the source; each mode reads the eight knobs its own way (animal_desc):

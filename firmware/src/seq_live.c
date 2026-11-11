@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* LIVE (main 0.9.11, ported to seq-v2 in p2): the sequencer's live modifiers, GLO > LIVE (the approved mock-up
  * secuencias.html: MANO, its V3, and RIELES, its V1; the pages are ui_live.c). Per track, never destructive: they change

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """(JIANT 0.6.46) The packages the live site holds now, for make_site.py's PREV_DIR (the earlier versions the
 installer keeps offering). The site lists them in firmware/versions.json; a site from before that has one package,
 named in the installer's metadata. Nothing found is no error: the new site then has the current version only.

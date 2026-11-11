@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """JIANT FM's line art: SVG paths -> ui_shapes.h (run by tools/build.py generate()).
 
   gen_ui_shapes.py OUT.h [SVG_DIR]          (default: assets/ui-shapes)

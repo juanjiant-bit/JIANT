@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // (JIANT 0.6.66) the v5 films: tools/video/film.html drawn frame by frame in Chromium (Playwright) from a capture
 // directory (tools/video/capture_dark.c + film_prep.py), piped as JPEG to ffmpeg with the audio:
 //   NODE_PATH=$(npm root -g) node tools/video/film.mjs build/video5/feat feat out.mp4

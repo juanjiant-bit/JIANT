@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * Repeatable host CPU/RAM probe of the actual 0.9.9 DSP. Host timings are
  * relative comparisons, never FM1 utilization or deadline measurements.
  */

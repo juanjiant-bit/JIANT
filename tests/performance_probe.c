@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * Repeatable host investigation; ns here are NOT FM1 utilization estimates.
  * Usage: performance_probe MODE ENGINE PRESET TRACKS NOTES FXMASK RTYPE OPS
  * MODE: track, mix, fx, idle, fmops, events_idle. FXMASK: chorus=1 delay=2 reverb=4.

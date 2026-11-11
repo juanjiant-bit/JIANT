@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* GLO > LIVE (main 0.9.11, seq-v2 p2): the six sequences side by side and their live modifiers (seq_live.c), two pages, the approved
  * mock-up secuencias.html (V3 MANO, V1 RIELES), first in GLO in a group of their own (ui_lens.c CE_GLO).

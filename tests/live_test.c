@@ -1,5 +1,4 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* LIVE (main 0.9.11, seq-v2 p2; GLO > LIVE: MANO and RIELES; firmware/src/seq_live.c, ui_live.c) on the real sequencer
  * and UI sources

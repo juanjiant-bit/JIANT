@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * (JIANT 0.7.2) the news film's footage (tools/video/update.html, in Spanish): the piece is the song generator's own
  * (POST PUNK, a seed, FORM CLUB: an arrangement with rows), played as a song by the real engines while the script goes
  * through what came in 0.6.99 .. 0.7.2: the generator, the presets, the DRUM-X kits, the punch-in sequencer, WALK /

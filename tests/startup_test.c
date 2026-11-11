@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* Native emulator boot: includes main.c's real felucca_init, not just the storage loader. */
 /* (JIANT 0.6.84) by @workeffortwaste (pull request #134, the ARRANGE power-off bug): it fails without main.c's
  * 0.6.81 fix (felucca_init clearing the arrangement persist_boot had read) and passes with it. */

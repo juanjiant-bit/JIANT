@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+# Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """Make the site (GitHub Pages):
 
   index.html                  redirect to the installer (the old URL keeps working)

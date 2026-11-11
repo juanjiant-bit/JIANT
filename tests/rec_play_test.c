@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* REC, PLAY, keys, STOP, PLAY: the take plays back (a YouTube user on V10.7.6: "I pressed record then play and entered
  * a few notes, pressed stop and pressed play to listen and it played nothing; if I then press record it plays notes I
  * did not enter"). A GEN song leaves PLAY in SONG mode (gen.c: live.mode, kept in the song index over a power cycle):

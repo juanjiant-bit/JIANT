@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * JIANT (FELUCCA TONIC): after SLOOP 2.4.1's arranger, live sections and SONG REC (isod89/sloop-fm1, GPL-3.0). */
 /* The song, the audio ISR's part (song_chain.c: what it is). Included at the end of seq.c. */
 static uint32_t chain_bar(void) { return 16u * div_samples(2); }        /* a 4/4 bar: 16 steps of 1/16 (DIV 2) */

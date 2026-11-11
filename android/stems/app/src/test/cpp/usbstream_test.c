@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: usbstream.c on the computer, against a pretend FM-1. ioctl() is replaced by a usbfs that completes
 // the URBs in order (the IN ones full of a counter, 44 or 45 frames a millisecond as the FM-1 sends 44.1 kHz; the
 // OUT ones recorded) and JNIEnv by the few calls the driver makes. Checks: every frame comes through once, in

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: WAV files. PCM, 16 or 24 bit, any channel count, little-endian; a 44-byte header (RIFF, fmt, data).
 // Three ways in and out: WavFileWriter records a take (the sizes patched as it grows, so a crash leaves a file that
 // plays to the last patch, and repair() fixes it fully); WavStreamWriter writes an export of known length straight

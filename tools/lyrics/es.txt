@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 # VOICE words (JIANT 0.8.5): the Spanish word bank of the lyric generator (tools/gen_lyrics.py -> felucca_lyrics.h).
 # Plain ASCII, no accents (the device's font and keys have none; stress is not marked in singing). Spanish is read by
 # rules on the device (sing.c sy_es), so any Spanish text sings; these words are only what the dice picks from.

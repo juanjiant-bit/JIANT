@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* Exercise the production song copy against persistence_test's NOR flash, including failed writes. */
 
 static project_store_t source_before[4];

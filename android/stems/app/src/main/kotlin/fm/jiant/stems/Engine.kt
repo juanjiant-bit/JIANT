@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the recorder. One thread pumps the FM-1's stream for as long as the record page is open: always into
 // a splitter that only meters, and during a take into one that also writes each armed lane's WAV (the headers
 // patched every two seconds, so a take cut short keeps what it had). The latency measure is a third kind of

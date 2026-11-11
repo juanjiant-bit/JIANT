@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * JIANT V10.25: SCL > SCENE, the multitimbral mode's page (seq.c scene_key plays it). Included by ui_graph.c.
  * KNOB 1 SCENE OFF / ON (on: the keys play every track with a role), KNOB 2 the TRACK, KNOB 3 its ROLE (KEEP CHORD ARP
  * BASS LEAD), KNOB 4 its CHORD (the chord CHORD and ARP play; OFF: a triad of the scale). A role sets its track up:

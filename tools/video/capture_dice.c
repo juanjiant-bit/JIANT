@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * (JIANT 0.6.34; 0.6.35 short, no names) the DICE ALL film's footage: the generator thrown live on the host build of the
  * tests (tests/ui_test.c), the real engines playing each piece at its own tempo, the FM-1's screen at 30 fps. About a
  * minute: a first piece under the splash, then a throw every four seconds or so, each one HOME + SELECT (the dialog),

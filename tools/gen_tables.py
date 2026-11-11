@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+# Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """Fixed-point lookup tables for FELUCCA (no float on the target).
 
 FS = 44100 Hz, control rate = every CTL (64) samples (0.9.9 ctl64: was 32). All curves map a

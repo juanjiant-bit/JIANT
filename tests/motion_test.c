@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * Real sequencer/project/UI sources: motion lifecycle and compact migration. */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"

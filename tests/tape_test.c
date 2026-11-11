@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.9.9-snd8) the master's TAPE (src/fx.c tape_block; FX > TAPE: TAPE and WOW, params.c tape_v) through the real sources
  * (ui_test.c's).
  *   build/host/tape_test

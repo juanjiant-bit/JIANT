@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.8.9) The USB audio input's packet scheduler over minutes (src/usb.c and the audio ISR's order in src/audio.c),
  * against a simulated FM-1 and host, in ns:
  *   the I2S      halves of HALF_FRAMES at 44,117.6 Hz; the audio ISR acks a half first and renders it (0.8.9): a

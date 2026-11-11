@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* ANIMAL engine test (src/eng_animal.c, JIANT 0.8.3) on the host, through hostsim.c as regress.c.
  *   build/host/animal_test [DEMODIR]          (run_tests.sh: build/animal_demo)
  * 1. CMOS: the fast relaxation oscillator plays the key an octave up (gate only, no sweep: +-10 cents, A3 .. A6);

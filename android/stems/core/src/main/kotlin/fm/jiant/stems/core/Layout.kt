@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: what the FM-1 sends in each USB mode (docs/MANUAL.md, "Stems" and "Stems with a voice") and how the
 // channels group into the lanes the app records, one WAV a lane:
 //   STEMS     (0.7.1, 8 ch):  T1..T6 (each track mono, before the master), FX L R (the effects' return)

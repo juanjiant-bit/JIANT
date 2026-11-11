@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the record page's meters (the FM-1's segmented heat gauges, one a channel, the number badge orange
 // when its lane is armed) and the editor's lanes (each lane's waveform in heat, the trim's orange edges, the
 // playhead).

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (V10.6z8) PROX / AIR calibration with a noisy RSSI (a Discord user: "near / far jump chaotically"). MENU > SYSTEM >
  * BLUETOOTH's PROX page takes FAR / NEAR as the median of ~2.5 s of the level (ui_menu.c bt_cal_tick, "HOLD STILL" and
  * its progress on the page), not one reading; AIR's level is smoothed longer and held within a level before PROX maps

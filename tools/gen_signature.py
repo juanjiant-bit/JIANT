@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """JIANT 0.5: the power-on signature (assets/ui-art/signature/jiant-fm1.jpg, white ink on black) as strokes.
 
   gen_signature.py IN.jpg OUT.h [--png PREVIEW.png]

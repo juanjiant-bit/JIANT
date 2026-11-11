@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // (JIANT 0.7.1) Stems from the browser: a backup file (the editor's or the installer's "Back up", felucca-backup) into
 // a fresh copy of the firmware (felucca.wasm), then a song (its rows, as PLAY in SONG mode plays them) or the live
 // section (a loop of n bars) rendered once per part with every other part left out of the mix (fx.c mix_skip: the

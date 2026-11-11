@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 # (JIANT 0.6.66) the v5 films: what tools/video/film.html draws each frame with, from tools/video/capture_dark.c's
 # footage: per frame the audio's level, its low / mid / high bands, a kick onset, a 32-band spectrum, and each track's
 # peak (frames.txt) with its onsets; the captions (scenes.txt). Writes data.json next to them.

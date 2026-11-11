@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the editor's waveforms (each lane's peak a bucket of frames) and the FM-1's heat colours.
 package fm.jiant.stems.core
 

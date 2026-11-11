@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* The editor protocol's stability contract (web/EDITOR_PROTOCOL.md "Stability contract (1.0)"), from the side of the
  * apps that depend on it (the JIANT Stems app's Fm1Link / Fm1Archive, the web editor): the real handler (editor.c,
  * through editor_test.c's host harness) is fed the exact byte sequences such an app sends, as USB-MIDI event packets
