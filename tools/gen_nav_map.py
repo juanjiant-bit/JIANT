@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """(JIANT 0.9.2) The navigation map: every section (its button), its groups (the tabs) and its pages in chain order,
 with the six rules, the held layers and the combos, read from the firmware's own chain tables (firmware/src/ui_lens.c
 CE_* / CG_* / CHAINS / NAV_DEF), so the map cannot drift from the firmware.

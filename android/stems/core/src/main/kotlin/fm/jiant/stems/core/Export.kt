@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the two exports, both over the trimmed take with the latency compensation applied.
 //   stemsZip: one WAV a lane in a ZIP. As recorded (each lane's own channels, 16 bit: the same samples the FM-1 sent,
 //             only moved and cut), or with the mix (stereo, gain and pan applied, the muted lanes left out); MIX.wav

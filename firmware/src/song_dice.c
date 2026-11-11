@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * JIANT (0.6.26 .. 0.6.83) the song-idea generator's helpers, GEN's now: the roles, the engines' and the scales' numbers,
  * a tie, a held note, an euclidean rhythm, a name's word, a high part's level, a track's loop and what sounds in it,
  * SAVE > TOOLS's CPU TEST song. Included by ui_input.c (main loop only), before gen.c.

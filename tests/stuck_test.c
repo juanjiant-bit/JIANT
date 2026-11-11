@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* Stuck notes (hanging voices, missing MIDI OUT note-offs): a key or MIDI note held while the state that made its
  * notes changes (octave, chord, scale, ARP, LATCH, KEY SPLIT, the selected track, a preset or engine load, SCENE's
  * roles and octave), then let go: every voice it started ends and every note sent on gets its note-off. MIDI IN:

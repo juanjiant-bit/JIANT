@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """(V10.6i) A factory preset table's entries as web/editor.html writes them: P(name, e, env, mono, pat, xp, mod), mod the
 preset's MODS (core.h) expanded to [parameter, value] numbers. tools/preset_mods_js.py ENGINE_FILE ARRAY prints them, one
 a line; the editor's tables are kept equal to the firmware's (web/test_web.mjs compares the names)"""

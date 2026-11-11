@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (JIANT 0.6.52) FUGUE (SEQ > FUGUE), after the Fugue Machine: three more playheads on each track, reading the same
  * steps as the sequencer, each with its RATE (OFF, 1/4 .. x4 of the track's), its DIRECTION (FWD, REV, PING, RND) and
  * its INTERVAL (-14 .. +14 degrees of the scale; a kit keeps its lanes): canons, counterpoint, phasing out of one

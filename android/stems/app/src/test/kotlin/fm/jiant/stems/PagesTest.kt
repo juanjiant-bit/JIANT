@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the pages on Robolectric (no phone, no FM-1): HOME lists a take written to disk, EDIT draws its lanes,
 // a drag trims it, M mutes a lane, a card's drag sets a gain, PLAY and STOP run, EXPORT shares a ZIP (through the
 // app's provider) and a mix, and the edits are saved; the Spanish strings and the record page's meters.

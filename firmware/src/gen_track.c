@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * Selected-track generation. Context and a temporary track live on the main
  * stack; no audio buffers, project-format changes or new DSP path. */
 typedef struct { uint16_t seed; uint8_t genre,role,complex,energy; } tg_config_t;

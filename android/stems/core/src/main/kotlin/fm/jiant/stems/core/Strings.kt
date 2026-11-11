@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: every string the app shows, in English and Spanish (rioplatense, as the FM-1's manual). One enum,
 // so a string cannot exist in one language and not the other; the tests check the format arguments match.
 package fm.jiant.stems.core

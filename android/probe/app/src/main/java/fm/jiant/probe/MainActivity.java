@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Probe: phase 0 of the stems app (android/probe/README.md). One screen that answers, on a given phone, the
 // questions the app depends on: does Android open the FM-1's eight USB channels (MENU > SYSTEM > USB > STEMS) at
 // 44.1 kHz; can it open a USB microphone at the same time as the FM-1; can it play into the FM-1 (USB > IN+OUT); does

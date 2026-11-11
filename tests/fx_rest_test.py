@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 # (cpu5) tests/fx_rest_test.c both ways: BIN_REST (fx.c as built) against BIN_REF (built with -DFX_REST_OFF): the same
 # output until the gate shut (the hash), exact zeros through the rest both ways (the C checks), the rest engaged.
 #   python3 tests/fx_rest_test.py BIN_REST BIN_REF

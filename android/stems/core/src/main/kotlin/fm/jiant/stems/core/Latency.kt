@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the round trip's latency, measured as JIANT Probe 0.4 (test 7) does. In STEMS+IN the phone's mic
 // goes out to the FM-1 and comes back in channel 10 (DRY, the mic as it came); with the phone near the FM-1's
 // speaker the mic hears the stems, so DRY is the stems' sum delayed by the whole loop (the FM-1's output, the air,

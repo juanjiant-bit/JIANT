@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // (JIANT 0.8.0) the lab film's LIVE VISUALS chapter: tools/video/visuals.html (the WebGL visuals of the stems app) drawn
 // frame by frame in Chromium, moved by the film's own music (data.json: each track's level, the kicks) and turning
 // style with each line of the chapter (timeline.json: the cue is the style); JPEGs in <dir>/vis that tutorial.html shows.

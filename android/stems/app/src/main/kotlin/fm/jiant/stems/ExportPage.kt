@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the export page. STEMS ZIP (a WAV a lane, as recorded or with the mix, MIX.wav beside them if asked)
 // or MERGE (the stereo mix, 16 or 24 bit, normalized to -1 dBFS if asked), both over the trim with the latency
 // applied. SAVE TO FILES opens Android's document picker (Downloads by default); SHARE writes the file to the app's

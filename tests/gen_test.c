@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * JIANT (0.6.91) the song generator (firmware/src/gen.c) measured: every genre at several seeds and settings, on the
  * host build of the UI tests. What a piece must always have: the same piece from the same settings (deterministic);
  * one scale on every melodic track, every note in it (the bass's chromatic approaches excepted) and in its register;

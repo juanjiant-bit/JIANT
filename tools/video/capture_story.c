@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * (JIANT 0.6.69) the Instagram stories' footage (1080 x 1920, tools/video/stories.html): a dark, pompous synth-pop
  * song in D minor at 112 BPM, Depeche Mode's way (an octave bass in 8ths, FM brass stabs, a big choir, a melancholic
  * bell lead, stomping drums with metal and an anvil), played by the real engines, while one of two scripts runs:

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the USB stream (16-bit little-endian frames of every channel, as the FM-1 sends them) split into one
 // stream a lane, plus the meters and the latency window. One splitter a take; the recorder's thread alone calls it.
 package fm.jiant.stems.core

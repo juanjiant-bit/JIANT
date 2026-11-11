@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 # (JIANT 0.6.35; 0.6.37 the landing's black, bone white and heat rule) the two films' thumbnails, 1280 x 720, from their footage (screen.rgb) in the project's look (black,
 # violet to orange, Chakra Petch, the signature):
 #   python3 tools/video/thumbnails.py build/video_dice build/video3 OUTDIR

@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * JIANT V10.6: SEQ > EUCLID and MODES, a pattern generator in MUTATE's place. Included by ui_graph.c.
  * EUCLID: KNOB 1 HITS, 2 STEPS, 3 ROTATE spread the hits as evenly as the steps allow (the euclidean rhythm); KNOB 4 a
  * DRUM track's LANE (each of its eight sounds its own HITS / STEPS / ROTATE, the pattern their least common length up to

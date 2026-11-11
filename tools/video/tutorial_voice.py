@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 # (JIANT 0.8.0) the tutorial film's voice-over: each line of tools/video/tutorial_script.py spoken (Kokoro, an ONNX
 # text-to-speech model, run locally: pip install kokoro-onnx soundfile; the model and voices from the kokoro-onnx
 # releases in $KOKORO, default ~/tts), laid end to end with pauses; the timeline the capture and the film follow.

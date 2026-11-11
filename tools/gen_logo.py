@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """V10.6l: the power-on logo, "jiant fm" (assets/ui-art/signature/jiant-fm-logo.jpg), as the owner writes it: his pen's
 path read off his screen recording (below), smoothed (Catmull-Rom) and resampled every ~STEP px at
 the splash's scale. Out: firmware/src/ui_signature.h, SIG_PTS x y bytes a point, a stroke starting where y has bit 7 set.

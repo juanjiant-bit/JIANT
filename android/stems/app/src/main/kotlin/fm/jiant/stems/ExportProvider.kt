@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: hands an export to the share sheet (Drive, WhatsApp, mail, Files): a read-only content:// address
 // for a file in the app's cache/exports, readable by the app picked through the temporary grant the share intent
 // carries. (What AndroidX's FileProvider does, without AndroidX.)

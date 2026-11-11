@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 # (JIANT 0.6.11; 0.6.37 the landing's look) the presentation videos: tools/video/capture.c's (or capture_dice.c's)
 # footage, the FM-1's screen at 30 fps and its audio, composed at 1920 x 1080 as the README's hero page is drawn
 # (tools/gen_readme_hero.py): pure black, the signature in heat colours, JIANT FM in bone white, the heat rule (cyan,

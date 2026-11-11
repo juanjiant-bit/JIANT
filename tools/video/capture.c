@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * (JIANT 0.6.11; 0.6.37 dark minimal techno) the presentation video's footage: the firmware's own UI and audio, from the
  * host build of the tests (tests/ui_test.c): a dark minimal techno track at 125 BPM in A minor (six tracks: low FM6
  * chords held for two bars, an acid line on ANALOG, a cyber line on PHASE, LOFI blips, DRUM-X, NOISE wind) played by

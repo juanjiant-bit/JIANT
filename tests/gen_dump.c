@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * The generator audited (firmware/src/gen.c): a piece as text, to read its harmony as a musician reads a lead sheet:
  * the key and the SCALE / CHORD pages as GEN wrote them, the chords bar by bar (a symbol and its roman numeral), every
  * part a line a bar (the notes by name, '=' held, '.' rest, a chord's notes joined by '/'), each section of a FORM

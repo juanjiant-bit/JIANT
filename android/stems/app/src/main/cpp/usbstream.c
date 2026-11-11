@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the FM-1's USB audio read (and the phone's mic written) by the app itself, through usbfs on the file
 // descriptor UsbDeviceConnection hands over, as JIANT Probe 0.2-0.4 proved on the phone (android/probe/.../usbiso.c):
 // Android's audio framework passes only some of a USB device's channels on to apps (an S23 Ultra: two of eight), so

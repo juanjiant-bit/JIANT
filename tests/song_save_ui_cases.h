@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 static int test_song_save_ui(void)
 {
     int bad = 0, ok;

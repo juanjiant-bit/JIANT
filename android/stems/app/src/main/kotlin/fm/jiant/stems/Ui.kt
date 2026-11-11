@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the FM-1's screen language on the phone (ui_draw.c, the "JIANT Stems App" design): black, cream text,
 // violet for what is selected, orange for the one active thing, the heat ramp for levels; Chakra Petch; the header
 // with its badge, the four cards with a label, a value and a hairline gauge, the footer breadcrumb.

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // (1.1) A take's length from the recorder to the export: a ZIP exported with the trim at the ends holds the whole take
 // (a field take of 37.27 s came out 23.49 s); the trim's edges dragged to the ends are the ends exactly, a tap near one
 // is not a trim, a touch on a lane near one moves the playhead; a take being recorded is never "recovered" (its WAVs cut

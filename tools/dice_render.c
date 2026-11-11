@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * (JIANT 0.6.80) DICE ALL heard: pieces from the generator (firmware/src/song_dice.c) on the host build of the tests,
  * the real engines playing each at its tempo, written as WAV files, to compare the generator before and after a
  * change by ear. Each argument is STYLE:ENERGY:SEED (the genre's index in GENRE (gen_tables.c), the energy 0..2, any seed: the same

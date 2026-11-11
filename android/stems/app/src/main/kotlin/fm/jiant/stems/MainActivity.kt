@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems 1.0 (android/README.md): record the FM-1's USB stems on the phone, each lane its own WAV, the phone's
 // mic through the FM-1's last track and back (STEMS+IN) moved earlier by the measured round trip, then trim, mix
 // and export a ZIP of the stems or a stereo mix. One activity, four pages on a stack: HOME (connect, the takes),

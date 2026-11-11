@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: playback of a session's mix (the editor's PLAY), float stereo through an AudioTrack, rendered a block
 // at a time by the same Renderer the exports use, so mute, solo, gain, pan and the latency shift are heard as they
 // change. It plays to the phone (headphones, Bluetooth, the speaker), not to the FM-1: in STEMS+IN the FM-1 is a

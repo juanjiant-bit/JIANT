@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """(JIANT 0.6.83) the audio path's CPU under valgrind (tests/cpu_vg.c): instructions per sample, section by section,
 against tests/cpu_baseline_vg.txt (peak/*: instructions in the worst single block of the section's rounds). callgrind's
 counts are exact (the same on every run of the same build), so the

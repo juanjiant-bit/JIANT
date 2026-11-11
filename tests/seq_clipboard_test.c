@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"
 int main(void)

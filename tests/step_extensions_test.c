@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 #define STEP_EXTENSIONS_TEST 1
 #include "comp_test.c"
 

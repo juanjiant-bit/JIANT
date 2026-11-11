@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* DRUM-X's ACOUST (ADD15, KIT 4 KNOB 1) was retired in V10.6o. A project saved with it set carries its 'D' 'A' block
  * (between the EQ's and SCENE's in the FUNC tail): it still loads, the value skipped and every block after it read as
  * stored; a project saved now never writes the block. KIT 4 keeps the KEY MAP (KNOB 2) and stays a DRUM page.

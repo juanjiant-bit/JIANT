@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: finding the FM-1 among the USB devices and opening its audio the way JIANT Probe's tests 5 and 7 did
 // on the phone: the audio-streaming interfaces with an isochronous endpoint (IN: the stems; OUT in STEMS+IN: the
 // mic), their format from the raw descriptors, claimed (the kernel's driver let go of), alternate setting 1 set, the

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // (JIANT 0.6.7) docs/cheatsheet/*.html (tools/gen_cheatsheets.py) -> docs/cheatsheet-*.png (the README) and .pdf (to
 // download), with the Chromium Playwright brings:  node tools/render_cheatsheets.mjs
 import { createRequire } from "module";

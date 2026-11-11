@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* Drive the real sequencer; the older probability test called seq_step directly and missed component replacement. */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"

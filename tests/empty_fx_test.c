@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * Compare all zero-buffer shortcuts against forcing the original FX kernels.
  * Covers fresh silence, sends, tails, resets, stereo/grain delay, reverb models,
  * parameter movement and LOAD changes; hash complete audio, FX state and buffers.

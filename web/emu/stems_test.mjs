@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // (JIANT 0.7.1) Stems from the browser build (web/emu/stems.js) in Node:
 //   node web/emu/stems_test.mjs build/emu/felucca.wasm
 // A device makes a piece (web_gen, FORM CLUB: a song with rows), its objects come out as a backup file would hold

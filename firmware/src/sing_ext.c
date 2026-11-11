@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * Compact transliteration readers. These are deliberately phonetic singing
  * approximations using VOICE's existing phonemes, not speech dictionaries.
  * Mandarin takes pinyin (notes determine pitch, not lexical tones). */

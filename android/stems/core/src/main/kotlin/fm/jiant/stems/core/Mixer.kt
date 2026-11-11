@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // JIANT Stems: the session applied to its lanes, a block at a time, for playback and the exports. Each lane is read
 // at its offset (a voice lane moved earlier by the latency), scaled by its gain, and for the mix panned with a
 // balance law: centre is unity on both sides (the FM-1's stems are what each track adds to the mix with its pan

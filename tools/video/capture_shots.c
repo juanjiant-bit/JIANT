@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * (JIANT 0.6.89) the README's newer screens: the presentation song (capture.c's) plays a few bars, then each page
  * below is shown with something on it (the lead off the grid on TIMING, HUMAN turned, the delay feeding back, ...)
  * and its screen, after a second of it alive, goes to shots.rgb (240 x 240 RGB24 each, in this order; names in

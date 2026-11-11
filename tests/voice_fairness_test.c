@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * Four single-note lines with overlapping releases. A new note should reuse
  * that track's released voice before fading another track's audible tail. */
 #define main hostsim_main
