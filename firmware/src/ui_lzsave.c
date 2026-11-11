@@ -358,7 +358,8 @@ static void graph_proj(int ar)
         const chain_row_t *r = &chain_config.row[i];
         int32_t x = 4 + (int32_t)(i % 8u) * 293 / 10, y = 72 + (int32_t)(i / 8u) * 22;
         int pick = ar && i == ui.song_row, used = graph_project_used(r->slot);
-        uint16_t c = lz_sec(r->slot, 1, !pick);
+        uint16_t c = used ? lz_sec(r->slot, 1, !pick) : T_RAISE;   /* (a row of an empty section: a well, its words DIM;
+                                                         * DIM on the section's colour could not be read) */
         b[0] = (char)('A' + (r->slot & 3u));
         fmt_int(b + 1, r->bars);
         cv_rect(x, y, 27, 20, c);

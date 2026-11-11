@@ -946,8 +946,8 @@ advertises 9 (palette and favorites).
 | 37 FAV_GET | engine, start v14, count 1..32 | rc; on success: engine, start v14, count, count × on/off |
 | 38 FAV_SET | engine, preset v14, on/off | rc; when applied: engine, preset v14, on/off |
 
-UI_SET ids: 0 palette (0..count-1, the order of UI_PALETTES: GREY GREEN AMBER ICE VIOLET ROSE PAPER
-HI-CON NIGHT MONO; 1.0.2: GREY is the MONO of 1.0.1, MONO a new black and white palette), 1 font (retired: rc 2), 2 reserved, 3 preset filter (0 all, 1 favorites). Unsupported state
+UI_SET ids: 0 palette (0..count-1, the order of UI_PALETTES: JIANT SELVA CONTRAST BRASA ABISAL HUESO NEON; up to V10.7.18 the eleven
+GREY GREEN AMBER ICE VIOLET ROSE PAPER HI-CON NIGHT MONO JIANT: read the names, never assume the order), 1 font (retired: rc 2), 2 reserved, 3 preset filter (0 all, 1 favorites). Unsupported state
 fields are 127.
 Both u28 signatures are four least-significant-first 7-bit bytes; compare them
 to refresh changed favorites and user slots. Factory references use stable
@@ -1004,7 +1004,7 @@ before SCALE LEDS the first 16, before SCREEN OFF the first 17):
 
 | index | id | name | kind | values (min 0) | default | tab |
 | --- | --- | --- | --- | --- | --- | --- |
-| 0 | 0 | COLOR | 0 | 0..9: GREY GREEN AMBER ICE VIOLET ROSE PAPER HI-CON NIGHT MONO (the order of `UI_PALETTES`) | GREY | 0 DISPLAY |
+| 0 | 0 | COLOR | 0 | 0..6: JIANT SELVA CONTRAST BRASA ABISAL HUESO NEON (the order of `UI_PALETTES`) | JIANT | 0 DISPLAY |
 | 1 | 1 | STYLE | 0 | 0 FLAT, 1 LINE | FLAT | 0 DISPLAY |
 | 2 | 2 | LARGE | 0 | 0 OFF, 1 ON | OFF | 0 DISPLAY |
 | 3 | 3 | ANIM | 0 | 0 ON, 1 OFF | ON | 0 DISPLAY |

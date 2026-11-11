@@ -228,8 +228,8 @@ static void ui_power_on(void)
     ui.home = 1;
     ui.force = 1;
     panel = PANEL_DEFAULT;
-    settings.palette = UI_GREY_INDEX;
-    palette_set(UI_GREY_INDEX);
+    settings.palette = UI_JIANT_INDEX;
+    palette_set(UI_JIANT_INDEX);
     transport_req = 0;
     panic_req = 0;
     mi_r = mi_w = midi_in_overflow = 0;
@@ -2640,18 +2640,19 @@ static int test_display_preferences(void)
     ui.menu_sel = MI_COLOR;
     ui.force = 1; ui_draw();
     memcpy(before, host_screen, sizeof before);
-    settings.palette = 5; palette_set(5);
+    settings.palette = 1; palette_set(1);
     press(B_OCTUP);
-    bad += check("COLOR OCT+ previews the next palette (PAPER, light) without closing the menu",
-                 settings.palette == 6 && T_BG == UI_PALETTES[6].bg && ux.light && ui.menu == 1 && !song.octave &&
+    bad += check("COLOR OCT+ previews the next palette (CONTRAST) without closing the menu",
+                 settings.palette == 2 && T_BG == UI_PALETTES[2].c[0] && T_TEXT == UI_PALETTES[2].c[2] && ui.menu == 1 && !song.octave &&
                  memcmp(before, host_screen, sizeof before) && !memcmp(sounds, trk, sizeof sounds));
     turn(EN_K1, 1);
-    bad += check("COLOR KNOB 1 steps on to HI-CON, NIGHT (#50: true black), MONO (1.0.2: black and white), JIANT, then wraps to GREY",
-                 settings.palette == 7 && (turn(EN_K1, 1), settings.palette == 8u) && T_BG == 0u &&
-                 str_eq(UI_PALETTES[8].name, "NIGHT") && (turn(EN_K1, 1), settings.palette == UI_BW_INDEX) &&
-                 str_eq(UI_PALETTES[UI_BW_INDEX].name, "MONO") && T_BG == 0u && T_TEXT == 0xFFFFu &&
+    bad += check("COLOR KNOB 1 steps on through the family (BRASA ABISAL HUESO NEON), then wraps to JIANT: exactly seven",
+                 NPALETTES == 7u && settings.palette == 3 && str_eq(UI_PALETTES[3].name, "BRASA") &&
+                 (turn(EN_K1, 1), settings.palette == 4u) && str_eq(UI_PALETTES[4].name, "ABISAL") &&
+                 (turn(EN_K1, 1), settings.palette == 5u) && str_eq(UI_PALETTES[5].name, "HUESO") && T_BG == 0u &&
+                 (turn(EN_K1, 1), settings.palette == 6u) && str_eq(UI_PALETTES[6].name, "NEON") &&
                  (turn(EN_K1, 1), settings.palette == UI_JIANT_INDEX) && str_eq(UI_PALETTES[UI_JIANT_INDEX].name, "JIANT") &&
-                 (turn(EN_K1, 1), settings.palette == UI_GREY_INDEX) && str_eq(UI_PALETTES[UI_GREY_INDEX].name, "GREY"));
+                 str_eq(UI_PALETTES[1].name, "SELVA") && str_eq(UI_PALETTES[2].name, "CONTRAST") && menu_n(MI_COLOR) == 7u);
     settings.lowcut = 2;
     ui.menu_sel = MI_LOWCUT;
     press(B_OCTUP);
@@ -2674,7 +2675,7 @@ static int test_display_preferences(void)
     k = ui.menu == 1 && settings.lowcut == 0u;         /* (OCT- at the first value: nothing, the menu stays) */
     press(B_HOME);
     bad += check("HOME leaves display preferences without changing musical state (OCT- no longer closes)",
-                 k && !ui.menu && settings.palette == UI_GREY_INDEX && !memcmp(sounds, trk, sizeof sounds));
+                 k && !ui.menu && settings.palette == UI_JIANT_INDEX && !memcmp(sounds, trk, sizeof sounds));
     return bad;
 }
 
@@ -2804,7 +2805,7 @@ static int test_menu_tabs(void)
         turn(EN_K3, -1); ok &= menu_get(i) == want && ui.menu == 1;
     }
     ui_prefs = 0; settings_hold = HOLD_DEF; settings_leds = LEDS_DIM; ui_style = ST_FLAT;
-    settings.lowcut = 0; fx_lowcut = 0; menu_put(MI_COLOR, UI_GREY_INDEX);
+    settings.lowcut = 0; fx_lowcut = 0; menu_put(MI_COLOR, UI_JIANT_INDEX);
     bad += check("MENU: OCT+ / OCT- step every value row up / down (COLOR wraps, the rest stop), the menu stays", ok);
     {   /* the ON / OFF rows: up (a knob right, OCT+) is ON, the switch's knob to the right, whichever bit it is */
         static const uint8_t SW[] = {MI_LARGE, MI_ANIM, MI_ACCEL, MI_LATCH, MI_BPMLOCK, MI_RESTORE};
@@ -3203,11 +3204,13 @@ static int test_information(void)
     for (x = 0; x < 4; x++) { fm1_ms += 600; draw_head(); }
     bad += check("USB power shows a steady bolt inside the battery without animation",
                  batt_shown() == 4 && ui.head_sig == signature && !memcmp(battery, host_screen, sizeof battery) &&
-                 host_screen[6 * 240 + 217] != 0 && host_screen[9 * 240 + 225] != 0);
+                 host_screen[(HEAD_MID - 4) * 240 + HEAD_BAT_X] == swap16(T_THEME) &&      /* (its frame, its fill) */
+                 host_screen[HEAD_MID * 240 + HEAD_BAT_X + 3] == swap16(T_THEME));
     usb.suspended = 1;
     draw_head();
     bad += check("USB suspension restores the battery outline and measured level",
-                 batt_shown() == 0 && ui.head_sig != signature && host_screen[6 * 240 + 217] != 0);
+                 batt_shown() == 0 && ui.head_sig != signature &&
+                 host_screen[(HEAD_MID - 4) * 240 + HEAD_BAT_X] == swap16(T_MID) && host_screen[HEAD_MID * 240 + HEAD_BAT_X + 3] == swap16(T_BG));
     usb.config = 0; usb.suspended = 0;
     song.batt_raw = 531; int levels = batt_shown() == 1;
     song.batt_raw = 561; levels &= batt_shown() == 2;
@@ -3239,6 +3242,14 @@ static int screen_neutral(void)
             return 0;
     }
     return 1;
+}
+/* a screen drawn at all: something on it that is not the background */
+static int screen_any(void)
+{
+    uint32_t i;
+    for (i = 0; i < 240u * 240u; i++)
+        if (swap16(host_screen[i]) != T_BG) return 1;
+    return 0;
 }
 static int mono_screens(uint32_t pal, int (*chk)(void), uint32_t *n)
 {
@@ -3274,19 +3285,18 @@ static int mono_screens(uint32_t pal, int (*chk)(void), uint32_t *n)
 static int test_mono_screens(void)
 {
     int bad = 0, ok;
-    uint32_t e, n = 0, nb = 0;
-    ok = mono_screens(UI_GREY_INDEX, screen_gray, &n);
-    bad += check("GREY: every pixel of every page, HOME, menu, ABOUT, dialog and countdown is gray", ok && n > 200u);
-    ok = mono_screens(UI_BW_INDEX, screen_neutral, &nb);
-    bad += check("MONO (black and white): every pixel of every page, HOME, menu, ABOUT, dialog and countdown is neutral",
-                 ok && nb == n);
-    ui_power_on();
-    for (e = 0; e < NPALETTES; e++) {               /* the other palettes are not gray: the check sees colour */
-        ui_power_on(); palette_set(e); ui.force = 1; ui_draw();
-        ok = screen_gray();
-        if (e == UI_GREY_INDEX ? !ok : ok) bad += check("palette colour shows on HOME", 0);
+    uint32_t e, n = 0;
+    /* (the family, 2026-11: no gray palette any more; every one of the seven draws every page, HOME, the menu, ABOUT, a
+     * dialog and the countdown, and shows colour: the thermal ramp is in all of them) */
+    for (e = 0; e < NPALETTES; e++) {
+        uint32_t k = 0;
+        ok = mono_screens(e, screen_any, &k);
+        n += k;
+        bad += check("every page, HOME, menu, ABOUT, dialog and countdown drawn in each palette of the family", ok && k > 200u);
+        ui_power_on(); settings.palette = e; palette_set(e); ui.force = 1; ui_draw();
+        if (screen_gray()) bad += check("palette colour shows on HOME", 0);
     }
-    palette_set(UI_GREY_INDEX);
+    palette_set(UI_JIANT_INDEX);
     return bad;
 }
 
@@ -3478,15 +3488,8 @@ static int test_roll(void)
     ui.force = 1; frame();
     ok &= !ui.roll[ROLL_BPM].from[0];
     bad += check("roll: a page, track, palette or engine change and ui.force snap", ok);
-    palette_set(UI_GREY_INDEX);
+    palette_set(UI_JIANT_INDEX);
 
-    /* MONO: every roll frame is gray */
-    ui_power_on(); roll_settle();
-    ok = 1;
-    song.g[G_BPM] += 9; frame();
-    turn(EN_K4, -1);
-    for (k = 0; k < ROLL_FRAMES; k++) { ok &= screen_gray(); frame(); }
-    bad += check("roll: MONO roll frames are gray", ok);
     ui_power_on();
     return bad;
 }
@@ -5456,7 +5459,13 @@ static int test_shift_page(void)
 static int pr_is_bar(uint32_t x, uint32_t y)
 {
     uint16_t c = swap16(host_screen[y * 240u + x]);
-    return c == T_THEME || c == T_ACCENT || c == T_TEXT;
+    uint32_t n;
+    if (c == T_THEME || c == T_ACCENT || c == T_TEXT)
+        return 1;
+    for (n = 0; n < 12u; n++)                      /* (the thermal ramp: a note its pitch class's heat, an accent toward white) */
+        if (c == note_col(n) || c == ux_mix(note_col(n), T_TEXT, 55))
+            return 1;
+    return c == heat_col(243) || c == heat_col(146) || c == heat_col(115);
 }
 static int pr_columns_match(const track_t *t, uint32_t *nbars)
 {
@@ -5760,8 +5769,7 @@ static int test_piano_roll(void)
     memset(host_screen, 0, sizeof host_screen); ui.force = 1; ui_draw();
     ok = pr_columns_match(t, &nb);
     bad += check("piano roll: ACID's bars drawn at their notes' rows, ties carried, rests empty", ok && nb >= 10u);
-    bad += check("  the view holds the page's notes (A2..A3 in 21 rows), MONO gray", proll.lo <= 45 && proll.lo + PR_ROWS - 1 >= 57 &&
-                 screen_gray());
+    bad += check("  the view holds the page's notes (A2..A3 in 21 rows)", proll.lo <= 45 && proll.lo + PR_ROWS - 1 >= 57);
     t->p[P_VOICE] = V_POLY;                                           /* chords: up to 4 bars in a column */
     for (i = 0; i < 16u; i += 4u) {
         step_t *s = &t->step[i];
@@ -11014,9 +11022,12 @@ static uint16_t lg_px(int32_t x, int32_t y) { return swap16(host_screen[y * 240 
 static int lg_value_rows(uint32_t c)                    /* rows of card c's value band holding the value's colour */
 {
     int32_t x, y, n = 0;
+    int16_t *vp;
+    const param_desc_t *d = page_desc(cur_page(), c, &vp);   /* (the value: its heat lifted a fifth toward the text) */
+    uint16_t vc = d && vp ? ux_mix(card_heat(RATIO(d, enum_rank(d, *vp)), d->min < 0 && d->max > 0), T_TEXT, 20) : T_TEXT;
     for (y = Y_LABEL + 40; y < Y_LABEL + 76; y++)
         for (x = CARD_X(c); x < CARD_X(c) + CARD_W; x++)
-            if (lg_px(x, y) == T_TEXT) { n++; break; }   /* (0.8.5: a value TEXT in every palette) */
+            if (lg_px(x, y) == vc) { n++; break; }
     return n;
 }
 static int test_large(void)
@@ -11164,6 +11175,10 @@ static int h2_collision(const uint16_t *lazy)
         any = 1;
     }
     return (int)any;
+}
+static uint32_t ux_luma(uint16_t c)        /* 0..255 (the test's own: gfx.c no longer needs one) */
+{
+    return ((c >> 11) * 255u / 31u * 54u + ((c >> 5) & 63u) * 255u / 63u * 183u + (c & 31u) * 255u / 31u * 19u) >> 8;
 }
 static int test_skin(void)
 {
@@ -14079,8 +14094,8 @@ static int test_card_heat(void)
     int bad = 0, ok = 1, moved = 1, other = 1, bip = 0, vtext = 1;
     uint32_t sk, c, k, i;
     for (sk = 0; sk < SKIN_N; sk++) {
-        for (k = 0; k < 2u; k++) {                      /* JIANT, then PAPER */
-            uint8_t pal = k ? 6u : UI_JIANT_INDEX;
+        for (k = 0; k < 2u; k++) {                      /* JIANT, then another of the family (HUESO) */
+            uint8_t pal = k ? 5u : UI_JIANT_INDEX;
             ui_power_on(); ui_skin = (uint8_t)sk; settings.palette = pal; palette_set(pal);
             go_title("ENV"); ui.force = 1; frames(160);
             for (c = 0; c < 4u; c++) {
@@ -14094,7 +14109,7 @@ static int test_card_heat(void)
                     *vp = (int16_t)(d->min + (d->max - d->min) * (int32_t)i / 2);
                     ui.knob_ms = fm1_ms; ui.force = 1; frame();
                     r = RATIO(d, enum_rank(d, *vp));
-                    want = k ? T_K(c) : card_heat(r, d->min < 0 && d->max > 0);
+                    want = card_heat(r, d->min < 0 && d->max > 0);   /* (the thermal ramp: every palette of the family) */
                     if (k) other &= gauge_px(c) == want;
                     else {
                         ok &= gauge_px(c) == want;
@@ -14108,7 +14123,7 @@ static int test_card_heat(void)
     }
     bad += check("0.9.5 JIANT: a card's gauge its value's heat (low .. high), in COLORS, BOTTOM and HUD", ok && moved);
     bad += check("  .. its value in the heat lifted a fifth toward the text (as the 0.6.36)", vtext);
-    bad += check("  another palette (PAPER): the knob's own colour whatever the value", other);
+    bad += check("  another palette of the family (HUESO): the same heat", other);
     ui_power_on(); settings.palette = UI_JIANT_INDEX; palette_set(UI_JIANT_INDEX);
     for (i = 0; i < NPAGES && !bip; i++) {              /* a bipolar knob on a lens page: cold at its centre, hot at either end */
         if (PAGES[i].scope != SC_TRACK || !page_visible(i)) continue;

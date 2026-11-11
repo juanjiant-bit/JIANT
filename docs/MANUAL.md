@@ -69,6 +69,12 @@ Everything since V10.6c, the last public version, in one list; each item links t
   HOP (trap, drill, pluggnb, boom bap or lofi), JAZZ at every tempo and TECHNO ROCK (rock or synth 80s) among them.
   SCL > SCENE's DRUM role can take a kit generated for the genre (**SCENE DRUM GEN**).
 - The **thermal palette** everywhere: every note its own heat, the piano roll coloured by pitch class (V10.6w).
+- **Seven palettes, all JIANT's own** (MENU > DISPLAY > COLOR): **JIANT** (as it was, the default), **SELVA** (greens),
+  **CONTRAST** (accessible: pure black and white, lighter greys, no panel tint), **BRASA** (warm), **ABISAL** (cold),
+  **HUESO** (bone white, one orange accent) and **NEON** (magenta and cyan). The thermal ramp (beings, notes, bars, each
+  card's value) is in all seven. They replace GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT and MONO; a
+  palette saved before lands on the nearest one (GREY, MONO, NIGHT → HUESO; GREEN → SELVA; AMBER, ROSE → BRASA; ICE →
+  ABISAL; VIOLET → JIANT; PAPER, HI-CON → CONTRAST).
 
 **Sequencer**
 - Step component **RAMP** replaces JUMP (V10.6v): a step's parameter lock glides there over 1–32 steps or 1–16 bars.
@@ -260,8 +266,7 @@ HUD:
 - **COLORS** (settings saved before 0.9.7 with no other skin chosen load as it): the LENTE layout in the **0.6 colours**. Black, near-black
   rounded cards with a small mark and the knob's name, **each knob its colour** on its value and its bar (JIANT,
   0.9.5 as the 0.6: each parameter's own colour **moves with its amount** as heat, violet when low to yellow and cream
-  when high, a centred one such as PAN or DETUNE cold in the middle and hot at either end; the other palettes their
-  four knob colours), the knob you turn framed in its colour; the
+  when high, a centred one such as PAN or DETUNE cold in the middle and hot at either end, in every palette), the knob you turn framed in its colour; the
   group's tab filled violet; the selected track's number in an orange box, a violet ▶ and a big violet BPM in the header;
   a near-black rounded panel; the beings in the 0.6 heat (violet spikes, red and orange rings, cream nuclei).
 - **BOTTOM**: the tabs are the groups' words (the one you are on underlined by a small pill, a dot a page under each), no cards and no panel box: the middle
@@ -2665,7 +2670,7 @@ the footer **MENU · DISPLAY · SKIN  2/26**. The header says MENU · DISPLAY.
 
 | Tab | Row | Values |
 | --- | --- | --- |
-| DISPLAY | COLOR | GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT, MONO, **JIANT** (default) |
+| DISPLAY | COLOR | **JIANT** (default), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — seven palettes of the same family, all dark, all with the thermal ramp |
 | DISPLAY | SKIN | **AIR** (default of new settings), COLORS, BOTTOM, HUD — (0.8.9; AIR 0.9.7) see [Skins](#skins-air-colors-bottom-hud-089-air-097) |
 | DISPLAY | SCOPE | **OFF** (default), ON — (0.9.7) an engine's EDIT pages: OFF the creature on the whole panel, centred, the page's name and the sound's name small in its corners; ON the creature on the left, the SCOPE card and the chips as before. Settings saved before 0.9.7 load as OFF |
 | DISPLAY | STYLE | FLAT, LINE |

@@ -71,13 +71,13 @@ static uint16_t note_col(uint32_t n);                /* (V10.6i) ui_lzpage.c: a 
 static uint16_t heat_col(int32_t v);
 /* (0.9.5, as the 0.6.36) JIANT (thermal): a card's colour its value as heat (ratio 0..1000, -1 none); bipolar (its range
  * across 0): by the distance from the centre, cold in the middle */
-static int heat_on(int32_t ratio) { return settings.palette == UI_JIANT_INDEX && ratio >= 0; }
+static int heat_on(int32_t ratio) { return ratio >= 0; }
 /* (V10.7.7) a level bar filled w of its full length fw: in the thermal palette cold to hot along the length (PROX's and
  * SWARM's FAR .. NEAR), else plain c */
 static __attribute__((noinline)) void heat_bar(int32_t x, int32_t y, int32_t w, int32_t fw, int32_t h, uint16_t c)
 {
     int32_t i;
-    if (settings.palette != UI_JIANT_INDEX || fw <= 0) { if (w > 0) cv_rect(x, y, w, h, c); return; }
+    if (fw <= 0) { if (w > 0) cv_rect(x, y, w, h, c); return; }
     for (i = 0; i < w; i += 2)
         cv_rect(x + i, y, w - i < 2 ? w - i : 2, h, heat_col(24 + i * 232 / fw));
 }
@@ -97,7 +97,7 @@ static uint16_t knob_col(uint32_t c, int32_t ratio, int bip)
 /* JIANT (thermal): a curve's colour at canvas row y, hot at the top (y0) and cold at the bottom (y1); else c */
 static uint16_t heat_y(int32_t y, int32_t y0, int32_t y1, uint16_t c)
 {
-    return settings.palette == UI_JIANT_INDEX && y1 > y0 ? heat_col(24 + (y1 - y) * 232 / (y1 - y0)) : c;
+    return y1 > y0 ? heat_col(24 + (y1 - y) * 232 / (y1 - y0)) : c;
 }
 #include "ui_being.c"                                /* (JIANT 0.5) the beings: the engine pages' creatures */
 #include "ui_engvis.c"                               /* (0.9.4) VOICE's head, ANIMAL's creature, DRUM-X's kit */
@@ -536,12 +536,9 @@ static void pr_split(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c, uin
  * class's own heat, as SCL's keys (ui_lzpage.c note_col), an accent toward white */
 static uint16_t lz_note(const step_t *st, int acc, int32_t n)
 {
-    if (settings.palette == UI_JIANT_INDEX) {
-        if (n >= 0 && !ux.mono)
-            return ux_mix(note_col((uint32_t)n), T_TEXT, acc ? 55 : 0);
-        return heat_col(acc ? 243 : st->n > 1u ? 146 : 115);
-    }
-    return acc ? T_TEXT : T_ACCENT;
+    if (n >= 0)
+        return ux_mix(note_col((uint32_t)n), T_TEXT, acc ? 55 : 0);
+    return heat_col(acc ? 243 : st->n > 1u ? 146 : 115);
 }
 /* (seq2d) a component's colour by its family, as the mock-up's: the pitch (ARP SEQ OCT TRANSPOSE RANDOM BEND) ACCENT,
  * the time (RATCHET STUTTER) THEME, the flow (MUTE) MID, the sound (LOCK SOUND RAMP) TEXT */
@@ -1140,7 +1137,7 @@ static void page_title(char *ti)
 }
 /* the strip's title: L centred (M when L lacks a glyph or is too wide) */
 /* the thermal ramp (JIANT): a value 0..256 as heat, as a thermal camera sees it: cyan (cold) .. blue .. violet .. red
- * .. orange .. yellow .. white (other palettes: their surface toward their accent and text) */
+ * .. orange .. yellow .. white, in every palette of the family */
 static uint16_t heat_col(int32_t v)
 {
     static const uint16_t H[7] = {0x3955u, 0x82DFu, 0xFA09u, 0xFBA3u, 0xFDEBu, 0xFF99u, 0xFFFFu};   /* (0.8.9, the skins' mock-up: the 0.6's
@@ -1148,8 +1145,6 @@ static uint16_t heat_col(int32_t v)
                                                          * red orange yellow white) */
     int32_t k;
     v = clamp(v, 0, 256);
-    if (settings.palette != UI_JIANT_INDEX)
-        return v < 128 ? ux_mix(T_SURF, T_ACCENT, v * 100 / 128) : ux_mix(T_ACCENT, T_TEXT, (v - 128) * 100 / 128);
     k = v * 6 / 257;
     return ux_mix(H[k], H[k + 1], (v * 6 - k * 256) * 100 / 256);
 }
@@ -1866,7 +1861,7 @@ static __attribute__((noinline)) void track_col6(uint32_t c, uint32_t sel, uint3
             cv_rect(4 + k * 8, 38, 6, 62, T_RAISE);
             if (v)
                 cv_rect(4 + k * 8, 100 - v, 6, v, mute ? T_DIM : sel && hot == (uint32_t)k + 1u ? T_ACCENT :
-                        settings.palette == UI_JIANT_INDEX ? heat_col(60 + v * 3) : T_THEME);
+                        heat_col(60 + v * 3));
             cv_text(4 + k * 8, 106 - AF_X_CAP_Y, &AF_X, SN[k], T_DIM);
         }
         cv_blit((uint32_t)T6_X(c), lz_on() ? graph_y() + 9u : Y_GRAPH);
@@ -2029,8 +2024,7 @@ static void scope_at(int32_t x0, int32_t pw, int32_t cy, int32_t a, uint16_t c)
     for (x = 0; x < pw; x++) {
         int32_t y = cy - snap[trig + (uint32_t)x] * a / peak;    /* auto-scaled */
         if (x)                                                   /* JIANT: each stroke as hot as it is loud */
-            cv_line_t(x0 - 1 + x, py, x0 + x, y, settings.palette == UI_JIANT_INDEX ?
-                      heat_col(40 + (y > cy ? y - cy : cy - y) * 216 / a) : c, 2);
+            cv_line_t(x0 - 1 + x, py, x0 + x, y, heat_col(40 + (y > cy ? y - cy : cy - y) * 216 / a), 2);
         py = y;
     }
 }
@@ -2045,8 +2039,7 @@ static void graph_mseq(const track_t *t, uint16_t c)
     int32_t y0 = 92, hmax = 80;
     for (i = 0; i < 16u; i++) {
         int32_t x = 13 + (int32_t)i * 13, h = t->p[P_MS0 + i] * hmax / 127;
-        uint16_t col = i >= len ? T_RAISE : i == now ? T_ACCENT : settings.palette == UI_JIANT_INDEX ?
-                       heat_col(48 + t->p[P_MS0 + i] * 200 / 127) : c;
+        uint16_t col = i >= len ? T_RAISE : i == now ? T_ACCENT : heat_col(48 + t->p[P_MS0 + i] * 200 / 127);
         cv_rrect(x, y0 - hmax, 10, hmax, 2, T_RAISE, T_SURF);
         if (h > 0)
             cv_rrect(x, y0 - (h < 3 ? 3 : h), 10, h < 3 ? 3 : h, 2, col, T_RAISE);
@@ -2063,10 +2056,10 @@ static void graph_mseq(const track_t *t, uint16_t c)
  * the bars in all. KNOB 1 the row, 2 its section (on END: STOP / x2 .. / LOOP), 3 its bars, 4 its scene */
 static uint16_t sec_col(uint32_t s)
 {
-    static const uint8_t HJ[4] = {40, 92, 140, 196}, HO[4] = {120, 160, 200, 240};   /* (V10.6i) A..D cold to hot: violet red
+    static const uint8_t HJ[4] = {40, 92, 140, 196};   /* (V10.6i) A..D cold to hot: violet red
                                                          * orange amber (was indigo red amber cream) */   /* (0.8.5: JIANT the mock-up's cyan
                                                          * violet orange yellow; was 60 115 175 230) */
-    return heat_col(settings.palette == UI_JIANT_INDEX ? HJ[s & 3u] : HO[s & 3u]);
+    return heat_col(HJ[s & 3u]);
 }
 #include "ui_tech.c"                                /* (JIANT 0.5) the technical graphs (FX, DEST, VOICE, GLOBAL) */
 #include "ui_lzsave.c"                              /* (0.8.5) SAVE's lens: its levels' panels */

@@ -16,16 +16,16 @@
 #                   no hanging notes on any MIDI / key routing.
 # UI renders (tests/ui_render.c): every screen in every palette from the real drawing code: the layout lint (no text
 #                   off the screen, cut, hidden, overlapping or spilling out of its cell / card; only free text
-#                   ellipsised), GREY gray, MONO neutral, the draw cost, the text audit (build/ui_new/text_audit.tsv);
-#                   PNGs of GREY MONO GREEN PAPER NIGHT in build/ui_new (tests/ui_render.py), the findings in build/ui_new/report.txt;
+#                   ellipsised), every ink's contrast, the draw cost, the text audit (build/ui_new/text_audit.tsv);
+#                   PNGs of the seven palettes in build/ui_new (tests/ui_render.py), the findings in build/ui_new/report.txt;
 #                   FM6's 32 algorithm charts as drawn (no box overlapping, no route through a box or crossing another);
-#                   DIGITAL's screens (its algorithm charts, OP ENV) with FELUCCA_FM4=1 too (build/ui_fm4: lint, GREY, MONO);
-#                   every frame of the rolling digits (lint, GREY, MONO), their filmstrips in build/ui_slot;
+#                   DIGITAL's screens (its algorithm charts, OP ENV) with FELUCCA_FM4=1 too (build/ui_fm4: lint, contrast);
+#                   every frame of the rolling digits (lint), their filmstrips in build/ui_slot;
 #                   the alignment: every text / icon / keycap meant to be centred, or on its neighbours' line, by its
 #                   ink against its box (cells, chips, buttons, rows, knobs, the roll's strip, the keycaps' pills), every
 #                   screen in FLAT and LINE and every palette, over every value it can show; 1 px off or more fails
 #                   (build/ui_new/align.txt). MENU > LARGE: every screen again (FLAT, LINE, every palette) and the page / value
-#                   sweep with the tall cards, the same lint and alignment; sheet_LARGE_GREY.png, sheet_LARGE_MONO.png.
+#                   sweep with the tall cards, the same lint and alignment; sheet_LARGE_JIANT.png, sheet_LARGE_CONTRAST.png.
 # UI (tests/ui_test.c): the UI sources against stub display / buttons / knobs: sound loads keep the steps and
 #                   the track's ARP / SCL / SLICER, the SEQ > PATTERNS loader and its REPLACE? dialog, the
 #                   one-step undo of both (SAVE held), REC on TRACKS / SEQ / ARP, STEP and ARP while recording,
@@ -296,7 +296,7 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "DIGITAL -> FM6 without a divide by zero (#61): the same values as before, a 0.9 ORGAN project (UBSan)" \
         "$OUT/fm4_div0_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/theme_test" tests/theme_test.c -lm
-    run "themes: contrast, text blending and font metrics" "$OUT/theme_test"
+    run "themes: the family of seven palettes, contrast, text blending and font metrics" "$OUT/theme_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/text_ref_test" tests/text_ref_test.c -lm
     run "text: pens, kerning and pixels equal the reference renderer" "$OUT/text_ref_test"
     if python3 -c "import PIL" 2>/dev/null; then
@@ -306,20 +306,20 @@ if [ -f build/gen/felucca_tables.h ]; then
     $CC -O1 -w -Ibuild/gen -o "$OUT/settings_test" tests/settings_test.c
     run "settings: PER1..PER4 migration, palette ids and preference preservation" "$OUT/settings_test"
     $CC -w -Ibuild/gen -Ifirmware/src -o "$OUT/ui_test" tests/ui_test.c -lm
-    run "UI: sounds keep steps, undo, recording, MIDI overflow, pending saves, panel recovery, drum grid, song chain, GREY gray, MONO neutral; (gen3) the COMP cards whole, every value" "$OUT/ui_test"
+    run "UI: sounds keep steps, undo, recording, MIDI overflow, pending saves, panel recovery, drum grid, song chain, every palette of the family; (gen3) the COMP cards whole, every value" "$OUT/ui_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/rec_play_test" tests/rec_play_test.c -lm
     run "REC PLAY keys STOP PLAY: the take plays back (power-on, NEW PROJECT, after a GEN song in SONG mode, TIMELINE)" "$OUT/rec_play_test"
     FV=$(sed -n 's/^#define FELUCCA_VERSION "\([^"]*\)".*/\1/p' firmware/src/felucca.c)   # (the splash, ABOUT: the real version)
     $CC -O1 -w "-DFELUCCA_VERSION=\"$FV\"" -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/ui_render" tests/ui_render.c -lm
     mkdir -p build/ui_new/ppm build/ui_slot
-    run "UI renders: layout lint (every screen and palette, every page, engine and column value), GREY gray, MONO neutral, alignment by ink (1 px fails), draw cost" \
+    run "UI renders: layout lint (every screen and palette, every page, engine and column value), ink contrast, alignment by ink (1 px fails), draw cost" \
         "$OUT/ui_render" build/ui_new build/ui_slot
     if python3 -c "import PIL" 2>/dev/null; then python3 tests/ui_render.py build/ui_new build/ui_slot; fi
     $CC -w -DFELUCCA_FM4=1 -Ibuild/gen -Ifirmware/src -o "$OUT/ui_test_fm4" tests/ui_test.c -lm
     run "UI built with FELUCCA_FM4=1 (DIGITAL, kept in the tree): its OP pages, EDIT cycle, algorithm charts" "$OUT/ui_test_fm4"
     $CC -O1 -w -DFELUCCA_FM4=1 "-DFELUCCA_VERSION=\"$FV\"" -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/ui_render_fm4" tests/ui_render.c -lm
     mkdir -p build/ui_fm4/ppm build/ui_fm4_slot
-    run "UI renders with FELUCCA_FM4=1: DIGITAL's screens (EDIT, OP ENV, the 8 algorithm charts), lint, GREY gray, MONO neutral" \
+    run "UI renders with FELUCCA_FM4=1: DIGITAL's screens (EDIT, OP ENV, the 8 algorithm charts), lint, ink contrast" \
         "$OUT/ui_render_fm4" build/ui_fm4 build/ui_fm4_slot
     $CC -w -Ibuild/gen -Ifirmware/src -o "$OUT/audio_test" tests/audio_test.c -lm
     run "audio: overload protection, bounded fades and DMA diagnostics" "$OUT/audio_test"

@@ -32,7 +32,7 @@ int main(void)
 {
     persist_t original = {0}, p;
     original.magic = PERSIST_MAGIC;
-    original.palette = 4; original.bold = original.lowcut = original.zoom = 1;   /* old id 4: MONO, now GREY */
+    original.palette = 4; original.bold = original.lowcut = original.zoom = 1;   /* old id 4: MONO, now HUESO (5) */
     original.panel = PANEL_DEFAULT; original.panel.enc[0] = 3;
     original.favorites.factory[8][0] = 1;
     original.favorites.user = 1u << 31; original.favorites.filter = 1;
@@ -48,23 +48,36 @@ int main(void)
     assert(settings.palette == 5u);
     p = original;
     assert(settings_import(&p, sizeof p) == 1); settings_init();
-    assert(settings.palette == UI_GREY_INDEX && fx_lowcut && settings.zoom && panel.enc[0] == 3);
-    assert(p.palette == palette_to_stored(UI_GREY_INDEX));        /* migrated in place */
-    {   /* every old id maps to a palette; tagged ids round trip; anything else is GREY */
+    assert(settings.palette == 5u && fx_lowcut && settings.zoom && panel.enc[0] == 3);
+    assert(p.palette == palette_to_stored(5u));                   /* migrated in place */
+    {   /* every old id maps to a palette; tagged ids round trip; anything else is JIANT */
         persist_t q = original;
+        enum { JIANT, SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON };
+        /* the firmware up to V10.7.18 saved UI_PAL_TAG + its index: GREY GREEN AMBER ICE VIOLET ROSE PAPER HI-CON NIGHT
+         * MONO JIANT -> the nearest of the family */
+        static const uint8_t V10[11] = {HUESO, SELVA, BRASA, ABISAL, JIANT, BRASA, CONTRAST, CONTRAST, HUESO, HUESO, JIANT};
+        /* and what that firmware reads these settings as (its index; NEON: an id it does not know, its fallback) */
+        static const uint8_t AS[7] = {10, 1, 7, 2, 3, 0, 11};
+        assert(!strcmp(UI_PALETTES[HUESO].name, "HUESO") && !strcmp(UI_PALETTES[NEON].name, "NEON") && UI_JIANT_INDEX == JIANT);
         for (uint32_t i = 0; i < 20u; i++) assert(palette_from_stored(i) < NPALETTES);
-        assert(palette_from_stored(13) == 6u && palette_from_stored(11) == 7u && palette_from_stored(19) == 7u);
-        for (uint32_t i = 0; i < NPALETTES; i++) assert(palette_from_stored(palette_to_stored(i)) == i);
-        assert(palette_from_stored(40) == UI_GREY_INDEX && !palette_stored_ok(40) && palette_stored_ok(3));
-        /* 1.0.2: the old MONO keeps its id as GREY (a saved MONO looks the same); the new black and white MONO is
-         * appended, a new id */
-        assert(palette_from_stored(UI_PAL_TAG + 0u) == UI_GREY_INDEX && !strcmp(UI_PALETTES[UI_GREY_INDEX].name, "GREY"));
-        assert(UI_BW_INDEX == NPALETTES - 2u && UI_JIANT_INDEX == NPALETTES - 1u && !strcmp(UI_PALETTES[UI_BW_INDEX].name, "MONO") &&
-               palette_from_stored(UI_PAL_TAG + UI_BW_INDEX) == UI_BW_INDEX && palette_stored_ok(UI_PAL_TAG + UI_BW_INDEX));
+        assert(palette_from_stored(13) == CONTRAST && palette_from_stored(11) == CONTRAST && palette_from_stored(19) == CONTRAST &&
+               palette_from_stored(0) == SELVA && palette_from_stored(1) == BRASA && palette_from_stored(5) == JIANT);
+        for (uint32_t i = 0; i < NPALETTES; i++)
+            assert(palette_from_stored(palette_to_stored(i)) == i && palette_to_stored(i) == UI_PAL_TAG + AS[i] &&
+                   palette_stored_ok(palette_to_stored(i)));
+        for (uint32_t i = 0; i < 11u; i++)
+            assert(palette_from_stored(UI_PAL_TAG + i) == V10[i] && palette_stored_ok(UI_PAL_TAG + i));
+        for (uint32_t i = 0; i < 300u; i++)               /* never an index out of the table, whatever was saved */
+            assert(palette_from_stored(i) < NPALETTES && palette_from_stored(0xFFFFFF00u + i) < NPALETTES);
+        assert(palette_from_stored(40) == UI_JIANT_INDEX && !palette_stored_ok(40) && palette_stored_ok(3) &&
+               palette_from_stored(UI_PAL_TAG + 12u) == UI_JIANT_INDEX && !palette_stored_ok(UI_PAL_TAG + 12u) &&
+               !palette_stored_ok(UI_PAL_TAG - 1u));
+        q.palette = UI_PAL_TAG + 9u;                      /* a saved MONO: HUESO, rewritten as HUESO's id */
+        assert(settings_import(&q, sizeof q) == 1 && settings.palette == HUESO && q.palette == UI_PAL_TAG + 0u);
         q.palette = palette_to_stored(5);
         assert(settings_import(&q, sizeof q) == 1 && settings.palette == 5u);
         settings.magic = SETTINGS_MAGIC_OLD; settings.palette = 13; settings_init();   /* retained SET3 */
-        assert(settings.magic == SETTINGS_MAGIC && settings.palette == 6u);
+        assert(settings.magic == SETTINGS_MAGIC && settings.palette == 2u);
         p = original; assert(settings_import(&p, sizeof p) == 1); settings_init();
     }
 #ifdef FELUCCA_FAVORITES

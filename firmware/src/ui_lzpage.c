@@ -51,8 +51,7 @@ static void graph_env_tracks(int dest)
         }
         cv_text(x + 4, y + 4 - AF_X_CAP_Y, &AF_X, n, ink);
         cv_clip_text(x + 22, y + 4 - AF_X_CAP_Y, &AF_X, trk_engp(t)->name, T_DIM, bg, 50);
-        env_mini(t, x + 5, y + 16, 66, dest ? 34 : 44, c >= trk_live ? T_DIM : settings.palette == UI_JIANT_INDEX ?
-                 heat_col(150) : T_THEME, sel ? 2 : 1);
+        env_mini(t, x + 5, y + 16, 66, dest ? 34 : 44, c >= trk_live ? T_DIM : heat_col(150), sel ? 2 : 1);
         if (!dest && (lv = env_now(t)) >= 0)
             og_node((x + 70) * 16, (y + 60 - lv * 44 / 1000) * 16, 2, T_TEXT);
         for (k = 0; dest && k < 3u; k++) {              /* FILTER PITCH SHAPE: a bar each from the middle */
@@ -81,7 +80,7 @@ static void graph_stage(const track_t *t)
             y = 1000 - (int32_t)((int64_t)(1000 - q) * (1000 - q) / 1000) * (1000 - v / 2) / 1000 - (1000 - q) * v / 2000;
         y = 122 - y * 66 / 1000;
         if (x)
-            cv_line_t(10 + x - 1, py, 10 + x, y, settings.palette == UI_JIANT_INDEX ? heat_y(y, 56, 122, T_THEME) : T_THEME, 2);
+            cv_line_t(10 + x - 1, py, 10 + x, y, heat_y(y, 56, 122, T_THEME), 2);
         py = y;
     }
     cv_rect(10, 124, 217, 1, T_RAISE);
@@ -183,8 +182,7 @@ static __attribute__((noinline)) void graph_lfodest(const track_t *t, const page
         if (w)
             cv_rect(w < 0 ? 166 + w : 166, y + 16, w < 0 ? -w : w, 4, ux_mix(T_RAISE, T_THEME, 45));
         if (live)
-            cv_rect(live < 0 ? 166 + live : 166, y + 16, live < 0 ? -live : live, 4, settings.palette == UI_JIANT_INDEX ?
-                    heat_col(110 + (live < 0 ? -live : live) * 3) : T_THEME);
+            cv_rect(live < 0 ? 166 + live : 166, y + 16, live < 0 ? -live : live, 4, heat_col(110 + (live < 0 ? -live : live) * 3));
     }
 }
 static void mseq_cap(const track_t *t, const page_t *pg)
@@ -242,7 +240,7 @@ static void key_val(int32_t x, int32_t y, const page_t *pg, uint32_t k)   /* a k
  * the same colour on KEY, CHORD, ARP, SCENE); other palettes their theme */
 static uint16_t note_col(uint32_t n)
 {
-    return settings.palette == UI_JIANT_INDEX ? heat_col(40 + (int32_t)(n % 12u) * 200 / 11) : T_THEME;
+    return heat_col(40 + (int32_t)(n % 12u) * 200 / 11);
 }
 static __attribute__((noinline)) void graph_key(const track_t *t, const page_t *pg)
 {

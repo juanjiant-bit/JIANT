@@ -72,6 +72,13 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
   BAILE FUNK, PHONK, HIP HOP (trap, drill, pluggnb, boom bap o lofi), JAZZ en cualquier tempo y TECHNO ROCK (rock o
   synth 80s). El rol DRUM de SCL > SCENE puede tomar un kit generado para el género (**SCENE DRUM GEN**).
 - La **paleta térmica** en todos lados: cada nota con su calor, el piano roll coloreado por nota (V10.6w).
+- **Siete paletas, todas propias de JIANT** (MENU > DISPLAY > COLOR): **JIANT** (como estaba, la que viene por
+  defecto), **SELVA** (verdes), **CONTRAST** (accesible: negro y blanco puros, grises más claros, sin tinte en el
+  panel), **BRASA** (cálida), **ABISAL** (fría), **HUESO** (blanco hueso y un solo acento naranja) y **NEON** (magenta y
+  cian). La rampa térmica (los seres, las notas, las barras, el valor de cada carta) está en las siete. Reemplazan a
+  GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT y MONO; si tenías guardada una de esas, quedás en la más
+  parecida (GREY, MONO, NIGHT → HUESO; GREEN → SELVA; AMBER, ROSE → BRASA; ICE → ABISAL; VIOLET → JIANT; PAPER,
+  HI-CON → CONTRAST).
 
 **Secuenciador**
 - El componente **RAMP** reemplaza a JUMP (V10.6v): el lock de parámetro de un paso se desliza hasta su valor en 1–32
@@ -268,7 +275,7 @@ HUD:
   Negro, cartas casi negras redondeadas con una marquita y el nombre de la perilla, **cada perilla con su color** en el
   valor y en la barra (JIANT, 0.9.5 como la 0.6: el color propio de cada parámetro **se mueve con su cantidad**, como
   calor, violeta si es poco, amarillo y crema si es mucho; uno centrado como PAN o DETUNE frío en el medio y caliente en
-  los dos extremos; las otras paletas sus cuatro colores de perilla), la carta de
+  los dos extremos, en todas las paletas), la carta de
   la perilla que girás enmarcada en su color; la pestaña del grupo rellena de violeta; el número de la pista en una
   cajita naranja, un ▶ violeta y el BPM grande en violeta en el encabezado; un panel casi negro redondeado; los seres con
   el calor de la 0.6 (púas violetas, anillos rojo y naranja, núcleos crema).
@@ -2810,7 +2817,7 @@ SKIN  2/26**. El encabezado dice MENU · DISPLAY.
 
 | Pestaña | Fila | Valores |
 | --- | --- | --- |
-| DISPLAY | COLOR | GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT, MONO, **JIANT** (por defecto) |
+| DISPLAY | COLOR | **JIANT** (por defecto), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — siete paletas de la misma familia, todas oscuras, todas con la rampa térmica |
 | DISPLAY | SKIN | **AIR** (de fábrica en los ajustes nuevos), COLORS, BOTTOM, HUD — (0.8.9; AIR 0.9.7) ver [Pieles](#pieles-air-colors-bottom-hud-089-air-097) |
 | DISPLAY | SCOPE | **OFF** (de fábrica), ON — (0.9.7) las páginas EDIT de un motor: OFF la criatura en todo el panel, centrada, el nombre de la página y el del sonido chiquitos en sus esquinas; ON la criatura a la izquierda, la carta SCOPE y las fichas como antes. Los ajustes guardados antes de 0.9.7 cargan OFF |
 | DISPLAY | STYLE | FLAT, LINE |

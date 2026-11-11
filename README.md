@@ -59,6 +59,9 @@ risk: it is a custom firmware.
   glides there over steps or bars) replaces JUMP.
 - **SWARM** (EXT's Bluetooth instrument) plays a melody from how near you are, with a FAR / NEAR morph and CHAOS.
 - The **thermal palette** everywhere: the piano roll coloured by pitch class.
+- *(next version)* **Seven palettes, all JIANT's own**: MENU › DISPLAY › COLOR offers JIANT (unchanged, the default),
+  SELVA, CONTRAST, BRASA, ABISAL, HUESO and NEON, each with the thermal ramp on beings, notes, bars and card values. The
+  ten palettes inherited from Felucca are gone; a saved one lands on the nearest of the family.
 - **VOICE** no longer clips on open vowels; WORDS › CONS sets the consonants' length.
 - **NRPN** for every automatable parameter ([docs/NRPN.md](docs/NRPN.md)); the editor protocol is a versioned
   contract, 1.2 ([web/EDITOR_PROTOCOL.md](web/EDITOR_PROTOCOL.md)).
@@ -207,7 +210,7 @@ VOICE singing its lyric, in the COLORS skin, exactly as the firmware draws them 
 
 - **Thermal palette**: values, curves, steps, hits and notes are coloured by intensity (cyan → blue → violet → red →
   orange → yellow → white). Selection is violet and active is orange; on JIANT each card's value and gauge are its
-  amount's heat (0.9.5, as 0.6), the other palettes give each knob its own colour.
+  amount's heat (0.9.5, as 0.6), in every one of the seven palettes.
 - **Skins** (MENU › DISPLAY › SKIN, 0.8.9): **AIR** (0.9.7, the default of new settings: HUD's floating words on
   every page, the knob row on top under the tabs, the middle free), **COLORS** (near-black rounded cards on top, a rounded
   panel), **BOTTOM** (the picture edge to edge, a slim knob row at the foot) and **HUD** (HOME's beings swim under

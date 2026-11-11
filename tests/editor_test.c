@@ -180,11 +180,12 @@ static int preferences(void)
         host_wire[n - 11] == 0x4F && host_wire[n - 10] == 1 && host_wire[n - 9] == LM_N &&   /* (0.8.5) DRUM lane modes */
         host_wire[n - 8] == 0x43 && host_wire[n - 7] == 2 && host_wire[n - 6] == ED_PROTO_MAJOR &&   /* (1.0) 'C' */
         host_wire[n - 4] == 0x59 && host_wire[n - 3] == 1 && host_wire[n - 2] == LYR_LEN - 1u);   /* (0.8.5) LYRIC, 63 */
+    a[1] = 5;                                          /* (HUESO) */
     request(ED_UI_SET, a, 2);
     bad += check("UI_SET updates the actual palette and reports RAM-only saving",
-        host_wire[5] == 3 && settings.palette == 7 && T_BG == UI_PALETTES[7].bg);
+        host_wire[5] == 3 && settings.palette == 5 && T_BG == UI_PALETTES[5].c[0] && T_TEXT == UI_PALETTES[5].c[2]);
     a[1] = NPALETTES; request(ED_UI_SET, a, 2);
-    bad += check("out-of-range palette leaves the display unchanged", host_wire[5] == 1 && settings.palette == 7);
+    bad += check("out-of-range palette leaves the display unchanged", host_wire[5] == 1 && settings.palette == 5);
     a[0] = 1; a[1] = 1; request(ED_UI_SET, a, 2);
     bad += check("the retired font weight is not supported (rc 2), UI_STATE says 127",
         host_wire[5] == 2 && host_wire[8] == 9 && host_wire[10] == 127);
@@ -934,7 +935,7 @@ static int menu_protocol(void)
     reset();
     ui.force = 0;
     ok = menu_set(0, 2) == 3 && host_wire[6] == 0 && ed_rv(host_wire + 7) == 2 && settings.palette == 2u &&
-         T_BG == UI_PALETTES[2].bg && ui.force;
+         T_BG == UI_PALETTES[2].c[0] && ui.force;
     ok &= menu_set(1, 1) == 3 && ui_style == ST_LINE;
     ok &= menu_set(2, 1) == 3 && (ui_prefs & PREF_LARGE);
     ok &= menu_set(3, 1) == 3 && (ui_prefs & PREF_ANIM_OFF);

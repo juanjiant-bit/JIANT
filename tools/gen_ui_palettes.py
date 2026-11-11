@@ -6,93 +6,87 @@
 
   gen_ui_palettes.py OUT.h [--report]
 
-A palette is five colours: BG (background), SURF (surface: dialogs, menu rows, mixer strips),
-TEXT, THEME (identity colour: values, curves, gauges, selection) and ACCENT (the one active
-thing: hot knob, cursor, playhead, a sounding step). The firmware derives the rest with fixed
-blends at palette_set() time (src/gfx.c, the same integer maths as mix() here):
-  MID  = mix(BG, TEXT, 70 %)    labels, units, secondary text
-  DIM  = mix(BG, TEXT, 42 %)    inactive, empty steps, disabled
-  LINE = mix(BG, TEXT, 18 %)    1 px dividers, the faint gauge track
-  SEL  = mix(BG, THEME, 80 %)   selection fill and gauge fill (the "mid" of the theme)
-  TINT = mix(BG, THEME, 12 %)   a faint area (the selected drum lane)
-  RAISE = mix(SURF, TEXT, 12 %) a raised area on a surface: empty step stubs, guides, the selected drum
-                                lane, fader slots, button wells, chips
+The family is seven palettes: JIANT (the default) and six of its own (SELVA CONTRAST BRASA ABISAL HUESO NEON), all
+dark, all with the thermal ramp. A palette is twelve stored colours: BG (background), SURF (surface: dialogs, menu
+rows, mixer strips), TEXT, THEME (identity colour: values, curves, gauges, selection), ACCENT (the one active thing:
+hot knob, cursor, playhead, a sounding step), MID (labels, units, secondary text), DIM (inactive, empty steps,
+disabled; the dividers), LINE (the faint gauge track), SEL (selection fill and gauge fill), TINT (a faint area),
+REC and RAISE (a raised area on a surface: empty step stubs, guides, fader slots, button wells, chips).
+JIANT's are five colours and the blends it has had since 0.8.9 (derive() here, the firmware's integer maths):
+  MID = mix(BG, TEXT, 70 %)  DIM = 42 %  LINE = 18 %  SEL = mix(BG, THEME, 80 %)  TINT = 12 %  RAISE = mix(SURF, TEXT, 4 %)
+the other six are stored as the owner set them. The firmware (src/gfx.c palette_set) derives only
   KEY  = mix(BG, TEXT, 78 %)    a keycap's fill (a mid-light cushion; its label INK, unavailable: a DIM fill)
-  INK  = BG: text on a selection or THEME fill (GREY, MONO: a light fill, dark ink)
-Outside the palette: REC, a fixed red (GREY, MONO: ACCENT); the QR code's fixed black and white; the crash
-screen's fixed red. GREY is pure grayscale (R = G = B) in every colour and every derived tint.
-MONO is black and white: its tokens are not blended but set (src/gfx.c palette_set, bw() here): BG SURF
-TINT GRID black; TEXT THEME ACCENT MID SEL KEY white (a selection, a THEME or ACCENT fill, a keycap: white
-with black INK, an inversion); and one mid grey, BW_GREY, for DIM LINE RAISE LANE. That grey is the one
-exception: RAISE is the fill under white text on chips, idle cells and button wells and the track of
-empty steps, slots and gauges, and DIM marks the inactive and the unavailable; black would hide them,
-white would hide the text on them or make the inactive read as active. Only antialiased edges add greys.
-Saved settings name palettes by a tagged id (PAL_TAG + index); older firmware saved the index into
-its 20 palettes, mapped by UI_PALETTE_MIGRATE.
+  LANE, GRID                    the piano roll's rows and step lines
+  INK  = black: text on a selection, a THEME / ACCENT / REC fill, a keycap
+Outside the palette: the QR code's fixed black and white; the crash screen's fixed red.
+Saved settings name a palette by a tagged id (PAL_TAG + n). n is not the index: it is the index the nearest palette
+had in the firmware up to V10.7.18 (STORED_AS), so settings saved by that firmware land on the nearest of the family
+(V10_TO_NEW) and that firmware reading newer settings shows its nearest one. Ids below 20 (the earliest firmware's 20
+palettes) map by UI_PALETTE_MIGRATE.
 --report prints the WCAG contrast of every pairing. The tool fails (exit 1) on any miss.
 """
 import argparse
 import sys
 from pathlib import Path
 
-# name, bg, surf, text, theme, accent (8-bit RGB; stored as RGB565)
-PALETTES = [
-    ("GREY",   (14, 14, 14),    (36, 36, 36),    (204, 204, 204), (232, 232, 232), (255, 255, 255)),
-    ("GREEN",  (6, 18, 10),     (16, 40, 26),    (226, 244, 230), (84, 214, 120),  (255, 214, 92)),
-    ("AMBER",  (18, 14, 8),     (42, 32, 18),    (246, 236, 216), (255, 168, 40),  (96, 214, 230)),
-    ("ICE",    (8, 16, 24),     (20, 36, 52),    (228, 240, 248), (80, 184, 236),  (255, 140, 100)),
-    ("VIOLET", (16, 12, 28),    (36, 28, 60),    (240, 232, 252), (178, 136, 246), (110, 228, 168)),
-    ("ROSE",   (24, 10, 18),    (52, 22, 40),    (252, 232, 242), (244, 114, 182), (255, 214, 110)),
-    ("PAPER",  (244, 239, 228), (226, 218, 202), (34, 30, 24),    (10, 84, 70),    (172, 56, 8)),
-    ("HI-CON", (0, 0, 0),       (40, 40, 40),    (255, 255, 255), (255, 232, 0),   (0, 230, 255)),
-    # appended (saved ids are indices: append only). #50, the 0.9 look: true black, green-tinted text and lines
-    # (the derived MID / DIM / LINE are tints of TEXT), phosphor-green values, white for the one active thing
-    ("NIGHT",  (0, 0, 0),       (0, 24, 10),     (150, 230, 170), (56, 220, 100),  (255, 255, 255)),
-    # 1.0.2: black and white (the derived tokens are set, not blended: bw()); the old MONO is GREY (id 0)
-    ("MONO",   (0, 0, 0),       (0, 0, 0),       (255, 255, 255), (255, 255, 255), (255, 255, 255)),
-    # JIANT FM (docs/TONIC-UI.md): a thermal camera. Black, white details, violet for what is selected, orange for the
-    # one active thing; every value, curve and hit as heat (ui_graph.c heat_col: cyan blue violet red orange yellow
-    # white). The default since JIANT 0.1 (src/panel.c); 0.5: violet selection (was cyan), the heat everywhere
-    ("JIANT",  (0, 0, 0),       (10, 9, 14),     (244, 241, 234), (184, 112, 255), (255, 122, 0)),   # (0.6.60: SURF black, no boxes;
-    # 0.8.9, the skins' mock-up: the 0.6 colours, a near-black panel and near-black cards: RAISE_OF below)
-]
-# (0.8.9) MENU > DISPLAY > SKIN (the approved mock-up opciones_skin.html, "0.6 COLORS"): each knob its colour, as the 0.6
-# firmware had them, on its card's value and gauge (and the EDIT chips, the knob row of BOTTOM and HUD): KNOB 1..4. The
-# mock-up's for JIANT PAPER GREEN AMBER ICE; the others in the same spirit (GREY: greys; MONO: white, black and white)
-KNOBS = {
-    "GREY":   [(232, 232, 232), (196, 196, 196), (255, 255, 255), (168, 168, 168)],
-    "GREEN":  [(70, 224, 122), (255, 210, 92), (47, 196, 176), (198, 255, 106)],
-    "AMBER":  [(255, 176, 0), (255, 128, 80), (255, 217, 138), (255, 138, 61)],
-    "ICE":    [(79, 210, 255), (255, 179, 92), (150, 164, 255), (255, 128, 128)],
-    "VIOLET": [(192, 156, 250), (255, 214, 110), (110, 228, 168), (250, 136, 196)],
-    "ROSE":   [(244, 114, 182), (255, 214, 110), (150, 170, 255), (255, 150, 120)],
-    "PAPER":  [(80, 52, 190), (112, 74, 0), (30, 58, 178), (164, 38, 22)],
-    "HI-CON": [(255, 232, 0), (0, 230, 255), (255, 255, 255), (255, 130, 130)],
-    "NIGHT":  [(56, 220, 100), (200, 255, 120), (120, 240, 210), (150, 230, 170)],
-    "MONO":   [(255, 255, 255)] * 4,
-    "JIANT":  [(138, 108, 255), (255, 210, 60), (88, 116, 255), (255, 75, 75)],
+# JIANT: five colours (8-bit RGB), the rest derived with the blends above (the palette as it has been since 0.8.9).
+# A thermal camera (docs/TONIC-UI.md): black, white details, violet for what is selected, orange for the one active
+# thing; every value, curve and hit as heat (ui_graph.c heat_col), in every palette of the family
+JIANT = ("JIANT", (0, 0, 0), (10, 9, 14), (244, 241, 234), (184, 112, 255), (255, 122, 0))
+RAISE_JIANT = 4                    # RAISE = mix(SURF, TEXT, 4 %): the mock-up's near-black card (#131218) on its panel
+# The rest of the family (the owner's, 2026-11): every token as he set it (role -> hex), stored whole. INK is black in
+# all seven. NEON's SEL is his #CC3284 a step lighter (#D43589: black INK on it 4.7, the rule 4.5; his 4.4)
+FAMILY = {
+    "SELVA":    dict(bg="020604", surf="08100B", raise_="101A13", line="1C2B20", dim="657A69", mid="9FB5A2", text="EAF5E4",
+                     theme="4BE38A", sel="35A866", tint="0A2414", accent="FF7A00", rec="FF4848"),
+    "CONTRAST": dict(bg="000000", surf="000000", raise_="1C1C1C", line="8C8C8C", dim="A6A6A6", mid="E2E2E2", text="FFFFFF",
+                     theme="D9B3FF", sel="D9B3FF", tint="26163D", accent="FFA640", rec="FF7A7A"),
+    "BRASA":    dict(bg="0A0503", surf="140B07", raise_="1E120C", line="33241A", dim="806C5A", mid="C4AE96", text="FFF2DC",
+                     theme="FF7A1A", sel="CC5F12", tint="26130A", accent="FFD23C", rec="FF4848"),
+    "ABISAL":   dict(bg="01040A", surf="070D17", raise_="0E1724", line="1D2B3A", dim="627787", mid="9DB2BD", text="E8F4F8",
+                     theme="29BEE6", sel="1F92B3", tint="07202B", accent="FF7A00", rec="FF4848"),
+    "HUESO":    dict(bg="000000", surf="0B0B0B", raise_="151515", line="2C2B2A", dim="6B6A67", mid="AAA8A3", text="F4F1EA",
+                     theme="F4F1EA", sel="BEBCB7", tint="1B1B1A", accent="FF7A00", rec="FF4848"),
+    "NEON":     dict(bg="050409", surf="0D0A14", raise_="17121F", line="2A2633", dim="6A6480", mid="A39CBA", text="EFE6C8",
+                     theme="FF3EA5", sel="D43589", tint="240A1A", accent="3FE0E6", rec="FF3B2F"),
 }
-# RAISE = mix(SURF, TEXT, RAISE_PCT); JIANT (0.8.9): the mock-up's near-black card (#131218) on its panel, 4 %
-RAISE_OF = {"JIANT": 4}
-BW = "MONO"
-BW_GREY = (82, 82, 82)             # MONO's one mid grey (RGB565 10/20/10): DIM LINE RAISE LANE
-# the 20 palettes of the earlier firmware (index order) -> the new palette
+NAMES = ["JIANT"] + list(FAMILY)   # MENU > DISPLAY > COLOR's order; the index is not what is saved (STORED)
+# the stored tokens, in the order of src/gfx.c ux's first fields (palette_set copies them)
+TOKENS = ["bg", "surf", "text", "theme", "accent", "mid", "dim", "line", "sel", "tint", "rec", "raise_"]
+# (0.8.9) each knob its colour (KNOB 1..4), on its card's value and gauge: JIANT's, in every palette of the family
+KNOBS = [(138, 108, 255), (255, 210, 60), (88, 116, 255), (255, 75, 75)]
+# the 20 palettes of the earliest firmware (index order), then the 11 of the firmware up to V10.7.18 (stored
+# PAL_TAG + index: GREY .. JIANT) -> the family
 OLD = ["GREEN", "AMBER", "CYAN", "RED", "MONO", "VIOLET", "PINK", "ICE", "WARM", "OCEAN", "DUSK", "HI-CON",
        "LIGHT", "PAPER", "SKY", "MINT", "LILAC", "ROSE", "SAND", "L-HICON"]
-OLD_TO_NEW = {"GREEN": "GREEN", "AMBER": "AMBER", "CYAN": "ICE", "RED": "ROSE", "MONO": "GREY", "VIOLET": "VIOLET",
-              "PINK": "ROSE", "ICE": "ICE", "WARM": "AMBER", "OCEAN": "ICE", "DUSK": "VIOLET", "HI-CON": "HI-CON",
-              "LIGHT": "PAPER", "PAPER": "PAPER", "SKY": "PAPER", "MINT": "PAPER", "LILAC": "PAPER", "ROSE": "PAPER",
-              "SAND": "PAPER", "L-HICON": "HI-CON"}
-PAL_TAG = 64                       # stored id = PAL_TAG + index; below 20: an old id
-REC_DARK, REC_LIGHT = (255, 72, 72), (190, 24, 40)
+OLD_TO_NEW = {"GREEN": "SELVA", "AMBER": "BRASA", "CYAN": "ABISAL", "RED": "BRASA", "MONO": "HUESO", "VIOLET": "JIANT",
+              "PINK": "BRASA", "ICE": "ABISAL", "WARM": "BRASA", "OCEAN": "ABISAL", "DUSK": "JIANT", "HI-CON": "CONTRAST",
+              "LIGHT": "CONTRAST", "PAPER": "CONTRAST", "SKY": "CONTRAST", "MINT": "CONTRAST", "LILAC": "CONTRAST",
+              "ROSE": "CONTRAST", "SAND": "CONTRAST", "L-HICON": "CONTRAST"}
+V10 = ["GREY", "GREEN", "AMBER", "ICE", "VIOLET", "ROSE", "PAPER", "HI-CON", "NIGHT", "MONO", "JIANT"]
+V10_TO_NEW = {"GREY": "HUESO", "GREEN": "SELVA", "AMBER": "BRASA", "ICE": "ABISAL", "VIOLET": "JIANT", "ROSE": "BRASA",
+              "PAPER": "CONTRAST", "HI-CON": "CONTRAST", "NIGHT": "HUESO", "MONO": "HUESO", "JIANT": "JIANT"}
+# what a palette is saved as: the id of the V10 palette nearest to it, so the firmware up to V10.7.18 reading these
+# settings shows that one (JIANT: JIANT); NEON a new id (that firmware: GREY, its fallback for an id it does not know)
+STORED_AS = {"JIANT": "JIANT", "SELVA": "GREEN", "CONTRAST": "HI-CON", "BRASA": "AMBER", "ABISAL": "ICE", "HUESO": "GREY",
+             "NEON": None}
+PAL_TAG = 64                       # stored id = PAL_TAG + n; below 20: an id of the earliest firmware
 QR_LIGHT, QR_DARK, CRASH_BG, CRASH_INK = (255, 255, 255), (0, 0, 0), (160, 0, 0), (255, 255, 255)
 PCT = {"MID": 70, "DIM": 42, "LINE": 18, "SEL": 80, "TINT": 12, "KEY": 78}
-RAISE_PCT = 12                     # SURF -> TEXT
 
 
-def to565(c, exact=False):
+def near565(h):
+    """a token of the family: the nearest RGB565 (a gray on the gray axis, G = 2 R)"""
+    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    r5, g6, b5 = (r * 31 + 127) // 255, (g * 63 + 127) // 255, (b * 31 + 127) // 255
+    if r == g == b:
+        g6 = r5 << 1
+    return (r5 << 11) | (g6 << 5) | b5
+
+
+def to565(c):
     r, g, b = c
-    if r == g == b and not exact:                     # a gray stays on the RGB565 gray axis (G = 2 R)
+    if r == g == b:                     # a gray stays on the RGB565 gray axis (G = 2 R)
         return ((r >> 3) << 11) | ((r >> 3) << 6) | (r >> 3)
     return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
 
@@ -105,25 +99,14 @@ def cdiv(a, b):
     return a // b if a >= 0 else -((-a) // b)
 
 
-def mix(a, b, pct, mono=False):
-    """src/gfx.c ux_mix: a + (b - a) * pct / 100 per channel, rounded; GREY, MONO on the 5-bit red channel"""
-    if mono:
-        x, y = a >> 11, b >> 11
-        d = (y - x) * pct
-        v = x + cdiv(d + (50 if d >= 0 else -50), 100)
-        return (v << 11) | (v << 6) | v
+def mix(a, b, pct):
+    """src/gfx.c ux_mix: a + (b - a) * pct / 100 per channel, rounded"""
     out = 0
     for sh, mask in ((11, 31), (5, 63), (0, 31)):
         x, y = (a >> sh) & mask, (b >> sh) & mask
         d = (y - x) * pct
         out |= (x + cdiv(d + (50 if d >= 0 else -50), 100)) << sh
     return out
-
-
-def luma(c):
-    """src/gfx.c ux_luma: 0..255, integer"""
-    r, g, b = c >> 11, (c >> 5) & 63, c & 31
-    return (r * 255 // 31 * 54 + g * 255 // 63 * 183 + b * 255 // 31 * 19) >> 8
 
 
 def lum(c565):
@@ -139,23 +122,20 @@ def contrast(a, b):
     return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
 
 
-def derive(p):
-    name, *cols = p
-    bg, surf, text, theme, accent = (to565(c, name == BW) for c in cols)
-    mono = name == "GREY"
-    d = dict(bg=bg, surf=surf, text=text, theme=theme, accent=accent,
-             mid=mix(bg, text, PCT["MID"], mono), dim=mix(bg, text, PCT["DIM"], mono),
-             line=mix(bg, text, PCT["LINE"], mono), sel=mix(bg, theme, PCT["SEL"], mono),
-             tint=mix(bg, theme, PCT["TINT"], mono), raise_=mix(surf, text, RAISE_OF.get(name, RAISE_PCT), mono),
-             key=mix(bg, text, PCT["KEY"], mono))
-    d["ink"] = bg
-    d["light"] = luma(bg) > 128
-    d["rec"] = accent if mono or name == BW else to565(REC_LIGHT if d["light"] else REC_DARK)
-    for i, k in enumerate(KNOBS[name]):
-        d[f"k{i}"] = to565(k, name == BW)
-    if name == BW:                     # src/gfx.c palette_set: set, not blended
-        grey = to565(BW_GREY)
-        d.update(mid=text, sel=theme, key=text, dim=grey, line=grey, raise_=grey, lane=grey, tint=bg, grid=bg)
+def derive(name):
+    if name == "JIANT":
+        bg, surf, text, theme, accent = (to565(c) for c in JIANT[1:])
+        d = dict(bg=bg, surf=surf, text=text, theme=theme, accent=accent,
+                 mid=mix(bg, text, PCT["MID"]), dim=mix(bg, text, PCT["DIM"]), line=mix(bg, text, PCT["LINE"]),
+                 sel=mix(bg, theme, PCT["SEL"]), tint=mix(bg, theme, PCT["TINT"]), raise_=mix(surf, text, RAISE_JIANT),
+                 rec=to565((255, 72, 72)))
+    else:
+        d = {k: near565(v) for k, v in FAMILY[name].items()}
+    assert list(d) and set(d) == set(TOKENS)
+    d["key"] = mix(d["bg"], d["text"], PCT["KEY"])
+    d["ink"] = 0
+    for i, k in enumerate(KNOBS):
+        d[f"k{i}"] = to565(k)
     return name, d
 
 
@@ -180,54 +160,54 @@ def main():
     ap.add_argument("--report", action="store_true")
     a = ap.parse_args()
     fails = []
-    assert PALETTES[0][0] == "GREY" and len(OLD) == 20 and len(PALETTES) <= 63
-    rows = [derive(p) for p in PALETTES]
+    assert NAMES[0] == "JIANT" and len(OLD) == 20 and set(STORED_AS) == set(NAMES)
+    rows = [derive(n) for n in NAMES]
     for name, d in rows:
-        if name == "GREY":
-            for k, v in d.items():
-                if k == "light":
-                    continue
-                if not (v >> 11 == v & 31 and ((v >> 5) & 63) == (v >> 11) << 1):
-                    fails.append(f"{name} is not grayscale: {k} = {v:#06x}")
-        if name == BW:                 # every token pure black or white, or the one grey (DIM LINE RAISE LANE)
-            for k, v in d.items():
-                if k != "light" and v not in (0x0000, 0xFFFF) and not (v == to565(BW_GREY) and k in ("dim", "line", "raise_", "lane")):
-                    fails.append(f"{name} is not black and white: {k} = {v:#06x}")
         for f, b, lim, why in CHECKS:
             c = contrast(d[f], d[b])
             if c < lim:
                 fails.append(f"{name}: {f}/{b} {c:.2f} < {lim} ({why})")
+    # what each is saved as (n of PAL_TAG + n), and what each n a firmware up to V10.7.18 saved reads as
+    stored = [V10.index(STORED_AS[n]) if STORED_AS[n] else None for n in NAMES]
+    for i, v in enumerate(stored):
+        if v is None:
+            stored[i] = max([len(V10) - 1] + [x for x in stored if x is not None]) + 1
+    back = [NAMES.index(V10_TO_NEW[n]) for n in V10] + [0] * (max(stored) + 1 - len(V10))
+    for i, v in enumerate(stored):
+        assert v >= len(V10) or back[v] == i, f"{NAMES[i]} is saved as an id that reads as {NAMES[back[v]]}"
+        back[v] = i
+    assert len(set(stored)) == len(stored)
     if a.report:
         print(f"{'palette':8s} " + " ".join(f"{f}/{b}".ljust(12) for f, b, _, _ in CHECKS))
         for name, d in rows:
             print(f"{name:8s} " + " ".join(f"{contrast(d[f], d[b]):5.1f}".ljust(12) for f, b, _, _ in CHECKS))
         print("minimum  " + " ".join(f"{lim:<12.2f}" for _, _, lim, _ in CHECKS))
+        for name, d in rows:                     # how near the RGB565 token is to what was set
+            if name in FAMILY:
+                off = {k: max(abs(x - int(FAMILY[name][k][i:i + 2], 16)) for x, i in zip(from565(d[k]), (0, 2, 4))) for k in TOKENS}
+                print(f"{name:8s} RGB565 off by at most {max(off.values())} of 255 ({max(off, key=off.get)})")
     if a.out:
-        names = [p[0] for p in PALETTES]
-        assert set(KNOBS) == {p[0] for p in PALETTES}
-        out = ["/* generated by tools/gen_ui_palettes.py: the UI palettes (5 colours each, the rest derived) */",
+        out = ["/* generated by tools/gen_ui_palettes.py: the UI palettes (12 stored colours each: bg surf text theme accent",
+               " * mid dim line sel tint rec raise, src/gfx.c ux's order) */",
                "#pragma once", "#include <stdint.h>", "",
-               "/* ui_pal_t {name, bg, surf, text, theme, accent} (src/gfx.c) */",
                "static const ui_pal_t UI_PALETTES[] = {"]
-        for p in PALETTES:
-            v = [to565(c, p[0] == BW) for c in p[1:]]
-            out.append(f'    {{"{p[0]}", ' + ", ".join(f"0x{x:04x}" for x in v) + "},")
-        out += ["};", "/* (0.8.9) KNOB 1..4's colours (MENU > DISPLAY > SKIN, the 0.6 colours) */",
-                "static const uint16_t UI_KNOBS[][4] = {"]
-        out += [f'    {{' + ", ".join(f"0x{to565(c, p[0] == BW):04x}" for c in KNOBS[p[0]]) + f'}},   /* {p[0]} */' for p in PALETTES]
-        out += ["};", "static const uint8_t UI_RAISE_OF[] = {" + ", ".join(str(RAISE_OF.get(p[0], RAISE_PCT)) for p in PALETTES) + "};",
-                f"#define UI_NPALETTES {len(PALETTES)}u", "#define UI_GREY_INDEX 0u",
-                f"#define UI_BW_INDEX {names.index(BW)}u          /* MONO: black and white (src/gfx.c palette_set) */",
-                f"#define UI_JIANT_INDEX {names.index('JIANT')}u          /* JIANT FM: the default (src/panel.c) */",
-                f"#define UI_BW_GREY 0x{to565(BW_GREY):04x}u          /* MONO's one grey: DIM LINE RAISE LANE */",
-                f"#define UI_PAL_TAG {PAL_TAG}u          /* stored id = UI_PAL_TAG + index; below 20: an old id */"]
-        out += [f"#define UI_{k}_PCT {v}" for k, v in PCT.items()] + [f"#define UI_RAISE_PCT {RAISE_PCT}   /* SURF -> TEXT */"]
-        out += [f"#define UI_REC_DARK 0x{to565(REC_DARK):04x}u", f"#define UI_REC_LIGHT 0x{to565(REC_LIGHT):04x}u",
+        for name, d in rows:
+            out.append(f'    {{"{name}", {{' + ", ".join(f"0x{d[k]:04x}" for k in TOKENS) + "}},")
+        out += ["};", "/* (0.8.9) KNOB 1..4's colours (the 0.6 colours), every palette */",
+                "static const uint16_t UI_KNOBS[4] = {" + ", ".join(f"0x{to565(c):04x}" for c in KNOBS) + "};",
+                f"#define UI_NPALETTES {len(NAMES)}u",
+                "#define UI_JIANT_INDEX 0u          /* JIANT FM: the default (src/panel.c) */",
+                f"#define UI_PAL_TAG {PAL_TAG}u          /* stored id = UI_PAL_TAG + UI_PAL_STORED[index]; below 20: an old id */",
+                "/* what each palette is saved as: the index its nearest one had up to V10.7.18 (" + " ".join(V10) + ") */",
+                "static const uint8_t UI_PAL_STORED[] = {" + ", ".join(str(v) for v in stored) + "};",
+                "/* and back: the palette of a saved id (V10.7.18's eleven -> the nearest of the family) */",
+                "static const uint8_t UI_PAL_READ[] = {" + ", ".join(str(v) for v in back) + "};",
+                f"#define UI_KEY_PCT {PCT['KEY']}",
                 f"#define UI_QR_LIGHT 0x{to565(QR_LIGHT):04x}u", f"#define UI_QR_DARK 0x{to565(QR_DARK):04x}u",
                 f"#define UI_CRASH_BG 0x{to565(CRASH_BG):04x}u", f"#define UI_CRASH_INK 0x{to565(CRASH_INK):04x}u", "",
-                "/* the 20 palettes of earlier firmware: " + " ".join(OLD) + " */",
+                "/* the 20 palettes of the earliest firmware: " + " ".join(OLD) + " */",
                 "static const uint8_t UI_PALETTE_MIGRATE[20] = {" +
-                ", ".join(str(names.index(OLD_TO_NEW[n])) for n in OLD) + "};", ""]
+                ", ".join(str(NAMES.index(OLD_TO_NEW[n])) for n in OLD) + "};", ""]
         Path(a.out).write_text("\n".join(out))
     for f in fails:
         print("FAIL", f)

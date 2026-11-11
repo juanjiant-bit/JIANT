@@ -533,16 +533,8 @@ static void draw_column_tall(uint32_t c, const char *label, const char *val, con
             ly = LG_LY + AF_M_CAP_Y + HALF_UP(AF_M_CAP_H - AF_S_CAP_H) - AF_S_CAP_Y;
             lw = ink_w(lf, label);
         }
-        if (hot && T_ACCENT == T_MID) {                 /* MONO: the label inverted, the chip 2 px round its ink */
-            int32_t cy = ly + (lf == &AF_M ? AF_M_CAP_Y : AF_S_CAP_Y), chh = lf == &AF_M ? AF_M_CAP_H : AF_S_CAP_H;
-            int32_t x0 = HALF_UP(COL_W - lw) - 2;
-            cv_rrect(x0, cy - 3, lw + 4, chh + 6, 3, T_ACCENT, T_SURF);
-            GFX_HOOK_ALIGN(x0, cy - 3, x0 + lw + 4, cy + chh + 3, AL_HV, "large card label chip (MONO hot)");
-            cv_text_in(0, ly, COL_W, lf, label, T_INK, T_ACCENT);
-        } else {
-            GFX_HOOK_ALIGN(0, 0, COL_W, 0, AL_H, "large card label centred");
-            cv_text_in(0, ly, COL_W, lf, label, lc, T_SURF);
-        }
+        GFX_HOOK_ALIGN(0, 0, COL_W, 0, AL_H, "large card label centred");
+        cv_text_in(0, ly, COL_W, lf, label, lc, T_SURF);
     }
     if (kid >= 0) {                                     /* "[OCT+]": the keycap, centred */
         GFX_HOOK_ALIGN(0, LG_VB, COL_W, LG_VB + AF_L_CAP_H, AL_HV, "large card keycap centred");
@@ -557,7 +549,7 @@ static void draw_column_tall(uint32_t c, const char *label, const char *val, con
         LARGE_HOOK(val, why);
         vy = vf == &AF_L ? LG_VB - AF_L_CAP_Y : vf == &AF_M ? LG_VB + HALF_UP(AF_L_CAP_H - AF_M_CAP_H) - AF_M_CAP_Y
                                                           : LG_VB + HALF_UP(AF_L_CAP_H - AF_S_CAP_H) - AF_S_CAP_Y;
-        if (vf == &AF_S && ink_w(vf, val) > COL_W - 4) {   /* (a value always fits: the lint reports one cut) */
+        if (vf == &AF_S && ink_w(vf, val) > COL_W - 2) {   /* (a value always fits: the lint reports one cut) */
             cv_text_fit(2, vy, vf, val, vc, T_SURF, COL_W - 4);
         } else {
             GFX_HOOK_ALIGN(0, LG_VB, COL_W, LG_VB + AF_L_CAP_H, AL_HV, "large card value centred");
@@ -740,6 +732,8 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
     uw = unit[0] ? text_w(&AF_S, unit) + 3 : 0;
     if (text_w(vf, val) + uw > room)
         vf = &AF_S;
+    if (!uw && text_w(vf, val) > room && text_w(&AF_X, val) <= room)   /* (a long name, COLOR's CONTRAST: whole in the small face) */
+        vf = &AF_X;
     sig = (uint8_t)str_hash(str_hash(song.sel + TSEL->eng_req * 4u + ux.gen * 64u + lz_on() * 16u, label), unit);
     snap = ui.force || sig != ui.roll[c].sig;           /* what the value is of: label, unit, track, engine, palette */
     if (kind == LK_TALL)
@@ -801,25 +795,15 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
             int32_t ly = lf == &AF_M ? 0 : lf == &AF_X ? CARD_XY - low : 1;   /* (0.8.5 a lens card: AF_X, capitals rows 5..11;
                                                          * 0.8.9 the knob row: 4..10) */
             int32_t cy = ly + (lf == &AF_M ? AF_M_CAP_Y : lf == &AF_X ? AF_X_CAP_Y : AF_S_CAP_Y);
-            int32_t chh = lf == &AF_M ? AF_M_CAP_H - 1 : lf == &AF_X ? AF_X_CAP_H : AF_S_CAP_H;   /* (0.8.9 M: Inter Tight's
-                                                         * figures reach a row higher: the chip a row shorter) */
-            if (hot && T_ACCENT == T_MID) {             /* MONO: no colour tells the hot knob: its label inverted, */
-                int32_t b[4], w;                        /* the chip 2 px round its ink */
-                text_ink(lf, label, b);
-                w = b[2] - b[0] + 4;
-                if (w > COL_W + 1 - lx - b[0]) w = COL_W + 1 - lx - b[0];
-                cv_rrect(lx + b[0] - 2, cy - 2, w, chh + 4, 2, T_ACCENT, cb);
-                GFX_HOOK_ALIGN(lx + b[0] - 2, cy - 2, lx + b[0] - 2 + w, cy + chh + 2, AL_HV, "card label chip (MONO hot)");
-                cv_text_fit(lx, ly, lf, label, T_INK, T_ACCENT, COL_W - 2 - 5);
-            } else {
-                int32_t ic = lf == &AF_X && lz_on() && kind != LK_TALL ? card_ico(label) : -1;
-                if (ic >= 0 && 10 + text_w(lf, label) <= COL_W - 2 - 5) {   /* (0.8.9) its mark, then the label */
-                    for (hk = 0; cv_halo && hk < HALO_N; hk++)   /* (0.9.0: outlined as the words, 2 px) */
-                        card_ico_draw(lx + HALO_X[hk], cy + HALO_Y[hk], (uint32_t)ic, T_BG);
-                    card_ico_draw(lx, cy, (uint32_t)ic, low ? (hot ? vc : lc) : lc);
-                    cv_text_fit(lx + 10, ly, lf, label, lc, cb, COL_W - 2 - 15);
-                } else
-                    cv_text_fit(lx, ly, lf, label, lc, cb, COL_W - 2 - 5);
+            {
+            int32_t ic = lf == &AF_X && lz_on() && kind != LK_TALL ? card_ico(label) : -1;
+            if (ic >= 0 && 10 + text_w(lf, label) <= COL_W - 2 - 5) {   /* (0.8.9) its mark, then the label */
+                for (hk = 0; cv_halo && hk < HALO_N; hk++)   /* (0.9.0: outlined as the words, 2 px) */
+                    card_ico_draw(lx + HALO_X[hk], cy + HALO_Y[hk], (uint32_t)ic, T_BG);
+                card_ico_draw(lx, cy, (uint32_t)ic, low ? (hot ? vc : lc) : lc);
+                cv_text_fit(lx + 10, ly, lf, label, lc, cb, COL_W - 2 - 15);
+            } else
+                cv_text_fit(lx, ly, lf, label, lc, cb, COL_W - 2 - 5);
             }
         }
         cv_scroll = 0;
@@ -831,8 +815,9 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
             x = roll_text(c, 5 + ox, ry - 1, val, vc);
         } else if (free)                                /* (a name: ellipsised where it must be) */
             x = cv_free_text(5 + ox, ry + 2, vf, val, vc, cb, room - uw);
-        else
-            x = cv_text_fit(5 + ox, ry + 2, vf, val, vc, cb, room - uw);
+        else                                            /* (AF_X: its capitals' foot on S's) */
+            x = cv_text_fit(5 + ox, vf == &AF_X ? ry + 2 + AF_S_CAP_Y + AF_S_CAP_H - AF_X_CAP_Y - AF_X_CAP_H : ry + 2, vf, val, vc, cb,
+                            room - uw);
         if (unit[0]) {
             GFX_HOOK_ALIGN(0, 0, 0, vf == &AF_M ? ry - 1 + AF_M.asc : ry + 2 + AF_S.asc, AL_B, "card unit on its value's baseline");
             uint16_t uc = hud ? T_TEXT : T_MID;         /* (0.9.0 HUD's HOME: TEXT) */
@@ -1923,7 +1908,7 @@ static uint8_t spl_anim;                            /* main.c: 1 = the signature
  * the colour: no curves, no creatures (the 0.5.2 signature and its beings were ~1.9 KB) */
 static uint16_t sig_col(uint32_t i)                 /* the thermal scale along the writing: violet, red, orange, yellow */
 {
-    return ux.mono || settings.palette == UI_BW_INDEX ? T_TEXT : heat_col(24 + (int32_t)(i * 220u / SIG_N));
+    return heat_col(24 + (int32_t)(i * 220u / SIG_N));
 }
 static void splash_sig(uint32_t n)
 {

@@ -89,7 +89,7 @@ static void graph_filter_lz(const track_t *t, const page_t *pg)
         cv_rect(64 + k * 54, 6, 1, 99, T_RAISE);
     for (x = 10; x <= 226; x++) {
         int32_t y = ed_resp(ty, x, xc, r[2]);
-        cv_rect(x, y, 1, 105 - y, ux_mix(T_SURF, settings.palette == UI_JIANT_INDEX ? heat_col(40 + x * 160 / 226) : T_THEME, 30));
+        cv_rect(x, y, 1, 105 - y, ux_mix(T_SURF, heat_col(40 + x * 160 / 226), 30));
         if (x > 10)
             cv_line_t(x - 1, py, x, y, T_THEME, 2);
         py = y;
@@ -131,7 +131,7 @@ static void graph_voice_lz(const track_t *t, const page_t *pg)
         ed_cap(14, y, n, i < nv ? T_MID : T_DIM);
         cv_rect(26, y, 202, 7, i < nv ? T_RAISE : T_LINE);
         if (lv > 0)
-            cv_rect(26, y, lv, 7, settings.palette == UI_JIANT_INDEX ? heat_col(60 + lv) : T_ACCENT);
+            cv_rect(26, y, lv, 7, heat_col(60 + lv));
     }
     param_format(track_desc(t, P_VOICE), t->p[P_VOICE], b, &u);
     str_cpy(b + str_len(b), pg->id[0] == P_ALLOC ? " \xB7 ALLOC " : " \xB7 PRIO ", 40 - str_len(b));

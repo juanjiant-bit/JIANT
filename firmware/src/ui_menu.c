@@ -392,14 +392,12 @@ static __attribute__((noinline)) void menu_panel(void)
                 cv_rect(x, y, 72, 1, T_ACCENT); cv_rect(x, y + 17, 72, 1, T_ACCENT);
                 cv_rect(x, y, 1, 18, T_ACCENT); cv_rect(x + 71, y, 1, 18, T_ACCENT);
             }
-            cv_clip_text(x + 5, y + 6 - AF_X_CAP_Y, &AF_X, row == MI_HOLD ? HOLD_N[k % 4u] : menu_vname(row, k),
-                         k == cur ? T_TEXT : T_MID, bg, row == MI_COLOR ? 44 : 62);
+            cv_clip_text(x + 4, y + 6 - AF_X_CAP_Y, &AF_X, row == MI_HOLD ? HOLD_N[k % 4u] : menu_vname(row, k),
+                         k == cur ? T_TEXT : T_MID, bg, row == MI_COLOR ? 48 : 63);   /* (COLOR: CONTRAST whole, 47 px) */
             if (row == MI_COLOR) {                     /* (the palette's THEME and ACCENT) */
                 uint32_t q;
                 for (q = 0; q < 2u; q++) {
-                    uint16_t col = q ? UI_PALETTES[k % NPALETTES].accent : UI_PALETTES[k % NPALETTES].theme;
-                    cv_rect(x + 50 + (int32_t)q * 10, y + 5, 8, 8, ux.mono || settings.palette == UI_BW_INDEX ?
-                            ux_gray(ux_luma(col) >> 3) : col);   /* (GREY, MONO: their grays) */
+                    cv_rect(x + 54 + (int32_t)q * 8, y + 5, 7, 8, UI_PALETTES[k % NPALETTES].c[3u + q]);
                 }
             }
         }
