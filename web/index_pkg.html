@@ -67,6 +67,7 @@
   <p id="edition-info" class="small"></p>
   <p><a id="download-fw" download data-t="downloadFw"></a></p>
   <p class="small" data-t="downloadFwHelp"></p>
+  <p class="small" data-t="downloadFwWarn" style="color:#ec6e50"></p>
   <!-- (0.8.5) the release's notice, before 0.8.5 is written (releaseNotice) -->
   <div id="notice" class="jiant-notice" hidden>
     <p style="margin:0 0 8px;font-weight:600" data-t="n085Title"></p>
@@ -539,6 +540,9 @@ for (const L of ["en", "es", "ja"]) TEXT[L].stockV16 = "";   /* (stockWhere name
 Object.assign(TEXT.es, { downloadFw: "Descargar firmware (.fwsc)", downloadFwHelp: "Descarga la versión seleccionada sin conectar el FM-1." });
 Object.assign(TEXT.en, { downloadFw: "Download firmware (.fwsc)", downloadFwHelp: "Download the selected version without connecting the FM-1." });
 Object.assign(TEXT.ja, { downloadFw: "ファームウェアをダウンロード (.fwsc)", downloadFwHelp: "FM-1 を接続せずに、選択したバージョンをダウンロードできます。" });
+Object.assign(TEXT.es, { downloadFwWarn: "Importante: instalá este archivo solo con el botón Install de esta página. Además de la app, el .fwsc trae la parte Bluetooth de la flash, donde viven GEN, el guardado de canciones y USB HOST. Otro flasher o el actualizador de M-VAVE pueden saltearla: el FM-1 arranca, pero GEN no anda y dice BLUETOOTH PART MISSING. Si te pasa, instalá de nuevo desde acá." });
+Object.assign(TEXT.en, { downloadFwWarn: "Important: install this file only with this page's Install button. Besides the app, the .fwsc carries the flash's Bluetooth part, where GEN, song saving and USB HOST live. Another flasher or M-VAVE's updater may skip it: the FM-1 starts, but GEN does not work and says BLUETOOTH PART MISSING. If that happens, install again from here." });
+Object.assign(TEXT.ja, { downloadFwWarn: "重要: このファイルはこのページの Install ボタンでのみインストールしてください。.fwsc にはアプリのほかにフラッシュの Bluetooth 部分が含まれ、GEN、ソングの保存、USB HOST はそこにあります。他のフラッシャーや M-VAVE のアップデーターはこの部分を書き込まないことがあり、FM-1 は起動しても GEN が動かず BLUETOOTH PART MISSING と表示されます。その場合はここからもう一度インストールしてください。" });
 const LANGS = ["es", "en", "ja"];
 const navLang = (navigator.language || "en").toLowerCase();
 let lang = navLang.startsWith("ja") ? "ja" : navLang.startsWith("es") ? "es" : "en";
