@@ -94,9 +94,12 @@ jobs:
         run: |
           pip install --timeout 30 --retries 2 playwright==1.58.0
           python3 -u web/emu/browser-additive-test.py build/pages/emu
+      - name: Site manifest (every file with its SHA-256, for the next publish to recover the site exactly)
+        run: python3 tools/fetch_live_site.py manifest build/pages
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/pages
+          retention-days: 90   # (the default is 1 day: the next publish starts from this artifact)
   deploy:
     needs: build
     runs-on: ubuntu-24.04

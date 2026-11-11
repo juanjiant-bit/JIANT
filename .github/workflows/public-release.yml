@@ -36,12 +36,21 @@ jobs:
           path: build/candidate
           persist-credentials: false
       - name: Frozen published site
+        id: site
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: github-pages
           run-id: 42764289783
           github-token: ${{ github.token }}
           path: build/released
+      - name: Published site to start from (the artifact; the live site when it expired or is older)
+        # The Pages artifact of the pinned run expires; the live site does not. tools/fetch_live_site.py leaves at
+        # build/released/artifact.tar the downloaded artifact, or the live site fetched file by file and checked
+        # (site-manifest.json, SHA256SUMS, versions.json); it stops the run rather than start from a partial site.
+        run: |
+          [ "${{ steps.site.outcome }}" = success ] || rm -rf build/released
+          python3 tools/fetch_live_site.py restore --artifact build/released/artifact.tar
       - name: JieLi toolchain cache
         uses: actions/cache@v4
         with:
@@ -158,9 +167,12 @@ jobs:
         with:
           name: public-firmware
           path: build/candidate/build/felucca.fwsc
+      - name: Site manifest (every file with its SHA-256, for the next publish to recover the site exactly)
+        run: python3 tools/fetch_live_site.py manifest build/pages
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/pages
+          retention-days: 90   # (the default is 1 day: the next publish starts from this artifact)
   deploy:
     needs: build
     runs-on: ubuntu-24.04
