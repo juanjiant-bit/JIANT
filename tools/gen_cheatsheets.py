@@ -242,7 +242,7 @@ def controls():
         (k('GLO') + ' + ' + k('SELECT'), 'Tempo (from any page).'),
         (k('STEP HELD', cls='a') + ' + ' + k('KNOB'), 'A parameter lock on that step (roll, grid).'),
         (k('HOME', cls='a') + ' held', 'MENU, four tabs DISPLAY · CONTROL · AUDIO · SYSTEM (ALGORITHM the tab, PRESETS the row, OCT−/+ the value; '
-         'each knob its card): skins (AIR · COLORS · BOTTOM · HUD), SCOPE, the seven palettes (JIANT SELVA CONTRAST BRASA ABISAL HUESO NEON), knob accel, FX latch, hold time, USB level; '
+         'each knob its card): skins (AIR · COLORS), SCOPE, the seven palettes (JIANT SELVA CONTRAST BRASA ABISAL HUESO NEON), knob accel, FX latch, hold time, USB level; '
          'SYSTEM › USB: AUDIO · STEREO · STEMS · IN+OUT · STEMS+IN · <b>HOST</b> (a USB-MIDI keyboard or a USB audio interface, '
          'on a powered hub; never saved); SYSTEM › BLUETOOTH: OFF · ON (MIDI, app JIANT FM-1) · AIR (PROX and SWARM from the devices around), '
          'OCT+ the PROX page (FAR / NEAR from 2.5 s, HOLD STILL). CONTROL › <b>VELOCITY</b> · VEL MIN · <b>AFTERTOUCH</b> · VEL LEARN '

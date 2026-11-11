@@ -347,7 +347,7 @@ static void draw_head(void)
         if (ui.roll[ROLL_BPM].from[0]) {               /* rolling: the BPM's strip only (the rule under it again) */
             cv_begin((uint32_t)(g.sx1 - g.sx0), H_HEAD, T_BG);
             roll_text(ROLL_BPM, g.bx - g.sx0, HEAD_BMY, b, ui.bpm_t ? T_ACCENT : T_THEME);
-            if (!skin_hud())
+            if (!ux.skin)
                 cv_rect(0, HEAD_RULE_Y, g.sx1 - g.sx0, 1, T_LINE);
             cv_blit((uint32_t)g.sx0, Y_HEAD);
         }
@@ -400,7 +400,7 @@ static void draw_head(void)
         draw_battery(HEAD_BAT_X);
         draw_load(HEAD_LOAD_X);
     }
-    if (!skin_hud()) {                                  /* the rule (0.8.9 HUD, 0.9.7 AIR: none, the words float) */
+    if (!ux.skin) {                                     /* the rule (0.9.7 AIR: none, the words float) */
         cv_rect(0, HEAD_RULE_Y, 240, 1, T_LINE);
         GFX_HOOK_RULE(0, HEAD_RULE_Y, 240, 1);
     }
@@ -418,12 +418,9 @@ static void lcd_rule(uint32_t x, uint32_t y, uint32_t w, uint32_t h)
 static void draw_rules(uint32_t y, uint32_t h)
 {
     uint32_t i;
-    if (y == card_y() && lz_low() && ux.skin == SKIN_AIR) {   /* (0.9.7) AIR: over the knobs' row and under it */
+    if (y == card_y() && lz_low()) {                    /* (0.9.7) AIR: over the knobs' row and under it */
         lcd_rule(RULE_X0, (LT_Y + LB_TAB_H + card_y()) / 2, RULE_W, 1);
         lcd_rule(RULE_X0, (card_y() + card_h() + graph_y()) / 2, RULE_W, 1);
-    } else if (y == card_y() && lz_low()) {             /* (0.8.9) BOTTOM, HUD: over the panel and under it */
-        lcd_rule(RULE_X0, (LT_Y + LB_TAB_H + graph_y()) / 2, RULE_W, 1);
-        lcd_rule(RULE_X0, (graph_y() + graph_h() + card_y()) / 2, RULE_W, 1);
     } else if (y == card_y()) {                         /* (LARGE: the geometry of the page, ui.c card_h; 0.8.5: a lens
                                                          * page's; the header draws its own rule) */
         lcd_rule(RULE_X0, (card_y() + card_h() + graph_y()) / 2, RULE_W, 1);
@@ -939,7 +936,7 @@ static void tabs_paint(uint32_t n, uint32_t lv, const char *const *nm, const cha
     uint32_t l, d;
     int low = lz_low() || (ux.skin && (dlg_on() || name_on()) && !(ui_prefs & PREF_LARGE)), hud = hud_home();   /* (0.9.0:
                                                          * NAME too, as the dialogs) */
-    int32_t y = hud ? H_HEAD : LT_Y, h = hud ? (int32_t)(card_y() < graph_y() ? card_y() : graph_y()) - H_HEAD : low ? LB_TAB_H : LT_H;
+    int32_t y = hud ? H_HEAD : LT_Y, h = hud ? (int32_t)card_y() - H_HEAD : low ? LB_TAB_H : LT_H;
     int32_t o = LT_Y - y;                               /* (0.9.7 AIR's HOME: down to its knobs' row) */
     lz_begin(240, (uint32_t)h, 0, (uint32_t)y);
     for (l = 0; l < n; l++) {
@@ -956,12 +953,9 @@ static void tabs_paint(uint32_t n, uint32_t lv, const char *const *nm, const cha
                 cv_rect(dx - 1, dy - 1, nd * 4, 3, T_BG);
             for (d = 0; d < (uint32_t)nd; d++) {
                 int32_t px = dx + (int32_t)d * 4;
-                if (l == lv && d == at) {
-                    if (ux.skin == SKIN_BOTTOM)
-                        cv_rrect(px - 1, dy - 1, 5, 3, -1, T_THEME, T_BG);
-                    else
-                        cv_rect(px - 1, dy, 4, 1, T_THEME);
-                } else
+                if (l == lv && d == at)
+                    cv_rect(px - 1, dy, 4, 1, T_THEME);
+                else
                     cv_rect(px, dy, 2, 1, l == lv ? hud_cap(T_MID) : T_DIM);
             }
             continue;
@@ -2270,7 +2264,7 @@ static void style_apply(void)
 {
     if (ui_style > ST_LINE)                             /* 2, the retired PIXEL: LINE; unknown: FLAT */
         ui_style = ui_style == 2u ? ST_LINE : ST_FLAT;
-    if (ui_skin >= SKIN_N)                              /* (0.8.9) SKIN: unknown, COLORS */
+    if (ui_skin != SKIN_AIR)                            /* (0.8.9) SKIN: the retired BOTTOM and HUD, unknown: COLORS */
         ui_skin = SKIN_COLORS;
     if (ux.style != ui_style || ux.skin != ui_skin) {
         ux.style = ui_style;

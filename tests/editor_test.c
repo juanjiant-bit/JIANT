@@ -894,9 +894,9 @@ static int menu_protocol(void)
         if (i == 20u) ok &= !strcmp(it.name, "MIDI OUT") && it.id == 20;   /* (0.6.72) */
     }
     menu_desc(21, &it);
-    ok &= !strcmp(it.name, "SKIN") && it.id == 21 && it.tab == 0 && it.value == 1 && it.max == 3 &&   /* (0.8.9) DISPLAY; (0.9.7)
+    ok &= !strcmp(it.name, "SKIN") && it.id == 21 && it.tab == 0 && it.value == 1 && it.max == 1 &&   /* (0.8.9) DISPLAY; (0.9.7)
                                                          * AIR first: COLORS (the tests' settings) at 1 */
-          !strcmp(it.names[0], "AIR") && !strcmp(it.names[1], "COLORS") && !strcmp(it.names[2], "BOTTOM") && !strcmp(it.names[3], "HUD");
+          !strcmp(it.names[0], "AIR") && !strcmp(it.names[1], "COLORS");
     menu_desc(22, &it);                                   /* (0.9.7) SCOPE, a row of DISPLAY: OFF (the default) ON */
     ok &= !strcmp(it.name, "SCOPE") && it.id == 22 && it.tab == 0 && it.value == 0 && it.max == 1 && !strcmp(it.names[0], "OFF") &&
           !strcmp(it.names[1], "ON");
@@ -972,8 +972,8 @@ static int menu_protocol(void)
     ok &= menu_set(5, 8191) == 3 && ed_rv(host_wire + 7) == 3 && settings_hold == 3u;
     ok &= menu_set(2, 7) == 3 && ed_rv(host_wire + 7) == 1 && (ui_prefs & PREF_LARGE);
     ok &= menu_set(14, 9) == 3 && ed_rv(host_wire + 7) == 2 && cin_bars == 2u;
-    ok &= menu_set(21, 3) == 3 && ed_rv(host_wire + 7) == 3 && ui_skin == SKIN_HUD;   /* (0.8.9) SKIN HUD (0.9.7: 3) */
-    ok &= menu_set(21, 9) == 3 && ed_rv(host_wire + 7) == 3 && ui_skin == SKIN_HUD;   /* (clamped) */
+    ok &= menu_set(21, 3) == 3 && ed_rv(host_wire + 7) == 1 && ui_skin == SKIN_COLORS;   /* (SKIN: AIR COLORS; BOTTOM and HUD retired) */
+    ok &= menu_set(21, 9) == 3 && ed_rv(host_wire + 7) == 1 && ui_skin == SKIN_COLORS;   /* (clamped) */
     ok &= menu_set(21, 0) == 3 && ed_rv(host_wire + 7) == 0 && ui_skin == SKIN_AIR;   /* (0.9.7) AIR, the menu's first */
     ok &= menu_set(21, 1) == 3 && ui_skin == SKIN_COLORS;
     ok &= menu_set(12, -1) == 3 && ed_rv(host_wire + 7) == 0 && click_mode == CLICK_OFF;

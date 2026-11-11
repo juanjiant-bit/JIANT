@@ -75,6 +75,7 @@ Everything since V10.6c, the last public version, in one list; each item links t
   card's value) is in all seven. They replace GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT and MONO; a
   palette saved before lands on the nearest one (GREY, MONO, NIGHT → HUESO; GREEN → SELVA; AMBER, ROSE → BRASA; ICE →
   ABISAL; VIOLET → JIANT; PAPER, HI-CON → CONTRAST).
+- **Two skins**: MENU > DISPLAY > SKIN is **AIR** or **COLORS**. BOTTOM and HUD are gone (a saved one loads as COLORS).
 
 **Sequencer**
 - Step component **RAMP** replaces JUMP (V10.6v): a step's parameter lock glides there over 1–32 steps or 1–16 bars.
@@ -250,32 +251,24 @@ Vestal's, *Velo*, github.com/charlesvestal/fm1-velocity, GPL-3.0). JIANT reads i
 
 ## 2. The screen
 
-### Skins: AIR, COLORS, BOTTOM, HUD (0.8.9, AIR 0.9.7)
+### Skins: AIR, COLORS
 
-**MENU > DISPLAY > SKIN** picks how the lenses are dressed (the approved mock-up "skin aireado", options 1, 3 and 4;
-0.9.7: AIR, the approved option); every page, every palette, FLAT and LINE. The menu steps them AIR, COLORS, BOTTOM,
-HUD:
+**MENU > DISPLAY > SKIN** picks how the lenses are dressed: **AIR** or **COLORS**, on every page and in every palette.
+(BOTTOM and HUD, the other two skins of 0.8.9, are gone: settings saved with either of them load as COLORS.)
 
-- **AIR** (0.9.7; the default of new settings: a new FM-1, or its settings erased; settings saved before keep the
-  skin they had): HUD's look on **every** page, with the **knob row on top**, right under the tabs: no cards and no
-  panel box, the words light with a 2 px dark outline, the middle of the screen free for the picture and the footer
-  the breadcrumb alone. On HOME
-  the beings swim over the whole screen under the header, the tabs, the knob row and the breadcrumb, as on HUD (the knob
-  row fading there a few seconds after the last turn); every layer, dialog and menu in the same dress. The group's word
-  is underlined by a dash.
-- **COLORS** (settings saved before 0.9.7 with no other skin chosen load as it): the LENTE layout in the **0.6 colours**. Black, near-black
-  rounded cards with a small mark and the knob's name, **each knob its colour** on its value and its bar (JIANT,
-  0.9.5 as the 0.6: each parameter's own colour **moves with its amount** as heat, violet when low to yellow and cream
-  when high, a centred one such as PAN or DETUNE cold in the middle and hot at either end, in every palette), the knob you turn framed in its colour; the
+- **AIR** (0.9.7; the default of new settings: a new FM-1, or its settings erased): on **every** page the **knob row
+  on top**, right under the tabs: no cards and no panel box, the words light with a 2 px dark outline, the middle of
+  the screen free for the picture and the footer the breadcrumb alone. On HOME the beings swim over the whole screen
+  under the header, the tabs, the knob row and the breadcrumb; there the knob row fades to a fifth a few seconds after
+  you last turned a knob and comes back at the next turn or when you change page (on every other page it stays lit).
+  Every layer, dialog and menu in the same dress. The tabs are the groups' words, the one you are on underlined by a
+  dash, a dot a page under each.
+- **COLORS** (settings saved before 0.9.7 load as it): the LENTE layout in the **0.6 colours**. Near-black
+  rounded cards with a small mark and the knob's name, each parameter's own colour **moving with its amount** as heat
+  on its value and its bar (violet when low to yellow and cream when high, a centred one such as PAN or DETUNE cold in
+  the middle and hot at either end, in every palette), the knob you turn framed in its colour; the
   group's tab filled violet; the selected track's number in an orange box, a violet ▶ and a big violet BPM in the header;
-  a near-black rounded panel; the beings in the 0.6 heat (violet spikes, red and orange rings, cream nuclei).
-- **BOTTOM**: the tabs are the groups' words (the one you are on underlined by a small pill, a dot a page under each), no cards and no panel box: the middle
-  of the screen is the picture, the screen's width (HOME's beings get the most room), and the four knobs are a slim row
-  over the breadcrumb (mark and name, the value in its colour, a hairline bar).
-- **HUD**: as BOTTOM, but on HOME the beings swim **under everything, over the whole screen**: the header, the tabs,
-  the knobs and the breadcrumb float over them as light words with a 2 px dark outline (0.9.0). There the knob row
-  fades to a fifth a few seconds after you last turned a knob, and comes back at the next turn or when you change page;
-  on every other page it stays lit. The group's word is underlined by a dash.
+  the beings in the 0.6 heat (violet spikes, red and orange rings, cream nuclei).
 
 Values (cards, the header's BPM) are set in a rounded sans again (Inter Tight SemiBold), as in 0.6; names, tabs and the
 breadcrumb stay in the 5 x 7 pixel letters. **MENU > LARGE** keeps its big cards on top in every skin (the skin keeps
@@ -307,7 +300,7 @@ Since 0.8.5 every page wears the skin of the design the owner approved (the HTML
   **breadcrumb**: **SECTION · GROUP · page** and the page's place in the section's chain at the right (0.9.2; e.g.
   **FX · DELAY · DLY 2  6/16**, **ENV · TRACKS · TRACKS DEST  2/5**).
 - **The tabs** (0.9.2): under the header, the section's **groups** (FX: TRK · BUS · DLY · REV · CHO · SLC · PCH · MST;
-  SEQ: PATT · TRACK · BAR · STEP · AUTO), the one you are on lit (COLORS: filled violet; BOTTOM: a small pill; HUD and AIR:
+  SEQ: PATT · TRACK · BAR · STEP · AUTO), the one you are on lit (COLORS: filled violet; AIR:
   a dash), and **a dot a page** under each, the page shown lit. The cards under them, a taller panel, and the footer is
   the breadcrumb alone.
 
@@ -376,7 +369,7 @@ knobs, their pictures and every function are the same, only the way between them
    EDIT held + PRESETS jumps engine to engine.)
 6. **The screen says where you are.** On top, the tabs are the section's **groups**, the one you are on lit and a dot
    for each of its pages. At the foot: **SECTION · GROUP · page** and **n/N**, the page's place in the chain:
-   **FX · DELAY · DLY 2  6/16**. The same in AIR, COLORS, BOTTOM and HUD, every palette.
+   **FX · DELAY · DLY 2  6/16**. The same in AIR and COLORS, every palette.
 
 - Each section remembers the page it was left on (EDIT one for the synths and one each for FM6 and DRUM); at power-on
   SEQ opens on STEP, ENV on ENV, LFO on LFO, the others on their first page.
@@ -2671,7 +2664,7 @@ the footer **MENU · DISPLAY · SKIN  2/26**. The header says MENU · DISPLAY.
 | Tab | Row | Values |
 | --- | --- | --- |
 | DISPLAY | COLOR | **JIANT** (default), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — seven palettes of the same family, all dark, all with the thermal ramp |
-| DISPLAY | SKIN | **AIR** (default of new settings), COLORS, BOTTOM, HUD — (0.8.9; AIR 0.9.7) see [Skins](#skins-air-colors-bottom-hud-089-air-097) |
+| DISPLAY | SKIN | **AIR** (default of new settings), COLORS — see [Skins](#skins-air-colors); a saved BOTTOM or HUD (0.8.9, retired) loads as COLORS |
 | DISPLAY | SCOPE | **OFF** (default), ON — (0.9.7) an engine's EDIT pages: OFF the creature on the whole panel, centred, the page's name and the sound's name small in its corners; ON the creature on the left, the SCOPE card and the chips as before. Settings saved before 0.9.7 load as OFF |
 | DISPLAY | STYLE | FLAT, LINE |
 | DISPLAY | LARGE | OFF, ON (big labels and values) |

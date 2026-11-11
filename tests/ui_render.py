@@ -8,7 +8,7 @@
   sheet_<PALETTE>.png      every screen of one palette, 1x, with its name
   (MENU > STYLE: LINE_<PALETTE>/ and sheet_LINE_<PALETTE>.png for JIANT CONTRAST HUESO NEON;
    MENU > LARGE: sheet_LARGE_JIANT.png, sheet_LARGE_CONTRAST.png, sheet_LARGE-LINE_JIANT.png;
-   (0.8.9) MENU > SKIN: BOTTOM_<PALETTE>/, HUD_<PALETTE>/ (0.9.7: AIR_<PALETTE>/) and their sheets for JIANT CONTRAST HUESO)
+   (0.9.7) MENU > SKIN: AIR_<PALETTE>/ and its sheets, every palette)
 With SLOTDIR (ui_render.py OUTDIR SLOTDIR): its filmstrips of the rolling digits, SLOTDIR/*.ppm -> *.png.
 """
 import sys
@@ -20,7 +20,7 @@ out = Path(sys.argv[1] if len(sys.argv) > 1 else "build/ui_new")
 shots = {}
 for f in sorted((out / "ppm").glob("*.ppm")):
     pal, name = f.stem.split("_", 1)
-    styled = pal in ("LINE", "LARGE", "LARGE-LINE", "BOTTOM", "HUD", "AIR")   # STYLE / MENU > LARGE / (0.8.9) SKIN renders: <STYLE>_<PALETTE>_<screen>
+    styled = pal in ("LINE", "LARGE", "LARGE-LINE", "AIR")   # STYLE / MENU > LARGE / (0.8.9) SKIN renders: <STYLE>_<PALETTE>_<screen>
     if styled:
         p2, name = name.split("_", 1)
         pal = f"{pal}_{p2}"

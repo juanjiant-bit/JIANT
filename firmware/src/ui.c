@@ -261,21 +261,18 @@ static int32_t ratio_d(const param_desc_t *d, int32_t v) { return ratio_of(d->mi
 #define LG_Y_GRAPH 136
 #define LG_H_GRAPH 62
 #define LZ_LG_Y_GRAPH 150                 /* (0.8.5) .. under a lens's tabs: the tall cards 42..146, the strip 150..212 */
-/* (0.8.9) SKIN BOTTOM and HUD (the mock-up's options 3 and 4): the tabs words (26..39), the panel the screen's width and no
- * box (42..189), the knobs a slim row over the breadcrumb (191..223: label, value, a hairline gauge). HUD's HOME (hud_home):
- * the beings over the whole screen, every strip drawn on them (head 0..23, tabs 24..40, the panel 41..190, the knobs
- * 191..223, the breadcrumb 224..239). MENU > LARGE ON keeps COLORS' layout (its tall cards on top) in every skin */
+/* (0.9.7) SKIN AIR: the tabs words (26..39), the knobs a slim row under them (42..74: label, value, a hairline gauge), the
+ * panel the screen's width and no box (77..224). Its HOME (hud_home): the beings over the whole screen, every strip drawn
+ * on them, the row 41..73 and the panel 74..223. MENU > LARGE ON keeps COLORS' layout (its tall cards on top).
+ * (LB_: the strips' sizes, from the retired BOTTOM, 0.8.9) */
 #define LB_TAB_H 14
-#define LB_GRAPH_Y 42
 #define LB_GRAPH_H 148
-#define LB_CARD_Y 191
 #define LB_CARD_H 33
-/* (0.9.7) SKIN AIR: BOTTOM's strips with the knobs' row on top, under the tabs (42..74), the panel 77..224 (BOTTOM's 148
- * rows); its HOME as HUD's (the beings over the whole screen) with the row 41..73 and the panel 74..223 */
 #define LA_CARD_Y 42
 #define LA_GRAPH_Y 77
 #define LA_HOME_CARD_Y 41
 #define LA_HOME_GRAPH_Y 74
+#define LA_HOME_GRAPH_H 150
 
 /* (0.9.5) the hints a page gives ("OCT+ KEEP  GLO+A4 FREEZE"): only once the page has been dwelt on HINT_DWELL_MS (never
  * while SELECT walks past it), each at most HINT_MAX times ever. The count kept with the settings, a byte a hint in engine
@@ -544,20 +541,19 @@ static int lz_low(void) { return ux.skin && lz_on() && !(ui_prefs & PREF_LARGE);
 static int hud_home(void);
 static uint32_t card_y(void)
 {
-    return lz_low() ? (ux.skin == SKIN_AIR ? (hud_home() ? LA_HOME_CARD_Y : LA_CARD_Y) : LB_CARD_Y) : lz_on() ? LZ_CARD_Y : Y_LABEL;
+    return lz_low() ? (hud_home() ? LA_HOME_CARD_Y : LA_CARD_Y) : lz_on() ? LZ_CARD_Y : Y_LABEL;
 }
 static uint32_t foot_y(void) { return hud_home() ? LZ_FOOT_Y - 1u : lz_on() ? LZ_FOOT_Y : Y_FOOT; }
 static uint32_t foot_h(void) { return hud_home() ? LZ_FOOT_H + 1u : lz_on() ? LZ_FOOT_H : H_FOOT; }
 static uint32_t card_h(void) { return large_kind() == LK_TALL ? LG_CARD_H : lz_low() ? LB_CARD_H : lz_on() ? LZ_CARD_H : CARD_H; }
 static uint32_t graph_y(void)
 {
-    int air = ux.skin == SKIN_AIR;
-    return large_kind() == LK_TALL ? (lz_on() ? LZ_LG_Y_GRAPH : LG_Y_GRAPH) : hud_home() ? (air ? LA_HOME_GRAPH_Y : LB_GRAPH_Y - 1u) :
-           lz_low() ? (air ? LA_GRAPH_Y : LB_GRAPH_Y) : lz_on() ? LZ_GRAPH_Y : Y_GRAPH;
+    return large_kind() == LK_TALL ? (lz_on() ? LZ_LG_Y_GRAPH : LG_Y_GRAPH) : hud_home() ? LA_HOME_GRAPH_Y :
+           lz_low() ? LA_GRAPH_Y : lz_on() ? LZ_GRAPH_Y : Y_GRAPH;
 }
 static uint32_t graph_h(void)
 {
-    return large_kind() == LK_TALL ? LG_H_GRAPH : hud_home() ? LB_CARD_Y - LB_GRAPH_Y + 1u : lz_low() ? LB_GRAPH_H :
+    return large_kind() == LK_TALL ? LG_H_GRAPH : hud_home() ? LA_HOME_GRAPH_H : lz_low() ? LB_GRAPH_H :
            lz_on() ? LZ_GRAPH_H : H_GRAPH;
 }
 static int large_face_has(const char *s)                /* every glyph of s in the sparse L face */
@@ -713,7 +709,7 @@ static int lz_mock_cards(void) { return lz_on() && lz_fam() <= LZ_FX; }
  * their header on BG, as every other page's) */
 static int hud_home(void)
 {
-    return skin_hud() && !ui.uboot && !seq_counting() && lz_low() && lz_fam() == LZ_HOME && home_level() == 0u;   /* (0.9.7 AIR too) */
+    return ux.skin && !ui.uboot && !seq_counting() && lz_low() && lz_fam() == LZ_HOME && home_level() == 0u;   /* (0.9.7 AIR too) */
 }
 /* the tab lit: the section's group shown, the menu's tab, a layer's view */
 static uint32_t menu_tab(void);

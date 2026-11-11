@@ -69,19 +69,10 @@ static uint32_t mtab_rows(uint32_t t)                  /* .. and how many it has
  * (1.0.2: PIXEL retired, a saved PIXEL reads as LINE) */
 static const char *const STYLE_N[2] = {"FLAT", "LINE"};
 static const char *const SCOPEOPT_N[2] = {"OFF", "ON"};   /* (0.9.7) ui.c ui_scope */
-/* (0.8.9) SKIN (ui_skin, gfx.c SKIN_*): COLORS the lens in the 0.6 colours (older settings: 0); BOTTOM the knobs a slim row
- * at the foot, the middle free; HUD the picture full screen, the words floating over it; (0.9.7) AIR, HUD's look with the
- * knobs' row on top (the default of new settings). By the stored value; the menu steps them AIR COLORS BOTTOM HUD
- * (SKIN_ORDER: the editor's MENU_DESC lists them so too) */
-static const char *const SKIN_NAME[SKIN_N] = {"COLORS", "BOTTOM", "HUD", "AIR"};
-static const uint8_t SKIN_ORDER[SKIN_N] = {SKIN_AIR, SKIN_COLORS, SKIN_BOTTOM, SKIN_HUD};
-static uint32_t skin_pos(uint32_t s)                   /* the menu's place of stored skin s */
-{
-    uint32_t i = 0;
-    while (i + 1u < SKIN_N && SKIN_ORDER[i] != s)
-        i++;
-    return i;
-}
+/* (0.8.9) SKIN (ui_skin, gfx.c SKIN_*): COLORS the lens in the 0.6 colours (older settings: 0); (0.9.7) AIR, the words
+ * floating and the knobs' row on top (the default of new settings). The menu steps them AIR COLORS (the editor's
+ * MENU_DESC lists them so too); BOTTOM and HUD (0.8.9) are retired: saved, they read as COLORS */
+static const char *const SKIN_NAME[SKIN_N] = {"AIR", "COLORS"};
 /* the two-valued rows: a bit of ui_prefs (PREF_REC: of ui_rec_prefs, ui.c PREF_SCALE_LEDS) and its names (bit clear =
  * the default, bit set). A step up (a knob right,
  * OCT+) = ON on the ON / OFF rows (the switch's knob to the right; ANIM, USB SERIAL: their bit clears), else the
@@ -198,7 +189,7 @@ static uint32_t menu_get(uint32_t row)
         return ((*vr->b >> vr->sh) ^ vr->x) & vr->m;
     switch (row) {
     case MI_COLOR: return settings.palette % NPALETTES;
-    case MI_SKIN: return skin_pos(ui_skin);
+    case MI_SKIN: return ui_skin != SKIN_AIR;
     case MI_SCOPE: return ui_scope != 0u;
     case MI_STYLE: return ui_style == ST_LINE;
     case MI_LOWCUT: return settings.lowcut % 3u;
@@ -232,7 +223,7 @@ static const char *menu_vname(uint32_t row, uint32_t v)
         return vr->nm + v % vr->n * vr->w;
     switch (row) {
     case MI_COLOR: return UI_PALETTES[v % NPALETTES].name;
-    case MI_SKIN: return SKIN_NAME[SKIN_ORDER[v % SKIN_N]];
+    case MI_SKIN: return SKIN_NAME[v % SKIN_N];
     case MI_SCOPE: return SCOPEOPT_N[v & 1u];
     case MI_STYLE: return STYLE_N[v & 1u];
     case MI_LOWCUT: return SPK_EQ[v % 3u];
@@ -282,7 +273,7 @@ static void menu_put(uint32_t row, uint32_t v)
         palette_set(v);                                /* (the menu signature redraws) */
         ui.force = 1;
         break;
-    case MI_SKIN: ui_skin = SKIN_ORDER[v % SKIN_N]; break;              /* (ui_draw.c style_apply: the next frame) */
+    case MI_SKIN: ui_skin = v ? SKIN_COLORS : SKIN_AIR; break;             /* (ui_draw.c style_apply: the next frame) */
     case MI_SCOPE: ui_scope = (uint8_t)(v & 1u); ui.force = 1; break;   /* (0.9.7) the EDIT pages so from the next frame */
     case MI_STYLE: ui_style = (uint8_t)(v ? ST_LINE : ST_FLAT); break;   /* (drawn so from the next frame) */
     case MI_LOWCUT: settings.lowcut = v; fx_lowcut = (uint8_t)v; break;

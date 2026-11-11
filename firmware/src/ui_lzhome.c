@@ -66,7 +66,7 @@ static int32_t eco_bot(void) { return eco_h() - (hud_home() ? 6 : 18); }
 static uint32_t eco_step(void)
 {
     uint32_t c, k, dt = ui.frame - eco.f0;
-    int32_t top = hud_home() && ux.skin == SKIN_AIR ? (int32_t)LA_HOME_GRAPH_Y : 0;   /* (V10.58) AIR's HOME: the water under
+    int32_t top = hud_home() ? (int32_t)LA_HOME_GRAPH_Y : 0;   /* (V10.58) AIR's HOME: the water under
                                                          * its cards (the beings swam over the tabs and the four values) */
     int32_t bot = eco_bot();                            /* (the panel's floor, the number's line under it: 0.8.4's 104 of
                                                          * 122, the lens's 140 its 122) */

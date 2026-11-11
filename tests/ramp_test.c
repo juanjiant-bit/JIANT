@@ -188,7 +188,7 @@ static int ramp_tests(void)
         ok &= !(t->step[0].carg & CV_RAMP_BARS) && t->step[0].clen[0] == 0u;
         rcheck("SEQ > COMP: ACTION RAMP (16 steps; LOCK A PARAM), LENGTH 32 steps then bars, VALUE FROM + CURVE, the cards", ok);
         {   /* every LENGTH in bars and every VALUE, the four skins and LARGE: the cards whole (as ui_test test_comp_cards) */
-            static const uint8_t SK[4] = {SKIN_COLORS, SKIN_BOTTOM, SKIN_HUD, SKIN_AIR};
+            static const uint8_t SK[4] = {SKIN_COLORS, SKIN_AIR, SKIN_COLORS, SKIN_AIR};
             uint32_t sk, lg, l, v, cut = 0;
             for (sk = 0; sk < 4u; sk++)
                 for (lg = 0; lg < 2u; lg++)

@@ -11187,23 +11187,20 @@ static int test_skin(void)
     ui_power_on();
     frame();
     ok = ui_skin == SKIN_COLORS && ux.skin == SKIN_COLORS && MI_SKIN == MI_COLOR + 1u && str_eq(MI_NAME[MI_SKIN], "SKIN") &&
-         MI_TAB[MI_SKIN] == MTAB_DISPLAY && menu_n(MI_SKIN) == 4u && str_eq(menu_vname(MI_SKIN, 0), "AIR") &&
-         str_eq(menu_vname(MI_SKIN, 1), "COLORS") && str_eq(menu_vname(MI_SKIN, 2), "BOTTOM") && str_eq(menu_vname(MI_SKIN, 3), "HUD") &&
-         SKIN_AIR == 3u && menu_get(MI_SKIN) == 1u;            /* (0.9.7: AIR stored 3, first in the menu) */
+         MI_TAB[MI_SKIN] == MTAB_DISPLAY && menu_n(MI_SKIN) == 2u && str_eq(menu_vname(MI_SKIN, 0), "AIR") &&
+         str_eq(menu_vname(MI_SKIN, 1), "COLORS") &&
+         SKIN_AIR == 3u && menu_get(MI_SKIN) == 1u;            /* (0.9.7: AIR stored 3, first in the menu; BOTTOM and HUD
+                                                                 * retired: exactly these two) */
     hold(B_HOME); ui.menu_sel = MI_SKIN;
     ok &= ui.menu == 1u;
-    turn(EN_K1, 1); ok &= ui_skin == SKIN_BOTTOM;
-    turn(EN_K1, 1); ok &= ui_skin == SKIN_HUD && ux.skin == SKIN_HUD;
-    turn(EN_K1, 1); ok &= ui_skin == SKIN_HUD;                    /* (stops at the end) */
-    press(B_OCTDN); ok &= ui_skin == SKIN_BOTTOM;
-    press(B_OCTDN); ok &= ui_skin == SKIN_COLORS && ux.skin == SKIN_COLORS;
-    press(B_OCTDN); ok &= ui_skin == SKIN_AIR && ux.skin == SKIN_AIR && ux.surf == ux.bg;
+    turn(EN_K1, 1); ok &= ui_skin == SKIN_COLORS;                 /* (stops at the end) */
+    turn(EN_K1, -1); frame(); ok &= ui_skin == SKIN_AIR && ux.skin == SKIN_AIR && ux.surf == ux.bg;
     press(B_OCTDN); ok &= ui_skin == SKIN_AIR;                    /* (stops at the start) */
     press(B_OCTUP); ok &= ui_skin == SKIN_COLORS && ux.skin == SKIN_COLORS;
-    press(B_OCTUP); ok &= ui_skin == SKIN_BOTTOM && ux.skin == SKIN_BOTTOM && ux.surf == ux.bg;
+    press(B_OCTUP); ok &= ui_skin == SKIN_COLORS;
     ok &= ui_style == ST_FLAT && (ui_prefs & ~PREF_ACCEL_OFF) == 0u;   /* (no other setting moved) */
     press(B_HOME);
-    bad += check("SKIN: under COLOR in DISPLAY; KNOB 1 / OCT+- AIR COLORS BOTTOM HUD (0.9.7), stopping at the ends", ok && !ui.menu);
+    bad += check("SKIN: under COLOR in DISPLAY; KNOB 1 / OCT+- AIR COLORS, stopping at the ends", ok && !ui.menu);
     {   /* (0.9.7) new settings (none saved: settings_fresh at power-on) are AIR; the editor's MENU_DESC lists AIR first */
         ui_skin = SKIN_COLORS;
         settings_fresh(); frame();
@@ -11213,46 +11210,44 @@ static int test_skin(void)
     }
     {   /* saved with the settings (byte 20 of engine 15); unknown and older settings: COLORS (idempotent) */
         persist_t p, q;
-        ui_skin = SKIN_HUD; frame();
+        ui_skin = SKIN_AIR; frame();
         settings_export(&p);
         ui_skin = SKIN_COLORS;
-        ok = settings_import(&p, (int)sizeof p) == 1 && ui_skin == SKIN_HUD && p.favorites.factory[15][20] == SKIN_HUD;
+        ok = settings_import(&p, (int)sizeof p) == 1 && ui_skin == SKIN_AIR && p.favorites.factory[15][20] == SKIN_AIR;
         frame();
-        ok &= ux.skin == SKIN_HUD;
+        ok &= ux.skin == SKIN_AIR;
         p.favorites.factory[15][20] = 7;
         ok &= settings_import(&p, (int)sizeof p) == 1 && ui_skin == SKIN_COLORS && !p.favorites.factory[15][20];
         q = p;
         ok &= settings_import(&q, (int)sizeof q) == 1 && ui_skin == SKIN_COLORS && !memcmp(&p, &q, sizeof p);
-        ui_skin = SKIN_BOTTOM;
+        ui_skin = SKIN_AIR;
         settings_export(&p);
         memset(&p.favorites, 0, sizeof p.favorites);
         p.magic = 0x50455233u;                                    /* (PER3: settings from before) */
         ok &= settings_import(&p, (int)(sizeof p - sizeof p.favorites)) == 2 && ui_skin == SKIN_COLORS;
-        ui_skin = 9; frame();                                     /* (a live unknown byte: COLORS) */
-        ok &= ui_skin == SKIN_COLORS && ux.skin == SKIN_COLORS;
-        ui_skin = SKIN_AIR; frame();                              /* (0.9.7) AIR saved, read back */
-        settings_export(&p);
-        ui_skin = SKIN_COLORS;
-        ok &= settings_import(&p, (int)sizeof p) == 1 && ui_skin == SKIN_AIR && p.favorites.factory[15][20] == SKIN_AIR;
-        for (sk = SKIN_COLORS; sk <= SKIN_HUD; sk++) {            /* .. settings saved before 0.9.7 keep their skin */
-            p.favorites.factory[15][20] = (uint8_t)sk;
-            ok &= settings_import(&p, (int)sizeof p) == 1 && ui_skin == sk;
+        for (sk = 0; sk < 256u; sk++) {                           /* (a live byte: the retired BOTTOM 1 and HUD 2, unknown: COLORS) */
+            ui_skin = (uint8_t)sk; frame();
+            ok &= ui_skin == (sk == SKIN_AIR ? SKIN_AIR : SKIN_COLORS) && ux.skin == ui_skin;
         }
-        bad += check("SKIN saved with the settings and read back (AIR too); older settings keep theirs; unknown: COLORS (idempotent)", ok);
+        ui_skin = SKIN_COLORS; frame();
+        settings_export(&p);
+        for (sk = 0; sk < 256u; sk++) {                           /* .. and saved: 1 (BOTTOM) and 2 (HUD) read as COLORS, the
+                                                                   * record rewritten so; 3 AIR; anything else COLORS */
+            p.favorites.factory[15][20] = (uint8_t)sk;
+            ok &= settings_import(&p, (int)sizeof p) == 1 && ui_skin == (sk == SKIN_AIR ? SKIN_AIR : SKIN_COLORS) &&
+                  p.favorites.factory[15][20] == ui_skin;
+        }
+        ui_skin = SKIN_COLORS;
+        bad += check("SKIN saved with the settings and read back; a saved BOTTOM or HUD (retired) and unknown: COLORS (idempotent)", ok);
     }
     ui_power_on(); frame();                                       /* the geometry: HOME (ECO) */
     ok = card_y() == LZ_CARD_Y && graph_y() == LZ_GRAPH_Y && !lz_low() && !hud_home();
     ok &= lg_px(CARD_X(0) + COL_W / 2, LZ_CARD_Y + 1) == T_RAISE && lg_px(LT_X(0) + LT_W / 2, LT_Y + 1) == T_THEME;
-    ui_skin = SKIN_BOTTOM; frame();
-    ok &= lz_low() && !hud_home() && card_y() == LB_CARD_Y && card_h() == LB_CARD_H && graph_y() == LB_GRAPH_Y &&
-          graph_h() == LB_GRAPH_H && skin_ink(LZ_CARD_Y, LZ_CARD_Y + LZ_CARD_H) > 0 && skin_ink(LB_CARD_Y, LB_CARD_Y + LB_CARD_H) > 100;
+    ui_skin = SKIN_AIR; frame();                                  /* (0.9.7) AIR: the beings over the whole screen, its knob row on top */
     ok &= lg_px(LT_X(0) + LT_W / 2 + 30, LT_Y + 1) == T_BG;       /* (the tabs words: no fill) */
-    ui_skin = SKIN_HUD; frame();
-    ok &= lz_low() && hud_home() && graph_y() == LB_GRAPH_Y - 1u && foot_y() == LZ_FOOT_Y - 1u;
     ui_prefs |= PREF_LARGE; frame();
     ok &= !lz_low() && !hud_home() && large_kind() == LK_TALL && card_y() == LZ_CARD_Y;   /* (LARGE: COLORS' layout) */
     ui_prefs &= ~PREF_LARGE; frame();
-    ui_skin = SKIN_AIR; frame();                                  /* (0.9.7) AIR: HUD's HOME, its knob row on top */
     ok &= lz_low() && hud_home() && card_y() == LA_HOME_CARD_Y && card_h() == LB_CARD_H && graph_y() == LA_HOME_GRAPH_Y &&
           graph_y() + graph_h() == LZ_FOOT_Y - 1u && foot_y() == LZ_FOOT_Y - 1u && skin_ink(LA_HOME_CARD_Y, LA_HOME_CARD_Y + LB_CARD_H) > 100;
     go_title("ENV"); frame();
@@ -11262,55 +11257,10 @@ static int test_skin(void)
     ui_prefs |= PREF_LARGE; frame();
     ok &= !lz_low() && large_kind() == LK_TALL && card_y() == LZ_CARD_Y;   /* (LARGE: COLORS' layout, as in every skin) */
     ui_prefs &= ~PREF_LARGE; ui_skin = SKIN_COLORS; go_home(); frame();
-    bad += check("SKIN geometry: COLORS cards on top; BOTTOM the knob row 191..223, the panel 42..189; HUD's HOME full screen; "
+    bad += check("SKIN geometry: COLORS cards on top; "
                  "AIR the knob row 42..74 under the tabs, the panel 77..224 (HOME: full screen, the row 41..73); LARGE: COLORS'", ok);
-    {   /* HUD's HOME: the beings swim the whole screen, under the header, the tabs and the knobs (their outlines drawn) */
-        uint32_t top = 0, low = 0, k;
-        ui_power_on(); ui_skin = SKIN_HUD; song.playing = 1;
-        eco.init = 0; frame();                                    /* (0.9.1) from their power-on places, one sent under the
-                                                                   * knob row and one over the tabs' line: they stay there
-                                                                   * (HUD's floor and ceiling the screen's), whatever the
-                                                                   * tests before left (their swim had been carried from them:
-                                                                   * a track muted on the MIXER then moved them lower) */
-        eco.sy[0] = (LB_CARD_Y + 20) << 8; eco.vy[0] = 30;
-        eco.sy[1] = (LB_GRAPH_Y - 20) << 8; eco.vy[1] = -30;
-        for (k = 0; k < 400u; k++) {
-            uint32_t c;
-            frame();
-            for (c = 0; c < ECO_N; c++) {
-                top |= (eco.sy[c] >> 8) < LB_GRAPH_Y;
-                low |= (eco.sy[c] >> 8) > LB_CARD_Y;
-            }
-        }
-        ok = hud_home() && top && low && ui.graph_sig != 0u;
-        bad += check("SKIN HUD: HOME's beings over the whole screen (above the tabs' line, under the knob row), every strip on them", ok);
-    }
-    {   /* HUD: the knob row whole for 3 s after a turn, then faded to 22 %, whole again at a turn (0.9.0: HOME's only) */
-        uint16_t lit, faded, back;
-        uint32_t c;
-        ui_power_on(); ui_skin = SKIN_HUD;
-        for (c = 0; c < NTRK; c++) trk[c].p[P_MUTE] = 1;          /* (HOME: the beings asleep, dim outlines under the row) */
-        frame();
-        turn(EN_K1, 1); frame();
-        lit = (uint16_t)skin_ink(LB_CARD_Y, LB_CARD_Y + LB_CARD_H);
-        ok = hud_fade() == 100u;
-        frames(4000);
-        ok &= hud_fade() == 22u;
-        faded = (uint16_t)skin_ink(LB_CARD_Y, LB_CARD_Y + LB_CARD_H);
-        {   /* (no pixel as bright as the text's left: the faint dim outlines of the asleep beings stay under it) */
-            uint32_t x, y, nb = 0;
-            for (y = LB_CARD_Y; y < LB_CARD_Y + LB_CARD_H; y++)
-                for (x = 0; x < 240; x++)
-                    nb += ux_luma(lg_px((int32_t)x, (int32_t)y)) > ux_luma(T_TEXT) * 3u / 4u;
-            ok &= nb == 0u;
-        }
-        turn(EN_K2, 1); frame();
-        back = (uint16_t)skin_ink(LB_CARD_Y, LB_CARD_Y + LB_CARD_H);
-        ok &= hud_fade() == 100u && lit > 100u && faded > 0u && back > 100u;
-        for (c = 0; c < NTRK; c++) trk[c].p[P_MUTE] = 0;
-        bad += check("SKIN HUD: the knob row fades to 22 % 3 s after the last turn, whole again at a turn", ok);
-    }
-    {   /* (0.9.7) AIR's HOME as HUD's: the knob row (on top, under the tabs) fades to 22 % 3 s after the last turn */
+    {   /* (0.9.7) AIR's HOME: the knob row (on top, under the tabs) whole for 3 s after a turn, then faded to 22 %, whole
+         * again at a turn; no pixel of the faded row as bright as the text's */
         uint32_t lit, faded, c;
         ui_power_on(); ui_skin = SKIN_AIR;
         for (c = 0; c < NTRK; c++) trk[c].p[P_MUTE] = 1;
@@ -11321,13 +11271,20 @@ static int test_skin(void)
         frames(4000);
         faded = skin_ink(LA_HOME_CARD_Y, LA_HOME_CARD_Y + LB_CARD_H);
         ok &= hud_fade() == 22u && lit > 100u && faded > 0u;
+        {
+            uint32_t x, y, nb = 0;
+            for (y = LA_HOME_CARD_Y; y < LA_HOME_CARD_Y + LB_CARD_H; y++)
+                for (x = 0; x < 240; x++)
+                    nb += ux_luma(lg_px((int32_t)x, (int32_t)y)) > ux_luma(T_TEXT) * 3u / 4u;
+            ok &= nb == 0u;
+        }
         turn(EN_K2, 1); frame();
         ok &= hud_fade() == 100u && skin_ink(LA_HOME_CARD_Y, LA_HOME_CARD_Y + LB_CARD_H) > 100u;
         for (c = 0; c < NTRK; c++) trk[c].p[P_MUTE] = 0;
-        bad += check("SKIN AIR: HOME's knob row (on top) fades as HUD's, whole again at a turn", ok);
+        bad += check("SKIN AIR: HOME's knob row (on top) fades to 22 % 3 s after the last turn, whole again at a turn", ok);
     }
-    {   /* (0.9.0, the HUD audit's M1) the fade on HUD's HOME only; whole again on a page, level or set change */
-        ui_power_on(); ui_skin = SKIN_HUD; frame();
+    {   /* (0.9.0, the HUD audit's M1) the fade on AIR's HOME only; whole again on a page, level or set change */
+        ui_power_on(); ui_skin = SKIN_AIR; frame();
         go_title("ENV"); frame();
         frames(4000);
         ok = hud_fade() == 100u;                                  /* (a lens page: never faded) */
@@ -11341,11 +11298,11 @@ static int test_skin(void)
         ok &= hud_fade() == 22u;
         turn(EN_SELECT, 1); frames(200); turn(EN_SELECT, -1); frame();   /* (BEING and back: its level) */
         ok &= hud_home() && hud_fade() == 100u;
-        bad += check("SKIN HUD: the knob row fades on HOME only, whole again on a new page, level or set (M1)", ok);
+        bad += check("SKIN AIR: the knob row fades on HOME only, whole again on a new page, level or set (M1)", ok);
     }
     {   /* (0.9.0, H1) the count-in and UPDATE MODE's countdown over HUD's HOME: their header on BG, no beings */
         uint32_t x, y, clean = 1;
-        ui_power_on(); ui_skin = SKIN_HUD; song.playing = 1; frames(2000);
+        ui_power_on(); ui_skin = SKIN_AIR; song.playing = 1; frames(2000);
         ok = hud_home();
         cin_left = cin_total = 4u; frame(); frame();
         ok &= !hud_home();
@@ -11360,7 +11317,7 @@ static int test_skin(void)
         ui.uboot = 0; ui.force = 1; frame();
         ok &= hud_home() && clean;
         song.playing = 0;
-        bad += check("SKIN HUD: the count-in and UPDATE MODE over HOME: not HUD's HOME, their header on BG (H1)", ok);
+        bad += check("SKIN AIR: the count-in and UPDATE MODE over HOME: not the beings' HOME, their header on BG (H1)", ok);
     }
     {   /* (0.9.0, H2) HUD's HOME sends what changed only (gfx.c cv_blit_cells): the panel always equals a full redraw of the
          * same state, and a frame sends a fraction of the screen. (A pixel off only inside a cell whose 16-bit hash
@@ -11370,7 +11327,7 @@ static int test_skin(void)
         static uint16_t lazy[240 * 240];
         uint32_t n, f, i, same = 1;
         uint64_t sent = 0;
-        for (sk = SKIN_HUD; sk <= SKIN_AIR; sk++) {             /* (0.9.7: AIR's HOME too) */
+        for (sk = SKIN_AIR; sk <= SKIN_AIR; sk++) {             /* (0.9.7: AIR's HOME) */
         ui_power_on(); ui_skin = (uint8_t)sk; song.playing = 1; frame();
         for (n = 0; n < 4u; n++) {
             for (f = 0; f < 45u; f++) {
@@ -11413,7 +11370,7 @@ static int test_skin(void)
         name_open(NK_USER_SAVE, 6); ui.force = 1; frame();
         ok = name_on() && lg_px(CARD_X(0) + COL_W / 2, LZ_CARD_Y + 1) == T_RAISE && lg_px(LT_X(1) + 2, LT_Y + LT_H / 2) == T_RAISE;
         press(B_OCTDN); frame();
-        for (sk = SKIN_BOTTOM; sk < SKIN_N; sk++) {
+        for (sk = SKIN_AIR; sk <= SKIN_AIR; sk++) {
             ui_power_on(); ui_skin = (uint8_t)sk; frame();
             name_open(NK_USER_SAVE, 6); ui.force = 1; frame();
             ok &= name_on() && lg_px(CARD_X(0) + COL_W / 2, LZ_CARD_Y + 1) == T_BG && lg_px(LT_X(1) + 2, LT_Y + LT_H / 2) == T_BG &&
@@ -11421,7 +11378,7 @@ static int test_skin(void)
             press(B_OCTDN); frame();
             ok &= !name_on();
         }
-        bad += check("SKIN: NAME follows it (BOTTOM, HUD: no boxes, the skin's tabs), as NOTICE and DICE (L6)", ok);
+        bad += check("SKIN: NAME follows it (AIR: no boxes, the skin's tabs), as NOTICE and DICE (L6)", ok);
     }
     {   /* (0.9.0, L8) a message longer than ui.msg: an ellipsis at its end, never cut silently; the long ones whole */
         char want[64];
@@ -11447,7 +11404,7 @@ static int test_skin(void)
         ok &= !ui.msg_t && !ui.hint_pg;
         bad += check("a page's hint goes when the page changes (not carried onto the next page); no layer hint after EDIT", ok);
     }
-    for (sk = 0; sk < SKIN_N; sk++) {                             /* every lens page in each skin */
+    for (sk = SKIN_COLORS; sk <= SKIN_AIR; sk += SKIN_AIR) {                             /* every lens page in each skin */
         int okp = 1;
         for (i = 0; i < NPAGES; i++) {
             ui_power_on(); ui_skin = (uint8_t)sk;
@@ -11458,10 +11415,8 @@ static int test_skin(void)
             npg += !sk;
             if (sk == SKIN_COLORS)
                 okp &= card_y() == LZ_CARD_Y && lg_px(CARD_X(0) + COL_W / 2, LZ_CARD_Y + 1) != T_BG;
-            else if (sk == SKIN_AIR)                              /* (0.9.7) AIR: the knob row on top */
+            else                                                  /* (0.9.7) AIR: the knob row on top */
                 okp &= lz_low() && card_y() == LA_CARD_Y && skin_ink(LA_CARD_Y, LA_CARD_Y + LB_CARD_H) > 0;
-            else
-                okp &= lz_low() && card_y() == LB_CARD_Y && skin_ink(LB_CARD_Y, LB_CARD_Y + LB_CARD_H) > 0;
             if (!okp) { printf("  skin %u: %s\n", sk, PAGES[i].title); break; }
         }
         ok = okp;
@@ -11470,15 +11425,13 @@ static int test_skin(void)
             if (i == 1u) press(B_HOME);
             if (i == 2u) { press(B_HOME); press(B_HOME); }
             frames(100);
-            ok &= lz_on() && lz_fam() == LZ_HOME && lz_level() == i && hud_home() == ((sk == SKIN_HUD || sk == SKIN_AIR) && !i) &&
+            ok &= lz_on() && lz_fam() == LZ_HOME && lz_level() == i && hud_home() == (sk == SKIN_AIR && !i) &&
                   skin_ink(LZ_FOOT_Y, 240) > 0;
         }
         hold(B_HOME); frame();                                    /* the menu */
         ok &= ui.menu == 1u && lz_low() == (sk != SKIN_COLORS);
         press(B_HOME);
         bad += check(sk == SKIN_COLORS ? "SKIN COLORS: every page of the lenses, HOME's three levels and the menu drawn" :
-                     sk == SKIN_BOTTOM ? "SKIN BOTTOM: every page of the lenses, HOME's three levels and the menu drawn" :
-                     sk == SKIN_HUD ? "SKIN HUD: every page of the lenses, HOME's three levels and the menu drawn" :
                      "SKIN AIR: every page of the lenses, HOME's three levels and the menu drawn", ok && npg > 40u);
     }
     ui_power_on(); frame();
@@ -11579,7 +11532,7 @@ static int test_home_a(void)
         ok &= !(eco_fc.fl[0] & EF_SHUT);                          /* (0.1 s on: open again, the level held) */
         bad += check("0.9.7 HOME A: a hit shuts its eyes 0.1 s (only its)", ok);
     }
-    for (sk = 0; sk < SKIN_N; sk++) {   /* no critters, no ring of MUTATE dots: MUTATE on draws nothing until one lands */
+    for (sk = SKIN_COLORS; sk <= SKIN_AIR; sk += SKIN_AIR) {   /* no critters, no ring of MUTATE dots: MUTATE on draws nothing until one lands */
         static uint16_t a[240 * 240];
         ui_power_on(); ui_skin = (uint8_t)sk; ui.home = 1; ui.hlv = 0; ui.hset[0] = 0;
         frames(320);
@@ -11601,8 +11554,6 @@ static int test_home_a(void)
         if (sk == SKIN_COLORS)
             ok &= ha_loose() <= 22u * 4u;                         /* (away from the beings the granules only: 22, 4 px at most) */
         bad += check(sk == SKIN_COLORS ? "0.9.7 HOME A (COLORS): no critters, no ring" :
-                     sk == SKIN_BOTTOM ? "0.9.7 HOME A (BOTTOM): no ring" :
-                     sk == SKIN_HUD ? "0.9.7 HOME A (HUD): no ring" :
                      "0.9.7 HOME A (AIR): no ring", ok);
     }
     ui_prefs = 0;
@@ -11646,7 +11597,7 @@ static int test_scope(void)
         ok &= ui_scope == 1u;                                     /* (settings_fresh leaves it: a new FM-1's byte is 0, OFF) */
         bad += check("SCOPE saved with the settings and read back; older settings, unknown values: OFF (idempotent)", ok);
     }
-    for (sk = 0; sk < SKIN_N; sk++)                               /* the EDIT pages of every engine with a creature */
+    for (sk = SKIN_COLORS; sk <= SKIN_AIR; sk += SKIN_AIR)                               /* the EDIT pages of every engine with a creature */
         for (e = 0; e < NENGINES; e++) {
             uint32_t on_tile, on_mid, off_tile, off_mid, gy, chips;
             if (!eng_ok(e) || e == ENGI_DRUM || e == ENGI_FM6 || eng_gone(e) || str_eq(ENGINES[e]->name, "DIGITAL") || e == ENGI_ADD)
@@ -11671,7 +11622,7 @@ static int test_scope(void)
             bad += ok ? 0 : 1;
         }
     bad += check("SCOPE: ON the creature left of the scope, the trace on the panel (no card, every skin); OFF on the whole panel",
-                 nseen >= 4u * 7u);
+                 nseen >= 2u * 7u);
     ui_power_on(); frame();
     return bad;
 }
@@ -12653,7 +12604,7 @@ static int test_toasts(void)
     int bad = 0, ok = 1, moved = 1, gone = 1;
     uint32_t sk, pi, lg, x, y, out, in, n, seen, passed, k;
     int32_t b[4];
-    for (sk = 0; sk < SKIN_N; sk++)
+    for (sk = SKIN_COLORS; sk <= SKIN_AIR; sk += SKIN_AIR)
         for (pi = 0; pi < 3u; pi++)
             for (lg = 0; lg < 2u; lg++) {
                 ui_power_on(); ui_skin = (uint8_t)sk; settings.palette = PAL[pi]; palette_set(PAL[pi]);
@@ -12675,7 +12626,7 @@ static int test_toasts(void)
     ui_prefs &= ~PREF_LARGE;
     bad += check("0.9.5 a toast is a pill over the page: the panel behind it as it was (every skin, JIANT GREY PAPER, LARGE)", ok);
     bad += check("  gone with the message: the page whole again", gone);
-    for (sk = 0; sk < SKIN_N; sk++) {                   /* playing: the page moves on behind it */
+    for (sk = SKIN_COLORS; sk <= SKIN_AIR; sk += SKIN_AIR) {                   /* playing: the page moves on behind it */
         ui_power_on(); ui_skin = (uint8_t)sk; settings.palette = UI_JIANT_INDEX; palette_set(UI_JIANT_INDEX);
         TSEL->p[P_APDEP] = 100; song.playing = 1;      /* (as test_fx_live: AUTO PAN's dot runs while it plays) */
         go_title("AUTO PAN"); frames(800);
@@ -12691,7 +12642,7 @@ static int test_toasts(void)
         song.playing = 0;
     }
     bad += check("  playing: the page (AUTO PAN's dot) goes on moving behind the toast", moved);
-    for (ok = 1, sk = 0; sk < SKIN_N; sk++) {           /* NOTICE: the page round its box, its tabs, its breadcrumb */
+    for (ok = 1, sk = SKIN_COLORS; sk <= SKIN_AIR; sk += SKIN_AIR) {           /* NOTICE: the page round its box, its tabs, its breadcrumb */
         static const int16_t R[3][4] = {{0, LT_Y, 240, 0}, {14, 66, 212, 140}, {0, LZ_FOOT_Y, 240, LZ_FOOT_H}};
         ui_power_on(); ui_skin = (uint8_t)sk; settings.palette = UI_JIANT_INDEX; palette_set(UI_JIANT_INDEX);
         go_title("ENV"); ui.force = 1; frames(800);
@@ -13566,7 +13517,7 @@ static int test_engine_order_099(void)
  * it can (gfx.c's hook, ut_text) */
 static int test_comp_cards(void)
 {
-    static const uint8_t SK[4] = {SKIN_COLORS, SKIN_BOTTOM, SKIN_HUD, SKIN_AIR};
+    static const uint8_t SK[4] = {SKIN_COLORS, SKIN_AIR, SKIN_COLORS, SKIN_AIR};
     int bad = 0;
     uint32_t sk, lg, pg, a, i, n = 0;
     char what[96] = "";
@@ -14093,7 +14044,7 @@ static int test_card_heat(void)
 {
     int bad = 0, ok = 1, moved = 1, other = 1, bip = 0, vtext = 1;
     uint32_t sk, c, k, i;
-    for (sk = 0; sk < SKIN_N; sk++) {
+    for (sk = SKIN_COLORS; sk <= SKIN_AIR; sk += SKIN_AIR) {
         for (k = 0; k < 2u; k++) {                      /* JIANT, then another of the family (HUESO) */
             uint8_t pal = k ? 5u : UI_JIANT_INDEX;
             ui_power_on(); ui_skin = (uint8_t)sk; settings.palette = pal; palette_set(pal);

@@ -2431,12 +2431,12 @@ int main(int argc, char **argv)
         for (s = 0; s < lg_nsmall; s++) fprintf(rep, " '%s'", lg_small[s]);
         fprintf(rep, "\n");
     }
-    {   /* (0.8.9) MENU > DISPLAY > SKIN BOTTOM and HUD (0.9.7: AIR) (ui.c lz_low, hud_home): every screen in every palette in FLAT, in
-         * LINE and with MENU > LARGE ON (COLORS' layout, the skin's tabs and colours), linted (GREY: gray, MONO: neutral); FLAT
-         * as OUTDIR/ppm/<SKIN>_<PALETTE>_<screen>.ppm for JIANT PAPER GREY MONO (ui_render.py: sheet_<SKIN>_<PALETTE>.png) */
-        static const char *const SK_N[SKIN_N] = {"COLORS", "BOTTOM", "HUD", "AIR"}, *const ST_N[3] = {"", "-LINE", "-LARGE"};
+    {   /* (0.9.7) MENU > DISPLAY > SKIN AIR (ui.c lz_low, hud_home): every screen in every palette in FLAT, in
+         * LINE and with MENU > LARGE ON (COLORS' layout, the skin's tabs and colours), linted; FLAT
+         * as OUTDIR/ppm/AIR_<PALETTE>_<screen>.ppm (ui_render.py: sheet_AIR_<PALETTE>.png) */
+        static const char *const SK_N[4] = {"COLORS", "", "", "AIR"}, *const ST_N[3] = {"", "-LINE", "-LARGE"};
         uint32_t sk, st, n0 = nfind, nlow = 0, nhud = 0;
-        for (sk = SKIN_BOTTOM; sk <= SKIN_AIR; sk++)   /* (0.9.7: AIR, the knobs' row on top) */
+        for (sk = SKIN_AIR; sk <= SKIN_AIR; sk++)      /* (0.9.7: AIR, the knobs' row on top; BOTTOM and HUD retired) */
             for (st = 0; st < 3u; st++)
                 for (p = 0; p < NPALETTES; p++)
                     for (s = 0; s < S_COUNT; s++) {
@@ -2456,13 +2456,13 @@ int main(int argc, char **argv)
                         nlow += (uint32_t)lz_low();
                         nhud += (uint32_t)hud_home();
                         lint();
-                        if (!st && (p == UI_JIANT_INDEX || !strcmp(UI_PALETTES[p].name, "CONTRAST") || !strcmp(UI_PALETTES[p].name, "HUESO")))
+                        if (!st)                         /* (AIR, the default skin: every palette of the family) */
                             write_ppm(out, tag, S_NAME[s]);
                     }
         ui_skin = SKIN_COLORS; ui_style = ST_FLAT; style_apply();
         if (nlow < 1000u || nhud < 20u) { fprintf(stderr, "ui_render: SKIN drew %u screens low, %u HUD HOMEs only\n", nlow, nhud); return 1; }
-        fprintf(rep, "SKIN BOTTOM and HUD (FLAT, LINE, LARGE, every palette): %u lint findings; %u screens with the knob row, %u HUD "
-                "HOMEs\n", nfind - n0, nlow, nhud);
+        fprintf(rep, "SKIN AIR (FLAT, LINE, LARGE, every palette): %u lint findings; %u screens with the knob row, %u HOMEs with "
+                "the beings over the whole screen\n", nfind - n0, nlow, nhud);
     }
     {   /* every FM6 colony (the lint above, fm6_hook, runs on each), in GREY: gray */
         uint32_t a, c0 = fmp_charts;
@@ -2562,10 +2562,10 @@ int main(int argc, char **argv)
         {   /* (0.8.9) SKIN: HOME, EDIT, SEQ's BAR, FX's BUSES redrawn whole in each skin (us, texts, LCD px sent), and HOME frame
              * by frame (HUD: every strip each frame, on the beings) */
             static const int SC[] = {S_HOME, S_EDIT_ANALOG, S_LENTE_BAR, S_FXL_BUSES, S_VX_HEAD_S, S_VX_WING, S_VX_KIT_HOME};
-            static const char *const SK_N[SKIN_N] = {"COLORS", "BOTTOM", "HUD", "AIR"};
+            static const char *const SK_N[4] = {"COLORS", "", "", "AIR"};
             uint32_t sk;
             fprintf(rep, "  SKIN (full redraw us / texts / LCD px; HOME a frame without force):\n");
-            for (sk = 0; sk < SKIN_N; sk++) {
+            for (sk = SKIN_COLORS; sk <= SKIN_AIR; sk += SKIN_AIR) {
                 fprintf(rep, "  %-7s", SK_N[sk]);
                 for (k = 0; k < sizeof SC / sizeof SC[0]; k++) {
                     clock_t c0;

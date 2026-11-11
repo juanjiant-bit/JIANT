@@ -111,7 +111,7 @@ static struct {
     uint16_t bg, surf, text, theme, accent, mid, dim, line, sel, tint, rec, raise;
     uint16_t key, lane, grid;
     uint8_t style;               /* MENU > STYLE (ui.c style_apply): ST_FLAT, ST_LINE */
-    uint8_t skin;                /* (0.8.9) MENU > SKIN (ui_draw.c style_apply): SKIN_COLORS, SKIN_BOTTOM, SKIN_HUD, SKIN_AIR */
+    uint8_t skin;                /* (0.8.9) MENU > SKIN (ui_draw.c style_apply): SKIN_COLORS, SKIN_AIR */
     uint32_t gen;                /* bumped by palette_set (the text ramps follow) */
 } ux;
 /* STYLE: FLAT, the filled SURF cards and panels; LINE, no SURF (it is BG) and 1 px T_RULE dividers between the
@@ -119,16 +119,13 @@ static struct {
  * Selections, accents, keys and gauges keep their fills in every style */
 #define ST_FLAT 0u
 #define ST_LINE 1u
-/* (0.8.9) SKIN (the approved mock-up opciones_skin.html): COLORS, the lens's cards and panel in the 0.6 colours; BOTTOM, the
- * knobs a slim row at the foot and the middle free (no panel, no boxes: SURF is BG); HUD, the picture full screen and the
- * words floating over it. (0.9.7) AIR (the default of new settings): HUD's look everywhere, the knobs' row on top, right
- * under the tabs, the middle free for the pictures, the breadcrumb at the foot (stored 3: older settings keep theirs) */
+/* (0.8.9) SKIN (the approved mock-up opciones_skin.html): COLORS, the lens's cards and panel in the 0.6 colours; (0.9.7)
+ * AIR (the default of new settings): no panel, no boxes (SURF is BG), the words floating with a dark outline, the knobs'
+ * row on top, right under the tabs, the middle free for the pictures, the breadcrumb at the foot; its HOME the beings
+ * over the whole screen. The values are the stored ones: 1 and 2 were BOTTOM and HUD (retired: they read as COLORS) */
 #define SKIN_COLORS 0u
-#define SKIN_BOTTOM 1u
-#define SKIN_HUD 2u
 #define SKIN_AIR 3u
-#define SKIN_N 4u
-static int skin_hud(void) { return ux.skin == SKIN_HUD || ux.skin == SKIN_AIR; }   /* (0.9.7) HUD's look: no rules, words float */
+#define SKIN_N 2u                /* (the menu's two) */
 #define T_K(c) UI_KNOBS[(c) & 3u]   /* KNOB c's colour (tools/gen_ui_palettes.py KNOBS): the skins' cards, as 0.6 */
 #define T_RULE ux.dim            /* LINE: the dividers (DIM: quieter than labels) */
 #define T_BG ux.bg               /* background */

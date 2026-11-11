@@ -46,7 +46,8 @@ static int settings_import(persist_t *p, int n)
     }
     if (old1 || old2) p->bold = 0;
     if (!current) memset(&p->favorites, 0, sizeof p->favorites);
-    if (p->favorites.factory[15][20] > 3u)         /* SKIN (JIANT 0.8.9, ui.c ui_skin; 0.9.7: 3 AIR): unknown = COLORS (0, older
+    if (p->favorites.factory[15][20] != SKIN_AIR)  /* SKIN (JIANT 0.8.9, ui.c ui_skin; 0.9.7: 3 AIR): the retired BOTTOM (1) and
+                                                     * HUD (2), unknown = COLORS (0, older
                                                      * settings too: they keep the skin they had) */
         p->favorites.factory[15][20] = 0;
     if (p->favorites.factory[15][19] > 1u)         /* SCOPE (0.9.7, ui.c ui_scope): unknown = OFF (0, older settings too) */

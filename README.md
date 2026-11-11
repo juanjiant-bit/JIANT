@@ -62,6 +62,8 @@ risk: it is a custom firmware.
 - *(next version)* **Seven palettes, all JIANT's own**: MENU › DISPLAY › COLOR offers JIANT (unchanged, the default),
   SELVA, CONTRAST, BRASA, ABISAL, HUESO and NEON, each with the thermal ramp on beings, notes, bars and card values. The
   ten palettes inherited from Felucca are gone; a saved one lands on the nearest of the family.
+- *(next version)* **Two skins**: MENU › DISPLAY › SKIN is AIR or COLORS; BOTTOM and HUD are gone (a saved one loads
+  as COLORS).
 - **VOICE** no longer clips on open vowels; WORDS › CONS sets the consonants' length.
 - **NRPN** for every automatable parameter ([docs/NRPN.md](docs/NRPN.md)); the editor protocol is a versioned
   contract, 1.2 ([web/EDITOR_PROTOCOL.md](web/EDITOR_PROTOCOL.md)).
@@ -211,10 +213,9 @@ VOICE singing its lyric, in the COLORS skin, exactly as the firmware draws them 
 - **Thermal palette**: values, curves, steps, hits and notes are coloured by intensity (cyan → blue → violet → red →
   orange → yellow → white). Selection is violet and active is orange; on JIANT each card's value and gauge are its
   amount's heat (0.9.5, as 0.6), in every one of the seven palettes.
-- **Skins** (MENU › DISPLAY › SKIN, 0.8.9): **AIR** (0.9.7, the default of new settings: HUD's floating words on
-  every page, the knob row on top under the tabs, the middle free), **COLORS** (near-black rounded cards on top, a rounded
-  panel), **BOTTOM** (the picture edge to edge, a slim knob row at the foot) and **HUD** (HOME's beings swim under
-  everything, the words float over them). Every skin wears the **LENTE** layout (0.8.5): the
+- **Skins** (MENU › DISPLAY › SKIN): **AIR** (0.9.7, the default of new settings: floating words on
+  every page, the knob row on top under the tabs, the middle free, HOME's beings over the whole screen) and **COLORS**
+  (near-black rounded cards on top). Every skin wears the **LENTE** layout (0.8.5): the
   section's groups as tabs on top (a dot a page), the breadcrumb **SECTION · GROUP · page n/N** at the foot. Values
   in [Inter Tight](https://github.com/rsms/inter-tight) SemiBold, names, tabs and the breadcrumb in a crisp 5 × 7
   pixel face, small captions in [Chakra Petch](https://github.com/m4rc1e/Chakra-Petch).
