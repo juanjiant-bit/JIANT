@@ -11649,13 +11649,13 @@ static int test_scope(void)
             ui_scope = 0u; ui.force = 1; frame();
             off_tile = sc_rows((int32_t)gy + 2, (int32_t)gy + 115, T_RAISE);   /* (no card, no chips) */
             off_mid = sc_count(117, (int32_t)gy + 20, 121, (int32_t)gy + 120, T_SURF, 0);   /* (the creature across the middle) */
-            ok = on_mid == 0u && off_mid > 0u && off_tile == 0u && (ux.skin || (on_tile > 40u && chips >= 20u));
+            ok = on_mid == 0u && off_mid > 0u && off_tile == 0u && on_tile == 0u && chips == 0u;   /* (V10.7.19: no SCOPE card in any skin) */
             if (!ok) printf("  %s skin %u: on card %u chips %u mid %u, off card %u mid %u\n", ENGINES[e]->name, sk, on_tile, chips, on_mid,
                             off_tile, off_mid);
             nseen += ok;
             bad += ok ? 0 : 1;
         }
-    bad += check("SCOPE: ON the creature left of the SCOPE card and the chips; OFF on the whole panel, no card, no chips (every engine, every skin)",
+    bad += check("SCOPE: ON the creature left of the scope, the trace on the panel (no card, every skin); OFF on the whole panel",
                  nseen >= 4u * 7u);
     ui_power_on(); frame();
     return bad;

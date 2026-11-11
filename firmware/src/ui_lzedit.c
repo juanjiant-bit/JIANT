@@ -35,7 +35,6 @@ static __attribute__((noinline)) void graph_sound_lz(const track_t *t)
     const engine_t *e = trk_engp(t);
     uint32_t two = cur_page()->id[0] != P_E0;
     int32_t x = 122, w = 106, ty = 2, bare = ux.skin != 0u;
-    uint16_t tb = lz_tile_bg();
     char b[40];
     /* (V10.7.15, the owner) no parameter list beside the being: the knobs' cards above say the same. SCOPE OFF (the
      * default): the creature (or the generic being) on the whole panel; SCOPE ON: the being left, the scope tall right */
@@ -47,9 +46,10 @@ static __attribute__((noinline)) void graph_sound_lz(const track_t *t)
             graph_being_at(t, 60 * 16, 68 * 16, 22 * 16);
         cv_rect(0, 0, 4, (int32_t)cv_h, T_BG);
         cv_rect(116, 0, 60, (int32_t)cv_h, T_SURF);
-        lz_tile(x, ty, w, 124, 0, T_THEME);
+        /* (V10.7.19, the owner: the users like the trace on the background) no tile behind the scope in any skin
+         * (COLORS drew a RAISE card): the trace and its title on the panel itself */
         GFX_HOOK_ALIGN(0, ty + 4, 0, ty + 11, AL_V | AL_PASS, "EDIT scope title");
-        cv_text_on(x + (bare ? 0 : 4), ty + 4 - AF_X_CAP_Y, &AF_X, "SCOPE", bare ? T_MID : T_TEXT, tb);
+        cv_text_on(x, ty + 4 - AF_X_CAP_Y, &AF_X, "SCOPE", bare ? T_MID : T_TEXT, T_SURF);
         scope_at(x + 4, w - 8, ty + 68, 48, T_THEME);
     }
     cv_halo = (uint8_t)bare;                            /* (0.9.0) BOTTOM, HUD: outlined, as HUD's */
