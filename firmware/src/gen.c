@@ -3299,7 +3299,12 @@ static void gen_helix(void)
 }
 static void gen_panel(void)
 {
-    if (bt_hw_seg()) gen_panel_bt(); else graph_proj(chain_config.count ? 2 : 0);
+    if (bt_hw_seg()) {                                  /* (its own words at the foot: not the song's length under them) */
+        proj_nofoot = 1;
+        gen_panel_bt();
+        proj_nofoot = 0;
+    } else
+        graph_proj(chain_config.count ? 2 : 0);
     gen_helix();
 }
 #include "gen_track.c"

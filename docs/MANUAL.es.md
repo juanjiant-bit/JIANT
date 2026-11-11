@@ -84,6 +84,10 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
   cargás con COLORS).
 - **Sin la fila STYLE**: el aspecto relleno (FLAT) es el único estilo; LINE ya no está (si lo tenías guardado, cargás
   con FLAT) y el menú tiene una fila menos.
+- **Letras chicas más grandes**: los nombres, las pestañas, las palabras del encabezado, la miga y los rótulos de los
+  paneles tienen mayúsculas de 9 px (eran letras de píxel de 7 px). Las ocho pestañas de SEQ y de FX se ven de a cinco;
+  el menú lista ocho filas por vez; se fueron algunos datos que repetían una carta (QUANT y ALL TR a la derecha de la
+  rueda de SCL, los números adentro de los anillos de BEING).
 
 **Secuenciador**
 - El componente **RAMP** reemplaza a JUMP (V10.6v): el lock de parámetro de un paso se desliza hasta su valor en 1–32
@@ -288,7 +292,7 @@ COLORS.)
   el fondo (sin caja de panel), como en AIR.
 
 Los valores (cartas, el BPM del encabezado) vuelven a una sans redondeada (Inter Tight SemiBold), como en la 0.6; los
-nombres, las pestañas y la miga siguen con las letras de píxel de 5 x 7. **MENU > LARGE** deja sus cartas grandes arriba
+nombres, las pestañas y la miga van en Chakra Petch, con mayúsculas de 9 px (hasta la V10.7.18, letras de píxel de 5 x 7, de 7 px). **MENU > LARGE** deja sus cartas grandes arriba
 en todas las pieles (la piel conserva sus pestañas y sus colores; en AIR quedan donde va su fila de perillas, debajo de
 las pestañas), así LARGE se lee igual en cualquiera.
 
@@ -325,8 +329,10 @@ Desde la 0.8.5 todas las páginas llevan la piel del diseño que aprobó el due�
   se ve. Las tarjetas debajo, un panel más alto, y el pie es solo la miga de pan.
 
 - **Las letras chicas** (desde la 0.8.5): los nombres de las tarjetas, las pestañas, la miga de pan, las
-  palabras del medio del encabezado y los rótulos y fichas chicas de los paneles van en una letra de píxeles de 5 x 7,
-  nítida, las mayúsculas mono chicas de la maqueta; los valores siguen en la letra redondeada más grande.
+  palabras del medio del encabezado y los rótulos y fichas chicas de los paneles iban en una letra de píxeles de 5 x 7;
+  ahora van en Chakra Petch con mayúsculas de 9 px, más fáciles de leer; los valores siguen en la letra redondeada más
+  grande. Si la sección tiene más de cinco grupos (SEQ, FX), las pestañas muestran los cinco de alrededor del que estás,
+  con una marquita del lado donde hay más.
 
 Los **colores** funcionan como una cámara térmica: frío (índigo, violeta) es poco, caliente (rojo, naranja, crema, blanco; 0.8.9: la escala de la 0.6) es
 mucho. Violeta es lo seleccionado, naranja lo activo.

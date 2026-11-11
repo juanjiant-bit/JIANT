@@ -1282,7 +1282,7 @@ static __attribute__((noinline)) void seq_overlay(const track_t *t, const page_t
  * track and its engine; on HOME (a track picked there) the track's engine big and "HOME" small. Then the header comes
  * back (ui.force). (0.6.64) Over the footer instead, which says the same: the header (load, battery) stays */
 static void draw_crumbs(int32_t y, uint16_t fg, uint16_t last);   /* (ui_draw.c) */
-#define CRUMB_Y 4                                    /* (ui_draw.c: a lens footer's breadcrumb line) */
+#define CRUMB_Y 3                                    /* (ui_draw.c: a lens footer's breadcrumb line) */
 static void page_flash_draw(void)
 {
     static uint32_t drawn;

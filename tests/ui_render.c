@@ -162,7 +162,7 @@ static void al_flush(void)                      /* a canvas blitted or begun: de
 static int32_t icon_cell(uint32_t *size, uint32_t id);
 static void hk_icon(int32_t x, int32_t y, uint32_t size, uint32_t id);   /* (after the icons: their cells' nibbles) */
 #define GFX_HOOK_ALIGN(x0, y0, x1, y1, mode, tag) hk_align(x0, (y0) + cv_oy, x1, (y1) + cv_oy, mode, tag)
-#define GFX_HOOK_PEN(y, f) (al_n ? (al_cy0 = (y) + cv_oy + ag((f), glyph((f), 'H')).by, al_cy1 = al_cy0 + ag((f), glyph((f), 'H')).bh) : 0)
+#define GFX_HOOK_PEN(y, f) (al_n ? (al_cy0 = (y) + cv_oy + ag((f), glyph((f), 'H')).by - (f)->rise, al_cy1 = al_cy0 + ag((f), glyph((f), 'H')).bh) : 0)
 #define GFX_HOOK_ITEM(x0, y0, x1, y1) al_item(x0, (y0) + cv_oy, x1, (y1) + cv_oy, 1, "cushion")
 #define GFX_HOOK_ICON(x, y, size, id) hk_icon(x, (y) + cv_oy, size, id)
 static char splash_seen[96];                    /* the splash scene: its texts as drawn, '|' between (draw) */
@@ -330,7 +330,7 @@ static void fm6_hook(int32_t k, int32_t x, int32_t y, int32_t r)
 
 static void finding(const char *what, const rbox_t *b, const rbox_t *o)
 {
-    static char seen[600][64];
+    static char seen[8000][64];
     static uint32_t nseen;
     char key[64];
     uint32_t i;
@@ -338,7 +338,7 @@ static void finding(const char *what, const rbox_t *b, const rbox_t *o)
     snprintf(key, sizeof key, "%.20s|%.14s|%.24s", cur_name, what, b->s);
     for (i = 0; i < nseen && strcmp(seen[i], key); i++) ;
     if (i < nseen) return;                       /* each finding once per screen */
-    if (nseen < 600u) strcpy(seen[nseen++], key);
+    if (nseen < 8000u) strcpy(seen[nseen++], key);
     else return;
     fprintf(rep, "LINT %-22s %-32s '%s' (%d,%d)-(%d,%d)", cur_name, what, b->s, b->x0, b->y0, b->x1, b->y1);
     if (o) fprintf(rep, " / '%s' (%d,%d)-(%d,%d)", o->s, o->x0, o->y0, o->x1, o->y1);

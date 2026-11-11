@@ -260,6 +260,12 @@ def emit(face, tracking, gamma, kern_min):
         cap = table[chars.index("H") * phases]
         lines.append(f"#define AF_{name}_CAP_Y {cap[3]}   /* the ink of H: rows {cap[3]} .. {cap[3] + cap[5] - 1} of the line */")
         lines.append(f"#define AF_{name}_CAP_H {cap[5]}")
+        if name == "S":       # AF_X: the labels, tabs, header and footer (the 5 x 7 pixel face until V10.7.18): S itself,
+            init = lines[-3]  # its ink 2 rows higher, so a place set for the pixel face (capitals from row 1) keeps its top
+            assert init.startswith("static const aafont_t AF_S = {") and init.endswith("};")
+            lines.append("static const aafont_t AF_X = {" + init[len("static const aafont_t AF_S = {"):-2] + ", 2};")
+            lines.append(f"#define AF_X_CAP_Y {cap[3] - 2}")
+            lines.append(f"#define AF_X_CAP_H {cap[5]}")
     cost = {"data": len(data) + len(hc), "glyph_table": gsize, "kern": len(kp) + 2 * len(ki), "extras": len(extras),
             "glyphs": len(chars), "phases": phases, "pairs": len(keys), "h": r["h"], "asc": r["asc"], "px": px,
             "font": os.path.basename(font.split("#")[0]), "adv_digit": r["glyphs"]["0"][0] / 16}

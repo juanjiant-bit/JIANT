@@ -9,7 +9,7 @@
  * each glyph is rasterised at 1 << psh horizontal phases (S M L 2, S M 4 until 0.9.9-snd3: drawn at a pen of +0, +1/2 px);
  * cv_text takes the phase that puts it within a phase step of its true place. Blending uses a 16-entry
  * ramp per (ink, background) pair, cached, so a pixel costs a nibble read and a store. Colours come from the theme tokens. */
-typedef struct { uint16_t off, adv; int8_t bx; uint8_t by, bw, bh; } aag_t;   /* a glyph at a phase (ag) */
+typedef struct { uint16_t off, adv; int8_t bx, by; uint8_t bw, bh; } aag_t;   /* a glyph at a phase (ag) */
 typedef struct { uint16_t off, adv; } aagh_t;   /* (0.9.0) a glyph: its phases' lowest data offset, the advance */
 typedef struct {
     uint8_t h, asc, first, last, nex;   /* line height, baseline; ASCII range; extras */
@@ -22,14 +22,13 @@ typedef struct {
     const uint8_t *ex;                  /* codes of the extra glyphs */
     uint8_t psh;                        /* log2 of the phases per glyph: entries i << psh .. (i << psh) + phases - 1 */
     const uint8_t *hc;                  /* data's Huffman code (cv_alpha_hc), 0 = 2 px per byte (cv_alpha) */
-    uint8_t bits;                       /* (0.8.5) 1: data is 1 bit a pixel, no ramp (AF_X: cv_bits) */
+    uint8_t rise;                       /* the ink drawn this many rows higher (AF_X: S, where the 5 x 7 face was) */
 } aafont_t;
 typedef struct { const char *name; uint16_t c[12]; } ui_pal_t;   /* (ux's first twelve, tools/gen_ui_palettes.py) */
 typedef struct { uint16_t off; uint8_t w; const char *label; } kc_t;
 #include "ui_fonts.h"                   /* AF_S 12 px / 400, AF_M 15 px / 500, AF_L 28 px / 600 */
-#include "ui_font_x.h"                  /* (0.8.5) AF_X: the 5 x 7 mono pixel face (tools/gen_px_font.py) */
-#define FONT_COMPACT (AF_S_COMPACT && AF_M_COMPACT && AF_L_COMPACT && AF_X_COMPACT)
-#define FONT_PHASES (AF_S_PHASES > 1 || AF_M_PHASES > 1 || AF_L_PHASES > 1 || AF_X_PHASES > 1)
+#define FONT_COMPACT (AF_S_COMPACT && AF_M_COMPACT && AF_L_COMPACT)
+#define FONT_PHASES (AF_S_PHASES > 1 || AF_M_PHASES > 1 || AF_L_PHASES > 1)
 #include "ui_palettes.h"
 #include "ui_keycaps.h"                 /* KC_*: the keycaps / badges (tools/gen_aa_keycaps.py), KNOB_* arcs */
 #define ELLIPSIS '\x85'                 /* the ellipsis glyph of AF_S and AF_M */
@@ -89,6 +88,7 @@ static uint8_t cv_scroll;        /* 1: drawing a scrolled view (its text may run
 static int32_t cv_oy;            /* y offset for graph drawing */
 static int16_t cv_cy0, cv_cy1;   /* text clip: canvas rows cv_cy0 .. cv_cy1 - 1 (cv_begin: the whole canvas) */
 static uint8_t cv_flip;          /* cv_alpha_hc: the cell mirrored left <-> right (the header's metronome, ui_draw.c) */
+static uint8_t cv_turn;          /* cv_alpha_hc: the cell turned a quarter left (cv_text_up) */
 /* (0.9.5) the texts drawn on the canvas since cv_begin (their ink boxes, canvas rows: x0 y0 x1 y1), so an overlay (ui_graph.c
  * toast_pill) can keep clear of them; past CV_NTXT the last one grows to take the rest in */
 #define CV_NTXT 32u
@@ -655,7 +655,14 @@ static void cv_alpha_hc(int32_t x, int32_t y, uint32_t w, uint32_t h, const uint
                 run = (s >> 4) + 1u;
             }
             n = run < w - gx ? run : w - gx;
-            if (v && row) {
+            if (v && cv_turn) {                      /* (cv_text_up) turned a quarter left: column x + its row, row y - its column */
+                uint32_t k;
+                for (k = 0; k < n; k++) {
+                    int32_t px = x + (int32_t)gy, py = y - (int32_t)(gx + k);
+                    if ((uint32_t)px < cv_w && py >= cv_cy0 && py < cv_cy1)
+                        cv_px[(uint32_t)py * cv_w + (uint32_t)px] = rv[v];
+                }
+            } else if (v && row) {
                 int32_t px = cv_flip ? x + (int32_t)(w - 1u - gx) : x + (int32_t)gx, dx = cv_flip ? -1 : 1;
                 uint32_t k;
                 for (k = 0; k < n; k++, px += dx)
@@ -664,25 +671,6 @@ static void cv_alpha_hc(int32_t x, int32_t y, uint32_t w, uint32_t h, const uint
             }
             gx += n;
             run -= n;
-        }
-    }
-    GFX_HOOK_PIXELS(w * h);
-}
-
-/* (0.8.5) w x h pixels of one bit each, MSB first, rows back to back, at canvas (x, y): AF_X's glyphs, crisp (the ink
- * colour alone: rv[15]) */
-static void cv_bits(int32_t x, int32_t y, uint32_t w, uint32_t h, const uint8_t *d, const uint16_t *rv)
-{
-    uint32_t k = 0, gx, gy;
-    uint16_t c = rv[15];
-    y += cv_oy;
-    for (gy = 0; gy < h; gy++) {
-        int32_t py = y + (int32_t)gy;
-        uint16_t *row = py < cv_cy0 || py >= cv_cy1 ? 0 : cv_px + (uint32_t)py * cv_w;
-        for (gx = 0; gx < w; gx++, k++) {
-            int32_t px = x + (int32_t)gx;
-            if (row && ((d[k >> 3] >> (7u - (k & 7u))) & 1u) && (uint32_t)px < cv_w)
-                row[px] = c;
         }
     }
     GFX_HOOK_PIXELS(w * h);
@@ -814,11 +802,9 @@ static int32_t text_run(int32_t x, int32_t y, const aafont_t *f, const char *s, 
         gv = ag(f, gi);
         err = pos - pen;
         if (g->bw) {
-            int32_t gx = x + (pos >> 4) + g->bx, gy = y + g->by;
+            int32_t gx = x + (pos >> 4) + g->bx, gy = y + g->by - f->rise;
             if (!rv)
                 ;                                    /* (text_ink: measured only) */
-            else if (f->bits)
-                cv_bits(gx, gy, g->bw, g->bh, f->data + g->off, rv);
             else if (f->hc)
                 cv_alpha_hc(gx, gy, g->bw, g->bh, f->data + g->off, f->hc, rv);
             else
@@ -995,32 +981,30 @@ static int32_t cv_clip_text(int32_t x, int32_t y, const aafont_t *f, const char 
     return cv_text_flags(x, y, f, b, fg, bg, 8u);
 }
 
-/* (0.8.9) a 1-bit face's s turned a quarter left (reading upwards, as the mock-up's keys name themselves): its line's top
- * at column x, its first character's foot at row y; maxh: at most this many rows (the rest dropped). Returns the rows used */
+/* (0.8.9) s turned a quarter left (reading upwards, as the mock-up's keys name themselves): its line's top at column x,
+ * its first character's foot at row y; maxh: at most this many rows (the rest dropped). Returns the rows used. (A
+ * Huffman-coded face's: cv_alpha_hc with cv_turn) */
 static int32_t cv_text_up(int32_t x, int32_t y, const aafont_t *f, const char *s, uint16_t fg, uint16_t bg, int32_t maxh)
 {
     int32_t pen = 0, x0 = 0x7FFF, y0 = 0x7FFF, x1 = -0x7FFF, y1 = -0x7FFF;
-    uint16_t c = swap16(fg);
+    const uint16_t *rv = ramp(fg, bg);
     const char *s0 = s;
-    GFX_HOOK_INK(fg, bg);
-    (void)bg;
     for (; *s; s++) {
         const aag_t gv = ag(f, glyph(f, fold(f, (uint8_t)*s))), *g = &gv;
-        uint32_t r, q, k = 0;
         int32_t adv = (g->adv + 8) >> 4;
         if (pen + adv - 1 > maxh)
             break;
-        for (r = 0; r < g->bh; r++)
-            for (q = 0; q < g->bw; q++, k++)
-                if ((f->data[g->off + (k >> 3)] >> (7u - (k & 7u))) & 1u) {
-                    int32_t px = x + g->by + (int32_t)r, py = y - (pen + g->bx + (int32_t)q) + cv_oy;
-                    if ((uint32_t)px < cv_w && py >= cv_cy0 && py < cv_cy1)
-                        cv_px[(uint32_t)py * cv_w + (uint32_t)px] = c;
-                    if (px < x0) x0 = px;
-                    if (px + 1 > x1) x1 = px + 1;
-                    if (py < y0) y0 = py;
-                    if (py + 1 > y1) y1 = py + 1;
-                }
+        if (g->bw && f->hc) {
+            int32_t px = x + g->by - f->rise, py = y - (pen + g->bx);
+            cv_turn = 1;
+            cv_alpha_hc(px, py, g->bw, g->bh, f->data + g->off, f->hc, rv);
+            cv_turn = 0;
+            py += cv_oy;
+            if (px < x0) x0 = px;
+            if (px + g->bh > x1) x1 = px + g->bh;
+            if (py - g->bw + 1 < y0) y0 = py - g->bw + 1;
+            if (py + 1 > y1) y1 = py + 1;
+        }
         pen += adv;
     }
     cv_txt_note(x0, y0, x1, y1);

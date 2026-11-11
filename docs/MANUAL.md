@@ -78,6 +78,9 @@ Everything since V10.6c, the last public version, in one list; each item links t
 - **Two skins**: MENU > DISPLAY > SKIN is **AIR** or **COLORS**. BOTTOM and HUD are gone (a saved one loads as COLORS).
 - **No STYLE row**: the filled look (FLAT) is the one style; LINE is gone (a saved LINE loads as FLAT) and the menu has
   a row less.
+- **Bigger small letters**: names, tabs, the header's words, the breadcrumb and the panels' captions have 9 px capitals
+  (were 7 px pixel letters). SEQ's and FX's eight tabs show five at a time; the menu lists eight rows at a time; a few
+  readouts that repeated a card are gone (SCL's QUANT and ALL TR at the wheel's right, the numbers inside BEING's rings).
 
 **Sequencer**
 - Step component **RAMP** replaces JUMP (V10.6v): a step's parameter lock glides there over 1–32 steps or 1–16 bars.
@@ -275,7 +278,7 @@ Vestal's, *Velo*, github.com/charlesvestal/fm1-velocity, GPL-3.0). JIANT reads i
   the background (no panel box), as in AIR.
 
 Values (cards, the header's BPM) are set in a rounded sans again (Inter Tight SemiBold), as in 0.6; names, tabs and the
-breadcrumb stay in the 5 x 7 pixel letters. **MENU > LARGE** keeps its big cards on top in every skin (the skin keeps
+breadcrumb are in Chakra Petch, capitals 9 px (the 5 x 7 pixel letters, 7 px, until V10.7.18). **MENU > LARGE** keeps its big cards on top in every skin (the skin keeps
 its tabs and colours; on AIR they sit where AIR's knob row does, under the tabs), so LARGE reads the same whatever the
 skin.
 
@@ -309,8 +312,9 @@ Since 0.8.5 every page wears the skin of the design the owner approved (the HTML
   the breadcrumb alone.
 
 - **The small letters** (since 0.8.5): the cards' names, the tabs, the breadcrumb, the header's middle words and
-  the panels' small captions and chips are set in a crisp 5 x 7 pixel face, the mock-up's small mono capitals; values
-  stay in the larger rounded face.
+  the panels' small captions and chips were set in a 5 x 7 pixel face; they are now Chakra Petch with 9 px capitals,
+  easier to read; values stay in the larger rounded face. With more than five groups (SEQ, FX) the tabs show the five
+  round the one you are on, a small mark at the side where more lie.
 
 **Colours** work like a thermal camera: cold (indigo, violet) is little, hot (red, orange, cream, white) is a lot (0.8.9: the 0.6 ramp). Violet is
 what's selected, orange what's active.

@@ -7887,7 +7887,7 @@ static int test_lente(void)
  * the bar sounding THEME with the playhead a 1 px ACCENT mark inside it that moves a step at a time (the footer drawn again
  * on a new step only, never per frame), the cursor's outline only when its bar is another; the breadcrumb to its right */
 static uint16_t fpx(int32_t x, int32_t y) { return swap16(host_screen[y * 240 + x]); }
-static int32_t fb_y(void) { return (int32_t)foot_y() + (lz_on() ? 4 + AF_X_CAP_Y : 19 + AF_S_CAP_Y + 1); }
+static int32_t fb_y(void) { return (int32_t)foot_y() + (lz_on() ? CRUMB_Y + AF_X_CAP_Y : 19 + AF_S_CAP_Y + 1); }
 /* (seq2g) the footer's strip: cell i's x, its top, its mark's row, the bars' dot k (a lens footer: compact, before the
  * breadcrumb; the normal one: row 1, 0.6's x 12 .. 228, the dots a column at x 233) */
 static int32_t fs_x(uint32_t i) { return lz_on() ? 6 + (int32_t)i * 5 + (int32_t)(i / 4u) * 2 : 12 + (int32_t)i * 13 + (int32_t)(i / 4u) * 4; }
@@ -12049,10 +12049,10 @@ static int lz_tab_lit(uint32_t l)
 {
     const char *nm[8], *tab[8];
     uint8_t cnt[8];
-    uint32_t lv, at, n = tabs_now(nm, tab, cnt, &lv, &at), k;
+    uint32_t lv, at, n = tabs_now(nm, tab, cnt, &lv, &at), k, k0 = tab_first(n, lv), ns = n > TAB_SHOWN ? TAB_SHOWN : n;
     int ok = lv == l;
-    for (k = 0; k < n; k++)
-        ok &= swap16(host_screen[(LT_Y + LT_H / 2) * 240 + TAB_X(k, n) + 1]) == (k == l ? T_THEME : T_RAISE);   /* (x + 1:
+    for (k = 0; k < ns; k++)                            /* (the tabs shown: at most TAB_SHOWN, round the one lit) */
+        ok &= swap16(host_screen[(LT_Y + LT_H / 2) * 240 + TAB_X(k, ns) + 1]) == (k + k0 == l ? T_THEME : T_RAISE);   /* (x + 1:
                                                          * eight tabs (SEQ's since 92fc1d7's GENERATE) are 27 px, a name
                                                          * centred in one reaches x + 2) */
     return ok;

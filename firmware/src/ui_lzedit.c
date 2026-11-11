@@ -48,7 +48,7 @@ static __attribute__((noinline)) void graph_sound_lz(const track_t *t)
         cv_rect(116, 0, 60, (int32_t)cv_h, T_SURF);
         /* (V10.7.19, the owner: the users like the trace on the background) no tile behind the scope in any skin
          * (COLORS drew a RAISE card): the trace and its title on the panel itself */
-        GFX_HOOK_ALIGN(0, ty + 4, 0, ty + 11, AL_V | AL_PASS, "EDIT scope title");
+        GFX_HOOK_ALIGN(0, ty + 4, 0, ty + 4 + AF_X_CAP_H, AL_V | AL_PASS, "EDIT scope title");
         cv_text_on(x, ty + 4 - AF_X_CAP_Y, &AF_X, "SCOPE", bare ? T_MID : T_TEXT, T_SURF);
         scope_at(x + 4, w - 8, ty + 68, 48, T_THEME);
     }

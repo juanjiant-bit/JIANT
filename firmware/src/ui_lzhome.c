@@ -279,19 +279,13 @@ static void organ(uint32_t k, int32_t cx, int32_t cy)
 {
     int16_t *vp;
     const param_desc_t *d = home_param(k, &vp);
-    char v[12];
-    const char *u;
     int32_t gx = ORG_X[k], gy = ORG_Y[k], hot = ui.hot_t && ui.hot_col == k;
     uint16_t c = hot ? T_ACCENT : T_THEME;
     og_quad_a(gx * 16, gy * 16, (gx + cx) * 8, gy * 16, (cx + (gx - cx) * 35 / 100) * 16, (cy + (gy - cy) * 35 / 100) * 16,
               ux_mix(T_SURF, c, 45), 12u, 256);
     og_node(gx * 16, gy * 16, 17, T_RAISE);
     lz_arc(gx, gy, 14, 3, clamp(RATIO(d, enum_rank(d, *vp)), 0, 1000), T_LINE, c);
-    param_format(d, *vp, v, &u);
-    if (u && u[0] && str_len(v) + str_len(u) <= 5u)     /* ("901Hz": its unit when it fits the organ) */
-        str_cpy(v + str_len(v), u, sizeof v - str_len(v));
-    GFX_HOOK_ALIGN(gx - 17, gy - 4, gx + 17, gy + 4, AL_HV, "BEING organ value centred");
-    cv_clip_text(gx - HALF_UP(text_w(&AF_X, v) < 30 ? text_w(&AF_X, v) : 30), gy - 4 - AF_X_CAP_Y + 1, &AF_X, v, T_TEXT, T_RAISE, 30);
+    /* (its value stood inside the ring, cut to five letters: the card and the ring's arc say it) */
     GFX_HOOK_ALIGN(gx - 30, 0, gx + 30, 0, AL_H, "BEING organ name centred");
     cv_text_in(gx - 30, gy - 28, 60, &AF_X, d->label, hot ? T_ACCENT : T_MID, T_SURF);
 }
@@ -334,7 +328,7 @@ static __attribute__((noinline)) void graph_home_being(void)
             og_node(22 * 16, y * 16, 12, T_RAISE);
             lz_arc(22, y, 10, 2, macro_v[m] * 1000 / 127, T_LINE, col);
             GFX_HOOK_ALIGN(12, y - 5, 32, y + 5, AL_HV, "ROUTES macro name in its knob");
-            cv_text_in(12, y - 4, 20, &AF_X, mn, T_TEXT, T_RAISE);
+            cv_text_in(12, y - 5 + CAP_IN(X, 10), 20, &AF_X, mn, T_TEXT, T_RAISE);
             if (!n)
                 cv_text(40, y - 4 - AF_X_CAP_Y + 1, &AF_X, "NO ROUTE", T_DIM);
         }

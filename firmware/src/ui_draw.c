@@ -107,7 +107,7 @@ static void draw_battery(int32_t bx)
                                                          * knob row (33 tall): rows 11..27, the figures 14..24, the
                                                          * label 4..10, the gauge 28..29) */
 #define CARD_VY (ROLL_Y - 1)                            /* the value's line (M) */
-#define CARD_XY 4                                       /* (0.8.5) a lens card's label (AF_X): its line, capitals rows 5..11 */
+#define CARD_XY 2                                       /* (0.8.5) a lens card's label (AF_X): its line, capitals rows 3..11 */
 #define CARD_BG (lz_low() ? T_SURF : T_RAISE)   /* (0.8.5, the mock-up) a card: RAISE (LINE: no fill; 0.8.9 BOTTOM,
                                                          * HUD: none, the knob row on the background) */
 static const uint8_t ROLL_EASE[17] = {0, 45, 84, 118, 147, 172, 193, 210, 223, 234, 242, 247, 251, 253, 254, 255, 255};
@@ -698,8 +698,6 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
     uw = unit[0] ? text_w(&AF_S, unit) + 3 : 0;
     if (text_w(vf, val) + uw > room)
         vf = &AF_S;
-    if (!uw && text_w(vf, val) > room && text_w(&AF_X, val) <= room)   /* (a long name, COLOR's CONTRAST: whole in the small face) */
-        vf = &AF_X;
     sig = (uint8_t)str_hash(str_hash(song.sel + TSEL->eng_req * 4u + ux.gen * 64u + lz_on() * 16u, label), unit);
     snap = ui.force || sig != ui.roll[c].sig;           /* what the value is of: label, unit, track, engine, palette */
     if (kind == LK_TALL)
@@ -781,9 +779,8 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
             x = roll_text(c, 5 + ox, ry - 1, val, vc);
         } else if (free)                                /* (a name: ellipsised where it must be) */
             x = cv_free_text(5 + ox, ry + 2, vf, val, vc, cb, room - uw);
-        else                                            /* (AF_X: its capitals' foot on S's) */
-            x = cv_text_fit(5 + ox, vf == &AF_X ? ry + 2 + AF_S_CAP_Y + AF_S_CAP_H - AF_X_CAP_Y - AF_X_CAP_H : ry + 2, vf, val, vc, cb,
-                            room - uw);
+        else
+            x = cv_text_fit(5 + ox, ry + 2, vf, val, vc, cb, room - uw);
         if (unit[0]) {
             GFX_HOOK_ALIGN(0, 0, 0, vf == &AF_M ? ry - 1 + AF_M.asc : ry + 2 + AF_S.asc, AL_B, "card unit on its value's baseline");
             uint16_t uc = hud ? T_TEXT : T_MID;         /* (0.9.0 HUD's HOME: TEXT) */
@@ -912,7 +909,7 @@ static void tabs_paint(uint32_t n, uint32_t lv, const char *const *nm, const cha
         int32_t x = low ? (int32_t)(l * 240u / n) + 2 : TAB_X(l, n), w = low ? (int32_t)((l + 1u) * 240u / n) - 2 - x :
                     TAB_X(l + 1u, n) - 2 - x, nd = cnt ? cnt[l] : 0, dx = x + HALF_UP(w - (nd * 4 - 2)), dy;
         const char *s = nm[l];
-        if (tab && tab[l] && text_w(&AF_X, s) > w - 4)
+        if (tab && tab[l] && text_w(&AF_X, s) > w - 8)     /* (3 px clear at either side) */
             s = tab[l];
         if (low) {
             GFX_HOOK_ALIGN(x, 0, x + w, 0, AL_H, "group tab word centred on its slot");
@@ -973,6 +970,13 @@ static uint32_t tabs_now(const char **nm, const char **tab, uint8_t *cnt, uint32
     }
     return n;
 }
+/* the tabs shown: at most TAB_SHOWN, wide enough for their words in the labels' face (SEQ's and FX's eight were 27 px
+ * each); with more groups, the five round the one lit */
+#define TAB_SHOWN 5u
+static uint32_t tab_first(uint32_t n, uint32_t lv)
+{
+    return n <= TAB_SHOWN ? 0u : lv < 2u ? 0u : lv + 3u > n ? n - TAB_SHOWN : lv - 2u;
+}
 static void draw_tabs(void)
 {
     static uint32_t drawn;
@@ -986,7 +990,14 @@ static void draw_tabs(void)
     if (!ui.force && sig == drawn)
         return;
     drawn = sig;
-    tabs_paint(n, lv, nm, tab, cnt, at);
+    k = tab_first(n, lv);                               /* (more than TAB_SHOWN groups: those round the one lit) */
+    tabs_paint(n > TAB_SHOWN ? TAB_SHOWN : n, lv - k, nm + k, tab + k, cnt + k, at);
+    if (n > TAB_SHOWN) {                                /* .. and a mark at the side where more lie */
+        if (k)
+            lcd_fill(0, LT_Y + 4, 2, 6, T_DIM);
+        if (k + TAB_SHOWN < n)
+            lcd_fill(238, LT_Y + 4, 2, 6, T_DIM);
+    }
 }
 /* (0.9.2, rule 6) the footer's breadcrumb, as the mock-up's: small, DIM, from x 6, its parts apart by " . ": SECTION .
  * GROUP . page ("FX . DELAY . DLY 2"; the menu "MENU . DISPLAY . COLOR", a layer "FX . MAP"), the group THEME, the page
@@ -1039,7 +1050,7 @@ static __attribute__((noinline)) void foot_crumbs(char *b, uint32_t n)   /* b ho
         str_cpy(b + str_len(b), ti, n - str_len(b));
     }
 }
-#define CRUMB_Y 4                                       /* (0.8.5) a lens footer's breadcrumb (AF_X): capitals rows 5..11 */
+#define CRUMB_Y 3                                       /* (0.8.5) a lens footer's breadcrumb (AF_X): capitals rows 4..12 */
 /* the page's place in its chain at the footer's right, "6/16" (the menu: the row among all; a layer: its view) */
 static int32_t crumb_count(char *b)
 {
@@ -1595,7 +1606,7 @@ static void draw_columns(void)
         char label[20];uint32_t pos=lyric_pick(label);
         fmt_int(val,(int32_t)ui.cursor+1);hot_text_column(0,"STEP",val);
         hot_text_column(1,"WORD",label[0]?label:"NO TEXT");
-        fmt_int(val,lyric_syl);hot_text_column(2,"SYLLABLE",pos?val:"AUTO");
+        fmt_int(val,lyric_syl);hot_text_column(2,"SYLL",pos?val:"AUTO");
         draw_act_column(3,"PLACE",T_THEME,ICON_AUTO);
         return;
     }
@@ -2191,13 +2202,13 @@ static void draw_confirm(void)
         cv_text_on(10, 7 - AF_S_CAP_Y, &AF_S, a, T_TEXT, cb);
         cv_text_on(10, 20 - AF_X_CAP_Y, &AF_X, b, T_DIM, cb);
         if (!ux.skin) {
-            cv_rrect(148, 4, 40, 23, 3, T_SURF, cb);
-            cv_rrect(192, 4, 40, 23, 3, T_SURF, cb);
+            cv_rrect(140, 3, 48, 25, 3, T_SURF, cb);
+            cv_rrect(192, 3, 40, 25, 3, T_SURF, cb);
         }
-        cv_text_in(148, 7 - AF_X_CAP_Y, 40, &AF_X, "OCT-", T_DIM, kb);
-        cv_text_in(148, 17 - AF_X_CAP_Y, 40, &AF_X, "CANCEL", T_MID, kb);
-        cv_text_in(192, 7 - AF_X_CAP_Y, 40, &AF_X, "OCT+", T_DIM, kb);
-        cv_text_in(192, 17 - AF_X_CAP_Y, 40, &AF_X, "OK", T_ACCENT, kb);
+        cv_text_in(140, 5 - AF_X_CAP_Y, 48, &AF_X, "OCT-", T_DIM, kb);   /* (the labels' face: two lines of 9 px, CANCEL 44 wide) */
+        cv_text_in(140, 16 - AF_X_CAP_Y, 48, &AF_X, "CANCEL", T_MID, kb);
+        cv_text_in(192, 5 - AF_X_CAP_Y, 40, &AF_X, "OCT+", T_DIM, kb);
+        cv_text_in(192, 16 - AF_X_CAP_Y, 40, &AF_X, "OK", T_ACCENT, kb);
         cv_blit(0, 194);
         dlg_crumb("DICE", drum_track(TSEL) && pk == 0u ? "KIT" : PART[pk]);
         return;

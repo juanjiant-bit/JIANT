@@ -66,6 +66,8 @@ risk: it is a custom firmware.
 - *(next version)* **Two skins**: MENU › DISPLAY › SKIN is AIR or COLORS; BOTTOM and HUD are gone (a saved one loads
   as COLORS).
 - *(next version)* **No STYLE row**: FLAT is the one style, LINE is gone (a saved LINE loads as FLAT).
+- *(next version)* **Bigger small letters**: names, tabs, the header's words and the breadcrumb with 9 px capitals
+  (Chakra Petch; the 5 × 7 pixel face is gone), five tabs at a time, eight menu rows at a time.
 - *(next version)* **COLORS without the panel box**: the picture sits on the background, as in AIR (cards and tiles as
   before).
 - **VOICE** no longer clips on open vowels; WORDS › CONS sets the consonants' length.
@@ -221,8 +223,8 @@ VOICE singing its lyric, in the COLORS skin, exactly as the firmware draws them 
   every page, the knob row on top under the tabs, the middle free, HOME's beings over the whole screen) and **COLORS**
   (near-black rounded cards on top). Every skin wears the **LENTE** layout (0.8.5): the
   section's groups as tabs on top (a dot a page), the breadcrumb **SECTION · GROUP · page n/N** at the foot. Values
-  in [Inter Tight](https://github.com/rsms/inter-tight) SemiBold, names, tabs and the breadcrumb in a crisp 5 × 7
-  pixel face, small captions in [Chakra Petch](https://github.com/m4rc1e/Chakra-Petch).
+  in [Inter Tight](https://github.com/rsms/inter-tight) SemiBold, names, tabs, the breadcrumb and small captions
+  in [Chakra Petch](https://github.com/m4rc1e/Chakra-Petch).
 - **HOME, the ecosystem**: one being per track (its species from its engine, its shape from its four knobs). Each one
   heats up, swells and moves with its own audio; the selected track is drawn bigger; muted ones go dark; in silence
   they all stay still. (0.9.7) Each wears a little face: its eyes shut on a hit, its mouth opens with its level;

@@ -392,7 +392,7 @@ static param_desc_t eu_d;
 static const param_desc_t *eu_desc(uint32_t k, int16_t **valp)
 {
     static const char *const LN[NLANE + 1] = {"ALL", "BD", "SD", "CP", "CH", "OH", "TM", "RS", "CB"};
-    static const char *const MD[2][EU_M] = {{"MOTION", "HARMONY", "OCTAVE", "SLIDE"}, {"ACCENT", "GHOST", "RATCHET", "VARY"}};
+    static const char *const MD[2][EU_M] = {{"MOTION", "HARM", "OCTAVE", "SLIDE"}, {"ACCENT", "GHOST", "RATCHET", "VARY"}};
     static const char *const MU[3][6] = {{"OFF", "1 BAR", "2 BARS", "4 BARS", "8 BARS", "16 BARS"}, {"ORBIT", "DRIFT", "PULSE"},
                                          {"GROOVE", "RHYTHM", "FEEL", "ALL"}};
     static const char *const ML[4] = {"EVERY", "AMOUNT", "MODE", "WHAT"};

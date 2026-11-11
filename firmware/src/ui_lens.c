@@ -88,7 +88,7 @@ static const nv_t CE_GLO[] = {NV("MANO", 0, 0, 0), NV("RIELES", 0, 0, 0), NV("MI
                               NV("SYSTEM", 0, 4, 2), NV("SYSTEM 2", 0, 4, 2), NV("KEY SPLIT", 0, 4, 2), NV("KEY SPLIT 2", 0, 4, 2)};   /* (V10.37) the performing pages first, the
                                                          * settings (GLOBAL, SYSTEM) last */   /* (0.9.9-seq2f) the global lane; (p2) LIVE first
                                                          * (ui_live.c) */
-static const ng_t CG_GLO[] = {{"LIVE", 0}, {"MIX", 0}, {"COMPS", "CMP"}, {"GLOBAL", 0}, {"SYSTEM", 0}};
+static const ng_t CG_GLO[] = {{"LIVE", 0}, {"MIX", 0}, {"COMPS", "CMP"}, {"GLOBAL", "GLOB"}, {"SYSTEM", "SYS"}};   /* (five tabs of 44 px in the labels' face) */
 static const nv_t CE_ENV[] = {NV("ENV", "TRACKS", 0, 0), NV("ENV DEST", "TRACKS DEST", 0, 0), NV("ENV", 0, 1, 1),
                               NV("ENV DEST", 0, 1, 1), NV("ENV 2", 0, 1, 1), NV("STAGE", 0, 2, 2)};   /* (V10.22: ENV 2) */
 static const ng_t CG_ENV[] = {{"TRACKS", 0}, {"ENV", 0}, {"STAGE", 0}};

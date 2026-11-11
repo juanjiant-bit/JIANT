@@ -220,22 +220,9 @@ static int graph_mod_lz(const track_t *t, const page_t *pg)
 }
 
 /* SCL . ARP  KEY: the twelve notes round a circle (C on top), the scale's lit and joined, ROOT in the accent, its name
- *            and the scale's in the middle; QUANT and ALL TR at the right; the scale on a keyboard under it. CHORD: the
+ *            and the scale's in the middle; the scale on a keyboard under it. CHORD: the
  *            chord each degree of the key plays now (chord_build, as a key would), I..VII. ARP / ARP 2: "MODE . RATE .
  *            OCT" and the pattern it plays over a triad (OFF: "ARP OFF") */
-static void key_val(int32_t x, int32_t y, const page_t *pg, uint32_t k)   /* a knob's label over its value */
-{
-    int16_t *vp;
-    const param_desc_t *d = page_desc(pg, k, &vp);
-    const char *u = "";
-    char b[16];
-    if (!d)
-        return;
-    param_format(d, *vp, b, &u);
-    str_cpy(b + str_len(b), u, 16 - str_len(b));
-    ed_cap(x, y, d->label, T_DIM);
-    cv_text(x, y + 10 - AF_M_CAP_Y, &AF_M, b, T_TEXT);
-}
 /* (V10.6i) a note's colour: each of the twelve its own heat, C coldest .. B hottest (the user's pick B: the same note
  * the same colour on KEY, CHORD, ARP, SCENE); other palettes their theme */
 static uint16_t note_col(uint32_t n)
@@ -280,8 +267,7 @@ static __attribute__((noinline)) void graph_key(const track_t *t, const page_t *
     cv_text_in(42, 48 - AF_M_CAP_Y, 40, &AF_M, NN[rt], note_col(rt), T_SURF);
     param_format(&TP[P_SCALE], t->p[P_SCALE], b, &u);
     cv_text_in(32, 66 - AF_X_CAP_Y, 60, &AF_X, b, T_MID, T_SURF);
-    key_val(130, 10, pg, 2);
-    key_val(130, 48, pg, 3);
+    (void)pg;                                           /* (QUANT and ALL TR stood at the right: their cards say them) */
     for (i = 0; i < 24u; i++) {                         /* two octaves from C */
         uint32_t deg = (i + 24u - rt) % 12u;
         cv_rect(8 + (int32_t)i * 9, BLK[i % 12u] ? 112 : 122, 8, BLK[i % 12u] ? 10 : 12,
