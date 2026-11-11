@@ -298,6 +298,8 @@ static int screens(void)
     bad += check("SEQ > CHANCE KNOB 3: RATCH of the cursor step, x1..x4", ok && step_ratchet(&t->step[0]) == 1u &&
                  step_chance(&t->step[0]) == 100u);
     {                                                /* RATCH dimmed where it does nothing: REST, TIE, empty */
+        settings.palette = 1u; palette_set(1u);      /* (SELVA: a card's value TEXT or its knob's colour; JIANT's is its heat) */
+#define VAL_PX() (card_px(2, T_TEXT) + card_px(2, T_K(2)))
         uint32_t dim[4], thm[4], k;
         static const step_t kind[4] = {
             {{60}, 1, ST_NOTE, 0, 100}, {{0}, 0, ST_REST, 0, 0}, {{0}, 0, ST_TIE, 0, 0}, {{0}, 0, ST_NOTE, 0, 0}};
@@ -305,12 +307,12 @@ static int screens(void)
             t->step[0] = kind[k];
             step_set_ratchet(&t->step[0], 2);
             memset(host_screen, 0, sizeof host_screen); ui.force = 1; ui_draw();
-            dim[k] = card_px(2, T_DIM); thm[k] = card_px(2, T_TEXT);   /* (0.8.5: a value TEXT) */
+            dim[k] = card_px(2, T_DIM); thm[k] = VAL_PX();
         }
         t->step[0] = kind[3]; t->step[0].hit = 1u;   /* a NOTE step of lane hits only: it plays */
         step_set_ratchet(&t->step[0], 2);
         memset(host_screen, 0, sizeof host_screen); ui.force = 1; ui_draw();
-        ok = card_px(2, T_DIM) == dim[0] && card_px(2, T_TEXT) == thm[0];
+        ok = card_px(2, T_DIM) == dim[0] && VAL_PX() == thm[0];
         for (k = 1; k < 4u; k++)
             ok &= dim[k] > dim[0] && thm[k] < thm[0];
         bad += check("  RATCH shows dimmed on a REST, a TIE or an empty step (a note or a hit: not)", ok);

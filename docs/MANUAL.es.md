@@ -75,7 +75,8 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
 - **Siete paletas, todas propias de JIANT** (MENU > DISPLAY > COLOR): **JIANT** (como estaba, la que viene por
   defecto), **SELVA** (verdes), **CONTRAST** (accesible: negro y blanco puros, grises más claros, sin tinte en el
   panel), **BRASA** (cálida), **ABISAL** (fría), **HUESO** (blanco hueso y un solo acento naranja) y **NEON** (magenta y
-  cian). La rampa térmica (los seres, las notas, las barras, el valor de cada carta) está en las siete. Reemplazan a
+  cian). La rampa térmica (los seres, las notas, las barras) está en las siete; las cartas de las perillas toman cuatro
+  colores propios de cada paleta (JIANT: el calor de cada valor, como antes). Reemplazan a
   GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT y MONO; si tenías guardada una de esas, quedás en la más
   parecida (GREY, MONO, NIGHT → HUESO; GREEN → SELVA; AMBER, ROSE → BRASA; ICE → ABISAL; VIOLET → JIANT; PAPER,
   HI-CON → CONTRAST).
@@ -277,9 +278,10 @@ COLORS.)
   Las pestañas son las palabras de los grupos, la del grupo en el que estás subrayada con una rayita, un punto por
   página debajo de cada una.
 - **COLORS** (los ajustes guardados antes de 0.9.7 cargan con ella): la estructura LENTE con los **colores de la 0.6**.
-  Cartas casi negras redondeadas con una marquita y el nombre de la perilla, el color propio de cada parámetro que **se
-  mueve con su cantidad**, como calor, en el valor y en la barra (violeta si es poco, amarillo y crema si es mucho; uno
-  centrado como PAN o DETUNE frío en el medio y caliente en los dos extremos, en todas las paletas), la carta de
+  Cartas casi negras redondeadas con una marquita y el nombre de la perilla, **cada perilla con su color** en el valor
+  y en la barra (JIANT: el color de cada parámetro **se mueve con su cantidad**, como calor, violeta si es poco,
+  amarillo y crema si es mucho; uno centrado como PAN o DETUNE frío en el medio y caliente en los dos extremos; las
+  otras seis paletas: cuatro colores propios, uno por perilla), la carta de
   la perilla que girás enmarcada en su color; la pestaña del grupo rellena de violeta; el número de la pista en una
   cajita naranja, un ▶ violeta y el BPM grande en violeta en el encabezado; los seres con
   el calor de la 0.6 (púas violetas, anillos rojo y naranja, núcleos crema). El dibujo de abajo de las cartas va sobre
@@ -2815,7 +2817,7 @@ SKIN  2/35**. El encabezado dice MENU · DISPLAY.
 
 | Pestaña | Fila | Valores |
 | --- | --- | --- |
-| DISPLAY | COLOR | **JIANT** (por defecto), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — siete paletas de la misma familia, todas oscuras, todas con la rampa térmica |
+| DISPLAY | COLOR | **JIANT** (por defecto), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — siete paletas de la misma familia, todas oscuras, todas con la rampa térmica, cada una con sus cuatro colores de perilla |
 | DISPLAY | SKIN | **AIR** (de fábrica en los ajustes nuevos), COLORS — ver [Pieles](#pieles-air-colors); si tenías guardada BOTTOM o HUD (0.8.9, retiradas), cargás con COLORS |
 | DISPLAY | SCOPE | **OFF** (de fábrica), ON — (0.9.7) las páginas EDIT de un motor: OFF la criatura en todo el panel, centrada, el nombre de la página y el del sonido chiquitos en sus esquinas; ON la criatura a la izquierda, la carta SCOPE y las fichas como antes. Los ajustes guardados antes de 0.9.7 cargan OFF |
 | DISPLAY | LARGE | OFF, ON (etiquetas y valores grandes) |

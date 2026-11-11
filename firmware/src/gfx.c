@@ -110,6 +110,7 @@ static const int8_t HALO_Y[HALO_N] = {-2, -2, -2, -1, -1, -1, -1, -1, 0, 0, 0, 0
 static struct {
     uint16_t bg, surf, text, theme, accent, mid, dim, line, sel, tint, rec, raise;
     uint16_t key, lane, grid;
+    const uint16_t *k;           /* KNOB 1..4's colours, the palette's (tools/gen_ui_palettes.py KNOBS) */
     uint8_t skin;                /* (0.8.9) MENU > SKIN (ui_draw.c style_apply): SKIN_COLORS, SKIN_AIR */
     uint32_t gen;                /* bumped by palette_set (the text ramps follow) */
 } ux;
@@ -121,7 +122,7 @@ static struct {
 #define SKIN_COLORS 0u
 #define SKIN_AIR 3u
 #define SKIN_N 2u                /* (the menu's two) */
-#define T_K(c) UI_KNOBS[(c) & 3u]   /* KNOB c's colour (tools/gen_ui_palettes.py KNOBS): the skins' cards, as 0.6 */
+#define T_K(c) ux.k[(c) & 3u]    /* KNOB c's colour: the palette's four, on its card's value and gauge */
 #define T_BG ux.bg               /* background */
 #define T_SURF ux.surf           /* dialogs, menu rows, mixer strips */
 #define T_TEXT ux.text           /* primary text */
@@ -156,6 +157,7 @@ static void palette_set(uint32_t i)
 {
     const ui_pal_t *p = &UI_PALETTES[i % NPALETTES];
     memcpy(&ux.bg, p->c, sizeof p->c);           /* the stored twelve */
+    ux.k = UI_KNOBS[i % NPALETTES];
     if (ux.skin) ux.surf = ux.bg;                /* (AIR: no panel, no boxes) */
     ux.key = ux_mix(ux.bg, ux.text, UI_KEY_PCT);
     ux.lane = ux_mix(ux.surf, ux.theme, 10);

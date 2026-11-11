@@ -53,8 +53,19 @@ FAMILY = {
 NAMES = ["JIANT"] + list(FAMILY)   # MENU > DISPLAY > COLOR's order; the index is not what is saved (STORED)
 # the stored tokens, in the order of src/gfx.c ux's first fields (palette_set copies them)
 TOKENS = ["bg", "surf", "text", "theme", "accent", "mid", "dim", "line", "sel", "tint", "rec", "raise_"]
-# (0.8.9) each knob its colour (KNOB 1..4), on its card's value and gauge: JIANT's, in every palette of the family
-KNOBS = [(138, 108, 255), (255, 210, 60), (88, 116, 255), (255, 75, 75)]
+# (0.8.9) each knob its colour (KNOB 1..4), on its card's value and gauge. JIANT: the 0.6 colours (its cards take the
+# value's heat instead where there is one, ui_graph.c heat_on). The other six (the owner, 2026-11): four of the
+# palette's own, apart from each other and from its ACCENT (the one active thing), 4.5 on BG, SURF and RAISE: its THEME
+# first, then tints beside it; HUESO greys and its one orange
+KNOBS = {
+    "JIANT":    [(138, 108, 255), (255, 210, 60), (88, 116, 255), (255, 75, 75)],
+    "SELVA":    ["4BE38A", "D6F26A", "3FD6C4", "FFC27A"],      # green, lime, teal, amber
+    "CONTRAST": ["D9B3FF", "FFE08A", "9FD8FF", "FF9E9E"],      # lilac, pale yellow, pale blue, pale red
+    "BRASA":    ["FF7A1A", "FFB870", "F2DDBE", "FF6A5A"],      # ember, apricot, cream, coral
+    "ABISAL":   ["29BEE6", "7FE3D0", "8FA8FF", "C9E8F5"],      # cyan, aqua, periwinkle, ice
+    "HUESO":    ["F4F1EA", "D0CEC8", "ABA9A4", "FF7A00"],      # bone, two greys, the orange
+    "NEON":     ["FF3EA5", "B58CFF", "FFE066", "FF9AD2"],      # magenta, violet, yellow, pink
+}
 # the 20 palettes of the earliest firmware (index order), then the 11 of the firmware up to V10.7.18 (stored
 # PAL_TAG + index: GREY .. JIANT) -> the family
 OLD = ["GREEN", "AMBER", "CYAN", "RED", "MONO", "VIOLET", "PINK", "ICE", "WARM", "OCEAN", "DUSK", "HI-CON",
@@ -134,8 +145,8 @@ def derive(name):
     assert list(d) and set(d) == set(TOKENS)
     d["key"] = mix(d["bg"], d["text"], PCT["KEY"])
     d["ink"] = 0
-    for i, k in enumerate(KNOBS):
-        d[f"k{i}"] = to565(k)
+    for i, k in enumerate(KNOBS[name]):
+        d[f"k{i}"] = to565(k) if name == "JIANT" else near565(k)
     return name, d
 
 
@@ -151,7 +162,7 @@ CHECKS = [("text", "bg", 12.0, "body text"), ("text", "surf", 9.0, "body text on
           ("ink", "key", 4.5, "a keycap's label"), ("key", "bg", 3.0, "a keycap on the background"),
           ("key", "surf", 2.5, "a keycap on a surface"), ("ink", "dim", 1.8, "an unavailable keycap's label"),
           ("ink", "accent", 4.5, "text on the ARM badge")] + \
-         [(f"k{i}", b, 4.5 if b != "raise_" else 4.0, f"KNOB {i + 1}'s value") for i in range(4) for b in ("bg", "surf", "raise_")]
+         [(f"k{i}", b, 4.5, f"KNOB {i + 1}'s value") for i in range(4) for b in ("bg", "surf", "raise_")]
 
 
 def main():
@@ -160,7 +171,7 @@ def main():
     ap.add_argument("--report", action="store_true")
     a = ap.parse_args()
     fails = []
-    assert NAMES[0] == "JIANT" and len(OLD) == 20 and set(STORED_AS) == set(NAMES)
+    assert NAMES[0] == "JIANT" and len(OLD) == 20 and set(STORED_AS) == set(NAMES) == set(KNOBS)
     rows = [derive(n) for n in NAMES]
     for name, d in rows:
         for f, b, lim, why in CHECKS:
@@ -193,8 +204,10 @@ def main():
                "static const ui_pal_t UI_PALETTES[] = {"]
         for name, d in rows:
             out.append(f'    {{"{name}", {{' + ", ".join(f"0x{d[k]:04x}" for k in TOKENS) + "}},")
-        out += ["};", "/* (0.8.9) KNOB 1..4's colours (the 0.6 colours), every palette */",
-                "static const uint16_t UI_KNOBS[4] = {" + ", ".join(f"0x{to565(c):04x}" for c in KNOBS) + "};",
+        out += ["};", "/* (0.8.9) KNOB 1..4's colours, each palette its own */",
+                "static const uint16_t UI_KNOBS[][4] = {"]
+        out += ["    {" + ", ".join(f"0x{d[f'k{i}']:04x}" for i in range(4)) + f"}},   /* {name} */" for name, d in rows]
+        out += ["};",
                 f"#define UI_NPALETTES {len(NAMES)}u",
                 "#define UI_JIANT_INDEX 0u          /* JIANT FM: the default (src/panel.c) */",
                 f"#define UI_PAL_TAG {PAL_TAG}u          /* stored id = UI_PAL_TAG + UI_PAL_STORED[index]; below 20: an old id */",

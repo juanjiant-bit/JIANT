@@ -60,7 +60,8 @@ risk: it is a custom firmware.
 - **SWARM** (EXT's Bluetooth instrument) plays a melody from how near you are, with a FAR / NEAR morph and CHAOS.
 - The **thermal palette** everywhere: the piano roll coloured by pitch class.
 - *(next version)* **Seven palettes, all JIANT's own**: MENU › DISPLAY › COLOR offers JIANT (unchanged, the default),
-  SELVA, CONTRAST, BRASA, ABISAL, HUESO and NEON, each with the thermal ramp on beings, notes, bars and card values. The
+  SELVA, CONTRAST, BRASA, ABISAL, HUESO and NEON, each with the thermal ramp on beings, notes and bars and its own four
+  knob colours on the cards (JIANT: each value's heat, as before). The
   ten palettes inherited from Felucca are gone; a saved one lands on the nearest of the family.
 - *(next version)* **Two skins**: MENU › DISPLAY › SKIN is AIR or COLORS; BOTTOM and HUD are gone (a saved one loads
   as COLORS).
@@ -215,7 +216,7 @@ VOICE singing its lyric, in the COLORS skin, exactly as the firmware draws them 
 
 - **Thermal palette**: values, curves, steps, hits and notes are coloured by intensity (cyan → blue → violet → red →
   orange → yellow → white). Selection is violet and active is orange; on JIANT each card's value and gauge are its
-  amount's heat (0.9.5, as 0.6), in every one of the seven palettes.
+  amount's heat (0.9.5, as 0.6), the other palettes give each knob a colour of their own.
 - **Skins** (MENU › DISPLAY › SKIN): **AIR** (0.9.7, the default of new settings: floating words on
   every page, the knob row on top under the tabs, the middle free, HOME's beings over the whole screen) and **COLORS**
   (near-black rounded cards on top). Every skin wears the **LENTE** layout (0.8.5): the

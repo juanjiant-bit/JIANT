@@ -71,8 +71,8 @@ Everything since V10.6c, the last public version, in one list; each item links t
 - The **thermal palette** everywhere: every note its own heat, the piano roll coloured by pitch class (V10.6w).
 - **Seven palettes, all JIANT's own** (MENU > DISPLAY > COLOR): **JIANT** (as it was, the default), **SELVA** (greens),
   **CONTRAST** (accessible: pure black and white, lighter greys, no panel tint), **BRASA** (warm), **ABISAL** (cold),
-  **HUESO** (bone white, one orange accent) and **NEON** (magenta and cyan). The thermal ramp (beings, notes, bars, each
-  card's value) is in all seven. They replace GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT and MONO; a
+  **HUESO** (bone white, one orange accent) and **NEON** (magenta and cyan). The thermal ramp (beings, notes, bars) is
+  in all seven; the knobs' cards take the palette's own four colours (JIANT: each value's heat, as before). They replace GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT and MONO; a
   palette saved before lands on the nearest one (GREY, MONO, NIGHT → HUESO; GREEN → SELVA; AMBER, ROSE → BRASA; ICE →
   ABISAL; VIOLET → JIANT; PAPER, HI-CON → CONTRAST).
 - **Two skins**: MENU > DISPLAY > SKIN is **AIR** or **COLORS**. BOTTOM and HUD are gone (a saved one loads as COLORS).
@@ -266,9 +266,10 @@ Vestal's, *Velo*, github.com/charlesvestal/fm1-velocity, GPL-3.0). JIANT reads i
   Every layer, dialog and menu in the same dress. The tabs are the groups' words, the one you are on underlined by a
   dash, a dot a page under each.
 - **COLORS** (settings saved before 0.9.7 load as it): the LENTE layout in the **0.6 colours**. Near-black
-  rounded cards with a small mark and the knob's name, each parameter's own colour **moving with its amount** as heat
-  on its value and its bar (violet when low to yellow and cream when high, a centred one such as PAN or DETUNE cold in
-  the middle and hot at either end, in every palette), the knob you turn framed in its colour; the
+  rounded cards with a small mark and the knob's name, **each knob its colour** on its value and its bar (JIANT: each
+  parameter's colour **moves with its amount** as heat, violet when low to yellow and cream when high, a centred one
+  such as PAN or DETUNE cold in the middle and hot at either end; the other six palettes: four colours of their own,
+  one a knob), the knob you turn framed in its colour; the
   group's tab filled violet; the selected track's number in an orange box, a violet ▶ and a big violet BPM in the header;
   the beings in the 0.6 heat (violet spikes, red and orange rings, cream nuclei). The picture under the cards sits on
   the background (no panel box), as in AIR.
@@ -2666,7 +2667,7 @@ the footer **MENU · DISPLAY · SKIN  2/35**. The header says MENU · DISPLAY.
 
 | Tab | Row | Values |
 | --- | --- | --- |
-| DISPLAY | COLOR | **JIANT** (default), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — seven palettes of the same family, all dark, all with the thermal ramp |
+| DISPLAY | COLOR | **JIANT** (default), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — seven palettes of the same family, all dark, all with the thermal ramp, each with its own four knob colours |
 | DISPLAY | SKIN | **AIR** (default of new settings), COLORS — see [Skins](#skins-air-colors); a saved BOTTOM or HUD (0.8.9, retired) loads as COLORS |
 | DISPLAY | SCOPE | **OFF** (default), ON — (0.9.7) an engine's EDIT pages: OFF the creature on the whole panel, centred, the page's name and the sound's name small in its corners; ON the creature on the left, the SCOPE card and the chips as before. Settings saved before 0.9.7 load as OFF |
 | DISPLAY | LARGE | OFF, ON (big labels and values) |

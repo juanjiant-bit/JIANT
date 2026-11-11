@@ -60,7 +60,7 @@ int main(int argc, char **argv)
             palette_set(p);
             assert(T_BG == c[0] && T_SURF == (sk ? c[0] : c[1]) && T_TEXT == c[2] && T_THEME == c[3] && T_ACCENT == c[4] &&
                    T_MID == c[5] && T_DIM == c[6] && T_LINE == c[7] && T_SEL == c[8] && T_TINT == c[9] && T_REC == c[10] &&
-                   T_RAISE == c[11] && T_INK == 0u && T_K(0) == UI_KNOBS[0] && T_K(3) == UI_KNOBS[3]);
+                   T_RAISE == c[11] && T_INK == 0u && T_K(0) == UI_KNOBS[p][0] && T_K(3) == UI_KNOBS[p][3]);
         }
     }
     ux.skin = SKIN_COLORS;
@@ -74,10 +74,10 @@ int main(int argc, char **argv)
             {T_INK, T_SEL, 4.5}, {T_INK, T_THEME, 4.5}, {T_DIM, T_BG, 2.2}, {T_LINE, T_BG, 1.25}, {T_REC, T_BG, 3.0},
             {T_INK, T_KEY, 4.5}, {T_KEY, T_BG, 3.0}, {T_KEY, T_SURF, 2.5}, {T_INK, T_DIM, 1.8}, {T_INK, T_ACCENT, 4.5},
             {T_TEXT, T_RAISE, 7.0}, {T_INK, T_REC, 4.5}, {T_SEL, T_BG, 1.8},
-            /* the knobs' colours (JIANT's, every palette) on what a card's value is drawn on */
+            /* the knobs' colours (each palette its own four) on what a card's value is drawn on */
             {T_K(0), T_BG, 4.5}, {T_K(1), T_BG, 4.5}, {T_K(2), T_BG, 4.5}, {T_K(3), T_BG, 4.5},
             {T_K(0), T_SURF, 4.5}, {T_K(1), T_SURF, 4.5}, {T_K(2), T_SURF, 4.5}, {T_K(3), T_SURF, 4.5},
-            {T_K(0), T_RAISE, 4.0}, {T_K(1), T_RAISE, 4.0}, {T_K(2), T_RAISE, 4.0}, {T_K(3), T_RAISE, 4.0}};
+            {T_K(0), T_RAISE, 4.5}, {T_K(1), T_RAISE, 4.5}, {T_K(2), T_RAISE, 4.5}, {T_K(3), T_RAISE, 4.5}};
         double min = 100;
         for (unsigned i = 0; i < sizeof c / sizeof c[0]; i++) {
             double r = contrast(c[i].fg, c[i].bg);
@@ -89,6 +89,15 @@ int main(int argc, char **argv)
         printf("%-7s text %.1f:1, labels %.1f:1, values %.1f:1, selection %.1f:1\n", UI_PALETTES[p].name,
                contrast(T_TEXT, T_BG), contrast(T_MID, T_BG), contrast(T_THEME, T_BG), contrast(T_INK, T_SEL));
         assert(contrast(T_BG, 0) < 1.1);                       /* every palette is dark (one coverage curve) */
+        for (unsigned i = 0; i < 4; i++) {                     /* the four knobs apart from each other, and (but HUESO's
+                                                                * fourth, its one orange) from the ACCENT, the active thing */
+            for (unsigned j = i + 1; j < 4; j++) assert(T_K(i) != T_K(j));
+            assert(T_K(i) != T_ACCENT || (p == 5u && i == 3u));
+        }
+        {   /* JIANT's as they were (the 0.6 colours); HUESO greys and the orange */
+            static const uint16_t J[4] = {0x8b7f, 0xfe87, 0x5bbf, 0xfa49};
+            if (p == UI_JIANT_INDEX) assert(!memcmp(UI_KNOBS[p], J, sizeof J));
+        }
         /* the blend: transparent, solid and an edge between the two, on two backgrounds */
         for (unsigned b = 0; b < 2; b++) {
             uint16_t under = b ? T_SEL : T_BG, ink = b ? T_INK : T_THEME;

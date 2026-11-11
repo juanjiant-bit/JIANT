@@ -14029,7 +14029,7 @@ static int test_card_heat(void)
                     *vp = (int16_t)(d->min + (d->max - d->min) * (int32_t)i / 2);
                     ui.knob_ms = fm1_ms; ui.force = 1; frame();
                     r = RATIO(d, enum_rank(d, *vp));
-                    want = card_heat(r, d->min < 0 && d->max > 0);   /* (the thermal ramp: every palette of the family) */
+                    want = k ? T_K(c) : card_heat(r, d->min < 0 && d->max > 0);
                     if (k) other &= gauge_px(c) == want;
                     else {
                         ok &= gauge_px(c) == want;
@@ -14043,7 +14043,7 @@ static int test_card_heat(void)
     }
     bad += check("0.9.5 JIANT: a card's gauge its value's heat (low .. high), in COLORS, BOTTOM and HUD", ok && moved);
     bad += check("  .. its value in the heat lifted a fifth toward the text (as the 0.6.36)", vtext);
-    bad += check("  another palette of the family (HUESO): the same heat", other);
+    bad += check("  another palette of the family (HUESO): the knob's own colour whatever the value", other);
     ui_power_on(); settings.palette = UI_JIANT_INDEX; palette_set(UI_JIANT_INDEX);
     for (i = 0; i < NPAGES && !bip; i++) {              /* a bipolar knob on a lens page: cold at its centre, hot at either end */
         if (PAGES[i].scope != SC_TRACK || !page_visible(i)) continue;
