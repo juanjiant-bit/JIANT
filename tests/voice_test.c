@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* VOICE words test (src/sing.c, src/eng_formant.c, JIANT 0.8.5) on the host, through hostsim.c as regress.c.
  *   build/host/voice_test [DEMODIR]          (run_tests.sh: build/voice_demo)
  *   build/host/voice_test --g2p LANG WORDS..  (prints each word's phonemes, | a syllable)

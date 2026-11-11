@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* The metronome and the count-in (1.1, Ideas Discussion #131; src/click.c, src/seq.c), through the real audio path
  * (audio.c audio_block: the mix, USB audio's tap, the click, the DAC):
  *   the click on the song tempo's quarter notes, sample for sample (beat k in the block a 1/16 track enters step 4k,

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* STRING and ADD (tests/string_add_test.c, JIANT 0.9.9-snd5): the two engines of src/eng_string.c and src/eng_add.c
  * against simulated audio (hostsim.c), no hardware:
  * 1. STRING in tune: every EXCITE, C1 .. C6 (the loop at its full rate and decimated by 2 .. 32), the fundamental within

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (V10.54) INPUT: a track that plays the audio input instead of a synth (engine 15).
  * The input is the USB audio one: an interface on the USB host port (usb_host.c, V10.53) or the computer's USB IN+OUT
  * (usb.c uac_in_fill), a block of stereo Q15 in uin_l / uin_r (uin_on: this block holds it).

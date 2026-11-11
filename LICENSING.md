@@ -5,7 +5,12 @@ Felucca is free software, licensed under the GNU General Public License, version
 bundled or ported parts keep their own licences; they are listed below, and their licence
 texts are in `LICENSES/`.
 
-Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments (Felucca)
+Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) (JIANT FM: modifications and new files)
+
+Each source file names its own authors in its header: a file that holds Felucca's code keeps
+Leo Kuroshita's notice (with "Portions Copyright ... Juan Jiant" where JIANT changed it); a file
+written new for JIANT FM names Juan Jiant only.
 
 ## What is GPL-3.0-only
 

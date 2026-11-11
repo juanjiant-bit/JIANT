@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """(0.8.5) The UI's smallest face, AF_X: a crisp 5 x 7 mono pixel font (run by tools/build.py generate()).
 
   gen_px_font.py OUT.h

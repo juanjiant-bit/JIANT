@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 # VOICE words (JIANT 0.8.5): the English word bank of the lyric generator (tools/gen_lyrics.py -> felucca_lyrics.h).
 # English is not read by rules: every word here, and the device's English dictionary (tools/lyrics/en_dict.txt, from
 # the CMU Pronouncing Dictionary), carries its phonemes. A line: a theme (LOVE NIGHT SEA SKY ROAD DREAM FIRE) or FN

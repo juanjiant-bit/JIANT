@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* STRING (JIANT 0.9.9-snd5): a plucked, struck or bowed string, Karplus-Strong. A delay line a period long, filled
  * with the EXCITE at the note (noise, a plucked noise, a pick's triangle, a hammer's or a mallet's bump, at POS along
  * the string), read back through a two-point average, a one-pole low-pass (BRIGHT: the loss of the highs each pass)

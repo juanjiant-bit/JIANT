@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.9.8) MENU > USB STEMS, the render side (fx.c stem_buf / stem_fx, what usb.c uac_tap8 sends), on the host build of
  * the UI tests: dense DICE (EXPLORE) songs of six tracks played for seconds, the stems tapped each block as the audio
  * ISR does, against each track rendered alone in the same take (the others played but left out of the mix: mix_skip, as

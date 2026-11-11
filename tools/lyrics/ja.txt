@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 # VOICE words (JIANT 0.8.5): the Japanese word bank of the lyric generator (tools/gen_lyrics.py -> felucca_lyrics.h),
 # in romaji (Hepburn; the device reads Hepburn and kunrei, sing.c sy_ja): one note a mora, so "sora" is two notes,
 # "kokoro" three, "taiyou" four (ta i yo u). A line: a theme (LOVE NIGHT SEA SKY ROAD DREAM FIRE) or FN, a category,

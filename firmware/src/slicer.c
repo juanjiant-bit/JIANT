@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* SLICER (JIANT 0.6.3: one, on a bus): a tempo-synced 16-step gate / stutter on the tracks routed to it (SL BUS: T1..T6
  * ON / OFF) and, with FX ON, on the delay, reverb and chorus returns too: everything ON, the whole mix's stutter after the
  * effects, a sampler's cut. The routed tracks reach it after their DIST, filter, LEVEL and PAN (fx.c mix_part: into

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* Robustness against damaged or crafted stored data and editor requests (the 1.0.4 audit's items 5-10): the real
  * C paths of the editor build (editor_test.c is the base: hostsim, stubs, RAM flash).
  *   projects            an engine number past the last refused (every format, and a RAM restore); a retained

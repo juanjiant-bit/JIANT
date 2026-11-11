@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * JIANT 0.5: the beings, in lines. A sound page without a graph of its own (the engine's EDIT pages) shows a creature
  * as a thermal camera's isotherms: four nested outlines of one body, each as hot as the being is there (heat_col:
  * the outer membrane cold, the core hot), the nuclei hottest. Colour is intensity: the output's level warms every

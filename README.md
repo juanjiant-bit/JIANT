@@ -463,7 +463,8 @@ Free software: [GPL-3.0-only](LICENSE), like Felucca. The fonts and the ported D
 FM-1 are trademarks of their owners; JIANT is not affiliated with or endorsed by them.
 
 Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments — Felucca.
-JIANT's modifications are distributed under the same license.
+Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) — JIANT FM's modifications and new files, distributed under the
+same license.
 
 ## Changelog
 

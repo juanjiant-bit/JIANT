@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (V10.6z4) the feel of live recording: a performance with real timing (staccato, held notes, legato overlaps, gaps,
  * early and late hits, velocities) played into REC on the real sources (ui_test.c's), then played back; what the steps
  * hold (place, MICRO, ties, LEN, SLIDE, velocity) and what the sequencer plays (MIDI OUT ALL: note-ons and -offs, a

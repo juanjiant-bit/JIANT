@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* FM-1 USB0 full-speed device controller, register level only
  * The protocol (descriptors, EP0 requests,
  * MIDI / CDC / SysEx) is the driver src/usb.c, shared with the update loader

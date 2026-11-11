@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * JIANT (FELUCCA TONIC): JIANT FM's organic line art, drawn by code (docs/TONIC-UI.md). */
 /* Everything is drawn into the graph canvas (gfx.c cv_px) with integer maths: no stored artwork. Positions in
  * 1/16 px (Q4) so curves move smoothly between pixels; lines antialiased (two pixels across, blended over what

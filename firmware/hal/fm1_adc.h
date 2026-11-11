@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* FM-1 SARADC: PB6 = MASTER pot (ch4),
  * PB1 = battery divider (ch3). Polled, 10 bit, from the main loop.
  * (V10.6z5) Also two of the key matrix's rows, PA7 (ch0) and PA8 (ch1), for the velocity diagnostic

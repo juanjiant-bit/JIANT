@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* PFX (JIANT, FELUCCA-TONIC-SPEC.md fase 7): the punch-in MIDI effects of the FX layer. They act on the notes and
  * the sound of the tracks while their key is held (or latched: FX LATCH), never on what is stored: let go, all is
  * as it was. White keys after the audio ones (perform.c PF_*):

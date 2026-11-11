@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.9.1) the master DJ FILTER (src/fx.c djf_block, G_DJF: GLO > MIXER KNOB 4) through the real sources (ui_test.c's).
  *   build/host/djf_test
  * 1. centred: a four-part mix with its FX, sequenced, rendered with the knob in the middle: bit for bit 0.9.0's (the

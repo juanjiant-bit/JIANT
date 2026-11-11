@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* VOICE words (JIANT 0.8.5): the VOICE engine sings syllables, words and lyrics (included by eng_formant.c).
  *
  * LANG (EDIT > WORDS, P_VLANG: OFF ES EN JA; OFF is VOICE as before, its vowels) turns a VOICE track into a singer: each

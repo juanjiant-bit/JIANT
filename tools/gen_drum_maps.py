@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """(0.9.7, flash) GEN's drum maps packed: firmware/src/gen_tables.c keeps them as text (DRUM_MAP: a genre's eight lanes,
 the throws' pools HAT_POOL OH_POOL RS_POOL CB_POOL TM_POOL: 16 characters a lane, '.' 0, '1'..'9', 'X'; "" no lane), read
 here, not compiled. Out: each distinct lane once, 16 levels a nibble (GM_LANE[k]: step 2i in the high nibble of byte i,

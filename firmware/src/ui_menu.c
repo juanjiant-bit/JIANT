@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* Felucca menu (HOME held): its rows in tabs (1.0.5: DISPLAY CONTROL AUDIO SYSTEM; ALGORITHM between them, PRESETS
  * within one; no scrolling), the rows in menu_items.c (the settings, shared with the editor's MENU_DESC / MENU_SET).
  * No BACK row: HOME closes it (ui_input.c). The two-valued rows are bits of ui_prefs (MENU_FLAGS). PRESETS scrolls from

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (V10.6z8) a GENE song keeps the sounds the player changes while it plays (song_chain.c snd_held, song_play.c
  * sec_apply): a YouTube user's "I change the instruments and at the end of the phrase they go back". A preset, an
  * engine, a sound knob and the DRUM-X kit changed mid-song stay over every section after; the sections still bring

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+# Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """The polyphase FIR of the USB audio input's 44.1 -> 48 kHz resampler (src/usb.c, FELUCCA_UAC_48K).
 
 48000 / 44100 = 160 / 147: up by L = 160, low-pass, down by M = 147. Output frame k sits at input time

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.9.1) MICRO in 64ths of a step (core.h ST_MICRO: the sixteenth in cwhen, the 64ths above it in flags' SF_MFINE), live
  * recording off the grid (seq.c rec_note, REC Q), its playback (seq_tick: late by a queue, early by the step before
  * ending sooner), FUNC's block 'M' 'F' (project.c), the editor and SEQ > NOTE's knob, on the real sources (ui_test.c's).

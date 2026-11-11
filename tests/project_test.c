@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* Host test of the project formats (firmware/src/project.c, -DPROJ_HOST part). (V10.6s) The formats of Felucca's
  * betas to 1.0.2, FUN1 .. FUN6 (built here byte for byte as the firmware stored them: tests/legacy_proj.h), are
  * retired: each, valid as it was, is refused and leaves the slot as it was; nothing reads past its end. The

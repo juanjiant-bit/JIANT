@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.9.2) The navigation, as the approved mock-up (navegacion.html): six rules, the same in every section.
  *   1 SELECT walks the section's pages as one chain (no levels, no zoom), stopping at its first and last page.
  *   2 The section's button: from another section, the page last shown there; already inside, the first page of the

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (V10.6v) SWARM (eng_input.c ain_swarm) with fake advertisements (bt_air_tap, as the radio's interrupt calls it):
  * OCTAVE's scale walk in the track's scale and round, a new device's re-randomize glide, CHAOS 127 bounded (no overflow),
  * the block's cost. (V10.6z6) The LEAD: the closeness (PROX before AIR's nearest, else the walk), FAR / NEAR (the factory

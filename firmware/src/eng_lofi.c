@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (V10.6d) MATH (was LOFI): the formulas alone, BYTE (bytebeat) and FLOAT (floatbeat). The chip waves (PLS TRI SAW
  * NOIS WRAM, the STEP envelope) were redundant beside ANALOG (the user's call): a sound of theirs that arrives -- a
  * project, a user preset -- plays as ANALOG's nearest (core.h analog_from_chip). The engine's number (3) and its stored

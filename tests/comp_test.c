@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* STEP COMPONENTS v2 (0.9.9-seq2d: core.h CA_* CC_*, seq.c comp_run / comp_migrate, project.c x bit 7, SEQ > COMP):
  * on the real sequencer, project and UI sources (with the stubs of tests/ui_test.c):
  *   CYCLE      four notes muted !1:4 .. !4:4 and a TRANSPOSE +1 R4 at 1:4 over the bar: 16 bars, each its own, then

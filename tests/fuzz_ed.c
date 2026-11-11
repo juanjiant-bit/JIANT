@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* Fuzz harness: random editor SysEx frames (with and without the header, any command, 0..1100 bytes, sometimes no
  * terminator) and raw USB-MIDI packets through the real usb.c / editor.c paths of the host build. run_tests.sh runs
  * it briefly under ASan / UBSan with a fixed seed.   fuzz_ed [ITERATIONS [SEED]] */

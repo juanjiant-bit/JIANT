@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
+ * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.9.8) MENU > USB STEMS / STEMS+IN over minutes: src/usb.c's 8- and 10-channel stream (uac_render_start, uac_tap8,
  * uac_packet) in the audio ISR's order against a simulated FM-1 and a host that reads it as the JIANT Stems app does
  * (android/stems: usbstream.c's isochronous URBs, each packet's buffer the endpoint's wMaxPacketSize, then
