@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
-# Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
-# Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
+# Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """VOICE words (JIANT 0.8.5): the phoneme codes, the English dictionary and the lyric generator's word banks as
 constant tables (firmware/src/sing.c reads them), from tools/lyrics/:
   en_dict.txt   the English words the device knows (a subset of the CMU Pronouncing Dictionary, BSD-2-Clause): each
@@ -91,31 +90,54 @@ LY_END = 0x7F                                        # the end of a word's lette
 def huff_code(count):
     """symbol -> (length, code), canonical (by length, then symbol), lengths at most HC_MAX; and the table sing.c
     reads: the number of codes of each length 1..HC_MAX, then the symbols in code order"""
-    import heapq
-    if len(count) == 1:
-        length = {next(iter(count)): 1}
+    from collections import deque
+    syms = sorted(count)
+    if len(syms) == 1:
+        bits = {syms[0]: 1}
     else:
-        heap = [(c, i, (s,)) for i, (s, c) in enumerate(sorted(count.items()))]
-        heapq.heapify(heap)
-        length = dict.fromkeys(count, 0)
-        n = len(heap)
-        while len(heap) > 1:
-            a, b = heapq.heappop(heap), heapq.heappop(heap)
-            for s in a[2] + b[2]:
-                length[s] += 1
-            n += 1
-            heapq.heappush(heap, (a[0] + b[0], n, a[2] + b[2]))
-    assert max(length.values()) <= HC_MAX, "a code over HC_MAX bits"
-    order = sorted(count, key=lambda s: (length[s], s))
-    code, c, prev = {}, 0, length[order[0]]
-    for s in order:
-        c <<= length[s] - prev
-        prev = length[s]
-        code[s] = (length[s], c)
-        c += 1
-    table = [sum(1 for s in order if length[s] == n) for n in range(1, HC_MAX + 1)] + order
-    return code, table
+        # The lengths from the two-queue construction: the symbols in a queue by weight (a tie: the lower symbol
+        # first), the joined nodes in a second one in the order they are made (their weights never fall). Each step
+        # joins the two lightest fronts, a symbol before a joined node of the same weight: the tree a priority queue
+        # keyed (weight, age) builds, so the lengths are those the dictionary was packed with since 0.9.0.
+        weight = [count[s] for s in syms]
+        parent = [-1] * len(syms)
+        single = deque(sorted(range(len(syms)), key=weight.__getitem__))
+        joined = deque()
 
+        def lightest():
+            if single and (not joined or weight[single[0]] <= weight[joined[0]]):
+                return single.popleft()
+            return joined.popleft()
+
+        while len(single) + len(joined) > 1:
+            x, y = lightest(), lightest()
+            parent[x] = parent[y] = len(weight)
+            weight.append(weight[x] + weight[y])
+            parent.append(-1)
+            joined.append(len(weight) - 1)
+
+        def depth(i):
+            d = 0
+            while parent[i] >= 0:
+                i, d = parent[i], d + 1
+            return d
+
+        bits = {s: depth(i) for i, s in enumerate(syms)}
+    assert max(bits.values()) <= HC_MAX, "a code over HC_MAX bits"
+    per_len = [0] * (HC_MAX + 1)
+    for s in syms:
+        per_len[bits[s]] += 1
+    # canonical codes: those of one length consecutive, the first of each length the end of the shorter ones, doubled
+    start, first = 0, [0] * (HC_MAX + 1)
+    for n in range(1, HC_MAX + 1):
+        start = (start + per_len[n - 1]) << 1
+        first[n] = start
+    order = sorted(syms, key=bits.__getitem__)       # (a stable sort: a length's symbols stay in their order)
+    code = {}
+    for s in order:
+        code[s] = (bits[s], first[bits[s]])
+        first[bits[s]] += 1
+    return code, per_len[1:] + order
 
 EN_BLK = 8                                           # (0.9.0) the dictionary's words a block (an index entry)
 LUT_BITS = {"P": 4, "L": 4, "H": 4}                 # compact accelerators; canonical fallback is exact

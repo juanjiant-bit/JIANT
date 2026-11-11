@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
- * JIANT (FELUCCA TONIC): after SLOOP 2.4.1's song (isod89/sloop-fm1, GPL-3.0). */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
+ * JIANT (FELUCCA TONIC): the song's design inspired by SLOOP 2.4.1's (Andre Rezemini, isod89/sloop-fm1, GPL-3.0:
+ * sections, quick chain, SONG REC), written anew on Felucca's song chain state (song_chain.c). */
 /* The song, the main loop's part (song_chain.c: what it is). Included by project.c. */
 static project_store_t song_keep __attribute__((section(".pool")));   /* the music as it was before PLAY */
 
@@ -215,20 +215,22 @@ static int song_stage(uint32_t s, uint32_t row)
     return 0;
 }
 
-/* the bars section s's loop takes: its longest pattern (LEN steps of its DIV) in bars, rounded up, 1..CHAIN_BARS */
-static uint32_t section_bars(uint32_t s)
+/* a quick chain's row: the bars section s needs to play its longest track through once (its LEN steps, or FIT's span,
+ * at its DIV), in whole 4/4 bars, 1 .. CHAIN_BARS; 1 when the section does not decode */
+static uint32_t quick_bars(uint32_t s)
 {
     project_t *p = &proj_scratch;
-    uint32_t k, bars = 1, bar = 16u * div_samples(2);
+    uint32_t bar = 16u * div_samples(2), most = 1, k;
     if (!bar || !proj_import(p, &proj_slot[s & 3u], sizeof(project_store_t)))
         return 1;
     for (k = 0; k < NTRK; k++) {
-        uint32_t len = (uint32_t)clamp(p->t[k].p[P_SLEN], 1, NSTEP);
-        uint32_t span = p->fit[k] & 128u ? fit_value_span(p->fit[k]) : len;
-        uint32_t b = (span * div_samples((uint32_t)p->t[k].p[P_SDIV]) + bar - 1u) / bar;
-        bars = b > bars ? b : bars;
+        uint32_t steps = (uint32_t)clamp(p->t[k].p[P_SLEN], 1, NSTEP), need;
+        if (p->fit[k] & 128u)                         /* (FIT on: its span, not LEN) */
+            steps = fit_value_span(p->fit[k]);
+        need = (steps * div_samples((uint32_t)p->t[k].p[P_SDIV]) + bar - 1u) / bar;
+        most = need > most ? need : most;
     }
-    return bars > CHAIN_BARS ? CHAIN_BARS : bars;
+    return most > CHAIN_BARS ? CHAIN_BARS : most;
 }
 /* (V10.6o) PARTS / TIMELINE: section s as proj_scratch holds it (just decoded: graph_project_used): its tracks that
  * play (part_play) */
@@ -245,17 +247,26 @@ static uint32_t part_scan(uint32_t s)
     return m;
 }
 
+/* 3 + the section of the song's first row that does not decode (not saved), 0 when every row's does */
+static uint32_t song_unsaved(const chain_config_t *c)
+{
+    uint32_t r;
+    for (r = 0; r < c->count; r++)
+        if (!proj_import(&proj_scratch, &proj_slot[c->row[r].slot], sizeof(project_store_t)))
+            return 3u + c->row[r].slot;
+    return 0;
+}
 /* Main loop only: PLAY a song (V10.6o: from row r0). 0 = armed, 1 = no rows, 2 = busy, 3 + s = section s not saved */
 static uint32_t chain_prepare_at(uint32_t r0)
 {
-    uint32_t i;
+    uint32_t rc;
     if (transport_busy())
         return 2;
     if (!chain_valid(&chain_config) || r0 >= chain_config.count)
         return 1;
-    for (i = 0; i < chain_config.count; i++)
-        if (!proj_import(&proj_scratch, &proj_slot[chain_config.row[i].slot], sizeof(project_store_t)))
-            return 3u + chain_config.row[i].slot;
+    rc = song_unsaved(&chain_config);
+    if (rc)
+        return rc;
     project_capture(&proj_scratch);                   /* the music as it is: back when the song ends */
     chain.kept = proj_pack(&song_keep, &proj_scratch) ? (uint8_t)(1u | ((uint32_t)(live.cur + 1) << 1)) : 0u;
     chain.config = chain_config;
@@ -465,7 +476,7 @@ static void quick_chain(const uint8_t *s, uint32_t n)
     chain.config.count = (uint8_t)n;
     for (i = 0; i < n; i++) {
         chain.config.row[i].slot = (uint8_t)(s[i] & 3u);
-        chain.config.row[i].bars = (uint8_t)section_bars(s[i]);
+        chain.config.row[i].bars = (uint8_t)quick_bars(s[i]);
     }
     chain.loop = 1;
     chain.kept = 0;

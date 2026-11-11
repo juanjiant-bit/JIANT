@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* DRUM-X (src/drumx_voice.c: the DRUM engine) on the host, through hostsim.c:
  *   build/host/drumx_test [DEMODIR]          (run_tests.sh: build/drumx_demo)
  * 1. every lane of the kit, struck through the DRUM engine (its GM note), sounds (peak above -30 dBFS), never at
@@ -19,26 +18,14 @@
  *    note drops 10 dB or more 5..40 ms after a kick (against DUCK 0), and is back (within 1 dB) after the release;
  *    CLIP 100: the loud mix saturates (crest factor down), never past full scale; CLIP 0 is out of the chain.
  * 6. demos into DEMODIR: every lane at MORPH 0, 64, 127; a beat with MORPH swept over 4 bars. */
-#include <stdarg.h>
 #define main hostsim_main
 #include "hostsim.c"
 #undef main
+#include "jiant_test_util.h"
 
 static int fails;
-static void check(const char *what, int ok, const char *fmt, ...)
-{
-    printf("drumx: %-66s %s", what, ok ? "ok" : "FAIL");
-    if (fmt) {
-        va_list ap;
-        va_start(ap, fmt);
-        printf("  (");
-        vprintf(fmt, ap);
-        printf(")");
-        va_end(ap);
-    }
-    printf("\n");
-    fails += !ok;
-}
+/* a verdict line, the details (printf fmt and its values, or NULL) in parentheses */
+#define check(what, ok, ...) (fails += jt_verdict("drumx: ", 66, (what), (ok), __VA_ARGS__))
 
 #define MAXN (FS * 3u)
 static int32_t buf[MAXN];
@@ -47,10 +34,9 @@ static const uint8_t NOTE[8] = {36, 38, 39, 42, 46, 45, 37, 56};   /* eng_drum.c
 static track_t *kitx(int16_t morph, int16_t tune)
 {
     track_t *t = &trk[0];
-    uint32_t i, k;
-    for (k = 0; k < NTRK; k++)
-        for (i = 0; i < NVOICE; i++)
-            trk[k].v[i].active = 0;
+    uint32_t k;
+    for (k = 0; k < NTRK * NVOICE; k++)                  /* every voice of every part idle */
+        trk[k / NVOICE].v[k % NVOICE].active = 0;
     host_tracks_init();
     lev_env = 0; lev_g = lev_cur = 32768; lev_dg = 0; lim_env = LIM_T;   /* (0.5.1: the slow leveler from rest each time) */
     memset(mp_seen, 0, sizeof mp_seen); memset(dist_w, 0, sizeof dist_w);   /* (0.6.8: the parts' LEVEL / PAN / DST blend from rest too) */
@@ -60,8 +46,7 @@ static track_t *kitx(int16_t morph, int16_t tune)
     host_preset(t, ENGI_DRUM, 0);
     t->p[P_E0] = morph;
     t->p[P_E1] = tune;
-    for (i = 0; i < 4u; i++)
-        t->p[P_DIST + i] = 0;
+    memset(&t->p[P_DIST], 0, 4u * sizeof t->p[0]);      /* (the 4 values from P_DIST on: none) */
     return t;
 }
 /* (ctl64) the kit's noise from its seed at the next hit (drumx_voice.c dx_run: an empty generator takes the constant): two
@@ -91,14 +76,7 @@ static int strike(track_t *t, uint32_t l, uint32_t n)
             return 1;
     return 0;
 }
-static double rms(uint32_t a, uint32_t b)
-{
-    double s = 0;
-    uint32_t i;
-    for (i = a; i < b; i++)
-        s += (double)buf[i] * buf[i];
-    return sqrt(s / (b - a));
-}
+static double rms(uint32_t a, uint32_t b) { return jt_rms_i32(buf, a, b); }
 static uint32_t crossings(uint32_t a, uint32_t b)
 {
     uint32_t i, c = 0;

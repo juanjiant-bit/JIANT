@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.8.4) The delay bus's line (src/fx.c: dly_buf, dly_lo) on the host, through hostsim.c as regress.c.
  *   build/host/delay_test [DEMODIR]          (run_tests.sh: build/fx_demo)
  * 1. no leak at the far end: at the longest TIME with MOD up (1/1 at 120 BPM; the full rate's own end; the longest of
@@ -26,22 +25,14 @@
 #define DRIVE_HASHES 0x61b7f8c324f58397ull, 0x61b7f8c324f58397ull, 0x8ba209e7bf974d27ull, 0xa970e37d322ef1c9ull, \
                      0x158c6ebbb0f6bdbfull, 0x5946fa168d9f7865ull, 0x50e06626e74308e7ull
 #endif
+#include "jiant_test_util.h"
+
 static int bad;
-static void check(const char *what, int ok)
-{
-    printf("delay: %-94s %s\n", what, ok ? "ok" : "FAIL");
-    bad += !ok;
-}
+static void check(const char *what, int ok) { bad += jt_verdict("delay: ", 94, what, ok, NULL); }
 #define NMAX (32u * FS)
 static int32_t L[NMAX], R[NMAX];
 static uint32_t xs = 0x2468aceu;
-static int32_t noise(int32_t amp)
-{
-    xs ^= xs << 13;
-    xs ^= xs >> 17;
-    xs ^= xs << 5;
-    return (int32_t)(((int64_t)(int32_t)xs * amp) >> 31);
-}
+static int32_t noise(int32_t amp) { return jt_xs_noise(&xs, amp); }   /* (white, from its seed: a run repeats) */
 
 static uint32_t g_now;                              /* (the next block's first sample: drun goes on from it, whole blocks) */
 static void dreset(void)
@@ -97,27 +88,9 @@ static void drun(src_t src, uint32_t t0, uint32_t len)
     }
     g_now = t;
 }
-static double rms(const int32_t *x, uint32_t a, uint32_t b)
-{
-    double e = 0;
-    uint32_t i;
-    for (i = a; i < b; i++) e += (double)x[i] * x[i];
-    return b > a ? sqrt(e / (b - a)) : 0;
-}
-static int32_t peak(const int32_t *x, uint32_t a, uint32_t b)
-{
-    int32_t p = 0;
-    uint32_t i;
-    for (i = a; i < b; i++) if (abs(x[i]) > p) p = abs(x[i]);
-    return p;
-}
-static uint32_t argpeak(const int32_t *x, uint32_t a, uint32_t b)
-{
-    int32_t p = -1;
-    uint32_t i, k = a;
-    for (i = a; i < b; i++) if (abs(x[i]) > p) { p = abs(x[i]); k = i; }
-    return k;
-}
+#define rms jt_rms_i32
+#define peak jt_peak_i32
+#define argpeak jt_peak_at
 
 static double s_f, s_a;
 static uint32_t s_len;
@@ -263,31 +236,7 @@ static void test_timing(void)
 /* ------------------------------------------------------------- 4. the sound --- */
 #define FFTN 16384u
 static double fre[FFTN], fim[FFTN];
-static void fft(void)
-{
-    uint32_t i, j = 0, len, k;
-    for (i = 1; i < FFTN; i++) {
-        uint32_t bit = FFTN >> 1;
-        for (; j & bit; bit >>= 1) j ^= bit;
-        j ^= bit;
-        if (i < j) { double t = fre[i]; fre[i] = fre[j]; fre[j] = t; t = fim[i]; fim[i] = fim[j]; fim[j] = t; }
-    }
-    for (len = 2; len <= FFTN; len <<= 1) {
-        double a = -2 * M_PI / len, wr = cos(a), wi = sin(a);
-        for (i = 0; i < FFTN; i += len) {
-            double cr = 1, ci = 0;
-            for (k = 0; k < len / 2u; k++) {
-                double ur = fre[i + k], ui = fim[i + k];
-                double vr = fre[i + k + len / 2u] * cr - fim[i + k + len / 2u] * ci;
-                double vi = fre[i + k + len / 2u] * ci + fim[i + k + len / 2u] * cr;
-                double t;
-                fre[i + k] = ur + vr; fim[i + k] = ui + vi;
-                fre[i + k + len / 2u] = ur - vr; fim[i + k + len / 2u] = ui - vi;
-                t = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = t;
-            }
-        }
-    }
-}
+static void fft(void) { jt_fft(fre, fim, FFTN, 1); }   /* (the twiddles by rotation: the figures as measured) */
 /* the spectrum of x[a .. a + FFTN) (Blackman-Harris: side lobes -92 dB), amplitudes in x's units: at f, the largest
  * other line (away from f and from DC), and everything else's RMS */
 static void spectrum(const int32_t *x, uint32_t a, double f, double *at_f, double *spur, double *spur_hz, double *resid)

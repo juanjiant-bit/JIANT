@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+// Copyright (C) 2026 Charles Vestal (X0X)
 // Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // Felucca in an AudioWorklet: felucca.wasm is the whole FM-1 firmware against a simulated FM-1
 // (web/emu/felucca_web.c). Each render quantum asks it for 128 frames, which runs the device's clock forward;

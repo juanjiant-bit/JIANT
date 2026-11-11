@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* FM6's voice bank (1.4.1, Discussion #168; src/fm6_vbank.c, the editor's FM6B_* in src/editor_fm6.c) against
  * simulated NOR flash: a bank written whole and read back, its sectors (0xE7000, staged in the autosave's older copy,
  * nothing else touched, the tail erased), a power cut after any programmed byte or during any erase (the old bank or
@@ -12,69 +11,81 @@
 #include "hostsim.c"
 #undef main
 
-static int32_t fm1_enc_take(uint32_t e) { (void)e; return 0; }
-static void fm1_irq_off(void) {}
-static void fm1_irq_on(void) {}
-static void lcd_sync(void) {}
+#include "jiant_test_util.h"
+
+/* the UI's hardware, absent: no encoder turns, no interrupts to mask, a display that takes everything */
+static int32_t fm1_enc_take(uint32_t enc) { (void)enc; return 0; }
+static void fm1_irq_on(void) { }
+static void fm1_irq_off(void) { }
 static void lcd_power(uint32_t s) { (void)s; }
-static void lcd_wake_now(void) {}
-static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *p)
-{ (void)x; (void)y; (void)w; (void)h; (void)p; }
+static void lcd_wake_now(void) { }
+static void lcd_sync(void) { }
+static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *p) { (void)x, (void)y, (void)w, (void)h, (void)p; }
 #define FELUCCA_FLASH 1
 #include "../firmware/src/gfx.c"
 #include "../firmware/src/panel.c"
 #include "../firmware/src/ui.c"
 #include "../firmware/src/menu_items.c"
-static void panel_setup(void) {}
+static void panel_setup(void) { }                  /* (no panel to bring up) */
 
-static uint8_t nor[0x100000], flash_ok = 1;
+/* the NOR flash, 1 MB: an erase sets a 4 KB sector to FF, a program only clears bits, within a 256 B page */
+static uint8_t nor[1u << 20], flash_ok = 1;
 static long cut_bytes = -1, cut_erase = -1;     /* the power goes after that many programmed bytes / at that erase */
 static int dead;                                 /* .. and stays off: nothing more is written */
 static uint32_t progs, erases;
-static int st_read(uint32_t off, void *dst, uint32_t n) { memcpy(dst, nor + off, n); return 0; }
+static int st_read(uint32_t off, void *dst, uint32_t n) { memcpy(dst, &nor[off], n); return 0; }
 static int st_erase(uint32_t off)
 {
+    uint32_t span = 4096;
     if (dead)
         return -8;
     erases++;
-    if (cut_erase >= 0 && cut_erase-- == 0) {    /* cut during the erase: half of it done */
-        memset(nor + off, 0xFF, 2048);
-        dead = 1;
-        return -8;
-    }
-    memset(nor + off, 0xFF, 4096);
-    return 0;
+    if (cut_erase >= 0 && cut_erase-- == 0)          /* the power cut halfway through this one */
+        span = 2048, dead = 1;
+    memset(nor + off, 0xFF, span);
+    return dead ? -8 : 0;
+}
+/* the power still on for one more programmed byte (cut_bytes counts them down to the cut) */
+static int powered(void)
+{
+    if (!dead && cut_bytes >= 0)
+        dead = cut_bytes-- == 0;
+    return !dead;
 }
 static int st_prog(uint32_t off, const void *src, uint32_t n)
 {
-    const uint8_t *s = src;
-    uint32_t i;
-    if ((off & 0xFFu) + n > 256u) {
+    const uint8_t *in = src, *end = in + n;
+    uint8_t *cell = nor + off;
+    if (n > 256u - (off & 0xFFu)) {                     /* (the driver splits at pages: a wrap is a bug) */
         printf("page wrap at %#x\n", off);
         exit(1);
     }
-    for (i = 0; i < n; i++) {
-        if (dead || (cut_bytes >= 0 && cut_bytes-- == 0)) {
-            dead = 1;
+    for (; in < end; in++, cell++) {
+        if (!powered())
             return -9;
-        }
-        nor[off + i] &= s[i];
+        *cell &= *in;
         progs++;
     }
     return 0;
 }
-static uint32_t irq_save(void) { return 0; }
-static void irq_restore(uint32_t f) { (void)f; }
-static uint32_t fl_jedec_ram(void) { return 0; }
-static void fl_plain_window_init(void) {}
-#define FL_FAR(fn) (fn)
+/* storage.c's platform: interrupts never masked, no chip ID to read, the flash window as it is, calls direct */
+static uint32_t irq_save(void) { return 0u; }
+static void irq_restore(uint32_t saved) { (void)saved; }
+static uint32_t fl_jedec_ram(void) { return 0u; }
+static void fl_plain_window_init(void) { }
+#define FL_FAR(f) (f)
 #include "../firmware/src/storage.c"
 #include "../firmware/src/upreset.c"
 #include "../firmware/src/project.c"
 
 static uint8_t rep[1024];                         /* the editor's reply */
 static uint32_t rep_n;
-static void ed_b(uint32_t v) { if (rep_n < sizeof rep) rep[rep_n++] = (uint8_t)(v & 127u); }
+static void ed_b(uint32_t v)                       /* a reply byte, 7 bits (SysEx data), dropped past the buffer */
+{
+    if (rep_n >= sizeof rep)
+        return;
+    rep[rep_n++] = (uint8_t)(v & 0x7Fu);
+}
 static void ed_str(const char *s, uint32_t max)
 {
     uint32_t i;
@@ -85,11 +96,7 @@ static void ed_str(const char *s, uint32_t max)
 static int ed_flash_stop(void) { return transport_busy(); }
 #include "../firmware/src/editor_fm6.c"
 
-static int check(const char *what, int ok)
-{
-    printf("fm6bank: %-96s %s\n", what, ok ? "ok" : "FAIL");
-    return ok ? 0 : 1;
-}
+static int check(const char *what, int ok) { return jt_verdict("fm6bank: ", 96, what, ok, NULL); }
 
 static uint32_t request(uint32_t cmd, const uint8_t *a, uint32_t n)
 {
@@ -176,17 +183,14 @@ static int bank_is(const bank_t *b)
 static void reset(void)
 {
     uint32_t k;
-    memset(nor, 0xFF, sizeof nor);
-    memset(&song, 0, sizeof song);
-    memset(trk, 0, sizeof trk);
-    memset(&chain, 0, sizeof chain);
+    static const struct { void *at; size_t n; } ZERO[] = {   /* the state a session builds, from nothing */
+        {&song, sizeof song}, {trk, sizeof trk}, {&chain, sizeof chain}, {proj_slot, sizeof proj_slot},
+        {up_bank, sizeof up_bank}, {&upf, sizeof upf}, {&ui, sizeof ui}, {&motion, sizeof motion},
+        {&fvb_tx, sizeof fvb_tx}};
+    for (k = 0; k < NELEM(ZERO); k++)
+        memset(ZERO[k].at, 0, ZERO[k].n);
+    memset(nor, 0xFF, sizeof nor);                      /* a blank chip */
     chain_defaults(&chain_config);
-    memset(proj_slot, 0, sizeof proj_slot);
-    memset(up_bank, 0, sizeof up_bank);
-    memset(&upf, 0, sizeof upf);
-    memset(&ui, 0, sizeof ui);
-    memset(&motion, 0, sizeof motion);
-    memset(&fvb_tx, 0, sizeof fvb_tx);
     host_tracks_init();
     fm6_init();
     for (k = 0; k < NTRK; k++) {

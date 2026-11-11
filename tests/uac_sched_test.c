@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.8.9) The USB audio input's packet scheduler over minutes (src/usb.c and the audio ISR's order in src/audio.c),
  * against a simulated FM-1 and host, in ns:
  *   the I2S      halves of HALF_FRAMES at 44,117.6 Hz; the audio ISR acks a half first and renders it (0.8.9): a
@@ -28,15 +27,15 @@
 #include <stdlib.h>
 #include <string.h>
 #ifndef HALF_FRAMES
-#error "-DHALF_FRAMES=n (src/core.h; run_tests.sh passes it)"
+#error "build with -DHALF_FRAMES= the value in firmware/src/core.h (as tests/run_tests.sh does)"
 #endif
 #ifndef T_C1
 #define T_C1 0
 #endif
-#define RING_PUBLISH() __asm__ volatile("" ::: "memory")
-#define FELUCCA_OTA 0
+#define FELUCCA_UAC 1                                   /* the firmware's USB audio and serial in, no OTA */
 #define FELUCCA_CDC 1
-#define FELUCCA_UAC 1
+#define FELUCCA_OTA 0
+#define RING_PUBLISH() __asm__ volatile("" ::: "memory") /* (one process: a compiler barrier is the ring's fence) */
 static void fm1_delay_ms(uint32_t ms) { (void)ms; }
 #pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
 /* core 1, simulated: one job queued, finished at c1_due (or when the ISR waits for it) */
@@ -84,11 +83,8 @@ static int c1_wait(void)
 #include "../firmware/src/usb.c"
 
 static int fails;
-static void check(const char *what, int ok)
-{
-    printf("%-100s %s\n", what, ok ? "ok" : "FAIL");
-    fails += !ok;
-}
+#include "jiant_test_util.h"
+static void check(const char *what, int ok) { fails += jt_verdict("", 100, what, ok, NULL); }
 
 static uint32_t lcg = 0x2468ACEu;
 static double rnd(void) { lcg = lcg * 1664525u + 1013904223u; return (lcg >> 8) / 16777216.0; }

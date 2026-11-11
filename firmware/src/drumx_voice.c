@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * JIANT (FELUCCA TONIC): DRUM-X, after the idea of Sonic Charge's Microtonic (a tuned oscillator with a pitch
  * envelope and FM, a filtered noise generator, their envelopes, two patches and a MORPH between them), built anew
  * small and in fixed point for the FM-1. */
@@ -16,7 +15,7 @@
  * 808 boom), NOISE (a random pitch each block, scaled by the envelope: glitch, grit), SINE (a sine at 1/8 of the
  * pitch, scaled by the envelope: wobble, laser); and DRIVE (the oscillator x3 into a soft clip: dense kicks, fat toms).
  * MORPH (0 A .. 127 B) mixes the two patches value by value, read every block: it may move while a hit rings.
- * Envelopes per block (Q30 values, Q16 factors, dv_kb), ramped linearly inside it; the pitch ramps too. A hit
+ * Envelopes per block (Q30 values, Q16 factors, dx_fall), ramped linearly inside it; the pitch ramps too. A hit
  * that has rung out (-84 dB) stops computing (live 0) and writes zeros. Only 32-bit products. */
 enum { DV_KICK, DV_SNARE, DV_CLAP, DV_HATC, DV_HATO, DV_TOM, DV_RIM, DV_BELL, DV_NLANE };   /* the kit's lanes */
 enum { DXW_SINE, DXW_FM, DXW_METAL, DXW_BELL };
@@ -53,12 +52,16 @@ static const uint16_t DX_NRM[17] = {16724, 11014, 8422, 6987, 6105, 5526, 5131, 
 /* the oscillator's modulator ratios (Q12), by wave */
 static const uint16_t DX_RATIO[4] = {4096, 4096, 6021, 11305};
 
-/* 2^(x / 4096), 0 <= x < 16 * 4096, Q16 (a cubic for the fraction: within 0.01 %) */
-static __attribute__((noinline)) uint32_t dv_exp2(uint32_t x)
+/* x octaves (x / 4096 of them, below 16) as a Q16 factor 2^(x / 4096): the whole octaves a shift of 1.0, the rest
+ * t (0 .. 1, the low 12 bits) a third-order polynomial 1 + c1 t + c2 t^2 + c3 t^3, its coefficients Q16 (c1 0.6957,
+ * c2 0.2266, c3 0.0777: off by 0.01 % at most), taken as ((c3 t + c2) t + c1) t + 1 */
+static __attribute__((noinline)) uint32_t dx_pow2(uint32_t x)
 {
-    uint32_t f = x & 4095u, m;
-    m = 65536u + ((f * (45594u + ((f * (14851u + ((f * 5092u) >> 12))) >> 12))) >> 12);
-    return m << (x >> 12);
+    uint32_t t = x & 0xfffu, acc;
+    acc = 14851u + ((t * 5092u) >> 12);
+    acc = 45594u + ((t * acc) >> 12);
+    acc = 65536u + ((t * acc) >> 12);
+    return acc << (x >> 12);
 }
 /* (0.9.9-snd1) the owner: FEEDBK, FM ENV "too extreme, harsh noise, unusable"; "a SOPHIE-like palette: hard but
  * musical, metallic, rubbery, clean transients". The knobs on curves, most of the travel musical, the extreme only in
@@ -90,24 +93,30 @@ static __attribute__((noinline)) int32_t dx_fm_lim(int32_t e, uint32_t inc, uint
     lim = fc >= 10500 ? 0 : (10500 - fc) * 41 / (fmh > 0 ? fmh : 1) - 41;
     return e < lim ? e : lim > 0 ? lim : 0;
 }
-/* tau (us) -> per-block decay, Q16: e^(-CTL / (tau fs)), to the fourth order (2^16 CTL / FS us) */
-static uint32_t dv_kb(uint32_t us)
+/* what an envelope with a time constant of `us` microseconds keeps over one block, Q16: e^-a with a = CTL / (FS tau)
+ * (in Q16: 95108934 / us for a block of 64 at 44.1 kHz), from the series of e^-a up to its a^4 / 24 term, each
+ * power truncated to Q16 and each term rounded down on its own; a held at 0.70 (46000), where the fourth order still
+ * falls, so a tau under ~1.4 blocks loses half its level each block; 1.0 written as 65535 */
+#define DX_BLOCK_A (CTL * 65536.0e6 / FS)
+static uint32_t dx_fall(uint32_t us)
 {
-    uint32_t x = (uint32_t)(65536.0 * CTL / FS * 1000000.0) / (us | 1u), x2, x3, x4, k;
-    if (x > 46000u)
-        x = 46000u;
-    x2 = (x * x) >> 16;
-    x3 = (x2 * x) >> 16;
-    x4 = (x3 * x) >> 16;
-    k = 65536u - x + (x2 >> 1) - x3 / 6u + x4 / 24u;
-    return k > 65535u ? 65535u : k;
+    uint32_t a = (uint32_t)DX_BLOCK_A / (us | 1u), pw, keep;
+    if (a > 46000u)
+        a = 46000u;
+    pw = (a * a) >> 16;
+    keep = 65536u - a + pw / 2u;
+    pw = (a * pw) >> 16;
+    keep -= pw / 6u;
+    pw = (a * pw) >> 16;
+    keep += pw / 24u;
+    return keep < 65536u ? keep : 65535u;
 }
 
 static void dx_trigger(dx_voice_t *v) { v->trig = 1; v->choke = 0; }
 static void dx_choke(dx_voice_t *v) { if (v->live) v->choke = 1; }
 
 /* a decay value (0..127) -> its tau in us: 3 ms x 2^(9 d / 127) */
-static uint32_t dx_tau(uint32_t d) { return ((dv_exp2(d * 9u * 4096u / 127u) >> 8) * 3000u) >> 8; }
+static uint32_t dx_tau(uint32_t d) { return ((dx_pow2(d * 9u * 4096u / 127u) >> 8) * 3000u) >> 8; }
 
 /* (0.6.49) LAYER's oscillator: a triangle (no table, a few operations; its odd partials add to the clang) */
 static inline int32_t dx_tri(uint32_t ph)
@@ -302,11 +311,11 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
         flt = DXF_BP;
     }
     k = 11890000u / ((pitch_inc((uint32_t)clamp(p16, 0, 2047)) >> 12) | 1u);   /* (V10.6q) half its period (us): no shorter */
-    kb = v->choke ? dv_kb(1500u) : dv_kb(ta > k ? ta : k);   /* (a choked hit: gone in ~5 ms; a blip shorter than its own
+    kb = v->choke ? dx_fall(1500u) : dx_fall(ta > k ? ta : k);   /* (a choked hit: gone in ~5 ms; a blip shorter than its own
                                                           * half wave was all DC) */
     ea1 = mulq16(v->ea, kb);
-    en1 = mulq16(v->en, v->choke ? kb : dv_kb(tn));
-    ep1 = (int32_t)(((uint32_t)v->ep * dv_kb(tp)) >> 16);
+    en1 = mulq16(v->en, v->choke ? kb : dx_fall(tn));
+    ep1 = (int32_t)(((uint32_t)v->ep * dx_fall(tp)) >> 16);
     if (sp < slen) {                                     /* (GR: the stroke held) */
         ea1 = v->ea;
         en1 = v->en;
@@ -335,7 +344,7 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
     if (flt < DXF_HP && cx < 96)                         /* (V10.6q) LP, BP: the band's power goes with its cutoff, the
                                                           * gain back as 1 / sqrt(fc) to COLOR 96's (x8 at most): a dark
                                                           * snare or clap as loud as a bright one (were up to 18 dB under) */
-        ng = (ng * (int32_t)(dv_exp2((uint32_t)(cx < 12 ? 84 : 96 - cx) * 146u) >> 4)) >> 12;
+        ng = (ng * (int32_t)(dx_pow2((uint32_t)(cx < 12 ? 84 : 96 - cx) * 146u) >> 4)) >> 12;
     ga = mulq15(og, cw ? (ea0 >> 16) + (v->en >> 16) : ea0 >> 15) << 8;   /* the oscillator's gain, Q23, stepped (the
                                                           * cowbell's in two stages: half on the noise's SNAP, a click,
                                                           * half on the decay, the tail) */

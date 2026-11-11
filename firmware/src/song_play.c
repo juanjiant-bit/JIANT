@@ -1,7 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Copyright (C) 2026 Andre Rezemini (SLOOP)
  * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
- * JIANT (FELUCCA TONIC): after SLOOP 2.4.1's arranger, live sections and SONG REC (isod89/sloop-fm1, GPL-3.0). */
+ * JIANT (FELUCCA TONIC): after SLOOP 2.4.1's arranger, live sections and SONG REC (isod89/sloop-fm1, GPL-3.0); the
+ * SONG REC take (srec_finish, srec_add, srec_bar, srec_stop) follows SLOOP 2.4.1's seq.c; the start, stop and row
+ * changes (chain_start, chain_stop, chain_tick, the tracks' restart in sec_apply) Felucca's song_chain.c. */
 /* The song, the audio ISR's part (song_chain.c: what it is). Included at the end of seq.c. */
 static uint32_t chain_bar(void) { return 16u * div_samples(2); }        /* a 4/4 bar: 16 steps of 1/16 (DIV 2) */
 

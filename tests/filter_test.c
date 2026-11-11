@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.9.9-snd1) The FILTER after the voices (src/voice.c track_filter, tf_run, track_comb) on the host, fed directly
  * (a saw, noise, a sine at the part's newest note; its voices faked: the comb follows the newest one):
  * 1. every TYPE (LP HP BP COMB COMB- MS20) at RES 0 / 100 / 127, CUT 0 / 64 / 127, from C1 to C8: bounded (no sample at
@@ -16,26 +15,14 @@
  * 5. MS20: the ring longer as RES rises; a full-scale saw at RES 127, every CUT, C1..C7: under full scale and no
  *    more than 6x RES 0's level (it screams, the clip holding it);
  * demos (argv[1], default build/filter_demo): comb_sweep.wav, comb_neg_sweep.wav, ms20_sweep.wav. */
-#include <stdarg.h>
 #define main hostsim_main
 #include "hostsim.c"
 #undef main
+#include "jiant_test_util.h"
 
 static int fails;
-static void check(const char *what, int ok, const char *fmt, ...)
-{
-    printf("filter: %-70s %s", what, ok ? "ok" : "FAIL");
-    if (fmt) {
-        va_list ap;
-        va_start(ap, fmt);
-        printf("  (");
-        vprintf(fmt, ap);
-        printf(")");
-        va_end(ap);
-    }
-    printf("\n");
-    fails += !ok;
-}
+/* a verdict line, the details (printf fmt and its values, or NULL) in parentheses */
+#define check(what, ok, ...) (fails += jt_verdict("filter: ", 70, (what), (ok), __VA_ARGS__))
 
 #define MAXN (FS * 8u)
 static int32_t buf[MAXN];
@@ -104,22 +91,8 @@ static int32_t swing(uint32_t a, uint32_t b)
         p = fabs(buf[i] - m) > p ? (int32_t)fabs(buf[i] - m) : p;
     return p;
 }
-static int32_t peak(uint32_t a, uint32_t b)
-{
-    int32_t p = 0;
-    uint32_t i;
-    for (i = a; i < b; i++)
-        p = abs(buf[i]) > p ? abs(buf[i]) : p;
-    return p;
-}
-static double rms(uint32_t a, uint32_t b)
-{
-    double s = 0;
-    uint32_t i;
-    for (i = a; i < b; i++)
-        s += (double)buf[i] * buf[i];
-    return sqrt(s / (b - a));
-}
+static int32_t peak(uint32_t a, uint32_t b) { return jt_peak_i32(buf, a, b); }
+static double rms(uint32_t a, uint32_t b) { return jt_rms_i32(buf, a, b); }
 /* the longest run of samples at or past full scale */
 static uint32_t pegged(uint32_t a, uint32_t b)
 {

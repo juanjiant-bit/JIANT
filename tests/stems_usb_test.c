@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.9.8) MENU > USB STEMS / STEMS+IN over minutes: src/usb.c's 8- and 10-channel stream (uac_render_start, uac_tap8,
  * uac_packet) in the audio ISR's order against a simulated FM-1 and a host that reads it as the JIANT Stems app does
  * (android/stems: usbstream.c's isochronous URBs, each packet's buffer the endpoint's wMaxPacketSize, then
@@ -29,12 +28,12 @@
 #include <stdlib.h>
 #include <string.h>
 #ifndef HALF_FRAMES
-#error "-DHALF_FRAMES=n (src/core.h; run_tests.sh passes it)"
+#error "build with -DHALF_FRAMES= the value in firmware/src/core.h (as tests/run_tests.sh does)"
 #endif
-#define RING_PUBLISH() __asm__ volatile("" ::: "memory")
-#define FELUCCA_OTA 0
+#define FELUCCA_UAC 1                                   /* the firmware's USB audio and serial in, no OTA */
 #define FELUCCA_CDC 1
-#define FELUCCA_UAC 1
+#define FELUCCA_OTA 0
+#define RING_PUBLISH() __asm__ volatile("" ::: "memory") /* (one process: a compiler barrier is the ring's fence) */
 static void fm1_delay_ms(uint32_t ms) { (void)ms; }
 #pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
 static volatile uint8_t t_stems;                         /* match fx.c: the render must read the current USB mode */
@@ -49,11 +48,8 @@ static volatile uint8_t uin_on;
 #include "../firmware/src/usb.c"
 
 static int fails;
-static void check(const char *what, int ok)
-{
-    printf("%-112s %s\n", what, ok ? "ok" : "FAIL");
-    fails += !ok;
-}
+#include "jiant_test_util.h"
+static void check(const char *what, int ok) { fails += jt_verdict("", 112, what, ok, NULL); }
 static uint32_t lcg = 0x13579BDu;
 static double rnd(void) { lcg = lcg * 1664525u + 1013904223u; return (lcg >> 8) / 16777216.0; }
 

@@ -199,7 +199,7 @@
 00aa60 a macro_master
 00ac7e a dx_mot_block
 00ada2 a master_begin
-00ae1c a dv_kb
+00ae1c a dx_fall
 00ae72 a duck_block
 00af38 a perf_avail
 00af7e a perf_unhush
@@ -1417,7 +1417,7 @@
 05be6a - chain_goto
 05bf24 - parts_audition
 05bf6e - song_retired
-05bfe6 @ dv_exp2
+05bfe6 @ dx_pow2
 05c016 a dx_sq
 05c042 a drum_chrom
 05c04a - song_rec_toggle

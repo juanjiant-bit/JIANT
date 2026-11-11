@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* ANIMAL engine test (src/eng_animal.c, JIANT 0.8.3) on the host, through hostsim.c as regress.c.
  *   build/host/animal_test [DEMODIR]          (run_tests.sh: build/animal_demo)
  * 1. CMOS: the fast relaxation oscillator plays the key an octave up (gate only, no sweep: +-10 cents, A3 .. A6);
@@ -21,118 +20,69 @@
 #include "hostsim.c"
 #undef main
 
+#include "jiant_test_util.h"
+
 #define NFFT 8192
 static int bad;
-static void check(const char *what, int ok)
-{
-    printf("animal: %-96s %s\n", what, ok ? "ok" : "FAIL");
-    bad += !ok;
-}
+static void check(const char *what, int ok) { bad += jt_verdict("animal: ", 96, what, ok, NULL); }
 
+/* ANIMAL's place in ENGINES[] (0 if it is missing), and a preset of it by name (0 and a failure if none) */
 static uint32_t eng_an(void)
 {
-    uint32_t e;
-    for (e = 0; e < NENGINES; e++)
+    uint32_t e = NENGINES;
+    while (e-- > 0)
         if (ENGINES[e] == &ENG_ANIMAL)
             return e;
     return 0;
 }
 static int32_t preset_of(const char *name)
 {
-    uint32_t k;
-    for (k = 0; k < ENG_ANIMAL.npresets; k++)
+    int32_t k = -1;
+    while (++k < (int32_t)ENG_ANIMAL.npresets)
         if (str_eq(ENG_ANIMAL.presets[k].name, name))
-            return (int32_t)k;
+            return k;
     printf("animal: no preset %s\n", name);
     bad++;
     return 0;
 }
 
-/* track 0 ANIMAL: preset pi (or -1: INIT), then e[] if given; ATK 0, SUS full, no sends */
+/* the part the analyses play: track 0 on ANIMAL at preset pi (-1: INIT), its engine knobs e[] over the preset's when
+ * given; the envelope open at once and held, POLY, nothing into the FX buses */
 static void setup(int32_t pi, const int16_t *e)
 {
-    uint32_t i;
+    static const struct { uint16_t id; int16_t v; } DRY[] = {{P_ATK, 0}, {P_SUS, 127}, {P_VOICE, V_POLY},
+                                                               {P_CHOR, 0}, {P_DLY, 0}, {P_REV, 0}};
+    track_t *t = &trk[0];
+    uint32_t k;
     memset(trk, 0, sizeof trk);
     host_tracks_init();
-    host_preset(&trk[0], eng_an(), pi < 0 ? 0 : (uint32_t)pi);
-    if (e)
-        for (i = 0; i < 8u; i++)
-            trk[0].p[P_E0 + i] = e[i];
-    trk[0].p[P_ATK] = 0;
-    trk[0].p[P_SUS] = 127;
-    trk[0].p[P_VOICE] = V_POLY;
-    trk[0].p[P_CHOR] = trk[0].p[P_DLY] = trk[0].p[P_REV] = 0;
+    host_preset(t, eng_an(), pi < 0 ? 0 : (uint32_t)pi);
+    for (k = 0; e && k < 8u; k++)
+        t->p[P_E0 + k] = e[k];
+    for (k = 0; k < NELEM(DRY); k++)
+        t->p[DRY[k].id] = DRY[k].v;
 }
 
-/* the voices' sum (before the mix) of a held note, n samples after `skip` s */
+/* y[0, n): the voices' sum (before the mix, full scale 1.0) of a note held from `skip` seconds on */
 static void voice_render(uint32_t note, double skip, double *y, uint32_t n)
 {
-    static int32_t b[CTL];
-    uint32_t i, k, sk = (uint32_t)(skip * FS) / CTL;
+    static int32_t blk[CTL];
+    uint32_t lead = (uint32_t)(skip * FS) / CTL, got = 0;
     trk_note_on(&trk[0], note, 100);
-    for (i = 0; i < sk; i++)
-        track_render(&trk[0], b, CTL);
-    for (i = 0; i < n; i += CTL) {
-        track_render(&trk[0], b, CTL);
-        for (k = 0; k < CTL && i + k < n; k++)
-            y[i + k] = b[k] / 32768.0;
+    while (lead-- > 0)
+        track_render(&trk[0], blk, CTL);
+    while (got < n) {
+        uint32_t k;
+        track_render(&trk[0], blk, CTL);
+        for (k = 0; k < CTL && got < n; k++)
+            y[got++] = blk[k] / 32768.0;
     }
 }
 
 /* ------------------------------------------------------------ analysis --- */
-static void fft(double *re, double *im, uint32_t n)
-{
-    uint32_t i, j, len;
-    for (i = 1, j = 0; i < n; i++) {
-        uint32_t bit = n >> 1;
-        for (; j & bit; bit >>= 1)
-            j ^= bit;
-        j ^= bit;
-        if (i < j) {
-            double t = re[i]; re[i] = re[j]; re[j] = t;
-            t = im[i]; im[i] = im[j]; im[j] = t;
-        }
-    }
-    for (len = 2; len <= n; len <<= 1) {
-        double a = -2 * M_PI / len;
-        for (i = 0; i < n; i += len)
-            for (j = 0; j < len / 2; j++) {
-                double wr = cos(a * j), wi = sin(a * j);
-                double xr = re[i + j + len / 2] * wr - im[i + j + len / 2] * wi;
-                double xi = re[i + j + len / 2] * wi + im[i + j + len / 2] * wr;
-                re[i + j + len / 2] = re[i + j] - xr, im[i + j + len / 2] = im[i + j] - xi;
-                re[i + j] += xr, im[i + j] += xi;
-            }
-    }
-}
-/* the averaged power spectrum (Hann) of y[0..n) in frames of NFFT, into ps[NFFT / 2] */
-static void spectrum(const double *y, uint32_t n, double *ps)
-{
-    static double re[NFFT], im[NFFT];
-    uint32_t f, i;
-    memset(ps, 0, sizeof(double) * NFFT / 2);
-    for (f = 0; f + NFFT <= n; f += NFFT / 2) {
-        for (i = 0; i < NFFT; i++) {
-            re[i] = y[f + i] * (0.5 - 0.5 * cos(2 * M_PI * i / NFFT));
-            im[i] = 0;
-        }
-        fft(re, im, NFFT);
-        for (i = 0; i < NFFT / 2; i++)
-            ps[i] += re[i] * re[i] + im[i] * im[i];
-    }
-}
-/* the strongest peak between lo and hi Hz, interpolated */
-static double peak_hz(const double *ps, double lo, double hi)
-{
-    uint32_t i, a = (uint32_t)(lo / FS * NFFT), b = (uint32_t)(hi / FS * NFFT), best = a;
-    double l, c, r, d;
-    for (i = a; i < b; i++)
-        if (ps[i] > ps[best])
-            best = i;
-    l = log(ps[best - 1] + 1e-30), c = log(ps[best] + 1e-30), r = log(ps[best + 1] + 1e-30);
-    d = 0.5 * (l - r) / (l - 2 * c + r);
-    return (best + d) * FS / NFFT;
-}
+static double FRE[NFFT], FIM[NFFT];                     /* the transforms' scratch */
+static void spectrum(const double *y, uint32_t n, double *ps) { jt_hann_power(y, n, ps, NFFT, FRE, FIM); }
+static double peak_hz(const double *ps, double lo, double hi) { return jt_peak_freq(ps, NFFT, FS, lo, hi); }
 /* the RMS envelope (5 ms frames) and its strongest repetition between lo and hi per second */
 #define EFR (FS / 200)
 static double env_rate(const double *y, uint32_t n, double lo, double hi)
@@ -167,31 +117,19 @@ static double env_rate(const double *y, uint32_t n, double lo, double hi)
             return 200.0 / k;
     return best ? 200.0 / best : 0;
 }
-static double rms(const double *y, uint32_t n, double *mean)
-{
-    double s = 0, m = 0;
-    uint32_t i;
-    for (i = 0; i < n; i++)
-        m += y[i];
-    m /= n;
-    for (i = 0; i < n; i++)
-        s += (y[i] - m) * (y[i] - m);
-    if (mean)
-        *mean = m;
-    return sqrt(s / n);
-}
+#define rms jt_rms_ac
 /* the frequency of the strongest component of y around i0 (a 2048-point frame, zero-padded): a pitch track */
 static double local_hz(const double *y, uint32_t i0, double lo, double hi)
 {
-    static double re[NFFT], im[NFFT], ps[NFFT / 2];
-    uint32_t i;
-    for (i = 0; i < NFFT; i++) {
-        re[i] = i < 1024u ? y[i0 + i] * (0.5 - 0.5 * cos(2 * M_PI * i / 1024)) : 0;
-        im[i] = 0;
+    static double ps[NFFT / 2];
+    uint32_t k;
+    for (k = 0; k < NFFT; k++) {                        /* 1024 points windowed, the rest zeros */
+        FRE[k] = k < 1024u ? y[i0 + k] * jt_hann(k, 1024) : 0;
+        FIM[k] = 0;
     }
-    fft(re, im, NFFT);
-    for (i = 0; i < NFFT / 2; i++)
-        ps[i] = re[i] * re[i] + im[i] * im[i];
+    jt_fft(FRE, FIM, NFFT, 0);
+    for (k = 0; k < NFFT / 2; k++)
+        ps[k] = FRE[k] * FRE[k] + FIM[k] * FIM[k];
     return peak_hz(ps, lo, hi);
 }
 
@@ -309,6 +247,23 @@ static void whistle(void)
 }
 
 /* --------------------------------------------------------- every preset --- */
+/* note 62 struck on track 0 and the whole blocks of its first half second: kept in `keep`, or (again 1) matched
+ * against what was kept there: 1 when every sample is the same */
+static int note_take(int32_t *keep, int again)
+{
+    static int32_t blk[CTL];
+    uint32_t at;
+    int match = 1;
+    trk_note_on(&trk[0], 62, 100);
+    for (at = 0; at + CTL <= FS / 2; at += CTL) {
+        track_render(&trk[0], blk, CTL);
+        if (again)
+            match &= !memcmp(keep + at, blk, sizeof blk);
+        else
+            memcpy(keep + at, blk, sizeof blk);
+    }
+    return match;
+}
 static void presets(void)
 {
     static int32_t a[FS / 2], b[CTL], o[2 * CTL];
@@ -343,21 +298,11 @@ static void presets(void)
             tf_on[0] = 0;                               /* (no note: the chain never ran its fade) */
             tf_ic1[0] = tf_ic2[0] = 0;
         }
-        trk_note_on(&trk[0], 62, 100);
-        for (i = 0; i < FS / 2 / CTL; i++) {
-            track_render(&trk[0], b, CTL);
-            for (k = 0; k < CTL; k++)
-                a[i * CTL + k] = b[k];
-        }
+        note_take(a, 0);
         trk_note_off(&trk[0], 62);
         for (i = 0; i < 12u * FS / CTL; i++)
             track_render(&trk[0], b, CTL);
-        trk_note_on(&trk[0], 62, 100);
-        for (i = 0; i < FS / 2 / CTL; i++) {
-            track_render(&trk[0], b, CTL);
-            for (k = 0; k < CTL; k++)
-                same &= a[i * CTL + k] == b[k];
-        }
+        same &= note_take(a, 1);
     }
     snprintf(what, sizeof what, "every preset sounds: the quietest %s at %.1f dB (a voice's sum, 3 s with its gaps)",
              ENG_ANIMAL.presets[lo_p].name, 20 * log10(lo));
@@ -441,44 +386,46 @@ static uint32_t demo_note(const preset_t *pr)
             return H[k].note;
     return 72;
 }
-static void demo(const char *dir, uint32_t pi)
+/* a block of the mix into the WAV: its frames */
+static uint32_t wav_block(FILE *w)
 {
     static int32_t o[2 * CTL];
+    const int32_t *f;
+    mix_block(o, CTL);
+    for (f = o; f < o + 2 * CTL; f += 2)
+        wav_put(w, f[0], f[1]);
+    return CTL;
+}
+static void demo(const char *dir, uint32_t pi)
+{
     static const int8_t PH[4][2] = {{0, 22}, {5, 14}, {0, 18}, {-5, 26}};   /* the phrase: semitones, length (1/10 s) */
     const preset_t *pr = &ENG_ANIMAL.presets[pi];
-    uint32_t home = demo_note(pr), s, i, frames = 0;
-    char path[512], nm[32];
+    uint32_t home = demo_note(pr), s, t, frames = 0;
+    char path[512], nm[32], *c;
     FILE *w;
-    for (i = 0; pr->name[i] && i < 31u; i++)
-        nm[i] = pr->name[i] == ' ' ? '_' : pr->name[i];
-    nm[i] = 0;
+    snprintf(nm, sizeof nm, "%s", pr->name);            /* the file: the preset's number and name, '_' for ' ' */
+    for (c = nm; *c; c++)
+        if (*c == ' ')
+            *c = '_';
     snprintf(path, sizeof path, "%s/%02u_%s.wav", dir, pi, nm);
-    if (!(w = fopen(path, "wb")))
+    w = fopen(path, "wb");
+    if (w == NULL)
         return;
     wav_hdr(w, 0);
-    memset(trk, 0, sizeof trk);
+    memset(trk, 0, sizeof trk);                         /* (the preset as it is, sends and all) */
     host_tracks_init();
     host_preset(&trk[0], eng_an(), pi);
     for (s = 0; s < 4u; s++) {                          /* each note a call, a breath between them */
         uint32_t note = home + PH[s][0], len = PH[s][1] * (FS / 10u);
         trk_note_on(&trk[0], note, 100);
-        for (i = 0; i < len + FS / 4; i += CTL) {
-            uint32_t j;
-            if (i >= len && i < len + CTL)
+        for (t = 0; t < len + FS / 4; t += CTL) {
+            if (t - len < CTL)                          /* (the block from len on: unsigned, under len wraps) */
                 trk_note_off(&trk[0], note);
-            mix_block(o, CTL);
-            for (j = 0; j < CTL; j++)
-                wav_put(w, o[2 * j], o[2 * j + 1]);
-            frames += CTL;
+            frames += wav_block(w);
         }
     }
-    for (i = 0; i < FS; i += CTL) {                     /* the tail */
-        uint32_t j;
-        mix_block(o, CTL);
-        for (j = 0; j < CTL; j++)
-            wav_put(w, o[2 * j], o[2 * j + 1]);
-        frames += CTL;
-    }
+    for (t = 0; t < FS; t += CTL)                       /* the tail */
+        frames += wav_block(w);
     fseek(w, 0, SEEK_SET);
     wav_hdr(w, frames);
     fclose(w);

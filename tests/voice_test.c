@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* VOICE words test (src/sing.c, src/eng_formant.c, JIANT 0.8.5) on the host, through hostsim.c as regress.c.
  *   build/host/voice_test [DEMODIR]          (run_tests.sh: build/voice_demo)
  *   build/host/voice_test --g2p LANG WORDS..  (prints each word's phonemes, | a syllable)
@@ -21,12 +20,10 @@
 #include "hostsim.c"
 #undef main
 
+#include "jiant_test_util.h"
+
 static int bad;
-static void check(const char *what, int ok)
-{
-    printf("voice: %-100s %s\n", what, ok ? "ok" : "FAIL");
-    bad += !ok;
-}
+static void check(const char *what, int ok) { bad += jt_verdict("voice: ", 100, what, ok, NULL); }
 static uint32_t eng_voice(void)
 {
     uint32_t e;
@@ -224,56 +221,21 @@ static void check_cache(void)
 
 /* ------------------------------------------------------------------------------------------ the checks --- */
 #define NFFT 4096
-static void fft(double *re, double *im, uint32_t n)
-{
-    uint32_t i, j, k, m;
-    for (i = 1, j = 0; i < n; i++) {
-        uint32_t bit = n >> 1;
-        for (; j & bit; bit >>= 1)
-            j ^= bit;
-        j ^= bit;
-        if (i < j) {
-            double t = re[i]; re[i] = re[j]; re[j] = t;
-            t = im[i]; im[i] = im[j]; im[j] = t;
-        }
-    }
-    for (m = 2; m <= n; m <<= 1) {
-        double a = -2.0 * M_PI / m;
-        for (k = 0; k < n; k += m)
-            for (j = 0; j < m / 2u; j++) {
-                double wr = cos(a * j), wi = sin(a * j);
-                double xr = re[k + j + m / 2u] * wr - im[k + j + m / 2u] * wi;
-                double xi = re[k + j + m / 2u] * wi + im[k + j + m / 2u] * wr;
-                re[k + j + m / 2u] = re[k + j] - xr; im[k + j + m / 2u] = im[k + j] - xi;
-                re[k + j] += xr; im[k + j] += xi;
-            }
-    }
-}
-/* the power spectrum of y[0..n) (Welch: Hann windows of NFFT, half overlapping), into P[NFFT / 2] */
+/* the power spectrum of y[0..n) (Welch: Hann windows of NFFT, half overlapping), into P[NFFT / 2]; shorter than a
+ * window: that one span Hann-windowed, zero-padded to NFFT */
 static void spectrum(const double *y, uint32_t n, double *P)
 {
     static double re[NFFT], im[NFFT];
-    uint32_t a, i, w = 0;
-    for (i = 0; i < NFFT / 2u; i++)
-        P[i] = 0;
-    for (a = 0; a + NFFT <= n; a += NFFT / 2u, w++) {
-        for (i = 0; i < NFFT; i++) {
-            re[i] = y[a + i] * (0.5 - 0.5 * cos(2.0 * M_PI * i / NFFT));
-            im[i] = 0;
-        }
-        fft(re, im, NFFT);
-        for (i = 0; i < NFFT / 2u; i++)
-            P[i] += re[i] * re[i] + im[i] * im[i];
+    uint32_t k;
+    if (jt_hann_power(y, n, P, NFFT, re, im) || !n)
+        return;
+    for (k = 0; k < NFFT; k++) {
+        re[k] = k < n ? y[k] * jt_hann(k, n) : 0;
+        im[k] = 0;
     }
-    if (!w && n) {                                       /* shorter than a window: one, zero-padded */
-        for (i = 0; i < NFFT; i++) {
-            re[i] = i < n ? y[i] * (0.5 - 0.5 * cos(2.0 * M_PI * i / n)) : 0;
-            im[i] = 0;
-        }
-        fft(re, im, NFFT);
-        for (i = 0; i < NFFT / 2u; i++)
-            P[i] = re[i] * re[i] + im[i] * im[i];
-    }
+    jt_fft(re, im, NFFT, 0);
+    for (k = 0; k < NFFT / 2u; k++)
+        P[k] = re[k] * re[k] + im[k] * im[k];
 }
 static double bin_hz(uint32_t k) { return (double)k * FS / NFFT; }
 /* the strongest frequency of P (smoothed over +-sm bins) in lo .. hi Hz */
@@ -308,14 +270,7 @@ static double centroid(const double *P)
     }
     return w > 0 ? s / w : 0;
 }
-static double rms(const double *y, uint32_t a, uint32_t b)
-{
-    double s = 0;
-    uint32_t i;
-    for (i = a; i < b; i++)
-        s += y[i] * y[i];
-    return b > a ? sqrt(s / (b - a)) : 0;
-}
+#define rms jt_rms_d
 
 /* track 0 VOICE, preset pi (LANG as it has it, or lang), the text (TEXT); ATK 0, SUS full, a dry voice */
 static void vsetup(int32_t pi, uint32_t lang, const char *text)
@@ -329,21 +284,25 @@ static void vsetup(int32_t pi, uint32_t lang, const char *text)
     if (lang)
         trk[0].p[P_VLANG] = (int16_t)lang;
     lyr_set(0, text ? text : "");
-    trk[0].p[P_VLYR] = 0;
-    trk[0].p[P_ATK] = 0;
-    trk[0].p[P_SUS] = 127;
-    trk[0].p[P_CHOR] = trk[0].p[P_DLY] = trk[0].p[P_REV] = 0;
+    {
+        static const struct { uint16_t id; int16_t v; } DRY[] = {{P_VLYR, 0}, {P_ATK, 0}, {P_SUS, 127},
+                                                                   {P_CHOR, 0}, {P_DLY, 0}, {P_REV, 0}};
+        uint32_t k;
+        for (k = 0; k < NELEM(DRY); k++)
+            trk[0].p[DRY[k].id] = DRY[k].v;
+    }
 }
-/* n samples of the track's voices into y (0: dropped) */
+/* n samples of the track's voices (whole blocks rendered) into y (full scale 1.0; NULL: rendered, not kept) */
 static void vrender(double *y, uint32_t n)
 {
-    static int32_t b[CTL];
-    uint32_t i, k;
-    for (i = 0; i < n; i += CTL) {
-        track_render(&trk[0], b, CTL);
-        for (k = 0; k < CTL && i + k < n; k++)
-            if (y)
-                y[i + k] = b[k] / 32768.0;
+    static int32_t blk[CTL];
+    uint32_t done = 0;
+    while (done < n) {
+        uint32_t k;
+        track_render(&trk[0], blk, CTL);
+        for (k = 0; k < CTL && done < n; k++, done++)
+            if (y != NULL)
+                y[done] = blk[k] / 32768.0;
     }
 }
 

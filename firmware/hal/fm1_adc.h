@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
+ * Copyright (C) 2026 Charles Vestal (Velo)
  * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
+/* fm1__row_drive / fm1__row_release (a row driven for the velocity reading, and back) are Velo's, from
+ * charlesvestal/fm1-velocity's firmware/hal/fm1_input.h (GPL-3.0). */
 /* FM-1 SARADC: PB6 = MASTER pot (ch4),
  * PB1 = battery divider (ch3). Polled, 10 bit, from the main loop.
  * (V10.6z5) Also two of the key matrix's rows, PA7 (ch0) and PA8 (ch1), for the velocity diagnostic

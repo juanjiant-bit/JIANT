@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-only
- * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
- * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
+ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (JIANT 0.8.5) DRUM-X OCTAVES (eng_drum.c DXO_*, seq.c dxo_*): the kit in every octave of the keys, on the real
  * sequencer, MIDI, project and UI sources (with the stubs of tests/ui_test.c):
  *   CENTRE     OCT 0: the keys' notes and hits as before (key 7 the kick, 36), no ratchet, no TOUCH, a hit bit for bit
@@ -20,6 +19,7 @@
 #define UI_TEST_NO_MAIN 1
 #define PROJ_FUNB_WRITER 1                               /* (an older format to load: FUNB, as JIANT 0.2 .. 0.5 wrote it) */
 #include "ui_test.c"
+#include "jiant_test_util.h"
 
 #define KICK_KEY 7u                                     /* the first C: the kick (36) at OCT 0 */
 static track_t *dt;
@@ -50,7 +50,11 @@ static track_t *drum_setup(void)
     events_block(CTL);                                  /* (the sound load's panic, as the ISR takes it) */
     return dt;
 }
-static uint32_t step_len(uint32_t idx) { return step_samples(dt, div_samples((uint32_t)dt->p[P_SDIV]), idx); }
+static uint32_t step_len(uint32_t idx)                 /* step idx of track dt in samples, at its SDIV */
+{
+    uint32_t per_div = div_samples((uint32_t)dt->p[P_SDIV]);
+    return step_samples(dt, per_div, idx);
+}
 static uint32_t now_s;                                  /* samples since the test's clock started */
 /* nb blocks of the ISR's events (keys, MIDI, the sequencer, the held octaves); at[]: the sample of each hit */
 static uint32_t run_b(uint32_t nb, uint32_t *at, uint32_t nat, uint32_t *nh)
@@ -272,14 +276,7 @@ static double rms_of(uint32_t a, uint32_t b)
         w += (double)abuf[i] * abuf[i];
     return sqrt(w / (b - a));
 }
-static int32_t peak(uint32_t a, uint32_t b)
-{
-    int32_t p = 0;
-    uint32_t i;
-    for (i = a; i < b; i++)
-        p = abs(abuf[i]) > p ? abs(abuf[i]) : p;
-    return p;
-}
+static int32_t peak(uint32_t a, uint32_t b) { return jt_peak_i32(abuf, a, b); }
 static int down(void)
 {
     int bad = 0, ok = 1, okg = 1, okf = 1;
