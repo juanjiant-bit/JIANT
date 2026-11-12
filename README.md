@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.21
+## This release: V10.7.22
 
 ### Installing
 
@@ -482,6 +482,16 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.22 — beta (2026-11-12)
+- **Animations move by the clock**: under load the beings, creatures and scope keep their speed with fewer frames (and less detail, faded in) instead of freezing; they freeze only past 85 % CPU. Only what changed is sent to the screen.
+- **OCT+ / OCT− are MOD sources**: unrouted they bend and vibrate the pitch as before; routed, OCT+ sweeps and OCT− vibrates the destination instead.
+- **The matrix's VEL follows the velocity as played**, whatever EDIT > VOICE 2's VEL is (0 %: every note at one level, VEL still modulates).
+- **SAVE > TOOLS first, with CLEAR PROJECT**: the music back to power-on (steps, automation, sounds, effects, rows, sections A–D, name); the saved project stays. ERASE of the open project clears its music too.
+- **PRESETS LIST USER**: only your own presets, kept at power-off.
+- **PRESETS loads sounds on GEN too** (every page but SEQ's); the GENRE is GEN 1's KNOB 1.
+- **ANALOG SAW3 / PLS3**: EDIT 1 is WAVE · INT · INT 3 · DETUNE (MIX on FOCUS).
+- **Bluetooth part missing**: said on a full screen at power-on (and on GEN), and reported to the installer, which checks it after installing.
 
 ### V10.7.21 — beta (2026-11-12)
 - **Fewer voices cut under load**: when the voice budget is nearly full, released notes hurry their release once they are 20 dB down (the start of the release sounds as set), and FM6 patches whose release never ended no longer hold a voice forever. ANALOG and FM6 tails then play at half the sample rate, interpolated (about 40 % cheaper, a little darker above 11 kHz); held notes of the dearest track only when the load stays high. With voices to spare nothing changes.
