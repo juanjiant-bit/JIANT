@@ -28,7 +28,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: github-pages
-          run-id: 43203399564
+          run-id: 43319686454
           github-token: ${{ github.token }}
           path: build/released
       - name: Published site to start from (the artifact; the live site when it expired or is older)
@@ -38,6 +38,8 @@ jobs:
         run: |
           [ "${{ steps.site.outcome }}" = success ] || rm -rf build/released
           python3 tools/fetch_live_site.py restore --artifact build/released/artifact.tar
+      - name: The patch on installer pages as make_site.py builds them (tests/patch_installer_test.py)
+        run: python3 tests/patch_installer_test.py
       - name: Update only the two installer pages
         run: |
           mkdir -p build/pages

@@ -284,7 +284,7 @@ Object.assign(TEXT.en, {
   tip_noreturn: "Switch the FM-1 off and on. If it starts, it is done (MENU > ABOUT shows the version).|If the screen stays black, connect it and press Install again; also try 'Is it in boot mode?'.",
   tip_mismatch: "Switch it off and on and look at MENU > ABOUT. Press COPY REPORT and tell us.",
   tip_loadfail: "Reload the page (Ctrl+F5), or pick the latest version.|Check the connection; an ad blocker may block the download.",
-  tip_stockNeedBackup: "If you already saved the backup, tick 'Resume an interrupted update' and press again.|If not, press Install to finish putting JIANT back, back up, then return.",
+  tip_stockNeedBackup: "If you already saved the backup, tick 'Resume an interrupted update' and press again.|If not, press Install: JIANT's own update program finishes putting JIANT back (the installer then checks its Bluetooth part). Back up, then return.",
   tip_stockUnsupported: "Install the current JIANT first (Install), then press Return to official again: it then saves your songs.",
   tip_backupfail: "Stop playback (no backup while it plays), keep the cable still and try again.|Close the editor and other MIDI programs.",
   tip_stock: "On M-VAVE's download page, FM-1: download firmware V15.|Unzip it (right click → Extract all).|Select the FM-1.fwsc inside (699,956 bytes).",
@@ -352,7 +352,7 @@ Object.assign(TEXT.ja, {
   tip_noreturn: "FM-1 の電源を入れ直してください。起動すれば完了です（MENU > ABOUT にバージョン）。|画面が黒いままなら、つないでもう一度インストールを押してください。「ブートモード？」も試してください。",
   tip_mismatch: "電源を入れ直し、MENU > ABOUT を確認してください。「レポートをコピー」を押して知らせてください。",
   tip_loadfail: "ページを再読み込み（Ctrl+F5）するか、最新のバージョンを選んでください。|接続を確認してください。広告ブロッカーがダウンロードを止めることがあります。",
-  tip_stockNeedBackup: "バックアップを保存済みなら「更新中断の再開」にチェックして、もう一度押してください。|まだなら、インストールを押して JIANT に戻し、バックアップしてから戻してください。",
+  tip_stockNeedBackup: "バックアップを保存済みなら「更新中断の再開」にチェックして、もう一度押してください。|まだなら「インストール」を押してください。JIANT 自身の更新プログラムが JIANT に戻します（そのあとインストーラーが Bluetooth 部分を確認します）。バックアップしてから戻してください。",
   tip_stockUnsupported: "先に最新の JIANT をインストールし（インストール）、もう一度「公式ファームウェアに戻す」を押してください。曲を保存できるようになります。",
   tip_backupfail: "再生を止め（再生中はバックアップできません）、ケーブルを動かさずにやり直してください。|エディタや他の MIDI プログラムを閉じてください。",
   tip_stock: "M-VAVE のダウンロードページの FM-1 から、ファームウェア V15 をダウンロードします。|展開します（右クリック → すべて展開）。|中の FM-1.fwsc（699,956 バイト）を選びます。",
@@ -462,7 +462,7 @@ TEXT.es = {
   tip_noreturn: "Apagá y prendé el FM-1. Si arranca, ya está (MENU > ABOUT muestra la versión).|Si la pantalla queda negra, conectalo y apretá Instalar de nuevo; probá también «¿Está en modo boot?».",
   tip_mismatch: "Apagalo y prendelo y mirá MENU > ABOUT. Apretá COPIAR INFORME y contanos.",
   tip_loadfail: "Recargá la página (Ctrl+F5), o elegí la última versión.|Revisá la conexión; un bloqueador de anuncios puede frenar la descarga.",
-  tip_stockNeedBackup: "Si ya guardaste el backup, marcá «Retomar una actualización interrumpida» y apretá de nuevo.|Si no, apretá Instalar para terminar de volver a JIANT, hacé el backup y después volvé.",
+  tip_stockNeedBackup: "Si ya guardaste el backup, marcá «Retomar una actualización interrumpida» y apretá de nuevo.|Si no, apretá Instalar: el programa de actualización de JIANT termina de volver a JIANT (después el instalador revisa su parte Bluetooth). Hacé el backup y después volvé.",
   tip_stockUnsupported: "Primero instalá el JIANT actual (Instalar) y después apretá «Volver al oficial» de nuevo: ahí sí guarda tus temas.",
   tip_backupfail: "Pará la reproducción (no hay backup mientras suena), no muevas el cable y reintentá.|Cerrá el editor y otros programas MIDI.",
   tip_stock: "En la página de descargas de M-VAVE, FM-1: bajá el firmware V15.|Descomprimilo (clic derecho → Extraer todo).|Elegí el FM-1.fwsc de adentro (699.956 bytes).",
@@ -532,6 +532,43 @@ for (const L of ["en", "es", "ja"])
   for (const k of ["tip_stockModified", "tip_stockCustom", "tip_stockOtherVer", "tip_stockNotV15", "tip_stockZip", "tip_stockError"])
     TEXT[L][k] = TEXT[L].tip_stock;
 for (const L of ["en", "es", "ja"]) TEXT[L].stockV16 = "";   /* (stockWhere names V16 itself now) */
+/* (V10.7.22) the Bluetooth part: checked after the install's restart (fm1diag.js btCheck), written once more when it is
+ * missing; update mode with a loader that is not JIANT's (it writes no Bluetooth part) is not resumed with JIANT.
+ * tools/patch_installer_downloads.py copies this block, as it is, into the published installers */
+Object.assign(TEXT.en, {
+  btcheck: "Checking the firmware's Bluetooth part…",
+  btrepair: "The firmware's Bluetooth part is missing (GEN, song saving, Bluetooth and USB HOST live there): installing once more to write it. Do not unplug the FM-1.",
+  btmissing: "Installed, but the FM-1 still reports its Bluetooth part missing (BLUETOOTH PART MISSING): GEN, song saving, Bluetooth and USB HOST will not work.",
+  tip_btmissing: "Switch the FM-1 off and on, plug it straight into the computer (no hub) and press Install again.|If it says the same, press COPY REPORT and send it to us (GitHub issues): it tells which update program wrote it.|Meanwhile the rest of JIANT works: any key closes the message it shows at power-on.",
+  foreignLoader: "The FM-1 is in update mode with another update program (the official one: a return to official or an official update stopped). Through it JIANT would be written without its Bluetooth part, so nothing was written. Found: ",
+  tip_foreignLoader: "Finish that update first: in 'Return to official' below select M-VAVE's FM-1.fwsc, tick 'Resume an interrupted update' and press its button.|When it says Done, press Install: JIANT is then written complete.|Do not switch the FM-1 off while it is in update mode.",
+  stockNeedResume: "The FM-1 is in update mode with the official update program (a return to official stopped): no backup can be made from there, and Install cannot finish it. Found: ",
+  tip_stockNeedResume: "Tick 'Resume an interrupted update' and press this button again: it finishes the official firmware.|Then press Install to put JIANT back.|Do not switch the FM-1 off while it is in update mode.",
+  tip_stockNeedBackup: "If you already saved the backup, tick 'Resume an interrupted update' and press again.|If not, press Install: JIANT's own update program finishes putting JIANT back (the installer then checks its Bluetooth part). Back up, then return.",
+});
+Object.assign(TEXT.es, {
+  btcheck: "Revisando la parte Bluetooth del firmware…",
+  btrepair: "Falta la parte Bluetooth del firmware (ahí viven GEN, el guardado de canciones, Bluetooth y USB HOST): instalando una vez más para escribirla. No desconectes el FM-1.",
+  btmissing: "Se instaló, pero el FM-1 sigue diciendo que le falta la parte Bluetooth (BLUETOOTH PART MISSING): GEN, el guardado de canciones, Bluetooth y USB HOST no van a andar.",
+  tip_btmissing: "Apagá y prendé el FM-1, conectalo directo a la computadora (sin hub) y apretá Instalar de nuevo.|Si dice lo mismo, apretá COPIAR INFORME y mandánoslo (GitHub issues): dice qué programa de actualización lo escribió.|Mientras tanto el resto de JIANT anda: cualquier tecla cierra el aviso que muestra al prender.",
+  foreignLoader: "El FM-1 está en modo de actualización con otro programa de actualización (el oficial: se cortó una vuelta al oficial o una actualización oficial). Con él, JIANT quedaría sin su parte Bluetooth, así que no se escribió nada. Encontrado: ",
+  tip_foreignLoader: "Primero terminá esa actualización: en «Volver al oficial», abajo, elegí el FM-1.fwsc de M-VAVE, marcá «Retomar una actualización interrumpida» y apretá su botón.|Cuando diga Listo, apretá Instalar: ahí JIANT se escribe completo.|No apagues el FM-1 mientras está en modo de actualización.",
+  stockNeedResume: "El FM-1 está en modo de actualización con el programa de actualización oficial (se cortó una vuelta al oficial): desde ahí no se puede hacer un backup, e Instalar no puede terminarla. Encontrado: ",
+  tip_stockNeedResume: "Marcá «Retomar una actualización interrumpida» y apretá este botón de nuevo: termina el firmware oficial.|Después apretá Instalar para volver a JIANT.|No apagues el FM-1 mientras está en modo de actualización.",
+  tip_stockNeedBackup: "Si ya guardaste el backup, marcá «Retomar una actualización interrumpida» y apretá de nuevo.|Si no, apretá Instalar: el programa de actualización de JIANT termina de volver a JIANT (después el instalador revisa su parte Bluetooth). Hacé el backup y después volvé.",
+});
+Object.assign(TEXT.ja, {
+  btcheck: "ファームウェアの Bluetooth 部分を確認中…",
+  btrepair: "ファームウェアの Bluetooth 部分がありません（GEN、曲の保存、Bluetooth、USB HOST はここにあります）。書き込むためにもう一度インストールします。FM-1 を抜かないでください。",
+  btmissing: "インストールしましたが、FM-1 はまだ Bluetooth 部分がないと報告しています（BLUETOOTH PART MISSING）。GEN、曲の保存、Bluetooth、USB HOST は動きません。",
+  tip_btmissing: "FM-1 の電源を入れ直し、ハブを使わずパソコンに直接つないで、もう一度「インストール」を押してください。|同じ表示なら「レポートをコピー」を押して GitHub で知らせてください（どの更新プログラムが書き込んだかが分かります）。|それ以外の JIANT は動きます。起動時の表示はどれかのキーで閉じます。",
+  foreignLoader: "FM-1 は別の更新プログラム（公式のもの。公式への戻しか公式アップデートが途中で止まっています）で書き込みモードになっています。これでは JIANT が Bluetooth 部分なしで書き込まれるため、何も書き込みませんでした。検出: ",
+  tip_foreignLoader: "先にその更新を終わらせてください。下の「公式ファームウェアに戻す」で M-VAVE の FM-1.fwsc を選び、「更新中断の再開」にチェックしてボタンを押します。|「完了」と出たら「インストール」を押してください。JIANT が完全に書き込まれます。|書き込みモードの間は FM-1 の電源を切らないでください。",
+  stockNeedResume: "FM-1 は公式の更新プログラムで書き込みモードになっています（公式への戻しが途中で止まっています）。この状態ではバックアップできず、「インストール」でも終わらせられません。検出: ",
+  tip_stockNeedResume: "「更新中断の再開」にチェックして、このボタンをもう一度押してください。公式ファームウェアの書き込みを終わらせます。|そのあと「インストール」で JIANT に戻してください。|書き込みモードの間は FM-1 の電源を切らないでください。",
+  tip_stockNeedBackup: "バックアップを保存済みなら「更新中断の再開」にチェックして、もう一度押してください。|まだなら「インストール」を押してください。JIANT 自身の更新プログラムが JIANT に戻します（そのあとインストーラーが Bluetooth 部分を確認します）。バックアップしてから戻してください。",
+});
+/* (V10.7.22) the Bluetooth part's texts end */
 const LANGS = ["es", "en", "ja"];
 const navLang = (navigator.language || "en").toLowerCase();
 let lang = navLang.startsWith("ja") ? "ja" : navLang.startsWith("es") ? "es" : "en";

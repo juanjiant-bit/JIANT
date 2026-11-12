@@ -96,24 +96,73 @@ const fwName = (fw) => [fw.text, fw.version].filter(Boolean).join(" ");
  *        save(archive, fw), openStock() } }
  * -> "done" or "cancel"; anything else is thrown with a code */
 const otaOf = (up) => up.find((id) => /^ota-/i.test(id.model));
+/* (V10.7.22) JIANT's update loader (firmware/loader/loader.c FELUCCA_ID), the only one that writes the package's
+ * Bluetooth part (its third entry: GEN, the songs' saving, Bluetooth, USB HOST). Another one waiting in update mode (the
+ * official loader a stopped return to official, or a stopped official update, leaves) would write JIANT's app alone:
+ * the FM-1 then says BLUETOOTH PART MISSING */
+const JIANT_LOADER = "ota-FM-1_900";
+/* (V10.7.22) INFO's Bluetooth part: the tag 58 01 s (1 this build's, 2 missing or another build's) right before the
+ * protocol's 43 02 1 x and the last tag (59 01 63); 0: no tag (firmware before it) */
+export function infoBt(a) {
+  const n = a.length;
+  return n >= 10 && a[n - 10] === 0x58 && a[n - 9] === 1 && a[n - 7] === 0x43 && a[n - 6] === 2 && a[n - 3] === 0x59 ? a[n - 8] : 0;
+}
+/* the protocol's minor version (43 02 01 x right before the last tag), -1 without it (V10.6z2 and older) */
+export function infoProto(a) {
+  const n = a.length;
+  return n >= 7 && a[n - 7] === 0x43 && a[n - 6] === 2 && a[n - 5] === 1 && a[n - 3] === 0x59 ? a[n - 4] : -1;
+}
+/* the Bluetooth part of the firmware just installed (up.installedPorts): "ok", "missing" or "unknown" (no answer, not
+ * JIANT, or a JIANT before protocol 1.2: nothing to check). INFO's tag when it has it, else (protocol 1.2, V10.6z6 ..
+ * V10.7.21) VEL op 4, which only reads: the keys' block after its 9 bytes only when the part is there */
+export async function btPart(up) {
+  const p = up.installedPorts;
+  if (!p) return "unknown";
+  const link = new BackupConnection(p.input, p.output), o = { timeout: up.t.info, retries: up.t.infoTries - 1 };
+  try {
+    const a = await link.request([1, []], o), s = infoBt(a);
+    if (s) return s === 1 ? "ok" : "missing";
+    if (!isJiantInfo(a) || infoProto(a) < 2) return "unknown";
+    return (await link.request([81, [4]], o)).length > 9 ? "ok" : "missing";
+  } catch (_) {
+    return "unknown";
+  } finally { link.close(); }
+}
+/* (V10.7.22) after the write the Bluetooth part is asked for; missing: Install once more (from JIANT, JIANT's own loader
+ * writes it; the app's sectors, already equal, are skipped), asked again; still missing: btmissing */
+async function btCheck(ctx) {
+  const { up, ui, state } = ctx;
+  ui.say("btcheck");
+  const bt = state.bt = await btPart(up);
+  if (bt !== "missing") return "done";
+  ui.say("btrepair");
+  await up.install(ctx.image, ctx.product, ui.step);
+  const again = await btPart(up);
+  state.bt = `missing, installed again: ${again}`;
+  if (again === "missing") throw fail("btmissing", "installed twice, the FM-1 still reports its Bluetooth part missing");
+  return "done";
+}
 
 export async function runInstall(ctx) {
   const { up, ui, state } = ctx;
   state.flow = "install";
+  state.bt = "";
   const ota = await otaOf(up);
   if (ota) {                                   // in update mode (an interrupted install): the write goes on
     ota.link.close();
     state.fw = { kind: "loader", text: ota.id.text };
+    if (ota.id.text !== JIANT_LOADER)          // (V10.7.22) not JIANT's loader: it would leave JIANT without its Bluetooth part
+      throw fail("foreignLoader", `update mode with ${ota.id.text}, not JIANT's loader (${JIANT_LOADER}): nothing was written`, ota.id.text);
     ui.say("resuming", ota.id.text);
     if (!(await up.resume(ctx.image, ui.step, ctx.product))) throw fail("stopped", "the write in update mode stopped");
-    return "done";
+    return btCheck(ctx);
   }
   ui.say("checking");
   const fw = state.fw = await fwKind(up);
   if (fw.kind === "none") throw up.notFound();
   if (fw.kind === "stock" || fw.kind === "jiant" || (fw.kind === "stock16" && ctx.allowV16)) {
     await up.install(ctx.image, ctx.product, ui.step);
-    return "done";
+    return btCheck(ctx);
   }
   if (fw.kind === "stock16") throw fail("stock16", `nothing was written: this FM-1 runs ${fwName(fw)} (stock16)`, fwName(fw));
   ui.openStock();
@@ -123,11 +172,15 @@ export async function runInstall(ctx) {
 export async function runStock(ctx) {
   const { up, ui, state, stock } = ctx;
   state.flow = "stock";
+  state.bt = "";
   const ota = await otaOf(up);
   if (ota) {
     ota.link.close();
     state.fw = { kind: "loader", text: ota.id.text };
-    if (!ctx.recovery) throw fail("stockNeedBackup", "update mode: no backup can be taken there");
+    if (!ctx.recovery)                         // (V10.7.22) JIANT's loader: Install finishes JIANT (a backup, then back);
+                                               // another (a stopped return to official): only Resume finishes it
+      throw ota.id.text === JIANT_LOADER ? fail("stockNeedBackup", "update mode: no backup can be taken there")
+        : fail("stockNeedResume", `update mode with ${ota.id.text}: no backup can be taken there, Install cannot finish it`, ota.id.text);
     if (!(await ui.confirm("stockConfirm"))) return "cancel";
     if (!(await up.resume(stock.image, ui.step, stock.product))) throw fail("stopped", "the write in update mode stopped");
     return "done";
@@ -238,6 +291,7 @@ export function makeReport({ env, page = "", installer = "", state = {}, scan = 
     `firmware: ${fw.kind || "-"} | identity: ${fw.text || "-"} | INFO: ${fw.version || "-"} | backup: ${fw.backup ? "yes" : "no"}${fw.port ? " | port: " + fw.port : ""}`,
   ];
   if (state.backupError) lines.push(`backup error: ${state.backupError}`);
+  if (state.bt) lines.push(`bluetooth part: ${state.bt}`);
   if (scan) {
     lines.push(`midi inputs probed (${scan.ports.length}):`);
     for (const p of scan.ports) lines.push(`  - ${p.name}${p.manufacturer ? " [" + p.manufacturer + "]" : ""} ${p.state}: ${p.result}`);

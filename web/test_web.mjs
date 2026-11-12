@@ -1562,7 +1562,13 @@ class FakeFM1 {
     this.editorCmds.push(cmd);
     const reply = (body) => this.tx([240, 125, 70, 76, cmd, ...body, 247]);
     if (!this.o.info || this.identity.startsWith("ota-")) return;      // an official firmware, a loader: silence
-    if (cmd === 1) return reply(this.o.info);
+    /* (V10.7.22) o.bt: the Bluetooth part after each write (1 there, 2 missing; the last one stays), told by INFO's tag
+     * 'X' (o.btTag) or, protocol 1.2 (o.proto 2), by VEL op 4's length; o.proto 1: neither */
+    const bt = this.btNow ?? (this.o.bt ? this.o.bt[0] : 1);
+    if (cmd === 1) return reply([...this.o.info, ...(this.o.btTag ? [0x58, 1, bt] : []),
+      ...(this.o.btTag || this.o.proto ? [0x43, 2, 1, this.o.btTag ? 3 : this.o.proto, 0x59, 1, 63] : [])]);
+    if (cmd === 81 && a[0] === 4 && (this.o.btTag || this.o.proto >= 2))
+      return reply([4, 0, 0, 0, 0, 0, 0, 0, 0, ...(bt === 1 ? new Array(160).fill(1) : [])]);
     const objs = this.o.objs || [];
     if (cmd === 65) {
       const out = [1, 0, objs.length];
@@ -1599,7 +1605,11 @@ class FakeFM1 {
       this.served++;
       if (this.served >= this.unplugAfter) { this.input.state = this.output.state = "disconnected"; return; }
       if (addr === 0xE0000000) { if (!this.o.noLoader) setTimeout(() => this.boot("ota-FM-1_900", this.o.loaderName || "JIANT Update"), 300); }
-      else if (addr === 0xF0000000) setTimeout(() => this.boot(this.after, this.o.afterName || "JIANT"), 300);
+      else if (addr === 0xF0000000) {
+        this.writes = (this.writes || 0) + 1;
+        if (this.o.bt) this.btNow = this.o.bt.length > 1 ? this.o.bt.shift() : this.o.bt[0];
+        setTimeout(() => this.boot(this.after, this.o.afterName || "JIANT"), 300);
+      }
       else this.next();
     }
   }
@@ -1726,6 +1736,41 @@ async function installerFlows() {
   ok(!x.dev.editorCmds.length, "installer: an official firmware is never asked the editor's INFO");
   x = await run("v15", { identity: "ota-FM-1_900", name: "JIANT Update" });
   ok(x.r === "ok" && x.c.state.fw.kind === "loader" && x.dev.identity === "FM-1_900", "installer: in update mode (ota-FM-1): Install resumes the write");
+  /* (V10.7.22) the Bluetooth part after the install's restart: INFO's tag, else VEL op 4 (protocol 1.2), else not checked;
+   * missing: installed once more; still missing: 'btmissing'. Update mode with a loader not JIANT's: not resumed */
+  {
+    const J = infoOf("JIANT V10.7.22", 6, { jiant: true });
+    const tail = [0x58, 1, 2, 0x43, 2, 1, 3, 0x59, 1, 63];
+    ok(D.infoBt([...J, ...tail]) === 2 && D.infoProto([...J, ...tail]) === 3 && D.infoBt([...J, 0x43, 2, 1, 2, 0x59, 1, 63]) === 0 &&
+       D.infoProto([...J, 0x43, 2, 1, 2, 0x59, 1, 63]) === 2 && D.infoProto(J) === -1,
+       "installer: INFO's Bluetooth part tag (58 01 s before 43 02 and 59) and the protocol's version read");
+    x = await run("jiant", { info: J, btTag: true, bt: [1] });
+    ok(x.r === "ok" && x.c.state.bt === "ok" && x.dev.writes === 1 && x.c.said.includes("btcheck"), "installer: Bluetooth part there (INFO's tag): done, written once");
+    x = await run("jiant", { info: J, btTag: true, bt: [2, 1] });
+    ok(x.r === "ok" && x.dev.writes === 2 && x.c.said.includes("btrepair") && x.c.state.bt === "missing, installed again: ok",
+       "installer: Bluetooth part missing after the install: installed once more, then there");
+    x = await run("jiant", { info: J, btTag: true, bt: [2] });
+    ok(x.r === "btmissing" && x.dev.writes === 2, "installer: still missing after the second install: 'btmissing' (no third)");
+    x = await run("jiant", { info: J, proto: 2, bt: [2, 1] });
+    ok(x.r === "ok" && x.dev.writes === 2 && x.dev.editorCmds.includes(81) && x.c.state.bt === "missing, installed again: ok",
+       "installer: no tag, protocol 1.2 (V10.6z6 .. V10.7.21): VEL op 4's length tells it, repaired");
+    x = await run("jiant", { info: J, proto: 1, bt: [2] });
+    ok(x.r === "ok" && x.dev.writes === 1 && !x.dev.editorCmds.includes(81) && x.c.state.bt === "unknown",
+       "installer: a firmware before protocol 1.2: not checked (done, written once)");
+    x = await run("v15");
+    ok(x.r === "ok" && x.c.state.bt === "unknown" && x.dev.writes === 1, "installer: no INFO answer after the restart: not checked, done");
+    x = await run("v15", { identity: "ota-FM-1_900", name: "JIANT Update", info: J, btTag: true, bt: [2, 1] });
+    ok(x.r === "ok" && x.c.state.fw.kind === "loader" && x.dev.writes === 2 && x.c.state.bt === "missing, installed again: ok",
+       "installer: resumed with JIANT's loader, the part missing: installed once more from JIANT");
+    x = await run("v15", { identity: "ota-FM-1_015", name: "FM-1 Update" });
+    ok(x.r === "foreignLoader" && x.dev.served === 0 && x.dev.upgrades === 0, "installer: update mode with another loader (official): 'foreignLoader', nothing written");
+    const T = installerText();
+    ok(["en", "es", "ja"].every((L) => ["btcheck", "btrepair", "btmissing", "tip_btmissing", "foreignLoader", "tip_foreignLoader",
+       "stockNeedResume", "tip_stockNeedResume"].every((k) => T[L][k])) && ["en", "es", "ja"].every((L) => !/press Install to finish|apretá Instalar para terminar|インストールを押して JIANT に戻し/.test(T[L].tip_stockNeedBackup)),
+       "installer page: the Bluetooth part's texts in es / en / ja; stockNeedBackup's tip no longer sends a stopped return to Install");
+    const rep = D.makeReport({ env: D.envOf({ userAgent: "x" }), state: { bt: "missing, installed again: missing" } });
+    ok(/bluetooth part: missing, installed again: missing/.test(rep), "installer: COPY REPORT says the Bluetooth part's check");
+  }
   x = await run("v15", { busy: true });
   ok(x.r === "busy", "installer: the port held by another program (Windows: open() rejects): 'busy'");
   x = await run("v15", { mute: true });
@@ -1799,6 +1844,10 @@ async function installerFlows() {
   ok(x.r === "backupfail" && x.dev.served === 0 && x.c.asked.join() === "backupFailConfirm", "installer: the backup times out: asked; no: 'backupfail', nothing written");
   x = await stock("v15", { identity: "ota-FM-1_900", name: "JIANT Update" });
   ok(x.r === "stockNeedBackup", "installer: Return in update mode without the resume box: 'stockNeedBackup'");
+  x = await stock("v15", { identity: "ota-FM-1_015", name: "FM-1 Update" });
+  ok(x.r === "stockNeedResume" && x.dev.served === 0, "installer: Return in update mode with the official loader, no resume box: 'stockNeedResume' (not Install)");
+  x = await stock("v15", { identity: "ota-FM-1_015", name: "FM-1 Update", after: "FM-1_015" }, {}, true);
+  ok(x.r === "ok" && x.dev.identity === "FM-1_015", "installer: Return in update mode with the official loader, resume ticked: finished");
   x = await stock("v15", { identity: "ota-FM-1_900", name: "JIANT Update", after: "FM-1_015" }, {}, true);
   ok(x.r === "ok" && x.dev.identity === "FM-1_015", "installer: Return in update mode, resume ticked: written");
   x = await stock("v15", { busy: true });

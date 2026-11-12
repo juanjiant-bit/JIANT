@@ -387,6 +387,8 @@ else
 fi
 
 run "installer CLI (fm1_install.py) against a simulated FM-1" python3 tests/install_test.py
+run "published installers' patch (tools/patch_installer_downloads.py) on pages as built and as patched before" \
+    python3 tests/patch_installer_test.py
 run "navigation map (docs/navigation-map*.svg) matches the firmware's chains" python3 tools/gen_nav_map.py --check
 
 if command -v node >/dev/null 2>&1; then
