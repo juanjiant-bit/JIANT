@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* SAVE > PROJECT > SAVE SONG AS. Main loop, stopped only. song_keep and proj_wire are existing work
+/* SAVE > PROJECT > PROJECTS, SAVE (the SAVE SONG AS page until V10.7.19). Main loop, stopped only. song_keep and proj_wire are existing work
  * buffers: no new audio memory. The source stays open and untouched. Each destination section has the
  * storage layer's A/B protection; the four sections and index are NOT one atomic transaction. On an
  * interrupted overwrite the source remains available to retry the complete copy. */

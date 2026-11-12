@@ -62,7 +62,8 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
   [TIMELINE, PARTS y CLIPS](#timeline-parts-y-clips-save--song).
 - **Un tema conserva los sonidos que cambiás mientras suena** (V10.6z8); EDIT > **RECALL** trae de vuelta el sonido de
   la sección en una pista.
-- **SAVE SONG AS** copia un tema entero a otro proyecto (SAVE > PROJECT).
+- **Guardar un tema** se hace en SAVE > PROJECT > **PROJECTS**: KNOB 1 elige el proyecto (no lo abre), SAVE le pone
+  nombre y en la pantalla NAME el KNOB 3 elige el tema entero (SONG) o solo el LOOP (la página SAVE SONG AS ya no está).
 
 **Batería y generador**
 - **DRUM-X**: una pasada de calidad (V10.6q), un cencerro CMOS clásico, el mapa de teclas **EXTENDED** por defecto con
@@ -439,7 +440,7 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 | **LFO** | **MOD**: MOD — **LFO**: LFO · LFO DEST — **MSEQ**: MSEQ · MSEQ 2 | 5 |
 | **SCL** | **KEY**: SCL — **CHORD**: CHORD — **SCENE**: SCENE (V10.24) | 3 |
 | **ARP** | **ARP**: ARP · ARP 2 | 2 |
-| **SAVE** | **SONG**: TIMELINE · PARTS · CLIPS · SECTIONS — **PROJECT**: PROJECTS · ARRANGE · TOOLS · SAVE SONG AS — **SOUND**: USER · PRESETS | 10 |
+| **SAVE** | **SONG**: TIMELINE · PARTS · CLIPS · SECTIONS — **PROJECT**: PROJECTS · ARRANGE · TOOLS — **SOUND**: USER · PRESETS | 9 |
 
 Dónde vivía cada página en la 0.9.1: las vistas de seis envolventes de ENV (el nivel TRACKS) ahora son páginas propias,
 **TRACKS** y **TRACKS DEST**, con las perillas de ENV y ENV DEST; **NOTE** aparece una sola vez (el grupo BAR; su
@@ -598,9 +599,8 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | TIMELINE (V10.6o) | ROW | SECT (la parte A–D de la fila) | BARS (1–64) | VAR (la variación de la pista de ALGORITHM en la fila) |
 | PARTS (V10.6o) | PART (A–D) | ROW (las filas del tema de esa parte) | — | LOOP / SONG (qué toca PLAY) |
 | CLIPS (V10.6s) | TRACK (T1–T6) | PART (A–D) | — | — |
-| PROJECTS / SECTIONS (la página PROJECT) | PROJECT (1–6; en SECTIONS: SECT A–D) | SECT (A–D; en SECTIONS: ERASE, V10.17) | LOAD (acción) | SAVE (acción) |
+| PROJECTS / SECTIONS (la página PROJECT) | PROJECT (1–6: lo elige, no lo abre; en SECTIONS: SECT A–D) | ERASE (acción) | LOAD (acción: abre el proyecto elegido) | SAVE (acción: después NAME, KNOB 3 SONG / LOOP) |
 | ARRANGE | ROW ("2/6") | SECT (en END: STOP / x2–x8 / LOOP) | BARS | SCENE |
-| SAVE SONG AS | el proyecto de destino (1–6) | — | — | SAVE (OCT+, después el nombre) |
 | TOOLS (V10.24) | SCOPE (TRACK, SOUND, SONG, SYSTEM) | ACTION (CLEAR SEQ · INIT SOUND · DELETE ROW, CLEAR SONG · NEW PROJECT, CPU TEST) | — | DO: **OCT+ mantenido un segundo** |
 
 **ARP** (por pista)
@@ -1881,12 +1881,23 @@ del tema** (FROM por pista, una pista parada en los mutes de la fila): tocás lo
   ARRANGE arriba); un lanzamiento de CLIPS, una carga o una tirada nueva de GENE hacen que las secciones vuelvan a traer
   sus sonidos.
 
-### SAVE SONG AS (SAVE › PROJECT)
+### Guardar un tema entero o un loop (SAVE › PROJECT › PROJECTS)
 
-Copia el **tema entero** a otro proyecto: las secciones A–D (con los cambios sin guardar de la que suena), el tempo y
-los globales, las filas, compases, END, escenas, FROM y VAR, y LOOP / SONG. **KNOB 1** el destino (1–6, no se abre),
-**KNOB 4** arma SAVE, **OCT+**; un destino usado pregunta **REPLACE WHOLE SONG n?**: OCT+, escribí un nombre, OCT+
-guarda. OCT− cancela. Pará antes. El tema de origen queda abierto y sin cambios; la copia se abre en PROJECTS.
+**PROJECTS** es donde se guarda un tema (la página SAVE SONG AS de las V10.6c–V10.7.19 ya no está). **KNOB 1** elige un
+proyecto (1–6); elegirlo no lo abre ni cambia la música. Sobre el proyecto elegido: **KNOB 2 ERASE**, **KNOB 3 LOAD**
+(lo abre: sus secciones, sus filas, su A como música) y **KNOB 4 SAVE**, cada una se hace con **OCT+**.
+
+**SAVE** pregunta **OVERWRITE PROJECT n?** si el destino ya tiene algo (OCT+ sigue, OCT− cancela) y después abre la
+pantalla **NAME**. Ahí **KNOB 3** elige qué se escribe (lo dice el título, **SAVE SONG TO PROJECT n** o **SAVE LOOP TO
+PROJECT n**; arranca siempre en SONG):
+
+- **SONG** (izquierda): el **tema entero**: las secciones A–D (con los cambios sin guardar de la que suena), el tempo
+  y los globales, las filas, compases, END, escenas, FROM y VAR, y LOOP / SONG.
+- **LOOP** (derecha): solo la música de ahora, en la **A** del destino; se **borran sus B–D y su arreglo**. Así
+  ponés un loop encima de un proyecto que tenía un tema entero.
+
+Escribí un nombre, **OCT+** guarda, OCT− cancela y no escribe nada. Pará antes. Si guardás en otro proyecto, el de
+origen queda abierto y sin cambios; la copia se abre con LOAD en PROJECTS.
 
 ### Escenas
 
@@ -2632,8 +2643,8 @@ distintas.
 
 ### La cadena de SAVE: SONG · PROJECT · SOUND
 
-(0.9.2; V10.2: primero componer) SAVE es una cadena de diez páginas en tres grupos, como todas las secciones:
-**SELECT** recorre TIMELINE → PARTS → CLIPS → SECTIONS → PROJECTS → ARRANGE → TOOLS → SAVE SONG AS → USER → PRESETS, un toque de **SAVE** salta al
+(0.9.2; V10.2: primero componer) SAVE es una cadena de nueve páginas en tres grupos, como todas las secciones:
+**SELECT** recorre TIMELINE → PARTS → CLIPS → SECTIONS → PROJECTS → ARRANGE → TOOLS → USER → PRESETS, un toque de **SAVE** salta al
 grupo siguiente (en ronda). Al encender, SAVE abre **TIMELINE**. Las páginas, sus
 perillas, OCT+, los diálogos y la pantalla NAME son los de siempre (hasta la 0.9.1 SELECT hacía zoom LIBRARY ↔ PROJECT
 ↔ SOUND y el toque cambiaba los dos juegos de cada nivel).
@@ -2641,7 +2652,7 @@ perillas, OCT+, los diálogos y la pantalla NAME son los de siempre (hasta la 0.
 | Grupo | Páginas | Qué muestra la pantalla | Perillas |
 | --- | --- | --- | --- |
 | **SONG** | TIMELINE · SECTIONS | TIMELINE: el tema en carriles (ver [7](#7-arrange-canciones-secciones-y-escenas)). / Las cuatro secciones del proyecto en grande, el tema como una tira. | ROW, LANE, SECT o FROM, BARS o VAR / SECT, ERASE (V10.17), LOAD, SAVE |
-| **PROJECT** | PROJECTS · ARRANGE · TOOLS · SAVE SONG AS | Los seis proyectos como fichas: el número, el nombre (el de su sección A), sus cuatro secciones A–D como chips (guardadas: en el color de la sección; vacías: oscuras); el proyecto abierto teñido y enmarcado en violeta, su sección elegida enmarcada en blanco. / Las filas de ARRANGE como fichas. / Las seis herramientas en lista. | PROJECT, SECT, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ agrega una fila, OCT− borra la elegida) / la herramienta |
+| **PROJECT** | PROJECTS · ARRANGE · TOOLS | Los seis proyectos como fichas: el número, el nombre (el de su sección A), sus cuatro secciones A–D como chips (guardadas: en el color de la sección; vacías: oscuras); el proyecto abierto teñido y enmarcado en violeta, su sección elegida enmarcada en blanco. / Las filas de ARRANGE como fichas. / Las seis herramientas en lista. | PROJECT, ERASE, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ agrega una fila, OCT− borra la elegida) / la herramienta |
 | **SOUND** | USER · PRESETS | El ser de la pista (la criatura de su motor, viva con su sonido), la pista y su sonido debajo; a la derecha los 32 lugares de usuario (uno guardado: la criatura de su motor en chiquito y su nombre) o los sonidos de fábrica. | SLOT, LOAD, ERASE, SAVE / No., ENG, FAV, LIST |
 
 - **SAVE desde otra página** vuelve a la página de SAVE que dejaste; **USER** y **SECTIONS** llegan con su SAVE ya

@@ -299,6 +299,11 @@ static void name_input(uint32_t notes, uint32_t oct)
     for (k = 0; k < (nm.kind == NK_LYRIC ? 3u : 2u); k++)
         if ((s = panel_enc(EN_K1 + k)) != 0)
             nm_knob(k, s);
+    if (nm.kind == NK_SONG_SAVE && (s = panel_enc(EN_K3)) != 0) {   /* (V10.7.20) KNOB 3: the whole SONG, or the LOOP alone */
+        song_save_loop = s > 0;
+        str_cpy(nm.ph, song_save_loop ? "LOOP" : "SONG", sizeof nm.ph);
+        ui.force = 1;
+    }
     enc_drop();                                        /* the other knobs do nothing here */
     if (oct & 2u)
         name_ok();
@@ -366,7 +371,8 @@ static void nm_draw_field(void)
     fmt_int(b, nm.len);
     if (nm.kind == NK_LYRIC)                           /* (0.8.5) a lyric: of 63 */
         str_cpy(b + str_len(b), "/63", 4);
-    nm_card(2, "LEN", b, nm.len >= nm_len_max() ? T_ACCENT : T_TEXT);
+    if (nm.kind == NK_SONG_SAVE) nm_card(2, "SCOPE", song_save_loop ? "LOOP" : "SONG", T_THEME);
+    else nm_card(2, "LEN", b, nm.len >= nm_len_max() ? T_ACCENT : T_TEXT);
     nm_card(3, "OCT +", nm.kind == NK_LYRIC ? "SET" : nm.kind == NK_USER_SAVE || nm.kind == NK_PROJ_SAVE || nm.kind == NK_SONG_SAVE ? "SAVE" : "WRITE",
             T_ACCENT);                                 /* (WRITE: the new name; SET: the lyric) */
 }
@@ -442,7 +448,8 @@ static void nm_draw_foot(void)
 {
     cv_begin(240, LZ_FOOT_H, T_BG);
     cv_text(6, CRUMB_Y, &AF_X, nm.kind == NK_LYRIC ? "LENTE \xB7 LYRIC \xB7 K3 DICE \xB7 OCT- CANCEL" :   /* (0.8.5: playing too) */
-            transport_busy() ? "LENTE \xB7 NAME \xB7 STOP TO SAVE" : "LENTE \xB7 NAME \xB7 OCT- CANCEL", T_DIM);
+            transport_busy() ? "LENTE \xB7 NAME \xB7 STOP TO SAVE" :
+            nm.kind == NK_SONG_SAVE ? "NAME \xB7 K3 SONG/LOOP \xB7 OCT- CANCEL" : "LENTE \xB7 NAME \xB7 OCT- CANCEL", T_DIM);
     cv_blit(0, LZ_FOOT_Y);
 }
 static void name_draw(void)

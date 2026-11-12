@@ -223,7 +223,7 @@ static __attribute__((noinline)) int16_t *mom_vp(uint32_t k, const param_desc_t 
         if (FIT_PAGE(pg) || pg->scope == SC_STEP || pg->scope == SC_TRK || ((act_cols() >> k) & 1u) || g == GR_COMP || g == GR_GCOMP || g == GR_SHAPE ||
             g == GR_FUGUE || g == GR_CHANCE || g == GR_DXSND || g == GR_SWARM || g == GR_FOCUS || (g == GR_STAGE && k < 2u) ||
             g == GR_EVENTS || g == GR_MOTION || g == GR_SONG || g == GR_BROWSE || g == GR_TOOLS || g == GR_SLOTS ||
-            g == GR_SONGSAVE || g == GR_USER || g == GR_PATS || DX_KIT3(pg) || fop_page(g) ||
+            g == GR_USER || g == GR_PATS || DX_KIT3(pg) || fop_page(g) ||
             (k == 0u && (BAR_PAGE(pg) || g == GR_SLPIT || g == GR_MSEQ || g == GR_MOD)))
             return 0;
         *d = page_desc(pg, k, &vp);
@@ -425,9 +425,12 @@ static void layer_tap(uint32_t l)
 {
     if (l == LAYER_REC)                                 /* REC: arms / disarms (no page) */
         (void)rec_tap();
-    else if (l == LAYER_SAVE) {                         /* GEN's SAVE keeps the whole song. */
-        if (gen_on()) nav_put(SEC_SAVE, "SAVE SONG AS");
-        else open_family(FAM_SAVE);
+    else if (l == LAYER_SAVE) {                         /* GEN's SAVE keeps the whole song (or its loop: NAME's KNOB 3). */
+        if (gen_on()) {                                 /* (PROJECTS, its SAVE armed: OCT+ saves; the SAVE SONG AS page,
+                                                         * until V10.7.19) */
+            if (nav_put(SEC_SAVE, "PROJECTS"))
+                ui.act = 4u;
+        } else open_family(FAM_SAVE);
     }
     else
         (void)page_tap(LAYERS[l].btn);

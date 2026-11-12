@@ -3499,7 +3499,7 @@ static int test_roll(void)
  * roll, nothing hot) the cards are pixel-identical to a forced redraw (what a page change would show). */
 static int test_soak_cards(void)
 {
-    uint32_t seed = 63u, f, quiet = 0, was_hot, old = 0, stale = 0, cmp = 0, c;
+    uint32_t seed = 63u, f, quiet = 0, was_hot, old = 0, stale = 0, cmp = 0, c, bank0;
     static uint16_t shot[240 * CARD_H];
 #define SOAK_RND(n) ((seed = seed * 1103515245u + 12345u) >> 8) % (n)
     ui_power_on();
@@ -3530,7 +3530,11 @@ static int test_soak_cards(void)
         ui_input();
         if (song.playing || transport_req) events_block(FS * 16u / 1000u);
         was_hot = ui.hot_t;                             /* (its last frame still drawn hot: the next one redraws) */
+        bank0 = ui.bank;
         ui_draw();
+        if (ui.bank != bank0)                           /* (V10.47: the roll, drawn after the cards, followed the playhead
+                                                         * to another bar in this frame: BAR's card says it on the next) */
+            quiet = 0;
         quiet++;
         if (ui.menu || ui.layer || ui.confirm || name_on() || ui.uboot)
             continue;                                   /* (the cards are not drawn) */
@@ -7594,8 +7598,8 @@ static void tl_drum(void)
  * the level's other set, SAVE from elsewhere always USER, PRESETS the slot / project) */
 static int test_save_lens(void)
 {
-    static const char *const CH[10] = {"TIMELINE", "PARTS", "CLIPS", "SECTIONS", "PROJECTS", "ARRANGE", "TOOLS", "SAVE SONG AS", "USER",
-                                       "PRESETS"};   /* (V10.6s: CLIPS) */
+    static const char *const CH[9] = {"TIMELINE", "PARTS", "CLIPS", "SECTIONS", "PROJECTS", "ARRANGE", "TOOLS", "USER",
+                                      "PRESETS"};   /* (V10.6s: CLIPS; V10.7.20: SAVE SONG AS gone, PROJECTS saves) */
     static const char *const TP[2] = {"PROJECTS", "USER"};
     int bad = 0, ok;
     uint32_t pr;
@@ -7604,10 +7608,10 @@ static int test_save_lens(void)
     press(B_SAVE); frame();
     ok = save_on() && save_level() == SV_PROJ && SONG_TRK(cur_page()) && ui.act == 0u && lz_on() &&
          card_y() == LZ_CARD_Y && graph_y() == LZ_GRAPH_Y && foot_y() == LZ_FOOT_Y && lz_tab_lit(0) &&
-         lz_crumb_is("SAVE \xB7 SONG \xB7 TIMELINE") && lz_count_is("1/10");
-    bad += check("V10.1 SAVE from HOME at power-on: SONG's TIMELINE; the tabs (SONG lit), the crumb, 1/10", ok);
-    bad += check("V10.1 SAVE: one chain TIMELINE PARTS CLIPS SECTIONS PROJECTS ARRANGE TOOLS SAVE SONG AS USER PRESETS; a SAVE tap the next group, round",
-                 chain_walk(B_SAVE, CH, 10, TP, 2));
+         lz_crumb_is("SAVE \xB7 SONG \xB7 TIMELINE") && lz_count_is("1/9");
+    bad += check("V10.1 SAVE from HOME at power-on: SONG's TIMELINE; the tabs (SONG lit), the crumb, 1/9", ok);
+    bad += check("V10.1 SAVE: one chain TIMELINE PARTS CLIPS SECTIONS PROJECTS ARRANGE TOOLS USER PRESETS; a SAVE tap the next group, round",
+                 chain_walk(B_SAVE, CH, 9, TP, 2));
     ui_power_on(); go_home(); frame(); press(B_SAVE); frame();
     turn(EN_SELECT, 5); frame();                                             /* ARRANGE, left there */
     go_home(); frame(); press(B_SAVE); frame();
@@ -7619,19 +7623,19 @@ static int test_save_lens(void)
     turn(EN_SELECT, 1); frame();
     ok &= cur_page()->graph == GR_SLOTS && save_level() == SV_LIB && ui.act == 0u && lz_crumb_is("SAVE \xB7 PROJECT \xB7 PROJECTS");
     bad += check("V10.1 SAVE from elsewhere the page left (ARRANGE); USER and SECTIONS from elsewhere armed, inside not", ok);
-    turn(EN_K1, 1); frame();                                                 /* LIBRARY: KNOB 1 the project */
-    ok = song_cur == 1u;
+    turn(EN_K1, 1); frame();                                                 /* LIBRARY: KNOB 1 picks a project (V10.7.20:
+                                                         * nothing opened; LOAD opens it) */
+    ok = song_cur == 0u && song_save_target == 1u;
     turn(EN_K1, -1); frame();
-    ok &= song_cur == 0u;
+    ok &= song_cur == 0u && song_save_target == 0u;
     pr = TSEL->preset;
     turn(EN_PRESET, 1); frame();
     ok &= song_cur == 0u && (TSEL->preset != pr || TSEL->eng_req != trk_def_engine(0)) && cur_page()->graph == GR_SLOTS;
-    bad += check("0.9.2 SAVE > PROJECTS: KNOB 1 the project; PRESETS a sound (was the project)", ok);
+    bad += check("0.9.2 SAVE > PROJECTS: KNOB 1 picks the project (not opened); PRESETS a sound (was the project)", ok);
     ok = 1;
-    turn(EN_K4, 1); press(B_OCTUP); frame();                                 /* PROJECTS opens explicit save scope first. */
-    ok &= cur_page()->graph == GR_SONGSAVE && !name_on();
-    press(B_OCTUP); frame();
-    ok &= name_on() && !lz_on();
+    turn(EN_K4, 1); press(B_OCTUP); frame();                                 /* PROJECTS' SAVE: the NAME screen (SONG / LOOP
+                                                         * on its KNOB 3) */
+    ok &= cur_page()->graph == GR_SLOTS && name_on() && nm.kind == NK_SONG_SAVE && !lz_on();
     press(B_OCTDN); frame();
     ok &= !name_on() && lz_on();
     btn_down(B_GLO); frames(800);                                            /* (0.8.5) a layer: its own lens */
@@ -9029,9 +9033,13 @@ static int test_project_page(void)
     nav_put(SEC_SAVE, "PROJECTS"); frame();             /* (V10.1: PROJECT's PROJECTS, the chain's 3rd) */
     ok = cur_page()->graph == GR_SLOTS && PAGES[ui.page + 1u].graph == GR_SONG && str_eq(PAGES[ui.page + 1u].title, "ARRANGE");
     bad += check("PROJECT: SAVE > PROJECT, then ARRANGE (the project's song)", ok);
-    turn(EN_K1, 1); frame();
-    ok = song_cur == 1 && trk[0].step[0].note[0] == 80 && live.cur < 0 && !chain_config.count && msg_is("PROJECT 2");
-    bad += check("  KNOB 1: project 2 in (its sections, its song), the music kept", ok);
+    turn(EN_K1, 1); frame();                            /* (V10.7.20) KNOB 1 picks project 2: nothing opened .. */
+    ok = song_cur == 0 && song_save_target == 1 && chain_config.count == 2 && trk[0].step[0].note[0] == 80;
+    turn(EN_K3, 1); frame();
+    ok &= ui.act == 3u && act_ready();
+    press(B_OCTUP); frame();                            /* .. LOAD opens it (empty: the music stays, to store into it) */
+    ok &= song_cur == 1 && trk[0].step[0].note[0] == 80 && live.cur < 0 && !chain_config.count;
+    bad += check("  KNOB 1 picks project 2 (not opened); LOAD: project 2 in (its sections, its song), the music kept", ok);
     song.g[G_SLOT] = 1;
     turn(EN_K2, 1); frame();                            /* PROJECTS: KNOB 2 selects ERASE, never a different part. */
     ok = song.g[G_SLOT] == 1 && save_level() == SV_LIB && ui.act == 2;
@@ -9069,19 +9077,26 @@ static int test_project_page(void)
     for (k = 0; k < 8u && name_on(); k++) { press(B_OCTUP); frame(); }
     turn(EN_SELECT, 1); frame();                        /* (V10.1: back to PROJECTS, the next page: KNOB 1 the project) */
     turn(EN_K1, -1); frame();
-    ok = song_cur == 0 && (!FELUCCA_FLASH || project_used(0)) && !project_used(2) && chain_config.count == 2 &&
-         trk[0].step[0].note[0] == 80;                  /* (no flash here: the sections were RAM only) */
-    bad += check("  KNOB 1 back: project 1, its song still there (its A: from flash), the music kept", ok);
+    ok = song_cur == 1 && song_save_target == 0;
+    turn(EN_K3, 1); press(B_OCTUP); frame();            /* (LOAD the picked project 1) */
+    ok &= song_cur == 0 && (!FELUCCA_FLASH || project_used(0)) && !project_used(2) && chain_config.count == 2 &&
+          (FELUCCA_FLASH || trk[0].step[0].note[0] == 80);   /* (no flash here: the sections were RAM only, the music stays;
+                                                         * with flash its A is the music) */
+    bad += check("  KNOB 1 back and LOAD: project 1, its song still there (its A: from flash)", ok);
     if (!FELUCCA_FLASH) { sl_steps(60); project_save(0); sl_steps(80); }
     song.g[G_SLOT] = 1;
     turn(EN_K3, 1); press(B_OCTUP); frame();            /* LOAD A */
     ok = trk[0].step[0].note[0] == 60 && live.cur == 0 && chain_config.count == 2;
     bad += check("  LOAD: section A is the music, the project's song kept", ok);
     transport_req = 1; frame();
-    turn(EN_K1, 1); frame();
-    ok = song_cur == 0 && msg_is("STOP TO CHANGE PROJECT");
+    turn(EN_K1, 1); frame();                            /* playing: the pick moves, LOAD is not ready and opens nothing */
+    ok = song_cur == 0 && song_save_target == 1;
+    turn(EN_K3, 1); frame();
+    ok &= !act_ready();
+    press(B_OCTUP); frame();
+    ok &= song_cur == 0 && chain_config.count == 2;
     transport_req = 2; frame();
-    bad += check("  playing: the project stays (STOP TO CHANGE PROJECT)", ok);
+    bad += check("  playing: the pick moves, the project stays (LOAD not ready)", ok);
     return bad;
 }
 

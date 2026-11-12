@@ -68,8 +68,8 @@ int main(void)
     seq_stop(); song_poll(); frame();
     bad += check("STOP restores the original section identity with its music before SAVE", live.cur == 0 && proj_cur == 0);
     press(B_SAVE); frame();
-    bad += check("SAVE from GEN opens whole-song destination without changing source",
-                 cur_page()->graph == GR_SONGSAVE && song_save_target == song_cur && !name_on());
+    bad += check("SAVE from GEN opens PROJECTS with SAVE armed, this project picked, without changing source",
+                 cur_page()->graph == GR_SLOTS && save_level() == SV_LIB && ui.act == 4u && song_save_target == song_cur && !name_on());
 
     /* A saved/non-generated section is no longer a dead end. GEN owns only
      * the draft buffers and may replace them, even while the previous song plays. */
@@ -86,8 +86,11 @@ int main(void)
     bad += check("GEN 3 keeps real parts visible while editing generator settings", gen_page()==2 && chain_config.count>=4);
     screen_save("build/song-check", "generator-draft-page3");
     seq_stop();song_poll();
-    nav_put(SEC_SAVE,"SAVE SONG AS");frame();turn(EN_K2,1);frame();
-    bad += check("SAVE scope selects LOOP without changing the live song", song_save_loop && chain_config.count>=4);
+    nav_put(SEC_SAVE,"PROJECTS");frame();turn(EN_K1,1);frame();turn(EN_K4,1);press(B_OCTUP);frame();
+    if(ui.confirm){press(B_OCTUP);frame();}
+    turn(EN_K3,1);frame();
+    bad += check("SAVE scope (NAME's KNOB 3) selects LOOP without changing the live song", name_on() && song_save_loop && chain_config.count>=4);
+    press(B_OCTDN);frame();
     song_save_loop=0;
     seq_stop(); song_poll();
     gp.form = 0; gen_go();

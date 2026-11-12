@@ -29,7 +29,7 @@ static void graph_lib(void)
     for (i = 0; i < NSONG; i++) {
         int32_t x = LZ_TX(i % 4u), y = (int32_t)(i / 4u) * 70;
         int cur = i == song_cur && !song_draft;
-        int pick = cur_page()->graph == GR_SONGSAVE || song_draft ? i == song_save_target : cur;
+        int pick = i == song_save_target;
         uint16_t bg = pick ? T_TINT : T_RAISE;
         char b[4], nm[13];
         cv_rect(x, y, 56, 66, bg);
@@ -509,8 +509,7 @@ static __attribute__((noinline)) void graph_lz_presets(void)
 static void graph_save_lz(const page_t *pg)
 {
     uint32_t lv = save_level();
-    if (pg->graph == GR_SONGSAVE) graph_lib();
-    else if (pg->graph == GR_TOOLS) graph_lz_tools();
+    if (pg->graph == GR_TOOLS) graph_lz_tools();
     else if (SONG_TRK(pg)) graph_tl();
     else if (SONG_PARTS(pg)) graph_parts();
     else if (SONG_CLIPS(pg)) graph_clips();

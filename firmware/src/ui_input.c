@@ -1607,13 +1607,6 @@ static void edit_param(uint32_t slot, int32_t steps)
         ui.force = 1;
         return;
     }
-    if (pg->graph == GR_SONGSAVE && slot == 1u) {
-        song_save_loop = (uint8_t)clamp((int32_t)song_save_loop + steps, 0, 1); return;
-    }
-    if (pg->graph == GR_SONGSAVE && slot == 0u) {
-        song_save_target = (uint8_t)clamp((int32_t)song_save_target + steps, 0, NSONG - 1);
-        return;
-    }
     if (pg->graph == GR_SLOTS && save_on() && save_level() == SV_PROJ) {   /* (0.8.5) SAVE > PROJECT's SECTIONS: KNOB 1
                                                          * the section, KNOB 2 its name (shown; EDIT renames it) */
         if (slot == 1u) {                                 /* (V10.17) KNOB 2 ERASE: right picks it, left drops it */
@@ -1632,9 +1625,11 @@ static void edit_param(uint32_t slot, int32_t steps)
     }
 sect:
     if (pg->graph == GR_SLOTS && slot == 0u) {            /* (0.6.12) KNOB 1 the project: its sections, the music kept */
-        int32_t n = clamp((int32_t)(song_draft ? song_save_target : song_cur) + (steps > 0 ? 1 : -1), 0, (int32_t)NSONG - 1);
-        if (song_draft) song_save_target = (uint8_t)n;
-        else if ((uint32_t)n != song_cur) (void)song_open((uint32_t)n);
+        if (save_level() == SV_LIB) {                     /* (V10.7.20) PROJECTS: KNOB 1 picks a project, nothing opened:
+                                                         * LOAD opens it, SAVE writes there, ERASE empties it */
+            song_save_target = (uint8_t)clamp((int32_t)song_save_target + (steps > 0 ? 1 : -1), 0, (int32_t)NSONG - 1);
+            ui.force = 1;
+        }
         return;
     }
     if (pg->graph == GR_USER) {                           /* KNOB 1 the slot */
@@ -1824,23 +1819,25 @@ static __attribute__((noinline)) void act_do(void)
             name_open(NK_USER_SAVE, ui.uslot);
         return;
     }
-    if (cur_page()->graph == GR_SONGSAVE) {
-        char title[13];
-        ui.act = 0;
-        if (transport_busy()) ui_message("STOP TO SAVE");
-        else if (lib_scan(song_save_target, title) || ((!song_draft || song_save_target != song_cur) && song_idx.rows[song_save_target].count))
-            confirm_open(CF_OVR_SONG, song_save_target);
-        else name_open(NK_SONG_SAVE, song_save_target);
-        return;
-    }
     if (cur_page()->graph == GR_SLOTS && save_level() == SV_LIB) {
-        uint32_t target = song_draft ? song_save_target : song_cur;
+        uint32_t target = song_save_target;
         if (c == 1u) {
             ui.act = 0;
             if (transport_busy()) ui_message("STOP TO ERASE");
             else confirm_open(CF_ERASE_SONG, target);
-        } else if (c == 2u && song_draft) (void)song_select(target);
-        else if (c == 3u) nav_put(SEC_SAVE, "SAVE SONG AS");
+        } else if (c == 2u && (song_draft || target != song_cur)) (void)song_select(target);
+        else if (c == 3u) {                              /* (V10.7.20) SAVE here (the SAVE SONG AS page is gone): this
+                                                         * project; SONG or LOOP on the NAME screen's KNOB 3 */
+            char title[13];
+            ui.act = 0;
+            song_save_target = (uint8_t)target;
+            song_save_loop = 0;                          /* (the whole SONG unless NAME's KNOB 3 says LOOP: a LOOP left
+                                                         * chosen from the save before would clear B-D unasked) */
+            if (transport_busy()) ui_message("STOP TO SAVE");
+            else if (lib_scan(target, title) || ((!song_draft || target != song_cur) && song_idx.rows[target].count))
+                confirm_open(CF_OVR_SONG, target);
+            else name_open(NK_SONG_SAVE, target);
+        }
         else goto slot_action;
         return;
     }

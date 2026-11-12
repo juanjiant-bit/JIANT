@@ -1342,7 +1342,7 @@ static int drift_on(void)
            g != GR_ROLL && g != GR_SHAPE && g != GR_COMP && g != GR_FUGUE && g != GR_LIVE &&   /* (0.8.3: LENTE's step, the
                                                          * heads; p2: LIVE's rails) */
            g != GR_STEPS && g != GR_CHANCE && g != GR_BROWSE && g != GR_USER && g != GR_SLOTS && g != GR_EVENTS &&
-           g != GR_SONGSAVE && g != GR_SONG && g != GR_TOOLS && g != GR_PATS;
+           g != GR_SONG && g != GR_TOOLS && g != GR_PATS;
 }
 static void graph_drift(void)
 {
@@ -1489,7 +1489,7 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
     if (pg->graph == GR_SLPIT)
         h ^= (sl_ui_step + 1u) * 40503u;
     if (FIT_PAGE(pg)) h ^= (t->seq_fit + 1u) * 104729u;
-    if (pg->graph == GR_SONGSAVE) h ^= (song_save_target + 1u) * 2654435761u;
+    if (pg->graph == GR_SLOTS) h ^= (song_save_target + 1u) * 2654435761u;
     if (pg->graph == GR_TOOLS)                       /* (0.6.12) the action picked, the song's row */
         h ^= ui.act * 7919u + ui.song_row * 104729u + (tl_t0 ? (fm1_ms - tl_t0 + 1u) / 40u + 1u : 0u) * 2654435761u;
     if (pg->graph == GR_SLOTS) {                     /* (a checksum over each slot; the project, the music's section, the song) */

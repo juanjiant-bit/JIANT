@@ -170,7 +170,7 @@ def controls():
         ('LFO', 'MOD  |  LFO: LFO · LFO 2 · LFO DEST  |  MSEQ: MSEQ · MSEQ 2', 'MACROS M1–M4 (stay latched)'),
         ('SCL', 'KEY  |  CHORD  |  SCENE', 'ROOT by key'),
         ('ARP', 'ARP: ARP · ARP 2', '—'),
-        ('SAVE', 'SONG: TIMELINE · PARTS · CLIPS · SECTIONS  |  PROJECT: PROJECTS · ARRANGE · TOOLS · SAVE SONG AS  |  SOUND: USER · PRESETS (from outside, USER / SECTIONS come armed)', 'SONG layer · C5 NAME'),
+        ('SAVE', 'SONG: TIMELINE · PARTS · CLIPS · SECTIONS  |  PROJECT: PROJECTS (pick · ERASE · LOAD · SAVE; NAME: K3 SONG / LOOP) · ARRANGE · TOOLS  |  SOUND: USER · PRESETS (from outside, USER / SECTIONS come armed)', 'SONG layer · C5 NAME'),
         ('REC', '(transport)', 'CLEAR · CLICK · held alone: UNDO'),
     ]
     t2 = ('<table class="pages"><tr><th>BUTTON</th><th>GROUPS (A TAP: THE NEXT) · PAGES (SELECT)</th><th>HOLD</th></tr>' +

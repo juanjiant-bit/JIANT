@@ -9,7 +9,8 @@ MAKE can regenerate while playback runs: transport stops, the next draft is
 generated, and playback resumes in the new draft's mode. This is not a gapless
 transition. GEN 1, 2 and 3 all show real sections and arrangement progress.
 
-SAVE > SAVE SONG AS selects a destination and SCOPE:
+SAVE > PROJECT > PROJECTS picks a destination (KNOB 1) and saves (KNOB 4, OCT+); on the NAME screen KNOB 3 is the SCOPE
+(V10.7.20; the SAVE SONG AS page until V10.7.19):
 
 - SONG saves A–D and the complete arrangement, scenes, track sources and variations.
 - LOOP saves the currently loaded music in A and clears B–D and the arrangement

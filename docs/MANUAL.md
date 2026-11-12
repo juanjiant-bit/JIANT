@@ -59,7 +59,8 @@ Everything since V10.6c, the last public version, in one list; each item links t
 - SAVE opens on the song: **TIMELINE**, **PARTS** and **CLIPS** (V10.6o, V10.6s), then SECTIONS. See
   [TIMELINE, PARTS and CLIPS](#timeline-parts-and-clips-save--song).
 - **A song keeps the sounds you change while it plays** (V10.6z8); EDIT > **RECALL** brings a track's section sound back.
-- **SAVE SONG AS** copies a whole song into another project (SAVE > PROJECT).
+- **Saving a song** is on SAVE > PROJECT > **PROJECTS**: KNOB 1 picks the project (it is not opened), SAVE names it, and
+  the NAME screen's KNOB 3 chooses the whole SONG or the LOOP alone (the SAVE SONG AS page is gone).
 
 **Drums and the generator**
 - **DRUM-X**: a quality pass (V10.6q), a classic CMOS cowbell, the **EXTENDED** key map by default with real fills
@@ -418,7 +419,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 | **LFO** | **MOD**: MOD — **LFO**: LFO · LFO DEST — **MSEQ**: MSEQ · MSEQ 2 | 5 |
 | **SCL** | **KEY**: SCL — **CHORD**: CHORD — **SCENE**: SCENE (V10.24) | 3 |
 | **ARP** | **ARP**: ARP · ARP 2 | 2 |
-| **SAVE** | **SONG**: TIMELINE · PARTS · CLIPS · SECTIONS — **PROJECT**: PROJECTS · ARRANGE · TOOLS · SAVE SONG AS — **SOUND**: USER · PRESETS | 10 |
+| **SAVE** | **SONG**: TIMELINE · PARTS · CLIPS · SECTIONS — **PROJECT**: PROJECTS · ARRANGE · TOOLS — **SOUND**: USER · PRESETS | 9 |
 
 Where a page lived in 0.9.1: ENV's six-envelope views (the TRACKS level) are now pages of their own, **TRACKS** and
 **TRACKS DEST**, with ENV's and ENV DEST's knobs; **NOTE** appears once (the BAR group; its big-step picture is
@@ -575,9 +576,8 @@ since 0.6.51: every project opens as it was.
 | TIMELINE (V10.6o) | ROW | SECT (the row's part A–D) | BARS (1–64) | VAR (the ALGORITHM track's variation in the row) |
 | PARTS (V10.6o) | PART (A–D) | ROW (the song's rows of that part) | — | LOOP / SONG (what PLAY plays) |
 | CLIPS (V10.6s) | TRACK (T1–T6) | PART (A–D) | — | — |
-| PROJECTS / SECTIONS (the PROJECT page) | PROJECT (1–6; on SECTIONS: SECT A–D) | SECT (A–D; on SECTIONS: ERASE, V10.17) | LOAD (action) | SAVE (action) |
+| PROJECTS / SECTIONS (the PROJECT page) | PROJECT (1–6: picks it, does not open it; on SECTIONS: SECT A–D) | ERASE (action) | LOAD (action: opens the picked project) | SAVE (action: then NAME, KNOB 3 SONG / LOOP) |
 | ARRANGE | ROW ("2/6") | SECT (on END: STOP / x2–x8 / LOOP) | BARS | SCENE |
-| SAVE SONG AS | the destination project (1–6) | — | — | SAVE (OCT+ then names it) |
 | TOOLS (V10.24) | SCOPE (TRACK, SOUND, SONG, SYSTEM) | ACTION (CLEAR SEQ · INIT SOUND · DELETE ROW, CLEAR SONG · NEW PROJECT, CPU TEST) | — | DO: **OCT+ held a second** |
 
 **ARP** (per track)
@@ -1799,12 +1799,23 @@ the song is written.
 - (V10.6z8) **A sound you change while the song plays stays** over the next sections (see the ARRANGE page above);
   a CLIPS launch, a load or a new GENE throw lets the sections bring their sounds again.
 
-### SAVE SONG AS (SAVE › PROJECT)
+### Saving a whole song or a loop (SAVE › PROJECT › PROJECTS)
 
-Copies the **whole song** into another project: sections A–D (with the unsaved edits of the one playing), the tempo
-and globals, the rows, bars, END, scenes, FROM and VAR, and LOOP / SONG. **KNOB 1** the destination (1–6, it is not
-opened), **KNOB 4** arms SAVE, **OCT+**; a used destination asks **REPLACE WHOLE SONG n?**: OCT+, type a name, OCT+
-saves. OCT− cancels. Stop first. The song you copied from stays open and unchanged; open the copy on PROJECTS.
+**PROJECTS** is where a song is saved (the SAVE SONG AS page of V10.6c–V10.7.19 is gone). **KNOB 1** picks a project
+(1–6); picking does not open it or change the music. On the picked project: **KNOB 2 ERASE**, **KNOB 3 LOAD** (opens
+it: its sections, its rows, its A as the music) and **KNOB 4 SAVE**, each done with **OCT+**.
+
+**SAVE** asks **OVERWRITE PROJECT n?** when the destination holds something (OCT+ goes on, OCT− cancels), then opens the
+**NAME** screen. There **KNOB 3** chooses what is written (the title says it, **SAVE SONG TO PROJECT n** or **SAVE LOOP
+TO PROJECT n**; it starts at SONG each time):
+
+- **SONG** (left): the **whole song**: sections A–D (with the unsaved edits of the one playing), the tempo and
+  globals, the rows, bars, END, scenes, FROM and VAR, and LOOP / SONG.
+- **LOOP** (right): only the music now, into the destination's **A**; its **B–D and its arrangement are cleared**.
+  This is how you put a loop over a project that held a whole song.
+
+Type a name, **OCT+** saves, OCT− cancels and writes nothing. Stop first. Saving to another project leaves the one
+you copied from open and unchanged; LOAD the copy on PROJECTS.
 
 ### Scenes
 
@@ -2492,8 +2503,8 @@ This is the chapter to read carefully. JIANT keeps several kinds of data in diff
 
 ### SAVE's chain: SONG · PROJECT · SOUND
 
-(0.9.2; V10.2: composing first) SAVE is a chain of ten pages in three groups, as every section: **SELECT** walks
-TIMELINE → PARTS → CLIPS → SECTIONS → PROJECTS → ARRANGE → TOOLS → SAVE SONG AS → USER → PRESETS, a **SAVE** tap jumps to the next group (round). At
+(0.9.2; V10.2: composing first) SAVE is a chain of nine pages in three groups, as every section: **SELECT** walks
+TIMELINE → PARTS → CLIPS → SECTIONS → PROJECTS → ARRANGE → TOOLS → USER → PRESETS, a **SAVE** tap jumps to the next group (round). At
 power-on SAVE opens **TIMELINE**. The pages, their knobs, OCT+, the dialogs
 and the NAME screen are the ones they always were (until 0.9.1 SELECT zoomed LIBRARY ↔ PROJECT ↔ SOUND and the tap
 switched each level's two sets).
@@ -2501,7 +2512,7 @@ switched each level's two sets).
 | Group | Pages | What the screen shows | Knobs |
 | --- | --- | --- | --- |
 | **SONG** | TIMELINE · PARTS · CLIPS · SECTIONS | TIMELINE: the song as blocks, the row picked opened track by track; PARTS: the four parts as cards; CLIPS: six tracks × four parts (see [TIMELINE, PARTS and CLIPS](#timeline-parts-and-clips-save--song)). / The project's four sections large, the song as a strip. | ROW, SECT, BARS, VAR / PART, ROW, —, LOOP·SONG / TRACK, PART / SECT, ERASE (V10.17), LOAD, SAVE |
-| **PROJECT** | PROJECTS · ARRANGE · TOOLS · SAVE SONG AS | The six projects as tiles: the number, the name (its section A's), the four sections A–D as chips (stored: in the section's colour; empty: dark); the project open tinted and framed violet, its section picked framed white. / ARRANGE's rows as chips. / The six tools as a list. | PROJECT, SECT, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ adds a row, OCT− deletes the one picked) / the tool |
+| **PROJECT** | PROJECTS · ARRANGE · TOOLS | The six projects as tiles: the number, the name (its section A's), the four sections A–D as chips (stored: in the section's colour; empty: dark); the project picked with KNOB 1 tinted and framed violet (the open one: its number lit), its section picked framed white. / ARRANGE's rows as chips. / The six tools as a list. | PROJECT, ERASE, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ adds a row, OCT− deletes the one picked) / the tool |
 | **SOUND** | USER · PRESETS | The track's being (its engine's creature, alive with its sound), the track and its sound under it; at the right the 32 user slots (a stored one: its engine's creature small and its name) or the factory sounds. | SLOT, LOAD, ERASE, SAVE / No., ENG, FAV, LIST |
 
 - **SAVE from another page** comes back to the SAVE page you left; **USER** and **SECTIONS** come with their SAVE

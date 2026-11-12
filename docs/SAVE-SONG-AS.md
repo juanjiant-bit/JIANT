@@ -2,10 +2,12 @@
 
 Based on the public V10.6c firmware (`d993eae82ff33ead15daf96f2de1d1779f275f8c`).
 
-Open **SAVE > PROJECT > SAVE SONG AS**. KNOB 1 chooses destination project 1–8 without
-opening it. KNOB 4 arms SAVE; OCT+ continues. A used destination asks **REPLACE WHOLE
-SONG n? / ALL A-D + ARRANGEMENT**. Confirm with OCT+, type a name, then OCT+ saves.
-OCT- cancels either dialog. Stop playback before saving.
+(V10.7.20: the SAVE SONG AS page is gone; **SAVE > PROJECT > PROJECTS** does its job.)
+Open **SAVE > PROJECT > PROJECTS**. KNOB 1 picks the destination project without
+opening it. KNOB 4 arms SAVE; OCT+ continues. A used destination asks **OVERWRITE
+PROJECT n? / NEXT: K3 SONG OR LOOP**. Confirm with OCT+; on the NAME screen KNOB 3 chooses
+SONG (everything below) or LOOP (the music now into A, B–D and the arrangement cleared),
+type a name, then OCT+ saves. OCT- cancels either screen. Stop playback before saving.
 
 The copy includes:
 

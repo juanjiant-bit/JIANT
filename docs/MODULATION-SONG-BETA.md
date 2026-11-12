@@ -10,8 +10,8 @@ current row, remaining bars and play position. The display refreshes at bar
 boundaries. A generated SONG can have 16- or 32-bar sections, so hearing the same
 phrase for several bars does not itself mean the arranger is stuck.
 
-SAVE from GEN opens SAVE SONG AS. Choose LOOP or SONG and a destination project, confirm an
-existing destination if needed, then name it. SONG copies sections A–D, arrangement,
+SAVE from GEN opens PROJECTS with SAVE armed (V10.7.20; SAVE SONG AS until V10.7.19). Pick a destination project
+(KNOB 1), OCT+, confirm an existing destination if needed, then on the NAME screen choose SONG or LOOP (KNOB 3) and name it. SONG copies sections A–D, arrangement,
 scenes and per-track source/variation metadata. LOOP writes the current music to A,
 clearing B–D and the arrangement at that destination. The current project can be
 overwritten explicitly. Stop playback before saving.

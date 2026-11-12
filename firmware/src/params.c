@@ -828,7 +828,6 @@ static const page_t PAGES[] = {
     {"ENV 2", FAM_ENV, SC_TRACK, GR_ADSR, {P_E2ATK, P_E2DEC, P_E2SUS, P_E2REL}},   /* (V10.22) a second ADSR, a MOD
                                                          * source (SRC ENV2) */   /* (V10.16) EUCLID's
                                                          * mutations on the bar: EVERY AMOUNT MODE WHAT */
-    {"SAVE SONG AS", FAM_SAVE, SC_GLOBAL, GR_SONGSAVE, {0xFF, 0xFF, 0xFF, G_SAVE}},
     {"RHYTHM", FAM_SEQ, SC_TRACK, GR_STEPS, {P_SLEN, 0xFF, 0xFF, P_SDIV}},
     {"PARTS", FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.6o) the song's four sections as cards: KNOB 1 one,
                                                          * OCT+ it loops, OCT- the song from its row (ui_lzsave.c graph_parts) */

@@ -57,6 +57,14 @@ int main(void)
  memcpy(draft_before,proj_slot,sizeof draft_before);
  erase_error=1;assert(song_save_as(3,"FAIL")&&song_draft&&!memcmp(draft_before,proj_slot,sizeof draft_before));erase_error=0;
  assert(!song_save_as(3,"RETRY"));
+ {/* (V10.7.20, the owner's use) a LOOP saved over a whole song elsewhere: its A the music now, its B-D and its rows gone */
+  for(unsigned n=0;n<4;n++)assert(saved_note(3,n)>=0);assert(song_idx.rows[3].count==4);
+  song_save_loop=1;assert(!song_save_as(3,"LOOP OVER"));
+  assert(saved_note(3,0)==trk[0].step[0].note[0]);for(unsigned n=1;n<4;n++)assert(saved_note(3,n)==-1);
+  assert(song_idx.rows[3].count==0&&song_draft&&chain_config.count==4);
+  song_save_loop=0;assert(!song_save_as(3,"RETRY"));assert(song_idx.rows[3].count==4);
+  puts("draft: a LOOP saved over a whole song clears its B-D and its arrangement; the draft stays");
+ }
  puts("draft: same-project overwrite is explicit; failed saves retain the draft for retry");
  assert(!song_erase_parts(1,0));for(unsigned n=0;n<4;n++)assert(saved_note(1,n)==-1);
  assert(song_draft&&!memcmp(draft_before,proj_slot,sizeof draft_before));

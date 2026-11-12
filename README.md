@@ -45,7 +45,8 @@ risk: it is a custom firmware.
 
 - **Songs**: SAVE opens on the song, **TIMELINE** (the song as blocks, each row opened track by track: mutes, FROM
   another part, a variation), **PARTS** (the four parts as cards, one loops with OCT+) and **CLIPS** (six tracks × four
-  parts, launched on the next bar; REC writes the rows). A sound you change while the song plays stays. **SAVE SONG AS**.
+  parts, launched on the next bar; REC writes the rows). A sound you change while the song plays stays. A whole song or
+  just its loop is saved on **PROJECTS** (SONG / LOOP on the NAME screen's KNOB 3).
 - **DRUM-X**: a quality pass, a classic CMOS cowbell, the **EXTENDED** key map (real fills on OCT+1, every sound
   chromatic on OCT−1), the punchy kicks back. **SCENE DRUM GEN**: SCL › SCENE's drum role plays a kit generated for the
   genre.
