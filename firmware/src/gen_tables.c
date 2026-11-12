@@ -200,7 +200,7 @@ enum { BA_OFFBEAT, BA_OFFOCT, BA_BOUNCE, BA_DEEPWALK, BA_ROLL16, BA_OCTBNC, BA_S
                                                          * basses never one; gen.c gen_riff) */
 /* (0.9.7, flash) the archetypes below are the text tools/gen_drum_maps.py reads (not compiled): build/gen/gen_bass.h holds
  * them a byte a step (BA_STEP: the note's code | the flag's << 4; gen.c ba_note, ba_flag), each its first step and bars */
-typedef struct { uint16_t at; uint8_t bars; } barch_t;
+typedef struct { uint16_t at : 13, bars : 3; } barch_t;   /* (V10.7.21: 2 B, was 4; tools/gen_drum_maps.py checks they fit) */
 #ifdef GEN_DRUM_MAPS_TEXT
 static const barch_t BASS_ARCH[BA_NALL] = {
     [BA_OFFBEAT]  = {"..R...R...R...R.", 0, 1},

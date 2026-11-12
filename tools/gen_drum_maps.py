@@ -145,12 +145,14 @@ def main(src, dice, out, dout, bout):
     L += zblob("BA_STEP_Z", bytes(steps))
     L += ["_Static_assert(BA_STEP_N <= GZ_MAX, \"gz.h: BA_STEP fits the buffer\");",
           "#define BA_STEP gz_get(BA_STEP_Z, BA_STEP_N)"]
+    L += ["_Static_assert(BA_STEP_N <= 8192u, \"gen_tables.c barch_t: at in 13 bits\");"]
     L += [f"static const barch_t BASS_ARCH[{asz}] = {{"]
     for name, at, bars in rows3:
+        assert at < 8192 and 0 < bars < 8, (name, at, bars)    # (barch_t: at 13 bits, bars 3)
         L.append(f"    [{name}] = {{{at}, {bars}}},")
     L.append("};")
     Path(bout).write_text("\n".join(L) + "\n")
-    size3 = len(steps) + 4 * len(rows3)
+    size3 = len(steps) + 2 * len(rows3)
     print(f"drum maps: {len(table)} maps, {len(ptab)} pools, {len(lanes) - 1} distinct lanes, {size} B; DICE's bars: "
           f"{len(btab)}, {len(bl) - 1} distinct lanes, {size2} B; bass archetypes {len(rows3)}, {size3} B -> {out}, {dout}, {bout}")
     return 0
