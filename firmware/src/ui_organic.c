@@ -21,8 +21,6 @@ enum { OG_CREAM, OG_CORAL, OG_TEAL, OG_MUSTARD, OG_MINT };
 static int og_neutral(uint16_t c) { return (c >> 11) == (c & 31u) && ((c >> 5) & 63u) >> 1 == (c >> 11); }
 static uint16_t og_col(uint32_t k)
 {
-    if (k >= OG_MUSTARD && og_neutral(T_ACCENT))         /* GREY, MONO: no colour of their own */
-        return T_MID;
     switch (k) {
     case OG_CORAL: return T_ACCENT;
     case OG_TEAL: return T_THEME;
@@ -235,7 +233,7 @@ static void og_tip(const og_shape_t *sh, const og_xf_t *f, int32_t m, int32_t *x
     og_pt(f, sh->a, sh->b, m, best, x, y);
 }
 /* the colour of a plate's role (tools/gen_ui_shapes.py colour_class): on JIANT (the default palette, the plates' own)
- * the plates' colours; on another palette blends of its own; on GREY / MONO greys */
+ * the plates' colours; on another palette blends of its own */
 static uint16_t og_role(uint32_t k)
 {
     static const uint16_t JIANT[8] = {0, 0, 0x04B1, 0, 0x072B, 0xFF20, 0xFBC0, 0x985F};   /* teal green yellow orange violet */
@@ -246,23 +244,12 @@ static uint16_t og_role(uint32_t k)
         return T_ACCENT;
     if (k == 3u)
         return T_THEME;
-    if (og_neutral(T_ACCENT))
-        return T_MID;
     if (settings.palette == UI_JIANT_INDEX)
         return JIANT[k];
     return k == 2u ? ux_mix(T_THEME, T_SURF, 40) : k == 4u ? og_col(OG_MINT) : k == 5u ? og_col(OG_MUSTARD) :
            k == 6u ? ux_mix(T_ACCENT, 0xFE60u, 35) : ux_mix(T_THEME, T_ACCENT, 50);
 }
-/* ux_mix kept neutral on GREY / MONO (their greys on the RGB565 gray axis: G = 2 R, B = R) */
-static uint16_t og_mix(uint16_t a, uint16_t b, int32_t pct)
-{
-    uint16_t c = ux_mix(a, b, pct);
-    if (og_neutral(T_ACCENT)) {
-        uint32_t r = c >> 11;
-        c = (uint16_t)(r << 11 | r << 6 | r);
-    }
-    return c;
-}
+#define og_mix ux_mix
 /* a plate (og_ill's bytes) alive: glow[k] (-256..256, 0 none) takes role k toward white (+) or into the surface (-);
  * lit[i] (0..256) lights the i-th dot of role dot_role (a hit, a voice: its own size up to 2 px more); sway (Q4 px)
  * bends every point sideways by its height, a wave of 64 units at phase ph (16 bits a turn); u Q4 per unit */

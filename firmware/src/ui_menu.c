@@ -277,7 +277,7 @@ static int32_t menu_scroll_max(void)
  * the tab). The drawing redone whole on a change (menu_sig) */
 /* (V10.58) the panel's top: under the cards (COLORS, AIR), or, BOTTOM and HUD (their cards at the foot), right under the
  * tabs (the panel at COLORS' place covered BOTTOM's and HUD's cards and left a blank band over it) */
-static uint32_t menu_py(void) { return lz_low() && ux.skin != SKIN_AIR ? LB_GRAPH_Y : LZ_GRAPH_Y; }
+static uint32_t menu_py(void) { return LZ_GRAPH_Y; }
 static int menu_large(void) { return (ui_prefs & PREF_LARGE) != 0u; }
 static uint32_t menu_tab(void) { return MI_TAB[ui.menu_sel % MI_COUNT]; }
 static uint32_t menu_set(void) { return (ui.menu_sel - mtab_first(menu_tab())) / 4u; }   /* ROWS 1-4: 0, 5-6: 1 */
@@ -288,7 +288,7 @@ static void menu_val(uint32_t row, char *b)          /* the row's value as it re
 static const char *menu_short(uint32_t row)          /* a card's label: the row's name, or its short form */
 {
     static const struct { uint8_t row; char s[9]; } SH[] = {
-        {MI_SCROFF, "SCR OFF"}, {MI_ACCEL, "ACCEL"}, {MI_SCLLED, "SCL LEDS"}, {MI_LOWCUT, "SPK EQ"}, {MI_USB, "USB LVL"},
+        {MI_SCROFF, "SCR OFF"}, {MI_ACCEL, "ACCEL"}, {MI_BPMLOCK, "BPM LK"}, {MI_SCLLED, "SCL LEDS"}, {MI_LOWCUT, "SPK EQ"}, {MI_USB, "USB LVL"},
         {MI_CLKLVL, "CLICK LV"}, {MI_RESTORE, "RESTORE"}, {MI_CPU, "CORES"}, {MI_CLOCK, "CPU MHZ"}, {MI_BT, "BT"}, {MI_PANEL, "CALIBR"}, {MI_INIT, "INIT SYS"},
         {MI_AT, "AFTERT"}, {MI_VLEARN, "V.LEARN"}};
     uint32_t k;
@@ -319,6 +319,8 @@ static void menu_cards(void)
             continue;
         }
         menu_val(r, v);
+        if (r == MI_COLOR && text_w(&AF_S, v) > COL_W - 8)   /* (CONTRAST, wider than a card: CONTR; whole in the rows) */
+            v[5] = 0;
         gauge_column(c, menu_short(r), v, r == ui.menu_sel ? T_ACCENT : T_TEXT, r < MI_VALUES && menu_n(r) > 1u ?
                     (int32_t)menu_get(r) * 1000 / (int32_t)(menu_n(r) - 1u) : -1);
     }
@@ -327,48 +329,42 @@ static __attribute__((noinline)) void menu_panel(void)
 {
     uint32_t t = menu_tab(), f = mtab_first(t), n = mtab_rows(t), k, r;
     char v[16];
-    if (ui.mlv == 0u) {                                /* MENU: the four tabs */
-        for (k = 0; k < MTAB_COUNT; k++) {   /* (0.8.9: the top tiles 72 tall, DISPLAY's seven rows; the others 64) */
-            int32_t x = 4 + (int32_t)(k & 1u) * 117, y = 2 + (int32_t)(k >> 1) * 74, h = k >> 1 ? 64 : 72;
-            lz_tile(x, y, 115, h, k == t, T_THEME);
-            cv_text(x + 5, y + 4 - AF_X_CAP_Y, &AF_X, MTAB_NAME[k], k == t ? T_THEME : T_MID);
-            if (k == t)
-                lz_uline(x + 5, y + 12, &AF_X, MTAB_NAME[k], T_THEME);
-            for (r = 0; r < mtab_rows(k); r++) {
-                uint32_t row = mtab_first(k) + r;
-                int32_t ry = y + 15 + (int32_t)r * (mtab_rows(k) > 6u ? 7 : 8);   /* (0.9.7: DISPLAY's eight 7 apart; p1: seven too, a bottom tile's) */
-                uint16_t bg = lz_tile_bg();
-                if (ry + 7 > y + h)                    /* (V10.13) a bottom tile holds seven: SYSTEM's eighth (ABOUT)
-                                                        * left out (the tiles only show in the slide between tabs) */
-                    break;
-                menu_val(row, v);
-                cv_clip_text(x + 5, ry - AF_X_CAP_Y, &AF_X, menu_short(row), T_DIM, bg, 64);
-                cv_text_r(x + 110, ry - AF_X_CAP_Y, &AF_X, v, k == t ? T_TEXT : T_DIM, bg);
-            }
+    if (ui.mlv == 0u) {                                /* MENU: the four tabs as tiles, each its name and how many rows
+                                                        * it holds (it listed every row and value, 7 px apart; the tiles
+                                                        * only show in the slide between tabs) */
+        for (k = 0; k < MTAB_COUNT; k++) {
+            int32_t x = 4 + (int32_t)(k & 1u) * 117, y = 2 + (int32_t)(k >> 1) * 70;
+            uint16_t bg = lz_tile_bg();
+            lz_tile(x, y, 115, 66, k == t, T_THEME);
+            GFX_HOOK_ALIGN(x, 0, x + 115, 0, AL_H, "menu tab tile name centred");
+            cv_text_in(x, y + 14, 115, &AF_M, MTAB_NAME[k], k == t ? T_THEME : T_TEXT, bg);
+            fmt_int(v, (int32_t)mtab_rows(k));
+            str_cpy(v + str_len(v), " ROWS", 8);
+            cv_text_in(x, y + 40 - AF_X_CAP_Y, 115, &AF_X, v, T_MID, bg);
         }
         return;
     }
-    if (ui.mlv == 1u) {                                /* TAB: its rows */
-        cv_text(10, 6 - AF_X_CAP_Y, &AF_X, MTAB_NAME[t], T_THEME);
-        cv_text_r(228, 6 - AF_X_CAP_Y, &AF_X, "ALGO: TAB \xB7 SELECT: ROW", T_DIM, T_SURF);
-        for (r = 0; r < n; r++) {               /* (0.8.9: seven rows fit, 17 apart; 0.9.7: eight, 15) */
+    if (ui.mlv == 1u) {                                /* TAB: its rows, eight at most: from the knobs' set (CONTROL's
+                                                        * twelve: the eight round it), 17 apart in the labels' face.
+                                                        * (The tab's name and "ALGO: TAB . SELECT: ROW" stood over them:
+                                                        * the tabs and the breadcrumb say both) */
+        uint32_t r0 = menu_set() * 4u;
+        while (r0 && r0 + 8u > ((n + 3u) & ~3u))
+            r0 -= 4u;
+        for (r = r0; r < n && r < r0 + 8u; r++) {
             uint32_t row = f + r, in = r / 4u == menu_set();
-            int32_t y = 14 + (int32_t)r * (n > 8u ? 10 : n > 7u ? 15 : n > 6u ? 17 : 20), h = n > 8u ? 10 : n > 7u ? 14 : n > 6u ? 16 : 18;
+            int32_t y = 2 + (int32_t)(r - r0) * 17, h = 16;
             uint16_t bg = in ? T_TINT : T_RAISE;
             cv_rect(8, y, 224, h, bg);
             if (row == ui.menu_sel)
                 cv_rect(8, y, 3, h, T_ACCENT);
             GFX_HOOK_ALIGN(0, y, 0, y + h, AL_V, "menu row name centred up/down");
-            {   /* (V10.6z6) more than eight rows (CONTROL's twelve): 10 apart, the small font */
-                const aafont_t *fo = n > 8u ? &AF_X : &AF_S;
-                int32_t ty = n > 8u ? y + CAP_IN(X, h) : y + CAP_IN(S, h);
-                cv_text_on(16, ty, fo, MI_NAME[row], in ? T_TEXT : T_MID, bg);
-                menu_val(row, v);
-                cv_text_r(in ? 218 : 226, ty, fo, v, in ? T_TEXT : T_MID, bg);
-            }
+            cv_text_on(16, y + CAP_IN(S, h), &AF_S, MI_NAME[row], in ? T_TEXT : T_MID, bg);
+            menu_val(row, v);
+            cv_text_r(in ? 216 : 226, y + CAP_IN(S, h), &AF_S, v, in ? T_TEXT : T_MID, bg);
             if (in) {
                 char kn[2] = {(char)('1' + r % 4u), 0};
-                cv_text(221, y + 2 - AF_X_CAP_Y, &AF_X, kn, T_THEME);
+                cv_text(220, y + 2 - AF_X_CAP_Y, &AF_X, kn, T_THEME);
             }
         }
         return;
@@ -392,14 +388,12 @@ static __attribute__((noinline)) void menu_panel(void)
                 cv_rect(x, y, 72, 1, T_ACCENT); cv_rect(x, y + 17, 72, 1, T_ACCENT);
                 cv_rect(x, y, 1, 18, T_ACCENT); cv_rect(x + 71, y, 1, 18, T_ACCENT);
             }
-            cv_clip_text(x + 5, y + 6 - AF_X_CAP_Y, &AF_X, row == MI_HOLD ? HOLD_N[k % 4u] : menu_vname(row, k),
-                         k == cur ? T_TEXT : T_MID, bg, row == MI_COLOR ? 44 : 62);
+            cv_clip_text(x + 4, y + 6 - AF_X_CAP_Y, &AF_X, row == MI_HOLD ? HOLD_N[k % 4u] : menu_vname(row, k),
+                         k == cur ? T_TEXT : T_MID, bg, row == MI_COLOR ? 48 : 63);   /* (COLOR: CONTRAST whole, 47 px) */
             if (row == MI_COLOR) {                     /* (the palette's THEME and ACCENT) */
                 uint32_t q;
                 for (q = 0; q < 2u; q++) {
-                    uint16_t col = q ? UI_PALETTES[k % NPALETTES].accent : UI_PALETTES[k % NPALETTES].theme;
-                    cv_rect(x + 50 + (int32_t)q * 10, y + 5, 8, 8, ux.mono || settings.palette == UI_BW_INDEX ?
-                            ux_gray(ux_luma(col) >> 3) : col);   /* (GREY, MONO: their grays) */
+                    cv_rect(x + 54 + (int32_t)q * 8, y + 5, 7, 8, UI_PALETTES[k % NPALETTES].c[3u + q]);
                 }
             }
         }
@@ -469,14 +463,14 @@ BTAPP_FN static void bt_prox_panel(const aafont_t *fx, const aafont_t *fm, const
         str_cpy(b, BPS(3), sizeof b);
     cv_text(10, 82 - AF_S_CAP_Y, fs, b, T_MID);
     for (k = 0; k < 3u; k++)
-        cv_text(10, 98 + 10 * (int32_t)k - AF_X_CAP_Y, fx, BPS(4u + k), T_DIM);
+        cv_text(10, 95 + 11 * (int32_t)k - AF_X_CAP_Y, fx, BPS(4u + k), T_DIM);   /* (9 px capitals: 11 apart) */
     str_cpy(b, BPS(14), sizeof b);                     /* (V10.61) KNOB 1 MIN, KNOB 2 MAX, KNOB 3 SPEED */
     fmt_int(b + str_len(b), BT_MIN());
     str_cpy(b + str_len(b), BPS(15), 16);
     fmt_int(b + str_len(b), BT_MAX() < BT_MIN() + 10 ? BT_MIN() + 10 : BT_MAX());
     str_cpy(b + str_len(b), BPS(16), 16);
     fmt_int(b + str_len(b), (int32_t)BT_SPEED() + 1);
-    cv_text(10, 136 - AF_S_CAP_Y, fs, b, T_TEXT);
+    cv_text(10, 129 - AF_S_CAP_Y, fs, b, T_TEXT);       /* (inside the panel: it stood at 136, cut at the foot) */
 }
 static __attribute__((noinline)) void bt_prox_input(uint32_t up, uint32_t dn)   /* (V10.6z8: out of the full segment) */
 {
@@ -544,7 +538,7 @@ static __attribute__((noinline)) void draw_menu(void)
 {
     uint32_t sig;
     sig = ui.menu * 7u + ui.menu_sel * 131u + settings.palette * 1009u + settings.lowcut * 7919u + settings_hold * 3511u +
-          settings_leds * 6151u + ui_prefs * 4099u + ui_style * 257u + ui_skin * 1543u + song.rec * 65537u + song.sel * 13u +
+          settings_leds * 6151u + ui_prefs * 4099u + ui_skin * 1543u + song.rec * 65537u + song.sel * 13u +
           ui_rec_prefs * 92821u + ui_scr * 131071u + ui.mlv * 0x9E3779B1u + bt_hw_status() * 40961u + bt_up * 77u + bt_prox_sig() +   /* (#157: SCREEN OFF's value redraws its row) */
           (ui.menu == 2 ? ui.menu_scroll * 48611u : 0u) +
           (ui.menu == 2 ? (song.cpu_q8 >> 3) * 7741u + load_diag.peak * 3329u + load_diag.late * 1931u +

@@ -46,13 +46,14 @@ static int settings_import(persist_t *p, int n)
     }
     if (old1 || old2) p->bold = 0;
     if (!current) memset(&p->favorites, 0, sizeof p->favorites);
-    if (p->favorites.factory[15][20] > 3u)         /* SKIN (JIANT 0.8.9, ui.c ui_skin; 0.9.7: 3 AIR): unknown = COLORS (0, older
+    if (p->favorites.factory[15][20] != SKIN_AIR)  /* SKIN (JIANT 0.8.9, ui.c ui_skin; 0.9.7: 3 AIR): the retired BOTTOM (1) and
+                                                     * HUD (2), unknown = COLORS (0, older
                                                      * settings too: they keep the skin they had) */
         p->favorites.factory[15][20] = 0;
     if (p->favorites.factory[15][19] > 1u)         /* SCOPE (0.9.7, ui.c ui_scope): unknown = OFF (0, older settings too) */
         p->favorites.factory[15][19] = 0;
-    if (p->favorites.factory[15][29] > 1u)        /* STYLE (ui.c ui_style): 2, the retired PIXEL = LINE; unknown = FLAT */
-        p->favorites.factory[15][29] = p->favorites.factory[15][29] == 2u ? 1u : 0u;
+    p->favorites.factory[15][29] = 0;             /* STYLE (retired: 1 LINE, 2 PIXEL): FLAT, the one style (0, as older firmware
+                                                    * reads it) */
     {   /* CLICK, CLICK LEVEL, COUNT-IN (ui.c ui_rec_prefs): two bits each, 3 is no value: the default (0) */
         uint32_t b = p->favorites.factory[15][28], f;
         for (f = 0; f < 3u; f++)

@@ -51,8 +51,7 @@ static void graph_env_tracks(int dest)
         }
         cv_text(x + 4, y + 4 - AF_X_CAP_Y, &AF_X, n, ink);
         cv_clip_text(x + 22, y + 4 - AF_X_CAP_Y, &AF_X, trk_engp(t)->name, T_DIM, bg, 50);
-        env_mini(t, x + 5, y + 16, 66, dest ? 34 : 44, c >= trk_live ? T_DIM : settings.palette == UI_JIANT_INDEX ?
-                 heat_col(150) : T_THEME, sel ? 2 : 1);
+        env_mini(t, x + 5, y + 16, 66, dest ? 34 : 44, c >= trk_live ? T_DIM : heat_col(150), sel ? 2 : 1);
         if (!dest && (lv = env_now(t)) >= 0)
             og_node((x + 70) * 16, (y + 60 - lv * 44 / 1000) * 16, 2, T_TEXT);
         for (k = 0; dest && k < 3u; k++) {              /* FILTER PITCH SHAPE: a bar each from the middle */
@@ -81,7 +80,7 @@ static void graph_stage(const track_t *t)
             y = 1000 - (int32_t)((int64_t)(1000 - q) * (1000 - q) / 1000) * (1000 - v / 2) / 1000 - (1000 - q) * v / 2000;
         y = 122 - y * 66 / 1000;
         if (x)
-            cv_line_t(10 + x - 1, py, 10 + x, y, settings.palette == UI_JIANT_INDEX ? heat_y(y, 56, 122, T_THEME) : T_THEME, 2);
+            cv_line_t(10 + x - 1, py, 10 + x, y, heat_y(y, 56, 122, T_THEME), 2);
         py = y;
     }
     cv_rect(10, 124, 217, 1, T_RAISE);
@@ -183,8 +182,7 @@ static __attribute__((noinline)) void graph_lfodest(const track_t *t, const page
         if (w)
             cv_rect(w < 0 ? 166 + w : 166, y + 16, w < 0 ? -w : w, 4, ux_mix(T_RAISE, T_THEME, 45));
         if (live)
-            cv_rect(live < 0 ? 166 + live : 166, y + 16, live < 0 ? -live : live, 4, settings.palette == UI_JIANT_INDEX ?
-                    heat_col(110 + (live < 0 ? -live : live) * 3) : T_THEME);
+            cv_rect(live < 0 ? 166 + live : 166, y + 16, live < 0 ? -live : live, 4, heat_col(110 + (live < 0 ? -live : live) * 3));
     }
 }
 static void mseq_cap(const track_t *t, const page_t *pg)
@@ -222,27 +220,14 @@ static int graph_mod_lz(const track_t *t, const page_t *pg)
 }
 
 /* SCL . ARP  KEY: the twelve notes round a circle (C on top), the scale's lit and joined, ROOT in the accent, its name
- *            and the scale's in the middle; QUANT and ALL TR at the right; the scale on a keyboard under it. CHORD: the
+ *            and the scale's in the middle; the scale on a keyboard under it. CHORD: the
  *            chord each degree of the key plays now (chord_build, as a key would), I..VII. ARP / ARP 2: "MODE . RATE .
  *            OCT" and the pattern it plays over a triad (OFF: "ARP OFF") */
-static void key_val(int32_t x, int32_t y, const page_t *pg, uint32_t k)   /* a knob's label over its value */
-{
-    int16_t *vp;
-    const param_desc_t *d = page_desc(pg, k, &vp);
-    const char *u = "";
-    char b[16];
-    if (!d)
-        return;
-    param_format(d, *vp, b, &u);
-    str_cpy(b + str_len(b), u, 16 - str_len(b));
-    ed_cap(x, y, d->label, T_DIM);
-    cv_text(x, y + 10 - AF_M_CAP_Y, &AF_M, b, T_TEXT);
-}
 /* (V10.6i) a note's colour: each of the twelve its own heat, C coldest .. B hottest (the user's pick B: the same note
  * the same colour on KEY, CHORD, ARP, SCENE); other palettes their theme */
 static uint16_t note_col(uint32_t n)
 {
-    return settings.palette == UI_JIANT_INDEX ? heat_col(40 + (int32_t)(n % 12u) * 200 / 11) : T_THEME;
+    return heat_col(40 + (int32_t)(n % 12u) * 200 / 11);
 }
 static __attribute__((noinline)) void graph_key(const track_t *t, const page_t *pg)
 {
@@ -282,8 +267,7 @@ static __attribute__((noinline)) void graph_key(const track_t *t, const page_t *
     cv_text_in(42, 48 - AF_M_CAP_Y, 40, &AF_M, NN[rt], note_col(rt), T_SURF);
     param_format(&TP[P_SCALE], t->p[P_SCALE], b, &u);
     cv_text_in(32, 66 - AF_X_CAP_Y, 60, &AF_X, b, T_MID, T_SURF);
-    key_val(130, 10, pg, 2);
-    key_val(130, 48, pg, 3);
+    (void)pg;                                           /* (QUANT and ALL TR stood at the right: their cards say them) */
     for (i = 0; i < 24u; i++) {                         /* two octaves from C */
         uint32_t deg = (i + 24u - rt) % 12u;
         cv_rect(8 + (int32_t)i * 9, BLK[i % 12u] ? 112 : 122, 8, BLK[i % 12u] ? 10 : 12,

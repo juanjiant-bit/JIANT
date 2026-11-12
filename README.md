@@ -59,6 +59,19 @@ risk: it is a custom firmware.
   glides there over steps or bars) replaces JUMP.
 - **SWARM** (EXT's Bluetooth instrument) plays a melody from how near you are, with a FAR / NEAR morph and CHAOS.
 - The **thermal palette** everywhere: the piano roll coloured by pitch class.
+- *(next version)* **Seven palettes, all JIANT's own**: MENU › DISPLAY › COLOR offers JIANT (unchanged, the default),
+  SELVA, CONTRAST, BRASA, ABISAL, HUESO and NEON, each with the thermal ramp on beings, notes and bars and its own four
+  knob colours on the cards (JIANT: each value's heat, as before). The
+  ten palettes inherited from Felucca are gone; a saved one lands on the nearest of the family.
+- *(next version)* **Two skins**: MENU › DISPLAY › SKIN is AIR or COLORS; BOTTOM and HUD are gone (a saved one loads
+  as COLORS).
+- *(next version)* **No STYLE row**: FLAT is the one style, LINE is gone (a saved LINE loads as FLAT).
+- *(next version)* **Bigger small letters**: names, tabs, the header's words and the breadcrumb with 9 px capitals
+  (Chakra Petch; the 5 × 7 pixel face is gone), five tabs at a time, eight menu rows at a time.
+- *(next version)* **Bigger values**: a card's number in 14 px figures (was 11), rolling as before; MENU › LARGE's tall
+  cards on SEQ's, SAVE's and FX's pages too.
+- *(next version)* **COLORS without the panel box**: the picture sits on the background, as in AIR (cards and tiles as
+  before).
 - **VOICE** no longer clips on open vowels; WORDS › CONS sets the consonants' length.
 - **NRPN** for every automatable parameter ([docs/NRPN.md](docs/NRPN.md)); the editor protocol is a versioned
   contract, 1.2 ([web/EDITOR_PROTOCOL.md](web/EDITOR_PROTOCOL.md)).
@@ -207,14 +220,13 @@ VOICE singing its lyric, in the COLORS skin, exactly as the firmware draws them 
 
 - **Thermal palette**: values, curves, steps, hits and notes are coloured by intensity (cyan → blue → violet → red →
   orange → yellow → white). Selection is violet and active is orange; on JIANT each card's value and gauge are its
-  amount's heat (0.9.5, as 0.6), the other palettes give each knob its own colour.
-- **Skins** (MENU › DISPLAY › SKIN, 0.8.9): **AIR** (0.9.7, the default of new settings: HUD's floating words on
-  every page, the knob row on top under the tabs, the middle free), **COLORS** (near-black rounded cards on top, a rounded
-  panel), **BOTTOM** (the picture edge to edge, a slim knob row at the foot) and **HUD** (HOME's beings swim under
-  everything, the words float over them). Every skin wears the **LENTE** layout (0.8.5): the
+  amount's heat (0.9.5, as 0.6), the other palettes give each knob a colour of their own.
+- **Skins** (MENU › DISPLAY › SKIN): **AIR** (0.9.7, the default of new settings: floating words on
+  every page, the knob row on top under the tabs, the middle free, HOME's beings over the whole screen) and **COLORS**
+  (near-black rounded cards on top). Every skin wears the **LENTE** layout (0.8.5): the
   section's groups as tabs on top (a dot a page), the breadcrumb **SECTION · GROUP · page n/N** at the foot. Values
-  in [Inter Tight](https://github.com/rsms/inter-tight) SemiBold, names, tabs and the breadcrumb in a crisp 5 × 7
-  pixel face, small captions in [Chakra Petch](https://github.com/m4rc1e/Chakra-Petch).
+  in [Inter Tight](https://github.com/rsms/inter-tight) SemiBold, names, tabs, the breadcrumb and small captions
+  in [Chakra Petch](https://github.com/m4rc1e/Chakra-Petch).
 - **HOME, the ecosystem**: one being per track (its species from its engine, its shape from its four knobs). Each one
   heats up, swells and moves with its own audio; the selected track is drawn bigger; muted ones go dark; in silence
   they all stay still. (0.9.7) Each wears a little face: its eyes shut on a hit, its mouth opens with its level;

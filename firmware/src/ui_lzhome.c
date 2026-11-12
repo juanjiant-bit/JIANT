@@ -27,7 +27,8 @@ static struct {
     int32_t r[ECO_N];                                   /* its radius now (Q4 px: swollen, pulsing) */
     uint32_t tm[ECO_N];                                 /* each being's time (it runs with its sound) */
     uint32_t f0;
-    uint8_t init;
+    uint8_t init, top;                                  /* (top: the water's top row the places are in: 0, the panel's;
+                                                         * AIR's HOME, the whole screen: under its knobs' row) */
 } eco;
 /* (0.9.7, variant A) each being's face and colours, worked out once a drawn frame by eco_step for eco_being: its three
  * isotherms' colours by its level (c0 outer .. c2), its last hit's time (fm1_ms, low 16 bits: the eyes shut 0.1 s), its face's EF_*
@@ -66,7 +67,7 @@ static int32_t eco_bot(void) { return eco_h() - (hud_home() ? 6 : 18); }
 static uint32_t eco_step(void)
 {
     uint32_t c, k, dt = ui.frame - eco.f0;
-    int32_t top = hud_home() && ux.skin == SKIN_AIR ? (int32_t)LA_HOME_GRAPH_Y : 0;   /* (V10.58) AIR's HOME: the water under
+    int32_t top = hud_home() ? (int32_t)LA_HOME_GRAPH_Y : 0;   /* (V10.58) AIR's HOME: the water under
                                                          * its cards (the beings swam over the tabs and the four values) */
     int32_t bot = eco_bot();                            /* (the panel's floor, the number's line under it: 0.8.4's 104 of
                                                          * 122, the lens's 140 its 122) */
@@ -76,6 +77,15 @@ static uint32_t eco_step(void)
             eco.sx[c] = ECO_PX[c] << 8; eco.sy[c] = ECO_PY[c] << 8;
             eco.vx[c] = (c & 1u) ? 90 : -110; eco.vy[c] = (c & 2u) ? 70 : -60;
         }
+        eco.top = 0;
+    }
+    if (eco.top != (uint8_t)top) {                      /* the water moved (AIR's HOME entered or left, the skin changed):
+                                                         * the beings with it. (They began at the panel's places on AIR's
+                                                         * HOME too: over the header, the tabs and the knobs' row, on the
+                                                         * words, until they had swum down) */
+        for (c = 0; c < ECO_N; c++)
+            eco.sy[c] += (top - (int32_t)eco.top) << 8;
+        eco.top = (uint8_t)top;
     }
     if (dt > 8u) dt = 8u;
     if (ANIM_OFF()) dt = 0;                             /* (0.9.9-beta4: and held under load, ui.c ui_hold) */
@@ -145,7 +155,7 @@ static void eco_face(int32_t cx, int32_t cy, int32_t r, int32_t k, int32_t e, ui
 {
     int32_t rk = r * k >> 8, s = rk >= 19 * 16 ? 3 : 2, ex = rk * 77 >> 8, d;
     int32_t ey = cy - (rk * 31 >> 8), my, mo;
-    uint16_t ec = (fl & EF_SLEEP) ? (ux.mono || settings.palette == UI_BW_INDEX ? ux_gray(ux_luma(T_DIM) >> 3) : T_DIM) : vk_heat(248);
+    uint16_t ec = (fl & EF_SLEEP) ? T_DIM : vk_heat(248);
     if (ex < 40) ex = 40;                               /* (2.5 px apart at least) */
     if (fl & EF_UP)                                     /* (MUTATE: it looks up) */
         ey -= rk * 31 >> 8 > 24 ? rk * 31 >> 8 : 24;
@@ -182,7 +192,7 @@ static void eco_being(uint32_t c, int32_t cx, int32_t cy, int32_t rq)
     uint32_t t = eco.tm[c] + c * 20000u;
     if (eco_off(c)) {
         bfeat_t a = {0, 0, 40, 3, 1, 0, 0, 0};
-        uint16_t dc = ux.mono || settings.palette == UI_BW_INDEX ? ux_gray(ux_luma(T_DIM) >> 3) : T_DIM;
+        uint16_t dc = T_DIM;
         bg_nv_in = 40;
         bg_outline(g, &a, cx, cy, rq, 0, eco.tm[c], dc);
         bg_nv_in = 0;
@@ -279,19 +289,13 @@ static void organ(uint32_t k, int32_t cx, int32_t cy)
 {
     int16_t *vp;
     const param_desc_t *d = home_param(k, &vp);
-    char v[12];
-    const char *u;
     int32_t gx = ORG_X[k], gy = ORG_Y[k], hot = ui.hot_t && ui.hot_col == k;
     uint16_t c = hot ? T_ACCENT : T_THEME;
     og_quad_a(gx * 16, gy * 16, (gx + cx) * 8, gy * 16, (cx + (gx - cx) * 35 / 100) * 16, (cy + (gy - cy) * 35 / 100) * 16,
               ux_mix(T_SURF, c, 45), 12u, 256);
     og_node(gx * 16, gy * 16, 17, T_RAISE);
     lz_arc(gx, gy, 14, 3, clamp(RATIO(d, enum_rank(d, *vp)), 0, 1000), T_LINE, c);
-    param_format(d, *vp, v, &u);
-    if (u && u[0] && str_len(v) + str_len(u) <= 5u)     /* ("901Hz": its unit when it fits the organ) */
-        str_cpy(v + str_len(v), u, sizeof v - str_len(v));
-    GFX_HOOK_ALIGN(gx - 17, gy - 4, gx + 17, gy + 4, AL_HV, "BEING organ value centred");
-    cv_clip_text(gx - HALF_UP(text_w(&AF_X, v) < 30 ? text_w(&AF_X, v) : 30), gy - 4 - AF_X_CAP_Y + 1, &AF_X, v, T_TEXT, T_RAISE, 30);
+    /* (its value stood inside the ring, cut to five letters: the card and the ring's arc say it) */
     GFX_HOOK_ALIGN(gx - 30, 0, gx + 30, 0, AL_H, "BEING organ name centred");
     cv_text_in(gx - 30, gy - 28, 60, &AF_X, d->label, hot ? T_ACCENT : T_MID, T_SURF);
 }
@@ -334,7 +338,7 @@ static __attribute__((noinline)) void graph_home_being(void)
             og_node(22 * 16, y * 16, 12, T_RAISE);
             lz_arc(22, y, 10, 2, macro_v[m] * 1000 / 127, T_LINE, col);
             GFX_HOOK_ALIGN(12, y - 5, 32, y + 5, AL_HV, "ROUTES macro name in its knob");
-            cv_text_in(12, y - 4, 20, &AF_X, mn, T_TEXT, T_RAISE);
+            cv_text_in(12, y - 5 + CAP_IN(X, 10), 20, &AF_X, mn, T_TEXT, T_RAISE);
             if (!n)
                 cv_text(40, y - 4 - AF_X_CAP_Y + 1, &AF_X, "NO ROUTE", T_DIM);
         }

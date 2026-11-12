@@ -946,8 +946,8 @@ advertises 9 (palette and favorites).
 | 37 FAV_GET | engine, start v14, count 1..32 | rc; on success: engine, start v14, count, count × on/off |
 | 38 FAV_SET | engine, preset v14, on/off | rc; when applied: engine, preset v14, on/off |
 
-UI_SET ids: 0 palette (0..count-1, the order of UI_PALETTES: GREY GREEN AMBER ICE VIOLET ROSE PAPER
-HI-CON NIGHT MONO; 1.0.2: GREY is the MONO of 1.0.1, MONO a new black and white palette), 1 font (retired: rc 2), 2 reserved, 3 preset filter (0 all, 1 favorites). Unsupported state
+UI_SET ids: 0 palette (0..count-1, the order of UI_PALETTES: JIANT SELVA CONTRAST BRASA ABISAL HUESO NEON; up to V10.7.18 the eleven
+GREY GREEN AMBER ICE VIOLET ROSE PAPER HI-CON NIGHT MONO JIANT: read the names, never assume the order), 1 font (retired: rc 2), 2 reserved, 3 preset filter (0 all, 1 favorites). Unsupported state
 fields are 127.
 Both u28 signatures are four least-significant-first 7-bit bytes; compare them
 to refresh changed favorites and user slots. Factory references use stable
@@ -1004,8 +1004,8 @@ before SCALE LEDS the first 16, before SCREEN OFF the first 17):
 
 | index | id | name | kind | values (min 0) | default | tab |
 | --- | --- | --- | --- | --- | --- | --- |
-| 0 | 0 | COLOR | 0 | 0..9: GREY GREEN AMBER ICE VIOLET ROSE PAPER HI-CON NIGHT MONO (the order of `UI_PALETTES`) | GREY | 0 DISPLAY |
-| 1 | 1 | STYLE | 0 | 0 FLAT, 1 LINE | FLAT | 0 DISPLAY |
+| 0 | 0 | COLOR | 0 | 0..6: JIANT SELVA CONTRAST BRASA ABISAL HUESO NEON (the order of `UI_PALETTES`) | JIANT | 0 DISPLAY |
+| 1 | 1 | STYLE | 0 | 0 FLAT (retired: LINE is gone, the device has no STYLE row; up to V10.7.18 also 1 LINE; a SET answers rc 0 and FLAT) | FLAT | 0 DISPLAY |
 | 2 | 2 | LARGE | 0 | 0 OFF, 1 ON | OFF | 0 DISPLAY |
 | 3 | 3 | ANIM | 0 | 0 ON, 1 OFF | ON | 0 DISPLAY |
 | 4 | 4 | LEDS | 0 | 0 OFF, 1 DIM LO, 2 DIM HI, 3 INV (darkest first, as the menu steps them) | DIM HI | 0 DISPLAY |
@@ -1024,8 +1024,8 @@ before SCALE LEDS the first 16, before SCREEN OFF the first 17):
 | 17 | 17 | SCREEN OFF | 0 | 0 NEVER, 1 "5 MIN", 2 "15 MIN", 3 "30 MIN", 4 "60 MIN" (1.1.5) | NEVER (1.1.5.1; 1.1.5: 30 MIN) | 0 DISPLAY |
 
 JIANT appends (index = id; count 23 since 0.9.7): 18 TRACKS (4 / 6, AUDIO), 19 LOAD (ECO / LITE / FULL, SYSTEM),
-20 MIDI OUT (KEYS / CLOCK / ALL / OFF, CONTROL), 21 SKIN (DISPLAY; 0.9.7: the values in the menu's order, 0 AIR,
-1 COLORS, 2 BOTTOM, 3 HUD, AIR the default of new settings; 0.8.9 had 0 COLORS, 1 BOTTOM, 2 HUD) and (0.9.7) 22 SCOPE
+20 MIDI OUT (KEYS / CLOCK / ALL / OFF, CONTROL), 21 SKIN (DISPLAY; the values in the menu's order: 0 AIR,
+1 COLORS, AIR the default of new settings; up to V10.7.18 also 2 BOTTOM, 3 HUD, retired: read `max`) and (0.9.7) 22 SCOPE
 (0 OFF, 1 ON; OFF the default: an engine's EDIT pages the creature on the whole panel, DISPLAY).
 V10.6z4 appends index 26, id 26 **OCT BEND** (AUDIO; count 27): 0 OFF, 1 "1 ST", 2 "2 ST" (the default), 3 "3 ST",
 4 "4 ST", 5 "5 ST", 6 "7 ST", 7 "12 ST": OCT+ held while a key's note sounds bends it up this far, OCT− a vibrato (the

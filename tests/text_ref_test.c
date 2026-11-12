@@ -45,14 +45,9 @@ static uint16_t rv[16];
 static void ref_ramp(uint16_t fg, uint16_t bg)
 {
     static const uint8_t SH[3] = {11, 5, 0}, MK[3] = {31, 63, 31};
-    const uint8_t *cv = ux.light ? CURVE_LIGHT : CURVE_DARK;
+    const uint8_t *cv = CURVE_DARK;
     for (uint32_t a = 0; a < 16u; a++) {
         uint32_t out = 0;
-        if (ux.mono) {
-            int32_t x = bg >> 11, y = fg >> 11;
-            rv[a] = ux_gray((uint32_t)(x + (((y - x) * (int32_t)cv[a] + 128) >> 8)));
-            continue;
-        }
         for (uint32_t k = 0; k < 3u; k++) {
             int32_t x = (bg >> SH[k]) & MK[k], y = (fg >> SH[k]) & MK[k];
             out |= (uint32_t)(x + (((y - x) * (int32_t)cv[a] + 128) >> 8)) << SH[k];
@@ -108,10 +103,6 @@ static void ref_unpack(const aafont_t *f, const aag_t *g)
 {
     uint32_t n = (uint32_t)g->bw * g->bh, k = 0, pos = 0;
     const uint8_t *d = f->data + g->off;
-    if (f->bits) {
-        for (k = 0; k < n; k++) alpha[k] = ((d[k >> 3] >> (7u-(k&7u)))&1u)*15u;
-        return;
-    }
     if (!f->hc) {
         for (k = 0; k < n; k++) alpha[k] = (d[k >> 1] >> ((k & 1u) ? 0 : 4)) & 15u;
         return;
@@ -158,7 +149,7 @@ static int32_t ref_text(int32_t x, int32_t y, const aafont_t *f, const char *s, 
         for (uint32_t gy = 0; gy < g->bh; gy++)
             for (uint32_t gx = 0; gx < g->bw; gx++, k++) {
                 uint32_t v = alpha[k];
-                int32_t px = x + (int32_t)floor(pos / 16.0) + g->bx + (int32_t)gx, py = y + g->by + (int32_t)gy;
+                int32_t px = x + (int32_t)floor(pos / 16.0) + g->bx + (int32_t)gx, py = y + g->by - f->rise + (int32_t)gy;
                 if (v && (uint32_t)px < W && (uint32_t)py < H) ref[py * W + px] = v == 15u ? fg : rv[v];
             }
         pen += g->adv;

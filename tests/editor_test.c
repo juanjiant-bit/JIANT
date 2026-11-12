@@ -180,11 +180,12 @@ static int preferences(void)
         host_wire[n - 11] == 0x4F && host_wire[n - 10] == 1 && host_wire[n - 9] == LM_N &&   /* (0.8.5) DRUM lane modes */
         host_wire[n - 8] == 0x43 && host_wire[n - 7] == 2 && host_wire[n - 6] == ED_PROTO_MAJOR &&   /* (1.0) 'C' */
         host_wire[n - 4] == 0x59 && host_wire[n - 3] == 1 && host_wire[n - 2] == LYR_LEN - 1u);   /* (0.8.5) LYRIC, 63 */
+    a[1] = 5;                                          /* (HUESO) */
     request(ED_UI_SET, a, 2);
     bad += check("UI_SET updates the actual palette and reports RAM-only saving",
-        host_wire[5] == 3 && settings.palette == 7 && T_BG == UI_PALETTES[7].bg);
+        host_wire[5] == 3 && settings.palette == 5 && T_BG == UI_PALETTES[5].c[0] && T_TEXT == UI_PALETTES[5].c[2]);
     a[1] = NPALETTES; request(ED_UI_SET, a, 2);
-    bad += check("out-of-range palette leaves the display unchanged", host_wire[5] == 1 && settings.palette == 7);
+    bad += check("out-of-range palette leaves the display unchanged", host_wire[5] == 1 && settings.palette == 5);
     a[0] = 1; a[1] = 1; request(ED_UI_SET, a, 2);
     bad += check("the retired font weight is not supported (rc 2), UI_STATE says 127",
         host_wire[5] == 2 && host_wire[8] == 9 && host_wire[10] == 127);
@@ -838,7 +839,7 @@ static uint32_t menu_set(uint32_t id, int32_t v)            /* -> rc; host_wire[
 static int menu_protocol(void)
 {
     static const char *const WANT[20][2] = {
-        {"COLOR", 0}, {"STYLE", "FLAT,LINE"}, {"LARGE", "OFF,ON"}, {"ANIM", "ON,OFF"}, {"LEDS", "OFF,DIM LO,DIM HI,INV"},
+        {"COLOR", 0}, {"STYLE", "FLAT"} /* (retired with LINE: FLAT alone) */, {"LARGE", "OFF,ON"}, {"ANIM", "ON,OFF"}, {"LEDS", "OFF,DIM LO,DIM HI,INV"},
         {"HOLD", "0.3 s,0.4 s,0.5 s,0.6 s"}, {"KNOB ACCEL", "ON,OFF"}, {"FX LATCH", "OFF,ON"}, {"BPM LOCK", "OFF,ON"},
         {"SPEAKER EQ", "FLAT,LOWCUT,BASS+"}, {"USB LEVEL", "MASTER,FIXED,-6 dB,-12 dB,-18 dB,-24 dB"}, {"USB", "CONSOLE,STEREO,STEMS,IN+OUT,STEMS+IN"},
         {"CLICK", "OFF,REC,ON"}, {"CLICK LEVEL", "LOW,MID,HIGH"}, {"COUNT-IN", "OFF,1 BAR,2 BARS"},   /* (1.1: appended) */
@@ -893,9 +894,9 @@ static int menu_protocol(void)
         if (i == 20u) ok &= !strcmp(it.name, "MIDI OUT") && it.id == 20;   /* (0.6.72) */
     }
     menu_desc(21, &it);
-    ok &= !strcmp(it.name, "SKIN") && it.id == 21 && it.tab == 0 && it.value == 1 && it.max == 3 &&   /* (0.8.9) DISPLAY; (0.9.7)
+    ok &= !strcmp(it.name, "SKIN") && it.id == 21 && it.tab == 0 && it.value == 1 && it.max == 1 &&   /* (0.8.9) DISPLAY; (0.9.7)
                                                          * AIR first: COLORS (the tests' settings) at 1 */
-          !strcmp(it.names[0], "AIR") && !strcmp(it.names[1], "COLORS") && !strcmp(it.names[2], "BOTTOM") && !strcmp(it.names[3], "HUD");
+          !strcmp(it.names[0], "AIR") && !strcmp(it.names[1], "COLORS");
     menu_desc(22, &it);                                   /* (0.9.7) SCOPE, a row of DISPLAY: OFF (the default) ON */
     ok &= !strcmp(it.name, "SCOPE") && it.id == 22 && it.tab == 0 && it.value == 0 && it.max == 1 && !strcmp(it.names[0], "OFF") &&
           !strcmp(it.names[1], "ON");
@@ -934,8 +935,8 @@ static int menu_protocol(void)
     reset();
     ui.force = 0;
     ok = menu_set(0, 2) == 3 && host_wire[6] == 0 && ed_rv(host_wire + 7) == 2 && settings.palette == 2u &&
-         T_BG == UI_PALETTES[2].bg && ui.force;
-    ok &= menu_set(1, 1) == 3 && ui_style == ST_LINE;
+         T_BG == UI_PALETTES[2].c[0] && ui.force;
+    ok &= menu_set(1, 1) == 0 && host_wire[6] == 1 && ed_rv(host_wire + 7) == 0;   /* (STYLE, retired: FLAT whatever is asked) */
     ok &= menu_set(2, 1) == 3 && (ui_prefs & PREF_LARGE);
     ok &= menu_set(3, 1) == 3 && (ui_prefs & PREF_ANIM_OFF);
     ok &= menu_set(4, 0) == 3 && settings_leds == LEDS_OFF && menu_set(4, 1) == 3 && settings_leds == LEDS_DIM_LO;
@@ -955,13 +956,13 @@ static int menu_protocol(void)
     ok &= menu_set(18, 1) == 3 && (ui_rec_prefs & 0x80u);   /* TRACKS 6 (0.6.18; rp_apply: the next frame) */
     ok &= menu_set(19, 0) == 3 && ui_load == 2u && sys_load == LOAD_ECO;   /* LOAD ECO (0.6.30) */
     for (i = 0; i < 20u; i++) {                         /* MENU_DESC reads them back */
-        static const int32_t SET[20] = {2, 1, 1, 1, 1, 3, 1, 1, 1, 2, 1, 0, 2, 0, 2, 1, 1, 2, 1, 0};
+        static const int32_t SET[20] = {2, 0 /* (STYLE, retired: FLAT) */, 1, 1, 1, 3, 1, 1, 1, 2, 1, 0, 2, 0, 2, 1, 1, 2, 1, 0};
         menu_desc(i, &it);
         ok &= it.value == SET[i];
     }
     bad += check("MENU_SET: every setting applied as the menu does (palette, EQ, USB LEVEL, CLICK, COUNT-IN at once, RESTORE LAST, SCALE LEDS, SCREEN OFF), read back", ok);
     ok = menu_set(3, 0) == 3 && !(ui_prefs & PREF_ANIM_OFF) && (ui_prefs & PREF_LARGE) && menu_set(10, 0) == 3 &&
-         !fx_usb_fixed && menu_set(1, 0) == 3 && ui_style == ST_FLAT;
+         !fx_usb_fixed && menu_set(1, 0) == 0;
     bad += check("MENU_SET: a flag back to its default leaves the other flags", ok);
 
     /* clamping: the reply carries the device's value */
@@ -971,8 +972,8 @@ static int menu_protocol(void)
     ok &= menu_set(5, 8191) == 3 && ed_rv(host_wire + 7) == 3 && settings_hold == 3u;
     ok &= menu_set(2, 7) == 3 && ed_rv(host_wire + 7) == 1 && (ui_prefs & PREF_LARGE);
     ok &= menu_set(14, 9) == 3 && ed_rv(host_wire + 7) == 2 && cin_bars == 2u;
-    ok &= menu_set(21, 3) == 3 && ed_rv(host_wire + 7) == 3 && ui_skin == SKIN_HUD;   /* (0.8.9) SKIN HUD (0.9.7: 3) */
-    ok &= menu_set(21, 9) == 3 && ed_rv(host_wire + 7) == 3 && ui_skin == SKIN_HUD;   /* (clamped) */
+    ok &= menu_set(21, 3) == 3 && ed_rv(host_wire + 7) == 1 && ui_skin == SKIN_COLORS;   /* (SKIN: AIR COLORS; BOTTOM and HUD retired) */
+    ok &= menu_set(21, 9) == 3 && ed_rv(host_wire + 7) == 1 && ui_skin == SKIN_COLORS;   /* (clamped) */
     ok &= menu_set(21, 0) == 3 && ed_rv(host_wire + 7) == 0 && ui_skin == SKIN_AIR;   /* (0.9.7) AIR, the menu's first */
     ok &= menu_set(21, 1) == 3 && ui_skin == SKIN_COLORS;
     ok &= menu_set(12, -1) == 3 && ed_rv(host_wire + 7) == 0 && click_mode == CLICK_OFF;

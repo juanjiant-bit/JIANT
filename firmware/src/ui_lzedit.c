@@ -32,10 +32,7 @@ static void ed_cap(int32_t x, int32_t y, const char *s, uint16_t c)   /* a capti
 }
 static __attribute__((noinline)) void graph_sound_lz(const track_t *t)
 {
-    const engine_t *e = trk_engp(t);
-    uint32_t two = cur_page()->id[0] != P_E0;
     int32_t x = 122, w = 106, ty = 2, bare = ux.skin != 0u;
-    char b[40];
     /* (V10.7.15, the owner) no parameter list beside the being: the knobs' cards above say the same. SCOPE OFF (the
      * default): the creature (or the generic being) on the whole panel; SCOPE ON: the being left, the scope tall right */
     if (!ui_scope) {
@@ -48,15 +45,11 @@ static __attribute__((noinline)) void graph_sound_lz(const track_t *t)
         cv_rect(116, 0, 60, (int32_t)cv_h, T_SURF);
         /* (V10.7.19, the owner: the users like the trace on the background) no tile behind the scope in any skin
          * (COLORS drew a RAISE card): the trace and its title on the panel itself */
-        GFX_HOOK_ALIGN(0, ty + 4, 0, ty + 11, AL_V | AL_PASS, "EDIT scope title");
+        GFX_HOOK_ALIGN(0, ty + 4, 0, ty + 4 + AF_X_CAP_H, AL_V | AL_PASS, "EDIT scope title");
         cv_text_on(x, ty + 4 - AF_X_CAP_Y, &AF_X, "SCOPE", bare ? T_MID : T_TEXT, T_SURF);
         scope_at(x + 4, w - 8, ty + 68, 48, T_THEME);
     }
-    cv_halo = (uint8_t)bare;                            /* (0.9.0) BOTTOM, HUD: outlined, as HUD's */
-    ed_cap(10, 6, e->page_title[two] && e->page_title[two][0] != '-' ? e->page_title[two] : e->name, T_THEME);
-    sound_name(t, b);
-    cv_clip_text(10, (int32_t)cv_h - 12 - AF_X_CAP_Y, &AF_X, b[0] ? b : e->name, bare ? T_TEXT : T_MID, T_SURF, 104);
-    cv_halo = 0;
+    /* (the page's name stood at the top left and the sound's at the foot: the breadcrumb and the header say them) */
 }
 /* FILTER: y of the response at x (px, 10..226), the cut at xc, res 0..1000; the unity line at y 62 */
 static int32_t ed_resp(uint32_t ty, int32_t x, int32_t xc, int32_t res)
@@ -89,7 +82,7 @@ static void graph_filter_lz(const track_t *t, const page_t *pg)
         cv_rect(64 + k * 54, 6, 1, 99, T_RAISE);
     for (x = 10; x <= 226; x++) {
         int32_t y = ed_resp(ty, x, xc, r[2]);
-        cv_rect(x, y, 1, 105 - y, ux_mix(T_SURF, settings.palette == UI_JIANT_INDEX ? heat_col(40 + x * 160 / 226) : T_THEME, 30));
+        cv_rect(x, y, 1, 105 - y, ux_mix(T_SURF, heat_col(40 + x * 160 / 226), 30));
         if (x > 10)
             cv_line_t(x - 1, py, x, y, T_THEME, 2);
         py = y;
@@ -131,7 +124,7 @@ static void graph_voice_lz(const track_t *t, const page_t *pg)
         ed_cap(14, y, n, i < nv ? T_MID : T_DIM);
         cv_rect(26, y, 202, 7, i < nv ? T_RAISE : T_LINE);
         if (lv > 0)
-            cv_rect(26, y, lv, 7, settings.palette == UI_JIANT_INDEX ? heat_col(60 + lv) : T_ACCENT);
+            cv_rect(26, y, lv, 7, heat_col(60 + lv));
     }
     param_format(track_desc(t, P_VOICE), t->p[P_VOICE], b, &u);
     str_cpy(b + str_len(b), pg->id[0] == P_ALLOC ? " \xB7 ALLOC " : " \xB7 PRIO ", 40 - str_len(b));

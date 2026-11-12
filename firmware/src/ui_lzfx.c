@@ -323,18 +323,14 @@ static void fxg_mod(uint32_t m, int32_t x, int32_t y, int32_t w, int32_t h)
         break;                                         /* (snd2: MASTER last) */
     }
 }
-/* the set's place: n dots (5 x 3, 7 apart) at the top left, k lit; its name at the right */
+/* the set's place: n dots (5 x 3, 7 apart) at the top left, k lit */
 static void fx_dots(uint32_t n, uint32_t k, const char *a, const char *b)
 {
-    char s[32];
     uint32_t i;
     for (i = 0; i < n; i++)
         cv_rect(6 + (int32_t)i * 7, 6, 5, 3, i == k ? T_THEME : T_DIM);
-    str_cpy(s, a, sizeof s);
-    str_cpy(s + str_len(s), " \xB7 ", 4);
-    str_cpy(s + str_len(s), b, 16);
-    GFX_HOOK_ALIGN(0, 3, 0, 12, AL_V | AL_PASS, "FX lens set name");
-    cv_text_r(234, 3, &AF_X, s, T_DIM, T_SURF);
+    (void)a; (void)b;                                  /* (its name stood at the right, "FX . T1", "SLICER . SL BUS 2": the
+                                                        * header, the tabs and the breadcrumb say it) */
 }
 static __attribute__((noinline)) void graph_fx_lz(const track_t *t, const page_t *pg)
 {
@@ -356,7 +352,7 @@ static __attribute__((noinline)) void graph_fx_lz(const track_t *t, const page_t
                                                          * THEME; BOTTOM, HUD bare, its name underlined) */
             lz_tile(x, y, 76, 68, sel, T_THEME);
             cv_bg = bg;
-            GFX_HOOK_ALIGN(0, y + 3, 0, y + 12, AL_V | AL_PASS, "FX module name");
+            GFX_HOOK_ALIGN(0, y + 3, 0, y + 14, AL_V | AL_PASS, "FX module name");
             cv_text_on(x + 4, y + 3, &AF_X, FX_MOD[m], sel ? T_THEME : ux.skin ? T_MID : T_TEXT, bg);
             if (sel)
                 lz_uline(x + 4, y + 12, &AF_X, FX_MOD[m], T_THEME);

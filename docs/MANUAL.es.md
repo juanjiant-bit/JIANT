@@ -72,6 +72,28 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
   BAILE FUNK, PHONK, HIP HOP (trap, drill, pluggnb, boom bap o lofi), JAZZ en cualquier tempo y TECHNO ROCK (rock o
   synth 80s). El rol DRUM de SCL > SCENE puede tomar un kit generado para el género (**SCENE DRUM GEN**).
 - La **paleta térmica** en todos lados: cada nota con su calor, el piano roll coloreado por nota (V10.6w).
+- **Siete paletas, todas propias de JIANT** (MENU > DISPLAY > COLOR): **JIANT** (como estaba, la que viene por
+  defecto), **SELVA** (verdes), **CONTRAST** (accesible: negro y blanco puros, grises más claros, sin tinte en el
+  panel), **BRASA** (cálida), **ABISAL** (fría), **HUESO** (blanco hueso y un solo acento naranja) y **NEON** (magenta y
+  cian). La rampa térmica (los seres, las notas, las barras) está en las siete; las cartas de las perillas toman cuatro
+  colores propios de cada paleta (JIANT: el calor de cada valor, como antes). Reemplazan a
+  GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT y MONO; si tenías guardada una de esas, quedás en la más
+  parecida (GREY, MONO, NIGHT → HUESO; GREEN → SELVA; AMBER, ROSE → BRASA; ICE → ABISAL; VIOLET → JIANT; PAPER,
+  HI-CON → CONTRAST).
+- **Dos pieles**: MENU > DISPLAY > SKIN es **AIR** o **COLORS**. BOTTOM y HUD ya no están (si tenías guardada alguna,
+  cargás con COLORS).
+- **Sin la fila STYLE**: el aspecto relleno (FLAT) es el único estilo; LINE ya no está (si lo tenías guardado, cargás
+  con FLAT) y el menú tiene una fila menos.
+- **Letras chicas más grandes**: los nombres, las pestañas, las palabras del encabezado, la miga y los rótulos de los
+  paneles tienen mayúsculas de 9 px (eran letras de píxel de 7 px). Las ocho pestañas de SEQ y de FX se ven de a cinco;
+  el menú lista ocho filas por vez; se fueron algunos datos que repetían una carta (QUANT y ALL TR a la derecha de la
+  rueda de SCL, los números adentro de los anillos de BEING).
+- **Valores más grandes**: el número de una carta va en cifras de 14 px (eran de 11) cuando entra con su unidad, y gira
+  como antes; los nombres y las palabras siguen en la letra de 11 px. El medio del encabezado dice el motor y el sonido
+  sin "T1 ·" (el número de la pista está en su cajita); se fueron la línea "FX · T1" de FX y los nombres de la página y
+  del sonido adentro del panel de EDIT (los dicen el encabezado y la miga).
+- **MENU > LARGE** en las páginas de SEQ, SAVE y FX: las cartas altas que ya tenían HOME y EDIT (el piano roll, la
+  grilla de batería y las listas conservan su panel, con las cartas normales).
 
 **Secuenciador**
 - El componente **RAMP** reemplaza a JUMP (V10.6v): el lock de parámetro de un paso se desliza hasta su valor en 1–32
@@ -251,37 +273,32 @@ de Charles Vestal, *Velo*, github.com/charlesvestal/fm1-velocity, GPL-3.0). JIAN
 
 ## 2. La pantalla
 
-### Pieles: AIR, COLORS, BOTTOM, HUD (0.8.9, AIR 0.9.7)
+### Pieles: AIR, COLORS
 
-**MENU > DISPLAY > SKIN** elige cómo se visten las lentes (la maqueta aprobada "skin aireado", opciones 1, 3 y 4; 0.9.7:
-AIR, la opción aprobada); en todas las páginas, todas las paletas, FLAT y LINE. El menú las recorre AIR, COLORS, BOTTOM,
-HUD:
+**MENU > DISPLAY > SKIN** elige cómo se visten las lentes: **AIR** o **COLORS**, en todas las páginas y con todas las
+paletas. (BOTTOM y HUD, las otras dos pieles de la 0.8.9, ya no están: si tenías guardada alguna de las dos, cargás con
+COLORS.)
 
-- **AIR** (0.9.7; la de fábrica de los ajustes nuevos: un FM-1 nuevo o con sus ajustes borrados; los ajustes guardados
-  antes conservan la piel que tenían): el aspecto de HUD en **todas** las páginas, con la **fila de perillas arriba**,
-  justo debajo de las pestañas: sin cartas ni caja de panel, el texto claro con un borde oscuro de 2 px, el medio de la
-  pantalla libre para el dibujo y el pie solo la miga de pan. En HOME los seres nadan por la pantalla entera debajo del
-  encabezado, las pestañas, la fila de perillas y la miga, como en HUD (la fila de perillas se apaga ahí unos segundos
-  después de la última vuelta); todas las capas, diálogos y el menú con la misma ropa. La palabra del grupo va
-  subrayada con una rayita.
-- **COLORS** (los ajustes guardados antes de 0.9.7 sin otra piel elegida cargan con ella): la estructura LENTE con los **colores de la 0.6**.
-  Negro, cartas casi negras redondeadas con una marquita y el nombre de la perilla, **cada perilla con su color** en el
-  valor y en la barra (JIANT, 0.9.5 como la 0.6: el color propio de cada parámetro **se mueve con su cantidad**, como
-  calor, violeta si es poco, amarillo y crema si es mucho; uno centrado como PAN o DETUNE frío en el medio y caliente en
-  los dos extremos; las otras paletas sus cuatro colores de perilla), la carta de
-  la perilla que girás enmarcada en su color; la pestaña del grupo rellena de violeta; el número de la pista en una
-  cajita naranja, un ▶ violeta y el BPM grande en violeta en el encabezado; un panel casi negro redondeado; los seres con
-  el calor de la 0.6 (púas violetas, anillos rojo y naranja, núcleos crema).
-- **BOTTOM**: las pestañas son las palabras de los grupos (la del grupo en el que estás con una pastillita debajo, un punto por página), sin cartas ni caja de panel: el
-  medio de la pantalla es el dibujo, de borde a borde (los seres de HOME tienen todo el lugar), y las cuatro perillas
-  son una fila fina sobre la miga de pan (marca y nombre, el valor en su color, una barra finita).
-- **HUD**: como BOTTOM, pero en HOME los seres nadan **debajo de todo, por la pantalla entera**: el encabezado, las
-  pestañas, las perillas y la miga flotan encima como texto claro con un borde oscuro de 2 px (0.9.0). Ahí la fila de
+- **AIR** (0.9.7; la de fábrica de los ajustes nuevos: un FM-1 nuevo o con sus ajustes borrados): en **todas** las
+  páginas la **fila de perillas arriba**, justo debajo de las pestañas: sin cartas ni caja de panel, el texto claro con
+  un borde oscuro de 2 px, el medio de la pantalla libre para el dibujo y el pie solo la miga de pan. En HOME los seres
+  nadan por la pantalla entera debajo del encabezado, las pestañas, la fila de perillas y la miga; ahí la fila de
   perillas se apaga a un quinto unos segundos después de la última vuelta de perilla y vuelve con la siguiente o al
-  cambiar de página; en las demás páginas queda encendida. La palabra del grupo va subrayada con una rayita.
+  cambiar de página (en las demás páginas queda encendida). Todas las capas, los diálogos y el menú con la misma ropa.
+  Las pestañas son las palabras de los grupos, la del grupo en el que estás subrayada con una rayita, un punto por
+  página debajo de cada una.
+- **COLORS** (los ajustes guardados antes de 0.9.7 cargan con ella): la estructura LENTE con los **colores de la 0.6**.
+  Cartas casi negras redondeadas con una marquita y el nombre de la perilla, **cada perilla con su color** en el valor
+  y en la barra (JIANT: el color de cada parámetro **se mueve con su cantidad**, como calor, violeta si es poco,
+  amarillo y crema si es mucho; uno centrado como PAN o DETUNE frío en el medio y caliente en los dos extremos; las
+  otras seis paletas: cuatro colores propios, uno por perilla), la carta de
+  la perilla que girás enmarcada en su color; la pestaña del grupo rellena de violeta; el número de la pista en una
+  cajita naranja, un ▶ violeta y el BPM grande en violeta en el encabezado; los seres con
+  el calor de la 0.6 (púas violetas, anillos rojo y naranja, núcleos crema). El dibujo de abajo de las cartas va sobre
+  el fondo (sin caja de panel), como en AIR.
 
 Los valores (cartas, el BPM del encabezado) vuelven a una sans redondeada (Inter Tight SemiBold), como en la 0.6; los
-nombres, las pestañas y la miga siguen con las letras de píxel de 5 x 7. **MENU > LARGE** deja sus cartas grandes arriba
+nombres, las pestañas y la miga van en Chakra Petch, con mayúsculas de 9 px (hasta la V10.7.18, letras de píxel de 5 x 7, de 7 px). **MENU > LARGE** deja sus cartas grandes arriba
 en todas las pieles (la piel conserva sus pestañas y sus colores; en AIR quedan donde va su fila de perillas, debajo de
 las pestañas), así LARGE se lee igual en cualquiera.
 
@@ -290,7 +307,7 @@ Desde la 0.8.5 todas las páginas llevan la piel del diseño que aprobó el due�
 - **Encabezado (arriba)**: una sola línea tranquila sobre una regla fina. A la izquierda el estado de reproducción (un
   cuadrado gris parado, un triángulo naranja sonando, violeta durante la cuenta) y los **BPM** (violeta; naranja
   mientras cambian), después el candado de BPM LOCK y el punto de REC (lleno: la pista seleccionada armada; un aro:
-  otra pista). Al medio de qué es la página: **T1 · ANALOG ACID** (la pista, su motor y su sonido); en las páginas del
+  otra pista). Al medio de qué es la página: **ANALOG ACID** (el motor de la pista y su sonido; el número de la pista está en la cajita naranja de la izquierda); en las páginas del
   tema (SAVE, ARRANGE, TOOLS, GLOBAL) **P1 NOMBRE** (el proyecto); en FX **T1** en naranja. A la derecha la octava
   (**OCT +2**, o la fila del tema mientras suena un tema), el **medidor de carga** (cinco barritas, violetas a medida
   que el sonido ocupa más del tiempo de audio) y la batería (violeta cuando la alimenta el USB). Los mensajes aparecen
@@ -314,12 +331,14 @@ Desde la 0.8.5 todas las páginas llevan la piel del diseño que aprobó el due�
   la sección (0.9.2; p. ej. **FX · DELAY · DLY 2  6/16**, **ENV · TRACKS · TRACKS DEST  2/5**).
 - **Las pestañas** (0.9.2): debajo del encabezado, los **grupos** de la sección (FX: TRK · BUS · DLY · REV · CHO · SLC ·
   PCH · MST; SEQ: PATT · TRACK · BAR · STEP · AUTO), encendido el del grupo en el que estás (COLORS: relleno violeta;
-  BOTTOM: una pastillita; HUD y AIR: una rayita), y **un punto por página** debajo de cada uno, encendido el de la página que
+  AIR: una rayita), y **un punto por página** debajo de cada uno, encendido el de la página que
   se ve. Las tarjetas debajo, un panel más alto, y el pie es solo la miga de pan.
 
 - **Las letras chicas** (desde la 0.8.5): los nombres de las tarjetas, las pestañas, la miga de pan, las
-  palabras del medio del encabezado y los rótulos y fichas chicas de los paneles van en una letra de píxeles de 5 x 7,
-  nítida, las mayúsculas mono chicas de la maqueta; los valores siguen en la letra redondeada más grande.
+  palabras del medio del encabezado y los rótulos y fichas chicas de los paneles iban en una letra de píxeles de 5 x 7;
+  ahora van en Chakra Petch con mayúsculas de 9 px, más fáciles de leer; los valores siguen en la letra redondeada más
+  grande. Si la sección tiene más de cinco grupos (SEQ, FX), las pestañas muestran los cinco de alrededor del que estás,
+  con una marquita del lado donde hay más.
 
 Los **colores** funcionan como una cámara térmica: frío (índigo, violeta) es poco, caliente (rojo, naranja, crema, blanco; 0.8.9: la escala de la 0.6) es
 mucho. Violeta es lo seleccionado, naranja lo activo.
@@ -384,7 +403,7 @@ páginas, sus perillas, sus dibujos y todas las funciones son las mismas, solo c
    no recorre páginas: regla 3; V10.7: EDIT mantenido + PRESETS salta de motor en motor.)
 6. **La pantalla dice dónde estás.** Arriba, las pestañas son los **grupos** de la sección, el actual encendido y un
    puntito por cada una de sus páginas. Abajo: **SECCIÓN · GRUPO · página** y **n/N**, el lugar de la página en la
-   cadena: **FX · DELAY · DLY 2  6/16**. Igual en AIR, COLORS, BOTTOM y HUD, con todas las paletas.
+   cadena: **FX · DELAY · DLY 2  6/16**. Igual en AIR y COLORS, con todas las paletas.
 
 - Cada sección recuerda la página donde la dejaste (EDIT una para los sintes y una para FM6 y otra para DRUM); al
   encender SEQ abre en STEP, ENV en ENV, LFO en LFO, las demás en su primera página.
@@ -2805,15 +2824,14 @@ la pista seleccionada.
 SYSTEM; frena en la primera y en la última), **ALGORITHM** salta a la pestaña siguiente / anterior (a su primera fila),
 **cualquier perilla** u **OCT+ / OCT−** cambia el valor; PRESETS acá no hace nada. HOME lo cierra (en ese momento se
 guarda la configuración). La pantalla muestra las filas de la pestaña, las cuatro de la fila elegida como tarjetas
-(ROWS 1–4 / ROWS 5–6; DISPLAY: ROWS 5–8; CONTROL también ROWS 9–12, las cuatro de las teclas) con el número de su perilla; las pestañas arriba, el pie **MENU · DISPLAY ·
-SKIN  2/26**. El encabezado dice MENU · DISPLAY.
+(ROWS 1–4 / ROWS 5–6; DISPLAY: ROWS 5–7; CONTROL también ROWS 9–12, las cuatro de las teclas) con el número de su perilla; las pestañas arriba, el pie **MENU · DISPLAY ·
+SKIN  2/35**. El encabezado dice MENU · DISPLAY.
 
 | Pestaña | Fila | Valores |
 | --- | --- | --- |
-| DISPLAY | COLOR | GREY, GREEN, AMBER, ICE, VIOLET, ROSE, PAPER, HI-CON, NIGHT, MONO, **JIANT** (por defecto) |
-| DISPLAY | SKIN | **AIR** (de fábrica en los ajustes nuevos), COLORS, BOTTOM, HUD — (0.8.9; AIR 0.9.7) ver [Pieles](#pieles-air-colors-bottom-hud-089-air-097) |
-| DISPLAY | SCOPE | **OFF** (de fábrica), ON — (0.9.7) las páginas EDIT de un motor: OFF la criatura en todo el panel, centrada, el nombre de la página y el del sonido chiquitos en sus esquinas; ON la criatura a la izquierda, la carta SCOPE y las fichas como antes. Los ajustes guardados antes de 0.9.7 cargan OFF |
-| DISPLAY | STYLE | FLAT, LINE |
+| DISPLAY | COLOR | **JIANT** (por defecto), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — siete paletas de la misma familia, todas oscuras, todas con la rampa térmica, cada una con sus cuatro colores de perilla |
+| DISPLAY | SKIN | **AIR** (de fábrica en los ajustes nuevos), COLORS — ver [Pieles](#pieles-air-colors); si tenías guardada BOTTOM o HUD (0.8.9, retiradas), cargás con COLORS |
+| DISPLAY | SCOPE | **OFF** (de fábrica), ON — (0.9.7) las páginas EDIT de un motor: OFF la criatura en todo el panel, centrada; ON la criatura a la izquierda, la carta SCOPE y las fichas como antes. Los ajustes guardados antes de 0.9.7 cargan OFF |
 | DISPLAY | LARGE | OFF, ON (etiquetas y valores grandes) |
 | DISPLAY | ANIM | ON, OFF (los valores saltan directo; la firma de encendido aparece entera) |
 | DISPLAY | LEDS | OFF, DIM LO, **DIM HI** (por defecto), INV — (0.7.3) los LEDs del brillo de reposo se turnan cuadro a cuadro, así el brillo ya no zumba por el parlante cuando la música para |

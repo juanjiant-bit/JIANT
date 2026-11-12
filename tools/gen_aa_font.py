@@ -58,6 +58,7 @@ HUFF = [("S", "M", "L")]
 RISE = {"IBMPlexMono-SemiBold.ttf": 1}
 UI_PRESET = "jiant-lab"            # the firmware's faces (tools/build.py; tests/text_spacing_test.py)
 L_CHARS = " #+-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXY"
+V_CHARS = " %+-./0123456789"
 
 
 def preset(name):
@@ -73,7 +74,10 @@ def preset(name):
         # (snd7: no lowercase: the UI folds every text to capitals, gfx.c fold; 6.7 KB of flash back)
         return [("S", str(f / "ChakraPetch-Medium.ttf"), 12, (32, 95), EXTRAS, -0.055, PHASES),
                 ("M", str(f / "InterTight[wght].ttf") + "@600", 15, (32, 95), EXTRAS, 0.0, PHASES),
-                ("L", str(f / "Michroma-Regular.ttf"), 18, (32, 32), [ord(c) for c in L_CHARS[1:]], 0.0, PHASES_L)]
+                ("L", str(f / "Michroma-Regular.ttf"), 18, (32, 32), [ord(c) for c in L_CHARS[1:]], 0.0, PHASES_L),
+                # V: a card's value when it is a number: M's face at 19 px (capitals 14, a figure 12 px wide: "1000" in a
+                # card), the figures and their signs only
+                ("V", str(f / "InterTight[wght].ttf") + "@600", 19, (32, 32), [ord(c) for c in V_CHARS[1:]], 0.0, PHASES_L)]
     if name == "inter-tight":
         v = str(FONTS.parent / "assets" / "fonts" / "InterTight[wght].ttf")   # SIL OFL 1.1, Google Fonts
         return [("S", v + "@400", 12, (32, 126), EXTRAS, 0.0, PHASES),
@@ -256,10 +260,16 @@ def emit(face, tracking, gamma, kern_min):
     lines.append(f"static const aafont_t AF_{name} = {{{r['h']}, {r['asc']}, {first}, {last}, {len(extras)}, {nki}, "
                  f"AF_{name}_GH, AF_{name}_GP, AF_{name}_DATA, {'AF_%s_KI' % name if keys else '0'}, "
                  f"{'AF_%s_KP' % name if keys else '0'}, AF_{name}_EX, {psh}, {'AF_%s_HC' % name if hc else '0'}}};")
-    if "H" in chars:                                  # the capitals' band (gfx.c CAP_IN: centring text by it)
-        cap = table[chars.index("H") * phases]
+    if "H" in chars or "0" in chars:                  # the capitals' band (gfx.c CAP_IN: centring text by it; V, the
+        cap = table[chars.index("H" if "H" in chars else "0") * phases]   # figures' face: a figure's)
         lines.append(f"#define AF_{name}_CAP_Y {cap[3]}   /* the ink of H: rows {cap[3]} .. {cap[3] + cap[5] - 1} of the line */")
         lines.append(f"#define AF_{name}_CAP_H {cap[5]}")
+        if name == "S":       # AF_X: the labels, tabs, header and footer (the 5 x 7 pixel face until V10.7.18): S itself,
+            init = lines[-3]  # its ink 2 rows higher, so a place set for the pixel face (capitals from row 1) keeps its top
+            assert init.startswith("static const aafont_t AF_S = {") and init.endswith("};")
+            lines.append("static const aafont_t AF_X = {" + init[len("static const aafont_t AF_S = {"):-2] + ", 2};")
+            lines.append(f"#define AF_X_CAP_Y {cap[3] - 2}")
+            lines.append(f"#define AF_X_CAP_H {cap[5]}")
     cost = {"data": len(data) + len(hc), "glyph_table": gsize, "kern": len(kp) + 2 * len(ki), "extras": len(extras),
             "glyphs": len(chars), "phases": phases, "pairs": len(keys), "h": r["h"], "asc": r["asc"], "px": px,
             "font": os.path.basename(font.split("#")[0]), "adv_digit": r["glyphs"]["0"][0] / 16}

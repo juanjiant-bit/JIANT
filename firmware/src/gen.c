@@ -3268,7 +3268,7 @@ static void gen_helix(void)
 {
     uint32_t n = chain_config.count, x, s = gp.seed * 2654435761u + gp.genre * 40503u, t = 0, i;
     int32_t cy = n ? 116 : 94, a = n ? 5 : 16, x0 = n ? 24 : 6;   /* (V10.6i) arranged: a band of its own under the lanes */
-    int heat = !ux.mono && settings.palette != UI_BW_INDEX;   /* (V10.6q, the owner) the DNA in the thermal palette */
+    int heat = 1;   /* (V10.6q, the owner) the DNA in the thermal palette */
     uint16_t f = T_THEME, b = T_ACCENT;
     if (n > 16u)
         return;
@@ -3299,7 +3299,12 @@ static void gen_helix(void)
 }
 static void gen_panel(void)
 {
-    if (bt_hw_seg()) gen_panel_bt(); else graph_proj(chain_config.count ? 2 : 0);
+    if (bt_hw_seg()) {                                  /* (its own words at the foot: not the song's length under them) */
+        proj_nofoot = 1;
+        gen_panel_bt();
+        proj_nofoot = 0;
+    } else
+        graph_proj(chain_config.count ? 2 : 0);
     gen_helix();
 }
 #include "gen_track.c"
