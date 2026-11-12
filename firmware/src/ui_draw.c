@@ -265,8 +265,8 @@ static uint16_t head_title(char *b)
         str_cpy(b + str_len(b), nm[0] ? nm : "NO NAME", 16);
         return T_MID;
     }
-    str_cpy(b + 2, " \xB7 ", 4);
-    str_cpy(b + str_len(b), trk_engp(TSEL)->name, 12);
+    str_cpy(b, trk_engp(TSEL)->name, 12);               /* (it began "T1 . ": the track's number stands in its box at
+                                                         * the left; the room is the sound's name's) */
     sound_name(TSEL, b + str_len(b) + 1u);
     if (b[str_len(b) + 1u])
         b[str_len(b)] = ' ';

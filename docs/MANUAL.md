@@ -81,6 +81,12 @@ Everything since V10.6c, the last public version, in one list; each item links t
 - **Bigger small letters**: names, tabs, the header's words, the breadcrumb and the panels' captions have 9 px capitals
   (were 7 px pixel letters). SEQ's and FX's eight tabs show five at a time; the menu lists eight rows at a time; a few
   readouts that repeated a card are gone (SCL's QUANT and ALL TR at the wheel's right, the numbers inside BEING's rings).
+- **Bigger values**: a card's number is set in 14 px figures (was 11) where it fits with its unit, and rolls as before;
+  names and words keep the 11 px face. The header's middle says the engine and the sound without "T1 ·" (the track's
+  number is in its box); FX's "FX · T1" line and EDIT's page and sound names inside the panel are gone (the header and
+  the breadcrumb say them).
+- **MENU > LARGE** on SEQ's, SAVE's and FX's pages: the tall cards HOME and EDIT have (the piano roll, the drum grid
+  and the lists keep their panel, with the normal cards).
 
 **Sequencer**
 - Step component **RAMP** replaces JUMP (V10.6v): a step's parameter lock glides there over 1–32 steps or 1–16 bars.
@@ -287,7 +293,7 @@ Since 0.8.5 every page wears the skin of the design the owner approved (the HTML
 - **Header (top)**: one quiet line over a thin rule. At the left the play state (a grey square stopped, an orange
   triangle playing, violet while counting in) and the **BPM** (violet; orange while it changes), then BPM LOCK's lock
   and the REC dot (filled: the selected track armed; a ring: another track). In the middle what the page is of:
-  **T1 · ANALOG ACID** (the track, its engine and its sound); on the song's pages (SAVE, ARRANGE, TOOLS, GLOBAL)
+  **ANALOG ACID** (the track's engine and its sound; its number is in the orange box at the left); on the song's pages (SAVE, ARRANGE, TOOLS, GLOBAL)
   **P1 NAME** (the project); on FX **T1** in orange. At the right the octave (**OCT +2**, or the song row while a song
   plays), the **load meter** (five small bars, violet as the sound takes more of the audio time) and the battery
   (violet when USB powers it). Messages appear in the middle ("SAVED", "T1 CLEARED"...), sometimes with a second line.
@@ -2673,7 +2679,7 @@ the footer **MENU · DISPLAY · SKIN  2/35**. The header says MENU · DISPLAY.
 | --- | --- | --- |
 | DISPLAY | COLOR | **JIANT** (default), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — seven palettes of the same family, all dark, all with the thermal ramp, each with its own four knob colours |
 | DISPLAY | SKIN | **AIR** (default of new settings), COLORS — see [Skins](#skins-air-colors); a saved BOTTOM or HUD (0.8.9, retired) loads as COLORS |
-| DISPLAY | SCOPE | **OFF** (default), ON — (0.9.7) an engine's EDIT pages: OFF the creature on the whole panel, centred, the page's name and the sound's name small in its corners; ON the creature on the left, the SCOPE card and the chips as before. Settings saved before 0.9.7 load as OFF |
+| DISPLAY | SCOPE | **OFF** (default), ON — (0.9.7) an engine's EDIT pages: OFF the creature on the whole panel, centred; ON the creature on the left, the SCOPE card and the chips as before. Settings saved before 0.9.7 load as OFF |
 | DISPLAY | LARGE | OFF, ON (big labels and values) |
 | DISPLAY | ANIM | ON, OFF (values snap; the power-on signature appears whole) |
 | DISPLAY | LEDS | OFF, DIM LO, **DIM HI** (default), INV — (0.7.3) the idle glow's LEDs take turns frame to frame, so the glow no longer hums through the speaker once the music stops |

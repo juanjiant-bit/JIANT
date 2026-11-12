@@ -88,6 +88,12 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
   paneles tienen mayúsculas de 9 px (eran letras de píxel de 7 px). Las ocho pestañas de SEQ y de FX se ven de a cinco;
   el menú lista ocho filas por vez; se fueron algunos datos que repetían una carta (QUANT y ALL TR a la derecha de la
   rueda de SCL, los números adentro de los anillos de BEING).
+- **Valores más grandes**: el número de una carta va en cifras de 14 px (eran de 11) cuando entra con su unidad, y gira
+  como antes; los nombres y las palabras siguen en la letra de 11 px. El medio del encabezado dice el motor y el sonido
+  sin "T1 ·" (el número de la pista está en su cajita); se fueron la línea "FX · T1" de FX y los nombres de la página y
+  del sonido adentro del panel de EDIT (los dicen el encabezado y la miga).
+- **MENU > LARGE** en las páginas de SEQ, SAVE y FX: las cartas altas que ya tenían HOME y EDIT (el piano roll, la
+  grilla de batería y las listas conservan su panel, con las cartas normales).
 
 **Secuenciador**
 - El componente **RAMP** reemplaza a JUMP (V10.6v): el lock de parámetro de un paso se desliza hasta su valor en 1–32
@@ -301,7 +307,7 @@ Desde la 0.8.5 todas las páginas llevan la piel del diseño que aprobó el due�
 - **Encabezado (arriba)**: una sola línea tranquila sobre una regla fina. A la izquierda el estado de reproducción (un
   cuadrado gris parado, un triángulo naranja sonando, violeta durante la cuenta) y los **BPM** (violeta; naranja
   mientras cambian), después el candado de BPM LOCK y el punto de REC (lleno: la pista seleccionada armada; un aro:
-  otra pista). Al medio de qué es la página: **T1 · ANALOG ACID** (la pista, su motor y su sonido); en las páginas del
+  otra pista). Al medio de qué es la página: **ANALOG ACID** (el motor de la pista y su sonido; el número de la pista está en la cajita naranja de la izquierda); en las páginas del
   tema (SAVE, ARRANGE, TOOLS, GLOBAL) **P1 NOMBRE** (el proyecto); en FX **T1** en naranja. A la derecha la octava
   (**OCT +2**, o la fila del tema mientras suena un tema), el **medidor de carga** (cinco barritas, violetas a medida
   que el sonido ocupa más del tiempo de audio) y la batería (violeta cuando la alimenta el USB). Los mensajes aparecen
@@ -2825,7 +2831,7 @@ SKIN  2/35**. El encabezado dice MENU · DISPLAY.
 | --- | --- | --- |
 | DISPLAY | COLOR | **JIANT** (por defecto), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — siete paletas de la misma familia, todas oscuras, todas con la rampa térmica, cada una con sus cuatro colores de perilla |
 | DISPLAY | SKIN | **AIR** (de fábrica en los ajustes nuevos), COLORS — ver [Pieles](#pieles-air-colors); si tenías guardada BOTTOM o HUD (0.8.9, retiradas), cargás con COLORS |
-| DISPLAY | SCOPE | **OFF** (de fábrica), ON — (0.9.7) las páginas EDIT de un motor: OFF la criatura en todo el panel, centrada, el nombre de la página y el del sonido chiquitos en sus esquinas; ON la criatura a la izquierda, la carta SCOPE y las fichas como antes. Los ajustes guardados antes de 0.9.7 cargan OFF |
+| DISPLAY | SCOPE | **OFF** (de fábrica), ON — (0.9.7) las páginas EDIT de un motor: OFF la criatura en todo el panel, centrada; ON la criatura a la izquierda, la carta SCOPE y las fichas como antes. Los ajustes guardados antes de 0.9.7 cargan OFF |
 | DISPLAY | LARGE | OFF, ON (etiquetas y valores grandes) |
 | DISPLAY | ANIM | ON, OFF (los valores saltan directo; la firma de encendido aparece entera) |
 | DISPLAY | LEDS | OFF, DIM LO, **DIM HI** (por defecto), INV — (0.7.3) los LEDs del brillo de reposo se turnan cuadro a cuadro, así el brillo ya no zumba por el parlante cuando la música para |

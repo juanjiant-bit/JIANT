@@ -463,14 +463,14 @@ BTAPP_FN static void bt_prox_panel(const aafont_t *fx, const aafont_t *fm, const
         str_cpy(b, BPS(3), sizeof b);
     cv_text(10, 82 - AF_S_CAP_Y, fs, b, T_MID);
     for (k = 0; k < 3u; k++)
-        cv_text(10, 98 + 10 * (int32_t)k - AF_X_CAP_Y, fx, BPS(4u + k), T_DIM);
+        cv_text(10, 95 + 11 * (int32_t)k - AF_X_CAP_Y, fx, BPS(4u + k), T_DIM);   /* (9 px capitals: 11 apart) */
     str_cpy(b, BPS(14), sizeof b);                     /* (V10.61) KNOB 1 MIN, KNOB 2 MAX, KNOB 3 SPEED */
     fmt_int(b + str_len(b), BT_MIN());
     str_cpy(b + str_len(b), BPS(15), 16);
     fmt_int(b + str_len(b), BT_MAX() < BT_MIN() + 10 ? BT_MIN() + 10 : BT_MAX());
     str_cpy(b + str_len(b), BPS(16), 16);
     fmt_int(b + str_len(b), (int32_t)BT_SPEED() + 1);
-    cv_text(10, 136 - AF_S_CAP_Y, fs, b, T_TEXT);
+    cv_text(10, 129 - AF_S_CAP_Y, fs, b, T_TEXT);       /* (inside the panel: it stood at 136, cut at the foot) */
 }
 static __attribute__((noinline)) void bt_prox_input(uint32_t up, uint32_t dn)   /* (V10.6z8: out of the full segment) */
 {

@@ -68,6 +68,8 @@ risk: it is a custom firmware.
 - *(next version)* **No STYLE row**: FLAT is the one style, LINE is gone (a saved LINE loads as FLAT).
 - *(next version)* **Bigger small letters**: names, tabs, the header's words and the breadcrumb with 9 px capitals
   (Chakra Petch; the 5 × 7 pixel face is gone), five tabs at a time, eight menu rows at a time.
+- *(next version)* **Bigger values**: a card's number in 14 px figures (was 11), rolling as before; MENU › LARGE's tall
+  cards on SEQ's, SAVE's and FX's pages too.
 - *(next version)* **COLORS without the panel box**: the picture sits on the background, as in AIR (cards and tiles as
   before).
 - **VOICE** no longer clips on open vowels; WORDS › CONS sets the consonants' length.

@@ -32,10 +32,7 @@ static void ed_cap(int32_t x, int32_t y, const char *s, uint16_t c)   /* a capti
 }
 static __attribute__((noinline)) void graph_sound_lz(const track_t *t)
 {
-    const engine_t *e = trk_engp(t);
-    uint32_t two = cur_page()->id[0] != P_E0;
     int32_t x = 122, w = 106, ty = 2, bare = ux.skin != 0u;
-    char b[40];
     /* (V10.7.15, the owner) no parameter list beside the being: the knobs' cards above say the same. SCOPE OFF (the
      * default): the creature (or the generic being) on the whole panel; SCOPE ON: the being left, the scope tall right */
     if (!ui_scope) {
@@ -52,11 +49,7 @@ static __attribute__((noinline)) void graph_sound_lz(const track_t *t)
         cv_text_on(x, ty + 4 - AF_X_CAP_Y, &AF_X, "SCOPE", bare ? T_MID : T_TEXT, T_SURF);
         scope_at(x + 4, w - 8, ty + 68, 48, T_THEME);
     }
-    cv_halo = (uint8_t)bare;                            /* (0.9.0) BOTTOM, HUD: outlined, as HUD's */
-    ed_cap(10, 6, e->page_title[two] && e->page_title[two][0] != '-' ? e->page_title[two] : e->name, T_THEME);
-    sound_name(t, b);
-    cv_clip_text(10, (int32_t)cv_h - 12 - AF_X_CAP_Y, &AF_X, b[0] ? b : e->name, bare ? T_TEXT : T_MID, T_SURF, 104);
-    cv_halo = 0;
+    /* (the page's name stood at the top left and the sound's at the foot: the breadcrumb and the header say them) */
 }
 /* FILTER: y of the response at x (px, 10..226), the cut at xc, res 0..1000; the unity line at y 62 */
 static int32_t ed_resp(uint32_t ty, int32_t x, int32_t xc, int32_t res)
