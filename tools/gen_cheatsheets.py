@@ -147,7 +147,7 @@ def controls():
         ('MASTER', 'Master volume.'),
         ('SELECT', '<b>Walks the section\'s pages</b>, a page a detent, stopping at the ends (the MENU: every row). Held with a button: '
                    'HOME <b>GEN</b>; EDIT · SEQ · LFO · FX their <b>dice</b> (OK keeps, CANCEL back); GLO the tempo; ENV · SCL · ARP · SAVE their chain.'),
-        ('PRESETS', '<b>Always presets</b>: the sounds (factory and user) on every page; SEQ: the step; GEN too (the genre is GEN 1's KNOB 1). '
+        ('PRESETS', '<b>Always presets</b>: the sounds (factory and user) on every page; SEQ: the step; GEN too (the genre is GEN 1 KNOB 1). '
                     'Nothing in the MENU or with a button held, except <b>EDIT</b> (V10.7): the first sound of the next / previous engine.'),
         ('ALGORITHM', 'Selects the track from any page: T1–T4, or T1–T6 with TRACKS 6. MENU: the tabs. A layer held: MAP · KNOBS · STATE.'),
         ('KNOB 1–4', 'The four columns on screen; KNOB 1 picks (step, bar, slot, row). Fast sweeps the whole range, slow fine-tunes. With a layer held: '
