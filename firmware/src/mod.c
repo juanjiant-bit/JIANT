@@ -38,7 +38,9 @@
  * and the engines read t->p as before. An engine reads its parameters in note_on (events_block) unmodulated.
  * Nothing active (every slot with SRC, DST or AMT at 0): no work, and the sound is bit-identical. */
 enum { MS_OFF, MS_LFO, MS_ENV, MS_VEL, MS_KEY, MS_RAND, MS_MODW, MS_AT, MS_EXPR, MS_M1, MS_STEP = MS_M1 + 4, MS_NOISE, MS_PROX, MS_ENV2,
-       MS_FOLLOW, MS_T1, MS_N = MS_T1 + NTRK };   /* (V10.54) FOLLOW: the audio input's envelope */   /* (V10.22) ENV2: ENV > ENV 2, per voice */
+       MS_FOLLOW, MS_T1, MS_OCTUP = MS_T1 + NTRK, MS_OCTDN, MS_N };   /* (V10.54) FOLLOW: the audio input's envelope */
+/* (V10.7.22, the owner) OCT+ / OCT-: the expression keys as sources (seq.c kx_block), 0..1 / bipolar; a route from one on
+ * the track takes it off the pitch (OCT+ no bend, OCT- no pitch vibrato) */   /* (V10.22) ENV2: ENV > ENV 2, per voice */
 static volatile int16_t mod_prox;   /* (V10.14) PROX, the Bluetooth proximity: 0..32767 (bt.c bt_prox_step, the main loop; 0
                                      * with Bluetooth off or no central connected) */
 static uint32_t div_samples(uint32_t div);   /* fx.c */
@@ -169,10 +171,37 @@ static __attribute__((noinline)) void ain_follow(void)
     ain_pk[1] = (int16_t)(pr > ain_pk[1] ? clamp(pr, 0, 32767) : ain_pk[1] - ((ain_pk[1] + 31) >> 5));
 }
 
+/* (V10.6z4) the expression keys' ramps (seq.c kx_block, here for OCT+ / OCT- as sources) */
+#define KX_BSS __attribute__((section(".bss.kx")))   /* (out of the merged statics, as fx.c's djf: theirs keep their places) */
+static volatile uint8_t kx_semi KX_BSS;            /* the bend's range, semitones (0: OFF) */
+static uint16_t kx_amt[NTRK][2] KX_BSS, kx_ph[NTRK] KX_BSS;   /* the ramps (vibrato depth, bend: 0..65535), the vibrato's phase */
+/* track i's bend (k 1: smoothstep of its ramp, Q12 0..4096) or vibrato's wave (k 0: a sine near enough, Q15) */
+static __attribute__((noinline)) int32_t kx_shape(uint32_t i, uint32_t k)
+{
+    int32_t x = (kx_amt[i][1] + 8) >> 4, q = (int16_t)kx_ph[i];
+    return k ? (x * x >> 12) * (3 * 4096 - 2 * x) >> 12 : q * (32768 - (q < 0 ? -q : q)) >> 13;
+}
+/* (V10.7.22) the sources: OCT+ the bend's curve, Q15 (OCT BEND OFF: 0), OCT- the vibrato, its depth faded in, bipolar.
+ * (Out of line, as kx_shape and kx_route: new code at the image's end, the sound's code where it was) */
+static __attribute__((noinline)) int32_t kx_src(const track_t *t, uint32_t s)
+{
+    uint32_t i = (uint32_t)(t - trk);
+    return s == MS_OCTUP ? (kx_semi ? kx_shape(i, 1u) << 3 : 0) : kx_shape(i, 0u) * (kx_amt[i][0] >> 1) >> 15;
+}
+/* track i's slots routing OCT- (bit 0) / OCT+ (bit 1): those keys are off its pitch (seq.c kx_block) */
+static __attribute__((noinline)) uint32_t kx_route(uint32_t i)
+{
+    const int16_t *p = &trk[i].p[P_M1SRC];
+    uint32_t k, m = 0, s;
+    for (k = 0; k < 12u; k += 3u)
+        if ((s = (uint32_t)p[k] - MS_OCTUP) < 2u && p[k + 1u] && p[k + 2u])
+            m |= 2u >> s;
+    return m;
+}
 /* source s of the track: the per-track ones, the per-voice ones of the latest note-on */
 static int32_t mod_tsrc(const track_t *t, uint32_t s, int32_t lfo)
 {
-    if (s >= MS_T1 && s < MS_N) return track_env[s - MS_T1];
+    if (s >= MS_T1) return s < MS_OCTUP ? track_env[s - MS_T1] : kx_src(t, s);   /* (V10.7.22 OCT+ OCT-: the keys) */
     if ((s == MS_ENV || s == MS_ENV2) && (t->m_vi >= NVOICE || !t->v[t->m_vi].active)) return 0;
     switch (s) {
     case MS_LFO:
@@ -333,7 +362,7 @@ static __attribute__((noinline)) void macro_master(void)
             uint32_t s = (uint32_t)t->p[P_M1SRC + 3u * k], d = (uint32_t)t->p[P_M1DST + 3u * k];
             int32_t a = t->p[P_M1AMT + 3u * k], v;
             if (!s || !a || s >= MS_N || !d || d >= MD_N) continue;
-            if (s >= MS_T1) track_follow_mask |= (uint8_t)(1u << (s - MS_T1));
+            if (s - MS_T1 < NTRK) track_follow_mask |= (uint8_t)(1u << (s - MS_T1));
             if (d < MD_CLIP || d >= MD_MASTER_END) continue;
             v = (mod_tsrc(t, s, mulq15(t->lfo_val, t->lfo_fade)) * a) >> 6;   /* Q15: AMT 64 at a full source = the range */
             if (d <= MD_PNCH)
