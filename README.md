@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.19
+## This release: V10.7.20
 
 ### Installing
 
@@ -482,6 +482,9 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.20 — beta (2026-11-12)
+- **SAVE has nine pages**: SAVE SONG AS is gone. On **PROJECTS**, KNOB 1 picks a project without opening it; LOAD opens it, ERASE empties it, SAVE writes there. The NAME screen's **KNOB 3** chooses the whole SONG or the LOOP alone (it starts at SONG every time).
 
 ### V10.7.19 — beta (2026-11-12)
 - **Seven palettes of JIANT's own**: JIANT, SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON (the inherited ones are gone); the cards' values take each palette's colours.
