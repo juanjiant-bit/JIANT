@@ -366,4 +366,5 @@ static const engine_t ENG_ANALOG = {
     .render = analog_dispatch,
     .knob = {P_E4, P_E5, P_ATK, P_REL},
     .keep = 0x03,                /* the filter */
+    .half = 1,                   /* (codex/voices) */
 };

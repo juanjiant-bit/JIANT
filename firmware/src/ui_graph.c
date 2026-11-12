@@ -1445,9 +1445,9 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
                                                          * FX's lens pictures change with their values, */
     if (fx_on() && (song.playing || bg_energy() > 2))   /* .. and with the sound while it sounds: FX live) */
         h ^= anim_fr / 2u * 2246822519u;
-    if (pg->graph == GR_LFO && !ui_hold)             /* (JIANT 0.5) the LFO runs: its phase, its level (0.9.9-beta4: held under load) */
+    if (pg->graph == GR_LFO && ui_hold < 2u)             /* (JIANT 0.5) the LFO runs: its phase, its level (0.9.9-beta4: held under load) */
         h ^= (t->lfo_ph >> 23) * 2654435761u ^ (uint32_t)(t->lfo_val * t->lfo_fade >> 22);
-    if (pg->graph == GR_ADSR && !ui_hold)            /* the envelope's dot: every voice's stage and level */
+    if (pg->graph == GR_ADSR && ui_hold < 2u)            /* the envelope's dot: every voice's stage and level */
         for (i = 0; i < NVOICE; i++)
             h = (h ^ ((uint32_t)t->v[i].stage << 24 | (uint32_t)t->v[i].env >> 16)) * 16777619u;
     for (i = 0; i < P_COUNT; i++)

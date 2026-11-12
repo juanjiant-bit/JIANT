@@ -95,20 +95,32 @@ static void list_put(uint32_t v)
  * the engines' creatures, the live graphs still: their signatures stop changing, nothing is drawn again), until it
  * falls under UI_HOLD_OFF % or the music stops (ui_hold_poll, main.c: once a frame). The I-cache is one for both cores
  * and the UI: a frame drawn is the engines' code evicted (Kirill's audit, LOOM-8) */
+/* (codex/voices, the owner: "the frozen animations come quite soon with the CPU") in two steps, each with its own way
+ * back, both on the average (never one half's spike):
+ *   1 SLOW    from UI_HOLD_ON % (back under UI_HOLD_OFF): frames every 50 ms instead of 15, so the beings, the creatures
+ *             and the scope draw a third as often (they move on, slower); the values snap (no rolling digits: frames
+ *             drawn again for a look), the LFO's and the envelope's live graphs go on at that pace.
+ *   2 FREEZE  from UI_FREEZE_ON % (back to SLOW under UI_FREEZE_OFF): as beta4's hold, the animation still.
+ * Until now one step, the freeze, at 60 %. The UI still gets no more of the time than it did held: a frame's pace is
+ * the held one from 60 % on; what SLOW adds is what those frames draw */
 static uint8_t ui_hold;
 static uint32_t anim_at;                               /* the last frame the animation moved on (ui_draw) .. */
 #define UI_HOLD_ON 60u
 #define UI_HOLD_OFF 50u
-#define ANIM_OFF() ((ui_prefs & PREF_ANIM_OFF) || ui_hold)
+#define UI_FREEZE_ON 75u
+#define UI_FREEZE_OFF 65u
+#define ANIM_OFF() ((ui_prefs & PREF_ANIM_OFF) || ui_hold > 1u)
 #define anim_fr (ANIM_OFF() ? anim_at : ui.frame)      /* .. the animation's frame: ui.frame while it moves, that one while
                                                         * still (the same frame draws the same picture, held or not) */
-#define ANIM_SNAP() (ANIM_OFF() || sys_load)
+#define ANIM_SNAP() (ANIM_OFF() || sys_load || ui_hold)
 static void ui_hold_poll(void)
 {
     uint32_t pct = load_avg_q8 >> 8;
     if (!song.playing || pct < UI_HOLD_OFF)
         ui_hold = 0;
-    else if (pct >= UI_HOLD_ON)
+    else if (pct >= UI_FREEZE_ON)
+        ui_hold = 2;
+    else if (ui_hold == 2u ? pct < UI_FREEZE_OFF : pct >= UI_HOLD_ON)
         ui_hold = 1;
 }
 #define PREF_ACCEL_OFF 4u                      /* MENU > KNOB ACCEL OFF (#52; JIANT: ON by default, the bit now means OFF):

@@ -79,8 +79,9 @@ static void gx_listen(uint32_t blocks, double *rms, int32_t *peak, uint32_t *cli
             cl += v >= 32767;
             acc += (double)o[i] * (double)o[i];
         }
-        for (p = 0; p < NPART; p++)                     /* (as voice.c voices_busy counts them: not the fading) */
-            for (i = 0; i < NVOICE; i++) nv += trk[p].v[i].active && trk[p].v[i].stage != 4u;
+        nv = voices_load();                             /* (as the budget counts them, voice.c: not the fading; (codex/voices)
+                                                         * a released one at half the rate half a voice) */
+        (void)p;
         if (nv > vm) vm = nv;
     }
     transport_req = 2;

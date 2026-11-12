@@ -56,6 +56,9 @@ static struct {                                  /* the patch through the macros
     int16_t env[4];                              /* (0.6.81) .. and the track's ATK DEC SUS REL */
     int32_t dt[6];                               /* DTUN: per operator, Q24 log2 */
 } fm6_eff[NTRK];
+static uint8_t rel_hurry[NTRK];                  /* (voice.c, codex/voices: a part's released voices hurried) */
+static volatile uint8_t load_tight;              /* (voice.c: the guard tripped) */
+#define HURRY_LVL 3277                           /* (voice.c) */
 static fm6_lfo_t fm6_lfo[NTRK];
 static int32_t fm6_lfo_v[NTRK], fm6_lfo_d[NTRK]; /* this block's LFO value and delay (Q24) */
 static fm6_note_t fm6_note[NTRK][FM6_POLY];
@@ -396,6 +399,7 @@ static void fm6_note_on(track_t *t, voice_t *v)
     fm6_note_init(n, p, (int32_t)v->note + p[FP_TRNSP] - 24, v->mvel ? v->mvel : v->vel,
                   (!v->env && !v->env_out) || !n->live);    /* from silence: phases and gains from 0 */
     n->trim = 255;                                      /* (its first block: the track's trim at once) */
+    v->s[0] = 32767;                                    /* (codex/voices) its level for the budget (voice.c voice_lvl) */
     fm6_lfo_key(&fm6_lfo[tr]);
 }
 
@@ -434,12 +438,17 @@ static void fm6_render(track_t *t, voice_t *v, int32_t *out, uint32_t len, const
     uint32_t tr = (uint32_t)(t - trk), i;
     const uint8_t *p;
     int32_t bus[FM6_N], lf, fb, lvl, k, a, da, pk = 0;
-    uint32_t tb;
-    if (!n || !n->live || len != FM6_N)
+    uint32_t tb, hf = len == FM6_N / 2u;                /* (codex/voices) half the rate: voice.c voice_half */
+    if (!n || !n->live || (len != FM6_N && !hf))
         return;
     p = fm6_eff[tr].p;
     if (!v->gate && n->down)
         fm6_note_key(n, p, 0);
+    if (rel_hurry[tr] && !v->gate && (v->s[0] < HURRY_LVL || load_tight))   /* (codex/voices) the budget nearly full: its
+                                                         * release sooner, once it is under -20 dB (voice.c VSOFT 1) */
+        fm6_note_hurry(n, 100000 << rel_hurry[tr]);     /* (-40 dB in 0.8 s, 0.4 s, 0.2 s at least) */
+    n->penv.half = (uint8_t)(hf | (hf != n->penv.half) << 1);   /* (the rate, and its change: fm6_note_compute) */
+    v->s[0] = 0;
     lf = fm6_note_logfreq(m->pitch16 + (p[FP_TRNSP] - 24) * 16, m->fine);
     fb = clamp(fm6_eff[tr].fb + ((m->shape - (64 << 8)) >> 11), 0, 7);
     lvl = clamp(t->p[P_E2], -64, 63) * 24 + clamp(m->cutoff >> 8, -150, 150) * 16 +   /* microsteps */
@@ -449,11 +458,12 @@ static void fm6_render(track_t *t, voice_t *v, int32_t *out, uint32_t len, const
         return;                                         /* every carrier below the threshold */
     /* the voice's amplitude ramp x VOICE_FS (one carrier at full: VOICE_FS / 2), six voices in unison ~ one */
     k = t->p[P_VOICE] == V_UNISON ? VOICE_FS * 2 / 5 : VOICE_FS;
-    for (i = 0; i < FM6_N; i++) {                       /* the block's peak first: its trim from this block on */
+    for (i = 0; i < len; i++) {                         /* the block's peak first: its trim from this block on */
         int32_t x = bus[i] - n->dc, ax = x < 0 ? -x : x;   /* (as it goes out: past the DC blocker) */
         pk = ax > pk ? ax : pk;
     }
     pk >>= 10;                                            /* (2^26 >> 10 = 2^16: the products fit 32 bits) */
+    v->s[0] = pk >> 1;
     if ((uint32_t)pk * (256u - fm6_trim[tr]) > (uint32_t)(FM6_TRIM_REF >> 10) << 8) {   /* over: down to there */
         uint32_t g = ((uint32_t)(FM6_TRIM_REF >> 10) << 8) / (uint32_t)pk;   /* the gain that would sit there */
         fm6_trim[tr] = (uint8_t)(256u - (g < 8u ? 8u : g));   /* (-30 dB at most) */
@@ -464,9 +474,9 @@ static void fm6_render(track_t *t, voice_t *v, int32_t *out, uint32_t len, const
     a = (mulq15(m->amp0, k) * (int32_t)(256u - n->trim)) >> 8;
     da = (((mulq15(m->amp1, k) * (int32_t)tb) >> 8) - a) >> FM6_LG_N;
     n->trim = fm6_trim[tr];
-    for (i = 0; i < FM6_N; i++) {
+    for (i = 0; i < len; i++) {
         int32_t x = bus[i] - n->dc;
-        n->dc += x >> 10;                                 /* a one-pole high-pass, ~7 Hz: FM puts sidebands at 0 Hz */
+        n->dc += x >> (10u - hf);                         /* a one-pole high-pass, ~7 Hz: FM puts sidebands at 0 Hz */
         a += da;
         out[i] += (int32_t)(((int64_t)x * a) >> 26);
     }
@@ -551,4 +561,5 @@ static const engine_t ENG_FM6 = {
     .block = fm6_block,
     .ownenv = 1,
     .done = fm6_done,
+    .half = 2,                                          /* (codex/voices) */
 };

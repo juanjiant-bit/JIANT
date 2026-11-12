@@ -505,6 +505,10 @@ typedef struct {                 /* an engine (engines.c ENGINES[]; the eng_*.c 
      * nearer block edge (within CTL / 2), as every engine did with blocks of 32; 0 = a note starts at its sample
      * (voice.c track_render renders the voice from there) */
     uint8_t whole;
+    /* (codex/voices) a voice of it can render at half the rate (voice.c voice_half): 1 = with its phase increments
+     * doubled and its filter an octave up (vmod_t: inc, pitch16, cutoff), any number of samples; 2 = it sees CTL / 2
+     * samples and does it itself (FM6); 0 = no */
+    uint8_t half;
 } engine_t;
 
 /* ------------------------------------------------- tracks, the song --- */

@@ -488,7 +488,8 @@ static void fm1_main(void)
         song_poll();                                  /* the song: the next section staged, the music back after it */
         felucca_dbg.stage = 2;
         ui_leds();
-        ui_hold_poll();                               /* (0.9.9-beta4) playing past 60 % of the render: the UI held (ui.c) */
+        ui_hold_poll();                               /* (0.9.9-beta4) playing past 60 % of the render: the UI slow, past
+                                                       * 75 % held (ui.c) */
         ui_draw();
         felucca_dbg.stage = 9;
         while (fm1_ms - m < (ui_hold ? 50u : 15u)) {             /* ~60 UI frames/s at most; held: 20 */

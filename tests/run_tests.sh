@@ -51,6 +51,11 @@
 # CTL64 (tests/ctl64_timing_test.c, 0.9.9): blocks of 64 samples (core.h CTL): every note of a MICRO-shifted pattern lands
 #                   in the rendered audio within 2 samples of where the sequencer puts it running a sample at a time
 #                   (voice.c track_render starts and releases a voice at its sample inside the block); POLY, MONO cuts, a kit.
+# VOICES (tests/voices_probe.c, codex/voices): the budget's soft measures (src/voice.c VSOFT): with room in the budget the mix
+#                   bit for bit as without them; a release hurried only with the budget nearly full, as set down to -20 dB,
+#                   smooth, an FM6 patch that never ends its release let go; a voice at half the rate (ANALOG, FM6) against the
+#                   full rate within a tolerance, no step where the rate changes, a tail at half the rate half a voice of the
+#                   budget, the rate never flipping. Its other modes measure (cost, stress, wav).
 # MOD (tests/mod_test.c): the modulation matrix: slots that do nothing are bit-identical, every source on each
 #                   kind of destination, clamping, MIDI CC1 / CC11 / aftertouch routing, the cost of 4 active
 #                   slots (at most +5 %), demos in build/mod_demo/.
@@ -255,7 +260,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "project formats (FUN1..FUN6 refused; FUN7..FUNC; DIGITAL tracks -> FM6 init, SAMPLE -> ANALOG)" "$OUT/project_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/motion_test" tests/motion_test.c -lm
     run "motion, whole-step chance, FUN7 migration, song restore, ARP repeat and the 1.2 ARP modes" "$OUT/motion_test"
-    $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/djf_test" tests/djf_test.c -lm
+    # (codex/voices) VSOFT 0: its four-part mix fills the budget, and the reference is 0.9.0's render (no soft measures)
+    $CC -O1 -w -DVSOFT=0u -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/djf_test" tests/djf_test.c -lm
     run "DJ FILTER (0.9.1): centred bit for bit 0.9.0, LP / HP response, no click crossing the middle, automation, old projects" "$OUT/djf_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/tape_test" tests/tape_test.c -lm
     run "TAPE (0.9.9-snd8): off never runs, the drive's harmonics, the highs lost, the head bump, WOW's few cents, no click, kept in a project" "$OUT/tape_test"
@@ -365,6 +371,10 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "four single-note tracks: own release before cross-track stealing (budget 8)" "$OUT/voice_fairness_test" 8
     run "four single-note tracks: own release before cross-track stealing (budget 12)" "$OUT/voice_fairness_test" 12
     run "four single-note tracks at 70..90 % (cpu5): no tail cut under the cap, a spike no trip, the guard keeps the leads, the prediction" "$OUT/voice_fairness_test" load
+    # (codex/voices) the budget's soft measures (voice.c VSOFT): tests/voices_probe.c; its cost / stress / wav modes are
+    # the measurements (host timing and a modelled load: relative only)
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/voices_probe" tests/voices_probe.c -lm
+    run "voices under load: nothing changes with room, releases hurried only under pressure, half the rate against the full one, no step at a change of rate, the budget's count" "$OUT/voices_probe" test
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/chorus_sleep_test" tests/chorus_sleep_test.c -lm
     run "chorus: exact zero-ring shortcut, tails and restart, unchanged state" python3 tests/chorus_sleep_test.py "$OUT/chorus_sleep_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/empty_fx_test" tests/empty_fx_test.c -lm
