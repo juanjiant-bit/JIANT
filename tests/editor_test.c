@@ -157,8 +157,9 @@ static int preferences(void)
     int bad = 0;
     uint8_t a[4] = {0, 7, 0, 0};
     reset();
-    uint32_t n = request(ED_INFO, a, 0), n0 = n - 10u;   /* (0.8.5: the 'O' tag, the DRUM lane modes, (1.0) 'C' the
-                                                          * protocol's version, then 'Y' last, LYRIC) */
+    uint32_t n = request(ED_INFO, a, 0), n0 = n - 13u;   /* (0.8.5: the 'O' tag, the DRUM lane modes, (1.3) 'X' the
+                                                          * Bluetooth segment, (1.0) 'C' the protocol's version, then
+                                                          * 'Y' last, LYRIC) */
     bad += check("INFO explicitly tags display capabilities after SONG without changing command 33",
         ED_SONG == 33 && ED_UI_STATE == 34 && ED_FAV_SET == 38 &&
         host_wire[n0 - 37] == CHAIN_ROWS && host_wire[n0 - 36] == 0x55 &&
@@ -177,7 +178,8 @@ static int preferences(void)
         host_wire[n0 - 10] == 0x4C && host_wire[n0 - 9] == 1 && host_wire[n0 - 8] == 1 &&   /* 1.1 parameter locks */
         host_wire[n0 - 7] == 0x56 && host_wire[n0 - 6] == 1 && host_wire[n0 - 5] == 32 &&   /* (0.6.11) FM6 voice bank */
         host_wire[n0 - 4] == 0x4A && host_wire[n0 - 3] == 1 && host_wire[n0 - 2] == 1 &&   /* (0.6.62) JIANT: the installer */
-        host_wire[n - 11] == 0x4F && host_wire[n - 10] == 1 && host_wire[n - 9] == LM_N &&   /* (0.8.5) DRUM lane modes */
+        host_wire[n - 14] == 0x4F && host_wire[n - 13] == 1 && host_wire[n - 12] == LM_N &&   /* (0.8.5) DRUM lane modes */
+        host_wire[n - 11] == 0x58 && host_wire[n - 10] == 1 && host_wire[n - 9] == 1 &&   /* (1.3) the segment: this build's */
         host_wire[n - 8] == 0x43 && host_wire[n - 7] == 2 && host_wire[n - 6] == ED_PROTO_MAJOR &&   /* (1.0) 'C' */
         host_wire[n - 4] == 0x59 && host_wire[n - 3] == 1 && host_wire[n - 2] == LYR_LEN - 1u);   /* (0.8.5) LYRIC, 63 */
     a[1] = 5;                                          /* (HUESO) */

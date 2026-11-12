@@ -3016,6 +3016,16 @@ browser, the MIDI ports it saw, the FM-1's firmware, the step it stopped at).
 Bluetooth part of JIANT (it also holds GEN, the songs' saving, USB HOST and more) was not installed: reinstall with the
 web installer (above). Other flashing tools write only the main firmware.
 
+**At power-on the screen says BLUETOOTH PART MISSING, "REINSTALL WITH THE JIANT WEB INSTALLER:
+juanjiant-bit.github.io/JIANT", ANY KEY: CONTINUE (from V10.7.22).** The same case, said once at each power-on. Press
+any key (it does nothing else) to play as usual: everything works except what lives in that part (GEN shows the same
+message instead of its cards; saving a song, Bluetooth and USB HOST say BLUETOOTH PART MISSING). To fix it, open the
+installer, connect and press **Install** (the same version is fine): it writes both parts. The installer checks the
+Bluetooth part after it restarts the FM-1 and, if it is missing, installs once more by itself; if it is still missing
+it says so: then press **COPY REPORT** and send it. If it says the FM-1 is in update mode with another update program
+(the official one: a return to official stopped), finish that first in **Return to official** with **Resume an
+interrupted update** ticked, then press **Install**.
+
 **My songs are not kept after power-off (a newer FM-1).** FM-1s sold from late 2026 (the logo on the front) have a
 different flash chip (JEDEC 0xB36014). JIANT before V10.6z did not know it and ran from RAM only: nothing was saved,
 GENE was missing and the device could not update itself. Install the current version (the installer writes from the

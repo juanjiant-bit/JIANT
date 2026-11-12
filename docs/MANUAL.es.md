@@ -3222,6 +3222,16 @@ instalador *preview* (enlace al pie) tiene la próxima versión sin aprobar: sol
 parte Bluetooth de JIANT (que también tiene GEN, el guardado de canciones, USB HOST y más) no se instaló: reinstalá
 con el instalador web (arriba). Otras herramientas de flasheo escriben solo el firmware principal.
 
+**Al prender, la pantalla dice BLUETOOTH PART MISSING, "REINSTALL WITH THE JIANT WEB INSTALLER:
+juanjiant-bit.github.io/JIANT", ANY KEY: CONTINUE (desde la V10.7.22).** Es el mismo caso, avisado una vez cada vez que
+prendés. Tocá cualquier tecla (no hace nada más) y tocá como siempre: anda todo menos lo que vive en esa parte (GEN
+muestra el mismo aviso en vez de sus tarjetas; guardar una canción, Bluetooth y USB HOST dicen BLUETOOTH PART MISSING).
+Para arreglarlo, abrí el instalador, conectá y apretá **Instalar** (la misma versión sirve): escribe las dos partes. El
+instalador revisa la parte Bluetooth después de reiniciar el FM-1 y, si falta, instala una vez más solo; si sigue
+faltando, lo dice: ahí apretá **COPIAR INFORME** y mandalo. Si dice que el FM-1 está en modo de actualización con otro
+programa de actualización (el oficial: se cortó una vuelta al oficial), terminá eso primero en **Volver al oficial** con
+**Retomar una actualización interrumpida** marcado, y después apretá **Instalar**.
+
 **Mis canciones no quedan guardadas al apagar (un FM-1 nuevo).** Los FM-1 vendidos desde fines de 2026 (con el logo en
 el frente) traen otro chip de flash (JEDEC 0xB36014). JIANT antes de la V10.6z no lo conocía y andaba solo desde la RAM:
 no guardaba nada, faltaba GENE y el equipo no podía actualizarse solo. Instalá la versión actual (el instalador escribe

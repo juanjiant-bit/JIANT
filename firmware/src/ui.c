@@ -338,6 +338,8 @@ static struct {
     uint8_t ev_row;              /* SEQ > AUTO LIST (ui_input.c ev_*): the row selected (the track's count: + ADD LOCK) */
     uint8_t ev_step, ev_id;      /* .. + ADD LOCK: the step and the parameter a lock is added on */
     uint8_t uboot;               /* main.c: seconds left before UPDATE MODE (OCT- + OCT+ held), 0 = none */
+    uint8_t segbox;              /* (V10.7.22) main.c: the Bluetooth segment missing at power-on, said over the screen
+                                  * (ui_draw.c seg_screen) until a key, a knob (scr_input) */
     uint32_t ly_t0;              /* the layer button's press time | 1, LY_* bits (ui_layer.c layer_gesture) */
     uint8_t ly;                  /* the layer whose button is down (LAYER_*), 0 = none */
     uint8_t layer;               /* the layer whose map is shown (LAYER_*), 0 = none */
@@ -443,6 +445,12 @@ static int scr_input(uint32_t pressed, uint32_t notes)
     int32_t moved = 0;
     if (pressed | notes | held | panel_moved)
         scrn.idle = fm1_ms;
+    if (ui.segbox && scrn.st == SCR_ON && (pressed | notes | panel_moved)) {   /* (V10.7.22) the power-on's BLUETOOTH */
+        ui.segbox = 0;                                  /* PART MISSING: gone (not by a dark screen's wake), the gesture
+                                                         * swallowed as a wake's */
+        ui.force = 1;
+        scrn.eat = 1;
+    }
     panel_moved = 0;
     if (scrn.st == SCR_ON && !scrn.eat)
         return 0;

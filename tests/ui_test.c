@@ -41,6 +41,7 @@
 #include <stdint.h>
 #define main hostsim_main
 #define HOST_OWN_TICKS 1                    /* (fm1_ticks below) */
+#define HOST_SEG_HOOK 1                     /* (V10.7.22) core.h: host_seg_gone, the Bluetooth segment missing */
 #include "hostsim.c"
 #undef main
 
@@ -136,8 +137,11 @@ static char ut_card_what[48];
 #define GFX_HOOK_BEGIN() ((void)0)
 #define GFX_HOOK_PIXELS(n) ((void)0)
 static int32_t ut_cv_w(void);
+static uint32_t ut_seg_url;                    /* (V10.7.22) seg_screen's address drawn */
 static void ut_text(int32_t x0, int32_t x1, const char *s, uint32_t flags)
 {
+    if (!strcmp(s, "juanjiant-bit.github.io/JIANT") && x0 >= 0 && x1 <= 240 && !(flags & 3u))
+        ut_seg_url++;
     if (ut_cv_w() != 57)                           /* (ui_draw.c COL_W: a card) */
         return;
     ut_card_txt++;
@@ -8902,6 +8906,44 @@ static int test_fx_sections(void)
 
 /* (0.6.21) HOME + SELECT: the dialog, OCT+: everything diced (one musical scale, a sequence on every track, DRUM a
  * beat); GLO + G4: UNDO puts the music back, again: forward */
+/* (V10.7.22) the Bluetooth segment missing (a torn install, another tool): at power-on what to do over the screen (main.c
+ * ui.segbox), each line within it, until a key (swallowed: PLAY does not start) or a knob; GEN says the same instead
+ * of drawing (HOME's cards were left under its tabs) */
+static int test_seg_missing(void)
+{
+    int bad = 0, ok;
+    uint32_t u0, c0;
+    ui_power_on();
+    go_home(); frames(16);
+    host_seg_gone = 1;
+    ui.segbox = 1;                                      /* (as main.c after bt_boot: !ly_en_ok) */
+    ui.force = 1;
+    u0 = ut_seg_url;
+    frames(64);
+    ok = ui.segbox && ut_seg_url == u0 + 1u && text_w(&AF_S, SEG_MISS) <= 236 &&
+         text_w(&AF_S, "JIANT WEB INSTALLER:") <= 236 && text_w(&AF_S, "juanjiant-bit.github.io/JIANT") <= 236;
+    press(B_PLAY); frames(32);
+    ok &= !ui.segbox && !song.playing && !transport_req && ut_seg_url == u0 + 1u;
+    ui.segbox = 1; ui.force = 1; frames(16);
+    turn(EN_K2, 1); frames(32);
+    ok &= !ui.segbox && ut_seg_url == u0 + 2u;
+    bad += check("V10.7.22 no Bluetooth segment at power-on: BLUETOOTH PART MISSING, the installer's address, over the "
+                 "screen; any key (swallowed) or knob goes on", ok);
+    fm1_ms += 1200u;
+    held_turn(B_HOME, 1); frames(16);                   /* GEN */
+    c0 = ut_card_txt;
+    u0 = ut_seg_url;
+    ui.force = 1; frames(32);
+    ok = ui.confirm == CF_DICE_ALL && ut_seg_url == u0 + 1u && ut_card_txt == c0;
+    press(B_OCTDN); frames(8);
+    bad += check("V10.7.22 GEN without the segment: what to do (the installer's address), no cards drawn", ok);
+    host_seg_gone = 0;
+    ui.confirm = 0;
+    ui.force = 1;
+    frames(8);
+    return bad;
+}
+
 static int test_dice_all(void)
 {
     int bad = 0, ok;
@@ -13940,6 +13982,7 @@ int main(void)
     setvbuf(stdout, NULL, _IONBF, 0);
     int bad = 0;
     bad += test_song_save_ui();
+    bad += test_seg_missing();
     bad += test_eq_tape_load();
     bad += test_comp_cards();
     bad += test_string_excite();
