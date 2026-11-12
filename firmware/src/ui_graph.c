@@ -1349,8 +1349,8 @@ static void graph_drift(void)
     uint32_t k, gh = graph_h();
     for (k = 0; k < 14u; k++) {
         uint32_t h = k * 2654435761u + 0x9E37u;
-        int32_t gx = 10 + (int32_t)((h >> 8) % 220u + ui.frame * (1u + (h >> 28)) / 8u) % 220;
-        int32_t gy = 4 + (int32_t)(((h >> 16) % (gh - 8u)) + (uint32_t)(sine_i((ui.frame * 200u + h) << 16) >> 13)) % (int32_t)(gh - 8u);
+        int32_t gx = 10 + (int32_t)((h >> 8) % 220u + anim_fr * (1u + (h >> 28)) / 8u) % 220;
+        int32_t gy = 4 + (int32_t)(((h >> 16) % (gh - 8u)) + (uint32_t)(sine_i((anim_fr * 200u + h) << 16) >> 13)) % (int32_t)(gh - 8u);
         cv_rect(gx, gy, 1 + (int32_t)(h >> 31), 1 + (int32_t)(h >> 31), ux_mix(T_SURF, T_THEME, 18 + (int32_t)(h >> 29) * 3));
     }
 }
@@ -1445,13 +1445,17 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
                                                          * FX's lens pictures change with their values, */
     if (fx_on() && (song.playing || bg_energy() > 2))   /* .. and with the sound while it sounds: FX live) */
         h ^= anim_fr / 2u * 2246822519u;
-    if (pg->graph == GR_LFO && ui_hold < 2u)             /* (JIANT 0.5) the LFO runs: its phase, its level (0.9.9-beta4: held under load) */
+    if (pg->graph == GR_LFO && ui_hold < 3u)             /* (JIANT 0.5) the LFO runs: its phase, its level (0.9.9-beta4: held under load) */
         h ^= (t->lfo_ph >> 23) * 2654435761u ^ (uint32_t)(t->lfo_val * t->lfo_fade >> 22);
-    if (pg->graph == GR_ADSR && ui_hold < 2u)            /* the envelope's dot: every voice's stage and level */
+    if (pg->graph == GR_ADSR && ui_hold < 3u)            /* the envelope's dot: every voice's stage and level */
         for (i = 0; i < NVOICE; i++)
             h = (h ^ ((uint32_t)t->v[i].stage << 24 | (uint32_t)t->v[i].env >> 16)) * 16777619u;
     for (i = 0; i < P_COUNT; i++)
         h = (h ^ (uint32_t)t->p[i]) * 16777619u;
+    if (pg->scope == SC_GLOBAL)                      /* (codex/anim) GLOBAL's pictures: the song's values (they were seen
+                                                      * a frame late, when the animation drew the panel again) */
+        for (i = 0; i < G_COUNT; i++)
+            h = (h ^ (uint32_t)song.g[i]) * 16777619u;
     h ^= (uint32_t)TSEL->preset * 7u + (uint32_t)song.g[G_SLOT] * 13u + TSEL->user * 257u + up_gen * 7919u + ui.uslot * 104729u +
          ui.ppick * 1299709u;
     if (pg->graph == GR_MSEQ)                        /* (JIANT) the step picked, the one playing, the level now */
@@ -1533,11 +1537,11 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
         h = (h ^ ((uint32_t)(ain_pk[0] >> 10) | (uint32_t)(ain_pk[1] >> 10) << 6 | (uint32_t)(mod_follow >> 10) << 12 |
                   (uint32_t)(ain_gg[(uint32_t)(t - trk) % NTRK] >> 12) << 18)) * 16777619u;
     if (pg->fam == FAM_EDIT && trk_engp(t) == &ENG_INPUT && t->p[P_E0] == AIN_SW)   /* (SWARM: it moves every frame) */
-        h ^= ui.frame * 2654435761u;
+        h ^= anim_fr * 2654435761u;
     if (DX_KIT3(pg))                                 /* (0.8.8) KIT 3's colony lives every frame, as KIT's (was still) */
-        h ^= ui.frame * 2654435761u;
+        h ^= anim_fr * 2654435761u;
     if (pg->graph >= GR_FMOP && pg->graph <= GR_FMENV)   /* (0.9.6) FM6's operators: the colony lives, as the beings */
-        h ^= ui.frame / 2u * 2246822519u;
+        h ^= anim_fr / 2u * 2246822519u;
     if (pg->graph == GR_MORPH)                       /* (0.6.45) the wave, MORPH */
         h = (h ^ ((uint32_t)t->p[P_MORPH] << 16 | (uint32_t)t->p[P_E0] << 8 | (uint32_t)t->p[P_E1] |
                   (uint32_t)t->p[P_E2] << 24)) * 16777619u;
@@ -1575,9 +1579,9 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
                                    (FELUCCA_FM4 && trk_eng(t) == ENGI_DIGITAL)))
         h ^= (ui.hot_t ? ui.hot_col + 1u : 0u) * 65537u;
     if (pg->scope == SC_ENGINE && trk_eng(t) == ENGI_DRUM)
-        h ^= ui.frame * 2654435761u;                 /* DRUM-X: the specimen moves every frame */
-    if (pg->graph == GR_DXSND) h ^= ui.frame * 2654435761u ^ dx_sig();
-    if (pg->graph == GR_SWARM) h ^= ui.frame * 2654435761u;   /* (V10.6z6: the morph, live) */
+        h ^= anim_fr * 2654435761u;                  /* DRUM-X: the specimen moves every frame (codex/anim: tick) */
+    if (pg->graph == GR_DXSND) h ^= anim_fr * 2654435761u ^ dx_sig();
+    if (pg->graph == GR_SWARM) h ^= anim_fr * 2654435761u;   /* (V10.6z6: the morph, live) */
     if (pg->scope == SC_ENGINE && trk_eng(t) == ENGI_FM6)   /* the patch (PAT's algorithm, levels, FB) */
         h ^= (fm6_pgen[(t - trk) % NTRK] + 1u) * 2246822519u;
     if (fop_page(pg->graph))                         /* (0.6.77) OPERATOR, OP ENV (track pages): the patch, the operator */
@@ -2002,6 +2006,27 @@ static void graph_scope(uint16_t c)
 {
     scope_at(PANEL_X0, PANEL_W, (int32_t)cv_h / 2, cv_h == H_GRAPH ? 46 : (int32_t)cv_h / 2 - 6, c);   /* (LARGE: the strip) */
 }
+/* (codex/anim) a stroke of the scope, as hot as it is loud (its end's height) */
+static __attribute__((noinline)) void scope_seg(int32_t xa, int32_t ya, int32_t xb, int32_t yb, int32_t cy, int32_t a)
+{
+    cv_line_t(xa, ya, xb, yb, heat_col(40 + (yb > cy ? yb - cy : cy - yb) * 216 / a), 2);
+}
+/* .. at the load's detail (as ui_organic.c pl_pt): an odd sample held (0), then onto its neighbours' chord, at half left
+ * out: the strokes from x - k (k 1 or 2) */
+static __attribute__((noinline)) int32_t scope_lod(int32_t x, int32_t pw, int32_t *py, int32_t y, int32_t x0, int32_t cy, int32_t a)
+{
+    int32_t m = ui_lod, oy;
+    if (x & 1) {
+        anim_st.oy = y;
+        return x + 1 >= pw;
+    }
+    if (m >= 256)
+        return 2;
+    oy = anim_st.oy + ((((*py + y) >> 1) - anim_st.oy) * m >> 8);
+    scope_seg(x0 - 2 + x, *py, x0 - 1 + x, oy, cy, a);
+    *py = oy;
+    return 1;
+}
 /* .. pw px wide from x0, about the line cy, +-a px (0.8.5: EDIT's SOUND, in its well) */
 static void scope_at(int32_t x0, int32_t pw, int32_t cy, int32_t a, uint16_t c)
 {
@@ -2022,9 +2047,11 @@ static void scope_at(int32_t x0, int32_t pw, int32_t cy, int32_t a, uint16_t c)
         }
     cv_rect(x0, cy, pw, 1, T_RAISE);
     for (x = 0; x < pw; x++) {
-        int32_t y = cy - snap[trig + (uint32_t)x] * a / peak;    /* auto-scaled */
+        int32_t y = cy - snap[trig + (uint32_t)x] * a / peak, k = 1;   /* auto-scaled */
+        if (x && ui_lod && !(k = scope_lod(x, pw, &py, y, x0, cy, a)))
+            continue;                                            /* (codex/anim: the load's detail) */
         if (x)                                                   /* JIANT: each stroke as hot as it is loud */
-            cv_line_t(x0 - 1 + x, py, x0 + x, y, heat_col(40 + (y > cy ? y - cy : cy - y) * 216 / a), 2);
+            scope_seg(x0 - k + x, py, x0 + x, y, cy, a);
         py = y;
     }
 }
@@ -2093,6 +2120,18 @@ static __attribute__((noinline)) void graph_gcomp(void)
     }
     cv_text(x0, (int32_t)h - 24 - AF_X_CAP_Y, &AF_X, gl_mono ? "MONO" : "POLY", T_DIM);
 }
+/* (codex/anim) the panel sent where it changed (gfx.c cv_blit_cells: a being swimming, not the water round it; was all of
+ * it each frame: 33600 px, ~45 ms of the SPI at 12 MHz); under load whole (a frame each 50 / 100 ms outlasts the transfer,
+ * and the cells' hashes would be work taken from the sound) */
+static __attribute__((noinline)) void panel_send(uint32_t y)
+{
+    if (ui_hold) {
+        cv_blit(0, y);
+        return;
+    }
+    dc_frame(ui.force);
+    cv_blit_cells(0, y);
+}
 static void draw_graph(void)
 {
     const page_t *pg = cur_page();
@@ -2111,7 +2150,10 @@ static void draw_graph(void)
          * main loop keeps its time for the keys, the knobs and the LCD. A new page, track or engine: at once */
         static uint32_t gr_ms, gr_key;
         uint32_t key = ui.page * 7u + song.sel * 131u + ui.home * 3u + TSEL->eng_req * 1031u;
-        if (sys_load && !ui.force && key == gr_key && fm1_ms - gr_ms < (sys_load == LOAD_ECO ? 70u : 50u))
+        uint32_t lim = ui_hold ? 95u : sys_load == LOAD_ECO ? 70u : sys_load ? 50u : 0u;   /* (codex/anim: under load ~10
+                                                      * a second, as SLOW's panel was drawn, the pictures where the clock
+                                                      * has them) */
+        if (!ui.force && key == gr_key && fm1_ms - gr_ms < lim)
             return;                                  /* (graph_sig stays: drawn on a later frame) */
         gr_key = key;
         gr_ms = fm1_ms;
@@ -2274,6 +2316,6 @@ static void draw_graph(void)
         toast_pill();
     else
         toast_at[0] = toast_at[2] = 0;
-    cv_blit(0, graph_y());
+    panel_send(graph_y());
 }
 

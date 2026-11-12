@@ -103,33 +103,60 @@ static void list_put(uint32_t v)
  * the engines' creatures, the live graphs still: their signatures stop changing, nothing is drawn again), until it
  * falls under UI_HOLD_OFF % or the music stops (ui_hold_poll, main.c: once a frame). The I-cache is one for both cores
  * and the UI: a frame drawn is the engines' code evicted (Kirill's audit, LOOM-8) */
-/* (codex/voices, the owner: "the frozen animations come quite soon with the CPU") in two steps, each with its own way
- * back, both on the average (never one half's spike):
- *   1 SLOW    from UI_HOLD_ON % (back under UI_HOLD_OFF): frames every 50 ms instead of 15, so the beings, the creatures
- *             and the scope draw a third as often (they move on, slower); the values snap (no rolling digits: frames
- *             drawn again for a look), the LFO's and the envelope's live graphs go on at that pace.
- *   2 FREEZE  from UI_FREEZE_ON % (back to SLOW under UI_FREEZE_OFF): as beta4's hold, the animation still.
- * Until now one step, the freeze, at 60 %. The UI still gets no more of the time than it did held: a frame's pace is
- * the held one from 60 % on; what SLOW adds is what those frames draw */
+/* (codex/voices, the owner: "the frozen animations come quite soon with the CPU") SLOW from 60 %, FREEZE from 75 %;
+ * (codex/anim) FREEZE the last resort, after LITE: */
+/* (codex/anim, the owner: "smooth, not frozen: lower the drawing's cost as real-time 3D engines do") three steps, each its
+ * own way back, all on the average:
+ *   1 SLOW    from 60 % (back under 50: UI_ON, UI_OFF): a frame every 50 ms, the values snap, the pictures at half
+ *             their detail (ui_lod: a polyline's every other point left out, glided there: ui_organic.c pl_pt)
+ *   2 LITE    from 75 % (back to SLOW under 65): a frame every 100 ms, as SLOW otherwise. Until
+ *             codex/anim this step froze the animation
+ *   3 FREEZE  from 85 % (the voices' guard's own: voice.c GUARD_ON_AVG; back to LITE under 78): the
+ *             last resort, as beta4's hold: the animation still, a frame every 50 ms
+ * Everything that moves takes its place from the animation's clock (anim_at, ms; anim_fr its 15 ms ticks, a frame at
+ * full pace), never from the frames drawn: fewer frames show the same motion, never a stop and a jump. The clock runs
+ * with fm1_ms (latched once a frame: anim_sync) and stands still while ANIM_OFF() */
 static uint8_t ui_hold;
-static uint32_t anim_at;                               /* the last frame the animation moved on (ui_draw) .. */
-#define UI_HOLD_ON 60u
-#define UI_HOLD_OFF 50u
-#define UI_FREEZE_ON 75u
-#define UI_FREEZE_OFF 65u
-#define ANIM_OFF() ((ui_prefs & PREF_ANIM_OFF) || ui_hold > 1u)
-#define anim_fr (ANIM_OFF() ? anim_at : ui.frame)      /* .. the animation's frame: ui.frame while it moves, that one while
-                                                        * still (the same frame draws the same picture, held or not) */
+static uint32_t anim_at;                               /* the animation's clock (ms): fm1_ms - anim_off while it moves */
+typedef struct {                                       /* (in the pool's spare hashes, gfx.c DC_USE: no new RAM) */
+    uint32_t off, tk;                                  /* the time held still, taken out; the clock's ticks, latched */
+    uint16_t lod, ms;                                  /* the pictures' detail: 0 whole .. 256 half (glided over LOD_MS) */
+    uint32_t nkey;                                     /* ui_lens.c nav_list, once a frame: what for, .. */
+    uint8_t non, n, v[24];                             /* .. while drawing, what it found (NAV_MAX) */
+    int32_t px, py, ox, oy;                            /* ui_organic.c pl_pt: the polyline's last point, the odd one held */
+} anim_st_t;
+#define anim_st (*(anim_st_t *)(void *)(dc_hash + DC_USE))
+typedef char anim_st_fits[sizeof(anim_st_t) <= 2u * (DC_MAX - DC_USE) ? 1 : -1];
+#define anim_off (anim_st.off)
+#define anim_tk (anim_st.tk)
+#define ui_lod (anim_st.lod)
+#define lod_ms (anim_st.ms)
+static const uint8_t UI_ON[3] = {60u, 75u, 85u}, UI_OFF[3] = {50u, 65u, 78u};   /* SLOW, LITE, FREEZE: from, back under
+                                                         * (FREEZE from the voices' guard's own 85 %: voice.c GUARD_ON_AVG) */
+#define ANIM_TICK 15u                                  /* a tick of the animation: a frame at full pace (main.c) */
+#define LOD_MS 300u                                    /* a change of detail glided over this long (a few frames) */
+#define UI_PACE() (ui_hold == 2u ? 100u : ui_hold ? 50u : 15u)   /* ms a frame at least (main.c) */
+#define ANIM_OFF() ((ui_prefs & PREF_ANIM_OFF) || ui_hold > 2u)
+#define anim_fr anim_tk                                /* the animation's ticks (the same time draws the same picture) */
 #define ANIM_SNAP() (ANIM_OFF() || sys_load || ui_hold)
 static void ui_hold_poll(void)
 {
-    uint32_t pct = load_avg_q8 >> 8;
-    if (!song.playing || pct < UI_HOLD_OFF)
-        ui_hold = 0;
-    else if (pct >= UI_FREEZE_ON)
-        ui_hold = 2;
-    else if (ui_hold == 2u ? pct < UI_FREEZE_OFF : pct >= UI_HOLD_ON)
-        ui_hold = 1;
+    uint32_t pct = song.playing ? load_avg_q8 >> 8 : 0u, h = 0;
+    while (h < 3u && pct >= (h < ui_hold ? UI_OFF[h] : UI_ON[h]))   /* (each step up past its own, down under its own) */
+        h++;
+    ui_hold = (uint8_t)h;
+}
+/* the clock and the detail, once a frame (ui_draw) */
+static void anim_sync(void)
+{
+    uint32_t st = (uint16_t)((uint16_t)fm1_ms - lod_ms) * 256u / LOD_MS, tg = ui_hold ? 256u : 0u;
+    if (ANIM_OFF())
+        anim_off = fm1_ms - anim_at;
+    else
+        anim_at = fm1_ms - anim_off;
+    anim_tk = anim_at / ANIM_TICK;
+    lod_ms = (uint16_t)fm1_ms;
+    ui_lod = (uint16_t)(ui_lod < tg ? (ui_lod + st < tg ? ui_lod + st : tg) : (ui_lod > tg + st ? ui_lod - st : tg));
 }
 #define PREF_ACCEL_OFF 4u                      /* MENU > KNOB ACCEL OFF (#52; JIANT: ON by default, the bit now means OFF):
                                                 * fast turns of wide values x2..x16 */

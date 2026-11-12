@@ -189,13 +189,25 @@ static int home_macros(void) { return ui.home && !ui.menu && !gen_on() && home_s
  * FX's 17 since snd8's TAPE, fits: ui_test checks every chain against it; snd8b's 17th page overran a 16 and crashed
  * FX); how many */
 #define NAV_MAX 24u
+/* (codex/anim) worked out once a frame drawn (the tabs, the crumbs, the signatures ask it ~50 times: a tenth of an EDIT
+ * frame): kept while ui_draw runs (anim_st.non), for the page, the section and the track it was for (ui.c anim_st) */
 static uint32_t nav_list(uint32_t sec, uint8_t *v)
 {
     const ch_t *c = nav_ch(sec);
-    uint32_t k, n = 0;
+    anim_st_t *q = &anim_st;
+    uint32_t k, n = 0, key = ((ui.page * 8u + sec) * 8u + song.sel) * 4u + ui.hlv + 1u;
+    if (q->non && q->nkey == key) {
+        memcpy(v, q->v, NAV_MAX);
+        return q->n;
+    }
     for (k = 0; k < c->n; k++)
         if (nv_ok(sec, k))
             v[n++] = (uint8_t)k;
+    if (q->non) {
+        memcpy(q->v, v, NAV_MAX);
+        q->n = (uint8_t)n;
+        q->nkey = key;
+    }
     return n;
 }
 static void go_home(void);

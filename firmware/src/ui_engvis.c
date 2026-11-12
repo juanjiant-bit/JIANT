@@ -155,8 +155,9 @@ static void vx_curve(const vxf_t *f, const int32_t *p, uint32_t n, int closed, i
     int32_t o[2 * (1 + 3 * 24)];                         /* (24 points closed at most: seq-v2's STRING draws 24, its
                                                          * silk; main's 16 overran the stack: p2, ui_render under ASan) */
     uint32_t i, e = 3u * vx_bez(p, n, closed, o);
-    for (i = 0; i < e; i++)
-        vx_line(f, o[2u * i], o[2u * i + 1u], o[2u * i + 2u], o[2u * i + 3u], h);
+    uint16_t c = vx_col(h);
+    for (i = 0; i <= e; i++)                             /* (codex/anim: at the load's detail, ui_organic.c pl_pt) */
+        pl_pt(i, e, f->cx + ((o[2u * i] * f->s) >> 8), f->cy + ((o[2u * i + 1u] * f->s) >> 8), c, 256 - vxs.dal);
 }
 /* an ellipse (Q4 units), n sides, its top at angle a0 .. a1 (16-bit turns) */
 static void vx_arc(const vxf_t *f, int32_t cx, int32_t cy, int32_t rx, int32_t ry, uint32_t a0, uint32_t a1, uint32_t n,
@@ -172,21 +173,24 @@ static void vx_arc(const vxf_t *f, int32_t cx, int32_t cy, int32_t rx, int32_t r
         py = y;
     }
 }
+static uint32_t vx_mt(uint32_t ms) { return ms / 25u * 192u + ms % 25u * 192u / 25u; }   /* (codex/anim) ms -> the mock-up's
+                                                         * Q8 frames (30 a second), whole: steps of any size add up the same */
 static uint32_t vx_rnd(uint32_t *r) { *r ^= *r << 13; *r ^= *r >> 17; *r ^= *r << 5; return *r; }
 /* the level of track t now (0..256: its part's peak, slewed: a hit at once, a quick fall), k: which drawing; its time
  * runs with it (once a frame) */
 static int32_t vx_level(const track_t *t, uint32_t k, int32_t en_home)
 {
-    uint32_t dt = ui.frame - vxs.fr[k], dm = fm1_ms - vxs.ms[k];
-    int32_t v;
+    uint32_t dt = anim_fr - vxs.fr[k], dm = fm1_ms - vxs.ms[k], st = (anim_fr >> 1) - (vxs.fr[k] >> 1);   /* (codex/anim: the
+                                                         * clock's ticks, not the frames; st: their pairs) */
+    int32_t v, j;
     if (!dt)
         return vxs.en[k];
     if (dt > 8u) dt = 8u;
-    vxs.fr[k] = ui.frame;
+    vxs.fr[k] = anim_fr;
     vxs.ms[k] = fm1_ms;
-    if (dm > 100u) dm = 100u;                            /* (a pause: no jump) */
+    if (dm > 250u) dm = 250u;                            /* (a pause: no jump; codex/anim: 4 frames a second still the time) */
     if (vxs.en[k])                                       /* (0.9.6) the mock-up's time: 30 frames a second while it sounds */
-        vxs.mt[k] += dm * 7680u / 1000u;
+        vxs.mt[k] += vx_mt(fm1_ms) - vx_mt(fm1_ms - dm);
     if (ANIM_OFF())
         return vxs.en[k] = 0;                            /* (ANIM OFF: at rest) */
     if (en_home >= 0)
@@ -195,7 +199,9 @@ static int32_t vx_level(const track_t *t, uint32_t k, int32_t en_home)
         v = ((track_t *)t)->peak * 256 / 7000;
         ((track_t *)t)->peak = 0;
         v = v > 256 ? 256 : v;
-        v = v > vxs.en[k] ? v : vxs.en[k] + (v - vxs.en[k] - 2) / 3;
+        for (dm = 0, j = vxs.en[k]; dm < st && dm < 8u; dm++)   /* (the fall: a step each two ticks, as at full pace) */
+            j = v > j ? v : j + (v - j - 2) / 3;
+        v = j;
     }
     v = v > 4 ? v : 0;                                   /* (HOME's level rests a little above 0: silence) */
     vxs.en[k] = v;
@@ -548,7 +554,7 @@ static VX_CODE void vx_voice(const track_t *t, int32_t cx, int32_t cy, int32_t s
     if (a[10] > 60)
         vh_node(&f, a[8], a[9], 1 + a[10] / 128, 150 + a[10] / 3 + hb);
     /* the air: turbulence from the constriction out through the mouth (frication), at the glottis (aspiration) */
-    r = ui.frame * 2654435761u + 1u;
+    r = anim_fr * 2654435761u + 1u;
     for (i = 0; i < fri / 14 && i < 12; i++) {           /* (a jet: from the slit forward and out between the teeth) */
         int32_t e = (int32_t)(vx_rnd(&r) & 255u), x = a[8] - e * 18 * 16 / 256;
         int32_t y = a[9] + (29 * 16 - a[9]) * clamp(e * 2, 0, 256) / 256 + ((int32_t)((r >> 8) & 63u) - 32) * (16 + e / 8) / 64;
@@ -633,9 +639,9 @@ static VX_SEG void vx_animal(const track_t *t, int32_t cx, int32_t cy, int32_t s
     tgt = clamp(tgt, 0, 256);
     m = vxs.w[0];
     if (!vxs.w[1]) { vxs.w[1] = 1; m = tgt; }           /* (the first look: at once) */
-    if (vxs.w[2] != (int16_t)ui.frame) {                 /* (the metamorphosis glides: once a frame) */
+    if (vxs.w[2] != (int16_t)anim_fr) {                  /* (the metamorphosis glides: once a frame drawn) */
         m += (tgt - m) / 5 + (tgt > m) - (tgt < m);
-        vxs.w[2] = (int16_t)ui.frame;
+        vxs.w[2] = (int16_t)anim_fr;
     }
     vxs.w[0] = (int16_t)m;
     w[0] = m >= 128 ? (256 - m) * 2 : m * 2;             /* bird */
@@ -651,9 +657,9 @@ static VX_SEG void vx_animal(const track_t *t, int32_t cx, int32_t cy, int32_t s
     pt[2 * 15 + 1] += op * (w[0] + w[2]) / 256 + op / 3;
     pt[2 * 14 + 1] += op / 3;
     flap = 0;
-    if (mode == AN_PULSE) flap = act ? (int32_t)((ui.frame & 1u) ? 1 : -1) * (2600 + act * 20) : 0;
-    else if (mode == AN_WING) flap = act ? og_sin(ui.frame * 0x5100u) * (act * 26) >> 15 : 0;
-    else if (act > 40) flap = og_sin(ui.frame * 0x2400u) * (act / 4) >> 9;
+    if (mode == AN_PULSE) flap = act ? (int32_t)((anim_fr & 1u) ? 1 : -1) * (2600 + act * 20) : 0;
+    else if (mode == AN_WING) flap = act ? og_sin(anim_fr * 0x5100u) * (act * 26) >> 15 : 0;
+    else if (act > 40) flap = og_sin(anim_fr * 0x2400u) * (act / 4) >> 9;
     flap -= (w[1] * 3000) >> 8;                           /* (an insect's wings raised a little, as it sings) */
     {   /* the body: three isotherms, the outer cold */
         static const int16_t SC[3] = {256, 170, 96}, HT[3] = {40, 116, 176};
@@ -669,7 +675,7 @@ static VX_SEG void vx_animal(const track_t *t, int32_t cx, int32_t cy, int32_t s
     /* the limbs: hip, knee, foot (a bird's feet with toes; an insect's legs shaking as it stridulates) */
     for (i = 0; i < 4u; i++) {
         int32_t *l = &pt[VA_LIMB + 6 * i], jx = 0;
-        if (mode == AN_PULSE && act && i == 2u) jx = (ui.frame & 1u) ? 2 * 16 : -2 * 16;
+        if (mode == AN_PULSE && act && i == 2u) jx = (anim_fr & 1u) ? 2 * 16 : -2 * 16;
         q[0] = l[0]; q[1] = l[1]; q[2] = l[2] + jx; q[3] = l[3] - jx / 2; q[4] = l[4]; q[5] = l[5];
         if ((q[0] - q[4]) * (q[0] - q[4]) + (q[1] - q[5]) * (q[1] - q[5]) < 4 * 256)
             continue;                                    /* (folded away) */
@@ -701,7 +707,7 @@ static VX_SEG void vx_animal(const track_t *t, int32_t cx, int32_t cy, int32_t s
     }
     /* the head's strokes: crest, antennae (trembling with the call), ears */
     for (i = 0; i < 2u; i++) {
-        int32_t *h = &pt[VA_HEAD + 6 * i], tr = w[1] && act ? (og_sin(ui.frame * 0x3700u + i * 0x5000u) * act) >> 17 : 0;
+        int32_t *h = &pt[VA_HEAD + 6 * i], tr = w[1] && act ? (og_sin(anim_fr * 0x3700u + i * 0x5000u) * act) >> 17 : 0;
         q[0] = h[0]; q[1] = h[1]; q[2] = h[2] + tr; q[3] = h[3]; q[4] = h[4] + tr * 2; q[5] = h[5] - tr;
         vx_curve(&f, q, 3, 0, i ? 96 : 140);
     }
@@ -717,7 +723,7 @@ static VX_SEG void vx_animal(const track_t *t, int32_t cx, int32_t cy, int32_t s
             vx_arc(&f, pt[VA_ORG], pt[VA_ORG + 1], r, r * 3 / 4, 0, 65536u, 10, 180 + hb);
         if (w[1] > 40)                                   /* (the abdomen's segments: the tymbal pulsing) */
             for (i = 0; i < 4u; i++) {
-                int32_t x = (pt[2 * 6] * (int32_t)(i + 1) + pt[2 * 5] * (int32_t)(4 - i)) / 5, sp = act ? (int32_t)((ui.frame + i) & 1u) * 16 : 0;
+                int32_t x = (pt[2 * 6] * (int32_t)(i + 1) + pt[2 * 5] * (int32_t)(4 - i)) / 5, sp = act ? (int32_t)((anim_fr + i) & 1u) * 16 : 0;
                 vx_line(&f, x + sp, pt[2 * 5 + 1] + 2 * 16, x - 2 * 16 + sp, pt[2 * 11 + 1] - 2 * 16, 60 + (w[1] * (90 + hb) >> 8));
             }
     }
@@ -1662,7 +1668,7 @@ static VX_SEG void vx_phase(const track_t *t, const int32_t *A, int32_t en_home)
 static VX_SEG void vx_lofi(const track_t *t, const int32_t *A, int32_t en_home)
 {
     const int16_t *p = t->p;
-    int32_t a0 = A[2] * 256 / 124, b0 = (A[3] - 4) * 256 / 94, fl = p[P_E1] != RW_BYTE, new_fr = vxs.fr[8] != ui.frame;
+    int32_t a0 = A[2] * 256 / 124, b0 = (A[3] - 4) * 256 / 94, fl = p[P_E1] != RW_BYTE, new_fr = vxs.fr[8] != anim_fr;
     int32_t en = vx_level(t, 8, en_home), i, j, pk = 6000, sx[9], sy[9], bc[8], px = 0, py = 0, qx = 0, qy = 0, q[2 * 22], g = fl ? 38 : 27;
     uint32_t mt = vxs.mt[8], age = vx_age(t, 8, 0), w0 = scope_w - 256u, byte = 0, cr;
     int32_t sq = vx_sq(vx_fall(age, 154u), age);

@@ -79,19 +79,42 @@ static void og_line_a(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c
     }
 }
 static void og_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c) { og_line_a(x0, y0, x1, y1, c, 256); }
+/* (codex/anim) a polyline's points 0..n, one at a time, at the pictures' level of detail (ui.c ui_lod: 0 whole .. 256
+ * half): each odd point glides onto the chord between its two neighbours as the detail falls, and at half is left out,
+ * half the lines (a geomorph, as a 3D engine blends a mesh's levels: the outline the same, nothing pops). At 0 the
+ * lines drawn are the ones drawn before it. pl_skip: an odd point the caller need not even work out */
+#define pl_skip(i, n) (((i) & 1u) && (i) < (n) && ui_lod >= 256u)
+static void pl_pt(uint32_t i, uint32_t n, int32_t x, int32_t y, uint16_t c, int32_t a)
+{
+    anim_st_t *q = &anim_st;
+    int32_t m = q->lod;
+    if ((i & 1u) && i < n && m) {                       /* (an odd point: held for the next) */
+        q->ox = x;
+        q->oy = y;
+        return;
+    }
+    if (i && !(i & 1u) && m && m < 256) {               /* (an even one after it: the held one on its way to the chord) */
+        q->ox += (((q->px + x) >> 1) - q->ox) * m >> 8;
+        q->oy += (((q->py + y) >> 1) - q->oy) * m >> 8;
+        og_line_a(q->px, q->py, q->ox, q->oy, c, a);
+        q->px = q->ox;
+        q->py = q->oy;
+    }
+    if (i)
+        og_line_a(q->px, q->py, x, y, c, a);
+    q->px = x;
+    q->py = y;
+}
 
 /* a quadratic Bezier (Q4 points) in n short lines */
 static void og_quad_a(int32_t x0, int32_t y0, int32_t cx, int32_t cy, int32_t x1, int32_t y1, uint16_t c, uint32_t n,
                       int32_t a)
 {
-    int32_t px = x0, py = y0;
     uint32_t i;
+    pl_pt(0, n, x0, y0, c, a);
     for (i = 1; i <= n; i++) {
         int32_t t = (int32_t)((i << 8) / n), u = 256 - t;   /* Q8 */
-        int32_t x = (u * u * x0 + 2 * u * t * cx + t * t * x1) >> 16, y = (u * u * y0 + 2 * u * t * cy + t * t * y1) >> 16;
-        og_line_a(px, py, x, y, c, a);
-        px = x;
-        py = y;
+        pl_pt(i, n, (u * u * x0 + 2 * u * t * cx + t * t * x1) >> 16, (u * u * y0 + 2 * u * t * cy + t * t * y1) >> 16, c, a);
     }
 }
 static void og_quad(int32_t x0, int32_t y0, int32_t cx, int32_t cy, int32_t x1, int32_t y1, uint16_t c, uint32_t n)
@@ -106,15 +129,12 @@ static int32_t og_sin(uint32_t ang) { return sine_i(ang << 16); }
 static void og_cubic_a(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3,
                        uint16_t c, uint32_t n, int32_t a)
 {
-    int32_t px = x0, py = y0;
     uint32_t i;
+    pl_pt(0, n, x0, y0, c, a);
     for (i = 1; i <= n; i++) {                           /* t in Q6: products stay in 32 bits */
         int32_t t = (int32_t)((i << 6) / n), u = 64 - t, uu = u * u, tt = t * t;
-        int32_t x = (uu * u * x0 + 3 * uu * t * x1 + 3 * u * tt * x2 + tt * t * x3) >> 18;
-        int32_t y = (uu * u * y0 + 3 * uu * t * y1 + 3 * u * tt * y2 + tt * t * y3) >> 18;
-        og_line_a(px, py, x, y, c, a);
-        px = x;
-        py = y;
+        pl_pt(i, n, (uu * u * x0 + 3 * uu * t * x1 + 3 * u * tt * x2 + tt * t * x3) >> 18,
+              (uu * u * y0 + 3 * uu * t * y1 + 3 * u * tt * y2 + tt * t * y3) >> 18, c, a);
     }
 }
 
@@ -173,14 +193,11 @@ static void og_stipple(int32_t cx, int32_t cy, int32_t rx, int32_t ry, uint32_t 
 /* a circle of radius r (Q4) in 20 lines */
 static void og_ring(int32_t cx, int32_t cy, int32_t r, uint16_t c)
 {
-    int32_t px = cx + r, py = cy;
     uint32_t i;
+    pl_pt(0, 20u, cx + r, cy, c, 256);
     for (i = 1; i <= 20u; i++) {
         uint32_t ang = i * (1u << 16) / 20u;
-        int32_t x = cx + ((og_cos(ang) * r) >> 15), y = cy + ((og_sin(ang) * r) >> 15);
-        og_line(px, py, x, y, c);
-        px = x;
-        py = y;
+        pl_pt(i, 20u, cx + ((og_cos(ang) * r) >> 15), cy + ((og_sin(ang) * r) >> 15), c, 256);
     }
 }
 /* a filled dot of radius r px (pixel centre (cx, cy) in Q4) with an antialiased rim */

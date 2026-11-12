@@ -321,6 +321,9 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "UI renders: layout lint (every screen and palette, every page, engine and column value), ink contrast, alignment by ink (1 px fails), draw cost" \
         "$OUT/ui_render" build/ui_new build/ui_slot
     if python3 -c "import PIL" 2>/dev/null; then python3 tests/ui_render.py build/ui_new build/ui_slot; fi
+    $CC -O1 -w "-DFELUCCA_VERSION=\"$FV\"" -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/anim_test" tests/anim_test.c -lm
+    run "animation under load (codex/anim): the clock not the frames, no jumps at 10 frames/s, the detail glides, nothing sent when still, cost" \
+        "$OUT/anim_test"
     $CC -w -DFELUCCA_FM4=1 -Ibuild/gen -Ifirmware/src -o "$OUT/ui_test_fm4" tests/ui_test.c -lm
     run "UI built with FELUCCA_FM4=1 (DIGITAL, kept in the tree): its OP pages, EDIT cycle, algorithm charts" "$OUT/ui_test_fm4"
     $CC -O1 -w -DFELUCCA_FM4=1 "-DFELUCCA_VERSION=\"$FV\"" -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/ui_render_fm4" tests/ui_render.c -lm
