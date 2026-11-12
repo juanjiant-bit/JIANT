@@ -1107,7 +1107,7 @@ static __attribute__((noinline)) void comp_knob(uint32_t slot, int32_t steps)
  * kept while the result stays untouched; back to the middle = back to it; UNDO: GLO + G4); KNOB 3 NUDGE: the whole
  * sequence a step left / right; KNOB 4 ROTATE: played from another step (P_SOFS). ui_tools.c tl_stretch, tl_repeat,
  * tl_shift */
-static uint32_t tl_len(const track_t *t);
+#define tl_len ev_len                                /* (ui_events.c: the same length, one copy) */
 static void tl_take(const track_t *t);
 static void tl_shift(track_t *t, uint32_t len, uint32_t d);
 static void tl_order(track_t *t, uint32_t len, const uint8_t *src);

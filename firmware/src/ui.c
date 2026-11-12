@@ -1359,13 +1359,7 @@ static uint8_t pat_last[NTRK];   /* that pattern's list index + 1, 0 = none */
 static uint8_t load_from;        /* a sound load (the outer one): the engine before it (load_end) */
 static uint8_t load_mo;          /* .. the track's motion paused while the sound changes: bit 0 set, bit 1 it was ON */
 
-static uint32_t fnv(uint32_t h, const void *p, uint32_t n)
-{
-    const uint8_t *b = (const uint8_t *)p;
-    while (n--)
-        h = (h ^ *b++) * 16777619u;
-    return h;
-}
+#define fnv as_mix                                   /* (params.c: the same FNV-1a, one copy) */
 static uint32_t steps_sig(const track_t *t) { return fnv(2166136261u, t->step, sizeof t->step); }
 
 /* load_begin: a pattern load drops the track's motion (its steps go); a sound load pauses it (PLAY OFF while the

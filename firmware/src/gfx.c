@@ -969,6 +969,7 @@ static int32_t cv_text_fit(int32_t x, int32_t y, const aafont_t *f, const char *
     int cut = text_fit(b, sizeof b, s, f, maxw);
     return cv_text_flags(x, y, f, b, fg, bg, cut ? 1u : 0u);
 }
+#if GFX_HOOKS
 static int32_t cv_free_text(int32_t x, int32_t y, const aafont_t *f, const char *s, uint16_t fg, uint16_t bg,
                             int32_t maxw)
 {
@@ -976,6 +977,9 @@ static int32_t cv_free_text(int32_t x, int32_t y, const aafont_t *f, const char 
     int cut = text_fit(b, sizeof b, s, f, maxw);
     return cv_text_flags(x, y, f, b, fg, bg, cut ? 9u : 8u);
 }
+#else
+#define cv_free_text cv_text_fit                /* (the firmware: the flags only the hooks read, the same code) */
+#endif
 /* (0.8.5) free text cut to maxw without an ellipsis, as the mock-up's chips cut a name ("WOBBL"): its first characters */
 static int32_t cv_clip_text(int32_t x, int32_t y, const aafont_t *f, const char *s, uint16_t fg, uint16_t bg, int32_t maxw)
 {

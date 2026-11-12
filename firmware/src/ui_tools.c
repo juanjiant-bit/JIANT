@@ -20,7 +20,6 @@ enum { TL_CLEAR, TL_REV, TL_LEFT, TL_RIGHT, TL_RANDOM, TL_COOK, TL_BEAT, TL_CAUT
  * the pool, RAM's .bss tight): the pool's headroom paid for step_t's four bytes of components v2 (proj_scratch) */
 #define tl_src (mscr.tl_src)          /* (seq2h) core.h mscr: one action's, the main loop's scratch */
 
-static uint32_t tl_len(const track_t *t) { return (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP); }
 static uint32_t tl_rnd(uint32_t n) { return n ? rng() % n : 0u; }
 static int tl_gate(const step_t *s) { return s->time == ST_NOTE && s->n; }
 static uint32_t tl_lane(const step_t *s, uint32_t l) { return (step_lanes_of(TSEL,s) >> l) & 1u; }

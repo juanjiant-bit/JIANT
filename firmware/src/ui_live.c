@@ -22,7 +22,6 @@
  * else STRETCH; CORTE / LOOP into LEN, a LOOP's steps to the start; GIRO into ROTATE; THIN into CHANCE; REV, PING, RND,
  * RATCH, OCT and a rate with no DIV or STRETCH stay live; UNDO: GLO + G4). Never saved; STOP keeps them. Included by
  * ui_layer.c. */
-static uint32_t tl_len(const track_t *t);
 static void tl_take(const track_t *t);
 static uint32_t tl_stretch(track_t *t, int32_t k);
 static uint16_t pk_fill(uint32_t st, int blk, int n, uint16_t *ink);
