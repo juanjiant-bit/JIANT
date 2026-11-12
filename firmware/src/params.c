@@ -837,6 +837,9 @@ static const page_t PAGES[] = {
     {"SWARM", FAM_EDIT, SC_TRACK, GR_SWARM, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.6z6) a SWARM track's FAR / NEAR: SIDE RATE MOVE
                                                          * TONE, (SWARM 2) SIDE NOISE MOD NOW (ui_dx.c sw_ui_*) */
     {"SWARM 2", FAM_EDIT, SC_TRACK, GR_SWARM, {0xFF, 0xFF, 0xFF, 0xFF}},
+    {"EDIT 1", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E0, P_E1, P_E2, P_E7}},   /* (V10.7.21) ANALOG's EDIT 1 (OSC): WAVE DETUNE MIX
+                                                         * INT; its EDIT 2 gone (FILTER has TYPE CUT RES DRIVE), NOISE on
+                                                         * FOCUS (ui.c page_visible) */
 };
 #define SPLIT_PAGE(pg) ((uint32_t)((pg)->graph - GR_SPLIT) < 2u)
 #define FIT_PAGE(pg) ((pg)->fam == FAM_SEQ && (pg)->id[0] == P_SLEN && (pg)->id[1] == 0xFFu)

@@ -731,7 +731,7 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see [14](#14-midi-
 
 | Engine | EDIT 1 | EDIT 2 | HOME knobs |
 | --- | --- | --- | --- |
-| **ANALOG** | WAVE, DETUNE, MIX, NOISE | CUT, RES, DRIVE, INT | CUT, RES, ATK, REL |
+| **ANALOG** | WAVE, DETUNE, MIX, INT (V10.7.21; NOISE, or INT 3 on SAW3 / PLS3, on FOCUS) | — (its FILTER page: TYPE, CUT, RES, DRIVE) | CUT, RES, ATK, REL |
 | **FM6** | ALG, FB, MOD, RATIO | MEG, VMOD, DETUNE, SLOT | MOD, RATIO, MEG, SLOT |
 | **PHASE** | WAVE, WAVE2, DCW, ENV | DETUNE, LINE, SUB, FB | DCW, ENV, DETUNE, REL |
 | **MATH** (V10.6e) | CHIP, WAVE (BYTE / FLOAT), ALGO, VAR | MOTION, GRIT (FLOAT: FEEDBK), BEND, LOOP | ALGO, VAR, MOTION, REL |

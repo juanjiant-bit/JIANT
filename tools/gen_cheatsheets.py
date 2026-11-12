@@ -312,9 +312,9 @@ def sound():
     b = []
     b.append(sec('ENGINES · EDIT 1 / EDIT 2'))
     eng = [
-        ('ANALOG', HEAT[1], 'WAVE DETUNE MIX NOISE', 'CUT RES DRIVE INT',
-         'SAW SQR TRI SIN PWM <b>SYNC RING SAW3 PLS3</b>; INT: osc 2 ±24 st; on SAW3 / PLS3 the NOISE knob is <b>INT 3</b>, osc 3\'s '
-         'interval (V10.39). Its filter is per voice. <b>Its picture</b> (0.9.6): '
+        ('ANALOG', HEAT[1], 'WAVE DETUNE MIX INT', 'FILTER: TYPE CUT RES DRIVE',
+         'SAW SQR TRI SIN PWM <b>SYNC RING SAW3 PLS3</b>; INT: osc 2 ±24 st; NOISE (on SAW3 / PLS3 <b>INT 3</b>, osc 3\'s '
+         'interval) on FOCUS (V10.7.21: no EDIT 2, its FILTER page instead). Its filter is per voice. <b>Its picture</b> (0.9.6): '
          'a cell whose membrane is the wave, spikes where DRIVE clips, a ring at CUT.'),
         ('FM6', HEAT[3], 'ALG FB MOD RATIO', 'MEG VMOD DETUNE SLOT',
          'Dexed\'s 6 operators, 32 algorithms drawn, .syx patches (SLOT), MOD / RATIO move the modulators. '

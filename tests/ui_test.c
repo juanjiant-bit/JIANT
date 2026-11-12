@@ -4606,8 +4606,8 @@ static int test_edit_cycle(void)
 {
     /* (0.9.2: one chain, SELECT a page a detent; an EDIT tap the next group's first. Was 0.8.5's lens: SELECT a level, the
      * tap the level's next set) */
-    static const char *const CH_A[] = {"EDIT 1", "EDIT 2", "FILTER", "MORPH", "STEREO", "FOCUS", "VOICE", "VOICE 2"};   /* (JIANT 0.5:
-                                                         * ANALOG's FILTER; 0.6.45: MORPH) */
+    static const char *const CH_A[] = {"EDIT 1", "FILTER", "MORPH", "STEREO", "FOCUS", "VOICE", "VOICE 2"};   /* (JIANT 0.5:
+                                                         * ANALOG's FILTER; 0.6.45: MORPH; V10.7.21: no EDIT 2) */
     static const char *const TP_A[] = {"FILTER", "FOCUS", "VOICE"};
     static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "FILTER", "STEREO", "OPERATOR", "OP ENV", "OPERATOR 2", "VOICE", "VOICE 2"};
     static const char *const TP_F[] = {"FILTER", "OPERATOR", "VOICE"};
@@ -4625,8 +4625,39 @@ static int test_edit_cycle(void)
         ok &= !str_eq(PAGES[i].title, "ENGINE");
     bad += check("no ENGINE page (engines are the EDIT layer's)", ok);
     set_engine_of(TSEL, 0);
-    bad += check("0.9.2 EDIT chain (ANALOG): SOUND (EDIT 1 EDIT 2) . TONE (FILTER MORPH VOICE VOICE 2) . FOCUS; taps: groups",
+    bad += check("0.9.2 EDIT chain (ANALOG, V10.7.21): SOUND (EDIT 1) . TONE (FILTER MORPH VOICE VOICE 2) . FOCUS; taps: groups",
                  chain_walk(B_EDIT, CH_A, NELEM(CH_A), TP_A, NELEM(TP_A)));
+    {   /* (V10.7.21, the owner: EDIT 2 and FILTER were the same page) ANALOG: EDIT 1 WAVE DETUNE MIX INT (INT 3 with SAW3),
+         * FILTER TYPE CUT RES DRIVE, NOISE (with SAW3 / PLS3 its slot is INT 3) on FOCUS; PHASE keeps EDIT 1 and EDIT 2 */
+        int16_t *hv;
+        uint32_t k, seen = 0;
+        go_title("EDIT 1"); frame();
+        ok = cur_page()->id[0] == P_E0 && cur_page()->id[1] == P_E1 && cur_page()->id[2] == P_E2 && cur_page()->id[3] == P_E7 &&
+             str_eq(page_desc(cur_page(), 3, &hv)->label, "INT");
+        go_title("FILTER"); frame();
+        ok &= cur_page()->id[0] == P_FTYPE && cur_page()->id[1] == P_E4 && cur_page()->id[2] == P_E5 && cur_page()->id[3] == P_E6;
+        go_title("FOCUS"); frame();
+        for (k = 0; k < 8u; k++) {                      /* (FOCUS's PARAM walks E1..E8: NOISE among them) */
+            seen |= str_eq(track_desc(TSEL, P_E0 + focus_k())->label, "NOISE");
+            turn(EN_K1, 1); frame();
+        }
+        ok &= seen;
+        TSEL->p[P_E0] = AW_SAW3; frame();                /* (SAW3 / PLS3: NOISE's slot is INT 3, on FOCUS too) */
+        turn(EN_K1, -8); frame();
+        for (k = 0, seen = 0; k < 8u; k++) {
+            seen |= str_eq(track_desc(TSEL, P_E0 + focus_k())->label, "INT 3");
+            turn(EN_K1, 1); frame();
+        }
+        ok &= seen;
+        TSEL->p[P_E0] = 0;
+        set_engine_of(TSEL, ENGI_PHASE); frame();
+        go_title("EDIT 2"); frame();
+        ok &= str_eq(cur_page()->title, "EDIT 2") && cur_page()->id[0] == P_E4;
+        go_title("EDIT 1"); frame();
+        ok &= cur_page()->id[3] == P_E3;
+        set_engine_of(TSEL, 0); frame();
+        bad += check("V10.7.21 ANALOG: EDIT 1 WAVE DETUNE MIX INT, FILTER TYPE CUT RES DRIVE, NOISE (SAW3: INT 3) on FOCUS; PHASE EDIT 1 + 2", ok);
+    }
 #if FELUCCA_FM4
     set_engine_of(TSEL, 1);
     bad += check("0.9.2 EDIT chain (DIGITAL): SOUND . TONE (FILTER VOICE VOICE 2) . OPS (OP1..OP4 ENV, OP LEVEL)",
@@ -4672,9 +4703,9 @@ static int test_edit_cycle(void)
     go_title("OP2 ENV");
     set_engine_of(TSEL, 0); frame();
     bad += check("an OP page of a track no longer DIGITAL falls back to EDIT 1", str_eq(cur_page()->title, "EDIT 1"));
-    go_title("EDIT 2"); frame();                        /* (0.9.2: a page put by code brings its entry) */
+    go_title("MORPH"); frame();                         /* (0.9.2: a page put by code brings its entry) */
     go_home(); press(B_EDIT);
-    bad += check("EDIT remembers its last page (as every section: rule 2)", str_eq(cur_page()->title, "EDIT 2"));
+    bad += check("EDIT remembers its last page (as every section: rule 2)", str_eq(cur_page()->title, "MORPH"));
     return bad;
 }
 
@@ -10887,8 +10918,8 @@ static int test_bpm_lock(void)
     turn(EN_SELECT, 3);
     ok &= ui.home && ui.confirm == CF_DICE_ALL && song.g[G_BPM] == b0;   /* (0.6.69) HOME: GEN */
     press(B_OCTDN); frame(); ok &= !ui.confirm;
-    go_title("EDIT 1"); frame(); turn(EN_SELECT, 2);
-    ok &= str_eq(cur_page()->title, "FILTER") && pd_level() == 1u;    /* (0.9.2: EDIT 1 EDIT 2 FILTER ..) */
+    go_title("EDIT 1"); frame(); turn(EN_SELECT, 1);
+    ok &= str_eq(cur_page()->title, "FILTER") && pd_level() == 1u;    /* (V10.7.21 ANALOG: EDIT 1 FILTER ..) */
     turn(EN_SELECT, -5);
     ok &= str_eq(cur_page()->title, "EDIT 1");                        /* (no wrap: the lens's first level) */
     go_title("ENV DEST"); frame(); turn(EN_SELECT, 3);
@@ -12230,15 +12261,13 @@ static int test_lz_edit(void)
     ui_power_on(); set_engine_of(TSEL, 0); frame();
     press(B_EDIT); frame();
     ok = pd_on() && lz_fam() == LZ_EDIT && pd_level() == 0u && lz_tab_lit(0) && lz_crumb_is("EDIT \xB7 SOUND \xB7 EDIT 1 \xB7 OSC") &&
-         lz_count_is("1/8");
-    turn(EN_SELECT, 1); frame();
-    ok &= str_eq(cur_page()->title, "EDIT 2") && lz_count_is("2/8");
-    turn(EN_SELECT, 1); frame();
+         lz_count_is("1/7");
+    turn(EN_SELECT, 1); frame();                                    /* (V10.7.21 ANALOG: no EDIT 2) */
     ok &= pd_level() == 1u && lz_tab_lit(1) && str_eq(cur_page()->title, "FILTER") && lz_crumb_is("EDIT \xB7 TONE \xB7 FILTER") &&
-          lz_count_is("3/8");
+          lz_count_is("2/7");
     frames(320); press(B_EDIT); frame();                            /* EDIT: the next group, FOCUS */
     ok &= pd_level() == 2u && lz_tab_lit(2) && str_eq(cur_page()->title, "FOCUS") && lz_crumb_is("EDIT \xB7 FOCUS \xB7 FOCUS") &&
-          lz_count_is("6/8");
+          lz_count_is("5/7");
     turn(EN_SELECT, 3); frame();
     ok &= str_eq(cur_page()->title, "VOICE 2");                     /* (V10.49: VOICE VOICE 2 last; no wrap) */
     turn(EN_SELECT, -4); frame();
@@ -12253,10 +12282,10 @@ static int test_lz_edit(void)
     turn(EN_SELECT, 1); frame();
     open_family(FAM_ENV); frame();
     press(B_EDIT); frame();
-    ok = str_eq(cur_page()->title, "EDIT 2") && pd_level() == 0u;
+    ok = str_eq(cur_page()->title, "FILTER") && pd_level() == 1u;
     pr = TSEL->preset;
     turn(EN_PRESET, 1); frame();
-    ok &= (TSEL->preset != pr || TSEL->eng_req != 0u) && str_eq(cur_page()->title, "EDIT 2");   /* (the next sound) */
+    ok &= (TSEL->preset != pr || TSEL->eng_req != 0u) && str_eq(cur_page()->title, "FILTER");   /* (the next sound) */
     bad += check("0.9.2 EDIT: EDIT from elsewhere the page left; PRESETS the next sound, the page stays", ok);
     ui_power_on(); set_engine_of(TSEL, 0); go_title("FOCUS"); frame();
     for (v = 0; v < 12; v++)                                        /* (V10.6i: the preset's own MOD slots cleared: */
