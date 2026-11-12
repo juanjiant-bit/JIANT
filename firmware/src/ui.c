@@ -30,6 +30,7 @@ static void trackgen_knob(uint32_t k,int32_t s);
 static void trackgen_cards(void);
 static void trackgen_make(void);
 static void system_init(void);                  /* (0.6.40) project.c: INIT SYSTEM */
+static int project_clear(void);                 /* (V10.7.22) project.c: CLEAR PROJECT */
 static int undo_do(void);                       /* .. back (and again: forward) */
 static uint8_t undo_ok;
 static int project_used(uint32_t slot);
@@ -858,7 +859,8 @@ static uint8_t ndg_step;                            /* (V10.25) SEQ > STRETCH's 
 static uint32_t tl_t0;                              /* (V10.24) TOOLS: OCT+ held since (0: not), its action and track */
 static uint8_t tl_kind, tl_trk;
 #define TL_HOLD 900u                                /* (ms: held this long, it is done; no dialog) */
-static const uint8_t TL_SC[6] = {0, 1, 2, 2, 3, 3};  /* (V10.24) TOOLS' actions' scopes: TRACK SOUND SONG SYSTEM */                            /* (V10.24) PRESETS: an UNDO mark taken at the browse's first turn */
+static const uint8_t TL_SC[6] = {0, 1, 2, 3, 3, 4};  /* (V10.24) TOOLS' actions' scopes: (V10.7.22) PROJECT (CLEAR PROJECT,
+                                                     * the first) TRACK SOUND SONG SYSTEM */                            /* (V10.24) PRESETS: an UNDO mark taken at the browse's first turn */
 static void page_entered(void)
 {
     const page_t *pg = cur_page();
@@ -2116,8 +2118,8 @@ static const char *act_name(uint32_t c)          /* column c's action (the foote
     if (cur_page()->graph == GR_LYRSTEP) return "PLACE";
     if (cur_page()->graph == GR_TRACKGEN) return "MAKE";
     if (cur_page()->graph == GR_TOOLS) {
-        static const char *const actions[] = {"CLEAR", "INIT", "DELETE", "CLEAR", "INIT"};
-        return actions[c < 5u ? c : 4u];
+        static const char *const actions[] = {"CLEAR", "CLEAR", "INIT", "DELETE", "CLEAR", "INIT"};
+        return actions[c < 6u ? c : 5u];
     }
     if (cur_page()->graph == GR_SONG)                   /* (0.8.5) SAVE's lens: OCT+ adds a row (PLAY plays); PARTS: */
         return SONG_PARTS(cur_page()) ? "LOOP" : SONG_CLIPS(cur_page()) ? "GO" : "ADD";   /* the part loops; CLIPS: the cell */
@@ -2142,9 +2144,10 @@ static int act_ready(void)
     if (cur_page()->graph == GR_LYRIC) return 1;
     if (cur_page()->graph == GR_LYRSTEP) return !chain_busy() && lyr_get(song.sel)[0];
     if (cur_page()->graph == GR_TRACKGEN) return !chain_busy() && trackgen_ok(TSEL);
-    if (cur_page()->graph == GR_TOOLS)                  /* one case per column: CLEAR PAT, INIT, DELETE ROW, CLEAR SONG */
-        return !chain_busy() && (c == 0u ? !seq_is_empty(TSEL) || motion_count(TSEL) : c == 1u || c >= 4u ? 1 :
-                                 c == 2u ? ui.song_row < chain_config.count : chain_config.count != 0u);
+    if (cur_page()->graph == GR_TOOLS)                  /* one case per action: CLEAR PROJECT (stopped), CLEAR SEQ, INIT,
+                                                         * DELETE ROW, CLEAR SONG, CPU TEST */
+        return !c ? !transport_busy() : !chain_busy() && (c == 1u ? !seq_is_empty(TSEL) || motion_count(TSEL) :
+                                 c == 2u || c >= 5u ? 1 : c == 3u ? ui.song_row < chain_config.count : chain_config.count != 0u);
     if (SONG_PARTS(cur_page()) || SONG_CLIPS(cur_page()))
         return project_used(ui.part);
     if (cur_page()->graph == GR_SONG)

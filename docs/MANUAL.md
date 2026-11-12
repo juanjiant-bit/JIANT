@@ -187,7 +187,7 @@ The names below are the ones the firmware uses (the HARDWARE CALIBRATION screen 
 | **SCL** | The SCL section (0.9.2: its own, ARP apart): **KEY → CHORD → SCENE** (V10.24). | **SCL** layer: keys set the root. |
 | **EDIT** | The EDIT section: from elsewhere the page last shown (one memory for the synths, one each for FM6 and DRUM); inside the next group: **SOUND → TONE → FOCUS** (FM6: SOUND → TONE → OPERATOR; DRUM: KIT → SOUND → LEVELS → TONE). Always EDIT (0.9.2: clearing a step is SEQ + G5, renaming SAVE + C5). A step held + EDIT still clears that step's locks. | **EDIT** layer: INIT, RECALL, DRUM-X sound mutes, SELECT the sound dice. Held + KNOB 1–4: **MOMENTARY** (the page under, put back when let go). |
 | **GLO** | The GLO section: from elsewhere the page last shown; inside **LIVE → MIX → COMPS → GLOBAL → SYSTEM**, round (at power-on MIXER; LIVE, the live sequences, first; V10.37 COMPS after MIX). | **GLO** layer: mutes, solos, levels, tap tempo, UNDO. |
-| **SAVE** | The SAVE section: from elsewhere the page last shown, and USER or SECTIONS come with their **SAVE already picked** (SAVE, OCT+, OCT+ as before); inside **SONG → PROJECT → SOUND**, round (V10.2: the song first; at power-on TIMELINE). | **SAVE** layer: play/store sections live; C5 NAME. |
+| **SAVE** | The SAVE section: from elsewhere the page last shown, and USER or SECTIONS come with their **SAVE already picked** (SAVE, OCT+, OCT+ as before); inside **TOOLS → SONG → PROJECT → SOUND**, round (V10.2: the song first; at power-on TIMELINE; V10.7.22: TOOLS, with CLEAR PROJECT, the first page, one SELECT left of TIMELINE). | **SAVE** layer: play/store sections live; C5 NAME. |
 | **ARP** | The ARP section (ARP · ARP 2, one group): from elsewhere the page last shown; inside, back to ARP. A chord held + ARP during step recording still arpeggiates it. | (no layer) |
 | **SEQ** | The SEQ section: from elsewhere the page last shown (at power-on STEP, the piano roll); inside the next group (V10.6): **STEP → LENGTH → EUCLID → PLAYHEADS → STRETCH → COMP → AUTO → GENERATE**, round. | **SEQ TOOLS** layer (on every SEQ page); G5 CLR STEP. |
 | **PLAY** | Start / stop. Held (~0.7 s): **PANIC**. | — |
@@ -346,7 +346,7 @@ dark. The pill keeps clear of the page's own words: where the foot is written (A
 sits in the nearest free rows, and on a page with no free rows it is left out and the header alone says it. A page's
 **hint** (V10.6: EUCLID's "TURN A KNOB: A PATTERN", MOTION's and PUNCH's "REC + PLAY ...") comes only once you stay on the
 page for about 0.8 s, never while SELECT walks past it, and each one at most twice in all (counted with the settings,
-so not again after a reboot). SAVE › TOOLS › INIT SYSTEM starts them over. Tapping a layer button says nothing (the
+so not again after a reboot). SAVE › TOOLS › CLEAR PROJECT starts them over. Tapping a layer button says nothing (the
 "HOLD [X] QUICK" hints are gone): hold it and its layer shows itself.
 
 ---
@@ -419,7 +419,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 | **LFO** | **MOD**: MOD — **LFO**: LFO · LFO DEST — **MSEQ**: MSEQ · MSEQ 2 | 5 |
 | **SCL** | **KEY**: SCL — **CHORD**: CHORD — **SCENE**: SCENE (V10.24) | 3 |
 | **ARP** | **ARP**: ARP · ARP 2 | 2 |
-| **SAVE** | **SONG**: TIMELINE · PARTS · CLIPS · SECTIONS — **PROJECT**: PROJECTS · ARRANGE · TOOLS — **SOUND**: USER · PRESETS | 9 |
+| **SAVE** | **TOOLS**: TOOLS (CLEAR PROJECT first) — **SONG**: TIMELINE · PARTS · CLIPS · SECTIONS — **PROJECT**: PROJECTS · ARRANGE — **SOUND**: USER · PRESETS | 9 |
 
 Where a page lived in 0.9.1: ENV's six-envelope views (the TRACKS level) are now pages of their own, **TRACKS** and
 **TRACKS DEST**, with ENV's and ENV DEST's knobs; **NOTE** appears once (the BAR group; its big-step picture is
@@ -578,7 +578,7 @@ since 0.6.51: every project opens as it was.
 | CLIPS (V10.6s) | TRACK (T1–T6) | PART (A–D) | — | — |
 | PROJECTS / SECTIONS (the PROJECT page) | PROJECT (1–6: picks it, does not open it; on SECTIONS: SECT A–D) | ERASE (action) | LOAD (action: opens the picked project) | SAVE (action: then NAME, KNOB 3 SONG / LOOP) |
 | ARRANGE | ROW ("2/6") | SECT (on END: STOP / x2–x8 / LOOP) | BARS | SCENE |
-| TOOLS (V10.24) | SCOPE (TRACK, SOUND, SONG, SYSTEM) | ACTION (CLEAR SEQ · INIT SOUND · DELETE ROW, CLEAR SONG · NEW PROJECT, CPU TEST) | — | DO: **OCT+ held a second** |
+| TOOLS (V10.24; V10.7.22 SAVE's first page) | SCOPE (PROJECT, TRACK, SOUND, SONG, SYSTEM) | ACTION (CLEAR PROJECT · CLEAR SEQ · INIT SOUND · DELETE ROW, CLEAR SONG · CPU TEST) | — | DO: **OCT+ held a second** (CLEAR PROJECT: OCT+ asks, OCT+ again does it) |
 
 **ARP** (per track)
 
@@ -1653,7 +1653,7 @@ sounding after you let go; the next chord replaces them.
 | --- | --- |
 | The selected track's steps and automation | **REC held + F3**, or SAVE > TOOLS > CLEAR SEQ, or SEQ TOOLS F3 |
 | All six tracks' steps, automation and the punch-in lane | **SEQ held + REC**, then OCT+ |
-| **Everything** (NEW PROJECT): every track its power-on sound (V10.7.11: T1 DRUM-X ACOUSTIC, T2 ANALOG PLUCK, T3 PHASE INIT SAW, T4 FM6 FM BASS, T5 VOICE CHANT, T6 ANIMAL WHISTLE, dry), no steps or automation, the mix, effects, tempo and SLICER at their defaults, the song empty, macros at 0, the factory DRUM-X kit. Saved projects, user presets, MENU, CLOCK, TUNE and MIDI stay | **MENU > SYSTEM > INIT SYSTEM** or **SAVE > TOOLS > 5 NEW PROJECT**, then OCT+ (UNDO brings the music back) |
+| **Everything** (CLEAR PROJECT, V10.7.22; was NEW PROJECT): the music as at power-on: every track its power-on sound (V10.7.11: T1 DRUM-X ACOUSTIC, T2 ANALOG PLUCK, T3 PHASE INIT SAW, T4 FM6 FM BASS, T5 VOICE CHANT, T6 ANIMAL WHISTLE, dry), no steps, lengths or automation, the mix, effects, master EQ / TAPE, tempo and SLICER at their defaults, the song's rows and sections A–D empty, no name, macros at 0, no lyrics, the factory DRUM-X kit, GEN on EXPLORE. Stopped only (**STOP TO CLEAR**). The **saved** project is not touched: the cleared music is a draft (as GEN's) until you SAVE it in PROJECTS; PROJECTS > LOAD brings the saved one back. User presets, MENU, CLOCK, TUNE and MIDI stay | **SAVE > TOOLS** (SAVE's first page; KNOB 1 picks **CLEAR PROJECT**, the first action) or **MENU > SYSTEM > INIT SYSTEM**: **CLEAR PROJECT?** OCT+ yes, OCT− no (UNDO brings the music back, not the rows or A–D) |
 | Only one part's automation on the selected track | **REC held + FX / EDIT / ENV / LFO / SCL / ARP / GLO** |
 | *(not a clear)* A heavy test song, to measure the CPU on the device and listen for clicks (every live track chords of four with two step components a step and long glides, the kit on every lane, every FX on, 160 BPM) | **SAVE > TOOLS > 6 CPU TEST**, OCT+, then PLAY (UNDO brings your music back) |
 | The track's automation, keeping the steps | SEQ TOOLS **F4 CLR AUTO**, or SEQ > AUTOMATION > CLEAR |
@@ -1686,8 +1686,8 @@ That's 24 sections in total (6 × 4).
    instead ([12](#to-save-a-project-section)).
 3. **Make B, C, D**: change the music (steps, sounds, a track muted…) and hold SAVE + **D4** (STORED B), then
    **E4** (C) and **F4** (D). SAVE + F3–B3 plays a section back to check it (playing: on the next bar).
-4. **Open the song**: stop (PLAY), press **SAVE**. At power-on it opens on **TIMELINE**, the first page; if it comes
-   back to another SAVE page, turn **SELECT** left to TIMELINE. With no rows it says **NO ROWS: OCT+ ADDS ONE**.
+4. **Open the song**: stop (PLAY), press **SAVE**. At power-on it opens on **TIMELINE**, the song's first page; if it
+   comes back to another SAVE page, turn **SELECT** left to TIMELINE (one more left: TOOLS). With no rows it says **NO ROWS: OCT+ ADDS ONE**.
 5. **Add the rows**: **OCT+** adds a row (ROW ADDED): the first is A, 4 bars; each next one is a copy of the row
    picked, after it (V10.6o). **KNOB 1** the row, **KNOB 2** its section A–D, **KNOB 3** its bars (1–64). For example
    A 8 · B 8 · A 8 · C 4 · D 8.
@@ -1805,6 +1805,10 @@ the song is written.
 (1–6); picking does not open it or change the music. On the picked project: **KNOB 2 ERASE**, **KNOB 3 LOAD** (opens
 it: its sections, its rows, its A as the music) and **KNOB 4 SAVE**, each done with **OCT+**.
 
+**ERASE** (**ERASE PROJECT n?**, OCT+) deletes the project from the flash: its sections A–D and its arrangement. On
+the project that is open (V10.7.22: also when the music is a GEN draft) the music goes too, as **CLEAR PROJECT** leaves
+it: no steps, rows or sections left behind. To clear the music but keep the saved copy, use SAVE > TOOLS > CLEAR PROJECT.
+
 **SAVE** asks **OVERWRITE PROJECT n?** when the destination holds something (OCT+ goes on, OCT− cancels), then opens the
 **NAME** screen. There **KNOB 3** chooses what is written (the title says it, **SAVE SONG TO PROJECT n** or **SAVE LOOP
 TO PROJECT n**; it starts at SONG each time):
@@ -1859,11 +1863,11 @@ says **SONG PLAYS: STOP IT TO EDIT**. Stop the song, or turn SONG mode off with 
 **A part set OFF stays off** (V10.8). The piece always has two melodic parts at least, but only parts left on
 **AUTO** are filled in for that (BASS first, then CHORDS); before V10.8 BASS and CHORDS came back on even when set
 OFF. **The GENRE is kept** between visits (V10.8; it used to go back to EXPLORE every time GEN opened); power-on and
-NEW PROJECT start on EXPLORE.
+CLEAR PROJECT start on EXPLORE.
 
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 |---|---|---|---|---|
-| 1/3 | **GENRE**: **EXPLORE** (power-on and NEW PROJECT start on it; V10.8: GEN keeps the one you picked between visits; no genre, every rule broken, below), RANDOM (half its throws are mutants of two genres, named A+B) or one of the genres (below), in that order | **SEED** 0000–9999 | **ENERGY** 0–100 % | **FORM**: LOOP, PARTS, SONG, MY LOOP |
+| 1/3 | **GENRE**: **EXPLORE** (power-on and CLEAR PROJECT start on it; V10.8: GEN keeps the one you picked between visits; no genre, every rule broken, below), RANDOM (half its throws are mutants of two genres, named A+B) or one of the genres (below), in that order | **SEED** 0000–9999 | **ENERGY** 0–100 % | **FORM**: LOOP, PARTS, SONG, MY LOOP |
 | 2/3 | **DRUMS** | **BASS** | **CHORDS** | **ARP** — each OFF, 10–100 %, or **AUTO** (the genre's); OFF stays off (V10.8) |
 | 3/3 | **LEAD** (as above) | **COMPLEX** 0–100 % | **SWING** AUTO or 0–100 % | **HUMAN** 0–100 % |
 
@@ -1902,7 +1906,7 @@ ultra-minimal: the tamborzão's "tum tcha" on 3, 6 and 12 two tom shots (low on 
 cowbell's answer, no snare, clap, hats or chords, the 808 short, punchy and gliding up at the bar's end, the chant's
 chops sparse.
 
-**A clean base** (0.9.9-gen1): every piece starts from **NEW PROJECT's state** — every track's parameters, sound,
+**A clean base** (0.9.9-gen1): every piece starts from **CLEAR PROJECT's state** — every track's parameters, sound,
 steps, step components, p-locks and automation, MUTATE, the song's globals (but the clock, tune, MIDI and routing),
 the punch-in and global component lanes, DRUM-X's kit (GLUE, octaves, sends, layers), FUGUE's playheads, PLAY's SONG
 mode — so nothing of the piece before, or of your edits, carries into it: **the same settings and seed make the same
@@ -1947,7 +1951,7 @@ kicks shorter too), the kits' pitch sweep, FM and drive offsets halved, the snar
 at most 8, the drum track's LEVEL 94 (was 106) and drier sends: over the 43 genres the drums went from 74 % of the mix's
 energy to 48 %.
 
-**EXPLORE** (0.8.6), the first choice and where the screen always opens (at power-on, after NEW PROJECT, every time
+**EXPLORE** (0.8.6), the first choice and where the screen always opens (at power-on, after CLEAR PROJECT, every time
 you open GEN), follows **no genre** and breaks their rules on purpose, so every seed is a very different piece
 (**LAST: EXPLORE 0421**):
 - **Tempo** anywhere from 56 to 200 BPM; **any drum map** (the procedural IDM's too) and kit, its sounds pulled far
@@ -2154,7 +2158,7 @@ REC Q, A3 …), and a REC tap still arms recording. GLO + G4 still works.
 G4 breathes on the GLO map when there is something to undo; with nothing, it says **NOTHING TO UNDO**.
 
 **UNDO covers**: DICE ALL, a sound diced, a track cleared (REC F3, TOOLS CLEAR SEQ), CLEAR ALL SEQUENCES (SEQ + REC),
-NEW PROJECT, INIT and RECALL (EDIT layer or TOOLS), clearing the automation (SEQ > AUTOMATION),
+CLEAR PROJECT, INIT and RECALL (EDIT layer or TOOLS), clearing the automation (SEQ > AUTOMATION),
 and a section loaded with **SAVE > SECTIONS > LOAD**. It restores the music as it was: sounds, steps, automation, the
 kit, the punch-in lane, the macros, the tempo and global effects.
 
@@ -2391,7 +2395,7 @@ tracks at once), RIELES the latched, visual one.
 in the written pattern), so recording over a modified track never scrambles it; the automation and the locks follow
 the step that sounds.
 
-**Never saved**: the modifiers are performance state, like the punch-in FX; STOP keeps them, NEW PROJECT clears them.
+**Never saved**: the modifiers are performance state, like the punch-in FX; STOP keeps them, CLEAR PROJECT clears them.
 What you COMMIT is what stays. They cost nothing in the audio render, a few instructions a track in the sequencer.
 
 **The FX layer's 1/2 TEMPO and LOOP 3 / 5 / 7** are these same modifiers: 1/2 TEMPO is RATE /2 (or slower, if LIVE
@@ -2494,25 +2498,27 @@ This is the chapter to read carefully. JIANT keeps several kinds of data in diff
   button is held and nothing is sounding, and **at most once a minute**.
 - It does **not** save when you switch off. If you change something and power off within those seconds, that last
   change is lost. To be safe: **stop, wait ~10 s**, or better, save into a section.
-- At power-on the device starts at zero, as **NEW PROJECT** leaves it (V10.6e: T1 DRUM-X, T2 ANALOG, T3 PHASE, T4 FM6,
+- At power-on the device starts at zero, as **CLEAR PROJECT** leaves it (V10.6e: T1 DRUM-X, T2 ANALOG, T3 PHASE, T4 FM6,
   T5 VOICE, T6 ANIMAL, each its preset's sound, dry; no
   steps). With **MENU > SYSTEM > RESTORE LAST ON** the autosave becomes the music instead (the screen says
   **RESTORED**). RESTORE LAST is **OFF** by default since 0.6.40: no autosave at all.
 - After a crash, a hang or a failed start, the autosave is not restored (the music that was playing could be what
   crashed).
 
-### SAVE's chain: SONG · PROJECT · SOUND
+### SAVE's chain: TOOLS · SONG · PROJECT · SOUND
 
-(0.9.2; V10.2: composing first) SAVE is a chain of nine pages in three groups, as every section: **SELECT** walks
-TIMELINE → PARTS → CLIPS → SECTIONS → PROJECTS → ARRANGE → TOOLS → USER → PRESETS, a **SAVE** tap jumps to the next group (round). At
-power-on SAVE opens **TIMELINE**. The pages, their knobs, OCT+, the dialogs
+(0.9.2; V10.2: composing first; V10.7.22: TOOLS first) SAVE is a chain of nine pages in four groups, as every section:
+**SELECT** walks TOOLS → TIMELINE → PARTS → CLIPS → SECTIONS → PROJECTS → ARRANGE → USER → PRESETS, a **SAVE** tap jumps
+to the next group (round). At power-on SAVE opens **TIMELINE** (the music, not the page that clears it); **TOOLS** is
+one SELECT to the left, its first action **CLEAR PROJECT**. The pages, their knobs, OCT+, the dialogs
 and the NAME screen are the ones they always were (until 0.9.1 SELECT zoomed LIBRARY ↔ PROJECT ↔ SOUND and the tap
 switched each level's two sets).
 
 | Group | Pages | What the screen shows | Knobs |
 | --- | --- | --- | --- |
+| **TOOLS** | TOOLS | The six tools as a list by scope: PROJECT (**CLEAR PROJECT**), TRACK (CLEAR SEQ), SOUND (INIT SOUND), SONG (DELETE ROW, CLEAR SONG), SYSTEM (CPU TEST). | SCOPE, ACTION, —, DO |
 | **SONG** | TIMELINE · PARTS · CLIPS · SECTIONS | TIMELINE: the song as blocks, the row picked opened track by track; PARTS: the four parts as cards; CLIPS: six tracks × four parts (see [TIMELINE, PARTS and CLIPS](#timeline-parts-and-clips-save--song)). / The project's four sections large, the song as a strip. | ROW, SECT, BARS, VAR / PART, ROW, —, LOOP·SONG / TRACK, PART / SECT, ERASE (V10.17), LOAD, SAVE |
-| **PROJECT** | PROJECTS · ARRANGE · TOOLS | The six projects as tiles: the number, the name (its section A's), the four sections A–D as chips (stored: in the section's colour; empty: dark); the project picked with KNOB 1 tinted and framed violet (the open one: its number lit), its section picked framed white. / ARRANGE's rows as chips. / The six tools as a list. | PROJECT, ERASE, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ adds a row, OCT− deletes the one picked) / the tool |
+| **PROJECT** | PROJECTS · ARRANGE | The six projects as tiles: the number, the name (its section A's), the four sections A–D as chips (stored: in the section's colour; empty: dark); the project picked with KNOB 1 tinted and framed violet (the open one: its number lit), its section picked framed white. / ARRANGE's rows as chips. | PROJECT, ERASE, LOAD, SAVE / ROW, SECT, BARS, SCENE (OCT+ adds a row, OCT− deletes the one picked) |
 | **SOUND** | USER · PRESETS | The track's being (its engine's creature, alive with its sound), the track and its sound under it; at the right the 32 user slots (a stored one: its engine's creature small and its name) or the factory sounds. | SLOT, LOAD, ERASE, SAVE / No., ENG, FAV, LIST |
 
 - **SAVE from another page** comes back to the SAVE page you left; **USER** and **SECTIONS** come with their SAVE
@@ -2521,7 +2527,7 @@ switched each level's two sets).
   (KNOB 4 to the right).
 - The other projects' tiles are read from the flash a project a frame (the headers only: no loading, nothing the
   audio notices) and kept until a project is saved, loaded or renamed.
-- The footer says **SAVE · PROJECT · PROJECTS  5/10**. The OCT+ / OCT− hints are not drawn on these pages: the armed
+- The footer says **SAVE · PROJECT · PROJECTS  6/9**. The OCT+ / OCT− hints are not drawn on these pages: the armed
   card says OCT+.
 
 ### To save a project section
@@ -2721,7 +2727,7 @@ the footer **MENU · DISPLAY · SKIN  2/35**. The header says MENU · DISPLAY.
 | SYSTEM | CPU CLOCK | **360 MHZ** (default), 320 MHZ — from the next start |
 | SYSTEM | BLUETOOTH | **OFF**, ON (Bluetooth MIDI: ADV, then CONN), AIR (listens only: PROX and SWARM) — OCT+ on the row opens the PROX page (FAR / NEAR); see [Bluetooth](#bluetooth-midi-and-prox-v1013v1020) |
 | SYSTEM | CALIBRATION | OCT+ opens HARDWARE CALIBRATION (teach each button and knob) |
-| SYSTEM | INIT SYSTEM | OCT+ asks, then everything back to zero for a new song (as SAVE > TOOLS > NEW PROJECT; UNDO brings the music back) |
+| SYSTEM | INIT SYSTEM | OCT+ asks (**CLEAR PROJECT?**), then everything back to zero for a new song (the same as SAVE > TOOLS > CLEAR PROJECT; UNDO brings the music back) |
 | SYSTEM | ABOUT | OCT+ opens: version, QR code, AUDIO LOAD (NOW, PEAK, LATE, SHED since power-on) and credits (scroll with SELECT, OCT− back) |
 
 If you hear clicks, open ABOUT and look at **LATE** (audio blocks that came too late) and **SHED** (voices the guard

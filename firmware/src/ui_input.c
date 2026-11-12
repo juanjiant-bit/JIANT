@@ -1591,7 +1591,7 @@ static void edit_param(uint32_t slot, int32_t steps)
                                                          * pick down / up; OCT+ does it (its dialog first) */
         int32_t a = ui.act ? (int32_t)ui.act - 1 : 0, sc = TL_SC[a];   /* (V10.24) KNOB 1 the scope (its first), the */
         if (slot == 0u && ui.act) {                      /* others the action (across the scopes) */
-            sc = clamp(sc + (steps > 0 ? 1 : -1), 0, 3);
+            sc = clamp(sc + (steps > 0 ? 1 : -1), 0, 4);
             for (a = 0; TL_SC[a] != sc; a++) {}
         } else if (ui.act)
             a = clamp(a + (steps > 0 ? 1 : -1), 0, 5);
@@ -1719,14 +1719,15 @@ static void tools_arm(void)
 {
     uint32_t c = act_col();
     if (!c--) return;
+    if (!c) return;                                   /* (V10.7.22) CLEAR PROJECT: its dialog, on the tap (act_do) */
     if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
     if (!act_ready()) {                               /* nothing there to clear or delete */
-        ui_message(c == 2u ? "NOTHING TO DELETE" : "NOTHING TO CLEAR");
+        ui_message(c == 3u ? "NOTHING TO DELETE" : "NOTHING TO CLEAR");
         return;
     }
-    tl_kind = (uint8_t)(c == 0u ? CF_CLEAR_SEQ : c == 1u ? CF_INIT_SOUND : c == 2u ? CF_DEL_ROW : c == 4u ? CF_INIT_SYS :
+    tl_kind = (uint8_t)(c == 1u ? CF_CLEAR_SEQ : c == 2u ? CF_INIT_SOUND : c == 3u ? CF_DEL_ROW :
                         c == 5u ? CF_CPU_TEST : CF_CLEAR_SONG);
-    tl_trk = (uint8_t)(c == 2u ? ui.song_row : song.sel);
+    tl_trk = (uint8_t)(c == 3u ? ui.song_row : song.sel);
     tl_t0 = fm1_ms | 1u;
 }
 /* OCT+ on an action page: the picked action. A load stays picked (browse and load again); the others
@@ -1766,8 +1767,13 @@ static __attribute__((noinline)) void act_do(void)
         ev_oct();
         return;
     }
-    if (cur_page()->graph == GR_TOOLS)                   /* (V10.24) OCT+ held: tools_arm, on the press */
+    if (cur_page()->graph == GR_TOOLS) {                 /* (V10.24) OCT+ held: tools_arm, on the press; (V10.7.22) */
+        if (!c) {                                        /* CLEAR PROJECT: stopped, its dialog (OCT+ YES, OCT- NO) */
+            if (transport_busy()) ui_message("STOP TO CLEAR");
+            else confirm_open(CF_INIT_SYS, song.sel);
+        }
         return;
+    }
     if (SONG_PARTS(cur_page())) {                       /* (V10.6o) PARTS: the part picked loops */
         parts_audition(ui.part);
         return;
@@ -2867,14 +2873,10 @@ static void ui_input_frame(void)
                     cpu_test_song();
                     ui_message("CPU TEST: PRESS PLAY");
                 }
-            } else if (kind == CF_INIT_SYS) {           /* (0.6.40) SAVE > TOOLS 5: everything as at power-on */
-                if (!chain_busy()) {
-                    undo_mark();
-                    if (song.playing) transport_req = 2;
-                    system_init();
+            } else if (kind == CF_INIT_SYS) {           /* (0.6.40) SAVE > TOOLS: everything as at power-on; */
+                if (!project_clear()) {                 /* (V10.7.22) CLEAR PROJECT, stopped (project.c) */
                     hints_reset();                      /* (0.9.5) the teaching hints start over */
                     gp.genre = GEN_EXPLORE;             /* (0.8.6) GEN's GENRE as at power-on: EXPLORE */
-                    ui_message("NEW PROJECT");
                 }
             } else if (kind == CF_CLEAR_ALL) {          /* SEQ + REC: every track's steps and automation, the lane */
                 if (!chain_busy()) {

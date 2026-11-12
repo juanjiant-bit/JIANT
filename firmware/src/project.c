@@ -1576,7 +1576,7 @@ static int project_restore_runtime(const project_t *input)
  * INIT / RECALL, a pattern or project loaded). undo_mark keeps the music as it is (packed as a project: ~3.8 KB);
  * undo_do brings it back and keeps what it replaced, so a second UNDO goes forward again. The transport plays on */
 static project_store_t undo_st[2] __attribute__((section(".lowbuf")));   /* (0.6.78: app.ld LOWBUF) */
-/* (JIANT 0.6.40) INIT SYSTEM (SAVE > TOOLS 5, its dialog; UNDO brings the music back) and the power-on (main.c, with
+/* (JIANT 0.6.40) INIT SYSTEM (V10.7.22: CLEAR PROJECT, project_clear) and the power-on (main.c, with
  * RESTORE LAST OFF): the six tracks their power-on sound (0.9.9: TRK_DEF's engine and preset, dry: ui.c power_sound_of); no
  * steps, automation or locks; the mix, the global effects, the tempo and the SLICER at their defaults; the song empty,
  * the macros at 0, the punch-in lane clear, the factory DRUM-X kit (X-MOD, TONE off, nothing muted), every FM6 patch
@@ -1641,6 +1641,22 @@ static void system_init_named(void)
     memcpy(nm, proj_name, sizeof nm);
     system_init();
     memcpy(proj_name, nm, sizeof nm);
+}
+/* (V10.7.22) SAVE > TOOLS > CLEAR PROJECT (and MENU > INIT SYSTEM: one dialog, CF_INIT_SYS), stopped: the music as at
+ * power-on (system_init: every track's steps, automation and sound, the effects, the master, the rows; GEN's GENRE, the
+ * hints) and sections A-D empty, no name. The saved project is not touched: the music becomes a draft (as GEN's, nothing
+ * written to flash) until SAVE writes it; PROJECTS > LOAD brings the saved one back, UNDO the music before (not A-D) */
+static int project_clear(void)                          /* 0 done (the caller: GEN's GENRE, the hints) */
+{
+    if (transport_busy()) { ui_message("STOP TO CLEAR"); return 1; }   /* (UNDO: marked by the dialog) */
+    if (!song_draft && song_draft_begin()) return 1;   /* (it says why) */
+    system_init();
+    memset(proj_slot, 0, sizeof proj_slot);             /* (a draft's sections too) */
+    live.cur = -1;
+    proj_cur = PROJ_NO_SLOT;
+    ui.song_row = 0;
+    ui_message("PROJECT CLEARED");
+    return 0;
 }
 static void undo_mark(void)
 {

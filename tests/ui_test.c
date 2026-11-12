@@ -2075,34 +2075,95 @@ static void tools_hold(void)                      /* (V10.24) TOOLS: OCT+ held a
     fm1_in.buttons &= ~(1u << panel.btn[B_OCTUP]);
     frame();
 }
+static void ui_power_on_099(void);
+static int lz_count_is(const char *s);
+/* (V10.7.22) a busy project: every track steps, automation, another sound and sends; the rows, a section, a name, the
+ * tempo, the master's TAPE and EQ, a macro, the punch lane, a lyric */
+static void busy_project(void)
+{
+    uint32_t k;
+    for (k = 0; k < NTRK; k++) {
+        trk[k].step[k + 1u] = (step_t){{(uint8_t)(60 + k)}, 1, ST_NOTE, 0, 100};
+        trk[k].p[P_SLEN] = 12; trk[k].p[P_REV] = 70; trk[k].p[P_DLY] = 40;
+        motion_capture(&trk[k], P_LEVEL, (int16_t)(40 + k));
+    }
+    set_engine_of(&trk[2], ENGI_FM6); set_engine_of(&trk[5], ENGI_ANALOG);
+    song.g[G_BPM] = 97; song.g[G_RTYPE] = 3; song.g[G_TUNE] = 5; song.g[G_CLOCK] = 1;
+    tape_v[0] = 30; eq_v[1] = -4; dx_tone = 0x35u; dx_mot[XM_DPTH] = 50; pfx_lane[3] = 9;
+    lyr_set(4, "LA LA");
+    project_save(1);
+    chain_config.count = 3;
+    for (k = 0; k < 3u; k++) chain_config.row[k] = (chain_row_t){1, 2};
+    song_idx.scene[song_cur][1].on = 1;
+    str_cpy(proj_name, "BUSY", sizeof proj_name);
+}
 static int test_init_system(void)
 {
     int bad = 0;
-    ui_power_on();
-    {   /* (0.6.40) TOOLS 5 INIT SYSTEM: its dialog; everything as at power-on (sounds, steps, automation, mix, effects,
-         * song, macros, the kit), the setup kept; UNDO brings the music back */
+    {   /* (V10.7.22) SAVE > TOOLS' first action CLEAR PROJECT (was TOOLS 5 NEW PROJECT, held): its dialog; the music as a
+         * fresh power-on's (steps, automation, sounds, effects, master, rows, A-D, name), the setup kept; the saved project
+         * not touched (a draft); refused playing; UNDO the music back */
+        static project_t ref, busy, now;
         uint32_t k, sig0, ok2;
-        trk[0].step[2] = (step_t){{60}, 1, ST_NOTE, 0, 100};
-        trk[2].p[P_LEVEL] = 30; trk[2].p[P_REV] = 90;
-        song.g[G_BPM] = 97; song.g[G_RTYPE] = 3; song.g[G_TUNE] = 5; song.g[G_CLOCK] = 1;
-        macro_v[1] = 77; dx_tone = 0x35u; dx_mot[XM_DPTH] = 50; pfx_lane[3] = 9;
-        motion_capture(&trk[1], P_LEVEL, 40);
+        int16_t tp0 = 0;
+        ui_power_on_099();
+        project_capture(&ref);
+        tp0 = tape_v[0];
+        busy_project();
         sig0 = steps_sig(&trk[0]);
-        go_title("TOOLS"); tools_pick(5); press(B_OCTUP);
-        ok2 = !ui.confirm && trk[0].step[2].n == 1u && msg_is("HOLD OCT+ TO DO IT");   /* (V10.24: a tap does nothing) */
-        tools_hold();
-        ok2 &= !ui.confirm && msg_is("NEW PROJECT") && chain_config.count == 0u;
+        go_title("TOOLS"); frames(2);
+        project_capture(&busy);
+        ok2 = !nav_cur() && lz_count_is("1/9");                  /* (SAVE's first page) */
+        tools_pick(1); press(B_OCTUP);
+        ok2 &= ui.confirm == CF_INIT_SYS;
+        press(B_OCTDN);
+        project_capture(&now);
+        memcpy(now.g, busy.g, sizeof now.g);                    /* (a preset's modulation moves the effects as frames go) */
+        now.sum = busy.sum;
+        ok2 &= !ui.confirm && !memcmp(&now, &busy, sizeof now) && project_used(1) && proj_name[0] && !song_draft &&
+               song.g[G_BPM] == 97;
+        bad += check("V10.7.22 TOOLS 1 CLEAR PROJECT: OCT+ asks (CLEAR PROJECT?), OCT- cancels: nothing changed", ok2);
+        song.playing = 1;
+        tools_pick(1); press(B_OCTUP);
+        ok2 = !ui.confirm && msg_is("STOP TO CLEAR");
+        confirm_open(CF_INIT_SYS, 0); press(B_OCTUP);           /* (MENU > INIT SYSTEM's dialog, then PLAY) */
+        song.playing = 0;
+        project_capture(&now);
+        memcpy(now.g, busy.g, sizeof now.g); now.sum = busy.sum;
+        ok2 &= !ui.confirm && msg_is("STOP TO CLEAR") && !memcmp(&now, &busy, sizeof now) && song.g[G_BPM] == 97;
+        bad += check("  CLEAR PROJECT playing: STOP TO CLEAR, nothing changed", ok2);
+        macro_v[1] = 77;                                        /* (a macro: it moves the effects as frames go) */
+        tools_pick(1); press(B_OCTUP); press(B_OCTUP);
+        project_capture(&now);
+        ok2 = !ui.confirm && msg_is("PROJECT CLEARED") && song.g[G_TUNE] == 5 && song.g[G_CLOCK] == 1;   /* (the setup stays) */
+        now.g[G_TUNE] = ref.g[G_TUNE]; now.g[G_CLOCK] = ref.g[G_CLOCK]; now.sel = ref.sel; now.sum = ref.sum;
+        for (k = 0; k < NTRK; k++) {                            /* (an empty step keeps its note value: a rest) */
+            ok2 &= seq_is_empty(&trk[k]);
+            memcpy(now.t[k].step, ref.t[k].step, sizeof now.t[k].step);
+        }
+        ok2 &= !memcmp(now.t, ref.t, sizeof now.t) && !memcmp(now.g, ref.g, sizeof now.g) &&
+               !memcmp(&now.motion, &ref.motion, sizeof now.motion) && !memcmp(&now.chain, &ref.chain, sizeof now.chain) &&
+               !memcmp(now.dx, ref.dx, sizeof now.dx) && !memcmp(now.fm6, ref.fm6, sizeof now.fm6) &&
+               !memcmp(&now, &ref, sizeof now);
         for (k = 0; k < NTRK; k++)
-            ok2 &= seq_is_empty(&trk[k]) && !motion_count(&trk[k]) && trk[k].eng_req == trk_def_engine(k);
-        ok2 &= trk[2].p[P_LEVEL] != 30 && trk[2].p[P_REV] != 90;   /* (the first sound's level and sends) */
-        ok2 &= song.g[G_BPM] == GP[G_BPM].def && song.g[G_RTYPE] == GP[G_RTYPE].def && !macro_v[1] && !dx_tone &&
-               !dx_mot[XM_DPTH] && !pfx_lane[3] && !memcmp(dx_kit, DX_KITS[TRK_PR_DRUM].lane, sizeof dx_kit);
-        ok2 &= song.g[G_TUNE] == 5 && song.g[G_CLOCK] == 1;       /* (the setup stays) */
-        bad += check("TOOLS 5 NEW PROJECT: everything as at power-on, CLOCK and TUNE kept", ok2);
-        ok2 = !undo_do() && steps_sig(&trk[0]) == sig0 && trk[2].p[P_LEVEL] == 30 && song.g[G_BPM] == 97;
-        bad += check("  UNDO after NEW PROJECT: the music back", ok2);
-        song.g[G_TUNE] = GP[G_TUNE].def; song.g[G_CLOCK] = GP[G_CLOCK].def;
-        memset(macro_v, 0, sizeof macro_v); dx_tone = 0; memset(dx_mot, 0, sizeof dx_mot); pfx_lane[3] = 0;   /* (UNDO brought them) */
+            ok2 &= seq_is_empty(&trk[k]) && !motion_count(&trk[k]) && trk[k].eng_req == trk_def_engine(k) && !lyr_get(k)[0];
+        ok2 &= tape_v[0] == tp0 && !eq_v[1] && !macro_v[1] && !pfx_lane[3] && !chain_config.count &&
+               !song_idx.scene[song_cur][1].on && !proj_name[0];
+        for (k = 0; k < 4u; k++) ok2 &= !project_used(k);
+        bad += check("  CLEAR PROJECT: steps, automation, sounds, FX, master, rows, A-D, name as a fresh power-on's", ok2);
+        bad += check("  .. the saved project untouched: the music a draft until SAVE", song_draft && song_cur == 0u);
+        ok2 = !undo_do() && steps_sig(&trk[0]) == sig0 && trk[2].eng_req == ENGI_FM6 && song.g[G_BPM] == 97;
+        bad += check("  UNDO after CLEAR PROJECT: the music back (not the rows or A-D: PROJECTS > LOAD, the saved one)", ok2);
+        /* PROJECTS > ERASE of the open project (a draft or not): its music goes too */
+        trk[1].step[3] = (step_t){{62}, 1, ST_NOTE, 0, 100};
+        ok2 = !song_erase_parts(song_cur, 0) && seq_is_empty(&trk[1]) && seq_is_empty(&trk[0]) && !chain_config.count;
+        song_draft = 0;
+        busy_project();
+        confirm_open(CF_ERASE_SONG, song_cur); press(B_OCTUP);
+        for (k = 0; k < NTRK; k++) ok2 &= seq_is_empty(&trk[k]) && !motion_count(&trk[k]);
+        ok2 &= !chain_config.count && !project_used(1) && !proj_name[0] && msg_is("PROJECT ERASED");
+        bad += check("  V10.7.22 PROJECTS > ERASE of the open project (a draft too): no steps, rows or sections left", ok2);
+        ui_power_on();
     }
     {   /* (0.6.83) TOOLS 6 CPU TEST: the heaviest song on every live track (the last one the kit), UNDO: back */
         uint32_t k, sig0, ok2, kit = 0, comps = 1;
@@ -2185,25 +2246,27 @@ static int test_actions(void)
     go_title("TOOLS");
     bad += check("TOOLS: nothing picked, OCT+ dark", act_cols() == 15u && act_col() == 0u && oct_leds_seen(0) == 1u);
     turn(EN_K1, 1);
-    bad += check("a knob picks CLEAR SEQ (TRACK), the steps stay; OCT+ breathes", ui.act == 1u && !seq_is_empty(t) &&
-                 oct_leds_seen(0) == (1u | OCT_BREATH));
+    bad += check("V10.7.22 a knob picks CLEAR PROJECT (PROJECT), the first; the steps stay; OCT+ breathes", ui.act == 1u &&
+                 !seq_is_empty(t) && oct_leds_seen(0) == (1u | OCT_BREATH));
     turn(EN_K1, 1);
-    bad += check("KNOB 1 the scope: SOUND (INIT SOUND)", ui.act == 2u);
+    bad += check("KNOB 1 the scope: TRACK (CLEAR SEQ)", ui.act == 2u);
     turn(EN_K1, 1);
-    bad += check("  .. SONG (DELETE ROW first)", ui.act == 3u);
+    bad += check("  .. SOUND (INIT SOUND)", ui.act == 3u);
+    turn(EN_K1, 1);
+    bad += check("  .. SONG (DELETE ROW first)", ui.act == 4u);
     turn(EN_K2, 1);
-    bad += check("KNOB 2 the action: CLEAR SONG", ui.act == 4u);
-    turn(EN_K1, -1); turn(EN_K1, -1);
+    bad += check("KNOB 2 the action: CLEAR SONG", ui.act == 5u);
+    turn(EN_K1, -1); turn(EN_K1, -1); turn(EN_K1, -1);
     press(B_OCTDN);
     bad += check("OCT- cancels the pick (still on TOOLS)", ui.act == 0u && !ui.home && !seq_is_empty(t));
-    turn(EN_K1, 1);
+    turn(EN_K1, 1); turn(EN_K1, 1);
     press(B_OCTUP);
     bad += check("TOOLS CLEAR: a tap does nothing, says hold", !ui.confirm && !seq_is_empty(t) && msg_is("HOLD OCT+ TO DO IT"));
     tools_hold();
     bad += check("OCT+ held: the pattern cleared, no dialog", seq_is_empty(t) && !ui.confirm && msg_is("T1 CLEARED"));
-    tools_pick(1);
-    bad += check("nothing to clear: OCT+ dark", oct_leds_seen(0) == 1u);
     tools_pick(2);
+    bad += check("nothing to clear: OCT+ dark", oct_leds_seen(0) == 1u);
+    tools_pick(3);
     t->p[P_E0] = (int16_t)(t->p[P_E0] + 1);
     tools_hold();
     bad += check("INIT SOUND held: SOUND INIT", msg_is("SOUND INIT"));
@@ -3752,7 +3815,7 @@ static int test_chain(void)
     for (k = chain_config.count; k < CHAIN_ROWS; k++) { turn(EN_K2, 1); turn(EN_K1, 1); }
     bad += check("SONG: + ADD, then END the last row (full: END right after row 16)", ui.song_row == CHAIN_ROWS);
     bad += check("SONG append row stays bounded at 16", chain_config.count == CHAIN_ROWS && chain_valid(&chain_config));
-    go_title("TOOLS"); tools_pick(4); press(B_OCTUP);
+    go_title("TOOLS"); tools_pick(5); press(B_OCTUP);
     bad += check("CLEAR SONG wants OCT+ held: a tap leaves the full song", !ui.confirm && chain_config.count == CHAIN_ROWS);
     { uint32_t n0 = chain_config.count, pg0 = ui.page;
     go_title("ARRANGE"); frame();
@@ -3763,7 +3826,7 @@ static int test_chain(void)
     bad += check("SONG: SECT left of A asks DELETE ROW?, OCT+ deletes it", ok && chain_config.count == n0 - 1u);
     ui.page = (uint8_t)pg0; ui.force = 1; frame();
     }
-    go_title("TOOLS"); tools_pick(4); tools_hold();
+    go_title("TOOLS"); tools_pick(5); tools_hold();
     bad += check("confirmed CLEAR SONG keeps musical steps", !chain_config.count && !ui.song_row);
     return bad;
 }
@@ -5185,19 +5248,19 @@ static int test_bughunt_ui(void)
     ui_power_on();
     go_title("TOOLS"); frame();
     chain_defaults(&chain_config);                      /* no song rows */
-    tools_pick(3);                                      /* DELETE ROW */
+    tools_pick(4);                                      /* DELETE ROW */
     press(B_OCTUP);
     ok = !ui.confirm && msg_is("NOTHING TO DELETE") && text_w(&AF_S, ui.msg) <= 236 - 106;   /* (fits the header) */
-    tools_pick(4);                                      /* CLEAR SONG */
+    tools_pick(5);                                      /* CLEAR SONG */
     press(B_OCTUP);
     ok &= !ui.confirm && msg_is("NOTHING TO CLEAR");
     track_defaults_steps(TSEL);
     chain_config.count = 1; chain_config.row[0].slot = 0; chain_config.row[0].bars = 1;
-    tools_pick(1);                                      /* CLEAR PAT on an empty track, the song with a row */
+    tools_pick(2);                                      /* CLEAR PAT on an empty track, the song with a row */
     ok &= !act_ready();
     press(B_OCTUP);
     ok &= !ui.confirm && msg_is("NOTHING TO CLEAR");
-    tools_pick(4);
+    tools_pick(5);
     ok &= act_ready();
     tools_hold();
     bad += check("TOOLS: DELETE ROW / CLEAR SONG / CLEAR PAT with nothing there: NOTHING TO ..; a song: held, cleared",
@@ -7640,20 +7703,21 @@ static void tl_drum(void)
  * the level's other set, SAVE from elsewhere always USER, PRESETS the slot / project) */
 static int test_save_lens(void)
 {
-    static const char *const CH[9] = {"TIMELINE", "PARTS", "CLIPS", "SECTIONS", "PROJECTS", "ARRANGE", "TOOLS", "USER",
-                                      "PRESETS"};   /* (V10.6s: CLIPS; V10.7.20: SAVE SONG AS gone, PROJECTS saves) */
-    static const char *const TP[2] = {"PROJECTS", "USER"};
+    static const char *const CH[9] = {"TOOLS", "TIMELINE", "PARTS", "CLIPS", "SECTIONS", "PROJECTS", "ARRANGE", "USER",
+                                      "PRESETS"};   /* (V10.6s: CLIPS; V10.7.20: SAVE SONG AS gone, PROJECTS saves; V10.7.22:
+                                                     * TOOLS first, CLEAR PROJECT its first action) */
+    static const char *const TP[3] = {"TIMELINE", "PROJECTS", "USER"};
     int bad = 0, ok;
     uint32_t pr;
     ui_power_on();
     go_home(); frame();
     press(B_SAVE); frame();
     ok = save_on() && save_level() == SV_PROJ && SONG_TRK(cur_page()) && ui.act == 0u && lz_on() &&
-         card_y() == LZ_CARD_Y && graph_y() == LZ_GRAPH_Y && foot_y() == LZ_FOOT_Y && lz_tab_lit(0) &&
-         lz_crumb_is("SAVE \xB7 SONG \xB7 TIMELINE") && lz_count_is("1/9");
-    bad += check("V10.1 SAVE from HOME at power-on: SONG's TIMELINE; the tabs (SONG lit), the crumb, 1/9", ok);
-    bad += check("V10.1 SAVE: one chain TIMELINE PARTS CLIPS SECTIONS PROJECTS ARRANGE TOOLS USER PRESETS; a SAVE tap the next group, round",
-                 chain_walk(B_SAVE, CH, 9, TP, 2));
+         card_y() == LZ_CARD_Y && graph_y() == LZ_GRAPH_Y && foot_y() == LZ_FOOT_Y && lz_tab_lit(1) &&
+         lz_crumb_is("SAVE \xB7 SONG \xB7 TIMELINE") && lz_count_is("2/9");
+    bad += check("V10.1 SAVE from HOME at power-on: SONG's TIMELINE (V10.7.22: TOOLS before it); the tabs (SONG lit), the crumb, 2/9", ok);
+    bad += check("V10.7.22 SAVE: one chain TOOLS TIMELINE PARTS CLIPS SECTIONS PROJECTS ARRANGE USER PRESETS; a SAVE tap the next group, round",
+                 chain_walk(B_SAVE, CH, 9, TP, 3));
     ui_power_on(); go_home(); frame(); press(B_SAVE); frame();
     turn(EN_SELECT, 5); frame();                                             /* ARRANGE, left there */
     go_home(); frame(); press(B_SAVE); frame();
@@ -7714,7 +7778,7 @@ static int test_save_lens(void)
     memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
     press(B_SAVE); frame();
     nav_put(SEC_SAVE, "TIMELINE"); frame();
-    ok = SONG_TRK(cur_page()) && !SONG_TRK(&PAGES[nv_page(SEC_SAVE, 4)]) && SONG_TRK(&PAGES[nv_page(SEC_SAVE, 0)]);
+    ok = SONG_TRK(cur_page()) && !SONG_TRK(&PAGES[nv_page(SEC_SAVE, 5)]) && SONG_TRK(&PAGES[nv_page(SEC_SAVE, 1)]);   /* (V10.7.22: TOOLS 0) */
     turn(EN_K1, 1); frame();                                                 /* row 2 */
     turn(EN_K2, 1); frame();                                                 /* its section C */
     turn(EN_K3, 2); frame();                                                 /* 6 bars */

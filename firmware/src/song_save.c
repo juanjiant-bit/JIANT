@@ -186,8 +186,9 @@ static int song_erase_parts(uint32_t target, uint32_t parts)
         if (st_save(OBJ_SONGIDX, index, sizeof *index)) goto failed;
     }
 #endif
-    if (!song_draft || target != song_cur || draft) song_index_target(index, target);
-    if (target == song_cur && (!song_draft || draft)) {
+    song_index_target(index, target);
+    if (target == song_cur) {                    /* (V10.7.22) a draft's too: the open project erased whole, its music
+                                                  * goes as well (the draft stays one, empty; was: the draft kept) */
         chain_config = song_idx.rows[target];
         for (k = 0; k < 4u; k++) if ((mask >> k) & 1u) memset(&proj_slot[k], 0, sizeof proj_slot[k]);
         live.dirty &= (uint8_t)~mask;

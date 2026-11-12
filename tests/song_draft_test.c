@@ -68,13 +68,14 @@ int main(void)
  puts("draft: same-project overwrite is explicit; failed saves retain the draft for retry");
  assert(!song_erase_parts(1,0));for(unsigned n=0;n<4;n++)assert(saved_note(1,n)==-1);
  assert(song_draft&&!memcmp(draft_before,proj_slot,sizeof draft_before));
- assert(!song_erase_parts(song_cur,0)&&song_draft&&chain_config.count==4);
- assert(!memcmp(draft_before,proj_slot,sizeof draft_before));
- for(unsigned n=0;n<4;n++)assert(saved_note(0,n)==-1);
+ /* (V10.7.22) the open project erased whole: its music goes too, the draft's as well (was: the draft kept) */
+ assert(!song_erase_parts(song_cur,0)&&song_draft&&!chain_config.count&&seq_is_empty(&trk[0]));
+ for(unsigned n=0;n<4;n++)assert(!project_used(n)&&saved_note(0,n)==-1);
+ draft_music(66);
  song.playing=1;assert(song_select(3)&&song_draft);song.playing=0;
  writes=erases;assert(!project_erase(1));assert(!project_used(1)&&erases==writes);
  for(unsigned r=0;r<chain_config.count;r++)assert(chain_config.row[r].slot!=1);
- puts("erase: deleting either saved project preserves the draft; draft part deletion is RAM-only");
+ puts("erase: another saved project preserves the draft, the open one clears it; draft part deletion is RAM-only");
  assert(!song_select(3)&&!song_draft&&song_cur==3&&chain_config.count==4);
  assert(!song_erase_parts(3,0)&&!song_draft&&!chain_config.count);
  for(unsigned n=0;n<4;n++)assert(!project_used(n)&&saved_note(3,n)==-1);
