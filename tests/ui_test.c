@@ -10275,6 +10275,25 @@ static int test_click_menu(void)
         ui.home = home0; ui.force = 1; frame();
         bad += check("LOAD LITE / ECO: the panel animates at most every 50 / 70 ms, values snap; FULL as before", ok);
     }
+    {   /* (codex/voices) the UI under load, in two steps on the average: SLOW from 60 % (the animation moves on, the
+         * values snap), FREEZE from 75 %; each its own way back; never while stopped */
+        uint32_t q0 = load_avg_q8, f0;
+        uint8_t pl0 = song.playing;
+        song.playing = 1;
+        load_avg_q8 = 59u << 8; ui_hold_poll(); ok = ui_hold == 0u && !ANIM_OFF();
+        load_avg_q8 = 60u << 8; ui_hold_poll(); ok &= ui_hold == 1u && !ANIM_OFF() && ANIM_SNAP();
+        f0 = anim_fr; ui.frame += 3u; ok &= anim_fr == f0 + 3u;                  /* (SLOW: it moves) */
+        load_avg_q8 = 74u << 8; ui_hold_poll(); ok &= ui_hold == 1u;
+        load_avg_q8 = 51u << 8; ui_hold_poll(); ok &= ui_hold == 1u;            /* (not back yet) */
+        load_avg_q8 = 75u << 8; ui_hold_poll(); ok &= ui_hold == 2u && ANIM_OFF();
+        f0 = anim_fr; ui.frame += 3u; ok &= anim_fr == f0;                       /* (FREEZE: still) */
+        load_avg_q8 = 66u << 8; ui_hold_poll(); ok &= ui_hold == 2u;            /* (not back yet) */
+        load_avg_q8 = 64u << 8; ui_hold_poll(); ok &= ui_hold == 1u && !ANIM_OFF();
+        load_avg_q8 = 49u << 8; ui_hold_poll(); ok &= ui_hold == 0u && !ANIM_SNAP();
+        load_avg_q8 = 90u << 8; song.playing = 0; ui_hold_poll(); ok &= ui_hold == 0u;   /* (stopped: never) */
+        song.playing = pl0; load_avg_q8 = q0; ui_hold_poll();
+        bad += check("UI under load: SLOW from 60 % (the animation moves, values snap), FREEZE from 75 %, back under 65 / 50 %, never stopped", ok);
+    }
     {   /* (0.6.29) 6 LITE: the heavy parts swapped while they sound, the project's values kept */
         int16_t rt0 = song.g[G_RTYPE], dp0 = song.g[G_DPIT];
         int32_t o[2u * CTL];
