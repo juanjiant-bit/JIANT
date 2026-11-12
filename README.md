@@ -485,6 +485,7 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
 
 ### V10.7.21 — beta (2026-11-12)
 - **Fewer voices cut under load**: when the voice budget is nearly full, released notes hurry their release once they are 20 dB down (the start of the release sounds as set), and FM6 patches whose release never ended no longer hold a voice forever. ANALOG and FM6 tails then play at half the sample rate, interpolated (about 40 % cheaper, a little darker above 11 kHz); held notes of the dearest track only when the load stays high. With voices to spare nothing changes.
+- **KICK, SNARE and CLAP are never cut**: when voices run out, a kit's kick, snare and clap hits are never taken for another note, nor by the overload guard (hats, toms and the rest may still give way).
 - **Animations under load**: from 60 % CPU they slow down instead of freezing; they freeze only from 75 %.
 - **ANALOG: one filter page.** EDIT 1 is WAVE · DETUNE · MIX · INT; EDIT 2 is gone (FILTER has TYPE · CUT · RES · DRIVE); NOISE (on SAW3 / PLS3: INT 3) on FOCUS.
 - Installer: the firmware download button is gone (another tool leaves the FM-1 without its Bluetooth part: GEN, song saving, USB HOST).

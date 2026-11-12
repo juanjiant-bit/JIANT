@@ -114,7 +114,7 @@ static __attribute__((noinline)) void shed_voice(void)
         uint32_t mode = trk_vmode(t), low = mode == V_POLY ? lowest_held(t) : 0u;
         for (i = 0; i < NVOICE; i++) {
             voice_t *v = &trk[p].v[i];
-            if (v->active && voice_held(t, v) && v->stage != 4u &&
+            if (v->active && voice_held(t, v) && v->stage != 4u && !voice_core_drum(t, v) &&
                 ((mode == V_POLY && i != low) || (mode != V_POLY && i > 0u))) {
                 if (!best || v->age < best->age)
                     best = v;

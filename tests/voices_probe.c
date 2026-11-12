@@ -197,8 +197,9 @@ static void st_shed(void)
             uint32_t mode = trk_vmode(t), low = mode == V_POLY ? lowest_held(t) : 0u;
             for (i = 0; i < NVOICE; i++) {
                 voice_t *v = &trk[p].v[i];
-                if (v->active && voice_held(t, v) && v->stage != 4u && ((mode == V_POLY && i != low) || (mode != V_POLY && i > 0u)) &&
-                    (!best || v->age < best->age)) best = v;
+                if (v->active && voice_held(t, v) && v->stage != 4u && !voice_core_drum(t, v) &&
+                    ((mode == V_POLY && i != low) || (mode != V_POLY && i > 0u)) &&
+                    (!best || v->age < best->age)) best = v;   /* (audio.c shed_voice's copy: KICK SNARE CLAP kept) */
             }
         }
         if (best) stm.shed_held++;
@@ -741,6 +742,31 @@ static int tests(void)
                  "(after %u blocks tripped), back at the full rate at block %u (the guard let go at %u, the load then under %u %%): %u changes of rate for 3 voices",
                  back, in_at, 4u * HALF_WAIT, out_at, calm_at, HALF_BACK, flips);
         t_check(msg, !back && in_at > 200u + 4u * HALF_WAIT && in_at < 500u && out_at > calm_at && calm_at && flips == 6u);
+    }
+    {   /* (V10.7.21, the owner) KICK SNARE CLAP are never cut: a kit hits them, then three synth parts hold chords past
+         * the budget, new notes keep coming and the overload guard sheds: the three hits play on (not given up, not fading) */
+        uint32_t l, b, cut = 0, hats_cut = 0, held = 0;
+        int32_t o[2 * CTL];
+        t_init(3);
+        host_preset(&trk[0], ENGI_DRUM, 0);
+        host_preset(&trk[1], ENGI_ANALOG, 1); host_preset(&trk[2], ENGI_FM6, 0); host_preset(&trk[3], ENGI_ANALOG, 1);
+        for (b = 0; b < 400u; b++) {
+            if (!(b % 40u)) for (l = 0; l < 4u; l++) trk_note_on(&trk[0], DRUM_LANE_NOTE[l], 110);   /* (KICK SNARE CLAP HATCL) */
+            if (b == 5u) for (l = 0; l < 4u; l++) { trk_note_on(&trk[1], 48 + 4 * l, 100); trk_note_on(&trk[2], 60 + 3 * l, 100); }
+            if (b > 10u && !(b % 7u)) { trk_note_on(&trk[3], 50 + b % 24u, 100); trk_note_on(&trk[1], 70 + b % 12u, 100); }
+            if (b > 20u && !(b % 5u)) st_shed();         /* (late halves: the guard's last resort, audio.c shed_voice's copy) */
+            mix_block(o, CTL);
+            if (b % 40u == 39u) continue;
+            for (l = 0; l < NVOICE; l++) {
+                const voice_t *v = &trk[0].v[l];
+                if (!v->active || b % 40u > 6u) continue;  /* (the first blocks after each hit: it still rings) */
+                if ((uint32_t)v->s[0] < 3u) { held++; cut += v->stage == 4u; }
+                else hats_cut += v->stage == 4u;
+            }
+        }
+        snprintf(msg, sizeof msg, "KICK SNARE CLAP never cut with the budget full and the guard shedding (%u blocks of hits seen, %u fading; "
+                 "the hats may go: %u)", held, cut, hats_cut);
+        t_check(msg, held > 100u && !cut);
     }
     vsoft_host = 0;
     printf("%s\n", t_fail ? "voices: FAIL" : "voices: all passed");

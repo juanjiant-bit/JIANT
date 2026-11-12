@@ -614,6 +614,14 @@ static uint32_t lowest_held(const track_t *t)           /* index of the lowest h
 /* the voice to give up for a new one (see the top); soft: only released voices and
  * extra voices of other non-POLY parts (also ones left after a mode change).
  * Returns its index, *pp its part; NVOICE = none */
+/* (V10.7.21, the owner: "never cut the drums, above all kick, snare, claps: the feel goes at once") a kit's KICK, SNARE
+ * and CLAP hits (DRUM-X lanes 0..2, drum_note_on keeps the lane in s[0]) are never given up for another voice: neither the
+ * budget (voice_victim, load_victim, the part's own steal) nor the overload guard (audio.c shed_voice) takes them; a new
+ * one is never refused (voice_room: hard, over the budget if it must) */
+static int voice_core_drum(const track_t *t, const voice_t *v)
+{
+    return t->engine == ENGI_DRUM && (uint32_t)v->s[0] < 3u;
+}
 static uint32_t voice_victim(const track_t *self, int soft, track_t **pp)
 {
     uint32_t p, i, best = NVOICE, cat = 4;
@@ -632,8 +640,8 @@ static uint32_t voice_victim(const track_t *self, int soft, track_t **pp)
                 c = 1;                                  /* released */
             else if (mode != V_POLY && i > 0)
                 c = 2;                                  /* extra UNISON, or a voice left by a mode / cap change */
-            else if (!soft && mode == V_POLY && i != low)
-                c = 3;                                  /* held, not the bass */
+            else if (!soft && mode == V_POLY && i != low && !voice_core_drum(t, v))
+                c = 3;                                  /* held, not the bass, not a kick snare clap */
             else
                 continue;
             if (c < cat || (c == cat && v->age < (*pp)->v[best].age)) {
@@ -773,7 +781,8 @@ static uint32_t load_victim(track_t *self, track_t **pp)
     low = lowest_held(self);
     for (i = 0; i < NVOICE; i++) {
         const voice_t *v = &self->v[i];
-        if (v->active && v->stage != 4u && i != low && (best == NVOICE || v->age < self->v[best].age)) {
+        if (v->active && v->stage != 4u && i != low && !voice_core_drum(self, v) &&
+            (best == NVOICE || v->age < self->v[best].age)) {
             best = i;
             *pp = self;
         }
@@ -1030,7 +1039,7 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
             best = i;
     if (best == np)
         for (i = 0; i < np; i++)                         /* oldest held, not the bass */
-            if (i != low && (best == np || t->v[i].age < t->v[best].age))
+            if (i != low && !voice_core_drum(t, &t->v[i]) && (best == np || t->v[i].age < t->v[best].age))
                 best = i;
     return voice_reuse(t, &t->v[best == np ? 0 : best]);
 }
