@@ -10672,7 +10672,12 @@ static int test_preset_types(void)
         persist_t p;
         settings_export(&p);
         list_put(0);
-        ok &= settings_import(&p, (int)sizeof p) && list_get() == 2u;
+        ok &= settings_import(&p, (int)sizeof p) && list_get() == 0u;   /* (V10.7.19) a sound type: ALL at power-on */
+        list_put(1);
+        settings_export(&p);
+        list_put(0);
+        ok &= settings_import(&p, (int)sizeof p) && list_get() == 1u;   /* (FAV is kept) */
+        list_put(2);
     }
     for (k = 0; k < 20u; k++) turn(EN_K4, 1);
     frame();
@@ -10680,7 +10685,7 @@ static int test_preset_types(void)
     for (k = 0; k < 20u; k++) turn(EN_K4, -1);
     frame();
     ok &= list_get() == 0u && !favorites.filter;
-    bad += check("PRESETS LIST: ALL FAV BASS .. FX (KNOB 4, no wrap); BASS lists every engine's basses only; kept with the settings", ok);
+    bad += check("PRESETS LIST: ALL FAV BASS .. FX (KNOB 4, no wrap); BASS lists every engine's basses only; a type ALL again at power-on, FAV kept", ok);
     {   /* (a YouTube user, V10.7.6: "I can't change the instruments on the tracks in the song with the PRESETS knob. It
          * goes to the voice synth and can't go back") LIST VOX, left on SAVE > PRESETS (kept with the settings): the
          * PRESETS knob on HOME browses the VOX sounds alone, in a song or not; HOME now says the LIST. LIST ALL: every
