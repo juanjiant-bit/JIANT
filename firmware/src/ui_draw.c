@@ -2386,7 +2386,8 @@ static void ui_draw_body(uint32_t counting)
     }
     if (!ui.home && !page_visible(ui.page)) {          /* an OP page of a track that is not DIGITAL (without
                                                          * FELUCCA_FM4: any track): EDIT 1 */
-        ui.page = (uint8_t)page_first(FAM_EDIT);
+        uint32_t e1 = nv_page(SEC_EDIT, 0);             /* (V10.7.21: EDIT 1 as shown on this track: ANALOG's own) */
+        ui.page = (uint8_t)(e1 < NPAGES ? e1 : page_first(FAM_EDIT));
         page_entered();
     }
     cursor_fix();
