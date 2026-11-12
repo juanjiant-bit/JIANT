@@ -175,6 +175,13 @@ static __attribute__((noinline)) void ain_follow(void)
 #define KX_BSS __attribute__((section(".bss.kx")))   /* (out of the merged statics, as fx.c's djf: theirs keep their places) */
 static volatile uint8_t kx_semi KX_BSS;            /* the bend's range, semitones (0: OFF) */
 static uint16_t kx_amt[NTRK][2] KX_BSS, kx_ph[NTRK] KX_BSS;   /* the ramps (vibrato depth, bend: 0..65535), the vibrato's phase */
+/* (VEL, core.h P_TVEL) a velocity as track t's sound takes it: its distance from 100 scaled by VEL / 127 (127: as
+ * played; 0: 100). (V10.7.22) the matrix's VEL follows the velocity as played: seq.c tvel, vel_note; voice.c vel_sound */
+static inline uint32_t tvel_of(const track_t *t, uint32_t v)
+{
+    return FELUCCA_FM4 && t->eng_req % NENGINES == ENGI_DIGITAL ? v : (uint32_t)(100 + ((int32_t)v - 100) * t->p[P_TVEL] / 127);
+}
+static void vel_note(track_t *t, uint32_t vel);   /* (seq.c) */
 /* track i's bend (k 1: smoothstep of its ramp, Q12 0..4096) or vibrato's wave (k 0: a sine near enough, Q15) */
 static __attribute__((noinline)) int32_t kx_shape(uint32_t i, uint32_t k)
 {
@@ -434,7 +441,7 @@ static __attribute__((noinline)) void mod_voice(track_t *t, voice_t *v, vmod_t *
 /* a note-on of track t (voice.c trk_note_on): the per-voice sources of the latest note */
 static void mod_note(track_t *t, uint32_t note, uint32_t vel)
 {
-    t->m_vel = (uint8_t)vel;
+    vel_note(t, vel);                               /* (V10.7.22) m_vel: the velocity as played (VEL: the sound's share) */
     t->m_key = (uint8_t)note;
     t->m_rnd = mod_rand();
 }

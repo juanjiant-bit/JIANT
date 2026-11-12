@@ -253,7 +253,7 @@ Vestal's, *Velo*, github.com/charlesvestal/fm1-velocity, GPL-3.0). JIANT reads i
   **100 %** (every project, preset and song made before it) plays each note as hard as it was played; less brings every
   note's velocity toward 100 (50 %: a strike of 60 plays 80, one of 120 plays 110); **0 %** plays every note at 100,
   as VELOCITY OFF does, but for this track only. It applies to every source: the keys, the sequencer's steps, the arp,
-  the punch-in repeats and MIDI in; the matrix's **VEL** reads the same value. A step's **ACCENT** still plays 127, and HUMAN and a RATCHET's DECAY
+  the punch-in repeats and MIDI in. (V10.7.22) It is only how much velocity reaches the *sound* (its level and the engine's own response): the matrix's **VEL** source always follows the velocity as played (the keys, a step's own, the arp, MIDI in, an external keyboard), whatever VEL is, 0 % included — VEL 0 % with VEL → CUT: every note as loud, the filter still following how hard you play. A step's **ACCENT** still plays 127, and HUMAN and a RATCHET's DECAY
   still vary the notes.
   Recording keeps the velocity you played, so turning VEL up later brings the dynamics back. The factory **bass**
   presets load at **0 %** (a bass is better even), GENE's bass at **75 %** (its composed ghost notes still softer); every other

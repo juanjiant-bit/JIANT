@@ -264,8 +264,8 @@ de Charles Vestal, *Velo*, github.com/charlesvestal/fm1-velocity, GPL-3.0). JIAN
   a *este* sonido. **100 %** (todo proyecto, preset y canción de antes) toca cada nota tan fuerte como se tocó; menos
   acerca la velocidad de cada nota a 100 (50 %: un toque de 60 suena 80, uno de 120 suena 110); **0 %** toca todas las
   notas a 100, como VELOCITY OFF, pero solo en esta pista. Vale para todas las fuentes: las teclas, los pasos del
-  secuenciador, el arpegiador, las repeticiones del punch-in y el MIDI de entrada; el **VEL** de la matriz lee el mismo
-  valor. El **ACENTO** de un paso sigue sonando 127, y HUMAN y el DECAY de un RATCHET siguen variando las notas. La grabación guarda la velocidad que tocaste: si después subís VEL,
+  secuenciador, el arpegiador, las repeticiones del punch-in y el MIDI de entrada; (V10.7.22) Es solo cuánta velocidad le llega al
+  *sonido* (su nivel y la respuesta propia del motor): la fuente **VEL** de la matriz sigue siempre la velocidad tal como se tocó (las teclas, la de cada paso, el arpegiador, el MIDI de entrada, un teclado externo), sea cual sea VEL, 0 % incluido — VEL 0 % con VEL → CUT: todas las notas igual de fuertes y el filtro siguiendo cuán fuerte tocás. El **ACENTO** de un paso sigue sonando 127, y HUMAN y el DECAY de un RATCHET siguen variando las notas. La grabación guarda la velocidad que tocaste: si después subís VEL,
   vuelve la dinámica. Los presets de **bajo** de fábrica cargan en **0 %** (un bajo queda mejor parejo), el bajo de GENE
   en **75 %** (sus notas fantasma compuestas siguen más suaves); los demás presets en 100 %. Se guarda con el sonido (proyectos,
   presets de usuario, canciones); NRPN 80, y el grupo VOICE del editor web.

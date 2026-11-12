@@ -1083,6 +1083,16 @@ static int32_t trk_trans(const track_t *t)
     const engine_t *e = ENGINES[t->engine % NENGINES];
     return e->oneshot || e->keys ? 0 : t->p[P_TRANS];
 }
+/* (V10.7.22) the velocity voice v's note takes before UNISON's level (FM6, eng_fm6.c; mvel 0: vel), VEL applied: mvel is the
+ * matrix's, the one as played (seq.c vel_note) or, where that was not the note's, the note's own; the one of the two
+ * UNISON's level turns into the voice's vel (as trk_note_on) */
+static __attribute__((noinline)) uint32_t vel_sound(const track_t *t, const voice_t *v)
+{
+    uint32_t nv = t->p[P_VOICE] == V_UNISON ? trk_nvoice(t) : 1u, s = tvel_of(t, v->mvel);
+    if (!v->mvel)
+        return v->vel;
+    return (nv >= NVOICE ? s * 36u / 100u : nv > 1u ? s / 2u : s) == v->vel ? s : v->mvel;
+}
 static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int glide, uint32_t age)
 {
     const engine_t *e = ENGINES[t->engine];

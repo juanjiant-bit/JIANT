@@ -317,16 +317,16 @@ int main(void)
         key_up(KEY); blocks(8);
         t->p[P_TVEL] = 0;
         key_down(KEY); blocks(4);
-        ck("   0 %: a key's 37 plays 100 (the voice, the matrix's VEL)", t->m_vel == 100u && vvel(t) == 100u);
+        ck("   0 %: a key's 37 plays 100; the matrix's VEL 37, as played (V10.7.22)", t->m_vel == 37u && vvel(t) == 100u);
         key_up(KEY); blocks(8);
         kb_velx[KEY] = 127u ^ 100u;
         key_down(KEY); blocks(4);
-        ck("   0 %: a key struck at 127 plays 100 too (only a step's ACCENT keeps 127)", t->m_vel == 100u);
+        ck("   0 %: a key struck at 127 plays 100 too (only a step's ACCENT keeps 127); the matrix 127", t->m_vel == 127u && vvel(t) == 100u);
         key_up(KEY); blocks(8);
         t->p[P_TVEL] = 64;
         kb_velx[KEY] = 37u ^ 100u;
         key_down(KEY); blocks(4);
-        ck("   50 %: a key's 37 plays 69 (halfway to 100)", t->m_vel == 69u && vvel(t) == 69u);
+        ck("   50 %: a key's 37 plays 69 (halfway to 100); the matrix 37", t->m_vel == 37u && vvel(t) == 69u);
         key_up(KEY); blocks(8);
         t->p[P_TVEL] = 0;
         /* the sequencer playing a step of 40 and an accented one */
@@ -336,20 +336,24 @@ int main(void)
         t->p[P_SLEN] = 2; t->p[P_SDIV] = 2; song.g[G_BPM] = 120;
         transport_req = 1;
         {
-            uint32_t n100 = 0, n127 = 0, other = 0, j, last = 0;
+            uint32_t n100 = 0, n127 = 0, other = 0, j, last = 0, v;
             for (j = 0; j < 120u; j++) {
                 blocks(16u * (FS / 1000u) / CTL / 4u);
-                if (t->m_vel && t->m_key != last) { last = t->m_key; n100 += t->m_vel == 100u; n127 += t->m_vel == 127u;
-                                                    other += t->m_vel != 100u && t->m_vel != 127u; }
+                if (t->m_vel && t->m_key != last) {
+                    last = t->m_key; v = vvel(t);
+                    n100 += v == 100u && t->m_vel == 40u;         /* (V10.7.22: the matrix's VEL the step's own) */
+                    n127 += v == 127u && t->m_vel == 127u;
+                    other += !(v == 100u && t->m_vel == 40u) && !(v == 127u && t->m_vel == 127u);
+                }
             }
-            snprintf(what, sizeof what, "   0 %%: the sequencer's step of 40 plays 100 (%u), its ACCENT still 127 (%u), none else (%u)",
+            snprintf(what, sizeof what, "   0 %%: the sequencer's step of 40 plays 100, the matrix 40 (%u), its ACCENT still 127 (%u), none else (%u)",
                      n100, n127, other);
             ck(what, n100 >= 1u && n127 >= 1u && !other);
         }
         transport_req = 2; ms_run(64);
         /* MIDI in */
         midi_enqueue(0x9u | 0x90u << 8 | 64u << 16 | 30u << 24, 1); events_block(CTL);
-        ck("   0 %: a MIDI note of 30 plays 100", t->m_vel == 100u);
+        ck("   0 %: a MIDI note of 30 plays 100, the matrix 30", t->m_vel == 30u && vvel(t) == 100u);
         midi_enqueue(0x8u | 0x80u << 8 | 64u << 16, 1); blocks(8);
         /* the arp: the keys' velocity, even at 127 (not an accent) */
         midi_out_mode = MO_ALL; frame();
@@ -358,7 +362,7 @@ int main(void)
         transport_req = 1; ms_run(32);
         t->m_vel = 0;
         key_down(KEY); ms_run(400);
-        ck("   0 %: the arp's notes of a key struck at 127 play 100", t->m_vel == 100u);
+        ck("   0 %: the arp's notes of a key struck at 127: the matrix's VEL 127, as played (the sound's: vel_matrix_test)", t->m_vel == 127u);
         key_up(KEY); transport_req = 2; ms_run(32);
         t->p[P_AMODE] = 0; midi_out_mode = MO_KEYS; frame();
         /* recorded: the key's own velocity */

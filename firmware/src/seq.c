@@ -387,9 +387,19 @@ static uint16_t kb_sdue[27];                    /* (0.6.81) samples to the strum
  * store before: as played; 0: 100). Applied where a velocity enters, before what the FM-1 adds to it: the keys and MIDI
  * in (input_on, after the recording: the step keeps the key's own), the arp's notes, a step's own (STEP_VEL); a
  * step's ACCENT (127), HUMAN's spread and RATCHET's DECAY act after it, as they would on any note */
-static inline uint32_t tvel(const track_t *t, uint32_t v)
+/* (V10.7.22, the owner) VEL is only how much velocity reaches the sound: the matrix's VEL follows the velocity as played.
+ * tvel keeps the one it was given (vs.raw: the keys, MIDI in, the arp, a step); mod.c mod_note, if the note's velocity
+ * is that one's as the sound takes it (a chord's notes too), gives the matrix (m_vel, mvel) the played one (vel_note).
+ * Else (an ACCENT's 127, HUMAN's spread, a RATCHET's DECAY, a repeat; VEL 100 %: the same) the note's own, as before.
+ * FM6, the one engine reading mvel: voice.c vel_sound */
+static __attribute__((noinline)) uint32_t tvel(const track_t *t, uint32_t v)   /* (not in the RAM code: mix_block) */
 {
-    return FELUCCA_FM4 && t->eng_req % NENGINES == ENGI_DIGITAL ? v : (uint32_t)(100 + ((int32_t)v - 100) * t->p[P_TVEL] / 127);
+    vs.raw = (uint8_t)v;
+    return tvel_of(t, v);
+}
+static __attribute__((noinline)) void vel_note(track_t *t, uint32_t vel)   /* (mod.c mod_note: the matrix's VEL) */
+{
+    t->m_vel = (uint8_t)(tvel_of(t, vs.raw) == vel ? vs.raw : vel);
 }
 #define STEP_VEL(t, s) ((s)->flags & SF_ACCENT ? 127u : tvel((t), (s)->vel ? (s)->vel : 96u))
 
