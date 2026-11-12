@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.20
+## This release: V10.7.21
 
 ### Installing
 
@@ -482,6 +482,12 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.21 — beta (2026-11-12)
+- **Fewer voices cut under load**: when the voice budget is nearly full, released notes hurry their release once they are 20 dB down (the start of the release sounds as set), and FM6 patches whose release never ended no longer hold a voice forever. ANALOG and FM6 tails then play at half the sample rate, interpolated (about 40 % cheaper, a little darker above 11 kHz); held notes of the dearest track only when the load stays high. With voices to spare nothing changes.
+- **Animations under load**: from 60 % CPU they slow down instead of freezing; they freeze only from 75 %.
+- **ANALOG: one filter page.** EDIT 1 is WAVE · DETUNE · MIX · INT; EDIT 2 is gone (FILTER has TYPE · CUT · RES · DRIVE); NOISE (on SAW3 / PLS3: INT 3) on FOCUS.
+- Installer: the firmware download button is gone (another tool leaves the FM-1 without its Bluetooth part: GEN, song saving, USB HOST).
 
 ### V10.7.20 — beta (2026-11-12)
 - **SAVE has nine pages**: SAVE SONG AS is gone. On **PROJECTS**, KNOB 1 picks a project without opening it; LOAD opens it, ERASE empties it, SAVE writes there. The NAME screen's **KNOB 3** chooses the whole SONG or the LOOP alone (it starts at SONG every time).
