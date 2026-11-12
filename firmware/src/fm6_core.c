@@ -169,7 +169,9 @@ static void fm6_env_key(fm6_env_t *e, const uint8_t *op, int down)
 /* ------------------------------------------------------ pitch envelope --- */
 typedef struct {
     int32_t level, target, inc;
-    uint8_t ix, rising, down, rsv;
+    uint8_t ix, rising, down;
+    uint8_t half;                /* (codex/voices; was padding) bit 0: the note renders at half the rate (eng_fm6.c),
+                                  * bit 1: from this block, or back at the full one (fm6_note_compute) */
 } fm6_penv_t;
 
 static const uint8_t FM6_PENV_RATE[100] = {
@@ -330,9 +332,9 @@ typedef struct {                 /* msfa FmOpParams */
                                    * the skip: a long release's tail, inaudible, computed for seconds on six operators) */
 
 /* one operator over the block: modulated by in (0: none), into out (add: += else =). Four loops, so none
- * tests a flag per sample */
+ * tests a flag per sample. (codex/voices) add's bit 1: at half the rate, FM6_N / 2 samples (freq is doubled) */
 #define FM6_OP_LOOP(PH, STORE)                                                    \
-    for (i = 0; i < FM6_N; i++) {                                               \
+    for (i = 0; i < n; i++) {                                                   \
         g += dg;                                                                \
         out[i] STORE mul64_sh15(fm6_sin(PH), g);                                \
         phase = (int32_t)((uint32_t)phase + (uint32_t)freq);                    \
@@ -340,8 +342,9 @@ typedef struct {                 /* msfa FmOpParams */
 static __attribute__((noinline)) void fm6_op_run(int32_t *out, const int32_t *in, int32_t phase, int32_t freq,
                                                  int32_t g1, int32_t g2, int add)
 {
-    int32_t dg = (g2 - g1 + (FM6_N >> 1)) >> FM6_LG_N, g = g1;
-    uint32_t i;
+    uint32_t i, n = FM6_N >> (add >> 1);
+    int32_t dg = (g2 - g1 + (int32_t)(n >> 1)) >> (FM6_LG_N - (add >> 1)), g = g1;
+    add &= 1;
     if (in && add)
         FM6_OP_LOOP(phase + in[i], +=)
     else if (in)
@@ -356,9 +359,10 @@ static __attribute__((noinline)) void fm6_op_run(int32_t *out, const int32_t *in
 static __attribute__((noinline)) void fm6_op_fb(int32_t *out, int32_t phase, int32_t freq, int32_t g1, int32_t g2,
                                                 int32_t *fb, int32_t shift, int add)
 {
-    int32_t dg = (g2 - g1 + (FM6_N >> 1)) >> FM6_LG_N, g = g1, y0 = fb[0], y = fb[1];
-    uint32_t i;
-    for (i = 0; i < FM6_N; i++) {
+    uint32_t i, n = FM6_N >> (add >> 1);
+    int32_t dg = (g2 - g1 + (int32_t)(n >> 1)) >> (FM6_LG_N - (add >> 1)), g = g1, y0 = fb[0], y = fb[1];
+    add &= 1;
+    for (i = 0; i < n; i++) {
         int32_t s = (y0 + y) >> (shift + 1);
         g += dg;
         y0 = y;
@@ -376,7 +380,7 @@ static __attribute__((noinline)) void fm6_op_fb(int32_t *out, int32_t phase, int
 #define MC_CPU() 0u                 /* (built alone: tests/fm6_test.c) */
 #endif
 static int32_t fm6_bus_c[2][2][FM6_N];   /* (JIANT 0.6.71) one pair a core (core.h MC_CPU) */
-static int fm6_core_render(int32_t *out, fm6_op_t *op, uint32_t alg, int32_t *fb, int32_t fb_shift)
+static int fm6_core_render(int32_t *out, fm6_op_t *op, uint32_t alg, int32_t *fb, int32_t fb_shift, int half)
 {
     int32_t (*fm6_bus)[FM6_N] = fm6_bus_c[MC_CPU() & 1u];
     const uint8_t *a = FM6_ALG[alg & 31u];
@@ -391,6 +395,7 @@ static int fm6_core_render(int32_t *out, fm6_op_t *op, uint32_t alg, int32_t *fb
         if (g1 >= FM6_THRESH || g2 >= FM6_THRESH) {
             if (!has[outbus])
                 add = 0;
+            add += half << 1;
             if (inbus == 0u || !has[inbus]) {
                 if ((f & 0xc0u) == 0xc0u && fb_shift < 16)
                     fm6_op_fb(o, op[k].phase, op[k].freq, g1, g2, fb, fb_shift, add);
@@ -403,7 +408,7 @@ static int fm6_core_render(int32_t *out, fm6_op_t *op, uint32_t alg, int32_t *fb
         } else if (!add) {
             has[outbus] = 0;
         }
-        op[k].phase = (int32_t)((uint32_t)op[k].phase + ((uint32_t)op[k].freq << FM6_LG_N));
+        op[k].phase = (int32_t)((uint32_t)op[k].phase + ((uint32_t)op[k].freq << (FM6_LG_N - half)));
     }
     return has[0];
 }
@@ -483,6 +488,7 @@ static void fm6_note_init(fm6_note_t *n, const uint8_t *p, int32_t note, int32_t
             n->op[k].phase = n->op[k].gain_out = 0;
         n->fb[0] = n->fb[1] = 0;
         n->dc = 0;
+        n->penv.half = 0;
     }
     n->fixed = 0;
     for (k = 0; k < 6u; k++) {
@@ -524,7 +530,7 @@ static int fm6_note_compute(fm6_note_t *n, const uint8_t *p, int32_t *out, int32
     uint32_t pmd = (uint32_t)((p[FP_LPMD] % 100u) * 165u >> 6) * (uint32_t)lfo_delay;   /* Q32 */
     int32_t senslfo = FM6_PMS[p[FP_LPMS] & 7u] * (lfo_val - (1 << 23));
     int32_t pmod = (int32_t)(mul64_us(pmd, senslfo) >> 39), pitch_mod;
-    uint32_t amd = (uint32_t)((p[FP_LAMD] % 100u) * 165u >> 6), amod, car = fm6_carriers(alg), k;
+    uint32_t amd = (uint32_t)((p[FP_LAMD] % 100u) * 165u >> 6), amod, car = fm6_carriers(alg), k, hf = n->penv.half & 1u;
     pmod = pmod < 0 ? -pmod : pmod;
     pitch_mod = fm6_penv_get(&n->penv, p) + (senslfo < 0 ? -pmod : pmod);
     amod = (uint32_t)(mul64_us(amd, lfo_delay) >> 8);                 /* Q24 */
@@ -533,7 +539,10 @@ static int fm6_note_compute(fm6_note_t *n, const uint8_t *p, int32_t *out, int32
         const uint8_t *op = p + k * FP_OP;
         int32_t level = fm6_env_get(&n->env[k], op);
         uint32_t ams = FM6_AMSENS[op[FP_AMS] & 3u];
-        n->op[k].freq = fm6_freq((n->fixed >> k) & 1u ? n->base[k] : logfreq + n->base[k] + pitch_mod + dt[k]);
+        n->op[k].freq = fm6_freq((n->fixed >> k) & 1u ? n->base[k] : logfreq + n->base[k] + pitch_mod + dt[k]) << hf;
+        if (n->penv.half & 2u)                     /* (codex/voices) the rate changes: the operator a sample on (its samples
+                                                    * the block's odd ones, voice.c voice_half) or back */
+            n->op[k].phase = (int32_t)((uint32_t)n->op[k].phase + (uint32_t)(hf ? n->op[k].freq >> 1 : -n->op[k].freq));
         if (ams) {                                 /* msfa: pt = exp(sensamp / 262144 * 0.07 + 12.2) */
             uint32_t sensamp = (uint32_t)(umul64(amod, ams) >> 24);
             int32_t lg = FM6_AMS_C0 + (int32_t)(umul64(sensamp, FM6_AMS_K) >> 10);
@@ -544,7 +553,21 @@ static int fm6_note_compute(fm6_note_t *n, const uint8_t *p, int32_t *out, int32
             level += modlvl;
         n->op[k].level_in = level < 0 ? 0 : level > (17 << 24) ? 17 << 24 : level;
     }
-    return fm6_core_render(out, n->op, alg, n->fb, fb ? 8 - fb : 16);
+    n->penv.half = (uint8_t)hf;
+    return fm6_core_render(out, n->op, alg, n->fb, fb ? 8 - fb : 16, (int)hf);
+}
+
+/* (codex/voices) a released note hurried (voice.c rel_hurry: the budget nearly full): every operator past its key-up
+ * falls step more a block (Q24 log2), under its L4 too (a patch whose release ends above silence would hold its voice);
+ * one still rising to its L4 is left to get there */
+static void fm6_note_hurry(fm6_note_t *n, int32_t step)
+{
+    uint32_t k;
+    for (k = 0; k < 6u; k++) {
+        fm6_env_t *e = &n->env[k];
+        if (!e->down && e->ix >= 3u && !(e->ix == 3u && e->rising))
+            e->level = e->level > step ? e->level - step : 0;
+    }
 }
 
 /* the note can be dropped: every carrier silent for good (released and done, or held at a silent

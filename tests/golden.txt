@@ -189,7 +189,7 @@ drums/drum_gm_kit 29dce68cb7627214
 mode/ANALOG/POLY 2ce3389d8e146736
 mode/ANALOG/MONO 5ab80bfef71da1dd
 mode/ANALOG/LEGATO adf454ccb31d946f
-mode/ANALOG/UNISON 0bc80adaab33b1e4
+mode/ANALOG/UNISON 7999268ee61da582
 mode/VOICE/POLY 84f21e0514aa1792
 mode/VOICE/MONO a1521935a506ecef
 mode/VOICE/LEGATO 3b7a297e5ee7fe31
@@ -200,6 +200,6 @@ sends/ANALOG/delay 2ec344675796f4d0
 sends/ANALOG/reverb c729377f2c8da194
 sends/ANALOG/all 4841fc0395b7fa8a
 sends/ANALOG/dist cdb38420c25052b4
-song/4track_mix 8ac88b4a9506bf47
+song/4track_mix 426e64b0125333e5
 slicer/gate/ANALOG_ACID ae0248dc346288c0
-slicer/song_gate_stut 032dd86934cdc0fd
+slicer/song_gate_stut 4bb07c857b7b7175

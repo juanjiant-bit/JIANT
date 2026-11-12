@@ -3377,6 +3377,7 @@ static void events_block(uint32_t n)
     uint32_t clock_mode = (uint32_t)song.g[G_CLOCK];
     blk_n = n ? n : 1u;                                /* (ctl64: ev_at) */
     ev_off = 0;
+    voice_soft();                                   /* (codex/voices) the budget's soft measures, a block */
     if (midi_clock.mode != clock_mode) {
         seq_stop();
         memset(&midi_clock, 0, sizeof midi_clock);
