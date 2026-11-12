@@ -627,7 +627,11 @@ static int page_visible(uint32_t i)
         return trk_engp(TSEL) == &ENG_LOFI && TSEL->p[P_E1] >= RW_BYTE;
     if (PAGES[i].scope == SC_ENGINE && PAGES[i].fam == FAM_EDIT)   /* (V10.7.21) ANALOG: its own EDIT 1 (INT in NOISE's
                                                          * place), no EDIT 2; every other engine EDIT 1 and EDIT 2 */
-        return (trk_eng(TSEL) == ENGI_ANALOG) == (PAGES[i].id[0] == P_E0 && PAGES[i].id[3] == P_E7);
+    {
+        uint32_t a2 = PAGES[i].id[0] == P_E0 && PAGES[i].id[3] == P_E7, a3 = PAGES[i].id[0] == P_E0 && PAGES[i].id[1] == P_E7;
+        if (trk_eng(TSEL) != ENGI_ANALOG) return !a2 && !a3;
+        return AN_OSC3(TSEL->p) ? a3 : a2;              /* (V10.7.22: SAW3 / PLS3, its three intervals on one page) */
+    }
     if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] == P_FTYPE)   /* (JIANT 0.5) FILTER: ANALOG's, or the part's */
         return (trk_eng(TSEL) == ENGI_ANALOG) == (PAGES[i].id[1] == P_E4);
     return !(PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] >= P_FM1_ATK &&

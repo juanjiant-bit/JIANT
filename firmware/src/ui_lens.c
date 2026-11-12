@@ -153,7 +153,7 @@ static uint32_t nav_cur(void)
     const ch_t *c = &CHAINS[key];
     if (sec == SEC_HOME)
         return gen_on() ? 4u + gen_page() : (ui.hlv ? 2u : 0u) + (ui.hset[ui.hlv ? 1 : 0] & 1u);
-    s = ((((ui.page * 31u + key) * 131u + e) * 257u + TSEL->eng_req) * 8191u + (uint32_t)(uint16_t)TSEL->p[P_E1]) * 7u +
+    s = ((((ui.page * 31u + key) * 131u + e) * 257u + TSEL->eng_req) * 8191u + ((uint32_t)(uint16_t)TSEL->p[P_E1] ^ (uint32_t)(uint16_t)TSEL->p[P_E0] << 8)) * 7u +
         sys_load + 1u;
     if (s == ui.nav_sig)
         return ui.nav_at;
@@ -170,7 +170,7 @@ static uint32_t nav_cur(void)
         if (e >= c->n)
             e = 0;
     }
-    ui.nav_sig = ((((ui.page * 31u + key) * 131u + e) * 257u + TSEL->eng_req) * 8191u + (uint32_t)(uint16_t)TSEL->p[P_E1]) * 7u +
+    ui.nav_sig = ((((ui.page * 31u + key) * 131u + e) * 257u + TSEL->eng_req) * 8191u + ((uint32_t)(uint16_t)TSEL->p[P_E1] ^ (uint32_t)(uint16_t)TSEL->p[P_E0] << 8)) * 7u +
                  sys_load + 1u;
     ui.nav_at = e;
     return e;

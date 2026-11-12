@@ -4643,6 +4643,13 @@ static int test_edit_cycle(void)
         }
         ok &= seen;
         TSEL->p[P_E0] = AW_SAW3; frame();                /* (SAW3 / PLS3: NOISE's slot is INT 3, on FOCUS too) */
+        go_title("EDIT 1"); frame();                     /* (V10.7.22) .. and EDIT 1 WAVE INT INT 3 DETUNE, the intervals together */
+        ok &= cur_page()->id[0] == P_E0 && str_eq(page_desc(cur_page(), 1, &hv)->label, "INT") &&
+              str_eq(page_desc(cur_page(), 2, &hv)->label, "INT 3") && cur_page()->id[3] == P_E1;
+        TSEL->p[P_E0] = 0; frame();                      /* (back to SAW on that page: the two-oscillator EDIT 1 again) */
+        ok &= str_eq(cur_page()->title, "EDIT 1") && cur_page()->id[3] == P_E7;
+        TSEL->p[P_E0] = AW_SAW3; frame();
+        go_title("FOCUS"); frame();
         turn(EN_K1, -8); frame();
         for (k = 0, seen = 0; k < 8u; k++) {
             seen |= str_eq(track_desc(TSEL, P_E0 + focus_k())->label, "INT 3");
@@ -4656,7 +4663,7 @@ static int test_edit_cycle(void)
         go_title("EDIT 1"); frame();
         ok &= cur_page()->id[3] == P_E3;
         set_engine_of(TSEL, 0); frame();
-        bad += check("V10.7.21 ANALOG: EDIT 1 WAVE DETUNE MIX INT, FILTER TYPE CUT RES DRIVE, NOISE (SAW3: INT 3) on FOCUS; PHASE EDIT 1 + 2", ok);
+        bad += check("V10.7.21 ANALOG: EDIT 1 WAVE DETUNE MIX INT, FILTER TYPE CUT RES DRIVE, NOISE / MIX on FOCUS, SAW3 EDIT 1 WAVE INT INT 3 DETUNE; PHASE EDIT 1 + 2", ok);
     }
 #if FELUCCA_FM4
     set_engine_of(TSEL, 1);

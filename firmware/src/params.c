@@ -840,6 +840,8 @@ static const page_t PAGES[] = {
     {"EDIT 1", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E0, P_E1, P_E2, P_E7}},   /* (V10.7.21) ANALOG's EDIT 1 (OSC): WAVE DETUNE MIX
                                                          * INT; its EDIT 2 gone (FILTER has TYPE CUT RES DRIVE), NOISE on
                                                          * FOCUS (ui.c page_visible) */
+    {"EDIT 1", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E0, P_E7, P_E3, P_E1}},   /* (V10.7.22) .. on SAW3 / PLS3 (three oscillators):
+                                                         * WAVE INT INT 3 DETUNE, the intervals together; MIX on FOCUS */
 };
 #define SPLIT_PAGE(pg) ((uint32_t)((pg)->graph - GR_SPLIT) < 2u)
 #define FIT_PAGE(pg) ((pg)->fam == FAM_SEQ && (pg)->id[0] == P_SLEN && (pg)->id[1] == 0xFFu)
