@@ -62,20 +62,20 @@ static void graph_lib(void)
  * wave, the song's rows, everything), at the right the scope's actions; under them a bar fills while OCT+ is held */
 static __attribute__((noinline)) void graph_lz_tools(void)
 {
-    static const char *const WHAT[6] = {"CLEAR SEQ", "INIT SOUND", "DELETE ROW", "CLEAR SONG", "NEW PROJECT", "CPU TEST"};
-    static const char *const ON[6] = {"STEPS + AUTO", "ENGINE DEFAULT", "", "ALL ROWS", "EVERYTHING", "HEAVY SONG"};
+    static const char *const WHAT[6] = {"CLEAR PROJECT", "CLEAR SEQ", "INIT SOUND", "DELETE ROW", "CLEAR SONG", "CPU TEST"};
+    static const char *const ON[6] = {"EVERYTHING", "STEPS + AUTO", "ENGINE DEFAULT", "", "ALL ROWS", "HEAVY SONG"};
     uint32_t a = ui.act ? ui.act - 1u : 0u, sc = TL_SC[a], c, n = 0, h = graph_h(), i;
     int32_t hold = tl_t0 ? (int32_t)(fm1_ms - tl_t0) * 232 / (int32_t)TL_HOLD : 0;
-    uint16_t col = !ui.act ? T_DIM : sc == 0u ? T_THEME : sc == 1u ? T_ACCENT : sc == 2u ? T_MID : T_TEXT;
+    uint16_t col = !ui.act ? T_DIM : sc == 1u ? T_THEME : sc == 2u ? T_ACCENT : sc == 3u ? T_MID : T_TEXT;
     char b[12];
     cv_frame(4, 4, 76, 76, col);                         /* the picture */
-    if (sc == 0u)
+    if (sc == 1u)
         for (i = 0; i < 16u; i++)                         /* the track's steps */
             cv_rect(10 + (int32_t)(i % 8u) * 8, 14 + (int32_t)(i / 8u) * 30, 6, 24, TSEL->step[i].time == ST_NOTE ? col : T_DIM);
-    else if (sc == 1u)
+    else if (sc == 2u)
         for (i = 0; i < 64u; i++)                         /* a wave */
             cv_rect(10 + (int32_t)i, 42 + ((24 * og_sin(i * 2048u)) >> 15), 1, 2, col);
-    else if (sc == 2u)
+    else if (sc == 3u)
         for (i = 0; i < 4u; i++)                          /* the song's rows */
             cv_rect(10, 12 + (int32_t)i * 16, 64, 12, i < chain_config.count ? col : T_DIM);
     else
@@ -89,12 +89,13 @@ static __attribute__((noinline)) void graph_lz_tools(void)
         cv_rect(88, y, 148, 24, bg);
         GFX_HOOK_ALIGN(0, y, 0, y + 12, AL_V, "tools row text centred up/down");
         cv_text_on(94, y + CAP_IN(M, 14), &AF_M, WHAT[c], sel ? T_TEXT : T_MID, bg);
-        if (c == 2u) { str_cpy(b, "ROW ", sizeof b); fmt_int(b + 4, (int32_t)ui.song_row + 1); }
-        cv_text(94, y + 15, &AF_X, c == 2u ? b : ON[c], sel ? T_MID : T_DIM);
+        if (c == 3u) { str_cpy(b, "ROW ", sizeof b); fmt_int(b + 4, (int32_t)ui.song_row + 1); }
+        cv_text(94, y + 15, &AF_X, c == 3u ? b : ON[c], sel ? T_MID : T_DIM);
     }
     cv_rect(4, (int32_t)h - 20, 232, 6, T_RAISE);        /* OCT+ held: the bar */
     if (hold > 0) cv_rect(4, (int32_t)h - 20, hold > 232 ? 232 : hold, 6, col);
-    cv_text_in(4, (int32_t)h - 11, 232, &AF_X, ui.act ? "HOLD OCT+ TO DO IT" : "TURN A KNOB TO PICK", T_MID, T_SURF);
+    cv_text_in(4, (int32_t)h - 11, 232, &AF_X, ui.act == 1u ? "OCT+ ASKS FIRST" : ui.act ? "HOLD OCT+ TO DO IT" :
+               "TURN A KNOB TO PICK", T_MID, T_SURF);
 }
 /* the song's length and END ("120 BARS . LOOP") into b (24) */
 static void song_len_txt(char *b, uint32_t total)

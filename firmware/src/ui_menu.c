@@ -671,8 +671,8 @@ static void menu_input(uint32_t oct)                  /* oct: ui_input.c oct_tap
             panel_setup();
             scrn.idle = fm1_ms;                         /* (SCREEN OFF: its own loop had the input) */
             ui.force = 1;
-        } else if (ui.menu_sel == MI_INIT) {           /* (0.6.58) INIT SYSTEM: a new song from zero (as SAVE > TOOLS 5,
-                                                         * its dialog; UNDO brings the music back) */
+        } else if (ui.menu_sel == MI_INIT) {           /* (0.6.58) INIT SYSTEM: a new song from zero (V10.7.22: CLEAR
+                                                         * PROJECT, SAVE > TOOLS' first: one dialog; UNDO the music) */
             ui.menu = 0;
             confirm_open(CF_INIT_SYS, song.sel);
             ui.force = 1;

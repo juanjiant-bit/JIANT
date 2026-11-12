@@ -1561,8 +1561,8 @@ static void draw_columns(void)
         return;
     }
     if (cur_page()->graph == GR_TOOLS) {                 /* (V10.24) KNOB 1 the scope, KNOB 2 the action; OCT+ held */
-        static const char *const SC[4] = {"TRACK", "SOUND", "SONG", "SYSTEM"};
-        static const char *const AC[6] = {"CLEAR", "INIT", "DEL ROW", "CLEAR", "NEW", "CPU"};
+        static const char *const SC[5] = {"PROJECT", "TRACK", "SOUND", "SONG", "SYSTEM"};
+        static const char *const AC[6] = {"CLEAR", "CLEAR", "INIT", "DEL ROW", "CLEAR", "CPU"};
         uint32_t a = ui.act ? ui.act - 1u : 0u;
         text_column(0, "SCOPE", ui.act ? SC[TL_SC[a]] : "--", ui.act ? VAL(0u) : T_DIM);
         text_column(1, "ACTION", ui.act ? AC[a] : "--", ui.act ? VAL(1u) : T_DIM);
@@ -2043,9 +2043,9 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, "WRITE LIVE CHANGES?", 24);
         str_cpy(b, "UNDO AFTER: GLO + G4", 24);
         break;
-    case CF_INIT_SYS:                                /* (0.6.40) SAVE > TOOLS 5 */
-        str_cpy(a, "NEW PROJECT?", 24);
-        str_cpy(b, "UNDO AFTER: GLO + G4", 24);
+    case CF_INIT_SYS:                                /* (0.6.40) SAVE > TOOLS; (V10.7.22) CLEAR PROJECT, MENU > INIT */
+        str_cpy(a, "CLEAR PROJECT?", 24);
+        str_cpy(b, "THE SAVED ONE STAYS", 24);
         break;
     case CF_DICE_SOUND:                              /* (0.6.65) EDIT + SELECT: heard already */
     case CF_DICE_SEQ:                                /* (0.6.67) SEQ / LFO / FX + SELECT */

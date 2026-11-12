@@ -100,11 +100,15 @@ static const ng_t CG_SCL[] = {{"KEY", 0}, {"CHORD", 0}, {"SCENE", 0}};
 static const nv_t CE_ARP[] = {NV("ARP", 0, 0, 2), NV("ARP 2", 0, 0, 2)};
 static const ng_t CG_ARP[] = {{"ARP", 0}};
 enum { SV_LIB, SV_PROJ, SV_SOUND };
-static const nv_t CE_SAVE[] = {NV("TIMELINE", 0, 0, SV_PROJ), NV("PARTS", 0, 0, SV_PROJ), NV("CLIPS", 0, 0, SV_PROJ),
-                               NV("PROJECT", "SECTIONS", 0, SV_PROJ),   /* (V10.1) composing first; V10.6o PARTS; V10.6s CLIPS */
-                               NV("PROJECT", "PROJECTS", 1, SV_LIB), NV("ARRANGE", 0, 1, SV_PROJ), NV("TOOLS", 0, 1, SV_LIB),
-                               NV("USER", 0, 2, SV_SOUND), NV("PRESETS", 0, 2, SV_SOUND)};
-static const ng_t CG_SAVE[] = {{"SONG", 0}, {"PROJECT", 0}, {"SOUND", 0}};
+/* (V10.7.22, the owner: "CLEAR PROJECT in SAVE, on the first page, at the start") TOOLS SAVE's first page, its own tab,
+ * CLEAR PROJECT its first action; SAVE at power-on still opens TIMELINE (NAV_DEF: the music first, not a page that
+ * clears it), TOOLS one SELECT to the left, or a SAVE tap from SOUND (round) */
+static const nv_t CE_SAVE[] = {NV("TOOLS", 0, 0, SV_LIB),
+                               NV("TIMELINE", 0, 1, SV_PROJ), NV("PARTS", 0, 1, SV_PROJ), NV("CLIPS", 0, 1, SV_PROJ),
+                               NV("PROJECT", "SECTIONS", 1, SV_PROJ),   /* (V10.1) composing first; V10.6o PARTS; V10.6s CLIPS */
+                               NV("PROJECT", "PROJECTS", 2, SV_LIB), NV("ARRANGE", 0, 2, SV_PROJ),
+                               NV("USER", 0, 3, SV_SOUND), NV("PRESETS", 0, 3, SV_SOUND)};
+static const ng_t CG_SAVE[] = {{"TOOLS", 0}, {"SONG", 0}, {"PROJECT", 0}, {"SOUND", 0}};
 #define CH(e, g) {e, g, (uint8_t)NELEM(e), (uint8_t)NELEM(g)}
 #define NAV_KEYS (SEC_N + 3u)                           /* the sections' memories: EDIT's synth one, then FM6 DRUM DIGITAL */
 static const ch_t CHAINS[NAV_KEYS] = {CH(CE_HOME, CG_HOME), CH(CE_SYN, CG_SYN), CH(CE_SEQ, CG_SEQ), CH(CE_FX, CG_FX),
@@ -112,8 +116,8 @@ static const ch_t CHAINS[NAV_KEYS] = {CH(CE_HOME, CG_HOME), CH(CE_SYN, CG_SYN), 
                                       CH(CE_ARP, CG_ARP), CH(CE_SAVE, CG_SAVE), CH(CE_FM6, CG_FM6), CH(CE_DRM, CG_DRM),
                                       CH(CE_DIG, CG_DIG)};
 /* the page each opens on at power-on (the mock-up's): SEQ its STEP, ENV its ENV, LFO its LFO, (p2) GLO its MIXER (LIVE's
- * pages before it: a GLO tap inside, rule 2); ui.nmem holds it ^ this */
-static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 2, 2, 1, 0, 0, 0, 0, 0, 0};
+ * pages before it: a GLO tap inside, rule 2), (V10.7.22) SAVE its TIMELINE (TOOLS before it); ui.nmem holds it ^ this */
+static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 2, 2, 1, 0, 0, 1, 0, 0, 0};
 static uint32_t nav_key(uint32_t sec) { uint32_t k = sec == SEC_EDIT ? edit_kind() : 0u; return k ? SEC_N - 1u + k : sec; }
 static const ch_t *nav_ch(uint32_t sec) { return &CHAINS[nav_key(sec)]; }
 static uint32_t nav_mem(uint32_t key) { return (uint32_t)(ui.nmem[key] ^ NAV_DEF[key]); }

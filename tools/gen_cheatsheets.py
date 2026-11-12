@@ -170,7 +170,7 @@ def controls():
         ('LFO', 'MOD  |  LFO: LFO · LFO 2 · LFO DEST  |  MSEQ: MSEQ · MSEQ 2', 'MACROS M1–M4 (stay latched)'),
         ('SCL', 'KEY  |  CHORD  |  SCENE', 'ROOT by key'),
         ('ARP', 'ARP: ARP · ARP 2', '—'),
-        ('SAVE', 'SONG: TIMELINE · PARTS · CLIPS · SECTIONS  |  PROJECT: PROJECTS (pick · ERASE · LOAD · SAVE; NAME: K3 SONG / LOOP) · ARRANGE · TOOLS  |  SOUND: USER · PRESETS (from outside, USER / SECTIONS come armed)', 'SONG layer · C5 NAME'),
+        ('SAVE', 'TOOLS: TOOLS (CLEAR PROJECT first)  |  SONG: TIMELINE · PARTS · CLIPS · SECTIONS  |  PROJECT: PROJECTS (pick · ERASE · LOAD · SAVE; NAME: K3 SONG / LOOP) · ARRANGE  |  SOUND: USER · PRESETS (from outside, USER / SECTIONS come armed)', 'SONG layer · C5 NAME'),
         ('REC', '(transport)', 'CLEAR · CLICK · held alone: UNDO'),
     ]
     t2 = ('<table class="pages"><tr><th>BUTTON</th><th>GROUPS (A TAP: THE NEXT) · PAGES (SELECT)</th><th>HOLD</th></tr>' +
@@ -287,7 +287,7 @@ def controls():
                                  ('MIXER', 'LEVEL PAN REV BPM'), ('GLOBAL', 'BPM SWING CLOCK TUNE'), ('COMPS', 'ACTION LENGTH COND VALUE'), ('COMPS 2', 'the global lane: its TRACKS, MONO / POLY'),
                                  ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('SYSTEM 2', ['USB', 'TRS IN', 'BT', '-']), ('PRESETS', 'No. ENG FAV LIST · OCT+ keep, OCT- back'),
                                  ('USER', 'SLOT LOAD ERASE SAVE'), ('PROJECTS', 'PROJECT SECT LOAD SAVE'), ('SECTIONS', 'SECT ERASE LOAD SAVE'), ('ARRANGE', 'ROW SECT BARS SCENE (OCT+ adds a row, OCT− deletes the one picked)'), ('TIMELINE', 'ROW LANE · SEC: SECT BARS · T1–T6: FROM VAR'),
-                                 ('TOOLS', 'K1 SCOPE (TRACK SOUND SONG SYSTEM) · K2 the action · hold OCT+ a second')]),
+                                 ('TOOLS', 'K1 SCOPE (PROJECT TRACK SOUND SONG SYSTEM) · K2 the action · hold OCT+ a second; CLEAR PROJECT (SAVE\'s first page): OCT+ asks, the saved copy kept')]),
     ]
 
     def ptable(rows):
@@ -431,7 +431,7 @@ def sound():
                   'sequence)</p>'))
     b.append(card('SONGS', HEAT[6],
                   '<p><b>6 projects × 4 sections (A–D)</b> (V10.6p; 8 before), a song of up to 16 rows by bars (SAVE › PROJECT › ARRANGE, OCT+ adds a row, OCT− deletes one, PLAY plays; END: STOP, x2–x8, LOOP), SLOOP style. '
-                  '<b>TIMELINE</b> (V10.6o, SAVE\'s first): the song as blocks, the row picked opened by track: K1 row K2 part K3 bars K4 the track\'s <b>VAR</b> (MUTE THIN FILL HALF REV SHIFT OCT± VAR 1–4), F3–D4 mutes, F4–B4 <b>FROM</b> A–D, PLAY loops the row. <b>PARTS</b>: the four parts, OCT+ loops one. <b>CLIPS</b> (V10.6s): 6 tracks × 4 parts, OCT+ on the next bar, REC writes the rows. A sound changed while the song plays stays (V10.6z8; EDIT › RECALL). '
+                  '<b>TIMELINE</b> (V10.6o, where SAVE opens; TOOLS before it): the song as blocks, the row picked opened by track: K1 row K2 part K3 bars K4 the track\'s <b>VAR</b> (MUTE THIN FILL HALF REV SHIFT OCT± VAR 1–4), F3–D4 mutes, F4–B4 <b>FROM</b> A–D, PLAY loops the row. <b>PARTS</b>: the four parts, OCT+ loops one. <b>CLIPS</b> (V10.6s): 6 tracks × 4 parts, OCT+ on the next bar, REC writes the rows. A sound changed while the song plays stays (V10.6z8; EDIT › RECALL). '
                   'Each row can hold a <b>scene</b>: mutes, DRUM-X group mutes, macros and MIDI punch-ins. SAVE held '
                   'plays sections live on the next bar, stores them, records the song (SONG REC). Each section keeps its '
                   'sounds, steps, motion, kit and its SLICER.</p>'))
