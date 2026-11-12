@@ -353,6 +353,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/mod_test" tests/mod_test.c -lm
     mkdir -p build/mod_demo
     run "modulation matrix: off = bit-identical, the math, MIDI CC1 / CC11 / aftertouch, cost, demos" "$OUT/mod_test" build/mod_demo
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/vel_matrix_test" tests/vel_matrix_test.c -lm
+    run "VEL (EDIT > VOICE 2) only the sound's: the matrix's VEL as played; the sound bit for bit as before" "$OUT/vel_matrix_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/slicer_test" tests/slicer_test.c -lm
     mkdir -p build/slicer_demo
     run "SLICER: no clicks, timing, sync with the sequencer, STUT, cost, demos" "$OUT/slicer_test" build/slicer_demo

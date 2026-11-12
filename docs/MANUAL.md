@@ -221,7 +221,7 @@ layer's shortcuts; on the DRUM grid they are steps and lanes; on the NAME screen
 | Step keys held (SEQ, the roll / grid) + **SELECT** / a step key + **REC** | **COPY** those steps / **PASTE** them from that step (see Copy and paste). |
 | **OCT− + OCT+** held at power-on | HARDWARE CALIBRATION. |
 | **OCT− + OCT+** held 5 s while running | Update mode (UBOOT), with a countdown from 2 s; let go to cancel. |
-| A note held + **OCT−** / **OCT+** (V10.6z4) | **Expression keys**: OCT− held fades in a vibrato like raising a mod wheel (~200 ms), OCT+ held bends the note up along a fixed smooth curve (~300 ms) to MENU > AUDIO > **OCT BEND**'s range (default 2 semitones); both ease back when let go. With no note held, OCT− / OCT+ change the octave as ever (OCT BEND OFF: always). Recorded as automation while recording (REC + EDIT clears it); with MIDI OUT ALL sent as CC1 and pitch bend (set the receiver's bend range to OCT BEND's). Both held on a note never starts UBOOT. |
+| A note held + **OCT−** / **OCT+** (V10.6z4) | **Expression keys**: OCT− held fades in a vibrato like raising a mod wheel (~200 ms), OCT+ held bends the note up along a fixed smooth curve (~300 ms) to MENU > AUDIO > **OCT BEND**'s range (default 2 semitones); both ease back when let go. With no note held, OCT− / OCT+ change the octave as ever (OCT BEND OFF: always). Recorded as automation while recording (REC + EDIT clears it); with MIDI OUT ALL sent as CC1 and pitch bend (set the receiver's bend range to OCT BEND's). Both held on a note never starts UBOOT. (V10.7.22) They are also the MOD matrix's sources **OCT+** and **OCT-**: a track whose MOD slot routes OCT+ (SRC, DEST and AMT set) sweeps that DEST along the same curve instead of bending (no pitch bend sent out either); one routing OCT- gets the same 5.5 Hz vibrato, faded in, on that DEST instead of on the pitch (CC1 still sent). |
 
 
 ### Key velocity and aftertouch (V10.6z7)
@@ -253,7 +253,7 @@ Vestal's, *Velo*, github.com/charlesvestal/fm1-velocity, GPL-3.0). JIANT reads i
   **100 %** (every project, preset and song made before it) plays each note as hard as it was played; less brings every
   note's velocity toward 100 (50 %: a strike of 60 plays 80, one of 120 plays 110); **0 %** plays every note at 100,
   as VELOCITY OFF does, but for this track only. It applies to every source: the keys, the sequencer's steps, the arp,
-  the punch-in repeats and MIDI in; the matrix's **VEL** reads the same value. A step's **ACCENT** still plays 127, and HUMAN and a RATCHET's DECAY
+  the punch-in repeats and MIDI in. (V10.7.22) It is only how much velocity reaches the *sound* (its level and the engine's own response): the matrix's **VEL** source always follows the velocity as played (the keys, a step's own, the arp, MIDI in, an external keyboard), whatever VEL is, 0 % included — VEL 0 % with VEL → CUT: every note as loud, the filter still following how hard you play. A step's **ACCENT** still plays 127, and HUMAN and a RATCHET's DECAY
   still vary the notes.
   Recording keeps the velocity you played, so turning VEL up later brings the dynamics back. The factory **bass**
   presets load at **0 %** (a bass is better even), GENE's bass at **75 %** (its composed ghost notes still softer); every other
@@ -2322,7 +2322,9 @@ curve where the bar would be.
     still faded in again on every phrase; projects keep their mode: PHASE FREE opens as MODE FREE.)
 - **MOD matrix**: 4 slots per track (KNOB 1 picks the slot).
   - Sources: OFF, LFO, ENV, VEL, KEY, RAND, MODW (MIDI CC1), AT (aftertouch), EXPR (CC11), **M1–M4**, **STEP** (MSEQ), **NOISE** (a smooth random wander, a new value about every 46 ms: a living wobble on
-    the filter, the pan, a send).
+    the filter, the pan, a send), PROX, ENV2, IN ENV, T1 ENV–T6 ENV, and (V10.7.22) **OCT+** / **OCT-** (the expression
+    keys, a note held + OCT+ / OCT−: OCT+ the bend's eased 0→1 curve, OCT- the vibrato faded in; routed, they move the DEST
+    instead of the pitch; for a tremolo on AMP use a negative AMT).
   - Destinations: PITCH, CUT, SHP, AMP, PAN, DIST, CHO, DLY, REV, RATE (LFO rate), VIB, **E1–E8** (the engine's own
     EDIT knobs, shown by name), **CLIP** and **PNCH** (the master), and (0.7.0) the FX buses: **D.TIM D.FB D.TON D.MIX**
     (DELAY TIME, FDBK, TONE, MIX), **R.SIZ R.DMP** (REVERB SIZE, DAMP), **C.RAT C.DEP** (CHORUS RATE, DEPTH). AMT 64 at a

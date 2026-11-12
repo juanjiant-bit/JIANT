@@ -866,6 +866,19 @@ int main(void)
              proj_scratch.t[0].p[P_M1DST] == MD_LEVEL && proj_scratch.t[0].p[P_M1AMT] == -64;
         bad += check("new follower and LEVEL IDs round-trip in the existing project format", ok);
     }
+    {                                               /* (V10.7.22) OCT+ / OCT- appended: the ids before them as stored */
+        static project_store_t oct_store;
+        static const int16_t SL[4][3] = {{MS_OCTUP, MD_CUT, 63}, {MS_OCTDN, MD_LEVEL, -20}, {MS_FOLLOW, MD_PAN, 5}, {MS_MODW, MD_CUT, 9}};
+        uint32_t k;
+        for (k = 0; k < 12u; k++)
+            trk[1].p[P_M1SRC + k] = SL[k / 3u][k % 3u];
+        project_capture(&proj_scratch);
+        ok = MS_MODW == 6 && MS_FOLLOW == 17 && MS_T1 + NTRK - 1 == 23 && MS_OCTUP == 24 && MS_OCTDN == 25 &&
+             proj_pack(&oct_store, &proj_scratch) && proj_import(&proj_scratch, &oct_store, sizeof oct_store);
+        for (k = 0; k < 12u; k++)
+            ok = ok && proj_scratch.t[1].p[P_M1SRC + k] == SL[k / 3u][k % 3u];
+        bad += check("V10.7.22: OCT+ / OCT- (24, 25) round-trip, the sources before them keep their numbers", ok);
+    }
     printf("%s\n", bad ? "PERSISTENCE TEST FAILED" : "persistence test passed");
     return bad != 0;
 }

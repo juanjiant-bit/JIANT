@@ -10,7 +10,12 @@
  * 3. MIDI OUT ALL: CC1 up and back to 0, pitch bend to full (MSB 127) and back to the middle (64);
  * 4. recording (armed, playing): the gates into the selected track's automation (P_XPR: 125 at the press, 127 at the
  *    release), played back without the keys: the bend comes and goes there;
- * 5. MENU: the row in AUDIO, its eight values; an older setting (byte 0) reads 2 ST (the editor's id 26: editor_test.c). */
+ * 5. MENU: the row in AUDIO, its eight values; an older setting (byte 0) reads 2 ST (the editor's id 26: editor_test.c);
+ * 6. (V10.7.22) the matrix's sources OCT+ / OCT- (mod.c MS_OCTUP / MS_OCTDN, appended: the ids before them kept):
+ *    no route from them: the bend, the vibrato and MIDI OUT bit for bit as V10.7.21 (a checksum, EXPR_HASH_V10721,
+ *    measured with that build's sources: -DEXPR_HASH_ONLY prints it); OCT+ on CUT sweeps the filter (the same eased
+ *    curve), no bend (nor MIDI's pitch bend), and eases back when let go; OCT- on CUT / LEVEL wobbles it at 5.5 Hz,
+ *    the pitch still, CC1 still sent; OCT BEND OFF: OCT+ 0. */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"
 
@@ -47,11 +52,61 @@ static void setup(void)
 }
 static uint32_t KEY = 12u;                            /* a white key mid keyboard */
 
+/* a fixed play of the keys (both tracks' notes, OCT+, OCT-, both, MIDI OUT ALL, a route of LFO and an inactive one
+ * from OCT+ on T1): FNV-1a over every block's kx_q8 and every MIDI byte sent */
+#define EXPR_HASH_V10721 0x9d661a90u
+static uint32_t expr_hash(void)
+{
+    uint32_t h = 2166136261u, b, i, n = 0;
+    setup();
+    menu_put(MI_OCTBEND, 2u);
+    midi_out_mode = MO_ALL;
+    trk[0].p[P_M2SRC] = MS_LFO; trk[0].p[P_M2DST] = MD_CUT; trk[0].p[P_M2AMT] = 40;
+    trk[0].p[P_M3SRC] = MS_T1 + NTRK; trk[0].p[P_M3DST] = MD_CUT; trk[0].p[P_M3AMT] = 0;   /* (OCT+: AMT 0, no route) */
+    trk[1].p[P_M1SRC] = MS_T1 + NTRK + 1; trk[1].p[P_M1DST] = 0; trk[1].p[P_M1AMT] = 30;   /* (OCT-: no DEST, no route) */
+    key_down(KEY);
+    frame();
+    for (b = 0; b < 2400u; b++) {
+        uint32_t ph = b / 300u;
+        if (b % 300u == 0u) {
+            if (ph & 1u) btn_down(B_OCTUP); else btn_up(B_OCTUP);
+            if (ph & 2u) btn_down(B_OCTDN); else btn_up(B_OCTDN);
+            frame();
+        }
+        events_block(CTL);
+        for (i = 0; i < NTRK; i++)
+            h = (h ^ (uint32_t)kx_q8[i]) * 16777619u;
+        while (mo_r != mo_w) {
+            h = (h ^ midi_out_q[mo_r++ % MQ]) * 16777619u;
+            n++;
+        }
+    }
+    btn_up(B_OCTUP); btn_up(B_OCTDN); key_up(KEY);
+    frame();
+    blocks(500);
+    for (i = 0; i < 4u; i++) trk[0].p[P_M1SRC + i] = trk[1].p[P_M1SRC + i] = 0;
+    for (i = 4u; i < 12u; i++) trk[0].p[P_M1SRC + i] = trk[1].p[P_M1SRC + i] = 0;
+    midi_out_mode = MO_KEYS;
+    frame();
+    return h ^ n;
+}
+
 int main(void)
 {
     char what[160];
     int32_t mx, mn, prev, jump;
     uint32_t k, cross;
+    {                                                 /* ---- 6. first: no route from OCT+ / OCT- ---- */
+        uint32_t h = expr_hash();
+#ifdef EXPR_HASH_ONLY
+        printf("expr hash %08x\n", h);
+        return 0;
+    }
+#else
+        snprintf(what, sizeof what, "no route from OCT+ / OCT-: bend, vibrato, MIDI OUT bit for bit as V10.7.21 (%08x)", h);
+        ck(what, h == EXPR_HASH_V10721);
+    }
+#endif
     /* ---- 5. the MENU row ---- */
     setup();
     ck("MENU > AUDIO > OCT BEND: in AUDIO, eight values, 2 ST by default (an older setting's 0)",
@@ -204,6 +259,115 @@ int main(void)
     transport_req = 2;
     ms_run(32);
     ck("stopped: the recorded gates gone (the sound's value back)", trk[0].p[P_XPR] == 127 && (blocks(400), kx_q8[0] == 0));
+    /* ---- 6. (V10.7.22) the sources OCT+ / OCT- ---- */
+#ifndef EXPR_HASH_ONLY                                /* (the sources: not in V10.7.21) */
+    ck("OCT+ / OCT- appended (24, 25), every source before them where it was: a stored project's matrix the same",
+       MS_MODW == 6 && MS_PROX == 15 && MS_FOLLOW == 17 && MS_T1 == 18 && MS_OCTUP == MS_T1 + NTRK && MS_OCTUP == 24 &&
+       MS_OCTDN == 25 && MS_N == 26 && str_eq(N_MSRC[MS_OCTUP], "OCT+") && str_eq(N_MSRC[MS_OCTDN], "OCT-") &&
+       str_eq(N_MSRC[MS_T1 + NTRK - 1], "T6 ENV") && TP[P_M1SRC].max == MS_N - 1 && !MS_BIPOLAR(MS_OCTDN) && !MS_VOICE(MS_OCTUP));
+    setup();
+    midi_out_mode = MO_ALL;
+    trk[0].p[P_M1SRC] = MS_OCTUP; trk[0].p[P_M1DST] = MD_CUT; trk[0].p[P_M1AMT] = 63;
+    key_down(KEY);
+    frame();
+    {
+        uint32_t b, pb = 0, cc = 0;
+        int32_t c56 = 0, cmax = 0, cj = 0, cprev = 0, rel = 0, rj = 0, q8 = 0;
+        btn_down(B_OCTUP);
+        frame();
+        for (b = 0; b < 400u * (FS / 1000u) / CTL; b++) {
+            events_block(CTL);
+            mod_begin(&trk[0]);
+            if (MOD.cut - cprev > cj) cj = MOD.cut - cprev;
+            cprev = MOD.cut;
+            mod_end(&trk[0]);
+            if (b == 56u * (FS / 1000u) / CTL) c56 = cprev;
+            if (cprev > cmax) cmax = cprev;
+            if (kx_q8[0] != 0) q8 = 1;
+            while (mo_r != mo_w) {
+                uint32_t pkt = midi_out_q[mo_r++ % MQ], st = (pkt >> 8) & 0xF0u;
+                pb += st == 0xE0u; cc += st == 0xB0u;
+            }
+        }
+        snprintf(what, sizeof what, "OCT+ on CUT (AMT 63): the filter eased up (%d at ~56 ms, %d of 63 steps), no step over %d, no bend, no pitch bend out",
+                 (int)c56, (int)cmax, (int)cj);
+        ck(what, c56 > 0 && c56 < cmax / 4 && cmax >= 62 * 256 && cmax <= 63 * 256 && cj <= 63 * 256 / 8 && !q8 && !pb && !cc);
+        btn_up(B_OCTUP);
+        frame();
+        rj = 0; cprev = cmax;
+        for (b = 0; b < 400u * (FS / 1000u) / CTL; b++) {
+            events_block(CTL);
+            mod_begin(&trk[0]);
+            if (cprev - MOD.cut > rj) rj = cprev - MOD.cut;
+            if (MOD.cut > cprev) rj = 99999;          /* (only down) */
+            cprev = MOD.cut;
+            mod_end(&trk[0]);
+            if (b == 150u * (FS / 1000u) / CTL) rel = cprev;
+        }
+        snprintf(what, sizeof what, "  let go: eases back (%d at ~150 ms) to %d, down only, no step over %d", (int)rel, (int)cprev, (int)rj);
+        ck(what, rel > 0 && rel < cmax && cprev == 0 && rj <= 63 * 256 / 8 && mod_tsrc(&trk[0], MS_OCTUP, 0) == 0);
+        trk[1].p[P_M1SRC] = MS_OCTUP; trk[1].p[P_M1DST] = MD_CUT; trk[1].p[P_M1AMT] = 63;   /* (another track's route: */
+        trk[0].p[P_M1SRC] = 0;                                                              /* T1's OCT+ bends again) */
+        btn_down(B_OCTUP);
+        frame();
+        blocks(400);
+        ck("  the route on another track only: this one bends as before (512)", kx_q8[0] == 512);
+        btn_up(B_OCTUP);
+        frame();
+        blocks(400);
+        trk[1].p[P_M1SRC] = 0;
+        trk[0].p[P_M1SRC] = MS_OCTUP;
+        menu_put(MI_OCTBEND, 0u);                    /* OFF: the octave, OCT+ stays 0 */
+        frame();
+        press(B_OCTUP);
+        blocks(100);
+        ck("  OCT BEND OFF: OCT+ the octave, the source 0", song.octave == 1 && mod_tsrc(&trk[0], MS_OCTUP, 0) == 0);
+        press(B_OCTDN);
+        menu_put(MI_OCTBEND, 2u);
+        frame();
+    }
+    {
+        uint32_t b, dst, cc = 0, cross = 0;
+        for (dst = 0; dst < 2u; dst++) {
+            int32_t vmax = 0, vmin = 0, base, pv, q8 = 0, x, prevx = 0;
+            trk[0].p[P_M1SRC] = MS_OCTDN; trk[0].p[P_M1DST] = dst ? MD_LEVEL : MD_CUT; trk[0].p[P_M1AMT] = 63;
+            base = trk[0].p[P_LEVEL] = 64;
+            cross = 0;
+            btn_down(B_OCTDN);
+            frame();
+            for (b = 0; b < 1300u * (FS / 1000u) / CTL; b++) {
+                events_block(CTL);
+                mod_begin(&trk[0]);
+                pv = dst ? trk[0].p[P_LEVEL] - base : MOD.cut;
+                mod_end(&trk[0]);
+                if (b >= 300u * (FS / 1000u) / CTL) {
+                    if (pv > vmax) vmax = pv;
+                    if (pv < vmin) vmin = pv;
+                    x = mod_tsrc(&trk[0], MS_OCTDN, 0);
+                    if ((x < 0) != (prevx < 0)) cross++;
+                    prevx = x;
+                }
+                q8 |= kx_q8[0] != 0;
+                while (mo_r != mo_w) {
+                    uint32_t pkt = midi_out_q[mo_r++ % MQ];
+                    cc += ((pkt >> 8) & 0xF0u) == 0xB0u && ((pkt >> 16) & 127u) == 1u;
+                }
+            }
+            snprintf(what, sizeof what, "OCT- on %s (AMT 63): a vibrato of it %+d / %+d, %u crossings a second (11), the pitch still, CC1 sent",
+                     dst ? "LEVEL" : "CUT", (int)vmax, (int)vmin, cross);
+            ck(what, (dst ? vmax >= 50 && vmin <= -50 && trk[0].p[P_LEVEL] == base
+                          : vmax >= 60 * 256 && vmin <= -60 * 256) && cross >= 10u && cross <= 12u && !q8 && cc > 0u);
+            btn_up(B_OCTDN);
+            frame();
+            blocks(300);
+            ck("  let go: faded out to 0", mod_tsrc(&trk[0], MS_OCTDN, 0) == 0 && kx_q8[0] == 0);
+        }
+    }
+    key_up(KEY);
+    trk[0].p[P_M1SRC] = trk[0].p[P_M1DST] = trk[0].p[P_M1AMT] = 0;
+    midi_out_mode = MO_KEYS;
+    frame();
+#endif
     printf("expr: %s\n", bad ? "FAILED" : "all ok");
     return bad != 0;
 }

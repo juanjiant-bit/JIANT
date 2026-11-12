@@ -236,14 +236,13 @@ static __attribute__((noinline)) void mo_block(uint32_t n)   /* events_block: th
  * MENU > AUDIO > OCT BEND's semitones (kx_semi; OFF: no expression keys). Into the track's pitch bend (voice.c kx_q8,
  * beside MIDI's): every engine follows, DRUM none. Recording, they are automation of P_XPR (the gates: the same curves
  * play back); MIDI OUT ALL sends them as CC1 (the vibrato's depth) and pitch bend (full: the range; set the receiver's
- * bend range to OCT BEND's) */
+ * bend range to OCT BEND's). (V10.7.22) the matrix's sources OCT+ / OCT- (mod.c mod_tsrc: the same curves): a slot on the
+ * track routing one takes it off the pitch (OCT+: no bend, nor its pitch bend out; OCT-: no pitch vibrato, CC1 still) */
 #include "vel_kb.h"                                /* (V10.6z6) the keys' velocity and pressure */
 _Static_assert(VK_NTRK == NTRK, "vel_kb.h VK_NTRK: the tracks");
 static uint8_t kb_on[27];                           /* (below: how many of a key's notes sound) */
-#define KX_BSS __attribute__((section(".bss.kx")))   /* (out of the merged statics, as fx.c's djf: theirs keep their places) */
 static volatile uint8_t kx_g[2] KX_BSS;            /* the keys' gates: tracks (bit i) with OCT- (vibrato), OCT+ (bend) held */
-static volatile uint8_t kx_semi KX_BSS;            /* the bend's range, semitones (0: OFF) */
-static uint16_t kx_amt[NTRK][2] KX_BSS, kx_ph[NTRK] KX_BSS;   /* the ramps (vibrato depth, bend: 0..65535), the vibrato's phase */
+                                                    /* (kx_semi, kx_amt, kx_ph: mod.c, the sources OCT+ / OCT- read them) */
 static uint8_t kx_mo[NTRK][2] KX_BSS;              /* MIDI OUT's last CC1, bend MSB - 64 */
 /* (V10.6z6) the keys' pressure (vel_kb.h vk[].at, MENU > CONTROL > AFTERTOUCH): a track's is its held keys' highest
  * (vs.atl), or what its recording plays (P_XPR bits 2..4: 0..7), slewed (~12 ms) into t->at, the matrix's AT (mod.c;
@@ -282,14 +281,13 @@ static __attribute__((noinline)) void kx_block(void)
         for (k = 0; k < 2u; k++)
             kx_amt[i][k] = (uint16_t)clamp(kx_amt[i][k] + ((g >> k) & 1u ? 1 : -1) * (k ? KX_STEP(300) : KX_STEP(200)), 0, 65535);
         kx_ph[i] = (uint16_t)(kx_amt[i][0] ? kx_ph[i] + 65536u * 11u * CTL / 2u / (uint32_t)FS : 0u);   /* 5.5 Hz, from its middle */
-        q = (int16_t)kx_ph[i];
-        x = (kx_amt[i][1] + 8) >> 4;                /* Q12 (0..4096) */
-        x = (x * x >> 12) * (3 * 4096 - 2 * x) >> 12;   /* smoothstep */
-        v = q * (32768 - (q < 0 ? -q : q)) >> 13;   /* a sine, near enough (Q15) */
+        g = kx_route(i);                            /* (V10.7.22) a route from OCT- (bit 0) / OCT+ (bit 1): not the pitch */
+        x = g & 2u ? 0 : kx_shape(i, 1u);           /* the bend: smoothstep, Q12 (0..4096) */
+        v = g & 1u ? 0 : kx_shape(i, 0u);           /* the vibrato: a sine, near enough (Q15) */
         kx_q8[i] = ((90 * (int32_t)kx_amt[i][0] >> 16) * v >> 15) + ((int32_t)kx_semi * x >> 4);
         if (mo_lvl != MO_ALL)
             continue;
-        q = kx_amt[i][0] >> 9;
+        q = kx_amt[i][0] >> 9;                      /* (CC1 the vibrato's depth, routed or not; the bend only on the pitch) */
         v = kx_semi ? x * 63 >> 12 : 0;             /* (the bend's MSB above the middle: 0..63) */
         if (q != kx_mo[i][0])
             mo_send(0xB0u | i, 1u, (uint32_t)(kx_mo[i][0] = (uint8_t)q));   /* (track i: channel i, trk_midi_ch) */
@@ -389,9 +387,19 @@ static uint16_t kb_sdue[27];                    /* (0.6.81) samples to the strum
  * store before: as played; 0: 100). Applied where a velocity enters, before what the FM-1 adds to it: the keys and MIDI
  * in (input_on, after the recording: the step keeps the key's own), the arp's notes, a step's own (STEP_VEL); a
  * step's ACCENT (127), HUMAN's spread and RATCHET's DECAY act after it, as they would on any note */
-static inline uint32_t tvel(const track_t *t, uint32_t v)
+/* (V10.7.22, the owner) VEL is only how much velocity reaches the sound: the matrix's VEL follows the velocity as played.
+ * tvel keeps the one it was given (vs.raw: the keys, MIDI in, the arp, a step); mod.c mod_note, if the note's velocity
+ * is that one's as the sound takes it (a chord's notes too), gives the matrix (m_vel, mvel) the played one (vel_note).
+ * Else (an ACCENT's 127, HUMAN's spread, a RATCHET's DECAY, a repeat; VEL 100 %: the same) the note's own, as before.
+ * FM6, the one engine reading mvel: voice.c vel_sound */
+static __attribute__((noinline)) uint32_t tvel(const track_t *t, uint32_t v)   /* (not in the RAM code: mix_block) */
 {
-    return FELUCCA_FM4 && t->eng_req % NENGINES == ENGI_DIGITAL ? v : (uint32_t)(100 + ((int32_t)v - 100) * t->p[P_TVEL] / 127);
+    vs.raw = (uint8_t)v;
+    return tvel_of(t, v);
+}
+static __attribute__((noinline)) void vel_note(track_t *t, uint32_t vel)   /* (mod.c mod_note: the matrix's VEL) */
+{
+    t->m_vel = (uint8_t)(tvel_of(t, vs.raw) == vel ? vs.raw : vel);
 }
 #define STEP_VEL(t, s) ((s)->flags & SF_ACCENT ? 127u : tvel((t), (s)->vel ? (s)->vel : 96u))
 

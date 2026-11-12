@@ -38,6 +38,7 @@ typedef struct {                        /* (the bytes first: short offsets) */
                                          * reading of its own plays it */
     uint8_t n[VK_NK];                   /* (vel.c) strikes learnt since a reset (to 24) */
     uint8_t velx[27];                   /* each key's press's velocity ^ 100 (0, as zeroed: 100) */
+    uint8_t raw;                        /* (V10.7.22, seq.c tvel) the latest note's velocity as played (padding before) */
     uint32_t hold;                      /* the keys whose press waits for its strike's window (the scan's ISR, vel.c
                                          * vel_note_on): the keys' block (seq.c) sees them pressed once let through */
     uint32_t t;                         /* (vel.c) the last strike learnt, fm1_ms */

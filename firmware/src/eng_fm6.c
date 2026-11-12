@@ -387,6 +387,7 @@ static fm6_note_t *fm6_note_of(track_t *t, voice_t *v)
     return i < FM6_POLY ? &fm6_note[t - trk][i] : 0;
 }
 
+static uint32_t vel_sound(const track_t *t, const voice_t *v);   /* (voice.c: VEL, the velocity the sound takes) */
 static void fm6_note_on(track_t *t, voice_t *v)
 {
     fm6_note_t *n = fm6_note_of(t, v);
@@ -396,7 +397,7 @@ static void fm6_note_on(track_t *t, voice_t *v)
         return;
     fm6_sync(t);
     p = fm6_eff[tr].p;
-    fm6_note_init(n, p, (int32_t)v->note + p[FP_TRNSP] - 24, v->mvel ? v->mvel : v->vel,
+    fm6_note_init(n, p, (int32_t)v->note + p[FP_TRNSP] - 24, vel_sound(t, v),   /* (VEL) */
                   (!v->env && !v->env_out) || !n->live);    /* from silence: phases and gains from 0 */
     n->trim = 255;                                      /* (its first block: the track's trim at once) */
     v->s[0] = 32767;                                    /* (codex/voices) its level for the budget (voice.c voice_lvl) */
