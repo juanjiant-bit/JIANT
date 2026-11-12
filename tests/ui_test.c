@@ -10739,7 +10739,9 @@ static int test_preset_types(void)
     turn(EN_K4, 1); frame();
     ok = list_get() == 1u && favorites.filter == 1u;
     turn(EN_K4, 1); frame();
-    ok &= list_get() == 2u && !favorites.filter && str_eq(N_LIST[list_get()], "BASS");
+    ok &= list_get() == LIST_USER && !favorites.filter && str_eq(N_LIST[list_get()], "USER");   /* (V10.7.22) */
+    turn(EN_K4, 1); frame();
+    ok &= list_get() == 3u && !favorites.filter && str_eq(N_LIST[list_get()], "BASS");
     preset_pos(&total);
     for (n = 0; n < total; n++) {
         e = preset_at(n, &k);
@@ -10755,22 +10757,55 @@ static int test_preset_types(void)
         settings_export(&p);
         list_put(0);
         ok &= settings_import(&p, (int)sizeof p) && list_get() == 1u;   /* (FAV is kept) */
-        list_put(2);
+        list_put(LIST_USER);
+        settings_export(&p);
+        list_put(0);
+        ok &= settings_import(&p, (int)sizeof p) && list_get() == LIST_USER;   /* (V10.7.22: USER is kept too) */
+        list_put(3);
     }
     for (k = 0; k < 20u; k++) turn(EN_K4, 1);
     frame();
-    ok &= list_get() == PT_N && str_eq(N_LIST[list_get()], "FX");
+    ok &= list_get() == LIST_N && str_eq(N_LIST[list_get()], "FX");
     for (k = 0; k < 20u; k++) turn(EN_K4, -1);
     frame();
     ok &= list_get() == 0u && !favorites.filter;
-    bad += check("PRESETS LIST: ALL FAV BASS .. FX (KNOB 4, no wrap); BASS lists every engine's basses only; a type ALL again at power-on, FAV kept", ok);
+    bad += check("PRESETS LIST: ALL FAV USER BASS .. FX (KNOB 4, no wrap); BASS lists every engine's basses only; a type ALL again at power-on, FAV and USER kept", ok);
+    {   /* (V10.7.22, the owner) LIST USER: PRESETS walks the user's own presets alone, wherever it is turned; none: says so */
+        uint32_t s, i, seen = 0, only = 1;
+        up_rec_t r;
+        ui_power_on();
+        for (s = 0; s < UP_SLOTS; s++) if (up_used(s)) up_put(s, 0);
+        list_put(LIST_USER);
+        ui.home = 1; frame();
+        turn(EN_PRESET, 1); frame();
+        ok = msg_is("NO USER SOUNDS: SAVE > USER");
+        for (s = 0; s < 3u; s++) {                      /* three of one's own: ANALOG, FM6, PHASE */
+            static const uint8_t EN[3] = {ENGI_ANALOG, ENGI_FM6, ENGI_PHASE};
+            memset(&r, 0, sizeof r);
+            r.used = UP_USED; r.ver = UP_VER; r.engine = EN[s]; r.np = P_COUNT;
+            memcpy(r.name, "MINE", 4); r.name[4] = (char)('1' + s);
+            for (i = 0; i < P_COUNT; i++) up_set_value(&r, i, param_store_def(EN[s], i));
+            up_put(5u + s, &r);
+        }
+        for (i = 0; i < 9u; i++) {
+            turn(EN_PRESET, 1); frame();
+            only &= user_of(TSEL) < UP_SLOTS;
+            seen |= 1u << (user_of(TSEL) & 31u);
+        }
+        ok &= only && seen == (7u << 5);
+        go_title("EDIT 1"); frame(); turn(EN_PRESET, -1); frame();   /* (EDIT too: the performance and edit pages) */
+        ok &= user_of(TSEL) < UP_SLOTS;
+        for (s = 5; s < 8u; s++) up_put(s, 0);
+        list_put(0);
+        bad += check("V10.7.22 LIST USER: PRESETS walks the user presets alone (HOME, EDIT), none: NO USER SOUNDS", ok);
+    }
     {   /* (a YouTube user, V10.7.6: "I can't change the instruments on the tracks in the song with the PRESETS knob. It
          * goes to the voice synth and can't go back") LIST VOX, left on SAVE > PRESETS (kept with the settings): the
          * PRESETS knob on HOME browses the VOX sounds alone, in a song or not; HOME now says the LIST. LIST ALL: every
          * track's PRESETS knob both ways over the whole list again, a song playing, and the knob says nothing */
         uint32_t t, all, i, p0, seen;
         ui_power_on();
-        list_put(1u + PT_VOX);
+        list_put(2u + PT_VOX);
         ui.home = 1; song.sel = 0; frame();
         turn(EN_PRESET, 1); frame();
         ok = TSEL->eng_req == ENGI_VOICE && msg_is("LIST VOX");   /* (DRUM-X: the first VOX sound, VOICE's) */

@@ -27,7 +27,8 @@ static __attribute__((noinline)) void settings_fix15(uint8_t *f)
         f[27] = 0;
     if (f[16] > 7u)                                 /* OCT BEND (V10.6z4, ui.c oct_xp): unknown = 2 ST (0) */
         f[16] = 0;
-    f[18] = 0;                                      /* PRESETS' LIST type (ui.c list_type): not kept over a power-off
+    f[18] = f[18] == 10u ? 10u : 0u;                /* PRESETS' LIST type (ui.c list_type): not kept over a power-off,
+                                                     * but USER (10 = PT_N, V10.7.22: the user's own bank) is
                                                      * (V10.7.19: two users left it on VOX and found "no presets": the
                                                      * PRESETS knob walked the VOX sounds alone). FAV is kept as before */
 }

@@ -88,12 +88,18 @@ static void overload(void)
 
     fresh();
     host_preset(&trk[0], ENGI_DRUM, 0);
-    trk_note_on(&trk[0], 36, 100); trk_note_on(&trk[0], 38, 100);
-    lead = held(&trk[0], 36); extra = held(&trk[0], 38);
+    trk_note_on(&trk[0], 36, 100); trk_note_on(&trk[0], 42, 100);   /* (V10.7.21: KICK SNARE CLAP never shed: a hat is) */
+    lead = held(&trk[0], 36); extra = held(&trk[0], 42);
     shed_voice();
     for (i = 0; i < 6u; i++) mix_block(out, CTL);
-    check("overload frees a held one-shot drum without waiting for its decay (faded over ~4 ms)",
+    check("overload frees a held one-shot drum (a hat) without waiting for its decay (faded over ~4 ms)",
           lead && extra && lead->active && !extra->active && voices_busy() == 1u);
+    fresh();
+    host_preset(&trk[0], ENGI_DRUM, 0);
+    trk_note_on(&trk[0], 36, 100); trk_note_on(&trk[0], 38, 100); trk_note_on(&trk[0], 39, 100);
+    shed_voice(); shed_voice(); shed_voice();
+    for (i = 0; i < 6u; i++) mix_block(out, CTL);
+    check("V10.7.21: overload never sheds KICK SNARE CLAP", voices_busy() == 3u);
 
     fresh();
     trk[0].p[P_VOICE] = V_UNISON;
