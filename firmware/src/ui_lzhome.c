@@ -27,7 +27,8 @@ static struct {
     int32_t r[ECO_N];                                   /* its radius now (Q4 px: swollen, pulsing) */
     uint32_t tm[ECO_N];                                 /* each being's time (it runs with its sound) */
     uint32_t f0;
-    uint8_t init;
+    uint8_t init, top;                                  /* (top: the water's top row the places are in: 0, the panel's;
+                                                         * AIR's HOME, the whole screen: under its knobs' row) */
 } eco;
 /* (0.9.7, variant A) each being's face and colours, worked out once a drawn frame by eco_step for eco_being: its three
  * isotherms' colours by its level (c0 outer .. c2), its last hit's time (fm1_ms, low 16 bits: the eyes shut 0.1 s), its face's EF_*
@@ -76,6 +77,15 @@ static uint32_t eco_step(void)
             eco.sx[c] = ECO_PX[c] << 8; eco.sy[c] = ECO_PY[c] << 8;
             eco.vx[c] = (c & 1u) ? 90 : -110; eco.vy[c] = (c & 2u) ? 70 : -60;
         }
+        eco.top = 0;
+    }
+    if (eco.top != (uint8_t)top) {                      /* the water moved (AIR's HOME entered or left, the skin changed):
+                                                         * the beings with it. (They began at the panel's places on AIR's
+                                                         * HOME too: over the header, the tabs and the knobs' row, on the
+                                                         * words, until they had swum down) */
+        for (c = 0; c < ECO_N; c++)
+            eco.sy[c] += (top - (int32_t)eco.top) << 8;
+        eco.top = (uint8_t)top;
     }
     if (dt > 8u) dt = 8u;
     if (ANIM_OFF()) dt = 0;                             /* (0.9.9-beta4: and held under load, ui.c ui_hold) */
