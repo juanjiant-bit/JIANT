@@ -167,6 +167,7 @@ regenerated from `params.c` and compared.
 | 1.0 | V10.6z3 | the contract; `INFO` tag `43 02 01 00`; `WATCH` bits 2..4 and the pushes `TRANSPORT` (40), `PUNCH` (41), `MUTATE` (42); NRPN for every automatable parameter and the globals (`docs/NRPN.md`), sent for knob moves with MIDI OUT ALL |
 | 1.1 | V10.6z5 | `VEL` (81): the velocity diagnostic (below); `INFO` tag `43 02 01 01` |
 | 1.2 | V10.6z7 | `VEL` ops 4 and 5: the keys' velocity, calibration and pressure (below); MENU ids 27..30 (VELOCITY, VEL MIN, AFTERTOUCH, VEL LEARN); `INFO` tag `43 02 01 02` |
+| 1.3 | V10.7.22 | `INFO` tag `58 01 s`: the Bluetooth segment (below); `INFO` tag `43 02 01 03` |
 
 ## 1.0: performance pushes (40-42)
 
@@ -349,7 +350,7 @@ at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device 
 
 | cmd | Request args | Reply args |
 | --- | --- | --- |
-| 1 INFO | — | version string, NENGINES, P_COUNT, G_COUNT, NSTEP, P_E0, then NENGINES engine-name strings, then (v3) NTRK (6 since JIANT 0.6, 4 before), then (v6) CHAIN_ROWS (16), then the tagged blocks `55 01 uiCaps`, `4D 01 64 01`, `42 01 3`, `46 01 nfactory nbank`, `53 01 3`, (1.0.3) `50 01 3` and (1.0.4) `4E 01 count` (MENU settings; 12, 1.1: 15, 1.2: 17, 1.1.5: 18) and (1.0.5) `52 01 4` (ratchet) and (1.1) `4C 01 1` (parameter locks) and (JIANT 0.6.11) `56 01 32` (FM6's voice bank) and (JIANT 0.6.62) `4A 01 1` (JIANT) and (JIANT 0.8.5) `4F 01 7` (DRUM lane modes) (below), (JIANT 0.8.5) `59 01 63` (LYRIC, always the last tag) and, just before it, (1.0) `43 02 major minor`: the protocol's version (see "Stability contract (1.0)"); older firmware ends earlier |
+| 1 INFO | — | version string, NENGINES, P_COUNT, G_COUNT, NSTEP, P_E0, then NENGINES engine-name strings, then (v3) NTRK (6 since JIANT 0.6, 4 before), then (v6) CHAIN_ROWS (16), then the tagged blocks `55 01 uiCaps`, `4D 01 64 01`, `42 01 3`, `46 01 nfactory nbank`, `53 01 3`, (1.0.3) `50 01 3` and (1.0.4) `4E 01 count` (MENU settings; 12, 1.1: 15, 1.2: 17, 1.1.5: 18) and (1.0.5) `52 01 4` (ratchet) and (1.1) `4C 01 1` (parameter locks) and (JIANT 0.6.11) `56 01 32` (FM6's voice bank) and (JIANT 0.6.62) `4A 01 1` (JIANT) and (JIANT 0.8.5) `4F 01 7` (DRUM lane modes) (below), (1.3) `58 01 s` (the Bluetooth segment: "INFO 'X'" below), (JIANT 0.8.5) `59 01 63` (LYRIC, always the last tag) and, just before it, (1.0) `43 02 major minor`: the protocol's version (see "Stability contract (1.0)"); older firmware ends earlier |
 | 2 GET | scope, id | scope, id, v14 |
 | 3 SET | scope, id, v14 | scope, id, v14 (the value after clamping). Setting global `G_ENGSEL` (id from DESC label "ENG") changes the engine: its defaults, then its first preset (as on the device) |
 | 4 DUMP | — | engine, preset, then P_COUNT × v14 (the selected track), then G_COUNT × v14 (globals) |
@@ -1140,3 +1141,14 @@ through the device's dictionary (~2100 words; a word it lacks by rough letter ru
 into plain ones (stress is not marked in singing) and ñ into "ny" before sending. A set takes effect at once (RAM: no
 flash write, also while playing): the track's lyric starts over at its next note. Saved with the project (FUNC's
 `L` `Y` block per track that has one; a project without it loads with none) and in the backup's runtime object (id 0).
+
+## 1.3: INFO 'X', the Bluetooth segment
+
+INFO carries `58 01 s` right before `43 02 major minor` (so the last ten bytes are `58 01 s 43 02 01 03 59 01 63`):
+whether the firmware's second part, the Bluetooth segment (flash 0xEA000: Bluetooth, GEN, the songs' saving, USB
+HOST, ...), is there. `s` 1: this build's (its header, length and CRC-32 as the image expects, checked once at
+power-on); 2: missing, torn or another build's: those features say BLUETOOTH PART MISSING and the device shows what to
+do at power-on. Only the web installer writes both parts. The installer asks for it after an install's restart and
+installs once more when it reads 2 (web/fm1diag.js btPart). Firmware without the tag: protocol 1.2 (V10.6z7 ..
+V10.7.21) tells it by `VEL` op 4's reply, 9 bytes without the segment (the keys' block is in it); older firmware does
+not tell.

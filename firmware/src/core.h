@@ -939,6 +939,11 @@ static int bt_hw_seg(void);                             /* bt_hw.c */
 #else
 #define BTAPP_RO
 #define BTAPP_FN
+#ifdef HOST_SEG_HOOK
+static uint8_t host_seg_gone;                           /* (ui_test: the segment missing, as a torn install leaves it) */
+static int bt_hw_seg(void) { return !host_seg_gone; }
+#else
 static int bt_hw_seg(void) { return 1; }                /* (the host: everything in the one image) */
+#endif
 #endif
 

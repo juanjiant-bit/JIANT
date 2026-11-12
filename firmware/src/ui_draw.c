@@ -1942,6 +1942,20 @@ static void draw_uboot(void)
     ui.force = 0;
 }
 
+/* (V10.7.22) the Bluetooth segment missing or another build's (ui.c seg_missing; GEN, the songs' saving, Bluetooth, USB
+ * HOST need it): what to do, over the screen. At power-on (main.c: ui.segbox, full: the header down, a key or a knob
+ * goes on) and on GEN instead of its cards (between its tabs and its foot) */
+static void seg_screen(uint32_t full)
+{
+    lcd_fill(0, full ? H_HEAD : 42u, 240, full ? 240u - H_HEAD : LZ_FOOT_Y - 42u, T_BG);
+    draw_text_box(0, 64, 240, &AF_S, SEG_MISS, T_ACCENT, 1);
+    draw_text_box(0, 98, 240, &AF_S, "REINSTALL WITH THE", T_TEXT, 1);
+    draw_text_box(0, 114, 240, &AF_S, "JIANT WEB INSTALLER:", T_TEXT, 1);
+    draw_text_box(0, 140, 240, &AF_S, "juanjiant-bit.github.io/JIANT", T_THEME, 1);
+    if (full)
+        draw_text_box(0, 190, 240, &AF_S, "ANY KEY: CONTINUE", T_DIM, 1);
+}
+
 /* the count-in (seq.c, MENU > COUNT-IN; 1.1, Discussion #131): over the page until the sequencer starts. Its bar's four
  * beats counted down, 4 3 2 1, in four cells (the beat now filled THEME, those gone dim), with 2 BARS which bar it is;
  * PLAY stops it. Drawn again on each beat (seq.c's state; the header stays live) */
@@ -2326,6 +2340,13 @@ static void ui_draw_body(uint32_t counting)
         draw_head();
         return;
     }
+    if (ui.segbox) {                                    /* (V10.7.22) the power-on's BLUETOOTH PART MISSING */
+        if (ui.force)
+            seg_screen(1);
+        ui.force = 0;
+        draw_head();
+        return;
+    }
     if (ui.menu) {
         draw_menu();
         ui.force = 0;
@@ -2379,8 +2400,14 @@ static void ui_draw_body(uint32_t counting)
         if (ui.force)
             draw_frame();
         draw_head();
-        gen_cards();
-        draw_graph();
+        if (!bt_hw_seg()) {                             /* (V10.7.22) GEN's code is in the segment: what to do, not
+                                                         * HOME's cards left under its tabs */
+            if (ui.force)
+                seg_screen(0);
+        } else {
+            gen_cards();
+            draw_graph();
+        }
         lz_frame_end();
         return;
     }

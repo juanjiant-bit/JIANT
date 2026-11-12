@@ -384,6 +384,9 @@ static void fm1_main(void)
     if (pw_crumb == PW_CR_SKIP) ui_message("SAFE START: POWER SETUP SKIPPED");
     else pw_crumb = 0;                         /* (V10.46) the UI is up: the supply setup went well */
     bt_boot(boot_clean);                       /* (V10.12) BLUETOOTH's boot guard (bt.c) */
+#if FELUCCA_BT
+    ui.segbox = (uint8_t)!ly_en_ok;            /* (V10.7.22) the segment missing: said over the screen (ui_draw.c) */
+#endif
 
     for (;;) {
         uint32_t m = fm1_ms;

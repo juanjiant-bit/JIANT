@@ -207,6 +207,7 @@ static void golden_info(void)
     g_b(0x56, "tag V"); g_b(1, "V"); g_b(FM6_NBANK, "FM6 voice bank");
     g_b(0x4A, "tag J"); g_b(1, "J"); g_b(1, "JIANT");
     g_b(0x4F, "tag O"); g_b(1, "O"); g_b(LM_N, "lane modes");
+    g_b(0x58, "tag X (1.3)"); g_b(1, "X"); g_b(1, "Bluetooth segment: this build's (the host: one image)");
     g_b(0x43, "tag C (1.0)"); g_b(2, "C"); g_b(1, "protocol major"); g_any("protocol minor");
     g_b(0x59, "tag Y (the web editor reads it last)"); g_b(1, "Y"); g_b(LYR_LEN - 1u, "lyric");
 }
