@@ -197,34 +197,35 @@ HOT_FNS = ("mix_block", "mix_part_m0", "fx_run0", "perf_begin", "perf_pre", "per
 
 
 def share_strings(ir, keep=()):
-    """(V10.7.21) a string literal whose bytes sit whole inside another constant byte array (most often its tail:
-    "BASS" in "PEDAL BASS", "OFF" in a packed name table) becomes an alias into it: the one .rodata of felucca.o is not
-    a mergeable string section, so the linker shares none of them. keep: names left alone (what an interrupt reaches);
-    a section of its own (BTAPP ...) is never a target. (the IR, how many strings, their bytes)"""
+    """(V10.7.21) a string literal or a compound literal (a preset's MODS list ..) whose bytes sit whole inside another
+    constant byte array (most often its tail: "BASS" in "PEDAL BASS", "OFF" in a packed name table) or equal one becomes
+    an alias into it: the linker merges only .rodata.str1.1's tails, and not the strings moved into the layout's holes,
+    the named tables nor the other literals. keep: names left alone; a section of its own (BTAPP ...) is never a target.
+    (the IR, how many literals, their bytes)"""
     def unesc(s):
         return re.sub(rb"\\([0-9A-Fa-f]{2})", lambda m: bytes([int(m[1], 16)]), s.encode("latin-1"))
-    arrays, strs = [], []
-    for m in re.finditer(r'^@("?[\w.]+"?) = (?:private|internal) (?:unnamed_addr )?constant \[(\d+) x i8\] c"(.*?)"'
-                         r'(, align \d+)?$', ir, flags=re.M):
-        name, data = m[1].strip('"'), unesc(m[3])
-        if name in keep or len(data) != int(m[2]):
+    arrays = []
+    for m in re.finditer(r'^@("?[\w.]+"?) = (?:private|internal) (unnamed_addr )?constant \[(\d+) x i8\] c"(.*?)"'
+                         r'(?:, align (\d+))?$', ir, flags=re.M):
+        name, data = m[1].strip('"'), unesc(m[4])
+        if name in keep or len(data) != int(m[3]):
             continue
-        arrays.append((name, int(m[2]), data))
-        if name.startswith(".str") and data.index(b"\0") == len(data) - 1:
-            strs.append((name, int(m[2]), data, m.group(0)))
-    arrays.sort(key=lambda a: -a[1])
-    lines, n, saved = {}, 0, 0
-    for name, size, data, line in strs:
-        for t, tsize, tdata in arrays:           # the longest that holds it: never itself an alias
-            if tsize <= size:
-                break
+        lit = (name.startswith(".str") and data.index(b"\0") == len(data) - 1) or name.startswith(".compoundliteral")
+        arrays.append((-len(data), name, data, lit and int(m[5] or 1) == 1, m.group(0)))
+    arrays.sort()
+    kept, lines, n, saved = [], {}, 0, 0
+    for size, name, data, lit, line in arrays:      # the longest first: a target is never itself an alias
+        for t, tdata in kept if lit else ():
             at = tdata.find(data)
             if at >= 0:
-                lines[line] = (f"@{name} = private unnamed_addr alias [{size} x i8], bitcast (i8* getelementptr inbounds "
-                               f"([{tsize} x i8], [{tsize} x i8]* @{t}, i32 0, i32 {at}) to [{size} x i8]*)")
-                n, saved = n + 1, saved + size
+                lines[line] = (f"@{name} = private unnamed_addr alias [{-size} x i8], bitcast (i8* getelementptr inbounds "
+                               f"([{len(tdata)} x i8], [{len(tdata)} x i8]* @{t}, i32 0, i32 {at}) to [{-size} x i8]*)")
+                n, saved = n + 1, saved - size
                 break
-    ir = re.sub(r'^@"?\.str[\w.]*"? = [^\n]*$', lambda m: lines.get(m.group(0), m.group(0)), ir, flags=re.M)
+        else:
+            kept.append((name, data))
+    ir = re.sub(r'^@"?\.(?:str|compoundliteral)[\w.]*"? = [^\n]*$', lambda m: lines.get(m.group(0), m.group(0)), ir,
+                flags=re.M)
     return ir, n, saved
 
 
