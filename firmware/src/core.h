@@ -490,6 +490,19 @@ typedef struct {                 /* an engine (engines.c ENGINES[]; the eng_*.c 
                                   * no phases over a retrigger, spreads none for UNISON, renders at SUS 0 */
     uint8_t keep;                /* bit k: s[k] is kept when a sounding voice is retriggered (filters) */
     uint8_t oneshot;             /* 1 = hits (DRUM): always POLY, no glide; amp ends its voices (eng_drum.c) */
+    /* 1 = the engine's own envelopes are the voice's amplitude (FM6): voice.c renders it at 1.0 (no ADSR, no
+     * velocity; LFO -> AMP, the matrix's AMP and the fades still apply; ENV is 0) and the voice ends when
+     * done() says so (once per control tick, before the render), not at the end of the ADSR's release */
+    uint8_t ownenv;
+    /* (0.9.9 ctl64) 1 = renders whole blocks only (FM6: its operators' block): a note inside a block starts at the
+     * nearer block edge (within CTL / 2), as every engine did with blocks of 32; 0 = a note starts at its sample
+     * (voice.c track_render renders the voice from there) */
+    uint8_t whole;
+    /* (codex/voices) a voice of it can render at half the rate (voice.c voice_half): 1 = with its phase increments
+     * doubled and its filter an octave up (vmod_t: inc, pitch16, cutoff), any number of samples; 2 = it sees CTL / 2
+     * samples and does it itself (FM6); 0 = no */
+    uint8_t half;
+    /* (V10.7.21: these three bytes beside the others, in their padding: 8 B less an engine) */
     void (*note_on)(struct track *t, voice_t *v);
     void (*render)(struct track *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m);
     /* optional (0 = none): the voice amplitude instead of the ADSR curve, once per control tick;
@@ -503,19 +516,7 @@ typedef struct {                 /* an engine (engines.c ENGINES[]; the eng_*.c 
     /* optional: the note of key k (0 = the lowest) when the engine maps the keys itself, else -1
      * (then the scale keyboard of seq.c kb_map) */
     int32_t (*keys)(const struct track *t, uint32_t k);
-    /* 1 = the engine's own envelopes are the voice's amplitude (FM6): voice.c renders it at 1.0 (no ADSR, no
-     * velocity; LFO -> AMP, the matrix's AMP and the fades still apply; ENV is 0) and the voice ends when
-     * done() says so (once per control tick, before the render), not at the end of the ADSR's release */
-    uint8_t ownenv;
     int (*done)(struct track *t, voice_t *v);
-    /* (0.9.9 ctl64) 1 = renders whole blocks only (FM6: its operators' block): a note inside a block starts at the
-     * nearer block edge (within CTL / 2), as every engine did with blocks of 32; 0 = a note starts at its sample
-     * (voice.c track_render renders the voice from there) */
-    uint8_t whole;
-    /* (codex/voices) a voice of it can render at half the rate (voice.c voice_half): 1 = with its phase increments
-     * doubled and its filter an octave up (vmod_t: inc, pitch16, cutoff), any number of samples; 2 = it sees CTL / 2
-     * samples and does it itself (FM6); 0 = no */
-    uint8_t half;
 } engine_t;
 
 /* ------------------------------------------------- tracks, the song --- */
