@@ -12189,8 +12189,13 @@ static int test_lz_home(void)
     ok &= gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(2) && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 1") &&
           lz_count_is("5/7");
     k = gp.genre;
-    turn(EN_PRESET, 1); frame();
-    ok &= gp.genre == (k == GEN_EXPLORE ? 0u : k == NGENRE ? GEN_EXPLORE : k + 1u);   /* PRESETS: the GENRE, KNOB 1's order
+    {   /* (V10.7.22, the owner) PRESETS on GEN: the sound, as on every page but SEQ's; the GENRE only by KNOB 1 */
+        uint32_t pr = TSEL->preset, en = TSEL->eng_req;
+        turn(EN_PRESET, 1); frame();
+        ok &= gp.genre == k && gen_on() && (TSEL->preset != pr || TSEL->eng_req != en);
+    }
+    turn(EN_K1, 1); frame();
+    ok &= gp.genre == (k == GEN_EXPLORE ? 0u : k == NGENRE ? GEN_EXPLORE : k + 1u);   /* KNOB 1: the GENRE, its order
                                                          * (0.8.6: EXPLORE, RANDOM, the genres) */
     turn(EN_SELECT, 1); frame();
     ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 2") && lz_count_is("6/7");
@@ -12200,7 +12205,7 @@ static int test_lz_home(void)
     ok &= gen_on() && gen_page() == 0u;
     press(B_HOME); frame();                                         /* a HOME tap on GEN: round to ECO */
     ok &= !ui.confirm && ui.home && home_level() == 0u && !home_set();
-    bad += check("0.9.2 HOME: ROUTES, then GEN 1..3 (PRESETS its GENRE); SELECT back out of GEN; a HOME tap on GEN: ECO", ok);
+    bad += check("0.9.2 HOME: ROUTES, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: ECO", ok);
     turn(EN_SELECT, 5); frame();                                    /* GEN 2 */
     ok = gen_on() && gen_page() == 1u;
     press(B_ENV); frame();                                          /* not modal: a section's button leaves it */
@@ -12217,7 +12222,7 @@ static int test_lz_home(void)
         uint32_t g0;
         turn(EN_SELECT, 4); frame();                    /* GEN 1 */
         ok = gen_on() && gen_page() == 0u;
-        turn(EN_PRESET, 3); frame();
+        turn(EN_K1, 3); frame();                        /* (V10.7.22: KNOB 1 the GENRE; PRESETS the sound) */
         g0 = gp.genre;
         press(B_OCTDN); frame();                        /* out (ECO) */
         open_family(FAM_ENV); frame();

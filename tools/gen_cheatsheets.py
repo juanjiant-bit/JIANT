@@ -131,8 +131,8 @@ def controls():
          'No levels, no zoom.', 'FX: SENDS → DIST → AUTO PAN → BUSES → DLY → DLY 2 → … → PUNCH'),
         ('2', 'THE BUTTON: IN, OR ON', 'From another section: the page you were last on there. Already inside: the '
          'first page of the next group (round).', 'FX › DLY 2: FX → REVERB · EDIT › FILTER: EDIT → FOCUS'),
-        ('3', 'PRESETS LOADS PRESETS', 'Always: the track\'s sounds; SEQ the patterns (PHRASES, OCT+ loads); GEN the '
-         'genre. Never a page, a track or a module.', 'FX › DLY: PRESETS ▶ the next sound'),
+        ('3', 'PRESETS LOADS PRESETS', 'Always: the track\'s sounds; SEQ the step; GEN too (its '
+         'genre: KNOB 1). Never a page, a track or a module.', 'FX › DLY: PRESETS ▶ the next sound'),
         ('4', 'KNOB 1 PICKS', 'The step, the bar, the slot, the stage, the operator, the kit\'s sound, the row. The track: '
          'always ALGORITHM.', 'SEQ › STEP: K1 = all 64 steps · SEQ › BAR: K1 = the bar'),
         ('5', 'HOLD = THE LAYER', 'Held + SELECT: HOME GEN · EDIT SEQ LFO FX their dice · GLO the tempo · ENV SCL ARP '
@@ -147,7 +147,7 @@ def controls():
         ('MASTER', 'Master volume.'),
         ('SELECT', '<b>Walks the section\'s pages</b>, a page a detent, stopping at the ends (the MENU: every row). Held with a button: '
                    'HOME <b>GEN</b>; EDIT · SEQ · LFO · FX their <b>dice</b> (OK keeps, CANCEL back); GLO the tempo; ENV · SCL · ARP · SAVE their chain.'),
-        ('PRESETS', '<b>Always presets</b>: the sounds (factory and user) on every page; SEQ: the patterns (PHRASES); GEN: the genre. '
+        ('PRESETS', '<b>Always presets</b>: the sounds (factory and user) on every page; SEQ: the step; GEN too (the genre is GEN 1's KNOB 1). '
                     'Nothing in the MENU or with a button held, except <b>EDIT</b> (V10.7): the first sound of the next / previous engine.'),
         ('ALGORITHM', 'Selects the track from any page: T1–T4, or T1–T6 with TRACKS 6. MENU: the tabs. A layer held: MAP · KNOBS · STATE.'),
         ('KNOB 1–4', 'The four columns on screen; KNOB 1 picks (step, bar, slot, row). Fast sweeps the whole range, slow fine-tunes. With a layer held: '

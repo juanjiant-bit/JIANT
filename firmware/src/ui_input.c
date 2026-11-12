@@ -3092,12 +3092,9 @@ static void ui_input_frame(void)
      * pass runs, so one landing after the layer's read went to the page as well: KNOB 1..4 edited the layer's control
      * and the page under it (HOME's sound, motion recorded), PRESETS could load a sound. They stay for the next pass */
     kq |= lay;
-    if (!lay && (s = panel_enc(EN_PRESET)) != 0) {
-        if (gen_on())
-            gen_knob(0, s);                             /* (GEN: its GENRE, the generator's preset) */
-        else
-            presets_turn(s);
-    }
+    if (!lay && (s = panel_enc(EN_PRESET)) != 0)     /* (V10.7.22, the owner: the sounds on every page but SEQ's, GEN's
+                                                         * too; the GENRE only on GEN 1's KNOB 1) */
+        presets_turn(s);
     if (!lay && (s = panel_enc(EN_ALGO)) != 0)     /* ALGORITHM: the selected track, on every page. (0.6.55) Only
                                                     * the tracks that play: TRACKS 4 stops at T4 (T5 / T6 asleep) */
         track_select((uint32_t)clamp((int32_t)song.sel + (s > 0 ? 1 : -1), 0, (int32_t)trk_live - 1));
