@@ -71,7 +71,6 @@ static uint32_t up_gen;                      /* bumped on every user bank change
  * PT_*: every engine's presets of that type, after Skiff by illuminus5), the type in a byte no engine uses (engine 15's
  * favourite byte 18: 0 in older settings, ALL / FAV as they were) */
 #define list_type (favorites.factory[15][18])
-_Static_assert(PT_N == 10, "settings_persist.c checks the LIST type against 10");
 static const char *const N_LIST[PT_N + 1] __attribute__((section(".rodata.ptlist"))) = {"ALL", "FAV", "BASS", "LEAD", "PAD",
                                                                                          "KEYS", "PLUCK", "BELL", "VOX", "DRUM", "FX"};
 static uint32_t list_get(void) { return list_type && list_type < PT_N ? list_type + 1u : favorites.filter ? 1u : 0u; }
