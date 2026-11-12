@@ -101,10 +101,12 @@ int main(void)
 #ifdef EXPR_HASH_ONLY
         printf("expr hash %08x\n", h);
         return 0;
-#endif
+    }
+#else
         snprintf(what, sizeof what, "no route from OCT+ / OCT-: bend, vibrato, MIDI OUT bit for bit as V10.7.21 (%08x)", h);
         ck(what, h == EXPR_HASH_V10721);
     }
+#endif
     /* ---- 5. the MENU row ---- */
     setup();
     ck("MENU > AUDIO > OCT BEND: in AUDIO, eight values, 2 ST by default (an older setting's 0)",
@@ -258,6 +260,7 @@ int main(void)
     ms_run(32);
     ck("stopped: the recorded gates gone (the sound's value back)", trk[0].p[P_XPR] == 127 && (blocks(400), kx_q8[0] == 0));
     /* ---- 6. (V10.7.22) the sources OCT+ / OCT- ---- */
+#ifndef EXPR_HASH_ONLY                                /* (the sources: not in V10.7.21) */
     ck("OCT+ / OCT- appended (24, 25), every source before them where it was: a stored project's matrix the same",
        MS_MODW == 6 && MS_PROX == 15 && MS_FOLLOW == 17 && MS_T1 == 18 && MS_OCTUP == MS_T1 + NTRK && MS_OCTUP == 24 &&
        MS_OCTDN == 25 && MS_N == 26 && str_eq(N_MSRC[MS_OCTUP], "OCT+") && str_eq(N_MSRC[MS_OCTDN], "OCT-") &&
@@ -364,6 +367,7 @@ int main(void)
     trk[0].p[P_M1SRC] = trk[0].p[P_M1DST] = trk[0].p[P_M1AMT] = 0;
     midi_out_mode = MO_KEYS;
     frame();
+#endif
     printf("expr: %s\n", bad ? "FAILED" : "all ok");
     return bad != 0;
 }
