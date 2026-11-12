@@ -100,7 +100,7 @@ static void draw_battery(int32_t bx)
 #define ROLL_FRAMES 9u
 #define ROLL_SNAP 3u                                    /* frames (~45 ms) */
 #define ROLL_BPM 4u                                     /* ui.roll[]: the four cards, then the header BPM */
-#define ROLL_Y (lz_low() ? 11 : lz_on() ? 14 : 18)        /* a card's value strip: rows 18..34, its figures (21..31) in the middle, */
+#define ROLL_Y (lz_low() ? 12 : lz_on() ? 14 : 18)        /* a card's value strip: rows 18..34, its figures (21..31) in the middle, */
 #define ROLL_H 17                                       /* the label (MONO's chip: to row 17) above it, the gauge (39) below;
                                                          * (0.8.5) a lens page's card (38 tall): rows 14..30, the figures
                                                          * 17..27, the gauge at 33; 0.8.9 SKIN BOTTOM / HUD's
@@ -145,9 +145,9 @@ static void roll_note(uint32_t k, const char *a, const char *b, int snap)
 /* s (M) at x, y with field k's roll: each character at its pen in s (the digits are tabular and never kerned,
  * so the old value has the same pens); a rolling digit has moved o of the strip's h rows (ROLL_EASE, one frame
  * later per place from the right), clipped to the strip. The roll's last frame clears it: the static text. */
-static int32_t roll_text(uint32_t k, int32_t x, int32_t y, const char *s, uint16_t fg)
+static int32_t roll_text(uint32_t k, int32_t x, int32_t y, const char *s, uint16_t fg, const aafont_t *f)   /* (f: M, the
+                                                         * header's BPM too; V, a card's number) */
 {
-    const aafont_t *f = &AF_M;                         /* (0.8.5: the header's BPM in S; 0.8.9, the skins' mock-up: in M) */
     uint32_t e = (uint8_t)(ui.frame - ui.roll[k].t0) + 1u, i, p = 0;
     const char *a = ui.roll[k].from;
     int32_t cy = k < ROLL_BPM ? ROLL_Y : 0, h = k < ROLL_BPM ? ROLL_H : HEAD_RULE_Y;   /* (above the header's rule) */
@@ -346,7 +346,7 @@ static void draw_head(void)
     if (!ui.force && sig == ui.head_sig) {
         if (ui.roll[ROLL_BPM].from[0]) {               /* rolling: the BPM's strip only (the rule under it again) */
             cv_begin((uint32_t)(g.sx1 - g.sx0), H_HEAD, T_BG);
-            roll_text(ROLL_BPM, g.bx - g.sx0, HEAD_BMY, b, ui.bpm_t ? T_ACCENT : T_THEME);
+            roll_text(ROLL_BPM, g.bx - g.sx0, HEAD_BMY, b, ui.bpm_t ? T_ACCENT : T_THEME, &AF_M);
             if (!ux.skin)
                 cv_rect(0, HEAD_RULE_Y, g.sx1 - g.sx0, 1, T_LINE);
             cv_blit((uint32_t)g.sx0, Y_HEAD);
@@ -368,7 +368,7 @@ static void draw_head(void)
     head_transport();
     if (!ui.roll[ROLL_BPM].from[0])
         GFX_HOOK_ALIGN(0, 0, 0, HEAD_RULE_Y, AL_V, "header text on its middle");
-    roll_text(ROLL_BPM, g.bx, HEAD_BMY, b, ui.bpm_t ? T_ACCENT : T_THEME);
+    roll_text(ROLL_BPM, g.bx, HEAD_BMY, b, ui.bpm_t ? T_ACCENT : T_THEME, &AF_M);
     lx = g.bx + g.b[2];                                /* the right end of the BPM's ink (and what follows it) */
     if (ui_prefs & PREF_BPM_LOCK) {                    /* BPM LOCK ON (#58): the lock right of the BPM */
         int32_t x = lx + HEAD_GAP;                     /* (0.8.5: drawn) a shackle over a body, 8 x 10 */
@@ -508,12 +508,13 @@ static void draw_column_tall(uint32_t c, const char *label, const char *val, con
                   vc == T_ACCENT || vc == T_DIM ? vc : T_KEY, T_INK, T_SURF);
     } else if (val[0]) {
         int why = !large_face_has(val) ? 1 : ink_w(vf, val) > COL_W - 6 ? 2 : 0;
-        if (why)
-            vf = &AF_M;
+        if (why)                                        /* (a number L cannot hold: V, the same 14 px capitals, narrower) */
+            vf = face_has(&AF_V, val) && ink_w(&AF_V, val) <= COL_W - 6 ? &AF_V : &AF_M;
         if (vf == &AF_M && ink_w(vf, val) > COL_W - 6)
             vf = &AF_S, why = 3;
         LARGE_HOOK(val, why);
-        vy = vf == &AF_L ? LG_VB - AF_L_CAP_Y : vf == &AF_M ? LG_VB + HALF_UP(AF_L_CAP_H - AF_M_CAP_H) - AF_M_CAP_Y
+        vy = vf == &AF_L ? LG_VB - AF_L_CAP_Y : vf == &AF_V ? LG_VB + HALF_UP(AF_L_CAP_H - AF_V_CAP_H) - AF_V_CAP_Y :
+             vf == &AF_M ? LG_VB + HALF_UP(AF_L_CAP_H - AF_M_CAP_H) - AF_M_CAP_Y
                                                           : LG_VB + HALF_UP(AF_L_CAP_H - AF_S_CAP_H) - AF_S_CAP_Y;
         if (vf == &AF_S && ink_w(vf, val) > COL_W - 2) {   /* (a value always fits: the lint reports one cut) */
             cv_text_fit(2, vy, vf, val, vc, T_SURF, COL_W - 4);
@@ -696,7 +697,10 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
     key[n + 12] = (char)(curve == DJF_NOCURVE ? '#' : 0x80 | ((curve + 64) & 127));   /* (0.9.1) the DJ FILTER's curve */
     key[n + 13] = 0;
     uw = unit[0] ? text_w(&AF_S, unit) + 3 : 0;
-    if (text_w(vf, val) + uw > room)
+    if (face_has(&AF_V, val) && val[0] && text_w(&AF_V, val) + uw <= room)   /* a number: in V (capitals 14 px) where it and
+                                                         * its unit fit the card; else M (11), else S (9) */
+        vf = &AF_V;
+    else if (text_w(vf, val) + uw > room)
         vf = &AF_S;
     sig = (uint8_t)str_hash(str_hash(song.sel + TSEL->eng_req * 4u + ux.gen * 64u + lz_on() * 16u, label), unit);
     snap = ui.force || sig != ui.roll[c].sig;           /* what the value is of: label, unit, track, engine, palette */
@@ -724,7 +728,7 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
         ov[i] = 0;
         ui.roll[c].sig = sig;
         if (!str_eq(ov, val))
-            roll_note(c, ov, val, snap || named || vf != &AF_M || kid >= 0 || kind == LK_TALL);
+            roll_note(c, ov, val, snap || named || vf == &AF_S || kid >= 0 || kind == LK_TALL);
         else if (snap)
             ui.roll[c].from[0] = 0;
         str_cpy(ui.col[c], key, sizeof ui.col[c]);
@@ -755,8 +759,9 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
             /* the label (S, MID) at the top left, its capitals rows 4..12; MENU > LARGE on a list / graph page, a lens
              * page or a layer (LK_LABEL): in M where it fits the card (capitals rows 4..14), else in S. A parameter
              * MOTION drives, an armed action: THEME */
-            const aafont_t *lf = kind == LK_LABEL && 5 + text_w(&AF_M, label) <= COL_W - 2 ? &AF_M : lz_on() ? &AF_X : &AF_S;
-            int32_t ly = lf == &AF_M ? 0 : lf == &AF_X ? CARD_XY - low : 1;   /* (0.8.5 a lens card: AF_X, capitals rows 5..11;
+            const aafont_t *lf = lz_on() ? &AF_X : &AF_S;   /* (MENU > LARGE on a list / graph page had it in M: the value
+                                                         * is the big one now, V) */
+            int32_t ly = lf == &AF_M ? 0 : lf == &AF_X ? CARD_XY - 2 * low : 1;   /* (0.8.5 a lens card: AF_X, capitals rows 5..11;
                                                          * 0.8.9 the knob row: 4..10) */
             int32_t cy = ly + (lf == &AF_M ? AF_M_CAP_Y : lf == &AF_X ? AF_X_CAP_Y : AF_S_CAP_Y);
             {
@@ -773,18 +778,20 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
         cv_scroll = 0;
         if (kid >= 0)                                   /* "[OCT+]": the keycap (accent: it would act; DIM: it would not) */
             x = cv_keycap(5 + ox, ry + 2, (uint32_t)kid, vc == T_ACCENT || vc == T_DIM ? vc : T_KEY, T_INK, cb);
-        else if (vf == &AF_M) {
-            if (!ui.roll[c].from[0] && val[0])
+        else if (vf != &AF_S) {                         /* (M: its capitals rows ry + 3 .. 13; V: its figures ry .. ry + 15,
+                                                         * inside the strip that rolls; its unit a row lower, on its line) */
+            if (!ui.roll[c].from[0] && val[0] && vf == &AF_M)
                 GFX_HOOK_ALIGN(0, ry, cw, ry + ROLL_H, AL_V, "card value in its roll window");
-            x = roll_text(c, 5 + ox, ry - 1, val, vc);
+            x = roll_text(c, 5 + ox, vf == &AF_V ? ry - AF_V_CAP_Y + 1 : ry - 1, val, vc, vf);
         } else if (free)                                /* (a name: ellipsised where it must be) */
             x = cv_free_text(5 + ox, ry + 2, vf, val, vc, cb, room - uw);
         else
             x = cv_text_fit(5 + ox, ry + 2, vf, val, vc, cb, room - uw);
         if (unit[0]) {
-            GFX_HOOK_ALIGN(0, 0, 0, vf == &AF_M ? ry - 1 + AF_M.asc : ry + 2 + AF_S.asc, AL_B, "card unit on its value's baseline");
+            int32_t uy = vf == &AF_V ? ry - AF_V_CAP_Y + 1 + AF_V.asc - AF_S.asc : ry + 2;
+            GFX_HOOK_ALIGN(0, 0, 0, uy + AF_S.asc, AL_B, "card unit on its value's baseline");
             uint16_t uc = hud ? T_TEXT : T_MID;         /* (0.9.0 HUD's HOME: TEXT) */
-            cv_text_on(x + 3, ry + 2, &AF_S, unit, fd < 100u ? ux_mix(T_BG, uc, (int32_t)fd) : uc, cb);   /* on the value's
+            cv_text_on(x + 3, uy, &AF_S, unit, fd < 100u ? ux_mix(T_BG, uc, (int32_t)fd) : uc, cb);   /* on the value's
                                                          * baseline (S) */
         }
         if (!strip && curve != DJF_NOCURVE && kind != LK_TALL) {   /* (0.9.1) the DJ FILTER: its response (BOTTOM, HUD:

@@ -3439,7 +3439,8 @@ static int test_roll(void)
     ui_power_on(); song.g[G_TUNE] = 7; roll_settle();
     turn(EN_K4, -1); frame(); frame(); frame();
     down = roll_ink_row(host_screen, CARD_X(3) + 5, CARD_X(3) + 16, (int32_t)card_y() + ROLL_Y, (int32_t)card_y() + ROLL_Y + ROLL_H);
-    ok &= ui.roll[3].dir == -1 && st > 0 && up > st + 16 && down < st - 16;
+    ok &= ui.roll[3].dir == -1 && st > 0 && up > st && down < st && up - down > 16;   /* (V's figures fill the strip but a
+                                                         * row or two: the ink's middle moves less than M's did) */
     ui_power_on(); song.g[G_TUNE] = -5; roll_settle();
     turn(EN_K4, -1);
     ok &= song.g[G_TUNE] == -6 && str_eq(ui.roll[3].from, "-5") && ui.roll[3].dir == -1;
@@ -11244,7 +11245,7 @@ static int test_skin(void)
     go_title("ENV"); frame();
     ok &= lz_low() && !hud_home() && card_y() == LA_CARD_Y && graph_y() == LA_GRAPH_Y && graph_h() == LB_GRAPH_H &&
           graph_y() + graph_h() <= LZ_FOOT_Y && skin_ink(LA_CARD_Y, LA_CARD_Y + LB_CARD_H) > 100 &&
-          lg_px(CARD_X(0) + COL_W / 2, LA_CARD_Y + 1) == T_BG;  /* (no boxes) */
+          lg_px(CARD_X(0) + COL_W - 2, LA_CARD_Y + 1) == T_BG;  /* (no boxes; at the right: the label's capitals reach row 1) */
     ui_prefs |= PREF_LARGE; frame();
     ok &= !lz_low() && large_kind() == LK_TALL && card_y() == LZ_CARD_Y;   /* (LARGE: COLORS' layout, as in every skin) */
     ui_prefs &= ~PREF_LARGE; ui_skin = SKIN_COLORS; go_home(); frame();

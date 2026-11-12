@@ -521,7 +521,9 @@ static uint32_t large_kind(void)
     uint32_t g;
     if (!(ui_prefs & PREF_LARGE))
         return LK_OFF;
-    if (ui.layer || lz_mock_cards() || ui.menu || name_on())   /* (0.8.5: the menu's lens too; the NAME screen, its own
+    if (ui.layer || ui.menu || name_on())               /* (SEQ's, SAVE's and FX's lenses kept their short cards until
+                                                         * V10.7.18: tall now, as HOME's and EDIT's, but for their list and
+                                                         * graph pages below) */   /* (0.8.5: the menu's lens too; the NAME screen, its own
                                                          * geometry: from any page) */                    /* (0.8.5: SEQ, SAVE, FX's lenses keep the mock-up's cards, M labels;
                                                          * HOME and the other lenses: tall cards under their tabs) */
         return LK_LABEL;
@@ -553,13 +555,14 @@ static uint32_t graph_h(void)
     return large_kind() == LK_TALL ? LG_H_GRAPH : hud_home() ? LA_HOME_GRAPH_H : lz_low() ? LB_GRAPH_H :
            lz_on() ? LZ_GRAPH_H : H_GRAPH;
 }
-static int large_face_has(const char *s)                /* every glyph of s in the sparse L face */
+static int face_has(const aafont_t *f, const char *s)   /* every glyph of s in a sparse face (L; V, the figures') */
 {
     for (; *s; s++)
-        if (glyph_at(&AF_L, fold(&AF_L, (uint8_t)*s)) < 0)
+        if (glyph_at(f, fold(f, (uint8_t)*s)) < 0)
             return 0;
     return 1;
 }
+#define large_face_has(s) face_has(&AF_L, s)
 static int32_t ink_w(const aafont_t *f, const char *s)
 {
     int32_t b[4];
