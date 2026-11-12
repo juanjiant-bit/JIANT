@@ -49,11 +49,11 @@ static int32_t bg_energy(void)
 {
     static int32_t e;
     static uint32_t fr = 0xFFFFFFFFu;
-    uint32_t w = scope_w, i;
+    uint32_t w = scope_w, i, n = (anim_fr >> 1) - (fr >> 1);
     int32_t pk = 0, v;
-    if (fr == ui.frame)                                 /* (once a frame: a redraw in the same frame draws the same) */
+    if (fr == anim_fr)                                  /* (once a tick: the same time draws the same; codex/anim: was a frame) */
         return e;
-    fr = ui.frame;
+    fr = anim_fr;
     for (i = 1; i <= 256u; i += 2u) {
         v = scope_buf[(w - i) & (SCOPE_N - 1u)];
         if (v < 0) v = -v;
@@ -61,7 +61,8 @@ static int32_t bg_energy(void)
     }
     v = pk * 256 / 12000;
     if (v > 256) v = 256;
-    e += v > e ? (v - e) * 3 / 4 : (v - e) / 6;
+    for (i = 0; i < n && i < 8u; i++)                   /* (a step each two ticks, as the frames drawn at full pace) */
+        e += v > e ? (v - e) * 3 / 4 : (v - e) / 6;
     return e;
 }
 #define BG_N 96                                         /* vertices of an outline */
@@ -73,14 +74,16 @@ static void bg_outline(const genome_t *g, const bfeat_t *f, int32_t cx, int32_t 
 {
     /* (0.6.57) LOAD LITE / ECO: fewer vertices, the inner isotherms (no spikes to draw) the coarsest: LITE about half
      * the lines a being, ECO a third; FULL as drawn */
-    int32_t i, px = 0, py = 0, nv = !sys_load ? BG_N : outer ? (sys_load == LOAD_ECO ? 48 : 64) : (sys_load == LOAD_ECO ? 24 : 32);
+    int32_t i, nv = !sys_load ? BG_N : outer ? (sys_load == LOAD_ECO ? 48 : 64) : (sys_load == LOAD_ECO ? 24 : 32);
     if (!outer && bg_nv_in && nv > bg_nv_in)
         nv = bg_nv_in;
-    for (i = 0; i <= nv; i++) {
+    for (i = 0; i <= nv; i++) {                          /* (codex/anim: at the load's detail, ui_organic.c pl_pt) */
         uint32_t th = (uint32_t)(i % nv) * 65536u / (uint32_t)nv;
         int32_t rr = r + ((((r * f->wob) >> 8) * ((9175 * bg_sin((uint32_t)f->lob * th + t) +
                                                     3932 * bg_sin((uint32_t)(f->lob + 2) * th - 2u * t)) >> 15)) >> 15);
         int32_t x, y;
+        if (pl_skip((uint32_t)i, (uint32_t)nv))
+            continue;
         if (outer) {
             int32_t c2 = bg_sin(((uint32_t)f->spikes * th >> 1) + (uint32_t)g->tw * 3000u + 0x4000u), p = c2 > 0 ? c2 : 0, n;
             for (n = 1; n < g->sh; n++)
@@ -93,10 +96,7 @@ static void bg_outline(const genome_t *g, const bfeat_t *f, int32_t cx, int32_t 
         }
         x = cx + ((rr * bg_sin(th + 0x4000u) >> 15) * g->ax >> 4);
         y = cy + (rr * bg_sin(th) >> 15);
-        if (i)
-            og_line(px, py, x, y, c);
-        px = x;
-        py = y;
+        pl_pt((uint32_t)i, (uint32_t)nv, x, y, c, 256);
     }
 }
 /* a small ring (a nucleus), Q4 */
@@ -186,8 +186,8 @@ static void graph_being_at(const track_t *t, int32_t cx, int32_t cy, int32_t r)
     bg_feat(t, g, pg->id, &f);
     f.lob += (int32_t)(ui.page & 1u);                    /* (the engine's second page: a lobe more, the same species) */
     bg_excite(&f, en, 2);
-    if (en > 2) tm += (ui.frame - f0) * (uint32_t)(160 + en * 3);
-    f0 = ui.frame;
+    if (en > 2) tm += (anim_fr - f0) * (uint32_t)(160 + en * 3);   /* (codex/anim: by the clock's ticks, not the frames) */
+    f0 = anim_fr;
     being_lines(g, &f, cx, cy, r * (256 + en / 3) / 256, en, tm);
 }
 
@@ -224,7 +224,7 @@ static void graph_colony(const track_t *t, int32_t sel)
             f.len = g->ss * 6 + e;
             f.wob = 40 + e * 3 / 4;
             f.ripple = e / 2;
-            being_lines(g, &f, x * 16, y * 16, (8 + e * 8 / 256) * 16, e, ui.frame * 1500u + l * 9000u);
+            being_lines(g, &f, x * 16, y * 16, (8 + e * 8 / 256) * 16, e, anim_fr * 1500u + l * 9000u);
         } else
             bg_outline(g, &f, x * 16, y * 16, 8 * 16, 1, l * 9000u, bg_col(24));
         cv_text_in(x - 14, y + 14, 28, &AF_S, drum_lane_abbr(t, l), sel == (int32_t)l ? T_THEME : muted ? T_DIM : T_MID, T_SURF);

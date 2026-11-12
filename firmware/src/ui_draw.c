@@ -2272,15 +2272,17 @@ static void ui_draw(void)
     static uint8_t counting;
     style_apply();
     ui.frame++;
-    if (!ANIM_OFF())                                    /* (0.9.9-beta4) the animation's frame (ui.c anim_fr): this one, */
-        anim_at = ui.frame;                             /* or the last it moved on while held */
+    anim_sync();                                        /* (codex/anim) the animation's clock, the detail (ui.c) */
     if (counting != (uint8_t)seq_counting()) {          /* a count-in began or ended: the page drawn again after it */
         counting = (uint8_t)seq_counting();
         ui.force = 1;
     }
     if (!scr_frame())                                   /* MENU > SCREEN OFF: dark (or waking), nothing drawn */
         return;
+    anim_st.non = 1;                                     /* (codex/anim: the lens's entries worked out once, ui_lens.c) */
+    anim_st.nkey = 0;
     ui_draw_page(counting);
+    anim_st.non = 0;
     scr_shown();
 }
 static void hint_tick(void);                            /* (ui_layer.c) */

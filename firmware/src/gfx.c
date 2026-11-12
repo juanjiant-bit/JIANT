@@ -264,11 +264,12 @@ static void scr_blit_stride(uint32_t x, uint32_t y, uint32_t w, uint32_t h, cons
 #define lcd_blit scr_blit
 
 static uint8_t dc_stale;          /* (0.9.0) a strip went to the panel outside cv_blit_cells: the cells' hashes are stale */
+static __attribute__((noinline)) void dc_touch(uint32_t x, uint32_t y);
 static void cv_blit(uint32_t x, uint32_t y)
 {
     GFX_HOOK_BLIT(x, y, 0u);
     GFX_HOOK_SENT(cv_w * cv_h);
-    dc_stale = 1;
+    dc_touch(x, y);
     lcd_blit(x, y, cv_w, cv_h, cv_px);
 }
 
@@ -276,7 +277,7 @@ static void cv_blit(uint32_t x, uint32_t y)
 static void cv_blit_from(uint32_t x, uint32_t y, uint32_t r0)
 {
     GFX_HOOK_BLIT(x, y, r0);
-    dc_stale = 1;
+    dc_touch(x, y);
     if (r0 < cv_h) {
         GFX_HOOK_SENT(cv_w * (cv_h - r0));
         lcd_blit(x, y + r0, cv_w, cv_h - r0, cv_px + r0 * cv_w);
@@ -298,6 +299,9 @@ static void cv_blit_from(uint32_t x, uint32_t y, uint32_t r0)
 #define DC_MAX 1920u                    /* cells: HUD's HOME has 1878 (header 180, tabs 150, the panel 1140, the knobs 4 x 72,
                                          * the footer 120): 3.8 kB of the pool */
 #define DC_STRIPS 10u
+#define DC_USE (DC_MAX - 32u)           /* (codex/anim) the cells the strips may take (HUD's HOME 1878); the last 64 B of the
+                                         * hashes keep the animation's clock, its detail (ui.c anim_st): no new RAM, the RAM's
+                                         * layout (and so the sound code's addressing) as it was */
 static uint16_t dc_hash[DC_MAX] __attribute__((section(".pool")));
 static uint16_t dc_roll __attribute__((section(".pool")));   /* (the cell sent anyway, in turn) */
 static struct { int16_t x, y, w, h; uint16_t base, n; } dc_st[DC_STRIPS] __attribute__((section(".pool")));
@@ -311,6 +315,15 @@ static void lcd_blit_stride(uint32_t x, uint32_t y, uint32_t w, uint32_t h, cons
         lcd_blit(x, y + r, w, 1u, px + r * stride);
 }
 #endif
+/* (codex/anim) a strip sent whole at x, y (the canvas's size): the cells' hashes stale only where its rows lie over a strip
+ * of cells (COLORS' panel is one: ui_graph.c draw_graph; the header's, the cards' and the footer's rows leave it be) */
+static __attribute__((noinline)) void dc_touch(uint32_t x, uint32_t y)
+{
+    (void)x;                                    /* (HUD's HOME: its strips the whole screen, any blit over one; COLORS: the
+                                                 * panel the one strip) */
+    if (dc_n > 1u || (dc_n && (int32_t)y < dc_st[0].y + dc_st[0].h && dc_st[0].y < (int32_t)(y + cv_h)))
+        dc_stale = 1;
+}
 static void dc_frame(int all)           /* a frame of cells begins; all: every cell sent (the strips found again) */
 {
     dc_all = (uint8_t)(all || dc_stale);
@@ -347,7 +360,7 @@ static __attribute__((noinline)) void cv_blit_cells(uint32_t x, uint32_t y)   /*
             break;
     if (i == dc_n) {                                    /* a strip not seen since the last full frame: its cells, all sent */
         base = dc_n ? dc_st[dc_n - 1u].base + dc_st[dc_n - 1u].n : 0u;
-        if (dc_n == DC_STRIPS || base + ncx * ncy > DC_MAX) {
+        if (dc_n == DC_STRIPS || base + ncx * ncy > DC_USE) {
             GFX_HOOK_SENT(cv_w * cv_h);
             dc_stale = 1;                               /* (no room: sent whole, the next frame all) */
             lcd_blit(x, y, cv_w, cv_h, cv_px);

@@ -10291,39 +10291,48 @@ static int test_click_menu(void)
         ui.home = 1;
         load_put(1u);
         ui.force = 1; draw_graph(); ui.force = 0; s0 = ui.graph_sig;
-        ui.frame += 2u; fm1_ms += 20u; draw_graph();
+        ui.frame += 2u; fm1_ms += 20u; anim_sync(); draw_graph();
         ok = ui.graph_sig == s0 && ANIM_SNAP();         /* (20 ms later: not yet) */
-        ui.frame += 2u; fm1_ms += 40u; draw_graph();
+        ui.frame += 2u; fm1_ms += 40u; anim_sync(); draw_graph();
         ok &= ui.graph_sig != s0;                       /* (60 ms: drawn) */
         load_put(0u);
-        s0 = ui.graph_sig; ui.frame += 2u; fm1_ms += 60u; draw_graph();
+        s0 = ui.graph_sig; ui.frame += 2u; fm1_ms += 60u; anim_sync(); draw_graph();
         ok &= ui.graph_sig == s0;                       /* ECO: 60 ms not yet */
-        ui.frame += 2u; fm1_ms += 20u; draw_graph();
+        ui.frame += 2u; fm1_ms += 20u; anim_sync(); draw_graph();
         ok &= ui.graph_sig != s0;
         load_put(2u);
-        s0 = ui.graph_sig; ui.frame += 2u; fm1_ms += 16u; draw_graph();
+        s0 = ui.graph_sig; ui.frame += 2u; fm1_ms += 16u; anim_sync(); draw_graph();
         ok &= ui.graph_sig != s0 && !ANIM_SNAP();       /* FULL: every change */
         ui.home = home0; ui.force = 1; frame();
         bad += check("LOAD LITE / ECO: the panel animates at most every 50 / 70 ms, values snap; FULL as before", ok);
     }
-    {   /* (codex/voices) the UI under load, in two steps on the average: SLOW from 60 % (the animation moves on, the
-         * values snap), FREEZE from 75 %; each its own way back; never while stopped */
-        uint32_t q0 = load_avg_q8, f0;
+    {   /* (codex/voices) the UI under load, on the average; (codex/anim) in three steps: SLOW from 60 % (a frame each
+         * 50 ms, the values snap, half the detail), LITE from 75 % (a frame each 100 ms; until codex/anim the animation
+         * froze here), FREEZE from 85 % (the last resort); each its own way back; never while stopped. The animation's
+         * clock follows the time while it moves, whatever the frames, and stands while frozen */
+        uint32_t q0 = load_avg_q8, f0, m0 = fm1_ms;
         uint8_t pl0 = song.playing;
         song.playing = 1;
-        load_avg_q8 = 59u << 8; ui_hold_poll(); ok = ui_hold == 0u && !ANIM_OFF();
-        load_avg_q8 = 60u << 8; ui_hold_poll(); ok &= ui_hold == 1u && !ANIM_OFF() && ANIM_SNAP();
-        f0 = anim_fr; ui.frame += 3u; ok &= anim_fr == f0 + 3u;                  /* (SLOW: it moves) */
+        load_avg_q8 = 59u << 8; ui_hold_poll(); ok = ui_hold == 0u && !ANIM_OFF() && UI_PACE() == 15u;
+        load_avg_q8 = 60u << 8; ui_hold_poll(); ok &= ui_hold == 1u && !ANIM_OFF() && ANIM_SNAP() && UI_PACE() == 50u;
+        anim_sync(); f0 = anim_at; fm1_ms += 45u; anim_sync(); ok &= anim_at == f0 + 45u;   /* (SLOW: it moves, by the time) */
         load_avg_q8 = 74u << 8; ui_hold_poll(); ok &= ui_hold == 1u;
         load_avg_q8 = 51u << 8; ui_hold_poll(); ok &= ui_hold == 1u;            /* (not back yet) */
-        load_avg_q8 = 75u << 8; ui_hold_poll(); ok &= ui_hold == 2u && ANIM_OFF();
-        f0 = anim_fr; ui.frame += 3u; ok &= anim_fr == f0;                       /* (FREEZE: still) */
+        load_avg_q8 = 75u << 8; ui_hold_poll(); ok &= ui_hold == 2u && !ANIM_OFF() && UI_PACE() == 100u;
+        f0 = anim_at; fm1_ms += 100u; anim_sync(); ok &= anim_at == f0 + 100u;   /* (LITE: it moves) */
+        load_avg_q8 = 84u << 8; ui_hold_poll(); ok &= ui_hold == 2u;
+        load_avg_q8 = 85u << 8; ui_hold_poll(); ok &= ui_hold == 3u && ANIM_OFF() && UI_PACE() == 50u;
+        f0 = anim_at; fm1_ms += 300u; anim_sync(); ok &= anim_at == f0;           /* (FREEZE: still) */
+        load_avg_q8 = 79u << 8; ui_hold_poll(); ok &= ui_hold == 3u;            /* (not back yet) */
+        load_avg_q8 = 77u << 8; ui_hold_poll(); ok &= ui_hold == 2u && !ANIM_OFF();
+        f0 = anim_at; fm1_ms += 30u; anim_sync(); ok &= anim_at == f0 + 30u;     /* (on from where it stood: no jump) */
         load_avg_q8 = 66u << 8; ui_hold_poll(); ok &= ui_hold == 2u;            /* (not back yet) */
         load_avg_q8 = 64u << 8; ui_hold_poll(); ok &= ui_hold == 1u && !ANIM_OFF();
         load_avg_q8 = 49u << 8; ui_hold_poll(); ok &= ui_hold == 0u && !ANIM_SNAP();
         load_avg_q8 = 90u << 8; song.playing = 0; ui_hold_poll(); ok &= ui_hold == 0u;   /* (stopped: never) */
         song.playing = pl0; load_avg_q8 = q0; ui_hold_poll();
-        bad += check("UI under load: SLOW from 60 % (the animation moves, values snap), FREEZE from 75 %, back under 65 / 50 %, never stopped", ok);
+        fm1_ms = m0 + 1000u; anim_sync(); ui_lod = 0;
+        bad += check("UI under load: SLOW from 60 %, LITE from 75 % (it moves on, by the clock), FREEZE from 85 %, each back lower, never stopped", ok);
     }
     {   /* (0.6.29) 6 LITE: the heavy parts swapped while they sound, the project's values kept */
         int16_t rt0 = song.g[G_RTYPE], dp0 = song.g[G_DPIT];

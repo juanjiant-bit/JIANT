@@ -22,11 +22,12 @@
 static const int16_t ECO_PX[ECO_N] = {44, 120, 196, 64, 146, 206}, ECO_PY[ECO_N] = {34, 28, 40, 84, 78, 86};   /* (where they
                                                          * start, as 0.8.4's HOME) */
 static struct {
-    int32_t en[ECO_N], pen[ECO_N];                      /* each track's level now (0..256, slewed), the frame before */
+    int32_t en[ECO_N], pen[ECO_N];                      /* each track's level now (0..256, slewed); (codex/anim) where it
+                                                         * was a step before (Q8 px, y << 16 | x: eco_at) */
     int32_t sx[ECO_N], sy[ECO_N], vx[ECO_N], vy[ECO_N];   /* the swim: where it is in the panel and its speed, Q8 px */
     int32_t r[ECO_N];                                   /* its radius now (Q4 px: swollen, pulsing) */
     uint32_t tm[ECO_N];                                 /* each being's time (it runs with its sound) */
-    uint32_t f0;
+    uint32_t f0;                                        /* (codex/anim) the swim's last step (ui.c anim_fr ticks) */
     uint8_t init, top;                                  /* (top: the water's top row the places are in: 0, the panel's;
                                                          * AIR's HOME, the whole screen: under its knobs' row) */
 } eco;
@@ -40,7 +41,8 @@ static struct {
     uint8_t fl[EH_N];
     uint8_t init;
 } eco_fc;
-enum { EF_SHUT = 1, EF_SLEEP = 2, EF_UP = 4 };          /* (0.9.7) the face's: eyes shut (a hit), asleep, looking up */
+enum { EF_SHUT = 1, EF_SLEEP = 2, EF_UP = 4 };
+#define eco_ft (eco_fc.ms[ECO_N])                       /* (codex/anim, in the room left: the levels' last look, ticks) */          /* (0.9.7) the face's: eyes shut (a hit), asleep, looking up */
 static int eco_off(uint32_t c) { return trk[c].p[P_MUTE] || c >= trk_live; }   /* (muted, or asleep: TRACKS 4) */
 static const genome_t *eco_genome(uint32_t c)
 {
@@ -64,9 +66,48 @@ static void eco_feat(uint32_t c, bfeat_t *f, int32_t k)
  * numbers' line under it (HUD: the numbers only in the middle, the floor near the screen's foot) */
 static int32_t eco_h(void) { return hud_home() ? 240 : (int32_t)graph_h(); }
 static int32_t eco_bot(void) { return eco_h() - (hud_home() ? 6 : 18); }
+/* (codex/anim) the swim in fixed steps of ECO_STEP ticks (~11 a second, each its ticks one by one, the wander from the
+ * clock's tick: the same path whatever the frame rate), drawn a step behind, between the last two (eco_at): a game's
+ * fixed physics and its drawn frames in between. The levels, the size and the faces each drawn frame, by the ticks gone */
+#define ECO_STEP 6u
+static void eco_at(uint32_t c, int32_t *x, int32_t *y)   /* where being c is drawn now (Q8 px) */
+{
+    int32_t a = (int32_t)(anim_at - eco.f0 * ANIM_TICK) * 256 / (int32_t)(ECO_STEP * ANIM_TICK);
+    a = clamp(a, 0, 256);
+    int32_t qx = eco.pen[c] & 0xFFFF, qy = (int32_t)((uint32_t)eco.pen[c] >> 16);
+    *x = qx + ((eco.sx[c] - qx) * a >> 8);
+    *y = qy + ((eco.sy[c] - qy) * a >> 8);
+}
+/* .. the swim's steps due, each its ticks (its own: the code before the sound's in the flash the size it was) */
+static __attribute__((noinline)) void eco_swim(uint32_t now, int32_t top, int32_t bot)
+{
+    uint32_t c, k, n;
+    if (now - eco.f0 > 4u * ECO_STEP)                   /* (a pause: on from here, no jump) */
+        eco.f0 = now - ECO_STEP;
+    for (n = eco.f0; now - n >= ECO_STEP; n += ECO_STEP)   /* the swim's steps due, each its ticks */
+        for (c = 0; c < ECO_N; c++) {
+            int32_t rad = (c == song.sel ? 17 : 12) * (272 + eco.en[c] * 5 / 4) >> 8, sp = 256 + eco.en[c] * 6;   /* (its
+                                                         * radius at its breath's fullest: the walls the same whatever
+                                                         * frame the step is worked out in) */
+            eco.pen[c] = (int32_t)((uint32_t)eco.sy[c] << 16 | (uint32_t)eco.sx[c]);
+            for (k = n; k < n + ECO_STEP; k++) {        /* swimming in the panel, bouncing off its walls, wandering */
+                eco.vx[c] += bg_sin(k * 211u + c * 16000u) >> 12;
+                eco.vy[c] += bg_sin(k * 157u + c * 23000u) >> 12;
+                eco.vx[c] = clamp(eco.vx[c], -140, 140);
+                eco.vy[c] = clamp(eco.vy[c], -110, 110);
+                eco.sx[c] += eco.vx[c] * sp >> 8;
+                eco.sy[c] += eco.vy[c] * sp >> 8;
+                if (eco.sx[c] < (rad + 8) << 8) { eco.sx[c] = (rad + 8) << 8; eco.vx[c] = -eco.vx[c]; }
+                if (eco.sx[c] > (232 - rad) << 8) { eco.sx[c] = (232 - rad) << 8; eco.vx[c] = -eco.vx[c]; }
+                if (eco.sy[c] < (rad + 4 + top) << 8) { eco.sy[c] = (rad + 4 + top) << 8; eco.vy[c] = -eco.vy[c]; }
+                if (eco.sy[c] > (bot - rad) << 8) { eco.sy[c] = (bot - rad) << 8; eco.vy[c] = -eco.vy[c]; }
+            }
+        }
+    eco.f0 = n;
+}
 static uint32_t eco_step(void)
 {
-    uint32_t c, k, dt = ui.frame - eco.f0;
+    uint32_t c, k, now = anim_fr, dt = (uint16_t)((uint16_t)now - eco_ft);
     int32_t top = hud_home() ? (int32_t)LA_HOME_GRAPH_Y : 0;   /* (V10.58) AIR's HOME: the water under
                                                          * its cards (the beings swam over the tabs and the four values) */
     int32_t bot = eco_bot();                            /* (the panel's floor, the number's line under it: 0.8.4's 104 of
@@ -75,30 +116,33 @@ static uint32_t eco_step(void)
         eco.init = 1;
         for (c = 0; c < ECO_N; c++) {
             eco.sx[c] = ECO_PX[c] << 8; eco.sy[c] = ECO_PY[c] << 8;
+            eco.pen[c] = (int32_t)((uint32_t)eco.sy[c] << 16 | (uint32_t)eco.sx[c]);
             eco.vx[c] = (c & 1u) ? 90 : -110; eco.vy[c] = (c & 2u) ? 70 : -60;
         }
         eco.top = 0;
+        eco.f0 = now;
     }
     if (eco.top != (uint8_t)top) {                      /* the water moved (AIR's HOME entered or left, the skin changed):
                                                          * the beings with it. (They began at the panel's places on AIR's
                                                          * HOME too: over the header, the tabs and the knobs' row, on the
                                                          * words, until they had swum down) */
-        for (c = 0; c < ECO_N; c++)
+        for (c = 0; c < ECO_N; c++) {
             eco.sy[c] += (top - (int32_t)eco.top) << 8;
+            eco.pen[c] = (int32_t)((uint32_t)eco.sy[c] << 16 | (uint32_t)eco.sx[c]);
+        }
         eco.top = (uint8_t)top;
     }
-    if (dt > 8u) dt = 8u;
-    if (ANIM_OFF()) dt = 0;                             /* (0.9.9-beta4: and held under load, ui.c ui_hold) */
-    eco.f0 = ui.frame;
+    if (dt > 16u) dt = 16u;                             /* (held under load, ui.c ui_hold, or ANIM OFF: the clock still) */
     for (c = 0; c < ECO_N; c++) {
         track_t *t = &trk[c];
-        int32_t v = t->peak * 256 / 7000, r = (c == song.sel ? 17 : 12) * 16, rad, sp;
+        int32_t v = t->peak * 256 / 7000, r = (c == song.sel ? 17 : 12) * 16, pen = eco.en[c];
         if (v > 256) v = 256;
-        eco.pen[c] = eco.en[c];
         if (dt) {                                       /* (once a frame: a redraw in the same frame draws the same) */
             t->peak = 0;
-            eco.en[c] = v > eco.en[c] ? v : eco.en[c] + (v - eco.en[c]) / 4;
-            if (eco.en[c] - eco.pen[c] > 48)            /* (0.9.7) a hit: the face's eyes shut for 0.1 s */
+            for (k = 0; k < (((now >> 1) - (eco_ft >> 1)) & 0x7FFFu) && k < 8u; k++)   /* (the fall: a step each two ticks, as
+                                                         * the frames drawn at full pace) */
+                eco.en[c] = v > eco.en[c] ? v : eco.en[c] + (v - eco.en[c]) / 4;
+            if (eco.en[c] - pen > 48)                   /* (0.9.7) a hit: the face's eyes shut for 0.1 s */
                 eco_fc.ms[c] = (uint16_t)fm1_ms;
         }
         if (!eco_fc.init || (uint16_t)((uint16_t)fm1_ms - eco_fc.ms[c]) > 1000u)   /* (none yet, or long ago: kept so, the
@@ -115,21 +159,9 @@ static uint32_t eco_step(void)
         else eco.tm[c] += dt * 60u;                     /* (silent: it still breathes, slowly) */
         r = r * (256 + eco.en[c] * 5 / 4 + (bg_sin(eco.tm[c] / 3u) >> 11)) / 256;
         eco.r[c] = r;
-        rad = r >> 4;
-        sp = 256 + eco.en[c] * 6;
-        for (k = 0; k < dt; k++) {                      /* swimming in the panel, bouncing off its walls, wandering */
-            eco.vx[c] += bg_sin(ui.frame * 211u + c * 16000u + k * 977u) >> 12;
-            eco.vy[c] += bg_sin(ui.frame * 157u + c * 23000u + k * 613u) >> 12;
-            eco.vx[c] = clamp(eco.vx[c], -140, 140);
-            eco.vy[c] = clamp(eco.vy[c], -110, 110);
-            eco.sx[c] += eco.vx[c] * sp >> 8;
-            eco.sy[c] += eco.vy[c] * sp >> 8;
-            if (eco.sx[c] < (rad + 8) << 8) { eco.sx[c] = (rad + 8) << 8; eco.vx[c] = -eco.vx[c]; }
-            if (eco.sx[c] > (232 - rad) << 8) { eco.sx[c] = (232 - rad) << 8; eco.vx[c] = -eco.vx[c]; }
-            if (eco.sy[c] < (rad + 4 + top) << 8) { eco.sy[c] = (rad + 4 + top) << 8; eco.vy[c] = -eco.vy[c]; }
-            if (eco.sy[c] > (bot - rad) << 8) { eco.sy[c] = (bot - rad) << 8; eco.vy[c] = -eco.vy[c]; }
-        }
     }
+    eco_ft = (uint16_t)now;
+    eco_swim(now, top, bot);
     eco_fc.init = 1;
     return dt;
 }
@@ -137,16 +169,11 @@ static uint32_t eco_step(void)
 static void eco_ell(int32_t cx, int32_t cy, int32_t rx, int32_t ry, uint16_t c)
 {
     uint32_t i;
-    int32_t px = 0, py = 0;
     rx = rx < 10 ? 10 : rx;
     ry = ry < 10 ? 10 : ry;
     for (i = 0; i <= 10u; i++) {
         uint32_t a = i * 65536u / 10u;
-        int32_t x = cx + ((rx * og_cos(a)) >> 15), y = cy + ((ry * og_sin(a)) >> 15);
-        if (i)
-            og_line(px, py, x, y, c);
-        px = x;
-        py = y;
+        pl_pt(i, 10u, cx + ((rx * og_cos(a)) >> 15), cy + ((ry * og_sin(a)) >> 15), c, 256);
     }
 }
 /* .. the face (the mock-up's, the bichos'): at (cx, cy) Q4 of a being of radius r Q4, scaled k (Q8); its mouth open e (0..256),
@@ -258,11 +285,12 @@ static void eco_draw(int32_t x0, int32_t y0, int words)
         cv_rect(gx - x0, gy, 1 + (int32_t)(h >> 31), 1 + (int32_t)(h >> 31), ux_mix(T_SURF, T_THEME, 22 + (int32_t)(h >> 29) * 4));
     }
     for (c = 0; c < ECO_N; c++) {
-        bx[c] = eco.sx[c] >> 4;
-        by[c] = eco.sy[c] >> 4;
+        eco_at(c, &bx[c], &by[c]);                      /* (codex/anim: between its last two steps) */
+        bx[c] >>= 4;
+        by[c] >>= 4;
     }
     for (c = 0; c < ECO_N; c++) {
-        int32_t rad = eco.r[c] >> 4, px = eco.sx[c] >> 8, py = eco.sy[c] >> 8, ny, reach = (rad >> 4) * 3 + 8;
+        int32_t rad = eco.r[c] >> 4, px = bx[c] >> 4, py = by[c] >> 4, ny, reach = (rad >> 4) * 3 + 8;
         char num[2] = {(char)('1' + c), 0};
         if (py + reach < y0 || py - reach > y0 + (int32_t)cv_h || px + reach < x0 || px - reach > x0 + (int32_t)cv_w)
             continue;                                   /* (off the strip) */

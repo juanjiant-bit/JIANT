@@ -416,8 +416,8 @@ static void lz_track_being(void)
     char b[20];
     bg_feat(t, g, trk_engp(t)->knob, &f);
     bg_excite(&f, en, 2);
-    if (en > 2) tm += (ui.frame - f0) * (uint32_t)(160 + en * 3);
-    f0 = ui.frame;
+    if (en > 2) tm += (anim_fr - f0) * (uint32_t)(160 + en * 3);
+    f0 = anim_fr;
     being_lines(g, &f, 42 * 16, 40 * 16, (8 * 16) * (256 + en / 3) / 256, en, tm);   /* (its spikes inside 4 .. 82) */
     b[0] = 'T'; b[1] = (char)('1' + song.sel % NTRK); b[2] = 0;
     GFX_HOOK_ALIGN(4, 0, 82, 0, AL_H | AL_PASS, "sound track centred");

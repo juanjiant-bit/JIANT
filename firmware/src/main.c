@@ -489,10 +489,10 @@ static void fm1_main(void)
         felucca_dbg.stage = 2;
         ui_leds();
         ui_hold_poll();                               /* (0.9.9-beta4) playing past 60 % of the render: the UI slow, past
-                                                       * 75 % held (ui.c) */
+                                                       * 75 % lighter, past 85 % held (ui.c) */
         ui_draw();
         felucca_dbg.stage = 9;
-        while (fm1_ms - m < (ui_hold ? 50u : 15u)) {             /* ~60 UI frames/s at most; held: 20 */
+        while (fm1_ms - m < UI_PACE()) {               /* ~60 UI frames/s at most; under load 20 or 10 (ui.c) */
             ui_input();
 #if FELUCCA_OTA
             ed_service();                       /* editor replies without waiting for the next frame */

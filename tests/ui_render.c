@@ -961,11 +961,14 @@ static void vx_sing(uint32_t ph0, uint32_t n0, uint32_t ph, uint32_t n, int32_t 
         TSEL->peak = peak;
         ui.frame++;
         fm1_ms += 33u;
+        anim_sync();                                     /* (codex/anim: the animation's clock with it) */
         cv_begin(240, 140, T_SURF);
         vx_draw(TSEL, 4, 2, 232, 136, -1);
     }
     fm1_ms = vxs.ms[0] = ms;
-    ui.frame = vxs.fr[0] = fr;
+    ui.frame = fr;
+    anim_sync();
+    vxs.fr[0] = anim_fr;
     TSEL->peak = peak;
     ui_scope = !full;
     if (home) { ui.home = 1; ui.hlv = 1; ui.hset[1] = 0; eco.en[song.sel] = 220; }
@@ -2290,6 +2293,7 @@ static void al_table(void)
             al_count, al_nst, al_fail, al_lost);
 }
 
+#ifndef UI_RENDER_NO_MAIN                          /* (codex/anim: tests/anim_test.c has its own) */
 int main(int argc, char **argv)
 {
     const char *out = argc > 1 ? argv[1] : "build/ui_new";
@@ -2619,3 +2623,4 @@ int main(int argc, char **argv)
            al_fail ? " (see align.txt)" : "");
     return nfind || nink || ink_bad || al_fail ? 1 : 0;
 }
+#endif

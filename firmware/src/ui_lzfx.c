@@ -33,7 +33,7 @@ static void fxg_delay(int32_t x, int32_t y, int32_t w, int32_t h)
     const char *u;
     int32_t i, a = 1000, mix = song.g[G_DMIX], fb = song.g[G_DFDBK], en = fxg_en();
     int32_t tr = RATIO(&GP[G_DTIME], enum_rank(&GP[G_DTIME], song.g[G_DTIME])), step = w * (500 + tr) / 10000;
-    int32_t pulse = en && step > 0 ? (int32_t)(ui.frame * 2u % (uint32_t)(9 * step)) : -99;   /* (the echo running) */
+    int32_t pulse = en && step > 0 ? (int32_t)(anim_fr * 2u % (uint32_t)(9 * step)) : -99;   /* (the echo running) */
     cv_rect(x, y + h - 1, w, 1, T_LINE);
     for (i = 0; i < 9 && a > 8; i++) {
         int32_t px = x + 6 + i * step, bh = (h - 14) * 9 / 10 * a / 1000 * (mix * 7 / 10 + 38) / 127;
@@ -64,7 +64,7 @@ static void fxg_delay(int32_t x, int32_t y, int32_t w, int32_t h)
 static void fxg_reverb(int32_t x, int32_t y, int32_t w, int32_t h)
 {
     int32_t i, sz = song.g[G_RSIZE], ty = song.g[G_RTYPE], e = 1000, k = 1000 - (5000 - sz * 4300 / 127) / (w ? w : 1);
-    int32_t top = y + 12, hh = h - 12, en = fxg_en(), sweep = en && w > 0 ? (int32_t)(ui.frame * 3u % (uint32_t)w) : -1;
+    int32_t top = y + 12, hh = h - 12, en = fxg_en(), sweep = en && w > 0 ? (int32_t)(anim_fr * 3u % (uint32_t)w) : -1;
     char b[16];
     for (i = 0; i < w; i++) {                        /* the decay, a column each: its height the envelope */
         int32_t env = i < w / 25 + 1 ? e * i / (w / 25 + 1) : e, n = 1000, ch;
@@ -88,7 +88,7 @@ static void fxg_reverb(int32_t x, int32_t y, int32_t w, int32_t h)
 static void fxg_chorus(int32_t x, int32_t y, int32_t w, int32_t h)
 {
     int32_t k, i, dep = song.g[G_CDEPTH], st = song.g[G_CSTER], mid = y + 8 + (h - 8) / 2;
-    uint32_t ph = fxg_en() ? ui.frame * (uint32_t)(song.g[G_CRATE] + 8) * 48u : 0u;   /* (running at RATE while it sounds) */
+    uint32_t ph = fxg_en() ? anim_fr * (uint32_t)(song.g[G_CRATE] + 8) * 48u : 0u;   /* (running at RATE while it sounds) */
     char b[16];
     for (k = 0; k < 3; k++) {
         int32_t py = 0;
@@ -293,7 +293,7 @@ static void fxg_pan(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h
         cv_rect(cx - sw, mid, 2 * sw + 1, 1, T_MID);
     {   /* the dot: at the middle, or swinging at RATE while it sounds (a sine over the span: the picture's, not the
          * audio's own phase) */
-        int32_t dx = fxg_en() && sw > 0 ? bg_sin(ui.frame * (uint32_t)(t->p[P_APRATE] + 6) * 96u) * sw >> 15 : 0;
+        int32_t dx = fxg_en() && sw > 0 ? bg_sin(anim_fr * (uint32_t)(t->p[P_APRATE] + 6) * 96u) * sw >> 15 : 0;
         cv_rrect(cx + dx - 4, mid - 4, 9, 9, 4, FXG_H(205), T_SURF);
     }
     {   /* WAVE . RATE as AUTO PAN's cards say them (its RATE by SYNC: page_desc) */
