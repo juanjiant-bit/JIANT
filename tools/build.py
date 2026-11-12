@@ -196,6 +196,38 @@ HOT_FNS = ("mix_block", "mix_part_m0", "fx_run0", "perf_begin", "perf_pre", "per
            "rev_reso", "cho_admit", "dist_shape", "dist_amp")
 
 
+def share_strings(ir, keep=()):
+    """(V10.7.21) a string literal whose bytes sit whole inside another constant byte array (most often its tail:
+    "BASS" in "PEDAL BASS", "OFF" in a packed name table) becomes an alias into it: the one .rodata of felucca.o is not
+    a mergeable string section, so the linker shares none of them. keep: names left alone (what an interrupt reaches);
+    a section of its own (BTAPP ...) is never a target. (the IR, how many strings, their bytes)"""
+    def unesc(s):
+        return re.sub(rb"\\([0-9A-Fa-f]{2})", lambda m: bytes([int(m[1], 16)]), s.encode("latin-1"))
+    arrays, strs = [], []
+    for m in re.finditer(r'^@("?[\w.]+"?) = (?:private|internal) (?:unnamed_addr )?constant \[(\d+) x i8\] c"(.*?)"'
+                         r'(, align \d+)?$', ir, flags=re.M):
+        name, data = m[1].strip('"'), unesc(m[3])
+        if name in keep or len(data) != int(m[2]):
+            continue
+        arrays.append((name, int(m[2]), data))
+        if name.startswith(".str") and data.index(b"\0") == len(data) - 1:
+            strs.append((name, int(m[2]), data, m.group(0)))
+    arrays.sort(key=lambda a: -a[1])
+    lines, n, saved = {}, 0, 0
+    for name, size, data, line in strs:
+        for t, tsize, tdata in arrays:           # the longest that holds it: never itself an alias
+            if tsize <= size:
+                break
+            at = tdata.find(data)
+            if at >= 0:
+                lines[line] = (f"@{name} = private unnamed_addr alias [{size} x i8], bitcast (i8* getelementptr inbounds "
+                               f"([{tsize} x i8], [{tsize} x i8]* @{t}, i32 0, i32 {at}) to [{size} x i8]*)")
+                n, saved = n + 1, saved + size
+                break
+    ir = re.sub(r'^@"?\.str[\w.]*"? = [^\n]*$', lambda m: lines.get(m.group(0), m.group(0)), ir, flags=re.M)
+    return ir, n, saved
+
+
 def hot_sections(ir):
     """HOT_FNS' definitions in the optimised IR given section ".hot_text.<name>"; (the IR, how many found)"""
     found = 0
@@ -482,7 +514,9 @@ def build_app():
                     return m.group(0)
             aligns[m.group(2)] = int(m.group(4))
             return f'{m.group(1)}, section ".rodata.n.{m.group(2)}"{m.group(3)}'
-        ir = re.sub(r'^(@"?([\w.]+)"? = [^\n]*? constant [^\n]*?)(, align (\d+))$', const, hot_ir, flags=re.M)
+        ir, n, saved = share_strings(hot_ir)
+        print(f"strings: {n} shared with a longer one ({saved} B)", flush=True)
+        ir = re.sub(r'^(@"?([\w.]+)"? = [^\n]*? constant [^\n]*?)(, align (\d+))$', const, ir, flags=re.M)
         (OUT / "felucca_hot.ll").write_text(ir)
         tc("cc", *cf, "-Xclang", "-disable-llvm-optzns", "-c", OUT / "felucca_hot.ll", "-o", OUT / "felucca.o")
         return aligns
