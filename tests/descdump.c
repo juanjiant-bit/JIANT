@@ -36,7 +36,7 @@ static void js_desc(const param_desc_t *d)
     int32_t i;
     printf("{\"label\":");
     js_str(d->label);
-    printf(",\"fmt\":%d,\"min\":%d,\"max\":%d,\"def\":%d,\"names\":", d->fmt, d->min, d->max, d->def);
+    printf(",\"fmt\":%d,\"min\":%d,\"max\":%d,\"def\":%d,\"names\":", (int)desc_fmt(d), d->min, d->max, d->def);
     if (d->fmt == F_ENUM && d->names) {
         putchar('[');
         for (i = 0; i <= d->max - d->min; i++) {
@@ -50,7 +50,7 @@ static void js_desc(const param_desc_t *d)
         printf("null");
     }
     printf(",\"unit\":");
-    js_str(d->unit ? d->unit : "");
+    js_str(desc_unit(d) ? desc_unit(d) : "");
     putchar('}');
 }
 

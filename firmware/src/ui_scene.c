@@ -26,7 +26,7 @@ static const param_desc_t *sc_desc(uint32_t k, int16_t **valp)
         *valp = &t->p[P_CHRD];
         return track_desc(t, P_CHRD);
     }
-    sc_d.fmt = F_ENUM; sc_d.min = 0; sc_d.def = 0; sc_d.unit = 0;
+    sc_d.fmt = F_ENUM; sc_d.min = 0; sc_d.def = 0;
     if (k == 0u) { sc_d.label = "SCENE"; sc_d.max = 1; sc_d.names = ONOFF; sc_v[0] = scn_on; }
     else if (k == 1u) { sc_d.label = "TRACK"; sc_d.max = NTRK - 1; sc_d.names = TN; sc_v[1] = sc_trk; }
     else if (k == 2u && dr) { sc_d.label = "ROLE"; sc_d.max = 1; sc_d.names = KR; sc_v[2] = r == SC_DRUM; }   /* (V10.6j) a kit: KEEP, DRUM */

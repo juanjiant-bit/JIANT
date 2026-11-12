@@ -90,9 +90,9 @@ static const uint8_t FM4_TO_FM6[FM4_NPRESETS] = {0, 1, 2, 3, 6, 4, 5, 7};
 
 /* EDIT: the ranges are the stores' (a value of engine 1 is clamped to them before it converts) */
 #define FM4_EDIT(l0, l1, l2, l3, l4, l5, l6, f0, f1, n0, n1) {                                              \
-        {l0, f0, 0, 7, 0, n0, 0}, {l1, f0, 0, 14, 1, n1, 0}, {l2, f0, 0, 14, 1, n1, 0}, {l3, f0, 0, 14, 1, n1, 0}, \
-        {l4, F_PCT, 0, 127, 60, 0, 0}, {l5, f1, 0, 127, 60, 0, 0}, {l6, F_PCT, 0, 127, 0, 0, 0},               \
-        {"-", F_INT, 0, 0, 0, 0, 0}}
+        {l0, f0, 0, 7, 0, n0}, {l1, f0, 0, 14, 1, n1}, {l2, f0, 0, 14, 1, n1}, {l3, f0, 0, 14, 1, n1}, \
+        {l4, F_PCT, 0, 127, 60, 0}, {l5, f1, 0, 127, 60, 0}, {l6, F_PCT, 0, 127, 0, 0},               \
+        {"-", F_INT, 0, 0, 0, 0}}
 
 #if !FELUCCA_FM4
 /* engine 1 without the DSP: never selectable, no presets, silent (a track never keeps it: fm4_convert) */

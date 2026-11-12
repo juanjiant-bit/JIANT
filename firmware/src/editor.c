@@ -559,12 +559,12 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
             return;
         ed_b(a[0]);
         ed_b(a[1]);
-        ed_b(d->fmt);
+        ed_b(desc_fmt(d));
         ed_v(d->min);
         ed_v(d->max);
         ed_v(d->def);
         ed_str(d->label, 8);
-        ed_str(d->unit, 8);
+        ed_str(desc_unit(d), 8);
         if (d->fmt == F_ENUM && d->names)                  /* up to 32 (0.7.0: the matrix DST has 30; was 24) */
             for (i = 0; i <= (uint32_t)(d->max - d->min) && i < 32u; i++) {
                 int dst = d->names == N_MDST, show = dst && (mod_dst_offer(TSEL, i) || i == (uint32_t)*vp);

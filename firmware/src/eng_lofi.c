@@ -19,7 +19,7 @@ static const char *const N_BYTE[] = {"B01", "B02", "B03", "B04", "B05", "B06", "
 /* (JIANT 0.5) BYTE's own: RES the filter's resonance (VIB's slot), LOOP (MASK's slot) t held in a window of 2^17 ..
  * 2^5 steps: the formula's long evolution (0: free) folded into a short cycle repeating at the note: a pitched tone */
 /* (JIANT 0.5) E4 (CUT) left: the filter is the FILTER page's (TYPE, CUT, RES: P_FTYPE P_FCUT P_FRES), on every engine */
-static const param_desc_t LOFI_NONE = {"-", F_INT, 0, 0, 0, 0, 0};
+static const param_desc_t LOFI_NONE = {"-", F_INT, 0, 0, 0, 0};
 /* (JIANT 0.5.1) each formula's start, in 512 steps of t: where it is already moving (some sit silent for up to
  * ~2 s from t = 0); a note starts there, LOOP's window too. The first 17 were rewritten in 0.5.1, away from the
  * well-worn one-liners (t * (42 & t >> 10), t & t >> 8 ..): rhythms and arpeggios after Tejeez, xpansive's
@@ -88,17 +88,17 @@ static __attribute__((noinline)) uint32_t lofi_byte(uint32_t f, uint32_t t, uint
  * holds it in a window; FBK (E5, 0.6.4) feeds the output back into t, from a shimmer to chaos; CHIP the bits, RES the
  * filter's */
 static const char *const N_FLOAT[] = {"F01", "F02", "F03", "F04", "F05", "F06", "F07", "F08", "F09", "F10", "F11", "F12", "F13", "F14", "F15", "F16", "F17", "F18", "F19", "F20", "F21", "F22", "F23", "F24", "F25", "F26", "F27", "F28", "F29", "F30", "F31", "F32", "F33", "F34", "F35", "F36", "F37", "F38", "F39", "F40", "F41", "F42", "F43", "F44", "F45", "F46", "F47", "F48", 0};   /* (p6: 48) */
-static const param_desc_t LOFI_ALGO = {"ALGO", F_INT, 0, 191, 64, N_BYTE, 0};    /* (p6: 48; the knob's: edit[2] keeps
+static const param_desc_t LOFI_ALGO = {"ALGO", F_INT, 0, 191, 64, N_BYTE};    /* (p6: 48; the knob's: edit[2] keeps
                                                          * 0..127, FUN7's byte) */
-static const param_desc_t LOFI_MOTN = {"MOTION", F_INT, 0, 255, 0, 0, 0};   /* (p6: 128 .. 255 SYNC; V10.6d: 0) */
-static const param_desc_t LOFI_FALGO = {"ALGO", F_INT, 0, 191, 64, N_FLOAT, 0};   /* = edit[2] (FLOAT) */
+static const param_desc_t LOFI_MOTN = {"MOTION", F_INT, 0, 255, 0, 0};   /* (p6: 128 .. 255 SYNC; V10.6d: 0) */
+static const param_desc_t LOFI_FALGO = {"ALGO", F_INT, 0, 191, 64, N_FLOAT};   /* = edit[2] (FLOAT) */
 /* .. its CHIP the resolution: 4 bits, 4 bits held over two samples, FULL (smooth, the default), 1 bit, STEP (4 bits and
  * the stepped envelope) */
 static const char *const N_FCHIP[] = {"4BIT", "4B/2", "FULL", "1BIT"};
-static const param_desc_t LOFI_FCHIP = {"CHIP", F_ENUM, 0, 3, 2, N_FCHIP, 0};    /* = edit[0] (FLOAT; 0.5.5: no STEP) */
+static const param_desc_t LOFI_FCHIP = {"CHIP", F_ENUM, 0, 3, 2, N_FCHIP};    /* = edit[0] (FLOAT; 0.5.5: no STEP) */
 /* (0.5.4) BYTE's and FLOAT's own second page: MOTN (E4, where CUT was: the time's speed, 64 as written), GRIT (BYTE,
  * E5: the samples held longer, a rate crusher), FBK (FLOAT, E5: the output back into the formula's time) */
-static const param_desc_t LOFI_FDCY = {"FEEDBK", F_PCT, 0, 127, 0, 0, 0};            /* = edit[5] (FLOAT, 0.6.4: was DRV, a
+static const param_desc_t LOFI_FDCY = {"FEEDBK", F_PCT, 0, 127, 0, 0};            /* = edit[5] (FLOAT, 0.6.4: was DRV, a
                                                          * fold that silenced it and doubled the FILTER page's DIST) */
 /* MOTN 0..127 -> the time's speed, Q8: x1/16 .. x1 (64) .. x15.5, exponential */
 /* (p6, the owner: "the notes only transpose, not the speed") MOTION 128 .. 255: SYNC, the formula's slow bits (its
@@ -442,14 +442,14 @@ static const engine_t ENG_LOFI = {
     .name = "MATH",
     .page_title = {"MATH", "TIME"},
     .edit = {
-        {"CHIP", F_ENUM, 0, 3, 2, N_CHIP, 0},           /* (FLOAT: 8BIT reads FULL, lofi_desc) */
-        {"WAVE", F_ENUM, RW_BYTE, RW_FLOAT, RW_BYTE, N_RWAVE, 0},
-        {"ALGO", F_INT, 0, 127, 64, 0, 0},              /* (the knob 0..191 and the names: lofi_desc) */
-        {"VAR", F_PCT, 0, 127, 0, 0, 0},
-        {"MOTION", F_INT, 0, 127, 0, 0, 0},             /* (V10.6d: 0 the default; the knob to 255 SYNC: lofi_desc) */
-        {"GRIT", F_PCT, 0, 127, 0, 0, 0},               /* (FLOAT: FEEDBK) */
-        {"BEND", F_PCT, 0, 127, 0, 0, 0},
-        {"LOOP", F_PCT, 0, 127, 0, 0, 0},
+        {"CHIP", F_ENUM, 0, 3, 2, N_CHIP},           /* (FLOAT: 8BIT reads FULL, lofi_desc) */
+        {"WAVE", F_ENUM, RW_BYTE, RW_FLOAT, RW_BYTE, N_RWAVE},
+        {"ALGO", F_INT, 0, 127, 64, 0},              /* (the knob 0..191 and the names: lofi_desc) */
+        {"VAR", F_PCT, 0, 127, 0, 0},
+        {"MOTION", F_INT, 0, 127, 0, 0},             /* (V10.6d: 0 the default; the knob to 255 SYNC: lofi_desc) */
+        {"GRIT", F_PCT, 0, 127, 0, 0},               /* (FLOAT: FEEDBK) */
+        {"BEND", F_PCT, 0, 127, 0, 0},
+        {"LOOP", F_PCT, 0, 127, 0, 0},
     },
     .presets = LOFI_PRESETS,
     .npresets = NELEM(LOFI_PRESETS),

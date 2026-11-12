@@ -13,7 +13,7 @@ enum { AW_SYNC = 5, AW_RING, AW_SAW3, AW_PLS3 };   /* (V10.22) PLS3: three pulse
  * semitones (INT stays osc 2's); no noise there (every factory SAW3 has NOISE 0: the same sound). analog_desc */
 #define AN_OSC3(p) ((p)[P_E0] == AW_SAW3 || (p)[P_E0] == AW_PLS3)
 #define AN_INT3(p) clamp((p)[P_E3], -24, 24)
-static const param_desc_t AN_INT3_DESC = {"INT 3", F_SEMI, -24, 24, 0, 0, 0};
+static const param_desc_t AN_INT3_DESC = {"INT 3", F_SEMI, -24, 24, 0, 0};
 static const param_desc_t *analog_desc(const track_t *t, uint32_t k) { return k == 3u && AN_OSC3(t->p) ? &AN_INT3_DESC : 0; }
 /* (JIANT 0.5) FILTER TYPE (P_FTYPE): LP as before (analog_render's loop); HP BP from the same state-variable filter
  * (analog_ext's loop, every WAVE); COMB the filter open, the part's sum through a feedback comb tuned to the newest
@@ -349,14 +349,14 @@ static const engine_t ENG_ANALOG = {
     .name = "ANALOG",
     .page_title = {"OSC", "FLT"},
     .edit = {
-        {"WAVE", F_ENUM, 0, 8, 0, N_ANALOG_WAVE, 0},
-        {"DETUNE", F_INT, 0, 127, 10, 0, "ct"},
-        {"MIX", F_PCT, 0, 127, 64, 0, 0},
-        {"NOISE", F_PCT, 0, 127, 0, 0, 0},
-        {"CUT", F_CUTOFF, 0, 127, 90, 0, 0},
-        {"RES", F_PCT, 0, 127, 30, 0, 0},
-        {"DRIVE", F_PCT, 0, 127, 0, 0, 0},
-        {"INT", F_SEMI, -24, 24, 0, 0, 0},             /* (JIANT 0.4: osc 2's interval, was KTR: the filter's key
+        {"WAVE", F_ENUM, 0, 8, 0, N_ANALOG_WAVE},
+        {"DETUNE", F_INT_CT, 0, 127, 10, 0},
+        {"MIX", F_PCT, 0, 127, 64, 0},
+        {"NOISE", F_PCT, 0, 127, 0, 0},
+        {"CUT", F_CUTOFF, 0, 127, 90, 0},
+        {"RES", F_PCT, 0, 127, 30, 0},
+        {"DRIVE", F_PCT, 0, 127, 0, 0},
+        {"INT", F_SEMI, -24, 24, 0, 0},             /* (JIANT 0.4: osc 2's interval, was KTR: the filter's key
                                                          * tracking, fixed at its old default, half) */
     },
     .desc = analog_desc,

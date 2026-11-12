@@ -401,7 +401,7 @@ static const param_desc_t *eu_desc(uint32_t k, int16_t **valp)
     uint32_t al = dr && !(e->lane % (NLANE + 1u));
     eul_t *L = al ? &e->a : &e->l[dr ? (e->lane + NLANE) % (NLANE + 1u) : 0];
     k %= EK_N;
-    eu_d.fmt = F_INT; eu_d.min = 0; eu_d.def = 0; eu_d.names = 0; eu_d.unit = 0;
+    eu_d.fmt = F_INT; eu_d.min = 0; eu_d.def = 0; eu_d.names = 0;
     if (k == EK_HITS && al) { eu_d.label = "DENSITY"; eu_d.max = 8; eu_v[k] = L->h; }
     else if (k == EK_HITS) { eu_d.label = "HITS"; eu_d.max = L->n; eu_v[k] = L->h; }
     else if (k == EK_STEPS) { eu_d.label = "STEPS"; eu_d.min = 2; eu_d.max = 64; eu_v[k] = L->n; }

@@ -26,9 +26,9 @@ enum { SX_NOISE, SX_PLUCK, SX_PICK, SX_HAMMER, SX_MALLET, SX_FDBK, SX_N };
  * SPEAKR where along the period the speaker's sound meets the string (which harmonic it blooms into), BLOOM how slowly
  * the feedback grows while the key is held. BRIGHT stays the tone. No memory more: the speaker's tap is the line. */
 static const param_desc_t STR_AMP[5] = {
-    {"MOVE", F_PCT, 0, 127, 28, 0, 0},                /* (par12) POS: the guitar swayed before the amp */
-    {"GAIN", F_PCT, 0, 127, 64, 0, 0}, {"DIST", F_PCT, 0, 127, 50, 0, 0},   /* (V10.23: heard at once, as FEEDBACK) */
-    {"SPEAKR", F_PCT, 0, 127, 40, 0, 0}, {"BLOOM", F_PCT, 0, 127, 40, 0, 0}};
+    {"MOVE", F_PCT, 0, 127, 28, 0},                /* (par12) POS: the guitar swayed before the amp */
+    {"GAIN", F_PCT, 0, 127, 64, 0}, {"DIST", F_PCT, 0, 127, 50, 0},   /* (V10.23: heard at once, as FEEDBACK) */
+    {"SPEAKR", F_PCT, 0, 127, 40, 0}, {"BLOOM", F_PCT, 0, 127, 40, 0}};
 static const param_desc_t *string_desc(const track_t *t, uint32_t k)
 {
     return k >= 3u && t->p[P_E0] == SX_FDBK ? &STR_AMP[k - 3u] : 0;
@@ -310,14 +310,14 @@ static const engine_t ENG_STRING = {
     .name = "STRING",
     .page_title = {"STRING", "BODY"},
     .edit = {
-        {"EXCITE", F_ENUM, 0, SX_N - 1, SX_PLUCK, N_STR_EXC, 0},
-        {"DECAY", F_PCT, 0, 127, 72, 0, 0},
-        {"BRIGHT", F_PCT, 0, 127, 60, 0, 0},
-        {"POS", F_PCT, 0, 127, 28, 0, 0},
-        {"STRETCH", F_PCT, 0, 127, 0, 0, 0},
-        {"BODY", F_PCT, 0, 127, 40, 0, 0},
-        {"SIZE", F_PCT, 0, 127, 40, 0, 0},
-        {"BOW", F_PCT, 0, 127, 0, 0, 0},
+        {"EXCITE", F_ENUM, 0, SX_N - 1, SX_PLUCK, N_STR_EXC},
+        {"DECAY", F_PCT, 0, 127, 72, 0},
+        {"BRIGHT", F_PCT, 0, 127, 60, 0},
+        {"POS", F_PCT, 0, 127, 28, 0},
+        {"STRETCH", F_PCT, 0, 127, 0, 0},
+        {"BODY", F_PCT, 0, 127, 40, 0},
+        {"SIZE", F_PCT, 0, 127, 40, 0},
+        {"BOW", F_PCT, 0, 127, 0, 0},
     },
     .presets = STRING_PRESETS,
     .npresets = NELEM(STRING_PRESETS),

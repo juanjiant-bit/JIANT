@@ -735,15 +735,15 @@ static const engine_t ENG_DRUM = {
     .name = "DRUM",
     .page_title = {"KIT", "KIT 2"},                     /* (0.6.54: both the whole kit's, was HIT) */
     .edit = {
-        {"MORPH", F_PCT, 0, 127, 64, 0, 0},
-        {"TUNE", F_PCT, 0, 127, 64, 0, 0},
-        {"TONE", F_PCT, 0, 127, 64, 0, 0},
-        {"DECAY", F_PCT, 0, 127, 64, 0, 0},
-        {"NOISE", F_PCT, 0, 127, 64, 0, 0},
-        {"FM ENV", F_PCT, 0, 127, 0, 0, 0},             /* (JIANT: was ACC; 0.6.36: was FM, a fixed FM: the FM struck
+        {"MORPH", F_PCT, 0, 127, 64, 0},
+        {"TUNE", F_PCT, 0, 127, 64, 0},
+        {"TONE", F_PCT, 0, 127, 64, 0},
+        {"DECAY", F_PCT, 0, 127, 64, 0},
+        {"NOISE", F_PCT, 0, 127, 64, 0},
+        {"FM ENV", F_PCT, 0, 127, 0, 0},             /* (JIANT: was ACC; 0.6.36: was FM, a fixed FM: the FM struck
                                                          * with the hit, gone with the pitch envelope) */
-        {"FOLD", F_PCT, 0, 127, 0, 0, 0},              /* (JIANT 0.5: a wavefolder, was WARP) */
-        {"DRIVE", F_PCT, 0, 127, 0, 0, 0},
+        {"FOLD", F_PCT, 0, 127, 0, 0},              /* (JIANT 0.5: a wavefolder, was WARP) */
+        {"DRIVE", F_PCT, 0, 127, 0, 0},
     },
     .presets = DRUM_PRESETS,
     .npresets = NELEM(DRUM_PRESETS),

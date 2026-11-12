@@ -80,7 +80,11 @@ MUL64_FN int32_t mul64_sh15(int32_t a, int32_t b) { return (int32_t)(((int64_t)a
 enum {
     F_INT, F_PCT, F_BIPCT, F_TIME, F_LFOHZ, F_CUTOFF, F_DB, F_SEMI, F_ENUM, F_BPM, F_NOTE,
     F_ONOFF, F_OCT, F_STEPS,
-    F_PCTINV                     /* (JIANT 0.6.37) a share of 127 shown and turned the other way: 0 is 100 % */
+    F_PCTINV,                    /* (JIANT 0.6.37) a share of 127 shown and turned the other way: 0 is 100 % */
+    /* (V10.7.21) F_INT with its unit (no unit pointer in every descriptor: 4 B each, ~1.6 KB of flash): ct, C, st, and
+     * F_REG64 (V10.6d, ANIMAL's SIZE: a register stored 0..127, shown as semitones from 64, 64 - v: smaller is higher,
+     * "+0" the key played; params.c param_format). The editor protocol sees F_INT and the unit (desc_fmt, desc_unit) */
+    F_INT_CT, F_INT_C, F_INT_ST, F_REG64
 };
 
 typedef struct {
@@ -88,8 +92,13 @@ typedef struct {
     uint8_t fmt;
     int16_t min, max, def;
     const char *const *names;   /* F_ENUM */
-    const char *unit;           /* F_INT / F_ENUM optional unit */
 } param_desc_t;
+static inline uint32_t desc_fmt(const param_desc_t *d) { return d->fmt >= F_INT_CT ? (uint32_t)F_INT : d->fmt; }
+static inline const char *desc_unit(const param_desc_t *d)   /* F_INT_CT .. F_REG64's, else 0 */
+{
+    static const char *const U[] = {"ct", "C", "st", ""};
+    return d->fmt >= F_INT_CT ? U[d->fmt - F_INT_CT] : 0;
+}
 
 enum {                          /* per-track parameters */
     P_LEVEL,
@@ -334,8 +343,6 @@ static int analog_from_trio(uint32_t engine, int16_t *e)
  * SIN; CUT open, no RES DRIVE INT (the FILTER page's CUT RES, the envelope, the mix, the sends stay). A BYTE / FLOAT with
  * CHIP STEP (4) -> 4BIT, the same sound. 1 = it was a chip sound (its engine is ANALOG now): projects (project.c
  * proj_phys_gone), user presets (upreset.c). Idempotent */
-static const char U_REG64[] = "";   /* (V10.6d) a desc's unit: a register stored 0..127, shown as semitones from 64
-                                     * (64 - v: smaller is higher), "+0" the key played (params.c param_format) */
 static int analog_from_chip(uint32_t engine, int16_t *e)
 {
     static const uint8_t W[5] = {1, 2, 0, 0, 3};

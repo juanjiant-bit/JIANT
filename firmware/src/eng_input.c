@@ -522,9 +522,9 @@ static __attribute__((noinline)) void ain_swarm(uint32_t n)
 static void (*const volatile AIN_SWARM)(uint32_t) = ain_swarm;   /* (mod.c macro_master: RAM code) */
 /* SWARM's knobs on the INPUT pages (the stored values the same slots, 0..127; PLAY as it is) */
 static const param_desc_t SW_DESC[8] = {
-    {"SOURCE", F_ENUM, 0, AIN_N - 1, AIN_IN1, N_AIN_SRC, 0}, {"PLUCK", F_PCT, 0, 127, 0, 0, 0}, {"FM", F_PCT, 0, 127, 0, 0, 0},
-    {"PLAY", F_ENUM, 0, 1, 0, N_AIN_PLAY, 0}, {"IMAGE", F_PCT, 0, 127, 0, 0, 0}, {"DRIFT", F_PCT, 0, 127, 0, 0, 0},
-    {"OCTAVE", F_PCT, 0, 127, 0, 0, 0}, {"CHAOS", F_PCT, 0, 127, 0, 0, 0}};   /* (V10.6v: CHAOS in SELF's place) */
+    {"SOURCE", F_ENUM, 0, AIN_N - 1, AIN_IN1, N_AIN_SRC}, {"PLUCK", F_PCT, 0, 127, 0, 0}, {"FM", F_PCT, 0, 127, 0, 0},
+    {"PLAY", F_ENUM, 0, 1, 0, N_AIN_PLAY}, {"IMAGE", F_PCT, 0, 127, 0, 0}, {"DRIFT", F_PCT, 0, 127, 0, 0},
+    {"OCTAVE", F_PCT, 0, 127, 0, 0}, {"CHAOS", F_PCT, 0, 127, 0, 0}};   /* (V10.6v: CHAOS in SELF's place) */
 static const param_desc_t *input_desc(const track_t *t, uint32_t k) { return t->p[P_E0] == AIN_SW && k < 8u ? &SW_DESC[k] : 0; }
 
 static void ain_block(struct track *t) { ain_upd[(uint32_t)(t - trk) % NTRK] = 1; }
@@ -587,14 +587,14 @@ static const engine_t ENG_INPUT = {
     .name = "EXT",                                   /* (V10.6d: EXT, external signals: the audio input and SWARM) */
     .page_title = {"EXT", "SHAPE"},
     .edit = {
-        {"SOURCE", F_ENUM, 0, AIN_N - 1, AIN_IN1, N_AIN_SRC, 0},
-        {"GAIN", F_INT, 0, 127, 64, 0, 0},
-        {"GATE", F_PCT, 0, 127, 0, 0, 0},
-        {"PLAY", F_ENUM, 0, 1, 0, N_AIN_PLAY, 0},
-        {"WIDTH", F_PCT, 0, 127, 127, 0, 0},
-        {"RING", F_PCT, 0, 127, 0, 0, 0},
-        {"BITS", F_PCT, 0, 127, 0, 0, 0},
-        {"RATE", F_PCT, 0, 127, 0, 0, 0},
+        {"SOURCE", F_ENUM, 0, AIN_N - 1, AIN_IN1, N_AIN_SRC},
+        {"GAIN", F_INT, 0, 127, 64, 0},
+        {"GATE", F_PCT, 0, 127, 0, 0},
+        {"PLAY", F_ENUM, 0, 1, 0, N_AIN_PLAY},
+        {"WIDTH", F_PCT, 0, 127, 127, 0},
+        {"RING", F_PCT, 0, 127, 0, 0},
+        {"BITS", F_PCT, 0, 127, 0, 0},
+        {"RATE", F_PCT, 0, 127, 0, 0},
     },
     .presets = INPUT_PRESETS,
     .npresets = NELEM(INPUT_PRESETS),

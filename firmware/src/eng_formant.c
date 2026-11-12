@@ -339,8 +339,8 @@ static int32_t formant_amp(track_t *t, voice_t *v, int32_t adsr)
  * consonants: 100 % crisp .. 0 % slurred; stored the other way, 0 = 100 %), LOOP (the lyric from its start every 1 2 4
  * 8 loops of the pattern, FREE: on through it) */
 static const param_desc_t FMT_WDESC[8] = {
-    {"POS", F_INT, 0, 127, 0, 0, 0}, {"THEME", F_INT, 0, 127, 64, N_THEME, 0}, {"ARTIC", F_PCTINV, 0, 127, 0, 0, 0},
-    {0}, {0}, {0}, {0}, {"LOOP", F_INT, 0, 127, 0, N_LOOP, 0},
+    {"POS", F_INT, 0, 127, 0, 0}, {"THEME", F_INT, 0, 127, 64, N_THEME}, {"ARTIC", F_PCTINV, 0, 127, 0, 0},
+    {0}, {0}, {0}, {0}, {"LOOP", F_INT, 0, 127, 0, N_LOOP},
 };
 static const param_desc_t *formant_desc(const track_t *t, uint32_t k)
 {
@@ -521,14 +521,14 @@ static const engine_t ENG_FORMANT = {
     .name = "VOICE",
     .page_title = {"VOWL", "TONE"},
     .edit = {
-        {"VOWEL", F_INT, 0, 127, 0, 0, 0},
-        {"VOWEL2", F_INT, 0, 127, 64, 0, 0},
-        {"TALK", F_TIME, 0, 127, 0, 0, 0},
-        {"SHIFT", F_SEMI, -12, 12, 0, 0, 0},
-        {"BUZZ", F_PCT, 0, 127, 64, 0, 0},
-        {"BREATH", F_PCT, 0, 127, 10, 0, 0},
-        {"Q", F_PCT, 0, 127, 64, 0, 0},
-        {"RAND", F_PCT, 0, 127, 0, 0, 0},
+        {"VOWEL", F_INT, 0, 127, 0, 0},
+        {"VOWEL2", F_INT, 0, 127, 64, 0},
+        {"TALK", F_TIME, 0, 127, 0, 0},
+        {"SHIFT", F_SEMI, -12, 12, 0, 0},
+        {"BUZZ", F_PCT, 0, 127, 64, 0},
+        {"BREATH", F_PCT, 0, 127, 10, 0},
+        {"Q", F_PCT, 0, 127, 64, 0},
+        {"RAND", F_PCT, 0, 127, 0, 0},
     },
     .presets = FORMANT_PRESETS,
     .npresets = NELEM(FORMANT_PRESETS),

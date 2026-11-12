@@ -83,8 +83,8 @@ static const char *const N_ENGNAME[] = {"ANALOG", FELUCCA_FM4 ? "DIGITAL" : "-",
                                              "DRUM", "NOISE", "FM6", "ADD", "ANIMAL", "EXT"};   /* (JIANT: SAMPLE 4, GRAIN 8, SLICE 13 retired; 0.8.3 ANIMAL;
                                                          * 0.9.9-snd5 STRING ADD) */
 
-#define PD(l, f, mn, mx, df) {l, f, mn, mx, df, 0, 0}
-#define PE(l, n, df) {l, F_ENUM, 0, (int16_t)(sizeof(n) / sizeof(n[0]) - 1), df, n, 0}
+#define PD(l, f, mn, mx, df) {l, f, mn, mx, df, 0}
+#define PE(l, n, df) {l, F_ENUM, 0, (int16_t)(sizeof(n) / sizeof(n[0]) - 1), df, n}
 
 static const param_desc_t TP[P_COUNT];
 /* (V10.6i) a factory preset's movement (preset_t.mod): each pair a common parameter (< P_E0) and its value, within its
@@ -218,10 +218,10 @@ static const param_desc_t GP[G_COUNT] = {
     /* (JIANT, FUNB) the buses: not in a project's header (project.c: after the punch-in lane) */
     [G_CSTER] = PD("STEREO", F_BIPCT, -64, 63, 0), /* (0.6.9) the CHORUS's stereo: 0 as before, -64 mono, 63 ~2x (was G_DHPF) */
     [G_WIDTH] = PD("WIDE", F_PCT, 0, 127, 0),    /* the delay's right echo up to 1/32 later, the chorus's taps apart */
-    [G_DTYPE] = {"TYPE", F_ENUM, 0, 2, 0, N_DLYTYPE, 0},   /* (0.6.90) ANALOG (saturating, resonant, past 100 % grows) / DIGITAL */
-    [G_DPING] = {"PING", F_ENUM, 0, 1, 0, N_ONOFF, 0},   /* (0.6.90) PING-PONG: the repeats left, right, left .. */
+    [G_DTYPE] = {"TYPE", F_ENUM, 0, 2, 0, N_DLYTYPE},   /* (0.6.90) ANALOG (saturating, resonant, past 100 % grows) / DIGITAL */
+    [G_DPING] = {"PING", F_ENUM, 0, 1, 0, N_ONOFF},   /* (0.6.90) PING-PONG: the repeats left, right, left .. */
     [G_PFXLEN] = PD("LEN", F_INT, 1, 64, 64),    /* (0.6.99) the punch-in lane: its steps and their size */
-    [G_PFXRES] = {"RES", F_ENUM, 0, 2, 1, N_PFXRES, 0},
+    [G_PFXRES] = {"RES", F_ENUM, 0, 2, 1, N_PFXRES},
     [G_DRTIM] = PE("R TIME", N_DRTIM, 0),           /* (V10.49) the right echo's time, a ratio of TIME (fx.c dly_rate) */
     [G_DDRV] = PD("DRIVE", F_PCT, 0, 100, 0),    /* (snd2) the delay's loop driven: 0 clean as before, 100 x4 into the clip */
     [G_DMOD] = PD("MOD", F_PCT, 0, 127, 0),      /* (0.6.89: 0, the repeats exact copies, by default) */     /* (0.6.86) the delay's drift: WOW + FLUTTER (fx.c dly_wow_adv) */
@@ -253,16 +253,16 @@ static const param_desc_t GP[G_COUNT] = {
     [G_SLP0 + 14] = PD("PITCH", F_SEMI, -24, 24, 0), [G_SLP15] = PD("PITCH", F_SEMI, -24, 24, 0),
 };
 
-static const param_desc_t LOFI_RTRG = {"RTRG", F_ONOFF, 0, 1, 1, 0, 0};   /* (0.6.12) P_LRTRG on a MATH track (V10.6d: ON its default) */
-static const param_desc_t TRK_CHANCE = {"CHANCE", F_PCTINV, 0, 127, 0, 0, 0};   /* (0.6.37) P_TCHAN: 0 = 100 % */
-static const param_desc_t MORPH_DESC = {"MORPH", F_PCT, 0, 127, 0, 0, 0};   /* (0.6.45) P_MORPH */
+static const param_desc_t LOFI_RTRG = {"RTRG", F_ONOFF, 0, 1, 1, 0};   /* (0.6.12) P_LRTRG on a MATH track (V10.6d: ON its default) */
+static const param_desc_t TRK_CHANCE = {"CHANCE", F_PCTINV, 0, 127, 0, 0};   /* (0.6.37) P_TCHAN: 0 = 100 % */
+static const param_desc_t MORPH_DESC = {"MORPH", F_PCT, 0, 127, 0, 0};   /* (0.6.45) P_MORPH */
 static const char *const N_CLEN[] = {"OFF", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
                                      "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",
                                      "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43",
                                      "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57",
                                      "58", "59", "60", "61", "62", "63", "64", 0};
-static const param_desc_t CLEN_DESC = {"C.LEN", F_ENUM, 0, 64, 0, N_CLEN, 0};   /* (0.6.47) P_CLEN */
-static const param_desc_t DXIMG_DESC = {"IMAGE", F_INT, 0, 127, 0, 0, 0};       /* (0.6.48) P_DXIMG */
+static const param_desc_t CLEN_DESC = {"C.LEN", F_ENUM, 0, 64, 0, N_CLEN};   /* (0.6.47) P_CLEN */
+static const param_desc_t DXIMG_DESC = {"IMAGE", F_INT, 0, 127, 0, 0};       /* (0.6.48) P_DXIMG */
 /* (V10.6) SEQ > EUCLID / MODES' knobs (ui_euclid.c: ids ID_EU0 + EK_*, the views of the selected track's settings) */
 #define ID_EU0 0xF0u
 #define ID_SC0 0xE8u                                    /* (V10.25) SCL > SCENE's four (ui_scene.c sc_desc) */
@@ -273,24 +273,24 @@ static const char *const N_CHRD[] = {"OFF", "TRIAD", "7TH", "ADD9", "SUS2", "SUS
                                      "POWER", 0};
 static const char *const N_CVOI[] = {"CLOSE", "LEAD", "OPEN", "+BASS", 0};
 static const param_desc_t CHORD_DESC[3] = {              /* (0.6.81) SCL > CHORD: P_CHRD P_CVOI P_CSTR */
-    {"CHORD", F_ENUM, 0, 11, 0, N_CHRD, 0}, {"VOICING", F_ENUM, 0, 3, 0, N_CVOI, 0}, {"STRUM", F_PCT, 0, 127, 0, 0, 0}};
+    {"CHORD", F_ENUM, 0, 11, 0, N_CHRD}, {"VOICING", F_ENUM, 0, 3, 0, N_CVOI}, {"STRUM", F_PCT, 0, 127, 0, 0}};
 static const param_desc_t ENV2_DESC[4] = {             /* (V10.22) ENV > ENV 2 (core.h P_E2*): as ENV's */
-    {"ATK", F_TIME, 0, 127, 0, 0, 0}, {"DEC", F_TIME, 0, 127, 0, 0, 0}, {"SUS", F_PCT, 0, 127, 0, 0, 0},
-    {"REL", F_TIME, 0, 127, 0, 0, 0}};
+    {"ATK", F_TIME, 0, 127, 0, 0}, {"DEC", F_TIME, 0, 127, 0, 0}, {"SUS", F_PCT, 0, 127, 0, 0},
+    {"REL", F_TIME, 0, 127, 0, 0}};
 static const param_desc_t HUM_DESC[3] = {                /* (0.6.87) SEQ > HUMAN: P_HVEL P_HTIM P_HGAT (127 = 0 %) */
-    {"HUMAN", F_PCTINV, 0, 127, 127, 0, 0}, {"TIME", F_PCTINV, 0, 127, 127, 0, 0}, {"GATE", F_PCTINV, 0, 127, 127, 0, 0}};   /* (0.6.92:
+    {"HUMAN", F_PCTINV, 0, 127, 127, 0}, {"TIME", F_PCTINV, 0, 127, 127, 0}, {"GATE", F_PCTINV, 0, 127, 127, 0}};   /* (0.6.92:
                                                          * one amount, P_HVEL; TIME and GATE stay stored, 127) */
-static const param_desc_t RECQ_DESC = {"REC Q", F_PCT, 0, 127, 127, 0, 0};   /* (0.6.88) P_HRQ: 100 % on the grid */
-static const param_desc_t DRIFT_DESC = {"DRIFT", F_PCTINV, 0, 127, 127, 0, 0};   /* (0.7.8) P_DRIFT: 127 = 0 % */
-static const param_desc_t TVEL_DESC = {"VEL", F_PCT, 0, 127, 127, 0, 0};   /* (after V10.7.2) P_TVEL: 127 = 100 % (core.h) */
+static const param_desc_t RECQ_DESC = {"REC Q", F_PCT, 0, 127, 127, 0};   /* (0.6.88) P_HRQ: 100 % on the grid */
+static const param_desc_t DRIFT_DESC = {"DRIFT", F_PCTINV, 0, 127, 127, 0};   /* (0.7.8) P_DRIFT: 127 = 0 % */
+static const param_desc_t TVEL_DESC = {"VEL", F_PCT, 0, 127, 127, 0};   /* (after V10.7.2) P_TVEL: 127 = 100 % (core.h) */
 static const param_desc_t WROT_DESC[2] = {               /* (0.7.8) WHEEL's ROTOR: P_WRDEP (127 = 100 %, as before), P_WDUST */
-    {"DEPTH", F_PCT, 0, 127, 127, 0, 0}, {"DUST", F_PCTINV, 0, 127, 127, 0, 0}};
-static const param_desc_t VLANG_DESC = {"LANG", F_ENUM, 0, LG_N - 1, 0, N_LANG, 0};   /* (0.8.5) VOICE's words: */
+    {"DEPTH", F_PCT, 0, 127, 127, 0}, {"DUST", F_PCTINV, 0, 127, 127, 0}};
+static const param_desc_t VLANG_DESC = {"LANG", F_ENUM, 0, LG_N - 1, 0, N_LANG};   /* (0.8.5) VOICE's words: */
 static const char *const N_DKEYMODE[] = {"CLASSIC", "EXTENDED"};
-static const param_desc_t DKEYMODE_DESC = {"KEY MAP",F_ENUM,0,1,1,N_DKEYMODE,0};   /* (2..9: EXTENDED, eng_drum.c drum_chrom) */
-static const param_desc_t SIMG_DESC = {"IMAGE", F_PCTINV, 0, 127, 127, 0, 0};   /* (V10.49) P_SIMG: 127 = 0 % */
-static const param_desc_t VLYR_DESC = {"LYRIC", F_ENUM, 0, LYR_N - 1, 0, N_LYRIC, 0};  /* P_VLANG, P_VLYR (sing.c) */
-static const param_desc_t VCONS_DESC = {"CONS", F_INT, 0, 127, 127, 0, 0};   /* (V10.6y) P_VCONS: 127 = 100 % (core.h) */
+static const param_desc_t DKEYMODE_DESC = {"KEY MAP",F_ENUM,0,1,1,N_DKEYMODE};   /* (2..9: EXTENDED, eng_drum.c drum_chrom) */
+static const param_desc_t SIMG_DESC = {"IMAGE", F_PCTINV, 0, 127, 127, 0};   /* (V10.49) P_SIMG: 127 = 0 % */
+static const param_desc_t VLYR_DESC = {"LYRIC", F_ENUM, 0, LYR_N - 1, 0, N_LYRIC};  /* P_VLANG, P_VLYR (sing.c) */
+static const param_desc_t VCONS_DESC = {"CONS", F_INT, 0, 127, 127, 0};   /* (V10.6y) P_VCONS: 127 = 100 % (core.h) */
 static const param_desc_t *track_desc(const track_t *t, uint32_t id)
 {
     if (id == MOT_DJF)                                /* (0.9.1) a DJ FILTER record (motion.c): the global's */
@@ -511,8 +511,8 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
         fmt_named = 1;
         return;
     }
-    if (d->unit == U_REG64) {                           /* (V10.6d) ANIMAL's SIZE: semitones from the key */
-        static const param_desc_t SEMI = {0, F_SEMI, 0, 0, 0, 0, 0};
+    if (d->fmt == F_REG64) {                            /* (V10.6d) ANIMAL's SIZE: semitones from the key */
+        static const param_desc_t SEMI = {0, F_SEMI, 0, 0, 0, 0};
         d = &SEMI;
         v = 64 - v;
     }
@@ -601,8 +601,6 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
         break;
     case F_ENUM:
         str_cpy(val, d->names[v < d->min ? d->min : v > d->max ? d->max : v], 6);
-        if (d->unit)
-            *unit = d->unit;
         break;
     case F_BPM:
         fmt_int(val, v);
@@ -625,8 +623,8 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
         } else {
             fmt_int(val, v);
         }
-        if (d->unit)
-            *unit = d->unit;
+        if (desc_unit(d))                             /* (F_INT_CT ..: its unit) */
+            *unit = desc_unit(d);
         break;
     }
 }
