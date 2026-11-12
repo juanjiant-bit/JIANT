@@ -437,7 +437,7 @@ static void section_store(uint32_t s)
     b[0] = (char)('A' + s);
     project_capture(&proj_scratch);
     if (!proj_pack(&proj_wire, &proj_scratch)) {        /* (0.6: packed aside first, the section kept if it does not fit) */
-        ui_message(proj_full ? "SECTION FULL" : "SAVE FORMAT ERROR");
+        proj_err();
         return;
     }
     proj_wire_gen++;

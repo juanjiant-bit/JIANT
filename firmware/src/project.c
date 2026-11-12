@@ -419,6 +419,14 @@ static uint32_t proj_name_get(char *d, const uint8_t *s)   /* its length */
  * 127, VEL 100 % (those three betas' VEL once lost; older firmware ignores the byte) */
 #define PROJ_VEL_MARK 'V'
 static uint8_t proj_full;                               /* the last proj_pack failed for room (not for a value) */
+static uint8_t proj_why, proj_why_t;                    /* .. for a value: the check's digit, its track's (proj_pack) */
+static __attribute__((noinline)) void proj_err(void)    /* proj_pack said no: why, on screen */
+{
+    static char m[] = "SAVE FORMAT ERROR 0 T0";
+    if (proj_full) { ui_message("SECTION FULL"); return; }
+    m[18] = (char)proj_why; m[20] = proj_why_t == ' ' ? 0 : 'T'; m[21] = (char)proj_why_t;
+    ui_message(m);
+}
 static int proj_step_empty(const step_t *s)
 {
     return !s->n && s->time == ST_REST && !s->flags && !s->vel && !s->hit && !s->acc && !s->probability && !s->comp &&
@@ -564,23 +572,39 @@ static int proj_pack(project_store_t *out, const project_t *q)
 {
     uint8_t *b = out->raw; uint32_t pos = 68u, t, i; uint32_t magic = PROJ_MAGIC, size = PROJ_STORE_SIZE, sum;
     proj_full = 0;
+    proj_why = '1';                                     /* (V10.7.19) which check refused it, said after SAVE FORMAT ERROR:
+                                                         * 1 KEY SPLIT, 2 FIT / engine, 3 an FM6 patch, 4 a parameter,
+                                                         * 5 a step, 6 a step's COMP, 7 the song's rows, 8 MOTION, 9 the kit;
+                                                         * the track's number after 2..6 */
     if (!proj_split_ok(q->split)) return 0;
     for (t = 0; t < NTRK; t++) {                        /* the values first: out untouched when one is wrong */
+        proj_why_t = (uint8_t)('1' + t);
+        proj_why = '2';
         if ((q->fit[t] & 127u) > 64u || q->t[t].engine >= NENGINES) return 0;
+        proj_why = '3';
         for (i = 0; i < FM6_PACKED; i++)
             if (q->fm6[t][i] > 127u) return 0;
+        proj_why = '4';
         for (i = 0; i < P_COUNT; i++)
             if (q->t[t].p[i] < -64 || q->t[t].p[i] > 127) return 0;
         for (i = 0; i < NSTEP; i++) {
             const step_t *s = &q->t[t].step[i];
+            proj_why = '5';
             if (s->n > 4u || s->time > ST_REST || (s->flags & ~(3u | SF_RATCH | SF_MFINE)) || s->probability > 101u ||
                 CT_DIV(s) >= CT_NDIV || s->ctime > 127u) return 0;
+            proj_why = '6';
             if (proj_comp_legacy ? s->comp >= CP_N || s->comp2 >= CP_N :
                 CO_ACT(s->comp) >= CA_N || CO_COND(s->comp) >= CC_N || CO_ACT(s->comp2) >= CA_N ||
                 CO_COND(s->comp2) >= CC_N || s->clen[0] >= CL_MAX || s->clen[1] >= CL_MAX) return 0;
         }
     }
-    if (!chain_valid(&q->chain) || !motion_valid(&q->motion) || P_COUNT > 127u || !dx_kit_ok(q->dx)) return 0;
+    proj_why_t = ' ';
+    proj_why = '7';
+    if (!chain_valid(&q->chain)) return 0;
+    proj_why = '8';
+    if (!motion_valid(&q->motion) || P_COUNT > 127u) return 0;
+    proj_why = '9';
+    if (!dx_kit_ok(q->dx)) return 0;
     if (proj_packed_size(q) > PROJC_PFX_OFF) { proj_full = 1; return 0; }
     memset(out, 0, sizeof *out); memcpy(b, &magic, 4); memcpy(b + 4, &size, 4);
     memcpy(b + 8, q->g, G_NSTORE * 2u); b[62] = q->sel; b[63] = q->parts; b[64] = q->phys; b[66] = P_COUNT;
@@ -1276,7 +1300,7 @@ static int project_save_as(uint32_t slot, const char *name)
         memcpy(p->name, name, str_len(name) < PROJ_NAME_LEN ? str_len(name) : PROJ_NAME_LEN);
     }
     proj_wire_gen++;
-    if (!proj_pack(&proj_wire, p)) { ui_message(proj_full ? "SECTION FULL" : "SAVE FORMAT ERROR"); return 2; }
+    if (!proj_pack(&proj_wire, p)) { proj_err(); return 2; }
 
 #if FELUCCA_FLASH
     if (flash_ok && !song_draft) {
@@ -1330,7 +1354,7 @@ static int project_rename(uint32_t slot, const char *name)
     memset(p->name, 0, sizeof p->name);
     memcpy(p->name, name, str_len(name) < PROJ_NAME_LEN ? str_len(name) : PROJ_NAME_LEN);
     proj_wire_gen++;
-    if (!proj_pack(&proj_wire, p)) { ui_message(proj_full ? "SECTION FULL" : "SAVE FORMAT ERROR"); return 2; }
+    if (!proj_pack(&proj_wire, p)) { proj_err(); return 2; }
 #if FELUCCA_FLASH
     if (flash_ok && st_save(proj_obj(slot), &proj_wire, sizeof proj_wire)) {
         ui_message("SAVE ERROR");

@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.18
+## This release: V10.7.19
 
 ### Installing
 
@@ -481,6 +481,14 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.19 — beta (2026-11-12)
+- **Seven palettes of JIANT's own**: JIANT, SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON (the inherited ones are gone); the cards' values take each palette's colours.
+- **Two skins**: AIR and COLORS (BOTTOM and HUD retired); **STYLE** retired (FLAT is the one style); COLORS without the grey panel box.
+- **Bigger type**: card numbers at 14 px, the small face at 9 px, LARGE tall on the FX and SEQ pages too; less repeated text on each screen.
+- **PRESETS**: a sound-type LIST (SAVE > PRESETS, KNOB 4) goes back to ALL at power-on, FAV is kept (users left on VOX found "no presets").
+- AIR's HOME: the beings start under the knob row (they covered the header and values at power-on).
+- SAVE FORMAT ERROR now says which check refused the save (a digit, and the track).
 
 ### V10.7.18 — public (2026-11-11)
 

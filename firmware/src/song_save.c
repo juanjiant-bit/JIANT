@@ -62,13 +62,13 @@ static __attribute__((noinline)) int song_save_as(uint32_t target, const char *n
     current = live.cur >= 0 && live.cur < 4 ? (uint32_t)live.cur : proj_cur < 4u ? proj_cur : 0u;
     project_capture(&proj_scratch);
     if (!proj_pack(&song_keep, &proj_scratch)) {
-        ui_message(proj_full ? "SECTION FULL" : "SAVE FORMAT ERROR");
+        proj_err();
         return 2;
     }
     /* Validate every section and every row's per-track sources BEFORE touching the destination. */
     for (section = 0; section < 4u; section++) {
         int rc = song_copy_section(section, current, name);
-        if (rc < 0) { ui_message("SECTION FULL"); return 2; }
+        if (rc < 0) { proj_err(); return 2; }
         if (rc) mask |= 1u << section;
     }
     if (!song_save_loop && !chain_valid(&chain_config)) { ui_message("INVALID ARRANGEMENT"); return 2; }
@@ -84,7 +84,7 @@ static __attribute__((noinline)) int song_save_as(uint32_t target, const char *n
     for (section = 0; section < 4u; section++) {
         uint32_t obj = target ? OBJ_SONG1 + (target - 1u) * 4u + section : OBJ_PROJECT0 + section;
         int rc = song_copy_section(section, current, name);
-        if (rc < 0) { ui_message("SAVE FORMAT ERROR"); return 2; }
+        if (rc < 0) { proj_err(); return 2; }
         /* A zero-length committed object hides both older copies of an absent section. */
         if (st_save(obj, &proj_wire, rc ? sizeof proj_wire : 0u)) {
             ui_message("SAVE ERROR: RETRY"); return 2;
