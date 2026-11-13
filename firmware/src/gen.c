@@ -2099,7 +2099,8 @@ static void gen_parts(void)
     uint32_t base = gls.on ? 3u : 1u | (form == FM_ARC ? 4u : 0u), dense = gls.on ? 0u : form == FM_PARTS ? 4u : form == FM_ARC ? 8u : 0u;   /* (the
                                                          * sections whose drums are A's; the denser ones) */
     uint8_t pdeg[4], pq[4], pn = gs.pn, secm[4] = {0};
-    uint32_t en, fok = ~0u >> 1, sg = gp.form == 2u && !gls.on;   /* (V10.7.26: SONG's own plans, gsong) */
+    uint32_t en, fok = ~0u >> 1, sg = (gp.form == 1u || gp.form == 2u) && !gls.on;   /* (V10.7.26: SONG's own plans, gsong; V10.7.28 PARTS' too, its
+                                                         * rows at half length: "PARTS always the same") */
     uint8_t pb[CHAIN_ROWS];
     const uint8_t *pl;
     if (form == FM_LOOP) { section_store(0); dice_secs |= 1u; return; }

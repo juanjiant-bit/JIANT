@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.27
+## This release: V10.7.28
 
 ### Installing
 
@@ -482,6 +482,9 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.28 — beta (2026-11-13)
+- **GEN FORM PARTS: a structure per seed too.** PARTS still gave one fixed plan; it now throws its structure from the same templates as SONG (by the genre's family, optional sections, ENERGY), every row at half its length for a shorter piece.
 
 ### V10.7.27 — beta (2026-11-13)
 - **STRING: the electric guitar into an amp.** FDBK is now a picked string, a pickup, a tube that sags on loud notes and a speaker cab, its feedback held at its level (it never runs away). GAIN is how close you stand to the amp, SPEAKR the harmonic it blooms into (the note, its octave, its twelfth), BLOOM the swell, DIST the tube's drive. In FEEDBACK the mod wheel walks you toward the amp. Letting go mutes the string (palm mutes); in LEGATO hammer-ons, pull-offs and bends keep the feedback in tune.

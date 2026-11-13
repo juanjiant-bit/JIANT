@@ -1,6 +1,6 @@
 # JIANT FM — Manual de usuario
 
-**JIANT FM V10.7.27 para el M-VAVE FM-1**
+**JIANT FM V10.7.28 para el M-VAVE FM-1**
 
 > *English version: [MANUAL.md](MANUAL.md).*
 
@@ -2230,8 +2230,8 @@ De qué está hecha una pieza:
   El largo de cada fila sale de su par razonable (4 u 8, 8 o 16, 16 o 32 compases; el build 4), las filas opcionales
   según la semilla. **ENERGY** le da forma: baja, intros, breaks y outros más largos y menos drops; alta, drops más
   largos y más drops. Cada tema dura de 2 a 5 minutos a su tempo (las filas más largas a la mitad, las más cortas al
-  doble) y entra en las 16 filas; la misma semilla y los mismos ajustes, el mismo tema. PARTS, LOOP y MY LOOP arman
-  como antes. Las secciones tuyas (guardadas por vos, no por GEN) nunca se pisan: entonces la pieza queda en un loop.
+  doble) y entra en las 16 filas; la misma semilla y los mismos ajustes, el mismo tema. (V10.7.28) **PARTS** arma su
+  estructura igual, cada fila a la mitad de su largo (una pieza más corta). LOOP y MY LOOP arman como antes. Las secciones tuyas (guardadas por vos, no por GEN) nunca se pisan: entonces la pieza queda en un loop.
 
 Cada pieza reemplaza los pasos, sonidos, kit, mezcla y automatización de todas las pistas. Los mutes quedan como
 estaban. Los roles que suenan van en las primeras pistas (la batería en la pista DRUM), así que con TRACKS 4 escuchás

@@ -1,6 +1,6 @@
 # JIANT FM — User Manual
 
-**JIANT FM V10.7.27 for the M-VAVE FM-1**
+**JIANT FM V10.7.28 for the M-VAVE FM-1**
 
 > *Versión en español: [MANUAL.es.md](MANUAL.es.md).*
 
@@ -2121,7 +2121,8 @@ What a piece is made of:
   Each row's length from its sensible pair (4 or 8, 8 or 16, 16 or 32 bars; the build 4), the optional rows a seed's.
   **ENERGY** shapes it: low, longer intros, breaks and outros and fewer drops; high, longer drops and more of them.
   Every song lasts 2 to 5 minutes at its tempo (the longest rows halved, the shortest doubled) and fits the 16 rows;
-  the same seed and settings, the same song. PARTS, LOOP and MY LOOP arrange as before. Sections of yours (stored by you, not by GEN) are never
+  the same seed and settings, the same song. (V10.7.28) **PARTS** throws its structure the same way, every row at half
+  its length (a shorter piece). LOOP and MY LOOP arrange as before. Sections of yours (stored by you, not by GEN) are never
   overwritten: then the piece stays one loop.
 
 Every piece replaces every track's steps, sounds, kit, mix and automation. Mutes are left as they are. The roles that
