@@ -2443,7 +2443,7 @@ static int trk_kit(const track_t *t)
 /* (0.6.88) TIMING early: how much before its place the step after the playing one starts (its ST_MICRO < 0), so the
  * playing one ends that much sooner (seq_tick); 0 when the next step is not known yet (a JUMP or REV coming, RANDOM
  * held, a song's section about to change) */
-static uint32_t seq_early(const track_t *t, uint32_t period, uint32_t len)
+static uint32_t seq_early(const track_t *t, uint32_t period, uint32_t len, uint32_t *vl)
 {
     uint32_t ni = (t->seq_idx + 1u) % (len ? len : 1u);
     const step_t *s;
@@ -2453,6 +2453,8 @@ static uint32_t seq_early(const track_t *t, uint32_t period, uint32_t len)
     s = shift_ahead(t, 1u, len);
     if (s->time != ST_NOTE || (!s->n && !s->hit))       /* (nothing to play there: never early) */
         return 0;
+    if (ENGINES[eng_idx(t->eng_req)] == &ENG_FORMANT && t->p[P_VLANG])   /* (voice2) VOICE singing: its next */
+        *vl = (uint32_t)sing[trk_index(t) % NTRK].nlead * CTL;   /* syllable's consonants before the step (sing.c) */
     m = ST_MICRO(s);
     if (m < 0) {
         uint32_t early = fit_scale_samples(step_samples(t, period, ni), (uint32_t)-m, 6u);
@@ -3181,8 +3183,13 @@ static void seq_tick(track_t *t, uint32_t n)
     }
     t->seq_pos += n;
     for (;;) {
-        uint32_t cur_len = step_samples(t, period, t->seq_idx) + t->ext, start, e = seq_early(t, period, len);
+        uint32_t cur_len = step_samples(t, period, t->seq_idx) + t->ext, start, vl = 0, e = seq_early(t, period, len, &vl);
         if (e >= cur_len) e = cur_len - 1u;             /* (0.6.88) TIMING: the next step early, this one shorter */
+        if (vl) {                                       /* (voice2) .. and a singer's by its consonants: its vowel on */
+            uint32_t room = (cur_len - e) / 2u;         /* the step (at most half of what is left of this one) */
+            vl = vl < room ? vl : room;
+            e += vl;
+        }
         if (t->seq_pos < cur_len - e && t->seq_pos != 0x7FFFFFFFu + n)
             break;
         start = t->seq_pos >= 0x7FFFFFFFu;
@@ -3190,6 +3197,9 @@ static void seq_tick(track_t *t, uint32_t n)
         ev_at(start || t->seq_pos >= n ? 0u : n - t->seq_pos);   /* (ctl64) the step's first sample (seq_pos: the samples
                                                          * past it at the block's end; 0 past it: the next block's first) */
         t->ext = (uint16_t)(start ? 0u : e);            /* (the next one longer by as much: the grid kept) */
+        if (vl && !start)
+            sing[trk_index(t) % NTRK].lead = (uint8_t)(0xC0u | ((vl + CTL) / (2u * CTL) & 63u));   /* (the note takes
+                                                         * it: sing_block; in 2 blocks) */
         if (t->jump_to && !start)                /* (0.6.42) JUMP: the step it names (LIVE's; V10.6y: REV, never set
                                                  * since LIVE's went, gone) */
             t->seq_idx = (uint16_t)((t->jump_to - 1u) % (len ? len : 1u));
