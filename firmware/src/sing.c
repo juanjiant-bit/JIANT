@@ -111,15 +111,15 @@ static const phon_t PHON[PH_COUNT] = {
     [PH_AX] = {500, 1450, 2450, PC_VOW, 240, 0, 0, 0, 0, 16, PL_NONE},
     [PH_Y] = {270, 2200, 3000, PC_GLI, 245, 0, 0, 0, 40, 16, PL_PAL},
     [PH_W] = {300, 650, 2250, PC_GLI, 245, 0, 0, 0, 40, 16, PL_LAB | PL_RND},
-    [PH_L] = {360, 1100, 2700, PC_LIQ, 225, 0, 0, 0, 55, 20, PL_ALV},
-    [PH_RT] = {450, 1500, 2450, PC_TAP, 255, 0, 0, 0, 22, 16, PL_ALV},
-    [PH_RR] = {450, 1500, 2450, PC_TRL, 255, 0, 0, 0, 80, 16, PL_ALV},
-    [PH_RA] = {400, 1100, 1550, PC_LIQ, 235, 0, 0, 0, 60, 18, PL_POST | PL_RND},
-    [PH_M] = {260, 1100, 2200, PC_NAS, 200, 0, 0, 0, 65, 30, PL_LAB},
-    [PH_N] = {260, 1650, 2600, PC_NAS, 200, 0, 0, 0, 60, 30, PL_ALV},
-    [PH_NY] = {260, 2050, 2900, PC_NAS, 200, 0, 0, 0, 65, 30, PL_PAL},
-    [PH_NG] = {270, 2200, 2700, PC_NAS, 200, 0, 0, 0, 60, 30, PL_VEL},
-    [PH_NM] = {280, 1400, 2500, PC_NAS, 210, 0, 0, 0, 60, 30, PL_UVU},
+    [PH_L] = {360, 1100, 2700, PC_LIQ, 190, 0, 0, 0, 45, 20, PL_ALV},
+    [PH_RT] = {400, 1600, 2450, PC_TAP, 255, 0, 0, 0, 26, 16, PL_ALV},
+    [PH_RR] = {400, 1600, 2450, PC_TRL, 255, 0, 0, 0, 100, 16, PL_ALV},
+    [PH_RA] = {400, 1100, 1650, PC_LIQ, 200, 0, 0, 0, 75, 18, PL_POST | PL_RND},
+    [PH_M] = {250, 900, 2200, PC_NAS, 130, 0, 0, 0, 50, 40, PL_LAB},
+    [PH_N] = {250, 1750, 2600, PC_NAS, 130, 0, 0, 0, 45, 40, PL_ALV},
+    [PH_NY] = {250, 2200, 2900, PC_NAS, 130, 0, 0, 0, 50, 40, PL_PAL},
+    [PH_NG] = {270, 2200, 2700, PC_NAS, 130, 0, 0, 0, 45, 40, PL_VEL},
+    [PH_NM] = {280, 1400, 2500, PC_NAS, 140, 0, 0, 0, 60, 40, PL_UVU},
     [PH_P] = {250, 900, 2200, PC_PLO, 0, 150, 30, 60, 55, 16, PL_LAB},
     [PH_T] = {250, 1750, 2700, PC_PLO, 0, 230, 86, 32, 50, 16, PL_ALV},
     [PH_K] = {250, 1950, 2500, PC_PLO, 0, 230, 46, 16, 55, 16, PL_VEL},
@@ -1284,12 +1284,11 @@ static __attribute__((noinline)) void sy_tick(const track_t *t, sing_t *s, uint3
         ta = (P->af << 7) * a15 >> 15;
         tv = ((32767 - a15) * 3) >> 3;
         break;
-    case PC_TAP:
-        tv = 32767 - ((24000 * a15) >> 15);
-        sh = 3;
-        break;
-    case PC_TRL:
-        tv = (s->tb / sy_ms(20)) & 1u ? 32767 - ((24000 * a15) >> 15) : 32767;
+    case PC_TAP:                                         /* (voice3) the tongue's touch: ~-14 dB, F1 down, ~3 ms in */
+    case PC_TRL:                                         /* and out; a trill's every other 20 ms (~25 Hz) */
+        tv = k == PC_TAP || (s->tb / sy_ms(20)) & 1u ? 32767 - ((26000 * a15) >> 15) : 32767;
+        if (tv < 32767)
+            tF[0] = 300;
         sh = 3;
         break;
     default:                                             /* vowels, glides, liquids, nasals */
@@ -1344,14 +1343,14 @@ static __attribute__((noinline)) void sy_tick(const track_t *t, sing_t *s, uint3
     }
     s->ff = (int16_t)(s->ff + ((tff - s->ff) >> (2 - SY_CB)));   /* (voice2: over 2 blocks, F4 no jump on the vowel) */
     s->fb = (int16_t)(s->fb + ((tfb - s->fb) >> (1 - SY_CB)));
-    s->bm = (int16_t)(s->bm + ((tbm - s->bm) >> (2 - SY_CB)));
+    s->bm = (int16_t)(s->bm + ((tbm - s->bm) >> (4 - SY_CB)));   /* (voice3: ~12 ms, a nasal's edges on the vowels) */
     s->pv = s->gv;
     s->pa = s->ga;
     s->pf = s->gf;
     /* (0.9.8) the gains: the voicing fades over ~6 ms into a fricative (the vowel's tail under the hiss), ~3 ms into a
      * closure (a tap's, a trill's dips: at once), comes in over ~3 ms; the frication comes in over ~10 ms (a plosive's
      * burst, an affricate's release: at once) and goes over ~5 ms: no hiss switched on and off */
-    s->gv = (int16_t)(s->gv + ((tv - s->gv) >> ((tv >= s->gv ? 2 : k == PC_FRI ? 3 : k == PC_TAP || k == PC_TRL ? 1 : k == PC_SIL ? 4 : 2) - SY_CB)));
+    s->gv = (int16_t)(s->gv + ((tv - s->gv) >> ((tv >= s->gv ? 2 : k == PC_FRI || k == PC_TAP || k == PC_TRL ? 3 : k == PC_SIL ? 4 : 2) - SY_CB)));
     /* (voice2) the frication goes over ~5 ms (was ~2: a hiss cut off), a fricative's comes in quicker in a key's quick
      * onset; that onset's hiss and aspiration carried over the vowel's first ~10 ms (sung over it, not before it) */
     j = (uint8_t)(s->oq - 1u) < 127u;                   /* (squeezed: a key's) */
@@ -1379,7 +1378,7 @@ static uint32_t sy_onset(sing_t *c, uint32_t lang)
     return b > SY_PLO ? (b & 0xFFFFu) | SY_PLO : b;
 }
 #define SY_KP(T) (SY_K + ((T) >= SY_PLO ? SY_BL(4u) : 0u))
-/* (voice3) a phrase from rest: its clock, its seed, the swell from its start (-6 dB); each block the part is silent
+/* (voice3) a phrase from rest: its clock, its seed, the swell from its start (-3 dB); each block the part is silent
  * (sy_voices: a voice that starts inside the block sounds so from its first sample) and at the note: a phrase renders
  * the same */
 static __attribute__((noinline)) void sy_rest(const sing_t *s, sing_x_t *x, uint32_t ti)
@@ -1526,9 +1525,9 @@ static void sing_block(track_t *t)
     }
     s->gated = (uint8_t)gated;
     sy_tick(t, s, lang);
-    {   /* (voice3) the singer's clocks; the vibrato (formant_word_render): ~5.6 Hz, each note its rate (5 .. 6 Hz) and
-         * +-1 Hz as it goes, from ~0.2 s into the note, in over ~0.2 s more, on notes of 0.6 s (none under 0.4: a key's
-         * while it is held that long); the swell (formant_amp): the vowel in over ~80 ms (from rest from -6 dB), then
+    {   /* (voice3) the singer's clocks; the vibrato (formant_word_render): ~5.6 Hz, each note its rate (5 .. 6 Hz),
+         * wandering +-1 Hz, from ~0.2 s into the vowel, in over ~0.12 s, on notes of 0.5 s and more (a key's: while it
+         * is held that long); the swell (formant_amp): the vowel in over ~80 ms (from rest from -3 dB), then
          * ~-9 dB/s (-4 dB at most), the phrase's peaks -1.5 dB/s (-3.5 dB at most) */
         uint32_t sd = ti + x->ps * 8u, age = x->vb >> 1, L = x->nl ? x->nl * 16u : age, h;
         int32_t e, st;

@@ -853,8 +853,8 @@ static void check_singer(void)
             dip = 20 * log10(lo / rv);
         }
         snprintf(what, sizeof what, "syllable joins: no click (%u joins of sus suenyos son sonidos suaves, the worst %.2f x the "
-                 "sound around, <= 1.6), la le li lo lu at most %.1f dB down between notes (>= -25)", nj, worst, dip);
-        check(what, nj >= 8u && worst <= 1.6 && dip >= -25.0);
+                 "sound around, <= 1.6), la le li lo lu at most %.1f dB down between notes (>= -28)", nj, worst, dip);
+        check(what, nj >= 8u && worst <= 1.6 && dip >= -28.0);   /* (voice3: the l a liquid's dip, ~-5 dB more) */
     }
     {   /* the glide as sung: LEGATO, GLIDE 36 TIME (1 + 36 * 36 / 8 = 163 blocks), A3 -> E4 held over, "ah -" (one vowel):
          * the pitch the render plays (glide_sung) block by block: monotonic, there in 163 +- 2 blocks, an S-curve (at a

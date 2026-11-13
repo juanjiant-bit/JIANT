@@ -33,7 +33,11 @@
  *
  * (voice2) WORDS: the source follows the level (open phase, tilt, breath), each syllable's pitch scoops into its note,
  * a let-go phrase creaks (every other period softer and longer: vocal fry), the presence ramped across the block (no
- * click at a burst); LANG OFF bit for bit as before. */
+ * click at a burst); LANG OFF bit for bit as before.
+ *
+ * (voice3) After a male voice measured: the pitch wanders, scoops from rest, lands from the last note, a vibrato on long
+ * notes only (fmt_life); the level swells and fades a note, a phrase (formant_amp, sing_block); about half the phrase
+ * ends creak; nasals a quiet murmur with less presence, the tap a short dip. LANG OFF bit for bit as before. */
 #define FMT_FOLOW 30
 #include "sing.c"
 #define FMT_TALK_MASK 0x01FFFFFF
@@ -334,6 +338,8 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
     /* (0.9.8: less presence) (voice2) ramped across the block, from the frication's weight at its start (a burst after
      * a key's quick closure turned the presence off in one sample: a click on the vowel still ringing) */
     j = (og >> 2) * (6 + (buzz >> 11));
+    if (bm > 16)                                        /* (voice3) a nasal's, a liquid's murmur: less presence (no buzz */
+        j = j * (bm < 40 ? 48 - bm : 8) >> 5;           /* on it, its higher formants weak) */
     ogk = mul64_sh15(j, 32767 - clamp(sg->pf * 16, 0, 32767));
     dogk = (mul64_sh15(j, 32767 - fw) - ogk) >> CTL_LOG2;
     for (i = 0; i < n; i++) {
