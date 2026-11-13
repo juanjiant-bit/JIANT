@@ -28,8 +28,7 @@ static struct {
     int32_t r[ECO_N];                                   /* its radius now (Q4 px: swollen, pulsing) */
     uint32_t tm[ECO_N];                                 /* each being's time (it runs with its sound) */
     uint32_t f0;                                        /* (codex/anim) the swim's last step (ui.c anim_fr ticks) */
-    uint8_t init, top;                                  /* (top: the water's top row the places are in: 0, the panel's;
-                                                         * AIR's HOME, the whole screen: under its knobs' row) */
+    uint8_t init, top;                                  /* (top: unused since V10.7.23, AIR gone: the RAM's layout kept) */
 } eco;
 /* (0.9.7, variant A) each being's face and colours, worked out once a drawn frame by eco_step for eco_being: its three
  * isotherms' colours by its level (c0 outer .. c2), its last hit's time (fm1_ms, low 16 bits: the eyes shut 0.1 s), its face's EF_*
@@ -62,10 +61,8 @@ static void eco_feat(uint32_t c, bfeat_t *f, int32_t k)
  * track's level (the part's peak, slewed: a hit at once, a quick fall), its time, its size (it pulses, and swells up to
  * ~2.2 x; the selected one larger), its swim over the whole panel (wandering, bouncing off the walls, a hit kicking it
  * on up to ~7 x). Still with ANIM OFF */
-/* (0.8.9) the beings' water: the panel (COLORS 232 x 140, BOTTOM 240 x 148), HUD's HOME the whole screen; its floor, the
- * numbers' line under it (HUD: the numbers only in the middle, the floor near the screen's foot) */
-static int32_t eco_h(void) { return hud_home() ? 240 : (int32_t)graph_h(); }
-static int32_t eco_bot(void) { return eco_h() - (hud_home() ? 6 : 18); }
+/* (0.8.9) the beings' water: the panel; its floor, the numbers' line under it */
+static int32_t eco_bot(void) { return (int32_t)graph_h() - 18; }
 /* (codex/anim) the swim in fixed steps of ECO_STEP ticks (~11 a second, each its ticks one by one, the wander from the
  * clock's tick: the same path whatever the frame rate), drawn a step behind, between the last two (eco_at): a game's
  * fixed physics and its drawn frames in between. The levels, the size and the faces each drawn frame, by the ticks gone */
@@ -79,7 +76,7 @@ static void eco_at(uint32_t c, int32_t *x, int32_t *y)   /* where being c is dra
     *y = qy + ((eco.sy[c] - qy) * a >> 8);
 }
 /* .. the swim's steps due, each its ticks (its own: the code before the sound's in the flash the size it was) */
-static __attribute__((noinline)) void eco_swim(uint32_t now, int32_t top, int32_t bot)
+static __attribute__((noinline)) void eco_swim(uint32_t now, int32_t bot)
 {
     uint32_t c, k, n;
     if (now - eco.f0 > 4u * ECO_STEP)                   /* (a pause: on from here, no jump) */
@@ -99,7 +96,7 @@ static __attribute__((noinline)) void eco_swim(uint32_t now, int32_t top, int32_
                 eco.sy[c] += eco.vy[c] * sp >> 8;
                 if (eco.sx[c] < (rad + 8) << 8) { eco.sx[c] = (rad + 8) << 8; eco.vx[c] = -eco.vx[c]; }
                 if (eco.sx[c] > (232 - rad) << 8) { eco.sx[c] = (232 - rad) << 8; eco.vx[c] = -eco.vx[c]; }
-                if (eco.sy[c] < (rad + 4 + top) << 8) { eco.sy[c] = (rad + 4 + top) << 8; eco.vy[c] = -eco.vy[c]; }
+                if (eco.sy[c] < (rad + 4) << 8) { eco.sy[c] = (rad + 4) << 8; eco.vy[c] = -eco.vy[c]; }
                 if (eco.sy[c] > (bot - rad) << 8) { eco.sy[c] = (bot - rad) << 8; eco.vy[c] = -eco.vy[c]; }
             }
         }
@@ -108,8 +105,6 @@ static __attribute__((noinline)) void eco_swim(uint32_t now, int32_t top, int32_
 static uint32_t eco_step(void)
 {
     uint32_t c, k, now = anim_fr, dt = (uint16_t)((uint16_t)now - eco_ft);
-    int32_t top = hud_home() ? (int32_t)LA_HOME_GRAPH_Y : 0;   /* (V10.58) AIR's HOME: the water under
-                                                         * its cards (the beings swam over the tabs and the four values) */
     int32_t bot = eco_bot();                            /* (the panel's floor, the number's line under it: 0.8.4's 104 of
                                                          * 122, the lens's 140 its 122) */
     if (!eco.init) {
@@ -119,18 +114,7 @@ static uint32_t eco_step(void)
             eco.pen[c] = (int32_t)((uint32_t)eco.sy[c] << 16 | (uint32_t)eco.sx[c]);
             eco.vx[c] = (c & 1u) ? 90 : -110; eco.vy[c] = (c & 2u) ? 70 : -60;
         }
-        eco.top = 0;
         eco.f0 = now;
-    }
-    if (eco.top != (uint8_t)top) {                      /* the water moved (AIR's HOME entered or left, the skin changed):
-                                                         * the beings with it. (They began at the panel's places on AIR's
-                                                         * HOME too: over the header, the tabs and the knobs' row, on the
-                                                         * words, until they had swum down) */
-        for (c = 0; c < ECO_N; c++) {
-            eco.sy[c] += (top - (int32_t)eco.top) << 8;
-            eco.pen[c] = (int32_t)((uint32_t)eco.sy[c] << 16 | (uint32_t)eco.sx[c]);
-        }
-        eco.top = (uint8_t)top;
     }
     if (dt > 16u) dt = 16u;                             /* (held under load, ui.c ui_hold, or ANIM OFF: the clock still) */
     for (c = 0; c < ECO_N; c++) {
@@ -161,7 +145,7 @@ static uint32_t eco_step(void)
         eco.r[c] = r;
     }
     eco_ft = (uint16_t)now;
-    eco_swim(now, top, bot);
+    eco_swim(now, bot);
     eco_fc.init = 1;
     return dt;
 }
@@ -266,23 +250,20 @@ static uint32_t routes_count(void)                      /* the MOD slots whose S
 }
 /* ECO: 0.8.4's HOME (graph_ecosys) in the lens's panel: the cytoplasm's granules drifting, the six beings swimming free
  * over the whole panel (0.9.7: variant A, eco_being), each with its number under it (the selected one larger, its number in
- * the theme's colour; a mutation landed, white). (0.8.9) Drawn into the canvas as the water's x0, y0 .. (eco_draw); SKIN HUD's HOME: the
- * water is the screen, every strip draws the part of it under it (eco_backdrop; a being off the strip skipped), the
- * numbers and the MACROS words in the middle strip only (words), clear of the floating ones */
-static void eco_draw(int32_t x0, int32_t y0, int words)
+ * the theme's colour; a mutation landed, white) */
+static void graph_eco(void)
 {
     uint32_t c, k, still = ANIM_OFF() != 0;
-    int32_t bx[ECO_N], by[ECO_N], bot = eco_bot(), hud = hud_home();
+    int32_t bx[ECO_N], by[ECO_N], bot = eco_bot();
     (void)eco_step();                                   /* (the swim, once a frame) */
     (void)bg_energy();                                  /* (the output's level kept as it was read: once a frame) */
     char b[16];
-    cv_oy = -y0;
     for (k = 0; k < 22u; k++) {                         /* the cytoplasm: granules drifting */
         uint32_t h = k * 2654435761u;
         int32_t gx = 10 + (int32_t)((h >> 8) % 220u + anim_fr * (1u + (h >> 28)) / 6u) % 220;   /* (still: where they were) */
         int32_t gy = 6 + (int32_t)(((h >> 16) % (uint32_t)(bot + 6)) + (still ? 0 : (uint32_t)(bg_sin((uint32_t)(anim_fr * 300u + h)) >> 13))) %
                          (uint32_t)(bot + 6);
-        cv_rect(gx - x0, gy, 1 + (int32_t)(h >> 31), 1 + (int32_t)(h >> 31), ux_mix(T_SURF, T_THEME, 22 + (int32_t)(h >> 29) * 4));
+        cv_rect(gx, gy, 1 + (int32_t)(h >> 31), 1 + (int32_t)(h >> 31), ux_mix(T_SURF, T_THEME, 22 + (int32_t)(h >> 29) * 4));
     }
     for (c = 0; c < ECO_N; c++) {
         eco_at(c, &bx[c], &by[c]);                      /* (codex/anim: between its last two steps) */
@@ -290,27 +271,19 @@ static void eco_draw(int32_t x0, int32_t y0, int words)
         by[c] >>= 4;
     }
     for (c = 0; c < ECO_N; c++) {
-        int32_t rad = eco.r[c] >> 4, px = bx[c] >> 4, py = by[c] >> 4, ny, reach = (rad >> 4) * 3 + 8;
+        int32_t rad = eco.r[c] >> 4, px = bx[c] >> 4, py = by[c] >> 4, ny;
         char num[2] = {(char)('1' + c), 0};
-        if (py + reach < y0 || py - reach > y0 + (int32_t)cv_h || px + reach < x0 || px - reach > x0 + (int32_t)cv_w)
-            continue;                                   /* (off the strip) */
-        eco_being(c, bx[c] - x0 * 16, by[c], eco.r[c]);
+        eco_being(c, bx[c], by[c], eco.r[c]);
         ny = clamp(py + rad / 2 + 4, 4, bot);
-        if (words && (!hud || (ny >= (int32_t)graph_y() + (home_set() ? 12 : 2) && ny + 14 <= (int32_t)(graph_y() + graph_h()))))
-            cv_text_in(px - 30 - x0, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM :
-                       hud ? T_TEXT : T_MID, T_SURF);   /* (0.9.0 HUD: TEXT, over the beings; 0.9.7: a mutation, white) */
+        cv_text_in(px - 30, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM : T_MID, T_SURF);
     }
-    if (words && home_set()) {                          /* MACROS: the routes, LATCH */
-        int32_t y = hud ? (int32_t)graph_y() + 3 : 2;
+    if (home_set()) {                                   /* MACROS: the routes, LATCH */
         fmt_int(b, (int32_t)routes_count());
         str_cpy(b + str_len(b), " ROUTES", 8);
-        cv_text(6, y, &AF_X, b, hud ? T_TEXT : T_DIM);
-        cv_text_r(234, y, &AF_X, mac_latch ? "LATCH" : "HOLD LFO", mac_latch ? T_ACCENT : hud ? T_TEXT : T_DIM, T_SURF);
+        cv_text(6, 2, &AF_X, b, T_DIM);
+        cv_text_r(234, 2, &AF_X, mac_latch ? "LATCH" : "HOLD LFO", mac_latch ? T_ACCENT : T_DIM, T_SURF);
     }
-    cv_oy = 0;
 }
-static void graph_eco(void) { eco_draw(0, 0, 1); }
-static void eco_backdrop(int32_t x0, int32_t y0, int words) { eco_draw(x0, y0, words); }
 /* BEING: the track's being large, its HOME knobs as organs at the corners */
 static const int16_t ORG_X[4] = {30, 210, 30, 210}, ORG_Y[4] = {28, 28, 116, 116};
 static void organ(uint32_t k, int32_t cx, int32_t cy)

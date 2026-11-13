@@ -187,22 +187,20 @@ static int ramp_tests(void)
         for (a = 0; a < 20u; a++) turn(EN_K2, -4);
         ok &= !(t->step[0].carg & CV_RAMP_BARS) && t->step[0].clen[0] == 0u;
         rcheck("SEQ > COMP: ACTION RAMP (16 steps; LOCK A PARAM), LENGTH 32 steps then bars, VALUE FROM + CURVE, the cards", ok);
-        {   /* every LENGTH in bars and every VALUE, the four skins and LARGE: the cards whole (as ui_test test_comp_cards) */
-            static const uint8_t SK[4] = {SKIN_COLORS, SKIN_AIR, SKIN_COLORS, SKIN_AIR};
+        {   /* every LENGTH in bars and every VALUE, plain and LARGE: the cards whole (as ui_test test_comp_cards) */
             uint32_t sk, lg, l, v, cut = 0;
-            for (sk = 0; sk < 4u; sk++)
+            for (sk = 0; sk < 1u; sk++)                 /* (V10.7.23: COLORS, the one skin) */
                 for (lg = 0; lg < 2u; lg++)
                     for (l = 0; l < 16u; l++)
                         for (v = 0; v < 12u; v++) {
-                            ui_skin = SK[sk];
                             if (lg) ui_prefs |= PREF_LARGE; else ui_prefs &= ~PREF_LARGE;
                             t->step[0].carg = (uint8_t)(CV_RAMP_BARS | v); t->step[0].clen[0] = (uint8_t)l;
                             ut_card_bad = 0; ut_card_txt = 0;
                             ui.force = 1; frame();
                             cut += ut_card_bad != 0u;
                         }
-            ui_skin = SK[0]; ui_prefs &= ~PREF_LARGE;
-            rcheck("  every LENGTH in bars x every VALUE, four skins and LARGE: the cards whole", !cut);
+            ui_prefs &= ~PREF_LARGE;
+            rcheck("  every LENGTH in bars x every VALUE, plain and LARGE: the cards whole", !cut);
         }
     }
     return rbad;

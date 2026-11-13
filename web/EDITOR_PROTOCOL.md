@@ -1025,8 +1025,8 @@ before SCALE LEDS the first 16, before SCREEN OFF the first 17):
 | 17 | 17 | SCREEN OFF | 0 | 0 NEVER, 1 "5 MIN", 2 "15 MIN", 3 "30 MIN", 4 "60 MIN" (1.1.5) | NEVER (1.1.5.1; 1.1.5: 30 MIN) | 0 DISPLAY |
 
 JIANT appends (index = id; count 23 since 0.9.7): 18 TRACKS (4 / 6, AUDIO), 19 LOAD (ECO / LITE / FULL, SYSTEM),
-20 MIDI OUT (KEYS / CLOCK / ALL / OFF, CONTROL), 21 SKIN (DISPLAY; the values in the menu's order: 0 AIR,
-1 COLORS, AIR the default of new settings; up to V10.7.18 also 2 BOTTOM, 3 HUD, retired: read `max`) and (0.9.7) 22 SCOPE
+20 MIDI OUT (KEYS / CLOCK / ALL / OFF, CONTROL), 21 SKIN (DISPLAY; up to V10.7.22 0 AIR, 1 COLORS; retired V10.7.23,
+as STYLE: its one value 0 COLORS, `max` 0, a set answers rc 0 and 0 whatever is asked) and (0.9.7) 22 SCOPE
 (0 OFF, 1 ON; OFF the default: an engine's EDIT pages the creature on the whole panel, DISPLAY).
 V10.6z4 appends index 26, id 26 **OCT BEND** (AUDIO; count 27): 0 OFF, 1 "1 ST", 2 "2 ST" (the default), 3 "3 ST",
 4 "4 ST", 5 "5 ST", 6 "7 ST", 7 "12 ST": OCT+ held while a key's note sounds bends it up this far, OCT− a vibrato (the

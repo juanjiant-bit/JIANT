@@ -11,54 +11,17 @@
 #define PANEL_X0 10                                  /* the graphs' inner area: x 10..230 */
 #define PANEL_W 220
 #define GOY 11                                       /* graphs drawn on a 100 px scale sit at y 11..111 */
-/* (0.8.9) SKIN HUD's HOME (ui.c hud_home): every strip begins on the beings (ui_lzhome.c eco_backdrop: the strip at screen
- * x, y), its words outlined (gfx.c cv_halo); elsewhere a strip cleared to BG */
-static void eco_backdrop(int32_t x0, int32_t y0, int words);
-static void lz_begin(uint32_t w, uint32_t h, uint32_t x, uint32_t y)
-{
-    cv_begin(w, h, T_BG);
-    if (hud_home()) {
-        eco_backdrop((int32_t)x, (int32_t)y, 0);
-        cv_halo = 1;
-    }
-}
-static void lz_blit(uint32_t x, uint32_t y)
-{
-    cv_halo = 0;
-    if (hud_home())                                  /* (0.9.0) what changed only (gfx.c) */
-        cv_blit_cells(x, y);
-    else
-        cv_blit(x, y);
-}
-/* (0.8.9) HUD: the knob row while KNOB 1..4 rest: whole for 3 s after a turn (0.9.0: or the page, level or set shown
- * changing), then down to 22 % in 0.6 s (steps of 13 %); every other case 100 (0.9.0: every page but HUD's HOME) */
-static uint32_t hud_fade(void)
-{
-    uint32_t el = fm1_ms - ui.knob_ms;
-    if (!hud_home() || el < 3000u)                   /* (0.9.0: HUD's HOME only, over the beings) */
-        return 100u;
-    return el >= 3600u ? 22u : 100u - (el - 3000u) * 78u / 600u / 13u * 13u;
-}
-
-/* (0.8.9) a tile in a lens's panel (FX's modules, the menu's tabs, ENV's tracks, MOD's slots): COLORS a rounded RAISE box
- * (r 4), the one picked framed in fc (the mock-up's card and its stroke); BOTTOM and HUD none (the words on the background;
- * the one picked: its name underlined, lz_uline). What lies under its words: lz_tile_bg */
-static uint16_t lz_tile_bg(void) { return ux.skin ? T_SURF : T_RAISE; }
+/* (0.8.9) a tile in a lens's panel (FX's modules, the menu's tabs): a rounded RAISE box (r 4), the one picked framed in
+ * fc (the mock-up's card and its stroke). What lies under its words: RAISE */
 static void lz_tile(int32_t x, int32_t y, int32_t w, int32_t h, int sel, uint16_t fc)
 {
-    if (ux.skin)
-        return;
     if (sel) {
         cv_rrect(x, y, w, h, 4, fc, cv_bg);
         cv_rrect(x + 1, y + 1, w - 2, h - 2, 3, T_RAISE, fc);
     } else
         cv_rrect(x, y, w, h, 4, T_RAISE, cv_bg);
 }
-static void lz_uline(int32_t x, int32_t y, const aafont_t *f, const char *s, uint16_t c)   /* BOTTOM, HUD: under a name */
-{
-    if (ux.skin)
-        cv_rect(x, y, text_w(f, s) - 1, 1, c);
-}
+
 
 /* the height ADSR and LFO are drawn on: 100 px, or (MENU > LARGE's strip: draw_graph) the strip's ~ 56 */
 static int32_t graph_ht = 100;
@@ -603,15 +566,13 @@ static void bar_cell(const track_t *t, uint32_t b, int32_t x, int32_t y, int32_t
     uint32_t len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP), i, l, dr = drum_track(t);
     int sel = b == ui.bank;
     int32_t sw = w - 4, top = y + (h > 20 ? 14 : 3), nh = h - (h > 20 ? 17 : 5);
-    uint16_t bg = ux.skin ? T_SURF : T_RAISE, nc;
+    uint16_t bg = T_RAISE, nc;
     char s[2];
     if (b * 16u >= len) {                            /* past LEN: a dark cell */
         cv_rect(x, y, w, h, T_BG);
         return;
     }
-    if (ux.skin)                                     /* (0.8.9) BOTTOM, HUD: bare, a line under it (the bar edited THEME) */
-        cv_rect(x, y + h - 1, w, 1, sel ? T_THEME : T_LINE);
-    else if (sel) {                                  /* COLORS: a rounded card, the bar edited framed THEME */
+    if (sel) {                                  /* COLORS: a rounded card, the bar edited framed THEME */
         cv_rrect(x, y, w, h, 3, T_THEME, cv_bg);
         cv_rrect(x + 1, y + 1, w - 2, h - 2, 2, T_RAISE, T_THEME);
     } else
@@ -781,12 +742,11 @@ static void graph_roll(const track_t *t, uint16_t c)
         int32_t n = (int32_t)proll.lo + PR_ROWS - 1 - r, y = PR_Y0 + r * PR_RH;
         uint32_t pc = (uint32_t)n % 12u;
         int in = mask == 0xFFFu ? !PR_KB[pc] : (int)((mask >> ((uint32_t)(n - t->p[P_ROOT] + 120) % 12u)) & 1u);
-        if (in && !ux.skin)                          /* ((0.8.9) BOTTOM, HUD: no rows, the beats only) */
+        if (in)
             cv_rect(PR_RX, y, PR_CX(ncol) - PR_RX, PR_RH, T_LANE);
     }
     for (i = 0; i < 16u; i++)                         /* step lines, the beats brighter */
-        if (!ux.skin || !(i % 4u))
-            cv_rect(PR_CX(i), PR_Y0, 1, ybot - PR_Y0, i % 4u ? T_GRID : T_LINE);
+        cv_rect(PR_CX(i), PR_Y0, 1, ybot - PR_Y0, i % 4u ? T_GRID : T_LINE);
     if (ncol < 16u)                                   /* past LEN: dark */
         cv_rect(PR_CX(ncol), PR_Y0, PR_RX + PR_RW - PR_CX(ncol), ybot - PR_Y0, T_BG);
     pr_keys(t, held);                                 /* (0.9.9-seq2b) the keys at the left (was: a key held, its row
@@ -1311,9 +1271,9 @@ static void page_flash_draw(void)
         str_cpy(sub + 3, en, sizeof sub - 3u);
     }
     if (lz_on()) {                                   /* (0.8.5) a lens page: its breadcrumb lit (the tabs say the level) */
-        lz_begin(240, foot_h(), 0, foot_y());
+        cv_begin(240, foot_h(), T_BG);
         draw_crumbs(CRUMB_Y + LZ_FOOT_Y - (int32_t)foot_y(), dim ? T_MID : T_TEXT, dim ? T_MID : T_TEXT);
-        lz_blit(0, foot_y());
+        cv_blit(0, foot_y());
         return;
     }
     {   /* (0.6.64) at the bottom: the footer says the same */
@@ -2160,12 +2120,6 @@ static void draw_graph(void)
     }
     ui.graph_sig = sig;
     cv_begin(240, graph_h(), T_BG);
-    if (hud_home()) {                                /* (0.8.9) HUD's HOME: the middle of the screen's water, its numbers */
-        cv_halo = 1;                                 /* (0.9.0) its words outlined too (M3) */
-        eco_backdrop(0, (int32_t)graph_y(), 1);
-        lz_blit(0, graph_y());
-        return;
-    }
     surf = ux.surf;                                  /* no panel box in any skin: the picture on the background, as AIR's
                                                       * (COLORS had a rounded SURF panel, 4 .. 236). What the panel's
                                                       * inside clears and writes on T_SURF lands on the background */

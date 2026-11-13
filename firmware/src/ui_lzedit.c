@@ -32,7 +32,7 @@ static void ed_cap(int32_t x, int32_t y, const char *s, uint16_t c)   /* a capti
 }
 static __attribute__((noinline)) void graph_sound_lz(const track_t *t)
 {
-    int32_t x = 122, w = 106, ty = 2, bare = ux.skin != 0u;
+    int32_t x = 122, w = 106, ty = 2;
     /* (V10.7.15, the owner) no parameter list beside the being: the knobs' cards above say the same. SCOPE OFF (the
      * default): the creature (or the generic being) on the whole panel; SCOPE ON: the being left, the scope tall right */
     if (!ui_scope) {
@@ -46,7 +46,7 @@ static __attribute__((noinline)) void graph_sound_lz(const track_t *t)
         /* (V10.7.19, the owner: the users like the trace on the background) no tile behind the scope in any skin
          * (COLORS drew a RAISE card): the trace and its title on the panel itself */
         GFX_HOOK_ALIGN(0, ty + 4, 0, ty + 4 + AF_X_CAP_H, AL_V | AL_PASS, "EDIT scope title");
-        cv_text_on(x, ty + 4 - AF_X_CAP_Y, &AF_X, "SCOPE", bare ? T_MID : T_TEXT, T_SURF);
+        cv_text_on(x, ty + 4 - AF_X_CAP_Y, &AF_X, "SCOPE", T_TEXT, T_SURF);
         scope_at(x + 4, w - 8, ty + 68, 48, T_THEME);
     }
     /* (the page's name stood at the top left and the sound's at the foot: the breadcrumb and the header say them) */

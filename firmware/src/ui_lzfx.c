@@ -348,14 +348,11 @@ static __attribute__((noinline)) void graph_fx_lz(const track_t *t, const page_t
         for (m = 0; m < FX_NMOD; m++) {
             int32_t x = 4 + (int32_t)(m % 3u) * 78, y = (int32_t)(m / 3u) * 72;
             int sel = m == ui.fxmod, ok = fx_mod_ok(m);
-            uint16_t bg = lz_tile_bg();                 /* (0.8.9, the skins: COLORS a rounded card, the one picked framed
-                                                         * THEME; BOTTOM, HUD bare, its name underlined) */
+            uint16_t bg = T_RAISE;                      /* (0.8.9: a rounded card, the one picked framed THEME) */
             lz_tile(x, y, 76, 68, sel, T_THEME);
             cv_bg = bg;
             GFX_HOOK_ALIGN(0, y + 3, 0, y + 14, AL_V | AL_PASS, "FX module name");
-            cv_text_on(x + 4, y + 3, &AF_X, FX_MOD[m], sel ? T_THEME : ux.skin ? T_MID : T_TEXT, bg);
-            if (sel)
-                lz_uline(x + 4, y + 12, &AF_X, FX_MOD[m], T_THEME);
+            cv_text_on(x + 4, y + 3, &AF_X, FX_MOD[m], sel ? T_THEME : T_TEXT, bg);
             if (ok)
                 fxg_mod(m, x + 4, y + 14, 68, 50);
             else

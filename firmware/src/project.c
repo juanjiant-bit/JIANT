@@ -1745,8 +1745,7 @@ static void persist_boot(void)                    /* before settings_init / pane
         if (settings_import(&p, n)) {
             persist_saved = p;
             settings_jiant_once(&p);               /* (0.6.81: the saved copy without the mark: saved again later) */
-        } else
-            settings_fresh();                      /* (0.9.7) none saved: new settings' defaults (SKIN AIR) */
+        }                                          /* (none saved: the defaults; V10.7.23: no SKIN AIR to set) */
     }
     song_index_load();                             /* the current song: whose sections fill the slots */
     {   /* projects: fill empty RAM slots from flash, so the slot list is right after power-on */

@@ -263,31 +263,22 @@ Vestal's, *Velo*, github.com/charlesvestal/fm1-velocity, GPL-3.0). JIANT reads i
 
 ## 2. The screen
 
-### Skins: AIR, COLORS
+### The look: COLORS
 
-**MENU > DISPLAY > SKIN** picks how the lenses are dressed: **AIR** or **COLORS**, on every page and in every palette.
-(BOTTOM and HUD, the other two skins of 0.8.9, are gone: settings saved with either of them load as COLORS.)
-
-- **AIR** (0.9.7; the default of new settings: a new FM-1, or its settings erased): on **every** page the **knob row
-  on top**, right under the tabs: no cards and no panel box, the words light with a 2 px dark outline, the middle of
-  the screen free for the picture and the footer the breadcrumb alone. On HOME the beings swim over the whole screen
-  under the header, the tabs, the knob row and the breadcrumb; there the knob row fades to a fifth a few seconds after
-  you last turned a knob and comes back at the next turn or when you change page (on every other page it stays lit).
-  Every layer, dialog and menu in the same dress. The tabs are the groups' words, the one you are on underlined by a
-  dash, a dot a page under each.
-- **COLORS** (settings saved before 0.9.7 load as it): the LENTE layout in the **0.6 colours**. Near-black
-  rounded cards with a small mark and the knob's name, **each knob its colour** on its value and its bar (JIANT: each
-  parameter's colour **moves with its amount** as heat, violet when low to yellow and cream when high, a centred one
-  such as PAN or DETUNE cold in the middle and hot at either end; the other six palettes: four colours of their own,
-  one a knob), the knob you turn framed in its colour; the
-  group's tab filled violet; the selected track's number in an orange box, a violet ▶ and a big violet BPM in the header;
-  the beings in the 0.6 heat (violet spikes, red and orange rings, cream nuclei). The picture under the cards sits on
-  the background (no panel box), as in AIR.
+The lenses wear one skin, **COLORS** (MENU > DISPLAY > SKIN and AIR, its other choice, are gone since V10.7.23: settings
+saved with AIR, or with the older BOTTOM and HUD, load as COLORS): the LENTE layout in the **0.6 colours**. The **knobs'
+cards have no box**: each sits on the background, its shape a **thin line in its value's colour**, so the line changes
+with the value (and the palette); the knob you turn gets a 2 px line. The card's name is grey (MID), the value and its
+bar in **each knob's colour** (JIANT: each parameter's colour **moves with its amount** as heat, violet when low to
+yellow and cream when high, a centred one such as PAN or DETUNE cold in the middle and hot at either end; the other six
+palettes: four colours of their own, one a knob); the group's tab filled violet; the selected track's number in an
+orange box, a violet ▶ and a big violet BPM in the header; the beings in the 0.6 heat (violet spikes, red and orange
+rings, cream nuclei). The picture under the cards sits on the background (no panel box). NOTICE's and NAME's cards are
+outlined the same way.
 
 Values (cards, the header's BPM) are set in a rounded sans again (Inter Tight SemiBold), as in 0.6; names, tabs and the
-breadcrumb are in Chakra Petch, capitals 9 px (the 5 x 7 pixel letters, 7 px, until V10.7.18). **MENU > LARGE** keeps its big cards on top in every skin (the skin keeps
-its tabs and colours; on AIR they sit where AIR's knob row does, under the tabs), so LARGE reads the same whatever the
-skin.
+breadcrumb are in Chakra Petch, capitals 9 px (the 5 x 7 pixel letters, 7 px, until V10.7.18). **MENU > LARGE** keeps its big cards on top,
+outlined as the small ones (the line in the value's colour).
 
 Since 0.8.5 every page wears the skin of the design the owner approved (the HTML mock-up "LENTE"):
 
@@ -384,7 +375,7 @@ knobs, their pictures and every function are the same, only the way between them
    EDIT held + PRESETS jumps engine to engine.)
 6. **The screen says where you are.** On top, the tabs are the section's **groups**, the one you are on lit and a dot
    for each of its pages. At the foot: **SECTION · GROUP · page** and **n/N**, the page's place in the chain:
-   **FX · DELAY · DLY 2  6/16**. The same in AIR and COLORS, every palette.
+   **FX · DELAY · DLY 2  6/16**. The same in every palette.
 
 - Each section remembers the page it was left on (EDIT one for the synths and one each for FM6 and DRUM); at power-on
   SEQ opens on STEP, ENV on ENV, LFO on LFO, the others on their first page.
@@ -2692,12 +2683,11 @@ track.
 first and the last), **ALGORITHM** jumps to the next / previous tab (its first row), **any knob** or **OCT+ / OCT−**
 changes the value; PRESETS does nothing here. HOME closes it (settings are saved then). The screen shows the tab's rows,
 the selected row's four as cards (ROWS 1–4 / ROWS 5–6; DISPLAY: ROWS 5–7; CONTROL also ROWS 9–12, the keys' four) with their knob's number; the tabs on top,
-the footer **MENU · DISPLAY · SKIN  2/35**. The header says MENU · DISPLAY.
+the footer **MENU · DISPLAY · SCOPE  2/34**. The header says MENU · DISPLAY.
 
 | Tab | Row | Values |
 | --- | --- | --- |
 | DISPLAY | COLOR | **JIANT** (default), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — seven palettes of the same family, all dark, all with the thermal ramp, each with its own four knob colours |
-| DISPLAY | SKIN | **AIR** (default of new settings), COLORS — see [Skins](#skins-air-colors); a saved BOTTOM or HUD (0.8.9, retired) loads as COLORS |
 | DISPLAY | SCOPE | **OFF** (default), ON — (0.9.7) an engine's EDIT pages: OFF the creature on the whole panel, centred; ON the creature on the left, the SCOPE card and the chips as before. Settings saved before 0.9.7 load as OFF |
 | DISPLAY | LARGE | OFF, ON (big labels and values) |
 | DISPLAY | ANIM | ON, OFF (values snap; the power-on signature appears whole) |
