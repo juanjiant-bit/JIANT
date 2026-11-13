@@ -561,6 +561,66 @@ int main(void)
             bad += gcheck("FORM generates a complete draft even when prior parts were stored", ok);
         }
     }
+    /* ---- (V10.7.26, the owner: "SONG always gives the same structure") FORM SONG's plans (gen.c gsong): every genre over
+     * 24 seeds many structures (the rows, their sections, bars and scenes), every song 2..5 minutes (a margin), every
+     * row of the plan played (no row past CHAIN_ROWS), a build always into a drop's crash, the same seed the same song;
+     * ENERGY's drops: more at 90 than at 10 */
+    {
+        uint32_t g, s, worst = 99, wg = 0, len_bad = 0, lost = 0, build_bad = 0, det_bad = 0, lo_d = 0, hi_d = 0, e;
+        double smin = 1e9, smax = 0;
+        gen_reset();
+        for (g = 1; g <= NGENRE; g++) {
+            uint32_t seen[24], ns = 0;
+            for (s = 0; s < 24u; s++) {
+                uint32_t r, h = 2166136261u, tot = 0, d = gs.trk_of[RL_DRUM], n, j, ptot = 0, fok;
+                uint8_t pb[CHAIN_ROWS];
+                double sec;
+                gen_with(g, 300u + 17u * s, 60, 2);
+                for (r = 0; r < chain_config.count; r++) {
+                    const scene_t *sc = &song_idx.scene[song_cur][r];
+                    h = (h ^ (chain_config.row[r].slot * 64u + chain_config.row[r].bars) ^ (uint32_t)sc->mute << 16 ^ (uint32_t)sc->on << 24) * 16777619u;
+                    tot += chain_config.row[r].bars;
+                    if (chain_config.row[r].slot == 2u && gs.g->form != FM_ARC && (r + 1u >= chain_config.count || chain_config.row[r + 1u].slot != 1u) &&
+                        gs.act[RL_DRUM]) build_bad++;
+                }
+                d = gs.trk_of[RL_DRUM];
+                gseed(GS_FORM);                         /* (the plan again, as gen_parts made it: its bars all played) */
+                n = gsong(pb, gs.g->form != FM_ARC, d < NTRK ? (dlen(&trk[d]) + 15u) / 16u : 1u, d < NTRK && gs.act[RL_DRUM], &fok);
+                for (j = 0; j < n; j++) ptot += (pb[j] >> 4) * 4u;
+                if (ptot != tot) { lost++; printf("  %s seed %u: planned %u bars, rows %u bars (%u rows)\n", gs.g->name, 300u + 17u * s, ptot, tot, chain_config.count); }
+                sec = tot * 240.0 / song.g[G_BPM];
+                if (sec < smin) smin = sec;
+                if (sec > smax) smax = sec;
+                if (sec < 110.0 || sec > 310.0) { len_bad++; printf("  %s seed %u: %.0f s\n", gs.g->name, 300u + 17u * s, sec); }
+                if (s < 4u) {                           /* the same seed again: the same rows */
+                    uint32_t h2 = 2166136261u;
+                    gen_with(g, 300u + 17u * s, 60, 2);
+                    for (r = 0; r < chain_config.count; r++) {
+                        const scene_t *sc = &song_idx.scene[song_cur][r];
+                        h2 = (h2 ^ (chain_config.row[r].slot * 64u + chain_config.row[r].bars) ^ (uint32_t)sc->mute << 16 ^ (uint32_t)sc->on << 24) * 16777619u;
+                    }
+                    det_bad += h2 != h;
+                }
+                for (r = 0; r < ns && seen[r] != h; r++) {}
+                if (r == ns) seen[ns++] = h;
+            }
+            if (ns < worst) { worst = ns; wg = g; }
+        }
+        printf("gen: SONG x 24 seeds: %u structures at least (%s), %.0f .. %.0f s\n", worst, GENRE[wg - 1u].name, smin, smax);
+        bad += gcheck("FORM SONG: every genre 8 structures at least in 24 seeds, the same seed the same song", worst >= 8u && !det_bad);
+        bad += gcheck("  every song 2..5 minutes, every planned row played, a build into a drop", !len_bad && !lost && !build_bad);
+        for (e = 0; e < 2u; e++)                        /* ENERGY 10 and 90: the drops (B, the crash) in the club and song genres */
+            for (g = 1; g <= NGENRE; g++) {
+                if (GENRE[g - 1u].form == FM_ARC) continue;
+                for (s = 0; s < 8u; s++) {
+                    uint32_t r;
+                    gen_with(g, 500u + 13u * s, e ? 90u : 10u, 2);
+                    for (r = 0; r < chain_config.count; r++) *(e ? &hi_d : &lo_d) += chain_config.row[r].slot == 1u;
+                }
+            }
+        printf("gen: SONG's drops: %u at ENERGY 10, %u at 90\n", lo_d, hi_d);
+        bad += gcheck("  ENERGY: more drops high than low (a second, third drop; the last chorus again)", hi_d > lo_d + lo_d / 5u);
+    }
     /* ---- (0.6.97) the kit's space, the top end's variety, Hook's register, the lead's envelope */
     {
         uint32_t seeds, rows = 0, bs, lo = 127, hi = 0, i2, sus_lt = 0, leads = 0;

@@ -2077,11 +2077,26 @@ What a piece is made of:
   same chords turned: IV–I–V–vi for I–V–vi–IV; a one-chord loop goes to its subdominant and back), the motif and the
   figures the same, moved onto those chords; in the pop genres (ITALO, SYNTH POP, INDIE, DISCO) **C is a whole step
   up**, a real key change stored in the section with its SCALE page (pop's last chorus). The modal loops (techno, house
-  minimal, dub ..) keep their loop in every section. **SONG** writes a club form: **A** the drop, **B** the intro (drums and bass), **C** the build
-  (the chords in, their filter opening over the loop, a roll at its end, the delay thrown on the last step) and **D**
-  the break (no drums, no bass, the chords wetter; 0.8.3: on its predominant, but in the modal loops), in ARRANGE as
-  B C A D C A with 16-bar rows (the drop 32). Ambient and post-rock genres get an arc instead (thin, in, apex: on its
-  predominant). Sections of yours (stored by you, not by GEN) are never
+  minimal, dub ..) keep their loop in every section. **SONG** writes the sections of a club track: **A** the piece,
+  **B** the drop's first loop (A with a crash on its one), **C** the build (four bars: the snare rolling faster, the
+  chords' filter opening, a riser, the delay thrown on the last step) and **D** the break (no drums, no bass, the chords
+  wetter; 0.8.3: on its predominant, but in the modal loops); the ambient and arc genres their arc's (B thin, C the
+  drums in with the lead out, D the apex). (V10.7.26) ARRANGE gets a **structure of its own every seed**, from the
+  templates of the genre's family, each row a scene (which layers play), the fills at the ends of the rows:
+  - **club** (techno, house, electro, drum & bass ..; EBM, breakbeat, techno rock half the seeds): the classic (intro,
+    groove, break, build, drop, a second break-build-drop, outro), the DJ's (long intro and outro, one long drop), drop
+    after drop (built from the intro, two or three drops), the groove's (grooves, a breakdown, the drop with or without
+    a build); an intro with or without its kick;
+  - **song** (cumbia, metal, techno rock, jazz ..): verse (a groove), pre-chorus (a build), chorus (a drop, its crash),
+    verse 2, chorus, bridge (a break), the last chorus (twice at high ENERGY), an outro or a hard stop;
+  - **hip hop** (hip hop, reggaeton, dembow, phonk, baile funk): the hook first or the verse first, verses of 16 or 32
+    bars, a third verse and hook at high ENERGY;
+  - **arc** (IDM, kraut, ambient, dream pop, neo classic, EXPLORE): the layers entering, the climax, the break, the
+    climax again at high ENERGY, the way out; FUGA: its voices one by one, the stretto, the episode, the coda.
+  Each row's length from its sensible pair (4 or 8, 8 or 16, 16 or 32 bars; the build 4), the optional rows a seed's.
+  **ENERGY** shapes it: low, longer intros, breaks and outros and fewer drops; high, longer drops and more of them.
+  Every song lasts 2 to 5 minutes at its tempo (the longest rows halved, the shortest doubled) and fits the 16 rows;
+  the same seed and settings, the same song. PARTS, LOOP and MY LOOP arrange as before. Sections of yours (stored by you, not by GEN) are never
   overwritten: then the piece stays one loop.
 
 Every piece replaces every track's steps, sounds, kit, mix and automation. Mutes are left as they are. The roles that

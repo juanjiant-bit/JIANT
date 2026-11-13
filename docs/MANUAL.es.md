@@ -2184,11 +2184,28 @@ De qué está hecha una pieza:
   subdominante y vuelve), el motivo y las figuras los mismos, llevados a esos acordes; en los géneros pop (ITALO, SYNTH
   POP, INDIE, DISCO) **C está un tono arriba**, un cambio de tonalidad real guardado en la sección con su página SCALE (el
   último estribillo del pop). Los loops modales (techno, house minimal, dub ..) conservan su loop en todas las secciones.
-  **SONG** escribe una forma de club: **A** el drop, **B** la intro (batería y
-  bajo), **C** el build (entran los acordes, su filtro se abre a lo largo del loop, un redoble al final, el delay
-  lanzado en el último paso) y **D** el break (sin batería ni bajo, los acordes más húmedos; 0.8.3: en su predominante,
-  salvo en los loops modales), en ARRANGE como B C A D C A con filas de 16 compases (el drop 32). Los géneros ambient y
-  post-rock reciben un arco (fino, entra, ápice: en su predominante). Las secciones tuyas (guardadas por vos, no por GEN) nunca se pisan: entonces la pieza queda en un loop.
+  **SONG** escribe las secciones de un tema de club: **A** la pieza, **B** el primer loop del drop (A con un crash
+  en el uno), **C** el build (cuatro compases: el redoble cada vez más rápido, el filtro de los acordes abriéndose, un
+  riser, el delay lanzado en el último paso) y **D** el break (sin batería ni bajo, los acordes más húmedos; 0.8.3: en
+  su predominante, salvo en los loops modales); los géneros de arco, las del arco (B fino, C entra la batería sin el
+  lead, D el ápice). (V10.7.26) ARRANGE recibe **una estructura propia en cada semilla**, de las plantillas de la
+  familia del género, cada fila una escena (qué capas suenan), los fills al final de las filas:
+  - **club** (techno, house, electro, drum & bass ..; EBM, breakbeat, techno rock la mitad de las semillas): la
+    clásica (intro, groove, break, build, drop, un segundo break-build-drop, outro), la de DJ (intro y outro largas, un
+    drop largo), drop tras drop (el build desde la intro, dos o tres drops), la del groove (grooves, un breakdown, el
+    drop con o sin build); la intro con o sin bombo;
+  - **canción** (cumbia, metal, techno rock, jazz ..): estrofa (un groove), pre-estribillo (un build), estribillo (un
+    drop, con su crash), estrofa 2, estribillo, puente (un break), el último estribillo (dos veces con ENERGY alta), un
+    outro o un final seco;
+  - **hip hop** (hip hop, reggaeton, dembow, phonk, baile funk): el hook primero o la estrofa primero, estrofas de 16 o
+    32 compases, una tercera estrofa y hook con ENERGY alta;
+  - **arco** (IDM, kraut, ambient, dream pop, neo classic, EXPLORE): las capas entrando, el clímax, el break, el clímax
+    otra vez con ENERGY alta, la salida; FUGA: sus voces una a una, el stretto, el episodio, la coda.
+  El largo de cada fila sale de su par razonable (4 u 8, 8 o 16, 16 o 32 compases; el build 4), las filas opcionales
+  según la semilla. **ENERGY** le da forma: baja, intros, breaks y outros más largos y menos drops; alta, drops más
+  largos y más drops. Cada tema dura de 2 a 5 minutos a su tempo (las filas más largas a la mitad, las más cortas al
+  doble) y entra en las 16 filas; la misma semilla y los mismos ajustes, el mismo tema. PARTS, LOOP y MY LOOP arman
+  como antes. Las secciones tuyas (guardadas por vos, no por GEN) nunca se pisan: entonces la pieza queda en un loop.
 
 Cada pieza reemplaza los pasos, sonidos, kit, mezcla y automatización de todas las pistas. Los mutes quedan como
 estaban. Los roles que suenan van en las primeras pistas (la batería en la pista DRUM), así que con TRACKS 4 escuchás
