@@ -28,6 +28,12 @@ static uint32_t host_tick_dflt;                 /* (V10.33) TIMER4's ticks (the 
                                                  * test with its own fm1_ticks defines HOST_OWN_TICKS first */
 #define fm1_ticks() (host_tick_dflt)
 #endif
+/* (V10.7.30) the master's BALANCE at the tests' power-on (host_tracks_init, ui_test.c ui_power_on): BAL_DEF, on, as the
+ * firmware's; a test that hears something else bit for bit or by its level through the master (DJ FILTER, MICRO, STEMS,
+ * CLICK, the audio path, VEL, DRUM-X's knobs) defines it 0 first */
+#ifndef HOST_BAL
+#define HOST_BAL BAL_DEF
+#endif
 #include "felucca_tables.h"
 #include "../firmware/src/libc.c"
 #undef memset
@@ -86,6 +92,7 @@ static void host_tracks_init(void)                /* as felucca_init: defaults, 
     uint32_t i, k;
     for (i = 0; i < G_COUNT; i++)
         song.g[i] = GP[i].def;
+    bal_v = getenv("BAL") ? (int16_t)atoi(getenv("BAL")) : HOST_BAL;   /* (V10.7.30: BALANCE as at power-on; BAL=a) */
     for (k = 0; k < NTRK; k++) {
         for (i = 0; i < P_E0; i++)
             trk[k].p[i] = TP[i].def;
@@ -866,6 +873,8 @@ int main(int argc, char **argv)
     if (getenv("CHORD"))
         nk = atoi(getenv("CHORD")) > 4 ? (uint32_t)atoi(getenv("CHORD")) : 4u;
     for (i = 0; i < G_COUNT; i++) song.g[i] = GP[i].def;
+    bal_v = getenv("BAL") ? (int16_t)atoi(getenv("BAL")) : HOST_BAL;   /* (V10.7.30) BALANCE (BAL=a); DNZ=n: NOISE */
+    dnz_v[0] = getenv("DNZ") ? (int16_t)atoi(getenv("DNZ")) : 0;
     for (i = 0; i < P_E0; i++) inst.p[i] = TP[i].def;
     inst.eng_req = inst.engine = (uint8_t)eng;
     for (i = 0; i < 8; i++) inst.p[P_E0 + i] = ENGINES[eng]->edit[i].def;

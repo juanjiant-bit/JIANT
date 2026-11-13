@@ -221,6 +221,7 @@ static void ui_power_on(void)
     memset(up_bank, 0, sizeof up_bank);
     for (i = 0; i < G_COUNT; i++)
         song.g[i] = GP[i].def;
+    bal_v = HOST_BAL;                             /* (V10.7.30: as main.c's power-on; hostsim.c HOST_BAL) */
     load_depth++;
     for (i = 0; i < NTRK; i++) {
         track_t *t = &trk[i];
@@ -5347,9 +5348,10 @@ static int test_rec_combos(void)
     ok = motion_find(t, 4, P_DIST) < 0 && !pfx_lane[0] && motion_find(t, 3, P_ATK) >= 0 && !song.rec && ui.home;
     bad += check("  REC + FX (REC first): the FX automation and the punch-in lane go, ENV stays, REC not armed", ok);
     /* (0.9.9-snd2) the FX chain: MASTER its last page, after PUNCH (ui_lens.c CE_FX), its module last on BUSES */
-    bad += check("  FX chain: ... SL PITCH, PUNCH IN, MASTER, its TAPE and EQ last (the BUSES tiles too)",
-                 !strcmp(CE_FX[NELEM(CE_FX) - 1u].t, "EQ") && !strcmp(CE_FX[NELEM(CE_FX) - 2u].t, "TAPE") &&
-                 !strcmp(CE_FX[NELEM(CE_FX) - 3u].t, "MASTER") && !strcmp(CE_FX[NELEM(CE_FX) - 4u].t, "PUNCH IN") &&
+    bad += check("  FX chain: ... SL PITCH, PUNCH IN, MASTER, its TAPE, EQ and BALANCE last (the BUSES tiles too)",
+                 !strcmp(CE_FX[NELEM(CE_FX) - 1u].t, "BALANCE") && !strcmp(CE_FX[NELEM(CE_FX) - 2u].t, "EQ") &&
+                 !strcmp(CE_FX[NELEM(CE_FX) - 3u].t, "TAPE") &&
+                 !strcmp(CE_FX[NELEM(CE_FX) - 4u].t, "MASTER") && !strcmp(CE_FX[NELEM(CE_FX) - 5u].t, "PUNCH IN") &&
                  !strcmp(CG_FX[NELEM(CG_FX) - 1u].nm, "MASTER") && !strcmp(FX_MOD[FX_NMOD - 1u], "MASTER"));
     {   /* (0.9.9-snd2) CLEAR AUTOMATION on the punch-in layer itself: FX + G5 (CLR AUTO on the map) empties the lane
          * only, stopped or playing (not recording); the tracks' automation stays */
@@ -8933,18 +8935,19 @@ static int test_scl_alltr(void)
  * the page left. (Was 0.8.5's lens: SELECT TRACK <-> BUSES <-> EFFECT, PRESETS the module, the FX tap the level's next) */
 static int test_fx_sections(void)
 {
-    static const char *const CH[18] = {"SENDS", "DIST", "AUTO PAN", "BUSES", "DLY", "DLY 2", "DLY 3", "REVERB", "REVERB 2",
-                                       "CHORUS", "SLICER", "SL BUS", "SL BUS 2", "SL PITCH", "PUNCH IN", "MASTER", "TAPE", "EQ"};
+    static const char *const CH[19] = {"SENDS", "DIST", "AUTO PAN", "BUSES", "DLY", "DLY 2", "DLY 3", "REVERB", "REVERB 2",
+                                       "CHORUS", "SLICER", "SL BUS", "SL BUS 2", "SL PITCH", "PUNCH IN", "MASTER", "TAPE", "EQ",
+                                       "BALANCE"};   /* (V10.7.30: BALANCE) */
     static const char *const TP[7] = {"BUSES", "DLY", "REVERB", "CHORUS", "SLICER", "PUNCH IN", "MASTER"};   /* (codex/coherence:
                                                          * PUNCH IN, was PUNCH, MASTER's knob's name) */
     int bad = 0, ok;
     uint32_t pr;
     ui_power_on();
-    bad += check("0.9.2 FX: one chain of 18 (TRK BUS DLY REV CHO SLC PCH MST; snd8: MASTER, TAPE; p9: EQ) by SELECT, no wrap; an FX tap each group's first, round",
-                 chain_walk(B_FX, CH, 18, TP, 7));
+    bad += check("0.9.2 FX: one chain of 19 (TRK BUS DLY REV CHO SLC PCH MST; snd8: MASTER, TAPE; p9: EQ; BALANCE) by SELECT, no wrap; an FX tap each group's first, round",
+                 chain_walk(B_FX, CH, 19, TP, 7));
     ui_power_on(); go_home(); frame(); press(B_FX); frame();
     ok = fx_on() && fx_level() == FXL_TRACK && lz_on() && card_y() == LZ_CARD_Y && lz_tabs() == 8u && lz_tab_lit(0) &&
-         lz_crumb_is("FX \xB7 TRACK \xB7 SENDS") && lz_count_is("1/18");
+         lz_crumb_is("FX \xB7 TRACK \xB7 SENDS") && lz_count_is("1/19");
     turn(EN_SELECT, 3); frame();
     ok &= fx_level() == FXL_BUSES && cur_page()->graph == GR_BUSES && lz_tab_lit(1) && lz_crumb_is("FX \xB7 BUSES \xB7 BUSES");
     ok &= cur_page()->id[0] == G_DMIX && cur_page()->id[1] == G_RSIZE && cur_page()->id[2] == G_CDEPTH && cur_page()->id[3] == G_SLDEP;
@@ -8952,7 +8955,7 @@ static int test_fx_sections(void)
     ok &= song.g[G_RSIZE] > 50;
     turn(EN_SELECT, 2); frame();
     ok &= fx_level() == FXL_EFFECT && str_eq(cur_page()->title, "DLY 2") && lz_tab_lit(2) &&
-          lz_crumb_is("FX \xB7 DELAY \xB7 DLY 2") && lz_count_is("6/18") && ui.fxmod == 0u;
+          lz_crumb_is("FX \xB7 DELAY \xB7 DLY 2") && lz_count_is("6/19") && ui.fxmod == 0u;
     {   /* the eight tabs: their short names (the full ones do not fit) */
         const char *nm[8], *tab[8];
         uint8_t cnt[8];
@@ -8964,17 +8967,34 @@ static int test_fx_sections(void)
     ok &= str_eq(cur_page()->title, "DLY 2") && (TSEL->preset != pr || TSEL->eng_req != trk_def_engine(0));
     frames(320); press(B_FX); frame();
     ok &= str_eq(cur_page()->title, "REVERB") && ui.fxmod == 1u;
-    bad += check("0.9.2 FX: tabs (eight, short names, dots), crumb FX . DELAY . DLY 2 6/18; BUSES' knobs; PRESETS a sound (was the module)", ok);
+    bad += check("0.9.2 FX: tabs (eight, short names, dots), crumb FX . DELAY . DLY 2 6/19; BUSES' knobs; PRESETS a sound (was the module)", ok);
     go_home(); frame();
     press(B_FX); frame();
     ok = str_eq(cur_page()->title, "REVERB") && fx_level() == FXL_EFFECT;
     ui_load = LOAD_ECO; frame();                                   /* LOAD ECO: no CHORUS, no SLICER */
     turn(EN_SELECT, 1); frame(); ok &= str_eq(cur_page()->title, "REVERB 2");
     turn(EN_SELECT, 1); frame(); ok &= str_eq(cur_page()->title, "PUNCH IN");   /* (CHORUS, SLICER skipped) */
-    ok &= lz_tabs() == 6u && lz_count_is("10/13");
+    ok &= lz_tabs() == 6u && lz_count_is("10/14");
     frames(320); press(B_FX); frame(); ok &= str_eq(cur_page()->title, "MASTER");
     ui_load = LOAD_FULL; frame();
     bad += check("0.9.2 FX: from elsewhere the page left; LOAD ECO: CHORUS and SLICER out of the chain and the tabs", ok);
+    {   /* (V10.7.30) DIST KNOB 3: NOISE, the selected track's (params.c dnz_v); under its threshold silence stays silence */
+        uint32_t i, pg;
+        int16_t *vp = 0;
+        const param_desc_t *d = 0;
+        int32_t b[CTL], quiet = 1;
+        for (pg = 0; pg < NPAGES && !str_eq(PAGES[pg].title, "DIST"); pg++) {}
+        if (pg < NPAGES) d = page_desc(&PAGES[pg], 2, &vp);
+        ok = d && str_eq(d->label, "NOISE") && vp == &dnz_v[song.sel % NTRK] && d->max == 100;
+        TSEL->p[P_DIST] = 60; dnz_v[song.sel % NTRK] = 100;
+        for (pg = 0; pg < 20u; pg++) {
+            for (i = 0; i < CTL; i++) b[i] = (int32_t)(i % 7u) - 3;   /* (a faint signal: under the threshold) */
+            track_dist(TSEL, b, CTL);
+            for (i = 0; i < CTL; i++) quiet &= b[i] > -200 && b[i] < 200;
+        }
+        dnz_v[song.sel % NTRK] = 0; TSEL->p[P_DIST] = 0;
+        bad += check("V10.7.30 DIST: KNOB 3 NOISE (0..100, the track's); a faint part under its threshold gets none", ok && quiet);
+    }
     ui_power_on();
     return bad;
 }

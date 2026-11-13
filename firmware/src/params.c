@@ -703,6 +703,19 @@ static int16_t tape_v[2] __attribute__((section(".bss.tape")));
 static const param_desc_t EQ_DESC[4] __attribute__((section(".rodata.tape"))) = {
     PD("LOW", F_INT, -12, 12, 0), PD("LO MID", F_INT, -12, 12, 0), PD("HI MID", F_INT, -12, 12, 0), PD("HIGH", F_INT, -12, 12, 0)};
 static int16_t eq_v[4] __attribute__((section(".bss.tape")));   /* (out of the merged statics, as fx.c's djf) */
+/* (V10.7.30, the owner: "everything gets muddy when I add tracks, a ball of mids") FX > BALANCE: the master's BALANCE
+ * AMOUNT, 0 (off) .. 100, BAL_DEF on (fx.c bal_ctl); and the DIST page's NOISE, a track each, 0 .. 100 (fx.c dist_noise).
+ * Not song or track parameters (no slot left: a new one moves every id from P_E0 on, the app's and the stores'): kept
+ * with the project ('X' 'M', project.c proj_xm; a project without it: BALANCE at BAL_DEF, NOISE 0) */
+#define ID_BAL 0xECu
+#define ID_DNZ 0xEDu
+#ifndef BAL_DEF
+#define BAL_DEF 50
+#endif
+static const param_desc_t XM_DESC[2] __attribute__((section(".rodata.tape"))) = {
+    PD("AMOUNT", F_PCT, 0, 100, BAL_DEF), PD("NOISE", F_PCT, 0, 100, 0)};
+static int16_t bal_v __attribute__((section(".bss.tape")));   /* (BAL_DEF set at power-on: main.c, system_init) */
+static int16_t dnz_v[NTRK] __attribute__((section(".bss.tape")));
 static uint8_t lfo_ph_mem[NTRK];
 static int lfo_mode_of(const track_t *t) { return t->p[P_LPHASE] < 0; }   /* 1 FREE */
 static const page_t PAGES[] = {
@@ -719,7 +732,8 @@ static const page_t PAGES[] = {
                                                          * (0.7.6) FX's second page, at hand (was after SL PITCH) */
     {"TAPE", FAM_FX, SC_GLOBAL, GR_NONE, {ID_TAPE, ID_TWOW, 0xFF, 0xFF}},
     {"EQ", FAM_FX, SC_GLOBAL, GR_NONE, {ID_EQ0, ID_EQ0 + 1u, ID_EQ0 + 2u, ID_EQ0 + 3u}},   /* (p9) the master's EQ, last */   /* (0.9.9-snd8) the master's tape, after MASTER */
-    {"DIST", FAM_FX, SC_TRACK, GR_NONE, {P_DTYPE, P_DTONE, 0xFF, 0xFF}},   /* JIANT: the drive's type and tone */
+    {"BALANCE", FAM_FX, SC_GLOBAL, GR_NONE, {ID_BAL, 0xFF, 0xFF, 0xFF}},   /* (V10.7.30) the master's BALANCE, after its EQ */
+    {"DIST", FAM_FX, SC_TRACK, GR_NONE, {P_DTYPE, P_DTONE, ID_DNZ, 0xFF}},   /* JIANT: the drive's type and tone; V10.7.30 NOISE */
     {"AUTO PAN", FAM_FX, SC_TRACK, GR_NONE, {P_APDEP, P_APRATE, P_APSYNC, P_APWAVE}},   /* (JIANT 0.6.9) the track's pan swung */
     {"BUSES", FAM_FX, SC_GLOBAL, GR_BUSES, {G_DMIX, G_RSIZE, G_CDEPTH, G_SLDEP}},   /* (0.8.5) FX's lens: the buses' main values */
     {"DLY", FAM_FX, SC_GLOBAL, GR_NONE, {G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX}},
@@ -891,6 +905,10 @@ static uint8_t sl_ui_step;       /* (JIANT 0.6.3) the SL PITCH page: the step KN
  * master's TAPE (noinline: page_desc is recorded code) */
 static __attribute__((noinline)) const param_desc_t *page_desc_v(uint32_t id, int16_t **valp)
 {
+    if (id == ID_BAL || id == ID_DNZ) {               /* (V10.7.30) BALANCE; the track's NOISE */
+        *valp = id == ID_BAL ? &bal_v : &dnz_v[song.sel % NTRK];
+        return &XM_DESC[id - ID_BAL];
+    }
     if (id >= ID_EQ0 && id < ID_EQ0 + 4u) {           /* (p9) the master's EQ */
         *valp = &eq_v[id - ID_EQ0];
         return &EQ_DESC[id - ID_EQ0];
@@ -921,7 +939,7 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         *valp = &trks_ui;
         return &TRKS_DESC;
     }
-    if ((id >= ID_TAPE && id <= ID_LMODE) || (id >= ID_EQ0 && id < ID_EQ0 + 4u))   /* (0.9.18) the LFO's MODE and PHASE;
+    if ((id >= ID_TAPE && id <= ID_LMODE) || (id >= ID_EQ0 && id < ID_EQ0 + 4u) || id == ID_BAL || id == ID_DNZ)   /* (0.9.18) the LFO's MODE and PHASE;
                                                          * (snd8) the master's TAPE; (p9) its EQ */
         return page_desc_v(id, valp);
     if (id == G_LOADP) {                              /* (0.6.30) the same */

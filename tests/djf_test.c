@@ -15,6 +15,7 @@
  *    steps, a stop brings the knob's value back; saved (FUNC: the main motion without them, block 'M' 'G' after the
  *    lyrics, so firmware before 0.9.1 loads the rest) and loaded back the same; AUTO LIST shows them; no lock.
  * 5. a project of before (G_DJF's id was G_NAME, always 0): the filter in the middle; a stored value out of range clamped. */
+#define HOST_BAL 0                      /* (V10.7.30) the master's BALANCE off: its centred render bit for bit 0.9.0's */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"
 

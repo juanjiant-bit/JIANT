@@ -184,7 +184,7 @@ The names below are the ones the firmware uses (the HARDWARE CALIBRATION screen 
 | **HOME** | HOME (0.9.2, as every section's button): from another section the HOME page last shown; on HOME the first page of the next group, round: **MACROS → SCOPE → GENE → MACROS** (V10.7.24; GENE: the generator, GEN until V10.6m). | About 0.7 s: opens the **MENU**. |
 | **ENV** | The ENV section: from elsewhere the page last shown (at power-on ENV); inside, the next group: **TRACKS → ENV → STAGE**, round. | (no layer) |
 | **LFO** | The LFO section: from elsewhere the page last shown (at power-on LFO); inside **MOD → LFO → MSEQ**, round. | **MACRO** layer: KNOB 1–4 are M1–M4. |
-| **FX** | The FX section: from elsewhere the page last shown; inside, the next module: **TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → PUNCH IN → MASTER** (MASTER · TAPE · EQ), round. | **Punch-in FX** layer. |
+| **FX** | The FX section: from elsewhere the page last shown; inside, the next module: **TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → PUNCH IN → MASTER** (MASTER · TAPE · EQ · BALANCE), round. | **Punch-in FX** layer. |
 | **SCL** | The SCL section (0.9.2: its own, ARP apart): **KEY → CHORD → SCENE** (V10.24). | **SCL** layer: keys set the root. |
 | **EDIT** | The EDIT section: from elsewhere the page last shown (one memory for the synths, one each for FM6 and DRUM); inside the next group: **SOUND → TONE → FOCUS** (FM6: SOUND → TONE → OPERATOR; DRUM: KIT → SOUND → LEVELS → TONE). Always EDIT (0.9.2: clearing a step is SEQ + G5, renaming SAVE + C5). A step held + EDIT still clears that step's locks. | **EDIT** layer: INIT, RECALL, DRUM-X sound mutes, SELECT the sound dice. Held + KNOB 1–4: **MOMENTARY** (the page under, put back when let go). |
 | **GLO** | The GLO section: from elsewhere the page last shown; inside **LIVE → MIX → G.COMP → SETUP**, round (at power-on MIXER; LIVE, the live sequences, first; V10.37 G.COMP after MIX; codex/coherence: SETUP holds GLOBAL, SYSTEM, SYSTEM 2 and KEY SPLIT). | **GLO** layer: mutes, solos, levels, tap tempo, UNDO. |
@@ -405,7 +405,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 | **EDIT** (FM6) | **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **TONE**: FILTER — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **PLAY**: PLAY · PLAY 2 | 8 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: X-MOD · FILTER · STEREO · PLAY | 14 |
 | **SEQ** | (V10.6) **STEP**: STEP — **PATTERN**: LENGTH · RHYTHM · TRACK — **EUCLID**: EUCLID · MODES · MUTATE — **PLAYHEADS**: PLAYHEADS — **STRETCH**: STRETCH — **COMP**: COMP · COMP 2 — **AUTO**: AUTOMATION · AUTO LIST · LYRIC STEP (VOICE) — **TRACK GEN**: TRACK GEN | 15 |
-| **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DLY 2 · DLY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SL BUS · SL BUS 2 · SL PITCH — **PUNCH IN**: PUNCH IN — **MASTER**: MASTER · TAPE · EQ | 18 |
+| **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DLY 2 · DLY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SL BUS · SL BUS 2 · SL PITCH — **PUNCH IN**: PUNCH IN — **MASTER**: MASTER · TAPE · EQ · BALANCE | 19 |
 | **GLO** | **LIVE**: KEYS · RAILS — **MIX**: MIXER · SENDS — **G.COMP**: G.COMP · G.COMP 2 — **SETUP**: GLOBAL · SYSTEM · SYSTEM 2 · KEY SPLIT · KEY SPLIT 2 | 11 |
 | **ENV** | **ENV**: ENV · ENV DEST · ENV 2 — **STAGE**: STAGE — **TRACKS**: TRACKS (codex/coherence: last; TRACKS DEST gone, ENV DEST's twin) | 5 |
 | **LFO** | **MOD**: MOD — **LFO**: LFO · LFO DEST — **MSEQ**: MSEQ · MSEQ 2 | 5 |
@@ -2294,7 +2294,7 @@ its page). PRESETS loads the track's sounds, as everywhere. The pages, their kno
 
 | Group | Pages | What the screen shows |
 | --- | --- | --- |
-| **TRACK** | SENDS (the FX page: DIST CHORUS DLY REV; V10.7.24) · DIST (TYPE TONE) · AUTO PAN | The track's set: its picture (the three sends as bars, DIST's curve with TYPE and TONE, AUTO PAN's swing with WAVE and RATE) and DIST's curve small under it. |
+| **TRACK** | SENDS (the FX page: DIST CHORUS DLY REV; V10.7.24) · DIST (TYPE TONE NOISE) · AUTO PAN | The track's set: its picture (the three sends as bars, DIST's curve with TYPE and TONE, AUTO PAN's swing with WAVE and RATE) and DIST's curve small under it. |
 | **BUSES** | BUSES | The six modules as tiles, each its picture small: **DELAY** (its echoes), **REVERB** (its decay), **CHORUS** (three waves), **SLICER** (its 16 steps, the one playing framed), **MASTER** (the output now, the duck's curve), **PUNCH IN** (the lane); with LOAD ECO CHORUS and SLICER are dark ("ECO"). Knobs: **DLY MIX, REV SIZE, CHORUS DEPTH, SLICER DEPTH**, their cards named for the bus (DLY REV CHO SLC; codex/coherence: were MIX SIZE DEPTH DEPTH). |
 | **DELAY · REVERB · CHORUS · SLICER · PUNCH IN · MASTER** | DLY · DLY 2 · DLY 3 — REVERB · REVERB 2 — CHORUS — SLICER · SL BUS · SL BUS 2 · SL PITCH — PUNCH IN — MASTER | The module large: its picture, "DELAY 2/3" (its page) in the title. With LOAD ECO the chain skips CHORUS and SLICER. |
 
@@ -2309,9 +2309,21 @@ its page). PRESETS loads the track's sounds, as everywhere. The pages, their kno
 ### Per track
 
 - **FX**: DIST amount and the three sends (CHORUS, DLY, REV).
-- **DIST**: amount, **TYPE** (SOFT, HARD, FOLD, CRUSH, RECT, **AMP**), **TONE** (darker / brighter). **AMP** is a guitar
-  amp: two valve stages that clip unevenly (low DIST clean, then crunch, then lead), the bias breathing with the level,
-  and a speaker cabinet with its presence peak; TONE moves the cabinet's brightness.
+- **DIST**: amount, **TYPE** (SOFT, HARD, FOLD, CRUSH, RECT, **AMP**), **TONE** (darker / brighter), **NOISE**
+  (V10.7.30). **AMP** is a guitar amp: two valve stages that clip unevenly (low DIST clean, then crunch, then lead), the
+  bias breathing with the level, and a speaker cabinet; TONE moves the cabinet's brightness. (V10.7.30) The cabinet no
+  longer rings in the mids (its old 1.8 kHz peak, +4.7 dB, made it honky and boxy): a broad, gentle scoop around 650 Hz
+  instead, the corner a little higher (~4.8 kHz), the level as before.
+  - **FOLD** (V10.7.30): a smooth (sine-shaped) wavefolder, its input band-limited: the low half of DIST is a round
+    saturation, the folds come in past the middle and grow toward the end (up to three and a half), without the old
+    triangle folder's harsh corners.
+  - **CRUSH** (V10.7.30): fewer bits and a lower sample rate, but the rate wanders ±50 % around its value and the steps
+    are ramped, so it no longer whistles a fixed "pedal note" at the reduction rate; the lo-fi grit stays.
+  - **NOISE** (V10.7.30, KNOB 3, 0–100 %, the selected track's; DIST must be on): white noise that rides the
+    distorted signal. Only the part of each wave above a threshold gets it, as much as it is over it (the threshold
+    drops a little as NOISE rises): a grit that follows the note's pitch and envelope and leaves the quiet parts and
+    the silences clean. It goes through the TONE's corner. Saved with the project (not with sound presets); not on
+    the editor, MIDI or automation (it is not a track parameter: there is no slot left for one).
 - **AUTO PAN**: the track's pan swung left and right around its PAN. **DEPTH** (0 = off), **RATE**, **SYNC** (BEAT:
   RATE in divisions 4BAR … 1/32, locked to the bar; FREE: RATE in Hz), **WAVE** (SIN, TRI, SAW, SQR, S&H).
 - **FILTER**: see [4](#4-engines).
@@ -2398,6 +2410,18 @@ from before).
 - **CLIP**: saturation that adds character, not volume.
 - **PUNCH**: fattens the DRUM tracks.
 - **DUCK**: the kick pulls the rest down; **REL** is its release.
+- **BALANCE** (V10.7.30, the page after EQ; **AMOUNT** 0–100 %, **50 by default: on**): a slow dynamic EQ on the EQ's
+  four bands, for the "ball of mids" a full mix becomes. It listens to the mix's balance between the bands (over
+  about a second, not hit by hit) and compares it with a balanced mix's curve (a commercial mix's tilt, the lows a
+  little richer and the top a little darker, as electronic music sits). When the **low mids (200 Hz–1 kHz) pile up** it
+  takes them down, about −2 to −4 dB where they sit on a typical dense GEN song at 50 % (up to ~−6 dB); it never boosts
+  them. The lows move ±1.5 dB at most, the 1–4 kHz band ±2 dB, the highs ±3 dB, toward the curve; within 0.5 dB of it
+  nothing moves. Only the balance between the bands, never the loudness (that is the leveler's). The corrections glide
+  (well under 1 dB of ripple at the beat: no pumping) and hold through silence. 0 is off (the mix bit for bit as
+  without it, the EQ as you set it). 100 corrects twice as hard (still within those bounds). Saved with the project; a
+  project saved before V10.7.30 opens with BALANCE at 50 (on: the point is that the mud goes, on your old songs too);
+  turn it to 0 and save to keep one as it was. Cost: the EQ's band split runs all the time (it ran only with the EQ
+  set).
 
 ### DJ FILTER (0.9.1, GLO › LIVE › KEYS KNOB 4; on MIXER until V10.36)
 

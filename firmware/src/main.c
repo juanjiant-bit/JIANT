@@ -176,6 +176,7 @@ static void felucca_init(void)
         chain_defaults(&chain_config);
     for (i = 0; i < G_COUNT; i++)
         song.g[i] = GP[i].def;
+    bal_v = BAL_DEF;                          /* (V10.7.30) the master's BALANCE on (fx.c bal_ctl) */
     sing_init();                              /* (0.9.0) VOICE's English generator words, resolved once (sing.c) */
     load_depth++;                             /* (the power-on loads: one outer load) */
     fm6_init();                               /* every track's FM6 patch: the init voice */

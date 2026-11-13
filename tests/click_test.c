@@ -11,6 +11,7 @@
  *   first of each bar accented; PLAY again changes nothing, STOP cancels it; the external clock never counts in; notes
  *   in its last eighth recorded onto step 1 (held on: tied; let go: one step), earlier ones not.
  *   build/click_demo/: the click at 120 BPM with a pattern (DAC and USB) */
+#define HOST_BAL 0                      /* (V10.7.30) the master's BALANCE off: the USB audio bit for bit with CLICK on and off, the clicks found by their level */
 #include <sys/stat.h>
 #define main hostsim_main
 #define HOST_OWN_TICKS 1                    /* (fm1_ticks below) */

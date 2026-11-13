@@ -3,6 +3,7 @@
  * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* The real audio ISR with a simulated DMA and clock: overload must free work
  * within one block without cutting another part's lead or bass. */
+#define HOST_BAL 0                      /* (V10.7.30) the master's BALANCE off: the USB and DAC levels exact */
 #define main hostsim_main
 #define HOST_OWN_TICKS 1                    /* (fm1_ticks below) */
 #include "hostsim.c"

@@ -15,6 +15,8 @@
  *   ECO        its tail trimming (the load budget, LOAD tight) and the shared voice cap act on the take itself: the stems
  *              keep exactly what the mix plays (they null against the solo render of the same take), however many voices
  *              the budget gave up (counted). */
+#define BAL_DEF 0                       /* (V10.7.30) its projects load BALANCE off too */
+#define HOST_BAL 0                      /* (V10.7.30) the master's BALANCE off: the stems sum to the mix before the master's EQ */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"
 #include <sys/mman.h>
