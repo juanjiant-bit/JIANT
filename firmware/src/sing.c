@@ -1399,19 +1399,31 @@ static void sing_block(track_t *t)
     }
     i = sy_voices(t, s, &sing_io[ti]);
     gated = i & 1u;
-    if (i & 2u) {                                        /* a note now */
-        if (s->rst) {
-            sy_reset(s);
-            s->rst = 0;
-        }
-        /* (voice2) the syllable, its onset in the time it has (a led note's: the sequencer's lead; a key's ~10 ms,
-         * overlapped with the vowel); then the next note's syllable read ahead on a copy (its coda sung by then, the
-         * word's phonemes kept): its onset, the next step's lead (seq.c seq_tick) */
+    {   /* (voice2) a note: its syllable, the onset in the time it has (a led note's: the sequencer's lead; a key's
+         * ~10 ms, overlapped with the vowel). A few blocks on (each track its own block: not all in the notes' one) the
+         * next note's syllable read ahead on a copy (its coda sung by then, the word's phonemes kept): its onset, the
+         * next step's lead (seq.c seq_tick) */
         sing_t c, *q = s;
         sw_t *w = &sing_w[ti], wk;
-        uint32_t T, b, k;
-        x->vb = 0;                                       /* (a syllable: the vibrato waits again) */
-        for (;;) {
+        uint32_t T, b, k, ahead = !(i & 2u) && sing_io[ti].nb == 2u + ti;
+        if (i & 2u) {                                    /* a note now */
+            if (s->rst) {
+                sy_reset(s);
+                s->rst = 0;
+            }
+            x->vb = 0;                                   /* (a syllable: the vibrato waits again) */
+        } else {
+            if (!pos)
+                s->posv = 0;
+            s->lead = (uint8_t)(s->lead >= 0x40u ? s->lead - 0x40u : 0u);   /* (a lead no note took: gone) */
+            if (ahead) {
+                wk = *w;
+                c = *s;
+                c.i = c.np;
+                q = &c;
+            }
+        }
+        if ((i & 2u) || ahead) {
             if (pos && (fixed || pos != q->posv))
                 sy_seek(t, q, lang, lyr, (uint32_t)pos - 1u);
             q->posv = (int16_t)pos;
@@ -1419,29 +1431,22 @@ static void sing_block(track_t *t)
             sy_next(t, q, lang, lyr);
             T = sy_onset(q, lang);
             k = SY_KP(T);
-            if (q != s)
-                break;
-            b = (s->lead & 63u) * 2u;
-            b = !b ? (T >= SY_PLO ? SY_MIN : SY_LIVE) : b > k + SY_MIN ? b - k : SY_MIN;
-            T &= 0xFFFFu;
-            if (b > T && (s->lead & 63u) * 2u > s->nlead + 2u)
-                b = T;                                   /* (a lead not the one read ahead: as written) */
-            b = T && b != T ? (b << 7) / T : 0u;         /* (a lead longer than the onset read ahead: the onset */
-            s->oq = (uint8_t)(b < 255u ? b : 255u);      /* stretched to it, up to x2: the vowel on the step still) */
-            sy_enter(s, lang);
-            s->lead = 0;
-            wk = *w;
-            c = *s;
-            c.i = c.np;
-            q = &c;
+            if (ahead) {
+                *w = wk;
+                T = (T & 0xFFFFu) + k;
+                s->nlead = (uint8_t)(T < 63u ? T : 63u);
+            } else {
+                b = (s->lead & 63u) * 2u;
+                b = !b ? (T >= SY_PLO ? SY_MIN : SY_LIVE) : b > k + SY_MIN ? b - k : SY_MIN;
+                T &= 0xFFFFu;
+                if (b > T && (s->lead & 63u) * 2u > s->nlead + 2u)
+                    b = T;                               /* (a lead not the one read ahead: as written) */
+                b = T && b != T ? (b << 7) / T : 0u;     /* (a lead longer than the onset read ahead: the onset */
+                s->oq = (uint8_t)(b < 255u ? b : 255u);  /* stretched to it, up to x2: the vowel on the step still) */
+                sy_enter(s, lang);
+                s->lead = 0;
+            }
         }
-        *w = wk;
-        T = (T & 0xFFFFu) + k;
-        s->nlead = (uint8_t)(T < 63u ? T : 63u);
-    } else {
-        if (!pos)
-            s->posv = 0;
-        s->lead = (uint8_t)(s->lead >= 0x40u ? s->lead - 0x40u : 0u);   /* (a lead no note took: gone) */
     }
     if (!gated && s->gated && !s->cdon) {                /* released: the coda */
         s->cdon = 1;
