@@ -1087,7 +1087,7 @@ int main(void)
                       trk[0].p[P_SDIV] == 2 && !trk[0].p[P_MSND] && trk[0].step[1].probability != 50 && dx_tone == 0 && !gl_mono && !macro_v[0]);
     }
     /* ---- (0.9.9-gen1) each genre's archetypes: the bass's and the lead's engine, filter and wave the archetype's;
-     * the acid house's 303; the 808, the EBM's MS20, the wobble, GLUE, MUTATE where the grammar has them */
+     * the acid house's 303; the 808, the EBM's LP24 driven (MS20 once), the wobble, GLUE, MUTATE where the grammar has them */
     {
         uint32_t eng_bad = 0, flt_bad = 0, wave_bad = 0, glue_bad = 0, mut_bad = 0, checks = 0, kit_bad = 0;
         uint32_t acid_ok = 0, acid_n = 0, trap_ok = 0, ebm_ok = 0, wob_ok = 0, four_ok = 0, four_n = 0;
@@ -1140,8 +1140,9 @@ int main(void)
                         (void)d;
                     }
                     if (!strcmp(GENRE[g].name, "REGGAETON")) trap_ok += b->eng_req == EG_A && b->p[P_E0] == 3 && b->p[P_GLIDE] >= 30 && b->p[P_DEC] >= 80;
-                    if (!strcmp(GENRE[g].name, "EBM") && gs.g->snd[GP_BASS] == SR_EBMBASS) ebm_ok += !(b->eng_req == EG_A && b->p[P_FTYPE] == 5 && b->p[P_DIST] > 0);   /* (V10.6n:
-                                                         * its throws' basses four: the MS20's, each time it is that one) */
+                    if (!strcmp(GENRE[g].name, "EBM") && gs.g->snd[GP_BASS] == SR_EBMBASS) ebm_ok += !(b->eng_req == EG_A && b->p[P_FTYPE] == FT_LP24 && b->p[P_E6] >= 70 && b->p[P_DIST] > 0);   /* (V10.6n:
+                                                         * its throws' basses four: the MS20's, each time it is that one;
+                                                         * codex/filters2: the LP24 driven into its growl, MS20 retired) */
                     wob_ok = 1;                                 /* (V10.6n: no wobble genre now) */
                 }
             }
@@ -1152,7 +1153,7 @@ int main(void)
                       !glue_bad && !mut_bad && !kit_bad && four_ok == four_n && four_n);
         bad += gcheck("  BREAKBEAT's 303: ANALOG saw/square, LP, RES >= 90, CUT low, ENV high, short over a sustain, LEGATO, glide TIME ~55 ms, slides ..",
                       acid_n && acid_ok + 1u >= acid_n);   /* (V10.6n: one in its seeds may miss an accent, the 303's dice) */
-        bad += gcheck("  REGGAETON's 808 (a sine, long, gliding), EBM's MS20 driven", trap_ok && !ebm_ok && wob_ok);
+        bad += gcheck("  REGGAETON's 808 (a sine, long, gliding), EBM's LP24 driven (was MS20)", trap_ok && !ebm_ok && wob_ok);
     }
     /* ---- (0.9.9-gen2) the owner's ear. ACID HOUSE's line as X0X's TB-3PO writes one (notes on 60..75 % of the steps,
      * ACCENTs on 25..35 % of the notes, SLIDEs on 20..30 %, never into a rest, octave jumps), over 40 seeds; played,

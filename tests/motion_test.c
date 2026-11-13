@@ -805,11 +805,12 @@ static int auto_list(void)
         str_eq(ui.msg, "AUTOMATION FULL") && !act_ready());
     motion_clear(&trk[1]);
     for (i = 0; i < P_COUNT; i++)                        /* names: an id each, none of DIGITAL's, lanes on DRUM only */
-        if (ev_id_ok(t, i) && ((i >= P_FM1_ATK && i <= P_FM4_LEVEL && i != P_TCHAN && i != P_MORPH && i != P_CLEN && i != P_DXIMG && i != P_HVEL && i != P_HTIM && i != P_HGAT && i != P_HRQ && i != P_TVEL) || (i >= P_LN0 && i <= P_LN7) ||
+        if (ev_id_ok(t, i) && ((i >= P_FM1_ATK && i <= P_FM4_LEVEL && i != P_TCHAN && i != P_MORPH && i != P_CLEN && i != P_DXIMG && i != P_HVEL && i != P_HTIM && i != P_HGAT && i != P_HRQ && i != P_TVEL) || (i >= P_LN0 && i <= P_LN7 && !(i >= P_FKEY && i <= P_FDRV)) ||   /* (codex/filters2: a
+                                                         * synth's FILTER 2, DRIVE in lanes 3..7's slots) */
                                !motion_param(i)))       /* (0.6.37: SHIFT's CHANCE in DIGITAL's OP1 DEC slot) */
             break;
     bad += check("  KNOB 3's list: what motion records and the sound has (no OP ENV, no DRUM lanes off DRUM)", i == P_COUNT &&
-        ev_id_ok(&trk[3], P_LN0));
+        ev_id_ok(&trk[3], P_LN0) && ev_id_ok(t, P_FNZ));
     {
         char a[12], b[12];
         ev_name(t, P_ED_FLT, a); ev_name(t, P_LD_FLT, b);

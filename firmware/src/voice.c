@@ -59,6 +59,17 @@ static uint32_t lfo_rand(track_t *t)
  * delay, in tune), the line's length and the feedback glided over the block (CUT turned or a new note: no zipper, was a
  * step a block), COMB- (neg) the feedback negative over half the line: the odd harmonics of the note, hollow. The wet
  * level by 1 - fb as before, at least a quarter: the clipped ring heard at the top of RES */
+/* (codex/filters2) the newest note sounding on the part: its pitch (gliding), else p16 */
+static __attribute__((noinline)) int32_t trk_newest(const track_t *t, int32_t p16)
+{
+    uint32_t i, age = 0;
+    for (i = 0; i < NVOICE; i++)
+        if (t->v[i].active && t->v[i].age >= age) {
+            age = t->v[i].age;
+            p16 = t->v[i].pitch_cur;
+        }
+    return p16;
+}
 #define COMB_LEN 1024u
 static int16_t comb_buf[NTRK][COMB_LEN] __attribute__((section(".pool")));   /* (0.6: six tracks, in the pool) */
 static uint16_t comb_w[NTRK];
@@ -68,15 +79,10 @@ static int32_t comb_fb[NTRK], comb_lp[NTRK];            /* .. the feedback there
 static __attribute__((noinline)) void track_comb(track_t *t, int32_t *out, uint32_t n, int32_t cut, int32_t res,
                                                  uint32_t neg)
 {
-    uint32_t ti = (uint32_t)(t - trk) % NTRK, i, per, age = 0, w = comb_w[ti], pq, pq1;
-    int32_t p16 = comb_p16[ti], r = clamp(res, 0, 127), lp = comb_lp[ti], dq, dfb, fbc, gn, fb, a, m, xq;
+    uint32_t ti = (uint32_t)(t - trk) % NTRK, i, per, w = comb_w[ti], pq, pq1;
+    int32_t p16 = trk_newest(t, comb_p16[ti]), r = clamp(res, 0, 127), lp = comb_lp[ti], dq, dfb, fbc, gn, fb, a, m, xq;
     int32_t dmp = 6400 + r * 55;                        /* (the damping's pole, Q14) */
     int16_t *b = comb_buf[ti];
-    for (i = 0; i < NVOICE; i++)                        /* the newest note sounding */
-        if (t->v[i].active && t->v[i].age >= age) {
-            age = t->v[i].age;
-            p16 = t->v[i].pitch_cur;
-        }
     comb_p16[ti] = (int16_t)p16;
     p16 = clamp(p16 + (cut - 64) * 8, 0, 2047);
     per = 0xFFFFFFFFu / ((pitch_inc((uint32_t)p16) >> 8) | 1u);   /* the period, Q8 */
@@ -166,72 +172,167 @@ static __attribute__((noinline)) void tf_sides(uint32_t ti, const tsvf_t *c, int
 static uint8_t tf_on[NTRK], tf_ft[NTRK];        /* the SVF in the chain the last block; the TYPE playing (0.6.71: a
                                                  * byte a track, not a bit: two cores write two tracks at once) */
 static uint8_t tf_cmb[NTRK];                    /* (0.6.81) the COMB ran the last block (its line live) */
-/* (0.9.9-snd1) TYPE MS20, the owner's "more aggressive filter, the Korg MS-20's": a 2-pole low-pass whose resonance is a
- * positive feedback through a diode-like clip (the Sallen-Key's, the MS-20's: screaming, and controlled, the clip
- * setting how loud it can ring). Here the trapezoidal SVF (dsp.c) held at damping 2 (no resonance of its own: the
- * MS-20's soft knee at RES 0) and its band-pass fed back into the input through softclip (half full scale): its small-
- * signal damping 2 - kn, RES exponential to it (2 .. 0.03: Q 0.5 .. 33, a scream at the top that still dies out when
- * the part is silent: no whistle left on its own), a hot input clipped in the loop (the MS-20's growl). The clip's feedback a sample late (explicit: the
- * linear part stable, the clip bounded: bounded however it is driven). CUT, LFO / ENV DEST FILTER as the SVF's; on
- * ANALOG and LOFI the part's (their own filter open), at ANALOG's CUT RES (E4 E5) */
-static uint8_t tf_ms[NTRK];                     /* (snd1) MS20 ran the last block (its state live) */
-static int32_t ms_s[NTRK][3];                   /* .. its state: the SVF's ic1 ic2, the band-pass a sample back */
-static __attribute__((noinline)) void tf_ms20(uint32_t ti, int32_t *out, uint32_t n, int32_t cut, int32_t res)
+/* (codex/filters2) EDIT > FILTER 2 (the owner: "a noise modulator on the filters, Roar's possibilities", "KB TRACKING",
+ * "metallic, broken and noise textures"): one modulator a part, a random value new at RATE (0.4 .. 320 Hz: the LFO's
+ * rates x 8, on the blocks' clock), NOISE its depth (squared: fine at the bottom) and MODE what it
+ * does: SOFT the value glided from one to the next, STEP held (sample and hold), both on CUT (+-4.5 octaves at the full
+ * NOISE, as an LFO on FILTER: CUT moved down so the top stays heard); METAL BREAK DUST textures on the part's sum before
+ * its filter (fn_tex: the filter shapes them). KEY: CUT follows the note (the voice's own filter: its note; the part's:
+ * the newest), 0 .. 100 % of it. Not a kit's, nor EXT's (their slots, core.h) */
+enum { FN_SOFT, FN_STEP, FN_METAL, FN_BREAK, FN_DUST };
+typedef struct {
+    uint32_t ph, rng, mph, minc, hc;                    /* the value's clock, the noise (an LCG), METAL's carrier, BREAK's
+                                                         * hold left */
+    int32_t env, hv;                                    /* DUST's level, BREAK's sample held */
+    int16_t a, b;                                       /* the value before, the value now (Q15) */
+} fnst_t;
+static fnst_t fns[NTRK] __attribute__((section(".bss.fn")));   /* (sections of their own: out of the merged statics) */
+typedef struct {
+    int32_t cut, kq;                                    /* the NOISE's CUT offset (SOFT, STEP), Q8 of its steps; KEY */
+    int16_t span;                                       /* .. how far CUT moves (tf_run: an open filter's CUT down) */
+    uint8_t amt, drv;                                   /* NOISE squared (0 .. 127); LP24's DRIVE (ANALOG's, the part's) */
+} fnb_t;
+static fnb_t fnb[NTRK] __attribute__((section(".bss.fn")));   /* the block's, track_post's (the voices': the next block's) */
+#define FN_OK(t) (ENGINES[(t)->engine] != &ENG_DRUM && ENGINES[(t)->engine] != &ENG_INPUT)
+static inline int32_t fn_inv(const int16_t *p, uint32_t id) { return 127 - (p[id] & 127); }   /* (stored 0 .. 127) */
+static inline uint32_t fn_mode(const int16_t *p) { return 4u - (((uint32_t)p[P_FNMD] & 127u) * 5u >> 7); }   /* (as
+                                                         * params.c FN_DESC names it) */
+static inline uint32_t fn_rand(fnst_t *s, uint32_t ti) { return s->rng = s->rng * 1664525u + 1013904223u + ti; }
+/* a block's FILTER 2 (track_post): the modulator's value, KEY (CUT's Q8 per 1/16 semitone, Q8: 1024 ANALOG's own 4, a
+ * fifth of the key; 127 / 27 of it the whole key), LP24's DRIVE */
+static inline void fn_tick(const track_t *t, const engine_t *e, uint32_t ti, uint32_t ok)
 {
-    int32_t ic1 = ms_s[ti][0], ic2 = ms_s[ti][1], bp = ms_s[ti][2], r = clamp(res, 0, 127), kn, xq;
-    uint32_t i;
-    tsvf_t c;
-    if (!tf_ms[ti]) {                                   /* in: from rest at the input (no step) */
-        ic1 = bp = 0;
-        ic2 = out[0];
+    fnst_t *s = &fns[ti];
+    fnb_t *b = &fnb[ti];
+    int32_t d = ok ? fn_inv(t->p, P_FNZ) : 0;
+    uint32_t o = s->ph, m = fn_mode(t->p);
+    b->kq = !ok ? 0 : (int32_t)(e == &ENG_ANALOG ? fkey_rank(t->p[P_FKEY]) : (uint32_t)fn_inv(t->p, P_FKEY)) * 1024 / 27;
+    b->drv = (uint8_t)(e == &ENG_ANALOG ? t->p[P_E6] & 127 : ok ? fn_inv(t->p, P_FDRV) : 0);
+    b->cut = b->span = 0;
+    b->amt = (uint8_t)((d * d) >> 7);
+    if (!d)
+        return;
+    s->ph += LFO_INC[fn_inv(t->p, P_FNRT)] << 3;       /* (0.4 .. 320 Hz) */
+    if (s->ph < o) {
+        s->a = s->b;
+        s->b = (int16_t)(fn_rand(s, ti) >> 16);
     }
-    tsvf_coef_k(&c, cut, 8192);
-    xq = r * 1536 / 127;                                /* the damping left 2 x 2^-(6 RES / 127): 2 .. 0.03 (Q 0.5 .. 33) */
-    kn = 8192 - (((8192 * (65536 - ((xq & 255) << 7))) >> 16) >> (xq >> 8));   /* Q12 */
+    if (m <= FN_STEP) {
+        b->span = (int16_t)(b->amt << 7);
+        b->cut = ((m ? s->b : s->a + (((s->b - s->a) * (int32_t)(s->ph >> 17)) >> 15)) * b->amt) >> 8;
+    }
+}
+/* a voice's block (voice_block, a synth's): FILTER 2 on its own filter (ANALOG, LOFI): the NOISE's CUT, the KEY (ANALOG's
+ * a fifth of it eng_analog.c's, as ever: the rest here), the last block's (track_post) when on; FILTER 2 or DRIVE on and
+ * the filter open: track_render calls track_post for them (tf_on 2: track_render, in RAM, as it was) */
+static __attribute__((noinline)) int32_t fn_voice(const track_t *t, int32_t p16, uint32_t ti)
+{
+    const int16_t *p = t->p;
+    const engine_t *e = ENGINES[t->engine];
+    if (e == &ENG_DRUM || e == &ENG_INPUT)
+        return 0;
+    if ((p[P_FNZ] & p[P_FDRV] & p[P_FKEY]) < 127 && !tf_on[ti])
+        tf_on[ti] = 2;
+    return e != &ENG_ANALOG && e != &ENG_LOFI ? 0 : (p[P_FNZ] < 127 ? fnb[ti].cut : 0) +
+           (p[P_FKEY] < 127 ? ((p16 - 60 * 16) * (fnb[ti].kq - (e == &ENG_ANALOG ? 1024 : 0))) >> 8 : 0);
+}
+/* the textures, NOISE their amount (w: the part at 1 - w, the texture at w), each new value of the modulator a new draw:
+ * METAL the part against a triangle at an inharmonic ratio of the newest note (one picked by each value:
+ * RATE how often), BREAK the part held for random lengths (up to ~1 ms at RATE 0, ~2 samples at the top: a jittered
+ * crush), some holds silent (a quarter at the full NOISE), DUST noise at the part's level (followed: silence stays
+ * silent), sparse crackles at RATE 0 thickening to a hiss at the top. None louder than the part */
+static __attribute__((noinline)) void fn_tex(track_t *t, uint32_t ti, int32_t *out, uint32_t n)
+{
+    uint32_t m = fn_mode(t->p), r = (uint32_t)fn_inv(t->p, P_FNRT), i, z, a = fnb[ti].amt;
+    uint32_t hm = 2u + (((127u - r) * 46u) >> 7), th = (r + 1u) * (r + 1u);
+    fnst_t *s = &fns[ti];
+    int32_t w = (int32_t)a * 258, x, y;
+    if (m == FN_METAL) {                                /* (x 1.19 .. 4.06 the note, 8 steps 0.41 apart) */
+        uint32_t pi = pitch_inc((uint32_t)clamp(trk_newest(t, 60 * 16), 0, 2047)) >> 12;
+        s->minc = (pi < 0x20000u ? pi : 0x20000u) * (4874u + ((uint32_t)(uint16_t)s->b >> 13) * 1679u);
+    }
     for (i = 0; i < n; i++) {
-        int32_t x = clamp(out[i] + ((kn * softclip(bp * 2)) >> 13), -60000, 60000);   /* the diode's feedback */
-        int32_t v3 = x - ic2, v1 = (c.a1 * ic1 + c.a2 * v3) >> 13, v2 = ic2 + ((c.a2 * ic1 + c.a3 * v3) >> 13);
-        ic1 = clamp(2 * v1 - ic1, -150000, 150000);
-        ic2 = clamp(2 * v2 - ic2, -150000, 150000);
-        bp = v1;
-        out[i] = soft_knee(v2 - (v2 >> 2), 16000);      /* (3/4: its ring about the dry's level, under full scale) */
+        x = clamp(out[i], -65535, 65535);              /* (the products in 32 bits) */
+        z = fn_rand(s, ti);
+        if (m == FN_METAL) {                            /* (against a triangle: its odd partials too) */
+            y = (int32_t)(s->mph >> 15) - 65536;
+            y = mulq15(x, (y < 0 ? -y : y) - 32768);
+            s->mph += s->minc;
+        } else if (m == FN_BREAK) {
+            if (!s->hc) {
+                s->hc = 1u + (z >> 8) % hm;
+                s->hv = (z >> 24) < (a >> 1) ? 0 : x;
+            }
+            s->hc--;
+            y = s->hv;
+        } else {
+            y = x < 0 ? -x : x;
+            s->env += (y - s->env) >> (y > s->env ? 3 : 9);
+            y = (z >> 18) < th ? mulq15((int16_t)(z >> 16), s->env) : 0;
+        }
+        out[i] = mulq15(x, 32768 - w) + mulq15(y, w);
     }
-    ms_s[ti][0] = ic1;
-    ms_s[ti][1] = ic2;
-    ms_s[ti][2] = bp;
-    tf_ms[ti] = 1;
+}
+/* (codex/filters2) FILTER's DRIVE on a part (every engine but ANALOG, whose DRIVE drives each voice): its sum into the
+ * soft clip before the filter, x1 .. x3 as ANALOG's */
+static __attribute__((noinline)) void fn_drive(int32_t *out, uint32_t n, int32_t d)
+{
+    uint32_t i;
+    int32_t g = (32768 + d * 512) >> 2;
+    for (i = 0; i < n; i++)
+        out[i] = softclip(((out[i] >> 2) * g) >> 11);
 }
 /* (V10.22) TYPE LP24 (a tester: "a 24 dB/oct ladder filter"): two of the SVF's low-passes in a row, 4 poles, the first
  * plain (damping 2), RES on the second (its peak, the ladder's), a soft knee after it; CUT, LFO / ENV DEST FILTER as the
- * SVF's; on ANALOG and LOFI the part's at their CUT RES (their own filter open), as MS20 */
+ * SVF's; on ANALOG and LOFI the part's at their CUT RES (their own filter open).
+ * (codex/filters2, the owner: clean to aggressive) DRIVE (ANALOG's own, the part's FILTER DRIVE on the others) feeds the
+ * second stage's band-pass back into its input through the soft clip (the MS-20's diode loop, which TYPE MS20 was): its
+ * damping lowered by up to three quarters of what it has over 0.05 (RES 0: a bump, Q 1.7; mid RES a growl; RES 127 a
+ * scream, Q 14, its ring dying when the part is silent: no whistle on its own), the clip squashing the ring of a loud
+ * input, the knee lower (under full scale), the level down to 3/4 as it drives. DRIVE 0: as before, sample for sample */
 static uint8_t tf_l24[NTRK];                    /* LP24 ran the last block (its state live) */
 static int32_t l24_s[NTRK][4];                  /* .. its two stages' ic1 ic2 */
-static __attribute__((noinline)) void tf_lp24(uint32_t ti, int32_t *out, uint32_t n, int32_t cut, int32_t res)
+/* (filters2) MS20's flag and state, as they were (6 B, 72 B: the small statics the compiler merges, sorted by size in the
+ * order they are first used, keep their places, and the code reading them, the Bluetooth segment's and the RAM's, its
+ * offsets): the TYPE playing MS20's old number 5 (track_filter, a block late: its DRIVE at least 70 %), the second
+ * stage's band-pass a sample back */
+static uint8_t tf_ms[NTRK];
+static int32_t ms_s[NTRK][3];
+static __attribute__((noinline)) void tf_lp24(uint32_t ti, int32_t *out, uint32_t n, int32_t cut, int32_t res, int32_t drv)
 {
-    int32_t a1 = l24_s[ti][0], a2 = l24_s[ti][1], b1 = l24_s[ti][2], b2 = l24_s[ti][3];
+    int32_t a1 = l24_s[ti][0], a2 = l24_s[ti][1], b1 = l24_s[ti][2], b2 = l24_s[ti][3], bp = ms_s[ti][0];
+    int32_t r = clamp(res, 0, 127), k2 = 8192 - r * 7600 / 127, kf, dg, kn;
     uint32_t i;
     tsvf_t c1, c2;
+    drv = clamp(drv, tf_ms[ti] ? 89 : 0, 127);
+    kf = ((k2 - 200) * drv * 3) >> 9;
+    dg = drv * 64;                                      /* (the level kept as it drives: x1 .. x3/4, MS20's) */
+    kn = kf ? 16000 : 30000;
     if (!tf_l24[ti]) {                                  /* in: from rest at the input (no step) */
-        a1 = b1 = 0;
+        a1 = b1 = bp = 0;
         a2 = b2 = out[0];
     }
     tsvf_coef_k(&c1, cut, 8192);
-    tsvf_coef(&c2, cut, clamp(res, 0, 127));
+    tsvf_coef_k(&c2, cut, k2);
     for (i = 0; i < n; i++) {
         int32_t v3 = out[i] - a2, v1 = (c1.a1 * a1 + c1.a2 * v3) >> 13, v2 = a2 + ((c1.a2 * a1 + c1.a3 * v3) >> 13);
         a1 = clamp(2 * v1 - a1, -150000, 150000);
         a2 = clamp(2 * v2 - a2, -150000, 150000);
+        if (kf)
+            v2 += (kf * softclip(bp * 2)) >> 13;        /* (the loop: a sample late, bounded by the clip) */
         v3 = v2 - b2;
         v1 = (c2.a1 * b1 + c2.a2 * v3) >> 13;
         v2 = b2 + ((c2.a2 * b1 + c2.a3 * v3) >> 13);
         b1 = clamp(2 * v1 - b1, -150000, 150000);
         b2 = clamp(2 * v2 - b2, -150000, 150000);
-        out[i] = soft_knee(v2, 30000);
+        bp = v1;
+        out[i] = soft_knee(v2 - ((v2 * dg) >> 15), kn); /* (driven: under full scale, as MS20) */
     }
     l24_s[ti][0] = a1;
     l24_s[ti][1] = a2;
     l24_s[ti][2] = b1;
     l24_s[ti][3] = b2;
+    ms_s[ti][0] = bp;
     tf_l24[ti] = 1;
 }
 static uint8_t tf_xb[NTRK], tf_fo[NTRK];        /* (0.6.81) a TYPE's crossfade: its blocks left, the TYPE from (TF_DRY:
@@ -247,8 +348,8 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
 {
     const int16_t *p = t->p;
     uint32_t ti = (uint32_t)(t - trk) % NTRK, i;
-    int32_t cut = ccut << 8, envq = 0, ic1 = tf_ic1[ti], ic2 = tf_ic2[ti], k;   /* (snd1: ccut, P_FCUT but on
-                                                         * ANALOG, whose own filter returned above but for MS20) */
+    int32_t cut = ccut << 8, envq = 0, ic1 = tf_ic1[ti], ic2 = tf_ic2[ti], k, kq;   /* (snd1: ccut, P_FCUT but on
+                                                         * ANALOG, whose own filter returned above but for LP24) */
     tsvf_t c;
     if (FT_IS_COMB(ft)) {
         if (!tf_cmb[ti]) {                              /* (0.6.81) in: its line cleared (the last time's, stale) */
@@ -260,7 +361,7 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
         tf_cmb[ti] = 1;
         return;
     }
-    if (own && ft != FT_MS20 && ft != FT_LP24)
+    if (own && !FT_IS_LP24(ft))
         return;
     if (t->engine == ENGI_DRUM)
         envq = (uint16_t)drum_env(t) + 1;                   /* (gen6d: the kit's ENV, its voices held at full) */
@@ -270,21 +371,21 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
                 envq = t->v[i].env >> 9;
     {   /* (0.6.81) the sweep kept where it is heard: CUT moved down so its top stays open at most (an open filter swept
          * up did nothing: half an LFO's cycle, a whole ENV, lost) */
-        int32_t span = (p[P_LD_FLT] < 0 ? -p[P_LD_FLT] : p[P_LD_FLT]) * 256 + (p[P_ED_FLT] > 0 ? p[P_ED_FLT] * 256 : 0);
+        int32_t span = (p[P_LD_FLT] < 0 ? -p[P_LD_FLT] : p[P_LD_FLT]) * 256 + (p[P_ED_FLT] > 0 ? p[P_ED_FLT] * 256 : 0) +
+                       fnb[ti].span;                   /* (filters2: FILTER 2's NOISE on CUT) */
         if (cut + span > (127 << 8))
             cut = (127 << 8) - span > 0 ? (127 << 8) - span : 0;
     }
-    cut += ((mulq15(t->lfo_val, t->lfo_fade) * p[P_LD_FLT]) >> 7) + ((envq * p[P_ED_FLT]) >> 7);
-    if (ft == FT_MS20) {
-        tf_ms20(ti, out, n, cut, cres);
-        return;
-    }
-    if (ft == FT_LP24) {                                /* (V10.22) */
-        tf_lp24(ti, out, n, cut, cres);
+    cut += ((mulq15(t->lfo_val, t->lfo_fade) * p[P_LD_FLT]) >> 7) + ((envq * p[P_ED_FLT]) >> 7) + fnb[ti].cut;
+    if ((kq = fnb[ti].kq) != 0)                         /* (filters2) KEY: the newest note's */
+        cut += ((trk_newest(t, 60 * 16) - 60 * 16) * kq) >> 8;
+    if (FT_IS_LP24(ft)) {                               /* (V10.22; filters2: its DRIVE, MS20's number hot) */
+        tf_lp24(ti, out, n, cut, cres, fnb[ti].drv);
         return;
     }
     {
-        uint32_t on = !(ft == FT_LP && fo == TF_DRY && cut >= (127 << 8) && !p[P_FRES]), was = tf_on[ti];
+        uint32_t on = !(ft == FT_LP && fo == TF_DRY && cut >= (127 << 8) && !p[P_FRES]), was = tf_on[ti] == 1u;   /* (2:
+                                                         * FILTER 2's flag, voice_block) */
         if (!on && !was)
             return;                                     /* (open: nothing to filter) */
         if (!was) {                                     /* in: the state as the input (no step) */
@@ -326,13 +427,15 @@ static __attribute__((noinline)) void track_filter(track_t *t, int32_t *out, uin
                                                    int32_t cres)
 {
     uint32_t ti = (uint32_t)(t - trk) % NTRK, r = ft_of(t->p), ft, fo, i;
-    uint32_t act = (tf_on[ti] && !own) || tf_cmb[ti];
+    uint32_t act = (tf_on[ti] == 1u && !own) || tf_cmb[ti];
     int32_t w0, dw;
     if (own && !FT_POST(r))
         r = FT_LP;                                      /* (an engine's own filter: the part's TYPEs or nothing here) */
     if (!tf_xb[ti]) {
-        if (r != tf_ft[ti] && (act || FT_POST(r)) && !(FT_IS_COMB(r) && FT_IS_COMB(tf_ft[ti]))) {
-                                                        /* (snd1: COMB <-> COMB- in the one line, its feedback glided) */
+        if (r != tf_ft[ti] && (act || FT_POST(r)) && !(FT_IS_COMB(r) && FT_IS_COMB(tf_ft[ti])) &&
+            !(FT_IS_LP24(r) && FT_IS_LP24(tf_ft[ti]))) {
+                                                        /* (snd1: COMB <-> COMB- in the one line, its feedback glided;
+                                                         * filters2: LP24 and its hot alias one filter) */
             tf_fo[ti] = (uint8_t)(act ? tf_ft[ti] : TF_DRY);
             tf_xb[ti] = TF_XB;
         }
@@ -342,8 +445,8 @@ static __attribute__((noinline)) void track_filter(track_t *t, int32_t *out, uin
     if (!tf_xb[ti]) {
         tf_run(t, out, n, ft, TF_DRY, 0, 0, own, ccut, cres);
         tf_cmb[ti] = FT_IS_COMB(ft);
-        tf_ms[ti] = ft == FT_MS20;
-        tf_l24[ti] = ft == FT_LP24;
+        tf_ms[ti] = ft == FT_LP24H;
+        tf_l24[ti] = FT_IS_LP24(ft);
         return;
     }
     if (n > CTL)
@@ -364,8 +467,8 @@ static __attribute__((noinline)) void track_filter(track_t *t, int32_t *out, uin
     }
     if (!--tf_xb[ti]) {
         tf_cmb[ti] = FT_IS_COMB(ft);
-        tf_ms[ti] = ft == FT_MS20;
-        tf_l24[ti] = ft == FT_LP24;
+        tf_ms[ti] = ft == FT_LP24H;
+        tf_l24[ti] = FT_IS_LP24(ft);
     }
 }
 
@@ -373,10 +476,20 @@ static __attribute__((noinline)) void track_filter(track_t *t, int32_t *out, uin
  * whole filter (track_filter). Its own function: the audio ISR's loop stays as it was */
 static __attribute__((noinline)) void track_post(track_t *t, const engine_t *e, int32_t *out, uint32_t n)
 {
+    uint32_t ti = (uint32_t)(t - trk) % NTRK, ok = e != &ENG_DRUM && e != &ENG_INPUT;
+    fn_tick(t, e, ti, ok);                              /* (filters2) FILTER 2, a block (on the voices' own filters the
+                                                         * next block: voice_block) */
+    if (fnb[ti].amt && !fnb[ti].span)                   /* .. its textures (NOISE on, not on CUT), FILTER's DRIVE: into
+                                                         * the filter */
+        fn_tex(t, ti, out, n);
+    if (e != &ENG_ANALOG && fnb[ti].drv)
+        fn_drive(out, n, fnb[ti].drv);
     if (e == &ENG_ANALOG)
         track_filter(t, out, n, 1, t->p[P_E4], t->p[P_E5]);
     else
         track_filter(t, out, n, e == &ENG_LOFI, t->p[P_FCUT], t->p[P_FRES]);
+    if (tf_on[ti] == 2u)                                /* (no SVF ran: the flag voice_block put, again next block) */
+        tf_on[ti] = 0;
 }
 
 static uint32_t beat_samples(void);                     /* (fx.c) */
@@ -1791,6 +1904,7 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
     m.shape = (64 << 8) + ((c->lfo * p[P_LD_SHP]) >> 7) + ((m.envq15 * p[P_ED_SHP]) >> 7);
     if (MOD.on)                                     /* the modulation matrix (mod.c) */
         mod_voice(t, v, &m, fsum);
+    m.cutoff += fn_voice(t, v->pitch16, c->ti);     /* (filters2) FILTER 2 */
     vo_off_c[MC_CPU() & 1u] = (uint8_t)off;
     {
         static const int8_t VP[8] = {-64, 64, -32, 32, -48, 48, -16, 16};

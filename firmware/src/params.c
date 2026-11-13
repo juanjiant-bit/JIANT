@@ -51,7 +51,7 @@ static const char *const N_PFXRES[] = {"1/8", "1/16", "1/32"};     /* (0.6.99) F
  * they play (seq.c seq_step; the steps keep what was written). Append-only: older projects hold 0..2 */
 static const char *const N_QUANT[] = {"OFF", "SNAP", "WHITE", "SEQ"};
 static const char *const N_DTYPE[] = {"SOFT", "HARD", "FOLD", "CRUSH", "RECT", "AMP"};   /* (JIANT) fx.c DT_*; 0.7.8 AMP */
-static const char *const N_FTYPE[] = {"LP", "HP", "BP", "COMB", "COMB-", "MS20", "LP24"};   /* (JIANT 0.5) P_FTYPE: eng_analog.c FT_*
+static const char *const N_FTYPE[] = {"LP", "HP", "BP", "COMB", "COMB-", "LP24", "LP24"};   /* (JIANT 0.5) P_FTYPE: eng_analog.c FT_*
                                                          * (0.9.9-snd1: COMB- the negative comb, MS20) */
 static const char *const N_VOICE[] = {"POLY", "MONO", "LEG", "UNI"};   /* V_POLY .. V_UNISON */
 static const char *const N_GLMODE[] = {"RATE", "TIME"};
@@ -294,22 +294,31 @@ static const param_desc_t NONE_DESC = {"-", F_PCTINV, 0, 127, 127, 0};      /* (
                                                          * the range IMAGE's (an NRPN or a lock keeps its meaning) */
 static const param_desc_t VLYR_DESC = {"LYRIC", F_ENUM, 0, LYR_N - 1, 0, N_LYRIC};  /* P_VLANG, P_VLYR (sing.c) */
 static const param_desc_t VCONS_DESC = {"CONS", F_INT, 0, 127, 127, 0};   /* (V10.6y) P_VCONS: 127 = 100 % (core.h) */
+/* (codex/filters2) FILTER 2 and FILTER's DRIVE (core.h P_FKEY ..): 127 = 0 %, SOFT; ANALOG's KEY 127 = 21 % (fkey_rank) */
+static const char *const N_FNMD[] = {"DUST", "BREAK", "METAL", "STEP", "SOFT", 0};   /* (by the value: shown right to left) */
+static const param_desc_t FN_DESC[6] = {{"KEY", F_PCTINV, 0, 127, 127, 0}, {"NOISE", F_PCTINV, 0, 127, 127, 0},
+    {"RATE", F_PCTINV, 0, 127, 127, 0}, {"MODE", F_INT, 0, 127, 127, N_FNMD}, {"DRIVE", F_PCTINV, 0, 127, 127, 0},
+    {"KEY", F_PCT, 0, 127, 127, 0}};
+#define FKEYA_DESC (FN_DESC[5])
 static const param_desc_t *track_desc(const track_t *t, uint32_t id)
 {
+    const engine_t *en = ENGINES[eng_idx(t->eng_req)];   /* (filters2: once) */
     if (id == MOT_DJF)                                /* (0.9.1) a DJ FILTER record (motion.c): the global's */
         return &GP[G_DJF];
-    if (id == P_SIMG && ENGINES[eng_idx(t->eng_req)] != &ENG_DRUM)   /* (V10.49) a synth's STEREO IMAGE (codex/coherence:
+    if (id == P_SIMG && en != &ENG_DRUM)              /* (V10.49) a synth's STEREO IMAGE (codex/coherence:
                                                          * PLAY 2's KNOB 4; EXT: none, its voice is one) */
-        return ENGINES[eng_idx(t->eng_req)] == &ENG_INPUT ? &NONE_DESC : &SIMG_DESC;
-    if (id == P_DKEYMODE && ENGINES[eng_idx(t->eng_req)] == &ENG_DRUM) return &DKEYMODE_DESC;
-    if ((id == P_VLANG || id == P_VLYR || id == P_VCONS) && ENGINES[eng_idx(t->eng_req)] == &ENG_FORMANT)
+        return en == &ENG_INPUT ? &NONE_DESC : &SIMG_DESC;
+    if (id == P_DKEYMODE && en == &ENG_DRUM) return &DKEYMODE_DESC;
+    if ((id == P_VLANG || id == P_VLYR || id == P_VCONS) && en == &ENG_FORMANT)
         return id == P_VLANG ? &VLANG_DESC : id == P_VLYR ? &VLYR_DESC : &VCONS_DESC;
+    if (id >= P_FKEY && id <= P_FDRV && en != &ENG_DRUM && en != &ENG_INPUT)   /* (filters2) a synth's FILTER 2, DRIVE */
+        return id == P_FKEY && en == &ENG_ANALOG ? &FKEYA_DESC : &FN_DESC[id - P_FKEY];
     if (id >= P_E0 && id <= P_E7) {                   /* the engine asked for (t->engine follows after a fade) */
-        const engine_t *e = ENGINES[eng_idx(t->eng_req)];
+        const engine_t *e = en;
         const param_desc_t *d = e->desc ? e->desc(t, id - P_E0) : 0;   /* a mode-dependent label / names */
         return d ? d : &e->edit[id - P_E0];
     }
-    if (id == P_LRTRG && ENGINES[eng_idx(t->eng_req)] == &ENG_LOFI)   /* (0.6.12) LOFI's RTRG in DIGITAL's slot */
+    if (id == P_LRTRG && en == &ENG_LOFI)             /* (0.6.12) LOFI's RTRG in DIGITAL's slot */
         return &LOFI_RTRG;
     if (id == P_TCHAN && !(FELUCCA_FM4 && t->eng_req % NENGINES == ENGI_DIGITAL))   /* (0.6.37) SHIFT's CHANCE */
         return &TRK_CHANCE;
@@ -354,10 +363,9 @@ static int16_t param_store_def(uint32_t e, uint32_t id)
 
 /* a retired F_ENUM value kept as an alias (the sample engines' SET / SRC aliases left with them in JIANT): none now.
  * -> the value v stands for */
-static int32_t enum_orig(const param_desc_t *d, int32_t v)
+static int32_t enum_orig(const param_desc_t *d, int32_t v)   /* (filters2: MS20's 5, LP24 hot, eng_analog.c) */
 {
-    (void)d;
-    return v;
+    return d->names == N_FTYPE && v == FT_LP24H ? FT_LP24 : v;
 }
 static uint32_t as_mix(uint32_t h, const void *p, uint32_t n)   /* FNV-1a, continued (project.c autosave_sig; song_play.c snd_sig) */
 {
@@ -434,8 +442,9 @@ static int32_t enum_rank(const param_desc_t *d, int32_t v)   /* v's place in the
 {
     const uint8_t *o = enum_order(d);
     int32_t r;
-    if (d->fmt == F_PCTINV) return d->max + d->min - v;   /* (the gauge full at 0) */
+    if (d->fmt == F_PCTINV || d == &FN_DESC[3]) return d->max + d->min - v;   /* (the gauge full at 0) */
     if (d == &VCONS_DESC) return (int32_t)vcons_rank(v);   /* (V10.6y: its place, core.h) */
+    if (d == &FKEYA_DESC) return (int32_t)fkey_rank(v);   /* (filters2) */
     for (r = 0; o && r < d->max - d->min; r++)
         if (o[r] == v - d->min)
             break;
@@ -461,9 +470,11 @@ static int32_t param_turn(const param_desc_t *d, int32_t v, int32_t steps)
         return lrate_at(clamp(lrate_rank(v) + steps, 0, 141));
     const uint8_t *o = enum_order(d);
     uint32_t k, i, w = (uint32_t)(d->max - d->min + 1);
-    if (d->fmt == F_PCTINV) steps = -steps;         /* (right: more chance, less skipped) */
+    if (d->fmt == F_PCTINV || d == &FN_DESC[3]) steps = -steps;   /* (right: more chance, less skipped; filters2: MODE) */
     if (d == &VCONS_DESC)                           /* (V10.6y) CONS: over its places, 127 (100 %) at 32 */
         return (clamp((int32_t)vcons_rank(v) + steps, 0, 127) + 95) & 127;
+    if (d == &FKEYA_DESC)                           /* (filters2) ANALOG's KEY: 127 (21 %) at 27 */
+        return (clamp((int32_t)fkey_rank(v) + steps, 0, 127) + 100) & 127;
     if (o)
         return o[clamp(enum_rank(d, v) - d->min + steps, 0, d->max - d->min)] + d->min;
     if (d->fmt == F_INT && d->names && (i = name_of(d, v, &k), k < w)) {   /* (p1, main 0.9.16) a name a detent (VOICE's
@@ -520,6 +531,8 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
         d = &SEMI;
         v = 64 - v;
     }
+    if (d == &FKEYA_DESC)                               /* (filters2) ANALOG's KEY: its place */
+        v = (int32_t)fkey_rank(v);
     if (d == &VCONS_DESC) {                             /* (V10.6y) VOICE's CONS: 50 .. 400 % */
         fmt_int(val, (int32_t)vcons_q6(v) * 100 / 64);
         *unit = "%";
@@ -748,8 +761,12 @@ static const page_t PAGES[] = {
     {"OP ENV", FAM_EDIT, SC_TRACK, GR_FMENV, {0xFF, 0xFF, 0xFF, 0xFF}},     /* bytes of the track's patch (ui_fm6op.c): */
     {"OPERATOR 2", FAM_EDIT, SC_TRACK, GR_FMOP2, {0xFF, 0xFF, 0xFF, 0xFF}}, /* CRS FINE LEVEL / STG RATE LEVEL / MODE DTUN VEL */
     {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_E4, P_E5, P_E6}},   /* (JIANT 0.5) ANALOG: TYPE CUT RES DRV */
-    {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_FCUT, P_FRES, P_DIST}},   /* .. every other engine's (on the part;
+    {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_FCUT, P_FRES, P_DIST}},   /* .. a kit's, EXT's (on the part;
                                                          * DRV: the part's DIST, after it) */
+    {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_FCUT, P_FRES, P_FDRV}},   /* (filters2) every other engine's:
+                                                         * DRIVE into the filter (DIST: FX > DIST) */
+    {"FILTER 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_FKEY, P_FNZ, P_FNRT, P_FNMD}},   /* (filters2) KEY NOISE RATE MODE: not a
+                                                         * kit's, nor EXT's (voice.c fn_tick) */
     {"SOUND", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* DRUM: a sound of the kit (ui_dx.c) */
     {"SOUND 2", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},
     {"SOUND 3", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (JIANT 0.4) MODE, the pitch modulation, DRIVE */

@@ -12,9 +12,13 @@
  *    them (the line glided, was a step a block);
  * 4. RES on a curve: the ring after a burst longer as RES rises, near self-oscillation at the top (still ringing a
  *    second later) and bounded;
- * 5. MS20: the ring longer as RES rises; a full-scale saw at RES 127, every CUT, C1..C7: under full scale and no
- *    more than 6x RES 0's level (it screams, the clip holding it);
- * demos (argv[1], default build/filter_demo): comb_sweep.wav, comb_neg_sweep.wav, ms20_sweep.wav. */
+ * 5. (codex/filters2: was MS20's, retired) LP24 at DRIVE 0 the LP24 of before, sample for sample; at DRIVE 100 % the
+ *    ring longer as RES rises; a full-scale saw at RES 127, every CUT, C1..C7 (DRIVE 100 %, ANALOG's and a part's, and
+ *    MS20's old number 5): under full scale and no more than 6x RES 0's level (it screams, the clip holding it);
+ * 6. (codex/filters2) FILTER 2: KEY 100 % keeps a saw's brightness across C2..C6 (KEY 0 darkens the top), ANALOG's KEY
+ *    at its stored 127 its old fixed tracking (1024); NOISE SOFT / STEP move CUT (the blocks' level varies, NOISE 0
+ *    steady); METAL BREAK DUST at the full NOISE, RATE 0 / 64 / 127: bounded, changing the sound, silence in silent out;
+ * demos (argv[1], default build/filter_demo): comb_sweep.wav, comb_neg_sweep.wav, lp24_drive_sweep.wav, fn_*.wav. */
 #define main hostsim_main
 #include "hostsim.c"
 #undef main
@@ -43,7 +47,7 @@ static track_t *part(uint32_t e, int ft, int cut, int res, int note)
     for (i = 0; i < NVOICE; i++)
         t->v[i].active = 0;
     memset(tf_on, 0, sizeof tf_on); memset(tf_cmb, 0, sizeof tf_cmb); memset(tf_xb, 0, sizeof tf_xb);
-    memset(tf_ft, 0, sizeof tf_ft);
+    memset(tf_ft, 0, sizeof tf_ft); memset(tf_l24, 0, sizeof tf_l24);
     t->p[P_FTYPE] = (int16_t)ft;
     t->p[P_FCUT] = t->p[P_E4] = (int16_t)cut;
     t->p[P_FRES] = t->p[P_E5] = (int16_t)res;
@@ -127,7 +131,8 @@ static void save(const char *dir, const char *name, uint32_t n)
     fclose(f);
 }
 
-static const char *const TN[] = {"LP", "HP", "BP", "COMB", "COMB-", "MS20", "LP24"};   /* (V10.22: LP24) */
+static const char *const TN[] = {"LP", "HP", "BP", "COMB", "COMB-", "LP24 (5)", "LP24"};   /* (V10.22: LP24; filters2: 5
+                                                         * MS20's old number, LP24 hot) */
 #define NT ((int)(sizeof TN / sizeof TN[0]))
 static int sw_from, sw_to;
 static void sweep(track_t *t, uint32_t k)
@@ -253,38 +258,175 @@ int main(int argc, char **argv)
     }
 
     /* 5 */
+    {   /* DRIVE 0: the LP24 of before (V10.22's loop, here), sample for sample */
+        static int32_t ref[FS / 2u];
+        int32_t a1 = 0, a2 = 0, b1 = 0, b2 = 0, same = 1, c;
+        uint32_t i, k;
+        track_t *t = part(ENGI_PHASE, 6, 60, 110, 45);
+        sw_from = 30; sw_to = 100;
+        sph = 0;
+        run(t, 1, 45, 0, FS / 2u, 20000, sweep);
+        sph = 0;
+        for (k = 0; k < FS / 2u; k += CTL) {
+            tsvf_t c1, c2;
+            c = sw_from + (int32_t)((int64_t)(sw_to - sw_from) * (int32_t)k / (int32_t)(FS * 2u));
+            tsvf_coef_k(&c1, clamp(c, 0, 127) << 8, 8192);
+            tsvf_coef(&c2, clamp(c, 0, 127) << 8, 110);
+            for (i = 0; i < CTL; i++) {
+                double hz = 440.0 * pow(2.0, (45 - 69) / 12.0), x;
+                int32_t in, v1, v2, v3;
+                sph += hz / FS; sph -= floor(sph); x = 2 * sph - 1;
+                in = (int32_t)(x * 20000);
+                if (!k && !i) { a2 = b2 = in; }
+                v3 = in - a2; v1 = (c1.a1 * a1 + c1.a2 * v3) >> 13; v2 = a2 + ((c1.a2 * a1 + c1.a3 * v3) >> 13);
+                a1 = clamp(2 * v1 - a1, -150000, 150000); a2 = clamp(2 * v2 - a2, -150000, 150000);
+                v3 = v2 - b2; v1 = (c2.a1 * b1 + c2.a2 * v3) >> 13; v2 = b2 + ((c2.a2 * b1 + c2.a3 * v3) >> 13);
+                b1 = clamp(2 * v1 - b1, -150000, 150000); b2 = clamp(2 * v2 - b2, -150000, 150000);
+                ref[k + i] = soft_knee(v2, 30000);
+            }
+        }
+        for (i = TF_XB * CTL; i < FS / 2u; i++)        /* (after its fade in) */
+            same &= ref[i] == buf[i];
+        check("LP24 at DRIVE 0: the LP24 of before, sample for sample (CUT swept, RES 110)", same, 0);
+    }
     {
         double prev = 0, lo = 1e9, hi = 0;
-        int mono = 1, r, c;
+        int mono = 1, r, c, v;
         int32_t pk = 0;
         for (r = 0; r <= 127; r += 127 / 4) {
-            track_t *t = part(ENGI_PHASE, 5, 50, r, 57);
+            track_t *t = part(ENGI_PHASE, 6, 50, r, 57);
             double tail;
+            t->p[P_FDRV] = 0;                           /* (DRIVE 100 %) */
             run(t, 2, 57, 0, FS / 20u, 12000, 0);
             run(t, 0, 57, 0, FS / 2u, 0, 0);
             tail = rms(FS / 50u, FS / 10u);
-            if (tail < prev)
+            if (tail < prev * 0.85)                     /* (the clip in the loop squashes a loud ring: about level mid RES) */
                 mono = 0;
+            if (getenv("VERBOSE"))
+                printf("  RES %d: tail %.0f\n", r, tail);
             prev = tail;
         }
-        check("MS20's ring after a burst longer as RES rises", mono, "at 127: rms %.0f 20 .. 100 ms on", prev);
-        for (c = 20; c <= 120; c += 20)                 /* a full-scale saw at RES 127, against RES 0 */
-            for (note = 24; note <= 96; note += 24) {
-                track_t *t = part(ENGI_ANALOG, 5, c, 127, note);
-                double a, b;
-                run(t, 1, note, 0, FS / 4u, 32000, 0);
-                pk = peak(0, FS / 4u) > pk ? peak(0, FS / 4u) : pk;
-                b = rms(FS / 8u, FS / 4u);
-                t = part(ENGI_ANALOG, 5, c, 0, note);
-                run(t, 1, note, 0, FS / 4u, 32000, 0);
-                a = rms(FS / 8u, FS / 4u);
-                if (a > 100) {
-                    lo = b / a < lo ? b / a : lo;
-                    hi = b / a > hi ? b / a : hi;
+        check("LP24 at DRIVE 100 %: its ring after a burst longer as RES rises (within 15 %)", mono && prev > 100, "at 127: rms %.0f 20 .. 100 ms on", prev);
+        for (v = 0; v < 3; v++)                         /* ANALOG's DRIVE, a part's DRIVE, MS20's old number */
+            for (c = 20; c <= 120; c += 20)             /* a full-scale saw at RES 127, against RES 0 */
+                for (note = 24; note <= 96; note += 24) {
+                    uint32_t e = v == 1 ? ENGI_PHASE : ENGI_ANALOG;
+                    track_t *t = part(e, v == 2 ? 5 : 6, c, 127, note);
+                    double a, b;
+                    t->p[P_E6] = v == 0 ? 127 : t->p[P_E6];
+                    t->p[P_FDRV] = v == 1 ? 0 : 127;
+                    run(t, 1, note, 0, FS / 4u, 32000, 0);
+                    pk = peak(0, FS / 4u) > pk ? peak(0, FS / 4u) : pk;
+                    b = rms(FS / 8u, FS / 4u);
+                    t = part(e, v == 2 ? 5 : 6, c, 0, note);
+                    t->p[P_E6] = v == 0 ? 127 : t->p[P_E6];
+                    t->p[P_FDRV] = v == 1 ? 0 : 127;
+                    run(t, 1, note, 0, FS / 4u, 32000, 0);
+                    a = rms(FS / 8u, FS / 4u);
+                    if (a > 100) {
+                        lo = b / a < lo ? b / a : lo;
+                        hi = b / a > hi ? b / a : hi;
+                    }
                 }
-            }
-        check("MS20 screams but controlled: a full-scale saw at RES 127, every CUT, C1..C7: under full scale",
+        check("LP24 driven screams but controlled: a full-scale saw at RES 127, every CUT, C1..C7: under full scale",
               pk < 32767 && hi < 6.0, "peak %d, level against RES 0 x%.2f .. x%.2f", pk, lo, hi);
+    }
+
+    /* 6 */
+    {   /* KEY: a saw's brightness (out / in) across C2..C6, CUT 50 */
+        double sp[2];
+        int kk;
+        for (kk = 0; kk < 2; kk++) {
+            double lo = 1e9, hi = 0;
+            for (note = 36; note <= 84; note += 12) {
+                track_t *t = part(ENGI_PHASE, 0, 50, 0, note);
+                double g;
+                t->p[P_FKEY] = (int16_t)(kk ? 0 : 127);  /* (KEY 100 %, 0 %) */
+                sph = 0;
+                run(t, 1, note, 0, FS / 4u, 16000, 0);
+                g = rms(FS / 8u, FS / 4u) / (16000 / sqrt(3.0));
+                lo = g < lo ? g : lo;
+                hi = g > hi ? g : hi;
+            }
+            sp[kk] = hi / lo;
+        }
+        check("KEY 100 % keeps a saw's brightness across C2..C6 (KEY 0 darkens the top)", sp[1] < 1.3 && sp[0] > 2.0,
+              "level spread KEY 0 x%.2f, KEY 100 %% x%.2f", sp[0], sp[1]);
+    }
+    {
+        track_t *t = part(ENGI_ANALOG, 0, 64, 0, 60);
+        int32_t a, b;
+        t->p[P_FKEY] = 127;
+        run(t, 1, 60, 0, CTL, 1000, 0);
+        a = fnb[0].kq;
+        t->p[P_FKEY] = 100;
+        run(t, 1, 60, 0, CTL, 1000, 0);
+        b = fnb[0].kq;
+        check("ANALOG's KEY: its stored 127 the old fixed tracking (1024: 4 a 1/16 semitone), 100 none", a == 1024 && b == 0,
+              "%d %d", a, b);
+    }
+    {   /* NOISE on CUT: the blocks' level wanders */
+        static const char *const MN[2] = {"SOFT", "STEP"};
+        int m;
+        for (m = 0; m < 2; m++) {
+            double v0, v1;
+            int nzv;
+            double var[2];
+            for (nzv = 0; nzv < 2; nzv++) {
+                track_t *t = part(ENGI_PHASE, 0, 60, 30, 48);
+                double mu = 0, s2 = 0;
+                uint32_t k;
+                t->p[P_FNZ] = (int16_t)(nzv ? 0 : 127);
+                t->p[P_FNRT] = 127 - 70;
+                t->p[P_FNMD] = (int16_t)(m ? 89 : 115);
+                sph = 0;
+                run(t, 1, 48, 0, FS * 2u, 16000, 0);
+                for (k = FS / 2u; k < FS * 2u; k += CTL * 8u) {
+                    double r = rms(k, k + CTL * 8u);
+                    mu += r;
+                    s2 += r * r;
+                }
+                k = (FS * 3u / 2u) / (CTL * 8u);
+                mu /= k;
+                var[nzv] = sqrt(s2 / k - mu * mu) / mu;
+            }
+            v0 = var[0];
+            v1 = var[1];
+            snprintf(what, sizeof what, "NOISE %s moves CUT: the level wanders at 100 %%, steady at 0", MN[m]);
+            check(what, v1 > 0.2 && v0 < 0.06, "relative deviation %.3f / %.3f", v0, v1);
+        }
+    }
+    {   /* the textures */
+        static const char *const MN[3] = {"METAL", "BREAK", "DUST"};
+        static const int16_t MV[3] = {64, 38, 12};
+        int m, rr;
+        for (m = 0; m < 3; m++) {
+            int32_t pk = 0;
+            double diff = 1e9, tail = 0;
+            for (rr = 0; rr <= 127; rr += 64) {
+                track_t *t = part(ENGI_PHASE, 0, 127, 0, 48);
+                uint32_t i;
+                double d = 0;
+                static int32_t dry[FS / 2u];
+                sph = 0;
+                run(t, 1, 48, 0, FS / 2u, 24000, 0);
+                memcpy(dry, buf, sizeof dry);
+                t = part(ENGI_PHASE, 0, 127, 0, 48);
+                t->p[P_FNZ] = 0;
+                t->p[P_FNRT] = (int16_t)(127 - rr);
+                t->p[P_FNMD] = MV[m];
+                sph = 0;
+                run(t, 1, 48, 0, FS / 2u, 24000, 0);
+                for (i = 0; i < FS / 2u; i++)
+                    d = fabs((double)buf[i] - dry[i]) > d ? fabs((double)buf[i] - dry[i]) : d;
+                diff = d < diff ? d : diff;
+                pk = peak(0, FS / 2u) > pk ? peak(0, FS / 2u) : pk;
+                run(t, 0, 48, 0, FS / 2u, 0, 0);
+                tail = rms(FS / 4u, FS / 2u) > tail ? rms(FS / 4u, FS / 2u) : tail;
+            }
+            snprintf(what, sizeof what, "%s at NOISE 100 %%, RATE 0 / 50 / 100 %%: bounded, heard, silence in silent out", MN[m]);
+            check(what, pk < 32767 && diff > 1000 && tail < 5, "peak %d, the least largest change %.0f, tail %.1f", pk, diff, tail);
+        }
     }
 
     /* demos */
@@ -298,11 +440,11 @@ int main(int argc, char **argv)
             run(t, 1, 36, 0, FS * 8u, 9000, sweep_demo);
             save(dir, ft == 3 ? "comb_sweep.wav" : "comb_neg_sweep.wav", FS * 8u);
         }
-        {   /* MS20: a saw riff, CUT swept up and down each 2 s, RES 40 / 90 / 120 / 127 */
+        {   /* LP24 driven (MS20's old number): a saw riff, CUT swept up and down each 2 s, RES 40 / 90 / 120 / 127 */
             track_t *t = part(ENGI_PHASE, 5, 40, 40, 36);
             sph = 0;
             run(t, 1, 36, 0, FS * 8u, 14000, sweep_ms20);
-            save(dir, "ms20_sweep.wav", FS * 8u);
+            save(dir, "lp24_drive_sweep.wav", FS * 8u);
         }
     }
     printf("filter: %s\n", fails ? "FAILED" : "all ok");

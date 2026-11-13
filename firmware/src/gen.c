@@ -1614,6 +1614,8 @@ static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint3
         if (gs.energy > 66u) cut += 6;
         t->p[P_FTYPE] = (int16_t)ft;
         if (e == EG_A) { t->p[P_E4] = (int16_t)clamp(cut, 0, 127); t->p[P_E5] = (int16_t)clamp(res, 0, ri == SR_ACID ? 120 : 112); }
+        if (e == EG_A && ft == FT_LP24 && t->p[P_E6] < 70)   /* (codex/filters2) EBM's bass, the MS20's once: LP24's growl */
+            t->p[P_E6] = 70;
         else { t->p[P_FCUT] = (int16_t)clamp(cut, 0, 127); t->p[P_FRES] = (int16_t)res; }
         t->p[P_ED_FLT] = grg(r->envf, 4);
         if (role != RL_PAD && role != RL_TEX && t->p[P_ED_FLT] < 6)   /* (gen3: the filter's envelope on a bass, a lead, an arp) */
@@ -2760,7 +2762,7 @@ BTAPP_FN static void gen_pick(void)
             {BA_NITZER3, BA_NITZER1, BA_PSY, BA_DAF, BA_NITZER2, BA_GALLOP, BA_EBMOFF, BA_EBM2B};   /* (Nitzer Ebb's, the
                                                          * techno-body's rumble, DAF's, Front 242's gallop, the offbeat
                                                          * octaves, a two-bar turn) */
-        gs.ba = EBA[gr() % 8u];                         /* (its bass the row's: V10.6p, always the MS20's two oscillators) */
+        gs.ba = EBA[gr() % 8u];                         /* (its bass the row's: V10.6p, always the two oscillators through the LP24, the MS20 once) */
         gmut.drum = (uint8_t)(DM_EBM + gr() % 4u);      /* (V10.6m) its drums one of four, a throw's own */
         if (gmut.drum == DM_EBM3) { gmut.bpm_lo = 148; gmut.bpm_hi = 156; }   /* (the owner's slow EBM: 77 felt, the
                                                          * half-time map at 154, the sequence in sixteenths over it) */

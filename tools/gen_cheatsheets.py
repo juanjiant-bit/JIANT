@@ -378,9 +378,13 @@ def sound():
     b.append(card('TWELVE ENGINES: ELEVEN SYNTHS AND EXT', HEAT[7], t))
     b.append('<div class="grid g3" style="margin-top:22px">')
     b.append(card('FILTER · EVERY ENGINE', HEAT[3], knobs('TYPE', 'CUT', 'RES', 'DRV') +
-                  '<p style="margin-top:8px"><b>LP · HP · BP · COMB · COMB- · MS20 · LP24</b> (LP24: four poles, V10.22). COMB rings tuned to the note (COMB-: hollow, odd harmonics): CUT moves it '
+                  '<p style="margin-top:8px"><b>LP · HP · BP · COMB · COMB- · LP24</b> (LP24: four poles; DRV takes it from clean to a growl and a scream). COMB rings tuned to the note (COMB-: hollow, odd harmonics): CUT moves it '
                   '±32 st, RES how much it rings. ANALOG and MATH: per voice; the others: on the track, following '
-                  'LFO / ENV DEST FLT (DRV = the track\'s DIST).</p>'))
+                  'LFO / ENV DEST FLT (DRV: ANALOG\'s own; the others drive the track into the filter; DRUM-X, EXT: the track\'s DIST).</p>'
+                  + knobs('KEY', 'NOISE', 'RATE', 'MODE') +
+                  '<p style="margin-top:8px"><b>FILTER 2</b>: KEY tracking 0 .. 100 % (ANALOG starts at 21 %); a noise modulator, '
+                  'NOISE its depth, RATE 0.4 .. 320 Hz; MODE <b>SOFT · STEP</b> move CUT (gliding, held), <b>METAL · BREAK · DUST</b> '
+                  'texture the track into the filter (ring at an inharmonic ratio, broken holds, crackle to hiss).</p>'))
     b.append(card('VOICE · PLAYING', HEAT[2], knobs('VCE', 'GLD', 'GLMOD', 'PRIO') +
                   '<p style="margin-top:8px">POLY · MONO · LEG · UNI; glide and its mode; LAST / LOW / HIGH priority. '
                   '<b>8 voices</b> shared by the six tracks (MONO and LEGATO keep their note). <b>EDIT › PLAY 2 IMAGE</b> (V10.49; was its STEREO page): '

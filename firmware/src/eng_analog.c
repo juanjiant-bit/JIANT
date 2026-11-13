@@ -19,9 +19,12 @@ static const param_desc_t *analog_desc(const track_t *t, uint32_t k) { return k 
  * (analog_ext's loop, every WAVE); COMB the filter open, the part's sum through a feedback comb tuned to the newest
  * note and CUT (+-32 semitones about it), RES its feedback (voice.c track_comb).
  * (0.9.9-snd1) COMB- the same comb with its feedback negative: odd harmonics, hollow (its line half as long: the note
- * where COMB's is). FT_POST(ft): a TYPE the part's (voice.c tf_run), every engine's own filter open under it */
-enum { FT_LP, FT_HP, FT_BP, FT_COMB, FT_COMBN, FT_MS20, FT_LP24, FT_N };   /* (snd1: MS20, voice.c tf_ms20; V10.22: LP24,
-                                                         * voice.c tf_lp24) */
+ * where COMB's is). FT_POST(ft): a TYPE the part's (voice.c tf_run), every engine's own filter open under it.
+ * (codex/filters2) MS20 retired (the owner: "it barely resembles the original", LP24 alike): its number 5 stays, an alias
+ * shown as LP24 that the knob passes over (params.c enum_orig), LP24 at DRIVE 70 % at least (voice.c tf_lp24: what
+ * sounds closest), so a project or a preset of before still plays it */
+enum { FT_LP, FT_HP, FT_BP, FT_COMB, FT_COMBN, FT_LP24H, FT_LP24, FT_N };   /* (V10.22: LP24, voice.c tf_lp24) */
+#define FT_IS_LP24(ft) ((ft) == FT_LP24 || (ft) == FT_LP24H)
 #define FT_IS_COMB(ft) ((ft) == FT_COMB || (ft) == FT_COMBN)
 #define FT_POST(ft) ((ft) >= FT_COMB)
 /* the TYPE stored, in range (was & 3: a value past the last read as another TYPE) */

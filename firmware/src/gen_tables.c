@@ -424,7 +424,7 @@ static const gcell_t LD_CELLS[3] = {{{0, 0, -1, 0}, 16, 3}, {{0, 7, 0, 4}, 2, 1}
 /* (0.9.9-gen1) a role's SOUND ARCHETYPE, packed (18 B; was 44): up to three (engine, factory preset) options (the first
  * the likeliest; a bass takes the first two only, so its engine is the archetype's), then what the role asks of the
  * sound over the preset, in the engine's real parameters: the amp envelope (GR: a range in eighths of 0..127), the
- * filter (type LP HP BP COMB COMB- MS20, 7: the engine's own; its cutoff and resonance: ANALOG's CUT RES, the part's
+ * filter (type LP HP BP COMB COMB-, 6 LP24 (5 the retired MS20's), 7: the engine's own; its cutoff and resonance: ANALOG's CUT RES, the part's
  * filter on the others), the filter envelope (GR4: in fourths of 0..63), the glide, ANALOG's WAVE (two: the second one
  * time in three; MIX 0: one oscillator), the LFO on the filter (its depth, a free rate or 1/4 1/8 1/8T 1/16 synced), the
  * part's drive and chorus, the voice mode */
@@ -499,8 +499,9 @@ static const grecipe_t RECIPE[SR_N] = {
     /* ---- (0.9.9-gen1) the archetypes the genres lacked */
     /* EBM (V10.6p, the owner: "a modular's analog basses, slightly detuned"): FAT BASS's two oscillators (two saws, two
      * squares one time in three) ~9 cents apart, the second an octave under (or a fourth, a fifth: GEN's consonant
-     * INT), the MS20 filter, short, its envelope on it (the accents open it further), driven */
-    [SR_EBMBASS]  = {{{EG_A, 14}, {EG_A, 14}, NO_}, GR(0, 7), GR(32, 47), GR(8, 31), GR(8, 23), GR(48, 71), GR(40, 63), GR4(28, 47), GFT(5, 0), GWV(0, 1, 0), 0, GDC(28, 0), V_LEGATO},
+     * INT), the LP24 filter driven into its growl (codex/filters2: was the MS20, retired; gen.c: DRIVE 55 % at least),
+     * short, its envelope on it (the accents open it further), driven */
+    [SR_EBMBASS]  = {{{EG_A, 14}, {EG_A, 14}, NO_}, GR(0, 7), GR(32, 47), GR(8, 31), GR(8, 23), GR(48, 71), GR(40, 63), GR4(28, 47), GFT(6, 0), GWV(0, 1, 0), 0, GDC(28, 0), V_LEGATO},
     /* trap's 808: a sine's long boom, gliding (the SLIDEs), driven */
     [SR_808]      = {{{EG_A, 7}, {EG_A, 2}, NO_}, GR(0, 7), GR(88, 111), GR(0, 15), GR(32, 47), GR(56, 79), GR(0, 7), GR4(0, 7), GFT(0, 48), GWV(3, 3, 1), 0, GDC(36, 0), V_LEGATO},
     /* jazz, bossa, boom bap: an upright's triangle, plucked */
@@ -771,7 +772,7 @@ static const ggenre_t GENRE[] = {
      * Front 242, Die Krupps (115 .. 130) and today's techno-body (Kontravoid, Phase Fatale, Schwefelgelb, Imperial Black
      * Unit: 125 .. 140): a distorted four on the floor, the snare or the clap on 2 and 4, metal; a sequenced bass in
      * sixteenths (Nitzer Ebb's, DAF's, Front 242's gallop, the offbeat octaves: gen.c gen_pick's eight) on two saws a
-     * few cents apart through the MS20, accents on its filter; a second sequence an octave up, a shout every bar or
+     * few cents apart through the LP24 driven (was the MS20), accents on its filter; a second sequence an octave up, a shout every bar or
      * two; no chords, dry */
     {"EBM", 118, 138, 0, {SC_PHRY, SC_MIN, SC_PHRY, SC_MIN}, DM_EBM, 100, KIT_INDUS, 0, HC_MACHINE, FL_NONE, 1,
      {BA_NITZER1, BA_DAF, BA_GALLOP}, 33, KM_SUSTAIN, 80, {PR_ONE, PR_PHRY, PR_I_VI}, 4, CS_STAB, VM_POWER,

@@ -613,6 +613,7 @@ static uint32_t layer_btn(void);
  * LANES 2 a DRUM track's (its lane levels); SOUND / SOUND 2 a DRUM track's (DRUM-X: ui_dx.c) */
 static int page_visible(uint32_t i)
 {
+    uint32_t te = trk_eng(TSEL);                        /* (filters2: once) */
     if (PAGES[i].graph == GR_SONG && PAGES[i].fam == FAM_SEQ)
         return 0;                                       /* (0.6.24) the song in one place: SAVE > ARRANGE (SEQ > SONG
                                                          * was the same page twice; kept in the table: its index) */
@@ -620,27 +621,28 @@ static int page_visible(uint32_t i)
                                  (PAGES[i].fam == FAM_FX && PAGES[i].id[0] == G_CRATE)))
         return 0;                                       /* (0.6.30) LOAD ECO: no SLICER, no chorus: their pages gone */
     if (PAGES[i].graph == GR_MORPH) {                   /* (0.6.45) MORPH: ANALOG's waves, PHASE (V10.6d: MATH none) */
-        uint32_t e = trk_eng(TSEL);
+        uint32_t e = te;
         return e == ENGI_ANALOG || ENGINES[e] == &ENG_PHASE;   /* (0.6.81: every ANALOG WAVE) */
     }
     if(PAGES[i].graph==GR_TRACKGEN) return trackgen_ok(TSEL);
     if (PAGES[i].graph == GR_SWARM)                     /* (V10.6z6) FAR / NEAR: a SWARM track's */
-        return trk_eng(TSEL) == ENGI_INPUT && TSEL->p[P_E0] == AIN_SW;
+        return te == ENGI_INPUT && TSEL->p[P_E0] == AIN_SW;
     if (PAGES[i].graph == GR_LYRIC || PAGES[i].graph == GR_LYRSTEP)
         return trk_engp(TSEL) == &ENG_FORMANT;
     if (PAGES[i].graph == GR_PATS || PAGES[i].graph == GR_CHANCE)   /* (0.6.37) PHRASES, a step's CHANCE: out of the */
         return !ui.home && ui.page == i;               /* SEQ pages' cycle (only where code put the screen) */
     if (PAGES[i].graph == GR_DXSND || PAGES[i].graph == GR_DXIMG)   /* (0.6.48: IMAGE; V10.49: STEREO a synth's too) */
-        return trk_eng(TSEL) == ENGI_DRUM;              /* (codex/coherence: a synth's IMAGE on PLAY 2) */
+        return te == ENGI_DRUM;              /* (codex/coherence: a synth's IMAGE on PLAY 2) */
     if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] >= P_LN0 && PAGES[i].id[0] <= P_LN7)
-        return trk_eng(TSEL) == ENGI_DRUM;
+        return (te == ENGI_DRUM) == (PAGES[i].id[0] != P_FKEY) && te != ENGI_INPUT;   /* (filters2:
+                                                         * FILTER 2, a synth's) */
     if (PAGES[i].graph == GR_FOCUS)                     /* (0.8.5) FOCUS: a synth's (FM6: OPERATOR, DRUM: SOUND; V10.54 not INPUT's) */
-        return trk_eng(TSEL) != ENGI_DRUM && trk_eng(TSEL) != ENGI_FM6 && trk_eng(TSEL) != ENGI_INPUT &&
-               !(FELUCCA_FM4 && trk_eng(TSEL) == ENGI_DIGITAL);
+        return te != ENGI_DRUM && te != ENGI_FM6 && te != ENGI_INPUT &&
+               !(FELUCCA_FM4 && te == ENGI_DIGITAL);
     if (PAGES[i].id[0] == P_ALLOC)                      /* (0.8.5) VOICE 2: not a kit's */
-        return trk_eng(TSEL) != ENGI_DRUM;
+        return te != ENGI_DRUM;
     if (PAGES[i].graph >= GR_FMOP && PAGES[i].graph <= GR_FMENV)   /* (0.6.10) OPERATOR, OP ENV, OPERATOR 2: FM6's */
-        return trk_eng(TSEL) == ENGI_FM6;
+        return te == ENGI_FM6;
     if (PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] == P_WRDEP)   /* (0.7.8) ROTOR: WHEEL's */
         return trk_engp(TSEL) == &ENG_WHEEL;
     if (PAGES[i].id[0] == P_LRTRG && PAGES[i].id[1] == 0xFFu)   /* (0.6.12) RETRIG: LOFI BYTE / FLOAT's */
@@ -649,16 +651,19 @@ static int page_visible(uint32_t i)
                                                          * place), no EDIT 2; every other engine EDIT 1 and EDIT 2 */
     {
         uint32_t a2 = PAGES[i].id[0] == P_E0 && PAGES[i].id[3] == P_E7, a3 = PAGES[i].id[0] == P_E0 && PAGES[i].id[1] == P_E7;
-        if (PAGES[i].id[0] == P_E7 || (trk_eng(TSEL) == ENGI_FM6 && PAGES[i].id[0] == P_E4))   /* (codex/coherence) FM6's
+        if (PAGES[i].id[0] == P_E7 || (te == ENGI_FM6 && PAGES[i].id[0] == P_E4))   /* (codex/coherence) FM6's
                                                          * EDIT 2: SLOT first */
-            return (trk_eng(TSEL) == ENGI_FM6) == (PAGES[i].id[0] == P_E7);
-        if (trk_eng(TSEL) != ENGI_ANALOG) return !a2 && !a3;
+            return (te == ENGI_FM6) == (PAGES[i].id[0] == P_E7);
+        if (te != ENGI_ANALOG) return !a2 && !a3;
         return AN_OSC3(TSEL->p) ? a3 : a2;              /* (V10.7.22: SAW3 / PLS3, its three intervals on one page) */
     }
     if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] == P_FTYPE)   /* (JIANT 0.5) FILTER: ANALOG's, or the part's */
-        return (trk_eng(TSEL) == ENGI_ANALOG) == (PAGES[i].id[1] == P_E4);
+    {
+        return te == ENGI_ANALOG ? PAGES[i].id[1] == P_E4 :   /* (filters2: a kit's and EXT's with DIST, the others' DRIVE) */
+               PAGES[i].id[1] != P_E4 && (te == ENGI_DRUM || te == ENGI_INPUT) == (PAGES[i].id[3] == P_DIST);
+    }
     return !(PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] >= P_FM1_ATK &&
-             PAGES[i].id[0] <= P_FM4_LEVEL) || (FELUCCA_FM4 && trk_eng(TSEL) == ENGI_DIGITAL);
+             PAGES[i].id[0] <= P_FM4_LEVEL) || (FELUCCA_FM4 && te == ENGI_DIGITAL);
 }
 
 static uint32_t page_first(uint32_t fam)

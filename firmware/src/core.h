@@ -201,6 +201,18 @@ enum {                          /* per-track parameters */
 /* (V10.6z4) a synth's expression keys as the sequencer recorded them (seq.c kx_block, ui_input.c kx_frame), in DRUM-X's
  * lane 8 level (127 every synth part holds): 127 - (bit 0 OCT- VIBRATO, bit 1 OCT+ BEND), automation only */
 #define P_XPR P_LN7
+/* (codex/filters2, the owner: a noise modulator on the filter, KB TRACKING, metallic / broken / noisy textures; LP24
+ * clean to aggressive) EDIT > FILTER 2 (voice.c fn_tick, fn_tex) and FILTER's DRIVE, in DRUM-X's lane 3..7 level slots:
+ * 127 there (what every synth part holds: its presets set it) is OFF / as before. Not a kit's (its lane levels) nor
+ * EXT's (its SWARM, eng_input.c SW_SLOT). KEY: 127 - v of the full tracking; ANALOG (its filter always tracked a fifth
+ * of the key): its place (v + 28) & 127, 127 at 27 (21 %, as before). NOISE, RATE, DRIVE: 127 - v. MODE: 127 - v,
+ * SOFT STEP METAL BREAK DUST */
+#define P_FKEY P_LN2
+#define P_FNZ P_LN3
+#define P_FNRT P_LN4
+#define P_FNMD P_LN5
+#define P_FDRV P_LN6
+static inline uint32_t fkey_rank(int32_t v) { return ((uint32_t)v + 28u) & 127u; }
 static inline uint32_t vcons_rank(int32_t v) { return ((uint32_t)v + 33u) & 127u; }
 static inline uint32_t vcons_q6(int32_t v)
 {

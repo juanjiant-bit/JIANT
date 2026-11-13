@@ -58,11 +58,9 @@ static int32_t ed_resp(uint32_t ty, int32_t x, int32_t xc, int32_t res)
     int32_t bump = pk * 64 / (64 + d * d / 2);
     if (ty == 3u || ty == 4u)                           /* COMB: teeth CUT apart, as deep as RES (COMB-: between) */
         return 62 - (int32_t)(((ty == 4u ? -1 : 1) * og_cos((uint32_t)x * (uint32_t)(4096 + xc * 160)) * (8 + pk / 2)) >> 15);
-    if (ty == 5u)                                       /* (snd1) MS20: a low-pass, its peak higher */
-        bump += bump / 2;
-    if (ty == 6u)                                       /* (V10.22) LP24: twice as steep */
+    if (ty == 5u || ty == 6u)                           /* (V10.22) LP24 (filters2: MS20's 5 its alias): twice as steep */
         return clamp(62 + (d > 0 ? 4 * d : 0) - bump, 8, 104);
-    y = ty == 0u || ty == 5u ? (d > 0 ? 2 * d : 0) : ty == 1u ? (d < 0 ? 2 * a : 0) : 2 * a / 3;   /* LP HP BP */
+    y = ty == 0u ? (d > 0 ? 2 * d : 0) : ty == 1u ? (d < 0 ? 2 * a : 0) : 2 * a / 3;   /* LP HP BP */
     return clamp(62 + y - bump - (ty == 2u ? pk / 3 : 0), 8, 104);
 }
 static void graph_filter_lz(const track_t *t, const page_t *pg)

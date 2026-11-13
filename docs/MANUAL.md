@@ -1091,10 +1091,11 @@ image) with a bar under it: the morph, FAR left, NEAR right.
 
 ### FILTER (every engine)
 
-EDIT > **FILTER**: **TYPE** LP, HP, BP, **COMB**, **COMB-**, **MS20** or **LP24** (V10.22: a 24 dB/oct low-pass, two poles in series, RES on the second). COMB and COMB- are a comb tuned to the note you play; CUT moves it, RES is how much
-it rings), **CUT**, **RES**, and KNOB 4: on ANALOG its own DRIVE, on every other engine the track's DIST. On ANALOG
-the filter is per voice; on MATH the filter page drives its per-voice filter; on the others it is a filter on the
-track that follows LFO DEST / ENV DEST FILTER.
+EDIT > **FILTER**: **TYPE** LP, HP, BP, **COMB**, **COMB-** or **LP24** (a 24 dB/oct low-pass, two poles in series, RES on the second). COMB and COMB- are a comb tuned to the note you play; CUT moves it, RES is how much
+it rings), **CUT**, **RES**, and KNOB 4 **DRIVE**: on ANALOG its own DRIVE (each voice into the clip), on every other
+engine the part into a soft clip before the filter, x1 .. x3 (DRUM-X and EXT keep the track's DIST there; DIST is
+always on FX > DIST too). On ANALOG the filter is per voice; on MATH the filter page drives its per-voice filter; on
+the others it is a filter on the track that follows LFO DEST / ENV DEST FILTER.
 
 **COMB** and **COMB-** (0.9.9-snd1): the comb is tuned to the newest note (CUT 64 = the note, ±32 semitones either
 side) and glides when CUT or the note moves (no zipper). **RES** is how long it rings, the same on every note: from a
@@ -1103,12 +1104,43 @@ and a damping low-pass in the loop (opening with RES) lets the highs die first, 
 feedback) is metallic and flanger-like; **COMB-** (negative) keeps only the odd harmonics: hollow, clarinet-like, at
 the same pitch.
 
-**MS20** (0.9.9-snd1): an aggressive 2-pole low-pass after the Korg MS-20: its resonance is fed back through a
-diode-like clip, so it screams at high RES but stays under control (the clip sets how loud it can ring, and a hot
-input growls instead of blowing up); RES is exponential (soft at 0, very sharp in the last part of its travel, and the
-ring still dies out when the part goes silent). Same knobs: CUT (with LFO / ENV DEST FILTER), RES, and the drive of
-KNOB 4. On ANALOG and MATH the MS20 (like the combs) is the track's filter after the voices: their own filter opens.
-LP, HP and BP sound exactly as before.
+**LP24** goes from clean to aggressive with **DRIVE**: at 0 it is the clean 4-pole low-pass it always was; turning
+DRIVE up feeds its second stage's band-pass back into it through a soft clip (the diode loop of the classic Japanese
+2-pole filters): at low RES a bump at CUT, in the middle a growl, at high RES a scream that the clip keeps under full
+scale; a loud input squashes the ring instead of blowing up, and the ring still dies when the part goes silent. On
+ANALOG and MATH LP24 (like the combs) is the track's filter after the voices: their own filter opens. LP, HP and BP
+sound exactly as before.
+
+**MS20 is gone** (codex/filters2): it sounded much like LP24 and little like the original. Its stored number
+stays as a hidden twin of LP24: a project, a preset or a song that has TYPE MS20 loads and plays LP24 with DRIVE at
+least 70 % (the closest to what it was), and shows LP24; the TYPE knob passes over it. GEN's EBM bass now asks for
+LP24 with its DRIVE at 55 % or more.
+
+### FILTER 2: KEY, NOISE, RATE, MODE (every engine but DRUM-X and EXT)
+
+EDIT > **FILTER 2** (codex/filters2), after FILTER. All four at their stored default are off: every project
+and preset of before sounds the same.
+
+- **KEY**: keyboard tracking, 0 .. 100 %. The cutoff follows the note you play: at 100 % an octave up opens it an
+  octave. On ANALOG it starts at 21 % (the fixed tracking its filter always had) and goes down to 0 % or up to 100 %;
+  on the other engines it starts at 0 %. A per-voice filter (ANALOG, MATH) follows each voice's note; the track's filter
+  follows the newest note.
+- **NOISE**: how much the noise modulator acts, 0 .. 100 % (fine at the bottom, heavy at the top).
+- **RATE**: how often the modulator picks a new random value, from ~0.4 Hz (a slow wander) to ~320 Hz (grit).
+- **MODE**: what the modulator does.
+  - **SOFT**: the value glides from one to the next and moves CUT (up to ±4.5 octaves at full NOISE): a drifting,
+    breathing filter at low RATE, a rough flutter at high RATE.
+  - **STEP**: the value is held until the next one (sample and hold) and moves CUT: stepped, broken filter jumps.
+  - **METAL**: the part is ring-modulated before the filter by a triangle at an inharmonic ratio of the newest note
+    (x1.19 .. x4.06); each new value picks another ratio, so RATE is how often the metal changes colour.
+  - **BREAK**: the part is held for random lengths (up to ~1 ms at RATE 0, a couple of samples at the top: a jittered
+    crush), and some holds are silent (up to a quarter at full NOISE): broken, glitchy.
+  - **DUST**: noise at the part's own level (silence stays silent), sparse crackles at RATE 0 thickening to a hiss at
+    the top, into the filter (RES makes it whistle).
+  In METAL, BREAK and DUST, NOISE is the mix: at 100 % only the texture is heard. None of them is louder than the part.
+
+With the track's filter fully open (LP, CUT 127, RES 0), SOFT and STEP lower CUT so the moving filter is heard, as
+LFO DEST FILTER does.
 
 **CHORUS** (0.9.9-snd2) is lighter: its LFO is read every 64 samples (16, 8, 4 at the fastest RATEs) and the three
 voices glide between, instead of three sines every sample; it sounds the same (-63 dB from before at the default).
@@ -1964,7 +1996,7 @@ filter, each with a small random range so two seeds differ but stay the sound. S
 |---|---|---|
 | **ACID** (the 303) | ACID HOUSE, BREAKS | (0.9.9-gen2, after X0X's Open303) ANALOG saw (or square), one oscillator, no noise; LP low (~400 Hz at rest), RES 104–120 (high, never ringing on its own), the envelope high on it (~2 kHz at the peak) with a short decay (400–900 ms) over a sustain (the note's body: ANALOG's one envelope is the level's too); an **ACCENT** opens the filter ~2 octaves more and plays louder; LEGATO, so a **SLIDE** holds the gate and the next note glides (MODE TIME, ~55 ms whatever the interval) **without retriggering** the envelope; DIST after |
 | **TECH BASS** | TECHNO, TECH HOUSE, HARD TECHNO, HYPNOTIC | ANALOG saw or square, short, resonant LP, envelope, drive |
-| **EBM BASS** | EBM, DARKWAVE, MINIMAL SYNTH | ANALOG square through the **MS20** filter, short, envelope, drive |
+| **EBM BASS** | EBM, DARKWAVE, MINIMAL SYNTH | ANALOG square through the **LP24** filter driven (MS20 before codex/filters2), short, envelope, drive |
 | **808** | TRAP | a sine's long boom, glide 30+, driven |
 | **WOBBLE** | DUBSTEP | fat saws, resonant LP moved by an LFO **on the beat** (1/8) |
 | **REESE** | DRUM & BASS, UK GARAGE | SAW3 detuned, a slow LFO on the filter, chorus |
