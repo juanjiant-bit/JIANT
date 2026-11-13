@@ -908,6 +908,17 @@ de un coro el suyo) y la voz nunca queda perfectamente quieta (un poco de jitter
 despacio de la primera y llega despacio a la segunda (una curva en S, tan larga como dice GLIDE); cantando palabras,
 las notas en legato se deslizan un poco (~60 ms) aun con GLIDE en 0.
 
+**A tiempo (voice2).** La **vocal** de una nota cantada cae en el tiempo de la nota, no su consonante. Tocando desde el
+secuenciador, VOICE lee de antemano la sílaba de la nota siguiente y arranca ese paso antes, tanto como duran sus
+consonantes (como mucho la mitad del paso anterior): "vai", "toma", "sa" cantan en el tiempo con las consonantes antes,
+como lo hace un cantante, sin microtiming negativo. **Los pasos de una pista VOICE que adelantaste con MICRO para
+compensar las consonantes tienen que volver a 0** (ahora cantarían adelantados en esa medida). Las teclas, el MIDI y las
+notas siguientes de un ARP o un RATCHET no se pueden leer de antemano: sus consonantes se cantan en ~10 ms, el siseo o la
+explosión montados sobre el comienzo de la vocal, y la vocal llega a ~10 ms de la tecla. La fuente sigue al nivel (más
+suave y con más aire cuando la nota entra y se apaga), la altura de cada sílaba sube apenas hasta su nota, y una frase
+soltada termina con un crujido suave y parejo (vocal fry; nada con BUZZ al máximo). LANG OFF (VOWEL / VOWEL2 / TALK)
+suena como antes.
+
 **EDIT > WORDS** (solo en pistas VOICE): **LANG**, **LYRIC**, **POS**; **OCT+** (TYPE) abre la pantalla para escribir
 la letra.
 

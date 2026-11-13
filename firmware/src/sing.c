@@ -28,6 +28,11 @@
  * release the coda (an English diphthong's second vowel too) sounds, voiced ones held. A next note before the release
  * (LEGATO, or the next step) sings the coda quickly first.
  *
+ * (voice2) On time: the vowel on the note's time. Each note reads the next note's syllable ahead (on a copy) and keeps
+ * its onset's length (nlead); the sequencer starts that step so much early (seq.c seq_tick, as a negative MICRO, the grid
+ * kept) and tells the note (lead): its consonants as written, its vowel on the step. A key, MIDI, an ARP's later notes
+ * (no lead): the onset squeezed into ~10 ms (oq), its hiss carried over the vowel's first ~10 ms.
+ *
  * All per track (sing[]: ~100 bytes a track), none per voice: the voices of a track sing the same syllable (a choir).
  * The UI reads sing[] (sing_view): the word, the syllable count, the phoneme sounding, the formants, the gains: the
  * VOICE page shows them (and a later sagittal CT head can move with them). */
@@ -643,6 +648,12 @@ typedef struct {
     int16_t pv, pa, pf;          /* .. its start (formant_render ramps across) */
     uint8_t live;                /* the articulation has started (from rest: the formants at the first target) */
     char w[20];                  /* the word (shown; the generator's, read from here) */
+    /* (voice2) on time: the vowel on the note's time (the struct's padding, its size as before). nlead the next
+     * syllable's onset (blocks, up to its vowel: the sequencer starts that step so much early, seq.c seq_tick); lead the
+     * lead the sequencer gave this note (2 blocks, bits 0..5; bits 6..7 its age: none taken, gone); oq the onset's time
+     * scale (Q7, 0: as written; under 128 squeezed: a key's, no lead, its consonants in ~10 ms overlapped with the
+     * vowel; over it stretched, up to x2: a lead longer than the onset read ahead) */
+    uint8_t nlead, lead, oq;
 } sing_t;
 static sing_t sing[NTRK];
 /* (0.9.8) more of a track's singer, in the pool (zeroed at boot; sing[] and the RAM region keep their layout, as sing_w):
@@ -653,17 +664,21 @@ typedef struct {
     uint16_t vb, vph;
 } sing_x_t;
 static sing_x_t sing_x[NTRK] __attribute__((section(".pool")));
-/* (V10.40) a track's blocks since its last note, the times between its last notes (0: none yet), quick notes (the
- * formants glide quicker): sy_cons, sy_tick. Its own section: out of the merged globals (sing[] grown moved the UI's) */
+/* (V10.40) a track's blocks since its last note, the times between its last notes (0: none yet): sy_cons. Its own section: out of the merged globals (sing[] grown moved the UI's) */
 typedef struct { uint16_t nb, ioi; } sing_io_t;
 static sing_io_t sing_io[NTRK] __attribute__((section(".bss.sing_io")));
-static uint8_t sy_quick __attribute__((section(".bss.sy_quick")));
 
 /* sing_view: what the UI reads (the VOICE page; the CT head) */
 static const sing_t *sing_view(const track_t *t) { return &sing[(uint32_t)(t - trk) % NTRK]; }
 static uint32_t sing_phon(const sing_t *s) { return s->i < s->np ? s->ph[s->i] : PH_SIL; }
 
-static uint32_t sy_ms(uint32_t ms) { return (ms * (1411u * 32u / CTL) + 512u) >> 10; }   /* ms -> blocks (CTL samples) */
+#define SY_BL(ms) (((ms) * (1411u * 32u / CTL) + 512u) >> 10)
+static uint32_t sy_ms(uint32_t ms) { return SY_BL(ms); }   /* ms -> blocks (CTL samples) */
+/* (voice2) on time: a key's onset (no lead) in SY_LIVE, its vowel ~10 ms after the key; a led note's vowel SY_K
+ * before the step's time (its voicing heard ~4 ms on: the vowel's onset on the step), its onset SY_MIN at the least */
+#define SY_LIVE SY_BL(10u)
+#define SY_K SY_BL(4u)
+#define SY_MIN SY_BL(6u)
 
 /* the phrase's length: the NOTE steps of the pattern (1..64; none: 8) */
 static uint32_t sy_phrase_len(const track_t *t)
@@ -1070,7 +1085,6 @@ static void sy_cons(const track_t *t, const sing_io_t *x)
 {
     uint32_t f = x->ioi ? (x->ioi * 113u) >> 6 : 256u;
     f = f < 128u ? 128u : f > 256u ? 256u : f;
-    sy_quick = f < 192u;
     sy_cx = (int16_t)(((vcons_q6(t->p[P_VCONS]) * f) >> 8) - 64);
 }
 static void sy_enter(sing_t *s, uint32_t lang)
@@ -1104,6 +1118,10 @@ static void sy_enter(sing_t *s, uint32_t lang)
     if (s->i + 1u == s->np && s->i > s->nu && ph_sonorant(c))
         ms = 0;                                          /* the last of a coda, voiced: held */
     s->tb = (uint16_t)(ms ? sy_ms(ms) | 1u : 0u);
+    if (s->oq && s->i < s->nu) {                         /* (voice2) the onset in its time: 2 blocks at least, a */
+        uint32_t b = (s->tb * s->oq) >> 7, fl = 2u + (P->cls == PC_FRI);   /* fricative 3 (its hiss carried over the */
+        s->tb = (uint16_t)(b > fl ? b : fl);             /* vowel: sy_tick) */
+    }
 }
 
 /* the next stage or phoneme */
@@ -1192,15 +1210,11 @@ static __attribute__((noinline)) void sy_tick(const track_t *t, sing_t *s, uint3
     else if (s->nu < s->np)
         nxt = s->ph[s->nu];
     Q = &PHON[nxt];
-    tF[0] = P->f1 ? P->f1 : Q->f1;
-    tF[1] = P->f1 ? P->f2 : Q->f2;
-    tF[2] = P->f1 ? P->f3 : Q->f3;
+    for (j = 0; j < 3u; j++)                             /* (f1 f2 f3 in a row) */
+        tF[j] = k == PC_SIL ? s->f[j] : (&(P->f1 ? P : Q)->f1)[j];
     tbm = P->bwm;
     switch (k) {
     case PC_SIL:
-        tF[0] = s->f[0];
-        tF[1] = s->f[1];
-        tF[2] = s->f[2];
         break;
     case PC_PLO:
     case PC_AFF:
@@ -1247,8 +1261,8 @@ static __attribute__((noinline)) void sy_tick(const track_t *t, sing_t *s, uint3
         break;
     default:                                             /* vowels, glides, liquids, nasals */
         tv = P->av << 7;
-        if (k == PC_VOW && s->i > 0u && s->i <= s->np && ph_vowel(s->ph[s->i - 1u]))
-            sh = 5;                                      /* a diphthong's glide: slower */
+        if (k == PC_VOW && (s->i ? ph_vowel(s->ph[s->i - 1u]) : 1))
+            sh = 5;                                      /* a diphthong's glide, (voice2) a vowel from the last: slower */
         break;
     }
     if (F) {                                             /* (V10.40: the frication's, once) */
@@ -1257,13 +1271,9 @@ static __attribute__((noinline)) void sy_tick(const track_t *t, sing_t *s, uint3
         tfb = F->fbw * 50;
     }
     if (!s->live) {                                      /* from rest: at the first target at once */
-        x->fq[0] = s->f[0] = (int16_t)(k == PC_SIL ? Q->f1 : tF[0]);
-        x->fq[1] = s->f[1] = (int16_t)(k == PC_SIL ? Q->f2 : tF[1]);
-        x->fq[2] = s->f[2] = (int16_t)(k == PC_SIL ? Q->f3 : tF[2]);
+        for (j = 0; j < 3u; j++)
+            tF[j] = x->fq[j] = s->f[j] = (int16_t)(k == PC_SIL ? (&Q->f1)[j] : tF[j]);
         x->vph = 0;                                      /* (the vibrato from its start: a phrase renders the same) */
-        tF[0] = s->f[0];
-        tF[1] = s->f[1];
-        tF[2] = s->f[2];
         s->ff = (int16_t)tff;
         s->fb = (int16_t)tfb;
         s->bm = (int16_t)tbm;
@@ -1275,7 +1285,8 @@ static __attribute__((noinline)) void sy_tick(const track_t *t, sing_t *s, uint3
      * shifts, and the gains' below, were set for blocks of 32 samples: since ctl64 (0.9.9) every glide took twice
      * its time (the formants ~12 .. 46 ms, a vowel's voicing still sounding through a closure), so each one is
      * SY_CB less: the times of 0.9.8 again */
-    sh -= 1u + SY_CB + sy_quick;
+    sh = sh > 2u + SY_CB ? sh - 1u - SY_CB : 1u;        /* (voice2: never a jump; quick notes' glides as the others': */
+                                                        /* their consonants on time, sy_cons, not their mouth hurried) */
     {   /* (V10.40) each syllable its own mouth: the targets -2.7 .. +3.1 % (~+-0.5 st) by the syllable (its first
          * phoneme, its vowel, its length: a "-" holds it), glided to as the rest: a phrase's formants move from
          * part to part, not one fixed mask */
@@ -1288,7 +1299,7 @@ static __attribute__((noinline)) void sy_tick(const track_t *t, sing_t *s, uint3
         int32_t d = (j < 3u ? tF[j] : x->fq[j - 3u]) - *a;
         *a = (int16_t)(*a + (d >> sh) + (d > 0 && (d >> sh) == 0));
     }
-    s->ff = (int16_t)(s->ff + ((tff - s->ff) >> (1 - SY_CB)));
+    s->ff = (int16_t)(s->ff + ((tff - s->ff) >> (2 - SY_CB)));   /* (voice2: over 2 blocks, F4 no jump on the vowel) */
     s->fb = (int16_t)(s->fb + ((tfb - s->fb) >> (1 - SY_CB)));
     s->bm = (int16_t)(s->bm + ((tbm - s->bm) >> (2 - SY_CB)));
     s->pv = s->gv;
@@ -1298,10 +1309,33 @@ static __attribute__((noinline)) void sy_tick(const track_t *t, sing_t *s, uint3
      * closure (a tap's, a trill's dips: at once), comes in over ~3 ms; the frication comes in over ~10 ms (a plosive's
      * burst, an affricate's release: at once) and goes over ~5 ms: no hiss switched on and off */
     s->gv = (int16_t)(s->gv + ((tv - s->gv) >> ((tv >= s->gv ? 2 : k == PC_FRI ? 3 : k == PC_TAP || k == PC_TRL ? 1 : 2) - SY_CB)));
-    s->ga = (int16_t)(s->ga + ((ta - s->ga) >> (1 - SY_CB)));
-    s->gf = (int16_t)(tf > s->gf && k != PC_FRI ? tf : s->gf + ((tf - s->gf) >> ((tf > s->gf ? 3 : 2) - SY_CB)));
+    /* (voice2) the frication goes over ~5 ms (was ~2: a hiss cut off), a fricative's comes in quicker in a key's quick
+     * onset; that onset's hiss and aspiration carried over the vowel's first ~10 ms (sung over it, not before it) */
+    j = (uint8_t)(s->oq - 1u) < 127u;                   /* (squeezed: a key's) */
+    k = j && s->i == s->nu;
+    s->ga = (int16_t)(s->ga + ((ta - s->ga) >> (k ? 2u : 1u - SY_CB)));
+    s->gf = (int16_t)(tf > s->gf && P->cls != PC_FRI ? tf
+                      : s->gf + ((tf - s->gf) >> (tf > s->gf ? 3u - SY_CB - j : k ? 4u - SY_CB : 3u - SY_CB)));
 }
 
+/* (voice2) the blocks from a syllable's start to its vowel (walked and put back: sy_adv moves i st tb), and SY_PLO
+ * when a plosive or an affricate is in it (its vowel heard a little later: the voicing after the burst, F1 rising from
+ * the closure's) */
+#define SY_PLO (1u << 16)
+static uint32_t sy_onset(sing_t *c, uint32_t lang)
+{
+    uint32_t b = 0, k, q, i = c->i, st = c->st, tb = c->tb;
+    for (k = 0; k < 24u && c->i < c->nu && c->i < c->np; k++) {
+        q = PHON[c->ph[c->i]].cls;
+        b += c->tb | (q == PC_PLO || q == PC_AFF ? SY_PLO : 0u);
+        sy_adv(c, lang);
+    }
+    c->i = (uint8_t)i;
+    c->st = (uint8_t)st;
+    c->tb = (uint16_t)tb;
+    return b > SY_PLO ? (b & 0xFFFFu) | SY_PLO : b;
+}
+#define SY_KP(T) (SY_K + ((T) >= SY_PLO ? SY_BL(4u) : 0u))
 /* (V10.40) sing_block's voices: held (bit 0), a note now (bit 1: sy_next). From a silent part (all its voices under
  * -36 dB) the syllable from rest (live 0: the formants and the voicing at once, no vowel's tail in a closure). The
  * notes' times: sy_cons */
@@ -1365,18 +1399,54 @@ static void sing_block(track_t *t)
     }
     i = sy_voices(t, s, &sing_io[ti]);
     gated = i & 1u;
-    if (i & 2u) {                                        /* a note now */
-        if (s->rst) {
-            sy_reset(s);
-            s->rst = 0;
+    {   /* (voice2) a note: its syllable, the onset in the time it has (a led note's: the sequencer's lead; a key's
+         * ~10 ms, overlapped with the vowel). A few blocks on (each track its own block: not all in the notes' one) the
+         * next note's syllable read ahead on a copy (its coda sung by then, the word's phonemes kept): its onset, the
+         * next step's lead (seq.c seq_tick) */
+        sing_t c, *q = s;
+        sw_t *w = &sing_w[ti], wk;
+        uint32_t T, b, k, ahead = !(i & 2u) && sing_io[ti].nb == 2u + ti;
+        if (i & 2u) {                                    /* a note now */
+            if (s->rst) {
+                sy_reset(s);
+                s->rst = 0;
+            }
+            x->vb = 0;                                   /* (a syllable: the vibrato waits again) */
+        } else {
+            if (!pos)
+                s->posv = 0;
+            s->lead = (uint8_t)(s->lead >= 0x40u ? s->lead - 0x40u : 0u);   /* (a lead no note took: gone) */
+            if (ahead) {
+                wk = *w;
+                c = *s;
+                c.i = c.np;
+                q = &c;
+            }
         }
-        if (pos && (fixed || pos != s->posv))
-            sy_seek(t, s, lang, lyr, (uint32_t)pos - 1u);
-        s->posv = (int16_t)pos;
-        x->vb = 0;                                       /* (a syllable: the vibrato waits again) */
-        sy_next(t, s, lang, lyr);
-    } else if (!pos) {
-        s->posv = 0;
+        if ((i & 2u) || ahead) {
+            if (pos && (fixed || pos != q->posv))
+                sy_seek(t, q, lang, lyr, (uint32_t)pos - 1u);
+            q->posv = (int16_t)pos;
+            q->oq = 0;
+            sy_next(t, q, lang, lyr);
+            T = sy_onset(q, lang);
+            k = SY_KP(T);
+            if (ahead) {
+                *w = wk;
+                T = (T & 0xFFFFu) + k;
+                s->nlead = (uint8_t)(T < 63u ? T : 63u);
+            } else {
+                b = (s->lead & 63u) * 2u;
+                b = !b ? (T >= SY_PLO ? SY_MIN : SY_LIVE) : b > k + SY_MIN ? b - k : SY_MIN;
+                T &= 0xFFFFu;
+                if (b > T && (s->lead & 63u) * 2u > s->nlead + 2u)
+                    b = T;                               /* (a lead not the one read ahead: as written) */
+                b = T && b != T ? (b << 7) / T : 0u;     /* (a lead longer than the onset read ahead: the onset */
+                s->oq = (uint8_t)(b < 255u ? b : 255u);  /* stretched to it, up to x2: the vowel on the step still) */
+                sy_enter(s, lang);
+                s->lead = 0;
+            }
+        }
     }
     if (!gated && s->gated && !s->cdon) {                /* released: the coda */
         s->cdon = 1;

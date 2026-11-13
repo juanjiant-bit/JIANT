@@ -866,6 +866,16 @@ next syllable, held notes take a gentle vibrato after about 0.3 s (each voice of
 never perfectly still (a little jitter and shimmer). A glide between notes eases out of the first and into the second
 (an S-curve, as long as GLIDE says); singing words, legato notes glide a little (~60 ms) even with GLIDE at 0.
 
+**On time (voice2).** A sung note's **vowel** lands on the note's time, not its consonant. Playing from the sequencer,
+VOICE reads the next note's syllable ahead and starts that step early by as long as its consonants take (at most half
+of the step before it), so "vai", "toma", "sa" sing on the beat with the consonants before it, as a singer does: no
+negative microtiming needed. **Steps of a VOICE track you moved early with MICRO to make up for the consonants should go
+back to 0** (they would now sing early by that much). Keys, MIDI and an ARP's or a RATCHET's later notes cannot be read
+ahead: their consonants are sung in ~10 ms, the hiss or the burst carried over the vowel's start, so the vowel comes
+within ~10 ms of the key. The source follows the level (softer and breathier as a note comes in and fades), each
+syllable's pitch scoops gently up into its note, and a let-go phrase ends with a soft, smooth creak (vocal fry; none
+with BUZZ at its top). LANG OFF (VOWEL / VOWEL2 / TALK) sounds as before.
+
 **EDIT > WORDS** (VOICE tracks only): **LANG**, **LYRIC**, **POS**; **OCT+** (TYPE) opens the lyric's typing screen.
 
 | LYRIC | sings |

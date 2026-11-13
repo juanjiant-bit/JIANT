@@ -292,6 +292,13 @@ static void vsetup(int32_t pi, uint32_t lang, const char *text)
             trk[0].p[DRY[k].id] = DRY[k].v;
     }
 }
+/* (voice2) a note as the sequencer starts one, its lead given (sing.c sing_t.lead: its consonants as long as they are
+ * written, its vowel on the step): the consonants measured whole; a key's (no lead) sung in ~10 ms */
+static void note_led(uint32_t note)
+{
+    sing[0].lead = 0xC0u | 63u;
+    trk_note_on(&trk[0], note, 100);
+}
 /* n samples of the track's voices (whole blocks rendered) into y (full scale 1.0; NULL: rendered, not kept) */
 static void vrender(double *y, uint32_t n)
 {
@@ -612,7 +619,7 @@ static void check_sound(void)
     {   /* fricatives: s high, sh lower, f weak and broad */
         double cs, ps, csh, psh, rs, rsh, rf, rv;
         vsetup(pi, LG_ES, "sa");
-        trk_note_on(&trk[0], 60, 100);
+        note_led(60);
         vrender(y, FS / 2);
         spectrum(y + (uint32_t)(0.015 * FS), (uint32_t)(0.05 * FS), P);
         cs = centroid(P);
@@ -621,14 +628,14 @@ static void check_sound(void)
         rv = rms(y, (uint32_t)(0.2 * FS), (uint32_t)(0.4 * FS));
         vsetup(preset_of("UTA JA"), LG_JA, "sha");
         trk[0].p[P_E3] = 0;
-        trk_note_on(&trk[0], 60, 100);
+        note_led(60);
         vrender(y, FS / 2);
         spectrum(y + (uint32_t)(0.015 * FS), (uint32_t)(0.06 * FS), P);
         csh = centroid(P);
         psh = peak_in(P, 1500, 9000, 6);
         rsh = rms(y, (uint32_t)(0.015 * FS), (uint32_t)(0.07 * FS));
         vsetup(pi, LG_ES, "fa");
-        trk_note_on(&trk[0], 60, 100);
+        note_led(60);
         vrender(y, FS / 2);
         rf = rms(y, (uint32_t)(0.015 * FS), (uint32_t)(0.065 * FS));
         printf("voice:   s: centroid %.0f Hz, peak %.0f Hz, %.1f dB of the vowel; sh: centroid %.0f, peak %.0f, %.1f dB; f %.1f dB\n",
@@ -641,7 +648,7 @@ static void check_sound(void)
         uint32_t i, cl = 0, bu = 0, frame = FS / 1000u;
         double rv, rmax = 0;
         vsetup(pi, LG_ES, "ta");
-        trk_note_on(&trk[0], 60, 100);
+        note_led(60);
         vrender(y, FS / 2);
         rv = rms(y, (uint32_t)(0.2 * FS), (uint32_t)(0.4 * FS));
         for (i = 0; i + frame < (uint32_t)(0.12 * FS); i += frame) {
@@ -758,7 +765,7 @@ static void check_singer(void)
         double env[60], top, rv, rs, cs, hi, mid, step = 0;
         uint32_t t10 = 0, t90 = 0;
         vsetup(pi, LG_ES, "sa");
-        trk_note_on(&trk[0], 60, 100);
+        note_led(60);
         vrender(y, FS / 2);
         for (k = 0; k < 60u; k++)
             env[k] = rms(y, k * FS / 1000u, (k + 1u) * FS / 1000u);
@@ -793,7 +800,7 @@ static void check_singer(void)
         double cs, lo, hi;
         vsetup(preset_of("UTA JA"), LG_JA, "sha");
         trk[0].p[P_E3] = 0;
-        trk_note_on(&trk[0], 60, 100);
+        note_led(60);
         vrender(y, FS / 2);
         spectrum(y + (uint32_t)(0.02 * FS), (uint32_t)(0.05 * FS), P);
         cs = centroid(P);
@@ -1147,6 +1154,115 @@ static void check_lyric(void)
     }
 }
 
+/* (voice2) on time: the vowel on the note's time. Sequenced (130 BPM, 1/8 and 1/16, each step a syllable): the singer
+ * reaches the vowel within -16 .. +3 ms of the step (the lead its consonants took, read a note ahead), and the vowel is
+ * heard (its 350 .. 2000 Hz band at -6 dB of the held vowel's) within +-16 ms of it; a key (no lead): the vowel within
+ * 14 ms of the key (the consonant squeezed, its hiss over the vowel); V10.7.22: 40 .. 120 ms late, both */
+typedef struct { double b0, b1, b2, a1, a2, z1, z2; } bq_t;
+static void bq_set(bq_t *q, int hp, double f)            /* a Butterworth 2-pole high- or low-pass */
+{
+    double w = 2 * M_PI * f / FS, c = cos(w), al = sin(w) / (2 * 0.7071), a0 = 1 + al;
+    q->b0 = q->b2 = (hp ? (1 + c) : (1 - c)) / 2 / a0;
+    q->b1 = (hp ? -(1 + c) : (1 - c)) / a0;
+    q->a1 = -2 * c / a0; q->a2 = (1 - al) / a0; q->z1 = q->z2 = 0;
+}
+static double bq(bq_t *q, double x)
+{
+    double y = q->b0 * x + q->z1;
+    q->z1 = q->b1 * x - q->a1 * y + q->z2;
+    q->z2 = q->b2 * x - q->a2 * y;
+    return y;
+}
+/* the vowel heard: y's 350 .. 2000 Hz band (4 poles each side), its RMS over 4 ms each ms; in [a, b) samples, the
+ * vowel's level the most after mid, the least before it, then the first rise to -6 dB of the vowel's: samples */
+static double band_on(const double *y, uint32_t a, uint32_t mid, uint32_t b)
+{
+    static double f[FS * 3];
+    bq_t q[4];
+    double ref = 0, mn = 1e30;
+    uint32_t i, j, am = a, W = FS / 250u, H = FS / 1000u;
+    bq_set(&q[0], 1, 350); bq_set(&q[1], 1, 350); bq_set(&q[2], 0, 2000); bq_set(&q[3], 0, 2000);
+    for (i = 0; i < b; i++)
+        f[i] = bq(&q[3], bq(&q[2], bq(&q[1], bq(&q[0], y[i]))));
+    for (i = a; i + W < b; i += H) {
+        double e = 0;
+        for (j = 0; j < W; j++) e += f[i + j] * f[i + j];
+        f[i] = e;                                        /* (the window's energy at its start, read ahead of it) */
+    }
+    for (i = mid; i + W < b; i += H)
+        if (f[i] > ref) ref = f[i];
+    for (i = a; i <= mid; i += H)
+        if (f[i] < mn) { mn = f[i]; am = i; }
+    for (i = am; i + W < b && f[i] < ref * 0.25; i += H)
+        ;
+    return (double)i + W / 2.0;
+}
+static void check_ontime(void)
+{
+    static const char *const SY[] = {"pa", "ta", "ka", "ba", "sa", "fa", "cha", "vai", "ma", "la", "ra", "tra"};
+    static double y[FS * 3];
+    static int32_t o[2 * CTL];
+    char what[240];
+    double nlo = 1e9, nhi = -1e9, alo = 1e9, ahi = -1e9, klo = 1e9, khi = -1e9;
+    uint32_t k, d, i, j;
+    for (k = 0; k < NELEM(SY); k++)
+        for (d = 1; d <= 2u; d++) {                      /* 1/8, 1/16 */
+            char txt[64];
+            uint32_t period, n = 0, nuc[12] = {0};
+            snprintf(txt, sizeof txt, "%s %s %s %s %s %s %s %s %s", SY[k], SY[k], SY[k], SY[k], SY[k], SY[k], SY[k], SY[k], SY[k]);
+            vsetup(preset_of("CANTOR ES"), LG_ES, txt);
+            trk[0].p[P_ATK] = ENG_FORMANT.presets[preset_of("CANTOR ES")].env[0];
+            for (j = 1; j < NPART; j++) trk[j].p[P_LEVEL] = 0;
+            trk[0].p[P_SLEN] = 8;
+            trk[0].p[P_SDIV] = (int16_t)d;
+            for (j = 0; j < 8u; j++) {
+                trk[0].step[j].time = ST_NOTE; trk[0].step[j].n = 1; trk[0].step[j].note[0] = 60; trk[0].step[j].vel = 100;
+            }
+            song.g[G_BPM] = 130;
+            period = div_samples(d);
+            seq_start();
+            while (n + CTL <= period * 8u && n + CTL <= NELEM(y)) {
+                mix_block(o, CTL);
+                for (i = 0; i < CTL; i++) y[n + i] = (o[2 * i] + o[2 * i + 1]) / 65536.0;
+                n += CTL;
+                if (sing[0].nsy < 12u && !nuc[sing[0].nsy] && sing[0].np && sing[0].i == sing[0].nu) nuc[sing[0].nsy] = n;
+            }
+            seq_stop();
+            for (j = 2; j < 7u; j++) {                   /* (step 0 has no lead: PLAY) */
+                double g = (double)(j - 1u) * period, t = ((double)nuc[j] - g) * 1000.0 / FS;
+                double a = (band_on(y, (uint32_t)g - period / 2u, (uint32_t)g + FS / 25u, (uint32_t)g + period - FS / 50u) - g) *
+                           1000.0 / FS;
+                if (t < nlo) nlo = t;
+                if (t > nhi) nhi = t;
+                if (k < 8u && a < alo) alo = a;          /* (heard: not l r tr, their liquid heard as the vowel's start) */
+                if (k < 8u && a > ahi) ahi = a;
+            }
+        }
+    for (k = 0; k < NELEM(SY); k++) {                    /* keys: from silence and after a note */
+        for (d = 0; d < 2u; d++) {
+            double t = -1;
+            char txt[64];
+            snprintf(txt, sizeof txt, "%s%s", d ? "a " : "", SY[k]);
+            vsetup(preset_of("CANTOR ES"), LG_ES, txt);
+            if (d) {
+                trk_note_on(&trk[0], 60, 100); vrender(0, FS / 4); trk_note_off(&trk[0], 60); vrender(0, FS / 20);
+            }
+            trk_note_on(&trk[0], 62, 100);
+            for (i = 0; i < FS / 10u && t < 0; i += CTL) {
+                vrender(0, CTL);
+                if (sing[0].nsy == d + 1u && sing[0].i == sing[0].nu) t = (i + CTL) * 1000.0 / FS;
+            }
+            if (t < klo) klo = t;
+            if (t > khi) khi = t;
+        }
+    }
+    printf("voice:   on time: sequenced vowel reached %.1f .. %.1f ms of the step, heard %.1f .. %.1f; keys %.1f .. %.1f ms\n",
+           nlo, nhi, alo, ahi, klo, khi);
+    snprintf(what, sizeof what, "on time: a sequenced syllable's vowel on its step (reached %.0f .. %.0f ms, heard %.0f .. %.0f; "
+             "-16 .. 3, +-16), a key's within %.0f ms (<= 14)", nlo, nhi, alo, ahi, khi);
+    check(what, nlo >= -16.0 && nhi <= 3.0 && alo >= -16.0 && ahi <= 16.0 && klo >= 0 && khi <= 14.0);
+}
+
 static void check_cost(void)
 {
     static double y[FS];
@@ -1166,6 +1282,8 @@ static void check_cost(void)
     t3 = now_ns();
     printf("voice: cost, host ns per sample and voice (4 voices; information): vowels %.1f, words %.1f\n",
            (double)(t1 - t0) / FS / 4.0, (double)(t3 - t2) / FS / 4.0);
+    check("cost: a singing voice (words) at most 1.6 x a vowel voice (V10.7.22: ~1.25; voice2 adds no work a sample)",
+          (double)(t3 - t2) <= 1.6 * (double)(t1 - t0));
 }
 
 /* (V10.6y, alex.knip) the level: an open vowel ("AH", LANG OFF and sung) under full scale, as loud as the other engines
@@ -1184,7 +1302,7 @@ static uint32_t cons_blocks(uint32_t raw, uint32_t ph)  /* "sa" at CONS raw: the
     uint32_t b, n = 0;
     vsetup(preset_of("CANTOR ES"), LG_ES, "sa");
     trk[0].p[P_VCONS] = (int16_t)raw;
-    trk_note_on(&trk[0], 60, 100);
+    note_led(60);
     for (b = 0; b < FS / CTL; b++) {
         vrender(0, CTL);
         n += sing_phon(&sing[0]) == ph && sing[0].i < sing[0].nu;
@@ -1239,10 +1357,10 @@ static void check_level_cons(void)
         check("CONS: on WORDS' KNOB 3, 127 (projects and presets of before) 100 %, turned 50 .. 400 %; DRUM's lane level else", ok);
     }
     n100 = cons_blocks(127, PH_S);
-    n300 = cons_blocks(cons_raw(300), PH_S);
+    n300 = cons_blocks(cons_raw(200), PH_S);            /* (voice2: 200 %, was 300: a led note's onset at most ~180 ms) */
     n50 = cons_blocks(cons_raw(50), PH_S);
-    snprintf(what, sizeof what, "CONS: the s of \"sa\" %u blocks at 100 %%, %u at 300 %%, %u at 50 %%", n100, n300, n50);
-    check(what, n100 > 4u && n300 >= n100 * 5u / 2u && n300 <= n100 * 7u / 2u && n50 * 2u >= n100 - 2u && n50 * 2u <= n100 + 2u);
+    snprintf(what, sizeof what, "CONS: the s of \"sa\" %u blocks at 100 %%, %u at 200 %%, %u at 50 %%", n100, n300, n50);
+    check(what, n100 > 4u && n300 >= n100 * 3u / 2u && n300 <= n100 * 5u / 2u && n50 * 2u >= n100 - 2u && n50 * 2u <= n100 + 2u);
 }
 
 /* --------------------------------------------------------------------------------------------------- demos --- */
@@ -1426,6 +1544,7 @@ int main(int argc, char **argv)
     check_lyric();
     check_theme();
     check_level_cons();
+    check_ontime();
     check_cost();
     if (argc > 1)
         demos(argv[1]);
