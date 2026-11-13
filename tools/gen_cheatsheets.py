@@ -382,9 +382,10 @@ def sound():
                   '±32 st, RES how much it rings. ANALOG and MATH: per voice; the others: on the track, following '
                   'LFO / ENV DEST FLT (DRV: ANALOG\'s own; the others drive the track into the filter; DRUM-X, EXT: the track\'s DIST).</p>'
                   + knobs('KEY', 'NOISE', 'RATE', 'MODE') +
-                  '<p style="margin-top:8px"><b>FILTER 2</b>: KEY tracking 0 .. 100 % (ANALOG starts at 21 %); a noise modulator, '
-                  'NOISE its depth, RATE 0.4 .. 320 Hz; MODE <b>SOFT · STEP</b> move CUT (gliding, held), <b>METAL · BREAK · DUST</b> '
-                  'texture the track into the filter (ring at an inharmonic ratio, broken holds, crackle to hiss).</p>'))
+                  '<p style="margin-top:8px"><b>FILTER 2</b>: KEY tracking 0 .. 100 % (ANALOG starts at 21 %); a modulator on CUT, '
+                  'NOISE its depth (±3.5 oct); MODE <b>SOFT · STEP</b> random, gliding or held (RATE 0.4 .. 320 Hz), <b>METAL</b> '
+                  'audio-rate at a RATIO of the note (x0.5 .. x4), <b>BREAK</b> in time (DIV 1/8 .. 1/32), <b>DUST</b> spikes '
+                  '(RATE: density). Also the MOD source <b>F.NOISE</b> (on PITCH or anything). LP24 with DRV: level kept, RES top sings.</p>'))
     b.append(card('VOICE · PLAYING', HEAT[2], knobs('VCE', 'GLD', 'GLMOD', 'PRIO') +
                   '<p style="margin-top:8px">POLY · MONO · LEG · UNI; glide and its mode; LAST / LOW / HIGH priority. '
                   '<b>8 voices</b> shared by the six tracks (MONO and LEGATO keep their note). <b>EDIT › PLAY 2 IMAGE</b> (V10.49; was its STEREO page): '

@@ -13,11 +13,15 @@
  * 4. RES on a curve: the ring after a burst longer as RES rises, near self-oscillation at the top (still ringing a
  *    second later) and bounded;
  * 5. (codex/filters2: was MS20's, retired) LP24 at DRIVE 0 the LP24 of before, sample for sample; at DRIVE 100 % the
- *    ring longer as RES rises; a full-scale saw at RES 127, every CUT, C1..C7 (DRIVE 100 %, ANALOG's and a part's, and
- *    MS20's old number 5): under full scale and no more than 6x RES 0's level (it screams, the clip holding it);
+ *    ring longer as RES rises to 100; a full-scale saw at RES 127, every CUT, C1..C7 (DRIVE 100 %, ANALOG's and a part's,
+ *    and MS20's old number 5): under full scale, RMS under -1 dB (it screams, the clip holding it);
+ *    (codex/filter2-mod) RES 127 driven sings on its own under a quiet input and dies once silent (RES 100: no); the
+ *    level made up as CUT closes or RES rises (DRIVE 50 %, a C3 saw: CUT 40 within 3 dB of open, CUT 20 within 12 dB);
  * 6. (codex/filters2) FILTER 2: KEY 100 % keeps a saw's brightness across C2..C6 (KEY 0 darkens the top), ANALOG's KEY
  *    at its stored 127 its old fixed tracking (1024); NOISE SOFT / STEP move CUT (the blocks' level varies, NOISE 0
- *    steady); METAL BREAK DUST at the full NOISE, RATE 0 / 64 / 127: bounded, changing the sound, silence in silent out;
+ *    steady); (filter2-mod) every MODE only moves CUT (NOISE 0 bit for bit off; at 100 % a sine under CUT's reach through
+ *    as it was, silence in silent out), METAL periodic at the note on x1 (not on x1.41), BREAK steady within a 1/16 and
+ *    jumping between, DUST sparse to dense;
  * demos (argv[1], default build/filter_demo): comb_sweep.wav, comb_neg_sweep.wav, lp24_drive_sweep.wav, fn_*.wav. */
 #define main hostsim_main
 #include "hostsim.c"
@@ -48,6 +52,7 @@ static track_t *part(uint32_t e, int ft, int cut, int res, int note)
         t->v[i].active = 0;
     memset(tf_on, 0, sizeof tf_on); memset(tf_cmb, 0, sizeof tf_cmb); memset(tf_xb, 0, sizeof tf_xb);
     memset(tf_ft, 0, sizeof tf_ft); memset(tf_l24, 0, sizeof tf_l24);
+    memset(fns, 0, sizeof fns); memset(ms_s, 0, sizeof ms_s);   /* (filter2-mod: the modulator, LP24's gain and push) */
     t->p[P_FTYPE] = (int16_t)ft;
     t->p[P_FCUT] = t->p[P_E4] = (int16_t)cut;
     t->p[P_FRES] = t->p[P_E5] = (int16_t)res;
@@ -96,6 +101,27 @@ static int32_t swing(uint32_t a, uint32_t b)
     return p;
 }
 static int32_t peak(uint32_t a, uint32_t b) { return jt_peak_i32(buf, a, b); }
+/* (filter2-mod) the rms about the mean (the SVF's rounding leaves a DC up a while: no sound) */
+static double rms_ac(uint32_t a, uint32_t b)
+{
+    double m = 0, e = 0;
+    uint32_t i;
+    for (i = a; i < b; i++)
+        m += buf[i];
+    m /= (b - a);
+    for (i = a; i < b; i++)
+        e += (buf[i] - m) * (buf[i] - m);
+    return sqrt(e / (b - a));
+}
+/* (filter2-mod) the rms of the first difference: what is heard (a DC the SVF holds at a low CUT, dying slowly, is not) */
+static double hiss(uint32_t a, uint32_t b)
+{
+    double e = 0;
+    uint32_t i;
+    for (i = a + 1u; i < b; i++)
+        e += (double)(buf[i] - buf[i - 1u]) * (buf[i] - buf[i - 1u]);
+    return sqrt(e / (b - a - 1u));
+}
 static double rms(uint32_t a, uint32_t b) { return jt_rms_i32(buf, a, b); }
 /* the longest run of samples at or past full scale */
 static uint32_t pegged(uint32_t a, uint32_t b)
@@ -290,46 +316,84 @@ int main(int argc, char **argv)
         check("LP24 at DRIVE 0: the LP24 of before, sample for sample (CUT swept, RES 110)", same, 0);
     }
     {
-        double prev = 0, lo = 1e9, hi = 0;
+        double prev = 0, hi = 0, first = 0;
         int mono = 1, r, c, v;
         int32_t pk = 0;
-        for (r = 0; r <= 127; r += 127 / 4) {
+        for (r = 0; r <= 100; r += 25) {               /* (filter2-mod: up to 100, past it it sings on its own) */
             track_t *t = part(ENGI_PHASE, 6, 50, r, 57);
-            double tail;
+            double tail, burst;
             t->p[P_FDRV] = 0;                           /* (DRIVE 100 %) */
             run(t, 2, 57, 0, FS / 20u, 12000, 0);
+            burst = rms(FS / 40u, FS / 20u);            /* (filter2-mod: against the burst's level, the gain made up the
+                                                         * same through both) */
             run(t, 0, 57, 0, FS / 2u, 0, 0);
-            tail = rms(FS / 50u, FS / 10u);
+            tail = rms_ac(FS / 500u, FS / 50u) / (burst + 1) * 1000;   /* (2 .. 20 ms on: was 20 .. 100, a DC there) */
             if (tail < prev * 0.85)                     /* (the clip in the loop squashes a loud ring: about level mid RES) */
                 mono = 0;
             if (getenv("VERBOSE"))
                 printf("  RES %d: tail %.0f\n", r, tail);
+            first = r ? first : tail;
             prev = tail;
         }
-        check("LP24 at DRIVE 100 %: its ring after a burst longer as RES rises (within 15 %)", mono && prev > 100, "at 127: rms %.0f 20 .. 100 ms on", prev);
+        check("LP24 at DRIVE 100 %: its ring after a burst longer as RES rises to 100 (within 15 %)", mono && prev > 2 * first,
+              "rms 2 .. 20 ms on, of the burst's: RES 0 %.0f / 1000, 100 %.0f", first, prev);
         for (v = 0; v < 3; v++)                         /* ANALOG's DRIVE, a part's DRIVE, MS20's old number */
-            for (c = 20; c <= 120; c += 20)             /* a full-scale saw at RES 127, against RES 0 */
+            for (c = 20; c <= 120; c += 20)             /* a full-scale saw at RES 127 */
                 for (note = 24; note <= 96; note += 24) {
                     uint32_t e = v == 1 ? ENGI_PHASE : ENGI_ANALOG;
                     track_t *t = part(e, v == 2 ? 5 : 6, c, 127, note);
-                    double a, b;
+                    double b;
                     t->p[P_E6] = v == 0 ? 127 : t->p[P_E6];
                     t->p[P_FDRV] = v == 1 ? 0 : 127;
                     run(t, 1, note, 0, FS / 4u, 32000, 0);
                     pk = peak(0, FS / 4u) > pk ? peak(0, FS / 4u) : pk;
                     b = rms(FS / 8u, FS / 4u);
-                    t = part(e, v == 2 ? 5 : 6, c, 0, note);
-                    t->p[P_E6] = v == 0 ? 127 : t->p[P_E6];
-                    t->p[P_FDRV] = v == 1 ? 0 : 127;
-                    run(t, 1, note, 0, FS / 4u, 32000, 0);
-                    a = rms(FS / 8u, FS / 4u);
-                    if (a > 100) {
-                        lo = b / a < lo ? b / a : lo;
-                        hi = b / a > hi ? b / a : hi;
-                    }
+                    hi = b > hi ? b : hi;
                 }
-        check("LP24 driven screams but controlled: a full-scale saw at RES 127, every CUT, C1..C7: under full scale",
-              pk < 32767 && hi < 6.0, "peak %d, level against RES 0 x%.2f .. x%.2f", pk, lo, hi);
+        check("LP24 driven screams, bounded: a full-scale saw at RES 127, every CUT, C1..C7: under full scale, RMS <= -1 dB",
+              pk < 32767 && hi < 29205, "peak %d, the loudest rms %.0f", pk, hi);
+    }
+    {   /* (codex/filter2-mod) RES past 100 with DRIVE: it sings on its own while the part plays, dies once it is silent */
+        double on[2][2], off[2][2];
+        int e, r;
+        for (e = 0; e < 2; e++)
+            for (r = 0; r < 2; r++) {
+                track_t *t = part(e ? ENGI_ANALOG : ENGI_PHASE, 6, 70, r ? 127 : 100, 48);
+                uint32_t i;
+                t->p[P_FDRV] = 127 - 64;                /* (DRIVE 50 %; ANALOG's: its own) */
+                t->p[P_E6] = e ? 64 : t->p[P_E6];
+                nz = 777u;
+                for (i = 0; i < FS; i += CTL) {         /* (a -56 dB noise: the part plays, quietly) */
+                    int32_t o[CTL];
+                    uint32_t j;
+                    for (j = 0; j < CTL; j++)
+                        o[j] = noise() >> 9;
+                    track_post(t, ENGINES[t->engine], o, CTL);
+                    memcpy(buf + i, o, sizeof o);
+                }
+                on[e][r] = rms(FS / 2u, FS);
+                run(t, 0, 48, 0, FS, 0, 0);
+                off[e][r] = hiss(FS / 2u, FS);
+            }
+        check("LP24 driven, RES 127: sings on its own under a -56 dB input (RES 100: no), silent 0.5 s after it stops",
+              on[0][1] > 1000 && on[1][1] > 1000 && on[0][0] < 200 && on[1][0] < 200 && off[0][1] < 1 && off[1][1] < 1,
+              "rms a part's %.0f / %.0f, ANALOG's %.0f / %.0f; after: %.2f %.2f", on[0][0], on[0][1], on[1][0], on[1][1],
+              off[0][1], off[1][1]);
+    }
+    {   /* (codex/filter2-mod) the level made up: a saw at C3, DRIVE 50 %: closing CUT, raising RES */
+        double l[4];
+        int k;
+        static const int CR[4][2] = {{127, 0}, {40, 0}, {20, 0}, {40, 110}};
+        for (k = 0; k < 4; k++) {
+            track_t *t = part(ENGI_PHASE, 6, CR[k][0], CR[k][1], 48);
+            t->p[P_FDRV] = 127 - 64;
+            sph = 0;
+            run(t, 1, 48, 0, FS / 2u, 12000, 0);
+            l[k] = 20 * log10(rms(FS / 4u, FS / 2u) + 1e-9);
+        }
+        check("LP24 driven keeps its level: CUT 40 within 3 dB of open, CUT 20 (under the note) within 12, RES 110 not under 0",
+              l[0] - l[1] < 3 && l[0] - l[2] < 12 && l[3] > l[1] - 0.5, "open %.1f, CUT 40 %+.1f, CUT 20 %+.1f, RES 110 %+.1f dB",
+              l[0], l[1] - l[0], l[2] - l[0], l[3] - l[0]);
     }
 
     /* 6 */
@@ -396,37 +460,113 @@ int main(int argc, char **argv)
             check(what, v1 > 0.2 && v0 < 0.06, "relative deviation %.3f / %.3f", v0, v1);
         }
     }
-    {   /* the textures */
-        static const char *const MN[3] = {"METAL", "BREAK", "DUST"};
-        static const int16_t MV[3] = {64, 38, 12};
-        int m, rr;
-        for (m = 0; m < 3; m++) {
-            int32_t pk = 0;
-            double diff = 1e9, tail = 0;
-            for (rr = 0; rr <= 127; rr += 64) {
-                track_t *t = part(ENGI_PHASE, 0, 127, 0, 48);
-                uint32_t i;
-                double d = 0;
-                static int32_t dry[FS / 2u];
-                sph = 0;
-                run(t, 1, 48, 0, FS / 2u, 24000, 0);
-                memcpy(dry, buf, sizeof dry);
-                t = part(ENGI_PHASE, 0, 127, 0, 48);
-                t->p[P_FNZ] = 0;
-                t->p[P_FNRT] = (int16_t)(127 - rr);
-                t->p[P_FNMD] = MV[m];
-                sph = 0;
-                run(t, 1, 48, 0, FS / 2u, 24000, 0);
-                for (i = 0; i < FS / 2u; i++)
-                    d = fabs((double)buf[i] - dry[i]) > d ? fabs((double)buf[i] - dry[i]) : d;
-                diff = d < diff ? d : diff;
-                pk = peak(0, FS / 2u) > pk ? peak(0, FS / 2u) : pk;
-                run(t, 0, 48, 0, FS / 2u, 0, 0);
-                tail = rms(FS / 4u, FS / 2u) > tail ? rms(FS / 4u, FS / 2u) : tail;
+    {   /* (codex/filter2-mod) every MODE moves CUT, none mixes a sound of its own: NOISE 0 the part bit for bit as FILTER 2
+         * off whatever MODE and RATE; at 100 % a 40 Hz sine under CUT's lowest reach goes through untouched, block by
+         * block (was: METAL a ring modulation, BREAK holds and gaps, DUST noise), silence in silent out */
+        static const char *const MN[5] = {"SOFT", "STEP", "METAL", "BREAK", "DUST"};
+        static const int16_t MV[5] = {115, 89, 64, 38, 12};
+        static int32_t dry[FS / 2u];
+        int m, same = 1;
+        for (m = 0; m < 5; m++) {
+            track_t *t = part(ENGI_PHASE, 0, 70, 60, 48);
+            uint32_t k;
+            double worst = 0, tail;
+            sph = 0;
+            run(t, 1, 48, 0, FS / 2u, 16000, 0);
+            memcpy(dry, buf, sizeof dry);
+            t = part(ENGI_PHASE, 0, 70, 60, 48);
+            t->p[P_FNMD] = MV[m];
+            t->p[P_FNRT] = 127 - 64;
+            sph = 0;
+            run(t, 1, 48, 0, FS / 2u, 16000, 0);
+            same &= !memcmp(dry, buf, sizeof dry);
+            t = part(ENGI_PHASE, 0, 127, 0, 48);
+            t->p[P_FNZ] = 0;
+            t->p[P_FNMD] = MV[m];
+            t->p[P_FNRT] = 127 - 64;
+            sph = 0;
+            run(t, 3, 48, 40.0, FS, 16000, 0);
+            for (k = FS / 10u; k + 1024u <= FS; k += 1024u) {   /* (the sine's level, 23 ms at a time) */
+                double d = fabs(20 * log10(rms(k, k + 1024u) / (16000 / sqrt(2.0))));
+                worst = d > worst ? d : worst;
             }
-            snprintf(what, sizeof what, "%s at NOISE 100 %%, RATE 0 / 50 / 100 %%: bounded, heard, silence in silent out", MN[m]);
-            check(what, pk < 32767 && diff > 1000 && tail < 5, "peak %d, the least largest change %.0f, tail %.1f", pk, diff, tail);
+            run(t, 0, 48, 0, FS / 2u, 0, 0);
+            tail = hiss(FS / 4u, FS / 2u);
+            snprintf(what, sizeof what, "%s at NOISE 100 %%: a 40 Hz sine through as it was, silence in silent out", MN[m]);
+            check(what, worst < 1.5 && tail < 1, "the level off by %.2f dB at most, after: %.2f", worst, tail);
         }
+        check("every MODE at NOISE 0, RATE 50 %: the part bit for bit as FILTER 2 off", same, 0);
+    }
+    {   /* METAL follows the note: x1 sidebands on the note's harmonics (periodic: its period's autocorrelation high),
+         * x1.41 off them (lower); its depth heard */
+        double ac[3], fhz = (double)pitch_inc(48u * 16u) * FS / 4294967296.0;
+        int k;
+        static const int16_t RV[3] = {127 - 20, 127 - 40, 127};   /* (x1, x1.41; NOISE 0) */
+        for (k = 0; k < 3; k++) {
+            track_t *t = part(ENGI_PHASE, 0, 64, 60, 48);
+            t->p[P_FNZ] = (int16_t)(k == 2 ? 127 : 127 - 90);
+            t->p[P_FNMD] = 64;
+            t->p[P_FNRT] = RV[k];
+            sph = 0;
+            run(t, 3, 48, fhz, FS, 16000, 0);           /* (a sine at the note as METAL's sine takes it) */
+            ac[k] = acorr(FS / 4u, FS, (uint32_t)lround(FS / fhz));
+        }
+        check("METAL follows the note: x1 periodic at the note (sidebands on its harmonics), x1.41 not",
+              ac[0] > 0.95 && ac[1] < ac[0] - 0.1, "its period's autocorrelation x1 %.3f, x1.41 %.3f, off %.3f", ac[0], ac[1], ac[2]);
+    }
+    {   /* BREAK in time: CUT held through each 1/16 (its own clock, the transport stopped), jumping between them */
+        track_t *t = part(ENGI_PHASE, 0, 70, 40, 48);
+        uint32_t len = beat_samples() / 4u, s0, k, nb = 0;
+        double within = 0, between = 0, prev = -1;
+        t->p[P_FNZ] = 0;
+        t->p[P_FNMD] = 38;
+        t->p[P_FNRT] = 127 - 40;                        /* (1/16) */
+        sph = 0;
+        fns[0].clk = 0;
+        run(t, 1, 48, 0, FS * 2u, 16000, 0);
+        for (s0 = len * 2u; s0 + len <= FS * 2u; s0 += len) {   /* (its steps: a block late, two to glide) */
+            double m = 0, v = 0, r;
+            uint32_t c = 0;
+            for (k = s0 + 4u * CTL; k + 512u <= s0 + len; k += 512u) {
+                r = 20 * log10(rms(k, k + 512u) + 1);
+                m += r;
+                v += r * r;
+                c++;
+            }
+            m /= c;
+            within += sqrt(v / c - m * m > 0 ? v / c - m * m : 0);
+            if (prev >= 0)
+                between += fabs(m - prev);
+            prev = m;
+            nb++;
+        }
+        within /= nb;
+        between /= nb - 1;
+        check("BREAK in time: CUT steady within a 1/16, jumping between them", within < 1.0 && between > 3 * within,
+              "level spread %.2f dB within a step, %.2f dB step to step", within, between);
+    }
+    {   /* DUST's density: the time CUT is up (a 2 kHz sine over CUT: a block 6 dB over the quietest), RATE 0 / 100 % */
+        double n[2];
+        int k;
+        for (k = 0; k < 2; k++) {
+            track_t *t = part(ENGI_PHASE, 0, 50, 30, 48);
+            uint32_t i, c = 0;
+            double prev = 0;
+            t->p[P_FNZ] = 0;
+            t->p[P_FNMD] = 12;
+            t->p[P_FNRT] = (int16_t)(k ? 0 : 127);
+            sph = 0;
+            run(t, 3, 48, 2000.0, FS * 4u, 16000, 0);
+            for (i = FS / 4u; i < FS * 4u; i += CTL) { /* (the quietest block: CUT at rest) */
+                double r = rms(i, i + CTL) + 1;
+                prev = prev == 0 || r < prev ? r : prev;
+            }
+            for (i = FS / 4u; i < FS * 4u; i += CTL)
+                c += rms(i, i + CTL) + 1 > prev * 2;
+            n[k] = (double)c * CTL / (FS * 15u / 4u);
+        }
+        check("DUST: sparse spikes at RATE 0, dense at 100 % (the time CUT is up 6 dB or more)", n[0] > 0.001 && n[0] < 0.05 &&
+              n[1] > 0.5, "%.1f %% and %.0f %% of the time", n[0] * 100, n[1] * 100);
     }
 
     /* demos */

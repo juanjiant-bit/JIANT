@@ -212,7 +212,7 @@ async function editorMock() {
     ok(md.map((d) => d.label).join() === "SRC1,DEST1,AMT1,SRC2,DEST2,AMT2,SRC3,DEST3,AMT3,SRC4,DEST4,AMT4"
       /* (12228a7, 2026-11-05: FOLLOW became IN ENV, the track followers T1..T6 ENV after it; 7e3aba5: RATE / VIB named
          L.RATE / L.PIT, F.CUT and LEVEL at the end: 32 DST names; V10.7.22: OCT+ OCT- appended) */
-      && md[0].names.join() === "OFF,LFO,ENV,VEL,KEY,RAND,MODW,AT,EXPR,M1,M2,M3,M4,STEP,NOISE,PROX,ENV2,IN ENV,T1 ENV,T2 ENV,T3 ENV,T4 ENV,T5 ENV,T6 ENV,OCT+,OCT-" && md[1].names.length === 32
+      && md[0].names.join() === "OFF,LFO,ENV,VEL,KEY,RAND,MODW,AT,EXPR,M1,M2,M3,M4,STEP,NOISE,PROX,ENV2,IN ENV,T1 ENV,T2 ENV,T3 ENV,T4 ENV,T5 ENV,T6 ENV,OCT+,OCT-,F.NOISE" && md[1].names.length === 32
       && md[1].names[11] === "L.PIT" && md[1].names[19] === "E8" && md[1].names[21] === "PNCH" && md[1].names[22] === "D.TIM" && md[1].names[29] === "C.DEP" && md[1].names[31] === "LEVEL" && md[2].min === -64 && md[2].max === 63 && md.every((d) => d.def === 0),
       "editor: matrix parameters 49..60 over DESC (32 DST names: the macros M1..M4, the master CLIP PNCH, the FX buses, F.CUT LEVEL)");
     await rq(E.req.set(0, 52, 1));

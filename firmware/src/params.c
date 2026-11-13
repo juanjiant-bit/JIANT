@@ -72,7 +72,7 @@ static const char *const N_APSYNC[] = {"FREE", "BEAT"};                  /* (JIA
 static const char *const N_APDIV[] = {"4BAR", "2BAR", "1BAR", "1/2", "1/4", "1/8", "1/16", "1/32"};   /* .. BEAT (fx.c AP_SIXT) */
 /* modulation matrix (mod.c): sources, destinations (E1..E8 = P_E0..P_E7: shown with the engine's labels) */
 static const char *const N_MSRC[] = {"OFF", "LFO", "ENV", "VEL", "KEY", "RAND", "MODW", "AT", "EXPR",
-                                     "M1", "M2", "M3", "M4", "STEP", "NOISE", "PROX", "ENV2", "IN ENV", "T1 ENV", "T2 ENV", "T3 ENV", "T4 ENV", "T5 ENV", "T6 ENV", "OCT+", "OCT-"};   /* (V10.7.22) OCT+ OCT-: the expression keys */   /* (V10.22) ENV2 */   /* (0.7.8) NOISE; (V10.14) PROX */   /* (JIANT: the macros, LFO held; the modulation sequence) */
+                                     "M1", "M2", "M3", "M4", "STEP", "NOISE", "PROX", "ENV2", "IN ENV", "T1 ENV", "T2 ENV", "T3 ENV", "T4 ENV", "T5 ENV", "T6 ENV", "OCT+", "OCT-", "F.NOISE"};   /* (V10.7.22) OCT+ OCT-: the expression keys; (filter2-mod) F.NOISE: FILTER 2's */   /* (V10.22) ENV2 */   /* (0.7.8) NOISE; (V10.14) PROX */   /* (JIANT: the macros, LFO held; the modulation sequence) */
 static const char *const N_MDST[] = {"OFF", "PITCH", "CUT", "SHP", "AMP", "PAN", "DIST", "CHO", "DLY", "REV", "L.RATE",
                                      "L.PIT", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8",
                                      "CLIP", "PNCH",   /* (JIANT: the master, FX > MASTER) */
@@ -296,10 +296,14 @@ static const param_desc_t VLYR_DESC = {"LYRIC", F_ENUM, 0, LYR_N - 1, 0, N_LYRIC
 static const param_desc_t VCONS_DESC = {"CONS", F_INT, 0, 127, 127, 0};   /* (V10.6y) P_VCONS: 127 = 100 % (core.h) */
 /* (codex/filters2) FILTER 2 and FILTER's DRIVE (core.h P_FKEY ..): 127 = 0 %, SOFT; ANALOG's KEY 127 = 21 % (fkey_rank) */
 static const char *const N_FNMD[] = {"DUST", "BREAK", "METAL", "STEP", "SOFT", 0};   /* (by the value: shown right to left) */
-static const param_desc_t FN_DESC[6] = {{"KEY", F_PCTINV, 0, 127, 127, 0}, {"NOISE", F_PCTINV, 0, 127, 127, 0},
+/* (codex/filter2-mod) RATE as METAL takes it (its sine's ratio to the note) and BREAK (its step), voice.c fn_tick */
+static const char *const N_FRAT[] = {"x4", "x3", "x2.76", "x2", "x1.5", "x1.41", "x1", "x0.5", 0};
+static const char *const N_FDIV[] = {"1/32", "1/16T", "1/16", "1/8", 0};
+static const param_desc_t FN_DESC[8] = {{"KEY", F_PCTINV, 0, 127, 127, 0}, {"NOISE", F_PCTINV, 0, 127, 127, 0},
     {"RATE", F_PCTINV, 0, 127, 127, 0}, {"MODE", F_INT, 0, 127, 127, N_FNMD}, {"DRIVE", F_PCTINV, 0, 127, 127, 0},
-    {"KEY", F_PCT, 0, 127, 127, 0}};
+    {"KEY", F_PCT, 0, 127, 127, 0}, {"RATIO", F_INT, 0, 127, 127, N_FRAT}, {"DIV", F_INT, 0, 127, 127, N_FDIV}};
 #define FKEYA_DESC (FN_DESC[5])
+#define FN_NAMED(d) ((d)->fmt == F_INT && (d) >= FN_DESC && (d) < FN_DESC + 8)   /* (MODE RATIO DIV: right to left) */
 static const param_desc_t *track_desc(const track_t *t, uint32_t id)
 {
     const engine_t *en = ENGINES[eng_idx(t->eng_req)];   /* (filters2: once) */
@@ -312,7 +316,11 @@ static const param_desc_t *track_desc(const track_t *t, uint32_t id)
     if ((id == P_VLANG || id == P_VLYR || id == P_VCONS) && en == &ENG_FORMANT)
         return id == P_VLANG ? &VLANG_DESC : id == P_VLYR ? &VLYR_DESC : &VCONS_DESC;
     if (id >= P_FKEY && id <= P_FDRV && en != &ENG_DRUM && en != &ENG_INPUT)   /* (filters2) a synth's FILTER 2, DRIVE */
-        return id == P_FKEY && en == &ENG_ANALOG ? &FKEYA_DESC : &FN_DESC[id - P_FKEY];
+    {
+        uint32_t m = id == P_FNRT ? ((uint32_t)t->p[P_FNMD] & 127u) * 5u >> 7 : 0u;   /* (filter2-mod: RATE by the MODE) */
+        return id == P_FKEY && en == &ENG_ANALOG ? &FKEYA_DESC : m == 2u ? &FN_DESC[6] : m == 1u ? &FN_DESC[7] :
+               &FN_DESC[id - P_FKEY];
+    }
     if (id >= P_E0 && id <= P_E7) {                   /* the engine asked for (t->engine follows after a fade) */
         const engine_t *e = en;
         const param_desc_t *d = e->desc ? e->desc(t, id - P_E0) : 0;   /* a mode-dependent label / names */
@@ -442,7 +450,7 @@ static int32_t enum_rank(const param_desc_t *d, int32_t v)   /* v's place in the
 {
     const uint8_t *o = enum_order(d);
     int32_t r;
-    if (d->fmt == F_PCTINV || d == &FN_DESC[3]) return d->max + d->min - v;   /* (the gauge full at 0) */
+    if (d->fmt == F_PCTINV || FN_NAMED(d)) return d->max + d->min - v;   /* (the gauge full at 0) */
     if (d == &VCONS_DESC) return (int32_t)vcons_rank(v);   /* (V10.6y: its place, core.h) */
     if (d == &FKEYA_DESC) return (int32_t)fkey_rank(v);   /* (filters2) */
     for (r = 0; o && r < d->max - d->min; r++)
@@ -470,7 +478,7 @@ static int32_t param_turn(const param_desc_t *d, int32_t v, int32_t steps)
         return lrate_at(clamp(lrate_rank(v) + steps, 0, 141));
     const uint8_t *o = enum_order(d);
     uint32_t k, i, w = (uint32_t)(d->max - d->min + 1);
-    if (d->fmt == F_PCTINV || d == &FN_DESC[3]) steps = -steps;   /* (right: more chance, less skipped; filters2: MODE) */
+    if (d->fmt == F_PCTINV || FN_NAMED(d)) steps = -steps;   /* (right: more chance, less skipped; filters2: MODE) */
     if (d == &VCONS_DESC)                           /* (V10.6y) CONS: over its places, 127 (100 %) at 32 */
         return (clamp((int32_t)vcons_rank(v) + steps, 0, 127) + 95) & 127;
     if (d == &FKEYA_DESC)                           /* (filters2) ANALOG's KEY: 127 (21 %) at 27 */

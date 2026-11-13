@@ -1093,8 +1093,8 @@ image) with a bar under it: the morph, FAR left, NEAR right.
 
 EDIT > **FILTER**: **TYPE** LP, HP, BP, **COMB**, **COMB-** or **LP24** (a 24 dB/oct low-pass, two poles in series, RES on the second). COMB and COMB- are a comb tuned to the note you play; CUT moves it, RES is how much
 it rings), **CUT**, **RES**, and KNOB 4 **DRIVE**: on ANALOG its own DRIVE (each voice into the clip), on every other
-engine the part into a soft clip before the filter, x1 .. x3 (DRUM-X and EXT keep the track's DIST there; DIST is
-always on FX > DIST too). On ANALOG the filter is per voice; on MATH the filter page drives its per-voice filter; on
+engine the part into a soft clip before the filter, x1 .. x6 (x3 before codex/filter2-mod; on ANALOG's LP24 too, after
+its voices' own drive; DRUM-X and EXT keep the track's DIST there; DIST is always on FX > DIST too). On ANALOG the filter is per voice; on MATH the filter page drives its per-voice filter; on
 the others it is a filter on the track that follows LFO DEST / ENV DEST FILTER.
 
 **COMB** and **COMB-** (0.9.9-snd1): the comb is tuned to the newest note (CUT 64 = the note, ±32 semitones either
@@ -1111,6 +1111,19 @@ scale; a loud input squashes the ring instead of blowing up, and the ring still 
 ANALOG and MATH LP24 (like the combs) is the track's filter after the voices: their own filter opens. LP, HP and BP
 sound exactly as before.
 
+**LP24 with power** (codex/filter2-mod, the owner: "the filter lacks power"). With any DRIVE above 0:
+- the part goes into the soft clip up to x6 (+15 dB) before the filter: more gain, more saturation;
+- the level is made up as the filter closes or rings: the filter compares its input's level with its output's and gives
+  back half of what was lost (in dB), up to +12 dB. Closing CUT no longer makes the part drop away. Measured on a C3
+  saw at DRIVE 100 %, the drop at CUT 40 is −1.6 dB (it was −2.3 dB; −4.1 dB at DRIVE 0), and below the note at CUT 20
+  it is about −9 dB (it was −14 dB; V10.7.29's MS20 was −7.6 dB). The output is a little lower as DRIVE rises (×0.6 at
+  100 %), so the part stays near the MS20's level, about 4 dB over the dry part;
+- **RES past ~90 %** goes over the edge: the filter sings on its own at CUT, kept under full scale by the clip, as
+  long as the part plays. Once the part is silent its push fades (~90 ms) and the ring dies, so nothing keeps
+  whistling.
+
+DRIVE 0 is the clean LP24 of before, sample for sample.
+
 **MS20 is gone** (codex/filters2): it sounded much like LP24 and little like the original. Its stored number
 stays as a hidden twin of LP24: a project, a preset or a song that has TYPE MS20 loads and plays LP24 with DRIVE at
 least 70 % (the closest to what it was), and shows LP24; the TYPE knob passes over it. GEN's EBM bass now asks for
@@ -1125,22 +1138,35 @@ and preset of before sounds the same.
   octave. On ANALOG it starts at 21 % (the fixed tracking its filter always had) and goes down to 0 % or up to 100 %;
   on the other engines it starts at 0 %. A per-voice filter (ANALOG, MATH) follows each voice's note; the track's filter
   follows the newest note.
-- **NOISE**: how much the noise modulator acts, 0 .. 100 % (fine at the bottom, heavy at the top).
-- **RATE**: how often the modulator picks a new random value, from ~0.4 Hz (a slow wander) to ~320 Hz (grit).
-- **MODE**: what the modulator does.
-  - **SOFT**: the value glides from one to the next and moves CUT (up to ±4.5 octaves at full NOISE): a drifting,
-    breathing filter at low RATE, a rough flutter at high RATE.
-  - **STEP**: the value is held until the next one (sample and hold) and moves CUT: stepped, broken filter jumps.
-  - **METAL**: the part is ring-modulated before the filter by a triangle at an inharmonic ratio of the newest note
-    (x1.19 .. x4.06); each new value picks another ratio, so RATE is how often the metal changes colour.
-  - **BREAK**: the part is held for random lengths (up to ~1 ms at RATE 0, a couple of samples at the top: a jittered
-    crush), and some holds are silent (up to a quarter at full NOISE): broken, glitchy.
-  - **DUST**: noise at the part's own level (silence stays silent), sparse crackles at RATE 0 thickening to a hiss at
-    the top, into the filter (RES makes it whistle).
-  In METAL, BREAK and DUST, NOISE is the mix: at 100 % only the texture is heard. None of them is louder than the part.
+- **NOISE**: the depth: how far the modulator moves CUT, 0 .. 100 %. 0 leaves the sound untouched. At 100 % CUT
+  swings about ±3.5 octaves. The curve is fine at the bottom: 30 % ≈ ±0.6 octave, 70 % ≈ ±1.8 octaves.
+- **RATE**: the modulator's speed, or its ratio or step, by MODE (below).
+- **MODE**: how the modulator moves CUT. Every MODE only moves the filter's cutoff. None mixes in a sound of its own
+  (codex/filter2-mod; before, METAL, BREAK and DUST put a texture in place of the sound).
+  - **SOFT**: a random value glides from one to the next. RATE: from ~0.4 Hz (a slow wander) to ~320 Hz (a rough
+    flutter).
+  - **STEP**: a random value held until the next one (sample and hold), at RATE: stepped filter jumps.
+  - **METAL**: CUT swung at audio rate by a sine tuned to the note you play. RATE, shown as **RATIO**, picks its ratio
+    to the note: x0.5, x1, x1.41, x1.5, x2, x2.76, x3, x4. The sidebands follow the note: x0.5 to x4 (but x1.41 and
+    x2.76) are harmonic, a growl or a buzz in tune; x1.41 and x2.76 are inharmonic, bell-like and metallic. Over ~1.9 kHz
+    the sine is taken an octave down (and again). On ANALOG and MATH, METAL moves their filter to the track (as LP24
+    does): their own per-voice filter opens and the same TYPE, CUT and RES play after the voices.
+  - **BREAK**: CUT jumps in time on a 16-step pattern (open, shut, half, …). RATE, shown as **DIV**, is the step:
+    **1/8**, **1/16**, **1/16T**, **1/32**. While the transport plays it follows the bar; stopped, it runs at the tempo.
+    About one step in five is broken (another level, the same one each time round, a different set every other bar).
+    Each jump glides over ~3 ms, so it does not click.
+  - **DUST**: sparse spikes up, each dying in ~5 ms. RATE is the density: about 2 a second at 0 % (crackle), hundreds
+    at 100 % (a fizz).
 
-With the track's filter fully open (LP, CUT 127, RES 0), SOFT and STEP lower CUT so the moving filter is heard, as
-LFO DEST FILTER does.
+The modulator is also the MOD matrix's source **F.NOISE** (below): route it to **PITCH** (or any DEST) at any AMT,
+whatever FILTER 2's NOISE is (NOISE 0 and a slot F.NOISE → PITCH: the pitch moves, the filter does not). In METAL,
+F.NOISE is SOFT's wander at RATE (the audio-rate sine is only the filter's).
+
+Projects saved with V10.7.30's FILTER 2 load with the same values, but METAL, BREAK and DUST now sound different (they
+modulate CUT). With NOISE at 0 nothing changes.
+
+With the track's filter fully open (LP, CUT 127, RES 0), every MODE lowers CUT by its depth so the moving filter is
+heard, as LFO DEST FILTER does. FILTER 2 does not move COMB / COMB- (KEY does not either).
 
 **CHORUS** (0.9.9-snd2) is lighter: its LFO is read every 64 samples (16, 8, 4 at the fastest RATEs) and the three
 voices glide between, instead of three sines every sample; it sounds the same (-63 dB from before at the default).
@@ -2462,7 +2488,9 @@ curve where the bar would be.
   - Sources: OFF, LFO, ENV, VEL, KEY, RAND, MODW (MIDI CC1), AT (aftertouch), EXPR (CC11), **M1–M4**, **STEP** (MSEQ), **NOISE** (a smooth random wander, a new value about every 46 ms: a living wobble on
     the filter, the pan, a send), PROX, ENV2, IN ENV, T1 ENV–T6 ENV, and (V10.7.22) **OCT+** / **OCT-** (the expression
     keys, a note held + OCT+ / OCT−: OCT+ the bend's eased 0→1 curve, OCT- the vibrato faded in; routed, they move the DEST
-    instead of the pitch; for a tremolo on AMP use a negative AMT).
+    instead of the pitch; for a tremolo on AMP use a negative AMT), and (codex/filter2-mod) **F.NOISE**: EDIT > FILTER
+    2's modulator (SOFT, STEP and BREAK bipolar, DUST's spikes 0..1, METAL SOFT's wander), whatever FILTER 2's NOISE;
+    on a kit or EXT it is 0.
   - Destinations: PITCH, CUT, SHP, AMP, PAN, DIST, CHO, DLY, REV, RATE (LFO rate), VIB, **E1–E8** (the engine's own
     EDIT knobs, shown by name), **CLIP** and **PNCH** (the master), and (0.7.0) the FX buses: **D.TIM D.FB D.TON D.MIX**
     (DELAY TIME, FDBK, TONE, MIX), **R.SIZ R.DMP** (REVERB SIZE, DAMP), **C.RAT C.DEP** (CHORUS RATE, DEPTH). AMT 64 at a
