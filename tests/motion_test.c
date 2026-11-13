@@ -655,9 +655,9 @@ static int lock_ui(void)
     open_family(FAM_FX);                                 /* the lock's knobs: the sound page shown last */
     open_family(FAM_SEQ);
     frame();
-    bad += check("from FX: the knobs lock CHO DLY REV (codex/coherence: SENDS the sends only)",
-                 lock_id(0) == P_CHOR && lock_id(2) == P_REV && lock_id(3) == 0xFFu);
-    lk_down(k4); turn(EN_K3, 5); lk_up(k4);
+    bad += check("from FX: the knobs lock DIST CHO DLY REV (V10.7.24: SENDS with DIST first again)",
+                 lock_id(0) == P_DIST && lock_id(1) == P_CHOR && lock_id(3) == P_REV);
+    lk_down(k4); turn(EN_K4, 5); lk_up(k4);
     bad += check("  step 5 gets a REV lock", motion_lock_get(t, 4, P_REV, &v) && v == t->p[P_REV] + 5);
     go_page(GR_MOTION);
     frame();
