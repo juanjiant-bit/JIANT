@@ -1799,9 +1799,10 @@ static uint32_t preset_all_pos(uint32_t *total)          /* list index of the se
  * `order` (NENG_SHOWN of them): ENGINE_ORDER, the list shown; (0.9.9) ENGINE_PC_ORDER, PROGRAM CHANGE's numbers */
 /* (V10.6h) PROGRAM CHANGE counts the engines as 0.9.8's numbers had them, so every number names what it named: MATH
  * as LOFI's 18 (the chip presets' numbers onto MATH's voices), ANIMAL its first 24 (the 5 tonal ones appended are
- * reached by the list, not by a program number); the user presets after them as before */
+ * reached by the list, not by a program number), STRING its first 16 (V10.7.26: VIOLIN VIOLA CELLO, appended, by the
+ * list); the user presets after them as before */
 static const uint8_t LOFI_PC[18] = {0, 1, 2, 8, 9, 10, 11, 3, 4, 5, 6, 7, 5, 3, 4, 4, 3, 6};
-static uint32_t pc_shown(uint32_t e, int pc) { return !pc ? preset_shown(e) : e == ENGI_LOFI ? 18u : e == ENGI_ANIMAL ? 24u : preset_shown(e); }
+static uint32_t pc_shown(uint32_t e, int pc) { return !pc ? preset_shown(e) : e == ENGI_LOFI ? 18u : e == ENGI_ANIMAL ? 24u : e == ENGI_STRING ? 16u : preset_shown(e); }
 static uint32_t preset_all_at_in(uint32_t n, uint32_t *k, const uint8_t *order)
 {
     uint32_t e, r;

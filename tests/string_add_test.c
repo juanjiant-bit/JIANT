@@ -8,7 +8,9 @@
  *    DECAY / DAMP the highs dying first; nothing above ~20 kHz (no alias) at the top of the keyboard.
  * 3. every preset of both: sounds, no DC, ends after the release, the same samples twice from silence, no clipping
  *    at the knobs' corners (8 voices); a STRING part's COMB TYPE turned to BP (the lines are its strings).
- * 4. demos into DEMODIR: every preset playing a phrase. */
+ * 4. demos into DEMODIR: every preset playing a phrase.
+ * (V10.7.26) FDBK's feedback bounded at every SPEAKR and not a sine; the BOW in tune and on the note at every key and
+ * pressure, its onset soft (no burst of highs); a bowed and a feedback voice's cost against a plucked one. */
 #define main hostsim_main
 #include "hostsim.c"
 #undef main
@@ -146,7 +148,8 @@ static void string_fdbk(void)
     char what[200];
     EG = &ENG_STRING;
     for (g = 0; g < 3u; g++) {
-        int16_t e[8] = {SX_FDBK, 40, 80, 24, 0, 70, 40, 20};
+        int16_t e[8] = {SX_FDBK, 40, 80, 24, 0, 70, 64, 20};   /* (V10.7.26: SPEAKR 64, the octave's sweet spot;
+                                                         * the feedback has dead spots now, as an amp has) */
         e[4] = G[g];
         setup(-1, e);
         voice_render(52, 0.05, y, FS / 4);
@@ -164,6 +167,132 @@ static void string_fdbk(void)
     snprintf(what, sizeof what, "STRING FDBK: GAIN 0 dies out (%.4f), GAIN 60 / 127 sustain at 3 s (%.3f %.3f), under full scale",
              r[0][1], r[1][1], r[2][1]);
     check(what, r[0][1] < r[0][0] * 0.1 && r[1][1] > 0.02 && r[2][1] > r[1][1] * 0.8 && top < 1.0);
+}
+
+static double lvl_at(const double *ps, double hz);
+/* (V10.7.26) FDBK bounded: GAIN, DIST, DECAY at the top, BLOOM at once, every SPEAKR, low / mid / high keys, held 4 s:
+ * under full scale, not growing after 3 s (its own limit), and once it feeds back not a sine (the tube's harmonics) */
+static void string_fdbk_bounded(void)
+{
+    static double y[FS * 4], ps[NFFT];
+    static const uint32_t NT[3] = {28, 52, 76};
+    double top = 0, worst = 0, pure = 0;
+    uint32_t sp, k, i, bad0 = 0;
+    char what[220];
+    EG = &ENG_STRING;
+    for (sp = 0; sp <= 127u; sp += 9u)
+        for (k = 0; k < 3u; k++) {
+            int16_t e[8] = {SX_FDBK, 127, 100, 0, 127, 127, (int16_t)sp, 0};
+            double a, b, tot = 0, pk = 0;
+            setup(-1, e);
+            voice_render(NT[k], 0, y, FS * 4);
+            for (i = 0; i < FS * 4u; i++)
+                top = fabs(y[i]) > top ? fabs(y[i]) : top;
+            a = rms(y + FS * 5 / 2, FS / 2, 0);
+            b = rms(y + FS * 7 / 2, FS / 2, 0);
+            if (b > a * 1.25 + 0.005) bad0++;
+            if (b / (a + 1e-9) > worst) worst = b / (a + 1e-9);
+            if (b > 0.06) {                              /* (blooming: the strongest partial's share of it; a dead
+                                                         * spot's faint remainder, near a pickup notch, aside) */
+                spectrum(y + FS * 3, NFFT, ps);
+                for (i = 1; i < NFFT / 2; i++) { tot += ps[i]; if (ps[i] > pk) pk = ps[i]; }
+                for (i = 1; i < NFFT / 2; i++)           /* (the peak's own bins: the window's main lobe) */
+                    if (ps[i] == pk) { pk = ps[i - 1] + ps[i] + ps[i + 1]; break; }
+                if (pk / tot > pure) pure = pk / tot;
+            }
+        }
+    snprintf(what, sizeof what, "STRING FDBK bounded at every SPEAKR (GAIN DIST DECAY 127): peak %.2f, 3.5 s / 2.5 s %.2f at the most, "
+             "the strongest partial %.0f %% at the most (not a sine)", top, worst, pure * 100);
+    check(what, top < 0.9 && !bad0 && pure < 0.97);
+}
+/* (V10.7.26) BOW in tune and on the note at every key (the stick-slip clocked by the string: never an octave up nor
+ * stuck), at BOW 20 / 64 / 127 */
+static void string_bow_tune(void)
+{
+    static const int16_t PR[3] = {20, 64, 127};
+    double worst = 0, quiet = 1;
+    uint32_t nt, k, wn = 0;
+    char what[220];
+    EG = &ENG_STRING;
+    for (k = 0; k < 3u; k++)
+        for (nt = 36; nt <= 96; nt += 5) {
+            int16_t e[8] = {SX_NOISE, 100, 70, 24, 0, 60, 60, PR[k]};
+            double f, w = want_hz(nt), r, lo, hi;
+            setup(-1, e);
+            voice_render(nt, 0.6, Y, NFFT * 2);
+            r = rms(Y, NFFT * 2, 0);
+            quiet = r < quiet ? r : quiet;
+            spectrum(Y, NFFT * 2, PS);
+            f = nt < 60u ? peak_hz(PS, w * 4 * 0.97, w * 4 * 1.03) / 4 : peak_hz(PS, w * 0.97, w * 1.03);   /* (low
+                                                         * keys: a bin is cents wide there, the 4th read) */
+            lo = lvl_at(PS, w);                          /* (the note's own: not under its octave) */
+            hi = lvl_at(PS, w * 2);
+            if (fabs(1200 * log2(f / w)) > fabs(worst)) { worst = 1200 * log2(f / w); wn = nt; }
+            if (nt >= 48u && hi > lo + 6) { worst = 999; wn = nt; }
+        }
+    snprintf(what, sizeof what, "STRING BOW in tune, on the note, C2 .. C7 at BOW 20 / 64 / 127: worst %+.1f cents (key %u), the quietest %.3f",
+             worst, wn, quiet);
+    check(what, fabs(worst) < 12 && quiet > 0.01);
+}
+/* (V10.7.26) a bow's onset soft: VIOLIN and CELLO at velocity 100 come in over ~0.1 s (the first 20 ms under a third of
+ * the held level), no burst of highs (the first 60 ms' highs under the held note's: no scratch at velocity 100) */
+static void string_bow_onset(void)
+{
+    static const char *const NM[2] = {"VIOLIN", "CELLO"};
+    static const uint32_t NT[2] = {74, 43};
+    double r0 = 0, hs = 0;
+    uint32_t k, i;
+    int ok = 1;
+    char what[220];
+    EG = &ENG_STRING;
+    for (k = 0; k < 2u; k++) {
+        double a, b, h0 = 0, h1 = 0;
+        setup(preset_of(NM[k]), 0);
+        trk[0].p[P_ATK] = EG->presets[preset_of(NM[k])].env[0];   /* (its bow's stroke: setup opens the ADSR at once) */
+        voice_render(NT[k], 0, Y, FS);
+        a = rms(Y, FS / 50, 0);
+        b = rms(Y + FS / 2, FS / 2, 0);
+        for (i = 1; i < FS * 6 / 100; i++) {             /* (the highs as the signal's slope: its first difference's
+                                                         * energy, the onset's 60 ms and the held note's) */
+            h0 += (Y[i] - Y[i - 1]) * (Y[i] - Y[i - 1]);
+            h1 += (Y[FS / 2 + i] - Y[FS / 2 + i - 1]) * (Y[FS / 2 + i] - Y[FS / 2 + i - 1]);
+        }
+        if (a / b > r0) r0 = a / b;
+        if (h0 / h1 > hs) hs = h0 / h1;
+        ok &= a < b / 3 && h0 < h1;
+    }
+    snprintf(what, sizeof what, "STRING BOW onset soft (VIOLIN, CELLO): the first 20 ms %.2f of the held level, its highs %.2f x the held note's",
+             r0, hs);
+    check(what, ok);
+}
+/* (V10.7.26) the cost: a bowed and a feedback voice against a plucked one, the least of 5 runs (codex/strings: under
+ * ~1.2x the cost before; a plucked voice here as the yardstick, timing on the host) */
+static double str_cost(const char *name)
+{
+    static int32_t b[CTL];
+    double best = 1e30;
+    uint32_t r, k, i;
+    for (r = 0; r < 5u; r++) {
+        uint64_t t0;
+        setup(preset_of(name), 0);
+        for (k = 0; k < 4u; k++) trk_note_on(&trk[0], 48 + 5 * k, 100);
+        t0 = now_ns();
+        for (i = 0; i < 700u; i++) track_render(&trk[0], b, CTL);
+        t0 = now_ns() - t0;
+        if ((double)t0 < best) best = (double)t0;
+    }
+    return best;
+}
+static void string_cost(void)
+{
+    double pl, bw, fb;
+    char what[200];
+    EG = &ENG_STRING;
+    pl = str_cost("NYLON");
+    bw = str_cost("VIOLIN");
+    fb = str_cost("FEEDBACK");
+    snprintf(what, sizeof what, "STRING cost: a bowed voice %.2f, a feedback voice %.2f x a plucked one (host timing)", bw / pl, fb / pl);
+    check(what, bw < pl * 1.7 && fb < pl * 1.7);
 }
 
 static void string_move(void)
@@ -456,6 +585,10 @@ int main(int argc, char **argv)
     string_comb();
     string_fdbk();
     string_move();
+    string_fdbk_bounded();
+    string_bow_tune();
+    string_bow_onset();
+    string_cost();
     add_partials();
     add_shape();
     add_alias();

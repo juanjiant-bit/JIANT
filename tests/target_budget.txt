@@ -44,7 +44,7 @@ dx_hands_step 36
 drw_dust 29
 dly_lo 2351
 animal_render 731
-string_render 224
+string_render 312
 add_render 297
 formant_word_render 553
 formant_block 99
