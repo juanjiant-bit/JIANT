@@ -52,7 +52,7 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 36 | REV | 0..127 | 0 | |
 | 38 | GLIDE | 0..127 | 0 | |
 | 39 | PAN | -64..63 | 0 | |
-| 44 | DETUNE | 0..127 | 40 | |
+| 44 | UNISON | 0..127 | 40 | |
 | 61 | ATK | 0..127 | 0 | (ANALOG PHASE WHEEL STRING NOISE FM6 ADD ANIMAL EXT) |
 | 61 | RTRG | 0..1 | 1 | (MATH) |
 | 61 | LANG | 0..9 | 0 | OFF ES EN JA RU DE FR ZH PT GN (VOICE) |
@@ -79,8 +79,9 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 80 | VEL | 0..127 | 127 | |
 | 81 | ROTATE | -32..32 | 0 | |
 | 82 | PITCH | -24..24 | 0 | |
-| 83 | IMAGE | 0..127 | 127 | (ANALOG PHASE MATH VOICE WHEEL STRING NOISE FM6 ADD ANIMAL EXT) |
+| 83 | IMAGE | 0..127 | 127 | (ANALOG PHASE MATH VOICE WHEEL STRING NOISE FM6 ADD ANIMAL) |
 | 83 | KICK | 0..127 | 127 | (DRUM) |
+| 83 | - | 0..127 | 127 | (EXT) |
 | 84 | SNARE | 0..127 | 127 | (ANALOG PHASE MATH WHEEL STRING DRUM NOISE FM6 ADD ANIMAL EXT) |
 | 84 | CONS | 0..127 | 127 | (VOICE) |
 | 85 | CLAP | 0..127 | 127 | |
@@ -155,7 +156,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | WHEEL 7 | 119 | PERC | 0..6 | 0 | OFF 2ND 3RD 2SOFT 3SOFT 2SLOW 3SLOW |
 | WHEEL 7 | 120 | CLICK | 0..127 | 40 | |
 | WHEEL 7 | 121 | DRIVE | 0..127 | 0 | |
-| WHEEL 7 | 122 | ROTOR | 0..2 | 1 | OFF SLOW FAST |
+| WHEEL 7 | 122 | SPEED | 0..2 | 1 | OFF SLOW FAST |
 | STRING 8 | 115 | EXCITE | 0..5 | 1 | NOISE PLUCK PICK HAMMR STICK FDBK |
 | STRING 8 | 116 | DECAY | 0..127 | 72 | |
 | STRING 8 | 117 | BRIGHT | 0..127 | 60 | |
@@ -186,7 +187,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | FM6 12 | 118 | RATIO | -16..16 | 0 | |
 | FM6 12 | 119 | MEG | -64..63 | 0 | |
 | FM6 12 | 120 | VMOD | -7..7 | 0 | |
-| FM6 12 | 121 | DETUNE | 0..127 | 0 | |
+| FM6 12 | 121 | SPREAD | 0..127 | 0 | |
 | FM6 12 | 122 | SLOT | 0..40 | 0 | |
 | ADD 13 | 115 | MODE | 0..9 | 0 | HARM ODD WIDE BELL BAR DRUM PRIME FIFTH SUB PLATE |
 | ADD 13 | 116 | MORPH | 0..127 | 0 | |
@@ -207,7 +208,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | EXT 15 | 115 | SOURCE | 0..4 | 0 | IN 1 IN 2 1+2 STEREO SWARM |
 | EXT 15 | 116 | GAIN | 0..127 | 64 | |
 | EXT 15 | 117 | GATE | 0..127 | 0 | |
-| EXT 15 | 118 | PLAY | 0..1 | 0 | THRU KEYS |
+| EXT 15 | 118 | MODE | 0..1 | 0 | THRU KEYS |
 | EXT 15 | 119 | WIDTH | 0..127 | 127 | |
 | EXT 15 | 120 | RING | 0..127 | 0 | |
 | EXT 15 | 121 | BITS | 0..127 | 0 | |
