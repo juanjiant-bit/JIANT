@@ -90,7 +90,7 @@ static void run_to(int s, uint32_t step, uint32_t T, uint16_t *out)
 #define NSTRICT 7u
 static void test_time(void)
 {
-    static const char *const SC[] = {"home", "home_being", "v6_analog", "v6_phase", "gen", "edit_analog", "v6_fm6_op",
+    static const char *const SC[] = {"home", "home_macros", "v6_analog", "v6_phase", "gen", "edit_analog", "v6_fm6_op",
                                      "v6_wheel", "vx_head_s", "vx_bird", "v6_noise", "v6_lofi", "vx_kit_hits"};
     uint32_t k;
     for (k = 0; k < sizeof SC / sizeof SC[0]; k++) {
@@ -191,7 +191,7 @@ static void test_jumps(void)
 /* the detail glides: drawn at ui_lod 0, 32 .. 256 (the time still), each step a part of the whole change */
 static void test_lod(void)
 {
-    static const char *const SC[] = {"home", "home_being", "vx_bird", "vx_mammal", "vx_insect"};   /* (the beings' outlines,
+    static const char *const SC[] = {"home", "home_macros", "vx_bird", "vx_mammal", "vx_insect"};   /* (the beings' outlines,
                                                          * the creatures' curves: ANALOG's wave, the kit's blobs, NOISE's
                                                          * swarm are drawn as they were) */
     uint32_t k, l, y, x;
@@ -294,7 +294,7 @@ static void cost(const char *n, uint32_t step, int lite)
 }
 static void costs(void)
 {
-    static const char *const SC[] = {"home", "home_being", "v6_analog", "v6_fm6_op", "v6_wheel", "v6_noise", "v6_phase", "v6_lofi",
+    static const char *const SC[] = {"home", "home_macros", "v6_analog", "v6_fm6_op", "v6_wheel", "v6_noise", "v6_phase", "v6_lofi",
                                      "v6_string", "vx_head_s", "vx_bird", "vx_kit_hits", "gen", "edit_analog"};
     uint32_t k;
     for (k = 0; k < sizeof SC / sizeof SC[0]; k++) {

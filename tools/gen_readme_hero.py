@@ -67,7 +67,7 @@ for i, (b, c) in enumerate(big):
 strips = [[('lente_step_note', 'NOTE · MICRO in 64ths'), ('seq_bar', 'SEQ › BAR · PLAYHEADS'), ('key_chord', 'CHORD'),
            ('fx_buses', 'FX › BUSES'), ('mixer', 'MIXER · DJ FILTER'), ('layer_glo_active', 'GLO held · MAP')],
           [('v6_analog_full', 'ACID ANALOG'), ('drumx', 'DRUM-X'), ('words', 'VOICE · WORDS'), ('ed_operator', 'FM6 OPERATOR'),
-           ('reverb_reso', 'RESO REVERB'), ('home_being', 'HOME › BEING')]]
+           ('reverb_reso', 'RESO REVERB'), ('home_scope', 'HOME › SCOPE')]]
 y1 = y0 + 545
 for r, row in enumerate(strips):
     for i, (b, c) in enumerate(row):

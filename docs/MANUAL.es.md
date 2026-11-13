@@ -147,18 +147,19 @@ Guardá tus archivos WAV.
 2. Girá **ALGORITHM** para elegir una pista (T1–T6). Con el valor por defecto, **TRACKS 4**, se detiene en T4: T5 y T6 aparecen solo con TRACKS 6 (ver
    [13](#13-sistema-tracks-load-y-el-menu)).
 3. Girá **PRESETS** para recorrer sonidos. Tocá las teclas.
-4. Girá **KNOB 1–4**: en HOME son los cuatro controles más útiles del motor de la pista.
+4. Girá **KNOB 1–4**: en EDIT 1 y EDIT 2 son el motor de la pista. (V10.7.24) En HOME son las macros **M1–M4** (HOME › MACROS)
+   y, una página más allá (**SELECT**), **FILTER · SPACE · DRIVE · DUCK** sobre toda la mezcla (HOME › SCOPE).
 5. ¿No te gusta? Mantené **EDIT** y girá **SELECT**: el sonido se tira a los dados y sale una variación nueva, que escuchás al
    instante. **OCT+ OK** la deja, **OCT− CANCEL** devuelve el sonido.
 
 ### Tu primer tema (5 minutos)
 
-1. Mantené **HOME** y girá **SELECT** (o en HOME tocá **HOME** dos veces: ECO → BEING → **GEN**). Se abre el **GENERATOR** en
+1. Mantené **HOME** y girá **SELECT** (o en HOME tocá **HOME** dos veces: MACROS → SCOPE → **GEN**). Se abre el **GENERATOR** en
    **EXPLORE** (ningún género, todas las reglas rotas): apretá **OCT+** así, o antes elegí RANDOM o uno de los géneros
    con KNOB 1 o PRESETS. Aparece una idea de tema completa: motores, sonidos, partes, escala, tempo y efectos. Apretá
    **PLAY**.
 2. ¿No te convence? Apretá **OCT+** otra vez: semilla nueva, pieza nueva. ¿Demasiado cargada? Girá **SELECT** un paso a la
-   derecha para GEN 2 y bajá **DRUMS** o **ARP**, después OCT+: la misma pieza con eso cambiado. **OCT−** vuelve a ECO. Para volver a lo que había antes: mantené **GLO** y apretá **G4** (UNDO).
+   derecha para GEN 2 y bajá **DRUMS** o **ARP**, después OCT+: la misma pieza con eso cambiado. **OCT−** vuelve a MACROS. Para volver a lo que había antes: mantené **GLO** y apretá **G4** (UNDO).
 3. ¿Te gusta? **Pará** (PLAY), apretá **SAVE** (abre TIMELINE, el tema) y girá **SELECT** tres pasos a la derecha
    (pasando ARRANGE, PARTS y CLIPS): **PART SLOTS**, las cuatro partes del proyecto. Girá **KNOB 4** a la derecha para que su tarjeta diga
    **OCT+** y apretá **OCT+**. Escribí un nombre con las teclas (o dejá el que te ofrece) y apretá **OCT+** otra vez. La
@@ -191,7 +192,7 @@ Los nombres de abajo son los que usa el firmware (la pantalla HARDWARE CALIBRATI
 
 | Botón | Toque | Mantener |
 | --- | --- | --- |
-| **HOME** | HOME (0.9.2, como el botón de cualquier sección): desde otra sección, la última página de HOME; en HOME la primera página del grupo siguiente, en ronda: **ECO → BEING → GENE → ECO** (GENE: el generador, GEN hasta la V10.6m). | Unos 0,7 s: abre el **MENU**. |
+| **HOME** | HOME (0.9.2, como el botón de cualquier sección): desde otra sección, la última página de HOME; en HOME la primera página del grupo siguiente, en ronda: **MACROS → SCOPE → GENE → MACROS** (V10.7.24; GENE: el generador, GEN hasta la V10.6m). | Unos 0,7 s: abre el **MENU**. |
 | **ENV** | La sección ENV: desde otro lado, la última página mostrada (al encender, ENV); adentro, el grupo siguiente: **TRACKS → ENV → STAGE**, en ronda. | (sin capa) |
 | **LFO** | La sección LFO: desde otro lado, la última página mostrada (al encender, LFO); adentro **MOD → LFO → MSEQ**, en ronda. | Capa **MACRO**: KNOB 1–4 son M1–M4. |
 | **FX** | La sección FX: desde otro lado, la última página mostrada; adentro, el módulo siguiente: **TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → PUNCH IN → MASTER** (MASTER · TAPE · EQ), en ronda. | Capa de **FX punch-in**. |
@@ -334,7 +335,7 @@ Desde la 0.8.5 todas las páginas llevan la piel del diseño que aprobó el due�
 Los **colores** funcionan como una cámara térmica: frío (índigo, violeta) es poco, caliente (rojo, naranja, crema, blanco; 0.8.9: la escala de la 0.6) es
 mucho. Violeta es lo seleccionado, naranja lo activo.
 
-**HOME** es el ecosistema: una criatura por pista, su especie según su motor, su forma según sus cuatro perillas, que
+**HOME** (V10.7.24: su primera página, **MACROS**) es el ecosistema: una criatura por pista, su especie según su motor, su forma según sus cuatro perillas principales, que
 se hincha y se calienta con su propio audio (0.8.8: nadando libres por toda la pantalla, solas, como antes de 0.8.5; ver
 [las secciones](#las-secciones-y-sus-cadenas)). (0.9.7) Cada ser lleva una **carita**: cierra los ojos con un golpe y abre
 la boca con su nivel. La pista seleccionada se dibuja más grande, su número en violeta, una muteada se **duerme** (un
@@ -401,7 +402,7 @@ páginas, sus perillas, sus dibujos y todas las funciones son las mismas, solo c
 - **SCL y ARP son dos secciones** (hasta la 0.9.1 una lente): SCL es KEY · CHORD, ARP es ARP · ARP 2 (un grupo: un
   toque de ARP adentro vuelve a ARP).
 - **GEN son tres páginas de HOME** (GEN 1–3, el último grupo de HOME), ya no una pantalla aparte: los botones de
-  sección funcionan ahí, OCT+ arma la pieza, OCT− vuelve a ECO. HOME + SELECT lo sigue abriendo desde cualquier lado.
+  sección funcionan ahí, OCT+ arma la pieza, OCT− vuelve a MACROS. HOME + SELECT lo sigue abriendo desde cualquier lado.
 - **SAVE desde afuera** vuelve a la página de SAVE que dejaste; **USER** y **PART SLOTS** llegan con su SAVE ya elegido,
   así SAVE, OCT+, OCT+ sigue guardando el sonido (o la parte).
 - **EDIT es siempre EDIT**: borrar un paso pasó a la capa SEQ (**SEQ + G5**, CLR STEP; en AUTO LIST borra el
@@ -419,7 +420,7 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 
 | Sección | Grupos (el botón) · páginas (SELECT) | Páginas |
 | --- | --- | --- |
-| **HOME** | **ECO**: ECO · MACROS — **BEING**: BEING · ROUTES — **GENE**: GENE 1 · GENE 2 · GENE 3 | 7 |
+| **HOME** | (V10.7.24) **MACROS**: MACROS — **SCOPE**: SCOPE — **GENE**: GENE 1 · GENE 2 · GENE 3 | 5 |
 | **EDIT** (un sinte) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (las que tengan el motor y la pista) — **FOCUS**: FOCUS — **PLAY**: PLAY · PLAY 2 (codex/coherence: era VOICE; el IMAGE de STEREO pasó a PLAY 2) | hasta 11 |
 | **EDIT** (FM6) | **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **TONE**: FILTER — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **PLAY**: PLAY · PLAY 2 | 8 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: X-MOD · FILTER · STEREO · PLAY | 14 |
@@ -438,20 +439,31 @@ dibujo del paso grande es el de COMP); el **SENDS** de FX es la página FX; la p
 nivel PROJECT) y **PROJECTS** (el nivel LIBRARY); EDIT 1 / EDIT 2 del kit DRUM son **KIT** / **KIT 2**. La página nueva
 **BAR** es el dibujo de los compases de PATTERN con KNOB 1 el compás y KNOB 2 LEN.
 
-- **ECO**: los seres de las seis pistas nadando libres por todo el panel, solos (0.8.8: como antes de 0.8.5), cada
-  uno hinchándose con su sonido (un golpe lo empuja), su número debajo; el seleccionado más grande, su número violeta.
-  (0.9.7, "hoy con carita") Cada ser es el contorno con púas de su especie (las púas según suena) en **tres isotermas**,
-  coloreadas por **su propio nivel** como una cámara térmica (bajito: cian y azul; fuerte: rojo, naranja y amarillo; las
-  de adentro más calientes), y donde estaban sus núcleos una **carita**: dos ojos que **se cierran con un golpe** y una
-  boca que **se abre con el nivel**. El ser de una pista muteada duerme (un contorno apagado, los ojos cerrados). (V10.6: la
-  mirada para arriba y el anillo se fueron con MUTATE.) Detrás derivan los gránulos del citoplasma (los dibuja solo la pantalla: nada del
-  tiempo del sonido). **MACROS**: KNOB 1–4 son **M1–M4** (las macros, como LFO
-  mantenido), las rutas contadas arriba a la izquierda, LATCH a la derecha.
-- **BEING**: el ser de la pista grande, sus cuatro perillas de HOME como órganos en las esquinas (un medidor cada una,
-  su valor, una vena hasta el cuerpo), el nombre del sonido debajo. (0.9.4) Una pista VOICE muestra ahí su **cabeza**, una ANIMAL su
-  **criatura**, una DRUM-X su **batería de bichitos** (ver [sus dibujos](#tres-motores-dibujan-su-propia-criatura-094)); (0.9.6) los otros
-  seis motores los suyos ([una célula, una colonia, gusanos, un enjambre, un caracol, una oruga](#seis-motores-más-dibujan-su-propia-criatura-096)). **ROUTES**: M1–M4 a la izquierda con sus rutas
-  dibujadas hasta donde van (**T2 CUT+62**).
+- **MACROS** (V10.7.24: la primera página de HOME, con el dibujo de ECO; ECO, BEING y ROUTES se fueron: las cuatro
+  perillas del sonido viven en EDIT): **KNOB 1–4** son **M1–M4**, las macros del proyecto (como LFO mantenido; se guardan
+  con el proyecto y las escenas del SONG como siempre), cada tarjeta apagada mientras ningún slot de MOD la nombre. Los
+  seres de las seis pistas nadan libres por todo el panel, solos, cada uno hinchándose con su sonido (un golpe lo
+  empuja), su número debajo; el seleccionado más grande, su número violeta. (0.9.7, "hoy con carita") Cada ser es el
+  contorno con púas de su especie (las púas según suena) en **tres isotermas**, coloreadas por **su propio nivel** como
+  una cámara térmica (bajito: cian y azul; fuerte: rojo, naranja y amarillo; las de adentro más calientes), y donde
+  estaban sus núcleos una **carita**: dos ojos que **se cierran con un golpe** y una boca que **se abre con el nivel**.
+  El ser de una pista muteada duerme (un contorno apagado, los ojos cerrados). Detrás derivan los gránulos del
+  citoplasma (los dibuja solo la pantalla: nada del tiempo del sonido). Arriba a la izquierda, las rutas contadas;
+  **girá una macro** y la línea dice adónde va (**M1 T2 CUT+62 T4 E1-31**, "NO ROUTE" si no va a ningún lado: armala en
+  LFO › MOD, SRC M1–M4); LATCH a la derecha.
+- **SCOPE** (V10.7.24): el **osciloscopio** de la mezcla en todo el panel (cada trazo tan caliente como fuerte suena), y
+  cuatro modificadores **globales** sobre toda la mezcla para tocar en vivo, que se guardan con el proyecto como todo
+  global (MIDI OUT ALL los manda como NRPN 1):
+  - **KNOB 1 FILTER**: el **DJ FILTER** de la mezcla (el mismo que la KNOB 4 de GLO › KEYS): al centro apagado, a la
+    izquierda un pasabajos que cierra, a la derecha un pasaaltos que abre; al cruzar se frena en el centro. Mientras
+    una pista graba, queda grabado como automatización del DJ FILTER, igual que en KEYS.
+  - **KNOB 2 SPACE**: cuánto delay y reverb tiene toda la mezcla: una perilla que mueve juntos el retorno del delay
+    (el **MIX** de FX › DLY) y el **SIZE** de la reverb, lo mismo los dos (la tarjeta muestra su promedio); los envíos
+    de las pistas quedan como están. Subiendo frena SIZE en 126 (127 es el FREEZE de CLOUD: eso se pone en REVERB).
+  - **KNOB 3 DRIVE**: el **CLIP** del master (KNOB 1 de FX › MASTER): la mezcla empujada x1–x4 al recorte suave, con
+    su nivel compensado.
+  - **KNOB 4 DUCK**: cuánto bombea la mezcla con el bombo (el **DUCK** de FX › MASTER; su release es el REL de MASTER).
+  Con **EDIT** mantenido: **MOMENTARY**, vuelven a donde estaban al soltar EDIT.
 - **ENV** › **TRACKS**: las envolventes de las seis pistas como mosaicos (la seleccionada teñida, con su nivel actual
   como punto); las perillas son de la pista seleccionada —
   **ALGORITHM** elige la pista. **ENV**: la envolvente grande / las columnas de ENV DEST, como antes.
@@ -482,8 +494,8 @@ nivel PROJECT) y **PROJECTS** (el nivel LIBRARY); EDIT 1 / EDIT 2 del kit DRUM s
   él (subida desde OFF la toma un slot libre, con ese parámetro como DEST; de vuelta a OFF lo libera), KNOB 4 el
   **AMT** de ese slot; E1–E8 como pestañas abajo.
 - **GEN 1–3** son el generador (como HOME mantenido + SELECT, desde cualquier página): **SELECT** cambia la página (a
-  la izquierda de GEN 1: ROUTES), **KNOB 1** el GENRE (V10.7.22; PRESETS el sonido, como en todos lados), **OCT+** arma la pieza, **OCT−** vuelve a ECO, un toque de
-  **HOME** sigue a ECO.
+  la izquierda de GEN 1: SCOPE), **KNOB 1** el GENRE (V10.7.22; PRESETS el sonido, como en todos lados), **OCT+** arma la pieza, **OCT−** vuelve a MACROS, un toque de
+  **HOME** sigue a MACROS.
 
 ### Cada página y sus cuatro perillas
 
@@ -737,8 +749,8 @@ Doce motores, todos de síntesis, sin samples: ANALOG, FM6, PHASE, **MATH** (LOF
 NOISE, DRUM-X, ANIMAL, **STRING** (una cuerda pulsada, golpeada o frotada, y el feedback de guitarra), **ADD**
 (aditiva) y **EXT** (señales externas: la entrada de audio USB, o SWARM, el Bluetooth de alrededor). Cualquier motor
 puede ir en cualquier pista. Elegilos con **PRESETS**
-(una sola lista con todos los motores) o con KNOB 2 (ENG) en SAVE > PRESETS. También figuran las cuatro perillas de
-HOME de cada pista.
+(una sola lista con todos los motores) o con KNOB 2 (ENG) en SAVE > PRESETS. También figuran las cuatro perillas
+principales de cada motor (las que sigue la forma de su ser; en HOME hasta la V10.7.23, ahora en EDIT).
 
 **El orden** (V10.6e): PRESETS, KNOB 2 (ENG) y las listas del editor web muestran los motores así: **DRUM-X, ANALOG,
 PHASE, FM6, VOICE, ANIMAL** (las pistas al encender, T1–T6), y después MATH, WHEEL, NOISE, STRING, ADD, EXT. Solo cambió el
@@ -750,7 +762,7 @@ así que todo lo guardado antes carga igual. PROGRAM CHANGE conserva los número
 Cambiar un valor de lista (WAVE, CHIP, un tipo) mientras suenan notas hace una pequeña bajada (unos 3 ms) en vez de un
 click; las notas siguen.
 
-| Motor | EDIT 1 | EDIT 2 | Perillas de HOME |
+| Motor | EDIT 1 | EDIT 2 | Perillas principales |
 | --- | --- | --- | --- |
 | **ANALOG** | WAVE, DETUNE, MIX, INT (V10.7.21; NOISE en FOCUS); con SAW3 / PLS3: WAVE, INT, INT 3, DETUNE (V10.7.22: los intervalos de los tres osciladores juntos; MIX en FOCUS) | — (su página FILTER: TYPE, CUT, RES, DRIVE) | CUT, RES, ATK, REL |
 | **FM6** | ALGO: ALG, FB, MOD, RATIO | PATCH: SLOT, MEG, VMOD, SPREAD (codex/coherence: SLOT en la KNOB 1; SPREAD, las portadoras separadas, era DETUNE) | MOD, RATIO, MEG, SLOT |
@@ -950,7 +962,7 @@ cuatro voces cantando siguen costando bastante menos que las ocho de ANALOG.
 
 ### Tres motores dibujan su propia criatura (0.9.4)
 
-Donde cada motor muestra su ser (EDIT › SOUND a la izquierda, HOME › BEING grande), tres motores dibujan algo propio,
+Donde cada motor muestra su ser (EDIT › SOUND a la izquierda; HOME › BEING grande hasta la V10.7.23), tres motores dibujan algo propio,
 con el mismo dibujo de líneas térmico (cuanto más fría la línea, menos densa o más callada; el blanco es lo más
 caliente), que se mueve solo mientras la pista suena y queda quieto en silencio:
 
@@ -975,8 +987,7 @@ caliente), que se mueve solo mientras la pista suena y queda quieto en silencio:
   laringe), salen arcos de canto, las alas del insecto vibran (PULSE: estridulando, frotando la pata; WING: aleteando
   borrosas) y laten los segmentos del abdomen, respiran las costillas del mamífero.
 - **DRUM-X: la batería como bichitos ("BICHOS")**, en **EDIT › KIT** (la primera página de KIT: arriba a la derecha
-  el nombre del último sonido que sonó), en **EDIT › SOUND 1–4** (encendido y nombrado el sonido que se edita) y en
-  **HOME › BEING**; KIT 2, KIT 3 y X-MOD conservan la colonia (un ser por sonido en dos filas). Cada tambor es un ser
+  el nombre del último sonido que sonó) y en **EDIT › SOUND 1–4** (encendido y nombrado el sonido que se edita); KIT 2, KIT 3 y X-MOD conservan la colonia (un ser por sonido en dos filas). Cada tambor es un ser
   chiquito con ojos y boca, parados como una batería: el **bombo** grande en el medio (su núcleo naranja caliente), el
   **redoblante** chato en su soporte, los **toms** con patitas (el de piso con patas más largas), el **hi-hat** dos
   conchas en su pie (juntas en CH, la de arriba se levanta con la boca abierta en OH), el **crash** en un tallo largo y
@@ -994,8 +1005,7 @@ bytes de RAM; nada en el sonido.
 
 Con 0.9.6 cada motor tiene su propio dibujo: ANALOG, FM6, WHEEL, NOISE, PHASE y MATH (entonces LOFI) dibujan el suyo en **EDIT › SOUND**
 (a la izquierda; el osciloscopio y las fichas a la derecha como antes; 0.9.7: con **MENU › DISPLAY › SCOPE** en ON — en OFF,
-el de fábrica, la criatura tiene todo el panel, centrada, el nombre del sonido un rótulo chiquito en una esquina) y en **HOME › BEING** (el ecosistema de HOME
-conserva sus seres), con el mismo dibujo térmico, la cara de los bichitos compartida con los de DRUM-X, y se mueven
+el de fábrica, la criatura tiene todo el panel, centrada, el nombre del sonido un rótulo chiquito en una esquina; HOME › BEING, que la mostraba grande, se fue con la V10.7.24), con el mismo dibujo térmico, la cara de los bichitos compartida con los de DRUM-X, y se mueven
 solo mientras la pista suena:
 
 - **ANALOG: una célula.** Su membrana (tres isotermas, la de afuera fría) son dos ciclos de los osciladores a través
@@ -1140,7 +1150,7 @@ DRUM-X es un kit sintetizado de ocho sonidos, **BD SD CP CH OH TM RS CB**, gener
   pista. Cambiar de motor, INIT SOUND, cargar un proyecto y GEN dejan el kit de la sección como está; DRUM-X devuelve el
   de fábrica. Editá cualquiera en EDIT > SOUND; la sección guarda el resultado.
 
-- Cada sonido tiene dos lados, **A** y **B**. **MORPH** (KIT, KNOB 1, también en HOME) mueve todo el kit entre ellos:
+- Cada sonido tiene dos lados, **A** y **B**. **MORPH** (KIT, KNOB 1) mueve todo el kit entre ellos:
   la perilla para tocar en vivo.
 - Las páginas van **primero todo el kit, después un sonido, al final los volúmenes y el estéreo** (0.6.58):
   - **KIT** (EDIT 1): MORPH, TUNE, TONE, DECAY. **KIT 2** (EDIT 2): NOISE, **FM ENV** (FM golpeada con cada golpe que se
@@ -1927,11 +1937,11 @@ Mantené **SAVE**:
 
 ### GEN — el generador de temas (HOME + SELECT)
 
-Mantené **HOME** y girá **SELECT**, desde cualquier página, o en HOME recorré la cadena con **SELECT** (ECO · MACROS ·
-BEING · ROUTES · **GEN 1 · GEN 2 · GEN 3**) o tocá HOME hasta su grupo siguiente (ECO → BEING → GEN). (0.9.2) El
+Mantené **HOME** y girá **SELECT**, desde cualquier página, o en HOME recorré la cadena con **SELECT** (MACROS · SCOPE ·
+**GEN 1 · GEN 2 · GEN 3**) o tocá HOME hasta su grupo siguiente (MACROS → SCOPE → GEN). (0.9.2) El
 **GENERATOR** es el último grupo de HOME, tres páginas comunes, ya no una pantalla aparte: **SELECT** cambia de página,
 **KNOB 1–4** fijan los cuatro valores que se ven (V10.7.22: **PRESETS** carga sonidos también acá, como en todas las páginas menos las de SEQ), **OCT+** arma la
-pieza y **OCT−** vuelve a ECO (la pieza queda; **UNDO**, GLO + G4, devuelve lo que había antes); todos los botones de
+pieza y **OCT−** vuelve a MACROS (la pieza queda; **UNDO**, GLO + G4, devuelve lo que había antes); todos los botones de
 sección funcionan desde ahí. El panel muestra las cinco partes como filas
 (las que pesan las perillas de la página, encendidas) con un adelanto de su densidad y su calor, las secciones de la
 FORM como fichas de colores, la última pieza y **OCT+ MAKE**. **PLAY** arranca y para el transporte sin salir de la
@@ -2457,6 +2467,7 @@ pequeña curva de respuesta donde iría la barra.
   ningún lado).
 - Soltá: quedan **enganchadas** — KNOB 1–4 siguen moviendo las macros en cualquier página — hasta que apretás LFO de
   nuevo.
+- (V10.7.24) En **HOME › MACROS** KNOB 1–4 también son M1–M4, sin enganchar nada; al girar una, arriba se ven sus rutas.
 - Cada encendido arranca con rutas al azar (dos por pista) en las pistas que no tienen ninguna. **F3**
   tira rutas nuevas en las pistas que están sonando; **G3** las borra. (V10.8) Las rutas al azar (al encender, F3, GEN,
   los dados) nunca apuntan a **PITCH**: una macro moviendo la afinación desafinaba pistas enteras. Una ruta a PITCH se
@@ -3007,7 +3018,7 @@ Cualquier perilla del sonido de una pista a cualquier CC de tu controlador, en e
 1. **MENU › CONTROL › LEARN**: **SEL TRACK** (el CC sigue a la pista que esté elegida cuando llega) o **FIXED TRK** (el
    CC queda en la pista donde lo aprendiste). Mantené HOME, ALGORITHM hasta la pestaña CONTROL, SELECT hasta LEARN, y
    después HOME para cerrar el menú: empieza el aprendizaje.
-2. **Girá una perilla** en cualquier página que edite un parámetro de una pista (HOME, EDIT, ENV, LFO, FX, el MIXER,
+2. **Girá una perilla** en cualquier página que edite un parámetro de una pista (EDIT, ENV, LFO, FX, el MIXER,
    los niveles de GLO): la pantalla dice **LEARN T2 CUT: SEND A CC** (o su CC si ya tiene uno).
 3. **Mové la perilla del controlador** (mandá el CC): **CC21 > T2 CUT**. Desde ahí ese CC mueve el CUT de T2 como la
    perilla (0–127 sobre su rango, grabado como automatización igual que una perilla), en **cualquier canal** y por

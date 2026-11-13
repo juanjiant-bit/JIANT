@@ -1,22 +1,19 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* (0.8.5) HOME's lens (ui_lens.c): the panels of ECO and BEING, drawn as the approved mock-up (lente_sistema.html,
- * HOME) in the lens's panel (240 x 140 at y 84). Included by ui_graph.c after ui_being.c. The beings are JIANT's own
- * (ui_being.c: the same genomes, isotherms, nuclei, the same swelling, exciting and swimming with each track's sound,
- * graph_ecosys's maths); the mock-up gave the chrome around them.
- *   ECO    (0.8.8: as 0.8.4's HOME again, graph_ecosys) the six tracks' beings swimming free over the whole panel, each
- *          by itself (wandering, bouncing off the walls, a hit kicking it on, swelling with its sound), its number under
- *          it; the selected one larger, its number in the theme's colour (no ring, no grid, no names). The cytoplasm's
- *          granules drift behind them. (0.9.7, the approved variant A "Hoy con carita") each being today's (the spiky
- *          outline of its species, the same spikes as it sounds) in three isotherms instead of four, coloured by its own
- *          level (quiet cyan and blue .. loud red, orange, yellow), and where its nuclei were a small face: two eyes that
- *          shut on a hit, a mouth that opens with the level; muted, asleep (a dim outline, its eyes shut). MUTATE: when a
- *          mutation lands the being looks up, its number lights white and one ring in the accent opens (the critters and
- *          the ring of twelve dots, gone). MACROS: the macros' routes counted at the top left, LATCH / HOLD LFO at the
- *          right
- *   BEING  the track's being large in the middle, its four HOME knobs as organs at the corners (a gauge each, its name
- *          and value, a vein to the body), the sound's name under it; ROUTES: the being small, M1..M4 down the left
- *          with their routes drawn to their destinations ("T1 CUT+40")
+/* (0.8.5) HOME's lens (ui_lens.c): its panels in the lens's panel (240 x 140 at y 84), as the approved mock-up
+ * (lente_sistema.html, HOME) drew ECO. Included by ui_graph.c after ui_being.c. The beings are JIANT's own (ui_being.c:
+ * the same genomes, isotherms, nuclei, the same swelling, exciting and swimming with each track's sound, graph_ecosys's
+ * maths); the mock-up gave the chrome around them.
+ *   MACROS (V10.7.24: was ECO's picture, ECO and BEING gone) the six tracks' beings swimming free over the whole panel,
+ *          each by itself (wandering, bouncing off the walls, a hit kicking it on, swelling with its sound), its number
+ *          under it; the selected one larger, its number in the theme's colour (no ring, no grid, no names). The
+ *          cytoplasm's granules drift behind them. (0.9.7, the approved variant A "Hoy con carita") each being today's
+ *          (the spiky outline of its species, the same spikes as it sounds) in three isotherms, coloured by its own level
+ *          (quiet cyan and blue .. loud red, orange, yellow), and where its nuclei were a small face: two eyes that shut on
+ *          a hit, a mouth that opens with the level; muted, asleep (a dim outline, its eyes shut). MUTATE: when a mutation
+ *          lands the being looks up, its number lights white and one ring in the accent opens. At the top left the
+ *          macros' routes counted, a macro turned: where it goes ("M1 T1 CUT+40 .."); LATCH / HOLD LFO at the right
+ *   SCOPE  (V10.7.24) the mix's oscilloscope over the whole panel (ui_graph.c graph_scope)
  * Nothing in the audio path: the parts' peaks and the scope the UI already reads. */
 #define ECO_N NTRK
 static const int16_t ECO_PX[ECO_N] = {44, 120, 196, 64, 146, 206}, ECO_PY[ECO_N] = {34, 28, 40, 84, 78, 86};   /* (where they
@@ -257,7 +254,7 @@ static void graph_eco(void)
     int32_t bx[ECO_N], by[ECO_N], bot = eco_bot();
     (void)eco_step();                                   /* (the swim, once a frame) */
     (void)bg_energy();                                  /* (the output's level kept as it was read: once a frame) */
-    char b[16];
+    char b[48];
     for (k = 0; k < 22u; k++) {                         /* the cytoplasm: granules drifting */
         uint32_t h = k * 2654435761u;
         int32_t gx = 10 + (int32_t)((h >> 8) % 220u + anim_fr * (1u + (h >> 28)) / 6u) % 220;   /* (still: where they were) */
@@ -277,96 +274,27 @@ static void graph_eco(void)
         ny = clamp(py + rad / 2 + 4, 4, bot);
         cv_text_in(px - 30, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM : T_MID, T_SURF);
     }
-    if (home_set()) {                                   /* MACROS: the routes, LATCH */
+    if (ui.hot_t && ui.hot_col < 4u) {                  /* MACROS: a macro turned, where it goes ("M2 T1 CUT+40 T3 ..",
+                                                         * the MACRO layer's list); else the routes counted; LATCH */
+        b[0] = 'M';
+        b[1] = (char)('1' + ui.hot_col);
+        b[2] = ' ';
+        if (!macro_routes(ui.hot_col, b + 3, sizeof b - 3u))
+            str_cpy(b + 3, "NO ROUTE", sizeof b - 3u);
+        cv_clip_text(6, 2, &AF_X, b, T_MID, T_SURF, 176);
+    } else {
         fmt_int(b, (int32_t)routes_count());
         str_cpy(b + str_len(b), " ROUTES", 8);
         cv_text(6, 2, &AF_X, b, T_DIM);
-        cv_text_r(234, 2, &AF_X, mac_latch ? "LATCH" : "HOLD LFO", mac_latch ? T_ACCENT : T_DIM, T_SURF);
     }
+    cv_text_r(234, 2, &AF_X, mac_latch ? "LATCH" : "HOLD LFO", mac_latch ? T_ACCENT : T_DIM, T_SURF);
 }
-/* BEING: the track's being large, its HOME knobs as organs at the corners */
-static const int16_t ORG_X[4] = {30, 210, 30, 210}, ORG_Y[4] = {28, 28, 116, 116};
-static void organ(uint32_t k, int32_t cx, int32_t cy)
-{
-    int16_t *vp;
-    const param_desc_t *d = home_param(k, &vp);
-    int32_t gx = ORG_X[k], gy = ORG_Y[k], hot = ui.hot_t && ui.hot_col == k;
-    uint16_t c = hot ? T_ACCENT : T_THEME;
-    og_quad_a(gx * 16, gy * 16, (gx + cx) * 8, gy * 16, (cx + (gx - cx) * 35 / 100) * 16, (cy + (gy - cy) * 35 / 100) * 16,
-              ux_mix(T_SURF, c, 45), 12u, 256);
-    og_node(gx * 16, gy * 16, 17, T_RAISE);
-    lz_arc(gx, gy, 14, 3, clamp(RATIO(d, enum_rank(d, *vp)), 0, 1000), T_LINE, c);
-    /* (its value stood inside the ring, cut to five letters: the card and the ring's arc say it) */
-    GFX_HOOK_ALIGN(gx - 30, 0, gx + 30, 0, AL_H, "BEING organ name centred");
-    cv_text_in(gx - 30, gy - 28, 60, &AF_X, d->label, hot ? T_ACCENT : T_MID, T_SURF);
-}
-static __attribute__((noinline)) void graph_home_being(void)
-{
-    uint32_t c = song.sel % NTRK, k;
-    int32_t cx = 120, cy = 68, bx = cx * 16, by = cy * 16;
-    (void)eco_step();
-    (void)bg_energy();
-    char b[16];
-    if (home_set()) {                                   /* ROUTES: the being small, the macros and their routes */
-        uint32_t m, i, j, row = 0;
-        int32_t ry[12];
-        cx = 128;
-        cy = 66;
-        bx = cx * 16;
-        by = cy * 16;
-        eco_being(c, bx, by, (13 * 16) * (256 + eco.en[c] * 5 / 4 + (bg_sin(eco.tm[c] / 3u) >> 11)) / 256);
-        for (m = 0; m < 4u; m++) {
-            int32_t y = 16 + (int32_t)m * 34, n = 0;
-            char mn[3] = {'M', (char)('1' + m), 0};
-            uint16_t col = ui.hot_t && ui.hot_col == m ? T_ACCENT : T_THEME;
-            for (i = 0; i < NTRK; i++)
-                for (j = 0; j < 4u && row < 12u; j++) {
-                    const int16_t *p = &trk[i].p[P_M1SRC + 3u * j];
-                    char e[20] = {'T', (char)('1' + i), ' ', 0};
-                    int32_t ty;
-                    if (p[0] != (int16_t)(MS_M1 + m) || !p[1] || !p[2] || n >= 3)
-                        continue;
-                    ty = 6 + (int32_t)row * 11;
-                    ry[row++] = ty;
-                    n++;
-                    str_cpy(e + 3, mod_dst_name(&trk[i], p[1]), sizeof e - 3);
-                    str_cpy(e + str_len(e), p[2] > 0 ? "+" : "", sizeof e - str_len(e));
-                    fmt_int(e + str_len(e), p[2] * 100 / 64);
-                    og_quad_a(34 * 16, y * 16, 120 * 16, y * 16, 168 * 16, (ty + 4) * 16, heat_col(70 + macro_v[m] * 150 / 127),
-                              14u, 200);
-                    cv_clip_text(171, ty, &AF_X, e, T_MID, T_SURF, 66);
-                }
-            og_node(22 * 16, y * 16, 12, T_RAISE);
-            lz_arc(22, y, 10, 2, macro_v[m] * 1000 / 127, T_LINE, col);
-            GFX_HOOK_ALIGN(12, y - 5, 32, y + 5, AL_HV, "ROUTES macro name in its knob");
-            cv_text_in(12, y - 5 + CAP_IN(X, 10), 20, &AF_X, mn, T_TEXT, T_RAISE);
-            if (!n)
-                cv_text(40, y - 4 - AF_X_CAP_Y + 1, &AF_X, "NO ROUTE", T_DIM);
-        }
-        (void)ry;
-        return;
-    }
-    for (k = 0; k < 4u; k++)
-        organ(k, cx, cy);
-    {   /* the being: graph_being's size, its HOME knobs, the track's own level */
-        const genome_t *g = eco_genome(c);
-        bfeat_t f;
-        eco_feat(c, &f, 2);
-        if (vx_draw(&trk[c], cx - 73, cy - 56, 146, 112, eco_off(c) ? 0 : eco.en[c]))
-            ;                                       /* (0.9.4 / 0.9.6: the engines' own creatures, ui_engvis.c) */
-        else if (eco_off(c))
-            bg_outline(g, &f, bx, by, (30 * 16), 1, eco.tm[c], T_DIM);
-        else
-            being_lines(g, &f, bx, by, (30 * 16) * (256 + eco.en[c] / 3) / 256, eco.en[c], eco.tm[c] + c * 20000u);
-    }
-    sound_name(&trk[c], b);
-    GFX_HOOK_ALIGN(60, 0, 180, 0, AL_H, "BEING sound name centred");
-    cv_text_in(60, 129, 120, &AF_X, b[0] ? b : trk_engp(&trk[c])->name, T_MID, T_SURF);
-}
+/* (V10.7.24) HOME's panel: MACROS the beings (graph_eco), SCOPE the mix's oscilloscope over the whole panel (ui_graph.c
+ * graph_scope, as hot as it is loud) */
 static void graph_home_lz(void)
 {
     if (home_level() == 1u)
-        graph_home_being();
+        graph_scope(ACC);
     else
         graph_eco();
 }

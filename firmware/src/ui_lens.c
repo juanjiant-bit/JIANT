@@ -40,9 +40,13 @@ typedef struct { const char *t, *nm; uint8_t g, lv; } nv_t;   /* PAGES title (HO
 typedef struct { const char *nm, *tab; } ng_t;                /* a group: its name, its tab's when the name is too wide */
 typedef struct { const nv_t *e; const ng_t *g; uint8_t n, ng; } ch_t;
 #define NV(t, nm, g, lv) {t, nm, g, lv}
-static const nv_t CE_HOME[] = {NV(0, "ECO", 0, 0), NV(0, "MACROS", 0, 0), NV(0, "BEING", 1, 1), NV(0, "ROUTES", 1, 1),
-                               NV(0, "GENE 1", 2, 2), NV(0, "GENE 2", 2, 2), NV(0, "GENE 3", 2, 2)};
-static const ng_t CG_HOME[] = {{"ECO", 0}, {"BEING", 0}, {"GENE", 0}};
+/* (V10.7.24, the owner) HOME two pages, then GEN: MACROS (M1..M4 over the six beings swimming) and SCOPE (the mix's
+ * oscilloscope, the four global modifiers for live play: FILTER SPACE DRIVE DUCK); ECO / BEING (the sound's four knobs
+ * twice: they stay on EDIT) and ROUTES (MACROS' twin) gone. A group a page, so a HOME tap reaches each: MACROS, SCOPE,
+ * GENE 1, round */
+static const nv_t CE_HOME[] = {NV(0, "MACROS", 0, 0), NV(0, "SCOPE", 1, 1), NV(0, "GENE 1", 2, 2), NV(0, "GENE 2", 2, 2),
+                               NV(0, "GENE 3", 2, 2)};
+static const ng_t CG_HOME[] = {{"MACROS", 0}, {"SCOPE", 0}, {"GENE", 0}};
 static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("MORPH", 0, 1, 1),
                               NV("RETRIG", 0, 1, 1), NV("ROTOR", 0, 1, 1), NV("WORDS", 0, 1, 1),
                               NV("SWARM", 0, 1, 1), NV("SWARM 2", 0, 1, 1), NV("FOCUS", 0, 2, 2), NV("PLAY", 0, 3, 1), NV("PLAY 2", 0, 3, 1)};   /* (the
@@ -157,7 +161,7 @@ static uint32_t nv_page(uint32_t sec, uint32_t e)
     return NPAGES;
 }
 static int nv_ok(uint32_t sec, uint32_t e) { return sec == SEC_HOME ? e < NELEM(CE_HOME) : nv_page(sec, e) < NPAGES; }
-/* the entry shown: HOME's from its state (ui.hlv, ui.hset, GEN's page); the others the one remembered when it is the page
+/* the entry shown: HOME's from its state (ui.hlv, GEN's page); the others the one remembered when it is the page
  * shown, else the page's own (put by code: in the group left, the default page's, then the chain's first), else
  * (PHRASES, CHANCE: out of the chain) the one left */
 static uint32_t nav_cur(void)
@@ -165,7 +169,7 @@ static uint32_t nav_cur(void)
     uint32_t sec = nav_sec(), key = nav_key(sec), e = nav_mem(key), k, pass, s;
     const ch_t *c = &CHAINS[key];
     if (sec == SEC_HOME)
-        return gen_on() ? 4u + gen_page() : (ui.hlv ? 2u : 0u) + (ui.hset[ui.hlv ? 1 : 0] & 1u);
+        return gen_on() ? 2u + gen_page() : ui.hlv & 1u;
     s = ((((ui.page * 31u + key) * 131u + e) * 257u + TSEL->eng_req) * 8191u + ((uint32_t)(uint16_t)TSEL->p[P_E1] ^ (uint32_t)(uint16_t)TSEL->p[P_E0] << 8)) * 7u +
         sys_load + 1u;
     if (s == ui.nav_sig)
@@ -191,9 +195,9 @@ static uint32_t nav_cur(void)
 static uint32_t nav_lv(void) { return nav_ch(nav_sec())->e[nav_cur()].lv; }   /* the 0.8.5 lens level it is drawn as */
 static uint32_t pd_level(void) { return nav_lv(); }
 static uint32_t save_level(void) { return nav_lv(); }
-static uint32_t home_level(void) { return gen_on() ? 2u : ui.hlv ? 1u : 0u; }
-static uint32_t home_set(void) { return ui.hset[home_level() & 1u] & 1u; }
-static int home_macros(void) { return ui.home && !ui.menu && !gen_on() && home_set(); }   /* MACROS / ROUTES: M1..M4 */
+static uint32_t home_level(void) { return gen_on() ? 2u : ui.hlv & 1u; }   /* (V10.7.24) 0 MACROS, 1 SCOPE, 2 GEN */
+static int home_macros(void) { return ui.home && !ui.menu && !gen_on() && !(ui.hlv & 1u); }   /* MACROS: M1..M4 */
+static int home_scope(void) { return ui.home && !gen_on() && (ui.hlv & 1u); }   /* SCOPE: the mix's four (ui.c home_knob) */
 /* the entries shown now (on this track, at this LOAD), in order: their indices in v (NAV_MAX at most: the longest chain,
  * FX's 17 since snd8's TAPE, fits: ui_test checks every chain against it; snd8b's 17th page overran a 16 and crashed
  * FX); how many */
@@ -245,19 +249,18 @@ static void nav_go(uint32_t sec, uint32_t e, int outside)
     e = k;
     nav_mem_put(key, e);
     if (sec == SEC_HOME) {
-        if (e >= 4u) {                                  /* GEN: the generator's screen, HOME's last group */
+        if (e >= 2u) {                                  /* GEN: the generator's screen, HOME's last group */
             if (!gen_on()) {
                 confirm_open(CF_DICE_ALL, song.sel);
                 gen_open();
                 if (!bt_hw_seg())                       /* (V10.7.10: GEN's code is in the Bluetooth segment) */
                     seg_missing();
             }
-            gen_page_put(e - 4u);
+            gen_page_put(e - 2u);
         } else {
             if (gen_on())
                 ui.confirm = 0;
-            ui.hlv = (uint8_t)(e >> 1);
-            ui.hset[e >> 1] = (uint8_t)(e & 1u);
+            ui.hlv = (uint8_t)e;                        /* (0 MACROS, 1 SCOPE) */
         }
         if (!ui.home)
             go_home();

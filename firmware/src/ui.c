@@ -321,7 +321,7 @@ static struct {
     uint8_t nmem[13];            /* (0.9.2) each section's page last shown, its chain's entry ^ its default (ui_lens.c
                                   * nav_mem: EDIT one per kind of track) */
     uint8_t fxmod;               /* (0.8.5) FX: the effect last shown (BUSES' tile lit) */
-    uint8_t hlv, hset[2];        /* .. HOME: ECO (0) or BEING (1), each one's page (HOME / MACROS, HOME / ROUTES) */
+    uint8_t hlv, hset[2];        /* .. HOME: MACROS (0) or SCOPE (1) (V10.7.24; hset: unused since, the RAM's layout kept) */
     uint8_t focus;               /* .. EDIT > FOCUS: the parameter (E1..E8: 0..7) */
     uint8_t stage;               /* .. ENV > STAGE: the stage (ATK DEC SUS REL: 0..3) */
     uint8_t ent_len, ent_arp, ent_res, ent_ord, ent_oct, ent_nn;   /* (0.6.37) that entry while held (ui_input.c
@@ -2009,13 +2009,13 @@ static uint32_t preset_visible(uint32_t cur, uint32_t total, uint32_t row)
 /* (JIANT 0.4) the MACRO layer latched: LFO held opens it, let go it stays (M1..M4 on KNOB 1..4, SELECT the dice, its
  * cards drawn by ui_draw over any page, no layer open: the keys stay notes) until LFO is pressed again (ui_layer.c) */
 static uint8_t mac_latch;
-/* HOME: what KNOB k edits: the engine's four main parameters */
-static const param_desc_t *home_param(uint32_t k, int16_t **vp)
-{
-    uint32_t id = trk_engp(TSEL)->knob[k & 3u];
-    *vp = &TSEL->p[id];
-    return track_desc(TSEL, id);
-}
+static uint32_t macro_routes(uint32_t m, char *b, uint32_t n);   /* (ui_layer.c) the MOD slots naming M(m+1), their names */
+/* (V10.7.24, the owner) HOME > SCOPE: four globals on the whole mix for live play, KNOB 1..4 (ui_input.c home_knob):
+ * FILTER the DJ FILTER (G_DJF), SPACE the delay's return MIX and the reverb's SIZE together (a view of the two: its value
+ * their mean, a turn moves both the same; the tracks' sends untouched), DRIVE the master's CLIP (G_CLIP), DUCK the kick's
+ * (G_DUCK). Song globals: kept with the project, NRPN 1 (MIDI OUT ALL), FILTER recorded as GLO's LIVE records it */
+static const uint8_t HS_ID[4] = {G_DJF, G_DMIX, G_CLIP, G_DUCK};
+static int32_t home_space(void) { return (song.g[G_DMIX] + song.g[G_RSIZE] + 1) / 2; }
 
 /* select track i (KNOB 1 on TRACKS, the editor): its sound, pages and pattern from now on */
 static void track_select(uint32_t i)

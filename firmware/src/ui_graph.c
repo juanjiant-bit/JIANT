@@ -1395,7 +1395,8 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
         return h ^ gen_draw_sig() ^ (strip_kind() == SK_SCOPE ? anim_fr / 2u * 2654435761u : 0u);
     if (ui.home)                                     /* the beings: every other frame (0.9.9-beta4: of the animation's, anim_fr:
                                                       * held, or ANIM OFF, the band is not drawn again) */
-        return h ^ (anim_fr / 2u) ^ (home_level() * 7u + home_set()) * 104729u;
+        return h ^ (anim_fr / 2u) ^ home_level() * 104729u ^ (ui.hot_t ? ui.hot_col + 1u : 0u) * 7919u;   /* (V10.7.24:
+                                                      * MACROS' route line with the knob turned) */
     h ^= (uint32_t)pg->graph * 131u + TSEL->eng_req + song.sel * 7777u + ui.page * 1291u;
     if (strip_kind() == SK_TITLE)                    /* MENU > LARGE: the page's title (its engine, its number); (V10.8) an
                                                       * EDIT page: the engine's creature, alive */
@@ -2053,7 +2054,7 @@ static uint16_t sec_col(uint32_t s)
 #include "ui_tech.c"                                /* (JIANT 0.5) the technical graphs (FX, DEST, VOICE, GLOBAL) */
 #include "ui_lzsave.c"                              /* (0.8.5) SAVE's lens: its levels' panels */
 #include "ui_lzfx.c"                                /* (0.8.5) FX's lens: its levels' panels */
-#include "ui_lzhome.c"                              /* (0.8.5) HOME's lens: ECO, BEING, the critters */
+#include "ui_lzhome.c"                              /* (0.8.5) HOME's lens: MACROS' beings, SCOPE */
 #include "ui_lzedit.c"                               /* (0.8.5) EDIT's lens panels */
 #include "ui_lzpage.c"                               /* (0.8.5) ENV's, LFO . MOD's, SCL . ARP's, GLO's */
 /* (0.9.9-seq2f) GLO > COMPS' roll: the lane's 16 steps as columns, each one's component mark on top (comp_col, as a
@@ -2136,7 +2137,8 @@ static void draw_graph(void)
         graph_ht = LG_H_GRAPH - 6;
         if (k == SK_SCOPE) {                         /* (V10.8, testers: LARGE hid the animations) HOME: the tracks'
                                                       * creatures in a row, the scope only if none has one */
-            uint32_t n = trk_live ? trk_live : 1u, i, w = 228u / n, any = 0;
+            uint32_t n = home_scope() ? 0u : trk_live ? trk_live : 1u, i, w = 228u / (n ? n : 1u), any = 0;   /* (V10.7.24:
+                                                      * SCOPE the scope) */
             vx_small = 1;
             for (i = 0; i < n; i++)
                 any |= (uint32_t)vx_draw(&trk[i], 6 + (int32_t)(i * w), 2, (int32_t)w - 4, (int32_t)graph_ht - 4, -1);
@@ -2157,7 +2159,7 @@ static void draw_graph(void)
         gen_panel();
     } else if (ui.home) {
         cv_oy = 0;
-        graph_home_lz();                             /* (0.8.5: HOME's lens, ECO / BEING; JIANT 0.5: the system's
+        graph_home_lz();                             /* (0.8.5: HOME's lens; V10.7.24 MACROS / SCOPE; JIANT 0.5: the system's
                                                       * beings, was the scope) */
     } else if (pg->graph == GR_LIVE) {               /* (p2) GLO > LIVE: the rails, KEYS's board (ui_live.c) */
         cv_oy = 0;

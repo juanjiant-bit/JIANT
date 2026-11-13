@@ -138,17 +138,18 @@ files.
 2. Turn **ALGORITHM** to pick a track (T1–T6). With the default **TRACKS 4** it stops at T4: T5 and T6 appear only with TRACKS 6 (see
    [13](#13-system-tracks-load-and-the-menu)).
 3. Turn **PRESETS** to browse sounds. Play the keys.
-4. Turn **KNOB 1–4**: on HOME they are the four most useful controls of the track's engine.
+4. Turn **KNOB 1–4**: on EDIT 1 and EDIT 2 they are the track's engine. (V10.7.24) On HOME they are the macros **M1–M4** (HOME › MACROS)
+   and, one page on (**SELECT**), **FILTER · SPACE · DRIVE · DUCK** on the whole mix (HOME › SCOPE).
 5. Don't like it? Hold **EDIT** and turn **SELECT**: the sound is rolled into a new variation and you hear it at once.
    **OCT+ OK** keeps it, **OCT− CANCEL** brings the sound back.
 
 ### Your first song (5 minutes)
 
-1. Hold **HOME** and turn **SELECT** (or on HOME tap **HOME** twice: ECO → BEING → **GEN**). The **GENERATOR** opens on
+1. Hold **HOME** and turn **SELECT** (or on HOME tap **HOME** twice: MACROS → SCOPE → **GEN**). The **GENERATOR** opens on
    **EXPLORE** (no genre, every rule broken): press **OCT+** as it is, or pick RANDOM or one of the genres with KNOB 1
    or PRESETS first. A whole song idea appears: engines, sounds, parts, scale, tempo and effects. Press **PLAY**.
 2. Not your thing? Press **OCT+** again: a new seed, a new piece. Too busy? Turn **SELECT** one detent right for GEN 2 and lower
-   **DRUMS** or **ARP**, then OCT+: the same piece with that changed. **OCT−** goes back to ECO. To go back to what was there before: hold **GLO** and press **G4** (UNDO).
+   **DRUMS** or **ARP**, then OCT+: the same piece with that changed. **OCT−** goes back to MACROS. To go back to what was there before: hold **GLO** and press **G4** (UNDO).
 3. Like it? **Stop** (PLAY), then press **SAVE** (it opens TIMELINE, the song) and turn **SELECT** three detents right
    (past ARRANGE, PARTS and CLIPS): **PART SLOTS**, the project's four parts. Turn **KNOB 4** to the right so its card says **OCT+**, then press
    **OCT+**. Type a name with the keys (or keep the one offered) and press **OCT+** again. The screen says **SAVED**.
@@ -180,7 +181,7 @@ The names below are the ones the firmware uses (the HARDWARE CALIBRATION screen 
 
 | Button | Tap | Hold |
 | --- | --- | --- |
-| **HOME** | HOME (0.9.2, as every section's button): from another section the HOME page last shown; on HOME the first page of the next group, round: **ECO → BEING → GENE → ECO** (GENE: the generator, GEN until V10.6m). | About 0.7 s: opens the **MENU**. |
+| **HOME** | HOME (0.9.2, as every section's button): from another section the HOME page last shown; on HOME the first page of the next group, round: **MACROS → SCOPE → GENE → MACROS** (V10.7.24; GENE: the generator, GEN until V10.6m). | About 0.7 s: opens the **MENU**. |
 | **ENV** | The ENV section: from elsewhere the page last shown (at power-on ENV); inside, the next group: **TRACKS → ENV → STAGE**, round. | (no layer) |
 | **LFO** | The LFO section: from elsewhere the page last shown (at power-on LFO); inside **MOD → LFO → MSEQ**, round. | **MACRO** layer: KNOB 1–4 are M1–M4. |
 | **FX** | The FX section: from elsewhere the page last shown; inside, the next module: **TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → PUNCH IN → MASTER** (MASTER · TAPE · EQ), round. | **Punch-in FX** layer. |
@@ -317,7 +318,7 @@ Since 0.8.5 every page wears the skin of the design the owner approved (the HTML
 **Colours** work like a thermal camera: cold (indigo, violet) is little, hot (red, orange, cream, white) is a lot (0.8.9: the 0.6 ramp). Violet is
 what's selected, orange what's active.
 
-**HOME** is the ecosystem: one creature per track, its species from its engine, its shape from its four knobs, swelling
+**HOME** (V10.7.24: its first page, **MACROS**) is the ecosystem: one creature per track, its species from its engine, its shape from its four main knobs, swelling
 and heating up with its own audio (0.8.8: swimming free over the whole screen by themselves, as before 0.8.5; see
 [the sections](#the-sections-and-their-chains)). (0.9.7) Each being wears a small **face**: its eyes shut on a hit, its
 mouth opens with its level. The selected track is drawn bigger, its number in violet, a muted one falls **asleep** (a dim
@@ -382,7 +383,7 @@ knobs, their pictures and every function are the same, only the way between them
 - **SCL and ARP are two sections** (until 0.9.1 one lens): SCL is KEY · CHORD, ARP is ARP · ARP 2 (one group: an ARP
   tap inside goes back to ARP).
 - **GEN is three HOME pages** (GEN 1–3, HOME's last group), no longer a screen of its own: the section buttons work
-  there, OCT+ makes the piece, OCT− goes back to ECO. HOME + SELECT still opens it from anywhere.
+  there, OCT+ makes the piece, OCT− goes back to MACROS. HOME + SELECT still opens it from anywhere.
 - **SAVE from outside** comes back to the SAVE page you left; **USER** and **PART SLOTS** come with their SAVE already
   picked, so SAVE, OCT+, OCT+ still stores the sound (or the part).
 - **EDIT is always EDIT**: clearing a step went to the SEQ layer (**SEQ + G5**, CLR STEP; on AUTO LIST it deletes the
@@ -399,7 +400,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 
 | Section | Groups (the button) · pages (SELECT) | Pages |
 | --- | --- | --- |
-| **HOME** | **ECO**: ECO · MACROS — **BEING**: BEING · ROUTES — **GENE**: GENE 1 · GENE 2 · GENE 3 | 7 |
+| **HOME** | (V10.7.24) **MACROS**: MACROS — **SCOPE**: SCOPE — **GENE**: GENE 1 · GENE 2 · GENE 3 | 5 |
 | **EDIT** (a synth) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (those the engine and the track have) — **FOCUS**: FOCUS — **PLAY**: PLAY · PLAY 2 (codex/coherence: was VOICE; STEREO's IMAGE on PLAY 2) | up to 11 |
 | **EDIT** (FM6) | **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **TONE**: FILTER — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **PLAY**: PLAY · PLAY 2 | 8 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: X-MOD · FILTER · STEREO · PLAY | 14 |
@@ -418,20 +419,30 @@ COMP's); FX's **SENDS** is the FX page; SAVE's PROJECT page is **PART SLOTS** (t
 LIBRARY level); the DRUM kit's EDIT 1 / EDIT 2 are **KIT** / **KIT 2**. The new **BAR** page is PATTERN's picture of
 the bars with KNOB 1 the bar and KNOB 2 LEN.
 
-- **ECO**: the six tracks' beings swimming free over the whole panel by themselves (0.8.8: as before 0.8.5), each
-  swelling with its sound (a hit kicks it on), its number under it; the selected one larger, its number violet.
+- **MACROS** (V10.7.24: HOME's first page, ECO's picture; ECO, BEING and ROUTES went: the sound's four knobs live on
+  EDIT): **KNOB 1–4** are **M1–M4**, the project's macros (as LFO held; kept with the project and the SONG's scenes as
+  ever), each card dim while no MOD slot names it. The six tracks' beings swim free over the whole panel by themselves,
+  each swelling with its sound (a hit kicks it on), its number under it; the selected one larger, its number violet.
   (0.9.7, "today's being with a face") Each being is its species' spiky outline (the spikes as it sounds) in **three
   isotherms**, coloured by **its own level** like a thermal camera (quiet: cyan and blue; loud: red, orange and
   yellow; the inner lines warmer), and where its nuclei were a **face**: two eyes that **shut on a hit**, a mouth that
-  **opens with the level**. A muted track's being sleeps (a dim outline, its eyes shut). (V10.6: the look up and the ring
-  went with MUTATE.) The cytoplasm's
-  granules drift behind them (drawn by the screen alone: nothing of the sound's time). **MACROS**:
-  KNOB 1–4 are **M1–M4** (the macros, as LFO held), the routes counted at the top left, LATCH at the right.
-- **BEING**: the track's being large, its four HOME knobs as organs at the corners (a gauge each, its value, a vein to
-  the body), the sound's name under it. (0.9.4) A VOICE track shows its **head**, an ANIMAL track its **creature**, a DRUM-X track
-  its **kit of little beings** there (see [their pictures](#three-engines-draw-their-own-creature-094)); (0.9.6) the other six
-  engines theirs ([a cell, a colony, worms, a swarm, a snail, a caterpillar](#six-more-engines-draw-their-own-creature-096)). **ROUTES**: M1–M4 down the left with their routes drawn to where they go
-  (**T2 CUT+62**).
+  **opens with the level**. A muted track's being sleeps (a dim outline, its eyes shut). The cytoplasm's granules drift
+  behind them (drawn by the screen alone: nothing of the sound's time). At the top left the routes counted; **turn a
+  macro** and the line says where it goes (**M1 T2 CUT+62 T4 E1-31**, "NO ROUTE" if none: set one on LFO › MOD, SRC
+  M1–M4); LATCH at the right.
+- **SCOPE** (V10.7.24): the mix's **oscilloscope** over the whole panel (each stroke as hot as it is loud), and four
+  **global** modifiers on the whole mix for playing live, kept with the project like every global (MIDI OUT ALL sends
+  them as NRPN 1):
+  - **KNOB 1 FILTER**: the mix's **DJ FILTER** (the same as GLO › KEYS' KNOB 4): the centre is off, left a low-pass
+    closing, right a high-pass opening; it stops at the centre on its way across. While a track records it is recorded
+    as the DJ FILTER's automation, as on KEYS.
+  - **KNOB 2 SPACE**: how much delay and reverb the whole mix has: one knob moving the delay's return (**FX › DLY's
+    MIX**) and the reverb's **SIZE** together, by the same amount (the card shows their mean); the tracks' sends stay as
+    they are. Turned up it stops SIZE at 126 (127 is CLOUD's FREEZE: set that on REVERB).
+  - **KNOB 3 DRIVE**: the master's **CLIP** (FX › MASTER KNOB 1): the mix driven x1–x4 into the soft clip, its level
+    kept.
+  - **KNOB 4 DUCK**: how much the mix pumps with the kick (FX › MASTER's **DUCK**; its release is MASTER's REL).
+  Hold **EDIT** and turn them: **MOMENTARY**, back where they were when EDIT is let go.
 - **ENV** › **TRACKS**: the six tracks' envelopes as tiles (the selected one tinted with its level now a dot), the knobs the selected track's — **ALGORITHM** picks the
   track. **ENV**: the envelope large / ENV DEST's columns, as before. **STAGE**: KNOB 1 picks the stage (ATK DEC
   SUS REL), KNOB 2 sets it, KNOB 3 LOOP; the whole envelope with the stage shaded over the stage's own
@@ -460,7 +471,7 @@ the bars with KNOB 1 the bar and KNOB 2 LEN.
   KNOB 2 sets it, KNOB 3 the **source** of the MOD slot aimed at it (turned up from OFF a free slot takes it, its DEST
   that parameter; back to OFF frees it), KNOB 4 that slot's **AMT**; E1–E8 as tabs under it.
 - **GEN 1–3** are the generator (as HOME held + SELECT, from any page): **SELECT** turns its page (left of GEN 1:
-  ROUTES), **KNOB 1** the GENRE (V10.7.22; PRESETS the sound, as everywhere), **OCT+** makes the piece, **OCT−** back to ECO, a **HOME** tap on to ECO.
+  SCOPE), **KNOB 1** the GENRE (V10.7.22; PRESETS the sound, as everywhere), **OCT+** makes the piece, **OCT−** back to MACROS, a **HOME** tap on to MACROS.
 
 ### Every page and its four knobs
 
@@ -708,8 +719,8 @@ keep controlling the macros on every page) until you press LFO again. F3 rolls n
 Twelve engines, all synthesis, no samples: ANALOG, FM6, PHASE, **MATH** (LOFI until V10.6e), VOICE, WHEEL, NOISE,
 DRUM-X, ANIMAL, **STRING** (a plucked, struck or bowed string, and guitar feedback), **ADD** (additive) and **EXT**
 (external signals: the USB audio input, or SWARM, the Bluetooth around it). Any engine can go on any track. Pick them
-with **PRESETS** (one list over every engine) or with KNOB 2 (ENG) on SAVE > PRESETS. Each track's four HOME knobs are
-listed too.
+with **PRESETS** (one list over every engine) or with KNOB 2 (ENG) on SAVE > PRESETS. Each engine's four main knobs (the
+ones its being's shape follows; on HOME until V10.7.23, on EDIT now) are listed too.
 
 **The order** (V10.6e): PRESETS, KNOB 2 (ENG) and the web editor's lists show the engines as **DRUM-X, ANALOG, PHASE,
 FM6, VOICE, ANIMAL** (the tracks at power-on, T1–T6), then MATH, WHEEL, NOISE, STRING, ADD, EXT. Only the order you see
@@ -720,7 +731,7 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see [14](#14-midi-
 (keys, or the notes the sequencer holds) goes on in the new engine, fading in; nothing is cut. Changing a list value
 (WAVE, CHIP, a type) while notes sound makes a short dip (about 3 ms) instead of a click; the notes go on.
 
-| Engine | EDIT 1 | EDIT 2 | HOME knobs |
+| Engine | EDIT 1 | EDIT 2 | Main knobs |
 | --- | --- | --- | --- |
 | **ANALOG** | WAVE, DETUNE, MIX, INT (V10.7.21; NOISE on FOCUS); on SAW3 / PLS3: WAVE, INT, INT 3, DETUNE (V10.7.22: the three oscillators' intervals together; MIX on FOCUS) | — (its FILTER page: TYPE, CUT, RES, DRIVE) | CUT, RES, ATK, REL |
 | **FM6** | ALGO: ALG, FB, MOD, RATIO | PATCH: SLOT, MEG, VMOD, SPREAD (codex/coherence: SLOT on KNOB 1; SPREAD, the carriers apart, was DETUNE) | MOD, RATIO, MEG, SLOT |
@@ -906,7 +917,7 @@ well under ANALOG's eight.
 
 ### Three engines draw their own creature (0.9.4)
 
-Where every engine shows its being (EDIT › SOUND on the left, HOME › BEING large), three engines draw something of their
+Where every engine shows its being (EDIT › SOUND on the left; HOME › BEING large until V10.7.23), three engines draw something of their
 own, in the same thermal line art (the colder the line, the less dense or quieter; white is hottest), moving only
 while the track sounds and resting in silence:
 
@@ -931,7 +942,7 @@ while the track sounds and resting in silence:
   mouth, an insect's wings buzz (PULSE: stridulating, its hind leg rubbing; WING: flapping in a blur) and its abdomen's
   segments pulse, a mammal's ribs breathe.
 - **DRUM-X: the kit as little beings ("BICHOS")**, on **EDIT › KIT** (the first KIT page: the sound last struck named
-  at the top right), on **EDIT › SOUND 1–4** (the sound being edited lit and named) and on **HOME › BEING**; KIT 2,
+  at the top right) and on **EDIT › SOUND 1–4** (the sound being edited lit and named); KIT 2,
   KIT 3 and X-MOD keep the colony (a being per sound in two rows). Each drum is a small being with eyes and a mouth,
   standing as a kit does: the **kick** large in the middle (its core hot orange), the **snare** flat on its stand, the
   **toms** on little legs (the floor tom on longer ones), the **hi-hat** two shells on a stand (together on CH, the top
@@ -949,8 +960,8 @@ of RAM; nothing in the sound.
 
 With 0.9.6 every engine has its own picture: ANALOG, FM6, WHEEL, NOISE, PHASE and MATH (LOFI then) draw theirs on **EDIT › SOUND**
 (on the left; the scope and the chips on the right as before; 0.9.7: with **MENU › DISPLAY › SCOPE** ON — OFF, the default,
-gives the creature the whole panel, centred, the sound's name a small caption in a corner) and on **HOME › BEING** (HOME's ecosystem keeps its
-beings), in the same thermal line art, the bichos' face shared with DRUM-X's beings, moving only while the track sounds:
+gives the creature the whole panel, centred, the sound's name a small caption in a corner; HOME › BEING, which showed it large, went
+with V10.7.24), in the same thermal line art, the bichos' face shared with DRUM-X's beings, moving only while the track sounds:
 
 - **ANALOG: a cell.** Its membrane (three isotherms, the outer cold) is two cycles of the oscillators through the
   filter and the drive, drawn round in polar form: WAVE (and MORPH), DETUNE, MIX, NOISE and INT shape it, CUT on the
@@ -1090,7 +1101,7 @@ DRUM-X is a synthesized kit of eight sounds, **BD SD CP CH OH TM RS CB**, genera
   knobs. Switching engines, INIT SOUND, a project load and GEN leave the section's kit as it is; DRUM-X brings the
   factory kit back. Edit any of them in EDIT > SOUND; the section saves the result.
 
-- Every sound has two sides, **A** and **B**. **MORPH** (KIT, KNOB 1, also on HOME) moves the whole kit between them:
+- Every sound has two sides, **A** and **B**. **MORPH** (KIT, KNOB 1) moves the whole kit between them:
   the knob to play live.
 - The pages go **the whole kit first, then one sound, then the volumes and the stereo** (0.6.58):
   - **KIT** (EDIT 1): MORPH, TUNE, TONE, DECAY. **KIT 2** (EDIT 2): NOISE, **FM ENV** (FM struck with each hit and gone
@@ -1842,11 +1853,11 @@ Hold **SAVE**:
 
 ### GEN — the song generator (HOME + SELECT)
 
-Hold **HOME** and turn **SELECT**, from any page, or on HOME walk the chain with **SELECT** (ECO · MACROS · BEING ·
-ROUTES · **GEN 1 · GEN 2 · GEN 3**) or tap HOME to its next group (ECO → BEING → GEN). (0.9.2) The **GENERATOR** is
+Hold **HOME** and turn **SELECT**, from any page, or on HOME walk the chain with **SELECT** (MACROS · SCOPE ·
+**GEN 1 · GEN 2 · GEN 3**) or tap HOME to its next group (MACROS → SCOPE → GEN). (0.9.2) The **GENERATOR** is
 HOME's last group, three ordinary pages, no longer a screen of its own: **SELECT** turns the page, **KNOB 1–4** set the
 four values shown (V10.7.22: **PRESETS** loads sounds here too, as on every page but SEQ's), **OCT+** makes the piece and **OCT−** goes back to
-ECO (the piece stays; **UNDO**, GLO + G4, brings back what was there before); every section button works from there. The panel shows the five parts as rows (the ones the page's knobs weigh lit) with a preview of
+MACROS (the piece stays; **UNDO**, GLO + G4, brings back what was there before); every section button works from there. The panel shows the five parts as rows (the ones the page's knobs weigh lit) with a preview of
 their density and heat, the FORM's sections as coloured chips, the last piece and **OCT+ MAKE**. **PLAY** runs and stops
 the transport without leaving the screen (0.6.97).
 
@@ -2330,6 +2341,7 @@ curve where the bar would be.
 
 - **Hold LFO**: KNOB 1–4 become M1–M4, and the map shows where each one goes ("NO ROUTE: MOD SRC" if nowhere).
 - Let go: they stay **latched** — KNOB 1–4 keep moving the macros on any page — until you press LFO again.
+- (V10.7.24) On **HOME › MACROS** KNOB 1–4 are M1–M4 too, no latch needed; turning one shows its routes at the top.
 - Every power-on starts with random routes (two per track) on tracks that have none. **F3** rolls new
   routes on the tracks that are sounding; **G3** clears them. (V10.8) Random routes (power-on, F3, GEN, the dice)
   never aim at **PITCH**: a macro drifting the pitch put whole tracks out of tune. Set a PITCH route by hand on LFO > MOD.
@@ -2847,7 +2859,7 @@ Any knob of a track's sound to any CC of your controller, on the device (from Fe
 1. **MENU › CONTROL › LEARN**: **SEL TRACK** (the CC follows whichever track is selected when it comes) or **FIXED
    TRK** (the CC stays on the track it was learned on). Hold HOME, ALGORITHM to the CONTROL tab, SELECT to LEARN, then
    HOME to close the menu: learning starts.
-2. **Turn a knob** on any page that edits a track's parameter (HOME, EDIT, ENV, LFO, FX, the MIXER, GLO's levels):
+2. **Turn a knob** on any page that edits a track's parameter (EDIT, ENV, LFO, FX, the MIXER, GLO's levels):
    the screen says **LEARN T2 CUT: SEND A CC** (or its CC if it already has one).
 3. **Move the controller's knob** (send the CC): **CC21 > T2 CUT**. From then on that CC sets T2's CUT as the knob
    does (0–127 over its range, recorded as automation like a knob), on **any channel** and over **USB or the TRS jack**.
