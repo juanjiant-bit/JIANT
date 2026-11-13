@@ -13722,7 +13722,8 @@ static int test_engine_order_099(void)
             n = ee == e1 && q == k1;
         }
         (void)k2;
-        if (!n && !(e1 == ENGI_ANIMAL && k1 >= 24u)) break;   /* (V10.6h: ANIMAL's appended tonal ones by the list alone) */
+        if (!n && !(e1 == ENGI_ANIMAL && k1 >= 24u) && !(e1 == ENGI_STRING && k1 >= 16u))
+            break;   /* (V10.6h: ANIMAL's appended tonal ones by the list alone; V10.7.26 STRING's VIOLIN VIOLA CELLO) */
     }
     ok &= i == all && NELEM(PC) == NENG_SHOWN;
     {   /* (V10.6h) PROGRAM CHANGE as 0.9.8 counted: MATH 18 (LOFI's), ANIMAL 24; ANIMAL's first is right after VOICE's

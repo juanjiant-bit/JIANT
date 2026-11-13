@@ -128,6 +128,7 @@
 #                   EXCITE (the decimated loops too), DECAY's T60 rising and even over the keys, BRIGHT, a COMB TYPE turned BP;
 #                   the additive engine (src/eng_add.c): every MODE's partials at their ratios, BRIGHT's tilt, EVEN, DAMP, no
 #                   alias at the top; every preset of both sounding, no DC, the same twice, ending; the knobs' corners; demos.
+#                   (V10.7.26) FDBK bounded at every SPEAKR, not a sine; the BOW in tune at every key, its onset soft; the cost.
 # VOICE words (tests/voice_test.c, 0.8.5): the VOICE engine singing (src/sing.c): Spanish by rules and Japanese romaji on word
 #                   lists (phonemes, syllables), English through its dictionary, every bank word's syllables; the lyric
 #                   generator (the same lyric per seed, phrases as long as the pattern's notes, bank words); the vowels' F1 / F2,
@@ -410,7 +411,7 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "ANIMAL: CMOS on the key and the owner's video, cricket, TEMP, Hopf onset, presets, DC, clipping, retrigger, demos" "$OUT/animal_test" build/animal_demo
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/string_add_test" tests/string_add_test.c -lm
     mkdir -p build/string_add_demo
-    run "STRING ADD (0.9.9-snd5): in tune C1 .. C6, DECAY's T60, BRIGHT, the COMB TYPE, partials, tilt, EVEN, DAMP, no alias, presets, corners, demos" "$OUT/string_add_test" build/string_add_demo
+    run "STRING ADD (0.9.9-snd5): in tune C1 .. C6, DECAY's T60, BRIGHT, the COMB TYPE, FDBK bounded, BOW in tune and soft, cost, partials, tilt, EVEN, DAMP, no alias, presets, corners, demos" "$OUT/string_add_test" build/string_add_demo
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/voice_test" tests/voice_test.c -lm
     mkdir -p build/voice_demo
     run "VOICE words: ES / JA / EN reading, the generator, formants, fricatives, plosives, clicks, DC, the lyric, POS, LOOP, demos" "$OUT/voice_test" build/voice_demo
