@@ -2238,6 +2238,32 @@ Cada pieza reemplaza los pasos, sonidos, kit, mezcla y automatización de todas 
 estaban. Los roles que suenan van en las primeras pistas (la batería en la pista DRUM), así que con TRACKS 4 escuchás
 los más importantes.
 
+**Las herramientas del secuenciador** (V10.7.30). Una pieza usa lo que usarías a mano, cada cosa donde su sección y
+su género la piden, más cuanto más suben **ENERGY** y **COMPLEX** (EXPLORE más lejos), de una tirada al azar propia
+(las notas de cada semilla son las de antes):
+- **Las secciones principales** (un groove, un drop, el ápice): el **DECY** del kit abriéndose a lo largo del loop
+  (automatización); entre las corcheas los hats cerrados tocados **por probabilidad** (80 %, COMPLEX arriba de 55); en
+  un loop que termina con dos semicorcheas vacías, dos **redoblantes que cierran la frase** y suenan sólo en su última
+  vuelta de dos o de cuatro (**TRIG N:M**); el **delay tirado** en la última nota de la frase del lead (si no, del
+  arp) y de vuelta en el uno; donde el género toca stabs (house, techno, garage ..) la primera nota del último compás
+  del arp un **CHORD** una vuelta sí y otra no (2:2).
+- **El build**: como antes el filtro de los acordes abriéndose, el riser, el redoble, el stutter y el pasaagudos del
+  master; ahora además el **TONE** del kit más brillante en sus cuatro compases y el filtro del arp en una **RAMP**
+  (EXP, BARS 4) hasta un **lock** en su primera nota.
+- **El break**: los acordes **entran y se van más lento** (ATK +16, REL +24, sólo ahí) y, donde la batería corre
+  cuatro compases, el **DJ FILTER** del master en pasabajos (-40) abriéndose hasta el final del break.
+- **El carril global** (GLO > COMPS): en los géneros de máquinas (no los de banda), un **STUTTER** en el último tiempo
+  del último compás de la frase (8:8; con ENERGY arriba de 50 4:4; 1/8, arriba de 66 1/16) en el lead y el arp, con
+  ENERGY arriba de 60 también en la batería donde el género hace redobles (los mapas de cuatro en el piso, las
+  gramáticas de hats redoblados). Un fill que comparte todo el tema.
+- **La mezcla**: los acordes con el pasabajos en 1 kHz o más brillante pasan a un **pasabanda** una octava abajo (el
+  agudo más o menos como antes, los graves debajo afuera: lugar para el bajo); toda parte de acordes con CHORUS 24 por lo
+  menos (más ancha: el medio es del lead y del bajo); la batería medio dB arriba. Los acordes oscuros conservan su
+  pasabajos (su cuerpo son los medios graves, como en las referencias del dueño).
+La automatización de cada sección queda bien dentro de sus 64 registros (25 como mucho en todos los géneros), y la
+misma semilla con los mismos ajustes da el mismo tema, registros, locks, componentes y carril incluidos
+(tests/gen_test.c).
+
 #### FORM MY LOOP: tu loop hecho tema
 
 Poné **FORM** en **MY LOOP** y apretá **OCT+**: GEN convierte el loop que estás tocando en un tema entero, con las

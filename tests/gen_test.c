@@ -184,6 +184,63 @@ static uint32_t hits_all(const track_t *t)
     return c;
 }
 
+/* (V10.7.30) a piece's sections as stored, scanned: a hash of their automation records, locks, components and chances
+ * and of the global lane; the resources counted into c (RC_*); the most records a section holds */
+enum { RC_GLO, RC_DLY, RC_DJF, RC_RMP, RC_RMPBAD, RC_CHD, RC_TRG, RC_PRB, RC_DRM, RC_ENV, RC_HP, RC_DARK, RC_MAXM, RC_N };
+static uint32_t rich_scan(uint32_t *c)
+{
+    static project_t ps2;
+    static track_t tt2;
+    uint32_t h = all_sig(), s2, k, i, j;
+    for (i = 0; i < GL_N; i++) h = (h ^ glane[i].comp ^ (uint32_t)glane[i].nm << 8 ^ (uint32_t)glane[i].mask << 16 ^ (uint32_t)glane[i].val << 24) * 16777619u;
+    c[RC_GLO] += CO_ACT(glane[12].comp) == CA_STUT && glane[12].mask;
+    for (k = 0; k < NTRK; k++) {
+        const track_t *t = &trk[k];
+        int32_t cut = t->p[t->eng_req == EG_A ? P_E4 : P_FCUT];
+        if (!gs.act[gs.role[k]]) continue;
+        c[RC_HP] += gs.role[k] == RL_PAD && t->p[P_FTYPE] == 2;
+        c[RC_DARK] += gs.role[k] == RL_PAD && t->p[P_CHOR] < 24;   /* (the chords wide) */
+    }
+    for (s2 = 0; s2 < 4u; s2++) {
+        if (!((dice_secs >> s2) & 1u) || !proj_import(&ps2, &proj_slot[s2], sizeof(project_store_t))) continue;
+        if (ps2.motion.count > c[RC_MAXM]) c[RC_MAXM] = ps2.motion.count;
+        for (i = 0; i < ps2.motion.count && i < MOTION_MAX; i++) {
+            const motion_event_t *e = &ps2.motion.event[i];
+            uint32_t id = MOTION_ID(e), ro = gs.role[MOTION_TRK(e) % NTRK];
+            h = (h ^ e->place ^ (uint32_t)e->param << 8 ^ (uint32_t)(uint16_t)e->value << 16) * 16777619u;
+            c[RC_DLY] += id == P_DLY && (ro == RL_LEAD || ro == RL_ARP);
+            c[RC_DJF] += id == MOT_DJF;
+            c[RC_DRM] += ro == RL_DRUM && (id == P_E2 || id == P_E3) && !(e->param & MOTION_LOCK);
+            c[RC_ENV] += ro == RL_PAD && (id == P_ATK || id == P_REL);
+        }
+        for (k = 0; k < NTRK; k++) {
+            memcpy(tt2.step, ps2.t[k].step, sizeof tt2.step);
+            proj_steps(tt2.step);
+            for (i = 0; i < NSTEP; i++) {
+                const step_t *st = &tt2.step[i];
+                uint32_t a = CO_ACT(st->comp), lk = 0;
+                h = (h ^ st->comp ^ (uint32_t)st->carg << 8 ^ (uint32_t)st->cnm[0] << 16 ^ (uint32_t)st->probability << 24) * 16777619u;
+                if (a == CA_RAMP) {
+                    for (j = 0; j < ps2.motion.count && j < MOTION_MAX; j++)
+                        lk |= (ps2.motion.event[j].param & MOTION_LOCK) && MOTION_TRK(&ps2.motion.event[j]) == k && MOTION_STEP(&ps2.motion.event[j]) == i;
+                    c[RC_RMP]++; c[RC_RMPBAD] += !lk || !CV_RAMP_OK(st->carg);
+                }
+                c[RC_CHD] += a == CA_CHORD;
+                c[RC_TRG] += gs.role[k] == RL_DRUM && a == CA_MUTE && (st->carg & CV_MUTE_TRIG) && CO_COND(st->comp) == CC_NM;
+                c[RC_PRB] += gs.role[k] == RL_DRUM && st->time == ST_NOTE && st->probability;
+            }
+        }
+    }
+    return h;
+}
+static void rich_with(uint32_t genre, uint32_t seed)   /* SONG, ENERGY 70, COMPLEX 60 */
+{
+    uint32_t k;
+    gp.genre = (uint8_t)genre; gp.seed = (uint16_t)seed; gp.energy = 70; gp.form = 2;
+    for (k = 0; k < GP_N; k++) gp.amt[k] = GA_AUTO;
+    gp.complex = 60; gp.swing = GA_AUTO; gp.human = 30;
+    gen_go();
+}
 int main(void)
 {
     int bad = 0;
@@ -1430,8 +1487,11 @@ int main(void)
                             printf("  %s seed %u: role %u %.1f dB under the drums\n", GENRE[g].name, 4040u + 11u * g + 1000u * sd, p, -10 * log10(er[p] / er[RL_DRUM]));
                         }
                     for (p = RL_BASS; p <= RL_TEX; p++)
-                        if (er[p] > er[RL_DRUM] * 2.0 && !(p == RL_BASS && !strcmp(GENRE[g].name, "MINIMAL TECHNO"))) front_bad++;   /* (the
+                        if (er[p] > er[RL_DRUM] * 2.0 && !(p == RL_BASS && !strcmp(GENRE[g].name, "MINIMAL TECHNO"))) {   /* (the
                                                          * owner's minimal reference: its sub 8 .. 14 dB over the drums) */
+                            front_bad++;
+                            printf("  %s seed %u: role %u %.1f dB over the drums\n", GENRE[g].name, 4040u + 11u * g + 1000u * sd, p, 10 * log10(er[p] / er[RL_DRUM]));
+                        }
                     if (!strcmp(GENRE[g].name, "MINIMAL TECHNO") && er[RL_BASS] < er[RL_DRUM] * 4.0) {
                         sub_bad++;
                         printf("  MINIMAL TECHNO seed %u: the sub %.1f dB over the drums\n", 4040u + 11u * g + 1000u * sd, 10 * log10(er[RL_BASS] / er[RL_DRUM] + 1e-12));
@@ -1774,6 +1834,39 @@ int main(void)
         bad += gcheck("V10.6z10 OCT+ never the genre's last eight cores; a seed its song whatever came before", !rep && h0 == h1);
         bad += gcheck("  a throw's own: IDM's breaks (3 maps at least), HOUSE's three basses, 8 progressions, extra kicks", maps >= 3u && ba_n == 3u && prog_n >= 8u && kx > 0u);
         bad += gcheck("  the anchors: the four on the floor, the dembow riddim's 3 + 3 + 2 in every bar", anchors == anch_n);
+    }
+    {   /* (V10.7.30, the owner: "GEN should use as many of the synth's resources as possible") every genre x 2 in SONG
+         * (ENERGY 70, COMPLEX 60): each section's automation inside its 64 records (never AUTOMATION FULL), the same
+         * song again from the same settings after another piece (its sections' records, locks, components, chances, the
+         * global lane); the resources there: the global lane's stutter, the delay thrown, the DJ FILTER, the RAMP on a
+         * lock, CHORD, the drums' TRIG N:M and chance, the kit's DECY / TONE moving, the chords' envelope in the break;
+         * the mix: the chords at 1 kHz or brighter band-passed an octave under (their lows out) */
+        uint32_t g, sd, n = 0, full = 0, det_bad = 0, c[RC_N] = {0}, junk[RC_N];
+        for (g = 0; g < NGENRE; g++)
+            for (sd = 0; sd < 2u; sd++) {
+                uint32_t h0, h1, seed = 77u + 131u * g + 3000u * sd;
+                gen_reset();
+                motion_full = 0;
+                rich_with(g + 1u, seed);
+                full += motion_full;
+                h0 = rich_scan(c);
+                n++;
+                rich_with((g + 1u) % NGENRE + 1u, seed + 1u);
+                rich_with(g + 1u, seed);
+                h1 = rich_scan(junk);
+                det_bad += h0 != h1;
+            }
+        printf("gen: the resources, %u songs: the global stutter %u, delay throws %u, DJ FILTER records %u, RAMPs %u (%u bad), CHORDs %u,\n"
+               "gen:   drum TRIGs %u, drum chances %u, kit DECY/TONE records %u, the chords' break envelope %u; band-passed chords %u, mix rules broken %u;\n"
+               "gen:   a section's records at most %u of %u, AUTOMATION FULL %u; again not the same %u\n",
+               n, c[RC_GLO], c[RC_DLY], c[RC_DJF], c[RC_RMP], c[RC_RMPBAD], c[RC_CHD], c[RC_TRG], c[RC_PRB], c[RC_DRM], c[RC_ENV], c[RC_HP],
+               c[RC_DARK], c[RC_MAXM], MOTION_MAX, full, det_bad);
+        bad += gcheck("V10.7.30 the sections' automation within its 64 records; a seed and its settings the same song (lane, locks, components)",
+                      !full && !det_bad && c[RC_MAXM] <= MOTION_MAX);
+        bad += gcheck("  the resources heard: the global stutter, throws, the DJ FILTER, RAMPs on locks, CHORDs, TRIGs, chances, the kit moving",
+                      c[RC_GLO] * 2u >= n && c[RC_DLY] && c[RC_DJF] && c[RC_RMP] && !c[RC_RMPBAD] && c[RC_CHD] && c[RC_TRG] && c[RC_PRB] &&
+                      c[RC_DRM] && c[RC_ENV]);
+        bad += gcheck("  the mix: the brighter chords band-passed (their lows out), every chord part wide", c[RC_HP] && !c[RC_DARK]);
     }
     printf(bad ? "gen: %d FAILED\n" : "gen: all passed\n", bad);
     return bad ? 1 : 0;
