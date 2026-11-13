@@ -42,7 +42,7 @@ static void graph_env_tracks(int dest)
     for (c = 0; c < NTRK; c++) {
         const track_t *t = &trk[c];
         int32_t x = 4 + (int32_t)(c % 3u) * 78, y = 2 + (int32_t)(c / 3u) * 68, sel = c == song.sel, lv;
-        uint16_t bg = sel ? T_TINT : T_RAISE, ink = c >= trk_live ? T_DIM : sel ? T_THEME : T_MID;
+        uint16_t bg = sel ? T_TINT : T_RAISE, ink = c >= trk_live ? T_DIM : sel ? T_THEME : T_TEXT;
         char n[3] = {'T', (char)('1' + c), 0};
         cv_rect(x, y, 76, 66, bg);
         if (sel) {
@@ -50,7 +50,7 @@ static void graph_env_tracks(int dest)
             cv_rect(x, y, 1, 66, T_THEME); cv_rect(x + 75, y, 1, 66, T_THEME);
         }
         cv_text(x + 4, y + 4 - AF_X_CAP_Y, &AF_X, n, ink);
-        cv_clip_text(x + 22, y + 4 - AF_X_CAP_Y, &AF_X, trk_engp(t)->name, T_DIM, bg, 50);
+        cv_clip_text(x + 22, y + 4 - AF_X_CAP_Y, &AF_X, trk_engp(t)->name, c >= trk_live ? T_DIM : T_TEXT, bg, 50);
         env_mini(t, x + 5, y + 16, 66, dest ? 34 : 44, c >= trk_live ? T_DIM : heat_col(150), sel ? 2 : 1);
         if (!dest && (lv = env_now(t)) >= 0)
             og_node((x + 70) * 16, (y + 60 - lv * 44 / 1000) * 16, 2, T_TEXT);
@@ -88,8 +88,8 @@ static void graph_stage(const track_t *t)
     param_format(&TP[id], t->p[id], b, &u);
     str_cpy(b + str_len(b), u, 24 - str_len(b));
     cv_text_r(226, 50 - AF_X_CAP_Y, &AF_X, b, T_TEXT, T_SURF);
-    cv_text(10, 128 - AF_X_CAP_Y, &AF_X, "0", T_DIM);
-    cv_text_r(226, 128 - AF_X_CAP_Y, &AF_X, sg == 2u ? "HELD" : b, T_DIM, T_SURF);
+    cv_text(10, 128 - AF_X_CAP_Y, &AF_X, "0", T_TEXT);
+    cv_text_r(226, 128 - AF_X_CAP_Y, &AF_X, sg == 2u ? "HELD" : b, T_TEXT, T_SURF);
 }
 /* the lens's panel for ENV's page pg (1), else 0 (its own) */
 static int graph_env_lz(const track_t *t, const page_t *pg)
@@ -174,7 +174,7 @@ static __attribute__((noinline)) void graph_lfodest(const track_t *t, const page
         if (!d)
             continue;
         cv_rect(100, y, 132, 26, T_RAISE);
-        ed_cap(105, y + 4, d->label, T_MID);
+        ed_cap(105, y + 4, d->label, T_TEXT);
         param_format(d, *vp, b, &u);
         str_cpy(b + str_len(b), u, 16 - str_len(b));
         cv_text_r(228, y + 4 - AF_X_CAP_Y, &AF_X, b, T_TEXT, T_RAISE);
@@ -197,7 +197,7 @@ static void mseq_cap(const track_t *t, const page_t *pg)
         ed_cap(10, 6, "MOD SRC: STEP", T_TEXT);
     str_cpy(b, "LEN ", 24);
     fmt_int(b + 4, t->p[P_MSLEN]);
-    cv_text_r(228, 6 - AF_X_CAP_Y, &AF_X, b, T_DIM, T_SURF);
+    cv_text_r(228, 6 - AF_X_CAP_Y, &AF_X, b, T_TEXT, T_SURF);
 }
 /* the lens's panel for LFO . MOD's page pg (1), else 0 (its own) */
 static int graph_mod_lz(const track_t *t, const page_t *pg)
@@ -266,7 +266,7 @@ static __attribute__((noinline)) void graph_key(const track_t *t, const page_t *
     }
     cv_text_in(42, 48 - AF_M_CAP_Y, 40, &AF_M, NN[rt], note_col(rt), T_SURF);
     param_format(&TP[P_SCALE], t->p[P_SCALE], b, &u);
-    cv_text_in(32, 66 - AF_X_CAP_Y, 60, &AF_X, b, T_MID, T_SURF);
+    cv_text_in(32, 66 - AF_X_CAP_Y, 60, &AF_X, b, T_TEXT, T_SURF);
     (void)pg;                                           /* (QUANT and ALL TR stood at the right: their cards say them) */
     for (i = 0; i < 24u; i++) {                         /* two octaves from C */
         uint32_t deg = (i + 24u - rt) % 12u;
@@ -304,7 +304,7 @@ static __attribute__((noinline)) void graph_chord(const track_t *t)
             if (k == 0u)                                /* the chord's root: a tick of text */
                 cv_rect(x - 1, y, 2, 3, T_TEXT);
         }
-        cv_text_in(x - 2, 125 - AF_X_CAP_Y, 27, &AF_X, RN[d], d == 0u ? T_THEME : T_DIM, T_SURF);
+        cv_text_in(x - 2, 125 - AF_X_CAP_Y, 27, &AF_X, RN[d], d == 0u ? T_THEME : T_TEXT, T_SURF);
     }
 }
 static void graph_arp(const track_t *t)
@@ -321,10 +321,10 @@ static void graph_arp(const track_t *t)
     fmt_int(b + str_len(b), (int32_t)oc);
     ed_cap(10, 6, b, T_TEXT);
     param_format(&TP[P_AORDER], t->p[P_AORDER], b, &u);
-    cv_text_r(228, 6 - AF_X_CAP_Y, &AF_X, b, T_DIM, T_SURF);
+    cv_text_r(228, 6 - AF_X_CAP_Y, &AF_X, b, T_TEXT, T_SURF);
     if (!md) {
-        cv_text_in(4, 56 - AF_M_CAP_Y, 232, &AF_M, "ARP OFF", T_MID, T_SURF);
-        cv_text_in(4, 76 - AF_X_CAP_Y, 232, &AF_X, "KEYS PLAY STRAIGHT", T_DIM, T_SURF);
+        cv_text_in(4, 56 - AF_M_CAP_Y, 232, &AF_M, "ARP OFF", T_TEXT, T_SURF);
+        cv_text_in(4, 76 - AF_X_CAP_Y, 232, &AF_X, "KEYS PLAY STRAIGHT", T_TEXT, T_SURF);
         return;
     }
     for (i = 0; i < 16u; i++) {                         /* the pattern over a triad, OCT octaves */
@@ -384,11 +384,11 @@ static __attribute__((noinline)) void graph_system(void)
     for (k = 0; k < 3u; k++) {
         uint16_t bg = k == ld ? T_THEME : T_RAISE;
         cv_rect(8 + (int32_t)k * 40, 34, 38, 14, bg);
-        cv_text_in(8 + (int32_t)k * 40, 38 - AF_X_CAP_Y, 38, &AF_X, LD[k], k == ld ? T_INK : T_MID, bg);
+        cv_text_in(8 + (int32_t)k * 40, 38 - AF_X_CAP_Y, 38, &AF_X, LD[k], k == ld ? T_INK : T_TEXT, bg);
     }
     param_format(&GP[G_ROUTE], song.g[G_ROUTE], b + 5, &u);
     b[0] = 'M'; b[1] = 'I'; b[2] = 'D'; b[3] = 'I'; b[4] = ' ';
-    ed_cap(134, 38, b, T_DIM);
+    ed_cap(134, 38, b, T_TEXT);
     if (fm1_ms - cpu_ms >= 250u) {                      /* (a sample each quarter second) */
         cpu_ms = fm1_ms;
         cpu[cpu_at++ % 56u] = (uint8_t)clamp((int32_t)(song.cpu_q8 * 100u / 256u), 0, 100);

@@ -563,7 +563,7 @@ static void graph_mutate(const track_t *t, const eu_t *e)
     uint32_t len = (uint32_t)clamp(t->p[P_SLEN], 1, 64), now = song.playing ? t->seq_idx % len : ~0u;
     uint32_t ev = e->mu[0] ? 1u << (e->mu[0] - 1u) : 0u, q = ev ? ((bar_n % ev) * 4u + beat_n % 4u) * 64u / (ev * 4u) : 0u;
     char b[8];
-    cv_text(4, 2, &AF_X, "ANCHOR", T_DIM);
+    cv_text(4, 2, &AF_X, "ANCHOR", T_TEXT);
     eu_strip(t, eu_za[song.sel % NTRK], 12, hh, len, now, 1);
     cv_text(4, 18 + hh, &AF_X, "NOW", T_TEXT);
     eu_strip(t, eu_za[song.sel % NTRK], 28 + hh, hh, len, now, 0);
@@ -572,7 +572,7 @@ static void graph_mutate(const track_t *t, const eu_t *e)
         int32_t x = cx + ((20 * og_cos(a)) >> 15), y = cy + ((20 * og_sin(a)) >> 15);
         cv_rect(x - 1, y - 1, 2, 2, ev && song.playing && (uint32_t)i <= q ? T_ACCENT : T_DIM);
     }
-    cv_text_in(cx - 18, cy - 9, 36, &AF_X, ev ? "NEXT" : "OFF", T_DIM, T_SURF);
+    cv_text_in(cx - 18, cy - 9, 36, &AF_X, ev ? "NEXT" : "OFF", T_TEXT, T_SURF);
     if (ev) { b[0] = 0; fmt_int(b, (int32_t)(song.playing ? ev - bar_n % ev : ev)); cv_text_in(cx - 18, cy + 2, 36, &AF_X, b, T_TEXT, T_SURF); }
     cv_text(4, h - 10, &AF_X, "OCT+ MUTATE", T_ACCENT);
     cv_text_r(234, h - 10, &AF_X, "OCT- ANCHOR", T_THEME, T_SURF);
@@ -609,7 +609,7 @@ static __attribute__((noinline)) void graph_euclid(const track_t *t)
         for (i = 0; i < tn; i++) {
             int32_t x = cx - (int32_t)tn * 13 + 4 + (int32_t)i * 26;
             const char *nm = tn == 2u ? TN[i * 3u] : TN[i];
-            cv_text_in(x - 4, h - 12, 22, &AF_X, nm, i == tp ? T_ACCENT : T_DIM, T_SURF);
+            cv_text_in(x - 4, h - 12, 22, &AF_X, nm, i == tp ? T_ACCENT : T_TEXT, T_SURF);
             if (i == tp) cv_rect(x, h - 3, 14, 1, T_ACCENT);
         }
     }
@@ -631,7 +631,7 @@ static __attribute__((noinline)) void graph_euclid(const track_t *t)
         for (i = 0; i < NLANE; i++) {                    /* the lanes */
             int32_t y = 6 + (int32_t)i * (h - 12) / NLANE, rh = (h - 12) / NLANE - 2;
             uint32_t on = sl ? i == lane : e->l[i].h != 0u, nn = e->l[i].n ? e->l[i].n : 1u;   /* (ALL: the lanes it plays) */
-            uint16_t c = on ? T_TEXT : e->l[i].h ? T_MID : T_DIM;
+            uint16_t c = on || e->l[i].h ? T_TEXT : T_DIM;
             if (sl && on) cv_rect(136, y, 98, rh, T_RAISE);
             cv_rect(136, y, 2, rh, sl && on ? T_ACCENT : T_SURF);
             cv_text(144, y + (rh - 8) / 2, &AF_X, LN[i + 1u], c);
@@ -646,7 +646,7 @@ static __attribute__((noinline)) void graph_euclid(const track_t *t)
     cv_text_in(cx - 30, cy - 14, 60, &AF_M, b, T_TEXT, T_SURF);
     for (i = 1; i < sizeof SCALE_MASK / sizeof SCALE_MASK[0] && SCALE_MASK[i] != e->mask; i++) {}
     if (i < sizeof SCALE_MASK / sizeof SCALE_MASK[0])
-        cv_text_in(cx - 30, cy + 6, 60, &AF_X, N_SCALE[i], T_MID, T_SURF);
+        cv_text_in(cx - 30, cy + 6, 60, &AF_X, N_SCALE[i], T_TEXT, T_SURF);
     {                                                    /* the roll */
         int32_t x0 = 134, y0 = 8, w = 100, rh = h - 30, lo = 127, hi = 0, cw;
         uint32_t c;
@@ -675,7 +675,7 @@ static __attribute__((noinline)) void graph_euclid(const track_t *t)
         else if (e->src == 0u) str_cpy(b, "SCL", sizeof b);
         else if (e->src == 7u) str_cpy(b, "NEW KEY", sizeof b);
         else { str_cpy(b, "FROM T1", sizeof b); b[6] = (char)('0' + e->src); }
-        cv_text_in(x0, y0 + rh + 6, w, &AF_X, b, e->src == 7u ? T_ACCENT : T_MID, T_SURF);
+        cv_text_in(x0, y0 + rh + 6, w, &AF_X, b, e->src == 7u ? T_ACCENT : T_TEXT, T_SURF);
     }
 }
 

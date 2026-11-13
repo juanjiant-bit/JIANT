@@ -419,7 +419,7 @@ static __attribute__((noinline)) void graph_live(void)
         lv_rail(i, y, lh);
         if (i == song.sel)                              /* ALGORITHM's track: on its badge; the tracks picked THEME */
             cv_rect(3, by0, 9, 9, T_ACCENT);
-        cv_text_in(3, by0 + CAP_IN(X, 9), 9, &AF_X, d, i == song.sel ? T_INK : (tg >> i) & 1u ? T_THEME : T_DIM, bg);
+        cv_text_in(3, by0 + CAP_IN(X, 9), 9, &AF_X, d, i == song.sel ? T_INK : (tg >> i) & 1u ? T_THEME : T_TEXT, bg);
         if ((tg >> i) & 1u)
             cv_rect(13, by0, 1, 9, T_THEME);
     }

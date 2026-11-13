@@ -23,7 +23,7 @@ static void ed_chip(int32_t x, int32_t y, int32_t w, const param_desc_t *d, int1
         return;
     param_format(d, v, b, &u);
     str_cpy(b + str_len(b), u, 24 - str_len(b));
-    cv_clip_text(x + 5, y - AF_X_CAP_Y + 1, &AF_X, d->label, on ? T_MID : T_DIM, bg, w - 6);
+    cv_clip_text(x + 5, y - AF_X_CAP_Y + 1, &AF_X, d->label, T_TEXT, bg, w - 6);
     cv_clip_text(x + 5, y - AF_X_CAP_Y + 9, &AF_X, b, on ? T_TEXT : T_DIM, bg, w - 6);
 }
 static void ed_cap(int32_t x, int32_t y, const char *s, uint16_t c)   /* a caption, its capitals from y */
@@ -88,7 +88,7 @@ static void graph_filter_lz(const track_t *t, const page_t *pg)
         py = y;
     }
     for (k = 0; k < 3; k++)
-        cv_text(67 + k * 54, 108 - AF_X_CAP_Y, &AF_X, FX[k], T_DIM);
+        cv_text(67 + k * 54, 108 - AF_X_CAP_Y, &AF_X, FX[k], T_TEXT);
     cv_rect(xc, 6, 1, 99, T_ACCENT);
     og_node(xc * 16, ed_resp(ty, xc, xc, r[2]) * 16, 4, T_ACCENT);
     str_cpy(b, N_FTYPE[ty], 32);
@@ -101,7 +101,7 @@ static void graph_filter_lz(const track_t *t, const page_t *pg)
         str_cpy(b + str_len(b), " ", 2);
         param_format(d, *vp, b + str_len(b), &u);
         str_cpy(b + str_len(b), u, 32 - str_len(b));
-        ed_cap(10, 120, b, T_MID);
+        ed_cap(10, 120, b, T_TEXT);
     }
     nd = r[3] * 20 / 1000;
     for (k = 0; k < 20; k++)
@@ -115,13 +115,13 @@ static void graph_voice_lz(const track_t *t, const page_t *pg)
     char b[40];
     fmt_int(b, (int32_t)nv);
     str_cpy(b + str_len(b), nv == 1u ? " VOICE" : " VOICES", 40 - str_len(b));
-    ed_cap(10, 6, b, T_DIM);
+    ed_cap(10, 6, b, T_TEXT);
     for (i = 0; i < NVOICE; i++) {
         int32_t y = 17 + (int32_t)i * 9, lv = 0;
         char n[2] = {(char)('1' + i), 0};
         if (t->v[i].stage && t->v[i].stage < 4u)
             lv = (int32_t)(((int64_t)t->v[i].env * 196) >> 24);
-        ed_cap(14, y, n, i < nv ? T_MID : T_DIM);
+        ed_cap(14, y, n, i < nv ? T_TEXT : T_DIM);
         cv_rect(26, y, 202, 7, i < nv ? T_RAISE : T_LINE);
         if (lv > 0)
             cv_rect(26, y, lv, 7, heat_col(60 + lv));
@@ -134,7 +134,7 @@ static void graph_voice_lz(const track_t *t, const page_t *pg)
     str_cpy(b, "GLIDE ", 40);
     param_format(track_desc(t, P_GLIDE), t->p[P_GLIDE], b + 6, &u);
     str_cpy(b + str_len(b), u, 40 - str_len(b));
-    ed_cap(10, 120, b, T_MID);
+    ed_cap(10, 120, b, T_TEXT);
     for (x = 0; x <= 104; x++) {                        /* the glide: low note to high, as slow as GLIDE */
         int32_t tm = glide ? x * 127 * 6 / (glide * 4 + 1) : 1000, k = tm > 255 ? 255 : tm;
         int32_t y = x < 16 ? 130 : 130 - 22 * (k * (255 - (255 - k) * (255 - k) / 255)) / 65025;
@@ -155,7 +155,7 @@ static void graph_focus_lz(const track_t *t)
     str_cpy(b + str_len(b), u, 24 - str_len(b));
     lz_arc(120, 58, 44, 4, clamp(RATIO(d, enum_rank(d, t->p[P_E0 + k])), 0, 1000), T_RAISE, T_THEME);
     GFX_HOOK_ALIGN(80, 0, 160, 0, AL_H, "FOCUS value centred in its gauge");
-    cv_text_in(80, 40 - AF_X_CAP_Y, 80, &AF_X, d->label, T_MID, T_SURF);
+    cv_text_in(80, 40 - AF_X_CAP_Y, 80, &AF_X, d->label, T_TEXT, T_SURF);
     cv_text_in(70, 52 - AF_M_CAP_Y, 100, &AF_M, b, T_TEXT, T_SURF);
     if (j >= 0) {
         const param_desc_t *da = track_desc(t, P_M1AMT + 3u * (uint32_t)j);
@@ -167,19 +167,19 @@ static void graph_focus_lz(const track_t *t)
         str_cpy(b + str_len(b), u, 24 - str_len(b));
     } else
         str_cpy(b, "NO MOD", 24);
-    cv_text_in(70, 74 - AF_X_CAP_Y, 100, &AF_X, b, j >= 0 ? T_THEME : T_DIM, T_SURF);
+    cv_text_in(70, 74 - AF_X_CAP_Y, 100, &AF_X, b, j >= 0 ? T_THEME : T_TEXT, T_SURF);
     str_cpy(b, pt && pt[0] != '-' ? pt : e->name, 16);
     str_cpy(b + str_len(b), " ", 2);
     fmt_int(b + str_len(b), (int32_t)(k & 3u) + 1);
     str_cpy(b + str_len(b), "/4", 3);
-    ed_cap(10, 6, b, T_DIM);
+    ed_cap(10, 6, b, T_TEXT);
     for (i = 0; i < 8u; i++) {                          /* E1..E8 */
         const param_desc_t *di = track_desc(t, P_E0 + i);
         int32_t x = 8 + (int32_t)i * 28;
         uint16_t bg = i == k ? T_THEME : T_RAISE;
         cv_rect(x, 118, 26, 13, bg);
         if (di && di->label && di->label[0] != '-')
-            cv_clip_text(x + 2, 121 - AF_X_CAP_Y, &AF_X, di->label, i == k ? T_INK : T_DIM, bg, 23);
+            cv_clip_text(x + 2, 121 - AF_X_CAP_Y, &AF_X, di->label, i == k ? T_INK : T_TEXT, bg, 23);
     }
 }
 /* the lens's panel for EDIT's page pg (1), else 0 (its own) */

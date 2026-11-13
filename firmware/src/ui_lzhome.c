@@ -272,7 +272,7 @@ static void graph_eco(void)
         char num[2] = {(char)('1' + c), 0};
         eco_being(c, bx[c], by[c], eco.r[c]);
         ny = clamp(py + rad / 2 + 4, 4, bot);
-        cv_text_in(px - 30, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM : T_MID, T_SURF);
+        cv_text_in(px - 30, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM : T_TEXT, T_SURF);
     }
     if (ui.hot_t && ui.hot_col < 4u) {                  /* MACROS: a macro turned, where it goes ("M2 T1 CUT+40 T3 ..",
                                                          * the MACRO layer's list); else the routes counted; LATCH */
@@ -281,13 +281,13 @@ static void graph_eco(void)
         b[2] = ' ';
         if (!macro_routes(ui.hot_col, b + 3, sizeof b - 3u))
             str_cpy(b + 3, "NO ROUTE", sizeof b - 3u);
-        cv_clip_text(6, 2, &AF_X, b, T_MID, T_SURF, 176);
+        cv_clip_text(6, 2, &AF_X, b, T_TEXT, T_SURF, 176);
     } else {
         fmt_int(b, (int32_t)routes_count());
         str_cpy(b + str_len(b), " ROUTES", 8);
-        cv_text(6, 2, &AF_X, b, T_DIM);
+        cv_text(6, 2, &AF_X, b, T_TEXT);
     }
-    cv_text_r(234, 2, &AF_X, mac_latch ? "LATCH" : "HOLD LFO", mac_latch ? T_ACCENT : T_DIM, T_SURF);
+    cv_text_r(234, 2, &AF_X, mac_latch ? "LATCH" : "HOLD LFO", mac_latch ? T_ACCENT : T_TEXT, T_SURF);
 }
 /* (V10.7.24) HOME's panel: MACROS the beings (graph_eco), SCOPE the mix's oscilloscope over the whole panel (ui_graph.c
  * graph_scope, as hot as it is loud) */

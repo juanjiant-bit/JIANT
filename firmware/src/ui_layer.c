@@ -1168,7 +1168,7 @@ static void ly_piano(uint32_t l)
             cv_text_up(x0 + HALF_UP(w - AF_X_CAP_H) - AF_X_CAP_Y, y + h - 14, &AF_X, nm, ink, fill, h - 14 - bh - 6);
         nt[0] = W_NOTE[i];                              /* (its note, the letter) */
         GFX_HOOK_ALIGN(x0, 0, x0 + w, 0, AL_H, "layer key's note centred");
-        cv_text_in(x0, y + h - 9 - AF_X_CAP_Y, w, &AF_X, nt, ink == T_INK ? ink : T_DIM, fill);
+        cv_text_in(x0, y + h - 9 - AF_X_CAP_Y, w, &AF_X, nt, ink, fill);
     }
     for (i = 0; i < 11; i++) {                          /* the black keys over them */
         int32_t x0 = 4 + PK_BLK[i] * 232 / 16 - 5;
@@ -1275,7 +1275,7 @@ static void layer_knobs(uint32_t l)                     /* the four as gauges in
         lz_arc(cx, 50, 25, 4, ly_card[c].r < 0 ? 0 : ly_card[c].r, T_LINE,
                ly_card[c].r < 0 ? T_LINE : knob_col(c, ly_card[c].r, ly_card[c].b));   /* (0.9.5 JIANT: its heat) */
         GFX_HOOK_ALIGN(cx - 26, 0, cx + 26, 0, AL_H, "layer KNOBS gauge's words centred");
-        cv_text_in(cx - 26, 44 - AF_X_CAP_Y, 52, &AF_X, ly_card[c].l, T_MID, T_SURF);
+        cv_text_in(cx - 26, 44 - AF_X_CAP_Y, 52, &AF_X, ly_card[c].l, T_TEXT, T_SURF);
         cv_text_in(cx - 26, 54 - AF_X_CAP_Y, 52, &AF_X, ly_card[c].v, T_TEXT, T_SURF);
     }
     b[0] = 0;
@@ -1288,7 +1288,7 @@ static void layer_knobs(uint32_t l)                     /* the four as gauges in
             str_cpy(b + str_len(b), ft[k].act, sizeof b - str_len(b));
         }
     GFX_HOOK_ALIGN(4, 0, 236, 0, AL_H, "layer KNOBS keys' words centred");
-    cv_text_in(4, 100 - AF_X_CAP_Y, 232, &AF_X, b, T_DIM, T_SURF);
+    cv_text_in(4, 100 - AF_X_CAP_Y, 232, &AF_X, b, T_TEXT, T_SURF);
 }
 /* STATE: "GLO . HELD", then what is on as chips, two a row (on: a THEME stripe, TEXT; off: DIM) */
 static uint32_t lst_n __attribute__((section(".pool")));
@@ -1308,7 +1308,7 @@ static void lst_chip(const char *a, const char *v, int on)
     cv_rrect(x, y, 114, 13, 3, bg, T_SURF);
     if (on)
         cv_rect(x, y + 2, 2, 9, T_THEME);
-    cv_clip_text(x + 6, y + 3 - AF_X_CAP_Y, &AF_X, b, on ? T_TEXT : T_DIM, bg, 104);
+    cv_clip_text(x + 6, y + 3 - AF_X_CAP_Y, &AF_X, b, T_TEXT, bg, 104);
 }
 static __attribute__((noinline)) void layer_state(uint32_t l)
 {

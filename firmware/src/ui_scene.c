@@ -125,9 +125,9 @@ static void graph_scene(void)
         track_t *t = &trk[i];
         int32_t x = x0 + (int32_t)i * cw;
         uint32_t r = drum_track(t) && scn_role[i] != SC_DRUM ? SC_KEEP : scn_role[i];
-        uint16_t c = r == SC_KEEP ? T_DIM : r == SC_CHORD ? T_THEME : r == SC_ARP ? T_MID : r == SC_BASS ? T_ACCENT : T_TEXT;
+        uint16_t c = r == SC_KEEP ? T_DIM : r == SC_CHORD ? T_THEME : r == SC_BASS ? T_ACCENT : T_TEXT;
         char b[3] = {'T', (char)('1' + i), 0};
-        cv_text_in(x, 2, cw - 4, &AF_X, b, i == sc_trk ? T_TEXT : T_DIM, T_SURF);
+        cv_text_in(x, 2, cw - 4, &AF_X, b, T_TEXT, T_SURF);
         cv_text_in(x - 2, 14, cw, &AF_X, drum_track(t) && r == SC_KEEP ? "KIT" : SC_ROLE[r], c, T_SURF);
         if (i == sc_trk) cv_frame(x - 3, 0, cw - 1, 25, T_ACCENT);
         if (i >= trk_live) continue;
@@ -150,7 +150,7 @@ static void graph_scene(void)
         }
     }
     cv_text_in(4, (int32_t)h - 11, 232, &AF_X, scn_on ? "OCT+ DICE  OCT- ALL KEEP" : "SCENE OFF: KNOB 1 TURNS IT ON",
-               scn_on ? T_ACCENT : T_DIM, T_SURF);
+               scn_on ? T_ACCENT : T_TEXT, T_SURF);
 }
 
 /* (V10.6j) SCENE's DRUM: key k's beat into the kit, 16 steps (main loop: ui_input.c's poll; the key in the audio side

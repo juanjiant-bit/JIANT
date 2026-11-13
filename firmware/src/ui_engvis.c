@@ -1204,7 +1204,7 @@ static void vx_fm_num(const vxf_t *f, const vxfm_t *o, uint32_t k, int32_t x, in
 {
     char n[2] = {(char)('1' + k), 0};
     vx_text(f->cx + ((x * f->s) >> 8), f->cy + ((y * f->s) >> 8) - 64, n,
-            sel ? T_THEME : o->p[(5u - k) * FP_OP + FP_OL] % 100u ? T_MID : T_DIM);
+            sel ? T_THEME : o->p[(5u - k) * FP_OP + FP_OL] % 100u ? T_TEXT : T_DIM);
 }
 /* COLONIA: the operators wired as the algorithm, the carriers standing on the output; sel the operator picked (or 6),
  * op2: OPERATOR 2 (its DETUNE a shimmer) */
@@ -1290,7 +1290,7 @@ static VX_CODE void vx_fm6_page(const track_t *t, uint32_t sel, int op2)
     vx_fm6(t, A, -1, sel, op2);
     if (!t->p[P_E0])
         str_cpy(b + 6, " PAT", 5);
-    cv_text(10, 4, &AF_S, b, hot == P_E0 || hot == P_E7 ? T_ACCENT : T_MID);
+    cv_text(10, 4, &AF_S, b, hot == P_E0 || hot == P_E7 ? T_ACCENT : T_TEXT);
     fop_freq(pt + (5u - sel) * FP_OP, fq + 4);
     cv_text_r(228, 4, &AF_S, fq, T_TEXT, T_SURF);
 }
@@ -1368,7 +1368,7 @@ static VX_CODE void vx_fm6env(const track_t *t)
 #undef VFY
 #undef VFW
     vxs.kc = 0;
-    cv_text(10, 4, &AF_S, b, T_MID);
+    cv_text(10, 4, &AF_S, b, T_TEXT);
     str_cpy(b, STG[sg], sizeof b);
     str_cpy(b + str_len(b), "  R ", 5);
     fmt_int(b + str_len(b), op[FP_R1 + sg]);
@@ -1409,7 +1409,7 @@ static VX_CODE void vx_wheel(const track_t *t, const int32_t *A, int32_t en_home
         for (k = -1; k <= 1; k += 2)                     /* the tube, its mouth */
             vx_line(&f, X + k * 42, 30 * 16, X + k * 38, 30 * 16 - th, 46 + c0);
         vx_ring(&f, X, 30 * 16 - th, 42, 14, 64 + c0);
-        vx_text(f.cx + ((X * f.s) >> 8), f.cy + ((30 * 16 * f.s) >> 8) + 64, d, l ? T_MID : T_DIM);
+        vx_text(f.cx + ((X * f.s) >> 8), f.cy + ((30 * 16 * f.s) >> 8) + 64, d, l ? T_TEXT : T_DIM);
         if (!l) continue;
         for (k = 0; k <= 10; k++) {                      /* the worm out of it, waving at its harmonic */
             int32_t yy = 30 * 16 - th - k * (h - th) / 10, xx = X + bend * k * k / 100 +

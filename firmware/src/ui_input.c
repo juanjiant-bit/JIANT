@@ -2276,7 +2276,7 @@ static void dice_side(uint32_t now, int32_t x0)          /* one half of the pane
 {
     const track_t *t = TSEL;
     uint32_t i, kind = ui.confirm;
-    cv_text_in(x0, 6 - AF_X_CAP_Y, 112, &AF_X, now ? "NOW" : "BEFORE", T_DIM, T_SURF);
+    cv_text_in(x0, 6 - AF_X_CAP_Y, 112, &AF_X, now ? "NOW" : "BEFORE", T_TEXT, T_SURF);
     if (kind == CF_DICE_SOUND) {
         bfeat_t f;
         if (!dkv.g)                                     /* (opened without a dice: as it is) */
@@ -2296,7 +2296,7 @@ static void dice_side(uint32_t now, int32_t x0)          /* one half of the pane
             int16_t v = now ? t->p[ids[i]] : dk.v[i];
             const param_desc_t *d = track_desc(t, ids[i]);
             int32_t w = d ? clamp(RATIO(d, enum_rank(d, v)), 0, 1000) * 96 / 1000 : 0;
-            cv_text(x0 + 8, 20 + (int32_t)i * 20 - AF_X_CAP_Y, &AF_X, d ? d->label : "", T_DIM);
+            cv_text(x0 + 8, 20 + (int32_t)i * 20 - AF_X_CAP_Y, &AF_X, d ? d->label : "", T_TEXT);
             cv_rect(x0 + 8, 29 + (int32_t)i * 20, 96, 3, T_LINE);
             cv_rect(x0 + 8, 29 + (int32_t)i * 20, w ? w : 1, 3, now ? T_ACCENT : T_MID);
         }
@@ -3202,13 +3202,13 @@ static void setup_title(void)
         cv_text(x, HEAD_MY, &AF_M, t, T_TEXT);
         cv_blit(0, 5);
     }
-    draw_text_box(0, 32, 240, &AF_S, "TEACH EACH BUTTON AND KNOB", T_MID, 1);
+    draw_text_box(0, 32, 240, &AF_S, "TEACH EACH BUTTON AND KNOB", T_TEXT, 1);
     lcd_fill(16, 56, 208, 1, T_LINE);
-    draw_text_box(0, 206, 240, &AF_S, "ANY KEY: CANCEL", T_DIM, 1);
+    draw_text_box(0, 206, 240, &AF_S, "ANY KEY: CANCEL", T_TEXT, 1);
 }
 static void setup_show(const char *what, const char *name)     /* "PRESS" / "TURN RIGHT", the control */
 {
-    draw_text_box(0, 80, 240, &AF_S, what, T_MID, 1);
+    draw_text_box(0, 80, 240, &AF_S, what, T_TEXT, 1);
     draw_text_box(0, 100, 240, &AF_L, name, T_THEME, 1);
 }
 static void panel_setup(void)

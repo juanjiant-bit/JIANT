@@ -37,7 +37,7 @@ static void graph_lib(void)
             cv_frame(x, y, 56, 66, T_THEME);
         fmt_int(b, (int32_t)i + 1);
         GFX_HOOK_ALIGN(0, y + 3, 0, y + 14, AL_V | AL_PASS, "library tile number");
-        cv_text_on(x + 4, y + 3, &AF_X, b, cur ? T_THEME : T_DIM, bg);
+        cv_text_on(x + 4, y + 3, &AF_X, b, cur ? T_THEME : T_TEXT, bg);
         if (cur)
             str_cpy(nm, graph_project_used(0) ? graph_project_name(0) : "", sizeof nm);
         else
@@ -88,14 +88,14 @@ static __attribute__((noinline)) void graph_lz_tools(void)
         n++;
         cv_rect(88, y, 148, 24, bg);
         GFX_HOOK_ALIGN(0, y, 0, y + 12, AL_V, "tools row text centred up/down");
-        cv_text_on(94, y + CAP_IN(M, 14), &AF_M, WHAT[c], sel ? T_TEXT : T_MID, bg);
+        cv_text_on(94, y + CAP_IN(M, 14), &AF_M, WHAT[c], T_TEXT, bg);
         if (c == 3u) { str_cpy(b, "ROW ", sizeof b); fmt_int(b + 4, (int32_t)ui.song_row + 1); }
-        cv_text(94, y + 15, &AF_X, c == 3u ? b : ON[c], sel ? T_MID : T_DIM);
+        cv_text(94, y + 15, &AF_X, c == 3u ? b : ON[c], T_TEXT);
     }
     cv_rect(4, (int32_t)h - 20, 232, 6, T_RAISE);        /* OCT+ held: the bar */
     if (hold > 0) cv_rect(4, (int32_t)h - 20, hold > 232 ? 232 : hold, 6, col);
     cv_text_in(4, (int32_t)h - 11, 232, &AF_X, ui.act == 1u ? "OCT+ ASKS FIRST" : ui.act ? "HOLD OCT+ TO DO IT" :
-               "TURN A KNOB TO PICK", T_MID, T_SURF);
+               "TURN A KNOB TO PICK", T_TEXT, T_SURF);
 }
 /* the song's length and END ("120 BARS . LOOP") into b (24) */
 static void song_len_txt(char *b, uint32_t total)
@@ -182,9 +182,9 @@ static void graph_parts(void)
     if (chain_config.count)
         song_strip(110, 10, ui.part & 3u, 0);
     else
-        cv_text(4, 110, &AF_X, "NO SONG ROWS", T_DIM);
+        cv_text(4, 110, &AF_X, "NO SONG ROWS", T_TEXT);
     GFX_HOOK_ALIGN(0, 128, 0, 139, AL_V | AL_PASS, "parts hint");
-    cv_text(4, 128, &AF_X, "OCT+ LOOP \xB7 OCT- SONG \xB7 F3-B3 A-D", T_MID);
+    cv_text(4, 128, &AF_X, "OCT+ LOOP \xB7 OCT- SONG \xB7 F3-B3 A-D", T_TEXT);
 }
 /* (V10.6s, the owner's mock-up C) CLIPS: the six tracks x the four parts, a cell a track's pattern in a part (its part's
  * colour calm where it plays there, grey where silent or the part empty); the part each track sounds framed in its
@@ -207,7 +207,7 @@ static void graph_clips(void)
     for (k = 0; k < NTRK; k++) {
         int32_t y = 13 + (int32_t)k * 18;
         b[1] = (char)('1' + k);
-        cv_text(4, y + CAP_IN(X, 15), &AF_X, b, k == song.sel ? T_THEME : T_MID);
+        cv_text(4, y + CAP_IN(X, 15), &AF_X, b, k == song.sel ? T_THEME : T_TEXT);
         for (s = 0; s < 4u; s++) {
             int32_t x = 24 + (int32_t)s * 53;
             uint16_t c = sec_col(s);
@@ -226,7 +226,7 @@ static void graph_clips(void)
                 cv_frame(x - 2, y - 2, 54, 19, T_TEXT);
         }
     }
-    cv_text(4, 128, &AF_X, "OCT+ GO \xB7 OCT- STOP \xB7 F3-B3 PART \xB7 REC", T_MID);
+    cv_text(4, 128, &AF_X, "OCT+ GO \xB7 OCT- STOP \xB7 F3-B3 PART \xB7 REC", T_TEXT);
 }
 /* (V10.6o, the owner's mock-up B) TIMELINE: the song as blocks (the cursor's row framed), what plays; under it the row
  * opened: each track's bar (its own part's colour calm, another part's bright with FROM and its letter,
@@ -246,7 +246,7 @@ static __attribute__((noinline)) void graph_tl(void)
     uint32_t n = chain_config.count, r = ui.song_row < n ? ui.song_row : n - 1u, k;
     char b[24];
     if (!n) {
-        cv_text_in(4, 60, 232, &AF_X, "NO ROWS: OCT+ ADDS ONE", T_MID, T_SURF);
+        cv_text_in(4, 60, 232, &AF_X, "NO ROWS: OCT+ ADDS ONE", T_TEXT, T_SURF);
         return;
     }
     song_strip(3, 18, 4u, 1);
@@ -254,9 +254,9 @@ static __attribute__((noinline)) void graph_tl(void)
         str_cpy(b, chain.hold ? "LOOP ROW " : "ROW ", sizeof b);
         fmt_int(b + str_len(b), (int32_t)chain.row + 1);
     } else str_cpy(b, "PLAY: LOOP THE ROW", sizeof b);
-    cv_text(4, 25, &AF_X, b, chain.hold ? T_THEME : T_DIM);
+    cv_text(4, 25, &AF_X, b, chain.hold ? T_THEME : T_TEXT);
     song_len_txt(b, song_bars(4u));
-    cv_text_r(236, 25, &AF_X, b, T_DIM, T_SURF);
+    cv_text_r(236, 25, &AF_X, b, T_TEXT, T_SURF);
     for (k = 0; k < NTRK; k++) {
         int32_t y = 38 + (int32_t)k * 14;
         uint32_t sl = chain_config.row[r].slot & 3u, src = row_src(r, k, sl), v = row_var(r, k), mu = tl_muted(r, k);
@@ -264,7 +264,7 @@ static __attribute__((noinline)) void graph_tl(void)
         uint16_t c = src != sl ? sec_col(src) : lz_sec(src, 1, 1), ink = src != sl ? T_INK : T_TEXT;
         b[0] = 'T'; b[1] = (char)('1' + k); b[2] = 0;
         GFX_HOOK_ALIGN(0, y, 0, y + 12, AL_V | AL_PASS, "timeline track row");
-        cv_text(4, y + CAP_IN(X, 12), &AF_X, b, k == song.sel ? T_THEME : T_MID);
+        cv_text(4, y + CAP_IN(X, 12), &AF_X, b, k == song.sel ? T_THEME : T_TEXT);
         if (k == song.sel) cv_rect(0, y + 2, 2, 8, T_THEME);
         if (!on) {
             cv_frame(24, y, 212, 12, T_DIM);
@@ -283,7 +283,7 @@ static __attribute__((noinline)) void graph_tl(void)
             cv_text_in(196, y + 1 + CAP_IN(X, 10), 39, &AF_X, RV_NAME[v < RV_N ? v : 0], T_INK, T_ACCENT);
         }
     }
-    cv_text(4, 128, &AF_X, "KEYS: F3-D4 MUTE \xB7 F4-B4 FROM", T_MID);
+    cv_text(4, 128, &AF_X, "KEYS: F3-D4 MUTE \xB7 F4-B4 FROM", T_TEXT);
 }
 /* PROJECT: the sections, the arrangement's chips, the song's strip (ar: ARRANGE, its rows picked; 2: GENE's lanes) */
 static uint8_t proj_nofoot;                              /* (gen.c: GENE draws its own words where the song's length stands) */
@@ -300,7 +300,7 @@ static void graph_proj(int ar)
         uint32_t t = song_bars(4u), acc = 0, played = 0, j;
         int32_t ls = 15, lh = ls - 2;                    /* (V10.6i) lanes 2 px shorter, the helix a band of its own */
         for (j = 0; j <= NTRK; j++)
-            cv_text(5, 4 + (int32_t)j * ls + (j ? 3 : 2), &AF_X, LN[j], T_DIM);
+            cv_text(5, 4 + (int32_t)j * ls + (j ? 3 : 2), &AF_X, LN[j], T_TEXT);
         for (i = 0; i < n && t; i++) {
             const chain_row_t *r = &chain_config.row[i];
             uint32_t s = r->slot & 3u;
@@ -334,7 +334,7 @@ static void graph_proj(int ar)
             cv_rect(24 + (int32_t)(played * 212u / t), 2, 1, 4 + 7 * ls, T_TEXT);
         }
         song_len_txt(b, t);
-        cv_text_r(236, 128, &AF_X, n ? b : "NO ROWS: OCT+ ADDS ONE", T_MID, T_SURF);
+        cv_text_r(236, 128, &AF_X, n ? b : "NO ROWS: OCT+ ADDS ONE", T_TEXT, T_SURF);
         return;
     } else
     for (i = 0; i < 4u; i++) {
@@ -355,7 +355,7 @@ static void graph_proj(int ar)
         }
     }
     GFX_HOOK_ALIGN(0, 58, 0, 69, AL_V | AL_PASS, "project arrange title");
-    cv_text(6, 58, &AF_X, ar == 2 ? "ARRANGE 2" : "ARRANGE", ar ? T_THEME : T_DIM);
+    cv_text(6, 58, &AF_X, ar == 2 ? "ARRANGE 2" : "ARRANGE", ar ? T_THEME : T_TEXT);
     for (i = 0; i < n && i < CHAIN_ROWS; i++) {
         const chain_row_t *r = &chain_config.row[i];
         int32_t x = 4 + (int32_t)(i % 8u) * 293 / 10, y = 72 + (int32_t)(i / 8u) * 22;
@@ -380,7 +380,7 @@ static void graph_proj(int ar)
         return;
     song_len_txt(b, total);
     GFX_HOOK_ALIGN(0, 128, 0, 139, AL_V | AL_PASS, "project song length");
-    cv_text_r(236, 128, &AF_X, n ? b : "NO ROWS: OCT+ ADDS ONE", ar && ui.song_row >= song_end_row() ? T_THEME : T_MID,
+    cv_text_r(236, 128, &AF_X, n ? b : "NO ROWS: OCT+ ADDS ONE", ar && ui.song_row >= song_end_row() ? T_THEME : T_TEXT,
               T_SURF);
 }
 /* a being small at (cx, cy) radius r (px): engine e's species, its outline in heat c; 24 vertices (bg_outline's form,
@@ -465,14 +465,14 @@ static __attribute__((noinline)) void graph_lz_presets(void)
         char n[4];
         e = eng_vis(r);
         lz_mini_being(e, 9, y + 7, 3, sel ? bg_col(230) : ux_mix(bg_col(120), T_SURF, 45));
-        cv_clip_text(21, y + CAP_IN(X, 14), &AF_X, ENGINES[e]->name, sel ? T_TEXT : T_DIM, T_SURF, 46);
+        cv_clip_text(21, y + CAP_IN(X, 14), &AF_X, ENGINES[e]->name, T_TEXT, T_SURF, 46);
         n[0] = 0; fmt_int(n, (int32_t)preset_shown(e));
-        cv_text_r(82, y + CAP_IN(X, 14), &AF_X, n, sel ? T_MID : T_DIM, T_SURF);
+        cv_text_r(82, y + CAP_IN(X, 14), &AF_X, n, T_TEXT, T_SURF);
         if (sel) cv_rect(0, y + 2, 2, 10, T_ACCENT);
     }
     cv_rect(86, 2, 1, (int32_t)rows * 15 - 2, T_DIM);
     if (!total) {
-        cv_text_in(88, 63, 148, &AF_X, "NO FAVORITES", T_MID, T_SURF);
+        cv_text_in(88, 63, 148, &AF_X, "NO FAVORITES", T_TEXT, T_SURF);
         return;
     }
     first = cur < rows / 2u ? 0u : cur - rows / 2u;
@@ -495,14 +495,14 @@ static __attribute__((noinline)) void graph_lz_presets(void)
         if (sel)
             cv_rect(90, y, 146, 14, bg);
         GFX_HOOK_ALIGN(0, y, 0, y + 14, AL_V, "sound preset row centred up/down");
-        cv_free_text(96, y + CAP_IN(X, 14), &AF_X, nm, sel ? T_TEXT : T_MID, bg, 92);
+        cv_free_text(96, y + CAP_IN(X, 14), &AF_X, nm, T_TEXT, bg, 92);
         if (favorite_has(e, k)) {
             GFX_HOOK_ALIGN(0, y, 0, y + 14, AL_V, "sound preset star centred up/down");
             cv_text_on(226, y + CAP_IN(S, 14), &AF_S, "*", T_ACCENT, bg);   /* (a favourite; 0.8.5 no icons) */
         }
         if (e != TSEL->eng_req) {                       /* (another engine's: LIST crosses engines) */
             GFX_HOOK_ALIGN(0, y, 0, y + 14, AL_V, "sound preset row centred up/down");
-            cv_text_r(220, y + CAP_IN(X, 14), &AF_X, eng_abbr(en), T_DIM, bg);
+            cv_text_r(220, y + CAP_IN(X, 14), &AF_X, eng_abbr(en), T_TEXT, bg);
         }
     }
 }

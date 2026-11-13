@@ -144,7 +144,7 @@ static int32_t menu_lines(const uint8_t *packed, int32_t y, int draw)
     const char *s=text;
     for (; *s; s += str_len(s) + 1u) {
         uint32_t k = (uint8_t)*s - 1u, c = k % 3u;
-        y = menu_text(s + 1, y + 4 * (int32_t)(k / 3u), c == 1u ? T_THEME : c == 2u ? T_MID : T_TEXT, draw);
+        y = menu_text(s + 1, y + 4 * (int32_t)(k / 3u), c == 1u ? T_THEME : T_TEXT, draw);
     }
     return y;
 }
@@ -244,13 +244,13 @@ static int32_t menu_document(int32_t y, int draw)
         cv_text(6, y + 2, &AF_L, "JIANT FM", T_THEME);
         cv_text(6, y + 38, &AF_S, "Firmware for the MVAVE FM-1", T_TEXT);
         cv_text(6, y + 58, &AF_M, FELUCCA_VERSION, T_THEME);
-        cv_text_r(232, y + 61, &AF_S, __DATE__, T_MID, T_BG);
+        cv_text_r(232, y + 61, &AF_S, __DATE__, T_TEXT, T_BG);
         cv_text(6, y + 82, &AF_S, "by Juan Jiant, Argentina", T_TEXT);   /* (0.6.96: the project's own) */
         cv_text(6, y + 100, &AF_S, "Free, GPL-3.0-only, no warranty", T_TEXT);
         cv_text(6, y + 118, &AF_S, "Made in Argentina", T_TEXT);
-        cv_text(6, y + 138, &AF_S, "github.com", T_MID);
-        cv_text(6, y + 156, &AF_S, "/juanjiant-bit", T_MID);
-        cv_text(6, y + 174, &AF_S, "/JIANT", T_MID);
+        cv_text(6, y + 138, &AF_S, "github.com", T_TEXT);
+        cv_text(6, y + 156, &AF_S, "/juanjiant-bit", T_TEXT);
+        cv_text(6, y + 174, &AF_S, "/JIANT", T_TEXT);
         draw_about_qr(158, y + 122);
     }
     y = menu_lines(ABOUT_PROJECT_PACK, y + 216, draw);
@@ -340,7 +340,7 @@ static __attribute__((noinline)) void menu_panel(void)
             cv_text_in(x, y + 14, 115, &AF_M, MTAB_NAME[k], k == t ? T_THEME : T_TEXT, bg);
             fmt_int(v, (int32_t)mtab_rows(k));
             str_cpy(v + str_len(v), " ROWS", 8);
-            cv_text_in(x, y + 40 - AF_X_CAP_Y, 115, &AF_X, v, T_MID, bg);
+            cv_text_in(x, y + 40 - AF_X_CAP_Y, 115, &AF_X, v, T_TEXT, bg);
         }
         return;
     }
@@ -359,9 +359,9 @@ static __attribute__((noinline)) void menu_panel(void)
             if (row == ui.menu_sel)
                 cv_rect(8, y, 3, h, T_ACCENT);
             GFX_HOOK_ALIGN(0, y, 0, y + h, AL_V, "menu row name centred up/down");
-            cv_text_on(16, y + CAP_IN(S, h), &AF_S, MI_NAME[row], in ? T_TEXT : T_MID, bg);
+            cv_text_on(16, y + CAP_IN(S, h), &AF_S, MI_NAME[row], T_TEXT, bg);
             menu_val(row, v);
-            cv_text_r(in ? 216 : 226, y + CAP_IN(S, h), &AF_S, v, in ? T_TEXT : T_MID, bg);
+            cv_text_r(in ? 216 : 226, y + CAP_IN(S, h), &AF_S, v, T_TEXT, bg);
             if (in) {
                 char kn[2] = {(char)('1' + r % 4u), 0};
                 cv_text(220, y + 2 - AF_X_CAP_Y, &AF_X, kn, T_THEME);
@@ -377,7 +377,7 @@ static __attribute__((noinline)) void menu_panel(void)
         str_cpy(b + str_len(b), MI_NAME[row], 32 - str_len(b));
         cv_text(10, 6 - AF_X_CAP_Y, &AF_X, b, T_THEME);
         if (!nv) {
-            cv_text_in(4, 60 - AF_M_CAP_Y, 232, &AF_M, "OCT+ OPENS IT", T_MID, T_SURF);
+            cv_text_in(4, 60 - AF_M_CAP_Y, 232, &AF_M, "OCT+ OPENS IT", T_TEXT, T_SURF);
             return;
         }
         for (k = 0; k < nv && k < 18u; k++) {
@@ -389,7 +389,7 @@ static __attribute__((noinline)) void menu_panel(void)
                 cv_rect(x, y, 1, 18, T_ACCENT); cv_rect(x + 71, y, 1, 18, T_ACCENT);
             }
             cv_clip_text(x + 4, y + 6 - AF_X_CAP_Y, &AF_X, row == MI_HOLD ? HOLD_N[k % 4u] : menu_vname(row, k),
-                         k == cur ? T_TEXT : T_MID, bg, row == MI_COLOR ? 48 : 63);   /* (COLOR: CONTRAST whole, 47 px) */
+                         T_TEXT, bg, row == MI_COLOR ? 48 : 63);   /* (COLOR: CONTRAST whole, 47 px) */
             if (row == MI_COLOR) {                     /* (the palette's THEME and ACCENT) */
                 uint32_t q;
                 for (q = 0; q < 2u; q++) {
@@ -471,6 +471,10 @@ BTAPP_FN static void bt_prox_panel(const aafont_t *fx, const aafont_t *fm, const
     str_cpy(b + str_len(b), BPS(16), 16);
     fmt_int(b + str_len(b), (int32_t)BT_SPEED() + 1);
     cv_text(10, 129 - AF_S_CAP_Y, fs, b, T_TEXT);       /* (inside the panel: it stood at 136, cut at the foot) */
+}
+static __attribute__((noinline)) void bt_prox_white(void)   /* (V10.7.24 white: its words TEXT, gfx.c UX_WHITE) */
+{
+    UX_WHITE(bt_prox_panel(&AF_X, &AF_M, &AF_S));
 }
 static __attribute__((noinline)) void bt_prox_input(uint32_t up, uint32_t dn)   /* (V10.6z8: out of the full segment) */
 {
@@ -588,7 +592,7 @@ static __attribute__((noinline)) void draw_menu(void)
     cv_rect(4, 0, 232, LZ_GRAPH_H, T_SURF);
     cv_bg = T_SURF;
     if (ui.menu == 3)
-        bt_prox_panel(&AF_X, &AF_M, &AF_S);            /* (V10.14) */
+        bt_prox_white();            /* (V10.14) */
     else
         menu_panel();
     cv_blit(0, menu_py());
