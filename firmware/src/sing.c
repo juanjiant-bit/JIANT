@@ -1341,14 +1341,18 @@ static uint32_t sy_onset(sing_t *c, uint32_t lang)
  * notes' times: sy_cons */
 static __attribute__((noinline)) uint32_t sy_voices(const track_t *t, sing_t *s, sing_io_t *io)
 {
-    uint32_t i, g = 0, q = 0, note;
+    uint32_t i, g = 0, q = 0, note, pn = 0;
     for (i = 0; i < NVOICE; i++) {
         const voice_t *v = &t->v[i];
         g |= v->gate & v->active;
         q |= (uint32_t)v->env_out;
+        pn |= v->sub && (v->pn_flags & PN_START);
     }
-    if (g && s->gated && t->mono_note && t->mono_note != s->mono && t->p[P_VOICE] != V_POLY)
-        s->pend = 1;                                     /* a legato note: the next syllable too */
+    /* a legato note: the next syllable too; (voice3) not a note whose voice starts later in the block or at the next one's
+     * first sample (voice.c, ctl64: a MONO note the sequencer retriggers): sing_note takes it then (V10.7.24: two
+     * syllables a note, the first lost) */
+    if (g && s->gated && t->mono_note && t->mono_note != s->mono && t->p[P_VOICE] != V_POLY && !pn)
+        s->pend = 1;
     s->mono = t->mono_note;
     note = s->pend;
     if (note) {
