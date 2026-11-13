@@ -247,7 +247,7 @@ Vestal's, *Velo*, github.com/charlesvestal/fm1-velocity, GPL-3.0). JIANT reads i
   MOD: any destination: filter, vibrato depth, level ...). New sounds (INIT SOUND, a new project) route it to the
   filter (slot 4, AT -> CUT +20) when that slot is free; saved projects and presets keep their own matrix. A resting
   finger does nothing (a dead zone), the value glides (no zipper), and lifting the key ends it. MENU > CONTROL >
-  **AFTERTOUCH** sets how sensitive it is (LOW, MID, HIGH) or turns it OFF. It works with OCT− / OCT+ held too; it
+  **AFTERTOUCH** sets how sensitive it is (1 … 10, V10.7.23) or turns it OFF. It works with OCT− / OCT+ held too; it
   is recorded as automation with the expression keys and sent as channel aftertouch with MIDI OUT ALL.
 - **A sound's VEL** (EDIT > VOICE 2, KNOB 3; 0..100 %, every engine but DRUM): how much velocity reaches *this* sound.
   **100 %** (every project, preset and song made before it) plays each note as hard as it was played; less brings every
@@ -2713,7 +2713,7 @@ the footer **MENU · DISPLAY · SKIN  2/35**. The header says MENU · DISPLAY.
 | CONTROL | LEARN | **OFF**, SEL TRACK, FIXED TRK, CLEAR ALL — arms MIDI LEARN when the MENU closes; not saved |
 | CONTROL | VELOCITY | OFF, SOFT, **NORMAL** (default), HARD — the keys play as hard as you strike them (F3..C5; the top row C#5..G5 has no sensor and follows your recent dynamics). The curve: SOFT louder for less, HARD needs more. OFF: every key 100, exactly as before. See [Key velocity and aftertouch](#key-velocity-and-aftertouch-v106z7) |
 | CONTROL | VEL MIN | 1, 10, **20** (default), 30, 40, 50, 64, 80 — the softest strike's velocity (the range is scaled, no step) |
-| CONTROL | AFTERTOUCH | OFF, LOW, **MID** (default), HIGH — pressing a held key harder: the matrix's **AT** source (new sounds route it to the filter, CUT +20), recorded, and sent as channel aftertouch with MIDI OUT ALL |
+| CONTROL | AFTERTOUCH | OFF, 1 … 10 (V10.7.23; **5** the default, the old LOW / MID / HIGH are 3 / 5 / 8: how little pressure reaches the full aftertouch, 1 a hard press, 10 a light one) — pressing a held key harder: the matrix's **AT** source (new sounds route it to the filter, CUT +20), recorded, and sent as channel aftertouch with MIDI OUT ALL |
 | CONTROL | VEL LEARN | **ON** (default), OFF, RESET — each key learns your soft, normal and hard strikes as you play (kept in the settings); RESET puts the factory calibration back, then learns again |
 | AUDIO | SPEAKER EQ | FLAT, LOWCUT, BASS+ (an EQ on the master for the small speaker; also reaches the outputs and USB) |
 | AUDIO | USB LEVEL | MASTER (USB follows the MASTER knob), FIXED (USB at full level), −6 / −12 / −18 / −24 dB (USB fixed and attenuated: for a phone or a computer whose input clips at the full level) |

@@ -18,7 +18,9 @@ typedef struct {
 } vk_t;
 /* the settings (main loop: menu_items.c, vel.c vel_poll): favorites.factory[15][13] VELOCITY (bits 0-1, its place ^ 2:
  * 0, every older setting, NORMAL) and VEL MIN (bits 2-4, its place ^ 2: 20); [15][14] AFTERTOUCH (bits 0-1, its place
- * ^ 2: MID), bits 2-3 VEL LEARN (0 ON, 1 OFF, 2 RESET: the seeds put back when picked, then as ON) */
+ * ^ 2: MID; V10.7.23: only read once, see bits 4-7), bits 2-3 VEL LEARN (0 ON, 1 OFF, 2 RESET: the seeds put back when
+ * picked, then as ON), bits 4-7 (V10.7.23) AFTERTOUCH OFF 1..10, its place ^ 5 (0: 5, MID's) */
+#define AT_LEVEL() (((uint32_t)(VEL_SET2 >> 4) ^ 5u) > 10u ? 5u : ((uint32_t)(VEL_SET2 >> 4) ^ 5u))
 #define VEL_SET (favorites.factory[15][13])
 #define VEL_SET2 (favorites.factory[15][14])
 /* the keys' velocity state, one block (one base address for the ISR's code; out of the merged statics, VK_BSS) */

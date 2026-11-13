@@ -124,7 +124,10 @@ static const char *const OCTBEND_N[8] = {"OFF", "1 ST", "2 ST", "3 ST", "4 ST", 
 typedef struct { uint8_t *b; uint8_t sh, m, x, n, w; const char *nm; } vel_row_t;
 static const vel_row_t VEL_ROW[4] = {{&VEL_SET, 0, 3, 2, 4, 7, "OFF\0\0\0\0SOFT\0\0\0NORMAL\0HARD"},
                                      {&VEL_SET, 2, 7, 2, 8, 3, "1\0\00010\00020\00030\00040\00050\00064\00080"},
-                                     {&VEL_SET2, 0, 3, 2, 4, 5, "OFF\0\0LOW\0\0MID\0\0HIGH"},
+                                     {&VEL_SET2, 4, 15, 5, 11, 4, "OFF\0" "1\0\0\0" "2\0\0\0" "3\0\0\0" "4\0\0\0" "5\0\0\0" "6\0\0\0"
+                                                                  "7\0\0\0" "8\0\0\0" "9\0\0\0" "10\0"},   /* (V10.7.23: AFTERTOUCH
+                                                         * OFF 1..10, bits 4-7, place ^ 5: 0 = 5, MID's; the old LOW MID HIGH
+                                                         * in bits 0-1 read once: settings_persist.c settings_fix15) */
                                      {&VEL_SET2, 2, 3, 0, 3, 6, "ON\0\0\0\0OFF\0\0\0RESET"}};
 static const vel_row_t *vel_row(uint32_t row) { return row >= MI_VEL && row <= MI_VLEARN ? &VEL_ROW[row - MI_VEL] : 0; }
 /* (JIANT 0.9.9-stab, as 0.9.12) MENU > SYSTEM > CPU CLOCK: 360 MHZ (the default: the boot stage's clock, M-VAVE's V15
