@@ -544,7 +544,7 @@ static int gl_ui(void)
     ui_power_on();
     gl_clear();
     go_page(GR_GCOMP); frame();
-    ok = str_eq(cur_page()->title, "COMPS") && gco_on() && !gco_slot();
+    ok = str_eq(cur_page()->title, "G.COMP") && gco_on() && !gco_slot();
     tap_key(key_at(0, 2));                              /* step 3 */
     turn(EN_K1, 2);                                     /* OFF MUTE STUTTER */
     ok &= gl_cur == 2u && CO_ACT(glane[2].comp) == CA_STUT && glane[2].len == 1u && glane[2].mask == 63u && gl_on;
@@ -558,7 +558,7 @@ static int gl_ui(void)
     bad += check("GLO > COMPS: a white key the step, KNOB 1..4 ACTION LENGTH CONDITION (no NEI, no ELSE) VALUE, black keys "
                  "the TRACKS", ok);
     ui.page++; page_entered(); frame();
-    ok = str_eq(cur_page()->title, "COMPS 2") && gco_slot();
+    ok = str_eq(cur_page()->title, "G.COMP 2") && gco_slot();
     turn(EN_K2, 1); turn(EN_K3, 1);                     /* T2 .. ON (already) */
     ok &= gl_trk == 1u && glane[2].mask == 62u;
     turn(EN_K3, -1);

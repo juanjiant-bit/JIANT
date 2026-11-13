@@ -107,9 +107,9 @@ int main(void)
     t->seq_pos = 123; t->ext = 42;
     fit_ui_set(t, 16);
     fit_check("editing SPAN while FIT is OFF preserves phase and pending microtiming", t->seq_pos == 123 && t->ext == 42);
-    turn(EN_K2, 2); turn(EN_K3, 1);
+    turn(EN_K1, 2); turn(EN_K2, 1);                      /* (codex/coherence: RHYTHM SPAN FIT on KNOB 1 and 2) */
     fit_check("SPAN and FIT knobs set the selected track without changing DIV or another track", fit_span(TSEL) == 18 && (TSEL->seq_fit & 128u) && !trk[1].seq_fit);
-    turn(EN_K3, -1);
+    turn(EN_K2, -1);
     fit_check("FIT OFF remembers the chosen SPAN", fit_span(TSEL) == 18 && !(TSEL->seq_fit & 128u));
     t->seq_pos = 1000000;
     fit_ui_set(t, 128u | 1u);

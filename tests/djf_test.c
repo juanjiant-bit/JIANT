@@ -220,7 +220,7 @@ static void test_automation(void)
     t = &trk[0];
     song.sel = 0;
     song.g[G_DJF] = 5;                                  /* the knob before */
-    go_title("MANO");                                   /* (V10.45: LIVE > MANO KNOB 4; MIXER's is BPM since V10.37) */
+    go_title("KEYS");                                   /* (V10.45: LIVE > MANO KNOB 4; MIXER's is BPM since V10.37) */
     song.rec = 1;
     seq_start();
     seq_tick(t, CTL);                                   /* step 1 */

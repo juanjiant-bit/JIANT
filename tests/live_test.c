@@ -300,7 +300,7 @@ static int commit(void)
     bad += check("  GIRO +2: ROTATE -2; THIN 50 %: the track's CHANCE 50 %", ok);
 
     t = lsetup();                                       /* the dialog, on RIELES */
-    nav_put(SEC_GLO, "RIELES");
+    nav_put(SEC_GLO, "RAILS");
     frame();
     lv.rate[0] = 2;
     frame();
@@ -347,7 +347,7 @@ static int pages(void)
     stop_transport();
     for (k = 0; k < NTRK; k++)
         *(drum_track(&trk[k]) ? &kdrm : &ksyn) |= 1u << k;
-    nav_put(SEC_GLO, "RIELES");
+    nav_put(SEC_GLO, "RAILS");
     frame();
     ok = lv_tracks() == 0x3Fu;
     for (k = 1; k < 9u; k++) {
@@ -356,7 +356,7 @@ static int pages(void)
     }
     for (k = 0; k < 9u; k++) turn(EN_K1, -1);
     ok &= lv.tgt == 0 && lv_tracks() == 0x3Fu && song.grid == 0;
-    bad += check("RIELES KNOB 1 PISTAS: ALL, then T1 .. T6 one by one, then SYN and DRM; the keys play notes here", ok);
+    bad += check("RAILS KNOB 1 TARGET: ALL, then T1 .. T6 one by one, then SYN and DRM; the keys play notes here", ok);
     turn(EN_K1, 3);                                     /* T3: RATE x2, CORTE 8, DENS 70 % */
     turn(EN_K2, 2);
     turn(EN_K3, 5);
@@ -382,7 +382,7 @@ static int pages(void)
 
     lsetup();
     stop_transport();
-    nav_put(SEC_GLO, "MANO");
+    nav_put(SEC_GLO, "KEYS");
     frame();
     kx2 = key_at(0, 1);
     kb1 = key_at(1, 0);
@@ -397,7 +397,7 @@ static int pages(void)
     fm1_in.notes &= ~(1u << kx2);
     keyboard_block(); frame();
     for (k = 0; k < NTRK; k++) ok &= lv_neutral(&lv.want[k]);
-    bad += check("MANO: the keys are its board (G3 held: x2 on every track, no note); let go, nothing", ok);
+    bad += check("KEYS: the keys are its board (G3 held: x2 on every track, no note); let go, nothing", ok);
     fm1_in.notes |= 1u << kb1 | 1u << kb3; keyboard_block(); frame();
     fm1_in.notes |= 1u << kd2; keyboard_block(); frame();
     ok = lv.want[0].rate == -2 && lv.want[2].rate == -2 && !lv.want[1].rate && !lv.want[3].rate && lv_tracks() == 5u;
@@ -431,20 +431,20 @@ static int pages(void)
     keyboard_block(); frame();
     ok = song.grid == 0 && vage != v0 && !((lv.kb >> kx2) & 1u);
     fm1_in.notes = 0; keyboard_block(); frame();
-    bad += check("  off MANO (MIXER) the keys play notes again", ok);
+    bad += check("  off KEYS (MIXER) the keys play notes again", ok);
 
     ui_power_on();
     frame();
     press(B_GLO); frame();
     ok = str_eq(cur_page()->title, "MIXER");
     turn(EN_SELECT, -1); frame();
-    ok &= str_eq(cur_page()->title, "RIELES") && crumb_is("GLO \xB7 LIVE \xB7 RIELES", "2/11");   /* (e3c9e26, 2026-11-04: KEY
+    ok &= str_eq(cur_page()->title, "RAILS") && crumb_is("GLO \xB7 LIVE \xB7 RAILS", "2/11");   /* (e3c9e26, 2026-11-04: KEY
                                                          * SPLIT and KEY SPLIT 2 under SYSTEM, 11 pages; was 9) */
     turn(EN_SELECT, -1); frame();
     turn(EN_SELECT, -1); frame();
-    ok &= str_eq(cur_page()->title, "MANO") && crumb_is("GLO \xB7 LIVE \xB7 MANO", "1/11") && tabs_lit(&k) == 5u && !k &&
+    ok &= str_eq(cur_page()->title, "KEYS") && crumb_is("GLO \xB7 LIVE \xB7 KEYS", "1/11") && tabs_lit(&k) == 4u && !k &&
           song.grid == 3;
-    bad += check("GLO: MIXER at power-on; SELECT back RIELES, MANO (the chain's first, LIVE · five tabs)", ok);
+    bad += check("GLO: MIXER at power-on; SELECT back RAILS, KEYS (the chain's first, LIVE · four tabs: codex/coherence SETUP)", ok);
     ui_power_on();
     return bad;
 }
