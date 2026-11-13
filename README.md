@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.28
+## This release: V10.7.29
 
 ### Installing
 
@@ -482,6 +482,10 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.29 — beta (2026-11-13)
+- **STRING FEEDBACK: GAIN is the amount.** The feedback holds from GAIN 1 (it used to need ~64), louder and stronger the higher, up to +6 dB past 64, with a soft limiter after the amp's cab so no bloom spikes. The same in the lows and the highs: within ~2 dB from C2 to C7 (C6 and up used to die). FEEDBACK, SHOEGAZE, SQUEAL and EBOW sustain at their own GAIN now.
+- **GEN: darker drums.** Every throw's drum TONE starts 13 lower (a third of the seeds 25 lower), where you used to turn it down by hand.
 
 ### V10.7.28 — beta (2026-11-13)
 - **GEN FORM PARTS: a structure per seed too.** PARTS still gave one fixed plan; it now throws its structure from the same templates as SONG (by the genre's family, optional sections, ENERGY), every row at half its length for a shorter piece.

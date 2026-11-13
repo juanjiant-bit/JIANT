@@ -192,13 +192,18 @@ static void string_fdbk_bounded(void)
             b = rms(y + FS * 7 / 2, FS / 2, 0);
             if (b > a * 1.25 + 0.005) bad0++;
             if (b / (a + 1e-9) > worst) worst = b / (a + 1e-9);
-            if (b > 0.06) {                              /* (blooming: the strongest partial's share of it; a dead
-                                                         * spot's faint remainder, near a pickup notch, aside) */
+            if (b > 0.1) {                               /* (blooming: the strongest partial's share of it; a dead
+                                                         * spot's faint remainder, near a pickup notch, aside: V10.7.29
+                                                         * under a third of a full bloom, ~0.32, the held level now
+                                                         * GAIN's) */
                 spectrum(y + FS * 3, NFFT, ps);
                 for (i = 1; i < NFFT / 2; i++) { tot += ps[i]; if (ps[i] > pk) pk = ps[i]; }
                 for (i = 1; i < NFFT / 2; i++)           /* (the peak's own bins: the window's main lobe) */
                     if (ps[i] == pk) { pk = ps[i - 1] + ps[i] + ps[i + 1]; break; }
-                if (pk / tot > pure) pure = pk / tot;
+                if (i * (double)FS / NFFT < 1500.0 && pk / tot > pure)   /* (V10.7.29: a partial blooming above ~1.5 kHz
+                                                         * (a short string's, the highs now held) has its harmonics
+                                                         * past the cab's ~6 kHz: a near sine there is the amp's) */
+                    pure = pk / tot;
             }
         }
     snprintf(what, sizeof what, "STRING FDBK bounded at every SPEAKR (GAIN DIST DECAY 127): peak %.2f, 3.5 s / 2.5 s %.2f at the most, "

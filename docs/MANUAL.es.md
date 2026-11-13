@@ -1,6 +1,6 @@
 # JIANT FM — Manual de usuario
 
-**JIANT FM V10.7.28 para el M-VAVE FM-1**
+**JIANT FM V10.7.29 para el M-VAVE FM-1**
 
 > *English version: [MANUAL.md](MANUAL.md).*
 
@@ -836,8 +836,9 @@ click; las notas siguen.
   - **FDBK** es una guitarra eléctrica en un ampli: una púa (más fuerte y brillante con la velocidad) en una cuerda de
     acero, una pastilla a un quinto de la cuerda, una válvula (una saturación suave y asimétrica que "cede": una nota
     fuerte comprime, una que se apaga florece), un bafle (sin graves bajo ~55 Hz, presencia en ~4,4 kHz, nada arriba de
-    ~6 kHz), y el sonido del ampli que vuelve a la cuerda. EDIT 2 es del ampli: **GAIN** qué tan cerca estás (0: sin
-    feedback; ~64: lo que la cuerda pierde, la sostiene; 127: florece enseguida), **DIST** la válvula (limpio, crunch,
+    ~6 kHz), y el sonido del ampli que vuelve a la cuerda. EDIT 2 es del ampli: **GAIN** la cantidad de feedback, qué tan
+    cerca estás (0: nada; desde 1 sostiene, más fuerte y más intenso cuanto más alto, hasta +6 dB pasado 64, bajo un
+    limitador suave que contiene los picos; V10.7.29: igual en graves y agudos), **DIST** la válvula (limpio, crunch,
     saturado), **SPEAKR** dónde estás parado respecto del parlante, el armónico en que florece (~0 y ~127 la nota, ~64
     su octava, ~80 la duodécima; por ~96 un punto muerto, donde se cancela y la nota se apaga antes), **BLOOM** cuánto
     tarda en crecer después de la púa (bajo: enseguida; ~85: medio segundo; 127: muchos segundos; una púa más fuerte

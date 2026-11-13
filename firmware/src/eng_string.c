@@ -148,7 +148,6 @@ static void string_note_on(track_t *t, voice_t *v)
 }
 
 #define ST_M (ST_SL - 1u)
-#define FB_T 12288                                       /* (V10.7.26) FDBK: the level the feedback holds (pickup, Q15) */
 static void string_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
     const int16_t *p = t->p;
@@ -156,19 +155,25 @@ static void string_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
     uint32_t d, per = str_period(m->inc, &d), D = 1u << d, i, w = v->ph[1] % ST_SL, cnt = (v->ph[1] >> 8) & 63u;
     int32_t lp = v->s[0], c1 = v->s[1], apx = v->s[2], apy = v->s[3], f1 = v->s[4], f2 = v->s[5], bl = v->s[6], bb = v->s[7];
     int32_t dc = (int32_t)v->ph[2], nst = (int32_t)v->ph[0] | 1, lvl = (int32_t)(v->ph[1] >> 16), body = clamp(p[P_E5], 0, 127), bf;
-    int32_t fb = p[P_E0] == SX_FDBK, bw = !fb && p[P_E7] > 0, fk = 0, fdo = 0, fol = 0, fz0 = 0, mvo = 0, r1, y0, y1;
+    int32_t fb = p[P_E0] == SX_FDBK, bw = !fb && p[P_E7] > 0, og = 256, fk = 0, fdo = 0, fol = 0, fz0 = 0, mvo = 0, r1, y0, y1;
     uint32_t ft = 0, mv = v->ph[0], na = 0, pu = 0;
     int32_t br = clamp(p[P_E2] + ((m->shape - (64 << 8)) >> 8), 0, 127), a = 5000 + br * 218;
     int32_t s15 = clamp(p[P_E4], 0, 127) * 193, comp, dly, di, fr, g, pk = 0, vb = 0, vbn = 0, hf = 0, dsh = 10, fbi = 0, sw = 0, gk = 0, sj = 0;
     if (fb) {                                            /* (p10) FDBK: the BODY page is the amp's */
-        int32_t mk = clamp(p[P_E3], 0, 127), dv = clamp(p[P_E5], 0, 127), ag;
+        int32_t mk = clamp(p[P_E3], 0, 127), dv = clamp(p[P_E5], 0, 127), ag, am, ft0;
         if (v->gate)                                     /* BLOOM: at once .. ~12 s up (par11: a harder hit blooms sooner) */
             bl += 4096 >> clamp((p[P_E7] - v->vel / 4) / 10, 0, 12);
         else                                             /* (V10.7.26) let go: the fingers off the string, no feedback */
             bl -= bl >> 3;
         bl = clamp(bl, 0, 32767);
-        ag = lvl < FB_T ? ((FB_T - lvl) * 21845) >> 13 : 0;   /* (V10.7.26) the feedback's own limit: none at FB_T */
-        fk = ((clamp(p[P_E4], 0, 127) * (bl >> 7)) >> 8) * ag >> 15;   /* GAIN x the bloom x the limit (Q7) */
+        am = clamp(p[P_E4], 0, 127);                     /* (V10.7.29, the owner: "a feedback amount, to reach a high
+                                                         * level, the same in the lows and the highs") GAIN the amount:
+                                                         * the level the feedback holds, ~-34 .. -1 dB at the pickup */
+        ft0 = 600 + am * 225;
+        og = 256 + (am > 64 ? (am - 64) * 4 : 0);
+        ag = am && lvl < ft0 ? (ft0 - lvl) * 32767 / ft0 : 0;   /* (the feedback's own limit: none at it) */
+        fk = ((127 * (bl >> 7)) >> 8) * ag >> 15;   /* (any amount drives the loop as hard: it
+                                                         * blooms at every GAIN, its level the amount's) */
         fdo = 384 + ((dv * dv) >> 1);                      /* the amp's drive: x1.5 .. x33 into the tube */
         fol = 7000 + 19000 * 256 / fdo;                    /* (its level kept) */
         fdo = fdo * 16384 / (16384 + lvl);                 /* (V10.7.26) its sag: a loud string drives it less */
@@ -196,7 +201,7 @@ static void string_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
     if (fk)                                              /* (V10.7.26) as much back as the string loses a pass, x0 .. x2
                                                          * (GAIN 64: what it loses; the pickup's comb up to x1.9 more), and
                                                          * a little more: a long string blooms slowly, a short one at once */
-        fk = ((32768 - g + 400) * fk) / 64;
+        fk = ((32768 - g + 400 + 20000 / (di + 1)) * fk) / 64;   /* (V10.7.29: a short string loses more to the loop's low-pass a pass: as much more back, the highs held as the lows) */
     if (!v->gate) {                                      /* (p5) let go: RELEASE the damper (low: a palm mute; high: it
                                                          * rings its DECAY out; V10.7.26: FDBK's too) */
         g = (g * str_gain(per << d, p[P_REL])) >> 15;   /* (both < 2^15: in 32 bits) */
@@ -318,7 +323,11 @@ static void string_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
             h = c - f1 - ((22938 * f2) >> 15);
             f2 += (20205 * h) >> 15;
             c1 += ((f1 - c1) * 19800) >> 15;
-            s = c1;
+            c = clamp((c1 * og) >> 8, -32767, 32767);   /* (V10.7.29) the amount louder past 64 (up to +6 dB), into a
+                                                         * soft limit: (3x - x^3) / 2 at two thirds, flat below
+                                                         * ~-6 dB, never past full scale: no spike */
+            c = (c * 21845) >> 15;
+            s = (3 * c - ((((c * c) >> 15) * c) >> 15)) >> 1;
         }
         dc += ((s << 12) - dc) >> dsh;                   /* (the output's DC blocked: ~7 Hz (FDBK ~55 Hz, the cab's
                                                          * low end); Q12, what sticks under a quarter of a step: rounded

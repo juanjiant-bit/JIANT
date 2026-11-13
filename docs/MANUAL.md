@@ -1,6 +1,6 @@
 # JIANT FM — User Manual
 
-**JIANT FM V10.7.28 for the M-VAVE FM-1**
+**JIANT FM V10.7.29 for the M-VAVE FM-1**
 
 > *Versión en español: [MANUAL.es.md](MANUAL.es.md).*
 
@@ -801,8 +801,9 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see [14](#14-midi-
   - **FDBK** is an electric guitar into an amp: a pick (harder and brighter with the velocity) on a steel string, a
     pickup a fifth along it, a tube (a soft, asymmetric clip that sags: a loud note compresses, a dying one blooms),
     a cab (no lows under ~55 Hz, a presence at ~4.4 kHz, nothing above ~6 kHz), and the amp's sound back into the
-    string. EDIT 2 is the amp's: **GAIN** how close you stand (0: no feedback; ~64: as much as the string loses, it
-    holds; 127: it blooms at once), **DIST** the tube's drive (clean, crunch, saturated), **SPEAKR** where you stand
+    string. EDIT 2 is the amp's: **GAIN** the feedback's amount, how close you stand (0: none; from 1 it holds, louder
+    and stronger the higher, up to +6 dB past 64, under a soft limit that keeps every peak in; V10.7.29: the same in the lows
+    and the highs), **DIST** the tube's drive (clean, crunch, saturated), **SPEAKR** where you stand
     from the speaker, the harmonic it blooms into (~0 and ~127 the note, ~64 its octave, ~80 the twelfth; around
     ~96 a dead spot, where it cancels and the note dies sooner), **BLOOM** how long the swell takes after the pick
     (low: at once; ~85: half a second; 127: many seconds; a harder pick blooms sooner). MOVE (POS's knob) sways the
