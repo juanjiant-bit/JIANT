@@ -1,6 +1,6 @@
 # JIANT FM — User Manual
 
-**JIANT FM V10.7.24 for the M-VAVE FM-1**
+**JIANT FM V10.7.25 for the M-VAVE FM-1**
 
 > *Versión en español: [MANUAL.es.md](MANUAL.es.md).*
 
@@ -875,6 +875,8 @@ ahead: their consonants are sung in ~10 ms, the hiss or the burst carried over t
 within ~10 ms of the key. The source follows the level (softer and breathier as a note comes in and fades), each
 syllable's pitch scoops gently up into its note, and a let-go phrase ends with a soft, smooth creak (vocal fry; none
 with BUZZ at its top). LANG OFF (VOWEL / VOWEL2 / TALK) sounds as before.
+
+**Like a singer (V10.7.25).** Measured on a real male voice: the pitch is never still (a slow wander of about ±10 cents), a note enters slightly off and settles in ~40 ms (from below or above), a legato note lands on the next with a small overshoot (~90 ms), **vibrato** (~5.6 Hz, ±20 cents) grows in after ~200 ms and only on notes of about half a second or longer (none on short ones), each note swells in and fades a little as sung, a phrase's peaks fall gently, and about half the phrase ends creak. Consonants: **N, M, Ñ** a quiet nasal murmur whose glide into the vowel tells which one; Spanish **R** a short tap, **RR** a 2–3 tap trill; English **r** a dark glide. A MONO note retriggered by the sequencer (GATE 127, ties) sings one syllable, not two (V10.7.24 lost one per note). The VOWEL / TALK modes (LANG OFF) sound as before.
 
 **EDIT > WORDS** (VOICE tracks only): **LANG**, **LYRIC**, **POS**; **OCT+** (TYPE) opens the lyric's typing screen.
 

@@ -1,6 +1,6 @@
 # JIANT FM — Manual de usuario
 
-**JIANT FM V10.7.24 para el M-VAVE FM-1**
+**JIANT FM V10.7.25 para el M-VAVE FM-1**
 
 > *English version: [MANUAL.md](MANUAL.md).*
 
@@ -918,6 +918,8 @@ explosión montados sobre el comienzo de la vocal, y la vocal llega a ~10 ms de 
 suave y con más aire cuando la nota entra y se apaga), la altura de cada sílaba sube apenas hasta su nota, y una frase
 soltada termina con un crujido suave y parejo (vocal fry; nada con BUZZ al máximo). LANG OFF (VOWEL / VOWEL2 / TALK)
 suena como antes.
+
+**Como un cantante (V10.7.25).** Medido sobre una voz masculina real: la afinación nunca está quieta (se mueve lento unos ±10 cents), una nota entra un poco corrida y se acomoda en ~40 ms (desde abajo o desde arriba), una nota ligada llega a la siguiente pasándose un poco (~90 ms), el **vibrato** (~5,6 Hz, ±20 cents) crece después de ~200 ms y solo en notas de medio segundo o más (en las cortas no), cada nota crece y decae un poco como al cantar, los picos de una frase bajan de a poco, y la mitad de los finales de frase raspan. Consonantes: **N, M, Ñ** un murmullo nasal suave cuyo paso a la vocal dice cuál es; la **R** castellana un golpecito corto, la **RR** dos o tres; la **r** inglesa un deslizamiento oscuro. Una nota MONO que el secuenciador vuelve a disparar (GATE 127, ligaduras) canta una sílaba, no dos (la V10.7.24 perdía una por nota). Los modos VOWEL / TALK (LANG OFF) suenan como antes.
 
 **EDIT > WORDS** (solo en pistas VOICE): **LANG**, **LYRIC**, **POS**; **OCT+** (TYPE) abre la pantalla para escribir
 la letra.
