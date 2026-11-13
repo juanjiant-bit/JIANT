@@ -324,7 +324,7 @@ static int chain_goto(uint32_t r, uint32_t hold)
     if (!song.playing) {
         uint32_t rc = transport_busy() ? 2u : chain_prepare_at(r);
         if (rc) {
-            ui_message(rc == 1u ? "ADD A SONG ROW" : rc == 2u ? "STOP FIRST" : "SECTION EMPTY");
+            ui_message(rc == 1u ? "ADD A SONG ROW" : rc == 2u ? "STOP FIRST" : "PART EMPTY");
             return 1;
         }
     } else {
@@ -336,7 +336,7 @@ static int chain_goto(uint32_t r, uint32_t hold)
         chain.ended = 0;
         chain.kept = 0;
         chain.scn = 0;
-        if (song_stage(chain.config.row[r].slot, r)) { ui_message("SECTION EMPTY"); return 1; }
+        if (song_stage(chain.config.row[r].slot, r)) { ui_message("PART EMPTY"); return 1; }
         RING_PUBLISH();
         chain.armed_bar = 1;                          /* (chain_tick: on the next bar) */
     }
@@ -360,7 +360,7 @@ static int section_jump(uint32_t s)
     if (!song.playing && !transport_busy()) {
         if (section_load(s))
             return 1;
-        ui_say("SECTION ", b);
+        ui_say("PART ", b);
         return 0;
     }
     chain_cut();                                      /* (a single section ends a quick chain) */
@@ -391,7 +391,7 @@ static int clip_launch(uint32_t k, uint32_t s)
     } else {
         project_capture(&proj_scratch);
         if (!proj_pack(&song_keep, &proj_scratch)) {
-            ui_message("SECTION FULL");
+            ui_message("PART FULL");
             return 1;
         }
         clip_go[k] = (uint8_t)(s + 1u);
@@ -450,7 +450,7 @@ static void section_store(uint32_t s)
 static void section_recall(void)
 {
     if (live.cur < 0) {
-        ui_message("NO SECTION YET");
+        ui_message("NO PART YET");
         return;
     }
     if (!section_jump((uint32_t)live.cur))

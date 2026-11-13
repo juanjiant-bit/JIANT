@@ -88,9 +88,9 @@ static int test_song_save_ui(void)
     ok = song_save_target == song_cur;
     turn(EN_K1, 1); frame();
     target = song_save_target;
-    turn(EN_K3, 1); frame();
-    ok &= ui.act == 3u && act_ready() && target == song_cur + 1u;
-    turn(EN_K2, 1); press(B_OCTUP); frame();
+    turn(EN_K2, 1); frame();
+    ok &= ui.act == 2u && act_ready() && target == song_cur + 1u;
+    turn(EN_K3, 1); press(B_OCTUP); frame();
     ok &= ui.confirm == CF_ERASE_SONG && ui.confirm_trk == target && song_cur == 0;
     press(B_OCTDN); frame();
     ok &= !ui.confirm && song_cur == 0 && song_save_target == target;
@@ -102,14 +102,14 @@ static int test_song_save_ui(void)
     turn(EN_K1, 1); frame();
     bad += check("PROJECTS destination browsing preserves the playing draft buffers",
                  song_draft && song_cur == target && song_save_target == target + 1u);
-    turn(EN_K3, 1); frame();
+    turn(EN_K2, 1); frame();
     bad += check("PROJECTS LOAD availability depends on transport, not the draft's selected part", act_ready());
-    turn(EN_K2, 1); press(B_OCTUP); frame();
+    turn(EN_K3, 1); press(B_OCTUP); frame();
     bad += check("PROJECTS ERASE targets the selected saved project and can be cancelled",
                  ui.confirm == CF_ERASE_SONG && ui.confirm_trk == song_save_target);
     press(B_OCTDN); frame();
     song.playing = 1;
-    turn(EN_K2, 1); press(B_OCTUP); frame();
+    turn(EN_K3, 1); press(B_OCTUP); frame();
     bad += check("PROJECTS ERASE refuses during playback without discarding the draft",
                  !ui.confirm && song_draft && strstr(ui.msg, "STOP TO ERASE") != 0);
     song.playing = 0;

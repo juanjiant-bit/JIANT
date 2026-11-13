@@ -1364,13 +1364,14 @@ static void draw_columns(void)
         }
         return;
     }
-    if (cur_page()->graph == GR_STAGE) {               /* (0.8.5) ENV > STAGE: the stage, its value, LOOP */
+    if (cur_page()->graph == GR_STAGE) {               /* (0.8.5) ENV > STAGE: the stage, its value (codex/coherence: LOOP
+                                                         * on ENV DEST alone) */
         uint32_t id = P_ATK + (ui.stage & 3u);
         int16_t *vp = &TSEL->p[id];
         hot_gauge_column(0, "STAGE", TP[id].label, (int32_t)(ui.stage & 3u) * 1000 / 3);
         card_mot_of(vp);
         pf_column(1, TP[id].label, &TP[id], *vp, VAL(1u), ICON_NONE);
-        pf_column(2, TP[P_ELOOP].label, &TP[P_ELOOP], TSEL->p[P_ELOOP], VAL(2u), ICON_NONE);
+        empty_column(2);
         text_column(3, "", "", T_DIM);
         return;
     }
@@ -1404,7 +1405,7 @@ static void draw_columns(void)
         text_column(3, "REC", live.srec ? "ON" : "OFF", live.srec ? T_ACCENT : T_DIM);
         return;
     }
-    if (SONG_TRK(cur_page())) {                        /* (V10.6o) TIMELINE: ROW, SECT, BARS, the ALGORITHM track's VAR */
+    if (SONG_TRK(cur_page())) {                        /* (V10.6o) TIMELINE: ROW, PART, BARS, the ALGORITHM track's VAR */
         uint32_t row = ui.song_row < chain_config.count ? ui.song_row : chain_config.count - 1u, v;
         if (!chain_config.count) {
             hot_text_column(0, "ROW", "--");
@@ -1414,7 +1415,7 @@ static void draw_columns(void)
         fmt_frac(val, (int32_t)row + 1, (int32_t)chain_config.count);
         hot_text_column(0, "ROW", val);
         val[0] = (char)('A' + (chain_config.row[row].slot & 3u)); val[1] = 0;
-        text_column(1, "SECT", val, VAL(1u));
+        text_column(1, "PART", val, VAL(1u));
         fmt_int(val, chain_config.row[row].bars);
         text_column(2, "BARS", val, VAL(2u));
         v = row_var(row, song.sel % NTRK);
@@ -1443,7 +1444,7 @@ static void draw_columns(void)
         hot_text_column(0, "ROW", val);
         if (used) { val[0] = (char)('A' + chain_config.row[row].slot); val[1] = 0; }
         else str_cpy(val, "--", sizeof val);
-        text_column(1, "SECT", val, used ? VAL(1u) : T_DIM);
+        text_column(1, "PART", val, used ? VAL(1u) : T_DIM);
         if (used) fmt_int(val, chain_config.row[row].bars);
         else str_cpy(val, "--", sizeof val);
         text_column(2, "BARS", val, used ? VAL(2u) : T_DIM);
@@ -1564,13 +1565,14 @@ static void draw_columns(void)
         static const char *const SC[5] = {"PROJECT", "TRACK", "SOUND", "SONG", "SYSTEM"};
         static const char *const AC[6] = {"CLEAR", "CLEAR", "INIT", "DEL ROW", "CLEAR", "CPU"};
         uint32_t a = ui.act ? ui.act - 1u : 0u;
-        text_column(0, "SCOPE", ui.act ? SC[TL_SC[a]] : "--", ui.act ? VAL(0u) : T_DIM);
+        text_column(0, "TARGET", ui.act ? SC[TL_SC[a]] : "--", ui.act ? VAL(0u) : T_DIM);   /* (codex/coherence: was SCOPE,
+                                                         * MENU's oscilloscope) */
         text_column(1, "ACTION", ui.act ? AC[a] : "--", ui.act ? VAL(1u) : T_DIM);
         empty_column(2);
         text_column(3, "DO", "OCT+", ui.act && act_ready() ? T_ACCENT : T_DIM);
         return;
     }
-    if (cur_page()->scope == SC_TRK) {                 /* LEVEL PAN REV of the selected track, the DJ FILTER */
+    if (cur_page()->scope == SC_TRK) {                 /* LEVEL PAN MUTE of the selected track, the tempo */
         const track_t *t = TSEL;
         uint32_t lvl = trk_level(song.sel);
         param_format(&TP[P_LEVEL], (int32_t)lvl, val, &unit);   /* (0: OFF) */
@@ -1578,10 +1580,10 @@ static void draw_columns(void)
         draw_column(0, "LEVEL", val, unit, lvl && !t->p[P_MUTE] ? VAL(0u) : T_DIM, (int32_t)lvl * 1000 / 127, ICON_AUTO);
         card_mot_of(&TSEL->p[P_PAN]);
         pf_column(1, "PAN", &TP[P_PAN], t->p[P_PAN], VAL(1u), param_icon(&TP[P_PAN], t->p[P_PAN]));
-        card_mot_of(&TSEL->p[P_REV]);
-        pf_column(2, "REV", &TP[P_REV], t->p[P_REV], VAL(2u), ICON_AUTO);
+        pf_column(2, "MUTE", &TP[P_MUTE], t->p[P_MUTE], t->p[P_MUTE] ? T_ACCENT : VAL(2u), ICON_AUTO);   /* (codex/coherence: was
+                                                         * REV, SENDS' beside it) */
         pf_column(3, "BPM", &GP[G_BPM], song.g[G_BPM], VAL(3u), ICON_AUTO);   /* (V10.37) KNOB 4 the tempo, at hand (the DJ
-                                                         * FILTER stays on LIVE > MANO's KNOB 4) */
+                                                         * FILTER stays on LIVE > KEYS's KNOB 4) */
         return;
     }
     if (cur_page()->graph == GR_BROWSE) {
@@ -1628,27 +1630,27 @@ static void draw_columns(void)
         }
         return;
     }
-    if (FIT_PAGE(cur_page())) {
-        pf_column(0, "LEN", &TP[P_SLEN], TSEL->p[P_SLEN], T_TEXT, ICON_AUTO);
+    if (FIT_PAGE(cur_page())) {                        /* (codex/coherence) RHYTHM: SPAN FIT (LEN DIV: LENGTH's) */
         fmt_int(val, (int32_t)fit_span(TSEL));
-        hot_gauge_column(1, "SPAN", val, (int32_t)(fit_span(TSEL) - 1u) * 1000 / 63);
-        hot_text_column(2, "FIT", TSEL->seq_fit & 128u ? "ON" : "OFF");
-        pf_column(3, "DIV", &TP[P_SDIV], TSEL->p[P_SDIV], T_TEXT, ICON_AUTO);
+        hot_gauge_column(0, "SPAN", val, (int32_t)(fit_span(TSEL) - 1u) * 1000 / 63);
+        hot_text_column(1, "FIT", TSEL->seq_fit & 128u ? "ON" : "OFF");
+        empty_column(2);
+        empty_column(3);
         return;
     }
-    if (cur_page()->graph == GR_SLOTS) {                 /* (0.6.12) PROJECT, SECT A-D, then LOAD and SAVE */
+    if (cur_page()->graph == GR_SLOTS) {                 /* (0.6.12) PROJECT, PART A-D, then LOAD ERASE SAVE (as USER) */
         uint32_t k = (uint32_t)song.g[G_SLOT] - 1u;
         int used = graph_project_used(k);
-        if (save_level() == SV_PROJ) {                   /* (0.8.5) SAVE > PROJECT's SECTIONS: SECT, its NAME */
+        if (save_level() == SV_PROJ) {                   /* (0.8.5) SAVE > PROJECT's PART SLOTS: PART, its NAME */
             val[0] = (char)('A' + (k & 3u)); val[1] = 0;
-            hot_gauge_column(0, "SECT", val, (int32_t)(k & 3u) * 1000 / 3);
-            draw_act_column(1, "ERASE", used ? T_THEME : T_DIM, ICON_AUTO);   /* (V10.17; the name: the card) */
+            hot_gauge_column(0, "PART", val, (int32_t)(k & 3u) * 1000 / 3);
+            draw_act_column(2, "ERASE", used ? T_THEME : T_DIM, ICON_AUTO);   /* (V10.17; the name: the card) */
         } else {
             fmt_int(val, (int32_t)song_save_target + 1);
             hot_gauge_column(0, "PROJECT", val, (int32_t)song_save_target * 1000 / (int32_t)(NSONG - 1u));
-            draw_act_column(1, "ERASE", T_THEME, ICON_AUTO);
+            draw_act_column(2, "ERASE", T_THEME, ICON_AUTO);
         }
-        draw_act_column(2, "LOAD", used || (save_level() == SV_LIB && (song_draft || song_save_target != song_cur)) ? T_THEME : T_DIM, ICON_AUTO);
+        draw_act_column(1, "LOAD", used || (save_level() == SV_LIB && (song_draft || song_save_target != song_cur)) ? T_THEME : T_DIM, ICON_AUTO);
         draw_act_column(3, "SAVE", T_THEME, ICON_AUTO);
         return;
     }
@@ -1809,6 +1811,8 @@ static void draw_columns(void)
         return;
     }
     for (c = 0; c < 4u; c++) {
+        static const char *const BUS_CARD[4] = {"DLY", "REV", "CHO", "SLC"};   /* (codex/coherence) FX > BUSES: each card its
+                                                         * bus (DLY MIX, REV SIZE, CHO DEPTH, SLC DEPTH), as the tabs */
         int16_t *vp;
         const param_desc_t *d = page_desc(cur_page(), c, &vp);
         if (c == 0u && BAR_PAGE(cur_page())) {          /* (0.9.2) SEQ > BAR: KNOB 1 the bar ("2/4") */
@@ -1856,7 +1860,7 @@ static void draw_columns(void)
                 unit = "ECO";                           /* (0.6.30) no chorus: the send goes nowhere */
         }
         card_mot_of(vp);                                /* (a global: never) */
-        draw_column(c, d->label, val, unit, vp == &lphase_ui && TSEL->p[P_LPHASE] < 0 ? T_DIM : VAL(c), d->fmt == F_ENUM && d->max < 2 ? -1 : RATIO(d, enum_rank(d, *vp)),
+        draw_column(c, cur_page()->graph == GR_BUSES ? BUS_CARD[c] : d->label, val, unit, vp == &lphase_ui && TSEL->p[P_LPHASE] < 0 ? T_DIM : VAL(c), d->fmt == F_ENUM && d->max < 2 ? -1 : RATIO(d, enum_rank(d, *vp)),
                     param_icon(d, *vp));
     }
 }
@@ -2080,7 +2084,7 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, "CLEAR T1 AUTOMATION?", 24); a[7] = (char)('1' + k % NTRK);
         break;
     case CF_CLEAR_PFX:
-        str_cpy(a, "CLEAR PUNCH AUTOMATION?", 24);   /* (snd2: the lane only) */
+        str_cpy(a, "CLEAR PUNCH IN LANE?", 24);   /* (snd2: the lane only) */
         break;
     case CF_OVR_USER:
         str_cpy(a, "OVERWRITE ", 24);
@@ -2092,8 +2096,8 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, "ERASE PROJECT ", 24); fmt_int(a + str_len(a), (int32_t)k + 1); str_cpy(a + str_len(a), "?", 2);
         str_cpy(b, "ALL A-D + ARRANGEMENT", 24);
         break;
-    case CF_ERASE_SECT:                              /* (V10.17) SAVE > SECTIONS > ERASE */
-        str_cpy(a, "ERASE SECT A?", 24);
+    case CF_ERASE_SECT:                              /* (V10.17) SAVE > PART SLOTS > ERASE */
+        str_cpy(a, "ERASE PART A?", 24);
         a[11] = (char)('A' + (k & 3u));
         str_cpy(b, graph_project_used(k & 3u) && graph_project_name(k & 3u)[0] ? graph_project_name(k & 3u) :
                    "THE SLOT GOES EMPTY", 24);

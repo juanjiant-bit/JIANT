@@ -1,25 +1,25 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* GLO > LIVE (main 0.9.11, seq-v2 p2): the six sequences side by side and their live modifiers (seq_live.c), two pages, the approved
- * mock-up secuencias.html (V3 MANO, V1 RIELES), first in GLO in a group of their own (ui_lens.c CE_GLO).
- *   MANO   the keys are a board: the black keys 1..6 (F#3 .. F#4) pick the tracks while held (several at once; none, or
+ * mock-up secuencias.html (V3 KEYS, V1 RAILS), first in GLO in a group of their own (ui_lens.c CE_GLO).
+ *   KEYS   the keys are a board: the black keys 1..6 (F#3 .. F#4) pick the tracks while held (several at once; none, or
  *          A#4: ALL), the white keys are the modifiers while held: F3 /2, G3 x2, A3 TR (3/2), B3 DT (2/3), C4 .. F4 LOOP
  *          8 4 2 1 (from where the playhead is; the shortest held wins), G4 REV, A4 PING, B4 C5 RATCH x2 x3, D5 THIN 50 %,
  *          E5 F5 OCT+ OCT-, G5 RETURN. G#4 LATCH: a white key then turns its modifier on / off (for the tracks held then).
  *          C#5 D#5 GIRO -1 / +1 (a step back / on), F#5 RND (the steps in any order) on / off. The keys play no note here
  *          (seq.c keyboard_block, song.grid 3); off the page they play again (a key still held keeps its modifier until
- *          it is let go). KNOB 1 RATE, 2 LOOP, 3 THIN on the tracks held (none: all), 4 the DJ FILTER (MIXER's KNOB 4).
+ *          it is let go). KNOB 1 RATE, 2 LOOP, 3 DENS (thinner only) on the tracks held (none: all), 4 the DJ FILTER (MIXER's KNOB 4).
  *          The panel: the six rails small, the board (held: ACCENT, latched: THEME).
- *   RIELES six rails, each its loop across the screen, its playhead, its ghost, its window, under it LEN . DIV and what
- *          is done to it. KNOB 1 PISTAS: ALL, T1 .. T6, SYN (the synths), DRM (the DRUM tracks); 2 RATE /4 .. x4; 3 CORTE
+ *   RAILS six rails, each its loop across the screen, its playhead, its ghost, its window, under it LEN . DIV and what
+ *          is done to it. KNOB 1 TARGET: ALL, T1 .. T6, SYN (the synths), DRM (the DRUM tracks); 2 RATE /4 .. x4; 3 LOOP
  *          (the first N steps); 4 DENS (left THIN 90 .. 10 %, the middle all, right RATCH x2 .. x4).
  * How they combine: one state per track. The knobs of both pages are its LATCHED layer (RATE is the same value on both
- * pages; MANO's LOOP and RIELES' CORTE are the one window, LOOP from the playhead, CORTE from step 1, the last turned
- * wins; THIN and DENS are the one density); MANO's keys sit on top while held or latched: a rate key replaces the
+ * pages; KEYS's LOOP and RAILS' LOOP are the one window, KEYS' from the playhead, RAILS' from step 1, the last turned
+ * wins; DENS is the one density (KEYS: thinner only)); KEYS's keys sit on top while held or latched: a rate key replaces the
  * rate, a LOOP key shortens the window (the shortest wins), THIN takes the thinner, RATCH the larger, REV / PING / OCT
  * are the keys' alone. On both pages OCT- tapped is RETURN (the tracks picked: everything back, in phase, on the next
  * beat), OCT- held BYPASS (the original while held, every track), OCT+ COMMIT (asks; OCT+ again writes RATE into DIV,
- * else STRETCH; CORTE / LOOP into LEN, a LOOP's steps to the start; GIRO into ROTATE; THIN into CHANCE; REV, PING, RND,
+ * else STRETCH; LOOP into LEN, a LOOP's steps to the start; GIRO into ROTATE; DENS (thinner) into CHANCE; REV, PING, RND,
  * RATCH, OCT and a rate with no DIV or STRETCH stay live; UNDO: GLO + G4). Never saved; STOP keeps them. Included by
  * ui_layer.c. */
 static void tl_take(const track_t *t);
@@ -30,15 +30,15 @@ static void tracks_edit(uint32_t slot, int32_t steps);
 static const char LV_WK[16][3] = {"/2", "x2", "TR", "DT", "L8", "L4", "L2", "L1", "RV", "PP", "R2", "R3", "TH", "O+", "O-",
                                   "RT"};
 static const char *const LV_RNAME[LV_NRATE] = {"/4", "/3", "/2", "2/3", "x1", "3/2", "x2", "x3", "x4"};
-static const char LV_TG[9][4] = {"ALL", "T1", "T2", "T3", "T4", "T5", "T6", "SYN", "DRM"};   /* RIELES' PISTAS */
+static const char LV_TG[9][4] = {"ALL", "T1", "T2", "T3", "T4", "T5", "T6", "SYN", "DRM"};   /* RAILS' TARGET */
 static const char LV_BK[11] = {'1', '2', '3', '4', '5', '6', 'L', 'A', '<', '>', '?'};
 static const int8_t LV_KRATE[4] = {-2, 2, 1, -1};       /* F3 .. B3: /2 x2 3/2 2/3 */
 
 static int live_page(void) { return !ui.home && !ui.menu && cur_page()->graph == GR_LIVE; }   /* (main 0.9.19's fix: no track
-                                                         * picked, PISTAS SYN / DRM with none of that kind: the first) */
-static int lv_isman(void) { return cur_page()->title[0] == 'M'; }
+                                                         * picked, TARGET SYN / DRM with none of that kind: the first) */
+static int lv_isman(void) { return cur_page()->title[0] == 'K'; }   /* (KEYS; off LIVE: KEY SPLIT .., unread) */
 static int live_mano(void) { return live_page() && !ui.confirm && lv_isman(); }
-/* the tracks the knobs, RETURN and COMMIT act on: MANO the black keys held (none, or A#4: all); RIELES its KNOB 1 */
+/* the tracks the knobs, RETURN and COMMIT act on: KEYS the black keys held (none, or A#4: all); RAILS its KNOB 1 */
 static uint32_t lv_tracks(void)
 {
     uint32_t m = 0, k, i;
@@ -63,7 +63,7 @@ static void lv_req(uint32_t m, uint32_t kind)           /* a request to the ISR 
             lv.rq[i]++;
         }
 }
-static void lv_keys_off(uint32_t m, uint32_t from)      /* MANO's white keys from `from` on: not on tracks m (PING kept) */
+static void lv_keys_off(uint32_t m, uint32_t from)      /* KEYS's white keys from `from` on: not on tracks m (PING kept) */
 {
     for (; from < 15u; from++)
         if (from != 9u) {
@@ -209,7 +209,7 @@ static __attribute__((noinline)) void live_commit(uint32_t m)
     }
     ui_message("WRITTEN: GLO+G4 UNDO");
 }
-/* each frame: MANO's keys (seq.c keyboard_block holds them in lv.kb), OCT- / OCT+ on a LIVE page (OCT- held BYPASS,
+/* each frame: KEYS's keys (seq.c keyboard_block holds them in lv.kb), OCT- / OCT+ on a LIVE page (OCT- held BYPASS,
  * tapped RETURN; OCT+ the COMMIT dialog), then what goes to the ISR */
 static __attribute__((noinline)) void live_frame(void)
 {
@@ -279,12 +279,12 @@ static __attribute__((noinline)) void live_knob(uint32_t slot, int32_t steps)
         tracks_edit(4, steps);                         /* (V10.45: 3 is MIXER's BPM now) */
         return;
     }
-    if (!mano && !slot--) {                             /* PISTAS: ALL, T1 .. T6, SYN, DRM */
+    if (!mano && !slot--) {                             /* TARGET: ALL, T1 .. T6, SYN, DRM */
         lv.tgt = (uint8_t)clamp((int32_t)lv.tgt + d, 0, 8);
         return;
     }
     v = slot == 0u ? clamp(lv.rate[f] + d, -4, 4) : slot == 1u ? clamp((int32_t)lv.cut[f] + d, 0, LV_NCUT - 1) :
-        mano ? clamp((lv.dn[f] < 0 ? lv.dn[f] : 0) - d, -9, 0) : clamp(lv.dn[f] + d, -9, 3);   /* (MANO THIN, RIELES DENS) */
+        mano ? clamp((lv.dn[f] < 0 ? lv.dn[f] : 0) - d, -9, 0) : clamp(lv.dn[f] + d, -9, 3);   /* (KEYS: thinner only, RAILS: both ways) */
     for (i = 0; i < NTRK; i++) {                        /* the first track picked's value, to every one picked */
         if (!((tg >> i) & 1u))
             continue;
@@ -302,7 +302,8 @@ static void lv_card(uint32_t c, const char *l, const char *v, const char *u, int
 {
     draw_column(c, l, v, u, on ? VAL(c) : T_DIM, r, ICON_NONE);
 }
-/* the cards: MANO RATE LOOP THIN DJ FILT, RIELES PISTAS RATE CORTE DENS (the values of the first track picked) */
+/* the cards: KEYS RATE LOOP DENS DJ FILT, RAILS TARGET RATE LOOP DENS (the values of the first track picked; codex/coherence:
+ * the same names on both, were MANO .. THIN, RIELES PISTAS .. CORTE DENS) */
 static __attribute__((noinline)) void live_cards(void)
 {
     int mano = lv_isman();
@@ -311,14 +312,15 @@ static __attribute__((noinline)) void live_cards(void)
     char val[8];
     const char *u = "";
     if (!mano)
-        lv_card(c++, "PISTAS", LV_TG[lv.tgt % 9u], "", 1, (int32_t)lv.tgt * 125);
+        lv_card(c++, "TARGET", LV_TG[lv.tgt % 9u], "", 1, (int32_t)lv.tgt * 125);   /* (codex/coherence: was PISTAS) */
     lv_card(c, "RATE", LV_RNAME[r + LV_X1], "", r, ratio_of(-4, 4, r));
     fmt_int(val, LV_CUT[ci]);
     c++;
-    lv_card(c, mano ? "LOOP" : "CORTE", ci ? val : "OFF", ci ? "ST" : "", ci, (int32_t)ci * 100);
+    lv_card(c, "LOOP", ci ? val : "OFF", ci ? "ST" : "", ci, (int32_t)ci * 100);   /* (KEYS: from the playhead, RAILS: from
+                                                         * step 1; the one window) */
     if (mano) {
         fmt_int(val, dn < 0 ? 100 + 10 * dn : 100);
-        lv_card(2, "THIN", val, "%", dn < 0, dn < 0 ? -dn * 111 : 0);
+        lv_card(2, "DENS", val, "%", dn < 0, dn < 0 ? -dn * 111 : 0);   /* (KEYS: thinner only) */
         djf_format(song.g[G_DJF], val, &u);
         card_mot_next = (uint8_t)motion_djf_any();
         card_curve_next = (int16_t)(song.g[G_DJF] + 256);
@@ -377,7 +379,7 @@ static void lv_rail(uint32_t i, int32_t y, int32_t h)
     for (e = -1; e <= h; e += 2)
         cv_rect(a, y + e, 1, 1, T_THEME);
 }
-/* MANO's board, F3 .. G5: the black keys in a row over the white ones, each its word, lit held (ACCENT) or latched /
+/* KEYS's board, F3 .. G5: the black keys in a row over the white ones, each its word, lit held (ACCENT) or latched /
  * on (THEME) for the tracks picked */
 static void lv_board(int32_t y)
 {
@@ -404,7 +406,7 @@ static void lv_board(int32_t y)
         cv_text_in(x0, yy + hh - 9 - AF_X_CAP_Y, w, &AF_X, nm, ink, fill);
     }
 }
-/* the panel: RIELES six rails across it; MANO six rails small over the board */
+/* the panel: RAILS six rails across it; KEYS six rails small over the board */
 static __attribute__((noinline)) void graph_live(void)
 {
     int mano = lv_isman();
@@ -433,7 +435,7 @@ static __attribute__((noinline)) uint32_t live_sig(uint32_t h)
         h = (h ^ ((const uint8_t *)&lv)[i]) * 16777619u;
     return h ^ (song.playing ? ui.frame * 2654435761u ^ song.sel : song.sel);
 }
-/* MANO's key LEDs: the keys held, the white keys latched, LATCH on */
+/* KEYS's key LEDs: the keys held, the white keys latched, LATCH on */
 static __attribute__((noinline)) uint32_t live_leds(void)
 {
     uint32_t m = lv.kb, k;

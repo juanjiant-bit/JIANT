@@ -44,21 +44,23 @@ static const nv_t CE_HOME[] = {NV(0, "ECO", 0, 0), NV(0, "MACROS", 0, 0), NV(0, 
                                NV(0, "GENE 1", 2, 2), NV(0, "GENE 2", 2, 2), NV(0, "GENE 3", 2, 2)};
 static const ng_t CG_HOME[] = {{"ECO", 0}, {"BEING", 0}, {"GENE", 0}};
 static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("MORPH", 0, 1, 1),
-                              NV("RETRIG", 0, 1, 1), NV("ROTOR", 0, 1, 1), NV("WORDS", 0, 1, 1), NV("STEREO", 0, 1, 1),
-                              NV("SWARM", 0, 1, 1), NV("SWARM 2", 0, 1, 1), NV("FOCUS", 0, 2, 2), NV("VOICE", 0, 3, 1), NV("VOICE 2", 0, 3, 1)};   /* (V10.49: STEREO; the
-                                                         * voices' pages last, after the sound's (the user)) */
-static const ng_t CG_SYN[] = {{"SOUND", 0}, {"TONE", 0}, {"FOCUS", 0}, {"VOICE", 0}};
-static const nv_t CE_FM6[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("STEREO", 0, 1, 1),
-                              NV("OPERATOR", 0, 2, 2), NV("OP ENV", 0, 2, 2), NV("OPERATOR 2", 0, 2, 2), NV("VOICE", 0, 3, 1),
-                              NV("VOICE 2", 0, 3, 1)};
-static const ng_t CG_FM6[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}, {"VOICE", 0}};
+                              NV("RETRIG", 0, 1, 1), NV("ROTOR", 0, 1, 1), NV("WORDS", 0, 1, 1),
+                              NV("SWARM", 0, 1, 1), NV("SWARM 2", 0, 1, 1), NV("FOCUS", 0, 2, 2), NV("PLAY", 0, 3, 1), NV("PLAY 2", 0, 3, 1)};   /* (the
+                                                         * voices' pages last, after the sound's (the user); codex/coherence:
+                                                         * PLAY, was VOICE (the engine's name too); STEREO's IMAGE on PLAY 2) */
+static const ng_t CG_SYN[] = {{"SOUND", 0}, {"TONE", 0}, {"FOCUS", 0}, {"PLAY", 0}};
+static const nv_t CE_FM6[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1),
+                              NV("OPERATOR", 0, 2, 2), NV("OP ENV", 0, 2, 2), NV("OPERATOR 2", 0, 2, 2), NV("PLAY", 0, 3, 1),
+                              NV("PLAY 2", 0, 3, 1)};
+static const ng_t CG_FM6[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}, {"PLAY", 0}};
 static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0, 0), NV("KIT 3", 0, 0, 0), NV("KIT 4", 0, 0, 0),
                               NV("SOUND", 0, 1, 2), NV("SOUND 2", 0, 1, 2), NV("SOUND 3", 0, 1, 2), NV("SOUND 4", 0, 1, 2),
                               NV("LEVELS", 0, 2, 1), NV("LEVELS 2", 0, 2, 1), NV("X-MOD", 0, 3, 1), NV("FILTER", 0, 3, 1),
-                              NV("STEREO", 0, 3, 1), NV("VOICE", 0, 3, 1)};
+                              NV("STEREO", 0, 3, 1), NV("PLAY", 0, 3, 1)};   /* (codex/coherence: PLAY, was VOICE; in TONE,
+                                                         * a kit's one page of it) */
 static const ng_t CG_DRM[] = {{"KIT", 0}, {"SOUND", 0}, {"LEVELS", "LEVEL"}, {"TONE", 0}};
-static const nv_t CE_DIG[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("VOICE", 0, 1, 1),
-                              NV("VOICE 2", 0, 1, 1), NV("OP1 ENV", 0, 2, 2), NV("OP2 ENV", 0, 2, 2), NV("OP3 ENV", 0, 2, 2),
+static const nv_t CE_DIG[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("PLAY", 0, 1, 1),
+                              NV("PLAY 2", 0, 1, 1), NV("OP1 ENV", 0, 2, 2), NV("OP2 ENV", 0, 2, 2), NV("OP3 ENV", 0, 2, 2),
                               NV("OP4 ENV", 0, 2, 2), NV("OP LEVEL", 0, 2, 2)};
 static const ng_t CG_DIG[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}};
 enum { LV_PAT, LV_BAR, LV_STEP, LV_N };                 /* SEQ's pictures: the bars, the roll, the step large */
@@ -69,33 +71,38 @@ static const nv_t CE_SEQ[] = {NV("STEP", 0, 0, LV_BAR), NV("PATTERN", "LENGTH", 
                               NV("EUCLID", 0, 2, LV_PAT), NV("MODES", 0, 2, LV_PAT), NV("MUTATE", 0, 2, LV_PAT),
                               NV("PLAYHEADS", 0, 3, LV_PAT), NV("STRETCH", 0, 4, LV_PAT),
                               NV("COMP", 0, 5, LV_STEP), NV("COMP 2", 0, 5, LV_STEP), NV("AUTOMATION", 0, 6, LV_BAR),
-                              NV("AUTO LIST", 0, 6, LV_BAR), NV("LYRIC STEP",0,6,LV_BAR),NV("GENERATE",0,7,LV_BAR)};
-static const ng_t CG_SEQ[] = {{"STEP", 0}, {"LENGTH", "LEN"}, {"EUCLID", "EUCL"}, {"PLAYHEADS", "HEAD"}, {"STRETCH", "STR"},
-                              {"COMP", 0}, {"AUTO", 0}, {"GENERATE","GEN"}};
+                              NV("AUTO LIST", 0, 6, LV_BAR), NV("LYRIC STEP",0,6,LV_BAR),NV("TRACK GEN",0,7,LV_BAR)};
+static const ng_t CG_SEQ[] = {{"STEP", 0}, {"PATTERN", "PAT"}, {"EUCLID", "EUCL"}, {"PLAYHEADS", "HEAD"}, {"STRETCH", "STR"},
+                              {"COMP", 0}, {"AUTO", 0}, {"TRACK GEN", "GEN"}};   /* (codex/coherence: PATTERN, was LENGTH: its
+                                                         * LENGTH RHYTHM TRACK; TRACK GEN, was GENERATE) */
 enum { FXL_TRACK, FXL_BUSES, FXL_EFFECT };
 static const nv_t CE_FX[] = {NV("FX", "SENDS", 0, FXL_TRACK), NV("DIST", 0, 0, FXL_TRACK), NV("AUTO PAN", 0, 0, FXL_TRACK),
                              NV("BUSES", 0, 1, FXL_BUSES), NV("DLY", 0, 2, FXL_EFFECT), NV("DLY 2", 0, 2, FXL_EFFECT),
                              NV("DLY 3", 0, 2, FXL_EFFECT), NV("REVERB", 0, 3, FXL_EFFECT), NV("REVERB 2", 0, 3, FXL_EFFECT),
                              NV("CHORUS", 0, 4, FXL_EFFECT), NV("SLICER", 0, 5, FXL_EFFECT), NV("SL BUS", 0, 5, FXL_EFFECT),
-                             NV("SL BUS 2", 0, 5, FXL_EFFECT), NV("SL PITCH", 0, 5, FXL_EFFECT), NV("PUNCH", 0, 6, FXL_EFFECT),
+                             NV("SL BUS 2", 0, 5, FXL_EFFECT), NV("SL PITCH", 0, 5, FXL_EFFECT), NV("PUNCH IN", 0, 6, FXL_EFFECT),
                              NV("MASTER", 0, 7, FXL_EFFECT), NV("TAPE", 0, 7, FXL_EFFECT),
                              NV("EQ", 0, 7, FXL_EFFECT)};   /* (p9: the master's EQ) */   /* (0.9.9-snd2: MASTER last, the
                                                          * end of the chain; snd8: its TAPE) */
 static const ng_t CG_FX[] = {{"TRACK", "TRK"}, {"BUSES", "BUS"}, {"DELAY", "DLY"}, {"REVERB", "REV"}, {"CHORUS", "CHO"},
-                             {"SLICER", "SLC"}, {"PUNCH", "PCH"}, {"MASTER", "MST"}};
-static const nv_t CE_GLO[] = {NV("MANO", 0, 0, 0), NV("RIELES", 0, 0, 0), NV("MIXER", 0, 1, 0), NV("SENDS", 0, 1, 0),
-                              NV("COMPS", 0, 2, 3), NV("COMPS 2", 0, 2, 3), NV("GLOBAL", 0, 3, 1),
-                              NV("SYSTEM", 0, 4, 2), NV("SYSTEM 2", 0, 4, 2), NV("KEY SPLIT", 0, 4, 2), NV("KEY SPLIT 2", 0, 4, 2)};   /* (V10.37) the performing pages first, the
+                             {"SLICER", "SLC"}, {"PUNCH IN", "PCH"}, {"MASTER", "MST"}};
+static const nv_t CE_GLO[] = {NV("KEYS", 0, 0, 0), NV("RAILS", 0, 0, 0), NV("MIXER", 0, 1, 0), NV("SENDS", 0, 1, 0),
+                              NV("G.COMP", 0, 2, 3), NV("G.COMP 2", 0, 2, 3), NV("GLOBAL", 0, 3, 1),
+                              NV("SYSTEM", 0, 3, 2), NV("SYSTEM 2", 0, 3, 2), NV("KEY SPLIT", 0, 3, 2), NV("KEY SPLIT 2", 0, 3, 2)};   /* (V10.37) the performing pages first, the
                                                          * settings (GLOBAL, SYSTEM) last */   /* (0.9.9-seq2f) the global lane; (p2) LIVE first
                                                          * (ui_live.c) */
-static const ng_t CG_GLO[] = {{"LIVE", 0}, {"MIX", 0}, {"COMPS", "CMP"}, {"GLOBAL", "GLOB"}, {"SYSTEM", "SYS"}};   /* (five tabs of 44 px in the labels' face) */
-static const nv_t CE_ENV[] = {NV("ENV", "TRACKS", 0, 0), NV("ENV DEST", "TRACKS DEST", 0, 0), NV("ENV", 0, 1, 1),
-                              NV("ENV DEST", 0, 1, 1), NV("ENV 2", 0, 1, 1), NV("STAGE", 0, 2, 2)};   /* (V10.22: ENV 2) */
-static const ng_t CG_ENV[] = {{"TRACKS", 0}, {"ENV", 0}, {"STAGE", 0}};
+static const ng_t CG_GLO[] = {{"LIVE", 0}, {"MIX", 0}, {"G.COMP", "GCMP"}, {"SETUP", 0}};   /* (codex/coherence: SETUP, the
+                                                         * settings in one group: GLOBAL, SYSTEM, SYSTEM 2, KEY SPLIT) */   /* (five tabs of 44 px in the labels' face) */
+static const nv_t CE_ENV[] = {NV("ENV", 0, 0, 1), NV("ENV DEST", 0, 0, 1), NV("ENV 2", 0, 0, 1), NV("STAGE", 0, 1, 2),
+                              NV("ENV", "TRACKS", 2, 0)};   /* (V10.22: ENV 2) (codex/coherence) the track's pages first;
+                                                         * TRACKS, the six tracks' envelopes at a glance (ENV's knobs), last
+                                                         * (TRACKS DEST, ENV DEST's twin, gone) */
+static const ng_t CG_ENV[] = {{"ENV", 0}, {"STAGE", 0}, {"TRACKS", 0}};
 static const nv_t CE_LFO[] = {NV("MOD", 0, 0, 0), NV("LFO", 0, 1, 1), NV("LFO 2", 0, 1, 1), NV("LFO DEST", 0, 1, 1),
                               NV("MSEQ", 0, 2, 2), NV("MSEQ 2", 0, 2, 2)};   /* (0.9.18: LFO 2, PHASE) */
 static const ng_t CG_LFO[] = {{"MOD", 0}, {"LFO", 0}, {"MSEQ", 0}};
-static const nv_t CE_SCL[] = {NV("SCL", 0, 0, 0), NV("CHORD", 0, 1, 1), NV("SCENE", 0, 2, 2)};   /* (V10.25 SCENE) */
+static const nv_t CE_SCL[] = {NV("SCL", "KEY", 0, 0),   /* (codex/coherence: KEY, its group's name) */
+                               NV("CHORD", 0, 1, 1), NV("SCENE", 0, 2, 2)};   /* (V10.25 SCENE) */
 static const ng_t CG_SCL[] = {{"KEY", 0}, {"CHORD", 0}, {"SCENE", 0}};
 static const nv_t CE_ARP[] = {NV("ARP", 0, 0, 2), NV("ARP 2", 0, 0, 2)};
 static const ng_t CG_ARP[] = {{"ARP", 0}};
@@ -103,10 +110,12 @@ enum { SV_LIB, SV_PROJ, SV_SOUND };
 /* (V10.7.22, the owner: "CLEAR PROJECT in SAVE, on the first page, at the start") TOOLS SAVE's first page, its own tab,
  * CLEAR PROJECT its first action; SAVE at power-on still opens TIMELINE (NAV_DEF: the music first, not a page that
  * clears it), TOOLS one SELECT to the left, or a SAVE tap from SOUND (round) */
+/* (codex/coherence) one name for the song's parts A-D (PART); SONG the four pages that edit and play its rows and parts
+ * together (ARRANGE next to TIMELINE), PROJECT what is stored: PART SLOTS (was SECTIONS, in SONG) and PROJECTS */
 static const nv_t CE_SAVE[] = {NV("TOOLS", 0, 0, SV_LIB),
-                               NV("TIMELINE", 0, 1, SV_PROJ), NV("PARTS", 0, 1, SV_PROJ), NV("CLIPS", 0, 1, SV_PROJ),
-                               NV("PROJECT", "SECTIONS", 1, SV_PROJ),   /* (V10.1) composing first; V10.6o PARTS; V10.6s CLIPS */
-                               NV("PROJECT", "PROJECTS", 2, SV_LIB), NV("ARRANGE", 0, 2, SV_PROJ),
+                               NV("TIMELINE", 0, 1, SV_PROJ), NV("ARRANGE", 0, 1, SV_PROJ), NV("PARTS", 0, 1, SV_PROJ),
+                               NV("CLIPS", 0, 1, SV_PROJ),   /* (V10.1) composing first; V10.6o PARTS; V10.6s CLIPS */
+                               NV("PROJECT", "PART SLOTS", 2, SV_PROJ), NV("PROJECT", "PROJECTS", 2, SV_LIB),
                                NV("USER", 0, 3, SV_SOUND), NV("PRESETS", 0, 3, SV_SOUND)};
 static const ng_t CG_SAVE[] = {{"TOOLS", 0}, {"SONG", 0}, {"PROJECT", 0}, {"SOUND", 0}};
 #define CH(e, g) {e, g, (uint8_t)NELEM(e), (uint8_t)NELEM(g)}
@@ -117,7 +126,7 @@ static const ch_t CHAINS[NAV_KEYS] = {CH(CE_HOME, CG_HOME), CH(CE_SYN, CG_SYN), 
                                       CH(CE_DIG, CG_DIG)};
 /* the page each opens on at power-on (the mock-up's): SEQ its STEP, ENV its ENV, LFO its LFO, (p2) GLO its MIXER (LIVE's
  * pages before it: a GLO tap inside, rule 2), (V10.7.22) SAVE its TIMELINE (TOOLS before it); ui.nmem holds it ^ this */
-static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 2, 2, 1, 0, 0, 1, 0, 0, 0};
+static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 2, 0, 1, 0, 0, 1, 0, 0, 0};
 static uint32_t nav_key(uint32_t sec) { uint32_t k = sec == SEC_EDIT ? edit_kind() : 0u; return k ? SEC_N - 1u + k : sec; }
 static const ch_t *nav_ch(uint32_t sec) { return &CHAINS[nav_key(sec)]; }
 static uint32_t nav_mem(uint32_t key) { return (uint32_t)(ui.nmem[key] ^ NAV_DEF[key]); }
@@ -221,7 +230,7 @@ static void ui_message(const char *s);
 static void seg_missing(void);
 static uint32_t fx_mod_of(uint32_t i);
 /* entry e of section sec shown (one that is not here: the nearest after it, else before); outside: from another
- * section (SAVE: USER and SECTIONS come with their SAVE armed, SAVE . OCT+ . OCT+ as before) */
+ * section (SAVE: USER and PART SLOTS come with their SAVE armed, SAVE . OCT+ . OCT+ as before) */
 static void nav_go(uint32_t sec, uint32_t e, int outside)
 {
     const ch_t *c = nav_ch(sec);
@@ -353,6 +362,8 @@ static __attribute__((noinline)) const char *nav_page_name(void)
     str_cpy(b, v->nm ? v->nm : v->t, 24);
     if (sec == SEC_EDIT && v->g == 0u && !v->nm && PAGES[ui.page].scope == SC_ENGINE) {   /* (EDIT 1 . OSC) */
         const char *pt = trk_engp(TSEL)->page_title[PAGES[ui.page].id[0] != P_E0];
+        if (trk_eng(TSEL) == ENGI_ANALOG)              /* (codex/coherence) EDIT . OSC: ANALOG has no EDIT 2 */
+            b[4] = 0;
         if (pt && pt[0] && pt[0] != '-') {
             str_cpy(b + str_len(b), " \xB7 ", 4);
             str_cpy(b + str_len(b), pt, 24 - str_len(b));

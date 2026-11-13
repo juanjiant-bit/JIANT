@@ -1714,7 +1714,7 @@ static void keyboard_block(void)
                 continue;
             }
             if (song.grid >= 2u) {                /* NAME (ui_name.c): every key types, none sounds; (p2) 3: GLO > LIVE
-                                                   * MANO, the keys its board (seq_live.c, ui_live.c) */
+                                                   * KEYS, the keys its board (seq_live.c, ui_live.c) */
                 kb_note[k] = KB_SILENT;
                 if (song.grid == 3u)
                     lv.kb |= 1u << k;
@@ -1762,7 +1762,7 @@ static void keyboard_block(void)
 
 /* (V10.7.10; main loop, vel.c vel_poll) the keys 0..19 whose press never waits for its strike's velocity (vel_kb.h
  * vs.now): those keyboard_block sends to a DRUM track (DRUM-X: its kit's key map), the selected one or, with KEY SPLIT,
- * their half's; the DRUM grid's lanes too (NAME, MANO: no note, nothing to wait for) */
+ * their half's; the DRUM grid's lanes too (NAME, KEYS: no note, nothing to wait for) */
 static uint32_t kb_drum_keys(void)
 {
     uint32_t c;

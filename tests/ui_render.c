@@ -751,7 +751,7 @@ static void live_scene(int s)
     seq_start();
     live_publish();
     for (k = 0; k < 2800u; k++) { events_block(CTL); if (!(k % 64u)) live_publish(); }
-    nav_put(SEC_GLO, s >= S_LIVE_MANO ? "MANO" : "RIELES");
+    nav_put(SEC_GLO, s >= S_LIVE_MANO ? "KEYS" : "RAILS");   /* (codex/coherence: were MANO, RIELES) */
     if (s == S_LIVE_RIELES_T3) { ui.hot_col = 0; ui.hot_t = 30; }
 }
 
@@ -1265,13 +1265,13 @@ static void setup(int s)
     }
     case S_ED_FILTER: go_title("FILTER"); TSEL->p[P_E5] = 90; break;   /* (0.8.5) EDIT's lens: TONE, FILTER (ANALOG) */
     case S_ED_FILTER_BP: eng(7); go_title("FILTER"); TSEL->p[P_FTYPE] = 2; TSEL->p[P_DIST] = 60; ui.hot_col = 1; ui.hot_t = 30; break;
-    case S_ED_VOICE2: go_title("VOICE 2"); TSEL->p[P_VOICE] = 3; trk[0].v[0].stage = 2; trk[0].v[0].env = 9u << 20; break;
+    case S_ED_VOICE2: go_title("PLAY 2"); TSEL->p[P_VOICE] = 3; trk[0].v[0].stage = 2; trk[0].v[0].env = 9u << 20; break;
     case S_ED_FOCUS: case S_ED_FOCUS_MOD:              /* .. FOCUS: CUT, (MOD) M2 moving it */
         go_title("FOCUS"); ui.focus = 4;
         if (s == S_ED_FOCUS_MOD) { TSEL->p[P_M2SRC] = 1; TSEL->p[P_M2DST] = MD_E1 + 4; TSEL->p[P_M2AMT] = 40; }
         break;
     case S_ENV_TRACKS: case S_ENV_TRACKS_DEST:          /* (0.8.5) ENV's lens: TRACKS (ENV / DEST), T2 sounding */
-        song.sel = 1; nav_scene(SEC_ENV, s == S_ENV_TRACKS ? "TRACKS" : "TRACKS DEST");
+        song.sel = 1; nav_scene(SEC_ENV, s == S_ENV_TRACKS ? "TRACKS" : "ENV DEST");   /* (codex/coherence: TRACKS DEST gone) */
         trk[1].v[0].stage = 2; trk[1].v[0].env = 10u << 20; trk[2].p[P_ED_FLT] = 60; trk[2].p[P_ED_PIT] = -40;
         trk[1].p[P_ED_SHP] = 90; trk[3].p[P_MUTE] = 1;
         break;
@@ -1347,7 +1347,7 @@ static void setup(int s)
     case S_SCL: TSEL->p[P_SCALE] = 2; go_title("SCL"); break;
     case S_SHIFT: TSEL->p[P_SOFS] = -3; TSEL->p[P_POFS] = 7; TSEL->p[P_HVEL] = 80; go_title("TRACK"); break;   /* (0.6.92: TRACK) */
     case S_ARP: go_title("ARP"); break;
-    case S_VOICE: go_title("VOICE"); break;
+    case S_VOICE: go_title("PLAY"); break;
     case S_GLOBAL: go_title("GLOBAL"); break;
     case S_SYSTEM: go_title("SYSTEM"); break;
     case S_EDIT_ANALOG: go_title("EDIT 1"); break;
@@ -1650,7 +1650,7 @@ static void setup(int s)
      * song B16 C16 A32 D8 C16 A32 (scenes on 2 and 4, END LOOP); seven user sounds */
     case S_PG0 ... S_PG_END: {   /* (V10.1) the pages the manual had no screen of: by title, on the engine they need */
         static const struct { const char *t; uint32_t e, sec; } PG[S_PG_END - S_PG0 + 1] =
-        {{"RETRIG", ENGI_LOFI, SEC_EDIT}, {"ROTOR", ENGI_WHEEL, SEC_EDIT}, {"LENGTH", 0xFFu, SEC_SEQ}, {"MODES", 0xFFu, SEC_SEQ}, {"DLY 3", 0xFFu, SEC_FX}, {"SL BUS", 0xFFu, SEC_FX}, {"TAPE", 0xFFu, SEC_FX}, {"EQ", 0xFFu, SEC_FX}, {"SYSTEM 2", 0xFFu, SEC_GLO}, {"COMPS", 0xFFu, SEC_GLO}, {"COMPS 2", 0xFFu, SEC_GLO}, {"KIT 2", ENGI_DRUM, SEC_EDIT}, {"KIT 3", ENGI_DRUM, SEC_EDIT}, {"KIT 4", ENGI_DRUM, SEC_EDIT}, {"LEVELS", ENGI_DRUM, SEC_EDIT}, {"LEVELS 2", ENGI_DRUM, SEC_EDIT}, {"X-MOD", ENGI_DRUM, SEC_EDIT}};
+        {{"RETRIG", ENGI_LOFI, SEC_EDIT}, {"ROTOR", ENGI_WHEEL, SEC_EDIT}, {"LENGTH", 0xFFu, SEC_SEQ}, {"MODES", 0xFFu, SEC_SEQ}, {"DLY 3", 0xFFu, SEC_FX}, {"SL BUS", 0xFFu, SEC_FX}, {"TAPE", 0xFFu, SEC_FX}, {"EQ", 0xFFu, SEC_FX}, {"SYSTEM 2", 0xFFu, SEC_GLO}, {"G.COMP", 0xFFu, SEC_GLO}, {"G.COMP 2", 0xFFu, SEC_GLO}, {"KIT 2", ENGI_DRUM, SEC_EDIT}, {"KIT 3", ENGI_DRUM, SEC_EDIT}, {"KIT 4", ENGI_DRUM, SEC_EDIT}, {"LEVELS", ENGI_DRUM, SEC_EDIT}, {"LEVELS 2", ENGI_DRUM, SEC_EDIT}, {"X-MOD", ENGI_DRUM, SEC_EDIT}};
         if (PG[s - S_PG0].e != 0xFFu) eng(PG[s - S_PG0].e);
         nav_scene(PG[s - S_PG0].sec, PG[s - S_PG0].t);
         break;
@@ -1678,7 +1678,7 @@ static void setup(int s)
         ui.uslot = 0; ui.song_row = 0; ui.msg_t = 0; ui.frame += 7u;   /* (the sections' cache read again) */
         if (s == S_SAVE_LIB) { nav_scene(SEC_SAVE, "PROJECTS"); ui.act = 4; }
         else if (s == S_SAVE_TOOLS) { nav_scene(SEC_SAVE, "TOOLS"); ui.act = 1; }
-        else if (s == S_SAVE_PROJ) { nav_scene(SEC_SAVE, "SECTIONS"); ui.act = 4; }
+        else if (s == S_SAVE_PROJ) { nav_scene(SEC_SAVE, "PART SLOTS"); ui.act = 4; }
         else if (s == S_SAVE_ARR) nav_scene(SEC_SAVE, "ARRANGE");
         else if (s == S_SAVE_SOUND) { nav_scene(SEC_SAVE, "USER"); ui.act = 4; }
         else if (s == S_SAVE_TL || s == S_SAVE_TL_LOOP) {   /* (V10.1) T2 from C, T4 muted, T6 HALF on row 2; T1 THIN on
@@ -2456,8 +2456,9 @@ int main(int argc, char **argv)
     {   /* (0.9.6) FM6's operator pages with their colony keep every number they showed: ALG, the operator and its frequency
          * (OPERATOR, OPERATOR 2), OP ENV's stage with its R and L, the four cards */
         static const struct { int s; const char *w[6]; } FT[] = {
-            {S_V6_FM6_OP, {"ALG 05 PAT", "OP3 x1.00", "RATIO", "FINE", "LEVEL", "/6"}},
-            {S_V6_FM6_OP2, {"ALG ", "OP2 x", "MODE", "DETUNE", "VEL", "+6"}},
+            {S_V6_FM6_OP, {"ALG 05 PAT", "OP3 x1.00", "COARSE", "FINE", "OUTPUT", "/6"}},   /* (codex/coherence: COARSE OUTPUT,
+                                                         * were RATIO LEVEL; KEY VEL, was VEL) */
+            {S_V6_FM6_OP2, {"ALG ", "OP2 x", "MODE", "DETUNE", "KEY VEL", "+6"}},
             {S_V6_FM6_ENV, {"OP1", "DEC  R ", "STAGE", "RATE", "LEVEL", "DEC"}}};
         uint32_t f, w, i, n0 = nfind;
         for (f = 0; f < NELEM(FT); f++) {

@@ -1860,15 +1860,16 @@ static __attribute__((noinline)) void track_col6(uint32_t c, uint32_t sel, uint3
             sn[--n] = 0;
         cv_text_on(4, 22, &AF_S, sn, mute ? T_ACCENT : sel ? T_TEXT : T_MID, T_SURF);
     }
-    if (cur_page()->id[0] == P_DIST) {               /* (0.8.5) GLO > MIX > SENDS: DIST CHORUS DLY REV as bars */
-        static const char *const SN[4] = {"D", "C", "D", "R"};
-        for (k = 0; k < 4; k++) {
-            int32_t v = trk[c].p[P_DIST + (uint32_t)k] * 60 / 127;   /* (P_DIST P_CHOR P_DLY P_REV: in a row) */
-            cv_rect(4 + k * 8, 38, 6, 62, T_RAISE);
+    if (cur_page()->id[0] == P_CHOR) {               /* (0.8.5) GLO > MIX > SENDS: CHORUS DLY REV as bars (codex/coherence:
+                                                         * the sends only, DIST on FX's own page) */
+        static const char *const SN[3] = {"C", "D", "R"};
+        for (k = 0; k < 3; k++) {
+            int32_t v = trk[c].p[P_CHOR + (uint32_t)k] * 60 / 127;   /* (P_CHOR P_DLY P_REV: in a row) */
+            cv_rect(4 + k * 10, 38, 8, 62, T_RAISE);
             if (v)
-                cv_rect(4 + k * 8, 100 - v, 6, v, mute ? T_DIM : sel && hot == (uint32_t)k + 1u ? T_ACCENT :
+                cv_rect(4 + k * 10, 100 - v, 8, v, mute ? T_DIM : sel && hot == (uint32_t)k + 1u ? T_ACCENT :
                         heat_col(60 + v * 3));
-            cv_text(4 + k * 8, 106 - AF_X_CAP_Y, &AF_X, SN[k], T_DIM);
+            cv_text(5 + k * 10, 106 - AF_X_CAP_Y, &AF_X, SN[k], T_DIM);
         }
         cv_blit((uint32_t)T6_X(c), lz_on() ? graph_y() + 9u : Y_GRAPH);
         return;
@@ -1894,7 +1895,8 @@ static __attribute__((noinline)) void track_col6(uint32_t c, uint32_t sel, uint3
                 3, mute ? T_DIM : hot == 2u ? T_ACCENT : heat_col(70 + (pan > 0 ? pan : -pan) * 2));
     cv_rect(4, 113, pw, 3, T_RAISE);                 /* the REV send */
     if (rv)
-        cv_rect(4, 113, rv * pw / 127 + 1, 3, mute ? T_DIM : hot == 3u ? T_ACCENT : heat_col(40 + rv * 3 / 2));
+        cv_rect(4, 113, rv * pw / 127 + 1, 3, mute ? T_DIM : heat_col(40 + rv * 3 / 2));   /* (codex/coherence: on SENDS'
+                                                         * knobs, MIXER's KNOB 3 MUTE) */
     cv_blit((uint32_t)T6_X(c), lz_on() ? graph_y() + 9u : Y_GRAPH);   /* (0.8.5: GLO's lens, the panel under the cards) */
 }
 static __attribute__((noinline)) void draw_tracks(void)
@@ -1918,7 +1920,7 @@ static __attribute__((noinline)) void draw_tracks(void)
         if (c >= trk_live)                           /* (0.6.22) TRACKS 4: asleep, grey as muted, "OFF" (mute 2) */
             mute = 2u;
         uint32_t hot = sel && ui.hot_t ? ui.hot_col + 1u : 0u;   /* the knob just turned (hot_col + 1): 1 LEVEL, 2 PAN,
-                                                                * 3 REV (4: the DJ FILTER, on its card) */
+                                                                * 3 MUTE (the name), 4 the tempo (on its card) */
         int32_t pk = t->peak, m, pan = clamp(t->p[P_PAN], -64, 63), rv = clamp(t->p[P_REV], 0, 127);
         uint16_t vc = mute ? T_DIM : T_THEME;
         char b[16];
@@ -1930,7 +1932,7 @@ static __attribute__((noinline)) void draw_tracks(void)
         ts.meter[c] = (uint8_t)(m < 0 ? 0 : m);
         sig = str_hash(1u + sel + st * 2u + (mute && arm) * 16u + hot * 32u, b) + lvl * 7919u +
               ts.meter[c] * 131u + (uint32_t)(pan + 128) * 104729u + (uint32_t)rv * 1299709u + mute * 3u + sk * 0x9E37u + c * 0x51u +
-              six * 0x3C6Fu + (cur_page()->id[0] == P_DIST ? 0x7F4Au + (uint32_t)t->p[P_DIST] * 3u + (uint32_t)t->p[P_CHOR] * 389u +
+              six * 0x3C6Fu + (cur_page()->id[0] == P_CHOR ? 0x7F4Au + (uint32_t)t->p[P_CHOR] * 389u +
                                 (uint32_t)t->p[P_DLY] * 6151u + (uint32_t)t->p[P_REV] * 98317u : 0u);   /* (SENDS) */
         if (!ui.force && sig == ts.col[c - b4])
             continue;
@@ -2203,7 +2205,7 @@ static void draw_graph(void)
         cv_oy = 0;
         graph_home_lz();                             /* (0.8.5: HOME's lens, ECO / BEING; JIANT 0.5: the system's
                                                       * beings, was the scope) */
-    } else if (pg->graph == GR_LIVE) {               /* (p2) GLO > LIVE: the rails, MANO's board (ui_live.c) */
+    } else if (pg->graph == GR_LIVE) {               /* (p2) GLO > LIVE: the rails, KEYS's board (ui_live.c) */
         cv_oy = 0;
         graph_live();
     } else if (pg->graph == GR_SCENE) {              /* (V10.25) SCL > SCENE: the six tracks' roles */

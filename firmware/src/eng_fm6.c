@@ -541,7 +541,7 @@ _Static_assert(sizeof FM6_ORDER == NELEM(FM6_PRESETS), "FM6's browsing order: ev
 
 static const engine_t ENG_FM6 = {
     .name = "FM6",
-    .page_title = {"OPS", "PATCH"},
+    .page_title = {"ALGO", "PATCH"},                    /* (codex/coherence: ALGO, was OPS, the OPERATOR group's tab) */
     .edit = {
         {"ALG", F_INT, 0, 32, 0, N_FM6_ALG},
         {"FB", F_INT, -7, 7, 0, 0},
@@ -549,7 +549,8 @@ static const engine_t ENG_FM6 = {
         {"RATIO", F_INT, -16, 16, 0, 0},
         {"MEG", F_BIPCT, -64, 63, 0, 0},
         {"VMOD", F_INT, -7, 7, 0, 0},
-        {"DETUNE", F_PCT, 0, 127, 0, 0},
+        {"SPREAD", F_PCT, 0, 127, 0, 0},                 /* (codex/coherence) the carriers apart (was DETUNE: OPERATOR 2's
+                                                         * is the operator's own) */
         {"SLOT", F_INT, 0, FM6_OWN + FM6_NBANK, 0, N_FM6_PATCH},
     },
     .presets = FM6_PRESETS,

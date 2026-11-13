@@ -73,10 +73,10 @@ static __attribute__((noinline)) int song_save_as(uint32_t target, const char *n
     }
     if (!song_save_loop && !chain_valid(&chain_config)) { ui_message("INVALID ARRANGEMENT"); return 2; }
     for (uint32_t row = 0; !song_save_loop && row < chain_config.count; row++) {
-        if (!(mask & (1u << chain_config.row[row].slot))) { ui_message("MISSING SECTION"); return 2; }
+        if (!(mask & (1u << chain_config.row[row].slot))) { ui_message("MISSING PART"); return 2; }
         for (uint32_t track = 0; track < NTRK; track++)
             if (!(mask & (1u << row_src(row, track, chain_config.row[row].slot)))) {
-                ui_message("MISSING SECTION"); return 2;
+                ui_message("MISSING PART"); return 2;
             }
     }
     if (song_saved_index(index)) { ui_message("SAVE INDEX ERROR"); return 2; }

@@ -409,7 +409,7 @@ static uint32_t proj_name_get(char *d, const uint8_t *s)   /* its length */
  * accent follow, bit 1 the chance follows, bit 2 RATCH bit 1, bit 3 all four notes); its n notes (4 with x's bit 3);
  * velocity | RATCH bit 0 << 7; hit, accent; chance. Then the chain, the motion's 4 header bytes and its records, (0.6.3) 'S' 'L' and the SLICER's globals. The tail at fixed places
  * from the end: the punch-in lane, the macros and the new globals (PROJC_PFX_OFF), the DRUM-X kit (PROJC_DX_OFF), the
- * name, the hash. A project too full to fit: proj_pack 0 and proj_full set (SECTION FULL) */
+ * name, the hash. A project too full to fit: proj_pack 0 and proj_full set (PART FULL) */
 #define PROJC_DX_OFF (PROJ_NAME_OFF - PROJ_DX_SIZE)
 #define PROJC_PFX_OFF (PROJC_DX_OFF - 48u)
 #define PROJC_GX_OFF (PROJC_PFX_OFF + 37u)
@@ -423,7 +423,7 @@ static uint8_t proj_why, proj_why_t;                    /* .. for a value: the c
 static __attribute__((noinline)) void proj_err(void)    /* proj_pack said no: why, on screen */
 {
     static char m[] = "SAVE FORMAT ERROR 0 T0";
-    if (proj_full) { ui_message("SECTION FULL"); return; }
+    if (proj_full) { ui_message("PART FULL"); return; }
     m[18] = (char)proj_why; m[20] = proj_why_t == ' ' ? 0 : 'T'; m[21] = (char)proj_why_t;
     ui_message(m);
 }
@@ -464,7 +464,7 @@ static int proj_fm_kept(const project_t *q, uint32_t t)
     return q->t[t].engine == ENGI_FM6 || memcmp(q->fm6[t], FM6_INIT, FM6_PACKED) != 0;
 }
 static int16_t proj_pdef(uint32_t engine, uint32_t i) { return param_store_def(engine, i); }
-/* the bytes q takes as FUNC up to the tail (PROJC_PFX_OFF: the room); more than the room: SECTION FULL */
+/* the bytes q takes as FUNC up to the tail (PROJC_PFX_OFF: the room); more than the room: PART FULL */
 static int proj_sc_used(const project_t *q) { return q->scene[0] || q->scene[1] || q->scene[2] || q->scene[3]; }   /* (V10.31) */
 static int proj_fg_used(const project_t *q)            /* (0.6.52) a FUGUE head on: its block is written */
 {
@@ -1762,7 +1762,7 @@ static void persist_boot(void)                    /* before settings_init / pane
 
 static int project_used(uint32_t slot) { return proj_import(&proj_scratch, &proj_slot[slot & 3u], sizeof(project_store_t)); }
 
-/* (V10.17) SAVE > SECTIONS > ERASE: section slot of the open project (song) empty again, in RAM and in flash (both
+/* (V10.17) SAVE > PART SLOTS > ERASE: section slot of the open project (song) empty again, in RAM and in flash (both
  * copies' sectors erased: EMPTY, and the LIBRARY's chip dark); the music playing stays as it is. Stopped only (a flash
  * erase). 0 done */
 static int project_erase(uint32_t slot)
@@ -1920,7 +1920,7 @@ static void autosave_hold(void) { as.t = fm1_ms; }   /* the editor's transfers: 
 
 /* main loop, every pass (after settings_poll) */
 /* (JIANT 0.6) how full the music is for a section (FUNC): 1.5 s after the last change, once, said at 90 % and when it
- * no longer fits (a section store or a save would say SECTION FULL; what is stored stays). Main loop, autosave_poll */
+ * no longer fits (a section store or a save would say PART FULL; what is stored stays). Main loop, autosave_poll */
 static struct { uint32_t sig, t; uint8_t due, said; } proj_fill;
 static uint32_t proj_fill_pct(void)
 {
@@ -1939,7 +1939,7 @@ static void proj_fill_poll(uint32_t sig)
         if (pct > 100u && proj_fill.said < 2u)
             ui_message("TOO FULL TO SAVE");
         else if (pct >= 90u && pct <= 100u && !proj_fill.said)
-            ui_message("SECTION 90% FULL");
+            ui_message("PART 90% FULL");
         proj_fill.said = (uint8_t)(pct > 100u ? 2u : pct >= 90u ? (proj_fill.said ? proj_fill.said : 1u) : pct < 85u ? 0u : proj_fill.said);
     }
 }

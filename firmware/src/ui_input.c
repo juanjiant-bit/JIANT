@@ -501,11 +501,11 @@ static void tracks_edit(uint32_t slot, int32_t steps)
     int16_t *vp;
     const param_desc_t *d;
     switch (slot) {
-    case 3:                                             /* (V10.37) the tempo (was the DJ FILTER: LIVE > MANO) */
+    case 3:                                             /* (V10.37) the tempo (was the DJ FILTER: LIVE > KEYS) */
         song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + accel(EN_K4, steps, 200), GP[G_BPM].min, GP[G_BPM].max);
         ui.bpm_t = 40;
         return;
-    case 4: {                                           /* (V10.45) LIVE > MANO KNOB 4: the DJ FILTER (V10.37 sent it to the
+    case 4: {                                           /* (V10.45) LIVE > KEYS KNOB 4: the DJ FILTER (V10.37 sent it to the
                                                          * tempo, MIXER's new KNOB 4); no acceleration across the middle */
         int32_t v = song.g[G_DJF], to = clamp(v + accel(EN_K4, steps, 127), -64, 63);
         if ((v < 0 && to > 0) || (v > 0 && to < 0))
@@ -517,9 +517,9 @@ static void tracks_edit(uint32_t slot, int32_t steps)
         vp = &t->p[P_LEVEL];
         d = &TP[P_LEVEL];
         break;
-    case 2:
-        vp = &t->p[P_REV];
-        d = &TP[P_REV];
+    case 2:                                             /* (codex/coherence) MUTE (was REV: SENDS' beside it) */
+        vp = &t->p[P_MUTE];
+        d = &TP[P_MUTE];
         break;
     default:
         vp = &t->p[P_PAN];
@@ -1599,22 +1599,24 @@ static void edit_param(uint32_t slot, int32_t steps)
         return;
     }
     if (SPLIT_PAGE(pg)) { split_edit(slot, steps); return; }
-    if (FIT_PAGE(pg) && (slot == 1u || slot == 2u)) {
+    if (FIT_PAGE(pg)) {                                   /* (codex/coherence) RHYTHM: KNOB 1 SPAN, 2 FIT */
         uint32_t v = TSEL->seq_fit, span = fit_span(TSEL);
-        if (slot == 1u) span = (uint32_t)clamp((int32_t)span + steps, 1, 64);
+        if (slot > 1u) return;
+        if (!slot) span = (uint32_t)clamp((int32_t)span + steps, 1, 64);
         else v = (v & 127u) | (steps > 0 ? 128u : 0u);
         fit_ui_set(TSEL, (uint8_t)((v & 128u) | span));
         ui.force = 1;
         return;
     }
-    if (pg->graph == GR_SLOTS && save_on() && save_level() == SV_PROJ) {   /* (0.8.5) SAVE > PROJECT's SECTIONS: KNOB 1
-                                                         * the section, KNOB 2 its name (shown; EDIT renames it) */
-        if (slot == 1u) {                                 /* (V10.17) KNOB 2 ERASE: right picks it, left drops it */
-            ui.act = steps > 0 ? 2u : ui.act == 2u ? 0u : ui.act;
+    if (pg->graph == GR_SLOTS && save_on() && save_level() == SV_PROJ) {   /* (0.8.5) SAVE > PROJECT's PART SLOTS: KNOB 1
+                                                         * the part (its name shown; EDIT renames it) */
+        if (slot == 2u) {                                 /* (V10.17) KNOB 3 ERASE (codex/coherence: LOAD ERASE SAVE, as
+                                                         * USER): right picks it, left drops it */
+            ui.act = steps > 0 ? 3u : ui.act == 3u ? 0u : ui.act;
             return;
         }
         if (slot == 0u) {
-            slot = 1u;                                    /* (KNOB 1 the section: SECT's slot, not an action) */
+            slot = 2u;                                    /* (KNOB 1 the part: G_SLOT's place, not an action) */
             goto sect;
         }
     }
@@ -1827,11 +1829,11 @@ static __attribute__((noinline)) void act_do(void)
     }
     if (cur_page()->graph == GR_SLOTS && save_level() == SV_LIB) {
         uint32_t target = song_save_target;
-        if (c == 1u) {
+        if (c == 2u) {
             ui.act = 0;
             if (transport_busy()) ui_message("STOP TO ERASE");
             else confirm_open(CF_ERASE_SONG, target);
-        } else if (c == 2u && (song_draft || target != song_cur)) (void)song_select(target);
+        } else if (c == 1u && (song_draft || target != song_cur)) (void)song_select(target);
         else if (c == 3u) {                              /* (V10.7.20) SAVE here (the SAVE SONG AS page is gone): this
                                                          * project; SONG or LOOP on the NAME screen's KNOB 3 */
             char title[13];
@@ -1847,10 +1849,10 @@ static __attribute__((noinline)) void act_do(void)
         else goto slot_action;
         return;
     }
-    if (cur_page()->graph == GR_SLOTS && c == 1u) {     /* (V10.17) SECTIONS: ERASE, the dialog first */
+    if (cur_page()->graph == GR_SLOTS && c == 2u) {     /* (V10.17) PART SLOTS: ERASE, the dialog first */
         ui.act = 0;
         if (transport_busy()) ui_message("STOP TO ERASE");
-        else if (!project_used(k)) ui_message("EMPTY SECTION");
+        else if (!project_used(k)) ui_message("EMPTY PART");
         else confirm_open(CF_ERASE_SECT, (song_cur << 2u) | (k & 3u));
         return;
     }
@@ -2662,7 +2664,7 @@ static void ui_input_frame(void)
     }
     kx_frame();                                         /* (V10.6z4) the expression keys let go, recorded */
     layer_masks();                                      /* seq.c: keys pressed with a layer's button are its own */
-    live_frame();                                       /* (p2) GLO > LIVE: MANO's keys, OCT- held, the modifiers */
+    live_frame();                                       /* (p2) GLO > LIVE: KEYS's keys, OCT- held, the modifiers */
     {   /* (0.6.67) a button held + SELECT (rule 5): its dice (HOME the generator, GEN; EDIT the sound, SEQ the sequence,
          * LFO the LFO, FX the effects; GLO + SELECT the tempo), ENV SCL ARP SAVE their chain (nav_jump); the button's tap
          * and layer swallowed, and the turn's last detents for a moment after it is let go (no page moved by them). Not in
@@ -2841,7 +2843,7 @@ static void ui_input_frame(void)
             } else if (kind == CF_LOAD_PAT) {
                 pat_load_ui(&trk[ui.confirm_trk % NTRK], pat_pick());
             } else if (kind == CF_CLEAR_PFX) {         /* (0.6.99) FX > PUNCH > CLEAR */
-                if (!chain_busy()) { memset(pfx_lane, 0, sizeof pfx_lane); pfx_ltgt = 0; ui_message("PUNCH LANE CLEARED"); }
+                if (!chain_busy()) { memset(pfx_lane, 0, sizeof pfx_lane); pfx_ltgt = 0; ui_message("PUNCH IN LANE CLEARED"); }
             } else if (kind == CF_CLEAR_MOTION) {
                 track_t *t = &trk[ui.confirm_trk % NTRK];
                 if (!chain_busy()) { load_begin(t, LOAD_PAT); motion_clear(t); load_end(t); ui_message("AUTOMATION CLEARED"); }
@@ -3077,7 +3079,7 @@ static void ui_input_frame(void)
         comp_keys(notes);
     } else if (skeys_on()) {                            /* (V10.6o) PARTS, TIMELINE: theirs */
         tl_keys(notes);
-    } else if (song.grid && song.grid != 3u) {         /* (p2: 3, LIVE's MANO: its board, ui_live.c) */
+    } else if (song.grid && song.grid != 3u) {         /* (p2: 3, LIVE's KEYS: its board, ui_live.c) */
         grid_keys(notes);
     } else if (song.seq_mode && cur_page()->graph == GR_ROLL) {   /* STEP (not CHANCE: its knobs only) */
         if (live_rec_sel() || !((song.rec >> song.sel) & 1u))   /* armed and playing: the keys record live, not

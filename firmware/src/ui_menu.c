@@ -289,7 +289,7 @@ static const char *menu_short(uint32_t row)          /* a card's label: the row'
 {
     static const struct { uint8_t row; char s[9]; } SH[] = {
         {MI_SCROFF, "SCR OFF"}, {MI_ACCEL, "ACCEL"}, {MI_BPMLOCK, "BPM LK"}, {MI_SCLLED, "SCL LEDS"}, {MI_LOWCUT, "SPK EQ"}, {MI_USB, "USB LVL"},
-        {MI_CLKLVL, "CLICK LV"}, {MI_RESTORE, "RESTORE"}, {MI_CPU, "CORES"}, {MI_CLOCK, "CPU MHZ"}, {MI_BT, "BT"}, {MI_PANEL, "CALIBR"}, {MI_INIT, "INIT SYS"},
+        {MI_CLKLVL, "CLICK LV"}, {MI_RESTORE, "RESTORE"}, {MI_CPU, "CORES"}, {MI_CLOCK, "CPU MHZ"}, {MI_BT, "BT"}, {MI_PANEL, "CALIBR"},
         {MI_AT, "AFTERT"}, {MI_VLEARN, "V.LEARN"}};
     uint32_t k;
     for (k = 0; k < NELEM(SH); k++)
@@ -533,7 +533,6 @@ static __attribute__((noinline)) void bt_cal_tick(void)
 }
 static uint32_t bt_prox_sig(void) { return ui.menu == 3 ? (bpc.on ? (fm1_ms - bpc.t0) / 100u * 67u : 0u) + (uint32_t)mod_prox * 31u + bp.raw * 977u + bp.w4[0] * 13u + bp.w4[1] * 17u + bp.w4[2] * 19u + bp.w4[3] * 23u + bp.src * 29u + bp.have * 37u + bp.seen * 41u + (bt_hw_rxdiag() >> 4) * 43u + bp.conn * 5u + BT_CAL[0] * 3u + BT_CAL[1] * 7u + BT_TUNE[0] * 11u + BT_TUNE[1] * 53u + BT_TUNE[2] * 59u : 0u; }
 
-static void confirm_open(uint32_t kind, uint32_t trk);   /* (0.6.58) INIT SYSTEM: ui_input.c */
 static __attribute__((noinline)) void draw_menu(void)
 {
     uint32_t sig;
@@ -671,12 +670,8 @@ static void menu_input(uint32_t oct)                  /* oct: ui_input.c oct_tap
             panel_setup();
             scrn.idle = fm1_ms;                         /* (SCREEN OFF: its own loop had the input) */
             ui.force = 1;
-        } else if (ui.menu_sel == MI_INIT) {           /* (0.6.58) INIT SYSTEM: a new song from zero (V10.7.22: CLEAR
-                                                         * PROJECT, SAVE > TOOLS' first: one dialog; UNDO the music) */
-            ui.menu = 0;
-            confirm_open(CF_INIT_SYS, song.sel);
-            ui.force = 1;
-        } else {                                       /* MI_ABOUT */
+        } else {                                       /* MI_ABOUT (codex/coherence: INIT SYSTEM gone: SAVE > TOOLS >
+                                                         * CLEAR PROJECT, the one place) */
             ui.menu = 2;
             ui.menu_scroll = 0;
             ui.force = 1;

@@ -347,7 +347,7 @@ _Static_assert(sizeof WHEEL_ORDER == NELEM(WHEEL_PRESETS), "WHEEL's browsing ord
 
 static const engine_t ENG_WHEEL = {
     .name = "WHEEL",
-    .page_title = {"BARS", "TONE"},
+    .page_title = {"BARS", "COLOR"},                   /* (codex/coherence: COLOR, was TONE, the group after it) */
     .edit = {
         {"REG", F_ENUM, 0, 15, 4, N_DRW_REG},
         {"SUB", F_INT, -8, 8, 0, 0},
@@ -356,7 +356,7 @@ static const engine_t ENG_WHEEL = {
         {"PERC", F_ENUM, 0, 6, 0, N_DRW_PERC},
         {"CLICK", F_PCT, 0, 127, 40, 0},
         {"DRIVE", F_PCT, 0, 127, 0, 0},
-        {"ROTOR", F_ENUM, 0, 2, 1, N_DRW_ROTR},
+        {"SPEED", F_ENUM, 0, 2, 1, N_DRW_ROTR},          /* (codex/coherence: the rotor's SPEED, was ROTOR, the page after) */
     },
     .presets = WHEEL_PRESETS,
     .npresets = NELEM(WHEEL_PRESETS),

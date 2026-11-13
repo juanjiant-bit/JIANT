@@ -879,7 +879,7 @@ static uint32_t layer_oct(uint32_t pressed, uint32_t oct)
     }
     if (lys.l == LAYER_SAVE && (mine & 2u)) {           /* SAVE + OCT+: STORE the music into the section playing */
         if (live.cur < 0)
-            ui_message("PLAY A SECTION FIRST");
+            ui_message("PLAY A PART FIRST");
         else
             section_store((uint32_t)live.cur);
     }
@@ -1222,7 +1222,7 @@ static __attribute__((noinline)) void layer_cards(uint32_t l)
         draw_column(0, "SONG", val, n != song_cur ? "NEXT" : "", VAL(0u), (int32_t)(n * 1000u / (NSONG - 1u)),
                     ICON_X_SONG);
         val[0] = live.cur >= 0 ? (char)('A' + live.cur) : '-'; val[1] = 0;
-        text_column(1, "SECT", val, live.cur >= 0 ? VAL(1u) : T_DIM);
+        text_column(1, "PART", val, live.cur >= 0 ? VAL(1u) : T_DIM);
         hot_text_column(2, "PLAY", live.mode ? "SONG" : "LOOP");
         text_column(3, "REC", live.srec == 2u ? "ON" : live.srec ? "ARM" : "OFF", live.srec ? VAL(3u) : T_DIM);
     } else if (l == LAYER_MACRO) {                      /* M1..M4, 0..100 % */
@@ -1350,7 +1350,7 @@ static __attribute__((noinline)) void layer_state(uint32_t l)
         fmt_int(v, (int32_t)song_cur + 1);
         lst_chip("SONG", v, 1);
         v[0] = live.cur >= 0 ? (char)('A' + live.cur) : '-'; v[1] = 0;
-        lst_chip("SECTION", v, live.cur >= 0);
+        lst_chip("PART", v, live.cur >= 0);
         str_cpy(b, "CHAIN ", sizeof b);
         for (k = 0; k < lys.nqc && k < 8u; k++) { char c[2] = {(char)('A' + lys.qc[k]), 0}; str_cpy(b + str_len(b), c, sizeof b - str_len(b)); }
         lst_chip(lys.nqc >= 2u ? b : "CHAIN -", 0, lys.nqc >= 2u);
@@ -1424,7 +1424,7 @@ static __attribute__((noinline)) void draw_layer(void)
     draw_foot();
 }
 
-#include "ui_live.c"                                    /* (p2, main 0.9.11) GLO > LIVE: MANO, RIELES */
+#include "ui_live.c"                                    /* (p2, main 0.9.11) GLO > LIVE: KEYS, RAILS */
 
 
 

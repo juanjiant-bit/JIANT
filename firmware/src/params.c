@@ -136,12 +136,13 @@ static const param_desc_t TP[P_COUNT] = {
     [P_CHOR] = PD("CHORUS", F_PCT, 0, 127, 0),
     [P_DLY] = PD("DLY", F_PCT, 0, 127, 0),
     [P_REV] = PD("REV", F_PCT, 0, 127, 0),
-    [P_VOICE] = PE("VOICE", N_VOICE, 0),
+    [P_VOICE] = PE("POLY", N_VOICE, 0),         /* (codex/coherence: was VOICE, the engine's, the group's and the page's) */
     [P_GLIDE] = PD("GLIDE", F_TIME, 0, 127, 0),
-    [P_GLMODE] = PE("MODE", N_GLMODE, 0),
+    [P_GLMODE] = PE("GL MODE", N_GLMODE, 0),    /* (codex/coherence: the glide's MODE) */
     [P_PRIO] = PE("PRIO", N_PRIO, 0),
     [P_ALLOC] = PE("ALLOC", N_ALLOC, 0),
-    [P_DETUNE] = PD("DETUNE", F_INT, 0, 127, 40),
+    [P_DETUNE] = PD("UNISON", F_PCT, 0, 127, 40),   /* (codex/coherence) UNISON's detune, how far apart (was DETUNE, a
+                                                     * bare number: the engines' DETUNE is another) */
     [P_PAN] = PD("PAN", F_BIPCT, -64, 63, 0),
     [P_MUTE] = PE("MUTE", N_ONOFF, 0),
     [P_APDEP] = PD("DEPTH", F_PCT, 0, 127, 0),       /* (JIANT 0.6.9) AUTO PAN (core.h: the old SLICER's slots) */
@@ -289,14 +290,17 @@ static const param_desc_t VLANG_DESC = {"LANG", F_ENUM, 0, LG_N - 1, 0, N_LANG};
 static const char *const N_DKEYMODE[] = {"CLASSIC", "EXTENDED"};
 static const param_desc_t DKEYMODE_DESC = {"KEY MAP",F_ENUM,0,1,1,N_DKEYMODE};   /* (2..9: EXTENDED, eng_drum.c drum_chrom) */
 static const param_desc_t SIMG_DESC = {"IMAGE", F_PCTINV, 0, 127, 127, 0};   /* (V10.49) P_SIMG: 127 = 0 % */
+static const param_desc_t NONE_DESC = {"-", F_PCTINV, 0, 127, 127, 0};      /* (codex/coherence) EXT's P_SIMG: no card on PLAY 2,
+                                                         * the range IMAGE's (an NRPN or a lock keeps its meaning) */
 static const param_desc_t VLYR_DESC = {"LYRIC", F_ENUM, 0, LYR_N - 1, 0, N_LYRIC};  /* P_VLANG, P_VLYR (sing.c) */
 static const param_desc_t VCONS_DESC = {"CONS", F_INT, 0, 127, 127, 0};   /* (V10.6y) P_VCONS: 127 = 100 % (core.h) */
 static const param_desc_t *track_desc(const track_t *t, uint32_t id)
 {
     if (id == MOT_DJF)                                /* (0.9.1) a DJ FILTER record (motion.c): the global's */
         return &GP[G_DJF];
-    if (id == P_SIMG && ENGINES[eng_idx(t->eng_req)] != &ENG_DRUM)   /* (V10.49) a synth's STEREO IMAGE */
-        return &SIMG_DESC;
+    if (id == P_SIMG && ENGINES[eng_idx(t->eng_req)] != &ENG_DRUM)   /* (V10.49) a synth's STEREO IMAGE (codex/coherence:
+                                                         * PLAY 2's KNOB 4; EXT: none, its voice is one) */
+        return ENGINES[eng_idx(t->eng_req)] == &ENG_INPUT ? &NONE_DESC : &SIMG_DESC;
     if (id == P_DKEYMODE && ENGINES[eng_idx(t->eng_req)] == &ENG_DRUM) return &DKEYMODE_DESC;
     if ((id == P_VLANG || id == P_VLYR || id == P_VCONS) && ENGINES[eng_idx(t->eng_req)] == &ENG_FORMANT)
         return id == P_VLANG ? &VLANG_DESC : id == P_VLYR ? &VLYR_DESC : &VCONS_DESC;
@@ -696,7 +700,8 @@ static const page_t PAGES[] = {
     {"MOD", FAM_LFO, SC_TRACK, GR_MOD, {0xFF, P_M1SRC, P_M1DST, P_M1AMT}},   /* KNOB 1: the slot (mod_ui_slot) */
     {"MSEQ", FAM_LFO, SC_TRACK, GR_MSEQ, {0xFF, P_MS0, P_MSLEN, P_MSSLW}},   /* JIANT: KNOB 1 the step (ms_ui_step) */
     {"MSEQ 2", FAM_LFO, SC_TRACK, GR_NONE, {P_MSDIV, 0xFF, 0xFF, 0xFF}},
-    {"FX", FAM_FX, SC_TRACK, GR_FX, {P_DIST, P_CHOR, P_DLY, P_REV}},
+    {"FX", FAM_FX, SC_TRACK, GR_FX, {P_CHOR, P_DLY, P_REV, 0xFF}},   /* (codex/coherence) SENDS: the sends only (DIST: its
+                                                         * own page, after it) */
     {"MASTER", FAM_FX, SC_GLOBAL, GR_NONE, {G_CLIP, G_PUNCH, G_DUCK, G_DREL}},   /* JIANT: clipper, drum bus, ducking;
                                                          * (0.7.6) FX's second page, at hand (was after SL PITCH) */
     {"TAPE", FAM_FX, SC_GLOBAL, GR_NONE, {ID_TAPE, ID_TWOW, 0xFF, 0xFF}},
@@ -716,7 +721,8 @@ static const page_t PAGES[] = {
     {"SL BUS", FAM_FX, SC_GLOBAL, GR_SLCR, {G_SLT1, G_SLT1 + 1, G_SLT1 + 2, G_SLT1 + 3}},   /* what goes in */
     {"SL BUS 2", FAM_FX, SC_GLOBAL, GR_SLCR, {G_SLT1 + 4, G_SLT6, G_SLFX, 0xFF}},
     {"SL PITCH", FAM_FX, SC_GLOBAL, GR_SLPIT, {0xFF, G_SLP0, G_SLPLEN, G_SLPQ}},   /* KNOB 1 the step (sl_ui_step) */
-    {"PUNCH", FAM_FX, SC_GLOBAL, GR_PUNCH, {G_PFXLEN, G_PFXRES, 0xFF, 0xFF}},   /* (0.6.99) the punch-in lane: LEN RES, REC, CLEAR */
+    {"PUNCH IN", FAM_FX, SC_GLOBAL, GR_PUNCH, {G_PFXLEN, G_PFXRES, 0xFF, 0xFF}},   /* (0.6.99) the punch-in lane: LEN RES, REC,
+                                                         * CLEAR (codex/coherence: was PUNCH, MASTER's knob's name) */
     {"SCL", FAM_SCL, SC_TRACK, GR_SCALE, {P_ROOT, P_SCALE, P_QUANT, ID_ALLTR}},   /* (JIANT: ROOT, SCALE every melodic track's;
                                                          * 0.7.6: ALL TR, the global, where TRANS was: SCL 2 gone) */
     {"CHORD", FAM_SCL, SC_TRACK, GR_NONE, {P_CHRD, P_CVOI, P_CSTR, 0xFF}},   /* (0.6.81) a key plays a chord (seq.c) */
@@ -738,7 +744,6 @@ static const page_t PAGES[] = {
     {"X-MOD", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},     /* (JIANT 0.5.1) the kit's LFO on MORPH, RAND */
     {"STEREO", FAM_EDIT, SC_TRACK, GR_DXIMG, {P_DXIMG, 0xFF, 0xFF, 0xFF}}, /* (0.6.58) IMAGE: the kit's stereo placings; (0.7.8)
                                                          * with the kit's pages, before the sounds (the volumes last) */
-    {"STEREO", FAM_EDIT, SC_TRACK, GR_DXIMG, {P_SIMG, 0xFF, 0xFF, 0xFF}},   /* (V10.49) a synth's: IMAGE, the voices across (POLY) */
     {"OPERATOR", FAM_EDIT, SC_TRACK, GR_FMOP, {0xFF, 0xFF, 0xFF, 0xFF}},    /* FM6 only: KNOB 1 the operator, then its */
     {"OP ENV", FAM_EDIT, SC_TRACK, GR_FMENV, {0xFF, 0xFF, 0xFF, 0xFF}},     /* bytes of the track's patch (ui_fm6op.c): */
     {"OPERATOR 2", FAM_EDIT, SC_TRACK, GR_FMOP2, {0xFF, 0xFF, 0xFF, 0xFF}}, /* CRS FINE LEVEL / STG RATE LEVEL / MODE DTUN VEL */
@@ -756,7 +761,8 @@ static const page_t PAGES[] = {
     {"OP3 ENV", FAM_EDIT, SC_TRACK, GR_ADSR, {P_FM3_ATK, P_FM3_DEC, P_FM3_SUS, P_FM3_REL}},
     {"OP4 ENV", FAM_EDIT, SC_TRACK, GR_ADSR, {P_FM4_ATK, P_FM4_DEC, P_FM4_SUS, P_FM4_REL}},
     {"OP LEVEL", FAM_EDIT, SC_TRACK, GR_NONE, {P_FM1_LEVEL, P_FM2_LEVEL, P_FM3_LEVEL, P_FM4_LEVEL}},
-    {"VOICE", FAM_EDIT, SC_TRACK, GR_NONE, {P_VOICE, P_GLIDE, P_GLMODE, P_PRIO}},
+    {"PLAY", FAM_EDIT, SC_TRACK, GR_NONE, {P_VOICE, P_GLIDE, P_GLMODE, P_PRIO}},   /* (codex/coherence: was VOICE) POLY GLIDE
+                                                         * GL MODE PRIO */
     {"GLOBAL", FAM_GLO, SC_GLOBAL, GR_NONE, {G_BPM, G_SWING, G_CLOCK, G_TUNE}},
     {"SYSTEM", FAM_GLO, SC_GLOBAL, GR_NONE, {G_TRKS, G_LOADP, G_ROUTE, G_INFO}},   /* (0.6.18) TRACKS 4 / 6; (0.6.30)
                                                          * LOAD ECO / LITE / FULL (the USB card: the header's icon) */
@@ -765,13 +771,15 @@ static const page_t PAGES[] = {
     {"KEY SPLIT", FAM_GLO, SC_GLOBAL, GR_SPLIT, {0xFF, 0xFF, 0xFF, 0xFF}},
     {"KEY SPLIT 2", FAM_GLO, SC_GLOBAL, GR_SPLIT2, {0xFF, 0xFF, 0xFF, 0xFF}},
     {"LYRIC STEP", FAM_SEQ, SC_TRACK, GR_LYRSTEP, {0xFF,0xFF,0xFF,0xFF}},
-    {"GENERATE", FAM_SEQ, SC_TRACK, GR_TRACKGEN, {0xFF,0xFF,0xFF,0xFF}},
-    {"COMPS", FAM_GLO, SC_GLOBAL, GR_GCOMP, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.9.9-seq2f) the global lane's step: ACTION
+    {"TRACK GEN", FAM_SEQ, SC_TRACK, GR_TRACKGEN, {0xFF,0xFF,0xFF,0xFF}},   /* (codex/coherence: was GENERATE, beside HOME's GENE) */
+    {"G.COMP", FAM_GLO, SC_GLOBAL, GR_GCOMP, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.9.9-seq2f) the global lane's step: ACTION
                                                          * LENGTH CONDITION VALUE (ui_input.c gco_knob) */
-    {"COMPS 2", FAM_GLO, SC_GLOBAL, GR_GCOMP, {0xFF, 0xFF, 0xFF, 0xFF}},   /* .. its TRACKS, MONO / POLY */
+    {"G.COMP 2", FAM_GLO, SC_GLOBAL, GR_GCOMP, {0xFF, 0xFF, 0xFF, 0xFF}},   /* .. its TRACKS, MONO / POLY (codex/coherence:
+                                                         * G.COMP, was COMPS, SEQ > COMP's name and an S) */
     {"PRESETS", FAM_SAVE, SC_GLOBAL, GR_BROWSE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* browser: PRESETS knob / KNOB 1 */
     {"USER", FAM_SAVE, SC_GLOBAL, GR_USER, {0xFF, 0xFF, 0xFF, 0xFF}},       /* user presets: SLOT LOAD ERASE SAVE */
-    {"PROJECT", FAM_SAVE, SC_GLOBAL, GR_SLOTS, {0xFF, G_SLOT, G_LOAD, G_SAVE}},   /* (0.6.12) PROJECT 1-6 (V10.6p; 1-8 before), SECT A-D */
+    {"PROJECT", FAM_SAVE, SC_GLOBAL, GR_SLOTS, {0xFF, G_LOAD, G_SLOT, G_SAVE}},   /* (0.6.12) PROJECT 1-6 (V10.6p; 1-8 before), PART A-D;
+                                                         * (codex/coherence) LOAD ERASE SAVE, as USER (G_SLOT: ERASE's place) */
     {"ARRANGE", FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (0.6.12) the project's song (SEQ > SONG) */
     {"TOOLS", FAM_SAVE, SC_GLOBAL, GR_TOOLS, {G_CLRSEQ, G_INITSND, 0xFF, 0xFF}},
     {"ARP", FAM_ARP, SC_TRACK, GR_ARP, {P_AMODE, P_ARATE, P_AOCT, P_AGATE}},
@@ -803,13 +811,15 @@ static const page_t PAGES[] = {
     {"EUCLID", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_EU0, ID_EU0 + 1u, ID_EU0 + 2u, ID_EU0 + 3u}},   /* (V10.6, MUTATE's place)
                                                          * HITS STEPS ROTATE, LANE / VARY (ui_euclid.c) */
     /* (0.8.5) LENTE everywhere (ui_lens.c): pages the mock-up added, appended (the table's order is no one's index) */
-    {"VOICE 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_ALLOC, P_DETUNE, P_TVEL, 0xFF}},   /* EDIT > TONE: ALLOC, UNISON's DETUNE (in
-                                                         * TP since Felucca, on no page until now), (after V10.7.2) VEL */
+    {"PLAY 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_ALLOC, P_DETUNE, P_TVEL, P_SIMG}},   /* ALLOC, UNISON's detune (in TP since
+                                                         * Felucca, on no page until 0.8.5), (after V10.7.2) VEL,
+                                                         * (codex/coherence) IMAGE, the voices across (POLY; V10.49's STEREO
+                                                         * page gone; was VOICE 2) */
     {"FOCUS", FAM_EDIT, SC_TRACK, GR_FOCUS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* EDIT's detail on a synth: PARAM (E1..E8), its
                                                          * VALUE, the MOD slot aimed at it: SRC AMT (ui_input.c focus_knob) */
-    {"STAGE", FAM_ENV, SC_TRACK, GR_STAGE, {0xFF, 0xFF, P_ELOOP, 0xFF}},   /* ENV's detail: STAGE (ATK DEC SUS REL), its
-                                                         * value, LOOP (ui_input.c stage_knob) */
-    {"SENDS", FAM_TRK, SC_TRACK, GR_TRK, {P_DIST, P_CHOR, P_DLY, P_REV}},   /* GLO > MIX: the track's sends (as FX > SENDS),
+    {"STAGE", FAM_ENV, SC_TRACK, GR_STAGE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* ENV's detail: STAGE (ATK DEC SUS REL), its
+                                                         * value (ui_input.c stage_knob; codex/coherence: LOOP, ENV DEST's) */
+    {"SENDS", FAM_TRK, SC_TRACK, GR_TRK, {P_CHOR, P_DLY, P_REV, 0xFF}},   /* GLO > MIX: the track's sends (as FX > SENDS),
                                                          * the six tracks' as bars (ui_graph.c track_col6) */
     {"BAR", FAM_SEQ, SC_TRACK, GR_STEPS, {0xFF, P_SLEN, 0xFF, 0xFF}},   /* (0.9.2) SEQ > BAR: the pattern's bars, KNOB 1
                                                          * the bar (the cursor at its place in it; was PRESETS on PATTERN's
@@ -817,16 +827,18 @@ static const page_t PAGES[] = {
     {"MODES", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_EU0 + 4u, ID_EU0 + 5u, ID_EU0 + 6u, ID_EU0 + 7u}},   /* (V10.6) the four
                                                          * modes' amounts */
     {"LFO 2", FAM_LFO, SC_TRACK, GR_LFO, {ID_LPHS, 0xFF, 0xFF, 0xFF}},   /* (0.9.18) PHASE: where TRIG starts (FREE: dimmed) */
-    {"MANO", FAM_GLO, SC_GLOBAL, GR_LIVE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (p2, main 0.9.11) GLO > LIVE: the keys a board of
+    {"KEYS", FAM_GLO, SC_GLOBAL, GR_LIVE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (p2, main 0.9.11) GLO > LIVE: the keys a board of
                                                          * live modifiers (ui_live.c, seq_live.c) */
-    {"RIELES", FAM_GLO, SC_GLOBAL, GR_LIVE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* .. the six sequences as rails, four knobs */
+    {"RAILS", FAM_GLO, SC_GLOBAL, GR_LIVE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* .. the six sequences as rails, four knobs
+                                                         * (codex/coherence: KEYS RAILS, were MANO RIELES) */
     {"TIMELINE", FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (add15) the song as lanes (was ARRANGE 2): a row's tracks, the section each
                                                          * plays from (song_chain.c row_src; ui_input.c song_trk_knob) */
     {"MUTATE", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_MU0, ID_MU0 + 1u, ID_MU0 + 2u, ID_MU0 + 3u}},
     {"ENV 2", FAM_ENV, SC_TRACK, GR_ADSR, {P_E2ATK, P_E2DEC, P_E2SUS, P_E2REL}},   /* (V10.22) a second ADSR, a MOD
                                                          * source (SRC ENV2) */   /* (V10.16) EUCLID's
                                                          * mutations on the bar: EVERY AMOUNT MODE WHAT */
-    {"RHYTHM", FAM_SEQ, SC_TRACK, GR_STEPS, {P_SLEN, 0xFF, 0xFF, P_SDIV}},
+    {"RHYTHM", FAM_SEQ, SC_TRACK, GR_STEPS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (codex/coherence) SPAN FIT (seq_fit), KNOB 1 and 2;
+                                                         * LEN and DIV on LENGTH only, the page before */
     {"PARTS", FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.6o) the song's four sections as cards: KNOB 1 one,
                                                          * OCT+ it loops, OCT- the song from its row (ui_lzsave.c graph_parts) */
     {"CLIPS", FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.6s) tracks x parts: KNOB 1 the track, 2 the part,
@@ -840,10 +852,12 @@ static const page_t PAGES[] = {
                                                          * FOCUS (ui.c page_visible) */
     {"EDIT 1", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E0, P_E7, P_E3, P_E1}},   /* (V10.7.22) .. on SAW3 / PLS3 (three oscillators):
                                                          * WAVE INT INT 3 DETUNE, the intervals together; MIX on FOCUS */
+    {"EDIT 2", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E7, P_E4, P_E5, P_E6}},   /* (codex/coherence) FM6's EDIT 2 (PATCH): SLOT on KNOB 1
+                                                         * (rule 4: a page that picks, picks with KNOB 1), MEG VMOD SPREAD */
 };
 #define SPLIT_PAGE(pg) ((uint32_t)((pg)->graph - GR_SPLIT) < 2u)
-#define FIT_PAGE(pg) ((pg)->fam == FAM_SEQ && (pg)->id[0] == P_SLEN && (pg)->id[1] == 0xFFu)
-#define BAR_PAGE(pg) ((pg)->graph == GR_STEPS && (pg)->id[0] == 0xFFu)
+#define FIT_PAGE(pg) ((pg)->graph == GR_STEPS && (pg)->id[1] == 0xFFu)   /* RHYTHM (BAR: KNOB 2 LEN) */
+#define BAR_PAGE(pg) ((pg)->graph == GR_STEPS && (pg)->id[1] == P_SLEN)
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))
 static uint8_t mod_ui_slot;      /* the MOD page: the matrix slot (0..3) KNOB 2..4 edit */
 static uint8_t ms_ui_step;       /* (JIANT) the MSEQ page: the step (0..15) KNOB 2 edits */

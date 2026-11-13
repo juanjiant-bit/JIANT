@@ -149,8 +149,9 @@ static int fop_card(uint32_t slot, const char **label, char *val, const char **u
     *ratio = (int32_t)(v * 1000u / fm6_max(fop_byte(f)));
     fmt_int(val, (int32_t)v);
     switch (f) {
-    case FO_CRS:
-        *label = op[FP_MODE] ? "FIXED" : "RATIO";
+    case FO_CRS:                                     /* (codex/coherence: COARSE, was RATIO / FIXED: EDIT 1's RATIO is
+                                                         * the modulators' macro; MODE says RATIO / FIXED) */
+        *label = "COARSE";
         *icon = ICON_RATIO;
         if (op[FP_MODE]) {
             static const char *const HZ[4] = {"1", "10", "100", "1000"};
@@ -166,7 +167,7 @@ static int fop_card(uint32_t slot, const char **label, char *val, const char **u
         return 1;
     case FO_LVL:
     case FO_ELVL:
-        *label = "LEVEL";
+        *label = f == FO_LVL ? "OUTPUT" : "LEVEL";       /* (codex/coherence: the operator's OUTPUT, OP ENV's stage LEVEL) */
         *icon = ICON_LEVEL;
         return f == FO_ELVL || v != 0u;
     case FO_MODE:
@@ -181,7 +182,7 @@ static int fop_card(uint32_t slot, const char **label, char *val, const char **u
         *icon = ICON_DETUNE;
         return 1;
     case FO_VEL:
-        *label = "VEL";
+        *label = "KEY VEL";                              /* (codex/coherence: the operator's, PLAY 2's VEL the sound's) */
         *icon = ICON_ACCENT;
         return 1;
     default:                                         /* FO_RATE */

@@ -9,17 +9,18 @@
  * value (MI_VALUES: the rows before them hold one). 1.0.5: in four tabs (MI_TAB). */
 enum { MI_COLOR, MI_SKIN, MI_SCOPE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_HOLD, MI_ACCEL, MI_LATCH, MI_BPMLOCK, MI_SCLLED, MI_MIDIOUT,
        MI_MIDIMAP, MI_LEARN, MI_VEL, MI_VELMIN, MI_AT, MI_VLEARN, MI_LOWCUT, MI_USB,
-       MI_CLICK, MI_CLKLVL, MI_COUNTIN, MI_TRACKS, MI_LOAD, MI_OCTBEND, MI_SERIAL, MI_RESTORE, MI_CPU, MI_CLOCK, MI_BT, MI_PANEL, MI_INIT, MI_ABOUT, MI_COUNT };   /* (1.1: the
+       MI_CLICK, MI_CLKLVL, MI_COUNTIN, MI_TRACKS, MI_LOAD, MI_OCTBEND, MI_SERIAL, MI_RESTORE, MI_CPU, MI_CLOCK, MI_BT, MI_PANEL, MI_ABOUT, MI_COUNT };   /* (1.1: the
                                                                                              * metronome's rows in AUDIO; 1.2: RESTORE LAST in
                                                                                              * SYSTEM, SCALE LEDS in CONTROL; 0.9.9-stab: CPU
-                                                                                             * CLOCK in SYSTEM) */
+                                                                                             * CLOCK in SYSTEM; codex/coherence: INIT SYSTEM gone,
+                                                                                             * SAVE > TOOLS > CLEAR PROJECT the one place) */
 #define MI_VALUES MI_PANEL
 static const char *const MI_NAME[MI_COUNT] = {"COLOR", "SKIN", "SCOPE", "LARGE", "ANIM", "LEDS", "SCREEN OFF", "HOLD", "KNOB ACCEL", "FX LATCH", "BPM LOCK",
                                               "SCALE LEDS", "MIDI OUT", "MIDI MAP", "LEARN",
                                               "VELOCITY", "VEL MIN", "AFTERTOUCH", "VEL LEARN",
                                               "SPEAKER EQ", "USB LEVEL", "CLICK", "CLICK LEVEL", "COUNT-IN", "TRACKS", "LOAD",
                                               "OCT BEND", "USB",
-                                              "RESTORE LAST", "CPU CORES", "CPU CLOCK", "BLUETOOTH", "CALIBRATION", "INIT SYSTEM", "ABOUT"};
+                                              "RESTORE LAST", "CPU CORES", "CPU CLOCK", "BLUETOOTH", "CALIBRATION", "ABOUT"};
 /* 1.0.5: the MENU's tabs (ui_menu.c: ALGORITHM steps between them, PRESETS among one tab's rows; the editor gets a
  * row's tab after its MENU_DESC reply). A tab's rows follow each other in MI order (tests/ui_test.c checks it); at
  * most MTAB_ROWS each (the page does not scroll: ui_menu.c fits them). A new row joins a tab here, a new tab is
@@ -50,7 +51,8 @@ static const uint8_t MI_TAB[MI_COUNT] = {
                                                                              * main 0.9.12), CPU CLOCK (0.9.9-stab) */
     MTAB_SYSTEM,                                                            /* BLUETOOTH (V10.12, bt.c) */
     MTAB_SYSTEM,                                                            /* CALIBRATION */
-    MTAB_SYSTEM, MTAB_SYSTEM,                                               /* INIT SYSTEM (0.6.58), ABOUT */
+    MTAB_SYSTEM,                                                            /* ABOUT (codex/coherence: INIT SYSTEM, 0.6.58, gone:
+                                                                             * the same dialog as SAVE > TOOLS > CLEAR PROJECT) */
 };
 static uint32_t mtab_first(uint32_t t)                 /* a tab's first row */
 {
@@ -83,7 +85,7 @@ static const menu_flag_t MENU_FLAGS[] = {
     {MI_LATCH, PREF_LATCH, {"OFF", "ON"}},
     {MI_BPMLOCK, PREF_BPM_LOCK, {"OFF", "ON"}},        /* #58: ON, DICE ALL keeps the tempo (0.6.67: SELECT alone never sets it) */
     {MI_RESTORE, PREF_RESTORE_ON, {"OFF", "ON"}},      /* 1.2, #130; JIANT 0.6.40: OFF (the default), no autosave, power-on as
-                                                        * INIT SYSTEM; ON, the last session back (project.c) */
+                                                        * CLEAR PROJECT; ON, the last session back (project.c) */
     {MI_SCLLED, PREF_SCALE_LEDS, {"OFF", "ON"}},      /* 1.2, Discussion #127: ON, the keys show the scale (ui_input.c) */
     {MI_TRACKS, PREF_SIX, {"4", "6"}},                /* (JIANT 0.6.18) 4 tracks (the default) or all 6 (voice.c trk_live) */
 };

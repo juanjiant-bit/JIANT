@@ -292,10 +292,10 @@ static void graph_proj(int ar)
     uint32_t i, total = 0, sel = (uint32_t)song.g[G_SLOT] - 1u, n = chain_config.count;
     char b[24];
     if (ar == 2) {                                       /* (beta5) GENE's lanes (TIMELINE's until V10.6o): the song left to
-                                                         * right, its bars the width; a lane for the rows (SEC) and one a track:
+                                                         * right, its bars the width; a lane for the rows (PRT, the parts; was SEC) and one a track:
                                                          * its own section calm (half), another bright with its letter, MUTE an
                                                          * empty frame, a VAR its short name. (V10.6o: no scan lines) */
-        static const char *const LN[NTRK + 1] = {"SEC", "T1", "T2", "T3", "T4", "T5", "T6"};
+        static const char *const LN[NTRK + 1] = {"PRT", "T1", "T2", "T3", "T4", "T5", "T6"};
         static const char *const RV_SH[RV_N] = {"", "", "TH", "FL", "HF", "RV", "SH", "+8", "-8", "V1", "V2", "V3", "V4"};
         uint32_t t = song_bars(4u), acc = 0, played = 0, j;
         int32_t ls = 15, lh = ls - 2;                    /* (V10.6i) lanes 2 px shorter, the helix a band of its own */

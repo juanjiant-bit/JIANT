@@ -523,7 +523,7 @@ static void (*const volatile AIN_SWARM)(uint32_t) = ain_swarm;   /* (mod.c macro
 /* SWARM's knobs on the INPUT pages (the stored values the same slots, 0..127; PLAY as it is) */
 static const param_desc_t SW_DESC[8] = {
     {"SOURCE", F_ENUM, 0, AIN_N - 1, AIN_IN1, N_AIN_SRC}, {"PLUCK", F_PCT, 0, 127, 0, 0}, {"FM", F_PCT, 0, 127, 0, 0},
-    {"PLAY", F_ENUM, 0, 1, 0, N_AIN_PLAY}, {"IMAGE", F_PCT, 0, 127, 0, 0}, {"DRIFT", F_PCT, 0, 127, 0, 0},
+    {"MODE", F_ENUM, 0, 1, 0, N_AIN_PLAY}, {"IMAGE", F_PCT, 0, 127, 0, 0}, {"DRIFT", F_PCT, 0, 127, 0, 0},
     {"OCTAVE", F_PCT, 0, 127, 0, 0}, {"CHAOS", F_PCT, 0, 127, 0, 0}};   /* (V10.6v: CHAOS in SELF's place) */
 static const param_desc_t *input_desc(const track_t *t, uint32_t k) { return t->p[P_E0] == AIN_SW && k < 8u ? &SW_DESC[k] : 0; }
 
@@ -590,7 +590,7 @@ static const engine_t ENG_INPUT = {
         {"SOURCE", F_ENUM, 0, AIN_N - 1, AIN_IN1, N_AIN_SRC},
         {"GAIN", F_INT, 0, 127, 64, 0},
         {"GATE", F_PCT, 0, 127, 0, 0},
-        {"PLAY", F_ENUM, 0, 1, 0, N_AIN_PLAY},
+        {"MODE", F_ENUM, 0, 1, 0, N_AIN_PLAY},          /* (codex/coherence: THRU / KEYS, was PLAY: EDIT > PLAY is the group) */
         {"WIDTH", F_PCT, 0, 127, 127, 0},
         {"RING", F_PCT, 0, 127, 0, 0},
         {"BITS", F_PCT, 0, 127, 0, 0},

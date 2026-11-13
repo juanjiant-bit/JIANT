@@ -246,10 +246,10 @@ static void fxg_slpitch(int32_t x, int32_t y, int32_t w, int32_t h)
 }
 static void fxg_sends(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h)
 {
-    static const char *const N[4] = {"DIST", "CHOR", "DLY", "REV"};
-    int32_t i, bw = w / 4 - 6;
-    for (i = 0; i < 4; i++) {
-        int32_t v = t->p[P_DIST + i], bx = x + i * (w / 4), fh = (h - 20) * v / 127;
+    static const char *const N[3] = {"CHOR", "DLY", "REV"};   /* (codex/coherence: DIST its own page) */
+    int32_t i, bw = w / 3 - 6;
+    for (i = 0; i < 3; i++) {
+        int32_t v = t->p[P_CHOR + i], bx = x + i * (w / 3), fh = (h - 20) * v / 127;
         cv_rect(bx, y + 10, bw, h - 20, T_RAISE);
         if (fh > 0)
             cv_rect(bx, y + h - 10 - fh, bw, fh, FXG_H(51 + v * 205 / 127));

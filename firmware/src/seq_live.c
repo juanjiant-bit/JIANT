@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* LIVE (main 0.9.11, ported to seq-v2 in p2): the sequencer's live modifiers, GLO > LIVE (the approved mock-up
- * secuencias.html: MANO, its V3, and RIELES, its V1; the pages are ui_live.c). Per track, never destructive: they change
+ * secuencias.html: KEYS, its V3, and RAILS, its V1; the pages are ui_live.c). Per track, never destructive: they change
  * how the sequencer walks the steps, not the steps, and are never saved (performance state, as the punch-in effects);
  * COMMIT writes them into the track's own parameters (UNDO: GLO + G4).
  *   RATE   /4 /3 /2 2/3 x1 3/2 x2 x3 x4: the samples the playhead moves by a block scaled
- *   CORTE  the first N steps only; LOOP (MANO's keys and K2): N steps from where the playhead is (a window of LEN, wrapping
+ *   LOOP   (RAILS) the first N steps only; LOOP (KEYS's keys and K2): N steps from where the playhead is (a window of LEN, wrapping
  *          past its last step)
- *   DIR    REV, PING (MANO's keys), RND (MANO's F#5) inside the window
- *   GIRO   the playhead a step on / back (MANO's C#5 D#5): a rotation, COMMIT puts it into ROTATE (P_SOFS)
+ *   DIR    REV, PING (KEYS's keys), RND (KEYS's F#5) inside the window
+ *   GIRO   the playhead a step on / back (KEYS's C#5 D#5): a rotation, COMMIT puts it into ROTATE (P_SOFS)
  *   THIN   a share of the steps silent: a roll of its own (deterministic: the track, the step, the loop), as CHANCE
  *   RATCH  every step played x2 .. x4 inside the step (step_parts), never shorter than LV_MINPART samples (~1.4 ms)
  *   OCT    the sequencer's notes an octave up / down (not a kit's hits)
@@ -23,7 +23,7 @@
  * at the ghost's place (rec_note: where the step is in the written pattern), so recording over a modified track never
  * scrambles it; the automation, the locks and the components follow the step that sounds.
  * Timing: the main loop (ui_live.c live_publish) writes what each track should have (lv.want); here (live_q, each block
- * before the sequencer) it goes in on the transport's next 1/16, RATE on the next beat (MANO's keys: the 1/16); RETURN
+ * before the sequencer) it goes in on the transport's next 1/16, RATE on the next beat (KEYS's keys: the 1/16); RETURN
  * on the next beat; OCT- held (BYPASS) at once (a COMMIT: ui_live.c, at once, the interrupts held off). Stopped: at once.
  * Cost: idle one test a block (lv.busy | lv.act and the tracks' FX bits) and one a track (seq_tick: LV_ON); modified,
  * the ghost's step and a multiply / divide by 2..4 per track and block (live_adv). Nothing in the audio render.
@@ -33,7 +33,7 @@ static void live_heads(track_t *t, uint32_t ti, uint32_t len);   /* (seq.c, afte
 enum { LV_X1 = 4, LV_NRATE = 9, LV_NCUT = 11, LV_MINPART = 64 };
 static const uint8_t LV_RN[LV_NRATE] = {1, 1, 1, 2, 1, 3, 2, 3, 4};   /* rate - LV_X1 .. : its multiplier as num / den */
 static const uint8_t LV_RD[LV_NRATE] = {4, 3, 2, 3, 1, 2, 1, 1, 1};
-static const uint8_t LV_CUT[LV_NCUT] = {0, 32, 24, 16, 12, 8, 6, 4, 3, 2, 1};   /* CORTE / LOOP: the steps (0 OFF) */
+static const uint8_t LV_CUT[LV_NCUT] = {0, 32, 24, 16, 12, 8, 6, 4, 3, 2, 1};   /* LOOP: the steps (0 OFF) */
 enum { LVD_FWD, LVD_REV, LVD_PING, LVD_RND };
 enum { LQ_NONE, LQ_BEAT, LQ_NOW };                     /* a request (lv.rk): RETURN, BYPASS */
 #define LF_HERE 1u                                      /* the window from where the playhead is (LOOP), not step 1 */
@@ -47,20 +47,20 @@ typedef struct {
     uint8_t ws, pad;                                    /* a LOOP's first step (ui_live.c: where the playhead was) */
 } lv_mod_t;                                             /* all 0: nothing */
 static struct {
-    /* main loop (ui_live.c): the latched layer per track, the knobs of both pages and MANO's black keys */
+    /* main loop (ui_live.c): the latched layer per track, the knobs of both pages and KEYS's black keys */
     int8_t rate[NTRK], dn[NTRK], rot[NTRK];             /* dn: DENS -9 .. 3 (THIN 90 % .. 10 %, RATCH x2 .. x4) */
     uint8_t cut[NTRK];                                  /* LV_CUT index */
     uint8_t here, rnd;                                  /* a bit per track: the window is a LOOP; DIR RND */
-    uint8_t tk[16], lt[16];                             /* MANO's white keys: the tracks each acts on, held / latched */
-    uint8_t latch, tgt, byp, rkey, ob;                  /* LATCH; RIELES' K1 (0 ALL, 1..6 T1..T6, 7 SYN, 8 DRM); OCT-
+    uint8_t tk[16], lt[16];                             /* KEYS's white keys: the tracks each acts on, held / latched */
+    uint8_t latch, tgt, byp, rkey, ob;                  /* LATCH; RAILS' K1 (0 ALL, 1..6 T1..T6, 7 SYN, 8 DRM); OCT-
                                                          * held; the tracks a rate key acted on last frame; OCT- / + */
-    uint32_t kprev, oms;                                /* MANO's keys last frame; OCT- down since (0: not) */
+    uint32_t kprev, oms;                                /* KEYS's keys last frame; OCT- down since (0: not) */
     /* main loop -> ISR */
     lv_mod_t want[NTRK];
     uint8_t r16, busy;                                  /* tracks whose RATE goes in on the 1/16; anything to do */
     uint8_t rq[NTRK], rk[NTRK];                         /* a request: rq moved on, of kind rk (LQ_*) */
     /* ISR */
-    uint32_t kb;                                        /* keyboard_block: the keys held on MANO */
+    uint32_t kb;                                        /* keyboard_block: the keys held on KEYS */
     lv_mod_t cur[NTRK];
     uint8_t act, rs[NTRK], pd[NTRK], rem[NTRK];         /* modified (a bit a track); rq seen; PING going down; RATE's
                                                          * remainder */
@@ -227,7 +227,7 @@ static __attribute__((noinline)) void live_q(uint32_t n)
         if (rq != LQ_NOW && !bb && (!b16 || rq == LQ_BEAT))
             continue;
         if (rq != LQ_NOW && !bb && !((lv.r16 >> i) & 1u))
-            w.rate = c->rate;                           /* (RATE waits for the beat; MANO's keys: the 1/16) */
+            w.rate = c->rate;                           /* (RATE waits for the beat; KEYS's keys: the 1/16) */
         lv.rs[i] = lv.rq[i];
         if (!(lv.act & bit)) {
             if (!song.playing || lv_neutral(&w)) {

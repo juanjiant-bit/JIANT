@@ -34,7 +34,7 @@ static int project_clear(void);                 /* (V10.7.22) project.c: CLEAR P
 static int undo_do(void);                       /* .. back (and again: forward) */
 static uint8_t undo_ok;
 static int project_used(uint32_t slot);
-static int project_erase(uint32_t slot);       /* (V10.17) SAVE > SECTIONS > ERASE */
+static int project_erase(uint32_t slot);       /* (V10.17) SAVE > PART SLOTS > ERASE */
 static uint32_t lib_scan(uint32_t n, char *b);           /* (0.8.5) project.c: SAVE > LIBRARY's tiles */
 static uint32_t lib_gen(void);
 static int project_recall_sound(uint32_t slot, uint32_t k);
@@ -412,7 +412,7 @@ enum { CF_NONE, CF_CLEAR_SEQ, CF_CLEAR_TRK, CF_OVR_PROJ, CF_OVR_USER, CF_LOAD_PA
                                    * keep the diced sequence / LFO / effects?;
                                    * SAVE over a used slot; a pattern over the user's steps;
                                    * USER ERASE; (0.9.3) MUTATE turned OFF: BACK TO BEFORE MUTATE?; (p2) LIVE's COMMIT */
-/* (p2, main 0.9.11) GLO > LIVE: MANO, RIELES (ui_live.c, included by ui_layer.c) */
+/* (p2, main 0.9.11) GLO > LIVE: KEYS, RAILS (ui_live.c, included by ui_layer.c) */
 static int live_page(void);
 static int live_mano(void);
 static void live_frame(void);
@@ -653,8 +653,7 @@ static int page_visible(uint32_t i)
     if (PAGES[i].graph == GR_PATS || PAGES[i].graph == GR_CHANCE)   /* (0.6.37) PHRASES, a step's CHANCE: out of the */
         return !ui.home && ui.page == i;               /* SEQ pages' cycle (only where code put the screen) */
     if (PAGES[i].graph == GR_DXSND || PAGES[i].graph == GR_DXIMG)   /* (0.6.48: IMAGE; V10.49: STEREO a synth's too) */
-        return trk_eng(TSEL) == ENGI_DRUM ? PAGES[i].id[0] != P_SIMG : PAGES[i].id[0] == P_SIMG && trk_eng(TSEL) != ENGI_INPUT;   /* (V10.49: a synth's
-                                                         * STEREO its own page, P_SIMG) */
+        return trk_eng(TSEL) == ENGI_DRUM;              /* (codex/coherence: a synth's IMAGE on PLAY 2) */
     if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] >= P_LN0 && PAGES[i].id[0] <= P_LN7)
         return trk_eng(TSEL) == ENGI_DRUM;
     if (PAGES[i].graph == GR_FOCUS)                     /* (0.8.5) FOCUS: a synth's (FM6: OPERATOR, DRUM: SOUND; V10.54 not INPUT's) */
@@ -672,6 +671,9 @@ static int page_visible(uint32_t i)
                                                          * place), no EDIT 2; every other engine EDIT 1 and EDIT 2 */
     {
         uint32_t a2 = PAGES[i].id[0] == P_E0 && PAGES[i].id[3] == P_E7, a3 = PAGES[i].id[0] == P_E0 && PAGES[i].id[1] == P_E7;
+        if (PAGES[i].id[0] == P_E7 || (trk_eng(TSEL) == ENGI_FM6 && PAGES[i].id[0] == P_E4))   /* (codex/coherence) FM6's
+                                                         * EDIT 2: SLOT first */
+            return (trk_eng(TSEL) == ENGI_FM6) == (PAGES[i].id[0] == P_E7);
         if (trk_eng(TSEL) != ENGI_ANALOG) return !a2 && !a3;
         return AN_OSC3(TSEL->p) ? a3 : a2;              /* (V10.7.22: SAW3 / PLS3, its three intervals on one page) */
     }
@@ -694,15 +696,16 @@ static uint32_t page_first(uint32_t fam)
  * for the level it was on (lens_level, save_level, fx_level, pd_level, home_level):
  *   SEQ   PATTERN's bars (PATTERN STRETCH TRACK, the new BAR), the roll (STEP NOTE AUTOMATION AUTO LIST), the step
  *         large (COMP COMP 2); PHRASES (PRESETS' pattern loader) and SONG read as PATTERN, CHANCE as STEP
- *   SAVE  (V10.2) SONG (TIMELINE SECTIONS), PROJECT (PROJECTS ARRANGE TOOLS: the PROJECT page's KNOB 1 the section), SOUND (USER PRESETS)
+ *   SAVE  (V10.2) SONG (TIMELINE ARRANGE PARTS CLIPS), PROJECT (PART SLOTS PROJECTS: the PROJECT page's KNOB 1 the part or
+ *         the project), SOUND (USER PRESETS)
  *   FX    TRACK (SENDS DIST AUTO PAN), BUSES, the effects (ui.fxmod: the module shown last, BUSES' tile lit) */
 static int lens_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam == FAM_SEQ; }
 static int save_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam == FAM_SAVE; }
 static void page_entered(void);
 static void page_flash(void);
 #define FX_NMOD 6u
-static const char *const FX_MOD[FX_NMOD] = {"DELAY", "REVERB", "CHORUS", "SLICER", "PUNCH", "MASTER"};   /* (snd2: MASTER */
-static const char *const FX_MHEAD[FX_NMOD] = {"DLY", "REVERB", "CHORUS", "SLICER", "PUNCH", "MASTER"};   /* last) its first page */
+static const char *const FX_MOD[FX_NMOD] = {"DELAY", "REVERB", "CHORUS", "SLICER", "PUNCH IN", "MASTER"};   /* (snd2: MASTER */
+static const char *const FX_MHEAD[FX_NMOD] = {"DLY", "REVERB", "CHORUS", "SLICER", "PUNCH IN", "MASTER"};   /* last) its first page */
 static const uint8_t FX_MN[FX_NMOD] = {3, 2, 1, 4, 1, 3};   /* its pages, one after another in PAGES (snd8: MASTER, TAPE; p9 EQ) */
 static int page_visible(uint32_t i);
 static int fx_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam == FAM_FX; }
@@ -2105,7 +2108,7 @@ static uint32_t act_cols(void)                   /* the columns that are actions
     if (pg->graph == GR_USER)
         return 14u;                              /* LOAD ERASE SAVE */
     if (pg->graph == GR_SLOTS && save_on())
-        return 14u;                              /* (V10.17) SECTIONS: ERASE LOAD SAVE */
+        return 14u;                              /* (V10.17) PART SLOTS, PROJECTS: LOAD ERASE SAVE */
     if (pg->scope == SC_GLOBAL)
         for (c = 0; c < 4u; c++)
             if (go_id(pg->id[c]))
@@ -2148,7 +2151,7 @@ static const char *act_name(uint32_t c)          /* column c's action (the foote
         return "LOAD";
     if (cur_page()->graph == GR_USER)
         return UP_GO[(c + 2u) % 3u];
-    if (cur_page()->graph == GR_SLOTS && (c & 3u) == 1u)   /* (V10.17) SECTIONS' KNOB 2 */
+    if (cur_page()->graph == GR_SLOTS && (c & 3u) == 2u)   /* (V10.17) PART SLOTS' KNOB 3 (codex/coherence: was 2) */
         return "ERASE";
     return id == G_CLRSEQ ? "CLEAR" : id == G_INITSND ? "INIT" : id == G_LOAD ? "LOAD" : "SAVE";
 }
@@ -2177,9 +2180,9 @@ static int act_ready(void)
         return pat_last[s] != pat_pick() + 1u || steps_sig(TSEL) != pat_sig[s];
     if (cur_page()->graph == GR_USER)
         return c == 3u ? !song.playing : up_used(ui.uslot) && (c == 1u || !song.playing);
-    if (cur_page()->graph == GR_SLOTS && c == 1u)       /* (V10.17) SECTIONS: ERASE a stored section, stopped */
+    if (cur_page()->graph == GR_SLOTS && c == 2u)       /* (V10.17) PART SLOTS: ERASE a stored part, stopped */
         return !transport_busy() && (save_level() == SV_LIB || project_used((uint32_t)song.g[G_SLOT] - 1u));
-    if (cur_page()->graph == GR_SLOTS && c == 2u && save_level() == SV_LIB && (song_draft || song_save_target != song_cur))
+    if (cur_page()->graph == GR_SLOTS && c == 1u && save_level() == SV_LIB && (song_draft || song_save_target != song_cur))
         return !transport_busy();
     id = cur_page()->id[c & 3u];
     if (id == G_LOAD)
