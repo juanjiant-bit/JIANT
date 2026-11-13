@@ -3,7 +3,7 @@
  * 2. each band +6 / -6 dB: a tone in it moves at least half of it, more than any other tone (broad one-pole bands,
  *    a Baxandall's gentleness: the neighbours follow a little);
  * 3. kept with a project ('E' 'Q'), one without it opens flat.
- * (V10.7.30) BALANCE (fx.c bal_ctl, params.c bal_v) and the DIST NOISE (dnz_v):
+ * (V10.7.30) BALANCE (fx.c bal_block, params.c bal_v) and the DIST NOISE (dnz_v):
  * 4. a mix heavy in the low mids: after a few seconds their tone down 2 .. 8 dB more than the others move; never a boost
  *    of them (a mix light in them: their gain stays 0); AMOUNT 0: bit for bit the input again; silence holds the gains;
  * 5. kept with a project ('X' 'M'), one without it opens with BALANCE at BAL_DEF and no NOISE. */
@@ -76,7 +76,7 @@ int main(void)
         for (r = 0; r < 2u; r++) {
             double mud = r ? -8 : 10;
             int32_t c1 = 0;
-            memset(&eqs, 0, sizeof eqs); for (k = 0; k < 4; k++) eq_v[k] = 0;
+            memset(&bal, 0, sizeof bal); for (k = 0; k < 4; k++) eq_v[k] = 0;
             bal_v = BAL_DEF;
             for (b = 0; b < 4000u; b++) {               /* (~5.8 s) */
                 for (i = 0; i < CTL; i++) {
@@ -87,40 +87,40 @@ int main(void)
                     }
                     mix_l[i] = mix_r[i] = (int32_t)v; wet[i] = 0;
                 }
-                eq_block(CTL);
-                if (eqs.c[1] > c1) c1 = eqs.c[1];
+                bal_block(CTL);
+                if (bal.c[1] > c1) c1 = bal.c[1];
             }
-            printf("eq:   BALANCE, the low mids %+.0f dB: its bands' gains %+.1f %+.1f %+.1f %+.1f dB\n", mud, eqs.c[0] / 256.0 / 42.52,
-                   eqs.c[1] / 256.0 / 42.52, eqs.c[2] / 256.0 / 42.52, eqs.c[3] / 256.0 / 42.52);
+            printf("eq:   BALANCE, the low mids %+.0f dB: its bands' gains %+.1f %+.1f %+.1f %+.1f dB\n", mud, bal.c[0] / 256.0 / 42.52,
+                   bal.c[1] / 256.0 / 42.52, bal.c[2] / 256.0 / 42.52, bal.c[3] / 256.0 / 42.52);
             if (!r)                                     /* (log2 Q16: 1 dB 10885) */
                 ck("4. BALANCE: low mids piled up: their band down 4 .. 12 dB, the lows within +-1.5 dB",
-                   eqs.c[1] <= -4 * 10885 && eqs.c[1] >= -510 * 256 && eqs.c[0] >= -64 * 256 && eqs.c[0] <= 64 * 256);
+                   bal.c[1] <= -4 * 10885 && bal.c[1] >= -510 * 256 && bal.c[0] >= -64 * 256 && bal.c[0] <= 64 * 256);
             else
-                ck("   low mids lacking: never boosted (their gain stays 0)", c1 == 0 && eqs.c[1] == 0);
+                ck("   low mids lacking: never boosted (their gain stays 0)", c1 == 0 && bal.c[1] == 0);
         }
         {   /* AMOUNT 0: back to bit for bit */
             int32_t ref[CTL], same = 1;
             bal_v = 0;
             for (b = 0; b < 3000u; b++) {
                 for (i = 0; i < CTL; i++) { mix_l[i] = mix_r[i] = (int32_t)(i * 997u % 60000u) - 30000; wet[i] = 0; ref[i] = mix_l[i]; }
-                eq_block(CTL);
+                bal_block(CTL);
             }
             for (i = 0; i < CTL; i++) same &= mix_l[i] == ref[i];
-            ck("   AMOUNT 0: settles back to the input bit for bit (the EQ flat)", same && !eqs.g[0] && !eqs.g[1] && !eqs.g[2] && !eqs.g[3]);
+            ck("   AMOUNT 0: settles back to the input bit for bit (the EQ flat)", same && !bal.g[0] && !bal.g[1] && !bal.g[2] && !bal.g[3]);
         }
         {   /* silence holds what BALANCE had */
             int32_t keep[4];
             bal_v = BAL_DEF;
             for (b = 0; b < 3000u; b++) {
                 for (i = 0; i < CTL; i++) { double v = 4000 * sin(ph[1]) + 9000 * sin(ph[0]); ph[0] += 2 * M_PI * 60 / FS; ph[1] += 2 * M_PI * 450 / FS; mix_l[i] = mix_r[i] = (int32_t)v; wet[i] = 0; }
-                eq_block(CTL);
+                bal_block(CTL);
             }
             for (b = 0; b < 3100u; b++) {               /* (after 100 blocks the band filters' own tails are out) */
-                if (b == 100u) for (k = 0; k < 4; k++) keep[k] = eqs.e[k];
+                if (b == 100u) for (k = 0; k < 4; k++) keep[k] = bal.e[k];
                 for (i = 0; i < CTL; i++) mix_l[i] = mix_r[i] = wet[i] = 0;
-                eq_block(CTL);
+                bal_block(CTL);
             }
-            ck("   silence: the followers held (the balance kept for the next sound)", keep[0] == eqs.e[0] && keep[1] == eqs.e[1] && keep[2] == eqs.e[2] && keep[3] == eqs.e[3]);
+            ck("   silence: the followers held (the balance kept for the next sound)", keep[0] == bal.e[0] && keep[1] == bal.e[1] && keep[2] == bal.e[2] && keep[3] == bal.e[3]);
         }
     }
     {   /* 5. kept with a project */

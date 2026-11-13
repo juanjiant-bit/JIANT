@@ -104,7 +104,7 @@ typedef struct {
                                                 * of a slot, a section's name, a check, set the EQ and TAPE playing) */
     int8_t bal;                                /* (V10.7.30) BALANCE's AMOUNT - BAL_DEF (0: the default, as every older read
                                                 * leaves it) and each track's DIST NOISE: 'X' 'M' (proj_xm), as the EQ */
-    uint8_t dnz[NTRK];
+    int16_t dnz[NTRK];                         /* (as params.c dnz_v: copied whole) */
     uint8_t scene[4];                          /* (V10.31) SCL > SCENE: ON, then the six roles a nibble each (seq.c
                                                 * scn_on scn_role): FUNC's 'S' 'C' block after 'D' 'A', none before */
     uint8_t scpat[(NTRK + 1) / 2];                        /* (V10.6k) SCENE's BASS/LEAD PATTERN and DRUM STYLE (seq.c scn_pat), a
@@ -231,19 +231,19 @@ static __attribute__((noinline)) uint32_t proj_xm(project_t *q, const uint8_t *b
     uint8_t *b = (uint8_t *)(uintptr_t)bc;
     uint32_t k, any = (uint32_t)q->bal;
     if (!room) {
-        for (k = 0; k < NTRK; k++) any |= q->dnz[k];
+        for (k = 0; k < NTRK; k++) any |= (uint32_t)q->dnz[k];
         if (!any) return 0;
         if (b) {
             b[pos] = 'X'; b[pos + 1u] = 'M'; b[pos + 2u] = (uint8_t)(q->bal + BAL_DEF);
-            memcpy(b + pos + 3u, q->dnz, NTRK);
+            for (k = 0; k < NTRK; k++) b[pos + 3u + k] = (uint8_t)q->dnz[k];
         }
         return 3u + NTRK;
     }
     q->bal = 0;
-    memset(q->dnz, 0, NTRK);
+    memset(q->dnz, 0, sizeof q->dnz);
     if (pos + 3u + NTRK > room || b[pos] != 'X' || b[pos + 1u] != 'M') return 0;
-    q->bal = (int8_t)(b[pos + 2u] - BAL_DEF);           /* (their range: project_restore_runtime's) */
-    memcpy(q->dnz, b + pos + 3u, NTRK);
+    q->bal = (int8_t)(b[pos + 2u] - BAL_DEF);           /* (its range: project_restore_runtime's) */
+    for (k = 0; k < NTRK; k++) q->dnz[k] = b[pos + 3u + k] > 100u ? 100 : b[pos + 3u + k];
     return 3u + NTRK;
 }
 
@@ -1256,7 +1256,7 @@ static __attribute__((noinline)) void proj_master_put(project_t *p)
     for (k = 0; k < 4u; k++) p->eq[k] = (int8_t)eq_v[k];
     p->tp[0] = (uint8_t)tape_v[0]; p->tp[1] = (uint8_t)tape_v[1];
     p->bal = (int8_t)(bal_v - BAL_DEF);                 /* (V10.7.30) BALANCE, the tracks' NOISE */
-    for (k = 0; k < NTRK; k++) p->dnz[k] = (uint8_t)dnz_v[k];
+    memcpy(p->dnz, dnz_v, sizeof p->dnz);
 }
 static void project_capture(project_t *p)
 {
@@ -1510,7 +1510,7 @@ static int project_restore_runtime(const project_t *input)
         for (k = 0; k < 4u; k++) eq_v[k] = clamp(p->eq[k], -12, 12);
         tape_v[0] = p->tp[0] > 100u ? 100 : p->tp[0]; tape_v[1] = p->tp[1] > 100u ? 100 : p->tp[1];
         bal_v = (int16_t)clamp(p->bal + BAL_DEF, 0, 100);   /* (V10.7.30) BALANCE, NOISE */
-        for (k = 0; k < NTRK; k++) dnz_v[k] = (int16_t)(p->dnz[k] > 100u ? 100u : p->dnz[k]);
+        memcpy(dnz_v, p->dnz, sizeof dnz_v);            /* (0 .. 100: proj_xm's, or the knob's) */
     }
     {                                                   /* (V10.31) SCENE */
         uint32_t i;

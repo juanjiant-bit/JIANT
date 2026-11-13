@@ -157,7 +157,8 @@ static __attribute__((noinline)) int32_t dist_fold(int32_t v)
  * dist_cab_b: no fixed rate, so no fixed tone where the images of the low notes crowd round it), the output a ramp from
  * the last held sample to the new one (dist_dc to dist_hold: a first-order hold, the images down by sin x / x once more);
  * the bits as before (4 .. 14 off, rounded: no offset). dist_hc: the type the state is of (+ 16; another: cleared) */
-static uint32_t dist_rnd[NTRK] __attribute__((section(".bss.tape")));   /* (the jitter's and NOISE's random numbers, a track each) */
+static uint32_t dist_rnd __attribute__((section(".bss.tape")));   /* (the jitter's and NOISE's random numbers: one for all, its
+                                                         * order no matter) */
 static __attribute__((noinline)) int32_t dist_shape_x(track_t *t, uint32_t type, int32_t x, int32_t g, int32_t d)
 {
     int32_t st0 = (int32_t)(786432u / (uint32_t)(12 + d)), y;   /* (65536 x 12 / (12 + d)) */
@@ -171,12 +172,12 @@ static __attribute__((noinline)) int32_t dist_shape_x(track_t *t, uint32_t type,
         return dist_fold(((t->dist_dc >> 2) * ((g * 7) >> 4)) >> 10);
     }
     if ((t->dist_cab_l += t->dist_cab_b) >= 65536) {   /* the next sample held */
-        uint32_t ti = (uint32_t)(t - trk) % NTRK, r = dist_rnd[ti] ? dist_rnd[ti] : 0x2545F491u + ti, sh = 4u + (uint32_t)d / 12u;
+        uint32_t r = dist_rnd | 1u, sh = 4u + (uint32_t)d / 12u;
         t->dist_cab_l &= 65535;
         t->dist_dc = t->dist_hold;
         t->dist_hold = (int32_t)((uint32_t)((clamp(x, -131072, 131071) + (1 << (sh - 1u))) >> sh) << sh);
         r ^= r << 13; r ^= r >> 17; r ^= r << 5;
-        dist_rnd[ti] = r;
+        dist_rnd = r;
         t->dist_cab_b = clamp(st0 + (st0 >> 6) * ((int32_t)r >> 26), 1024, 65535);
     }
     y = t->dist_dc + ((((t->dist_hold - t->dist_dc) >> 2) * (t->dist_cab_l >> 6)) >> 8);
@@ -245,7 +246,7 @@ static int32_t dist_w[NTRK];                            /* the blend the last bl
 static int32_t dist_nlp[NTRK] __attribute__((section(".bss.tape")));
 static __attribute__((noinline)) void dist_noise(track_t *t, int32_t *b, uint32_t n)
 {
-    uint32_t ti = (uint32_t)(t - trk) % NTRK, r = dist_rnd[ti] ? dist_rnd[ti] : 0x2545F491u + ti, i;
+    uint32_t ti = (uint32_t)(t - trk) % NTRK, r = dist_rnd | 1u, i;
     int32_t lp = dist_nlp[ti], amt = dnz_v[ti], thr = 8000 - amt * 40, gn = (amt * 3 * dist_w[ti]) >> 12;
     int32_t k = clamp(32000 - t->p[P_DIST] * 95 + t->p[P_DTONE] * 300, 2500, 32767);
     for (i = 0; i < n; i++) {
@@ -256,7 +257,7 @@ static __attribute__((noinline)) void dist_noise(track_t *t, int32_t *b, uint32_
         b[i] += (lp * ((a * gn) >> 8)) >> 15;
     }
     dist_nlp[ti] = lp;
-    dist_rnd[ti] = r;
+    dist_rnd = r;
 }
 static void track_dist(track_t *t, int32_t *b, uint32_t n)
 {
@@ -413,24 +414,8 @@ static __attribute__((noinline)) void tape_block(uint32_t n)
 }
 /* (p9) the master's EQ (FX > EQ, params.c eq_v): three one-pole low-passes (~200 Hz, ~1 kHz, ~4 kHz) split the mix into
  * four bands that sum back to it exactly; each band's gain - 1 added (eq_gain: -12 .. +12 dB, Q12), the gains moved to
- * their knobs a block at a time. ~10 multiplies a sample and channel; every knob at 0 (and settled): not run.
- * (V10.7.30, the owner: "everything gets muddy when I add tracks and it becomes a ball of mids") BALANCE (FX > BALANCE,
- * params.c bal_v, 0 off .. 100, BAL_DEF): a dynamic EQ on the same four bands. Each band's level (the mean of |band| over
- * every fourth sample of a block, both sides, before any gain) followed slowly (~0.75 s: the song's balance, not a hit's), in log2 (Q8), against
- * a balanced mix's curve (BAL_T: a commercial mix's -4.5 dB / octave through this split, the lows 3 dB richer and the top
- * 1.5 dB darker, as electronic music sits); each band's distance from it less their mean (only the balance between the
- * bands, not the loudness: that is the leveler's) brought back by a share, AMOUNT / 50 x BAL_R: the LO MIDS only down,
- * twice their excess (their band to -12 dB: ~-6 dB at 400 Hz, where the bands' overlap leaves it: the mud), the lows a
- * quarter (+-1.5 dB: a cut there would fill the dip back), the HI MIDS half (+-2 dB), the highs half (+-3 dB); within
- * 0.5 dB of the curve nothing. The corrections glide (~0.75 s on top of the follower: well under 1 dB of ripple at the beat, no pumping), added to the EQ's (in log2, eqs.c), the
- * followers held under BAL_GATE (a tail, silence: the balance kept for the next sound). Run while AMOUNT is on, the
- * EQ flat or not */
-#define BAL_GATE 200                                    /* (the four bands' means summed: ~-45 dBFS) */
-static struct { int32_t lp[2][3], g[4], e[4], c[4]; } eqs __attribute__((section(".bss.tape")));
-static const int16_t BAL_T[4] __attribute__((section(".rodata.tape"))) = {361, 81, -92, -286};   /* the curve, log2 Q8 */
-static const int16_t BAL_R[4] __attribute__((section(".rodata.tape"))) = {64, 512, 128, 128};   /* the share, Q8 */
-static const int16_t BAL_LO[4] __attribute__((section(".rodata.tape"))) = {-64, -510, -85, -128};   /* its bounds */
-static const int16_t BAL_HI[4] __attribute__((section(".rodata.tape"))) = {64, 0, 85, 128};
+ * their knobs a block at a time. ~10 multiplies a sample and channel; every knob at 0 (and settled): not run */
+static struct { int32_t lp[2][3], g[4]; } eqs __attribute__((section(".bss.tape")));
 static __attribute__((noinline)) int32_t eq_gain(int32_t db)   /* 10^(db / 20) - 1, Q12 */
 {
     static const int16_t UP[13] __attribute__((section(".rodata.tape"))) =
@@ -440,79 +425,114 @@ static __attribute__((noinline)) int32_t eq_gain(int32_t db)   /* 10^(db / 20) -
     db = clamp(db, -12, 12);
     return db >= 0 ? UP[db] : DN[-db];
 }
-/* the band gains this block: the EQ's and BALANCE's (eqs.c, log2 Q16 -> 2^x, Q12, within 0.1 %); acc: last block's
- * sums of |band|; -> the gains - 1, Q12 */
-static __attribute__((noinline)) void bal_ctl(int32_t *tg, const int32_t *acc, uint32_t n)
-{
-    int32_t lg[4], an = 0, k, m = (acc[0] + acc[1] + acc[2] + acc[3]) >> (CTL_LOG2 - 2);
-    (void)n;                                            /* (a block of CTL, every fourth sample summed) */
-    for (k = 0; k < 4; k++) {
-        int32_t e = eqs.e[k], b;
-        if (m > BAL_GATE)
-            eqs.e[k] = e += ((acc[k] >> (CTL_LOG2 - 2)) * 8 - e) >> 9;   /* (a sum of every fourth) */
-        e = e > 16 ? e : 16;
-        b = 31 - __builtin_clz((uint32_t)e);
-        lg[k] = (b << 8) + (int32_t)(((uint32_t)e << (31 - b)) >> 23 & 255u) - BAL_T[k];
-        an += lg[k];
-    }
-    an >>= 2;
-    for (k = 0; k < 4; k++) {
-        int32_t dv = lg[k] - an, c, f, x;
-        dv = dv > 21 ? dv - 21 : dv < -21 ? dv + 21 : 0;   /* (0.5 dB: as good as on the curve) */
-        c = clamp(-dv * BAL_R[k] * bal_v / 12800, BAL_LO[k], BAL_HI[k]) << 8;
-        eqs.c[k] += (c - eqs.c[k]) >> 9;
-        if (eqs.c[k] - c < 512 && c - eqs.c[k] < 512)   /* (there: exactly; AMOUNT 0 settles at the EQ's own gains) */
-            eqs.c[k] = c;
-        c = eqs.c[k] >> 8;                              /* (log2 Q8) */
-        f = c & 255;
-        x = 4096 + ((f * (2689 + ((1407 * f) >> 8))) >> 8);   /* 2^(f / 256), Q12 */
-        x = c >= 0 ? x << (c >> 8) : x >> -(c >> 8);
-        tg[k] = (((4096 + eq_gain(eq_v[k])) * x) >> 12) - 4096;
-    }
-}
 static __attribute__((noinline)) void eq_block(uint32_t n)
 {
     static const int16_t A[3] __attribute__((section(".rodata.tape"))) = {922, 4349, 14220};   /* (Q15: 1 - e^(-2 pi f / FS)) */
-    static int32_t acc[4] __attribute__((section(".bss.tape")));
-    int32_t g0[4], dg[4], tg[4];
-    uint32_t i, k;
-    for (i = 0; i < n && !(mix_l[i] | mix_r[i] | wet[i]); i++) {}
-    for (k = 0; i == n && k < 6u; k++)                  /* (V10.7.30) a silent block, the bands' tails out: silent out, */
-        i = (uint32_t)((&eqs.lp[0][0])[k] + 39) < 79u ? n : 0u;   /* not run, the gains held. (A state under 40: the */
-    if (i == n) {                                       /* ~200 Hz one-pole's floor stops a negative one there; what it
-                                                         * added, ~-60 dBFS at most, goes) */
-        memset(eqs.lp, 0, sizeof eqs.lp);
-        return;
-    }
-    bal_ctl(tg, acc, n);
+    int32_t g0[4], dg[4];
+    uint32_t i, c, k;
     for (k = 0; k < 4u; k++) {
         g0[k] = eqs.g[k];
-        dg[k] = (tg[k] - g0[k]) / (int32_t)n;
+        dg[k] = (eq_gain(eq_v[k]) - g0[k]) / (int32_t)n;
         eqs.g[k] = g0[k] + dg[k] * (int32_t)n;
     }
-    {   /* (V10.7.30) the states, gains and sums in locals through the block (globals: reloaded each sample), and the
-         * bands' sum as x g3 + l0 (g0 - g1) + l1 (g1 - g2) + l2 (g2 - g3): the same, four multiplies a side, the gains'
-         * ramps a sum each; the bands themselves only where BALANCE measures them (every fourth sample is plenty) */
-        int32_t l0 = eqs.lp[0][0], l1 = eqs.lp[0][1], l2 = eqs.lp[0][2], r0 = eqs.lp[1][0], r1 = eqs.lp[1][1], r2 = eqs.lp[1][2];
-        int32_t s0 = 0, s1 = 0, s2 = 0, s3 = 0, h0 = g0[0] - g0[1], h1 = g0[1] - g0[2], h2 = g0[2] - g0[3], h3 = g0[3];
-        int32_t d0 = dg[0] - dg[1], d1 = dg[1] - dg[2], d2 = dg[2] - dg[3], d3 = dg[3], a0 = A[0], a1 = A[1], a2 = A[2];
-        for (i = 0; i < n; i++) {
-            int32_t xl = mix_l[i] + wet[i], xr = mix_r[i] + wet[i];
-            l0 += ((xl - l0) >> 3) * a0 >> 12; l1 += ((xl - l1) >> 3) * a1 >> 12; l2 += ((xl - l2) >> 3) * a2 >> 12;
-            r0 += ((xr - r0) >> 3) * a0 >> 12; r1 += ((xr - r1) >> 3) * a1 >> 12; r2 += ((xr - r2) >> 3) * a2 >> 12;
-            if (!(i & 3u)) {
-                int32_t b1 = l1 - l0, b2 = l2 - l1, b3 = xl - l2, c1 = r1 - r0, c2 = r2 - r1, c3 = xr - r2;
-                s0 += (l0 < 0 ? -l0 : l0) + (r0 < 0 ? -r0 : r0); s1 += (b1 < 0 ? -b1 : b1) + (c1 < 0 ? -c1 : c1);
-                s2 += (b2 < 0 ? -b2 : b2) + (c2 < 0 ? -c2 : c2); s3 += (b3 < 0 ? -b3 : b3) + (c3 < 0 ? -c3 : c3);
-            }
-            mix_l[i] = xl + ((xl >> 4) * h3 >> 8) + ((l0 >> 4) * h0 >> 8) + ((l1 >> 4) * h1 >> 8) + ((l2 >> 4) * h2 >> 8);
-            mix_r[i] = xr + ((xr >> 4) * h3 >> 8) + ((r0 >> 4) * h0 >> 8) + ((r1 >> 4) * h1 >> 8) + ((r2 >> 4) * h2 >> 8);
-            wet[i] = 0;
-            h0 += d0; h1 += d1; h2 += d2; h3 += d3;
+    for (i = 0; i < n; i++) {
+        int32_t x[2];
+        x[0] = mix_l[i] + wet[i];
+        x[1] = mix_r[i] + wet[i];
+        wet[i] = 0;
+        for (c = 0; c < 2u; c++) {
+            int32_t *lp = eqs.lp[c], b0, b1, b2, b3, y = x[c];
+            for (k = 0; k < 3u; k++)
+                lp[k] += ((y - lp[k]) >> 3) * A[k] >> 12;
+            b0 = lp[0]; b1 = lp[1] - lp[0]; b2 = lp[2] - lp[1]; b3 = y - lp[2];
+            y += ((b0 >> 4) * (g0[0] + dg[0] * (int32_t)i) >> 8) + ((b1 >> 4) * (g0[1] + dg[1] * (int32_t)i) >> 8) +
+                 ((b2 >> 4) * (g0[2] + dg[2] * (int32_t)i) >> 8) + ((b3 >> 4) * (g0[3] + dg[3] * (int32_t)i) >> 8);
+            x[c] = y;
         }
-        eqs.lp[0][0] = l0; eqs.lp[0][1] = l1; eqs.lp[0][2] = l2; eqs.lp[1][0] = r0; eqs.lp[1][1] = r1; eqs.lp[1][2] = r2;
-        acc[0] = s0; acc[1] = s1; acc[2] = s2; acc[3] = s3;
+        mix_l[i] = x[0];
+        mix_r[i] = x[1];
     }
+}
+/* (V10.7.30, the owner: "everything gets muddy when I add tracks and it becomes a ball of mids") BALANCE (FX > BALANCE,
+ * params.c bal_v, 0 off .. 100, BAL_DEF): a slow dynamic EQ just before the EQ (so the EQ stays as you set it, on top),
+ * on its four bands: each side split as eq_block splits it (three one-poles: ~200 Hz, ~1 kHz, ~4 kHz; the mid alone,
+ * its correction added to both, would put a sound panned hard on the other side too). The bands' level (the mean of
+ * |left + right band| over every eighth sample, before any gain) followed slowly (~0.75 s: the
+ * song's balance, not a hit's), in log2 (Q8), against a balanced mix's curve (BAL_T: a commercial mix's -4.5 dB /
+ * octave through this split, the lows 3 dB richer and the top 1.5 dB darker, as electronic music sits); each band's
+ * distance from it less their mean (only the balance between the bands, not the loudness: that is the leveler's)
+ * brought back by a share, AMOUNT / 50 x BAL_R: the LO MIDS only down, twice their excess (their band to -12 dB: ~-6
+ * dB at 400 Hz, where the bands' overlap leaves it: the mud), the lows a quarter (+-1.5 dB: a cut there would fill the
+ * dip back), the HI MIDS half (+-2 dB), the highs half (+-3 dB); within 0.5 dB of the curve nothing. The control every
+ * fourth block, the corrections gliding (~0.75 s on top of the follower: well under 1 dB of ripple at the
+ * beat, no pumping), the gains held through a block, a step of at most 64 (~0.13 dB) a block. The followers held under
+ * BAL_GATE (a tail, silence: the balance kept for the next sound). AMOUNT 0: the gains back to 0, then not run (the
+ * mix bit for bit as without it) */
+#define BAL_GATE 200                                    /* (the four bands' means summed: ~-45 dBFS) */
+static struct { int32_t lp[6], g[4], e[4], c[4], s[4], tg[4]; uint8_t blk; } bal __attribute__((section(".bss.tape")));
+static const int16_t BAL_T[4] __attribute__((section(".rodata.tape"))) = {361, 81, -92, -286};   /* the curve, log2 Q8 */
+static const int16_t BAL_R[4] __attribute__((section(".rodata.tape"))) = {64, 512, 128, 128};   /* the share, Q8 */
+static const int16_t BAL_LO[4] __attribute__((section(".rodata.tape"))) = {-64, -510, -85, -128};   /* its bounds */
+static const int16_t BAL_HI[4] __attribute__((section(".rodata.tape"))) = {64, 0, 85, 128};
+static __attribute__((noinline)) void bal_block(uint32_t n)
+{
+    static const int16_t A[3] __attribute__((section(".rodata.tape"))) = {922, 4349, 14220};   /* (eq_block's) */
+    int32_t l0 = bal.lp[0], l1 = bal.lp[1], l2 = bal.lp[2], r0 = bal.lp[3], r1 = bal.lp[4], r2 = bal.lp[5];
+    int32_t s0 = 0, s1 = 0, s2 = 0, s3 = 0, h0, h1, h2, h3, k, a0 = A[0], a1 = A[1], a2 = A[2];
+    uint32_t i;
+    for (k = 0; k < 6 && (uint32_t)(bal.lp[k] + 39) < 79u; k++) {}   /* the split's tails out (a state under 40: the
+                                                         * ~200 Hz one-pole's floor stops a negative one there; what it
+                                                         * added, ~-60 dBFS at most, goes) and a silent block: silent
+                                                         * out, not run, the gains held */
+    for (i = 0; k == 6 && i < n && !(mix_l[i] | mix_r[i] | wet[i]); i++) {}
+    if (k == 6 && i == n) {
+        memset(bal.lp, 0, sizeof bal.lp);
+        return;
+    }
+    if (!(++bal.blk & 3u)) {                            /* the control, every fourth block: the four blocks' sums (bal.s)
+                                                         * -> the band gains to reach (bal.tg: 2^correction - 1, Q12) */
+        int32_t lg[4], an = 0, m = (bal.s[0] + bal.s[1] + bal.s[2] + bal.s[3]) >> CTL_LOG2;
+        for (k = 0; k < 4; k++) {
+            int32_t e = bal.e[k], b;
+            if (m > BAL_GATE)
+                bal.e[k] = e += ((bal.s[k] >> CTL_LOG2) * 8 - e) >> 7;
+            e = e > 16 ? e : 16;
+            b = 31 - __builtin_clz((uint32_t)e);
+            lg[k] = (b << 8) + (int32_t)(((uint32_t)e << (31 - b)) >> 23 & 255u) - BAL_T[k];
+            an += lg[k];
+            bal.s[k] = 0;
+        }
+        an >>= 2;
+        for (k = 0; k < 4; k++) {
+            int32_t dv = lg[k] - an, c, f, x;
+            dv = dv > 21 ? dv - 21 : dv < -21 ? dv + 21 : 0;   /* (0.5 dB: as good as on the curve) */
+            c = clamp(-dv * BAL_R[k] * bal_v / 12800, BAL_LO[k], BAL_HI[k]) << 8;
+            bal.c[k] += (c - bal.c[k]) >> 7;
+            if (bal.c[k] - c < 512 && c - bal.c[k] < 512)   /* (there: exactly; AMOUNT 0 settles at 0) */
+                bal.c[k] = c;
+            c = bal.c[k] >> 8;                              /* (log2 Q8) */
+            f = c & 255;
+            x = 4096 + ((f * (2689 + ((1407 * f) >> 8))) >> 8);   /* 2^(f / 256), Q12 */
+            bal.tg[k] = (c >= 0 ? x << (c >> 8) : x >> -(c >> 8)) - 4096;
+        }
+    }
+    for (k = 0; k < 4; k++)
+        bal.g[k] += clamp(bal.tg[k] - bal.g[k], -64, 64);
+    h0 = bal.g[0] - bal.g[1]; h1 = bal.g[1] - bal.g[2]; h2 = bal.g[2] - bal.g[3]; h3 = bal.g[3];
+    for (i = 0; i < n; i++) {                           /* (the bands' sum as x g3 + l0 (g0 - g1) + l1 (g1 - g2) + l2 (g2 - g3)) */
+        int32_t xl = mix_l[i] + wet[i], xr = mix_r[i] + wet[i];
+        l0 += ((xl - l0) >> 3) * a0 >> 12; l1 += ((xl - l1) >> 3) * a1 >> 12; l2 += ((xl - l2) >> 3) * a2 >> 12;
+        r0 += ((xr - r0) >> 3) * a0 >> 12; r1 += ((xr - r1) >> 3) * a1 >> 12; r2 += ((xr - r2) >> 3) * a2 >> 12;
+        if (!(i & 7u)) {                                /* (both sides' bands summed: the mid's, twice) */
+            int32_t b0 = l0 + r0, b1 = l1 + r1 - b0, b2 = l2 + r2 - l1 - r1, b3 = xl + xr - l2 - r2;
+            s0 += b0 < 0 ? -b0 : b0; s1 += b1 < 0 ? -b1 : b1; s2 += b2 < 0 ? -b2 : b2; s3 += b3 < 0 ? -b3 : b3;
+        }
+        mix_l[i] = xl + ((xl >> 4) * h3 >> 8) + ((l0 >> 4) * h0 >> 8) + ((l1 >> 4) * h1 >> 8) + ((l2 >> 4) * h2 >> 8);
+        mix_r[i] = xr + ((xr >> 4) * h3 >> 8) + ((r0 >> 4) * h0 >> 8) + ((r1 >> 4) * h1 >> 8) + ((r2 >> 4) * h2 >> 8);
+        wet[i] = 0;
+    }
+    bal.lp[0] = l0; bal.lp[1] = l1; bal.lp[2] = l2; bal.lp[3] = r0; bal.lp[4] = r1; bal.lp[5] = r2;
+    bal.s[0] += s0 << 1; bal.s[1] += s1 << 1; bal.s[2] += s2 << 1; bal.s[3] += s3 << 1;   /* (x 2: as 32 a block) */
 }
 /* (0.9.1) the master DJ FILTER (G_DJF, GLO > MIXER KNOB 4): one bipolar knob on the whole mix, just before CLIP and the
  * leveler. 0: out of the chain, not run at all (the mix bit for bit as without it). Below 0 a low-pass sweeping down
@@ -3097,7 +3117,12 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
                                                          * the flash past the tables, out of a direct call's reach) */
         f(n);
     }
-    if (bal_v || eq_v[0] || eq_v[1] || eq_v[2] || eq_v[3] || eqs.g[0] || eqs.g[1] || eqs.g[2] || eqs.g[3]) {   /* (p9) the EQ; BALANCE */
+    if (bal_v || (bal.g[0] | bal.g[1] | bal.g[2] | bal.g[3])) {   /* (V10.7.30) BALANCE, before the EQ */
+        void (*f)(uint32_t) = bal_block;
+        FM1_OPAQUE(f);
+        f(n);
+    }
+    if (eq_v[0] || eq_v[1] || eq_v[2] || eq_v[3] || eqs.g[0] || eqs.g[1] || eqs.g[2] || eqs.g[3]) {   /* (p9) the EQ */
         void (*f)(uint32_t) = eq_block;
         FM1_OPAQUE(f);                                  /* (as tape_block: out of the RAM code's direct reach) */
         f(n);
