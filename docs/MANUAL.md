@@ -2685,7 +2685,7 @@ track.
 first and the last), **ALGORITHM** jumps to the next / previous tab (its first row), **any knob** or **OCT+ / OCT−**
 changes the value; PRESETS does nothing here. HOME closes it (settings are saved then). The screen shows the tab's rows,
 the selected row's four as cards (ROWS 1–4 / ROWS 5–6; DISPLAY: ROWS 5–7; CONTROL also ROWS 9–12, the keys' four) with their knob's number; the tabs on top,
-the footer **MENU · DISPLAY · SCOPE  2/34**. The header says MENU · DISPLAY.
+the footer **MENU · DISPLAY · SCOPE  2/33**. The header says MENU · DISPLAY.
 
 | Tab | Row | Values |
 | --- | --- | --- |
