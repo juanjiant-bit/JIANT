@@ -2854,6 +2854,14 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
         }
     }
     if ((t->seq_fit & 128u) && !gate) gate = 1u;
+    if (e == &ENG_FORMANT && t->p[P_VLANG]) {          /* (voice3) VOICE singing: the note's length, its TIEs too */
+        sing_x_t *x = &sing_x[trk_index(t) % NTRK];     /* (its vibrato on long notes only: sing.c) */
+        uint32_t L = gate >> 10, k = 1;
+        while (k < 16u && seq_steps(t)[(t->seq_idx + k++) % len].time == ST_TIE)
+            L += unit >> 10;
+        x->nl = (uint8_t)(L < 254u ? L + 1u : 255u);    /* (1024 samples: 16 blocks) */
+        x->fl |= SXF_SEQ;
+    }
     for (i = 0; i < (arp ? 1u : s->n) && i < 4u && !(kit && arp); i++) {
         uint32_t x = arp ? cp_arp_note(t, arp, ac, aa, t->arp_k++) : s->note[i];
         x = (uint32_t)clamp((int32_t)x + up, 0, 127);

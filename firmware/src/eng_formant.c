@@ -125,10 +125,12 @@ static void fres_coef(fres_t *r, uint32_t f16, uint32_t bw16)
 
 /* (voice2) F1 F2 F3 of both renders (one copy: the flash): f[] b[] (Hz x 16) moved by SHIFT / key tracking (ratio)
  * and Q (bws); sung high, F1 follows F0 (sopranos do), the same Q: no boom on the fundamental */
-static __attribute__((noinline)) void fmt_f123(fres_t *r, const int32_t *fa, const int32_t *ba, uint32_t ratio,
-                                               uint32_t bws, uint32_t f0)
-{
-    uint32_t j;
+static __attribute__((noinline)) uint32_t fmt_f123(fres_t *r, const int32_t *fa, const int32_t *ba, const int16_t *p,
+                                                   int32_t p16, uint32_t inc, uint32_t *pbws)
+{   /* (voice3) SHIFT and FOLOW (key tracking around C4, fixed): one ratio for all; Q: bandwidth x2.5 .. x0.4; F0 in Hz x
+     * 16 (here: one copy) */
+    uint32_t j, ratio = fmt_ratio(p[P_E3] * 16 + ((FMT_FOLOW * (p16 - 60 * 16) * 516) >> 16));
+    uint32_t bws = *pbws = fmt_ratio((64 - p[P_E6]) * 4), f0 = (uint32_t)(umul64(inc, 705600u) >> 32);
     for (j = 0; j < 3u; j++) {
         int32_t f = (int32_t)(mul64_us(ratio, fa[j]) >> 16);
         int32_t b = (int32_t)(mul64_us(bws, (int32_t)(mul64_us(ratio, ba[j]) >> 16)) >> 16);
@@ -138,12 +140,73 @@ static __attribute__((noinline)) void fmt_f123(fres_t *r, const int32_t *fa, con
         }
         fres_coef(&r[j], (uint32_t)clamp(f, 60 * 16, 7000 * 16), (uint32_t)clamp(b, 20 * 16, 1500 * 16));
     }
+    return ratio;
 }
 
 /* (V10.40) WORDS' F5 (formant_word_render), each voice's y1 y2 (voice_t has no room; VOICE's 4 voices: slots 0..3) */
 static int32_t fmt_f5[NTRK][4][2] __attribute__((section(".bss.fmt_f5")));   /* (its own: out of the merged globals) */
 #define FMT_FRESH (-128)                                /* vjit: the resonators from rest (voice_start keeps ph[1..2]) */
-#define FMT_SCOOP 128                                   /* (voice2) the scoop's length (sing_x vb: 32 samples, ~93 ms) */
+#define FMT_SCOOP 128                                   /* (voice2) a glide's wait for the vibrato (sing_x vb: ~93 ms) */
+
+/* (voice3) a landing, (1 - u)^2 (1 - c u): u Q12 (0 .. 4096, then 0), c Q4; Q12. c 1: there with no overshoot; 3.2: the
+ * way 10 .. 90 % in a quarter of the time, -16 % past it at half; 4.4: -30 % */
+static __attribute__((noinline)) int32_t fmt_land(int32_t u, int32_t c)
+{
+    int32_t a = 4096 - (u < 4096 ? u : 4096);
+    return (((a * a) >> 12) * (4096 - ((c * u) >> 4))) >> 12;
+}
+/* (voice3) the pitch of a singer, after a male voice measured: the note's increment (*p16 its pitch) moved by
+ *   a landing from the last note (legato: ~90 ms 10 .. 90 %, ~30 ct past it; after an unvoiced consonant in ~100 ms,
+ *     under it, on the note by the vowel); a glide with GLIDE set: as sung (fmt_sung), the vibrato waits;
+ *   a scoop from rest (7 notes in 10 over 20 ct: from below up to -75 ct in ~50 ms, or from above in ~25 ms, a little
+ *     past it), on the vowel's time;
+ *   a wander (sing_block wn: ~9 ct RMS, 0.3 .. 2.5 Hz; and the tuning, +-16 ct, slower: each note a little off,
+ *     drifting), never a step at a note;
+ *   the vibrato (sing_x ve: on long notes, a third of them faint), +-19 ct, its width each cycle its own (+-30 %).
+ * BUZZ at its top (hum 0) a machine: the pitch as played. The scoop's draws the note's and the voice's (sy_hash) */
+static __attribute__((noinline)) uint32_t fmt_life(const track_t *t, const voice_t *v, const vmod_t *m, sing_x_t *sx,
+                                                   int32_t hum, int32_t *pp16, uint32_t vi)
+{
+    uint32_t inc;
+    int32_t age = sx->vb >> 1, p16 = m->pitch16, fine = m->fine, po = sx->wn, d;   /* (the wander: sing_block's) */
+    if (v->pitch_cur != v->pitch16 && t->p[P_GLIDE]) {  /* GLIDE: as sung (an S-curve), no vibrato */
+        inc = fmt_sung(v, m, pp16);
+        sx->vb = FMT_SCOOP;
+    } else {
+        p16 += v->pitch16 - v->pitch_cur;                /* (the words' own landing, not voice.c's glide) */
+        d = v->gfrom - v->pitch16;
+        if (d && d > -193 && d < 193 && !(sx->fl & SXF_RST)) {
+            d *= fmt_land(age * (sx->fl & SXF_CJ ? 59 : 16), sx->fl & SXF_CJ ? 16 : d > 32 || d < -32 ? 40 : 60);
+                                                         /* (past it ~30 ct, a wide leap no more than ~35) */
+            p16 += d >> 12;                              /* (1/16 st Q12: its fraction in the fine tune, as fmt_sung) */
+            fine += ((d >> 4) & 255) * 237 >> 12;
+        }
+        *pp16 = p16 = clamp(p16, 0, 2047);
+        inc = m->inc;
+        if (p16 != m->pitch16 || fine != m->fine) {
+            inc = pitch_inc(p16);
+            inc += (uint32_t)((int32_t)(inc >> 12) * fine);
+        }
+    }
+    if (!hum)
+        return inc;
+    /* the rest in 1/4096 of the increment (~0.42 ct) */
+    if ((sx->fl & SXF_RST) && sx->va < 216u) {          /* the scoop: below or above, 5 .. 50 ct, the time each note's */
+        uint32_t h = sy_hash(vi + sx->ps * 64u, sx->ps);   /* (the phrase's seed, the voice) */
+        int32_t dep = (int32_t)(5u + (((h >> 16) * 46u) >> 16)) * 19 >> 3, u = sx->va * (20 + (int32_t)((h >> 8) & 7u));
+        if (h & 1u) {                                    /* (from above: twice as quick) */
+            u <<= 1;
+            dep = -dep;
+        }
+        po -= dep * fmt_land(u, 70) >> 12;
+    }
+    if (sx->ve) {                                        /* the vibrato (ve: 255 x 1.25), its width +-30 % as it goes */
+        int32_t w = sx->ve * 5 >> 2;
+        w += w * sx->wn >> 8;
+        po += sine_i((uint32_t)(sx->vph + vi * 0x3A00u) << 16) * w * 62 >> 23;
+    }
+    return inc + (uint32_t)((int32_t)(inc >> 12) * (po * hum >> 6));
+}
 
 /* source: BUZZ (+ SHP modulation, + velocity) -> the open quotient: g[] the closure (te, the end of the open phase),
  * the opening's end (tp: 65 % of it, closing 35 %) and their phase scales; returns BUZZ. (V10.40) both renders' (one
@@ -167,6 +230,7 @@ static void formant_note_on(track_t *t, voice_t *v)
                                                          * -42 dB) too: its resonators rang the last vowel at full level
                                                          * under the release, heard ~10 ms again as the attack came */
         if (v->env_out < 256) {
+            v->gfrom = (int16_t)v->pitch16;             /* (voice3: no glide from a note long gone) */
             v->vjit = FMT_FRESH;                        /* (F4 F5 zeroed at the render: ph[1..2] kept by voice_start) */
             v->ph[0] = v->ph[1] = v->ph[2] = 0;
             v->s[0] = v->s[1] = v->s[2] = v->s[3] = v->s[4] = v->s[5] = v->s[6] = v->s[7] = 0;
@@ -193,12 +257,13 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
     static const uint8_t BW0[3] = {70, 90, 140};       /* the bandwidths of F1 F2 F3 at x1 (Hz; V10.40: were 80 100 160,
                                                          * the vowels peakier, open, less muffled) */
     const int16_t *p = t->p;
-    const sing_t *sg = sing_view(t);
-    sing_x_t *sx = &sing_x[(uint32_t)(t - trk) % NTRK];
+    uint32_t ti = (uint32_t)(t - trk) % NTRK;
+    const sing_t *sg = &sing[ti];
+    sing_x_t *sx = &sing_x[ti];
     fres_t r[3], r1, r2, r3, r4, r5;
-    int32_t *f5 = fmt_f5[(uint32_t)(t - trk) % NTRK][(uint32_t)(v - t->v) & 3u];
+    int32_t *f5 = fmt_f5[ti][(uint32_t)(v - t->v) & 3u];
     int32_t fa[3], j, buzz, tilt, gvb, gn, og, ogk, dogk, gv, dgv, ga, dga, gf, dgf, fw, hum, jd, jr, shim, bm, bw[3], fry;
-    uint32_t inc = m->inc, incj, i, te, tp, rp, rn, ratio, bws, f0, r4r;
+    uint32_t inc = m->inc, incj, i, te, tp, rp, rn, ratio, bws, r4r;
     uint32_t g[4];
     uint32_t ph = v->ph[0];
     int32_t y1 = v->s[0], y2 = v->s[1], y3 = v->s[2], y4 = v->s[3], y5 = v->s[4], y6 = v->s[5];
@@ -209,21 +274,12 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
      * pitch glides, then it waits again), each voice of a choir at its own phase; each glottal period its own length
      * (jitter, ~0.3 %) and level (shimmer, ~0.4 dB). BUZZ at its top (the last ~12 %) steadies them away: a machine */
     hum = clamp((127 - p[P_E4]) * 4, 0, 64);
-    if (v->pitch_cur != v->pitch16) {                   /* gliding: as sung (an S-curve), no vibrato, (voice2) no scoop */
-        inc = fmt_sung(v, m, &p16);
-        sx->vb = FMT_SCOOP;
-    }
-    {   /* (voice2) a syllable's pitch scoops up into its note (~-27 ct, in over ~90 ms) as a singer's attack does */
-        int32_t vd = (clamp((int32_t)sx->vb - 400, 0, 512) * hum) >> 9;   /* 0 .. 64 */
-        int32_t vib = (sine_i((uint32_t)(sx->vph + (uint32_t)(v - t->v) * 0x3A00u) << 16) * vd * 3) >> 17;
-        vd = FMT_SCOOP - clamp((int32_t)sx->vb, 0, FMT_SCOOP);
-        vib -= (vd * vd * hum) >> 14;
-        inc += (uint32_t)((int32_t)(inc >> 12) * vib);   /* (+-48 / 4096: +-20 ct) */
-    }
-    /* (voice2) a phrase's end creaks: let go, under ~-6 dB, every other glottal period softer and longer (up to half,
-     * +0.6 %; the jitter up to x4): vocal fry, smooth (the voice's own pulses), none at BUZZ's top (a machine) */
-    fry = v->gate ? 0 : (clamp(16000 - v->env_out, 0, 12000) * hum) >> 14;
-    jd = ((hum * 3) >> 4) * (16 + fry) >> 4;            /* +-12 / 4096 at the most (held) */
+    inc = fmt_life(t, v, m, sx, hum, &p16, (uint32_t)(v - t->v) & 3u);   /* (voice3: the scoop, the landing, the vibrato, */
+                                                        /* the wander) */
+    /* (voice3) about half the phrase ends creak (sing_block SXF_CRK; voice2's: all), let go, under ~-6 dB: every other
+     * glottal period much softer and longer (the pitch heard an octave down), rough, airy; none at BUZZ's top */
+    fry = sx->fl & SXF_CRK ? (clamp(16000 - v->env_out, 0, 12000) * hum) >> 14 : 0;
+    jd = ((hum * 3) >> 5) * (16 + fry) >> 4;            /* +-6 / 4096 at the most (held) */
     jr = v->vjit;                                        /* (the period under way: as it began) */
     if (jr == FMT_FRESH) {                               /* (V10.40: a retrigger near silence, formant_note_on) */
         jr = 0;
@@ -232,16 +288,13 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
     incq = (int32_t)(inc >> 12);
     incj = inc + (uint32_t)(incq * jr);
     shim = 32768 + (jr << 7);
-    ratio = fmt_ratio(p[P_E3] * 16 + ((FMT_FOLOW * (p16 - 60 * 16) * 516) >> 16));   /* (the pitch sung: its glide) */
-    bws = fmt_ratio((64 - p[P_E6]) * 4);
-    f0 = (uint32_t)(umul64(inc, 705600u) >> 32);
     bm = clamp(sg->bm, 8, 64);
     bw[0] = BW0[0] * (bm < 24 ? bm : 24);               /* (0.9.8) a nasal's, a lateral's F1 less widened than F2 F3: */
     bw[1] = BW0[1] * bm;                                /* the murmur low and round, the mouth's formants damped */
     bw[2] = BW0[2] * bm;
     for (j = 0; j < 3; j++)
         fa[j] = sg->f[j] << 4;
-    fmt_f123(r, fa, bw, ratio, bws, f0);
+    ratio = fmt_f123(r, fa, bw, p, p16, inc, &bws);   /* (the pitch sung: its glide) */
     r1 = r[0];
     r2 = r[1];
     r3 = r[2];
@@ -256,21 +309,26 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
                               5000 * 16));
     /* (voice2) the source follows the level: softer as the voicing comes and goes and as the note fades (the open phase
      * longer, the tilt darker: up to ~-14 % BUZZ), breathier quiet */
-    buzz = fmt_glot(p, v, m, g, (sg->gv + (v->env_out < 16384 ? v->env_out : 16384) - 49151) >> 3);
+    buzz = fmt_glot(p, v, m, g, (sg->gv + (v->env_out < 16384 ? v->env_out : 16384) - 49151) * 3 >> 4);
     tilt = 1900 + ((buzz * 96) >> 8);                   /* (0.9.8) a softer source than the vowels' (~6 kHz at 80 %) */
     te = g[0];
     tp = g[1];
     rp = g[2];
     rn = g[3];
     gvb = 32767 - p[P_E5] * p[P_E5] * 2;                /* BREATH: voicing fades at the top, noise comes in; */
-    gn = ((p[P_E5] * 258 + (clamp(20000 - v->env_out, 0, 20000) >> 3)) * sg->gv) >> 15;   /* (V10.40) as the voicing */
+    gn = ((p[P_E5] * 258 + (clamp(20000 - v->env_out, 0, 20000) >> 3) + fry * 40 +   /* (voice3: airier in a creak, in
+                                                         * the vowel's first 60 ms, coming in over ~10 ms) */
+           (sx->va < 41u && !(sx->fl & SXF_REL) ? (41 - sx->va) * (sx->vb < 16u ? sx->vb * 4 : 60) : 0)) * sg->gv) >> 15;
+                                                        /* (V10.40) as the voicing */
                                                         /* through F1 filled the gap of p t k: -17 dB, now -30 and under) */
     gv = (sg->pv * gvb) >> 15;                          /* the articulation's gains, ramped over the block */
     dgv = (((sg->gv * gvb) >> 15) - gv) >> CTL_LOG2;
-    ga = sg->pa;
-    dga = (sg->ga - ga) >> CTL_LOG2;
-    gf = sg->pf;
-    dgf = (sg->gf - gf) >> CTL_LOG2;
+    ga = sg->pa;                                        /* (voice3) with the breath: the glottis open (ga), shut (gn) */
+    dga = ((sg->ga - ga) >> CTL_LOG2) * 2;
+    ga = ga * 2 + gn;
+    gn = ga - (gn >> 1);
+    gf = sg->pf + (sg->pf >> 1);                        /* (x 1.5) */
+    dgf = (sg->gf + (sg->gf >> 1) - gf) >> CTL_LOG2;
     og = 7800 - ((p[P_E6] - 64) * 30);                 /* (V10.40: x 0.6, the peakier F1 F2 F3 and F5 as loud as before) */
     og = (int32_t)(mul64_us(fmt_ratio((60 * 16 - p16) / 4), og) >> 16);
     /* (0.9.8: less presence) (voice2) ramped across the block, from the frication's weight at its start (a burst after
@@ -292,12 +350,11 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
         x = (lp * gv) >> 15;
         gv += dgv;
         nz = (int32_t)(noise32(&nst) >> 16) - 32768;
-        if (gn)
-            x += ph < te ? (nz * gn) >> 15 : (nz * gn) >> 16;   /* breath: with the glottis open */
-        x += (nz * ga) >> 14;                           /* aspiration: h, after p t k (V10.40: x 2, the output's x 0.6) */
+        x += ((nz >> 1) * (ph < te ? ga : gn)) >> 14;   /* breath: with the glottis open; aspiration: h, after p t k
+                                                         * (V10.40: x 2, the output's x 0.6); (voice3) one gain each */
         ga += dga;
-        fz = ((nz - nzq) * gf) >> 15;
-        fz += fz >> 1;                                  /* (V10.40: x 1.5, the output's x 0.6: s ~-17 dB) frication: noise, (0.9.8) band-passed (1 - z^-2: none at DC */
+        gn += dga;
+        fz = ((nz - nzq) >> 1) * gf >> 14;              /* (V10.40: x 1.5, the output's x 0.6: s ~-17 dB) frication: noise, (0.9.8) band-passed (1 - z^-2: none at DC */
         nzq = nzp;                                      /* nor at the top, no fizz past ~12 kHz), into F4 */
         nzp = nz;
         gf += dgf;
@@ -323,10 +380,10 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
         ogk += dogk;
         ph += incj;
         if (ph < incj) {                                /* a glottal period begins (the glottis shut: no step) */
-            int32_t f = jr & 1 ? 0 : fry;               /* (voice2: bit 0 the periods in turn, the fry's) */
-            jr = (((nz * jd) >> 15) | 1) ^ (jr & 1);
-            incj = inc + (uint32_t)(incq * (jr - (f >> 1)));
-            shim = 32768 + ((jr - (f << 1)) << 7);
+            int32_t f = jr & 1 ? 0 : fry;               /* (voice2: bit 0 the periods in turn, the fry's; voice3: */
+            jr = (((nz * jd) >> 15) | 1) ^ (jr & 1);    /* -75 %, +3 %, the creak's) */
+            incj = inc + (uint32_t)(incq * (jr - (f << 2)));
+            shim = 32768 + ((jr - (f * 7 >> 1)) << 7);
         }
         out[i] += voice_amp(s, m, i) * 23 >> 3;   /* (V10.6y: x 2.875, formant_render's) */
     }
@@ -353,16 +410,21 @@ static void formant_block(track_t *t) { sing_block(t); }   /* (LANG OFF: nothing
 static int32_t formant_amp(track_t *t, voice_t *v, int32_t adsr)
 {
     const sing_t *s;
+    const sing_x_t *x;
+    uint32_t ti = (uint32_t)(t - trk) % NTRK;
     if (!t->p[P_VLANG])
         return adsr;
+    x = &sing_x[ti];
+    adsr = (int32_t)(mul64_us((uint32_t)x->w, adsr) >> 15);   /* (voice3) the swell (sing_block; held as let go) */
     if (v->gate) {
         v->s[7] = adsr;
         return adsr;
     }
-    s = sing_view(t);
-    if (!(s->cdon && s->i >= s->nu && s->i < s->np && s->tb))   /* (voice2) the coda's level eased down to the release's */
-        v->s[7] -= v->s[7] >> 2;                        /* after it (~5 ms; was a step: a click) */
-    return v->s[7] > adsr ? v->s[7] : adsr;
+    s = &sing[ti];
+    if (s->cdon && s->i >= s->nu && s->i < s->np && s->tb)
+        return v->s[7] > adsr ? v->s[7] : adsr;          /* (a timed coda phoneme: at the level the note had) */
+    v->s[7] -= v->s[7] >> 2;                             /* (voice2) the coda's level eased down to the release's after it */
+    return v->s[7] > adsr ? v->s[7] : adsr;              /* (~5 ms; was a step: a click) */
 }
 
 /* WORDS: the EDIT values relabelled (the same ranges and defaults): POS (0 AUTO: each note the next syllable; 1..127
@@ -384,7 +446,7 @@ static void formant_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, con
     const int16_t *p = t->p;
     fres_t r[3], r1, r2, r3, r4;
     int32_t fa[3], ba[3], fb[3], bb[3], k, j, buzz, tilt, gv, gn, og, ogk;
-    uint32_t inc = m->inc, i, te, tp, rp, rn, ratio, bws, f0, g[4];
+    uint32_t inc = m->inc, i, te, tp, rp, rn, ratio, bws, g[4];
     uint32_t ph = v->ph[0];
     int32_t y1 = v->s[0], y2 = v->s[1], y3 = v->s[2], y4 = v->s[3], y5 = v->s[4], y6 = v->s[5];
     int32_t y7 = (int32_t)v->ph[1], y8 = (int32_t)v->ph[2], lp = v->s[6], nst = 0;
@@ -423,10 +485,7 @@ static void formant_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, con
         }
     }
     /* SHIFT (semitones) and FOLOW (key tracking around C4, fixed), one ratio for all four */
-    ratio = fmt_ratio(p[P_E3] * 16 + ((FMT_FOLOW * (v->pitch_cur - 60 * 16) * 516) >> 16));   /* FOLOW / 127 */
-    bws = fmt_ratio((64 - p[P_E6]) * 4);                /* Q: bandwidth x2.5 .. x0.4 */
-    f0 = (uint32_t)(umul64(inc, 705600u) >> 32);   /* F0 in Hz * 16 */
-    fmt_f123(r, fa, ba, ratio, bws, f0);
+    ratio = fmt_f123(r, fa, ba, p, v->pitch_cur, inc, &bws);
     r1 = r[0];
     r2 = r[1];
     r3 = r[2];

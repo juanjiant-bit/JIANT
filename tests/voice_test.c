@@ -752,6 +752,7 @@ static double f0_at(const double *y, uint32_t a)
         return FS / (best + 0.5 * (r0 - r2) / (r0 - 2 * r1 + r2));
     }
 }
+static void check_life(void);
 static void check_singer(void)
 {
     static double y[FS * 8], P[NFFT / 2], ctx[FS / 10];
@@ -907,7 +908,7 @@ static void check_singer(void)
                 for (k = 0; k < 200u * 32u / CTL; k++) {   /* (~145 ms: the glide and after) */
                     vrender(0, CTL);
                     for (i = 0; i < 3u; i++)
-                        okf &= abs(sing[0].f[i] - f0[i]) <= 2;
+                        okf &= abs(sing[0].f[i] - f0[i]) <= 2 + f0[i] / 8;   /* (voice3: a held vowel moves a little) */
                 }
             }
         }
@@ -931,41 +932,157 @@ static void check_singer(void)
             check(what, a && k - a >= 76u * 32u / CTL && k - a <= 84u * 32u / CTL && nsy[k] == 2u);
         }
     }
-    {   /* vibrato: a held vowel at C4, 2.4 s: F0 steady in its first 0.25 s (within 6 ct: the jitter), then from ~0.7 s
-         * a swing of 12 .. 30 ct (+-) at 4.5 .. 6.5 Hz; ROBOT EN (BUZZ at its top): none */
-        uint32_t r;
-        for (r = 0; r < 2u; r++) {
-            double c[240], mean = 0, lo = 1e9, hi = -1e9, early = 0, rate;
-            uint32_t m = 0, zc = 0;
-            vsetup(preset_of(r ? "ROBOT EN" : "CANTOR ES"), LG_ES, "a");
-            trk[0].p[P_E5] = 0;                          /* (no breath: a clean F0) */
-            trk_note_on(&trk[0], 60, 100);
-            vrender(y, (uint32_t)(2.4 * FS));
-            for (k = 0; k < 230u; k++) {
-                double f = f0_at(y, k * FS / 100u);
-                c[k] = f > 0 ? 1200.0 * log2(f / 261.6256) : 0;
-            }
-            for (k = 5; k < 25u; k++)
-                if (fabs(c[k]) > early) early = fabs(c[k]);
-            for (k = 80; k < 230u; k++) { mean += c[k]; m++; }
-            mean /= m;
-            for (k = 80; k < 230u; k++) {
-                if (c[k] - mean < lo) lo = c[k] - mean;
-                if (c[k] - mean > hi) hi = c[k] - mean;
-                zc += k > 80u && (c[k] - mean > 0) != (c[k - 1u] - mean > 0);
-            }
-            rate = zc / 2.0 / 1.5;
-            printf("voice:   %s held C4: the first 0.25 s within %.1f ct, from 0.8 s %+.1f .. %+.1f ct at %.1f Hz\n",
-                   r ? "ROBOT EN" : "CANTOR ES", early, lo, hi, rate);
-            if (!r) {
-                snprintf(what, sizeof what, "vibrato on a held note: none at first (%.1f ct), then %+.0f .. %+.0f ct at %.1f Hz",
-                         early, lo, hi, rate);
-                check(what, early < 6.0 && hi > 12.0 && hi < 30.0 && lo < -12.0 && lo > -30.0 && rate > 4.5 && rate < 6.5);
-            } else {
-                snprintf(what, sizeof what, "ROBOT EN (BUZZ at its top): no vibrato, no jitter (%+.1f .. %+.1f ct)", lo, hi);
-                check(what, hi - lo < 2.0);
-            }
+    check_life();
+}
+
+/* (voice3) the pitch of y (FS) every 10 ms from a into c[] (cents re C4, 0 unvoiced): n frames */
+static uint32_t cents_of(const double *y, uint32_t a, uint32_t n, double *c)
+{
+    uint32_t k;
+    for (k = 0; k < n; k++) {
+        double f = f0_at(y, a + k * FS / 100u);
+        c[k] = f > 0 ? 1200.0 * log2(f / 261.6256) : 0;
+    }
+    return n;
+}
+/* the vibrato's swing in c[a .. b) (10 ms frames): the cents less their 210 ms moving mean (the wander, the tuning gone),
+ * its peak-to-peak / 2 (the 90th percentile of |x|) and its rate (zero crossings) */
+static double vib_of(const double *c, uint32_t a, uint32_t b, double *rate)
+{
+    static double x[400], ax[400];
+    uint32_t k, j, n = 0, zc = 0;
+    for (k = a; k < b && n < 400u; k++, n++) {
+        double m = 0;
+        for (j = k - 10u; j <= k + 10u; j++) m += c[j];
+        x[n] = c[k] - m / 21.0;
+        ax[n] = fabs(x[n]);
+        zc += n && (x[n] > 0) != (x[n - 1u] > 0);
+    }
+    qsort(ax, n, sizeof ax[0], cmp_dbl);
+    *rate = zc / 2.0 / (n / 100.0);
+    return n ? ax[n * 9u / 10u] : 0;
+}
+/* (voice3) the singer's pitch, after a male voice measured: a held note's vibrato (none in its first 0.15 s, then 10 ..
+ * 45 ct at 4.5 .. 6.5 Hz), none on a key let go after 0.3 s, none on the sequencer's short notes (1/8 at 120 BPM),
+ * there on its long ones (3 steps of 1/8 at 70 BPM); a note from rest scooping (its first 20 ms up to 80 ct off) and on
+ * its note by 0.25 s (within the wander's +-30 ct); a legato note landing (there in 60 .. 200 ms, past it 0 .. 50 ct);
+ * ROBOT EN (BUZZ at its top) as played; the same twice */
+static void check_life(void)
+{
+    static double y[FS * 4], c[400];
+    char what[240];
+    uint32_t k, r;
+    double early, late, rate, rr;
+    {   /* a key held 2.4 s, CANTOR ES "a" (no breath: a clean F0) */
+        vsetup(preset_of("CANTOR ES"), LG_ES, "a");
+        trk[0].p[P_E5] = 0;
+        trk_note_on(&trk[0], 60, 100);
+        vrender(y, (uint32_t)(2.4 * FS));
+        cents_of(y, 0, 235, c);
+        early = vib_of(c, 15, 35, &rr);
+        late = vib_of(c, 80, 225, &rate);
+        printf("voice:   CANTOR ES held C4: swing %.1f ct in 0.15 .. 0.35 s, %.1f ct at %.1f Hz from 0.8 s\n", early, late, rate);
+        snprintf(what, sizeof what, "vibrato on a held note: none at first (%.1f ct, <= 12: the scoop, the wander), then %.0f ct at %.1f Hz (15 .. 45, 4.5 .. 6.5)",
+                 early, late, rate);
+        check(what, early < 12.0 && late > 15.0 && late < 45.0 && rate > 4.5 && rate < 6.5);
+        {   /* the scoop: a note from rest starts off its pitch, then is on it */
+            double o0 = fabs(c[1]), m = 0;
+            for (k = 22; k < 28u; k++) m += c[k] / 6.0;
+            snprintf(what, sizeof what, "a note from rest: %.0f ct off at its start (<= 80), %+.0f ct at 0.22 .. 0.28 s (+-30)", o0, m);
+            check(what, o0 <= 80.0 && fabs(m) <= 30.0);
         }
+    }
+    {   /* a key let go after 0.3 s: no vibrato in it */
+        vsetup(preset_of("CANTOR ES"), LG_ES, "a a");
+        trk[0].p[P_E5] = 0;
+        trk_note_on(&trk[0], 60, 100);
+        vrender(y, (uint32_t)(0.32 * FS));
+        trk_note_off(&trk[0], 60);
+        vrender(y + (uint32_t)(0.32 * FS), FS / 4);
+        cents_of(y, 0, 34, c);
+        early = vib_of(c, 12, 26, &rr);
+        snprintf(what, sizeof what, "a key let go after 0.3 s: no vibrato (%.1f ct, <= 12)", early);
+        check(what, early <= 12.0);
+    }
+    for (r = 0; r < 2u; r++) {   /* the sequencer: short notes, then long ones */
+        static int32_t o[2 * CTL];
+        uint32_t n = 0, i, period, nn = r ? 12u : 16u, frames;
+        double mx = 0, mn = 1e9;
+        vsetup(preset_of("CANTOR ES"), LG_ES, "a a a a a a a a a a a a a a a a");
+        trk[0].p[P_E5] = 0;
+        for (k = 1; k < NPART; k++) trk[k].p[P_LEVEL] = 0;
+        trk[0].p[P_SLEN] = (int16_t)nn;
+        trk[0].p[P_SDIV] = 1;
+        for (k = 0; k < nn; k++) {
+            step_t *s = &trk[0].step[k];
+            s->time = r && k % 3u ? ST_TIE : ST_NOTE; s->n = !(r && k % 3u); s->note[0] = 60; s->vel = 100;
+        }
+        song.g[G_BPM] = (int16_t)(r ? 70 : 120);
+        period = div_samples(1u);
+        frames = period * nn;
+        seq_start();
+        while (n + CTL <= frames && n + CTL <= NELEM(y)) {
+            mix_block(o, CTL);
+            for (i = 0; i < CTL; i++) y[n + i] = (o[2 * i] + o[2 * i + 1]) / 65536.0;
+            n += CTL;
+        }
+        seq_stop();
+        for (k = 1; k + 1u < nn / (r ? 3u : 1u); k++) {   /* each note's middle (its vowel), but the first and the last */
+            uint32_t a = (k * (r ? 3u : 1u) * period) / (FS / 100u), len = (r ? 3u : 1u) * period / (FS / 100u);
+            double v;
+            cents_of(y, 0, a + len, c);
+            v = r ? vib_of(c, a + len / 2u, a + len - 12u, &rr) : vib_of(c, a + 4u, a + len - 4u, &rr);
+            if (v > mx) mx = v;
+            if (v < mn) mn = v;
+        }
+        snprintf(what, sizeof what, r ? "sequenced long notes (1.3 s): a vibrato (%.1f .. %.1f ct, >= 18)" :
+                 "sequenced short notes (1/8 at 120 BPM): no vibrato (%.1f .. %.1f ct, <= 14)", mn, mx);
+        check(what, r ? mn >= 18.0 : mx <= 14.0);
+    }
+    {   /* legato C4 -> E4 (GLIDE 0): the landing, as sung */
+        static const snt_t GW[] = {{60, 4, 1}, {64, 4, 0}};
+        static uint16_t nsy[FS * 3 / CTL];
+        double t10 = -1, t90 = -1, over = 0;
+        uint32_t a = (uint32_t)(4 * FS * 60u / 100u / 2u) / (FS / 100u);
+        vsetup(preset_of("CANTOR ES"), LG_ES, "la la");
+        trk[0].p[P_E5] = 0;
+        sing_notes(GW, NELEM(GW), y, FS * 3u, nsy, 0);
+        cents_of(y, 0, a + 40u, c);
+        for (k = a; k < a + 40u; k++) {
+            if (t10 < 0 && c[k] > 40) t10 = (k - a) * 10.0;
+            if (t90 < 0 && c[k] > 360) t90 = (k - a) * 10.0;
+            if (c[k] - 400 > over) over = c[k] - 400;
+        }
+        snprintf(what, sizeof what, "a legato note lands as sung: 10 .. 90 %% in %.0f ms (40 .. 200), %.0f ct past it (<= 60)",
+                 t90 - t10, over);
+        check(what, t10 >= 0 && t90 > t10 && t90 - t10 >= 40 && t90 - t10 <= 200 && over <= 60);
+    }
+    {   /* ROBOT EN: as played */
+        double lo = 1e9, hi = -1e9;
+        vsetup(preset_of("ROBOT EN"), LG_ES, "a");
+        trk[0].p[P_E5] = 0;
+        trk_note_on(&trk[0], 60, 100);
+        vrender(y, (uint32_t)(2.4 * FS));
+        cents_of(y, 0, 230, c);
+        for (k = 20; k < 230u; k++) {
+            if (c[k] < lo) lo = c[k];
+            if (c[k] > hi) hi = c[k];
+        }
+        snprintf(what, sizeof what, "ROBOT EN (BUZZ at its top): no vibrato, no scoop, no wander (%+.1f .. %+.1f ct)", lo, hi);
+        check(what, hi - lo < 2.0);
+    }
+    {   /* the same twice: a legato phrase with its draws, from silence */
+        static double z[FS * 2];
+        static const snt_t PH[] = {{60, 3, 1}, {62, 2, 0}, {64, 4, 0}, {60, 2, 0}};
+        uint32_t n1, n2;
+        vsetup(preset_of("CANTOR ES"), LG_ES, "la noche es azul");
+        n1 = sing_notes(PH, NELEM(PH), y, FS * 2u, 0, 0);
+        vsetup(preset_of("WORD CHOIR"), LG_ES, "sus suenyos");   /* (another singer between) */
+        sing_notes(PH, NELEM(PH), z, FS * 2u, 0, 0);
+        vsetup(preset_of("CANTOR ES"), LG_ES, "la noche es azul");
+        n2 = sing_notes(PH, NELEM(PH), z, FS * 2u, 0, 0);
+        check("the singer's draws (scoop, wander, vibrato, creak) the same each time a phrase is sung from silence",
+              n1 == n2 && n1 > FS && !memcmp(y, z, n1 * sizeof y[0]));
     }
 }
 
@@ -1338,7 +1455,7 @@ static void check_level_cons(void)
     ra = 10 * log10(ra / FS);
     snprintf(what, sizeof what, "level: an open A (vowels, sung) C3 .. C5 peaks %.2f (under full scale), RMS %.1f .. %.1f dB (ANALOG %.1f)",
              pk, lo, hi, ra);
-    check(what, pk < 0.95 && hi < ra + 3 && lo > ra - 10);
+    check(what, pk < 0.95 && hi < ra + 3 && lo > ra - 13);   /* (voice3: a held note fades ~4 dB, as sung) */
     vsetup(preset_of("CANTOR ES"), LG_ES, "sa");
     {
         const param_desc_t *d = track_desc(&trk[0], P_VCONS);
