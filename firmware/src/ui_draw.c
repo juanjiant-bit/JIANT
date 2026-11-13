@@ -1231,21 +1231,27 @@ static void draw_columns(void)
     char val[12];
     const char *unit;
     (void)motion_mask(song.sel, card_mot_mask);       /* (PLAY OFF: no scan) */
-    if (home_macros()) {                                /* (0.8.5) HOME's MACROS / ROUTES: M1..M4, 0..100 % */
+    if (home_macros()) {                                /* (0.8.5) HOME's MACROS: M1..M4, 0..100 % (V10.7.24: dim without a
+                                                         * route, as the MACRO layer's) */
         static const char *const M[4] = {"M1", "M2", "M3", "M4"};
         for (c = 0; c < 4u; c++) {
             fmt_int(val, macro_v[c] * 100 / 127);
-            draw_column(c, M[c], val, "%", VAL(c), macro_v[c] * 1000 / 127, ICON_MIX);
+            draw_column(c, M[c], val, "%", macro_routes(c, 0, 0) ? VAL(c) : T_DIM, macro_v[c] * 1000 / 127, ICON_MIX);
         }
         return;
     }
-    if (ui.home) {
-        for (c = 0; c < 4u; c++) {
-            int16_t *vp;
-            const param_desc_t *d = home_param(c, &vp);
-            param_format(d, *vp, val, &unit);
-            card_mot_of(vp);
-            draw_column(c, d->label, val, unit, VAL(c), RATIO(d, enum_rank(d, *vp)), param_icon(d, *vp));
+    if (ui.home) {                                      /* (V10.7.24) HOME's SCOPE: FILTER SPACE DRIVE DUCK (ui.c HS_ID) */
+        int32_t sp = home_space();
+        djf_format(song.g[G_DJF], val, &unit);
+        card_mot_next = (uint8_t)motion_djf_any();
+        card_curve_next = (int16_t)(song.g[G_DJF] + 256);
+        draw_column(0, "FILTER", val, unit, VAL(0u), RATIO(&GP[G_DJF], song.g[G_DJF]), ICON_AUTO);
+        fmt_int(val, sp * 100 / 127);
+        draw_column(1, "SPACE", val, "%", VAL(1u), sp * 1000 / 127, ICON_REVERB);
+        for (c = 2; c < 4u; c++) {
+            const param_desc_t *d = &GP[HS_ID[c]];
+            param_format(d, song.g[HS_ID[c]], val, &unit);
+            draw_column(c, c == 2u ? "DRIVE" : "DUCK", val, unit, VAL(c), RATIO(d, song.g[HS_ID[c]]), c == 2u ? ICON_DRIVE : ICON_LEVEL);
         }
         return;
     }

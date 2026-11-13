@@ -215,10 +215,11 @@ static __attribute__((noinline)) int16_t *mom_vp(uint32_t k, const param_desc_t 
     *d = 0;
     if (ui.menu || ui.confirm || gen_on() || mac_latch || lock_held())
         return 0;
-    if (ui.home) {
+    if (ui.home) {                                      /* (V10.7.24) SCOPE: its globals (SPACE: MIX, SIZE kept too) */
         if (home_macros())
             return 0;
-        *d = home_param(k, &vp);
+        *d = &GP[HS_ID[k & 3u]];
+        vp = &song.g[HS_ID[k & 3u]];
     } else {
         if (FIT_PAGE(pg) || pg->scope == SC_STEP || pg->scope == SC_TRK || ((act_cols() >> k) & 1u) || g == GR_COMP || g == GR_GCOMP || g == GR_SHAPE ||
             g == GR_FUGUE || g == GR_CHANCE || g == GR_DXSND || g == GR_SWARM || g == GR_FOCUS || (g == GR_STAGE && k < 2u) ||
@@ -281,12 +282,16 @@ static __attribute__((noinline)) void mom_knob(uint32_t k, int32_t s)
         (void)mom_keep(MOM_G, G_RPRE);
         (void)mom_keep(MOM_G, G_RDAMP);
     }
+    if (ui.home && id == G_DMIX && !mom_keep(MOM_G, G_RSIZE)) {   /* (HOME > SCOPE's SPACE: SIZE moves with MIX) */
+        ui_message("MOMENTARY: 16 AT MOST");
+        return;
+    }
     if (!mom_keep(t, id)) {
         ui_message("MOMENTARY: 16 AT MOST");
         return;
     }
     if (ui.home)
-        *vp = (int16_t)param_turn(d, *vp, accel(EN_K1 + k, s, d->fmt == F_ENUM ? 0 : d->max - d->min));
+        home_knob(k, s);
     else
         edit_param(k, s);
 }

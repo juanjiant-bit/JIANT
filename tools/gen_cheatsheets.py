@@ -155,12 +155,12 @@ def controls():
         ('OCT− · OCT+', 'The keyboard\'s octave (both together: back to 0); on DRUM the kit stays put: +1/+2/+3 ratchet x2/x4/x8, −1 SHORT, −2 GHOST, −3 FLAM, each sound its own (grid KNOB 3 HIT). On action pages and dialogs: back / confirm.'),
         ('PLAY', 'Start / stop. GLO + PLAY: restart from the top.'),
         ('REC', 'Arms live recording on the selected track (notes and knob moves, overdub).'),
-        ('HOME', 'Tap: HOME (on HOME the next group: ECO · BEING · GENE). <b>Hold: the MENU.</b>'),
+        ('HOME', 'Tap: HOME (on HOME the next group: MACROS · SCOPE · GENE). <b>Hold: the MENU.</b>'),
         ('KEYS', '27 keys play the selected track in its scale; with a layer held they become that layer\'s.'),
     ]
     t = '<table>' + ''.join(f'<tr><td class="n">{e(n)}</td><td>{d}</td></tr>' for n, d in rows) + '</table>'
     pb = [
-        ('HOME', 'ECO: ECO · MACROS  |  BEING: BEING · ROUTES  |  GENE: GENE 1 · GENE 2 · GENE 3', 'MENU'),
+        ('HOME', 'MACROS (M1–M4 over the beings)  |  SCOPE (FILTER · SPACE · DRIVE · DUCK on the mix)  |  GENE: GENE 1 · GENE 2 · GENE 3', 'MENU'),
         ('EDIT', 'SOUND: EDIT 1 · EDIT 2  |  TONE: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2  |  FOCUS  |  PLAY: PLAY · PLAY 2 (last). EXT: EDIT 1 / 2 are EXT and SHAPE. FM6: SOUND (ALGO · PATCH)  |  TONE: FILTER  |  OPERATOR: OPERATOR · OP ENV · OPERATOR 2  |  PLAY. DRUM: KIT: KIT · KIT 2 · KIT 3 · KIT 4  |  SOUND: SOUND 1–4  |  LEVELS 1–2  |  TONE: X-MOD · FILTER · STEREO · PLAY', 'INIT · RECALL · sound mutes'),
         ('SEQ', 'STEP  |  PATTERN: LENGTH · RHYTHM · TRACK  |  EUCLID: EUCLID · MODES · MUTATE  |  PLAYHEADS  |  STRETCH  |  COMP: COMP · COMP 2  |  AUTO: AUTOMATION · AUTO LIST · LYRIC STEP  |  TRACK GEN', 'SEQ TOOLS'),
         ('FX', 'TRACK: SENDS · DIST · AUTO PAN  |  BUSES  |  DELAY: DLY 1–3  |  REVERB 1–2  |  CHORUS  |  SLICER: SLICER · SL BUS 1–2 · SL PITCH  |  PUNCH IN  |  MASTER · TAPE · EQ',
@@ -260,7 +260,7 @@ def controls():
                           ('PROX (BT)', 'SRC PROX: the phone\'s distance (AIR: a hand, no phone) · MENU › SYSTEM › BLUETOOTH, OCT+: OCT− FAR, OCT+ NEAR; K1 MIN, K2 MAX, K3 SPD (V10.61)'),
                           ('FOLLOW', 'SRC FOLLOW: the audio input\'s envelope (EXT, V10.54), any track, any DEST'),
                           ('MSEQ', 'STEP LEVEL LEN SLEW'), ('MSEQ 2', 'DIV - - -')]),
-        ('FX', HEAT[5], [('SENDS', 'CHORUS DLY REV -'), ('BUSES', 'DLY REV CHO SLC'), ('DIST', 'DIST TYPE TONE -'), ('AUTO PAN', 'DEPTH RATE SYNC WAVE'), ('SLICER', 'MODE PAT RATE DEPTH'),
+        ('FX', HEAT[5], [('SENDS', 'DIST CHORUS DLY REV'), ('BUSES', 'DLY REV CHO SLC'), ('DIST', 'TYPE TONE - -'), ('AUTO PAN', 'DEPTH RATE SYNC WAVE'), ('SLICER', 'MODE PAT RATE DEPTH'),
                          ('SL BUS', 'T1 T2 T3 T4'), ('SL BUS 2', 'T5 T6 FX -'), ('SL PITCH', 'STEP PITCH LEN QUANT'),
                          ('DLY', 'TIME FEEDBK TONE MIX'), ('DLY 2', 'WIDE PITCH SPRAY MOD'), ('DLY 3', ['TYPE', 'PING', 'DRIVE', 'R TIME']),
                          ('REVERB', 'TYPE SIZE DAMP PRE/AIR'), ('REVERB 2', 'MOD RATE FILT WIDE'),
@@ -283,7 +283,8 @@ def controls():
                           ('STEP', 'STEP NOTE TIME VEL'), ('STEP · DRUM', 'STEP LANE HIT ACC'), 
                           ('AUTOMATION', 'PLAY EVENT LOCK CLEAR'), ('AUTO LIST', 'ROW STEP PARAM VALUE'),
                           ('COMP', 'STEP TYPE VAL EVERY'), ('COMP 2', 'STEP TYPE VAL EVERY')]),
-        ('GLO · SAVE', HEAT[6], [('KEYS', 'RATE LOOP DENS DJ FILT (the keys: live modifiers)'), ('RAILS', 'TARGET RATE LOOP DENS'),
+        ('HOME · GLO · SAVE', HEAT[6], [('MACROS', 'M1 M2 M3 M4'), ('SCOPE', 'FILTER SPACE DRIVE DUCK'),
+                                 ('KEYS', 'RATE LOOP DENS DJ FILT (the keys: live modifiers)'), ('RAILS', 'TARGET RATE LOOP DENS'),
                                  ('MIXER', 'LEVEL PAN MUTE BPM'), ('GLOBAL', 'BPM SWING CLOCK TUNE'), ('G.COMP', 'ACTION LENGTH COND VALUE'), ('G.COMP 2', 'the global lane: its TRACKS, MONO / POLY'),
                                  ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('SYSTEM 2', ['USB', 'TRS IN', 'BT', '-']), ('PRESETS', 'No. ENG FAV LIST · OCT+ keep, OCT- back'),
                                  ('USER', 'SLOT LOAD ERASE SAVE'), ('PROJECTS', 'PROJECT LOAD ERASE SAVE'), ('PART SLOTS', 'PART LOAD ERASE SAVE'), ('ARRANGE', 'ROW PART BARS SCENE (OCT+ adds a row, OCT− deletes the one picked)'), ('TIMELINE', 'ROW PART BARS VAR · T1–T6: FROM'),
@@ -303,7 +304,7 @@ def controls():
     cards = {n: card(n, c, ptable(r)) for n, c, r in fams}
     b.append('<div class="grid g3"><div class="col">' + cards['ENV'] + cards['LFO'] + cards['SCL · ARP'] + '</div>' +
              cards['FX'] + cards['EDIT'] + '</div>')
-    b.append('<div class="grid g2" style="margin-top:22px">' + cards['SEQ'] + cards['GLO · SAVE'] + '</div>')
+    b.append('<div class="grid g2" style="margin-top:22px">' + cards['SEQ'] + cards['HOME · GLO · SAVE'] + '</div>')
     page('CONTROLS', 'every button, knob, layer, combo and page', ''.join(b), 'controls.html')
 
 
@@ -351,7 +352,7 @@ def sound():
          'RAND. Then a sound (KNOB 1 the sound): SIDE PITCH PMOD · DECAY NOISE COLOR · MODE PM.TYPE DRIVE · <b>LAYER</b> (no note) FEEDBK '
          '<b>SEND</b> (CHO / DLY / REV). Last LEVELS and <b>STEREO</b> IMAGE (a knob through the kit\'s stereo placings). '
          '<b>KIT 4 KEY MAP</b> (V10.6r): EXTENDED (default) +1 FILLS, −1 KICK / TOM or one sound chromatic, −2 FX KIT, −3 FLAM; or CLASSIC. Cowbell: classic CMOS (V10.6q). '
-         'KIT, SOUND 1–4 and HOME › BEING draw the kit as little beings that squash and shout on each hit (0.9.4).'),
+         'KIT and SOUND 1–4 draw the kit as little beings that squash and shout on each hit (0.9.4).'),
         ('EXT', HEAT[0], 'SOURCE GAIN GATE PLAY', 'WIDTH RING BITS RATE',
          '(V10.54; EXT since V10.6d) SOURCE <b>SWARM</b>: a melody from the Bluetooth around (PROX first, then AIR; FAR / NEAR morph, CHAOS). Else not a synth: the USB audio input on a track of its own (an interface on USB HOST behind a powered hub, or '
          'the computer with USB IN+OUT). SOURCE IN 1 · IN 2 · 1+2 · STEREO (two tracks can take IN 1 and IN 2); PLAY <b>THRU</b> '
@@ -384,7 +385,7 @@ def sound():
                   'in POLY each voice its own place across the stereo field, drawn on the page (V10.52).</p>'))
     b.append(card('DICE', HEAT[5], '<p><b>EDIT + SELECT</b>: a random factory preset of the engine, every '
                   'parameter moved up to a quarter of its range. DRUM-X: both sides of every sound around the factory '
-                  'kit. Heard at once: OCT+ OK keeps it, OCT- CANCEL brings the sound back. SEQ / LFO / FX + SELECT: the sequence, the LFO, the effects, the same way. HOME + SELECT (or HOME twice on HOME): <b>GEN</b>, the song generator, HOME\'s last three pages: GENRE (<b>EXPLORE</b>, where it opens: no genre, every rule broken; RANDOM; 43 genres; PRESETS too) · SEED · ENERGY · FORM; DRUMS · BASS · CHORDS · ARP · LEAD amounts; COMPLEX · SWING · HUMAN (SELECT: the next page). OCT+ makes the piece (again: a new seed), OCT- back to ECO. GLO + G4 undoes.</p>'))
+                  'kit. Heard at once: OCT+ OK keeps it, OCT- CANCEL brings the sound back. SEQ / LFO / FX + SELECT: the sequence, the LFO, the effects, the same way. HOME + SELECT (or HOME twice on HOME): <b>GEN</b>, the song generator, HOME\'s last three pages: GENRE (<b>EXPLORE</b>, where it opens: no genre, every rule broken; RANDOM; 43 genres; PRESETS too) · SEED · ENERGY · FORM; DRUMS · BASS · CHORDS · ARP · LEAD amounts; COMPLEX · SWING · HUMAN (SELECT: the next page). OCT+ makes the piece (again: a new seed), OCT- back to MACROS. GLO + G4 undoes.</p>'))
     b.append('</div>')
 
     b.append(sec('MODULATION'))

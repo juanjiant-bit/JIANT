@@ -174,6 +174,13 @@ static int check(const char *what, int ok)
     printf("ui: %-74s %s\n", what, ok ? "ok" : "FAIL");
     return ok ? 0 : 1;
 }
+/* (V10.7.24) HOME's SCOPE shown, *vp the global its KNOB k moves (ui.c HS_ID: FILTER, SPACE's MIX, DRIVE, DUCK); the
+ * tests that turned HOME's sound knobs (gone from HOME) turn these */
+static void home_scope_vp(uint32_t k, int16_t **vp)
+{
+    nav_go(SEC_HOME, 1u, 0);
+    *vp = &song.g[HS_ID[k & 3u]];
+}
 
 /* main.c felucca_init, on the parts of 0.9.8 (TRK_OLD: T1 ANALOG ACID, T2 FM6 PAD, T3 LOFI PULSE LD, T4 DRUM-X, T5 PHASE,
  * T6 WHEEL, each its preset's sound with its sends), the music the UI tests, the renders (ui_render.c) and the CPU
@@ -3988,7 +3995,7 @@ static int test_product_ux(void)
     turn(EN_K2, -1000); ok = step_chance(&TSEL->step[0]) == 0;
     turn(EN_K2, 1000); ok &= step_chance(&TSEL->step[0]) == 100;
     bad += check("CHANCE controls clamp to 0..100 without changing adjacent steps", ok);
-    ui_power_on(); song.rec = 1; seq_start(); go_home();
+    ui_power_on(); song.rec = 1; seq_start(); go_title("EDIT 1");   /* (V10.7.24: the sound's knobs on EDIT, HOME's gone) */
     int16_t baseline = TSEL->p[P_E0]; turn(EN_K1, 1);
     bad += check("REC plus a sound knob records motion through the UI", motion_count(TSEL) == 1 && motion_enabled(TSEL));
     press(B_PLAY); events_block(32);
@@ -4010,17 +4017,17 @@ static int test_product_ux(void)
     bad += check("#93 the events used up: AUTOMATION FULL", msg_is("AUTOMATION FULL") && !motion_full);
     {   /* #63: a card shows MOTION's icon while the track's motion changes its parameter */
         uint32_t id = ENGINES[TSEL->eng_req]->knob[0];
-        ui_power_on(); go_home(); frame();
+        ui_power_on(); go_title("EDIT 1"); frame();
         ok = !card_motion(0) && !card_motion(1);
-        song.rec = 1; seq_start(); go_home(); turn(EN_K1, 1); frame();
+        song.rec = 1; seq_start(); go_title("EDIT 1"); turn(EN_K1, 1); frame();
         ok &= card_motion(0) && !card_motion(1) && !card_motion(2) && !card_motion(3);
-        bad += check("MOTION: a recorded knob marks its HOME card (and no other)", ok && motion_count(TSEL) == 1);
+        bad += check("MOTION: a recorded knob marks its EDIT card (and no other)", ok && motion_count(TSEL) == 1);
         song.rec = 0; press(B_PLAY); events_block(32); frame();
         ok = card_motion(0);
-        go_page(GR_MOTION); turn(EN_K1, -1); go_home(); frame();
+        go_page(GR_MOTION); turn(EN_K1, -1); go_title("EDIT 1"); frame();
         ok &= !card_motion(0) && motion_count(TSEL) == 1;
         bad += check("MOTION: PLAY OFF takes the icon off the card, the events stay", ok);
-        go_page(GR_MOTION); turn(EN_K1, 1); go_home(); frame();
+        go_page(GR_MOTION); turn(EN_K1, 1); go_title("EDIT 1"); frame();
         ok = card_motion(0);
         track_select(1); frame();
         ok &= !card_motion(0);                           /* (another track: its own motion, none) */
@@ -4034,7 +4041,7 @@ static int test_product_ux(void)
         bad += check("MOTION: a mix parameter's event marks its MIXER card (PAN)", ok);
         go_page(GR_MOTION); turn(EN_K4, 1); press(B_OCTUP); press(B_OCTUP);
         ok = motion_count(TSEL) == 0;
-        go_home(); frame();
+        go_title("EDIT 1"); frame();
         ok &= !card_motion(0) && !card_motion(1);
         go_page(GR_TRK); frame();
         ok &= !card_motion(1);
@@ -5066,7 +5073,7 @@ static int test_quick_layers(void)
     ok = !ui.confirm && msg_is("NOTHING SAVED");
     {   /* (0.9.9-seq2e) KNOB 1 with EDIT held: MOMENTARY on the page under (HOME's KNOB 1), back when let go */
         int16_t *vp, c;
-        home_param(0, &vp);
+        home_scope_vp(0, &vp);
         c = *vp;
         btn_down(B_EDIT); frame(); turn(EN_K1, 5);
         ok &= *vp != c && !ui.layer && msg_is("MOMENTARY");
@@ -7033,7 +7040,7 @@ static int test_screen_off(void)
 
     scr_idle(31u * 60000u);
     n = host_pw_n;
-    home_param(0, &vp);
+    home_scope_vp(0, &vp);
     v0 = *vp;
     for (i = 0; i < 20u; i++) turn(EN_K1, 1);        /* a knob turned to wake it, still turning (on past the wake) */
     ok = scr_woke(n) && *vp == v0;
@@ -7510,10 +7517,10 @@ static int test_momentary(void)
     btn_up(B_EDIT); frames(96);
     ok &= *v1 == c1 && *v2 == c2 && str_eq(cur_page()->title, "DLY");
     go_title("FX"); frames(64);
-    page_desc(cur_page(), 2, &v1);                      /* (codex/coherence: SENDS CHORUS DLY REV, REV on KNOB 3) */
+    page_desc(cur_page(), 3, &v1);                      /* (V10.7.24: SENDS DIST CHORUS DLY REV, REV on KNOB 4) */
     c1 = *v1;
     btn_down(B_EDIT); frame();
-    turn(EN_K3, 9); frame();
+    turn(EN_K4, 9); frame();
     h1 = *v1;
     ok &= h1 != c1 && !project_save(1) && stored_param(1, song.sel, P_REV) == c1;
     btn_up(B_EDIT); frames(96);
@@ -7586,7 +7593,7 @@ static int test_layer_knob_race(void)
             uint32_t i;
             ui_power_on();
             song.rec = 1; seq_start(); go_home(); frames(64);
-            home_param(k, &vp);
+            home_scope_vp(k, &vp);
             c = *vp;
             btn_down(LB[l]); frames(560);
             for (i = 0; i < 4u; i++) { rc_enc(EN_K1 + k, l ? -1 : 1, 1); frame(); }
@@ -7604,7 +7611,7 @@ static int test_layer_knob_race(void)
     {
         int16_t *vp, c;
         uint32_t i;
-        home_param(0, &vp);
+        home_scope_vp(0, &vp);
         c = *vp;
         btn_down(B_FX); frames(560);
         for (i = 0; i < 5u; i++) { rc_enc(EN_K1, 1, 1); frame(); }
@@ -7621,7 +7628,7 @@ static int test_layer_knob_race(void)
     go_home(); frames(64);
     {
         int16_t *vp, c;
-        home_param(0, &vp);
+        home_scope_vp(0, &vp);
         c = *vp;
         rc_enc(EN_K1, 1, 1); frame(); frame();
         ok = *vp == c + 1;
@@ -10751,7 +10758,7 @@ static int test_midi_learn(void)
     ml_set(0);                                           /* (the MENU sweeps before left it armed: not saved, a power-on's 0) */
     ml_clear_all();
     ml_tab[0] = MLM_FACTORY;
-    ui.home = 1; ui.menu = 0; frame();
+    go_title("EDIT 1"); ui.menu = 0; frame();   /* (V10.7.24: a page of the sound's knobs; HOME's are the macros) */
     trk[0].p[P_LEVEL] = 10;
     midi_event(0xB0, 0, 7, 127);                         /* (ROUT CH1-6: channel 1 plays T1) */
     lv = (uint32_t)trk[0].p[P_LEVEL];
@@ -10762,8 +10769,8 @@ static int test_midi_learn(void)
     bad += check("MIDI MAP FACTORY by default (older settings: 0): CC7 sets T1's LEVEL as ever; LEARN OFF SEL TRACK FIXED TRK CLEAR ALL", ok);
 
     song.sel = 1; frame();
-    menu_put(MI_LEARN, 2u); ui.menu = 1; menu_close(); frame();
-    turn(EN_K1, 1); frame();                             /* (HOME KNOB 1 on T2) */
+    menu_put(MI_LEARN, 2u); ui.menu = 1; menu_close(); go_title("EDIT 1"); frame();
+    turn(EN_K1, 1); frame();                             /* (EDIT 1 KNOB 1 on T2) */
     id = ml.id;
     ok = ml.on == 2u && ml.pick && ml.arm && ml.trk == 1u && id < P_COUNT;
     midi_event(0xB0, 0, 21, 0);
@@ -10776,7 +10783,7 @@ static int test_midi_learn(void)
     if (!ok) printf("  on %u pick %u arm %u trk %u id %u count %u cc %u map %u p1 %d p2 %d\n", ml.on, ml.pick, ml.arm, ml.trk, id, ml_count(), ml_cc_of(1, id), ml_map(), trk[1].p[id], trk[2].p[id]);
     bad += check("LEARN FIXED TRK: T2's knob, then CC21: learned on T2 (the map to CUSTOM ADD); T3 selected, CC21 still T2's", ok);
 
-    menu_put(MI_LEARN, 1u); ui.menu = 1; menu_close(); frame();
+    menu_put(MI_LEARN, 1u); ui.menu = 1; menu_close(); go_title("EDIT 1"); frame();
     turn(EN_K2, 1); frame();
     id2 = ml.id;
     ok = ml.trk == ML_SEL && ml.arm;
@@ -10799,7 +10806,7 @@ static int test_midi_learn(void)
     ok &= ml_cc_of(ML_SEL, id) == 8u && trk[3].p[id] == track_desc(&trk[3], id)->max && (id == P_LEVEL || trk[3].p[P_LEVEL] == 50);
     bad += check("  CC64 refused (RESERVED); CC7 learned in CUSTOM ADD: the learned parameter, not LEVEL", ok);
 
-    menu_put(MI_LEARN, 0u); ui.menu = 1; menu_close(); frame();
+    menu_put(MI_LEARN, 0u); ui.menu = 1; menu_close(); go_title("EDIT 1"); frame();
     menu_put(MI_MIDIMAP, 2u);
     trk[0].p[P_LEVEL] = 10; trk[1].p[P_PAN] = 0;
     midi_event(0xB0, 0, 10, 127);                        /* (CC10 PAN: not learned) */
@@ -10825,7 +10832,7 @@ static int test_midi_learn(void)
     }
     bad += check("kept with the settings (the editor's backup too): MIDI MAP and the learned CCs", ok);
 
-    menu_put(MI_LEARN, 3u); ui.menu = 1; menu_close(); frame();
+    menu_put(MI_LEARN, 3u); ui.menu = 1; menu_close(); go_title("EDIT 1"); frame();
     ok = ml_count() == 0u && ml.on == 0u && str_eq(ui.msg, "LEARN CLEARED");
     bad += check("LEARN CLEAR ALL: every CC gone at the MENU's close", ok);
     ml_tab[0] = MLM_FACTORY;
@@ -11098,8 +11105,8 @@ static int test_bpm_lock(void)
     turn(EN_SELECT, -1);
     ok &= str_eq(cur_page()->title, "GLOBAL");
     go_home(); frame(); turn(EN_SELECT, 1);
-    ok &= ui.home && !ui.confirm && home_level() == 0u && home_set();   /* (0.9.2: ECO MACROS BEING ROUTES GEN ..) */
-    turn(EN_SELECT, 3);
+    ok &= ui.home && !ui.confirm && home_level() == 1u && home_scope();   /* (V10.7.24: MACROS SCOPE GEN ..) */
+    turn(EN_SELECT, 1);
     ok &= ui.home && ui.confirm == CF_DICE_ALL && song.g[G_BPM] == b0;   /* (0.6.69) HOME: GEN */
     press(B_OCTDN); frame(); ok &= !ui.confirm;
     go_title("EDIT 1"); frame(); turn(EN_SELECT, 1);
@@ -11301,7 +11308,7 @@ static int test_large(void)
     for (c = 0; c < 4u; c++)                                      /* each column's K pill, over its knob */
         ok &= lg_px(CARD_X(c) + 8, LZ_CARD_Y + LG_MY + LG_MH / 2) == T_KEY;
     ok &= !memcmp(off + LZ_FOOT_Y * 240, host_screen + LZ_FOOT_Y * 240, 240u * LZ_FOOT_H * sizeof *off);
-    ok &= swap16(host_screen[(LT_Y + LT_H / 2) * 240 + LT_X(0) + 2]) == T_THEME;   /* (its tabs: ECO lit) */
+    ok &= swap16(host_screen[(LT_Y + LT_H / 2) * 240 + LT_X(0) + 2]) == T_THEME;   /* (its tabs: MACROS lit) */
     bad += check("#15 LARGE ON: HOME's cards tall under its tabs (a K1..K4 pill over each column), the scope a strip, the footer kept", ok);
 
     /* the value in L: GLOBAL's BPM 124 stands about twice as tall as in M */
@@ -11433,12 +11440,13 @@ static int test_skin(void)
     }
     /* the knobs' cards (V10.7.23): no box, on the background; their shape a line in the value's colour, 1 px, 2 px the
      * knob just turned; the colour follows the value's (the palette here) */
-    ui_power_on(); frame();                                       /* HOME (ECO) */
+    ui_power_on(); nav_go(SEC_HOME, 1u, 0); frame();             /* HOME (V10.7.24: SCOPE, its cards in their values'
+                                                         * colours; MACROS' without a route dim) */
     o0 = lg_px(CARD_X(0) + COL_W / 2, LZ_CARD_Y);
     ok = card_y() == LZ_CARD_Y && graph_y() == LZ_GRAPH_Y && o0 != T_BG && o0 != T_RAISE &&
          lg_px(CARD_X(0) + COL_W / 2, LZ_CARD_Y + 1) == T_BG && lg_px(CARD_X(0) + 2, LZ_CARD_Y + LZ_CARD_H / 2) == T_BG &&
          lg_px(CARD_X(0), LZ_CARD_Y + LZ_CARD_H / 2) == o0 && lg_px(CARD_X(0) + COL_W - 1, LZ_CARD_Y + LZ_CARD_H / 2) == o0 &&
-         lg_px(CARD_X(0) + COL_W / 2, LZ_CARD_Y + LZ_CARD_H - 1) == o0 && lg_px(LT_X(0) + LT_W / 2, LT_Y + 1) == T_THEME;
+         lg_px(CARD_X(0) + COL_W / 2, LZ_CARD_Y + LZ_CARD_H - 1) == o0 && lg_px(LT_X(1) + LT_W / 2, LT_Y + 1) == T_THEME;
     turn(EN_K1, 1); frame();
     ok &= lg_px(CARD_X(0) + COL_W / 2, LZ_CARD_Y + 1) != T_BG && lg_px(CARD_X(0) + 1, LZ_CARD_Y + LZ_CARD_H / 2) != T_BG &&
           lg_px(CARD_X(0) + 2, LZ_CARD_Y + LZ_CARD_H / 2) == T_BG;
@@ -11495,7 +11503,7 @@ static int test_skin(void)
             if (!okp) { printf("  %s\n", PAGES[i].title); break; }
         }
         ok = okp;
-        for (i = 0; i < 3u; i++) {                                /* HOME's groups: ECO, BEING, GEN (a HOME tap each, 0.9.2) */
+        for (i = 0; i < 3u; i++) {                                /* HOME's groups: MACROS, SCOPE, GEN (a HOME tap each) */
             ui_power_on(); frame();
             if (i == 1u) press(B_HOME);
             if (i == 2u) { press(B_HOME); press(B_HOME); }
@@ -11563,12 +11571,13 @@ static uint32_t ha_eye_rows(uint32_t fl)                /* .. the rows of its ey
     }
     return n;
 }
-/* .. ECO's panel (COLORS: the graph's rows) at frame f, the animation held: its pixels not BG away from every being (2 r +
+/* .. MACROS' panel (V10.7.24, was ECO's; COLORS: the graph's rows) at frame f, the animation held: its pixels not BG away from every being (2 r +
  * 14 px round it: its isotherms, face, number) */
 static uint32_t ha_loose(void)
 {
     uint32_t x, y, c, n = 0;
-    for (y = graph_y() + 2u; y + 2u < graph_y() + graph_h(); y++)
+    for (y = graph_y() + 14u; y + 2u < graph_y() + graph_h(); y++)   /* (V10.7.24: under MACROS' line, its ROUTES and
+                                                         * LATCH) */
         for (x = 8; x < 232u; x++) {
             int near = 0;
             for (c = 0; c < ECO_N; c++) {
@@ -11595,7 +11604,7 @@ static int test_home_a(void)
     ok &= ha_eye_rows(0) == 2u && ha_eye_rows(EF_SHUT) == 1u && ha_eye_rows(EF_SLEEP) >= 1u;
     bad += check("0.9.7 HOME A: the face: its mouth opens with the level, its eyes shut on a hit (one row), it looks up on MUTATE", ok);
     {   /* the face as HOME runs it: a hit shuts the eyes 0.1 s, a mutation landed looks up, muted asleep */
-        ui_power_on(); ui.home = 1; ui.hlv = 0; ui.hset[0] = 0;
+        ui_power_on(); ui.home = 1; ui.hlv = 0;
         for (c = 0; c < NTRK; c++) trk[c].p[P_MUTE] = 0;
         frames(320);
         ok = eco_fc.init && !(eco_fc.fl[0] & (EF_SHUT | EF_UP));
@@ -11607,7 +11616,7 @@ static int test_home_a(void)
     }
     for (sk = 0; sk < 1u; sk++) {   /* no critters, no ring of MUTATE dots: MUTATE on draws nothing until one lands */
         static uint16_t a[240 * 240];
-        ui_power_on(); ui.home = 1; ui.hlv = 0; ui.hset[0] = 0;
+        ui_power_on(); ui.home = 1; ui.hlv = 0;
         frames(320);
         ui_prefs = PREF_ANIM_OFF;
         for (c = 0; c < NTRK; c++) { trk[c].p[P_MSND] = 0; trk[c].p[P_MPAT] = 0; }
@@ -12024,25 +12033,28 @@ static int test_organic(void)
     uint32_t k, j, routes = 0, per[4] = {0, 0, 0, 0}, bad_dst = 0;
     int16_t cut;
     ui_power_on();
-    go_home(); frames(400);
-    cut = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
+    go_title("EDIT 1"); frames(400);                   /* (V10.7.24: the sound's knobs on EDIT; HOME's are M1..M4) */
+    cut = TSEL->p[P_E0];
     turn(EN_K1, 2);
-    ok = !mac_latch && TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] != cut;   /* HOME: the sound's four */
-    cut = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
+    ok = !mac_latch && TSEL->p[P_E0] != cut;           /* EDIT 1: the sound's */
+    cut = TSEL->p[P_E0];
     btn_down(B_LFO); frames(560); btn_up(B_LFO); frames(64);
     ok &= mac_latch && !ui.layer;                  /* LFO held, let go: latched (its cards drawn, no layer open) */
     macro_v[0] = macro_v[1] = 0;                   /* (the macros as an earlier test left them: from 0) */
     turn(EN_K1, 5);
-    ok &= macro_v[0] == 5 && TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == cut;   /* (M1, not the sound's KNOB 1) */
+    ok &= macro_v[0] == 5 && TSEL->p[P_E0] == cut;     /* (M1, not the sound's KNOB 1) */
     go_page(GR_ADSR); frames(64);
     turn(EN_K2, 1);
     ok &= mac_latch && macro_v[1] == 1;            /* on another page too */
     press(B_LFO); frames(400);
     ok &= !mac_latch && !str_eq(cur_page()->title, "LFO");   /* LFO again: off, no LFO page */
-    go_home(); frames(64);
+    go_title("EDIT 1"); frames(64);
     turn(EN_K1, 1);
-    ok &= macro_v[0] == 5;
-    bad += check("MACRO: LFO held, let go: latched (M1..M4 on the knobs, any page); LFO again: off; HOME the sound's", ok);
+    ok &= macro_v[0] == 5 && TSEL->p[P_E0] != cut;
+    go_home(); frames(64);                         /* (V10.7.24) HOME's MACROS: M1..M4 unlatched too */
+    turn(EN_K1, 1);
+    ok &= macro_v[0] == 6 && !mac_latch;
+    bad += check("MACRO: LFO held, let go: latched (M1..M4 on the knobs, any page); LFO again: off; EDIT the sound's, HOME M1..M4", ok);
     ui_power_on();
     for (k = 0; k < NTRK; k++)
         for (j = 0; j < 12u; j++)
@@ -12154,40 +12166,95 @@ static int lz_count_is(const char *s)
     char b[8];
     return crumb_count(b) && str_eq(b, s);
 }
-/* HOME (0.9.2): ECO (ECO MACROS) . BEING (BEING ROUTES) . GEN (GEN 1..3) one chain; SELECT a page a detent (no wrap), a
- * HOME tap the next group (round: GEN -> ECO), PRESETS on GEN its GENRE, OCT- on GEN back to ECO; GEN is a page (a
- * section's button leaves it, HOME comes back to it); HOME from elsewhere the page left; MACROS / ROUTES: M1..M4.
- * (Was 0.8.5's lens: SELECT ECO <-> BEING <-> GEN levels, a HOME tap the level's other set, GEN modal) */
+/* HOME (V10.7.24, the owner): MACROS . SCOPE . GEN (GENE 1..3) one chain, a group a page; SELECT a page a detent (no
+ * wrap), a HOME tap the next group (round: GEN -> MACROS), PRESETS on GEN the sound, OCT- on GEN back to MACROS; GEN is a
+ * page (a section's button leaves it, HOME comes back to it); HOME from elsewhere the page left. MACROS: M1..M4 over the
+ * beings; SCOPE: the scope, FILTER SPACE DRIVE DUCK on the mix. (0.9.2 .. V10.7.23: ECO MACROS BEING ROUTES GEN 1..3) */
 static int test_lz_home(void)
 {
     int bad = 0, ok;
     uint32_t c, k;
     ui_power_on(); frame();
-    ok = ui.home && lz_on() && lz_fam() == LZ_HOME && home_level() == 0u && !home_set() && lz_tab_lit(0) && lz_tabs() == 3u &&
-         lz_crumb_is("HOME \xB7 ECO \xB7 ECO") && lz_count_is("1/7");   /* (seven pages, as the n/7 below; the "1/8" came
-                                                         * with e147a98's import, 2026-11-04, the rest of the test says 7) */
-    press(B_HOME); frame();                                         /* a HOME tap: BEING (the next group) */
-    ok &= ui.home && home_level() == 1u && !home_set() && lz_tab_lit(1) && lz_crumb_is("HOME \xB7 BEING \xB7 BEING") &&
-          lz_count_is("3/7");
+    ok = ui.home && lz_on() && lz_fam() == LZ_HOME && home_level() == 0u && home_macros() && !home_scope() && lz_tab_lit(0) &&
+         lz_tabs() == 3u && lz_crumb_is("HOME \xB7 MACROS \xB7 MACROS") && lz_count_is("1/5");
+    for (c = 0; c < 4u; c++) {                                      /* KNOB 1..4: M1..M4, the sound untouched */
+        int16_t e = TSEL->p[ENGINES[TSEL->eng_req]->knob[c]];
+        k = macro_v[c];
+        turn(EN_K1 + c, 3); frame();
+        ok &= macro_v[c] == (uint8_t)(k + 3u) && TSEL->p[ENGINES[TSEL->eng_req]->knob[c]] == e;
+    }
+    ok &= !strncmp(ui.col[0], "M1|", 3) && !strncmp(ui.col[3], "M4|", 3);
+    press(B_HOME); frame();                                         /* a HOME tap: SCOPE (the next group) */
+    ok &= ui.home && home_level() == 1u && home_scope() && !home_macros() && lz_tab_lit(1) &&
+          lz_crumb_is("HOME \xB7 SCOPE \xB7 SCOPE") && lz_count_is("2/5") && !strncmp(ui.col[0], "FILTER|", 7) &&
+          !strncmp(ui.col[1], "SPACE|", 6) && !strncmp(ui.col[2], "DRIVE|", 6) && !strncmp(ui.col[3], "DUCK|", 5);
     turn(EN_SELECT, -1); frame();                                   /* SELECT left: MACROS */
-    ok &= home_level() == 0u && home_set() && home_macros() && lz_crumb_is("HOME \xB7 ECO \xB7 MACROS") && lz_count_is("2/7");
-    k = macro_v[0];
-    turn(EN_K1, 3); frame();
-    ok &= macro_v[0] == (uint8_t)(k + 3u) && !strncmp(ui.col[0], "M1|", 3);
-    c = (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
-    turn(EN_SELECT, -1); frame();                                   /* ECO: the HOME knobs */
-    turn(EN_K1, 1); frame();
-    ok &= !home_set() && home_level() == 0u && (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] != c &&
-          macro_v[0] == (uint8_t)(k + 3u);
+    ok &= home_macros() && lz_count_is("1/5");
     turn(EN_SELECT, -1); frame();                                   /* (no wrap) */
-    ok &= home_level() == 0u && !home_set() && ui.home && !ui.confirm;
-    bad += check("0.9.2 HOME: ECO MACROS BEING .. one chain by SELECT (no wrap), a HOME tap the next group; tabs, crumb, n/7", ok);
-    turn(EN_SELECT, 3); frame();                                    /* ROUTES */
-    ok = home_level() == 1u && home_set() && home_macros() && lz_crumb_is("HOME \xB7 BEING \xB7 ROUTES") && lz_count_is("4/7");
+    ok &= home_level() == 0u && home_macros() && ui.home && !ui.confirm;
+    turn(EN_SELECT, 1); frame();
+    ok &= home_scope();
+    bad += check("V10.7.24 HOME: MACROS SCOPE GENE 1..3 one chain by SELECT (no wrap), a HOME tap the next group; tabs, crumb, n/5; "
+                 "MACROS' KNOB 1..4 M1..M4", ok);
+    {   /* SCOPE's four: the globals on the whole mix, the macros and the sound untouched */
+        int16_t cl = song.g[G_CLIP], du = song.g[G_DUCK], dm, rs, e = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
+        uint8_t m0[4];
+        memcpy(m0, macro_v, sizeof m0);
+        song.g[G_DMIX] = 60; song.g[G_RSIZE] = 80;
+        dm = song.g[G_DMIX]; rs = song.g[G_RSIZE];
+        ok = song.g[G_DJF] == 0;
+        turn(EN_K1, -5); frame();
+        ok &= song.g[G_DJF] < 0 && strstr(ui.col[0], "LP") != 0;    /* left: the low-pass */
+        turn(EN_K1, 30); frame();
+        ok &= song.g[G_DJF] == 0 && strstr(ui.col[0], "OFF") != 0;  /* (no acceleration across the middle: off) */
+        turn(EN_K1, 4); frame();
+        ok &= song.g[G_DJF] > 0 && strstr(ui.col[0], "HP") != 0;    /* right: the high-pass */
+        turn(EN_K2, 4); frame();
+        ok &= song.g[G_DMIX] == dm + 4 && song.g[G_RSIZE] == rs + 4;   /* SPACE: MIX and SIZE together */
+        turn(EN_K2, -300); frame();
+        ok &= song.g[G_DMIX] == 0 && song.g[G_RSIZE] == 0 && strstr(ui.col[1], "|0|") != 0;
+        turn(EN_K2, 300); frame();
+        ok &= song.g[G_DMIX] == 127 && song.g[G_RSIZE] == 126;      /* (SIZE not into CLOUD's FREEZE) */
+        turn(EN_K3, 5); frame();
+        ok &= song.g[G_CLIP] == cl + 5;                              /* DRIVE: the master's CLIP */
+        turn(EN_K4, 7); frame();
+        ok &= song.g[G_DUCK] == du + 7;                              /* DUCK */
+        ok &= !memcmp(m0, macro_v, sizeof m0) && TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == e;
+        bad += check("V10.7.24 HOME SCOPE: FILTER G_DJF (LP left, OFF centre, HP right), SPACE MIX + SIZE, DRIVE CLIP, DUCK", ok);
+    }
+    {   /* FILTER while recording: the DJ FILTER's automation (MOT_DJF), as LIVE > KEYS' KNOB 4 records it */
+        uint32_t i, n = 0;
+        song.g[G_DJF] = 0;
+        song.rec = 1u << song.sel; seq_start(); frames(8);
+        for (i = 0; i < 6u; i++) { turn(EN_K1, -1); frames(4); }
+        for (i = 0; i < motion.count; i++) n += MOTION_ID(&motion.event[i]) == MOT_DJF;
+        ok = song.g[G_DJF] < 0 && n > 0u;
+        stop_transport(); song.rec = 0;
+        song.g[G_DJF] = 0;
+        {   /* EDIT held: MOMENTARY, back when let go */
+            int16_t d0 = song.g[G_DUCK];
+            btn_down(B_EDIT); frame(); turn(EN_K4, 6);
+            ok &= song.g[G_DUCK] != d0 && msg_is("MOMENTARY");
+            btn_up(B_EDIT); frames(64);
+            ok &= song.g[G_DUCK] == d0 && home_scope();
+        }
+        bad += check("V10.7.24 HOME SCOPE: FILTER recorded as the DJ FILTER's automation while recording; EDIT held MOMENTARY", ok);
+    }
+    {   /* the scope drawn: a wave in the buffer, the panel differs from silence */
+        static uint16_t a[240 * 140];
+        memset(scope_buf, 0, sizeof scope_buf);
+        ui.force = 1; frame();
+        memcpy(a, host_screen + LZ_GRAPH_Y * 240, sizeof a);
+        for (k = 0; k < SCOPE_N; k++) scope_buf[k] = (int16_t)(((int32_t)(k % 40u) - 20) * 600);
+        ui.force = 1; frame();
+        ok = home_scope() && memcmp(a, host_screen + LZ_GRAPH_Y * 240, sizeof a) != 0;
+        memset(scope_buf, 0, sizeof scope_buf);
+        bad += check("V10.7.24 HOME SCOPE: the mix's oscilloscope over the panel", ok);
+    }
     fm1_ms += 1000u;
     turn(EN_SELECT, 1); frame();                                    /* GEN 1 */
-    ok &= gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(2) && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 1") &&
-          lz_count_is("5/7");
+    ok = gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(2) && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 1") &&
+          lz_count_is("3/5");
     k = gp.genre;
     {   /* (V10.7.22, the owner) PRESETS on GEN: the sound, as on every page but SEQ's; the GENRE only by KNOB 1 */
         uint32_t pr = TSEL->preset, en = TSEL->eng_req;
@@ -12198,15 +12265,15 @@ static int test_lz_home(void)
     ok &= gp.genre == (k == GEN_EXPLORE ? 0u : k == NGENRE ? GEN_EXPLORE : k + 1u);   /* KNOB 1: the GENRE, its order
                                                          * (0.8.6: EXPLORE, RANDOM, the genres) */
     turn(EN_SELECT, 1); frame();
-    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 2") && lz_count_is("6/7");
-    turn(EN_SELECT, -2); frame();                                   /* back: ROUTES, GEN shut */
-    ok &= !ui.confirm && ui.home && home_level() == 1u && home_set();
+    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 2") && lz_count_is("4/5");
+    turn(EN_SELECT, -2); frame();                                   /* back: SCOPE, GEN shut */
+    ok &= !ui.confirm && ui.home && home_level() == 1u && home_scope();
     turn(EN_SELECT, 1); frame();
     ok &= gen_on() && gen_page() == 0u;
-    press(B_HOME); frame();                                         /* a HOME tap on GEN: round to ECO */
-    ok &= !ui.confirm && ui.home && home_level() == 0u && !home_set();
-    bad += check("0.9.2 HOME: ROUTES, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: ECO", ok);
-    turn(EN_SELECT, 5); frame();                                    /* GEN 2 */
+    press(B_HOME); frame();                                         /* a HOME tap on GEN: round to MACROS */
+    ok &= !ui.confirm && ui.home && home_level() == 0u && home_macros();
+    bad += check("V10.7.24 HOME: SCOPE, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: MACROS", ok);
+    turn(EN_SELECT, 3); frame();                                    /* GEN 2 */
     ok = gen_on() && gen_page() == 1u;
     press(B_ENV); frame();                                          /* not modal: a section's button leaves it */
     ok &= !ui.confirm && !ui.home && str_eq(cur_page()->title, "ENV");
@@ -12215,31 +12282,32 @@ static int test_lz_home(void)
     turn(EN_ALGO, 1); frame();
     ok &= song.sel == 1u && gen_on();                               /* (ALGORITHM the track there too) */
     turn(EN_ALGO, -1); frame();
-    press(B_OCTDN); frame();                                        /* OCT-: ECO */
-    ok &= !ui.confirm && ui.home && home_level() == 0u && !home_set();
-    bad += check("0.9.2 HOME: GEN is HOME's pages, not modal (ENV leaves it, HOME comes back to GEN 2, ALGORITHM works); OCT- ECO", ok);
+    press(B_OCTDN); frame();                                        /* OCT-: MACROS */
+    ok &= !ui.confirm && ui.home && home_level() == 0u && home_macros();
+    bad += check("V10.7.24 HOME: GEN is HOME's pages, not modal (ENV leaves it, HOME comes back to GEN 2, ALGORITHM works); OCT- MACROS", ok);
     {   /* (V10.8, testers) GEN's GENRE kept when GEN is left and opened again */
         uint32_t g0;
-        turn(EN_SELECT, 4); frame();                    /* GEN 1 */
+        turn(EN_SELECT, 2); frame();                    /* GEN 1 */
         ok = gen_on() && gen_page() == 0u;
         turn(EN_K1, 3); frame();                        /* (V10.7.22: KNOB 1 the GENRE; PRESETS the sound) */
         g0 = gp.genre;
-        press(B_OCTDN); frame();                        /* out (ECO) */
+        press(B_OCTDN); frame();                        /* out (MACROS) */
         open_family(FAM_ENV); frame();
         go_home(); frames(64);
-        turn(EN_SELECT, 4); frame();
+        turn(EN_SELECT, 2); frame();
         ok &= gen_on() && gp.genre == g0 && g0 != GEN_EXPLORE;
         press(B_OCTDN); frame();
         bad += check("V10.8 GEN: the GENRE picked stays after leaving GEN (was EXPLORE again each visit)", ok);
     }
-    turn(EN_SELECT, 2); frame();                                    /* BEING */
+    turn(EN_SELECT, 1); frame();                                    /* SCOPE */
     open_family(FAM_ENV); frame();
     ok = !ui.home;
     press(B_HOME); frame();                                         /* HOME from elsewhere: where it was left */
-    ok &= ui.home && home_level() == 1u && home_set() == 0u;
-    {   /* the beings drawn: the ECO panel differs from frame to frame while the tracks sound (their life, their faces) */
+    ok &= ui.home && home_level() == 1u && home_scope();
+    {   /* the beings drawn: the MACROS panel differs from frame to frame while the tracks sound (their life, their faces) */
         static uint16_t a[240 * 140];
-        turn(EN_SELECT, -2); frame();
+        turn(EN_SELECT, -1); frame();
+        ok &= home_macros();
         for (c = 0; c < NTRK; c++) trk[c].peak = 9000;
         frames(64);
         memcpy(a, host_screen + LZ_GRAPH_Y * 240, sizeof a);
@@ -12247,7 +12315,18 @@ static int test_lz_home(void)
         frames(64);
         ok &= memcmp(a, host_screen + LZ_GRAPH_Y * 240, sizeof a) != 0 && eco_fc.init;
     }
-    bad += check("0.9.2 HOME: HOME from elsewhere the page left (rule 2); the beings live", ok);
+    bad += check("V10.7.24 HOME: HOME from elsewhere the page left (rule 2); the beings live on MACROS", ok);
+    {   /* MACROS: a macro turned says where it goes (its routes, at the panel's top) */
+        static uint16_t a[240 * 12];
+        ui_prefs = PREF_ANIM_OFF;
+        trk[0].p[P_M1SRC + 3u * 2u] = (int16_t)(MS_M1 + 1); trk[0].p[P_M1DST + 3u * 2u] = MD_E1; trk[0].p[P_M1AMT + 3u * 2u] = 32;
+        ui.hot_t = 0; ui.force = 1; frame();
+        memcpy(a, host_screen + LZ_GRAPH_Y * 240, sizeof a);
+        turn(EN_K2, 1); frame();
+        ok = ui.hot_t && ui.hot_col == 1u && macro_routes(1, 0, 0) == 1u && memcmp(a, host_screen + LZ_GRAPH_Y * 240, sizeof a) != 0;
+        ui_prefs = 0;
+        bad += check("V10.7.24 HOME MACROS: a macro turned, its routes shown at the panel's top", ok);
+    }
     gp.page = 0;                                                    /* (GEN's page is kept: the next tests' start) */
     gp.genre = 0;
     ui_power_on();
@@ -12861,7 +12940,7 @@ static void vxt_run(uint32_t ms, int audio)               /* frames of 16 ms, th
 }
 static int vxt_same(void) { return !memcmp(vxt_a, host_screen + LZ_GRAPH_Y * 240, sizeof vxt_a); }
 static void vxt_snap(void) { memcpy(vxt_a, host_screen + LZ_GRAPH_Y * 240, sizeof vxt_a); }
-/* track 1 as engine e preset pre, a note every beat (DRUM: a beat), on page (0: HOME's BEING): moves while it plays
+/* track 1 as engine e preset pre, a note every beat (DRUM: a beat), on page (0: HOME's MACROS): moves while it plays
  * (*mv), still when silent (*st: the panel; HOME, whose beings swim on: the creature's time and level); k the
  * creature's slot in vxs (it ran) */
 static void vxt_case(uint32_t e, const char *pre, const char *page, uint32_t k, int *mv, int *st)
@@ -12884,7 +12963,7 @@ static void vxt_case(uint32_t e, const char *pre, const char *page, uint32_t k, 
         else if (i % 4u == 0u) { st->n = 1; st->note[0] = (uint8_t)(60 + (i & 7u)); } else st->time = ST_TIE;
     }
     vxt_run(160, 1);                                    /* (the engine's switch faded) */
-    if (page) go_title(page); else { ui.home = 1; ui.hlv = 1; ui.hset[1] = 0; }
+    if (page) go_title(page); else { ui.home = 1; ui.hlv = 0; }
     transport_req = 1;
     vxt_run(1500, 1);
     j = vxs.fr[k];
@@ -12907,19 +12986,18 @@ static int test_engvis(void)
 {
     static const struct { uint32_t e; const char *pre, *page; uint8_t k; const char *what; } C[] = {
         {5, "CANTOR ES", "EDIT 1", 0, "VOICE WORDS, EDIT"}, {5, "TALK BOX", "EDIT 2", 0, "VOICE vowels, EDIT"},
-        {5, "SINGER EN", 0, 0, "VOICE, HOME BEING"}, {ENGI_ANIMAL, "CANARY", "EDIT 1", 1, "ANIMAL bird, EDIT"},
-        {ENGI_ANIMAL, "CRICKET", "EDIT 2", 1, "ANIMAL insect, EDIT"}, {ENGI_ANIMAL, "DOG BARK", 0, 1, "ANIMAL mammal, HOME BEING"},
+        {5, "SINGER EN", "EDIT 1", 0, "VOICE, EDIT 1 (V10.7.24: was HOME BEING)"}, {ENGI_ANIMAL, "CANARY", "EDIT 1", 1, "ANIMAL bird, EDIT"},
+        {ENGI_ANIMAL, "CRICKET", "EDIT 2", 1, "ANIMAL insect, EDIT"}, {ENGI_ANIMAL, "DOG BARK", "EDIT 1", 1, "ANIMAL mammal, EDIT 1 (V10.7.24: was HOME BEING)"},
         {ENGI_DRUM, "DRUM-X", "SOUND", 2, "DRUM-X kit, EDIT SOUND"}, {ENGI_DRUM, "DRUM-X", "EDIT 1", 2, "DRUM-X kit, EDIT KIT"},
-        {ENGI_DRUM, "DRUM-X", 0, 2, "DRUM-X kit, HOME BEING"},
-        {ENGI_ANALOG, "ACID", "EDIT 1", 3, "ANALOG cell, EDIT"}, {ENGI_ANALOG, "SOFT PAD", 0, 3, "ANALOG cell, HOME BEING"},
+        {ENGI_ANALOG, "ACID", "EDIT 1", 3, "ANALOG cell, EDIT"}, {ENGI_ANALOG, "SOFT PAD", "EDIT 1", 3, "ANALOG cell, EDIT 1 (V10.7.24: was HOME BEING)"},
         {ENGI_FM6, "TINE EP", "EDIT 1", 4, "FM6 colony, EDIT"}, {ENGI_FM6, "TINE EP", "OPERATOR", 4, "FM6 colony, OPERATOR"},
         {ENGI_FM6, "TINE EP", "OP ENV", 4, "FM6 envelope's bicho, OP ENV"}, {ENGI_FM6, "BRASS", "OPERATOR 2", 4, "FM6 colony, OPERATOR 2"},
-        {ENGI_FM6, "MARIMBA", 0, 4, "FM6 colony, HOME BEING"},
-        {7, "ROCK DRIVE", "EDIT 1", 5, "WHEEL worms, EDIT"}, {7, "GOSPEL", 0, 5, "WHEEL worms, HOME BEING"},
-        {11, "RAIN", "EDIT 1", 6, "NOISE swarm, EDIT"}, {11, "SEA", 0, 6, "NOISE swarm, HOME BEING"},
-        {2, "BRASS", "EDIT 1", 7, "PHASE snail, EDIT"}, {2, "CZ PIANO", 0, 7, "PHASE snail, HOME BEING"},
+        {ENGI_FM6, "MARIMBA", "EDIT 1", 4, "FM6 colony, EDIT 1 (V10.7.24: was HOME BEING)"},
+        {7, "ROCK DRIVE", "EDIT 1", 5, "WHEEL worms, EDIT"}, {7, "GOSPEL", "EDIT 1", 5, "WHEEL worms, EDIT 1 (V10.7.24: was HOME BEING)"},
+        {11, "RAIN", "EDIT 1", 6, "NOISE swarm, EDIT"}, {11, "SEA", "EDIT 1", 6, "NOISE swarm, EDIT 1 (V10.7.24: was HOME BEING)"},
+        {2, "BRASS", "EDIT 1", 7, "PHASE snail, EDIT"}, {2, "CZ PIANO", "EDIT 1", 7, "PHASE snail, EDIT 1 (V10.7.24: was HOME BEING)"},
         {3, "BYTEBEAT", "EDIT 1", 8, "LOFI caterpillar BYTE, EDIT"}, {3, "FLOAT PAD", "EDIT 2", 8, "LOFI caterpillar FLOAT, EDIT"},
-        {3, "PULSE LD", "EDIT 1", 8, "LOFI caterpillar PLS, EDIT"}, {3, "GB ARP", 0, 8, "LOFI caterpillar, HOME BEING"}};
+        {3, "PULSE LD", "EDIT 1", 8, "LOFI caterpillar PLS, EDIT"}, {3, "GB ARP", "EDIT 1", 8, "LOFI caterpillar, EDIT 1 (V10.7.24: was HOME BEING)"}};
     int bad = 0, ok = 1, mv, st;
     uint32_t c;
     for (c = 0; c < NELEM(C); c++) {
@@ -13058,7 +13136,7 @@ static void rv_walk(uint32_t sec)                      /* the button from HOME, 
         if (nav_cur() == at && nav_sec() == sec)
             break;
     }
-    if (sec == SEC_HOME) { press(B_OCTDN); frames(2); }   /* (GEN: OCT- back to ECO) */
+    if (sec == SEC_HOME) { press(B_OCTDN); frames(2); }   /* (GEN: OCT- back to MACROS) */
 }
 /* 0.9.1's lenses (ui_lens.c PD_TAB / ED, ui.c LENS_SET / SV_SET / FX's), as the mock-up's "Hoy" column: section, level
  * (0.9.1's numbering, the level the page is drawn as), its pages; each must be reached at that level */
@@ -13244,17 +13322,17 @@ static int test_lz_reach(void)
                         if (j == NPAGES) { seen_old[i][k] |= 2u; continue; }   /* (not this engine's, this LOAD's) */
                         if (rv_has(OLD_LV[i].t[k], OLD_LV[i].fam, OLD_LV[i].lv)) seen_old[i][k] |= 1u;
                     }
-            {   /* HOME: its seven pages (ECO MACROS BEING ROUTES GEN 1..3), each drawn as before */
-                static const uint8_t HL[7] = {0, 0, 1, 1, 2, 2, 2};
+            {   /* HOME: its five pages (V10.7.24: MACROS SCOPE GENE 1..3), each drawn as its level */
+                static const uint8_t HL[5] = {0, 1, 2, 2, 2};
                 uint32_t n = 0;
                 go_home(); frames(32); press(B_HOME); frames(32);
                 turn(EN_SELECT, -10); frames(2);
-                for (k = 0; k < 7u; k++) {
-                    n += nav_cur() == k && home_level() == HL[k] && (k >= 4u ? gen_on() && gen_page() == k - 4u : ui.home &&
-                         home_set() == (k & 1u));
+                for (k = 0; k < 5u; k++) {
+                    n += nav_cur() == k && home_level() == HL[k] && (k >= 2u ? gen_on() && gen_page() == k - 2u : ui.home &&
+                         home_macros() == !k && home_scope() == (k == 1u));
                     turn(EN_SELECT, 1); frames(2);
                 }
-                okh &= n == 7u;
+                okh &= n == 5u;
                 press(B_OCTDN); frames(2);
             }
         }
@@ -13267,7 +13345,7 @@ static int test_lz_reach(void)
     bad += check("0.9.2 reach: every page each engine shows (LOFI BYTE, LOAD ECO too) by its button and SELECT alone", ok);
     bad += check("0.9.2 reach: every parameter of those pages (the ids on them)", okp);
     bad += check("0.9.2 reach: every 0.9.1 lens page at its 0.9.1 level (drawn as it was; NOTE's STEP view merged)", okold);
-    bad += check("0.9.2 reach: HOME's seven pages by SELECT (ECO MACROS BEING ROUTES GEN 1..3)", okh);
+    bad += check("0.9.2 reach: HOME's five pages by SELECT (V10.7.24: MACROS SCOPE GENE 1..3)", okh);
     ui_power_on();
     return bad;
 }

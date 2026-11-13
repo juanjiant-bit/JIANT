@@ -530,6 +530,33 @@ static void tracks_edit(uint32_t slot, int32_t steps)
     knob_cap(t, (uint32_t)(vp - t->p));
 }
 
+/* (V10.7.24) HOME > SCOPE's KNOB k (ui.c HS_ID): FILTER as LIVE > KEYS' (no acceleration across the middle; recorded
+ * while recording, motion_djf_set), SPACE the delay's MIX and the reverb's SIZE moved together (SIZE not into 127, the
+ * FREEZE of CLOUD, unless it was there), DRIVE CLIP, DUCK. MOMENTARY (EDIT held): written, not recorded */
+static void home_knob(uint32_t k, int32_t s)
+{
+    uint32_t id = HS_ID[k & 3u];
+    int32_t v = song.g[id], to;
+    if (!(k & 3u)) {
+        to = clamp(v + accel(EN_K1, s, 127), -64, 63);
+        if ((v < 0 && to > 0) || (v > 0 && to < 0))
+            to = 0;
+        if (mom_on)
+            song.g[G_DJF] = (int16_t)to;
+        else
+            motion_djf_set(TSEL, (int16_t)to);
+        return;
+    }
+    if ((k & 3u) == 1u) {
+        int32_t d = accel(EN_K2, s, 127), r = song.g[G_RSIZE];
+        song.g[G_DMIX] = (int16_t)clamp(v + d, 0, 127);
+        song.g[G_RSIZE] = (int16_t)clamp(r + d, 0, r > 126 ? 127 : 126);
+        mo_knob(7, G_RSIZE);
+    } else
+        song.g[id] = (int16_t)param_turn(&GP[id], v, accel(EN_K1 + (k & 3u), s, GP[id].max - GP[id].min));
+    mo_knob(7, id);                                     /* (a global: NRPN 1 on channel 16, MIDI OUT ALL) */
+}
+
 /* SEQ > STEP's piano roll (not the DRUM grid, whose white keys stay its steps): where step recording writes */
 static int roll_on(void)
 {
@@ -2679,7 +2706,7 @@ static void ui_input_frame(void)
             if (f == FAM_COUNT) {                       /* HOME held: GEN, HOME's generator */
                 ui.home_t0 |= 2u;
                 if (!pj_sel_ms || fm1_ms - pj_sel_ms > 400u)
-                    nav_go(SEC_HOME, 4u + gen_page(), 1);
+                    nav_go(SEC_HOME, 2u + gen_page(), 1);
             } else if (k) {
                 if (f == FAM_EDIT)                      /* (0.9.9-seq2f) EDIT + SELECT: the sound dice again (SELECT is
                                                          * no sound parameter; the presets: PRESETS only) */
@@ -2948,7 +2975,7 @@ static void ui_input_frame(void)
     if (seq == BT_TAP || seq == BT_HOLD)                /* (SONG: SAVE held, G5) */
         open_family(FAM_SEQ);
     if (home == BT_TAP)                                 /* HOME acts on release (a hold opens the menu): rule 2, HOME's */
-        nav_button(SEC_HOME);                           /* page last shown; on HOME the next group (ECO BEING GEN) */
+        nav_button(SEC_HOME);                           /* page last shown; on HOME the next group (MACROS SCOPE GEN) */
     cursor_fix();                                       /* LEN may have changed (knob, editor, load) */
     for (id = 0; id < 14u; id++) {
         if (!((pressed >> id) & 1u))
@@ -3048,7 +3075,7 @@ static void ui_input_frame(void)
         if (b & 1u)
             page_tap(panel_btn_of(id));
     if (gen_on() && (oct & 2u)) {                       /* (0.9.2) GEN, HOME's pages: OCT+ the piece (the screen stays, */
-        gen_press();                 /* OCT+ again: another), OCT- back to ECO */
+        gen_press();                 /* OCT+ again: another), OCT- back to MACROS */
     } else if (gen_on() && (oct & 1u)) {
         nav_go(SEC_HOME, 0, 0);
     } else if (act_cols() && (oct & 2u)) {              /* action pages: OCT+ does the picked action, */
@@ -3108,7 +3135,7 @@ static void ui_input_frame(void)
             ui.bpm_t = 40;                              /* the header's BPM lights up; no message over the header */
         }
     } else if ((s = panel_enc(EN_SELECT)) != 0 && !lay && !ui.menu) {   /* (0.9.2, rule 1) SELECT alone: the section's
-                                                        * chain, a page a detent (HOME's: ECO MACROS BEING ROUTES GEN 1..3) */
+                                                        * chain, a page a detent (HOME's: MACROS SCOPE GENE 1..3) */
         uint64_t cph = cp_held();
         if (cph)                                        /* (seq2h) step keys held: COPY them (the range between) */
             cp_copy(cph);
@@ -3148,15 +3175,10 @@ static void ui_input_frame(void)
             ui.hot_col = (uint8_t)k;
             ui.hot_t = 40, ui.knob_ms = fm1_ms;
         }
-        if (home_macros()) {                            /* (0.8.5) HOME's MACROS / ROUTES: M1..M4 */
+        if (home_macros()) {                            /* (0.8.5) HOME's MACROS: M1..M4 */
             macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
-        } else if (ui.home) {
-            int16_t *vp;
-            const param_desc_t *d = home_param(k, &vp);
-            int32_t was = *vp;
-            *vp = (int16_t)param_turn(d, *vp, accel(EN_K1 + k, s, d->fmt == F_ENUM ? 0 : d->max - d->min));
-            knob_cap(TSEL, (uint32_t)(vp - TSEL->p));
-            excite_turn(TSEL, vp, was);
+        } else if (ui.home) {                           /* (V10.7.24) HOME's SCOPE: the mix's four */
+            home_knob(k, s);
         } else {
             edit_param(k, s);
         }

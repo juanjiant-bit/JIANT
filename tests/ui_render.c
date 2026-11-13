@@ -662,7 +662,7 @@ enum { S_HOME, S_HOME_IDLE, S_MESSAGE, S_MESSAGE_KEY, S_MESSAGE_NOFILE, S_PRESET
        S_HEAD_BPM_LOCKED, S_HEAD_GLO_TURN, S_HEAD_DOWNBEAT, S_HEAD_BEAT_2,
        S_SAVE_LIB, S_SAVE_TOOLS, S_SAVE_PROJ, S_SAVE_ARR, S_SAVE_SOUND, S_SAVE_PRESETS, S_SAVE_TL, S_SAVE_PARTS, S_SAVE_PARTS_LOOP, S_SAVE_TL_LOOP, S_SAVE_CLIPS, S_PG0, S_PG_END = S_PG0 + 16,
        S_FXL_SENDS, S_FXL_DIST, S_FXL_PAN, S_FXL_BUSES, S_FXL_DELAY, S_FXL_DELAY2, S_FXL_REVERB, S_FXL_SLICER, S_FXL_MASTER,
-       S_HOME_MACROS, S_HOME_BEING, S_HOME_ROUTES, S_GEN_LEAD,
+       S_HOME_MACROS, S_HOME_SCOPE, S_HOME_MACRO_TURN, S_GEN_LEAD,
        S_ED_FILTER, S_ED_FILTER_BP, S_ED_VOICE2, S_ED_FOCUS, S_ED_FOCUS_MOD, S_ED_OPERATOR,
        S_ENV_TRACKS, S_ENV_TRACKS_DEST, S_ENV_STAGE, S_ENV_STAGE_SUS, S_MSEQ2, S_KEY_CHORD, S_KEY_CHORD_OFF, S_KEY_ARP, S_KEY_ARP2, S_GLO_SENDS, S_MENU_ROW, S_MENU_ROW_LEDS, S_LY_FX_KNOBS, S_LY_FX_STATE, S_LY_GLO_STATE, S_DLG_DICE_SOUND, S_DLG_DICE_SEQ, S_DLG_DICE_FX, S_DLG_MUT_BACK,
        S_DRUM_X4, S_DRUM_GHOST, S_DRUM_OCT_UP, S_DRUM_OCT_DN, S_COMP_TOUCH, S_COMP_EVEN, S_GEN_EXPLORE, S_GEN_SONG,
@@ -700,7 +700,7 @@ static const char *const S_NAME[S_COUNT] = {"home", "home_idle", "message", "mes
     "save_library", "save_tools", "save_project", "save_arrange", "save_sound", "save_presets", "save_timeline", "save_parts", "save_parts_loop", "save_timeline_loop", "save_clips", "pg_retrig", "pg_rotor", "pg_length", "pg_modes", "pg_dly3", "pg_slbus", "pg_tape", "pg_eq", "pg_system2", "pg_comps", "pg_comps2", "pg_kit2", "pg_kit3", "pg_kit4", "pg_levels", "pg_levels2", "pg_xmod",
     "fx_track_sends", "fx_track_dist", "fx_track_pan", "fx_buses", "fx_effect_delay", "fx_effect_delay2", "fx_effect_reverb",
     "fx_effect_slicer", "fx_effect_master",
-    "home_macros", "home_being", "home_routes", "gen_lead",
+    "home_macros", "home_scope", "home_macro_turn", "gen_lead",
     "ed_filter", "ed_filter_bp", "ed_voice2", "ed_focus", "ed_focus_mod", "ed_operator",
     "env_tracks", "env_tracks_dest", "env_stage", "env_stage_sus", "mseq2", "key_chord", "key_chord_off", "key_arp", "key_arp2", "glo_sends", "menu_row", "menu_row_leds", "ly_fx_knobs", "ly_fx_state", "ly_glo_state", "dlg_dice_sound", "dlg_dice_seq", "dlg_dice_fx", "euclid_modes",
     "drum_hit_x4", "drum_hit_ghost", "drum_oct_x8", "drum_oct_flam", "comp_touch", "comp_echo_even", "gen_explore", "gen_song",
@@ -970,7 +970,7 @@ static void vx_sing(uint32_t ph0, uint32_t n0, uint32_t ph, uint32_t n, int32_t 
     vxs.fr[0] = anim_fr;
     TSEL->peak = peak;
     ui_scope = !full;
-    if (home) { ui.home = 1; ui.hlv = 1; ui.hset[1] = 0; eco.en[song.sel] = 220; }
+    if (home) { ui.home = 1; ui.hlv = 0; eco.en[song.sel] = 220; }
 }
 static void vx_animal_scene(const char *pre, int32_t size)
 {
@@ -1057,7 +1057,7 @@ static void v6_scene(uint32_t e, const char *pre, const char *page, const int16_
     vxs.nms[c] = fm1_ms - age;
     vxs.mt[c] = 30u * 256u * 3u + c * 977u;
     vxs.swt = vxs.mt[c] >> 8;
-    if (page) go_title(page); else { ui.home = 1; ui.hlv = 1; ui.hset[1] = 0; }
+    if (page) go_title(page); else { ui.home = 1; ui.hlv = 0; }
 }
 static void setup(int s)
 {
@@ -1251,15 +1251,19 @@ static void setup(int s)
         trk[5].p[P_MUTE] = 1;
         break;
     }
-    case S_HOME_MACROS: case S_HOME_BEING: case S_HOME_ROUTES: {   /* (0.8.5) HOME's lens: MACROS, BEING, ROUTES */
+    case S_HOME_MACROS: case S_HOME_SCOPE: case S_HOME_MACRO_TURN: {   /* (V10.7.24) HOME: MACROS, SCOPE, MACROS with M3
+                                                         * turned (its routes at the top) */
         uint32_t k;
-        ui.hlv = s != S_HOME_MACROS;
-        ui.hset[s == S_HOME_MACROS ? 0 : 1] = s != S_HOME_BEING;
+        ui.hlv = s == S_HOME_SCOPE;
         for (k = 0; k < NTRK; k++) trk[k].peak = (int32_t)(1500u + k * 900u);
         trk[1].p[P_M1SRC] = MS_M1; trk[1].p[P_M1DST] = MD_CUT; trk[1].p[P_M1AMT] = 40;
         trk[3].p[P_M1SRC + 3] = MS_M1 + 2; trk[3].p[P_M1DST + 3] = MD_E1; trk[3].p[P_M1AMT + 3] = -20;
         macro_v[0] = 40; macro_v[1] = 90; macro_v[2] = 20; macro_v[3] = 64;
-        if (s == S_HOME_BEING) { ui.hot_col = 2; ui.hot_t = 30; }
+        if (s == S_HOME_SCOPE) {
+            for (k = 0; k < SCOPE_N; k++) scope_buf[k] = (int16_t)(((int32_t)(k % 48u) - 24) * 420);
+            song.g[G_DJF] = -20; song.g[G_CLIP] = 30; song.g[G_DUCK] = 50;
+        }
+        if (s == S_HOME_MACRO_TURN) { ui.hot_col = 2; ui.hot_t = 30; }
         break;
     }
     case S_ED_FILTER: go_title("FILTER"); TSEL->p[P_E5] = 90; break;   /* (0.8.5) EDIT's lens: TONE, FILTER (ANALOG) */
@@ -1741,7 +1745,7 @@ static void setup(int s)
         memset(vxs.fr, 0xFF, sizeof vxs.fr);
         go_title("EDIT 2");
         break;
-    case S_VX_HEAD_HOME: vx_phon(PH_E, 6000); ui.home = 1; ui.hlv = 1; ui.hset[1] = 0; break;
+    case S_VX_HEAD_HOME: vx_phon(PH_E, 6000); ui.home = 1; ui.hlv = 0; break;
     case S_VX_HEAD_QUIET: vx_phon(PH_SIL, 0); break;
     case S_VX_BIRD: vx_animal_scene("CANARY", -1); break;
     case S_VX_CMOS: vx_animal_scene("CMOS BIRD", -1); break;
@@ -1750,11 +1754,11 @@ static void setup(int s)
     case S_VX_MAMMAL: vx_animal_scene("WOLF", -1); break;
     case S_VX_MORPH_IB: vx_animal_scene("CRICKET", 127); go_title("EDIT 2"); break;
     case S_VX_MORPH_BM: vx_animal_scene("DOG BARK", 4); break;
-    case S_VX_ANIMAL_HOME: vx_animal_scene("OWL", -1); ui.home = 1; ui.hlv = 1; ui.hset[1] = 0; break;
+    case S_VX_ANIMAL_HOME: vx_animal_scene("OWL", -1); ui.home = 1; ui.hlv = 0; break;
     case S_VX_KIT: vx_kit_scene(0x03u, 0); dx_ui_lane = 1; dx_ui_seen = last_note; go_title("SOUND"); break;
     case S_VX_KIT_HITS: vx_kit_scene(0xBCu, 0); dx_ui_lane = 4; dx_ui_seen = last_note; go_title("SOUND 2"); break;
     case S_VX_KIT_GHOST: vx_kit_scene(0x22u, 2); dx_ui_lane = 5; dx_ui_seen = last_note; go_title("SOUND 3"); break;
-    case S_VX_KIT_HOME: vx_kit_scene(0x8Bu, 0); ui.home = 1; ui.hlv = 1; ui.hset[1] = 0; break;
+    case S_VX_KIT_HOME: vx_kit_scene(0x8Bu, 0); ui.home = 1; ui.hlv = 0; break;
     case S_VX_BUG_BD: case S_VX_BUG_SD: case S_VX_BUG_CP: case S_VX_BUG_CH: case S_VX_BUG_OH: case S_VX_BUG_TM:
     case S_VX_BUG_RS: case S_VX_BUG_CB: vx_bug_scene((uint32_t)(s - S_VX_BUG_BD), 0, 1); break;
     case S_VX_BUG_GHOST: vx_bug_scene(1, 2, 1); break;
@@ -1902,7 +1906,7 @@ static void sweep_motion(void)
     uint32_t c, any = 0;
     for (c = 0; c < 4u; c++) {
         int16_t *vp = 0;
-        const param_desc_t *d = ui.home ? home_param(c, &vp) : page_desc(cur_page(), c, &vp);
+        const param_desc_t *d = ui.home ? 0 : page_desc(cur_page(), c, &vp);   /* (V10.7.24: HOME's knobs no track's) */
         uintptr_t id = vp ? ((uintptr_t)vp - (uintptr_t)TSEL->p) / sizeof *vp : P_COUNT;
         if (d && d->label && d->label[0] != '-' && id < P_COUNT && !motion_set_event(TSEL, c, (uint32_t)id, *vp))
             any = 1;
@@ -2446,7 +2450,7 @@ int main(int argc, char **argv)
         static const int COST[] = {S_HOME, S_PRESETS, S_STEP, S_ROLL_CHORDS, S_DRUM, S_MIXER, S_MENU, S_ABOUT_CREDITS, S_CONFIRM_PROJ,
                                    S_PATTERN, S_COMP, S_LENTE_PAT, S_LENTE_BAR, S_LENTE_STEP, S_LENTE_STEP_DRUM,
                                    S_SAVE_LIB, S_SAVE_PROJ, S_SAVE_SOUND, S_FXL_SENDS, S_FXL_BUSES, S_FXL_REVERB,
-                                   S_HOME_BEING, S_EDIT_ANALOG, S_ED_FILTER, S_ED_FOCUS, S_ENV_TRACKS, S_MOD, S_KEY_CHORD,
+                                   S_HOME_SCOPE, S_EDIT_ANALOG, S_ED_FILTER, S_ED_FOCUS, S_ENV_TRACKS, S_MOD, S_KEY_CHORD,
                                    S_SYSTEM, S_MENU_ROW, S_LY_FX_KNOBS, S_DLG_DICE_SOUND, S_EDIT_SAMPLE, S_VX_HEAD_S, S_VX_BIRD,
                                    S_VX_MAMMAL, S_VX_KIT_HITS, S_VX_HEAD_HOME, S_VX_KIT_HOME, S_VX_BUG_SD,
                                    S_V6_ANALOG, S_V6_FM6, S_V6_FM6_OP, S_V6_FM6_OP2, S_V6_FM6_ENV, S_V6_WHEEL, S_V6_NOISE, S_V6_PHASE,
