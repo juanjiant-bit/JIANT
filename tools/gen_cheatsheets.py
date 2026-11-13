@@ -9,7 +9,7 @@ import html, os
 
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(R, 'docs', 'cheatsheet')
-VERSION = 'V10.7.26'   # (the release; a rename is this one line)
+VERSION = 'V10.7.27'   # (the release; a rename is this one line)
 
 HEAT = ['#22d3ee', '#3b82f6', '#8b5cf6', '#d946ef', '#ef4444', '#ff7a00', '#facc15', '#f4f1ea']
 
@@ -332,7 +332,7 @@ def sound():
         ('STRING', HEAT[3], 'EXCITE DECAY BRIGHT POS', 'STRETCH BODY SIZE BOW',
          'Karplus-Strong string (snd5): EXCITE NOISE PLUCK PICK HAMMR STICK; POS where it is struck, STRETCH a stiff, '
          'metallic string, BODY / SIZE its box. RELEASE is its damper: the string rings after the step and dies out when let '
-         'go. <b>BOW</b> (V10.7.26): a bow\'s stick and slip, its pressure; ATTACK the stroke, POS bridge ↔ fingerboard, the '
+         'go. <b>BOW</b> (V10.7.27): a bow\'s stick and slip, its pressure; ATTACK the stroke, POS bridge ↔ fingerboard, the '
          'body follows the register. <b>FDBK</b>: an electric guitar into an amp (MOVE where POS was; EDIT 2 <b>GAIN</b> how '
          'close, DIST the tube, <b>SPEAKR</b> the harmonic it blooms into, BLOOM the swell; FEEDBACK: the <b>mod wheel</b> walks '
          'up to the amp). NYLON, STEEL GTR, HARP, PIANO, MARIMBA, BOWED, VIOLIN, VIOLA, CELLO, FEEDBACK…'),

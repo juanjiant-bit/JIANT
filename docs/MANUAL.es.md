@@ -1,6 +1,6 @@
 # JIANT FM — Manual de usuario
 
-**JIANT FM V10.7.26 para el M-VAVE FM-1**
+**JIANT FM V10.7.27 para el M-VAVE FM-1**
 
 > *English version: [MANUAL.md](MANUAL.md).*
 
@@ -823,7 +823,7 @@ click; las notas siguen.
 - **ANIMAL**: cantos de animales con modelos físicos, ver [ANIMAL](#animal-083) más abajo.
 - **STRING**: una cuerda pulsada, golpeada o frotada (Karplus-Strong). EXCITE NOISE PLUCK PICK HAMMR STICK dice cómo
   se la pone a sonar, POS dónde, STRETCH una cuerda rígida, metálica, BODY / SIZE su caja; RELEASE es su apagador (suena
-  más allá del paso y se apaga al soltar: bajo, un palm mute). (V10.7.26) Dos modos son nuevos:
+  más allá del paso y se apaga al soltar: bajo, un palm mute). (V10.7.27) Dos modos son nuevos:
   - **BOW** (cualquier EXCITE, BOW arriba de 0) es un arco: agarra la cuerda y la deja resbalar una vez por período
     (el "stick-slip" de un arco de verdad, siempre en la nota), con un poco de ruido de resina. **BOW** es la presión
     del arco (el AT la aprieta en VIOLIN, VIOLA, CELLO), **ATTACK** el golpe de arco (~80–200 ms en los presets; una

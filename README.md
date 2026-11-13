@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.26
+## This release: V10.7.27
 
 ### Installing
 
@@ -482,6 +482,10 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.27 — beta (2026-11-13)
+- **STRING: the electric guitar into an amp.** FDBK is now a picked string, a pickup, a tube that sags on loud notes and a speaker cab, its feedback held at its level (it never runs away). GAIN is how close you stand to the amp, SPEAKR the harmonic it blooms into (the note, its octave, its twelfth), BLOOM the swell, DIST the tube's drive. In FEEDBACK the mod wheel walks you toward the amp. Letting go mutes the string (palm mutes); in LEGATO hammer-ons, pull-offs and bends keep the feedback in tune.
+- **STRING: a real bow.** BOW grips the string and lets it slip, in tune from C2 to C7, with a little rosin and a body that follows the register (violin high, cello low). New presets **VIOLIN, VIOLA, CELLO** (aftertouch the bow's pressure, mod wheel the vibrato); BOWED plays all three by register. PROGRAM CHANGE keeps its numbers.
 
 ### V10.7.26 — beta (2026-11-13)
 - **GEN FORM SONG: a structure per seed.** It used to be one fixed plan for every genre. Now each seed picks from templates of the genre's family (club: classic, DJ, drop after drop, groove; song: verse, pre-chorus, chorus, bridge; hip hop: hook and verse; arc: ambient, IDM, kraut; FUGA), with optional sections (a second break and drop, a bridge, a last chorus again, an intro without the kick) and lengths of 4 to 32 bars; ENERGY gives longer drops and more of them, or longer intros and breaks; every song 2–5 minutes. The same seed still makes the same song; LOOP, PARTS and MY LOOP unchanged.

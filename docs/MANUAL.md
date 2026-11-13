@@ -1,6 +1,6 @@
 # JIANT FM — User Manual
 
-**JIANT FM V10.7.26 for the M-VAVE FM-1**
+**JIANT FM V10.7.27 for the M-VAVE FM-1**
 
 > *Versión en español: [MANUAL.es.md](MANUAL.es.md).*
 
@@ -788,7 +788,7 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see [14](#14-midi-
 - **ANIMAL**: animal calls from physical models, see [ANIMAL](#animal-083) below.
 - **STRING**: a plucked, struck or bowed string (Karplus-Strong). EXCITE NOISE PLUCK PICK HAMMR STICK sets how it is
   set going, POS where, STRETCH a stiff, metallic string, BODY / SIZE its box; RELEASE is its damper (it rings past the
-  step and dies when let go: low, a palm mute). (V10.7.26) Two of its modes are new:
+  step and dies when let go: low, a palm mute). (V10.7.27) Two of its modes are new:
   - **BOW** (any EXCITE, BOW above 0) is a bow: it grips the string and lets it slip once a period (a real bow's
     stick and slip, always on the note), with a little rosin noise. **BOW** is the bow's pressure (AT presses it in
     VIOLIN, VIOLA, CELLO), **ATTACK** its stroke (~80–200 ms in the presets; a harder note gets up to speed sooner,
