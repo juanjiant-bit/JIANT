@@ -94,14 +94,8 @@ static uint8_t cv_turn;          /* cv_alpha_hc: the cell turned a quarter left 
 #define CV_NTXT 32u
 static int16_t cv_txt[CV_NTXT][4] __attribute__((section(".pool")));
 static uint8_t cv_ntxt __attribute__((section(".pool")));
-static uint8_t cv_halo __attribute__((section(".pool")));   /* (0.8.9) SKIN HUD: text drawn with a 1 px BG outline under it
-                                 * (cv_text_flags), over a picture (the pool: the audio's data stays where it was) */
-
-/* (0.9.0) the outline's offsets: every pixel within 2 px (dx^2 + dy^2 <= 5), as the 2 px halo of HUD's words over the beings
- * (the 0.8.9 1 px one left them hard to read on a busy picture) */
-#define HALO_N 20u
-static const int8_t HALO_X[HALO_N] = {-1, 0, 1, -2, -1, 0, 1, 2, -2, -1, 1, 2, -2, -1, 0, 1, 2, -1, 0, 1};
-static const int8_t HALO_Y[HALO_N] = {-2, -2, -2, -1, -1, -1, -1, -1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2};
+static uint8_t cv_halo __attribute__((section(".pool")));   /* a rounded box's corners blended onto what the canvas holds
+                                 * (cv_rrect: the toast's pill; 0.8.9 .. V10.7.22 HUD's and AIR's words outlined too) */
 
 #define RGB(r, g, b) ((uint16_t)((((r) >> 3) << 11) | (((g) >> 2) << 5) | ((b) >> 3)))
 
@@ -111,17 +105,10 @@ static struct {
     uint16_t bg, surf, text, theme, accent, mid, dim, line, sel, tint, rec, raise;
     uint16_t key, lane, grid;
     const uint16_t *k;           /* KNOB 1..4's colours, the palette's (tools/gen_ui_palettes.py KNOBS) */
-    uint8_t skin;                /* (0.8.9) MENU > SKIN (ui_draw.c style_apply): SKIN_COLORS, SKIN_AIR */
     uint32_t gen;                /* bumped by palette_set (the text ramps follow) */
 } ux;
 /* (STYLE, 1.0: FLAT the filled SURF cards and panels, LINE 1 px dividers instead; LINE is retired, FLAT the one style) */
-/* (0.8.9) SKIN (the approved mock-up opciones_skin.html): COLORS, the lens's cards and panel in the 0.6 colours; (0.9.7)
- * AIR (the default of new settings): no panel, no boxes (SURF is BG), the words floating with a dark outline, the knobs'
- * row on top, right under the tabs, the middle free for the pictures, the breadcrumb at the foot; its HOME the beings
- * over the whole screen. The values are the stored ones: 1 and 2 were BOTTOM and HUD (retired: they read as COLORS) */
-#define SKIN_COLORS 0u
-#define SKIN_AIR 3u
-#define SKIN_N 2u                /* (the menu's two) */
+/* (0.8.9 .. V10.7.22 MENU > SKIN: COLORS, AIR. V10.7.23, the owner: COLORS the one skin, the knobs' cards outlined) */
 #define T_K(c) ux.k[(c) & 3u]    /* KNOB c's colour: the palette's four, on its card's value and gauge */
 #define T_BG ux.bg               /* background */
 #define T_SURF ux.surf           /* dialogs, menu rows, mixer strips */
@@ -158,7 +145,6 @@ static void palette_set(uint32_t i)
     const ui_pal_t *p = &UI_PALETTES[i % NPALETTES];
     memcpy(&ux.bg, p->c, sizeof p->c);           /* the stored twelve */
     ux.k = UI_KNOBS[i % NPALETTES];
-    if (ux.skin) ux.surf = ux.bg;                /* (AIR: no panel, no boxes) */
     ux.key = ux_mix(ux.bg, ux.text, UI_KEY_PCT);
     ux.lane = ux_mix(ux.surf, ux.theme, 10);
     ux.grid = ux_mix(ux.surf, ux.text, 6);
@@ -503,7 +489,7 @@ static void cv_rrect(int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, uint
         for (i = 0; i < r; i++) {
             uint32_t a = rr_cov(r, i, j), q;
             uint16_t px = a >= 16u ? c : a == 0u ? under : ux_mix(under, c, (int32_t)(a * 100u / 16u));
-            if (cv_halo && under == ux.bg && a < 16u) {   /* (0.9.0) over HUD's picture: the corners on what is there */
+            if (cv_halo && under == ux.bg && a < 16u) {   /* (the corners on what is there) */
                 for (q = 0; q < 4u; q++) {
                     int32_t px_ = q & 1u ? x + w - 1 - i : x + i, py = (q & 2u ? y + h - 1 - j : y + j) + cv_oy;
                     if ((uint32_t)px_ < cv_w && (uint32_t)py < cv_h && a) {
@@ -517,21 +503,6 @@ static void cv_rrect(int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, uint
             cv_pset(x + w - 1 - i, y + j, px);
             cv_pset(x + i, y + h - 1 - j, px);
             cv_pset(x + w - 1 - i, y + h - 1 - j, px);
-        }
-}
-/* (0.9.0) a few canvas pixels kept and put back (HUD's picture through a ring's or a disc's hole, ui_draw.c) */
-static void cv_keep(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t *buf, int put)
-{
-    int32_t i, j;
-    for (j = 0; j < h; j++)
-        for (i = 0; i < w; i++) {
-            int32_t px = x + i, py = y + j + cv_oy;
-            if ((uint32_t)px < cv_w && (uint32_t)py < cv_h) {
-                if (put)
-                    cv_px[(uint32_t)py * cv_w + (uint32_t)px] = buf[j * w + i];
-                else
-                    buf[j * w + i] = cv_px[(uint32_t)py * cv_w + (uint32_t)px];
-            }
         }
 }
 
@@ -873,14 +844,6 @@ static int32_t cv_text_flags(int32_t x, int32_t y, const aafont_t *f, const char
                              uint32_t flags)
 {
     int32_t b[4], pen;
-    if (cv_halo) {                                   /* (0.8.9) the outline: the ink, solid BG, round it (0.9.0: 2 px) */
-        static uint16_t hv[16] __attribute__((section(".pool")));
-        uint32_t k;
-        for (k = 0; k < 16u; k++)
-            hv[k] = swap16(ux.bg);
-        for (k = 0; k < HALO_N; k++)
-            text_run(x + HALO_X[k], y + HALO_Y[k], f, s, hv, b);
-    }
     pen = text_run(x, y, f, s, ramp(fg, bg), b);
     cv_txt_note(b[0], b[1] + cv_oy, b[2], b[3] + cv_oy);
     if (GFX_HOOKS && b[2] > b[0]) {

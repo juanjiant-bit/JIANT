@@ -78,11 +78,8 @@ static int test_song_save_ui(void)
     turn(EN_K4, 1); press(B_OCTUP); frame();
     bad += check("playing refuses before naming or overwrite confirmation", !name_on() && !ui.confirm && strstr(ui.msg, "STOP TO SAVE") != 0);
     song.playing = 0;
-    for (uint32_t skin = 0; skin < 4; skin++) {
-        ux.skin = skin;
-        ui.force = 1;
-        frame();
-    }
+    ui.force = 1;                                    /* (V10.7.23: COLORS, the one skin) */
+    frame();
     ui_power_on();                                   /* LOAD and ERASE act on the picked project */
     nav_put(SEC_SAVE, "PROJECTS"); frame();
     ok = song_save_target == song_cur;

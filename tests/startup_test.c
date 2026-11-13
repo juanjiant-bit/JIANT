@@ -35,15 +35,16 @@ static int startup_case(int saved, int restore, int noprefs)
     if (!noprefs && st_save(OBJ_SETTINGS, &prefs, sizeof prefs)) return 1;
 
     web_boot();
-    if (noprefs) {                                     /* (0.9.7) no settings saved: new settings, SKIN AIR, SCOPE OFF */
-        int okf = ui_skin == SKIN_AIR, i2;
-        for (i2 = 0; i2 < 2000; i2++) web_render(128);   /* (past the splash: the skin applied) */
-        okf &= ux.skin == SKIN_AIR && ui_skin == SKIN_AIR && ui_scope == 0u;
-        printf("startup: empty flash, no settings: SKIN AIR, SCOPE OFF (new settings) %s\n", okf ? "ok" : "FAIL");
+    if (noprefs) {                                     /* (0.9.7) no settings saved: new settings, SCOPE OFF (V10.7.23: the
+                                                        * SKIN byte 0, COLORS the one skin) */
+        int okf = 1, i2;
+        for (i2 = 0; i2 < 2000; i2++) web_render(128);   /* (past the splash) */
+        okf &= !favorites.factory[15][20] && ui_scope == 0u;
+        printf("startup: empty flash, no settings: SCOPE OFF, the retired SKIN byte 0 (new settings) %s\n", okf ? "ok" : "FAIL");
         return !okf;
     }
-    if (ui_skin != SKIN_COLORS || ui_scope) {          /* (0.9.7) settings saved before AIR: their skin (0, COLORS) kept, SCOPE OFF */
-        printf("startup: saved settings keep their SKIN (COLORS), SCOPE OFF: FAIL\n");
+    if (favorites.factory[15][20] || ui_scope) {       /* (0.9.7) settings saved before: the SKIN byte 0, SCOPE OFF */
+        printf("startup: saved settings: the SKIN byte 0 (COLORS), SCOPE OFF: FAIL\n");
         return 1;
     }
     ok = song_cur == want.cur && !memcmp(&chain_config, &want.rows[want.cur], sizeof chain_config);

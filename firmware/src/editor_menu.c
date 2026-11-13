@@ -22,8 +22,8 @@ static const uint8_t ED_MENU[][2] = {
     {MI_TRACKS, 18},                                   /* (JIANT 0.6.18) TRACKS 4 / 6, a row of AUDIO */
     {MI_LOAD, 19},                                     /* (JIANT 0.6.30) LOAD ECO / LITE / FULL, a row of SYSTEM (p1: AUDIO) */
     {MI_MIDIOUT, 20},                                  /* (JIANT 0.6.72) MIDI OUT KEYS / CLOCK / ALL / OFF, CONTROL */
-    {MI_SKIN, 21},                                     /* (JIANT 0.8.9) SKIN, a row of DISPLAY: AIR COLORS (BOTTOM and HUD
-                                                        * retired) */
+    {MI_COUNT, 21},                                    /* (JIANT 0.8.9) SKIN, a row of DISPLAY; retired V10.7.23: COLORS, its
+                                                        * one value (the index and the id stay) */
     {MI_SCOPE, 22},                                    /* (0.9.7) SCOPE OFF / ON, a row of DISPLAY */
     {MI_CLOCK, 24},                                    /* (0.9.9-stab) CPU CLOCK 360 / 320 MHZ, a row of SYSTEM (24 as 0.9.12's) */
     {MI_CPU, 23},                                      /* (p1, main 0.9.12) CPU CORES 2 / 1, a row of SYSTEM (23 as main's) */
@@ -64,9 +64,11 @@ static int ed_menu_handle(uint32_t cmd, const uint8_t *a, uint32_t n)
             return 1;
         }
         row = ED_MENU[a[0]][0];
-        if (row == MI_COUNT) {                         /* STYLE (retired): FLAT alone, so an editor of before lists it there */
-            ed_b(1); ed_b(EDM_ENUM); ed_v(0); ed_v(0); ed_v(0);
-            ed_str("STYLE", 12); ed_str("FLAT", 12);
+        if (row == MI_COUNT) {                         /* STYLE, SKIN (retired): FLAT, COLORS alone, so an editor of before
+                                                        * lists them there */
+            int sk = ED_MENU[a[0]][1] == 21u;
+            ed_b(ED_MENU[a[0]][1]); ed_b(EDM_ENUM); ed_v(0); ed_v(0); ed_v(0);
+            ed_str(sk ? "SKIN" : "STYLE", 12); ed_str(sk ? "COLORS" : "FLAT", 12);
             ed_b(MTAB_DISPLAY); ed_str(MTAB_NAME[MTAB_DISPLAY], 12);
             return 1;
         }
@@ -94,7 +96,7 @@ static int ed_menu_handle(uint32_t cmd, const uint8_t *a, uint32_t n)
         return 1;
     }
     row = ED_MENU[i][0];
-    if (row == MI_COUNT) {                             /* STYLE (retired): FLAT, whatever is asked */
+    if (row == MI_COUNT) {                             /* STYLE, SKIN (retired): FLAT, COLORS, whatever is asked */
         ed_b(0); ed_b(a[0]); ed_v(0);
         return 1;
     }

@@ -543,7 +543,7 @@ static void audit_scene(const char *name)
 }
 /* the contrast of every text, icon and keycap label drawn against what it is drawn on (gfx.c GFX_HOOK_INK), per
  * palette: the lowest seen (report.txt), and a finding under INK_MIN (a word that can barely be seen: the palettes'
- * own rule for the inactive is 2.2, DIM on BG). Not the knobs' row of HUD's / AIR's HOME while it is faded */
+ * own rule for the inactive is 2.2, DIM on BG) */
 #define INK_MIN 1.5
 static double ink_low[16];
 static uint16_t ink_low_fg[16], ink_low_bg[16];
@@ -564,7 +564,6 @@ static void hk_ink(uint16_t ink, uint16_t bg)
 {
     uint32_t p = settings.palette % NPALETTES;
     double r = ink_contrast(ink, bg);
-    if (ink != bg && hud_fade() < 100u) return;        /* (HUD's / AIR's HOME: the knobs' row faded while they rest, meant) */
     if (ink_low[p] == 0 || r < ink_low[p]) { ink_low[p] = r; ink_low_fg[p] = ink; ink_low_bg[p] = bg; }
     if (ink != bg && r < INK_MIN) {
         if (ink_bad < 20u) fprintf(rep, "%s: ink %04x on %04x, contrast %.2f < %.1f (%s)\n", cur_name, ink, bg, r, INK_MIN, UI_PALETTES[p].name);
@@ -2128,7 +2127,6 @@ static void align_sweeps(void)
     if (nul) rep = nul;                              /* (not lint scenes: their draws pile up) */
     for (st = 0; st < 1u; st++)             /* (FLAT, the one style: LINE is retired) */ {
         state(); pal(UI_JIANT_INDEX);
-        style_apply();
         cur_name = st ? "sweep LINE: cushions" : "sweep FLAT: cushions";
         for (k = 0; k < NTRK; k++)
             for (i = 0; i < 3u; i++) {
@@ -2245,7 +2243,6 @@ static void align_sweeps(void)
         ui_prefs = 0; ui.hot_t = 0;
         ui.force = 0;
     }
-    style_apply();
     state();
     nscr = npend = nrules = 0;
     nfind = nf;
@@ -2386,14 +2383,12 @@ int main(int argc, char **argv)
                     setup((int)s);
                     ui_prefs |= PREF_LARGE;
                     pal(p);
-                    style_apply();
                     draw((int)s);
                     ntall += !ui.menu && !ui.confirm && !name_on() && large_kind() == LK_TALL;
                     lint();
                     if ((p == UI_JIANT_INDEX || (!st && !strcmp(UI_PALETTES[p].name, "CONTRAST"))))
                         write_ppm(out, tag, S_NAME[s]);
                 }
-        style_apply();
         sweep_columns();                                /* every value of every column, tall */
         large_on = 0;
         if (ntall < 100u) { fprintf(stderr, "ui_render: LARGE drew %u screens with tall cards only\n", ntall); return 1; }
@@ -2407,39 +2402,6 @@ int main(int argc, char **argv)
         fprintf(rep, "\n  in S, e.g.:");
         for (s = 0; s < lg_nsmall; s++) fprintf(rep, " '%s'", lg_small[s]);
         fprintf(rep, "\n");
-    }
-    {   /* (0.9.7) MENU > DISPLAY > SKIN AIR (ui.c lz_low, hud_home): every screen in every palette in FLAT, in
-         * LINE and with MENU > LARGE ON (COLORS' layout, the skin's tabs and colours), linted; FLAT
-         * as OUTDIR/ppm/AIR_<PALETTE>_<screen>.ppm (ui_render.py: sheet_AIR_<PALETTE>.png) */
-        static const char *const SK_N[4] = {"COLORS", "", "", "AIR"}, *const ST_N[3] = {"", "-LINE", "-LARGE"};
-        uint32_t sk, st, n0 = nfind, nlow = 0, nhud = 0;
-        for (sk = SKIN_AIR; sk <= SKIN_AIR; sk++)      /* (0.9.7: AIR, the knobs' row on top; BOTTOM and HUD retired) */
-            for (st = 0; st < 3u; st += 2u)        /* (plain, LARGE) */
-                for (p = 0; p < NPALETTES; p++)
-                    for (s = 0; s < S_COUNT; s++) {
-                        char name[64], tag[24];
-                        if (!FELUCCA_FM4 && (s == S_OP_ENV || (s >= S_ALG1 && s <= S_OP_LEVEL)))
-                            continue;
-                        snprintf(tag, sizeof tag, "%s%s_%s", SK_N[sk], ST_N[st], UI_PALETTES[p].name);
-                        snprintf(name, sizeof name, "%s/%s", tag, S_NAME[s]);
-                        cur_name = name;
-                        setup((int)s);
-                        if (st == 2u) ui_prefs |= PREF_LARGE;
-                        pal(p);
-                        ui_skin = (uint8_t)sk;
-                        style_apply();
-                        draw((int)s);
-                        if (ux.skin != sk) { fprintf(stderr, "ui_render: %s drawn in skin %u\n", name, ux.skin); return 1; }
-                        nlow += (uint32_t)lz_low();
-                        nhud += (uint32_t)hud_home();
-                        lint();
-                        if (!st)                         /* (AIR, the default skin: every palette of the family) */
-                            write_ppm(out, tag, S_NAME[s]);
-                    }
-        ui_skin = SKIN_COLORS; style_apply();
-        if (nlow < 1000u || nhud < 20u) { fprintf(stderr, "ui_render: SKIN drew %u screens low, %u HUD HOMEs only\n", nlow, nhud); return 1; }
-        fprintf(rep, "SKIN AIR (plain and LARGE, every palette): %u lint findings; %u screens with the knob row, %u HOMEs with "
-                "the beings over the whole screen\n", nfind - n0, nlow, nhud);
     }
     {   /* every FM6 colony (the lint above, fm6_hook, runs on each), in GREY: gray */
         uint32_t a, c0 = fmp_charts;
@@ -2537,17 +2499,16 @@ int main(int argc, char **argv)
             }
         }
         roll_cost();
-        {   /* (0.8.9) SKIN: HOME, EDIT, SEQ's BAR, FX's BUSES redrawn whole in each skin (us, texts, LCD px sent), and HOME frame
-             * by frame (HUD: every strip each frame, on the beings) */
+        {   /* (0.8.9) HOME, EDIT, SEQ's BAR, FX's BUSES redrawn whole (us, texts, LCD px sent), and HOME frame by frame
+             * (V10.7.23: COLORS, the one skin) */
             static const int SC[] = {S_HOME, S_EDIT_ANALOG, S_LENTE_BAR, S_FXL_BUSES, S_VX_HEAD_S, S_VX_WING, S_VX_KIT_HOME};
-            static const char *const SK_N[4] = {"COLORS", "", "", "AIR"};
             uint32_t sk;
-            fprintf(rep, "  SKIN (full redraw us / texts / LCD px; HOME a frame without force):\n");
-            for (sk = SKIN_COLORS; sk <= SKIN_AIR; sk += SKIN_AIR) {
-                fprintf(rep, "  %-7s", SK_N[sk]);
+            fprintf(rep, "  COLORS (full redraw us / texts / LCD px; HOME a frame without force):\n");
+            for (sk = 0; sk < 1u; sk++) {
+                fprintf(rep, "  %-7s", "COLORS");
                 for (k = 0; k < sizeof SC / sizeof SC[0]; k++) {
                     clock_t c0;
-                    setup(SC[k]); ui_skin = (uint8_t)sk; pal(UI_JIANT_INDEX); style_apply();
+                    setup(SC[k]); pal(UI_JIANT_INDEX);
                     draw(SC[k]);
                     px_visited = n_text = blit_px = 0;
                     c0 = clock();
@@ -2557,7 +2518,7 @@ int main(int argc, char **argv)
                 }
                 {
                     clock_t c0;
-                    setup(S_HOME); ui_skin = (uint8_t)sk; pal(UI_JIANT_INDEX); style_apply(); draw(S_HOME);
+                    setup(S_HOME); pal(UI_JIANT_INDEX); draw(S_HOME);
                     blit_px = 0;
                     c0 = clock();
                     for (i = 0; i < N * 4; i++) { ui_draw(); nscr = npend = 0; }
@@ -2565,7 +2526,6 @@ int main(int argc, char **argv)
                             (unsigned long long)(blit_px / (N * 4)));
                 }
             }
-            ui_skin = SKIN_COLORS; style_apply();
         }
         {   /* MENU > LARGE: the same full redraws, tall cards and the strip */
             static const int LC[] = {S_HOME, S_EDIT_ANALOG, S_ENV, S_LFO, S_MIXER, S_FX, S_PATTERN};

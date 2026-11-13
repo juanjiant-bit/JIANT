@@ -334,7 +334,7 @@ static __attribute__((noinline)) void menu_panel(void)
                                                         * only show in the slide between tabs) */
         for (k = 0; k < MTAB_COUNT; k++) {
             int32_t x = 4 + (int32_t)(k & 1u) * 117, y = 2 + (int32_t)(k >> 1) * 70;
-            uint16_t bg = lz_tile_bg();
+            uint16_t bg = T_RAISE;
             lz_tile(x, y, 115, 66, k == t, T_THEME);
             GFX_HOOK_ALIGN(x, 0, x + 115, 0, AL_H, "menu tab tile name centred");
             cv_text_in(x, y + 14, 115, &AF_M, MTAB_NAME[k], k == t ? T_THEME : T_TEXT, bg);
@@ -537,7 +537,7 @@ static __attribute__((noinline)) void draw_menu(void)
 {
     uint32_t sig;
     sig = ui.menu * 7u + ui.menu_sel * 131u + settings.palette * 1009u + settings.lowcut * 7919u + settings_hold * 3511u +
-          settings_leds * 6151u + ui_prefs * 4099u + ui_skin * 1543u + song.rec * 65537u + song.sel * 13u +
+          settings_leds * 6151u + ui_prefs * 4099u + song.rec * 65537u + song.sel * 13u +
           ui_rec_prefs * 92821u + ui_scr * 131071u + ui.mlv * 0x9E3779B1u + bt_hw_status() * 40961u + bt_up * 77u + bt_prox_sig() +   /* (#157: SCREEN OFF's value redraws its row) */
           (ui.menu == 2 ? ui.menu_scroll * 48611u : 0u) +
           (ui.menu == 2 ? (song.cpu_q8 >> 3) * 7741u + load_diag.peak * 3329u + load_diag.late * 1931u +
@@ -571,7 +571,7 @@ static __attribute__((noinline)) void draw_menu(void)
         return;
     }
     if (ui.force) {                                    /* (0.9.0) round its tabs, cards, panel and footer, not under them */
-        int16_t R[7][4] = {{0, LT_Y, 240, (int16_t)(lz_low() ? LB_TAB_H : LT_H)}, {0, (int16_t)menu_py(), 240, LZ_GRAPH_H},
+        int16_t R[7][4] = {{0, LT_Y, 240, (int16_t)LT_H}, {0, (int16_t)menu_py(), 240, LZ_GRAPH_H},
                            {0, (int16_t)foot_y(), 240, (int16_t)foot_h()}};
         uint32_t c;
         for (c = 0; c < 4u; c++) {

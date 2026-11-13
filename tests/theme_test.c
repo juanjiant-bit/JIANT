@@ -53,17 +53,15 @@ int main(int argc, char **argv)
         assert(!memcmp(UI_PALETTES[UI_JIANT_INDEX].c, JIANT, sizeof JIANT));
         assert(&ux.raise - &ux.bg == 11 && &ux.grid - &ux.bg == 14);   /* (palette_set copies the stored twelve) */
     }
-    for (unsigned sk = 0; sk < 2; sk++) {             /* the stored tokens as they are, in COLORS and AIR (SURF: BG) */
-        ux.skin = (uint8_t)(sk ? SKIN_AIR : SKIN_COLORS);
+    for (unsigned sk = 0; sk < 1; sk++) {             /* the stored tokens as they are (V10.7.23: COLORS, the one skin) */
         for (unsigned p = 0; p < NPALETTES; p++) {
             const uint16_t *c = UI_PALETTES[p].c;
             palette_set(p);
-            assert(T_BG == c[0] && T_SURF == (sk ? c[0] : c[1]) && T_TEXT == c[2] && T_THEME == c[3] && T_ACCENT == c[4] &&
+            assert(T_BG == c[0] && T_SURF == c[1] && T_TEXT == c[2] && T_THEME == c[3] && T_ACCENT == c[4] &&
                    T_MID == c[5] && T_DIM == c[6] && T_LINE == c[7] && T_SEL == c[8] && T_TINT == c[9] && T_REC == c[10] &&
                    T_RAISE == c[11] && T_INK == 0u && T_K(0) == UI_KNOBS[p][0] && T_K(3) == UI_KNOBS[p][3]);
         }
     }
-    ux.skin = SKIN_COLORS;
     for (unsigned p = 0; p < NPALETTES; p++) {
         uint16_t *tok = &ux.bg;
         palette_set(p);

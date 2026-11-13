@@ -8,7 +8,7 @@
   sheet_<PALETTE>.png      every screen of one palette, 1x, with its name
   (MENU > STYLE: LINE_<PALETTE>/ and sheet_LINE_<PALETTE>.png for JIANT CONTRAST HUESO NEON;
    MENU > LARGE: sheet_LARGE_JIANT.png, sheet_LARGE_CONTRAST.png, sheet_LARGE-LINE_JIANT.png;
-   (0.9.7) MENU > SKIN: AIR_<PALETTE>/ and its sheets, every palette)
+   (MENU > SKIN AIR, 0.9.7 .. V10.7.22: retired, COLORS the one skin))
 With SLOTDIR (ui_render.py OUTDIR SLOTDIR): its filmstrips of the rolling digits, SLOTDIR/*.ppm -> *.png.
 """
 import sys

@@ -47,10 +47,8 @@ static int settings_import(persist_t *p, int n)
     }
     if (old1 || old2) p->bold = 0;
     if (!current) memset(&p->favorites, 0, sizeof p->favorites);
-    if (p->favorites.factory[15][20] != SKIN_AIR)  /* SKIN (JIANT 0.8.9, ui.c ui_skin; 0.9.7: 3 AIR): the retired BOTTOM (1) and
-                                                     * HUD (2), unknown = COLORS (0, older
-                                                     * settings too: they keep the skin they had) */
-        p->favorites.factory[15][20] = 0;
+    p->favorites.factory[15][20] = 0;             /* SKIN (JIANT 0.8.9 .. V10.7.22; 3 was AIR, 1 BOTTOM, 2 HUD; retired V10.7.23):
+                                                    * COLORS, the one skin (0, as older firmware reads it) */
     if (p->favorites.factory[15][19] > 1u)         /* SCOPE (0.9.7, ui.c ui_scope): unknown = OFF (0, older settings too) */
         p->favorites.factory[15][19] = 0;
     p->favorites.factory[15][29] = 0;             /* STYLE (retired: 1 LINE, 2 PIXEL): FLAT, the one style (0, as older firmware
@@ -116,15 +114,6 @@ static void settings_jiant_once(persist_t *p)
     settings.palette = UI_JIANT_INDEX;
 #ifdef FELUCCA_FAVORITES
     favorites.factory[15][23] = JIANT_PAL_SEEN;
-#endif
-}
-
-/* (0.9.7) at power-on with no settings saved (a new FM-1, an erased store): the defaults of new settings, SKIN AIR (settings
- * saved before keep what they hold: 0 COLORS ..) */
-static void settings_fresh(void)
-{
-#ifdef FELUCCA_FAVORITES
-    favorites.factory[15][20] = SKIN_AIR;
 #endif
 }
 

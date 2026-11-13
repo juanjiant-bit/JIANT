@@ -274,29 +274,19 @@ de Charles Vestal, *Velo*, github.com/charlesvestal/fm1-velocity, GPL-3.0). JIAN
 
 ## 2. La pantalla
 
-### Pieles: AIR, COLORS
+### El aspecto: COLORS
 
-**MENU > DISPLAY > SKIN** elige cómo se visten las lentes: **AIR** o **COLORS**, en todas las páginas y con todas las
-paletas. (BOTTOM y HUD, las otras dos pieles de la 0.8.9, ya no están: si tenías guardada alguna de las dos, cargás con
-COLORS.)
-
-- **AIR** (0.9.7; la de fábrica de los ajustes nuevos: un FM-1 nuevo o con sus ajustes borrados): en **todas** las
-  páginas la **fila de perillas arriba**, justo debajo de las pestañas: sin cartas ni caja de panel, el texto claro con
-  un borde oscuro de 2 px, el medio de la pantalla libre para el dibujo y el pie solo la miga de pan. En HOME los seres
-  nadan por la pantalla entera debajo del encabezado, las pestañas, la fila de perillas y la miga; ahí la fila de
-  perillas se apaga a un quinto unos segundos después de la última vuelta de perilla y vuelve con la siguiente o al
-  cambiar de página (en las demás páginas queda encendida). Todas las capas, los diálogos y el menú con la misma ropa.
-  Las pestañas son las palabras de los grupos, la del grupo en el que estás subrayada con una rayita, un punto por
-  página debajo de cada una.
-- **COLORS** (los ajustes guardados antes de 0.9.7 cargan con ella): la estructura LENTE con los **colores de la 0.6**.
-  Cartas casi negras redondeadas con una marquita y el nombre de la perilla, **cada perilla con su color** en el valor
-  y en la barra (JIANT: el color de cada parámetro **se mueve con su cantidad**, como calor, violeta si es poco,
-  amarillo y crema si es mucho; uno centrado como PAN o DETUNE frío en el medio y caliente en los dos extremos; las
-  otras seis paletas: cuatro colores propios, uno por perilla), la carta de
-  la perilla que girás enmarcada en su color; la pestaña del grupo rellena de violeta; el número de la pista en una
-  cajita naranja, un ▶ violeta y el BPM grande en violeta en el encabezado; los seres con
-  el calor de la 0.6 (púas violetas, anillos rojo y naranja, núcleos crema). El dibujo de abajo de las cartas va sobre
-  el fondo (sin caja de panel), como en AIR.
+Las lentes tienen una sola piel, **COLORS** (MENU > DISPLAY > SKIN y AIR, su otra opción, ya no están desde la V10.7.23:
+si tenías guardada AIR, o las viejas BOTTOM y HUD, cargás con COLORS): la estructura LENTE con los **colores de la 0.6**.
+Las **cartas de las perillas no tienen caja**: cada una va sobre el fondo, con su forma dibujada como una **línea fina
+del color de su valor**, así que la línea cambia con el valor (y con la paleta); la perilla que girás lleva la línea de
+2 px. El nombre de la carta va en gris (MID), el valor y su barra en el **color de cada perilla** (JIANT: el color de
+cada parámetro **se mueve con su cantidad**, como calor, violeta si es poco, amarillo y crema si es mucho; uno centrado
+como PAN o DETUNE frío en el medio y caliente en los dos extremos; las otras seis paletas: cuatro colores propios, uno
+por perilla); la pestaña del grupo rellena de violeta; el número de la pista en una cajita naranja, un ▶ violeta y el
+BPM grande en violeta en el encabezado; los seres con el calor de la 0.6 (púas violetas, anillos rojo y naranja, núcleos
+crema). El dibujo de abajo de las cartas va sobre el fondo (sin caja de panel). Las cartas de NOTICE y de NAME van
+dibujadas igual, con su línea.
 
 Los valores (cartas, el BPM del encabezado) vuelven a una sans redondeada (Inter Tight SemiBold), como en la 0.6; los
 nombres, las pestañas y la miga van en Chakra Petch, con mayúsculas de 9 px (hasta la V10.7.18, letras de píxel de 5 x 7, de 7 px). **MENU > LARGE** deja sus cartas grandes arriba
@@ -2847,12 +2837,11 @@ SYSTEM; frena en la primera y en la última), **ALGORITHM** salta a la pestaña 
 **cualquier perilla** u **OCT+ / OCT−** cambia el valor; PRESETS acá no hace nada. HOME lo cierra (en ese momento se
 guarda la configuración). La pantalla muestra las filas de la pestaña, las cuatro de la fila elegida como tarjetas
 (ROWS 1–4 / ROWS 5–6; DISPLAY: ROWS 5–7; CONTROL también ROWS 9–12, las cuatro de las teclas) con el número de su perilla; las pestañas arriba, el pie **MENU · DISPLAY ·
-SKIN  2/35**. El encabezado dice MENU · DISPLAY.
+SCOPE  2/33**. El encabezado dice MENU · DISPLAY.
 
 | Pestaña | Fila | Valores |
 | --- | --- | --- |
 | DISPLAY | COLOR | **JIANT** (por defecto), SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON — siete paletas de la misma familia, todas oscuras, todas con la rampa térmica, cada una con sus cuatro colores de perilla |
-| DISPLAY | SKIN | **AIR** (de fábrica en los ajustes nuevos), COLORS — ver [Pieles](#pieles-air-colors); si tenías guardada BOTTOM o HUD (0.8.9, retiradas), cargás con COLORS |
 | DISPLAY | SCOPE | **OFF** (de fábrica), ON — (0.9.7) las páginas EDIT de un motor: OFF la criatura en todo el panel, centrada; ON la criatura a la izquierda, la carta SCOPE y las fichas como antes. Los ajustes guardados antes de 0.9.7 cargan OFF |
 | DISPLAY | LARGE | OFF, ON (etiquetas y valores grandes) |
 | DISPLAY | ANIM | ON, OFF (los valores saltan directo; la firma de encendido aparece entera) |
