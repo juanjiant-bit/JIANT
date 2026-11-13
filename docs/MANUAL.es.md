@@ -2549,8 +2549,9 @@ ancho). Se oculta con LOAD ECO (la tarjeta de envío de chorus de una pista dice
   de 1 dB de ondulación al ritmo: no bombea) y se sostienen en los silencios. 0 es apagado (la mezcla bit a bit como
   sin él, el EQ como lo pusiste). 100 corrige el doble (dentro de los mismos límites). Se guarda con el proyecto; un
   proyecto guardado antes de V10.7.30 abre con BALANCE en 50 (prendido: la idea es que el barro se vaya, también en tus
-  temas viejos); ponelo en 0 y guardá para dejar uno como estaba. Costo: la división en bandas del EQ corre siempre
-  (antes solo con el EQ tocado).
+  temas viejos); ponelo en 0 y guardá para dejar uno como estaba. Trabaja justo antes del EQ, con su propia división
+  en las mismas cuatro bandas, así que el EQ queda exactamente como lo pusiste, encima. Costo: unos pocos por ciento de
+  la CPU de audio con AMOUNT prendido (nada en silencio).
 
 ### DJ FILTER (0.9.1, GLO › LIVE › KEYS KNOB 4; en MIXER hasta V10.36)
 

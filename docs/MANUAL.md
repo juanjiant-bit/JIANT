@@ -2420,8 +2420,9 @@ from before).
   (well under 1 dB of ripple at the beat: no pumping) and hold through silence. 0 is off (the mix bit for bit as
   without it, the EQ as you set it). 100 corrects twice as hard (still within those bounds). Saved with the project; a
   project saved before V10.7.30 opens with BALANCE at 50 (on: the point is that the mud goes, on your old songs too);
-  turn it to 0 and save to keep one as it was. Cost: the EQ's band split runs all the time (it ran only with the EQ
-  set).
+  turn it to 0 and save to keep one as it was. It works just before the EQ, on its own split of the same four bands,
+  so the EQ stays exactly as you set it, on top. Cost: a few percent of the audio CPU while AMOUNT is on (nothing in
+  silence).
 
 ### DJ FILTER (0.9.1, GLO › LIVE › KEYS KNOB 4; on MIXER until V10.36)
 
