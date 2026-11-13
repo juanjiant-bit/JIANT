@@ -353,9 +353,9 @@ With FX held the keys become effects that act while hel…8050 tokens truncated�
   KNOB 1 the row, KNOB 2 its section, KNOB 3 its bars, KNOB 4 the **VAR** of the ALGORITHM track (MUTE, THIN, FILL,
   HALF, REV, SHIFT, OCT±, VAR 1–4); F3–D4 mute T1–T6 in the row, F4–B4 make the track play another section (**FROM**).
   PLAY loops the row; PLAY again lets the song go on.
-- **PARTS** (V10.6o): the four sections as cards, OCT+ loops one, OCT− back to the song. **CLIPS** (V10.6s): six tracks ×
-  four sections, a cell launched on the next bar; with REC each launch becomes a row.
-- **ARRANGE** (SELECT right past PARTS, CLIPS, SECTIONS and PROJECTS, or SAVE + G5): KNOB 2 on **END** picks STOP,
+- **PARTS** (V10.6o): the four parts as cards, OCT+ loops one, OCT− back to the song. **CLIPS** (V10.6s): six tracks ×
+  four parts, a cell launched on the next bar; with REC each launch becomes a row.
+- **ARRANGE** (SELECT right from TIMELINE, or SAVE + G5): KNOB 2 on **END** picks STOP,
   x2–x8 or LOOP; KNOB 4 right stores a **scene** (mutes, macros) in the row.
 - **Play**: PLAY on ARRANGE plays the song from the top; elsewhere SAVE + D5 (SONG mode) first.
   **OCT−** on a row asks **DELETE SONG ROW?** (OCT+ deletes). **SAVE + E5 (SONG REC)** writes the sections you play
