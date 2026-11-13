@@ -49,7 +49,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: github-pages
-          run-id: 43452124234
+          run-id: 43457305020
           github-token: ${{ github.token }}
           path: build/released
       - name: Published site to start from (the artifact; the live site when it expired or is older)
@@ -108,7 +108,7 @@ jobs:
           editions=json.loads(edition_path.read_text())
           for entry in prior:
               editions.setdefault(entry['version'],{k:entry[k] for k in ('edition','status') if k in entry})
-          editions[m['version']]={'edition':'V10.7.29','status':'beta'}
+          editions[m['version']]={'edition':'V10.7.30','status':'beta'}
           edition_path.write_text(json.dumps(editions))
           shutil.copyfile('build/candidate/web/editor.html','web/editor.html')
           make_site.main('build/candidate/build/felucca.fwsc',m['version'],'build/new-preview',str(fw))
