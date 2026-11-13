@@ -1474,7 +1474,7 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
         h = (h ^ (n + 1u) * 40503u ^ ev_row(n) * 2654435761u ^ ((uint32_t)ui.ev_step << 8 | ui.ev_id) * 104729u) * 16777619u;
     }
     if (pg->graph == GR_CHANCE) h ^= ui.cursor * 40503u + step_chance(&t->step[ui.cursor]);
-    if (pg->graph == GR_LIVE)                        /* (p2) GLO > LIVE: the playheads, the ghosts, the keys */
+    if (FELUCCA_LIVE && pg->graph == GR_LIVE)        /* (p2) GLO > LIVE: the playheads, the ghosts, the keys */
         h = live_sig(h);
     if (pg->graph == GR_FUGUE) {                     /* (0.6.52) the heads, their settings, where they are */
         uint32_t ti = song.sel % NTRK, k;
@@ -2161,7 +2161,7 @@ static void draw_graph(void)
         cv_oy = 0;
         graph_home_lz();                             /* (0.8.5: HOME's lens; V10.7.24 MACROS / SCOPE; JIANT 0.5: the system's
                                                       * beings, was the scope) */
-    } else if (pg->graph == GR_LIVE) {               /* (p2) GLO > LIVE: the rails, KEYS's board (ui_live.c) */
+    } else if (FELUCCA_LIVE && pg->graph == GR_LIVE) {   /* (p2) GLO > LIVE: the rails, KEYS's board (ui_live.c) */
         cv_oy = 0;
         graph_live();
     } else if (pg->graph == GR_SCENE) {              /* (V10.25) SCL > SCENE: the six tracks' roles */

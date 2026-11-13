@@ -86,16 +86,30 @@ static const nv_t CE_FX[] = {NV("FX", "SENDS", 0, FXL_TRACK), NV("DIST", 0, 0, F
                              NV("CHORUS", 0, 4, FXL_EFFECT), NV("SLICER", 0, 5, FXL_EFFECT), NV("SL BUS", 0, 5, FXL_EFFECT),
                              NV("SL BUS 2", 0, 5, FXL_EFFECT), NV("SL PITCH", 0, 5, FXL_EFFECT), NV("PUNCH IN", 0, 6, FXL_EFFECT),
                              NV("MASTER", 0, 7, FXL_EFFECT), NV("TAPE", 0, 7, FXL_EFFECT),
-                             NV("EQ", 0, 7, FXL_EFFECT), NV("BALANCE", 0, 7, FXL_EFFECT)};   /* (p9: the master's EQ) */   /* (0.9.9-snd2: MASTER last, the
+                             NV("EQ", 0, 7, FXL_EFFECT)
+#if FELUCCA_XFX
+                             , NV("BALANCE", 0, 7, FXL_EFFECT)
+#endif
+                            };   /* (p9: the master's EQ) */   /* (0.9.9-snd2: MASTER last, the
                                                          * end of the chain; snd8: its TAPE) */
 static const ng_t CG_FX[] = {{"TRACK", "TRK"}, {"BUSES", "BUS"}, {"DELAY", "DLY"}, {"REVERB", "REV"}, {"CHORUS", "CHO"},
                              {"SLICER", "SLC"}, {"PUNCH IN", "PCH"}, {"MASTER", "MST"}};
+#if FELUCCA_LIVE
 static const nv_t CE_GLO[] = {NV("KEYS", 0, 0, 0), NV("RAILS", 0, 0, 0), NV("MIXER", 0, 1, 0), NV("SENDS", 0, 1, 0),
                               NV("G.COMP", 0, 2, 3), NV("G.COMP 2", 0, 2, 3), NV("GLOBAL", 0, 3, 1),
-                              NV("SYSTEM", 0, 3, 2), NV("SYSTEM 2", 0, 3, 2), NV("KEY SPLIT", 0, 3, 2), NV("KEY SPLIT 2", 0, 3, 2)};   /* (V10.37) the performing pages first, the
+                              NV("SYSTEM", 0, 3, 2), NV("SYSTEM 2", 0, 3, 2), NV("KEY SPLIT", 0, 3, 2), NV("KEY SPLIT 2", 0, 3, 2)};
+#else
+static const nv_t CE_GLO[] = {NV("MIXER", 0, 0, 0), NV("SENDS", 0, 0, 0),
+                              NV("G.COMP", 0, 1, 3), NV("G.COMP 2", 0, 1, 3), NV("GLOBAL", 0, 2, 1),
+                              NV("SYSTEM", 0, 2, 2), NV("SYSTEM 2", 0, 2, 2), NV("KEY SPLIT", 0, 2, 2), NV("KEY SPLIT 2", 0, 2, 2)};
+#endif   /* (V10.37) the performing pages first, the
                                                          * settings (GLOBAL, SYSTEM) last */   /* (0.9.9-seq2f) the global lane; (p2) LIVE first
                                                          * (ui_live.c) */
-static const ng_t CG_GLO[] = {{"LIVE", 0}, {"MIX", 0}, {"G.COMP", "GCMP"}, {"SETUP", 0}};   /* (codex/coherence: SETUP, the
+static const ng_t CG_GLO[] = {
+#if FELUCCA_LIVE
+                               {"LIVE", 0},
+#endif
+                               {"MIX", 0}, {"G.COMP", "GCMP"}, {"SETUP", 0}};   /* (codex/coherence: SETUP, the
                                                          * settings in one group: GLOBAL, SYSTEM, SYSTEM 2, KEY SPLIT) */   /* (five tabs of 44 px in the labels' face) */
 static const nv_t CE_ENV[] = {NV("ENV", 0, 0, 1), NV("ENV DEST", 0, 0, 1), NV("ENV 2", 0, 0, 1), NV("STAGE", 0, 1, 2),
                               NV("ENV", "TRACKS", 2, 0)};   /* (V10.22: ENV 2) (codex/coherence) the track's pages first;
@@ -130,7 +144,7 @@ static const ch_t CHAINS[NAV_KEYS] = {CH(CE_HOME, CG_HOME), CH(CE_SYN, CG_SYN), 
                                       CH(CE_DIG, CG_DIG)};
 /* the page each opens on at power-on (the mock-up's): SEQ its STEP, ENV its ENV, LFO its LFO, (p2) GLO its MIXER (LIVE's
  * pages before it: a GLO tap inside, rule 2), (V10.7.22) SAVE its TIMELINE (TOOLS before it); ui.nmem holds it ^ this */
-static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 2, 0, 1, 0, 0, 1, 0, 0, 0};
+static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, FELUCCA_LIVE ? 2 : 0, 0, 1, 0, 0, 1, 0, 0, 0};   /* (GLO: MIXER; V10.7.30 its first without LIVE) */
 static uint32_t nav_key(uint32_t sec) { uint32_t k = sec == SEC_EDIT ? edit_kind() : 0u; return k ? SEC_N - 1u + k : sec; }
 static const ch_t *nav_ch(uint32_t sec) { return &CHAINS[nav_key(sec)]; }
 static uint32_t nav_mem(uint32_t key) { return (uint32_t)(ui.nmem[key] ^ NAV_DEF[key]); }

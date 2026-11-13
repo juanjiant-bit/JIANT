@@ -303,7 +303,7 @@ static void track_dist(track_t *t, int32_t *b, uint32_t n)
         t->dist_lp1 = l1;
         t->dist_lp2 = l2;
     }
-    if (dnz_v[ti]) {                                    /* (V10.7.30) NOISE, in the flash */
+    if (FELUCCA_XFX && dnz_v[ti]) {                     /* (V10.7.30) NOISE, in the flash */
         void (*f)(track_t *, int32_t *, uint32_t) = dist_noise;
         FM1_OPAQUE(f);
         f(t, b, n);
@@ -3117,7 +3117,7 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
                                                          * the flash past the tables, out of a direct call's reach) */
         f(n);
     }
-    if (bal_v || (bal.g[0] | bal.g[1] | bal.g[2] | bal.g[3])) {   /* (V10.7.30) BALANCE, before the EQ */
+    if (FELUCCA_XFX && (bal_v || (bal.g[0] | bal.g[1] | bal.g[2] | bal.g[3]))) {   /* (V10.7.30) BALANCE, before the EQ */
         void (*f)(uint32_t) = bal_block;
         FM1_OPAQUE(f);
         f(n);

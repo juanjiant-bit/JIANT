@@ -100,6 +100,14 @@ static inline const char *desc_unit(const param_desc_t *d)   /* F_INT_CT .. F_RE
     return d->fmt >= F_INT_CT ? U[d->fmt - F_INT_CT] : 0;
 }
 
+#ifndef FELUCCA_LIVE
+#define FELUCCA_LIVE 0  /* (V10.7.30, the owner: "RAILS out, KEYS if it costs") GLO > LIVE's KEYS and RAILS pages (ui_live.c):
+                         * out of GLOBAL and the image; the LIVE modifiers the FX layer drives (seq_live.c) stay */
+#endif
+#ifndef FELUCCA_XFX
+#define FELUCCA_XFX 0   /* (V10.7.30) the master's BALANCE and DIST's NOISE (fx.c bal_block, dist_noise): built, out of the
+                         * image until there is room for them (their pages and their calls with it; the stores keep their block) */
+#endif
 enum {                          /* per-track parameters */
     P_LEVEL,
     P_ATK, P_DEC, P_SUS, P_REL,

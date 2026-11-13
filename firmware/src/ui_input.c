@@ -1416,7 +1416,7 @@ static void edit_param(uint32_t slot, int32_t steps)
     const page_t *pg = cur_page();
     const param_desc_t *d;
     int32_t v;
-    if (pg->graph == GR_LIVE) {                         /* (p2) GLO > LIVE (ui_live.c) */
+    if (FELUCCA_LIVE && pg->graph == GR_LIVE) {         /* (p2) GLO > LIVE (ui_live.c) */
         live_knob(slot, steps);
         return;
     }

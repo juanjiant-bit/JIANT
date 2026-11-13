@@ -617,6 +617,8 @@ static int page_visible(uint32_t i)
     if (PAGES[i].graph == GR_SONG && PAGES[i].fam == FAM_SEQ)
         return 0;                                       /* (0.6.24) the song in one place: SAVE > ARRANGE (SEQ > SONG
                                                          * was the same page twice; kept in the table: its index) */
+    if ((!FELUCCA_LIVE && PAGES[i].graph == GR_LIVE) || (!FELUCCA_XFX && PAGES[i].fam == FAM_FX && PAGES[i].id[0] == ID_BAL))
+        return 0;                                       /* (V10.7.30) KEYS RAILS, BALANCE out (core.h): kept in the table */
     if (sys_load == LOAD_ECO && ((PAGES[i].graph == GR_SLCR || PAGES[i].graph == GR_SLPIT) ||
                                  (PAGES[i].fam == FAM_FX && PAGES[i].id[0] == G_CRATE)))
         return 0;                                       /* (0.6.30) LOAD ECO: no SLICER, no chorus: their pages gone */

@@ -406,7 +406,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: X-MOD · FILTER · STEREO · PLAY | 14 |
 | **SEQ** | (V10.6) **STEP**: STEP — **PATTERN**: LENGTH · RHYTHM · TRACK — **EUCLID**: EUCLID · MODES · MUTATE — **PLAYHEADS**: PLAYHEADS — **STRETCH**: STRETCH — **COMP**: COMP · COMP 2 — **AUTO**: AUTOMATION · AUTO LIST · LYRIC STEP (VOICE) — **TRACK GEN**: TRACK GEN | 15 |
 | **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DLY 2 · DLY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SL BUS · SL BUS 2 · SL PITCH — **PUNCH IN**: PUNCH IN — **MASTER**: MASTER · TAPE · EQ · BALANCE | 19 |
-| **GLO** | **LIVE**: KEYS · RAILS — **MIX**: MIXER · SENDS — **G.COMP**: G.COMP · G.COMP 2 — **SETUP**: GLOBAL · SYSTEM · SYSTEM 2 · KEY SPLIT · KEY SPLIT 2 | 11 |
+| **GLO** | **MIX**: MIXER · SENDS — **G.COMP**: G.COMP · G.COMP 2 — **SETUP**: GLOBAL · SYSTEM · SYSTEM 2 · KEY SPLIT · KEY SPLIT 2 | 9 |
 | **ENV** | **ENV**: ENV · ENV DEST · ENV 2 — **STAGE**: STAGE — **TRACKS**: TRACKS (codex/coherence: last; TRACKS DEST gone, ENV DEST's twin) | 5 |
 | **LFO** | **MOD**: MOD — **LFO**: LFO · LFO DEST — **MSEQ**: MSEQ · MSEQ 2 | 5 |
 | **SCL** | **KEY**: SCL — **CHORD**: CHORD — **SCENE**: SCENE (V10.24) | 3 |
@@ -2319,7 +2319,7 @@ its page). PRESETS loads the track's sounds, as everywhere. The pages, their kno
     triangle folder's harsh corners.
   - **CRUSH** (V10.7.30): fewer bits and a lower sample rate, but the rate wanders ±50 % around its value and the steps
     are ramped, so it no longer whistles a fixed "pedal note" at the reduction rate; the lo-fi grit stays.
-  - **NOISE** (V10.7.30, KNOB 3, 0–100 %, the selected track's; DIST must be on): white noise that rides the
+  - *(V10.7.30 beta: NOISE left out for room; next beta.)* **NOISE** (V10.7.30, KNOB 3, 0–100 %, the selected track's; DIST must be on): white noise that rides the
     distorted signal. Only the part of each wave above a threshold gets it, as much as it is over it (the threshold
     drops a little as NOISE rises): a grit that follows the note's pitch and envelope and leaves the quiet parts and
     the silences clean. It goes through the TONE's corner. Saved with the project (not with sound presets); not on
@@ -2410,7 +2410,7 @@ from before).
 - **CLIP**: saturation that adds character, not volume.
 - **PUNCH**: fattens the DRUM tracks.
 - **DUCK**: the kick pulls the rest down; **REL** is its release.
-- **BALANCE** (V10.7.30, the page after EQ; **AMOUNT** 0–100 %, **50 by default: on**): a slow dynamic EQ on the EQ's
+- *(V10.7.30 beta: BALANCE is built but left out of this image for room; it returns in the next beta.)* **BALANCE** (V10.7.30, the page after EQ; **AMOUNT** 0–100 %, **50 by default: on**): a slow dynamic EQ on the EQ's
   four bands, for the "ball of mids" a full mix becomes. It listens to the mix's balance between the bands (over
   about a second, not hit by hit) and compares it with a balanced mix's curve (a commercial mix's tilt, the lows a
   little richer and the top a little darker, as electronic music sits). When the **low mids (200 Hz–1 kHz) pile up** it
@@ -2486,6 +2486,8 @@ curve where the bar would be.
 ## 11. Performance
 
 ### Live sequences: GLO › LIVE (0.9.11)
+
+*(V10.7.30: KEYS and RAILS are out of GLOBAL; GLOBAL opens on MIXER. The DJ FILTER is on HOME › SCOPE (FILTER). A TRACKS page on HOME takes their place in a later beta.)*
 
 The six sequences side by side, and modifiers you play over them like MIDI effects on a master: divide, multiply,
 shorten, reverse, thin, repeat. They never touch the steps: they change how the sequencer walks them, and a track

@@ -1260,7 +1260,7 @@ static void draw_columns(void)
             sw_ui_cards_bt(cur_page());
         return;
     }
-    if (cur_page()->graph == GR_LIVE) {                /* (p2) GLO > LIVE (ui_live.c) */
+    if (FELUCCA_LIVE && cur_page()->graph == GR_LIVE) {   /* (p2) GLO > LIVE (ui_live.c) */
         live_cards();
         return;
     }

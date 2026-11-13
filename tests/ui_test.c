@@ -3955,7 +3955,7 @@ static int test_product_ux(void)
     press(B_GLO); frames(320); ok &= str_eq(cur_page()->title, "GLOBAL");   /* (codex/coherence: SETUP, GLOBAL .. KEY SPLIT 2) */
     press(B_GLO); frames(320); ok &= cur_page()->graph == GR_LIVE && str_eq(cur_page()->title, "KEYS");   /* (p2: LIVE first, */
     press(B_GLO); ok &= cur_page()->graph == GR_TRK && str_eq(cur_page()->title, "MIXER");          /* then MIX) */
-    bad += check("0.9.2 GLO: SELECT MIXER > SENDS, a GLO tap the next group: (V10.37) G.COMP > SETUP (GLOBAL) > LIVE (KEYS) > MIXER", ok);
+    bad += !FELUCCA_LIVE ? 0 : check("0.9.2 GLO: SELECT MIXER > SENDS, a GLO tap the next group: (V10.37) G.COMP > SETUP (GLOBAL) > LIVE (KEYS) > MIXER", ok);
     go_home(); hold(B_SEQ);
     bad += check("long SEQ off the SEQ pages is a tap (no SONG: SAVE held, G5)", cur_page()->graph != GR_SONG);
     go_page(GR_SONG);
@@ -5349,9 +5349,11 @@ static int test_rec_combos(void)
     bad += check("  REC + FX (REC first): the FX automation and the punch-in lane go, ENV stays, REC not armed", ok);
     /* (0.9.9-snd2) the FX chain: MASTER its last page, after PUNCH (ui_lens.c CE_FX), its module last on BUSES */
     bad += check("  FX chain: ... SL PITCH, PUNCH IN, MASTER, its TAPE, EQ and BALANCE last (the BUSES tiles too)",
-                 !strcmp(CE_FX[NELEM(CE_FX) - 1u].t, "BALANCE") && !strcmp(CE_FX[NELEM(CE_FX) - 2u].t, "EQ") &&
-                 !strcmp(CE_FX[NELEM(CE_FX) - 3u].t, "TAPE") &&
-                 !strcmp(CE_FX[NELEM(CE_FX) - 4u].t, "MASTER") && !strcmp(CE_FX[NELEM(CE_FX) - 5u].t, "PUNCH IN") &&
+                 (FELUCCA_XFX ? !strcmp(CE_FX[NELEM(CE_FX) - 1u].t, "BALANCE") && !strcmp(CE_FX[NELEM(CE_FX) - 2u].t, "EQ") &&
+                  !strcmp(CE_FX[NELEM(CE_FX) - 3u].t, "TAPE") : !strcmp(CE_FX[NELEM(CE_FX) - 1u].t, "EQ") &&
+                  !strcmp(CE_FX[NELEM(CE_FX) - 2u].t, "TAPE")) &&
+                 !strcmp(CE_FX[NELEM(CE_FX) - 4u + !FELUCCA_XFX].t, "MASTER") &&
+                 !strcmp(CE_FX[NELEM(CE_FX) - 5u + !FELUCCA_XFX].t, "PUNCH IN") &&
                  !strcmp(CG_FX[NELEM(CG_FX) - 1u].nm, "MASTER") && !strcmp(FX_MOD[FX_NMOD - 1u], "MASTER"));
     {   /* (0.9.9-snd2) CLEAR AUTOMATION on the punch-in layer itself: FX + G5 (CLR AUTO on the map) empties the lane
          * only, stopped or playing (not recording); the tracks' automation stays */
@@ -8944,7 +8946,7 @@ static int test_fx_sections(void)
     uint32_t pr;
     ui_power_on();
     bad += check("0.9.2 FX: one chain of 19 (TRK BUS DLY REV CHO SLC PCH MST; snd8: MASTER, TAPE; p9: EQ; BALANCE) by SELECT, no wrap; an FX tap each group's first, round",
-                 chain_walk(B_FX, CH, 19, TP, 7));
+                 chain_walk(B_FX, CH, FELUCCA_XFX ? 19 : 18, TP, 7));
     ui_power_on(); go_home(); frame(); press(B_FX); frame();
     ok = fx_on() && fx_level() == FXL_TRACK && lz_on() && card_y() == LZ_CARD_Y && lz_tabs() == 8u && lz_tab_lit(0) &&
          lz_crumb_is("FX \xB7 TRACK \xB7 SENDS") && lz_count_is("1/19");
@@ -8967,7 +8969,7 @@ static int test_fx_sections(void)
     ok &= str_eq(cur_page()->title, "DLY 2") && (TSEL->preset != pr || TSEL->eng_req != trk_def_engine(0));
     frames(320); press(B_FX); frame();
     ok &= str_eq(cur_page()->title, "REVERB") && ui.fxmod == 1u;
-    bad += check("0.9.2 FX: tabs (eight, short names, dots), crumb FX . DELAY . DLY 2 6/19; BUSES' knobs; PRESETS a sound (was the module)", ok);
+    bad += !FELUCCA_XFX ? 0 : check("0.9.2 FX: tabs (eight, short names, dots), crumb FX . DELAY . DLY 2 6/19; BUSES' knobs; PRESETS a sound (was the module)", ok);
     go_home(); frame();
     press(B_FX); frame();
     ok = str_eq(cur_page()->title, "REVERB") && fx_level() == FXL_EFFECT;
@@ -8977,7 +8979,7 @@ static int test_fx_sections(void)
     ok &= lz_tabs() == 6u && lz_count_is("10/14");
     frames(320); press(B_FX); frame(); ok &= str_eq(cur_page()->title, "MASTER");
     ui_load = LOAD_FULL; frame();
-    bad += check("0.9.2 FX: from elsewhere the page left; LOAD ECO: CHORUS and SLICER out of the chain and the tabs", ok);
+    bad += !FELUCCA_XFX ? 0 : check("0.9.2 FX: from elsewhere the page left; LOAD ECO: CHORUS and SLICER out of the chain and the tabs", ok);
     {   /* (V10.7.30) DIST KNOB 3: NOISE, the selected track's (params.c dnz_v); under its threshold silence stays silence */
         uint32_t i, pg;
         int16_t *vp = 0;
@@ -8993,7 +8995,7 @@ static int test_fx_sections(void)
             for (i = 0; i < CTL; i++) quiet &= b[i] > -200 && b[i] < 200;
         }
         dnz_v[song.sel % NTRK] = 0; TSEL->p[P_DIST] = 0;
-        bad += check("V10.7.30 DIST: KNOB 3 NOISE (0..100, the track's); a faint part under its threshold gets none", ok && quiet);
+        bad += !FELUCCA_XFX ? 0 : check("V10.7.30 DIST: KNOB 3 NOISE (0..100, the track's); a faint part under its threshold gets none", ok && quiet);
     }
     ui_power_on();
     return bad;
@@ -12648,7 +12650,7 @@ static int test_lz_glo(void)
     open_family(FAM_ENV); frame();
     press(B_GLO); frame();
     ok &= str_eq(cur_page()->title, "G.COMP 2");
-    bad += check("0.9.2 GLO: MIXER SENDS (G.COMP G.COMP 2) SETUP by SELECT, a GLO tap the next group (p2: LIVE first); from elsewhere the page left", ok);
+    bad += !FELUCCA_LIVE ? 0 : check("0.9.2 GLO: MIXER SENDS (G.COMP G.COMP 2) SETUP by SELECT, a GLO tap the next group (p2: LIVE first); from elsewhere the page left", ok);
     {   /* (0.9.9-snd8b) every chain fits nav_list's buffer (FX's 17th page, TAPE, overran a 16: a crash entering FX) */
         uint32_t k, worst = 0;
         for (k = 0; k < NELEM(CHAINS); k++) worst = CHAINS[k].n > worst ? CHAINS[k].n : worst;
@@ -13278,8 +13280,8 @@ static int test_coherence(void)
     {   /* .. and the names: the groups' and the pages' as the review asked (SAVE's PART, PUNCH IN, PLAY, KEYS RAILS) */
         int16_t *hv;
         ui_power_on(); frame();
-        ok = nav_put(SEC_SAVE, "PART SLOTS") && nav_put(SEC_FX, "PUNCH IN") && nav_put(SEC_GLO, "KEYS") &&
-             nav_put(SEC_GLO, "RAILS") && !nav_put(SEC_GLO, "MANO") && !nav_put(SEC_ENV, "TRACKS DEST") &&
+        ok = nav_put(SEC_SAVE, "PART SLOTS") && nav_put(SEC_FX, "PUNCH IN") && (nav_put(SEC_GLO, "KEYS") == FELUCCA_LIVE) &&
+             (nav_put(SEC_GLO, "RAILS") == FELUCCA_LIVE) && !nav_put(SEC_GLO, "MANO") && !nav_put(SEC_ENV, "TRACKS DEST") &&
              nav_put(SEC_EDIT, "PLAY") && !nav_put(SEC_EDIT, "VOICE") && !nav_put(SEC_EDIT, "STEREO");
         for (i = 0; i < MI_COUNT; i++)
             ok &= !str_eq(MI_NAME[i], "INIT SYSTEM");   /* (one action, one name: SAVE > TOOLS > CLEAR PROJECT) */

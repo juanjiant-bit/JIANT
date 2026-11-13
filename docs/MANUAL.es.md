@@ -426,7 +426,7 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: X-MOD · FILTER · STEREO · PLAY | 14 |
 | **SEQ** | (V10.6) **STEP**: STEP — **PATTERN**: LENGTH · RHYTHM · TRACK — **EUCLID**: EUCLID · MODES · MUTATE — **PLAYHEADS**: PLAYHEADS — **STRETCH**: STRETCH — **COMP**: COMP · COMP 2 — **AUTO**: AUTOMATION · AUTO LIST · LYRIC STEP (VOICE) — **TRACK GEN**: TRACK GEN | 15 |
 | **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DLY 2 · DLY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SL BUS · SL BUS 2 · SL PITCH — **PUNCH IN**: PUNCH IN — **MASTER**: MASTER · TAPE · EQ · BALANCE | 19 |
-| **GLO** | **LIVE**: KEYS · RAILS — **MIX**: MIXER · SENDS — **G.COMP**: G.COMP · G.COMP 2 — **SETUP**: GLOBAL · SYSTEM · SYSTEM 2 · KEY SPLIT · KEY SPLIT 2 | 11 |
+| **GLO** | **MIX**: MIXER · SENDS — **G.COMP**: G.COMP · G.COMP 2 — **SETUP**: GLOBAL · SYSTEM · SYSTEM 2 · KEY SPLIT · KEY SPLIT 2 | 9 |
 | **ENV** | **ENV**: ENV · ENV DEST · ENV 2 — **STAGE**: STAGE — **TRACKS**: TRACKS (codex/coherence: al final; TRACKS DEST, gemela de ENV DEST, ya no está) | 5 |
 | **LFO** | **MOD**: MOD — **LFO**: LFO · LFO DEST — **MSEQ**: MSEQ · MSEQ 2 | 5 |
 | **SCL** | **KEY**: SCL — **CHORD**: CHORD — **SCENE**: SCENE (V10.24) | 3 |
@@ -2442,7 +2442,7 @@ sus perillas y sus dibujos son los mismos.
   - **CRUSH** (V10.7.30): menos bits y menos frecuencia de muestreo, pero la frecuencia se mueve ±50 % alrededor de su
     valor y los escalones van en rampa, así que ya no silba una "nota pedal" fija en la frecuencia de reducción; la
     mugre lo-fi queda.
-  - **NOISE** (V10.7.30, KNOB 3, 0–100 %, de la pista elegida; DIST tiene que estar prendido): ruido blanco que va
+  - *(Beta V10.7.30: NOISE quedó afuera por espacio; vuelve en la próxima beta.)* **NOISE** (V10.7.30, KNOB 3, 0–100 %, de la pista elegida; DIST tiene que estar prendido): ruido blanco que va
     montado sobre la señal distorsionada. Solo la parte de cada onda que pasa un umbral lo recibe, tanto como lo pasa
     (el umbral baja un poco cuando subís NOISE): una mugre que sigue la altura y la envolvente de la nota y deja limpias
     las partes suaves y los silencios. Pasa por el corte de TONE. Se guarda con el proyecto (no con los presets de
@@ -2538,7 +2538,7 @@ ancho). Se oculta con LOAD ECO (la tarjeta de envío de chorus de una pista dice
 - **CLIP**: saturación que agrega carácter, no volumen.
 - **PUNCH**: engorda las pistas DRUM.
 - **DUCK**: el bombo baja todo lo demás; **REL** es su release.
-- **BALANCE** (V10.7.30, la página después de EQ; **AMOUNT** 0–100 %, **50 de fábrica: prendido**): un EQ dinámico y
+- *(Beta V10.7.30: BALANCE está hecho pero quedó afuera de esta imagen por espacio; vuelve en la próxima beta.)* **BALANCE** (V10.7.30, la página después de EQ; **AMOUNT** 0–100 %, **50 de fábrica: prendido**): un EQ dinámico y
   lento sobre las cuatro bandas del EQ, para la "pelota de medios" en que se convierte una mezcla llena. Escucha el
   balance de la mezcla entre las bandas (a lo largo de un segundo, no golpe a golpe) y lo compara con la curva de una
   mezcla balanceada (la pendiente de una mezcla comercial, los graves un poco más ricos y los agudos un poco más oscuros,
@@ -2622,6 +2622,8 @@ pequeña curva de respuesta donde iría la barra.
 ## 11. Tocar en vivo
 
 ### Secuencias en vivo: GLO › LIVE (0.9.11)
+
+*(V10.7.30: KEYS y RAILS salen de GLOBAL; GLOBAL abre en MIXER. El DJ FILTER está en HOME › SCOPE (FILTER). Una página TRACKS en HOME los reemplaza en una beta próxima.)*
 
 Las seis secuencias una al lado de la otra y modificadores para tocar encima, como efectos MIDI sobre un master:
 dividir, multiplicar, acortar, dar vuelta, ralear, repetir. Nunca tocan los pasos: cambian cómo el secuenciador los
