@@ -1703,7 +1703,7 @@ static void set_engine(uint32_t ei) { set_engine_of(TSEL, ei); }
  * on (the setting itself: power-on reads it before the main loop): its matrix's slot 4, if free, AT -> CUT by 20 */
 static void vel_at_route(track_t *t)
 {
-    if (!((VEL_SET2 ^ 2u) & 3u) || drum_track(t) || t->p[P_M1SRC + 9] || t->p[P_M1SRC + 10])   /* (AFTERTOUCH OFF: none) */
+    if (!AT_LEVEL() || drum_track(t) || t->p[P_M1SRC + 9] || t->p[P_M1SRC + 10])   /* (AFTERTOUCH OFF: none) */
         return;
     t->p[P_M1SRC + 9] = MS_AT;
     t->p[P_M1SRC + 10] = MD_CUT;

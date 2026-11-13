@@ -250,7 +250,7 @@ int main(void)
     ck("   stopped: the sound's value back (P_XPR 127), the pressure 0", trk[0].p[P_XPR] == 127 && trk[0].at == 0);
     /* ---- 5. the default routing */
     setup();
-    VEL_SET2 = 2;                                     /* (AFTERTOUCH OFF: its place 0, stored ^ 2) */
+    VEL_SET2 = 5u << 4;                               /* (AFTERTOUCH OFF: V10.7.23, bits 4-7 place 0 ^ 5) */
     power_on_parts();
     ck("5. AFTERTOUCH OFF: a new project's sounds as before (no routing added)", trk[1].p[P_M1SRC + 9] != MS_AT &&
        trk[2].p[P_M1SRC + 9] != MS_AT);
@@ -283,15 +283,32 @@ int main(void)
     /* ---- 6. the MENU */
     setup();
     VEL_SET = VEL_SET2 = 0;
-    ck("6. MENU > CONTROL: VELOCITY, VEL MIN, AFTERTOUCH, VEL LEARN; an older setting NORMAL, 20, MID, ON",
+    ck("6. MENU > CONTROL: VELOCITY, VEL MIN, AFTERTOUCH, VEL LEARN; an older setting NORMAL, 20, 5 (V10.7.23: OFF 1..10, MID = 5), ON",
        MI_TAB[MI_VEL] == MTAB_CONTROL && MI_TAB[MI_VLEARN] == MTAB_CONTROL && str_eq(MI_NAME[MI_VEL], "VELOCITY") &&
        str_eq(menu_vname(MI_VEL, menu_get(MI_VEL)), "NORMAL") && str_eq(menu_vname(MI_VELMIN, menu_get(MI_VELMIN)), "20") &&
-       str_eq(menu_vname(MI_AT, menu_get(MI_AT)), "MID") && str_eq(menu_vname(MI_VLEARN, menu_get(MI_VLEARN)), "ON") &&
-       menu_n(MI_VEL) == 4u && menu_n(MI_VELMIN) == 8u && menu_n(MI_AT) == 4u && menu_n(MI_VLEARN) == 3u);
+       str_eq(menu_vname(MI_AT, menu_get(MI_AT)), "5") && str_eq(menu_vname(MI_VLEARN, menu_get(MI_VLEARN)), "ON") &&
+       menu_n(MI_VEL) == 4u && menu_n(MI_VELMIN) == 8u && menu_n(MI_AT) == 11u && menu_n(MI_VLEARN) == 3u);
     menu_put(MI_VEL, 0);
-    menu_put(MI_AT, 3);
+    {   /* (V10.7.23) an older AFTERTOUCH (bits 0-1: OFF LOW MID HIGH) read once as OFF 3 5 8; then the new field kept */
+        static const uint8_t OLD[4] = {0, 3, 5, 8};
+        uint32_t o, ok6 = 1;
+        for (o = 0; o < 4u; o++) {
+            favorites.factory[15][14] = (uint8_t)(4u | ((o ^ 2u) & 3u));   /* (VEL LEARN OFF kept: bits 2-3) */
+            settings_fix15(favorites.factory[15]);
+            ok6 &= AT_LEVEL() == OLD[o] && (favorites.factory[15][14] & 12u) == 4u;
+            settings_fix15(favorites.factory[15]);          /* (twice: nothing more) */
+            ok6 &= AT_LEVEL() == OLD[o];
+        }
+        favorites.factory[15][14] = (uint8_t)((7u ^ 5u) << 4 | 1u);   /* (7 picked, bits 0-1 anything: kept) */
+        settings_fix15(favorites.factory[15]);
+        ok6 &= AT_LEVEL() == 7u;
+        ck("   V10.7.23: an older OFF LOW MID HIGH reads as OFF 3 5 8, once; a picked level is kept", ok6);
+        VEL_SET2 = 0;
+    }
+    menu_put(MI_AT, 10);
     menu_put(MI_VELMIN, 0);
-    ck("   VELOCITY OFF, AFTERTOUCH HIGH, VEL MIN 1: stored", menu_get(MI_VEL) == 0u && menu_get(MI_AT) == 3u &&
+    ck("   VELOCITY OFF, AFTERTOUCH 10, VEL MIN 1: stored", menu_get(MI_VEL) == 0u && menu_get(MI_AT) == 10u &&
+       AT_LEVEL() == 10u &&
        str_eq(menu_vname(MI_VELMIN, menu_get(MI_VELMIN)), "1") && (VEL_SET & 3u) == 2u);
     vk_cal = 1;
     menu_put(MI_VLEARN, 2);

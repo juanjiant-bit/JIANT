@@ -27,6 +27,11 @@ static __attribute__((noinline)) void settings_fix15(uint8_t *f)
         f[27] = 0;
     if (f[16] > 7u)                                 /* OCT BEND (V10.6z4, ui.c oct_xp): unknown = 2 ST (0) */
         f[16] = 0;
+    if (!(f[14] >> 4) && ((f[14] ^ 2u) & 3u) != 2u) {   /* (V10.7.23) AFTERTOUCH OFF 1..10 in bits 4-7: an older
+                                                     * OFF LOW HIGH (bits 0-1) as 0 3 8, once (bits 0-1 then MID's) */
+        static const uint8_t AT_OLD[4] = {0, 3, 5, 8};
+        f[14] = (uint8_t)((f[14] & 0x0Cu) | (uint32_t)(AT_OLD[(f[14] ^ 2u) & 3u] ^ 5u) << 4);
+    }
     f[18] = f[18] == 10u ? 10u : 0u;                /* PRESETS' LIST type (ui.c list_type): not kept over a power-off,
                                                      * but USER (10 = PT_N, V10.7.22: the user's own bank) is
                                                      * (V10.7.19: two users left it on VOX and found "no presets": the

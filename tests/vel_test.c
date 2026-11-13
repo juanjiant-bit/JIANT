@@ -227,7 +227,8 @@ static uint32_t strike(uint32_t k, uint32_t fall, int32_t d, uint32_t hold)
 static void settings(uint32_t curve, uint32_t min, uint32_t at, uint32_t learn)   /* places, as the menu's */
 {
     VEL_SET = (uint8_t)(((curve ^ 2u) & 3u) | ((min ^ 2u) & 7u) << 2);
-    VEL_SET2 = (uint8_t)(((at ^ 2u) & 3u) | learn << 2);
+    static const uint8_t AT10[4] = {0, 3, 5, 8};      /* (V10.7.23: the old OFF LOW MID HIGH as OFF 1..10) */
+    VEL_SET2 = (uint8_t)(learn << 2 | (uint32_t)(AT10[at & 3u] ^ 5u) << 4);
     vel_poll();
 }
 static int cmp_u(const void *a, const void *b) { return (int)(*(const uint32_t *)a) - (int)(*(const uint32_t *)b); }
@@ -239,7 +240,7 @@ int main(void)
     /* ---- 1. the settings */
     vel_poll();
     check("1. an older setting (bytes 0): VELOCITY NORMAL, VEL MIN 20, AFTERTOUCH MID, VEL LEARN ON; the sampling on",
-          vs.curve == 2u && vs.min == 20u && vs.atr == 2u && vs.learn && vk_on == 3u && fm1_an.want && vk_cal == 1u);
+          vs.curve == 2u && vs.min == 20u && vs.atr == 5u && vs.learn && vk_on == 3u && fm1_an.want && vk_cal == 1u);
     check("   no calibration saved: the seeds (C4 594+15, D4 594+77, the others 560 / 594 / 675)",
           vs.ref[7][1] >> 4 == 609 && vs.ref[9][1] >> 4 == 671 && vs.ref[0][0] >> 4 == 560 && vs.ref[0][2] >> 4 == 675);
     settings(0, 2, 0, 0);

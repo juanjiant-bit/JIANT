@@ -215,7 +215,7 @@ const bar = (v, max) => `<span class="vbt"><span class="vb" style="width:${Math.
 function liveShow(r) {
   if (r.length < 9 + 7 + 10 * NK) { $("lv").textContent = "Este FM-1 no tiene el segmento Bluetooth instalado: instalalo con el instalador web."; return false; }
   const b = 9, curve = r[b], min = r[b + 1], at = r[b + 2], learn = r[b + 3], mean = r[b + 4], n = r[b + 5], last = r[b + 6];
-  $("lvset").textContent = `VELOCITY ${CURVE[curve & 3]} · VEL MIN ${min} · AFTERTOUCH ${ATN[at & 3]} · VEL LEARN ${learn ? "ON" : "OFF"} · arriba: ${mean}`;
+  $("lvset").textContent = `VELOCITY ${CURVE[curve & 3]} · VEL MIN ${min} · AFTERTOUCH ${at ? at : "OFF"} · VEL LEARN ${learn ? "ON" : "OFF"} · arriba: ${mean}`;
   const rows = [];
   for (let k = 0; k < NK; k++) {
     const o = b + 7 + 10 * k, vel = r[o], rd = v14(r, o + 1), h = v14(r, o + 3), nn = v14(r, o + 5), sf = v14(r, o + 7), pr = r[o + 9];

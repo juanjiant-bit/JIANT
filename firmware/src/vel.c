@@ -140,7 +140,11 @@ static __attribute__((noinline)) void vel_driven(uint32_t key, const vd_key_t *k
     }
     if (!vs.atr)
         return;
-    t = ((int32_t)s - (int32_t)v) * (1 << vs.atr >> 1) - 16;   /* (LOW 1, MID 2, HIGH 4 a count, the dead zone 16 / 8 / 4) */
+    {   /* (V10.7.23) AFTERTOUCH 1..10: the pressure's gain in quarters, 1 .. 10 = x0.5 .. x8 (3, 5, 8: the old LOW 1,
+         * MID 2, HIGH 4 a count), the dead zone 16 after it */
+        static const uint8_t AT_Q2[11] = {0, 2, 3, 4, 6, 8, 10, 12, 16, 22, 32};
+        t = (((int32_t)s - (int32_t)v) * AT_Q2[vs.atr % 11u] >> 2) - 16;
+    }
     t = t < 0 ? 0 : t > 127 ? 127 : t;
     vk[key].at = (uint8_t)(a + (t - a + (t > a ? 3 : -3)) / 4);   /* (smoothed) */
 }
@@ -216,7 +220,8 @@ static void vel_poll(void)
     uint32_t c = VEL_SET ^ 0x0Au, a = VEL_SET2 ^ 2u, on;   /* (each field's place ^ 2) */
     vs.curve = (uint8_t)(c & 3u);
     vs.min = VC_MIN[(c >> 2) & 7u];
-    vs.atr = (uint8_t)(a & 3u);
+    vs.atr = (uint8_t)AT_LEVEL();               /* (V10.7.23: OFF 1..10) */
+    (void)a;
     vs.learn = (a & 12u) != 4u;                 /* (VEL LEARN ON 0, OFF 1, RESET 2: learning) */
     on = (vs.curve != 0u) | (uint32_t)(vs.atr != 0u) << 1;
     vs.now = kb_drum_keys();                    /* (V10.7.10) the keys going to a DRUM track: no wait */
