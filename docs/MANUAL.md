@@ -786,6 +786,31 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see [14](#14-midi-
 - **NOISE**: coloured and metallic noise. MODE: ANLG, DUST, LFSR, META (DUST is only the crackle: at DENS 0 it still crackles softly). PEAK is its own resonance.
 - **DRUM**: DRUM-X, see [5](#5-drum-x).
 - **ANIMAL**: animal calls from physical models, see [ANIMAL](#animal-083) below.
+- **STRING**: a plucked, struck or bowed string (Karplus-Strong). EXCITE NOISE PLUCK PICK HAMMR STICK sets how it is
+  set going, POS where, STRETCH a stiff, metallic string, BODY / SIZE its box; RELEASE is its damper (it rings past the
+  step and dies when let go: low, a palm mute). (V10.7.26) Two of its modes are new:
+  - **BOW** (any EXCITE, BOW above 0) is a bow: it grips the string and lets it slip once a period (a real bow's
+    stick and slip, always on the note), with a little rosin noise. **BOW** is the bow's pressure (AT presses it in
+    VIOLIN, VIOLA, CELLO), **ATTACK** its stroke (~80–200 ms in the presets; a harder note gets up to speed sooner,
+    and only a hard, pressed one scratches at the start), **POS** where it bows (low: by the bridge, bright; high:
+    over the fingerboard, sweet), **SIZE** the body (it also follows the register: a violin's high, a cello's low),
+    **BODY** how much of it, **BRIGHT** the bridge's hill (~2–3 kHz; the highs above ~6–8 kHz rolled off),
+    **DECAY** how long the string rings once the bow stops. The vibrato comes in late (the LFO's FADE). **BOWED** plays
+    as a violin up high, a viola in the middle and a cello low; **VIOLIN**, **VIOLA** and **CELLO** (appended to the
+    list: PROGRAM CHANGE reaches STRING's first 16, these by the list) are lines (LEGATO; the mod wheel adds vibrato).
+  - **FDBK** is an electric guitar into an amp: a pick (harder and brighter with the velocity) on a steel string, a
+    pickup a fifth along it, a tube (a soft, asymmetric clip that sags: a loud note compresses, a dying one blooms),
+    a cab (no lows under ~55 Hz, a presence at ~4.4 kHz, nothing above ~6 kHz), and the amp's sound back into the
+    string. EDIT 2 is the amp's: **GAIN** how close you stand (0: no feedback; ~64: as much as the string loses, it
+    holds; 127: it blooms at once), **DIST** the tube's drive (clean, crunch, saturated), **SPEAKR** where you stand
+    from the speaker, the harmonic it blooms into (~0 and ~127 the note, ~64 its octave, ~80 the twelfth; around
+    ~96 a dead spot, where it cancels and the note dies sooner), **BLOOM** how long the swell takes after the pick
+    (low: at once; ~85: half a second; 127: many seconds; a harder pick blooms sooner). MOVE (POS's knob) sways the
+    guitar. The feedback has its own ceiling: it never runs away nor clips, and a little hiss lets a dying string
+    bloom again. Letting go mutes the string (RELEASE: low, a palm mute). **To play "walking up to the amp"**
+    (FEEDBACK): hold a note and push the **mod wheel** (MODW → GAIN): it sustains, then turns into its octave,
+    singing; pull back and it dies. **Aftertouch** moves SPEAKR (a step aside: the octave to the twelfth). In
+    LEGATO, hammer-ons and pull-offs need no new pick, and bends keep the feedback in tune.
 
 ### ANIMAL (0.8.3)
 

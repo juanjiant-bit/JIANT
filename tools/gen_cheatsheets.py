@@ -331,9 +331,11 @@ def sound():
          '48 formulas each in BYTE and FLOAT (ALGO 0–191); MOTN past half is <b>SYNC</b>: the formula\'s slow bits follow the bar.'),
         ('STRING', HEAT[3], 'EXCITE DECAY BRIGHT POS', 'STRETCH BODY SIZE BOW',
          'Karplus-Strong string (snd5): EXCITE NOISE PLUCK PICK HAMMR STICK; POS where it is struck, STRETCH a stiff, '
-         'metallic string, BODY / SIZE its box, <b>BOW</b> a bow\'s noise into the loop. RELEASE is its damper: the string '
-         'rings after the step and dies out when let go. <b>FDBK</b>: guitar feedback (MOVE where POS was; EDIT 2 GAIN DIST SPEAKR '
-         'BLOOM). NYLON, STEEL GTR, HARP, KOTO, PIANO, MARIMBA, BOWED…'),
+         'metallic string, BODY / SIZE its box. RELEASE is its damper: the string rings after the step and dies out when let '
+         'go. <b>BOW</b> (V10.7.26): a bow\'s stick and slip, its pressure; ATTACK the stroke, POS bridge ↔ fingerboard, the '
+         'body follows the register. <b>FDBK</b>: an electric guitar into an amp (MOVE where POS was; EDIT 2 <b>GAIN</b> how '
+         'close, DIST the tube, <b>SPEAKR</b> the harmonic it blooms into, BLOOM the swell; FEEDBACK: the <b>mod wheel</b> walks '
+         'up to the amp). NYLON, STEEL GTR, HARP, PIANO, MARIMBA, BOWED, VIOLIN, VIOLA, CELLO, FEEDBACK…'),
         ('ADD', HEAT[1], 'MODE MORPH BRIGHT PARTIAL', 'SHIFT COMB DECAY MOTION',
          'Additive (snd5): partials by MODE HARM ODD WIDE BELL BAR DRUM <b>PRIME FIFTH SUB PLATE</b> (par6); MORPH between '
          'spectra, PARTIAL how many, SHIFT stretches them, COMB carves notches, DECAY the highs die first, MOTION sweeps '

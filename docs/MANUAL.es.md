@@ -821,6 +821,32 @@ click; las notas siguen.
 - **NOISE**: ruido coloreado y metálico. MODE: ANLG, DUST, LFSR, META (DUST es solo el crepitar: con DENS en 0 igual crepita suave). PEAK es su propia resonancia.
 - **DRUM**: DRUM-X, ver [5](#5-drum-x).
 - **ANIMAL**: cantos de animales con modelos físicos, ver [ANIMAL](#animal-083) más abajo.
+- **STRING**: una cuerda pulsada, golpeada o frotada (Karplus-Strong). EXCITE NOISE PLUCK PICK HAMMR STICK dice cómo
+  se la pone a sonar, POS dónde, STRETCH una cuerda rígida, metálica, BODY / SIZE su caja; RELEASE es su apagador (suena
+  más allá del paso y se apaga al soltar: bajo, un palm mute). (V10.7.26) Dos modos son nuevos:
+  - **BOW** (cualquier EXCITE, BOW arriba de 0) es un arco: agarra la cuerda y la deja resbalar una vez por período
+    (el "stick-slip" de un arco de verdad, siempre en la nota), con un poco de ruido de resina. **BOW** es la presión
+    del arco (el AT la aprieta en VIOLIN, VIOLA, CELLO), **ATTACK** el golpe de arco (~80–200 ms en los presets; una
+    nota más fuerte llega antes, y sólo una fuerte y apretada raspa al empezar), **POS** dónde frota (bajo: junto al
+    puente, brillante; alto: sobre el diapasón, dulce), **SIZE** la caja (además sigue al registro: aguda en el violín,
+    grave en el cello), **BODY** cuánta caja, **BRIGHT** la "colina" del puente (~2–3 kHz; arriba de ~6–8 kHz recortado),
+    **DECAY** cuánto sigue sonando la cuerda cuando el arco para. El vibrato entra tarde (el FADE del LFO). **BOWED**
+    suena a violín arriba, a viola en el medio y a cello abajo; **VIOLIN**, **VIOLA** y **CELLO** (agregados al final:
+    PROGRAM CHANGE llega a los primeros 16 de STRING, éstos por la lista) son para líneas (LEGATO; la rueda suma vibrato).
+  - **FDBK** es una guitarra eléctrica en un ampli: una púa (más fuerte y brillante con la velocidad) en una cuerda de
+    acero, una pastilla a un quinto de la cuerda, una válvula (una saturación suave y asimétrica que "cede": una nota
+    fuerte comprime, una que se apaga florece), un bafle (sin graves bajo ~55 Hz, presencia en ~4,4 kHz, nada arriba de
+    ~6 kHz), y el sonido del ampli que vuelve a la cuerda. EDIT 2 es del ampli: **GAIN** qué tan cerca estás (0: sin
+    feedback; ~64: lo que la cuerda pierde, la sostiene; 127: florece enseguida), **DIST** la válvula (limpio, crunch,
+    saturado), **SPEAKR** dónde estás parado respecto del parlante, el armónico en que florece (~0 y ~127 la nota, ~64
+    su octava, ~80 la duodécima; por ~96 un punto muerto, donde se cancela y la nota se apaga antes), **BLOOM** cuánto
+    tarda en crecer después de la púa (bajo: enseguida; ~85: medio segundo; 127: muchos segundos; una púa más fuerte
+    florece antes). MOVE (la perilla de POS) balancea la guitarra. El feedback tiene su propio techo: nunca se dispara
+    ni satura, y un poco de soplido deja que una cuerda que se apaga vuelva a florecer. Soltar calla la cuerda
+    (RELEASE: bajo, palm mute). **Para tocar "acercarse al ampli"** (FEEDBACK): mantené una nota y subí la **rueda de
+    modulación** (MODW → GAIN): se sostiene, después se da vuelta a su octava, cantando; bajala y se apaga. El
+    **aftertouch** mueve SPEAKR (un paso al costado: de la octava a la duodécima). En LEGATO, hammer-ons y pull-offs sin
+    púa nueva, y los bends mantienen el feedback afinado.
 
 ### ANIMAL (0.8.3)
 
