@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.22
+## This release: V10.7.23
 
 ### Installing
 
@@ -482,6 +482,12 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.23 — beta (2026-11-13)
+- **Cards outlined, no grey box**: every knob card sits on the background, its shape drawn as a thin line in its value's colour (the knob just turned: 2 px); labels in grey.
+- **COLORS is the one skin**: AIR and MENU > DISPLAY > SKIN are gone (a saved AIR loads as COLORS).
+- **Names and pages cleaned**: the parts A–D are PART everywhere (SECTIONS is PART SLOTS, beside PROJECTS); FX's punch-in is PUNCH IN; SENDS holds only sends; MENU's INIT SYSTEM is gone (SAVE > TOOLS > CLEAR PROJECT); SEQ's RHYTHM keeps SPAN and FIT (the group is PATTERN; GENERATE is TRACK GEN); EDIT's VOICE / VOICE 2 are PLAY / PLAY 2 (POLY, GL MODE, UNISON; IMAGE moved there, the one-knob STEREO page gone); FM6's DETUNEs named apart; GLO's MANO / RIELES are KEYS / RAILS; MIXER's KNOB 3 is MUTE; COMPS is G.COMP. Every parameter is where the manual says; projects and presets unchanged.
+- **AFTERTOUCH 1 … 10** (MENU > CONTROL): how little pressure reaches the full aftertouch; the old LOW / MID / HIGH read as 3 / 5 / 8.
 
 ### V10.7.22 — beta (2026-11-12)
 - **Animations move by the clock**: under load the beings, creatures and scope keep their speed with fewer frames (and less detail, faded in) instead of freezing; they freeze only past 85 % CPU. Only what changed is sent to the screen.
