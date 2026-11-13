@@ -6,6 +6,7 @@ Firmware personalizado para el M-VAVE FM-1, de Juan Jiant. Primero la versión m
 
 | Versión | Fecha | Estado |
 | --- | --- | --- |
+| **V10.7.23** | 2026-11-13 | **Pública** |
 | **V10.7.22** | 2026-11-13 | **Pública** |
 | V10.7.18 … V10.7.21 | 2026-11-11 … 11-12 | Beta |
 | **V10.7.17** | 2026-11-10 | **Pública** |
@@ -25,6 +26,16 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 > al final.
 
 ---
+
+## V10.7.23 — tarjetas con contorno, una sola piel, nombres más claros, AFTERTOUCH 1–10 (2026-11-13)
+
+- **Tarjetas con contorno, sin caja gris**: cada tarjeta va sobre el fondo con una línea fina del color de su valor (la perilla que girás: 2 px).
+- **COLORS es la única piel**: AIR y MENU › DISPLAY › SKIN ya no están (AIR guardada carga como COLORS).
+- **Nombres y páginas ordenados**: las partes A–D se llaman PART en todos lados (SECTIONS es PART SLOTS, al lado de PROJECTS); el punch-in de FX es PUNCH IN; INIT SYSTEM salió del MENU (SAVE › TOOLS › CLEAR PROJECT); RHYTHM de SEQ deja SPAN y FIT (el grupo es PATTERN; GENERATE es TRACK GEN); VOICE / VOICE 2 de EDIT son PLAY / PLAY 2 (POLY, GL MODE, UNISON; IMAGE pasó ahí); los DETUNE de FM6 con nombres distintos; MANO / RIELES de GLO son KEYS / RAILS; la KNOB 3 del MIXER es MUTE; COMPS es G.COMP.
+- **AFTERTOUCH 1 … 10** (MENU › CONTROL): cuánta presión hace falta para llegar al aftertouch máximo; los viejos LOW / MID / HIGH son 3 / 5 / 8.
+
+**Notas de compatibilidad**
+- Proyectos, presets y ajustes cargan como antes; solo cambiaron nombres y lugares de páginas (el manual dice dónde está cada cosa). El editor web sigue leyendo las librerías con los nombres viejos.
 
 ## V10.7.22 — paletas, letra más grande, animaciones fluidas, menos voces cortadas (2026-11-13)
 

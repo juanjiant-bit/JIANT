@@ -6,6 +6,7 @@ Custom firmware for the M-VAVE FM-1 by Juan Jiant. Newest version first.
 
 | Version | Date | Status |
 | --- | --- | --- |
+| **V10.7.23** | 2026-11-13 | **Public** |
 | **V10.7.22** | 2026-11-13 | **Public** |
 | V10.7.18 … V10.7.21 | 2026-11-11 … 11-12 | Beta |
 | **V10.7.17** | 2026-11-10 | **Public** |
@@ -24,6 +25,16 @@ The sections marked **Compatibility notes** are the ones to check before you ins
 > 31 October 2026 are much older builds with the same names; they are covered under "Older versions" at the end.
 
 ---
+
+## V10.7.23 — outlined cards, one skin, cleaner names, AFTERTOUCH 1–10 (2026-11-13)
+
+- **Cards outlined, no grey box**: every knob card sits on the background, its shape drawn as a thin line in its value's colour (the knob just turned: 2 px).
+- **COLORS is the one skin**: AIR and MENU › DISPLAY › SKIN are gone (a saved AIR loads as COLORS).
+- **Names and pages cleaned**: the parts A–D are PART everywhere (SECTIONS is PART SLOTS, beside PROJECTS); FX's punch-in is PUNCH IN; MENU's INIT SYSTEM is gone (SAVE › TOOLS › CLEAR PROJECT); SEQ's RHYTHM keeps SPAN and FIT (the group is PATTERN; GENERATE is TRACK GEN); EDIT's VOICE / VOICE 2 are PLAY / PLAY 2 (POLY, GL MODE, UNISON; IMAGE moved there); FM6's DETUNEs named apart; GLO's MANO / RIELES are KEYS / RAILS; MIXER's KNOB 3 is MUTE; COMPS is G.COMP.
+- **AFTERTOUCH 1 … 10** (MENU › CONTROL): how little pressure reaches the full aftertouch; the old LOW / MID / HIGH read as 3 / 5 / 8.
+
+**Compatibility notes**
+- Projects, presets and settings load as before; only page names and places changed (the manual lists where each one is). The web editor still reads library files with the old names.
 
 ## V10.7.22 — palettes, bigger type, smoother animations, fewer voices cut (2026-11-13)
 
