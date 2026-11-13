@@ -355,7 +355,8 @@ static struct {
     uint8_t uslot;               /* SAVE > USER: the selected user preset slot */
     uint8_t ppick;               /* SEQ > PATTERNS: the pattern picked (pat_count list index) */
     uint8_t song_row;            /* SONG: row selected, count selects the next empty row */
-    uint8_t part;                /* (V10.6o) SAVE > PARTS: the section KNOB 1 picks (0..3 A..D; was add15's song_tk) */
+    uint8_t part;                /* (V10.6o) HOME > PARTS: the part KNOB 2 picks (0..3 A..D; was add15's song_tk); PART_CELL:
+                                  * a track's cell picked (KNOB 1 T1..T6), else the part's head (ALL) */
     uint8_t ev_row;              /* SEQ > AUTO LIST (ui_input.c ev_*): the row selected (the track's count: + ADD LOCK) */
     uint8_t ev_step, ev_id;      /* .. + ADD LOCK: the step and the parameter a lock is added on */
     uint8_t uboot;               /* main.c: seconds left before UPDATE MODE (OCT- + OCT+ held), 0 = none */
@@ -614,11 +615,13 @@ static uint32_t layer_btn(void);
 static int page_visible(uint32_t i)
 {
     uint32_t te = trk_eng(TSEL);                        /* (filters2: once) */
-    if (PAGES[i].graph == GR_SONG && PAGES[i].fam == FAM_SEQ)
+    if (PAGES[i].graph == GR_SONG && (PAGES[i].fam == FAM_SEQ || PAGES[i].title[0] == 'C'))   /* (V10.7.32: CLIPS, PARTS' grid) */
         return 0;                                       /* (0.6.24) the song in one place: SAVE > ARRANGE (SEQ > SONG
                                                          * was the same page twice; kept in the table: its index) */
     if ((!FELUCCA_LIVE && PAGES[i].graph == GR_LIVE) || (!FELUCCA_XFX && PAGES[i].fam == FAM_FX && PAGES[i].id[0] == ID_BAL))
         return 0;                                       /* (V10.7.30) KEYS RAILS, BALANCE out (core.h): kept in the table */
+    if ((!FELUCCA_SPLIT && (uint32_t)(PAGES[i].graph - GR_SPLIT) < 2u) || (!FELUCCA_ENVX && PAGES[i].graph == GR_STAGE))
+        return 0;                                       /* (V10.7.32) KEY SPLIT, KEY SPLIT 2, ENV > STAGE out (core.h) */
     if (sys_load == LOAD_ECO && ((PAGES[i].graph == GR_SLCR || PAGES[i].graph == GR_SLPIT) ||
                                  (PAGES[i].fam == FAM_FX && PAGES[i].id[0] == G_CRATE)))
         return 0;                                       /* (0.6.30) LOAD ECO: no SLICER, no chorus: their pages gone */
@@ -2060,7 +2063,9 @@ static void sw_ui_knob(const page_t *pg, uint32_t k, int32_t s);   /* (V10.6z6) 
 static void sw_ui_cards_bt(const page_t *pg);
 #define SONG_TRK(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'T')   /* (add15-beta5) TIMELINE (was ARRANGE 2) */
 #define SONG_PARTS(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'P')   /* (V10.6o) PARTS */
-#define SONG_CLIPS(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'C')   /* (V10.6s) CLIPS */
+#define SONG_CLIPS(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'C')   /* (V10.6s) CLIPS: (V10.7.32) PARTS' grid, the
+                                                         * page out (page_visible; kept in the table) */
+#define PART_CELL 4u                                    /* (V10.7.32) ui.part: a track's cell picked on PARTS (else ALL) */
 #define DX_KIT3(pg) ((pg)->graph == GR_DXIMG && (pg)->title[0] == 'K')   /* (0.6.58) GR_DXIMG: KIT 3, or STEREO (IMAGE) */
 static void dx_kit3_cards(void);
 static uint32_t dx_sig(void);
@@ -2126,7 +2131,8 @@ static const char *act_name(uint32_t c)          /* column c's action (the foote
         return actions[c < 6u ? c : 5u];
     }
     if (cur_page()->graph == GR_SONG)                   /* (0.8.5) SAVE's lens: OCT+ adds a row (PLAY plays); PARTS: */
-        return SONG_PARTS(cur_page()) ? "LOOP" : SONG_CLIPS(cur_page()) ? "GO" : "ADD";   /* the part loops; CLIPS: the cell */
+        return !SONG_PARTS(cur_page()) ? "ADD" : ui.part & PART_CELL ? "GO" : "LOOP";   /* PARTS: the part loops (its head),
+                                                         * the cell goes in (V10.7.32: CLIPS' grid) */
     if (cur_page()->graph == GR_PATS)
         return "LOAD";
     if (cur_page()->graph == GR_USER)
@@ -2152,8 +2158,8 @@ static int act_ready(void)
                                                          * DELETE ROW, CLEAR SONG, CPU TEST */
         return !c ? !transport_busy() : !chain_busy() && (c == 1u ? !seq_is_empty(TSEL) || motion_count(TSEL) :
                                  c == 2u || c >= 5u ? 1 : c == 3u ? ui.song_row < chain_config.count : chain_config.count != 0u);
-    if (SONG_PARTS(cur_page()) || SONG_CLIPS(cur_page()))
-        return project_used(ui.part);
+    if (SONG_PARTS(cur_page()))
+        return project_used(ui.part & 3u);
     if (cur_page()->graph == GR_SONG)
         return !chain_busy() && chain_config.count < CHAIN_ROWS;
     if (cur_page()->graph == GR_PATS)

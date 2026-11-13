@@ -186,7 +186,8 @@ static int32_t roll_text(uint32_t k, int32_t x, int32_t y, const char *s, uint16
  *           (THEME; the knob turning it: the accent) from x 35, then BPM LOCK's lock and the REC mark (a dot: filled the
  *           selected track armed, a ring another)
  *   centre  what the page is of, centred on x 120 (MID): "T1 . ANALOG ACID" (the track, its engine and sound), on the
- *           song's pages (SAVE, ARRANGE, TOOLS, GLOBAL) "P1 NAME" (the project), on FX "T1" (the accent)
+ *           project's pages (SAVE, TOOLS, GLOBAL; V10.7.32: not HOME's song pages) "P1 NAME" (the project), on FX "T1"
+ *           (the accent)
  *   right   the octave ("OCT +2"), or the song row while a song plays (the disc and its number), ending at 196; the load
  *           (five bars 200..218) and the battery (222..234)
  * A message or a layer's label replaces the centre and the octave, centred on x 120, up to 158 px; while the BPM is
@@ -233,8 +234,9 @@ static void sound_name(const track_t *t, char *b);
 static uint16_t head_title(char *b)
 {
     const page_t *pg = cur_page();
-    int glob = !ui.home && !ui.layer && (pg->graph == GR_SLOTS || pg->graph == GR_SONG || pg->graph == GR_TOOLS ||
-                                         pg->fam == FAM_GLO || pg->fam == FAM_SAVE);
+    int glob = !ui.home && !ui.layer && !song_pg(ui.page) && (pg->graph == GR_SLOTS || pg->graph == GR_TOOLS ||
+                                                              pg->fam == FAM_GLO || pg->fam == FAM_SAVE);   /* (V10.7.32:
+                                                         * the song's pages HOME's, its header) */
     if (ui.menu) {                                      /* (0.8.5) the menu: "MENU . DISPLAY", "ABOUT / CREDITS" */
         str_cpy(b, ui.menu == 2 ? "ABOUT / CREDITS" : "MENU \xB7 ", 40);
         if ((ui.menu | 2u) == 3u)
@@ -1283,7 +1285,7 @@ static void draw_columns(void)
         }
         return;
     }
-    if (cur_page()->graph == GR_STAGE) {               /* (0.8.5) ENV > STAGE: the stage, its value (codex/coherence: LOOP
+    if (STAGE_PAGE(cur_page())) {               /* (0.8.5) ENV > STAGE: the stage, its value (codex/coherence: LOOP
                                                          * on ENV DEST alone) */
         uint32_t id = P_ATK + (ui.stage & 3u);
         int16_t *vp = &TSEL->p[id];
@@ -1302,26 +1304,18 @@ static void draw_columns(void)
         dx_kit3_cards();
         return;
     }
-    if (SONG_PARTS(cur_page())) {                      /* (V10.6o) PARTS: PART, its ROW in the song, its loop's BARS, PLAY */
+    if (SONG_PARTS(cur_page())) {                      /* (V10.7.32) PARTS (CLIPS' grid): TRACK (ALL: the parts' heads), PART,
+                                                         * the part's ROW in the song, PLAY (LOOP / SONG) */
         uint32_t s = ui.part & 3u, r = ui.song_row;
+        if (ui.part & PART_CELL) { val[0] = 'T'; val[1] = (char)('1' + song.sel % NTRK); val[2] = 0; }
+        else str_cpy(val, "ALL", sizeof val);
+        hot_text_column(0, "TRACK", val);
         val[0] = (char)('A' + s); val[1] = 0;
-        hot_text_column(0, "PART", val);
+        text_column(1, "PART", val, VAL(1u));
         if (r < chain_config.count && chain_config.row[r].slot == s) fmt_frac(val, (int32_t)r + 1, (int32_t)chain_config.count);
         else str_cpy(val, "--", sizeof val);
-        text_column(1, "ROW", val, val[0] != '-' ? VAL(1u) : T_DIM);
-        if (song_bars(s)) fmt_int(val, (int32_t)song_bars(s));
-        else str_cpy(val, "--", sizeof val);
-        text_column(2, "BARS", val, T_DIM);
+        text_column(2, "ROW", val, val[0] != '-' ? VAL(2u) : T_DIM);
         text_column(3, "PLAY", live.mode ? "SONG" : "LOOP", VAL(3u));
-        return;
-    }
-    if (SONG_CLIPS(cur_page())) {                      /* (V10.6s) CLIPS: TRACK, PART (the cell), SONG REC */
-        val[0] = 'T'; val[1] = (char)('1' + song.sel % NTRK); val[2] = 0;
-        hot_text_column(0, "TRACK", val);
-        val[0] = (char)('A' + (ui.part & 3u)); val[1] = 0;
-        text_column(1, "PART", val, VAL(1u));
-        empty_column(2);
-        text_column(3, "REC", live.srec ? "ON" : "OFF", live.srec ? T_ACCENT : T_DIM);
         return;
     }
     if (SONG_TRK(cur_page())) {                        /* (V10.6o) TIMELINE: ROW, PART, BARS, the ALGORITHM track's VAR */

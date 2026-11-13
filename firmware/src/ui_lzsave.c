@@ -150,46 +150,13 @@ static void song_strip(int32_t y, int32_t h, uint32_t hl, int tl)
         cv_rect(4 + (int32_t)(played * 232u / t), y - 2, 1, h + 4, T_TEXT);
     }
 }
-/* (V10.6o, the owner's mock-up A) PARTS: the four sections as cards (2 x 2, their colours): the letter, the name (else
- * GENE's or PART), its bars in the song, its tracks that play (six marks); KNOB 1's ringed, the one looping a ring
- * pulsing; under them the song, the part's rows lit (the cursor's, OCT-'s, framed) */
-static void graph_parts(void)
-{
-    uint32_t s, k;
-    char b[24];
-    for (s = 0; s < 4u; s++) {
-        int32_t x = 4 + (int32_t)(s & 1u) * 118, y = 2 + (int32_t)(s >> 1) * 52;
-        int used = graph_project_used(s), loop = used && live.cur == (int8_t)s && song.playing && !chain.running;
-        uint16_t c = used ? sec_col(s) : T_RAISE, ink = used ? T_INK : T_DIM;
-        const char *nm = graph_project_name(s);
-        cv_rect(x, y, 114, 48, c);
-        b[0] = (char)('A' + s); b[1] = 0;
-        cv_text_on(x + 6, y + 4, &AF_M, b, ink, c);
-        if (used && song_bars(s)) {                       /* (its bars in the song) */
-            fmt_int(b, (int32_t)song_bars(s));
-            str_cpy(b + str_len(b), " BARS", 6);
-            cv_text_r(x + 109, y + 5, &AF_X, b, ink, c);
-        }
-        cv_free_text(x + 6, y + 22, &AF_X, !used ? "EMPTY" : nm[0] ? nm : (dice_secs >> s) & 1u ? "GENE" : "PART", ink, c, 102);
-        for (k = 0; used && k < NTRK; k++)                /* the tracks that play in it */
-            cv_rect(x + 6 + (int32_t)k * 17, y + 37, 15, 5, (part_play.b[s] >> k) & 1u ? ink : ux_mix(c, T_INK, 30));
-        if (s == ui.part || loop) {
-            uint16_t rc = loop && (anim_fr / 8u) & 1u ? T_THEME : T_TEXT;
-            cv_frame(x - 2, y - 2, 118, 52, rc);
-            if (s == ui.part) cv_frame(x - 1, y - 1, 116, 50, rc);
-        }
-    }
-    if (chain_config.count)
-        song_strip(110, 10, ui.part & 3u, 0);
-    else
-        cv_text(4, 110, &AF_X, "NO SONG ROWS", T_TEXT);
-    GFX_HOOK_ALIGN(0, 128, 0, 139, AL_V | AL_PASS, "parts hint");
-    cv_text(4, 128, &AF_X, "OCT+ LOOP \xB7 OCT- SONG \xB7 F3-B3 A-D", T_TEXT);
-}
-/* (V10.6s, the owner's mock-up C) CLIPS: the six tracks x the four parts, a cell a track's pattern in a part (its part's
- * colour calm where it plays there, grey where silent or the part empty); the part each track sounds framed in its
- * colour, the cell asked for (in on the next bar) framed dashed (a stop: the sounding frame dashed); the cell KNOB 1 / 2
- * pick ringed; SONG REC on the right */
+/* (V10.6s, the owner's mock-up C; V10.7.32 PARTS and CLIPS one page) PARTS: the four parts' heads over the six tracks x
+ * the four parts, a cell a track's pattern in a part (its part's colour calm where it plays there, grey where silent or the
+ * part empty); a head an outline card in its part's colour, its letter and its bars in the song (the part looping: the
+ * card pulsing); the part each track sounds framed in its colour, the cell asked for (in on the next bar) framed dashed (a
+ * stop: the sounding frame dashed); what KNOB 1 / 2 pick ringed (a head, ALL: the column's every cell with it); SONG REC on
+ * the left */
+static void card_line(int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, uint16_t c, int32_t lw);   /* (ui_draw.c) */
 static void clip_dash(int32_t x, int32_t y, uint16_t c)   /* a cell's frame, dashed */
 {
     int32_t i;
@@ -198,35 +165,48 @@ static void clip_dash(int32_t x, int32_t y, uint16_t c)   /* a cell's frame, das
         if (i < 15) { cv_rect(x, y + i, 2, 2, c); cv_rect(x + 48, y + i, 2, 2, c); }
     }
 }
-static void graph_clips(void)
+static void graph_parts(void)
 {
-    uint32_t s, k;
-    char b[3] = "T1";
+    uint32_t s, k, ps = ui.part & 3u, cell = ui.part & PART_CELL;
+    char b[8] = "T1";
     if (live.srec)
-        cv_text(4, 2, &AF_X, "REC", T_ACCENT);         /* (SONG REC: the launches become rows) */
+        cv_text(2, 2 + CAP_IN(X, 15), &AF_X, "REC", T_ACCENT);   /* (SONG REC: the launches become rows) */
+    for (s = 0; s < 4u; s++) {                          /* the heads */
+        int32_t x = 24 + (int32_t)s * 53;
+        int used = graph_project_used(s), loop = used && live.cur == (int8_t)s && song.playing && !chain.running;
+        uint16_t c = used ? sec_col(s) : T_DIM;
+        card_line(x, 2, 50, 15, 3, loop && (anim_fr / 8u) & 1u ? T_TEXT : c, 1);
+        b[0] = (char)('A' + s); b[1] = 0;
+        if (used && song_bars(s)) { b[1] = ' '; fmt_int(b + 2, (int32_t)song_bars(s)); }
+        GFX_HOOK_ALIGN(x, 2, x + 50, 17, AL_HV, "parts head letter");
+        cv_text_in(x, 2 + CAP_IN(X, 15), 50, &AF_X, b, used ? c : T_DIM, T_BG);
+        if (!cell && s == ps)
+            cv_frame(x - 2, 0, 54, 19, T_TEXT);
+    }
     for (k = 0; k < NTRK; k++) {
-        int32_t y = 13 + (int32_t)k * 18;
-        b[1] = (char)('1' + k);
-        cv_text(4, y + CAP_IN(X, 15), &AF_X, b, k == song.sel ? T_THEME : T_TEXT);
+        int32_t y = 21 + (int32_t)k * 17;
+        b[0] = 'T'; b[1] = (char)('1' + k); b[2] = 0;
+        GFX_HOOK_ALIGN(0, y, 0, y + 15, AL_V | AL_PASS, "parts track row");
+        cv_text(4, y + CAP_IN(X, 15), &AF_X, b, cell && k == song.sel ? T_THEME : T_TEXT);
         for (s = 0; s < 4u; s++) {
             int32_t x = 24 + (int32_t)s * 53;
             uint16_t c = sec_col(s);
-            int used = graph_project_used(s);
-            if (!k) {                                      /* (the parts' letters over them) */
-                char l[2] = {(char)('A' + s), 0};
-                cv_text(x + 22, 2, &AF_X, l, used ? c : T_DIM);
-            }
-            cv_rect(x, y, 50, 15, lz_sec(s, used && (part_play.b[s] >> k) & 1u, -1 + 2 * (used && (part_play.b[s] >> k) & 1u)));
+            int on = graph_project_used(s) && (part_play.b[s] >> k) & 1u;
+            cv_rect(x, y, 50, 15, lz_sec(s, on, -1 + 2 * on));
             if (clip_now[k] == s + 1u) {
                 if (clip_go[k] == CLIP_STOP) clip_dash(x, y, c);
                 else { cv_frame(x, y, 50, 15, c); cv_frame(x + 1, y + 1, 48, 13, c); }
             } else if (clip_go[k] == s + 1u)
                 clip_dash(x, y, c);
-            if (k == song.sel && s == ui.part)
+            if (cell && k == song.sel && s == ps)
                 cv_frame(x - 2, y - 2, 54, 19, T_TEXT);
         }
     }
-    cv_text(4, 128, &AF_X, "OCT+ GO \xB7 OCT- STOP \xB7 F3-B3 PART \xB7 REC", T_TEXT);
+    if (!cell)                                          /* (a head: its column's cells all go) */
+        cv_frame(24 + (int32_t)ps * 53 - 1, 20, 52, NTRK * 17, T_MID);
+    GFX_HOOK_ALIGN(0, 124, 0, 135, AL_V | AL_PASS, "parts hint");
+    cv_text(4, 124 + CAP_IN(X, 11), &AF_X, cell ? "OCT+ GO \xB7 OCT- STOP \xB7 F3-B3 PART \xB7 REC" :
+                                                  "OCT+ LOOP \xB7 OCT- SONG \xB7 F3-B3 PART \xB7 REC", T_TEXT);
 }
 /* (V10.6o, the owner's mock-up B) TIMELINE: the song as blocks (the cursor's row framed), what plays; under it the row
  * opened: each track's bar (its own part's colour calm, another part's bright with FROM and its letter,
@@ -512,8 +492,7 @@ static void graph_save_lz(const page_t *pg)
     uint32_t lv = save_level();
     if (pg->graph == GR_TOOLS) graph_lz_tools();
     else if (SONG_TRK(pg)) graph_tl();
-    else if (SONG_PARTS(pg)) graph_parts();
-    else if (SONG_CLIPS(pg)) graph_clips();
+    else if (SONG_PARTS(pg)) graph_parts();             /* (V10.7.32: CLIPS' grid) */
     else if (pg->graph == GR_SONG) graph_proj(1);
     else if (pg->graph == GR_SLOTS) { if (lv == SV_PROJ) graph_proj(0); else graph_lib(); }
     else if (pg->graph == GR_USER) graph_sound();

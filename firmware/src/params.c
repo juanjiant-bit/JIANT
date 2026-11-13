@@ -886,7 +886,8 @@ static const page_t PAGES[] = {
     {"EDIT 2", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E7, P_E4, P_E5, P_E6}},   /* (codex/coherence) FM6's EDIT 2 (PATCH): SLOT on KNOB 1
                                                          * (rule 4: a page that picks, picks with KNOB 1), MEG VMOD SPREAD */
 };
-#define SPLIT_PAGE(pg) ((uint32_t)((pg)->graph - GR_SPLIT) < 2u)
+#define SPLIT_PAGE(pg) (FELUCCA_SPLIT && (uint32_t)((pg)->graph - GR_SPLIT) < 2u)   /* (V10.7.32: out, core.h) */
+#define STAGE_PAGE(pg) (FELUCCA_ENVX && (pg)->graph == GR_STAGE)   /* (V10.7.32: ENV > STAGE out, core.h) */
 #define FIT_PAGE(pg) ((pg)->graph == GR_STEPS && (pg)->id[1] == 0xFFu)   /* RHYTHM (BAR: KNOB 2 LEN) */
 #define BAR_PAGE(pg) ((pg)->graph == GR_STEPS && (pg)->id[1] == P_SLEN)
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))

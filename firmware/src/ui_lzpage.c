@@ -94,9 +94,9 @@ static void graph_stage(const track_t *t)
 /* the lens's panel for ENV's page pg (1), else 0 (its own) */
 static int graph_env_lz(const track_t *t, const page_t *pg)
 {
-    if (pg->graph == GR_STAGE)
+    if (STAGE_PAGE(pg))
         graph_stage(t);
-    else if (pd_level() == 0u)
+    else if (FELUCCA_ENVX && pd_level() == 0u)       /* (V10.7.32: TRACKS out, core.h) */
         graph_env_tracks(pg->id[0] != P_ATK);
     else
         return 0;

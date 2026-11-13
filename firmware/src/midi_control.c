@@ -66,7 +66,7 @@ static midi_channel_t *midi_channel(uint32_t ch)
 static uint32_t midi_targets(uint32_t ch)
 {
     uint32_t mask = midi_channel(ch)->targets;
-    if (split_cfg[0] && ch == split_cfg[6]) mask |= (1u << split_track(0)) | (1u << split_track(1));
+    if (SPLIT_ON && ch == split_cfg[6]) mask |= (1u << split_track(0)) | (1u << split_track(1));
     else mask |= 1u << trk_index(midi_track(ch));
     return mask;
 }
@@ -154,7 +154,7 @@ static void midi_note_event(uint32_t ch, uint32_t note, uint32_t vel)
     uint32_t id = mn_get(ch, note) & 0x7u;
     if (vel) {
         uint32_t high = note >= split_cut(1), sound = note;
-        int split = split_cfg[0] && ch == split_cfg[6];
+        int split = SPLIT_ON && ch == split_cfg[6];
         track_t *t = split ? &trk[split_track(high)] : midi_track(ch);
         if (split && !drum_track(t)) sound = (uint32_t)clamp((int32_t)note + 12 * split_oct(high), 0, 127);
         /* Repeated notes replace the previous press, including a pedal-held one. */
@@ -448,7 +448,7 @@ static void __attribute__((noinline)) midi_route_ch14(void)
 {
     uint32_t ch, note;
     for (ch = NPART; ch < 16u; ch++) {
-        if (split_cfg[0] && ch == split_cfg[6]) continue;
+        if (SPLIT_ON && ch == split_cfg[6]) continue;
         midi_channel_t *c = midi_channel(ch);
         for (note = 0; note < 128u; note++)
             if (mn_get(ch, note))
@@ -480,7 +480,7 @@ static void __attribute__((noinline)) midi_event(uint32_t st, uint32_t ch, uint3
         midi_song_req = (uint8_t)(d1 + 1u);
         return;
     }
-    if (ch >= NPART && !song.g[G_ROUTE] && !(split_cfg[0] && ch == split_cfg[6]) && (!midi_channel(ch)->targets || (st == 0x90u && d2))) {
+    if (ch >= NPART && !song.g[G_ROUTE] && !(SPLIT_ON && ch == split_cfg[6]) && (!midi_channel(ch)->targets || (st == 0x90u && d2))) {
         if (ch == 15u && st == 0xB0u && (d1 == 99u || d1 == 98u || d1 == 6u || d1 == 38u))
             midi_control(ch, d1, d2);              /* (V10.6z3) channel 16's NRPN (the globals: MIDI OUT sends them there) */
         return;
@@ -491,7 +491,7 @@ static void __attribute__((noinline)) midi_event(uint32_t st, uint32_t ch, uint3
         midi_channel(ch)->bend = (int16_t)((int32_t)(d1 | (d2 << 7)) - 8192);
         midi_expression_channel(ch);
     } else if (st == 0xB0u || st == 0xD0u) {
-        uint32_t mask = split_cfg[0] && ch == split_cfg[6] ? midi_targets(ch) : 1u << trk_index(midi_track(ch));
+        uint32_t mask = SPLIT_ON && ch == split_cfg[6] ? midi_targets(ch) : 1u << trk_index(midi_track(ch));
         for (uint32_t i = 0; i < NTRK; i++) if (mask & (1u << i)) mod_midi(&trk[i], st, d1, d2);
         if (st == 0xB0u) midi_control(ch, d1, d2);
     }

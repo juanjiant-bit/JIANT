@@ -104,6 +104,16 @@ static inline const char *desc_unit(const param_desc_t *d)   /* F_INT_CT .. F_RE
 #define FELUCCA_LIVE 0  /* (V10.7.30, the owner: "RAILS out, KEYS if it costs") GLO > LIVE's KEYS and RAILS pages (ui_live.c):
                          * out of GLOBAL and the image; the LIVE modifiers the FX layer drives (seq_live.c) stay */
 #endif
+#ifndef FELUCCA_SPLIT
+#define FELUCCA_SPLIT 0 /* (V10.7.32, the owner) GLO > KEY SPLIT and KEY SPLIT 2 (ui.c split_*): out of GLOBAL and the image,
+                         * and the split with them (seq.c SPLIT_ON: a project's split is kept as stored, not played; a
+                         * split no page shows would only confuse) */
+#endif
+#ifndef FELUCCA_ENVX
+#define FELUCCA_ENVX 0  /* (V10.7.32, the owner) ENV > STAGE and ENV > TRACKS (the six tracks' envelopes; ui_lzpage.c
+                         * graph_stage, graph_env_tracks): out of ENV's chain and the image. Nothing stored: ENV, ENV DEST
+                         * and ENV 2 edit the same envelope */
+#endif
 #ifndef FELUCCA_XFX
 #define FELUCCA_XFX 0   /* (V10.7.30) the master's BALANCE and DIST's NOISE (fx.c bal_block, dist_noise): built, out of the
                          * image until there is room for them (their pages and their calls with it; the stores keep their block) */

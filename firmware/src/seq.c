@@ -7,6 +7,9 @@ static uint8_t split_cfg[8] __attribute__((section(".pool")));
 static uint32_t split_cut(uint32_t midi) { return split_cfg[midi ? 7 : 1] ? split_cfg[midi ? 7 : 1] : (midi ? 60u : 13u); }
 static uint32_t split_track(uint32_t high) { return split_cfg[2u + high] % NTRK; }
 static int32_t split_oct(uint32_t high) { return (int8_t)split_cfg[4u + high]; }
+/* (V10.7.32) the split plays only with its pages in the image (core.h FELUCCA_SPLIT): a project's split is kept as it was
+ * stored (loaded, saved back), not played */
+#define SPLIT_ON (FELUCCA_SPLIT && split_cfg[0])
 static uint8_t shift_valid[2][NTRK];
 /* Keyboard, scale, arpeggiator, sequencer and transport.
  * Everything here runs in the audio ISR, once per CTL-sample block (64 samples since 0.9.9 ctl64; the note-ons it
@@ -1722,15 +1725,15 @@ static void keyboard_block(void)
                 kb_note[k] = key_black(k) && key_place(k) < NLANE ? DRUM_LANE_NOTE[key_place(k)] : KB_SILENT;
             else {
                 uint32_t high = k >= split_cut(0);
-                if (split_cfg[0]) kb_trk[k] = (uint8_t)split_track(high);
+                if (SPLIT_ON) kb_trk[k] = (uint8_t)split_track(high);
                 kb_note[k] = (uint8_t)kb_map(&trk[kb_trk[k]], k);
-                if (split_cfg[0] && kb_note[k] != KB_SILENT && !drum_track(&trk[kb_trk[k]]))
+                if (SPLIT_ON && kb_note[k] != KB_SILENT && !drum_track(&trk[kb_trk[k]]))
                     kb_note[k] = (uint8_t)clamp((int32_t)kb_note[k] + 12 * split_oct(high), 0, 127);
             }
-            kb_oct[k] = (int8_t)(!song.grid && drum_track(&trk[kb_trk[k]]) ? song.octave + (split_cfg[0] ? split_oct(k >= split_cut(0)) : 0) : 0);   /* split drum octave retained until release */
+            kb_oct[k] = (int8_t)(!song.grid && drum_track(&trk[kb_trk[k]]) ? song.octave + (SPLIT_ON ? split_oct(k >= split_cut(0)) : 0) : 0);   /* split drum octave retained until release */
             if (kb_note[k] == KB_SILENT)
                 continue;
-            if (scn_on && !song.grid && !split_cfg[0]) {           /* (V10.25) SCENE: every track with a role */
+            if (scn_on && !song.grid && !SPLIT_ON) {           /* (V10.25) SCENE: every track with a role */
                 scn_keys |= 1u << k;
                 scene_fp(k, 1);
                 continue;
@@ -1768,7 +1771,7 @@ static uint32_t kb_drum_keys(void)
     uint32_t c;
     if (song.grid)
         return ~0u;
-    if (!split_cfg[0])
+    if (!SPLIT_ON)
         return drum_track(&trk[song.sel % NTRK]) ? ~0u : 0u;
     c = split_cut(0);
     c = c < 32u ? ~0u << c : 0u;                    /* (the high half: keys from the cut up) */

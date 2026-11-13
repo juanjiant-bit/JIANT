@@ -1274,12 +1274,12 @@ static void setup(int s)
         if (s == S_ED_FOCUS_MOD) { TSEL->p[P_M2SRC] = 1; TSEL->p[P_M2DST] = MD_E1 + 4; TSEL->p[P_M2AMT] = 40; }
         break;
     case S_ENV_TRACKS: case S_ENV_TRACKS_DEST:          /* (0.8.5) ENV's lens: TRACKS (ENV / DEST), T2 sounding */
-        song.sel = 1; nav_scene(SEC_ENV, s == S_ENV_TRACKS ? "TRACKS" : "ENV DEST");   /* (codex/coherence: TRACKS DEST gone) */
+        song.sel = 1; nav_scene(SEC_ENV, s == S_ENV_TRACKS ? (FELUCCA_ENVX ? "TRACKS" : "ENV") : "ENV DEST");   /* (V10.7.32: TRACKS out) */   /* (codex/coherence: TRACKS DEST gone) */
         trk[1].v[0].stage = 2; trk[1].v[0].env = 10u << 20; trk[2].p[P_ED_FLT] = 60; trk[2].p[P_ED_PIT] = -40;
         trk[1].p[P_ED_SHP] = 90; trk[3].p[P_MUTE] = 1;
         break;
     case S_ENV_STAGE: case S_ENV_STAGE_SUS:
-        go_title("STAGE"); ui.stage = s == S_ENV_STAGE ? 1 : 2; ui.hot_col = 1; ui.hot_t = 30; break;
+        go_title(FELUCCA_ENVX ? "STAGE" : "ENV"); ui.stage = s == S_ENV_STAGE ? 1 : 2; ui.hot_col = 1; ui.hot_t = 30; break;
     case S_MSEQ2: go_title("MSEQ 2"); break;
     case S_DLG_MUT_BACK: {                              /* (V10.6) MODES on a melodic track in C minor: the ring, the notes */
         uint32_t i;
@@ -1682,7 +1682,7 @@ static void setup(int s)
         if (s == S_SAVE_LIB) { nav_scene(SEC_SAVE, "PROJECTS"); ui.act = 4; }
         else if (s == S_SAVE_TOOLS) { nav_scene(SEC_SAVE, "TOOLS"); ui.act = 1; }
         else if (s == S_SAVE_PROJ) { nav_scene(SEC_SAVE, "PART SLOTS"); ui.act = 4; }
-        else if (s == S_SAVE_ARR) nav_scene(SEC_SAVE, "ARRANGE");
+        else if (s == S_SAVE_ARR) nav_scene(SEC_HOME, "ARRANGE");   /* (V10.7.32: the song's pages HOME's) */
         else if (s == S_SAVE_SOUND) { nav_scene(SEC_SAVE, "USER"); ui.act = 4; }
         else if (s == S_SAVE_TL || s == S_SAVE_TL_LOOP) {   /* (V10.1) T2 from C, T4 muted, T6 HALF on row 2; T1 THIN on
                                                          * row 4; (V10.6o) T3 muted by row 2's scene; _LOOP: row 2 held */
@@ -1690,19 +1690,20 @@ static void setup(int s)
             song_idx.tvar[song_cur][3] = RV_THIN; song_idx.scene[song_cur][1].on = 1; song_idx.scene[song_cur][1].mute = 4;
             ui.song_row = 1; song.sel = 2;
             if (s == S_SAVE_TL_LOOP) { chain.running = 1; chain.hold = 1; chain.row = 1; chain.remaining = 9; }
-            nav_scene(SEC_SAVE, "TIMELINE");
+            nav_scene(SEC_HOME, "TIMELINE");
         }
         else if (s == S_SAVE_PARTS || s == S_SAVE_PARTS_LOOP) {   /* (V10.6o) B picked; _LOOP: C looping */
             ui.part = s == S_SAVE_PARTS ? 1 : 2; ui.song_row = s == S_SAVE_PARTS ? 0 : 1;
             if (s == S_SAVE_PARTS_LOOP) { live.cur = 2; song.playing = 1; }
-            nav_scene(SEC_SAVE, "PARTS");
+            nav_scene(SEC_HOME, "PARTS");
         }
         else if (s == S_SAVE_CLIPS) {                   /* (V10.6s) CLIPS: T1 T3 T5 sound A, T2 B, T4 C asked for, T6 a stop
                                                          * asked for; the cell T4 C picked; SONG REC on */
             static const uint8_t NOW[NTRK] = {1, 2, 1, 1, 1, 2}, GO[NTRK] = {0, 0, 0, 3, 0, CLIP_STOP};
             memcpy(clip_now, NOW, sizeof clip_now); memcpy(clip_go, GO, sizeof clip_go);
-            song.sel = 3; ui.part = 2; live.srec = 2; song.playing = 1;
-            nav_scene(SEC_SAVE, "CLIPS");
+            song.sel = 3; live.srec = 2; song.playing = 1;
+            nav_scene(SEC_HOME, "PARTS");                /* (V10.7.32: PARTS, its grid; a cell picked) */
+            ui.part = 2 | PART_CELL;
         }
         else nav_scene(SEC_SAVE, "PRESETS");
         ui.msg_t = 0;

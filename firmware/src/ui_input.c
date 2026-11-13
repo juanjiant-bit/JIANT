@@ -39,7 +39,8 @@ static void led_clear(uint8_t *nl, uint32_t id)
 static const uint8_t FAM_BTN[FAM_COUNT] = {B_HOME, B_ENV, B_LFO, B_FX, B_SCL, B_EDIT, B_GLO, B_SAVE,
                                            B_ARP, B_SEQ, B_GLO};   /* GLO: mixer + global settings; REC is transport */
 
-static uint32_t cur_fam(void) { return ui.home ? FAM_HOME : cur_page()->fam; }
+static uint32_t cur_fam(void) { return ui.home || cur_page()->graph == GR_SONG ? FAM_HOME : cur_page()->fam; }   /* (V10.7.32:
+                                                         * the song's pages HOME's: its LED) */
 
 /* (0.9.2) a section's button held + SELECT (ui_lens.c nav_jump, the dice, the tempo): the button let go stays there (its
  * tap, its layer: not now) */
@@ -573,7 +574,8 @@ static int rec_tap(void)                                /* 1: the arming changed
     uint8_t bit = (uint8_t)(1u << song.sel);
     if (cp_paste_rec())                                 /* (seq2h) a step key held, the clipboard full: PASTE */
         return 0;
-    if (!ui.home && SONG_CLIPS(cur_page())) {          /* (V10.6s) CLIPS: REC records the launches as the song's rows */
+    if (!ui.home && SONG_PARTS(cur_page())) {          /* (V10.6s) PARTS (CLIPS' grid): REC records the launches as the
+                                                         * song's rows (SONG REC) */
         song_rec_toggle();
         return 1;
     }
@@ -1351,7 +1353,7 @@ static void parts_audition(uint32_t s)
 static void parts_song(void)
 {
     live.mode = 1;
-    ui.song_row = (uint8_t)part_row(ui.part, 0);
+    ui.song_row = (uint8_t)part_row(ui.part & 3u, 0);
     if (!chain_goto(ui.song_row, 0))
         ui_message("THE SONG");
 }
@@ -1381,11 +1383,11 @@ static __attribute__((noinline)) void tl_keys(uint32_t pressed)
         if (!((pressed >> k) & 1u) || key_black(k))
             continue;
         p = key_place(k);
-        if (SONG_PARTS(cur_page()) || SONG_CLIPS(cur_page())) {
-            if (p < 4u && SONG_CLIPS(cur_page())) {      /* (V10.6s) CLIPS: the whole part, every track */
+        if (SONG_PARTS(cur_page())) {
+            if (p < 4u) {                               /* (V10.6s) PARTS: the whole part, every track (its head picked) */
                 ui.part = (uint8_t)p;
                 clip_launch(NTRK, p);
-            } else if (p < 4u) parts_audition(p);
+            }
             continue;
         }
         if (r >= chain_config.count)
@@ -1476,7 +1478,7 @@ static void edit_param(uint32_t slot, int32_t steps)
         focus_knob(slot, steps);
         return;
     }
-    if (pg->graph == GR_STAGE && slot < 2u) {             /* (0.8.5) ENV > STAGE: the stage, its value */
+    if (STAGE_PAGE(pg) && slot < 2u) {             /* (0.8.5) ENV > STAGE: the stage, its value */
         if (slot == 0u)
             ui.stage = (uint8_t)clamp((int32_t)(ui.stage & 3u) + (steps > 0 ? 1 : -1), 0, 3);
         else {
@@ -1507,21 +1509,21 @@ static void edit_param(uint32_t slot, int32_t steps)
         else if (slot == 3u) ui.act = steps > 0 ? 4u : 0u;
         return;
     }
-    if (SONG_PARTS(pg)) {                               /* (V10.6o) PARTS: KNOB 1 the part, 2 the song's row of it (OCT-
-                                                         * plays from there), 4 what PLAY plays (LOOP / SONG); 3 nothing */
-        if (slot == 0u)
-            ui.part = (uint8_t)clamp((int32_t)ui.part + steps, 0, 3);
-        else if (slot == 1u)
-            ui.song_row = (uint8_t)part_row(ui.part, steps);
-        else if (slot == 3u)
+    if (SONG_PARTS(pg)) {                               /* (V10.7.32: PARTS and CLIPS one grid) KNOB 1 the row: ALL (the
+                                                         * parts' heads) or T1..T6 (a track's cells), 2 the part, 3 the song's
+                                                         * row of it (OCT- on a head plays from there), 4 what PLAY plays */
+        uint32_t s = ui.part & 3u;
+        if (slot == 0u) {
+            int32_t r = clamp((ui.part & PART_CELL ? (int32_t)song.sel + 1 : 0) + steps, 0, NTRK);
+            ui.part = (uint8_t)(s | (r ? PART_CELL : 0u));
+            if (r)
+                track_select((uint32_t)r - 1u);
+        } else if (slot == 1u)
+            ui.part = (uint8_t)((ui.part & PART_CELL) | (uint32_t)clamp((int32_t)s + steps, 0, 3));
+        else if (slot == 2u)
+            ui.song_row = (uint8_t)part_row(s, steps);
+        else
             live.mode = steps > 0;
-        return;
-    }
-    if (SONG_CLIPS(pg)) {                               /* (V10.6s) CLIPS: KNOB 1 the track, 2 the part (the cell) */
-        if (slot == 0u)
-            track_select((uint32_t)clamp((int32_t)song.sel + steps, 0, NTRK - 1));
-        else if (slot == 1u)
-            ui.part = (uint8_t)clamp((int32_t)ui.part + steps, 0, 3);
         return;
     }
     if (SONG_TRK(pg)) {                                 /* (V10.6o) TIMELINE: ROW, its SECT, its BARS, the VAR of the track
@@ -1803,12 +1805,12 @@ static __attribute__((noinline)) void act_do(void)
         }
         return;
     }
-    if (SONG_PARTS(cur_page())) {                       /* (V10.6o) PARTS: the part picked loops */
-        parts_audition(ui.part);
-        return;
-    }
-    if (SONG_CLIPS(cur_page())) {                       /* (V10.6s) CLIPS: the cell in on the next bar */
-        clip_launch(song.sel, ui.part);
+    if (SONG_PARTS(cur_page())) {                       /* (V10.6o) PARTS: the part picked loops (its head); (V10.6s,
+                                                         * CLIPS') a cell: in on the next bar */
+        if (ui.part & PART_CELL)
+            clip_launch(song.sel, ui.part & 3u);
+        else
+            parts_audition(ui.part & 3u);
         return;
     }
     if (cur_page()->graph == GR_SONG) {                 /* (0.8.5) SAVE > PROJECT's ARRANGE: OCT+ adds a row; (V10.6o) after
@@ -2706,7 +2708,7 @@ static void ui_input_frame(void)
             if (f == FAM_COUNT) {                       /* HOME held: GEN, HOME's generator */
                 ui.home_t0 |= 2u;
                 if (!pj_sel_ms || fm1_ms - pj_sel_ms > 400u)
-                    nav_go(SEC_HOME, 2u + gen_page(), 1);
+                    nav_go(SEC_HOME, HE_GEN + gen_page(), 1);
             } else if (k) {
                 if (f == FAM_EDIT)                      /* (0.9.9-seq2f) EDIT + SELECT: the sound dice again (SELECT is
                                                          * no sound parameter; the presets: PRESETS only) */
@@ -2975,7 +2977,7 @@ static void ui_input_frame(void)
     if (seq == BT_TAP || seq == BT_HOLD)                /* (SONG: SAVE held, G5) */
         open_family(FAM_SEQ);
     if (home == BT_TAP)                                 /* HOME acts on release (a hold opens the menu): rule 2, HOME's */
-        nav_button(SEC_HOME);                           /* page last shown; on HOME the next group (MACROS SCOPE GEN) */
+        nav_button(SEC_HOME);                           /* page last shown; on HOME the next group (MACROS TIMELINE ARRANGE PARTS SCOPE GEN) */
     cursor_fix();                                       /* LEN may have changed (knob, editor, load) */
     for (id = 0; id < 14u; id++) {
         if (!((pressed >> id) & 1u))
@@ -2987,8 +2989,8 @@ static void ui_input_frame(void)
                 break;
             if (song.playing || chain_busy() || seq_counting())   /* (a count-in: PLAY stops it) */
                 transport_req = 2;
-            else if (!song.rec && ((!ui.home && cur_page()->graph == GR_SONG && !SONG_PARTS(cur_page()) &&
-                                    !SONG_CLIPS(cur_page())) || live.mode))   /* (the song layer's SONG mode; PARTS: as
+            else if (!song.rec && ((!ui.home && cur_page()->graph == GR_SONG && !SONG_PARTS(cur_page())) ||
+                                   live.mode))   /* (the song layer's SONG mode; PARTS: as
                                                          * KNOB 4 says. A track armed: the loop, recorded; a song does
                                                          * not record, chain_start) */
                 chain_play_ui();
@@ -3077,15 +3079,15 @@ static void ui_input_frame(void)
     if (gen_on() && (oct & 2u)) {                       /* (0.9.2) GEN, HOME's pages: OCT+ the piece (the screen stays, */
         gen_press();                 /* OCT+ again: another), OCT- back to MACROS */
     } else if (gen_on() && (oct & 1u)) {
-        nav_go(SEC_HOME, 0, 0);
+        nav_go(SEC_HOME, HE_MACROS, 0);
     } else if (act_cols() && (oct & 2u)) {              /* action pages: OCT+ does the picked action, */
         act_do();
     } else if (act_cols() && (oct & 1u)) {              /* OCT- drops it, or (none picked) goes HOME; PHRASES: back to */
         if (cur_page()->graph == GR_PATS && !ui.home)   /* the SEQ page it was opened on */
             nav_go(SEC_SEQ, nav_cur(), 0);
-        else if (SONG_PARTS(cur_page()))                 /* (V10.6o) PARTS: back to the song */
+        else if (SONG_PARTS(cur_page()) && !(ui.part & PART_CELL))   /* (V10.6o) PARTS, a head: back to the song */
             parts_song();
-        else if (SONG_CLIPS(cur_page()))                 /* (V10.6s) CLIPS: the track stops on the next bar */
+        else if (SONG_PARTS(cur_page()))                 /* (V10.6s) a cell: the track stops on the next bar */
             clip_launch(song.sel, 4u);
         else if (cur_page()->graph == GR_SONG) {         /* (V10.4) ARRANGE, TIMELINE: OCT+ adds a row, OCT- deletes
                                                          * the one picked (DELETE ROW?, as TOOLS) */
@@ -3170,7 +3172,7 @@ static void ui_input_frame(void)
         if (ui.home || pg->scope == SC_STEP || pg->scope == SC_TRK || page_desc(pg, k, &hv) ||
             ((pg->graph == GR_USER || pg->graph == GR_MOD || pg->graph == GR_MSEQ || pg->graph == GR_PATS || BAR_PAGE(pg)) &&
              k == 0u)
-            || FIT_PAGE(pg) || SPLIT_PAGE(pg) || pg->graph == GR_SONG || pg->graph == GR_DXSND || pg->graph == GR_SWARM || pg->graph == GR_FOCUS || pg->graph == GR_STAGE ||
+            || FIT_PAGE(pg) || SPLIT_PAGE(pg) || pg->graph == GR_SONG || pg->graph == GR_DXSND || pg->graph == GR_SWARM || pg->graph == GR_FOCUS || STAGE_PAGE(pg) ||
             pg->graph == GR_GCOMP || pg->graph == GR_LIVE) {   /* (not an empty column) */
             ui.hot_col = (uint8_t)k;
             ui.hot_t = 40, ui.knob_ms = fm1_ms;
