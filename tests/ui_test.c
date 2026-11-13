@@ -10414,7 +10414,8 @@ static int test_click_menu(void)
         ui.frame += 2u; fm1_ms += 20u; anim_sync(); draw_graph();
         ok &= ui.graph_sig != s0;
         load_put(2u);
-        s0 = ui.graph_sig; ui.frame += 2u; fm1_ms += 16u; anim_sync(); draw_graph();
+        s0 = ui.graph_sig; ui.frame += 2u; fm1_ms += 32u; anim_sync(); draw_graph();   /* (two animation ticks of 15 ms:
+                                                         * a redraw whatever the clock's phase; 16 ms could fall in one tick) */
         ok &= ui.graph_sig != s0 && !ANIM_SNAP();       /* FULL: every change */
         ui.home = home0; ui.force = 1; frame();
         bad += check("LOAD LITE / ECO: the panel animates at most every 50 / 70 ms, values snap; FULL as before", ok);
