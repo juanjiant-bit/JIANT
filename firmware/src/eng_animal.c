@@ -171,6 +171,7 @@ static int32_t cmos_block(const track_t *t, voice_t *v)
         sg = 1;
     }
     /* the slow one: RATE (and the touch: x1 .. x1.6), CAP its duty (15 .. 85 % charging), HYST its window */
+    if (ah > 64) ah = 64;                                /* (HYST's range: the table's nine points) */
     w = 1966 + ah * 174;                                 /* (0.12 .. 0.80, Q14) */
     vth = AN_V1 / 2 + (w << 9);
     vtl = AN_V1 / 2 - (w << 9);

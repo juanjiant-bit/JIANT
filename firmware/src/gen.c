@@ -2029,7 +2029,7 @@ static const uint8_t SONG_T[] = {
     SI(GT_INTRO, 1), SI(GT_GROOVE, 1), SI(GT_DROP, 1), SI(GT_BREAK, 1), SI(GT_GROOVE2, 1), SI(GT_BUILD, 1) | SO,
     SI(GT_DROP, 2) | SE, SI(GT_OUTRO, 1), 0xFF,
     /* FUGA: the voices one by one (of one length), the stretto, the episode and the stretto again, the coda */
-    SI(GT_V1, 1), SI(GT_V2, 1), SI(GT_V3, 1), SI(GT_DROP, 2), SI(GT_BREAK, 0) | SO, SI(GT_DROP, 1) | SN, SI(GT_OUTRO, 0),
+    SI(GT_V1, 1), SI(GT_V2, 1), SI(GT_V3, 1), SI(GT_DROP, 2), SI(GT_BREAK, 0) | SO, SI(GT_DROP, 1) | SN, SI(GT_OUTRO, 0), 0xFF,
 };
 static const uint8_t SONG_FAM[6] = {0, 4, 7, 9, 12, 13};   /* the club's, the song's, hip hop's, the arc's, FUGA's templates */
 /* (the song genres': hip hop's the urban drums', the dance ones' half the seeds the club's; 0xFF between) */
@@ -2049,7 +2049,7 @@ static __attribute__((noinline)) uint32_t gsong(uint8_t *pb, uint32_t plan, uint
         if (SONG_DM[j] == 0xFFu) k = 0;
         else if (SONG_DM[j] == g->drum) fam = k ? k : (uint32_t)!gch(50);
     for (k = SONG_FAM[fam] + gr() % (uint32_t)(SONG_FAM[fam + 1u] - SONG_FAM[fam]); k; k -= *p++ == 0xFFu) {}
-    for (; *p != 0xFFu && p < SONG_T + sizeof SONG_T && n < CHAIN_ROWS; p++) {
+    for (; p < SONG_T + sizeof SONG_T && *p != 0xFFu && n < CHAIN_ROWS; p++) {
         uint32_t t = *p & 15u, o = *p >> 6, l = (*p >> 4) & 3u, b;
         if (o == 1u || o == 2u) on = (uint32_t)gch(o == 1u ? 50u : e);
         if (o && !on) continue;
