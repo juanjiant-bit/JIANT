@@ -172,8 +172,8 @@ static void graph_dximg(const track_t *t)
         char b[8];
         img = poly ? 127 - clamp(t->p[P_SIMG], 0, 127) : 0;   /* (P_SIMG: stored inverted) */
         sp = img * half / 127;
-        cv_text(PANEL_X0, 4 - AF_S_CAP_Y, &AF_S, "L", T_DIM);
-        cv_text_r(PANEL_X0 + PANEL_W, 4 - AF_S_CAP_Y, &AF_S, "R", T_DIM, T_SURF);
+        cv_text(PANEL_X0, 4 - AF_S_CAP_Y, &AF_S, "L", T_TEXT);
+        cv_text_r(PANEL_X0 + PANEL_W, 4 - AF_S_CAP_Y, &AF_S, "R", T_TEXT, T_SURF);
         cv_rect(PANEL_X0 + 6, fy, PANEL_W - 12, 1, T_LINE);   /* the field */
         cv_rect(cx, fy - 22, 1, 44, T_RAISE);                  /* the middle */
         if (sp)
@@ -197,7 +197,7 @@ static void graph_dximg(const track_t *t)
             }
         }
         cv_text(PANEL_X0, 100 - AF_S_CAP_Y, &AF_S, poly ? (img ? "IMAGE: VOICES SPREAD" : "IMAGE 0: ALL CENTRED") : "POLY ONLY",
-                poly && img ? T_MID : T_DIM);
+                T_TEXT);
         return;
     }
     cv_rect(cx, 0, 1, 96, T_RAISE);
@@ -234,8 +234,8 @@ static void graph_sing(const track_t *t)
     uint16_t bg = cv_bg;
     char b[64];
     if (!lang) {
-        cv_text_in(PANEL_X0, 44, PANEL_W, &AF_X, "LANG OFF: VOWELS", T_MID, bg);
-        cv_text_in(PANEL_X0, 58, PANEL_W, &AF_X, "LANG ES EN JA: WORDS", T_MID, bg);
+        cv_text_in(PANEL_X0, 44, PANEL_W, &AF_X, "LANG OFF: VOWELS", T_TEXT, bg);
+        cv_text_in(PANEL_X0, 58, PANEL_W, &AF_X, "LANG ES EN JA: WORDS", T_TEXT, bg);
         return;
     }
     str_cpy(b, N_LANG[lang], sizeof b);
@@ -248,7 +248,7 @@ static void graph_sing(const track_t *t)
     cv_clip_text(PANEL_X0, 6 - AF_X_CAP_Y, &AF_X, b, T_TEXT, bg, lw - 30);   /* the source */
     fmt_int(b, s->nsy);
     str_cpy(b + str_len(b), " SYL", 5);
-    cv_text_r(cx0 - 10, 6 - AF_X_CAP_Y, &AF_X, b, T_DIM, bg);
+    cv_text_r(cx0 - 10, 6 - AF_X_CAP_Y, &AF_X, b, T_TEXT, bg);
     sing_up(b, s->w[0] ? s->w : "-", sizeof b);          /* the word */
     cv_free_text(PANEL_X0, 20, &AF_M, b, T_TEXT, bg, lw);
     for (k = 0, x = PANEL_X0; k < s->np && k < SY_N; k++) {   /* its syllable's phonemes: chips */
@@ -264,7 +264,7 @@ static void graph_sing(const track_t *t)
     }
     if (!lyr && lyr_get((uint32_t)(t - trk))[0]) {       /* the text from the word on */
         sing_up(b, lyr_get((uint32_t)(t - trk)) + (s->to < LYR_LEN ? s->to : 0u), sizeof b);
-        cv_free_text(PANEL_X0, 68 - AF_X_CAP_Y, &AF_X, b, T_DIM, bg, lw);
+        cv_free_text(PANEL_X0, 68 - AF_X_CAP_Y, &AF_X, b, T_TEXT, bg, lw);
     }
     /* the vowel chart: F2 2500 .. 600 Hz across, F1 250 .. 850 Hz down */
     cv_rect(cx0, cy0, cw, ch, T_RAISE);
@@ -274,7 +274,7 @@ static void graph_sing(const track_t *t)
         int32_t vx = cx0 + 4 + clamp((2500 - P->f2) * (cw - 14) / 1900, 0, cw - 14);
         int32_t vy = cy0 + 4 + clamp(((int32_t)P->f1 - 250) * (ch - 16) / 600, 0, ch - 16);
         sing_up(b, PH_NAME[VREF[k]], 4);
-        cv_text(vx, vy - AF_X_CAP_Y, &AF_X, b, T_DIM);
+        cv_text(vx, vy - AF_X_CAP_Y, &AF_X, b, T_TEXT);
     }
     nv = s->gv * 100 / 32767;
     nn = (s->ga > s->gf ? s->ga : s->gf) * 100 / 32767;
@@ -285,10 +285,10 @@ static void graph_sing(const track_t *t)
         cv_rect(dx - 3, dy - 2, 7, 5, dc);
         cv_rect(dx - 2, dy - 3, 5, 7, dc);
     }
-    cv_text(cx0, 96 - AF_X_CAP_Y, &AF_X, "V", T_DIM);    /* the voicing, the noise */
+    cv_text(cx0, 96 - AF_X_CAP_Y, &AF_X, "V", T_TEXT);    /* the voicing, the noise */
     cv_rect(cx0 + 10, 98, cw - 10, 3, T_RAISE);
     cv_rect(cx0 + 10, 98, (cw - 10) * clamp(nv, 0, 100) / 100, 3, T_THEME);
-    cv_text(cx0, 108 - AF_X_CAP_Y, &AF_X, "N", T_DIM);
+    cv_text(cx0, 108 - AF_X_CAP_Y, &AF_X, "N", T_TEXT);
     cv_rect(cx0 + 10, 110, cw - 10, 3, T_RAISE);
     cv_rect(cx0 + 10, 110, (cw - 10) * clamp(nn, 0, 100) / 100, 3, T_ACCENT);
 }
@@ -355,7 +355,7 @@ static __attribute__((noinline)) void graph_morph(const track_t *t)
                 px = x; py = y;
             }
             }
-            cv_text(PANEL_X0 + 2, 90, &AF_S, b, T_MID);
+            cv_text(PANEL_X0 + 2, 90, &AF_S, b, T_TEXT);
             return;
         }
         pos = clamp(p[P_E0] * 256 + p[P_MORPH] * 768 / 127, 0, 1536);
@@ -378,7 +378,7 @@ static __attribute__((noinline)) void graph_morph(const track_t *t)
     }
     str_cpy(b, n0, sizeof b);
     if (f && a1 != a0) { str_cpy(b + str_len(b), " > ", 4); str_cpy(b + str_len(b), n1, 8); }
-    cv_text(PANEL_X0 + 2, 90, &AF_S, b, T_MID);
+    cv_text(PANEL_X0 + 2, 90, &AF_S, b, T_TEXT);
 }
 
 /* (0.8.5) the piano roll of the cursor's bar, as the approved mock-up (LENTE's BAR, under the bars' strip): its 16
@@ -594,7 +594,7 @@ static void bar_cell(const track_t *t, uint32_t b, int32_t x, int32_t y, int32_t
     }
     s[0] = (char)('1' + b);
     s[1] = 0;
-    nc = song.playing && seq_src(t, t->seq_idx) / 16u == b ? T_ACCENT : sel ? T_THEME : T_MID;
+    nc = song.playing && seq_src(t, t->seq_idx) / 16u == b ? T_ACCENT : sel ? T_THEME : T_TEXT;
     GFX_HOOK_ALIGN(0, y, 0, y + (h > 20 ? 15 : h), AL_V | AL_PASS, "LENTE bar number at its cell's top");
     cv_text_on(x + 3, y + (h > 20 ? 3 : CAP_IN(X, h)), &AF_X, s, nc, bg);
 }
@@ -839,7 +839,7 @@ static void graph_grid(const track_t *t, uint16_t c)
             cv_rect(6, y, 228, lp - 1, T_RAISE);        /* (6 .. 234, as a list row; the hits 40 .. 230) */
         }
         GFX_HOOK_ALIGN(0, y + hy, 0, y + hy + 10, AL_V, "drum lane label on its hits' line");
-        cv_text_on(10, y + hy - 3, &AF_S, drum_lane_abbr(t, l), sel ? T_ACCENT : T_MID, row);   /* ink as the hits' rows */
+        cv_text_on(10, y + hy - 3, &AF_S, drum_lane_abbr(t, l), sel ? T_ACCENT : T_TEXT, row);   /* ink as the hits' rows */
         for (i = 0; i < 16u && base + i < len; i++) {
             const step_t *st = &seq_steps(t)[base + i];
             uint32_t b = 1u << l;
@@ -1132,7 +1132,7 @@ static void graph_drum(const track_t *t, int32_t sel)
         else {
             cv_rect(x + 2, 58, 12, 1, T_DIM);
         }
-        cv_text_in(x - 4, 100, 24, &AF_S, drum_lane_abbr(t, l), sel == (int32_t)l ? T_THEME : muted ? T_DIM : T_MID, T_SURF);
+        cv_text_in(x - 4, 100, 24, &AF_S, drum_lane_abbr(t, l), sel == (int32_t)l ? T_THEME : muted ? T_DIM : T_TEXT, T_SURF);
     }
 }
 
@@ -1272,7 +1272,7 @@ static void page_flash_draw(void)
     }
     if (lz_on()) {                                   /* (0.8.5) a lens page: its breadcrumb lit (the tabs say the level) */
         cv_begin(240, foot_h(), T_BG);
-        draw_crumbs(CRUMB_Y + LZ_FOOT_Y - (int32_t)foot_y(), dim ? T_MID : T_TEXT, dim ? T_MID : T_TEXT);
+        draw_crumbs(CRUMB_Y + LZ_FOOT_Y - (int32_t)foot_y(), T_TEXT, T_TEXT);
         cv_blit(0, foot_y());
         return;
     }
@@ -1280,8 +1280,8 @@ static void page_flash_draw(void)
         int32_t fh = H_FOOT;
         cv_begin(240, (uint32_t)fh, T_BG);
         cv_bg = T_BG;
-        cv_text(8, (fh - (int32_t)AF_M.h) / 2, &AF_M, nm, dim ? T_MID : T_TEXT);
-        cv_text_r(232, (fh - (int32_t)AF_S.h) / 2, &AF_S, sub, dim ? T_DIM : T_ACCENT, T_BG);
+        cv_text(8, (fh - (int32_t)AF_M.h) / 2, &AF_M, nm, T_TEXT);
+        cv_text_r(232, (fh - (int32_t)AF_S.h) / 2, &AF_S, sub, dim ? T_TEXT : T_ACCENT, T_BG);
         cv_blit(0, foot_y());
     }
 }
@@ -1672,7 +1672,7 @@ static void graph_pats(void)
         uint32_t k = (uint32_t)(first + row);
         char tag[4], nm[13];
         pat_label(k, tag, nm);
-        list_row(LIST_Y(row), k == cur, tag, T_MID, nm, T_TEXT, 232);
+        list_row(LIST_Y(row), k == cur, tag, T_TEXT, nm, T_TEXT, 232);
     }
 }
 /* MIXER page: four SURF columns, one under each card: the track number on its cushion (in the accent:
@@ -1783,7 +1783,7 @@ static void track_strip(uint32_t c, uint32_t sel, uint32_t st, uint32_t mute, ui
     if (mute && arm)
         cv_keycap(5, 22 + AF_S_CAP_Y + HALF_UP(AF_S_CAP_H - KC_H), KC_MUTE, T_KEY, T_INK, T_SURF);
     else
-        cv_free_text(5, 22, &AF_S, b, mute ? T_DIM : sel ? T_TEXT : T_MID, T_SURF, CARD_W - 10);
+        cv_free_text(5, 22, &AF_S, b, mute ? T_DIM : T_TEXT, T_SURF, CARD_W - 10);
     cv_rrect(5, TSS_GY, gw, 3, 1, T_BG, T_SURF);
     cv_rrect(5, TSS_GY, fx < 3 ? 3 : fx, 3, 1, hot == 1u ? T_ACCENT : vc, T_BG);
     cv_rrect(5, TSS_MY, gw, 3, 1, T_RAISE, T_SURF);
@@ -1819,7 +1819,7 @@ static __attribute__((noinline)) void track_col6(uint32_t c, uint32_t sel, uint3
         sn[n] = 0;
         while (n > 1u && text_w(&AF_S, sn) > T6_W - 7)
             sn[--n] = 0;
-        cv_text_on(4, 22, &AF_S, sn, mute ? T_ACCENT : sel ? T_TEXT : T_MID, T_SURF);
+        cv_text_on(4, 22, &AF_S, sn, mute ? T_ACCENT : T_TEXT, T_SURF);
     }
     if (cur_page()->id[0] == P_CHOR) {               /* (0.8.5) GLO > MIX > SENDS: CHORUS DLY REV as bars (codex/coherence:
                                                          * the sends only, DIST on FX's own page) */
@@ -1830,7 +1830,7 @@ static __attribute__((noinline)) void track_col6(uint32_t c, uint32_t sel, uint3
             if (v)
                 cv_rect(4 + k * 10, 100 - v, 8, v, mute ? T_DIM : sel && hot == (uint32_t)k + 1u ? T_ACCENT :
                         heat_col(60 + v * 3));
-            cv_text(5 + k * 10, 106 - AF_X_CAP_Y, &AF_X, SN[k], T_DIM);
+            cv_text(5 + k * 10, 106 - AF_X_CAP_Y, &AF_X, SN[k], T_TEXT);
         }
         cv_blit((uint32_t)T6_X(c), lz_on() ? graph_y() + 9u : Y_GRAPH);
         return;
@@ -1848,7 +1848,7 @@ static __attribute__((noinline)) void track_col6(uint32_t c, uint32_t sel, uint3
         str_cpy(v, "OFF", sizeof v);
     }
     cv_text_in(17, 44, T6_W - 18, &AF_S, v, lc, T_SURF);
-    cv_text_in(17, 58, T6_W - 18, &AF_S, "dB", T_DIM, T_SURF);
+    cv_text_in(17, 58, T6_W - 18, &AF_S, "dB", T_TEXT, T_SURF);
     cv_rect(4, 104, pw, 3, T_RAISE);                 /* PAN, from the middle */
     cv_rect(4 + pw / 2, 102, 1, 7, hot == 2u ? T_ACCENT : T_MID);
     if (pan)
@@ -1922,7 +1922,7 @@ static __attribute__((noinline)) void draw_tracks(void)
         if (mute && arm)                             /* (on the name's capitals) */
             cv_keycap(5, 21 + AF_S_CAP_Y + HALF_UP(AF_S_CAP_H - KC_H), KC_MUTE, T_KEY, T_INK, T_SURF);
         else
-            cv_free_text(5, 21, &AF_S, b, mute ? T_DIM : sel ? T_TEXT : T_MID, T_SURF, CARD_W - 10);
+            cv_free_text(5, 21, &AF_S, b, mute ? T_DIM : T_TEXT, T_SURF, CARD_W - 10);
         {   /* (the JIANT style: track_col6) */
         {   /* LEVEL: the knob, its dB inside (OFF at 0), and the meter of the output */
             char v[8];
@@ -1931,7 +1931,7 @@ static __attribute__((noinline)) void draw_tracks(void)
                 int32_t d = LEVEL_DB_X10_AT(lvl);
                 fmt_int(v, (d + (d < 0 ? -5 : 5)) / 10);
                 GFX_HOOK_ALIGN(KB_X, 0, KB_X + 2 * KNOB_BIG_R, 0, AL_H, "mixer level text centred across");
-                cv_text_in(KB_X, KB_Y + KNOB_BIG_R + 5, 2 * KNOB_BIG_R, &AF_S, "dB", T_DIM, T_SURF);
+                cv_text_in(KB_X, KB_Y + KNOB_BIG_R + 5, 2 * KNOB_BIG_R, &AF_S, "dB", T_TEXT, T_SURF);
             } else {
                 str_cpy(v, "OFF", sizeof v);
             }
@@ -1945,9 +1945,9 @@ static __attribute__((noinline)) void draw_tracks(void)
             char v[8];
             uint16_t pc = hot == 2u ? T_ACCENT : vc, rc = hot == 3u ? T_ACCENT : vc;
             GFX_HOOK_ALIGN(15 - KNOB_SMALL_R, 0, 15 + KNOB_SMALL_R, 0, AL_H, "mixer caption over its knob");
-            cv_text_in(15 - KNOB_SMALL_R, 72, 2 * KNOB_SMALL_R, &AF_S, "PAN", T_DIM, T_SURF);   /* (by their ink) */
+            cv_text_in(15 - KNOB_SMALL_R, 72, 2 * KNOB_SMALL_R, &AF_S, "PAN", T_TEXT, T_SURF);   /* (by their ink) */
             GFX_HOOK_ALIGN(42 - KNOB_SMALL_R, 0, 42 + KNOB_SMALL_R, 0, AL_H, "mixer caption over its knob");
-            cv_text_in(42 - KNOB_SMALL_R, 72, 2 * KNOB_SMALL_R, &AF_S, "REV", T_DIM, T_SURF);
+            cv_text_in(42 - KNOB_SMALL_R, 72, 2 * KNOB_SMALL_R, &AF_S, "REV", T_TEXT, T_SURF);
             knob(15 - KNOB_SMALL_R, KS_Y, KNOB_SMALL_R, KNOB_SMALL_COV, KNOB_SMALL_ANG, pan, -64, 63, pc);
             knob(42 - KNOB_SMALL_R, KS_Y, KNOB_SMALL_R, KNOB_SMALL_COV, KNOB_SMALL_ANG, rv, 0, 127, rc);
             v[0] = '+';                              /* the cards' numbers, without the % */
@@ -2081,7 +2081,7 @@ static __attribute__((noinline)) void graph_gcomp(void)
         for (k = 0; k < NTRK; k++)
             cv_rect(x + cw / 2 - 1, y0 + 12 + (int32_t)k * 9, 3, 3, (c->mask >> k) & 1u ? T_TEXT : T_DIM);
     }
-    cv_text(x0, (int32_t)h - 24 - AF_X_CAP_Y, &AF_X, gl_mono ? "MONO" : "POLY", T_DIM);
+    cv_text(x0, (int32_t)h - 24 - AF_X_CAP_Y, &AF_X, gl_mono ? "MONO" : "POLY", T_TEXT);
 }
 /* (codex/anim) the panel sent where it changed (gfx.c cv_blit_cells: a being swimming, not the water round it; was all of
  * it each frame: 33600 px, ~45 ms of the SPI at 12 MHz); under load whole (a frame each 50 / 100 ms outlasts the transfer,

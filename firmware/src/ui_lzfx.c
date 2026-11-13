@@ -47,7 +47,7 @@ static void fxg_delay(int32_t x, int32_t y, int32_t w, int32_t h)
         if (song.g[G_DPING] && w > 120) {
             b[0] = i & 1 ? 'R' : 'L';
             b[1] = 0;
-            fxg_label(px - 1, y + 9, b, T_DIM, 0);
+            fxg_label(px - 1, y + 9, b, T_TEXT, 0);
         }
         a = a * (fb > 127 ? 127 : fb) / 127;
     }
@@ -57,9 +57,9 @@ static void fxg_delay(int32_t x, int32_t y, int32_t w, int32_t h)
     if (w > 120) {
         str_cpy(b + str_len(b), " \xB7 ", 4);
         str_cpy(b + str_len(b), song.g[G_DTYPE] ? "DIGITAL" : "ANALOG", 9);
-        fxg_label(x + w, y, song.g[G_DCOLOR] < 58 ? "DARKER" : song.g[G_DCOLOR] > 70 ? "BRIGHTER" : "EXACT COPY", T_DIM, 1);
+        fxg_label(x + w, y, song.g[G_DCOLOR] < 58 ? "DARKER" : song.g[G_DCOLOR] > 70 ? "BRIGHTER" : "EXACT COPY", T_TEXT, 1);
     }
-    fxg_label(x, y, b, T_MID, 0);
+    fxg_label(x, y, b, T_TEXT, 0);
 }
 static void fxg_reverb(int32_t x, int32_t y, int32_t w, int32_t h)
 {
@@ -77,12 +77,12 @@ static void fxg_reverb(int32_t x, int32_t y, int32_t w, int32_t h)
             cv_rect(x + i, top + hh - ch, 1, ch, i == sweep ? T_TEXT : FXG_H(218 - i * 180 / (w ? w : 1)));
         e = e * k / 1000;
     }
-    fxg_label(x, y, N_RTYPE[clamp(ty, 0, 4)], T_MID, 0);
+    fxg_label(x, y, N_RTYPE[clamp(ty, 0, 4)], T_TEXT, 0);
     if (w > 120) {
         str_cpy(b, "PRE ", sizeof b);
         fmt_int(b + 4, song.g[G_RPRE]);
         str_cpy(b + str_len(b), " MS", 4);
-        fxg_label(x + w, y, b, T_DIM, 1);
+        fxg_label(x + w, y, b, T_TEXT, 1);
     }
 }
 static void fxg_chorus(int32_t x, int32_t y, int32_t w, int32_t h)
@@ -104,7 +104,7 @@ static void fxg_chorus(int32_t x, int32_t y, int32_t w, int32_t h)
     str_cpy(b, "STEREO ", sizeof b);
     b[7] = st > 0 ? '+' : 0;
     fmt_int(b + 7 + (st > 0), st);
-    fxg_label(x, y, b, T_MID, 0);
+    fxg_label(x, y, b, T_TEXT, 0);
 }
 static void fxg_slicer(int32_t x, int32_t y, int32_t w, int32_t h)
 {
@@ -130,7 +130,7 @@ static void fxg_slicer(int32_t x, int32_t y, int32_t w, int32_t h)
         str_cpy(b + str_len(b), r, 8);
     }
     lw = text_w(&AF_X, b);
-    fxg_label(x, y, b, T_MID, 0);
+    fxg_label(x, y, b, T_TEXT, 0);
     if (w > 120) {                                   /* the tracks in it, FX */
         uint32_t n = 0;
         for (i = 0; i < NTRK && n + 4u < sizeof b; i++)
@@ -140,7 +140,7 @@ static void fxg_slicer(int32_t x, int32_t y, int32_t w, int32_t h)
         if (song.g[G_SLFX]) str_cpy(b + str_len(b), "+FX", 4);
         {   /* (at the right, clear of the mode's words: ellipsised when it must) */
             int32_t rw = text_w(&AF_X, b), l = x + lw + 14, rx = x + w - rw < l ? l : x + w - rw;
-            cv_free_text(rx, y + 3, &AF_X, b, T_DIM, cv_bg, x + w - rx);
+            cv_free_text(rx, y + 3, &AF_X, b, T_TEXT, cv_bg, x + w - rx);
         }
     }
 }
@@ -156,9 +156,9 @@ static void fxg_master(int32_t x, int32_t y, int32_t w, int32_t h)
     if (w > 120) {
         str_cpy(b + str_len(b), " \xB7 PUNCH ", 10);
         fmt_int(b + str_len(b), song.g[G_PUNCH]);
-        fxg_label(x + w, y + 14, "DUCK", T_DIM, 1);
+        fxg_label(x + w, y + 14, "DUCK", T_TEXT, 1);
     }
-    fxg_label(x, y + 14, b, T_MID, 0);
+    fxg_label(x, y + 14, b, T_TEXT, 0);
     if (w > 120) {                                      /* (V10.43) the page: CLIP's curve (in -> out, the level now a dot),
                                                          * PUNCH's bar (its push on the peaks now), then the duck */
         int32_t s = ch, d = song.g[G_CLIP] * 127 / 100, g = 4096 + d * d * 2, dy = 0;
@@ -229,9 +229,9 @@ static void fxg_punch(int32_t x, int32_t y, int32_t w, int32_t h)
         if (pfx_rec_ok()) str_cpy(b + str_len(b), " \xB7 REC", 7);
     }
     if (w > 120)                                        /* (snd2: the page's letters large, AF_M; the tile's as before) */
-        cv_text(x, y, &AF_M, b, T_MID);
+        cv_text(x, y, &AF_M, b, T_TEXT);
     else
-        fxg_label(x, y, b, T_MID, 0);
+        fxg_label(x, y, b, T_TEXT, 0);
 }
 static void fxg_slpitch(int32_t x, int32_t y, int32_t w, int32_t h)
 {
@@ -242,7 +242,7 @@ static void fxg_slpitch(int32_t x, int32_t y, int32_t w, int32_t h)
         uint16_t c = i == (int32_t)sl_ui_step ? T_THEME : i < len ? FXG_H(128 + v * 5) : T_RAISE;
         cv_rect(x + i * cw + 1, v >= 0 ? mid - bh : mid + 1, cw - 2, bh, c);
     }
-    fxg_label(x, y, song.g[G_SLPQ] ? "SL PITCH \xB7 SCL" : "SL PITCH \xB7 CHR", T_MID, 0);
+    fxg_label(x, y, song.g[G_SLPQ] ? "SL PITCH \xB7 SCL" : "SL PITCH \xB7 CHR", T_TEXT, 0);
 }
 static void fxg_sends(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h)
 {
@@ -254,7 +254,7 @@ static void fxg_sends(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t
         if (fh > 0)
             cv_rect(bx, y + h - 10 - fh, bw, fh, FXG_H(51 + v * 205 / 127));
         GFX_HOOK_ALIGN(bx, 0, bx + bw, 0, AL_H, "FX send name centred under its bar");
-        cv_text_in(bx, y + h - 6, bw, &AF_X, N[i], T_DIM, T_SURF);
+        cv_text_in(bx, y + h - 6, bw, &AF_X, N[i], T_TEXT, T_SURF);
     }
 }
 static void fxg_dist(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h)
@@ -276,10 +276,10 @@ static void fxg_dist(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t 
         int32_t yy = clamp(cy - tk_dist_y(type, xx, d ? g : 4096, d) * (s / 2 - 1) * 9 / 10 / 32767, y + 3, y + s - 4);
         cv_rect(clamp(px, x + 3, x + s - 4) - 1, yy - 1, 3, 3, T_TEXT);
     }
-    fxg_label(x + s + 8, y + 1, N_DTYPE[type], T_MID, 0);
+    fxg_label(x + s + 8, y + 1, N_DTYPE[type], T_TEXT, 0);
     str_cpy(b, "TONE ", sizeof b);
     fmt_int(b + 5, t->p[P_DTONE]);
-    fxg_label(x + s + 8, y + 15, b, T_DIM, 0);
+    fxg_label(x + s + 8, y + 15, b, T_TEXT, 0);
 }
 static void fxg_pan(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h)
 {
@@ -287,8 +287,8 @@ static void fxg_pan(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h
     char b[24];
     const char *u;
     cv_rect(cx, y + 10, 1, h - 10, T_LINE);
-    fxg_label(x, mid - 6 - AF_X_CAP_Y, "L", T_DIM, 0);
-    fxg_label(x + w, mid - 6 - AF_X_CAP_Y, "R", T_DIM, 1);
+    fxg_label(x, mid - 6 - AF_X_CAP_Y, "L", T_TEXT, 0);
+    fxg_label(x + w, mid - 6 - AF_X_CAP_Y, "R", T_TEXT, 1);
     if (sw > 0)
         cv_rect(cx - sw, mid, 2 * sw + 1, 1, T_MID);
     {   /* the dot: at the middle, or swinging at RATE while it sounds (a sine over the span: the picture's, not the
@@ -306,7 +306,7 @@ static void fxg_pan(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h
         param_format(dr ? dr : track_desc(t, P_APRATE), dr && vp ? *vp : t->p[P_APRATE], r, &u);
         str_cpy(b + str_len(b), r, 10);
     }
-    fxg_label(x + 12, y, b, T_MID, 0);
+    fxg_label(x + 12, y, b, T_TEXT, 0);
 }
 /* module m's picture */
 static void fxg_mod(uint32_t m, int32_t x, int32_t y, int32_t w, int32_t h)
@@ -318,7 +318,7 @@ static void fxg_mod(uint32_t m, int32_t x, int32_t y, int32_t w, int32_t h)
     case 3: if (cur_page()->graph == GR_SLPIT && w > 120) fxg_slpitch(x, y, w, h); else fxg_slicer(x, y, w, h); break;
     case 4: fxg_punch(x, y, w, h); break;
     default:
-        if (w > 120 && cur_page()->id[0] == ID_EQ0 && bt_hw_seg()) tech_eq(x, y, w, h);   /* (V10.44) EQ: its curve */
+        if (w > 120 && cur_page()->id[0] == ID_EQ0 && bt_hw_seg()) tech_eq_white(x, y, w, h);   /* (V10.44) EQ: its curve */
         else fxg_master(x, y, w, h);
         break;                                         /* (snd2: MASTER last) */
     }

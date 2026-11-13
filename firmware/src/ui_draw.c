@@ -239,7 +239,7 @@ static uint16_t head_title(char *b)
         str_cpy(b, ui.menu == 2 ? "ABOUT / CREDITS" : "MENU \xB7 ", 40);
         if ((ui.menu | 2u) == 3u)
             str_cpy(b + str_len(b), MTAB_NAME[MI_TAB[ui.menu_sel % MI_COUNT]], 16);
-        return T_MID;
+        return T_TEXT;
     }
     b[0] = 'T';
     b[1] = (char)('1' + song.sel % NTRK);
@@ -256,14 +256,14 @@ static uint16_t head_title(char *b)
             project_cur_name(nm);
         str_cpy(b + str_len(b), " ", 2);
         str_cpy(b + str_len(b), nm[0] ? nm : "NO NAME", 16);
-        return T_MID;
+        return T_TEXT;
     }
     str_cpy(b, trk_engp(TSEL)->name, 12);               /* (it began "T1 . ": the track's number stands in its box at
                                                          * the left; the room is the sound's name's) */
     sound_name(TSEL, b + str_len(b) + 1u);
     if (b[str_len(b) + 1u])
         b[str_len(b)] = ' ';
-    return T_MID;
+    return T_TEXT;
 }
 /* a message / a layer's label at x, or centred on x 120 (x < 0), at most maxw px with its
  * icon (ui.c MSG_NOFILE: the accent's) */
@@ -299,7 +299,7 @@ static int32_t head_group(void)
         fmt_int(b + str_len(b), song.octave);
         x0 = x = HEAD_GRP_R - (text_w(&AF_S, "OCT") + 4 + text_w(&AF_S, b));
         GFX_HOOK_ALIGN(0, 0, 0, HEAD_RULE_Y, AL_V, "header text on its middle");
-        x = cv_text(x, HEAD_SY, &AF_S, "OCT", T_MID) + 4;
+        x = cv_text(x, HEAD_SY, &AF_S, "OCT", T_TEXT) + 4;
     }
     GFX_HOOK_ALIGN(0, 0, 0, HEAD_RULE_Y, AL_V, "header text on its middle");
     cv_text(x, HEAD_SY, &AF_S, b, T_THEME);
@@ -448,7 +448,7 @@ static uint8_t card_arm_next;                           /* (0.8.5) the next draw
 static void draw_column_tall(uint32_t c, const char *label, const char *val, const char *unit, uint16_t vc, int32_t ratio,
                              uint32_t icon, int hot, int mot, int32_t kid)
 {
-    uint16_t lc = hot ? T_ACCENT : mot ? T_THEME : T_MID;
+    uint16_t lc = hot ? T_ACCENT : mot ? T_THEME : T_TEXT;
     const aafont_t *lf = &AF_M, *vf = &AF_L;
     int32_t ly = LG_LY, vy, lw = 0, mw;
     char k[3] = {'K', (char)('1' + c), 0};
@@ -504,7 +504,7 @@ static void draw_column_tall(uint32_t c, const char *label, const char *val, con
     }
     if (unit[0]) {
         GFX_HOOK_ALIGN(0, 0, COL_W, 0, AL_H, "large card unit centred");
-        cv_text_in(0, LG_UY, COL_W, &AF_S, unit, T_MID, T_BG);
+        cv_text_in(0, LG_UY, COL_W, &AF_S, unit, T_TEXT, T_BG);
     }
     if (ratio >= 0) {
         int32_t gw = COL_W - 10, fx = ratio * gw / 1000;
@@ -617,7 +617,7 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
     card_curve_next = 0;
     uint32_t kind = large_kind();                       /* MENU > LARGE: tall (draw_column_tall), or the label in M */
     uint8_t sig;
-    uint16_t lc = hot ? T_ACCENT : arm || mot ? T_THEME : T_MID, cb = T_BG, gk = 0, oc;
+    uint16_t lc = hot ? T_ACCENT : arm || mot ? T_THEME : T_TEXT, cb = T_BG, gk = 0, oc;
     int32_t x, lx = 5, uw, room = COL_W - 8, ch = (int32_t)card_h(), ry = ROLL_Y, lw;
     const aafont_t *vf = &AF_M;
     uint32_t n, kn;
@@ -630,7 +630,7 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
             gk = knob_col(c, ratio, card_bip);          /* (the gauge's) */
             vc = heat_on(ratio) ? ux_mix(gk, T_TEXT, 20) : gk;
         }
-        lc = arm || mot ? T_THEME : T_MID;
+        lc = arm || mot ? T_THEME : T_TEXT;
     }
     if (!gk)
         vc = value_col(vc, ratio);
@@ -743,7 +743,7 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
         if (unit[0]) {
             int32_t uy = vf == &AF_V ? ry - AF_V_CAP_Y + 1 + AF_V.asc - AF_S.asc : ry + 2;
             GFX_HOOK_ALIGN(0, 0, 0, uy + AF_S.asc, AL_B, "card unit on its value's baseline");
-            cv_text_on(x + 3, uy, &AF_S, unit, T_MID, cb);   /* on the value's baseline (S) */
+            cv_text_on(x + 3, uy, &AF_S, unit, T_TEXT, cb);   /* on the value's baseline (S) */
         }
         if (!strip && curve != DJF_NOCURVE && kind != LK_TALL) {   /* (0.9.1) the DJ FILTER: its response */
             uint16_t gc = hot && !lz_on() ? T_ACCENT : vc == T_DIM ? T_DIM : lz_on() ? (gk ? gk : vc) : gauge_col(ratio);
@@ -851,7 +851,7 @@ static void tabs_paint(uint32_t n, uint32_t lv, const char *const *nm, const cha
             s = tab[l];
         cv_rrect(x, 0, w, LT_H, 4, bg, T_BG);
         GFX_HOOK_ALIGN(x, 0, x + w, LT_H, AL_HV, "group tab name centred in its tab");
-        cv_text_in(x, CAP_IN(X, LT_H), w, &AF_X, s, l == lv ? T_INK : T_MID, bg);
+        cv_text_in(x, CAP_IN(X, LT_H), w, &AF_X, s, l == lv ? T_INK : T_TEXT, bg);
         for (d = 0; d < (uint32_t)nd; d++)
             cv_rect(dx + (int32_t)d * 4, LT_H - 2, 2, 1, l != lv ? T_DIM : d == at ? T_INK : ux_mix(T_THEME, T_INK, 40));
     }
@@ -1129,7 +1129,7 @@ static void draw_foot(void)
             GFX_HOOK_ALIGN(0, 0, 240, 0, AL_H | AL_CELLS | AL_N(16), "footer step bars centred");
         (void)foot_strip(12, 1, 0);
     }
-    draw_crumbs(ry, T_DIM, accw ? T_ACCENT : T_DIM);   /* (0.8.5) row 2: the breadcrumb (the track's engine and sound:
+    draw_crumbs(ry, T_TEXT, accw ? T_ACCENT : T_TEXT);   /* (0.8.5) row 2: the breadcrumb (the track's engine and sound:
                                                          * the header's centre) */
     cv_blit(0, foot_y());
 }
@@ -1467,16 +1467,16 @@ static void draw_columns(void)
         draw_column(0, "LEN", val, "ST", VAL(0u), RATIO(&GP[G_PFXLEN], song.g[G_PFXLEN]), ICON_AUTO);
         hot_text_column(1, "RES", N_PFXRES[(uint32_t)clamp(song.g[G_PFXRES], 0, 2)]);
         fmt_int(val, (int32_t)n);
-        text_column(2, pfx_rec_ok() ? "REC" : song.playing ? "PLAY" : "STEPS", pfx_rec_ok() ? "ON" : song.playing ? "ON" : val, pfx_rec_ok() ? T_ACCENT : T_MID);
+        text_column(2, pfx_rec_ok() ? "REC" : song.playing ? "PLAY" : "STEPS", pfx_rec_ok() ? "ON" : song.playing ? "ON" : val, pfx_rec_ok() ? T_ACCENT : T_TEXT);
         draw_act_column(3, "CLR AUTO", n ? T_MID : T_DIM, ICON_X_MOTION_DEL);   /* (snd2: the lane only) */
         return;
     }
     if (cur_page()->graph == GR_MOTION) {
         hot_text_column(0, "PLAY", motion_enabled(TSEL) ? "ON" : "OFF");
         fmt_int(val, (int32_t)(motion_count(TSEL) - motion_lock_count(TSEL)));
-        text_column(1, "EVENT", val, T_MID);
+        text_column(1, "EVENT", val, T_TEXT);
         fmt_int(val, (int32_t)motion_lock_count(TSEL));   /* parameter locks (SEQ > STEP: a step held, a knob) */
-        text_column(2, "LOCK", val, T_MID);
+        text_column(2, "LOCK", val, T_TEXT);
         draw_act_column(3, "CLEAR", T_MID, ICON_X_MOTION_DEL);
         return;
     }
@@ -1824,7 +1824,7 @@ static void draw_splash(void)
     lcd_fill(0, 0, 240, 240, T_BG);
     cv_begin(240, 36, T_BG);
     for (k = 0; k < 2u; k++)
-        cv_text_in(0, (int32_t)k * 16, 240, &AF_S, SPLASH_LINES[k], k ? T_DIM : T_MID, T_BG);
+        cv_text_in(0, (int32_t)k * 16, 240, &AF_S, SPLASH_LINES[k], T_TEXT, T_BG);
     cv_blit(0, SPL_TY);
     if (spl_anim && !(ui_prefs & PREF_ANIM_OFF))
         splash_sig(0);
@@ -1876,7 +1876,7 @@ static void seg_screen(uint32_t full)
     draw_text_box(0, 114, 240, &AF_S, "JIANT WEB INSTALLER:", T_TEXT, 1);
     draw_text_box(0, 140, 240, &AF_S, "juanjiant-bit.github.io/JIANT", T_THEME, 1);
     if (full)
-        draw_text_box(0, 190, 240, &AF_S, "ANY KEY: CONTINUE", T_DIM, 1);
+        draw_text_box(0, 190, 240, &AF_S, "ANY KEY: CONTINUE", T_TEXT, 1);
 }
 
 /* the count-in (seq.c, MENU > COUNT-IN; 1.1, Discussion #131): over the page until the sequencer starts. Its bar's four
@@ -1906,7 +1906,7 @@ static __attribute__((noinline)) void draw_countin(void)
         sub[9] = (char)('0' + total / 4u % 10u);
     } else
         str_cpy(sub, "1 BAR", sizeof sub);
-    draw_text_box(0, 66, 240, &AF_S, sub, T_MID, 1);
+    draw_text_box(0, 66, 240, &AF_S, sub, T_TEXT, 1);
     cv_begin(216, CI_H, T_BG);
     for (j = 0; j < 4u; j++) {
         int32_t x = (int32_t)j * 56;
@@ -1922,7 +1922,7 @@ static __attribute__((noinline)) void draw_countin(void)
         ui.force = 0;
         return;
     }
-    draw_text_box(0, CI_Y + CI_H + 14, 240, &AF_S, "RECORDING STARTS AFTER 1", T_MID, 1);
+    draw_text_box(0, CI_Y + CI_H + 14, 240, &AF_S, "RECORDING STARTS AFTER 1", T_TEXT, 1);
     {   /* PLAY stops it */
         int32_t x = HALF_UP(240 - kh_ink(KC_PLAY, "STOP"));
         cv_begin(240, KC_H + 2, T_BG);
@@ -2088,10 +2088,10 @@ static void dlg_crumb(const char *a, const char *b)     /* "SAVE . NOTICE . CONF
 {
     int32_t x;
     cv_begin(240, LZ_FOOT_H, T_BG);
-    x = cv_text(6, CRUMB_Y, &AF_X, SEC_NAME[nav_sec()], T_DIM);
-    x = cv_text(x, CRUMB_Y, &AF_X, " \xB7 ", T_DIM);
+    x = cv_text(6, CRUMB_Y, &AF_X, SEC_NAME[nav_sec()], T_TEXT);
+    x = cv_text(x, CRUMB_Y, &AF_X, " \xB7 ", T_TEXT);
     x = cv_text(x, CRUMB_Y, &AF_X, a, T_THEME);
-    x = cv_text(x, CRUMB_Y, &AF_X, " \xB7 ", T_DIM);
+    x = cv_text(x, CRUMB_Y, &AF_X, " \xB7 ", T_TEXT);
     cv_text(x, CRUMB_Y, &AF_X, b, T_TEXT);
     cv_blit(0, LZ_FOOT_Y);
 }
@@ -2104,7 +2104,7 @@ static uint16_t dlg_card(int32_t x, int32_t y, int32_t w, int32_t h)
 static void dlg_button(int32_t x, int32_t y, int32_t w, const char *k, const char *a, int yes, uint16_t under)
 {
     cv_rrect(x, y, w, 34, 4, T_SURF, under);
-    cv_text_on(x + 6, y + 5 - AF_X_CAP_Y, &AF_X, k, T_DIM, T_SURF);
+    cv_text_on(x + 6, y + 5 - AF_X_CAP_Y, &AF_X, k, T_TEXT, T_SURF);
     cv_text_on(x + 6, y + 16 - AF_M_CAP_Y, &AF_M, a, yes ? T_ACCENT : T_TEXT, T_SURF);
     cv_rect(x + 6, y + 30, w - 12, yes ? 2 : 1, yes ? T_ACCENT : T_LINE);
 }
@@ -2128,12 +2128,12 @@ static void draw_confirm(void)
         cv_begin(240, 30, T_BG);
         cb = dlg_card(4, 0, 232, 30);
         cv_text_on(10, 7 - AF_S_CAP_Y, &AF_S, a, T_TEXT, cb);
-        cv_text_on(10, 20 - AF_X_CAP_Y, &AF_X, b, T_DIM, cb);
+        cv_text_on(10, 20 - AF_X_CAP_Y, &AF_X, b, T_TEXT, cb);
         cv_rrect(140, 3, 48, 25, 3, T_SURF, cb);
         cv_rrect(192, 3, 40, 25, 3, T_SURF, cb);
-        cv_text_in(140, 5 - AF_X_CAP_Y, 48, &AF_X, "OCT-", T_DIM, kb);   /* (the labels' face: two lines of 9 px, CANCEL 44 wide) */
-        cv_text_in(140, 16 - AF_X_CAP_Y, 48, &AF_X, "CANCEL", T_MID, kb);
-        cv_text_in(192, 5 - AF_X_CAP_Y, 40, &AF_X, "OCT+", T_DIM, kb);
+        cv_text_in(140, 5 - AF_X_CAP_Y, 48, &AF_X, "OCT-", T_TEXT, kb);   /* (the labels' face: two lines of 9 px, CANCEL 44 wide) */
+        cv_text_in(140, 16 - AF_X_CAP_Y, 48, &AF_X, "CANCEL", T_TEXT, kb);
+        cv_text_in(192, 5 - AF_X_CAP_Y, 40, &AF_X, "OCT+", T_TEXT, kb);
         cv_text_in(192, 16 - AF_X_CAP_Y, 40, &AF_X, "OK", T_ACCENT, kb);
         cv_blit(0, 194);
         dlg_crumb("DICE", drum_track(TSEL) && pk == 0u ? "KIT" : PART[pk]);
@@ -2151,7 +2151,7 @@ static void draw_confirm(void)
         char f[32];
         text_fit(f, sizeof f, b, &AF_S, 196);          /* a name: free text */
         GFX_HOOK_ALIGN(0, 0, 212, 0, AL_H, "dialog detail centred");
-        cv_text_flags(ink_in(&AF_S, f, 212), 60, &AF_S, f, T_MID, cb, 8u | (f[str_len(f) - 1u] == ELLIPSIS));
+        cv_text_flags(ink_in(&AF_S, f, 212), 60, &AF_S, f, T_TEXT, cb, 8u | (f[str_len(f) - 1u] == ELLIPSIS));
     }
     dlg_button(12, 92, 90, "OCT -", ui.confirm == CF_DICE_ALL ? "CANCEL" : "NO", 0, cb);
     dlg_button(110, 92, 90, "OCT +", "YES", 1, cb);

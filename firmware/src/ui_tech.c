@@ -95,7 +95,7 @@ static void tech_global(void)
     for (k = 0; k < 3; k++) {                           /* CLK: the sources */
         int32_t x = x0 + k * 40, on = song.g[G_CLOCK] == k;
         cv_rrect(x, 74, 34, 6, 3, on ? heat_col(200) : T_RAISE, T_SURF);
-        cv_text_in(x, 82, 34, &AF_S, CK[k], on ? T_TEXT : T_DIM, T_SURF);
+        cv_text_in(x, 82, 34, &AF_S, CK[k], T_TEXT, T_SURF);
     }
     cx = x0 + 120 + (w - 120) / 2;                      /* TUNE: from the middle */
     cv_rect(x0 + 124, 76, w - 124, 2, T_RAISE);
@@ -121,7 +121,7 @@ static void tech_retrig(const track_t *t)
             cv_rect(x0 + i, y, 1, py - y + 1, T_RAISE);  /* (back to 0) */
         py = y;
     }
-    cv_text(x0, TK_Y0, &AF_S, on ? "FROM THE START, EVERY NOTE" : "THE FORMULA RUNS ON", T_DIM);
+    cv_text(x0, TK_Y0, &AF_S, on ? "FROM THE START, EVERY NOTE" : "THE FORMULA RUNS ON", T_TEXT);
 }
 
 /* the page's technical graph, if it has one (1) */
@@ -169,18 +169,18 @@ static __attribute__((noinline)) void tech_ports(void)
         int32_t x = 8 + (int32_t)i * 78, on = i == 0u ? usb.up : i == 1u ? 1 : b != 0u;
         uint32_t li = i == 1u ? 2u : 0u;
         cv_frame(x, 14, 70, 70, on ? T_THEME : T_LINE);
-        cv_text(x + 6, 20, &AF_S, N[i], on ? T_TEXT : T_DIM);
+        cv_text(x + 6, 20, &AF_S, N[i], T_TEXT);
         cv_text(x + 6, 38, &AF_X, i == 0u ? (!usb.up ? "OFF" : usb.config ? "MIDI" : "WAIT") : i == 1u ? "IN" : bt_vname(b),
-                T_MID);
+                T_TEXT);
         cv_rect(x + 8, 62, 10, 10, (i == 2u ? b == 2u && sp_lit[0] : sp_lit[li]) ? heat_col(200) : T_RAISE);
-        cv_text(x + 21, 64, &AF_X, "IN", T_DIM);
+        cv_text(x + 21, 64, &AF_X, "IN", T_TEXT);
         if (i != 1u) {
             cv_rect(x + 40, 62, 10, 10, (i == 2u ? b == 2u : 1) && sp_lit[1] ? heat_col(120) : T_RAISE);
-            cv_text(x + 53, 64, &AF_X, "OUT", T_DIM);
+            cv_text(x + 53, 64, &AF_X, "OUT", T_TEXT);
         }
     }
     if (b >= 2u) {                                     /* (linked or AIR: PROX, what the radio hears) */
-        cv_text(8, 96, &AF_X, "PROX", T_DIM);
+        cv_text(8, 96, &AF_X, "PROX", T_TEXT);
         cv_rect(40, 96, 190, 6, T_RAISE);
         cv_rect(40, 96, mod_prox * 190 / 32767, 6, heat_col(64 + mod_prox / 200));
     }
@@ -202,13 +202,16 @@ static BTAPP_FN void tech_levels(const track_t *t, uint32_t b)   /* (V10.44 in t
         cv_text_in(x, 118, 25, &AF_S, drum_lane_abbr(t, l), l - b < 4u ? T_TEXT : T_DIM, T_SURF);
     }
 }
+/* (V10.7.24 white) their words TEXT (gfx.c UX_WHITE; out of line: new code goes after the sound's pinned runs) */
+static __attribute__((noinline)) void tech_eq_white(int32_t x, int32_t y, int32_t w, int32_t h) { UX_WHITE(tech_eq(x, y, w, h)); }
+static __attribute__((noinline)) void tech_levels_white(const track_t *t, uint32_t b) { UX_WHITE(tech_levels(t, b)); }
 static int graph_tech(const track_t *t, const page_t *pg)
 {
     if (pg->scope != SC_GLOBAL)
         switch (pg->id[0]) {
         case P_LRTRG: if (pg->id[1] != 0xFFu) return 0; tech_retrig(t); return 1;   /* (not DIGITAL's OP1 ENV) */
         case P_ED_FLT: tech_dest(t); return 1;
-        case P_LN0: case P_LN4: if (!bt_hw_seg()) return 0; tech_levels(t, pg->id[0] - P_LN0); return 1;
+        case P_LN0: case P_LN4: if (!bt_hw_seg()) return 0; tech_levels_white(t, pg->id[0] - P_LN0); return 1;
         default: return 0;
         }
     switch (pg->id[0]) {

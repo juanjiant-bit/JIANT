@@ -227,6 +227,6 @@ static void graph_colony(const track_t *t, int32_t sel)
             being_lines(g, &f, x * 16, y * 16, (8 + e * 8 / 256) * 16, e, anim_fr * 1500u + l * 9000u);
         } else
             bg_outline(g, &f, x * 16, y * 16, 8 * 16, 1, l * 9000u, bg_col(24));
-        cv_text_in(x - 14, y + 14, 28, &AF_S, drum_lane_abbr(t, l), sel == (int32_t)l ? T_THEME : muted ? T_DIM : T_MID, T_SURF);
+        cv_text_in(x - 14, y + 14, 28, &AF_S, drum_lane_abbr(t, l), sel == (int32_t)l ? T_THEME : muted ? T_DIM : T_TEXT, T_SURF);
     }
 }

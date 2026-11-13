@@ -115,8 +115,8 @@ static struct {
 #define T_TEXT ux.text           /* primary text */
 #define T_THEME ux.theme         /* values, curves, the gauge's end line */
 #define T_ACCENT ux.accent       /* the one active thing: hot knob, cursor, playhead */
-#define T_MID ux.mid             /* labels, units, secondary text */
-#define T_DIM ux.dim             /* inactive, empty */
+#define T_MID ux.mid             /* secondary graphics (V10.7.24 white, the owner: no text drawn in it; text is T_TEXT) */
+#define T_DIM ux.dim             /* inactive, empty (text in it: only a state, disabled / empty / gone) */
 #define T_LINE ux.line           /* 1 px dividers, gauge track */
 #define T_SEL ux.sel             /* selection and gauge fill */
 #define T_TINT ux.tint           /* a faint theme area */
@@ -127,6 +127,9 @@ static struct {
 #define T_LANE ux.lane           /* the piano roll: an in-scale row (SURF -> THEME 10 %) */
 #define T_GRID ux.grid           /* the piano roll: a step line (SURF -> TEXT 6 %; beats and C rows: RAISE) */
 #define NPALETTES UI_NPALETTES
+/* (V10.7.24 white) the pictures in the Bluetooth segment (ui_tech.c tech_eq tech_levels, ui_menu.c bt_prox_panel: their
+ * code kept as it is) draw their words in MID / DIM: for the call those two are TEXT, as every other word */
+#define UX_WHITE(call) do { uint16_t m_ = ux.mid, d_ = ux.dim; ux.mid = ux.dim = ux.text; call; ux.mid = m_; ux.dim = d_; } while (0)
 
 /* a + (b - a) * pct / 100 per channel, rounded */
 static uint16_t ux_mix(uint16_t a, uint16_t b, int32_t pct)

@@ -354,7 +354,7 @@ static void nm_card(uint32_t c, const char *l, const char *v, uint16_t vc)
 {
     cv_begin(CARD_W, LZ_CARD_H, T_BG);
     card_line(0, 0, CARD_W, LZ_CARD_H, 5, vc, 1);      /* (V10.7.23) no box: its line in the value's colour */
-    cv_text(5, CARD_XY - AF_X_CAP_Y + 1, &AF_X, l, T_MID);
+    cv_text(5, CARD_XY - AF_X_CAP_Y + 1, &AF_X, l, T_TEXT);
     cv_text(5, 17 - AF_M_CAP_Y, &AF_M, v, vc);
     cv_blit((uint32_t)CARD_X(c), LZ_CARD_Y);
 }
@@ -414,9 +414,9 @@ static __attribute__((noinline)) void nm_draw_panel(void)
             cv_rect(x, 45, 12, 12, f);
             cv_text_in(x, 47 - AF_X_CAP_Y, 12, &AF_X, c, typed ? T_INK : next ? T_ACCENT : T_TEXT, f);
         }
-        cv_text(14 + 14 * (int32_t)n, 48 - AF_X_CAP_Y, &AF_X, "TAP AGAIN: NEXT", T_MID);
+        cv_text(14 + 14 * (int32_t)n, 48 - AF_X_CAP_Y, &AF_X, "TAP AGAIN: NEXT", T_TEXT);
     } else
-        cv_text(10, 48 - AF_X_CAP_Y, &AF_X, nm.num ? "ONE TAP, ONE CHARACTER" : "TAP AGAIN: NEXT LETTER", T_MID);
+        cv_text(10, 48 - AF_X_CAP_Y, &AF_X, nm.num ? "ONE TAP, ONE CHARACTER" : "TAP AGAIN: NEXT LETTER", T_TEXT);
     GFX_HOOK_ALIGN(4, 0, 236, 0, AL_H | AL_CELLS | AL_N(8), "name keys' row in the panel");
     for (i = 0; i < 16u; i++) {                        /* the white keys: the left octave, then the right one */
         int32_t x = 9 + 28 * (int32_t)(i % 8u), y = i < 8u ? 62 : 84;
@@ -444,7 +444,7 @@ static void nm_draw_foot(void)
     cv_begin(240, LZ_FOOT_H, T_BG);
     cv_text(6, CRUMB_Y, &AF_X, nm.kind == NK_LYRIC ? "LENTE \xB7 LYRIC \xB7 K3 DICE \xB7 OCT- CANCEL" :   /* (0.8.5: playing too) */
             transport_busy() ? "LENTE \xB7 NAME \xB7 STOP TO SAVE" :
-            nm.kind == NK_SONG_SAVE ? "NAME \xB7 K3 SONG/LOOP \xB7 OCT- CANCEL" : "LENTE \xB7 NAME \xB7 OCT- CANCEL", T_DIM);
+            nm.kind == NK_SONG_SAVE ? "NAME \xB7 K3 SONG/LOOP \xB7 OCT- CANCEL" : "LENTE \xB7 NAME \xB7 OCT- CANCEL", T_TEXT);
     cv_blit(0, LZ_FOOT_Y);
 }
 static void name_draw(void)
