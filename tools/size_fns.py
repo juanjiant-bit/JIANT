@@ -170,7 +170,9 @@ def main(src, dst):
                   "voice_victim", "shift_prepare_pass", "shift_cond", "sy_seek", "live_heads", "cg_near", "e0_chunk",
                   "step_parts",
                   # (V10.6z8) a section's change: the sounds the player changed
-                  "snd_sig", "snd_own"}
+                  "snd_sig", "snd_own",
+                  # (V10.7.30) a note's start and a key's release, a MIDI track silenced: once an event
+                  "trk_note_on", "voice_start", "key_off", "midi_silence_track", "fm6_note_of", "mod_track_desc"}
     names, hit = ((size_names() | cold_ui) - isr) | input_size | event_size, set()
     def mark(m):
         if m.group(2) not in names:
