@@ -1,6 +1,6 @@
 # JIANT FM — Manual de usuario
 
-**JIANT FM V10.7.23 para el M-VAVE FM-1**
+**JIANT FM V10.7.24 para el M-VAVE FM-1**
 
 > *English version: [MANUAL.md](MANUAL.md).*
 

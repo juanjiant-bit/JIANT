@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.23
+## This release: V10.7.24
 
 ### Installing
 
@@ -482,6 +482,11 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.24 — public (2026-11-13)
+- **HOME is two pages, then GENE**: **MACROS** (M1–M4 over the six beings; a turned macro shows where it goes) and **SCOPE** (the scope big, and four knobs on the whole mix: **FILTER** the DJ filter, **SPACE** the delay's mix and the reverb's size together, **DRIVE** the master's clipper, **DUCK** the kick's pumping). ECO, BEING and ROUTES are gone; the sound's knobs are on EDIT.
+- **VOICE sings on the step**: with the sequencer the consonants start early so the vowel lands on the step (no negative MICRO needed: set it back to 0 on old VOICE steps); live keys and MIDI squeeze the consonants so the vowel comes within ~10–20 ms. Smoother formant glides and syllable joins (a click after a burst fixed), a source that follows the level (breathier when soft), a small pitch scoop into each syllable, a smooth fry at phrase ends.
+- **FX › SENDS** is DIST · CHORUS · DLY · REV again; FX › DIST is TYPE · TONE.
 
 ### V10.7.23 — beta (2026-11-13)
 - **Cards outlined, no grey box**: every knob card sits on the background, its shape drawn as a thin line in its value's colour (the knob just turned: 2 px); labels in grey.
