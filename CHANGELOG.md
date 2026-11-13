@@ -6,6 +6,8 @@ Custom firmware for the M-VAVE FM-1 by Juan Jiant. Newest version first.
 
 | Version | Date | Status |
 | --- | --- | --- |
+| **V10.7.22** | 2026-11-13 | **Public** |
+| V10.7.18 … V10.7.21 | 2026-11-11 … 11-12 | Beta |
 | **V10.7.17** | 2026-11-10 | **Public** |
 | **V10.7.16** | 2026-11-10 | **Public** |
 | V10.7.7 … V10.7.15 | 2026-11-09 … 11-10 | Beta |
@@ -22,6 +24,34 @@ The sections marked **Compatibility notes** are the ones to check before you ins
 > 31 October 2026 are much older builds with the same names; they are covered under "Older versions" at the end.
 
 ---
+
+## V10.7.22 — palettes, bigger type, smoother animations, fewer voices cut (2026-11-13)
+
+Covers the betas V10.7.18 … V10.7.22.
+
+**Sound**
+- **ROOM** is a feedback delay network: dense tails that end in silence.
+- **Fewer voices cut under load**: released notes hurry their release once they are 20 dB down, FM6 patches whose release never ended no longer hold a voice, and ANALOG / FM6 tails play at half the sample rate (interpolated) when the CPU is short. A kit's **KICK, SNARE and CLAP are never cut**.
+- **OCT+ / OCT−** are MOD matrix sources: unrouted they bend and vibrate the pitch as before; routed, OCT+ sweeps and OCT− vibrates the destination instead.
+- **The matrix's VEL follows the velocity as played**, whatever EDIT › VOICE 2's VEL is: VEL 0 % plays every note at one level and VEL still modulates.
+
+**Screen**
+- **Seven palettes of JIANT's own** (JIANT, SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON); skins **AIR** and **COLORS** only; STYLE retired (FLAT).
+- **Bigger type**: card numbers at 14 px, the small face at 9 px, LARGE tall on FX and SEQ.
+- **Animations move by the clock**: under load they keep their speed with fewer frames instead of freezing (freeze only past 85 % CPU); only what changed is sent to the screen.
+
+**Pages**
+- **SAVE**: TOOLS first, with **CLEAR PROJECT** (the music back to power-on; the saved project stays). SAVE SONG AS is gone: PROJECTS picks a project with KNOB 1, LOAD / ERASE / SAVE act on it, SONG or LOOP on the NAME screen's KNOB 3.
+- **PRESETS**: LIST **USER** (your own presets alone, kept at power-off); a sound type goes back to ALL at power-on. The PRESETS knob loads sounds on every page but SEQ's, GEN's too (GEN's GENRE is GEN 1's KNOB 1).
+- **ANALOG**: one filter page; EDIT 1 is WAVE · DETUNE · MIX · INT (SAW3 / PLS3: WAVE · INT · INT 3 · DETUNE); NOISE and MIX on FOCUS.
+
+**Fixes**
+- The **Bluetooth part** (it also holds GEN and song saving) missing is said on a full screen at power-on, and the web installer checks it after installing and writes it again if needed. The installer no longer offers the firmware file for other tools.
+- AIR's HOME: the beings no longer cover the header at power-on. SAVE FORMAT ERROR says which check refused the save.
+
+**Compatibility notes**
+- Projects, presets and settings load as before. SAVE SONG AS moved into PROJECTS (above). On ANALOG, EDIT 2 is gone (its knobs are on FILTER and EDIT 1).
+- Presets that route VEL in the matrix now respond to the played velocity when the sound's VEL is under 100 %.
 
 ## V10.7.17 — MY LOOP stability (2026-11-10)
 

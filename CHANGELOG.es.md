@@ -6,6 +6,8 @@ Firmware personalizado para el M-VAVE FM-1, de Juan Jiant. Primero la versión m
 
 | Versión | Fecha | Estado |
 | --- | --- | --- |
+| **V10.7.22** | 2026-11-13 | **Pública** |
+| V10.7.18 … V10.7.21 | 2026-11-11 … 11-12 | Beta |
 | **V10.7.17** | 2026-11-10 | **Pública** |
 | **V10.7.16** | 2026-11-10 | **Pública** |
 | V10.7.7 … V10.7.15 | 2026-11-09 … 11-10 | Beta |
@@ -23,6 +25,34 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 > al final.
 
 ---
+
+## V10.7.22 — paletas, letra más grande, animaciones fluidas, menos voces cortadas (2026-11-13)
+
+Incluye las betas V10.7.18 … V10.7.22.
+
+**Sonido**
+- **ROOM** es una red de retardos con realimentación: colas densas que terminan en silencio.
+- **Menos voces cortadas bajo carga**: las notas soltadas aceleran su release después de bajar 20 dB, los patches de FM6 con release infinito ya no retienen una voz, y las colas de ANALOG / FM6 suenan a media frecuencia de muestreo (interpolada) cuando falta CPU. **Bombo, caja y clap** de un kit **no se cortan nunca**.
+- **OCT+ / OCT−** son fuentes de la matriz MOD: sin asignar hacen el bend y el vibrato de siempre; asignadas, OCT+ barre y OCT− hace vibrato del destino.
+- **La VEL de la matriz sigue la fuerza con que tocás**, sea cual sea la VEL de EDIT › VOICE 2: con VEL 0 % todas las notas suenan igual y la VEL igual modula.
+
+**Pantalla**
+- **Siete paletas propias de JIANT** (JIANT, SELVA, CONTRAST, BRASA, ABISAL, HUESO, NEON); solo los skins **AIR** y **COLORS**; STYLE retirado (FLAT).
+- **Letra más grande**: números de las tarjetas a 14 px, la letra chica a 9 px, LARGE alto en FX y SEQ.
+- **Las animaciones van con el reloj**: bajo carga mantienen la velocidad con menos cuadros en vez de congelarse (se congelan solo por encima de 85 % de CPU); solo se manda a la pantalla lo que cambió.
+
+**Páginas**
+- **SAVE**: TOOLS primero, con **CLEAR PROJECT** (la música vuelve a como al encender; el proyecto guardado queda). SAVE SONG AS ya no existe: PROJECTS elige un proyecto con KNOB 1, LOAD / ERASE / SAVE actúan sobre él, SONG o LOOP con la KNOB 3 de la pantalla del nombre.
+- **PRESETS**: LIST **USER** (solo tus presets, se conserva al apagar); un tipo de sonido vuelve a ALL al encender. La perilla PRESETS carga sonidos en todas las páginas menos las de SEQ, también en GEN (el GENRE de GEN es la KNOB 1 de GEN 1).
+- **ANALOG**: una sola página de filtro; EDIT 1 es WAVE · DETUNE · MIX · INT (SAW3 / PLS3: WAVE · INT · INT 3 · DETUNE); NOISE y MIX en FOCUS.
+
+**Arreglos**
+- Si falta la **parte Bluetooth** (también tiene GEN y el guardado de canciones), se avisa en pantalla completa al encender, y el instalador web la verifica al terminar y la vuelve a grabar si hace falta. El instalador ya no ofrece el archivo del firmware para otras herramientas.
+- HOME de AIR: las criaturas ya no tapan el encabezado al encender. SAVE FORMAT ERROR dice qué control rechazó el guardado.
+
+**Notas de compatibilidad**
+- Proyectos, presets y ajustes cargan como antes. SAVE SONG AS pasó a PROJECTS (arriba). En ANALOG ya no está EDIT 2 (sus perillas están en FILTER y EDIT 1).
+- Los presets que usan VEL en la matriz ahora responden a la fuerza tocada cuando la VEL del sonido está por debajo de 100 %.
 
 ## V10.7.17 — estabilidad de MY LOOP (2026-11-10)
 
