@@ -8,6 +8,7 @@
  *    VEL 64 and 0 with none (what VEL does to the sound itself unchanged);
  * 2. VEL 0: notes struck 30 and 120 start at the same velocity (100), the matrix's VEL reads 30 and 120 (per voice and
  *    per track), a VEL -> CUT route opens the filter by it; a step's own velocity and its ACCENT (127) too. */
+#define HOST_BAL 0                      /* (V10.7.30) the master's BALANCE off: the mix bit for bit as before */
 #define main hostsim_main
 #include "hostsim.c"
 #undef main

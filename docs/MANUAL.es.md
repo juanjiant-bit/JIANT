@@ -195,7 +195,7 @@ Los nombres de abajo son los que usa el firmware (la pantalla HARDWARE CALIBRATI
 | **HOME** | HOME (0.9.2, como el botón de cualquier sección): desde otra sección, la última página de HOME; en HOME la primera página del grupo siguiente, en ronda: **MACROS → SCOPE → GENE → MACROS** (V10.7.24; GENE: el generador, GEN hasta la V10.6m). | Unos 0,7 s: abre el **MENU**. |
 | **ENV** | La sección ENV: desde otro lado, la última página mostrada (al encender, ENV); adentro, el grupo siguiente: **TRACKS → ENV → STAGE**, en ronda. | (sin capa) |
 | **LFO** | La sección LFO: desde otro lado, la última página mostrada (al encender, LFO); adentro **MOD → LFO → MSEQ**, en ronda. | Capa **MACRO**: KNOB 1–4 son M1–M4. |
-| **FX** | La sección FX: desde otro lado, la última página mostrada; adentro, el módulo siguiente: **TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → PUNCH IN → MASTER** (MASTER · TAPE · EQ), en ronda. | Capa de **FX punch-in**. |
+| **FX** | La sección FX: desde otro lado, la última página mostrada; adentro, el módulo siguiente: **TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → PUNCH IN → MASTER** (MASTER · TAPE · EQ · BALANCE), en ronda. | Capa de **FX punch-in**. |
 | **SCL** | La sección SCL (0.9.2: propia, separada de ARP): **KEY → CHORD → SCENE** (V10.24). | Capa **SCL**: las teclas fijan la tónica. |
 | **EDIT** | La sección EDIT: desde otro lado, la última página mostrada (una memoria para los sintes y una para FM6 y otra para DRUM); adentro el grupo siguiente: **SOUND → TONE → FOCUS** (FM6: SOUND → TONE → OPERATOR; DRUM: KIT → SOUND → LEVELS → TONE). Siempre EDIT (0.9.2: borrar un paso es SEQ + G5, renombrar SAVE + C5). Un paso mantenido + EDIT sigue borrando los locks de ese paso. | Capa **EDIT**: INIT, RECALL, mutes de los sonidos de DRUM-X, SELECT los dados de sonido. Mantenido + KNOB 1–4: **MOMENTARY** (la página de abajo, vuelve al soltar). |
 | **GLO** | La sección GLO: desde otro lado, la última página mostrada; adentro **LIVE → MIX → G.COMP → SETUP**, en ronda (al prender MIXER; LIVE, las secuencias en vivo, primero; V10.37: G.COMP después de MIX; codex/coherence: SETUP junta GLOBAL, SYSTEM, SYSTEM 2 y KEY SPLIT). | Capa **GLO**: mutes, solos, niveles, tap tempo, UNDO. |
@@ -425,7 +425,7 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 | **EDIT** (FM6) | **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **TONE**: FILTER — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **PLAY**: PLAY · PLAY 2 | 8 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: X-MOD · FILTER · STEREO · PLAY | 14 |
 | **SEQ** | (V10.6) **STEP**: STEP — **PATTERN**: LENGTH · RHYTHM · TRACK — **EUCLID**: EUCLID · MODES · MUTATE — **PLAYHEADS**: PLAYHEADS — **STRETCH**: STRETCH — **COMP**: COMP · COMP 2 — **AUTO**: AUTOMATION · AUTO LIST · LYRIC STEP (VOICE) — **TRACK GEN**: TRACK GEN | 15 |
-| **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DLY 2 · DLY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SL BUS · SL BUS 2 · SL PITCH — **PUNCH IN**: PUNCH IN — **MASTER**: MASTER · TAPE · EQ | 18 |
+| **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DLY 2 · DLY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SL BUS · SL BUS 2 · SL PITCH — **PUNCH IN**: PUNCH IN — **MASTER**: MASTER · TAPE · EQ · BALANCE | 19 |
 | **GLO** | **LIVE**: KEYS · RAILS — **MIX**: MIXER · SENDS — **G.COMP**: G.COMP · G.COMP 2 — **SETUP**: GLOBAL · SYSTEM · SYSTEM 2 · KEY SPLIT · KEY SPLIT 2 | 11 |
 | **ENV** | **ENV**: ENV · ENV DEST · ENV 2 — **STAGE**: STAGE — **TRACKS**: TRACKS (codex/coherence: al final; TRACKS DEST, gemela de ENV DEST, ya no está) | 5 |
 | **LFO** | **MOD**: MOD — **LFO**: LFO · LFO DEST — **MSEQ**: MSEQ · MSEQ 2 | 5 |
@@ -2373,9 +2373,22 @@ sus perillas y sus dibujos son los mismos.
 ### Por pista
 
 - **FX**: cantidad de DIST y los tres envíos (CHORUS, DLY, REV).
-- **DIST**: cantidad, **TYPE** (SOFT, HARD, FOLD, CRUSH, RECT, **AMP**), **TONE** (más oscuro / más brillante). **AMP**
-  es un amplificador de guitarra: dos etapas de válvula que saturan desparejo (DIST bajo limpio, después crunch, después
-  lead), el bias respirando con el nivel, y un bafle con su pico de presencia; TONE mueve el brillo del bafle.
+- **DIST**: cantidad, **TYPE** (SOFT, HARD, FOLD, CRUSH, RECT, **AMP**), **TONE** (más oscuro / más brillante),
+  **NOISE** (V10.7.30). **AMP** es un amplificador de guitarra: dos etapas de válvula que saturan desparejo (DIST bajo
+  limpio, después crunch, después lead), el bias respirando con el nivel, y un bafle; TONE mueve el brillo del bafle.
+  (V10.7.30) El bafle ya no resuena en los medios (su viejo pico en 1,8 kHz, +4,7 dB, lo hacía nasal y encajonado): en
+  su lugar un hueco ancho y suave alrededor de 650 Hz, el corte un poco más arriba (~4,8 kHz), el nivel como antes.
+  - **FOLD** (V10.7.30): un plegador suave (con forma de seno), con la entrada limitada en banda: la mitad baja de DIST
+    es una saturación redonda, los pliegues entran pasando la mitad y crecen hacia el final (hasta tres y medio), sin
+    las esquinas ásperas del plegador triangular de antes.
+  - **CRUSH** (V10.7.30): menos bits y menos frecuencia de muestreo, pero la frecuencia se mueve ±50 % alrededor de su
+    valor y los escalones van en rampa, así que ya no silba una "nota pedal" fija en la frecuencia de reducción; la
+    mugre lo-fi queda.
+  - **NOISE** (V10.7.30, KNOB 3, 0–100 %, de la pista elegida; DIST tiene que estar prendido): ruido blanco que va
+    montado sobre la señal distorsionada. Solo la parte de cada onda que pasa un umbral lo recibe, tanto como lo pasa
+    (el umbral baja un poco cuando subís NOISE): una mugre que sigue la altura y la envolvente de la nota y deja limpias
+    las partes suaves y los silencios. Pasa por el corte de TONE. Se guarda con el proyecto (no con los presets de
+    sonido); no está en el editor, MIDI ni automatización (no es un parámetro de pista: no queda lugar para uno).
 - **AUTO PAN**: el paneo de la pista oscilando a izquierda y derecha alrededor de su PAN. **DEPTH** (0 = apagado),
   **RATE**, **SYNC** (BEAT: RATE en divisiones 4BAR … 1/32, sincronizado al compás; FREE: RATE en Hz), **WAVE** (SIN,
   TRI, SAW, SQR, S&H).
@@ -2467,6 +2480,19 @@ ancho). Se oculta con LOAD ECO (la tarjeta de envío de chorus de una pista dice
 - **CLIP**: saturación que agrega carácter, no volumen.
 - **PUNCH**: engorda las pistas DRUM.
 - **DUCK**: el bombo baja todo lo demás; **REL** es su release.
+- **BALANCE** (V10.7.30, la página después de EQ; **AMOUNT** 0–100 %, **50 de fábrica: prendido**): un EQ dinámico y
+  lento sobre las cuatro bandas del EQ, para la "pelota de medios" en que se convierte una mezcla llena. Escucha el
+  balance de la mezcla entre las bandas (a lo largo de un segundo, no golpe a golpe) y lo compara con la curva de una
+  mezcla balanceada (la pendiente de una mezcla comercial, los graves un poco más ricos y los agudos un poco más oscuros,
+  como se para la música electrónica). Cuando **los medios graves (200 Hz–1 kHz) se amontonan** los baja, unos −2 a
+  −4 dB donde están en un tema denso de GEN típico al 50 % (hasta ~−6 dB); nunca los sube. Los graves se mueven ±1,5 dB
+  como mucho, la banda de 1–4 kHz ±2 dB, los agudos ±3 dB, hacia la curva; a menos de 0,5 dB de ella no se mueve nada.
+  Solo el balance entre las bandas, nunca el volumen (eso es del leveler). Las correcciones se deslizan (bastante menos
+  de 1 dB de ondulación al ritmo: no bombea) y se sostienen en los silencios. 0 es apagado (la mezcla bit a bit como
+  sin él, el EQ como lo pusiste). 100 corrige el doble (dentro de los mismos límites). Se guarda con el proyecto; un
+  proyecto guardado antes de V10.7.30 abre con BALANCE en 50 (prendido: la idea es que el barro se vaya, también en tus
+  temas viejos); ponelo en 0 y guardá para dejar uno como estaba. Costo: la división en bandas del EQ corre siempre
+  (antes solo con el EQ tocado).
 
 ### DJ FILTER (0.9.1, GLO › LIVE › KEYS KNOB 4; en MIXER hasta V10.36)
 

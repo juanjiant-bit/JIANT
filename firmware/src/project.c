@@ -102,6 +102,9 @@ typedef struct {
     int8_t eq[4];                              /* (V10.58) the master's EQ and TAPE as stored: applied when the project is */
     uint8_t tp[2];                             /* loaded (project_restore_runtime), never by a read (until V10.57 every read
                                                 * of a slot, a section's name, a check, set the EQ and TAPE playing) */
+    int8_t bal;                                /* (V10.7.30) BALANCE's AMOUNT - BAL_DEF (0: the default, as every older read
+                                                * leaves it) and each track's DIST NOISE: 'X' 'M' (proj_xm), as the EQ */
+    uint8_t dnz[NTRK];
     uint8_t scene[4];                          /* (V10.31) SCL > SCENE: ON, then the six roles a nibble each (seq.c
                                                 * scn_on scn_role): FUNC's 'S' 'C' block after 'D' 'A', none before */
     uint8_t scpat[(NTRK + 1) / 2];                        /* (V10.6k) SCENE's BASS/LEAD PATTERN and DRUM STYLE (seq.c scn_pat), a
@@ -218,6 +221,30 @@ static __attribute__((noinline)) uint32_t proj_eq(project_t *q, const uint8_t *b
     }
     for (k = 0; k < 4u; k++) q->eq[k] = (int8_t)(b[pos + 2u + k] > 24u ? 0 : b[pos + 2u + k] - 12);
     return 6u;
+}
+
+/* (V10.7.30) BALANCE's AMOUNT and the tracks' NOISE: 'X' 'M', AMOUNT, then NOISE a track each (0 .. 100 a byte), when
+ * AMOUNT is not BAL_DEF or a NOISE is on; the last block (firmware before stops at it, the rest loads). A project
+ * without it: AMOUNT BAL_DEF (BALANCE on: what the owner asked for, an older project too), every NOISE 0 */
+static __attribute__((noinline)) uint32_t proj_xm(project_t *q, const uint8_t *bc, uint32_t pos, uint32_t room)
+{
+    uint8_t *b = (uint8_t *)(uintptr_t)bc;
+    uint32_t k, any = (uint32_t)q->bal;
+    if (!room) {
+        for (k = 0; k < NTRK; k++) any |= q->dnz[k];
+        if (!any) return 0;
+        if (b) {
+            b[pos] = 'X'; b[pos + 1u] = 'M'; b[pos + 2u] = (uint8_t)(q->bal + BAL_DEF);
+            memcpy(b + pos + 3u, q->dnz, NTRK);
+        }
+        return 3u + NTRK;
+    }
+    q->bal = 0;
+    memset(q->dnz, 0, NTRK);
+    if (pos + 3u + NTRK > room || b[pos] != 'X' || b[pos + 1u] != 'M') return 0;
+    q->bal = (int8_t)(b[pos + 2u] - BAL_DEF);           /* (their range: project_restore_runtime's) */
+    memcpy(q->dnz, b + pos + 3u, NTRK);
+    return 3u + NTRK;
 }
 
 /* (JIANT 0.6) the tracks from `from` on of a project read from a format of PROJ_LT tracks: their power-on sounds
@@ -561,6 +588,7 @@ static uint32_t proj_packed_size(const project_t *q)
         if (q->fit[t]) { n += 2u + NTRK; break; }
     for (i = 0; i < sizeof q->split; i++) if (q->split[i]) { n += 2u + sizeof q->split; break; }
     for (i = 0; i < sizeof q->scpat; i++) if (q->scpat[i]) { n += 2u + sizeof q->scpat; break; }
+    n += proj_xm((project_t *)(uintptr_t)q, 0, 0, 0);   /* (V10.7.30) BALANCE, NOISE */
     return n;
 }
 static int proj_split_ok(const uint8_t *s)
@@ -751,6 +779,7 @@ static int proj_pack(project_store_t *out, const project_t *q)
     if (i < sizeof q->split) { b[pos++] = 'K'; b[pos++] = 'S'; memcpy(b + pos, q->split, sizeof q->split); pos += sizeof q->split; }
     for (i = 0; i < sizeof q->scpat && !q->scpat[i]; i++) {}   /* (V10.6k) SCENE's patterns (the last) */
     if (i < sizeof q->scpat) { b[pos++] = 'S'; b[pos++] = 'P'; memcpy(b + pos, q->scpat, sizeof q->scpat); pos += sizeof q->scpat; }
+    pos += proj_xm((project_t *)(uintptr_t)q, b, pos, 0);   /* (V10.7.30) BALANCE, NOISE (the last) */
     memcpy(b + PROJC_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJC_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
     for (i = 0; i < 4u; i++)
@@ -1071,8 +1100,11 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         pos += 2u + sizeof q->split;
     }
     memset(q->scpat, 0, sizeof q->scpat);
-    if (pos + 2u + sizeof q->scpat <= room && b[pos] == 'S' && b[pos + 1u] == 'P')   /* (V10.6k) */
+    if (pos + 2u + sizeof q->scpat <= room && b[pos] == 'S' && b[pos + 1u] == 'P') {   /* (V10.6k) */
         memcpy(q->scpat, b + pos + 2u, sizeof q->scpat);
+        pos += 2u + sizeof q->scpat;
+    }
+    proj_xm(q, b, pos, room);                           /* (V10.7.30) BALANCE, NOISE (else BAL_DEF, 0) */
     proj_new_tracks(q, nt);                             /* (a FUNC of fewer tracks: the rest at power-on) */
     for (t = nt; t < NTRK; t++)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);
@@ -1223,6 +1255,8 @@ static __attribute__((noinline)) void proj_master_put(project_t *p)
     uint32_t k;
     for (k = 0; k < 4u; k++) p->eq[k] = (int8_t)eq_v[k];
     p->tp[0] = (uint8_t)tape_v[0]; p->tp[1] = (uint8_t)tape_v[1];
+    p->bal = (int8_t)(bal_v - BAL_DEF);                 /* (V10.7.30) BALANCE, the tracks' NOISE */
+    for (k = 0; k < NTRK; k++) p->dnz[k] = (uint8_t)dnz_v[k];
 }
 static void project_capture(project_t *p)
 {
@@ -1475,6 +1509,8 @@ static int project_restore_runtime(const project_t *input)
         uint32_t k;
         for (k = 0; k < 4u; k++) eq_v[k] = clamp(p->eq[k], -12, 12);
         tape_v[0] = p->tp[0] > 100u ? 100 : p->tp[0]; tape_v[1] = p->tp[1] > 100u ? 100 : p->tp[1];
+        bal_v = (int16_t)clamp(p->bal + BAL_DEF, 0, 100);   /* (V10.7.30) BALANCE, NOISE */
+        for (k = 0; k < NTRK; k++) dnz_v[k] = (int16_t)(p->dnz[k] > 100u ? 100u : p->dnz[k]);
     }
     {                                                   /* (V10.31) SCENE */
         uint32_t i;
@@ -1591,6 +1627,8 @@ static __attribute__((noinline)) void system_init(void)   /* (snd8: out of its c
     for (i = 0; i < G_COUNT; i++) song.g[i] = GP[i].def;
     tape_v[0] = tape_v[1] = 0;                          /* (snd8) the master's TAPE out */
     eq_v[0] = eq_v[1] = eq_v[2] = eq_v[3] = 0;          /* (p9) its EQ flat */
+    bal_v = BAL_DEF;                                    /* (V10.7.30) BALANCE on, no NOISE */
+    memset(dnz_v, 0, sizeof dnz_v);
     for (i = 0; i < 5u; i++) song.g[KEEP[i]] = kept[i];
     kept[0] = dice_secs;
     chain_defaults(&chain_config);
@@ -1899,6 +1937,8 @@ static uint32_t autosave_sig(void)
     h = as_mix(h, scn_pat, sizeof scn_pat);
     h = as_mix(h, eq_v, sizeof eq_v);                   /* the master's EQ and TAPE (an EQ change alone: */
     h = as_mix(h, tape_v, sizeof tape_v);               /* autosaved, RESTORE LAST gives it back) */
+    h = as_mix(h, &bal_v, sizeof bal_v);                /* (V10.7.30) BALANCE, NOISE */
+    h = as_mix(h, dnz_v, sizeof dnz_v);
     return as_mix(h, proj_name, sizeof proj_name);
 }
 

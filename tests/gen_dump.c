@@ -5,7 +5,8 @@
  * part a line a bar (the notes by name, '=' held, '.' rest, a chord's notes joined by '/'), each section of a FORM
  * (its key). Optionally the piece heard: a WAV of it playing (its song, with PARTS or SONG), SECONDS long.
  *   cc -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o build/host/gen_dump tests/gen_dump.c -lm
- *   build/host/gen_dump GENRE SEED [ENERGY [FORM [OUT.wav SECONDS]]]      (GENRE 1..NGENRE, NGENRE + 1 EXPLORE, 0 every genre; FORM 0 1 2) */
+ *   build/host/gen_dump GENRE SEED [ENERGY [FORM [OUT.wav SECONDS]]]      (GENRE 1..NGENRE, NGENRE + 1 EXPLORE, 0 every genre; FORM 0 1 2)
+ *   env BAL=a: the master's BALANCE AMOUNT (0 off) */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"
 static const char *NS[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
@@ -125,6 +126,7 @@ int main(int argc, char **argv)
         for (k = 0; k < GP_N; k++) gp.amt[k] = GA_AUTO;
         gp.complex = 50; gp.swing = GA_AUTO; gp.human = 30;
         gen_go();
+        if (getenv("BAL")) bal_v = (int16_t)atoi(getenv("BAL"));   /* (V10.7.30) BALANCE's AMOUNT (else as GEN left it) */
         pd = gs.trk_of[RL_PAD];
         spell();
         printf("\n=== %s  seed %u  energy %u  form %s  %d BPM  swing %d\n", gs.g->name, seed, energy, form == 2u ? "SONG" : form ? "PARTS" : "LOOP",

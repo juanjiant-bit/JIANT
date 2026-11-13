@@ -267,7 +267,7 @@ if [ -f build/gen/felucca_tables.h ]; then
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/tape_test" tests/tape_test.c -lm
     run "TAPE (0.9.9-snd8): off never runs, the drive's harmonics, the highs lost, the head bump, WOW's few cents, no click, kept in a project" "$OUT/tape_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/eq_test" tests/eq_test.c -lm
-    run "EQ (p9): the master's four bands, flat bit for bit, each band moving its tones, kept in a project" "$OUT/eq_test"
+    run "EQ (p9): the master's four bands, flat bit for bit, each band moving its tones, kept in a project; BALANCE (V10.7.30)" "$OUT/eq_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/micro_test" tests/micro_test.c -lm
     run "MICRO in 64ths (0.9.1): recorded within 1/64 of a step at any tempo / division, played there, REC Q 50 %, old projects, 'M' 'F'" "$OUT/micro_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/ctl64_timing_test" tests/ctl64_timing_test.c -lm

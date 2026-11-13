@@ -17,6 +17,8 @@
  * 6. saved and loaded: every value on 64 steps of a synth and a kit's, the block 'M' 'F' there; without it (what firmware
  *    before 0.9.1 reads: the rest of the project as it is) the sixteenth below.
  * 7. SEQ > NOTE's KNOB 4 a 64th a detent, -32 .. +31, "+5/64" (the editor's STEP_SET keeping a step's MICRO: editor_test.c). */
+#define BAL_DEF 0                       /* (V10.7.30) its projects load BALANCE off too */
+#define HOST_BAL 0                      /* (V10.7.30) the master's BALANCE off: its old project sample for sample 0.9.0's */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"
 

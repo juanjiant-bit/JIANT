@@ -18,6 +18,7 @@
  *    note drops 10 dB or more 5..40 ms after a kick (against DUCK 0), and is back (within 1 dB) after the release;
  *    CLIP 100: the loud mix saturates (crest factor down), never past full scale; CLIP 0 is out of the chain.
  * 6. demos into DEMODIR: every lane at MORPH 0, 64, 127; a beat with MORPH swept over 4 bars. */
+#define HOST_BAL 0                      /* (V10.7.30) the master's BALANCE off: its knobs heard by the RMS they move */
 #define main hostsim_main
 #include "hostsim.c"
 #undef main
