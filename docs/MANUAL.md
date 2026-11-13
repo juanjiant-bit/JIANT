@@ -2161,6 +2161,29 @@ What a piece is made of:
 Every piece replaces every track's steps, sounds, kit, mix and automation. Mutes are left as they are. The roles that
 play go on the first tracks (drums on the DRUM track), so with TRACKS 4 you hear the most important ones.
 
+**The sequencer's own tools** (V10.7.30). A piece uses what you would use by hand, each where its section and genre
+call for it, more of it as **ENERGY** and **COMPLEX** rise (EXPLORE further), from a random stream of its own (the
+notes of every seed are the same as before):
+- **The main sections** (a groove, a drop, the apex): the kit's **DECY** opening over its loop (automation); between
+  the eighths the closed hats played by **chance** (80 %, COMPLEX past 55); on a loop that ends with two empty
+  sixteenths, two **snares that close the phrase** and play only its last loop of two or four (**TRIG N:M**); the
+  lead's (else the arp's) **delay thrown** on the phrase's last note and back on the one; where the genre plays stabs
+  (house, techno, garage ..) the arp's last bar's first note a **CHORD** every other loop (2:2).
+- **The build**: as before the chords' filter opening, the riser, the snare roll, the stutter and the master's
+  high-pass; now also the kit's **TONE** brighter over its four bars and the arp's filter a **RAMP** (EXP, BARS 4) to a
+  **lock** on its first note.
+- **The break**: the chords **slower in and out** (ATK +16, REL +24 there only) and, where the drums run four bars,
+  the master's **DJ FILTER** low-passed (-40) and opening by the break's end.
+- **The global lane** (GLO > COMPS): in the machines' genres (not a band's), a **STUTTER** on the last beat of the
+  phrase's last bar (8:8; past ENERGY 50 4:4; 1/8, past 66 1/16) on the lead and the arp, past ENERGY 60 the drums too
+  where the genre rolls (the four-on-the-floor maps, the hat-roll grammars). A fill the whole song shares.
+- **The mix**: chords whose low-pass sits at 1 kHz or brighter get a **band-pass** an octave under it instead (their
+  top about as before, the lows under it out: room for the bass); every chord part at least CHORUS 24 (wider: the
+  middle is the lead's and the bass's); the drums half a dB up. Dark chords keep their low-pass (their body is the low
+  mids, as the owner's references).
+Each section's automation stays well inside its 64 records (25 at most over every genre), and the same seed and
+settings give the same song, records, locks, components and lane included (tests/gen_test.c).
+
 #### FORM MY LOOP: your loop made a song
 
 Set **FORM** to **MY LOOP** and press **OCT+**: GEN turns the loop you are playing into a whole song, by the rules of

@@ -67,7 +67,7 @@ static uint32_t gpickw(const uint8_t *w, uint32_t n)    /* an index by its weigh
     for (i = 0; i < n; i++) { if (r < w[i]) return i; r -= w[i]; }
     return n - 1u;
 }
-enum { GS_PICK, GS_DRUMS, GS_BASS, GS_CHORDS, GS_ARP, GS_LEAD, GS_SOUND, GS_FORM, GS_MIX, GS_TEX, GS_PLAN, GS_GRAM };
+enum { GS_PICK, GS_DRUMS, GS_BASS, GS_CHORDS, GS_ARP, GS_LEAD, GS_SOUND, GS_FORM, GS_MIX, GS_TEX, GS_PLAN, GS_GRAM, GS_RICH };
 
 /* ------------------------------------------------------------------------------------------------ the piece --- */
 /* (0.8.3) a chord of the plan: its first step, its steps, its root's degree in the mode, its quality (QSTACK) and how
@@ -1777,7 +1777,7 @@ static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
     /* (p3, the owner: "the leads eat the drums and everything else; the drums always in front, the rest accompanies")
      * the drums up, the bass under them, the chords and the arp back, the lead ~6 dB under gen3's; the genre's lift at
      * half and on the bass and the chords only */
-    t->p[P_LEVEL] = (int16_t)clamp((r == RL_DRUM ? 110 : r == RL_BASS ? 114 : r == RL_LEAD ? (g->lead == LD_RIFF ? 108 : 92) : r == RL_ARP ? 96 :
+    t->p[P_LEVEL] = (int16_t)clamp((r == RL_DRUM ? 111 : r == RL_BASS ? 114 : r == RL_LEAD ? (g->lead == LD_RIFF ? 108 : 92) : r == RL_ARP ? 96 :
                                     r == RL_TEX ? (g->tex == SR_NOISE ? 56 : 66) : 100) +
                                    (r == RL_BASS || r == RL_PAD ? GG_LIFT(GGR) / 2 : 0) +   /* (the genre's own: GGRAM) */
                                    (gs.gi < NGENRE ? (r == RL_TEX ? 8 : 3) * ((int8_t)(GMIX[gs.gi][r >> 1] << (r & 1u ? 0 : 4)) >> 4) : 0) +
@@ -1814,6 +1814,15 @@ static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
     if (r == RL_DRUM && (g->spec & GSP_HEAVY))          /* (p4b, the owner: EBM's drums industrial, distorted, simple;
                                                          * V10.6p: phonk's and baile funk's too) */
         t->p[P_DIST] = (int16_t)grr(40, 60);
+    if (r == RL_PAD) {  /* (V10.7.30, the owner: "a ball of mids") each part its room, from no random number (the mix's
+         * stream as it was): the chords whose low-pass sits at 1 kHz or up a band-pass an octave under it (their top about
+         * as it was, the lows under it gone: -7 dB two octaves down), the bass's room; the chords wider (CHORUS): the
+         * middle the lead's and the bass's. (The chords under 1 kHz as they were: their body the low mids, the owner's
+         * dark references) */
+        int16_t *c = &t->p[t->eng_req == EG_A ? P_E4 : P_FCUT];
+        if (!t->p[P_FTYPE] && *c >= 72) { t->p[P_FTYPE] = 2; *c = (int16_t)(*c - 12); t->p[t->eng_req == EG_A ? P_E5 : P_FRES] = 0; t->p[P_ED_FLT] = 0; }
+        if (t->p[P_CHOR] < 24) t->p[P_CHOR] = 24;
+    }
 }
 
 /* ---------------------------------------------------------------------------------------- the form: parts --- */
@@ -1930,6 +1939,62 @@ static uint32_t gform(void)
 static void gmot(track_t *t, uint32_t step, uint32_t id, int32_t v, int ramp)
 {
     if (!motion_set_event(t, step, id, (int16_t)clamp(v, 0, 127)) && ramp) motion.event[motion.count - 1u].value ^= (int16_t)(1 << 13);
+}
+/* (V10.7.30, the owner: "GEN should use as many of the synth's resources as possible, with good judgement") a section's
+ * life from the sequencer's own tools, from a stream of its own (GS_RICH: every part's notes as they were), as much of
+ * it as ENERGY and COMPLEX ask (EXPLORE further). The main sections (a groove, a drop, the apex): the kit's DECY opening
+ * over its loop, the hats between the eighths played by chance (80 %, COMPLEX past 55), two snares closing the phrase
+ * that play its last loop of two or four only (TRIG N:M); the lead's (else the arp's) delay thrown on its phrase's last
+ * note and back on the one; a stab genre's arp a chord (CHORD) on its last bar's first note every other loop. The
+ * build: the kit brighter (TONE) over its four bars, the arp's filter a RAMP (EXP) to a lock on its first note over the
+ * four bars. The break: the chords slower in and out (ATK REL), the master's DJ FILTER low-passed and opening by its
+ * end. (The club's B is A's parts: theirs already. The global lane's stutter: gen_make) */
+static uint32_t gchord_page(void);
+static track_t *gtr(uint32_t r) { uint32_t k = gs.trk_of[r]; return k < NTRK && gs.act[r] ? &trk[k] : 0; }   /* a role's playing track */
+static uint32_t gfree(const track_t *t, uint32_t i, uint32_t to)   /* its first note from i on with no component (to: none) */
+{
+    for (; i < to && (!dstarts(t, i) || comp_any(&t->step[i])); i++) {}
+    return i;
+}
+static __attribute__((noinline)) void grich(uint32_t k)
+{
+    uint32_t q0 = gq, f = gform(), e = (gs.energy + gs.complex) / 2u + (gx.on ? 25u : 0u), i, len, id;
+    uint32_t bld = f == FM_CLUB && k == 2u, brk = k == (f == FM_CLUB ? 3u : 1u), mel = !bld && !brk && (f != FM_CLUB || k != 1u);
+    track_t *t, *dr = gtr(RL_DRUM), *ld = gtr(RL_LEAD), *ar = gtr(RL_ARP), *pd = gtr(RL_PAD);
+    step_t *s;
+    if (gls.on) return;
+    gseed(GS_RICH);
+    if (dr && !brk) {
+        t = dr; len = dlen(t); id = bld ? P_E2 : P_E3;
+        if (bld || gch(e)) { gmot(t, 0, id, t->p[id] - (int32_t)!bld * 8, 0); gmot(t, bld ? 63u : len - 1u, id, t->p[id] + (bld ? 24 : 8), 1); }
+        for (i = 0; i < len && !bld; i++) {
+            s = &t->step[i];
+            if (i + 2u >= len && s->time != ST_NOTE && gch(e)) {
+                gdrum_hit(t, i, DV_SNARE, 80, 0);
+                s->comp = CO_MAKE(CA_MUTE, CC_NM); s->carg = CV_MUTE_TRIG; s->cnm[0] = (uint8_t)(len > 16u ? 0x11u : 0x33u);
+            } else if ((i & 1u) && s->time == ST_NOTE && s->hit == 1u << DV_HATC && !s->comp && gs.complex > 55u) step_set_chance(s, 80);
+        }
+    }
+    if (!ld) ld = ar;
+    if (mel && ld && gch(e)) {
+        len = dlen(ld);
+        for (i = len - 1u; i > 1u && i + 8u >= len; i--)
+            if (dstarts(ld, i)) { gmot(ld, i, P_DLY, ld->p[P_DLY] + 48, 0); gmot(ld, 0, P_DLY, ld->p[P_DLY], 0); break; }
+    }
+    if (ar && (mel ? GSTAB(gs.g->pads) && !gx.on && ar->p[P_VOICE] == V_POLY && gch(e) : bld)) {
+        len = dlen(ar);
+        i = gfree(ar, mel && len > 16u ? len - 16u : 0u, bld ? 16u : len);
+        id = ar->eng_req == EG_A ? P_E4 : P_FCUT;
+        s = &ar->step[i];
+        if (i < 16u && bld && !motion_set_lock(ar, i, id, (int16_t)clamp(ar->p[id] + 30, 0, 127))) {
+            s->comp = CO_MAKE(CA_RAMP, 0); s->carg = 1u | CV_RAMP_BARS; s->clen[0] = 3;
+        } else if (i < len && mel) { s->comp = CO_MAKE(CA_CHORD, CC_NM); s->carg = (uint8_t)(gchord_page() - 1u); s->cnm[0] = 0x11u; }
+    }
+    if (brk && pd) {
+        gmot(pd, 0, P_ATK, pd->p[P_ATK] + 16, 0); gmot(pd, 0, P_REL, pd->p[P_REL] + 24, 0);
+        if (dr && dlen(dr) == NSTEP && gch(e)) { motion_set_event(dr, 0, MOT_DJF, -40); gmot(dr, 60, MOT_DJF, 0, 1); }
+    }
+    gq = q0;
 }
 /* (V10.6m) the song as rows (after SIREN's plan, docs: the owner's "nothing happens in a section, fills every loop, no
  * builds"): a row's kind, GT_*: the section it plays, the drums' groups out (DXG_*), the bass in or out, the melodic
@@ -2242,6 +2307,7 @@ static void gen_parts(void)
             gmute(dr);
             if (bs < NTRK && (ld < NTRK || ar < NTRK || pd < NTRK)) trk[bs].p[P_MUTE] = 1;
         }
+        grich(k);                                       /* (V10.7.30) the section's automation, locks, components */
         for (i = 0; i < NTRK; i++) secm[k] |= (uint8_t)((trk[i].p[P_MUTE] != 0) << i);
         section_store(k);
         if (live.cur == (int8_t)k) dice_secs |= (uint8_t)(1u << k);
@@ -3041,6 +3107,18 @@ static __attribute__((noinline)) void gen_make(void)
     if ((g->spec & GSP_THIRDS) && gs.trk_of[RL_LEAD] < NTRK && gs.act[RL_LEAD]) {   /* (V10.6n) cumbia's second voice */
         fg_set_t *f = &fg_set[gs.trk_of[RL_LEAD]][0];
         f->rate = 5; f->dir = FG_FWD; f->ivl = -2;      /* (x1, with it, a third under) */
+    }
+    grich(0);                                           /* (V10.7.30) A's automation, locks, components (gen_parts: the rest) */
+    if (g->human < 40u && (gs.energy + gs.complex) / 2u + (gx.on ? 25u : 0u) >= 45u) {   /* (V10.7.30) the master's
+                                                         * components (GLO > COMPS), the machines' genres (not a band's):
+                                                         * a STUTTER on the last beat of the phrase's last bar (8:8, ENERGY
+                                                         * past half 4:4; 1/8, past two thirds 1/16) on the lead and the arp,
+                                                         * past 60 the drums too where the genre rolls (the four on the floor's
+                                                         * maps, the hat rolls' grammars): a fill the whole song shares */
+        gcomp_t *c = &glane[12];
+        c->mask = (uint8_t)(1u << gs.trk_of[RL_LEAD] | 1u << gs.trk_of[RL_ARP] | (gs.energy > 60u && (g->drum <= DM_TECHNO || GG_RAT(GGR))) << gs.trk_of[RL_DRUM]);
+        c->comp = CO_MAKE(CA_STUT, CC_NM); c->val = gs.energy <= 66u; c->len = 3; c->nm = gs.energy > 50u ? 0x33u : 0x77u;
+        gl_touch();
     }
 parts:
     gen_parts();
