@@ -7517,10 +7517,10 @@ static int test_momentary(void)
     btn_up(B_EDIT); frames(96);
     ok &= *v1 == c1 && *v2 == c2 && str_eq(cur_page()->title, "DLY");
     go_title("FX"); frames(64);
-    page_desc(cur_page(), 2, &v1);                      /* (codex/coherence: SENDS CHORUS DLY REV, REV on KNOB 3) */
+    page_desc(cur_page(), 3, &v1);                      /* (V10.7.24: SENDS DIST CHORUS DLY REV, REV on KNOB 4) */
     c1 = *v1;
     btn_down(B_EDIT); frame();
-    turn(EN_K3, 9); frame();
+    turn(EN_K4, 9); frame();
     h1 = *v1;
     ok &= h1 != c1 && !project_save(1) && stored_param(1, song.sel, P_REV) == c1;
     btn_up(B_EDIT); frames(96);
