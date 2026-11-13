@@ -1093,8 +1093,8 @@ image) with a bar under it: the morph, FAR left, NEAR right.
 
 EDIT > **FILTER**: **TYPE** LP, HP, BP, **COMB**, **COMB-** or **LP24** (a 24 dB/oct low-pass, two poles in series, RES on the second). COMB and COMB- are a comb tuned to the note you play; CUT moves it, RES is how much
 it rings), **CUT**, **RES**, and KNOB 4 **DRIVE**: on ANALOG its own DRIVE (each voice into the clip), on every other
-engine the part into a soft clip before the filter, x1 .. x6 (x3 before codex/filter2-mod; on ANALOG's LP24 too, after
-its voices' own drive; DRUM-X and EXT keep the track's DIST there; DIST is always on FX > DIST too). On ANALOG the filter is per voice; on MATH the filter page drives its per-voice filter; on
+engine the part into a soft clip before the filter, x1 .. x6 (x3 before codex/filter2-mod; DRUM-X and EXT keep the
+track's DIST there; DIST is always on FX > DIST too). On ANALOG the filter is per voice; on MATH the filter page drives its per-voice filter; on
 the others it is a filter on the track that follows LFO DEST / ENV DEST FILTER.
 
 **COMB** and **COMB-** (0.9.9-snd1): the comb is tuned to the newest note (CUT 64 = the note, ±32 semitones either
@@ -1112,12 +1112,14 @@ ANALOG and MATH LP24 (like the combs) is the track's filter after the voices: th
 sound exactly as before.
 
 **LP24 with power** (codex/filter2-mod, the owner: "the filter lacks power"). With any DRIVE above 0:
-- the part goes into the soft clip up to x6 (+15 dB) before the filter: more gain, more saturation;
+- the part goes into the soft clip up to x6 (+15 dB) before the filter: more gain, more saturation (on ANALOG its own
+  DRIVE drives each voice, x1 .. x3, as before);
 - the level is made up as the filter closes or rings: the filter compares its input's level with its output's and gives
   back half of what was lost (in dB), up to +12 dB. Closing CUT no longer makes the part drop away. Measured on a C3
-  saw at DRIVE 100 %, the drop at CUT 40 is −1.6 dB (it was −2.3 dB; −4.1 dB at DRIVE 0), and below the note at CUT 20
-  it is about −9 dB (it was −14 dB; V10.7.29's MS20 was −7.6 dB). The output is a little lower as DRIVE rises (×0.6 at
-  100 %), so the part stays near the MS20's level, about 4 dB over the dry part;
+  saw at DRIVE 100 %, the drop at CUT 40 is −1.5 dB (it was −2.3 dB; −4.1 dB at DRIVE 0), and below the note at CUT 20
+  it is about −8 dB (it was −14 dB; V10.7.29's MS20 was −7.6 dB). The output is lowered as DRIVE rises (×0.48 at
+  100 %), so the open filter is as loud as before: the power is in the body kept as it closes, the saturation and the
+  ring, not in a louder part;
 - **RES past ~90 %** goes over the edge: the filter sings on its own at CUT, kept under full scale by the clip, as
   long as the part plays. Once the part is silent its push fades (~90 ms) and the ring dies, so nothing keeps
   whistling.

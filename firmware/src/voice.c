@@ -261,6 +261,12 @@ static __attribute__((noinline)) void fn_tick(const track_t *t, const engine_t *
     }
     b->cut = (v * dep) >> 15;
 }
+/* the SVF's coefficients at cut, damping k (tsvf_coef_k) out of line: METAL's every 4 samples (tf_run, tf_lp24), the
+ * divide out of their sample loops */
+static __attribute__((noinline)) void fn_coef(tsvf_t *c, int32_t cut, int32_t k)
+{
+    tsvf_coef_k(c, cut, k);
+}
 /* the matrix's F.NOISE (mod.c mod_tsrc): the value, its clock kept running (track_post, a synth's) */
 static __attribute__((noinline)) int32_t fn_src(const track_t *t)
 {
@@ -285,8 +291,8 @@ static __attribute__((noinline)) int32_t fn_voice(const track_t *t, int32_t p16,
     return e != &ENG_ANALOG && e != &ENG_LOFI ? 0 : (p[P_FNZ] < 127 ? fnb[ti].cut : 0) +
            (p[P_FKEY] < 127 ? ((p16 - 60 * 16) * (fnb[ti].kq - (e == &ENG_ANALOG ? 1024 : 0))) >> 8 : 0);
 }
-/* (codex/filters2) FILTER's DRIVE on a part (every engine but ANALOG, whose DRIVE drives each voice; filter2-mod: and
- * ANALOG's LP24 too): its sum into the soft clip before the filter, x1 .. x6 (was x3) */
+/* (codex/filters2) FILTER's DRIVE on a part (every engine but ANALOG, whose DRIVE drives each voice): its sum into the
+ * soft clip before the filter, x1 .. x6 (filter2-mod: was x3) */
 static __attribute__((noinline)) void fn_drive(int32_t *out, uint32_t n, int32_t d)
 {
     uint32_t i;
@@ -302,7 +308,7 @@ static __attribute__((noinline)) void fn_drive(int32_t *out, uint32_t n, int32_t
  * damping lowered by up to three quarters of what it has over 0.05 (RES 0: a bump; mid RES a growl; RES 127 a scream),
  * the clip squashing the ring of a loud input, the knee lower (under full scale), the level down to 3/4 as it drives.
  * (codex/filter2-mod, the owner: "the filter lacks power") DRIVE on: the part into the soft clip x1 .. x6 first
- * (fn_drive, ANALOG's too), the level made up as the filter closes or rings (its input's level against its output's, a
+ * (fn_drive; ANALOG's voices their own x1 .. x3), the level made up as the filter closes or rings (its input's level against its output's, a
  * block at a time: half the drop in dB made up, +12 dB at most, -6 dB on a ring louder than the input), and RES over 100
  * past the edge: the loop's feedback over the damping, it sings on its own (bounded by the clip) while the part plays,
  * its push faded (~90 ms) once the input is silent: the ring then dies, no whistle left. DRIVE 0: as before, sample for
@@ -325,7 +331,7 @@ static __attribute__((noinline)) void tf_lp24(uint32_t ti, int32_t *out, uint32_
     kf = ((k2 - 200) * drv * 3) >> 9;
     if (drv && r > 100)                                 /* (filter2-mod) past the edge, while the part plays */
         kf += ((r - 100) * 64 * ms_s[ti][2]) >> 15;
-    dg = drv * 100;                                     /* (the level kept as it drives: x1 .. 0.61; filter2-mod: was
+    dg = drv * 134;                                     /* (the level kept as it drives: x1 .. 0.48; filter2-mod: was
                                                          * 3/4, the made-up gain and x6 into the clip louder) */
     kn = kf ? 16000 : 30000;
     ga = ms_s[ti][1] ? ms_s[ti][1] : 4096;
@@ -338,8 +344,8 @@ static __attribute__((noinline)) void tf_lp24(uint32_t ti, int32_t *out, uint32_
         if (!i || (md && !(i & 3u))) {                  /* (filter2-mod: METAL's CUT every 4 samples) */
             mo = cut + ((fn_sin(mph) * md) >> 15);
             mph += mi;
-            tsvf_coef_k(&c1, mo, 8192);
-            tsvf_coef_k(&c2, mo, k2);
+            fn_coef(&c1, mo, 8192);
+            fn_coef(&c2, mo, k2);
         }
         v3 = out[i] - a2;
         v1 = (c1.a1 * a1 + c1.a2 * v3) >> 13;
@@ -452,7 +458,7 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
             int32_t x = out[i], y, w = (int32_t)((i + 1u) << (12 - CTL_LOG2));   /* 0 .. 1 over the block, Q12 */
             int32_t v3, v1, v2;
             if (!i || (md && !(i & 3u))) {              /* (filter2-mod: METAL's CUT every 4 samples) */
-                tsvf_coef_k(&c, cut + ((fn_sin(mph) * md) >> 15), k);
+                fn_coef(&c, cut + ((fn_sin(mph) * md) >> 15), k);
                 mph += mi;
             }
             v3 = x - ic2;
@@ -542,8 +548,7 @@ static __attribute__((noinline)) void track_post(track_t *t, const engine_t *e, 
     uint32_t ti = (uint32_t)(t - trk) % NTRK, ok = e != &ENG_DRUM && e != &ENG_INPUT;
     fn_tick(t, e, ti, ok);                              /* (filters2) FILTER 2, a block (on the voices' own filters the
                                                          * next block: voice_block) */
-    if (fnb[ti].drv && (e != &ENG_ANALOG || FT_IS_LP24(ft_of(t->p))))   /* FILTER's DRIVE: into the filter (ANALOG's: its
-                                                         * voices', filter2-mod: and LP24's) */
+    if (e != &ENG_ANALOG && fnb[ti].drv)                /* FILTER's DRIVE: into the filter (ANALOG's: its voices') */
         fn_drive(out, n, fnb[ti].drv);
     if (e == &ENG_ANALOG)
         track_filter(t, out, n, 1, t->p[P_E4], t->p[P_E5]);

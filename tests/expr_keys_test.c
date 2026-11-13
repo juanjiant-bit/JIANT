@@ -261,9 +261,10 @@ int main(void)
     ck("stopped: the recorded gates gone (the sound's value back)", trk[0].p[P_XPR] == 127 && (blocks(400), kx_q8[0] == 0));
     /* ---- 6. (V10.7.22) the sources OCT+ / OCT- ---- */
 #ifndef EXPR_HASH_ONLY                                /* (the sources: not in V10.7.21) */
-    ck("OCT+ / OCT- appended (24, 25), every source before them where it was: a stored project's matrix the same",
+    ck("OCT+ / OCT- appended (24, 25), every source before them where it was: a stored project's matrix the same",   /* (filter2-mod:
+                                                         * F.NOISE appended after them, 26) */
        MS_MODW == 6 && MS_PROX == 15 && MS_FOLLOW == 17 && MS_T1 == 18 && MS_OCTUP == MS_T1 + NTRK && MS_OCTUP == 24 &&
-       MS_OCTDN == 25 && MS_N == 26 && str_eq(N_MSRC[MS_OCTUP], "OCT+") && str_eq(N_MSRC[MS_OCTDN], "OCT-") &&
+       MS_OCTDN == 25 && MS_N == 27 && MS_FNZ == 26 && str_eq(N_MSRC[MS_OCTUP], "OCT+") && str_eq(N_MSRC[MS_OCTDN], "OCT-") &&
        str_eq(N_MSRC[MS_T1 + NTRK - 1], "T6 ENV") && TP[P_M1SRC].max == MS_N - 1 && !MS_BIPOLAR(MS_OCTDN) && !MS_VOICE(MS_OCTUP));
     setup();
     midi_out_mode = MO_ALL;

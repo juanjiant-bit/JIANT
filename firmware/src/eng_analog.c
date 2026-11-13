@@ -38,7 +38,7 @@ static __attribute__((noinline)) uint32_t fn_metal(const int16_t *p)   /* (voice
 {
     return p[P_FNZ] < 127 && ((uint32_t)(p[P_FNMD] & 127) * 5u >> 7) == 2u;
 }
-static __attribute__((noinline)) uint32_t ft_voice(const int16_t *p)   /* (filter2-mod: one copy) */
+static inline uint32_t ft_voice(const int16_t *p)
 {
     uint32_t f = (uint16_t)p[P_FTYPE];                  /* (a stray negative one: open, as a part's) */
     return f < FT_COMB && !fn_metal(p) ? f : FT_COMB;

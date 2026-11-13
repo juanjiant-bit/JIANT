@@ -308,7 +308,8 @@ int main(int argc, char **argv)
                 a1 = clamp(2 * v1 - a1, -150000, 150000); a2 = clamp(2 * v2 - a2, -150000, 150000);
                 v3 = v2 - b2; v1 = (c2.a1 * b1 + c2.a2 * v3) >> 13; v2 = b2 + ((c2.a2 * b1 + c2.a3 * v3) >> 13);
                 b1 = clamp(2 * v1 - b1, -150000, 150000); b2 = clamp(2 * v2 - b2, -150000, 150000);
-                ref[k + i] = soft_knee(v2, 30000);
+                if (k + i < FS / 2u)                    /* (filter2-mod: the last block past the end, ASan) */
+                    ref[k + i] = soft_knee(v2, 30000);
             }
         }
         for (i = TF_XB * CTL; i < FS / 2u; i++)        /* (after its fade in) */

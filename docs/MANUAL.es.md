@@ -1143,8 +1143,7 @@ lugar de la imagen) con una barra debajo: el morph, FAR a la izquierda, NEAR a l
 EDIT > **FILTER**: **TYPE** LP, HP, BP, **COMB**, **COMB-** o **LP24** (un pasabajos de 24 dB/oct, dos etapas en serie, RES en la segunda). COMB y COMB- son un filtro peine afinado a la nota que tocás; CUT lo mueve, RES es
 cuánto resuena), **CUT**, **RES**, y KNOB 4 **DRIVE**: en ANALOG su propio DRIVE (cada voz contra el recorte), en
 todos los demás motores la parte entra a un recorte suave antes del filtro, x1 .. x6 (x3 antes de codex/filter2-mod;
-también en el LP24 de ANALOG, después del drive propio de sus voces; DRUM-X y EXT siguen teniendo ahí el DIST de la
-pista; DIST está siempre también en FX > DIST). En ANALOG el filtro es por voz; en MATH la página de
+DRUM-X y EXT siguen teniendo ahí el DIST de la pista; DIST está siempre también en FX > DIST). En ANALOG el filtro es por voz; en MATH la página de
 filtro maneja su filtro por voz; en los demás es un filtro sobre la pista que sigue a LFO DEST / ENV DEST FILTER.
 
 **COMB** y **COMB-** (0.9.9-snd1): el peine se afina a la nota más nueva (CUT 64 = la nota, ±32 semitonos a cada
@@ -1162,13 +1161,14 @@ apaga cuando la parte queda en silencio. En ANALOG y MATH el LP24 (como los pein
 las voces: su propio filtro se abre. LP, HP y BP suenan exactamente igual que antes.
 
 **LP24 con potencia** (codex/filter2-mod, el dueño: "al filtro le falta potencia"). Con cualquier DRIVE arriba de 0:
-- la parte entra al recorte suave hasta x6 (+15 dB) antes del filtro: más ganancia, más saturación;
+- la parte entra al recorte suave hasta x6 (+15 dB) antes del filtro: más ganancia, más saturación (en ANALOG su
+  propio DRIVE maneja cada voz, x1 .. x3, como antes);
 - el nivel se compensa cuando el filtro se cierra o resuena: el filtro compara el nivel de su entrada con el de su
   salida y devuelve la mitad de lo perdido (en dB), hasta +12 dB. Cerrar CUT ya no hace que la parte se desinfle.
-  Medido con una sierra en C3 y DRIVE 100 %, la caída en CUT 40 es de −1,6 dB (era −2,3 dB; −4,1 dB con DRIVE 0), y
-  por debajo de la nota, en CUT 20, ronda los −9 dB (era −14 dB; el MS20 de la V10.7.29 era −7,6 dB). La salida baja
-  un poco a medida que sube DRIVE (×0,6 al 100 %), así que la parte queda cerca del nivel del MS20, unos 4 dB arriba
-  de la parte sin filtro;
+  Medido con una sierra en C3 y DRIVE 100 %, la caída en CUT 40 es de −1,5 dB (era −2,3 dB; −4,1 dB con DRIVE 0), y
+  por debajo de la nota, en CUT 20, ronda los −8 dB (era −14 dB; el MS20 de la V10.7.29 era −7,6 dB). La salida baja a
+  medida que sube DRIVE (×0,48 al 100 %), así que con el filtro abierto suena tan fuerte como antes: la potencia está
+  en el cuerpo que se mantiene al cerrar, la saturación y la resonancia, no en una parte más fuerte;
 - **RES pasado ~90 %** cruza el borde: el filtro canta solo en CUT, por debajo del máximo gracias al recorte, mientras
   la parte suena. Cuando la parte queda en silencio, el empuje se apaga (~90 ms) y la resonancia muere, así que nada
   queda silbando.

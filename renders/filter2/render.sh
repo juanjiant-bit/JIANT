@@ -40,8 +40,8 @@ for m in soft:115:89 step:89:89 metal:64:71 break:38:79 dust:12:89; do
     n=${m%%:*}; v=${m#*:}; mv=${v%%:*}; rt=${v#*:}; i=0
     for b in old new; do s=antes; [ $b = new ] && s=ahora; nl=""; nr=""
         for z in 89 38 0; do i=$((i + 1))
-            r $b h$i 0 9 SECS=3 NOTE=7 PSET=119:60,120:70,88:$mv,87:$rt,86:$z; nl="$nl $T/h$i.wav"
-            r $b f$i 0 0 SECS=3 STEPS=$LEAD PSET=119:90,120:40,88:$mv,87:$rt,86:$z; nr="$nr $T/f$i.wav"
+            r $b h$i 0 9 SECS=2 NOTE=7 PSET=119:60,120:70,88:$mv,87:$rt,86:$z; nl="$nl $T/h$i.wav"
+            r $b f$i 0 0 SECS=2 STEPS=$LEAD PSET=119:90,120:40,88:$mv,87:$rt,86:$z; nr="$nr $T/f$i.wav"
         done
         join "01_${n}_nota_30_70_100_$s" $nl
         join "02_${n}_riff_30_70_100_$s" $nr
@@ -67,16 +67,16 @@ join 04_fnoise_pitch_break "$T/p3.wav"
 #    (before, now) and MS20 (V10.7.29); CUT closed 127 -> 10 at DRIVE 100 % (the level kept?); RES 90 -> 127 at DRIVE
 #    50 % (self-oscillation now); the FAT BASS riff (ANALOG 14) through each; a part's (PHASE) riff, DRIVE 100 %, RES 100
 for b in old new; do s=antes; [ $b = new ] && s=ahora
-    r $b x1 0 9 SECS=8 SWEEP=1 PSET=112:6,121:64; join 05_lp24_barrido_drive50_$s "$T/x1.wav"
-    r $b x2 0 9 SECS=8 SWEEP=1 PSET=112:6,121:127; join 05_lp24_barrido_drive100_$s "$T/x2.wav"
-    r $b x3 0 9 SECS=8 NOTE=7 PSET=112:6,120:40,121:127 PSWEEP=119:127:10; join 06_lp24_cerrando_drive100_$s "$T/x3.wav"
-    r $b x4 0 9 SECS=8 NOTE=7 PSET=112:6,119:60,121:64 PSWEEP=120:90:127; join 07_lp24_res_90a127_drive50_$s "$T/x4.wav"
+    r $b x1 0 9 SECS=6 SWEEP=1 PSET=112:6,121:64; join 05_lp24_barrido_drive50_$s "$T/x1.wav"
+    r $b x2 0 9 SECS=6 SWEEP=1 PSET=112:6,121:127; join 05_lp24_barrido_drive100_$s "$T/x2.wav"
+    r $b x3 0 9 SECS=6 NOTE=7 PSET=112:6,120:40,121:127 PSWEEP=119:127:10; join 06_lp24_cerrando_drive100_$s "$T/x3.wav"
+    r $b x4 0 9 SECS=6 NOTE=7 PSET=112:6,119:60,121:64 PSWEEP=120:90:127; join 07_lp24_res_90a127_drive50_$s "$T/x4.wav"
     r $b x5 0 14 SECS=6 STEPS=$RIFF PSET=112:6,119:50,120:75,121:127,5:40; join 08_lp24_fatbass_riff_drive100_$s "$T/x5.wav"
     r $b x6 2 0 SECS=6 STEPS=$RIFF PSET=112:6,113:60,114:100,89:0; join 09_lp24_phase_riff_drive100_$s "$T/x6.wav"
 done
-r v29 y1 0 9 SECS=8 SWEEP=1 PSET=112:5; join 05_ms20_barrido_v29 "$T/y1.wav"
-r v29 y3 0 9 SECS=8 NOTE=7 PSET=112:5,120:40 PSWEEP=119:127:10; join 06_ms20_cerrando_v29 "$T/y3.wav"
-r v29 y4 0 9 SECS=8 NOTE=7 PSET=112:5,119:60 PSWEEP=120:90:127; join 07_ms20_res_90a127_v29 "$T/y4.wav"
+r v29 y1 0 9 SECS=6 SWEEP=1 PSET=112:5; join 05_ms20_barrido_v29 "$T/y1.wav"
+r v29 y3 0 9 SECS=6 NOTE=7 PSET=112:5,120:40 PSWEEP=119:127:10; join 06_ms20_cerrando_v29 "$T/y3.wav"
+r v29 y4 0 9 SECS=6 NOTE=7 PSET=112:5,119:60 PSWEEP=120:90:127; join 07_ms20_res_90a127_v29 "$T/y4.wav"
 r v29 y5 0 14 SECS=6 STEPS=$RIFF PSET=112:5,119:50,120:75,5:40; join 08_ms20_fatbass_riff_v29 "$T/y5.wav"
 r v29 y6 2 0 SECS=6 STEPS=$RIFF PSET=112:5,113:60,114:100; join 09_ms20_phase_riff_v29 "$T/y6.wav"
 rm -rf "$T"
