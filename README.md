@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.25
+## This release: V10.7.26
 
 ### Installing
 
@@ -482,6 +482,9 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.26 — beta (2026-11-13)
+- **GEN FORM SONG: a structure per seed.** It used to be one fixed plan for every genre. Now each seed picks from templates of the genre's family (club: classic, DJ, drop after drop, groove; song: verse, pre-chorus, chorus, bridge; hip hop: hook and verse; arc: ambient, IDM, kraut; FUGA), with optional sections (a second break and drop, a bridge, a last chorus again, an intro without the kick) and lengths of 4 to 32 bars; ENERGY gives longer drops and more of them, or longer intros and breaks; every song 2–5 minutes. The same seed still makes the same song; LOOP, PARTS and MY LOOP unchanged.
 
 ### V10.7.25 — beta (2026-11-13)
 - **VOICE like a singer**, after a real voice measured: pitch that is never still, notes that enter slightly off and settle, legato landings with a small overshoot, vibrato (~5.6 Hz) only on long notes and growing in, notes that swell and fade, phrases that fall, creaky phrase ends.
