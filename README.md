@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.29
+## This release: V10.7.30
 
 ### Installing
 
@@ -482,6 +482,13 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.30 — beta (2026-11-13)
+- **Filters: one LP24 with range.** MS20 is gone: projects that used it open with LP24 set as close as it gets. LP24 gains **DRIVE** (clean to aggressive). A new **FILTER 2** page: **KEY** (keyboard tracking), a **noise modulator** on the cutoff (from grit to broken) and **textures** (metallic, broken, noise).
+- **Distortions fixed.** **CRUSH** no longer leaves a pedal note at its reduction rate (the rate jitters, a smoother hold). **FOLD** folds smoothly and progressively instead of harshly. **AMP** loses its boxy mid peak.
+- **GEN uses more of the synth**: per section and genre, the sequencer's own tools (ramps, stutters and conditions on fills, automation into drops, FX throws at phrase ends, chord stabs where the genre has them), and the chords leave room for the bass and lead.
+- **GLOBAL opens on MIXER**: KEYS and RAILS are gone (the DJ FILTER is on HOME > SCOPE). A TRACKS page on HOME comes in a later beta.
+- Not in this image (built, back in the next beta when there is room): the master **BALANCE** and DIST **NOISE**.
 
 ### V10.7.29 — beta (2026-11-13)
 - **STRING FEEDBACK: GAIN is the amount.** The feedback holds from GAIN 1 (it used to need ~64), louder and stronger the higher, up to +6 dB past 64, with a soft limiter after the amp's cab so no bloom spikes. The same in the lows and the highs: within ~2 dB from C2 to C7 (C6 and up used to die). FEEDBACK, SHOEGAZE, SQUEAL and EBOW sustain at their own GAIN now.

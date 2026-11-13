@@ -262,7 +262,7 @@ if [ -f build/gen/felucca_tables.h ]; then
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/motion_test" tests/motion_test.c -lm
     run "motion, whole-step chance, FUN7 migration, song restore, ARP repeat and the 1.2 ARP modes" "$OUT/motion_test"
     # (codex/voices) VSOFT 0: its four-part mix fills the budget, and the reference is 0.9.0's render (no soft measures)
-    $CC -O1 -w -DVSOFT=0u -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/djf_test" tests/djf_test.c -lm
+    $CC -O1 -w -DVSOFT=0u -DFELUCCA_LIVE=1 -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/djf_test" tests/djf_test.c -lm   # (V10.7.30: GLO LIVE out of the image, its code tested built in)
     run "DJ FILTER (0.9.1): centred bit for bit 0.9.0, LP / HP response, no click crossing the middle, automation, old projects" "$OUT/djf_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/tape_test" tests/tape_test.c -lm
     run "TAPE (0.9.9-snd8): off never runs, the drive's harmonics, the highs lost, the head bump, WOW's few cents, no click, kept in a project" "$OUT/tape_test"
@@ -282,7 +282,7 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "CPU safety (p1, main 0.9.12 / 0.9.13): crash code, the crash record (row 9), a crash logged (p2b: 2 CORES kept), MENU > SYSTEM > CPU CORES / CPU CLOCK" "$OUT/cpu_safe_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/ratchet_test" tests/ratchet_test.c -lm
     run "RATCH: x1..x4 in a step (notes, chords, drum hits), gates, chance, swing, projects, user presets, CHANCE page" "$OUT/ratchet_test"
-    $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/live_test" tests/live_test.c -lm
+    $CC -O1 -w -DFELUCCA_LIVE=1 -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/live_test" tests/live_test.c -lm   # (V10.7.30: as djf_test)
     run "LIVE (p2, main 0.9.11, GLO > LIVE MANO / RIELES): RATE on the beat, CORTE / LOOP / RATCH / THIN / REV / PING on the 1/16, the ghost, RETURN, BYPASS, COMMIT + UNDO, REC at the ghost, PISTAS ALL..T6, MANO's keys only there, the chain, the PLAYHEADS" "$OUT/live_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/comp_test" tests/comp_test.c -lm
     run "COMPONENTS v2 (seq2d): the 16-bar cycle, RATCHET STUTTER MUTE ARP SEQ JUMP over their LENGTH, MONO / POLY, migration, COMP pages; (seq2f) the global lane" "$OUT/comp_test"
