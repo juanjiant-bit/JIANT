@@ -107,7 +107,7 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
 - **PARTS y CLIPS son una sola página, PARTS**: la grilla de CLIPS (seis pistas × partes A–D) con las cabeceras de las
   partes arriba. Una cabecera toca la parte entera (OCT+ en loop, OCT− el tema desde su fila), una celda solo esa pista
   (OCT+ entra en el compás siguiente, OCT− la pista para). REC es SONG REC, F3–B3 una parte.
-- **SAVE = guardar y cargar**: **TOOLS · PROJECTS · USER · PRESETS · PART SLOTS**, una pestaña cada una; SAVE abre en
+- **SAVE = guardar y cargar**: **TOOLS · PROJECTS · PART SLOTS · USER · PRESETS**, una pestaña cada una (V10.7.36: PART SLOTS al lado de PROJECTS); SAVE abre en
   PROJECTS.
 - **SEQ › LOCKS**: AUTOMATION y AUTO LIST son una sola página. Arriba si los registros suenan y cuántos LOCK y REC hay
   (OCT+ CLEAR ALL); debajo la lista, cada fila marcada **LOCK** o **REC**. Ver [LOCKS](#páginas-de-patrón).
@@ -234,7 +234,7 @@ Guardá tus archivos WAV.
 
 ### Tu primer tema (5 minutos)
 
-1. Mantené **HOME** y girá **SELECT** (o en HOME tocá **HOME** seis veces: MACROS → TRACKS → TIMELINE → ARRANGE → PARTS → LIVE MIX → **GEN**). Se abre el **GENERATOR** en
+1. Mantené **HOME** y girá **SELECT** en cualquier página menos HOME › MACROS (ahí tira los dados de las macros, V10.7.36), o en HOME tocá **HOME** seis veces: MACROS → LIVE MIX → TRACKS → TIMELINE → ARRANGE → PARTS → **GEN**. Se abre el **GENERATOR** en
    **EXPLORE** (ningún género, todas las reglas rotas): apretá **OCT+** así, o antes elegí RANDOM o uno de los géneros
    con KNOB 1 o PRESETS. Aparece una idea de tema completa: motores, sonidos, partes, escala, tempo y efectos. Apretá
    **PLAY**.
@@ -272,7 +272,7 @@ Los nombres de abajo son los que usa el firmware (la pantalla HARDWARE CALIBRATI
 
 | Botón | Toque | Mantener |
 | --- | --- | --- |
-| **HOME** | HOME (0.9.2, como el botón de cualquier sección): desde otra sección, la última página de HOME; en HOME la primera página del grupo siguiente, en ronda: **LIFE → MACROS → TRACKS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN → LIFE** (V10.7.24; V10.7.32 las páginas del tema, desde SAVE; V10.7.34 LIFE primera, TRACKS después de MACROS; GEN: el generador, GEN hasta la V10.6m). Al prender, HOME abre en MACROS. | Unos 0,7 s: abre el **MENU**. |
+| **HOME** | HOME (0.9.2, como el botón de cualquier sección): desde otra sección, la última página de HOME; en HOME la primera página del grupo siguiente, en ronda: **LIFE → MACROS → LIVE MIX → TRACKS → TIMELINE → ARRANGE → PARTS → GEN → LIFE** (V10.7.24; V10.7.32 las páginas del tema, desde SAVE; V10.7.34 LIFE primera, TRACKS; V10.7.36 LIVE MIX después de MACROS; GEN: el generador, GEN hasta la V10.6m). Al prender, HOME abre en MACROS. | Unos 0,7 s: abre el **MENU**. |
 | **ENV** | La sección ENV: desde otro lado, la última página mostrada (al encender, ENV); adentro, vuelve a ENV (un grupo: ENV · ENV DEST · ENV 2; V10.7.32: STAGE y TRACKS ya no están). | (sin capa) |
 | **LFO** | La sección LFO: desde otro lado, la última página mostrada (al encender, LFO); adentro **MOD → LFO → STEP MOD**, en ronda. | Capa **MACRO**: KNOB 1–4 son M1–M4. |
 | **FX** | La sección FX: desde otro lado, la última página mostrada; adentro, el módulo siguiente: **TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → MASTER** (MASTER · TAPE · EQ), en ronda (V10.7.32: PUNCH IN en el FX mantenido). | Capa de **FX punch-in**; el carril de punch-in al pie; FX + PRESETS sus perillas. |
@@ -501,7 +501,7 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 
 | Sección | Grupos (el botón) · páginas (SELECT) | Páginas |
 | --- | --- | --- |
-| **HOME** | (V10.7.24; V10.7.32 las páginas del tema; V10.7.34 LIFE, TRACKS) **LIFE**: LIFE — **MACROS**: MACROS — **TRACKS**: TRACKS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **LIVE MIX**: LIVE MIX — **GEN**: GEN 1 · GEN 2 · GEN 3 | 10 |
+| **HOME** | (V10.7.24; V10.7.32 las páginas del tema; V10.7.34 LIFE, TRACKS; V10.7.36 LIVE MIX segunda) **LIFE**: LIFE — **MACROS**: MACROS — **LIVE MIX**: LIVE MIX — **TRACKS**: TRACKS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **GEN**: GEN 1 · GEN 2 · GEN 3 | 10 |
 | **EDIT** (un sinte) | (V10.7.35) **SOUND**: EDIT 1 · EDIT 2 · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (los que tengan el motor y la pista) — **TONE**: FILTER · FILTER 2 · TONE (KEY TRK · CRUSH · LIFE) — **VOICES**: VOICES · VOICES 2 (EXT: VOICES 3) — **AUTO KNOBS**: AUTO KNOBS | hasta 11 |
 | **EDIT** (FM6) | (V10.7.35) **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **TONE**: FILTER · FILTER 2 · TONE — **VOICES**: VOICES · VOICES 2 | 10 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: KIT LFO · FILTER · STEREO · VOICES · VOICES 3 | 14 |
@@ -2068,7 +2068,7 @@ Son 24 partes en total (6 × 4).
 
 ### La página ARRANGE (HOME › ARRANGE)
 
-ARRANGE es la quinta página de HOME (V10.7.34: LIFE primero, TRACKS después de MACROS; V10.7.32: las páginas del tema son de HOME, MACROS → TRACKS → TIMELINE → ARRANGE → PARTS →
+ARRANGE es la sexta página de HOME (V10.7.36: LIVE MIX después de MACROS; V10.7.34: LIFE primero, TRACKS después de MACROS; V10.7.32: las páginas del tema son de HOME, MACROS → TRACKS → TIMELINE → ARRANGE → PARTS →
 LIVE MIX → GEN; hasta entonces de SAVE; SELECT desde TIMELINE, un toque de HOME, o SAVE + G5 desde cualquier lado): arriba las cuatro partes del proyecto en grande
 (guardadas: en su color, la que suena dice **NOW**), después **ARRANGE**: las filas del tema como fichas (**A16**: la
 sección y sus compases, en el color de la sección; una escena: un punto blanco; la fila en la que estás encendida y
@@ -3061,7 +3061,7 @@ distintas.
 - Después de un crash, un cuelgue o un arranque fallido, el autoguardado no se restaura (la música que estaba sonando
   podría ser lo que causó el crash).
 
-### La cadena de SAVE: TOOLS · PROJECTS · USER · PRESETS · PART SLOTS
+### La cadena de SAVE: TOOLS · PROJECTS · PART SLOTS · USER · PRESETS
 
 (0.9.2; V10.7.22: TOOLS primero; V10.7.32, el dueño: **SAVE = guardar y cargar**, las páginas del tema en HOME) SAVE es
 una cadena de cinco páginas, una pestaña cada una, como todas las secciones: **SELECT** recorre TOOLS → PROJECTS → USER →

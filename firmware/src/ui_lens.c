@@ -53,22 +53,23 @@ enum { SV_LIB, SV_PROJ, SV_SOUND };
  * one further; its screen not built: core.h). SCOPE now LIVE MIX, GENE GEN */
 /* (V10.7.34, the owner) TRACKS right after MACROS: every track a lane (ui_lzhome.c graph_tracks), HOME's own screen
  * (ui.hlv 2), its group */
-enum { HE_LIFE = FELUCCA_LIFE - 1, HE_MACROS, HE_TRACKS, HE_TIMELINE, HE_ARRANGE, HE_PARTS, HE_SCOPE, HE_GEN };
+/* (V10.7.36, the owner) LIVE MIX right after MACROS */
+enum { HE_LIFE = FELUCCA_LIFE - 1, HE_MACROS, HE_SCOPE, HE_TRACKS, HE_TIMELINE, HE_ARRANGE, HE_PARTS, HE_GEN };
 static const nv_t CE_HOME[] = {
 #if FELUCCA_LIFE
                                NV(0, "LIFE", 0, 0),
 #endif
-                               NV(0, "MACROS", FELUCCA_LIFE ? 1 : 0, 0), NV(0, "TRACKS", FELUCCA_LIFE ? 2 : 1, 3),
-                               NV("TIMELINE", 0, FELUCCA_LIFE ? 3 : 2, SV_PROJ), NV("ARRANGE", 0, FELUCCA_LIFE ? 4 : 3, SV_PROJ),
-                               NV("PARTS", 0, FELUCCA_LIFE ? 5 : 4, SV_PROJ), NV(0, "LIVE MIX", FELUCCA_LIFE ? 6 : 5, 1),
+                               NV(0, "MACROS", FELUCCA_LIFE ? 1 : 0, 0), NV(0, "LIVE MIX", FELUCCA_LIFE ? 2 : 1, 1),
+                               NV(0, "TRACKS", FELUCCA_LIFE ? 3 : 2, 3), NV("TIMELINE", 0, FELUCCA_LIFE ? 4 : 3, SV_PROJ),
+                               NV("ARRANGE", 0, FELUCCA_LIFE ? 5 : 4, SV_PROJ), NV("PARTS", 0, FELUCCA_LIFE ? 6 : 5, SV_PROJ),
                                NV(0, "GEN 1", FELUCCA_LIFE ? 7 : 6, 2), NV(0, "GEN 2", FELUCCA_LIFE ? 7 : 6, 2),
                                NV(0, "GEN 3", FELUCCA_LIFE ? 7 : 6, 2)};
 static const ng_t CG_HOME[] = {
 #if FELUCCA_LIFE
                                {"LIFE", 0},
 #endif
-                               {"MACROS", "MACRO"}, {"TRACKS", "TRK"}, {"TIMELINE", "TIME"}, {"ARRANGE", "ARR"}, {"PARTS", 0},
-                               {"LIVE MIX", "LIVE"}, {"GEN", 0}};
+                               {"MACROS", "MACRO"}, {"LIVE MIX", "LIVE"}, {"TRACKS", "TRK"}, {"TIMELINE", "TIME"},
+                               {"ARRANGE", "ARR"}, {"PARTS", 0}, {"GEN", 0}};
 static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("MORPH", 0, 0, 1), NV("RETRIG", 0, 0, 1),
                               NV("ROTOR", 0, 0, 1), NV("WORDS", 0, 0, 1), NV("SWARM", 0, 0, 1), NV("SWARM 2", 0, 0, 1),
                               NV("FILTER", 0, 1, 1), NV("FILTER 2", 0, 1, 1), NV("TONE", 0, 1, 1), NV("VOICES", 0, 2, 1),
@@ -175,9 +176,10 @@ static const ng_t CG_ARP[] = {{"ARP", 0}};
  * together (ARRANGE next to TIMELINE), PROJECT what is stored: PART SLOTS (was SECTIONS, in SONG) and PROJECTS */
 /* (V10.7.32, the owner: "SAVE = save and load only") the song's pages to HOME; SAVE a group a page: TOOLS, PROJECTS,
  * USER, PRESETS, PART SLOTS last (the parts' slots of the project shown), each its own tab */
-static const nv_t CE_SAVE[] = {NV("TOOLS", 0, 0, SV_LIB), NV("PROJECT", "PROJECTS", 1, SV_LIB), NV("USER", 0, 2, SV_SOUND),
-                               NV("PRESETS", 0, 3, SV_SOUND), NV("PROJECT", "PART SLOTS", 4, SV_PROJ)};
-static const ng_t CG_SAVE[] = {{"TOOLS", 0}, {"PROJECTS", "PROJ"}, {"USER", 0}, {"PRESETS", "PRST"}, {"PART SLOTS", "SLOTS"}};
+static const nv_t CE_SAVE[] = {NV("TOOLS", 0, 0, SV_LIB), NV("PROJECT", "PROJECTS", 1, SV_LIB), NV("PROJECT", "PART SLOTS", 2, SV_PROJ),
+                               NV("USER", 0, 3, SV_SOUND), NV("PRESETS", 0, 4, SV_SOUND)};   /* (V10.7.36, the owner: PART SLOTS
+                                                         * beside PROJECTS) */
+static const ng_t CG_SAVE[] = {{"TOOLS", 0}, {"PROJECTS", "PROJ"}, {"PART SLOTS", "SLOTS"}, {"USER", 0}, {"PRESETS", "PRST"}};
 #define CH(e, g) {e, g, (uint8_t)NELEM(e), (uint8_t)NELEM(g)}
 #define NAV_KEYS (SEC_N + 3u)                           /* the sections' memories: EDIT's synth one, then FM6 DRUM DIGITAL */
 static const ch_t CHAINS[NAV_KEYS] = {CH(CE_HOME, CG_HOME), CH(CE_SYN, CG_SYN), CH(CE_SEQ, CG_SEQ), CH(CE_FX, CG_FX),
@@ -231,8 +233,8 @@ static uint32_t home_cur(void)
         return HE_GEN + gen_page();
     if (ui.home)
         return FELUCCA_LIFE && ui.hlv == 2u ? (uint32_t)HE_LIFE : ui.hlv == 3u ? HE_TRACKS : ui.hlv == 1u ? HE_SCOPE : HE_MACROS;
-    for (k = HE_TIMELINE; k < HE_SCOPE && !str_eq(PAGES[ui.page].title, CE_HOME[k].t); k++) {}
-    return k < HE_SCOPE ? k : HE_ARRANGE;
+    for (k = HE_TIMELINE; k < HE_GEN && !str_eq(PAGES[ui.page].title, CE_HOME[k].t); k++) {}
+    return k < HE_GEN ? k : HE_ARRANGE;
 }
 /* the entry shown: HOME's from its state (ui.hlv, GEN's page); the others the one remembered when it is the page
  * shown, else the page's own (put by code: in the group left, the default page's, then the chain's first), else

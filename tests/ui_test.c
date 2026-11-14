@@ -1976,6 +1976,9 @@ static int test_save(void)
     bad += check("V10.7.32 SAVE from HOME at power-on: PROJECTS (TOOLS before it), nothing armed",
                  !ui.home && cur_page()->graph == GR_SLOTS && save_level() == SV_LIB && ui.act == 0u);
     press(B_SAVE);
+    bad += check("V10.7.36 SAVE again: the next group, PART SLOTS (the owner: beside PROJECTS), from inside: SAVE not armed",
+                 cur_page()->graph == GR_SLOTS && save_level() == SV_PROJ && ui.act == 0u);
+    press(B_SAVE);
     bad += check("V10.7.32 SAVE again: the next group, USER, from inside: SAVE not armed", cur_page()->graph == GR_USER &&
                  ui.act == 0u);
     go_home();
@@ -1994,7 +1997,7 @@ static int test_save(void)
                      !name_on() && up_used(0) && up_value(up_rec(0), P_E0) == 5 && ui.act == 0u && str_eq(nmb, au));
     }
     turn(EN_SELECT, 1);
-    bad += check("V10.7.32 SELECT right: PRESETS (PART SLOTS after it, the chain's last)", cur_page()->graph == GR_BROWSE &&
+    bad += check("V10.7.36 SELECT right: PRESETS (the chain's last)", cur_page()->graph == GR_BROWSE &&
                  save_level() == SV_SOUND);
     go_home();
     press(B_SAVE);
@@ -7788,11 +7791,12 @@ static void tl_drum(void)
  * the level's other set, SAVE from elsewhere always USER, PRESETS the slot / project) */
 static int test_save_lens(void)
 {
-    static const char *const CH[5] = {"TOOLS", "PROJECTS", "USER", "PRESETS", "PART SLOTS"};   /* (V10.6s: CLIPS; V10.7.20:
+    static const char *const CH[5] = {"TOOLS", "PROJECTS", "PART SLOTS", "USER", "PRESETS"};   /* (V10.7.36, the owner: PART
+                                                     * SLOTS beside PROJECTS) */   /* (V10.6s: CLIPS; V10.7.20:
                                                      * SAVE SONG AS gone, PROJECTS saves; V10.7.22: TOOLS first, CLEAR PROJECT
                                                      * its first action; V10.7.32, the owner: SAVE = save and load, the song's
                                                      * pages HOME's, a tab a page, PART SLOTS last) */
-    static const char *const TP[4] = {"PROJECTS", "USER", "PRESETS", "PART SLOTS"};
+    static const char *const TP[4] = {"PROJECTS", "PART SLOTS", "USER", "PRESETS"};
     int bad = 0, ok;
     uint32_t pr;
     ui_power_on();
@@ -7802,19 +7806,19 @@ static int test_save_lens(void)
          card_y() == LZ_CARD_Y && graph_y() == LZ_GRAPH_Y && foot_y() == LZ_FOOT_Y && lz_tab_lit(1) && lz_tabs() == 5u &&
          lz_crumb_is("SAVE \xB7 PROJECTS \xB7 PROJECTS") && lz_count_is("2/5");
     bad += check("V10.7.32 SAVE from HOME at power-on: PROJECTS (TOOLS before it); the tabs (PROJECTS lit), the crumb, 2/5", ok);
-    bad += check("V10.7.32 SAVE: one chain TOOLS PROJECTS USER PRESETS PART SLOTS, a tab each; a SAVE tap the next group, round",
+    bad += check("V10.7.36 SAVE: one chain TOOLS PROJECTS PART SLOTS USER PRESETS, a tab each; a SAVE tap the next group, round",
                  chain_walk(B_SAVE, CH, 5, TP, 4));
     ui_power_on(); go_home(); frame(); press(B_SAVE); frame();
-    turn(EN_SELECT, 1); frame();                                             /* USER, from inside: not armed */
-    ok = cur_page()->graph == GR_USER && ui.act == 0u;
-    go_home(); frame(); press(B_SAVE); frame();
-    ok &= cur_page()->graph == GR_USER && ui.act == 4u;                      /* (the page left; from elsewhere: armed) */
-    turn(EN_SELECT, 2); frame();
-    ok &= cur_page()->graph == GR_SLOTS && save_level() == SV_PROJ && ui.act == 0u &&
-          lz_crumb_is("SAVE \xB7 PART SLOTS \xB7 PART SLOTS") && lz_count_is("5/5");
+    turn(EN_SELECT, 1); frame();                                             /* PART SLOTS, from inside: not armed */
+    ok = cur_page()->graph == GR_SLOTS && save_level() == SV_PROJ && ui.act == 0u &&
+         lz_crumb_is("SAVE \xB7 PART SLOTS \xB7 PART SLOTS") && lz_count_is("3/5");
     go_home(); frame(); press(B_SAVE); frame();
     ok &= cur_page()->graph == GR_SLOTS && save_level() == SV_PROJ && ui.act == 4u;   /* (PART SLOTS from elsewhere: SAVE armed) */
-    turn(EN_SELECT, -3); frame();
+    turn(EN_SELECT, 1); frame();                                             /* USER, from inside: not armed */
+    ok &= cur_page()->graph == GR_USER && ui.act == 0u;
+    go_home(); frame(); press(B_SAVE); frame();
+    ok &= cur_page()->graph == GR_USER && ui.act == 4u;                      /* (the page left; from elsewhere: armed) */
+    turn(EN_SELECT, -2); frame();
     ok &= cur_page()->graph == GR_SLOTS && save_level() == SV_LIB && ui.act == 0u && lz_crumb_is("SAVE \xB7 PROJECTS \xB7 PROJECTS");
     {   /* the song's pages are not SAVE's (HOME's), no SAVE page is a song page */
         uint32_t k;
@@ -9298,7 +9302,7 @@ static int test_project_page(void)
     turn(EN_K3, 1); frame();                            /* PROJECTS: KNOB 3 selects ERASE, never a different part (codex/
                                                          * coherence: LOAD ERASE SAVE, as USER) */
     ok = song.g[G_SLOT] == 1 && save_level() == SV_LIB && ui.act == 3;
-    turn(EN_SELECT, 3); frame();                        /* (V10.7.32) PART SLOTS (SAVE's last): KNOB 1 */
+    turn(EN_SELECT, 1); frame();                        /* (V10.7.36) PART SLOTS (PROJECTS' next): KNOB 1 */
     ok &= save_level() == SV_PROJ && cur_page()->graph == GR_SLOTS;
     turn(EN_K1, 2); frame();
     ok &= song.g[G_SLOT] == 3;
@@ -9330,7 +9334,7 @@ static int test_project_page(void)
     bad += check("V10.17 PART SLOTS KNOB 3 ERASE: the dialog (ERASE PART C?), then EMPTY; the music stays; not playing", ok);
     turn(EN_K4, 1); press(B_OCTUP); frame();            /* (stored again for what follows) */
     for (k = 0; k < 8u && name_on(); k++) { press(B_OCTUP); frame(); }
-    turn(EN_SELECT, -3); frame();                       /* (V10.7.32: back to PROJECTS, three before: KNOB 1 the project) */
+    turn(EN_SELECT, -1); frame();                       /* (V10.7.36: back to PROJECTS, one before: KNOB 1 the project) */
     turn(EN_K1, -1); frame();
     ok = song_cur == 1 && song_save_target == 0;
     turn(EN_K2, 1); press(B_OCTUP); frame();            /* (LOAD the picked project 1) */
@@ -11207,12 +11211,14 @@ static int test_bpm_lock(void)
     turn(EN_SELECT, -1);
     ok &= str_eq(cur_page()->title, "GLOBAL");
     go_home(); frame(); turn(EN_SELECT, 1);
-    ok &= ui.home && home_tracks() && !msg_is("MACROS DICED") && song.g[G_BPM] == b0;   /* (V10.7.34: SELECT on MACROS
-                                                         * the next page, TRACKS; no dice) */
+    ok &= ui.home && home_scope() && !msg_is("MACROS DICED") && song.g[G_BPM] == b0;   /* (V10.7.34: SELECT on MACROS
+                                                         * the next page, no dice; V10.7.36 LIVE MIX) */
+    turn(EN_SELECT, 1);
+    ok &= ui.home && home_tracks();
     turn(EN_SELECT, 1);
     ok &= !ui.home && nav_sec() == SEC_HOME && SONG_TRK(cur_page()) && song.g[G_BPM] == b0;
-    turn(EN_SELECT, 3);
-    ok &= ui.home && !ui.confirm && home_level() == 1u && home_scope();   /* (.. ARRANGE PARTS SCOPE GEN) */
+    turn(EN_SELECT, 2);
+    ok &= !ui.home && !ui.confirm && str_eq(cur_page()->title, "PARTS");   /* (.. ARRANGE PARTS GEN) */
     turn(EN_SELECT, 1);
     ok &= ui.home && ui.confirm == CF_DICE_ALL && song.g[G_BPM] == b0;   /* (0.6.69) HOME: GEN */
     press(B_OCTDN); frame(); ok &= !ui.confirm;
@@ -11612,7 +11618,7 @@ static int test_skin(void)
         ok = okp;
         for (i = 0; i < 5u; i++) {                                /* HOME's own: MACROS, SCOPE, GEN, (V10.7.34) LIFE, TRACKS
                                                          * (V10.7.32: the song's pages between them, SAVE's lens: in the loop above) */
-            static const uint8_t HL[5] = {1, 6, 7, 0, 2};
+            static const uint8_t HL[5] = {1, 2, 7, 0, 3};   /* (V10.7.36: LIVE MIX the third tab) */
             ui_power_on(); frame();
             if (i) nav_go(SEC_HOME, i == 1u ? HE_SCOPE : i == 2u ? HE_GEN : i == 3u ? HE_LIFE : HE_TRACKS, 0);
             frames(100);
@@ -12296,7 +12302,7 @@ static int test_home_tracks(void)
         st->time = ST_NOTE; st->n = 1; st->note[0] = (uint8_t)(48 + i);
     }
     nav_go(SEC_HOME, HE_TRACKS, 0); frames(64);
-    ok = ui.home && home_tracks() && home_level() == 4u && lz_crumb_is("HOME \xB7 TRACKS \xB7 TRACKS") && lz_tab_lit(2) &&
+    ok = ui.home && home_tracks() && home_level() == 4u && lz_crumb_is("HOME \xB7 TRACKS \xB7 TRACKS") && lz_tab_lit(3) &&
          !strncmp(ui.col[0], "TRACK|T1", 8);
     memcpy(m0, macro_v, sizeof m0);
     turn(EN_K1, 1); frame();
@@ -12348,6 +12354,8 @@ static int test_home_tracks(void)
     turn(EN_SELECT, -1); frame();
     ok &= home_tracks();
     turn(EN_SELECT, -1); frame();
+    ok &= home_scope();                                 /* (V10.7.36: LIVE MIX before TRACKS) */
+    turn(EN_SELECT, -1); frame();
     ok &= home_macros();
     return check("V10.7.34 HOME > TRACKS: the lanes, KNOB 1 the track, 2..4 LEVEL PAN REV; GLO's mute and solo; a level lit; "
                  "playing moves, still not redrawn; PRESETS its list; SELECT; HELP", ok);
@@ -12371,43 +12379,37 @@ static int test_lz_home(void)
         ok &= macro_v[c] == (uint8_t)(k + 3u) && TSEL->p[ENGINES[TSEL->eng_req]->knob[c]] == e;
     }
     ok &= !strncmp(ui.col[0], "M1|", 3) && !strncmp(ui.col[3], "M4|", 3);
+    press(B_HOME); frame();                                         /* (V10.7.36, the owner) LIVE MIX right after MACROS */
+    ok &= ui.home && home_level() == 1u && home_scope() && !home_macros() && lz_tab_lit(2) &&
+          lz_crumb_is("HOME \xB7 LIVE MIX \xB7 LIVE MIX") && lz_count_is("3/10") && !strncmp(ui.col[0], "FILTER|", 7) &&
+          !strncmp(ui.col[1], "SPACE|", 6) && !strncmp(ui.col[2], "CLIP|", 5) && !strncmp(ui.col[3], "DUCK|", 5);
     {   /* (V10.7.32) a HOME tap: the next group, the song's pages HOME's (its tabs, crumb, count, header, LED) */
         static const char *const SP[3] = {"TIMELINE", "ARRANGE", "PARTS"};
         static const char *const SC[3] = {"HOME \xB7 TIMELINE \xB7 TIMELINE", "HOME \xB7 ARRANGE \xB7 ARRANGE",
                                           "HOME \xB7 PARTS \xB7 PARTS"};
-        char cn[8] = "4/10", ttl[40];
-        press(B_HOME); frame();                         /* (V10.7.34) TRACKS first, HOME's own */
-        ok &= ui.home && home_tracks() && home_level() == 4u && !home_macros() && !home_scope() && !home_life() && lz_tab_lit(2) &&
-              lz_crumb_is("HOME \xB7 TRACKS \xB7 TRACKS") && lz_count_is("3/10") && !strncmp(ui.col[0], "TRACK|", 6) &&
+        char cn[8] = "5/10", ttl[40];
+        press(B_HOME); frame();                         /* (V10.7.34) TRACKS, HOME's own */
+        ok &= ui.home && home_tracks() && home_level() == 4u && !home_macros() && !home_scope() && !home_life() && lz_tab_lit(3) &&
+              lz_crumb_is("HOME \xB7 TRACKS \xB7 TRACKS") && lz_count_is("4/10") && !strncmp(ui.col[0], "TRACK|", 6) &&
               !strncmp(ui.col[1], "LEVEL|", 6) && !strncmp(ui.col[2], "PAN|", 4) && !strncmp(ui.col[3], "REV|", 4);
         for (c = 0; c < 3u; c++) {
             press(B_HOME); frame();
-            cn[0] = (char)('4' + c);
+            cn[0] = (char)('5' + c);
             ok &= !ui.home && nav_sec() == SEC_HOME && str_eq(cur_page()->title, SP[c]) && cur_fam() == FAM_HOME &&
-                  lz_tab_lit(3u + c) && lz_crumb_is(SC[c]) && lz_count_is(cn) && lz_tabs() == 8u;
+                  lz_tab_lit(4u + c) && lz_crumb_is(SC[c]) && lz_count_is(cn) && lz_tabs() == 8u;
             (void)head_title(ttl);
             ok &= ttl[0] != 'P';                        /* (HOME's header: the track's sound, not the project) */
         }
     }
-    press(B_HOME); frame();                                         /* .. SCOPE */
-    ok &= ui.home && home_level() == 1u && home_scope() && !home_macros() && lz_tab_lit(6) &&
-          lz_crumb_is("HOME \xB7 LIVE MIX \xB7 LIVE MIX") && lz_count_is("7/10") && !strncmp(ui.col[0], "FILTER|", 7) &&
-          !strncmp(ui.col[1], "SPACE|", 6) && !strncmp(ui.col[2], "CLIP|", 5) && !strncmp(ui.col[3], "DUCK|", 5);
-    turn(EN_SELECT, -1); frame();                                   /* SELECT left: PARTS */
-    ok &= !ui.home && str_eq(cur_page()->title, "PARTS") && lz_count_is("6/10");
-    turn(EN_SELECT, -4); frame();                                   /* .. MACROS (TRACKS on the way) */
+    turn(EN_SELECT, -4); frame();                                   /* PARTS .. MACROS (ARRANGE TIMELINE TRACKS LIVE MIX) */
+    ok &= home_scope() && lz_count_is("3/10");
+    turn(EN_SELECT, -1); frame();
     ok &= home_macros() && lz_count_is("2/10");
     turn(EN_SELECT, -1); frame();                                   /* (V10.7.34) SELECT left on MACROS: LIFE (no dice) */
     ok &= home_life() && ui.home && !ui.confirm && !msg_is("MACROS DICED");
-    turn(EN_SELECT, 1); frame();
-    ok &= home_macros();
-    turn(EN_SELECT, 5); frame();                                    /* (V10.7.34, the owner) SELECT alone to LIVE MIX */
-    ok &= home_scope() && lz_count_is("7/10");
-    turn(EN_SELECT, -5); frame();
-    ok &= home_macros();
-    press(B_HOME); turn(EN_SELECT, 4); frame();
-    ok &= home_scope();
-    bad += check("V10.7.34 HOME: LIFE MACROS TRACKS TIMELINE ARRANGE PARTS LIVE MIX GEN 1..3 one chain by SELECT (MACROS too, no dice), a HOME tap the next group; tabs, crumb, n/10; "
+    turn(EN_SELECT, 2); frame();                                    /* (V10.7.36) SELECT alone: LIVE MIX two on from LIFE */
+    ok &= home_scope() && lz_count_is("3/10");
+    bad += check("V10.7.36 HOME: LIFE MACROS LIVE MIX TRACKS TIMELINE ARRANGE PARTS GEN 1..3 one chain by SELECT (MACROS too, no dice), a HOME tap the next group; tabs, crumb, n/10; "
                  "MACROS' KNOB 1..4 M1..M4", ok);
     {   /* SCOPE's four: the globals on the whole mix, the macros and the sound untouched */
         int16_t cl = song.g[G_CLIP], du = song.g[G_DUCK], dm, rs, e = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
@@ -12465,7 +12467,7 @@ static int test_lz_home(void)
         bad += check("V10.7.24 HOME SCOPE: the mix's oscilloscope over the panel", ok);
     }
     fm1_ms += 1000u;
-    turn(EN_SELECT, 1); frame();                                    /* GEN 1 */
+    turn(EN_SELECT, 5); frame();                                    /* GEN 1 (TRACKS TIMELINE ARRANGE PARTS on the way) */
     ok = gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(7) && lz_crumb_is("HOME \xB7 GEN \xB7 GEN 1") &&
           lz_count_is("8/10");
     k = gp.genre;
@@ -12479,8 +12481,8 @@ static int test_lz_home(void)
                                                          * (0.8.6: EXPLORE, RANDOM, the genres) */
     turn(EN_SELECT, 1); frame();
     ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GEN \xB7 GEN 2") && lz_count_is("9/10");
-    turn(EN_SELECT, -2); frame();                                   /* back: SCOPE, GEN shut */
-    ok &= !ui.confirm && ui.home && home_level() == 1u && home_scope();
+    turn(EN_SELECT, -2); frame();                                   /* back: PARTS, GEN shut */
+    ok &= !ui.confirm && !gen_on() && str_eq(cur_page()->title, "PARTS");
     turn(EN_SELECT, 1); frame();
     ok &= gen_on() && gen_page() == 0u;
     press(B_HOME); frame();                                         /* a HOME tap on GEN: round to LIFE (V10.7.34) */
@@ -12504,7 +12506,7 @@ static int test_lz_home(void)
     }
     turn(EN_SELECT, 1); frame();                                    /* SELECT right: MACROS */
     ok &= home_macros() && lz_count_is("2/10");
-    bad += check("V10.7.24 HOME: SCOPE, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: "
+    bad += check("V10.7.24 HOME: PARTS, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: "
                  "LIFE (V10.7.34: its KNOB 1..4 LIFE FILTER PITCH FX), SELECT on to MACROS", ok);
     press(B_HOME); turn(EN_SELECT, 6); frame();                     /* GEN 2 */
     ok = gen_on() && gen_page() == 1u;
@@ -12532,14 +12534,14 @@ static int test_lz_home(void)
         press(B_OCTDN); frame();
         bad += check("V10.8 GEN: the GENRE picked stays after leaving GEN (was EXPLORE again each visit)", ok);
     }
-    press(B_HOME); turn(EN_SELECT, 4); frame();                     /* LIVE MIX */
+    press(B_HOME); frame();                                         /* LIVE MIX (V10.7.36: MACROS' next) */
     open_family(FAM_ENV); frame();
     ok = !ui.home;
     press(B_HOME); frame();                                         /* HOME from elsewhere: where it was left */
     ok &= ui.home && home_level() == 1u && home_scope();
     {   /* the beings drawn: the MACROS panel differs from frame to frame while the tracks sound (their life, their faces) */
         static uint16_t a[240 * 140];
-        turn(EN_SELECT, -5); frame();
+        turn(EN_SELECT, -1); frame();
         ok &= home_macros();
         for (c = 0; c < NTRK; c++) trk[c].peak = 9000;
         frames(64);
@@ -13691,13 +13693,13 @@ static void tk_start(uint32_t from)                     /* 0 home, 1 seq, 2 fxdl
     go_home(); frames(64);
     if (from == 1u) { press(B_SEQ); frames(320); }
     if (from == 2u) { press(B_FX); frames(320); press(B_FX); frames(320); press(B_FX); frames(320); }
-    if (from == 3u) { press(B_SAVE); frames(320); press(B_SAVE); frames(320); turn(EN_SELECT, 1); frames(32); press(B_HOME); frames(320); }
+    if (from == 3u) { press(B_SAVE); frames(320); press(B_SAVE); frames(320); press(B_SAVE); frames(320); turn(EN_SELECT, 1); frames(32); press(B_HOME); frames(320); }   /* (SAVE left on PRESETS; V10.7.36 PART SLOTS before USER) */
     fm1_ms += 1200u;
     tk_n = 0;
 }
 static int test_nav_tasks(void)
 {
-    static const uint8_t WANT[14] = {5, 3, 5, 6, 34, 9, 9, 2, 3, 3, 4, 8, 19, 5};   /* (V10.7.33: PRESETS a list, task 10
+    static const uint8_t WANT[14] = {5, 3, 5, 6, 34, 10, 9, 2, 3, 3, 4, 8, 19, 5};   /* (V10.7.33: PRESETS a list, task 10
                                                          * three: open, the next, OCT+) */   /* (V10.7.32: SAVE opens on PROJECTS, USER
                                                          * its next: task 6 a tap less) */   /* (2463a3b, 2026-11-04: SEQ > LENGTH >
                                                          * RHYTHM between LENGTH and TRACK: tasks 11 and 13 a detent more) */   /* (V10.37: COMPS before GLOBAL, SYSTEM a tap further) */   /* (V10.1: SAVE composes first, 106 -> 108) */   /* (seq2: task 5 by STEP's KNOB 1, no BAR;
@@ -13735,8 +13737,8 @@ static int test_nav_tasks(void)
             ok = str_eq(cur_page()->title, "STEP") && ui.cursor == 32u && (TSEL->step[32].flags & SF_ACCENT);
             break;
         case 5:                                         /* the sound into U05 */
-            tk_start(0); tk_btn(B_SAVE); tk_btn(B_SAVE); tk_go(EN_K1, 4); tk_val(EN_K4, 1);   /* (V10.7.32:
-                                                         * PROJECTS first, the second tap USER) */
+            tk_start(0); tk_btn(B_SAVE); tk_btn(B_SAVE); tk_btn(B_SAVE); tk_go(EN_K1, 4); tk_val(EN_K4, 1);   /* (V10.7.32:
+                                                         * PROJECTS first; V10.7.36 PART SLOTS, then USER) */
             tk_btn(B_OCTUP); tk_btn(B_OCTUP);
             ok = ui.uslot == 4u && up_used(4) && !name_on();
             break;
@@ -13792,7 +13794,7 @@ static int test_nav_tasks(void)
     }
     printf("ui:   the race: %u %u %u %u %u %u %u %u %u %u %u %u %u %u = %u actions (0.9.1: 75)\n", got[0], got[1], got[2], got[3],
            got[4], got[5], got[6], got[7], got[8], got[9], got[10], got[11], got[12], got[13], tot);
-    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 115u);   /* (V10.7.32: 112; V10.7.33: 114; V10.7.35: 115, FM6 the sound first) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
+    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 116u);   /* (V10.7.36: 116, PART SLOTS before USER) */   /* (V10.7.32: 112; V10.7.33: 114; V10.7.35: 115, FM6 the sound first) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
     ui_power_on();
     return bad;
 }
@@ -13868,7 +13870,7 @@ static int test_nav_rules(void)
     held_turn(B_SCL, 1); frame();
     ok &= str_eq(cur_page()->title, "CHORD") && !ui.layer;   /* SCL + SELECT: its chain (from its page left, KEY) */
     fm1_ms += 1200u;
-    held_turn(B_SAVE, 4); frame();                       /* (V10.7.32: PROJECTS, then USER PRESETS PART SLOTS) */
+    held_turn(B_SAVE, 1); frame();                       /* (V10.7.36: PROJECTS, then PART SLOTS USER PRESETS) */
     ok &= cur_page()->graph == GR_SLOTS;                 /* SAVE + SELECT: its chain (PART SLOTS) */
     fm1_ms += 1200u;
     held_turn(B_LFO, 1); frame();
@@ -14374,14 +14376,14 @@ static int test_auto_knobs(void)
         memcpy(m0, macro_v, sizeof m0);
         turn(EN_SELECT, 1); frame();
         for (k = 0; k < 4u; k++) same &= macro_v[k] == m0[k];
-        ok &= home_tracks() && !msg_is("MACROS DICED") && same;   /* (V10.7.34: SELECT on MACROS the next page) */
+        ok &= home_scope() && !msg_is("MACROS DICED") && same;   /* (V10.7.34: SELECT on MACROS the next page; V10.7.36 LIVE MIX) */
         go_home(); frame(); turn(EN_SELECT, -1); frame();   /* (V10.7.36, the owner) HOME + SELECT on MACROS: the macros' dice */
         ok &= home_macros();
         btn_down(B_HOME); frame(); turn(EN_SELECT, 1); frame(); btn_up(B_HOME); frames(4);
         ok &= home_macros() && !gen_on() && msg_is("MACROS DICED");
         frames(320); fm1_ms += 1200u;
-        press(B_HOME); frame();                         /* .. elsewhere (TRACKS) GEN, as ever */
-        ok &= home_tracks();
+        press(B_HOME); frame();                         /* .. elsewhere (LIVE MIX) GEN, as ever */
+        ok &= home_scope();
         btn_down(B_HOME); frame(); turn(EN_SELECT, 1); frame(); btn_up(B_HOME); frames(4);
         ok &= gen_on();
         ui.confirm = 0; frame();

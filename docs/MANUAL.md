@@ -102,7 +102,7 @@ Everything since V10.6c, the last public version, in one list; each item links t
 - **PARTS and CLIPS are one page, PARTS**: the CLIPS grid (six tracks × parts A–D) with the parts' heads on top. A head
   plays the whole part (OCT+ loops it, OCT− the song from its row), a cell that track alone (OCT+ in on the next bar,
   OCT− the track stops). REC is SONG REC, F3–B3 a part.
-- **SAVE = save and load**: **TOOLS · PROJECTS · USER · PRESETS · PART SLOTS**, a tab each; SAVE opens on PROJECTS.
+- **SAVE = save and load**: **TOOLS · PROJECTS · PART SLOTS · USER · PRESETS**, a tab each (V10.7.36: PART SLOTS beside PROJECTS); SAVE opens on PROJECTS.
 - **SEQ › LOCKS**: AUTOMATION and AUTO LIST are one page. On top whether the records play and how many LOCK and REC there
   are (OCT+ CLEAR ALL); under it the list, each row tagged **LOCK** or **REC**. See [LOCKS](#pattern-pages).
 - **PUNCH IN on the FX held**: while FX is held the punch-in lane runs along the screen's foot, with its playhead;
@@ -219,7 +219,7 @@ files.
 
 ### Your first song (5 minutes)
 
-1. Hold **HOME** and turn **SELECT** (or on HOME tap **HOME** six times: MACROS → TRACKS → TIMELINE → ARRANGE → PARTS → LIVE MIX → **GEN**). The **GENERATOR** opens on
+1. Hold **HOME** and turn **SELECT** on any page but HOME › MACROS (there it dices the macros, V10.7.36), or on HOME tap **HOME** six times: MACROS → LIVE MIX → TRACKS → TIMELINE → ARRANGE → PARTS → **GEN**. The **GENERATOR** opens on
    **EXPLORE** (no genre, every rule broken): press **OCT+** as it is, or pick RANDOM or one of the genres with KNOB 1
    or PRESETS first. A whole song idea appears: engines, sounds, parts, scale, tempo and effects. Press **PLAY**.
 2. Not your thing? Press **OCT+** again: a new seed, a new piece. Too busy? Turn **SELECT** one detent right for GEN 2 and lower
@@ -255,7 +255,7 @@ The names below are the ones the firmware uses (the HARDWARE CALIBRATION screen 
 
 | Button | Tap | Hold |
 | --- | --- | --- |
-| **HOME** | HOME (0.9.2, as every section's button): from another section the HOME page last shown; on HOME the first page of the next group, round: **LIFE → MACROS → TRACKS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN → LIFE** (V10.7.24; V10.7.32 the song's pages, from SAVE; V10.7.34 LIFE first, TRACKS after MACROS; GEN: the generator, GEN until V10.6m). At power-on HOME opens on MACROS. | About 0.7 s: opens the **MENU**. |
+| **HOME** | HOME (0.9.2, as every section's button): from another section the HOME page last shown; on HOME the first page of the next group, round: **LIFE → MACROS → LIVE MIX → TRACKS → TIMELINE → ARRANGE → PARTS → GEN → LIFE** (V10.7.24; V10.7.32 the song's pages, from SAVE; V10.7.34 LIFE first, TRACKS; V10.7.36 LIVE MIX after MACROS; GEN: the generator, GEN until V10.6m). At power-on HOME opens on MACROS. | About 0.7 s: opens the **MENU**. |
 | **ENV** | The ENV section: from elsewhere the page last shown (at power-on ENV); inside, back to ENV (one group: ENV · ENV DEST · ENV 2; V10.7.32: STAGE and TRACKS gone). | (no layer) |
 | **LFO** | The LFO section: from elsewhere the page last shown (at power-on LFO); inside **MOD → LFO → STEP MOD**, round. | **MACRO** layer: KNOB 1–4 are M1–M4. |
 | **FX** | The FX section: from elsewhere the page last shown; inside, the next module: **TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → MASTER** (MASTER · TAPE · EQ), round (V10.7.32: PUNCH IN on the FX held). | **Punch-in FX** layer; the punch-in lane at the foot; FX + PRESETS its knobs. |
@@ -475,7 +475,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 
 | Section | Groups (the button) · pages (SELECT) | Pages |
 | --- | --- | --- |
-| **HOME** | (V10.7.24; V10.7.32 the song's pages; V10.7.34 LIFE, TRACKS) **LIFE**: LIFE — **MACROS**: MACROS — **TRACKS**: TRACKS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **LIVE MIX**: LIVE MIX — **GEN**: GEN 1 · GEN 2 · GEN 3 | 10 |
+| **HOME** | (V10.7.24; V10.7.32 the song's pages; V10.7.34 LIFE, TRACKS; V10.7.36 LIVE MIX second) **LIFE**: LIFE — **MACROS**: MACROS — **LIVE MIX**: LIVE MIX — **TRACKS**: TRACKS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **GEN**: GEN 1 · GEN 2 · GEN 3 | 10 |
 | **EDIT** (a synth) | (V10.7.35) **SOUND**: EDIT 1 · EDIT 2 · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (those the engine and the track have) — **TONE**: FILTER · FILTER 2 · TONE (KEY TRK · CRUSH · LIFE) — **VOICES**: VOICES · VOICES 2 (EXT: VOICES 3) — **AUTO KNOBS**: AUTO KNOBS | up to 11 |
 | **EDIT** (FM6) | (V10.7.35) **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **TONE**: FILTER · FILTER 2 · TONE — **VOICES**: VOICES · VOICES 2 | 10 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: KIT LFO · FILTER · STEREO · VOICES · VOICES 3 | 14 |
@@ -1978,7 +1978,7 @@ That's 24 parts in total (6 × 4).
 
 ### The ARRANGE page (HOME › ARRANGE)
 
-ARRANGE is HOME's fifth page (V10.7.34: LIFE first, TRACKS after MACROS; V10.7.32: the song's pages HOME's, MACROS → TRACKS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN;
+ARRANGE is HOME's sixth page (V10.7.36: LIVE MIX after MACROS; V10.7.34: LIFE first, TRACKS after MACROS; V10.7.32: the song's pages HOME's, MACROS → TRACKS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN;
 until then SAVE's; SELECT from TIMELINE, a HOME tap, or SAVE + G5 from anywhere): on top the project's four parts large (stored: in their
 colour, the one playing says **NOW**), then **ARRANGE**: the song's rows as chips (**A16**: the section and its bars, in
 the section's colour; a scene: a white dot; the row you are on lit and framed), and under them the whole song as one
@@ -2900,7 +2900,7 @@ This is the chapter to read carefully. JIANT keeps several kinds of data in diff
 - After a crash, a hang or a failed start, the autosave is not restored (the music that was playing could be what
   crashed).
 
-### SAVE's chain: TOOLS · PROJECTS · USER · PRESETS · PART SLOTS
+### SAVE's chain: TOOLS · PROJECTS · PART SLOTS · USER · PRESETS
 
 (0.9.2; V10.7.22: TOOLS first; V10.7.32, the owner: **SAVE = save and load**, the song's pages on HOME) SAVE is a chain
 of five pages, a tab each, as every section: **SELECT** walks TOOLS → PROJECTS → USER → PRESETS → PART SLOTS, a **SAVE**
