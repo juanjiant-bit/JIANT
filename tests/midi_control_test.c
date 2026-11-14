@@ -418,6 +418,20 @@ static int split_test(void)
     int bad = 0;
     midi_test_reset();
     bad += check("SPLIT defaults OFF", !split_cfg[0]);
+#if !FELUCCA_SPLIT
+    {   /* (V10.7.32) KEY SPLIT out of the image (core.h FELUCCA_SPLIT 0): a project's split kept as stored, not played:
+         * channel 10 and the keys go to the selected track as without one (run_tests.sh builds this test with it too) */
+        uint32_t i, vis = 0;
+        split_cfg[0]=1; split_cfg[2]=0; split_cfg[3]=1; split_cfg[4]=(uint8_t)-1; split_cfg[5]=1; split_cfg[6]=9; split_cfg[7]=60;
+        queued(0x99,48,100,1); queued(0x99,72,100,1);
+        bad += check("V10.7.32 split out: channel 10 is not split (the stored split inert)",
+                     !(midi_note_held(&trk[0],36) && midi_note_held(&trk[1],84)) && split_cfg[0] == 1);
+        for (i = 0; i < NPAGES; i++) vis += SPLIT_PAGE(&PAGES[i]) || ((uint32_t)(PAGES[i].graph - GR_SPLIT) < 2u && page_visible(i));
+        bad += check("V10.7.32 split out: no KEY SPLIT page shown", !vis);
+        midi_test_reset();
+        return bad;
+    }
+#endif
     split_cfg[0]=1; split_cfg[2]=0; split_cfg[3]=1; split_cfg[4]=(uint8_t)-1; split_cfg[5]=1;
     split_cfg[6]=9; split_cfg[7]=60;
     queued(0x99,48,100,1); queued(0x99,72,100,1);

@@ -97,6 +97,8 @@ jobs:
           python3 tests/uac_input_irq_test.py > build/song-check/usb-input.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/midi_control_test.c -lm -o build/song-check/midi
           build/song-check/midi | tee build/song-check/midi.log
+          cc -O1 -w -Wno-implicit-function-declaration -DFELUCCA_SPLIT=1 -Ibuild/gen -Ifirmware/src tests/midi_control_test.c -lm -o build/song-check/midi-split
+          build/song-check/midi-split | tee build/song-check/midi-split.log
       - name: Generator song progress and whole-song save regression
         run: |
           set -euo pipefail

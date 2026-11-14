@@ -477,8 +477,8 @@ int main(void)
         song.grid = 0;
         ok &= kb_drum_keys() == 0u;
         song.sel = 0;
-        ck("8. no wait on a DRUM track's keys: the selected one, KEY SPLIT's half (both ways), the DRUM grid; a synth's wait",
-           ok && split_ok == 2u);
+        ck("8. no wait on a DRUM track's keys: the selected one, KEY SPLIT's half (both ways; V10.7.32 out of the image: the "
+           "selected track's, a stored split not played), the DRUM grid; a synth's wait", ok && split_ok == (FELUCCA_SPLIT ? 2u : 0u));
     }
     printf("vel_seq: %s\n", bad ? "FAILED" : "all ok");
     return bad != 0;

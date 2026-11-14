@@ -128,7 +128,7 @@ def controls():
     b.append(sec('NAVIGATION · SIX RULES'))
     rules = [
         ('1', 'SELECT WALKS THE PAGES', 'Every page of the section in one chain, a page a detent, stopping at both ends. '
-         'No levels, no zoom.', 'FX: SENDS → DIST → AUTO PAN → BUSES → DLY → DLY 2 → … → PUNCH IN'),
+         'No levels, no zoom.', 'FX: SENDS → DIST → AUTO PAN → BUSES → DLY → DLY 2 → … → EQ'),
         ('2', 'THE BUTTON: IN, OR ON', 'From another section: the page you were last on there. Already inside: the '
          'first page of the next group (round).', 'FX › DLY 2: FX → REVERB · EDIT › FILTER: EDIT → FOCUS'),
         ('3', 'PRESETS LOADS PRESETS', 'Always: the track\'s sounds; SEQ the step; GEN too (its '
@@ -138,7 +138,7 @@ def controls():
         ('5', 'HOLD = THE LAYER', 'Held + SELECT: HOME GEN · EDIT SEQ LFO FX their dice · GLO the tempo · ENV SCL ARP '
          'SAVE their chain.', 'SEQ + G5 CLR STEP · SAVE + C5 NAME'),
         ('6', 'THE SCREEN SAYS WHERE', 'Tabs on top: the section\'s groups, the one shown lit, a dot a page. Footer: '
-         'SECTION · GROUP · page and n/N.', 'FX · DELAY · DLY 2   6/16'),
+         'SECTION · GROUP · page and n/N.', 'FX · DELAY · DLY 2   6/17'),
     ]
     b.append('<div class="grid g3">' + ''.join(
         card(f'{n} · {t}', HEAT[int(n) + 1], f'<p>{e(d)}</p><p class="dim">{e(x)}</p>') for n, t, d, x in rules) + '</div>')
@@ -155,22 +155,22 @@ def controls():
         ('OCT− · OCT+', 'The keyboard\'s octave (both together: back to 0); on DRUM the kit stays put: +1/+2/+3 ratchet x2/x4/x8, −1 SHORT, −2 GHOST, −3 FLAM, each sound its own (grid KNOB 3 HIT). On action pages and dialogs: back / confirm.'),
         ('PLAY', 'Start / stop. GLO + PLAY: restart from the top.'),
         ('REC', 'Arms live recording on the selected track (notes and knob moves, overdub).'),
-        ('HOME', 'Tap: HOME (on HOME the next group: MACROS · SCOPE · GENE). <b>Hold: the MENU.</b>'),
+        ('HOME', 'Tap: HOME (on HOME the next group: MACROS · TIMELINE · ARRANGE · PARTS · SCOPE · GENE). <b>Hold: the MENU.</b>'),
         ('KEYS', '27 keys play the selected track in its scale; with a layer held they become that layer\'s.'),
     ]
     t = '<table>' + ''.join(f'<tr><td class="n">{e(n)}</td><td>{d}</td></tr>' for n, d in rows) + '</table>'
     pb = [
-        ('HOME', 'MACROS (M1–M4 over the beings)  |  SCOPE (FILTER · SPACE · DRIVE · DUCK on the mix)  |  GENE: GENE 1 · GENE 2 · GENE 3', 'MENU'),
+        ('HOME', 'MACROS (M1–M4 over the beings)  |  TIMELINE  |  ARRANGE  |  PARTS (tracks × parts: a head the part, a cell the track)  |  SCOPE (FILTER · SPACE · DRIVE · DUCK on the mix)  |  GENE: GENE 1 · GENE 2 · GENE 3', 'MENU'),
         ('EDIT', 'SOUND: EDIT 1 · EDIT 2  |  TONE: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2  |  FOCUS  |  PLAY: PLAY · PLAY 2 (last). EXT: EDIT 1 / 2 are EXT and SHAPE. FM6: SOUND (ALGO · PATCH)  |  TONE: FILTER  |  OPERATOR: OPERATOR · OP ENV · OPERATOR 2  |  PLAY. DRUM: KIT: KIT · KIT 2 · KIT 3 · KIT 4  |  SOUND: SOUND 1–4  |  LEVELS 1–2  |  TONE: X-MOD · FILTER · STEREO · PLAY', 'INIT · RECALL · sound mutes'),
-        ('SEQ', 'STEP  |  PATTERN: LENGTH · RHYTHM · TRACK  |  EUCLID: EUCLID · MODES · MUTATE  |  PLAYHEADS  |  STRETCH  |  COMP: COMP · COMP 2  |  AUTO: AUTOMATION · AUTO LIST · LYRIC STEP  |  TRACK GEN', 'SEQ TOOLS'),
-        ('FX', 'TRACK: SENDS · DIST · AUTO PAN  |  BUSES  |  DELAY: DLY 1–3  |  REVERB 1–2  |  CHORUS  |  SLICER: SLICER · SL BUS 1–2 · SL PITCH  |  PUNCH IN  |  MASTER · TAPE · EQ',
-         'PUNCH-IN FX'),
-        ('GLO', 'MIX: MIXER · SENDS  |  G.COMP: G.COMP · G.COMP 2  |  SETUP: GLOBAL · SYSTEM · SYSTEM 2 · KEY SPLIT 1–2 (at power-on GLO opens MIXER)', 'MUTE · SOLO · LEVEL · TAP'),
-        ('ENV', 'ENV: ENV · ENV DEST · ENV 2  |  STAGE  |  TRACKS (the six)', '—'),
+        ('SEQ', 'STEP  |  PATTERN: LENGTH · RHYTHM · TRACK  |  EUCLID: EUCLID · MODES · MUTATE  |  PLAYHEADS  |  STRETCH  |  COMP: COMP · COMP 2  |  LOCKS: LOCKS · LYRIC STEP  |  TRACK GEN', 'SEQ TOOLS'),
+        ('FX', 'TRACK: SENDS · DIST · AUTO PAN  |  BUSES  |  DELAY: DLY 1–3  |  REVERB 1–2  |  CHORUS  |  SLICER: SLICER · SL BUS 1–2 · SL PITCH  |  MASTER · TAPE · EQ',
+         'PUNCH-IN FX · the lane at the foot'),
+        ('GLO', 'MIX: MIXER · SENDS  |  G.COMP: G.COMP · G.COMP 2  |  SETUP: GLOBAL · SYSTEM · SYSTEM 2 (at power-on GLO opens MIXER)', 'MUTE · SOLO · LEVEL · TAP'),
+        ('ENV', 'ENV: ENV · ENV DEST · ENV 2', '—'),
         ('LFO', 'MOD  |  LFO: LFO · LFO 2 · LFO DEST  |  MSEQ: MSEQ · MSEQ 2', 'MACROS M1–M4 (stay latched)'),
         ('SCL', 'KEY  |  CHORD  |  SCENE', 'ROOT by key'),
         ('ARP', 'ARP: ARP · ARP 2', '—'),
-        ('SAVE', 'TOOLS: TOOLS (CLEAR PROJECT first)  |  SONG: TIMELINE · ARRANGE · PARTS · CLIPS  |  PROJECT: PART SLOTS · PROJECTS (pick · LOAD · ERASE · SAVE; NAME: K3 SONG / LOOP)  |  SOUND: USER · PRESETS (from outside, USER / PART SLOTS come armed)', 'SONG layer · C5 NAME'),
+        ('SAVE', 'TOOLS (CLEAR PROJECT first)  |  PROJECTS (pick · LOAD · ERASE · SAVE; NAME: K3 SONG / LOOP; where SAVE opens)  |  USER  |  PRESETS  |  PART SLOTS (from outside, USER / PART SLOTS come armed)', 'SONG layer · C5 NAME'),
         ('REC', '(transport)', 'CLEAR · CLICK · held alone: UNDO'),
     ]
     t2 = ('<table class="pages"><tr><th>BUTTON</th><th>GROUPS (A TAP: THE NEXT) · PAGES (SELECT)</th><th>HOLD</th></tr>' +
@@ -200,8 +200,9 @@ def controls():
                   '<p>A key plays its effect while held (MENU FX LATCH ON: toggles); hold FX and let go untouched: <b>LOCKED</b> '
                   'open, FX again unlocks; OCT- all off. In on the next 1/16. Black 1–6 mute T1–T6, A#4 picks which tracks the MIDI ones '
                   'touch (all · synths · drums). G#4 C#5 D#5 loop the last 3 / 5 / 7 steps; F#5 <b>GLITCH</b> skips on the 1/16 grid, its cycle '
-                  'locked to the bar (par9). With REC armed and playing they record into the section\'s lane; G5 '
-                  'clears it.</p><h4>KNOBS</h4>' + knobs('FILTER', 'CRUSH', 'THROW', 'DEPTH')))
+                  'locked to the bar (par9). With REC armed and playing they record into the section\'s lane, drawn along the screen\'s foot '
+                  'while FX is held; G5 clears it. <b>FX + PRESETS</b> right: the knobs are the lane\'s (LEN RES - CLEAR), left: the FX KNOBS.</p>'
+                  '<h4>FX KNOBS</h4>' + knobs('FILTER', 'CRUSH', 'THROW', 'DEPTH')))
     b.append(card('GLO · MIX', HEAT[1], keyboard(glo_w, glo_b) +
                   '<p>Black 1–6 mute T1–T6 (latched), 7–10 the DRUM-X groups. White: solo while held, E4 unmutes all, '
                   'F4 tap tempo, G4 <b>UNDO</b> the last big change (again: redo; V10.7: also REC held alone and let go). SELECT: the tempo. PLAY: restart.</p><h4>KNOBS</h4>' +
@@ -220,7 +221,7 @@ def controls():
                                   'G3 clears them (only tracks that sound). LFO + SELECT: the track\'s LFO diced.', ('M1', 'M2', 'M3', 'M4')),
         ('SCL · SCALE', HEAT[0], 'Any key sets the ROOT. ROOT and SCALE are every melodic track\'s (and RESO\'s).',
          ('ROOT', 'SCL', 'OFS', 'PIT')),
-        ('SEQ · TOOLS', HEAT[4], 'On the SEQ pages: F3 CLEAR · G3 REVERSE · A3 B3 SHIFT · F4 CLR AUTO (the automation) · G5 CLR STEP (AUTO LIST: the record). DRUM: G4 CLR · A4 REV · B4 FILL the lane (black 1–8 pick it).',
+        ('SEQ · TOOLS', HEAT[4], 'On the SEQ pages: F3 CLEAR · G3 REVERSE · A3 B3 SHIFT · F4 CLR AUTO (the automation) · G5 CLR STEP (LOCKS: the record). DRUM: G4 CLR · A4 REV · B4 FILL the lane (black 1–8 pick it).',
          ('LEN', 'DIV', 'SWING', 'GATE')),
         ('REC · RECORD', '#ef4444', 'F3 CLEAR the track (at once; GLO + G4 undoes it), G3 the metronome CLICK.', ('CLICK', '-', '-', '-')),
     ]
@@ -232,7 +233,7 @@ def controls():
         (k('HOME', cls='v') + ' + ' + k('SELECT', cls='v'), 'GENE, the song generator (HOME\'s last pages).'),
         (k('EDIT · SEQ · LFO · FX', cls='v') + ' + ' + k('SELECT', cls='v'), 'Their dice: sound · sequence · LFO · effects (KEEP? OK / CANCEL).'),
         (k('ENV · SCL · ARP · SAVE', cls='v') + ' + ' + k('SELECT', cls='v'), 'Into that section and along its chain.'),
-        (k('SEQ') + ' + ' + k('G5'), 'CLR STEP: the cursor step and its locks (AUTO LIST: deletes the record).'),
+        (k('SEQ') + ' + ' + k('G5'), 'CLR STEP: the cursor step and its locks (LOCKS: deletes the record).'),
         (k('SAVE') + ' + ' + k('C5'), 'NAME: rename the slot, the section, the project.'),
         (k('REC') + ' + ' + k('FX') + k('EDIT') + k('ENV') + k('LFO') + k('SCL') + k('ARP') + k('GLO'),
          'Clear that part\'s automation on the selected track (FX: the punch-in lane too).'),
@@ -255,7 +256,7 @@ def controls():
     b.append(sec('EVERY PAGE · KNOB 1 – 4'))
     fams = [
         ('ENV', HEAT[0], [('ENV', 'ATK DEC SUS REL'), ('ENV DEST', 'FILTER PITCH SHAPE LOOP'), ('ENV 2', 'ATK DEC SUS REL'),
-                          ('ENV 2 →', 'a second ADSR: MOD SRC ENV2, any DEST (V10.22)'), ('STAGE', 'STAGE VALUE LOOP -')]),
+                          ('ENV 2 →', 'a second ADSR: MOD SRC ENV2, any DEST (V10.22)')]),
         ('LFO', HEAT[1], [('LFO', 'RATE WAVE MODE FADE'), ('LFO 2', 'PHASE - - -'), ('LFO DEST', 'PITCH FILTER SHAPE AMP'), ('MOD', 'SLOT SRC DEST AMT'),
                           ('PROX (BT)', 'SRC PROX: the phone\'s distance (AIR: a hand, no phone) · MENU › SYSTEM › BLUETOOTH, OCT+: OCT− FAR, OCT+ NEAR; K1 MIN, K2 MAX, K3 SPD (V10.61)'),
                           ('FOLLOW', 'SRC FOLLOW: the audio input\'s envelope (EXT, V10.54), any track, any DEST'),
@@ -264,7 +265,7 @@ def controls():
                          ('SL BUS', 'T1 T2 T3 T4'), ('SL BUS 2', 'T5 T6 FX -'), ('SL PITCH', 'STEP PITCH LEN QUANT'),
                          ('DLY', 'TIME FEEDBK TONE MIX'), ('DLY 2', 'WIDE PITCH SPRAY MOD'), ('DLY 3', ['TYPE', 'PING', 'DRIVE', 'R TIME']),
                          ('REVERB', 'TYPE SIZE DAMP PRE/AIR'), ('REVERB 2', 'MOD RATE FILT WIDE'),
-                         ('CHORUS', 'RATE DEPTH STEREO -'), ('PUNCH IN', 'LEN RES REC CLEAR'), ('MASTER', 'CLIP PUNCH DUCK REL'), ('TAPE', 'TAPE WOW - -'),
+                         ('CHORUS', 'RATE DEPTH STEREO -'), ('FX + PRESETS', 'LEN RES REC CLEAR (the punch-in lane, FX held)'), ('MASTER', 'CLIP PUNCH DUCK REL'), ('TAPE', 'TAPE WOW - -'),
                          ('EQ', ['LOW', 'LO MID', 'HI MID', 'HIGH'])]),
         ('EDIT', HEAT[3], [('EDIT 1', 'E1 E2 E3 E4'), ('EDIT 2', 'E5 E6 E7 E8'), ('EXT', 'SOURCE GAIN GATE MODE'), ('SHAPE', 'WIDTH RING BITS RATE'), ('SWARM', 'SIDE RATE MOVE TONE'), ('SWARM 2', 'SIDE NOISE MOD NOW'),
                            ('MORPH', 'MORPH DRIFT - -'), ('ROTOR', 'DEPTH DUST - -'),
@@ -281,13 +282,13 @@ def controls():
                           ('TRACK', 'PITCH CHANCE HUMAN REC Q'), ('EUCLID', 'HITS STEPS ROTATE VARY'), ('EUCLID · DRUM', 'HITS STEPS ROTATE LANE'), ('EUCLID · DRUM ALL', 'DENSITY STEPS ROTATE LANE'),
                           ('MODES', 'MOTION HARMONY OCTAVE SLIDE'), ('MODES · DRUM', 'ACCENT GHOST RATCHET VARY'), ('MUTATE', 'EVERY AMOUNT MODE WHAT'),
                           ('STEP', 'STEP NOTE TIME VEL'), ('STEP · DRUM', 'STEP LANE HIT ACC'), 
-                          ('AUTOMATION', 'PLAY EVENT LOCK CLEAR'), ('AUTO LIST', 'ROW STEP PARAM VALUE'),
+                          ('LOCKS · TOP', 'ALL PLAY LOCK REC · OCT+ CLEAR ALL'), ('LOCKS', 'ROW STEP PARAM VALUE · LOCK / REC'),
                           ('COMP', 'STEP TYPE VAL EVERY'), ('COMP 2', 'STEP TYPE VAL EVERY')]),
         ('HOME · GLO · SAVE', HEAT[6], [('MACROS', 'M1 M2 M3 M4'), ('SCOPE', 'FILTER SPACE DRIVE DUCK'),
                                  ('KEYS', 'RATE LOOP DENS DJ FILT (the keys: live modifiers)'), ('RAILS', 'TARGET RATE LOOP DENS'),
                                  ('MIXER', 'LEVEL PAN MUTE BPM'), ('GLOBAL', 'BPM SWING CLOCK TUNE'), ('G.COMP', 'ACTION LENGTH COND VALUE'), ('G.COMP 2', 'the global lane: its TRACKS, MONO / POLY'),
                                  ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('SYSTEM 2', ['USB', 'TRS IN', 'BT', '-']), ('PRESETS', 'No. ENG FAV LIST · OCT+ keep, OCT- back'),
-                                 ('USER', 'SLOT LOAD ERASE SAVE'), ('PROJECTS', 'PROJECT LOAD ERASE SAVE'), ('PART SLOTS', 'PART LOAD ERASE SAVE'), ('ARRANGE', 'ROW PART BARS SCENE (OCT+ adds a row, OCT− deletes the one picked)'), ('TIMELINE', 'ROW PART BARS VAR · T1–T6: FROM'),
+                                 ('USER', 'SLOT LOAD ERASE SAVE'), ('PROJECTS', 'PROJECT LOAD ERASE SAVE'), ('PART SLOTS', 'PART LOAD ERASE SAVE'), ('ARRANGE', 'ROW PART BARS SCENE (OCT+ adds a row, OCT− deletes the one picked)'), ('TIMELINE', 'ROW PART BARS VAR · T1–T6: FROM'), ('PARTS', 'TRACK PART ROW LOOP/SONG · OCT+ go, OCT− song / stop'),
                                  ('TOOLS', 'K1 TARGET (PROJECT TRACK SOUND SONG SYSTEM) · K2 the action · hold OCT+ a second; CLEAR PROJECT (SAVE\'s first page): OCT+ asks, the saved copy kept')]),
     ]
 
@@ -423,9 +424,9 @@ def sound():
     b.append('</div>')
     b.append('<div class="grid g3" style="margin-top:22px">')
     b.append(card('SEQUENCER', HEAT[4],
-                  '<p>64 steps a track, up to 4 notes a step, piano roll and drum grid. One chain (V10.6): STEP (the roll / grid, K1 all 64 steps) · LENGTH · TRACK · EUCLID · MODES · MUTATE · PLAYHEADS · STRETCH · COMP · COMP 2 · AUTOMATION · AUTO LIST; SELECT walks, SEQ jumps to the next group, PRESETS loads a pattern. <b>Hold a step + turn a knob</b>: '
+                  '<p>64 steps a track, up to 4 notes a step, piano roll and drum grid. One chain (V10.6): STEP (the roll / grid, K1 all 64 steps) · LENGTH · TRACK · EUCLID · MODES · MUTATE · PLAYHEADS · STRETCH · COMP · COMP 2 · LOCKS; SELECT walks, SEQ jumps to the next group, PRESETS loads a pattern. <b>Hold a step + turn a knob</b>: '
                   'a parameter lock. STEP K4 <b>VEL</b> (V10.8): 1–127, then ACC, SLD, A+S. Step recording: hold a chord + KNOB 1 its length; + ARP: arpeggiated (K1 rate, K2 order, K3 oct). COMP / COMP 2: two components a step, each ACTION · LENGTH · CONDITION · VALUE: ARP, SEQ, OCT+, OCT−, RATCH, STUT, MUTE, TRANS, RAND, LOCK, <b>RAMP</b> (V10.6v, JUMP\'s place: the step\'s lock glides there over 1–32 steps or 1–16 bars, LIN EXP LOG S STEPS ZIGZAG), SOUND (a kit\'s SHORT / GHOST / FLAM), BEND, SHIFT, CHORD, <b>TRIG</b> (MUTE the other way: plays only when its CONDITION holds, TRIG 4:4 the 4th pass); CONDITION ALWAYS, 25 / 50 / 75 %, 1ST, FILL, PRE, NEI (and their !), N:M, ELSE (C2: MONO). REC keeps lengths, legato (SLIDE) and velocity; GATE 100 % for new tracks (V10.6z4). TRACK: PITCH, CHANCE thins the whole track, HUMAN one amount (velocity, timing, gate, decay / release), REC Q. STRETCH / REPEAT act as the knob turns; ROTATE reads the sequence from another step; NUDGE in red (OCT+) moves the cursor step off the grid in 64ths (REC Q 0 % records where you played, to the 64th). <b>EUCLID</b> (V10.6; V10.16 VARY in four turns A A\' A\'\' B, and <b>MUTATE</b>: EVERY 1–16 bars, AMOUNT, ORBIT / DRIFT / PULSE, GROOVE / RHYTHM / FEEL / ALL, OCT+ now, OCT− the anchor): HITS, STEPS 2–64, ROTATE write the track\'s pattern live; K4 LANE (DRUM-X: each sound its own; V10.7 <b>ALL</b>, the default: K1 DENSITY 1–8 writes a whole kit, a lane picked writes only that lane) or VARY; MODES adds ACCENT GHOST RATCHET VARY (DRUM-X) or MOTION HARMONY OCTAVE SLIDE; notes in the track\'s SCL, else the key the other tracks fit (FROM Tn), else NEW KEY; OCT+ a new variation, OCT− the one before. REC + knobs while playing: '
-                  'automation (64 records a section, MOTION page plays / clears them, AUTO LIST edits them). EUCLID starts at 0 and '
+                  'automation (64 records a section; LOCKS plays, clears and edits them, each a LOCK or a REC). EUCLID starts at 0 and '
                   'transforms the track\'s own sequence, giving it back as it was at rest (V10.28–V10.31). STRETCH › NUDGE: OCT− the '
                   'whole sequence by steps, OCT+ the cursor step in 64ths (V10.25). Longer than 16 steps, the roll follows the playhead (V10.47).</p>'
                   '<h4>LENGTH · TRACK</h4>' + knobs('LEN', 'DIV', 'SWG', 'GATE') + knobs('PIT', 'CHN', 'HUM', 'RECQ')))
@@ -438,8 +439,8 @@ def sound():
                   'UP+8 CONV DIVG PINKY THUMB WALK CHORD <b style="color:#f4f1ea">TRNS</b> (the keys transpose the '
                   'sequence)</p>'))
     b.append(card('SONGS', HEAT[6],
-                  '<p><b>6 projects × 4 sections (A–D)</b> (V10.6p; 8 before), a song of up to 16 rows by bars (SAVE › PROJECT › ARRANGE, OCT+ adds a row, OCT− deletes one, PLAY plays; END: STOP, x2–x8, LOOP), SLOOP style. '
-                  '<b>TIMELINE</b> (V10.6o, where SAVE opens; TOOLS before it): the song as blocks, the row picked opened by track: K1 row K2 part K3 bars K4 the track\'s <b>VAR</b> (MUTE THIN FILL HALF REV SHIFT OCT± VAR 1–4), F3–D4 mutes, F4–B4 <b>FROM</b> A–D, PLAY loops the row. <b>PARTS</b>: the four parts, OCT+ loops one. <b>CLIPS</b> (V10.6s): 6 tracks × 4 parts, OCT+ on the next bar, REC writes the rows. A sound changed while the song plays stays (V10.6z8; EDIT › RECALL). '
+                  '<p><b>6 projects × 4 sections (A–D)</b> (V10.6p; 8 before), a song of up to 16 rows by bars (HOME › ARRANGE, OCT+ adds a row, OCT− deletes one, PLAY plays; END: STOP, x2–x8, LOOP), SLOOP style. '
+                  '<b>TIMELINE</b> (V10.6o; on HOME since V10.7.32, after MACROS): the song as blocks, the row picked opened by track: K1 row K2 part K3 bars K4 the track\'s <b>VAR</b> (MUTE THIN FILL HALF REV SHIFT OCT± VAR 1–4), F3–D4 mutes, F4–B4 <b>FROM</b> A–D, PLAY loops the row. <b>PARTS</b> (CLIPS\' grid, V10.7.32): 6 tracks × 4 parts; a part\'s head: OCT+ loops it, OCT− the song; a cell: OCT+ on the next bar, OCT− the track stops; REC writes the rows. A sound changed while the song plays stays (V10.6z8; EDIT › RECALL). '
                   'Each row can hold a <b>scene</b>: mutes, DRUM-X group mutes, macros and MIDI punch-ins. SAVE held '
                   'plays sections live on the next bar, stores them, records the song (SONG REC). Each section keeps its '
                   'sounds, steps, motion, kit and its SLICER.</p>'))
@@ -491,7 +492,7 @@ def sound():
                   '<p style="margin-top:6px">−12…+12 dB, wide and gentle (~200 Hz, 1 kHz, 4 kHz); at 0 it costs nothing. The page draws the curve '
                   '(SCOPE ON: the master live behind it); EQ and TAPE change only when a project loads.</p>'
                   '<h4>PUNCH-IN FX (FX HELD)</h4><p>REPEAT 1/8 · 1/16 · 1/32 (1/8 from 41 BPM, 1/16 from 21: V10.59), LPF, HPF, LOOP 3 / 5 / 7, GLITCH on the grid; '
-                  'on the notes: OCT−/+, ½ TEMPO, DEC−/+, STUTTER, ATK+, ARP, RANDOM. Knobs: FILTER CRUSH THROW DEPTH. '
+                  'on the notes: OCT−/+, ½ TEMPO, DEC−/+, STUTTER, ATK+, ARP, RANDOM. FX KNOBS: FILTER CRUSH THROW DEPTH (FX + PRESETS: the lane\'s). '
                   'Recordable per section.</p>'))
     b.append('</div>')
     page('SOUND · FX · MOD', 'engines, effects, modulation, sequencer and songs', ''.join(b), 'sound.html')

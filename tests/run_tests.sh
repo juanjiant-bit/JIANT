@@ -290,6 +290,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "DRUM-X OCTAVES (0.8.5): ratchets above the kit, SHORT GHOST FLAM below, live, recorded and played back as heard, MIDI bands" "$OUT/drumx_oct_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/midi_control_test" tests/midi_control_test.c -lm
     run "USB/TRS clock, bend, sustain, ownership and panic recovery" "$OUT/midi_control_test"
+    $CC -O1 -w -DFELUCCA_SPLIT=1 -Ibuild/gen -Ifirmware/src -o "$OUT/midi_control_split" tests/midi_control_test.c -lm   # (V10.7.32: KEY SPLIT out of the image, its code tested built in)
+    run "USB/TRS MIDI with KEY SPLIT built in (FELUCCA_SPLIT=1): the zones, their owners, the page" "$OUT/midi_control_split"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/stuck_test" tests/stuck_test.c -lm
     run "stuck notes: keys, SCENE, LATCH, ARP, MIDI IN and MIDI OUT notes end whatever changed while held; PANIC (PLAY held)" "$OUT/stuck_test"
     $CC -O1 -w -DFELUCCA_FM4=1 -Ibuild/gen -Ifirmware/src -o "$OUT/digital_test" tests/digital_test.c -lm

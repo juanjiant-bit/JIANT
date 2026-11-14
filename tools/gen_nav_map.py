@@ -37,8 +37,35 @@ FONT = R / 'assets/fonts/InterTight[wght].ttf'
 VERSION = re.search(r'FELUCCA_VERSION "([vV][^"]+)"', (R / 'firmware/src/felucca.c').read_text()).group(1)
 
 # ------------------------------------------------------------------------------------------- the chains ---
+def switches():
+    """core.h's build switches (FELUCCA_LIVE, FELUCCA_SPLIT, FELUCCA_ENVX ..): their defaults"""
+    return {k: int(v) for k, v in re.findall(r'#ifndef (FELUCCA_\w+)\s*\n#define \1 (\d+)', (R / 'firmware/src/core.h').read_text())}
+
+
+def preprocess(s, sw):
+    """(V10.7.32) the chain tables' #if FELUCCA_X / #if !FELUCCA_X / #else / #endif, as the build sees them; a
+    "FELUCCA_X ? a : b" as its value"""
+    out, keep = [], [True]
+    for ln in s.split('\n'):
+        m = re.match(r'\s*#if\s+(!?)(FELUCCA_\w+)\s*$', ln)
+        if m:
+            v = bool(sw.get(m.group(2), 0)) != bool(m.group(1))
+            keep.append(keep[-1] and v)
+            continue
+        if re.match(r'\s*#else\b', ln):
+            keep[-1] = keep[-2] and not keep[-1]
+            continue
+        if re.match(r'\s*#endif\b', ln):
+            keep.pop()
+            continue
+        if keep[-1]:
+            out.append(ln)
+    s = '\n'.join(out)
+    return re.sub(r'(FELUCCA_\w+)\s*\?\s*(\d+)\s*:\s*(\d+)', lambda m: m.group(2) if sw.get(m.group(1), 0) else m.group(3), s)
+
+
 def parse():
-    s = LENS.read_text()
+    s = preprocess(LENS.read_text(), switches())
     sec = re.findall(r'"(\w+)"', re.search(r'SEC_NAME\[SEC_N\] = \{(.*?)\};', s, re.S).group(1))
     lit = lambda v: None if v == '0' else v.strip('"')
     tabs = {}
@@ -84,21 +111,21 @@ L = {
          ('HOLD', 'Hold = the layer', 'A button held puts its shortcuts on the keys and knobs; ALGORITHM while held: MAP · KNOBS · STATE.'),
          ('SCREEN', 'The screen says where', 'Tabs on top: the groups, a dot a page. At the foot: SECTION · GROUP · page and n/N.')],
   hints={'HOME': ('MENU', 'GEN'), 'EDIT': ('INIT · RECALL', 'sound dice'), 'SEQ': ('SEQ TOOLS', 'sequence dice'),
-         'FX': ('punch-in FX', 'FX dice'), 'GLO': ('mutes · solos · UNDO', 'tempo'), 'ENV': (None, 'walk this chain'),
+         'FX': ('punch-in FX · the lane', 'FX dice'), 'GLO': ('mutes · solos · UNDO', 'tempo'), 'ENV': (None, 'walk this chain'),
          'LFO': ('MACROS M1–M4', 'LFO dice'), 'SCL': ('ROOT on the keys', 'walk this chain'), 'ARP': (None, 'walk this chain'),
-         'SAVE': ('sections live · NAME', 'walk this chain')},
-  notes={'HOME': 'GEN 1–3: PRESETS the genre, OCT+ makes the piece, OCT− back to ECO.',
+         'SAVE': ('parts live · NAME', 'walk this chain')},
+  notes={'HOME': 'GEN 1–3: PRESETS the genre, OCT+ makes the piece, OCT− back to MACROS. TIMELINE ARRANGE PARTS: the song (V10.7.32, from SAVE).',
          'SEQ': 'PRESETS: the patterns (PHRASES). KNOB 1: all 64 steps on STEP, bar after bar.',
          'EDIT': 'TONE pages only where the engine has them: MORPH (ANALOG PHASE LOFI), RETRIG (LOFI), ROTOR (WHEEL), WORDS (VOICE). DRUM-X: KNOB 1 picks the kit\'s sound on SOUND.',
-         'FX': 'CHORUS and SLICER are hidden with LOAD ECO; the chain skips them.',
+         'FX': 'CHORUS and SLICER are hidden with LOAD ECO; the chain skips them. PUNCH IN: on the FX held (the lane at the foot, FX + PRESETS its knobs).',
          'SAVE': 'From outside, USER and PART SLOTS come with SAVE armed: SAVE · OCT+ · OCT+.',
          'ARP': 'One group: ARP inside goes back to ARP.', 'SCL': 'KNOB 1 sets ROOT.',
-         'ENV': 'ALGORITHM picks the track on TRACKS.', 'GLO': 'MIXER KNOB 4: the DJ FILTER.',
+         'ENV': 'One group (V10.7.32: STAGE and TRACKS gone).', 'GLO': 'MIXER KNOB 4: the DJ FILTER.',
          'LFO': 'KNOB 1: the slot on MOD, the step on MSEQ.'},
   layers=[('HOME', 'the MENU: DISPLAY · CONTROL · AUDIO · SYSTEM (SELECT the rows, ALGORITHM the tabs)'),
           ('EDIT', 'F3 INIT · G3 RECALL · DRUM: black keys 1–8 mute each sound'),
           ('SEQ', 'F3 CLEAR · G3 REVERSE · A3/B3 SHIFT · F4 CLR AUTO · G4–B4 LANE CLEAR / REVERSE / FILL · **G5 CLR STEP** · REC: CLEAR ALL'),
-          ('FX', 'punch-in: F3–A3 REPEAT · B3/C4 LPF/HPF · D4/E4 OCT · F4 ½ TEMPO · G4/A4 DEC · B4/C5 STUTTER · D5 ATK+ · E5 ARP · F5 RANDOM'),
+          ('FX', 'punch-in: F3–A3 REPEAT · B3/C4 LPF/HPF · D4/E4 OCT · F4 ½ TEMPO · G4/A4 DEC · B4/C5 STUTTER · D5 ATK+ · E5 ARP · F5 RANDOM · PRESETS: the lane\'s knobs'),
           ('GLO', 'black 1–6 MUTE · F3–D4 SOLO · E4 unmute all · F4 TAP · **G4 UNDO** · PLAY restart · knobs: LEVEL'),
           ('LFO', 'KNOB 1–4 = M1–M4, latched · F3 new routes · G3 clear'),
           ('SCL', 'any key sets the ROOT'),
@@ -128,21 +155,21 @@ L = {
          ('MANTENER', 'Mantener = la capa', 'Un botón mantenido pone sus atajos en teclas y perillas; ALGORITHM mientras lo mantenés: MAP · KNOBS · STATE.'),
          ('PANTALLA', 'La pantalla dice dónde', 'Arriba las pestañas: los grupos, un punto por página. Abajo: SECCIÓN · GRUPO · página y n/N.')],
   hints={'HOME': ('MENU', 'GEN'), 'EDIT': ('INIT · RECALL', 'dados de sonido'), 'SEQ': ('SEQ TOOLS', 'dados de secuencia'),
-         'FX': ('FX punch-in', 'dados de FX'), 'GLO': ('mutes · solos · UNDO', 'tempo'), 'ENV': (None, 'recorre esta cadena'),
+         'FX': ('FX punch-in · el carril', 'dados de FX'), 'GLO': ('mutes · solos · UNDO', 'tempo'), 'ENV': (None, 'recorre esta cadena'),
          'LFO': ('MACROS M1–M4', 'dados de LFO'), 'SCL': ('ROOT en las teclas', 'recorre esta cadena'),
          'ARP': (None, 'recorre esta cadena'), 'SAVE': ('secciones en vivo · NAME', 'recorre esta cadena')},
-  notes={'HOME': 'GEN 1–3: PRESETS el género, OCT+ arma la pieza, OCT− vuelve a ECO.',
+  notes={'HOME': 'GEN 1–3: PRESETS el género, OCT+ arma la pieza, OCT− vuelve a MACROS. TIMELINE ARRANGE PARTS: el tema (V10.7.32, desde SAVE).',
          'SEQ': 'PRESETS: los patrones (PHRASES). KNOB 1: los 64 pasos en STEP, compás tras compás.',
          'EDIT': 'Las páginas de TONE solo donde el motor las tiene: MORPH (ANALOG PHASE LOFI), RETRIG (LOFI), ROTOR (WHEEL), WORDS (VOICE). DRUM-X: KNOB 1 elige el sonido del kit en SOUND.',
-         'FX': 'CHORUS y SLICER se ocultan con LOAD ECO; la cadena los saltea.',
+         'FX': 'CHORUS y SLICER se ocultan con LOAD ECO; la cadena los saltea. PUNCH IN: en el FX mantenido (el carril al pie, FX + PRESETS sus perillas).',
          'SAVE': 'Desde afuera, USER y PART SLOTS llegan con SAVE elegido: SAVE · OCT+ · OCT+.',
          'ARP': 'Un grupo: ARP adentro vuelve a ARP.', 'SCL': 'KNOB 1 fija ROOT.',
-         'ENV': 'ALGORITHM elige la pista en TRACKS.', 'GLO': 'MIXER KNOB 4: el DJ FILTER.',
+         'ENV': 'Un grupo (V10.7.32: STAGE y TRACKS ya no están).', 'GLO': 'MIXER KNOB 4: el DJ FILTER.',
          'LFO': 'KNOB 1: el slot en MOD, el paso en MSEQ.'},
   layers=[('HOME', 'el MENU: DISPLAY · CONTROL · AUDIO · SYSTEM (SELECT las filas, ALGORITHM las pestañas)'),
           ('EDIT', 'F3 INIT · G3 RECALL · DRUM: negras 1–8 silencian cada sonido'),
           ('SEQ', 'F3 CLEAR · G3 REVERSE · A3/B3 SHIFT · F4 CLR AUTO · G4–B4 LANE CLEAR / REVERSE / FILL · **G5 CLR STEP** · REC: CLEAR ALL'),
-          ('FX', 'punch-in: F3–A3 REPEAT · B3/C4 LPF/HPF · D4/E4 OCT · F4 ½ TEMPO · G4/A4 DEC · B4/C5 STUTTER · D5 ATK+ · E5 ARP · F5 RANDOM'),
+          ('FX', 'punch-in: F3–A3 REPEAT · B3/C4 LPF/HPF · D4/E4 OCT · F4 ½ TEMPO · G4/A4 DEC · B4/C5 STUTTER · D5 ATK+ · E5 ARP · F5 RANDOM · PRESETS: las perillas del carril'),
           ('GLO', 'negras 1–6 MUTE · F3–D4 SOLO · E4 desmutea todo · F4 TAP · **G4 UNDO** · PLAY reinicia · perillas: LEVEL'),
           ('LFO', 'KNOB 1–4 = M1–M4, enganchadas · F3 rutas nuevas · G3 las borra'),
           ('SCL', 'cualquier tecla fija la ROOT'),
@@ -380,7 +407,7 @@ def draw_block(sv, ch, sec, x, y, colw, accent, drawn, label=None):
         nx = gx + 16
         room = gx + colw - 8 - nx
         fs = PAGE_FS
-        while tw(p['name'], fs, 600) > room and fs > 13: fs -= .5
+        while tw(p["name"], fs, 600) > room and fs > 11: fs -= .5   # (V10.7.32: 11, EDIT's twelve columns since FILTER 2)
         if tw(p['name'], fs, 600) > room:
             raise SystemExit(f'gen_nav_map: "{p["name"]}" does not fit its pill ({room:.0f} px)')
         sv.text(nx, cy + fs * .36, p['name'], fs, TXT, 600)
