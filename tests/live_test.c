@@ -438,11 +438,11 @@ static int pages(void)
     press(B_GLO); frame();
     ok = str_eq(cur_page()->title, "MIXER");
     turn(EN_SELECT, -1); frame();
-    ok &= str_eq(cur_page()->title, "RAILS") && crumb_is("GLO \xB7 LIVE \xB7 RAILS", "2/11");   /* (e3c9e26, 2026-11-04: KEY
+    ok &= str_eq(cur_page()->title, "RAILS") && crumb_is("GLO \xB7 LIVE \xB7 RAILS", FELUCCA_SPLIT ? "2/11" : "2/9");   /* (e3c9e26, 2026-11-04: KEY
                                                          * SPLIT and KEY SPLIT 2 under SYSTEM, 11 pages; was 9) */
     turn(EN_SELECT, -1); frame();
     turn(EN_SELECT, -1); frame();
-    ok &= str_eq(cur_page()->title, "KEYS") && crumb_is("GLO \xB7 LIVE \xB7 KEYS", "1/11") && tabs_lit(&k) == 4u && !k &&
+    ok &= str_eq(cur_page()->title, "KEYS") && crumb_is("GLO \xB7 LIVE \xB7 KEYS", FELUCCA_SPLIT ? "1/11" : "1/9") && tabs_lit(&k) == 4u && !k &&
           song.grid == 3;
     bad += check("GLO: MIXER at power-on; SELECT back RAILS, KEYS (the chain's first, LIVE · four tabs: codex/coherence SETUP)", ok);
     ui_power_on();

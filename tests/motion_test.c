@@ -659,9 +659,9 @@ static int lock_ui(void)
                  lock_id(0) == P_DIST && lock_id(1) == P_CHOR && lock_id(3) == P_REV);
     lk_down(k4); turn(EN_K4, 5); lk_up(k4);
     bad += check("  step 5 gets a REV lock", motion_lock_get(t, 4, P_REV, &v) && v == t->p[P_REV] + 5);
-    go_page(GR_MOTION);
+    go_page(GR_EVENTS);                                 /* (V10.7.32: LOCKS' top row, AUTOMATION's) */
     frame();
-    bad += check("AUTOMATION: EVENT 0, LOCK 3", motion_count(t) - motion_lock_count(t) == 0u && motion_lock_count(t) == 3u);
+    bad += check("LOCKS' top row: REC 0, LOCK 3", motion_count(t) - motion_lock_count(t) == 0u && motion_lock_count(t) == 3u);
     /* the roll: the step being entered is the one held */
     ui_power_on();
     t = &trk[0];
@@ -747,6 +747,7 @@ static int auto_list(void)
     go_home();
     cursor_set(4);
     go_page(GR_EVENTS);
+    ui.ev_top = 0;                                      /* (V10.7.32 LOCKS: below its top row, + ADD LOCK) */
     frame();
     id0 = ui.ev_id;
     bad += check("AUTO LIST: empty, + ADD LOCK selected on the SEQ cursor's step, the first knob of the sound page",
@@ -787,7 +788,7 @@ static int auto_list(void)
     bad += check("  0.9.2 SEQ + G5 (was EDIT): the row's record goes", motion_count(t) == 1u && !motion_lock_get(t, 2, ui.ev_id, &v) &&
         str_eq(ui.msg, "DELETED"));
     frames(2000);
-    turn(EN_K1, -5);
+    turn(EN_K1, -5); turn(EN_K1, 1);                     /* (V10.7.32: the top row, then the first record) */
     v = motion.event[0].value;
     turn(EN_K4, 2); turn(EN_K4, 2); turn(EN_K4, 2);
     ok = motion.event[0].value == v + 6;
