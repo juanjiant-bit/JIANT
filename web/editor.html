@@ -197,8 +197,11 @@
       <p class="bar"><label><span data-t="lyricLang"></span> <select id="lyrlang"></select></label>
         <label><span data-t="lyricSrc"></span> <select id="lyrsrc"></select></label></p>
       <p class="bar"><input id="lyric" maxlength="256" size="56" autocomplete="off" spellcheck="false">
+        <label><span data-t="lyricConv"></span> <select id="lyrconv"></select></label></p>
+      <p class="bar"><span data-t="lyricPh"></span> <input id="lyricph" maxlength="63" size="56" autocomplete="off" spellcheck="false">
         <button id="lyricsend" data-t="lyricSend"></button></p>
       <p class="dim" id="lyric-preview" aria-live="polite"></p>
+      <p class="dim" data-t="lyricPhHelp"></p>
       <p class="dim">RU: transliteración automática / automatic transliteration. ZH: pinyin.
         SEQ → LYRIC STEP: STEP, WORD, SYLLABLE, OCT+ PLACE. TEXT FIXED + POS repite la sílaba elegida / repeats the selected syllable. SYLLABLE 0 = AUTO.</p></div>
   </section>
@@ -347,6 +350,7 @@
     <span data-t="foot"></span> M-VAVE and FM-1 are trademarks of their respective owners.<br>
     <a href="FUKIAI-LICENSE.txt" data-t="iconsCredit"></a></footer>
 </main>
+<script src="lyrics.js"></script>   <!-- (V10.7.33) VOICE's words as phonemes; lyrics_en.js (the CMU dictionary) loaded when English needs it -->
 <script>
 "use strict";
 /*PROTO-BEGIN*/
@@ -2705,6 +2709,9 @@ const TEXT = {
     lyricLang: "LANG",
     lyricSrc: "LYRIC",
     lyricSent: "歌詞を送りました",
+    lyricConv: "音素",
+    lyricPh: "音素（送信）",
+    lyricPhHelp: "V10.7.33: 本体は英語辞書を持たず、エディタが言葉を音素コードに変換して送ります（ES / EN（CMU 辞書）/ JA / PT / IT）。音素は「/」で始まり、編集できます。「.」は音節の始まり。TEXT は文字のまま送信（RU DE FR ZH GN、本体の規則）。",
     live: "● リアルタイム", polling: "○ ポーリング（古いファームウェア）",
     library: "ライブラリ", libSearch: "名前・タグで検索", allEngines: "全エンジン", allTags: "全タグ",
     sortModified: "更新順", sortCreated: "作成順", sortName: "名前順", sortEngine: "エンジン順",
@@ -2809,6 +2816,9 @@ const TEXT = {
     lyricLang: "LANG",
     lyricSrc: "LYRIC",
     lyricSent: "Lyric sent",
+    lyricConv: "PHONEMES",
+    lyricPh: "Phonemes (sent)",
+    lyricPhHelp: "V10.7.33: the device has no English dictionary: the editor turns your words into VOICE's phoneme codes and sends those (ES, EN with the CMU dictionary, JA, PT, IT sung as ES). They start with \"/\" and you can edit them; \".\" starts a syllable. TEXT sends the letters (RU DE FR ZH GN: the device's rules; an English text there is read by rough letter rules).",
     live: "● Live", polling: "○ Polling (older firmware)",
     library: "Library", libSearch: "Search name or tag", allEngines: "All engines", allTags: "All tags",
     sortModified: "Recently changed", sortCreated: "Recently added", sortName: "Name", sortEngine: "Engine",
@@ -3256,31 +3266,76 @@ function lyricShown() { return !!dev && !!dev.info && !!dev.info.lyric && !!dev.
 async function lyricRead(d = dev) {
   if (!lyricShown()) return;
   const r = parse[CMD.LYRIC](await rq(req.lyric(d.sel || 0)));
-  if (document.activeElement !== $("lyric")) $("lyric").value = r.text;
-  lyricPreview();
+  if (r.text[0] === "/") {                               /* (V10.7.33) phonemes: shown as they are */
+    if (document.activeElement !== $("lyricph")) $("lyricph").value = r.text;
+    lyricPreview(false);
+    return;
+  }
+  if (document.activeElement !== $("lyric")) $("lyric").value = r.text;   /* letters (a project before): converted */
+  lyricPreview(true);
 }
 $("lyricsend").addEventListener("click", () => {
   if (!lyricShown()) return;
   op(async () => {
-    const text = lyricText($("lyric").value, LYR_LANG[+$("lyrlang").value]);
+    const conv = lyricConvLang(), ph = $("lyricph").value.trim();
+    const text = conv && ph ? lyricPhText(ph) : lyricText($("lyric").value, LYR_LANG[+$("lyrlang").value]);
     const r = parse[CMD.LYRIC](await rq(req.lyric(dev.sel || 0, text)));
-    $("lyric").value = r.text;
+    if (conv) $("lyricph").value = r.text; else $("lyric").value = r.text;
     sayK("lyricSent");
   });
 });
+/* (V10.7.33) the words as phonemes (web/lyrics.js): the converter's language (the LANG's, IT, or none: TEXT) */
+const LYR_CONV = ["AUTO", "IT", "TEXT"];
+function lyricConvLang() {
+  const c = LYR_CONV[+$("lyrconv").value] || "AUTO", lang = LYR_LANG[+$("lyrlang").value];
+  if (typeof LYR === "undefined" || c === "TEXT") return "";
+  return c === "IT" ? "IT" : LYR.langs.includes(lang) && lang !== "IT" ? lang : "";
+}
+/* a phoneme lyric as the device takes it: "/" first, upper case, printable ASCII, at most 63 */
+function lyricPhText(s) {
+  let t = String(s ?? "").toUpperCase().replace(/[^\x20-\x7E]/g, " ").trim();
+  if (t && t[0] !== "/") t = "/" + t;
+  if (t.length > 63) throw new Error(`${t.length}/63: acortá la letra / shorten the lyric.`);
+  return t;
+}
+let lyrDictAsk = null;
+function lyricDict() {                                   /* the CMU dictionary (1.9 MB): loaded when English first needs it */
+  if (typeof LY_EN_DICT === "string" || typeof document === "undefined") return Promise.resolve();
+  return lyrDictAsk || (lyrDictAsk = new Promise(ok => {
+    const sc = document.createElement("script");
+    sc.src = "lyrics_en.js"; sc.onload = ok; sc.onerror = ok;
+    document.head.appendChild(sc);
+  }));
+}
 /* LANG (P_VLANG, id 61) and LYRIC (P_VLYR, id 74): VOICE's words, in other engines' slots (sing.c) */
 const LYR_LANG = ["OFF", "ES", "EN", "JA", "RU", "DE", "FR", "ZH", "PT", "GN"];
 const LYR_SRC = ["TEXT", ...Array.from({ length: 16 }, (_, i) => `W${i + 1}`), ...Array.from({ length: 8 }, (_, i) => `S${i + 1}`), "TEXT FIXED"];
-function lyricPreview() {
+function lyricPreview(convert = true) {
+  const lang = lyricConvLang();
+  $("lyricph").disabled = !lang;
+  if (lang) {
+    if (lang === "EN" && typeof LY_EN_DICT !== "string") lyricDict().then(() => lyricPreview(convert));
+    try {
+      if (convert && $("lyric").value.trim()) $("lyricph").value = LYR.convert(lang, $("lyric").value).text;
+      const ph = lyricPhText($("lyricph").value), r = $("lyric").value.trim() ? LYR.convert(lang, $("lyric").value) : null;
+      const ruled = r ? r.words.filter(w => w.src === "rules" && lang === "EN").map(w => w.w) : [];
+      $("lyric-preview").textContent = `${ph.length}/63 · ${lang}${lang === "IT" ? " (LANG ES)" : ""}` +
+        (ruled.length ? ` · ${ruled.length} sin diccionario / not in the dictionary: ${ruled.join(" ")}` : "");
+    } catch (e) { $("lyric-preview").textContent = e.message; }
+    return;
+  }
   try { const text=lyricText($("lyric").value,LYR_LANG[+$("lyrlang").value]); $("lyric-preview").textContent=`${text.length}/63 · ${text}`; }
   catch(e) { $("lyric-preview").textContent=e.message; }
 }
-$("lyric").addEventListener("input",lyricPreview);
+$("lyric").addEventListener("input",() => lyricPreview(true));
+$("lyricph").addEventListener("input",() => lyricPreview(false));
+$("lyrconv").replaceChildren(...LYR_CONV.map((n, i) => el("option", { value: i, text: n })));
+$("lyrconv").addEventListener("change", () => lyricPreview(true));
 const LYR_ID = { lang: 61, src: 74 };
 for (const [id, names, key] of [["lyrlang", LYR_LANG, "lang"], ["lyrsrc", LYR_SRC, "src"]]) {
   $(id).replaceChildren(...names.map((n, i) => el("option", { value: i, text: n })));
   $(id).addEventListener("change", () => {
-    lyricPreview();
+    lyricPreview(true);
     if (!lyricShown()) return;
     op(async () => { parse[CMD.SET](await rq(req.set(0, LYR_ID[key], +$(id).value))); dev.dump = await getDump(); refreshAll(); });
   });

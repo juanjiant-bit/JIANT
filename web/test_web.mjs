@@ -1601,9 +1601,100 @@ async function updater() {
   ok(e2 && e2.code === "notfound", "fm1ota.js: no device -> error code 'notfound'");
 }
 
+/* (V10.7.33) VOICE's words as phonemes (web/lyrics.js; the device has no English dictionary): its tables are the firmware's
+ * (build/gen/felucca_lyrics.h PH_CODE, PH_CM); its letter readings (ES, EN's rules, JA) the device's, word for word
+ * (tests/voice_test.c --g2p on the same letters); every code text it makes read by the device as it shows it; the CMU
+ * dictionary (web/lyrics_en.js) there and decoded; the editor's lyric box sends the phonemes */
+function lyricsPhonemes() {
+  const ctx = { console };
+  vm.createContext(ctx);
+  vm.runInContext(readFileSync(join(HERE, "lyrics.js"), "utf8") + ";globalThis.LYR = LYR;", ctx);
+  const L = ctx.LYR;
+  const hdr = join(FW_ROOT, "build/gen/felucca_lyrics.h");
+  if (existsSync(hdr)) {
+    const h = readFileSync(hdr, "utf8");
+    const code = [...h.match(/PH_CODE\[PH_COUNT\]\[2\] = \{(.*)\};/)[1].matchAll(/\{'(.)', (?:'(.)'|0)\}/g)].map(m => (m[1] + (m[2] || "")).toUpperCase());
+    const cm = h.match(/PH_CM\[PH_COUNT\] = \{([^}]*)\}/)[1].split(",").map(Number);
+    const ph = h.match(/enum \{ (PH_SIL[^}]*), PH_COUNT \}/)[1].split(", ").map(x => x.slice(3));
+    ok(eq(code, L.CODE) && eq(cm, L.CM) && eq(ph, L.PH), "lyrics.js: the phonemes, codes and languages as the firmware's (felucca_lyrics.h)");
+  } else console.log("lyrics.js: no build/gen/felucca_lyrics.h (./build.sh): the tables' check skipped");
+  /* a typed lyric */
+  let r = L.convert("ES", "La canción del niño - ¿sí? pingüino");
+  ok(r.text === "/LA KANSYON DEL NINYO - SI PINGWINO" && r.len === r.text.length,
+     "lyrics.js: ES as the device reads its letters, ñ as ny, a melisma kept, ü said (pin.gwi.no)");
+  r = L.convert("JA", "konnichiwa kitto");
+  ok(r.text === "/KONNNICHIWA KI#TO", "lyrics.js: JA romaji as the device's morae (the moraic n NN, a doubled consonant #)");
+  r = L.convert("PT", "coração não");
+  ok(r.text === "/KO.RA.SANNU NANNU.", "lyrics.js: PT by rules (nasal ão in its syllable: \".\" where the device would split it)");
+  r = L.convert("IT", "ciao bella gnocchi");
+  ok(r.text === "/CHAO BELA NYOKI" && L.sing("IT") === "ES", "lyrics.js: IT by rules, sung as ES (its codes all Spanish's)");
+  /* the CMU dictionary */
+  const dictFile = join(HERE, "lyrics_en.js");
+  ok(existsSync(dictFile), "lyrics_en.js: the CMU dictionary is in web/");
+  if (existsSync(dictFile)) {
+    vm.runInContext(readFileSync(dictFile, "utf8") + ";globalThis.LY_EN_DICT = LY_EN_DICT;", ctx);
+    const d = L.enDict();
+    ok(d && d.size > 120000 && d.get("hello") === "HAXLOUH" && d.get("dont") === "DOUHNT" && /BSD-2-Clause/.test(readFileSync(dictFile, "utf8").slice(0, 300)),
+       "lyrics_en.js: 120000+ words decoded (hello HAXLOUH, don't DOUHNT), its BSD-2-Clause notice");
+    r = L.convert("EN", "Hello darkness, my old friend - oh zorblat");
+    ok(r.text === "/HAXLOUH DAARKNAXS MAAIH OUHLD FREHND - OUH ZAARBLAET" &&
+       r.words.filter(w => w.src === "rules").map(w => w.w).join() === "zorblat",
+       "lyrics.js: EN through the dictionary, a word it lacks by the device's letter rules");
+  }
+  /* against the device: tests/voice_test.c --g2p (built here from the sources) */
+  const bin = join(FW_ROOT, "build/host/voice_g2p");
+  try {
+    if (existsSync(hdr)) execFileSync("cc", ["-O1", "-w", "-Ibuild/gen", "-Ifirmware/src", "-o", bin, "tests/voice_test.c", "-lm"], { cwd: FW_ROOT });
+  } catch (e) { console.log("lyrics.js: no cc: the device's readings not checked"); }
+  if (existsSync(bin)) {
+    const g2p = (lang, words) => {
+      const out = execFileSync(bin, ["--g2p", lang, ...words], { maxBuffer: 1 << 26 }).toString().trim().split("\n");
+      return out.map(l => l.slice(17).trim());
+    };
+    const ES = ["corazon", "guerra", "queso", "cielo", "ciudad", "playa", "estrella", "honra", "israel", "muy", "hoy", "agua",
+                "gente", "jardin", "extranyo", "perro", "pero", "caer", "leon", "cuidado", "hielo", "chocolate", "vaca", "llave",
+                "atlas", "obstaculo", "aire", "auto", "rey", "ninyo", "quiero", "guitarra", "pinguino", "xilofono", "alrededor"];
+    const JA = ["konnichiwa", "arigatou", "kitto", "shinjiru", "tsunami", "kyou", "fuji", "wo", "chotto", "matcha", "kanji",
+                "onna", "desu", "ryokou", "sakura", "nyan", "zutto", "dzu"];
+    const EN = ["zorblat", "glimmerish", "quaint", "knight", "wrestle", "singing", "cheese", "phantom", "boy", "rhythm",
+                "strengthen", "nightly", "lazy", "fire", "hope", "cute", "crayon", "squawk", "shoe", "ya"];
+    let bad = 0;
+    for (const [lang, list] of [["ES", ES], ["JA", JA], ["EN", EN]]) {
+      const dev = g2p(lang, list);
+      list.forEach((w, k) => {
+        const js = L.show(L.letters(lang, w));
+        if (js !== dev[k]) { bad++; console.log(`  ${lang} ${w}: lyrics.js ${js}, the device ${dev[k]}`); }
+      });
+    }
+    ok(!bad, "lyrics.js: ES, EN's letter rules and JA read each word as the device reads its letters (voice_test --g2p)");
+    /* every code text it makes, read back by the device as lyrics.js shows it */
+    const texts = [["ES", "La canción del niño, pingüino corazón guerra"], ["JA", "konnichiwa sakura kitto shinjiru ryokou"],
+                   ["PT", "coração não saudade Brasil cidade filho"], ["EN", "Hello darkness my old friend strength beautiful being"],
+                   ["IT", "ciao bella gnocchi sciare figlio pizza"]];
+    bad = 0;
+    let n = 0;
+    for (const [lang, txt] of texts) {
+      const c = L.convert(lang, txt), dl = L.sing(lang);
+      const words = c.words.filter(w => w.code !== "-");
+      const dev = g2p(dl, words.map(w => "/" + w.code));
+      words.forEach((w, k) => {
+        n++;
+        const js = L.show(L.parse(lang, w.code));
+        if (js !== dev[k]) { bad++; console.log(`  ${lang} /${w.code}: lyrics.js ${js}, the device ${dev[k]}`); }
+      });
+    }
+    ok(!bad && n > 30, `lyrics.js: ${n} code texts (ES EN JA PT IT) read by the device as lyrics.js shows them`);
+  }
+  /* the editor's box */
+  ok(/id="lyricph"/.test(html) && /id="lyrconv"/.test(html) && /<script src="lyrics\.js"><\/script>/.test(html) &&
+     /function lyricPhText/.test(html) && (html.match(/\blyricPhHelp: "/g) || []).length === 2,
+     "editor: the lyric box shows the phonemes (editable) and sends them; lyrics.js loaded; its help in English and Japanese");
+}
+
 await editorMock();
 await editorFm6Bank();
 await editorLyric();
+lyricsPhonemes();
 await editorSamplePresets();
 mockTables();
 await editorLibrarian();

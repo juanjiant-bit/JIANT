@@ -119,7 +119,7 @@ def main(pkg, version, out, prev=None):
     if (HERE / "vel.html").exists():                # (V10.6z5) the velocity diagnostic's page
         (out / "webapp" / "vel").mkdir(parents=True, exist_ok=True)
         shutil.copy(HERE / "vel.html", out / "webapp" / "vel" / "index.html")
-    for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js"):
+    for f in ("fukiai.ttf", "FUKIAI-LICENSE.txt", "fm1backup.js", "lyrics.js", "lyrics_en.js"):   # (V10.7.33: VOICE's phonemes)
         if (HERE / f).exists():
             shutil.copy(HERE / f, ed / f)
     (out / "index.html").write_text(

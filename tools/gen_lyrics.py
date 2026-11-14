@@ -134,11 +134,13 @@ def ph_parse(lang, text):
 
 def ph_text(lang, ph):
     """[(code, syllable start)] -> its shortest code text: no "."s when sy_phauto finds the same syllables, else one
-    where each starts (None: no text reads back as it)"""
+    where each starts (one syllable: a "." at its end; None: no text reads back as it)"""
     plain = "".join(CODES[PHONEMES[c][0]][0] for c, _ in ph)
     if ph_parse(lang, plain) == [(c, bool(s)) for c, s in ph]:
         return plain
     dotted = "".join(("." if s and k else "") + CODES[PHONEMES[c][0]][0] for k, (c, s) in enumerate(ph))
+    if "." not in dotted:                            # (one syllable that sy_phauto would split: a "." at the end)
+        dotted += "."
     if ph_parse(lang, dotted) == [(c, bool(s) or k == 0) for k, (c, s) in enumerate(ph)]:
         return dotted
     return None

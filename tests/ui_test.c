@@ -9089,6 +9089,8 @@ static int test_dice_all(void)
     bad += check("DICE ALL: HOME + SELECT asks first (OCT- NO: nothing changed)", ok);
     fm1_ms += 1200u;
     gp.page = 0;                                        /* (0.9.2: GEN opens at its page left: from GEN 1 here) */
+    gp.form = 1;                                        /* (V10.7.33: FORM as at power-on; the #63 soak's random turns can
+                                                         * leave it at MY LOOP, which dices nothing from an empty loop) */
     held_turn(B_HOME, 1); frames(64);
     {   /* (0.7.4) GEN's knobs and SELECT repaint their cards, never the whole body (it flickered on every turn) */
         uint32_t f0 = host_big_fills, e0 = gp.energy, p0 = gp.page;
@@ -12447,18 +12449,19 @@ static int test_lz_edit(void)
     ui_power_on(); set_engine_of(TSEL, 0); frame();
     press(B_EDIT); frame();
     ok = pd_on() && lz_fam() == LZ_EDIT && pd_level() == 0u && lz_tab_lit(0) && lz_crumb_is("EDIT \xB7 SOUND \xB7 EDIT \xB7 OSC") &&
-         lz_count_is("1/8");                                        /* (codex/coherence: EDIT . OSC, ANALOG has no EDIT 2;
-                                                                     * codex/filters2: FILTER 2; filter2-mod: FILTER 3) */
+         lz_count_is("1/9");                                        /* (codex/coherence: EDIT . OSC, ANALOG has no EDIT 2;
+                                                                     * codex/filters2: FILTER 2; filter2-mod: FILTER 3;
+                                                                     * V10.7.33: PLAY 3) */
     turn(EN_SELECT, 1); frame();                                    /* (V10.7.21 ANALOG: no EDIT 2) */
     ok &= pd_level() == 1u && lz_tab_lit(1) && str_eq(cur_page()->title, "FILTER") && lz_crumb_is("EDIT \xB7 TONE \xB7 FILTER") &&
-          lz_count_is("2/8");
+          lz_count_is("2/9");
     frames(320); press(B_EDIT); frame();                            /* EDIT: the next group, FOCUS */
     ok &= pd_level() == 2u && lz_tab_lit(2) && str_eq(cur_page()->title, "FOCUS") && lz_crumb_is("EDIT \xB7 FOCUS \xB7 FOCUS") &&
-          lz_count_is("6/8");
-    turn(EN_SELECT, 3); frame();
-    ok &= str_eq(cur_page()->title, "PLAY 2");                      /* (V10.49: PLAY PLAY 2 last; no wrap) */
-    turn(EN_SELECT, -3); frame();
-    ok &= pd_level() == 1u && str_eq(cur_page()->title, "MORPH");    /* (MORPH FOCUS PLAY PLAY 2: three back) */
+          lz_count_is("6/9");
+    turn(EN_SELECT, 4); frame();
+    ok &= str_eq(cur_page()->title, "PLAY 3");                      /* (V10.49: PLAY PLAY 2 last; V10.7.33 PLAY 3; no wrap) */
+    turn(EN_SELECT, -4); frame();
+    ok &= pd_level() == 1u && str_eq(cur_page()->title, "MORPH");    /* (MORPH FOCUS PLAY PLAY 2 PLAY 3: four back) */
     frames(320); press(B_EDIT); frame();
     ok &= str_eq(cur_page()->title, "FOCUS");
     frames(320); press(B_EDIT); frame();
@@ -12519,6 +12522,27 @@ static int test_lz_edit(void)
     set_engine_of(TSEL, ENGI_FM6); frame();
     ok &= !nav_put(SEC_EDIT, "FOCUS") && nav_put(SEC_EDIT, "OPERATOR");
     bad += check("0.9.2 EDIT > PLAY (codex/coherence: was VOICE; POLY, GL MODE): PLAY 2 (ALLOC, UNISON, VEL, IMAGE) after it, not on DRUM; FOCUS on the synths only", ok);
+    {   /* (V10.7.33) PLAY 3: KNOB 1 CRUSH, the track's (0..127 shown 0..100 %), on every engine's chain (a kit's too); DIST's
+         * TYPE without it (SOFT HARD FOLD RECT AMP) */
+        int16_t *hv;
+        const param_desc_t *d;
+        uint32_t e;
+        ui_power_on();
+        for (e = 0, ok = 1; e < 3u; e++) {
+            static const uint8_t EG[3] = {0, ENGI_FM6, ENGI_DRUM};
+            set_engine_of(TSEL, EG[e]); frame();
+            ok &= nav_put(SEC_EDIT, "PLAY 3");
+        }
+        set_engine_of(TSEL, 0); go_title("PLAY 3"); frame();
+        d = page_desc(cur_page(), 0, &hv);
+        ok &= d && str_eq(d->label, "CRUSH") && hv == &cru_v[song.sel] && d->max == 127 && !cru_v[song.sel];
+        turn(EN_K1, 5); frame();
+        ok &= cru_v[song.sel] > 0 && cru_v[1] == 0;
+        d = track_desc(TSEL, P_DTYPE);
+        ok &= d->max == 4 && str_eq(d->names[3], "RECT") && str_eq(d->names[4], "AMP");
+        bad += check("V10.7.33 EDIT > PLAY 3: KNOB 1 CRUSH (the track's; synths, FM6, DRUM); DIST TYPE SOFT HARD FOLD RECT AMP", ok);
+        cru_v[song.sel] = 0;
+    }
     ui_power_on();
     return bad;
 }

@@ -1760,7 +1760,7 @@ static void check_theme(void)
 int main(int argc, char **argv)
 {
     if (argc > 2 && !strcmp(argv[1], "--g2p")) {
-        uint32_t lang = !strcmp(argv[2], "JA") ? LG_JA : !strcmp(argv[2], "EN") ? LG_EN : LG_ES;
+        uint32_t lang = !strcmp(argv[2], "JA") ? LG_JA : !strcmp(argv[2], "EN") ? LG_EN : !strcmp(argv[2], "PT") ? LG_PT : LG_ES;
         int a;
         char b[256];
         for (a = 3; a < argc; a++) {
