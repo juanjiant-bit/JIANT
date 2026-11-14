@@ -1216,6 +1216,37 @@ static void ly_piano(uint32_t l)
             cv_text_up(x0 + HALF_UP(10 - AF_X_CAP_H) - AF_X_CAP_Y, y + bh - 4, &AF_X, nm, fill == T_BG ? T_DIM : ink, fill, bh - 8);
     }
 }
+/* (V10.7.36, the owner: "larger, without the keys that do nothing") REC's and SAVE's map: only the white keys that act,
+ * as large tiles, each its key (note and octave) and what it does; a line on top says what the layer is for */
+static __attribute__((noinline)) void ly_tiles(uint32_t l)
+{
+    uint8_t ks[16];
+    uint32_t i, n = 0, cols, rows;
+    int32_t top = 14, tw, th;
+    char nm[12];
+    for (i = 0; i < 16u; i++) {
+        (void)ly_keyname(l, 0, i, nm);
+        if (nm[0])
+            ks[n++] = (uint8_t)i;
+    }
+    cv_text(10, 2 - AF_X_CAP_Y, &AF_X, l == LAYER_REC ? "REC HELD: RECORDING TOOLS" : "SAVE HELD: PLAY OR STORE PARTS A-D",
+            T_THEME);
+    cols = n <= 4u ? 2u : 3u;
+    rows = (n + cols - 1u) / cols;
+    if (!rows)
+        return;
+    tw = (228 - 4 * ((int32_t)cols - 1)) / (int32_t)cols;
+    th = ((int32_t)graph_h() - top - 4 - 4 * ((int32_t)rows - 1)) / (int32_t)rows;
+    for (i = 0; i < n; i++) {
+        int32_t x = 6 + (int32_t)(i % cols) * (tw + 4), y = top + (int32_t)(i / cols) * (th + 4);
+        uint16_t ink, fill = pk_fill(ly_keyname(l, 0, ks[i], nm), 0, 1, &ink);
+        char key[3] = {W_NOTE[ks[i]], (char)('3' + (ks[i] + 3u) / 7u), 0};
+        cv_rrect(x, y, tw, th, 3, fill, T_SURF);
+        cv_text(x + 4, y + 2 - AF_X_CAP_Y, &AF_X, key, ink == T_DIM ? T_DIM : ink == T_INK ? T_INK : T_THEME);
+        GFX_HOOK_ALIGN(x, 0, x + tw, 0, AL_H, "layer tile action centred");
+        cv_text_in(x, y + th - 3 - AF_M_CAP_H - AF_M_CAP_Y, tw, &AF_M, nm, ink, fill);
+    }
+}
 /* Draw REC controls separately so the pinned UI/audio boundary stays unchanged. */
 static __attribute__((noinline)) void rec_columns(void)
 {
@@ -1466,6 +1497,8 @@ static __attribute__((noinline)) void draw_layer(void)
             layer_knobs(l);
         else if (ui.lylv % 3u == 2u)                    /* STATE: what is on */
             layer_state(l);
+        else if (l == LAYER_REC || l == LAYER_SAVE)     /* (V10.7.36) MAP: the keys that act, large */
+            ly_tiles(l);
         else                                            /* MAP: the keyboard */
             ly_piano(l);
         cv_blit(0, graph_y());

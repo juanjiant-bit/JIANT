@@ -7557,14 +7557,14 @@ static int test_momentary(void)
     bad += check("0.9.9-seq2e EDIT tapped: its pages, as before", ok);
     ui_power_on(); go_home(); frames(64);
     btn_down(B_EDIT); frames(800);
-    ok = ui.layer == LAYER_EDIT && !mom_on && str_eq(ly_card[0].l, "ENG") && str_eq(ly_card[1].l, "No.") &&
-         str_eq(ly_card[2].l, "FAV");
+    ok = ui.layer == LAYER_EDIT && !mom_on && !ly_drawn() && lz_fam() != LZ_LAYER;   /* (V10.7.36, the owner: no map
+                                                         * drawn, the page under it: its knobs MOMENTARY there) */
     turn(EN_SELECT, 1); frame();                        /* (0.9.9-seq2f) SELECT in the layer: the sound dice, asked */
     ok &= ui.confirm == CF_DICE_SOUND && !mom_on;
     btn_up(B_EDIT); frames(8);
     press(B_OCTDN); frames(200);                        /* CANCEL */
     ok &= ui.home && !ui.layer && !ui.confirm;
-    bad += check("  EDIT held: its layer, cards ENG No. FAV; SELECT the sound dice there, asked (seq2f); let go: no page", ok);
+    bad += check("  EDIT held: its layer, no map drawn (V10.7.36); SELECT the sound dice there, asked (seq2f); let go: no page", ok);
     /* a FILTER page (CUT, RES): two knobs, live, back exactly */
     ui_power_on(); track_select(1);
     for (i = 0; i < NPAGES && !(PAGES[i].fam == FAM_EDIT && PAGES[i].id[1] == P_FCUT); i++)

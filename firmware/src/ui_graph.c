@@ -612,7 +612,7 @@ static void bar_cells(const track_t *t, int32_t x0, int32_t w, int32_t y, int32_
 #define LS_Y 0
 #define LS_H 16
 static int seq_roll_view(const page_t *pg);
-static int lens_strip(void) { return !ui.home && lz_on() && !ui.layer && seq_roll_view(cur_page()); }
+static int lens_strip(void) { return !ui.home && lz_on() && !ly_drawn() && seq_roll_view(cur_page()); }
 
 /* the bars of step s in column x (in its RATCH parts, hits; a TIE's carried bars: 1): a 1 px edge mark for a note
  * out of view; first: row y of the step's first note; fc: the note in focus's colour (0: none) and its note */
@@ -1327,7 +1327,7 @@ static void lib_poll(void)                              /* (graph_signature, onc
  * The pill keeps clear of the page's own words (gfx.c cv_txt: every text drawn on the panel this frame): near the foot
  * if nothing is written there, else the nearest rows lower, then higher, with none; a page written all over (MUTATE's
  * lines, AUTO LIST's rows where no gap is a pill high): no pill, the header says it alone, as on HOME */
-static int toast_on(void) { return lz_on() && ui.msg_t && ui.msg[0] && !ui.layer && !ui.home; }
+static int toast_on(void) { return lz_on() && ui.msg_t && ui.msg[0] && !ly_drawn() && !ui.home; }
 #define TOAST_H 17
 #define TOAST_GAP_X 3                                /* (the clearance round a word: its 2 px halo and a pixel) */
 #define TOAST_GAP_Y 2

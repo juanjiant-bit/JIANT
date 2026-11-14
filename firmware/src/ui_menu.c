@@ -348,24 +348,21 @@ static __attribute__((noinline)) void menu_panel(void)
                                                         * twelve: the eight round it), 17 apart in the labels' face.
                                                         * (The tab's name and "ALGO: TAB . SELECT: ROW" stood over them:
                                                         * the tabs and the breadcrumb say both) */
-        uint32_t r0 = menu_set() * 4u;
-        while (r0 && r0 + 8u > ((n + 3u) & ~3u))
-            r0 -= 4u;
-        for (r = r0; r < n && r < r0 + 8u; r++) {
-            uint32_t row = f + r, in = r / 4u == menu_set();
-            int32_t y = 2 + (int32_t)(r - r0) * 17, h = 16;
-            uint16_t bg = in ? T_TINT : T_RAISE;
+        uint32_t r0 = menu_set() * 4u;                  /* (V10.7.36, the owner: four large rows, the knobs' set, the
+                                                         * small screen read at a glance; SELECT walks into the next four) */
+        for (r = r0; r < n && r < r0 + 4u; r++) {
+            uint32_t row = f + r;
+            int32_t y = 2 + (int32_t)(r - r0) * 34, h = 32;
+            uint16_t bg = T_TINT;
+            char kn[2] = {(char)('1' + r % 4u), 0};
             cv_rect(8, y, 224, h, bg);
             if (row == ui.menu_sel)
                 cv_rect(8, y, 3, h, T_ACCENT);
             GFX_HOOK_ALIGN(0, y, 0, y + h, AL_V, "menu row name centred up/down");
-            cv_text_on(16, y + CAP_IN(S, h), &AF_S, MI_NAME[row], T_TEXT, bg);
+            cv_free_text(16, y + CAP_IN(M, h), &AF_M, MI_NAME[row], T_TEXT, bg, 116);
             menu_val(row, v);
-            cv_text_r(in ? 216 : 226, y + CAP_IN(S, h), &AF_S, v, T_TEXT, bg);
-            if (in) {
-                char kn[2] = {(char)('1' + r % 4u), 0};
-                cv_text(220, y + 2 - AF_X_CAP_Y, &AF_X, kn, T_THEME);
-            }
+            cv_text_r(214, y + CAP_IN(M, h), &AF_M, v, T_TEXT, bg);
+            cv_text(220, y + 3 - AF_X_CAP_Y, &AF_X, kn, T_THEME);
         }
         return;
     }

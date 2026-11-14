@@ -757,12 +757,14 @@ static uint32_t lens_level(void)                        /* SEQ: the level the pa
     return g == GR_PATS || g == GR_SONG ? LV_PAT : g == GR_CHANCE ? LV_STEP : nav_lv();
 }
 static int home_lz(void) { return (ui.home && !ui.menu && !dlg_on()) || gen_on(); }   /* (GEN: HOME's) */
-static uint32_t lz_on(void) { return ((lens_on() || save_on() || fx_on() || pd_on() || home_lz()) && !ui.layer && !name_on()) || (ui.menu | 2u) == 3u || (ui.layer && !ui.menu); }
+/* (V10.7.36, the owner) EDIT held draws no map: its knobs are MOMENTARY on the page shown, its keys work as before */
+static uint32_t ly_drawn(void) { return ui.layer && ui.layer != LAYER_EDIT; }
+static uint32_t lz_on(void) { return ((lens_on() || save_on() || fx_on() || pd_on() || home_lz()) && !ly_drawn() && !name_on()) || (ui.menu | 2u) == 3u || (ly_drawn() && !ui.menu); }
 static uint32_t lz_fam(void)                            /* which lens */
 {
     if ((ui.menu | 2u) == 3u)                           /* (0.8.5) the menu (ui_menu.c; V10.14: 3 PROX) */
         return LZ_MENU;
-    if (ui.layer)                                       /* .. a layer held: MAP . KNOBS . STATE (ui_layer.c) */
+    if (ly_drawn())                                     /* .. a layer held: MAP . KNOBS . STATE (ui_layer.c) */
         return LZ_LAYER;
     if (gen_on() || ui.home)
         return LZ_HOME;

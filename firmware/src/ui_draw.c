@@ -234,7 +234,7 @@ static void sound_name(const track_t *t, char *b);
 static uint16_t head_title(char *b)
 {
     const page_t *pg = cur_page();
-    int glob = !ui.home && !ui.layer && !song_pg(ui.page) && (pg->graph == GR_SLOTS || pg->graph == GR_TOOLS ||
+    int glob = !ui.home && !ly_drawn() && !song_pg(ui.page) && (pg->graph == GR_SLOTS || pg->graph == GR_TOOLS ||
                                                               pg->fam == FAM_GLO || pg->fam == FAM_SAVE);   /* (V10.7.32:
                                                          * the song's pages HOME's, its header) */
     if (ui.menu) {                                      /* (0.8.5) the menu: "MENU . DISPLAY", "ABOUT / CREDITS" */
@@ -246,7 +246,7 @@ static uint16_t head_title(char *b)
     b[0] = 'T';
     b[1] = (char)('1' + song.sel % NTRK);
     b[2] = 0;
-    if (!ui.home && !ui.layer && pg->fam == FAM_FX)
+    if (!ui.home && !ly_drawn() && pg->fam == FAM_FX)
         return T_ACCENT;
     if (glob) {
         char nm[16];
@@ -318,7 +318,7 @@ static void draw_head(void)
                    (uint32_t)seq_counting() * 7u + (ui_prefs & PREF_BPM_LOCK) * 4099u +
                    (uint32_t)batt_shown() * 7777u + (chain.running ? (chain.row + 1u) * 104729u : 0u) +
                    head_load() * 0x9E3779B1u + str_hash(tc, ttl) * 3u;
-    int msg = ui.msg_t || ui.layer;
+    int msg = ui.msg_t || ly_drawn();
     int centre = !msg || ui.bpm_t || ui.layer == LAYER_GLO;   /* the BPM being changed: it stays, the message right */
     int32_t lx, r = HEAD_LOAD_X - 6;
     if (song.g[G_BPM] != ui.roll_bpm) {
@@ -605,7 +605,7 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
 {
     card_bip = (uint8_t)(ratio >= 0 && ratio == ratio_last.r && ratio_last.bip);   /* (its ratio from RATIO: bipolar?) */
     ratio_last.bip = 0;
-    if (ui.layer && c < 4u) {
+    if (ly_drawn() && c < 4u) {
         ly_card[c].r = (int16_t)ratio;
         ly_card[c].b = card_bip;
         str_cpy(ly_card[c].l, label, sizeof ly_card[c].l);
@@ -2369,7 +2369,7 @@ static void ui_draw_body(uint32_t counting)
         name_draw();
         return;
     }
-    if (ui.layer || mac_latch) {                        /* a layer's map over the page (ui_layer.c); (JIANT 0.4) the MACRO
+    if (ly_drawn() || mac_latch) {                      /* a layer's map over the page (ui_layer.c); (JIANT 0.4) the MACRO
                                                          * layer latched: its cards (no layer open) */
         uint8_t hm = !ui.layer;
         static uint8_t hm_was;
