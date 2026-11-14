@@ -501,7 +501,7 @@ static uint32_t gdna(uint8_t *map)
                                                          * at COMPLEX 0, .. 3 past 80) */
     return km;
 }
-static void gen_drums(track_t *t, uint32_t len)
+BTAPP_FN static void gen_drums(track_t *t, uint32_t len)   /* (V10.7.33: the segment's, as gen_role: its callers gated) */
 {
     const ggenre_t *g = gs.g;
     uint8_t map[8];                                     /* (0.9.7) lane numbers (gen_drum_maps.h; 0: none) */
@@ -1243,7 +1243,7 @@ static void gen_riff(track_t *t, uint32_t len, uint32_t ri)
         gnote(&t->step[i], n, 1, f == 1u ? 114 : f == 3u ? 62 : 94, f == 2u ? SF_SLIDE : 0u);   /* (an accent, a ghost) */
     }
 }
-static void gen_lead(track_t *t, uint32_t len)
+BTAPP_FN static void gen_lead(track_t *t, uint32_t len)   /* (V10.7.33: the segment's, as gen_role: its callers gated) */
 {
     const ggenre_t *g = gs.g;
     uint32_t i, j, a = gs.amt[GP_LEAD], bars = (len + 15u) / 16u, style = g->lead, fam = HXF(gs.hx), legato = gs.energy < 34u ? 4u : 2u;
@@ -1826,7 +1826,10 @@ static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
 }
 
 /* ---------------------------------------------------------------------------------------- the form: parts --- */
-static void gen_role(track_t *t, uint32_t k, uint32_t len)   /* a track's part as its role plays it */
+/* (V10.7.33) In the Bluetooth segment (BTAPP_FN, as gen_pick: the app slot full; the room the English dictionary left):
+ * every caller runs only once bt_hw_seg() said it is this build's (gen_go, dice_seq, trackgen_make, MY LOOP's
+ * gls_begin, gen_pitched under gen_make); main loop only */
+BTAPP_FN static void gen_role(track_t *t, uint32_t k, uint32_t len)   /* a track's part as its role plays it */
 {
     uint32_t r = gs.role[k];
     if (!gs.act[r] || (r == RL_TEX && k != gs.trk_of[RL_TEX])) return;

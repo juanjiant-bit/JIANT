@@ -454,3 +454,7 @@ PROX, the proximity source.
 - (V10.7.33) The dictionary is gone from the device (and from the segment: `LY_EN_DICT`, `LY_EN_IDX`, `LY_EN_PAIR`,
   10,612 B of `.btapp.rodata`): the web editor converts English with the whole CMU dictionary and sends phonemes
   (`web/lyrics.js`). `ly_en_ok` still gates the other languages' rules and words in the segment (`sing_ext.c`).
+- (V10.7.33) In that room, GEN's per-track writers `gen_role`, `gen_lead` and `gen_drums` (`gen.c`, BTAPP_FN, as
+  `gen_pick` since V10.6y): main loop only, every caller behind `bt_hw_seg()` (gen_go, dice_seq, trackgen_make, MY LOOP's
+  gls_begin). App 577,876 B (6,460 B free), segment 69,464 B (17 of 18 sectors). The lyric generator's banks stay in the
+  app: the audio reads them where a word starts.
