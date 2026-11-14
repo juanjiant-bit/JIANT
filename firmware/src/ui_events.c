@@ -1,18 +1,20 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* Felucca 1.1.5: SEQ > AUTO LIST, the selected track's parameter locks and automation events as a list (the page after
- * AUTOMATION; included by ui.c). A row: its kind (LOCK / AUTO), its step, its parameter, its value; in the order of
- * the steps, then of the parameters; the last row is + ADD LOCK.
- *   KNOB 1 (or the PRESETS knob) the row
+/* Felucca 1.1.5: SEQ > AUTO LIST, the selected track's parameter locks and automation events as a list (included by
+ * ui.c). (V10.7.32, the owner) LOCKS: AUTO LIST and AUTOMATION one page. Its top row is AUTOMATION's: whether the records
+ * play (KNOB 2 PLAY ON / OFF), how many LOCK and REC there are, OCT+ CLEAR ALL (the dialog); then a row a record: its
+ * kind (LOCK: a parameter lock, MOTION_LOCK; REC: recorded motion, an automation event; RAMP: a COMP RAMP's), its step,
+ * its parameter, its value; in the order of the steps, then of the parameters; the last row is + ADD LOCK.
+ *   KNOB 1 (or the PRESETS knob) the row (the top first)
  *   KNOB 2 the step: the record moves to the next step where its parameter has no record (1 .. LEN)
  *   KNOB 3 the parameter: any one motion can record (motion.c motion_param) that the track's sound has, by name; it
  *          takes the next one with no record on that step, its value the sound's own (a lock that changes nothing yet)
  *   KNOB 4 the value
  *   OCT+   on + ADD LOCK: a lock on the step and parameter KNOB 2 / 3 set there (the SEQ cursor's step and the first
  *          parameter of the sound page shown last, to begin with), at the sound's own value; on a record: its kind
- *          LOCK <-> AUTO (an automation event holds its value until the next one, a lock sounds on its step only)
- *   EDIT   deletes the record;  OCT- goes HOME (as on the other action pages)
+ *          LOCK <-> REC (an automation event holds its value until the next one, a lock sounds on its step only)
+ *   SEQ + G5 deletes the record;  OCT- goes HOME (as on the other action pages)
  * Not while a song plays
  * (STOP TO EDIT). The 64 records are shared by the four tracks: AUTOMATION FULL when they are used */
 static int32_t accel(uint32_t role, int32_t s, int32_t range);
@@ -73,6 +75,7 @@ static void ev_fix(void)
 }
 static void ev_enter(void)
 {
+    ui.ev_top = 1;                                      /* (V10.7.32: LOCKS opens on its top row) */
     ui.ev_step = (uint8_t)ui.cursor;
     ui.ev_id = 0xFFu;
     ev_fix();
@@ -92,9 +95,11 @@ static const char *ev_act_name(void)
 {
     uint8_t idx[MOTION_MAX];
     uint32_t n = ev_rows(idx), r = ev_row(n);
+    if (ui.ev_top)
+        return "CLEAR";
     if (r == n)
         return "ADD";
-    return (motion.event[idx[r]].param & MOTION_LOCK) ? "AUTO" : "LOCK";   /* what OCT+ turns it into */
+    return (motion.event[idx[r]].param & MOTION_LOCK) ? "REC" : "LOCK";   /* what OCT+ turns it into */
 }
 static int ev_act_ready(void)
 {
@@ -102,6 +107,8 @@ static int ev_act_ready(void)
     uint32_t n = ev_rows(idx);
     if (chain_busy())
         return 0;
+    if (ui.ev_top)
+        return n != 0u;
     return ev_row(n) < n || (motion.count < MOTION_MAX && ev_id_ok(TSEL, ui.ev_id));
 }
 
@@ -121,12 +128,20 @@ static __attribute__((noinline)) void ev_knob(uint32_t slot, int32_t s)
     uint32_t n = ev_rows(idx), r = ev_row(n), i, step, id;
     const motion_event_t *e;
     const param_desc_t *d;
-    if (slot == 0u) {
-        ui.ev_row = (uint8_t)clamp((int32_t)r + s, 0, (int32_t)n);
+    if (slot == 0u) {                                   /* (the top row above the first record) */
+        int32_t at = clamp((ui.ev_top ? -1 : (int32_t)r) + s, -1, (int32_t)n);
+        ui.ev_top = at < 0;
+        if (at >= 0)
+            ui.ev_row = (uint8_t)at;
         return;
     }
     if (ev_busy())
         return;
+    if (ui.ev_top) {                                    /* the top row: KNOB 2 PLAY (AUTOMATION's) */
+        if (slot == 1u)
+            motion_set_enabled(t, s > 0);
+        return;
+    }
     if (r == n) {                                       /* + ADD LOCK: where it goes */
         ev_fix();
         if (slot == 1u)
@@ -179,6 +194,13 @@ static void ev_oct(void)
     int32_t at;
     if (ev_busy())
         return;
+    if (ui.ev_top) {                                    /* the top row: CLEAR ALL (AUTOMATION's dialog) */
+        if (n)
+            confirm_open(CF_CLEAR_MOTION, song.sel);
+        else
+            ui_message("NOTHING TO CLEAR");
+        return;
+    }
     if (r == n) {
         ev_fix();
         if (!ev_id_ok(t, ui.ev_id))
@@ -204,18 +226,18 @@ static void ev_oct(void)
         if (motion_put(t, MOTION_STEP(&e), MOTION_ID(&e), MOTION_VAL(&e), lock ? MOTION_LOCK : 0u))
             ui_message("AUTOMATION ONLY");              /* (0.9.1: the DJ FILTER's, no lock) */
         else
-            ui_message(lock ? "NOW A LOCK" : "NOW AUTOMATION");
+            ui_message(lock ? "NOW A LOCK" : "NOW REC");
     }
 }
 
-/* EDIT: the record goes (the row below moves up) */
+/* SEQ + G5: the record goes (the row below moves up) */
 static void ev_delete(void)
 {
     track_t *t = TSEL;
     uint8_t idx[MOTION_MAX];
     uint32_t n = ev_rows(idx), r = ev_row(n);
     const motion_event_t *e;
-    if (r == n) {
+    if (r == n || ui.ev_top) {
         ui_message("NOTHING TO DELETE");
         return;
     }
@@ -225,4 +247,72 @@ static void ev_delete(void)
     motion_delete_event(t, MOTION_STEP(e), MOTION_ID(e));
     ui.ev_row = (uint8_t)r;                              /* (ev_row clamps it to the new count) */
     ui_message("DELETED");
+}
+
+/* (V10.7.32) LOCKS' panel: the top row (PLAY, the LOCK and REC counts, OCT+ CLEAR ALL) an outline card, then the rows a
+ * record each (its kind's tag, its step, its parameter, its value) and + ADD LOCK, eight at a time round the one picked
+ * (TINT, framed THEME; the top's frame TEXT) */
+static void card_line(int32_t x, int32_t y, int32_t w, int32_t h, int32_t r, uint16_t c, int32_t lw);   /* (ui_draw.c) */
+#define LK_ROWS 8u
+static void graph_locks(const track_t *t)
+{
+    uint8_t idx[MOTION_MAX];
+    uint32_t n = ev_rows(idx), r = ev_row(n), nl = motion_lock_count(t), i, first;
+    char b[32], v[16], nm[12];
+    const char *u = "";
+    card_line(4, 2, 232, 17, 3, ui.ev_top ? T_TEXT : T_LINE, 1);
+    str_cpy(b, motion_enabled(t) ? "PLAY ON \xB7 " : "PLAY OFF \xB7 ", sizeof b);
+    fmt_int(b + str_len(b), (int32_t)nl);
+    str_cpy(b + str_len(b), " LOCK \xB7 ", sizeof b - str_len(b));
+    fmt_int(b + str_len(b), (int32_t)(n - nl));
+    str_cpy(b + str_len(b), " REC", sizeof b - str_len(b));
+    GFX_HOOK_ALIGN(0, 2, 0, 19, AL_V | AL_PASS, "locks top row");
+    cv_text(10, 2 + CAP_IN(X, 17), &AF_X, b, motion_enabled(t) ? T_TEXT : T_MID);
+    GFX_HOOK_ALIGN(0, 2, 0, 19, AL_V | AL_PASS, "locks top row");
+    cv_text_r(230, 2 + CAP_IN(X, 17), &AF_X, "OCT+ CLEAR", ui.ev_top && n ? T_ACCENT : T_DIM, T_BG);
+    first = r + 4u > LK_ROWS ? r + 4u - LK_ROWS : 0u;   /* (the one picked in view, three after it when there are) */
+    if (first + LK_ROWS > n + 1u)
+        first = n + 1u > LK_ROWS ? n + 1u - LK_ROWS : 0u;
+    for (i = first; i <= n && i < first + LK_ROWS; i++) {
+        int32_t y = 24 + (int32_t)(i - first) * 14;
+        int sel = !ui.ev_top && i == r;
+        uint16_t bg = sel ? T_TINT : T_BG, tc;
+        uint32_t step, id;
+        int16_t val;
+        const char *tag;
+        if (sel) {
+            cv_rect(4, y, 232, 13, T_TINT);
+            cv_frame(4, y, 232, 13, T_THEME);
+        }
+        if (i == n) {                                   /* + ADD LOCK: on the step and parameter KNOB 2 / 3 set */
+            ev_fix();
+            tag = "+ ADD";
+            step = ui.ev_step;
+            id = ui.ev_id;
+            val = id < P_COUNT ? motion_base_value(t, id) : 0;
+            tc = T_THEME;
+        } else {
+            const motion_event_t *e = &motion.event[idx[i]];
+            step = MOTION_STEP(e);
+            id = MOTION_ID(e);
+            val = MOTION_VAL(e);
+            tag = (e->param & MOTION_LOCK) ? "LOCK" : MOTION_RAMP(e) ? "RAMP" : "REC";
+            tc = (e->param & MOTION_LOCK) ? T_ACCENT : T_TEXT;
+        }
+        GFX_HOOK_ALIGN(0, y, 0, y + 13, AL_V | AL_PASS, "locks row");
+        cv_text_on(9, y + CAP_IN(X, 13), &AF_X, tag, tc, bg);
+        b[0] = 'S';
+        fmt_int(b + 1, (int32_t)step + 1);
+        GFX_HOOK_ALIGN(0, y, 0, y + 13, AL_V | AL_PASS, "locks row");
+        cv_text_on(48, y + CAP_IN(X, 13), &AF_X, b, i == n ? T_MID : T_TEXT, bg);
+        if ((id >= P_COUNT && id != MOT_DJF) || !ev_id_ok(t, id))
+            continue;
+        ev_name(t, id, nm);
+        param_format(track_desc(t, id), val, v, &u);
+        str_cpy(v + str_len(v), u, sizeof v - str_len(v));
+        GFX_HOOK_ALIGN(0, y, 0, y + 13, AL_V | AL_PASS, "locks row");
+        cv_free_text(78, y + CAP_IN(X, 13), &AF_X, nm, i == n ? T_MID : T_TEXT, bg, 96);
+        GFX_HOOK_ALIGN(0, y, 0, y + 13, AL_V | AL_PASS, "locks row");
+        cv_text_r(230, y + CAP_IN(X, 13), &AF_X, v, i == n ? T_MID : T_TEXT, bg);
+    }
 }

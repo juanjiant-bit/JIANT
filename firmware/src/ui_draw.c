@@ -797,6 +797,27 @@ static __attribute__((noinline)) void hot_text_column(uint32_t c, const char *la
 {
     text_column(c, label, value, VAL(c));
 }
+/* (0.6.99) the punch-in lane's cards: LEN, RES, its state (REC ON recording, PLAY ON playing, else its steps), CLEAR;
+ * (V10.7.32) the FX layer's KNOB 1..4 with FX + PRESETS (ui_layer.c), FX > PUNCH IN's until then */
+static void draw_act_column(uint32_t c, const char *label, uint16_t vc, uint32_t icon);
+static uint32_t pfx_lane_n(void)
+{
+    uint32_t n = 0, i;
+    for (i = 0; i < 64u; i++) n += pfx_lane_at(i) != 0u;
+    return n;
+}
+static void pfx_cards(void)
+{
+    char val[12];
+    uint32_t n = pfx_lane_n();
+    fmt_int(val, song.g[G_PFXLEN]);
+    draw_column(0, "LEN", val, "ST", VAL(0u), RATIO(&GP[G_PFXLEN], song.g[G_PFXLEN]), ICON_AUTO);
+    hot_text_column(1, "RES", N_PFXRES[(uint32_t)clamp(song.g[G_PFXRES], 0, 2)]);
+    fmt_int(val, (int32_t)n);
+    text_column(2, pfx_rec_ok() ? "REC" : song.playing ? "PLAY" : "STEPS", pfx_rec_ok() ? "ON" : song.playing ? "ON" : val, pfx_rec_ok() ? T_ACCENT : T_TEXT);
+    draw_act_column(3, "CLEAR", n ? T_MID : T_DIM, ICON_X_MOTION_DEL);   /* (snd2: the lane only; V10.7.32 CLEAR, was
+                                                         * CLR AUTO: KNOB 4 right asks, CLEAR PUNCH IN LANE?) */
+}
 
 /* Shared empty card: keep the renderer and all of its state-reset behavior. */
 static __attribute__((noinline)) void empty_column(uint32_t c)
@@ -1007,10 +1028,15 @@ static uint32_t foot_ph(const track_t *t, uint32_t *len)
     *len = t->p[P_SLEN] > 0 ? (uint32_t)t->p[P_SLEN] : 1u;
     return song.playing ? seq_src(t, t->seq_idx) : 0xFFu;
 }
+static uint32_t lane_sig(void);                         /* (V10.7.32) ui_layer.c: the FX layer's punch-in lane */
+static int32_t ly_lane(int32_t x0, int32_t y, int32_t x1);
+static int fx_lane_foot(void) { return ui.layer == LAYER_FX && !ui.menu; }   /* (V10.7.32) FX held: the lane at the foot */
 static uint32_t foot_strip_sig(void)
 {
     const track_t *t = TSEL;
     uint32_t len, ph = foot_ph(t, &len), bk = ui.bank;
+    if (fx_lane_foot())
+        return lane_sig() ^ 0x1A4Eu;
     return steps_hash(t) + (len * 131u + bk) * 2654435761u + (ph / 16u == bk ? ph % 16u + 1u : 0u) * 40503u +
            (ph < len ? ph / 16u + 1u : 0u) * 977u + (song.seq_mode ? ui.cursor + 1u : 0u) * 3001u;
 }
@@ -1062,6 +1088,14 @@ static __attribute__((noinline)) void draw_crumbs(int32_t y, uint16_t fg, uint16
     uint32_t i, k = 0;
     int32_t x, x0;
     const aafont_t *f = lz_on() ? &AF_X : &AF_S;        /* (0.8.5: a lens page, the mock-up's small mono) */
+    if (f == &AF_X && fx_lane_foot()) {                 /* (V10.7.32) FX held: the punch-in lane, then the count (the
+                                                         * view's word: its tab) */
+        if (cw)
+            cv_text_r(234, y, f, cnt, T_TEXT, T_BG);
+        GFX_HOOK_ALIGN(0, y + AF_X_CAP_Y, 0, y + AF_X_CAP_Y + AF_X_CAP_H, AL_V, "footer breadcrumb on its line");
+        (void)ly_lane(6, y + AF_X_CAP_Y, mx);
+        return;
+    }
     x0 = f == &AF_X ? foot_strip(6, y + AF_X_CAP_Y, 1) : 8;   /* (seq2g, a lens footer: the steps first, on the capitals) */
     foot_crumbs(b, sizeof b);
     for (i = 0; b[i]; i++)                              /* (the last part: after the last dot) */
@@ -1418,13 +1452,24 @@ static void draw_columns(void)
         empty_column(3);
         return;
     }
-    if (cur_page()->graph == GR_EVENTS) {              /* AUTO LIST (ui_events.c): ROW STEP PARAM VALUE */
+    if (cur_page()->graph == GR_EVENTS) {              /* LOCKS (ui_events.c): ROW STEP PARAM VALUE; (V10.7.32) its top
+                                                         * row: ROW ALL, PLAY (KNOB 2), how many LOCK, how many REC */
         const track_t *t = TSEL;
         uint8_t idx[MOTION_MAX];
         uint32_t n = ev_rows(idx), r = ev_row(n), step, id;
         int16_t v;
         char nm[12];
         const param_desc_t *d;
+        if (ui.ev_top) {
+            uint32_t nl = motion_lock_count(t);
+            hot_text_column(0, "ROW", "ALL");
+            text_column(1, "PLAY", motion_enabled(t) ? "ON" : "OFF", VAL(1u));
+            fmt_int(val, (int32_t)nl);
+            text_column(2, "LOCK", val, nl ? T_TEXT : T_DIM);
+            fmt_int(val, (int32_t)(n - nl));
+            text_column(3, "REC", val, n - nl ? T_TEXT : T_DIM);
+            return;
+        }
         if (r < n) {
             const motion_event_t *e = &motion.event[idx[r]];
             fmt_frac(val, (int32_t)r + 1, (int32_t)n);
@@ -1450,28 +1495,13 @@ static void draw_columns(void)
         hot_text_column(2, "PARAM", nm);
         d = track_desc(t, id);
         param_format(d, v, val, &unit);
-        draw_column(3, r == n ? "VALUE" : (motion.event[idx[r]].param & MOTION_LOCK) ? "LOCK" : MOTION_RAMP(&motion.event[idx[r]]) ? "RAMP" : "AUTO", val, unit,
+        draw_column(3, r == n ? "VALUE" : (motion.event[idx[r]].param & MOTION_LOCK) ? "LOCK" : MOTION_RAMP(&motion.event[idx[r]]) ? "RAMP" : "REC", val, unit,
                     r < n ? VAL(3u) : T_DIM, RATIO(d, enum_rank(d, v)), param_icon(d, v));
         return;
     }
-    if (cur_page()->graph == GR_PUNCH) {               /* (0.6.99) the punch-in lane: LEN, RES, its state, CLEAR */
-        uint32_t n = 0, i;
-        for (i = 0; i < 64u; i++) n += pfx_lane_at(i) != 0u;
-        fmt_int(val, song.g[G_PFXLEN]);
-        draw_column(0, "LEN", val, "ST", VAL(0u), RATIO(&GP[G_PFXLEN], song.g[G_PFXLEN]), ICON_AUTO);
-        hot_text_column(1, "RES", N_PFXRES[(uint32_t)clamp(song.g[G_PFXRES], 0, 2)]);
-        fmt_int(val, (int32_t)n);
-        text_column(2, pfx_rec_ok() ? "REC" : song.playing ? "PLAY" : "STEPS", pfx_rec_ok() ? "ON" : song.playing ? "ON" : val, pfx_rec_ok() ? T_ACCENT : T_TEXT);
-        draw_act_column(3, "CLR AUTO", n ? T_MID : T_DIM, ICON_X_MOTION_DEL);   /* (snd2: the lane only) */
-        return;
-    }
-    if (cur_page()->graph == GR_MOTION) {
-        hot_text_column(0, "PLAY", motion_enabled(TSEL) ? "ON" : "OFF");
-        fmt_int(val, (int32_t)(motion_count(TSEL) - motion_lock_count(TSEL)));
-        text_column(1, "EVENT", val, T_TEXT);
-        fmt_int(val, (int32_t)motion_lock_count(TSEL));   /* parameter locks (SEQ > STEP: a step held, a knob) */
-        text_column(2, "LOCK", val, T_TEXT);
-        draw_act_column(3, "CLEAR", T_MID, ICON_X_MOTION_DEL);
+    if (cur_page()->graph == GR_PUNCH) {               /* (0.6.99) the punch-in lane: LEN, RES, its state, CLEAR (V10.7.32:
+                                                         * the page out; the FX layer's, FX + PRESETS) */
+        pfx_cards();
         return;
     }
     if (cur_page()->graph == GR_TOOLS) {                 /* (V10.24) KNOB 1 the scope, KNOB 2 the action; OCT+ held */
@@ -1994,7 +2024,7 @@ static void confirm_text(char *a, char *b)
         str_cpy(a, drum_track(TSEL) ? "RECALL SOUND + KIT?" : "RECALL SAVED SOUND?", 24);
         break;
     case CF_CLEAR_MOTION:
-        str_cpy(a, "CLEAR T1 AUTOMATION?", 24); a[7] = (char)('1' + k % NTRK);
+        str_cpy(a, "CLEAR T1 LOCKS + REC?", 24); a[7] = (char)('1' + k % NTRK);   /* (V10.7.32: LOCKS' CLEAR ALL) */
         break;
     case CF_CLEAR_PFX:
         str_cpy(a, "CLEAR PUNCH IN LANE?", 24);   /* (snd2: the lane only) */

@@ -1158,7 +1158,8 @@ static void graph_title(void)
  * a step, once motion.c keeps one; till then its records as marks at the roll's foot */
 static int seq_roll_view(const page_t *pg)
 {
-    return pg == &PAGES[ui.page] && lens_on() && pg->graph != GR_PATS && pg->graph != GR_SONG && pg->graph != GR_EUCLID;
+    return pg == &PAGES[ui.page] && lens_on() && pg->graph != GR_PATS && pg->graph != GR_SONG && pg->graph != GR_EUCLID &&
+           pg->graph != GR_EVENTS;                      /* (V10.7.32: LOCKS, its list) */
 }
 static int roll_view(const page_t *pg)
 {
@@ -1209,19 +1210,6 @@ static __attribute__((noinline)) void seq_overlay(const track_t *t, const page_t
         k = ui.cursor % NSTEP;
         if (mine == CA_RAMP && k >= base && k < base + 16u && bt_hw_seg())
             ramp_draw_bt(t, dr, top, k - base);
-    } else if (pg->graph == GR_MOTION || pg->graph == GR_EVENTS) {
-        uint8_t idx[MOTION_MAX];
-        uint32_t n = ev_rows(idx), cur = ev_row(n);
-        for (k = 0; k < n; k++) {
-            const motion_event_t *e = &motion.event[idx[k]];
-            uint32_t sx = MOTION_STEP(e);
-            if (sx < base || sx >= base + 16u || sx >= len)
-                continue;
-            seq_col(dr, sx - base, &x, &w);
-            cv_rect(x + 2, bot - 3, w - 4, 2, (e->param & MOTION_LOCK) ? T_ACCENT : T_TEXT);
-            if (pg->graph == GR_EVENTS && k == cur)
-                cv_frame(x, top, w + 1, bot - top, T_THEME);
-        }
     } else if (pg->id[0] == P_POFS && !dr && t->p[P_POFS]) {
         for (i = 0; i < 16u && base + i < len; i++) {
             const step_t *st = &seq_steps(t)[base + i];
@@ -1401,8 +1389,7 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
     if (strip_kind() == SK_TITLE)                    /* MENU > LARGE: the page's title (its engine, its number); (V10.8) an
                                                       * EDIT page: the engine's creature, alive */
         return h ^ 0x5A17u ^ (pg->fam == FAM_EDIT ? anim_fr / 2u * 2654435761u : 0u);
-    if ((pg->graph == GR_NONE && !fx_on()) || SPLIT_PAGE(pg) || pg->graph == GR_ARP ||
-        (pg->graph == GR_MOTION && !seq_roll_view(pg))) h ^= anim_fr / 2u;   /* (0.9.9-seq2b: AUTOMATION the roll, still) */   /* (0.8.5:
+    if ((pg->graph == GR_NONE && !fx_on()) || SPLIT_PAGE(pg) || pg->graph == GR_ARP) h ^= anim_fr / 2u;   /* (0.8.5:
                                                          * FX's lens pictures change with their values, */
     if (fx_on() && (song.playing || bg_energy() > 2))   /* .. and with the sound while it sounds: FX live) */
         h ^= anim_fr / 2u * 2246822519u;
@@ -1464,14 +1451,14 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
         for (i = 0; i < CHAIN_ROWS; i++)
             h = (h ^ (chain_config.row[i].slot + 4u * chain_config.row[i].bars)) * 16777619u;
     }
-    if (pg->graph == GR_MOTION) h ^= motion_count(t) * 131u + motion_enabled(t);
-    if (pg->graph == GR_EVENTS) {                    /* AUTO LIST: the rows, the one selected, + ADD LOCK's place */
+    if (pg->graph == GR_EVENTS) {                    /* LOCKS: the rows, the one selected, + ADD LOCK's place, the top */
         uint8_t idx[MOTION_MAX];
         uint32_t n = ev_rows(idx);
         for (i = 0; i < n; i++)
             h = (h ^ ((uint32_t)motion.event[idx[i]].place << 24 | (uint32_t)motion.event[idx[i]].param << 16 |
                       (uint16_t)motion.event[idx[i]].value)) * 16777619u;
         h = (h ^ (n + 1u) * 40503u ^ ev_row(n) * 2654435761u ^ ((uint32_t)ui.ev_step << 8 | ui.ev_id) * 104729u) * 16777619u;
+        h ^= (ui.ev_top + 1u) * 3266489917u + motion_enabled(t) * 977u;
     }
     if (pg->graph == GR_CHANCE) h ^= ui.cursor * 40503u + step_chance(&t->step[ui.cursor]);
     if (FELUCCA_LIVE && pg->graph == GR_LIVE)        /* (p2) GLO > LIVE: the playheads, the ghosts, the keys */
@@ -1597,13 +1584,6 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
                 h = (h ^ (uint32_t)(uint8_t)fg_set[song.sel % NTRK][k].ivl) * 16777619u;
             if (pg->graph == GR_COMP)
                 h = (h ^ (comp_slot() + 1u) * 40503u) * 16777619u;
-            if (pg->graph == GR_MOTION || pg->graph == GR_EVENTS) {
-                uint8_t idx[MOTION_MAX];
-                uint32_t n = ev_rows(idx);
-                for (k = 0; k < n; k++)
-                    h = (h ^ motion.event[idx[k]].place ^ (uint32_t)motion.event[idx[k]].param << 8) * 16777619u;
-                h = (h ^ (n + 1u) ^ ev_row(n) << 8) * 16777619u;
-            }
         }
     }
     if (pg->graph == GR_STEPS || pg->graph == GR_ROLL || pg->graph == GR_CHANCE || pg->graph == GR_SHAPE || roll_view(pg) ||
@@ -2170,6 +2150,9 @@ static void draw_graph(void)
     } else if (pg->graph == GR_EUCLID) {             /* (V10.6) SEQ > EUCLID / MODES: the ring, the lanes or the notes */
         cv_oy = 0;
         graph_euclid(t);
+    } else if (pg->graph == GR_EVENTS) {             /* (V10.7.32) SEQ > LOCKS: the top row, the records (ui_events.c) */
+        cv_oy = 0;
+        graph_locks(t);
     } else if (seq_roll_view(pg)) {                  /* (0.9.9-seq2b) every SEQ page: the roll (a kit: the grid), its marks */
         cv_oy = 0;
         if (drum_track(t))

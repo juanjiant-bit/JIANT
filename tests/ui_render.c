@@ -647,7 +647,7 @@ enum { S_HOME, S_HOME_IDLE, S_MESSAGE, S_MESSAGE_KEY, S_MESSAGE_NOFILE, S_PRESET
        S_CONFIRM_SEQ, S_CONFIRM_PROJ, S_CONFIRM_USER, S_CONFIRM_PAT, S_CONFIRM_MOTION, S_CONFIRM_ERASE, S_GEN, S_GEN_PARTS,
        S_MENU, S_MENU_SPEAKER, S_ABOUT, S_ABOUT_REC, S_ABOUT_CREDITS, S_ABOUT_END, S_UBOOT, S_CALIBRATION, S_SPLASH,
        S_BATT0, S_BATT1, S_BATT2, S_BATT3, S_BATT_USB, S_MOTION_REC, S_MOTION_OFF, S_MOTION_CARD, S_SONG_HOME,
-       S_FX_PEEK, S_FX_HELD, S_FX_WAIT, S_FX_HARM, S_MENU_HOLD, S_MENU_LEDS, S_MENU_END, S_MENU_SYSTEM, S_MENU_SLIDE, S_MENU_PROX, S_MENU_PROX_OFF, S_REVERB, S_REVERB_RESO,
+       S_FX_PEEK, S_FX_HELD, S_FX_WAIT, S_FX_HARM, S_FX_LANE, S_FX_LANE_K, S_MENU_HOLD, S_MENU_LEDS, S_MENU_END, S_MENU_SYSTEM, S_MENU_SLIDE, S_MENU_PROX, S_MENU_PROX_OFF, S_REVERB, S_REVERB_RESO,
        S_GLO_PEEK, S_GLO_ACTIVE, S_GLO_EXT, S_SCL_PEEK, S_SCL_ACTIVE, S_EDIT_PEEK, S_EDIT_ACTIVE, S_EDIT_USER, S_EDIT_DRUM, S_LAYER_HINT, S_LAYER_LOCK, S_LAYER_LOCK_FX, S_LAYER_SONG, S_LAYER_SONG_CHAIN,
        S_SEQ_TOOLS, S_SEQ_TOOLS_DRUM, S_SEQ_TOOLS_SONG,
        S_LENTE_PAT, S_LENTE_PAT_DRUM, S_LENTE_STRETCH, S_LENTE_BAR, S_LENTE_BAR_DRUM, S_LENTE_STEP, S_LENTE_STEP_COMP,
@@ -683,7 +683,7 @@ static const char *const S_NAME[S_COUNT] = {"home", "home_idle", "message", "mes
     "edit_noise", "alg_1", "alg_2", "alg_3", "alg_4", "alg_5", "alg_6", "alg_7", "alg_8", "op_level", "fm6_alg_01", "fm6_alg_05", "fm6_alg_22", "fm6_alg_32", "drumx", "drumx_hit", "dx_sound", "dx_sound2", "confirm_seq", "confirm_project", "confirm_user", "confirm_pattern",
     "confirm_motion", "confirm_erase", "gen", "gen_parts", "menu", "menu_speaker", "about", "about_rec", "about_credits", "about_end", "uboot", "calibration", "splash",
     "batt_0", "batt_1", "batt_2", "batt_3", "batt_usb", "motion_rec", "motion_off", "motion_card", "song_home",
-    "perform_peek", "perform_held", "perform_wait", "perform_harm", "menu_hold", "menu_leds", "menu_end", "menu_system", "menu_slide", "menu_prox", "menu_prox_off", "reverb_spring", "reverb_reso",
+    "perform_peek", "perform_held", "perform_wait", "perform_harm", "perform_lane", "perform_lane_knobs", "menu_hold", "menu_leds", "menu_end", "menu_system", "menu_slide", "menu_prox", "menu_prox_off", "reverb_spring", "reverb_reso",
     "layer_glo_peek", "layer_glo_active", "layer_glo_ext", "layer_scl_peek", "layer_scl_active", "layer_edit_peek",
     "layer_edit_active", "layer_edit_user", "layer_edit_drum", "layer_hint", "layer_lock", "layer_lock_fx", "layer_song", "layer_song_chain",
     "layer_seq_tools", "layer_seq_tools_drum", "layer_seq_tools_song",
@@ -1063,7 +1063,8 @@ static void setup(int s)
 {
     memset(kb_on, 0, sizeof kb_on);               /* no key held (roll_playing holds one) */
     live.req = live.cur = -1; live.mode = live.srec = live.dirty = 0; lys.nqc = 0;   /* (the song layer: off) */
-    memset(clip_now, 0, sizeof clip_now); memset(clip_go, 0, sizeof clip_go);   /* (V10.6s: CLIPS, nothing known) */
+    memset(clip_now, 0, sizeof clip_now); memset(clip_go, 0, sizeof clip_go);
+    fx_lane_k = 0; memset(pfx_lane, 0, sizeof pfx_lane);   /* (V10.7.32: the FX layer's knobs FX KNOBS, its lane empty) */   /* (V10.6s: CLIPS, nothing known) */
     trk_live = NTRK;                              /* (the six awake but on *_tracks4) */
     if (s >= S_TOAST_ENV) {                       /* (0.9.5) a toast over a page with words to its foot: the pill keeps clear
                                                    * of them (or is not drawn: the header says it), never over one (hk_overlay) */
@@ -1169,7 +1170,7 @@ static void setup(int s)
         TSEL->step[4].comp = CP_TRIG; step_set_chance(&TSEL->step[6], 50); step_set_ratchet(&TSEL->step[8], 3);
         go_page(GR_COMP);
         break;
-    case S_MOTION: go_page(GR_MOTION); break;
+    case S_MOTION: go_page(GR_EVENTS); break;
     /* 1.1.5, the REC layer (REC held): over HOME, the settings as they come (CLICK OFF, COUNT-IN OFF, LEVEL MID);
      * over STEP armed, CLICK REC, COUNT-IN 2 BARS, LEVEL HIGH (KNOB 2 just turned); a song playing on an empty
      * track (CLEAR dimmed: STOP TO EDIT) */
@@ -1416,8 +1417,8 @@ static void setup(int s)
     case S_BATT2: usb.config = 0; song.batt_raw = 570; go_home(); break;
     case S_BATT3: usb.config = 0; song.batt_raw = 600; go_home(); break;
     case S_BATT_USB: usb.config = 1; usb.suspended = 0; song.batt_raw = 500; go_home(); break;
-    case S_MOTION_REC: song.rec = 1u << song.sel; go_page(GR_MOTION); break;    /* recording into the motion */
-    case S_MOTION_OFF: song.playing = 0; go_page(GR_MOTION); ui.act = 4; break;  /* stopped, CLEAR picked */
+    case S_MOTION_REC: song.rec = 1u << song.sel; go_page(GR_EVENTS); break;    /* recording into the motion */
+    case S_MOTION_OFF: song.playing = 0; go_page(GR_EVENTS); ui.act = 4; break;  /* stopped, CLEAR picked */
     case S_MOTION_CARD: {                                          /* #63: HOME, MOTION drives KNOB 1 and 3 (3 just turned) */
         const engine_t *en = ENGINES[TSEL->eng_req];
         motion_set_event(TSEL, 2, en->knob[0], TSEL->p[en->knob[0]]);
@@ -1440,6 +1441,20 @@ static void setup(int s)
         perf_held = perf_act = PF_BIT(PF_R16) | PF_BIT(PF_LPF) | PF_BIT(PF_M1 + 1);
         perf_k[0] = -40; perf_k[1] = 25; perf_k[3] = 30; ui.hot_col = 0; ui.hot_t = 30;
         break;
+    case S_FX_LANE: case S_FX_LANE_K: {             /* (V10.7.32) FX held, playing, the punch-in lane along its foot (32
+                                                     * steps: REPEAT, LPF, STUTTER placed); _K: FX + PRESETS, the lane's
+                                                     * knobs (LEN RES PLAY CLR AUTO) */
+        static const uint8_t L[32] = {1, 1, 0, 0, 4, 4, 4, 4, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 7, 7, 7, 7, 0, 0, 1, 0, 0, 0, 10, 10, 0, 0};
+        uint32_t i;
+        song.playing = 1; song.g[G_PFXLEN] = 32; song.g[G_PFXRES] = 1;
+        for (i = 0; i < 32u; i++) pfx_lane_put(i, L[i]);
+        pfx_lph = 9u * pfx_lane_step(beat_samples());   /* (the playhead on step 10) */
+        go_home(); ui.layer = LAYER_FX;
+        perf_held = perf_act = PF_BIT(PF_LPF);
+        perf_k[0] = -40;
+        if (s == S_FX_LANE_K) { fx_lane_k = 1; ui.hot_col = 1; ui.hot_t = 30; }
+        break;
+    }
     case S_FX_WAIT:
         song.playing = 1; song.g[G_BPM] = 72; ui.layer = LAYER_FX;
         perf_held = PF_BIT(PF_R16) | PF_BIT(PF_R8) | PF_BIT(PF_LPF); perf_act = PF_BIT(PF_LPF);
@@ -1611,7 +1626,7 @@ static void setup(int s)
         break;
     case S_MOTION_LOCKS:
         motion_set_event(TSEL, 1, P_REV, 40); motion_set_lock(TSEL, 2, P_REV, 100); motion_set_lock(TSEL, 6, P_ATK, 90);
-        go_page(GR_MOTION);
+        go_page(GR_EVENTS);
         break;
     /* 1.1.5 SEQ > AUTO LIST (ui_events.c): locks and automation events of the track, the 4th row selected, its
      * VALUE just turned; empty (+ ADD LOCK: step 5, the first knob of HOME); a DRUM track's long list, scrolled
@@ -1620,16 +1635,16 @@ static void setup(int s)
         motion_set_event(TSEL, 0, P_LRATE, 70); motion_set_lock(TSEL, 2, P_REV, 100); motion_set_lock(TSEL, 2, P_ED_FLT, -30);
         motion_set_lock(TSEL, 6, P_ATK, 90); motion_set_lock(TSEL, 6, P_E4, 20); motion_set_event(TSEL, 8, P_PAN, -40);
         motion_set_lock(TSEL, 11, P_LD_FLT, 50); motion_set_lock(TSEL, 13, P_DLY, 80); motion_set_lock(TSEL, 15, P_GLIDE, 60);
-        go_page(GR_EVENTS); ui.ev_row = 3; ui.hot_col = 3; ui.hot_t = 30;
+        go_page(GR_EVENTS); ui.ev_top = 0; ui.ev_row = 3; ui.hot_col = 3; ui.hot_t = 30;
         break;
-    case S_AUTO_LIST_ADD: ui.cursor = 4; go_page(GR_EVENTS); break;
+    case S_AUTO_LIST_ADD: ui.cursor = 4; go_page(GR_EVENTS); ui.ev_top = 0; break;
     case S_AUTO_LIST_DRUM: {
         uint32_t i;
         drum(0); go_page(GR_ROLL);
         for (i = 0; i < 12u; i++)
             motion_set_lock(TSEL, i, i & 1u ? P_LN0 + i % 8u : P_E0 + i % 8u, 100);
         motion_set_event(TSEL, 15, P_REV, 127);
-        go_page(GR_EVENTS); ui.ev_row = 13; song.playing = 1;
+        go_page(GR_EVENTS); ui.ev_top = 0; ui.ev_row = 13; song.playing = 1;
         break;
     }
     case S_USER_FOOT: song.playing = 0; up_store(3, "MY BASS"); ui.uslot = 3; go_page(GR_USER); break;   /* EDIT NAME lit */

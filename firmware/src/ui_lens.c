@@ -82,26 +82,28 @@ enum { LV_PAT, LV_BAR, LV_STEP, LV_N };                 /* SEQ's pictures: the b
 static const nv_t CE_SEQ[] = {NV("STEP", 0, 0, LV_BAR), NV("PATTERN", "LENGTH", 1, LV_PAT), NV("RHYTHM", 0, 1, LV_PAT), NV("TRACK", 0, 1, LV_PAT),
                               NV("EUCLID", 0, 2, LV_PAT), NV("MODES", 0, 2, LV_PAT), NV("MUTATE", 0, 2, LV_PAT),
                               NV("PLAYHEADS", 0, 3, LV_PAT), NV("STRETCH", 0, 4, LV_PAT),
-                              NV("COMP", 0, 5, LV_STEP), NV("COMP 2", 0, 5, LV_STEP), NV("AUTOMATION", 0, 6, LV_BAR),
-                              NV("AUTO LIST", 0, 6, LV_BAR), NV("LYRIC STEP",0,6,LV_BAR),NV("TRACK GEN",0,7,LV_BAR)};
+                              NV("COMP", 0, 5, LV_STEP), NV("COMP 2", 0, 5, LV_STEP), NV("AUTO LIST", "LOCKS", 6, LV_BAR),
+                              NV("LYRIC STEP",0,6,LV_BAR),NV("TRACK GEN",0,7,LV_BAR)};   /* (V10.7.32, the owner) LOCKS:
+                                                         * AUTOMATION and AUTO LIST one page (AUTO LIST's PAGES entry; ui_events.c) */
 static const ng_t CG_SEQ[] = {{"STEP", 0}, {"PATTERN", "PAT"}, {"EUCLID", "EUCL"}, {"PLAYHEADS", "HEAD"}, {"STRETCH", "STR"},
-                              {"COMP", 0}, {"AUTO", 0}, {"TRACK GEN", "GEN"}};   /* (codex/coherence: PATTERN, was LENGTH: its
+                              {"COMP", 0}, {"LOCKS", "LOCK"}, {"TRACK GEN", "GEN"}};   /* (codex/coherence: PATTERN, was LENGTH: its
                                                          * LENGTH RHYTHM TRACK; TRACK GEN, was GENERATE) */
 enum { FXL_TRACK, FXL_BUSES, FXL_EFFECT };
 static const nv_t CE_FX[] = {NV("FX", "SENDS", 0, FXL_TRACK), NV("DIST", 0, 0, FXL_TRACK), NV("AUTO PAN", 0, 0, FXL_TRACK),
                              NV("BUSES", 0, 1, FXL_BUSES), NV("DLY", 0, 2, FXL_EFFECT), NV("DLY 2", 0, 2, FXL_EFFECT),
                              NV("DLY 3", 0, 2, FXL_EFFECT), NV("REVERB", 0, 3, FXL_EFFECT), NV("REVERB 2", 0, 3, FXL_EFFECT),
                              NV("CHORUS", 0, 4, FXL_EFFECT), NV("SLICER", 0, 5, FXL_EFFECT), NV("SL BUS", 0, 5, FXL_EFFECT),
-                             NV("SL BUS 2", 0, 5, FXL_EFFECT), NV("SL PITCH", 0, 5, FXL_EFFECT), NV("PUNCH IN", 0, 6, FXL_EFFECT),
-                             NV("MASTER", 0, 7, FXL_EFFECT), NV("TAPE", 0, 7, FXL_EFFECT),
-                             NV("EQ", 0, 7, FXL_EFFECT)
+                             NV("SL BUS 2", 0, 5, FXL_EFFECT), NV("SL PITCH", 0, 5, FXL_EFFECT),
+                             NV("MASTER", 0, 6, FXL_EFFECT), NV("TAPE", 0, 6, FXL_EFFECT),
+                             NV("EQ", 0, 6, FXL_EFFECT)
 #if FELUCCA_XFX
-                             , NV("BALANCE", 0, 7, FXL_EFFECT)
+                             , NV("BALANCE", 0, 6, FXL_EFFECT)
 #endif
                             };   /* (p9: the master's EQ) */   /* (0.9.9-snd2: MASTER last, the
                                                          * end of the chain; snd8: its TAPE) */
 static const ng_t CG_FX[] = {{"TRACK", "TRK"}, {"BUSES", "BUS"}, {"DELAY", "DLY"}, {"REVERB", "REV"}, {"CHORUS", "CHO"},
-                             {"SLICER", "SLC"}, {"PUNCH IN", "PCH"}, {"MASTER", "MST"}};
+                             {"SLICER", "SLC"}, {"MASTER", "MST"}};   /* (V10.7.32, the owner: PUNCH IN on the FX held,
+                                                         * ui_layer.c ly_lane; its page out, ui.c page_visible) */
 #if FELUCCA_LIVE
 static const nv_t CE_GLO[] = {NV("KEYS", 0, 0, 0), NV("RAILS", 0, 0, 0), NV("MIXER", 0, 1, 0), NV("SENDS", 0, 1, 0),
                               NV("G.COMP", 0, 2, 3), NV("G.COMP 2", 0, 2, 3), NV("GLOBAL", 0, 3, 1),

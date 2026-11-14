@@ -347,7 +347,8 @@ static __attribute__((noinline)) void graph_fx_lz(const track_t *t, const page_t
         uint32_t m;
         for (m = 0; m < FX_NMOD; m++) {
             int32_t x = 4 + (int32_t)(m % 3u) * 78, y = (int32_t)(m / 3u) * 72;
-            int sel = m == ui.fxmod, ok = fx_mod_ok(m);
+            int sel = m == ui.fxmod, ok = fx_mod_ok(m) || m == 4u;   /* (V10.7.32: PUNCH IN's lane, on the FX held: its
+                                                         * page out, the tile as it was) */
             uint16_t bg = T_RAISE;                      /* (0.8.9: a rounded card, the one picked framed THEME) */
             lz_tile(x, y, 76, 68, sel, T_THEME);
             cv_bg = bg;

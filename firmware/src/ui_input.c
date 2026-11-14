@@ -44,6 +44,10 @@ static uint32_t cur_fam(void) { return ui.home || cur_page()->graph == GR_SONG ?
 
 /* (0.9.2) a section's button held + SELECT (ui_lens.c nav_jump, the dice, the tempo): the button let go stays there (its
  * tap, its layer: not now) */
+static uint8_t fx_lane_k;                                /* (V10.7.32) FX held: KNOB 1..4 the punch-in lane's (LEN RES - CLEAR;
+                                                         * FX + PRESETS right), else FX KNOBS (FILTER CRUSH THROW DEPTH, left;
+                                                         * again when the FX layer shuts) */
+static uint8_t fx_pr_turn;                               /* .. a PRESETS turn with FX held this frame: a combo */
 static uint8_t ly_used;                                  /* the held layer's knobs or keys used: PRESETS stays its */
 static int song_open(uint32_t n);                         /* (song_main.c: SAVE > PROJECT's KNOB 1) */
 static uint8_t pj_btn = 0xFFu;                           /* the button a SELECT combo was made with: no layer while held */
@@ -1384,8 +1388,9 @@ static __attribute__((noinline)) void tl_keys(uint32_t pressed)
             continue;
         p = key_place(k);
         if (SONG_PARTS(cur_page())) {
-            if (p < 4u) {                               /* (V10.6s) PARTS: the whole part, every track (its head picked) */
-                ui.part = (uint8_t)p;
+            if (p < 4u) {                               /* (V10.6s) PARTS: the whole part, every track (the part picked,
+                                                         * the row kept) */
+                ui.part = (uint8_t)((ui.part & PART_CELL) | p);
                 clip_launch(NTRK, p);
             }
             continue;
@@ -1501,12 +1506,6 @@ static void edit_param(uint32_t slot, int32_t steps)
     if(pg->graph==GR_TRACKGEN) {trackgen_knob(slot,steps);return;}
     if (pg->graph == GR_EVENTS) {                         /* AUTO LIST (ui_events.c) */
         ev_knob(slot, steps);
-        return;
-    }
-    if (pg->graph == GR_MOTION) {
-        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
-        if (slot == 0u) motion_set_enabled(TSEL, steps > 0);
-        else if (slot == 3u) ui.act = steps > 0 ? 4u : 0u;
         return;
     }
     if (SONG_PARTS(pg)) {                               /* (V10.7.32: PARTS and CLIPS one grid) KNOB 1 the row: ALL (the
@@ -1769,11 +1768,6 @@ static __attribute__((noinline)) void act_do(void)
     if (!c--)
         return;
     if(cur_page()->graph==GR_TRACKGEN) {trackgen_make();return;}
-    if (cur_page()->graph == GR_MOTION) {
-        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
-        confirm_open(CF_CLEAR_MOTION, song.sel);
-        return;
-    }
     if (cur_page()->graph == GR_LYRIC) {                /* (0.8.5) WORDS: the lyric, typed (the NAME screen) */
         name_open(NK_LYRIC, song.sel);
         return;
@@ -2720,6 +2714,16 @@ static void ui_input_frame(void)
                 btn_used(FAM_BTN[f]);
             }
             pj_sel_ms = fm1_ms | 1u;
+        } else if (f == FAM_FX && !ui.menu && !dlg_on() && !name_on()) {
+            if ((s = panel_enc(EN_PRESET)) != 0) {      /* (V10.7.32) FX held + PRESETS: KNOB 1..4 the punch-in lane's
+                                                         * (right) or FX KNOBS (left); the FX layer stays (a combo: no tap) */
+                if (fx_lane_k != (s > 0)) {
+                    fx_lane_k = (uint8_t)(s > 0);
+                    ui_message(fx_lane_k ? "KNOBS: PUNCH IN LANE" : "KNOBS: FX KNOBS");
+                    ui.force = 1;
+                }
+                fx_pr_turn = 1;
+            }
         } else if (f != FAM_COUNT && !ui.menu && !dlg_on() && !name_on() && !ly_used && (s = panel_enc(EN_PRESET)) != 0) {
             btn_used(FAM_BTN[f]);                       /* (0.9.2, rule 3) a button held + PRESETS: nothing (until 0.9.1
                                                          * its pages); no tap after, no map while held. (A layer already
@@ -2747,7 +2751,8 @@ static void ui_input_frame(void)
     {   /* a key pressed with the button: a combo (its edge, or the ISR already took it); then not the grid's or a step's */
         static uint32_t kb_seen;
         lkeys = kb_layer & ~kb_seen;
-        combo = lay && (notes || lkeys);
+        combo = (lay && (notes || lkeys)) || fx_pr_turn;
+        fx_pr_turn = 0;
         kb_seen = kb_layer;
     }
     if (lay)
@@ -2800,6 +2805,8 @@ static void ui_input_frame(void)
         ly_used = 1;
     lytap = layer_gesture(now, combo);
     layer_show();
+    if (ui.layer != LAYER_FX && !((fm1_in.buttons >> panel.btn[B_FX]) & 1u))
+        fx_lane_k = 0;                                  /* (V10.7.32) FX let go, its layer shut: its knobs FX KNOBS again */
     layer_keys(lkeys);
     for (k = 0; k < 4u; k++)
         if (ks[k]) {

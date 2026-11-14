@@ -359,6 +359,7 @@ static struct {
                                   * a track's cell picked (KNOB 1 T1..T6), else the part's head (ALL) */
     uint8_t ev_row;              /* SEQ > AUTO LIST (ui_input.c ev_*): the row selected (the track's count: + ADD LOCK) */
     uint8_t ev_step, ev_id;      /* .. + ADD LOCK: the step and the parameter a lock is added on */
+    uint8_t ev_top;              /* (V10.7.32) SEQ > LOCKS: its top row picked (PLAY, the counts; OCT+ CLEAR ALL) */
     uint8_t uboot;               /* main.c: seconds left before UPDATE MODE (OCT- + OCT+ held), 0 = none */
     uint8_t segbox;              /* (V10.7.22) main.c: the Bluetooth segment missing at power-on, said over the screen
                                   * (ui_draw.c seg_screen) until a key, a knob (scr_input) */
@@ -615,6 +616,12 @@ static uint32_t layer_btn(void);
 static int page_visible(uint32_t i)
 {
     uint32_t te = trk_eng(TSEL);                        /* (filters2: once) */
+    if (PAGES[i].graph == GR_PUNCH)                     /* (V10.7.32) FX > PUNCH IN: on the FX held (ui_layer.c ly_lane, FX
+                                                         * + PRESETS its knobs); kept in the table */
+        return 0;
+    if (PAGES[i].graph == GR_MOTION)                    /* (V10.7.32) AUTOMATION: LOCKS' top row (AUTO LIST, ui_events.c);
+                                                         * kept in the table */
+        return 0;
     if (PAGES[i].graph == GR_SONG && (PAGES[i].fam == FAM_SEQ || PAGES[i].title[0] == 'C'))   /* (V10.7.32: CLIPS, PARTS' grid) */
         return 0;                                       /* (0.6.24) the song in one place: SAVE > ARRANGE (SEQ > SONG
                                                          * was the same page twice; kept in the table: its index) */
@@ -886,7 +893,7 @@ static void page_entered(void)
     if (!ui.home && lock_page_ok(ui.page))
         ui.plk_src = (uint8_t)(ui.page + 1u);
     song.seq_mode = !ui.home && pg->fam == FAM_SEQ;
-    ui.hint_k = ui.home ? HK_NONE : pg->graph == GR_MOTION ? HK_MOTION : pg->graph == GR_PUNCH ? HK_PUNCH :
+    ui.hint_k = ui.home ? HK_NONE : pg->graph == GR_EVENTS ? HK_MOTION : pg->graph == GR_PUNCH ? HK_PUNCH :
                 pg->graph == GR_EUCLID ? HK_EUCLID : HK_NONE;   /* (0.9.5: its hint once dwelt on: ui_layer.c hint_tick) */
     ui.hint_at = (uint8_t)(ui.home ? 255u : ui.page + 1u);
     ui.hint_ms = fm1_ms;
@@ -2047,7 +2054,7 @@ static void track_select(uint32_t i)
     page_flash();                                    /* (0.6.51) the track's number and engine shown big */
 }
 
-#include "ui_events.c"                            /* SEQ > AUTO LIST: the locks and events as a list (an action page) */
+#include "ui_events.c"                            /* SEQ > LOCKS: the locks and events as a list (an action page) */
 /* EDIT > SOUND / SOUND 2 (ui_dx.c, included by ui_input.c): the DRUM-X sound edited and its patch (0 A, 1 B) */
 static uint8_t dx_ui_lane, dx_ui_side;
 static uint32_t dx_pagen(const page_t *pg)            /* SOUND 1..3; (0.5.1) X-MOD 4; (0.6.54) SOUND 4: 8 */
@@ -2082,7 +2089,7 @@ static uint32_t act_cols(void)                   /* the columns that are actions
     uint32_t c, m = 0;
     if (ui.home)
         return 0;
-    if (pg->graph == GR_MOTION || pg->graph == GR_PUNCH) return 8u;   /* (0.6.99) PUNCH: KNOB 4 CLEAR */
+    if (pg->graph == GR_PUNCH) return 8u;               /* (0.6.99) PUNCH: KNOB 4 CLEAR */
     if (pg->graph == GR_EVENTS || pg->graph==GR_TRACKGEN) return 16u;
     if (pg->graph == GR_TOOLS) return 15u;
     if (pg->graph == GR_LYRIC || pg->graph==GR_LYRSTEP) return 8u;
@@ -2121,7 +2128,6 @@ static const char *act_name(uint32_t c)          /* column c's action (the foote
     static const char *const UP_GO[3] = {"LOAD", "ERASE", "SAVE"};
     uint32_t id = cur_page()->id[c & 3u];
     if (cur_page()->graph == GR_PUNCH) return "CLR AUTO";   /* (snd2) the punch-in lane only */
-    if (cur_page()->graph == GR_MOTION) return "CLEAR";
     if (cur_page()->graph == GR_EVENTS) return ev_act_name();
     if (cur_page()->graph == GR_LYRIC) return "TYPE";
     if (cur_page()->graph == GR_LYRSTEP) return "PLACE";
@@ -2149,7 +2155,6 @@ static int act_ready(void)
     uint32_t c = act_col(), s = song.sel, id;
     if (!c--)
         return 0;
-    if (cur_page()->graph == GR_MOTION) return !chain_busy() && motion_count(TSEL);
     if (cur_page()->graph == GR_EVENTS) return ev_act_ready();
     if (cur_page()->graph == GR_LYRIC) return 1;
     if (cur_page()->graph == GR_LYRSTEP) return !chain_busy() && lyr_get(song.sel)[0];
