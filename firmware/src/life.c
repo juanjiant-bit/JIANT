@@ -22,7 +22,8 @@
  * LIFE 0 (or a track's LIFE 0): none of it runs on the sound; every render bit for bit as before (tests/life_test.c). */
 #define LIFE_POOL __attribute__((section(".pool")))
 #define LIFE_SZ __attribute__((noinline, minsize))     /* (once a block, a part: its size, not its pace, counts) */
-#define LPM_L 32u                                       /* the cross-FM line (a power of 2): delays 0 .. ~28 samples */
+#define LPM_L 32u                                       /* the cross-FM line (a power of 2): delays 0 .. ~28 samples
+                                                         * (past 25 % up to 30: a longer line, the pool's headroom) */
 typedef struct {
     int32_t bx[NTRK], by[NTRK];                         /* the beings' places in the water, 0..65535 (y down) */
     uint32_t bclk[NTRK];                                /* each one's clock: its swim, its breath (quicker loud) */
@@ -44,6 +45,9 @@ typedef struct {
     uint32_t vph[NTRK * NVOICE];                        /* .. its wander's clock */
     int16_t vn[NTRK * NVOICE][3];                       /* .. its three noises (one worked out a block, in turn) */
     uint8_t blk;                                        /* (the blocks: the swim every 8th) */
+    uint16_t bst;                                       /* (V10.7.35, the owner: "at 100 % absolutely extreme") LIFE past
+                                                         * 25 % on everything, Q8: x1 at 25 % and under, x4 at 100 % (a
+                                                         * square: the knob's top the wild end) */
 } life_t;
 static life_t life LIFE_POOL;
 
@@ -88,6 +92,8 @@ static LIFE_SZ void life_master(void)
     for (k = 0; k < 4u; k++)                            /* the knobs at this LIFE, Q15 (x gate / 100 / 100: x 838 >> 8):
                                                          * FILTER, the sag's PITCH (up to 50 %), FX, the cross-FM's (past it) */
         sc[k] = (kn[k] * gate * 838) >> 8;
+    k = life_v[LIFE_AMT] > 25 ? (uint32_t)(life_v[LIFE_AMT] - 25) : 0u;
+    life.bst = (uint16_t)(256u + k * k * 768u / 5625u);
     if (!life.init) {                                   /* (where they start: two rows of three) */
         static const uint16_t X0[NTRK] = {12000, 32000, 52000, 22000, 42000, 60000};
         life.init = 1;
@@ -154,8 +160,10 @@ static LIFE_SZ void life_master(void)
         }
         cs = clamp(cs, -32767, 32767);
         es = clamp(es, 0, 32767);
-        life.xc[i] = (int16_t)(((cs * sc[0]) >> 15) >> 2);   /* (+-32 steps, << 8) */
-        life.xp[i] = (int16_t)(-(((es * sc[1]) >> 15) * 71 >> 15));   /* (a sag, ~30 ct) */
+        life.xc[i] = (int16_t)clamp(((((cs * sc[0]) >> 15) >> 2) * life.bst) >> 8, -32767, 32767);   /* (+-32 steps, << 8;
+                                                         * x4 at 100 %) */
+        life.xp[i] = (int16_t)clamp((-(((es * sc[1]) >> 15) * 71 >> 15) * life.bst) >> 8, -32767, 32767);   /* (a sag, ~30 ct;
+                                                         * ~2 semitones at 100 %) */
         life.xs[i] = (int16_t)((es * sc[2]) >> 15);
         life.pa[i] = (int16_t)sc[3];
     }
@@ -181,7 +189,7 @@ static LIFE_SZ int32_t life_ctx(uint32_t ti, int32_t *c)
 {
     int32_t lpt = life_pt(ti, MOD.on ? MOD.lof : 0);
     ti %= NTRK;
-    c[0] = life_v[LIFE_AMT] * lpt / 100;
+    c[0] = ((life_v[LIFE_AMT] * lpt / 100) * life.bst) >> 8;   /* (0..1024: x4 at 100 %) */
     c[1] = (life.xc[ti] * lpt) >> 8;
     c[2] = (life.xp[ti] * lpt) >> 8;
     return lpt;
@@ -226,8 +234,9 @@ static __attribute__((noinline)) void life_voice(uint32_t vi, voice_t *v, vmod_t
         if (m->shape != 64 << 8)                        /* (+-8 steps of shape, when something moves it already: at
                                                          * its centre an engine's plain wave, ANALOG's cheap one, stays) */
             m->shape = clamp(m->shape + ((((n3 * a) >> 8) * 8) >> 7), -62 * 256, 190 * 256);
-        m->amp1 = mulq15(m->amp1, 32767 - ((((n3 + 32768) >> 1) * (((31 + (tire >> 4)) * a) >> 8)) >> 8));   /* (its level
-                                                         * breathing: down ~12 %, ~18 % tired) */
+        n3 = (((n3 + 32768) >> 1) * (((31 + (tire >> 4)) * a) >> 8)) >> 8;
+        m->amp1 = mulq15(m->amp1, 32767 - (n3 < 16384 ? n3 : 16384));   /* (its level breathing: down ~12 %, ~18 % tired;
+                                                         * at most half, LIFE 100 %) */
         v->env_out = m->amp1;
     }
     m->inc += (uint32_t)((int32_t)(m->inc >> 12) * fine);
@@ -261,7 +270,8 @@ static __attribute__((noinline)) void life_pm(uint32_t ti, int32_t *out, uint32_
             m += (g0[s] * src[s][i]) >> 15;
         m = clamp(m * 3, -32767, 32767);
         ln[w & (LPM_L - 1u)] = out[i];
-        d = (((A >> 7) * ((32768 + m) >> 7)) * 14) >> 8;   /* (Q8 samples: 0 .. ~27.8) */
+        d = (((((A >> 7) * ((32768 + m) >> 7)) * 14) >> 8) * life.bst) >> 8;   /* (Q8 samples: 0 .. ~27.8; past 25 % deeper, up to 30) */
+        d = d < (int32_t)(LPM_L - 2u) << 8 ? d : (int32_t)(LPM_L - 2u) << 8;
         r = w - (uint32_t)(d >> 8);
         f = d & 255;
         x0 = ln[r & (LPM_L - 1u)];
@@ -278,7 +288,8 @@ static LIFE_SZ void life_snd(track_t *t, mod_t *mp, int32_t *off)
 {
     static const uint8_t ID[3] = {P_CHOR, P_DLY, P_REV};
     uint32_t ti = (uint32_t)(t - trk) % NTRK, k, j;
-    int32_t x = (life.xs[ti] * life_pt(ti, mp->lof)) >> 8;
+    int32_t x = (((life.xs[ti] * life_pt(ti, mp->lof)) >> 8) * life.bst) >> 8;   /* (x4 at 100 %: the sends up to x3) */
+    x = x < 65534 ? x : 65534;
     for (k = 0; k < 3u; k++) {
         uint32_t id = ID[k];
         for (j = 0; j < mp->nk && mp->kid[j] != id; j++)

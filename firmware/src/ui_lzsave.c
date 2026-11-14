@@ -456,11 +456,13 @@ static __attribute__((noinline)) void graph_lz_presets(void)
         cv_text_in(88, 63, 148, &AF_X, "NO FAVORITES", T_TEXT, T_SURF);
         return;
     }
+    rows = (graph_h() - 2u) / 20u;                      /* (V10.7.35, the owner: the names larger, fewer a page) */
+    rows = rows > 7u ? 7u : rows;
     first = cur < rows / 2u ? 0u : cur - rows / 2u;
     if (total > rows && first + rows > total)
         first = total - rows;
     for (i = first; i < total && i < first + rows; i++) {
-        int32_t y = 2 + (int32_t)(i - first) * 15;
+        int32_t y = 2 + (int32_t)(i - first) * 20;
         int sel = i == cur;
         uint16_t bg = sel ? T_TINT : T_SURF;
         char nm[13];
@@ -474,18 +476,18 @@ static __attribute__((noinline)) void graph_lz_presets(void)
             en = ENGINES[e]->name;
         }
         if (sel)
-            cv_rect(90, y, 146, 14, bg);
+            cv_rect(90, y, 146, 19, bg);
         if (i == now)                                   /* (V10.7.33) the track's sound: a bar; edited and not saved, a dot */
-            cv_rrect(90, y + 4, snd_dirty(TSEL) ? 6 : 2, 6, snd_dirty(TSEL) ? 3 : 0, T_ACCENT, bg);
-        GFX_HOOK_ALIGN(0, y, 0, y + 14, AL_V, "sound preset row centred up/down");
-        cv_free_text(96, y + CAP_IN(X, 14), &AF_X, nm, T_TEXT, bg, 92);
+            cv_rrect(90, y + 6, snd_dirty(TSEL) ? 6 : 2, 7, snd_dirty(TSEL) ? 3 : 0, T_ACCENT, bg);
+        GFX_HOOK_ALIGN(0, y, 0, y + 19, AL_V, "sound preset row centred up/down");
+        cv_free_text(96, y + CAP_IN(M, 19), &AF_M, nm, T_TEXT, bg, e != TSEL->eng_req ? 100 : 124);
         if (favorite_has(e, k)) {
-            GFX_HOOK_ALIGN(0, y, 0, y + 14, AL_V, "sound preset star centred up/down");
-            cv_text_on(226, y + CAP_IN(S, 14), &AF_S, "*", T_ACCENT, bg);   /* (a favourite; 0.8.5 no icons) */
+            GFX_HOOK_ALIGN(0, y, 0, y + 19, AL_V, "sound preset star centred up/down");
+            cv_text_on(226, y + CAP_IN(S, 19), &AF_S, "*", T_ACCENT, bg);   /* (a favourite; 0.8.5 no icons) */
         }
         if (e != TSEL->eng_req) {                       /* (another engine's: LIST crosses engines) */
-            GFX_HOOK_ALIGN(0, y, 0, y + 14, AL_V, "sound preset row centred up/down");
-            cv_text_r(220, y + CAP_IN(X, 14), &AF_X, eng_abbr(en), T_TEXT, bg);
+            GFX_HOOK_ALIGN(0, y, 0, y + 19, AL_V, "sound preset row centred up/down");
+            cv_text_r(220, y + CAP_IN(X, 19), &AF_X, eng_abbr(en), T_TEXT, bg);
         }
     }
 }
