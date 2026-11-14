@@ -841,7 +841,7 @@ int main(void)
             gen_with(0, seeds, 50, 0);
             if (gs.mutant) {
                 mut++;
-                if (!strchr(gs.g->name, '+') || gs.g->bpm_hi < gs.g->bpm_lo || strncmp(ui.msg, "GENE: ", 6)) bad_mut++;   /* (V10.6z10: V10.6d named it GENE) */
+                if (!strchr(gs.g->name, '+') || gs.g->bpm_hi < gs.g->bpm_lo || strncmp(ui.msg, "GEN: ", 5)) bad_mut++;   /* (V10.6z10: V10.6d named it GENE; V10.7.33 GEN) */
                 project_capture(&proj_scratch);
                 if (!proj_pack(&proj_wire, &proj_scratch)) bad_mut++;
                 for (i = 0; i < 16u; i++) events_block(CTL);
@@ -917,7 +917,7 @@ int main(void)
             for (k = 0; k < GP_N; k++) gp.amt[k] = GA_AUTO;
             gp.complex = (uint8_t)((sd * 29u) % 100u); gp.swing = GA_AUTO; gp.human = 30;
             gen_go();
-            if (strncmp(ui.msg, "GENE: EXPLORE ", 14) || strcmp(gs.g->name, "EXPLORE")) name_bad++;
+            if (strncmp(ui.msg, "GEN: EXPLORE ", 13) || strcmp(gs.g->name, "EXPLORE")) name_bad++;
             for (k = 0; k < NTRK; k++) {
                 const track_t *t = &trk[k];
                 uint32_t r = gs.role[k], len = dlen(t), on = 0, c = 0, b;
@@ -1116,7 +1116,7 @@ int main(void)
             press(B_OCTUP); frames(4);
             seed0 = gp.seed;
             sig1 = steps_sig(&trk[0]);
-            bad += gcheck("  OCT+: a piece (GEN: HOUSE nnnn), the screen stays", ui.confirm == CF_DICE_ALL && !strncmp(ui.msg, "GENE: HOUSE ", 12) && sig1 != sig0);
+            bad += gcheck("  OCT+: a piece (GEN: HOUSE nnnn), the screen stays", ui.confirm == CF_DICE_ALL && !strncmp(ui.msg, "GEN: HOUSE ", 11) && sig1 != sig0);
             press(B_OCTUP); frames(4);
             bad += gcheck("  OCT+ again with the same settings: a new seed, another piece", gp.seed != seed0 && steps_sig(&trk[0]) != sig1);
             press(B_OCTDN);

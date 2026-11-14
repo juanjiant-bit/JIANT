@@ -392,6 +392,8 @@ static int up_store(uint32_t k, const char *name)
     }
     {
         int rc = up_put(k, &r);                         /* the record first, then its FM6 patch (up_fm6.c) */
+        if (rc == 0 || rc == 3)
+            snd_mark(TSEL);                             /* (V10.7.33: the sound saved, PRESETS' mark off) */
         if ((rc == 0 || rc == 3) && r.engine == ENGI_FM6) {
             int u = upf_store(k, (uint32_t)(TSEL - trk));
             if (u == 2)

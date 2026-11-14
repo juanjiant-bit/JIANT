@@ -141,36 +141,40 @@ static void graph_voice_lz(const track_t *t, const page_t *pg)
         py = y;
     }
 }
+/* (V10.7.33, the owner) EDIT > AUTO KNOBS (was FOCUS): "pick a knob and what moves it". On top the knob picked (KNOB 1) and its
+ * value (KNOB 2) as a bar of the thermal ramp (heat_col); under it what moves it and how much (KNOB 3 SRC, KNOB 4 AMT: the
+ * MOD slot aimed at it, the same MATRIX shows); the eight knobs at the foot, the one picked lit. (The gauge's circle gone) */
+static void focus_bar(int32_t y, int32_t f)             /* a track 220 px, 0..f (0..1000) of it in the ramp (heat_bar) */
+{
+    cv_rect(10, y, 220, 12, T_RAISE);
+    heat_bar(10, y, f * 220 / 1000, 220, 12, T_THEME);
+}
 static void graph_focus_lz(const track_t *t)
 {
-    const engine_t *e = trk_engp(t);
     uint32_t k = focus_k(), i;
-    int32_t j = focus_slot(k);
+    int32_t j = focus_slot(k), a = 0;
     const param_desc_t *d = track_desc(t, P_E0 + k);
-    const char *u = "", *pt = e->page_title[k >> 2];
+    const char *u = "";
     char b[24];
     param_format(d, t->p[P_E0 + k], b, &u);
     str_cpy(b + str_len(b), u, 24 - str_len(b));
-    lz_arc(120, 58, 44, 4, clamp(RATIO(d, enum_rank(d, t->p[P_E0 + k])), 0, 1000), T_RAISE, T_THEME);
-    GFX_HOOK_ALIGN(80, 0, 160, 0, AL_H, "FOCUS value centred in its gauge");
-    cv_text_in(80, 40 - AF_X_CAP_Y, 80, &AF_X, d->label, T_TEXT, T_SURF);
-    cv_text_in(70, 52 - AF_M_CAP_Y, 100, &AF_M, b, T_TEXT, T_SURF);
+    cv_text(10, 6, &AF_M, d->label, T_TEXT);
+    cv_text_r(230, 6, &AF_M, b, T_THEME, T_SURF);
+    focus_bar(28, clamp(RATIO(d, enum_rank(d, t->p[P_E0 + k])), 0, 1000));
+    ed_cap(10, 54, "MOVED BY", T_TEXT);
     if (j >= 0) {
         const param_desc_t *da = track_desc(t, P_M1AMT + 3u * (uint32_t)j);
-        char a[16];
+        a = t->p[P_M1AMT + 3u * (uint32_t)j];
         str_cpy(b, N_MSRC[clamp(t->p[P_M1SRC + 3u * (uint32_t)j], 0, MS_N - 1)], 24);
-        str_cpy(b + str_len(b), " > ", 4);
-        param_format(da, t->p[P_M1AMT + 3u * (uint32_t)j], a, &u);
-        str_cpy(b + str_len(b), a, 24 - str_len(b));
+        cv_text_r(230, 64, &AF_M, b, T_THEME, T_SURF);
+        param_format(da, a, b, &u);
         str_cpy(b + str_len(b), u, 24 - str_len(b));
+        cv_text(10, 64, &AF_M, b, T_TEXT);
+        a = RATIO(da, a < 0 ? -a : a);
+        a = a * 2 - 1000;                               /* (as much as it moves: a bipolar AMT's size) */
     } else
-        str_cpy(b, "NO MOD", 24);
-    cv_text_in(70, 74 - AF_X_CAP_Y, 100, &AF_X, b, j >= 0 ? T_THEME : T_TEXT, T_SURF);
-    str_cpy(b, pt && pt[0] != '-' ? pt : e->name, 16);
-    str_cpy(b + str_len(b), " ", 2);
-    fmt_int(b + str_len(b), (int32_t)(k & 3u) + 1);
-    str_cpy(b + str_len(b), "/4", 3);
-    ed_cap(10, 6, b, T_TEXT);
+        cv_text(10, 64, &AF_M, "NOTHING", T_DIM);
+    focus_bar(86, a);
     for (i = 0; i < 8u; i++) {                          /* E1..E8 */
         const param_desc_t *di = track_desc(t, P_E0 + i);
         int32_t x = 8 + (int32_t)i * 28;

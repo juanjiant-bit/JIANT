@@ -292,7 +292,7 @@ static void track_dist(track_t *t, int32_t *b, uint32_t n)
     }
 }
 
-/* (V10.7.33, the owner: CRUSH out of DIST's TYPE, a track's own) EDIT > PLAY 3, CRUSH (params.c cru_v, 0..127 shown as
+/* (V10.7.33, the owner: CRUSH out of DIST's TYPE, a track's own) EDIT > VOICES 3, CRUSH (params.c cru_v, 0..127 shown as
  * 0..100 %, a track each; 0: not run, DIST on or off): what DIST TYPE CRUSH was at that DRIVE, its own state (cru_s,
  * the pool): the ~55 Hz low cut, the held samples at a rate jittered around FS 12 / (12 + CRUSH) with a ramp between
  * them and the bits 4 .. 14 off (dist_shape_x's), the two-pole low-pass that closes with it (DIST's TONE moving it, as

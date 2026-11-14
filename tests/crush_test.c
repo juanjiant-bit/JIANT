@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* (V10.7.33) CRUSH, the track's own (fx.c track_crush, crush_block; params.c cru_v; EDIT > PLAY 3), through the real
+/* (V10.7.33) CRUSH, the track's own (fx.c track_crush, crush_block; params.c cru_v; EDIT > VOICES 3), through the real
  * sources (ui_test.c's):
  * 1. CRUSH 0: bit for bit the input (not run);
  * 2. the sound of DIST TYPE CRUSH at that DRIVE: against the code before (old_dist_crush below, fx.c track_dist with

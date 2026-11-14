@@ -1555,7 +1555,7 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
             for (i = 0; i < CHAIN_ROWS; i++) h = (h ^ (uint32_t)song_idx.scene[song_cur][i].on * (i + 1u)) * 16777619u;
         }
         if (pg->graph == GR_BROWSE)
-            h ^= list_get() * 977u + preset_favorite() * 31u;
+            h ^= list_get() * 977u + favorites.filter * 31u + pl_cur * 7919u + (uint32_t)snd_dirty(TSEL) * 104729u;
     }
     if (fx_on()) {                                   /* (0.8.5) FX's lens: the level, the module, the buses' values, the
                                                          * slicer's step, the output (MASTER), the punch lane */

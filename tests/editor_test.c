@@ -847,7 +847,7 @@ static int menu_protocol(void)
         {"CLICK", "OFF,REC,ON"}, {"CLICK LEVEL", "LOW,MID,HIGH"}, {"COUNT-IN", "OFF,1 BAR,2 BARS"},   /* (1.1: appended) */
         {"RESTORE LAST", "OFF,ON"}, {"SCALE LEDS", "OFF,ON"},                                        /* (1.2) */
         {"SCREEN OFF", "NEVER,5 MIN,15 MIN,30 MIN,60 MIN"}, {"TRACKS", "4,6"},   /* (0.6.18) */
-        {"LOAD", "ECO,LITE,FULL"}};                                                                 /* (0.6.30) */
+        {"CPU LOAD", "ECO,LITE,FULL"}};   /* (V10.7.33: CPU LOAD, was LOAD) */                                                                 /* (0.6.30) */
     static const int32_t DEF[20] = {-1, 0, 0, 0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2};   /* (COLOR: the default palette) */
     static const uint8_t TAB[20] = {0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 2, 2, 2, 3, 1, 0, 2, 2};      /* DISPLAY CONTROL AUDIO SYSTEM
                                                          * (p1: LOAD, 19, in AUDIO) */

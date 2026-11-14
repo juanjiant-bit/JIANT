@@ -434,9 +434,10 @@ static __attribute__((noinline)) void graph_sound(void)
  * plays each as it passes; OCT+ keeps it, OCT- brings back the sound from before the browse (ui_input.c br_undo) */
 static __attribute__((noinline)) void graph_lz_presets(void)
 {
-    uint32_t total, cur = preset_pos(&total), e, k, i, first, r, rc = 0, rows = (graph_h() - 2u) / 15u;
+    uint32_t total, now = preset_pos(&total), cur = pl_at(&total), e, k, i, first, r, rc = 0, rows = (graph_h() - 2u) / 15u;
+    uint32_t he = total ? preset_at(cur, &k) : TSEL->eng_req;   /* (V10.7.33) the engine of the sound picked lit */
     rows = rows > 9u ? 9u : rows;
-    for (r = 0; r < NENG_SHOWN; r++) if (eng_vis(r) == TSEL->eng_req) rc = r;
+    for (r = 0; r < NENG_SHOWN; r++) if (eng_vis(r) == he) rc = r;
     first = rc < rows / 2u ? 0u : rc - rows / 2u;
     if (first + rows > NENG_SHOWN) first = NENG_SHOWN > rows ? NENG_SHOWN - rows : 0u;
     for (r = first; r < NENG_SHOWN && r < first + rows; r++) {
@@ -448,7 +449,7 @@ static __attribute__((noinline)) void graph_lz_presets(void)
         cv_clip_text(21, y + CAP_IN(X, 14), &AF_X, ENGINES[e]->name, T_TEXT, T_SURF, 46);
         n[0] = 0; fmt_int(n, (int32_t)preset_shown(e));
         cv_text_r(82, y + CAP_IN(X, 14), &AF_X, n, T_TEXT, T_SURF);
-        if (sel) cv_rect(0, y + 2, 2, 10, T_ACCENT);
+        if (sel && he < NENGINES) cv_rect(0, y + 2, 2, 10, T_ACCENT);
     }
     cv_rect(86, 2, 1, (int32_t)rows * 15 - 2, T_DIM);
     if (!total) {
@@ -474,6 +475,8 @@ static __attribute__((noinline)) void graph_lz_presets(void)
         }
         if (sel)
             cv_rect(90, y, 146, 14, bg);
+        if (i == now)                                   /* (V10.7.33) the track's sound: a bar; edited and not saved, a dot */
+            cv_rrect(90, y + 4, snd_dirty(TSEL) ? 6 : 2, 6, snd_dirty(TSEL) ? 3 : 0, T_ACCENT, bg);
         GFX_HOOK_ALIGN(0, y, 0, y + 14, AL_V, "sound preset row centred up/down");
         cv_free_text(96, y + CAP_IN(X, 14), &AF_X, nm, T_TEXT, bg, 92);
         if (favorite_has(e, k)) {

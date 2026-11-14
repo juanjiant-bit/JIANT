@@ -463,7 +463,7 @@ int main(void)
     bad += check("an empty loop: nothing made, said so", !chain_config.count && !song_draft && strstr(ui.msg, "EMPTY") != 0);
     /* ---- GENE 1's FORM card: MY LOOP whole on it */
     lt_clear(); gp.form = 3; gp.page = 0;
-    nav_put(SEC_HOME, "GENE 1"); gp.hot = 3;
+    nav_put(SEC_HOME, "GEN 1"); gp.hot = 3;
     ut_card_bad = ut_card_txt = 0; ui.force = 1; frame();
     {
         char v[16];

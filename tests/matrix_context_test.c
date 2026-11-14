@@ -57,7 +57,7 @@ int main(void)
     TSEL->eng_req=ENGI_DRUM;assert(TSEL->p[P_M1DST]==MD_SHP&&!strcmp(mod_dst_name(TSEL,MD_SHP),"N/A"));
     engine(ENGI_DRUM);for(unsigned k=0;k<NTRK;k++)for(unsigned j=0;j<NMSLOT;j++)trk[k].p[P_M1SRC+3*j]=0;
     for(unsigned n=0;n<40;n++){macro_dice(3);for(unsigned k=0;k<NTRK;k++)for(unsigned j=0;j<NMSLOT;j++)if(trk[k].p[P_M1SRC+3*j])assert(mod_dst_offer(&trk[k],trk[k].p[P_M1DST+3*j]));macro_dice(2);}
-    nav_put(SEC_LFO,"MOD");TSEL->p[P_M1DST]=MD_CLIP;frame();screen_save("build/song-check","matrix-context");
+    nav_put(SEC_LFO,"MATRIX");TSEL->p[P_M1DST]=MD_CLIP;frame();screen_save("build/song-check","matrix-context");
     printf("matrix context: %u mode configurations; navigation, aliases, legacy projects and DICE passed\n",configurations);
     return 0;
 }

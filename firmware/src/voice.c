@@ -674,7 +674,7 @@ static uint32_t trk_vmode(const track_t *t)
 {
     return ENGINES[t->engine]->oneshot ? V_POLY : (uint32_t)t->p[P_VOICE] & 3u;
 }
-static __attribute__((noinline)) int trk_drone(const track_t *t) { return t->p[P_VOICE] == V_DRONE && t->engine != ENGI_DRUM; }   /* (DRUM: the one oneshot) */
+static inline int trk_drone(const track_t *t) { return t->p[P_VOICE] == V_DRONE && t->engine != ENGI_DRUM; }   /* (DRUM: the one oneshot) */
 
 /* ------------------------------------------------- the shared voice budget --- */
 /* (JIANT 0.6.16) the load budget: while it is set the sound may not grow: a new note takes a voice instead of adding
@@ -1557,7 +1557,10 @@ static void mono_remove(track_t *t, uint32_t note)
  * lets it go (the sequencer's never: its repeated note holds); MUTE (seq.c events_block), a clear (latch_drop), STOP
  * (seq_stop), PANIC (trk_all_off) and POLY turned off DRONE (ui_input.c: panic_req) let it all go */
 #define DR_OLD(t) ((t)->mono_stack[7])
-static __attribute__((noinline)) void drone_let(track_t *t, uint32_t m)   /* the voices of mask m let go, the gesture over */
+#ifndef FM1_OPAQUE
+#define FM1_OPAQUE(v) ((void)(v))                    /* (the host: no reach to mind) */
+#endif
+static __attribute__((noinline)) void drone_let_f(track_t *t, uint32_t m)   /* the voices of mask m let go, the gesture over */
 {
     uint32_t i;
     for (i = 0; i < NVOICE; i++)
@@ -1565,6 +1568,14 @@ static __attribute__((noinline)) void drone_let(track_t *t, uint32_t m)   /* the
             voice_off_at(t, &t->v[i]);
     DR_OLD(t) = 0;
     t->nmono = 0;
+}
+/* (V10.7.33) drone_let from anywhere through a register: its callers include the RAM code (trk_note_off, the sequencer's),
+ * drone_let_f is in the flash, out of a direct call's reach */
+static inline void drone_let(track_t *t, uint32_t m)
+{
+    void (*f)(track_t *, uint32_t) = drone_let_f;
+    FM1_OPAQUE(f);
+    f(t, m);
 }
 static int drone_on(track_t *t, uint32_t note)          /* 1: a voice of its own wanted (trk_note_on, as POLY) */
 {
