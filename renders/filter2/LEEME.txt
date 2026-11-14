@@ -16,6 +16,11 @@ Qué cambió (lo que pidió Juan)
 - BREAK: el corte salta a tempo con un patrón de 16 pasos. RATE pasa a llamarse DIV: 1/8, 1/16, 1/16T, 1/32. Más o
   menos un paso de cada cinco sale "roto".
 - DUST: picos sueltos del corte hacia arriba. RATE es la densidad: de crujido ralo a chisporroteo denso.
+- Perilla nueva DEST en FILTER 2 (que ahora es NOISE · RATE · MODE · DEST): un crossfade en cinco pasos entre el corte
+  y la afinación: FILT (solo el corte, el valor por defecto: lo de la V10.7.30), F75, MIX (los dos a la mitad), P75,
+  PITCH (solo la afinación). En la afinación, SOFT/STEP/BREAK/DUST llegan a ±1 octava con NOISE 100; METAL se vuelve FM
+  (modulación de fase afinada a la nota, índice ~2,5). En VOICE no hay DEST (ese lugar es su CONS).
+- KEY se fue a una página propia, FILTER 3. DRIVE se queda en FILTER, porque es la perilla de la potencia.
 - Fuente nueva de la matriz MOD: F.NOISE. Es el mismo modulador y se puede mandar a PITCH (o a cualquier destino),
   aunque el NOISE de FILTER 2 esté en 0.
 - LP24 con DRIVE > 0: entra más fuerte al recorte (hasta x6; en ANALOG manda su propio DRIVE por voz), compensa el nivel cuando cerrás el filtro o subís la RES
@@ -38,6 +43,11 @@ Archivos
 04_fnoise_pitch_{step,soft,break}.wav
     F.NOISE -> PITCH (slot 1, AMT 20 ≈ ±3,7 semitonos) con el NOISE de FILTER 2 en 0, así que el filtro no se mueve.
     STEP: saltos de altura al azar. SOFT: deriva. BREAK: saltos de altura a tempo con el riff.
+10_dest_<modo>_filt_mix_pitch.wav
+    Cada modo con NOISE 70 % sobre el riff, tres tramos de 2 s: DEST en FILT, en MIX y en PITCH. Solo "ahora", porque
+    DEST es nuevo.
+11_metal_fm_pitch_ratios_nota.wav
+    METAL con DEST PITCH (FM), NOISE 70 %, recorriendo las ocho relaciones sobre una nota sostenida.
 05_lp24_barrido_drive{50,100}_{antes,ahora}.wav, 05_ms20_barrido_v29.wav
     CUT y RES barridos sobre un Do4 sostenido (el SWEEP de hostsim, ANALOG preset 9).
 06_lp24_cerrando_drive100_{antes,ahora}.wav, 06_ms20_cerrando_v29.wav
@@ -72,7 +82,8 @@ Qué cambia en proyectos viejos
 ------------------------------
 - Proyectos con FILTER 2 en sus valores por defecto (NOISE 0) y LP24 con DRIVE 0: suenan igual, bit por bit.
 - Proyectos guardados con la beta V10.7.30 que usaban METAL, BREAK o DUST: cargan con los mismos valores pero suenan
-  distinto (ahora modulan el corte), y su RATE pasa a ser RATIO o DIV.
+  distinto (ahora modulan el corte), y su RATE pasa a ser RATIO o DIV. Su DEST queda en FILT y su KEY aparece en
+  FILTER 3.
 - LP24 con DRIVE > 0 (incluido ANALOG con su DRIVE y el viejo MS20, que se toca como LP24 con DRIVE >= 70 %): el nivel
   compensado al cerrar, la salida un poco más baja al subir DRIVE (en ANALOG queda cerca del MS20 de la V10.7.29), y con
   RES arriba de ~90 % ahora auto-oscila.

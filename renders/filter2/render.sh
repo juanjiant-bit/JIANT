@@ -8,6 +8,7 @@
 # KEY 85, NOISE 86, RATE 87, MODE 88 (SOFT 115, STEP 89, METAL 64, BREAK 38, DUST 12), the part's DRIVE 89; all stored
 # 127 - the amount (127: 0 %). NOISE 30 / 70 / 100 %: 89 / 38 / 0. METAL's RATIO x0.5 .. x4: RATE 127 - 16 k - 8.
 # BREAK's DIV 1/8 1/16 1/16T 1/32: RATE 111 79 47 15. MOD slot 1: SRC 49, DEST 50, AMT 51 (F.NOISE 26, PITCH 1).
+# FILTER 2's DEST (lane 1's slot) 84: FILT 127, MIX 64, PITCH 0.
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd); NEW=$(cd "$HERE/../.." && pwd); BASE=${1:?"usage: $0 BASE V29"}; V29=${2:?"usage: $0 BASE V29"}
 T=$(mktemp -d)
@@ -79,4 +80,18 @@ r v29 y3 0 9 SECS=6 NOTE=7 PSET=112:5,120:40 PSWEEP=119:127:10; join 06_ms20_cer
 r v29 y4 0 9 SECS=6 NOTE=7 PSET=112:5,119:60 PSWEEP=120:90:127; join 07_ms20_res_90a127_v29 "$T/y4.wav"
 r v29 y5 0 14 SECS=6 STEPS=$RIFF PSET=112:5,119:50,120:75,5:40; join 08_ms20_fatbass_riff_v29 "$T/y5.wav"
 r v29 y6 2 0 SECS=6 STEPS=$RIFF PSET=112:5,113:60,114:100; join 09_ms20_phase_riff_v29 "$T/y6.wav"
+# 5. DEST: each MODE at NOISE 70 % on the riff, FILT / MIX / PITCH one after the other; METAL on the pitch (FM) across its
+#    ratios, a held note (now only: DEST is new)
+for m in soft:115:89 step:89:76 metal:64:71 break:38:79 dust:12:89; do
+    n=${m%%:*}; v=${m#*:}; mv=${v%%:*}; rt=${v#*:}; nl=""
+    for dv in 127 64 0; do
+        r new d$dv 0 0 SECS=2 STEPS=$LEAD PSET=119:90,120:40,88:$mv,87:$rt,86:38,84:$dv; nl="$nl $T/d$dv.wav"
+    done
+    join "10_dest_${n}_filt_mix_pitch" $nl
+done
+nl=""
+for k in 0 1 2 3 4 5 6 7; do rt=$((127 - 16 * k - 8))
+    r new mp$k 0 9 SECS=2 NOTE=7 PSET=119:90,120:20,88:64,87:$rt,86:38,84:0; nl="$nl $T/mp$k.wav"
+done
+join 11_metal_fm_pitch_ratios_nota $nl
 rm -rf "$T"

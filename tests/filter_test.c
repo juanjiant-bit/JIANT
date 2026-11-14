@@ -515,6 +515,39 @@ int main(int argc, char **argv)
         check("METAL follows the note: x1 periodic at the note (sidebands on its harmonics), x1.41 not",
               ac[0] > 0.95 && ac[1] < ac[0] - 0.1, "its period's autocorrelation x1 %.3f, x1.41 %.3f, off %.3f", ac[0], ac[1], ac[2]);
     }
+    {   /* (codex/filter2-mod) METAL with DEST PITCH: the part phase modulated (its line), in tune at x1 (periodic at the
+         * note), off at x1.41; the filter untouched (DEST's FILTER share 0); silence in silent out */
+        double ac[2], ch[2], fhz = (double)pitch_inc(48u * 16u) * FS / 4294967296.0, tl = 0;
+        static int32_t dry[FS];
+        int k;
+        static const int16_t RV[2] = {127 - 20, 127 - 40};
+        track_t *t = part(ENGI_PHASE, 0, 127, 0, 48);
+        sph = 0;
+        run(t, 3, 48, fhz, FS, 16000, 0);
+        memcpy(dry, buf, sizeof dry);
+        for (k = 0; k < 2; k++) {
+            uint32_t i;
+            double e = 0, d = 0;
+            t = part(ENGI_PHASE, 0, 127, 0, 48);
+            t->p[P_FNZ] = 0;
+            t->p[P_FNMD] = 64;
+            t->p[P_FNRT] = RV[k];
+            t->p[P_FDST] = 0;
+            sph = 0;
+            run(t, 3, 48, fhz, FS, 16000, 0);
+            ac[k] = acorr(FS / 4u, FS, (uint32_t)lround(FS / fhz));
+            for (i = FS / 4u; i < FS; i++) {            /* (how far from the sine: against the sine's own level) */
+                d += (double)(buf[i] - dry[i]) * (buf[i] - dry[i]);
+                e += (double)dry[i] * dry[i];
+            }
+            ch[k] = sqrt(d / e);
+            run(t, 0, 48, 0, FS / 2u, 0, 0);
+            tl = hiss(FS / 4u, FS / 2u) > tl ? hiss(FS / 4u, FS / 2u) : tl;
+        }
+        check("METAL on the pitch (DEST PITCH): phase modulated, in tune at x1, off it at x1.41, silence in silent out",
+              ac[0] > 0.95 && ac[1] < ac[0] - 0.1 && ch[0] > 0.3 && tl < 1,
+              "autocorrelation at the period x1 %.3f, x1.41 %.3f; changed by %.2f of the sine; after %.2f", ac[0], ac[1], ch[0], tl);
+    }
     {   /* BREAK in time: CUT held through each 1/16 (its own clock, the transport stopped), jumping between them */
         track_t *t = part(ENGI_PHASE, 0, 70, 40, 48);
         uint32_t len = beat_samples() / 4u, s0, k, nb = 0;

@@ -1131,17 +1131,21 @@ stays as a hidden twin of LP24: a project, a preset or a song that has TYPE MS20
 least 70 % (the closest to what it was), and shows LP24; the TYPE knob passes over it. GEN's EBM bass now asks for
 LP24 with its DRIVE at 55 % or more.
 
-### FILTER 2: KEY, NOISE, RATE, MODE (every engine but DRUM-X and EXT)
+### FILTER 2: NOISE, RATE, MODE, DEST · FILTER 3: KEY (every engine but DRUM-X and EXT)
 
-EDIT > **FILTER 2** (codex/filters2), after FILTER. All four at their stored default are off: every project
-and preset of before sounds the same.
+EDIT > **FILTER 2** (codex/filters2), after FILTER, is a modulator: NOISE · RATE · MODE · **DEST**. **FILTER 3**
+(codex/filter2-mod) holds **KEY**. All of them at their stored default are off: every project and preset of before
+sounds the same.
 
-- **KEY**: keyboard tracking, 0 .. 100 %. The cutoff follows the note you play: at 100 % an octave up opens it an
-  octave. On ANALOG it starts at 21 % (the fixed tracking its filter always had) and goes down to 0 % or up to 100 %;
-  on the other engines it starts at 0 %. A per-voice filter (ANALOG, MATH) follows each voice's note; the track's filter
-  follows the newest note.
-- **NOISE**: the depth: how far the modulator moves CUT, 0 .. 100 %. 0 leaves the sound untouched. At 100 % CUT
-  swings about ±3.5 octaves. The curve is fine at the bottom: 30 % ≈ ±0.6 octave, 70 % ≈ ±1.8 octaves.
+KEY moved off FILTER 2 to make room for DEST. DRIVE stays on FILTER: it is the filter's power, the knob you reach for
+with TYPE, CUT and RES, while KEY is set once for a sound. FILTER 3 is one knob, like RETRIG or STEREO.
+
+- **KEY** (FILTER 3): keyboard tracking, 0 .. 100 %. The cutoff follows the note you play: at 100 % an octave up opens
+  it an octave. On ANALOG it starts at 21 % (the fixed tracking its filter always had) and goes down to 0 % or up to
+  100 %; on the other engines it starts at 0 %. A per-voice filter (ANALOG, MATH) follows each voice's note; the track's
+  filter follows the newest note.
+- **NOISE**: the depth, 0 .. 100 %. 0 leaves the sound untouched. At 100 % CUT swings about ±3.5 octaves (with DEST on
+  FILTER). The curve is fine at the bottom: 30 % ≈ ±0.6 octave, 70 % ≈ ±1.8 octaves.
 - **RATE**: the modulator's speed, or its ratio or step, by MODE (below).
 - **MODE**: how the modulator moves CUT. Every MODE only moves the filter's cutoff. None mixes in a sound of its own
   (codex/filter2-mod; before, METAL, BREAK and DUST put a texture in place of the sound).
@@ -1159,13 +1163,22 @@ and preset of before sounds the same.
     Each jump glides over ~3 ms, so it does not click.
   - **DUST**: sparse spikes up, each dying in ~5 ms. RATE is the density: about 2 a second at 0 % (crackle), hundreds
     at 100 % (a fizz).
+- **DEST**: what the modulator moves, a crossfade in five steps: **FILT** (only the cutoff: the default, V10.7.30's),
+  **F75** (3/4 cutoff, 1/4 pitch), **MIX** (both, each at half), **P75**, **PITCH** (only the pitch). NOISE stays the
+  overall depth. On the pitch, at PITCH and NOISE 100 %:
+  - SOFT, STEP, BREAK and DUST move every voice's pitch up to about ±1 octave (DUST's spikes up), once a block;
+  - METAL becomes FM: the track's sound is phase-modulated by the same sine, at RATIO of the note, so the sidebands are
+    in tune (x0.5 .. x4) or bell-like (x1.41, x2.76); the index is about 2.5 at 100 % (bright, not noise). It runs
+    through COMB's delay line, so with TYPE COMB / COMB- METAL's pitch half is off (the cutoff half is off there anyway).
+  On VOICE there is no DEST (its CONS uses that slot): it is always FILT there; route **F.NOISE** to PITCH instead.
 
 The modulator is also the MOD matrix's source **F.NOISE** (below): route it to **PITCH** (or any DEST) at any AMT,
-whatever FILTER 2's NOISE is (NOISE 0 and a slot F.NOISE → PITCH: the pitch moves, the filter does not). In METAL,
-F.NOISE is SOFT's wander at RATE (the audio-rate sine is only the filter's).
+whatever FILTER 2's NOISE and DEST are: it is the raw modulator, full scale, and the slot's AMT alone sets its depth
+(NOISE 0 and a slot F.NOISE → PITCH: the pitch moves, the filter does not). In METAL, F.NOISE is SOFT's wander at RATE
+(the audio-rate sine is only for CUT and DEST's pitch).
 
-Projects saved with V10.7.30's FILTER 2 load with the same values, but METAL, BREAK and DUST now sound different (they
-modulate CUT). With NOISE at 0 nothing changes.
+Projects saved with V10.7.30's FILTER 2 load with the same values (DEST at FILT, KEY now shown on FILTER 3), but METAL,
+BREAK and DUST now sound different (they modulate CUT). With NOISE at 0 nothing changes.
 
 With the track's filter fully open (LP, CUT 127, RES 0), every MODE lowers CUT by its depth so the moving filter is
 heard, as LFO DEST FILTER does. FILTER 2 does not move COMB / COMB- (KEY does not either).

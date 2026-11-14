@@ -197,7 +197,11 @@ static fnst_t fns[NTRK] __attribute__((section(".bss.fn")));   /* (sections of t
 typedef struct {
     int32_t cut, kq;                                    /* the NOISE's CUT offset, Q8 of its steps; KEY */
     int16_t span;                                       /* .. how far CUT moves (tf_run: an open filter's CUT down) */
-    uint8_t amt, drv;                                   /* NOISE eased (0 .. 126); LP24's DRIVE (ANALOG's, the part's) */
+    int16_t pit, pmd;                                   /* (filter2-mod: DEST) the pitch's offset (1/16 semitones, the
+                                                         * voices'), METAL's phase modulation (its delay's swing, Q4
+                                                         * samples: fn_pm) */
+    uint8_t amt, drv, pmon;                             /* NOISE eased (0 .. 126); LP24's DRIVE (ANALOG's, the part's);
+                                                         * fn_pm's line live */
 } fnb_t;
 static fnb_t fnb[NTRK] __attribute__((section(".bss.fn")));   /* the block's, track_post's (the voices': the next block's) */
 #define FN_OK(t) (ENGINES[(t)->engine] != &ENG_DRUM && ENGINES[(t)->engine] != &ENG_INPUT)
@@ -220,13 +224,15 @@ static __attribute__((noinline)) void fn_tick(const track_t *t, const engine_t *
     fnst_t *s = &fns[ti];
     fnb_t *b = &fnb[ti];
     int32_t d = ok ? fn_inv(t->p, P_FNZ) : 0, r = fn_inv(t->p, P_FNRT), v, dep;
-    uint32_t o = s->ph, m = fn_mode(t->p), z;
+    uint32_t o = s->ph, m = fn_mode(t->p), z, pw;
     b->kq = !ok ? 0 : (int32_t)(e == &ENG_ANALOG ? fkey_rank(t->p[P_FKEY]) : (uint32_t)fn_inv(t->p, P_FKEY)) * 1024 / 27;
     b->drv = (uint8_t)(e == &ENG_ANALOG ? t->p[P_E6] & 127 : ok ? fn_inv(t->p, P_FDRV) : 0);
-    b->cut = b->span = s->mdep = s->src = 0;
+    b->cut = b->span = b->pit = b->pmd = s->mdep = s->src = 0;
     b->amt = (uint8_t)((d * (d + 127)) >> 8);
     if (!ok)
         return;
+    pw = e == &ENG_FORMANT ? 0 : (4 - (((uint32_t)t->p[P_FDST] & 127u) * 5u >> 7)) * 32u;   /* (DEST: the pitch's share,
+                                                         * Q7; VOICE's FILTER, its CONS there) */
     s->ph += LFO_INC[r] << 3;                           /* (0.4 .. 320 Hz) */
     if (s->ph < o) {
         s->a = s->b;
@@ -249,17 +255,49 @@ static __attribute__((noinline)) void fn_tick(const track_t *t, const engine_t *
     s->src = (int16_t)v;                                /* (every MODE's within 16 bits) */
     if (!d)
         return;
-    dep = b->amt * 99;                                  /* (126: 12474, 3.5 octaves) */
+    dep = (b->amt * 99 * (int32_t)(128u - pw)) >> 7;   /* (126: 12474, 3.5 octaves; DEST's FILTER share) */
     b->span = (int16_t)dep;
     if (m == FN_METAL) {                                /* (the sine under ~1.9 kHz: octaves down) */
-        uint32_t inc = (pitch_inc((uint32_t)clamp(trk_newest(t, 60 * 16), 0, 2047)) >> 8) * RAT[r >> 4];
+        uint32_t inc = (pitch_inc((uint32_t)clamp(trk_newest(t, 60 * 16), 0, 2047)) >> 8) * RAT[r >> 4], dq;
         while (inc > 0x0B000000u)
             inc >>= 1;
         s->minc = inc;
         s->mdep = (int16_t)dep;
+        dq = 0x66666666u / ((inc >> 8) | 1u) >> 4;      /* (the pitch: its delay's swing for an index ~2.5, Q4 samples,
+                                                         * 1000 at most: the line's) */
+        b->pmd = (int16_t)(((dq < 16000u ? dq : 16000u) * b->amt / 126u * pw) >> 7);
         return;
     }
     b->cut = (v * dep) >> 15;
+    b->pit = (int16_t)((((v * b->amt * 3) >> 16) * (int32_t)pw) >> 7);   /* (+-1 octave at 100 %: 189 1/16 semitones) */
+}
+/* (codex/filter2-mod) METAL on the pitch (DEST): the part's sum through a short line whose delay a sine at the note's
+ * ratio swings (phase modulation: FM's sidebands, in tune with the note), COMB's line (in the pool: COMB plays it not
+ * then); its swing glided a block at a time (in, out: no click), its own phase (BREAK's clock, METAL not using it) */
+static __attribute__((noinline)) void fn_pm(uint32_t ti, int32_t *out, uint32_t n)
+{
+    fnst_t *s = &fns[ti];
+    int16_t *b = comb_buf[ti];
+    uint32_t w = comb_w[ti], i, ph = s->clk;
+    int32_t dd, y;
+    if (!fnb[ti].pmon) {                                /* (in: the line cleared, the last time's stale) */
+        memset(comb_buf[ti], 0, sizeof comb_buf[ti]);
+        s->env = 0;
+        fnb[ti].pmon = 1;
+    }
+    dd = s->env += (fnb[ti].pmd - s->env) >> 2;
+    if (!dd && !fnb[ti].pmd)
+        fnb[ti].pmon = 0;
+    for (i = 0; i < n; i++) {
+        uint32_t d = (uint32_t)(dd * (32768 + fn_sin(ph))) >> 12, r = w - (d >> 8);   /* (Q8 samples: 0 .. the swing) */
+        b[w & (COMB_LEN - 1u)] = (int16_t)clamp(out[i] >> 1, -32767, 32767);
+        y = b[r & (COMB_LEN - 1u)];
+        out[i] = (y + (((b[(r - 1u) & (COMB_LEN - 1u)] - y) * (int32_t)(d & 255u)) >> 8)) << 1;
+        w++;
+        ph += s->minc;
+    }
+    comb_w[ti] = (uint16_t)w;
+    s->clk = ph;
 }
 /* the SVF's coefficients at cut, damping k (tsvf_coef_k) out of line: METAL's every 4 samples (tf_run, tf_lp24), the
  * divide out of their sample loops */
@@ -554,6 +592,10 @@ static __attribute__((noinline)) void track_post(track_t *t, const engine_t *e, 
         track_filter(t, out, n, 1, t->p[P_E4], t->p[P_E5]);
     else
         track_filter(t, out, n, e == &ENG_LOFI, t->p[P_FCUT], t->p[P_FRES]);
+    if (tf_cmb[ti])                                     /* (filter2-mod) METAL on the pitch: COMB's line, not COMB's */
+        fnb[ti].pmon = 0;
+    else if (fnb[ti].pmd || fnb[ti].pmon)
+        fn_pm(ti, out, n);
     if (tf_on[ti] == 2u)                                /* (no SVF ran: the flag voice_block put, again next block) */
         tf_on[ti] = 0;
 }
@@ -1951,7 +1993,8 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
     }
     if (!env && !m.amp0 && v->stage == 2 && !e->sampled)
         return 0;                                   /* held at a silent sustain (SUS 0): nothing to render */
-    pitch = v->pitch_cur + t->pfx_pit + c->tune + c->bend16 + ((c->lfo * p[P_LD_PIT] * 3) >> 15) + ((m.envq15 * p[P_ED_PIT] * 3) >> 15);
+    pitch = v->pitch_cur + t->pfx_pit + c->tune + c->bend16 + ((c->lfo * p[P_LD_PIT] * 3) >> 15) + ((m.envq15 * p[P_ED_PIT] * 3) >> 15) +
+            fnb[c->ti].pit;                     /* (filter2-mod) FILTER 2's DEST on the pitch, the last block's */
     m.pitch16 = clamp(pitch, 0, 2047);
     m.inc = pitch_inc(m.pitch16);
     dfine = dcut = 0;
