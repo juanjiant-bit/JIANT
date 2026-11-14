@@ -3144,7 +3144,7 @@ static void ui_input_frame(void)
             ui.bpm_t = 40;                              /* the header's BPM lights up; no message over the header */
         }
     } else if ((s = panel_enc(EN_SELECT)) != 0 && !lay && !ui.menu) {   /* (0.9.2, rule 1) SELECT alone: the section's
-                                                        * chain, a page a detent (HOME's: MACROS SCOPE GENE 1..3) */
+                                                        * chain, a page a detent (HOME's: MACROS TIMELINE ARRANGE PARTS SCOPE GENE 1..3) */
         uint64_t cph = cp_held();
         if (cph)                                        /* (seq2h) step keys held: COPY them (the range between) */
             cp_copy(cph);
