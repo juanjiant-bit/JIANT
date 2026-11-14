@@ -218,7 +218,7 @@ static __attribute__((noinline)) int16_t *mom_vp(uint32_t k, const param_desc_t 
     if (ui.menu || ui.confirm || gen_on() || mac_latch || lock_held())
         return 0;
     if (ui.home) {                                      /* (V10.7.24) SCOPE: its globals (SPACE: MIX, SIZE kept too) */
-        if (home_macros())
+        if (home_macros() || home_life())
             return 0;
         *d = &GP[HS_ID[k & 3u]];
         vp = &song.g[HS_ID[k & 3u]];
@@ -679,14 +679,15 @@ static void macro_dice(uint32_t mode)
     uint32_t k, j, n;
     for (k = 0; k < NTRK; k++) {
         track_t *t = &trk[k];
-        uint32_t has = 0, used = 0;
+        uint32_t has = 0;
+        uint64_t used = 0;                              /* (V10.7.34: MD_N past 32) */
         for (j = 0; j < 4u; j++) {
             int16_t *m = &t->p[P_M1SRC + 3u * j];
             if (m[0] >= MS_M1 && m[0] < MS_M1 + 4) {
                 if (mode) m[0] = m[1] = m[2] = 0;
                 else has = 1;
             }
-            if (m[0]) used |= 1u << m[1];
+            if (m[0]) used |= 1ull << (m[1] & 63);
         }
         if (has || mode == 2u)
             continue;
@@ -712,7 +713,7 @@ static void macro_dice(uint32_t mode)
             }
             if (tries == 16u)
                 continue;
-            used |= 1u << d;
+            used |= 1ull << d;
             m[0] = (int16_t)(MS_M1 + (k + 2u * n) % 4u);
             m[1] = (int16_t)d;
             m[2] = (int16_t)((d == MD_PITCH ? 4 + (int32_t)(rng() % 9u) : 24 + (int32_t)(rng() % 40u)) * (rng() & 1u ? 1 : -1));

@@ -248,13 +248,9 @@ static uint32_t routes_count(void)                      /* the MOD slots whose S
 /* ECO: 0.8.4's HOME (graph_ecosys) in the lens's panel: the cytoplasm's granules drifting, the six beings swimming free
  * over the whole panel (0.9.7: variant A, eco_being), each with its number under it (the selected one larger, its number in
  * the theme's colour; a mutation landed, white) */
-static void graph_eco(void)
+static void eco_water(int32_t bot, uint32_t still)       /* the cytoplasm: granules drifting (MACROS, LIFE) */
 {
-    uint32_t c, k, still = ANIM_OFF() != 0;
-    int32_t bx[ECO_N], by[ECO_N], bot = eco_bot();
-    (void)eco_step();                                   /* (the swim, once a frame) */
-    (void)bg_energy();                                  /* (the output's level kept as it was read: once a frame) */
-    char b[48];
+    uint32_t k;
     for (k = 0; k < 22u; k++) {                         /* the cytoplasm: granules drifting */
         uint32_t h = k * 2654435761u;
         int32_t gx = 10 + (int32_t)((h >> 8) % 220u + anim_fr * (1u + (h >> 28)) / 6u) % 220;   /* (still: where they were) */
@@ -262,20 +258,61 @@ static void graph_eco(void)
                          (uint32_t)(bot + 6);
         cv_rect(gx, gy, 1 + (int32_t)(h >> 31), 1 + (int32_t)(h >> 31), ux_mix(T_SURF, T_THEME, 22 + (int32_t)(h >> 29) * 4));
     }
+}
+/* (V10.7.34) and LIFE (lf 1; life.c): the beings where the sound has them (its swim: agitated loud, calm in silence; its
+ * breath their size), and between them who moves whom, a line from the one that moves to the one moved, thicker as it moves
+ * it more (its weight x its sound now), a dot near the one moved; LIFE 0: no lines, STILL */
+static void graph_eco(uint32_t lf)
+{
+    uint32_t c, j, links = 0, still = ANIM_OFF() != 0;
+    int32_t bx[ECO_N], by[ECO_N], bot = eco_bot(), lo;
+    (void)eco_step();                                   /* (the swim, once a frame) */
+    (void)bg_energy();                                  /* (the output's level kept as it was read: once a frame) */
+    char b[48];
+    eco_water(bot, still);
     for (c = 0; c < ECO_N; c++) {
         eco_at(c, &bx[c], &by[c]);                      /* (codex/anim: between its last two steps) */
         bx[c] >>= 4;
         by[c] >>= 4;
+        if (lf) {                                       /* (LIFE: the sound's swim) */
+            bx[c] = (12 + ((life.bx[c] * 216) >> 16)) << 4;
+            by[c] = (8 + ((life.by[c] * (bot - 16)) >> 16)) << 4;
+        }
     }
+    for (c = 0, j = 1500; c < ECO_N * ECO_N && lf; c++)   /* (LIFE) the strongest link: the faint ones (a third of it) not
+                                                         * drawn, the picture kept readable */
+        if (c / ECO_N != c % ECO_N) {
+            int32_t st = (life.w[c / ECO_N][c % ECO_N] * life.en[c % ECO_N]) >> 15;
+            j = st / 3 > (int32_t)j ? (uint32_t)(st / 3) : j;
+        }
+    for (c = 0, lo = (int32_t)j; c < ECO_N && lf && life.on; c++)   /* (LIFE) the lines first, under the beings */
+        for (j = 0; j < ECO_N; j++) {
+            int32_t st = j == c || eco_off(c) || eco_off(j) ? 0 : (life.w[c][j] * life.en[j]) >> 15, k;
+            uint16_t col = ux_mix(T_THEME, T_ACCENT, st >> 7 < 100 ? st >> 7 : 100);
+            if (st < lo)
+                continue;
+            for (k = 0; k < 3 && st > lo + k * 6000; k++)   /* (1 .. 3 px thick: stronger, thicker) */
+                og_line(bx[j] + k * 16, by[j], bx[c] + k * 16, by[c], col);
+            links++;
+            cv_rect(((bx[c] * 3 + bx[j]) >> 6) - 1, ((by[c] * 3 + by[j]) >> 6) - 1, 3, 3, col);   /* (a dot near the one
+                                                         * moved: which way) */
+        }
     for (c = 0; c < ECO_N; c++) {
-        int32_t rad = eco.r[c] >> 4, px = bx[c] >> 4, py = by[c] >> 4, ny;
+        int32_t r = lf ? eco.r[c] * (256 + life.breath[c] / 1024) / 256 : eco.r[c], rad = r >> 4, px = bx[c] >> 4,
+                py = by[c] >> 4, ny;
         char num[2] = {(char)('1' + c), 0};
-        eco_being(c, bx[c], by[c], eco.r[c]);
+        eco_being(c, bx[c], by[c], r);
         ny = clamp(py + rad / 2 + 4, 4, bot);
         if (px < 150 || ny < bot - 30)                  /* (V10.7.33: not under the tempo's corner) */
             cv_text_in(px - 30, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM : T_TEXT, T_SURF);
     }
-    if (ui.hot_t && ui.hot_col < 4u) {                  /* MACROS: a macro turned, where it goes ("M2 T1 CUT+40 T3 ..",
+    if (lf) {                                           /* (LIFE) its amount, the lines counted */
+        fmt_int(b, life_v[LIFE_AMT]);
+        str_cpy(b + str_len(b), life_v[LIFE_AMT] ? "% LIFE" : "% STILL", 8);
+        cv_text(6, 2, &AF_X, b, life_v[LIFE_AMT] ? T_TEXT : T_DIM);
+        fmt_int(b, (int32_t)links);
+        str_cpy(b + str_len(b), links == 1u ? " LINK" : " LINKS", 7);
+    } else if (ui.hot_t && ui.hot_col < 4u) {           /* MACROS: a macro turned, where it goes ("M2 T1 CUT+40 T3 ..",
                                                          * the MACRO layer's list); else the routes counted; LATCH */
         b[0] = 'M';
         b[1] = (char)('1' + ui.hot_col);
@@ -288,17 +325,20 @@ static void graph_eco(void)
         str_cpy(b + str_len(b), " ROUTES", 8);
         cv_text(6, 2, &AF_X, b, T_TEXT);
     }
-    cv_text_r(234, 2, &AF_X, mac_latch ? "LATCH" : "HOLD LFO", mac_latch ? T_ACCENT : T_TEXT, T_SURF);
+    if (lf)
+        cv_text_r(234, 2, &AF_X, b, links ? T_ACCENT : T_DIM, T_SURF);
+    else
+        cv_text_r(234, 2, &AF_X, mac_latch ? "LATCH" : "HOLD LFO", mac_latch ? T_ACCENT : T_TEXT, T_SURF);
     fmt_int(b, song.g[G_BPM]);                          /* (V10.7.33, the owner) the tempo large: HOME held + PRESETS */
     cv_text_r(210, bot - 22, &AF_L, b, ui.bpm_t ? T_ACCENT : T_TEXT, T_SURF);
     cv_text_r(234, bot - 2, &AF_X, "BPM", T_TEXT, T_SURF);
 }
 /* (V10.7.24) HOME's panel: MACROS the beings (graph_eco), SCOPE the mix's oscilloscope over the whole panel (ui_graph.c
- * graph_scope, as hot as it is loud) */
+ * graph_scope, as hot as it is loud); (V10.7.34) LIFE graph_eco's */
 static void graph_home_lz(void)
 {
     if (home_level() == 1u)
         graph_scope(ACC);
     else
-        graph_eco();
+        graph_eco(home_level() == 3u);
 }

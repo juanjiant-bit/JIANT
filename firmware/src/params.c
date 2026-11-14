@@ -73,11 +73,11 @@ static const char *const N_APSYNC[] = {"FREE", "BEAT"};                  /* (JIA
 static const char *const N_APDIV[] = {"4BAR", "2BAR", "1BAR", "1/2", "1/4", "1/8", "1/16", "1/32"};   /* .. BEAT (fx.c AP_SIXT) */
 /* modulation matrix (mod.c): sources, destinations (E1..E8 = P_E0..P_E7: shown with the engine's labels) */
 static const char *const N_MSRC[] = {"OFF", "LFO", "ENV", "VEL", "KEY", "RAND", "MODW", "AT", "EXPR",
-                                     "M1", "M2", "M3", "M4", "STEP", "NOISE", "PROX", "ENV2", "IN ENV", "T1 ENV", "T2 ENV", "T3 ENV", "T4 ENV", "T5 ENV", "T6 ENV", "OCT+", "OCT-", "F.NOISE"};   /* (V10.7.22) OCT+ OCT-: the expression keys; (filter2-mod) F.NOISE: FILTER 2's */   /* (V10.22) ENV2 */   /* (0.7.8) NOISE; (V10.14) PROX */   /* (JIANT: the macros, LFO held; the modulation sequence) */
+                                     "M1", "M2", "M3", "M4", "STEP", "NOISE", "PROX", "ENV2", "IN ENV", "T1 ENV", "T2 ENV", "T3 ENV", "T4 ENV", "T5 ENV", "T6 ENV", "OCT+", "OCT-", "F.NOISE", "LIFE", "BEING"};   /* (V10.7.22) OCT+ OCT-: the expression keys; (filter2-mod) F.NOISE: FILTER 2's */   /* (V10.22) ENV2 */   /* (0.7.8) NOISE; (V10.14) PROX */   /* (JIANT: the macros, LFO held; the modulation sequence) */
 static const char *const N_MDST[] = {"OFF", "PITCH", "CUT", "SHP", "AMP", "PAN", "DIST", "CHO", "DLY", "REV", "L.RATE",
                                      "L.PIT", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8",
                                      "CLIP", "PNCH",   /* (JIANT: the master, FX > MASTER) */
-                                     "D.TIM", "D.FB", "D.TON", "D.MIX", "R.SIZ", "R.DMP", "C.RAT", "C.DEP", "F.CUT", "LEVEL"};   /* (0.7.0) the FX buses'
+                                     "D.TIM", "D.FB", "D.TON", "D.MIX", "R.SIZ", "R.DMP", "C.RAT", "C.DEP", "F.CUT", "LEVEL", "LIFE"};   /* (0.7.0) the FX buses'
                                                          * globals (DELAY TIME FDBK TONE MIX, REVERB SIZE DAMP, CHORUS RATE
                                                          * DEPTH): mod.c macro_master, fx.c GFX() */
 static const char *const N_ENGNAME[] = {"ANALOG", FELUCCA_FM4 ? "DIGITAL" : "-", "PHASE", "MATH", "-", "VOICE", "-", "WHEEL", "STRING", "-",
@@ -735,6 +735,27 @@ static const param_desc_t XM_DESC[3] __attribute__((section(".rodata.tape"))) = 
 static int16_t bal_v __attribute__((section(".bss.tape")));   /* (BAL_DEF set at power-on: main.c, system_init) */
 static int16_t dnz_v[NTRK] __attribute__((section(".bss.tape")));
 static int16_t cru_v[NTRK] __attribute__((section(".pool")));   /* (V10.7.33) CRUSH (0..127: DIST's DRIVE, shown 0..100 %) */
+/* (V10.7.34, the owner: "organic, self-modulating voices") LIFE (life.c): HOME > LIFE's four, LIFE FILTER PITCH FX (0..100;
+ * LIFE 0: every voice and track as before, bit for bit), then each track's LIFE (EDIT > VOICES 3 KNOB 2, ID_LIF; 0..100,
+ * times the global one). Not song or track parameters (as BALANCE: no slot left): kept with the project ('X' 'L',
+ * project.c proj_xm; a project without it, every one before V10.7.34: these defaults, LIFE on) */
+#define ID_LIF 0xEFu
+enum { LIFE_AMT, LIFE_FILT, LIFE_PIT, LIFE_FX, LIFE_N };
+#ifndef LIFE_DEF
+#define LIFE_DEF 25
+#endif
+static const int8_t LIFE_DEFS[LIFE_N] = {LIFE_DEF, 30, 10, 25};
+#define LIFE_TDEF 100
+static const param_desc_t LIFE_DESC __attribute__((section(".rodata.tape"))) = PD("LIFE", F_PCT, 0, 100, LIFE_TDEF);   /* (the track's) */
+static const char *const LIFE_NM[LIFE_N] = {"LIFE", "FILTER", "PITCH", "FX"};   /* (HOME > LIFE's cards) */
+static int16_t life_v[LIFE_N + NTRK] __attribute__((section(".pool")));   /* (life_defaults at power-on: main.c) */
+static int32_t life_def(uint32_t k) { return k < LIFE_N ? LIFE_DEFS[k] : LIFE_TDEF; }   /* (value k of life_v) */
+static void life_defaults(void)
+{
+    uint32_t k;
+    for (k = 0; k < LIFE_N + NTRK; k++)
+        life_v[k] = (int16_t)life_def(k);
+}
 static uint8_t lfo_ph_mem[NTRK];
 static int lfo_mode_of(const track_t *t) { return t->p[P_LPHASE] < 0; }   /* 1 FREE */
 static const page_t PAGES[] = {
@@ -753,7 +774,7 @@ static const page_t PAGES[] = {
     {"EQ", FAM_FX, SC_GLOBAL, GR_NONE, {ID_EQ0, ID_EQ0 + 1u, ID_EQ0 + 2u, ID_EQ0 + 3u}},   /* (p9) the master's EQ, last */   /* (0.9.9-snd8) the master's tape, after MASTER */
     {"BALANCE", FAM_FX, SC_GLOBAL, GR_NONE, {ID_BAL, 0xFF, 0xFF, 0xFF}},   /* (V10.7.30) the master's BALANCE, after its EQ */
     {"DIST", FAM_FX, SC_TRACK, GR_NONE, {P_DTYPE, P_DTONE, FELUCCA_XFX ? ID_DNZ : 0xFF, 0xFF}},   /* JIANT: the drive's type and tone; V10.7.30 NOISE */
-    {"VOICES 3", FAM_EDIT, SC_TRACK, GR_NONE, {ID_CRU, 0xFF, 0xFF, 0xFF}},   /* (V10.7.33) CRUSH, the track's bit reducer (was DIST's
+    {"VOICES 3", FAM_EDIT, SC_TRACK, GR_NONE, {ID_CRU, ID_LIF, 0xFF, 0xFF}},   /* (V10.7.33) CRUSH, the track's bit reducer (was DIST's
                                                          * TYPE; PLAY and PLAY 2 have no knob free) */
     {"AUTO PAN", FAM_FX, SC_TRACK, GR_NONE, {P_APDEP, P_APRATE, P_APSYNC, P_APWAVE}},   /* (JIANT 0.6.9) the track's pan swung */
     {"BUSES", FAM_FX, SC_GLOBAL, GR_BUSES, {G_DMIX, G_RSIZE, G_CDEPTH, G_SLDEP}},   /* (0.8.5) FX's lens: the buses' main values */
@@ -932,6 +953,10 @@ static uint8_t sl_ui_step;       /* (JIANT 0.6.3) the SL PITCH page: the step KN
  * master's TAPE (noinline: page_desc is recorded code) */
 static __attribute__((noinline)) const param_desc_t *page_desc_v(uint32_t id, int16_t **valp)
 {
+    if (id == ID_LIF) {                               /* (V10.7.34) the track's LIFE (life.c) */
+        *valp = &life_v[LIFE_N + song.sel % NTRK];
+        return &LIFE_DESC;
+    }
     if (id >= ID_BAL && id <= ID_CRU) {               /* (V10.7.30) BALANCE; the track's NOISE; (V10.7.33) its CRUSH */
         *valp = id == ID_BAL ? &bal_v : id == ID_DNZ ? &dnz_v[song.sel % NTRK] : &cru_v[song.sel % NTRK];
         return &XM_DESC[id - ID_BAL];
@@ -966,7 +991,7 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         *valp = &trks_ui;
         return &TRKS_DESC;
     }
-    if ((id >= ID_TAPE && id <= ID_LMODE) || (id >= ID_EQ0 && id < ID_EQ0 + 4u) || (id >= ID_BAL && id <= ID_CRU))   /* (0.9.18) the LFO's MODE and PHASE;
+    if ((id >= ID_TAPE && id <= ID_LMODE) || (id >= ID_EQ0 && id < ID_EQ0 + 4u) || (id >= ID_BAL && id <= ID_LIF))   /* (0.9.18) the LFO's MODE and PHASE;
                                                          * (snd8) the master's TAPE; (p9) its EQ */
         return page_desc_v(id, valp);
     if (id == G_LOADP) {                              /* (0.6.30) the same */

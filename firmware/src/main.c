@@ -177,6 +177,7 @@ static void felucca_init(void)
     for (i = 0; i < G_COUNT; i++)
         song.g[i] = GP[i].def;
     bal_v = BAL_DEF;                          /* (V10.7.30) the master's BALANCE on (fx.c bal_ctl) */
+    life_defaults();                          /* (V10.7.34) LIFE on, gently (life.c) */
     load_depth++;                             /* (the power-on loads: one outer load) */
     fm6_init();                               /* every track's FM6 patch: the init voice */
     power_on_parts();                         /* (0.9.9: ui.c, TRK_DEF's sounds; the tests run it too) */

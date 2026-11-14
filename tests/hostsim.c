@@ -34,6 +34,12 @@ static uint32_t host_tick_dflt;                 /* (V10.33) TIMER4's ticks (the 
 #ifndef HOST_BAL
 #define HOST_BAL BAL_DEF
 #endif
+/* (V10.7.34) LIFE at the tests' power-on: 0, still (LIFE=a overrides): the tests of every other feature hear it as they
+ * were written, bit for bit; the firmware's power-on is LIFE_DEF, and the tests about the default sound define it so
+ * (regress.c: the golden renders; life_test.c) */
+#ifndef HOST_LIFE
+#define HOST_LIFE 0
+#endif
 #include "felucca_tables.h"
 #include "../firmware/src/libc.c"
 #undef memset
@@ -60,6 +66,12 @@ static void fm1_delay_ms(uint32_t ms) { (void)ms; }
 #include "../firmware/src/song_chain.c"
 #include "../firmware/src/seq.c"
 #define inst (trk[0])                   /* the single-part renders below: part 1 */
+static void host_life(void)
+{
+    life_defaults();
+    life_v[LIFE_AMT] = (int16_t)(getenv("LIFE") ? atoi(getenv("LIFE")) : HOST_LIFE);
+    life_reset();
+}
 
 static void wav_hdr(FILE *f, uint32_t frames)
 {
@@ -93,6 +105,7 @@ static void host_tracks_init(void)                /* as felucca_init: defaults, 
     for (i = 0; i < G_COUNT; i++)
         song.g[i] = GP[i].def;
     bal_v = getenv("BAL") ? (int16_t)atoi(getenv("BAL")) : HOST_BAL;   /* (V10.7.30: BALANCE as at power-on; BAL=a) */
+    host_life();
     for (k = 0; k < NTRK; k++) {
         for (i = 0; i < P_E0; i++)
             trk[k].p[i] = TP[i].def;
@@ -872,6 +885,7 @@ int main(int argc, char **argv)
         nk = atoi(getenv("CHORD")) > 4 ? (uint32_t)atoi(getenv("CHORD")) : 4u;
     for (i = 0; i < G_COUNT; i++) song.g[i] = GP[i].def;
     bal_v = getenv("BAL") ? (int16_t)atoi(getenv("BAL")) : HOST_BAL;   /* (V10.7.30) BALANCE (BAL=a); DNZ=n: NOISE */
+    host_life();
     dnz_v[0] = getenv("DNZ") ? (int16_t)atoi(getenv("DNZ")) : 0;
     for (i = 0; i < P_E0; i++) inst.p[i] = TP[i].def;
     inst.eng_req = inst.engine = (uint8_t)eng;

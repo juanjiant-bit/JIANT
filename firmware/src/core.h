@@ -115,8 +115,8 @@ static inline const char *desc_unit(const param_desc_t *d)   /* F_INT_CT .. F_RE
                          * and ENV 2 edit the same envelope */
 #endif
 #ifndef FELUCCA_LIFE
-#define FELUCCA_LIFE 0  /* (V10.7.33, the owner) HOME > LIFE, a page before MACROS, to come: its slot in HOME's chain kept
-                         * (ui_lens.c CE_HOME, HE_*), its screen not built */
+#define FELUCCA_LIFE 1  /* (V10.7.33, the owner) HOME > LIFE, a page before MACROS (ui_lens.c CE_HOME, HE_*); (V10.7.34) built:
+                         * ui_lzhome.c graph_life, the sound's in life.c */
 #endif
 #ifndef FELUCCA_PHRASES
 #define FELUCCA_PHRASES 0 /* (V10.7.33) SEQ > PHRASES (the factory patterns' loader) and a step's CHANCE page: no way led to

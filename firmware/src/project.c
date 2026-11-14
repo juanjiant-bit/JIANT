@@ -106,6 +106,8 @@ typedef struct {
                                                 * leaves it) and each track's DIST NOISE: 'X' 'M' (proj_xm), as the EQ */
     int16_t dnz[NTRK];                         /* (as params.c dnz_v: copied whole) */
     int16_t cru[NTRK];                         /* (V10.7.33) each track's CRUSH (as params.c cru_v, 0..127): 'X' 'C' (proj_xm) */
+    int8_t life[LIFE_N + NTRK];                  /* (V10.7.34) LIFE (params.c life_v) less its defaults (0: every project of
+                                                * before, LIFE on): 'X' 'L' (proj_xm) */
     uint8_t scene[4];                          /* (V10.31) SCL > SCENE: ON, then the six roles a nibble each (seq.c
                                                 * scn_on scn_role): FUNC's 'S' 'C' block after 'D' 'A', none before */
     uint8_t scpat[(NTRK + 1) / 2];                        /* (V10.6k) SCENE's BASS/LEAD PATTERN and DRUM STYLE (seq.c scn_pat), a
@@ -237,6 +239,7 @@ static __attribute__((noinline)) uint32_t proj_xm(project_t *q, const uint8_t *b
         q->bal = 0;
         memset(q->dnz, 0, sizeof q->dnz);
         memset(q->cru, 0, sizeof q->cru);
+        memset(q->life, 0, sizeof q->life);
     }
     for (x = 0; x < 2u; x++) {                          /* 'X' 'M' (AMOUNT, NOISE), then 'X' 'C' (CRUSH) */
         uint32_t h = 3u - x, any = x ? 0u : (uint32_t)q->bal;
@@ -259,6 +262,23 @@ static __attribute__((noinline)) uint32_t proj_xm(project_t *q, const uint8_t *b
             for (k = 0; k < NTRK; k++) b[pos + n + h + k] = (uint8_t)v[k];
         }
         n += h + NTRK;
+    }
+    /* (V10.7.34) LIFE: 'X' 'L' and its ten values (0 .. 100 a byte: HOME > LIFE's four, the tracks'), when one is not
+     * its default; the last (firmware before stops at it). Without it: the defaults (LIFE on) */
+    if (room) {
+        if (pos + 2u + LIFE_N + NTRK <= room && b[pos] == 'X' && b[pos + 1u] == 'L')
+            for (k = 0; k < LIFE_N + NTRK; k++)
+                q->life[k] = (int8_t)((b[pos + 2u + k] > 100u ? 100 : b[pos + 2u + k]) - life_def(k));
+        return 0;
+    }
+    for (k = 0, x = 0; k < LIFE_N + NTRK; k++) x |= (uint32_t)(uint8_t)q->life[k];
+    if (x) {
+        if (b) {
+            b[pos + n] = 'X'; b[pos + n + 1u] = 'L';
+            for (k = 0; k < LIFE_N + NTRK; k++)
+                b[pos + n + 2u + k] = (uint8_t)(q->life[k] + life_def(k));
+        }
+        n += 2u + LIFE_N + NTRK;
     }
     return n;
 }
@@ -1312,6 +1332,8 @@ static __attribute__((noinline)) void proj_master_put(project_t *p)
     p->bal = (int8_t)(bal_v - BAL_DEF);                 /* (V10.7.30) BALANCE, the tracks' NOISE */
     memcpy(p->dnz, dnz_v, sizeof p->dnz);
     memcpy(p->cru, cru_v, sizeof p->cru);               /* (V10.7.33) CRUSH */
+    for (k = 0; k < LIFE_N + NTRK; k++)                   /* (V10.7.34) LIFE, less its defaults */
+        p->life[k] = (int8_t)(clamp(life_v[k], 0, 100) - life_def(k));
 }
 static void project_capture(project_t *p)
 {
@@ -1569,6 +1591,8 @@ static int project_restore_runtime(const project_t *input)
         bal_v = (int16_t)clamp(p->bal + BAL_DEF, 0, 100);   /* (V10.7.30) BALANCE, NOISE */
         memcpy(dnz_v, p->dnz, sizeof dnz_v);            /* (0 .. 100: proj_xm's, or the knob's) */
         memcpy(cru_v, p->cru, sizeof cru_v);            /* (V10.7.33) CRUSH (0 .. 127: proj_xm's, or the knob's) */
+        for (k = 0; k < LIFE_N + NTRK; k++)               /* (V10.7.34) LIFE */
+            life_v[k] = (int16_t)clamp(p->life[k] + life_def(k), 0, 100);
     }
     {                                                   /* (V10.31) SCENE */
         uint32_t i;
@@ -1688,6 +1712,7 @@ static __attribute__((noinline)) void system_init(void)   /* (snd8: out of its c
     bal_v = BAL_DEF;                                    /* (V10.7.30) BALANCE on, no NOISE */
     memset(dnz_v, 0, sizeof dnz_v);
     memset(cru_v, 0, sizeof cru_v);                     /* (V10.7.33) no CRUSH */
+    life_defaults();                                    /* (V10.7.34) LIFE as at power-on */
     for (i = 0; i < 5u; i++) song.g[KEEP[i]] = kept[i];
     kept[0] = dice_secs;
     chain_defaults(&chain_config);
@@ -1999,6 +2024,7 @@ static uint32_t autosave_sig(void)
     h = as_mix(h, &bal_v, sizeof bal_v);                /* (V10.7.30) BALANCE, NOISE */
     h = as_mix(h, dnz_v, sizeof dnz_v);
     h = as_mix(h, cru_v, sizeof cru_v);                 /* (V10.7.33) CRUSH */
+    h = as_mix(h, life_v, sizeof life_v);               /* (V10.7.34) LIFE */
     return as_mix(h, proj_name, sizeof proj_name);
 }
 

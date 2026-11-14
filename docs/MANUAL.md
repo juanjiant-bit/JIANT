@@ -38,6 +38,18 @@ public version) or earlier: [What's new in this version](#whats-new-in-this-vers
 
 Everything since V10.6c, the last public version, in one list; each item links to its place in the manual.
 
+**LIFE: the voices alive, the tracks moving each other (V10.7.34)**
+- **HOME › LIFE**, HOME's new first page: every voice breathes on its own (a few cents of pitch, its filter, its level),
+  a held note has an arc (it starts with energy, blooms, then tires), and the tracks move each other before the effects
+  (a kit ducks the others' filters, a pad opens them, at the top of PITCH a Lyra-like cross-FM). **KNOB 1 LIFE** (0: the
+  classic, still synth, exactly as before), **2 FILTER**, **3 PITCH**, **4 FX**. The screen: one being per track, swimming
+  as it sounds, a line from each track to the one it moves, thicker as it moves it more. On by default (LIFE 25 %): a
+  project saved before opens with it on too; turn LIFE to 0 for the old sound. See [LIFE](#life-the-voices-alive-v10734).
+- Each track's own LIFE: **EDIT › VOICES 3, KNOB 2** (0..100 %, times HOME's): keep a channel still, or let only one live.
+- The MOD matrix: sources **LIFE** (the track's breath) and **BEING** (its being's height in the water), destination
+  **LIFE** (an LFO, an envelope, another track's ENV changing how much a track lives). **T1 ENV … T6 ENV** (each track's
+  envelope follower) were already there.
+
 **VOICE's words as phonemes, BALANCE back, CRUSH its own (V10.7.33)**
 - **VOICE has no English dictionary on the device any more**: the web editor turns the words you type into VOICE's
   **phonemes** (English with the whole CMU dictionary, 120 000 words; Spanish, Japanese, Portuguese and Italian by
@@ -237,7 +249,7 @@ The names below are the ones the firmware uses (the HARDWARE CALIBRATION screen 
 
 | Button | Tap | Hold |
 | --- | --- | --- |
-| **HOME** | HOME (0.9.2, as every section's button): from another section the HOME page last shown; on HOME the first page of the next group, round: **MACROS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN → MACROS** (V10.7.24; V10.7.32 the song's pages, from SAVE; GEN: the generator, GEN until V10.6m). | About 0.7 s: opens the **MENU**. |
+| **HOME** | HOME (0.9.2, as every section's button): from another section the HOME page last shown; on HOME the first page of the next group, round: **LIFE → MACROS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN → LIFE** (V10.7.24; V10.7.32 the song's pages, from SAVE; V10.7.34 LIFE first; GEN: the generator, GEN until V10.6m). At power-on HOME opens on MACROS. | About 0.7 s: opens the **MENU**. |
 | **ENV** | The ENV section: from elsewhere the page last shown (at power-on ENV); inside, back to ENV (one group: ENV · ENV DEST · ENV 2; V10.7.32: STAGE and TRACKS gone). | (no layer) |
 | **LFO** | The LFO section: from elsewhere the page last shown (at power-on LFO); inside **MOD → LFO → STEP MOD**, round. | **MACRO** layer: KNOB 1–4 are M1–M4. |
 | **FX** | The FX section: from elsewhere the page last shown; inside, the next module: **TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → MASTER** (MASTER · TAPE · EQ), round (V10.7.32: PUNCH IN on the FX held). | **Punch-in FX** layer; the punch-in lane at the foot; FX + PRESETS its knobs. |
@@ -457,7 +469,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 
 | Section | Groups (the button) · pages (SELECT) | Pages |
 | --- | --- | --- |
-| **HOME** | (V10.7.24; V10.7.32 the song's pages) **MACROS**: MACROS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **LIVE MIX**: LIVE MIX — **GEN**: GEN 1 · GEN 2 · GEN 3 | 8 |
+| **HOME** | (V10.7.24; V10.7.32 the song's pages; V10.7.34 LIFE) **LIFE**: LIFE — **MACROS**: MACROS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **LIVE MIX**: LIVE MIX — **GEN**: GEN 1 · GEN 2 · GEN 3 | 9 |
 | **EDIT** (a synth) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (those the engine and the track have) — **AUTO KNOBS**: AUTO KNOBS — **VOICES**: VOICES · VOICES 2 · VOICES 3 (codex/coherence: was VOICE; STEREO's IMAGE on VOICES 2) | up to 11 |
 | **EDIT** (FM6) | **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **TONE**: FILTER — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **VOICES**: VOICES · VOICES 2 · VOICES 3 | 8 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: KIT LFO · FILTER · STEREO · VOICES · VOICES 3 | 14 |
@@ -476,7 +488,9 @@ STEP COND's); FX's **SENDS** is the FX page; SAVE's PROJECT page is **PART SLOTS
 LIBRARY level); the DRUM kit's EDIT 1 / EDIT 2 are **KIT** / **KIT 2**. The new **BAR** page is PATTERN's picture of
 the bars with KNOB 1 the bar and KNOB 2 LEN.
 
-- **MACROS** (V10.7.24: HOME's first page, ECO's picture; ECO, BEING and ROUTES went: the sound's four knobs live on
+- **LIFE** (V10.7.34, HOME's first page): LIFE, FILTER, PITCH, FX, the beings and who moves whom: see
+  [LIFE](#life-the-voices-alive-v10734). SELECT right goes on to MACROS.
+- **MACROS** (V10.7.24: HOME's first page until V10.7.34, ECO's picture; ECO, BEING and ROUTES went: the sound's four knobs live on
   EDIT): **KNOB 1–4** are **M1–M4**, the project's macros (as LFO held; kept with the project and the SONG's scenes as
   ever), each card dim while no MOD slot names it. The six tracks' beings swim free over the whole panel by themselves,
   each swelling with its sound (a hit kicks it on), its number under it; the selected one larger, its number violet.
@@ -609,7 +623,7 @@ since 0.6.51: every project opens as it was.
 | LEVELS 2 | HATOP | TOM | RIM | BELL | DRUM |
 | PLAY (was VOICE) | POLY (POLY MONO LEG UNI DRONE; was VOICE) | GLIDE | GL MODE (the glide's RATE / TIME; was MODE) | PRIO | every engine |
 | VOICES 2 (0.8.5; was VOICE 2) | ALLOC | UNISON (UNI's detune, 0..100 %; was DETUNE) | VEL (the sound's velocity amount, 0..100 %) | IMAGE (the voices across, POLY; was the STEREO page; not on EXT) | every engine but DRUM |
-| VOICES 3 (V10.7.33) | CRUSH (the track's bit reducer, 0..100 %; was DIST TYPE CRUSH) | | | | every engine (a kit's too) |
+| VOICES 3 (V10.7.33) | CRUSH (the track's bit reducer, 0..100 %; was DIST TYPE CRUSH) | LIFE (V10.7.34: the track's LIFE, 0..100 %, times HOME › LIFE's) | | | every engine (a kit's too) |
 | SWARM, SWARM 2 (V10.6z6) | SIDE (FAR / NEAR) | that side's RATE, MOVE, TONE / NOISE, MOD | | (SWARM 2: NOW, the morph and its source) | EXT with SOURCE SWARM |
 | AUTO KNOBS (0.8.5) | PARAM (E1–E8) | its value | SRC (the MOD slot on it) | AMT | the synths (not FM6, DRUM) |
 
@@ -1942,7 +1956,7 @@ That's 24 parts in total (6 × 4).
 
 ### The ARRANGE page (HOME › ARRANGE)
 
-ARRANGE is HOME's third page (V10.7.32: the song's pages HOME's, MACROS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN;
+ARRANGE is HOME's fourth page (V10.7.34: LIFE first; V10.7.32: the song's pages HOME's, MACROS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN;
 until then SAVE's; SELECT from TIMELINE, a HOME tap, or SAVE + G5 from anywhere): on top the project's four parts large (stored: in their
 colour, the one playing says **NOW**), then **ARRANGE**: the song's rows as chips (**A16**: the section and its bars, in
 the section's colour; a scene: a white dot; the row you are on lit and framed), and under them the whole song as one
@@ -2633,14 +2647,55 @@ curve where the bar would be.
     keys, a note held + OCT+ / OCT−: OCT+ the bend's eased 0→1 curve, OCT- the vibrato faded in; routed, they move the DEST
     instead of the pitch; for a tremolo on AMP use a negative AMT), and (codex/filter2-mod) **F.NOISE**: EDIT > FILTER
     2's modulator (SOFT, STEP and BREAK bipolar, DUST's spikes 0..1, METAL SOFT's wander), whatever FILTER 2's NOISE;
-    on a kit or EXT it is 0.
+    on a kit or EXT it is 0. (V10.7.34) **LIFE**: the track's breath, a slow organic wander (bipolar), quicker as the track
+    sounds; **BEING**: its being's height in HOME › LIFE's water (bipolar, up +), what you see there. Both move with LIFE
+    at 0 too. **T1 ENV … T6 ENV**: each track's envelope follower (its dry sound), a track moving another by hand.
   - Destinations: PITCH, CUT, SHP, AMP, PAN, DIST, CHO, DLY, REV, RATE (LFO rate), VIB, **E1–E8** (the engine's own
     EDIT knobs, shown by name), **CLIP** and **PNCH** (the master), and (0.7.0) the FX buses: **D.TIM D.FB D.TON D.MIX**
     (DELAY TIME, FDBK, TONE, MIX), **R.SIZ R.DMP** (REVERB SIZE, DAMP), **C.RAT C.DEP** (CHORUS RATE, DEPTH). AMT 64 at a
     full source = the parameter's whole range; every track's slots on the same bus add. A STEP source (the mod
-    sequence) on D.TIM sequences the delay time.
+    sequence) on D.TIM sequences the delay time. **F.CUT**, **LEVEL**, and (V10.7.34) **LIFE**: the track's LIFE this
+    block, on top of its VOICES 3 LIFE (AMT 64 at a full source = 100 %): an LFO, an ENV, another track's ENV deciding
+    how much this one lives (with HOME's LIFE above 0).
 - **STEP MOD**: a 16-step modulation sequencer per track, like a CV sequencer. KNOB 1 picks the step, KNOB 2 sets its
   level, LEN and SLEW; DIV on STEP MOD 2. Use it from MOD with SRC **STEP**.
+
+### LIFE: the voices alive (V10.7.34)
+
+Without LIFE a synth is still unless you build its movement by hand. With it, JIANT's voices live by themselves:
+
+- **Each voice its own life** (every engine): a slow, organic wander of its own, so the notes of a chord breathe apart:
+  its pitch (a few cents, and a small detune of the note's own), its filter, its shape when something else already moves
+  it, its level (a breath of about a decibel). A **held note has an arc**: it starts with energy (the wander quicker and
+  wider, more so the harder it was played), **blooms** (the filter opening a little over its first second and a half),
+  then **tires** (from about three seconds a little darker, its breath slower). A legato note goes on with the arc.
+- **The tracks move each other**, before the effects, as on a Lyra: each track's dry sound of the block before (its
+  envelope, and at the top of PITCH its very samples) moves the others. Who moves whom: each track is held most by the
+  one before it among those that sound (two tracks: a duet, each the other's; more: a ring), a little by the rest, and
+  more when their beings swim close. One block late (1.5 ms): no order, no feedback loop that runs away, and a little
+  of a Lyra's instability.
+
+| HOME › LIFE | What it does |
+| --- | --- |
+| **KNOB 1 LIFE** | How much everything lives, 0..100 % (25 % at power-on and in every project saved before V10.7.34). **0: the classic, still synth, bit for bit as before.** |
+| **KNOB 2 FILTER** | How much the tracks move each other's cutoff: a drum kit **ducks** the others' filters with each hit, any other track **opens** them as it plays (30 %). |
+| **KNOB 3 PITCH** | Up to 50 %: the others' level makes a track **sag** a few cents (up to ~30 ct), as an old power supply under a hit. Past 50 %: audio-rate **cross-FM**, each track's sound phase-modulated by the others' (10 %). |
+| **KNOB 4 FX** | How much the others throw a track into its sends (CHORUS, DELAY, REVERB: up to twice where they stand; a dry track stays dry) (25 %). |
+
+The screen shows what you hear: one **being** per track (its species, colours and face as on MACROS), swimming in the
+water at the pace of its sound (agitated when loud, calm in silence) and breathing (its size: the **LIFE** source). A
+**line** goes from each track to the one it moves, thicker and warmer the more it moves it, a dot near the one moved;
+at the top left the LIFE amount (**STILL** at 0), at the right the lines counted. FILTER, PITCH and FX stay dim at LIFE 0.
+
+- **One track still, or only one alive**: **EDIT › VOICES 3, KNOB 2** is the track's own LIFE (0..100 %, 100 % by
+  default), times HOME's. At 0 the track is still and is not moved by the others (it still moves them). The matrix's
+  **LIFE** destination adds to it a block at a time.
+- **In the matrix**: **LIFE** (the breath), **BEING** (the swim, up +) and **T1 ENV … T6 ENV** as sources; **LIFE** as a
+  destination.
+- **Kept with the project** (LIFE, FILTER, PITCH, FX, each track's LIFE); a project saved before V10.7.34 opens with
+  the defaults, LIFE on. For the exact old sound of a project, turn LIFE to 0.
+- **Cost**: at the default about 4 % more of the audio's CPU in a full song; at 0 nothing to speak of. The cross-FM
+  (PITCH past 50 %) adds a short line per track it reaches.
 
 ### Macros M1–M4
 

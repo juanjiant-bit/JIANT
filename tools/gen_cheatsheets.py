@@ -158,13 +158,13 @@ def controls():
         ('OCT− · OCT+', 'The keyboard\'s octave (both together: back to 0); on DRUM the kit stays put: +1/+2/+3 ratchet x2/x4/x8, −1 SHORT, −2 GHOST, −3 FLAM, each sound its own (grid KNOB 3 HIT). On action pages and dialogs: back / confirm.'),
         ('PLAY', 'Start / stop. GLO + PLAY: restart from the top.'),
         ('REC', 'Arms live recording on the selected track (notes and knob moves, overdub).'),
-        ('HOME', 'Tap: HOME (on HOME the next group: MACROS · TIMELINE · ARRANGE · PARTS · LIVE MIX · GEN). <b>Hold: the MENU.</b> '
+        ('HOME', 'Tap: HOME (on HOME the next group: LIFE · MACROS · TIMELINE · ARRANGE · PARTS · LIVE MIX · GEN). <b>Hold: the MENU.</b> '
                  '+ OCT+: HELP on / off. + PRESETS: the tempo.'),
         ('KEYS', '27 keys play the selected track in its scale; with a layer held they become that layer\'s.'),
     ]
     t = '<table>' + ''.join(f'<tr><td class="n">{e(n)}</td><td>{d}</td></tr>' for n, d in rows) + '</table>'
     pb = [
-        ('HOME', 'MACROS (M1–M4 over the beings)  |  TIMELINE  |  ARRANGE  |  PARTS (tracks × parts: a head the part, a cell the track)  |  LIVE MIX (FILTER · SPACE · CLIP · DUCK on the mix)  |  GEN: GEN 1 · GEN 2 · GEN 3', 'MENU'),
+        ('HOME', 'LIFE (the voices alive, the tracks moving each other)  |  MACROS (M1–M4 over the beings)  |  TIMELINE  |  ARRANGE  |  PARTS (tracks × parts: a head the part, a cell the track)  |  LIVE MIX (FILTER · SPACE · CLIP · DUCK on the mix)  |  GEN: GEN 1 · GEN 2 · GEN 3', 'MENU'),
         ('EDIT', 'SOUND: EDIT 1 · EDIT 2  |  TONE: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2  |  AUTO KNOBS  |  VOICES: VOICES · VOICES 2 · VOICES 3 (last). EXT: EDIT 1 / 2 are EXT and SHAPE. FM6: SOUND (ALGO · PATCH)  |  TONE: FILTER  |  OPERATOR: OPERATOR · OP ENV · OPERATOR 2  |  VOICES. DRUM: KIT: KIT · KIT 2 · KIT 3 · KIT 4  |  SOUND: SOUND 1–4  |  LEVELS 1–2  |  TONE: KIT LFO · FILTER · STEREO · VOICES', 'INIT · RECALL · sound mutes'),
         ('SEQ', 'STEP  |  PATTERN: LENGTH · RHYTHM · TRACK  |  EUCLID: EUCLID · MODES · MUTATE  |  PLAYHEADS  |  STRETCH  |  STEP COND: STEP COND · COND 2  |  LOCKS: LOCKS · LYRICS  |  TRACK GEN', 'SEQ TOOLS'),
         ('FX', 'TRACK: SENDS · DIST · AUTO PAN  |  BUSES  |  DELAY: DELAY 1–3  |  REVERB 1–2  |  CHORUS  |  SLICER: SLICER · SLICER IN 1–2 · SL PITCH  |  MASTER · TAPE · EQ · BALANCE',
@@ -275,7 +275,7 @@ def controls():
                            ('MORPH', 'MORPH DRIFT - -'), ('ROTOR', 'DEPTH DUST - -'),
                            ('WORDS', 'LANG LYRIC CONS (OCT+ TYPE)'), ('RETRIG', 'RTRG - - -'), ('OPERATOR', 'OP COARSE FINE OUTPUT'),
                            ('OP ENV', 'OP STAGE RATE LEVEL'), ('OPERATOR 2', 'OP MODE DETUNE KEY VEL'), ('FILTER', 'TYPE CUT RES DRIVE'),
-                           ('VOICES', 'POLY GLIDE GL MODE PRIO'), ('VOICES 2', 'ALLOC UNISON VEL IMAGE'), ('VOICES 3', 'CRUSH - - -'), ('AUTO KNOBS', 'KNOB VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS -'), ('KIT 4', 'KEY MAP - - -'),
+                           ('VOICES', 'POLY GLIDE GL MODE PRIO'), ('VOICES 2', 'ALLOC UNISON VEL IMAGE'), ('VOICES 3', 'CRUSH LIFE - -'), ('AUTO KNOBS', 'KNOB VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS -'), ('KIT 4', 'KEY MAP - - -'),
                            ('KIT LFO', 'RATE DEPTH SHAPE RAND'), ('LEVELS', 'KICK SNARE CLAP HATCL'),
                            ('LEVELS 2', 'HATOP TOM RIM BELL'), ('SOUND', 'SOUND SIDE PITCH PMOD'),
                            ('SOUND 2', 'SOUND DECAY NOISE COLOR'), ('SOUND 3', 'SOUND MODE PM.TYPE DRIVE'),
@@ -288,7 +288,7 @@ def controls():
                           ('STEP', 'STEP NOTE TIME VEL'), ('STEP · DRUM', 'STEP LANE HIT ACC'), 
                           ('LOCKS · TOP', 'ALL PLAY LOCK REC · OCT+ CLEAR ALL'), ('LOCKS', 'ROW STEP PARAM VALUE · LOCK / REC'),
                           ('STEP COND', 'STEP TYPE VAL EVERY'), ('COND 2', 'STEP TYPE VAL EVERY')]),
-        ('HOME · GLO · SAVE', HEAT[6], [('MACROS', 'M1 M2 M3 M4 · BPM large · SELECT dice'), ('LIVE MIX', 'FILTER SPACE CLIP DUCK'),
+        ('HOME · GLO · SAVE', HEAT[6], [('LIFE', 'LIFE FILTER PITCH FX · LIFE 0: still'), ('MACROS', 'M1 M2 M3 M4 · BPM large · SELECT dice'), ('LIVE MIX', 'FILTER SPACE CLIP DUCK'),
                                  ('KEYS', 'RATE LOOP DENS DJ FILT (the keys: live modifiers)'), ('RAILS', 'TARGET RATE LOOP DENS'),
                                  ('MIXER', 'LEVEL PAN MUTE G.SWING'), ('GLOBAL', 'BPM G.SWING CLOCK TUNE'), ('COMP', 'ACTION LENGTH COND VALUE'), ('COMP 2', 'the global lane: its TRACKS, MONO / POLY'),
                                  ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('PORTS', ['USB', 'TRS IN', 'BT', '-']), ('PRESETS', 'TRACK ENG SOURCE TYPE · OCT+ load, OCT- close, REC fav'),
@@ -422,7 +422,8 @@ def sound():
                   '<p style="margin-top:6px">E1…E8: the engine\'s own EDIT knobs. CLIP / PNCH: the master. D. R. C.: the DELAY, REVERB and CHORUS buses (a STEP source on D.TIM sequences the delay time). '
                   '<b>PROX</b>: how close the Bluetooth phone is (or AIR: a hand); MENU › SYSTEM › BLUETOOTH, OCT+: FAR / NEAR, MIN MAX SPD. '
                   '<b>FOLLOW</b>: the audio input\'s envelope (an input opens a filter, ducks a pad). '
-                  '<b>OCT+ / OCT-</b>: the expression keys (a note held + OCT): routed, they sweep / wobble the DEST instead of the pitch.</p>'))
+                  '<b>OCT+ / OCT-</b>: the expression keys (a note held + OCT): routed, they sweep / wobble the DEST instead of the pitch. '
+                  '<b>LIFE</b> / <b>BEING</b>: the track\'s breath, its being\'s swim (HOME › LIFE); <b>T1–T6 ENV</b>: a track\'s level; DEST <b>LIFE</b>: how much it lives.</p>'))
     b.append(card('STEP MOD · MACROS', HEAT[1],
                   '<h4>STEP MOD · A CV SEQUENCER PER TRACK</h4>' + knobs('STEP', 'LVL', 'LEN', 'SLEW') +
                   '<p style="margin-top:6px">16 levels, DIV on STEP MOD 2, in time with the transport. Use it from MATRIX, '

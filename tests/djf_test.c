@@ -37,6 +37,7 @@ static uint32_t centre_render(void)
     static int32_t o[2u * CTL];
     uint32_t b, i, h = 2166136261u, k;
     ui_power_on();
+    life_v[LIFE_AMT] = 0;                               /* (V10.7.34: LIFE 0 for the render: bit for bit 0.9.0's) */
     song.master_q12 = 4096;
     trk_live = NTRK;
     for (k = 0; k < 4u; k++) {

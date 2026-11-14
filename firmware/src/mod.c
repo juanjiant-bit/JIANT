@@ -38,7 +38,7 @@
  * and the engines read t->p as before. An engine reads its parameters in note_on (events_block) unmodulated.
  * Nothing active (every slot with SRC, DST or AMT at 0): no work, and the sound is bit-identical. */
 enum { MS_OFF, MS_LFO, MS_ENV, MS_VEL, MS_KEY, MS_RAND, MS_MODW, MS_AT, MS_EXPR, MS_M1, MS_STEP = MS_M1 + 4, MS_NOISE, MS_PROX, MS_ENV2,
-       MS_FOLLOW, MS_T1, MS_OCTUP = MS_T1 + NTRK, MS_OCTDN, MS_FNZ, MS_N };   /* (V10.54) FOLLOW: the audio input's envelope */
+       MS_FOLLOW, MS_T1, MS_OCTUP = MS_T1 + NTRK, MS_OCTDN, MS_FNZ, MS_LIFE, MS_BEING, MS_N };   /* (V10.54) FOLLOW: the audio input's envelope */
 /* (codex/filter2-mod, the owner: FILTER 2's modulator "on the cutoff or the pitch") F.NOISE: EDIT > FILTER 2's value
  * (voice.c fn_tick: SOFT STEP BREAK bipolar, DUST's spikes 0..1, METAL SOFT's wander), whatever its NOISE; appended (the
  * ids before it kept: projects, presets, the editor). A kit's, EXT's: 0 */
@@ -55,7 +55,10 @@ static uint32_t ms_clock;        /* (JIANT) samples since PLAY on the transport'
                                   * 0): MS_STEP's place */
 enum { MD_OFF, MD_PITCH, MD_CUT, MD_SHP, MD_AMP, MD_PAN, MD_DIST, MD_CHO, MD_DLY, MD_REV, MD_RATE, MD_VIB, MD_E1,
        MD_CLIP = MD_E1 + 8, MD_PNCH, MD_DTIME, MD_DFDBK, MD_DCOL, MD_DMIX, MD_RSIZE, MD_RDAMP, MD_CRATE, MD_CDEPTH, MD_MASTER_END,
-       MD_FCUT = MD_MASTER_END, MD_LEVEL, MD_N };
+       MD_FCUT = MD_MASTER_END, MD_LEVEL, MD_LIFE, MD_N };
+/* (V10.7.34) LIFE (life.c), appended: the sources LIFE (the track's breath: its being's pulse, bipolar) and BEING (its being's
+ * height in HOME > LIFE's water, bipolar, up +), the destination LIFE (per block: the track's LIFE, AMT 64 at a full source
+ * = 100 %, on top of EDIT > VOICES 3's) */
 /* (0.7.0) the FX buses' globals as destinations (a mod sequence on the delay time ..): once an audio block
  * macro_master sums every track's slots on them and fx.c reads the stored value plus that offset through GFX(k) in
  * place of song.g[] (no slot on a bus: the stored value, live for the UI's graphs and the host tests of a bus alone) */
@@ -78,9 +81,9 @@ _Static_assert(P_M2SRC == P_M1SRC + 3 && P_M4AMT == P_M1SRC + 11 && P_M4AMT + 1 
 #define NMSLOT 4u
 #define MS_VMASK ((1u << MS_ENV) | (1u << MS_VEL) | (1u << MS_KEY) | (1u << MS_RAND) | (1u << MS_ENV2))
 #define MS_VOICE(s) ((MS_VMASK >> ((s) & 31u)) & 1u)   /* a value per voice: ENV VEL KEY RAND, (V10.22) ENV2 */
-#define MS_BIPOLAR(s) ((s) == MS_LFO || (s) == MS_KEY || (s) == MS_RAND || (s) == MS_NOISE || (s) == MS_FNZ)
+#define MS_BIPOLAR(s) ((s) == MS_LFO || (s) == MS_KEY || (s) == MS_RAND || (s) == MS_NOISE || (s) == MS_FNZ || (s) >= MS_LIFE)
 
-_Static_assert(MS_N <= 32 && MD_N <= 32, "matrix UI bitsets hold all IDs");
+_Static_assert(MS_N <= 32 && MD_N <= 64, "matrix UI bitsets hold all IDs (ui_layer.c: the destinations in 64 bits)");
 
 /* the track parameter of a per-block destination */
 static uint32_t mod_param(uint32_t d)
@@ -110,8 +113,9 @@ typedef struct {                 /* the part in mix_part (one at a time) */
     int32_t pit, cut, shp, gain; /* per voice, from the per-track sources (gain Q15) */
     uint8_t vsrc[NMSLOT], vdst[NMSLOT];
     int8_t vamt[NMSLOT];
-    uint8_t kid[NMSLOT];         /* per-block: the parameter, its stored value */
-    int16_t keep[NMSLOT];
+    uint8_t kid[NMSLOT + 3u];    /* per-block: the parameter, its stored value (V10.7.34: and LIFE's three sends) */
+    int16_t keep[NMSLOT + 3u];
+    int16_t lof;                 /* (V10.7.34) the slots on LIFE this block (0..100 more or less: life.c life_pt) */
 } mod_t;
 static mod_t mod_c[2];                      /* (JIANT 0.6.71) one a core: each renders its own parts at once (fx.c mix_block) */
 #define MOD (mod_c[MC_CPU() & 1u])
@@ -208,11 +212,12 @@ static __attribute__((noinline)) uint32_t kx_route(uint32_t i)
             m |= 2u >> s;
     return m;
 }
+#include "life.c"                                       /* (V10.7.34) LIFE: what it needs is above */
 static int32_t fn_src(const track_t *t);                /* (filter2-mod: voice.c, F.NOISE) */
 /* source s of the track: the per-track ones, the per-voice ones of the latest note-on */
 static int32_t mod_tsrc(const track_t *t, uint32_t s, int32_t lfo)
 {
-    if (s >= MS_T1) return s < MS_OCTUP ? track_env[s - MS_T1] : s == MS_FNZ ? fn_src(t) : kx_src(t, s);   /* (V10.7.22
+    if (s >= MS_T1) return s < MS_OCTUP ? track_env[s - MS_T1] : s == MS_FNZ ? fn_src(t) : s >= MS_LIFE ? life_src(t, s) : kx_src(t, s);   /* (V10.7.22
                                                          * OCT+ OCT-: the keys; filter2-mod F.NOISE) */
     if ((s == MS_ENV || s == MS_ENV2) && (t->m_vi >= NVOICE || !t->v[t->m_vi].active)) return 0;
     switch (s) {
@@ -283,13 +288,13 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
 {
     mod_t *const mp = &MOD;                          /* (0.6.71) this core's */
     const int16_t *p = t->p;
-    int32_t lfo, off[NMSLOT];
-    uint32_t k, j;
+    int32_t lfo, off[NMSLOT + 3u];
+    uint32_t k, j, ls = life_snd_on(t);                 /* (V10.7.34) LIFE on the sends (life.c) */
     mp->on = 0;
     for (k = 0; k < NMSLOT; k++)
         if (p[P_M1SRC + 3u * k] && p[P_M1DST + 3u * k] && p[P_M1AMT + 3u * k])
             break;
-    if (k == NMSLOT)
+    if (k == NMSLOT && !ls)
         return 0;
     lfo = mulq15(t->lfo_val, t->lfo_fade);              /* (the LFO of the block before: track_render ticks it) */
     for (j = k; j < NMSLOT; j++)
@@ -297,11 +302,12 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
             ms_tick(t);                                 /* (once, for every slot reading it) */
             break;
         }
-    mp->on = 1;
+    mp->on = k < NMSLOT ? 1u : 2u;                      /* (V10.7.34: 2, LIFE's sends alone: no voice's work) */
     mp->amp = 0;
     mp->nv = mp->nk = 0;
     mp->pit = mp->cut = mp->shp = 0;
     mp->gain = 32767;
+    mp->lof = 0;
     for (; k < NMSLOT; k++) {
         uint32_t s = (uint32_t)p[P_M1SRC + 3u * k], d = (uint32_t)p[P_M1DST + 3u * k];
         int32_t a = p[P_M1AMT + 3u * k], x;
@@ -323,8 +329,13 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
         }
         {                                               /* per block: AMT 64 = the whole range */
             uint32_t id = d == MD_FCUT && t->engine == ENGI_ANALOG ? P_E4 : mod_param(d);
-            const param_desc_t *pd = mod_track_desc(t, id);
+            const param_desc_t *pd;
             x = mod_tsrc(t, s, lfo);
+            if (d == MD_LIFE) {                         /* (V10.7.34) the track's LIFE, this block (life.c life_pt) */
+                mp->lof = (int16_t)clamp(mp->lof + ((((x * a) >> 6) * 100) >> 15), -100, 100);
+                continue;
+            }
+            pd = mod_track_desc(t, id);
             for (j = 0; j < mp->nk && mp->kid[j] != id; j++)
                 ;
             if (j == mp->nk) {
@@ -337,6 +348,8 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
                                                                                                * as before its in-time values) */
         }
     }
+    if (ls)
+        life_snd(t, mp, off);                           /* (V10.7.34) the other tracks on its sends */
     for (j = 0; j < mp->nk; j++) {
         uint32_t id = mp->kid[j];
         const param_desc_t *pd = mod_track_desc(t, id);
@@ -389,6 +402,7 @@ static __attribute__((noinline)) void macro_master(void)
     }
     ain_any = (uint8_t)any;
     ain_sw = (uint8_t)sw1;
+    life_master();                                      /* (V10.7.34) LIFE's block: the beings, who moves whom */
     clip_eff = (int16_t)clamp(song.g[G_CLIP] + off[0], 0, 100);
     pnch_eff = (int16_t)clamp(song.g[G_PUNCH] + off[1], 0, 100);
     for (k = 0; k < 8u; k++)

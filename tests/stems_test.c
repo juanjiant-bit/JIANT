@@ -44,6 +44,8 @@ static void song_from(uint32_t seed, uint32_t load)
     gen_go();
     song.g[G_DJF] = 0;                                   /* (the sum is checked before the master: these off) */
     song.g[G_CLIP] = 0;
+    life_v[LIFE_AMT] = 0;                                /* (V10.7.34: LIFE's tracks move each other: a stem is its solo
+                                                          * render with LIFE 0; GEN's project brings LIFE's default) */
 }
 
 /* nb blocks of the song (the transport started here), the stems tapped into d[frame][NCH]; skip: the parts left out of

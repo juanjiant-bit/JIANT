@@ -28,7 +28,7 @@ mix/full.glitch 2972
 mix/full.repeat 2960
 mix/idle 307
 mix/idle.tail 305
-peak/VOICE.EN6 214927
+peak/VOICE.EN6 232823
 rev/CLOUD 1685
 rev/RESO 1439
 rev/ROOM 1440

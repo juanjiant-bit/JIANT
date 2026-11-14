@@ -75,6 +75,7 @@ static uint32_t old_render(void)
     static int32_t o[2u * CTL];
     uint32_t b, i, h = 2166136261u;
     old_steps();
+    life_v[LIFE_AMT] = 0;                               /* (V10.7.34: LIFE 0 for the render: bit for bit 0.9.0's) */
     transport_req = 1; ui_input();
     for (b = 0; b < 1800u; b++) {
         memset(o, 0, sizeof o);
@@ -90,6 +91,7 @@ static uint32_t old_render(void)
 static uint32_t old_pack(project_store_t *st, project_t *q)
 {
     old_steps();
+    life_defaults();                                    /* (V10.7.34) LIFE as the firmware powers on: no 'X' 'L' written */
     project_capture(q);
     if (!proj_pack(st, q))
         return 0;

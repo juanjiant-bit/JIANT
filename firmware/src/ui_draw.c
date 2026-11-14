@@ -1083,11 +1083,12 @@ static int clip_tag(char *b)
 /* (V10.7.33, the owner) HELP (HOME + OCT+, ui.c ui_help): a line in the footer's place saying what the page's own keys do;
  * an action page its OCT+ / OCT- (foot_hint); else its picture's (GR_*), HOME's MACROS (250) and LIVE MIX (251), GEN (252),
  * or its section's (100 + SEC_*); none: the breadcrumb. One string, the lines one after another */
-static const uint8_t HELP_K[] = {250, 251, 252, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
+static const uint8_t HELP_K[] = {250, 251, 252, 253, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
 static const char HELP_S[] =
     "SELECT DICE  HOME+PRESETS BPM\0"
     "HOME+PRESETS BPM  HOME+SELECT GEN\0"
     "OCT+ A PIECE  OCT- BACK\0"
+    "LIFE 0 STILL  LINES: WHO MOVES WHOM\0"
     "OCT+ LOAD  OCT- CLOSE  REC FAVORITE\0"
     "PICK A KNOB AND WHAT MOVES IT\0"
     "REC: KEYS WRITE  SEQ+PRESETS STEP\0"
@@ -1330,6 +1331,14 @@ static void draw_columns(void)
         for (c = 0; c < 4u; c++) {
             fmt_int(val, macro_v[c] * 100 / 127);
             draw_column(c, M[c], val, "%", macro_routes(c, 0, 0) ? VAL(c) : T_DIM, macro_v[c] * 1000 / 127, ICON_MIX);
+        }
+        return;
+    }
+    if (home_life()) {                                  /* (V10.7.34) HOME's LIFE: LIFE FILTER PITCH FX (life.c) */
+        for (c = 0; c < 4u; c++) {
+            fmt_int(val, life_v[c]);
+            draw_column(c, LIFE_NM[c], val, "%", c && !life_v[LIFE_AMT] ? T_DIM : VAL(c), life_v[c] * 10,
+                        c == 0u ? ICON_MOD : c == 1u ? ICON_CUTOFF : c == 2u ? ICON_PITCH : ICON_REVERB);
         }
         return;
     }

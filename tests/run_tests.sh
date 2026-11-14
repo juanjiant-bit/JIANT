@@ -397,6 +397,10 @@ if [ -f build/gen/felucca_tables.h ]; then
         python3 tests/fx_rest_test.py "$OUT/fx_rest_test" "$OUT/fx_rest_ref"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/regress" tests/regress.c -lm
     run "regression: golden renders, health, voices, CPU budget" "$OUT/regress" tests/golden.txt tests/cpu_baseline.txt
+    # (V10.7.34) LIFE 0: every golden render of before LIFE bit for bit (tests/golden_life0.txt, never rewritten)
+    run "regression: LIFE 0, the golden renders of before LIFE bit for bit" env -u GOLDEN_UPDATE LIFE=0 "$OUT/regress" tests/golden_life0.txt tests/cpu_baseline.txt
+    $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/life_test" tests/life_test.c -lm
+    run "LIFE (V10.7.34): LIFE 0 still, the voices alive, bounded at 100, who moves whom, the matrix's LIFE BEING and LIFE, HOME > LIFE, kept in a project" "$OUT/life_test"
     $CC -O2 -w -pthread -Ibuild/gen -Ifirmware/src -o "$OUT/mc_thread_test" tests/mc_thread_test.c -lm
     run "mixer: serial, deferred, real thread, delays and lost job" python3 tests/mc_thread_test.py "$OUT/mc_thread_test"
     # (FM4_CONVERT 1: the DIGITAL -> FM6 conversion the editor mirrors, kept in the tree; the firmware retired it in V10.6s)

@@ -29,6 +29,7 @@
  *   peak/VOICE.EN6 (0.9.0, last) six VOICE EN tracks starting a word in one block: that block's instructions, the worst
  *                  of 24 rounds (cpu_vg.py: not per sample) */
 #define UI_TEST_NO_MAIN
+#define HOST_LIFE LIFE_DEF              /* (V10.7.34: the CPU of the sound as it ships: LIFE on) */
 #include "ui_test.c"
 #include <valgrind/callgrind.h>
 
