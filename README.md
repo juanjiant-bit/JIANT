@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.31
+## This release: V10.7.32
 
 ### Installing
 
@@ -482,6 +482,16 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.32 — beta (2026-11-14)
+- **HOME is the song.** HOME's pages: MACROS, TIMELINE, ARRANGE, PARTS, SCOPE, GENE. The song left SAVE.
+- **PARTS is one grid** (PARTS and CLIPS together): tracks by parts A–D. A column's head plays the whole part (OCT+ loops it, OCT− plays the song from it); a cell plays that track only (OCT− stops the track). REC is SONG REC.
+- **SAVE only saves and loads:** TOOLS · PROJECTS · USER · PRESETS · PART SLOTS (last).
+- **LOCKS** (was AUTOMATION and AUTO LIST): on top whether they play and how many; below every record, marked **LOCK** (a step held and a knob turned) or **REC** (recorded with REC), edited as before.
+- **Punch-in where you play it:** hold FX and the recorded lane runs along the bottom with its playhead; the layer switches its knobs to LEN · RES · CLEAR. The held layer's footer says **FX KNOBS** (was MACROS). FX > PUNCH IN left the FX chain.
+- **Gone:** GLO > KEY SPLIT, ENV > STAGE and ENV > TRACKS (projects that used them still load).
+- **FX > SENDS** draws DIST's bar again beside CHOR, DLY and REV.
+- Still out for room: the master BALANCE and DIST NOISE.
 
 ### V10.7.31 — beta (2026-11-14)
 - **FILTER 2 modulates, it never replaces.** NOISE is the depth (0: the sound untouched; 100: the cutoff about ±3.5 octaves). MODE is the movement: **SOFT** glides, **STEP** jumps, **METAL** moves the cutoff at audio rate in tune with the note (RATE becomes RATIO: x0.5 .. x4 and the bell ratios x1.41, x2.76), **BREAK** jumps in time (RATE becomes DIV: 1/8 .. 1/32), **DUST** sparks. **DEST** sends it to the filter, the pitch or both (FILT · F75 · MIX · P75 · PITCH; on PITCH, METAL is an FM in tune). **KEY** moved to its own page, FILTER 3.
