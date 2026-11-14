@@ -31,6 +31,9 @@
  * each place can show). 0.5 px is the odd pixel left over (it goes left / up); 1 px or more is a finding.
  * OUTDIR/align.txt: per place, how often measured, the worst offsets and where.
  * Exit 1 on a finding, an ink under INK_MIN, or an alignment 1 px or more off. */
+#ifndef FELUCCA_PHRASES
+#define FELUCCA_PHRASES 1   /* (V10.7.33) SEQ > PHRASES and CHANCE: out of the image (core.h), kept in the tree and tested here */
+#endif
 #define KC_REF 1                 /* (0.9.0) ui_keycaps.h: the pills as nibbles too (al_keycaps; KC_DATA is Huffman-coded) */
 #include <stdio.h>
 #include <string.h>

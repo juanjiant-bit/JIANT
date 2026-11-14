@@ -3064,6 +3064,7 @@ static void ui_input_frame(void)
                     pl_load();
                 else
                     pl_close();
+                oct = 0;                                /* (GEN back under it: not its OCT+ / OCT- too) */
                 break;
             }
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_SCENE) {   /* (V10.26) SCENE: OCT+ dices
