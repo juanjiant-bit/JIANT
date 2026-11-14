@@ -7,14 +7,15 @@ drone_demo.wav (44,1 kHz, estéreo, unos 12 s)
   - 3 s: toco un A3 y lo suelto. No vuelve a atacar: la misma voz se desliza del D al A
     y la envolvente sigue de largo.
   - 5,8 s: toco un F3 y lo suelto. Baja deslizándose del A al F.
-  - 8,5 s: aprieto OCT- y OCT+ juntos: el drone se apaga con el RELEASE del sonido
-    (la octava queda como estaba). A los 12 s ya no queda nada.
+  - 8,5 s: vuelvo a tocar la tecla del F3 (la nota que suena): se apaga con el RELEASE del
+    sonido. A los 12 s ya no queda nada.
 
 Cómo se arma de nuevo:
   cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/drone_test.c -lm -o build/host/drone_test
   build/host/drone_test renders/v33c/drone_demo.wav
 
 Para probarlo en el FM-1: elegí un pad, EDIT > PLAY, girá POLY hasta DRONE (arriba aparece
-"OCT- + OCT+: DRONE OFF"), tocá una nota o un acorde y soltalo. Tocá otra nota y fijate cómo
-se desliza. Para cortarlo: OCT- + OCT+ juntos, STOP, PANIC (PLAY sostenido), o tocá sola otra
-vez la tecla de la nota que suena.
+"DRONE: TAP ITS KEY TO END"), tocá una nota o un acorde y soltalo: las teclas que suenan
+quedan encendidas. Tocá otra nota y fijate cómo se desliza. Para cortarlo: tocá sola otra vez
+la tecla de la nota que suena, o MUTE en la pista, STOP, PANIC (PLAY sostenido). OCT- y OCT+
+siguen cambiando la octava y no tocan el drone.

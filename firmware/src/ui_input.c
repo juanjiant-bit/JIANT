@@ -488,7 +488,7 @@ static void excite_turn(track_t *t, const int16_t *vp, int32_t old)
     if (vp == &t->p[P_VOICE] && (old == V_DRONE || *vp == V_DRONE)) {   /* (V10.7.33) into / out of DRONE: what sounds */
         panic_req |= (uint8_t)(1u << k);                /* ends (out: what it held); in: the screen says how a drone ends */
         if (*vp == V_DRONE)
-            ui_message("OCT- + OCT+: DRONE OFF");
+            ui_message("DRONE: TAP ITS KEY TO END");
         return;
     }
     if (vp == &t->p[P_E0] && t->eng_req % NENGINES == 0u &&   /* (V10.39) ANALOG into / out of SAW3 PLS3: NOISE <-> INT 3 */
@@ -1921,7 +1921,6 @@ slot_action:
 static const uint8_t XB_SEMI[8] = {0, 1, 2, 3, 4, 5, 7, 12};
 static uint8_t kx_recd KX_BSS;                          /* the selected track's gates as last recorded */
 /* OCT- / OCT+ pressed where they are the octave: the octave (both: back to 0), or with a note held the expression */
-static int8_t oct_was;                                  /* (DRONE) the octave before the last OCT */
 static __attribute__((noinline)) void oct_key(uint32_t b, uint32_t both)
 {
     uint32_t k, m = 0;
@@ -1932,16 +1931,10 @@ static __attribute__((noinline)) void oct_key(uint32_t b, uint32_t both)
         kx_g[b == B_OCTUP] |= (uint8_t)m;
         return;
     }
-    if ((fm1_in.buttons & both) == both && TSEL->p[P_VOICE] == V_DRONE) {
-        song.octave = oct_was;                          /* (V10.7.33) DRONE: both let it go (seq.c latch_drop), the
-                                                         * octave as it was before the first of them */
-        latch_drop_req |= (uint8_t)(1u << song.sel);
-    } else if ((fm1_in.buttons & both) == both)
+    if ((fm1_in.buttons & both) == both)
         song.octave = 0;
-    else {
-        oct_was = song.octave;
+    else
         song.octave += b == B_OCTDN ? (song.octave > -3 ? -1 : 0) : (song.octave < 3 ? 1 : 0);
-    }
     if (drum_track(TSEL) && !song.grid)         /* (0.8.5) the kit's octaves: what this one does */
         ui_message(drum_oct_label(TSEL,song.octave));
 }

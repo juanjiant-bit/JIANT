@@ -3,9 +3,10 @@
 /* (V10.7.33) DRONE, the voice mode (EDIT > PLAY POLY's fifth value; voice.c drone_on): a note held after its key is let
  * go; the next note glides there (GLIDE's time, 58 ms at least) on the same voice, its envelope going on; a chord held
  * as a chord, the next one gliding voice by voice; a chord into one note: the one glides, the rest let go; the droning
- * note's key struck alone again lets it go; OCT- + OCT+ (the octave as it was), STOP, PANIC and leaving DRONE let it all
- * go with RELEASE; the sequencer's notes held to the next one (a note repeated holds); MIDI IN as the keys; a kit
- * ignores it; every engine but the kit's holds and glides.
+ * note's key struck alone again lets it go (RELEASE); MUTE (RELEASE), STOP, PANIC and leaving DRONE let it all go;
+ * OCT- / OCT+ keep their role (the octave; never the drone); the keys of the notes held lit; the sequencer's notes held to
+ * the next one (a note repeated holds); MIDI IN as the keys; a kit ignores it; every engine but the kit's holds and
+ * glides; a project of before with the keys' LATCH (ARP OFF, HOLD ON) opens in DRONE (ui_test.c test_key_latch).
  *   cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/drone_test.c -lm -o build/host/drone_test
  *   build/host/drone_test [OUT.wav]      (OUT.wav: an ANALOG pad in DRONE, three notes gliding, then let go) */
 #define UI_TEST_NO_MAIN 1
@@ -124,15 +125,28 @@ static void test_keys(void)
     on(60); on(64); blocks(ms(50)); off(60); off(64); blocks(2);
     ck("a chord after one droning note: both held (the drone glides to one, the other a voice of its own)", held() == 2u && holds(60) && holds(64));
 
-    /* OCT- + OCT+ on the track's pages: let go, the octave as it was */
+    {                                                    /* the keys of the notes held lit (ui_input.c voice_leds) */
+        uint32_t want = 0, kk;
+        for (kk = 0; kk < 27u; kk++)
+            if (kb_map(T, kk) == 60u || kb_map(T, kk) == 64u) want |= 1u << kk;
+        frame();
+        ck("the keys of the notes held are lit (keys let go)", want && (key_leds(0) & want) == want && !fm1_in.notes);
+        on(60); blocks(2); off(60); blocks(2); frame();
+        for (kk = 0; kk < 27u; kk++)
+            if (kb_map(T, kk) == 60u) want &= ~(1u << kk);
+        ck(".. a note let go (its key again): its key dark, the other still lit", !holds(60) && (key_leds(0) & want) == want &&
+           !(key_leds(0) & ~want));
+    }
     song.octave = 1;
     btn_down(B_OCTDN); frame(); btn_down(B_OCTUP); frame(); btn_up(B_OCTDN); btn_up(B_OCTUP); frame();
     blocks(2);
-    ck("OCT- + OCT+ lets the drone go (RELEASE), the octave as it was", !held() && song.octave == 1);
-    blocks(ms(3000));
+    ck("OCT- + OCT+: the octave back to 0 as ever, the drone held (OCT never ends it)", holds(64) && song.octave == 0);
     press(B_OCTDN); blocks(1);
-    ck("OCT- alone: the octave, as ever", song.octave == 0);
+    ck("OCT- alone: the octave, the drone held", song.octave == -1 && holds(64));
     song.octave = 0;
+    T->p[P_MUTE] = 1; blocks(2);
+    ck("MUTE lets the drone go (RELEASE)", !held());
+    T->p[P_MUTE] = 0; blocks(ms(3000));
 
     tap(60, 50); tap(64, 50);
     ck("held before STOP / PANIC", held() == 1u);
@@ -150,7 +164,7 @@ static void test_keys(void)
         tap(55, 50);
         ck(".. and UNI as ever: a note ends with its key", !held());
         for (i = 0; i < 8u && T->p[P_VOICE] != V_DRONE; i++) turn(EN_K1, 1);
-        ck(".. turned back to DRONE: the screen says how it ends", T->p[P_VOICE] == V_DRONE && msg_is("OCT- + OCT+: DRONE OFF"));
+        ck(".. turned back to DRONE: the screen says how it ends", T->p[P_VOICE] == V_DRONE && msg_is("DRONE: TAP ITS KEY TO END"));
         go_home(); frame();
     }
     blocks(ms(2000));
@@ -244,8 +258,7 @@ static void demo(const char *path)
     wn = 0;
     blocks(ms(300));
     for (i = 0; i < 3u; i++) { on(N[i]); blocks(ms(150)); off(N[i]); blocks(ms(2600)); }
-    song.octave = 0;
-    btn_down(B_OCTDN); frame(); btn_down(B_OCTUP); frame(); btn_up(B_OCTDN); btn_up(B_OCTUP); frame();
+    on(N[2]); blocks(ms(150)); off(N[2]);               /* the droning note's key again: it fades (RELEASE) */
     blocks(ms(3500));
     fseek(wf, 0, SEEK_SET);
     wav_hdr(wf, wn);

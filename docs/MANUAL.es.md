@@ -1283,16 +1283,18 @@ demás motores: una recta, como antes).
 nota siguiente **se desliza** hasta ahí en la misma voz, en el tiempo de GLIDE (en su GL MODE; debajo de 26, los 60 ms
 de un cantante), la envolvente sigue (sin ataque nuevo). Un **acorde** tocado junto queda sonando
 como acorde; el acorde siguiente se desliza voz por voz, cada nota nueva tomando la sostenida más cercana (más notas: las
-de más arrancan voces propias; menos: las voces viejas que ninguna nota tomó se apagan al soltar la última tecla). Para soltarlo: tocá **sola otra vez la tecla de una nota que suena** (esa nota se apaga), o **OCT- + OCT+**
-juntos en las páginas de la pista (todo el drone se apaga con RELEASE; la octava queda como estaba; la pantalla lo dice al
-elegir DRONE), **STOP**, **PANIC** (PLAY sostenido) u otro valor de POLY. Las notas del secuenciador también hacen drone:
+de más arrancan voces propias; menos: las voces viejas que ninguna nota tomó se apagan al soltar la última tecla). Para soltarlo: **tocá sola otra vez la tecla de una nota que suena** (esa nota se apaga con RELEASE; la pantalla lo dice
+al elegir DRONE); **MUTE** en la pista (todo el drone se apaga con RELEASE), **STOP**, **PANIC** (PLAY sostenido) u otro
+valor de POLY. OCT- / OCT+ siguen con lo suyo (la octava, las teclas de expresión sobre una tecla sostenida) y nunca
+cortan un drone. Las teclas de las notas que suenan quedan encendidas, así ves qué está sonando. Las notas del secuenciador también hacen drone:
 cada una sostenida hasta la nota siguiente (una nota repetida sigue, sin redisparar), un paso de acorde un acorde
 sostenido. MIDI IN toca como las teclas.
 
 > **Drones**: elegí un pad (ANALOG SOFT PAD, los sonidos con arco de STRING, los órganos de FM6), poné **POLY** en DRONE,
 > GL MODE en TIME y GLIDE a gusto (60–90: una curva lenta, vocal), tocá una quinta grave y soltala: te quedan las manos
 > libres para las perillas (FILTER, el LFO, los envíos de FX). Tocá otra quinta y las dos notas se deslizan hasta ahí; una
-> nota sola y la más cercana se desliza a ella mientras la otra se apaga; OCT- + OCT+ apaga todo. En una pista
+> nota sola y la más cercana se desliza a ella mientras la otra se apaga; volvé a tocar las teclas encendidas (o MUTE en
+> la pista) para apagarlo. En una pista
 > secuenciada, una nota cada uno o dos compases hace un drone que se mueve debajo del resto.
 
 ---
@@ -1881,8 +1883,12 @@ suenan tal cual llegan.
 
 ARP: MODE, RATE, OCT (1–4), GATE. ARP 2: SWING, PROB, HOLD, ORDER (NOTE / PLAY). Modos: OFF, UP, DN, UPDN, RND, ORD,
 REPEAT, DNUP, UP+8, CONV, DIVG, PINKY, THUMB, WALK, CHORD, **TRNS** (las teclas y el MIDI entrante transponen la
-secuencia de la pista según su distancia a C4, sin tocar notas). **Latch de teclas**: con MODE OFF, **HOLD ON** deja
-las notas sonando después de soltarlas; el acorde siguiente las reemplaza.
+secuencia de la pista según su distancia a C4, sin tocar notas). **HOLD** (ARP 2): el arpegio sigue andando después de
+soltar las teclas; el acorde siguiente lo reemplaza. HOLD es solo del arpegiador: con MODE OFF no hace nada. (V10.7.33:
+el viejo latch de teclas, MODE OFF + HOLD ON dejando las notas sonando, ya no está; para sostener notas usá el modo de voz
+**DRONE**, EDIT > PLAY. Un proyecto guardado con ese latch se abre en DRONE, así sus notas siguen sostenidas; se comporta
+un poco distinto: una nota nueva se desliza desde la sostenida en vez de reemplazarla, y volver a tocar la tecla de una
+nota sostenida la suelta.)
 
 ### Borrar
 

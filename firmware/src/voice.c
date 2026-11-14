@@ -1554,7 +1554,7 @@ static void mono_remove(track_t *t, uint32_t note)
  * (DR_OLD), each the nearest in pitch, gliding there (glide_set: GLIDE as set, a singer's 60 ms at least), the envelope
  * going on; a note with none left starts a voice of its own (a chord holds as a chord). The last key up lets go the old
  * voices no note took (a chord into one note: the one glides, the rest fade). A droning note's key struck alone again
- * lets it go (the sequencer's never: its repeated note holds); OCT- + OCT+ (ui_input.c oct_key, seq.c latch_drop), STOP
+ * lets it go (the sequencer's never: its repeated note holds); MUTE (seq.c events_block), a clear (latch_drop), STOP
  * (seq_stop), PANIC (trk_all_off) and POLY turned off DRONE (ui_input.c: panic_req) let it all go */
 #define DR_OLD(t) ((t)->mono_stack[7])
 static __attribute__((noinline)) void drone_let(track_t *t, uint32_t m)   /* the voices of mask m let go, the gesture over */

@@ -130,11 +130,10 @@ static uint32_t mo_key(const track_t *t)   /* a key's note goes out: not with OF
 {
     return mo_lvl != MO_OFF && !(mo_lvl == MO_ALL && t->p[P_AMODE]);
 }
-/* (stuck notes) the keys' notes sent on (the keys, SCENE, LATCH): bit n of track i's row, note n went out on
- * its channel and its note-off not yet. A note let go ends there if it went out, whatever MIDI OUT or the ARP are by
- * then (they were asked again at the key-up: a note-on out with no note-off); kb_lt bit k: key k's press latched (LATCH
- * then: a HOLD turned on under a key latched nothing, its key-up left the voice sounding for good) */
-static uint32_t mo_ks[NTRK][4] __attribute__((section(".pool"))), kb_lt __attribute__((section(".pool")));
+/* (stuck notes) the keys' notes sent on (the keys, SCENE): bit n of track i's row, note n went out on its channel and
+ * its note-off not yet. A note let go ends there if it went out, whatever MIDI OUT or the ARP are by then (they were
+ * asked again at the key-up: a note-on out with no note-off). (V10.7.33: the keys' LATCH, kb_lt, gone: DRONE holds) */
+static uint32_t mo_ks[NTRK][4] __attribute__((section(".pool")));
 static void mo_kon(uint32_t i, uint32_t x, uint32_t vel)   /* key note x of track i out (note-on) */
 {
     mo_ks[i % NTRK][(x >> 5) & 3u] |= 1u << (x & 31u);
@@ -1435,10 +1434,9 @@ static uint32_t perf_key(uint32_t k)
     return !key_black(k) ? (p < PF_M1 ? p : p == PF_M1 ? PF_CLR : PF_N) : p < NTRK ? PF_M1 + p : p - NTRK < 5u ? BK[p - NTRK] : PF_N;
 }
 
-/* (0.6.14) LATCH: ARP OFF and ARP 2's HOLD ON, the keys' notes keep sounding when let go; the first key of the next
- * chord (no key down) lets the latched ones go. In the arp's note list (held / nheld / arp_phys, unused with ARP OFF);
- * HOLD turned off lets them go (events_block) */
-static int key_latch(const track_t *t) { return t->p[P_AHOLD] && !t->p[P_AMODE]; }
+/* (0.6.14) the arp's note list let go (held / nheld). (V10.7.33) The keys' LATCH (ARP OFF and HOLD ON: the notes kept
+ * sounding) is gone: ARP 2's HOLD is the arpeggiator's alone, voice mode DRONE holds the keys' notes (project.c: a
+ * project of before with that LATCH opens in DRONE) */
 static void latch_release(track_t *t)
 {
     uint32_t i;
@@ -1452,11 +1450,10 @@ static void latch_release(track_t *t)
 /* (0.6.19) the UI (main loop) lets a track's held / latched notes go through here, in events_block: SEQ TOOLS CLEAR,
  * REC CLEAR ALL (they zeroed the list from the main loop: the latched voices kept sounding, nothing left to end them) */
 static volatile uint8_t latch_drop_req;
-static uint8_t latch_was;                           /* bit i: track i was in LATCH last block */
 static void latch_drop(track_t *t)
 {
     latch_release(t);                               /* (their voices and MIDI OUT's notes end) */
-    if (trk_drone(t))                               /* (DRONE: OCT- + OCT+, a clear) */
+    if (trk_drone(t))                               /* (DRONE: a clear, MUTE) */
         drone_let(t, 255u);
     pfx_hush(t);                                    /* (0.6.28) the punch-in repeats end and forget the notes struck */
     t->pfx_lnn = 0;                                 /* (STUTTER / ARP replayed the cleared steps' last notes) */
@@ -1491,19 +1488,6 @@ static void key_next(uint32_t k, track_t *t)
 static void key_on(uint32_t k, track_t *t)
 {
     uint32_t n = chord_build(t, kb_note[k], kb_snd[k]), gap = n > 1u ? chord_gap(t) : 0u, i;
-    kb_lt = key_latch(t) ? kb_lt | 1u << k : kb_lt & ~(1u << k);
-    if (key_latch(t)) {                             /* LATCH: a new chord lets the last one go */
-        uint32_t j;
-        if (!t->arp_phys)
-            latch_release(t);
-        t->arp_phys++;
-        for (j = 0; j < n; j++) {
-            for (i = 0; i < t->nheld && t->held[i] != kb_snd[k][j]; i++)
-                ;
-            if (i == t->nheld && t->nheld < 16u)
-                t->held[t->nheld++] = kb_snd[k][j];
-        }
-    }
     kb_on[k] = 0;
     kb_sn[k] = (uint8_t)n;
     if (n > 1u && rec_on(t) && !t->p[P_AMODE])      /* (0.6.84) recording: the whole chord into one step, where the
@@ -1540,34 +1524,21 @@ static void keys_strum(uint32_t n)
 /* key k is up: the note it started ends, unless another key still holds it */
 static void key_off(uint32_t k, track_t *t)
 {
-    uint32_t n = kb_on[k], i, lat;
+    uint32_t n = kb_on[k], i;
     if (!n)
         return;
-    dxo_off(t, DXO_KEY + k);                         /* the held performance ends (LATCH too) */
+    dxo_off(t, DXO_KEY + k);                         /* the held performance ends */
     kb_on[k] = 0;                                   /* (the strum's notes not in yet: never) */
     kb_sn[k] = 0;
     /* Repeated physical octaves share a performance note. Its scheduler is
-     * released by the last owner, even if the key map/octave or LATCH changed. */
+     * released by the last owner, even if the key map/octave changed. */
     uint32_t control=kb_snd[k][0];
     if(control>=86u&&control<=127u&&!midi_local_held(t,control)) dxo_off(t,DXO_KEY+control);
-    lat = key_latch(t) && (kb_lt >> k) & 1u;        /* LATCH: it keeps sounding (recorded as let go); (stuck notes) a key
-                                                     * pressed before HOLD came on, a note past the list's 16: let go */
-    if (lat && t->arp_phys)
-        t->arp_phys--;
     for (i = 0; i < n; i++) {
-        uint32_t x = kb_snd[k][i], j;
-        for (j = 0; lat && j < t->nheld && t->held[j] != x; j++)
-            ;
-        if (lat && j < t->nheld) {
-            rec_release(t, x);
-            continue;
-        }
+        uint32_t x = kb_snd[k][i];
         if (midi_local_held(t, x))
             continue;
-        if (lat)
-            trk_note_off(t, x);
-        else
-            input_off(t, x);
+        input_off(t, x);
         mo_koff(trk_index(t), drum_oct_note(x, kb_oct[k]));
     }
 }
@@ -3380,7 +3351,7 @@ static void panic_do(void)
     memset(scn_sl, 0, sizeof scn_sl);
     for (i = 0; i < NTRK * 128u; i++)                  /* (the keys' notes sent on: their note-offs) */
         mo_koff(i >> 7, i & 127u);
-    scn_keys = kb_lt = 0;
+    scn_keys = 0;
     midi_in_overflow = 1;
 }
 static __attribute__((noinline)) void panic_block(void)   /* (mo_block, before events_block's panic_req) */
@@ -3456,17 +3427,15 @@ static void events_block(uint32_t n)
     ovf_pr = 0;
     for (i = 0; i < NTRK; i++) {
         track_t *t = &trk[i];
-        if (((latch_drop_req >> i) & 1u) || (((latch_was >> i) & 1u) && !key_latch(t))) {
-            latch_drop_req &= (uint8_t)~(1u << i);  /* (0.6.19) a clear, or LATCH left (HOLD off, ARP on, whatever
-                                                     * the keys: a key down kept it all sounding, and stacking) */
+        if ((latch_drop_req >> i) & 1u) {
+            latch_drop_req &= (uint8_t)~(1u << i);  /* (0.6.19) a clear */
             latch_drop(t);
         }
-        latch_was = (uint8_t)(key_latch(t) ? latch_was | 1u << i : latch_was & ~(1u << i));
+        if (t->p[P_MUTE] && trk_drone(t))           /* (V10.7.33) DRONE muted: what it holds lets go (RELEASE) */
+            drone_let(t, 255u);
         if ((pr >> i) & 1u) {
             if (i < NPART)
                 dxo_n[i] = 0;                       /* (0.8.5) the held ratchets stop */
-            if ((latch_was >> i) & 1u)
-                latch_release(t);                   /* (0.6.19: MIDI OUT's latched notes end too) */
             if (t->arp_note)                        /* (stuck notes) the arp's note ends here: carried onto the new
                                                      * engine below, nothing would ever end it (arp_forget) */
                 arp_silence(t);
@@ -3489,8 +3458,6 @@ static void events_block(uint32_t n)
         engine_block(t);                              /* engine switch: fade, then switch (voice.c) */
         /* ARP turned off, or HOLD released with no key down: drop the latched chord */
         if ((t->armp && !t->p[P_AMODE]) || (t->aholdp && !t->p[P_AHOLD] && !t->arp_phys)) {
-            if (!t->armp && t->aholdp && !t->p[P_AHOLD])
-                latch_release(t);                       /* (0.6.14) LATCH off: its notes go */
             t->nheld = 0;
             if (!t->p[P_AMODE])
                 t->arp_phys = 0;
