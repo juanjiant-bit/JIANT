@@ -1086,7 +1086,7 @@ static int clip_tag(char *b)
  * or its section's (100 + SEC_*); none: the breadcrumb. One string, the lines one after another */
 static const uint8_t HELP_K[] = {250, 251, 252, 253, 254, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
 static const char HELP_S[] =
-    "LFO+SELECT DICE  HOME+PRESETS BPM\0"
+    "HOME+SELECT DICE  HOME+PRESETS BPM\0"
     "HOME+PRESETS BPM  HOME+SELECT GEN\0"
     "OCT+ A PIECE  OCT- BACK\0"
     "LIFE 0 STILL  LINES: WHO MOVES WHOM\0"

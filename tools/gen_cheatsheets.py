@@ -288,7 +288,7 @@ def controls():
                           ('STEP', 'STEP NOTE TIME VEL'), ('STEP · DRUM', 'STEP LANE HIT ACC'), 
                           ('LOCKS · TOP', 'ALL PLAY LOCK REC · OCT+ CLEAR ALL'), ('LOCKS', 'ROW STEP PARAM VALUE · LOCK / REC'),
                           ('STEP COND', 'STEP TYPE VAL EVERY'), ('COND 2', 'STEP TYPE VAL EVERY')]),
-        ('HOME · GLO · SAVE', HEAT[6], [('LIFE', 'LIFE FILTER PITCH FX · LIFE 0: still'), ('MACROS', 'M1 M2 M3 M4 · BPM large · LFO+SELECT dice'), ('TRACKS', 'TRACK LEVEL PAN REV'), ('LIVE MIX', 'FILTER SPACE CLIP DUCK'),
+        ('HOME · GLO · SAVE', HEAT[6], [('LIFE', 'LIFE FILTER PITCH FX · LIFE 0: still'), ('MACROS', 'M1 M2 M3 M4 · BPM large · HOME+SELECT dice'), ('TRACKS', 'TRACK LEVEL PAN REV'), ('LIVE MIX', 'FILTER SPACE CLIP DUCK'),
                                  ('KEYS', 'RATE LOOP DENS DJ FILT (the keys: live modifiers)'), ('RAILS', 'TARGET RATE LOOP DENS'),
                                  ('MIXER', 'LEVEL PAN MUTE G.SWING'), ('GLOBAL', 'BPM G.SWING CLOCK TUNE'), ('COMP', 'ACTION LENGTH COND VALUE'), ('COMP 2', 'the global lane: its TRACKS, MONO / POLY'),
                                  ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('PORTS', ['USB', 'TRS IN', 'BT', '-']), ('PRESETS', 'TRACK ENG SOURCE TYPE · OCT+ load, OCT- close, REC fav'),

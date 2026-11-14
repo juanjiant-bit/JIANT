@@ -340,6 +340,10 @@ static void seq_turn(int32_t s)                   /* (V10.7.33) SEQ held + PRESE
 }
 static void held_turn(uint32_t label, int32_t s)  /* (0.6.67) a button held + SELECT, let go after */
 {
+    if (label == B_HOME && home_macros()) {             /* (V10.7.36: HOME + SELECT on MACROS dices the macros; GEN from
+                                                         * the next page, as the tests ask GEN) */
+        ui.hlv = 3; ui.force = 1; frame();
+    }
     fm1_in.buttons |= 1u << panel.btn[label]; host_pressed |= 1u << panel.btn[label];
     turn(EN_SELECT, s);
     fm1_in.buttons &= ~(1u << panel.btn[label]);
@@ -14330,7 +14334,7 @@ static int test_help_line(void)
     ui_power_on(); frame();
     btn_down(B_HOME); frame(); press(B_OCTUP); btn_up(B_HOME); frames(4);
     ok = (ui_help & 1u) && !ui.menu && ui.home && msg_is("HELP ON") && song.octave == 0;
-    ok &= help_line(b) && str_eq(b, "LFO+SELECT DICE  HOME+PRESETS BPM") && text_w(&AF_X, b) <= 228;
+    ok &= help_line(b) && str_eq(b, "HOME+SELECT DICE  HOME+PRESETS BPM") && text_w(&AF_X, b) <= 228;
     go_title("AUTO KNOBS"); frame();
     ok &= help_line(b) && str_eq(b, "PICK A KNOB AND WHAT MOVES IT");
     go_title("TOOLS"); frame();
@@ -14371,8 +14375,18 @@ static int test_auto_knobs(void)
         turn(EN_SELECT, 1); frame();
         for (k = 0; k < 4u; k++) same &= macro_v[k] == m0[k];
         ok &= home_tracks() && !msg_is("MACROS DICED") && same;   /* (V10.7.34: SELECT on MACROS the next page) */
+        go_home(); frame(); turn(EN_SELECT, -1); frame();   /* (V10.7.36, the owner) HOME + SELECT on MACROS: the macros' dice */
+        ok &= home_macros();
+        btn_down(B_HOME); frame(); turn(EN_SELECT, 1); frame(); btn_up(B_HOME); frames(4);
+        ok &= home_macros() && !gen_on() && msg_is("MACROS DICED");
+        frames(320); fm1_ms += 1200u;
+        press(B_HOME); frame();                         /* .. elsewhere (TRACKS) GEN, as ever */
+        ok &= home_tracks();
+        btn_down(B_HOME); frame(); turn(EN_SELECT, 1); frame(); btn_up(B_HOME); frames(4);
+        ok &= gen_on();
+        ui.confirm = 0; frame();
     }
-    return check("V10.7.33 AUTO KNOBS (was FOCUS): KNOB 3 / 4 write the MATRIX's slot (MATRIX shows it); V10.7.34 MACROS: SELECT pages, no dice", ok);
+    return check("V10.7.33 AUTO KNOBS (was FOCUS): KNOB 3 / 4 write the MATRIX's slot (MATRIX shows it); V10.7.34 MACROS: SELECT pages, no dice; V10.7.36 HOME + SELECT there the macros' dice, elsewhere GEN", ok);
 }
 /* (V10.7.33, the owner) PRESETS always loads sounds, through its list: off it, its first turn opens it over the page and
  * loads nothing; PRESETS scrolls it (nothing loaded), OCT+ loads the sound picked and closes it, OCT- or PL_MS untouched
