@@ -50,19 +50,16 @@ typedef struct { const nv_t *e; const ng_t *g; uint8_t n, ng; } ch_t;
  * HOME TRACKS page (V10.7.33) goes right after MACROS, HE_* moving with it */
 enum { SV_LIB, SV_PROJ, SV_SOUND };
 /* (V10.7.33, the owner) a LIFE page before MACROS, to come: its slot kept (FELUCCA_LIFE 1: the entry, its group, HE_*
- * one further; its screen not built). SCOPE now LIVE MIX, GENE GEN */
-#ifndef FELUCCA_LIFE
-#define FELUCCA_LIFE 0
-#endif
-#define HL FELUCCA_LIFE
-enum { HE_LIFE = HL - 1, HE_MACROS, HE_TIMELINE, HE_ARRANGE, HE_PARTS, HE_SCOPE, HE_GEN };
+ * one further; its screen not built: core.h). SCOPE now LIVE MIX, GENE GEN */
+enum { HE_LIFE = FELUCCA_LIFE - 1, HE_MACROS, HE_TIMELINE, HE_ARRANGE, HE_PARTS, HE_SCOPE, HE_GEN };
 static const nv_t CE_HOME[] = {
 #if FELUCCA_LIFE
                                NV(0, "LIFE", 0, 0),
 #endif
-                               NV(0, "MACROS", HL, 0), NV("TIMELINE", 0, HL + 1, SV_PROJ), NV("ARRANGE", 0, HL + 2, SV_PROJ),
-                               NV("PARTS", 0, HL + 3, SV_PROJ), NV(0, "LIVE MIX", HL + 4, 1), NV(0, "GEN 1", HL + 5, 2),
-                               NV(0, "GEN 2", HL + 5, 2), NV(0, "GEN 3", HL + 5, 2)};
+                               NV(0, "MACROS", FELUCCA_LIFE ? 1 : 0, 0), NV("TIMELINE", 0, FELUCCA_LIFE ? 2 : 1, SV_PROJ),
+                               NV("ARRANGE", 0, FELUCCA_LIFE ? 3 : 2, SV_PROJ), NV("PARTS", 0, FELUCCA_LIFE ? 4 : 3, SV_PROJ),
+                               NV(0, "LIVE MIX", FELUCCA_LIFE ? 5 : 4, 1), NV(0, "GEN 1", FELUCCA_LIFE ? 6 : 5, 2),
+                               NV(0, "GEN 2", FELUCCA_LIFE ? 6 : 5, 2), NV(0, "GEN 3", FELUCCA_LIFE ? 6 : 5, 2)};
 static const ng_t CG_HOME[] = {
 #if FELUCCA_LIFE
                                {"LIFE", 0},
@@ -184,7 +181,7 @@ static const ch_t CHAINS[NAV_KEYS] = {CH(CE_HOME, CG_HOME), CH(CE_SYN, CG_SYN), 
 /* the page each opens on at power-on (the mock-up's): SEQ its STEP, ENV its ENV, LFO its LFO, (p2) GLO its MIXER (LIVE's
  * pages before it: a GLO tap inside, rule 2), (V10.7.32) SAVE its PROJECTS (TOOLS before it: not a page that clears
  * first; TIMELINE, its first until now, HOME's); ui.nmem holds it ^ this */
-static const uint8_t NAV_DEF[NAV_KEYS] = {HL, 0, 0, 0, FELUCCA_LIVE ? 2 : 0, 0, 0, 0, 0, 1, 0, 0, 0};   /* (GLO: MIXER; V10.7.30 its first without LIVE) */
+static const uint8_t NAV_DEF[NAV_KEYS] = {FELUCCA_LIFE ? 1 : 0, 0, 0, 0, FELUCCA_LIVE ? 2 : 0, 0, 0, 0, 0, 1, 0, 0, 0};   /* (GLO: MIXER; V10.7.30 its first without LIVE) */
 static uint32_t nav_key(uint32_t sec) { uint32_t k = sec == SEC_EDIT ? edit_kind() : 0u; return k ? SEC_N - 1u + k : sec; }
 static const ch_t *nav_ch(uint32_t sec) { return &CHAINS[nav_key(sec)]; }
 static uint32_t nav_mem(uint32_t key) { return (uint32_t)(ui.nmem[key] ^ NAV_DEF[key]); }

@@ -114,6 +114,10 @@ static inline const char *desc_unit(const param_desc_t *d)   /* F_INT_CT .. F_RE
                          * graph_stage, graph_env_tracks): out of ENV's chain and the image. Nothing stored: ENV, ENV DEST
                          * and ENV 2 edit the same envelope */
 #endif
+#ifndef FELUCCA_LIFE
+#define FELUCCA_LIFE 0  /* (V10.7.33, the owner) HOME > LIFE, a page before MACROS, to come: its slot in HOME's chain kept
+                         * (ui_lens.c CE_HOME, HE_*), its screen not built */
+#endif
 #ifndef FELUCCA_PHRASES
 #define FELUCCA_PHRASES 0 /* (V10.7.33) SEQ > PHRASES (the factory patterns' loader) and a step's CHANCE page: no way led to
                          * them since 0.9.9-seq2i (PRESETS loads sounds only; CHANCE lives in the step's components and
