@@ -491,7 +491,7 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
 - **DRONE** (EDIT › VOICES, POLY = DRONE): notes keep sounding after the key; the same note again lets it go, MUTE lets them all go, the held notes' keys stay lit. ARP's HOLD is the arp's only (the old key latch opens as DRONE).
 - **VOICE sings phonemes:** the editor turns lyrics into phonemes (English from a dictionary in the editor, Spanish by rule); the device keeps no dictionary. Each language its vowels.
 - **BALANCE** (the master's dynamic EQ) and **DIST NOISE** back. **CRUSH** has its own page: EDIT › VOICES 3, DIST on or off.
-- **UI:** PRESETS opens a list on its first turn (knobs: track, engine, favourites, user); SEQ + PRESETS moves the step; BPM on MACROS (HOME + PRESETS anywhere); global SWING on MIXER; **HELP** with HOME + OCT+ (a line saying what the page's keys do); SELECT on MACROS rolls the macros' dice; FOCUS is **AUTO KNOBS**; pages renamed (EDIT's PLAY is VOICES, SCOPE is LIVE MIX).
+- **UI:** PRESETS opens a list on its first turn (knobs: track, engine, favourites, user); SEQ + PRESETS moves the step; BPM on MACROS (HOME + PRESETS anywhere); global SWING on MIXER; **HELP** with HOME + OCT+ (a line saying what the page's keys do); the macros' dice on LFO + SELECT (SELECT on MACROS turns the page, as everywhere); FOCUS is **AUTO KNOBS**; pages renamed (EDIT's PLAY is VOICES, SCOPE is LIVE MIX).
 - **FX automation is said as it records:** holding an FX with REC armed and playing shows **REC FX AUTOM — REC+FX: CLEAR** (REC + FX clears the FX automation and the punch-in lane; FX + PRESETS, KNOB 4, the lane alone). (A tester's request.)
 
 ### V10.7.32 — beta (2026-11-14)

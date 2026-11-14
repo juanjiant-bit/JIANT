@@ -2456,20 +2456,6 @@ static uint32_t btn_hold(uint32_t *t0, uint32_t label, uint32_t now, int hold_ok
 /* the quick layers: ui_layer.c (included after this file) */
 static void layer_masks(void);
 static void macro_dice(uint32_t mode);                  /* (JIANT 0.4) */
-/* (V10.7.33, the owner) HOME > MACROS: SELECT dices the four macros: their routes rolled again (the MACRO layer's F3 DICE:
- * the tracks that sound) and where each stands */
-static void macro_roll(void)
-{
-    uint32_t k;
-    if (chain_busy()) {
-        ui_message("SONG PLAYS: STOP IT TO EDIT");
-        return;
-    }
-    macro_dice(1);
-    for (k = 0; k < 4u; k++)
-        macro_v[k] = (uint8_t)(rng() & 127u);
-    ui_message("MACROS DICED");
-}
 static void layer_arm(uint32_t pressed, uint32_t now);
 static uint32_t layer_held(void);
 static int layer_knobs_quiet(void);
@@ -3205,10 +3191,8 @@ static void ui_input_frame(void)
         uint64_t cph = cp_held();
         if (cph)                                        /* (seq2h) step keys held: COPY them (the range between) */
             cp_copy(cph);
-        else if (home_macros())                         /* (V10.7.33, the owner) HOME > MACROS: SELECT the macros' dice (a
-                                                         * HOME tap the next page) */
-            macro_roll();
-        else
+        else                                            /* (V10.7.34, the owner: HOME > MACROS too, its dice
+                                                         * LFO + SELECT, the MACRO layer's) */
             nav_select(s);
     }
     for (k = 0; k < 4u && !kq; k++) {

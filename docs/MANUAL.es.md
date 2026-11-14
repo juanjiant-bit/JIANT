@@ -84,8 +84,9 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
   GLO › MIXER ahora es **G.SWING**, el swing global.
 - **AYUDA**: **HOME + OCT+** prende una línea al pie de cada página que dice qué hacen sus teclas (OCT+, OCT−, REC,
   SELECT, F3 …); se guarda con los ajustes. (HOME + OCT− queda para el MENU.)
-- **HOME › MACROS: SELECT tira los dados de las cuatro macros** (sus rutas y dónde está cada una; un toque de HOME
-  pasa a la página siguiente). GEN sigue con sus dados, EDIT + SELECT con los del sonido.
+- **Los dados de las macros: LFO + SELECT** (la capa MACRO; sus rutas y dónde está cada una). V10.7.34: SELECT en HOME ›
+  MACROS pasa de página como en todos lados (en la V10.7.33 tiraba los dados). GEN sigue con sus dados, EDIT + SELECT con
+  los del sonido.
 - **EDIT › AUTO KNOBS** (era FOCUS): "Elegí una perilla y qué la mueve sola". Arriba la perilla elegida y su valor
   como barra en los colores térmicos; abajo qué la mueve y cuánto. Escribe en los mismos slots que muestra LFO ›
   MATRIX, así que siempre coinciden.

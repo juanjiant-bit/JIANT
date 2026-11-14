@@ -198,7 +198,7 @@ static void ui_power_on(void)
     memset(&song, 0, sizeof song);
     scn_on = 0; scn_keys = 0;                     /* (V10.25: SCENE off at power-on, its roles the defaults) */
     memset(eu, 0, sizeof eu);                     /* (EUCLID / MUTATE: the session's, none at power-on) */
-    memset(macro_v, 0, sizeof macro_v);           /* (V10.7.33: MACROS' SELECT dices them; a fresh power-on's 0) */
+    memset(macro_v, 0, sizeof macro_v);           /* (a fresh power-on's 0) */
     ndg_step = 0;
     memset(scn_role, 0, sizeof scn_role); sc_trk = 5;
     memset(&chain, 0, sizeof chain);
@@ -11203,9 +11203,8 @@ static int test_bpm_lock(void)
     turn(EN_SELECT, -1);
     ok &= str_eq(cur_page()->title, "GLOBAL");
     go_home(); frame(); turn(EN_SELECT, 1);
-    ok &= ui.home && home_macros() && msg_is("MACROS DICED") && song.g[G_BPM] == b0;   /* (V10.7.33: MACROS, its dice) */
-    press(B_HOME);
-    ok &= ui.home && home_tracks() && song.g[G_BPM] == b0;   /* (V10.7.34: MACROS TRACKS TIMELINE ..) */
+    ok &= ui.home && home_tracks() && !msg_is("MACROS DICED") && song.g[G_BPM] == b0;   /* (V10.7.34: SELECT on MACROS
+                                                         * the next page, TRACKS; no dice) */
     turn(EN_SELECT, 1);
     ok &= !ui.home && nav_sec() == SEC_HOME && SONG_TRK(cur_page()) && song.g[G_BPM] == b0;
     turn(EN_SELECT, 3);
@@ -12394,11 +12393,17 @@ static int test_lz_home(void)
     ok &= !ui.home && str_eq(cur_page()->title, "PARTS") && lz_count_is("6/10");
     turn(EN_SELECT, -4); frame();                                   /* .. MACROS (TRACKS on the way) */
     ok &= home_macros() && lz_count_is("2/10");
-    turn(EN_SELECT, -1); frame();                                   /* (V10.7.33) MACROS: SELECT the macros' dice */
-    ok &= home_level() == 0u && home_macros() && ui.home && !ui.confirm && msg_is("MACROS DICED");
+    turn(EN_SELECT, -1); frame();                                   /* (V10.7.34) SELECT left on MACROS: LIFE (no dice) */
+    ok &= home_life() && ui.home && !ui.confirm && !msg_is("MACROS DICED");
+    turn(EN_SELECT, 1); frame();
+    ok &= home_macros();
+    turn(EN_SELECT, 5); frame();                                    /* (V10.7.34, the owner) SELECT alone to LIVE MIX */
+    ok &= home_scope() && lz_count_is("7/10");
+    turn(EN_SELECT, -5); frame();
+    ok &= home_macros();
     press(B_HOME); turn(EN_SELECT, 4); frame();
     ok &= home_scope();
-    bad += check("V10.7.34 HOME: LIFE MACROS TRACKS TIMELINE ARRANGE PARTS LIVE MIX GEN 1..3 one chain by SELECT (MACROS: its dice), a HOME tap the next group; tabs, crumb, n/10; "
+    bad += check("V10.7.34 HOME: LIFE MACROS TRACKS TIMELINE ARRANGE PARTS LIVE MIX GEN 1..3 one chain by SELECT (MACROS too, no dice), a HOME tap the next group; tabs, crumb, n/10; "
                  "MACROS' KNOB 1..4 M1..M4", ok);
     {   /* SCOPE's four: the globals on the whole mix, the macros and the sound untouched */
         int16_t cl = song.g[G_CLIP], du = song.g[G_DUCK], dm, rs, e = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
@@ -12497,7 +12502,7 @@ static int test_lz_home(void)
     ok &= home_macros() && lz_count_is("2/10");
     bad += check("V10.7.24 HOME: SCOPE, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: "
                  "LIFE (V10.7.34: its KNOB 1..4 LIFE FILTER PITCH FX), SELECT on to MACROS", ok);
-    press(B_HOME); turn(EN_SELECT, 6); frame();                     /* GEN 2 (V10.7.33: SELECT on MACROS its dice) */
+    press(B_HOME); turn(EN_SELECT, 6); frame();                     /* GEN 2 */
     ok = gen_on() && gen_page() == 1u;
     press(B_ENV); frame();                                          /* not modal: a section's button leaves it */
     ok &= !ui.confirm && !ui.home && str_eq(cur_page()->title, "ENV");
@@ -13414,7 +13419,7 @@ static void rv_walk(uint32_t sec)                      /* the button from HOME, 
     for (i = 0; i < 40u; i++) {
         rv_add();
         at = nav_cur();
-        if (home_macros()) press(B_HOME); else turn(EN_SELECT, 1);   /* (V10.7.33: SELECT on MACROS its dice; a HOME tap) */
+        turn(EN_SELECT, 1);                             /* (V10.7.34: SELECT on MACROS too) */
         frames(2);
         if (nav_cur() == at && nav_sec() == sec)
             break;
@@ -13628,7 +13633,7 @@ static int test_lz_reach(void)
                           k == HE_SCOPE ? ui.home && home_scope() && home_level() == 1u :
                           !ui.home && save_on() && lz_fam() == LZ_SAVE && save_level() == SV_PROJ &&
                           str_eq(cur_page()->title, HS[k - HE_TIMELINE]));
-                    if (k == HE_MACROS) press(B_HOME); else turn(EN_SELECT, 1);   /* (V10.7.33: SELECT on MACROS its dice) */
+                    turn(EN_SELECT, 1);             /* (V10.7.34: SELECT on MACROS too) */
                     frames(2);
                 }
                 okh &= n == 10u;
@@ -14319,7 +14324,7 @@ static int test_help_line(void)
     ui_power_on(); frame();
     btn_down(B_HOME); frame(); press(B_OCTUP); btn_up(B_HOME); frames(4);
     ok = (ui_help & 1u) && !ui.menu && ui.home && msg_is("HELP ON") && song.octave == 0;
-    ok &= help_line(b) && str_eq(b, "SELECT DICE  HOME+PRESETS BPM");
+    ok &= help_line(b) && str_eq(b, "LFO+SELECT DICE  HOME+PRESETS BPM") && text_w(&AF_X, b) <= 228;
     go_title("AUTO KNOBS"); frame();
     ok &= help_line(b) && str_eq(b, "PICK A KNOB AND WHAT MOVES IT");
     go_title("TOOLS"); frame();
@@ -14359,9 +14364,9 @@ static int test_auto_knobs(void)
         memcpy(m0, macro_v, sizeof m0);
         turn(EN_SELECT, 1); frame();
         for (k = 0; k < 4u; k++) same &= macro_v[k] == m0[k];
-        ok &= home_macros() && msg_is("MACROS DICED") && !same;
+        ok &= home_tracks() && !msg_is("MACROS DICED") && same;   /* (V10.7.34: SELECT on MACROS the next page) */
     }
-    return check("V10.7.33 AUTO KNOBS (was FOCUS): KNOB 3 / 4 write the MATRIX's slot (MATRIX shows it); MACROS: SELECT dices the four", ok);
+    return check("V10.7.33 AUTO KNOBS (was FOCUS): KNOB 3 / 4 write the MATRIX's slot (MATRIX shows it); V10.7.34 MACROS: SELECT pages, no dice", ok);
 }
 /* (V10.7.33, the owner) PRESETS always loads sounds, through its list: off it, its first turn opens it over the page and
  * loads nothing; PRESETS scrolls it (nothing loaded), OCT+ loads the sound picked and closes it, OCT- or PL_MS untouched

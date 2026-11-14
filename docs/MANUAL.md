@@ -81,8 +81,8 @@ Everything since V10.6c, the last public version, in one list; each item links t
   KNOB 4 is now **G.SWING**, the global swing.
 - **HELP**: **HOME + OCT+** turns on a line at the foot of every page saying what its own keys do (OCT+, OCT−, REC,
   SELECT, F3 …); kept with the settings. (HOME + OCT− is kept for the MENU.)
-- **HOME › MACROS: SELECT dices the four macros** (their routes and where they stand; a HOME tap goes on to the next
-  page). GEN keeps its dice, EDIT + SELECT the sound's.
+- **The macros' dice: LFO + SELECT** (the MACRO layer's; their routes and where they stand). V10.7.34: SELECT on HOME ›
+  MACROS turns the page like everywhere else (V10.7.33 diced there). GEN keeps its dice, EDIT + SELECT the sound's.
 - **EDIT › AUTO KNOBS** (was FOCUS): on top the knob picked and its value as a bar in the thermal colours; under it what
   moves it and how much. It writes the same slots LFO › MATRIX shows, so both always agree.
 - **New names** (the stored ids are the same): LFO › MOD is **MATRIX** (now the last of LFO's pages), MSEQ **STEP MOD**,
