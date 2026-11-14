@@ -760,7 +760,7 @@ static __attribute__((noinline)) int glatin(void)
     uint32_t d = gs.g->drum;
     return d == DM_CUMBIA || d - DM_REGG < 2u || d - DM_CUMB2 < 5u || !gs.gi;
 }
-static void gen_bass(track_t *t, uint32_t len)
+BTAPP_FN static void gen_bass(track_t *t, uint32_t len)   /* (V10.7.36: the segment's, as gen_role: its only caller) */
 {
     const ggenre_t *g = gs.g;
     const barch_t *a = &BASS_ARCH[gs.ba];
@@ -884,7 +884,7 @@ static uint32_t gchord_at(uint32_t i, int32_t lo, int32_t hi, int32_t *n, int32_
     if (rootless && (q == Q_7 || q == Q_9) && !c->alt && giv(c, 8) == 14) q = Q_R9;
     return gvoice(c, q, lo, hi, prev, np, mode, n);
 }
-static void gen_pads(track_t *t, uint32_t len)
+BTAPP_FN static void gen_pads(track_t *t, uint32_t len)   /* (V10.7.36: the segment's, as gen_role: its only caller) */
 {
     const ggenre_t *g = gs.g;
     uint32_t i, a = gs.amt[GP_CHORDS], last = 0xFFFFu, cnt = 0, style = g->pads, mode = gvo_mode(), fam = HXF(gs.hx);
