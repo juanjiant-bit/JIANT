@@ -167,7 +167,7 @@ static void graph_dximg(const track_t *t)
                                                           * note over it; the silent ones a tick where they would sit; the
                                                           * span IMAGE opens as a bar under the field (POLY only) */
         static const int8_t VP[8] = {-64, 64, -32, 32, -48, 48, -16, 16};
-        int poly = t->p[P_VOICE] == V_POLY;
+        int poly = (t->p[P_VOICE] & 3) == V_POLY;      /* (DRONE: as POLY) */
         int32_t half = PANEL_W / 2 - 16, fy = 62, sp;
         char b[8];
         img = poly ? 127 - clamp(t->p[P_SIMG], 0, 127) : 0;   /* (P_SIMG: stored inverted) */

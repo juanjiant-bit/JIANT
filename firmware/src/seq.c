@@ -94,7 +94,9 @@ static void seq_note_on(track_t *t, uint32_t note, uint32_t vel)
 {
     if(dxp_overrides(t)) return; /* held fill owns this track; direct/live notes stay independent */
     uint32_t i = trk_index(t) % NTRK, send = mo_lvl == MO_ALL && note < 128u && mo_plays(t, note) && !pfx_holds(t);
+    t->dr_seq = 1;                                  /* (DRONE: a note repeated holds, never taps off) */
     trk_note_on(t, note, vel);
+    t->dr_seq = 0;
     if (send) {
         uint32_t x = (uint32_t)clamp((int32_t)note + (t->pfx_pit + t->pfx_rpit) / 16, 0, 127);
         if (mo_out[i][note])
@@ -437,7 +439,7 @@ static uint32_t chord_build_mode(const track_t *t, uint32_t root, uint8_t *out, 
     uint32_t vc = (uint32_t)t->p[P_CVOI], n = 0, i, j, ti = trk_index(t) % NTRK, any = mode & 0x80u, peek = mode & 0x40u;
     int32_t nt[KB_CH + 1], r = (int32_t)root;           /* (V10.25 SCENE any: any voice; V10.27 peek: the screen's, */
     mode &= 0x3Fu;                                      /* LEAD's last chord not written: drawing changed the voicing) */
-    if (!mode || mode > CD_POW || e->oneshot || (e->keys && e->keys(t, 0) >= 0) || (t->p[P_VOICE] != V_POLY && !any)) {
+    if (!mode || mode > CD_POW || e->oneshot || (e->keys && e->keys(t, 0) >= 0) || ((t->p[P_VOICE] & 3) != V_POLY && !any)) {   /* (DRONE: as POLY) */
         out[0] = (uint8_t)root;
         return 1;
     }
@@ -1454,6 +1456,8 @@ static uint8_t latch_was;                           /* bit i: track i was in LAT
 static void latch_drop(track_t *t)
 {
     latch_release(t);                               /* (their voices and MIDI OUT's notes end) */
+    if (trk_drone(t))                               /* (DRONE: OCT- + OCT+, a clear) */
+        drone_let(t, 255u);
     pfx_hush(t);                                    /* (0.6.28) the punch-in repeats end and forget the notes struck */
     t->pfx_lnn = 0;                                 /* (STUTTER / ARP replayed the cleared steps' last notes) */
     t->arp_phys = 0;
@@ -2619,6 +2623,8 @@ static void seq_stop(void)
                 arp_off(&trk[i]);
     for (i = 0; i < NTRK; i++) {
         seq_release(&trk[i]);
+        if (trk_drone(&trk[i]))                    /* (DRONE: STOP lets it go) */
+            drone_let(&trk[i], 255u);
         trk[i].rh_n = 0;                           /* a recorded note held over the stop: as far as it got */
         trk[i].rat_left = 0;
         trk[i].arp_from = 0;

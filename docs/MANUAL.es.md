@@ -594,7 +594,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | SOUND 4 | SOUND | LAYER | FEEDBK | SEND | DRUM (un sonido) |
 | LEVELS | KICK | SNARE | CLAP | HATCL | DRUM |
 | LEVELS 2 | HATOP | TOM | RIM | BELL | DRUM |
-| PLAY (era VOICE) | POLY (POLY MONO LEG UNI; era VOICE) | GLIDE | GL MODE (RATE / TIME del glide; era MODE) | PRIO | todos los motores |
+| PLAY (era VOICE) | POLY (POLY MONO LEG UNI DRONE; era VOICE) | GLIDE | GL MODE (RATE / TIME del glide; era MODE) | PRIO | todos los motores |
 | PLAY 2 (0.8.5; era VOICE 2) | ALLOC | UNISON (cuánto se abren las voces de UNI, 0..100 %; era DETUNE) | VEL (cuánta velocidad le llega al sonido, 0..100 %) | IMAGE (las voces repartidas, POLY; era la página STEREO; no en EXT) | todos menos DRUM |
 | SWARM, SWARM 2 (V10.6z6) | SIDE (FAR / NEAR) | los RATE, MOVE, TONE / NOISE, MOD de ese lado | | (SWARM 2: NOW, el morph y su fuente) | EXT con SOURCE SWARM |
 | FOCUS (0.8.5) | PARAM (E1–E8) | su valor | SRC (el slot de MOD sobre él) | AMT | los sintes (no FM6, DRUM) |
@@ -1272,12 +1272,28 @@ cada pasada queda un poco más sucia y un poco más baja, como una cinta o un BB
 
 ### VOICE (todos los motores)
 
-EDIT > **PLAY** (era VOICE, que es también el nombre del motor VOICE): **POLY** POLY, MONO, LEG (legato), UNI (unísono);
+EDIT > **PLAY** (era VOICE, que es también el nombre del motor VOICE): **POLY** POLY, MONO, LEG (legato), UNI (unísono), DRONE;
 **GLIDE**; **GL MODE** RATE o TIME (cómo se mide el glide); **PRIO** LAST, LOW, HIGH. **PLAY 2**: **ALLOC** (ROT / REUSE),
 **UNISON** (cuánto se abren las voces de UNI, 0..100 %; era DETUNE, un número pelado), **VEL**, **IMAGE** (las voces
 repartidas en el estéreo en POLY; era su propia página STEREO; no en EXT). Las seis pistas comparten un presupuesto de 8 voces; FM6 toca como máximo cuatro por
 pista. (0.9.8) VOICE hace el glide como un cantante: una curva en S de la altura en el mismo tiempo (los
 demás motores: una recta, como antes).
+
+**DRONE** (V10.7.33, todos los motores menos DRUM, que lo ignora): una nota sigue sonando después de soltar la tecla. La
+nota siguiente **se desliza** hasta ahí en la misma voz, en el tiempo de GLIDE (en su GL MODE; debajo de 26, los 60 ms
+de un cantante), la envolvente sigue (sin ataque nuevo). Un **acorde** tocado junto queda sonando
+como acorde; el acorde siguiente se desliza voz por voz, cada nota nueva tomando la sostenida más cercana (más notas: las
+de más arrancan voces propias; menos: las voces viejas que ninguna nota tomó se apagan al soltar la última tecla). Para soltarlo: tocá **sola otra vez la tecla de una nota que suena** (esa nota se apaga), o **OCT- + OCT+**
+juntos en las páginas de la pista (todo el drone se apaga con RELEASE; la octava queda como estaba; la pantalla lo dice al
+elegir DRONE), **STOP**, **PANIC** (PLAY sostenido) u otro valor de POLY. Las notas del secuenciador también hacen drone:
+cada una sostenida hasta la nota siguiente (una nota repetida sigue, sin redisparar), un paso de acorde un acorde
+sostenido. MIDI IN toca como las teclas.
+
+> **Drones**: elegí un pad (ANALOG SOFT PAD, los sonidos con arco de STRING, los órganos de FM6), poné **POLY** en DRONE,
+> GL MODE en TIME y GLIDE a gusto (60–90: una curva lenta, vocal), tocá una quinta grave y soltala: te quedan las manos
+> libres para las perillas (FILTER, el LFO, los envíos de FX). Tocá otra quinta y las dos notas se deslizan hasta ahí; una
+> nota sola y la más cercana se desliza a ella mientras la otra se apaga; OCT- + OCT+ apaga todo. En una pista
+> secuenciada, una nota cada uno o dos compases hace un drone que se mueve debajo del resto.
 
 ---
 

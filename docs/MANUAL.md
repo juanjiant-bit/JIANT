@@ -567,7 +567,7 @@ since 0.6.51: every project opens as it was.
 | SOUND 4 | SOUND | LAYER | FEEDBK | SEND | DRUM (one sound) |
 | LEVELS | KICK | SNARE | CLAP | HATCL | DRUM |
 | LEVELS 2 | HATOP | TOM | RIM | BELL | DRUM |
-| PLAY (was VOICE) | POLY (POLY MONO LEG UNI; was VOICE) | GLIDE | GL MODE (the glide's RATE / TIME; was MODE) | PRIO | every engine |
+| PLAY (was VOICE) | POLY (POLY MONO LEG UNI DRONE; was VOICE) | GLIDE | GL MODE (the glide's RATE / TIME; was MODE) | PRIO | every engine |
 | PLAY 2 (0.8.5; was VOICE 2) | ALLOC | UNISON (UNI's detune, 0..100 %; was DETUNE) | VEL (the sound's velocity amount, 0..100 %) | IMAGE (the voices across, POLY; was the STEREO page; not on EXT) | every engine but DRUM |
 | SWARM, SWARM 2 (V10.6z6) | SIDE (FAR / NEAR) | that side's RATE, MOVE, TONE / NOISE, MOD | | (SWARM 2: NOW, the morph and its source) | EXT with SOURCE SWARM |
 | FOCUS (0.8.5) | PARAM (E1–E8) | its value | SRC (the MOD slot on it) | AMT | the synths (not FM6, DRUM) |
@@ -1215,11 +1215,27 @@ the delay exactly as before (a project of before opens with DRIVE 0).
 
 ### PLAY (every engine)
 
-EDIT > **PLAY** (was VOICE, the VOICE engine's name too): **POLY** POLY, MONO, LEG (legato), UNI (unison); **GLIDE**;
+EDIT > **PLAY** (was VOICE, the VOICE engine's name too): **POLY** POLY, MONO, LEG (legato), UNI (unison), DRONE; **GLIDE**;
 **GL MODE** RATE or TIME (how glide is measured); **PRIO** LAST, LOW, HIGH. **PLAY 2**: **ALLOC** (ROT / REUSE),
 **UNISON** (how far apart UNI's voices are, 0..100 %; was DETUNE, a bare number), **VEL**, **IMAGE** (the voices across
 the stereo field in POLY; was its own STEREO page; not on EXT). The six tracks share a budget of 8 voices; FM6 plays at most four per track. (0.9.8) VOICE glides as a singer: an S-curve in
 pitch over the same time (the other engines: a straight line, as before).
+
+**DRONE** (V10.7.33, every engine but DRUM, which ignores it): a note keeps sounding after its key is let go. The next
+note **glides** there on the same voice over GLIDE's time (in its GL MODE; under 26, a singer's 60 ms), the envelope
+going on (no new attack). A **chord** played together holds as a chord; the next chord glides
+voice by voice, each new note taking the nearest held one (more notes: the extra ones start voices of their own; fewer:
+the old voices no new note took fade when the last key is up). To let go: strike a **droning note's key
+again alone** (that note fades), or **OCT- + OCT+** together on the track's pages (the whole drone fades with RELEASE; the
+octave stays as it was; the screen says how when DRONE is picked), **STOP**, **PANIC** (PLAY held), or another POLY value.
+The sequencer's notes drone too: each held to the next note (a note repeated holds on, never retriggered), a chord step a
+held chord. MIDI IN plays as the keys.
+
+> **Drones**: pick a pad (ANALOG SOFT PAD, STRING's bowed sounds, FM6's organs), set **POLY** to DRONE, GL MODE to TIME
+> and GLIDE to taste (60–90: a slow, vocal bend), play a low fifth and let go: your hands are free for the knobs (FILTER,
+> the LFO, the FX sends). Play another fifth and both notes slide there; one note alone and the nearer one slides to it
+> while the other fades; OCT- + OCT+ fades it all. On a sequenced track one note every bar or two makes a moving drone
+> under the rest.
 
 ---
 
