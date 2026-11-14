@@ -14,6 +14,7 @@
  *          lands the being looks up, its number lights white and one ring in the accent opens. At the top left the
  *          macros' routes counted, a macro turned: where it goes ("M1 T1 CUT+40 .."); LATCH / HOLD LFO at the right
  *   SCOPE  (V10.7.24) the mix's oscilloscope over the whole panel (ui_graph.c graph_scope)
+ *   TRACKS (V10.7.34, the owner) every track playing a lane, one under another (graph_tracks)
  * Nothing in the audio path: the parts' peaks and the scope the UI already reads. */
 #define ECO_N NTRK
 static const int16_t ECO_PX[ECO_N] = {44, 120, 196, 64, 146, 206}, ECO_PY[ECO_N] = {34, 28, 40, 84, 78, 86};   /* (where they
@@ -293,12 +294,67 @@ static void graph_eco(void)
     cv_text_r(210, bot - 22, &AF_L, b, ui.bpm_t ? T_ACCENT : T_TEXT, T_SURF);
     cv_text_r(234, bot - 2, &AF_X, "BPM", T_TEXT, T_SURF);
 }
+/* (V10.7.34, the owner) TRACKS: each track playing (TRACKS 4: four) a lane, one under another, its pattern as a
+ * timeline: its steps in their notes' heat (lz_note, as the roll's and the bars'; a kit's hits, or a step of hits
+ * alone, a block the lane's height), the step playing an ACCENT line (each lane its own step: one line down the lanes when their lengths agree), its
+ * number and engine at the left. A lane glows and its meter rises with its level (eco.en: MACROS' reading of the peaks,
+ * eco_step); muted, or out of GLO's solo, dim; a solo held framed ACCENT, the selected one THEME. Mute and solo are GLO's
+ * keys, as on MIXER (its help line at the foot) */
+static int tk_off(uint32_t c) { return eco_off(c) || (perf_solo && !((perf_solo >> c) & 1u)); }
+static const char *help_find(uint32_t k);               /* (ui_draw.c) */
+/* what TRACKS shows changed: the mutes, the solo, the selection, the selected track's steps and length (SEQ held's tools
+ * and knobs); playing or sounding (a level not yet fallen): every other frame, as MACROS */
+static uint32_t tracks_sig(void)
+{
+    uint32_t c, h = perf_solo * 977u + song.sel * 31u + trk_live + (uint32_t)TSEL->p[P_SLEN] * 7919u, live = song.playing;
+    for (c = 0; c < NTRK; c++) {
+        live |= trk[c].peak > 0 || eco.en[c] > 3;
+        h += (uint32_t)trk[c].p[P_MUTE] << (c + 20u);
+    }
+    return (h ^ steps_hash(TSEL)) + (live ? anim_fr / 2u * 2654435761u : 0u);
+}
+static __attribute__((noinline)) void graph_tracks(void)
+{
+    uint32_t n = trk_live ? trk_live : 1u, c, i;
+    int32_t rh = ((int32_t)graph_h() - 22) / (int32_t)n;
+    (void)eco_step();                                   /* (the levels, once a frame) */
+    for (c = 0; c < n; c++) {
+        const track_t *t = &trk[c];
+        uint32_t len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP), ph = song.playing ? seq_src(t, t->seq_idx) : NSTEP;
+        int32_t y = 2 + (int32_t)c * rh, h = rh - 3, nh = h - 6, en = eco.en[c], lo, hi, dr = drum_track(t),
+                ty = y + (h - 9) / 2, sw = 164 / (int32_t)len;
+        int off = tk_off(c), so = (perf_solo >> c) & 1u, sel = c == song.sel;
+        uint16_t hc = heat_col(48 + en * 200 / 256);
+        char b[3] = {'T', (char)('1' + c), 0};
+        card_line(66, y, 170, h, 3, so ? T_ACCENT : sel ? T_THEME : off ? T_DIM : T_RAISE, 1 + (sel | so));
+        if (!off && en > 3) {                           /* (its level: the lane glows, the meter at its left rises) */
+            cv_rect(68, y + 2, 166, h - 4, ux_mix(T_BG, hc, en * 30 / 256));
+            cv_rect(62, y + h - 1 - (h - 1) * en / 256, 2, (h - 1) * en / 256 + 1, hc);
+        }
+        cv_text(4, ty, &AF_X, b, sel ? T_THEME : off ? T_DIM : T_TEXT);
+        cv_clip_text(19, ty, &AF_X, ENGINES[trk_eng(t)]->name, off ? T_DIM : T_TEXT, T_SURF, 42);
+        pat_range(t, &lo, &hi);
+        for (i = 0; i < len; i++) {                     /* (a note its pitch's height and heat; a kit's hit the lane's) */
+            const step_t *st = &seq_steps(t)[i];
+            int bk = dr || !st->n;
+            if (step_on(st))
+                cv_rect(69 + (int32_t)i * 164 / (int32_t)len, bk ? y + 3 : y + 1 + nh - ((int32_t)st->note[0] - lo) * (nh - 2) / (hi - lo),
+                        sw > 2 ? sw - 1 : 1, bk ? nh : 2,
+                        off ? T_DIM : lz_note(st, (st->flags & SF_ACCENT) != 0u, bk ? -1 : st->note[0]));
+        }
+        if (ph < len)                                   /* the playhead */
+            cv_rect(69 + (int32_t)ph * 164 / (int32_t)len, y + 2, 1, h - 4, off ? T_DIM : T_ACCENT);
+    }
+    cv_clip_text(4, (int32_t)graph_h() - 14, &AF_X, help_find(253u), T_TEXT, T_SURF, 232);   /* (the help line's words) */
+}
 /* (V10.7.24) HOME's panel: MACROS the beings (graph_eco), SCOPE the mix's oscilloscope over the whole panel (ui_graph.c
- * graph_scope, as hot as it is loud) */
+ * graph_scope, as hot as it is loud), (V10.7.34) TRACKS its lanes */
 static void graph_home_lz(void)
 {
     if (home_level() == 1u)
         graph_scope(ACC);
+    else if (home_level() == 3u)
+        graph_tracks();
     else
         graph_eco();
 }

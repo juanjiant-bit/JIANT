@@ -38,6 +38,12 @@ versión pública) o de antes: [Qué hay de nuevo en esta versión](#qué-hay-de
 
 Todo lo que cambió desde la V10.6c, la última versión pública, en una lista; cada punto lleva a su lugar en el manual.
 
+**HOME › TRACKS (V10.7.34)**
+- Una página nueva de HOME justo después de MACROS: **cada pista como un carril**, uno debajo del otro, su patrón como
+  una línea de tiempo en el calor de sus notas, los cabezales corriendo por todos, cada carril brillando cuando su pista
+  suena. **KNOB 1** la pista, **2–4** su LEVEL, PAN y REV; **GLO + una tecla negra** silencia, **GLO + una tecla
+  blanca** sostenida hace solo, como en MIXER. Ver [HOME › TRACKS](#las-secciones-y-sus-cadenas).
+
 **Las palabras de VOICE como fonemas, vuelve BALANCE, CRUSH por su cuenta (V10.7.33)**
 - **VOICE ya no tiene diccionario inglés en el equipo**: el editor web convierte las palabras que escribís en
   **fonemas** de VOICE (el inglés con todo el diccionario CMU, 120 000 palabras; castellano, japonés, portugués e
@@ -81,7 +87,7 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
   llevaba a ellas desde que PRESETS dejó de cargar patrones.
 
 **Cada botón hace lo que dice (V10.7.32)**
-- **HOME = ver y armar el tema**: MACROS · **TIMELINE** · **ARRANGE** · **PARTS** · LIVE MIX · GEN 1–3. Las páginas del
+- **HOME = ver y armar el tema**: MACROS · TRACKS (V10.7.34) · **TIMELINE** · **ARRANGE** · **PARTS** · LIVE MIX · GEN 1–3. Las páginas del
   tema pasaron de SAVE a HOME tal como eran (sus perillas, OCT+ / OCT−, PLAY); un toque de HOME las recorre. Ver
   [TIMELINE y PARTS](#timeline-y-parts-home).
 - **PARTS y CLIPS son una sola página, PARTS**: la grilla de CLIPS (seis pistas × partes A–D) con las cabeceras de las
@@ -214,7 +220,7 @@ Guardá tus archivos WAV.
 
 ### Tu primer tema (5 minutos)
 
-1. Mantené **HOME** y girá **SELECT** (o en HOME tocá **HOME** cinco veces: MACROS → TIMELINE → ARRANGE → PARTS → LIVE MIX → **GEN**). Se abre el **GENERATOR** en
+1. Mantené **HOME** y girá **SELECT** (o en HOME tocá **HOME** seis veces: MACROS → TRACKS → TIMELINE → ARRANGE → PARTS → LIVE MIX → **GEN**). Se abre el **GENERATOR** en
    **EXPLORE** (ningún género, todas las reglas rotas): apretá **OCT+** así, o antes elegí RANDOM o uno de los géneros
    con KNOB 1 o PRESETS. Aparece una idea de tema completa: motores, sonidos, partes, escala, tempo y efectos. Apretá
    **PLAY**.
@@ -252,7 +258,7 @@ Los nombres de abajo son los que usa el firmware (la pantalla HARDWARE CALIBRATI
 
 | Botón | Toque | Mantener |
 | --- | --- | --- |
-| **HOME** | HOME (0.9.2, como el botón de cualquier sección): desde otra sección, la última página de HOME; en HOME la primera página del grupo siguiente, en ronda: **MACROS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN → MACROS** (V10.7.24; V10.7.32 las páginas del tema, desde SAVE; GEN: el generador, GEN hasta la V10.6m). | Unos 0,7 s: abre el **MENU**. |
+| **HOME** | HOME (0.9.2, como el botón de cualquier sección): desde otra sección, la última página de HOME; en HOME la primera página del grupo siguiente, en ronda: **MACROS → TRACKS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN → MACROS** (V10.7.24; V10.7.32 las páginas del tema, desde SAVE; V10.7.34 TRACKS; GEN: el generador, GEN hasta la V10.6m). | Unos 0,7 s: abre el **MENU**. |
 | **ENV** | La sección ENV: desde otro lado, la última página mostrada (al encender, ENV); adentro, vuelve a ENV (un grupo: ENV · ENV DEST · ENV 2; V10.7.32: STAGE y TRACKS ya no están). | (sin capa) |
 | **LFO** | La sección LFO: desde otro lado, la última página mostrada (al encender, LFO); adentro **MOD → LFO → STEP MOD**, en ronda. | Capa **MACRO**: KNOB 1–4 son M1–M4. |
 | **FX** | La sección FX: desde otro lado, la última página mostrada; adentro, el módulo siguiente: **TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → MASTER** (MASTER · TAPE · EQ), en ronda (V10.7.32: PUNCH IN en el FX mantenido). | Capa de **FX punch-in**; el carril de punch-in al pie; FX + PRESETS sus perillas. |
@@ -481,7 +487,7 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 
 | Sección | Grupos (el botón) · páginas (SELECT) | Páginas |
 | --- | --- | --- |
-| **HOME** | (V10.7.24; V10.7.32 las páginas del tema) **MACROS**: MACROS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **LIVE MIX**: LIVE MIX — **GEN**: GEN 1 · GEN 2 · GEN 3 | 8 |
+| **HOME** | (V10.7.24; V10.7.32 las páginas del tema; V10.7.34 TRACKS) **MACROS**: MACROS — **TRACKS**: TRACKS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **LIVE MIX**: LIVE MIX — **GEN**: GEN 1 · GEN 2 · GEN 3 | 9 |
 | **EDIT** (un sinte) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (las que tengan el motor y la pista) — **AUTO KNOBS**: AUTO KNOBS — **VOICES**: VOICES · VOICES 2 · VOICES 3 (codex/coherence: era VOICE; el IMAGE de STEREO pasó a VOICES 2) | hasta 11 |
 | **EDIT** (FM6) | **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **TONE**: FILTER — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **VOICES**: VOICES · VOICES 2 · VOICES 3 | 8 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: KIT LFO · FILTER · STEREO · VOICES · VOICES 3 | 14 |
@@ -512,6 +518,22 @@ nivel PROJECT) y **PROJECTS** (el nivel LIBRARY); EDIT 1 / EDIT 2 del kit DRUM s
   citoplasma (los dibuja solo la pantalla: nada del tiempo del sonido). Arriba a la izquierda, las rutas contadas;
   **girá una macro** y la línea dice adónde va (**M1 T2 CUT+62 T4 E1-31**, "NO ROUTE" si no va a ningún lado: armala en
   LFO › MATRIX, SRC M1–M4); LATCH a la derecha.
+- **TRACKS** (V10.7.34, justo después de MACROS): **cada pista que suena como un carril**, uno debajo del otro (TRACKS 4:
+  cuatro, TRACKS 6: seis), el patrón actual dibujado como una línea de tiempo: cada paso una rayita a la altura de su
+  nota en **el calor de la nota** (como lo pinta el piano roll; un acento casi blanco; los golpes de un kit DRUM como
+  bloques), y en cada carril una línea de **cabezal** (del color de acento; una sola línea por todos cuando sus largos
+  coinciden). A la izquierda de cada carril su número y su motor (**T1 ANALOG**). Un carril **brilla** mientras su
+  pista suena y un medidor chico a su lado sube con el nivel: se ve de un vistazo qué suena. El carril de una pista
+  **silenciada** queda tenue; mientras se sostiene un **solo**, su carril se enmarca en el color de acento y los demás
+  se apagan; el de la pista elegida, en el color del tema.
+  - **KNOB 1 TRACK** elige la pista (las que suenan, como ALGORITHM), **KNOB 2 LEVEL**, **KNOB 3 PAN**, **KNOB 4 REV**
+    (el envío a la reverb: dónde se ubica el carril en la sala; las tres primeras de MIXER antes de su MUTE). Se graban
+    mientras se graba, como en MIXER.
+  - **Silencio y solo** son las teclas de GLO, las mismas que en GLO › MIXER: **GLO + una tecla negra** (F#3 = T1,
+    G#3 = T2 …) silencia o devuelve esa pista, **GLO + una tecla blanca** (F3 = T1, G3 = T2 …) sostenida le hace solo.
+    El pie del panel y la línea de HELP (HOME + OCT+) lo dicen.
+  - **PRESETS** abre la lista de presets sobre la página, como en todos lados: elegí el sonido de la pista desde acá
+    mismo; OCT− (u OCT+ después de cargar) vuelve a TRACKS.
 - **LIVE MIX** (V10.7.24): el **osciloscopio** de la mezcla en todo el panel (cada trazo tan caliente como fuerte suena), y
   cuatro modificadores **globales** sobre toda la mezcla para tocar en vivo, que se guardan con el proyecto como todo
   global (MIDI OUT ALL los manda como NRPN 1):
@@ -2030,7 +2052,7 @@ Son 24 partes en total (6 × 4).
 
 ### La página ARRANGE (HOME › ARRANGE)
 
-ARRANGE es la tercera página de HOME (V10.7.32: las páginas del tema son de HOME, MACROS → TIMELINE → ARRANGE → PARTS →
+ARRANGE es la cuarta página de HOME (V10.7.32: las páginas del tema son de HOME, MACROS → TRACKS → TIMELINE → ARRANGE → PARTS →
 LIVE MIX → GEN; hasta entonces de SAVE; SELECT desde TIMELINE, un toque de HOME, o SAVE + G5 desde cualquier lado): arriba las cuatro partes del proyecto en grande
 (guardadas: en su color, la que suena dice **NOW**), después **ARRANGE**: las filas del tema como fichas (**A16**: la
 sección y sus compases, en el color de la sección; una escena: un punto blanco; la fila en la que estás encendida y
@@ -2066,7 +2088,7 @@ largo y su END (**120 BARS · LOOP**).
 
 ### TIMELINE y PARTS (HOME)
 
-(V10.6o, V10.6s; V10.7.32 en HOME) HOME es donde se ve y se arma el tema: después de MACROS vienen **TIMELINE**,
+(V10.6o, V10.6s; V10.7.32 en HOME) HOME es donde se ve y se arma el tema: después de MACROS y TRACKS vienen **TIMELINE**,
 **ARRANGE** y **PARTS** (hasta la V10.7.32 el grupo SONG de SAVE; CLIPS ahora es la grilla de PARTS), y después LIVE MIX y
 GEN. Un toque de HOME las recorre, HOME desde otro lado vuelve a la que dejaste, y la pantalla dice HOME (sus
 pestañas, la miga de pan, el encabezado). En TIMELINE y ARRANGE el tema se dibuja como una tira de **bloques**, cada fila tan ancha como sus compases y del color de su parte; mientras
@@ -2183,8 +2205,8 @@ Mantené **SAVE**:
 
 ### GEN — el generador de temas (HOME + SELECT)
 
-Mantené **HOME** y girá **SELECT**, desde cualquier página, o en HOME recorré la cadena con **SELECT** (MACROS · LIVE MIX ·
-**GEN 1 · GEN 2 · GEN 3**) o tocá HOME hasta su grupo siguiente (MACROS → LIVE MIX → GEN). (0.9.2) El
+Mantené **HOME** y girá **SELECT**, desde cualquier página, o en HOME recorré la cadena con **SELECT** (MACROS · TRACKS · … · LIVE MIX ·
+**GEN 1 · GEN 2 · GEN 3**) o tocá HOME hasta su grupo siguiente (MACROS → TRACKS → … → LIVE MIX → GEN). (0.9.2) El
 **GENERATOR** es el último grupo de HOME, tres páginas comunes, ya no una pantalla aparte: **SELECT** cambia de página,
 **KNOB 1–4** fijan los cuatro valores que se ven (V10.7.22: **PRESETS** carga sonidos también acá, como en todas las páginas menos las de SEQ), **OCT+** arma la
 pieza y **OCT−** vuelve a MACROS (la pieza queda; **UNDO**, GLO + G4, devuelve lo que había antes); todos los botones de
@@ -2804,7 +2826,7 @@ pequeña curva de respuesta donde iría la barra.
 
 ### Secuencias en vivo: GLO › LIVE (0.9.11)
 
-*(V10.7.30: KEYS y RAILS salen de GLOBAL; GLOBAL abre en MIXER. El DJ FILTER está en HOME › LIVE MIX (FILTER). Una página TRACKS en HOME los reemplaza en una beta próxima.)*
+*(V10.7.30: KEYS y RAILS salen de GLOBAL; GLOBAL abre en MIXER. El DJ FILTER está en HOME › LIVE MIX (FILTER). HOME › TRACKS (V10.7.34) muestra el carril de cada pista, su nivel, paneo y reverb.)*
 
 Las seis secuencias una al lado de la otra y modificadores para tocar encima, como efectos MIDI sobre un master:
 dividir, multiplicar, acortar, dar vuelta, ralear, repetir. Nunca tocan los pasos: cambian cómo el secuenciador los

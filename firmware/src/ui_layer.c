@@ -218,7 +218,7 @@ static __attribute__((noinline)) int16_t *mom_vp(uint32_t k, const param_desc_t 
     if (ui.menu || ui.confirm || gen_on() || mac_latch || lock_held())
         return 0;
     if (ui.home) {                                      /* (V10.7.24) SCOPE: its globals (SPACE: MIX, SIZE kept too) */
-        if (home_macros())
+        if (home_macros() || home_tracks())             /* (V10.7.34: TRACKS' knobs not momentary) */
             return 0;
         *d = &GP[HS_ID[k & 3u]];
         vp = &song.g[HS_ID[k & 3u]];

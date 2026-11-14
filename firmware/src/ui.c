@@ -324,7 +324,7 @@ static struct {
     uint8_t nmem[13];            /* (0.9.2) each section's page last shown, its chain's entry ^ its default (ui_lens.c
                                   * nav_mem: EDIT one per kind of track) */
     uint8_t fxmod;               /* (0.8.5) FX: the effect last shown (BUSES' tile lit) */
-    uint8_t hlv, hset[2];        /* .. HOME: MACROS (0) or SCOPE (1) (V10.7.24; hset: unused since, the RAM's layout kept) */
+    uint8_t hlv, hset[2];        /* .. HOME: MACROS (0), SCOPE (1) or TRACKS (2, V10.7.34) (V10.7.24; hset: unused since, the RAM's layout kept) */
     uint8_t focus;               /* .. EDIT > FOCUS: the parameter (E1..E8: 0..7) */
     uint8_t stage;               /* .. ENV > STAGE: the stage (ATK DEC SUS REL: 0..3) */
     uint8_t ent_len, ent_arp, ent_res, ent_ord, ent_oct, ent_nn;   /* (0.6.37) that entry while held (ui_input.c
@@ -2058,6 +2058,9 @@ static uint32_t macro_routes(uint32_t m, char *b, uint32_t n);   /* (ui_layer.c)
  * their mean, a turn moves both the same; the tracks' sends untouched), DRIVE the master's CLIP (G_CLIP), DUCK the kick's
  * (G_DUCK). Song globals: kept with the project, NRPN 1 (MIDI OUT ALL), FILTER recorded as GLO's LIVE records it */
 static const uint8_t HS_ID[4] = {G_DJF, G_DMIX, G_CLIP, G_DUCK};
+/* (V10.7.34, the owner) HOME > TRACKS' KNOB 2..4: the selected track's LEVEL, PAN and REV, the send that places a lane
+ * in the room (MIXER's first three before its MUTE; the sends' REV, FX > SENDS'). KNOB 1 the track */
+static const uint8_t TK_ID[4] = {0, P_LEVEL, P_PAN, P_REV};
 static int32_t home_space(void) { return (song.g[G_DMIX] + song.g[G_RSIZE] + 1) / 2; }
 
 /* select track i (KNOB 1 on TRACKS, the editor): its sound, pages and pattern from now on */

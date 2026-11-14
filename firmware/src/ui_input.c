@@ -569,6 +569,25 @@ static void home_knob(uint32_t k, int32_t s)
     mo_knob(7, id);                                     /* (a global: NRPN 1 on channel 16, MIDI OUT ALL) */
 }
 
+/* the next track that plays, or the one before (ALGORITHM; HOME > TRACKS' KNOB 1) */
+static __attribute__((noinline)) void track_step(int32_t s)
+{
+    track_select((uint32_t)clamp((int32_t)song.sel + (s > 0 ? 1 : -1), 0, (int32_t)trk_live - 1));
+}
+/* (V10.7.34, the owner) HOME > TRACKS' KNOB k: 1 the track (as ALGORITHM: the tracks that play), 2 LEVEL, 3 PAN, 4 REV
+ * (ui.c TK_ID), recorded as MIXER's */
+static void trk_knob(uint32_t k, int32_t s)
+{
+    track_t *t = TSEL;
+    uint32_t id = TK_ID[k & 3u];
+    if (!k) {
+        track_step(s);
+        return;
+    }
+    t->p[id] = (int16_t)clamp(t->p[id] + accel(EN_K1 + k, s, TP[id].max - TP[id].min), TP[id].min, TP[id].max);
+    knob_cap(t, id);
+}
+
 /* SEQ > STEP's piano roll (not the DRUM grid, whose white keys stay its steps): where step recording writes */
 static int roll_on(void)
 {
@@ -3170,7 +3189,7 @@ static void ui_input_frame(void)
         presets_turn(s);
     if (!lay && (s = panel_enc(EN_ALGO)) != 0)     /* ALGORITHM: the selected track, on every page. (0.6.55) Only
                                                     * the tracks that play: TRACKS 4 stops at T4 (T5 / T6 asleep) */
-        track_select((uint32_t)clamp((int32_t)song.sel + (s > 0 ? 1 : -1), 0, (int32_t)trk_live - 1));
+        track_step(s);
     if (glo) {                                          /* GLO + SELECT: the tempo (0.6.67: the only way, with TAP) */
         if (sel) {
             song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + accel(EN_SELECT, sel, 200), GP[G_BPM].min, GP[G_BPM].max);
@@ -3222,6 +3241,8 @@ static void ui_input_frame(void)
         }
         if (home_macros()) {                            /* (0.8.5) HOME's MACROS: M1..M4 */
             macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
+        } else if (home_tracks()) {                     /* (V10.7.34) HOME > TRACKS: the track, its LEVEL PAN REV */
+            trk_knob(k, s);
         } else if (ui.home) {                           /* (V10.7.24) HOME's SCOPE: the mix's four */
             home_knob(k, s);
         } else {
