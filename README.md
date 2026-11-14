@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.34
+## This release: V10.7.35
 
 ### Installing
 
@@ -482,6 +482,12 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.35 — beta (2026-11-14)
+- **SELECT on HOME › MACROS turns the page** like everywhere: SELECT alone reaches LIVE MIX. The macros' dice: **LFO + SELECT**.
+- **EDIT, the sound first:** EDIT 1 · EDIT 2 · the engine's page (MORPH, ROTOR, WORDS…) · FILTER · FILTER 2 · **TONE** · VOICES · VOICES 2 · AUTO KNOBS last. TONE gathers what had a page of one or two knobs: **KEY TRK** (was FILTER 3's KEY: how much the filter follows the note), **CRUSH**, **LIFE**. FM6: its operators before the filter. A kit and EXT keep CRUSH and LIFE on VOICES 3.
+- **LIFE past 25 % keeps growing, up to x4 at 100 %:** the tracks' pull on each other's filter, pitch (a sag up to ~2 semitones) and sends, each voice's wander, bloom and breath. LIFE 0 and 25 sound as before.
+- **PRESETS' list** in larger letters (fewer names a screen).
 
 ### V10.7.34 — beta (2026-11-14), with V10.7.33
 - **HOME › LIFE**, HOME's first page: every voice breathes on its own (a few cents, its filter, its level), a held note has an arc, and the tracks move each other before the effects (a kit ducks the others' filters, a pad opens them, at the top of PITCH a cross-FM between tracks). **KNOB 1 LIFE** (0: the still synth, exactly as before), **2 FILTER**, **3 PITCH**, **4 FX**. The screen: one being per track, a line from each track to the one it moves. On by default (25 %).
