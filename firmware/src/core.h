@@ -415,7 +415,7 @@ static int drum_from_perc(uint32_t engine, int16_t *e)
 }
 
 /* ------------------------------------------------- voices, engines --- */
-enum { V_POLY, V_MONO, V_LEGATO, V_UNISON };   /* P_VOICE */
+enum { V_POLY, V_MONO, V_LEGATO, V_UNISON, V_DRONE };   /* P_VOICE (V10.7.33: DRONE appended, voice.c drone_on) */
 typedef struct {
     uint8_t note, vel, gate, active;
     uint8_t stage;               /* env: 0 off, 1 attack, 2 decay/sustain, 3 release, 4 given up (fading) */
@@ -872,10 +872,11 @@ typedef struct track {
     uint8_t rh_last;             /* the last of them; rh_bak: what it held (an early release puts it back) */
     step_t rh_bak;
     /* mono */
-    uint8_t mono_stack[8];
+    uint8_t mono_stack[8];       /* (DRONE: [0..6] the keys down, [7] the voices the next note glides from) */
     uint8_t nmono;
     uint8_t mono_note;           /* note the MONO / LEGATO / UNISON voice(s) play, 0 = none */
     uint8_t rr;                  /* POLY ROTATE: next voice to try */
+    uint8_t dr_seq;              /* (V10.7.33 DRONE) the sequencer's note on (seq.c seq_note_on: no tap off; was padding) */
     /* mix runtime */
     int32_t peak;
     int32_t dist_hp, dist_lp1, dist_lp2;   /* DIST insert state (fx.c) */

@@ -1,0 +1,21 @@
+DRONE, el modo de voz nuevo (V10.7.33, rama codex/v33c-drone). Esta carpeta se borra antes de publicar.
+
+drone_demo.wav (44,1 kHz, estéreo, unos 12 s)
+  Una pista ANALOG con el preset SOFT PAD, EDIT > PLAY con POLY en DRONE, GL MODE en TIME y
+  GLIDE en 70 (cada deslizamiento dura casi medio segundo, sea cual sea el salto).
+  - 0,3 s: toco un D3 y lo suelto enseguida (150 ms). La nota se queda sonando sola.
+  - 3 s: toco un A3 y lo suelto. No vuelve a atacar: la misma voz se desliza del D al A
+    y la envolvente sigue de largo.
+  - 5,8 s: toco un F3 y lo suelto. Baja deslizándose del A al F.
+  - 8,5 s: vuelvo a tocar la tecla del F3 (la nota que suena): se apaga con el RELEASE del
+    sonido. A los 12 s ya no queda nada.
+
+Cómo se arma de nuevo:
+  cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/drone_test.c -lm -o build/host/drone_test
+  build/host/drone_test renders/v33c/drone_demo.wav
+
+Para probarlo en el FM-1: elegí un pad, EDIT > PLAY, girá POLY hasta DRONE (arriba aparece
+"DRONE: TAP ITS KEY TO END"), tocá una nota o un acorde y soltalo: las teclas que suenan
+quedan encendidas. Tocá otra nota y fijate cómo se desliza. Para cortarlo: tocá sola otra vez
+la tecla de la nota que suena, o MUTE en la pista, STOP, PANIC (PLAY sostenido). OCT- y OCT+
+siguen cambiando la octava y no tocan el drone.

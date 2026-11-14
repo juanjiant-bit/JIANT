@@ -668,11 +668,13 @@ static uint32_t trk_nvoice(const track_t *t)
     return c && c < NVOICE ? c : NVOICE;
 }
 
-/* the part's voice mode: P_VOICE, POLY for an engine of hits (engine_t.oneshot: DRUM) */
+/* the part's voice mode: P_VOICE, POLY for an engine of hits (engine_t.oneshot: DRUM); (V10.7.33) DRONE allocates as
+ * POLY (its notes held: trk_drone, drone_on) */
 static uint32_t trk_vmode(const track_t *t)
 {
-    return ENGINES[t->engine]->oneshot ? V_POLY : (uint32_t)t->p[P_VOICE];
+    return ENGINES[t->engine]->oneshot ? V_POLY : (uint32_t)t->p[P_VOICE] & 3u;
 }
+static __attribute__((noinline)) int trk_drone(const track_t *t) { return t->p[P_VOICE] == V_DRONE && t->engine != ENGI_DRUM; }   /* (DRUM: the one oneshot) */
 
 /* ------------------------------------------------- the shared voice budget --- */
 /* (JIANT 0.6.16) the load budget: while it is set the sound may not grow: a new note takes a voice instead of adding
@@ -1140,7 +1142,7 @@ static __attribute__((noinline)) void voice_half(track_t *t, const engine_t *e, 
 }
 
 /* the budget is full: free a voice for part t. 0 = nothing to take (soft) */
-static int voice_room(track_t *t, int soft)
+static __attribute__((noinline)) int voice_room(track_t *t, int soft)   /* (V10.7.33: kept a call, as it was) */
 {
     track_t *vp = 0;
     uint32_t k;
@@ -1547,6 +1549,56 @@ static void mono_remove(track_t *t, uint32_t note)
     t->nmono = (uint8_t)k;
 }
 
+/* (V10.7.33) DRONE (P_VOICE 4, the owner's): a note sounds on after its key is let go. The keys of a gesture (from
+ * the first key down to the last one up; mono_stack[0..6] the keys down) take the voices that sounded before it
+ * (DR_OLD), each the nearest in pitch, gliding there (glide_set: GLIDE as set, a singer's 60 ms at least), the envelope
+ * going on; a note with none left starts a voice of its own (a chord holds as a chord). The last key up lets go the old
+ * voices no note took (a chord into one note: the one glides, the rest fade). A droning note's key struck alone again
+ * lets it go (the sequencer's never: its repeated note holds); MUTE (seq.c events_block), a clear (latch_drop), STOP
+ * (seq_stop), PANIC (trk_all_off) and POLY turned off DRONE (ui_input.c: panic_req) let it all go */
+#define DR_OLD(t) ((t)->mono_stack[7])
+static __attribute__((noinline)) void drone_let(track_t *t, uint32_t m)   /* the voices of mask m let go, the gesture over */
+{
+    uint32_t i;
+    for (i = 0; i < NVOICE; i++)
+        if (((m >> i) & 1u) && t->v[i].gate)
+            voice_off_at(t, &t->v[i]);
+    DR_OLD(t) = 0;
+    t->nmono = 0;
+}
+static int drone_on(track_t *t, uint32_t note)          /* 1: a voice of its own wanted (trk_note_on, as POLY) */
+{
+    uint32_t i, k = NVOICE, best = 128u, m = 0, old = t->nmono ? DR_OLD(t) : 255u;
+    voice_t *v = t->v;
+    int32_t d;
+    for (i = 0; i < NVOICE; i++, v++)
+        if (v->active && v->gate) {
+            m |= 1u << i;
+            d = (int32_t)v->note - (int32_t)note;
+            if (!d && !t->nmono && !t->dr_seq) {        /* droning: its key struck alone again lets it go */
+                voice_off_at(t, v);
+                return 0;
+            }
+            d = d < 0 ? -d : d;                         /* (the same note: 0, held on) */
+            if (((old >> i) & 1u) && (uint32_t)d < best) { best = (uint32_t)d; k = i; }
+        }
+    if (!t->nmono)                                      /* a gesture's first key: what sounds is what it glides from */
+        DR_OLD(t) = (uint8_t)m;
+    if (t->nmono < 7u)
+        t->mono_stack[t->nmono++] = (uint8_t)note;
+    if (k == NVOICE)
+        return 1;
+    DR_OLD(t) &= (uint8_t)~(1u << k);
+    v = &t->v[k];
+    if (!best)                                          /* held on (the sequencer's note again) */
+        return 0;
+    v->note = (uint8_t)note;
+    glide_from_trk(t, v);
+    v->pitch16 = ((int32_t)note + trk_trans(t)) * 16 + t->pfx_rpit;
+    glide_set(t, v, t->p[P_GLIDE] > 25 ? 1 : 2);        /* (under 26: TIME's under the 2's 58 ms) */
+    return 0;
+}
+
 static int pfx_note(track_t *t, uint32_t note, uint32_t vel);   /* pfx.c (in fx.c) */
 static uint8_t trk_hush;
 /* trk_live is shared with the matrix; declared in core.h. */
@@ -1586,11 +1638,16 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
         t->lfo_ph = (uint32_t)t->p[P_LPHASE] << 25;
         t->lfo_fade = 0;
     }
-    if (mode == V_POLY) {
-        voice_t *v = voice_alloc(t, note);
+    if (trk_drone(t)) {                                 /* (DRONE: mode POLY, its keys in the mono stack) */
+        if (!drone_on(t, note))
+            return;
+    } else if (mode == V_POLY) {
         t->nmono = 0;                                   /* no stale mono stack after a mode change */
         t->mono_note = 0;
-        voice_begin(t, v, note, vel, t->p[P_GLIDE] != 0 && !ENGINES[t->engine]->oneshot, 0, 0u);
+    }
+    if (mode == V_POLY) {
+        voice_t *v = voice_alloc(t, note);
+        voice_begin(t, v, note, vel, t->p[P_GLIDE] != 0 && !ENGINES[t->engine]->oneshot && t->p[P_VOICE] != V_DRONE, 0, 0u);
         return;
     }
     {
@@ -1619,6 +1676,11 @@ static void trk_note_off(track_t *t, uint32_t note)
         }
     t->xp_n = (uint8_t)k;
     mono_remove(t, note);                              /* a mode change must not retain a released key */
+    if (trk_drone(t)) {                                 /* DRONE: held; the last key up lets go what no note took */
+        if (!t->nmono)
+            drone_let(t, DR_OLD(t));
+        return;
+    }
     if (mode != V_POLY) {
         uint32_t nv = mode == V_UNISON ? trk_nvoice(t) : 1u;
         if (t->mono_note == note) {
@@ -1746,6 +1808,8 @@ static void engine_block(track_t *t)
             t->xp_n = 0;
             for (i = 0; i < n; i++)
                 trk_note_on(t, t->xp_note[i], t->xp_vel[i]);
+            if (trk_drone(t))
+                t->nmono = 0;                           /* (DRONE: carried, not keys down) */
             if (n && any)                               /* (0.6.41) on the new engine: in, not at once */
                 t->xin = t->xin_len = XF_ENG;
         }

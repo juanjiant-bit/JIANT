@@ -135,6 +135,8 @@ jobs:
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/expr-keys | tee build/song-check/expr-keys.log
           cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/legato_rec_test.c -lm -o build/song-check/legato-rec
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 LEGATO_REC_VERBOSE=1 build/song-check/legato-rec | tee build/song-check/legato-rec.log
+          cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/drone_test.c -lm -o build/song-check/drone
+          ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/drone | tee build/song-check/drone.log
       - name: Song sounds held, PROX / AIR calibration median and SYSTEM 2 (V10.6z8)
         run: |
           set -euo pipefail

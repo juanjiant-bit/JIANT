@@ -8857,38 +8857,28 @@ static int gate_on(const track_t *t, uint32_t note)
     return 0;
 }
 static int test_key_latch(void)
-{
+{   /* (V10.7.33) the keys' LATCH is gone (DRONE holds): ARP 2's HOLD is the arpeggiator's alone; with ARP OFF it does
+     * nothing, a key let go ends its note; a project saved with that LATCH opens in DRONE (project.c proj_latch_drone) */
     int bad = 0;
     track_t *t;
-    uint32_t a, b;
+    project_t q;
+    uint32_t a;
     ui_power_on();
     song.sel = 0; t = &trk[0];
     t->p[P_AMODE] = 0; t->p[P_AHOLD] = 1; t->p[P_SUS] = 127; t->p[P_MUTE] = 0;
     fm1_in.notes = 1u; events_block(CTL); a = kb_note[0];
+    bad += check("HOLD ON, ARP OFF: the key's note sounds", gate_on(t, a));
     fm1_in.notes = 0; events_block(CTL);
-    bad += check("LATCH: ARP OFF, HOLD ON: the key let go, its note still sounds", gate_on(t, a));
-    fm1_in.notes = 4u; events_block(CTL); b = kb_note[2];
-    fm1_in.notes = 0; events_block(CTL);
-    t->xf = 0; events_block(CTL);
-    bad += check("  the next key: the latched note goes, the new one stays", !gate_on(t, a) && gate_on(t, b));
+    bad += check("  let go: it ends (no LATCH any more), nothing kept in the arp's list", !gate_on(t, a) && !t->nheld && !t->arp_phys);
     t->p[P_AHOLD] = 0; events_block(CTL);
-    bad += check("  HOLD off: the latched note goes", !gate_on(t, b));
-    fm1_in.notes = 1u; events_block(CTL); fm1_in.notes = 0; events_block(CTL);
-    bad += check("  HOLD OFF: a key let go ends its note as ever", !gate_on(t, a));
-    t->p[P_AHOLD] = 1;                                  /* (0.6.19) HOLD off with a key still down */
-    fm1_in.notes = 1u; events_block(CTL); fm1_in.notes = 0; events_block(CTL);
-    fm1_in.notes = 4u; events_block(CTL);               /* (b down: arp_phys 1) */
-    t->p[P_AHOLD] = 0; events_block(CTL);
-    fm1_in.notes = 0; events_block(CTL);
-    bad += check("  HOLD off with a key down: the latched notes still go (they droned)", !gate_on(t, a) && !gate_on(t, b));
-    t->p[P_AHOLD] = 1;
-    fm1_in.notes = 1u; events_block(CTL); fm1_in.notes = 0; events_block(CTL);
-    t->p[P_AMODE] = 1; events_block(CTL);               /* ARP turned on */
-    t->p[P_AMODE] = 0; t->p[P_AHOLD] = 1;
-    fm1_in.notes = 1u; events_block(CTL); fm1_in.notes = 0; events_block(CTL);
-    latch_drop_req |= 1u; events_block(CTL);            /* SEQ TOOLS CLEAR's request */
-    bad += check("  a clear lets the latched chord go (it was orphaned)", !gate_on(t, a) && !t->nheld && !t->arp_phys);
-    t->p[P_AHOLD] = 0; events_block(CTL);
+    memset(&q, 0, sizeof q);
+    q.t[1].engine = ENGI_ANALOG; q.t[1].p[P_AHOLD] = 1; q.t[1].p[P_VOICE] = V_MONO;
+    q.t[2].engine = ENGI_ANALOG; q.t[2].p[P_AHOLD] = 1; q.t[2].p[P_AMODE] = 1;
+    q.t[3].engine = ENGI_DRUM; q.t[3].p[P_AHOLD] = 1;
+    proj_latch_drone(&q);
+    bad += check("  a project with the LATCH (ARP OFF, HOLD ON) opens in DRONE; an arp's HOLD, a kit: as they were",
+                 q.t[1].p[P_VOICE] == V_DRONE && q.t[2].p[P_VOICE] == V_POLY && q.t[3].p[P_VOICE] == V_POLY &&
+                 q.t[0].p[P_VOICE] == V_POLY);
     return bad;
 }
 

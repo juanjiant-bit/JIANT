@@ -581,7 +581,7 @@ since 0.6.51: every project opens as it was.
 | SOUND 4 | SOUND | LAYER | FEEDBK | SEND | DRUM (one sound) |
 | LEVELS | KICK | SNARE | CLAP | HATCL | DRUM |
 | LEVELS 2 | HATOP | TOM | RIM | BELL | DRUM |
-| PLAY (was VOICE) | POLY (POLY MONO LEG UNI; was VOICE) | GLIDE | GL MODE (the glide's RATE / TIME; was MODE) | PRIO | every engine |
+| PLAY (was VOICE) | POLY (POLY MONO LEG UNI DRONE; was VOICE) | GLIDE | GL MODE (the glide's RATE / TIME; was MODE) | PRIO | every engine |
 | PLAY 2 (0.8.5; was VOICE 2) | ALLOC | UNISON (UNI's detune, 0..100 %; was DETUNE) | VEL (the sound's velocity amount, 0..100 %) | IMAGE (the voices across, POLY; was the STEREO page; not on EXT) | every engine but DRUM |
 | PLAY 3 (V10.7.33) | CRUSH (the track's bit reducer, 0..100 %; was DIST TYPE CRUSH) | | | | every engine (a kit's too) |
 | SWARM, SWARM 2 (V10.6z6) | SIDE (FAR / NEAR) | that side's RATE, MOVE, TONE / NOISE, MOD | | (SWARM 2: NOW, the morph and its source) | EXT with SOURCE SWARM |
@@ -1260,12 +1260,29 @@ the delay exactly as before (a project of before opens with DRIVE 0).
 
 ### PLAY (every engine)
 
-EDIT > **PLAY** (was VOICE, the VOICE engine's name too): **POLY** POLY, MONO, LEG (legato), UNI (unison); **GLIDE**;
+EDIT > **PLAY** (was VOICE, the VOICE engine's name too): **POLY** POLY, MONO, LEG (legato), UNI (unison), DRONE; **GLIDE**;
 **GL MODE** RATE or TIME (how glide is measured); **PRIO** LAST, LOW, HIGH. **PLAY 2**: **ALLOC** (ROT / REUSE),
 **UNISON** (how far apart UNI's voices are, 0..100 %; was DETUNE, a bare number), **VEL**, **IMAGE** (the voices across
 the stereo field in POLY; was its own STEREO page; not on EXT). **PLAY 3** (V10.7.33): **CRUSH**, the track's bit
 reducer (see [Per track](#per-track)). The six tracks share a budget of 8 voices; FM6 plays at most four per track. (0.9.8) VOICE glides as a singer: an S-curve in
 pitch over the same time (the other engines: a straight line, as before).
+
+**DRONE** (V10.7.33, every engine but DRUM, which ignores it): a note keeps sounding after its key is let go. The next
+note **glides** there on the same voice over GLIDE's time (in its GL MODE; under 26, a singer's 60 ms), the envelope
+going on (no new attack). A **chord** played together holds as a chord; the next chord glides
+voice by voice, each new note taking the nearest held one (more notes: the extra ones start voices of their own; fewer:
+the old voices no new note took fade when the last key is up). To let go: **tap a droning note's key again** on its own
+(that note fades with RELEASE; the screen says so when DRONE is picked); **MUTE** the track (the whole drone fades with
+RELEASE), **STOP**, **PANIC** (PLAY held), or another POLY value. OCT- / OCT+ keep their role (the octave, the
+expression keys over a held key) and never end a drone. The keys of the droning notes stay lit, so you see what holds.
+The sequencer's notes drone too: each held to the next note (a note repeated holds on, never retriggered), a chord step a
+held chord. MIDI IN plays as the keys.
+
+> **Drones**: pick a pad (ANALOG SOFT PAD, STRING's bowed sounds, FM6's organs), set **POLY** to DRONE, GL MODE to TIME
+> and GLIDE to taste (60–90: a slow, vocal bend), play a low fifth and let go: your hands are free for the knobs (FILTER,
+> the LFO, the FX sends). Play another fifth and both notes slide there; one note alone and the nearer one slides to it
+> while the other fades; tap the lit keys again (or MUTE the track) to fade it out. On a sequenced track one note every bar or two makes a moving drone
+> under the rest.
 
 ---
 
@@ -1829,8 +1846,11 @@ gate). STRUM at 0: the steps' chords as before, all at once. A drum track, MONO,
 
 ARP: MODE, RATE, OCT (1–4), GATE. ARP 2: SWING, PROB, HOLD, ORDER (NOTE / PLAY). Modes: OFF, UP, DN, UPDN, RND, ORD,
 REPEAT, DNUP, UP+8, CONV, DIVG, PINKY, THUMB, WALK, CHORD, **TRNS** (the keys and incoming MIDI transpose the track's
-sequence by their distance from C4, without playing notes). **Key latch**: with MODE OFF, **HOLD ON** keeps the notes
-sounding after you let go; the next chord replaces them.
+sequence by their distance from C4, without playing notes). **HOLD** (ARP 2): the arpeggio keeps running after you let
+go of the keys; the next chord replaces it. HOLD is the arpeggiator's alone: with MODE OFF it does nothing. (V10.7.33:
+the old key latch, MODE OFF + HOLD ON keeping the notes sounding, is gone; to hold notes use voice mode **DRONE**, EDIT >
+PLAY. A project saved with that latch opens in DRONE, so its notes still hold; it behaves slightly differently: a new
+note glides from the held one instead of replacing it, and a held note's key tapped again lets it go.)
 
 ### Clearing
 

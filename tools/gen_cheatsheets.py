@@ -390,7 +390,8 @@ def sound():
                   'FILT · F75 · MIX · P75 · PITCH (VOICE: FILT). <b>FILTER 3</b>: KEY tracking 0 .. 100 % (ANALOG starts at 21 %). '
                   'MOD source <b>F.NOISE</b>: the raw modulator. LP24 with DRV: level kept, RES top sings.</p>'))
     b.append(card('VOICE · PLAYING', HEAT[2], knobs('VCE', 'GLD', 'GLMOD', 'PRIO') +
-                  '<p style="margin-top:8px">POLY · MONO · LEG · UNI; glide and its mode; LAST / LOW / HIGH priority. '
+                  '<p style="margin-top:8px">POLY · MONO · LEG · UNI · DRONE (held after the key, the next note glides; '
+                  'its key again lets it go, its keys lit); glide and its mode; LAST / LOW / HIGH priority. '
                   '<b>8 voices</b> shared by the six tracks (MONO and LEGATO keep their note). <b>EDIT › PLAY 2 IMAGE</b> (V10.49; was its STEREO page): '
                   'in POLY each voice its own place across the stereo field, drawn on the page (V10.52).</p>'))
     b.append(card('DICE', HEAT[5], '<p><b>EDIT + SELECT</b>: a random factory preset of the engine, every '

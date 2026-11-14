@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* Stuck notes (hanging voices, missing MIDI OUT note-offs): a key or MIDI note held while the state that made its
- * notes changes (octave, chord, scale, ARP, LATCH, KEY SPLIT, the selected track, a preset or engine load, SCENE's
+ * notes changes (octave, chord, scale, ARP, HOLD, KEY SPLIT, the selected track, a preset or engine load, SCENE's
  * roles and octave), then let go: every voice it started ends and every note sent on gets its note-off. MIDI IN:
  * note-on velocity 0, running status on TRS, CC123 / CC120 / CC64, an engine load under held notes. PANIC (PLAY held):
  * every voice and every MIDI OUT note ends. The real sources (seq.c, midi_control.c, voice.c, the UI) on the host. */
@@ -63,7 +63,7 @@ static void reset(uint32_t mo)
     memset(midi_owners, 0, sizeof midi_owners); memset(&midi_map, 0, sizeof midi_map);
     memset(split_cfg, 0, sizeof split_cfg); memset(&um, 0, sizeof um);
     memset(scn_role, 0, sizeof scn_role); memset(scn_pat, 0, sizeof scn_pat); scn_on = 0; scn_keys = 0;
-    memset(scn_sl, 0, sizeof scn_sl); memset(mo_ks, 0, sizeof mo_ks); kb_lt = 0;
+    memset(scn_sl, 0, sizeof scn_sl); memset(mo_ks, 0, sizeof mo_ks);
     mi_r = mi_w = 0; midi_in_overflow = 0;
     fm1_in.notes = kb_prev = 0; song.sel = 1; song.octave = 0;
     usb.config = 1; mo_lvl = (uint8_t)mo;
@@ -115,7 +115,7 @@ static int keys_test(void)
         CASE("CHORD on", t->p[P_CHRD] = CD_SEV);
         CASE("SCALE / QUANT SNAP", (t->p[P_QUANT] = QN_SNAP, t->p[P_SCALE] = 5, t->p[P_ROOT] = 3));
         CASE("ARP on", (t->p[P_AMODE] = AM_UP, blocks(30)));
-        CASE("LATCH (HOLD) on", (t->p[P_AHOLD] = 1, blocks(2)));
+        CASE("HOLD on (ARP OFF)", (t->p[P_AHOLD] = 1, blocks(2)));
         CASE("KEY SPLIT on", (split_cfg[0] = 1, split_cfg[2] = 4, split_cfg[3] = 5, split_cfg[1] = 9));
         CASE("track selected", song.sel = 4);
         CASE("ROOT / TRANS", (t->p[P_ROOT] = 5, t->p[P_TRANS] = 7));
@@ -133,7 +133,7 @@ static int keys_test(void)
         bad += released(b, 40);
         reset(mo); t = &trk[1];
         t->p[P_AHOLD] = 1; kdown(7); kup(7); blocks(4); kdown(9); t->p[P_AHOLD] = 0; blocks(2); kup(9);
-        snprintf(b, sizeof b, "LATCH, a chord, HOLD off with a key held, let go%s", m);
+        snprintf(b, sizeof b, "HOLD on (ARP OFF), a chord, HOLD off with a key held, let go%s", m);
         bad += released(b, 40);
     }
     return bad;

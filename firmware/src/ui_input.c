@@ -485,6 +485,12 @@ static void excite_turn(track_t *t, const int16_t *vp, int32_t old)
     static int16_t side[NTRK][2][4];
     static uint8_t had[NTRK];
     uint32_t k = (uint32_t)(t - trk) % NTRK, i, was = old == 5, now = t->p[P_E0] == 5;   /* (eng_string.c SX_FDBK) */
+    if (vp == &t->p[P_VOICE] && (old == V_DRONE || *vp == V_DRONE)) {   /* (V10.7.33) into / out of DRONE: what sounds */
+        panic_req |= (uint8_t)(1u << k);                /* ends (out: what it held); in: the screen says how a drone ends */
+        if (*vp == V_DRONE)
+            ui_message("DRONE: TAP ITS KEY TO END");
+        return;
+    }
     if (vp == &t->p[P_E0] && t->eng_req % NENGINES == 0u &&   /* (V10.39) ANALOG into / out of SAW3 PLS3: NOISE <-> INT 3 */
         (old == 7 || old == 8) != AN_OSC3(t->p)) {      /* (the knob changes meaning: from 0, no noise, unison) */
         t->p[P_E3] = 0;
@@ -2105,7 +2111,8 @@ static void ent_note(track_t *t, step_t *st, uint32_t note)   /* one note into t
         for (m = ui.ent_nn; m > j; m--) ui.ent_notes[m] = ui.ent_notes[m - 1u];
         ui.ent_notes[j] = (uint8_t)note; ui.ent_nn++;
     }
-    if (t->p[P_VOICE] && !ENGINES[t->engine]->oneshot) {   /* (drums: hits stack as a chord) */
+    if ((t->p[P_VOICE] & 3) && !ENGINES[t->engine]->oneshot) {   /* (MONO LEG UNI: one note; drums' hits, POLY and DRONE
+                                                         * stack as a chord) */
         st->note[0] = (uint8_t)note;
         st->n = 1;
     } else if (st->n < 4u) {

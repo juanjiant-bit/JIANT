@@ -364,6 +364,23 @@ static void proj_phys_gone(project_t *q)
         q->sum = proj_sum(q);
 }
 
+/* (V10.7.33) the keys' LATCH (ARP OFF with ARP 2's HOLD ON: the notes kept sounding) is gone, HOLD is the arpeggiator's
+ * alone: a synth track saved so opens in voice mode DRONE, its notes held as they were (a new note glides there now
+ * instead of replacing them). Idempotent */
+static void proj_latch_drone(project_t *q)
+{
+    uint32_t k, hit = 0;
+    for (k = 0; k < NTRK; k++) {
+        proj_trk_t *d = &q->t[k];
+        if (d->p[P_AHOLD] && !d->p[P_AMODE] && d->engine != ENGI_DRUM && d->p[P_VOICE] != V_DRONE) {
+            d->p[P_VOICE] = V_DRONE;
+            hit = 1;
+        }
+    }
+    if (hit)
+        q->sum = proj_sum(q);
+}
+
 /* n bytes of a stored project (any format) -> slot q as format 6; 0 = not a project */
 static int proj_import_any(project_t *q, const void *b, int n);
 static __attribute__((noinline)) int proj_unpack_c(project_t *q, const uint8_t *b);   /* (snd8: out of proj_import's recorded code) */
@@ -426,6 +443,7 @@ static int proj_import(project_t *q, const void *b, int n)
     }
     proj_fm4(q);
     proj_phys_gone(q);
+    proj_latch_drone(q);
     return 1;
 }
 static int proj_import_any(project_t *q, const void *b, int n)

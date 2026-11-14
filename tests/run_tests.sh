@@ -274,6 +274,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "MICRO in 64ths (0.9.1): recorded within 1/64 of a step at any tempo / division, played there, REC Q 50 %, old projects, 'M' 'F'" "$OUT/micro_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/ctl64_timing_test" tests/ctl64_timing_test.c -lm
     run "ctl64 (0.9.9): the rendered notes at the sequencer's sample (MICRO-shifted steps, POLY, MONO cuts, kit hits) in blocks of CTL" "$OUT/ctl64_timing_test"
+    $CC -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/drone_test" tests/drone_test.c -lm
+    run "DRONE (V10.7.33): held after the key, the next note gliding on the same voice, chords voice by voice, the key again / OCT- + OCT+ / STOP / PANIC / another mode letting go, the sequencer's and MIDI IN's notes, every engine, kits ignore it" "$OUT/drone_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/gen_test" tests/gen_test.c -lm
     run "GEN (0.6.91): the song generator, every genre: deterministic, one scale, the kick anchored, the bass's roots, chord tones, forms, the screen; (0.9.9-gen1) the clean base, the archetypes, the CPU budget; (gen2) the 303 line and its legato slides, the leads' vibrato, the drums' decays; (gen3) the rules by role, the drums' share, the loudness" "$OUT/gen_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -Wno-implicit-function-declaration -o "$OUT/loop_song_test" tests/loop_song_test.c -lm
