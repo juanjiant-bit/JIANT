@@ -100,8 +100,6 @@ static void host_tracks_init(void)                /* as felucca_init: defaults, 
             trk[k].step[i].time = ST_REST;
     }
     song.master_q12 = 4096;
-    if (!lyb_ok)
-        sing_init();                             /* (0.9.0: as felucca_init, VOICE's English generator words) */
     trk_live = NTRK;                             /* (the tests play all six: TRACKS 6) */
 }
 

@@ -139,7 +139,7 @@ def main(src, dst):
                   "fm6_note_on", "formant_desc", "formant_note_on", "glide_from_trk", "glide_set", "glide_sung",
                   "hex8", "input_desc", "input_off", "input_on", "kb_lat", "kb_map", "key_next", "key_place",
                   "live_next", "live_swap", "lm_hits", "lm_once", "load_admit", "load_cost_q8", "lofi_desc",
-                  "lofi_note_on", "lv_neutral", "ly_at", "ly_pick", "ly_word", "mc_lost", "midi_channel",
+                  "lofi_note_on", "lv_neutral", "ly_pick", "ly_word", "mc_lost", "midi_channel",
                   "midi_clock_transport", "midi_expression", "midi_expression_channel", "midi_forget_track",
                   "midi_local_held", "midi_mapped", "midi_note_event", "midi_note_held", "midi_out_event_at",
                   "midi_pedal_up", "midi_release", "midi_targets", "midi_track", "midi_val_set", "ml_free_cc",
@@ -152,7 +152,7 @@ def main(src, dst):
                   "scale_snap", "scale_steps", "seq_note_off", "seq_note_on", "seq_release", "seq_unit",
                   "shed_voice", "shift_step_pass", "sl_enter", "sound_v04", "sp_chain", "srec_stop", "st_micro_set",
                   "step_lm_any", "step_lmode", "step_rolls", "step_set_chance", "step_set_lmode", "step_set_ratchet",
-                  "str_cpy", "string_desc", "string_note_on", "sy_en_expand", "sy_enter", "sy_es_tok", "sy_gen_word",
+                  "str_cpy", "string_desc", "string_note_on", "sy_enter", "sy_es_tok", "sy_gen_word",
                   "sy_norm", "sy_norm_lang", "sy_phrase_len", "sy_take_entry", "sy_tok", "sy_word", "sy_word_next",
                   "track_desc", "trk_all_off", "trk_chance", "trk_fade_out", "trk_kit", "trk_note_off", "trk_nvoice",
                   "trk_trans", "uac_ep4_reset", "uac_rate_set", "uac_stream", "uh_parse_midi", "uh_parse_uac",
@@ -172,7 +172,13 @@ def main(src, dst):
                   # (V10.6z8) a section's change: the sounds the player changed
                   "snd_sig", "snd_own",
                   # (V10.7.30) a note's start and a key's release, a MIDI track silenced: once an event
-                  "trk_note_on", "voice_start", "key_off", "midi_silence_track", "fm6_note_of", "mod_track_desc"}
+                  "trk_note_on", "voice_start", "key_off", "midi_silence_track", "fm6_note_of", "mod_track_desc",
+                  # (V10.7.33) the words' readers, once a word (sy_word's, out of line since the dictionary left): the
+                  # letter rules, the romaji, the syllables, the phoneme codes
+                  "sy_en_rules", "sy_ja", "sy_syl", "sy_phon", "sy_phauto", "ph_cl", "sy_ext", "sy_take",
+                  # .. and CRUSH's block (V10.7.33, fx.c): built for size it is still cheaper than DIST TYPE CRUSH was (a
+                  # call to the flash a sample)
+                  "crush_block"}
     names, hit = ((size_names() | cold_ui) - isr) | input_size | event_size, set()
     def mark(m):
         if m.group(2) not in names:

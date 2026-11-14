@@ -115,7 +115,7 @@ static inline const char *desc_unit(const param_desc_t *d)   /* F_INT_CT .. F_RE
                          * and ENV 2 edit the same envelope */
 #endif
 #ifndef FELUCCA_XFX
-#define FELUCCA_XFX 0   /* (V10.7.30) the master's BALANCE and DIST's NOISE (fx.c bal_block, dist_noise): built, out of the
+#define FELUCCA_XFX 1   /* (V10.7.30) the master's BALANCE and DIST's NOISE (fx.c bal_block, dist_noise): built, out of the
                          * image until there is room for them (their pages and their calls with it; the stores keep their block) */
 #endif
 enum {                          /* per-track parameters */

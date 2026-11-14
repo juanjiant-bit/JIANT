@@ -35,11 +35,6 @@ static int32_t tk_dist_y(uint32_t type, int32_t x, int32_t g, int32_t d)
     case DT_HARD: return clamp(v, -22000, 22000) * 32767 / 26000;
     case DT_FOLD:                                       /* (V10.7.30) the sine folder (fx.c dist_xblk, without its low-pass) */
         return dist_fold(((x >> 2) * ((g * 7) >> 4)) >> 10) * 32767 / 26000;
-    case DT_CRUSH: {
-        uint32_t sh = 4u + (uint32_t)d / 12u;
-        x = (int32_t)((uint32_t)(clamp(x, -131072, 131068) >> sh) << sh);
-        return clamp(((x >> 2) * g) >> 10, -26000, 26000) * 32767 / 26000;
-    }
     case DT_RECT: a = x < 0 ? -x : x; return softclip((((a - 65536) >> 2) * g) >> 10);
     case DT_AMP:                                        /* (0.7.8) the two stages, without the coupling's drift */
         a = softclip(clamp(v + (v >> 1), -400000, 400000) + AMP_B1) - softclip(AMP_B1);

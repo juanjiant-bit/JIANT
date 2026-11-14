@@ -2496,7 +2496,7 @@ static __attribute__((noinline)) void gx_sound(track_t *t, uint32_t r)
 {
     if (t->eng_req == EG_VO && r == RL_LEAD && gch(70)) { t->p[P_VLANG] = (int16_t)grr(1, LG_N - 1); t->p[P_VLYR] = (int16_t)grr(1, LYR_N - 1); }   /* (V10.6n:
                                                          * words a lead's only) */
-    if (t->p[P_DIST] && gch(50)) t->p[P_DTYPE] = (int16_t)grr(0, 5);
+    if (t->p[P_DIST] && gch(50)) t->p[P_DTYPE] = (int16_t)grr(0, 4);   /* (V10.7.33: five, CRUSH its own) */
     if ((r == RL_LEAD || r == RL_BASS) && gch(15)) t->p[P_GLIDE] = (int16_t)grr(15, 40);   /* (V10.8: was 30 %, 20..70) */
     if (r != RL_BASS && gch(12)) {                     /* (V10.8: was 25 %) (0.9.9-gen2) a vibrato on a line (shallow, ~5.5 Hz, faded in),
                                                          * a slow drift on the rest (a detune moving), never a siren */

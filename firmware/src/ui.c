@@ -1279,7 +1279,8 @@ static __attribute__((noinline)) uint32_t lyric_pick(char *label)
     char word[20],nw[24];uint8_t ph[SW_MAX];
     label[0]=0;
     while(sy_tok(txt,p,&a,&b,&mel)) {
-        uint32_t i,m=0;
+        uint32_t i,m=txt[0]=='/';                    /* (V10.7.33: a phoneme lyric's word, "/" first) */
+        word[0]='/';
         for(i=a;i<b&&m<19u;i++) word[m++]=txt[i];word[m]=0;
         if(mel) ns=1;
         else sy_word((uint32_t)clamp(TSEL->p[P_VLANG],1,LG_N-1),nw,

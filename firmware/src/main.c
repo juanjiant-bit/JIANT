@@ -177,7 +177,6 @@ static void felucca_init(void)
     for (i = 0; i < G_COUNT; i++)
         song.g[i] = GP[i].def;
     bal_v = BAL_DEF;                          /* (V10.7.30) the master's BALANCE on (fx.c bal_ctl) */
-    sing_init();                              /* (0.9.0) VOICE's English generator words, resolved once (sing.c) */
     load_depth++;                             /* (the power-on loads: one outer load) */
     fm6_init();                               /* every track's FM6 patch: the init voice */
     power_on_parts();                         /* (0.9.9: ui.c, TRK_DEF's sounds; the tests run it too) */
@@ -337,8 +336,8 @@ static void fm1_main(void)
     panel_init();
 #if FELUCCA_BT
     ly_en_ok = (uint8_t)bt_hw_seg();                    /* (V10.15) the segment checked (the plain XIP window set: its
-                                                         * interrupts-off moment under the splash) before sing_init reads
-                                                         * VOICE's English dictionary there (sing.c) */
+                                                         * interrupts-off moment under the splash) before VOICE reads
+                                                         * its other languages' rules there (sing.c) */
 #endif
     felucca_init();
     master_boot();

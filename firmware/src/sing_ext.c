@@ -34,7 +34,7 @@ static const sy_rule_t SY_RULES[] LY_DICT_SEC = {
     {"g",LR|LD|LZ|LG,PH_G,0}, {"j",LR,PH_Y,0}, {"z",LR|LF|LP,PH_Z,0},
     {"'",LG,PH_H,0}
 };
-static uint32_t sy_ext(uint32_t lang, const char *w, uint32_t n, uint8_t *tc, uint8_t *tk)
+static __attribute__((noinline)) uint32_t sy_ext(uint32_t lang, const char *w, uint32_t n, uint8_t *tc, uint8_t *tk)
 {
     if(!ly_en_ok) return sy_es_tok(w,n,tc,tk); /* unverified/missing optional bank */
     uint32_t i=0,m=0,mask=1u<<(lang-LG_RU);

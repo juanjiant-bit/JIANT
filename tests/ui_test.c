@@ -191,8 +191,6 @@ static void ui_power_on(void)
     uint32_t i;
     song_draft = song_save_loop = 0;
     memset(split_cfg, 0, sizeof split_cfg); memset(&midi_map, 0, sizeof midi_map);
-    if (!lyb_ok)
-        sing_init();                              /* (0.9.0: as felucca_init, VOICE's English generator words) */
     memset(trk, 0, sizeof trk);
     memset(&song, 0, sizeof song);
     scn_on = 0; scn_keys = 0;                     /* (V10.25: SCENE off at power-on, its roles the defaults) */
@@ -4680,14 +4678,14 @@ static int test_edit_cycle(void)
 {
     /* (0.9.2: one chain, SELECT a page a detent; an EDIT tap the next group's first. Was 0.8.5's lens: SELECT a level, the
      * tap the level's next set) */
-    static const char *const CH_A[] = {"EDIT 1", "FILTER", "FILTER 2", "FILTER 3", "MORPH", "FOCUS", "PLAY", "PLAY 2"};   /* (JIANT 0.5:
+    static const char *const CH_A[] = {"EDIT 1", "FILTER", "FILTER 2", "FILTER 3", "MORPH", "FOCUS", "PLAY", "PLAY 2", "PLAY 3"};   /* (JIANT 0.5:
                                                          * ANALOG's FILTER; 0.6.45: MORPH; V10.7.21: no EDIT 2; codex/coherence:
                                                          * PLAY, was VOICE; STEREO's IMAGE on PLAY 2) */
     static const char *const TP_A[] = {"FILTER", "FOCUS", "PLAY"};
     static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "FILTER", "FILTER 2", "FILTER 3", "OPERATOR", "OP ENV", "OPERATOR 2",
-                                       "PLAY", "PLAY 2"};   /* (codex/filters2: FILTER 2; filter2-mod: FILTER 3, KEY) */
+                                       "PLAY", "PLAY 2", "PLAY 3"};   /* (codex/filters2: FILTER 2; filter2-mod: FILTER 3, KEY; V10.7.33 PLAY 3) */
     static const char *const TP_F[] = {"FILTER", "OPERATOR", "PLAY"};
-    static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "FILTER 2", "FILTER 3", "PLAY", "PLAY 2", "OP1 ENV", "OP2 ENV", "OP3 ENV",
+    static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "FILTER 2", "FILTER 3", "PLAY", "PLAY 2", "PLAY 3", "OP1 ENV", "OP2 ENV", "OP3 ENV",
                                        "OP4 ENV", "OP LEVEL"};
     static const char *const TP_D[] = {"FILTER", "OP1 ENV"};
     int bad = 0, ok;
@@ -4755,7 +4753,7 @@ static int test_edit_cycle(void)
     {   /* #97: a DRUM track's lane levels on EDIT > LANES (KICK SNARE CLAP HATCL) and LANES 2 (HATOP TOM RIM BELL) */
         /* (161d079, 2026-10-28: KIT 4, the KEY MAP, after KIT 3 in the KIT group) */
         static const char *const CH_K[] = {"KIT", "KIT 2", "KIT 3", "KIT 4", "SOUND", "SOUND 2", "SOUND 3", "SOUND 4", "LEVELS",
-                                           "LEVELS 2", "X-MOD", "FILTER", "STEREO", "PLAY"};
+                                           "LEVELS 2", "X-MOD", "FILTER", "STEREO", "PLAY", "PLAY 3"};
         static const char *const TP_K[] = {"SOUND", "LEVELS", "X-MOD"};
         set_engine_of(TSEL, ENGI_DRUM);
         bad += check("0.9.2 EDIT chain (DRUM): KIT (KIT KIT 2 KIT 3 KIT 4) . SOUND (1..4) . LEVELS (LEVELS LEVELS 2) . TONE (X-MOD FILTER STEREO PLAY)",

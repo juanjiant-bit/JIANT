@@ -47,6 +47,9 @@
 #define UP_V04_MARK 0x47u                        /* (JIANT 0.4) .. and LOFI's / ANALOG's E values today's (core.h sound_v04) */
 #define UP_VEL_AT (UP_FM_AT - 1u)                /* (V10.7.6) packed[]'s byte before (past P_COUNT, 0 in every record before): */
 #define UP_VEL_MARK 'V'                          /* P_TVEL (VEL) as stored; without it MUTATE's config or a V10.7.3..7.5 VEL: 127 */
+#define UP_DT_AT (UP_VEL_AT - 1u)                /* (V10.7.33) the byte before: UP_DT_MARK, DIST TYPE without CRUSH (else */
+#define UP_DT_MARK 'D'                           /* up_migrate: CRUSH 3, RECT 4, AMP 5); */
+#define UP_CRU_AT (UP_DT_AT - 1u)                /* .. a DIST TYPE CRUSH's DRIVE, migrated: up_load sets the track's CRUSH */
 typedef struct {
     uint8_t used, ver, engine, np;               /* UP_USED, UP_VER, engine, P_COUNT when stored */
     char name[12];                               /* ASCII 32..126, 0-padded (no 0 when 12 long) */
@@ -61,7 +64,7 @@ typedef struct {
 } up_bank_t;
 _Static_assert(sizeof(up_rec_t) == 192, "user preset record layout");
 _Static_assert(P_COUNT <= UP_PMAX * 2u && P_COUNT < 128, "user preset record: P_COUNT");
-_Static_assert(P_COUNT <= UP_VEL_AT, "user preset record: the FM and VEL marks past the parameters");
+_Static_assert(P_COUNT <= UP_CRU_AT, "user preset record: the FM, VEL and DIST marks past the parameters");
 static up_bank_t up_bank[UP_SLOTS / UP_PER_BANK] __attribute__((section(".lowbuf")));   /* (0.9.0: the pool, was .bss: main
                                                    * loop only, 6 KiB of the RAM region back; 0.9.9-beta4: LOWBUF, the
                                                    * pool's top given to the RAM code) */
@@ -93,6 +96,16 @@ static void up_migrate(up_rec_t *r)
     if (r->ver >= 4u && r->np <= UP_VEL_AT && r->packed[UP_VEL_AT] != UP_VEL_MARK) {   /* (V10.7.6) VEL 100 % */
         if (P_TVEL + 8u < r->np && r->engine != ENGI_DIGITAL) up_set_value(r, P_TVEL, 127);   /* (DIGITAL: its OP4) */
         r->packed[UP_VEL_AT] = UP_VEL_MARK;
+    }
+    if (r->ver >= 4u && r->np <= UP_CRU_AT && P_DTYPE + 8u < r->np && r->packed[UP_DT_AT] != UP_DT_MARK) {
+        int16_t ty = up_value(r, P_DTYPE);             /* (V10.7.33) DIST TYPE CRUSH: the track's CRUSH (up_load) */
+        if (ty == 3) {
+            r->packed[UP_CRU_AT] = (uint8_t)clamp(up_value(r, P_DIST), 0, 127);
+            up_set_value(r, P_DIST, 0);
+            up_set_value(r, P_DTYPE, 0);
+        } else if (ty > 3)
+            up_set_value(r, P_DTYPE, (int16_t)(ty - 1));
+        r->packed[UP_DT_AT] = UP_DT_MARK;
     }
 }
 
@@ -200,7 +213,7 @@ static __attribute__((noinline)) int up_parse(const uint8_t *a, uint32_t na, up_
     r->ver = UP_VER;
     r->engine = a[1];
     r->np = P_COUNT;
-    r->packed[UP_FM_AT] = UP_V04_MARK; r->packed[UP_VEL_AT] = UP_VEL_MARK;
+    r->packed[UP_FM_AT] = UP_V04_MARK; r->packed[UP_VEL_AT] = UP_VEL_MARK; r->packed[UP_DT_AT] = UP_DT_MARK;
     for (i = 0; i < n; i++)
         r->name[i] = (char)a[2 + i];
     for (i = 0; i < P_COUNT; i++, k += 2u)
@@ -360,7 +373,7 @@ static int up_store(uint32_t k, const char *name)
     r.ver = UP_VER;
     r.engine = TSEL->eng_req;
     r.np = P_COUNT;
-    r.packed[UP_FM_AT] = UP_V04_MARK; r.packed[UP_VEL_AT] = UP_VEL_MARK;
+    r.packed[UP_FM_AT] = UP_V04_MARK; r.packed[UP_VEL_AT] = UP_VEL_MARK; r.packed[UP_DT_AT] = UP_DT_MARK;
     up_set_name(&r, k, name);
     for (i = 0; i < P_COUNT; i++)
         up_set_value(&r, i, motion_base_value(TSEL, i));
@@ -438,6 +451,8 @@ static int up_load(uint32_t k)
         if (eng_gone(r->engine))                        /* a retired engine (core.h): ANALOG's first preset */
             set_engine_of(t, ENGI_PHYS_TO);
     }
+    if (r->packed[UP_DT_AT] == UP_DT_MARK && r->packed[UP_CRU_AT])   /* (V10.7.33) a DIST TYPE CRUSH sound: its CRUSH */
+        cru_v[song.sel % NTRK] = (int16_t)(r->packed[UP_CRU_AT] & 127u);
     t->user = (uint8_t)(k + 1u);
     load_end(t);
     sync_reload = 1;

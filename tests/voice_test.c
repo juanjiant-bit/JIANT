@@ -16,7 +16,8 @@
  * 5. cost: host ns per sample and voice, vowels against words (the counts: tests/cpu_vg.c eng/VOICE.*).
  * 6. demos into DEMODIR: Spanish, English, Japanese phrases on a melody, the dice's lyrics, every word preset. */
 #define main hostsim_main
-#define LY_EN_REF 1              /* (0.9.0) felucca_lyrics.h: the dictionary's words as text too (the lookup's check) */
+#define LY_EN_REF 1              /* felucca_lyrics.h: the English reference words, their code texts and phonemes */
+#include <ctype.h>
 #include "hostsim.c"
 #undef main
 
@@ -48,7 +49,7 @@ static void g2p_str(uint32_t lang, const char *w, char *out, uint32_t max)
 {
     uint8_t ph[SW_MAX];
     char nw[24];
-    uint32_t ns, n = sy_word(lang, nw, sy_norm(w, (uint32_t)strlen(w), nw, sizeof nw), ph, &ns), k, m = 0;
+    uint32_t ns, n = sy_word(lang, nw, sy_norm_lang(lang, w, (uint32_t)strlen(w), nw, sizeof nw), ph, &ns), k, m = 0;
     out[0] = 0;
     for (k = 0; k < n; k++) {
         m += (uint32_t)snprintf(out + m, max - m, "%s%s%s", k ? " " : "", ph[k] & SYB ? "|" : "", PH_NAME[ph[k] & 0x3Fu]);
@@ -120,16 +121,139 @@ static void demo_wav(const char *dir, const char *name, int32_t pi, const char *
     fclose(w);
 }
 
-/* (0.9.0) the English words resolved in the main loop (sing.c lyb_*, lyc[]): each entry what sy_word gives; and a
- * VOICE EN track sings the same with them as without (TEXT, W, S), sample for sample */
-static int entry_is(const uint8_t *e, const char *txt, uint32_t len)
+/* (V10.7.33) sing.c sy_es_tok as it was before its table */
+static uint32_t es_tok_ref(const char *w, uint32_t n, uint8_t *tc, uint8_t *tk)
 {
-    uint8_t buf[SW_MAX];
-    char w[20], nw[24];
-    uint32_t ns = 0, n = sy_word(LG_EN, nw, sy_wkey(txt, len, w, nw), buf, &ns);
-    return e[0] == n && e[1] == ns && !memcmp(e + 2, buf, n);
+    uint32_t i, m = 0;
+    for (i = 0; i < n && m + 2u <= SW_MAX; i++) {
+        int c = w[i], nx = i + 1u < n ? w[i + 1u] : 0, nx2 = i + 2u < n ? w[i + 2u] : 0;
+        uint32_t code = 0xFFu, kind = TK_C;
+        switch (c) {
+        case 'a': code = PH_A; kind = TK_S; break;
+        case 'e': code = PH_E; kind = TK_S; break;
+        case 'o': code = PH_O; kind = TK_S; break;
+        case 'i': code = PH_I; kind = TK_W; break;
+        case 'u': code = PH_U; kind = TK_W; break;
+        case 'y':
+            if (sy_isv(nx)) code = PH_Y;
+            else { code = PH_I; kind = TK_W; }
+            break;
+        case 'c':
+            if (nx == 'h') { code = PH_CH; i++; }
+            else code = nx == 'e' || nx == 'i' ? PH_S : PH_K;
+            break;
+        case 'q': code = PH_K; if (nx == 'u') i++; break;
+        case 'g':
+            if (nx == 'e' || nx == 'i') code = PH_X;
+            else { code = PH_G; if (nx == 'u' && (nx2 == 'e' || nx2 == 'i')) i++; }
+            break;
+        case 'j': code = PH_X; break;
+        case 'x': tc[m] = PH_K; tk[m++] = TK_C; code = PH_S; break;
+        case 'z': case 's': code = PH_S; break;
+        case 'v': case 'b': code = PH_B; break;
+        case 'd': code = PH_D; break;
+        case 'f': code = PH_F; break;
+        case 'k': code = PH_K; break;
+        case 'p': code = PH_P; break;
+        case 't': code = PH_T; break;
+        case 'm': code = PH_M; break;
+        case 'w': code = PH_W; break;
+        case 'l':
+            if (nx == 'l') { code = PH_Y; i++; }
+            else code = PH_L;
+            break;
+        case 'n':
+            if (nx == 'y' && sy_isv(nx2)) { code = PH_NY; i++; }
+            else code = PH_N;
+            break;
+        case 'r':
+            if (nx == 'r') { code = PH_RR; i++; }
+            else code = !m || tc[m - 1u] == PH_N || tc[m - 1u] == PH_L || tc[m - 1u] == PH_S ? PH_RR : PH_RT;
+            break;
+        default: break;                                  /* h, the rest: silent */
+        }
+        if (code != 0xFFu) {
+            tc[m] = (uint8_t)code;
+            tk[m++] = (uint8_t)kind;
+        }
+    }
+    return m;
 }
-static uint32_t render_en(uint32_t lyr, const char *text, int cached, int32_t *out, uint32_t max)
+/* (V10.7.33) sing.c sy_en_rules as it was before its table: the reference its table reads every word as */
+static uint32_t en_rules_ref(const char *w, uint32_t n, uint8_t *tc, uint8_t *tk)
+{
+    uint32_t i, m = 0, magic = 0xFFu;
+#define EN_T(c, k) do { if (m < SW_MAX) { tc[m] = (uint8_t)(c); tk[m++] = (uint8_t)(k); } } while (0)
+    if (n >= 3u && w[n - 1u] == 'e' && !sy_isv(w[n - 2u]) && sy_isv(w[n - 3u]))
+        magic = n - 3u;                                  /* a silent e: the vowel before says its name */
+    for (i = 0; i < n; i++) {
+        int c = w[i], nx = i + 1u < n ? w[i + 1u] : 0, nx2 = i + 2u < n ? w[i + 2u] : 0;
+        if (i == n - 1u && c == 'e' && n > 2u) break;    /* (a final e: silent) */
+        if (sy_isv(c) || c == 'y') {
+            if (c == 'y' && (i == 0u || sy_isv(nx))) { EN_T(PH_Y, TK_C); continue; }
+            if (c == 'y') { EN_T(i == n - 1u ? PH_I : PH_IH, TK_S); continue; }
+            if (i == magic) {
+                if (c == 'a') { EN_T(PH_E, TK_S); EN_T(PH_IH, TK_W); }
+                else if (c == 'i') { EN_T(PH_AA, TK_S); EN_T(PH_IH, TK_W); }
+                else if (c == 'o') { EN_T(PH_O, TK_S); EN_T(PH_UH, TK_W); }
+                else if (c == 'u') EN_T(PH_U, TK_S);
+                else EN_T(PH_I, TK_S);
+                continue;
+            }
+            if ((c == 'e' && (nx == 'e' || nx == 'a')) ) { EN_T(PH_I, TK_S); i++; continue; }
+            if (c == 'o' && nx == 'o') { EN_T(PH_U, TK_S); i++; continue; }
+            if (c == 'o' && (nx == 'u' || nx == 'w')) { EN_T(PH_AA, TK_S); EN_T(PH_UH, TK_W); i++; continue; }
+            if (c == 'a' && (nx == 'i' || nx == 'y')) { EN_T(PH_E, TK_S); EN_T(PH_IH, TK_W); i++; continue; }
+            if (c == 'o' && nx == 'a') { EN_T(PH_O, TK_S); EN_T(PH_UH, TK_W); i++; continue; }
+            if (c == 'o' && (nx == 'i' || nx == 'y')) { EN_T(PH_AO, TK_S); EN_T(PH_IH, TK_W); i++; continue; }
+            if (c == 'a' && (nx == 'u' || nx == 'w')) { EN_T(PH_AO, TK_S); i++; continue; }
+            if (c == 'i' && nx == 'g' && nx2 == 'h') { EN_T(PH_AA, TK_S); EN_T(PH_IH, TK_W); i += 2u; continue; }
+            EN_T(c == 'a' ? PH_AE : c == 'e' ? PH_EH : c == 'i' ? PH_IH : c == 'o' ? PH_AA : PH_AH, TK_S);
+            continue;
+        }
+        if (c == 't' && nx == 'h') { EN_T(PH_TH, TK_C); i++; continue; }
+        if (c == 's' && nx == 'h') { EN_T(PH_SH, TK_C); i++; continue; }
+        if (c == 'c' && nx == 'h') { EN_T(PH_CH, TK_C); i++; continue; }
+        if (c == 'p' && nx == 'h') { EN_T(PH_F, TK_C); i++; continue; }
+        if (c == 'w' && nx == 'h') { EN_T(PH_W, TK_C); i++; continue; }
+        if (c == 'c' && nx == 'k') { EN_T(PH_K, TK_C); i++; continue; }
+        if (c == 'q' && nx == 'u') { EN_T(PH_K, TK_C); EN_T(PH_W, TK_C); i++; continue; }
+        if (c == 'k' && nx == 'n' && !i) continue;
+        if (c == 'w' && nx == 'r') continue;
+        if (c == 'g' && nx == 'h') { i++; continue; }
+        if (c == 'n' && nx == 'g' && !sy_isv(nx2)) { EN_T(PH_NG, TK_C); i++; continue; }
+        switch (c) {
+        case 'b': EN_T(PH_B, TK_C); break;
+        case 'c': EN_T(nx == 'e' || nx == 'i' || nx == 'y' ? PH_S : PH_K, TK_C); break;
+        case 'd': EN_T(PH_D, TK_C); break;
+        case 'f': EN_T(PH_F, TK_C); break;
+        case 'g': EN_T(PH_G, TK_C); break;
+        case 'h': if (sy_isv(nx)) EN_T(PH_H, TK_C); break;
+        case 'j': EN_T(PH_J, TK_C); break;
+        case 'k': EN_T(PH_K, TK_C); break;
+        case 'l': if (nx != 'l') EN_T(PH_L, TK_C); break;
+        case 'm': EN_T(PH_M, TK_C); break;
+        case 'n': EN_T(PH_N, TK_C); break;
+        case 'p': EN_T(PH_P, TK_C); break;
+        case 'r': EN_T(PH_RA, TK_C); break;
+        case 's': EN_T(i && sy_isv(w[i - 1u]) && sy_isv(nx) ? PH_Z : PH_S, TK_C); break;
+        case 't': EN_T(PH_T, TK_C); break;
+        case 'v': EN_T(PH_V, TK_C); break;
+        case 'w': EN_T(PH_W, TK_C); break;
+        case 'x': EN_T(PH_K, TK_C); EN_T(PH_S, TK_C); break;
+        case 'z': EN_T(PH_Z, TK_C); break;
+        default: break;
+        }
+    }
+#undef EN_T
+    return m;
+}
+
+
+/* (V10.7.33) phonemes as text ("/" first: the editor's, the NAME screen's): a VOICE EN track sings them (TEXT), and its
+ * generator's words (W, S: phoneme codes since the dictionary left the device); the same lyric as English letters sings
+ * too (the rules: a project before), otherwise */
+static uint32_t render_en(uint32_t lyr, const char *text, int32_t *out, uint32_t max)
 {
     static const nt_t NT[] = {{60, 2}, {62, 2}, {64, 1}, {65, 1}, {67, 4}, {65, 2}, {64, 2}, {62, 1}, {60, 3}, {0, 1},
                               {57, 2}, {59, 2}, {60, 4}, {62, 1}, {64, 1}, {67, 2}, {64, 2}, {60, 4}};
@@ -145,9 +269,6 @@ static uint32_t render_en(uint32_t lyr, const char *text, int cached, int32_t *o
     trk[0].p[P_VLANG] = LG_EN;
     lyr_set(0, text);
     trk[0].p[P_VLYR] = (int16_t)lyr;
-    lyb_ok = (uint8_t)cached;
-    if (!cached)
-        lyc[0].seq |= 1u;                                /* (as while it is written: not read) */
     for (k = 0; k < 3u * nn; k++) {
         uint32_t len = NT[k % nn].len * eighth, note = NT[k % nn].note;
         if (note)
@@ -161,62 +282,47 @@ static uint32_t render_en(uint32_t lyr, const char *text, int cached, int32_t *o
                 out[n++] = o[j];
         }
     }
-    lyc[0].seq &= ~1u;
-    lyb_ok = 1;
     return n;
 }
-static void check_cache(void)
+static void check_phtext(void)
 {
-    static const char *const TX[] = {
-        "Love me tender, love me sweet; never let me go", "strength through the starlight - - oh",
-        "don't stop believing hold_on to that feeling", "zorblat QUIXOTIC antidisestablishmentarianism xyz",
-        "a b c d e f g h i j k l m n o p q r s t u v w x y z a b c d e f", "the the the the the the the the the the the the",
-        "", "---", "it's a beautiful day in the neighbourhood isn't it"};
-    static const char *const LT[] = {"TEXT", "W1", "W7", "W16", "S1", "S5"};
-    static const uint8_t LV[] = {0, 1, 7, 16, LYR_NW + 1u, LYR_NW + 5u};
+    static const char *const TX[][2] = {
+        {"Love me tender, love me sweet; never let me go", "/LAHV MI TEHNDER, LAHV MI SWIT; NEHVER LEHT MI GOUH"},
+        {"hello world - - oh", "/HAXLOUH WERLD - - OUH"},
+        {"don't stop believing", "/DOUHNT STAAP BIHLIVIHNG"}};
+    static const char *const LT[] = {"W1", "W7", "W16", "S1", "S5"};
+    static const uint8_t LV[] = {1, 7, 16, LYR_NW + 1u, LYR_NW + 5u};
     static int32_t a[FS * 40], b[FS * 40];
-    uint32_t k, bad_b = 0, miss = 0, used = 0, ntok = 0, bad_t = 0, nocache = 0;
-    sing_init();
-    for (k = 0; k < LYB_N; k++) {
-        char word[20];
-        const char *q = k < LYB_SCAT ? ly_word(&LY_BANK[1], k, word) : k < LYB_N - 1u ? SCAT_EN[k - LYB_SCAT] : VOCABLE[1];
-        if (!lyb_at[k]) miss++;
-        else {
-            bad_b += !entry_is(&lyb_ph[lyb_at[k] - 1u], q, 64u);
-            used = lyb_at[k] + 1u + lyb_ph[lyb_at[k] - 1u];   /* (the last entry's end) */
+    uint32_t k, j, bad = 0, toks = 0, p = 0, s0, s1, mel;
+    char got[64] = "";
+    lyr_set(0, "/HAX.LOUH WERLD - LAHV#");
+    while (sy_tok(lyr_txt[0], p, &s0, &s1, &mel)) {
+        size_t gl = strlen(got);
+        snprintf(got + gl, sizeof got - gl, "%s%.*s", toks ? "|" : "", (int)(s1 - s0), lyr_txt[0] + s0);
+        toks++;
+        p = s1;
+    }
+    check("V10.7.33 a phoneme lyric's words: \"/\" first, \".\" and \"#\" in them (HAX.LOUH|WERLD|-|LAHV#)",
+          toks == 4u && !strcmp(got, "HAX.LOUH|WERLD|-|LAHV#"));
+    for (k = 0; k < NELEM(TX); k++) {
+        uint32_t na = render_en(0, TX[k][0], a, NELEM(a)), nb = render_en(0, TX[k][1], b, NELEM(b)), za = 0, zb = 0;
+        for (j = 0; j < na; j++) za += a[j] != 0;
+        for (j = 0; j < nb; j++) zb += b[j] != 0;
+        if (za < na / 4u || zb < nb / 4u || (na == nb && !memcmp(a, b, na * sizeof a[0]))) {
+            printf("voice:   EN \"%s\": letters %u of %u sounding, phonemes %u of %u\n", TX[k][0], za, na, zb, nb);
+            bad++;
         }
     }
-    printf("voice:   the generator's English words resolved at boot: %u of %u, %u B of %u, %u differ, %u missing\n",
-           (unsigned)(LYB_N - miss), (unsigned)LYB_N, used, (unsigned)LYB_PH, bad_b, miss);
-    check("English words resolved off the ISR (sing_init): every word the generator sings, each as sy_word reads it",
-          !bad_b && !miss && lyb_ok);
-    for (k = 0; k < sizeof TX / sizeof TX[0]; k++) {
-        uint32_t p = 0, s0, s1, mel;
-        lyr_set(0, TX[k]);
-        while (sy_tok(lyr_txt[0], p, &s0, &s1, &mel)) {
-            if (!mel) {
-                ntok++;
-                if (!lyc[0].at[s0] || lyc[0].ph[lyc[0].at[s0] - 1u] != s1) nocache++;
-                else bad_t += !entry_is(&lyc[0].ph[lyc[0].at[s0]], &lyr_txt[0][s0], s1 - s0);
-            }
-            p = s1;
+    check("V10.7.33 English as letters (a project before: the rules) and as the editor's phonemes: both sing, otherwise", !bad);
+    for (k = 0; k < sizeof LV; k++) {
+        uint32_t na = render_en(LV[k], "", a, NELEM(a)), za = 0;
+        for (j = 0; j < na; j++) za += a[j] != 0;
+        if (za < na / 4u) {
+            printf("voice:   EN %s: %u of %u samples sounding\n", LT[k], za, na);
+            bad++;
         }
     }
-    printf("voice:   TEXT lyrics' words resolved with the text: %u words, %u differ, %u left to the lookup (past %u B)\n",
-           ntok, bad_t, nocache, (unsigned)LYC_N);
-    check("English words resolved off the ISR (lyr_set): every TEXT word as sy_word reads it", !bad_t && ntok > 60u);
-    for (k = 0, bad_b = 0; k < sizeof LV; k++) {
-        const char *text = LV[k] ? "" : TX[k % 3u];
-        uint32_t na = render_en(LV[k], text, 1, a, sizeof a / sizeof a[0]);
-        uint32_t nb = render_en(LV[k], text, 0, b, sizeof b / sizeof b[0]), j, nz = 0;
-        for (j = 0; j < na; j++) nz += a[j] != 0;
-        if (na != nb || memcmp(a, b, na * sizeof a[0]) || nz < na / 4u) {
-            for (j = 0; j < na && a[j] == b[j]; j++) ;
-            printf("voice:   %s: the cached words sing otherwise (%u %u samples, %u sounding, first at %u)\n", LT[k], na, nb, nz, j);
-            bad_b++;
-        }
-    }
-    check("VOICE EN with the words resolved off the ISR: TEXT W1 W7 W16 S1 S5 sample for sample as with the lookup", !bad_b);
+    check("V10.7.33 VOICE EN's generator (W1 W7 W16 S1 S5): its phoneme-coded words sing", !bad);
 }
 
 /* ------------------------------------------------------------------------------------------ the checks --- */
@@ -335,8 +441,9 @@ static void check_reading(void)
         {"onna", "|o |N |n a"}, {"desu", "|d e |s u"}, {"ryokou", "|r y o |k o |o"}, {"Sakura", "|s a |k u |r a"},
     };
     static const char *const EN[][2] = {
-        {"love", "|l ah v"}, {"my", "|m aa ih"}, {"time", "|t aa ih m"}, {"beautiful", "|b y u |t ax |f ax l"},
-        {"water", "|w ao |t er"}, {"strong", "|s t r ao ng"}, {"the", "|dh ax"}, {"Dont", "|d o uh n t"},
+        {"/LAHV", "|l ah v"}, {"/MAAIH", "|m aa ih"}, {"/TAAIHM", "|t aa ih m"}, {"/BYUTAXFAXL", "|b y u |t ax |f ax l"},
+        {"/WAOTER", "|w ao |t er"}, {"/STRAONG", "|s t r ao ng"}, {"/DHAX", "|dh ax"}, {"/dOUHnt", "|d o uh n t"},
+        {"/BI.IHNG", "|b i |ih ng"}, {"/STRIHNG.GER", "|s t r ih ng |g er"}, {"/IHN.GROUHN", "|ih n |g r o uh n"},
     };
     char b[256], what[160];
     uint32_t k, ok = 1, l, n;
@@ -358,104 +465,103 @@ static void check_reading(void)
         g2p_str(LG_EN, EN[k][0], b, sizeof b);
         if (strcmp(b, EN[k][1])) { printf("voice:   EN %-12s %s (want %s)\n", EN[k][0], b, EN[k][1]); ok = 0; }
     }
-    check("English through the dictionary (CMU, syllabified): love my time beautiful water strong the don't", ok);
-    {   /* every dictionary word found, with at least a syllable; an unknown word by the letter rules.
-         * (0.9.0: the dictionary Huffman-coded) each word's phonemes exactly gen_lyrics.py's (LY_EN_REF_*: the words as
-         * text); every word cut short, one letter more and one changed at its end: not found unless itself a word */
-        uint32_t nw, len, bad = 0, miss = 0, probes = 0;
-        uint8_t ph[SW_MAX];
-        char w[32];
-        ok = 1;
+    check("V10.7.33 English as the editor's phoneme codes (the CMU dictionary's, syllabified): love my time beautiful water "
+          "strong the don't being; \".\" where a syllable starts", ok);
+    {   /* (V10.7.33) the English dictionary off the device: each of its words as the editor sends it (its code text,
+         * tools/gen_lyrics.py ph_text: no "." where sy_phauto finds the syllables) read back exactly (phonemes,
+         * syllables), as English; the same text in upper and lower case; without the Bluetooth segment too (no
+         * table of English's there now) */
+        uint32_t nw, n, ns, i, bad = 0, dots = 0, low = 0, rules = 0;
+        uint8_t ph[SW_MAX], ph2[SW_MAX];
+        char w[40];
         for (nw = 0; nw < LY_EN_N; nw++) {
-            const char *rw = LY_EN_REF_W[nw], *rp = LY_EN_REF_PH[nw];
-            uint32_t wl = (uint32_t)strlen(rw), i, v;
-            len = sy_en_find(rw, wl, ph);
-            ok &= len > 0;
-            if (len != strlen(rp))
-                bad++;
+            const char *rc = LY_EN_REF_CODE[nw], *rp = LY_EN_REF_PH[nw];
+            uint32_t wl;
+            char nw2[40];
+            snprintf(w, sizeof w, "/%s", rc);           /* (as the editor sends it: upper case) */
+            dots += strchr(rc, '.') != 0;
+            n = sy_word(LG_EN, nw2, sy_norm_lang(LG_EN, w, (uint32_t)strlen(w), nw2, sizeof nw2), ph, &ns);
+            if (n != strlen(rp)) bad++;
             else
-                for (i = 0; i < len; i++)
-                    bad += ph[i] != ((uint8_t)rp[i] & 0x7Fu);
-            for (v = 0; v < 79u; v++) {                          /* the near misses: one less, one more, last / first changed */
-                uint32_t n2 = wl, lo = 0, hi = LY_EN_N, found = 0;
-                memcpy(w, rw, wl);
-                if (v == 0u) {
-                    if (wl < 2u) continue;
-                    n2 = wl - 1u;
-                } else if (v <= 26u) {
-                    w[wl] = (char)('a' + v - 1u);
-                    n2 = wl + 1u;
-                } else if (v <= 52u) {
-                    if (w[wl - 1u] == (char)('a' + v - 27u)) continue;
-                    w[wl - 1u] = (char)('a' + v - 27u);
-                } else {
-                    if (w[0] == (char)('a' + v - 53u)) continue;
-                    w[0] = (char)('a' + v - 53u);
-                }
-                w[n2] = 0;
-                while (lo < hi) {                                /* (the reference words are sorted) */
-                    uint32_t mid = (lo + hi) / 2u;
-                    int c = strcmp(LY_EN_REF_W[mid], w);
-                    if (!c) { found = 1; break; }
-                    if (c < 0) lo = mid + 1u; else hi = mid;
-                }
-                probes++;
-                miss += (sy_en_find(w, n2, ph) != 0) != found;
+                for (i = 0; i < n; i++) bad += ph[i] != ((uint8_t)rp[i] & 0x7Fu);
+            for (i = 0; w[i]; i++) w[i] = (char)tolower(w[i]);
+            ly_en_ok = 0;
+            wl = sy_norm_lang(LG_EN, w, (uint32_t)strlen(w), nw2, sizeof nw2);
+            low += sy_word(LG_EN, nw2, wl, ph2, &ns) != n || memcmp(ph, ph2, n);
+            ly_en_ok = 1;
+            n = sy_word(LG_EN, LY_EN_REF_W[nw], (uint32_t)strlen(LY_EN_REF_W[nw]), ph, &ns);
+            {                                            /* (as letters: the letter rules, exactly) */
+                uint8_t tc[SW_MAX], tk[SW_MAX];
+                uint32_t ns3, m3 = sy_en_rules(LY_EN_REF_W[nw], (uint32_t)strlen(LY_EN_REF_W[nw]), tc, tk);
+                m3 = sy_syl(tc, tk, m3, ph2, &ns3);
+                rules += n == m3 && ns == ns3 && !memcmp(ph, ph2, n);
             }
         }
-        ok &= !bad && !miss;
         g2p_str(LG_EN, "zorblat", b, sizeof b);
-        ok &= sy_en_find("zorblat", 7, ph) == 0 && !strcmp(b, "|z aa r |b l ae t");
-        printf("voice:   dictionary: %u words' phonemes against gen_lyrics.py's, %u differ; %u near misses, %u wrong\n",
-               (unsigned)LY_EN_N, bad, probes, miss);
-        snprintf(what, sizeof what, "English dictionary: all %u words found, exact; a word it lacks by letter rules (zorblat: %s)",
-                 (unsigned)LY_EN_N, b);
-        check(what, ok);
+        printf("voice:   %u English words as the editor's codes (%u with \".\"s): %u differ, %u otherwise in lower case "
+               "or without the segment; as letters %u sung by the rules (zorblat %s)\n", (unsigned)LY_EN_N, dots, bad,
+               low, rules, b);
+        snprintf(what, sizeof what, "V10.7.33 English: all %u dictionary words as phoneme codes read back exactly; as letters "
+                 "by the rules (a project before)", (unsigned)LY_EN_N);
+        check(what, !bad && !low && rules == LY_EN_N && dots < LY_EN_N / 10u && !strcmp(b, "|z aa r |b l ae t"));
     }
-    {   /* (V10.6f) the words left out of the packed dictionary (tools/lyrics/en_ruled.txt): not in it, and the letter
-         * rules read each exactly as the dictionary did (its phonemes, stresses, syllables) */
-        uint8_t ph[SW_MAX];
-        uint32_t nw, n, ns, i, nsr, bad = 0;
-        for (nw = 0; nw < LY_EN_RULED_N; nw++) {
-            const char *rw = LY_EN_RULED_W[nw], *rp = LY_EN_RULED_PH[nw];
-            uint32_t wl = (uint32_t)strlen(rw);
-            bad += sy_en_find(rw, wl, ph) != 0;
-            n = sy_word(LG_EN, rw, wl, ph, &ns);
-            for (i = nsr = 0; i < strlen(rp); i++) nsr += ((uint8_t)rp[i] & SYB) != 0;
-            if (n != strlen(rp) || ns != nsr) { bad++; continue; }
-            for (i = 0; i < n; i++) bad += ph[i] != ((uint8_t)rp[i] & 0x7Fu);
+    {   /* (V10.7.33) the English letter rules as a table: every dictionary word, every bank word's letters and 200000
+         * random words (a .. z, y and e heavy, 1 .. 23 letters) read exactly as the code before it */
+        uint8_t ta[SW_MAX], ka[SW_MAX], tb[SW_MAX], kb[SW_MAX];
+        uint32_t nw, diff = 0, x = 12345u, k2;
+        char w[24];
+        for (nw = 0; nw < LY_EN_N + 200000u; nw++) {
+            uint32_t wl, na, nb;
+            if (nw < LY_EN_N) {
+                snprintf(w, sizeof w, "%s", LY_EN_REF_W[nw]);
+            } else {
+                static const char AL[] = "abcdefghijklmnopqrstuvwxyzaeiouyeghhlnrsw";
+                x ^= x << 13; x ^= x >> 17; x ^= x << 5;
+                wl = 1u + x % 23u;
+                for (k2 = 0; k2 < wl; k2++) { x ^= x << 13; x ^= x >> 17; x ^= x << 5; w[k2] = AL[x % (sizeof AL - 1u)]; }
+                w[wl] = 0;
+            }
+            wl = (uint32_t)strlen(w);
+            na = sy_en_rules(w, wl, ta, ka);
+            nb = en_rules_ref(w, wl, tb, kb);
+            if (na != nb || memcmp(ta, tb, na) || memcmp(ka, kb, na)) {
+                if (diff++ < 5u) printf("voice:   EN rules: %s reads otherwise\n", w);
+            }
+            na = sy_es_tok(w, wl, ta, ka);
+            nb = es_tok_ref(w, wl, tb, kb);
+            if (na != nb || memcmp(ta, tb, na) || memcmp(ka, kb, na)) {
+                if (diff++ < 5u) printf("voice:   ES rules: %s reads otherwise\n", w);
+            }
         }
-        printf("voice:   %u words by the rules alone (out of the dictionary), %u differ\n", (unsigned)LY_EN_RULED_N, bad);
-        check("V10.6f English: the words the rules read as the dictionary did, out of it, sung the same", !bad && LY_EN_RULED_N > 400u);
+        check("V10.7.33 English and Spanish letter rules as tables: 2095 dictionary words and 200000 random ones as the code before", !diff);
     }
-    {   /* (V10.15) the dictionary in the Bluetooth segment: without it (ly_en_ok 0, NO SEG) nothing of it is read (its
-         * bytes poisoned here: a read would change the words), every English word by the letter rules, each with a
-         * syllable; the generator's words too (sing_init again), and singing goes on; with it back, as before */
-        static uint8_t keep[sizeof LY_EN_DICT];
-        uint8_t ph[SW_MAX], ph2[SW_MAX];
-        char rb[160];
-        uint32_t nw, n, ns, n2, ns2, rules = 0;
-        ok = 1;
-        ly_en_ok = 0;
-        for (nw = 0; nw < LY_EN_N; nw++) {
-            const char *rw = LY_EN_REF_W[nw];
-            uint32_t wl = (uint32_t)strlen(rw);
-            ok &= sy_en_find(rw, wl, ph) == 0;
-            n = sy_word(LG_EN, rw, wl, ph, &ns);
-            n2 = sy_en_rules(rw, wl, (uint8_t *)rb, (uint8_t *)rb + 64);
-            n2 = sy_syl((uint8_t *)rb, (uint8_t *)rb + 64, n2, ph2, &ns2);
-            rules += n == n2 && ns == ns2 && !memcmp(ph, ph2, n);
-        }
-        sing_init();
-        ok &= rules == LY_EN_N && lyb_ok;
-        g2p_str(LG_EN, "love", rb, sizeof rb);
-        ly_en_ok = 1;
-        sing_init();
-        g2p_str(LG_EN, "love", b, sizeof b);
-        printf("voice:   without the segment: love %s (with it %s); %u of %u words as the rules read them\n", rb, b,
-               (unsigned)rules, (unsigned)LY_EN_N);
-        check("V10.15 English without the Bluetooth segment: the dictionary never read, every word by the letter rules, "
-              "the generator's too; with it back as before", ok && strcmp(rb, b) && sy_en_find("love", 4, ph) > 0);
+    {   /* (V10.7.33) the codes of every language: each phoneme of a language's list (the NAME screen's, ph_pick) read
+         * back as itself from its code, alone and between two vowels */
+        uint32_t lg, k, bad = 0, cnt[5] = {0};
+        static const uint8_t LGS[5] = {LG_ES, LG_EN, LG_JA, LG_PT, LG_RU};
+        for (lg = 0; lg < 5u; lg++)
+            for (k = 0; k < 48u; k++) {
+                uint8_t ph[SW_MAX], ph1[SW_MAX];
+                char c[3], w[12];
+                uint32_t ns, n, n1, p, want;
+                if (!ph_pick(LGS[lg], k, c)) break;
+                for (p = 0, n = k; p < PH_COUNT; p++)  /* (the k-th of the language's codes) */
+                    if ((PH_CM[p] & ph_lmask(LGS[lg])) && !n--) break;
+                want = p == PH_U && LGS[lg] == LG_JA ? PH_UJ : p == PH_RT && LGS[lg] == LG_EN ? PH_RA : p;
+                snprintf(w, sizeof w, "/%s", c);
+                w[1] = (char)tolower(w[1]); w[2] = (char)tolower(w[2]);
+                n1 = sy_word(LGS[lg], w, (uint32_t)strlen(w), ph1, &ns);
+                snprintf(w, sizeof w, "/o.%c%c.o", tolower(c[0]), c[1] ? tolower(c[1]) : '.');
+                n = sy_word(LGS[lg], w, (uint32_t)strlen(w), ph, &ns);
+                if (n1 != 1u || (ph1[0] & 0x3Fu) != want || n != 3u || (ph[1] & 0x3Fu) != want) {
+                    printf("voice:   lang %u code %s: %u, %u phonemes\n", LGS[lg], c, n1, n);
+                    bad++;
+                }
+                cnt[lg]++;
+            }
+        snprintf(what, sizeof what, "V10.7.33 the languages' phoneme lists (ES %u EN %u JA %u PT %u others %u): each read back "
+                 "from its code", cnt[0], cnt[1], cnt[2], cnt[3], cnt[4]);
+        check(what, !bad && cnt[1] >= 37u && cnt[0] >= 25u && cnt[2] >= 25u && cnt[4] == 44u);
     }
     {   /* the banks: every word's syllables as gen_lyrics.py counted them (the generator fits phrases by them) */
         static const char *const LN[4] = {"", "ES", "EN", "JA"};
@@ -469,8 +575,19 @@ static void check_reading(void)
                 char nw2[24];
                 char word[20];
                 const char *w = ly_word(bk, k, word);
-                bad_w += strcmp(w,ref[k])!=0; /* exact text, not only the syllable count */
-                (void)sy_word(l, nw2, sy_norm(w, (uint32_t)strlen(w), nw2, sizeof nw2), ph, &n);
+                if (l == LG_EN) {                        /* (V10.7.33: its phoneme codes, as the dictionary's) */
+                    uint32_t lo = 0, hi = LY_EN_N, i;
+                    char rc[24], ww[24];
+                    while (lo + 1u < hi) { uint32_t mid = (lo + hi) / 2u; if (strcmp(LY_EN_REF_W[mid], ref[k]) <= 0) lo = mid; else hi = mid; }
+                    for (i = 0; LY_EN_REF_CODE[lo][i] && i + 1u < sizeof rc; i++) rc[i] = (char)tolower(LY_EN_REF_CODE[lo][i]);
+                    rc[i] = 0;
+                    bad_w += strcmp(LY_EN_REF_W[lo], ref[k]) != 0 || strcmp(w, rc) != 0;
+                    snprintf(ww, sizeof ww, "/%s", w);
+                    (void)sy_word(l, nw2, sy_norm_lang(l, ww, (uint32_t)strlen(ww), nw2, sizeof nw2), ph, &n);
+                } else {
+                    bad_w += strcmp(w,ref[k])!=0; /* exact text, not only the syllable count */
+                    (void)sy_word(l, nw2, sy_norm(w, (uint32_t)strlen(w), nw2, sizeof nw2), ph, &n);
+                }
                 tot++;
                 if (n != (ly_meta(bk,k) & 7u)) {
                     if (bad_w++ < 8u)
@@ -509,7 +626,7 @@ static uint32_t gen_text(uint32_t lang, uint32_t lyr, uint32_t theme, uint32_t n
             char nw[24];
             uint32_t ns, i;
             sy_gen_word(&trk[0], &g, lang, lyr);
-            (void)sy_word(lang, nw, sy_norm(g.w, sizeof g.w, nw, sizeof nw), b, &ns);
+            (void)sy_word(lang, nw, sy_norm_lang(lang, g.w, sizeof g.w, nw, sizeof nw), b, &ns);
             s += ns;
             for (i = 0; g.w[i] && m + 2u < max; i++)
                 out[m++] = g.w[i];
@@ -568,7 +685,7 @@ static void check_generator(void)
                         found = strlen(t) == n && (!strncmp(t, p, n) ||
                                                    (l == LG_ES && !strncmp(t, p, n - 1u) && t[n - 1u] == 'o' && p[n - 1u] == 'a'));
                     }
-                    found |= (n == 2u && (!strncmp(p, "la", 2) || !strncmp(p, "oh", 2) || !strncmp(p, "ra", 2)));
+                    found |= (n == 2u && (!strncmp(p, "la", 2) || !strncmp(p, "ra", 2))) || (n == 3u && !strncmp(p, "ouh", 3));
                     bad_w += !found;
                 }
             }
@@ -1539,7 +1656,6 @@ static void check_seek_cycles(void)
         "strength through the night", "... ???", "_ _ x _", "konnichiwa sekai", "", "a - a - a - a",
         "a b c d e f g h i j k l m n o p q r s t u v w x y z a b c d e f"};
     uint32_t ti, lang, tx, pos, lyr, errors = 0, count = 0;
-    sing_init();
     host_tracks_init();
     for (ti = 0; ti < NTRK; ti++) {
         track_t *t = &trk[ti];
@@ -1665,7 +1781,7 @@ int main(int argc, char **argv)
     check_cost();
     if (argc > 1)
         demos(argv[1]);
-    check_cache();                                       /* (0.9.0; after the demos: they render as before) */
+    check_phtext();                                      /* (V10.7.33; after the demos: they render as before) */
     check_seek_cycles();
     printf("voice: %s\n", bad ? "FAILED" : "all checks ok");
     return bad != 0;

@@ -136,7 +136,7 @@ _Static_assert(sizeof rev_comb / 2u >= SP_LEN && sizeof rev_u.sp / 4u >= 4u * (S
  * low-pass at a speaker's corner (TONE moves it ~3 .. 7 kHz; V10.7.30: ~4.8 kHz in the middle, was ~4) and (V10.7.30,
  * dist_amp) a broad scoop of the box's mids (was a resonance at ~1.8 kHz: the honk). State: dist_dc (the coupling),
  * dist_cab_l / _b (the cabinet). (V10.7.30) FOLD a sine folder, CRUSH's rate jittered and its steps ramped (dist_xblk) */
-enum { DT_SOFT, DT_HARD, DT_FOLD, DT_CRUSH, DT_RECT, DT_AMP };
+enum { DT_SOFT, DT_HARD, DT_FOLD, DT_RECT, DT_AMP, DT_CRUSH };   /* (V10.7.33) CRUSH out of TYPE: its own stage, track_crush */
 #define AMP_B1 7000                                     /* the stages' biases (Q15 into tanh) */
 #define AMP_B2 (-3500)
 /* (V10.7.30, the owner: "FOLD is very aggressive, in the bad sense") FOLD: a sine folder, not the triangle's corners: the
@@ -150,38 +150,21 @@ static __attribute__((noinline)) int32_t dist_fold(int32_t v)
     c = (((u * u) >> 14) * u) >> 14;
     return ((3 * u - c) * 21845) >> 15;
 }
-/* (V10.7.30) CRUSH and FOLD's shapers, in the flash (out of the RAM code: dist_shape calls them through a register). FOLD:
- * the low cut's out through a one-pole low-pass (~6 kHz: less to fold into the highs, dist_dc), x0.44 (no fold: a round
- * saturation) .. x3.9 into dist_fold. CRUSH (the owner: "a kind of pedal note at the reduction frequency"): the held
- * samples taken at a rate jittered +-50 % around FS 12 / (12 + DRIVE) (a phase, dist_cab_l, Q16, and this period's step,
- * dist_cab_b: no fixed rate, so no fixed tone where the images of the low notes crowd round it), the output a ramp from
- * the last held sample to the new one (dist_dc to dist_hold: a first-order hold, the images down by sin x / x once more);
- * the bits as before (4 .. 14 off, rounded: no offset). dist_hc: the type the state is of (+ 16; another: cleared) */
+/* (V10.7.30) FOLD's shaper, in the flash (out of the RAM code: dist_shape calls it through a register): the low cut's
+ * out through a one-pole low-pass (~6 kHz: less to fold into the highs, dist_dc), x0.44 (no fold: a round saturation)
+ * .. x3.9 into dist_fold. dist_hc: the type the state is of (+ 16; another: cleared). (V10.7.33) CRUSH's half is
+ * crush_block's now (below track_dist) */
 static uint32_t dist_rnd __attribute__((section(".bss.tape")));   /* (the jitter's and NOISE's random numbers: one for all, its
                                                          * order no matter) */
 static __attribute__((noinline)) int32_t dist_shape_x(track_t *t, uint32_t type, int32_t x, int32_t g, int32_t d)
 {
-    int32_t st0 = (int32_t)(786432u / (uint32_t)(12 + d)), y;   /* (65536 x 12 / (12 + d)) */
+    (void)d;
     if (t->dist_hc != type + 16u) {
         t->dist_hc = (uint8_t)(type + 16u);
-        t->dist_dc = t->dist_hold = t->dist_cab_l = 0;
-        t->dist_cab_b = st0;
+        t->dist_dc = 0;
     }
-    if (type == DT_FOLD) {
-        t->dist_dc += mulq15(x - t->dist_dc, 19000);
-        return dist_fold(((t->dist_dc >> 2) * ((g * 7) >> 4)) >> 10);
-    }
-    if ((t->dist_cab_l += t->dist_cab_b) >= 65536) {   /* the next sample held */
-        uint32_t r = dist_rnd | 1u, sh = 4u + (uint32_t)d / 12u;
-        t->dist_cab_l &= 65535;
-        t->dist_dc = t->dist_hold;
-        t->dist_hold = (int32_t)((uint32_t)((clamp(x, -131072, 131071) + (1 << (sh - 1u))) >> sh) << sh);
-        r ^= r << 13; r ^= r >> 17; r ^= r << 5;
-        dist_rnd = r;
-        t->dist_cab_b = clamp(st0 + (st0 >> 6) * ((int32_t)r >> 26), 1024, 65535);
-    }
-    y = t->dist_dc + ((((t->dist_hold - t->dist_dc) >> 2) * (t->dist_cab_l >> 6)) >> 8);
-    return clamp(((y >> 2) * g) >> 10, -26000, 26000);
+    t->dist_dc += mulq15(x - t->dist_dc, 19000);
+    return dist_fold(((t->dist_dc >> 2) * ((g * 7) >> 4)) >> 10);
 }
 static __attribute__((noinline)) int32_t dist_shape(track_t *t, uint32_t type, int32_t x, int32_t g, int32_t d)
 {
@@ -189,8 +172,7 @@ static __attribute__((noinline)) int32_t dist_shape(track_t *t, uint32_t type, i
     switch (type) {
     case DT_HARD:
         return clamp(v, -22000, 22000);
-    case DT_FOLD:
-    case DT_CRUSH: {                                     /* (V10.7.30) in the flash */
+    case DT_FOLD: {                                      /* (V10.7.30) in the flash */
         int32_t (*f)(track_t *, uint32_t, int32_t, int32_t, int32_t) = dist_shape_x;
         FM1_OPAQUE(f);
         return f(t, type, x, g, d);
@@ -243,7 +225,7 @@ static int32_t dist_w[NTRK];                            /* the blend the last bl
  * the wave above a threshold (~-12 dBFS at 1 .. ~-18 at 100 of the drive's out): only the loud part of each cycle gets
  * it, as loud as it is over the threshold: a grit that rides the note (its pitch, its envelope), silent under it. The
  * noise through a one-pole at the TONE's corner (dist_nlp), its level the drive's blend */
-static int32_t dist_nlp[NTRK] __attribute__((section(".bss.tape")));
+static int32_t dist_nlp[NTRK] __attribute__((section(".pool")));   /* (V10.7.33: the pool, as BALANCE's) */
 static __attribute__((noinline)) void dist_noise(track_t *t, int32_t *b, uint32_t n)
 {
     uint32_t ti = (uint32_t)(t - trk) % NTRK, r = dist_rnd | 1u, i;
@@ -276,7 +258,7 @@ static void track_dist(track_t *t, int32_t *b, uint32_t n)
     full = w0 >= 4096 && w1 >= 4096;
     g = 4096 + d * d * 2;                                /* Q12: 1x .. ~9x, gentle at first */
     k = clamp(32000 - d * 95 + t->p[P_DTONE] * 300, 2500, 32767);   /* tone: transparent at low drive .. ~3 kHz, Q15 */
-    mk = type == DT_HARD || type == DT_FOLD || type == DT_CRUSH ? 30000 - d * 60 : 30000 - d * 120;   /* make-up */
+    mk = type == DT_HARD || type == DT_FOLD ? 30000 - d * 60 : 30000 - d * 120;   /* make-up */
     if (type > DT_AMP)
         type = DT_SOFT;
     if (type == DT_AMP) {                               /* the cabinet's corner: ~4.8 kHz, TONE ~3 .. 7 kHz; its make-up */
@@ -305,6 +287,65 @@ static void track_dist(track_t *t, int32_t *b, uint32_t n)
     }
     if (FELUCCA_XFX && dnz_v[ti]) {                     /* (V10.7.30) NOISE, in the flash */
         void (*f)(track_t *, int32_t *, uint32_t) = dist_noise;
+        FM1_OPAQUE(f);
+        f(t, b, n);
+    }
+}
+
+/* (V10.7.33, the owner: CRUSH out of DIST's TYPE, a track's own) EDIT > PLAY 3, CRUSH (params.c cru_v, 0..127 shown as
+ * 0..100 %, a track each; 0: not run, DIST on or off): what DIST TYPE CRUSH was at that DRIVE, its own state (cru_s,
+ * the pool): the ~55 Hz low cut, the held samples at a rate jittered around FS 12 / (12 + CRUSH) with a ramp between
+ * them and the bits 4 .. 14 off (dist_shape_x's), the two-pole low-pass that closes with it (DIST's TONE moving it, as
+ * it did), the make-up, the blend in from 0 over its first 8 steps (DIST's). After DIST. Once a block, in the flash
+ * (as CRUSH was: dist_shape_x), one loop; a project's DIST TYPE CRUSH loads as CRUSH at its DRIVE, DIST off
+ * (project.c proj_crush_mig) */
+typedef struct { int32_t hp, l1, l2, dc, hold, ph, st, w; } cru_t;
+static cru_t cru_s[NTRK] __attribute__((section(".pool")));
+static __attribute__((noinline)) void crush_block(track_t *t, int32_t *b, uint32_t n)
+{
+    uint32_t ti = (uint32_t)(t - trk) % NTRK, i, r = dist_rnd | 1u;
+    cru_t *c = &cru_s[ti];
+    int32_t d = cru_v[ti], w0 = c->w, w1 = d >= 8 ? 4096 : d * 512, dw, g, k, mk, st0, sh;
+    int32_t hp = c->hp, l1 = c->l1, l2 = c->l2, dc = c->dc, hold = c->hold, ph = c->ph, stp = c->st;
+    if (w1 != w0)
+        w1 = w1 - w0 > 64 || w0 - w1 > 64 ? w0 + (w1 - w0) / 2 : w1;
+    c->w = w1;
+    if (!w0 && !w1)
+        return;
+    st0 = (int32_t)(786432u / (uint32_t)(12 + d));
+    if (!w0)                                            /* in: from silence */
+        hp = l1 = l2 = dc = hold = ph = 0, stp = st0;
+    dw = (w1 - w0) >> CTL_LOG2;
+    g = 4096 + d * d * 2;
+    k = clamp(32000 - d * 95 + t->p[P_DTONE] * 300, 2500, 32767);
+    mk = 30000 - d * 60;
+    sh = 4 + d / 12;
+    for (i = 0; i < n; i++) {
+        int32_t x = b[i], y;
+        hp += (x - hp + 64) >> 7;
+        x = clamp(x - hp, -230000, 230000);
+        if ((ph += stp) >= 65536) {                     /* the next sample held */
+            ph &= 65535;
+            dc = hold;
+            hold = (int32_t)((uint32_t)((clamp(x, -131072, 131071) + (1 << (sh - 1))) >> sh) << sh);
+            r ^= r << 13; r ^= r >> 17; r ^= r << 5;
+            stp = clamp(st0 + (st0 >> 6) * ((int32_t)r >> 26), 1024, 65535);
+            r |= 1u;
+        }
+        y = dc + ((((hold - dc) >> 2) * (ph >> 6)) >> 8);
+        y = clamp(((y >> 2) * g) >> 10, -26000, 26000);
+        l1 += mulq15(y - l1, k);
+        l2 += mulq15(l1 - l2, k);
+        y = mulq15(l2, mk);
+        b[i] += (((y - b[i]) >> 2) * (w0 + dw * (int32_t)(i + 1u))) >> 10;   /* (full: y within 3 of 2^18) */
+    }
+    dist_rnd = r;
+    c->hp = hp; c->l1 = l1; c->l2 = l2; c->dc = dc; c->hold = hold; c->ph = ph; c->st = stp;
+}
+static void track_crush(track_t *t, int32_t *b, uint32_t n)
+{
+    if (cru_v[(uint32_t)(t - trk) % NTRK] || cru_s[(uint32_t)(t - trk) % NTRK].w) {
+        void (*f)(track_t *, int32_t *, uint32_t) = crush_block;
         FM1_OPAQUE(f);
         f(t, b, n);
     }
@@ -469,7 +510,8 @@ static __attribute__((noinline)) void eq_block(uint32_t n)
  * BAL_GATE (a tail, silence: the balance kept for the next sound). AMOUNT 0: the gains back to 0, then not run (the
  * mix bit for bit as without it) */
 #define BAL_GATE 200                                    /* (the four bands' means summed: ~-45 dBFS) */
-static struct { int32_t lp[6], g[4], e[4], c[4], s[4], tg[4]; uint8_t blk; } bal __attribute__((section(".bss.tape")));
+static struct { int32_t lp[6], g[4], e[4], c[4], s[4], tg[4]; uint8_t blk; } bal __attribute__((section(".pool")));   /* (V10.7.33: the
+                                                         * pool, zeroed at boot: RAM's .data + .bss as before BALANCE came in) */
 static const int16_t BAL_T[4] __attribute__((section(".rodata.tape"))) = {361, 81, -92, -286};   /* the curve, log2 Q8 */
 static const int16_t BAL_R[4] __attribute__((section(".rodata.tape"))) = {64, 512, 128, 128};   /* the share, Q8 */
 static const int16_t BAL_LO[4] __attribute__((section(".rodata.tape"))) = {-64, -510, -85, -128};   /* its bounds */
@@ -2584,6 +2626,7 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
         if ((duck_g0 < 32767 || duck_g1 < 32767) && ENGINES[t->engine] != &ENG_DRUM)   /* DUCK: the kick's */
             lq = duck_ramp(l0 >> 8, mp_lvl[ti] >> 8, &dl);
         track_dist(t, b, n);
+        track_crush(t, b, n);                           /* (V10.7.33) CRUSH, the track's own */
         int32_t pm0 = 32768, pm1 = 32768;               /* (0.6.48: drum_mix's; pf.mg counts only while muting) */
         if ((pf.mute >> (t - trk)) & 1u) {
             pm0 = pf.mg[ti];

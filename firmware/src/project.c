@@ -105,6 +105,7 @@ typedef struct {
     int8_t bal;                                /* (V10.7.30) BALANCE's AMOUNT - BAL_DEF (0: the default, as every older read
                                                 * leaves it) and each track's DIST NOISE: 'X' 'M' (proj_xm), as the EQ */
     int16_t dnz[NTRK];                         /* (as params.c dnz_v: copied whole) */
+    int16_t cru[NTRK];                         /* (V10.7.33) each track's CRUSH (as params.c cru_v, 0..127): 'X' 'C' (proj_xm) */
     uint8_t scene[4];                          /* (V10.31) SCL > SCENE: ON, then the six roles a nibble each (seq.c
                                                 * scn_on scn_role): FUNC's 'S' 'C' block after 'D' 'A', none before */
     uint8_t scpat[(NTRK + 1) / 2];                        /* (V10.6k) SCENE's BASS/LEAD PATTERN and DRUM STYLE (seq.c scn_pat), a
@@ -225,26 +226,57 @@ static __attribute__((noinline)) uint32_t proj_eq(project_t *q, const uint8_t *b
 
 /* (V10.7.30) BALANCE's AMOUNT and the tracks' NOISE: 'X' 'M', AMOUNT, then NOISE a track each (0 .. 100 a byte), when
  * AMOUNT is not BAL_DEF or a NOISE is on; the last block (firmware before stops at it, the rest loads). A project
- * without it: AMOUNT BAL_DEF (BALANCE on: what the owner asked for, an older project too), every NOISE 0 */
+ * without it: AMOUNT BAL_DEF (BALANCE on: what the owner asked for, an older project too), every NOISE 0.
+ * (V10.7.33) .. then each track's CRUSH: 'X' 'C' and a byte a track (0 .. 127), when one is on (firmware before stops
+ * at 'X' 'M'); without it every CRUSH 0. Reading: 0 (the last) */
 static __attribute__((noinline)) uint32_t proj_xm(project_t *q, const uint8_t *bc, uint32_t pos, uint32_t room)
 {
     uint8_t *b = (uint8_t *)(uintptr_t)bc;
-    uint32_t k, any = (uint32_t)q->bal;
-    if (!room) {
-        for (k = 0; k < NTRK; k++) any |= (uint32_t)q->dnz[k];
-        if (!any) return 0;
-        if (b) {
-            b[pos] = 'X'; b[pos + 1u] = 'M'; b[pos + 2u] = (uint8_t)(q->bal + BAL_DEF);
-            for (k = 0; k < NTRK; k++) b[pos + 3u + k] = (uint8_t)q->dnz[k];
-        }
-        return 3u + NTRK;
+    uint32_t k, x, n = 0;
+    if (room) {
+        q->bal = 0;
+        memset(q->dnz, 0, sizeof q->dnz);
+        memset(q->cru, 0, sizeof q->cru);
     }
-    q->bal = 0;
-    memset(q->dnz, 0, sizeof q->dnz);
-    if (pos + 3u + NTRK > room || b[pos] != 'X' || b[pos + 1u] != 'M') return 0;
-    q->bal = (int8_t)(b[pos + 2u] - BAL_DEF);           /* (its range: project_restore_runtime's) */
-    for (k = 0; k < NTRK; k++) q->dnz[k] = b[pos + 3u + k] > 100u ? 100 : b[pos + 3u + k];
-    return 3u + NTRK;
+    for (x = 0; x < 2u; x++) {                          /* 'X' 'M' (AMOUNT, NOISE), then 'X' 'C' (CRUSH) */
+        uint32_t h = 3u - x, any = x ? 0u : (uint32_t)q->bal;
+        int16_t *v = x ? q->cru : q->dnz;
+        if (room) {
+            if (pos + h + NTRK > room || b[pos] != 'X' || b[pos + 1u] != (x ? 'C' : 'M'))
+                continue;
+            if (!x)
+                q->bal = (int8_t)(b[pos + 2u] - BAL_DEF);   /* (its range: project_restore_runtime's) */
+            for (k = 0; k < NTRK; k++)
+                v[k] = (int16_t)(b[pos + h + k] > 127u - 27u * !x ? 127u - 27u * !x : b[pos + h + k]);
+            pos += h + NTRK;
+            continue;
+        }
+        for (k = 0; k < NTRK; k++) any |= (uint32_t)v[k];
+        if (!any) continue;
+        if (b) {
+            b[pos + n] = 'X'; b[pos + n + 1u] = x ? 'C' : 'M';
+            if (!x) b[pos + 2u] = (uint8_t)(q->bal + BAL_DEF);
+            for (k = 0; k < NTRK; k++) b[pos + n + h + k] = (uint8_t)v[k];
+        }
+        n += h + NTRK;
+    }
+    return n;
+}
+
+/* (V10.7.33) a FUNC of before (b[65] not PROJ_DT_MARK): DIST TYPE had CRUSH (3; RECT 4, AMP 5): a track of it gets
+ * CRUSH at its DRIVE (the same sound: fx.c crush_block is that stage) and DIST off, SOFT; RECT and AMP one down */
+static __attribute__((noinline)) void proj_crush_mig(project_t *q)
+{
+    uint32_t k;
+    for (k = 0; k < NTRK; k++) {
+        int16_t *p = q->t[k].p;
+        if (p[P_DTYPE] == 3) {
+            q->cru[k] = (int16_t)clamp(p[P_DIST], 0, 127);
+            p[P_DIST] = 0;
+            p[P_DTYPE] = 0;
+        } else if (p[P_DTYPE] > 3)
+            p[P_DTYPE]--;
+    }
 }
 
 /* (JIANT 0.6) the tracks from `from` on of a project read from a format of PROJ_LT tracks: their power-on sounds
@@ -445,6 +477,7 @@ static uint32_t proj_name_get(char *d, const uint8_t *s)   /* its length */
  * MUTATE's P_MCFG (0.9.9-seq2c .. V10.6; GENE's evolving parts 92) or VEL as V10.7.3 .. V10.7.5 saved it: it loads
  * 127, VEL 100 % (those three betas' VEL once lost; older firmware ignores the byte) */
 #define PROJ_VEL_MARK 'V'
+#define PROJ_DT_MARK 'W'                                /* (V10.7.33) .. and DIST TYPE without CRUSH (proj_crush_mig) */
 static uint8_t proj_full;                               /* the last proj_pack failed for room (not for a value) */
 static uint8_t proj_why, proj_why_t;                    /* .. for a value: the check's digit, its track's (proj_pack) */
 static __attribute__((noinline)) void proj_err(void)    /* proj_pack said no: why, on screen */
@@ -588,7 +621,7 @@ static uint32_t proj_packed_size(const project_t *q)
         if (q->fit[t]) { n += 2u + NTRK; break; }
     for (i = 0; i < sizeof q->split; i++) if (q->split[i]) { n += 2u + sizeof q->split; break; }
     for (i = 0; i < sizeof q->scpat; i++) if (q->scpat[i]) { n += 2u + sizeof q->scpat; break; }
-    n += proj_xm((project_t *)(uintptr_t)q, 0, 0, 0);   /* (V10.7.30) BALANCE, NOISE */
+    n += proj_xm((project_t *)(uintptr_t)q, 0, 0, 0);   /* (V10.7.30) BALANCE, NOISE; (V10.7.33) CRUSH */
     return n;
 }
 static int proj_split_ok(const uint8_t *s)
@@ -636,7 +669,7 @@ static int proj_pack(project_store_t *out, const project_t *q)
     if (proj_packed_size(q) > PROJC_PFX_OFF) { proj_full = 1; return 0; }
     memset(out, 0, sizeof *out); memcpy(b, &magic, 4); memcpy(b + 4, &size, 4);
     memcpy(b + 8, q->g, G_NSTORE * 2u); b[62] = q->sel; b[63] = q->parts; b[64] = q->phys; b[66] = P_COUNT;
-    b[67] = NTRK; b[65] = PROJ_VEL_MARK;
+    b[67] = NTRK; b[65] = PROJ_DT_MARK;
     for (t = 0; t < NTRK; t++) {
         uint32_t e = q->t[t].engine, map, fm = (uint32_t)proj_fm_kept(q, t);
         b[pos++] = (uint8_t)e; b[pos++] = q->t[t].preset; b[pos++] = (uint8_t)fm;
@@ -779,7 +812,8 @@ static int proj_pack(project_store_t *out, const project_t *q)
     if (i < sizeof q->split) { b[pos++] = 'K'; b[pos++] = 'S'; memcpy(b + pos, q->split, sizeof q->split); pos += sizeof q->split; }
     for (i = 0; i < sizeof q->scpat && !q->scpat[i]; i++) {}   /* (V10.6k) SCENE's patterns (the last) */
     if (i < sizeof q->scpat) { b[pos++] = 'S'; b[pos++] = 'P'; memcpy(b + pos, q->scpat, sizeof q->scpat); pos += sizeof q->scpat; }
-    pos += proj_xm((project_t *)(uintptr_t)q, b, pos, 0);   /* (V10.7.30) BALANCE, NOISE (the last) */
+    pos += proj_xm((project_t *)(uintptr_t)q, b, pos, 0);   /* (V10.7.30) BALANCE, NOISE (firmware before: the last);
+                                                         * (V10.7.33) CRUSH after them */
     memcpy(b + PROJC_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJC_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
     for (i = 0; i < 4u; i++)
@@ -898,7 +932,7 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
             values[i] = (int16_t)b[pos++] - 64;
         }
         params_by_count(q->t[t].p, values, np, def);
-        if (b[65] != PROJ_VEL_MARK && e != ENGI_DIGITAL)   /* (V10.7.6) a FUNC of before VEL: its slot was MUTATE's */
+        if (b[65] != PROJ_VEL_MARK && b[65] != PROJ_DT_MARK && e != ENGI_DIGITAL)   /* (V10.7.6) a FUNC of before VEL: its slot was MUTATE's */
             q->t[t].p[P_TVEL] = 127;                    /* config (127 - cfg), VEL 100 % (PROJ_VEL_MARK) */
         if (pos + 8u > room) return 0;
         map = pos;
@@ -1104,7 +1138,9 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         memcpy(q->scpat, b + pos + 2u, sizeof q->scpat);
         pos += 2u + sizeof q->scpat;
     }
-    proj_xm(q, b, pos, room);                           /* (V10.7.30) BALANCE, NOISE (else BAL_DEF, 0) */
+    proj_xm(q, b, pos, room);                           /* (V10.7.30) BALANCE, NOISE (else BAL_DEF, 0); (V10.7.33) CRUSH */
+    if (b[65] != PROJ_DT_MARK)                          /* (V10.7.33) DIST TYPE CRUSH: CRUSH */
+        proj_crush_mig(q);
     proj_new_tracks(q, nt);                             /* (a FUNC of fewer tracks: the rest at power-on) */
     for (t = nt; t < NTRK; t++)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);
@@ -1257,6 +1293,7 @@ static __attribute__((noinline)) void proj_master_put(project_t *p)
     p->tp[0] = (uint8_t)tape_v[0]; p->tp[1] = (uint8_t)tape_v[1];
     p->bal = (int8_t)(bal_v - BAL_DEF);                 /* (V10.7.30) BALANCE, the tracks' NOISE */
     memcpy(p->dnz, dnz_v, sizeof p->dnz);
+    memcpy(p->cru, cru_v, sizeof p->cru);               /* (V10.7.33) CRUSH */
 }
 static void project_capture(project_t *p)
 {
@@ -1511,6 +1548,7 @@ static int project_restore_runtime(const project_t *input)
         tape_v[0] = p->tp[0] > 100u ? 100 : p->tp[0]; tape_v[1] = p->tp[1] > 100u ? 100 : p->tp[1];
         bal_v = (int16_t)clamp(p->bal + BAL_DEF, 0, 100);   /* (V10.7.30) BALANCE, NOISE */
         memcpy(dnz_v, p->dnz, sizeof dnz_v);            /* (0 .. 100: proj_xm's, or the knob's) */
+        memcpy(cru_v, p->cru, sizeof cru_v);            /* (V10.7.33) CRUSH (0 .. 127: proj_xm's, or the knob's) */
     }
     {                                                   /* (V10.31) SCENE */
         uint32_t i;
@@ -1629,6 +1667,7 @@ static __attribute__((noinline)) void system_init(void)   /* (snd8: out of its c
     eq_v[0] = eq_v[1] = eq_v[2] = eq_v[3] = 0;          /* (p9) its EQ flat */
     bal_v = BAL_DEF;                                    /* (V10.7.30) BALANCE on, no NOISE */
     memset(dnz_v, 0, sizeof dnz_v);
+    memset(cru_v, 0, sizeof cru_v);                     /* (V10.7.33) no CRUSH */
     for (i = 0; i < 5u; i++) song.g[KEEP[i]] = kept[i];
     kept[0] = dice_secs;
     chain_defaults(&chain_config);
@@ -1939,6 +1978,7 @@ static uint32_t autosave_sig(void)
     h = as_mix(h, tape_v, sizeof tape_v);               /* autosaved, RESTORE LAST gives it back) */
     h = as_mix(h, &bal_v, sizeof bal_v);                /* (V10.7.30) BALANCE, NOISE */
     h = as_mix(h, dnz_v, sizeof dnz_v);
+    h = as_mix(h, cru_v, sizeof cru_v);                 /* (V10.7.33) CRUSH */
     return as_mix(h, proj_name, sizeof proj_name);
 }
 

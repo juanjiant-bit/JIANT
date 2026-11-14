@@ -254,7 +254,7 @@ static void graph_sing(const track_t *t)
     for (k = 0, x = PANEL_X0; k < s->np && k < SY_N; k++) {   /* its syllable's phonemes: chips */
         int32_t w;
         uint16_t f = k == s->i ? T_THEME : T_RAISE;
-        sing_up(b, PH_NAME[s->ph[k] % PH_COUNT], 4);
+        sing_up(b, PH_CODE[s->ph[k] % PH_COUNT], 3);       /* (V10.7.33: its code, as a lyric of phonemes writes it) */
         w = text_w(&AF_X, b) + 8;
         if (x + w > cx0 - 10)
             break;
@@ -273,7 +273,7 @@ static void graph_sing(const track_t *t)
         const phon_t *P = &PHON[VREF[k]];
         int32_t vx = cx0 + 4 + clamp((2500 - P->f2) * (cw - 14) / 1900, 0, cw - 14);
         int32_t vy = cy0 + 4 + clamp(((int32_t)P->f1 - 250) * (ch - 16) / 600, 0, ch - 16);
-        sing_up(b, PH_NAME[VREF[k]], 4);
+        sing_up(b, PH_CODE[VREF[k]], 3);
         cv_text(vx, vy - AF_X_CAP_Y, &AF_X, b, T_TEXT);
     }
     nv = s->gv * 100 / 32767;

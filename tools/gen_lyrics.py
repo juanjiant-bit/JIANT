@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
-"""VOICE words (JIANT 0.8.5): the phoneme codes, the English dictionary and the lyric generator's word banks as
-constant tables (firmware/src/sing.c reads them), from tools/lyrics/:
-  en_dict.txt   the English words the device knows (a subset of the CMU Pronouncing Dictionary, BSD-2-Clause): each
-                its letters, then its phonemes (a byte each, 0x80 | syllable start 0x40 | code), sorted, front-coded
-                (the letters shared with the word before), with an index every EN_BLK words (binary search, then at
-                most EN_BLK compared); (0.9.0) Huffman-coded (en_dict_pack: the shared count, the letters, the
-                phonemes, each their own canonical code), a block of EN_BLK from a byte (8: was 16 as bytes)
+"""VOICE words (JIANT 0.8.5): the phoneme codes and the lyric generator's word banks as constant tables
+(firmware/src/sing.c reads them), from tools/lyrics/:
   es.txt en.txt ja.txt   the generator's banks: words by theme and category, each with its syllables (Spanish by the
-                same rules sing.c reads it with, sy_es below; English from the dictionary; Japanese in morae)
-Spanish and Japanese text is read by rules on the device; English only through the dictionary (and rough letter rules
-for a word it lacks). The phoneme list here is the order of sing.c's PHON[] (a static assert checks the count).
+                same rules sing.c reads it with, sy_es below; English from en_dict.txt, the CMU Pronouncing Dictionary;
+                Japanese in morae). (V10.7.33) English's words packed as their phoneme codes (PH_CODE: sing.c sy_phon reads
+                them; a "." where a syllable starts only when sy_phauto would put it elsewhere)
+  en_dict.txt   (V10.7.33) no longer on the device (the web editor has the whole CMU dictionary, web/lyrics_en.js): the
+                English bank's phonemes, and the host tests' reference words
+The phoneme list here is the order of sing.c's PHON[] (a static assert checks the count); the codes and the languages'
+lists are web/lyrics.js's too (tools/gen_web_lyrics.py writes them from here).
   tools/gen_lyrics.py OUT.h"""
 import re
 import sys
@@ -36,6 +35,114 @@ PHONEMES = [
 PH = {c: i for i, (c, _) in enumerate(PHONEMES)}
 VOWELS = {PH[c] for c in ("A", "E", "I", "O", "U", "UJ", "IH", "EH", "AE", "AA", "AO", "UH", "AH", "ER", "AX")}
 assert len(PHONEMES) < 64
+
+# (V10.7.33) phonemes as text: each phoneme's code (upper case: the device types upper case) and the languages that
+# read it (sing.c PH_CODE, PH_CM; ES also Italian, OT the languages read by sing_ext.c's rules). The longer codes only
+# where none of the language's letter pairs would be taken for them (ER in Spanish is e + r); U and R are read as the
+# language's (Japanese UJ, English RA), so UJ and RA have no languages of their own
+PM = {"ES": 1, "EN": 2, "JA": 4, "PT": 8, "OT": 16}
+ALL = 31
+EN_OT = PM["EN"] | PM["OT"]
+CODES = {
+    "SIL": ("#", PM["JA"] | PM["OT"]),
+    "A": ("A", ALL), "E": ("E", ALL), "I": ("I", ALL), "O": ("O", ALL), "U": ("U", ALL), "UJ": ("U", 0),
+    "IH": ("IH", EN_OT), "EH": ("EH", EN_OT | PM["PT"]), "AE": ("AE", EN_OT), "AA": ("AA", EN_OT),
+    "AO": ("AO", EN_OT | PM["PT"]), "UH": ("UH", EN_OT), "AH": ("AH", EN_OT), "ER": ("ER", EN_OT), "AX": ("AX", EN_OT),
+    "Y": ("Y", ALL), "W": ("W", ALL), "L": ("L", ALL), "RT": ("R", ALL), "RR": ("RR", ALL & ~PM["EN"] & ~PM["JA"]),
+    "RA": ("R", 0),
+    "M": ("M", ALL), "N": ("N", ALL), "NY": ("NY", PM["ES"] | PM["PT"] | PM["OT"]), "NG": ("NG", EN_OT),
+    "NM": ("NN", PM["JA"] | PM["PT"] | PM["OT"]),
+    "P": ("P", ALL), "T": ("T", ALL), "K": ("K", ALL), "B": ("B", ALL), "D": ("D", ALL), "G": ("G", ALL),
+    "F": ("F", ALL), "S": ("S", ALL), "SH": ("SH", ALL), "H": ("H", ALL), "X": ("X", ALL), "TH": ("TH", ALL),
+    "V": ("V", ALL), "Z": ("Z", ALL), "ZH": ("ZH", ALL), "DH": ("DH", EN_OT),
+    "CH": ("CH", ALL), "TS": ("TS", ALL & ~PM["EN"]), "J": ("J", ALL),
+}
+assert set(CODES) == {c for c, _ in PHONEMES}
+# the NAME screen's lists (sing.c ph_pick: the white keys, 16 a page): each language's codes in PHONEMES' order (vowels
+# first), at most 48 (three pages)
+PH_LISTS = {k: " ".join(c for c, _ in PHONEMES if CODES[c][1] & m) for k, m in PM.items()}
+LANG_OF = {"es": "ES", "en": "EN", "ja": "JA", "pt": "PT"}
+
+
+def ph_cl(a, b):
+    """sing.c ph_cl: consonants a b an onset"""
+    A, B = PHONEMES[a][0], PHONEMES[b][0]
+    if A == "SIL":
+        return True
+    if a in VOWELS or A in ("Y", "W"):
+        return False
+    if B in ("Y", "W"):
+        return True
+    return B in ("L", "RT", "RA") and A in ("P", "T", "K", "B", "D", "G", "F") and not (A == "D" and B == "L")
+
+
+def ph_auto(lang, ph):
+    """sing.c sy_phauto: the syllables' starts of a phoneme list without "."s"""
+    starts, e, first = set(), 0, True
+    for k, c in enumerate(ph):
+        if not (c in VOWELS or (lang == "JA" and c == PH["NM"])):
+            continue
+        if lang != "JA" and k and ph[k - 1] in VOWELS and c in (PH["IH"], PH["UH"], PH["I"], PH["U"]):
+            e = k + 1
+            continue
+        s = k - e
+        if first:
+            s = 0
+        elif s <= 1:
+            s = k - s
+        elif ph_cl(ph[k - 2], ph[k - 1]):
+            s = k - 3 if s >= 3 and ph[k - 3] == PH["SIL"] else k - 2
+        else:
+            s = k - 1
+        starts.add(s)
+        e = k + 1
+        first = False
+    if ph:
+        starts.add(0)
+    return starts
+
+
+def ph_parse(lang, text):
+    """sing.c sy_phon: a phoneme word (upper or lower case, no "/") -> [(code, syllable start)]"""
+    mask, w, out, i, st = PM[lang], text.upper(), [], 0, True
+    dots = "." in w
+    while i < len(w):
+        if w[i] == ".":
+            st, i = True, i + 1
+            continue
+        best, bl = None, 0
+        for c, (code, m) in ((PH[n], CODES[n]) for n, _ in PHONEMES):
+            if m & mask and len(code) > bl and w.startswith(code, i):
+                best, bl = c, len(code)
+        if best is None:
+            i += 1
+            continue
+        if best == PH["U"] and lang == "JA":
+            best = PH["UJ"]
+        if best == PH["RT"] and lang == "EN":
+            best = PH["RA"]
+        out.append([best, dots and st])
+        st, i = False, i + bl
+    if not dots:
+        sa = ph_auto(lang, [c for c, _ in out])
+        for k, o in enumerate(out):
+            o[1] = k in sa
+    if out:
+        out[0][1] = True
+    return [(c, s) for c, s in out]
+
+
+def ph_text(lang, ph):
+    """[(code, syllable start)] -> its shortest code text: no "."s when sy_phauto finds the same syllables, else one
+    where each starts (None: no text reads back as it)"""
+    plain = "".join(CODES[PHONEMES[c][0]][0] for c, _ in ph)
+    if ph_parse(lang, plain) == [(c, bool(s)) for c, s in ph]:
+        return plain
+    dotted = "".join(("." if s and k else "") + CODES[PHONEMES[c][0]][0] for k, (c, s) in enumerate(ph))
+    if ph_parse(lang, dotted) == [(c, bool(s) or k == 0) for k, (c, s) in enumerate(ph)]:
+        return dotted
+    return None
+
 
 # ------------------------------------------------------------------------------------------ English (CMU) ---
 ARPA = {"AA": ["AA"], "AE": ["AE"], "AO": ["AO"], "EH": ["EH"], "ER": ["ER"], "IH": ["IH"], "IY": ["I"], "UH": ["UH"],
@@ -80,195 +187,6 @@ def en_phones(arpa):
     if not nuc:
         return [], 0
     return [(PH[c], i in starts) for i, (c, _) in enumerate(seq)], len(nuc)
-
-
-# (0.9.0) the dictionary Huffman-coded (-5.4 KB): three canonical codes (sing.c ly_sym), at most HC_MAX bits a code
-HC_MAX = 15
-LY_END = 0x7F                                        # the end of a word's letters / phonemes (no phoneme byte & 0x7F)
-
-
-def huff_code(count):
-    """symbol -> (length, code), canonical (by length, then symbol), lengths at most HC_MAX; and the table sing.c
-    reads: the number of codes of each length 1..HC_MAX, then the symbols in code order"""
-    from collections import deque
-    syms = sorted(count)
-    if len(syms) == 1:
-        bits = {syms[0]: 1}
-    else:
-        # The lengths from the two-queue construction: the symbols in a queue by weight (a tie: the lower symbol
-        # first), the joined nodes in a second one in the order they are made (their weights never fall). Each step
-        # joins the two lightest fronts, a symbol before a joined node of the same weight: the tree a priority queue
-        # keyed (weight, age) builds, so the lengths are those the dictionary was packed with since 0.9.0.
-        weight = [count[s] for s in syms]
-        parent = [-1] * len(syms)
-        single = deque(sorted(range(len(syms)), key=weight.__getitem__))
-        joined = deque()
-
-        def lightest():
-            if single and (not joined or weight[single[0]] <= weight[joined[0]]):
-                return single.popleft()
-            return joined.popleft()
-
-        while len(single) + len(joined) > 1:
-            x, y = lightest(), lightest()
-            parent[x] = parent[y] = len(weight)
-            weight.append(weight[x] + weight[y])
-            parent.append(-1)
-            joined.append(len(weight) - 1)
-
-        def depth(i):
-            d = 0
-            while parent[i] >= 0:
-                i, d = parent[i], d + 1
-            return d
-
-        bits = {s: depth(i) for i, s in enumerate(syms)}
-    assert max(bits.values()) <= HC_MAX, "a code over HC_MAX bits"
-    per_len = [0] * (HC_MAX + 1)
-    for s in syms:
-        per_len[bits[s]] += 1
-    # canonical codes: those of one length consecutive, the first of each length the end of the shorter ones, doubled
-    start, first = 0, [0] * (HC_MAX + 1)
-    for n in range(1, HC_MAX + 1):
-        start = (start + per_len[n - 1]) << 1
-        first[n] = start
-    order = sorted(syms, key=bits.__getitem__)       # (a stable sort: a length's symbols stay in their order)
-    code = {}
-    for s in order:
-        code[s] = (bits[s], first[bits[s]])
-        first[bits[s]] += 1
-    return code, per_len[1:] + order
-
-EN_BLK = 8                                           # (0.9.0) the dictionary's words a block (an index entry)
-LUT_BITS = {"P": 4, "L": 4, "H": 4}                 # compact accelerators; canonical fallback is exact
-
-
-def huff_lut(code, k):
-    """the 2^k entries of a code's lookup table (sing.c ly_sym): the next k bits -> length << 8 | symbol of the code
-    they start with, 0 when it is longer than k bits"""
-    lut = [0] * (1 << k)
-    for s, (n, c) in code.items():
-        if n <= k:
-            for v in range(c << (k - n), (c + 1) << (k - n)):
-                lut[v] = n << 8 | s
-    return lut
-
-
-def huff_decode(table, bits, pos):
-    """sing.c ly_sym: the symbol at bit pos of bits (a list of 0 / 1); (symbol, next pos)"""
-    code = first = idx = 0
-    for n in range(HC_MAX):
-        code |= bits[pos]
-        pos += 1
-        cnt = table[n]
-        if code - first < cnt:
-            return table[HC_MAX + idx + code - first], pos
-        idx += cnt
-        first = (first + cnt) << 1
-        code <<= 1
-    raise AssertionError("no code")
-
-
-def phone_pairs(recs):
-    """Lossless byte-pair coding of phones only. 128 recursive pairs, maximum
-    depth 8. Word-block size and bounded dictionary search are unchanged."""
-    from collections import Counter
-    seq = [tuple(b & 0x7f for b in ph) for _, _, ph in recs]
-    pairs, depth = [], [0] * 256
-    for symbol in range(128, 256):
-        counts = Counter(pair for row in seq for pair in zip(row, row[1:])
-                         if max(depth[pair[0]], depth[pair[1]]) < 8)
-        if not counts:
-            break
-        pair, count = max(counts.items(), key=lambda kv: (kv[1], kv[0]))
-        if count < 8:
-            break
-        pairs.append(pair)
-        depth[symbol] = 1 + max(depth[pair[0]], depth[pair[1]])
-        for k, row in enumerate(seq):
-            out, i = [], 0
-            while i < len(row):
-                if row[i:i+2] == pair:
-                    out.append(symbol)
-                    i += 2
-                else:
-                    out.append(row[i])
-                    i += 1
-            seq[k] = tuple(out)
-    return seq, pairs
-
-
-def en_dict_pack(recs):
-    """recs: [(shared, rest, phoneme bytes)] in order -> (blob, idx, tables, codes): each EN_BLK-th word (pre 0) starts
-    a block at a
-    byte (idx: its offset); a word is its shared count (code P), its letters then LY_END (code L, 'a' .. 'z' as 0 ..
-    25), its phoneme bytes & 0x7F then LY_END (code H)"""
-    from collections import Counter
-    phones, pairs = phone_pairs(recs)
-    cp, cl, ch = Counter(), Counter(), Counter()
-    for pre, rest, ph in recs:
-        cp[pre] += 1
-        cl.update(ord(c) - 97 for c in rest)
-        cl[LY_END] += 1
-        ch[LY_END] += 1
-    for ph in phones:
-        ch.update(ph)
-    (kp, tp), (kl, tl), (kh, th) = huff_code(cp), huff_code(cl), huff_code(ch)
-    blob, idx, bits = bytearray(), [], []
-
-    def put(code, s):
-        n, c = code[s]
-        bits.extend((c >> (n - 1 - i)) & 1 for i in range(n))
-
-    def flush():
-        bits.extend([0] * (-len(bits) % 8))
-        for i in range(0, len(bits), 8):
-            blob.append(int("".join(map(str, bits[i:i + 8])), 2))
-        bits.clear()
-    for k, (pre, rest, ph) in enumerate(recs):
-        if k % EN_BLK == 0:
-            flush()
-            idx.append(len(blob))
-        put(kp, pre)
-        for c in rest:
-            put(kl, ord(c) - 97)
-        put(kl, LY_END)
-        for b in phones[k]:
-            put(kh, b)
-        put(kh, LY_END)
-    flush()
-    blob += bytes(4)                                 # (sing.c ly_fill reads up to 4 bytes ahead)
-    return blob, idx, (tp, tl, th), (kp, kl, kh), pairs
-
-
-def en_dict_unpack(blob, idx, tables, n, pairs):
-    """the words back from en_dict_pack's blob, as sing.c sy_en_find reads them: [(word, phoneme bytes)]"""
-    bits = [(b >> (7 - i)) & 1 for b in blob for i in range(8)]
-    tp, tl, th = tables
-    out, w = [], ""
-    for k in range(n):
-        pos = idx[k // EN_BLK] * 8 if k % EN_BLK == 0 else pos
-        pre, pos = huff_decode(tp, bits, pos)
-        w = w[:pre]
-        while True:
-            s, pos = huff_decode(tl, bits, pos)
-            if s == LY_END:
-                break
-            w += chr(97 + s)
-        ph = []
-        while True:
-            s, pos = huff_decode(th, bits, pos)
-            if s == LY_END:
-                break
-            def expand(v):
-                if v < 128:
-                    ph.append(0x80 | v)
-                else:
-                    for child in pairs[v - 128]:
-                        expand(child)
-            expand(s)
-        out.append((w, bytes(ph)))
-    return out
 
 
 def load_en_dict():
@@ -470,11 +388,17 @@ def main():
     L = ["/* generated by tools/gen_lyrics.py from tools/lyrics/: do not edit */"]
     L.append("enum { " + ", ".join(f"PH_{c}" for c, _ in PHONEMES) + ", PH_COUNT };")
     L.append("static const char PH_NAME[PH_COUNT][3] = {" + ", ".join(f'"{n}"' for _, n in PHONEMES) + "};")
-    # the English dictionary
-    recs, nsyl_en, plain = [], {}, 0
-    # (V10.6f) the words the letter rules read exactly as the dictionary (tools/lyrics/en_ruled.txt): not packed
-    ruled = {ln.strip() for ln in (LY / "en_ruled.txt").read_text().splitlines() if ln.strip() and not ln.startswith("#")}
-    ruled_ph = []
+    # (V10.7.33) the phonemes as text: their codes, the languages reading each, the NAME screen's lists
+    L.append("enum { " + ", ".join(f"PM_{k} = {v}" for k, v in PM.items()) + " };")
+    L.append("static const char PH_CODE[PH_COUNT][2] = {" +
+             ", ".join("{" + ", ".join(f"'{ch.lower()}'" for ch in CODES[c][0].ljust(2, chr(0))).replace(chr(39) + chr(0) + chr(39), "0") + "}"
+                       for c, _ in PHONEMES) + "};")
+    L.append("static const uint8_t PH_CM[PH_COUNT] = {" + ", ".join(str(CODES[c][1]) for c, _ in PHONEMES) + "};")
+    lists = {k: [PH[c] for c in v.split()] for k, v in PH_LISTS.items()}
+    for k, v in lists.items():
+        assert len(v) <= 48, k
+    # the English words (the bank's syllables and phonemes; the host tests' reference)
+    nsyl_en, code_en = {}, {}
     for w in sorted(en):
         ph, ns = en_phones(en[w])
         if not ns or not re.fullmatch(r"[a-z]{1,23}", w):
@@ -482,56 +406,17 @@ def main():
         if len(ph) > 32:                             # (sing.c SW_MAX)
             raise SystemExit(f"gen_lyrics: {w}: over 32 phonemes")
         nsyl_en[w] = ns
-        if w in ruled:
-            ruled_ph.append((w, bytes(0x80 | (0x40 if st else 0) | c for c, st in ph)))
-    words = sorted(w for w in en if w not in ruled)
-    prev = ""
-    for k, w in enumerate(words):
-        ph, ns = en_phones(en[w])
-        pre = 0
-        if k % EN_BLK:                               # each EN_BLK-th whole (the index's), the rest front-coded
-            while pre < min(len(w), len(prev), 31) and w[pre] == prev[pre]:
-                pre += 1
-        recs.append((pre, w[pre:], bytes(0x80 | (0x40 if st else 0) | c for c, st in ph)))
-        p16 = 0                                      # (0.8.9's bytes, a whole word each 16th: the print's comparison)
-        while k % 16 and p16 < min(len(w), len(prev), 31) and w[p16] == prev[p16]:
-            p16 += 1
-        plain += 1 + len(w) - p16 + len(ph) + 2 * (k % 16 == 0)
-        prev = w
-    blob, idx, (tp, tl, th), codes, pairs = en_dict_pack(recs)
-    if en_dict_unpack(blob, idx, (tp, tl, th), len(words), pairs) != [(w, r[2]) for w, r in zip(words, recs)]:
-        raise SystemExit("gen_lyrics: the dictionary does not decode back")
-    assert len(blob) < 65536
+        code_en[w] = ph_text("EN", ph)
+        if code_en[w] is None:
+            raise SystemExit(f"gen_lyrics: {w}: no code text reads back as its phonemes")
+    words = sorted(en)
     L.append(f"#define LY_EN_N {len(words)}u")
-    L.append(f"#define LY_END {LY_END}u")
-    # (JIANT V10.15) the dictionary and its index where the includer puts them (sing.c LY_DICT_SEC: the Bluetooth segment)
-    L.append("#ifndef LY_DICT_SEC\n#define LY_DICT_SEC\n#endif")
-    L.append(f"static const uint8_t LY_EN_PAIR[{len(pairs)}][2] LY_DICT_SEC = {{\n" +
-             ",\n".join("    {"+c_bytes(pair)+"}" for pair in pairs) + "\n};")
-    L.append(f"static const uint8_t LY_EN_DICT[{len(blob)}] LY_DICT_SEC = {{\n    {c_bytes(blob)}}};")
-    L.append(f"static const uint16_t LY_EN_IDX[{len(idx)}] LY_DICT_SEC = {{\n    {c_bytes(idx)}}};")
-    L.append(f"#define LY_EN_BLK {EN_BLK}u")
-    heads = words[::EN_BLK]                          # LY_EN_LET[c]: the first block whose first word starts at or after c
-    let = [sum(1 for h in heads if h[0] < chr(97 + c)) for c in range(27)]
-    L.append(f"static const uint16_t LY_EN_LET[27] = {{\n    {c_bytes(let)}}};")
-    nlut = 0
-    for nm, t, code in (("P", tp, codes[0]), ("L", tl, codes[1]), ("H", th, codes[2])):
-        lut = huff_lut(code, LUT_BITS[nm])
-        nlut += 2 * len(lut)
-        L.append(f"#define LY_EN_K{nm} {LUT_BITS[nm]}u")
-        L.append(f"static const uint8_t LY_EN_HC{nm}[{len(t)}] = {{\n    {c_bytes(t)}}};")
-        L.append(f"static const uint16_t LY_EN_LUT{nm}[{len(lut)}] = {{\n    {c_bytes(lut)}}};")
-    # the words and their phoneme bytes as text, for the host tests only (tests/voice_test.c: every word looked up)
-    L.append("#ifdef LY_EN_REF")
-    L.append("static const char *const LY_EN_REF_W[LY_EN_N] = {\n    " +
-             c_strs(f'"{w}"' for w in words) + "};")
+    L.append("#ifdef LY_EN_REF")                     # (tests/voice_test.c: each word's code text read back exactly)
+    L.append("static const char *const LY_EN_REF_W[LY_EN_N] = {\n    " + c_strs(f'"{w}"' for w in words) + "};")
+    L.append("static const char *const LY_EN_REF_CODE[LY_EN_N] = {\n    " + c_strs(f'"{code_en[w]}"' for w in words) + "};")
     L.append("static const char *const LY_EN_REF_PH[LY_EN_N] = {\n    " +
-             c_strs('"' + "".join(f"\\x{b:02x}" for b in r[2]) + '"' for r in recs) + "};")
-    L.append(f"#define LY_EN_RULED_N {len(ruled_ph)}u")
-    L.append("static const char *const LY_EN_RULED_W[LY_EN_RULED_N] = {\n    " +
-             c_strs(f'"{w}"' for w, _ in ruled_ph) + "};")
-    L.append("static const char *const LY_EN_RULED_PH[LY_EN_RULED_N] = {\n    " +
-             c_strs('"' + "".join(f"\\x{b:02x}" for b in p) + '"' for _, p in ruled_ph) + "};")
+             c_strs('"' + "".join(f"\\x{0x80 | (0x40 if st else 0) | c:02x}" for c, st in en_phones(en[w])[0]) + '"'
+                    for w in words) + "};")
     L.append("#endif")
     # the banks
     nsyl = {"es": es_nsyl, "en": lambda w: nsyl_en[w] if w in nsyl_en else 0, "ja": ja_nmora}
@@ -549,6 +434,9 @@ def main():
                     assert len(w) <= 19, "singer word buffer"
                     bank_words.append(w)
                     offs.append(len(txt))
+                    if lang == "en":                 # (V10.7.33) its phoneme codes ("." 27), "/" put first by sing.c
+                        w = code_en[w].lower()
+                        assert len(w) <= 18, "singer word buffer, the / first"
                     txt += w.encode() + b"\0"
                     assert 0 <= ns < 8
                     meta.append(ns | (8 if fem else 0))
@@ -560,8 +448,8 @@ def main():
         L.append(f"#define LY_{U}_NW {n}u")
         # Exact alphabet packing: 0 is word terminator, 1..26 a..z.
         # Sparse offsets remain every 16 words, now measured in bits.
-        assert all(b == 0 or 97 <= b <= 122 for b in txt)
-        bits = ''.join(f'{0 if b == 0 else b-96:05b}' for b in txt)
+        assert all(b == 0 or 97 <= b <= 122 or b == 46 for b in txt)
+        bits = ''.join(f'{0 if b == 0 else 27 if b == 46 else b-96:05b}' for b in txt)
         bits += '0' * (-len(bits) % 8)
         packed = bytes(int(bits[i:i+8],2) for i in range(0,len(bits),8)) + b'\0'
         L.append(f"static const uint8_t LY_{U}_TXT[{len(packed)}] = {{\n    {c_bytes(packed)}}};")
@@ -573,9 +461,9 @@ def main():
         rows_c = ",\n    ".join("{" + ", ".join(str(a | b<<9) for a, b in t) + "}" for t in grp)
         L.append(f"static const uint16_t LY_{U}_GRP[{len(THEMES)}][{len(CATS)}] = {{\n    {rows_c}}};")
     out.write_text("\n".join(L) + "\n")
-    print(f"lyrics: {len(PHONEMES)} phonemes; English dictionary {len(words)} words, "
-          f"{len(blob) + 2 * len(idx) + len(tp) + len(tl) + len(th) + nlut + 2*len(pairs)} B (Huffman/pairs; {plain} B as bytes); "
-          f"banks ES {counts['es']} EN {counts['en']} JA {counts['ja']} words -> {out}")
+    print(f"lyrics: {len(PHONEMES)} phonemes, codes and lists ({sum(len(v) for v in lists.values())} entries); "
+          f"no English dictionary on the device; banks ES {counts['es']} EN {counts['en']} (phoneme codes) "
+          f"JA {counts['ja']} words -> {out}")
 
 
 if __name__ == "__main__":

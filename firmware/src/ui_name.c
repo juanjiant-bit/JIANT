@@ -22,7 +22,10 @@
  * Spaces at either end are dropped when it is written; an empty name: USER the automatic one, PROJECT none.
  * (JIANT 0.8.5) LYRIC: EDIT > WORDS, OCT+ (a VOICE track): the track's lyric (sing.c lyr_txt), the same keys, at most
  * 63 characters, the field a window of 12 that follows the cursor; KNOB 3 the dice (a phrase of the language's words
- * in place of the text, another each turn); OCT+ sets it (playing too: it is no flash write), OCT- cancels. */
+ * in place of the text, another each turn); OCT+ sets it (playing too: it is no flash write), OCT- cancels.
+ * (V10.7.33) .. and D# past 123 the language's phonemes (LANG on): PH 1 .. PH 3, the white keys the language's list
+ * (sing.c PH_LIST: vowels first), a tap types one phoneme's code (a lyric of phonemes starts with "/": put first by the
+ * first tap; "." from 123 starts a syllable where the device would not, sing.c sy_phauto). */
 enum { NK_NONE, NK_USER_SAVE, NK_USER_RENAME, NK_PROJ_SAVE, NK_PROJ_RENAME, NK_LYRIC, NK_SONG_SAVE };
 #define NM_LEN 12u
 #define NM_MAX (LYR_LEN - 1u)                          /* the buffer: a lyric's length */
@@ -38,7 +41,7 @@ static struct {
     uint8_t kind;                                      /* NK_*: NK_NONE = closed */
     uint8_t slot;
     uint8_t len, cur;                                  /* the name's length; the cursor 0..len */
-    uint8_t num;                                       /* the white keys: 0 ABC, 1 123 */
+    uint8_t num;                                       /* the white keys: 0 ABC, 1 123, (V10.7.33) 2.. PH 1.. (LYRIC) */
     uint8_t key;                                       /* the white key (place + 1) of the letter being cycled, 0 none */
     uint8_t tap;                                       /* .. that letter's index in its group */
     uint8_t rep;                                       /* the key (+ 1) of a held arrow / DELETE, 0 none */
@@ -60,12 +63,24 @@ static void name_close(void)
 /* the keys: 2 = NAME's (silent), 1 = the DRUM grid, 0 = notes (seq.c keyboard_block reads song.grid) */
 static uint32_t keys_mode(void) { return name_on() || gco_on() || ckeys_on() || skeys_on() ? 2u : live_mano() ? 3u : (uint32_t)grid_on(); }   /* (seq2f: COMPS, silent; seq2g: COMP too) */
 
+#define NM_LANG ((uint32_t)trk[nm.slot % NTRK].p[P_VLANG] % LG_N)
+#define nm_modes() (nm.kind == NK_LYRIC && NM_LANG ? 5u : 2u)   /* (V10.7.33) ABC 123, then the phonemes' three pages
+                                                         * (LYRIC, LANG on) */
+static const char *nm_mode_name(uint32_t m)            /* ABC 123 PH 1 .. PH 3 */
+{
+    static char ph[5] = "PH 1";
+    ph[3] = (char)('1' + m - 2u);
+    return m >= 2u ? ph : m ? "123" : "ABC";
+}
 static const char *nm_group(uint32_t p)                /* white key place p's characters */
 {
-    static char one[2];
+    static char one[3];
     if (!nm.num)
         return NM_ABC[p & 15u];
-    one[0] = NM_NUM[p & 15u];
+    if (nm.num >= 2u)                                  /* (V10.7.33) a phoneme's code */
+        (void)ph_pick(NM_LANG, (nm.num - 2u) * 16u + (p & 15u), one);
+    else
+        one[0] = NM_NUM[p & 15u], one[1] = 0;
     return one;
 }
 static uint32_t nm_black(uint32_t k)                   /* black key k's function: by its name (F# .. D#) */
@@ -156,6 +171,20 @@ static void nm_white(uint32_t p)
 {
     const char *g = nm_group(p);
     uint32_t n = str_len(g);
+    if (nm.num >= 2u) {                                /* (V10.7.33) a phoneme: its code, "/" first in the lyric */
+        uint32_t c = nm.cur;
+        nm_commit();
+        if (!n)
+            return;
+        if (nm.s[0] != '/') {
+            nm.cur = 0;
+            if (!nm_insert('/')) { nm.cur = (uint8_t)c; return; }
+            nm.cur = (uint8_t)(c + 1u);
+        }
+        while (*g && nm_insert(*g++))
+            nm.cur++;
+        return;
+    }
     if (nm.key == p + 1u && fm1_ms - nm.t < NM_TAP_MS) {   /* the same key again: its next character */
         nm.tap = (uint8_t)((nm.tap + 1u) % n);
         nm.s[nm.cur] = g[nm.tap];
@@ -198,7 +227,7 @@ static void nm_do(uint32_t f)                          /* a black key's function
         nm.len--;
         break;
     case NB_MODE:
-        nm.num ^= 1u;
+        nm.num = (uint8_t)((nm.num + 1u) % nm_modes());
         break;
     default:
         break;
@@ -383,7 +412,7 @@ static __attribute__((noinline)) void nm_draw_panel(void)
     cv_bg = T_SURF;
     nm_title(b);
     cv_text(10, 6 - AF_X_CAP_Y, &AF_X, b, T_THEME);
-    cv_text_r(230, 6 - AF_X_CAP_Y, &AF_X, nm.num ? "123" : "ABC", T_ACCENT, T_SURF);
+    cv_text_r(230, 6 - AF_X_CAP_Y, &AF_X, nm_mode_name(nm.num), T_ACCENT, T_SURF);
     for (i = 0; i < NM_LEN; i++) {                     /* the name: 12 cells */
         int32_t x = NM_CX(i);
         uint32_t q = i + w0;
@@ -435,7 +464,7 @@ static __attribute__((noinline)) void nm_draw_panel(void)
         cv_text_in(x, y + 4 - AF_X_CAP_Y, 42, &AF_X, FN[i], T_INK, T_KEY);
         GFX_HOOK_ALIGN(x, 0, x + 42, 0, AL_H | AL_PASS, "name black key name / use centred across");
         cv_text_in(x, y + 16 - AF_X_CAP_Y, 42, &AF_X, i == NB_LEFT ? "<" : i == NB_RIGHT ? ">" : i == NB_SPACE ? "SPACE" :
-                   i == NB_DEL ? "DEL" : nm.num ? "ABC" : "123", T_INK, T_KEY);
+                   i == NB_DEL ? "DEL" : nm_mode_name((nm.num + 1u) % nm_modes()), T_INK, T_KEY);
     }
     cv_blit(0, LZ_GRAPH_Y);
 }

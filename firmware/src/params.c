@@ -50,7 +50,8 @@ static const char *const N_PFXRES[] = {"1/8", "1/16", "1/32"};     /* (0.6.99) F
 /* seq.c kb_map; 1 = SNAP (stored projects: the former ON); 3 = SEQ: SNAP, and the sequencer's notes snap too as
  * they play (seq.c seq_step; the steps keep what was written). Append-only: older projects hold 0..2 */
 static const char *const N_QUANT[] = {"OFF", "SNAP", "WHITE", "SEQ"};
-static const char *const N_DTYPE[] = {"SOFT", "HARD", "FOLD", "CRUSH", "RECT", "AMP"};   /* (JIANT) fx.c DT_*; 0.7.8 AMP */
+static const char *const N_DTYPE[] = {"SOFT", "HARD", "FOLD", "RECT", "AMP"};   /* (JIANT) fx.c DT_*; 0.7.8 AMP; (V10.7.33)
+                                                         * CRUSH its own: EDIT > PLAY 3 (a project's migrates: project.c) */
 static const char *const N_FTYPE[] = {"LP", "HP", "BP", "COMB", "COMB-", "LP24", "LP24"};   /* (JIANT 0.5) P_FTYPE: eng_analog.c FT_*
                                                          * (0.9.9-snd1: COMB- the negative comb, MS20) */
 static const char *const N_VOICE[] = {"POLY", "MONO", "LEG", "UNI"};   /* V_POLY .. V_UNISON */
@@ -170,7 +171,7 @@ static const param_desc_t TP[P_COUNT] = {
     LANE(0, "KICK"), LANE(1, "SNARE"), LANE(2, "CLAP"), LANE(3, "HATCL"),
     LANE(4, "HATOP"), LANE(5, "TOM"), LANE(6, "RIM"), LANE(7, "BELL"),
 #undef LANE
-    [P_DTYPE] = PE("TYPE", N_DTYPE, 0),         /* (JIANT) DIST: SOFT (as before) HARD FOLD CRUSH RECT AMP */
+    [P_DTYPE] = PE("TYPE", N_DTYPE, 0),         /* (JIANT) DIST: SOFT (as before) HARD FOLD RECT AMP */
     [P_DTONE] = PD("TONE", F_BIPCT, -64, 63, 0),   /* .. its tone: darker / brighter */
     [P_MSLEN] = PD("LEN", F_STEPS, 1, 16, 16),  /* (JIANT) the modulation sequence (mod.c MS_STEP) */
     [P_MSDIV] = PE("DIV", N_DIV, 2),
@@ -721,13 +722,16 @@ static int16_t eq_v[4] __attribute__((section(".bss.tape")));   /* (out of the m
  * with the project ('X' 'M', project.c proj_xm; a project without it: BALANCE at BAL_DEF, NOISE 0) */
 #define ID_BAL 0xECu
 #define ID_DNZ 0xEDu
+#define ID_CRU 0xEEu                                    /* (V10.7.33) EDIT > PLAY 3's CRUSH, the track's (fx.c track_crush):
+                                                         * 'X' 'C' (project.c proj_xm), as NOISE */
 #ifndef BAL_DEF
 #define BAL_DEF 50
 #endif
-static const param_desc_t XM_DESC[2] __attribute__((section(".rodata.tape"))) = {
-    PD("AMOUNT", F_PCT, 0, 100, BAL_DEF), PD("NOISE", F_PCT, 0, 100, 0)};
+static const param_desc_t XM_DESC[3] __attribute__((section(".rodata.tape"))) = {
+    PD("AMOUNT", F_PCT, 0, 100, BAL_DEF), PD("NOISE", F_PCT, 0, 100, 0), PD("CRUSH", F_PCT, 0, 127, 0)};
 static int16_t bal_v __attribute__((section(".bss.tape")));   /* (BAL_DEF set at power-on: main.c, system_init) */
 static int16_t dnz_v[NTRK] __attribute__((section(".bss.tape")));
+static int16_t cru_v[NTRK] __attribute__((section(".pool")));   /* (V10.7.33) CRUSH (0..127: DIST's DRIVE, shown 0..100 %) */
 static uint8_t lfo_ph_mem[NTRK];
 static int lfo_mode_of(const track_t *t) { return t->p[P_LPHASE] < 0; }   /* 1 FREE */
 static const page_t PAGES[] = {
@@ -746,6 +750,8 @@ static const page_t PAGES[] = {
     {"EQ", FAM_FX, SC_GLOBAL, GR_NONE, {ID_EQ0, ID_EQ0 + 1u, ID_EQ0 + 2u, ID_EQ0 + 3u}},   /* (p9) the master's EQ, last */   /* (0.9.9-snd8) the master's tape, after MASTER */
     {"BALANCE", FAM_FX, SC_GLOBAL, GR_NONE, {ID_BAL, 0xFF, 0xFF, 0xFF}},   /* (V10.7.30) the master's BALANCE, after its EQ */
     {"DIST", FAM_FX, SC_TRACK, GR_NONE, {P_DTYPE, P_DTONE, FELUCCA_XFX ? ID_DNZ : 0xFF, 0xFF}},   /* JIANT: the drive's type and tone; V10.7.30 NOISE */
+    {"PLAY 3", FAM_EDIT, SC_TRACK, GR_NONE, {ID_CRU, 0xFF, 0xFF, 0xFF}},   /* (V10.7.33) CRUSH, the track's bit reducer (was DIST's
+                                                         * TYPE; PLAY and PLAY 2 have no knob free) */
     {"AUTO PAN", FAM_FX, SC_TRACK, GR_NONE, {P_APDEP, P_APRATE, P_APSYNC, P_APWAVE}},   /* (JIANT 0.6.9) the track's pan swung */
     {"BUSES", FAM_FX, SC_GLOBAL, GR_BUSES, {G_DMIX, G_RSIZE, G_CDEPTH, G_SLDEP}},   /* (0.8.5) FX's lens: the buses' main values */
     {"DLY", FAM_FX, SC_GLOBAL, GR_NONE, {G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX}},
@@ -923,8 +929,8 @@ static uint8_t sl_ui_step;       /* (JIANT 0.6.3) the SL PITCH page: the step KN
  * master's TAPE (noinline: page_desc is recorded code) */
 static __attribute__((noinline)) const param_desc_t *page_desc_v(uint32_t id, int16_t **valp)
 {
-    if (id == ID_BAL || id == ID_DNZ) {               /* (V10.7.30) BALANCE; the track's NOISE */
-        *valp = id == ID_BAL ? &bal_v : &dnz_v[song.sel % NTRK];
+    if (id >= ID_BAL && id <= ID_CRU) {               /* (V10.7.30) BALANCE; the track's NOISE; (V10.7.33) its CRUSH */
+        *valp = id == ID_BAL ? &bal_v : id == ID_DNZ ? &dnz_v[song.sel % NTRK] : &cru_v[song.sel % NTRK];
         return &XM_DESC[id - ID_BAL];
     }
     if (id >= ID_EQ0 && id < ID_EQ0 + 4u) {           /* (p9) the master's EQ */
@@ -957,7 +963,7 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         *valp = &trks_ui;
         return &TRKS_DESC;
     }
-    if ((id >= ID_TAPE && id <= ID_LMODE) || (id >= ID_EQ0 && id < ID_EQ0 + 4u) || id == ID_BAL || id == ID_DNZ)   /* (0.9.18) the LFO's MODE and PHASE;
+    if ((id >= ID_TAPE && id <= ID_LMODE) || (id >= ID_EQ0 && id < ID_EQ0 + 4u) || (id >= ID_BAL && id <= ID_CRU))   /* (0.9.18) the LFO's MODE and PHASE;
                                                          * (snd8) the master's TAPE; (p9) its EQ */
         return page_desc_v(id, valp);
     if (id == G_LOADP) {                              /* (0.6.30) the same */
