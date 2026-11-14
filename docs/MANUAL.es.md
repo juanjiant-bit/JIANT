@@ -38,6 +38,21 @@ versión pública) o de antes: [Qué hay de nuevo en esta versión](#qué-hay-de
 
 Todo lo que cambió desde la V10.6c, la última versión pública, en una lista; cada punto lleva a su lugar en el manual.
 
+**Las palabras de VOICE como fonemas, vuelve BALANCE, CRUSH por su cuenta (V10.7.33)**
+- **VOICE ya no tiene diccionario inglés en el equipo**: el editor web convierte las palabras que escribís en
+  **fonemas** de VOICE (el inglés con todo el diccionario CMU, 120 000 palabras; castellano, japonés, portugués e
+  italiano por reglas), te los muestra para que los corrijas y manda esos. En el equipo, la pantalla de la letra tiene
+  **teclas de fonemas** (D# después de 123: PH 1–3, los fonemas del idioma) para armar una palabra sonido por sonido.
+  Una letra guardada como letras en inglés (todo proyecto de antes) sigue cantando, leída con reglas aproximadas:
+  abrila en el editor y mandala de nuevo para tener la pronunciación del diccionario. Ver
+  [VOICE: palabras y letras](#voice-palabras-y-letras-085).
+- **BALANCE** (FX › BALANCE, el EQ dinámico lento del master) y el **NOISE** de DIST (KNOB 3) vuelven a la imagen. Un
+  proyecto guardado antes de la V10.7.30 abre con BALANCE en 50 (prendido). Ver [MASTER](#master).
+- **CRUSH** (el reductor de bits) ya no es un TYPE de DIST: es de la pista, **EDIT › PLAY 3**, KNOB 1 (0–100 %), y anda
+  con DIST apagado o prendido (primero DIST). El TYPE de DIST es SOFT, HARD, FOLD, RECT, AMP. Un proyecto o preset de
+  usuario guardado con DIST TYPE CRUSH abre con CRUSH en su cantidad de DIST y DIST apagado: suena igual. Ver
+  [Por pista](#por-pista).
+
 **Cada botón hace lo que dice (V10.7.32)**
 - **HOME = ver y armar el tema**: MACROS · **TIMELINE** · **ARRANGE** · **PARTS** · SCOPE · GENE 1–3. Las páginas del
   tema pasaron de SAVE a HOME tal como eran (sus perillas, OCT+ / OCT−, PLAY); un toque de HOME las recorre. Ver
@@ -439,8 +454,8 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 | Sección | Grupos (el botón) · páginas (SELECT) | Páginas |
 | --- | --- | --- |
 | **HOME** | (V10.7.24; V10.7.32 las páginas del tema) **MACROS**: MACROS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **SCOPE**: SCOPE — **GENE**: GENE 1 · GENE 2 · GENE 3 | 8 |
-| **EDIT** (un sinte) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (las que tengan el motor y la pista) — **FOCUS**: FOCUS — **PLAY**: PLAY · PLAY 2 (codex/coherence: era VOICE; el IMAGE de STEREO pasó a PLAY 2) | hasta 11 |
-| **EDIT** (FM6) | **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **TONE**: FILTER — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **PLAY**: PLAY · PLAY 2 | 8 |
+| **EDIT** (un sinte) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (las que tengan el motor y la pista) — **FOCUS**: FOCUS — **PLAY**: PLAY · PLAY 2 · PLAY 3 (codex/coherence: era VOICE; el IMAGE de STEREO pasó a PLAY 2; V10.7.33 CRUSH en PLAY 3) | hasta 12 |
+| **EDIT** (FM6) | **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **TONE**: FILTER — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **PLAY**: PLAY · PLAY 2 · PLAY 3 | 9 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: X-MOD · FILTER · STEREO · PLAY | 14 |
 | **SEQ** | (V10.6) **STEP**: STEP — **PATTERN**: LENGTH · RHYTHM · TRACK — **EUCLID**: EUCLID · MODES · MUTATE — **PLAYHEADS**: PLAYHEADS — **STRETCH**: STRETCH — **COMP**: COMP · COMP 2 — **LOCKS**: LOCKS · LYRIC STEP (VOICE) — **TRACK GEN**: TRACK GEN | 14 |
 | **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DLY 2 · DLY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SL BUS · SL BUS 2 · SL PITCH — **MASTER**: MASTER · TAPE · EQ (V10.7.32: PUNCH IN en el FX mantenido) | 17 |
@@ -596,6 +611,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | LEVELS 2 | HATOP | TOM | RIM | BELL | DRUM |
 | PLAY (era VOICE) | POLY (POLY MONO LEG UNI; era VOICE) | GLIDE | GL MODE (RATE / TIME del glide; era MODE) | PRIO | todos los motores |
 | PLAY 2 (0.8.5; era VOICE 2) | ALLOC | UNISON (cuánto se abren las voces de UNI, 0..100 %; era DETUNE) | VEL (cuánta velocidad le llega al sonido, 0..100 %) | IMAGE (las voces repartidas, POLY; era la página STEREO; no en EXT) | todos menos DRUM |
+| PLAY 3 (V10.7.33) | CRUSH (el reductor de bits de la pista, 0..100 %; era DIST TYPE CRUSH) | | | | todos (un kit también) |
 | SWARM, SWARM 2 (V10.6z6) | SIDE (FAR / NEAR) | los RATE, MOVE, TONE / NOISE, MOD de ese lado | | (SWARM 2: NOW, el morph y su fuente) | EXT con SOURCE SWARM |
 | FOCUS (0.8.5) | PARAM (E1–E8) | su valor | SRC (el slot de MOD sobre él) | AMT | los sintes (no FM6, DRUM) |
 
@@ -995,9 +1011,37 @@ Con LANG activo, las páginas EDIT dicen **POS THEME ARTIC SHIFT** | **BUZZ BREA
 **Escribir una letra.** En el equipo: EDIT > WORDS, **OCT+**. Es la pantalla NAME con lugar para 63 caracteres (el
 campo se desplaza con el cursor): las teclas escriben al estilo teléfono, **KNOB 3** tira el dado (una frase del
 generador en el idioma y el tema de la pista, para editarla a gusto), **OCT+** la confirma (también mientras suena),
-**OCT−** cancela. Desde la computadora: en la pestaña Sound del editor web aparece el recuadro **Lyric** en una pista
-VOICE (LANG, LYRIC y el texto; convierte los acentos y la ñ a lo que el equipo lee). Cada pista tiene su propia letra,
-que se guarda con la sección del proyecto.
+**OCT−** cancela. (V10.7.33) **Fonemas en el equipo**: **D#** pasa las teclas blancas por ABC, 123 y después **PH 1,
+PH 2, PH 3**, los fonemas del idioma de la pista (LANG prendido), las vocales primero; cada toque escribe el código de
+un fonema (*A*, *IH*, *SH*, *NY*, *RR*…) y el primero pone al principio la **/** que marca una letra de fonemas. Armás
+una palabra sonido por sonido: *KORASON* es "corazón", *LAHV* el "love" inglés. Un **.** (desde 123) empieza una
+sílaba donde el equipo la cortaría en otro lado.
+Desde la computadora: en la pestaña Sound del editor web aparece el recuadro **Lyric** en una pista VOICE (LANG,
+LYRIC, tus palabras y, desde la V10.7.33, los **Phonemes** en que se convierten: se pueden editar, y eso es lo que se
+manda; tienen que entrar en 63). Cada pista tiene su propia letra, que se guarda con la sección del proyecto.
+
+**Fonemas (V10.7.33).** Una letra que empieza con **/** es de fonemas: cada palabra una tira de códigos, una o dos
+letras por sonido, iguales en todos los idiomas donde el sonido es el mismo. Vocales **A E I O U** (la *u* japonesa
+también es U), y en inglés **I** (*see*), **IH** (*sit*), **E** (la *e* de *day*: E IH), **EH** (*bed*), **AE** (*cat*),
+**AA** (*father*; *my* es AA IH), **AO** (*law*; *boy* AO IH), **O** (*go*: O UH), **UH** (*book*), **U** (*food*),
+**AH** (*cup*), **ER** (*bird*), **AX** (la *a* débil de *about*). Consonantes como se escriben: **P T K B D G F S H M N
+L W Y V Z J** (la *j* inglesa o italiana), **X** (la jota), **R** (la *r* suave del castellano y el japonés; la *r*
+inglesa), **RR** (la vibrante), **NY** (ñ), **NG** (*sing*), **NN** (la *n* nasal del japonés y el portugués), **SH**,
+**ZH** (*measure*), **TH** (*thin*), **DH** (*this*), **CH**, **TS**, y **#** una pausa corta (el japonés *kitto*:
+KI#TO). El idioma decide algunos (ER, AX, AE son solo del inglés: en castellano *ER* es *e r*). Las sílabas las
+encuentra el equipo (cada vocal con la consonante de antes, *pl tr* y parecidos juntos); un **.** marca una donde la
+cortaría en otro lado (*BI.IHNG*, "being").
+
+**Los idiomas del editor.** **Inglés** con todo el CMU Pronouncing Dictionary (unas 120 000 palabras, en el editor, no
+en el equipo); una palabra que no está, con las reglas aproximadas de letras (el recuadro te dice cuáles). **Castellano**
+y **japonés** como el equipo lee sus letras (el mismo sonido; el editor además pronuncia la *ü* de *pingüino*).
+**Portugués** (de Brasil, por reglas: vocales nasales, *lh nh*, *ti di* como *chi ji*, *e o* finales como *i u*) e
+**italiano** (por reglas, cantado con LANG **ES**: elegí IT en el menú PHONEMES del recuadro) son aproximados. Ruso,
+alemán, francés, mandarín y guaraní se mandan como letras (TEXT), leídas por las reglas del equipo como antes.
+
+**Una letra guardada antes de la V10.7.33** son letras: sigue cantando, el castellano y el japonés igual que antes, el
+inglés con las reglas aproximadas de letras (el equipo ya no tiene el diccionario): abrí la pista en el editor y mandá
+la letra de nuevo para recuperar el inglés del diccionario.
 
 **Reglas del texto.**
 - El **castellano** se lee por reglas, tal como se escribe: seseo (*z* y *ce ci* como *s*), *ll* e *y* como *y*, *rr*
@@ -1005,8 +1049,9 @@ que se guarda con la sección del proyecto.
   *cuidado*). No hacen falta tildes; escribí la **ñ como NY** (NINYO).
 - El **japonés** en romaji (Hepburn o kunrei), **una nota por mora**: *sakura* 3, *konnichiwa* 5 (ko-n-ni-chi-wa),
   *arigatou* 5 (la *ou* larga se canta o-o); una consonante doble (*kitto*) es una pausa corta, no una nota.
-- El **inglés** sale de un diccionario de ~2100 palabras comunes (del CMU Pronouncing Dictionary) con sus sílabas; una
-  palabra que no está se lee con reglas aproximadas de letras, que funcionan peor.
+- El **inglés** como letras se lee con reglas aproximadas (V10.7.33: el diccionario de ~2100 palabras del equipo ya no
+  está; el editor manda las pronunciaciones de todo el diccionario CMU como fonemas: ver arriba). Las palabras inglesas
+  del dado (W, S) están guardadas como fonemas y suenan como antes.
 - Un **-** solo sostiene la vocal una nota más (un melisma: *A - MOR* es a, a, mor). **_** une dos palabras en una
   (*MI_AMOR*: mia-mor, la sinalefa). La puntuación y los dígitos solo separan palabras.
 
@@ -1018,10 +1063,11 @@ ruido.
 **Qué esperar.** Es síntesis por formantes, como un chip de voz antiguo que canta: las vocales, *s sh f*, *t k p*,
 *ch*, *m n l* y las semivocales se entienden en contexto; *b d g*, *v z* y la *r* inglesa son aproximadas, y se
 entiende menos con notas muy cortas (las consonantes de una sílaba toman 40–100 ms antes de su vocal). El castellano y
-el japonés se leen mejor (su ortografía es regular); el inglés depende del diccionario.
+el japonés se leen mejor (su ortografía es regular); el inglés necesita los fonemas del editor (o los tuyos).
 
 **Costo.** Nada de estado por voz (la articulación es de la pista); ~1 KB de RAM para las seis letras y cantantes;
-~42 KB de flash (casi todo es el diccionario inglés); alrededor de +9 % de CPU sobre las vocales de VOICE, así que
+el diccionario inglés (~11 KB de la flash del segmento Bluetooth) es del editor desde la V10.7.33; alrededor de +9 %
+de CPU sobre las vocales de VOICE, así que
 cuatro voces cantando siguen costando bastante menos que las ocho de ANALOG.
 
 ### Tres motores dibujan su propia criatura (0.9.4)
@@ -1275,7 +1321,8 @@ cada pasada queda un poco más sucia y un poco más baja, como una cinta o un BB
 EDIT > **PLAY** (era VOICE, que es también el nombre del motor VOICE): **POLY** POLY, MONO, LEG (legato), UNI (unísono);
 **GLIDE**; **GL MODE** RATE o TIME (cómo se mide el glide); **PRIO** LAST, LOW, HIGH. **PLAY 2**: **ALLOC** (ROT / REUSE),
 **UNISON** (cuánto se abren las voces de UNI, 0..100 %; era DETUNE, un número pelado), **VEL**, **IMAGE** (las voces
-repartidas en el estéreo en POLY; era su propia página STEREO; no en EXT). Las seis pistas comparten un presupuesto de 8 voces; FM6 toca como máximo cuatro por
+repartidas en el estéreo en POLY; era su propia página STEREO; no en EXT). **PLAY 3** (V10.7.33): **CRUSH**, el
+reductor de bits de la pista (ver [Por pista](#por-pista)). Las seis pistas comparten un presupuesto de 8 voces; FM6 toca como máximo cuatro por
 pista. (0.9.8) VOICE hace el glide como un cantante: una curva en S de la altura en el mismo tiempo (los
 demás motores: una recta, como antes).
 
@@ -2508,22 +2555,27 @@ sus perillas y sus dibujos son los mismos.
 ### Por pista
 
 - **FX**: cantidad de DIST y los tres envíos (CHORUS, DLY, REV).
-- **DIST**: cantidad, **TYPE** (SOFT, HARD, FOLD, CRUSH, RECT, **AMP**), **TONE** (más oscuro / más brillante),
-  **NOISE** (V10.7.30). **AMP** es un amplificador de guitarra: dos etapas de válvula que saturan desparejo (DIST bajo
+- **DIST**: cantidad, **TYPE** (SOFT, HARD, FOLD, RECT, **AMP**; V10.7.33: CRUSH es aparte, abajo), **TONE** (más
+  oscuro / más brillante), **NOISE** (V10.7.30). **AMP** es un amplificador de guitarra: dos etapas de válvula que saturan desparejo (DIST bajo
   limpio, después crunch, después lead), el bias respirando con el nivel, y un bafle; TONE mueve el brillo del bafle.
   (V10.7.30) El bafle ya no resuena en los medios (su viejo pico en 1,8 kHz, +4,7 dB, lo hacía nasal y encajonado): en
   su lugar un hueco ancho y suave alrededor de 650 Hz, el corte un poco más arriba (~4,8 kHz), el nivel como antes.
   - **FOLD** (V10.7.30): un plegador suave (con forma de seno), con la entrada limitada en banda: la mitad baja de DIST
     es una saturación redonda, los pliegues entran pasando la mitad y crecen hacia el final (hasta tres y medio), sin
     las esquinas ásperas del plegador triangular de antes.
-  - **CRUSH** (V10.7.30): menos bits y menos frecuencia de muestreo, pero la frecuencia se mueve ±50 % alrededor de su
-    valor y los escalones van en rampa, así que ya no silba una "nota pedal" fija en la frecuencia de reducción; la
-    mugre lo-fi queda.
-  - *(Beta V10.7.30: NOISE quedó afuera por espacio; vuelve en la próxima beta.)* **NOISE** (V10.7.30, KNOB 3, 0–100 %, de la pista elegida; DIST tiene que estar prendido): ruido blanco que va
+  - **NOISE** (V10.7.30, KNOB 3, 0–100 %, de la pista elegida; DIST tiene que estar prendido): ruido blanco que va
     montado sobre la señal distorsionada. Solo la parte de cada onda que pasa un umbral lo recibe, tanto como lo pasa
     (el umbral baja un poco cuando subís NOISE): una mugre que sigue la altura y la envolvente de la nota y deja limpias
     las partes suaves y los silencios. Pasa por el corte de TONE. Se guarda con el proyecto (no con los presets de
     sonido); no está en el editor, MIDI ni automatización (no es un parámetro de pista: no queda lugar para uno).
+- **CRUSH** (V10.7.33, **EDIT › PLAY 3**, KNOB 1, 0–100 %, de la pista elegida; era el TYPE CRUSH de DIST): menos bits
+  y menos frecuencia de muestreo (más de los dos a medida que sube), la frecuencia moviéndose ±50 % alrededor de su
+  valor y los escalones en rampa, así que nunca silba una "nota pedal" fija; el **TONE** de DIST lo oscurece o abrillanta
+  como antes. Anda con DIST apagado o prendido (después de DIST: un sonido distorsionado, triturado). 0 es apagado (no
+  corre). Se guarda con el proyecto (no con los presets de usuario, no está en el editor, MIDI ni automatización: como
+  NOISE, no queda lugar para un parámetro). Un proyecto o preset de usuario guardado con DIST TYPE CRUSH abre con CRUSH
+  en su cantidad de DIST y DIST apagado (TYPE SOFT): el mismo sonido; un RECT o AMP conserva su TYPE. Costo: el de
+  CRUSH dentro de DIST (menos: sin una llamada por muestra).
 - **AUTO PAN**: el paneo de la pista oscilando a izquierda y derecha alrededor de su PAN. **DEPTH** (0 = apagado),
   **RATE**, **SYNC** (BEAT: RATE en divisiones 4BAR … 1/32, sincronizado al compás; FREE: RATE en Hz), **WAVE** (SIN,
   TRI, SAW, SQR, S&H).
@@ -2615,7 +2667,7 @@ ancho). Se oculta con LOAD ECO (la tarjeta de envío de chorus de una pista dice
 - **CLIP**: saturación que agrega carácter, no volumen.
 - **PUNCH**: engorda las pistas DRUM.
 - **DUCK**: el bombo baja todo lo demás; **REL** es su release.
-- *(Beta V10.7.30: BALANCE está hecho pero quedó afuera de esta imagen por espacio; vuelve en la próxima beta.)* **BALANCE** (V10.7.30, la página después de EQ; **AMOUNT** 0–100 %, **50 de fábrica: prendido**): un EQ dinámico y
+- **BALANCE** (V10.7.30, de vuelta en la imagen en la V10.7.33; FX › BALANCE, la página después de EQ; **AMOUNT** 0–100 %, **50 de fábrica: prendido**): un EQ dinámico y
   lento sobre las cuatro bandas del EQ, para la "pelota de medios" en que se convierte una mezcla llena. Escucha el
   balance de la mezcla entre las bandas (a lo largo de un segundo, no golpe a golpe) y lo compara con la curva de una
   mezcla balanceada (la pendiente de una mezcla comercial, los graves un poco más ricos y los agudos un poco más oscuros,
@@ -2981,7 +3033,9 @@ Un nombre vacío: una sección de proyecto queda sin nombre, un preset de usuari
 
 La misma pantalla sirve para escribir la **letra** de una pista VOICE (EDIT > WORDS, OCT+): hasta 63 caracteres, el
 campo se desplaza con el cursor, **KNOB 3** tira el dado y OCT+ la confirma aunque esté sonando (no escribe en la
-flash).
+flash). (V10.7.33) Ahí **D#** sigue después de 123 a **PH 1–3**: las teclas blancas escriben los fonemas del idioma de
+la pista (un código cada una; la primera pone la **/** de la letra), ver
+[VOICE: palabras y letras](#voice-palabras-y-letras-085).
 
 ### Presets de usuario (SAVE > USER)
 
@@ -3375,8 +3429,11 @@ Settings.
 - **6-OP FM**: editá patches FM6, importá .syx y **Send to the device's voice bank (B1–B32)** (enviá al banco de voces
   del equipo).
 - **Projects**: los slots de proyecto y el **Complete backup**: **Save backup** y **Restore backup**.
-- **Sound**, en una pista VOICE (0.8.5): el recuadro **Lyric**: LANG, LYRIC y el texto de la letra; **Send** la
-  escribe en la pista (convierte acentos y ñ).
+- **Sound**, en una pista VOICE (0.8.5): el recuadro **Lyric**: LANG, LYRIC y las palabras de la letra; (V10.7.33)
+  abajo los **Phonemes** en que se convierten (inglés con el diccionario CMU, castellano, japonés, portugués;
+  **PHONEMES** IT para italiano, TEXT para mandar letras como antes), editables; **Send** escribe los fonemas en la
+  pista. Una letra leída del equipo que son letras (guardada antes de la V10.7.33) se convierte al mostrarse: mandala
+  para quedarte con el inglés del diccionario.
 
 ### El backup completo
 

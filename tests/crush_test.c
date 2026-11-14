@@ -10,7 +10,8 @@
  * 4. kept with a project ('X' 'C'); a project of before (b[65] 'V': DIST TYPE had CRUSH) loads its CRUSH tracks as
  *    CRUSH at their DRIVE with DIST off (SOFT), RECT and AMP one down; today's RECT stays RECT;
  * 5. a user preset of before (no UP_DT_MARK) migrates the same: DIST off, its DRIVE the track's CRUSH when loaded.
- * With a directory argument: renders/ crush_old.wav and crush_new.wav (the same chord, DRIVE / CRUSH 70) */
+ * With a directory argument: crush_antes_dist_tipo_crush_70.wav and crush_despues_play3_crush_70.wav there (the same
+ * chord, DIST TYPE CRUSH at DRIVE 70 as V10.7.32 had it, and CRUSH 70; renders/v33a) */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"
 static int bad;
@@ -242,8 +243,8 @@ int main(int argc, char **argv)
             track_dist(t, &c[i], CTL);
             track_crush(t, &c[i], CTL);
         }
-        wav_out(argv[1], "crush_old_dist_type_crush_70.wav", a, n);
-        wav_out(argv[1], "crush_new_play3_crush_70.wav", c, n);
+        wav_out(argv[1], "crush_antes_dist_tipo_crush_70.wav", a, n);
+        wav_out(argv[1], "crush_despues_play3_crush_70.wav", c, n);
         cru_v[0] = 0;
     }
     printf("crush: %s\n", bad ? "FAILED" : "all ok");

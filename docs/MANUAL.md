@@ -38,6 +38,20 @@ public version) or earlier: [What's new in this version](#whats-new-in-this-vers
 
 Everything since V10.6c, the last public version, in one list; each item links to its place in the manual.
 
+**VOICE's words as phonemes, BALANCE back, CRUSH its own (V10.7.33)**
+- **VOICE has no English dictionary on the device any more**: the web editor turns the words you type into VOICE's
+  **phonemes** (English with the whole CMU dictionary, 120 000 words; Spanish, Japanese, Portuguese and Italian by
+  rules), shows them so you can edit them, and sends those. On the device, the lyric screen has **phoneme keys** (D#
+  past 123: PH 1–3, the language's phonemes) to build a word sound by sound. A lyric saved as English letters (every
+  project before) still sings, read by rough letter rules: open it in the editor and send it again to get the
+  dictionary's pronunciation. See [VOICE: words and lyrics](#voice-words-and-lyrics-085).
+- **BALANCE** (FX › BALANCE, the master's slow dynamic EQ) and DIST's **NOISE** (KNOB 3) are back in the image. A
+  project saved before V10.7.30 opens with BALANCE at 50 (on). See [MASTER](#master).
+- **CRUSH** (the bit reducer) is no longer one of DIST's TYPEs: it is the track's own, **EDIT › PLAY 3**, KNOB 1
+  (0–100 %), and works with DIST off or on (DIST first). DIST's TYPE is SOFT, HARD, FOLD, RECT, AMP. A project or user
+  preset saved with DIST TYPE CRUSH loads as CRUSH at its DIST amount, DIST off: it sounds the same. See
+  [Per track](#per-track).
+
 **Every button does what it says (V10.7.32)**
 - **HOME = see and build the song**: MACROS · **TIMELINE** · **ARRANGE** · **PARTS** · SCOPE · GENE 1–3. The song's
   pages moved from SAVE to HOME as they were (their knobs, OCT+ / OCT−, PLAY); a HOME tap walks them. See
@@ -418,8 +432,8 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 | Section | Groups (the button) · pages (SELECT) | Pages |
 | --- | --- | --- |
 | **HOME** | (V10.7.24; V10.7.32 the song's pages) **MACROS**: MACROS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **SCOPE**: SCOPE — **GENE**: GENE 1 · GENE 2 · GENE 3 | 8 |
-| **EDIT** (a synth) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (those the engine and the track have) — **FOCUS**: FOCUS — **PLAY**: PLAY · PLAY 2 (codex/coherence: was VOICE; STEREO's IMAGE on PLAY 2) | up to 11 |
-| **EDIT** (FM6) | **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **TONE**: FILTER — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **PLAY**: PLAY · PLAY 2 | 8 |
+| **EDIT** (a synth) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (those the engine and the track have) — **FOCUS**: FOCUS — **PLAY**: PLAY · PLAY 2 · PLAY 3 (codex/coherence: was VOICE; STEREO's IMAGE on PLAY 2; V10.7.33 CRUSH on PLAY 3) | up to 12 |
+| **EDIT** (FM6) | **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **TONE**: FILTER — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **PLAY**: PLAY · PLAY 2 · PLAY 3 | 9 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: X-MOD · FILTER · STEREO · PLAY | 14 |
 | **SEQ** | (V10.6) **STEP**: STEP — **PATTERN**: LENGTH · RHYTHM · TRACK — **EUCLID**: EUCLID · MODES · MUTATE — **PLAYHEADS**: PLAYHEADS — **STRETCH**: STRETCH — **COMP**: COMP · COMP 2 — **LOCKS**: LOCKS · LYRIC STEP (VOICE) — **TRACK GEN**: TRACK GEN | 14 |
 | **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DLY 2 · DLY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SL BUS · SL BUS 2 · SL PITCH — **MASTER**: MASTER · TAPE · EQ (V10.7.32: PUNCH IN on the FX held) | 17 |
@@ -569,6 +583,7 @@ since 0.6.51: every project opens as it was.
 | LEVELS 2 | HATOP | TOM | RIM | BELL | DRUM |
 | PLAY (was VOICE) | POLY (POLY MONO LEG UNI; was VOICE) | GLIDE | GL MODE (the glide's RATE / TIME; was MODE) | PRIO | every engine |
 | PLAY 2 (0.8.5; was VOICE 2) | ALLOC | UNISON (UNI's detune, 0..100 %; was DETUNE) | VEL (the sound's velocity amount, 0..100 %) | IMAGE (the voices across, POLY; was the STEREO page; not on EXT) | every engine but DRUM |
+| PLAY 3 (V10.7.33) | CRUSH (the track's bit reducer, 0..100 %; was DIST TYPE CRUSH) | | | | every engine (a kit's too) |
 | SWARM, SWARM 2 (V10.6z6) | SIDE (FAR / NEAR) | that side's RATE, MOVE, TONE / NOISE, MOD | | (SWARM 2: NOW, the morph and its source) | EXT with SOURCE SWARM |
 | FOCUS (0.8.5) | PARAM (E1–E8) | its value | SRC (the MOD slot on it) | AMT | the synths (not FM6, DRUM) |
 
@@ -947,9 +962,38 @@ With LANG on the EDIT pages read **POS THEME ARTIC SHIFT** | **BUZZ BREATH Q LOO
 
 **Writing a lyric.** On the device: EDIT > WORDS, **OCT+**. It is the NAME screen with room for 63 characters (the
 field scrolls with the cursor): the keys type phone-style, **KNOB 3** throws the dice (a phrase of the generator in the
-track's language and theme, to edit as you like), **OCT+** sets it (also while playing), **OCT−** cancels. From the
-computer: the web editor's Sound tab shows a **Lyric** box on a VOICE track (LANG, LYRIC and the text; it turns
-accents and ñ into what the device reads). Each track has its own lyric, saved with the project section.
+track's language and theme, to edit as you like), **OCT+** sets it (also while playing), **OCT−** cancels.
+(V10.7.33) **Phonemes on the device**: **D#** steps the white keys through ABC, 123 and then **PH 1, PH 2, PH 3**, the
+track's language's phonemes (LANG on), vowels first; a tap types one phoneme's code (*A*, *IH*, *SH*, *NY*, *RR*…)
+and the first one puts the **/** that marks a lyric of phonemes at its start. Build a word sound by sound: *LAHV* is
+English "love", *KORASON* Spanish "corazón". A **.** (from 123) starts a syllable where the device would split it
+otherwise.
+From the computer: the web editor's Sound tab shows a **Lyric** box on a VOICE track (LANG, LYRIC, your words, and
+since V10.7.33 the **Phonemes** they become: editable, and those are what is sent; the count must fit in 63). Each
+track has its own lyric, saved with the project section.
+
+**Phonemes (V10.7.33).** A lyric that starts with **/** is phonemes: each word a run of codes, one or two letters a
+sound, the same in every language where the sound is the same. Vowels **A E I O U** (Spanish / Japanese *u* is U too),
+and in English **I** (*see*), **IH** (*sit*), **E** (the *e* of *day*: E IH), **EH** (*bed*), **AE** (*cat*), **AA**
+(*father*; *my* is AA IH), **AO** (*law*; *boy* AO IH), **O** (*go*: O UH), **UH** (*book*), **U** (*food*), **AH**
+(*cup*), **ER** (*bird*), **AX** (the weak *a* of *about*). Consonants as written: **P T K B D G F S H M N L W Y V Z
+J** (English / Italian *j*), **X** (the Spanish jota), **R** (Spanish / Japanese tap; English *r*), **RR** (the trill),
+**NY** (ñ), **NG** (*sing*), **NN** (the Japanese and Portuguese nasal *n*), **SH**, **ZH** (*measure*), **TH**
+(*thin*), **DH** (*this*), **CH**, **TS**, and **#** a short stop (Japanese *kitto*: KI#TO). The language decides a few
+of them (ER, AX, AE are English's only: in Spanish *ER* is *e r*). Syllables are found by the device (each vowel with
+the consonant before it, *pl tr* and the like together); a **.** marks one where it would split otherwise
+(*BI.IHNG*, "being").
+
+**The editor's languages.** **English** through the whole CMU Pronouncing Dictionary (about 120 000 words, in the
+editor, not on the device); a word it lacks by the rough letter rules (the box says which). **Spanish** and
+**Japanese** as the device reads their letters (the same sound; the editor also says the *ü* of *pingüino*).
+**Portuguese** (Brazilian, by rules: nasal vowels, *lh nh*, *ti di* as *chi ji*, final *e o* as *i u*) and
+**Italian** (by rules, sung with LANG **ES**: pick IT in the box's PHONEMES menu) are approximations. Russian,
+German, French, Mandarin and Guaraní are sent as letters (TEXT), read by the device's rules as before.
+
+**A lyric saved before V10.7.33** is letters: it still sings, Spanish and Japanese exactly as before, English by the
+rough letter rules (the device no longer has the dictionary): open the track in the editor and send the lyric again
+to get the dictionary's English back.
 
 **Text rules.**
 - **Spanish** is read by rules, the way it is written: seseo (*z* and *ce ci* as *s*), *ll* and *y* as *y*, *rr* and
@@ -957,8 +1001,9 @@ accents and ñ into what the device reads). Each track has its own lyric, saved 
   No accents needed; write **ñ as NY** (NINYO).
 - **Japanese** in romaji (Hepburn or kunrei), **one note a mora**: *sakura* 3, *konnichiwa* 5 (ko-n-ni-chi-wa),
   *arigatou* 5 (a long *ou* sung o-o); a doubled consonant (*kitto*) is a short stop, not a note.
-- **English** comes from a dictionary of ~2100 common words (from the CMU Pronouncing Dictionary) with their
-  syllables; a word it lacks is read by rough letter rules, which work less well.
+- **English** as letters is read by rough letter rules (V10.7.33: the device's dictionary of ~2100 words is gone; the
+  editor sends the whole CMU dictionary's pronunciations as phonemes instead: see above). The dice's English words (W,
+  S) are stored as phonemes and sound as before.
 - A **-** on its own holds the vowel one more note (a melisma: *A - MOR* is a, a, mor). **_** joins two words into one
   (*MI_AMOR*: mia-mor, the Spanish *sinalefa*). Punctuation and digits only separate words.
 
@@ -969,11 +1014,11 @@ formants (F1 down, F2 across: where the tongue is), with the voicing and noise l
 **What to expect.** This is formant synthesis, like a vintage speech chip that sings: vowels, *s sh f*, *t k p*, *ch*,
 *m n l* and the glides come through in context; *b d g*, *v z* and the English *r* are approximations, and
 intelligibility drops at very short notes (a syllable's consonants take 40–100 ms before its vowel). Spanish and
-Japanese read best (their spelling is regular); English depends on the dictionary.
+Japanese read best (their spelling is regular); English needs the editor's phonemes (or your own).
 
-**Cost.** No state per voice (the articulation is the track's); ~1 KB of RAM for the six lyrics and singers; ~42 KB
-of flash (the English dictionary is most of it); about +9 % CPU over VOICE's vowels, so four voices singing still cost
-well under ANALOG's eight.
+**Cost.** No state per voice (the articulation is the track's); ~1 KB of RAM for the six lyrics and singers; the
+English dictionary (~11 KB of the Bluetooth segment's flash) is the editor's since V10.7.33; about +9 % CPU over
+VOICE's vowels, so four voices singing still cost well under ANALOG's eight.
 
 ### Three engines draw their own creature (0.9.4)
 
@@ -1218,7 +1263,8 @@ the delay exactly as before (a project of before opens with DRIVE 0).
 EDIT > **PLAY** (was VOICE, the VOICE engine's name too): **POLY** POLY, MONO, LEG (legato), UNI (unison); **GLIDE**;
 **GL MODE** RATE or TIME (how glide is measured); **PRIO** LAST, LOW, HIGH. **PLAY 2**: **ALLOC** (ROT / REUSE),
 **UNISON** (how far apart UNI's voices are, 0..100 %; was DETUNE, a bare number), **VEL**, **IMAGE** (the voices across
-the stereo field in POLY; was its own STEREO page; not on EXT). The six tracks share a budget of 8 voices; FM6 plays at most four per track. (0.9.8) VOICE glides as a singer: an S-curve in
+the stereo field in POLY; was its own STEREO page; not on EXT). **PLAY 3** (V10.7.33): **CRUSH**, the track's bit
+reducer (see [Per track](#per-track)). The six tracks share a budget of 8 voices; FM6 plays at most four per track. (0.9.8) VOICE glides as a singer: an S-curve in
 pitch over the same time (the other engines: a straight line, as before).
 
 ---
@@ -2381,21 +2427,26 @@ its page). PRESETS loads the track's sounds, as everywhere. The pages, their kno
 ### Per track
 
 - **FX**: DIST amount and the three sends (CHORUS, DLY, REV).
-- **DIST**: amount, **TYPE** (SOFT, HARD, FOLD, CRUSH, RECT, **AMP**), **TONE** (darker / brighter), **NOISE**
-  (V10.7.30). **AMP** is a guitar amp: two valve stages that clip unevenly (low DIST clean, then crunch, then lead), the
+- **DIST**: amount, **TYPE** (SOFT, HARD, FOLD, RECT, **AMP**; V10.7.33: CRUSH is its own, below), **TONE** (darker /
+  brighter), **NOISE** (V10.7.30). **AMP** is a guitar amp: two valve stages that clip unevenly (low DIST clean, then crunch, then lead), the
   bias breathing with the level, and a speaker cabinet; TONE moves the cabinet's brightness. (V10.7.30) The cabinet no
   longer rings in the mids (its old 1.8 kHz peak, +4.7 dB, made it honky and boxy): a broad, gentle scoop around 650 Hz
   instead, the corner a little higher (~4.8 kHz), the level as before.
   - **FOLD** (V10.7.30): a smooth (sine-shaped) wavefolder, its input band-limited: the low half of DIST is a round
     saturation, the folds come in past the middle and grow toward the end (up to three and a half), without the old
     triangle folder's harsh corners.
-  - **CRUSH** (V10.7.30): fewer bits and a lower sample rate, but the rate wanders ±50 % around its value and the steps
-    are ramped, so it no longer whistles a fixed "pedal note" at the reduction rate; the lo-fi grit stays.
-  - *(V10.7.30 beta: NOISE left out for room; next beta.)* **NOISE** (V10.7.30, KNOB 3, 0–100 %, the selected track's; DIST must be on): white noise that rides the
+  - **NOISE** (V10.7.30, KNOB 3, 0–100 %, the selected track's; DIST must be on): white noise that rides the
     distorted signal. Only the part of each wave above a threshold gets it, as much as it is over it (the threshold
     drops a little as NOISE rises): a grit that follows the note's pitch and envelope and leaves the quiet parts and
     the silences clean. It goes through the TONE's corner. Saved with the project (not with sound presets); not on
     the editor, MIDI or automation (it is not a track parameter: there is no slot left for one).
+- **CRUSH** (V10.7.33, **EDIT › PLAY 3**, KNOB 1, 0–100 %, the selected track's; was DIST's TYPE CRUSH): fewer bits
+  and a lower sample rate (more of both as it rises), the rate wandering ±50 % around its value and the steps ramped,
+  so it never whistles a fixed "pedal note"; DIST's **TONE** darkens or brightens it as it did. It works whether DIST is
+  off or on (after DIST: a distorted sound crushed). 0 is off (not run). Saved with the project (not with user presets,
+  not on the editor, MIDI or automation: like NOISE, no parameter slot is left). A project or a user preset saved with
+  DIST TYPE CRUSH loads with CRUSH at its DIST amount and DIST off (TYPE SOFT): the same sound; a RECT or AMP keeps its
+  TYPE. Cost: as CRUSH was in DIST (less: no call per sample).
 - **AUTO PAN**: the track's pan swung left and right around its PAN. **DEPTH** (0 = off), **RATE**, **SYNC** (BEAT:
   RATE in divisions 4BAR … 1/32, locked to the bar; FREE: RATE in Hz), **WAVE** (SIN, TRI, SAW, SQR, S&H).
 - **FILTER**: see [4](#4-engines).
@@ -2482,7 +2533,7 @@ from before).
 - **CLIP**: saturation that adds character, not volume.
 - **PUNCH**: fattens the DRUM tracks.
 - **DUCK**: the kick pulls the rest down; **REL** is its release.
-- *(V10.7.30 beta: BALANCE is built but left out of this image for room; it returns in the next beta.)* **BALANCE** (V10.7.30, the page after EQ; **AMOUNT** 0–100 %, **50 by default: on**): a slow dynamic EQ on the EQ's
+- **BALANCE** (V10.7.30, back in the image in V10.7.33; FX › BALANCE, the page after EQ; **AMOUNT** 0–100 %, **50 by default: on**): a slow dynamic EQ on the EQ's
   four bands, for the "ball of mids" a full mix becomes. It listens to the mix's balance between the bands (over
   about a second, not hit by hit) and compares it with a balanced mix's curve (a commercial mix's tilt, the lows a
   little richer and the top a little darker, as electronic music sits). When the **low mids (200 Hz–1 kHz) pile up** it
@@ -2823,7 +2874,9 @@ on SAVE > USER, PART SLOTS or PROJECTS (renames the selected slot, part or proje
 An empty name: a project section gets none, a user preset an automatic one.
 
 The same screen types a VOICE track's **lyric** (EDIT > WORDS, OCT+): up to 63 characters, the field scrolls with the
-cursor, **KNOB 3** throws the dice, and OCT+ sets it even while playing (it is not a flash write).
+cursor, **KNOB 3** throws the dice, and OCT+ sets it even while playing (it is not a flash write). (V10.7.33) There
+**D#** goes on past 123 to **PH 1–3**: the white keys type the track's language's phonemes (a code each; the first puts
+the lyric's **/**), see [VOICE: words and lyrics](#voice-words-and-lyrics-085).
 
 ### User presets (SAVE > USER)
 
@@ -3190,8 +3243,11 @@ later). See [Key velocity and aftertouch](#key-velocity-and-aftertouch-v106z7); 
 Every parameter from the computer, over USB. Tabs: Sound, 6-OP FM, Sequencer, Tracks, Library, Projects, Settings.
 
 - **6-OP FM**: edit FM6 patches, import .syx, and **Send to the device's voice bank (B1–B32)**.
-- **Sound**, on a VOICE track (0.8.5): the **Lyric** box: LANG, LYRIC and the lyric's text, **Send** writes it to the
-  track (accents and ñ converted).
+- **Sound**, on a VOICE track (0.8.5): the **Lyric** box: LANG, LYRIC and the lyric's words; (V10.7.33) under them the
+  **Phonemes** they become (English through the CMU dictionary, Spanish, Japanese, Portuguese; **PHONEMES** IT for
+  Italian, TEXT to send letters as before), editable; **Send** writes the phonemes to the track. A lyric read from the
+  device that is letters (saved before V10.7.33) is converted as it is shown: Send it to keep the dictionary's
+  English.
 - **Projects**: the project slots, and the **Complete backup**: **Save backup** and **Restore backup**.
 
 ### The complete backup

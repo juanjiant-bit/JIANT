@@ -1,0 +1,66 @@
+renders/v33a — escuchas de la V10.7.33 (rama codex/v33a). Se borran antes del release.
+
+Todos son WAV de 44,1 kHz, 16 bits, estéreo (los dos canales iguales), secos (sin chorus, delay ni reverb), sin
+BALANCE y sin el master: solo la pista, para comparar lo que cambia de verdad.
+
+
+1. VOICE sin el diccionario inglés en el equipo
+-----------------------------------------------
+
+El equipo ya no tiene el diccionario inglés (LY_EN_DICT, ~11 KB que vivían en el segmento Bluetooth). Ahora el editor
+web convierte las palabras en fonemas (inglés con todo el diccionario CMU, en web/lyrics_en.js) y manda eso: una letra
+que empieza con "/" y códigos de una o dos letras por sonido.
+
+La melodía es la misma en todos (14 notas, ~11 s), con el preset de cada idioma (SINGER EN, CANTOR ES).
+
+  voz_en_antes_v10.7.32_diccionario.wav
+      La V10.7.32 cantando la letra en inglés como texto, con su diccionario de 2095 palabras en el equipo:
+      "Love me under silver light, hold my hand tonight"
+
+  voz_en_despues_fonemas_del_editor.wav
+      Esta rama cantando lo que manda el editor para esa misma letra:
+      "/LAHV MI AHNDER SIHLVER LAAIHT HOUHLD MAAIH HAEND TAXNAAIHT" (59 de 63 caracteres)
+      Es idéntico bit a bit al de antes: el editor saca del diccionario CMU los mismos fonemas que tenía el equipo.
+
+  voz_en_despues_texto_viejo_por_reglas.wav
+      Esta rama cantando la letra vieja tal cual (como texto, como la guardaba cualquier proyecto anterior): sin
+      diccionario se lee con las reglas aproximadas de letras del equipo, que ya existían para las palabras que el
+      diccionario no tenía. Canta, pero se nota la diferencia ("love" sale con la o de "go":
+      l-o-u-v en vez de l-a-v). Para recuperar el inglés del
+      diccionario alcanza con abrir la pista en el editor y mandar la letra de nuevo: el editor la convierte sola.
+
+  voz_es_antes_v10.7.32.wav
+      La V10.7.32 cantando "Bajo la luna canta el mar, quiero contigo caminar" como texto.
+
+  voz_es_despues_fonemas_del_editor.wav
+      Esta rama cantando lo que manda el editor: "/BAXO LA LUNA KANTA EL MAR KYERO KONTIGO KAMINAR".
+      Idéntico bit a bit al de antes: el editor usa las mismas reglas del castellano que el equipo. (Una letra vieja en
+      castellano, como texto, también suena idéntica: las reglas del castellano no cambiaron.)
+
+Cómo se hicieron: render_voice.c, compilado contra tests/hostsim.c de cada árbol (la V10.7.32 en ddc7c3a para
+"antes", esta rama para "después"); los fonemas salen de web/lyrics.js (LYR.convert).
+
+
+2. CRUSH: de TYPE de DIST a parámetro propio de la pista (EDIT > PLAY 3)
+-----------------------------------------------------------------------
+
+  crush_bajo_antes_dist_tipo_crush_70.wav
+      La V10.7.32: un riff de bajo de ANALOG (02 SQR BASS, 110 BPM) con DIST 70 y TYPE CRUSH.
+
+  crush_bajo_despues_play3_crush_70.wav
+      Esta rama: el mismo riff con DIST en 0 y CRUSH 70 en EDIT > PLAY 3 (que es lo que hace la migración al abrir un
+      proyecto viejo con DIST TYPE CRUSH).
+      Entre los dos hay como mucho 1 bit de diferencia en 16 (el último paso de la mezcla, que ahora no tiene el
+      atajo de "todo mojado"): suena igual.
+
+Cómo se hicieron: render_crush.c (con -DOLD para la V10.7.32). tests/crush_test.c compara además muestra por muestra
+el CRUSH nuevo contra el código viejo de DIST TYPE CRUSH, DRIVE 1..127 y TONE -64..63: a lo sumo 3 de 2^18 de
+diferencia.
+
+
+3. BALANCE vuelve
+-----------------
+
+No hay WAV de BALANCE (es el mismo de la V10.7.30): volvió a la imagen (FELUCCA_XFX 1) y está prendido por defecto (50),
+así que cambian 198 de los 207 renders de tests/golden.txt (con BALANCE apagado en la compilación, los 207 dan igual que
+antes: ninguno de los otros cambios mueve un render).

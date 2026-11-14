@@ -451,3 +451,6 @@ PROX, the proximity source.
   `sy_en_rules`' letter rules (as a word the dictionary lacks: "love" |l o uh v instead of |l ah v), the generator's
   too; VOICE sings on. `tests/voice_test.c` checks it for all 2,095 words.
 - App 567,760 B (16,576 B free), segment 47,128 B (12 of 18 sectors). Repinned with `FELUCCA_REPIN=keep`.
+- (V10.7.33) The dictionary is gone from the device (and from the segment: `LY_EN_DICT`, `LY_EN_IDX`, `LY_EN_PAIR`,
+  10,612 B of `.btapp.rodata`): the web editor converts English with the whole CMU dictionary and sends phonemes
+  (`web/lyrics.js`). `ly_en_ok` still gates the other languages' rules and words in the segment (`sing_ext.c`).

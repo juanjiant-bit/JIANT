@@ -161,9 +161,9 @@ def controls():
     t = '<table>' + ''.join(f'<tr><td class="n">{e(n)}</td><td>{d}</td></tr>' for n, d in rows) + '</table>'
     pb = [
         ('HOME', 'MACROS (M1–M4 over the beings)  |  TIMELINE  |  ARRANGE  |  PARTS (tracks × parts: a head the part, a cell the track)  |  SCOPE (FILTER · SPACE · DRIVE · DUCK on the mix)  |  GENE: GENE 1 · GENE 2 · GENE 3', 'MENU'),
-        ('EDIT', 'SOUND: EDIT 1 · EDIT 2  |  TONE: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2  |  FOCUS  |  PLAY: PLAY · PLAY 2 (last). EXT: EDIT 1 / 2 are EXT and SHAPE. FM6: SOUND (ALGO · PATCH)  |  TONE: FILTER  |  OPERATOR: OPERATOR · OP ENV · OPERATOR 2  |  PLAY. DRUM: KIT: KIT · KIT 2 · KIT 3 · KIT 4  |  SOUND: SOUND 1–4  |  LEVELS 1–2  |  TONE: X-MOD · FILTER · STEREO · PLAY', 'INIT · RECALL · sound mutes'),
+        ('EDIT', 'SOUND: EDIT 1 · EDIT 2  |  TONE: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2  |  FOCUS  |  PLAY: PLAY · PLAY 2 · PLAY 3 (last). EXT: EDIT 1 / 2 are EXT and SHAPE. FM6: SOUND (ALGO · PATCH)  |  TONE: FILTER  |  OPERATOR: OPERATOR · OP ENV · OPERATOR 2  |  PLAY · PLAY 3. DRUM: KIT: KIT · KIT 2 · KIT 3 · KIT 4  |  SOUND: SOUND 1–4  |  LEVELS 1–2  |  TONE: X-MOD · FILTER · STEREO · PLAY · PLAY 3', 'INIT · RECALL · sound mutes'),
         ('SEQ', 'STEP  |  PATTERN: LENGTH · RHYTHM · TRACK  |  EUCLID: EUCLID · MODES · MUTATE  |  PLAYHEADS  |  STRETCH  |  COMP: COMP · COMP 2  |  LOCKS: LOCKS · LYRIC STEP  |  TRACK GEN', 'SEQ TOOLS'),
-        ('FX', 'TRACK: SENDS · DIST · AUTO PAN  |  BUSES  |  DELAY: DLY 1–3  |  REVERB 1–2  |  CHORUS  |  SLICER: SLICER · SL BUS 1–2 · SL PITCH  |  MASTER · TAPE · EQ',
+        ('FX', 'TRACK: SENDS · DIST · AUTO PAN  |  BUSES  |  DELAY: DLY 1–3  |  REVERB 1–2  |  CHORUS  |  SLICER: SLICER · SL BUS 1–2 · SL PITCH  |  MASTER · TAPE · EQ · BALANCE',
          'PUNCH-IN FX · the lane at the foot'),
         ('GLO', 'MIX: MIXER · SENDS  |  G.COMP: G.COMP · G.COMP 2  |  SETUP: GLOBAL · SYSTEM · SYSTEM 2 (at power-on GLO opens MIXER)', 'MUTE · SOLO · LEVEL · TAP'),
         ('ENV', 'ENV: ENV · ENV DEST · ENV 2', '—'),
@@ -261,17 +261,17 @@ def controls():
                           ('PROX (BT)', 'SRC PROX: the phone\'s distance (AIR: a hand, no phone) · MENU › SYSTEM › BLUETOOTH, OCT+: OCT− FAR, OCT+ NEAR; K1 MIN, K2 MAX, K3 SPD (V10.61)'),
                           ('FOLLOW', 'SRC FOLLOW: the audio input\'s envelope (EXT, V10.54), any track, any DEST'),
                           ('MSEQ', 'STEP LEVEL LEN SLEW'), ('MSEQ 2', 'DIV - - -')]),
-        ('FX', HEAT[5], [('SENDS', 'DIST CHORUS DLY REV'), ('BUSES', 'DLY REV CHO SLC'), ('DIST', 'TYPE TONE - -'), ('AUTO PAN', 'DEPTH RATE SYNC WAVE'), ('SLICER', 'MODE PAT RATE DEPTH'),
+        ('FX', HEAT[5], [('SENDS', 'DIST CHORUS DLY REV'), ('BUSES', 'DLY REV CHO SLC'), ('DIST', 'TYPE TONE NOISE -'), ('AUTO PAN', 'DEPTH RATE SYNC WAVE'), ('SLICER', 'MODE PAT RATE DEPTH'),
                          ('SL BUS', 'T1 T2 T3 T4'), ('SL BUS 2', 'T5 T6 FX -'), ('SL PITCH', 'STEP PITCH LEN QUANT'),
                          ('DLY', 'TIME FEEDBK TONE MIX'), ('DLY 2', 'WIDE PITCH SPRAY MOD'), ('DLY 3', ['TYPE', 'PING', 'DRIVE', 'R TIME']),
                          ('REVERB', 'TYPE SIZE DAMP PRE/AIR'), ('REVERB 2', 'MOD RATE FILT WIDE'),
                          ('CHORUS', 'RATE DEPTH STEREO -'), ('FX + PRESETS', 'LEN RES REC CLEAR (the punch-in lane, FX held)'), ('MASTER', 'CLIP PUNCH DUCK REL'), ('TAPE', 'TAPE WOW - -'),
-                         ('EQ', ['LOW', 'LO MID', 'HI MID', 'HIGH'])]),
+                         ('EQ', ['LOW', 'LO MID', 'HI MID', 'HIGH']), ('BALANCE', 'AMOUNT - - -')]),
         ('EDIT', HEAT[3], [('EDIT 1', 'E1 E2 E3 E4'), ('EDIT 2', 'E5 E6 E7 E8'), ('EXT', 'SOURCE GAIN GATE MODE'), ('SHAPE', 'WIDTH RING BITS RATE'), ('SWARM', 'SIDE RATE MOVE TONE'), ('SWARM 2', 'SIDE NOISE MOD NOW'),
                            ('MORPH', 'MORPH DRIFT - -'), ('ROTOR', 'DEPTH DUST - -'),
                            ('WORDS', 'LANG LYRIC CONS (OCT+ TYPE)'), ('RETRIG', 'RTRG - - -'), ('OPERATOR', 'OP COARSE FINE OUTPUT'),
                            ('OP ENV', 'OP STAGE RATE LEVEL'), ('OPERATOR 2', 'OP MODE DETUNE KEY VEL'), ('FILTER', 'TYPE CUT RES DRIVE'),
-                           ('PLAY', 'POLY GLIDE GL MODE PRIO'), ('PLAY 2', 'ALLOC UNISON VEL IMAGE'), ('FOCUS', 'PARAM VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS -'), ('KIT 4', 'KEY MAP - - -'),
+                           ('PLAY', 'POLY GLIDE GL MODE PRIO'), ('PLAY 2', 'ALLOC UNISON VEL IMAGE'), ('PLAY 3', 'CRUSH - - -'), ('FOCUS', 'PARAM VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS -'), ('KIT 4', 'KEY MAP - - -'),
                            ('X-MOD', 'RATE DEPTH SHAPE RAND'), ('LEVELS', 'KICK SNARE CLAP HATCL'),
                            ('LEVELS 2', 'HATOP TOM RIM BELL'), ('SOUND', 'SOUND SIDE PITCH PMOD'),
                            ('SOUND 2', 'SOUND DECAY NOISE COLOR'), ('SOUND 3', 'SOUND MODE PM.TYPE DRIVE'),
@@ -343,8 +343,9 @@ def sound():
          'the spectrum. Presets PRIME ORG, QUINT, DRONE, GONG, TOTEM…'),
         ('VOICE', HEAT[6], 'VOWEL VOWEL2 TALK SHIFT', 'BUZZ BREATH Q RAND',
          'Formant voice (after klattsch): vowels, talk, breath. <b>WORDS</b> (0.8.5): LANG ES / EN / JA sings syllables, '
-         'a note each (POS THEME ARTIC SHIFT · BUZZ BREATH Q LOOP); LYRIC TEXT (OCT+ on WORDS types it, KNOB 3 dice; '
-         'the web editor sends it) or W1–16 words, S1–8 scat; "-" holds the vowel. <b>Its picture</b> (0.9.4): a CT head '
+         'a note each (POS THEME ARTIC SHIFT · BUZZ BREATH Q LOOP); LYRIC TEXT (OCT+ on WORDS types it, KNOB 3 dice, '
+         'D# PH 1–3 the phonemes; V10.7.33: the web editor turns words into phonemes, English with the CMU dictionary) '
+         'or W1–16 words, S1–8 scat; "-" holds the vowel. <b>Its picture</b> (0.9.4): a CT head '
          'whose tongue, jaw, lips and velum sing the phoneme.'),
         ('WHEEL', HEAT[5], 'REG SUB BODY TOP', 'PERC CLICK DRIVE SPEED', 'Drawbar organ: registrations, percussion, rotary. '
          '<b>Its picture</b> (0.9.6): nine tube worms, one a drawbar, bent by the rotor.'),
@@ -451,8 +452,8 @@ def sound():
     b.append(sec('EFFECTS'))
     b.append('<div class="grid g3">')
     b.append(card('PER TRACK', HEAT[5], '<h4>FX · SENDS</h4>' + knobs('DST', 'CHO', 'DLY', 'REV') +
-                  '<h4>DIST</h4>' + knobs('DST', 'TYPE', 'TONE', '-') +
-                  '<p style="margin-top:6px">SOFT · HARD · FOLD · CRUSH · RECT.</p>'
+                  '<h4>DIST</h4>' + knobs('DST', 'TYPE', 'TONE', 'NOISE') +
+                  '<p style="margin-top:6px">SOFT · HARD · FOLD · RECT · AMP. <b>CRUSH</b> (bits, rate): EDIT › PLAY 3, the track\'s, DIST on or off.</p>'
                   '<h4>AUTO PAN</h4>' + knobs('DEPTH', 'RATE', 'SYNC', 'WAVE') +
                   '<p style="margin-top:6px">The track\'s pan swung L–R around its PAN. SYNC <b>BEAT</b>: RATE 4 BARS … 1/32, '
                   'in time with the bar; <b>FREE</b>: in Hz. SIN · TRI · SAW · SQR · S&amp;H, never a click.</p>'))

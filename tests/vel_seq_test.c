@@ -419,7 +419,17 @@ int main(void)
         trk[1].p[P_TVEL] = 99; trk[2].p[P_TVEL] = 0;
         project_load(1);
         ck("   a project keeps each track's VEL (40, 127)", trk[1].p[P_TVEL] == 40 && trk[2].p[P_TVEL] == 127);
-        ck("   saved with the VEL mark (FUNC byte 65, V10.7.6)", proj_slot[1].raw[65] == 'V');
+        ck("   saved with the VEL mark (FUNC byte 65: V10.7.6 'V', V10.7.33 'W', DIST TYPE without CRUSH too)",
+           proj_slot[1].raw[65] == 'W');
+        {   /* (V10.7.33) a FUNC of V10.7.6 .. V10.7.32 ('V'): its VEL as stored */
+            uint32_t h;
+            proj_slot[1].raw[65] = 'V';
+            h = proj_hash(proj_slot[1].raw, PROJ_STORE_SIZE - 4u); memcpy(proj_slot[1].raw + PROJ_STORE_SIZE - 4u, &h, 4);
+            trk[1].p[P_TVEL] = 99;
+            project_load(1);
+            ck("   one saved with the V10.7.6 mark ('V'): its VEL kept (40, 127)", trk[1].p[P_TVEL] == 40 && trk[2].p[P_TVEL] == 127);
+            project_save(1);
+        }
         {   /* (V10.7.6) a FUNC of before the mark (MUTATE's P_MCFG in the slot: 127 - cfg; or V10.7.3..7.5's VEL): 100 % */
             uint32_t h;
             proj_slot[1].raw[65] = 0;
