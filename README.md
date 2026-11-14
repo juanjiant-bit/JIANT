@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.30
+## This release: V10.7.31
 
 ### Installing
 
@@ -482,6 +482,12 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.31 — beta (2026-11-14)
+- **FILTER 2 modulates, it never replaces.** NOISE is the depth (0: the sound untouched; 100: the cutoff about ±3.5 octaves). MODE is the movement: **SOFT** glides, **STEP** jumps, **METAL** moves the cutoff at audio rate in tune with the note (RATE becomes RATIO: x0.5 .. x4 and the bell ratios x1.41, x2.76), **BREAK** jumps in time (RATE becomes DIV: 1/8 .. 1/32), **DUST** sparks. **DEST** sends it to the filter, the pitch or both (FILT · F75 · MIX · P75 · PITCH; on PITCH, METAL is an FM in tune). **KEY** moved to its own page, FILTER 3.
+- **F.NOISE**, the same modulator as a MOD matrix source, with its own amount (it runs even with NOISE at 0): send it to PITCH or anywhere.
+- **LP24 with more power** when DRIVE is up: up to x6 into the clip, the level kept when you close the filter or raise RES, and it self-oscillates near the top of RES while the part plays. At DRIVE 0 it is the LP24 it was.
+- V10.7.30 projects that used METAL, BREAK or DUST load with the same values and sound different (they modulate now).
 
 ### V10.7.30 — beta (2026-11-13)
 - **Filters: one LP24 with range.** MS20 is gone: projects that used it open with LP24 set as close as it gets. LP24 gains **DRIVE** (clean to aggressive). A new **FILTER 2** page: **KEY** (keyboard tracking), a **noise modulator** on the cutoff (from grit to broken) and **textures** (metallic, broken, noise).

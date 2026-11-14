@@ -1278,6 +1278,101 @@ static void test_jiant_fx(void)
     song.g[G_RTYPE] = 0;
 }
 
+
+/* (codex/filter2-mod) F.NOISE (MS_FNZ): EDIT > FILTER 2's modulator as a source. On PITCH, FILTER 2's NOISE at 0 (the
+ * filter untouched): STEP at RATE ~55 % moves the pitch in steps (the upward zero crossings a window vary); no slot: the
+ * pitch steady; SOFT the same, glided. The windows' crossings, most / fewest */
+static double fnz_spread(uint32_t mode_v, int routed)
+{
+    uint32_t w, i, lo = 1u << 30, hi = 0;
+    fresh(eng_by_name("ANALOG"), 0);
+    trk[0].p[P_CHOR] = trk[0].p[P_DLY] = trk[0].p[P_REV] = 0;
+    trk[0].p[P_E0] = 3;                                 /* (a sine: one crossing a period) */
+    trk[0].p[P_E2] = trk[0].p[P_E3] = 0;
+    trk[0].p[P_FNMD] = (int16_t)mode_v;
+    trk[0].p[P_FNRT] = 127 - 70;
+    if (routed)
+        slot(&trk[0], 0, MS_FNZ, MD_PITCH, 63);
+    trk_note_on(&trk[0], 60, 100);
+    blocks(FS / 5u / CTL);
+    for (w = 0; w < 12u; w++) {
+        uint32_t n = 0;
+        int32_t prev = 0;
+        for (i = 0; i < 64u; i++) {                     /* (64 blocks: 93 ms a window) */
+            uint32_t j;
+            blocks(1);
+            for (j = 0; j < CTL; j++) {
+                n += prev < 0 && out_buf[2u * j] >= 0;
+                prev = out_buf[2u * j];
+            }
+        }
+        lo = n < lo ? n : lo;
+        hi = n > hi ? n : hi;
+    }
+    return lo ? (double)hi / lo : 0;
+}
+/* (codex/filter2-mod) FILTER 2's DEST: STEP at NOISE 100 %, DEST stored 127 - v (FILT 127, MIX 64, PITCH 0): the pitch's
+ * spread (as fnz_spread, no slot); VOICE's slot is its CONS: DEST off there */
+static double dest_spread(int16_t dest, const char *eng)
+{
+    uint32_t w, i, lo = 1u << 30, hi = 0;
+    fresh(eng_by_name(eng), 0);
+    trk[0].p[P_CHOR] = trk[0].p[P_DLY] = trk[0].p[P_REV] = 0;
+    if (str_eq(eng, "ANALOG")) {
+        trk[0].p[P_E0] = 3;
+        trk[0].p[P_E2] = trk[0].p[P_E3] = 0;
+    }
+    trk[0].p[P_FNMD] = 89;
+    trk[0].p[P_FNRT] = 127 - 70;
+    trk[0].p[P_FNZ] = 0;
+    trk[0].p[P_FDST] = dest;
+    trk_note_on(&trk[0], 60, 100);
+    blocks(FS / 5u / CTL);
+    for (w = 0; w < 12u; w++) {
+        uint32_t n = 0;
+        int32_t prev = 0;
+        for (i = 0; i < 64u; i++) {
+            uint32_t j;
+            blocks(1);
+            for (j = 0; j < CTL; j++) {
+                n += prev < 0 && out_buf[2u * j] >= 0;
+                prev = out_buf[2u * j];
+            }
+        }
+        lo = n < lo ? n : lo;
+        hi = n > hi ? n : hi;
+    }
+    return lo ? (double)hi / lo : 0;
+}
+static void test_dest(void)
+{
+    double f = dest_spread(127, "ANALOG"), m = dest_spread(64, "ANALOG"), p = dest_spread(0, "ANALOG");
+    char what[160];
+    int32_t vp;
+    snprintf(what, sizeof what, "FILTER 2 DEST (STEP, NOISE 100 %%): the pitch's spread FILT x%.2f, MIX x%.2f, PITCH x%.2f", f, m, p);
+    check(what, f < 1.1 && m > 1.25 && p > m * 1.2 && p < 4.5);
+    fresh(eng_by_name("VOICE"), 0);                     /* (VOICE: its CONS in DEST's slot, DEST off) */
+    trk[0].p[P_FNMD] = 89; trk[0].p[P_FNZ] = 0; trk[0].p[P_FDST] = 0;
+    trk_note_on(&trk[0], 60, 100);
+    blocks(200);
+    vp = fnb[0].pit;
+    check("FILTER 2 DEST: VOICE's slot its CONS, DEST off there (the pitch untouched)", vp == 0);
+}
+static void test_fnoise(void)
+{
+    double s0 = fnz_spread(89, 0), s1 = fnz_spread(89, 1), s2 = fnz_spread(115, 1);
+    char what[160];
+    snprintf(what, sizeof what, "F.NOISE -> PITCH (FILTER 2 NOISE 0): STEP x%.2f, SOFT x%.2f, no slot x%.2f", s1, s2, s0);
+    check(what, s0 > 0 && s0 < 1.06 && s1 > 1.2 && s2 > 1.1);
+    fresh(ENGI_DRUM, 0);                                /* (a kit's: its lane levels in those slots, no modulator) */
+    memset(fns, 0x55, sizeof fns);
+    slot(&trk[0], 0, MS_FNZ, MD_CUT, 63);
+    trk_note_on(&trk[0], 36, 100);
+    blocks(4);
+    check("F.NOISE: appended (OCT- before it), named, bipolar; a kit's 0",
+          MS_FNZ == MS_OCTDN + 1 && str_eq(N_MSRC[MS_FNZ], "F.NOISE") && MS_BIPOLAR(MS_FNZ) && fn_src(&trk[0]) == 0);
+}
+
 int main(int argc, char **argv)
 {
     test_off();
@@ -1293,6 +1388,8 @@ int main(int argc, char **argv)
     test_analog_ext();
     test_phase_fb();
     test_lofi_tone();
+    test_fnoise();
+    test_dest();
     if (argc > 1)
         check("demos written", demos(argv[1]));
     printf("%s\n", bad ? "MOD MATRIX TEST FAILED" : "mod matrix test passed");

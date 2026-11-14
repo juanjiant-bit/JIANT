@@ -4680,14 +4680,14 @@ static int test_edit_cycle(void)
 {
     /* (0.9.2: one chain, SELECT a page a detent; an EDIT tap the next group's first. Was 0.8.5's lens: SELECT a level, the
      * tap the level's next set) */
-    static const char *const CH_A[] = {"EDIT 1", "FILTER", "FILTER 2", "MORPH", "FOCUS", "PLAY", "PLAY 2"};   /* (JIANT 0.5:
+    static const char *const CH_A[] = {"EDIT 1", "FILTER", "FILTER 2", "FILTER 3", "MORPH", "FOCUS", "PLAY", "PLAY 2"};   /* (JIANT 0.5:
                                                          * ANALOG's FILTER; 0.6.45: MORPH; V10.7.21: no EDIT 2; codex/coherence:
                                                          * PLAY, was VOICE; STEREO's IMAGE on PLAY 2) */
     static const char *const TP_A[] = {"FILTER", "FOCUS", "PLAY"};
-    static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "FILTER", "FILTER 2", "OPERATOR", "OP ENV", "OPERATOR 2", "PLAY",
-                                       "PLAY 2"};   /* (codex/filters2: FILTER 2) */
+    static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "FILTER", "FILTER 2", "FILTER 3", "OPERATOR", "OP ENV", "OPERATOR 2",
+                                       "PLAY", "PLAY 2"};   /* (codex/filters2: FILTER 2; filter2-mod: FILTER 3, KEY) */
     static const char *const TP_F[] = {"FILTER", "OPERATOR", "PLAY"};
-    static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "FILTER 2", "PLAY", "PLAY 2", "OP1 ENV", "OP2 ENV", "OP3 ENV",
+    static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "FILTER 2", "FILTER 3", "PLAY", "PLAY 2", "OP1 ENV", "OP2 ENV", "OP3 ENV",
                                        "OP4 ENV", "OP LEVEL"};
     static const char *const TP_D[] = {"FILTER", "OP1 ENV"};
     int bad = 0, ok;
@@ -12449,14 +12449,14 @@ static int test_lz_edit(void)
     ui_power_on(); set_engine_of(TSEL, 0); frame();
     press(B_EDIT); frame();
     ok = pd_on() && lz_fam() == LZ_EDIT && pd_level() == 0u && lz_tab_lit(0) && lz_crumb_is("EDIT \xB7 SOUND \xB7 EDIT \xB7 OSC") &&
-         lz_count_is("1/7");                                        /* (codex/coherence: EDIT . OSC, ANALOG has no EDIT 2;
-                                                                     * codex/filters2: FILTER 2) */
+         lz_count_is("1/8");                                        /* (codex/coherence: EDIT . OSC, ANALOG has no EDIT 2;
+                                                                     * codex/filters2: FILTER 2; filter2-mod: FILTER 3) */
     turn(EN_SELECT, 1); frame();                                    /* (V10.7.21 ANALOG: no EDIT 2) */
     ok &= pd_level() == 1u && lz_tab_lit(1) && str_eq(cur_page()->title, "FILTER") && lz_crumb_is("EDIT \xB7 TONE \xB7 FILTER") &&
-          lz_count_is("2/7");
+          lz_count_is("2/8");
     frames(320); press(B_EDIT); frame();                            /* EDIT: the next group, FOCUS */
     ok &= pd_level() == 2u && lz_tab_lit(2) && str_eq(cur_page()->title, "FOCUS") && lz_crumb_is("EDIT \xB7 FOCUS \xB7 FOCUS") &&
-          lz_count_is("5/7");
+          lz_count_is("6/8");
     turn(EN_SELECT, 3); frame();
     ok &= str_eq(cur_page()->title, "PLAY 2");                      /* (V10.49: PLAY PLAY 2 last; no wrap) */
     turn(EN_SELECT, -3); frame();
@@ -13250,9 +13250,9 @@ static void rv_walk(uint32_t sec)                      /* the button from HOME, 
  * (0.9.1's numbering, the level the page is drawn as), its pages; each must be reached at that level */
 typedef struct { uint8_t fam, lv, kind; const char *t[13]; } old_lv_t;   /* kind: EDIT's (0 synth 1 FM6 2 DRUM), 9 any */
 static const old_lv_t OLD_LV[] = {
-    {FAM_EDIT, 0, 0, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 0, {"FILTER", "FILTER 2", "MORPH", "RETRIG", "ROTOR", "PLAY", "PLAY 2", "WORDS"}},
+    {FAM_EDIT, 0, 0, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 0, {"FILTER", "FILTER 2", "FILTER 3", "MORPH", "RETRIG", "ROTOR", "PLAY", "PLAY 2", "WORDS"}},
     {FAM_EDIT, 2, 0, {"FOCUS"}},
-    {FAM_EDIT, 0, 1, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 1, {"FILTER", "FILTER 2", "PLAY", "PLAY 2"}},
+    {FAM_EDIT, 0, 1, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 1, {"FILTER", "FILTER 2", "FILTER 3", "PLAY", "PLAY 2"}},
     {FAM_EDIT, 2, 1, {"OPERATOR", "OP ENV", "OPERATOR 2"}},
     {FAM_EDIT, 0, 2, {"EDIT 1", "EDIT 2", "KIT 3"}}, {FAM_EDIT, 1, 2, {"X-MOD", "FILTER", "STEREO", "LEVELS", "LEVELS 2", "PLAY"}},
     {FAM_EDIT, 2, 2, {"SOUND", "SOUND 2", "SOUND 3", "SOUND 4"}},

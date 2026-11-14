@@ -1,6 +1,6 @@
 # JIANT FM — Manual de usuario
 
-**JIANT FM V10.7.30 para el M-VAVE FM-1**
+**JIANT FM V10.7.31 para el M-VAVE FM-1**
 
 > *English version: [MANUAL.md](MANUAL.md).*
 
@@ -1166,8 +1166,8 @@ lugar de la imagen) con una barra debajo: el morph, FAR a la izquierda, NEAR a l
 
 EDIT > **FILTER**: **TYPE** LP, HP, BP, **COMB**, **COMB-** o **LP24** (un pasabajos de 24 dB/oct, dos etapas en serie, RES en la segunda). COMB y COMB- son un filtro peine afinado a la nota que tocás; CUT lo mueve, RES es
 cuánto resuena), **CUT**, **RES**, y KNOB 4 **DRIVE**: en ANALOG su propio DRIVE (cada voz contra el recorte), en
-todos los demás motores la parte entra a un recorte suave antes del filtro, x1 .. x3 (DRUM-X y EXT siguen teniendo ahí
-el DIST de la pista; DIST está siempre también en FX > DIST). En ANALOG el filtro es por voz; en MATH la página de
+todos los demás motores la parte entra a un recorte suave antes del filtro, x1 .. x6 (x3 antes de codex/filter2-mod;
+DRUM-X y EXT siguen teniendo ahí el DIST de la pista; DIST está siempre también en FX > DIST). En ANALOG el filtro es por voz; en MATH la página de
 filtro maneja su filtro por voz; en los demás es un filtro sobre la pista que sigue a LFO DEST / ENV DEST FILTER.
 
 **COMB** y **COMB-** (0.9.9-snd1): el peine se afina a la nota más nueva (CUT 64 = la nota, ±32 semitonos a cada
@@ -1184,36 +1184,82 @@ mantiene por debajo del máximo. Una entrada fuerte aplasta la resonancia en vez
 apaga cuando la parte queda en silencio. En ANALOG y MATH el LP24 (como los peines) es el filtro de la pista después de
 las voces: su propio filtro se abre. LP, HP y BP suenan exactamente igual que antes.
 
+**LP24 con potencia** (codex/filter2-mod, el dueño: "al filtro le falta potencia"). Con cualquier DRIVE arriba de 0:
+- la parte entra al recorte suave hasta x6 (+15 dB) antes del filtro: más ganancia, más saturación (en ANALOG su
+  propio DRIVE maneja cada voz, x1 .. x3, como antes);
+- el nivel se compensa cuando el filtro se cierra o resuena: el filtro compara el nivel de su entrada con el de su
+  salida y devuelve la mitad de lo perdido (en dB), hasta +12 dB. Cerrar CUT ya no hace que la parte se desinfle.
+  Medido con una sierra en C3 y DRIVE 100 %, la caída en CUT 40 es de −1,5 dB (era −2,3 dB; −4,1 dB con DRIVE 0), y
+  por debajo de la nota, en CUT 20, ronda los −8 dB (era −14 dB; el MS20 de la V10.7.29 era −7,6 dB). La salida baja a
+  medida que sube DRIVE (×0,48 al 100 %), así que con el filtro abierto suena tan fuerte como antes: la potencia está
+  en el cuerpo que se mantiene al cerrar, la saturación y la resonancia, no en una parte más fuerte;
+- **RES pasado ~90 %** cruza el borde: el filtro canta solo en CUT, por debajo del máximo gracias al recorte, mientras
+  la parte suena. Cuando la parte queda en silencio, el empuje se apaga (~90 ms) y la resonancia muere, así que nada
+  queda silbando.
+
+DRIVE 0 es el LP24 limpio de antes, muestra por muestra.
+
 **El MS20 ya no está** (codex/filters2): sonaba muy parecido al LP24 y poco al original. Su número guardado queda como
 un gemelo oculto del LP24: un proyecto, preset o canción con TYPE MS20 carga y toca LP24 con DRIVE al 70 % como mínimo
 (lo más parecido a lo que era), y muestra LP24; la perilla de TYPE lo saltea. El bajo EBM de GEN ahora pide LP24 con su
 DRIVE al 55 % o más.
 
-### FILTER 2: KEY, NOISE, RATE, MODE (todos los motores menos DRUM-X y EXT)
+### FILTER 2: NOISE, RATE, MODE, DEST · FILTER 3: KEY (todos los motores menos DRUM-X y EXT)
 
-EDIT > **FILTER 2** (codex/filters2), después de FILTER. Las cuatro en su valor guardado por defecto están apagadas:
-todo proyecto y preset de antes suena igual.
+EDIT > **FILTER 2** (codex/filters2), después de FILTER, es un modulador: NOISE · RATE · MODE · **DEST**. **FILTER 3**
+(codex/filter2-mod) tiene **KEY**. Todas en su valor guardado por defecto están apagadas: todo proyecto y preset de
+antes suena igual.
 
-- **KEY**: seguimiento de teclado, 0 .. 100 %. El corte sigue a la nota que tocás: al 100 % una octava arriba lo abre
-  una octava. En ANALOG arranca en 21 % (el seguimiento fijo que su filtro tuvo siempre) y baja hasta 0 % o sube hasta
-  100 %; en los otros motores arranca en 0 %. Un filtro por voz (ANALOG, MATH) sigue la nota de cada voz; el filtro de
-  la pista sigue la nota más nueva.
-- **NOISE**: cuánto actúa el modulador de ruido, 0 .. 100 % (fino abajo, pesado arriba).
-- **RATE**: cada cuánto el modulador elige un valor al azar nuevo, de ~0,4 Hz (un vaivén lento) a ~320 Hz (aspereza).
-- **MODE**: qué hace el modulador.
-  - **SOFT**: el valor se desliza de uno al siguiente y mueve CUT (hasta ±4,5 octavas con NOISE al máximo): un filtro
-    que deriva y respira con RATE bajo, un aleteo áspero con RATE alto.
-  - **STEP**: el valor se sostiene hasta el siguiente (sample and hold) y mueve CUT: saltos de filtro escalonados, rotos.
-  - **METAL**: la parte se modula en anillo antes del filtro con un triángulo a una relación inarmónica de la nota más
-    nueva (x1,19 .. x4,06); cada valor nuevo elige otra relación, así que RATE es cada cuánto cambia el color del metal.
-  - **BREAK**: la parte se sostiene por largos al azar (hasta ~1 ms con RATE 0, un par de muestras arriba de todo: un
-    crush con jitter), y algunos tramos quedan mudos (hasta un cuarto con NOISE al máximo): roto, con glitches.
-  - **DUST**: ruido al nivel de la propia parte (el silencio sigue en silencio), crujidos sueltos con RATE 0 que se
-    espesan hasta un siseo arriba de todo, entrando al filtro (RES lo hace silbar).
-  En METAL, BREAK y DUST, NOISE es la mezcla: al 100 % se oye solo la textura. Ninguna suena más fuerte que la parte.
+KEY salió de FILTER 2 para hacerle lugar a DEST. DRIVE se queda en FILTER: es la potencia del filtro, la perilla que
+buscás junto con TYPE, CUT y RES, mientras que KEY se ajusta una vez por sonido. FILTER 3 es una sola perilla, como
+RETRIG o STEREO.
 
-Con el filtro de la pista abierto del todo (LP, CUT 127, RES 0), SOFT y STEP bajan CUT para que el filtro en movimiento
-se oiga, como hace LFO DEST FILTER.
+- **KEY** (FILTER 3): seguimiento de teclado, 0 .. 100 %. El corte sigue a la nota que tocás: al 100 % una octava
+  arriba lo abre una octava. En ANALOG arranca en 21 % (el seguimiento fijo que su filtro tuvo siempre) y baja hasta
+  0 % o sube hasta 100 %; en los otros motores arranca en 0 %. Un filtro por voz (ANALOG, MATH) sigue la nota de cada
+  voz; el filtro de la pista sigue la nota más nueva.
+- **NOISE**: la profundidad, 0 .. 100 %. En 0 el sonido queda intacto. Al 100 % CUT se mueve unas ±3,5 octavas (con
+  DEST en FILTER). La curva es fina abajo: 30 % ≈ ±0,6 octava, 70 % ≈ ±1,8 octavas.
+- **RATE**: la velocidad del modulador, o su relación o paso, según MODE (abajo).
+- **MODE**: cómo mueve el modulador a CUT. Todos los MODE solo mueven el corte del filtro. Ninguno mezcla un sonido
+  propio (codex/filter2-mod; antes METAL, BREAK y DUST ponían una textura en lugar del sonido).
+  - **SOFT**: un valor al azar que se desliza de uno al siguiente. RATE: de ~0,4 Hz (un vaivén lento) a ~320 Hz (un
+    aleteo áspero).
+  - **STEP**: un valor al azar que se sostiene hasta el siguiente (sample and hold), a RATE: saltos de filtro
+    escalonados.
+  - **METAL**: CUT se mueve a velocidad de audio con un seno afinado a la nota que tocás. RATE, que se muestra como
+    **RATIO**, elige su relación con la nota: x0,5, x1, x1,41, x1,5, x2, x2,76, x3, x4. Las bandas laterales siguen a
+    la nota: de x0,5 a x4 (salvo x1,41 y x2,76) son armónicas, un gruñido o un zumbido afinado; x1,41 y x2,76 son
+    inarmónicas, a campana y metálicas. Por encima de ~1,9 kHz el seno se baja una octava (y otra). En ANALOG y MATH,
+    METAL lleva su filtro a la pista (como LP24): su filtro por voz se abre y el mismo TYPE, CUT y RES suenan después de
+    las voces.
+  - **BREAK**: CUT salta a tempo sobre un patrón de 16 pasos (abierto, cerrado, a medias, …). RATE, que se muestra como
+    **DIV**, es el paso: **1/8**, **1/16**, **1/16T**, **1/32**. Con el transporte en marcha sigue al compás; parado,
+    corre al tempo. Más o menos uno de cada cinco pasos sale roto (otro nivel, el mismo en cada vuelta, otro juego cada
+    dos compases). Cada salto se desliza en ~3 ms, así que no hace clic.
+  - **DUST**: picos sueltos hacia arriba, que se apagan en ~5 ms cada uno. RATE es la densidad: unos 2 por segundo al
+    0 % (crujido), cientos al 100 % (un chisporroteo).
+- **DEST**: qué mueve el modulador, un crossfade en cinco pasos: **FILT** (solo el corte: el valor por defecto, el de la
+  V10.7.30), **F75** (3/4 corte, 1/4 afinación), **MIX** (los dos, cada uno a la mitad), **P75**, **PITCH** (solo la
+  afinación). NOISE sigue siendo la profundidad general. Sobre la afinación, con PITCH y NOISE al 100 %:
+  - SOFT, STEP, BREAK y DUST mueven la afinación de cada voz hasta más o menos ±1 octava (los picos de DUST hacia
+    arriba), una vez por bloque;
+  - METAL se vuelve FM: el sonido de la pista se modula en fase con el mismo seno, a la RATIO de la nota, así que las
+    bandas laterales quedan afinadas (x0,5 .. x4) o a campana (x1,41, x2,76); el índice ronda 2,5 al 100 % (brillante,
+    no ruido). Usa la línea de retardo del COMB, así que con TYPE COMB / COMB- la mitad de afinación de METAL no actúa
+    (la del corte tampoco actúa ahí).
+  En VOICE no hay DEST (ese lugar lo usa su CONS): ahí siempre es FILT; para la afinación ruteá **F.NOISE** a PITCH.
+
+El modulador también es la fuente **F.NOISE** de la matriz MOD (abajo): ruteala a **PITCH** (o a cualquier DEST) con
+cualquier AMT, sea cual sea el NOISE y el DEST de FILTER 2: es el modulador crudo, a escala completa, y solo el AMT del
+slot fija su profundidad (NOISE 0 y un slot F.NOISE → PITCH: se mueve la afinación, el filtro no). En METAL, F.NOISE es
+el vaivén de SOFT a RATE (el seno a velocidad de audio es solo para CUT y la afinación de DEST).
+
+Los proyectos guardados con el FILTER 2 de la V10.7.30 cargan con los mismos valores (DEST en FILT, KEY ahora en
+FILTER 3), pero METAL, BREAK y DUST ahora suenan distinto (modulan CUT). Con NOISE en 0 no cambia nada.
+
+Con el filtro de la pista abierto del todo (LP, CUT 127, RES 0), todos los MODE bajan CUT según su profundidad para que
+el filtro en movimiento se oiga, como hace LFO DEST FILTER. FILTER 2 no mueve COMB / COMB- (KEY tampoco).
 
 El **CHORUS** (0.9.9-snd2) es más liviano: su LFO se lee cada 64 muestras (16, 8, 4 en los RATE más rápidos) y las
 tres voces se deslizan entre esos puntos, en vez de tres senos por muestra; suena igual (-63 dB de diferencia con el de
@@ -2625,7 +2671,9 @@ pequeña curva de respuesta donde iría la barra.
   - Fuentes: OFF, LFO, ENV, VEL, KEY, RAND, MODW (MIDI CC1), AT (aftertouch), EXPR (CC11), **M1–M4**, **STEP** (MSEQ), **NOISE** (un vagar aleatorio suave, un valor nuevo cada
     ~46 ms: un temblor vivo sobre el filtro, el paneo, un envío), PROX, ENV2, IN ENV, T1 ENV–T6 ENV y (V10.7.22) **OCT+** /
     **OCT-** (las teclas de expresión, una nota mantenida + OCT+ / OCT−: OCT+ la curva suave 0→1 del bend, OCT- el vibrato
-    entrando; ruteadas, mueven el DEST en vez de la afinación; para un trémolo sobre AMP usá un AMT negativo).
+    entrando; ruteadas, mueven el DEST en vez de la afinación; para un trémolo sobre AMP usá un AMT negativo) y
+    (codex/filter2-mod) **F.NOISE**: el modulador de EDIT > FILTER 2 (SOFT, STEP y BREAK bipolares, los picos de DUST
+    0..1, en METAL el vaivén de SOFT), sea cual sea el NOISE de FILTER 2; en un kit o en EXT vale 0.
   - Destinos: PITCH, CUT, SHP, AMP, PAN, DIST, CHO, DLY, REV, RATE (velocidad del LFO), VIB, **E1–E8** (las perillas
     EDIT propias del motor, mostradas por nombre), **CLIP** y **PNCH** (el master), y (0.7.0) los buses de FX: **D.TIM D.FB
     D.TON D.MIX** (DELAY TIME, FDBK, TONE, MIX), **R.SIZ R.DMP** (REVERB SIZE, DAMP), **C.RAT C.DEP** (CHORUS RATE,

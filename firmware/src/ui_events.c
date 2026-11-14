@@ -29,8 +29,10 @@ static int ev_id_ok(const track_t *t, uint32_t id)
     if (id >= P_COUNT || !motion_param(id) || (id >= P_FM1_ATK && id <= P_FM4_LEVEL && id != P_TCHAN && id != P_MORPH && id != P_CLEN && id != P_DXIMG &&
                                                               id != P_HVEL && id != P_HTIM && id != P_HGAT && id != P_HRQ && id != P_TVEL))
         return 0;
-    if (id >= P_LN0 && id <= P_LN7 && !(id >= P_FKEY && id <= P_FDRV && !drum_track(t) &&
-                                        ENGINES[eng_idx(t->eng_req)] != &ENG_INPUT))   /* (filters2: a synth's FILTER 2) */
+    if (id >= P_LN0 && id <= P_LN7 && !(((id >= P_FKEY && id <= P_FDRV) || (id == P_FDST &&
+                                        ENGINES[eng_idx(t->eng_req)] != &ENG_FORMANT)) && !drum_track(t) &&
+                                        ENGINES[eng_idx(t->eng_req)] != &ENG_INPUT))   /* (filters2: a synth's FILTER 2;
+                                                         * filter2-mod: DEST, not VOICE's CONS) */
         return drum_track(t);
     d = track_desc(t, id);
     return d && d->label && d->label[0] && d->label[0] != '-' && d->max > d->min;

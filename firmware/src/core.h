@@ -230,6 +230,10 @@ enum {                          /* per-track parameters */
 #define P_FNRT P_LN4
 #define P_FNMD P_LN5
 #define P_FDRV P_LN6
+/* (codex/filter2-mod, the owner) FILTER 2's DEST: the modulator on CUT, on the pitch or both, a crossfade in five steps
+ * (127 - v: 0 FILTER, 127 PITCH; 127 stored, what every synth part holds, FILTER: V10.7.30's), in lane 1's slot: VOICE's
+ * CONS there (VOICE: FILTER always, its F.NOISE through the matrix) */
+#define P_FDST P_LN1
 static inline uint32_t fkey_rank(int32_t v) { return ((uint32_t)v + 28u) & 127u; }
 static inline uint32_t vcons_rank(int32_t v) { return ((uint32_t)v + 33u) & 127u; }
 static inline uint32_t vcons_q6(int32_t v)

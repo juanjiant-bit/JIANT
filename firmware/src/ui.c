@@ -645,9 +645,10 @@ static int page_visible(uint32_t i)
         return !ui.home && ui.page == i;               /* SEQ pages' cycle (only where code put the screen) */
     if (PAGES[i].graph == GR_DXSND || PAGES[i].graph == GR_DXIMG)   /* (0.6.48: IMAGE; V10.49: STEREO a synth's too) */
         return te == ENGI_DRUM;              /* (codex/coherence: a synth's IMAGE on PLAY 2) */
-    if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] >= P_LN0 && PAGES[i].id[0] <= P_LN7)
-        return (te == ENGI_DRUM) == (PAGES[i].id[0] != P_FKEY) && te != ENGI_INPUT;   /* (filters2:
-                                                         * FILTER 2, a synth's) */
+    if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] >= P_LN0 && PAGES[i].id[0] <= P_LN7)   /* (filters2: FILTER 2, a
+                                                         * synth's; filter2-mod: FILTER 3 KEY, VOICE's FILTER 2 no DEST) */
+        return PAGES[i].id[0] == P_LN0 || PAGES[i].id[0] == P_LN4 ? te == ENGI_DRUM : te != ENGI_DRUM &&
+               te != ENGI_INPUT && (PAGES[i].id[0] == P_FKEY || (te == ENGI_VOICE) == (PAGES[i].id[3] == 0xFFu));
     if (PAGES[i].graph == GR_FOCUS)                     /* (0.8.5) FOCUS: a synth's (FM6: OPERATOR, DRUM: SOUND; V10.54 not INPUT's) */
         return te != ENGI_DRUM && te != ENGI_FM6 && te != ENGI_INPUT &&
                !(FELUCCA_FM4 && te == ENGI_DIGITAL);

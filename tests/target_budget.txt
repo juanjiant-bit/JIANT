@@ -51,7 +51,6 @@ formant_block 99
 djf_block 199
 eq_block 355
 track_comb 115
-tf_run 124
-tf_lp24 113
-fn_tex 71
+tf_run 152
+tf_lp24 175
 fn_drive 23

@@ -38,7 +38,10 @@
  * and the engines read t->p as before. An engine reads its parameters in note_on (events_block) unmodulated.
  * Nothing active (every slot with SRC, DST or AMT at 0): no work, and the sound is bit-identical. */
 enum { MS_OFF, MS_LFO, MS_ENV, MS_VEL, MS_KEY, MS_RAND, MS_MODW, MS_AT, MS_EXPR, MS_M1, MS_STEP = MS_M1 + 4, MS_NOISE, MS_PROX, MS_ENV2,
-       MS_FOLLOW, MS_T1, MS_OCTUP = MS_T1 + NTRK, MS_OCTDN, MS_N };   /* (V10.54) FOLLOW: the audio input's envelope */
+       MS_FOLLOW, MS_T1, MS_OCTUP = MS_T1 + NTRK, MS_OCTDN, MS_FNZ, MS_N };   /* (V10.54) FOLLOW: the audio input's envelope */
+/* (codex/filter2-mod, the owner: FILTER 2's modulator "on the cutoff or the pitch") F.NOISE: EDIT > FILTER 2's value
+ * (voice.c fn_tick: SOFT STEP BREAK bipolar, DUST's spikes 0..1, METAL SOFT's wander), whatever its NOISE; appended (the
+ * ids before it kept: projects, presets, the editor). A kit's, EXT's: 0 */
 /* (V10.7.22, the owner) OCT+ / OCT-: the expression keys as sources (seq.c kx_block), 0..1 / bipolar; a route from one on
  * the track takes it off the pitch (OCT+ no bend, OCT- no pitch vibrato) */   /* (V10.22) ENV2: ENV > ENV 2, per voice */
 static volatile int16_t mod_prox;   /* (V10.14) PROX, the Bluetooth proximity: 0..32767 (bt.c bt_prox_step, the main loop; 0
@@ -75,7 +78,7 @@ _Static_assert(P_M2SRC == P_M1SRC + 3 && P_M4AMT == P_M1SRC + 11 && P_M4AMT + 1 
 #define NMSLOT 4u
 #define MS_VMASK ((1u << MS_ENV) | (1u << MS_VEL) | (1u << MS_KEY) | (1u << MS_RAND) | (1u << MS_ENV2))
 #define MS_VOICE(s) ((MS_VMASK >> ((s) & 31u)) & 1u)   /* a value per voice: ENV VEL KEY RAND, (V10.22) ENV2 */
-#define MS_BIPOLAR(s) ((s) == MS_LFO || (s) == MS_KEY || (s) == MS_RAND || (s) == MS_NOISE)
+#define MS_BIPOLAR(s) ((s) == MS_LFO || (s) == MS_KEY || (s) == MS_RAND || (s) == MS_NOISE || (s) == MS_FNZ)
 
 _Static_assert(MS_N <= 32 && MD_N <= 32, "matrix UI bitsets hold all IDs");
 
@@ -205,10 +208,12 @@ static __attribute__((noinline)) uint32_t kx_route(uint32_t i)
             m |= 2u >> s;
     return m;
 }
+static int32_t fn_src(const track_t *t);                /* (filter2-mod: voice.c, F.NOISE) */
 /* source s of the track: the per-track ones, the per-voice ones of the latest note-on */
 static int32_t mod_tsrc(const track_t *t, uint32_t s, int32_t lfo)
 {
-    if (s >= MS_T1) return s < MS_OCTUP ? track_env[s - MS_T1] : kx_src(t, s);   /* (V10.7.22 OCT+ OCT-: the keys) */
+    if (s >= MS_T1) return s < MS_OCTUP ? track_env[s - MS_T1] : s == MS_FNZ ? fn_src(t) : kx_src(t, s);   /* (V10.7.22
+                                                         * OCT+ OCT-: the keys; filter2-mod F.NOISE) */
     if ((s == MS_ENV || s == MS_ENV2) && (t->m_vi >= NVOICE || !t->v[t->m_vi].active)) return 0;
     switch (s) {
     case MS_LFO:

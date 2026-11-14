@@ -55,13 +55,13 @@ static const nv_t CE_HOME[] = {NV(0, "MACROS", 0, 0), NV("TIMELINE", 0, 1, SV_PR
                                NV(0, "GENE 3", 5, 2)};
 static const ng_t CG_HOME[] = {{"MACROS", "MACRO"}, {"TIMELINE", "TIME"}, {"ARRANGE", "ARR"}, {"PARTS", 0}, {"SCOPE", 0},
                                {"GENE", 0}};
-static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("FILTER 2", 0, 1, 1), NV("MORPH", 0, 1, 1),
+static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("FILTER 2", 0, 1, 1), NV("FILTER 3", 0, 1, 1), NV("MORPH", 0, 1, 1),
                               NV("RETRIG", 0, 1, 1), NV("ROTOR", 0, 1, 1), NV("WORDS", 0, 1, 1),
                               NV("SWARM", 0, 1, 1), NV("SWARM 2", 0, 1, 1), NV("FOCUS", 0, 2, 2), NV("PLAY", 0, 3, 1), NV("PLAY 2", 0, 3, 1)};   /* (the
                                                          * voices' pages last, after the sound's (the user); codex/coherence:
                                                          * PLAY, was VOICE (the engine's name too); STEREO's IMAGE on PLAY 2) */
 static const ng_t CG_SYN[] = {{"SOUND", 0}, {"TONE", 0}, {"FOCUS", 0}, {"PLAY", 0}};
-static const nv_t CE_FM6[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("FILTER 2", 0, 1, 1),
+static const nv_t CE_FM6[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("FILTER 2", 0, 1, 1), NV("FILTER 3", 0, 1, 1),
                               NV("OPERATOR", 0, 2, 2), NV("OP ENV", 0, 2, 2), NV("OPERATOR 2", 0, 2, 2), NV("PLAY", 0, 3, 1),
                               NV("PLAY 2", 0, 3, 1)};
 static const ng_t CG_FM6[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}, {"PLAY", 0}};
@@ -71,7 +71,7 @@ static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0
                               NV("STEREO", 0, 3, 1), NV("PLAY", 0, 3, 1)};   /* (codex/coherence: PLAY, was VOICE; in TONE,
                                                          * a kit's one page of it) */
 static const ng_t CG_DRM[] = {{"KIT", 0}, {"SOUND", 0}, {"LEVELS", "LEVEL"}, {"TONE", 0}};
-static const nv_t CE_DIG[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("FILTER 2", 0, 1, 1), NV("PLAY", 0, 1, 1),
+static const nv_t CE_DIG[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("FILTER 2", 0, 1, 1), NV("FILTER 3", 0, 1, 1), NV("PLAY", 0, 1, 1),
                               NV("PLAY 2", 0, 1, 1), NV("OP1 ENV", 0, 2, 2), NV("OP2 ENV", 0, 2, 2), NV("OP3 ENV", 0, 2, 2),
                               NV("OP4 ENV", 0, 2, 2), NV("OP LEVEL", 0, 2, 2)};
 static const ng_t CG_DIG[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}};

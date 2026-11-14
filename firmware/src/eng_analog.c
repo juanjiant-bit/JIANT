@@ -32,11 +32,16 @@ static inline uint32_t ft_of(const int16_t *p)
 {
     return (uint32_t)clamp(p[P_FTYPE], 0, FT_N - 1);
 }
-/* the TYPE a voice's own filter plays (ANALOG, LOFI): LP HP BP, or open (FT_COMB in svf_mode) under a part's TYPE */
+/* the TYPE a voice's own filter plays (ANALOG, LOFI): LP HP BP, or open (FT_COMB in svf_mode) under a part's TYPE;
+ * (codex/filter2-mod) open under FILTER 2's METAL too (NOISE on, MODE METAL: voice.c fn_mode, FN_METAL_ON), the part's */
+static __attribute__((noinline)) uint32_t fn_metal(const int16_t *p)   /* (voice.c FN_METAL_ON: one copy) */
+{
+    return p[P_FNZ] < 127 && ((uint32_t)(p[P_FNMD] & 127) * 5u >> 7) == 2u;
+}
 static inline uint32_t ft_voice(const int16_t *p)
 {
     uint32_t f = (uint16_t)p[P_FTYPE];                  /* (a stray negative one: open, as a part's) */
-    return f < FT_COMB ? f : FT_COMB;
+    return f < FT_COMB && !fn_metal(p) ? f : FT_COMB;
 }
 static inline int32_t svf_mode(const tsvf_t *c, int32_t in, int32_t *ic1, int32_t *ic2, uint32_t ft, int32_t k)
 {
@@ -266,7 +271,7 @@ static void analog_dispatch(track_t *t, voice_t *v, int32_t *out, uint32_t n, co
         int32_t base = (int32_t)t->p[P_E0] * 256;      /* (as it leaves or comes: the plain WAVE) */
         analog_morph(t, v, out, n, m, m0 < 0 ? base : m0, m1 < 0 ? base : m1);
     }
-    else if ((uint32_t)t->p[P_E0] >= AW_SYNC || t->p[P_FTYPE])
+    else if ((uint32_t)t->p[P_E0] >= AW_SYNC || ft_voice(t->p))   /* (filter2-mod: was P_FTYPE, METAL's open too) */
         analog_ext(t, v, out, n, m);
     else
         analog_render(t, v, out, n, m);
