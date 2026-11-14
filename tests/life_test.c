@@ -301,6 +301,9 @@ int main(int argc, char **argv)
         d = i < NPAGES ? page_desc(&PAGES[i], 1, &vp) : 0;
         ck("   EDIT > VOICES 3 KNOB 2: the track's LIFE (0 .. 100 %)", d && str_eq(d->label, "LIFE") && vp == &life_v[LIFE_N + song.sel] &&
            d->max == 100);
+        for (i = 0; i < NPAGES && !str_eq(PAGES[i].title, "TONE"); i++) {}   /* (V10.7.35: a synth's on TONE, KNOB 3) */
+        d = i < NPAGES ? page_desc(&PAGES[i], 2, &vp) : 0;
+        ck("   EDIT > TONE KNOB 3: the track's LIFE too (V10.7.35)", d && str_eq(d->label, "LIFE") && vp == &life_v[LIFE_N + song.sel]);
     }
     if (argc > 1)
         demos(argv[1]);

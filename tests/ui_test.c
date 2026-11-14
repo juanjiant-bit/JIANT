@@ -4720,14 +4720,14 @@ static int test_edit_cycle(void)
 {
     /* (0.9.2: one chain, SELECT a page a detent; an EDIT tap the next group's first. Was 0.8.5's lens: SELECT a level, the
      * tap the level's next set) */
-    static const char *const CH_A[] = {"EDIT 1", "FILTER", "FILTER 2", "FILTER 3", "MORPH", "AUTO KNOBS", "VOICES", "VOICES 2", "VOICES 3"};   /* (JIANT 0.5:
+    static const char *const CH_A[] = {"EDIT 1", "MORPH", "FILTER", "FILTER 2", "TONE", "VOICES", "VOICES 2", "AUTO KNOBS"};   /* (V10.7.35) */   /* (JIANT 0.5:
                                                          * ANALOG's FILTER; 0.6.45: MORPH; V10.7.21: no EDIT 2; codex/coherence:
                                                          * PLAY, was VOICE; STEREO's IMAGE on PLAY 2) */
-    static const char *const TP_A[] = {"FILTER", "AUTO KNOBS", "VOICES"};
-    static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "FILTER", "FILTER 2", "FILTER 3", "OPERATOR", "OP ENV", "OPERATOR 2",
-                                       "VOICES", "VOICES 2", "VOICES 3"};   /* (codex/filters2: FILTER 2; filter2-mod: FILTER 3, KEY; V10.7.33 VOICES 3) */
-    static const char *const TP_F[] = {"FILTER", "OPERATOR", "VOICES"};
-    static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "FILTER 2", "FILTER 3", "VOICES", "VOICES 2", "VOICES 3", "OP1 ENV", "OP2 ENV", "OP3 ENV",
+    static const char *const TP_A[] = {"FILTER", "VOICES", "AUTO KNOBS"};
+    static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "OPERATOR", "OP ENV", "OPERATOR 2", "FILTER", "FILTER 2", "TONE",
+                                       "VOICES", "VOICES 2"};   /* (V10.7.35: the sound first) */   /* (codex/filters2: FILTER 2; filter2-mod: FILTER 3, KEY; V10.7.33 VOICES 3) */
+    static const char *const TP_F[] = {"OPERATOR", "FILTER", "VOICES"};
+    static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "FILTER 2", "TONE", "VOICES", "VOICES 2", "OP1 ENV", "OP2 ENV", "OP3 ENV",
                                        "OP4 ENV", "OP LEVEL"};
     static const char *const TP_D[] = {"FILTER", "OP1 ENV"};
     int bad = 0, ok;
@@ -11213,7 +11213,7 @@ static int test_bpm_lock(void)
     ok &= ui.home && ui.confirm == CF_DICE_ALL && song.g[G_BPM] == b0;   /* (0.6.69) HOME: GEN */
     press(B_OCTDN); frame(); ok &= !ui.confirm;
     go_title("EDIT 1"); frame(); turn(EN_SELECT, 1);
-    ok &= str_eq(cur_page()->title, "FILTER") && pd_level() == 1u;    /* (V10.7.21 ANALOG: EDIT 1 FILTER ..) */
+    ok &= str_eq(cur_page()->title, "MORPH") && pd_level() == 1u;     /* (V10.7.35 ANALOG: EDIT 1 MORPH FILTER ..) */
     turn(EN_SELECT, -5);
     ok &= str_eq(cur_page()->title, "EDIT 1");                        /* (no wrap: the lens's first level) */
     go_title("ENV DEST"); frame(); turn(EN_SELECT, 2);
@@ -12600,33 +12600,36 @@ static int test_lz_edit(void)
     ui_power_on(); set_engine_of(TSEL, 0); frame();
     press(B_EDIT); frame();
     ok = pd_on() && lz_fam() == LZ_EDIT && pd_level() == 0u && lz_tab_lit(0) && lz_crumb_is("EDIT \xB7 SOUND \xB7 EDIT \xB7 OSC") &&
-         lz_count_is("1/9");                                        /* (codex/coherence: EDIT . OSC, ANALOG has no EDIT 2;
-                                                                     * codex/filters2: FILTER 2; filter2-mod: FILTER 3;
-                                                                     * V10.7.33: VOICES 3) */
-    turn(EN_SELECT, 1); frame();                                    /* (V10.7.21 ANALOG: no EDIT 2) */
+         lz_count_is("1/8");                                        /* (V10.7.35, the owner: EDIT 1 MORPH . FILTER FILTER 2 TONE
+                                                                     * . VOICES VOICES 2 . AUTO KNOBS; ANALOG has no EDIT 2) */
+    turn(EN_SELECT, 1); frame();                                    /* (the engine's own page, in the sound's group) */
+    ok &= pd_level() == 1u && lz_tab_lit(0) && str_eq(cur_page()->title, "MORPH") && lz_count_is("2/8");
+    frames(320); press(B_EDIT); frame();                            /* EDIT: the next group, TONE */
     ok &= pd_level() == 1u && lz_tab_lit(1) && str_eq(cur_page()->title, "FILTER") && lz_crumb_is("EDIT \xB7 TONE \xB7 FILTER") &&
-          lz_count_is("2/9");
-    frames(320); press(B_EDIT); frame();                            /* EDIT: the next group, FOCUS */
-    ok &= pd_level() == 2u && lz_tab_lit(2) && str_eq(cur_page()->title, "AUTO KNOBS") && lz_crumb_is("EDIT \xB7 AUTO KNOBS \xB7 AUTO KNOBS") &&
-          lz_count_is("6/9");
+          lz_count_is("3/8");
+    frames(320); press(B_EDIT); frame();
+    ok &= lz_tab_lit(2) && str_eq(cur_page()->title, "VOICES") && lz_count_is("6/8");
+    frames(320); press(B_EDIT); frame();
+    ok &= pd_level() == 2u && lz_tab_lit(3) && str_eq(cur_page()->title, "AUTO KNOBS") &&
+          lz_crumb_is("EDIT \xB7 AUTO KNOBS \xB7 AUTO KNOBS") && lz_count_is("8/8");
     turn(EN_SELECT, 4); frame();
-    ok &= str_eq(cur_page()->title, "VOICES 3");                      /* (V10.49: PLAY PLAY 2 last; V10.7.33 VOICES 3; no wrap) */
-    turn(EN_SELECT, -4); frame();
-    ok &= pd_level() == 1u && str_eq(cur_page()->title, "MORPH");    /* (MORPH AUTO KNOBS VOICES VOICES 2 VOICES 3: four back) */
+    ok &= str_eq(cur_page()->title, "AUTO KNOBS");                   /* (the last; no wrap) */
+    turn(EN_SELECT, -3); frame();
+    ok &= pd_level() == 1u && str_eq(cur_page()->title, "TONE");     /* (VOICES 2, VOICES, TONE: three back) */
+    frames(320); press(B_EDIT); frame();
+    ok &= str_eq(cur_page()->title, "VOICES");
     frames(320); press(B_EDIT); frame();
     ok &= str_eq(cur_page()->title, "AUTO KNOBS");
-    frames(320); press(B_EDIT); frame();
-    ok &= str_eq(cur_page()->title, "VOICES");                        /* (V10.49: the voices' group; codex/coherence: PLAY) */
     frames(320); press(B_EDIT); frame();
     ok &= str_eq(cur_page()->title, "EDIT 1");                      /* (round) */
     bad += check("0.9.2 EDIT: one chain by SELECT (no wrap), an EDIT tap the next group's first (round); tabs, crumb, n/N", ok);
     turn(EN_SELECT, 1); frame();
     open_family(FAM_ENV); frame();
     press(B_EDIT); frame();
-    ok = str_eq(cur_page()->title, "FILTER") && pd_level() == 1u;
+    ok = str_eq(cur_page()->title, "MORPH") && pd_level() == 1u;
     pr = TSEL->preset;
     pr_turn(1); frame();
-    ok &= (TSEL->preset != pr || TSEL->eng_req != 0u) && str_eq(cur_page()->title, "FILTER");   /* (the next sound) */
+    ok &= (TSEL->preset != pr || TSEL->eng_req != 0u) && str_eq(cur_page()->title, "MORPH");   /* (the next sound) */
     bad += check("0.9.2 EDIT: EDIT from elsewhere the page left; PRESETS the next sound, the page stays", ok);
     ui_power_on(); set_engine_of(TSEL, 0); go_title("AUTO KNOBS"); frame();
     for (v = 0; v < 12; v++)                                        /* (V10.6i: the preset's own MOD slots cleared: */
@@ -12679,19 +12682,21 @@ static int test_lz_edit(void)
         const param_desc_t *d;
         uint32_t e;
         ui_power_on();
-        for (e = 0, ok = 1; e < 3u; e++) {
+        for (e = 0, ok = 1; e < 3u; e++) {              /* (V10.7.35: a synth's on TONE, a kit's on VOICES 3) */
             static const uint8_t EG[3] = {0, ENGI_FM6, ENGI_DRUM};
             set_engine_of(TSEL, EG[e]); frame();
-            ok &= nav_put(SEC_EDIT, "VOICES 3");
+            ok &= nav_put(SEC_EDIT, e < 2u ? "TONE" : "VOICES 3") && !nav_put(SEC_EDIT, e < 2u ? "VOICES 3" : "TONE") &&
+                  !nav_put(SEC_EDIT, "FILTER 3");
         }
-        set_engine_of(TSEL, 0); go_title("VOICES 3"); frame();
-        d = page_desc(cur_page(), 0, &hv);
+        set_engine_of(TSEL, 0); go_title("TONE"); frame();
+        ok &= str_eq(page_desc(cur_page(), 0, &hv)->label, "KEY TRK") && str_eq(page_desc(cur_page(), 2, &hv)->label, "LIFE");
+        d = page_desc(cur_page(), 1, &hv);
         ok &= d && str_eq(d->label, "CRUSH") && hv == &cru_v[song.sel] && d->max == 127 && !cru_v[song.sel];
-        turn(EN_K1, 5); frame();
+        turn(EN_K2, 5); frame();
         ok &= cru_v[song.sel] > 0 && cru_v[1] == 0;
         d = track_desc(TSEL, P_DTYPE);
         ok &= d->max == 4 && str_eq(d->names[3], "RECT") && str_eq(d->names[4], "AMP");
-        bad += check("V10.7.33 EDIT > PLAY 3: KNOB 1 CRUSH (the track's; synths, FM6, DRUM); DIST TYPE SOFT HARD FOLD RECT AMP", ok);
+        bad += check("V10.7.35 EDIT > TONE: KEY TRK, CRUSH (the track's), LIFE (a kit's CRUSH on VOICES 3); DIST TYPE SOFT HARD FOLD RECT AMP", ok);
         cru_v[song.sel] = 0;
     }
     ui_power_on();
@@ -13430,9 +13435,9 @@ static void rv_walk(uint32_t sec)                      /* the button from HOME, 
  * (0.9.1's numbering, the level the page is drawn as), its pages; each must be reached at that level */
 typedef struct { uint8_t fam, lv, kind; const char *t[13]; } old_lv_t;   /* kind: EDIT's (0 synth 1 FM6 2 DRUM), 9 any */
 static const old_lv_t OLD_LV[] = {
-    {FAM_EDIT, 0, 0, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 0, {"FILTER", "FILTER 2", "FILTER 3", "MORPH", "RETRIG", "ROTOR", "VOICES", "VOICES 2", "WORDS"}},
+    {FAM_EDIT, 0, 0, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 0, {"FILTER", "FILTER 2", "TONE", "MORPH", "RETRIG", "ROTOR", "VOICES", "VOICES 2", "WORDS"}},
     {FAM_EDIT, 2, 0, {"AUTO KNOBS"}},
-    {FAM_EDIT, 0, 1, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 1, {"FILTER", "FILTER 2", "FILTER 3", "VOICES", "VOICES 2"}},
+    {FAM_EDIT, 0, 1, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 1, {"FILTER", "FILTER 2", "TONE", "VOICES", "VOICES 2"}},
     {FAM_EDIT, 2, 1, {"OPERATOR", "OP ENV", "OPERATOR 2"}},
     {FAM_EDIT, 0, 2, {"EDIT 1", "EDIT 2", "KIT 3"}}, {FAM_EDIT, 1, 2, {"KIT LFO", "FILTER", "STEREO", "LEVELS", "LEVELS 2", "VOICES"}},
     {FAM_EDIT, 2, 2, {"SOUND", "SOUND 2", "SOUND 3", "SOUND 4"}},
@@ -13688,7 +13693,7 @@ static void tk_start(uint32_t from)                     /* 0 home, 1 seq, 2 fxdl
 }
 static int test_nav_tasks(void)
 {
-    static const uint8_t WANT[14] = {4, 3, 5, 6, 34, 9, 9, 2, 3, 3, 4, 8, 19, 5};   /* (V10.7.33: PRESETS a list, task 10
+    static const uint8_t WANT[14] = {5, 3, 5, 6, 34, 9, 9, 2, 3, 3, 4, 8, 19, 5};   /* (V10.7.33: PRESETS a list, task 10
                                                          * three: open, the next, OCT+) */   /* (V10.7.32: SAVE opens on PROJECTS, USER
                                                          * its next: task 6 a tap less) */   /* (2463a3b, 2026-11-04: SEQ > LENGTH >
                                                          * RHYTHM between LENGTH and TRACK: tasks 11 and 13 a detent more) */   /* (V10.37: COMPS before GLOBAL, SYSTEM a tap further) */   /* (V10.1: SAVE composes first, 106 -> 108) */   /* (seq2: task 5 by STEP's KNOB 1, no BAR;
@@ -13702,6 +13707,7 @@ static int test_nav_tasks(void)
         switch (t) {
         case 0:                                         /* the filter (CUT) of track 2 */
             tk_start(0); tk_btn(B_EDIT); tk_go(EN_ALGO, 1); tk_btn(B_EDIT);
+            if (TSEL->eng_req == ENGI_FM6) tk_btn(B_EDIT);   /* (V10.7.35: FM6's OPERATOR group before the filter's) */
             v = TSEL->p[P_FCUT]; tk_val(EN_K2, -8);
             ok = song.sel == 1u && str_eq(cur_page()->title, "FILTER") && TSEL->p[P_FCUT] != v;
             break;
@@ -13782,7 +13788,7 @@ static int test_nav_tasks(void)
     }
     printf("ui:   the race: %u %u %u %u %u %u %u %u %u %u %u %u %u %u = %u actions (0.9.1: 75)\n", got[0], got[1], got[2], got[3],
            got[4], got[5], got[6], got[7], got[8], got[9], got[10], got[11], got[12], got[13], tot);
-    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 114u);   /* (V10.7.32: 112; V10.7.33: 114) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
+    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 115u);   /* (V10.7.32: 112; V10.7.33: 114; V10.7.35: 115, FM6 the sound first) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
     ui_power_on();
     return bad;
 }

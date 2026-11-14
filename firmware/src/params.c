@@ -301,9 +301,9 @@ static const char *const N_FNMD[] = {"DUST", "BREAK", "METAL", "STEP", "SOFT", 0
 static const char *const N_FRAT[] = {"x4", "x3", "x2.76", "x2", "x1.5", "x1.41", "x1", "x0.5", 0};
 static const char *const N_FDIV[] = {"1/32", "1/16T", "1/16", "1/8", 0};
 static const char *const N_FDST[] = {"PITCH", "P75", "MIX", "F75", "FILT", 0};   /* (filter2-mod) DEST: P75 3/4 on the pitch */
-static const param_desc_t FN_DESC[9] = {{"KEY", F_PCTINV, 0, 127, 127, 0}, {"NOISE", F_PCTINV, 0, 127, 127, 0},
+static const param_desc_t FN_DESC[9] = {{"KEY TRK", F_PCTINV, 0, 127, 127, 0}, {"NOISE", F_PCTINV, 0, 127, 127, 0},
     {"RATE", F_PCTINV, 0, 127, 127, 0}, {"MODE", F_INT, 0, 127, 127, N_FNMD}, {"DRIVE", F_PCTINV, 0, 127, 127, 0},
-    {"KEY", F_PCT, 0, 127, 127, 0}, {"RATIO", F_INT, 0, 127, 127, N_FRAT}, {"DIV", F_INT, 0, 127, 127, N_FDIV},
+    {"KEY TRK", F_PCT, 0, 127, 127, 0}, {"RATIO", F_INT, 0, 127, 127, N_FRAT}, {"DIV", F_INT, 0, 127, 127, N_FDIV},
     {"DEST", F_INT, 0, 127, 127, N_FDST}};
 #define FKEYA_DESC (FN_DESC[5])
 #define FN_NAMED(d) ((d)->fmt == F_INT && (d) >= FN_DESC && (d) < FN_DESC + 9)   /* (MODE RATIO DIV DEST: right to left) */
@@ -826,7 +826,8 @@ static const page_t PAGES[] = {
                                                          * FILTER 3. (filters2) KEY NOISE RATE MODE: not a
                                                          * kit's, nor EXT's (voice.c fn_tick) */
     {"FILTER 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_FNZ, P_FNRT, P_FNMD, 0xFF}},   /* .. VOICE's */
-    {"FILTER 3", FAM_EDIT, SC_TRACK, GR_NONE, {P_FKEY, 0xFF, 0xFF, 0xFF}},   /* (filter2-mod) KEY: the keyboard tracking (was
+    {"TONE", FAM_EDIT, SC_TRACK, GR_NONE, {P_FKEY, ID_CRU, ID_LIF, 0xFF}},   /* (V10.7.35, the owner: was FILTER 3 and VOICES 3,
+                                                         * a knob or two each) KEY TRK, CRUSH, LIFE. (filter2-mod) KEY: the keyboard tracking (was
                                                          * FILTER 2's first: DRIVE stays FILTER's, the knob of its power) */
     {"SOUND", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* DRUM: a sound of the kit (ui_dx.c) */
     {"SOUND 2", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},

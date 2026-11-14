@@ -69,25 +69,27 @@ static const ng_t CG_HOME[] = {
 #endif
                                {"MACROS", "MACRO"}, {"TRACKS", "TRK"}, {"TIMELINE", "TIME"}, {"ARRANGE", "ARR"}, {"PARTS", 0},
                                {"LIVE MIX", "LIVE"}, {"GEN", 0}};
-static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("FILTER 2", 0, 1, 1), NV("FILTER 3", 0, 1, 1), NV("MORPH", 0, 1, 1),
-                              NV("RETRIG", 0, 1, 1), NV("ROTOR", 0, 1, 1), NV("WORDS", 0, 1, 1),
-                              NV("SWARM", 0, 1, 1), NV("SWARM 2", 0, 1, 1), NV("AUTO KNOBS", 0, 2, 2), NV("VOICES", 0, 3, 1), NV("VOICES 2", 0, 3, 1),
-                              NV("VOICES 3", 0, 3, 1)};   /* (V10.7.33: VOICES 3, CRUSH; the
+static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("MORPH", 0, 0, 1), NV("RETRIG", 0, 0, 1),
+                              NV("ROTOR", 0, 0, 1), NV("WORDS", 0, 0, 1), NV("SWARM", 0, 0, 1), NV("SWARM 2", 0, 0, 1),
+                              NV("FILTER", 0, 1, 1), NV("FILTER 2", 0, 1, 1), NV("TONE", 0, 1, 1), NV("VOICES", 0, 2, 1),
+                              NV("VOICES 2", 0, 2, 1), NV("VOICES 3", 0, 2, 1), NV("AUTO KNOBS", 0, 3, 2)};   /* (VOICES 3: EXT's) */   /* (V10.7.35, the owner: the sound first, its
+                                                         * engine's own page with it; FILTER 3 and VOICES 3 one page, TONE;
+                                                         * VOICES then AUTO KNOBS last) (V10.7.33: VOICES 3, CRUSH; the
                                                          * voices' pages last, after the sound's (the user); codex/coherence:
                                                          * PLAY, was VOICE (the engine's name too); STEREO's IMAGE on PLAY 2) */
-static const ng_t CG_SYN[] = {{"SOUND", 0}, {"TONE", 0}, {"AUTO KNOBS", "AUTO"}, {"VOICES", 0}};
-static const nv_t CE_FM6[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("FILTER 2", 0, 1, 1), NV("FILTER 3", 0, 1, 1),
-                              NV("OPERATOR", 0, 2, 2), NV("OP ENV", 0, 2, 2), NV("OPERATOR 2", 0, 2, 2), NV("VOICES", 0, 3, 1),
-                              NV("VOICES 2", 0, 3, 1), NV("VOICES 3", 0, 3, 1)};
-static const ng_t CG_FM6[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}, {"VOICES", 0}};
+static const ng_t CG_SYN[] = {{"SOUND", 0}, {"TONE", 0}, {"VOICES", 0}, {"AUTO KNOBS", "AUTO"}};
+static const nv_t CE_FM6[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("OPERATOR", 0, 1, 2), NV("OP ENV", 0, 1, 2),
+                              NV("OPERATOR 2", 0, 1, 2), NV("FILTER", 0, 2, 1), NV("FILTER 2", 0, 2, 1), NV("TONE", 0, 2, 1),
+                              NV("VOICES", 0, 3, 1), NV("VOICES 2", 0, 3, 1)};   /* (V10.7.35: the sound first) */
+static const ng_t CG_FM6[] = {{"SOUND", 0}, {"OPERATOR", "OPS"}, {"TONE", 0}, {"VOICES", 0}};
 static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0, 0), NV("KIT 3", 0, 0, 0), NV("KIT 4", 0, 0, 0),
                               NV("SOUND", 0, 1, 2), NV("SOUND 2", 0, 1, 2), NV("SOUND 3", 0, 1, 2), NV("SOUND 4", 0, 1, 2),
                               NV("LEVELS", 0, 2, 1), NV("LEVELS 2", 0, 2, 1), NV("KIT LFO", 0, 3, 1), NV("FILTER", 0, 3, 1),
                               NV("STEREO", 0, 3, 1), NV("VOICES", 0, 3, 1), NV("VOICES 3", 0, 3, 1)};   /* (codex/coherence: PLAY, was VOICE; in TONE,
                                                          * a kit's one page of it) */
 static const ng_t CG_DRM[] = {{"KIT", 0}, {"SOUND", 0}, {"LEVELS", "LEVEL"}, {"TONE", 0}};
-static const nv_t CE_DIG[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("FILTER 2", 0, 1, 1), NV("FILTER 3", 0, 1, 1), NV("VOICES", 0, 1, 1),
-                              NV("VOICES 2", 0, 1, 1), NV("VOICES 3", 0, 1, 1), NV("OP1 ENV", 0, 2, 2), NV("OP2 ENV", 0, 2, 2), NV("OP3 ENV", 0, 2, 2),
+static const nv_t CE_DIG[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("FILTER 2", 0, 1, 1), NV("TONE", 0, 1, 1), NV("VOICES", 0, 1, 1),
+                              NV("VOICES 2", 0, 1, 1), NV("OP1 ENV", 0, 2, 2), NV("OP2 ENV", 0, 2, 2), NV("OP3 ENV", 0, 2, 2),
                               NV("OP4 ENV", 0, 2, 2), NV("OP LEVEL", 0, 2, 2)};
 static const ng_t CG_DIG[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}};
 enum { LV_PAT, LV_BAR, LV_STEP, LV_N };                 /* SEQ's pictures: the bars, the roll, the step large */
