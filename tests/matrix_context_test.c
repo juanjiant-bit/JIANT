@@ -20,7 +20,7 @@ static void sweep(void)
     }
     int d=0,count=0;
     while(d<MD_N-1){int n=mod_dst_turn(t,d,1);assert(n>d&&++count<MD_N);d=n;}
-    assert(mod_dst_turn(t,31,100000)==31&&mod_dst_turn(t,0,-100000)==0);
+    assert(mod_dst_turn(t,MD_N-1,100000)==MD_N-1&&mod_dst_turn(t,0,-100000)==0);   /* (V10.7.34: MD_LIFE the last) */
     assert(!memcmp(before,t->p,sizeof before));
 }
 int main(void)
