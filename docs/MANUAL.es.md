@@ -1,6 +1,6 @@
 # JIANT FM — Manual de usuario
 
-**JIANT FM V10.7.32 para el M-VAVE FM-1**
+**JIANT FM V10.7.34 para el M-VAVE FM-1**
 
 > *English version: [MANUAL.md](MANUAL.md).*
 
@@ -674,7 +674,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | SOUND 4 | SOUND | LAYER | FEEDBK | SEND | DRUM (un sonido) |
 | LEVELS | KICK | SNARE | CLAP | HATCL | DRUM |
 | LEVELS 2 | HATOP | TOM | RIM | BELL | DRUM |
-| PLAY (era VOICE) | POLY (POLY MONO LEG UNI DRONE; era VOICE) | GLIDE | GL MODE (RATE / TIME del glide; era MODE) | PRIO | todos los motores |
+| VOICES (era PLAY, antes VOICE) | POLY (POLY MONO LEG UNI DRONE; era VOICE) | GLIDE | GL MODE (RATE / TIME del glide; era MODE) | PRIO | todos los motores |
 | VOICES 2 (0.8.5; era VOICE 2) | ALLOC | UNISON (cuánto se abren las voces de UNI, 0..100 %; era DETUNE) | VEL (cuánta velocidad le llega al sonido, 0..100 %) | IMAGE (las voces repartidas, POLY; era la página STEREO; no en EXT) | todos menos DRUM |
 | VOICES 3 (V10.7.33) | CRUSH (el reductor de bits de la pista, 0..100 %; era DIST TYPE CRUSH) | LIFE (V10.7.34: el LIFE de la pista, 0..100 %, por el de HOME › LIFE) | | | todos (un kit también) |
 | SWARM, SWARM 2 (V10.6z6) | SIDE (FAR / NEAR) | los RATE, MOVE, TONE / NOISE, MOD de ese lado | | (SWARM 2: NOW, el morph y su fuente) | EXT con SOURCE SWARM |
@@ -1383,10 +1383,10 @@ cada pasada queda un poco más sucia y un poco más baja, como una cinta o un BB
 
 ### VOICE (todos los motores)
 
-EDIT > **PLAY** (era VOICE, que es también el nombre del motor VOICE): **POLY** POLY, MONO, LEG (legato), UNI (unísono), DRONE;
+EDIT > **VOICES** (era PLAY, antes VOICE, que es también el nombre del motor VOICE): **POLY** POLY, MONO, LEG (legato), UNI (unísono), DRONE;
 **GLIDE**; **GL MODE** RATE o TIME (cómo se mide el glide); **PRIO** LAST, LOW, HIGH. **VOICES 2**: **ALLOC** (ROT / REUSE),
 **UNISON** (cuánto se abren las voces de UNI, 0..100 %; era DETUNE, un número pelado), **VEL**, **IMAGE** (las voces
-repartidas en el estéreo en POLY; era su propia página STEREO; no en EXT). **PLAY 3** (V10.7.33): **CRUSH**, el
+repartidas en el estéreo en POLY; era su propia página STEREO; no en EXT). **VOICES 3** (V10.7.33): **CRUSH**, el
 reductor de bits de la pista (ver [Por pista](#por-pista)). Las seis pistas comparten un presupuesto de 8 voces; FM6 toca como máximo cuatro por
 pista. (0.9.8) VOICE hace el glide como un cantante: una curva en S de la altura en el mismo tiempo (los
 demás motores: una recta, como antes).
@@ -1998,7 +1998,7 @@ REPEAT, DNUP, UP+8, CONV, DIVG, PINKY, THUMB, WALK, CHORD, **TRNS** (las teclas 
 secuencia de la pista según su distancia a C4, sin tocar notas). **HOLD** (ARP 2): el arpegio sigue andando después de
 soltar las teclas; el acorde siguiente lo reemplaza. HOLD es solo del arpegiador: con MODE OFF no hace nada. (V10.7.33:
 el viejo latch de teclas, MODE OFF + HOLD ON dejando las notas sonando, ya no está; para sostener notas usá el modo de voz
-**DRONE**, EDIT > PLAY. Un proyecto guardado con ese latch se abre en DRONE, así sus notas siguen sostenidas; se comporta
+**DRONE**, EDIT > VOICES. Un proyecto guardado con ese latch se abre en DRONE, así sus notas siguen sostenidas; se comporta
 un poco distinto: una nota nueva se desliza desde la sostenida en vez de reemplazarla, y volver a tocar la tecla de una
 nota sostenida la suelta.)
 

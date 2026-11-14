@@ -9,7 +9,7 @@ import html, os
 
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(R, 'docs', 'cheatsheet')
-VERSION = 'V10.7.32'   # (the release; a rename is this one line)
+VERSION = 'V10.7.34'   # (the release; a rename is this one line)
 
 HEAT = ['#22d3ee', '#3b82f6', '#8b5cf6', '#d946ef', '#ef4444', '#ff7a00', '#facc15', '#f4f1ea']
 
@@ -396,7 +396,7 @@ def sound():
     b.append(card('VOICE · PLAYING', HEAT[2], knobs('VCE', 'GLD', 'GLMOD', 'PRIO') +
                   '<p style="margin-top:8px">POLY · MONO · LEG · UNI · DRONE (held after the key, the next note glides; '
                   'its key again lets it go, its keys lit); glide and its mode; LAST / LOW / HIGH priority. '
-                  '<b>8 voices</b> shared by the six tracks (MONO and LEGATO keep their note). <b>EDIT › PLAY 2 IMAGE</b> (V10.49; was its STEREO page): '
+                  '<b>8 voices</b> shared by the six tracks (MONO and LEGATO keep their note). <b>EDIT › VOICES 2 IMAGE</b> (V10.49; was its STEREO page): '
                   'in POLY each voice its own place across the stereo field, drawn on the page (V10.52).</p>'))
     b.append(card('DICE', HEAT[5], '<p><b>EDIT + SELECT</b>: a random factory preset of the engine, every '
                   'parameter moved up to a quarter of its range. DRUM-X: both sides of every sound around the factory '
@@ -459,7 +459,7 @@ def sound():
     b.append('<div class="grid g3">')
     b.append(card('PER TRACK', HEAT[5], '<h4>FX · SENDS</h4>' + knobs('DST', 'CHO', 'DLY', 'REV') +
                   '<h4>DIST</h4>' + knobs('DST', 'TYPE', 'TONE', 'NOISE') +
-                  '<p style="margin-top:6px">SOFT · HARD · FOLD · RECT · AMP. <b>CRUSH</b> (bits, rate): EDIT › PLAY 3, the track\'s, DIST on or off.</p>'
+                  '<p style="margin-top:6px">SOFT · HARD · FOLD · RECT · AMP. <b>CRUSH</b> (bits, rate): EDIT › VOICES 3, the track\'s, DIST on or off.</p>'
                   '<h4>AUTO PAN</h4>' + knobs('DEPTH', 'RATE', 'SYNC', 'WAVE') +
                   '<p style="margin-top:6px">The track\'s pan swung L–R around its PAN. SYNC <b>BEAT</b>: RATE 4 BARS … 1/32, '
                   'in time with the bar; <b>FREE</b>: in Hz. SIN · TRI · SAW · SQR · S&amp;H, never a click.</p>'))

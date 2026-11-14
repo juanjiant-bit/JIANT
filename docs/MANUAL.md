@@ -1,6 +1,6 @@
 # JIANT FM — User Manual
 
-**JIANT FM V10.7.32 for the M-VAVE FM-1**
+**JIANT FM V10.7.34 for the M-VAVE FM-1**
 
 > *Versión en español: [MANUAL.es.md](MANUAL.es.md).*
 
@@ -643,7 +643,7 @@ since 0.6.51: every project opens as it was.
 | SOUND 4 | SOUND | LAYER | FEEDBK | SEND | DRUM (one sound) |
 | LEVELS | KICK | SNARE | CLAP | HATCL | DRUM |
 | LEVELS 2 | HATOP | TOM | RIM | BELL | DRUM |
-| PLAY (was VOICE) | POLY (POLY MONO LEG UNI DRONE; was VOICE) | GLIDE | GL MODE (the glide's RATE / TIME; was MODE) | PRIO | every engine |
+| VOICES (was PLAY, VOICE before) | POLY (POLY MONO LEG UNI DRONE; was VOICE) | GLIDE | GL MODE (the glide's RATE / TIME; was MODE) | PRIO | every engine |
 | VOICES 2 (0.8.5; was VOICE 2) | ALLOC | UNISON (UNI's detune, 0..100 %; was DETUNE) | VEL (the sound's velocity amount, 0..100 %) | IMAGE (the voices across, POLY; was the STEREO page; not on EXT) | every engine but DRUM |
 | VOICES 3 (V10.7.33) | CRUSH (the track's bit reducer, 0..100 %; was DIST TYPE CRUSH) | LIFE (V10.7.34: the track's LIFE, 0..100 %, times HOME › LIFE's) | | | every engine (a kit's too) |
 | SWARM, SWARM 2 (V10.6z6) | SIDE (FAR / NEAR) | that side's RATE, MOVE, TONE / NOISE, MOD | | (SWARM 2: NOW, the morph and its source) | EXT with SOURCE SWARM |
@@ -1322,10 +1322,10 @@ the delay exactly as before (a project of before opens with DRIVE 0).
 
 ### PLAY (every engine)
 
-EDIT > **PLAY** (was VOICE, the VOICE engine's name too): **POLY** POLY, MONO, LEG (legato), UNI (unison), DRONE; **GLIDE**;
+EDIT > **VOICES** (was PLAY, before that VOICE, the VOICE engine's name too): **POLY** POLY, MONO, LEG (legato), UNI (unison), DRONE; **GLIDE**;
 **GL MODE** RATE or TIME (how glide is measured); **PRIO** LAST, LOW, HIGH. **VOICES 2**: **ALLOC** (ROT / REUSE),
 **UNISON** (how far apart UNI's voices are, 0..100 %; was DETUNE, a bare number), **VEL**, **IMAGE** (the voices across
-the stereo field in POLY; was its own STEREO page; not on EXT). **PLAY 3** (V10.7.33): **CRUSH**, the track's bit
+the stereo field in POLY; was its own STEREO page; not on EXT). **VOICES 3** (V10.7.33): **CRUSH**, the track's bit
 reducer (see [Per track](#per-track)). The six tracks share a budget of 8 voices; FM6 plays at most four per track. (0.9.8) VOICE glides as a singer: an S-curve in
 pitch over the same time (the other engines: a straight line, as before).
 
@@ -1911,7 +1911,7 @@ REPEAT, DNUP, UP+8, CONV, DIVG, PINKY, THUMB, WALK, CHORD, **TRNS** (the keys an
 sequence by their distance from C4, without playing notes). **HOLD** (ARP 2): the arpeggio keeps running after you let
 go of the keys; the next chord replaces it. HOLD is the arpeggiator's alone: with MODE OFF it does nothing. (V10.7.33:
 the old key latch, MODE OFF + HOLD ON keeping the notes sounding, is gone; to hold notes use voice mode **DRONE**, EDIT >
-PLAY. A project saved with that latch opens in DRONE, so its notes still hold; it behaves slightly differently: a new
+VOICES. A project saved with that latch opens in DRONE, so its notes still hold; it behaves slightly differently: a new
 note glides from the held one instead of replacing it, and a held note's key tapped again lets it go.)
 
 ### Clearing

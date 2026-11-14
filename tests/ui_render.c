@@ -665,7 +665,7 @@ enum { S_HOME, S_HOME_IDLE, S_MESSAGE, S_MESSAGE_KEY, S_MESSAGE_NOFILE, S_PRESET
        S_HEAD_BPM_LOCKED, S_HEAD_GLO_TURN, S_HEAD_DOWNBEAT, S_HEAD_BEAT_2,
        S_SAVE_LIB, S_SAVE_TOOLS, S_SAVE_PROJ, S_SAVE_ARR, S_SAVE_SOUND, S_SAVE_PRESETS, S_SAVE_TL, S_SAVE_PARTS, S_SAVE_PARTS_LOOP, S_SAVE_TL_LOOP, S_SAVE_CLIPS, S_PG0, S_PG_END = S_PG0 + 16,
        S_FXL_SENDS, S_FXL_DIST, S_FXL_PAN, S_FXL_BUSES, S_FXL_DELAY, S_FXL_DELAY2, S_FXL_REVERB, S_FXL_SLICER, S_FXL_MASTER,
-       S_HOME_MACROS, S_HOME_SCOPE, S_HOME_MACRO_TURN, S_HOME_TRK, S_HOME_TRK_MUTE, S_HOME_TRK_SOLO, S_HOME_TRK6,
+       S_HOME_MACROS, S_HOME_SCOPE, S_HOME_MACRO_TURN, S_HOME_LIFE, S_HOME_TRK, S_HOME_TRK_MUTE, S_HOME_TRK_SOLO, S_HOME_TRK6,
        S_HOME_TRK_STOP, S_HELP_TRK, S_GEN_LEAD,
        S_ED_FILTER, S_ED_FILTER_BP, S_ED_VOICE2, S_ED_FOCUS, S_ED_FOCUS_MOD, S_ED_OPERATOR,
        S_ENV_TRACKS, S_ENV_TRACKS_DEST, S_ENV_STAGE, S_ENV_STAGE_SUS, S_MSEQ2, S_KEY_CHORD, S_KEY_CHORD_OFF, S_KEY_ARP, S_KEY_ARP2, S_GLO_SENDS, S_MENU_ROW, S_MENU_ROW_LEDS, S_LY_FX_KNOBS, S_LY_FX_STATE, S_LY_GLO_STATE, S_DLG_DICE_SOUND, S_DLG_DICE_SEQ, S_DLG_DICE_FX, S_DLG_MUT_BACK,
@@ -705,7 +705,7 @@ static const char *const S_NAME[S_COUNT] = {"home", "home_idle", "message", "mes
     "save_library", "save_tools", "save_project", "save_arrange", "save_sound", "save_presets", "save_timeline", "save_parts", "save_parts_loop", "save_timeline_loop", "save_clips", "pg_retrig", "pg_rotor", "pg_length", "pg_modes", "pg_dly3", "pg_slbus", "pg_tape", "pg_eq", "pg_system2", "pg_comps", "pg_comps2", "pg_kit2", "pg_kit3", "pg_kit4", "pg_levels", "pg_levels2", "pg_xmod",
     "fx_track_sends", "fx_track_dist", "fx_track_pan", "fx_buses", "fx_effect_delay", "fx_effect_delay2", "fx_effect_reverb",
     "fx_effect_slicer", "fx_effect_master",
-    "home_macros", "home_scope", "home_macro_turn", "home_trk", "home_trk_mute", "home_trk_solo", "home_trk6",
+    "home_macros", "home_scope", "home_macro_turn", "home_life", "home_trk", "home_trk_mute", "home_trk_solo", "home_trk6",
     "home_trk_stop", "help_trk", "gen_lead",
     "ed_filter", "ed_filter_bp", "ed_voice2", "ed_focus", "ed_focus_mod", "ed_operator",
     "env_tracks", "env_tracks_dest", "env_stage", "env_stage_sus", "mseq2", "key_chord", "key_chord_off", "key_arp", "key_arp2", "glo_sends", "menu_row", "menu_row_leds", "ly_fx_knobs", "ly_fx_state", "ly_glo_state", "dlg_dice_sound", "dlg_dice_seq", "dlg_dice_fx", "euclid_modes",
@@ -1261,10 +1261,11 @@ static void setup(int s)
         trk[5].p[P_MUTE] = 1;
         break;
     }
-    case S_HOME_MACROS: case S_HOME_SCOPE: case S_HOME_MACRO_TURN: {   /* (V10.7.24) HOME: MACROS, SCOPE, MACROS with M3
-                                                         * turned (its routes at the top) */
+    case S_HOME_MACROS: case S_HOME_SCOPE: case S_HOME_MACRO_TURN: case S_HOME_LIFE: {   /* (V10.7.24) HOME: MACROS, SCOPE,
+                                                         * MACROS with M3 turned (its routes at the top); (V10.7.34) LIFE */
         uint32_t k;
-        ui.hlv = s == S_HOME_SCOPE;
+        ui.hlv = s == S_HOME_SCOPE ? 1u : s == S_HOME_LIFE ? 2u : 0u;
+        if (s == S_HOME_LIFE) { life_defaults(); for (k = 0; k < 64u; k++) life_master(); }   /* (the beings placed, as the audio has by then) */
         for (k = 0; k < NTRK; k++) trk[k].peak = (int32_t)(1500u + k * 900u);
         trk[1].p[P_M1SRC] = MS_M1; trk[1].p[P_M1DST] = MD_CUT; trk[1].p[P_M1AMT] = 40;
         trk[3].p[P_M1SRC + 3] = MS_M1 + 2; trk[3].p[P_M1DST + 3] = MD_E1; trk[3].p[P_M1AMT + 3] = -20;
@@ -1301,7 +1302,7 @@ static void setup(int s)
         perf_solo = (uint8_t)(s == S_HOME_TRK_SOLO ? 1u << 2 : 0u);   /* (set: another scene leaves it) */
         song.sel = s == S_HOME_TRK6 ? 3u : 0u;
         ui_help = s == S_HELP_TRK;
-        ui.home = 1; ui.hlv = 2;
+        ui.home = 1; ui.hlv = 3;   /* (V10.7.34: 3, LIFE the 2) */
         break;
     }
     case S_PL_LIST: case S_PL_EDITED: case S_PL_HOME: {   /* (V10.7.33) PRESETS' list over ENV (the sound picked three
