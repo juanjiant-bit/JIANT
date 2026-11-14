@@ -226,7 +226,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | CC98 | parameter | range | default | values |
 | --- | --- | --- | --- | --- |
 | 0 | BPM | 40..240 | 120 | |
-| 1 | SWING | 0..100 | 0 | |
+| 1 | G.SWING | 0..100 | 0 | |
 | 3 | TUNE | -50..50 | 0 | |
 | 4 | TIME | 0..66 | 1 | 1/4 1/8 1/16 1/32 8T 16T 1/2 1/1 2BAR 4BAR 5ms 6ms 7ms 8ms 9ms 10ms 11ms 12ms 13ms 15ms 17ms 19ms 21ms 24ms 27ms 31ms 35ms 39ms 44ms 50ms 56ms 64ms 72ms 81ms 91ms 103ms 116ms 131ms 148ms 167ms ... |
 | 5 | FEEDBK | 0..120 | 60 | |
@@ -251,7 +251,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | 33 | WIDE | 0..127 | 0 | |
 | 34 | PITCH | -12..12 | 0 | |
 | 35 | SPRAY | 0..127 | 0 | |
-| 36 | ALL TR | -14..14 | 0 | |
+| 36 | TRANSP | -14..14 | 0 | |
 | 37 | MODE | 0..2 | 0 | OFF GATE STUT |
 | 38 | PAT | 1..16 | 1 | |
 | 39 | RATE | 0..5 | 1 | 1/8 1/16 1/32 8T 16T 32T |

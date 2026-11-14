@@ -148,7 +148,7 @@ int main(void)
     {
         int16_t g[G_COUNT];
         ui_power_on();
-        ok = nav_put(SEC_GLO, "SYSTEM 2");
+        ok = nav_put(SEC_GLO, "PORTS");
         frame();
         memcpy(g, song.g, sizeof g);
         for (i = 0; i < 4u; i++) {
@@ -156,7 +156,7 @@ int main(void)
             turn(EN_K1 + i, 1);
             ok &= msg_is("EDIT: MENU > BLUETOOTH") && !memcmp(g, song.g, sizeof g) && !ui.menu;
         }
-        bad += check("V10.6z8 GLO > SYSTEM 2: any knob says EDIT: MENU > BLUETOOTH and changes nothing", ok);
+        bad += check("V10.6z8 GLO > PORTS (was SYSTEM 2): any knob says EDIT: MENU > BLUETOOTH and changes nothing", ok);
     }
     printf("prox cal: %s\n", bad ? "FAILED" : "all ok");
     return bad != 0;

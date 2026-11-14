@@ -356,7 +356,7 @@ static int comp_ui(void)
     t = TSEL;
     t->step[0] = (step_t){{60, 64, 67}, 3, ST_NOTE, 0, 100};
     go_page(GR_COMP); frame();
-    ok = str_eq(cur_page()->title, "COMP") && comp_view() == CA_NONE;
+    ok = str_eq(cur_page()->title, "STEP COND") && comp_view() == CA_NONE;
     turn(EN_K1, 1);                                       /* OFF -> ARP: four steps, UP x4 1 OCT */
     ok &= CO_ACT(t->step[0].comp) == CA_ARP && t->step[0].clen[0] == 3u && t->step[0].carg == CP_ARG(0u, 2u, 0u);
     turn(EN_K2, 2);                                       /* LENGTH 6 */
@@ -375,7 +375,7 @@ static int comp_ui(void)
     ok &= !t->step[0].comp && !t->step[0].clen[0];
     bad += check("SEQ > COMP: KNOB 1 ACTION, KNOB 2 LENGTH, KNOB 3 CONDITION (ELSE skipped), KNOB 4 VALUE, OFF clears", ok);
     ui.page++; page_entered(); frame();
-    ok = str_eq(cur_page()->title, "COMP 2") && comp_slot() == 1u;
+    ok = str_eq(cur_page()->title, "COND 2") && comp_slot() == 1u;
     turn(EN_K1, 4); turn(EN_K1, 3);                       /* MUTE */
     turn(EN_K3, 4); turn(EN_K3, 4); turn(EN_K3, 4);   /* ELSE: MONO */
     ok &= CO_ACT(t->step[0].comp2) == CA_MUTE && CO_COND(t->step[0].comp2) == CC_ELSE && !t->step[0].comp;
@@ -544,7 +544,7 @@ static int gl_ui(void)
     ui_power_on();
     gl_clear();
     go_page(GR_GCOMP); frame();
-    ok = str_eq(cur_page()->title, "G.COMP") && gco_on() && !gco_slot();
+    ok = str_eq(cur_page()->title, "COMP") && gco_on() && !gco_slot();
     tap_key(key_at(0, 2));                              /* step 3 */
     turn(EN_K1, 2);                                     /* OFF MUTE STUTTER */
     ok &= gl_cur == 2u && CO_ACT(glane[2].comp) == CA_STUT && glane[2].len == 1u && glane[2].mask == 63u && gl_on;
@@ -558,7 +558,7 @@ static int gl_ui(void)
     bad += check("GLO > COMPS: a white key the step, KNOB 1..4 ACTION LENGTH CONDITION (no NEI, no ELSE) VALUE, black keys "
                  "the TRACKS", ok);
     ui.page++; page_entered(); frame();
-    ok = str_eq(cur_page()->title, "G.COMP 2") && gco_slot();
+    ok = str_eq(cur_page()->title, "COMP 2") && gco_slot();
     turn(EN_K2, 1); turn(EN_K3, 1);                     /* T2 .. ON (already) */
     ok &= gl_trk == 1u && glane[2].mask == 62u;
     turn(EN_K3, -1);
