@@ -120,7 +120,7 @@ static const param_desc_t TP[P_COUNT] = {
     [P_ARATE] = PE("RATE", N_DIV, 2),
     [P_AOCT] = PD("OCT", F_INT, 1, 4, 1),
     [P_AGATE] = PD("GATE", F_PCT, 1, 127, 64),
-    [P_ASWING] = PD("ARP SWING", F_PCT, 0, 100, 0),
+    [P_ASWING] = PD("ARP SWG", F_PCT, 0, 100, 0),
     [P_APROB] = PD("PROB", F_PCT, 0, 127, 127),
     [P_AHOLD] = PE("HOLD", N_ONOFF, 0),
     [P_AORDER] = PE("ORDER", N_ORDER, 0),
@@ -214,7 +214,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_RTYPE] = PE("TYPE", N_RTYPE, 0),
     /* (JIANT) the drum bus and the kick's ducking (fx.c, eng_drum.c); the ids of the GM drum part's level and
      * reverb send, inert since 1.0 */
-    [G_PUNCH] = PD("DRUM PUNCH", F_PCT, 0, 100, 0),    /* DRUM fattened: up to +5 dB the first 4 ms, the body +3 dB (0.5) */
+    [G_PUNCH] = PD("PUNCH", F_PCT, 0, 100, 0),    /* DRUM fattened: up to +5 dB the first 4 ms, the body +3 dB (0.5) */
     [G_DUCK] = PD("DUCK", F_PCT, 0, 100, 0),     /* the kick ducks the other parts: up to -18 dB */
     /* (JIANT, FUNB) the buses: not in a project's header (project.c: after the punch-in lane) */
     [G_CSTER] = PD("STEREO", F_BIPCT, -64, 63, 0), /* (0.6.9) the CHORUS's stereo: 0 as before, -64 mono, 63 ~2x (was G_DHPF) */
@@ -233,7 +233,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_RWIDE] = PD("WIDE", F_PCT, 0, 127, 0),    /* .. its width: its combs (ROOM) / taps (SPRING) apart, left and right */
     [G_DPIT] = PD("PITCH", F_SEMI, -12, 12, 0),  /* the GRAIN delay: each repeat through two grains this far up / down */
     [G_DSPRY] = PD("SPRAY", F_PCT, 0, 127, 0),    /* .. their spray: each grain from a random place (0: plain delay) */
-    [G_STRN] = PD("TRANSPOSE", F_INT, -14, 14, 0),  /* (JIANT 0.4) every sequence this many steps up / down its scale (0.6.45:
+    [G_STRN] = PD("TRANSP", F_INT, -14, 14, 0),  /* (JIANT 0.4) every sequence this many steps up / down its scale (0.6.45:
                                                   * named ALL TR, was STRN: nobody knew what moved their notes) */
     [G_SLMODE] = PE("MODE", N_SLCR, 0),         /* (JIANT 0.6.3) the SLICER bus (slicer.c) */
     [G_SLPAT] = PD("PAT", F_INT, 1, 16, 1),
@@ -691,7 +691,7 @@ static int16_t trks_ui;
 /* (0.7.6) a track page's slot holding the global ALL TR (G_STRN): SCL's KNOB 4, where TRANS was (page_desc) */
 #define ID_ALLTR 0xFCu
 static const char *const N_LOAD[] = {"ECO", "LITE", "FULL"};
-static const param_desc_t LOAD_DESC = PE("CPU LOAD", N_LOAD, 2);
+static const param_desc_t LOAD_DESC = PE("LOAD", N_LOAD, 2);
 static int16_t load_ui;
 /* (0.9.18) the LFO's MODE TRIG / FREE (LFO KNOB 3) and its PHASE (LFO 2 KNOB 1): views of P_LPHASE, whose -1 has been FREE
  * since 0.6.51 (stored as ever: every project and preset opens as it was). page_desc reads them into lmode_ui / lphase_ui,

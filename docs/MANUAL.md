@@ -40,7 +40,7 @@ Everything since V10.6c, the last public version, in one list; each item links t
 
 **Easy to understand (V10.7.33)**
 - **PRESETS always loads sounds, through a list.** Its first turn opens the list over the page (nothing loads); PRESETS
-  scrolls it, **KNOB 1** the track, **KNOB 2** the next engine, **KNOB 3** the source (**FACTORY · USER · FAVORITES**),
+  scrolls it, **KNOB 1** the track, **KNOB 2** the next engine, **KNOB 3** the source (**FACTORY · USER · FAVORITE**),
   **KNOB 4** the type (**ALL · BASS · LEAD · PAD …**). **OCT+** loads the sound picked; **OCT−**, or a few seconds
   untouched, closes it with no change. **REC** marks a favourite. A dot (●) on the track's sound: edited, not saved.
   SAVE › PRESETS is the same list.
@@ -56,9 +56,10 @@ Everything since V10.6c, the last public version, in one list; each item links t
 - **New names** (the stored ids are the same): LFO › MOD is **MATRIX** (now the last of LFO's pages), MSEQ **STEP MOD**,
   SCL's KEY **SCALE**, GLO's G.COMP **COMP** and SEQ's COMP **STEP COND** (COMP 2: **COND 2**), DLY **DELAY**, GLO's
   SENDS **BUS SENDS**, EDIT's PLAY / PLAY 2 **VOICES / VOICES 2**, HOME's SCOPE **LIVE MIX** (its DRIVE: **CLIP**), GENE
-  **GEN**, MASTER's PUNCH **DRUM PUNCH**, X-MOD **KIT LFO**, SL BUS **SLICER IN**, SYSTEM 2 **PORTS**, LYRIC STEP
-  **LYRICS**, QUANT **KEY SNAP**, ALL TR **TRANSPOSE**, LOAD **CPU LOAD**, USB **USB MODE**; the three swings
-  **G.SWING** (GLOBAL), **SWING** (PATTERN), **ARP SWING**.
+  **GEN**, X-MOD **KIT LFO**, SL BUS **SLICER IN**, SYSTEM 2 **PORTS**, LYRIC STEP
+  **LYRICS**, QUANT **KEY SNAP**, ALL TR **TRANSP**, MENU's LOAD **CPU LOAD**; the three swings
+  **G.SWING** (GLOBAL), **SWING** (PATTERN), **ARP SWG**. (Kept for the cards' width: MASTER's PUNCH, the MENU's USB,
+  GLO › SYSTEM's LOAD.)
 - **Gone from the image**: SEQ › PHRASES (the factory patterns' loader) and a step's CHANCE page; nothing had led to
   them since PRESETS stopped loading patterns.
 
@@ -122,7 +123,7 @@ Everything since V10.6c, the last public version, in one list; each item links t
   a row less.
 - **Bigger small letters**: names, tabs, the header's words, the breadcrumb and the panels' captions have 9 px capitals
   (were 7 px pixel letters). SEQ's and FX's eight tabs show five at a time; the menu lists eight rows at a time; a few
-  readouts that repeated a card are gone (SCL's KEY SNAP and TRANSPOSE at the wheel's right, the numbers inside BEING's rings).
+  readouts that repeated a card are gone (SCL's KEY SNAP and TRANSP at the wheel's right, the numbers inside BEING's rings).
 - **Bigger values**: a card's number is set in 14 px figures (was 11) where it fits with its unit, and rolls as before;
   names and words keep the 11 px face. The header's middle says the engine and the sound without "T1 ·" (the track's
   number is in its box); FX's "FX · T1" line and EDIT's page and sound names inside the panel are gone (the header and
@@ -214,7 +215,7 @@ The names below are the ones the firmware uses (the HARDWARE CALIBRATION screen 
 | --- | --- |
 | **SELECT** (encoder) | Alone (0.9.2): **walks the section's pages**, one page a detent, as one chain, stopping at its first and last page (no levels, no zoom; see [How navigation works](#how-navigation-works-six-rules-092)). In the MENU: its rows, all four tabs in one chain. With a button held: **HOME** + SELECT **GEN**, **EDIT / SEQ / LFO / FX** + SELECT that part's **dice**, **GLO** + SELECT the **tempo**, **ENV / SCL / ARP / SAVE** + SELECT walk that section's chain from wherever you are. |
 | **ALGORITHM** (encoder) | Selects the track from any page: T1–T6 (T1–T4 with TRACKS 4). The track is always ALGORITHM's (0.9.2: PRESETS no longer picks it on ENV, LFO, CHORD, ARP). In the MENU: the next / previous tab. With a layer held: its view, MAP ↔ KNOBS ↔ STATE. |
-| **PRESETS** (encoder) | **Always sounds, through a list** (V10.7.33): its first turn opens the list over any page (nothing loads), PRESETS scrolls it, OCT+ loads the sound picked, OCT− or a few seconds untouched close it; KNOB 1 the track, KNOB 2 the next engine, KNOB 3 FACTORY / USER / FAVORITES, KNOB 4 the type; REC a favourite (see "Easy to understand (V10.7.33)" above). In the MENU it does nothing; with a button held: **EDIT** the first sound of the next / previous engine (V10.7), **SEQ** the step (its number large), **HOME** the tempo. It never changes page, track, module or row. |
+| **PRESETS** (encoder) | **Always sounds, through a list** (V10.7.33): its first turn opens the list over any page (nothing loads), PRESETS scrolls it, OCT+ loads the sound picked, OCT− or a few seconds untouched close it; KNOB 1 the track, KNOB 2 the next engine, KNOB 3 FACTORY / USER / FAVORITE, KNOB 4 the type; REC a favourite (see "Easy to understand (V10.7.33)" above). In the MENU it does nothing; with a button held: **EDIT** the first sound of the next / previous engine (V10.7), **SEQ** the step (its number large), **HOME** the tempo. It never changes page, track, module or row. |
 | **KNOB 1–4** | The four cards (columns) on screen. A page that picks something picks it with **KNOB 1** (the step, the bar, the slot, the stage, the operator, the kit's sound, the row). With a layer held, the layer's own knobs. Turning fast sweeps the whole range, slowly fine-tunes (MENU › CONTROL › KNOB ACCEL turns this off). In the MENU: KNOB n the setting on card n. |
 | **MASTER** | The output volume. |
 
@@ -496,7 +497,7 @@ the bars with KNOB 1 the bar and KNOB 2 LEN.
   **SYSTEM**: the tracks that play as chips, LOAD's three settings (the one set lit), MIDI's route, the CPU load over the
   last seconds as a line.
 - **SCL · ARP** › **KEY**: the twelve notes round a circle (C on top), the scale's lit and joined, ROOT in the accent
-  with the scale's name in the middle, KEY SNAP and TRANSPOSE at the right, the scale on a keyboard under it; KNOB 1 sets
+  with the scale's name in the middle, KEY SNAP and TRANSP at the right, the scale on a keyboard under it; KNOB 1 sets
   ROOT. **CHORD**: the chord each degree of the key plays now (I–VII, as a key would play it: one note while CHORD is
   OFF or the voice isn't POLY). **ARP** / **ARP 2**: "MODE · RATE · OCT" and the pattern it plays over a triad (GATE
   the cells' length, SWING the off-beats late, PROB some left out); OFF says so.
@@ -560,13 +561,13 @@ since 0.6.51: every project opens as it was.
 | REVERB | TYPE | SIZE | DAMP (RESO: FOLLOW) | PRE (SHIMMER/CLOUD: AIR; RESO: PITCH) |
 | REVERB 2 | MOD | RATE | FILT | WIDE |
 | CHORUS | RATE | DEPTH | STEREO | — |
-| MASTER | CLIP | DRUM PUNCH | DUCK | REL |
+| MASTER | CLIP | PUNCH | DUCK | REL |
 
 **SCL**
 
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- |
-| SCL | ROOT | SCALE | KEY SNAP | TRANSPOSE (0.7.6; was TRANS, and SCL 2 held TRANSPOSE alone) |
+| SCL | ROOT | SCALE | KEY SNAP | TRANSP (0.7.6; was TRANS, and SCL 2 held TRANSP alone) |
 | SCENE (V10.24) | SCENE (OFF / ON) | TRACK (T1–T6) | ROLE (KEEP CHORD ARP BASS LEAD DRUM) | CHORD (that track's chord) |
 
 **EDIT** (per track; which pages appear depends on the engine)
@@ -607,13 +608,13 @@ since 0.6.51: every project opens as it was.
 | SENDS (0.8.5) | CHORUS | DLY | REV | — (the selected track's, as FX > SENDS) |
 | COMP, COMP 2 (were COMPS) | the global lane's step components (V10.37: right after MIX) | | | |
 | GLOBAL | BPM | G.SWING | CLOCK | TUNE |
-| SYSTEM | TRACKS | CPU LOAD | ROUTE | CPU (%) |
+| SYSTEM | TRACKS | LOAD | ROUTE | CPU (%) |
 
 **SAVE**
 
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- |
-| PRESETS (V10.7.33: the list) | TRACK | ENG (KNOB 2: the next engine's first sound) | SOURCE (FACTORY / USER / FAVORITES) | TYPE (ALL BASS LEAD PAD KEYS PLUCK BELL VOX DRUM FX) · PRESETS scrolls, OCT+ loads, OCT− closes, REC a favourite |
+| PRESETS (V10.7.33: the list) | TRACK | ENG (KNOB 2: the next engine's first sound) | SOURCE (FACTORY / USER / FAVORITE) | TYPE (ALL BASS LEAD PAD KEYS PLUCK BELL VOX DRUM FX) · PRESETS scrolls, OCT+ loads, OCT− closes, REC a favourite |
 | USER | SLOT (U01–U32) | LOAD (action) | ERASE (action) | SAVE (action) |
 | PROJECTS / PART SLOTS (the PROJECT page) | PROJECT (1–6: picks it, does not open it; on PART SLOTS: PART A–D) | LOAD (action: opens the picked project; PART SLOTS: the part) | ERASE (action) | SAVE (action: then NAME, KNOB 3 SONG / LOOP) |
 | TOOLS (V10.24; V10.7.22 SAVE's first page) | TARGET (PROJECT, TRACK, SOUND, SONG, SYSTEM; was SCOPE) | ACTION (CLEAR PROJECT · CLEAR SEQ · INIT SOUND · DELETE ROW, CLEAR SONG · CPU TEST) | — | DO: **OCT+ held a second** (CLEAR PROJECT: OCT+ asks, OCT+ again does it) |
@@ -631,7 +632,7 @@ since 0.6.51: every project opens as it was.
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- |
 | ARP | MODE | RATE | OCT | GATE |
-| ARP 2 | ARP SWING | PROB | HOLD | ORDER |
+| ARP 2 | ARP SWG | PROB | HOLD | ORDER |
 
 **SEQ** (per track)
 
@@ -1768,13 +1769,13 @@ MIDI, a project load), every melodic track follows it at once; drum tracks have 
 - SCALE: CHR, MAJ, MIN, DOR, MIX, PEN, MPEN, HARM, PHRY, LYD, LOC, MEL, BLUES, WHOLE, DIMHW, DIMWH.
 - KEY SNAP: OFF; SNAP (keys snap to the scale); WHITE (the white keys walk the scale, black keys are silent); SEQ (as SNAP,
   and the sequencer's notes snap too as they play).
-- **SCL > TRANSPOSE**, KNOB 4 (0.7.6; SCL 2 until then; it was called STRN) moves every sequence up or down the scale (±14 degrees), on every track at
+- **SCL > TRANSP**, KNOB 4 (0.7.6; SCL 2 until then; it was called STRN) moves every sequence up or down the scale (±14 degrees), on every track at
   once. It is global and saved with the project: if your notes sound lower or higher than the piano roll shows, look
-  here. When it is not 0 the piano roll says **TRANSPOSE** and its value, and PLAY says it too. 0 = off.
+  here. When it is not 0 the piano roll says **TRANSP** and its value, and PLAY says it too. 0 = off.
 - The RESO reverb and the SLICER's pitch steps follow the scale too.
 - (0.8.3) **A section keeps its key**: ROOT and SCALE are stored with each section, so a song can change key from one
   section to the next (GEN's PARTS does it for pop genres: the last section a whole step up). When the song brings in a
-  section, the keys, CHORD, TRANSPOSE and the RESO reverb follow its key, also with a DRUM track selected (then the first
+  section, the keys, CHORD, TRANSP and the RESO reverb follow its key, also with a DRUM track selected (then the first
   melodic track's key counts; until 0.8.3 a DRUM track selected kept the key before).
 
 ### CHORD (0.6.81)
@@ -2157,7 +2158,7 @@ What a piece is made of:
   amounts decide how much plays; the kick is never dropped from the one.
 - **The key** (0.8.3): a mode of seven notes for every genre (its list: major, minor, dorian, mixolydian, phrygian,
   lydian, harmonic and melodic minor), **written to the SCALE page** (ROOT, SCALE, and KEY SNAP at SNAP unless you chose
-  another KEY SNAP setting) on every track, so the keys you play afterwards, the CHORD page, TRANSPOSE and the RESO reverb are in the
+  another KEY SNAP setting) on every track, so the keys you play afterwards, the CHORD page, TRANSP and the RESO reverb are in the
   piece's key. A genre that sings pentatonic or blues (deep house, funk, boom bap, D&B, afrobeat ..) gets the mode that
   holds it (dorian or aeolian; major for the major pentatonic) and its **lead** keeps to the pentatonic notes: the
   chords stay real chords and every note is still in the SCALE page's scale. The chord track's **CHORD page** is set
@@ -2966,7 +2967,7 @@ the footer **MENU · DISPLAY · SCOPE  2/33**. The header says MENU · DISPLAY.
 | AUDIO | TRACKS | **4** (default), 6 |
 | AUDIO | CPU LOAD | ECO, LITE, **FULL** (default) — the same as GLO › SYSTEM KNOB 2 |
 | AUDIO | OCT BEND | OFF, 1, **2** (default), 3, 4, 5, 7, 12 ST — (V10.6z4) the expression keys: OCT+ held on a note bends up this far, OCT− a vibrato; OFF: OCT is the octave even with a note held (see Useful combinations) |
-| SYSTEM | USB MODE | AUDIO (stereo USB audio and MIDI, the default; was CONSOLE until V10.6d, when the serial console left), STEREO (audio + MIDI only, class 0; was OFF: helps macOS 13–15 see the USB audio input), STEMS (0.7.1: an 8-channel audio input, see "Stems" below), IN+OUT (0.7.5: stereo audio both ways, see "USB audio in" below), STEMS+IN (0.8.0: the stems with the audio output too, see "Stems with a voice" below) |
+| SYSTEM | USB | AUDIO (stereo USB audio and MIDI, the default; was CONSOLE until V10.6d, when the serial console left), STEREO (audio + MIDI only, class 0; was OFF: helps macOS 13–15 see the USB audio input), STEMS (0.7.1: an 8-channel audio input, see "Stems" below), IN+OUT (0.7.5: stereo audio both ways, see "USB audio in" below), STEMS+IN (0.8.0: the stems with the audio output too, see "Stems with a voice" below) |
 | SYSTEM | RESTORE LAST | **OFF** (default: no autosave, power-on at zero), ON (the last session back at power-on) |
 | SYSTEM | CPU CORES | 1 CORE, **2 CORES** (default) — from the next start; (V10.6z2) the second core only starts on the stock power settings (not after a SAFE START) |
 | SYSTEM | CPU CLOCK | **360 MHZ** (default), 320 MHZ — from the next start |

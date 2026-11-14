@@ -1865,7 +1865,7 @@ static uint32_t preset_all_at(uint32_t n, uint32_t *k) { return preset_all_at_in
  * FAVORITES; FAVORITES of a type: both). list_get / list_put (LIST's codes) stay for the settings and the editor */
 #define pl_src() (list_type == PT_N ? 1u : favorites.filter ? 2u : 0u)
 #define pl_cat() (list_type < PT_N ? (uint32_t)list_type : 0u)
-static const char *const N_PLSRC[3] = {"FACTORY", "USER", "FAVORITES"};
+static const char *const N_PLSRC[3] = {"FACTORY", "USER", "FAVORITE"};   /* (a card's width) */
 static __attribute__((noinline)) void pl_turn(uint32_t slot, int32_t steps)   /* KNOB 3 the source, 4 the type, no wrap */
 {
     int32_t d = steps > 0 ? 1 : -1;

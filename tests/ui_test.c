@@ -8984,7 +8984,7 @@ static int test_scl_alltr(void)
     t = TSEL;
     go_title("SCL"); frame();
     d = page_desc(cur_page(), 3u, &vp);
-    ok = d == &GP[G_STRN] && vp == &song.g[G_STRN] && str_eq(d->label, "TRANSPOSE");
+    ok = d == &GP[G_STRN] && vp == &song.g[G_STRN] && str_eq(d->label, "TRANSP");
     song.g[G_STRN] = 0; t->p[P_TRANS] = 0;
     song.rec = 1;                                      /* (recording: the global is no track lock) */
     turn(EN_K4, 1); turn(EN_K4, 1); frame();
@@ -10964,7 +10964,7 @@ static int test_preset_types(void)
     turn(EN_K3, 1); frame();                            /* (V10.7.33) KNOB 3 the SOURCE: USER */
     ok = list_get() == LIST_USER && !favorites.filter && str_eq(N_PLSRC[pl_src()], "USER");   /* (V10.7.22) */
     turn(EN_K3, 1); frame();                            /* .. FAVORITES */
-    ok &= list_get() == 1u && favorites.filter == 1u && str_eq(N_PLSRC[pl_src()], "FAVORITES");
+    ok &= list_get() == 1u && favorites.filter == 1u && str_eq(N_PLSRC[pl_src()], "FAVORITE");
     turn(EN_K3, -1); frame(); turn(EN_K3, -1); frame();   /* .. FACTORY */
     ok &= list_get() == 0u && str_eq(N_PLSRC[pl_src()], "FACTORY");
     turn(EN_K4, 1); frame();                            /* KNOB 4 the TYPE: BASS */
@@ -11074,7 +11074,7 @@ static int test_usb_serial(void)
     ui_power_on();
     usb.up = 0;                                          /* (no SIE here: usb_cdc_switch only flips the descriptors) */
     frame();
-    ok = usb_cdc_on && dev_class() == 0xEF && !(ui_prefs & PREF_SERIAL_OFF) && !usb_out && str_eq(MI_NAME[MI_SERIAL], "USB MODE") &&
+    ok = usb_cdc_on && dev_class() == 0xEF && !(ui_prefs & PREF_SERIAL_OFF) && !usb_out && str_eq(MI_NAME[MI_SERIAL], "USB") &&
          menu_n(MI_SERIAL) == 5u && str_eq(menu_vname(MI_SERIAL, 0), "CONSOLE") && str_eq(menu_vname(MI_SERIAL, 1), "STEREO") &&
          str_eq(menu_vname(MI_SERIAL, 2), "STEMS") && str_eq(menu_vname(MI_SERIAL, 3), "IN+OUT") &&
          str_eq(menu_vname(MI_SERIAL, 4), "STEMS+IN");   /* (0.7.1: USB SERIAL ON / OFF became USB CONSOLE / STEREO /
@@ -13428,7 +13428,7 @@ static int test_coherence(void)
         for (i = 0; i < MI_COUNT; i++)
             ok &= !str_eq(MI_NAME[i], "INIT SYSTEM");   /* (one action, one name: SAVE > TOOLS > CLEAR PROJECT) */
         go_title("MASTER"); frame();
-        ok &= str_eq(page_desc(cur_page(), 1, &hv)->label, "DRUM PUNCH");   /* (the drums' punch: the master's own) */
+        ok &= str_eq(page_desc(cur_page(), 1, &hv)->label, "PUNCH");   /* (the drums' punch: the master's own) */
         for (i = 0; i < NPAGES; i++)
             ok &= !str_eq(PAGES[i].title, "PUNCH") && !str_eq(PAGES[i].title, "VOICE") && !str_eq(PAGES[i].title, "COMPS");
         bad += check("codex/coherence: the names (PART SLOTS, LOCKS, HOME's TIMELINE PARTS, KEYS RAILS, PLAY; V10.7.32 no PUNCH IN page, no CLIPS, no KEY SPLIT, no STAGE, no INIT SYSTEM, no TRACKS DEST, no STEREO on a synth)", ok);

@@ -41,7 +41,7 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
 **Fácil de entender (V10.7.33)**
 - **PRESETS siempre carga sonidos, con una lista.** El primer giro abre la lista sobre la página (no carga nada);
   PRESETS la recorre, **KNOB 1** la pista, **KNOB 2** el motor siguiente, **KNOB 3** el origen (**FACTORY · USER ·
-  FAVORITES**), **KNOB 4** el tipo (**ALL · BASS · LEAD · PAD …**). **OCT+** carga el sonido elegido; **OCT−**, o unos
+  FAVORITE**), **KNOB 4** el tipo (**ALL · BASS · LEAD · PAD …**). **OCT+** carga el sonido elegido; **OCT−**, o unos
   segundos sin tocar nada, la cierra sin cambios. **REC** lo marca favorito. Un punto (●) en el sonido de la pista:
   editado y sin guardar. SAVE › PRESETS es la misma lista.
 - **SEQ mantenido + PRESETS** mueve el paso en cualquier página de SEQ, con su número grande en pantalla (las 16 teclas
@@ -58,9 +58,10 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
 - **Nombres nuevos** (los ids guardados son los mismos): LFO › MOD es **MATRIX** (ahora la última página de LFO), MSEQ
   **STEP MOD**, KEY de SCL **SCALE**, G.COMP de GLO **COMP** y COMP de SEQ **STEP COND** (COMP 2: **COND 2**), DLY
   **DELAY**, SENDS de GLO **BUS SENDS**, PLAY / PLAY 2 de EDIT **VOICES / VOICES 2**, SCOPE de HOME **LIVE MIX** (su
-  DRIVE: **CLIP**), GENE **GEN**, PUNCH de MASTER **DRUM PUNCH**, X-MOD **KIT LFO**, SL BUS **SLICER IN**, SYSTEM 2
-  **PORTS**, LYRIC STEP **LYRICS**, QUANT **KEY SNAP**, ALL TR **TRANSPOSE**, LOAD **CPU LOAD**, USB **USB MODE**; los
-  tres swings **G.SWING** (GLOBAL), **SWING** (PATTERN), **ARP SWING**.
+  DRIVE: **CLIP**), GENE **GEN**, X-MOD **KIT LFO**, SL BUS **SLICER IN**, SYSTEM 2
+  **PORTS**, LYRIC STEP **LYRICS**, QUANT **KEY SNAP**, ALL TR **TRANSP**, LOAD del MENU **CPU LOAD**; los
+  tres swings **G.SWING** (GLOBAL), **SWING** (PATTERN), **ARP SWG**. (Quedan por el ancho de las tarjetas: PUNCH de
+  MASTER, USB del MENU, LOAD de GLO › SYSTEM.)
 - **Fuera de la imagen**: SEQ › PHRASES (el cargador de patrones de fábrica) y la página CHANCE de un paso; nada
   llevaba a ellas desde que PRESETS dejó de cargar patrones.
 
@@ -131,7 +132,7 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
   con FLAT) y el menú tiene una fila menos.
 - **Letras chicas más grandes**: los nombres, las pestañas, las palabras del encabezado, la miga y los rótulos de los
   paneles tienen mayúsculas de 9 px (eran letras de píxel de 7 px). Las ocho pestañas de SEQ y de FX se ven de a cinco;
-  el menú lista ocho filas por vez; se fueron algunos datos que repetían una carta (KEY SNAP y TRANSPOSE a la derecha de la
+  el menú lista ocho filas por vez; se fueron algunos datos que repetían una carta (KEY SNAP y TRANSP a la derecha de la
   rueda de SCL, los números adentro de los anillos de BEING).
 - **Valores más grandes**: el número de una carta va en cifras de 14 px (eran de 11) cuando entra con su unidad, y gira
   como antes; los nombres y las palabras siguen en la letra de 11 px. El medio del encabezado dice el motor y el sonido
@@ -228,7 +229,7 @@ Los nombres de abajo son los que usa el firmware (la pantalla HARDWARE CALIBRATI
 | --- | --- |
 | **SELECT** (encoder) | Solo (0.9.2): **recorre las páginas de la sección**, una página por paso, en una sola cadena, frenando en la primera y en la última (sin niveles, sin zoom; ver [Cómo funciona la navegación](#cómo-funciona-la-navegación-seis-reglas-092)). En el MENU: sus filas, las cuatro pestañas en una cadena. Con un botón mantenido: **HOME** + SELECT **GEN**, **EDIT / SEQ / LFO / FX** + SELECT los **dados** de esa parte, **GLO** + SELECT el **tempo**, **ENV / SCL / ARP / SAVE** + SELECT recorren la cadena de esa sección desde donde estés. |
 | **ALGORITHM** (encoder) | Elige la pista desde cualquier página: T1–T6 (T1–T4 con TRACKS 4). La pista es siempre de ALGORITHM (0.9.2: PRESETS ya no la elige en ENV, LFO, CHORD, ARP). En el MENU: la pestaña siguiente / anterior. Con una capa mantenida: su vista, MAP ↔ KNOBS ↔ STATE. |
-| **PRESETS** (encoder) | **Siempre sonidos, con una lista** (V10.7.33): el primer giro abre la lista sobre cualquier página (no carga nada), PRESETS la recorre, OCT+ carga el sonido elegido, OCT− o unos segundos sin tocar la cierran; KNOB 1 la pista, KNOB 2 el motor siguiente, KNOB 3 FACTORY / USER / FAVORITES, KNOB 4 el tipo; REC un favorito. En el MENU no hace nada; con un botón mantenido: **EDIT** el primer sonido del motor siguiente / anterior (V10.7), **SEQ** el paso (su número grande), **HOME** el tempo. Nunca cambia de página, de pista, de módulo ni de fila. |
+| **PRESETS** (encoder) | **Siempre sonidos, con una lista** (V10.7.33): el primer giro abre la lista sobre cualquier página (no carga nada), PRESETS la recorre, OCT+ carga el sonido elegido, OCT− o unos segundos sin tocar la cierran; KNOB 1 la pista, KNOB 2 el motor siguiente, KNOB 3 FACTORY / USER / FAVORITE, KNOB 4 el tipo; REC un favorito. En el MENU no hace nada; con un botón mantenido: **EDIT** el primer sonido del motor siguiente / anterior (V10.7), **SEQ** el paso (su número grande), **HOME** el tempo. Nunca cambia de página, de pista, de módulo ni de fila. |
 | **KNOB 1–4** | Las cuatro tarjetas (columnas) de la pantalla. Una página que elige algo lo elige con **KNOB 1** (el paso, el compás, el slot, la etapa, el operador, el sonido del kit, la fila). Con una capa mantenida, las perillas propias de la capa. Girar rápido recorre todo el rango, despacio ajusta fino (MENU › CONTROL › KNOB ACCEL lo desactiva). En el MENU: KNOB n el ajuste de la tarjeta n. |
 | **MASTER** | El volumen de salida. |
 
@@ -522,7 +523,7 @@ nivel PROJECT) y **PROJECTS** (el nivel LIBRARY); EDIT 1 / EDIT 2 del kit DRUM s
   semicorcheas, como antes. **SYSTEM**: las pistas que suenan como fichas, los tres ajustes de LOAD (encendido el
   elegido), la ruta MIDI, la carga de CPU de los últimos segundos como una línea.
 - **SCL · ARP** › **KEY**: las doce notas en un círculo (C arriba), las de la escala encendidas y unidas, ROOT en el
-  acento con el nombre de la escala en el medio, KEY SNAP y TRANSPOSE a la derecha, la escala en un teclado debajo; KNOB 1
+  acento con el nombre de la escala en el medio, KEY SNAP y TRANSP a la derecha, la escala en un teclado debajo; KNOB 1
   fija ROOT. **CHORD**: el acorde que toca ahora cada grado de la tonalidad (I–VII, como lo tocaría una tecla: una nota
   si CHORD está en OFF o la voz no es POLY). **ARP** / **ARP 2**: "MODE · RATE · OCT" y el patrón que toca sobre una
   tríada (GATE el largo de las celdas, SWING los contratiempos tarde, PROB algunas fuera); en OFF lo dice.
@@ -589,13 +590,13 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | REVERB | TYPE | SIZE | DAMP (RESO: FOLLOW) | PRE (SHIMMER/CLOUD: AIR; RESO: PITCH) |
 | REVERB 2 | MOD | RATE | FILT | WIDE |
 | CHORUS | RATE | DEPTH | STEREO | — |
-| MASTER | CLIP | DRUM PUNCH | DUCK | REL |
+| MASTER | CLIP | PUNCH | DUCK | REL |
 
 **SCL**
 
 | Página | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- |
-| SCL | ROOT | SCALE | KEY SNAP | TRANSPOSE (0.7.6; antes TRANS, y SCL 2 tenía solo TRANSPOSE) |
+| SCL | ROOT | SCALE | KEY SNAP | TRANSP (0.7.6; antes TRANS, y SCL 2 tenía solo TRANSP) |
 | SCENE (V10.24) | SCENE (OFF / ON) | TRACK (T1–T6) | ROLE (KEEP CHORD ARP BASS LEAD DRUM) | CHORD (el acorde de esa pista) |
 
 **EDIT** (por pista; qué páginas aparecen depende del motor)
@@ -635,13 +636,13 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | MIXER | LEVEL | PAN | MUTE (codex/coherence; era REV, que está en BUS SENDS al lado) | G.SWING (V10.7.33: el swing global; hasta entonces BPM, ahora HOME mantenido + PRESETS) |
 | SENDS (0.8.5) | CHORUS | DLY | REV | — (los de la pista seleccionada, como FX > SENDS) |
 | GLOBAL | BPM | G.SWING | CLOCK | TUNE |
-| SYSTEM | TRACKS | CPU LOAD | ROUTE | CPU (%) |
+| SYSTEM | TRACKS | LOAD | ROUTE | CPU (%) |
 
 **SAVE**
 
 | Página | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- |
-| PRESETS (V10.7.33: la lista) | TRACK | ENG (KNOB 2: el primer sonido del motor siguiente) | SOURCE (FACTORY / USER / FAVORITES) | TYPE (ALL BASS LEAD PAD KEYS PLUCK BELL VOX DRUM FX) · PRESETS la recorre, OCT+ carga, OCT− cierra, REC un favorito |
+| PRESETS (V10.7.33: la lista) | TRACK | ENG (KNOB 2: el primer sonido del motor siguiente) | SOURCE (FACTORY / USER / FAVORITE) | TYPE (ALL BASS LEAD PAD KEYS PLUCK BELL VOX DRUM FX) · PRESETS la recorre, OCT+ carga, OCT− cierra, REC un favorito |
 | USER | SLOT (U01–U32) | LOAD (acción) | ERASE (acción) | SAVE (acción) |
 | PROJECTS / PART SLOTS (la página PROJECT) | PROJECT (1–6: lo elige, no lo abre; en PART SLOTS: PART A–D) | LOAD (acción: abre el proyecto elegido; en PART SLOTS, la parte) | ERASE (acción) | SAVE (acción: después NAME, KNOB 3 SONG / LOOP) |
 | TOOLS (V10.24; V10.7.22 la primera página de SAVE) | TARGET (PROJECT, TRACK, SOUND, SONG, SYSTEM; era SCOPE) | ACTION (CLEAR PROJECT · CLEAR SEQ · INIT SOUND · DELETE ROW, CLEAR SONG · CPU TEST) | — | DO: **OCT+ mantenido un segundo** (CLEAR PROJECT: OCT+ pregunta, OCT+ otra vez lo hace) |
@@ -659,7 +660,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | Página | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- |
 | ARP | MODE | RATE | OCT | GATE |
-| ARP 2 | ARP SWING | PROB | HOLD | ORDER |
+| ARP 2 | ARP SWG | PROB | HOLD | ORDER |
 
 **SEQ** (por pista)
 
@@ -1848,14 +1849,14 @@ tienen. Cada pista conserva su propio TRANS.
 - SCALE: CHR, MAJ, MIN, DOR, MIX, PEN, MPEN, HARM, PHRY, LYD, LOC, MEL, BLUES, WHOLE, DIMHW, DIMWH.
 - KEY SNAP: OFF; SNAP (las teclas se ajustan a la escala); WHITE (las teclas blancas recorren la escala, las negras no
   suenan); SEQ (como SNAP, y además las notas del secuenciador se ajustan mientras suenan).
-- **SCL > TRANSPOSE**, KNOB 4 (0.7.6; hasta entonces en SCL 2; antes se llamaba STRN) mueve todas las secuencias hacia arriba o hacia abajo por la escala (±14
+- **SCL > TRANSP**, KNOB 4 (0.7.6; hasta entonces en SCL 2; antes se llamaba STRN) mueve todas las secuencias hacia arriba o hacia abajo por la escala (±14
   grados), en todas las pistas a la vez. Es global y se guarda con el proyecto: si tus notas suenan más graves o más
-  agudas de lo que muestra el piano roll, fijate acá. Cuando no está en 0 el piano roll muestra **TRANSPOSE** y su valor, y
+  agudas de lo que muestra el piano roll, fijate acá. Cuando no está en 0 el piano roll muestra **TRANSP** y su valor, y
   al dar PLAY también lo avisa. 0 = apagado.
 - La reverb RESO y los pasos de afinación del SLICER también siguen la escala.
 - (0.8.3) **Cada sección guarda su tonalidad**: ROOT y SCALE se guardan con cada sección, así que un tema puede cambiar
   de tonalidad de una sección a otra (el PARTS de GEN lo hace en los géneros pop: la última sección un tono arriba).
-  Cuando el tema entra a una sección, las teclas, CHORD, TRANSPOSE y la reverb RESO siguen su tonalidad, también con una
+  Cuando el tema entra a una sección, las teclas, CHORD, TRANSP y la reverb RESO siguen su tonalidad, también con una
   pista de batería seleccionada (entonces cuenta la de la primera pista melódica; hasta 0.8.3 una pista de batería
   seleccionada se quedaba con la tonalidad anterior).
 
@@ -2264,7 +2265,7 @@ De qué está hecha una pieza:
   cantidades deciden cuánto suena; el bombo nunca se cae del uno.
 - **La tonalidad** (0.8.3): un modo de siete notas para cada género (de su lista: mayor, menor, dórico, mixolidio,
   frigio, lidio, menor armónica y melódica), **escrito en la página SCALE** (ROOT, SCALE, y KEY SNAP en SNAP salvo que hayas
-  elegido otro KEY SNAP) en todas las pistas, así que las teclas que toques después, la página CHORD, TRANSPOSE y la reverb
+  elegido otro KEY SNAP) en todas las pistas, así que las teclas que toques después, la página CHORD, TRANSP y la reverb
   RESO están en la tonalidad de la pieza. Un género que canta en pentatónica o blues (deep house, funk, boom bap, D&B,
   afrobeat ..) recibe el modo que la contiene (dórico o eólico; mayor para la pentatónica mayor) y su **lead** se queda
   en las notas de la pentatónica: los acordes siguen siendo acordes de verdad y todas las notas siguen en la escala de
@@ -3133,7 +3134,7 @@ SCOPE  2/33**. El encabezado dice MENU · DISPLAY.
 | AUDIO | TRACKS | **4** (por defecto), 6 |
 | AUDIO | CPU LOAD | ECO, LITE, **FULL** (por defecto) — lo mismo que GLO › SYSTEM KNOB 2 |
 | AUDIO | OCT BEND | OFF, 1, **2** (por defecto), 3, 4, 5, 7, 12 ST — (V10.6z4) las teclas de expresión: OCT+ mantenido sobre una nota dobla hasta acá, OCT− un vibrato; OFF: OCT es la octava aunque haya una nota mantenida (ver Combinaciones útiles) |
-| SYSTEM | USB MODE | AUDIO (audio USB estéreo y MIDI, por defecto; hasta la V10.6d era CONSOLE, cuando se fue la consola serie), STEREO (solo audio + MIDI, clase 0; era OFF: ayuda a que macOS 13–15 vea la entrada de audio USB), STEMS (0.7.1: entrada de audio de 8 canales, ver "Stems" más abajo), IN+OUT (0.7.5: audio estéreo en los dos sentidos, ver "Entrada de audio USB" más abajo), STEMS+IN (0.8.0: los stems con la salida de audio también, ver "Stems con una voz" más abajo) |
+| SYSTEM | USB | AUDIO (audio USB estéreo y MIDI, por defecto; hasta la V10.6d era CONSOLE, cuando se fue la consola serie), STEREO (solo audio + MIDI, clase 0; era OFF: ayuda a que macOS 13–15 vea la entrada de audio USB), STEMS (0.7.1: entrada de audio de 8 canales, ver "Stems" más abajo), IN+OUT (0.7.5: audio estéreo en los dos sentidos, ver "Entrada de audio USB" más abajo), STEMS+IN (0.8.0: los stems con la salida de audio también, ver "Stems con una voz" más abajo) |
 | SYSTEM | RESTORE LAST | **OFF** (por defecto: sin autoguardado, el encendido arranca en cero), ON (la última sesión vuelve al encender) |
 | SYSTEM | CPU CORES | 1 CORE, **2 CORES** (por defecto) — desde el próximo arranque; (V10.6z2) el segundo núcleo arranca solo con la alimentación de fábrica (no después de un SAFE START) |
 | SYSTEM | CPU CLOCK | **360 MHZ** (por defecto), 320 MHZ — desde el próximo arranque |

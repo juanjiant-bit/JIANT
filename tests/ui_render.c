@@ -676,6 +676,7 @@ enum { S_HOME, S_HOME_IDLE, S_MESSAGE, S_MESSAGE_KEY, S_MESSAGE_NOFILE, S_PRESET
        S_VX_BUG_FLAM, S_VX_BUG_RATCH, S_VX_BUG_QUIET,
        S_V6_ANALOG, S_V6_ANALOG_SQR, S_V6_ANALOG_RING, S_V6_ANALOG_QUIET, S_V6_ANALOG_HOME, S_V6_ANALOG_FULL, S_V6_FM6, S_V6_FM6_ALG32, S_V6_FM6_OP, S_V6_FM6_OP2, S_V6_FM6_ENV, S_V6_FM6_ENV_REL, S_V6_FM6_HOME, S_V6_FM6_FULL, S_V6_WHEEL, S_V6_WHEEL_FAST, S_V6_WHEEL_HOME, S_V6_WHEEL_FULL, S_V6_NOISE, S_V6_NOISE_LFSR, S_V6_NOISE_WHITE, S_V6_NOISE_HOME, S_V6_NOISE_FULL, S_V6_PHASE, S_V6_PHASE_RING, S_V6_PHASE_HOME, S_V6_PHASE_FULL, S_V6_LOFI, S_V6_LOFI_FLOAT, S_V6_LOFI_PLS, S_V6_LOFI_HOME, S_V6_LOFI_FULL, S_V6_VOICE_FULL, S_V6_ANIMAL_FULL, S_VX_TRACT_A_FULL, S_VX_TRACT_M_FULL, S_VX_TRACT_A_EDIT, S_VX_TRACT_M_EDIT, S_VX_TRACT_A_HOME, S_VX_TRACT_M_HOME, S_V6_STRING, S_V6_STRING_BOW, S_V6_STRING_HOME, S_V6_STRING_FULL, S_V6_ADD, S_V6_ADD_BELL, S_V6_ADD_HOME, S_V6_ADD_FULL, S_HOME_MUT, S_HOME_FACES,
        S_LIVE_RIELES, S_LIVE_RIELES_T3, S_LIVE_MANO, S_LIVE_MANO_KEYS,
+       S_PL_LIST, S_PL_EDITED, S_PL_HOME, S_HELP_MACROS, S_HELP_STEP, S_HELP_TOOLS, S_STEP_BIG,
        S_MIXER_T4, S_HOME_T4, S_MOCK_HOME, S_MOCK_PRESETS, S_MOCK_SEQ, S_MOCK_DRUM, S_MOCK_MIXER, S_MOCK_DIALOG, S_MOCK_MENU,
        S_TOAST_ENV, S_TOAST_MUTATE, S_TOAST_MUTATE_HINT, S_TOAST_MOTION, S_TOAST_MOTION_LOCKS, S_TOAST_PUNCH, S_TOAST_AUTO_LIST,
        S_TOAST_AUTO_LIST_DRUM, S_TOAST_PATTERN, S_TOAST_FM6_OP, S_TOAST_ANALOG, S_COUNT };
@@ -714,6 +715,7 @@ static const char *const S_NAME[S_COUNT] = {"home", "home_idle", "message", "mes
     "vx_bug_flam", "vx_bug_ratchet", "vx_bug_quiet",
     "v6_analog", "v6_analog_sqr", "v6_analog_ring", "v6_analog_quiet", "v6_analog_home", "v6_analog_full", "v6_fm6", "v6_fm6_alg32", "v6_fm6_op", "v6_fm6_op2", "v6_fm6_env", "v6_fm6_env_rel", "v6_fm6_home", "v6_fm6_full", "v6_wheel", "v6_wheel_fast", "v6_wheel_home", "v6_wheel_full", "v6_noise", "v6_noise_lfsr", "v6_noise_white", "v6_noise_home", "v6_noise_full", "v6_phase", "v6_phase_ring", "v6_phase_home", "v6_phase_full", "v6_lofi", "v6_lofi_float", "v6_lofi_pls", "v6_lofi_home", "v6_lofi_full", "v6_voice_full", "v6_animal_full", "vx_tract_a_full", "vx_tract_m_full", "vx_tract_a_edit", "vx_tract_m_edit", "vx_tract_a_home", "vx_tract_m_home", "v6_string", "v6_string_bow", "v6_string_home", "v6_string_full", "v6_add", "v6_add_bell", "v6_add_home", "v6_add_full", "home_mutate", "home_faces",
     "live_rieles", "live_rieles_t3", "live_mano", "live_mano_keys",
+    "presets_list", "presets_list_edited", "presets_list_home", "help_macros", "help_step", "help_tools", "step_big",
     "mixer_tracks4", "home_tracks4", "mock_home", "mock_presets", "mock_seq", "mock_drum", "mock_mixer", "mock_dialog", "mock_menu",
     "toast_env", "toast_mutate", "toast_mutate_hint", "toast_motion", "toast_motion_locks", "toast_punch", "toast_auto_list",
     "toast_auto_list_drum", "toast_pattern", "toast_fm6_op", "toast_analog"};
@@ -1065,6 +1067,8 @@ static void v6_scene(uint32_t e, const char *pre, const char *page, const int16_
 static void setup(int s)
 {
     memset(kb_on, 0, sizeof kb_on);               /* no key held (roll_playing holds one) */
+    ui_help = 0; big_t = 0; pl_ret = 0; pl_cur = 0;   /* (V10.7.33: HELP off, no step said large, PRESETS' list shut) */
+    list_put(0);
     live.req = live.cur = -1; live.mode = live.srec = live.dirty = 0; lys.nqc = 0;   /* (the song layer: off) */
     memset(clip_now, 0, sizeof clip_now); memset(clip_go, 0, sizeof clip_go);
     fx_lane_k = 0; memset(pfx_lane, 0, sizeof pfx_lane);   /* (V10.7.32: the FX layer's knobs FX KNOBS, its lane empty) */   /* (V10.6s: CLIPS, nothing known) */
@@ -1184,12 +1188,12 @@ static void setup(int s)
         for (k = 0; k < 16u; k++) TSEL->p[P_MS0 + k] = L[k];
         TSEL->p[P_MSLEN] = 12; ms_ui_step = 4; ms_clock = div_samples(2) * 6u + 3u;
         TSEL->ms_v = 60 * 258;
-        go_title("MSEQ");
+        go_title("STEP MOD");
         break;
     }
     case S_DIST_PAGE: TSEL->p[P_DIST] = 70; TSEL->p[P_DTYPE] = 2; TSEL->p[P_DTONE] = 20; go_title("DIST"); break;
     /* (JIANT 0.5) the technical graphs (ui_tech.c) */
-    case S_DLY2: song.g[G_WIDTH] = 90; song.g[G_DPIT] = 5; song.g[G_DSPRY] = 60; go_title("DLY 2"); break;
+    case S_DLY2: song.g[G_WIDTH] = 90; song.g[G_DPIT] = 5; song.g[G_DSPRY] = 60; go_title("DELAY 2"); break;
     case S_REVERB2: song.g[G_RMOD] = 80; song.g[G_RWIDE] = 100; go_title("REVERB 2"); break;
     case S_CHORUS: song.g[G_CDEPTH] = 90; go_title("CHORUS"); break;
     case S_MASTER: song.g[G_CLIP] = 60; song.g[G_PUNCH] = 50; song.g[G_DUCK] = 40; go_title("MASTER"); break;
@@ -1270,11 +1274,27 @@ static void setup(int s)
         if (s == S_HOME_MACRO_TURN) { ui.hot_col = 2; ui.hot_t = 30; }
         break;
     }
+    case S_PL_LIST: case S_PL_EDITED: case S_PL_HOME: {   /* (V10.7.33) PRESETS' list over ENV (the sound picked three
+                                                         * on; EDITED: the track's sound edited, its dot) or over HOME */
+        uint32_t t;
+        song.sel = 1;
+        if (s == S_PL_HOME) { ui.home = 1; ui.hlv = 0; } else go_title("ENV");
+        snd_mark(TSEL);
+        pl_open();
+        pl_cur = (uint16_t)(preset_pos(&t) + 4u);
+        if (s == S_PL_EDITED) TSEL->p[P_E0] = (int16_t)(TSEL->p[P_E0] ^ 3);
+        if (s == S_PL_HOME) { pl_turn(3, 1); pl_cur = 3; }   /* (TYPE BASS) */
+        break;
+    }
+    case S_HELP_MACROS: ui_help = 1; ui.home = 1; ui.hlv = 0; break;   /* (V10.7.33) HELP: HOME + OCT+ */
+    case S_HELP_STEP: ui_help = 1; go_title("STEP"); break;
+    case S_HELP_TOOLS: ui_help = 1; go_title("TOOLS"); break;
+    case S_STEP_BIG: go_title("STEP"); cursor_set(6); big_say("STEP 7"); break;   /* (V10.7.33) SEQ held + PRESETS */
     case S_ED_FILTER: go_title("FILTER"); TSEL->p[P_E5] = 90; break;   /* (0.8.5) EDIT's lens: TONE, FILTER (ANALOG) */
     case S_ED_FILTER_BP: eng(7); go_title("FILTER"); TSEL->p[P_FTYPE] = 2; TSEL->p[P_DIST] = 60; ui.hot_col = 1; ui.hot_t = 30; break;
-    case S_ED_VOICE2: go_title("PLAY 2"); TSEL->p[P_VOICE] = 3; trk[0].v[0].stage = 2; trk[0].v[0].env = 9u << 20; break;
+    case S_ED_VOICE2: go_title("VOICES 2"); TSEL->p[P_VOICE] = 3; trk[0].v[0].stage = 2; trk[0].v[0].env = 9u << 20; break;
     case S_ED_FOCUS: case S_ED_FOCUS_MOD:              /* .. FOCUS: CUT, (MOD) M2 moving it */
-        go_title("FOCUS"); ui.focus = 4;
+        go_title("AUTO KNOBS"); ui.focus = 4;
         if (s == S_ED_FOCUS_MOD) { TSEL->p[P_M2SRC] = 1; TSEL->p[P_M2DST] = MD_E1 + 4; TSEL->p[P_M2AMT] = 40; }
         break;
     case S_ENV_TRACKS: case S_ENV_TRACKS_DEST:          /* (0.8.5) ENV's lens: TRACKS (ENV / DEST), T2 sounding */
@@ -1284,7 +1304,7 @@ static void setup(int s)
         break;
     case S_ENV_STAGE: case S_ENV_STAGE_SUS:
         go_title(FELUCCA_ENVX ? "STAGE" : "ENV"); ui.stage = s == S_ENV_STAGE ? 1 : 2; ui.hot_col = 1; ui.hot_t = 30; break;
-    case S_MSEQ2: go_title("MSEQ 2"); break;
+    case S_MSEQ2: go_title("STEP MOD 2"); break;
     case S_DLG_MUT_BACK: {                              /* (V10.6) MODES on a melodic track in C minor: the ring, the notes */
         uint32_t i;
         song.sel = 1; set_engine_of(TSEL, ENGI_ANALOG); TSEL->p[P_SCALE] = 2; TSEL->p[P_ROOT] = 0;
@@ -1314,7 +1334,7 @@ static void setup(int s)
         ui.menu = 1; ui.mlv = 2; ui.menu_sel = s == S_MENU_ROW ? MI_COLOR : MI_LEDS; break;
     case S_GLO_SENDS:                                  /* (0.8.5) GLO's lens: MIX > SENDS */
         trk[0].p[P_DIST] = 30; trk[1].p[P_CHOR] = 90; trk[2].p[P_DLY] = 60; trk[3].p[P_REV] = 127; trk[4].p[P_MUTE] = 1;
-        go_title("SENDS"); ui.hot_col = 2; ui.hot_t = 30;
+        go_title("BUS SENDS"); ui.hot_col = 2; ui.hot_t = 30;
         break;
     case S_KEY_CHORD: TSEL->p[P_CHRD] = 2; TSEL->p[P_CVOI] = 1; TSEL->p[P_ROOT] = 9; TSEL->p[P_SCALE] = 2; go_title("CHORD"); break;
     case S_KEY_CHORD_OFF: go_title("CHORD"); break;
@@ -1340,21 +1360,21 @@ static void setup(int s)
     case S_ENVDEST: go_title("ENV DEST"); break;
     case S_LFO: go_title("LFO"); break;
     case S_MOD: TSEL->p[P_M1SRC] = 1; TSEL->p[P_M1DST] = 2; TSEL->p[P_M1AMT] = 40; TSEL->p[P_M2SRC] = 6;
-        TSEL->p[P_M2DST] = 14; TSEL->p[P_M2AMT] = -64; mod_ui_slot = 1; go_title("MOD"); break;
+        TSEL->p[P_M2DST] = 14; TSEL->p[P_M2AMT] = -64; mod_ui_slot = 1; go_title("MATRIX"); break;
     case S_FX: go_title("FX"); break;
     case S_SLICER: song.g[G_SLMODE] = 1; go_title("SLICER"); break;   /* (0.6.3: the bus) */
-    case S_SLBUS: song.g[G_SLMODE] = 2; song.g[G_SLT1 + 2] = 0; song.g[G_SLFX] = 0; go_title("SL BUS 2"); break;
+    case S_SLBUS: song.g[G_SLMODE] = 2; song.g[G_SLT1 + 2] = 0; song.g[G_SLFX] = 0; go_title("SLICER IN2"); break;
     case S_SLPITCH: {
         static const int8_t PS[16] = {0, 7, 12, -5, 0, 3, 24, -12, 5, 0, -24, 7, 12, 0, 0, 0};
         for (uint32_t k = 0; k < 16u; k++) song.g[G_SLP0 + k] = PS[k];
         song.g[G_SLMODE] = 2; song.g[G_SLPLEN] = 12; sl_ui_step = 2; go_title("SL PITCH");
         break;
     }
-    case S_DLY: go_title("DLY"); break;
+    case S_DLY: go_title("DELAY"); break;
     case S_SCL: TSEL->p[P_SCALE] = 2; go_title("SCL"); break;
     case S_SHIFT: TSEL->p[P_SOFS] = -3; TSEL->p[P_POFS] = 7; TSEL->p[P_HVEL] = 80; go_title("TRACK"); break;   /* (0.6.92: TRACK) */
     case S_ARP: go_title("ARP"); break;
-    case S_VOICE: go_title("PLAY"); break;
+    case S_VOICE: go_title("VOICES"); break;
     case S_GLOBAL: go_title("GLOBAL"); break;
     case S_SYSTEM: go_title("SYSTEM"); break;
     case S_EDIT_ANALOG: go_title("EDIT 1"); break;
@@ -1554,7 +1574,7 @@ static void setup(int s)
             song.g[G_STRN] = -12;
         song.playing = 1; t->seq_idx = 21;
         nav_scene(SEC_SEQ, s == S_LENTE_PAT ? "LENGTH" : s == S_LENTE_STRETCH ? "STRETCH" : s == S_LENTE_BAR || s == S_LENTE_BAR_LONG ?
-                  "STEP" : s == S_LENTE_STEP_COMP2 ? "COMP 2" : s == S_LENTE_STEP ? "NOTE" : s == S_SEQ_BAR ? "BAR" : "COMP");   /* (0.9.2: NOTE the roll; the
+                  "STEP" : s == S_LENTE_STEP_COMP2 ? "COND 2" : s == S_LENTE_STEP ? "NOTE" : s == S_SEQ_BAR ? "BAR" : "STEP COND");   /* (0.9.2: NOTE the roll; the
                                                          * step large on COMP: TIE, REST, LONG there) */
         cursor_set(s == S_LENTE_STEP_TIE ? 35 : s == S_LENTE_STEP_REST ? 36 : s == S_LENTE_BAR_LONG || s == S_LENTE_STEP_LONG ? 40 : 34);
         ui.pr_focus = s == S_LENTE_STEP ? 2u : 0u;
@@ -1567,7 +1587,7 @@ static void setup(int s)
         drum(0); trk[3].p[P_SLEN] = 32;
         memcpy(&trk[3].step[16], &trk[3].step[0], 16u * sizeof(step_t));
         trk[3].step[20].hit |= 0x30u; trk[3].step[20].acc |= 0x10u;
-        nav_scene(SEC_SEQ, s == S_LENTE_PAT_DRUM ? "LENGTH" : s == S_LENTE_BAR_DRUM ? "STEP" : s == S_SEQ_BAR_DRUM ? "BAR" : "COMP");
+        nav_scene(SEC_SEQ, s == S_LENTE_PAT_DRUM ? "LENGTH" : s == S_LENTE_BAR_DRUM ? "STEP" : s == S_SEQ_BAR_DRUM ? "BAR" : "STEP COND");
         cursor_set(20); ui.lane = 4;
         break;
     /* NAME (ui_name.c): USER SAVE prefilled; a letter cycling (RS: S, R next); 123 on a project; an empty project name
@@ -1656,7 +1676,7 @@ static void setup(int s)
      * DEPTH 90, CLIP 30 PUNCH 40 DUCK 20 REL 60 */
     case S_FXL_SENDS: case S_FXL_DIST: case S_FXL_PAN: case S_FXL_BUSES: case S_FXL_DELAY: case S_FXL_DELAY2:
     case S_FXL_REVERB: case S_FXL_SLICER: case S_FXL_MASTER: {
-        static const char *const T[] = {"FX", "DIST", "AUTO PAN", "BUSES", "DLY", "DLY 2", "REVERB", "SLICER", "MASTER"};
+        static const char *const T[] = {"FX", "DIST", "AUTO PAN", "BUSES", "DELAY", "DELAY 2", "REVERB", "SLICER", "MASTER"};
         TSEL->p[P_DIST] = 30; TSEL->p[P_CHOR] = 60; TSEL->p[P_DLY] = 40; TSEL->p[P_REV] = 50;
         TSEL->p[P_DTYPE] = 0; TSEL->p[P_APDEP] = 40; TSEL->p[P_APWAVE] = 0;
         song.g[G_DFDBK] = 70; song.g[G_DMIX] = 50; song.g[G_RTYPE] = 0; song.g[G_RSIZE] = 70; song.g[G_CDEPTH] = 64;
@@ -1671,7 +1691,7 @@ static void setup(int s)
      * song B16 C16 A32 D8 C16 A32 (scenes on 2 and 4, END LOOP); seven user sounds */
     case S_PG0 ... S_PG_END: {   /* (V10.1) the pages the manual had no screen of: by title, on the engine they need */
         static const struct { const char *t; uint32_t e, sec; } PG[S_PG_END - S_PG0 + 1] =
-        {{"RETRIG", ENGI_LOFI, SEC_EDIT}, {"ROTOR", ENGI_WHEEL, SEC_EDIT}, {"LENGTH", 0xFFu, SEC_SEQ}, {"MODES", 0xFFu, SEC_SEQ}, {"DLY 3", 0xFFu, SEC_FX}, {"SL BUS", 0xFFu, SEC_FX}, {"TAPE", 0xFFu, SEC_FX}, {"EQ", 0xFFu, SEC_FX}, {"SYSTEM 2", 0xFFu, SEC_GLO}, {"G.COMP", 0xFFu, SEC_GLO}, {"G.COMP 2", 0xFFu, SEC_GLO}, {"KIT 2", ENGI_DRUM, SEC_EDIT}, {"KIT 3", ENGI_DRUM, SEC_EDIT}, {"KIT 4", ENGI_DRUM, SEC_EDIT}, {"LEVELS", ENGI_DRUM, SEC_EDIT}, {"LEVELS 2", ENGI_DRUM, SEC_EDIT}, {"X-MOD", ENGI_DRUM, SEC_EDIT}};
+        {{"RETRIG", ENGI_LOFI, SEC_EDIT}, {"ROTOR", ENGI_WHEEL, SEC_EDIT}, {"LENGTH", 0xFFu, SEC_SEQ}, {"MODES", 0xFFu, SEC_SEQ}, {"DELAY 3", 0xFFu, SEC_FX}, {"SLICER IN", 0xFFu, SEC_FX}, {"TAPE", 0xFFu, SEC_FX}, {"EQ", 0xFFu, SEC_FX}, {"PORTS", 0xFFu, SEC_GLO}, {"COMP", 0xFFu, SEC_GLO}, {"COMP 2", 0xFFu, SEC_GLO}, {"KIT 2", ENGI_DRUM, SEC_EDIT}, {"KIT 3", ENGI_DRUM, SEC_EDIT}, {"KIT 4", ENGI_DRUM, SEC_EDIT}, {"LEVELS", ENGI_DRUM, SEC_EDIT}, {"LEVELS 2", ENGI_DRUM, SEC_EDIT}, {"KIT LFO", ENGI_DRUM, SEC_EDIT}};
         if (PG[s - S_PG0].e != 0xFFu) eng(PG[s - S_PG0].e);
         nav_scene(PG[s - S_PG0].sec, PG[s - S_PG0].t);
         break;
@@ -2010,7 +2030,7 @@ static void sweep_columns(void)
     }
     for (e = 0; e < 4u; e++) {                           /* the MOD page: every source and destination */
         int32_t v;
-        state(); pal(UI_JIANT_INDEX); go_title("MOD");
+        state(); pal(UI_JIANT_INDEX); go_title("MATRIX");
         cur_name = large_on ? "LARGE MOD sweep" : "MOD sweep";
         for (v = 0; v < MD_N; v++) {
             TSEL->p[P_M1SRC] = (int16_t)(v % MS_N); TSEL->p[P_M1DST] = (int16_t)v; TSEL->p[P_M1AMT] = (int16_t)(e * 40 - 64);

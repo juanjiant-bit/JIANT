@@ -272,7 +272,8 @@ static void graph_eco(void)
         char num[2] = {(char)('1' + c), 0};
         eco_being(c, bx[c], by[c], eco.r[c]);
         ny = clamp(py + rad / 2 + 4, 4, bot);
-        cv_text_in(px - 30, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM : T_TEXT, T_SURF);
+        if (px < 150 || ny < bot - 30)                  /* (V10.7.33: not under the tempo's corner) */
+            cv_text_in(px - 30, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM : T_TEXT, T_SURF);
     }
     if (ui.hot_t && ui.hot_col < 4u) {                  /* MACROS: a macro turned, where it goes ("M2 T1 CUT+40 T3 ..",
                                                          * the MACRO layer's list); else the routes counted; LATCH */
