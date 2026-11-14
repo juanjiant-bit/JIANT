@@ -383,7 +383,7 @@ async function editorMock() {
     const inert = [25, 26].map(async (id) => E.parse[E.CMD.DESC](await rq(E.req.desc(1, id))));
     const [d25, d26] = await Promise.all(inert);
     ok(rd.label === "TYPE" && rd.def === 0 && eq(rd.names, ["ROOM", "SPRING", "SHIMR", "RESO", "CLOUD"]) && r1.value === 4 && r0.value === 0 &&
-       d25.label === "PUNCH" && d26.label === "DUCK" && d25.max === 100 && info.gcount === 73,   /* (V10.49 G_DRTIME) */
+       d25.label === "DRUM PUNCH" && d26.label === "DUCK" && d25.max === 100 && info.gcount === 73,   /* (V10.49 G_DRTIME) */
       "editor: REVERB TYPE (ROOM SPRING SHIMR RESO CLOUD, set 10 clamps to 4, global id 24; 25, 26 PNCH and DUCK, JIANT's master)");
   }
   const st = E.parse[E.CMD.STEP_SET](await rq(E.req.stepSet(5, { n: 2, notes: [60, 64], time: 0, flags: 1, vel: 100 })));
@@ -494,7 +494,7 @@ function mockTables() {
   ok(shown(div).join() === "4BAR,2BAR,1/1,1/2,1/4,1/8,8T,1/16,16T,1/32" &&
      slr.some((d) => shown(d).join() === "1/8,8T,1/16,16T,1/32,32T") && div.names[2] === "1/16",
      "editor: #48 DIV / RATE / TIME longest first (values unchanged: 2 is still 1/16)");
-  const swg = [T.TP, T.GP].flatMap((tb) => tb.filter((d) => d.label === "SWING"));
+  const swg = [T.TP, T.GP].flatMap((tb) => tb.filter((d) => /(^|[ .])SWING$/.test(d.label)));   /* (V10.7.33: SWING, ARP SWING, G.SWING) */
   ok(swg.length === 3 && swg.every((d) => E.fmtValue(d, 100)[0] === "100" && E.fmtValue(d, 50)[0] === "50") &&
      E.fmtValue({ fmt: swg[0].fmt, min: 0, max: 127 }, 127)[0] === "100" && E.fmtValue({ fmt: swg[0].fmt, min: 0, max: 127 }, 64)[0] === "50",
      "editor: SWG 100 shows 100 % (not 79), 0..127 percents unchanged");

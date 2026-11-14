@@ -200,7 +200,7 @@
         <button id="lyricsend" data-t="lyricSend"></button></p>
       <p class="dim" id="lyric-preview" aria-live="polite"></p>
       <p class="dim">RU: transliteración automática / automatic transliteration. ZH: pinyin.
-        SEQ → LYRIC STEP: STEP, WORD, SYLLABLE, OCT+ PLACE. TEXT FIXED + POS repite la sílaba elegida / repeats the selected syllable. SYLLABLE 0 = AUTO.</p></div>
+        SEQ → LYRICS: STEP, WORD, SYLLABLE, OCT+ PLACE. TEXT FIXED + POS repite la sílaba elegida / repeats the selected syllable. SYLLABLE 0 = AUTO.</p></div>
   </section>
 
   <section class="panel" id="p-fm6" data-tab="fm6" data-dev hidden>
@@ -1607,8 +1607,8 @@ function makeMockDevice(opt = {}) {
     D("RATE", F.LFOHZ, -14, 127, 60), E("WAVE", ["SIN", "TRI", "SAW", "SQR", "S&H", "DRIFT"], 0), D("PHASE", F.INT, -1, 127, 0), D("FADE", F.TIME, 0, 127, 0),   /* (0.6.51) RATE < 0 in time, PHASE -1 FREE (0.9.18: shown as MODE TRIG / FREE, lfoModeRows) */
     D("PITCH", F.BIPCT, -64, 63, 0), D("FILTER", F.BIPCT, -64, 63, 0), D("SHAPE", F.BIPCT, -64, 63, 0), D("AMP", F.PCT, 0, 127, 0),
     E("MODE", ["OFF", "UP", "DN", "UPDN", "RND", "ORD", "REPEAT", "DNUP", "UP+8", "CONV", "DIVG", "PINKY", "THUMB", "WALK", "CHORD", "TRNS"], 0), E("RATE", NDIV, 2), D("OCT", F.INT, 1, 4, 1), D("GATE", F.PCT, 1, 127, 64),
-    D("SWING", F.PCT, 0, 100, 0), D("PROB", F.PCT, 0, 127, 127), E("HOLD", NONOFF, 0), E("ORDER", ["NOTE", "PLAY"], 0),
-    D("ROOT", F.NOTE, 0, 11, 0), E("SCALE", ["CHR", "MAJ", "MIN", "DOR", "MIX", "PEN", "MPEN", "HARM", "PHRY", "LYD", "LOC", "MEL", "BLUES", "WHOLE", "DIMHW", "DIMWH"], 0), E("QUANT", ["OFF", "SNAP", "WHITE", "SEQ"], 0), D("TRANS", F.SEMI, -24, 24, 0),
+    D("ARP SWING", F.PCT, 0, 100, 0), D("PROB", F.PCT, 0, 127, 127), E("HOLD", NONOFF, 0), E("ORDER", ["NOTE", "PLAY"], 0),
+    D("ROOT", F.NOTE, 0, 11, 0), E("SCALE", ["CHR", "MAJ", "MIN", "DOR", "MIX", "PEN", "MPEN", "HARM", "PHRY", "LYD", "LOC", "MEL", "BLUES", "WHOLE", "DIMHW", "DIMWH"], 0), E("KEY SNAP", ["OFF", "SNAP", "WHITE", "SEQ"], 0), D("TRANS", F.SEMI, -24, 24, 0),
     D("LEN", F.STEPS, 1, 64, 16), E("DIV", NDIV, 2), D("SWING", F.PCT, 0, 100, 0), D("GATE", F.PCT, 1, 127, 127),   /* (V10.6z4: GATE 100 % for new tracks) */
     D("DIST", F.PCT, 0, 127, 0), D("CHORUS", F.PCT, 0, 127, 0), D("DLY", F.PCT, 0, 127, 0), D("REV", F.PCT, 0, 127, 0),
     E("POLY", ["POLY", "MONO", "LEG", "UNI"], 0), D("GLIDE", F.TIME, 0, 127, 0), D("PAN", F.BIPCT, -64, 63, 0), E("MUTE", NONOFF, 0),
@@ -1617,7 +1617,7 @@ function makeMockDevice(opt = {}) {
     ...[1, 2, 3, 4].flatMap((k) => [E("SRC" + k, MSRC, 0), E("DEST" + k, MDST, 0), D("AMT" + k, F.BIPCT, -64, 63, 0)]),   /* the matrix */
   ];
   const GP = [
-    D("BPM", F.BPM, 40, 240, 120), D("SWING", F.PCT, 0, 100, 0), E("CLOCK", ["INT", "USB+BT", "TRS"], 0), D("TUNE", F.INT, -50, 50, 0),
+    D("BPM", F.BPM, 40, 240, 120), D("G.SWING", F.PCT, 0, 100, 0), E("CLOCK", ["INT", "USB+BT", "TRS"], 0), D("TUNE", F.INT, -50, 50, 0),
     E("TIME", NDTIME, 1), D("FEEDBK", F.PCT, 0, 120, 60), D("TONE", F.PCT, 0, 127, 64), D("MIX", F.PCT, 0, 127, 90),   /* (JIANT 0.4: free
        times past the divisions; TONE: COLR + HPF in one) */
     D("SIZE", F.PCT, 0, 127, 90), D("DAMP", F.PCT, 0, 127, 60), D("RATE", F.LFOHZ, 0, 127, 40), D("DEPTH", F.PCT, 0, 127, 60),
@@ -1627,12 +1627,12 @@ function makeMockDevice(opt = {}) {
       "STRING", "-", "DRUM", "NOISE", "FM6", "ADD", "ANIMAL", "EXT"], 0), D("CLIP", F.PCT, 0, 100, 0),   /* G_CLIP (was SET); 0.8.3 ANIMAL; snd5 STRING 8 ADD 13 */
     E("CLRSQ", NGO, 0), E("INIT", NGO, 0),
     E("TYPE", ["ROOM", "SPRING", "SHIMR", "RESO", "CLOUD"], 0),               /* G_RTYPE (id 24, was G_DRCH): the reverb's model */
-    D("PUNCH", F.PCT, 0, 100, 0), D("DUCK", F.PCT, 0, 100, 0),   /* G_PUNCH, G_DUCK (JIANT; were G_DRLVL, G_DRREV) */
+    D("DRUM PUNCH", F.PCT, 0, 100, 0), D("DUCK", F.PCT, 0, 100, 0),   /* G_PUNCH, G_DUCK (JIANT; were G_DRLVL, G_DRREV) */
     D("STEREO", F.BIPCT, -64, 63, 0), D("WIDE", F.PCT, 0, 127, 0),   /* (JIANT, FUNB) G_DHPF (0.6.9: G_CSTER, the CHORUS's stereo), G_WIDTH: width */
     D("MOD", F.PCT, 0, 127, 0), D("RATE", F.LFOHZ, 0, 127, 30), D("PRE", F.INT, -24, 100, 0),   /* the reverb's modulation, pre-delay (0.6.12: SHIMMER / CLOUD AIR below 0) */
     D("FILT", F.BIPCT, -64, 63, 0), D("WIDE", F.PCT, 0, 127, 0),   /* (JIANT 0.3) G_RFILT, G_RWIDE: the reverb's tone, width */
     D("PITCH", F.SEMI, -12, 12, 0), D("SPRAY", F.PCT, 0, 127, 0),   /* .. G_DPIT, G_DSPRY: the GRAIN delay */
-    D("ALL TR", F.INT, -14, 14, 0),                   /* (JIANT 0.4) G_STRN: every sequence this many steps along the scale */
+    D("TRANSPOSE", F.INT, -14, 14, 0),                   /* (JIANT 0.4) G_STRN: every sequence this many steps along the scale */
     /* (JIANT 0.6.3) G_SLMODE 37 ..: the SLICER, one on a bus: mode, pattern, rate, depth; T1..T6 and FX in; the repeats'
        pitch sequence: LEN, QNT, 16 steps */
     E("MODE", ["OFF", "GATE", "STUT"], 0), D("PAT", F.INT, 1, 16, 1), E("RATE", ["1/8", "1/16", "1/32", "8T", "16T", "32T"], 1), D("DEPTH", F.PCT, 0, 127, 127),
@@ -2972,25 +2972,25 @@ const P = { LEVEL: 0, SLEN: 29 };
 const LAYOUT = (pe0) => [
   { t: "ENV", pages: [["ENV", 0, [1, 2, 3, 4]], ["ENV DEST", 0, [5, 6, 7, 8]]] },
   { t: "LFO", pages: [["LFO", 0, [9, 10, 11, 12]], ["LFO DEST", 0, [13, 14, 15, 16]],
-    ...(pe0 >= 112 ? [["MSEQ", 0, [93, 95, 94]], ...[0, 1, 2, 3].map((k) => [`STEPS ${4 * k + 1}-${4 * k + 4}`, 0,
+    ...(pe0 >= 112 ? [["STEP MOD", 0, [93, 95, 94]], ...[0, 1, 2, 3].map((k) => [`STEPS ${4 * k + 1}-${4 * k + 4}`, 0,
       [96 + 4 * k, 97 + 4 * k, 98 + 4 * k, 99 + 4 * k]])] : [])] },   /* (JIANT) the modulation sequence: LEN DIV SLEW, its 16 levels */
-  ...(pe0 >= 61 ? [{ t: "MOD", mod: 49 }] : []),   /* the matrix: P_M1SRC 49 .. P_M4AMT 60, one row per slot */
+  ...(pe0 >= 61 ? [{ t: "MATRIX", mod: 49 }] : []),   /* the matrix: P_M1SRC 49 .. P_M4AMT 60, one row per slot */
   { t: "EDIT", engine: true, pages: [["EDIT 1", 0, [pe0, pe0 + 1, pe0 + 2, pe0 + 3]], ["EDIT 2", 0, [pe0 + 4, pe0 + 5, pe0 + 6, pe0 + 7]],
     ...(pe0 >= 91 && engName() === "DRUM" ? [["LANES", 0, P_LANES.slice(0, 4)], ["LANES 2", 0, P_LANES.slice(4)]] : [])] },   /* lane levels 83..90 */
   ...(pe0 >= 81 && engName() === "DIGITAL" ? [{ t: "OP ENV", pages: [   /* P_FM1_ATK 61: ATK DEC SUS REL LVL per operator (a
                                                     FELUCCA_FM4=1 firmware only: DIGITAL retired, its engine is "-") */
     ...[0, 1, 2, 3].map((k) => [`OP${k + 1}`, 0, [61 + 5 * k, 62 + 5 * k, 63 + 5 * k, 64 + 5 * k]]),
     ["OP LVL", 0, [65, 70, 75, 80]]] }] : []),
-  { t: "PLAY", pages: [["LEVEL", 0, [0]], ["PLAY", 0, [37, 38, 41, 42]],   /* (codex/coherence: PLAY, the device's EDIT > PLAY; was VOICE) */   /* (JIANT 0.4: no VOICE 2: PAN on MIXER, MUTE there and GLO) */
+  { t: "VOICES", pages: [["LEVEL", 0, [0]], ["VOICES", 0, [37, 38, 41, 42]],   /* (V10.7.33: VOICES, the device's EDIT > VOICES; PLAY before, VOICE before it) */   /* (JIANT 0.4: no VOICE 2: PAN on MIXER, MUTE there and GLO) */
     ...(dev && dev.pdesc && dev.pdesc[80] && dev.pdesc[80].label === "VEL" ? [["VEL", 0, [80]]] : [])] },   /* (after V10.7.2) the sound's
                                                     velocity amount (P_TVEL 80), where the device names it so */
-  { t: "FX", pages: [["SENDS", 0, pe0 >= 112 ? [34, 35, 36] : [33, 34, 35, 36]],   /* (codex/coherence: the sends; DIST its page) */ ["MASTER", 1, [21, 25, 26, 13]], ...(dev && dev.gdesc && dev.gdesc[17] && dev.gdesc[17].label === "DJ FILT" ? [["DJ FILTER", 1, [17]]] : []),   /* (0.9.1, as the device names it) */ ...(pe0 >= 112 ? [["DIST", 0, [33, 91, 92]]] : []), ...(dev && dev.info && dev.info.gcount >= 66 ? [["AUTO PAN", 0, [45, 46, 48, 47]], ["SLICER", 1, [37, 38, 39, 40]], ["SL BUS", 1, [41, 42, 43, 44]],
-      ["SL BUS 2", 1, [45, 46, 47]], ["SL PITCH", 1, [48, 49]], ...[0, 1, 2, 3].map((k) => [`PITCH ${4 * k + 1}-${4 * k + 4}`, 1,
+  { t: "FX", pages: [["SENDS", 0, pe0 >= 112 ? [34, 35, 36] : [33, 34, 35, 36]],   /* (codex/coherence: the sends; DIST its page) */ ["MASTER", 1, [21, 25, 26, 13]], ...(dev && dev.gdesc && dev.gdesc[17] && dev.gdesc[17].label === "DJ FILT" ? [["DJ FILTER", 1, [17]]] : []),   /* (0.9.1, as the device names it) */ ...(pe0 >= 112 ? [["DIST", 0, [33, 91, 92]]] : []), ...(dev && dev.info && dev.info.gcount >= 66 ? [["AUTO PAN", 0, [45, 46, 48, 47]], ["SLICER", 1, [37, 38, 39, 40]], ["SLICER IN", 1, [41, 42, 43, 44]],
+      ["SLICER IN2", 1, [45, 46, 47]], ["SL PITCH", 1, [48, 49]], ...[0, 1, 2, 3].map((k) => [`PITCH ${4 * k + 1}-${4 * k + 4}`, 1,
       [50 + 4 * k, 51 + 4 * k, 52 + 4 * k, 53 + 4 * k]])] : [["SLICER", 0, [45, 46, 47, 48]]]),   /* (0.6.3: one, on a bus) */
-    ["DLY", 1, [4, 5, 6, 7]], ...(pe0 >= 112 ? [["DLY 2", 1, [28, 34, 35, ...(dev && dev.info && dev.info.gcount >= 67 ? [66] : [])]],
-    ...(dev && dev.info && dev.info.gcount >= 69 ? [["DLY 3", 1, [67, 68]]] : [])] : []), ["REVERB", 1, pe0 >= 112 ? [24, 8, 9, 31] : [24, 8, 9]],
+    ["DELAY", 1, [4, 5, 6, 7]], ...(pe0 >= 112 ? [["DELAY 2", 1, [28, 34, 35, ...(dev && dev.info && dev.info.gcount >= 67 ? [66] : [])]],
+    ...(dev && dev.info && dev.info.gcount >= 69 ? [["DELAY 3", 1, [67, 68]]] : [])] : []), ["REVERB", 1, pe0 >= 112 ? [24, 8, 9, 31] : [24, 8, 9]],
     ...(pe0 >= 112 ? [["REVERB 2", 1, [29, 30, 32, 33]]] : []), ["CHORUS", 1, pe0 >= 112 ? [10, 11, 27] : [10, 11]]] },   /* G_RTYPE 24: ROOM SPRING SHIMR RESO CLOUD; MASTER: CLIP PNCH DUCK REL; (0.6.9) AUTOPAN: DPTH RATE SYNC WAVE, CHORUS: STER (27) */
-  { t: "SCL", pages: [["SCL", 0, [25, 26, 27, 28]], ["SCL 2", 1, [36]]] },   /* (JIANT 0.4) G_STRN 36: every sequence along the scale */
+  { t: "SCL", pages: [["SCALE", 0, [25, 26, 27, 28]], ["SCALE 2", 1, [36]]] },   /* (JIANT 0.4) G_STRN 36: every sequence along the scale */
   { t: "ARP", pages: [["ARP", 0, [17, 18, 19, 20]], ["ARP 2", 0, [21, 22, 23, 24]]] },
   { t: "SEQ PATTERN", tab: "seqgroups", pages: [["PATTERN", 0, [29, 30, 31, 32]], ...(pe0 >= 83 ? [["STRETCH · TRACK", 0, P_SHIFT]] : [])] },   /* ROTATE PITCH 81, 82 (SHIFT until 0.6.91) */
   { t: "GLOBAL", tab: "setgroups", pages: [["GLOBAL", 1, [0, 1, 2, 3]], ["SYSTEM", 1, [14]]] },   /* G_ROUTE: MIDI IN */
