@@ -50,6 +50,12 @@ Everything since V10.6c, the last public version, in one list; each item links t
   **LIFE** (an LFO, an envelope, another track's ENV changing how much a track lives). **T1 ENV … T6 ENV** (each track's
   envelope follower) were already there.
 
+**HOME › TRACKS (V10.7.34)**
+- A new HOME page right after MACROS: **every track as a lane**, one under another, its pattern as a timeline in the
+  notes' heat, the playheads running across them, each lane glowing as its track sounds. **KNOB 1** the track, **2–4**
+  its LEVEL, PAN and REV; **GLO + a black key** mutes, **GLO + a white key** held solos, as on MIXER. See
+  [HOME › TRACKS](#the-sections-and-their-chains).
+
 **VOICE's words as phonemes, BALANCE back, CRUSH its own (V10.7.33)**
 - **VOICE has no English dictionary on the device any more**: the web editor turns the words you type into VOICE's
   **phonemes** (English with the whole CMU dictionary, 120 000 words; Spanish, Japanese, Portuguese and Italian by
@@ -90,7 +96,7 @@ Everything since V10.6c, the last public version, in one list; each item links t
   them since PRESETS stopped loading patterns.
 
 **Every button does what it says (V10.7.32)**
-- **HOME = see and build the song**: MACROS · **TIMELINE** · **ARRANGE** · **PARTS** · LIVE MIX · GEN 1–3. The song's
+- **HOME = see and build the song**: MACROS · TRACKS (V10.7.34) · **TIMELINE** · **ARRANGE** · **PARTS** · LIVE MIX · GEN 1–3. The song's
   pages moved from SAVE to HOME as they were (their knobs, OCT+ / OCT−, PLAY); a HOME tap walks them. See
   [TIMELINE and PARTS](#timeline-and-parts-home).
 - **PARTS and CLIPS are one page, PARTS**: the CLIPS grid (six tracks × parts A–D) with the parts' heads on top. A head
@@ -213,7 +219,7 @@ files.
 
 ### Your first song (5 minutes)
 
-1. Hold **HOME** and turn **SELECT** (or on HOME tap **HOME** five times: MACROS → TIMELINE → ARRANGE → PARTS → LIVE MIX → **GEN**). The **GENERATOR** opens on
+1. Hold **HOME** and turn **SELECT** (or on HOME tap **HOME** six times: MACROS → TRACKS → TIMELINE → ARRANGE → PARTS → LIVE MIX → **GEN**). The **GENERATOR** opens on
    **EXPLORE** (no genre, every rule broken): press **OCT+** as it is, or pick RANDOM or one of the genres with KNOB 1
    or PRESETS first. A whole song idea appears: engines, sounds, parts, scale, tempo and effects. Press **PLAY**.
 2. Not your thing? Press **OCT+** again: a new seed, a new piece. Too busy? Turn **SELECT** one detent right for GEN 2 and lower
@@ -249,7 +255,7 @@ The names below are the ones the firmware uses (the HARDWARE CALIBRATION screen 
 
 | Button | Tap | Hold |
 | --- | --- | --- |
-| **HOME** | HOME (0.9.2, as every section's button): from another section the HOME page last shown; on HOME the first page of the next group, round: **LIFE → MACROS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN → LIFE** (V10.7.24; V10.7.32 the song's pages, from SAVE; V10.7.34 LIFE first; GEN: the generator, GEN until V10.6m). At power-on HOME opens on MACROS. | About 0.7 s: opens the **MENU**. |
+| **HOME** | HOME (0.9.2, as every section's button): from another section the HOME page last shown; on HOME the first page of the next group, round: **LIFE → MACROS → TRACKS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN → LIFE** (V10.7.24; V10.7.32 the song's pages, from SAVE; V10.7.34 LIFE first, TRACKS after MACROS; GEN: the generator, GEN until V10.6m). At power-on HOME opens on MACROS. | About 0.7 s: opens the **MENU**. |
 | **ENV** | The ENV section: from elsewhere the page last shown (at power-on ENV); inside, back to ENV (one group: ENV · ENV DEST · ENV 2; V10.7.32: STAGE and TRACKS gone). | (no layer) |
 | **LFO** | The LFO section: from elsewhere the page last shown (at power-on LFO); inside **MOD → LFO → STEP MOD**, round. | **MACRO** layer: KNOB 1–4 are M1–M4. |
 | **FX** | The FX section: from elsewhere the page last shown; inside, the next module: **TRACK → BUSES → DELAY → REVERB → CHORUS → SLICER → MASTER** (MASTER · TAPE · EQ), round (V10.7.32: PUNCH IN on the FX held). | **Punch-in FX** layer; the punch-in lane at the foot; FX + PRESETS its knobs. |
@@ -469,7 +475,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 
 | Section | Groups (the button) · pages (SELECT) | Pages |
 | --- | --- | --- |
-| **HOME** | (V10.7.24; V10.7.32 the song's pages; V10.7.34 LIFE) **LIFE**: LIFE — **MACROS**: MACROS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **LIVE MIX**: LIVE MIX — **GEN**: GEN 1 · GEN 2 · GEN 3 | 9 |
+| **HOME** | (V10.7.24; V10.7.32 the song's pages; V10.7.34 LIFE, TRACKS) **LIFE**: LIFE — **MACROS**: MACROS — **TRACKS**: TRACKS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **LIVE MIX**: LIVE MIX — **GEN**: GEN 1 · GEN 2 · GEN 3 | 10 |
 | **EDIT** (a synth) | **SOUND**: EDIT 1 · EDIT 2 — **TONE**: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (those the engine and the track have) — **AUTO KNOBS**: AUTO KNOBS — **VOICES**: VOICES · VOICES 2 · VOICES 3 (codex/coherence: was VOICE; STEREO's IMAGE on VOICES 2) | up to 11 |
 | **EDIT** (FM6) | **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **TONE**: FILTER — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **VOICES**: VOICES · VOICES 2 · VOICES 3 | 8 |
 | **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: KIT LFO · FILTER · STEREO · VOICES · VOICES 3 | 14 |
@@ -501,6 +507,22 @@ the bars with KNOB 1 the bar and KNOB 2 LEN.
   behind them (drawn by the screen alone: nothing of the sound's time). At the top left the routes counted; **turn a
   macro** and the line says where it goes (**M1 T2 CUT+62 T4 E1-31**, "NO ROUTE" if none: set one on LFO › MATRIX, SRC
   M1–M4); LATCH at the right.
+- **TRACKS** (V10.7.34, right after MACROS): **every track that plays as a lane**, one under another (TRACKS 4: four,
+  TRACKS 6: six), the current pattern drawn as a timeline: each step a dash at its note's height in **the note's heat**
+  (as the piano roll colours it; an accent near white; a DRUM kit's hits as blocks), and a **playhead** line (the accent
+  colour) on
+  each lane (one line down all of them when their lengths agree). At each lane's left its number and engine (**T1
+  ANALOG**). A lane **glows** while its track sounds, and a small meter beside it rises with the level: you see at a
+  glance what plays. A **muted** track's lane is dim; while a **solo** is held its lane is framed in the accent colour
+  and the others go dim; the selected track's lane is framed in the theme colour.
+  - **KNOB 1 TRACK** picks the track (the tracks that play, as ALGORITHM), **KNOB 2 LEVEL**, **KNOB 3 PAN**, **KNOB 4
+    REV** (the reverb send: where the lane sits in the room; MIXER's first three before its MUTE). Recorded while
+    recording, as on MIXER.
+  - **Mute and solo** are GLO's keys, the same as on GLO › MIXER: **GLO + a black key** (F#3 = T1, G#3 = T2 …) mutes
+    or unmutes that track, **GLO + a white key** (F3 = T1, G3 = T2 …) held solos it. The panel's foot and the HELP line
+    (HOME + OCT+) say so.
+  - **PRESETS** opens the preset list over the page, as everywhere: pick the selected track's sound right from here;
+    OCT− (or OCT+ after loading) comes back to TRACKS.
 - **LIVE MIX** (V10.7.24): the mix's **oscilloscope** over the whole panel (each stroke as hot as it is loud), and four
   **global** modifiers on the whole mix for playing live, kept with the project like every global (MIDI OUT ALL sends
   them as NRPN 1):
@@ -1956,7 +1978,7 @@ That's 24 parts in total (6 × 4).
 
 ### The ARRANGE page (HOME › ARRANGE)
 
-ARRANGE is HOME's fourth page (V10.7.34: LIFE first; V10.7.32: the song's pages HOME's, MACROS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN;
+ARRANGE is HOME's fifth page (V10.7.34: LIFE first, TRACKS after MACROS; V10.7.32: the song's pages HOME's, MACROS → TRACKS → TIMELINE → ARRANGE → PARTS → LIVE MIX → GEN;
 until then SAVE's; SELECT from TIMELINE, a HOME tap, or SAVE + G5 from anywhere): on top the project's four parts large (stored: in their
 colour, the one playing says **NOW**), then **ARRANGE**: the song's rows as chips (**A16**: the section and its bars, in
 the section's colour; a scene: a white dot; the row you are on lit and framed), and under them the whole song as one
@@ -1989,7 +2011,7 @@ strip (its rows by their length, a white line where it plays) with its length an
 
 ### TIMELINE and PARTS (HOME)
 
-(V10.6o, V10.6s; V10.7.32 on HOME) HOME is where a song is seen and made: after MACROS come **TIMELINE**, **ARRANGE**
+(V10.6o, V10.6s; V10.7.32 on HOME) HOME is where a song is seen and made: after MACROS and TRACKS come **TIMELINE**, **ARRANGE**
 and **PARTS** (until V10.7.32 SAVE's SONG group; CLIPS is now PARTS' grid), then LIVE MIX and GEN. A HOME tap walks
 them, HOME from elsewhere comes back to the one you left, and the screen says HOME (its tabs, the breadcrumb, the
 header). On TIMELINE and ARRANGE the song is drawn as a strip of **blocks**, each row as wide as its bars and in its part's colour; while it plays, a line
@@ -2100,8 +2122,8 @@ Hold **SAVE**:
 
 ### GEN — the song generator (HOME + SELECT)
 
-Hold **HOME** and turn **SELECT**, from any page, or on HOME walk the chain with **SELECT** (MACROS · LIVE MIX ·
-**GEN 1 · GEN 2 · GEN 3**) or tap HOME to its next group (MACROS → LIVE MIX → GEN). (0.9.2) The **GENERATOR** is
+Hold **HOME** and turn **SELECT**, from any page, or on HOME walk the chain with **SELECT** (MACROS · TRACKS · … · LIVE MIX ·
+**GEN 1 · GEN 2 · GEN 3**) or tap HOME to its next group (MACROS → TRACKS → … → LIVE MIX → GEN). (0.9.2) The **GENERATOR** is
 HOME's last group, three ordinary pages, no longer a screen of its own: **SELECT** turns the page, **KNOB 1–4** set the
 four values shown (V10.7.22: **PRESETS** loads sounds here too, as on every page but SEQ's), **OCT+** makes the piece and **OCT−** goes back to
 MACROS (the piece stays; **UNDO**, GLO + G4, brings back what was there before); every section button works from there. The panel shows the five parts as rows (the ones the page's knobs weigh lit) with a preview of
@@ -2713,7 +2735,7 @@ at the top left the LIFE amount (**STILL** at 0), at the right the lines counted
 
 ### Live sequences: GLO › LIVE (0.9.11)
 
-*(V10.7.30: KEYS and RAILS are out of GLOBAL; GLOBAL opens on MIXER. The DJ FILTER is on HOME › LIVE MIX (FILTER). A TRACKS page on HOME takes their place in a later beta.)*
+*(V10.7.30: KEYS and RAILS are out of GLOBAL; GLOBAL opens on MIXER. The DJ FILTER is on HOME › LIVE MIX (FILTER). HOME › TRACKS (V10.7.34) shows every track's lane, its level, pan and reverb.)*
 
 The six sequences side by side, and modifiers you play over them like MIDI effects on a master: divide, multiply,
 shorten, reverse, thin, repeat. They never touch the steps: they change how the sequencer walks them, and a track

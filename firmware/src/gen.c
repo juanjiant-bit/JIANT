@@ -1001,7 +1001,7 @@ static void gen_pads(track_t *t, uint32_t len)
 }
 
 /* ----------------------------------------------------------------------------------------------------- arp --- */
-static void gen_arp(track_t *t, uint32_t len)
+BTAPP_FN static void gen_arp(track_t *t, uint32_t len)   /* (V10.7.34: the segment's, as gen_role: its only caller) */
 {
     const garp_t *ap;
     uint32_t i, k = 0, idx = 0, a = gs.amt[GP_ARP], no = 0, last = 0xFFFFu, cnt = 0, rate, mask;
@@ -1511,7 +1511,7 @@ BTAPP_FN static void gen_lead(track_t *t, uint32_t len)   /* (V10.7.33: the segm
 }
 
 /* ------------------------------------------------------------------------------------------------- texture --- */
-static void gen_texture(track_t *t, uint32_t len)
+BTAPP_FN static void gen_texture(track_t *t, uint32_t len)   /* (V10.7.34: the segment's, as gen_role) */
 {
     uint32_t i, ri = gs.g->tex;
     int32_t n[1], lo = ri == SR_DRONE || ri == SR_SUB || ri == SR_NOISE || ri == SR_TEXTURE ? 43 : 55;   /* (an organ, a

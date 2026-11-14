@@ -1371,6 +1371,7 @@ static void toast_pill(void)
 static void sound_name(const track_t *t, char *b);   /* (ui_draw.c) */
 static void gen_panel(void);                         /* (0.8.5) gen.c: GEN in HOME's lens */
 static uint32_t gen_draw_sig(void);
+static uint32_t tracks_sig(void);                    /* (V10.7.34) ui_lzhome.c: HOME > TRACKS */
 static __attribute__((noinline)) uint32_t graph_signature(void)
 {
     const page_t *pg = cur_page();
@@ -1383,7 +1384,7 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
         return h ^ gen_draw_sig() ^ (strip_kind() == SK_SCOPE ? anim_fr / 2u * 2654435761u : 0u);
     if (ui.home)                                     /* the beings: every other frame (0.9.9-beta4: of the animation's, anim_fr:
                                                       * held, or ANIM OFF, the band is not drawn again) */
-        return h ^ (anim_fr / 2u) ^ home_level() * 104729u ^ (ui.hot_t ? ui.hot_col + 1u : 0u) * 7919u;   /* (V10.7.24:
+        return h ^ (home_tracks() ? tracks_sig() : anim_fr / 2u) ^ home_level() * 104729u ^ (ui.hot_t ? ui.hot_col + 1u : 0u) * 7919u;   /* (V10.7.24:
                                                       * MACROS' route line with the knob turned) */
     h ^= (uint32_t)pg->graph * 131u + TSEL->eng_req + song.sel * 7777u + ui.page * 1291u;
     if (strip_kind() == SK_TITLE)                    /* MENU > LARGE: the page's title (its engine, its number); (V10.8) an

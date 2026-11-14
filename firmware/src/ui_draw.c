@@ -1082,13 +1082,15 @@ static int clip_tag(char *b)
 }
 /* (V10.7.33, the owner) HELP (HOME + OCT+, ui.c ui_help): a line in the footer's place saying what the page's own keys do;
  * an action page its OCT+ / OCT- (foot_hint); else its picture's (GR_*), HOME's MACROS (250) and LIVE MIX (251), GEN (252),
+ * LIFE (253), TRACKS (254: GLO's mute and solo keys, as MIXER's; its panel shows the line too),
  * or its section's (100 + SEC_*); none: the breadcrumb. One string, the lines one after another */
-static const uint8_t HELP_K[] = {250, 251, 252, 253, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
+static const uint8_t HELP_K[] = {250, 251, 252, 253, 254, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
 static const char HELP_S[] =
     "SELECT DICE  HOME+PRESETS BPM\0"
     "HOME+PRESETS BPM  HOME+SELECT GEN\0"
     "OCT+ A PIECE  OCT- BACK\0"
     "LIFE 0 STILL  LINES: WHO MOVES WHOM\0"
+    "GLO+BLACK KEYS MUTE  GLO+WHITE SOLO\0"
     "OCT+ LOAD  OCT- CLOSE  REC FAVORITE\0"
     "PICK A KNOB AND WHAT MOVES IT\0"
     "REC: KEYS WRITE  SEQ+PRESETS STEP\0"
@@ -1339,6 +1341,17 @@ static void draw_columns(void)
             fmt_int(val, life_v[c]);
             draw_column(c, LIFE_NM[c], val, "%", c && !life_v[LIFE_AMT] ? T_DIM : VAL(c), life_v[c] * 10,
                         c == 0u ? ICON_MOD : c == 1u ? ICON_CUTOFF : c == 2u ? ICON_PITCH : ICON_REVERB);
+        }
+        return;
+    }
+    if (home_tracks()) {                                /* (V10.7.34) HOME > TRACKS: the track (KNOB 1), its LEVEL PAN REV */
+        const track_t *t = TSEL;
+        val[0] = 'T'; val[1] = (char)('1' + song.sel % NTRK); val[2] = 0;
+        hot_text_column(0, "TRACK", val);
+        for (c = 1; c < 4u; c++) {
+            const param_desc_t *d = &TP[TK_ID[c]];
+            card_mot_of(&t->p[TK_ID[c]]);
+            pf_column(c, d->label, d, t->p[TK_ID[c]], c == 1u && t->p[P_MUTE] ? T_DIM : VAL(c), param_icon(d, t->p[TK_ID[c]]));
         }
         return;
     }

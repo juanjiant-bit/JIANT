@@ -665,7 +665,8 @@ enum { S_HOME, S_HOME_IDLE, S_MESSAGE, S_MESSAGE_KEY, S_MESSAGE_NOFILE, S_PRESET
        S_HEAD_BPM_LOCKED, S_HEAD_GLO_TURN, S_HEAD_DOWNBEAT, S_HEAD_BEAT_2,
        S_SAVE_LIB, S_SAVE_TOOLS, S_SAVE_PROJ, S_SAVE_ARR, S_SAVE_SOUND, S_SAVE_PRESETS, S_SAVE_TL, S_SAVE_PARTS, S_SAVE_PARTS_LOOP, S_SAVE_TL_LOOP, S_SAVE_CLIPS, S_PG0, S_PG_END = S_PG0 + 16,
        S_FXL_SENDS, S_FXL_DIST, S_FXL_PAN, S_FXL_BUSES, S_FXL_DELAY, S_FXL_DELAY2, S_FXL_REVERB, S_FXL_SLICER, S_FXL_MASTER,
-       S_HOME_MACROS, S_HOME_SCOPE, S_HOME_MACRO_TURN, S_GEN_LEAD,
+       S_HOME_MACROS, S_HOME_SCOPE, S_HOME_MACRO_TURN, S_HOME_TRK, S_HOME_TRK_MUTE, S_HOME_TRK_SOLO, S_HOME_TRK6,
+       S_HOME_TRK_STOP, S_HELP_TRK, S_GEN_LEAD,
        S_ED_FILTER, S_ED_FILTER_BP, S_ED_VOICE2, S_ED_FOCUS, S_ED_FOCUS_MOD, S_ED_OPERATOR,
        S_ENV_TRACKS, S_ENV_TRACKS_DEST, S_ENV_STAGE, S_ENV_STAGE_SUS, S_MSEQ2, S_KEY_CHORD, S_KEY_CHORD_OFF, S_KEY_ARP, S_KEY_ARP2, S_GLO_SENDS, S_MENU_ROW, S_MENU_ROW_LEDS, S_LY_FX_KNOBS, S_LY_FX_STATE, S_LY_GLO_STATE, S_DLG_DICE_SOUND, S_DLG_DICE_SEQ, S_DLG_DICE_FX, S_DLG_MUT_BACK,
        S_DRUM_X4, S_DRUM_GHOST, S_DRUM_OCT_UP, S_DRUM_OCT_DN, S_COMP_TOUCH, S_COMP_EVEN, S_GEN_EXPLORE, S_GEN_SONG,
@@ -704,7 +705,8 @@ static const char *const S_NAME[S_COUNT] = {"home", "home_idle", "message", "mes
     "save_library", "save_tools", "save_project", "save_arrange", "save_sound", "save_presets", "save_timeline", "save_parts", "save_parts_loop", "save_timeline_loop", "save_clips", "pg_retrig", "pg_rotor", "pg_length", "pg_modes", "pg_dly3", "pg_slbus", "pg_tape", "pg_eq", "pg_system2", "pg_comps", "pg_comps2", "pg_kit2", "pg_kit3", "pg_kit4", "pg_levels", "pg_levels2", "pg_xmod",
     "fx_track_sends", "fx_track_dist", "fx_track_pan", "fx_buses", "fx_effect_delay", "fx_effect_delay2", "fx_effect_reverb",
     "fx_effect_slicer", "fx_effect_master",
-    "home_macros", "home_scope", "home_macro_turn", "gen_lead",
+    "home_macros", "home_scope", "home_macro_turn", "home_trk", "home_trk_mute", "home_trk_solo", "home_trk6",
+    "home_trk_stop", "help_trk", "gen_lead",
     "ed_filter", "ed_filter_bp", "ed_voice2", "ed_focus", "ed_focus_mod", "ed_operator",
     "env_tracks", "env_tracks_dest", "env_stage", "env_stage_sus", "mseq2", "key_chord", "key_chord_off", "key_arp", "key_arp2", "glo_sends", "menu_row", "menu_row_leds", "ly_fx_knobs", "ly_fx_state", "ly_glo_state", "dlg_dice_sound", "dlg_dice_seq", "dlg_dice_fx", "euclid_modes",
     "drum_hit_x4", "drum_hit_ghost", "drum_oct_x8", "drum_oct_flam", "comp_touch", "comp_echo_even", "gen_explore", "gen_song",
@@ -1272,6 +1274,34 @@ static void setup(int s)
             song.g[G_DJF] = -20; song.g[G_CLIP] = 30; song.g[G_DUCK] = 50;
         }
         if (s == S_HOME_MACRO_TURN) { ui.hot_col = 2; ui.hot_t = 30; }
+        break;
+    }
+    case S_HOME_TRK: case S_HOME_TRK_MUTE: case S_HOME_TRK_SOLO: case S_HOME_TRK6: case S_HOME_TRK_STOP: case S_HELP_TRK: {
+        /* (V10.7.34) HOME > TRACKS: the lanes playing (TRACKS 4), T2 muted, T3 soloed (GLO + a white key held), six with a
+         * kit on T4 selected, stopped and silent, HELP on */
+        uint32_t k, i;
+        static const uint8_t PI[NTRK] = {0, 4, 2, 0, 6, 9};
+        trk_live = s == S_HOME_TRK6 ? NTRK : 4u;
+        for (k = 0; k < NTRK; k++) {
+            if (k != 3u) load_pat16(&trk[k], PATTERNS[PI[k] % NPATTERNS].note, PATTERNS[PI[k] % NPATTERNS].flags);
+            trk[k].seq_idx = 5;
+            trk[k].peak = s == S_HOME_TRK_STOP ? 0 : (int32_t)(1200u + ((k * 2654435761u) >> 20) % 5000u);
+        }
+        trk[5].p[P_SLEN] = 32;
+        set_engine_of(&trk[3], ENGI_DRUM);
+        for (i = 0; i < 16u; i++) {                      /* (T4 a kit: kick, snare, hats) */
+            step_t *st = &trk[3].step[i];
+            memset(st, 0, sizeof *st);
+            st->time = ST_NOTE; st->vel = 100;
+            st->hit = (uint8_t)((i % 4u == 0u ? 1u : 0u) | (i == 4u || i == 12u ? 2u : 0u) | (i % 2u ? 0u : 8u));
+            st->acc = (uint8_t)(i == 0u ? 1u : 0u);
+        }
+        song.playing = s != S_HOME_TRK_STOP;
+        if (s == S_HOME_TRK_MUTE) trk[1].p[P_MUTE] = 1;
+        perf_solo = (uint8_t)(s == S_HOME_TRK_SOLO ? 1u << 2 : 0u);   /* (set: another scene leaves it) */
+        song.sel = s == S_HOME_TRK6 ? 3u : 0u;
+        ui_help = s == S_HELP_TRK;
+        ui.home = 1; ui.hlv = 2;
         break;
     }
     case S_PL_LIST: case S_PL_EDITED: case S_PL_HOME: {   /* (V10.7.33) PRESETS' list over ENV (the sound picked three
@@ -2489,7 +2519,7 @@ int main(int argc, char **argv)
         static const int COST[] = {S_HOME, S_PRESETS, S_STEP, S_ROLL_CHORDS, S_DRUM, S_MIXER, S_MENU, S_ABOUT_CREDITS, S_CONFIRM_PROJ,
                                    S_PATTERN, S_COMP, S_LENTE_PAT, S_LENTE_BAR, S_LENTE_STEP, S_LENTE_STEP_DRUM,
                                    S_SAVE_LIB, S_SAVE_PROJ, S_SAVE_SOUND, S_FXL_SENDS, S_FXL_BUSES, S_FXL_REVERB,
-                                   S_HOME_SCOPE, S_EDIT_ANALOG, S_ED_FILTER, S_ED_FOCUS, S_ENV_TRACKS, S_MOD, S_KEY_CHORD,
+                                   S_HOME_SCOPE, S_HOME_TRK6, S_EDIT_ANALOG, S_ED_FILTER, S_ED_FOCUS, S_ENV_TRACKS, S_MOD, S_KEY_CHORD,
                                    S_SYSTEM, S_MENU_ROW, S_LY_FX_KNOBS, S_DLG_DICE_SOUND, S_EDIT_SAMPLE, S_VX_HEAD_S, S_VX_BIRD,
                                    S_VX_MAMMAL, S_VX_KIT_HITS, S_VX_HEAD_HOME, S_VX_KIT_HOME, S_VX_BUG_SD,
                                    S_V6_ANALOG, S_V6_FM6, S_V6_FM6_OP, S_V6_FM6_OP2, S_V6_FM6_ENV, S_V6_WHEEL, S_V6_NOISE, S_V6_PHASE,
@@ -2525,7 +2555,8 @@ int main(int argc, char **argv)
         {   /* the STEP page's piano roll: its panel alone redrawn, and a frame that changes nothing (the signature only) */
             static const int G[] = {S_ROLL_CHORDS, S_ROLL_PLAYING, S_DRUM, S_PATTERN, S_COMP, S_LENTE_PAT, S_LENTE_STEP,
                                     S_SAVE_LIB, S_SAVE_SOUND, S_FXL_BUSES, S_FXL_REVERB, S_FXL_DELAY, S_EDIT_ANALOG,
-                                    S_ENV_TRACKS, S_MOD, S_SYSTEM, S_VX_HEAD_S, S_VX_INSECT, S_VX_KIT_HITS, S_DX_SOUND};
+                                    S_ENV_TRACKS, S_MOD, S_SYSTEM, S_VX_HEAD_S, S_VX_INSECT, S_VX_KIT_HITS, S_DX_SOUND,
+                                    S_HOME_TRK6, S_HOME_MACROS};   /* (V10.7.34: HOME > TRACKS, MACROS beside it) */
             for (k = 0; k < sizeof G / sizeof G[0]; k++) {
                 clock_t c0;
                 double tg, ti;
