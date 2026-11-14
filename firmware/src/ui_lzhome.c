@@ -288,6 +288,9 @@ static void graph_eco(void)
         cv_text(6, 2, &AF_X, b, T_TEXT);
     }
     cv_text_r(234, 2, &AF_X, mac_latch ? "LATCH" : "HOLD LFO", mac_latch ? T_ACCENT : T_TEXT, T_SURF);
+    fmt_int(b, song.g[G_BPM]);                          /* (V10.7.33, the owner) the tempo large: HOME held + PRESETS */
+    cv_text_r(210, bot - 22, &AF_L, b, ui.bpm_t ? T_ACCENT : T_TEXT, T_SURF);
+    cv_text_r(234, bot - 2, &AF_X, "BPM", T_TEXT, T_SURF);
 }
 /* (V10.7.24) HOME's panel: MACROS the beings (graph_eco), SCOPE the mix's oscilloscope over the whole panel (ui_graph.c
  * graph_scope, as hot as it is loud) */

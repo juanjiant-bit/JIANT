@@ -506,9 +506,10 @@ static void tracks_edit(uint32_t slot, int32_t steps)
     int16_t *vp;
     const param_desc_t *d;
     switch (slot) {
-    case 3:                                             /* (V10.37) the tempo (was the DJ FILTER: LIVE > KEYS) */
-        song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + accel(EN_K4, steps, 200), GP[G_BPM].min, GP[G_BPM].max);
-        ui.bpm_t = 40;
+    case 3:                                             /* (V10.7.33, the owner) G.SWING, the global swing (V10.37: the
+                                                         * tempo, now HOME held + PRESETS; was the DJ FILTER) */
+        song.g[G_SWING] = (int16_t)param_turn(&GP[G_SWING], song.g[G_SWING], accel(EN_K4, steps, 100));
+        mo_knob(7, G_SWING);
         return;
     case 4: {                                           /* (V10.45) LIVE > KEYS KNOB 4: the DJ FILTER (V10.37 sent it to the
                                                          * tempo, MIXER's new KNOB 4); no acceleration across the middle */
@@ -578,6 +579,10 @@ static int rec_tap(void)                                /* 1: the arming changed
     uint8_t bit = (uint8_t)(1u << song.sel);
     if (cp_paste_rec())                                 /* (seq2h) a step key held, the clipboard full: PASTE */
         return 0;
+    if (!ui.home && cur_page()->graph == GR_BROWSE) {   /* (V10.7.33) PRESETS' list: REC the sound picked a FAVORITE */
+        pl_fav();
+        return 0;
+    }
     if (!ui.home && SONG_PARTS(cur_page())) {          /* (V10.6s) PARTS (CLIPS' grid): REC records the launches as the
                                                          * song's rows (SONG REC) */
         song_rec_toggle();
@@ -1599,20 +1604,8 @@ static void edit_param(uint32_t slot, int32_t steps)
         tracks_edit(slot, steps);
         return;
     }
-    if (pg->graph == GR_BROWSE) {                         /* KNOB 1: one preset, KNOB 2: the next / previous engine */
-        if (slot < 2u && !br_armed) {                    /* (V10.24) the sound before the browse: OCT- brings it back */
-            undo_mark();
-            br_armed = 1;
-        }
-        if (slot == 0u) {
-            preset_step(steps);
-        } else if (slot == 1u) {
-            select_engine(eng_step(TSEL->eng_req, steps));
-        } else if (slot == 2u) {
-            preset_mark(steps > 0);
-        } else if (slot == 3u) {                         /* (p1, main 0.9.12) LIST: ALL FAV, then the types */
-            list_turn(steps);
-        }
+    if (pg->graph == GR_BROWSE) {                         /* (V10.7.33) PRESETS' list: TRACK ENGINE SOURCE TYPE */
+        pl_knob(slot, steps);
         return;
     }
     if (pg->graph == GR_TOOLS) {                          /* (0.6.25) TOOLS: a list, any knob (and PRESETS) moves the
@@ -2149,27 +2142,14 @@ static void seq_entry(uint32_t pressed)
 /* PRESETS: the sounds; (0.9.9-seq2i, the owner) on SEQ's pages the step picked, a step a detent (round in LEN), the same
  * step every SEQ page edits (STEP's cursor, COMP's, the locks'): the factory PATTERNS' loader it opened is gone (the
  * generator, MUTATE and the components make patterns enough) */
+/* (V10.7.33, the owner) .. via a list: off it, its first turn opens it over the page; on it, the next / previous sound
+ * (ui.c pl_*). Nothing else (the SEQ step: SEQ held + PRESETS; G.COMP's step: its keys) */
 static void presets_turn(int32_t s)
 {
-    if (gco_on()) {
-        gl_cur = (uint8_t)(((int32_t)gl_cur + s) & (GL_N - 1u));
-        ui.force = 1;
-        return;
-    }
-
-    if (!ui.home && PAGES[ui.page].fam == FAM_SEQ) {
-        char b[12];
-        cursor_set((int32_t)ui.cursor + s);
-        str_cpy(b, "STEP ", sizeof b);
-        fmt_int(b + 5, (int32_t)ui.cursor + 1);
-        ui_message(b);
-        return;
-    }
-    if (!ui.home && cur_page()->graph == GR_BROWSE && !br_armed) {   /* (V10.24) as KNOB 1 there */
-        undo_mark();
-        br_armed = 1;
-    }
-    preset_step(s);
+    if (ui.home || cur_page()->graph != GR_BROWSE)
+        pl_open();
+    else
+        pl_scroll(s);
 }
 
 /* (JIANT 0.5) SELECT off HOME: the selected track's sound diced. DRUM-X: both patches (A, B) of every sound, each
@@ -2450,6 +2430,20 @@ static uint32_t btn_hold(uint32_t *t0, uint32_t label, uint32_t now, int hold_ok
 /* the quick layers: ui_layer.c (included after this file) */
 static void layer_masks(void);
 static void macro_dice(uint32_t mode);                  /* (JIANT 0.4) */
+/* (V10.7.33, the owner) HOME > MACROS: SELECT dices the four macros: their routes rolled again (the MACRO layer's F3 DICE:
+ * the tracks that sound) and where each stands */
+static void macro_roll(void)
+{
+    uint32_t k;
+    if (chain_busy()) {
+        ui_message("SONG PLAYS: STOP IT TO EDIT");
+        return;
+    }
+    macro_dice(1);
+    for (k = 0; k < 4u; k++)
+        macro_v[k] = (uint8_t)(rng() & 127u);
+    ui_message("MACROS DICED");
+}
 static void layer_arm(uint32_t pressed, uint32_t now);
 static uint32_t layer_held(void);
 static int layer_knobs_quiet(void);
@@ -2654,6 +2648,15 @@ static void ui_input_frame(void)
         usb_serial_apply();                             /* (MENU > USB SERIAL: when the menu has closed) */
     if (scr_input(pressed, notes))                      /* MENU > SCREEN OFF: dark, or the wake gesture: swallowed */
         return;                                         /* (before the buttons' timers: no tap or hold after it) */
+    if (((fm1_in.buttons >> panel.btn[B_HOME]) & 1u) && ((pressed >> panel.btn[B_OCTUP]) & 1u) && !ui.menu) {
+        ui.home_t0 |= 2u;                               /* (V10.7.33, the owner) HOME + OCT+: HELP on / off (no MENU, no
+                                                         * octave; HOME + OCT- is the MENU's) */
+        pressed &= ~(1u << panel.btn[B_OCTUP]);
+        ui_help ^= 1u;
+        ui_message(ui_help & 1u ? "HELP ON" : "HELP OFF");
+        ui.force = 1;
+        settings_save();
+    }
     home = btn_hold(&ui.home_t0, B_HOME, now, 1);
     rec = btn_hold(&ui.rec_t0, B_REC, now, 0);          /* (a tap; held, the REC layer: ui_layer.c) */
     seq = btn_hold(&ui.seq_t0, B_SEQ, now, !ui.menu && !dlg_on());
@@ -2686,6 +2689,14 @@ static void ui_input_frame(void)
         }
     }
     kx_frame();                                         /* (V10.6z4) the expression keys let go, recorded */
+    if (pl_ret) {                                       /* (V10.7.33) PRESETS' list over a page: left by a button (it
+                                                         * stays where that took it), or untouched PL_MS: closed */
+        if (ui.home || ui.confirm || cur_page()->graph != GR_BROWSE) {
+            ui.nmem[SEC_SAVE] = pl_nm;
+            pl_ret = 0;
+        } else if ((int32_t)(fm1_ms - scrn.idle) > (int32_t)PL_MS)
+            pl_close();
+    }
     layer_masks();                                      /* seq.c: keys pressed with a layer's button are its own */
     live_frame();                                       /* (p2) GLO > LIVE: KEYS's keys, OCT- held, the modifiers */
     {   /* (0.6.67) a button held + SELECT (rule 5): its dice (HOME the generator, GEN; EDIT the sound, SEQ the sequence,
@@ -2724,6 +2735,11 @@ static void ui_input_frame(void)
                 }
                 fx_pr_turn = 1;
             }
+        } else if (f == FAM_COUNT && hb && !ui.menu && !dlg_on() && !name_on() && (s = panel_enc(EN_PRESET)) != 0) {
+            ui.home_t0 |= 2u;                           /* (V10.7.33, the owner) HOME held + PRESETS: the tempo (HOME >
+                                                         * MACROS shows it large; no MENU when HOME is let go) */
+            song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + accel(EN_PRESET, s, 200), GP[G_BPM].min, GP[G_BPM].max);
+            ui.bpm_t = 40;
         } else if (f != FAM_COUNT && !ui.menu && !dlg_on() && !name_on() && !ly_used && (s = panel_enc(EN_PRESET)) != 0) {
             btn_used(FAM_BTN[f]);                       /* (0.9.2, rule 3) a button held + PRESETS: nothing (until 0.9.1
                                                          * its pages); no tap after, no map while held. (A layer already
@@ -2731,6 +2747,15 @@ static void ui_input_frame(void)
             if (f == FAM_EDIT && !mom_on)               /* (V10.7) but EDIT + PRESETS: the next / previous engine (not
                                                          * amid a MOMENTARY tweak: its values go back to this sound) */
                 preset_engine_jump(s);
+            else if (f == FAM_SEQ && !ui.home && PAGES[ui.page].fam == FAM_SEQ) {   /* (V10.7.33, the owner) SEQ held +
+                                                         * PRESETS: the step every SEQ page edits, a step a detent, its
+                                                         * number large (was PRESETS alone: PRESETS loads sounds only) */
+                char b[12];
+                cursor_set((int32_t)ui.cursor + s);
+                str_cpy(b, "STEP ", sizeof b);
+                fmt_int(b + 5, (int32_t)ui.cursor + 1);
+                big_say(b);
+            }
         } else if (pj_sel_ms && fm1_ms - pj_sel_ms < 400u) {
             if (panel_enc(EN_SELECT))
                 pj_sel_ms = fm1_ms | 1u;                /* (dropped: still the paging turn) */
@@ -3033,12 +3058,12 @@ static void ui_input_frame(void)
                 break;
             if (live_page())                            /* (p2) LIVE: OCT- RETURN / held BYPASS, OCT+ COMMIT */
                 break;                                  /* (ui_live.c live_frame) */
-            if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_BROWSE) {   /* (V10.24) PRESETS: OCT+ keeps
-                                                         * the sound, OCT- the one before the browse */
-                if (!br_armed) ui_message(b == B_OCTUP ? "TURN KNOB 1 TO BROWSE" : "NOTHING TO GO BACK TO");
-                else if (b == B_OCTUP) ui_message("SOUND KEPT");
-                else ui_message(undo_sound(song.sel) ? "NOTHING TO GO BACK TO" : "SOUND BEFORE");
-                br_armed = 0;
+            if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_BROWSE) {   /* (V10.7.33) PRESETS' list: OCT+
+                                                         * loads the sound picked, OCT- closes it as it was */
+                if (b == B_OCTUP)
+                    pl_load();
+                else
+                    pl_close();
                 break;
             }
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_SCENE) {   /* (V10.26) SCENE: OCT+ dices
@@ -3148,6 +3173,9 @@ static void ui_input_frame(void)
         uint64_t cph = cp_held();
         if (cph)                                        /* (seq2h) step keys held: COPY them (the range between) */
             cp_copy(cph);
+        else if (home_macros())                         /* (V10.7.33, the owner) HOME > MACROS: SELECT the macros' dice (a
+                                                         * HOME tap the next page) */
+            macro_roll();
         else
             nav_select(s);
     }

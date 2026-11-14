@@ -254,6 +254,9 @@ static void rp_put(uint32_t f, uint32_t v)
  * the SCOPE card, the chips); 0 OFF (the default: new settings and older ones, which never held it), the creature on the
  * whole panel, centred, the page's and the sound's names in its corners. A byte no engine uses (engine 15) */
 #define ui_scope (favorites.factory[15][19])
+/* (V10.7.33, the owner) HOME + OCT+: HELP, a line at the foot of every page saying what its keys do (ui_draw.c help_line);
+ * bit 0 of a byte no engine uses (0 in older settings: OFF), saved with the settings */
+#define ui_help (favorites.factory[15][13])
 
 static uint8_t sync_reload;                  /* engine / preset / project / user preset loaded: editor RELOAD push */
 
@@ -641,8 +644,9 @@ static int page_visible(uint32_t i)
         return te == ENGI_INPUT && TSEL->p[P_E0] == AIN_SW;
     if (PAGES[i].graph == GR_LYRIC || PAGES[i].graph == GR_LYRSTEP)
         return trk_engp(TSEL) == &ENG_FORMANT;
-    if (PAGES[i].graph == GR_PATS || PAGES[i].graph == GR_CHANCE)   /* (0.6.37) PHRASES, a step's CHANCE: out of the */
-        return !ui.home && ui.page == i;               /* SEQ pages' cycle (only where code put the screen) */
+    if (PAGES[i].graph == GR_PATS_ || PAGES[i].graph == GR_CHANCE_)   /* (0.6.37) PHRASES, a step's CHANCE: out of the */
+        return FELUCCA_PHRASES && !ui.home && ui.page == i;   /* SEQ pages' cycle (only where code put the screen;
+                                                         * V10.7.33: out, core.h) */
     if (PAGES[i].graph == GR_DXSND || PAGES[i].graph == GR_DXIMG)   /* (0.6.48: IMAGE; V10.49: STEREO a synth's too) */
         return te == ENGI_DRUM;              /* (codex/coherence: a synth's IMAGE on PLAY 2) */
     if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] >= P_LN0 && PAGES[i].id[0] <= P_LN7)   /* (filters2: FILTER 2, a
@@ -701,7 +705,7 @@ static void page_entered(void);
 static void page_flash(void);
 #define FX_NMOD 6u
 static const char *const FX_MOD[FX_NMOD] = {"DELAY", "REVERB", "CHORUS", "SLICER", "PUNCH IN", "MASTER"};   /* (snd2: MASTER */
-static const char *const FX_MHEAD[FX_NMOD] = {"DLY", "REVERB", "CHORUS", "SLICER", "PUNCH IN", "MASTER"};   /* last) its first page */
+static const char *const FX_MHEAD[FX_NMOD] = {"DELAY", "REVERB", "CHORUS", "SLICER", "PUNCH IN", "MASTER"};   /* last) its first page */
 static const uint8_t FX_MN[FX_NMOD] = {3, 2, 1, 4, 1, 3};   /* its pages, one after another in PAGES (snd8: MASTER, TAPE; p9 EQ) */
 static int page_visible(uint32_t i);
 static int fx_on(void) { return !ui.home && !page_over && PAGES[ui.page].fam == FAM_FX; }
@@ -873,7 +877,7 @@ static uint32_t lock_id(uint32_t k)
 }
 
 static void ev_enter(void);
-static uint8_t br_armed;
+static uint16_t pl_cur;                             /* (V10.7.33) PRESETS' list: the sound picked + 1 (0: the track's own) */
 static uint8_t ndg_step;                            /* (V10.25) SEQ > STRETCH's NUDGE: 0 the sequence by steps (blue), 1 the
                                                      * cursor step's MICRO timing (red); OCT- / OCT+ pick it */
 static uint32_t tl_t0;                              /* (V10.24) TOOLS: OCT+ held since (0: not), its action and track */
@@ -884,7 +888,7 @@ static const uint8_t TL_SC[6] = {0, 1, 2, 3, 3, 4};  /* (V10.24) TOOLS' actions'
 static void page_entered(void)
 {
     const page_t *pg = cur_page();
-    br_armed = 0;
+    pl_cur = 0;
     if (pg->graph == GR_SLOTS && !song_draft) song_save_target = song_cur;   /* (PROJECTS: this project picked first) */
     ui.knob_ms = fm1_ms;                         /* (0.9.0) HUD: the knob row whole again on a new page */
     if (!ui.home && pg->fam == FAM_FX && fx_trk_k(ui.page) < 0 && pg->graph != GR_BUSES)
@@ -1315,6 +1319,14 @@ static void page_flash(void)
     pf_ms = fm1_ms;
     pf_on = 1;
 }
+/* (V10.7.33) a number said large over the panel for a moment (SEQ held + PRESETS: the step; ui_draw.c ui_draw_body) */
+static char big_s[10];
+static uint8_t big_t;
+static void big_say(const char *s)
+{
+    str_cpy(big_s, s, sizeof big_s);
+    big_t = 50;
+}
 /* a section's button (rule 2, ui_lens.c nav_button): its page last shown; on it, the next group's first */
 static void open_family(uint32_t fam) { nav_button(sec_of_fam(fam)); }
 
@@ -1369,10 +1381,18 @@ static void load_motion_hold(track_t *t, uint32_t what)
     motion_set_enabled(t, 0);
 }
 
+/* (V10.7.33, the owner) the sound as last loaded or saved, its signature a track (song_play.c snd_sig: every parameter
+ * not the track's own, FM6's patch): PRESETS' list marks the sound when it differs (unsaved edits) */
+static uint16_t snd_at[NTRK];
+static uint8_t load_snd;
+static uint32_t snd_sig(uint32_t k);
+static void snd_mark(const track_t *t) { snd_at[trk_index(t)] = (uint16_t)snd_sig(trk_index(t)); }
+static int snd_dirty(const track_t *t) { return snd_at[trk_index(t)] != (uint16_t)snd_sig(trk_index(t)); }
 static void load_begin(track_t *t, uint32_t what)
 {
     if (load_depth++)
         return;
+    load_snd = (uint8_t)(what & LOAD_SOUND);
     if (what & LOAD_SOUND) {                      /* (0.6.13) the sound as it is: the fade of what sounds renders
                                                    * with it (voice.c xf_snap), unless one is fading on it now */
         uint32_t k = trk_index(t);
@@ -1389,6 +1409,8 @@ static void load_end(track_t *t)
 {
     if (--load_depth)
         return;
+    if (load_snd)
+        snd_mark(t);
     if (load_mo & 1u) {                           /* a sound load: the motion on the common parameters stays */
         (void)motion_sound_loaded(t, load_from, t->eng_req);
         if ((load_mo & 2u) && motion_count(t))
@@ -1838,25 +1860,39 @@ static uint32_t preset_all_at_in(uint32_t n, uint32_t *k, const uint8_t *order)
 }
 static uint32_t preset_all_at(uint32_t n, uint32_t *k) { return preset_all_at_in(n, k, ENGINE_ORDER); }
 
-static __attribute__((noinline)) void list_turn(int32_t steps)   /* PRESETS' KNOB 4: ALL FAV BASS LEAD .. FX, no wrap */
+/* (V10.7.33, the owner) the PRESETS list's SOURCE (KNOB 3: 0 FACTORY, 1 USER, 2 FAVORITES) and TYPE (KNOB 4: 0 ALL, a
+ * sound type PT_*), kept where LIST was: USER list_type PT_N, FAVORITES favorites.filter, the type list_type (FACTORY or
+ * FAVORITES; FAVORITES of a type: both). list_get / list_put (LIST's codes) stay for the settings and the editor */
+#define pl_src() (list_type == PT_N ? 1u : favorites.filter ? 2u : 0u)
+#define pl_cat() (list_type < PT_N ? (uint32_t)list_type : 0u)
+static const char *const N_PLSRC[3] = {"FACTORY", "USER", "FAVORITES"};
+static __attribute__((noinline)) void pl_turn(uint32_t slot, int32_t steps)   /* KNOB 3 the source, 4 the type, no wrap */
 {
-    uint32_t v = (uint32_t)clamp((int32_t)list_get() + (steps > 0 ? 1 : -1), 0, LIST_N);
-    if (v != list_get()) {
-        list_put(v);
-        ui.force = 1;
-        settings_save();
-    }
+    int32_t d = steps > 0 ? 1 : -1;
+    if (slot == 2u) {
+        uint32_t s = (uint32_t)clamp((int32_t)pl_src() + d, 0, 2), c = pl_cat();
+        favorites.filter = s == 2u;
+        list_type = (uint8_t)(s == 1u ? PT_N : c);
+    } else if (pl_src() != 1u)                          /* (the user's sounds have no type) */
+        list_type = (uint8_t)clamp((int32_t)pl_cat() + d, 0, PT_N - 1);
+    ui.force = 1;
+    settings_save();
 }
-/* (p1) list index i's sound (engine e, its preset or user slot k) is in the LIST */
+/* (p1) list index i's sound (engine e, its preset or user slot k) is in the list: its SOURCE, its TYPE */
 static int preset_in(uint32_t e, uint32_t k)
 {
-    uint32_t v = list_get();
-    return v == 1u ? favorite_has(e, k) : v == LIST_USER ? e == NENGINES : e < NENGINES && PR_TAG(&ENGINES[e]->presets[k]) == v - 2u;
+    uint32_t s = pl_src(), c = pl_cat();
+    if (s == 1u || e == NENGINES)
+        return s == 1u ? e == NENGINES : s == 2u && !c && favorite_has(e, k);
+    return (s != 2u || favorite_has(e, k)) && (!c || PR_TAG(&ENGINES[e]->presets[k]) == c);
 }
 static uint32_t preset_pos(uint32_t *total)
 {
     uint32_t all, current = preset_all_pos(&all), n = 0, pos = 0xFFFFFFFFu;
-    if (!list_get()) { *total = all; return current; }
+    if (!list_type && !favorites.filter) {              /* FACTORY, ALL: the engines' presets in order */
+        *total = all - up_count();
+        return current < *total ? current : *total;
+    }
     for (uint32_t i = 0; i < all; i++) {
         uint32_t k, e = preset_all_at(i, &k);
         if (!preset_in(e, k)) continue;
@@ -1869,7 +1905,7 @@ static uint32_t preset_pos(uint32_t *total)
 static uint32_t preset_at(uint32_t n, uint32_t *k)
 {
     uint32_t all;
-    if (!list_get()) return preset_all_at(n, k);
+    if (!list_type && !favorites.filter) return preset_all_at(n, k);
     preset_all_pos(&all);
     for (uint32_t i = 0; i < all; i++) {
         uint32_t e = preset_all_at(i, k);
@@ -1883,14 +1919,6 @@ static int preset_favorite(void)
     uint32_t k = user_of(TSEL);
     return favorite_has(k < UP_SLOTS ? NENGINES : TSEL->eng_req,
                                         k < UP_SLOTS ? k : TSEL->preset);
-}
-static void preset_mark(int on)
-{
-    uint32_t k = user_of(TSEL);
-    if (favorite_set(k < UP_SLOTS ? NENGINES : TSEL->eng_req, k < UP_SLOTS ? k : TSEL->preset, on)) {
-        ui.force = 1;
-        settings_save();
-    }
 }
 
 /* the pattern the selected track's sound suggests: its index in the SEQ > PATTERNS list, or -1. A factory
@@ -1928,21 +1956,27 @@ static void preset_go(uint32_t n)                    /* load list index n into t
     preset_hinted();
 }
 
-/* (V10.7) EDIT + PRESETS: the first sound of the next engine in the list (back: of the one before; the user slots one
- * group), its name said */
-static void preset_engine_jump(int32_t dir)
+/* (V10.7) the first sound of the next engine in the list from index cur (dir < 0: of the one before; the user slots one
+ * group); cur if none. EDIT + PRESETS loads it, its name said; the PRESETS list's KNOB 2 moves there */
+static uint32_t pl_engine(uint32_t cur, uint32_t total, int32_t dir)
 {
-    uint32_t total, cur = preset_pos(&total), k, e0, e = NENGINES, i, n = 0;
-    if (!total) return;
+    uint32_t k, e0, e = NENGINES, i, n = cur;
+    if (!total) return cur;
     e0 = preset_at(cur < total ? cur : 0u, &k);
     for (i = 1; i < total; i++) {
         n = (cur + (dir > 0 ? i : total - i)) % total;
         if ((e = preset_at(n, &k)) != e0) break;
     }
-    if (i >= total) return;
+    if (i >= total) return cur;
     while (n != cur && preset_at((n + total - 1u) % total, &k) == e) n = (n + total - 1u) % total;
+    return n;
+}
+static void preset_engine_jump(int32_t dir)
+{
+    uint32_t total, cur = preset_pos(&total), n = pl_engine(cur, total, dir), k;
+    if (n == cur) return;
     preset_go(n);
-    ui_message(e == NENGINES ? "USER SOUNDS" : trk_engp(TSEL)->name);
+    ui_message(preset_at(n, &k) == NENGINES ? "USER SOUNDS" : trk_engp(TSEL)->name);
 }
 
 /* (JIANT 0.6.72) PROGRAM CHANGE (midi_control.c midi_pc_req): the list's n-th sound into the track whose channel it
@@ -2000,17 +2034,6 @@ static uint32_t eng_list_pos(uint32_t *total)
     return cur;
 }
 
-static void preset_step(int32_t direction)
-{
-    uint32_t total, cur = preset_pos(&total);
-    if (!total) { ui_message(list_get() == LIST_USER ? "NO USER SOUNDS: SAVE > USER" : "NO FAVORITES"); return; }
-    preset_go(cur >= total ? (direction > 0 ? 0 : total - 1) :
-              (cur + (direction > 0 ? 1u : total - 1u)) % total);
-    if (list_get() && (ui.home || cur_page()->graph != GR_BROWSE))   /* (a YouTube user: "it goes to the voice synth and
-                                                         * can't go back": LIST VOX, set on SAVE > PRESETS and kept) */
-        ui_say("LIST ", N_LIST[list_get()]);            /* the LIST said wherever it is not shown */
-}
-
 /* Seven display rows. Favorites use a bounded window, not a repeating carousel.
  * Return total for an empty row; a non-favorite current sound shows the start. */
 static uint32_t preset_visible(uint32_t cur, uint32_t total, uint32_t row)
@@ -2055,12 +2078,94 @@ static void track_select(uint32_t i)
     page_flash();                                    /* (0.6.51) the track's number and engine shown big */
 }
 
+/* (V10.7.33, the owner: "PRESETS always loads sounds, via a list") PRESETS' list: SAVE > PRESETS' page, or over any page
+ * when PRESETS is turned off it (its first turn opens it, loading nothing). PRESETS scrolls it, KNOB 1 the track, 2 the
+ * next engine's first, 3 the SOURCE, 4 the TYPE; OCT+ loads the sound picked (UNDO: the sound before), OCT- or PL_MS
+ * untouched closes it as it was (ui_input.c pl_frame); REC marks a FAVORITE. pl_cur the sound picked (list index;
+ * 0 the track's own; + 1); pl_ret the page it was opened over: 1 a page (pl_pg), 2 HOME, 3 GEN (0: none) */
+#define PL_MS 4000u
+static uint8_t pl_ret, pl_pg, pl_nm;
+static uint32_t pl_at(uint32_t *total)
+{
+    uint32_t cur = preset_pos(total);
+    return pl_cur && pl_cur <= *total ? pl_cur - 1u : cur < *total ? cur : 0u;
+}
+static void pl_open(void)
+{
+    uint32_t i;
+    pl_ret = (uint8_t)(gen_on() ? 3u : ui.home ? 2u : 1u);
+    pl_pg = ui.page;
+    pl_nm = ui.nmem[SEC_SAVE];
+    if (gen_on())
+        ui.confirm = 0;
+    for (i = 0; PAGES[i].graph != GR_BROWSE; i++) {}
+    ui.home = 0;
+    ui.page = (uint8_t)i;
+    pl_cur = 0;
+    ui.force = 1;
+}
+static void pl_close(void)
+{
+    if (pl_ret) {
+        ui.page = pl_pg;
+        ui.home = pl_ret > 1u;
+        if (pl_ret == 3u)
+            ui.confirm = CF_DICE_ALL;
+        ui.nmem[SEC_SAVE] = pl_nm;
+        pl_ret = 0;
+    }
+    pl_cur = 0;
+    ui.force = 1;
+}
+static void pl_scroll(int32_t s)                        /* PRESETS on the list: the next / previous sound, round */
+{
+    uint32_t total, cur = pl_at(&total);
+    int32_t n;
+    if (!total)
+        return;
+    n = ((int32_t)cur + s) % (int32_t)total;
+    pl_cur = (uint16_t)((n < 0 ? n + (int32_t)total : n) + 1);
+}
+static void pl_knob(uint32_t slot, int32_t s)
+{
+    uint32_t total, cur = pl_at(&total);
+    if (slot == 1u) {
+        pl_cur = (uint16_t)(pl_engine(cur, total, s) + 1u);
+        return;
+    }
+    if (slot)
+        pl_turn(slot, s);
+    else
+        track_select((uint32_t)clamp((int32_t)song.sel + (s > 0 ? 1 : -1), 0, (int32_t)trk_live - 1));
+    pl_cur = 0;
+}
+static void pl_load(void)                               /* OCT+ */
+{
+    uint32_t total, n = pl_at(&total);
+    if (!total) {
+        ui_message(pl_src() == 1u ? "NO USER SOUNDS: SAVE > USER" : "NO FAVORITES");
+        return;
+    }
+    undo_mark();
+    preset_go(n);
+    pl_close();
+    ui_message("SOUND LOADED");
+}
+static void pl_fav(void)                                /* REC: the sound picked a FAVORITE, or not */
+{
+    uint32_t total, k, e = preset_at(pl_at(&total), &k);
+    if (total && favorite_set(e, k, !favorite_has(e, k))) {
+        ui.force = 1;
+        settings_save();
+    }
+}
+
 #include "ui_events.c"                            /* SEQ > LOCKS: the locks and events as a list (an action page) */
 /* EDIT > SOUND / SOUND 2 (ui_dx.c, included by ui_input.c): the DRUM-X sound edited and its patch (0 A, 1 B) */
 static uint8_t dx_ui_lane, dx_ui_side;
 static uint32_t dx_pagen(const page_t *pg)            /* SOUND 1..3; (0.5.1) X-MOD 4; (0.6.54) SOUND 4: 8 */
 {
-    if (pg->title[0] == 'X')
+    if (pg->title[0] == 'K')                          /* (V10.7.33: KIT LFO, was X-MOD) */
         return 4u;
     return pg->title[5] == ' ' ? (pg->title[6] == '4' ? 8u : (uint32_t)(pg->title[6] - '0')) : 1u;
 }

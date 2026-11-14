@@ -1080,6 +1080,57 @@ static int clip_tag(char *b)
     str_cpy(b + str_len(b), "]", 2);
     return 1;
 }
+/* (V10.7.33, the owner) HELP (HOME + OCT+, ui.c ui_help): a line in the footer's place saying what the page's own keys do;
+ * an action page its OCT+ / OCT- (foot_hint); else its picture's (GR_*), HOME's MACROS (250) and LIVE MIX (251), GEN (252),
+ * or its section's (100 + SEC_*); none: the breadcrumb. One string, the lines one after another */
+static const uint8_t HELP_K[] = {250, 251, 252, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
+static const char HELP_S[] =
+    "SELECT DICE  HOME+PRESETS BPM\0"
+    "HOME+PRESETS BPM  HOME+SELECT GEN\0"
+    "OCT+ A PIECE  OCT- BACK\0"
+    "OCT+ LOAD  OCT- CLOSE  REC FAVORITE\0"
+    "PICK A KNOB AND WHAT MOVES IT\0"
+    "REC: KEYS WRITE  SEQ+PRESETS STEP\0"
+    "KEYS PICK THE STEP  SEQ+PRESETS STEP\0"
+    "OCT+ NEW  OCT- THE ONE BEFORE\0"
+    "OCT- NUDGE ALL  OCT+ THE STEP\0"
+    "OCT+ DICE ROLES  OCT- ALL KEEP\0"
+    "KEYS PICK THE STEP\0"
+    "GLO+BLACK KEYS MUTE  GLO+SELECT BPM\0"
+    "EDIT+SELECT DICE  EDIT+PRESETS ENGINE\0"
+    "SEQ+SELECT DICE  SEQ+PRESETS STEP\0"
+    "FX+SELECT DICE  HOLD FX: PERFORM KEYS\0"
+    "GLO+SELECT BPM  GLO+F4 TAP  GLO+G4 UNDO\0"
+    "LFO+SELECT DICE  HOLD LFO: MACROS\0"
+    "SCL+A KEY: ROOT\0";
+static const char *help_find(uint32_t k)
+{
+    const char *s = HELP_S;
+    uint32_t i;
+    for (i = 0; i < sizeof HELP_K; i++, s += str_len(s) + 1u)
+        if (HELP_K[i] == k)
+            return s;
+    return 0;
+}
+static int help_line(char *b)                           /* 1: b (48) holds the page's help */
+{
+    const char *s;
+    if (!(ui_help & 1u))
+        return 0;
+    if (act_cols()) {
+        char c[16];
+        foot_hint(b, c);
+        str_cpy(b + str_len(b), "  ", 3);
+        str_cpy(b + str_len(b), c, 16);
+        return 1;
+    }
+    s = help_find(gen_on() ? 252u : ui.home ? 250u + home_level() : PAGES[ui.page].graph);
+    if (!s)
+        s = help_find(100u + nav_sec());
+    if (s)
+        str_cpy(b, s, 48);
+    return s != 0;
+}
 static __attribute__((noinline)) void draw_crumbs(int32_t y, uint16_t fg, uint16_t last)
 {
     char cnt[8], ct[8];
@@ -1088,6 +1139,11 @@ static __attribute__((noinline)) void draw_crumbs(int32_t y, uint16_t fg, uint16
     uint32_t i, k = 0;
     int32_t x, x0;
     const aafont_t *f = lz_on() ? &AF_X : &AF_S;        /* (0.8.5: a lens page, the mock-up's small mono) */
+    if (help_line(b)) {                                 /* (V10.7.33) HELP on: the page's keys */
+        GFX_HOOK_ALIGN(0, y + AF_X_CAP_Y, 0, y + AF_X_CAP_Y + AF_X_CAP_H, AL_V, "footer help on its line");
+        cv_clip_text(6, y, &AF_X, b, T_THEME, T_BG, 228);
+        return;
+    }
     if (f == &AF_X && fx_lane_foot()) {                 /* (V10.7.32) FX held: the punch-in lane, then the count (the
                                                          * view's word: its tab) */
         if (cw)
@@ -1140,7 +1196,8 @@ static void draw_foot(void)
         str_cpy(ti, "HOME", sizeof ti);
     else
         page_title(ti);
-    sig = str_hash(0x9E3779B9u, s) + str_hash(7u, ti) + (uint32_t)lz * 104729u + foot_strip_sig();   /* (seq2g) the steps */
+    sig = str_hash(0x9E3779B9u, s) + str_hash(7u, ti) + (uint32_t)lz * 104729u + foot_strip_sig() +   /* (seq2g) the steps */
+          (ui_help & 1u) * 7919u + ui.home * 31u + (uint32_t)gen_on() * 977u;   /* (V10.7.33: HELP, HOME's own) */
     if (act_cols() && !lz) {                           /* the hint, and whether OCT+ would act */
         char ha[16], hb[16];
         foot_hint(ha, hb);
@@ -1287,7 +1344,7 @@ static void draw_columns(void)
         for (c = 2; c < 4u; c++) {
             const param_desc_t *d = &GP[HS_ID[c]];
             param_format(d, song.g[HS_ID[c]], val, &unit);
-            draw_column(c, c == 2u ? "DRIVE" : "DUCK", val, unit, VAL(c), RATIO(d, song.g[HS_ID[c]]), c == 2u ? ICON_DRIVE : ICON_LEVEL);
+            draw_column(c, c == 2u ? "CLIP" : "DUCK", val, unit, VAL(c), RATIO(d, song.g[HS_ID[c]]), c == 2u ? ICON_DRIVE : ICON_LEVEL);
         }
         return;
     }
@@ -1306,7 +1363,7 @@ static void draw_columns(void)
         int16_t *vp = &TSEL->p[P_E0 + k];
         const param_desc_t *d = track_desc(TSEL, P_E0 + k);
         param_format(d, *vp, val, &unit);
-        hot_gauge_column(0, "PARAM", d->label, (int32_t)k * 1000 / 7);
+        hot_gauge_column(0, "KNOB", d->label, (int32_t)k * 1000 / 7);
         card_mot_of(vp);
         draw_column(1, d->label, val, unit, VAL(1u), RATIO(d, enum_rank(d, *vp)), ICON_NONE);
         text_column(2, "SRC", j < 0 ? "OFF" : N_MSRC[clamp(TSEL->p[P_M1SRC + 3u * (uint32_t)j], 0, MS_N - 1)], j < 0 ? T_DIM : VAL(2u));
@@ -1525,23 +1582,19 @@ static void draw_columns(void)
         pf_column(1, "PAN", &TP[P_PAN], t->p[P_PAN], VAL(1u), param_icon(&TP[P_PAN], t->p[P_PAN]));
         pf_column(2, "MUTE", &TP[P_MUTE], t->p[P_MUTE], t->p[P_MUTE] ? T_ACCENT : VAL(2u), ICON_AUTO);   /* (codex/coherence: was
                                                          * REV, SENDS' beside it) */
-        pf_column(3, "BPM", &GP[G_BPM], song.g[G_BPM], VAL(3u), ICON_AUTO);   /* (V10.37) KNOB 4 the tempo, at hand (the DJ
-                                                         * FILTER stays on LIVE > KEYS's KNOB 4) */
+        pf_column(3, GP[G_SWING].label, &GP[G_SWING], song.g[G_SWING], VAL(3u), ICON_AUTO);   /* (V10.7.33) KNOB 4 G.SWING (the
+                                                         * tempo: HOME held + PRESETS, HOME > MACROS shows it) */
         return;
     }
-    if (cur_page()->graph == GR_BROWSE) {
-        uint32_t total, cur = preset_pos(&total);
-        char u[8];
-        if (cur < total) fmt_int(val, (int32_t)cur + 1);
-        else str_cpy(val, total ? "--" : "NONE", 8);   /* (0.6.25: an empty list said "--/0") */
-        str_cpy(u, "/", 8);
-        fmt_int(u + 1, (int32_t)total);
-        if (!total || (cur + 1u >= 100u && total >= 100u)) u[0] = 0;   /* (0.7.0) "147/155" is too wide for the card: the
-                                                         * number alone past 99 (every engine's presets counted) */
-        hot_unit_column(0, "No.", val, u);
-        hot_text_column(1, "ENG", ENGINES[TSEL->eng_req]->name);
-        hot_text_column(2, "FAV", preset_favorite() ? "ON" : "OFF");
-        hot_text_column(3, "LIST", N_LIST[list_get()]);
+    if (cur_page()->graph == GR_BROWSE) {              /* (V10.7.33) PRESETS' list: TRACK, the engine picked, SOURCE, TYPE */
+        uint32_t total, k, e = preset_at(pl_at(&total), &k);
+        val[0] = 'T';
+        val[1] = (char)('1' + song.sel % NTRK);
+        val[2] = 0;
+        hot_text_column(0, "TRACK", val);
+        hot_text_column(1, "ENG", !total ? "--" : e == NENGINES ? "USER" : ENGINES[e]->name);
+        hot_text_column(2, "SOURCE", N_PLSRC[pl_src()]);
+        hot_text_column(3, "TYPE", pl_src() == 1u ? "--" : pl_cat() ? N_LIST[pl_cat() + 2u] : N_LIST[0]);
         return;
     }
     if (cur_page()->graph == GR_PATS) {                  /* PAT, then LOAD (a GO button) */
@@ -2351,6 +2404,12 @@ static void ui_draw_body(uint32_t counting)
     draw_columns();
     felucca_dbg.stage = 5;
     draw_graph();
+    if (big_t) {                                        /* (V10.7.33) the step large (SEQ held + PRESETS) */
+        if (--big_t)
+            draw_text_box(40, graph_y() + graph_h() / 2u - 20u, 160, &AF_L, big_s, T_THEME, 1);
+        else
+            ui.graph_sig = ~0u;
+    }
     if (ui.msg_t && !--ui.msg_t && ui.msg2[0]) {     /* the second message (ui_notices) */
         str_cpy(ui.msg, ui.msg2, sizeof ui.msg);
         ui.msg2[0] = 0;

@@ -18,8 +18,8 @@ enum { MI_COLOR, MI_SCOPE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_HOLD, MI_AC
 static const char *const MI_NAME[MI_COUNT] = {"COLOR", "SCOPE", "LARGE", "ANIM", "LEDS", "SCREEN OFF", "HOLD", "KNOB ACCEL", "FX LATCH", "BPM LOCK",
                                               "SCALE LEDS", "MIDI OUT", "MIDI MAP", "LEARN",
                                               "VELOCITY", "VEL MIN", "AFTERTOUCH", "VEL LEARN",
-                                              "SPEAKER EQ", "USB LEVEL", "CLICK", "CLICK LEVEL", "COUNT-IN", "TRACKS", "LOAD",
-                                              "OCT BEND", "USB",
+                                              "SPEAKER EQ", "USB LEVEL", "CLICK", "CLICK LEVEL", "COUNT-IN", "TRACKS", "CPU LOAD",
+                                              "OCT BEND", "USB MODE",
                                               "RESTORE LAST", "CPU CORES", "CPU CLOCK", "BLUETOOTH", "CALIBRATION", "ABOUT"};
 /* 1.0.5: the MENU's tabs (ui_menu.c: ALGORITHM steps between them, PRESETS among one tab's rows; the editor gets a
  * row's tab after its MENU_DESC reply). A tab's rows follow each other in MI order (tests/ui_test.c checks it); at

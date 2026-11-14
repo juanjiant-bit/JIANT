@@ -1347,6 +1347,8 @@ static int project_save_as(uint32_t slot, const char *name)
         proj_cur = (uint8_t)(slot & 3u);
         live.cur = (int8_t)(slot & 3u);                 /* (0.6.12: the section playing, SAVE > PROJECT shows it) */
         live.dirty &= (uint8_t)~(1u << (slot & 3u));    /* (stored in flash now) */
+        for (slot = 0; slot < NTRK; slot++)             /* (V10.7.33: the sounds saved, PRESETS' mark off) */
+            snd_mark(&trk[slot]);
         ui_message("SAVED");
         return 0;
     }
