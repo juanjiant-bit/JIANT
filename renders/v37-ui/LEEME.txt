@@ -1,0 +1,73 @@
+renders/v37-ui · JIANT FM, rama codex/v37-ui (sobre V10.7.36 beta)
+=====================================================================
+
+Qué hay acá: los sonidos de DRUM-X antes y después de la revisión de sonido, el nuevo EROSION de los kits, y capturas
+de pantalla de la nueva imagen de WEST y de las páginas de DRUM-X. Todo sale de las fuentes del firmware compiladas en
+la computadora (tests/hostsim.c), no de una grabación del aparato. WAV mono de 16 bits, 44,1 kHz (el kit suena al medio: IMAGE 0), secos (sin DIST,
+CHORUS, DELAY ni REVERB, salvo el kit en sí).
+
+Para rehacerlos:
+    cc -O2 -w -Ibuild/gen -Ifirmware/src -o build/host/drumx_renders tests/drumx_renders.c -lm
+    build/host/drumx_renders renders/v37-ui/drumx_after          (los sonidos, los kits, velocidad, DECAY, NOISE)
+    build/host/drumx_renders renders/v37-ui/drumx_erosion ero    (EROSION)
+(la herramienta escribe estéreo; acá se guardaron en mono, los dos canales eran iguales)
+"drumx_before" es la misma herramienta compilada contra V10.7.36 (commit 7c771ab).
+
+
+1. drumx_before/ y drumx_after/   (los mismos nombres en las dos carpetas: comparar de a pares)
+-------------------------------------------------------------------------------------------------
+sound_<KIT>_<SONIDO>.wav   cada sonido solo, velocidad 100, 1,2 s. Kits: DRUMX (el de fábrica), 909, 808, ACOUSTIC,
+                           TECHNO (TECHNO RAW). Sonidos: KICK SNARE CLAP HATCL HATOP TOM RIM BELL.
+kit_<KIT>.wav              dos compases de un beat a 120 BPM en semicorcheas, con un hi-hat abierto cortado por uno
+                           cerrado al final del segundo compás (el choke).
+vel_<SONIDO>.wav           KICK, SNARE, TOM y HATCL a velocidad 30, 60, 90 y 127 (0,5 s cada uno).
+decay_<SONIDO>.wav         KICK, SNARE y TOM con el DECAY del kit en 16, 40, 64, 88 y 112 (0,8 s cada uno).
+noise_<SONIDO>.wav         el NOISE del KICK (ahora su CLICK) y del TOM en 0, 40, 70, 100 y 127 (0,6 s cada uno).
+
+Qué cambió (y qué escuchar):
+- CLICK del bombo (noise_KICK): antes, subir el NOISE del bombo se comía el cuerpo (en 127 quedaba un golpe seco, el
+  cuerpo -35 dB). Ahora es un click brillante de ~2 ms SOBRE el cuerpo: de 0 a 24 nada (todos los bombos de fábrica
+  están entre 0 y 24, así que suenan igual), después sube hasta 127. En la tarjeta el NOISE del bombo se llama CLICK.
+- El palo del tom (noise_TOM): el NOISE del tom se suma al parche en vez de reemplazarlo. Los toms de fábrica quedan
+  1–2,5 dB más llenos de cuerpo; en 127 el tom sigue teniendo nota.
+- Redoblante, casco y bordona (sound_*_SNARE, kit_*): el tono suena 5/8 del tiempo del ruido; el golpe es tono y
+  chasquido juntos y la cola es la bordona. NOISE sigue siendo el balance tono/chasquido. Las colas de los redoblantes
+  de fábrica quedan un poco más secas (DRUM-X: -20 dB a los 81 ms, antes 95 ms). Es el único cambio que se oye en los
+  kits de fábrica sin tocar nada; me pareció una mejora clara (así suena un redoblante real y una 909).
+- DECAY del kit (decay_*): una curva más suave. Los kits de fábrica (DECAY 54..76) quedan a menos de un paso de antes;
+  en los extremos va de un séptimo a siete veces el decay (antes de 1/22 a 22 veces: en 16 todo era un tic, el
+  redoblante duraba 19 ms; ahora 56 ms). Además el DECAY del kit alarga solo la cola: el barrido de altura y el SNAP
+  conservan el tiempo propio del sonido, así un DECAY largo no ensucia el ataque del bombo.
+- La velocidad colorea el golpe (vel_*): COLOR se mueve (velocidad - 100) / 3. En vel_SNARE se oye: a 30 el golpe es
+  oscuro (antes 32 % de energía arriba de 2 kHz en el ataque, ahora 2 %), a 127 más brillante (71 % -> 80 %). Con
+  velocidad 100 (la del secuenciador por defecto) nada cambia. Los sonidos con el ruido en pasa-altos (hi-hats, toms,
+  rim) solo se aclaran con los acentos: oscurecerlos los haría sonar más fuerte (vel_HATCL casi igual que antes).
+- Choke del hi-hat (kit_*, al final del segundo compás): ya funcionaba (el abierto cae -18 dB en los 40 ms después
+  del cerrado, antes y después); ahora corta también un abierto tocado en el mismo instante justo antes del cerrado.
+
+En los kits de fábrica casi todo queda igual o muy cerca (los bombos, hats, clap, rim, cowbell idénticos o a décimas
+de dB); lo que cambia: el redoblante (más seco), los toms (más cuerpo), los golpes que no tienen velocidad 100.
+
+
+2. drumx_erosion/   (EROSION nuevo en los kits: EDIT > MOD > EROSION)
+---------------------------------------------------------------------
+El mismo beat sobre el kit DRUM-X con el FILTER del kit en LP, CUT 90, RES 40, y EROSION con NOISE 90, RATE 70,
+DEST MIX (mitad corte del filtro, mitad altura de los golpes), en cada MODE:
+erosion_OFF.wav     NOISE 0: el kit sin EROSION (bit a bit como sin la página)
+erosion_SOFT.wav    un valor al azar que se desliza: el filtro y la afinación derivan
+erosion_STEP.wav    un valor al azar que se sostiene: saltos escalonados
+erosion_METAL.wav   un seno a la RATIO del golpe más nuevo: en el corte a velocidad de audio, en la altura FM (metálico)
+erosion_BREAK.wav   un patrón de 16 pasos a tempo (1/8 .. 1/32 según RATE)
+erosion_DUST.wav    picos sueltos hacia arriba (RATE = densidad)
+Todos acotados: los picos quedan en -4,6 .. -5,1 dBFS (el OFF -4,7).
+
+
+3. screens/   (capturas del firmware compilado en la computadora, paleta JIANT, al doble de tamaño)
+------------------------------------------------------------------------------------------------------
+west_1_strike .. west_5_silence   la nueva imagen de WEST ("A, circuito") en EDIT, panel entero: a los 20 ms de una
+                                  nota, 150 ms, 400 ms, 900 ms y en silencio (la lámpara apagada, todo quieto).
+west_6_fold_mod                   FOLD 87 %, SYMM 47 %, MOD 71 %, RATIO 3.5: la onda plegada y la del modulador cambian.
+west_7_dust                       DUST alto: las motas en la puerta del LPG, DECAY largo (la cola baja lenta).
+drumx_01_EDIT_1 .. drumx_12_OUT   las doce páginas de EDIT en una pista DRUM-X, en orden: KIT KIT 2 KIT 3 | SOUND
+                                  SOUND 2 SOUND 3 | LEVELS LEVELS 2 | KIT LFO EROSION | FILTER OUT. En SOUND el
+                                  encabezado del panel dice el sonido elegido y su lado ("SD · SNARE · A").
