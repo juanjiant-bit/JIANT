@@ -165,7 +165,7 @@ def controls():
     t = '<table>' + ''.join(f'<tr><td class="n">{e(n)}</td><td>{d}</td></tr>' for n, d in rows) + '</table>'
     pb = [
         ('HOME', 'LIFE (the voices alive, the tracks moving each other)  |  MACROS (M1–M4 over the beings)  |  LIVE MIX (FILTER · SPACE · CLIP · DUCK on the mix)  |  TRACKS (every track a lane: K1 track, LEVEL PAN REV; GLO + black key mute, + white key solo)  |  TIMELINE  |  ARRANGE  |  PARTS (tracks × parts: a head the part, a cell the track)  |  GEN: GEN 1 · GEN 2 · GEN 3', 'MENU'),
-        ('EDIT', 'SOUND: EDIT 1 · EDIT 2  |  TONE: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2  |  AUTO KNOBS  |  VOICES: VOICES · VOICES 2 · VOICES 3 (last). EXT: EDIT 1 / 2 are EXT and SHAPE. FM6: SOUND (ALGO · PATCH)  |  TONE: FILTER  |  OPERATOR: OPERATOR · OP ENV · OPERATOR 2  |  VOICES. DRUM: KIT: KIT · KIT 2 · KIT 3 · KIT 4  |  SOUND: SOUND 1–4  |  LEVELS 1–2  |  TONE: KIT LFO · FILTER · STEREO · VOICES', 'INIT · RECALL · sound mutes'),
+        ('EDIT', 'SOUND: EDIT 1 · EDIT 2  |  TONE: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2  |  AUTO KNOBS  |  VOICES: VOICES · VOICES 2 · VOICES 3 (last). EXT: EDIT 1 / 2 are EXT and SHAPE. FM6: SOUND (ALGO · PATCH)  |  TONE: FILTER  |  OPERATOR: OPERATOR · OP ENV · OPERATOR 2  |  VOICES. DRUM: KIT: KIT · KIT 2 · KIT 3  |  SOUND: SOUND 1–3 (the sound a key struck)  |  LEVELS 1–2  |  MOD: KIT LFO · EROSION  |  TONE: FILTER · OUT', 'INIT · RECALL · sound mutes'),
         ('SEQ', 'STEP  |  PATTERN: LENGTH · RHYTHM · TRACK  |  EUCLID: EUCLID · MODES · MUTATE  |  PLAYHEADS  |  STRETCH  |  STEP COND: STEP COND · COND 2  |  LOCKS: LOCKS · LYRICS  |  TRACK GEN', 'SEQ TOOLS'),
         ('FX', 'TRACK: SENDS · DIST · AUTO PAN  |  BUSES  |  DELAY: DELAY 1–3  |  REVERB 1–2  |  CHORUS  |  SLICER: SLICER · SLICER IN 1–2 · SL PITCH  |  MASTER · TAPE · EQ · BALANCE',
          'PUNCH-IN FX · the lane at the foot'),
@@ -278,11 +278,11 @@ def controls():
                            ('MORPH', 'MORPH DRIFT - -'), ('ROTOR', 'DEPTH DUST - -'),
                            ('WORDS', 'LANG LYRIC CONS (OCT+ TYPE)'), ('RETRIG', 'RTRG - - -'), ('OPERATOR', 'OP COARSE FINE OUTPUT'),
                            ('OP ENV', 'OP STAGE RATE LEVEL'), ('OPERATOR 2', 'OP MODE DETUNE KEY VEL'), ('FILTER', 'TYPE CUT RES DRIVE'),
-                           ('VOICES', 'POLY GLIDE GL MODE PRIO'), ('VOICES 2', 'ALLOC UNISON VEL IMAGE'), ('VOICES 3', 'CRUSH LIFE - -'), ('AUTO KNOBS', 'KNOB VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS -'), ('KIT 4', 'KEY MAP - - -'),
+                           ('VOICES', 'POLY GLIDE GL MODE PRIO'), ('VOICES 2', 'UNISON VEL IMAGE - (ALLOC automatic)'), ('VOICES 3', 'CRUSH LIFE - - (EXT)'), ('AUTO KNOBS', 'KNOB VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS GLUE'),
                            ('KIT LFO', 'RATE DEPTH SHAPE RAND'), ('LEVELS', 'KICK SNARE CLAP HATCL'),
-                           ('LEVELS 2', 'HATOP TOM RIM BELL'), ('SOUND', 'SOUND SIDE PITCH PMOD'),
-                           ('SOUND 2', 'SOUND DECAY NOISE COLOR'), ('SOUND 3', 'SOUND MODE PM.TYPE DRIVE'),
-                           ('SOUND 4', 'SOUND LAYER FEEDBK SEND'), ('STEREO', 'IMAGE - - - (DRUM-X; a synth: VOICES 2 IMAGE, in POLY)')]),
+                           ('LEVELS 2', 'HATOP TOM RIM BELL'), ('SOUND', 'PITCH DECAY SIDE PMOD'),
+                           ('SOUND 2', 'NOISE (kick: CLICK) COLOR DRIVE MODE'), ('SOUND 3', 'PM.TYPE LAYER FEEDBK SEND'),
+                           ('EROSION (DRUM-X)', 'NOISE RATE MODE DEST'), ('OUT', 'IMAGE CRUSH LIFE KEY MAP (DRUM-X)')]),
         ('SCL · ARP', HEAT[2], [('SCALE', 'ROOT SCALE KEY SNAP TRANSP'), ('CHORD', 'CHORD VOICING STRUM -'), ('SCENE', 'ON TRACK ROLE CHORD'), ('ARP', 'MODE RATE OCT GATE'),
                                 ('ARP 2', 'ARP SWG PROB HOLD ORDER')]),
         ('SEQ', HEAT[4], [('LENGTH', 'LEN DIV SWING GATE'), ('RHYTHM', 'SPAN FIT - -'), ('STRETCH', 'x/÷ REPEAT NUDGE ROTATE'), ('NUDGE', 'OCT− blue: the whole sequence by steps · OCT+ red: the cursor step in 64ths (MICRO)'), ('PLAYHEADS', 'HEAD RATE DIR INTVL'),
@@ -361,13 +361,15 @@ def sound():
          '<b>wavefolder</b> (FOLD, SYMM: even harmonics) into a <b>low-pass gate</b> (a vactrol: filter + VCA struck together; '
          'GATE filter ↔ VCA, DECAY the strike, past 88 held open: drones). <b>DUST</b>: crackle that pings the gate, the core '
          'gone past 72, hiss past 96. Harder notes fold more. A NOISE project opens as a DUST patch. Plucks, BONGO, MARIMBA, '
-         'bells, FOLD BASS, leads, drones. <b>Its picture</b>: the folded wave, lit by the gate.'),
+         'bells, FOLD BASS, leads, drones. <b>Its picture</b> (V10.7.37): the circuit, MOD › OSC › FOLD › LPG, the lamp lit by each strike.'),
         ('DRUM-X', '#ff7a00', 'MORPH TUNE TONE DECAY', 'NOISE FM ENV FOLD DRIVE',
-         '8 sounds BD SD CP CH OH TM RS CB, sides A / B: <b>MORPH</b> morphs the kit. The kit first: <b>KIT 3</b> BP FEEDBK, <b>KIT LFO</b> RATE DEPTH SHAPE '
-         'RAND. Then a sound (KNOB 1 the sound): SIDE PITCH PMOD · DECAY NOISE COLOR · MODE PM.TYPE DRIVE · <b>LAYER</b> (no note) FEEDBK '
-         '<b>SEND</b> (CHO / DLY / REV). Last LEVELS and <b>STEREO</b> IMAGE (a knob through the kit\'s stereo placings). '
-         '<b>KIT 4 KEY MAP</b> (V10.6r): EXTENDED (default) +1 FILLS, −1 KICK / TOM or one sound chromatic, −2 FX KIT, −3 FLAM; or CLASSIC. Cowbell: classic CMOS (V10.6q). '
-         'KIT and SOUND 1–4 draw the kit as little beings that squash and shout on each hit (0.9.4).'),
+         '8 sounds BD SD CP CH OH TM RS CB, sides A / B: <b>MORPH</b> morphs the kit. The kit first: <b>KIT 3</b> BP FEEDBK HANDS GLUE. '
+         'Then a sound (V10.7.37: the one a key struck): PITCH DECAY SIDE PMOD · NOISE (the kick\'s <b>CLICK</b>) COLOR DRIVE MODE · '
+         'PM.TYPE <b>LAYER</b> (no note) FEEDBK <b>SEND</b> (CHO / DLY / REV). LEVELS. <b>KIT LFO</b> RATE DEPTH SHAPE RAND, '
+         '<b>EROSION</b> (the noise modulator on the kit\'s FILTER and its hits\' pitch). FILTER, then <b>OUT</b>: IMAGE (a knob '
+         'through the kit\'s stereo placings) CRUSH LIFE <b>KEY MAP</b> (EXTENDED (default) +1 FILLS, −1 KICK / TOM or one sound '
+         'chromatic, −2 FX KIT, −3 FLAM; or CLASSIC). Velocity colours each hit; a closed hat chokes the open one. '
+         'KIT and SOUND 1–3 draw the kit as little beings that squash and shout on each hit (0.9.4).'),
         ('EXT', HEAT[0], 'SOURCE GAIN GATE PLAY', 'WIDTH RING BITS RATE',
          '(V10.54; EXT since V10.6d) SOURCE <b>SWARM</b>: a melody from the Bluetooth around (PROX first, then AIR; FAR / NEAR morph, CHAOS). Else not a synth: the USB audio input on a track of its own (an interface on USB HOST behind a powered hub, or '
          'the computer with USB IN+OUT). SOURCE IN 1 · IN 2 · 1+2 · STEREO (two tracks can take IN 1 and IN 2); PLAY <b>THRU</b> '
@@ -395,10 +397,10 @@ def sound():
                   '±32 st, RES how much it rings. ANALOG and MATH: per voice; the others: on the track, following '
                   'LFO / ENV DEST FLT (DRV: ANALOG\'s own; the others drive the track into the filter; DRUM-X, EXT: the track\'s DIST).</p>'
                   + knobs('NOISE', 'RATE', 'MODE', 'DEST') +
-                  '<p style="margin-top:8px"><b>FILTER 2</b>: a modulator, NOISE its depth (±3.5 oct on CUT, ±1 oct on pitch); MODE '
+                  '<p style="margin-top:8px"><b>EROSION</b>: a modulator, NOISE its depth (±3.5 oct on CUT, ±1 oct on pitch); MODE '
                   '<b>SOFT · STEP</b> random, gliding or held (RATE 0.4 .. 320 Hz), <b>METAL</b> audio-rate at a RATIO of the note '
                   '(x0.5 .. x4: on pitch, FM), <b>BREAK</b> in time (DIV 1/8 .. 1/32), <b>DUST</b> spikes (RATE: density); <b>DEST</b> '
-                  'FILT · F75 · MIX · P75 · PITCH (VOICE: FILT). <b>FILTER 3</b>: KEY tracking 0 .. 100 % (ANALOG starts at 21 %). '
+                  'FILT · F75 · MIX · P75 · PITCH (VOICE: FILT; V10.7.37: DRUM-X too, on its FILTER and its hits). <b>FILTER 3</b>: KEY tracking 0 .. 100 % (ANALOG starts at 21 %). '
                   'MOD source <b>F.NOISE</b>: the raw modulator. LP24 with DRV: level kept, RES top sings.</p>'))
     b.append(card('VOICE · PLAYING', HEAT[2], knobs('VCE', 'GLD', 'GLMOD', 'PRIO') +
                   '<p style="margin-top:8px">POLY · MONO · LEG · UNI · DRONE (held after the key, the next note glides; '
@@ -466,7 +468,7 @@ def sound():
     b.append('<div class="grid g3">')
     b.append(card('PER TRACK', HEAT[5], '<h4>FX · SENDS</h4>' + knobs('DST', 'CHO', 'DLY', 'REV') +
                   '<h4>DIST</h4>' + knobs('DST', 'TYPE', 'TONE', 'NOISE') +
-                  '<p style="margin-top:6px">SOFT · HARD · FOLD · RECT · AMP. <b>CRUSH</b> (bits, rate): EDIT › VOICES 3, the track\'s, DIST on or off.</p>'
+                  '<p style="margin-top:6px">SOFT · HARD · FOLD · RECT · AMP. <b>CRUSH</b> (bits, rate): EDIT › TONE (a kit: OUT; EXT: VOICES 3), the track\'s, DIST on or off.</p>'
                   '<h4>AUTO PAN</h4>' + knobs('DEPTH', 'RATE', 'SYNC', 'WAVE') +
                   '<p style="margin-top:6px">The track\'s pan swung L–R around its PAN. SYNC <b>BEAT</b>: RATE 4 BARS … 1/32, '
                   'in time with the bar; <b>FREE</b>: in Hz. SIN · TRI · SAW · SQR · S&amp;H, never a click.</p>'))

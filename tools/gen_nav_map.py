@@ -407,7 +407,8 @@ def draw_block(sv, ch, sec, x, y, colw, accent, drawn, label=None):
         nx = gx + 16
         room = gx + colw - 8 - nx
         fs = PAGE_FS
-        while tw(p["name"], fs, 600) > room and fs > 11: fs -= .5   # (V10.7.32: 11, EDIT's twelve columns since FILTER 2)
+        while tw(p["name"], fs, 600) > room and fs > 10: fs -= .5   # (V10.7.32: 11, EDIT's twelve columns since EROSION;
+                                                        # V10.7.37: 10, thirteen: DRUM-X's five groups)
         if tw(p['name'], fs, 600) > room:
             raise SystemExit(f'gen_nav_map: "{p["name"]}" does not fit its pill ({room:.0f} px)')
         sv.text(nx, cy + fs * .36, p['name'], fs, TXT, 600)

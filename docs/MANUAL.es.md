@@ -502,9 +502,9 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 | Sección | Grupos (el botón) · páginas (SELECT) | Páginas |
 | --- | --- | --- |
 | **HOME** | (V10.7.24; V10.7.32 las páginas del tema; V10.7.34 LIFE, TRACKS; V10.7.36 LIVE MIX segunda) **LIFE**: LIFE — **MACROS**: MACROS — **LIVE MIX**: LIVE MIX — **TRACKS**: TRACKS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **GEN**: GEN 1 · GEN 2 · GEN 3 | 10 |
-| **EDIT** (un sinte) | (V10.7.35) **SOUND**: EDIT 1 · EDIT 2 · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (los que tengan el motor y la pista) — **TONE**: FILTER · FILTER 2 · TONE (KEY TRK · CRUSH · LIFE) — **VOICES**: VOICES · VOICES 2 (EXT: VOICES 3) — **AUTO KNOBS**: AUTO KNOBS | hasta 11 |
-| **EDIT** (FM6) | (V10.7.35) **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **TONE**: FILTER · FILTER 2 · TONE — **VOICES**: VOICES · VOICES 2 | 10 |
-| **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: KIT LFO · FILTER · STEREO · VOICES · VOICES 3 | 14 |
+| **EDIT** (un sinte) | (V10.7.35) **SOUND**: EDIT 1 · EDIT 2 · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (los que tengan el motor y la pista) — **TONE**: FILTER · EROSION · TONE (KEY TRK · CRUSH · LIFE) — **VOICES**: VOICES · VOICES 2 (EXT: VOICES 3) — **AUTO KNOBS**: AUTO KNOBS | hasta 11 |
+| **EDIT** (FM6) | (V10.7.35) **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **TONE**: FILTER · EROSION · TONE — **VOICES**: VOICES · VOICES 2 | 10 |
+| **EDIT** (DRUM) | (V10.7.37) **KIT**: KIT · KIT 2 · KIT 3 — **SOUND**: SOUND · SOUND 2 · SOUND 3 (el sonido de la última tecla) — **LEVELS**: LEVELS · LEVELS 2 — **MOD**: KIT LFO · EROSION — **TONE**: FILTER · OUT | 12 |
 | **SEQ** | (V10.6) **STEP**: STEP — **PATTERN**: LENGTH · RHYTHM · TRACK — **EUCLID**: EUCLID · MODES · MUTATE — **PLAYHEADS**: PLAYHEADS — **STRETCH**: STRETCH — **STEP COND**: STEP COND · COND 2 — **LOCKS**: LOCKS · LYRICS (VOICE) — **TRACK GEN**: TRACK GEN | 14 |
 | **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DELAY 2 · DELAY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SLICER IN · SLICER IN2 · SL PITCH — **MASTER**: MASTER · TAPE · EQ · BALANCE (V10.7.32: PUNCH IN en el FX mantenido) | 18 |
 | **GLO** | **MIX**: MIXER · SENDS — **COMP**: COMP · COMP 2 — **SETUP**: GLOBAL · SYSTEM · PORTS (V10.7.32: KEY SPLIT ya no está) | 7 |
@@ -589,7 +589,7 @@ nivel PROJECT) y **PROJECTS** (el nivel LIBRARY); EDIT 1 / EDIT 2 del kit DRUM s
   sonido abajo), el osciloscopio en un pozo y los ocho parámetros E como fichas a la derecha, encendidas las cuatro de
   la página. **TONE**: **FILTER** dibuja la respuesta de TYPE en CUT con su pico de RES (LP, HP, BP, COMB), CUT una
   línea, DRIVE / DIST una fila de celdas; **VOICES** / **VOICES 2** (eran VOICE / VOICE 2) las voces una por fila, tan llenas como suenan,
-  POLY y PRIO (VOICES 2: ALLOC), la curva de GLIDE; las demás conservan su dibujo. **AUTO KNOBS** (nueva): un parámetro E
+  POLY y PRIO (VOICES 2: UNISON), la curva de GLIDE; las demás conservan su dibujo. **AUTO KNOBS** (nueva): un parámetro E
   grande como medidor — KNOB 1 lo elige (E1–E8), KNOB 2 lo ajusta, KNOB 3 la **fuente** del slot de MOD que apunta a
   él (subida desde OFF la toma un slot libre, con ese parámetro como DEST; de vuelta a OFF lo libera), KNOB 4 el
   **AMT** de ese slot; E1–E8 como pestañas abajo.
@@ -665,19 +665,19 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | OP ENV | OP | STAGE | RATE | LEVEL | FM6 |
 | OPERATOR 2 | OP | MODE | DETUNE | KEY VEL (la velocidad del operador; era VEL) | FM6 |
 | FILTER | TYPE | CUT | RES | DRIVE (ANALOG) / DIST (los demás) | todos los motores |
+| EROSION (V10.7.37; era FILTER 2) | NOISE | RATE | MODE (SOFT STEP METAL BREAK DUST) | DEST (FILT .. PITCH; no en VOICE) | todos menos EXT (DRUM: el suyo, abajo) |
 | KIT 3 | BP | FEEDBK | HANDS | GLUE | DRUM (todo el kit) |
-| KIT 4 (V10.6r) | KEY MAP (CLASSIC, EXTENDED, o EXTENDED con un sonido cromático; V10.6o: ACOUST ya no está; codex/coherence: en la KNOB 1) | — | — | — | DRUM (todo el kit) |
 | KIT LFO | RATE | DEPTH | SHAPE | RAND | DRUM (todo el kit) |
-| STEREO | IMAGE | — | — | — | DRUM (todo el kit) |
-| SOUND | SOUND | SIDE | PITCH | PMOD | DRUM (un sonido) |
-| SOUND 2 | SOUND | DECAY | NOISE | COLOR | DRUM (un sonido) |
-| SOUND 3 | SOUND | MODE | PM.TYPE | DRIVE | DRUM (un sonido) |
-| SOUND 4 | SOUND | LAYER | FEEDBK | SEND | DRUM (un sonido) |
+| EROSION (V10.7.37) | NOISE | RATE | MODE (SOFT STEP METAL BREAK DUST) | DEST (FILT F75 MIX P75 PITCH) | DRUM (el FILTER del kit y la altura de sus golpes) |
+| OUT (V10.7.37) | IMAGE (era de STEREO) | CRUSH | LIFE (los dos eran de VOICES 3) | KEY MAP (era de KIT 4: CLASSIC, KIK/TOM o un sonido cromático) | DRUM (todo el kit) |
+| SOUND (V10.7.37: el sonido de la última tecla) | PITCH | DECAY | SIDE (A / B) | PMOD | DRUM (un sonido) |
+| SOUND 2 | NOISE (el del bombo: CLICK) | COLOR | DRIVE | MODE | DRUM (un sonido) |
+| SOUND 3 | PM.TYPE | LAYER | FEEDBK | SEND | DRUM (un sonido) |
 | LEVELS | KICK | SNARE | CLAP | HATCL | DRUM |
 | LEVELS 2 | HATOP | TOM | RIM | BELL | DRUM |
 | VOICES (era PLAY, antes VOICE) | POLY (POLY MONO LEG UNI DRONE; era VOICE) | GLIDE | GL MODE (RATE / TIME del glide; era MODE) | PRIO | todos los motores |
-| VOICES 2 (0.8.5; era VOICE 2) | ALLOC | UNISON (cuánto se abren las voces de UNI, 0..100 %; era DETUNE) | VEL (cuánta velocidad le llega al sonido, 0..100 %) | IMAGE (las voces repartidas, POLY; era la página STEREO; no en EXT) | todos menos DRUM |
-| VOICES 3 (V10.7.33) | CRUSH (el reductor de bits de la pista, 0..100 %; era DIST TYPE CRUSH) | LIFE (V10.7.34: el LIFE de la pista, 0..100 %, por el de HOME › LIFE) | | | todos (un kit también) |
+| VOICES 2 (0.8.5; era VOICE 2) | UNISON (cuánto se abren las voces de UNI, 0..100 %; era DETUNE) | VEL (cuánta velocidad le llega al sonido, 0..100 %) | IMAGE (las voces repartidas, POLY; era la página STEREO; no en EXT) | (V10.7.37: ALLOC ya no está, es automático) | todos menos DRUM |
+| VOICES 3 (V10.7.33) | CRUSH (el reductor de bits de la pista, 0..100 %; era DIST TYPE CRUSH) | LIFE (V10.7.34: el LIFE de la pista, 0..100 %, por el de HOME › LIFE) | | | EXT (los sintes: TONE; un kit: OUT) |
 | SWARM, SWARM 2 (V10.6z6) | SIDE (FAR / NEAR) | los RATE, MOVE, TONE / NOISE, MOD de ese lado | | (SWARM 2: NOW, el morph y su fuente) | EXT con SOURCE SWARM |
 | AUTO KNOBS (0.8.5) | PARAM (E1–E8) | su valor | SRC (el slot de MOD sobre él) | AMT | los sintes (no FM6, DRUM) |
 
@@ -1243,10 +1243,15 @@ solo mientras la pista suena:
 - **WHEEL: nueve gusanos de tubo**, uno por tirante, tan altos como su nivel (los dígitos de la registración debajo),
   cada uno con una corona de tantos tentáculos como su armónico; el **rotor es una corriente** que los dobla (SLOW, FAST,
   su DEPTH), PERC hace saltar y gritar a su gusano, CLICK les saca burbujas por la boca, DUST deja motas.
-- **WEST: la onda plegada** (V10.7.36; antes el enjambre de NOISE): dos ciclos de la onda tal como la pliega el motor
-  (FOLD, SYMM, MOD y RATIO la doblan), corriendo con el sonido; brilla y se pliega más cuando el gate se abre con un
-  golpe y se apaga cuando se cierra. Arriba, la lámpara (la luz del vactrol) se enciende con cada nota; DUST desparrama
-  motas que titilan; una cara abajo cierra los ojos con cada golpe.
+- **WEST: el circuito** (V10.7.37; la onda plegada en la V10.7.36, antes el enjambre de NOISE): el motor como su flujo
+  de señal, un diagrama chico en el mismo trazo. Una caja **MOD** (la onda del modulador, tantos ciclos como **RATIO**,
+  tan brillante como hondo es **MOD**) baja a la caja **OSC** (la onda central, MOD doblándole la fase), una flecha a
+  **FOLD** (dos ciclos de ella por el plegador como la pliegan **FOLD** y **SYMM**, en vivo: un golpe la pliega más), una
+  flecha al **LPG**: una lámpara redonda con cara que se prende de golpe con cada nota y se apaga tan lento como diga
+  **DECAY** (un vactrol), las motas de DUST en su puerta, y debajo la **cola del decay** con un punto que la baja con la
+  nota. Un pulso corre por los cables mientras la pista suena; en silencio todo queda quieto y la lámpara apagada. En el
+  panel entero las cajas tienen nombre (MOD OSC FOLD LPG); al lado del scope (MENU › SCOPE ON) el mismo diagrama chico,
+  sin nombres.
 - **PHASE: un caracol.** Las cámaras de la caparazón están en la **fase doblada** (parejas con DCW en 0; al subir el DCW
   se amontonan donde la fase corre, que es lo que hace la distorsión de fase), coloreadas por la salida; **la suela del
   pie es la onda** (WAVE y WAVE2 alternando); FB deshilacha la espiral, SUB hace respirar la vuelta de afuera, los ojos
@@ -1360,13 +1365,13 @@ un gemelo oculto del LP24: un proyecto, preset o canción con TYPE MS20 carga y 
 (lo más parecido a lo que era), y muestra LP24; la perilla de TYPE lo saltea. El bajo EBM de GEN ahora pide LP24 con su
 DRIVE al 55 % o más.
 
-### FILTER 2: NOISE, RATE, MODE, DEST · FILTER 3: KEY (todos los motores menos DRUM-X y EXT)
+### EROSION: NOISE, RATE, MODE, DEST · FILTER 3: KEY (todos los motores menos EXT)
 
-EDIT > **FILTER 2** (codex/filters2), después de FILTER, es un modulador: NOISE · RATE · MODE · **DEST**. **FILTER 3**
+EDIT > **EROSION** (V10.7.37: la página se llamaba FILTER 2; codex/filters2), después de FILTER, es un modulador: NOISE · RATE · MODE · **DEST**. **FILTER 3**
 (codex/filter2-mod) tiene **KEY**. Todas en su valor guardado por defecto están apagadas: todo proyecto y preset de
 antes suena igual.
 
-KEY salió de FILTER 2 para hacerle lugar a DEST. DRIVE se queda en FILTER: es la potencia del filtro, la perilla que
+KEY salió de EROSION para hacerle lugar a DEST. DRIVE se queda en FILTER: es la potencia del filtro, la perilla que
 buscás junto con TYPE, CUT y RES, mientras que KEY se ajusta una vez por sonido. FILTER 3 es una sola perilla, como
 RETRIG o STEREO.
 
@@ -1407,15 +1412,25 @@ RETRIG o STEREO.
   En VOICE no hay DEST (ese lugar lo usa su CONS): ahí siempre es FILT; para la afinación ruteá **F.NOISE** a PITCH.
 
 El modulador también es la fuente **F.NOISE** de la matriz MOD (abajo): ruteala a **PITCH** (o a cualquier DEST) con
-cualquier AMT, sea cual sea el NOISE y el DEST de FILTER 2: es el modulador crudo, a escala completa, y solo el AMT del
+cualquier AMT, sea cual sea el NOISE y el DEST de EROSION: es el modulador crudo, a escala completa, y solo el AMT del
 slot fija su profundidad (NOISE 0 y un slot F.NOISE → PITCH: se mueve la afinación, el filtro no). En METAL, F.NOISE es
 el vaivén de SOFT a RATE (el seno a velocidad de audio es solo para CUT y la afinación de DEST).
 
-Los proyectos guardados con el FILTER 2 de la V10.7.30 cargan con los mismos valores (DEST en FILT, KEY ahora en
+Los proyectos guardados con el EROSION de la V10.7.30 cargan con los mismos valores (DEST en FILT, KEY ahora en
 FILTER 3), pero METAL, BREAK y DUST ahora suenan distinto (modulan CUT). Con NOISE en 0 no cambia nada.
 
 Con el filtro de la pista abierto del todo (LP, CUT 127, RES 0), todos los MODE bajan CUT según su profundidad para que
-el filtro en movimiento se oiga, como hace LFO DEST FILTER. FILTER 2 no mueve COMB / COMB- (KEY tampoco).
+el filtro en movimiento se oiga, como hace LFO DEST FILTER. EROSION no mueve COMB / COMB- (KEY tampoco).
+
+**El EROSION de DRUM-X** (V10.7.37, EDIT › MOD › EROSION en una pista DRUM): el mismo modulador sobre el kit, con sus
+cuatro perillas propias: **NOISE** (0 .. 100 %; en 0, el valor de todo kit y proyecto de antes, no corre nada de él y el
+kit suena bit a bit como antes), **RATE**, **MODE** (SOFT, STEP, METAL, BREAK, DUST, como arriba) y **DEST** (FILT, F75,
+MIX, P75, PITCH). En FILT mueve el corte del **FILTER** del kit (EDIT › TONE › FILTER: un filtro abierto se baja para
+que el movimiento se oiga, como en los sintes); en PITCH mueve **la altura de cada golpe** (hasta cerca de ±1 octava al
+100 %, leída cuando el golpe suena un bloque: la deriva de SOFT, los saltos de STEP, el patrón a tempo de BREAK, los
+tirones hacia arriba de DUST); METAL en la altura modula en fase la suma del kit al RATIO del golpe más nuevo. Todos los
+MODE están acotados (las mismas profundidades que en los sintes) y el NOISE del kit se puede automatizar (un lock, los
+carriles AUTO). Los valores son de la pista (se guardan con el sonido y el proyecto).
 
 El **CHORUS** (0.9.9-snd2) es más liviano: su LFO se lee cada 64 muestras (16, 8, 4 en los RATE más rápidos) y las
 tres voces se deslizan entre esos puntos, en vez de tres senos por muestra; suena igual (-63 dB de diferencia con el de
@@ -1429,10 +1444,13 @@ cada pasada queda un poco más sucia y un poco más baja, como una cinta o un BB
 ### VOICE (todos los motores)
 
 EDIT > **VOICES** (era PLAY, antes VOICE, que es también el nombre del motor VOICE): **POLY** POLY, MONO, LEG (legato), UNI (unísono), DRONE;
-**GLIDE**; **GL MODE** RATE o TIME (cómo se mide el glide); **PRIO** LAST, LOW, HIGH. **VOICES 2**: **ALLOC** (ROT / REUSE),
-**UNISON** (cuánto se abren las voces de UNI, 0..100 %; era DETUNE, un número pelado), **VEL**, **IMAGE** (las voces
-repartidas en el estéreo en POLY; era su propia página STEREO; no en EXT). **VOICES 3** (V10.7.33): **CRUSH**, el
-reductor de bits de la pista (ver [Por pista](#por-pista)). Las seis pistas comparten un presupuesto de 8 voces; FM6 toca como máximo cuatro por
+**GLIDE**; **GL MODE** RATE o TIME (cómo se mide el glide); **PRIO** LAST, LOW, HIGH. **VOICES 2**: **UNISON** (cuánto
+se abren las voces de UNI, 0..100 %; era DETUNE, un número pelado), **VEL**, **IMAGE** (las voces repartidas en el
+estéreo en POLY; era su propia página STEREO; no en EXT). (V10.7.37) **ALLOC** ya no está en la página: las voces se
+reparten solas, **REUSE** (una nota nueva toma la voz libre más cercana a su altura, así el glide recorre lo menos
+posible) con **GLIDE** prendido, **ROT** (rueda, cada nota una voz fresca) con GLIDE apagado. Un proyecto o preset
+guardado con ALLOC carga igual pero toca con esa regla (ALLOC REUSE con GLIDE apagado ahora rota). **VOICES 3**
+(V10.7.33, de EXT): **CRUSH**, el reductor de bits de la pista (ver [Por pista](#por-pista)); el de un kit está en **OUT**. Las seis pistas comparten un presupuesto de 8 voces; FM6 toca como máximo cuatro por
 pista. (0.9.8) VOICE hace el glide como un cantante: una curva en S de la altura en el mismo tiempo (los
 demás motores: una recta, como antes).
 
@@ -1469,11 +1487,14 @@ DRUM-X es un kit sintetizado de ocho sonidos, **BD SD CP CH OH TM RS CB**, gener
 
 - Cada sonido tiene dos lados, **A** y **B**. **MORPH** (KIT, KNOB 1) mueve todo el kit entre ellos:
   la perilla para tocar en vivo.
-- Las páginas van **primero todo el kit, después un sonido, al final los volúmenes y el estéreo** (0.6.58):
+- Las páginas van **primero todo el kit, después un sonido, los volúmenes, la modulación del kit y su salida**
+  (V10.7.37: doce páginas en cinco grupos, eran quince: **KIT** KIT · KIT 2 · KIT 3, **SOUND** SOUND · SOUND 2 · SOUND 3,
+  **LEVELS** LEVELS · LEVELS 2, **MOD** KIT LFO · EROSION, **TONE** FILTER · OUT; la página VOICES del kit ya no está, un
+  kit es siempre polifónico; un proyecto conserva todos sus valores, solo se movieron las páginas):
   - **KIT** (EDIT 1): MORPH, TUNE, TONE, DECAY. **KIT 2** (EDIT 2): NOISE, **FM ENV** (FM golpeada con cada golpe que se
     va en pocos milisegundos: un parche, un click, un filo metálico en el ataque, la cola limpia), **FOLD** (un
     wavefolder después de la envolvente: ataque brillante, cola limpia), DRIVE.
-    (0.9.9-snd1) **FM ENV** y **FEEDBK** (el de KIT 3 y el de SOUND 4) van sobre curvas: casi todo el recorrido es
+    (0.9.9-snd1) **FM ENV** y **FEEDBK** (el de KIT 3 y el de SOUND 3) van sobre curvas: casi todo el recorrido es
     musical (un parche, goma, metal, el filo de una sierra creciendo sobre un seno; transitorios limpios), el ruido
     áspero solo en los últimos pasos (FM ENV pasado el ~90 %, FEEDBK 14–15). El índice de FM es el mismo en todo el
     teclado pero se suaviza en los golpes muy agudos para que nunca se pliegue en siseo; FEEDBK realimenta el promedio
@@ -1490,18 +1511,23 @@ DRUM-X es un kit sintetizado de ocho sonidos, **BD SD CP CH OH TM RS CB**, gener
     (un proyecto de antes abre con GLUE en OFF).
   - **KIT LFO**: **RATE** (OFF, 4BAR … 1/32, a tempo), **DEPTH** (cuánto oscila MORPH), **SHAPE** (SINE, TRI, SAW, RAMP,
     S&H), **RAND** (cada golpe con su propio MORPH y un poco de afinación).
-  - **FILTER**: el del kit.
-  - **SOUND 1–4**, un sonido cada una: la KNOB 1 es siempre **SOUND** (cuál; tocar una tecla también lo elige).
-    - **SOUND**: SIDE (A / B), PITCH, PMOD (cuánto cae la afinación; con el filtro GR, **SCRAPE**: abajo).
-    - **SOUND 2**: DECAY, NOISE, COLOR, del lado elegido en SOUND (la KNOB 1 lo muestra: "SD B").
-    - **SOUND 3**: **MODE** (onda SIN / FM / MTL / BEL, filtro de ruido LP / BP / HP / GR, "+" para snap), **PM.TYPE** (cómo
-      se mueve la afinación: DECAY, LONG, NOISE, SINE), **DRIVE** (ON / OFF).
+  - **EROSION** (V10.7.37): el modulador de ruido de los sintes sobre el kit (NOISE RATE MODE DEST): el corte de su
+    FILTER y la altura de sus golpes. Ver [EROSION](#erosion-noise-rate-mode-dest--filter-3-key-todos-los-motores-menos-ext).
+  - **FILTER**: el del kit: TYPE, CUT, RES, DIST.
+  - **OUT** (V10.7.37): **IMAGE** (era la de la página STEREO, abajo), **CRUSH** y **LIFE** (eran de VOICES 3: el reductor
+    de bits y el LIFE de la pista), **KEY MAP** (era de KIT 4: CLASSIC, KIK/TOM o un sonido cromático; ver [Las teclas](#las-teclas-extended-v106r)).
+  - **SOUND 1–3**, un sonido: (V10.7.37) **el sonido de la última tecla tocada en la pista** (el encabezado del panel lo
+    nombra con su lado: "SD · SNARE · A"; HELP lo dice); ya no hay perilla SOUND, las cuatro perillas son del sonido.
+    - **SOUND**: PITCH, DECAY, SIDE (A / B: qué lado editan las perillas), PMOD (cuánto cae la afinación; con el filtro
+      GR, **SCRAPE**: abajo).
+    - **SOUND 2**: NOISE (el del bombo es su **CLICK**, abajo), COLOR, **DRIVE** (ON / OFF), **MODE** (onda SIN / FM / MTL
+      / BEL, filtro de ruido LP / BP / HP / GR, "+" para snap).
       (V10.7.8) **GR**, el güiro: un pasabanda cuyo golpe es una pasada por las estrías de un güiro, ticks a 24–64 Hz
       (PITCH da la velocidad). El PMOD de SOUND pasa a ser **SCRAPE**, el largo de la pasada (0–173 ms), y la velocidad
       del golpe elige larga o corta: un acento (127) toca la pasada entera, "rrrrip", un golpe suave solo su comienzo,
       "chk" (el largo va con la cuarta potencia de la velocidad). Cualquier sonido puede tenerlo (un tom raspado, un
       clap raspado); los kits de antes nunca lo tuvieron, así que suenan como sonaban.
-    - **SOUND 4**: **LAYER** (OFF, 1–15): un segundo oscilador en un intervalo desafinado, modulado en frecuencia por el
+    - **SOUND 3**: **PM.TYPE** (cómo se mueve la afinación: DECAY, LONG, NOISE, SINE), **LAYER** (OFF, 1–15): un segundo oscilador en un intervalo desafinado, modulado en frecuencia por el
       sonido, más cuanto más alto: de un filo metálico a un golpe sin nota, así el sonido se funde en el ritmo y no
       molesta a la armonía (el kit de fábrica lo tiene en redoblante, hi-hats y cowbell); **FEEDBK** (OFF, 1–15): el de
       ese sonido (se suma al de KIT 3); **SEND**: ese golpe solo hacia un efecto, OFF y después CHO, DLY, REV con 16
@@ -1509,11 +1535,33 @@ DRUM-X es un kit sintetizado de ocho sonidos, **BD SD CP CH OH TM RS CB**, gener
       con los SEND en OFF, secos; un proyecto guardado conserva los suyos). Los dados (DICE ALL; los
       dados de sonido) mueven fuerte LAYER y FEEDBK. Cada sonido con LAYER usa un poco de CPU (como FEEDBK).
   - **LEVELS / LEVELS 2**: el nivel de cada sonido (KICK, SNARE, CLAP, HATCL, HATOP, TOM, RIM, BELL).
-  - **STEREO**: **IMAGE** (automatizable) barre el kit por sus ubicaciones en el estéreo. 0 (MONO): todos al medio; los
+  - La **IMAGE** de **OUT** (automatizable; la página STEREO hasta la V10.7.37) barre el kit por sus ubicaciones en el estéreo. 0 (MONO): todos al medio; los
     primeros pasos lo abren; desde ahí cada paso es otra ubicación (cada sonido por su propia curva), así que girala
     hasta que la imagen quede bien. El bombo queda cerca del medio. DRV, DIST y el FILTER trabajan sobre la suma del
     kit, así que con ellos la imagen se angosta (la página dibuja los sonidos en gris).
   - KIT 3, KIT LFO, LAYER, FEEDBK y SEND se guardan con el kit de la sección.
+- **El sonido** (V10.7.37, una revisión de cada sonido; los kits de fábrica tan cerca de antes como estaban, las
+  diferencias abajo):
+  - **El CLICK del bombo**: el NOISE del bombo (SOUND 2, KNOB 1, que en el bombo se llama **CLICK**) ahora es un click
+    sobre el cuerpo: nada hasta 24 (todos los bombos de fábrica como estaban, están todos entre 0 y 24), después hasta
+    el ruido entero en 127, un transitorio brillante de ~2 ms (su brillo sigue a COLOR). Ya no adelgaza el cuerpo: antes
+    subir el NOISE del bombo se lo comía (en 127 quedaba solo un golpe seco).
+  - **El palo del tom**: el NOISE del tom se suma sobre el parche en vez de reemplazar una parte (el cuerpo de los toms
+    de fábrica 1–2,5 dB más lleno; en 127 el tom conserva su nota debajo del palo).
+  - **Casco y bordona del redoblante**: el tono del redoblante (el casco) suena 5/8 del tiempo del ruido (la bordona),
+    así el golpe es tono y chasquido juntos y la cola es la bordona (NOISE sigue siendo el balance). Las colas de los
+    redoblantes de fábrica quedan un poco más secas.
+  - **DECAY sigue al sonido**: el DECAY del kit (KIT, KNOB 4) va sobre una curva más suave (los 54..76 de los kits de
+    fábrica a menos de un paso de antes; sus extremos un séptimo y siete veces el decay, eran veintidós veces, todos
+    los sonidos un tic o 1,5 s), nunca más allá de lo más largo que puede sonar un sonido, y alarga solo la cola: el
+    barrido de altura y el SNAP conservan el tiempo propio del sonido, así un DECAY largo ya no ensucia el ataque del
+    bombo.
+  - **La velocidad colorea el golpe**: la velocidad de un golpe mueve su COLOR, (velocidad − 100) / 3: un acento más
+    brillante, un golpe suave más oscuro, como un tambor de verdad (100, el del secuenciador, como antes). Un sonido
+    con el ruido en pasa-altos (los hi-hats, los toms y el rim de los kits de fábrica) solo se aclara: más oscuro, su
+    ruido sonaría más fuerte.
+  - **El choke del hi-hat**: un hi-hat cerrado (o el de pedal, GM 44) corta un abierto que suena en pocos milisegundos,
+    como antes; (V10.7.37) también uno abierto tocado en el mismo instante justo antes.
 - **Mutes**: GLO mantenido + teclas negras 7–10 mutean los grupos KICK, SNARE, HAT, PERC; EDIT mantenido + teclas
   negras 1–8 mutean cada sonido.
 - **EDIT mantenido + SELECT** tira los dados del kit (0.9.9-seq2f, de nuevo; los presets de DRUM: PRESETS). **EDIT mantenido + F3 (INIT)** trae de
@@ -1561,7 +1609,7 @@ Un kit por sección, compartido por todas las pistas en DRUM: mientras otra pist
 
 ### Las teclas: EXTENDED (V10.6r)
 
-(V10.6r) **EDIT › KIT 4**, KNOB 1 **KEY MAP**: **EXTENDED** (lo que trae una pista DRUM-X nueva; cargar un kit respeta
+(V10.6r) **EDIT › OUT**, KNOB 4 **KEY MAP** (de KIT 4 hasta la V10.7.37): **EXTENDED** (se ve KIK/TOM, o el nombre del sonido cromático) (lo que trae una pista DRUM-X nueva; cargar un kit respeta
 lo que elegiste) o **CLASSIC** (las octavas como se describen arriba). EXTENDED le da a cada octava un trabajo, con su
 nombre en pantalla al cambiar OCT:
 
@@ -1579,7 +1627,7 @@ el motor por calidad (sin perillas nuevas: ruido más limpio, FM sin aliasing, l
 suaves de FOLD / DRIVE / FEEDBK) e hizo del **cencerro uno CMOS clásico** (dos cuadradas a 1,47, pasabanda, un click y
 una cola; COLOR lo mezcla, lo modula en anillo y en FM, siempre afinado); la V10.6z9 trajo de vuelta la pegada de los
 bombos (su cuerpo de antes de la V10.6q, NOISE apagado por defecto en una curva cúbica, un golpe corto al subirlo) y los
-hats brillantes. El ACOUST de KIT 4 ya no está (V10.6o).
+hats brillantes (V10.7.37: su CLICK). El ACOUST de KIT 4 ya no está (V10.6o).
 
 ---
 
@@ -2700,7 +2748,7 @@ sus perillas y sus dibujos son los mismos.
     (el umbral baja un poco cuando subís NOISE): una mugre que sigue la altura y la envolvente de la nota y deja limpias
     las partes suaves y los silencios. Pasa por el corte de TONE. Se guarda con el proyecto (no con los presets de
     sonido); no está en el editor, MIDI ni automatización (no es un parámetro de pista: no queda lugar para uno).
-- **CRUSH** (V10.7.33, **EDIT › VOICES 3**, KNOB 1, 0–100 %, de la pista elegida; era el TYPE CRUSH de DIST): menos bits
+- **CRUSH** (V10.7.33, **EDIT › TONE**, KNOB 2 en un sinte, **OUT** KNOB 2 en un kit, VOICES 3 en EXT, 0–100 %, de la pista elegida; era el TYPE CRUSH de DIST): menos bits
   y menos frecuencia de muestreo (más de los dos a medida que sube), la frecuencia moviéndose ±50 % alrededor de su
   valor y los escalones en rampa, así que nunca silba una "nota pedal" fija; el **TONE** de DIST lo oscurece o abrillanta
   como antes. Anda con DIST apagado o prendido (después de DIST: un sonido distorsionado, triturado). 0 es apagado (no
@@ -2856,8 +2904,8 @@ pequeña curva de respuesta donde iría la barra.
     ~46 ms: un temblor vivo sobre el filtro, el paneo, un envío), PROX, ENV2, IN ENV, T1 ENV–T6 ENV y (V10.7.22) **OCT+** /
     **OCT-** (las teclas de expresión, una nota mantenida + OCT+ / OCT−: OCT+ la curva suave 0→1 del bend, OCT- el vibrato
     entrando; ruteadas, mueven el DEST en vez de la afinación; para un trémolo sobre AMP usá un AMT negativo) y
-    (codex/filter2-mod) **F.NOISE**: el modulador de EDIT > FILTER 2 (SOFT, STEP y BREAK bipolares, los picos de DUST
-    0..1, en METAL el vaivén de SOFT), sea cual sea el NOISE de FILTER 2; en un kit o en EXT vale 0. (V10.7.34) **LIFE**:
+    (codex/filter2-mod) **F.NOISE**: el modulador de EDIT > EROSION (SOFT, STEP y BREAK bipolares, los picos de DUST
+    0..1, en METAL el vaivén de SOFT), sea cual sea el NOISE de EROSION; en EXT vale 0, en un kit 0 salvo que su EROSION tenga NOISE (V10.7.37). (V10.7.34) **LIFE**:
     la respiración de la pista, un vagar lento y orgánico (bipolar), más rápido cuanto más suena; **BEING**: la altura de
     su ser en el agua de HOME › LIFE (bipolar, arriba +), lo que ves ahí. Las dos se mueven también con LIFE en 0.
     **T1 ENV … T6 ENV**: el seguidor de envolvente de cada pista (su sonido seco), una pista moviendo otra a mano.
@@ -2899,7 +2947,7 @@ ritmo de su sonido (agitado fuerte, tranquilo en silencio) y respirando (su tama
 va de cada pista a la que mueve, más gruesa y cálida cuanto más la mueve, con un punto cerca de la movida; arriba a la
 izquierda el LIFE (**STILL** en 0), a la derecha las líneas contadas. FILTER, PITCH y FX quedan tenues con LIFE en 0.
 
-- **Una pista quieta, o que viva una sola**: **EDIT › VOICES 3, KNOB 2** es el LIFE propio de la pista (0..100 %, 100 %
+- **Una pista quieta, o que viva una sola**: **EDIT › TONE, KNOB 3** (un kit: **OUT**, KNOB 3; EXT: VOICES 3, KNOB 2) es el LIFE propio de la pista (0..100 %, 100 %
   de fábrica), por el de HOME. En 0 la pista queda quieta y no la mueven las otras (ella sí las sigue moviendo). El
   destino **LIFE** de la matriz se le suma bloque a bloque.
 - **En la matriz**: **LIFE** (la respiración), **BEING** (el nado, arriba +) y **T1 ENV … T6 ENV** como fuentes; **LIFE**

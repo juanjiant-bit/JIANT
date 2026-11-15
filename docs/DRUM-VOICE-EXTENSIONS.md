@@ -4,7 +4,7 @@ Candidate base: `V10.6c-dxv`. ADD only; no sampler. The public installer and pub
 
 ## DRUM-X
 
-Choose **EDIT → KIT 4 → KEY MAP → EXTENDED**. CLASSIC is the default and preserves the earlier octave behavior. The setting is stored per track in the existing parameter store; no project-format or flash-map expansion.
+Choose **EDIT → OUT → KEY MAP (KNOB 4) → EXTENDED** (V10.7.37; KIT 4 before). CLASSIC is the default and preserves the earlier octave behavior. The setting is stored per track in the existing parameter store; no project-format or flash-map expansion.
 
 | OCT | EXTENDED behavior |
 | --- | --- |

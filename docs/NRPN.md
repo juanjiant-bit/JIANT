@@ -52,7 +52,9 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 36 | REV | 0..127 | 0 | |
 | 38 | GLIDE | 0..127 | 0 | |
 | 39 | PAN | -64..63 | 0 | |
-| 44 | UNISON | 0..127 | 40 | |
+| 43 | NOISE | 0..127 | 0 | (DRUM) |
+| 44 | UNISON | 0..127 | 40 | (ANALOG PHASE MATH VOICE WHEEL STRING WEST FM6 ADD ANIMAL EXT) |
+| 44 | RATE | 0..127 | 40 | (DRUM) |
 | 61 | ATK | 0..127 | 0 | (ANALOG PHASE WHEEL STRING WEST FM6 ADD ANIMAL EXT) |
 | 61 | RTRG | 0..1 | 1 | (MATH) |
 | 61 | LANG | 0..9 | 0 | OFF ES EN JA RU DE FR ZH PT GN (VOICE) |
@@ -81,7 +83,6 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 82 | PITCH | -24..24 | 0 | |
 | 83 | IMAGE | 0..127 | 127 | (ANALOG PHASE MATH VOICE WHEEL STRING WEST FM6 ADD ANIMAL) |
 | 83 | KICK | 0..127 | 127 | (DRUM) |
-| 83 | - | 0..127 | 127 | (EXT) |
 | 84 | DEST | 0..127 | 127 | (ANALOG PHASE MATH WHEEL STRING WEST FM6 ADD ANIMAL) |
 | 84 | CONS | 0..127 | 127 | (VOICE) |
 | 84 | SNARE | 0..127 | 127 | (DRUM EXT) |

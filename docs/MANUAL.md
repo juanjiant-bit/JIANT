@@ -476,9 +476,9 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 | Section | Groups (the button) · pages (SELECT) | Pages |
 | --- | --- | --- |
 | **HOME** | (V10.7.24; V10.7.32 the song's pages; V10.7.34 LIFE, TRACKS; V10.7.36 LIVE MIX second) **LIFE**: LIFE — **MACROS**: MACROS — **LIVE MIX**: LIVE MIX — **TRACKS**: TRACKS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **GEN**: GEN 1 · GEN 2 · GEN 3 | 10 |
-| **EDIT** (a synth) | (V10.7.35) **SOUND**: EDIT 1 · EDIT 2 · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (those the engine and the track have) — **TONE**: FILTER · FILTER 2 · TONE (KEY TRK · CRUSH · LIFE) — **VOICES**: VOICES · VOICES 2 (EXT: VOICES 3) — **AUTO KNOBS**: AUTO KNOBS | up to 11 |
-| **EDIT** (FM6) | (V10.7.35) **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **TONE**: FILTER · FILTER 2 · TONE — **VOICES**: VOICES · VOICES 2 | 10 |
-| **EDIT** (DRUM) | **KIT**: KIT · KIT 2 · KIT 3 · KIT 4 — **SOUND**: SOUND · SOUND 2 · SOUND 3 · SOUND 4 — **LEVELS**: LEVELS · LEVELS 2 — **TONE**: KIT LFO · FILTER · STEREO · VOICES · VOICES 3 | 14 |
+| **EDIT** (a synth) | (V10.7.35) **SOUND**: EDIT 1 · EDIT 2 · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (those the engine and the track have) — **TONE**: FILTER · EROSION · TONE (KEY TRK · CRUSH · LIFE) — **VOICES**: VOICES · VOICES 2 (EXT: VOICES 3) — **AUTO KNOBS**: AUTO KNOBS | up to 11 |
+| **EDIT** (FM6) | (V10.7.35) **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **TONE**: FILTER · EROSION · TONE — **VOICES**: VOICES · VOICES 2 | 10 |
+| **EDIT** (DRUM) | (V10.7.37) **KIT**: KIT · KIT 2 · KIT 3 — **SOUND**: SOUND · SOUND 2 · SOUND 3 (the sound a key struck) — **LEVELS**: LEVELS · LEVELS 2 — **MOD**: KIT LFO · EROSION — **TONE**: FILTER · OUT | 12 |
 | **SEQ** | (V10.6) **STEP**: STEP — **PATTERN**: LENGTH · RHYTHM · TRACK — **EUCLID**: EUCLID · MODES · MUTATE — **PLAYHEADS**: PLAYHEADS — **STRETCH**: STRETCH — **STEP COND**: STEP COND · COND 2 — **LOCKS**: LOCKS · LYRICS (VOICE) — **TRACK GEN**: TRACK GEN | 14 |
 | **FX** | **TRACK**: SENDS · DIST · AUTO PAN — **BUSES**: BUSES — **DELAY**: DLY · DELAY 2 · DELAY 3 — **REVERB**: REVERB · REVERB 2 — **CHORUS**: CHORUS — **SLICER**: SLICER · SLICER IN · SLICER IN2 · SL PITCH — **MASTER**: MASTER · TAPE · EQ · BALANCE (V10.7.32: PUNCH IN on the FX held) | 18 |
 | **GLO** | **MIX**: MIXER · SENDS — **COMP**: COMP · COMP 2 — **SETUP**: GLOBAL · SYSTEM · PORTS (V10.7.32: KEY SPLIT gone) | 7 |
@@ -559,7 +559,7 @@ the bars with KNOB 1 the bar and KNOB 2 LEN.
 - **EDIT** › **SOUND**: the engine's creature on the left (0.9.4 / 0.9.6: each engine its own, see below; alive with the sound, the page's name over it, the sound's
   under it), the scope in a well and all eight E parameters as chips on the right, the page's four lit. **TONE**:
   **FILTER** draws TYPE's response at CUT with its RES peak (LP, HP, BP, COMB), CUT a line, DRIVE / DIST a row of
-  cells; **VOICES** / **VOICES 2** (were VOICE / VOICE 2) the voices one a row as full as they sound, POLY and PRIO (VOICES 2: ALLOC), GLIDE's
+  cells; **VOICES** / **VOICES 2** (were VOICE / VOICE 2) the voices one a row as full as they sound, POLY and PRIO (VOICES 2: UNISON), GLIDE's
   curve; the others keep their pictures. **AUTO KNOBS** (new): one E parameter large as a gauge — KNOB 1 picks it (E1–E8),
   KNOB 2 sets it, KNOB 3 the **source** of the MOD slot aimed at it (turned up from OFF a free slot takes it, its DEST
   that parameter; back to OFF frees it), KNOB 4 that slot's **AMT**; E1–E8 as tabs under it.
@@ -633,19 +633,19 @@ since 0.6.51: every project opens as it was.
 | OP ENV | OP | STAGE | RATE | LEVEL | FM6 |
 | OPERATOR 2 | OP | MODE | DETUNE | KEY VEL (the operator's velocity; was VEL) | FM6 |
 | FILTER | TYPE | CUT | RES | DRIVE (ANALOG) / DIST (others) | every engine |
+| EROSION (V10.7.37; was FILTER 2) | NOISE | RATE | MODE (SOFT STEP METAL BREAK DUST) | DEST (FILT .. PITCH; not on VOICE) | every engine but EXT (DRUM: its own, below) |
 | KIT 3 | BP | FEEDBK | HANDS | GLUE | DRUM (the whole kit) |
-| KIT 4 (V10.6r) | KEY MAP (CLASSIC, EXTENDED, or EXTENDED with one sound chromatic; V10.6o: ACOUST gone; codex/coherence: on KNOB 1) | — | — | — | DRUM (the whole kit) |
 | KIT LFO | RATE | DEPTH | SHAPE | RAND | DRUM (the whole kit) |
-| STEREO | IMAGE | — | — | — | DRUM (the whole kit) |
-| SOUND | SOUND | SIDE | PITCH | PMOD | DRUM (one sound) |
-| SOUND 2 | SOUND | DECAY | NOISE | COLOR | DRUM (one sound) |
-| SOUND 3 | SOUND | MODE | PM.TYPE | DRIVE | DRUM (one sound) |
-| SOUND 4 | SOUND | LAYER | FEEDBK | SEND | DRUM (one sound) |
+| EROSION (V10.7.37) | NOISE | RATE | MODE (SOFT STEP METAL BREAK DUST) | DEST (FILT F75 MIX P75 PITCH) | DRUM (the kit's FILTER and its hits' pitch) |
+| OUT (V10.7.37) | IMAGE (was STEREO's) | CRUSH | LIFE (both were VOICES 3's) | KEY MAP (was KIT 4's: CLASSIC, KIK/TOM, or one sound chromatic) | DRUM (the whole kit) |
+| SOUND (V10.7.37: the sound a key struck) | PITCH | DECAY | SIDE (A / B) | PMOD | DRUM (one sound) |
+| SOUND 2 | NOISE (the kick's: CLICK) | COLOR | DRIVE | MODE | DRUM (one sound) |
+| SOUND 3 | PM.TYPE | LAYER | FEEDBK | SEND | DRUM (one sound) |
 | LEVELS | KICK | SNARE | CLAP | HATCL | DRUM |
 | LEVELS 2 | HATOP | TOM | RIM | BELL | DRUM |
 | VOICES (was PLAY, VOICE before) | POLY (POLY MONO LEG UNI DRONE; was VOICE) | GLIDE | GL MODE (the glide's RATE / TIME; was MODE) | PRIO | every engine |
-| VOICES 2 (0.8.5; was VOICE 2) | ALLOC | UNISON (UNI's detune, 0..100 %; was DETUNE) | VEL (the sound's velocity amount, 0..100 %) | IMAGE (the voices across, POLY; was the STEREO page; not on EXT) | every engine but DRUM |
-| VOICES 3 (V10.7.33) | CRUSH (the track's bit reducer, 0..100 %; was DIST TYPE CRUSH) | LIFE (V10.7.34: the track's LIFE, 0..100 %, times HOME › LIFE's) | | | every engine (a kit's too) |
+| VOICES 2 (0.8.5; was VOICE 2) | UNISON (UNI's detune, 0..100 %; was DETUNE) | VEL (the sound's velocity amount, 0..100 %) | IMAGE (the voices across, POLY; was the STEREO page; not on EXT) | (V10.7.37: ALLOC gone, automatic) | every engine but DRUM |
+| VOICES 3 (V10.7.33) | CRUSH (the track's bit reducer, 0..100 %; was DIST TYPE CRUSH) | LIFE (V10.7.34: the track's LIFE, 0..100 %, times HOME › LIFE's) | | | EXT (the synths: TONE; a kit: OUT) |
 | SWARM, SWARM 2 (V10.6z6) | SIDE (FAR / NEAR) | that side's RATE, MOVE, TONE / NOISE, MOD | | (SWARM 2: NOW, the morph and its source) | EXT with SOURCE SWARM |
 | AUTO KNOBS (0.8.5) | PARAM (E1–E8) | its value | SRC (the MOD slot on it) | AMT | the synths (not FM6, DRUM) |
 
@@ -1187,10 +1187,14 @@ with V10.7.24), in the same thermal line art, the bichos' face shared with DRUM-
 - **WHEEL: nine tube worms**, one per drawbar, as tall as its level (the registration's digits under them), each with a
   crown of as many tentacles as its harmonic; the **rotor is a current** that bends them (SLOW, FAST, its DEPTH), PERC
   makes its worm leap and shout, CLICK lets bubbles out of their mouths, DUST drifts motes.
-- **WEST: the folded wave** (V10.7.36; NOISE's swarm before): two cycles of the wave exactly as the engine folds it
-  (FOLD, SYMM, MOD and RATIO bend it), scrolling with the sound; it brightens and folds further as the gate opens on a
-  strike and dims as it closes. Above it the lamp (the vactrol's light) glows on each note; DUST scatters flickering
-  motes; a face under it shuts its eyes on a strike.
+- **WEST: the circuit** (V10.7.37; the folded wave in V10.7.36, NOISE's swarm before): the engine as its signal flow, a
+  small diagram in the same line art. A **MOD** box (the modulator's own wave, as many cycles as **RATIO**, as bright as
+  **MOD** is deep) feeds down into the **OSC** box (the core wave, MOD bending its phase), an arrow to **FOLD** (two
+  cycles of it through the folder as **FOLD** and **SYMM** fold it, live: a strike folds harder), an arrow to the
+  **LPG**: a round lamp with a face that lights at once on a strike and fades as slowly as **DECAY** sets (a vactrol),
+  DUST's motes at its door, and under it the **decay's tail**, a dot running down it with the note. A pulse runs along
+  the wires while the track sounds; in silence everything stands still and the lamp is dark. On the whole panel the
+  boxes are named (MOD OSC FOLD LPG); beside the scope (MENU › SCOPE ON) the same diagram small, without names.
 - **PHASE: a snail.** The shell's chambers sit at the **bent phase** (even at DCW 0; as DCW rises they crowd where the
   phase rushes, which is what phase distortion does), coloured by the output; **the foot's sole is the wave** (WAVE and
   WAVE2 alternating); FB frays the spiral, SUB makes the outer whorl breathe, the eyestalks pull in on each note; with
@@ -1303,13 +1307,13 @@ stays as a hidden twin of LP24: a project, a preset or a song that has TYPE MS20
 least 70 % (the closest to what it was), and shows LP24; the TYPE knob passes over it. GEN's EBM bass now asks for
 LP24 with its DRIVE at 55 % or more.
 
-### FILTER 2: NOISE, RATE, MODE, DEST · FILTER 3: KEY (every engine but DRUM-X and EXT)
+### EROSION: NOISE, RATE, MODE, DEST · FILTER 3: KEY (every engine but EXT)
 
-EDIT > **FILTER 2** (codex/filters2), after FILTER, is a modulator: NOISE · RATE · MODE · **DEST**. **FILTER 3**
+EDIT > **EROSION** (V10.7.37: the page was called FILTER 2; codex/filters2), after FILTER, is a modulator: NOISE · RATE · MODE · **DEST**. **FILTER 3**
 (codex/filter2-mod) holds **KEY**. All of them at their stored default are off: every project and preset of before
 sounds the same.
 
-KEY moved off FILTER 2 to make room for DEST. DRIVE stays on FILTER: it is the filter's power, the knob you reach for
+KEY moved off EROSION to make room for DEST. DRIVE stays on FILTER: it is the filter's power, the knob you reach for
 with TYPE, CUT and RES, while KEY is set once for a sound. FILTER 3 is one knob, like RETRIG or STEREO.
 
 - **KEY** (FILTER 3): keyboard tracking, 0 .. 100 %. The cutoff follows the note you play: at 100 % an octave up opens
@@ -1345,15 +1349,24 @@ with TYPE, CUT and RES, while KEY is set once for a sound. FILTER 3 is one knob,
   On VOICE there is no DEST (its CONS uses that slot): it is always FILT there; route **F.NOISE** to PITCH instead.
 
 The modulator is also the MOD matrix's source **F.NOISE** (below): route it to **PITCH** (or any DEST) at any AMT,
-whatever FILTER 2's NOISE and DEST are: it is the raw modulator, full scale, and the slot's AMT alone sets its depth
+whatever EROSION's NOISE and DEST are: it is the raw modulator, full scale, and the slot's AMT alone sets its depth
 (NOISE 0 and a slot F.NOISE → PITCH: the pitch moves, the filter does not). In METAL, F.NOISE is SOFT's wander at RATE
 (the audio-rate sine is only for CUT and DEST's pitch).
 
-Projects saved with V10.7.30's FILTER 2 load with the same values (DEST at FILT, KEY now shown on FILTER 3), but METAL,
+Projects saved with V10.7.30's EROSION load with the same values (DEST at FILT, KEY now shown on FILTER 3), but METAL,
 BREAK and DUST now sound different (they modulate CUT). With NOISE at 0 nothing changes.
 
 With the track's filter fully open (LP, CUT 127, RES 0), every MODE lowers CUT by its depth so the moving filter is
-heard, as LFO DEST FILTER does. FILTER 2 does not move COMB / COMB- (KEY does not either).
+heard, as LFO DEST FILTER does. EROSION does not move COMB / COMB- (KEY does not either).
+
+**DRUM-X's EROSION** (V10.7.37, EDIT › MOD › EROSION on a DRUM track): the same modulator on the kit, its four knobs
+its own: **NOISE** (0 .. 100 %; 0, the default of every kit and project of before: nothing of it runs, the kit sounds
+bit for bit as before), **RATE**, **MODE** (SOFT, STEP, METAL, BREAK, DUST, as above) and **DEST** (FILT, F75, MIX,
+P75, PITCH). On FILT it moves the kit's **FILTER** cutoff (EDIT › TONE › FILTER: an open filter is lowered so the
+movement is heard, as on the synths); on PITCH it moves **each hit's pitch** (up to about ±1 octave at 100 %, read when
+the hit plays a block: a SOFT drift, STEP's jumps, BREAK's pattern in time, DUST's upward flicks); METAL on the pitch
+phase-modulates the kit's sum at RATIO of the newest hit. Every MODE is bounded (the same depths as the synths'), and the
+kit's NOISE is automatable (a lock, the AUTO lanes). The values are the track's (saved with the sound and the project).
 
 **CHORUS** (0.9.9-snd2) is lighter: its LFO is read every 64 samples (16, 8, 4 at the fastest RATEs) and the three
 voices glide between, instead of three sines every sample; it sounds the same (-63 dB from before at the default).
@@ -1366,10 +1379,13 @@ the delay exactly as before (a project of before opens with DRIVE 0).
 ### PLAY (every engine)
 
 EDIT > **VOICES** (was PLAY, before that VOICE, the VOICE engine's name too): **POLY** POLY, MONO, LEG (legato), UNI (unison), DRONE; **GLIDE**;
-**GL MODE** RATE or TIME (how glide is measured); **PRIO** LAST, LOW, HIGH. **VOICES 2**: **ALLOC** (ROT / REUSE),
-**UNISON** (how far apart UNI's voices are, 0..100 %; was DETUNE, a bare number), **VEL**, **IMAGE** (the voices across
-the stereo field in POLY; was its own STEREO page; not on EXT). **VOICES 3** (V10.7.33): **CRUSH**, the track's bit
-reducer (see [Per track](#per-track)). The six tracks share a budget of 8 voices; FM6 plays at most four per track. (0.9.8) VOICE glides as a singer: an S-curve in
+**GL MODE** RATE or TIME (how glide is measured); **PRIO** LAST, LOW, HIGH. **VOICES 2**: **UNISON** (how far apart
+UNI's voices are, 0..100 %; was DETUNE, a bare number), **VEL**, **IMAGE** (the voices across the stereo field in POLY;
+was its own STEREO page; not on EXT). (V10.7.37) **ALLOC** is gone from the page: the voices are allocated by
+themselves, **REUSE** (a new note takes the free voice nearest its pitch, so a glide travels least) when **GLIDE** is
+on, **ROT** (round robin, each note a fresh voice) when it is off. A project or a preset saved with ALLOC set loads as
+before but plays by that rule (ALLOC REUSE with GLIDE off now rotates). **VOICES 3** (V10.7.33, EXT's): **CRUSH**, the
+track's bit reducer (see [Per track](#per-track)); a kit's is on **OUT**. The six tracks share a budget of 8 voices; FM6 plays at most four per track. (0.9.8) VOICE glides as a singer: an S-curve in
 pitch over the same time (the other engines: a straight line, as before).
 
 **DRONE** (V10.7.33, every engine but DRUM, which ignores it): a note keeps sounding after its key is let go. The next
@@ -1404,11 +1420,14 @@ DRUM-X is a synthesized kit of eight sounds, **BD SD CP CH OH TM RS CB**, genera
 
 - Every sound has two sides, **A** and **B**. **MORPH** (KIT, KNOB 1) moves the whole kit between them:
   the knob to play live.
-- The pages go **the whole kit first, then one sound, then the volumes and the stereo** (0.6.58):
+- The pages go **the whole kit first, then one sound, then the volumes, the kit's modulation and its way out**
+  (V10.7.37: twelve pages in five groups, was fifteen: **KIT** KIT · KIT 2 · KIT 3, **SOUND** SOUND · SOUND 2 · SOUND 3,
+  **LEVELS** LEVELS · LEVELS 2, **MOD** KIT LFO · EROSION, **TONE** FILTER · OUT; the kit's VOICES page is gone, a kit
+  is always polyphonic; a project keeps every value, only the pages moved):
   - **KIT** (EDIT 1): MORPH, TUNE, TONE, DECAY. **KIT 2** (EDIT 2): NOISE, **FM ENV** (FM struck with each hit and gone
     in a few milliseconds: a beater, a click, a metal edge on the attack, the tail clean), **FOLD** (a wavefolder after
     the envelope: a bright attack, a clean tail), DRIVE.
-    (0.9.9-snd1) **FM ENV** and **FEEDBK** (KIT 3's and SOUND 4's) are on curves: most of the travel is musical (a
+    (0.9.9-snd1) **FM ENV** and **FEEDBK** (KIT 3's and SOUND 3's) are on curves: most of the travel is musical (a
     beater, rubber, metal, a saw's edge growing on a sine; clean transients), the harsh noise only in the last steps
     (FM ENV past ~90 %, FEEDBK 14–15). The FM index is the same across the keyboard but eased on very high hits so it
     never folds into hiss; FEEDBK feeds back the mean of the last two samples (no fizz). Saved values keep their knob
@@ -1423,18 +1442,23 @@ DRUM-X is a synthesized kit of eight sounds, **BD SD CP CH OH TM RS CB**, genera
     dense, the peaks held). Saved with the project (a project of before opens with it OFF).
   - **KIT LFO**: **RATE** (OFF, 4BAR … 1/32, in time), **DEPTH** (how far MORPH swings), **SHAPE** (SINE, TRI, SAW, RAMP,
     S&H), **RAND** (each hit gets its own MORPH and a little tune).
-  - **FILTER**: the kit's.
-  - **SOUND 1–4**, one sound each: KNOB 1 is always **SOUND** (which one; striking a key also picks it).
-    - **SOUND**: SIDE (A / B), PITCH, PMOD (how far the pitch falls; with the filter GR, **SCRAPE**: below).
-    - **SOUND 2**: DECAY, NOISE, COLOR, of the side picked on SOUND (KNOB 1 shows it: "SD B").
-    - **SOUND 3**: **MODE** (wave SIN / FM / MTL / BEL, noise filter LP / BP / HP / GR, "+" for snap), **PM.TYPE** (how the
-      pitch moves: DECAY, LONG, NOISE, SINE), **DRIVE** (ON / OFF).
+  - **EROSION** (V10.7.37): the synths' noise modulator on the kit (NOISE RATE MODE DEST): its FILTER's cutoff and its
+    hits' pitch. See [EROSION](#erosion-noise-rate-mode-dest--filter-3-key-every-engine-but-ext).
+  - **FILTER**: the kit's: TYPE, CUT, RES, DIST.
+  - **OUT** (V10.7.37): **IMAGE** (was the STEREO page's, below), **CRUSH** and **LIFE** (were VOICES 3's: the track's bit
+    reducer, the track's LIFE), **KEY MAP** (was KIT 4's: CLASSIC, KIK/TOM or one sound chromatic; see [The keys](#the-keys-extended-v106r)).
+  - **SOUND 1–3**, one sound: (V10.7.37) **the sound a key struck last on the track** (the panel's header names it and
+    its side: "SD · SNARE · A"; HELP says so); no SOUND knob any more, all four knobs are the sound's.
+    - **SOUND**: PITCH, DECAY, SIDE (A / B: which side the knobs edit), PMOD (how far the pitch falls; with the filter
+      GR, **SCRAPE**: below).
+    - **SOUND 2**: NOISE (the kick's is its **CLICK**, below), COLOR, **DRIVE** (ON / OFF), **MODE** (wave SIN / FM /
+      MTL / BEL, noise filter LP / BP / HP / GR, "+" for snap).
       (V10.7.8) **GR**, the guiro: a band-pass whose hit is a stroke over a guiro's ridges, ticks at 24–64 Hz (PITCH sets
       the rate). SOUND's PMOD becomes **SCRAPE**, the stroke's length (0–173 ms), and the hit's velocity picks long or
       short: an accent (127) plays the whole stroke, "rrrrip", a soft hit only its start, "chk" (the length goes with the
       velocity's fourth power). Any sound can take it (a scraped tom, a scraped clap); the kits of before never had it,
       so they sound as they did.
-    - **SOUND 4**: **LAYER** (OFF, 1–15): a second oscillator at an out-of-tune interval, frequency modulated by the
+    - **SOUND 3**: **PM.TYPE** (how the pitch moves: DECAY, LONG, NOISE, SINE), **LAYER** (OFF, 1–15): a second oscillator at an out-of-tune interval, frequency modulated by the
       sound, more as it goes up: from a metal edge to a clang with no note, so the sound melts into the rhythm and stays
       out of the harmony (the factory kit has it on the snare, the hats and the cowbell); **FEEDBK** (OFF, 1–15): that
       sound's own (added to KIT 3's); **SEND**: that hit alone into one effect, OFF then CHO, DLY, REV with 16 amounts
@@ -1442,7 +1466,7 @@ DRUM-X is a synthesized kit of eight sounds, **BD SD CP CH OH TM RS CB**, genera
       SENDs OFF, dry; a saved project keeps its own). The dice (DICE ALL; the sound dice) set
       LAYER and FEEDBK boldly. Each sound with a LAYER costs a little CPU (about as FEEDBK).
   - **LEVELS / LEVELS 2**: the level of each sound (KICK, SNARE, CLAP, HATCL, HATOP, TOM, RIM, BELL).
-  - **STEREO**: **IMAGE** (automatable) sweeps the kit through its placings in the stereo field. 0 (MONO): every sound
+  - **OUT**'s **IMAGE** (automatable; the STEREO page until V10.7.37) sweeps the kit through its placings in the stereo field. 0 (MONO): every sound
     in the middle; the first turns open it; from there each step is another placing (each sound moves on its own
     curve), so turn it until the image sits right. The kick stays near the middle. DRV, DIST and the FILTER work on the
     kit's sum, so with them the image narrows (the page draws the sounds grey).
@@ -1480,6 +1504,26 @@ changes **how** they play, not which sound. The screen says it when you press OC
   SHORT, GHOST, FLAM** for it on the cursor step (left back to -- takes the hit and its mode away). A sound's x2 x4
   x8 spill over the steps after it as RATCH does (0.9.18: x2 a hit a step, x4 two, x8 four). The step's own RATCH
   (SEQ > STEP COND) repeats its other sounds: a sound with its own x2 / x4 / x8 or recorded ONCE is left out of it.
+- **The sound** (V10.7.37, a review of each sound; the factory kits as close to before as they were, the differences
+  below):
+  - **The kick's CLICK**: the kick's NOISE (SOUND 2, KNOB 1, shown **CLICK** on the kick) is now a click over the body:
+    nothing up to 24 (every factory kick as it was, all of them sit at 0..24), then up to the full noise at 127, a bright
+    ~2 ms transient (its brightness follows COLOR). It no longer thins the body: before, raising the kick's NOISE took
+    the kick away (at 127 nothing but a knock was left).
+  - **The tom's stick**: the tom's NOISE is added over the skin instead of replacing part of it (the factory toms' body
+    1–2.5 dB fuller; at 127 the tom keeps its note under the stick).
+  - **The snare's shell and wires**: the snare's tone (the shell) rings 5/8 of the noise's (the wires') time, so a hit
+    is tone and snap together and the tail is the snares (NOISE stays the balance). The factory snares' tails are a
+    little drier.
+  - **DECAY follows the sound**: the kit's DECAY (KIT, KNOB 4) is on a gentler curve (the factory kits' 54..76 within a
+    step of before; its ends a seventh and seven times the decay, were twenty-two times, every sound then a tick or 1.5 s
+    long), never past the longest a sound can ring, and it lengthens the tail alone: the pitch sweep and SNAP keep the
+    sound's own time, so a long DECAY no longer smears the kick's attack.
+  - **Velocity colours the hit**: a hit's velocity moves its COLOR, (velocity − 100) / 3: an accent is brighter, a soft
+    hit darker, like a real drum (100, the sequencer's default, as before). A sound whose noise is high-passed (the
+    hats, the toms and the rim of the factory kits) only brightens: darker, its noise would get louder.
+  - **The hi-hat choke**: a closed hat (or the pedal hat, GM 44) cuts a ringing open hat in a few milliseconds, as
+    before; (V10.7.37) also an open hat struck in the same instant just before it.
 - **MIDI** (0.8.5): notes 35–81 still play the GM drum map exactly as before. The notes around it, which used to play
   their octave of 36–47 plain, are now these octaves, by pitch class: **23–34 SHORT, 11–22 GHOST, 0–10 FLAM, 82–93
   REPEAT 1/2, 94–105 REPEAT, 106–127 x2** (0.9.17; 84 the kick every other step, 96 the kick once a step, 108 the kick
@@ -1494,7 +1538,7 @@ One kit per section, shared by every track on DRUM: while another track plays DR
 
 ### The keys: EXTENDED (V10.6r)
 
-(V10.6r) **EDIT › KIT 4**, KNOB 1 **KEY MAP**: **EXTENDED** (the default of a new DRUM-X track; a kit load keeps the
+(V10.6r) **EDIT › OUT**, KNOB 4 **KEY MAP** (KIT 4's until V10.7.37): **EXTENDED** (shown KIK/TOM, or the chromatic sound's name) (the default of a new DRUM-X track; a kit load keeps the
 track's choice) or **CLASSIC** (the octaves as described above). EXTENDED gives each octave a job, its name on screen
 when OCT changes:
 
@@ -1511,7 +1555,7 @@ A note recorded in EXTENDED plays back on the same sound at the same pitch. The 
 engine for quality (no new knobs: cleaner noise, no aliasing on FM, the 808 clap's bursts, smoother FOLD / DRIVE /
 FEEDBK curves) and made the **cowbell a classic CMOS one** (two squares at 1.47, band-passed, a click and a tail; COLOR
 mixes, rings and FMs it, still tonal); V10.6z9 brought back the kicks' punch (their pre-V10.6q body, NOISE off by
-default on a cube curve, a short knock when raised) and the bright hats. KIT 4's ACOUST is gone (V10.6o).
+default on a cube curve, a short knock when raised; V10.7.37: its CLICK) and the bright hats. KIT 4's ACOUST is gone (V10.6o).
 
 ---
 
@@ -2565,7 +2609,7 @@ its page). PRESETS loads the track's sounds, as everywhere. The pages, their kno
     drops a little as NOISE rises): a grit that follows the note's pitch and envelope and leaves the quiet parts and
     the silences clean. It goes through the TONE's corner. Saved with the project (not with sound presets); not on
     the editor, MIDI or automation (it is not a track parameter: there is no slot left for one).
-- **CRUSH** (V10.7.33, **EDIT › VOICES 3**, KNOB 1, 0–100 %, the selected track's; was DIST's TYPE CRUSH): fewer bits
+- **CRUSH** (V10.7.33, **EDIT › TONE**, KNOB 2 on a synth, **OUT** KNOB 2 on a kit, VOICES 3 on EXT, 0–100 %, the selected track's; was DIST's TYPE CRUSH): fewer bits
   and a lower sample rate (more of both as it rises), the rate wandering ±50 % around its value and the steps ramped,
   so it never whistles a fixed "pedal note"; DIST's **TONE** darkens or brightens it as it did. It works whether DIST is
   off or on (after DIST: a distorted sound crushed). 0 is off (not run). Saved with the project (not with user presets,
@@ -2711,8 +2755,8 @@ curve where the bar would be.
     the filter, the pan, a send), PROX, ENV2, IN ENV, T1 ENV–T6 ENV, and (V10.7.22) **OCT+** / **OCT-** (the expression
     keys, a note held + OCT+ / OCT−: OCT+ the bend's eased 0→1 curve, OCT- the vibrato faded in; routed, they move the DEST
     instead of the pitch; for a tremolo on AMP use a negative AMT), and (codex/filter2-mod) **F.NOISE**: EDIT > FILTER
-    2's modulator (SOFT, STEP and BREAK bipolar, DUST's spikes 0..1, METAL SOFT's wander), whatever FILTER 2's NOISE;
-    on a kit or EXT it is 0. (V10.7.34) **LIFE**: the track's breath, a slow organic wander (bipolar), quicker as the track
+    2's modulator (SOFT, STEP and BREAK bipolar, DUST's spikes 0..1, METAL SOFT's wander), whatever EROSION's NOISE;
+    on EXT it is 0, on a kit 0 unless its EROSION's NOISE is up (V10.7.37). (V10.7.34) **LIFE**: the track's breath, a slow organic wander (bipolar), quicker as the track
     sounds; **BEING**: its being's height in HOME › LIFE's water (bipolar, up +), what you see there. Both move with LIFE
     at 0 too. **T1 ENV … T6 ENV**: each track's envelope follower (its dry sound), a track moving another by hand.
   - Destinations: PITCH, CUT, SHP, AMP, PAN, DIST, CHO, DLY, REV, RATE (LFO rate), VIB, **E1–E8** (the engine's own
@@ -2752,7 +2796,7 @@ water at the pace of its sound (agitated when loud, calm in silence) and breathi
 **line** goes from each track to the one it moves, thicker and warmer the more it moves it, a dot near the one moved;
 at the top left the LIFE amount (**STILL** at 0), at the right the lines counted. FILTER, PITCH and FX stay dim at LIFE 0.
 
-- **One track still, or only one alive**: **EDIT › VOICES 3, KNOB 2** is the track's own LIFE (0..100 %, 100 % by
+- **One track still, or only one alive**: **EDIT › TONE, KNOB 3** (a kit: **OUT**, KNOB 3; EXT: VOICES 3, KNOB 2) is the track's own LIFE (0..100 %, 100 % by
   default), times HOME's. At 0 the track is still and is not moved by the others (it still moves them). The matrix's
   **LIFE** destination adds to it a block at a time.
 - **In the matrix**: **LIFE** (the breath), **BEING** (the swim, up +) and **T1 ENV … T6 ENV** as sources; **LIFE** as a
