@@ -325,8 +325,8 @@ int main(void)
         vs.on = 1;
         trk[3].p[P_TVEL] = 0;
         track_defaults(&trk[3]);
-        ck("7. VEL: 100 % by default (127; NRPN 80, VOICE 2's KNOB 3)", trk[3].p[P_TVEL] == 127 && track_desc(&trk[3], P_TVEL)->def == 127 &&
-           str_eq(track_desc(&trk[3], P_TVEL)->label, "VEL") && track_desc(&trk[3], P_TVEL)->max == 127 && P_TVEL == 80 && PAGES[page_find("VOICES 2")].id[2] == P_TVEL);
+        ck("7. VEL: 100 % by default (127; NRPN 80, VOICES 2's KNOB 2: V10.7.37, ALLOC gone)", trk[3].p[P_TVEL] == 127 && track_desc(&trk[3], P_TVEL)->def == 127 &&
+           str_eq(track_desc(&trk[3], P_TVEL)->label, "VEL") && track_desc(&trk[3], P_TVEL)->max == 127 && P_TVEL == 80 && PAGES[page_find("VOICES 2")].id[1] == P_TVEL);
         t->p[P_TVEL] = 127;                           /* (track 1 at power-on is a bass: 0 %) */
         kb_velx[KEY] = 37u ^ 100u;
         key_down(KEY); blocks(4);
