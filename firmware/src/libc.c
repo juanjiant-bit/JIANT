@@ -55,6 +55,14 @@ static void str_cpy(char *d, const char *s, unsigned max)
     }
     d[i] = 0;
 }
+/* (V10.7.38) s after d's text: str_app as str_cpy(d + str_len(d), s, max) (max: what is left), str_cat its buffer of max
+ * (str_cpy(d + str_len(d), s, max - str_len(d))); one call where each was two (the image's bytes for VOICES) */
+static __attribute__((noinline)) void str_app(char *d, const char *s, unsigned max) { str_cpy(d + str_len(d), s, max); }
+static __attribute__((noinline)) void str_cat(char *d, const char *s, unsigned max)
+{
+    unsigned n = str_len(d);
+    str_cpy(d + n, s, max - n);
+}
 
 /* decimal with an optional fixed point: fmt_fix(buf, -63, 1) -> "-6.3" */
 static void fmt_fix(char *b, int32_t v, int decimals)

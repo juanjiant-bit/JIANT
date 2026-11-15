@@ -278,7 +278,7 @@ def controls():
                            ('MORPH', 'MORPH DRIFT - -'), ('ROTOR', 'DEPTH DUST - -'),
                            ('WORDS', 'LANG LYRIC CONS (OCT+ TYPE)'), ('RETRIG', 'RTRG - - -'), ('OPERATOR', 'OP COARSE FINE OUTPUT'),
                            ('OP ENV', 'OP STAGE RATE LEVEL'), ('OPERATOR 2', 'OP MODE DETUNE KEY VEL'), ('FILTER', 'TYPE CUT RES DRIVE'),
-                           ('VOICES', 'POLY GLIDE GL MODE PRIO'), ('VOICES 2', 'UNISON VEL IMAGE - (ALLOC automatic)'), ('VOICES 3', 'CRUSH LIFE - - (EXT)'), ('AUTO KNOBS', 'KNOB VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS GLUE'),
+                           ('VOICES', 'POLY GLIDE GL MODE PRIO'), ('VOICES 2', 'UNISON VEL IMAGE VOICES (AUTO 1..8; ALL n/8)'), ('VOICES 3', 'CRUSH LIFE - - (EXT)'), ('AUTO KNOBS', 'KNOB VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS GLUE'),
                            ('KIT LFO', 'RATE DEPTH SHAPE RAND'), ('LEVELS', 'KICK SNARE CLAP HATCL'),
                            ('LEVELS 2', 'HATOP TOM RIM BELL'), ('SOUND', 'PITCH DECAY SIDE PMOD'),
                            ('SOUND 2', 'NOISE (kick: CLICK) COLOR DRIVE MODE'), ('SOUND 3', 'PM.TYPE LAYER FEEDBK SEND'),

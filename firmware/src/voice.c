@@ -649,7 +649,8 @@ static void lfo_fade_restart(uint32_t mask)
             trk[k].lfo_fade = 0;
 }
 
-/* voices the engine may use (POLY and UNISON): its cap, else all of them */
+/* voices the track may use (POLY, DRONE and UNISON): the engine's cap, else all of them; (V10.7.38, the owner) under
+ * its VOICES (P_VCAP, n + 1 stored: 0 and 1 AUTO; a kit's EROSION NOISE there, never read as one) */
 /* (JIANT 0.6.29, 0.6.30) GLO > SYSTEM > LOAD (MENU > SYSTEM > LOAD): how much of the CPU the heavy parts may take,
  * swapped while they sound, the project keeping its settings (ui.c ui_load, rp_apply). FULL: all as set. LITE: their
  * light kin: FM6 two voices, the reverb SHIMMER / CLOUD as ROOM, RESO as SPRING, the GRAIN delay plain (fx.c). ECO:
@@ -663,12 +664,18 @@ static volatile uint8_t sys_load;
 #define ECO_VOICES 6u            /* (0.6.70) LOAD ECO: the voices all parts share (NVOICE else) */
 static uint32_t trk_nvoice(const track_t *t)
 {
-    uint32_t c = ENGINES[t->engine]->poly;
+    const engine_t *e = ENGINES[t->engine];
+    uint32_t c = e->poly ? e->poly : NVOICE, u = (uint32_t)t->p[P_VCAP] - 2u;   /* (every cap <= NVOICE) VOICES n: u = n - 1;
+                                                         * AUTO (0, 1) wraps past any cap */
     if (sys_load && t->engine == ENGI_FM6 && c > LITE_FM6_POLY)
         c = LITE_FM6_POLY;
-    if (sys_load == LOAD_ECO && !ENGINES[t->engine]->oneshot && (!c || c > ECO_POLY))
-        c = ECO_POLY;
-    return c && c < NVOICE ? c : NVOICE;
+    if (!e->oneshot) {
+        if (sys_load == LOAD_ECO && c > ECO_POLY)
+            c = ECO_POLY;
+        if (u < c)
+            c = u + 1u;
+    }
+    return c;
 }
 
 /* the part's voice mode: P_VOICE, POLY for an engine of hits (engine_t.oneshot: DRUM); (V10.7.33) DRONE allocates as

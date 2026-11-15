@@ -676,7 +676,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | LEVELS | KICK | SNARE | CLAP | HATCL | DRUM |
 | LEVELS 2 | HATOP | TOM | RIM | BELL | DRUM |
 | VOICES (era PLAY, antes VOICE) | POLY (POLY MONO LEG UNI DRONE; era VOICE) | GLIDE | GL MODE (RATE / TIME del glide; era MODE) | PRIO | todos los motores |
-| VOICES 2 (0.8.5; era VOICE 2) | UNISON (cuánto se abren las voces de UNI, 0..100 %; era DETUNE) | VEL (cuánta velocidad le llega al sonido, 0..100 %) | IMAGE (las voces repartidas, POLY; era la página STEREO; no en EXT) | (V10.7.37: ALLOC ya no está, es automático) | todos menos DRUM |
+| VOICES 2 (0.8.5; era VOICE 2) | UNISON (cuánto se abren las voces de UNI, 0..100 %; era DETUNE) | VEL (cuánta velocidad le llega al sonido, 0..100 %) | IMAGE (las voces repartidas, POLY; era la página STEREO; no en EXT) | VOICES (V10.7.38: AUTO, 1..8, el máximo de voces de la pista; donde estaba ALLOC, que es automático) | todos menos DRUM |
 | VOICES 3 (V10.7.33) | CRUSH (el reductor de bits de la pista, 0..100 %; era DIST TYPE CRUSH) | LIFE (V10.7.34: el LIFE de la pista, 0..100 %, por el de HOME › LIFE) | | | EXT (los sintes: TONE; un kit: OUT) |
 | SWARM, SWARM 2 (V10.6z6) | SIDE (FAR / NEAR) | los RATE, MOVE, TONE / NOISE, MOD de ese lado | | (SWARM 2: NOW, el morph y su fuente) | EXT con SOURCE SWARM |
 | AUTO KNOBS (0.8.5) | PARAM (E1–E8) | su valor | SRC (el slot de MOD sobre él) | AMT | los sintes (no FM6, DRUM) |
@@ -1469,7 +1469,14 @@ se abren las voces de UNI, 0..100 %; era DETUNE, un número pelado), **VEL**, **
 estéreo en POLY; era su propia página STEREO; no en EXT). (V10.7.37) **ALLOC** ya no está en la página: las voces se
 reparten solas, **REUSE** (una nota nueva toma la voz libre más cercana a su altura, así el glide recorre lo menos
 posible) con **GLIDE** prendido, **ROT** (rueda, cada nota una voz fresca) con GLIDE apagado. Un proyecto o preset
-guardado con ALLOC carga igual pero toca con esa regla (ALLOC REUSE con GLIDE apagado ahora rota). **VOICES 3**
+guardado con ALLOC carga igual pero toca con esa regla (ALLOC REUSE con GLIDE apagado ahora rota). (V10.7.38)
+**VOICES** (KNOB 4, donde estaba ALLOC): cuántas de las 8 voces compartidas puede tomar esta pista, **AUTO** (las del
+motor, como antes) o **1** .. **8**. Vale en POLY y DRONE (una nota nueva pasado el tope toma una de las voces de la
+propia pista, como el tope de un motor) y fija el tamaño del UNI; MONO y LEG tocan una voz igual, un kit nunca se
+limita, EXT tiene una sola voz (sin VOICES). El sonido lo guarda (presets de usuario); un sonido de fábrica o el dado
+cargan AUTO, y un proyecto o preset con ALLOC (ROT o REUSE) carga AUTO. La página dibuja las voces de la pista y,
+arriba a la derecha, **ALL n/8**: el máximo de voces de todas las pistas (su VOICES o el del motor en POLY, UNI y
+DRONE, una en MONO y LEG) contra las 8 que comparten, para ver adónde va la polifonía antes de sobrecargar. **VOICES 3**
 (V10.7.33, de EXT): **CRUSH**, el reductor de bits de la pista (ver [Por pista](#por-pista)); el de un kit está en **OUT**. Las seis pistas comparten un presupuesto de 8 voces; FM6 toca como máximo cuatro por
 pista. (0.9.8) VOICE hace el glide como un cantante: una curva en S de la altura en el mismo tiempo (los
 demás motores: una recta, como antes).

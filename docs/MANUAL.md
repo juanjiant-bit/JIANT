@@ -644,7 +644,7 @@ since 0.6.51: every project opens as it was.
 | LEVELS | KICK | SNARE | CLAP | HATCL | DRUM |
 | LEVELS 2 | HATOP | TOM | RIM | BELL | DRUM |
 | VOICES (was PLAY, VOICE before) | POLY (POLY MONO LEG UNI DRONE; was VOICE) | GLIDE | GL MODE (the glide's RATE / TIME; was MODE) | PRIO | every engine |
-| VOICES 2 (0.8.5; was VOICE 2) | UNISON (UNI's detune, 0..100 %; was DETUNE) | VEL (the sound's velocity amount, 0..100 %) | IMAGE (the voices across, POLY; was the STEREO page; not on EXT) | (V10.7.37: ALLOC gone, automatic) | every engine but DRUM |
+| VOICES 2 (0.8.5; was VOICE 2) | UNISON (UNI's detune, 0..100 %; was DETUNE) | VEL (the sound's velocity amount, 0..100 %) | IMAGE (the voices across, POLY; was the STEREO page; not on EXT) | VOICES (V10.7.38: AUTO, 1..8, the track's voices at most; ALLOC's place, ALLOC automatic) | every engine but DRUM |
 | VOICES 3 (V10.7.33) | CRUSH (the track's bit reducer, 0..100 %; was DIST TYPE CRUSH) | LIFE (V10.7.34: the track's LIFE, 0..100 %, times HOME › LIFE's) | | | EXT (the synths: TONE; a kit: OUT) |
 | SWARM, SWARM 2 (V10.6z6) | SIDE (FAR / NEAR) | that side's RATE, MOVE, TONE / NOISE, MOD | | (SWARM 2: NOW, the morph and its source) | EXT with SOURCE SWARM |
 | AUTO KNOBS (0.8.5) | PARAM (E1–E8) | its value | SRC (the MOD slot on it) | AMT | the synths (not FM6, DRUM) |
@@ -1401,7 +1401,14 @@ UNI's voices are, 0..100 %; was DETUNE, a bare number), **VEL**, **IMAGE** (the 
 was its own STEREO page; not on EXT). (V10.7.37) **ALLOC** is gone from the page: the voices are allocated by
 themselves, **REUSE** (a new note takes the free voice nearest its pitch, so a glide travels least) when **GLIDE** is
 on, **ROT** (round robin, each note a fresh voice) when it is off. A project or a preset saved with ALLOC set loads as
-before but plays by that rule (ALLOC REUSE with GLIDE off now rotates). **VOICES 3** (V10.7.33, EXT's): **CRUSH**, the
+before but plays by that rule (ALLOC REUSE with GLIDE off now rotates). (V10.7.38) **VOICES** (KNOB 4, in ALLOC's
+place): how many of the 8 shared voices this track may hold, **AUTO** (the engine's own count, as before) or **1** ..
+**8**. It holds in POLY and DRONE (a new note past it takes one of the track's own voices, as an engine's cap does) and
+sets UNI's stack; MONO and LEG play one voice anyway, a kit is never capped, EXT has one voice (no VOICES). A sound
+keeps it (user presets); a factory sound or the dice loads AUTO, and a project or preset with ALLOC (ROT or REUSE)
+loads AUTO. The page draws the track's voices and, top right, **ALL n/8**: every track's voices at most (its VOICES
+or the engine's in POLY, UNI and DRONE, one in MONO and LEG) against the 8 they share, to see where the polyphony goes
+before it overloads. **VOICES 3** (V10.7.33, EXT's): **CRUSH**, the
 track's bit reducer (see [Per track](#per-track)); a kit's is on **OUT**. The six tracks share a budget of 8 voices; FM6 plays at most four per track. (0.9.8) VOICE glides as a singer: an S-curve in
 pitch over the same time (the other engines: a straight line, as before).
 

@@ -139,7 +139,7 @@ enum {                          /* per-track parameters */
     P_SLEN, P_SDIV, P_SSWING, P_SGATE,
     P_DIST, P_CHOR, P_DLY, P_REV,
     P_VOICE, P_GLIDE, P_PAN, P_MUTE,
-    P_GLMODE, P_PRIO, P_ALLOC, P_DETUNE,
+    P_GLMODE, P_PRIO, P_VCAP, P_DETUNE,        /* (V10.7.38) P_VCAP: VOICES, once ALLOC (params.c N_VCAP) */
     P_SLCR, P_SLPAT, P_SLRATE, P_SLDEPTH,      /* SLICER insert (slicer.c) */
     P_M1SRC, P_M1DST, P_M1AMT,                 /* modulation matrix (mod.c): 4 slots of SRC, DST, AMT; */
     P_M2SRC, P_M2DST, P_M2AMT,                 /* new common parameters go just before P_E0 (user presets */
@@ -252,7 +252,7 @@ enum {                          /* per-track parameters */
  * load sets TP's 0, and VOICES 2 was not a kit's page), RATE in UNISON's, MODE in GL MODE's (SOFT STEP METAL BREAK
  * DUST), DEST in PRIO's (FILT F75 MIX P75 PITCH), each as it reads (params.c DERO_DESC, a DRUM part's; NOISE 0: the
  * kit bit for bit as before) */
-#define P_DNZ P_ALLOC
+#define P_DNZ P_VCAP
 #define P_DNRT P_DETUNE
 #define P_DNMD P_GLMODE
 #define P_DDST P_PRIO

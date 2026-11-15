@@ -1322,7 +1322,7 @@ static void setup(int s)
     case S_STEP_BIG: go_title("STEP"); cursor_set(6); big_say("STEP 7"); break;   /* (V10.7.33) SEQ held + PRESETS */
     case S_ED_FILTER: go_title("FILTER"); TSEL->p[P_E5] = 90; break;   /* (0.8.5) EDIT's lens: TONE, FILTER (ANALOG) */
     case S_ED_FILTER_BP: eng(7); go_title("FILTER"); TSEL->p[P_FTYPE] = 2; TSEL->p[P_DIST] = 60; ui.hot_col = 1; ui.hot_t = 30; break;
-    case S_ED_VOICE2: go_title("VOICES 2"); TSEL->p[P_VOICE] = 3; trk[0].v[0].stage = 2; trk[0].v[0].env = 9u << 20; break;
+    case S_ED_VOICE2: go_title("VOICES 2"); TSEL->p[P_VOICE] = 3; TSEL->p[P_VCAP] = 5; /* (V10.7.38: VOICES 4) */ trk[0].v[0].stage = 2; trk[0].v[0].env = 9u << 20; break;
     case S_ED_FOCUS: case S_ED_FOCUS_MOD:              /* .. FOCUS: CUT, (MOD) M2 moving it */
         go_title("AUTO KNOBS"); ui.focus = 4;
         if (s == S_ED_FOCUS_MOD) { TSEL->p[P_M2SRC] = 1; TSEL->p[P_M2DST] = MD_E1 + 4; TSEL->p[P_M2AMT] = 40; }

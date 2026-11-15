@@ -57,7 +57,9 @@ static const char *const N_FTYPE[] = {"LP", "HP", "BP", "COMB", "COMB-", "LP24",
 static const char *const N_VOICE[] = {"POLY", "MONO", "LEG", "UNI", "DRONE"};   /* V_POLY .. V_DRONE (append only) */
 static const char *const N_GLMODE[] = {"RATE", "TIME"};
 static const char *const N_PRIO[] = {"LAST", "LOW", "HIGH"};
-static const char *const N_ALLOC[] = {"ROT", "REUSE"};
+/* (V10.7.38, the owner) VOICES (P_VCAP, ALLOC's slot): n + 1 stored for n voices; 0 and 1 (ALLOC's ROT and REUSE, a
+ * project or preset from before) AUTO, 1 an alias the knob passes over (enum_orig) */
+static const char *const N_VCAP[] = {"AUTO", "AUTO", "1", "2", "3", "4", "5", "6", "7", "8"};
 static const char *const N_ORDER[] = {"NOTE", "PLAY"};
 static const char *const N_CLOCK[] = {"INT", "USB+BT", "TRS"};   /* (V10.37) USB follows Bluetooth's clock too */
 static const char *const N_MIDI_INPUT[] = {"USB", "TRS"};
@@ -141,8 +143,9 @@ static const param_desc_t TP[P_COUNT] = {
     [P_GLIDE] = PD("GLIDE", F_TIME, 0, 127, 0),
     [P_GLMODE] = PE("GL MODE", N_GLMODE, 0),    /* (codex/coherence: the glide's MODE) */
     [P_PRIO] = PE("PRIO", N_PRIO, 0),
-    [P_ALLOC] = PE("-", N_ALLOC, 0),             /* (V10.7.37: ALLOC retired, read by nothing on a synth; a kit's EROSION
-                                                         * NOISE there, DERO_DESC) */
+    [P_VCAP] = PE("VOICES", N_VCAP, 0),          /* (V10.7.38, the owner) how many of the 8 voices the track may hold
+                                                         * (voice.c trk_nvoice; V10.7.37 ALLOC retired; a kit's EROSION NOISE
+                                                         * there, DERO_DESC) */
     [P_DETUNE] = PD("UNISON", F_PCT, 0, 127, 40),   /* (codex/coherence) UNISON's detune, how far apart (was DETUNE, a
                                                      * bare number: the engines' DETUNE is another) */
     [P_PAN] = PD("PAN", F_BIPCT, -64, 63, 0),
@@ -324,6 +327,7 @@ static const param_desc_t *track_desc(const track_t *t, uint32_t id)
     if (id == P_SIMG && en != &ENG_DRUM)              /* (V10.49) a synth's STEREO IMAGE (codex/coherence:
                                                          * PLAY 2's KNOB 4; EXT: none, its voice is one) */
         return en == &ENG_INPUT ? &NONE_DESC : &SIMG_DESC;
+    if (id == P_VCAP && en == &ENG_INPUT) return &NONE_DESC;   /* (V10.7.38) VOICES: EXT's voice is one */
     if (id == P_DKEYMODE && en == &ENG_DRUM) return &DKEYMODE_DESC;
     if (DERO_ID(id) && en == &ENG_DRUM) return &DERO_DESC[id - P_GLMODE];   /* (V10.7.37) its EROSION */
     if ((id == P_VLANG || id == P_VLYR || id == P_VCONS) && en == &ENG_FORMANT)
@@ -390,7 +394,8 @@ static int16_t param_store_def(uint32_t e, uint32_t id)
  * -> the value v stands for */
 static int32_t enum_orig(const param_desc_t *d, int32_t v)   /* (filters2: MS20's 5, LP24 hot, eng_analog.c) */
 {
-    return d->names == N_FTYPE && v == FT_LP24H ? FT_LP24 : v;
+    return d->names == N_FTYPE && v == FT_LP24H ? FT_LP24 : d->names == N_VCAP && v == 1 ? 0 : v;   /* (V10.7.38: VOICES'
+                                                         * old REUSE, AUTO) */
 }
 static uint32_t as_mix(uint32_t h, const void *p, uint32_t n)   /* FNV-1a, continued (project.c autosave_sig; song_play.c snd_sig) */
 {
@@ -903,8 +908,9 @@ static const page_t PAGES[] = {
     {"EUCLID", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_EU0, ID_EU0 + 1u, ID_EU0 + 2u, ID_EU0 + 3u}},   /* (V10.6, MUTATE's place)
                                                          * HITS STEPS ROTATE, LANE / VARY (ui_euclid.c) */
     /* (0.8.5) LENTE everywhere (ui_lens.c): pages the mock-up added, appended (the table's order is no one's index) */
-    {"VOICES 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_DETUNE, P_TVEL, P_SIMG, 0xFF}},   /* (V10.7.37, the owner: ALLOC gone,
-                                                         * automatic: voice.c voice_alloc) UNISON VEL IMAGE; before: */   /* ALLOC, UNISON's detune (in TP since
+    {"VOICES 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_DETUNE, P_TVEL, P_SIMG, P_VCAP}},   /* (V10.7.37, the owner: ALLOC gone,
+                                                         * automatic: voice.c voice_alloc) UNISON VEL IMAGE, (V10.7.38) VOICES;
+                                                         * before: */   /* ALLOC, UNISON's detune (in TP since
                                                          * Felucca, on no page until 0.8.5), (after V10.7.2) VEL,
                                                          * (codex/coherence) IMAGE, the voices across (POLY; V10.49's STEREO
                                                          * page gone; was VOICE 2) */

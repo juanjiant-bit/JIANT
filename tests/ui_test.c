@@ -12686,15 +12686,42 @@ static int test_lz_edit(void)
     {
         int16_t *hv;
         ok &= str_eq(page_desc(cur_page(), 0, &hv)->label, "UNISON") && str_eq(page_desc(cur_page(), 1, &hv)->label, "VEL") &&
-              str_eq(page_desc(cur_page(), 2, &hv)->label, "IMAGE") && !page_desc(cur_page(), 3, &hv);
-        set_engine_of(TSEL, ENGI_INPUT); frame();                   /* (EXT: no IMAGE, its voice is one) */
-        ok &= str_eq(cur_page()->title, "VOICES 2") && page_desc(cur_page(), 2, &hv)->label[0] == '-';
+              str_eq(page_desc(cur_page(), 2, &hv)->label, "IMAGE") && str_eq(page_desc(cur_page(), 3, &hv)->label, "VOICES");
+        ok &= TSEL->p[P_VCAP] == 0 && trk_nvoice(TSEL) == NVOICE;   /* (V10.7.38, the owner) VOICES: AUTO, n + 1 stored for n */
+        turn(EN_K4, 1); frame();                                    /* (1, the old REUSE: an AUTO the knob passes over) */
+        ok &= TSEL->p[P_VCAP] == 2 && trk_nvoice(TSEL) == 1u;
+        turn(EN_K4, 2); frame();
+        ok &= TSEL->p[P_VCAP] == 4 && trk_nvoice(TSEL) == 3u;
+        turn(EN_K4, -3); frame();
+        ok &= TSEL->p[P_VCAP] == 0 && trk_nvoice(TSEL) == NVOICE;
+        set_engine_of(TSEL, ENGI_INPUT); frame();                   /* (EXT: no IMAGE, no VOICES, its voice is one) */
+        ok &= str_eq(cur_page()->title, "VOICES 2") && page_desc(cur_page(), 2, &hv)->label[0] == '-' &&
+              page_desc(cur_page(), 3, &hv)->label[0] == '-';
     }
     set_engine_of(TSEL, ENGI_DRUM); frame();
     ok &= !nav_put(SEC_EDIT, "VOICES 2") && !nav_put(SEC_EDIT, "VOICES") && !nav_put(SEC_EDIT, "AUTO KNOBS") && nav_put(SEC_EDIT, "OUT");
     set_engine_of(TSEL, ENGI_FM6); frame();
     ok &= !nav_put(SEC_EDIT, "FOCUS") && nav_put(SEC_EDIT, "OPERATOR");
-    bad += check("0.9.2 EDIT > VOICES (POLY, GL MODE): VOICES 2 (V10.7.37: UNISON, VEL, IMAGE; ALLOC automatic) after it, not on DRUM; FOCUS on the synths only", ok);
+    bad += check("0.9.2 EDIT > VOICES (POLY, GL MODE): VOICES 2 (V10.7.37: UNISON, VEL, IMAGE; ALLOC automatic; V10.7.38 VOICES AUTO 1 .. 8) after it, not on DRUM; FOCUS on the synths only", ok);
+    {   /* (V10.7.38) a project of before: ALLOC REUSE (1, VOICES' slot) loads AUTO; VOICES 3 (4) saved and loaded */
+        const char *u = "";
+        char s[8];
+        ui_power_on();
+        set_engine_of(&trk[0], 0);
+        set_engine_of(&trk[1], 0);
+        frame();
+        trk[0].p[P_VCAP] = 1;
+        trk[1].p[P_VCAP] = 4;
+        project_save(1);
+        trk[0].p[P_VCAP] = 7;
+        trk[1].p[P_VCAP] = 0;
+        project_load(1);
+        frame();
+        param_format(track_desc(&trk[0], P_VCAP), trk[0].p[P_VCAP], s, &u);
+        ok = trk[0].engine == 0u && trk_nvoice(&trk[0]) == NVOICE && str_eq(s, "AUTO") && trk[1].p[P_VCAP] == 4 &&
+             trk_nvoice(&trk[1]) == 3u;
+        bad += check("V10.7.38 VOICES: a project with ALLOC REUSE loads AUTO (8 voices), VOICES 3 kept through a save", ok);
+    }
     {   /* (V10.7.33) VOICES 3: KNOB 1 CRUSH, the track's (0..127 shown 0..100 %), on every engine's chain (a kit's too); DIST's
          * TYPE without it (SOFT HARD FOLD RECT AMP) */
         int16_t *hv;

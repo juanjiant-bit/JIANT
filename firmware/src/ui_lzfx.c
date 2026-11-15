@@ -55,8 +55,8 @@ static void fxg_delay(int32_t x, int32_t y, int32_t w, int32_t h)
         cv_rect(x + 6 + pulse, y + h - 3, 3, 2, T_TEXT);
     param_format(&GP[G_DTIME], song.g[G_DTIME], b, &u);
     if (w > 120) {
-        str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), song.g[G_DTYPE] ? "DIGITAL" : "ANALOG", 9);
+        str_app(b, " \xB7 ", 4);
+        str_app(b, song.g[G_DTYPE] ? "DIGITAL" : "ANALOG", 9);
         fxg_label(x + w, y, song.g[G_DCOLOR] < 58 ? "DARKER" : song.g[G_DCOLOR] > 70 ? "BRIGHTER" : "EXACT COPY", T_TEXT, 1);
     }
     fxg_label(x, y, b, T_TEXT, 0);
@@ -81,7 +81,7 @@ static void fxg_reverb(int32_t x, int32_t y, int32_t w, int32_t h)
     if (w > 120) {
         str_cpy(b, "PRE ", sizeof b);
         fmt_int(b + 4, song.g[G_RPRE]);
-        str_cpy(b + str_len(b), " MS", 4);
+        str_app(b, " MS", 4);
         fxg_label(x + w, y, b, T_TEXT, 1);
     }
 }
@@ -120,14 +120,14 @@ static void fxg_slicer(int32_t x, int32_t y, int32_t w, int32_t h)
             cv_frame(cx, y + 11, cw, h - 16, T_TEXT);
     }
     str_cpy(b, mode == SL_OFF ? "OFF" : mode == SL_STUT ? "STUT" : "GATE", sizeof b);
-    str_cpy(b + str_len(b), " ", 2);
-    if (w > 120) str_cpy(b + str_len(b), "\xB7 PAT ", 8);
+    str_app(b, " ", 2);
+    if (w > 120) str_app(b, "\xB7 PAT ", 8);
     fmt_int(b + str_len(b), song.g[G_SLPAT]);
     if (w > 120) {
         char r[8];
         param_format(&GP[G_SLRATE], song.g[G_SLRATE], r, &u);
-        str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), r, 8);
+        str_app(b, " \xB7 ", 4);
+        str_app(b, r, 8);
     }
     lw = text_w(&AF_X, b);
     fxg_label(x, y, b, T_TEXT, 0);
@@ -137,7 +137,7 @@ static void fxg_slicer(int32_t x, int32_t y, int32_t w, int32_t h)
             if (song.g[G_SLT1 + i]) { b[n++] = 'T'; b[n++] = (char)('1' + i); b[n++] = ' '; }
         b[n] = 0;
         if (!n) str_cpy(b, "NONE ", sizeof b);
-        if (song.g[G_SLFX]) str_cpy(b + str_len(b), "+FX", 4);
+        if (song.g[G_SLFX]) str_app(b, "+FX", 4);
         {   /* (at the right, clear of the mode's words: ellipsised when it must) */
             int32_t rw = text_w(&AF_X, b), l = x + lw + 14, rx = x + w - rw < l ? l : x + w - rw;
             cv_free_text(rx, y + 3, &AF_X, b, T_TEXT, cv_bg, x + w - rx);
@@ -154,7 +154,7 @@ static void fxg_master(int32_t x, int32_t y, int32_t w, int32_t h)
     str_cpy(b, "CLIP ", sizeof b);
     fmt_int(b + 5, song.g[G_CLIP]);
     if (w > 120) {
-        str_cpy(b + str_len(b), " \xB7 PUNCH ", 10);
+        str_app(b, " \xB7 PUNCH ", 10);
         fmt_int(b + str_len(b), song.g[G_PUNCH]);
         fxg_label(x + w, y + 14, "DUCK", T_TEXT, 1);
     }
@@ -222,11 +222,11 @@ static void fxg_punch(int32_t x, int32_t y, int32_t w, int32_t h)
     }
     str_cpy(b, "LANE ", sizeof b);
     fmt_int(b + 5, song.g[G_PFXLEN]);
-    str_cpy(b + str_len(b), " ST", 4);
+    str_app(b, " ST", 4);
     if (w > 120) {
-        str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), N_PFXRES[clamp(song.g[G_PFXRES], 0, 2)], 6);
-        if (pfx_rec_ok()) str_cpy(b + str_len(b), " \xB7 REC", 7);
+        str_app(b, " \xB7 ", 4);
+        str_app(b, N_PFXRES[clamp(song.g[G_PFXRES], 0, 2)], 6);
+        if (pfx_rec_ok()) str_app(b, " \xB7 REC", 7);
     }
     if (w > 120)                                        /* (snd2: the page's letters large, AF_M; the tile's as before) */
         cv_text(x, y, &AF_M, b, T_TEXT);
@@ -302,10 +302,10 @@ static void fxg_pan(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h
         const param_desc_t *dw = page_desc(cur_page(), 3, &vp), *dr;
         char r[10];
         param_format(dw ? dw : track_desc(t, P_APWAVE), t->p[P_APWAVE], b, &u);
-        str_cpy(b + str_len(b), " \xB7 ", 4);
+        str_app(b, " \xB7 ", 4);
         dr = page_desc(cur_page(), 1, &vp);
         param_format(dr ? dr : track_desc(t, P_APRATE), dr && vp ? *vp : t->p[P_APRATE], r, &u);
-        str_cpy(b + str_len(b), r, 10);
+        str_app(b, r, 10);
     }
     fxg_label(x + 12, y, b, T_TEXT, 0);
 }

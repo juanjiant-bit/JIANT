@@ -22,7 +22,7 @@ static void ed_chip(int32_t x, int32_t y, int32_t w, const param_desc_t *d, int1
     if (!d || !d->label || d->label[0] == '-')
         return;
     param_format(d, v, b, &u);
-    str_cpy(b + str_len(b), u, 24 - str_len(b));
+    str_cat(b, u, 24);
     cv_clip_text(x + 5, y - AF_X_CAP_Y + 1, &AF_X, d->label, T_TEXT, bg, w - 6);
     cv_clip_text(x + 5, y - AF_X_CAP_Y + 9, &AF_X, b, on ? T_TEXT : T_DIM, bg, w - 6);
 }
@@ -90,15 +90,15 @@ static void graph_filter_lz(const track_t *t, const page_t *pg)
     cv_rect(xc, 6, 1, 99, T_ACCENT);
     og_node(xc * 16, ed_resp(ty, xc, xc, r[2]) * 16, 4, T_ACCENT);
     str_cpy(b, N_FTYPE[ty], 32);
-    str_cpy(b + str_len(b), trk_eng(t) == 0u ? " \xB7 PER VOICE" : " \xB7 ON THE PART", 32 - str_len(b));
+    str_cat(b, trk_eng(t) == 0u ? " \xB7 PER VOICE" : " \xB7 ON THE PART", 32);
     ed_cap(10, 6, b, T_TEXT);
     d = page_desc(pg, 3, &vp);
     if (d) {
         const char *u = "";
         str_cpy(b, d->label, 32);
-        str_cpy(b + str_len(b), " ", 2);
+        str_app(b, " ", 2);
         param_format(d, *vp, b + str_len(b), &u);
-        str_cpy(b + str_len(b), u, 32 - str_len(b));
+        str_cat(b, u, 32);
         ed_cap(10, 120, b, T_TEXT);
     }
     nd = r[3] * 20 / 1000;
@@ -107,13 +107,20 @@ static void graph_filter_lz(const track_t *t, const page_t *pg)
 }
 static void graph_voice_lz(const track_t *t, const page_t *pg)
 {
-    uint32_t i, nv = trk_nvoice(t) ? trk_nvoice(t) : NVOICE;
+    uint32_t i, nv = trk_nvoice(t), all = 0;                /* (trk_nvoice: never 0) */
     int32_t glide = t->p[P_GLIDE], py = 0, x;
     const char *u = "";
     char b[40];
     fmt_int(b, (int32_t)nv);
-    str_cpy(b + str_len(b), nv == 1u ? " VOICE" : " VOICES", 40 - str_len(b));
+    str_cat(b, nv == 1u ? " VOICE" : " VOICES", 40);
     ed_cap(10, 6, b, T_TEXT);
+    for (i = 0; i < NTRK; i++)                          /* (V10.7.38, the owner) ALL: every track's voices at most (its
+                                                         * VOICES; MONO, LEGATO one) against the 8 they share */
+        all += (9u >> (trk[i].p[P_VOICE] & 3)) & 1u ? trk_nvoice(&trk[i]) : 1u;   /* (POLY 0, UNISON 3, DRONE 4 & 3: 0;
+                                                         * a kit's P_VOICE 0) */
+    str_cpy(b, "ALL ", 40);
+    fmt_frac(b + 4, (int32_t)all, NVOICE);
+    cv_text_r(230, 6 - AF_X_CAP_Y, &AF_X, b, T_DIM, T_SURF);
     for (i = 0; i < NVOICE; i++) {
         int32_t y = 17 + (int32_t)i * 9, lv = 0;
         char n[2] = {(char)('1' + i), 0};
@@ -127,14 +134,14 @@ static void graph_voice_lz(const track_t *t, const page_t *pg)
     param_format(track_desc(t, P_VOICE), t->p[P_VOICE], b, &u);
     {   /* (V10.7.37: VOICES 2 its UNISON, ALLOC gone) */
         uint32_t id = pg->id[0] == P_DETUNE ? P_DETUNE : P_PRIO;
-        str_cpy(b + str_len(b), id == P_DETUNE ? " \xB7 UNISON " : " \xB7 PRIO ", 40 - str_len(b));
+        str_cat(b, id == P_DETUNE ? " \xB7 UNISON " : " \xB7 PRIO ", 40);
         param_format(track_desc(t, id), t->p[id], b + str_len(b), &u);
-        str_cpy(b + str_len(b), u, 40 - str_len(b));
+        str_cat(b, u, 40);
     }
     ed_cap(10, 95, b, T_TEXT);
     str_cpy(b, "GLIDE ", 40);
     param_format(track_desc(t, P_GLIDE), t->p[P_GLIDE], b + 6, &u);
-    str_cpy(b + str_len(b), u, 40 - str_len(b));
+    str_cat(b, u, 40);
     ed_cap(10, 120, b, T_TEXT);
     for (x = 0; x <= 104; x++) {                        /* the glide: low note to high, as slow as GLIDE */
         int32_t tm = glide ? x * 127 * 6 / (glide * 4 + 1) : 1000, k = tm > 255 ? 255 : tm;
@@ -160,7 +167,7 @@ static void graph_focus_lz(const track_t *t)
     const char *u = "";
     char b[24];
     param_format(d, t->p[P_E0 + k], b, &u);
-    str_cpy(b + str_len(b), u, 24 - str_len(b));
+    str_cat(b, u, 24);
     cv_text(10, 6, &AF_M, d->label, T_TEXT);
     cv_text_r(230, 6, &AF_M, b, T_THEME, T_SURF);
     focus_bar(28, clamp(RATIO(d, enum_rank(d, t->p[P_E0 + k])), 0, 1000));
@@ -171,7 +178,7 @@ static void graph_focus_lz(const track_t *t)
         str_cpy(b, N_MSRC[clamp(t->p[P_M1SRC + 3u * (uint32_t)j], 0, MS_N - 1)], 24);
         cv_text_r(230, 64, &AF_M, b, T_THEME, T_SURF);
         param_format(da, a, b, &u);
-        str_cpy(b + str_len(b), u, 24 - str_len(b));
+        str_cat(b, u, 24);
         cv_text(10, 64, &AF_M, b, T_TEXT);
         a = RATIO(da, a < 0 ? -a : a);
         a = a * 2 - 1000;                               /* (as much as it moves: a bipolar AMT's size) */

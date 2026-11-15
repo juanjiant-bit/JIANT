@@ -1616,7 +1616,7 @@ function makeMockDevice(opt = {}) {
     D("LEN", F.STEPS, 1, 64, 16), E("DIV", NDIV, 2), D("SWING", F.PCT, 0, 100, 0), D("GATE", F.PCT, 1, 127, 127),   /* (V10.6z4: GATE 100 % for new tracks) */
     D("DIST", F.PCT, 0, 127, 0), D("CHORUS", F.PCT, 0, 127, 0), D("DLY", F.PCT, 0, 127, 0), D("REV", F.PCT, 0, 127, 0),
     E("POLY", ["POLY", "MONO", "LEG", "UNI", "DRONE"], 0), D("GLIDE", F.TIME, 0, 127, 0), D("PAN", F.BIPCT, -64, 63, 0), E("MUTE", NONOFF, 0),
-    E("GL MODE", ["RATE", "TIME"], 0), E("PRIO", ["LAST", "LOW", "HIGH"], 0), E("-", ["ROT", "REUSE"], 0), D("UNISON", F.PCT, 0, 127, 40),   /* (codex/coherence: POLY, GL MODE, UNISON; were VOICE, MODE, DETUNE; V10.7.37: ALLOC retired, "-") */
+    E("GL MODE", ["RATE", "TIME"], 0), E("PRIO", ["LAST", "LOW", "HIGH"], 0), E("VOICES", ["AUTO", "AUTO", "1", "2", "3", "4", "5", "6", "7", "8"], 0), D("UNISON", F.PCT, 0, 127, 40),   /* (codex/coherence: POLY, GL MODE, UNISON; were VOICE, MODE, DETUNE; V10.7.37: ALLOC retired, "-"; V10.7.38: VOICES, n + 1 for n voices, 1 the old REUSE: AUTO) */
     D("DEPTH", F.PCT, 0, 127, 0), D("RATE", F.LFOHZ, 0, 127, 2), E("WAVE", ["SIN", "TRI", "SAW", "SQR", "S&H"], 1), E("SYNC", ["FREE", "BEAT"], 1),   /* (JIANT 0.6.9) AUTO PAN, in the old per-track SLICER's slots (BEAT: RATE 0..7, 4BAR .. 1/32) */
     ...[1, 2, 3, 4].flatMap((k) => [E("SRC" + k, MSRC, 0), E("DEST" + k, MDST, 0), D("AMT" + k, F.BIPCT, -64, 63, 0)]),   /* the matrix */
   ];

@@ -240,7 +240,7 @@ static uint16_t head_title(char *b)
     if (ui.menu) {                                      /* (0.8.5) the menu: "MENU . DISPLAY", "ABOUT / CREDITS" */
         str_cpy(b, ui.menu == 2 ? "ABOUT / CREDITS" : "MENU \xB7 ", 40);
         if ((ui.menu | 2u) == 3u)
-            str_cpy(b + str_len(b), MTAB_NAME[MI_TAB[ui.menu_sel % MI_COUNT]], 16);
+            str_app(b, MTAB_NAME[MI_TAB[ui.menu_sel % MI_COUNT]], 16);
         return T_TEXT;
     }
     b[0] = 'T';
@@ -256,8 +256,8 @@ static uint16_t head_title(char *b)
             str_cpy(nm, graph_project_name(0), sizeof nm);        /* library's), else the slot's last loaded / saved */
         else
             project_cur_name(nm);
-        str_cpy(b + str_len(b), " ", 2);
-        str_cpy(b + str_len(b), nm[0] ? nm : "NO NAME", 16);
+        str_app(b, " ", 2);
+        str_app(b, nm[0] ? nm : "NO NAME", 16);
         return T_TEXT;
     }
     str_cpy(b, trk_engp(TSEL)->name, 12);               /* (it began "T1 . ": the track's number stands in its box at
@@ -579,7 +579,7 @@ static void djf_format(int32_t v, char *val, const char **unit)
     else
         fmt_int(val, h / 1000);
     if (h >= 1000)
-        str_cpy(val + str_len(val), "k", 2);
+        str_app(val, "k", 2);
     *unit = v < 0 ? "LP" : "HP";
 }
 /* the response of G_DJF value v drawn w px wide from (x, y): rows rows (5 or 6), 0 dB on the second (the bump above it),
@@ -610,7 +610,7 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
         ly_card[c].b = card_bip;
         str_cpy(ly_card[c].l, label, sizeof ly_card[c].l);
         str_cpy(ly_card[c].v, val, sizeof ly_card[c].v);
-        str_cpy(ly_card[c].v + str_len(ly_card[c].v), unit, sizeof ly_card[c].v - str_len(ly_card[c].v));
+        str_cat(ly_card[c].v, unit, sizeof ly_card[c].v);
     }
     char key[56];
     int hot = c == ui.hot_col && ui.hot_t, named = fmt_named, mot = card_mot_next && label[0], strip, snap;
@@ -647,10 +647,10 @@ static void draw_column(uint32_t c, const char *label, const char *val, const ch
         unit = "";                                      /* "BPM 124 BPM", "USB OFF USB": the label says it */
     (void)icon;                                         /* (0.8.5, the mock-up: no icons on the cards) */
     str_cpy(key, label, 12);                            /* cache key: texts + colour + gauge */
-    str_cpy(key + str_len(key), "|", 2);
-    str_cpy(key + str_len(key), val, 14);
-    str_cpy(key + str_len(key), "|", 2);
-    str_cpy(key + str_len(key), unit, 8);
+    str_app(key, "|", 2);
+    str_app(key, val, 14);
+    str_app(key, "|", 2);
+    str_app(key, unit, 8);
     n = str_len(key);
     /* every RGB565 bit: status colours can change with identical text */
     key[n] = (char)('A' + (vc & 15u));
@@ -958,24 +958,24 @@ static __attribute__((noinline)) void foot_crumbs(char *b, uint32_t n)   /* b ho
     if (!lz_on()) {
         page_title(ti);
         str_cpy(b, FAM_CRUMB[cur_page()->fam % FAM_COUNT], n);
-        str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), ti, 20);
+        str_app(b, " \xB7 ", 4);
+        str_app(b, ti, 20);
         return;
     }
     f = lz_fam();
     if (f == LZ_MENU) {
         str_cpy(b, "MENU \xB7 ", n);
-        str_cpy(b + str_len(b), MTAB_NAME[menu_tab()], 12);
-        str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), MI_NAME[ui.menu_sel % MI_COUNT], 16);
+        str_app(b, MTAB_NAME[menu_tab()], 12);
+        str_app(b, " \xB7 ", 4);
+        str_app(b, MI_NAME[ui.menu_sel % MI_COUNT], 16);
         return;
     }
     if (f == LZ_LAYER) {
         static const char *const LN[LAYER_N] = {"", "FX", "GLO", "SCL", "EDIT", "SEQ", "REC", "SAVE", "LFO"};
         static const char *const LLV[3] = {"MAP", "KNOBS", "STATE"};
         str_cpy(b, LN[ui.layer % LAYER_N], n);
-        str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), LLV[ui.lylv % 3u], 8);
+        str_app(b, " \xB7 ", 4);
+        str_app(b, LLV[ui.lylv % 3u], 8);
         return;
     }
     {
@@ -983,14 +983,14 @@ static __attribute__((noinline)) void foot_crumbs(char *b, uint32_t n)   /* b ho
         uint32_t g, p, i, m;
         (void)nav_groups(cnt, gi, &g, &p, &i, &m);
         str_cpy(b, SEC_NAME[nav_sec()], n);
-        str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), nav_group_name(gi[g]), 12);
-        str_cpy(b + str_len(b), " \xB7 ", 4);
+        str_app(b, " \xB7 ", 4);
+        str_app(b, nav_group_name(gi[g]), 12);
+        str_app(b, " \xB7 ", 4);
         if (grid_on() && black_held(GK_ACC))
             str_cpy(ti, "ACCENT", sizeof ti);
         else
             str_cpy(ti, nav_page_name(), sizeof ti);
-        str_cpy(b + str_len(b), ti, n - str_len(b));
+        str_cat(b, ti, n);
     }
 }
 #define CRUMB_Y 3                                       /* (0.8.5) a lens footer's breadcrumb (AF_X): capitals rows 4..12 */
@@ -1077,7 +1077,7 @@ static int clip_tag(char *b)
         return 0;
     b[0] = '[';
     fmt_int(b + 1, clip.n);
-    str_cpy(b + str_len(b), "]", 2);
+    str_app(b, "]", 2);
     return 1;
 }
 /* (V10.7.33, the owner) HELP (HOME + OCT+, ui.c ui_help): a line in the footer's place saying what the page's own keys do;
@@ -1123,8 +1123,8 @@ static int help_line(char *b)                           /* 1: b (48) holds the p
     if (act_cols()) {
         char c[16];
         foot_hint(b, c);
-        str_cpy(b + str_len(b), "  ", 3);
-        str_cpy(b + str_len(b), c, 16);
+        str_app(b, "  ", 3);
+        str_app(b, c, 16);
         return 1;
     }
     s = help_find(gen_on() ? 252u : ui.home ? 250u + home_level() : PAGES[ui.page].graph);
@@ -1777,7 +1777,7 @@ static void draw_columns(void)
         if (on && !kit) note_name(pn, st->note[f ? f - 1u : 0u]); else str_cpy(pn, "--", 8);
         fmt_int(sn, (int32_t)ui.cursor + 1);
         if (!m) str_cpy(mo, on ? "GRID" : "--", sizeof mo);
-        else { mo[0] = m < 0 ? '-' : '+'; fmt_int(mo + 1, m < 0 ? -m : m); str_cpy(mo + str_len(mo), "/64", 4); }   /* (0.9.1) */
+        else { mo[0] = m < 0 ? '-' : '+'; fmt_int(mo + 1, m < 0 ? -m : m); str_app(mo, "/64", 4); }   /* (0.9.1) */
         if (kit) hot_text_column(0, "STEP", sn);
         else text_column(0, "FOCUS", fo, on ? VAL(0u) : T_DIM);
         text_column(1, "PITCH", pn, on && !kit ? VAL(1u) : T_DIM);
@@ -2054,7 +2054,7 @@ static void confirm_text(char *a, char *b)
     case CF_OVR_SONG:
         str_cpy(a, "OVERWRITE PROJECT ", 24);
         fmt_int(a + str_len(a), (int32_t)k + 1);
-        str_cpy(a + str_len(a), "?", 2);
+        str_app(a, "?", 2);
         str_cpy(b, "NEXT: K3 SONG OR LOOP", 24);      /* (on the NAME screen that follows) */
         break;
     case CF_OVR_PROJ:
@@ -2111,11 +2111,11 @@ static void confirm_text(char *a, char *b)
     case CF_OVR_USER:
         str_cpy(a, "OVERWRITE ", 24);
         up_slot_label(a + str_len(a), k);
-        str_cpy(a + str_len(a), "?", 2);
+        str_app(a, "?", 2);
         up_name(k, b);                               /* the sound stored there */
         break;
     case CF_ERASE_SONG:
-        str_cpy(a, "ERASE PROJECT ", 24); fmt_int(a + str_len(a), (int32_t)k + 1); str_cpy(a + str_len(a), "?", 2);
+        str_cpy(a, "ERASE PROJECT ", 24); fmt_int(a + str_len(a), (int32_t)k + 1); str_app(a, "?", 2);
         str_cpy(b, "ALL A-D + ARRANGEMENT", 24);
         break;
     case CF_ERASE_SECT:                              /* (V10.17) SAVE > PART SLOTS > ERASE */
@@ -2127,7 +2127,7 @@ static void confirm_text(char *a, char *b)
     case CF_ERASE_USER:
         str_cpy(a, "ERASE ", 24);
         up_slot_label(a + str_len(a), k);
-        str_cpy(a + str_len(a), "?", 2);
+        str_app(a, "?", 2);
         up_name(k, b);
         break;
     case CF_LOAD_PAT: {

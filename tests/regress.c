@@ -882,6 +882,50 @@ static int chk_voice_cap(char *msg, uint32_t n)
     return most[0] == 4u && most[1] == 4u;
 }
 
+/* (V10.7.38, the owner) EDIT > VOICES 2 > VOICES: a track's voices at most (P_VCAP, n + 1 stored for n voices; 0 and
+ * the old ALLOC REUSE 1 AUTO). 8 keys held on ANALOG: AUTO and REUSE the engine's count as before, VOICES 3 three in
+ * POLY, DRONE and UNISON (the stack); MONO one; a kit with its EROSION NOISE in that slot (P_DNZ) not capped */
+static uint32_t vcap_most(uint32_t engine, uint32_t mode, int32_t vcap)
+{
+    track_t *t = &trk[0];
+    uint32_t k, i, most = 0;
+    host_tracks_init();
+    if (engine == ENGI_DRUM)
+        host_drums(t);
+    else {
+        host_preset(t, engine, 0);
+        t->p[P_VOICE] = (int16_t)mode;
+    }
+    t->p[P_AMODE] = 0;
+    t->p[P_VCAP] = (int16_t)vcap;
+    for (k = 0; k < 8u; k++)
+        engine == ENGI_DRUM ? input_on(t, 35u + 3u * k, 100) : trk_note_on(t, 48u + 3u * k, 100);
+    for (k = 0; k < FS / 2u / CTL; k++) {
+        uint32_t a = 0;
+        blk();
+        for (i = 0; i < NVOICE; i++)
+            a += t->v[i].active && t->v[i].stage != 4u;
+        most = a > most ? a : most;
+    }
+    for (k = 0; k < 8u; k++)
+        engine == ENGI_DRUM ? input_off(t, 35u + 3u * k) : trk_note_off(t, 48u + 3u * k);
+    if (mode == V_DRONE)
+        trk_all_off(t);
+    for (k = 0; k < 4u * FS / CTL && !parts_free(); k++)
+        blk();
+    return parts_free() ? most : 99u;
+}
+static int chk_track_vcap(char *msg, uint32_t n)
+{
+    uint32_t a = vcap_most(ENGI_ANALOG, V_POLY, 0), r = vcap_most(ENGI_ANALOG, V_POLY, 1);
+    uint32_t p3 = vcap_most(ENGI_ANALOG, V_POLY, 4), d3 = vcap_most(ENGI_ANALOG, V_DRONE, 4);
+    uint32_t u3 = vcap_most(ENGI_ANALOG, V_UNISON, 4), ua = vcap_most(ENGI_ANALOG, V_UNISON, 0);
+    uint32_t m = vcap_most(ENGI_ANALOG, V_MONO, 4), k0 = vcap_most(ENGI_DRUM, 0, 0), k4 = vcap_most(ENGI_DRUM, 0, 4);
+    snprintf(msg, n, "VOICES (8 keys): AUTO %u, old REUSE %u; VOICES 3: POLY %u, DRONE %u, UNISON %u (AUTO %u), MONO %u; "
+             "a kit with EROSION NOISE %u (0: %u)", a, r, p3, d3, u3, ua, m, k4, k0);
+    return a == NVOICE && r == a && p3 == 3u && d3 == 3u && u3 == 3u && ua == NVOICE && m == 1u && k4 == k0 && k0 > 3u;
+}
+
 /* no hanging notes: 6 s of random MIDI note-ons / offs on channels 1..4 (the parts), 5, 10 and 16 (ignored
  * with ROUT CH1-4, the selected track with SEL), and keys, while the selected track changes; round 1 with ROUT
  * CH1-4, round 2 SEL, round 3 switching ROUT every 0.5 s (CH1-4 lets go of channels 5..16's notes,
@@ -1088,6 +1132,7 @@ int main(int argc, char **argv)
     add(J_CHECK, "voices: LEGATO keeps its note")->check = chk_keep_legato;
     add(J_CHECK, "voices: UNISON keeps its note")->check = chk_keep_unison;
     add(J_CHECK, "voices: VOICE engine cap")->check = chk_voice_cap;
+    add(J_CHECK, "voices: a track's VOICES (V10.7.38)")->check = chk_track_vcap;
     add(J_CHECK, "routing: no hanging notes")->check = chk_hang;
     run_jobs(J, nj, jobs_at_once);
 

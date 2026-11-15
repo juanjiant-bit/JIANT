@@ -52,6 +52,7 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 36 | REV | 0..127 | 0 | |
 | 38 | GLIDE | 0..127 | 0 | |
 | 39 | PAN | -64..63 | 0 | |
+| 43 | VOICES | 0..9 | 0 | AUTO AUTO 1 2 3 4 5 6 7 8 (ANALOG PHASE MATH VOICE WHEEL STRING WEST FM6 ADD ANIMAL) |
 | 43 | NOISE | 0..127 | 0 | (DRUM) |
 | 44 | UNISON | 0..127 | 40 | (ANALOG PHASE MATH VOICE WHEEL STRING WEST FM6 ADD ANIMAL EXT) |
 | 44 | RATE | 0..127 | 40 | (DRUM) |

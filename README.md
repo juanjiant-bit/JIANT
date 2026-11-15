@@ -488,7 +488,9 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
 - **FILTER 2 is now EROSION** on every synth, and **DRUM-X** has it too: its pages go from fifteen to **twelve** (the drum
   VOICES page is gone). The kit's sound was reviewed: velocity brightens only the accents (above 100), and the kit's
   DECAY ranges from a fifth to five times each sound's own.
-- **ALLOC is automatic**: VOICES 2 is now **UNISON · VEL · IMAGE**.
+- **ALLOC is automatic**: VOICES 2 is now **UNISON · VEL · IMAGE · VOICES**. **VOICES** (KNOB 4) caps how many of the 8
+  shared voices a track may hold (AUTO, or 1 to 8; POLY, DRONE and the UNISON stack), and the page shows **ALL n/8**,
+  every track's voices against the 8, so the whole system's polyphony is set on purpose instead of overloading.
 - **MATH › RETRIG › TIME** (KNOB 2): **NOTE** (as before, each note restarts the formula's time) or a tempo rate,
   1/1 to 1/32 and the triplets 1/4T 1/8T 1/16T, so the formula's slow time follows the transport across notes.
 - **PROX** (the Bluetooth proximity control): **SLEW** 0–100 % (how slowly it follows: 30 ms to 770 ms to reach 90 %) and
