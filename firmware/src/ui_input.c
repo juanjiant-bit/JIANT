@@ -740,6 +740,16 @@ static void comp_keys(uint32_t pressed)
 }
 
 /* ------------------------------------------------- parameter locks --- */
+static __attribute__((noinline)) uint64_t keys_steps(uint32_t keys, uint32_t len)   /* the white keys held as the
+                                                         * bank's steps (under len), bit a step (V10.7.39: one copy of two) */
+{
+    uint32_t k;
+    uint64_t m = 0;
+    for (k = 0; k < 27u; k++)
+        if (((keys >> k) & 1u) && !key_black(k) && ui.bank * 16u + key_place(k) < len)
+            m |= (uint64_t)1 << (ui.bank * 16u + key_place(k));
+    return m;
+}
 /* 1.1 (Discussions #75, #53): on SEQ > STEP, hold a step and turn KNOB 1..4: the step gets a lock of the parameter
  * that knob edits on the sound page shown last (ui.plk_src: HOME's four, ENV, LFO, FX, EDIT 1 / 2, OP ENV, ..; the
  * cards show those four while a step is held, a locked value bright, the sound's own DIM). The step held: on the
@@ -750,17 +760,13 @@ static void comp_keys(uint32_t pressed)
 static uint64_t lock_held(void)
 {
     const track_t *t = TSEL;
-    uint32_t k, len = (uint32_t)t->p[P_SLEN], keys = fm1_in.notes & ~kb_layer;
-    uint64_t m = 0;
+    uint32_t len = (uint32_t)t->p[P_SLEN], keys = fm1_in.notes & ~kb_layer;
     if (ui.home || ui.menu || ui.confirm || ui.layer || name_on() || !song.seq_mode || cur_page()->graph != GR_ROLL ||
         !keys)
         return 0;
     if (!grid_on())                                     /* the roll: the step being entered */
         return ui.entry_open && !live_rec_sel() && ui.cursor < len ? (uint64_t)1 << ui.cursor : 0u;
-    for (k = 0; k < 27u; k++)
-        if (((keys >> k) & 1u) && !key_black(k) && ui.bank * 16u + key_place(k) < len)
-            m |= (uint64_t)1 << (ui.bank * 16u + key_place(k));
-    return m;
+    return keys_steps(keys, len);
 }
 
 /* each pass, before the grid's keys: a hit pressed on goes once its key is let go (plk_rm, grid_keys) */
@@ -831,15 +837,11 @@ static void lock_clear(uint64_t held)
 static uint64_t cp_held(void)
 {
     const track_t *t = TSEL;
-    uint32_t k, len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP), keys = fm1_in.notes & ~kb_layer;
-    uint64_t m = 0;
+    uint32_t len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP), keys = fm1_in.notes & ~kb_layer;
     if (!keys || ui.home || ui.menu || ui.confirm || name_on() || !song.seq_mode ||
         cur_page()->graph != GR_ROLL || (!drum_track(t) && ((song.rec >> song.sel) & 1u)))
         return 0;
-    for (k = 0; k < 27u; k++)
-        if (((keys >> k) & 1u) && !key_black(k) && ui.bank * 16u + key_place(k) < len)
-            m |= (uint64_t)1 << (ui.bank * 16u + key_place(k));
-    return m;
+    return keys_steps(keys, len);
 }
 
 /* the held keys' own doing on the grid undone (the hit a press put there; a hit pressed stays when let go) */
@@ -2628,6 +2630,7 @@ static void ui_input_frame(void)
     fx_usb_fixed = (ui_prefs & PREF_USB_FIXED) != 0u;   /* (MENU > USB LEVEL: fx.c, audio.c) */
     fx_usb_gain = USB_GAIN[fx_usb_fixed ? usb_lvl % 5u : 0u];   /* (0.7.0) .. and its attenuation (usb.c uac_tap) */
     mo_lvl = (uint8_t)(midi_out_mode & 3u);             /* (0.6.72) MENU > MIDI OUT (seq.c) */
+    mi_base = midi_base_set;                            /* (V10.7.39) MENU > MIDI BASE CH (seq.c; 0..10: settings_fix15) */
     midi_pc_poll();                                     /* (0.6.72) PROGRAM CHANGE in: the sounds it asked for */
     ml_poll();                                          /* (p1) MIDI LEARN: a CC came for the picked parameter */
     rp_apply();                                        /* (MENU > CLICK, CLICK LEVEL, COUNT-IN: click.c, seq.c) */

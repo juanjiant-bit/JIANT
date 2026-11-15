@@ -14,6 +14,10 @@
 #                   (tests/target_budget.txt, +10 %; exact, static).
 #   voices          the budget of 8, steal fades, MONO / LEGATO / UNISON keep their note, the VOICE cap,
 #                   no hanging notes on any MIDI / key routing.
+# BT FUZZ (tests/btmidi_fuzz_test.c, V10.7.39): random and hostile Bluetooth input through the stack (L2CAP, ATT, the
+#                   BLE-MIDI decoder, the scan table) and the app's MIDI dispatch, under ASan / UBSan: no crash, no
+#                   out-of-bounds, no hang, the MIDI owners consistent, nothing held after a full release; dense packets
+#                   (aftertouch, bend, a CC) keep held notes; a link lost lets them go.
 # UI renders (tests/ui_render.c): every screen in every palette from the real drawing code: the layout lint (no text
 #                   off the screen, cut, hidden, overlapping or spilling out of its cell / card; only free text
 #                   ellipsised), every ink's contrast, the draw cost, the text audit (build/ui_new/text_audit.tsv);
@@ -204,6 +208,14 @@ $CC -o "$OUT/usb_host_desc_test" tests/usb_host_desc_test.c
 run "USB > HOST (V10.41): a keyboard's MIDI IN found, a stick / an output-only synth refused, the event filter; (V10.53) an audio interface's 16-bit 44.1 capture" "$OUT/usb_host_desc_test"
 $CC -o "$OUT/bt_midi_test" tests/bt_midi_test.c
 run "BLE-MIDI to and from JIANT's MIDI rings (firmware/bt/bt_midi.h, V10.13)" "$OUT/bt_midi_test"
+# (V10.7.39) the Bluetooth fuzz (tests/btmidi_fuzz_test.c): under ASan / UBSan where the compiler has them (the DSP's
+# wrapping arithmetic aside: shift and signed overflow are the renders' own, not memory errors)
+FZ_SAN=""
+if echo 'int main(void){return 0;}' | ${CC%% *} -fsanitize=address,undefined -x c - -o "$OUT/fz_probe" 2>/dev/null; then
+    FZ_SAN="-g -fsanitize=address,undefined -fno-sanitize=shift,signed-integer-overflow -fno-sanitize-recover=all"
+fi
+$CC -w $FZ_SAN -DBTF_STACK=1 -o "$OUT/btmidi_fuzz_stack" tests/btmidi_fuzz_test.c
+run "Bluetooth fuzz, the stack (V10.7.39): L2CAP fragments, every ATT PDU, BLE-MIDI packets of any shape, the scan table's names" env ASAN_OPTIONS=detect_leaks=0 "$OUT/btmidi_fuzz_stack"
 
 HALF=$(sed -n 's/^#define HALF_FRAMES \([0-9]*\).*/\1/p' firmware/src/core.h)
 $CC -O2 -DT_CDC=1 -DHALF_FRAMES=$HALF -o "$OUT/uac_test" tests/uac_test.c -lm
@@ -301,6 +313,10 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "USB/TRS clock, bend, sustain, ownership and panic recovery" "$OUT/midi_control_test"
     $CC -O1 -w -DFELUCCA_SPLIT=1 -Ibuild/gen -Ifirmware/src -o "$OUT/midi_control_split" tests/midi_control_test.c -lm   # (V10.7.32: KEY SPLIT out of the image, its code tested built in)
     run "USB/TRS MIDI with KEY SPLIT built in (FELUCCA_SPLIT=1): the zones, their owners, the page" "$OUT/midi_control_split"
+    $CC -O1 -w $FZ_SAN -Ibuild/gen -Ifirmware/src -o "$OUT/btmidi_fuzz_app" tests/btmidi_fuzz_test.c -lm
+    run "Bluetooth fuzz, the app (V10.7.39): BLE-MIDI into the real MIDI dispatch, floods, ROUT / BASE / panics / lost links under held notes" env ASAN_OPTIONS=detect_leaks=0 "$OUT/btmidi_fuzz_app"
+    $CC -O1 -w $FZ_SAN -DFELUCCA_SPLIT=1 -Ibuild/gen -Ifirmware/src -o "$OUT/btmidi_fuzz_split" tests/btmidi_fuzz_test.c -lm
+    run "Bluetooth fuzz, the app with KEY SPLIT built in (FELUCCA_SPLIT=1)" env ASAN_OPTIONS=detect_leaks=0 "$OUT/btmidi_fuzz_split"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/stuck_test" tests/stuck_test.c -lm
     run "stuck notes: keys, SCENE, LATCH, ARP, MIDI IN and MIDI OUT notes end whatever changed while held; PANIC (PLAY held)" "$OUT/stuck_test"
     $CC -O1 -w -DFELUCCA_FM4=1 -Ibuild/gen -Ifirmware/src -o "$OUT/digital_test" tests/digital_test.c -lm

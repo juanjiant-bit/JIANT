@@ -8,8 +8,9 @@ Editor protocol 1.0 (web/EDITOR_PROTOCOL.md, "Stability contract"). Every parame
 91 93 94 102..105) are unchanged.
 
 - **Track parameters:** CC99 (NRPN MSB) **0**, CC98 (NRPN LSB) the parameter's id below, on the channel the
-  track plays (ROUTE as notes: CH1-6, channel n is track n; SEL, every channel the selected track). Channel 16
-  is heard for NRPN also with CH1-6: the selected track.
+  track plays (ROUTE as notes: CH1-6, channel n is track n, or BASE + n - 1 with MENU > SYSTEM > MIDI BASE CH;
+  SEL, every channel the selected track). Channel 16 is heard for NRPN also with CH1-6: the selected track (with
+  MIDI BASE CH 11, track 6).
 - **Globals:** CC99 **1**, CC98 the global's id, on channel 16 or any channel the FM-1 hears.
 - **The value:** CC6 (data entry MSB) then CC38 (LSB): 14 bits, 0..16383, over the parameter's range as DESC
   gives it, `v = min + (x * (max - min) + 8191) / 16383`. CC6 alone is a 7-bit value (as a CC: 0..127 over the

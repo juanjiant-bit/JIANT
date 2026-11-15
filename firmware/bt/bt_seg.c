@@ -37,6 +37,7 @@
 #define BLE_NAME_HEX 0                         /* the name as it is (no " XXXX") */
 #define BLE_LL_MAX_OCTETS 27u                  /* stock's PDU size, as Melodee (radio-tested) */
 #define BLE_DIAG 0                             /* (no counters, no console: as Melodee) */
+#define BLE_MIDI_LAST_TS 0                     /* (V10.7.39) the received timestamps are not used (ble_app_midi_in) */
 #define FELUCCA_BLE_BOND 1                     /* (V10.32) Just Works pairing with bonding, LL encryption: a central that asks
                                                 * to pair (Windows, some Macs and Androids) pairs, no PIN */
 #define FELUCCA_BLE_CENTRAL 3                  /* (V10.35) AIR: the scanner alone (no connecting out): every advertisement's
@@ -124,6 +125,8 @@ BLE_API void ble_app_state(void)
     uint8_t c = (uint8_t)ble_connected(), on = (uint8_t)ble_midi_ready();
     if (c && !bs_linked && bs_conns < 255u)
         bs_conns++;
+    if (!c && bs_linked)
+        bt_midi_rx(0);                         /* (V10.7.39) the link lost: what its notes held let go (src/bt.c) */
     bs_linked = c;
     if (on && !bt_oq.on)
         bt_oq.r = bt_oq.w;                     /* (a new listener: nothing stale) */

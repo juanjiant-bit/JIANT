@@ -2266,13 +2266,18 @@ static void draw_confirm(void)
 
 /* (0.8.5) the end of a lens screen drawn outside the page path (GEN): the second message, the timers, the footer and the
  * tabs */
-static void lz_frame_end(void)
+static __attribute__((noinline)) void msg_next(void)   /* a message's time up: the second message (ui_notices) in its
+                                                         * place (V10.7.39: one copy of what three frames did) */
 {
     if (ui.msg_t && !--ui.msg_t && ui.msg2[0]) {
         str_cpy(ui.msg, ui.msg2, sizeof ui.msg);
         ui.msg2[0] = 0;
         ui.msg_t = 60;
     }
+}
+static void lz_frame_end(void)
+{
+    msg_next();
     if (ui.bpm_t)
         ui.bpm_t--;
     if (ui.hot_t)
@@ -2387,11 +2392,7 @@ static void ui_draw_body(uint32_t counting)
         draw_layer();
         if (hm)
             ui.layer = 0;
-        if (ui.msg_t && !--ui.msg_t && ui.msg2[0]) {
-            str_cpy(ui.msg, ui.msg2, sizeof ui.msg);
-            ui.msg2[0] = 0;
-            ui.msg_t = 60;
-        }
+        msg_next();
         if (ui.hot_t)
             ui.hot_t--;
         if (ui.bpm_t)
@@ -2436,11 +2437,7 @@ static void ui_draw_body(uint32_t counting)
         else
             ui.graph_sig = ~0u;
     }
-    if (ui.msg_t && !--ui.msg_t && ui.msg2[0]) {     /* the second message (ui_notices) */
-        str_cpy(ui.msg, ui.msg2, sizeof ui.msg);
-        ui.msg2[0] = 0;
-        ui.msg_t = 60;
-    }
+    msg_next();                                        /* the second message (ui_notices) */
     if (ui.bpm_t)
         ui.bpm_t--;
     if (ui.hot_t)

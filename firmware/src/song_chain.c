@@ -74,6 +74,13 @@ static void scene_capture(scene_t *s)
 static song_index_t song_idx;
 static uint8_t song_draft;                    /* Generated workspace: never auto-written to project slots. */
 static uint8_t song_cur;                      /* the song whose sections proj_slot holds (0: the four project slots) */
+static __attribute__((noinline)) void song_rows_clear(void)   /* the current song's rows: no scenes, no tracks FROM,
+                                                         * no VARs (V10.7.39: one copy of what three places did) */
+{
+    memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
+    memset(song_idx.tsrc[song_cur], 0, sizeof song_idx.tsrc[song_cur]);
+    memset(song_idx.tvar[song_cur], 0, sizeof song_idx.tvar[song_cur]);
+}
 /* track k of the current song's row r: the section it plays (the row's own unless ARRANGE 2 gave it another) */
 static uint32_t row_src(uint32_t r, uint32_t k, uint32_t s)
 {

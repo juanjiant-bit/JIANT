@@ -2907,13 +2907,13 @@ static struct { uint16_t h[8], s[4]; uint8_t at, thrown, sat; } gsr __attribute_
  * reverb's type; EXPLORE's own (its playheads, its wilder components). Weights fitted to the pieces measured */
 static __attribute__((noinline)) uint32_t gcpu_est(void)
 {
-    uint32_t k, i, c = GCPU_BASE + 8u * GCPU_REV[song.g[G_RTYPE]] + (gx.on ? GCPU_GX : 0u), v = 0;
-    for (k = 0; k < NTRK; k++) {
+    uint32_t k, i, c = GCPU_BASE + 8u * GCPU_REV[song.g[G_RTYPE]] + gx.on * GCPU_GX, v = 0;
+    for (k = 0; k < trk_live; k++) {                    /* (the tracks playing: TRACKS 4 or 6) */
         const track_t *t = &trk[k];
         const step_t *s = t->step;
         uint32_t e = t->eng_req, len = (uint32_t)t->p[P_SLEN], occ = 0, held = 0, w;   /* (GEN's: 1 .. NSTEP) */
         uint32_t rel = TIME_MS_X10[t->p[P_REL]] * (uint32_t)song.g[G_BPM] / 6262u + (uint32_t)t->p[P_SGATE] / 8u;
-        if (k >= trk_live || !gs.act[gs.role[k]] || t->p[P_MUTE]) continue;
+        if (!gs.act[gs.role[k]] || t->p[P_MUTE]) continue;
         for (i = 0; i < len; i++, s++) {                /* (in steps, Q4) */
             if (s->time == ST_TIE) { occ += held << 4; continue; }
             held = s->time != ST_NOTE ? 0u : s->n ? s->n : 1u;

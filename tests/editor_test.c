@@ -171,7 +171,7 @@ static int preferences(void)
         host_wire[n0 - 23] == 0 &&                        /* (no bank since 1.0.3) */
         host_wire[n0 - 22] == 0x53 && host_wire[n0 - 21] == 1 && host_wire[n0 - 20] == 3 &&
         host_wire[n0 - 19] == 0x50 && host_wire[n0 - 18] == 1 && host_wire[n0 - 17] == 3 &&   /* FM6 v2: no bank, preset patches */
-        host_wire[n0 - 16] == 0x4E && host_wire[n0 - 15] == 1 && host_wire[n0 - 14] == 31 &&   /* MENU settings: 31 items (V10.6z4 OCT BEND; 6ba2f5e VELOCITY,
+        host_wire[n0 - 16] == 0x4E && host_wire[n0 - 15] == 1 && host_wire[n0 - 14] == 32 &&   /* MENU settings: 32 items (V10.7.39 MIDI BASE CH); 31 (V10.6z4 OCT BEND; 6ba2f5e VELOCITY,
                                                                                              * VEL MIN, AFTERTOUCH, VEL LEARN); 26 (0.6.72: MIDI OUT; 0.8.9 SKIN; 0.9.7 SCOPE;
                                                                                              * 0.9.9-stab CPU CLOCK; p1 CPU CORES, MIDI MAP) */
         host_wire[n0 - 13] == 0x52 && host_wire[n0 - 12] == 1 && host_wire[n0 - 11] == 4 &&   /* RATCH */
@@ -880,6 +880,15 @@ static int menu_protocol(void)
         }
     }
     if (jf) { fprintf(jf, "]\n"); fclose(jf); }
+    {   /* (V10.7.39) MIDI BASE CH: the last item, id 31, 1..11, SYSTEM; set from the editor */
+        uint32_t m = menu_desc((uint32_t)ED_MENU_N - 1u, &it), rc;
+        int okb = m > 10u && it.id == 31u && !strcmp(it.name, "MIDI BASE CH") && it.nnames == 11u && !strcmp(it.names[0], "1") &&
+                  !strcmp(it.names[10], "11") && it.value == 0 && it.tab == 3u && !strcmp(it.tabname, "SYSTEM");
+        rc = menu_set(31, 6);
+        okb &= (rc == 0u || rc == 3u) && midi_base_set == 6u && menu_set(31, 11) != 0u;
+        midi_base_set = 0;
+        bad += check("MENU_DESC / MENU_SET (V10.7.39): MIDI BASE CH, id 31, 1..11 in SYSTEM, set from the editor", okb);
+    }
     bad += check("MENU_DESC: 18 items (1.0.4's 12 in the menu's order, then 1.1's CLICK, CLICK LEVEL, COUNT-IN, 1.2's RESTORE LAST, SCALE LEDS, SCREEN OFF), ids 0..17, names, defaults", ok);
     bad += check("MENU_DESC (1.0.5): after the names each item's tab, index and name (DISPLAY CONTROL AUDIO SYSTEM)", ok);
     {   /* an older editor reads the names and stops: the tab is past them, nothing it reads moved */
@@ -921,8 +930,8 @@ static int menu_protocol(void)
             ok &= !strcmp(it.name, NM[q]) && it.id == 26u + q && it.tab == (q ? 1u : 2u);
         }
     }
-    n = menu_desc(31, &it);
-    ok &= n == 2u && it.index == 31 && it.id == 127;
+    n = menu_desc(32, &it);                               /* (31: V10.7.39's MIDI BASE CH) */
+    ok &= n == 2u && it.index == 32 && it.id == 127;
     n = menu_desc(127, &it);
     bad += check("MENU_DESC: no CALIBRATION / ABOUT; an index past the list answers index, 127 (no item)",
                  ok && n == 2u && it.index == 127 && it.id == 127);
@@ -984,7 +993,7 @@ static int menu_protocol(void)
         static uint8_t fav0[sizeof favorites], set0[sizeof settings];
         uint8_t hold0 = settings_hold, leds0 = settings_leds;
         memcpy(fav0, &favorites, sizeof favorites); memcpy(set0, &settings, sizeof settings);
-        ok = menu_set(31, 1) == 1 && host_wire[6] == 31 && ed_rv(host_wire + 7) == 1;   /* (26..30 since V10.6z4 / z7) */
+        ok = menu_set(32, 1) == 1 && host_wire[6] == 32 && ed_rv(host_wire + 7) == 1;   /* (26..30 since V10.6z4 / z7, 31 V10.7.39) */
         ok &= menu_set(126, -3) == 1 && host_wire[6] == 126 && ed_rv(host_wire + 7) == -3;
         ok &= menu_set(127, 0) == 1 && host_wire[6] == 127;
         ok &= !memcmp(fav0, &favorites, sizeof favorites) && !memcmp(set0, &settings, sizeof settings) &&

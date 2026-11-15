@@ -493,6 +493,12 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
   piece's cost as it makes it and, only when it is over, makes it again with FM6 on one track (then none) and SHIMR in
   CLOUD's place, the steps and the mix as they were (TRACKS 4: ~2 % of the pieces at the default settings change, ~8 %
   at full; `tests/gen_cpu.c` measures every genre against CPU TEST in `run_tests.sh`).
+- **MIDI BASE CH** (MENU › SYSTEM, 1–11, default 1): track *n* listens and sends on channel BASE + *n* − 1, so two
+  FM-1s share one MIDI bus (one on 1, the other on 7). Kept with the settings; older settings load as 1.
+- **Bluetooth MIDI hardened** after a crash report with a BLE keyboard: a dense packet of aftertouch, bend or a CC
+  (up to 240 messages in one) no longer overflows MIDI IN and drops every held note (poly pressure, which nothing
+  plays, is ignored; repeats of one controller keep their last value), and a Bluetooth link lost with notes held
+  lets them go. A VOICE track whose LANG changed mid-phrase no longer reads past its word template.
 
 ### V10.7.38 — beta (2026-11-15)
 - **WEST drawn as its circuit** on EDIT: the two sine cores, the folder and the vactrol gate, each moving with its knob.

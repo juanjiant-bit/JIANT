@@ -284,8 +284,16 @@ static int midi_enqueue(uint32_t pkt, uint32_t source)
 #include "../bt/bt_midi.h"
 struct bt_oq bt_oq;                                     /* (V10.13) MIDI OUT over Bluetooth too (bt_seg.c takes it) */
 #endif
+/* (V10.7.39) MENU > SYSTEM > MIDI BASE CH - 1 (0..10, ui.c midi_base_set; ui_input.c copies it every frame): track n
+ * plays and is heard on channel BASE + n - 1 (two FM-1s on one MIDI bus: 1 and 7): the tracks' channel messages (1..6
+ * as seq.c sends them, trk_midi_ch) go out moved here, channel 16's (the globals' NRPN) as they are; MIDI IN: seq.c
+ * midi_track, midi_control.c midi_event */
+static uint8_t mi_base;
 static void midi_out_event_at(uint32_t pkt, uint32_t due)   /* from the audio ISR; due: fm1_ticks() it goes at, 0 now */
 {
+    if ((pkt & 15u) - 8u < 7u && (pkt >> 8 & 15u) < 6u)   /* (channel messages of channels 1..6: NPART, which the loader,
+                                                         * that builds this file too, does not know) */
+        pkt += (uint32_t)mi_base << 8;
     if (usb.config && mo_w - mo_r < MQ) {
         midi_out_q[mo_w % MQ] = pkt;
         midi_out_due[mo_w % MQ] = due;

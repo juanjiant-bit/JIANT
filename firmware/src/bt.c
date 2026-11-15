@@ -51,12 +51,20 @@ static uint32_t bt_hw_rxdiag(void) { return 0; }
 /* (V10.13) a BLE-MIDI message received (bt_seg.c ble_app_midi_in: channel messages, the clock, START CONTINUE STOP) into
  * the MIDI input ring as USB's (source 1: CLK USB follows its clock; LEARN, ROUT, MIDI MAP alike). The BLE interrupts
  * (priority 2) are preempted by TIMER5, the ring's other producer (USB, TRS): the interrupts off around it (core 1 takes
- * none). In the segment: only its interrupts call it */
+ * none). In the segment: only its interrupts call it. (V10.7.39) A CC, pressure, bend or PROGRAM CHANGE takes the place
+ * of the same one queued just before it, unread (bt_midi.h bt_midi_same: the audio interrupt, the reader, cannot run
+ * here); 0: the link lost (bt_seg.c ble_app_state), the notes it held let go as after a lost note-off (seq.c
+ * panic_block) */
 BTAPP_FN void bt_midi_rx(uint32_t pkt)
 {
-    uint32_t ie = fm1_icfg() & 0x200u;
+    uint32_t ie = fm1_icfg() & 0x200u, *last = &midi_in_q[(mi_w - 1u) % MQ];
     fm1_irq_off();
-    midi_enqueue(pkt, 1u);                              /* (full: midi_in_overflow, every note let go, as USB / TRS) */
+    if (!pkt)
+        midi_in_overflow = 1;
+    else if (mi_w != mi_r && bt_midi_same(pkt, *last))
+        *last = pkt;
+    else
+        midi_enqueue(pkt, 1u);                          /* (full: midi_in_overflow, every note let go, as USB / TRS) */
     if (ie)
         fm1_irq_on();
 }

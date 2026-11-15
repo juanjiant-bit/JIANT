@@ -38,6 +38,16 @@ static void motion_unguard(uint32_t f)
     (void)f;
 #endif
 }
+static __attribute__((noinline)) uint32_t motion_cut(uint32_t n, uint32_t f)   /* the lane cut to its first n events
+                                                         * (guarded: f), the rest zero; how many went (V10.7.39: one copy of
+                                                         * what four clears did) */
+{
+    uint32_t gone = motion.count - n;
+    memset(motion.event + n, 0, (MOTION_MAX - n) * sizeof motion.event[0]);
+    motion.count = (uint8_t)n;
+    motion_unguard(f);
+    return gone;
+}
 static int motion_param(uint32_t id)
 {
     /* Sound only: transport, routing, voice allocation and discrete engine
@@ -333,25 +343,19 @@ static void motion_delete_event(track_t *t, uint32_t step, uint32_t id)   /* (ei
     motion_restore(t);
     for (i = 0; i < motion.count; i++)
         if (MOTION_PLACE(&motion.event[i]) != place || MOTION_ID(&motion.event[i]) != id) motion.event[n++] = motion.event[i];
-    memset(motion.event + n, 0, (MOTION_MAX - n) * sizeof motion.event[0]);
-    motion.count = (uint8_t)n;
-    motion_unguard(f);
+    motion_cut(n, f);
 }
 /* the locks of track t's step (NSTEP and up: of every step); their automation events stay. A lock sounding now goes
  * back at the next step as always (motion_locked). The locks it removed */
 static uint32_t motion_clear_locks(track_t *t, uint32_t step)
 {
-    uint32_t f = motion_guard(), k = trk_index(t), i, n = 0, gone;
+    uint32_t f = motion_guard(), k = trk_index(t), i, n = 0;
     for (i = 0; i < motion.count; i++) {
         const motion_event_t *e = &motion.event[i];
         if (MOTION_TRK(e) == k && (e->param & MOTION_LOCK) && (step >= NSTEP || MOTION_STEP(e) == step)) continue;
         motion.event[n++] = *e;
     }
-    gone = motion.count - n;
-    memset(motion.event + n, 0, (MOTION_MAX - n) * sizeof motion.event[0]);
-    motion.count = (uint8_t)n;
-    motion_unguard(f);
-    return gone;
+    return motion_cut(n, f);
 }
 static int motion_capture(track_t *t, uint32_t id, int16_t value)
 {
@@ -546,7 +550,7 @@ static int motion_move(track_t *t, uint32_t i, uint32_t step, uint32_t id, int16
  * The records it removed */
 static uint32_t motion_clear_ids(track_t *t, const uint32_t m[(P_COUNT + 31u) / 32u])
 {
-    uint32_t f = motion_guard(), k = trk_index(t), i, n = 0, gone;
+    uint32_t f = motion_guard(), k = trk_index(t), i, n = 0;
     motion_restore(t);
     for (i = 0; i < motion.count; i++) {
         const motion_event_t *e = &motion.event[i];
@@ -555,12 +559,8 @@ static uint32_t motion_clear_ids(track_t *t, const uint32_t m[(P_COUNT + 31u) / 
             continue;
         motion.event[n++] = *e;
     }
-    gone = motion.count - n;
-    memset(motion.event + n, 0, (MOTION_MAX - n) * sizeof motion.event[0]);
-    motion.count = (uint8_t)n;
     motion_full = 0;
-    motion_unguard(f);
-    return gone;
+    return motion_cut(n, f);
 }
 static int motion_engine_id(uint32_t id)
 {
@@ -571,7 +571,7 @@ static int motion_engine_id(uint32_t id)
  * stay, both kinds. The records it removed */
 static uint32_t motion_sound_loaded(track_t *t, uint32_t from, uint32_t to)
 {
-    uint32_t f, k = trk_index(t), i, n = 0, gone;
+    uint32_t f, k = trk_index(t), i, n = 0;
     if (eng_idx(from) == eng_idx(to))
         return 0;
     f = motion_guard();
@@ -581,9 +581,5 @@ static uint32_t motion_sound_loaded(track_t *t, uint32_t from, uint32_t to)
             continue;
         motion.event[n++] = *e;
     }
-    gone = motion.count - n;
-    memset(motion.event + n, 0, (MOTION_MAX - n) * sizeof motion.event[0]);
-    motion.count = (uint8_t)n;
-    motion_unguard(f);
-    return gone;
+    return motion_cut(n, f);
 }

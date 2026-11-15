@@ -225,6 +225,10 @@
                                           * indication and then never discovered the MIDI characteristic; the database
                                           * never changes while we run, so the indication is never due (§5) */
 #endif
+#ifndef BLE_MIDI_LAST_TS
+#define BLE_MIDI_LAST_TS 1               /* ble_app_midi_in gets the packet's last timestamp (0: 0 always, for an app that
+                                          * plays messages as they come and never reads it: smaller) */
+#endif
 #ifndef BLE_MIDI_RUNNING_STATUS
 #define BLE_MIDI_RUNNING_STATUS 1        /* the encoder drops a repeated status byte inside a packet */
 #endif

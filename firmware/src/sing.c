@@ -802,7 +802,8 @@ static void sy_gen_word(const track_t *t, sing_t *s, uint32_t lang, uint32_t lyr
         const char *const *T = TPLS[(lang - 1u) % 3u];
         uint32_t nt = NTPL[(lang - 1u) % 3u], cat, th;
         const char *q;
-        if (s->tpl == 0xFFu || !T[s->tpl % nt][s->tps]) {
+        if (s->tpl == 0xFFu || s->tps >= str_len(T[s->tpl % nt])) {   /* (V10.7.39: its length, not its octet at tps: a
+                                                         * language changed mid-phrase left tps past a shorter template's end) */
             s->tpl = (uint8_t)(sy_rnd(&s->rng) % nt);
             s->tps = 0;
         }

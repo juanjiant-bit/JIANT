@@ -279,7 +279,7 @@ layer's shortcuts; on the DRUM grid they are steps and lanes; on the NAME screen
 | Combination | Result |
 | --- | --- |
 | **GLO** held + **PLAY** | Restart from the top without stopping (internal clock). |
-| **PLAY** held (~0.7 s) | **PANIC: ALL NOTES OFF**. The transport stops and every sound ends at once: every track's voices, latched chords, arpeggios, punch-in repeats and the notes MIDI IN holds (a key or MIDI note let go afterwards does nothing; the next one plays as usual). MIDI OUT sends the note-off of every note it sent and All Notes Off (CC123) on the tracks' channels 1–6 (not with MIDI OUT OFF). For a note left hanging by a controller that lost its note-off; MIDI IN's CC120 / CC123 still do the same for their channel. |
+| **PLAY** held (~0.7 s) | **PANIC: ALL NOTES OFF**. The transport stops and every sound ends at once: every track's voices, latched chords, arpeggios, punch-in repeats and the notes MIDI IN holds (a key or MIDI note let go afterwards does nothing; the next one plays as usual). MIDI OUT sends the note-off of every note it sent and All Notes Off (CC123) on the tracks' channels 1–6 (from MENU › SYSTEM › MIDI BASE CH on) (not with MIDI OUT OFF). For a note left hanging by a controller that lost its note-off; MIDI IN's CC120 / CC123 still do the same for their channel. |
 | **GLO** held + **SELECT** | Tempo, from any page. |
 | **GLO** held + **G4** | **UNDO** the last big change (again: redo). |
 | **REC** held alone, let go | (V10.7) **UNDO** too: held past HOLD (~0.5 s) with no key, knob, button or OCT touched; again: redo. Anything used while held keeps it the REC layer; a tap still arms recording. |
@@ -3206,7 +3206,8 @@ the MENU (hold HOME, tab SYSTEM, row BLUETOOTH; OCT+ there opens the PROX page).
 ### ROUTE (GLO > SYSTEM, KNOB 3)
 
 **CH1-6**: MIDI channels 1–6 play tracks 1–6, channels 7–16 are ignored. **SEL**: every channel plays the selected
-track.
+track. (V10.7.39) With MENU › SYSTEM › **MIDI BASE CH** above 1 the six channels move: BASE 7 plays tracks 1–6 from
+channels 7–12 and ignores the rest.
 
 ### GLOBAL (GLO > GLOBAL)
 
@@ -3219,7 +3220,7 @@ track.
 first and the last), **ALGORITHM** jumps to the next / previous tab (its first row), **any knob** or **OCT+ / OCT−**
 changes the value; PRESETS does nothing here. HOME closes it (settings are saved then). The screen shows the tab's rows,
 the selected row's four as cards (ROWS 1–4 / ROWS 5–6; DISPLAY: ROWS 5–7; CONTROL also ROWS 9–12, the keys' four) with their knob's number; the tabs on top,
-the footer **MENU · DISPLAY · SCOPE  2/33**. The header says MENU · DISPLAY.
+the footer **MENU · DISPLAY · SCOPE  2/34**. The header says MENU · DISPLAY.
 
 | Tab | Row | Values |
 | --- | --- | --- |
@@ -3253,6 +3254,7 @@ the footer **MENU · DISPLAY · SCOPE  2/33**. The header says MENU · DISPLAY.
 | SYSTEM | RESTORE LAST | **OFF** (default: no autosave, power-on at zero), ON (the last session back at power-on) |
 | SYSTEM | CPU CORES | 1 CORE, **2 CORES** (default) — from the next start; (V10.6z2) the second core only starts on the stock power settings (not after a SAFE START) |
 | SYSTEM | CPU CLOCK | **360 MHZ** (default), 320 MHZ — from the next start |
+| SYSTEM | MIDI BASE CH | **1** (default) … 11 — (V10.7.39) the MIDI channel of track 1: track *n* listens and sends on BASE + *n* − 1 (in and out, USB, TRS and Bluetooth). Two FM-1s on one MIDI bus: one on 1 (channels 1–6), the other on 7 (channels 7–12). Kept with the settings; settings of before load as 1. With 11, track 6 is on channel 16, whose PROGRAM CHANGE stays the song's (sections, projects) |
 | SYSTEM | BLUETOOTH | **OFF**, ON (Bluetooth MIDI: ADV, then CONN), AIR (listens only: PROX and SWARM) — OCT+ on the row opens the PROX page (FAR / NEAR); see [Bluetooth](#bluetooth-midi-and-prox-v1013v1020) |
 | SYSTEM | CALIBRATION | OCT+ opens HARDWARE CALIBRATION (teach each button and knob) |
 | SYSTEM | ABOUT | OCT+ opens: version, QR code, AUDIO LOAD (NOW, PEAK, LATE, SHED since power-on) and credits (scroll with SELECT, OCT− back) |
@@ -3268,7 +3270,8 @@ faded): a photo of that screen helps when you report a problem.
 - **MIDI IN** over USB and the **TRS** jack. **ROUTE** decides which track each channel plays (see
   [13](#13-system-tracks-load-and-the-menu)). Incoming notes on an armed track are recorded like the keys.
 - **MIDI OUT** (over USB; MENU > CONTROL > **MIDI OUT**, 0.6.72), each track on its channel (T1 = channel 1 … T6 =
-  channel 6):
+  channel 6; V10.7.39: from MENU › SYSTEM › **MIDI BASE CH** on, T1 = channel BASE … T6 = BASE + 5, as MIDI IN hears
+  them; the globals' NRPN stays on channel 16):
   - **KEYS** (the default): the keys send their notes, as before.
   - **CLOCK**: and the clock (24 a beat) with **START / STOP**, while the tempo is the FM-1's own (CLOCK INT): a drum
     machine or a DAW follows it. The clock runs while stopped too, so the follower knows the tempo before PLAY.
@@ -3348,7 +3351,9 @@ you play reaches all the tracks with a role at once, each in its own way, all fr
   **JIANT FM-1**); keep the app in the foreground, phones cut Bluetooth for apps in the background.
 - **MIDI in**: what the app sends plays the FM-1 exactly as USB-MIDI does (notes, CC, program change, bend, clock with
   CLOCK USB +BT, MIDI LEARN and MAP). **MIDI out**: what MENU › CONTROL › MIDI OUT lets out (KEYS / CLOCK / ALL) goes to the app too.
-  No SysEx (the editor and updates stay on USB).
+  No SysEx (the editor and updates stay on USB). (V10.7.39) Poly pressure is ignored (nothing plays it), a packet full of
+  aftertouch, bend or one CC keeps that controller's last value instead of overflowing MIDI IN (which let go of every
+  held note), and the notes held over Bluetooth end when the link is lost (an app closed, the phone out of range).
 - **PROX**: a modulation source from **how close the connected phone is** (its Bluetooth signal, filtered). It follows
   the phone, not a hand. On the BLUETOOTH row (CONN) press **OCT+**: the PROX page. Phone away (a metre or so): **OCT−**
   (FAR). Phone on the FM-1, top left: **OCT+** (NEAR). Then on a track's MOD page pick **SRC PROX** (e.g. DEST CUT).

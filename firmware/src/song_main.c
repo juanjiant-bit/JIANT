@@ -658,9 +658,7 @@ static void song_poll(void)
             char b[8];
             chain_defaults(&chain_config);
             chain_config.count = (uint8_t)n;
-            memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
-            memset(song_idx.tsrc[song_cur], 0, sizeof song_idx.tsrc[song_cur]);   /* (SONG REC: whole sections; */
-            memset(song_idx.tvar[song_cur], 0, sizeof song_idx.tvar[song_cur]);   /* V10.6s: CLIPS' tracks FROM) */
+            song_rows_clear();                          /* (SONG REC: whole sections; V10.6s: CLIPS' tracks FROM) */
             for (k = 0; k < n; k++) {
                 chain_config.row[k] = live.rec[k];
                 song_idx.tsrc[song_cur][k] = rec_src[k];

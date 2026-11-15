@@ -9,7 +9,7 @@
  * value (MI_VALUES: the rows before them hold one). 1.0.5: in four tabs (MI_TAB). */
 enum { MI_COLOR, MI_SCOPE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_HOLD, MI_ACCEL, MI_LATCH, MI_BPMLOCK, MI_SCLLED, MI_MIDIOUT,
        MI_MIDIMAP, MI_LEARN, MI_VEL, MI_VELMIN, MI_AT, MI_VLEARN, MI_LOWCUT, MI_USB,
-       MI_CLICK, MI_CLKLVL, MI_COUNTIN, MI_TRACKS, MI_LOAD, MI_OCTBEND, MI_SERIAL, MI_RESTORE, MI_CPU, MI_CLOCK, MI_BT, MI_PANEL, MI_ABOUT, MI_COUNT };   /* (1.1: the
+       MI_CLICK, MI_CLKLVL, MI_COUNTIN, MI_TRACKS, MI_LOAD, MI_OCTBEND, MI_SERIAL, MI_RESTORE, MI_CPU, MI_CLOCK, MI_MIDIBASE, MI_BT, MI_PANEL, MI_ABOUT, MI_COUNT };   /* (1.1: the
                                                                                              * metronome's rows in AUDIO; 1.2: RESTORE LAST in
                                                                                              * SYSTEM, SCALE LEDS in CONTROL; 0.9.9-stab: CPU
                                                                                              * CLOCK in SYSTEM; codex/coherence: INIT SYSTEM gone,
@@ -20,7 +20,7 @@ static const char *const MI_NAME[MI_COUNT] = {"COLOR", "SCOPE", "LARGE", "ANIM",
                                               "VELOCITY", "VEL MIN", "AFTERTOUCH", "VEL LEARN",
                                               "SPEAKER EQ", "USB LEVEL", "CLICK", "CLICK LEVEL", "COUNT-IN", "TRACKS", "CPU LOAD",
                                               "OCT BEND", "USB",
-                                              "RESTORE LAST", "CPU CORES", "CPU CLOCK", "BLUETOOTH", "CALIBRATION", "ABOUT"};
+                                              "RESTORE LAST", "CPU CORES", "CPU CLOCK", "MIDI BASE CH", "BLUETOOTH", "CALIBRATION", "ABOUT"};
 /* 1.0.5: the MENU's tabs (ui_menu.c: ALGORITHM steps between them, PRESETS among one tab's rows; the editor gets a
  * row's tab after its MENU_DESC reply). A tab's rows follow each other in MI order (tests/ui_test.c checks it); at
  * most MTAB_ROWS each (the page does not scroll: ui_menu.c fits them). A new row joins a tab here, a new tab is
@@ -49,6 +49,8 @@ static const uint8_t MI_TAB[MI_COUNT] = {
     MTAB_AUDIO,                                                             /* OCT BEND (V10.6z4: CONTROL's eight are full) */
     MTAB_SYSTEM, MTAB_SYSTEM, MTAB_SYSTEM, MTAB_SYSTEM,                     /* USB SERIAL, RESTORE LAST, CPU CORES (p1,
                                                                              * main 0.9.12), CPU CLOCK (0.9.9-stab) */
+    MTAB_SYSTEM,                                                            /* MIDI BASE CH (V10.7.39: CONTROL holds its
+                                                                             * twelve; beside BLUETOOTH) */
     MTAB_SYSTEM,                                                            /* BLUETOOTH (V10.12, bt.c) */
     MTAB_SYSTEM,                                                            /* CALIBRATION */
     MTAB_SYSTEM,                                                            /* ABOUT (codex/coherence: INIT SYSTEM, 0.6.58, gone:
@@ -120,14 +122,20 @@ static const char *const OCTBEND_N[8] = {"OFF", "1 ST", "2 ST", "3 ST", "4 ST", 
  * floor, AFTERTOUCH's sensitivity (OFF: none), VEL LEARN (RESET: the calibration's seeds back, then ON) */
 /* each: its settings byte, the field's shift, mask and ^ (its stored form), its count, its names (w bytes apart) */
 typedef struct { uint8_t *b; uint8_t sh, m, x, n, w; const char *nm; } vel_row_t;
-static const vel_row_t VEL_ROW[4] = {{&VEL_SET, 0, 3, 2, 4, 7, "OFF\0\0\0\0SOFT\0\0\0NORMAL\0HARD"},
+/* (V10.7.39) and MIDI BASE CH (ui.c midi_base_set, seq.c mi_base): 1..11, AFTERTOUCH's numbers and an 11 */
+static const char AT_N[] = "OFF\0" "1\0\0\0" "2\0\0\0" "3\0\0\0" "4\0\0\0" "5\0\0\0" "6\0\0\0" "7\0\0\0" "8\0\0\0" "9\0\0\0"
+                           "10\0\0" "11";
+static const vel_row_t VEL_ROW[5] = {{&VEL_SET, 0, 3, 2, 4, 7, "OFF\0\0\0\0SOFT\0\0\0NORMAL\0HARD"},
                                      {&VEL_SET, 2, 7, 2, 8, 3, "1\0\00010\00020\00030\00040\00050\00064\00080"},
-                                     {&VEL_SET2, 4, 15, 5, 11, 4, "OFF\0" "1\0\0\0" "2\0\0\0" "3\0\0\0" "4\0\0\0" "5\0\0\0" "6\0\0\0"
-                                                                  "7\0\0\0" "8\0\0\0" "9\0\0\0" "10\0"},   /* (V10.7.23: AFTERTOUCH
+                                     {&VEL_SET2, 4, 15, 5, 11, 4, AT_N},   /* (V10.7.23: AFTERTOUCH
                                                          * OFF 1..10, bits 4-7, place ^ 5: 0 = 5, MID's; the old LOW MID HIGH
                                                          * in bits 0-1 read once: settings_persist.c settings_fix15) */
-                                     {&VEL_SET2, 2, 3, 0, 3, 6, "ON\0\0\0\0OFF\0\0\0RESET"}};
-static const vel_row_t *vel_row(uint32_t row) { return row >= MI_VEL && row <= MI_VLEARN ? &VEL_ROW[row - MI_VEL] : 0; }
+                                     {&VEL_SET2, 2, 3, 0, 3, 6, "ON\0\0\0\0OFF\0\0\0RESET"},
+                                     {&midi_base_set, 0, 15, 0, 11, 4, AT_N + 4}};
+static const vel_row_t *vel_row(uint32_t row)
+{
+    return row >= MI_VEL && row <= MI_VLEARN ? &VEL_ROW[row - MI_VEL] : row == MI_MIDIBASE ? &VEL_ROW[4] : 0;
+}
 /* (JIANT 0.9.9-stab, as 0.9.12) MENU > SYSTEM > CPU CLOCK: 360 MHZ (the default: the boot stage's clock, M-VAVE's V15
  * runs it so with the core rails at 1.60 / 1.38 V, hal/fm1_sys.h fm1_rails_boot) or 320 MHZ (JieLi's rated clock, as
  * M-VAVE's open firmware and Skiff run it: ~11 % fewer cycles a block), switched at boot before the audio and the second
