@@ -279,6 +279,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "DRONE (V10.7.33): held after the key, the next note gliding on the same voice, chords voice by voice, the key again / OCT- + OCT+ / STOP / PANIC / another mode letting go, the sequencer's and MIDI IN's notes, every engine, kits ignore it" "$OUT/drone_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/gen_test" tests/gen_test.c -lm
     run "GEN (0.6.91): the song generator, every genre: deterministic, one scale, the kick anchored, the bass's roots, chord tones, forms, the screen; (0.9.9-gen1) the clean base, the archetypes, the CPU budget; (gen2) the 303 line and its legato slides, the leads' vibrato, the drums' decays; (gen3) the rules by role, the drums' share, the loudness" "$OUT/gen_test"
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/gen_cpu" tests/gen_cpu.c -lm
+    GEN_CPU_CHECK=1 run "GEN's CPU (V10.7.39): every genre, EXPLORE and RANDOM at full (ENERGY and every amount 100, COMPLEX 50 and 100, TRACKS 4 and 6), each piece's song timed against SAVE > TOOLS CPU TEST's: its heaviest 4 s within CPU TEST's, GEN's estimate within its limit (gen.c gcpu_est)" "$OUT/gen_cpu"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -Wno-implicit-function-declaration -o "$OUT/loop_song_test" tests/loop_song_test.c -lm
     run "GEN FROM LOOP: the loop's key and chords heard (C major, A minor, a DRUM-X 808 line, drums alone), the loop untouched as A, every section its material, new parts on empty tracks in key, a counter-melody of its melody, played end to end, kept, UNDO, seeds" "$OUT/loop_song_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/stems_test" tests/stems_test.c -lm
