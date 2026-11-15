@@ -852,14 +852,14 @@ borra. (LFO + SELECT tira el LFO de la pista, con KEEP / CANCEL: ver los dados.)
 ## 4. Motores
 
 Doce motores, todos de síntesis, sin samples: ANALOG, FM6, PHASE, **MATH** (LOFI hasta la V10.6e), VOICE, WHEEL,
-NOISE, DRUM-X, ANIMAL, **STRING** (una cuerda pulsada, golpeada o frotada, y el feedback de guitarra), **ADD**
+**WEST** (costa oeste: plegado y low-pass gate; NOISE hasta la V10.7.35), DRUM-X, ANIMAL, **STRING** (una cuerda pulsada, golpeada o frotada, y el feedback de guitarra), **ADD**
 (aditiva) y **EXT** (señales externas: la entrada de audio USB, o SWARM, el Bluetooth de alrededor). Cualquier motor
 puede ir en cualquier pista. Elegilos con **PRESETS**
 (una sola lista con todos los motores) o con KNOB 2 (ENG) en SAVE > PRESETS. También figuran las cuatro perillas
 principales de cada motor (las que sigue la forma de su ser; en HOME hasta la V10.7.23, ahora en EDIT).
 
 **El orden** (V10.6e): PRESETS, KNOB 2 (ENG) y las listas del editor web muestran los motores así: **DRUM-X, ANALOG,
-PHASE, FM6, VOICE, ANIMAL** (las pistas al encender, T1–T6), y después MATH, WHEEL, NOISE, STRING, ADD, EXT. Solo cambió el
+PHASE, FM6, VOICE, ANIMAL** (las pistas al encender, T1–T6), y después MATH, WHEEL, WEST, STRING, ADD, EXT. Solo cambió el
 orden que ves: los proyectos, presets de usuario, favoritos y backups nombran los motores por su número, que no cambia,
 así que todo lo guardado antes carga igual. PROGRAM CHANGE conserva los números de la 0.9.8 (ver [14](#14-midi-y-usb)).
 
@@ -876,7 +876,7 @@ click; las notas siguen.
 | **MATH** (V10.6e) | CHIP, WAVE (BYTE / FLOAT), ALGO, VAR | MOTION, GRIT (FLOAT: FEEDBK), BEND, LOOP | ALGO, VAR, MOTION, REL |
 | **VOICE** | VOWEL, VOWEL2, TALK, SHIFT | SOURCE (era TONE): BUZZ, BREATH, Q, RAND | VOWEL, BUZZ, BREATH, TALK |
 | **WHEEL** | REG, SUB, BODY, TOP | COLOR (era TONE): PERC, CLICK, DRIVE, SPEED (la del rotor; era ROTOR) | REG, PERC, DRIVE, SPEED |
-| **NOISE** | MODE, COLOR, FREQ, PEAK | TRK, DENSE, DRIFT, CRUSH | FREQ, PEAK, COLOR, REL |
+| **WEST** (V10.7.36) | FOLD, SYMM, MOD, RATIO | GATE, DECAY, RES, DUST | FOLD, MOD, DECAY, DUST |
 | **DRUM** (DRUM-X) | MORPH, TUNE, TONE, DECAY | NOISE, FM ENV, FOLD, DRIVE | MORPH, TUNE, TONE, DECAY |
 | **ANIMAL** (0.8.3) | MODE, PRESS, CHAOS, SIZE | SWEEP, RATE, GROUP, TEMP | PRESS, SWEEP, RATE, SIZE |
 | **STRING** | EXCITE, DECAY, BRIGHT, POS | STRETCH, BODY, SIZE, BOW | (EXCITE FDBK: el feedback de guitarra, MOVE, GAIN, DIST, SPEAKR, BLOOM) |
@@ -924,7 +924,7 @@ click; las notas siguen.
   3SLOW), click de tecla, drive, SPEED (la del rotor: OFF, SLOW, FAST). EDIT > **ROTOR** (solo WHEEL): **DEPTH** (cuánto gira el
   parlante rotativo: 100 % como antes, 0 % quieto) y **DUST** (0–100 %: el crujido y el siseo de un órgano viejo mientras
   suena).
-- **NOISE**: ruido coloreado y metálico. MODE: ANLG, DUST, LFSR, META (DUST es solo el crepitar: con DENS en 0 igual crepita suave). PEAK es su propia resonancia.
+- **WEST** (V10.7.36, en el lugar de NOISE): síntesis de costa oeste, un seno plegado por una low-pass gate; ver [WEST](#west-costa-oeste-v10736) abajo.
 - **DRUM**: DRUM-X, ver [5](#5-drum-x).
 - **ANIMAL**: cantos de animales con modelos físicos, ver [ANIMAL](#animal-083) más abajo.
 - **STRING**: una cuerda pulsada, golpeada o frotada (Karplus-Strong). EXCITE NOISE PLUCK PICK HAMMR STICK dice cómo
@@ -954,6 +954,42 @@ click; las notas siguen.
     modulación** (MODW → GAIN): se sostiene, después se da vuelta a su octava, cantando; bajala y se apaga. El
     **aftertouch** mueve SPEAKR (un paso al costado: de la octava a la duodécima). En LEGATO, hammer-ons y pull-offs sin
     púa nueva, y los bends mantienen el feedback afinado.
+
+
+### WEST: costa oeste (V10.7.36)
+
+WEST ocupa el lugar de NOISE (el motor 11: su número, sus números de PROGRAM CHANGE). Es una voz de costa oeste: un
+**seno** cuya fase modula un segundo seno (FM), entra a un **wavefolder** que dobla la onda sobre sí misma, y de ahí a
+una **low-pass gate**: un filtro pasabajos y un VCA movidos juntos por una sola envolvente a través de un modelo de
+**vactrol** (una lámpara que ilumina una resistencia sensible a la luz: abre rápido y cierra tarde, más lento cuanto más
+se oscurece). Una nota lo *golpea*: un pluck, un bongó, una campana; sostenida largo, un drone.
+
+| | EDIT 1 (FOLD) | EDIT 2 (GATE) |
+| --- | --- | --- |
+| KNOB 1 | **FOLD**: la ganancia del plegador, x1 .. x9. La onda se dobla sobre sí misma: cada vez más armónicos (impares), metálica y viva, con el mismo nivel | **GATE**: qué hace el gate: 0 solo pasabajos (el nivel queda, se cierran los agudos), 64 las dos cosas (lo clásico), 127 solo VCA (los pliegues quedan, baja el nivel) |
+| KNOB 2 | **SYMM**: un offset a la entrada del plegador: pliegues asimétricos, armónicos pares (el 2.º, un color hueco, de lengüeta) | **DECAY**: el golpe, 5 ms .. 4 s; pasado 88 una nota sostenida deja el gate algo abierto (127: abierto mientras se sostiene, un drone); al soltar se cierra en ~150 ms |
+| KNOB 3 | **MOD**: profundidad de FM del segundo seno sobre el primero (índice hasta ~5) | **RES**: la resonancia del filtro del gate (un anillo en el golpe) |
+| KNOB 4 | **RATIO**: la relación del modulador con la nota: 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 (1.41, 1.73, 2.76, 5.40: campanas y barras) | **DUST**: ruido dentro del gate. 1–72 crepitar (impulsos al azar, 1 .. 600 por segundo) que además *golpea* el gate (notas fantasma, gotas); 72–96 el seno se apaga (solo los impulsos); 96–127 entra el siseo (ruido blanco, completo en 127). 0: nada de ruido |
+
+- **Velocidad**: una nota más fuerte pliega más y abre el techo del gate (±10 semitonos): más brillante y más fuerte.
+- **Las macros de la pista**: FLT (CUT, el CUT de la matriz, el filtro de LIFE) mueve el techo del gate, SHP pliega (un
+  LFO a SHAPE hace respirar los pliegues), PIT la afinación. El techo sigue a la tecla a medias, el gate cerrado a la
+  tecla misma. LIFE (su vagar por voz de la forma), DRONE, UNISON y los E1–E8 de la matriz MOD andan como en todos.
+- **El golpe también pliega**: el pliegue sigue el nivel del gate (la mitad cerrado), así el timbre de un pluck florece
+  y se oscurece con su nivel, como en un patch de costa oeste.
+- **Presets** (WEST PLUCK y los otros primero en la lista): **WEST PLUCK**, **BONGO**, **MARIMBA**, **WEST BELL**,
+  **GAMELAN**, **FOLD BASS**, **RUBBER BASS**, **WEST LEAD**, **FOLD LEAD** (la presión lo pliega), **FOLD DRONE** (los
+  pliegues respirando), **DUST DRONE**, **INIT WEST**; después los ocho de NOISE, rehechos con DUST: **WIND**, **RAIN**
+  (el polvo golpea el gate: gotas en la nota), **ARCADE**, **METAL**, **SEA**, **HISS PAD**, **TAPE AIR**,
+  **INIT NOISE**. Los roles de ruido y textura del generador eligen SEA, TAPE AIR, HISS PAD e INIT NOISE como antes.
+- **Proyectos y presets de usuario hechos con NOISE** (V10.7.35 y antes) abren como WEST en un patch de DUST (no hay
+  que hacer nada): los modos de ruido de NOISE pasan a DUST (el ruido blanco de ANLG: DUST 127; los impulsos de DUST:
+  DUST 96, el seno callado), el gate a solo pasabajos (GATE 0) sostenido tan abierto como estaba FREQ (un COLOR rosa o
+  marrón un poco menos: DECAY 88–127), PEAK a su RES; LFSR y META, los tonos de registro, a un tono plegado y modulado
+  (FOLD 90, RATIO 0.5 o 1.41). TRK, DRIFT y CRUSH no tienen equivalente; su automatización sobre los valores EDIT se
+  descarta. El resto de la pista (mezcla, envíos, filtro, matriz, pasos) queda como estaba. Un proyecto guardado de nuevo
+  se guarda como WEST. PROGRAM CHANGE y los números de preset siguen nombrando WIND .. TAPE AIR. MIDI CC74 / CC71 en una
+  pista WEST: FOLD / RES.
 
 ### ANIMAL (0.8.3)
 
@@ -1179,7 +1215,7 @@ bytes de RAM; nada en el sonido.
 
 ### Seis motores más dibujan su propia criatura (0.9.6)
 
-Con 0.9.6 cada motor tiene su propio dibujo: ANALOG, FM6, WHEEL, NOISE, PHASE y MATH (entonces LOFI) dibujan el suyo en **EDIT › SOUND**
+Con 0.9.6 cada motor tiene su propio dibujo: ANALOG, FM6, WHEEL, NOISE (WEST desde la V10.7.36), PHASE y MATH (entonces LOFI) dibujan el suyo en **EDIT › SOUND**
 (a la izquierda; el osciloscopio y las fichas a la derecha como antes; 0.9.7: con **MENU › DISPLAY › SCOPE** en ON — en OFF,
 el de fábrica, la criatura tiene todo el panel, centrada, el nombre del sonido un rótulo chiquito en una esquina; HOME › BEING, que la mostraba grande, se fue con la V10.7.24), con el mismo dibujo térmico, la cara de los bichitos compartida con los de DRUM-X, y se mueven
 solo mientras la pista suena:
@@ -1200,9 +1236,10 @@ solo mientras la pista suena:
 - **WHEEL: nueve gusanos de tubo**, uno por tirante, tan altos como su nivel (los dígitos de la registración debajo),
   cada uno con una corona de tantos tentáculos como su armónico; el **rotor es una corriente** que los dobla (SLOW, FAST,
   su DEPTH), PERC hace saltar y gritar a su gusano, CLICK les saca burbujas por la boca, DUST deja motas.
-- **NOISE: un enjambre** de protozoos alrededor de una reina: **COLOR** es cómo caminan (blanco: tiemblan en el lugar;
-  marrón: derivan), **FREQ** cómo giran y qué tan ancho es el anillo que guardan, **PEAK** qué tan apretado; en DUST cada
-  impulso hace que algunos se enciendan y salten; en LFSR y META marchan en columnas, una por bit del registro.
+- **WEST: la onda plegada** (V10.7.36; antes el enjambre de NOISE): dos ciclos de la onda tal como la pliega el motor
+  (FOLD, SYMM, MOD y RATIO la doblan), corriendo con el sonido; brilla y se pliega más cuando el gate se abre con un
+  golpe y se apaga cuando se cierra. Arriba, la lámpara (la luz del vactrol) se enciende con cada nota; DUST desparrama
+  motas que titilan; una cara abajo cierra los ojos con cada golpe.
 - **PHASE: un caracol.** Las cámaras de la caparazón están en la **fase doblada** (parejas con DCW en 0; al subir el DCW
   se amontonan donde la fase corre, que es lo que hace la distorsión de fase), coloreadas por la salida; **la suela del
   pie es la onda** (WAVE y WAVE2 alternando); FB deshilacha la espiral, SUB hace respirar la vuelta de afuera, los ojos
@@ -3321,7 +3358,8 @@ protección desvaneció): una foto de esa pantalla ayuda cuando reportás un pro
   - **OFF**: nada.
 - **PROGRAM CHANGE** (0.6.72): el programa *n* en el canal que toca una pista carga en esa pista el sonido número
   *n* + 1 de la lista de PRESETS (los presets de cada motor en su orden, después los presets de usuario); la pista
-  seleccionada no cambia. (0.9.9) Los motores en el orden de la 0.9.8, ANALOG, FM6, PHASE, MATH (el número de LOFI, V10.6h), VOICE, WHEEL, NOISE,
+  seleccionada no cambia. (0.9.9) Los motores en el orden de la 0.9.8, ANALOG, FM6, PHASE, MATH (el número de LOFI, V10.6h), VOICE, WHEEL, NOISE
+  (WEST desde la V10.7.36: sus primeros ocho presets, los nombres de NOISE rehechos, con los números de NOISE; el resto por la lista),
   DRUM, ANIMAL, muestre lo que muestre la página PRESETS (que ahora empieza por DRUM-X): los números de programa de un
   equipo MIDI siguen cargando los sonidos de antes. Los programas llegan a los primeros 128 sonidos de la lista: desde 0.8.3 eso termina dentro
   de los presets de ANIMAL (va último), así que los presets de usuario que vienen después se eligen en el equipo o
@@ -3336,7 +3374,7 @@ protección desvaneció): una foto de esa pantalla ayuda cuando reportás un pro
 - **Clock**: GLO > GLOBAL > CLOCK **USB** o **TRS** sigue el clock y los Start / Continue / Stop de esa entrada. Con un
   clock externo, TAP y el reinicio con GLO + PLAY quedan desactivados.
 - **Controladores** (en la pista que toca el canal): CC5 glide, CC7 nivel, CC10 paneo, CC71 resonancia y CC74 cutoff
-  (los propios del motor, donde los tiene), CC72 release, CC73 attack, CC75 decay, CC91 envío de reverb, CC93 envío
+  (los propios del motor, donde los tiene; WEST: RES y FOLD), CC72 release, CC73 attack, CC75 decay, CC91 envío de reverb, CC93 envío
   de chorus, CC94 envío de delay; **CC16–23** los ocho valores propios del motor (las perillas de EDIT 1 / EDIT 2,
   E1–E8, sea cual sea el motor: CC16 es el KNOB 1 de EDIT 1), **CC102 / CC103** cutoff / resonancia del filtro post,
   **CC104** drive, **CC105** sustain (0.6.96). CC1 (rueda de modulación), CC11 (expresión) y el aftertouch de canal son fuentes de

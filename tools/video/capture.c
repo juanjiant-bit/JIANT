@@ -111,7 +111,7 @@ static void song_build(void)
     sound(T_ARP, "LOFI", "PULSE LD");
     sound(T_DRUM, "DRUM", "DRUM-X");
     sound(T_PAD, "FM6", "PAD");
-    sound(T_ZAP, "NOISE", "WIND");
+    sound(T_ZAP, "WEST", "WIND");
     for (k = 0; k < NTRK; k++) {
         track_defaults_steps(&trk[k]);
         trk[k].p[P_ROOT] = 9; trk[k].p[P_SCALE] = 2;          /* A minor */

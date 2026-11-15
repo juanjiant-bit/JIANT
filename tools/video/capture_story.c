@@ -141,7 +141,7 @@ static void song_build(void)
     sound(T_BRASS, "FM6", "BRASS");
     sound(T_DRUM, "DRUM", "DRUM-X");
     sound(T_CHOIR, "VOICE", "CHOIR AAH");
-    sound(T_ANVIL, "NOISE", "METAL");
+    sound(T_ANVIL, "WEST", "METAL");
     for (k = 0; k < NTRK; k++) {
         track_defaults_steps(&trk[k]);
         trk[k].p[P_ROOT] = 2; trk[k].p[P_SCALE] = 2;     /* D minor */

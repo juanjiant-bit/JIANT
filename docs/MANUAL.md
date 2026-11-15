@@ -815,14 +815,14 @@ keep controlling the macros on every page) until you press LFO again. F3 rolls n
 
 ## 4. Engines
 
-Twelve engines, all synthesis, no samples: ANALOG, FM6, PHASE, **MATH** (LOFI until V10.6e), VOICE, WHEEL, NOISE,
+Twelve engines, all synthesis, no samples: ANALOG, FM6, PHASE, **MATH** (LOFI until V10.6e), VOICE, WHEEL, **WEST** (west coast: fold and low-pass gate; NOISE until V10.7.35),
 DRUM-X, ANIMAL, **STRING** (a plucked, struck or bowed string, and guitar feedback), **ADD** (additive) and **EXT**
 (external signals: the USB audio input, or SWARM, the Bluetooth around it). Any engine can go on any track. Pick them
 with **PRESETS** (one list over every engine) or with KNOB 2 (ENG) on SAVE > PRESETS. Each engine's four main knobs (the
 ones its being's shape follows; on HOME until V10.7.23, on EDIT now) are listed too.
 
 **The order** (V10.6e): PRESETS, KNOB 2 (ENG) and the web editor's lists show the engines as **DRUM-X, ANALOG, PHASE,
-FM6, VOICE, ANIMAL** (the tracks at power-on, T1–T6), then MATH, WHEEL, NOISE, STRING, ADD, EXT. Only the order you see
+FM6, VOICE, ANIMAL** (the tracks at power-on, T1–T6), then MATH, WHEEL, WEST, STRING, ADD, EXT. Only the order you see
 changed: projects, user presets, favourites and backups name engines by their numbers, which stay, so everything saved
 before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see [14](#14-midi-and-usb)).
 
@@ -838,7 +838,7 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see [14](#14-midi-
 | **MATH** (V10.6e) | CHIP, WAVE (BYTE / FLOAT), ALGO, VAR | MOTION, GRIT (FLOAT: FEEDBK), BEND, LOOP | ALGO, VAR, MOTION, REL |
 | **VOICE** | VOWEL, VOWEL2, TALK, SHIFT | BUZZ, BREATH, Q, RAND | VOWEL, BUZZ, BREATH, TALK |
 | **WHEEL** | REG, SUB, BODY, TOP | COLOR: PERC, CLICK, DRIVE, SPEED (the rotor's; was ROTOR) | REG, PERC, DRIVE, SPEED |
-| **NOISE** | MODE, COLOR, FREQ, PEAK | TRK, DENSE, DRIFT, CRUSH | FREQ, PEAK, COLOR, REL |
+| **WEST** (V10.7.36) | FOLD, SYMM, MOD, RATIO | GATE, DECAY, RES, DUST | FOLD, MOD, DECAY, DUST |
 | **DRUM** (DRUM-X) | MORPH, TUNE, TONE, DECAY | NOISE, FM ENV, FOLD, DRIVE | MORPH, TUNE, TONE, DECAY |
 | **ANIMAL** (0.8.3) | MODE, PRESS, CHAOS, SIZE | SWEEP, RATE, GROUP, TEMP | PRESS, SWEEP, RATE, SIZE |
 | **STRING** | EXCITE, DECAY, BRIGHT, POS | STRETCH, BODY, SIZE, BOW | (EXCITE FDBK: the guitar feedback's MOVE, GAIN, DIST, SPEAKR, BLOOM) |
@@ -882,7 +882,7 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see [14](#14-midi-
 - **WHEEL**: a drawbar organ: registrations (REG), percussion (PERC: OFF, 2ND, 3RD, 2SOFT, 3SOFT, 2SLOW, 3SLOW),
   key click, drive, SPEED (the rotor's: OFF, SLOW, FAST). EDIT > **ROTOR** (WHEEL only): **DEPTH** (how much the rotary speaker
   swirls: 100 % as before, 0 % a still speaker) and **DUST** (0–100 %: an old organ's crackle and hiss while it plays).
-- **NOISE**: coloured and metallic noise. MODE: ANLG, DUST, LFSR, META (DUST is only the crackle: at DENS 0 it still crackles softly). PEAK is its own resonance.
+- **WEST** (V10.7.36, in NOISE's place): west-coast synthesis, a folded sine through a low-pass gate; see [WEST](#west-west-coast-v10736) below.
 - **DRUM**: DRUM-X, see [5](#5-drum-x).
 - **ANIMAL**: animal calls from physical models, see [ANIMAL](#animal-083) below.
 - **STRING**: a plucked, struck or bowed string (Karplus-Strong). EXCITE NOISE PLUCK PICK HAMMR STICK sets how it is
@@ -911,6 +911,41 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see [14](#14-midi-
     (FEEDBACK): hold a note and push the **mod wheel** (MODW → GAIN): it sustains, then turns into its octave,
     singing; pull back and it dies. **Aftertouch** moves SPEAKR (a step aside: the octave to the twelfth). In
     LEGATO, hammer-ons and pull-offs need no new pick, and bends keep the feedback in tune.
+
+
+### WEST: west coast (V10.7.36)
+
+WEST takes NOISE's place (engine 11: its number, its PROGRAM CHANGE numbers). It is a west-coast voice: a **sine**
+whose phase a second sine modulates (FM), into a **wavefolder** that bends the wave back on itself, into a **low-pass
+gate**: a low-pass filter and a VCA driven together by one envelope through a model of a **vactrol** (a lamp lighting a
+light-dependent resistor: it opens quickly and closes late, slower as it darkens). A note *strikes* it: a pluck, a
+bongo, a bell; held long, a drone.
+
+| | EDIT 1 (FOLD) | EDIT 2 (GATE) |
+| --- | --- | --- |
+| KNOB 1 | **FOLD**: the folder's gain, x1 .. x9. The wave folds over itself: more and more (odd) harmonics, metallic and alive, its level the same | **GATE**: what the gate does: 0 a low-pass alone (the level stays, the highs close), 64 both (the classic), 127 a VCA alone (the folds stay, the level falls) |
+| KNOB 2 | **SYMM**: an offset into the folder: asymmetric folds, even harmonics (the 2nd, a hollow, reedy colour) | **DECAY**: the strike, 5 ms .. 4 s; past 88 a held note keeps the gate partly open (127: open while held, a drone); let go, it closes within ~150 ms |
+| KNOB 3 | **MOD**: FM depth from the second sine into the first (index up to ~5) | **RES**: the gate's filter resonance (a ring on the strike) |
+| KNOB 4 | **RATIO**: the modulator's ratio to the note: 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 (1.41, 1.73, 2.76, 5.40: bells and bars) | **DUST**: noise into the gate. 1–72 crackle (random impulses, 1 .. 600 a second) that also *pings* the gate (ghost notes, drops); 72–96 the sine fades out (the impulses alone); 96–127 hiss comes in (white noise, full at 127). 0: none at all |
+
+- **Velocity**: a harder note folds more and opens the gate's ceiling (±10 semitones): brighter and louder.
+- **The track's macros**: FLT (CUT, the matrix's CUT, LIFE's filter) moves the gate's ceiling, SHP folds (an LFO on
+  SHAPE breathes the folds), PIT the pitch. The ceiling follows the key by half, the closed gate the key itself.
+  LIFE (its per-voice wander of the shape), DRONE, UNISON and the MOD matrix's E1–E8 work as on every engine.
+- **The strike also folds**: the fold follows the gate's level (half of it when closed), so a pluck's timbre blooms
+  and darkens with its level, the way a west-coast patch does.
+- **Presets** (WEST PLUCK and the others first in the list): **WEST PLUCK**, **BONGO**, **MARIMBA**, **WEST BELL**,
+  **GAMELAN**, **FOLD BASS**, **RUBBER BASS**, **WEST LEAD**, **FOLD LEAD** (pressure folds it), **FOLD DRONE** (the
+  folds breathing), **DUST DRONE**, **INIT WEST**; then NOISE's eight, remade with DUST: **WIND**, **RAIN** (the dust
+  pings the gate: drops at the note), **ARCADE**, **METAL**, **SEA**, **HISS PAD**, **TAPE AIR**, **INIT NOISE**.
+  The generator's noise and texture roles pick SEA, TAPE AIR, HISS PAD and INIT NOISE as before.
+- **Projects and user presets made with NOISE** (V10.7.35 and before) open as WEST in a DUST patch (nothing to do):
+  NOISE's noise modes become DUST (ANLG's white noise: DUST 127; DUST's impulses: DUST 96, the sine silent), the gate a
+  low-pass alone (GATE 0) held as open as FREQ was (a pink or brown COLOR a little less: DECAY 88–127), PEAK its RES;
+  LFSR and META, the register tones, a folded, modulated tone (FOLD 90, RATIO 0.5 or 1.41). TRK, DRIFT and CRUSH have
+  no counterpart; their automation on the EDIT values is dropped. The rest of the track (mix, sends, filter, matrix,
+  steps) is as it was. A project saved again is saved as WEST. PROGRAM CHANGE and the preset numbers still name WIND ..
+  TAPE AIR. MIDI CC74 / CC71 on a WEST track: FOLD / RES.
 
 ### ANIMAL (0.8.3)
 
@@ -1125,7 +1160,7 @@ of RAM; nothing in the sound.
 
 ### Six more engines draw their own creature (0.9.6)
 
-With 0.9.6 every engine has its own picture: ANALOG, FM6, WHEEL, NOISE, PHASE and MATH (LOFI then) draw theirs on **EDIT › SOUND**
+With 0.9.6 every engine has its own picture: ANALOG, FM6, WHEEL, NOISE (WEST since V10.7.36), PHASE and MATH (LOFI then) draw theirs on **EDIT › SOUND**
 (on the left; the scope and the chips on the right as before; 0.9.7: with **MENU › DISPLAY › SCOPE** ON — OFF, the default,
 gives the creature the whole panel, centred, the sound's name a small caption in a corner; HOME › BEING, which showed it large, went
 with V10.7.24), in the same thermal line art, the bichos' face shared with DRUM-X's beings, moving only while the track sounds:
@@ -1145,9 +1180,10 @@ with V10.7.24), in the same thermal line art, the bichos' face shared with DRUM-
 - **WHEEL: nine tube worms**, one per drawbar, as tall as its level (the registration's digits under them), each with a
   crown of as many tentacles as its harmonic; the **rotor is a current** that bends them (SLOW, FAST, its DEPTH), PERC
   makes its worm leap and shout, CLICK lets bubbles out of their mouths, DUST drifts motes.
-- **NOISE: a swarm** of protozoa round a queen: **COLOR** is how they walk (white: jittering in place; brown: drifting),
-  **FREQ** how they swirl and how wide a ring they keep, **PEAK** how tight; in DUST each impulse makes some flare and
-  jump; in LFSR and META they march in columns, one per bit of the register.
+- **WEST: the folded wave** (V10.7.36; NOISE's swarm before): two cycles of the wave exactly as the engine folds it
+  (FOLD, SYMM, MOD and RATIO bend it), scrolling with the sound; it brightens and folds further as the gate opens on a
+  strike and dims as it closes. Above it the lamp (the vactrol's light) glows on each note; DUST scatters flickering
+  motes; a face under it shuts its eyes on a strike.
 - **PHASE: a snail.** The shell's chambers sit at the **bent phase** (even at DCW 0; as DCW rises they crowd where the
   phase rushes, which is what phase distortion does), coloured by the output; **the foot's sole is the wave** (WAVE and
   WAVE2 alternating); FB frays the spiral, SUB makes the outer whorl breathe, the eyestalks pull in on each note; with
@@ -3146,7 +3182,7 @@ faded): a photo of that screen helps when you report a problem.
   - **OFF**: nothing.
 - **PROGRAM CHANGE** (0.6.72): program *n* on the channel a track plays loads the PRESETS list's sound number *n* + 1
   (every engine's presets in their order, then the user presets) into that track; the selection stays where it was.
-  (0.9.9) The engines in 0.9.8's order, ANALOG, FM6, PHASE, MATH (LOFI's number, V10.6h), VOICE, WHEEL, NOISE, DRUM, ANIMAL, whatever the
+  (0.9.9) The engines in 0.9.8's order, ANALOG, FM6, PHASE, MATH (LOFI's number, V10.6h), VOICE, WHEEL, NOISE (WEST since V10.7.36: its first eight presets, NOISE's names remade, at NOISE's numbers; the rest by the list), DRUM, ANIMAL, whatever the
   PRESETS page shows (it starts with DRUM-X now): a MIDI setup's program numbers keep loading the sounds they did.
   Programs reach the list's first 128 sounds: since 0.8.3 that ends inside ANIMAL's presets (it comes last), so the
   user presets after it are picked on the device or from the editor.
@@ -3159,7 +3195,7 @@ faded): a photo of that screen helps when you report a problem.
 - **Clock**: GLO > GLOBAL > CLOCK **USB** or **TRS** follows that input's clock and Start / Continue / Stop. With an
   external clock, TAP and GLO + PLAY restart are disabled.
 - **Controllers** (on the track the channel plays): CC5 glide, CC7 level, CC10 pan, CC71 resonance and CC74 cutoff (the
-  engine's own, where it has them), CC72 release, CC73 attack, CC75 decay, CC91 reverb send, CC93 chorus send,
+  engine's own, where it has them; WEST: RES and FOLD), CC72 release, CC73 attack, CC75 decay, CC91 reverb send, CC93 chorus send,
   CC94 delay send; **CC16–23** the engine's own eight values (EDIT 1 / EDIT 2's knobs, E1–E8, whatever the engine:
   CC16 is KNOB 1 of EDIT 1), **CC102 / CC103** the post filter's cutoff / resonance, **CC104** drive, **CC105** sustain
   (0.6.96). CC1 (mod wheel), CC11 (expression) and channel aftertouch are sources in the MOD matrix (MODW, EXPR,

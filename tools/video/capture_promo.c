@@ -142,7 +142,7 @@ static void song_build(void)
     sound(T_BLIP, "LOFI", "FLOAT ARP");
     sound(T_DRUM, "DRUM", "DRUM-X");
     sound(T_CHOIR, "VOICE", "CHOIR AAH");
-    sound(T_WIND, "NOISE", "WIND");
+    sound(T_WIND, "WEST", "WIND");
     for (k = 0; k < NTRK; k++) {
         track_defaults_steps(&trk[k]);
         trk[k].p[P_ROOT] = 5; trk[k].p[P_SCALE] = 2;     /* F minor */
