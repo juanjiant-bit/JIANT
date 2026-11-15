@@ -11,7 +11,7 @@ analog_ext 4350
 analog_morph 806
 lofi_byte_render 180
 drum_render 33
-noise_render 256
+west_render 909
 fm6_render 364
 fm6_op_run 72
 fm6_op_fb 25

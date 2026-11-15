@@ -117,9 +117,10 @@
 #                   ring's length, MS20 screaming under full scale; demos in build/filter_demo/.
 # DRUM-X (tests/drumx_test.c): the DRUM engine (src/drumx_voice.c): every lane sounds, stays under full scale and ends,
 #                   MORPH A <-> B (also while a hit rings), PITCH, the hat choke, MRPH on the knob; demos in build/drumx_demo/.
-# NOISE (tests/noise_test.c): the engine (src/eng_noise.c): COLR's slope (white, pink, brown), the filter and the
-#                   register clock following the key, META periodic at the key, no DC, no clipping at the
-#                   corners, a note from silence the same twice, the cost per voice; demos in build/noise_demo/.
+# WEST (tests/west_test.c, V10.7.36; NOISE's engine 11 before): the engine (src/eng_west.c): bounded at every value's
+#                   ends and the 256 corners, no DC, FOLD SYMM MOD heard, the low-pass gate's strike (filter, VCA,
+#                   held), velocity, DUST 0 no noise at all, the track's CUT and SHP, a note from silence the same twice,
+#                   NOISE projects opening as WEST (phys 2 -> 3); demos in build/west_demo/.
 # ANIMAL (tests/animal_test.c, 0.8.3): the engine (src/eng_animal.c): CMOS's relaxation oscillator on the key, the owner's
 #                   video (chirps at 1.0 .. 1.3 kHz with rising hooks, 2.4 .. 4.5 a second; a trill of 8 .. 10), the cricket's
 #                   carrier and chirp rate, TEMP (Dolbear), the Hopf whistle's onset by bifurcation and its pitch, every
@@ -413,9 +414,9 @@ if [ -f build/gen/felucca_tables.h ]; then
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/drumx_test" tests/drumx_test.c -lm
     mkdir -p build/drumx_demo
     run "DRUM-X: every lane sounds and ends, MORPH, PITCH, NOIS, hat choke, group mutes, demos" "$OUT/drumx_test" build/drumx_demo
-    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/noise_test" tests/noise_test.c -lm
-    mkdir -p build/noise_demo
-    run "NOISE: colour slopes, key-tracked filter and clock, META period, DC, clipping, retrigger, cost, demos" "$OUT/noise_test" build/noise_demo
+    $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/west_test" tests/west_test.c -lm
+    mkdir -p build/west_demo
+    run "WEST: bounded corners, fold, gate, velocity, DUST, macros, NOISE projects, demos" "$OUT/west_test" build/west_demo
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/animal_test" tests/animal_test.c -lm
     mkdir -p build/animal_demo
     run "ANIMAL: CMOS on the key and the owner's video, cricket, TEMP, Hopf onset, presets, DC, clipping, retrigger, demos" "$OUT/animal_test" build/animal_demo

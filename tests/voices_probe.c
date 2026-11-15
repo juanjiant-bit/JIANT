@@ -65,7 +65,7 @@ static double cost_run(uint32_t e, uint32_t pr, uint32_t nv, uint32_t mode)
     return best;
 }
 static const uint8_t COST_ENG[] = {ENGI_ANALOG, ENGI_PHASE, ENGI_LOFI, ENGI_VOICE, ENGI_WHEEL, ENGI_STRING, ENGI_ADD,
-                                   ENGI_NOISE, ENGI_ANIMAL, ENGI_DRUM, ENGI_FM6};
+                                   ENGI_WEST, ENGI_ANIMAL, ENGI_DRUM, ENGI_FM6};
 static double eng_rel[NENGINES];                        /* a voice's cost by engine, ANALOG's mean = 1 */
 static double eng_half[NENGINES];                       /* .. at half the rate, of its own full one (0: not built) */
 static void cost_table(int print)
@@ -105,7 +105,7 @@ static double q15_db(int32_t q) { return q > 0 ? 20.0 * log10(q / 32768.0) : -12
  * an_pct: ANALOG's voice as % of a half (tests/voice_fairness_test.c takes 6 "as measured"; voice.c LOAD_W_PCT's
  * estimate is 3) */
 static const double ENG_REL[NENGINES] = {[ENGI_ANALOG] = 1.00, [ENGI_PHASE] = 1.13, [ENGI_LOFI] = 1.36, [ENGI_VOICE] = 1.71,
-    [ENGI_WHEEL] = 0.86, [ENGI_STRING] = 0.85, [ENGI_ADD] = 1.16, [ENGI_NOISE] = 1.04, [ENGI_ANIMAL] = 0.70,
+    [ENGI_WHEEL] = 0.86, [ENGI_STRING] = 0.85, [ENGI_ADD] = 1.16, [ENGI_WEST] = 1.06,   /* (V10.7.36: WEST, callgrind against ANALOG; NOISE 1.04) */ [ENGI_ANIMAL] = 0.70,
     [ENGI_DRUM] = 0.69, [ENGI_FM6] = 1.40};
 #define HALF_COST 0.58
 static double st_base = 28.0, st_an = 6.0;

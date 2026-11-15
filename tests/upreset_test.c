@@ -183,6 +183,36 @@ int main(void)
         bad += check("a grid record: bank round trip", up_used(20) && !memcmp(up_rec(20), &got, sizeof got));
     }
 
+    {   /* (V10.7.36) engine 11 was NOISE: a record of it without UP_WEST_MARK (stored until V10.7.35) gets WEST's values
+         * once (core.h west_from_noise) and the mark; a marked one (stored today, UP_PUT) is kept; another engine's is
+         * only marked */
+        static const int16_t NZ[8] = {1, 30, 88, 80, 64, 105, 40, 0};   /* (NOISE's RAIN) */
+        int16_t want[8];
+        up_rec_t w = r, x = r, y = r;
+        uint32_t k;
+        w.engine = x.engine = ENGI_WEST;
+        y.engine = 2u;
+        for (k = 0; k < 8u; k++) {
+            up_set_value(&w, P_E0 + k, NZ[k]);
+            up_set_value(&x, P_E0 + k, NZ[k]);
+            up_set_value(&y, P_E0 + k, NZ[k]);
+        }
+        ok = r.packed[UP_WEST_AT] == UP_WEST_MARK && r.ver >= 4u;   /* (UP_PUT's record: marked) */
+        w.packed[UP_WEST_AT] = y.packed[UP_WEST_AT] = 0;
+        memcpy(want, NZ, sizeof want);
+        west_from_noise(want);
+        up_migrate(&w);
+        up_migrate(&x);
+        up_migrate(&y);
+        ok &= w.packed[UP_WEST_AT] == UP_WEST_MARK && y.packed[UP_WEST_AT] == UP_WEST_MARK && want[7] == 96;
+        for (k = 0; k < 8u; k++)
+            ok &= up_value(&w, P_E0 + k) == want[k] && up_value(&x, P_E0 + k) == NZ[k] && up_value(&y, P_E0 + k) == NZ[k];
+        up_migrate(&w);
+        for (k = 0; k < 8u; k++)
+            ok &= up_value(&w, P_E0 + k) == want[k];
+        bad += check("NOISE record -> WEST once (DUST), marked kept", ok);
+    }
+
     /* PHYS MODEL DRUM (before 1.0): (V10.6s) no longer the DRUM engine: from flash (a record of an older layout too)
      * and by UP_PUT the record as stored (PHYS, retired, plays as ANALOG: ui.c set_engine_of), nothing lost */
     {

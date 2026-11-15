@@ -923,7 +923,8 @@ static uint32_t quiet_tail(track_t **pp)
 #define LOAD_SHARE_Q8 154u                              /* 0.6: the two cores' share (the FM-1: the split is by cost) */
 #define LOAD_FRAME_TICKS 544u                           /* TIMER4 ticks a frame (24 MHz / 44,117.6 Hz: audio.c DAC_TICKS) */
 #define LOAD_W_PCT 1u                                   /* a weight unit of mc_cost (fx.c) as % of a half: an estimate
-                                                         * until the part is measured (FM6 4 %, LOFI / NOISE 2, else 3) */
+                                                         * until the part is measured (FM6 4 %, LOFI 2, else 3;
+                                                         * V10.7.36: WEST 3, ANALOG's cost, NOISE was 2) */
 #define LOAD_ADD_LOG2 (12u - CTL_LOG2)                 /* what the admitted voices added decays over ~93 ms (128 blocks of 32,
                                                          * the average's time: as their load shows in it, load_block) */
 static uint32_t mc_tk[NTRK];                            /* (fx.c measures it: a part's block in TIMER4 ticks, smoothed) */
@@ -938,7 +939,7 @@ static uint32_t load_cost_q8(const track_t *t)          /* a voice more of part 
         uint32_t half = mc_tk[ti] * (HALF_FRAMES / CTL) / nv;
         c = half * 25600u / (HALF_FRAMES * LOAD_FRAME_TICKS);
     } else
-        c = (e == &ENG_FM6 ? 4u : e == &ENG_LOFI || e == &ENG_NOISE ? 2u : 3u) * LOAD_W_PCT * 256u;
+        c = (e == &ENG_FM6 ? 4u : e == &ENG_LOFI ? 2u : 3u) * LOAD_W_PCT * 256u;
     return load_cores2 ? (c * LOAD_SHARE_Q8) >> 8 : c;
 }
 static void load_take(const track_t *t)                 /* a voice added: into the prediction */

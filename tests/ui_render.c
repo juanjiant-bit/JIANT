@@ -675,7 +675,7 @@ enum { S_HOME, S_HOME_IDLE, S_MESSAGE, S_MESSAGE_KEY, S_MESSAGE_NOFILE, S_PRESET
        S_VX_ANIMAL_HOME, S_VX_KIT, S_VX_KIT_HITS, S_VX_KIT_GHOST, S_VX_KIT_HOME, S_VX_KIT_MUTED,
        S_VX_BUG_BD, S_VX_BUG_SD, S_VX_BUG_CP, S_VX_BUG_CH, S_VX_BUG_OH, S_VX_BUG_TM, S_VX_BUG_RS, S_VX_BUG_CB, S_VX_BUG_GHOST,
        S_VX_BUG_FLAM, S_VX_BUG_RATCH, S_VX_BUG_QUIET,
-       S_V6_ANALOG, S_V6_ANALOG_SQR, S_V6_ANALOG_RING, S_V6_ANALOG_QUIET, S_V6_ANALOG_HOME, S_V6_ANALOG_FULL, S_V6_FM6, S_V6_FM6_ALG32, S_V6_FM6_OP, S_V6_FM6_OP2, S_V6_FM6_ENV, S_V6_FM6_ENV_REL, S_V6_FM6_HOME, S_V6_FM6_FULL, S_V6_WHEEL, S_V6_WHEEL_FAST, S_V6_WHEEL_HOME, S_V6_WHEEL_FULL, S_V6_NOISE, S_V6_NOISE_LFSR, S_V6_NOISE_WHITE, S_V6_NOISE_HOME, S_V6_NOISE_FULL, S_V6_PHASE, S_V6_PHASE_RING, S_V6_PHASE_HOME, S_V6_PHASE_FULL, S_V6_LOFI, S_V6_LOFI_FLOAT, S_V6_LOFI_PLS, S_V6_LOFI_HOME, S_V6_LOFI_FULL, S_V6_VOICE_FULL, S_V6_ANIMAL_FULL, S_VX_TRACT_A_FULL, S_VX_TRACT_M_FULL, S_VX_TRACT_A_EDIT, S_VX_TRACT_M_EDIT, S_VX_TRACT_A_HOME, S_VX_TRACT_M_HOME, S_V6_STRING, S_V6_STRING_BOW, S_V6_STRING_HOME, S_V6_STRING_FULL, S_V6_ADD, S_V6_ADD_BELL, S_V6_ADD_HOME, S_V6_ADD_FULL, S_HOME_MUT, S_HOME_FACES,
+       S_V6_ANALOG, S_V6_ANALOG_SQR, S_V6_ANALOG_RING, S_V6_ANALOG_QUIET, S_V6_ANALOG_HOME, S_V6_ANALOG_FULL, S_V6_FM6, S_V6_FM6_ALG32, S_V6_FM6_OP, S_V6_FM6_OP2, S_V6_FM6_ENV, S_V6_FM6_ENV_REL, S_V6_FM6_HOME, S_V6_FM6_FULL, S_V6_WHEEL, S_V6_WHEEL_FAST, S_V6_WHEEL_HOME, S_V6_WHEEL_FULL, S_V6_WEST, S_V6_WEST_FM, S_V6_WEST_DUST, S_V6_WEST_HOME, S_V6_WEST_FULL, S_V6_PHASE, S_V6_PHASE_RING, S_V6_PHASE_HOME, S_V6_PHASE_FULL, S_V6_LOFI, S_V6_LOFI_FLOAT, S_V6_LOFI_PLS, S_V6_LOFI_HOME, S_V6_LOFI_FULL, S_V6_VOICE_FULL, S_V6_ANIMAL_FULL, S_VX_TRACT_A_FULL, S_VX_TRACT_M_FULL, S_VX_TRACT_A_EDIT, S_VX_TRACT_M_EDIT, S_VX_TRACT_A_HOME, S_VX_TRACT_M_HOME, S_V6_STRING, S_V6_STRING_BOW, S_V6_STRING_HOME, S_V6_STRING_FULL, S_V6_ADD, S_V6_ADD_BELL, S_V6_ADD_HOME, S_V6_ADD_FULL, S_HOME_MUT, S_HOME_FACES,
        S_LIVE_RIELES, S_LIVE_RIELES_T3, S_LIVE_MANO, S_LIVE_MANO_KEYS,
        S_PL_LIST, S_PL_EDITED, S_PL_HOME, S_HELP_MACROS, S_HELP_STEP, S_HELP_TOOLS, S_STEP_BIG,
        S_MIXER_T4, S_HOME_T4, S_MOCK_HOME, S_MOCK_PRESETS, S_MOCK_SEQ, S_MOCK_DRUM, S_MOCK_MIXER, S_MOCK_DIALOG, S_MOCK_MENU,
@@ -715,7 +715,7 @@ static const char *const S_NAME[S_COUNT] = {"home", "home_idle", "message", "mes
     "vx_animal_home", "vx_kit", "vx_kit_hits", "vx_kit_ghost", "vx_kit_home", "vx_kit_muted",
     "vx_bug_bd", "vx_bug_sd", "vx_bug_cp", "vx_bug_ch", "vx_bug_oh", "vx_bug_tm", "vx_bug_rs", "vx_bug_cb", "vx_bug_ghost",
     "vx_bug_flam", "vx_bug_ratchet", "vx_bug_quiet",
-    "v6_analog", "v6_analog_sqr", "v6_analog_ring", "v6_analog_quiet", "v6_analog_home", "v6_analog_full", "v6_fm6", "v6_fm6_alg32", "v6_fm6_op", "v6_fm6_op2", "v6_fm6_env", "v6_fm6_env_rel", "v6_fm6_home", "v6_fm6_full", "v6_wheel", "v6_wheel_fast", "v6_wheel_home", "v6_wheel_full", "v6_noise", "v6_noise_lfsr", "v6_noise_white", "v6_noise_home", "v6_noise_full", "v6_phase", "v6_phase_ring", "v6_phase_home", "v6_phase_full", "v6_lofi", "v6_lofi_float", "v6_lofi_pls", "v6_lofi_home", "v6_lofi_full", "v6_voice_full", "v6_animal_full", "vx_tract_a_full", "vx_tract_m_full", "vx_tract_a_edit", "vx_tract_m_edit", "vx_tract_a_home", "vx_tract_m_home", "v6_string", "v6_string_bow", "v6_string_home", "v6_string_full", "v6_add", "v6_add_bell", "v6_add_home", "v6_add_full", "home_mutate", "home_faces",
+    "v6_analog", "v6_analog_sqr", "v6_analog_ring", "v6_analog_quiet", "v6_analog_home", "v6_analog_full", "v6_fm6", "v6_fm6_alg32", "v6_fm6_op", "v6_fm6_op2", "v6_fm6_env", "v6_fm6_env_rel", "v6_fm6_home", "v6_fm6_full", "v6_wheel", "v6_wheel_fast", "v6_wheel_home", "v6_wheel_full", "v6_west", "v6_west_fm", "v6_west_dust", "v6_west_home", "v6_west_full", "v6_phase", "v6_phase_ring", "v6_phase_home", "v6_phase_full", "v6_lofi", "v6_lofi_float", "v6_lofi_pls", "v6_lofi_home", "v6_lofi_full", "v6_voice_full", "v6_animal_full", "vx_tract_a_full", "vx_tract_m_full", "vx_tract_a_edit", "vx_tract_m_edit", "vx_tract_a_home", "vx_tract_m_home", "v6_string", "v6_string_bow", "v6_string_home", "v6_string_full", "v6_add", "v6_add_bell", "v6_add_home", "v6_add_full", "home_mutate", "home_faces",
     "live_rieles", "live_rieles_t3", "live_mano", "live_mano_keys",
     "presets_list", "presets_list_edited", "presets_list_home", "help_macros", "help_step", "help_tools", "step_big",
     "mixer_tracks4", "home_tracks4", "mock_home", "mock_presets", "mock_seq", "mock_drum", "mock_mixer", "mock_dialog", "mock_menu",
@@ -1039,7 +1039,7 @@ static void vx_bug_scene(uint32_t l, uint32_t dm, uint32_t n)
 /* (0.9.6) the six creatures of the mock-up's family (ui_engvis.c): track 1 as engine e (preset pre), the knobs k[0..7]
  * (-99: the preset's), a note (none: silent) played and rung a while, then on page (0: HOME's BEING); age: ms since the
  * note when drawn (its squash, its blink), mt: the creature's time (its phases, NOISE's swarm moving) */
-enum { ENGI_PHASE_UI = 2, ENGI_LOFI_UI = 3, ENGI_WHEEL_UI = 7, ENGI_NOISE_UI = 11 };   /* (engines.c ENGINES[]) */
+enum { ENGI_PHASE_UI = 2, ENGI_LOFI_UI = 3, ENGI_WHEEL_UI = 7, ENGI_WEST_UI = 11 };   /* (engines.c ENGINES[]) */
 static void v6_scene(uint32_t e, const char *pre, const char *page, const int16_t *k, uint32_t note, uint32_t age, uint32_t c)
 {
     uint32_t i;
@@ -1063,7 +1063,6 @@ static void v6_scene(uint32_t e, const char *pre, const char *page, const int16_
     vx_age(TSEL, c, 0);                                  /* (the note seen, age ms ago) */
     vxs.nms[c] = fm1_ms - age;
     vxs.mt[c] = 30u * 256u * 3u + c * 977u;
-    vxs.swt = vxs.mt[c] >> 8;
     if (page) go_title(page); else { ui.home = 1; ui.hlv = 0; }
 }
 static void setup(int s)
@@ -1856,11 +1855,11 @@ static void setup(int s)
     case S_V6_WHEEL_FAST: { static const int16_t K[8] = {15, 0, 0, 0, 2, 100, 60, 2}; v6_scene(ENGI_WHEEL_UI, "JAZZ PERC", "EDIT 2", K, 62, 60, 5); break; }
     case S_V6_WHEEL_HOME: v6_scene(ENGI_WHEEL_UI, "GOSPEL", 0, 0, 55, 300, 5); break;
     case S_V6_WHEEL_FULL: v6_scene(ENGI_WHEEL_UI, "ROCK DRIVE", "EDIT 1", 0, 60, 300, 5); ui_scope = 0; break;
-    case S_V6_NOISE: { static const int16_t K[8] = {1, 40, 80, 90, 64, 100, 30, 0}; v6_scene(ENGI_NOISE_UI, "RAIN", "EDIT 1", K, 60, 300, 6); break; }
-    case S_V6_NOISE_LFSR: { static const int16_t K[8] = {2, 64, 90, 40, 64, 32, 0, 40}; v6_scene(ENGI_NOISE_UI, "ARCADE", "EDIT 2", K, 60, 300, 6); break; }
-    case S_V6_NOISE_WHITE: { static const int16_t K[8] = {0, 0, 120, 10, 64, 0, 60, 0}; v6_scene(ENGI_NOISE_UI, "WIND", "EDIT 1", K, 48, 900, 6); break; }
-    case S_V6_NOISE_HOME: v6_scene(ENGI_NOISE_UI, "SEA", 0, 0, 48, 300, 6); break;
-    case S_V6_NOISE_FULL: { static const int16_t K[8] = {1, 40, 80, 90, 64, 100, 30, 0}; v6_scene(ENGI_NOISE_UI, "RAIN", "EDIT 1", K, 60, 300, 6); ui_scope = 0; break; }
+    case S_V6_WEST: { static const int16_t K[8] = {40, 0, 0, 1, 64, 8, 60, 56}; v6_scene(ENGI_WEST_UI, "RAIN", "EDIT 1", K, 60, 300, 6); break; }
+    case S_V6_WEST_FM: { static const int16_t K[8] = {100, 40, 70, 7, 80, 60, 30, 0}; v6_scene(ENGI_WEST_UI, "ARCADE", "EDIT 2", K, 60, 300, 6); break; }
+    case S_V6_WEST_DUST: { static const int16_t K[8] = {30, 40, 20, 0, 20, 124, 50, 90}; v6_scene(ENGI_WEST_UI, "WIND", "EDIT 1", K, 48, 900, 6); break; }
+    case S_V6_WEST_HOME: v6_scene(ENGI_WEST_UI, "SEA", 0, 0, 48, 300, 6); break;
+    case S_V6_WEST_FULL: { static const int16_t K[8] = {60, 20, 30, 5, 64, 80, 40, 20}; v6_scene(ENGI_WEST_UI, "RAIN", "EDIT 1", K, 60, 300, 6); ui_scope = 0; break; }
     case S_V6_PHASE: v6_scene(ENGI_PHASE_UI, "BRASS", "EDIT 1", 0, 50, 300, 7); break;
     case S_V6_PHASE_RING: { static const int16_t K[8] = {3, 2, 90, 60, 30, 1, 80, 70}; v6_scene(ENGI_PHASE_UI, "BELL", "EDIT 2", K, 62, 50, 7); break; }
     case S_V6_PHASE_HOME: v6_scene(ENGI_PHASE_UI, "CZ PIANO", 0, 0, 57, 300, 7); break;
@@ -2523,10 +2522,10 @@ int main(int argc, char **argv)
                                    S_HOME_SCOPE, S_HOME_TRK6, S_EDIT_ANALOG, S_ED_FILTER, S_ED_FOCUS, S_ENV_TRACKS, S_MOD, S_KEY_CHORD,
                                    S_SYSTEM, S_MENU_ROW, S_LY_FX_KNOBS, S_DLG_DICE_SOUND, S_EDIT_SAMPLE, S_VX_HEAD_S, S_VX_BIRD,
                                    S_VX_MAMMAL, S_VX_KIT_HITS, S_VX_HEAD_HOME, S_VX_KIT_HOME, S_VX_BUG_SD,
-                                   S_V6_ANALOG, S_V6_FM6, S_V6_FM6_OP, S_V6_FM6_OP2, S_V6_FM6_ENV, S_V6_WHEEL, S_V6_NOISE, S_V6_PHASE,
-                                   S_V6_LOFI, S_V6_LOFI_FLOAT, S_V6_ANALOG_HOME, S_V6_FM6_HOME, S_V6_WHEEL_HOME, S_V6_NOISE_HOME,
+                                   S_V6_ANALOG, S_V6_FM6, S_V6_FM6_OP, S_V6_FM6_OP2, S_V6_FM6_ENV, S_V6_WHEEL, S_V6_WEST, S_V6_PHASE,
+                                   S_V6_LOFI, S_V6_LOFI_FLOAT, S_V6_ANALOG_HOME, S_V6_FM6_HOME, S_V6_WHEEL_HOME, S_V6_WEST_HOME,
                                    S_V6_PHASE_HOME, S_V6_LOFI_HOME, S_V6_ANALOG_FULL, S_V6_FM6_FULL, S_V6_WHEEL_FULL,
-                                   S_V6_NOISE_FULL, S_V6_PHASE_FULL, S_V6_LOFI_FULL};   /* (0.9.6: the six, EDIT, HOME, the whole panel) */   /* (0.9.4: the creatures against a being) */   /* (0.8.5: the lenses everywhere) */   /* (0.8.3:
+                                   S_V6_WEST_FULL, S_V6_PHASE_FULL, S_V6_LOFI_FULL};   /* (0.9.6: the six, EDIT, HOME, the whole panel) */   /* (0.9.4: the creatures against a being) */   /* (0.8.5: the lenses everywhere) */   /* (0.8.3:
                                                                          * LENTE's three levels) */
         enum { N = 200 };
         uint32_t i, k;

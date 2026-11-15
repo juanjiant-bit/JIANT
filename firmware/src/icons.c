@@ -203,12 +203,8 @@ static uint32_t param_icon(const param_desc_t *d, int32_t v)
         return ICON_LFO_WAVE;                 /* "WAVE" is also the oscillator wave */
     if (d == &TP[P_ARATE] || d == &GP[G_SLRATE] || d == &AP_BEAT)
         return ICON_DIVISION;                 /* arp / SLICER / AUTO PAN on the tempo: a note division, not Hz */
-    if (d->names == N_NOISE_MODE)
-        return ICON_NOISE;                    /* NOISE's MODE is the source; its CLK the register clock */
     if (d->names == N_ANIMAL_MODE)
         return ICON_PHYS;                     /* (0.8.3) ANIMAL's MODE: the source model */
-    if (d == &NOISE_CLK)
-        return ICON_RATE;
     if (d == &GP[G_SLMODE])
         return ICON_SLICE;                    /* (0.6.24: "MODE" also the arp's and the glide's) */
     if (d == &TP[P_GLMODE])

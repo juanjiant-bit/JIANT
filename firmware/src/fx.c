@@ -2856,7 +2856,7 @@ static __attribute__((noinline)) void mc_job(uint32_t a)  /* core 1: the buses (
 static uint32_t mc_cost(const track_t *t)               /* a part's share of the work, roughly: its voices by engine */
 {
     const engine_t *e = ENGINES[t->engine];
-    uint32_t k, v = 0, w = e == &ENG_FM6 ? 4u : e == &ENG_LOFI || e == &ENG_NOISE ? 2u : 3u;
+    uint32_t k, v = 0, w = e == &ENG_FM6 ? 4u : e == &ENG_LOFI ? 2u : 3u;   /* (V10.7.36: WEST 3) */
     for (k = 0; k < NVOICE; k++)
         v += t->v[k].active;
     return v ? 1u + v * w : 0u;
