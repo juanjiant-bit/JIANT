@@ -73,7 +73,8 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 73 | DRIFT | 0..127 | 127 | |
 | 74 | IMAGE | 0..127 | 0 | (ANALOG PHASE MATH WHEEL STRING DRUM WEST FM6 ADD ANIMAL EXT) |
 | 74 | LYRIC | 0..25 | 0 | TEXT W1 W2 W3 W4 W5 W6 W7 W8 W9 W10 W11 W12 W13 W14 W15 W16 S1 S2 S3 S4 S5 S6 S7 S8 TEXT FIXED (VOICE) |
-| 75 | DUST | 0..127 | 127 | |
+| 75 | DUST | 0..127 | 127 | (ANALOG PHASE VOICE WHEEL STRING DRUM WEST FM6 ADD ANIMAL EXT) |
+| 75 | TIME | 0..127 | 127 | (MATH) |
 | 76 | CHORD | 0..11 | 0 | OFF TRIAD 7TH ADD9 SUS2 SUS4 MAJ MIN 7 MAJ7 MIN7 POWER |
 | 77 | VOICING | 0..3 | 0 | CLOSE LEAD OPEN +BASS |
 | 78 | DEPTH | 0..127 | 127 | |
@@ -184,7 +185,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | WEST 11 | 115 | FOLD | 0..127 | 40 | |
 | WEST 11 | 116 | SYMM | 0..127 | 0 | |
 | WEST 11 | 117 | MOD | 0..127 | 0 | |
-| WEST 11 | 118 | RATIO | 0..15 | 1 | 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 |
+| WEST 11 | 118 | RATIO | 0..31 | 1 | 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 0.5T 1T 1.41T 1.5T 1.73T 2T 2.5T 2.76T 3T 3.5T 4T 5T 5.40T 6T 7T 8T |
 | WEST 11 | 119 | GATE | 0..127 | 64 | |
 | WEST 11 | 120 | DECAY | 0..127 | 60 | |
 | WEST 11 | 121 | RES | 0..127 | 20 | |

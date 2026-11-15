@@ -175,10 +175,10 @@ int main(void)
         snprintf(name, sizeof name, "eng/ANIMAL.%s", N_ANIMAL_MODE[i]);
         vg_section(name);
     }
-    for (i = 0; i < 2u; i++) {                          /* (V10.7.36) WEST's heaviest corners: every stage on, the hiss and
-                                                         * the impulses (the core gone); the core sounding, modulated, the
-                                                         * dust pinging the gate */
-        static const int16_t WC[2][8] = {{127, 127, 127, 15, 64, 127, 127, 127}, {127, 127, 127, 15, 64, 127, 127, 60}};
+    for (i = 0; i < 2u; i++) {                          /* (V10.7.36) WEST's heaviest corners; (V10.7.37) every stage on with
+                                                         * the core sounding (DUST 72: the impulses, the core whole; past 96
+                                                         * the core is not run), FM and AM, the sine core; the triangle's */
+        static const int16_t WC[2][8] = {{127, 127, 127, 15, 64, 127, 127, 72}, {127, 127, 127, 31, 64, 127, 127, 60}};
         uint32_t k;
         vg_quiet();
         vg_part(0, ENGI_WEST, 0, 0);
@@ -186,7 +186,7 @@ int main(void)
             trk[0].p[P_E0 + k] = WC[i][k];
         for (k = 0; k < 8u; k++)
             trk_note_on(&trk[0], 48 + 4 * k, 100);
-        snprintf(name, sizeof name, "eng/WEST.%s", i ? "FM" : "HEAVY");
+        snprintf(name, sizeof name, "eng/WEST.%s", i ? "TRI" : "HEAVY");
         vg_section(name);
     }
     for (i = 0; i < 2u; i++) {                          /* (0.8.5) VOICE singing words (sing.c): 4 voices, a lyric */

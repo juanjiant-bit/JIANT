@@ -579,13 +579,13 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     }
     const dx_lane_t *patch=&dx_kit[(uint32_t)v->s[0] & (DV_NLANE-1u)];
     uint32_t hitfx=drum_hit_fx(L);
-    {   /* (V10.7.37) the kit's DECAY on a gentler curve, d (160 - |d|) / 160: the kits' 54..76 as they were within a step,
-         * its ends x / 7 (was x / 22: every sound a tick, or every one 1.5 s); each hit's velocity on its COLOR, (v - 100)
-         * / 3: an accent brighter, a soft hit darker (100, the sequencer's: as before; a high-pass sound only brighter) */
+    {   /* (V10.7.37) the kit's DECAY on a gentler curve, d (128 - |d|) / 128: the kits' 54..76 as they were within a step,
+         * its ends x / 5 (was x / 22: every sound a tick, or every one 1.5 s); each hit's velocity on its COLOR, (v - 100)
+         * / 3 over 100: an accent brighter (100, the sequencer's, and under: as before) */
         int32_t dk = clamp(p[P_E3], 0, 127) - 64, vc = ((int32_t)(L->x.sv ? L->x.sv : 127) - 100) / 3;
-        dk = dk * (160 - (dk < 0 ? -dk : dk)) / 160;
-        if (vc < 0 && ((patch->mode >> 2) & 3u) == DXF_HP)   /* (a high-pass's noise darker is louder: a soft hat or tom
-                                                         * keeps its colour, an accent still brightens it) */
+        dk -= dk * (dk < 0 ? -dk : dk) >> 7;            /* (a shift: its curve d (128 - |d|) / 128) */
+        if (vc < 0)                                      /* (an accent brighter; a soft hit as before: a high-pass's
+                                                         * noise darker would be louder) */
             vc = 0;
         dx_run_fx(patch, &L->x, p[P_E0] + dx_mot_v + L->rm + lfo_shp,
            L->st * 16 + L->rt + L->bc + (p[P_E1] - 64) * 3 + t->pfx_pit + lfo_pit,

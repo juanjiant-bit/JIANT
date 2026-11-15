@@ -30,6 +30,17 @@ const FW_ROOT = process.env.FELUCCA_ROOT || join(HERE, "..");
 
 /* (0.6.62) the installer's firmware check (index_pkg.html isJiantInfo): JIANT by its tag, an older JIANT by its six
  * tracks and v0.x, Felucca (four tracks, 1.x) and anything else not */
+/* (emu-transfer) the emulator's SEND TO / GET FROM FM-1 and its backup file (web/emu/transfer.js) against a mocked
+ * Web MIDI FM-1 (web/emu/fm1mock.mjs): the protocol model on both sides (with build/emu/felucca.wasm: run_tests.sh runs
+ * the firmware-on-both-sides part) */
+function emuTransfer() {
+  let out = "", code = 0;
+  try { out = execFileSync(process.execPath, [join(HERE, "emu/transfer_test.mjs")], { encoding: "utf8" }); }
+  catch (e) { out = String(e.stdout || ""); code = e.status || 1; }
+  const n = (out.match(/ ok$/gm) || []).length;
+  ok(code === 0 && n >= 25 && /transfer: all ok/.test(out), `emulator transfers: ${n} checks (web/emu/transfer_test.mjs)`);
+  if (code) console.log(out.split("\n").filter((l) => /FAIL|Error/.test(l)).join("\n"));
+}
 function installerCheck() {
   const html = readFileSync(join(HERE, "index_pkg.html"), "utf8");
   const src = html.slice(html.indexOf("function isJiantInfo"), html.indexOf("async function fwKind"));
@@ -1717,5 +1728,6 @@ editorIcons();
 await packages();
 await updater();
 installerCheck();
+emuTransfer();
 console.log(failed ? `WEB TESTS FAILED (${failed})` : "web tests passed");
 process.exit(failed ? 1 : 0);

@@ -143,6 +143,40 @@ int main(void)
     run_ms(100, AMP, 4000);                               /* .. and away (past FAR) */
     ok &= mod_prox < 2000;
     bad += check("V10.6z8 AIR: the smoothed, held level still follows a move within ~4 s, both ways", ok);
+    {   /* 5b. (V10.7.37, a user: PROX too slow) SLEW on a central's link: a clean step from FAR to NEAR, a packet every 10
+         * ms; the time to 90 % per SLEW (0: a packet or two), always bounded; a SPEED of before reads as its SLEW; SENS
+         * widens PROX about the middle (0: the map as before) */
+        static const uint8_t SL[4] = {0, 30, 60, 100};
+        uint32_t ms[4], k, t;
+        int32_t lo2 = 0, hi2 = 0, m0, m7;
+        uint16_t w1[1];
+        bt_set(1);
+        for (k = 0; k < 4u; k++) {
+            favorites.factory[6][21] = (uint8_t)(0x80u | SL[k]);
+            w1[0] = LV(80u);                                /* (FAR: rest there) */
+            for (t = 0; t < 300u; t++) bt_prox_step(w1, 1, 1, fm1_ms += 10u);
+            w1[0] = LV(40u);                                /* (NEAR, at once) */
+            for (t = 0; t < 400u && mod_prox < 29490; t++) {
+                bt_prox_step(w1, 1, 1, fm1_ms += 10u);
+                lo2 = mod_prox < lo2 ? mod_prox : lo2; hi2 = mod_prox > hi2 ? mod_prox : hi2;
+            }
+            ms[k] = (t + 1u) * 10u;
+        }
+        printf("prox: SLEW 0 30 60 100 %%: a step to 90 %% in %u %u %u %u ms\n", ms[0], ms[1], ms[2], ms[3]);
+        ok = ms[0] <= 30u && ms[0] < ms[1] && ms[1] < ms[2] && ms[2] < ms[3] && ms[3] >= 300u && lo2 >= 0 && hi2 <= 32767;
+        favorites.factory[6][21] = 2;                       /* (SPEED 3 of before: 1/8) */
+        ok &= bt_slew() == 60;
+        favorites.factory[6][21] = 0;
+        ok &= bt_slew() == 100;
+        bad += check("V10.7.37 PROX SLEW: 0 follows in a packet or two, slower up to 100 (as before), bounded; SPEED read as SLEW", ok);
+        m0 = bt_prox_map(55 << 8);                          /* (a little nearer than the middle, 60) */
+        favorites.factory[6][19] = 7u << 5;
+        m7 = bt_prox_map(55 << 8);
+        ok = m7 > m0 && m7 - 16384 >= (m0 - 16384) * 4 && bt_prox_map(40 << 8) == 32767 && bt_prox_map(80 << 8) == 0 && BT_MIN() == 0;
+        favorites.factory[6][19] = 0;
+        printf("prox: SENS 0 %d, SENS 7 %d (a level of 55, FAR 80 NEAR 40)\n", (int)m0, (int)m7);
+        bad += check("V10.7.37 PROX SENS 7: x4.5 about the middle (a small move sweeps it), the ends held; MIN kept", ok);
+    }
     bt_up = 0; ui.menu = 0;
     /* 6. (V10.6z8, a Discord user) GLO > SYSTEM 2 shows USB, TRS and BT; its knobs say where BT is edited, change nothing */
     {

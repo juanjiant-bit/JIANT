@@ -302,10 +302,12 @@ static const char *const N_FNMD[] = {"DUST", "BREAK", "METAL", "STEP", "SOFT", 0
 static const char *const N_FRAT[] = {"x4", "x3", "x2.76", "x2", "x1.5", "x1.41", "x1", "x0.5", 0};
 static const char *const N_FDIV[] = {"1/32", "1/16T", "1/16", "1/8", 0};
 static const char *const N_FDST[] = {"PITCH", "P75", "MIX", "F75", "FILT", 0};   /* (filter2-mod) DEST: P75 3/4 on the pitch */
-static const param_desc_t FN_DESC[9] = {{"KEY TRK", F_PCTINV, 0, 127, 127, 0}, {"NOISE", F_PCTINV, 0, 127, 127, 0},
+static const char *const N_LTIME[] = {"1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4T", "1/4", "1/2", "1/1", "NOTE", 0};
+static const param_desc_t FN_DESC[10] = {{"KEY TRK", F_PCTINV, 0, 127, 127, 0}, {"NOISE", F_PCTINV, 0, 127, 127, 0},
     {"RATE", F_PCTINV, 0, 127, 127, 0}, {"MODE", F_INT, 0, 127, 127, N_FNMD}, {"DRIVE", F_PCTINV, 0, 127, 127, 0},
     {"KEY TRK", F_PCT, 0, 127, 127, 0}, {"RATIO", F_INT, 0, 127, 127, N_FRAT}, {"DIV", F_INT, 0, 127, 127, N_FDIV},
-    {"DEST", F_INT, 0, 127, 127, N_FDST}};
+    {"DEST", F_INT, 0, 127, 127, N_FDST}, {"TIME", F_INT, 0, 127, 127, N_LTIME}};   /* (V10.7.37) MATH's RETRIG TIME (core.h
+                                                         * P_LTIME): NOTE, or the transport at a rate (eng_lofi.c lofi_tq) */
 /* (V10.7.37) a kit's EROSION (core.h P_DNZ ..), in P_GLMODE .. P_DETUNE's order: MODE DEST NOISE RATE, each as it reads */
 static const char *const N_DNMD[] = {"SOFT", "STEP", "METAL", "BREAK", "DUST"};
 static const char *const N_DDST[] = {"FILT", "F75", "MIX", "P75", "PITCH"};
@@ -313,7 +315,7 @@ static const param_desc_t DERO_DESC[4] = {{"MODE", F_ENUM, 0, 4, 0, N_DNMD}, {"D
                                           {"NOISE", F_PCT, 0, 127, 0, 0}, {"RATE", F_PCT, 0, 127, 40, 0}};
 #define DERO_ID(id) ((uint32_t)(id) - P_GLMODE < 4u)
 #define FKEYA_DESC (FN_DESC[5])
-#define FN_NAMED(d) ((d)->fmt == F_INT && (d) >= FN_DESC && (d) < FN_DESC + 9)   /* (MODE RATIO DIV DEST: right to left) */
+#define FN_NAMED(d) ((d)->fmt == F_INT && (d) >= FN_DESC && (d) < FN_DESC + 10)   /* (MODE RATIO DIV DEST: right to left) */
 static const param_desc_t *track_desc(const track_t *t, uint32_t id)
 {
     const engine_t *en = ENGINES[eng_idx(t->eng_req)];   /* (filters2: once) */
@@ -341,6 +343,8 @@ static const param_desc_t *track_desc(const track_t *t, uint32_t id)
     }
     if (id == P_LRTRG && en == &ENG_LOFI)             /* (0.6.12) LOFI's RTRG in DIGITAL's slot */
         return &LOFI_RTRG;
+    if (id == P_LTIME && en == &ENG_LOFI)             /* (V10.7.37) .. its TIME */
+        return &FN_DESC[9];
     if (id == P_TCHAN && !(FELUCCA_FM4 && t->eng_req % NENGINES == ENGI_DIGITAL))   /* (0.6.37) SHIFT's CHANCE */
         return &TRK_CHANCE;
     if (!(FELUCCA_FM4 && t->eng_req % NENGINES == ENGI_DIGITAL))   /* (0.6.43) MUTATE's four */
@@ -810,7 +814,7 @@ static const page_t PAGES[] = {
     {"WORDS", FAM_EDIT, SC_TRACK, GR_LYRIC, {P_VLANG, P_VLYR, P_VCONS, 0xFF}},   /* (0.8.5) VOICE: LANG LYRIC, (V10.6y) CONS
                                                          * where POS was (POS: EDIT 1's KNOB 1, LANG on), OCT+ TYPE
                                                          * (the lyric on the NAME screen, ui_name.c) */
-    {"RETRIG", FAM_EDIT, SC_TRACK, GR_NONE, {P_LRTRG, 0xFF, 0xFF, 0xFF}},
+    {"RETRIG", FAM_EDIT, SC_TRACK, GR_NONE, {P_LRTRG, P_LTIME, 0xFF, 0xFF}},   /* (V10.7.37: TIME, NOTE or a rate) */
     {"MORPH", FAM_EDIT, SC_TRACK, GR_MORPH, {P_MORPH, P_DRIFT, 0xFF, 0xFF}},   /* (0.6.45) ANALOG PHASE LOFI: the wave morphs;
                                                          * (0.7.8) DRIFT: the voices wander */
     {"ROTOR", FAM_EDIT, SC_TRACK, GR_NONE, {P_WRDEP, P_WDUST, 0xFF, 0xFF}},   /* (0.7.8) WHEEL: the rotor's depth, DUST */

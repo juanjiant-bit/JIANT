@@ -42,7 +42,7 @@ static void dx_mode_name(char *b, uint32_t m)        /* "FM BP+" (b: 8 bytes) */
 }
 
 /* (JIANT 0.6.54) the pages, the whole kit first, then a sound; (V10.7.37, the owner) three sound pages, four values each,
- * the sound the one a key struck last on the track (dx_follow; the panel's header names it and its side):
+ * the sound the one a key struck last on the track (dx_follow; the panel's header names it):
  *   SOUND    PITCH DECAY SIDE PMOD         SOUND 3  PM.TYPE LAYER FEEDBK SEND (the bus and how much on one knob)
  *   SOUND 2  NOISE COLOR DRIVE MODE */
 /* SOUND 3's SEND as one value: 0 OFF, then CHORUS, DELAY, REVERB 16 amounts each (1..48) */

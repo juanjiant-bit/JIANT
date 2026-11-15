@@ -1,39 +1,50 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
  * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* WEST (V10.7.36, engine 11: NOISE's slot, its number, its first eight presets' places): west-coast synthesis. A sine
- * core, phase-modulated by a second sine (MOD, RATIO), into a WAVEFOLDER (FOLD, SYMM), into a LOW-PASS GATE: a
- * low-pass filter and a VCA driven together by one envelope through a model of a vactrol (a lamp lighting a cell:
- * it opens quickly and closes late, slower the darker it gets), so a note is struck: a pluck, a bongo, a bell.
- *   FOLD   the folder's gain: the sine bent back on itself, x1 .. x9 (sin(pi/2 * g * x): its level never grows, its
- *          harmonics do, odd ones, lively and metallic). The strike folds harder (the gate's level moves it, 1/2 .. 1),
- *          and a harder note too. The gain stops short of aliasing high notes (its top harmonic under ~18 kHz).
- *   SYMM   a DC offset into the folder: asymmetric folds, even harmonics (a DC blocker after it).
- *   MOD    the modulator's depth on the core's phase (FM), up to an index of ~5.
+/* WEST (engine 11: NOISE's slot, its number, its first eight presets' places): west-coast synthesis, V10.7.37 remade
+ * after the Buchla and Serge systems (their ideas: no code of anyone's). A complex oscillator, a principal core
+ * (a sine, the Buchla 259's, or a triangle, Serge's) phase-modulated by a modulation oscillator (MOD, RATIO), into a
+ * WAVEFOLDER (FOLD, SYMM), into a LOW-PASS GATE: a low-pass and a VCA driven together by a VACTROL (an LED lighting a
+ * cell, the 292's), so a note is struck: a pluck, a bongo, a mallet, a bell.
+ *   FOLD   the folder's gain, x1 .. x10: the core bent back on itself, more folds the further (a sine core through a
+ *          sine fold: Bessel's sweep, the 259's timbre; a triangle core through a triangle fold: Serge's wave
+ *          multiplier, glassier). The folds are integrated (first-order antiderivative anti-aliasing: each sample the
+ *          fold's mean over the sample's span, not its point), so they sing instead of buzzing; the gain also stops
+ *          short of a high note's Nyquist (the triangle's sooner: its corners' harmonics go on). The light folds it (louder brighter, as an LPG patch: the folder's gain
+ *          0.4 .. 1 of FOLD with the cell's conductance), and so does a harder note.
+ *   SYMM   an offset into the folder: asymmetric folds, even harmonics (a DC blocker after it).
+ *   MOD    the modulation oscillator's depth on the core's phase (linear, through zero: FM), an index up to ~5;
+ *          past 100 it also moves the core's amplitude (AM, up to half: the sidebands of a ring).
  *   RATIO  the modulator's ratio to the note: 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 (2.76 and 5.40 a
- *          free bar's modes, 1.41 and 1.73 roots: bells).
- *   GATE   what the gate does: 0 a low-pass alone (its level stays: the ADSR's), 64 both (the classic), 127 a VCA
- *          alone (the folds as they are).
- *   DECAY  the strike's decay, 5 ms .. 4 s (DECAY_K); past 88 a held note keeps the gate partly open (127: open), a
- *          drone. A released note's gate closes within ~150 ms at most.
- *   RES    the gate's filter resonance.
- *   DUST   noise into the gate: 1..72 random impulses (crackle, 1 .. 600 a second) that also strike the gate a
- *          little (the dust pings it: ghost notes, drops); 72..96 the core fades out (the impulses alone); 96..127
- *          hiss comes in (white noise, at 127 full) and the impulses get denser (to ~2000 a second). 0: none at all.
+ *          free bar's modes, 1.41 and 1.73 roots: bells) with the sine core; then the same sixteen with a triangle
+ *          core and fold (0.5T .. 8T: Serge). (V10.7.36's values 0..15 keep their meaning.)
+ *   GATE   what the gate does: 0 a low-pass alone (the level the ADSR's), 64 both (the classic combo), 127 a VCA alone.
+ *   DECAY  the vactrol's memory: its first halving 2 ms .. 2.6 s. Struck, the LED lights the cell for ~3 ms; the
+ *          cell answers fast but not at once (~1 ms) and darkens slowly and not evenly: the darker, the slower (the
+ *          light falls fast, then a long tail). Its conductance (the light to the 0.75) opens the filter (~8.6
+ *          semitones an octave of light) and the VCA. Past 80 a held note keeps the LED lit (the ADSR's level, all
+ *          of it at 127): it sustains.
+ *   RES    the gate's filter resonance, bounded (Q up to ~3: a pinged gate rings down in pitch, the bongo's knock).
+ *   DUST   noise into the gate: 1..72 random impulses (crackle, 1 .. 600 a second) that also flash the cell (the dust
+ *          pings it: ghost notes, drops); 72..96 the core fades out (the impulses alone); 96..127 hiss comes in (white
+ *          noise, at 127 full) and the impulses get denser (to ~2000 a second). 0: none at all.
  * The track's FLT moves the gate's ceiling (CUT, the matrix's CUT, LIFE's), SHP the fold, PIT the pitch; velocity
- * folds harder and opens the ceiling (+-10 semitones). The ceiling follows the key by half, the closed gate the key.
+ * lights the cell brighter (the strike), folds harder and opens the ceiling. The ceiling follows the key by half.
  *
- * State (the voice's own: no memory of the engine's): ph[0] the core's phase (UNISON spreads it), ph[1] the
- * modulator's, ph[2] the noise's generator (seeded by the note and the unison detune); s[0] s[1] the filter, s[2]
- * the lamp (the strike's level, decaying), s[3] the dust's strikes waiting for the next step, s[4] the DC blocker,
- * s[5] the cell (the gate's level), s[6] the VCA's gain as last ramped. The envelope and the filter's coefficients
- * step every 16 samples (WS_SUB), the gain ramps between them.
+ * State (the voice's own): ph[0] the core's phase (UNISON spreads it), ph[1] the modulator's, ph[2] the noise's
+ * generator (seeded by the note and the unison detune); s[0] s[1] the filter, s[2] the strike (the LED's pulse: its
+ * level << 8 | its steps left), s[3] the dust's flashes waiting for the next step, s[4] the DC blocker, s[5] the
+ * cell's darkness (-log2 of its light, Q20: the decay runs there, its rate the light's), s[6] the VCA's gain as last
+ * ramped, s[7] the folder's last input (the antiderivative's other end). The vactrol and the filter's coefficients
+ * step every 16 samples (WS_SUB), the gains ramp between them.
  *
  * NOISE (engine 11 until V10.7.35) is gone: a project or a user preset made with it opens as WEST in a DUST patch
  * (core.h west_from_noise, project.c proj_phys_gone, upreset.c up_migrate); its first eight presets are NOISE's names
  * remade (PROGRAM CHANGE, the generator's textures 4..7 and the stored preset numbers name what they named). */
 static const char *const N_WEST_RATIO[] = {"0.5", "1", "1.41", "1.5", "1.73", "2", "2.5", "2.76",
-                                           "3", "3.5", "4", "5", "5.40", "6", "7", "8"};
+                                           "3", "3.5", "4", "5", "5.40", "6", "7", "8",
+                                           "0.5T", "1T", "1.41T", "1.5T", "1.73T", "2T", "2.5T", "2.76T",
+                                           "3T", "3.5T", "4T", "5T", "5.40T", "6T", "7T", "8T"};
 static const uint16_t WEST_RATIO[16] = {128, 256, 362, 384, 443, 512, 640, 706, 768, 896, 1024, 1280, 1383, 1536, 1792, 2048};
 /* phase increment of pitch p (1/16 semitone) past the table's top, up to one step a sample (NOISE's, kept here:
  * eng_animal.c uses it) */
@@ -64,48 +75,105 @@ static uint32_t isqrt32(uint32_t x)
     }
     return r;
 }
-#define WS_SUB 16u                                      /* the envelope's step (samples) */
+#define WS_SUB 16u                                      /* the vactrol's step (samples) */
+#define WL_DARK (15 << 20)                              /* the cell's darkness at its darkest (Q20 octaves): shut */
+/* 2^-x, x Q12 octaves (>= 0), Q15 (a quadratic between the octaves) */
+static int32_t west_exp2n(int32_t x)
+{
+    uint32_t i = (uint32_t)x >> 12, f = ((uint32_t)x & 4095u) << 4;
+    if (i >= 15u)
+        return 0;
+    return (int32_t)((65536u - ((f * 43024u) >> 16) + ((((f * f) >> 16) * 10256u) >> 16)) >> (i + 1u));
+}
+/* -log2(l / 32768), l Q15 (1 .. 32768), Q20 octaves */
+static int32_t west_log2n(int32_t l)
+{
+    int32_t e = 1, m;
+    if (l <= 0)
+        return WL_DARK;
+    while (l < 16384) {
+        l <<= 1;
+        e++;
+    }
+    m = l - 16384;                                      /* log2(1 + m) ~ m (1.3465 - 0.3465 m), m Q14 */
+    return (e << 20) - ((m * (22061 - ((5677 * m) >> 14))) >> 8);
+}
+/* the folds: f(p) (Q15) and its antiderivative F(p) over the folder's input p (a quarter turn = full scale: the
+ * core at 1, the gain at 1). tri 0: a sine fold, F the cosine (its scale is the divisor's, west_render); tri 1: a
+ * triangle fold, F its parabolas (Q15: 0 .. 1) */
+static int32_t west_f(uint32_t p, int tri)
+{
+    int32_t s = (int32_t)p;
+    if (!tri)
+        return sine_i(p);
+    if (s > 0x40000000 || s < -0x40000000)
+        s = (int32_t)(0x80000000u - p);
+    return s >> 15;
+}
+static int32_t west_F(uint32_t p, int tri)
+{
+    int32_t s = (int32_t)p;
+    if (!tri)
+        return sine_i(p + 0x40000000u);
+    if (s > 0x40000000 || s < -0x40000000) {
+        s = (int32_t)(0x80000000u - p) >> 15;
+        return 32768 - ((s * s) >> 16);
+    }
+    s >>= 15;
+    return (s * s) >> 16;
+}
 
 static void west_note_on(track_t *t, voice_t *v)
 {
     uint32_t seed = (v->note + 1u) * 0x9E3779B9u ^ (uint32_t)v->fine * 0x85EBCA6Bu;   /* (UNISON: each its own) */
     (void)t;
     v->ph[0] = v->ph[1] = 0;                            /* (from silence: the same strike every time; a sounding
-                                                         * voice keeps its phases, voice.c) */
+                                                         * voice keeps its phases, its cell and its filter: voice.c) */
     v->ph[2] = seed ? seed : 1u;
-    v->s[0] = v->s[1] = v->s[3] = v->s[4] = v->s[5] = v->s[6] = v->s[7] = 0;
-    v->s[2] = 14000 + v->vel * 147;                     /* the strike: the lamp lit, harder brighter */
+    if (!v->env_out) {                                  /* (from silence; sounding, the fold's gain and the FM's
+                                                         * depth go on from where they are: no step) */
+        v->s[2] = v->s[3] = 0;
+        v->s[0] = v->s[1] = v->s[4] = v->s[6] = v->s[7] = 0;
+        v->s[5] = WL_DARK;
+    }
+    v->s[2] = (v->s[2] & ~15) | 12;                     /* the strike: the LED lit ~4 ms (render: harder brighter) */
 }
 
 static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
     const int16_t *p = t->p;
-    int32_t symm = clamp(p[P_E1], 0, 127) * 129, md = clamp(p[P_E2], 0, 127), gate = clamp(p[P_E4], 0, 127);
-    int32_t dec = clamp(p[P_E5], 0, 127), dust = clamp(p[P_E7], 0, 127), vel = v->vel;
-    int32_t ic1 = v->s[0], ic2 = v->s[1], drv = v->s[2], pend = v->s[3], dc = v->s[4], cell = v->s[5], ga = v->s[6];
-    uint32_t cph = v->ph[0], mph = v->ph[1], inc = m->inc;   /* (state in locals: out[] may alias v->s[]) */
-    uint32_t minc = (inc >> 8) * WEST_RATIO[(uint32_t)clamp(p[P_E3], 0, 15)], dep = (uint32_t)(md * md * 13) >> 1;
-    uint32_t r = 1753000000u / (inc | 1u), k, i = 0;    /* r: ~18 kHz / the note */
-    int32_t rng = (int32_t)v->ph[2], kd = 8192 - clamp(p[P_E6], 0, 127) * 7600 / 127, hold = 0, osc = 32767, hiss = 0;
-    int32_t thr = 0, kick = dust * 200, fdep = (127 - gate) * 520, vdep = gate * 520, gcap, fg, ceil, flo;
+    int32_t md = clamp(p[P_E2], 0, 127), gate = clamp(p[P_E4], 0, 127), rt = clamp(p[P_E3], 0, 31);
+    int32_t dec = clamp(p[P_E5], 0, 127), dust = clamp(p[P_E7], 0, 127), vel = v->vel, tri = rt >> 4;
+    int32_t ic1 = v->s[0], ic2 = v->s[1], strk = v->s[2] & 15, gq = (int32_t)((uint32_t)v->s[2] >> 4), dq = v->s[3];
+    int32_t pend = 0, dc = v->s[4], dark = v->s[5], ga = v->s[6];
+    int32_t xg0 = v->s[7], F0 = 0, fv = -1;
+    uint32_t p0, cph = v->ph[0], mph = v->ph[1], inc = m->inc, off = (uint32_t)clamp(p[P_E1], 0, 127) << 22;
+    uint32_t minc = (inc >> 8) * WEST_RATIO[rt & 15], dep = (uint32_t)(md * md * 13) >> 1;   /* (state in locals:
+                                                         * out[] may alias v->s[]) */
+    uint32_t r = 1753000000u / (inc | 1u), i = 0;      /* r: ~18 kHz / the note */
+    int32_t rng = (int32_t)v->ph[2], kd = 8192 - clamp(p[P_E6], 0, 127) * 6800 / 127, hold = 0, osc = 32767, hiss = 0;
+    int32_t thr = 0, kick = dust * 200, fdep = (127 - gate) * 520, vdep = gate * 520, gcap, fg, ceil, flo, kf, k0;
+    int32_t am = md > 100 ? (md - 100) * 600 : 0;
     {   /* FOLD (+ SHP, velocity), squared: 0 .. 2016 (Q8 over x1) */
         int32_t f = clamp((p[P_E0] << 8) + m->shape - (64 << 8) + (vel - 64) * 40, 0, 127 << 8);
         fg = ((f >> 4) * (f >> 4)) >> 11;
     }
-    gcap = r >= 16u ? 4096 : r <= 3u ? 256 : (int32_t)(r - 2u) * 160;
+    gcap = r >= 16u ? 4096 : r <= 3u ? 256 : (int32_t)(r - 2u) * 180;
+    if (tri)                                            /* (the triangle's own harmonics go on: its folds a sixth as far,
+                                                         * the folded corners' rate under ~3 kHz) */
+        gcap = r >= 96u ? 4096 : r <= 6u ? 256 : (int32_t)r * 43;
     /* the gate's ceiling (+ FLT, velocity, the key by half) and its floor (the key, half an octave under it) */
     ceil = clamp((112 << 8) + m->cutoff + (vel - 64) * 48 + (m->pitch16 - 60 * 16) * 9, 0, 127 << 8);
     flo = clamp((m->pitch16 - 362) * 19 - (6 << 8), 0, ceil);
     fdep = fdep > 32767 ? 32767 : fdep;
     vdep = vdep > 32767 ? 32767 : vdep;
-    /* the strike's decay a step: DECAY_K (per sample, Q16) to the 16th; released, ~150 ms at most */
-    k = DECAY_K[v->gate ? (dec > 126 ? 126 : dec) : (dec > 64 ? 64 : dec)];
-    k = (k * k) >> 16;
-    k = (k * k) >> 16;
-    k = (k * k) >> 16;
-    k = (k * k) >> 16;
-    if (v->gate && dec > 88)
-        hold = (dec - 88) * 840;
+    /* the darkening a step (Q20 octaves) in the dark, k0, and 31 times that at full light (k0 + 30 k0 x the
+     * conductance): an octave darker in a seventieth of the time to -40 dB, the ninth in a quarter of it; the cell
+     * ~9 octaves dark (-40 dB) in 20 ms .. 10 s */
+    k0 = (west_exp2n(dec * 290) * 1693) >> 10;
+    kf = (k0 * 15) >> 5;
+    if (v->gate && dec > 80)                            /* held: the LED lit by the ADSR */
+        hold = mulq15((dec - 80) * 697, m->envq15);
     if (dust) {                                         /* DUST: the impulses' rate 2^(e8 / 256) a second */
         int32_t e8 = dust <= 72 ? dust * 33 : dust <= 96 ? 2376 : 2376 + (dust - 96) * 15;
         uint32_t rate = 1u << (e8 >> 8);
@@ -114,39 +182,70 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
         osc = dust <= 72 ? 32767 : dust >= 96 ? 0 : (96 - dust) * 1365;
         hiss = dust > 96 ? (dust - 96) * 1057 : 0;
     }
+    p0 = ((uint32_t)xg0 << 7) + off;                    /* (F0 read when needed: fv -1) */
     while (i < n) {
         uint32_t len = n - i < WS_SUB ? n - i : WS_SUB, end = i + len;
-        int32_t lf, lv, g, dga;
+        int32_t li, gc, lf, lv, g, dt, dga, dg, dd, drv = hold;
         tsvf_t c;
-        drv = hold + (((drv - hold) * (int32_t)(k >> 1)) >> 15);   /* the lamp fades */
-        drv = clamp(drv + pend, 0, 32767);              /* .. and the dust strikes it */
-        pend = 0;
-        if (drv > cell)                                 /* the cell: quick to light, slow to darken */
-            cell += (drv - cell + 1) >> 1;
-        else
-            cell += (drv - cell) >> (cell < 8192 ? 6 : 5);
-        lf = 32767 - mulq15(fdep, 32767 - cell);        /* the filter's share of it, the VCA's */
-        lv = 32767 - mulq15(vdep, 32767 - cell);
-        tsvf_coef_k(&c, flo + mulq15(ceil - flo, lf), kd);
-        g = 256 + ((fg * (128 + (cell >> 8))) >> 8);
-        if (g > gcap)
-            g = gcap;
+        if (strk) {                                     /* the strike's pulse: the LED, harder brighter */
+            drv = 11000 + vel * 171 > drv ? 11000 + vel * 171 : drv;
+            strk--;
+        }
+        li = west_exp2n(dark >> 8);                     /* the cell's light, Q15 */
+        if (drv > li) {                                 /* lit: quickly, not at once (~1.5 .. 3 ms) */
+            li += ((drv - li) * (4096 + (drv >> 3))) >> 15;
+            dark = west_log2n(li);
+        } else {                                        /* darkening: slower the darker */
+            dark += k0 + ((kf * west_exp2n((dark >> 8) * 3 >> 2)) >> 9);
+            dark = dark > WL_DARK ? WL_DARK : dark;
+        }
+        gc = dark >= WL_DARK ? 0 : west_exp2n((dark >> 8) * 3 >> 2);   /* the conductance: the light to the 0.75 */
+        lf = mulq15(fdep, (dark >> 8) * 7 >> 4);        /* the filter's share of it (~6 st an octave), the VCA's */
+        lv = 32767 - mulq15(vdep, 32767 - gc);
+        tsvf_coef_k(&c, ceil - lf < flo ? flo : ceil - lf, kd);
+        g = 256 + ((fg * (13107 + mulq15(19660, gc))) >> 15);   /* the fold: 0.4 .. 1 of FOLD with the light */
+        g = (g > gcap ? gcap : g) << 8;
+        dt = ((int32_t)(dep >> 5) * (9830 + mulq15(22937, gc))) >> 10;   /* the FM's index: 0.3 .. 1 of MOD's */
         dga = len == WS_SUB ? (lv - ga) >> 4 : (lv - ga) / (int32_t)len;
+        dg = len == WS_SUB ? (g - gq) >> 4 : (g - gq) / (int32_t)len;
+        dd = len == WS_SUB ? (dt - dq) >> 4 : (dt - dq) / (int32_t)len;
         for (; i < end; i++) {
-            int32_t x, y, v1, v2, v3;
-            if (dep) {
-                int32_t ms = sine_i(mph);
-                mph += minc;
-                x = sine_i(cph + (uint32_t)ms * dep);
-            } else {
-                x = sine_i(cph);
+            int32_t y = 0, v1, v2, v3;
+            if (osc) {                                  /* (DUST past 96: the core gone, none of it run) */
+                int32_t x, ms = 0, xg, d, F1;
+                uint32_t ph = cph, p1;
+                if (dep) {
+                    ms = sine_i(mph);
+                    mph += minc;
+                    dq += dd;
+                    ph += (uint32_t)ms * (uint32_t)dq;
+                }
+                x = tri ? osc_tri(ph + 0x40000000u) : sine_i(ph);
+                gq += dg;
+                xg = x * (gq >> 8);                     /* the folder's input: Q23, a quarter turn at 1 */
+                p1 = ((uint32_t)xg << 7) + off;
+                d = xg - xg0;
+                if ((uint32_t)(d + (1 << 18)) >= 2u << 18) {   /* the fold's mean over the sample (F's slope) */
+                    if (fv < 0)
+                        F0 = west_F(p0, tri);
+                    F1 = west_F(p1, tri);
+                    y = tri ? (F1 - F0) * 32768 / (d >> 8) : (F0 - F1) * 20861 / (d >> 8);
+                    F0 = F1;
+                    fv = 0;
+                } else {                                /* (a short span: the fold at its middle) */
+                    y = west_f(p1 - ((uint32_t)d << 6), tri);
+                    fv = -1;
+                }
+                p0 = p1;
+                xg0 = xg;
+                if (am)
+                    y = mulq15(y, 32767 - am + mulq15(am, ms));
+                dc += ((y << 8) - dc) >> 9;             /* (~14 Hz: SYMM's DC gone within ~12 ms) */
+                y -= dc >> 8;
+                if (osc != 32767)
+                    y = mulq15(y, osc);
             }
             cph += inc;
-            y = sine_i((uint32_t)(((x * g) >> 8) + symm) << 15);   /* the fold: sin(pi/2 * (g x + SYMM)) */
-            dc += ((y << 8) - dc) >> 9;                 /* (~14 Hz: SYMM's DC gone within ~12 ms) */
-            y -= dc >> 8;
-            if (osc != 32767)
-                y = mulq15(y, osc);
             if (dust) {
                 uint32_t q = noise32(&rng);
                 if (hiss)
@@ -156,10 +255,11 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
                     y += (q & 0x20000u) ? a : -a;
                     pend += (a * kick) >> 16;
                 }
+                y = clamp(y, -65535, 65535);
             }
             /* the gate's low-pass (dsp.c tsvf_lp, rounded: no DC walk at low cutoffs), at half level (the sums of
              * its products inside 32 bits with the dust's peaks) */
-            v3 = (clamp(y, -65535, 65535) >> 1) - ic2;
+            v3 = (y >> 1) - ic2;
             v1 = (c.a1 * ic1 + c.a2 * v3 + 4096) >> 13;
             v2 = ic2 + ((c.a2 * ic1 + c.a3 * v3 + 4096) >> 13);
             ic1 = clamp(2 * v1 - ic1, -150000, 150000);
@@ -168,14 +268,22 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
             out[i] += voice_amp(soft_knee(mulq15(v2 << 1, ga), 26000), m, i);
         }
         ga = lv;
+        gq = g;
+        dq = dt;
+        if (pend) {                                     /* the dust's flashes on the cell */
+            li = west_exp2n(dark >> 8) + pend;
+            dark = west_log2n(li > 32767 ? 32767 : li);
+            pend = 0;
+        }
     }
     v->s[0] = ic1;
     v->s[1] = ic2;
-    v->s[2] = drv;
-    v->s[3] = pend;
+    v->s[2] = (int32_t)((uint32_t)gq << 4) | strk;
+    v->s[3] = dq;
     v->s[4] = dc;
-    v->s[5] = cell;
+    v->s[5] = dark;
     v->s[6] = ga;
+    v->s[7] = xg0;
     v->ph[0] = cph;
     v->ph[1] = mph;
     v->ph[2] = (uint32_t)rng;
@@ -183,42 +291,55 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
 
 /* {FOLD, SYMM, MOD, RATIO, GATE, DECAY, RES, DUST}. 0..7: NOISE's names in their places, remade as DUST and noise
  * through the gate (the generator's textures are 4..7); then the west coast: plucks, bongos, mallets, bells, folded
- * basses, leads, drones (WEST_ORDER: those first) */
+ * basses, leads, drones (WEST_ORDER: those first). (V10.7.37) revoiced for the vactrol and the folds: the struck ones
+ * leave their tails to the cell (REL long: the ADSR only ends them), the held ones (DECAY past 80) sustain */
 static const preset_t WEST_PRESETS[] = {
-    {"WIND", {0, 0, 0, 1, 0, 112, 100, 120}, {90, 90, 127, 90}, 0, TAG(FX), FX(0, 30, 20, 80), PAT(5),
+    {"WIND", {0, 0, 0, 1, 0, 112, 100, 120}, {90, 90, 110, 90}, 0, TAG(FX), FX(0, 30, 20, 80), PAT(5),
      MODS(MMOD(1, PS_MODW, PD_E(6), 30), P_LWAVE, LW_DRIFT, P_LRATE, 20, P_LD_FLT, 30)},   /* MODW: it howls, gusts */
-    /* the dust pings the gate: drops of the note, each its own height and place */
-    {"RAIN", {40, 0, 0, 1, 64, 8, 60, 56}, {0, 64, 127, 50}, 0, TAG(FX), FX(0, 0, 20, 70), PAT(5),
+    /* the dust flashes the cell: drops of the note, each its own height and place */
+    {"RAIN", {30, 0, 0, 1, 64, 26, 70, 56}, {0, 64, 127, 50}, 0, TAG(FX), FX(0, 0, 20, 70), PAT(5),
      MODS(MMOD(1, PS_RAND, PD_CUT, 30), MMOD(2, PS_RAND, PD_PAN, 40))},
     /* a folded zap: ENV 2 drops it an octave into the note, RAND its ratio */
-    {"ARCADE", {100, 40, 50, 0, 80, 30, 30, 0}, {0, 80, 0, 50}, 0, TAG(FX), FX(0, 0, 10, 20), PAT(3),
+    {"ARCADE", {100, 40, 50, 16, 80, 56, 30, 0}, {0, 80, 0, 50}, 0, TAG(FX), FX(0, 0, 10, 20), PAT(3),
      MODS(MENV2(0, 40, 0, 30), MMOD(1, PS_ENV2, PD_PITCH, 63), MMOD(2, PS_RAND, PD_E(3), 20))},
-    {"METAL", {90, 30, 70, 7, 90, 70, 40, 6}, {0, 75, 40, 60}, 10, TAG(FX), FX(0, 20, 30, 45), PAT(7),
+    /* clangorous: a triangle core at a bar's second mode, folded hard, the dust's grit */
+    {"METAL", {85, 30, 75, 23, 96, 76, 30, 6}, {0, 75, 127, 70}, 10, TAG(FX), FX(0, 20, 30, 45), PAT(7),
      MODS(MMOD(1, PS_VEL, PD_CUT, 20))},
     {"SEA", {0, 0, 0, 1, 0, 104, 30, 118}, {100, 90, 120, 110}, 0, TAG(FX), FX(0, 20, 20, 80), PAT(5),
      MODS(P_LRATE, 10, P_LD_FLT, 20, P_LD_AMP, 30)},
-    {"HISS PAD", {20, 0, 0, 1, 30, 120, 60, 112}, {80, 90, 115, 100}, 0, TAG(PAD), FX(0, 40, 30, 85), PAT(5),
+    {"HISS PAD", {20, 0, 0, 1, 30, 120, 60, 112}, {80, 90, 105, 100}, 0, TAG(PAD), FX(0, 40, 30, 85), PAT(5),
      BREATHE(24, 0, 1), MODS(MMOD(1, PS_AT, PD_E(6), 30))},
     {"INIT NOISE", {0, 0, 0, 1, 127, 127, 0, 127}, {0, 64, 57, 20}, 0, TAG(FX), FX(0, 0, 0, 0)},
-    {"TAPE AIR", {0, 0, 0, 1, 20, 100, 20, 104}, {90, 90, 120, 110}, 0, TAG(FX), FX(0, 30, 25, 70), PAT(5),
+    {"TAPE AIR", {0, 0, 0, 1, 20, 100, 20, 104}, {90, 90, 115, 110}, 0, TAG(FX), FX(0, 30, 25, 70), PAT(5),
      MODS(P_LWAVE, LW_DRIFT, P_LRATE, -1, P_LD_FLT, 10)},
-    /* (V10.7.36) the west coast */
-    {"WEST PLUCK", {45, 0, 0, 1, 64, 40, 20, 0}, {0, 64, 127, 40}, 0, TAG(PLUCK), FX(0, 0, 20, 30), PAT(3)},
-    {"BONGO", {25, 10, 20, 3, 70, 30, 70, 0}, {0, 64, 127, 30}, 0, TAG(PLUCK), FX(0, 0, 10, 25), PAT(6)},
-    {"MARIMBA", {20, 0, 25, 10, 64, 50, 10, 0}, {0, 64, 127, 50}, 0, TAG(KEYS), FX(0, 0, 15, 35), PAT(3)},
-    {"WEST BELL", {15, 0, 75, 2, 100, 92, 0, 0}, {0, 64, 127, 80}, 0, TAG(BELL), FX(0, 0, 20, 55), PAT(7)},
-    {"GAMELAN", {40, 20, 55, 7, 90, 80, 15, 0}, {0, 64, 127, 70}, 0, TAG(BELL), FX(0, 10, 25, 50), PAT(7)},
-    {"FOLD BASS", {70, 30, 10, 0, 40, 60, 30, 0}, {0, 64, 127, 30}, 0, 1 | TAG(BASS), FX(0, 0, 0, 10), PAT(2)},
-    {"RUBBER BASS", {35, 0, 45, 1, 30, 35, 70, 0}, {0, 64, 127, 25}, 0, 1 | TAG(BASS), FX(0, 0, 0, 5), PAT(2)},
-    {"WEST LEAD", {50, 20, 15, 5, 70, 112, 25, 0}, {0, 64, 127, 40}, 0, 1 | TAG(LEAD), FX(0, 10, 30, 30), PAT(4),
-     MODS(P_GLIDE, 12, MMOD(1, PS_MODW, PD_E(0), 40))},            /* MODW folds it */
-    {"FOLD LEAD", {75, 45, 25, 1, 60, 118, 40, 0}, {0, 64, 127, 45}, 0, 1 | TAG(LEAD), FX(10, 0, 25, 25), PAT(4),
-     MODS(MMOD(1, PS_AT, PD_E(0), 35), MLFO(LW_SIN, 50, 6, 0))},  /* pressure folds it, a vibrato */
-    {"FOLD DRONE", {55, 10, 15, 5, 30, 126, 30, 0}, {60, 64, 127, 90}, 0, TAG(PAD), FX(0, 30, 30, 80), PAT(5),
-     MODS(MLFO(LW_TRI, 8, 0, 0), P_LD_SHP, 40)},                   /* the folds breathing slowly */
-    {"DUST DRONE", {30, 40, 20, 0, 20, 124, 50, 30}, {80, 64, 127, 100}, 0, TAG(PAD), FX(0, 20, 40, 90), PAT(5),
+    /* (V10.7.36, revoiced V10.7.37) the west coast. A sine core folded, the gate pinged: the classic pluck */
+    {"WEST PLUCK", {52, 12, 0, 1, 64, 68, 30, 0}, {0, 64, 127, 80}, 0, TAG(PLUCK), FX(0, 0, 25, 30), PAT(3)},
+    /* the bongo: a gate pinged short and resonant (its knock falls in pitch with the light), the core barely
+     * folded, a fifth above it in the FM */
+    {"BONGO", {16, 0, 22, 3, 64, 50, 100, 0}, {0, 64, 127, 70}, 0, TAG(PLUCK), FX(0, 0, 10, 25), PAT(6)},
+    /* a wooden bar: the 4th partial from the modulator, the gate mostly a low-pass, a soft mallet */
+    {"MARIMBA", {10, 0, 34, 10, 56, 66, 18, 0}, {0, 64, 110, 85}, 0, TAG(KEYS), FX(0, 0, 15, 35), PAT(3)},
+    /* a struck bell: 1.41 (inharmonic), the gate mostly a VCA (it stays bright as it rings), a long memory */
+    {"WEST BELL", {12, 0, 70, 2, 104, 78, 0, 0}, {0, 64, 127, 100}, 0, TAG(BELL), FX(0, 0, 20, 55), PAT(7)},
+    /* bronze: a free bar's 2.76 in the FM, folded asymmetric, the gate rings long */
+    {"GAMELAN", {34, 24, 52, 7, 84, 74, 22, 0}, {0, 64, 127, 100}, 0, TAG(BELL), FX(0, 10, 25, 50), PAT(7)},
+    /* a triangle core folded (Serge), the gate a low-pass mostly: it growls and closes */
+    {"FOLD BASS", {70, 30, 8, 17, 36, 70, 34, 0}, {0, 64, 100, 60}, 0, 1 | TAG(BASS), FX(0, 0, 0, 10), PAT(2)},
+    /* the octave below in the FM, a resonant low-pass gate: it bounces */
+    {"RUBBER BASS", {26, 0, 48, 0, 16, 52, 84, 0}, {0, 64, 64, 50}, 0, 1 | TAG(BASS), FX(0, 0, 0, 5), PAT(2)},
+    /* a held line: the triangle core folded, the cell kept lit while held (DECAY 112), MODW folds it */
+    {"WEST LEAD", {48, 20, 14, 21, 64, 112, 26, 0}, {0, 64, 100, 60}, 0, 1 | TAG(LEAD), FX(0, 10, 30, 30), PAT(4),
+     MODS(P_GLIDE, 12, MMOD(1, PS_MODW, PD_E(0), 40))},
+    /* the sine folded to its limit and offset, pressure folds it, a vibrato */
+    {"FOLD LEAD", {82, 46, 20, 1, 60, 120, 36, 0}, {0, 64, 92, 55}, 0, 1 | TAG(LEAD), FX(10, 0, 25, 25), PAT(4),
+     MODS(MMOD(1, PS_AT, PD_E(0), 35), MLFO(LW_SIN, 50, 6, 0))},
+    /* the folds breathing slowly (the LFO on SHP), a triangle core through a low-pass gate held open */
+    {"FOLD DRONE", {56, 10, 12, 21, 28, 127, 30, 0}, {70, 64, 60, 90}, 0, TAG(PAD), FX(0, 30, 30, 80), PAT(5),
+     MODS(MLFO(LW_TRI, 8, 0, 0), P_LD_SHP, 40)},
+    /* a held tone the dust keeps flashing, drifting */
+    {"DUST DRONE", {30, 24, 22, 5, 30, 104, 50, 30}, {80, 64, 44, 100}, 0, TAG(PAD), FX(0, 20, 40, 90), PAT(5),
      MODS(P_LWAVE, LW_DRIFT, P_LRATE, 12, P_LD_SHP, 30)},
-    {"INIT WEST", {30, 0, 0, 1, 64, 60, 0, 0}, {0, 64, 127, 40}, 0, TAG(KEYS), FX(0, 0, 0, 0)},
+    {"INIT WEST", {40, 0, 0, 1, 64, 66, 20, 0}, {0, 64, 127, 70}, 0, TAG(KEYS), FX(0, 0, 0, 0)},
 };
 static const uint8_t WEST_ORDER[] = {8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,   /* the west coast, to play */
                                      5, 7, 4, 0, 3,                              /* NOISE's textures, remade */
@@ -234,7 +355,7 @@ static const engine_t ENG_WEST = {
         {"FOLD", F_PCT, 0, 127, 40, 0},
         {"SYMM", F_PCT, 0, 127, 0, 0},
         {"MOD", F_PCT, 0, 127, 0, 0},
-        {"RATIO", F_ENUM, 0, 15, 1, N_WEST_RATIO},
+        {"RATIO", F_ENUM, 0, 31, 1, N_WEST_RATIO},
         {"GATE", F_PCT, 0, 127, 64, 0},
         {"DECAY", F_PCT, 0, 127, 60, 0},
         {"RES", F_PCT, 0, 127, 20, 0},
@@ -245,5 +366,6 @@ static const engine_t ENG_WEST = {
     .note_on = west_note_on,
     .render = west_render,
     .knob = {P_E0, P_E2, P_E5, P_E7},
-    .keep = 0x73,                /* the filter, the DC blocker, the cell, the gain (a retrigger strikes the lamp anew) */
+    .keep = 0xF3,                /* the filter, the DC blocker, the cell, the gain, the folder's input (a retrigger strikes
+                                  * the LED anew: the light from where it is) */
 };

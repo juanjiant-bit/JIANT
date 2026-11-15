@@ -225,7 +225,7 @@ static __attribute__((noinline)) void fn_tick(const track_t *t, const engine_t *
     fnb_t *b = &fnb[ti];
     uint32_t dk = e == &ENG_DRUM;                       /* (V10.7.37) a kit's EROSION (core.h P_DNZ: its values as they read) */
     int32_t d = ok ? fn_inv(t->p, P_FNZ) : dk ? t->p[P_DNZ] & 127 : 0, r = dk ? t->p[P_DNRT] & 127 : fn_inv(t->p, P_FNRT), v, dep;
-    uint32_t o = s->ph, m = dk ? (uint32_t)clamp(t->p[P_DNMD], 0, 4) : fn_mode(t->p), z, pw;
+    uint32_t o = s->ph, m = dk ? (uint32_t)t->p[P_DNMD] & 7u : fn_mode(t->p), z, pw;
     b->kq = !ok ? 0 : (int32_t)(e == &ENG_ANALOG ? fkey_rank(t->p[P_FKEY]) : (uint32_t)fn_inv(t->p, P_FKEY)) * 1024 / 27;
     b->drv = (uint8_t)(e == &ENG_ANALOG ? t->p[P_E6] & 127 : ok ? fn_inv(t->p, P_FDRV) : 0);
     b->cut = b->span = b->pit = b->pmd = s->mdep = s->src = dx_ero_pit[ti] = 0;

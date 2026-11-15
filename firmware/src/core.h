@@ -218,6 +218,9 @@ enum {                          /* per-track parameters */
 #define P_SIMG P_LN0                   /* (V10.49) a synth's EDIT > STEREO IMAGE, stored inverted (127 = 0 %: the lane level's
                                          * 127 every synth part holds); DRUM-X's lane 1 level there. (P_DXIMG is VOICE's LYRIC) */
 #define P_VLANG P_LRTRG
+#define P_LTIME P_WDUST            /* (V10.7.37, the owner) MATH's RETRIG > TIME, in WHEEL's DUST slot (127 there, every MATH
+                                         * track before it: NOTE); stored 127 - v over its names (params.c FN_DESC[9], eng_lofi.c
+                                         * lofi_tq) */
 #define P_DKEYMODE P_LRTRG        /* DRUM-X only: 0 classic, 1 extended performance octaves. */
 #define P_VLYR P_DXIMG
 /* (V10.6y, alex.knip) VOICE's CONS (EDIT > WORDS KNOB 3): its consonants' length, 50 .. 400 %, in DRUM-X's lane 2 level

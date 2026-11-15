@@ -108,11 +108,22 @@ static const param_desc_t LOFI_FDCY = {"FEEDBK", F_PCT, 0, 127, 0, 0};          
  * sample (Q16) */
 static volatile uint32_t beat_pos, beat_n;
 static volatile uint32_t bar_n;
+/* (V10.7.37, the owner) RETRIG's TIME (core.h P_LTIME): NOTE (127 stored: every MATH track before it, as ever), or a rate
+ * the slow time runs at on the transport, a step of the formula (2048 t, SYNC's 1/16) a division, whatever note plays
+ * and shared by every voice (no note-on restarts it). With a rate MOTION's knob is not used */
 static __attribute__((noinline)) uint32_t lofi_sync(uint32_t *rate)
 {
     uint32_t bl = (uint32_t)FS * 60u / (uint32_t)clamp(song.g[G_BPM], 20, 300);
     *rate = (8192u << 16) / bl;
     return (bar_n * 4u + beat_n) * 8192u + beat_pos * 8192u / bl;
+}
+/* .. as MOTION the formulas read it: a rate is SYNC (128 + m) at the speed giving one step (2048 t) a division, exactly
+ * (lofi_motion of 0 16 32 40 48 56 64 72 80: x1/16 .. x2, 1/1 .. 1/32) */
+static __attribute__((noinline)) int32_t lofi_mo(const int16_t *p)
+{
+    static const uint8_t M[9] = {80, 72, 64, 56, 48, 40, 32, 16, 0};   /* 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1/1 */
+    uint32_t k = (uint32_t)clamp(p[P_LTIME], 0, 127) * 10u >> 7;
+    return k < 9u ? 128 + M[k] : p[P_E4];
 }
 static uint32_t lofi_motion(int32_t m)
 {
@@ -258,8 +269,9 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
     int32_t held = v->s[0], cnt = v->s[1], ic1 = v->s[4], ic2 = v->s[5], l1 = v->s[3], l2 = (int32_t)v->ph[2];
     uint32_t lm = p[P_E7] ? (1u << (17u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: t's window */
     uint32_t t0 = (uint32_t)(f < 32u ? BYTE_T0[f] : 0u) << 9;    /* (0.5.1: the formula's start) */
-    uint32_t mul = lofi_motion(p[P_E4]), ts = v->ph[1], var = vr;   /* (0.5.4) MOTN: the slow time, Q8 */
-    uint32_t sy = p[P_E4] >= 128, sr = 0, sb = sy ? lofi_sync(&sr) : 0u;   /* (p6) SYNC */
+    int32_t mo = lofi_mo(p);                            /* (V10.7.37: TIME a rate, a SYNC) */
+    uint32_t mul = lofi_motion(mo), ts = v->ph[1], var = vr;   /* (0.5.4) MOTN: the slow time, Q8 */
+    uint32_t sy = mo >= 128, sr = 0, sb = sy ? lofi_sync(&sr) : 0u;   /* (p6) SYNC */
     hold *= 1 + (p[P_E5] >> 3);                         /* (0.5.4) GRIT: each sample held up to 16 x longer */
     for (i = 0; i < n; i++) {
         if (--cnt <= 0) {
@@ -304,8 +316,9 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
     const int16_t *p = t->p;
     uint32_t f = (uint32_t)p[P_E2] >> 2, tt = (uint32_t)v->s[2], tf = v->ph[0], ts = v->ph[1], i;
     uint32_t ti = inc >> 3;                             /* (t a sample, Q24: 32 a cycle of the note) */
-    uint32_t sy = p[P_E4] >= 128, sr = 0, sb = sy ? lofi_sync(&sr) : 0u;   /* (p6) SYNC */
-    uint32_t mul = lofi_motion(p[P_E4]), var = (uint32_t)clamp(p[P_E3] + ((m->shape - (64 << 8)) >> 8), 0, 127);   /*
+    int32_t mo = lofi_mo(p);                            /* (V10.7.37: TIME a rate, a SYNC) */
+    uint32_t sy = mo >= 128, sr = 0, sb = sy ? lofi_sync(&sr) : 0u;   /* (p6) SYNC */
+    uint32_t mul = lofi_motion(mo), var = (uint32_t)clamp(p[P_E3] + ((m->shape - (64 << 8)) >> 8), 0, 127);   /*
                                                          * (0.6.81: SHAPE moves VAR, as BYTE's) */
     uint32_t bs = p[P_E6] ? 13u - (uint32_t)p[P_E6] / 11u : 0u;   /* BEND: t ^ t >> 13 .. 2 */
     uint32_t lm = p[P_E7] ? (1u << (17u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: t's window */

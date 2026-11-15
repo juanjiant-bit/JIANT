@@ -14364,8 +14364,6 @@ static int test_help_line(void)
     ok &= help_line(b) && str_eq(b, "HOME+SELECT DICE  HOME+PRESETS BPM") && text_w(&AF_X, b) <= 228;
     go_title("AUTO KNOBS"); frame();
     ok &= help_line(b) && str_eq(b, "PICK A KNOB AND WHAT MOVES IT");
-    set_engine_of(TSEL, ENGI_DRUM); go_title("SOUND 2"); frame();   /* (V10.7.37: a kit's sound pages, no SOUND knob) */
-    ok &= help_line(b) && str_eq(b, "A KEY PICKS ITS SOUND  EDIT+BLACK MUTE") && text_w(&AF_X, b) <= 228;
     go_title("TOOLS"); frame();
     ok &= help_line(b) && !strncmp(b, "OCT+ ", 5);       /* (an action page: its OCT+ / OCT-) */
     go_title("ENV"); frame();

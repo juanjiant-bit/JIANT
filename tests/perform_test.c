@@ -18,7 +18,8 @@
  *    tail (DECY back after the block); STUTTER 1/16 strikes a kick 4 times a beat; 1/2 TEMPO slows the sequencer and,
  *    let go, puts it where it would have been; RANDOM moves some notes; the lane on every track (SYN / DRM saved: ALL).
  * 10. (V10.7.36) the new keys: REVERSE (the 1/16 before, backwards), TAPE STOP (slower, then silence), PITCH UP / DOWN
- *    (an octave over a bar, in time), FREEZE (the reverb's SIZE at its top, its send shut), REV ALL / DLY ALL (full wet,
+ *    (an octave over a bar, in time), FREEZE (V10.7.37: the master captured and held as a drone of crossfaded grains:
+ *    the pitch kept, seamless, the live muted, a ramp back), REV ALL / DLY ALL (full wet,
  *    the dry muted), RING (bounded, the root's sine), LIFE MAX (100 % in the block, the user's values back), GLITCH's
  *    variety: audible, bounded, no overflow, back to the live signal (bit for bit) when let go.
  * Demos (WAV) into DEMO_DIR. */
@@ -451,7 +452,7 @@ static int test_misc(void)
         {"REPEAT 1/8", PF_R8, 30000}, {"REPEAT 1/16", PF_R16, 30000}, {"REPEAT 1/32", PF_R32, 30000},
         {"REVERSE", PF_REV, 30000}, {"TAPE STOP", PF_TAPE, 60000}, {"PITCH UP", PF_PUP, 100000},
         {"PITCH DOWN", PF_PDN, 100000}, {"RING", PF_RING, 60000}, {"GLITCH", PF_GLT, 100000},
-        {"WOBBLE", PF_WOB, 60000}, {"COMB", PF_COMB, 60000}};
+        {"WOBBLE", PF_WOB, 60000}, {"COMB", PF_COMB, 60000}, {"FREEZE", PF_FRZ, 60000}};
     uint32_t c, t;
     int32_t own;
     test_signal(110, 16000, 110, 16000);
@@ -476,7 +477,7 @@ static int test_misc(void)
             in_r[t] = (t / 53u) & 1u ? 120000 : -120000;
         }
         {
-            static const int E[] = {PF_R16, PF_REV, PF_TAPE, PF_PUP, PF_PDN, PF_GLT, PF_COMB};
+            static const int E[] = {PF_R16, PF_REV, PF_TAPE, PF_PUP, PF_PDN, PF_GLT, PF_COMB, PF_FRZ};
             uint32_t j;
             for (j = 0; j < sizeof E / sizeof E[0]; j++) {
                 ev_t e2[] = {{0, PF_RING + 1}, {0, PF_WOB + 1}, {0, E[j] + 1}};
@@ -1105,6 +1106,43 @@ static int test_new(void)
         }
         bad += check("  let go: the live signal again after the ramp, bit for bit", same(40000u + 400u, 50000));
     }
+    {   /* (V10.7.37) FREEZE: at once; a 1/4 beat recorded (live meanwhile), then held: the input gone silent, the held
+         * sound goes on (the live muted), its pitch the input's, its level about it, no step at the grains' joins
+         * (seamless: none past twice the input's own largest step), a little moving (the jitter); let go: the ramp back
+         * (no step past 1/32 of the level), then the live signal bit for bit, the buffer given back */
+        ev_t ev[] = {{992, PF_FRZ + 1}, {100000, -(PF_FRZ + 1)}};
+        uint32_t c, c0, cap = 992u + 22050u / 4u + CTL;
+        int32_t own, st, pk, rel, sil;
+        double e0 = 0, e1 = 0, ea = 0, eb = 0;
+        for (t = 0; t < NT; t++) {                   /* a chord's two notes (220, 330 Hz) until 8000, then silence */
+            double y = t < 8000u ? 9000 * sin(2 * M_PI * 220 * t / FS) + 6000 * sin(2 * M_PI * 330 * t / FS) : 0;
+            in_l[t] = in_r[t] = (int32_t)lrint(y);
+        }
+        own = max_step(in_l, 0, 8000);
+        run(120, 1, ev, 2, 110000);
+        c = zc_raw(out_l, 20000u, 80000u);
+        for (t = 0; t < 8000u; t++) out_r[t] = (int32_t)lrint(9000 * sin(2 * M_PI * 220 * t / FS) + 6000 * sin(2 * M_PI * 330 * t / FS));
+        c0 = zc_raw(out_r, 0, 8000u) * 60000u / 8000u;
+        for (t = 0; t < NT; t++) out_r[t] = in_r[t] = 0;
+        for (t = 1000u; t < 6000u; t++) e0 += (double)in_l[t] * in_l[t];
+        for (t = 20000u; t < 80000u; t++) e1 += (double)out_l[t] * out_l[t];
+        for (t = 20000u; t < 50000u; t++) ea += (double)out_l[t] * out_l[t];
+        for (t = 50000u; t < 80000u; t++) eb += (double)out_l[t] * out_l[t];
+        e0 /= 5000.0;
+        e1 /= 60000.0;
+        st = max_step(out_l, cap + 600u, 99000u);
+        pk = peak(out_l, cap, 100000u);
+        rel = max_step(out_l, 99900u, 101000u);
+        sil = peak(out_l, 100400u, 110000u);
+        snprintf(what, sizeof what, "FREEZE: held after the input stops (level %.1f dB of it), pitch kept (%u crossings, %u), "
+                 "seamless (largest step %d, the input's %d), bounded (%d)", 10 * log10(e1 / e0 + 1e-12), c, c0, st, own, pk);
+        bad += check(what, same(0, 992u + 22050u / 4u - CTL) && e1 > e0 * 0.35 && e1 < e0 * 2.0 && c > c0 * 9u / 10u &&
+                     c < c0 * 11u / 10u && st <= 2 * own && pk <= 16000);
+        snprintf(what, sizeof what, "  it holds on (the halves' level %.1f dB apart); let go: a ramp (largest step %d), then "
+                 "the live signal (silence: %d), the buffer back", 10 * log10(eb / (ea + 1e-12) + 1e-12), rel, sil);
+        bad += check(what, eb > ea * 0.5 && eb < ea * 2.0 && rel <= own && sil == 0 && same(100400u, 110000u) && !sl_lent &&
+                     pf.mode == BM_NONE);
+    }
     {   /* DLY 1/16: the delay's TIME 1/16, FEEDBK 95, the dry into its send, the dry kept; let go: a bar at FEEDBK 30 */
         static int32_t ml[CTL], mr[CTL], bl[CTL], br[CTL], sd[CTL], sr[CTL];
         uint32_t i, b, ok = 1;
@@ -1164,11 +1202,11 @@ static int test_new(void)
         bad += check(what, held > dry && tail < dry / 50);
         song.g[G_DTIME] = 0;
     }
-    {   /* REV ALL / DLY ALL / FREEZE before the buses: the dry into one send, the dry muted; FREEZE shuts the reverb's */
+    {   /* REV ALL / DLY ALL before the buses: the dry into one send, the dry muted */
         static int32_t ml[CTL], mr[CTL], bl[CTL], br[CTL], sd[CTL], sr[CTL];
-        static const struct { int e; const char *n; } W[3] = {{PF_RVA, "REV ALL"}, {PF_DLA, "DLY ALL"}, {PF_FRZ, "FREEZE"}};
+        static const struct { int e; const char *n; } W[2] = {{PF_RVA, "REV ALL"}, {PF_DLA, "DLY ALL"}};
         uint32_t i, j, b;
-        for (j = 0; j < 3u; j++) {
+        for (j = 0; j < 2u; j++) {
             int ok = 1;
             host_tracks_init();
             perf_reset();
@@ -1181,51 +1219,21 @@ static int test_new(void)
                     ml[i] = mr[i] = 8000, bl[i] = br[i] = 2000, sd[i] = 100, sr[i] = 300;
                 if (perf_begin(CTL))
                     perf_pre(ml, mr, bl, br, sd, sr, CTL);
-                if (b == 30u) {
-                    if (W[j].e == PF_FRZ)
-                        ok &= ml[CTL - 1] == 8000 && sr[CTL - 1] == 0 && sd[CTL - 1] == 100 && gfx_val(GF_RSIZE) == 127;
-                    else
-                        ok &= ml[CTL - 1] == 0 && mr[CTL - 1] == 0 && bl[CTL - 1] == 0 &&
-                              (W[j].e == PF_RVA ? sr[CTL - 1] > 9900 && sd[CTL - 1] == 100 : sd[CTL - 1] > 9700 && sr[CTL - 1] == 300);
-                }
+                if (b == 30u)
+                    ok &= ml[CTL - 1] == 0 && mr[CTL - 1] == 0 && bl[CTL - 1] == 0 &&
+                          (W[j].e == PF_RVA ? sr[CTL - 1] > 9900 && sd[CTL - 1] == 100 : sd[CTL - 1] > 9700 && sr[CTL - 1] == 300);
             }
             ok &= ml[CTL - 1] == 8000 && bl[CTL - 1] == 2000 && sd[CTL - 1] == 100 && sr[CTL - 1] == 300 && !pfw.rw &&
-                  !pfw.dw && !pfw.fz;
-            snprintf(what, sizeof what, W[j].e == PF_FRZ ? "%s: the reverb's SIZE 127, nothing new into it, the dry as it was; "
-                     "let go: as before" : "%s: full wet, the dry (and the SLICER's bus) muted, all into the send; let go: as before",
+                  !pfw.dw;
+            snprintf(what, sizeof what, "%s: full wet, the dry (and the SLICER's bus) muted, all into the send; let go: as before",
                      W[j].n);
             bad += check(what, ok);
-            gfx_off[GF_RSIZE] = 0;
         }
     }
-    {   /* the song: REV ALL leaves only the reverb (the tracks' level pre-reverb: still heard); FREEZE: the cloud holds
-         * after the notes stop; DLY ALL: the delay's repeats; LIFE MAX: the sound moves, the user's LIFE back */
-        int32_t o[2 * CTL], pk_on = 0, pk_wet = 0, tail_fz = 0, tail_no = 0;
-        uint32_t f, i, m;
-        for (m = 0; m < 2u; m++) {                  /* FREEZE (m 1) or not: the tail 1.5 s after the song stops */
-            song_setup();
-            song.g[G_RTYPE] = 4;                    /* (CLOUD: SIZE full holds its line) */
-            transport_req = 1;
-            for (f = 0; f < 5u * FS; f += CTL) {
-                if (f == 2u * 44032u && m)
-                    perf_press(PF_FRZ, 1);
-                if (f == 2u * 44032u + 4096u) {
-                    transport_req = 2;
-                    for (i = 0; i < NTRK; i++)
-                        trk[i].p[P_LEVEL] = 0;      /* (the notes' own tails out of it) */
-                }
-                mix_block(o, CTL);
-                for (i = 0; f > 4u * FS && i < CTL; i++) {
-                    int32_t a = abs(o[2 * i]);
-                    if (m) tail_fz = a > tail_fz ? a : tail_fz;
-                    else tail_no = a > tail_no ? a : tail_no;
-                }
-            }
-            perf_press(PF_FRZ, 0);
-            mix_block(o, CTL);
-        }
-        snprintf(what, sizeof what, "FREEZE (CLOUD): the cloud holds after the song stops (2 s on: %d, without %d)", tail_fz, tail_no);
-        bad += check(what, tail_fz > 300 && tail_fz > 3 * tail_no);
+    {   /* the song: REV ALL leaves only the reverb (the tracks' level pre-reverb: still heard); DLY ALL: the delay's
+         * repeats; LIFE MAX: the sound moves, the user's LIFE back */
+        int32_t o[2 * CTL], pk_on = 0, pk_wet = 0;
+        uint32_t f, i;
         song_setup();
         for (i = 0; i < NTRK; i++) trk[i].p[P_REV] = 0;   /* (no send of its own: only REV ALL's) */
         transport_req = 1;

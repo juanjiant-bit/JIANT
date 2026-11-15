@@ -1,6 +1,6 @@
 # JIANT FM — User Manual
 
-**JIANT FM V10.7.36 for the M-VAVE FM-1**
+**JIANT FM V10.7.37 for the M-VAVE FM-1**
 
 > *Versión en español: [MANUAL.es.md](MANUAL.es.md).*
 
@@ -627,7 +627,7 @@ since 0.6.51: every project opens as it was.
 | EDIT 1 | E1 | E2 | E3 | E4 | every engine (see [4](#4-engines)) |
 | EDIT 2 | E5 | E6 | E7 | E8 | every engine |
 | WORDS | LANG | LYRIC | CONS (V10.6y: the consonants' length, 50–400 %; POS on EDIT 1 when LANG is on) | (OCT+ TYPE: the lyric) | VOICE (0.8.5, [words](#voice-words-and-lyrics-085)) |
-| RETRIG | RTRG | — | — | — | MATH (BYTE, FLOAT) |
+| RETRIG | RTRG | TIME (V10.7.37: NOTE, or 1/1 .. 1/32 and triplets) | — | — | MATH (BYTE, FLOAT) |
 | MORPH | MORPH | — | — | — | ANALOG (SAW..SIN), PHASE |
 | OPERATOR | OP | COARSE (the ratio, or the fixed Hz; was RATIO / FIXED) | FINE | OUTPUT (the operator's level; was LEVEL) | FM6 |
 | OP ENV | OP | STAGE | RATE | LEVEL | FM6 |
@@ -741,7 +741,7 @@ breadcrumb, **FX · MAP**. The keys and knobs do exactly what they did.
 | F5 | RANDOM |
 | G5 | COMB (a resonant comb at the scale's root) |
 | F#3 / G#3 | PITCH UP / PITCH DOWN (the whole mix, up to an octave over a bar) |
-| A#3 | FREEZE (the reverb holds its cloud) |
+| A#3 | FREEZE (the mix held as a drone) |
 | C#4 / D#4 | REV ALL / DLY ALL (full wet: only the reverb / the delay) |
 | F#4 | RING (ring modulation at the scale's root) |
 | G#4 / C#5 / D#5 | LOOP 3 / 5 / 7 |
@@ -877,7 +877,11 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see [14](#14-midi-
     crusher, BEND folds time, LOOP repeats a tiny stretch (high LOOP turns the noise into a tuned note).
   - **FLOAT** (floatbeat): CHIP becomes the resolution (4BIT, 4B/2, FULL, 1BIT), KNOB 3 **ALGO** (32 formulas made of
     sines), KNOB 4 **VAR**; EDIT 2: **MOTION, FEEDBK, BEND, LOOP**. Hold a key: the formula plays in that key.
-  - **RETRIG** page (BYTE / FLOAT): **RTRG ON** restarts the formula from the top on every note.
+  - **RETRIG** page (BYTE / FLOAT): **RTRG ON** restarts the formula from the top on every note. (V10.7.37) KNOB 2
+    **TIME**: **NOTE** (the default, as before: each note's slow time from its own start, MOTION its speed) or a tempo
+    rate, **1/1 1/2 1/4 1/8 1/16 1/32** and the triplets **1/4T 1/8T 1/16T**: then the slow time is the transport's,
+    one step of the formula's slow part a division, shared by every voice and never reset by a note (a second note goes
+    on where the first is); MOTION is not used then (SYNC as on MOTION's top half, at that rate).
 - **MORPH** (EDIT > MORPH, on ANALOG and PHASE; LOFI's went with its chip waves): the wave slides continuously toward the next ones (on ANALOG
   SAW > SQR > TRI > SIN, on PHASE toward its next shape). 0 = the wave as
   chosen. On ANALOG the **SHAPE** modulation moves the morph too, so an LFO or envelope sweeps the wave. The
@@ -922,29 +926,36 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see [14](#14-midi-
 
 ### WEST: west coast (V10.7.36)
 
-WEST takes NOISE's place (engine 11: its number, its PROGRAM CHANGE numbers). It is a west-coast voice: a **sine**
-whose phase a second sine modulates (FM), into a **wavefolder** that bends the wave back on itself, into a **low-pass
-gate**: a low-pass filter and a VCA driven together by one envelope through a model of a **vactrol** (a lamp lighting a
-light-dependent resistor: it opens quickly and closes late, slower as it darkens). A note *strikes* it: a pluck, a
-bongo, a bell; held long, a drone.
+WEST takes NOISE's place (engine 11: its number, its PROGRAM CHANGE numbers); V10.7.37 remade it. It is a west-coast voice after the
+Buchla and Serge systems: a **complex oscillator** (a principal core, a **sine** as the Buchla 259's or a **triangle**
+as Serge's, phase-modulated by a **modulation oscillator**), into a **wavefolder** that bends the wave back on itself,
+into a **low-pass gate**: a low-pass filter and a VCA driven together by a **vactrol** (an LED lighting a
+light-dependent resistor, the 292's). A note *strikes* it: the LED flashes for ~4 ms, the cell lights up in 1.5–3 ms
+(fast, not instant: the soft "thock" of a pinged gate) and darkens slowly and unevenly, fast at first, then a long
+tail that gets longer the darker it gets: a pluck, a bongo, a marimba, a bell; held long, a drone.
 
 | | EDIT 1 (FOLD) | EDIT 2 (GATE) |
 | --- | --- | --- |
-| KNOB 1 | **FOLD**: the folder's gain, x1 .. x9. The wave folds over itself: more and more (odd) harmonics, metallic and alive, its level the same | **GATE**: what the gate does: 0 a low-pass alone (the level stays, the highs close), 64 both (the classic), 127 a VCA alone (the folds stay, the level falls) |
-| KNOB 2 | **SYMM**: an offset into the folder: asymmetric folds, even harmonics (the 2nd, a hollow, reedy colour) | **DECAY**: the strike, 5 ms .. 4 s; past 88 a held note keeps the gate partly open (127: open while held, a drone); let go, it closes within ~150 ms |
-| KNOB 3 | **MOD**: FM depth from the second sine into the first (index up to ~5) | **RES**: the gate's filter resonance (a ring on the strike) |
-| KNOB 4 | **RATIO**: the modulator's ratio to the note: 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 (1.41, 1.73, 2.76, 5.40: bells and bars) | **DUST**: noise into the gate. 1–72 crackle (random impulses, 1 .. 600 a second) that also *pings* the gate (ghost notes, drops); 72–96 the sine fades out (the impulses alone); 96–127 hiss comes in (white noise, full at 127). 0: none at all |
+| KNOB 1 | **FOLD**: the folder's gain, x1 .. x9. The wave folds over itself: more and more harmonics in a singing sweep, its level the same. The folds are integrated (each sample takes the fold's mean over its span), so they stay smooth instead of buzzing; high notes fold less (no aliasing) | **GATE**: what the gate does: 0 a low-pass alone (the level stays, the highs close), 64 both (the classic combo), 127 a VCA alone (the folds stay, the level falls) |
+| KNOB 2 | **SYMM**: an offset into the folder: asymmetric folds, even harmonics (the 2nd, a hollow, reedy colour) | **DECAY**: the vactrol's memory: the cell about 40 dB dark in 20 ms (0) .. 1 s (80) .. 10 s (127). Past 80 a held note keeps the LED lit (by the ADSR's level, all of it at 127): it sustains, darker the lower; let go, the cell decays as it would |
+| KNOB 3 | **MOD**: the modulation oscillator's depth on the core (FM, linear through zero, index up to ~5); past 100 it also modulates the amplitude (AM, ring-like sidebands) | **RES**: the gate's filter resonance, bounded (a pinged gate rings down in pitch as it closes: the bongo's knock) |
+| KNOB 4 | **RATIO**: the modulator's ratio to the note: 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 with the **sine** core (Buchla: smooth, round folds); then the same sixteen with a **T**, 0.5T .. 8T, with the **triangle** core and a triangle folder (Serge: brighter, glassier folds). (1.41, 1.73, 2.76, 5.40: bells and bars) | **DUST**: noise into the gate. 1–72 crackle (random impulses, 1 .. 600 a second) that also *flash* the cell (ghost notes, drops); 72–96 the core fades out (the impulses alone); 96–127 hiss comes in (white noise, full at 127). 0: none at all |
 
-- **Velocity**: a harder note folds more and opens the gate's ceiling (±10 semitones): brighter and louder.
+- **The light colours the sound** as in a west-coast patch: the cell's conductance (its light to the 0.75) sets the
+  filter's cutoff and the VCA, and also the fold (from 0.4 to all of FOLD) and the FM index (0.3 .. all of MOD): a
+  strike blooms bright and mellows as it fades, louder is brighter.
+- **Velocity**: a harder note lights the cell brighter, folds more and opens the gate's ceiling (±10 semitones).
 - **The track's macros**: FLT (CUT, the matrix's CUT, LIFE's filter) moves the gate's ceiling, SHP folds (an LFO on
   SHAPE breathes the folds), PIT the pitch. The ceiling follows the key by half, the closed gate the key itself.
   LIFE (its per-voice wander of the shape), DRONE, UNISON and the MOD matrix's E1–E8 work as on every engine.
-- **The strike also folds**: the fold follows the gate's level (half of it when closed), so a pluck's timbre blooms
-  and darkens with its level, the way a west-coast patch does.
-- **Presets** (WEST PLUCK and the others first in the list): **WEST PLUCK**, **BONGO**, **MARIMBA**, **WEST BELL**,
-  **GAMELAN**, **FOLD BASS**, **RUBBER BASS**, **WEST LEAD**, **FOLD LEAD** (pressure folds it), **FOLD DRONE** (the
-  folds breathing), **DUST DRONE**, **INIT WEST**; then NOISE's eight, remade with DUST: **WIND**, **RAIN** (the dust
-  pings the gate: drops at the note), **ARCADE**, **METAL**, **SEA**, **HISS PAD**, **TAPE AIR**, **INIT NOISE**.
+- **Presets** (WEST PLUCK and the others first in the list; V10.7.37 revoiced and level-matched): **WEST PLUCK** (the
+  classic pinged, folded sine), **BONGO** (short, resonant: the knock falls in pitch), **MARIMBA** (the 4th partial
+  from the modulator, a soft mallet), **WEST BELL** (1.41, the gate mostly a VCA: it rings bright), **GAMELAN** (2.76,
+  asymmetric folds), **FOLD BASS** (the triangle core folded, Serge), **RUBBER BASS** (the octave below in the FM, a
+  resonant low-pass gate), **WEST LEAD** (triangle core, held open; MODW folds it), **FOLD LEAD** (pressure folds it),
+  **FOLD DRONE** (the folds breathing), **DUST DRONE**, **INIT WEST**; then NOISE's eight, remade with DUST: **WIND**,
+  **RAIN** (the dust flashes the gate: drops at the note), **ARCADE**, **METAL** (the triangle core at a bar's mode),
+  **SEA**, **HISS PAD**, **TAPE AIR**, **INIT NOISE**.
   The generator's noise and texture roles pick SEA, TAPE AIR, HISS PAD and INIT NOISE as before.
 - **Projects and user presets made with NOISE** (V10.7.35 and before) open as WEST in a DUST patch (nothing to do):
   NOISE's noise modes become DUST (ANLG's white noise: DUST 127; DUST's impulses: DUST 96, the sine silent), the gate a
@@ -1220,7 +1231,7 @@ on the tempo's grid, and **how near something is** decides what it plays and how
 
 | Source | When | How quick |
 | --- | --- | --- |
-| **PROX** | BLUETOOTH **ON** with a central (a phone, a computer) connected: the link's RSSI, ~90–130 packets a second, as the matrix's PROX reads it (its FAR / NEAR points and MIN / MAX / SPEED on MENU › SYSTEM › BLUETOOTH). Not calibrated: its own range (the highest level nearest). | fast (~12 ms on top of PROX's own smoothing) |
+| **PROX** | BLUETOOTH **ON** with a central (a phone, a computer) connected: the link's RSSI, ~90–130 packets a second, as the matrix's PROX reads it (its FAR / NEAR points and MIN / MAX / SLEW / SENS on MENU › SYSTEM › BLUETOOTH). Not calibrated: its own range (the highest level nearest). | fast (~12 ms on top of PROX's own smoothing) |
 | **AIR** | BLUETOOTH **AIR**: the **nearest** device heard (the strongest advertisement), through PROX's FAR / NEAR points when they are stored, else by how far its level is over the weakest device heard. | ~0.4 s (advertisements come a few times a second) |
 | **SELF** | nothing heard: a slow walk, mostly far, so SWARM still plays (only a source's name: the knob SELF is CHAOS since V10.6v). | slow |
 
@@ -1235,6 +1246,12 @@ advertisements is noisy: one reading could land anywhere). Leave the page while 
 **AIR** the level the matrix's PROX reads is also smoothed four times longer and moves only once it changes by more
 than about a level and a half (a hysteresis): steady where you stand, it still follows a hand in or out within a few
 seconds. (SWARM's own AIR closeness keeps its ~0.4 s.)
+
+(V10.7.37) The PROX page's knobs: **K1 MIN**, **K2 MAX** (PROX's output range), **K3 SLEW 0–100 %** (how slowly PROX
+follows: 0 a packet or two, ~30 ms to 90 % of a step, with a median of the last 3 readings; 100 the slowest, as before,
+~0.8 s to 90 %, a median of 9; in between continuous), **K4 SENS 0–7** (a gain about the middle of FAR..NEAR: 0 as
+before, 7 ×4.5, so a small move sweeps PROX end to end; it clips at MIN and MAX). A SPEED stored before reads as its
+SLEW (SPEED 1..5 = SLEW 100, 80, 60, 40, 20). The page no longer shows the four raw signal words.
 
 **FAR and NEAR.** Like DRUM-X's patches A and B, SWARM keeps **two states** and plays between them: the closeness is the
 morph, all the time, by itself (FAR at 0, NEAR at 128, every value in between mixed). EDIT › **SWARM** and **SWARM 2**
@@ -1447,8 +1464,8 @@ DRUM-X is a synthesized kit of eight sounds, **BD SD CP CH OH TM RS CB**, genera
   - **FILTER**: the kit's: TYPE, CUT, RES, DIST.
   - **OUT** (V10.7.37): **IMAGE** (was the STEREO page's, below), **CRUSH** and **LIFE** (were VOICES 3's: the track's bit
     reducer, the track's LIFE), **KEY MAP** (was KIT 4's: CLASSIC, KIK/TOM or one sound chromatic; see [The keys](#the-keys-extended-v106r)).
-  - **SOUND 1–3**, one sound: (V10.7.37) **the sound a key struck last on the track** (the panel's header names it and
-    its side: "SD · SNARE · A"; HELP says so); no SOUND knob any more, all four knobs are the sound's.
+  - **SOUND 1–3**, one sound: (V10.7.37) **the sound a key struck last on the track** (the panel's header names it:
+    "SD · SNARE"; SOUND's SIDE card the side the knobs edit); no SOUND knob any more, all four knobs are the sound's.
     - **SOUND**: PITCH, DECAY, SIDE (A / B: which side the knobs edit), PMOD (how far the pitch falls; with the filter
       GR, **SCRAPE**: below).
     - **SOUND 2**: NOISE (the kick's is its **CLICK**, below), COLOR, **DRIVE** (ON / OFF), **MODE** (wave SIN / FM /
@@ -1516,12 +1533,11 @@ changes **how** they play, not which sound. The screen says it when you press OC
     is tone and snap together and the tail is the snares (NOISE stays the balance). The factory snares' tails are a
     little drier.
   - **DECAY follows the sound**: the kit's DECAY (KIT, KNOB 4) is on a gentler curve (the factory kits' 54..76 within a
-    step of before; its ends a seventh and seven times the decay, were twenty-two times, every sound then a tick or 1.5 s
+    step of before; its ends a fifth and five times the decay, were twenty-two times, every sound then a tick or 1.5 s
     long), never past the longest a sound can ring, and it lengthens the tail alone: the pitch sweep and SNAP keep the
     sound's own time, so a long DECAY no longer smears the kick's attack.
-  - **Velocity colours the hit**: a hit's velocity moves its COLOR, (velocity − 100) / 3: an accent is brighter, a soft
-    hit darker, like a real drum (100, the sequencer's default, as before). A sound whose noise is high-passed (the
-    hats, the toms and the rim of the factory kits) only brightens: darker, its noise would get louder.
+  - **Velocity colours the accents**: a hit over velocity 100 moves its COLOR up, (velocity − 100) / 3: an accent is
+    brighter, like a real drum; 100 and below (the sequencer's default, soft hits) as before.
   - **The hi-hat choke**: a closed hat (or the pedal hat, GM 44) cuts a ringing open hat in a few milliseconds, as
     before; (V10.7.37) also an open hat struck in the same instant just before it.
 - **MIDI** (0.8.5): notes 35–81 still play the GM drum map exactly as before. The notes around it, which used to play
@@ -2902,9 +2918,13 @@ passes get it. Saved with the section. (V10.7.36: G5 no longer erases it; REC he
   a beat below ~86 BPM), then silence while held. These start on the next 1/16 while playing. Below about 81 BPM,
   REPEAT 1/8 is too long for its buffer and is shown dimmed. **PITCH UP / PITCH DOWN** (F#3 G#3): the whole mix glides
   up / down while held, an octave over about a bar, then stays there, in time; let go and it snaps back. REPEAT,
-  REVERSE, TAPE STOP, PITCH and GLITCH share one buffer: the last pressed plays, letting it go returns to the one held
-  before. **FREEZE** (A#3): the reverb holds its cloud (its SIZE at the top: CLOUD stops writing its line, the other
-  reverbs ring on), nothing new goes into it. **REV ALL / DLY ALL** (C#4 D#4): full wet, every track into the reverb /
+  REVERSE, TAPE STOP, PITCH, GLITCH, COMB and FREEZE share one buffer: the last pressed plays, letting it go returns to
+  the one held before. **FREEZE** (A#3, V10.7.37): the mix itself is frozen: from the press it captures the next quarter
+  of a beat (100–280 ms; you hear it live meanwhile), then holds it as a continuous drone, two overlapping, smoothly
+  windowed grains reading that moment forward and looping back, a little jittered (~1.5 ms) so it lives; no click, no
+  loop seam. The live mix is muted while held (KNOB 4 DEPTH lets some of it back, as for the other buffer effects);
+  let go, it ramps back to the live mix. (Before V10.7.37 FREEZE held the reverb's cloud: CLOUD's SIZE 127 still does.)
+  **REV ALL / DLY ALL** (C#4 D#4): full wet, every track into the reverb /
   the delay (its MIX at least 100), the dry muted: only the effect is heard; let go, the dry is back and the tail rings
   on. **RING** (F#4): ring modulation of the master by a sine two octaves over the selected track's scale root (C5 …
   B5), its depth wobbling once a bar; never louder than the mix. **LIFE MAX** (A#4): HOME › LIFE's LIFE, FILTER, PITCH
@@ -3325,8 +3345,7 @@ you play reaches all the tracks with a role at once, each in its own way, all fr
 - **PROX**: a modulation source from **how close the connected phone is** (its Bluetooth signal, filtered). It follows
   the phone, not a hand. On the BLUETOOTH row (CONN) press **OCT+**: the PROX page. Phone away (a metre or so): **OCT−**
   (FAR). Phone on the FM-1, top left: **OCT+** (NEAR). Then on a track's MOD page pick **SRC PROX** (e.g. DEST CUT).
-  It fades to 0 when the phone disconnects. The page also shows the link (L1, packets read / received) and the raw
-  signal words.
+  It fades to 0 when the phone disconnects. The page also shows the link (L1, packets read / received).
 - **AIR** (V10.35, an experiment): the third value of the BLUETOOTH row. The radio stops advertising (no MIDI) and only
   **listens** to every Bluetooth device around: phones, watches, headphones, TVs. PROX then follows how strongly they
   are heard, which a body or a hand near the antenna (top left of the back) shadows, so no phone is needed in your

@@ -1082,10 +1082,9 @@ static int clip_tag(char *b)
 }
 /* (V10.7.33, the owner) HELP (HOME + OCT+, ui.c ui_help): a line in the footer's place saying what the page's own keys do;
  * an action page its OCT+ / OCT- (foot_hint); else its picture's (GR_*), HOME's MACROS (250) and LIVE MIX (251), GEN (252),
- * LIFE (253), TRACKS (254: GLO's mute and solo keys, as MIXER's; its panel shows the line too), (V10.7.37) a kit's SOUND
- * pages (GR_DXSND: the sound edited the one a key struck),
+ * LIFE (253), TRACKS (254: GLO's mute and solo keys, as MIXER's; its panel shows the line too),
  * or its section's (100 + SEC_*); none: the breadcrumb. One string, the lines one after another */
-static const uint8_t HELP_K[] = {250, 251, 252, 253, 254, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, GR_DXSND, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
+static const uint8_t HELP_K[] = {250, 251, 252, 253, 254, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
 static const char HELP_S[] =
     "HOME+SELECT DICE  HOME+PRESETS BPM\0"
     "HOME+PRESETS BPM  HOME+SELECT GEN\0"
@@ -1101,7 +1100,6 @@ static const char HELP_S[] =
     "OCT+ DICE ROLES  OCT- ALL KEEP\0"
     "KEYS PICK THE STEP\0"
     "GLO+BLACK KEYS MUTE  GLO+SELECT BPM\0"
-    "A KEY PICKS ITS SOUND  EDIT+BLACK MUTE\0"
     "EDIT+SELECT DICE  EDIT+PRESETS ENGINE\0"
     "SEQ+SELECT DICE  SEQ+PRESETS STEP\0"
     "FX+SELECT DICE  HOLD FX: PERFORM KEYS\0"

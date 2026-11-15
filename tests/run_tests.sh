@@ -293,6 +293,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "COMPONENTS v2 (seq2d): the 16-bar cycle, RATCHET STUTTER MUTE ARP SEQ JUMP over their LENGTH, MONO / POLY, migration, COMP pages; (seq2f) the global lane" "$OUT/comp_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/drumx_oct_test" tests/drumx_oct_test.c -lm
     run "DRUM-X OCTAVES (0.8.5): ratchets above the kit, SHORT GHOST FLAM below, live, recorded and played back as heard, MIDI bands" "$OUT/drumx_oct_test"
+    $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/math_time_test" tests/math_time_test.c -lm
+    run "MATH RETRIG TIME (V10.7.37): NOTE restarts each note's time; a rate keeps one transport time for every voice" "$OUT/math_time_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/midi_control_test" tests/midi_control_test.c -lm
     run "USB/TRS clock, bend, sustain, ownership and panic recovery" "$OUT/midi_control_test"
     $CC -O1 -w -DFELUCCA_SPLIT=1 -Ibuild/gen -Ifirmware/src -o "$OUT/midi_control_split" tests/midi_control_test.c -lm   # (V10.7.32: KEY SPLIT out of the image, its code tested built in)
@@ -504,6 +506,7 @@ fi
 if command -v node >/dev/null 2>&1; then
     run "web pages: editor protocol, package builder, update protocol" node web/test_web.mjs
     run "web backup: capture, validation before writes, restore order" node web/test_backup.mjs
+    run "emulator <-> FM-1 transfers (web/emu/transfer.js) against a mocked Web MIDI FM-1" node web/emu/transfer_test.mjs
 else
     echo "== skip web tests (no node)"
 fi
@@ -519,6 +522,10 @@ else
     run "browser emulator: boot, keys, MIDI, screen, LEDs, PLAY, a save kept across instances, = native, cost" \
         node web/emu/emu_test.mjs build/emu/felucca.wasm "$OUT/emu_native.f32"
         run "stems from the browser build (web/emu/stems.js): a backup in, each part alone, the song once round, WAV + ZIP" node web/emu/stems_test.mjs build/emu/felucca.wasm
+    run "emulator <-> FM-1 transfers with the firmware on both sides (the backup protocol in the wasm)" node web/emu/transfer_test.mjs build/emu/felucca.wasm
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+        run "the emulator page's FM-1 panel in Chromium (a simulated FM-1 over Web MIDI)" node web/emu/browser_transfer_test.mjs
+    fi
 fi
 
 [ $fail -eq 0 ] && echo "ALL HOST TESTS PASSED" || { echo "HOST TESTS FAILED"; exit 1; }

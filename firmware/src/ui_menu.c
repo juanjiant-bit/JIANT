@@ -406,8 +406,8 @@ static struct { uint32_t t0, ts; uint8_t on, n, v[64]; } bpc __attribute__((sect
 /* (the texts one after the other, each after the one before's NUL: BPS(i) the i-th; no row padded to the longest) */
 static const char BP_P[] BTAPP_RO = "BLUETOOTH \xB7 PROX\0""SELECT: BACK\0""NOT CONNECTED\0""NOT CALIBRATED\0""OCT-  FAR: PHONE AWAY\0"
                                      "OCT+  NEAR: PHONE ON THE\0""FM-1, TOP LEFT (ANTENNA)\0""PROX FAR SET\0""PROX NEAR SET\0""LEVEL \0"
-                                     "   RAW \0""FAR \0""   NEAR \0""%\0""K1 MIN \0""%  K2 MAX \0""%  K3 SPD ";
-static const uint8_t BP_O[17] BTAPP_RO = {0, 17, 30, 44, 59, 81, 106, 131, 144, 158, 165, 173, 178, 187, 189, 197, 208};
+                                     "   RAW \0""FAR \0""   NEAR \0""%\0""MIN \0""% MAX \0""% SLEW \0""% SENS ";
+static const uint8_t BP_O[18] BTAPP_RO = {0, 17, 30, 44, 59, 81, 106, 131, 144, 158, 165, 173, 178, 187, 189, 194, 201, 209};
 #define BPS(i) (BP_P + BP_O[i])
 BTAPP_FN static void bt_prox_panel(const aafont_t *fx, const aafont_t *fm, const aafont_t *fs)   /* (the fonts
                                                                                                   * from the app: V10.14) */
@@ -441,12 +441,8 @@ BTAPP_FN static void bt_prox_panel(const aafont_t *fx, const aafont_t *fm, const
         fmt_frac(b + str_len(b), (int32_t)(d & 0xFFFFu), (int32_t)(d >> 16));
         cv_text_r(228, 64 - AF_X_CAP_Y, fx, b, T_DIM, T_SURF);
     }
-    if (bp.conn && bp.have) {                           /* (V10.18) the four words, to read off the screen */
-        for (k = 0; k < 16u; k++)
-            b[k + k / 4u] = "0123456789ABCDEF"[bp.w4[k / 4u] >> (12u - 4u * (k & 3u)) & 15u];
-        b[4] = b[9] = b[14] = ' '; b[19] = 0;
-        cv_text_r(228, 44 - AF_X_CAP_Y, fx, b, T_DIM, T_SURF);
-    }
+    /* (V10.18's four words, read off the screen while the reading was chosen: gone in V10.7.37 for SLEW and SENS, the
+     * segment full; the word used is RAW, on the LEVEL line) */
     if (bpc.on) {                                       /* (V10.6z8) a point being taken: how far */
         str_cpy(b, bpc.on > 1u ? "HOLD STILL: NEAR " : "HOLD STILL: FAR ", sizeof b);
         fmt_int(b + str_len(b), (int32_t)((fm1_ms - bpc.t0) * 100u / BPC_MS));
@@ -461,12 +457,14 @@ BTAPP_FN static void bt_prox_panel(const aafont_t *fx, const aafont_t *fm, const
     cv_text(10, 82 - AF_S_CAP_Y, fs, b, T_MID);
     for (k = 0; k < 3u; k++)
         cv_text(10, 95 + 11 * (int32_t)k - AF_X_CAP_Y, fx, BPS(4u + k), T_DIM);   /* (9 px capitals: 11 apart) */
-    str_cpy(b, BPS(14), sizeof b);                     /* (V10.61) KNOB 1 MIN, KNOB 2 MAX, KNOB 3 SPEED */
+    str_cpy(b, BPS(14), sizeof b);                     /* (V10.61) KNOB 1 MIN, KNOB 2 MAX, (V10.7.37) 3 SLEW, 4 SENS */
     fmt_int(b + str_len(b), BT_MIN());
     str_cpy(b + str_len(b), BPS(15), 16);
     fmt_int(b + str_len(b), BT_MAX() < BT_MIN() + 10 ? BT_MIN() + 10 : BT_MAX());
     str_cpy(b + str_len(b), BPS(16), 16);
-    fmt_int(b + str_len(b), (int32_t)BT_SPEED() + 1);
+    fmt_int(b + str_len(b), bt_slew());
+    str_cpy(b + str_len(b), BPS(17), 16);
+    fmt_int(b + str_len(b), BT_SENS());
     cv_text(10, 129 - AF_S_CAP_Y, fs, b, T_TEXT);       /* (inside the panel: it stood at 136, cut at the foot) */
 }
 static __attribute__((noinline)) void bt_prox_white(void)   /* (V10.7.24 white: its words TEXT, gfx.c UX_WHITE) */
@@ -475,15 +473,16 @@ static __attribute__((noinline)) void bt_prox_white(void)   /* (V10.7.24 white: 
 }
 static __attribute__((noinline)) void bt_prox_input(uint32_t up, uint32_t dn)   /* (V10.6z8: out of the full segment) */
 {
-    int32_t z = 0, v = 0, w = 0;
+    int32_t z = 0, v = 0, w = 0, x = 0;
     if (panel_enc(EN_SELECT) || panel_enc(EN_ALGO)) {
         ui.menu = 1;
         ui.force = 1;
-    } else if ((z = panel_enc(EN_K1)) != 0 || (v = panel_enc(EN_K2)) != 0 || (w = panel_enc(EN_K3)) != 0) {
-        /* (V10.61) MIN, MAX, SPEED (saved with the settings, as FAR / NEAR) */
-        BT_TUNE[0] = (uint8_t)clamp(BT_MIN() / 5 + z, 0, 18);
+    } else if ((z = panel_enc(EN_K1)) != 0 || (v = panel_enc(EN_K2)) != 0 || (w = panel_enc(EN_K3)) != 0 ||
+               (x = panel_enc(EN_K4)) != 0) {
+        /* (V10.61) MIN, MAX, (V10.7.37) SLEW in 5 % steps, SENS 0..7 (saved with the settings, as FAR / NEAR) */
+        BT_TUNE[0] = (uint8_t)(clamp(BT_MIN() / 5 + z, 0, 18) | clamp(BT_SENS() + x, 0, 7) << 5);
         BT_TUNE[1] = (uint8_t)clamp((100 - BT_MAX()) / 5 - v, 0, 18);   /* (clockwise: MAX up) */
-        BT_TUNE[2] = (uint8_t)clamp((int32_t)BT_SPEED() + w, 0, 4);
+        BT_TUNE[2] = (uint8_t)(0x80 | clamp(bt_slew() + 5 * w, 0, 100));
         ui.force = 1;
     } else if (up || dn) {
         if (!bp.conn || !bp.have) {

@@ -35,18 +35,17 @@ Qué cambió (y qué escuchar):
   de fábrica quedan un poco más secas (DRUM-X: -20 dB a los 81 ms, antes 95 ms). Es el único cambio que se oye en los
   kits de fábrica sin tocar nada; me pareció una mejora clara (así suena un redoblante real y una 909).
 - DECAY del kit (decay_*): una curva más suave. Los kits de fábrica (DECAY 54..76) quedan a menos de un paso de antes;
-  en los extremos va de un séptimo a siete veces el decay (antes de 1/22 a 22 veces: en 16 todo era un tic, el
-  redoblante duraba 19 ms; ahora 56 ms). Además el DECAY del kit alarga solo la cola: el barrido de altura y el SNAP
-  conservan el tiempo propio del sonido, así un DECAY largo no ensucia el ataque del bombo.
-- La velocidad colorea el golpe (vel_*): COLOR se mueve (velocidad - 100) / 3. En vel_SNARE se oye: a 30 el golpe es
-  oscuro (antes 32 % de energía arriba de 2 kHz en el ataque, ahora 2 %), a 127 más brillante (71 % -> 80 %). Con
-  velocidad 100 (la del secuenciador por defecto) nada cambia. Los sonidos con el ruido en pasa-altos (hi-hats, toms,
-  rim) solo se aclaran con los acentos: oscurecerlos los haría sonar más fuerte (vel_HATCL casi igual que antes).
+  en los extremos va de un quinto a cinco veces el decay (antes de 1/22 a 22 veces: en 16 todo era un tic, el
+  redoblante duraba 19 ms; ahora ~30 ms hasta -20 dB). Además el DECAY del kit alarga solo la cola: el barrido de altura
+  y el SNAP conservan el tiempo propio del sonido, así un DECAY largo no ensucia el ataque del bombo.
+- La velocidad colorea los acentos (vel_*): arriba de 100, COLOR sube (velocidad - 100) / 3: a 127 el golpe es más
+  brillante. Con velocidad 100 (la del secuenciador por defecto) o menos nada cambia (oscurecer los golpes suaves hacía
+  sonar más fuerte el ruido de los hi-hats, toms y rim, así que quedó solo para los acentos).
 - Choke del hi-hat (kit_*, al final del segundo compás): ya funcionaba (el abierto cae -18 dB en los 40 ms después
   del cerrado, antes y después); ahora corta también un abierto tocado en el mismo instante justo antes del cerrado.
 
 En los kits de fábrica casi todo queda igual o muy cerca (los bombos, hats, clap, rim, cowbell idénticos o a décimas
-de dB); lo que cambia: el redoblante (más seco), los toms (más cuerpo), los golpes que no tienen velocidad 100.
+de dB); lo que cambia: el redoblante (más seco), los toms (más cuerpo), los acentos (velocidad arriba de 100).
 
 
 2. drumx_erosion/   (EROSION nuevo en los kits: EDIT > MOD > EROSION)
@@ -67,7 +66,8 @@ Todos acotados: los picos quedan en -4,6 .. -5,1 dBFS (el OFF -4,7).
 west_1_strike .. west_5_silence   la nueva imagen de WEST ("A, circuito") en EDIT, panel entero: a los 20 ms de una
                                   nota, 150 ms, 400 ms, 900 ms y en silencio (la lámpara apagada, todo quieto).
 west_6_fold_mod                   FOLD 87 %, SYMM 47 %, MOD 71 %, RATIO 3.5: la onda plegada y la del modulador cambian.
-west_7_dust                       DUST alto: las motas en la puerta del LPG, DECAY largo (la cola baja lenta).
+west_7_dust                       DUST alto, DECAY largo (la cola baja lenta). (Las motas de DUST se sacaron por
+                                  espacio en la memoria del programa.)
 drumx_01_EDIT_1 .. drumx_12_OUT   las doce páginas de EDIT en una pista DRUM-X, en orden: KIT KIT 2 KIT 3 | SOUND
                                   SOUND 2 SOUND 3 | LEVELS LEVELS 2 | KIT LFO EROSION | FILTER OUT. En SOUND el
-                                  encabezado del panel dice el sonido elegido y su lado ("SD · SNARE · A").
+                                  encabezado del panel dice el sonido elegido ("SD · SNARE").

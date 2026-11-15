@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.36
+## This release: V10.7.37
 
 ### Installing
 
@@ -482,6 +482,10 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.37 — beta (2026-11-15)
+- **WEST remade, with Buchla and Serge character.** Its low-pass gate is a **vactrol** model (an LED lighting a light-dependent resistor): a quick but not instant attack and a slow, nonlinear decay, fast at first then a long tail that lasts longer as it darkens, so a short strike rings like a struck bongo and long DECAYs sustain. The cores go from sine (Buchla) to triangle (Serge), folded smoothly; the presets revoiced.
+- **FREEZE holds the audio itself:** the last moment of the mix sustained as a seamless drone (overlapping crossfaded grains) while held, instead of freezing the reverb.
 
 ### V10.7.36 — beta (2026-11-15)
 - **WEST COAST replaces NOISE** (engine 11, the same PROGRAM CHANGE numbers): a sine core, FM from a second sine, a **wavefolder** and a **low-pass gate** (filter and VCA on one vactrol-like envelope: a fast strike, a late close). EDIT 1 **FOLD · SYMM · MOD · RATIO**, EDIT 2 **GATE · DECAY · RES · DUST**. Velocity folds more and opens the gate. 20 presets (plucks, BONGO, MARIMBA, bells, GAMELAN, folded basses, leads, drones) and NOISE's eight remade with DUST at their old numbers. A project or user sound with NOISE opens as WEST in a DUST patch (NOISE's TRK, DRIFT and CRUSH have no match).

@@ -1452,21 +1452,10 @@ static VX_CODE void vx_wheel(const track_t *t, const int32_t *A, int32_t en_home
  * strike, fading as slowly as DECAY: a vactrol), DUST's motes at its door, and under it the decay's tail, the strike
  * running down it. A pulse runs along the wires while it sounds; still in silence (its time the sound's, vx_level). From
  * the knobs, the track's level and its newest note only (not the engine's state: eng_west.c is its own) */
-static void vx_box(const vxf_t *f, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t h)   /* Q4 units, corners cut */
-{
-    int32_t P[16] = {x0 + 48, y0, x1 - 48, y0, x1, y0 + 48, x1, y1 - 48, x1 - 48, y1, x0 + 48, y1, x0, y1 - 48, x0, y0 + 48};
-    vx_poly(f, P, 8, 1, h);
-}
-/* a wire from (x0, y0) to (x1, y1), across or down (Q4 units), its head at the end, a pulse along it at u (0..255) */
-static void vx_wire(const vxf_t *f, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t h, int32_t u, int32_t hp)
-{
-    int32_t a = x1 != x0, sx = a ? 48 : 32, sy = a ? 32 : 48;
-    vx_line(f, x0, y0, x1, y1, h);
-    vx_line(f, x1 - sx, y1 - sy, x1, y1, h);
-    vx_line(f, x1 - (a ? sx : -sx), y1 - (a ? -sy : sy), x1, y1, h);
-    if (hp > 0)
-        vx_dot(f, x0 + (x1 - x0) * u / 256, y0 + (y1 - y0) * u / 256, 24, hp);
-}
+/* the circuit's boxes (x0 y0 x1 y1, units: MOD OSC FOLD LPG, their names at the top) and wires (from, to: across or down) */
+static const int8_t VW_B[4][4] = {{-60, -45, -30, -23}, {-60, -13, -30, 9}, {-24, -30, 24, 22}, {30, -30, 60, 8}};
+static const int8_t VW_W[3][4] = {{-45, -23, -45, -13}, {-30, -2, -24, -2}, {24, -8, 30, -8}};
+static const char *const VW_N[4] = {"MOD", "OSC", "FOLD", "LPG"};
 /* a wave of n points across x0..x1 (Q4 units) about y, a units high: wf(th) (th the point's turn, 16-bit) */
 static void vx_wv(const vxf_t *f, int32_t x0, int32_t x1, int32_t y, int32_t a, uint32_t n, uint32_t cyc, uint32_t d0,
                   const int32_t *k, int32_t h)
@@ -1490,10 +1479,10 @@ static void vx_wv(const vxf_t *f, int32_t x0, int32_t x1, int32_t y, int32_t a, 
 static VX_CODE void vx_west(const track_t *t, const int32_t *A, int32_t en_home)
 {
     const int16_t *p = t->p;
-    vxf_t f = vx_uf(A, 100, 0);
-    int32_t en = vx_level(t, 6, en_home), i, fo = p[P_E0] & 127, md = p[P_E2] & 127, dust = p[P_E7] & 127, lamp, hb, hw, k[4];
+    vxf_t f = vx_uf(A, 100, 0), g;
+    int32_t en = vx_level(t, 6, en_home), i, fo = p[P_E0] & 127, md = p[P_E2] & 127, lamp, hb, hw, k[4];
     uint32_t mt = vxs.mt[6], age = vx_age(t, 6, 0), R = WEST_RATIO[(uint32_t)p[P_E3] & 15u], d0 = vx_ang(mt, 60) << 8,
-             half = 40u + (uint32_t)(p[P_E5] & 127) * 12u, u = (mt >> 5) & 255u;   /* (DECAY's half life, 40 ms .. 1.6 s) */
+             half = 40u + (uint32_t)(p[P_E5] & 127) * 12u;   /* (DECAY's half life, 40 ms .. 1.6 s) */
     vxs.kc = 1;
     lamp = en ? vx_fall(age, half) : 0;                  /* the lamp: struck at once, fading with DECAY (silence: dark) */
     lamp = clamp(lamp > en ? lamp : en, 0, 256);
@@ -1503,26 +1492,30 @@ static VX_CODE void vx_west(const track_t *t, const int32_t *A, int32_t en_home)
     k[1] = md;
     k[2] = 0;
     k[3] = (p[P_E1] & 127) * 129;                        /* (SYMM: its offset into the folder) */
-    vx_box(&f, -60 * 16, -45 * 16, -30 * 16, -23 * 16, hb);   /* MOD */
-    vx_box(&f, -60 * 16, -13 * 16, -30 * 16, 9 * 16, hb);     /* OSC */
-    vx_box(&f, -24 * 16, -30 * 16, 24 * 16, 22 * 16, hb + lamp / 4);   /* FOLD */
-    vx_box(&f, 30 * 16, -30 * 16, 60 * 16, 8 * 16, hb + lamp / 3);     /* LPG */
+    g = f;
+    g.s <<= 4;                                           /* (g: whole units, the boxes' and the wires' corners) */
+    for (i = 0; i < 4; i++) {                            /* the boxes, corners cut (FOLD and the LPG lit by the strike), named
+                                                         * (not at EDIT's small panel beside the scope: over the waves) */
+        const int8_t *q = VW_B[i];
+        int32_t P[16] = {q[0] + 3, q[1], q[2] - 3, q[1], q[2], q[1] + 3, q[2], q[3] - 3, q[2] - 3, q[3], q[0] + 3, q[3], q[0], q[3] - 3,
+                         q[0], q[1] + 3};
+        vx_poly(&g, P, 8, 1, hb + lamp * i / 12);
+        if (f.s >= 290)
+            vx_text(f.cx + ((q[0] + q[2]) * f.s >> 5), f.cy + ((q[1] + 2) * f.s >> 4), VW_N[i], vx_col(hb + 40));
+    }
+    for (i = 0; i < 3; i++) {                            /* the wires and their heads, lit while it sounds */
+        const int8_t *q = VW_W[i];
+        int32_t a = q[2] != q[0];
+        vx_line(&g, q[0], q[1], q[2], q[3], hw);
+        vx_line(&g, q[2] - (a ? 3 : 2), q[3] - (a ? 2 : 3), q[2], q[3], hw);
+        vx_line(&g, q[2] - (a ? 3 : -2), q[3] - (a ? -2 : 3), q[2], q[3], hw);
+    }
     vx_wv(&f, -57 * 16, -33 * 16, -30 * 16, 5 * 16, 12u + R * 3u / 64u, R, vx_ang(mt, 60) * R, 0, 50 + md * 3 / 2);   /* MOD's wave (RATIO cycles) */
     vx_wv(&f, -57 * 16, -33 * 16, 2 * 16, 5 * 16, 24, 256, d0, k, hw);   /* the core's (one cycle, MOD bending it) */
     k[2] = 256 + ((fo * fo >> 3) * (128 + lamp / 2) >> 8);   /* FOLD's gain, x1 .. x9 (the strike folds harder) */
     vx_wv(&f, -21 * 16, 21 * 16, -2 * 16, 15 * 16, 40, 512, d0, k, hw + lamp / 3);   /* the folded wave (two cycles) */
-    vx_wire(&f, -45 * 16, -23 * 16, -45 * 16, -13 * 16, hb, u, en ? hw : 0);
-    vx_wire(&f, -30 * 16, -2 * 16, -24 * 16, -2 * 16, hb, u, en ? hw : 0);
-    vx_wire(&f, 24 * 16, -8 * 16, 30 * 16, -8 * 16, hb, u, en ? hw : 0);
-    vx_ring(&f, 45 * 16, -7 * 16, 8 * 16, 8 * 16, 60 + lamp * 3 / 4);   /* the lamp, its glow */
-    if (lamp > 24) {
-        vx_ring(&f, 45 * 16, -7 * 16, (9 + lamp / 64) * 16, (9 + lamp / 64) * 16, lamp * 3 / 4);
-        vx_dot(&f, 45 * 16, -7 * 16, 24 + lamp / 4, 90 + lamp * 2 / 3);
-    }
+    vx_ring(&f, 45 * 16, -7 * 16, 128, 128, 60 + lamp * 3 / 4);   /* the lamp, its glow, its face */
     vx_bface(&f, 45 * 16, -7 * 16, 112, lamp, age < 90u, lamp);
-    for (i = 0; i < dust * 10 / 127; i++)                /* DUST: motes at the gate's door */
-        vx_dot(&f, (26 + vx_hash((uint32_t)i * 7u + (mt >> 7)) * 6 / 256) * 16,
-               (-18 + vx_hash((uint32_t)i * 13u + 3u + (mt >> 7)) * 20 / 256) * 16, 16, 90 + vx_hash((uint32_t)i + (mt >> 6)) / 2);
     {   /* the decay's tail under the gate, the strike running down it (1.6 s across) */
         int32_t px = 0, py = 0, X, Y;
         vx_line(&f, 30 * 16, 33 * 16, 60 * 16, 33 * 16, hb);
@@ -1533,14 +1526,6 @@ static VX_CODE void vx_west(const track_t *t, const int32_t *A, int32_t en_home)
             px = X;
             py = Y;
         }
-        if (en && age < 1600u)
-            vx_dot(&f, (30 + (int32_t)age * 30 / 1600) * 16, (33 - vx_fall(age, half) * 18 / 256) * 16, 32, 120 + lamp / 2);
-    }
-    if (f.s >= 290) {   /* the names (not at EDIT's small panel beside the scope: they would cover the waves) */
-        static const char *const NM[4] = {"MOD", "OSC", "FOLD", "LPG"};
-        static const int8_t NX[4] = {-45, -45, 0, 45}, NY[4] = {-43, -11, -28, -28};
-        for (i = 0; i < 4; i++)
-            vx_text(f.cx + NX[i] * f.s / 16, f.cy + NY[i] * f.s / 16, NM[i], vx_col(hb + 40));
     }
     vxs.kc = 0;
 }
@@ -2011,15 +1996,13 @@ static int vx_draw(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h,
  * the sound last struck (KIT) or the sound edited, lit (SOUND: lane) */
 static void vx_kit_page(const track_t *t, int32_t lane)
 {
-    char b[20];
+    char b[16];
     uint32_t l;
     vx_kit(t, 120 * 16, 73 * 16, 368, -1, lane);
     l = lane < 0 ? vxs.last & 7u : (uint32_t)lane & 7u;
     str_cpy(b, drum_lane_abbr(t, l), sizeof b);
     str_cpy(b + str_len(b), " \xB7 ", sizeof b - str_len(b));
     str_cpy(b + str_len(b), drum_lane_name(t, l), sizeof b - str_len(b));
-    if (lane >= 0)                                       /* (V10.7.37) SOUND's: its side too (the values the knobs turn) */
-        str_cpy(b + str_len(b), dx_ui_side ? " \xB7 B" : " \xB7 A", sizeof b - str_len(b));
     cv_text(8, 6 - AF_X_CAP_Y, &AF_X, "KIT", T_THEME);
     cv_text_r(232, 6 - AF_X_CAP_Y, &AF_X, b, lane < 0 ? T_TEXT : T_THEME, T_SURF);
 }

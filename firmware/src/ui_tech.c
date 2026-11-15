@@ -201,7 +201,7 @@ static int graph_tech(const track_t *t, const page_t *pg)
 {
     if (pg->scope != SC_GLOBAL)
         switch (pg->id[0]) {
-        case P_LRTRG: if (pg->id[1] != 0xFFu) return 0; tech_retrig(t); return 1;   /* (not DIGITAL's OP1 ENV) */
+        case P_LRTRG: if (pg->id[1] != P_LTIME) return 0; tech_retrig(t); return 1;   /* (not DIGITAL's OP1 ENV) */
         case P_ED_FLT: tech_dest(t); return 1;
         case P_LN0: case P_LN4: if (!bt_hw_seg()) return 0; tech_levels_white(t, pg->id[0] - P_LN0); return 1;
         default: return 0;

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* WEST engine test (src/eng_west.c, V10.7.36: engine 11, NOISE's slot) on the host, through hostsim.c as regress.c.
+/* WEST engine test (src/eng_west.c, V10.7.36: engine 11, NOISE's slot; V10.7.37 remade: the vactrol, the integrated
+ * folds, the triangle core) on the host, through hostsim.c as regress.c.
  *   build/host/west_test [DEMODIR]           (run_tests.sh: build/west_demo)
  * 1. bounded: every parameter at 0 and at 127 (the others at a preset's), and the 256 corners of all eight at 0 / 127,
  *    8 notes at velocity 127 over the keyboard, LEVEL 127: no voice sum past 2 x VOICE_FS a voice, no mix sample at
@@ -10,6 +11,11 @@
  * 3. the gate is heard: GATE 64, DECAY 20: the strike's first 30 ms far louder than 0.4 s on; GATE 0 (a low-pass):
  *    the level stays but the highs go (the brightness falls); GATE 127 (a VCA): the brightness stays, the level falls;
  *    DECAY 127 held: the level holds.
+ * 3b. (V10.7.37) the vactrol: struck, the cell lights in a few ms but darkens over far longer (attack faster than decay);
+ *    each octave darker takes longer than the one before (the tail longer the darker); a strike released at once
+ *    still rings (a pluck: the cell's memory), darker as it fades; a longer DECAY rings longer; the triangle core
+ *    (RATIO's second bank) at FOLD 0 a triangle (odd harmonics, the 3rd ~1/9), folded brighter; the folds integrated:
+ *    a high note folded hard leaves little energy where its harmonics would alias.
  * 4. velocity: 127 is louder and brighter than 40 (the fold and the ceiling).
  * 5. DUST 0 adds no noise: the same note with two noise seeds renders bit for bit the same; DUST 30 differs; DUST 127
  *    with the core gone still sounds (a noise patch), broadband.
@@ -303,8 +309,8 @@ static void gate(void)
     spectrum(y + FS / 4, ps);
     br1 = bright(ps, hz_of_note(48));
     a = rms(y + 2000, 4000);
-    b = rms(y + FS / 2, 4000);
-    snprintf(what, sizeof what, "GATE 127 (VCA): brightness %.3f -> %.3f (the fold follows the strike, the highs stay), level %.1f dB at 0.5 s",
+    b = rms(y + FS - 4000, 4000);
+    snprintf(what, sizeof what, "GATE 127 (VCA): brightness %.3f -> %.3f (the fold follows the strike, the highs stay), level %.1f dB at 1 s",
              br0, br1, 20 * log10(b / (a + 1e-12)));
     check(what, br1 > 0.5 * br0 && b < a * 0.1);
     e[4] = 64; e[5] = 127;                               /* held: a drone */
@@ -313,6 +319,106 @@ static void gate(void)
     b = rms(y + FS * 2u - 4000, 4000);
     snprintf(what, sizeof what, "DECAY 127 held: the level at 2 s %.1f dB of 0.5 s's (a drone)", 20 * log10(b / (a + 1e-12)));
     check(what, b > a * 0.8 && a > 0.01);
+}
+
+
+/* ------------------------------------------------------------ 3b. vactrol --- */
+static double light_of(void)                             /* the struck voice's light (eng_west.c s[5]: -log2 of it, Q20) */
+{
+    uint32_t k;
+    for (k = 0; k < NVOICE; k++)
+        if (trk[0].v[k].active)
+            return pow(2.0, -trk[0].v[k].s[5] / 1048576.0);
+    return 0;
+}
+/* a note struck (released after rel samples), the light every block into lt[], the voice into y */
+static void strike(const int16_t *e, uint32_t note, uint32_t rel, double *lt, uint32_t nb)
+{
+    static int32_t b[CTL];
+    uint32_t i, k;
+    setup(e);
+    trk[0].p[P_REL] = 100;                               /* (the ADSR's release long: the cell's own decay heard) */
+    trk_note_on(&trk[0], note, 100);
+    for (i = 0; i < nb; i++) {
+        if (i * CTL >= rel && i * CTL < rel + CTL)
+            trk_note_off(&trk[0], note);
+        track_render(&trk[0], b, CTL);
+        lt[i] = light_of();
+        for (k = 0; k < CTL; k++)
+            y[i * CTL + k] = b[k] / 32768.0;
+    }
+}
+static double tri_h3(uint32_t fold)                      /* the triangle core, held open: its 3rd harmonic over the 1st */
+{
+    int16_t e[8] = {0, 0, 0, 17, 127, 127, 0, 0};
+    e[0] = (int16_t)fold;
+    note_render(e, 48, 64, y, NFFT, 4);
+    spectrum(y, ps);
+    return harm(ps, hz_of_note(48), 3) / (harm(ps, hz_of_note(48), 1) + 1e-30);
+}
+static void vactrol(void)
+{
+    static double lt[FS * 2 / CTL];
+    int16_t e[8] = {70, 0, 0, 1, 64, 60, 20, 0};
+    uint32_t nb = FS * 2 / CTL, i, pkb = 0, hb = 0, oct[9] = {0}, o;
+    double pk = 0, a, b, c, b0, b1, t20[3];
+    char what[240];
+    strike(e, 48, CTL, lt, nb);                          /* (a ping: released after one block) */
+    for (i = 0; i < nb; i++)
+        if (lt[i] > pk)
+            pk = lt[i], pkb = i;
+    for (o = 1, i = pkb; i < nb && o < 9u; i++)          /* the block each octave darker than the peak is reached */
+        while (o < 9u && lt[i] < pk / (double)(1u << o))
+            oct[o++] = i;
+    while (hb < pkb && lt[hb] < pk / 2)                  /* (lit to half its peak) */
+        hb++;
+    snprintf(what, sizeof what, "vactrol: lit to half in %.1f ms (its peak %.2f at %.1f ms), half again %.1f ms after the peak "
+             "(attack faster than decay)", (hb + 1) * 1000.0 * CTL / FS, pk, (pkb + 1) * 1000.0 * CTL / FS,
+             (oct[1] - pkb) * 1000.0 * CTL / FS);
+    check(what, pkb * CTL < FS * 8u / 1000u && pk > 0.5 && oct[1] > pkb && (oct[1] - pkb) > 2 * (hb + 1));
+    snprintf(what, sizeof what, "  the tail longer the darker: octaves 1-2 %.1f ms, 4-5 %.1f ms, 7-8 %.1f ms",
+             (oct[2] - oct[1]) * 1000.0 * CTL / FS, (oct[5] - oct[4]) * 1000.0 * CTL / FS, (oct[8] - oct[7]) * 1000.0 * CTL / FS);
+    check(what, oct[8] && oct[2] - oct[1] < oct[5] - oct[4] && oct[5] - oct[4] < oct[8] - oct[7]);
+    a = rms(y + FS / 100, FS / 100);                      /* 10 .. 20 ms */
+    b = rms(y + FS / 10, FS / 100);                       /* 100 .. 110 ms */
+    c = rms(y + FS / 2, FS / 100);                        /* 500 ms */
+    spectrum(y, ps);
+    b0 = centroid(ps, hz_of_note(48));
+    spectrum(y + FS / 4, ps);
+    b1 = centroid(ps, hz_of_note(48));
+    snprintf(what, sizeof what, "a ping (released at once) plucks: %.1f dB at 0.1 s, %.1f dB at 0.5 s of its start; the centroid %.2f -> %.2f",
+             20 * log10(b / (a + 1e-12)), 20 * log10(c / (a + 1e-12)), b0, b1);
+    check(what, b < a * 0.5 && b > a * 0.02 && c < b * 0.5 && b1 < b0 * 0.85);
+    for (i = 0; i < 3u; i++) {                           /* DECAY 20, 50, 80: the time to -20 dB of the light's peak */
+        uint32_t k;
+        e[5] = (int16_t)(20 + 30 * i);
+        strike(e, 48, CTL, lt, nb);
+        for (k = 4; k < nb && lt[k] > 0.01 * pk; k++)
+            ;
+        t20[i] = k * 1000.0 * CTL / FS;
+    }
+    snprintf(what, sizeof what, "  DECAY 20 / 50 / 80: the light 40 dB down in %.0f / %.0f / %.0f ms (longer, a memory)", t20[0], t20[1], t20[2]);
+    check(what, t20[0] < t20[1] && t20[1] < t20[2] && t20[0] < 150 && t20[2] > 500);
+    a = tri_h3(0);
+    b = tri_h3(80);
+    snprintf(what, sizeof what, "the triangle core (RATIO 1T): FOLD 0 a triangle (3rd harmonic %.1f dB, -19 a triangle's), FOLD 80 %.1f dB",
+             10 * log10(a + 1e-30), 10 * log10(b + 1e-30));
+    check(what, a > 0.008 && a < 0.02 && b > a * 4);
+    {   /* the folds integrated: C6 on the triangle core folded hard (FOLD 127) leaves little energy off its harmonics
+         * (folded back over Nyquist: aliases; -22 dB unintegrated and uncapped, V10.7.37's first try) */
+        int16_t h[8] = {127, 0, 0, 17, 127, 127, 0, 0};
+        double lo = 0, all = 0, f0 = hz_of_note(84);
+        note_render(h, 84, 127, y, NFFT, 4);
+        spectrum(y, ps);
+        for (i = 2; i < NFFT / 2; i++) {
+            double f = (double)i * FS / NFFT, r = f / f0;
+            all += ps[i];
+            if (fabs(r - floor(r + 0.5)) > 0.1)          /* (off the harmonics: aliases) */
+                lo += ps[i];
+        }
+        snprintf(what, sizeof what, "  C6, the triangle core folded hard: %.1f dB of its energy off its harmonics (aliases)", 10 * log10(lo / all + 1e-30));
+        check(what, lo < all * 0.003);
+    }
 }
 
 /* --------------------------------------------------------- 4. velocity --- */
@@ -548,8 +654,8 @@ static double part_cost(uint32_t eng, uint32_t pi, const int16_t *e)
 }
 static void cost(void)
 {
-    static const int16_t HEAVY[8] = {127, 127, 127, 15, 64, 127, 127, 127};   /* every stage on, hiss and impulses */
-    static const int16_t HEAVY2[8] = {127, 127, 127, 15, 64, 127, 127, 60};   /* .. the core sounding, the dust pinging */
+    static const int16_t HEAVY[8] = {127, 127, 127, 15, 64, 127, 127, 72};   /* every stage on, the core whole, FM AM, impulses */
+    static const int16_t HEAVY2[8] = {127, 127, 127, 31, 64, 127, 127, 60};   /* .. the triangle core */
     const engine_t *an = ENGINES[ENGI_ANALOG];
     double worst_an = 0, worst = 0, c, idle;
     uint32_t pi;
@@ -649,6 +755,7 @@ int main(int argc, char **argv)
     bounded();
     fold();
     gate();
+    vactrol();
     velocity();
     dust();
     determinism();

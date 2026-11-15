@@ -172,10 +172,19 @@ static struct {
  * calibrated FAR .. NEAR, in 5 % steps: [19] MIN 0..18 (0 .. 90 %: under it PROX is 0, so a phone a little away
  * already lets go), [20] MAX as 100 % - 5 % x [20] (0..18: over it PROX is full), always 10 % over MIN; [21] SPEED
  * 0..4: the level's smoothing 1/32 (as before, ~0.3 s) 1/16 1/8 1/4 1/2 (the fastest, the noisiest). 0 0 0 as V10.60 */
+/* (V10.7.37, a user: PROX too slow) [21] SLEW 0..100 % (bit 7 set: 0x80 | SLEW; a value of before, SPEED k 0..4, reads
+ * as SLEW 100 - 20 k, the same smoothing): the level's one pole 1 / 2^(SLEW / 20) of the way a packet (100: 1/32, ~0.3
+ * s, as before; 0: none, the packet itself), its median over 3 .. 9 packets with it; [19] bits 5..7 SENS 0..7: PROX
+ * x1 .. x4.5 about the middle of MIN .. MAX (a small move sweeps it all; 0, every setting before: as it was) */
 #define BT_TUNE (&favorites.factory[6][19])
-#define BT_MIN() ((int32_t)(BT_TUNE[0] > 18u ? 0u : BT_TUNE[0]) * 5)
+#define BT_MIN() ((int32_t)((BT_TUNE[0] & 31u) > 18u ? 0u : BT_TUNE[0] & 31u) * 5)
 #define BT_MAX() (100 - (int32_t)(BT_TUNE[1] > 18u ? 0u : BT_TUNE[1]) * 5)
-#define BT_SPEED() ((uint32_t)(BT_TUNE[2] > 4u ? 0u : BT_TUNE[2]))
+#define BT_SENS() ((int32_t)BT_TUNE[0] >> 5)
+BTAPP_FN static int32_t bt_slew(void)   /* (in the segment: the PROX page and its knobs run only with it) */
+{
+    uint32_t b = BT_TUNE[2];
+    return b & 0x80u ? (int32_t)((b & 127u) > 100u ? 100u : b & 127u) : b > 4u ? 100 : 100 - 20 * (int32_t)b;
+}
 BTAPP_FN static int32_t bt_prox_map(int32_t lvl)
 {
     int32_t f = (int32_t)BT_CAL[0] << 7, n = (int32_t)BT_CAL[1] << 7, lo = BT_MIN(), hi = BT_MAX(), p;
@@ -184,7 +193,8 @@ BTAPP_FN static int32_t bt_prox_map(int32_t lvl)
     if (hi < lo + 10)
         hi = lo + 10;
     p = clamp((lvl - f) * 32767 / (n - f), 0, 32767);
-    return clamp((p - 32767 * lo / 100) * 100 / (hi - lo), 0, 32767);
+    p = (p - 32767 * lo / 100) * 100 / (hi - lo);
+    return clamp(16384 + (p - 16384) * (2 + BT_SENS()) / 2, 0, 32767);   /* (V10.7.37 SENS) */
 }
 /* (V10.6z6) SWARM's closeness (eng_input.c sw_pxv): a central's link (ON, connected; not AIR's scan), as PROX maps it;
  * the points not stored, the level's own range (its lowest and highest, each relaxing towards it, ~10 s), larger nearer.
@@ -211,6 +221,8 @@ BTAPP_FN static void bt_sw_prox(uint32_t conn)
 BTAPP_FN static void bt_prox_step(const uint16_t *w, uint32_t n, uint32_t conn, uint32_t now)
 {
     uint32_t i, j, k, m[9], air = bt_get() == 2u;
+    int32_t sl = bt_slew(), g = (256 >> (sl / 20)) - ((256 >> (sl / 20)) / 2) * (sl % 20) / 20;   /* (V10.7.37: SLEW's
+                                                         * pole, Q8: 256 >> (SLEW / 20), between them a line) */
     if (!conn)
         bp.have = bp.wn = 0;
     bp.conn = (uint8_t)conn;
@@ -218,14 +230,15 @@ BTAPP_FN static void bt_prox_step(const uint16_t *w, uint32_t n, uint32_t conn, 
         bp.raw = w[i];
         bp.win[bp.wn % 9u] = (uint8_t)((w[i] & 63u) + (w[i] >> 8 & 63u));
         bp.wn = (uint8_t)(bp.wn < 17u ? bp.wn + 1u : 9u);
-        k = bp.wn < 9u ? bp.wn : 9u;
+        k = 3u + (uint32_t)sl * 6u / 100u / 2u * 2u;    /* (V10.7.37: the median of 3 .. 9, the last ones) */
+        k = bp.wn < k ? bp.wn : k;
         for (j = 0; j < k; j++) {                       /* (sorted in) */
-            uint32_t x = bp.win[j], q = j;
+            uint32_t x = bp.win[(bp.wn + 17u - j) % 9u], q = j;
             for (; q && m[q - 1u] > x; q--)
                 m[q] = m[q - 1u];
             m[q] = x;
         }
-        bp.lvl = bp.have ? bp.lvl + ((int32_t)(m[k / 2u] << 8) - bp.lvl) / ((32 << 2 * air) >> BT_SPEED()) : (int32_t)(m[k / 2u] << 8);   /* (V10.20:
+        bp.lvl = bp.have ? bp.lvl + ((((int32_t)(m[k / 2u] << 8) - bp.lvl) * g >> 8) >> 2 * air) : (int32_t)(m[k / 2u] << 8);   /* (V10.20:
                                                          * the median of nine, ~32 packets: ~0.3 s; was five, ~6: on
                                                          * the hardware a random sample and hold, the channels' hops) */
         bp.have = 1;
@@ -242,7 +255,7 @@ BTAPP_FN static void bt_prox_step(const uint16_t *w, uint32_t n, uint32_t conn, 
     if (now - bp.t > 1000u)
         bp.t = now - 1000u;
     for (; now - bp.t >= 10u; bp.t += 10u)
-        mod_prox = (int16_t)(mod_prox - (mod_prox + (31 >> BT_SPEED())) / (32 >> BT_SPEED()));
+        mod_prox = (int16_t)(mod_prox - ((mod_prox * g + 255) >> 8));
 }
 /* (V10.18) twelve readings of a packet: each of its four words as V10.14's level ((w & 63) + (w >> 8 & 63)), its low
  * byte / 2, its high byte / 2. (V10.20) The one used is fixed again: word 0 (RSSI2 / 3 by the buffer) as the level, the
