@@ -949,6 +949,7 @@ static __attribute__((noinline)) void perf_block(int32_t *bl, int32_t *br, uint3
     ct = c ? 32768 : 0;
     sh = 4u + (uint32_t)pf.cc * 7u / 100u;
     hold = sh - 3u;
+    frz_on = pf.mode == BM_FRZ && pf.state;            /* (V10.7.41: voice.c voice_soft) */
     if (pf.split)
         perf_switch(a);
     for (i = 0; i < n; i++) {

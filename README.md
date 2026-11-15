@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.40
+## This release: V10.7.41
 
 ### Installing
 
@@ -482,6 +482,12 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.41 (2026-11-15)
+- **WEST with RES high no longer breaks on the peaks**: past RES ~43 the gate's input is lowered with its resonance
+  (x0.25 at 127), so its ring stays inside the gate's arithmetic (it wrapped around: a crack on every peak). Below RES 43
+  nothing changes; of the factory sounds only WIND, RAIN, HISS PAD, BONGO and RUBBER BASS (RES high) change.
+- **FREEZE lighter**: while it holds, the tracks under it (not heard) play at half the sample rate where they can.
 
 ### V10.7.40 — beta (2026-11-15)
 - **FM6 never reaches a glitch**: under a heavy load the dearest part's held voices (FM6 first: it costs 60 % at half the
