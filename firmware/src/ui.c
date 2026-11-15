@@ -207,6 +207,8 @@ static void prefs_update(void)
 #define ui_load (favorites.factory[15][26])    /* (JIANT 0.6.30) LOAD (voice.c sys_load): 0 FULL, 1 LITE, 2 ECO; a byte no
                                                 * engine uses, 0 in older settings (0.6.29's 6 LITE: 1, LITE) */
 #define oct_xp (favorites.factory[15][16])    /* (V10.6z4) MENU > AUDIO > OCT BEND, its place ^ 2 (0, older settings: 2 ST) */
+#define midi_base_set (favorites.factory[15][31])   /* (V10.7.39) MENU > SYSTEM > MIDI BASE CH - 1, 0..10 (seq.c mi_base): 0
+                                                * in older settings, channel 1 as ever; a byte no engine uses */
 #define midi_out_mode (favorites.factory[15][24])   /* (JIANT 0.6.72) MENU > MIDI OUT (seq.c MO_*): 0 KEYS (older settings,
                                                 * as ever), 1 CLOCK, 2 ALL, 3 OFF; a byte no engine uses */
 #define PREF_SIX (0x80u << 8)                  /* (JIANT 0.6.18) MENU > TRACKS 6: all six tracks play; clear (the

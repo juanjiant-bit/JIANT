@@ -14,13 +14,23 @@
 
 /* a received USB-MIDI event (the stack's decoder: cable 0, ble_midi.h) -> what goes into the input ring, 0 dropped:
  * channel messages, the clock, START CONTINUE STOP (USB's midi_in_event; no SysEx over Bluetooth: the editor and the
- * updater use USB) */
+ * updater use USB). (V10.7.39) Not poly pressure (An): nothing plays it (seq.c midi_event), and a keyboard's flood of it,
+ * 120 messages in one 244-octet packet, filled the 64 events of the ring at once: its overflow let go of every note held */
 static inline uint32_t bt_midi_accept(uint32_t pkt)
 {
     uint32_t cin = pkt & 15u, st = pkt >> 8 & 0xFFu;
     if (cin == 0xFu)
         return st == 0xF8u || st == 0xFAu || st == 0xFBu || st == 0xFCu ? 0xFu | st << 8 : 0u;
-    return cin >= 8u && cin <= 0xEu && st >> 4 == cin && !(pkt & 0x80800000u) ? pkt : 0u;
+    return cin >= 8u && cin <= 0xEu && cin != 0xAu && st >> 4 == cin && !(pkt & 0x80800000u) ? pkt : 0u;
+}
+/* (V10.7.39) an accepted event that may take the place of the one queued before it, not yet read (bt.c bt_midi_rx): the
+ * same CC (status and number), channel pressure, bend or PROGRAM CHANGE of the same channel, only its last value
+ * mattering. A packet of channel pressure or bend by running status (240 / 120 in one packet) no longer overflows the
+ * ring; notes and the clock always queue */
+static inline __attribute__((always_inline)) uint32_t bt_midi_same(uint32_t pkt, uint32_t prev)
+{
+    uint32_t cin = pkt & 15u;
+    return cin >= 0xBu && cin <= 0xEu && !((pkt ^ prev) & (cin == 0xBu ? 0xFFFFFFu : 0xFFFFu));
 }
 
 /* MIDI OUT's copy for Bluetooth: one producer (the audio interrupt, which preempts the BLE ones), one consumer */

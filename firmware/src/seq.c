@@ -59,7 +59,8 @@ static volatile uint8_t midi_hint;       /* MIDI IN played track n - 1, which is
 
 static uint32_t trk_index(const track_t *t) { return (uint32_t)(t - trk); }
 
-static uint32_t trk_midi_ch(uint32_t i) { return i % NTRK; }   /* MIDI channel 0..15 of track i (keys -> MIDI out) */
+static uint32_t trk_midi_ch(uint32_t i) { return i % NTRK; }   /* MIDI channel 0..15 of track i (keys -> MIDI out; V10.7.39:
+                                                                * + MIDI BASE CH - 1 as it goes out, usb.c midi_out_event_at) */
 
 static int drum_track(const track_t *t) { return ENGINES[eng_idx(t->eng_req)] == &ENG_DRUM; }
 
@@ -3245,9 +3246,14 @@ static void seq_tick(track_t *t, uint32_t n)
 }
 
 /* MIDI in: the track a channel plays (0..15): G_ROUTE CH1-6 (0) channels 1..6 their parts (7..16 never get
- * here: midi_event drops them), SEL (1) every channel the selected track */
-static uint8_t midi_route;                 /* the G_ROUTE events_block last saw (a change to CH1-6: midi_route_ch14) */
-static track_t *midi_track(uint32_t ch) { return ch < NPART && !song.g[G_ROUTE] ? &trk[ch] : TSEL; }
+ * here: midi_event drops them; V10.7.39: channels BASE .. BASE + 5, mi_base), SEL (1) every channel the selected track */
+static uint8_t midi_route;                 /* the G_ROUTE events_block last saw (a change to CH1-6: midi_route_ch14), and
+                                            * (V10.7.39) MIDI BASE CH << 1 (a change: the channels no longer heard let go) */
+static track_t *midi_track(uint32_t ch)
+{
+    ch -= mi_base;
+    return ch < NPART && !song.g[G_ROUTE] ? &trk[ch] : TSEL;
+}
 
 #include "midi_control.c"
 #include "midi_clock.c"
@@ -3412,9 +3418,10 @@ static void events_block(uint32_t n)
         }
         transport_req = 0;
     }
-    if (midi_route != (uint8_t)song.g[G_ROUTE]) {     /* ROUT changed: CH1-6 lets go of channels 7..16 */
-        midi_route = (uint8_t)song.g[G_ROUTE];
-        if (!midi_route)
+    if (midi_route != (uint8_t)(song.g[G_ROUTE] | mi_base << 1)) {   /* ROUT or MIDI BASE CH changed: CH1-6 lets go of
+                                                                    * the channels it no longer hears */
+        midi_route = (uint8_t)(song.g[G_ROUTE] | mi_base << 1);
+        if (!song.g[G_ROUTE])
             midi_route_ch14();
     }
     pr = panic_req;

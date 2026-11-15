@@ -444,12 +444,13 @@ static void midi_control(uint32_t ch, uint32_t cc, uint32_t value)
 /* ROUT CH1-6 listens to channels 1..6 only. A switch to it from SEL (events_block, before the queue) lets go
  * of what channels 5..16 hold: their notes released (also pedal-held ones), their pedal, bend, wheel and RPN
  * selection reset, so no note can hang on a channel that is no longer heard. Each part's bend then follows
- * its own channel (1..6), as CH1-6 routes it. */
+ * its own channel (1..6), as CH1-6 routes it. (V10.7.39) Channels BASE .. BASE + 5 (MIDI BASE CH, seq.c mi_base); a
+ * change of it lets go of the others the same way */
 static void __attribute__((noinline)) midi_route_ch14(void)
 {
     uint32_t ch, note;
-    for (ch = NPART; ch < 16u; ch++) {
-        if (SPLIT_ON && ch == split_cfg[6]) continue;
+    for (ch = 0; ch < 16u; ch++) {
+        if ((SPLIT_ON && ch == split_cfg[6]) || ch - mi_base < NPART) continue;
         midi_channel_t *c = midi_channel(ch);
         for (note = 0; note < 128u; note++)
             if (mn_get(ch, note))
@@ -459,7 +460,7 @@ static void __attribute__((noinline)) midi_route_ch14(void)
         c->rpn_msb = c->rpn_lsb = 127;
     }
     for (ch = 0; ch < NPART; ch++)
-        midi_expression(&trk[ch], midi_channel(ch));
+        midi_expression(&trk[ch], midi_channel(ch + mi_base));
 }
 
 /* (JIANT 0.6.72) PROGRAM CHANGE n on the channel a track plays: the n + 1-th sound of the PRESETS list (every engine's
@@ -473,7 +474,7 @@ static volatile uint8_t midi_song_req;
 
 /* Keep the occasional controller/panic dispatch outside the hot rendering loop. Channel voice messages only
  * (realtime and clock are handled in events_block, SysEx never reaches here). With ROUT CH1-6 channels
- * 7..16 are ignored entirely: notes, bend, CCs (CC1/11/64, RPN, and the CC120/121/123 panic and reset),
+ * 7..16 (V10.7.39: those outside BASE .. BASE + 5) are ignored entirely: notes, bend, CCs (CC1/11/64, RPN, and the CC120/121/123 panic and reset),
  * channel aftertouch, so they stay free for other instruments. */
 static void __attribute__((noinline)) midi_event(uint32_t st, uint32_t ch, uint32_t d1, uint32_t d2)
 {
@@ -481,7 +482,7 @@ static void __attribute__((noinline)) midi_event(uint32_t st, uint32_t ch, uint3
         midi_song_req = (uint8_t)(d1 + 1u);
         return;
     }
-    if (ch >= NPART && !song.g[G_ROUTE] && !(SPLIT_ON && ch == split_cfg[6]) && (!midi_channel(ch)->targets || (st == 0x90u && d2))) {
+    if (ch - mi_base >= NPART && !song.g[G_ROUTE] && !(SPLIT_ON && ch == split_cfg[6]) && (!midi_channel(ch)->targets || (st == 0x90u && d2))) {
         if (ch == 15u && st == 0xB0u && (d1 == 99u || d1 == 98u || d1 == 6u || d1 == 38u))
             midi_control(ch, d1, d2);              /* (V10.6z3) channel 16's NRPN (the globals: MIDI OUT sends them there) */
         return;

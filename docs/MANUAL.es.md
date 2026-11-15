@@ -296,7 +296,7 @@ atajos de esa capa; en la grilla DRUM son pasos y carriles; en la pantalla NAME 
 | Combinación | Resultado |
 | --- | --- |
 | **GLO** mantenido + **PLAY** | Reinicia desde el principio sin parar (clock interno). |
-| **PLAY** mantenido (~0,7 s) | **PANIC: ALL NOTES OFF**. Para el transporte y corta todo el sonido de una: las voces de todas las pistas, los acordes en LATCH, los arpegios, las repeticiones del punch-in y las notas que tiene MIDI IN (una tecla o nota MIDI que soltás después no hace nada; la siguiente suena como siempre). MIDI OUT manda el note-off de cada nota que mandó y All Notes Off (CC123) en los canales 1–6 de las pistas (no con MIDI OUT en OFF). Usalo si te queda una nota colgada, por ejemplo de un controlador que perdió su note-off; el CC120 / CC123 de MIDI IN sigue haciendo lo mismo en su canal. |
+| **PLAY** mantenido (~0,7 s) | **PANIC: ALL NOTES OFF**. Para el transporte y corta todo el sonido de una: las voces de todas las pistas, los acordes en LATCH, los arpegios, las repeticiones del punch-in y las notas que tiene MIDI IN (una tecla o nota MIDI que soltás después no hace nada; la siguiente suena como siempre). MIDI OUT manda el note-off de cada nota que mandó y All Notes Off (CC123) en los canales 1–6 de las pistas (desde MENU › SYSTEM › MIDI BASE CH) (no con MIDI OUT en OFF). Usalo si te queda una nota colgada, por ejemplo de un controlador que perdió su note-off; el CC120 / CC123 de MIDI IN sigue haciendo lo mismo en su canal. |
 | **GLO** mantenido + **SELECT** | Tempo, desde cualquier página. |
 | **GLO** mantenido + **G4** | **UNDO** del último cambio grande (otra vez: rehacer). |
 | **REC** mantenido solo, soltado | (V10.7) También **UNDO**: mantenido más que HOLD (~0,5 s) sin tocar tecla, perilla, botón ni OCT; otra vez: rehacer. Si usás otra cosa mientras lo mantenés, es la capa REC; un toque sigue armando la grabación. |
@@ -3388,7 +3388,8 @@ Bluetooth se configura en el MENU (mantené HOME, pestaña SYSTEM, fila BLUETOOT
 ### ROUTE (GLO > SYSTEM, KNOB 3)
 
 **CH1-6**: los canales MIDI 1–6 tocan las pistas 1–6, los canales 7–16 se ignoran. **SEL**: todos los canales tocan
-la pista seleccionada.
+la pista seleccionada. (V10.7.39) Con MENU › SYSTEM › **MIDI BASE CH** arriba de 1 los seis canales se corren: BASE 7
+toca las pistas 1–6 desde los canales 7–12 e ignora el resto.
 
 ### GLOBAL (GLO > GLOBAL)
 
@@ -3402,7 +3403,7 @@ SYSTEM; frena en la primera y en la última), **ALGORITHM** salta a la pestaña 
 **cualquier perilla** u **OCT+ / OCT−** cambia el valor; PRESETS acá no hace nada. HOME lo cierra (en ese momento se
 guarda la configuración). La pantalla muestra las filas de la pestaña, las cuatro de la fila elegida como tarjetas
 (ROWS 1–4 / ROWS 5–6; DISPLAY: ROWS 5–7; CONTROL también ROWS 9–12, las cuatro de las teclas) con el número de su perilla; las pestañas arriba, el pie **MENU · DISPLAY ·
-SCOPE  2/33**. El encabezado dice MENU · DISPLAY.
+SCOPE  2/34**. El encabezado dice MENU · DISPLAY.
 
 | Pestaña | Fila | Valores |
 | --- | --- | --- |
@@ -3436,6 +3437,7 @@ SCOPE  2/33**. El encabezado dice MENU · DISPLAY.
 | SYSTEM | RESTORE LAST | **OFF** (por defecto: sin autoguardado, el encendido arranca en cero), ON (la última sesión vuelve al encender) |
 | SYSTEM | CPU CORES | 1 CORE, **2 CORES** (por defecto) — desde el próximo arranque; (V10.6z2) el segundo núcleo arranca solo con la alimentación de fábrica (no después de un SAFE START) |
 | SYSTEM | CPU CLOCK | **360 MHZ** (por defecto), 320 MHZ — desde el próximo arranque |
+| SYSTEM | MIDI BASE CH | **1** (por defecto) … 11 — (V10.7.39) el canal MIDI de la pista 1: la pista *n* escucha y manda por BASE + *n* − 1 (entrada y salida, USB, TRS y Bluetooth). Dos FM-1 en un mismo bus MIDI: uno en 1 (canales 1–6), el otro en 7 (canales 7–12). Se guarda con los ajustes; los ajustes de antes cargan como 1. Con 11 la pista 6 queda en el canal 16, cuyo PROGRAM CHANGE sigue siendo de la canción (secciones, proyectos) |
 | SYSTEM | BLUETOOTH | **OFF**, ON (MIDI por Bluetooth: ADV, después CONN), AIR (solo escucha: PROX y SWARM) — OCT+ en la fila abre la página PROX (FAR / NEAR); ver [Bluetooth](#midi-por-bluetooth-y-prox-v1013v1020) |
 | SYSTEM | CALIBRATION | OCT+ abre HARDWARE CALIBRATION (enseñarle cada botón y perilla) |
 | SYSTEM | ABOUT | OCT+ abre: versión, código QR, AUDIO LOAD (NOW, PEAK, LATE, SHED desde el encendido) y créditos (se desplaza con SELECT, OCT− vuelve) |
@@ -3451,7 +3453,8 @@ protección desvaneció): una foto de esa pantalla ayuda cuando reportás un pro
 - **MIDI IN** por USB y por el jack **TRS**. **ROUTE** decide qué pista toca cada canal (ver
   [13](#13-sistema-tracks-load-y-el-menu)). Las notas entrantes en una pista armada se graban igual que las teclas.
 - **MIDI OUT** (por USB; MENU > CONTROL > **MIDI OUT**, 0.6.72), cada pista por su canal (T1 = canal 1 … T6 =
-  canal 6):
+  canal 6; V10.7.39: desde MENU › SYSTEM › **MIDI BASE CH**, T1 = canal BASE … T6 = BASE + 5, como los escucha MIDI IN;
+  el NRPN de los globales sigue en el canal 16):
   - **KEYS** (por defecto): las teclas mandan sus notas, como siempre.
   - **CLOCK**: y además el clock (24 por negra) con **START / STOP**, mientras el tempo es el del FM-1 (CLOCK INT): una
     caja de ritmos o un DAW lo siguen. El clock corre también parado, así el que sigue conoce el tempo antes del PLAY.
@@ -3539,7 +3542,10 @@ que tocás llega a la vez a todas las pistas con rol, cada una a su manera, todo
   **JIANT FM-1**); dejá la app en primer plano, los celulares cortan el Bluetooth de las apps en segundo plano.
 - **MIDI de entrada**: lo que manda la app toca el FM-1 igual que por USB-MIDI (notas, CC, program change, bend,
   clock con CLOCK USB +BT, MIDI LEARN y MAP). **MIDI de salida**: lo que deja salir MENU › CONTROL › MIDI OUT (KEYS / CLOCK / ALL)
-  también va a la app. Sin SysEx (el editor y las actualizaciones siguen por USB).
+  también va a la app. Sin SysEx (el editor y las actualizaciones siguen por USB). (V10.7.39) La presión polifónica se
+  ignora (nada la toca), un paquete lleno de aftertouch, bend o un mismo CC se queda con el último valor en vez de
+  desbordar MIDI IN (que soltaba todas las notas), y las notas que se tienen por Bluetooth se cortan si se pierde el
+  enlace (una app cerrada, el celular fuera de alcance).
 - **PROX**: una fuente de modulación según **qué tan cerca está el celular conectado** (su señal Bluetooth,
   filtrada). Sigue al celular, no a la mano. En la fila BLUETOOTH (CONN) apretá **OCT+**: la página PROX. Celular lejos (a un
   metro, más o menos): **OCT−** (FAR). Celular apoyado en el FM-1, arriba a la izquierda: **OCT+** (NEAR). Después, en

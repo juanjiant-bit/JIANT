@@ -307,7 +307,7 @@ static void att_midi_in(void *ctx, uint32_t pkt, uint16_t ts)
 /* one BLE-MIDI packet in: a central's write to our MIDI I/O, or (as central) the peripheral's notification */
 BLE_API void ble_att_midi_packet(const uint8_t *v, uint16_t n)
 {
-    uint16_t last = ble_midi_last_ts(v, n);
+    uint16_t last = BLE_MIDI_LAST_TS ? ble_midi_last_ts(v, n) : 0u;
 #if BLE_DIAG
     uint32_t i, r = ble_dg.mi_raw_n++ & 3u;
     for (i = 0; i < 12u; i++)

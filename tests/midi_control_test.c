@@ -280,6 +280,64 @@ static int route_test(void)
     bad += check("channel 1's note-off still releases its note after the switch", !any_gate() && !midi_owners[2]);
     return bad;
 }
+/* (V10.7.39) MENU > SYSTEM > MIDI BASE CH: track n listens and sends on BASE + n - 1 (two FM-1s on one bus); stored
+ * with the settings (an older record: 1); a change lets go of the channels no longer heard */
+static uint32_t out_since(uint32_t from, uint32_t st, uint32_t d1)   /* MIDI OUT's ring since from: a packet of st / d1 */
+{
+    for (uint32_t i = from; i != mo_w; i++)
+        if ((midi_out_q[i % MQ] >> 8 & 0xFFu) == st && (midi_out_q[i % MQ] >> 16 & 0x7Fu) == d1) return 1;
+    return 0;
+}
+static int base_test(void)
+{
+    int bad = 0, ok; uint32_t mo;
+    midi_test_reset(); song.sel = 0; song.g[G_ROUTE] = 0;
+    bad += check("MIDI BASE CH: 1 at power-on, the MENU says 1 of 1..11 (SYSTEM)",
+                 mi_base == 0u && menu_get(MI_MIDIBASE) == 0u && menu_n(MI_MIDIBASE) == 11u && str_eq(menu_vname(MI_MIDIBASE, 0), "1") &&
+                 str_eq(menu_vname(MI_MIDIBASE, 10), "11") && MI_TAB[MI_MIDIBASE] == MTAB_SYSTEM && str_eq(MI_NAME[MI_MIDIBASE], "MIDI BASE CH"));
+    menu_put(MI_MIDIBASE, 6); ui_input_frame(); events_block(CTL);
+    bad += check("  set to 7 (MENU): the audio side follows the next frame", mi_base == 6u && midi_base_set == 6u);
+    queued(0x90, 60, 100, 1); queued(0x95, 61, 100, 2);
+    bad += check("  BASE 7: channels 1 and 6 play nothing (ROUT CH1-6)", !any_gate() && !midi_owners[0] && !midi_owners[5]);
+    queued(0x96, 62, 100, 1); queued(0x9B, 63, 100, 2); queued(0x9C, 64, 100, 1);
+    bad += check("  channel 7 plays T1, 12 T6 (USB, TRS); 13 nothing", gate_note(&trk[0], 62) && mn_get(6, 62) == 1u &&
+                 mn_get(11, 63) == 6u && midi_owners[5] == 1u && !mn_get(12, 64));   /* (T6 asleep: TRACKS 4) */
+    queued(0xE6, 127, 127, 1); queued(0xB6, 1, 77, 1); queued(0xC7, 3, 0, 1);
+    bad += check("  bend, CC1 and PROGRAM CHANGE on channel 7 reach T1, on 8 T2", midi_bend_target[0] == 512 && trk[0].mw == 77 && midi_pc_req[1] == 4u);
+    midi_pc_req[1] = 0;
+    usb.config = 1; mo_lvl = MO_ALL; mo = mo_w;
+    mo_send(0x90u | trk_midi_ch(1), 70, 90); mo_send(0xB0u | 15u, 99, 1);
+    bad += check("  MIDI OUT: T2's note goes out on channel 8; channel 16's (the globals' NRPN) as it is",
+                 out_since(mo, 0x97, 70) && out_since(mo, 0xBF, 99) && !out_since(mo, 0x91, 70));
+    mo = mo_w; panic_do();
+    ok = 1;
+    for (uint32_t i = 0; i < NTRK; i++) ok &= out_since(mo, 0xB6u + i, 123);
+    bad += check("  PANIC: CC123 out on channels 7..12", ok && !out_since(mo, 0xB0, 123));
+    events_block(CTL);
+    queued(0x96, 62, 100, 1); queued(0xB6, 64, 127, 1); queued(0x86, 62, 0, 1);
+    bad += check("  a pedal-held note on channel 7 ..", gate_note(&trk[0], 62) && (mn_get(6, 62) & MIDI_PEDAL_NOTE));
+    menu_put(MI_MIDIBASE, 0); ui_input_frame(); events_block(CTL);
+    bad += check("  .. let go when BASE goes back to 1 (channel 7 no longer heard); channel 1 plays T1 again",
+                 !gate_note(&trk[0], 62) && !mn_get(6, 62) && !midi_owners[0] && !midi_ch[6].pedal);
+    queued(0x90, 60, 100, 1); queued(0x80, 60, 0, 1);
+    bad += check("  .. channel 1's note on and off on T1", !any_gate() && !midi_owners[0]);
+    menu_put(MI_MIDIBASE, 10); ui_input_frame(); events_block(CTL);
+    queued(0x9F, 65, 100, 1); queued(0xCF, 2, 0, 1);
+    bad += check("  BASE 11: channel 16 plays T6; its PROGRAM CHANGE stays the song's (a section)",
+                 mn_get(15, 65) == 6u && !midi_pc_req[5] && midi_song_req == 3u);
+    midi_song_req = 0; queued(0x8F, 65, 0, 1);
+    {
+        persist_t p = {0};
+        p.magic = PERSIST_MAGIC; p.panel = panel;
+        settings_export(&p); midi_base_set = 0;
+        ok = settings_import(&p, sizeof p) && midi_base_set == 10u;
+        p.favorites.factory[15][31] = 0; ok &= settings_import(&p, sizeof p) && midi_base_set == 0u;
+        p.favorites.factory[15][31] = 200; ok &= settings_import(&p, sizeof p) && midi_base_set == 0u;
+        bad += check("  saved with the settings and read back; an older record (0) and an unknown value load as 1", ok);
+    }
+    ui_input_frame(); events_block(CTL);
+    return bad;
+}
 /* #103: the standard CC map, on the track the channel plays, as a knob turn (and as AUTOMATION records one) */
 static int cc_map_test(void)
 {
@@ -484,7 +542,7 @@ static int split_test(void)
 int main(void)
 {
     int bad = split_test() + controls_test() + sustain_test() + ownership_test() + clock_test(1) + clock_test(2) + clock_arp_and_boundaries() +
-              arp_ext_stop_test() + usb_burst_test() + route_test() + cc_map_test() + clock_steady_test();
+              arp_ext_stop_test() + usb_burst_test() + route_test() + cc_map_test() + clock_steady_test() + base_test();
     printf("%s\n", bad ? "MIDI CONTROL/CLOCK TEST FAILED" : "MIDI control/clock integration tests passed"); return bad != 0;
 }
 

@@ -253,7 +253,8 @@ def controls():
          'each knob its card): skins (AIR · COLORS), SCOPE, the seven palettes (JIANT SELVA CONTRAST BRASA ABISAL HUESO NEON), knob accel, FX latch, hold time, USB level; '
          'SYSTEM › USB: AUDIO · STEREO · STEMS · IN+OUT · STEMS+IN · <b>HOST</b> (a USB-MIDI keyboard or a USB audio interface, '
          'on a powered hub; never saved); SYSTEM › BLUETOOTH: OFF · ON (MIDI, app JIANT FM-1) · AIR (PROX and SWARM from the devices around), '
-         'OCT+ the PROX page (FAR / NEAR from 2.5 s, HOLD STILL). CONTROL › <b>VELOCITY</b> · VEL MIN · <b>AFTERTOUCH</b> · VEL LEARN '
+         'OCT+ the PROX page (FAR / NEAR from 2.5 s, HOLD STILL); SYSTEM › <b>MIDI BASE CH</b> 1–11 (track n on BASE + n − 1, '
+         'in and out: two FM-1s on one bus, 1 and 7). CONTROL › <b>VELOCITY</b> · VEL MIN · <b>AFTERTOUCH</b> · VEL LEARN '
          '(V10.6z7, F3..C5); AUDIO › <b>OCT BEND</b> (a note held + OCT− vibrato, OCT+ bend).'),
     ]
     t3 = '<table>' + ''.join(f'<tr><td style="white-space:nowrap;width:1%;padding-right:18px">{a}</td><td>{d}</td></tr>'

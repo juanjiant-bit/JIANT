@@ -27,6 +27,8 @@ static __attribute__((noinline)) void settings_fix15(uint8_t *f)
         f[27] = 0;
     if (f[16] > 7u)                                 /* OCT BEND (V10.6z4, ui.c oct_xp): unknown = 2 ST (0) */
         f[16] = 0;
+    if (f[31] > 10u)                                /* MIDI BASE CH (V10.7.39, ui.c midi_base_set): unknown = 1 (0) */
+        f[31] = 0;
     if (!(f[14] >> 4) && ((f[14] ^ 2u) & 3u) != 2u) {   /* (V10.7.23) AFTERTOUCH OFF 1..10 in bits 4-7: an older
                                                      * OFF LOW HIGH (bits 0-1) as 0 3 8, once (bits 0-1 then MID's) */
         static const uint8_t AT_OLD[4] = {0, 3, 5, 8};

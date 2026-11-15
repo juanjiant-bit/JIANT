@@ -488,6 +488,12 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
   how many of the 8 shared voices a track may hold (AUTO, as before, or 1 to 8; POLY, DRONE and the UNISON stack), and
   the page shows **ALL n/8**, every track's voices against the 8, so the whole system's polyphony is set on purpose
   instead of overloading. Old projects open on AUTO.
+- **MIDI BASE CH** (MENU › SYSTEM, 1–11, default 1): track *n* listens and sends on channel BASE + *n* − 1, so two
+  FM-1s share one MIDI bus (one on 1, the other on 7). Kept with the settings; older settings load as 1.
+- **Bluetooth MIDI hardened** after a crash report with a BLE keyboard: a dense packet of aftertouch, bend or a CC
+  (up to 240 messages in one) no longer overflows MIDI IN and drops every held note (poly pressure, which nothing
+  plays, is ignored; repeats of one controller keep their last value), and a Bluetooth link lost with notes held
+  lets them go. A VOICE track whose LANG changed mid-phrase no longer reads past its word template.
 
 ### V10.7.38 — beta (2026-11-15)
 - **WEST drawn as its circuit** on EDIT: the two sine cores, the folder and the vactrol gate, each moving with its knob.
