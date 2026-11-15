@@ -5431,8 +5431,8 @@ static int test_rec_combos(void)
                  !strcmp(CE_FX[NELEM(CE_FX) - 4u + !FELUCCA_XFX].t, "MASTER") &&
                  !strcmp(CE_FX[NELEM(CE_FX) - 5u + !FELUCCA_XFX].t, "SL PITCH") && !page_visible(fx_page("PUNCH IN")) &&
                  !strcmp(CG_FX[NELEM(CG_FX) - 1u].nm, "MASTER") && !strcmp(FX_MOD[FX_NMOD - 1u], "MASTER"));
-    {   /* (0.9.9-snd2) CLEAR AUTOMATION on the punch-in layer itself: FX + G5 (CLR AUTO on the map) empties the lane
-         * only, stopped or playing (not recording); the tracks' automation stays */
+    {   /* (V10.7.36) FX + G5 is COMB: the punch-in lane and the tracks' automation stay (the lane is cleared by REC + FX
+         * or FX + PRESETS, KNOB 4 CLEAR only), named on the map */
         char nm[12];
         uint32_t st, k2;
         static int32_t o2[2 * CTL];
@@ -5443,12 +5443,15 @@ static int test_rec_combos(void)
             btn_down(B_FX); frame(); key_down(white(15)); frame();
             st = ly_keyname(LAYER_FX, 0, 15u, nm);
             mix_block(o2, CTL); mix_block(o2, CTL);
+            ok = (perf_held & PF_BIT(PF_COMB)) != 0u;
             key_up(white(15)); btn_up(B_FX); frame();
-            ok = !pfx_lane[0] && !pfx_lane[5] && motion_find(t, 4, P_DIST) >= 0 && !strcmp(nm, "CLR AUTO") && st == LS_HELD;
+            ok &= pfx_lane[0] == 0x11 && pfx_lane[5] == 0x30 && motion_find(t, 4, P_DIST) >= 0 && !strcmp(nm, "COMB") &&
+                  st != LS_OFF && st != LS_DIM;
             if (k2) { transport_req = 2; mix_block(o2, CTL); }
-            bad += check(k2 ? "  FX + G5 CLR AUTO playing: the punch-in lane only (the FX automation stays)"
-                            : "  FX + G5 CLR AUTO stopped: the punch-in lane only (the FX automation stays), named on the map", ok);
+            bad += check(k2 ? "  FX + G5 COMB playing: the punch-in lane and the FX automation stay"
+                            : "  FX + G5 COMB stopped: the lane and the FX automation stay, named on the map", ok);
         }
+        memset(pfx_lane, 0, sizeof pfx_lane);
     }
     btn_down(B_REC); frame();
     btn_down(B_GLO); frame(); btn_up(B_GLO); frame();

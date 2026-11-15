@@ -370,7 +370,7 @@ static int test_keys(void)
     fm1_in.notes = 0;
     fm1_in.buttons = 0;
     keyboard_block();
-    {   /* the keys without an effect (G5 CLR AUTO is pfx.c's): the layer's, nothing */
+    {   /* the keys without an effect (none since V10.7.36): the layer's, nothing */
         uint32_t q, ok = 1, assigned = 0;
         for (q = 0; q < 27u; q++)
             if (perf_key(q) < PF_N)
@@ -389,8 +389,8 @@ static int test_keys(void)
             ok &= !kb_layer && !perf_held && mo_w == mo0;
         }
         fm1_in.buttons = 0;
-        bad += check("the keys without an effect (G5 CLR AUTO): silent, nothing held; every effect on a key",
-                     ok && (uint32_t)__builtin_popcount(assigned) == PF_N);   /* (15 white F3 .. F5, 11 black) */
+        bad += check("every effect on a key (16 white, 11 black); a key without one would be silent, nothing held",
+                     ok && (uint32_t)__builtin_popcount(assigned) == PF_N);   /* (16 white F3 .. G5, 11 black) */
         kb_mask = perf_mask = 0;
     }
     usb.config = 0;
@@ -450,7 +450,8 @@ static int test_misc(void)
     static const struct { const char *name; int e; uint32_t off; } C[] = {
         {"REPEAT 1/8", PF_R8, 30000}, {"REPEAT 1/16", PF_R16, 30000}, {"REPEAT 1/32", PF_R32, 30000},
         {"REVERSE", PF_REV, 30000}, {"TAPE STOP", PF_TAPE, 60000}, {"PITCH UP", PF_PUP, 100000},
-        {"PITCH DOWN", PF_PDN, 100000}, {"RING", PF_RING, 60000}, {"GLITCH", PF_GLT, 100000}};
+        {"PITCH DOWN", PF_PDN, 100000}, {"RING", PF_RING, 60000}, {"GLITCH", PF_GLT, 100000},
+        {"WOBBLE", PF_WOB, 60000}, {"COMB", PF_COMB, 60000}};
     uint32_t c, t;
     int32_t own;
     test_signal(110, 16000, 110, 16000);
@@ -475,16 +476,16 @@ static int test_misc(void)
             in_r[t] = (t / 53u) & 1u ? 120000 : -120000;
         }
         {
-            static const int E[] = {PF_R16, PF_REV, PF_TAPE, PF_PUP, PF_PDN, PF_GLT};
+            static const int E[] = {PF_R16, PF_REV, PF_TAPE, PF_PUP, PF_PDN, PF_GLT, PF_COMB};
             uint32_t j;
             for (j = 0; j < sizeof E / sizeof E[0]; j++) {
-                ev_t e2[] = {{0, PF_RING + 1}, {0, E[j] + 1}};
+                ev_t e2[] = {{0, PF_RING + 1}, {0, PF_WOB + 1}, {0, E[j] + 1}};
                 int32_t pk;
                 run_crush = 100;
-                run(120, 1, e2, 2, 100000);
+                run(120, 1, e2, 3, 100000);
                 run_crush = 0;
                 pk = peak(out_l, 0, 100000) > peak(out_r, 0, 100000) ? peak(out_l, 0, 100000) : peak(out_r, 0, 100000);
-                snprintf(what, sizeof what, "4x full scale through effect %d + RING + KNOB 2 CRUSH: peak %d (no wrap)", E[j], pk);
+                snprintf(what, sizeof what, "4x full scale through effect %d + RING + WOBBLE + KNOB 2 CRUSH: peak %d (no wrap)", E[j], pk);
                 bad += check(what, pk < 300000);
             }
         }
@@ -689,23 +690,6 @@ static int test_pfx(void)
     bad += check("OCT+: a held note an octave up while held, back after", c1 > c0 * 1.7 && c1 < c0 * 2.3 &&
                  c2 > c0 * 0.85 && c2 < c0 * 1.15 && !t1->pfx_pit);
     trk_note_off(t1, 45);
-    /* DEC- on a kick: the tail shorter; DECY as it was outside the block */
-    {
-        double r0 = 0, r1 = 0;
-        int16_t d0 = td->p[P_E3];
-        uint32_t m;
-        for (m = 0; m < 2u; m++) {
-            for (i = 0; i < 44100u; i += CTL) mix_block(o, CTL);
-            if (m) perf_press(PF_DSHT, 1);
-            mix_block(o, CTL);                          /* (the effect in) */
-            trk_note_on(td, 36, 100);
-            pfx_render(11008u, 0xFFFFFFFFu, 0xFFFFFFFFu, 0);
-            for (i = 2205u; i < 8820u; i++) *(m ? &r1 : &r0) += (double)song_l[i] * song_l[i];
-            if (m) perf_press(PF_DSHT, 0);
-        }
-        mix_block(o, CTL);
-        bad += check("DEC-: a kick's tail shorter; DECY as stored outside the ISR", r1 < r0 * 0.5 && td->p[P_E3] == d0);
-    }
     /* STUTTER 1/16 on the drums: the last kick 4 times a beat (120 BPM: 22050 samples) */
     song_setup();
     trk_note_on(td, 36, 100);
@@ -718,8 +702,7 @@ static int test_pfx(void)
     perf_press(PF_S8, 0);
     mix_block(o, CTL);
     bad += check("STUTTER 1/8 (JIANT 0.4, was 1/16): the last kick twice in a beat; let go: none more", hits == 2u && !(td->pfx & PFX_REP));
-    /* (JIANT 0.4) ATK+ on the drums: a hit's first ms softer (faded in); DEC- on a synth: its sustain 0 (a pluck), put
-     * back after; ARP on the drums: a fill, each press another */
+    /* (JIANT 0.4) ATK+ on the drums: a hit's first ms softer (faded in); ARP on the drums: a fill, each press another */
     {
         double e0 = 0, e1 = 0;
         uint32_t m;
@@ -736,28 +719,6 @@ static int test_pfx(void)
         }
         mix_block(o, CTL);
         bad += check("ATK+ on the drums: a snare's first 10 ms softer (faded in)", e1 < e0 * 0.5 && e0 > 0);
-    }
-    {
-        int16_t s0;
-        song_setup();
-        s0 = t1->p[P_SUS] = 100;
-        perf_press(PF_DSHT, 1);
-        for (i = 0; i < 4u * CTL; i += CTL) mix_block(o, CTL);
-        {
-            int16_t during;
-            uint32_t v;
-            int32_t env = 0;
-            trk_note_on(t1, 60, 100);
-            for (i = 0; i < 22016u; i += CTL) mix_block(o, CTL);
-            for (v = 0; v < NVOICE; v++)
-                if (t1->v[v].active && t1->v[v].env > env) env = t1->v[v].env;
-            during = t1->p[P_SUS];
-            perf_press(PF_DSHT, 0);
-            mix_block(o, CTL);
-            bad += check("DEC- on a synth: its sustain 0 (a held note decays away), back after", env < (1 << 24) / 20 &&
-                         during == s0 && t1->p[P_SUS] == s0);
-            trk_note_off(t1, 60);
-        }
     }
     {
         uint8_t f[2][16];
@@ -877,11 +838,22 @@ static int test_pfx(void)
         bad += check("punch-in lane: REC + OCT+ over steps 4..7 recorded (ALL); played on drums and synths (DRM saved: ALL)",
                      ok && pit5 && !pit10 && syn);
         pfx_ltgt = 0;
-        perf_press(PF_CLR, 1);
+        perf_press(PF_COMB, 1);                    /* (V10.7.36: G5 is COMB, the lane stays; DEC- / DEC+ saved in
+                                                     * it, 4 and 5, play nothing) */
         mix_block(o, CTL);
-        perf_press(PF_CLR, 0);
-        for (ok = 1, st = 0; st < 64u; st++) ok &= !pfx_lane_at(st);
-        bad += check("  stopped, FX + G5 clears the lane", ok);
+        perf_press(PF_COMB, 0);
+        for (ok = 1, st = 0; st < 64u; st++) ok &= pfx_lane_at(st) == (st >= 4u && st < 8u ? 2u : 0u);
+        memset(pfx_lane, 0, sizeof pfx_lane);
+        for (st = 0; st < 64u; st++) pfx_lane_put(st, st & 1u ? 4u : 5u);
+        transport_req = 1;
+        for (i = 0; i < 16u * s16; i += CTL) {
+            mix_block(o, CTL);
+            ok &= !t1->pfx && !td->pfx && !pfx_lnow;
+        }
+        transport_req = 2;
+        mix_block(o, CTL);
+        memset(pfx_lane, 0, sizeof pfx_lane);
+        bad += check("  G5 (COMB now) leaves the lane; a lane holding 4 / 5 (DEC- / DEC+ of before) plays nothing", ok);
     }
     /* (0.6.99) FX > PUNCH: LEN 16 of 1/8: the lane 16 steps of two sixteenths; a press over sixteenths 12..15 lands on
      * steps 6 and 7, and the second pass (sixteenths 32..) plays it there again (the lane wraps at 16 of 1/8 = 32
@@ -1085,6 +1057,113 @@ static int test_new(void)
         run(120, 1, ev, 2, 50000);
         bad += check("  a full-scale sine: never past it", peak(out_l, 0, 50000) <= 30000 && peak(out_r, 0, 50000) <= 30000);
     }
+    {   /* WOBBLE: a 2 kHz sine through a low-pass shut on the 1/8s, open between them: loud at mid-1/8, quiet at its
+         * edges, every 1/8 the same; bounded; back */
+        ev_t ev[] = {{992, PF_WOB + 1}, {16u * P16, -(PF_WOB + 1)}};
+        int32_t mid, edge, mid2, pk;
+        test_signal(1500, 12000, 1500, 12000);
+        run(120, 1, ev, 2, 18u * P16);
+        mid = peak(out_l, 4u * P16 + P16 - 300u, 4u * P16 + P16 + 300u);
+        edge = peak(out_l, 4u * P16 - 150u, 4u * P16 + 150u);
+        mid2 = peak(out_l, 10u * P16 + P16 - 300u, 10u * P16 + P16 + 300u);
+        pk = peak(out_l, 0, 18u * P16);
+        snprintf(what, sizeof what, "WOBBLE: a 1.5 kHz sine open mid-1/8 (%d, again %d), shut at the 1/8 (%d), bounded (%d)",
+                 mid, mid2, edge, pk);
+        bad += check(what, mid > 6000 && mid2 > 6000 && edge < mid / 4 && pk < 40000);
+        bad += check("  let go: the live signal again after the ramp, bit for bit", same(16u * P16 + 400u, 18u * P16));
+    }
+    {   /* COMB: a noise burst rings at the root (C3: 337 samples, a 131 Hz period), bounded, back */
+        ev_t ev[] = {{0, PF_COMB + 1}, {40000, -(PF_COMB + 1)}};
+        uint32_t s = 12345u;
+        int32_t pk, pin;
+        double ac = 0, n0 = 0;
+        for (t = 0; t < NT; t++) {
+            s = s * 1664525u + 1013904223u;
+            in_l[t] = in_r[t] = (int32_t)(s >> 16) - 32768;
+        }
+        run(120, 0, ev, 2, 50000);
+        {   /* (the best lag about a C3 period: D sways a quarter tone) */
+            uint32_t lag;
+            double best = -1;
+            for (lag = 325u; lag < 350u; lag++) {
+                double a = 0, q = 0;
+                for (t = 10000u; t < 30000u; t++) {
+                    a += (double)out_l[t] * out_l[t - lag];
+                    q += (double)out_l[t] * out_l[t];
+                }
+                if (a > best) best = a, ac = a, n0 = q;
+            }
+        }
+        pk = peak(out_l, 0, 50000);
+        pin = peak(in_l, 0, 50000);
+        snprintf(what, sizeof what, "COMB: noise rings at the root (correlation a C3 period on: %.2f), bounded (%d, in %d: 1.625 x at most)",
+                 n0 > 0 ? ac / n0 : 0, pk, pin);
+        {   /* (against a lag not a period: 200) */
+            double a2 = 0;
+            for (t = 10000u; t < 30000u; t++) a2 += (double)out_l[t] * out_l[t - 200u];
+            bad += check(what, n0 > 0 && ac / n0 > 0.15 && fabs(a2 / n0) < 0.05 && pk <= pin * 13 / 8 + 2);
+        }
+        bad += check("  let go: the live signal again after the ramp, bit for bit", same(40000u + 400u, 50000));
+    }
+    {   /* DLY 1/16: the delay's TIME 1/16, FEEDBK 95, the dry into its send, the dry kept; let go: a bar at FEEDBK 30 */
+        static int32_t ml[CTL], mr[CTL], bl[CTL], br[CTL], sd[CTL], sr[CTL];
+        uint32_t i, b, ok = 1;
+        host_tracks_init();
+        perf_reset();
+        song.playing = 1;
+        song.g[G_DTIME] = 5;
+        song.g[G_DFDBK] = 40;
+        song.g[G_DMIX] = 60;
+        perf_press(PF_D16, 1);
+        for (b = 0; b < 4000u; b++) {
+            if (b == 32u)
+                perf_press(PF_D16, 0);
+            memset(gfx_off, 0, sizeof gfx_off);     /* (macro_master's every block) */
+            for (i = 0; i < CTL; i++)
+                ml[i] = mr[i] = 8000, bl[i] = br[i] = 0, sd[i] = sr[i] = 0;
+            if (perf_begin(CTL))
+                perf_pre(ml, mr, bl, br, sd, sr, CTL);
+            if (b == 30u)
+                ok &= ml[CTL - 1] == 8000 && sd[CTL - 1] > 7900 && sr[CTL - 1] == 0 && gfx_val(GF_DTIME) == 2 &&
+                      gfx_val(GF_DFDBK) == 95 && gfx_val(GF_DMIX) == 100;
+            if (b == 100u)
+                ok &= sd[CTL - 1] == 0 && gfx_val(GF_DTIME) == 2 && gfx_val(GF_DFDBK) == 30;
+        }
+        ok &= gfx_val(GF_DTIME) == 5 && gfx_val(GF_DFDBK) == 40 && gfx_val(GF_DMIX) == 60 && !pfw.etail && !pfw.ew;
+        bad += check("DLY 1/16: the delay at 1/16, FEEDBK 95, MIX 100, all the dry sent (kept too); let go: a bar at FEEDBK 30, "
+                     "then the user's", ok);
+        song.g[G_DTIME] = 0;
+    }
+    {   /* .. on the song: echoes build while held (louder than the dry alone), die out within ~2 s of the let go */
+        int32_t o[2 * CTL], dry = 0, held = 0, tail = 0;
+        uint32_t f, i, m;
+        for (m = 0; m < 2u; m++) {
+            song_setup();
+            for (i = 0; i < NTRK; i++) trk[i].p[P_DLY] = 0;
+            transport_req = 1;
+            for (f = 0; f < 5u * FS; f += CTL) {
+                if (m && f == 44032u) perf_press(PF_D16, 1);
+                if (f == 3u * 44032u) {
+                    if (m) perf_press(PF_D16, 0);
+                    transport_req = 2;
+                    for (i = 0; i < NTRK; i++) trk[i].p[P_LEVEL] = 0;
+                }
+                mix_block(o, CTL);
+                for (i = 0; i < CTL; i++) {
+                    int32_t a = abs(o[2 * i]);
+                    if (!m && f > 88064u && f < 3u * 44032u) dry = a > dry ? a : dry;
+                    if (m && f > 88064u && f < 3u * 44032u) held = a > held ? a : held;
+                    if (m && f > 4u * FS + FS / 2u) tail = a > tail ? a : tail;
+                }
+            }
+            transport_req = 2;
+            mix_block(o, CTL);
+        }
+        snprintf(what, sizeof what, "DLY 1/16 on the song: echoes over the dry (peak %d, dry %d), gone 1.5 s after the let go (%d)",
+                 held, dry, tail);
+        bad += check(what, held > dry && tail < dry / 50);
+        song.g[G_DTIME] = 0;
+    }
     {   /* REV ALL / DLY ALL / FREEZE before the buses: the dry into one send, the dry muted; FREEZE shuts the reverb's */
         static int32_t ml[CTL], mr[CTL], bl[CTL], br[CTL], sd[CTL], sr[CTL];
         static const struct { int e; const char *n; } W[3] = {{PF_RVA, "REV ALL"}, {PF_DLA, "DLY ALL"}, {PF_FRZ, "FREEZE"}};
@@ -1241,6 +1320,7 @@ static int test_new(void)
     return bad;
 }
 
+#ifndef PERFORM_NO_MAIN                            /* (tests/punch_render.c: its own) */
 int main(int argc, char **argv)
 {
     int bad = 0;
@@ -1261,3 +1341,4 @@ int main(int argc, char **argv)
     printf("%s\n", bad ? "PERFORM TEST FAILED" : "perform test passed");
     return bad != 0;
 }
+#endif

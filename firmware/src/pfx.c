@@ -6,8 +6,7 @@
  *   D4 OCT-, E4 OCT+   every voice an octave down / up (both: none), at once, notes held too
  *   F4 1/2 TEMPO       the track's sequencer at half speed; let go, it is back where it would have been (p2: LIVE's
  *                      RATE /2, seq_live.c; the LOOPs a LIVE LOOP of the last N steps)
- *   G4 DEC-, A4 DEC+   short / long decays: a synth's DEC and REL, DRUM's DECY (DEC- wins); (JIANT 0.4) DEC- also
- *                      takes a synth's sustain to 0: the whole instrument plucks
+ *   (G4, A4: WOBBLE, DLY 1/16 since V10.7.36, audio effects in perform.c; DEC- DEC+ were here)
  *   B4 C5              STUTTER 1/8, 1/16 (JIANT 0.4; were 1/16 1/32): the notes the track struck last together (a
  *                      step's chord, a drum step's hits) again at the rate, gated half; the sequencer's own notes wait
  *   D5 ATK+            (JIANT, was STUTTER 1/16T) every synth's attack slow (two thirds of the way to the longest);
@@ -20,15 +19,17 @@
  * so a repeat starts on the grid; let go, at once. The lane records the presses as they were (to the nearest step).
  * Of the repeats (STUTTER, ARP) the fastest held plays. They act on every track (V10.7.36: A#4 is LIFE MAX now, the
  * ALL / SYN / DRM selector is gone; a lane saved with SYN or DRM plays on every track).
+ * (V10.7.36) G5 is COMB (perform.c): the lane is cleared by REC + FX (ui_input.c) or FX + PRESETS, KNOB 4 CLEAR, no
+ * longer by a key. A lane step holding 4 or 5 (DEC- / DEC+ of before) plays nothing.
  * (V10.7.36) A#4 LIFE MAX: HOME > LIFE's LIFE FILTER PITCH FX at 100 % for the block (before macro_master: LIFE's own
  * block sees them, the parts too), the user's values back in pfx_end: nothing outside the ISR sees them, nothing saves
  * them; at once, not on the 1/16.
  * The punch-in lane (the automation): a section's 64 steps of 1/16 (4 bars, from the transport's start or the
  * section's), one effect a step (pfx_lane: a nibble, 0 none, 1..10 D4 .. F5) and the tracks it acts on (pfx_ltgt).
- * Recording (REC armed, playing, not a song): the steps that pass while a MIDI effect is held get it (the lowest held),
- * G5 held erases them. Stopped, FX + G5 clears the lane. Played back with the held ones.
+ * Recording (REC armed, playing, not a song): the steps that pass while a MIDI effect is held get it (the lowest held).
+ * Played back with the held ones.
  * Saved with the section (project.c FUNA: the 33 spare bytes at PROJ_PFX_OFF), staged by the song (song_chain.c).
- * In the ISR: pfx_block before the events (what acts on each track, the repeats, the decays put in), pfx_end after
+ * In the ISR: pfx_block before the events (what acts on each track, the repeats, the attacks put in), pfx_end after
  * the parts (the decays back: as mod.c, nothing outside the ISR sees them). Idle: one test a block. */
 static uint8_t pfx_in;                /* a repeat's own note-on (pfx_note lets it through) */
 static uint8_t pfx_any;               /* a track has something running (or to put back) */
@@ -121,8 +122,8 @@ static __attribute__((noinline)) void pfx_fire(track_t *t, int arp)
     pfx_in = 0;
 }
 
-/* the values DEC- / DEC+ took out (pfx_end puts them back) */
-static int16_t pfx_keep[NTRK][4];   /* DEC, REL (DRUM: DECY); ATK; SUS (DEC-) */
+/* the attacks ATK+ took out (pfx_end puts them back) */
+static int16_t pfx_keep[NTRK];
 static uint32_t pfx_qon;            /* (JIANT) the effects in (quantized to the 1/16) */
 static volatile uint32_t pfx_lnow;  /* (V10.6z3) the effect the punch-in lane plays now (PF bit; the editor's PUNCH push) */
 
@@ -169,12 +170,9 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
             pfx_qon |= nw;
     }
     held = pfx_qon;
-    if (pfx_clr && !(song.playing && pfx_rec_ok()))     /* (snd2) G5 CLR AUTO, not recording: the whole lane (only it: the
-                                                         * tracks' automation stays) */
-        memset(pfx_lane, 0, sizeof pfx_lane);
     if (song.playing && b >= 4u) {                      /* the lane: record, or play; (0.6.99) its LEN and RES */
         uint32_t s16 = pfx_lane_step(b), len = pfx_lane_len(), st = (pfx_lph / s16) % len, half = pfx_lph % s16 >= s16 / 2u;
-        uint32_t w = pfx_rec_ok() && (raw || pfx_clr) ? (raw ? (uint32_t)__builtin_ctz(raw) - PF_OCTD + 1u : 0u) : 16u;
+        uint32_t w = pfx_rec_ok() && raw ? (uint32_t)__builtin_ctz(raw) - PF_OCTD + 1u : 16u;
         pfx_lph += n;
         if (w < 16u) {                                  /* recording, to the nearest step: a press in a step's second */
             if (!pfx_rh) {                              /* half starts at the next one */
@@ -196,7 +194,7 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
                 pfx_lane_put(st, pfx_rold);             /* let go in a step's first half: that step as it was */
             pfx_rh = 0;
             if ((k = pfx_lane_at(st)) != 0u && k <= 10u)
-                lane = PF_BIT(PF_OCTD + k - 1u);
+                lane = PF_BIT(PF_OCTD + k - 1u) & PF_MIDI;   /* (V10.7.36: 4, 5 nothing: G4 A4 are not on the notes now) */
         }
     }
     pfx_lnow = lane;                                    /* (V10.6z3: the editor's PUNCH push) */
@@ -214,7 +212,7 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
         uint32_t lpn = (on >> PF_LP3) & 1u ? 3u : (on >> PF_LP5) & 1u ? 5u : (on >> PF_LP7) & 1u ? 7u : 0u;   /* (snd2) LOOP
                                                          * 3 / 5 / 7 (the shortest held wins) */
         f = ((on >> PF_RND) & 1u ? PFX_RND : 0u) | ((on >> PF_HALF) & 1u ? PFX_HALF : 0u) | (rep ? PFX_REP : 0u) |
-            (on & (PF_BIT(PF_DSHT) | PF_BIT(PF_DLNG)) ? PFX_DEC : 0u) | ((on >> PF_ATK) & 1u ? PFX_ATK : 0u) |
+            ((on >> PF_ATK) & 1u ? PFX_ATK : 0u) |
             (lpn && song.playing ? PFX_LOOP : 0u);
         /* (p2) 1/2 TEMPO and LOOP are LIVE's RATE /2 and a LOOP (seq_live.c live_q): its ghost keeps where the track
          * would be, let go it is back there */
@@ -242,23 +240,8 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
                 pfx_hush(t);                            /* gated half */
             }
         }
-        if (f & PFX_DEC) {                              /* the decays, short or long */
-            int sh = (on >> PF_DSHT) & 1u;
-            uint32_t a = drum ? P_E3 : P_DEC, c = drum ? P_E3 : P_REL;
-            pfx_keep[k][0] = t->p[a];
-            pfx_keep[k][1] = t->p[c];
-            pfx_keep[k][3] = t->p[P_SUS];
-            if (drum) {
-                t->p[a] = (int16_t)clamp(t->p[a] + (sh ? -40 : 40), 0, 127);
-            } else {
-                t->p[a] = (int16_t)(sh ? t->p[a] / 3 : t->p[a] + (127 - t->p[a]) * 2 / 3);
-                t->p[c] = (int16_t)(sh ? t->p[c] / 3 : t->p[c] + (127 - t->p[c]) * 2 / 3);
-                if (sh)
-                    t->p[P_SUS] = 0;                    /* (JIANT 0.4) DEC-: a pluck */
-            }
-        }
         if ((f & PFX_ATK) && !drum) {                   /* (JIANT) ATK+: the attack slow (DRUM: eng_drum.c) */
-            pfx_keep[k][2] = t->p[P_ATK];
+            pfx_keep[k] = t->p[P_ATK];
             t->p[P_ATK] = (int16_t)(t->p[P_ATK] + (127 - t->p[P_ATK]) * 2 / 3);
         }
         if (f || t->pfx_pit)
@@ -266,7 +249,7 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
     }
 }
 
-/* after the parts: what DEC- / DEC+ changed, back; (V10.7.36) LIFE MAX's */
+/* after the parts: what ATK+ changed, back; (V10.7.36) LIFE MAX's */
 static __attribute__((noinline)) void pfx_end(void)
 {
     uint32_t k;
@@ -276,14 +259,6 @@ static __attribute__((noinline)) void pfx_end(void)
         pfx_life.on = 0;
     }
     for (k = 0; k < NTRK; k++)
-        if (trk[k].pfx & PFX_DEC) {
-            int drum = trk[k].engine == ENGI_DRUM;
-            trk[k].p[drum ? P_E3 : P_DEC] = pfx_keep[k][0];
-            trk[k].p[drum ? P_E3 : P_REL] = pfx_keep[k][1];
-            if (!drum)
-                trk[k].p[P_SUS] = pfx_keep[k][3];
-        }
-    for (k = 0; k < NTRK; k++)
         if ((trk[k].pfx & PFX_ATK) && trk[k].engine != ENGI_DRUM)
-            trk[k].p[P_ATK] = pfx_keep[k][2];
+            trk[k].p[P_ATK] = pfx_keep[k];
 }

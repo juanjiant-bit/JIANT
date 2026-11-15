@@ -764,12 +764,13 @@ SEQ las suyas). El encabezado nombra la capa en palabras, **[GLO] SET**. El pie 
 | C4 | TAPE STOP (se frena hasta pararse en un tiempo, después silencio) |
 | D4 / E4 | OCT− / OCT+ |
 | F4 | 1/2 TEMPO |
-| G4 / A4 | DEC− / DEC+ |
+| G4 | WOBBLE (un pasabajos resonante que abre y cierra cada 1/8) |
+| A4 | DLY 1/16 (ecos a 1/16 que crecen mientras la mantenés) |
 | B4 / C5 | STUTTER 1/8 / 1/16 |
 | D5 | ATK+ |
 | E5 | ARP |
 | F5 | RANDOM |
-| G5 | borra el carril de punch-in |
+| G5 | COMB (un filtro peine resonante en la tónica de la escala) |
 | F#3 / G#3 | PITCH UP / PITCH DOWN (toda la mezcla, hasta una octava en un compás) |
 | A#3 | FREEZE (la reverb congela su nube) |
 | C#4 / D#4 | REV ALL / DLY ALL (todo mojado: solo la reverb / el delay) |
@@ -2969,8 +2970,8 @@ largo, 1 … 64 pasos; **RES** el paso, 1/8, 1/16 o 1/32 de tiempo (64 pasos de 
 de 1/8 ocho); el KNOB 3 dice qué está haciendo (REC mientras graba, PLAY mientras suena, si no cuántos pasos tienen un
 efecto); **CLEAR** (KNOB 4 a la derecha) pregunta **CLEAR PUNCH IN LANE?** (OCT+ sí). (PRESETS, porque todas las teclas
 de la capa FX ya tienen un efecto y FX + SELECT son los dados de FX; la vista KNOBS de la capa dice **PRESETS LANE**.) Para grabar: REC armado y tocando (no en una canción), mantené FX y
-la tecla del efecto; los pasos que pasa lo reciben; **G5** sostenido borra por donde pasa el cabezal. Se guarda con
-la sección.
+la tecla del efecto; los pasos que pasa lo reciben. Se guarda con la sección. (V10.7.36: G5 ya no lo borra; lo borran
+REC mantenido + FX o este CLEAR de la KNOB 4.)
 
 - **Sobre el audio** (V10.7.36): REPEAT 1/8, 1/16, 1/32 (F3 G3 A3); **REVERSE** (B3): cada 1/16 (un 1/8 por encima
   de ~167 BPM, un 1/32 por debajo de ~82) es la anterior tocada al revés, una y otra vez mientras la mantenés (la primera
@@ -2987,7 +2988,15 @@ la sección.
   la pista elegida (C5 … B5), con su profundidad ondulando una vez por compás; nunca más fuerte que la mezcla.
   **LIFE MAX** (A#4): LIFE, FILTER, PITCH y FX de HOME › LIFE al 100 % mientras la mantenés; al soltar, tus valores
   exactos (nunca se guarda). Todas entran al apretar (salvo lo dicho) y salen con una rampa corta.
-- **Sobre las notas**: OCT− / OCT+ (D4 E4), 1/2 TEMPO (F4), DEC− (corto, punteado) / DEC+ (largo) (G4 A4), STUTTER
+- (V10.7.36) **WOBBLE** (G4): un pasabajos resonante en el master que abre y cierra una vez por cada 1/8 del
+  transporte, a tempo. **DLY 1/16** (A4): el bus de delay a 1/16 con una realimentación muy alta (justo debajo de la
+  autooscilación; la saturación de su lazo lo mantiene acotado) y toda la mezcla mandada a él, la seca se queda: los
+  ecos crecen mientras la mantenés; al soltar, la realimentación baja durante un compás para que se apaguen rápido, y
+  después vuelven tus ajustes del delay. **COMB** (G5): un filtro peine resonante en el master afinado a la tónica de
+  la escala de la pista elegida (C3 … B3), con su afinación y su realimentación ondulando solas, nunca más fuerte que
+  la mezcla (comparte el buffer de REPEAT: suena el último apretado). DEC− y DEC+ (antes G4 A4) ya no están; un paso
+  del carril que los tenía no toca nada.
+- **Sobre las notas**: OCT− / OCT+ (D4 E4), 1/2 TEMPO (F4), STUTTER
   1/8 / 1/16 (B4 C5), ATK+ (ataques lentos, baterías incluidas) (D5), ARP (E5; en una pista DRUM, un fill nuevo en cada
   pulsación), RANDOM (F5). Entran en la siguiente 1/16 y actúan sobre todas las pistas (V10.7.36: ya no está el
   selector ALL / SYN / DRM de A#4; un carril guardado con SYN o DRM suena en todas).
@@ -2998,9 +3007,6 @@ la sección.
   un loop de batería tirado al delay suena a ecos y no a una nube de ruido de hats y caja (cada pasada pierde el ruido
   mucho más rápido que las notas). El delay sin THROW queda como antes. (V10.7.36: ya no están las teclas LPF / HPF
   ni MUTE T1–T6; FILTER es la KNOB 1, los mutes son de GLO.)
-- (0.9.9-snd2) **G5 CLR AUTO** (con su nombre en el mapa): FX + G5 vacía el carril de punch-in (su automatización) y
-  nada más, parado o tocando; grabando, sigue borrando solo donde pasa el cursor. La KNOB 4 del carril (FX + PRESETS) también es
-  **CLEAR** (lo mismo, con un diálogo).
 - (0.9.9-snd2) **G#4 LOOP 3**, **C#5 LOOP 5**, **D#5 LOOP 7**: mientras los mantenés, cada pista
   repite sus últimos 3, 5 o 7 pasos (desde el paso que suena cuando entra, en el próximo 1/16), sin alinearse al compás:
   loops impares que giran contra el 4/4. Al soltar, cada pista vuelve a donde habría estado. **F#5 GLITCH** (de la
@@ -3012,8 +3018,8 @@ la sección.
 
 **El carril de punch-in**: cada sección tiene un carril de 64 pasos de 1/16 (4 compases). Con **REC armado y sonando**
 (no durante un tema), los **efectos de nota (D4–F5)** que mantenés se graban en él, uno por paso (los efectos de audio, LOOP y
-LIFE MAX no se graban). Mantené **FX + G5** mientras suena para borrar por donde pasa el cabezal; parado, FX + G5
-borra todo el carril. **REC mantenido + FX** también lo borra (junto con la automatización de FX de la pista).
+LIFE MAX no se graban). **REC mantenido + FX** lo borra (junto con la automatización de FX de la pista), o FX +
+PRESETS, KNOB 4 **CLEAR** (con un diálogo). (V10.7.36: FX + G5, CLR AUTO, ahora es COMB.)
 
 **Traba**: mantené FX hasta que se abra su mapa y soltalo sin tocar nada: la capa FX queda abierta (**[FX] LOCKED**),
 como las macros con LFO; las teclas tocan los efectos (momentáneos: apretada suena, soltada se apaga), las perillas son

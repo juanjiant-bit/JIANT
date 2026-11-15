@@ -970,8 +970,9 @@ static uint32_t layer_leds(uint32_t *br)
  * colours over the layer's keys (the keycaps' words); STATE what is on, as chips. (Until 0.8.8: cells with note names,
  * the Felucca map.) The keys and knobs do what they did: only the drawing is new */
 static const char *const PF_NAME[PF_N] = {"RPT 1/8", "RPT 1/16", "RPT 1/32", "REVERSE", "TAPESTOP",   /* (perform.c PF_*) */
-    "OCT-", "OCT+", "1/2 TEMPO", "DEC-", "DEC+", "STUT 1/8", "STUT 1/16", "ATK+", "ARP", "RANDOM",   /* the MIDI ones (pfx.c) */
-    "PITCH UP", "PITCH DN", "FREEZE", "REV ALL", "DLY ALL", "RING", "GLITCH", "LOOP 3", "LOOP 5", "LOOP 7", "LIFE MAX"};
+    "OCT-", "OCT+", "1/2 TEMPO", "WOBBLE", "DLY 1/16", "STUT 1/8", "STUT 1/16", "ATK+", "ARP", "RANDOM",   /* the MIDI ones (pfx.c) */
+    "PITCH UP", "PITCH DN", "FREEZE", "REV ALL", "DLY ALL", "RING", "GLITCH", "LOOP 3", "LOOP 5", "LOOP 7", "LIFE MAX",
+    "COMB"};
 static const char W_NOTE[16] = {'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G'};
 static const char B_NOTE[11] = {'F', 'G', 'A', 'C', 'D', 'F', 'G', 'A', 'C', 'D', 'F'};   /* black keys 1..11: F# G# .. F#5 */
 static const uint8_t PK_BLK[11] = {1, 2, 3, 5, 6, 8, 9, 10, 12, 13, 15};   /* a black key: left of white key n */
@@ -1023,11 +1024,8 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
     uint32_t busy = chain_busy() ? LS_DIM : LS_OFF;
     nm[0] = 0;
     if (l == LAYER_FX) {
-        uint32_t held = perf_kill ? 0u : perf_held | perf_latched, e = blk ? (p < 11u ? PF_BK[p] : PF_N) : p < PF_NW ? p : PF_N;
-        if (!blk && p == PF_NW) {                       /* (snd2) G5: CLEAR AUTOMATION, the punch-in lane's */
-            str_cpy(nm, "CLR AUTO", 12);
-            return pfx_clr ? LS_HELD : LS_OFF;
-        }
+        uint32_t held = perf_kill ? 0u : perf_held | perf_latched, e = blk ? (p < 11u ? PF_BK[p] : PF_N) : p < PF_NW ? p
+                      : p == PF_NW ? PF_COMB : PF_N;   /* (V10.7.36: G5 COMB, was CLR AUTO) */
         if (e >= PF_N)
             return LS_OFF;
         str_cpy(nm, PF_NAME[e], 12);

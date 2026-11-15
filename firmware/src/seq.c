@@ -1425,12 +1425,12 @@ static __attribute__((noinline)) void dxo_tick(track_t *t, uint32_t n)
     }
 }
 
-/* the effect of key k in the FX layer (PF_N none): the first PF_NW white keys (F3 .. F5) in order, G5 CLR AUTO, the
+/* the effect of key k in the FX layer (PF_N none): the first PF_NW white keys (F3 .. F5) in order, G5 COMB, the
  * black keys F#3 .. F#5 by perform.c PF_BK */
 static uint32_t perf_key(uint32_t k)
 {
     uint32_t p = key_place(k);
-    return !key_black(k) ? (p < PF_NW ? p : p == PF_NW ? PF_CLR : PF_N) : p < 11u ? PF_BK[p] : PF_N;
+    return !key_black(k) ? (p < PF_NW ? p : p == PF_NW ? PF_COMB : PF_N) : p < 11u ? PF_BK[p] : PF_N;
 }
 
 /* (0.6.14) the arp's note list let go (held / nheld). (V10.7.33) The keys' LATCH (ARP OFF and HOLD ON: the notes kept

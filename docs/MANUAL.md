@@ -733,12 +733,13 @@ breadcrumb, **FX · MAP**. The keys and knobs do exactly what they did.
 | C4 | TAPE STOP (slows to a stop over a beat, then silence) |
 | D4 / E4 | OCT− / OCT+ |
 | F4 | 1/2 TEMPO |
-| G4 / A4 | DEC− / DEC+ |
+| G4 | WOBBLE (a resonant low-pass opening and closing every 1/8) |
+| A4 | DLY 1/16 (echoes at 1/16 building while held) |
 | B4 / C5 | STUTTER 1/8 / 1/16 |
 | D5 | ATK+ |
 | E5 | ARP |
 | F5 | RANDOM |
-| G5 | erases the punch-in lane |
+| G5 | COMB (a resonant comb at the scale's root) |
 | F#3 / G#3 | PITCH UP / PITCH DOWN (the whole mix, up to an octave over a bar) |
 | A#3 | FREEZE (the reverb holds its cloud) |
 | C#4 / D#4 | REV ALL / DLY ALL (full wet: only the reverb / the delay) |
@@ -2813,7 +2814,7 @@ the step, 1/8, 1/16 or 1/32 of a beat (64 steps of 1/16 are four bars, of 1/32 t
 is doing (REC while recording, PLAY while it plays, else how many steps hold an effect); **CLEAR** (KNOB 4 turned
 right) asks **CLEAR PUNCH IN LANE?** (OCT+ yes). (PRESETS, because every key of the FX layer already has an effect and
 FX + SELECT is the FX dice; the layer's KNOBS view says **PRESETS LANE**.) To record: REC armed and playing (not in a song), hold FX and the effect's key; the steps it
-passes get it; **G5** held erases where the playhead passes. Saved with the section.
+passes get it. Saved with the section. (V10.7.36: G5 no longer erases it; REC held + FX or this KNOB 4 CLEAR do.)
 
 - **On the audio** (V10.7.36): REPEAT 1/8, 1/16, 1/32 (F3 G3 A3); **REVERSE** (B3): each 1/16 (a 1/8 above ~167 BPM,
   a 1/32 below ~82) is the one before it played backwards, again and again while held (the first 1/16 after the press
@@ -2829,7 +2830,14 @@ passes get it; **G5** held erases where the playhead passes. Saved with the sect
   B5), its depth wobbling once a bar; never louder than the mix. **LIFE MAX** (A#4): HOME › LIFE's LIFE, FILTER, PITCH
   and FX at 100 % while held; let go, your values exactly (never saved). All of them at once when pressed (except as
   said), out with a short ramp.
-- **On the notes**: OCT− / OCT+ (D4 E4), 1/2 TEMPO (F4), DEC− (short, plucky) / DEC+ (long) (G4 A4), STUTTER 1/8 / 1/16
+- (V10.7.36) **WOBBLE** (G4): a resonant low-pass on the master opening and closing once every 1/8 of the transport,
+  in time. **DLY 1/16** (A4): the delay bus at 1/16 with a very high feedback (just under self-oscillation; its loop's
+  saturation keeps it bounded) and the whole mix sent into it, the dry kept: the echoes build while held; let go, the
+  feedback drops for a bar so they die out quickly, then your delay settings are back. **COMB** (G5): a resonant comb
+  on the master tuned to the selected track's scale root (C3 … B3), its tuning and feedback swaying by themselves,
+  never louder than the mix (it shares REPEAT's buffer: the last pressed of them plays). DEC− and DEC+ (G4 A4 before)
+  are gone; a lane step that held them plays nothing.
+- **On the notes**: OCT− / OCT+ (D4 E4), 1/2 TEMPO (F4), STUTTER 1/8 / 1/16
   (B4 C5), ATK+ (slow attacks, drums too) (D5), ARP (E5; on a DRUM track a new fill every press), RANDOM (F5). They come
   in on the next 1/16 and act on every track (V10.7.36: the ALL / SYN / DRM selector of A#4 is gone; a lane saved with
   SYN or DRM plays on every track).
@@ -2839,9 +2847,6 @@ passes get it; **G5** held erases where the playhead passes. Saved with the sect
   to ~3 kHz as FEEDBK goes up and further (~1.8 kHz) over the tail: a thrown drum loop rings out as echoes instead of a
   wash of hats and snare noise (each pass loses the noise much faster than the notes). The delay without THROW is as
   before. (V10.7.36: the LPF / HPF keys and the MUTE T1–T6 keys are gone; FILTER is KNOB 1, the mutes are GLO's.)
-- (0.9.9-snd2) **G5 CLR AUTO** (named on the map): FX + G5 empties the punch-in lane (its automation) and nothing
-  else, stopped or playing; while recording it still erases only where the playhead passes. The lane's KNOB 4 (FX +
-  PRESETS) is **CLEAR** too (the same, with a dialog).
 - (0.9.9-snd2) **G#4 LOOP 3**, **C#5 LOOP 5**, **D#5 LOOP 7**: while held, every track repeats
   its last 3, 5 or 7 steps (from the step playing when it comes in, on the next 1/16), not on the bar: odd loops that
   turn against the 4/4. Let go and each track is back where it would have been. **F#5 GLITCH** (from 0.9.18, V10.7.36
@@ -2852,8 +2857,8 @@ passes get it; **G5** held erases where the playhead passes. Saved with the sect
 
 **The punch-in lane**: each section has a lane of 64 steps of 1/16 (4 bars). With **REC armed and playing** (not
 during a song), the **note effects (D4–F5)** you hold are recorded into it, one per step (the audio effects, LOOP and LIFE MAX
-are not recorded). Hold **FX + G5** while playing to erase where the play head passes; stopped, FX + G5 erases the whole
-lane. **REC held + FX** also clears it (along with the track's FX automation).
+are not recorded). **REC held + FX** clears it (along with the track's FX automation), or FX + PRESETS, KNOB 4
+**CLEAR** (with a dialog). (V10.7.36: FX + G5, CLR AUTO, is COMB now.)
 
 **Lock**: hold FX until its map opens and let go without touching anything: the FX layer stays open (**[FX]
 LOCKED**), as the macros do with LFO; the keys play the effects (momentary: held on, let go off), the knobs are FX's
