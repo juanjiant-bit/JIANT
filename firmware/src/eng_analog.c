@@ -33,7 +33,7 @@ static inline uint32_t ft_of(const int16_t *p)
     return (uint32_t)clamp(p[P_FTYPE], 0, FT_N - 1);
 }
 /* the TYPE a voice's own filter plays (ANALOG, LOFI): LP HP BP, or open (FT_COMB in svf_mode) under a part's TYPE;
- * (codex/filter2-mod) open under FILTER 2's METAL too (NOISE on, MODE METAL: voice.c fn_mode, FN_METAL_ON), the part's */
+ * (codex/filter2-mod) open under EROSION's METAL too (NOISE on, MODE METAL: voice.c fn_mode, FN_METAL_ON), the part's */
 static __attribute__((noinline)) uint32_t fn_metal(const int16_t *p)   /* (voice.c FN_METAL_ON: one copy) */
 {
     return p[P_FNZ] < 127 && ((uint32_t)(p[P_FNMD] & 127) * 5u >> 7) == 2u;

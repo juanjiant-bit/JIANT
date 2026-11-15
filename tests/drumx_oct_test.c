@@ -448,6 +448,10 @@ static int oct_rec_down(void)
     /* played back, the same sound: the live hit and the sequenced one, the same length */
     drum_setup();
     strike_dmp(38, 2);
+    memmove(abuf, abuf + 2u * CTL, (AN - 2u * CTL) * sizeof abuf[0]);   /* (V10.7.37) the sequenced hit is two blocks in
+                                                         * when it is caught (run_b renders them first): the live one from
+                                                         * the same point (the snare's shell shorter, its peak earlier) */
+    memset(abuf + AN - 2u * CTL, 0, 2u * CTL * sizeof abuf[0]);
     len0 = hit_len(AN);
     pk0 = peak(0, AN);
     quiet_kit();

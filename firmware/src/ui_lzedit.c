@@ -6,7 +6,7 @@
  *           engine's page name over it and the sound's name under it; on the right the scope in a well and the eight
  *           E parameters as chips, the page's four lit. DRUM's KIT keeps its colony (graph_colony)
  *   FILTER  the response of TYPE at CUT with RES (LP HP BP COMB), CUT a line, DRIVE a row of cells
- *   VOICE   the track's voices one a row, each as full as its envelope now; VOICE and PRIO (VOICE 2: ALLOC); GLIDE's
+ *   VOICE   the track's voices one a row, each as full as its envelope now; VOICE and PRIO (VOICES 2: UNISON); GLIDE's
  *           curve
  *   FOCUS   the parameter as a gauge, its value large, the MOD slot that moves it ("M1 -> +63%"); E1..E8 as tabs
  * The others (MORPH, RETRIG, ROTOR, the kit's, the operators') keep their panels. */
@@ -125,9 +125,12 @@ static void graph_voice_lz(const track_t *t, const page_t *pg)
             cv_rect(26, y, lv, 7, heat_col(60 + lv));
     }
     param_format(track_desc(t, P_VOICE), t->p[P_VOICE], b, &u);
-    str_cpy(b + str_len(b), pg->id[0] == P_ALLOC ? " \xB7 ALLOC " : " \xB7 PRIO ", 40 - str_len(b));
-    param_format(track_desc(t, pg->id[0] == P_ALLOC ? P_ALLOC : P_PRIO), t->p[pg->id[0] == P_ALLOC ? P_ALLOC : P_PRIO],
-                 b + str_len(b), &u);
+    {   /* (V10.7.37: VOICES 2 its UNISON, ALLOC gone) */
+        uint32_t id = pg->id[0] == P_DETUNE ? P_DETUNE : P_PRIO;
+        str_cpy(b + str_len(b), id == P_DETUNE ? " \xB7 UNISON " : " \xB7 PRIO ", 40 - str_len(b));
+        param_format(track_desc(t, id), t->p[id], b + str_len(b), &u);
+        str_cpy(b + str_len(b), u, 40 - str_len(b));
+    }
     ed_cap(10, 95, b, T_TEXT);
     str_cpy(b, "GLIDE ", 40);
     param_format(track_desc(t, P_GLIDE), t->p[P_GLIDE], b + 6, &u);
@@ -192,7 +195,7 @@ static int graph_edit_lz(const track_t *t, const page_t *pg)
         graph_sound_lz(t);
     else if (pg->id[0] == P_FTYPE)
         graph_filter_lz(t, pg);
-    else if (pg->id[0] == P_VOICE || pg->id[0] == P_ALLOC)
+    else if (pg->id[0] == P_VOICE || pg->id[0] == P_DETUNE)
         graph_voice_lz(t, pg);
     else if (pg->graph == GR_FOCUS)
         graph_focus_lz(t);

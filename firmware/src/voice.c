@@ -172,7 +172,7 @@ static __attribute__((noinline)) void tf_sides(uint32_t ti, const tsvf_t *c, int
 static uint8_t tf_on[NTRK], tf_ft[NTRK];        /* the SVF in the chain the last block; the TYPE playing (0.6.71: a
                                                  * byte a track, not a bit: two cores write two tracks at once) */
 static uint8_t tf_cmb[NTRK];                    /* (0.6.81) the COMB ran the last block (its line live) */
-/* (codex/filters2) EDIT > FILTER 2 (the owner: "a noise modulator on the filters", "KB TRACKING"): one modulator a part on
+/* (codex/filters2) EDIT > EROSION (the owner: "a noise modulator on the filters", "KB TRACKING"): one modulator a part on
  * CUT, NOISE its depth, MODE its kind, RATE its speed. KEY: CUT follows the note (the voice's own filter: its note; the
  * part's: the newest), 0 .. 100 % of it. Not a kit's, nor EXT's (their slots, core.h).
  * (codex/filter2-mod, the owner: "they should modulate the engine's sound, not replace it: the cutoff or the pitch, the
@@ -215,7 +215,7 @@ static inline int32_t fn_sin(uint32_t ph)               /* a sine near enough (a
     return q * (32768 - (q < 0 ? -q : q)) >> 13;
 }
 static uint32_t beat_samples(void);                     /* (fx.c) */
-/* a block's FILTER 2 (track_post): the modulator's value, KEY (CUT's Q8 per 1/16 semitone, Q8: 1024 ANALOG's own 4, a
+/* a block's EROSION (track_post): the modulator's value, KEY (CUT's Q8 per 1/16 semitone, Q8: 1024 ANALOG's own 4, a
  * fifth of the key; 127 / 27 of it the whole key), LP24's DRIVE */
 static __attribute__((noinline)) void fn_tick(const track_t *t, const engine_t *e, uint32_t ti, uint32_t ok)
 {
@@ -223,15 +223,17 @@ static __attribute__((noinline)) void fn_tick(const track_t *t, const engine_t *
     static const uint16_t RAT[8] = {128, 256, 361, 384, 512, 707, 768, 1024};   /* METAL's ratios, Q8 */
     fnst_t *s = &fns[ti];
     fnb_t *b = &fnb[ti];
-    int32_t d = ok ? fn_inv(t->p, P_FNZ) : 0, r = fn_inv(t->p, P_FNRT), v, dep;
-    uint32_t o = s->ph, m = fn_mode(t->p), z, pw;
+    uint32_t dk = e == &ENG_DRUM;                       /* (V10.7.37) a kit's EROSION (core.h P_DNZ: its values as they read) */
+    int32_t d = ok ? fn_inv(t->p, P_FNZ) : dk ? t->p[P_DNZ] & 127 : 0, r = dk ? t->p[P_DNRT] & 127 : fn_inv(t->p, P_FNRT), v, dep;
+    uint32_t o = s->ph, m = dk ? (uint32_t)clamp(t->p[P_DNMD], 0, 4) : fn_mode(t->p), z, pw;
     b->kq = !ok ? 0 : (int32_t)(e == &ENG_ANALOG ? fkey_rank(t->p[P_FKEY]) : (uint32_t)fn_inv(t->p, P_FKEY)) * 1024 / 27;
     b->drv = (uint8_t)(e == &ENG_ANALOG ? t->p[P_E6] & 127 : ok ? fn_inv(t->p, P_FDRV) : 0);
-    b->cut = b->span = b->pit = b->pmd = s->mdep = s->src = 0;
+    b->cut = b->span = b->pit = b->pmd = s->mdep = s->src = dx_ero_pit[ti] = 0;
     b->amt = (uint8_t)((d * (d + 127)) >> 8);
-    if (!ok)
+    if (!ok && !(dk && d))                              /* (a kit's at NOISE 0: as before, not run, F.NOISE 0) */
         return;
-    pw = e == &ENG_FORMANT ? 0 : (4 - (((uint32_t)t->p[P_FDST] & 127u) * 5u >> 7)) * 32u;   /* (DEST: the pitch's share,
+    pw = dk ? (uint32_t)clamp(t->p[P_DDST], 0, 4) * 32u :
+         e == &ENG_FORMANT ? 0 : (4 - (((uint32_t)t->p[P_FDST] & 127u) * 5u >> 7)) * 32u;   /* (DEST: the pitch's share,
                                                          * Q7; VOICE's FILTER, its CONS there) */
     s->ph += LFO_INC[r] << 3;                           /* (0.4 .. 320 Hz) */
     if (s->ph < o) {
@@ -270,6 +272,7 @@ static __attribute__((noinline)) void fn_tick(const track_t *t, const engine_t *
     }
     b->cut = (v * dep) >> 15;
     b->pit = (int16_t)((((v * b->amt * 3) >> 16) * (int32_t)pw) >> 7);   /* (+-1 octave at 100 %: 189 1/16 semitones) */
+    dx_ero_pit[ti] = b->pit;                            /* (V10.7.37: a kit's hits read it, eng_drum.c drum_render) */
 }
 /* (codex/filter2-mod) METAL on the pitch (DEST): the part's sum through a short line whose delay a sine at the note's
  * ratio swings (phase modulation: FM's sidebands, in tune with the note), COMB's line (in the pool: COMB plays it not
@@ -315,8 +318,8 @@ static __attribute__((noinline)) int32_t fn_src(const track_t *t)
 }
 /* METAL on: ANALOG's and LOFI's own filters open (eng_analog.c ft_voice), theirs the part's at their CUT RES (tf_run) */
 #define FN_METAL_ON(p) fn_metal(p)                      /* (eng_analog.c) */
-/* a voice's block (voice_block, a synth's): FILTER 2 on its own filter (ANALOG, LOFI): the NOISE's CUT, the KEY (ANALOG's
- * a fifth of it eng_analog.c's, as ever: the rest here), the last block's (track_post) when on; FILTER 2 or DRIVE on and
+/* a voice's block (voice_block, a synth's): EROSION on its own filter (ANALOG, LOFI): the NOISE's CUT, the KEY (ANALOG's
+ * a fifth of it eng_analog.c's, as ever: the rest here), the last block's (track_post) when on; EROSION or DRIVE on and
  * the filter open: track_render calls track_post for them (tf_on 2: track_render, in RAM, as it was) */
 static __attribute__((noinline)) int32_t fn_voice(const track_t *t, int32_t p16, uint32_t ti)
 {
@@ -468,7 +471,7 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
     {   /* (0.6.81) the sweep kept where it is heard: CUT moved down so its top stays open at most (an open filter swept
          * up did nothing: half an LFO's cycle, a whole ENV, lost) */
         int32_t span = (p[P_LD_FLT] < 0 ? -p[P_LD_FLT] : p[P_LD_FLT]) * 256 + (p[P_ED_FLT] > 0 ? p[P_ED_FLT] * 256 : 0) +
-                       fnb[ti].span;                   /* (filters2: FILTER 2's NOISE on CUT) */
+                       fnb[ti].span;                   /* (filters2: EROSION's NOISE on CUT) */
         if (cut + span > (127 << 8))
             cut = (127 << 8) - span > 0 ? (127 << 8) - span : 0;
     }
@@ -481,7 +484,7 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
     }
     {
         uint32_t on = !(ft == FT_LP && fo == TF_DRY && cut >= (127 << 8) && !cres), was = tf_on[ti] == 1u;   /* (2:
-                                                         * FILTER 2's flag, voice_block; filter2-mod: cres, P_FRES but on
+                                                         * EROSION's flag, voice_block; filter2-mod: cres, P_FRES but on
                                                          * ANALOG's METAL) */
         int32_t md = fns[ti].mdep;
         uint32_t mph = fns[ti].mph, mi = fns[ti].minc << 2;
@@ -584,7 +587,7 @@ static __attribute__((noinline)) void track_filter(track_t *t, int32_t *out, uin
 static __attribute__((noinline)) void track_post(track_t *t, const engine_t *e, int32_t *out, uint32_t n)
 {
     uint32_t ti = (uint32_t)(t - trk) % NTRK, ok = e != &ENG_DRUM && e != &ENG_INPUT;
-    fn_tick(t, e, ti, ok);                              /* (filters2) FILTER 2, a block (on the voices' own filters the
+    fn_tick(t, e, ti, ok);                              /* (filters2) EROSION, a block (on the voices' own filters the
                                                          * next block: voice_block) */
     if (e != &ENG_ANALOG && fnb[ti].drv)                /* FILTER's DRIVE: into the filter (ANALOG's: its voices') */
         fn_drive(out, n, fnb[ti].drv);
@@ -1231,7 +1234,9 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
                 load_take(t);                           /* (nothing to give up: added after all) */
         }
     }
-    if (t->p[P_ALLOC] || t->p[P_GLIDE]) {
+    if (t->p[P_GLIDE]) {                                /* (V10.7.37, the owner: ALLOC gone from the UI, automatic: REUSE
+                                                         * with GLIDE on (the nearest pitch glides least), ROT without; the
+                                                         * stored ALLOC read by nothing, a kit's EROSION NOISE there) */
         for (i = 0; i < np; i++) {
             int32_t d = t->v[i].pitch_cur - (int32_t)note * 16;
             if (t->v[i].active)
@@ -2072,7 +2077,7 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
     if (!env && !m.amp0 && v->stage == 2 && !e->sampled)
         return 0;                                   /* held at a silent sustain (SUS 0): nothing to render */
     pitch = v->pitch_cur + t->pfx_pit + c->tune + c->bend16 + ((c->lfo * p[P_LD_PIT] * 3) >> 15) + ((m.envq15 * p[P_ED_PIT] * 3) >> 15) +
-            fnb[c->ti].pit;                     /* (filter2-mod) FILTER 2's DEST on the pitch, the last block's */
+            fnb[c->ti].pit;                     /* (filter2-mod) EROSION's DEST on the pitch, the last block's */
     m.pitch16 = clamp(pitch, 0, 2047);
     m.inc = pitch_inc(m.pitch16);
     dfine = dcut = 0;
@@ -2092,7 +2097,7 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
         mod_voice(t, v, &m, fsum);
     if (c->lv | c->lcut | c->lfine)                     /* (V10.7.34) LIFE: the voice's own, the other tracks' (life.c) */
         life_voice(c->ti * NVOICE + (uint32_t)(v - t->v), v, &m, &c->lv, !off);
-    m.cutoff += fn_voice(t, v->pitch16, c->ti);     /* (filters2) FILTER 2 */
+    m.cutoff += fn_voice(t, v->pitch16, c->ti);     /* (filters2) EROSION */
     vo_off_c[MC_CPU() & 1u] = (uint8_t)off;
     {
         static const int8_t VP[8] = {-64, 64, -32, 32, -48, 48, -16, 16};

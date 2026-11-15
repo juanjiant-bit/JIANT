@@ -31,7 +31,7 @@ static int ev_id_ok(const track_t *t, uint32_t id)
         return 0;
     if (id >= P_LN0 && id <= P_LN7 && !(((id >= P_FKEY && id <= P_FDRV) || (id == P_FDST &&
                                         ENGINES[eng_idx(t->eng_req)] != &ENG_FORMANT)) && !drum_track(t) &&
-                                        ENGINES[eng_idx(t->eng_req)] != &ENG_INPUT))   /* (filters2: a synth's FILTER 2;
+                                        ENGINES[eng_idx(t->eng_req)] != &ENG_INPUT))   /* (filters2: a synth's EROSION;
                                                          * filter2-mod: DEST, not VOICE's CONS) */
         return drum_track(t);
     d = track_desc(t, id);

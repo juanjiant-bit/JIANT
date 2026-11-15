@@ -113,7 +113,8 @@ static uint32_t dx_fall(uint32_t us)
 }
 
 static void dx_trigger(dx_voice_t *v) { v->trig = 1; v->choke = 0; }
-static void dx_choke(dx_voice_t *v) { if (v->live) v->choke = 1; }
+static void dx_choke(dx_voice_t *v) { if (v->live || v->trig) v->choke = 1; }   /* (V10.7.37: an open hat struck in the
+                                                          * same block, still to start, cut too) */
 
 /* a decay value (0..127) -> its tau in us: 3 ms x 2^(9 d / 127) */
 static uint32_t dx_tau(uint32_t d) { return ((dx_pow2(d * 9u * 4096u / 127u) >> 8) * 3000u) >> 8; }
@@ -234,8 +235,8 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
                                              int32_t dofs, int32_t cofs, int32_t nofs, int32_t warp, int32_t fm, int32_t *y,
                                              uint32_t n, uint32_t feedback)
 {
-    int32_t q[DXP_N], p16, depth, ea0, ea1, en1, ep1, og, ng, ga, dga, gn, dgn, kd, inc, dinc, mt, cw, cx;
-    uint32_t i, k, wave = L->mode & 3u, flt = (L->mode >> 2) & 3u, ta, tn, tp, kb, inc1, sp, gr = flt == DXF_GR, slen = 0, sinc = 0;
+    int32_t q[DXP_N], p16, depth, ea0, ea1, en1, ep1, og, ng, ga, dga, gn, dgn, kd, inc, dinc, mt, cw, cx, d0;
+    uint32_t i, k, wave = L->mode & 3u, flt = (L->mode >> 2) & 3u, ta, t0, tn, tp, kb, inc1, sp, gr = flt == DXF_GR, slen = 0, sinc = 0;
     tsvf_t c;
     uint32_t nf = n, ln = L >= dx_kit && L < dx_kit + 8 ? (uint32_t)(L - dx_kit) : 0u;
     int32_t lay = (int32_t)DX_LAY_L(dx_lay[ln]), lfb = (int32_t)DX_TONE_FB(dx_tone) + (int32_t)DX_LAY_FB(dx_lay[ln]) + (int32_t)feedback;
@@ -256,22 +257,31 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
     morph = clamp(morph, 0, 127);
     for (k = 0; k < DXP_N; k++)
         q[k] = L->a[k] + ((L->b[k] - L->a[k]) * morph) / 127;
-    q[DXP_DECAY] = clamp(q[DXP_DECAY] + dofs, 0, 127);
+    d0 = q[DXP_DECAY];                                   /* (V10.7.37) the sound's own decay: its attack's (the pitch sweep,
+                                                          * SNAP) keep it whatever the kit's DECAY, which moves the tail
+                                                          * alone; past 127 (the longest sounds long still: no ceiling
+                                                          * where every sound would ring the same, ~2.8 s at 140) */
+    q[DXP_DECAY] = clamp(d0 + dofs, 0, 140);
     for (k = 0; k < 2u; k++) {                           /* (V10.6q) COLOR, NOISE: the offset as it is where it fits, scaled
                                                           * to the room where it would clip (was clipped: half a knob dead
                                                           * on a sound near an end); DECAY stays in octaves (SHORT: half) */
         int32_t o = clamp(k ? nofs : cofs, -64, 63), *x = &q[k ? DXP_NOISE : DXP_COLOR];
         *x += o > 0 ? o * (127 - *x < 63 ? 127 - *x : 63) / 63 : o * (*x < 64 ? *x : 64) / 64;
     }
-    if (!ln)                                             /* (V10.6z8, the owner: "the kick sounds like a snare") the
-                                                          * KICK's NOISE on a cube: the kit's 40 (V10.6q) or 4..24 (before)
-                                                          * as good as none, the body whole; the knob up to 127 still there
-                                                          * (64: an eighth, 100: a half) */
-        q[DXP_NOISE] = (q[DXP_NOISE] * q[DXP_NOISE] * q[DXP_NOISE]) >> 14;
+    if (!ln) {                                           /* (V10.6z8, the owner: "the kick sounds like a snare") the
+                                                          * KICK's NOISE was on a cube, the kits' 0..24 as good as none;
+                                                          * (V10.7.37) its CLICK: nothing up to 24 (every factory kick as
+                                                          * before), then on a square to the whole noise at 127, a click
+                                                          * (~2 ms) over the body (which it no longer thins: og below) */
+        int32_t x = q[DXP_NOISE] - 24;
+        q[DXP_NOISE] = x > 0 ? x * x * 127 / 10609 : 0;
+    }
     ta = dx_tau((uint32_t)q[DXP_DECAY]);
-    tn = (L->mode >> 4) & 1u ? (ta >> 2 < 8000u ? ta >> 2 : 8000u) : ta;   /* SNAP: a quarter, 8 ms at most (V10.6q: a click) */
+    t0 = dx_tau((uint32_t)d0);
+    tn = !ln ? 2000u : (L->mode >> 4) & 1u ? (t0 >> 2 < 8000u ? t0 >> 2 : 8000u) : ta;   /* SNAP: a quarter, 8 ms at most (V10.6q:
+                                                          * a click); (V10.7.37) the kick's CLICK ~2 ms */
     tp = ((L->mode >> 5) & 3u) == DXM_LONG ? (uint32_t)clamp((int32_t)(ta / 2u), 4000, 250000)
-                                           : (uint32_t)clamp((int32_t)(ta / (ln ? 8u : 6u)), 1000, ln ? 25000 : 40000);
+                                           : (uint32_t)clamp((int32_t)(t0 / (ln ? 8u : 6u)), 1000, ln ? 25000 : 40000);
                                                          /* (V10.6q: / 12, 15 ms: thin; / 8, 25 ms: the click and the
                                                           * body; V10.6z8: the KICK's / 6, 40 ms again, as before V10.6q:
                                                           * the big sweep the owner asked back) */
@@ -311,6 +321,10 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
         flt = DXF_BP;
     }
     k = 11890000u / ((pitch_inc((uint32_t)clamp(p16, 0, 2047)) >> 12) | 1u);   /* (V10.6q) half its period (us): no shorter */
+    if (ln == DV_SNARE)                                  /* (V10.7.37) the snare's shell rings 5/8 of the wires' time: the
+                                                          * hit tone and snap together, the tail the snares (NOISE the
+                                                          * balance as before) */
+        ta = ta * 5u >> 3;
     kb = v->choke ? dx_fall(1500u) : dx_fall(ta > k ? ta : k);   /* (a choked hit: gone in ~5 ms; a blip shorter than its own
                                                           * half wave was all DC) */
     ea1 = mulq16(v->ea, kb);
@@ -334,13 +348,16 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
         inc1 = pitch_inc((uint32_t)clamp(p16 + off, 0, 2047));
     }
     ng = q[DXP_NOISE] * 258;
-    og = ((32767 - ng) * 11) >> 4;                       /* (x 11 / 16: about the DRUM kits' level) */
+    og = ((32767 - ((0x21u >> ln) & 1u ? 0 : ng)) * 11) >> 4;   /* (x 11 / 16: about the DRUM kits' level; V10.7.37: the kick's
+                                                          * and the tom's noise, the beater, the stick, over the skin, not
+                                                          * instead of it) */
     ng = (ng * 11) >> 4;
     cw = wave == DXW_METAL && ln == DV_BELL;             /* (V10.6q) the cowbell: the CMOS one (below), its band on its
                                                           * pitch, between its two squares (its COLOR the timbre) */
-    cx = cw ? clamp(((p16 - 360) * 19 >> 8) + 4, 0, 113) : q[DXP_COLOR] + (!ln << 5);   /* (the filter's cutoff, as a
+    cx = cw ? clamp(((p16 - 360) * 19 >> 8) + 4, 0, 113) : (ln ? q[DXP_COLOR] : clamp(q[DXP_COLOR] + 72, 0, 113));   /* (the filter's cutoff, as a
                                                           * COLOR; V10.6z8: the KICK's 2 1/4 octaves up, its noise turned
-                                                          * up a knock, a beater: not a rumble under the body) */
+                                                          * up a knock, a beater: not a rumble under the body; V10.7.37:
+                                                          * 5 octaves up, its CLICK bright) */
     if (flt < DXF_HP && cx < 96)                         /* (V10.6q) LP, BP: the band's power goes with its cutoff, the
                                                           * gain back as 1 / sqrt(fc) to COLOR 96's (x8 at most): a dark
                                                           * snare or clap as loud as a bright one (were up to 18 dB under) */

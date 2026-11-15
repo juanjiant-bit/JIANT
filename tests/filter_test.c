@@ -17,7 +17,7 @@
  *    and MS20's old number 5): under full scale, RMS under -1 dB (it screams, the clip holding it);
  *    (codex/filter2-mod) RES 127 driven sings on its own under a quiet input and dies once silent (RES 100: no); the
  *    level made up as CUT closes or RES rises (DRIVE 50 %, a C3 saw: CUT 40 within 3 dB of open, CUT 20 within 12 dB);
- * 6. (codex/filters2) FILTER 2: KEY 100 % keeps a saw's brightness across C2..C6 (KEY 0 darkens the top), ANALOG's KEY
+ * 6. (codex/filters2) EROSION: KEY 100 % keeps a saw's brightness across C2..C6 (KEY 0 darkens the top), ANALOG's KEY
  *    at its stored 127 its old fixed tracking (1024); NOISE SOFT / STEP move CUT (the blocks' level varies, NOISE 0
  *    steady); (filter2-mod) every MODE only moves CUT (NOISE 0 bit for bit off; at 100 % a sine under CUT's reach through
  *    as it was, silence in silent out), METAL periodic at the note on x1 (not on x1.41), BREAK steady within a 1/16 and
@@ -461,7 +461,7 @@ int main(int argc, char **argv)
             check(what, v1 > 0.2 && v0 < 0.06, "relative deviation %.3f / %.3f", v0, v1);
         }
     }
-    {   /* (codex/filter2-mod) every MODE moves CUT, none mixes a sound of its own: NOISE 0 the part bit for bit as FILTER 2
+    {   /* (codex/filter2-mod) every MODE moves CUT, none mixes a sound of its own: NOISE 0 the part bit for bit as EROSION
          * off whatever MODE and RATE; at 100 % a 40 Hz sine under CUT's lowest reach goes through untouched, block by
          * block (was: METAL a ring modulation, BREAK holds and gaps, DUST noise), silence in silent out */
         static const char *const MN[5] = {"SOFT", "STEP", "METAL", "BREAK", "DUST"};
@@ -496,7 +496,7 @@ int main(int argc, char **argv)
             snprintf(what, sizeof what, "%s at NOISE 100 %%: a 40 Hz sine through as it was, silence in silent out", MN[m]);
             check(what, worst < 1.5 && tail < 1, "the level off by %.2f dB at most, after: %.2f", worst, tail);
         }
-        check("every MODE at NOISE 0, RATE 50 %: the part bit for bit as FILTER 2 off", same, 0);
+        check("every MODE at NOISE 0, RATE 50 %: the part bit for bit as EROSION off", same, 0);
     }
     {   /* METAL follows the note: x1 sidebands on the note's harmonics (periodic: its period's autocorrelation high),
          * x1.41 off them (lower); its depth heard */

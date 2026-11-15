@@ -715,6 +715,8 @@ static void nrpn_doc(void)
         }
         for (j = 0; j < ns; j++) {
             uint32_t m = 0;
+            if (seen[j]->label[0] == '-')                   /* (V10.7.37: a slot those engines do not read, ALLOC's) */
+                continue;
             mdp("| %u | ", id);
             md_desc(seen[j]);
             if (ns > 1u) {

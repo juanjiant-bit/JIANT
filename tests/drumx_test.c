@@ -730,6 +730,49 @@ int main(int argc, char **argv)
         dx_glue = 0;
         t->p[P_E7] = 0;
     }
+    {   /* (V10.7.37) the kit's EROSION (core.h P_DNZ): NOISE 0 with RATE MODE DEST anywhere, nothing of it runs (the
+         * modulator's block all 0, the FILTER not asked for, the hits' tune untouched: the kit as before, the goldens);
+         * NOISE 127 in each MODE (DEST MIX, the kit's FILTER open: lowered to be heard): the kit moved, never past full
+         * scale */
+        static int32_t ref[FS / 2], ero[FS / 2];
+        uint32_t m, k, same, moved = 1, ti;
+        int32_t pk = 0;
+        track_t *t = kitx(0, 64);
+        ti = (uint32_t)(t - trk) % NTRK;
+        t->p[P_DNZ] = 0; t->p[P_DNRT] = 90; t->p[P_DNMD] = 3; t->p[P_DDST] = 4;
+        fnb[ti].cut = fnb[ti].span = fnb[ti].pit = fnb[ti].pmd = 99; dx_ero_pit[ti] = 99; tf_on[ti] = 0;
+        fn_tick(t, &ENG_DRUM, ti, 0);
+        same = !fnb[ti].cut && !fnb[ti].span && !fnb[ti].pit && !fnb[ti].pmd && !dx_ero_pit[ti] && !fns[ti].src;
+        t = kitx(0, 64);                                /* (a NOISE-0 kit played: the FILTER never asked for) */
+        t->p[P_DNZ] = 0; t->p[P_DNRT] = 90; t->p[P_DNMD] = 3; t->p[P_DDST] = 4;
+        tf_on[ti] = 0;
+        strike(t, 1, FS / 6u);
+        same &= !tf_on[ti];
+        check("EROSION (V10.7.37): NOISE 0 (RATE MODE DEST set): its block 0, the FILTER not run (drum_render: no pitch read)", same, 0);
+        for (m = 0; m < 6u; m++) {
+            t = kitx(0, 64);
+            t->p[P_FTYPE] = 0; t->p[P_FCUT] = 127; t->p[P_FRES] = 0;   /* (the FILTER open: run only by EROSION, as a synth's) */
+            t->p[P_DNZ] = (int16_t)(m ? 127 : 0);
+            t->p[P_DNRT] = 90;
+            t->p[P_DNMD] = (int16_t)(m ? m - 1u : 0u);
+            t->p[P_DDST] = 2;
+            for (k = 0; k < 3u; k++) {                  /* the kick, the snare, the closed hat, 1/6 s apart */
+                same_noise(t);
+                strike(t, k == 2u ? 3u : k, FS / 6u);
+                memcpy((m ? ero : ref) + k * (FS / 6u), buf, FS / 6u * sizeof buf[0]);
+            }
+            if (m) {
+                double d = 0;
+                for (k = 0; k < FS / 2u; k++) {
+                    d += (double)(ero[k] - ref[k]) * (ero[k] - ref[k]);
+                    pk = abs(ero[k]) > pk ? abs(ero[k]) : pk;
+                }
+                moved &= d > 1e6 * (FS / 2u) / 1000.0;
+            }
+        }
+        check("EROSION NOISE 127 in every MODE (DEST MIX): the kit moved, under full scale", moved && pk < 32767,
+              "peak %d", pk);
+    }
 
     /* 6 */
     for (l = 0; l < 8u; l++) {

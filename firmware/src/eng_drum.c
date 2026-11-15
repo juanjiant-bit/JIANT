@@ -510,6 +510,11 @@ static __attribute__((noinline)) void drum_side_ramp(int32_t *sl, int32_t *sr, i
     }
 }
 
+/* (V10.7.37) the kit's EROSION (EDIT > EROSION, core.h P_DNZ): voice.c fn_tick runs the synths' noise modulator for a
+ * DRUM part with NOISE on (track_post: the part's FILTER CUT moved as a synth's), its pitch share each hit's tune here
+ * (the last block's, as a synth's voices); NOISE 0: nothing of it runs */
+static int16_t dx_ero_pit[NTRK];
+static uint8_t tf_on[NTRK];                             /* (voice.c's: the FILTER asked to run, as a synth's EROSION does) */
 static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
 {
     const int16_t *p = t->p;
@@ -562,17 +567,32 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
         lfo_pit = (lfo * p[P_LD_PIT] * 3) >> 15;
         lfo_shp = (lfo * p[P_LD_SHP]) >> 15;
     }
+    if (p[P_DNZ]) {                                      /* (V10.7.37) EROSION on: the FILTER runs, the hit's pitch */
+        uint32_t ti = (uint32_t)(t - trk) % NTRK;
+        if (!tf_on[ti])
+            tf_on[ti] = 2;
+        lfo_pit += dx_ero_pit[ti];
+    }
     if (L->bc != L->bd) {                                /* (0.6.82) BEND: towards its pitch over the step */
         int32_t d = L->bd - L->bc;
         L->bc = (int16_t)(L->bc + (d > 0 ? (d < L->bs ? d : L->bs) : (-d < L->bs ? d : -L->bs)));
     }
     const dx_lane_t *patch=&dx_kit[(uint32_t)v->s[0] & (DV_NLANE-1u)];
     uint32_t hitfx=drum_hit_fx(L);
-    dx_run_fx(patch, &L->x, p[P_E0] + dx_mot_v + L->rm + lfo_shp,
+    {   /* (V10.7.37) the kit's DECAY on a gentler curve, d (160 - |d|) / 160: the kits' 54..76 as they were within a step,
+         * its ends x / 7 (was x / 22: every sound a tick, or every one 1.5 s); each hit's velocity on its COLOR, (v - 100)
+         * / 3: an accent brighter, a soft hit darker (100, the sequencer's: as before; a high-pass sound only brighter) */
+        int32_t dk = clamp(p[P_E3], 0, 127) - 64, vc = ((int32_t)(L->x.sv ? L->x.sv : 127) - 100) / 3;
+        dk = dk * (160 - (dk < 0 ? -dk : dk)) / 160;
+        if (vc < 0 && ((patch->mode >> 2) & 3u) == DXF_HP)   /* (a high-pass's noise darker is louder: a soft hat or tom
+                                                         * keeps its colour, an accent still brightens it) */
+            vc = 0;
+        dx_run_fx(patch, &L->x, p[P_E0] + dx_mot_v + L->rm + lfo_shp,
            L->st * 16 + L->rt + L->bc + (p[P_E1] - 64) * 3 + t->pfx_pit + lfo_pit,
-           p[P_E3] - 64 + DXO_DEC[L->dm & 3u] + ((hitfx&DXF_LONG)?36:0),
-           p[P_E2] - 64 + DXO_TON[L->dm & 3u], p[P_E4] - 64 + DXO_TON[L->dm & 3u] + ((hitfx&DXF_NOISE)?32:0),
+           dk + DXO_DEC[L->dm & 3u] + ((hitfx&DXF_LONG)?36:0),
+           p[P_E2] - 64 + DXO_TON[L->dm & 3u] + vc, p[P_E4] - 64 + DXO_TON[L->dm & 3u] + ((hitfx&DXF_NOISE)?32:0),
            (hitfx&DXF_FOLD)&&p[P_E6]<80 ? 80 : p[P_E6], p[P_E5], y, n, (hitfx&DXF_FB)?6u:0u);
+    }
     {                                                    /* PUNCH: the boost before the knee (driven into it, as
                                                           * Drum Buss), the tail's cut on the amplitude ramp */
         int32_t pu = pnch_eff;

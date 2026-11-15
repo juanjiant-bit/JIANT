@@ -807,7 +807,7 @@ static int auto_list(void)
     motion_clear(&trk[1]);
     for (i = 0; i < P_COUNT; i++)                        /* names: an id each, none of DIGITAL's, lanes on DRUM only */
         if (ev_id_ok(t, i) && ((i >= P_FM1_ATK && i <= P_FM4_LEVEL && i != P_TCHAN && i != P_MORPH && i != P_CLEN && i != P_DXIMG && i != P_HVEL && i != P_HTIM && i != P_HGAT && i != P_HRQ && i != P_TVEL) || (i >= P_LN0 && i <= P_LN7 && !(i >= P_FKEY && i <= P_FDRV) && i != P_FDST) ||   /* (codex/filters2: a
-                                                         * synth's FILTER 2, DRIVE in lanes 3..7's slots; filter2-mod: DEST
+                                                         * synth's EROSION, DRIVE in lanes 3..7's slots; filter2-mod: DEST
                                                          * in lane 1's) */
                                !motion_param(i)))       /* (0.6.37: SHIFT's CHANCE in DIGITAL's OP1 DEC slot) */
             break;

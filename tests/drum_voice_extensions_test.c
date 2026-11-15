@@ -53,10 +53,10 @@ static int extensions(void)
         quiet_kit();trk_note_on(dt,st.note[0],100);
         ok &= drum_kit[3][DV_BELL].st==(int32_t)k-13;
     }
-    ui.home=0;for(p=0;p<NPAGES;p++) if(str_eq(PAGES[p].title,"KIT 4")) ui.page=(uint8_t)p;
-    dx_kit3_knob(0,5);ok &= dt->p[P_DKEYMODE]==9;
-    dx_kit3_knob(0,-1);ok &= dt->p[P_DKEYMODE]==8;
-    bad+=check("EXT BELL CHROM: recorded steps keep lane and pitch; KIT 4 knob 1 walks the maps (V10.7.23: KEY MAP on KNOB 1)",ok);
+    ui.home=0;for(p=0;p<NPAGES;p++) if(str_eq(PAGES[p].title,"OUT")) ui.page=(uint8_t)p;
+    dx_keymap_turn(5);ok &= dt->p[P_DKEYMODE]==9;
+    dx_keymap_turn(-1);ok &= dt->p[P_DKEYMODE]==8;
+    bad+=check("EXT BELL CHROM: recorded steps keep lane and pitch; OUT knob 4 walks the maps (V10.7.37: KIT 4's KEY MAP on OUT)",ok);
     dt->p[P_DKEYMODE]=1;
     ok=1;
     for(k=0;k<12;k++) {

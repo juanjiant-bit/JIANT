@@ -235,7 +235,7 @@ static void at_beat(uint32_t q)
     }
     if (q >= B(12, 0) && q < B(14, 0)) trk[T_DRUM].p[P_E0] = (int16_t)(24 + (q - B(12, 0)) * 6u);
     if (q == B(14, 0)) {
-        page(T_DRUM, "STEREO");
+        page(T_DRUM, "OUT");
         caption(q, "DRUMS", "STEREO IMAGE", "one knob places the whole kit|the kick stays in the middle", 0,
                 "IMAGE 0 → 120|each voice on its own orbit|kick: a quarter as far");
     }

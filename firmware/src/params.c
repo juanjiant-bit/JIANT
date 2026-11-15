@@ -73,7 +73,7 @@ static const char *const N_APSYNC[] = {"FREE", "BEAT"};                  /* (JIA
 static const char *const N_APDIV[] = {"4BAR", "2BAR", "1BAR", "1/2", "1/4", "1/8", "1/16", "1/32"};   /* .. BEAT (fx.c AP_SIXT) */
 /* modulation matrix (mod.c): sources, destinations (E1..E8 = P_E0..P_E7: shown with the engine's labels) */
 static const char *const N_MSRC[] = {"OFF", "LFO", "ENV", "VEL", "KEY", "RAND", "MODW", "AT", "EXPR",
-                                     "M1", "M2", "M3", "M4", "STEP", "NOISE", "PROX", "ENV2", "IN ENV", "T1 ENV", "T2 ENV", "T3 ENV", "T4 ENV", "T5 ENV", "T6 ENV", "OCT+", "OCT-", "F.NOISE", "LIFE", "BEING"};   /* (V10.7.22) OCT+ OCT-: the expression keys; (filter2-mod) F.NOISE: FILTER 2's */   /* (V10.22) ENV2 */   /* (0.7.8) NOISE; (V10.14) PROX */   /* (JIANT: the macros, LFO held; the modulation sequence) */
+                                     "M1", "M2", "M3", "M4", "STEP", "NOISE", "PROX", "ENV2", "IN ENV", "T1 ENV", "T2 ENV", "T3 ENV", "T4 ENV", "T5 ENV", "T6 ENV", "OCT+", "OCT-", "F.NOISE", "LIFE", "BEING"};   /* (V10.7.22) OCT+ OCT-: the expression keys; (filter2-mod) F.NOISE: EROSION's */   /* (V10.22) ENV2 */   /* (0.7.8) NOISE; (V10.14) PROX */   /* (JIANT: the macros, LFO held; the modulation sequence) */
 static const char *const N_MDST[] = {"OFF", "PITCH", "CUT", "SHP", "AMP", "PAN", "DIST", "CHO", "DLY", "REV", "L.RATE",
                                      "L.PIT", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8",
                                      "CLIP", "PNCH",   /* (JIANT: the master, FX > MASTER) */
@@ -141,7 +141,8 @@ static const param_desc_t TP[P_COUNT] = {
     [P_GLIDE] = PD("GLIDE", F_TIME, 0, 127, 0),
     [P_GLMODE] = PE("GL MODE", N_GLMODE, 0),    /* (codex/coherence: the glide's MODE) */
     [P_PRIO] = PE("PRIO", N_PRIO, 0),
-    [P_ALLOC] = PE("ALLOC", N_ALLOC, 0),
+    [P_ALLOC] = PE("-", N_ALLOC, 0),             /* (V10.7.37: ALLOC retired, read by nothing on a synth; a kit's EROSION
+                                                         * NOISE there, DERO_DESC) */
     [P_DETUNE] = PD("UNISON", F_PCT, 0, 127, 40),   /* (codex/coherence) UNISON's detune, how far apart (was DETUNE, a
                                                      * bare number: the engines' DETUNE is another) */
     [P_PAN] = PD("PAN", F_BIPCT, -64, 63, 0),
@@ -295,7 +296,7 @@ static const param_desc_t NONE_DESC = {"-", F_PCTINV, 0, 127, 127, 0};      /* (
                                                          * the range IMAGE's (an NRPN or a lock keeps its meaning) */
 static const param_desc_t VLYR_DESC = {"LYRIC", F_ENUM, 0, LYR_N - 1, 0, N_LYRIC};  /* P_VLANG, P_VLYR (sing.c) */
 static const param_desc_t VCONS_DESC = {"CONS", F_INT, 0, 127, 127, 0};   /* (V10.6y) P_VCONS: 127 = 100 % (core.h) */
-/* (codex/filters2) FILTER 2 and FILTER's DRIVE (core.h P_FKEY ..): 127 = 0 %, SOFT; ANALOG's KEY 127 = 21 % (fkey_rank) */
+/* (codex/filters2) EROSION and FILTER's DRIVE (core.h P_FKEY ..): 127 = 0 %, SOFT; ANALOG's KEY 127 = 21 % (fkey_rank) */
 static const char *const N_FNMD[] = {"DUST", "BREAK", "METAL", "STEP", "SOFT", 0};   /* (by the value: shown right to left) */
 /* (codex/filter2-mod) RATE as METAL takes it (its sine's ratio to the note) and BREAK (its step), voice.c fn_tick */
 static const char *const N_FRAT[] = {"x4", "x3", "x2.76", "x2", "x1.5", "x1.41", "x1", "x0.5", 0};
@@ -305,6 +306,12 @@ static const param_desc_t FN_DESC[9] = {{"KEY TRK", F_PCTINV, 0, 127, 127, 0}, {
     {"RATE", F_PCTINV, 0, 127, 127, 0}, {"MODE", F_INT, 0, 127, 127, N_FNMD}, {"DRIVE", F_PCTINV, 0, 127, 127, 0},
     {"KEY TRK", F_PCT, 0, 127, 127, 0}, {"RATIO", F_INT, 0, 127, 127, N_FRAT}, {"DIV", F_INT, 0, 127, 127, N_FDIV},
     {"DEST", F_INT, 0, 127, 127, N_FDST}};
+/* (V10.7.37) a kit's EROSION (core.h P_DNZ ..), in P_GLMODE .. P_DETUNE's order: MODE DEST NOISE RATE, each as it reads */
+static const char *const N_DNMD[] = {"SOFT", "STEP", "METAL", "BREAK", "DUST"};
+static const char *const N_DDST[] = {"FILT", "F75", "MIX", "P75", "PITCH"};
+static const param_desc_t DERO_DESC[4] = {{"MODE", F_ENUM, 0, 4, 0, N_DNMD}, {"DEST", F_ENUM, 0, 4, 0, N_DDST},
+                                          {"NOISE", F_PCT, 0, 127, 0, 0}, {"RATE", F_PCT, 0, 127, 40, 0}};
+#define DERO_ID(id) ((uint32_t)(id) - P_GLMODE < 4u)
 #define FKEYA_DESC (FN_DESC[5])
 #define FN_NAMED(d) ((d)->fmt == F_INT && (d) >= FN_DESC && (d) < FN_DESC + 9)   /* (MODE RATIO DIV DEST: right to left) */
 static const param_desc_t *track_desc(const track_t *t, uint32_t id)
@@ -316,11 +323,12 @@ static const param_desc_t *track_desc(const track_t *t, uint32_t id)
                                                          * PLAY 2's KNOB 4; EXT: none, its voice is one) */
         return en == &ENG_INPUT ? &NONE_DESC : &SIMG_DESC;
     if (id == P_DKEYMODE && en == &ENG_DRUM) return &DKEYMODE_DESC;
+    if (DERO_ID(id) && en == &ENG_DRUM) return &DERO_DESC[id - P_GLMODE];   /* (V10.7.37) its EROSION */
     if ((id == P_VLANG || id == P_VLYR || id == P_VCONS) && en == &ENG_FORMANT)
         return id == P_VLANG ? &VLANG_DESC : id == P_VLYR ? &VLYR_DESC : &VCONS_DESC;
     if (id == P_FDST && en != &ENG_DRUM && en != &ENG_INPUT)   /* (filter2-mod) a synth's DEST (VOICE's CONS above) */
         return &FN_DESC[8];
-    if (id >= P_FKEY && id <= P_FDRV && en != &ENG_DRUM && en != &ENG_INPUT)   /* (filters2) a synth's FILTER 2, DRIVE */
+    if (id >= P_FKEY && id <= P_FDRV && en != &ENG_DRUM && en != &ENG_INPUT)   /* (filters2) a synth's EROSION, DRIVE */
     {
         uint32_t m = id == P_FNRT ? ((uint32_t)t->p[P_FNMD] & 127u) * 5u >> 7 : 0u;   /* (filter2-mod: RATE by the MODE) */
         return id == P_FKEY && en == &ENG_ANALOG ? &FKEYA_DESC : m == 2u ? &FN_DESC[6] : m == 1u ? &FN_DESC[7] :
@@ -364,7 +372,7 @@ static const param_desc_t *track_desc(const track_t *t, uint32_t id)
  * only; range and default are the same): what the editor protocol, user presets and projects use */
 static const param_desc_t *param_desc_of(uint32_t e, uint32_t id)
 {
-    return id >= P_E0 ? &ENGINES[e]->edit[id - P_E0] : &TP[id];
+    return id >= P_E0 ? &ENGINES[e]->edit[id - P_E0] : DERO_ID(id) && ENGINES[e] == &ENG_DRUM ? &DERO_DESC[id - P_GLMODE] : &TP[id];
 }
 /* (V10.6z4) the default a store (projects, user presets) leaves out or fills in: GATE's 50 % as every store before
  * (its value then not written), so one saved at the old default loads 50 %, a new track's 100 % is written */
@@ -809,10 +817,12 @@ static const page_t PAGES[] = {
     /* (JIANT 0.6.54) DRUM: the whole kit first (KIT = EDIT 1, KIT 2 = EDIT 2, KIT 3, X-MOD, FILTER), then a sound
      * (SOUND 1..4, KNOB 1 the sound on each), (0.6.58) then the volumes (LEVELS, LEVELS 2); (0.7.8) STEREO after X-MOD */
     {"KIT 3", FAM_EDIT, SC_TRACK, GR_DXIMG, {0xFF, 0xFF, 0xFF, 0xFF}},     /* TONE's BP and FEEDBK (the kit's) */
-    {"KIT 4", FAM_EDIT, SC_TRACK, GR_DXIMG, {0xFF, 0xFF, 0xFF, 0xFF}}, /* KEY MAP (KNOB 2; V10.6o: ACOUST gone) */
     {"KIT LFO", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},     /* (JIANT 0.5.1) the kit's LFO on MORPH, RAND */
-    {"STEREO", FAM_EDIT, SC_TRACK, GR_DXIMG, {P_DXIMG, 0xFF, 0xFF, 0xFF}}, /* (0.6.58) IMAGE: the kit's stereo placings; (0.7.8)
-                                                         * with the kit's pages, before the sounds (the volumes last) */
+    {"OUT", FAM_EDIT, SC_TRACK, GR_DXIMG, {P_DXIMG, ID_CRU, ID_LIF, P_DKEYMODE}},   /* (V10.7.37, the owner) the kit's way out:
+                                                         * IMAGE (was STEREO's), CRUSH and LIFE (VOICES 3's), KEY MAP (KIT 4's:
+                                                         * 0..9, ui_input.c dx_keymap_turn) */
+    {"EROSION", FAM_EDIT, SC_TRACK, GR_NONE, {P_DNZ, P_DNRT, P_DNMD, P_DDST}},   /* (V10.7.37) a kit's EROSION: the noise
+                                                         * modulator on its FILTER's CUT and the hits' pitch (core.h P_DNZ) */
     {"OPERATOR", FAM_EDIT, SC_TRACK, GR_FMOP, {0xFF, 0xFF, 0xFF, 0xFF}},    /* FM6 only: KNOB 1 the operator, then its */
     {"OP ENV", FAM_EDIT, SC_TRACK, GR_FMENV, {0xFF, 0xFF, 0xFF, 0xFF}},     /* bytes of the track's patch (ui_fm6op.c): */
     {"OPERATOR 2", FAM_EDIT, SC_TRACK, GR_FMOP2, {0xFF, 0xFF, 0xFF, 0xFF}}, /* CRS FINE LEVEL / STG RATE LEVEL / MODE DTUN VEL */
@@ -821,18 +831,17 @@ static const page_t PAGES[] = {
                                                          * DRV: the part's DIST, after it) */
     {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_FCUT, P_FRES, P_FDRV}},   /* (filters2) every other engine's:
                                                          * DRIVE into the filter (DIST: FX > DIST) */
-    {"FILTER 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_FNZ, P_FNRT, P_FNMD, P_FDST}},   /* (filter2-mod) NOISE RATE MODE DEST, ui.c
+    {"EROSION", FAM_EDIT, SC_TRACK, GR_NONE, {P_FNZ, P_FNRT, P_FNMD, P_FDST}},   /* (filter2-mod) NOISE RATE MODE DEST, ui.c
                                                          * page_visible: VOICE's without DEST (its CONS's slot); KEY on
                                                          * FILTER 3. (filters2) KEY NOISE RATE MODE: not a
                                                          * kit's, nor EXT's (voice.c fn_tick) */
-    {"FILTER 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_FNZ, P_FNRT, P_FNMD, 0xFF}},   /* .. VOICE's */
+    {"EROSION", FAM_EDIT, SC_TRACK, GR_NONE, {P_FNZ, P_FNRT, P_FNMD, 0xFF}},   /* .. VOICE's */
     {"TONE", FAM_EDIT, SC_TRACK, GR_NONE, {P_FKEY, ID_CRU, ID_LIF, 0xFF}},   /* (V10.7.35, the owner: was FILTER 3 and VOICES 3,
                                                          * a knob or two each) KEY TRK, CRUSH, LIFE. (filter2-mod) KEY: the keyboard tracking (was
-                                                         * FILTER 2's first: DRIVE stays FILTER's, the knob of its power) */
-    {"SOUND", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* DRUM: a sound of the kit (ui_dx.c) */
-    {"SOUND 2", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},
-    {"SOUND 3", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (JIANT 0.4) MODE, the pitch modulation, DRIVE */
-    {"SOUND 4", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (JIANT 0.6.54) LAYER, FEEDBK, SEND */
+                                                         * EROSION's first: DRIVE stays FILTER's, the knob of its power) */
+    {"SOUND", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* DRUM: a sound of the kit (ui_dx.c): PITCH DECAY SIDE PMOD */
+    {"SOUND 2", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* NOISE COLOR DRIVE MODE */
+    {"SOUND 3", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.7.37: three, was four) PM.TYPE LAYER FEEDBK SEND */
     {"LEVELS", FAM_EDIT, SC_TRACK, GR_NONE, {P_LN0, P_LN1, P_LN2, P_LN3}},   /* DRUM only: the sounds' levels (was LANES) */
     {"LEVELS 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_LN4, P_LN5, P_LN6, P_LN7}},
     {"OP1 ENV", FAM_EDIT, SC_TRACK, GR_ADSR, {P_FM1_ATK, P_FM1_DEC, P_FM1_SUS, P_FM1_REL}},
@@ -890,7 +899,8 @@ static const page_t PAGES[] = {
     {"EUCLID", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_EU0, ID_EU0 + 1u, ID_EU0 + 2u, ID_EU0 + 3u}},   /* (V10.6, MUTATE's place)
                                                          * HITS STEPS ROTATE, LANE / VARY (ui_euclid.c) */
     /* (0.8.5) LENTE everywhere (ui_lens.c): pages the mock-up added, appended (the table's order is no one's index) */
-    {"VOICES 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_ALLOC, P_DETUNE, P_TVEL, P_SIMG}},   /* ALLOC, UNISON's detune (in TP since
+    {"VOICES 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_DETUNE, P_TVEL, P_SIMG, 0xFF}},   /* (V10.7.37, the owner: ALLOC gone,
+                                                         * automatic: voice.c voice_alloc) UNISON VEL IMAGE; before: */   /* ALLOC, UNISON's detune (in TP since
                                                          * Felucca, on no page until 0.8.5), (after V10.7.2) VEL,
                                                          * (codex/coherence) IMAGE, the voices across (POLY; V10.49's STEREO
                                                          * page gone; was VOICE 2) */

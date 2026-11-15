@@ -649,17 +649,20 @@ static int page_visible(uint32_t i)
                                                          * V10.7.33: out, core.h) */
     if (PAGES[i].graph == GR_DXSND || PAGES[i].graph == GR_DXIMG)   /* (0.6.48: IMAGE; V10.49: STEREO a synth's too) */
         return te == ENGI_DRUM;              /* (codex/coherence: a synth's IMAGE on PLAY 2) */
-    if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] >= P_LN0 && PAGES[i].id[0] <= P_LN7)   /* (filters2: FILTER 2, a
-                                                         * synth's; filter2-mod: FILTER 3 KEY, VOICE's FILTER 2 no DEST) */
+    if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] >= P_LN0 && PAGES[i].id[0] <= P_LN7)   /* (filters2: EROSION, a
+                                                         * synth's; filter2-mod: FILTER 3 KEY, VOICE's EROSION no DEST) */
         return PAGES[i].id[0] == P_LN0 || PAGES[i].id[0] == P_LN4 ? te == ENGI_DRUM : te != ENGI_DRUM &&
                te != ENGI_INPUT && (PAGES[i].id[0] == P_FKEY || (te == ENGI_VOICE) == (PAGES[i].id[3] == 0xFFu));
     if (PAGES[i].graph == GR_FOCUS)                     /* (0.8.5) FOCUS: a synth's (FM6: OPERATOR, DRUM: SOUND; V10.54 not INPUT's) */
         return te != ENGI_DRUM && te != ENGI_FM6 && te != ENGI_INPUT &&
                !(FELUCCA_FM4 && te == ENGI_DIGITAL);
-    if (PAGES[i].id[0] == ID_CRU)                       /* (V10.7.35) VOICES 3: a kit's and EXT's (a synth's on TONE) */
-        return te == ENGI_DRUM || te == ENGI_INPUT;
-    if (PAGES[i].id[0] == P_ALLOC)                      /* (0.8.5) VOICE 2: not a kit's */
+    if (PAGES[i].id[0] == ID_CRU)                       /* (V10.7.35) VOICES 3: EXT's (a synth's on TONE; V10.7.37 a kit's
+                                                         * on OUT) */
+        return te == ENGI_INPUT;
+    if (PAGES[i].id[0] == P_DETUNE || PAGES[i].id[0] == P_VOICE)   /* (0.8.5) VOICES 2, (V10.7.37) VOICES: not a kit's */
         return te != ENGI_DRUM;
+    if (PAGES[i].id[0] == P_DNZ)                        /* (V10.7.37) EROSION: a kit's (a synth's: its lane slots, above) */
+        return te == ENGI_DRUM;
     if (PAGES[i].graph >= GR_FMOP && PAGES[i].graph <= GR_FMENV)   /* (0.6.10) OPERATOR, OP ENV, OPERATOR 2: FM6's */
         return te == ENGI_FM6;
     if (PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] == P_WRDEP)   /* (0.7.8) ROTOR: WHEEL's */
@@ -2173,11 +2176,11 @@ static void pl_fav(void)                                /* REC: the sound picked
 #include "ui_events.c"                            /* SEQ > LOCKS: the locks and events as a list (an action page) */
 /* EDIT > SOUND / SOUND 2 (ui_dx.c, included by ui_input.c): the DRUM-X sound edited and its patch (0 A, 1 B) */
 static uint8_t dx_ui_lane, dx_ui_side;
-static uint32_t dx_pagen(const page_t *pg)            /* SOUND 1..3; (0.5.1) X-MOD 4; (0.6.54) SOUND 4: 8 */
+static uint32_t dx_pagen(const page_t *pg)            /* SOUND 1..3; (0.5.1) X-MOD 4 */
 {
     if (pg->title[0] == 'K')                          /* (V10.7.33: KIT LFO, was X-MOD) */
         return 4u;
-    return pg->title[5] == ' ' ? (pg->title[6] == '4' ? 8u : (uint32_t)(pg->title[6] - '0')) : 1u;
+    return pg->title[5] == ' ' ? (uint32_t)(pg->title[6] - '0') : 1u;
 }
 static void dx_knob(const page_t *pg, uint32_t k, int32_t s);
 static void dx_cards(const page_t *pg);
@@ -2191,6 +2194,8 @@ static void sw_ui_cards_bt(const page_t *pg);
 #define PART_CELL 4u                                    /* (V10.7.32) ui.part: a track's cell picked on PARTS (else ALL) */
 #define DX_KIT3(pg) ((pg)->graph == GR_DXIMG && (pg)->title[0] == 'K')   /* (0.6.58) GR_DXIMG: KIT 3, or STEREO (IMAGE) */
 static void dx_kit3_cards(void);
+static void dx_keymap_turn(int32_t s);                /* (V10.7.37) OUT's KEY MAP */
+static void dx_keymap_card(uint32_t c);
 static uint32_t dx_sig(void);
 
 /* ---------------------------------------------------- action pages --- */

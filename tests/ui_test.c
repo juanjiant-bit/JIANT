@@ -4726,14 +4726,14 @@ static int test_edit_cycle(void)
 {
     /* (0.9.2: one chain, SELECT a page a detent; an EDIT tap the next group's first. Was 0.8.5's lens: SELECT a level, the
      * tap the level's next set) */
-    static const char *const CH_A[] = {"EDIT 1", "MORPH", "FILTER", "FILTER 2", "TONE", "VOICES", "VOICES 2", "AUTO KNOBS"};   /* (V10.7.35) */   /* (JIANT 0.5:
+    static const char *const CH_A[] = {"EDIT 1", "MORPH", "FILTER", "EROSION", "TONE", "VOICES", "VOICES 2", "AUTO KNOBS"};   /* (V10.7.35) */   /* (JIANT 0.5:
                                                          * ANALOG's FILTER; 0.6.45: MORPH; V10.7.21: no EDIT 2; codex/coherence:
                                                          * PLAY, was VOICE; STEREO's IMAGE on PLAY 2) */
     static const char *const TP_A[] = {"FILTER", "VOICES", "AUTO KNOBS"};
-    static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "OPERATOR", "OP ENV", "OPERATOR 2", "FILTER", "FILTER 2", "TONE",
-                                       "VOICES", "VOICES 2"};   /* (V10.7.35: the sound first) */   /* (codex/filters2: FILTER 2; filter2-mod: FILTER 3, KEY; V10.7.33 VOICES 3) */
+    static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "OPERATOR", "OP ENV", "OPERATOR 2", "FILTER", "EROSION", "TONE",
+                                       "VOICES", "VOICES 2"};   /* (V10.7.35: the sound first) */   /* (codex/filters2: EROSION; filter2-mod: FILTER 3, KEY; V10.7.33 VOICES 3) */
     static const char *const TP_F[] = {"OPERATOR", "FILTER", "VOICES"};
-    static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "FILTER 2", "TONE", "VOICES", "VOICES 2", "OP1 ENV", "OP2 ENV", "OP3 ENV",
+    static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "EROSION", "TONE", "VOICES", "VOICES 2", "OP1 ENV", "OP2 ENV", "OP3 ENV",
                                        "OP4 ENV", "OP LEVEL"};
     static const char *const TP_D[] = {"FILTER", "OP1 ENV"};
     int bad = 0, ok;
@@ -4800,11 +4800,12 @@ static int test_edit_cycle(void)
 #endif
     {   /* #97: a DRUM track's lane levels on EDIT > LANES (KICK SNARE CLAP HATCL) and LANES 2 (HATOP TOM RIM BELL) */
         /* (161d079, 2026-10-28: KIT 4, the KEY MAP, after KIT 3 in the KIT group) */
-        static const char *const CH_K[] = {"KIT", "KIT 2", "KIT 3", "KIT 4", "SOUND", "SOUND 2", "SOUND 3", "SOUND 4", "LEVELS",
-                                           "LEVELS 2", "KIT LFO", "FILTER", "STEREO", "VOICES", "VOICES 3"};
-        static const char *const TP_K[] = {"SOUND", "LEVELS", "KIT LFO"};
+        /* (V10.7.37, the owner: twelve pages, was fifteen) */
+        static const char *const CH_K[] = {"KIT", "KIT 2", "KIT 3", "SOUND", "SOUND 2", "SOUND 3", "LEVELS", "LEVELS 2",
+                                           "KIT LFO", "EROSION", "FILTER", "OUT"};
+        static const char *const TP_K[] = {"SOUND", "LEVELS", "KIT LFO", "FILTER"};
         set_engine_of(TSEL, ENGI_DRUM);
-        bad += check("0.9.2 EDIT chain (DRUM): KIT (KIT KIT 2 KIT 3 KIT 4) . SOUND (1..4) . LEVELS (LEVELS LEVELS 2) . TONE (X-MOD FILTER STEREO PLAY)",
+        bad += check("V10.7.37 EDIT chain (DRUM): KIT (KIT KIT 2 KIT 3) . SOUND (1..3) . LEVELS (LEVELS LEVELS 2) . MOD (KIT LFO EROSION) . TONE (FILTER OUT)",
                      chain_walk(B_EDIT, CH_K, NELEM(CH_K), TP_K, NELEM(TP_K)));
         {   /* (0.6.58) KIT 3 turns BP and FEEDBK, (0.7.8) KNOB 3 the CLAP's HANDS, never IMAGE; STEREO's KNOB 1 is IMAGE */
             uint8_t t0 = dx_tone, h0 = dx_hands;
@@ -4813,11 +4814,21 @@ static int test_edit_cycle(void)
             turn(EN_K3, 3); frame();
             ok = TSEL->p[P_DXIMG] == i0 && dx_tone == t0 && dx_hands > h0;
             dx_hands = h0;
-            go_title("STEREO"); frame();
+            go_title("OUT"); frame();
             turn(EN_K1, 5); frame();
             ok &= TSEL->p[P_DXIMG] > i0 && dx_tone == t0;
             TSEL->p[P_DXIMG] = i0;
-            bad += check("KIT 3: KNOB 3 turns HANDS (0.7.9), not IMAGE; STEREO: KNOB 1 turns IMAGE", ok);
+            {   /* (V10.7.37) OUT's KNOB 4 the KEY MAP, 0..9 (KIT 4's): EXTENDED's KIK/TOM, then a sound's chromatic run */
+                int16_t km = TSEL->p[P_DKEYMODE];
+                TSEL->p[P_DKEYMODE] = 1;
+                turn(EN_K4, 1); turn(EN_K4, 1); turn(EN_K4, 1); frame();   /* (a step a detent, as KIT 4's) */
+                ok &= TSEL->p[P_DKEYMODE] == 4 && drum_chrom(TSEL) == 2;
+                for (int j = 0; j < 9; j++) turn(EN_K4, -1);
+                frame();
+                ok &= TSEL->p[P_DKEYMODE] == 0 && !drum_ext(TSEL);
+                TSEL->p[P_DKEYMODE] = km;
+            }
+            bad += check("KIT 3: KNOB 3 turns HANDS (0.7.9), not IMAGE; OUT: KNOB 1 turns IMAGE, KNOB 4 the KEY MAP 0..9", ok);
         }
         go_title("LEVELS 2"); frame();
         ok = TSEL->p[P_LN5] == 127;
@@ -8653,33 +8664,32 @@ static int test_dx_sound(void)
     ok &= !seen;
     set_engine_of(TSEL, ENGI_DRUM);
     bad += check("EDIT > SOUND / SOUND 2: on a DRUM track only", ok);
-    go_title("SOUND");
-    dx_ui_lane = 0; dx_ui_side = 0; dx_ui_seen = last_note;   /* (no key since: the page keeps its lane) */
-    turn(EN_K1, 1); turn(EN_K1, 1);                    /* LANE: CP */
-    turn(EN_K2, 1);                                    /* SIDE: B */
+    go_title("SOUND");                                 /* (V10.7.37: no SOUND knob; the sound a key struck: CP here) */
+    dx_ui_lane = 2; dx_ui_side = 0; dx_ui_seen = last_note;   /* (no key since: the page keeps its sound) */
+    turn(EN_K3, 1);                                    /* SIDE: B */
     k = dx_kit[2].b[DXP_PITCH];
-    turn(EN_K3, 3);
+    turn(EN_K1, 3);                                    /* PITCH */
     ok = dx_ui_lane == 2u && dx_ui_side == 1u && dx_kit[2].b[DXP_PITCH] > k && dx_kit[2].a[DXP_PITCH] == DX_KIT_DEF[2].a[DXP_PITCH];
-    bad += check("  SOUND: LANE, SIDE, PTCH edit that sound's patch (the other patch stays)", ok);
-    go_title("SOUND 3");                               /* (0.6.54: MODE on SOUND 3's KNOB 2, KNOB 1 the sound) */
-    turn(EN_K2, 1);
+    bad += check("  SOUND: PITCH, SIDE (V10.7.37: KNOB 1, KNOB 3) edit that sound's patch (the other patch stays)", ok);
+    go_title("SOUND 2");                               /* (V10.7.37: MODE on SOUND 2's KNOB 4) */
+    turn(EN_K4, 1);
     ok = dx_kit[2].mode != DX_KIT_DEF[2].mode && ((dx_kit[2].mode >> 2) & 3u) <= DXF_HP && dx_ui_lane == 2u;
-    go_title("SOUND 2");
+    go_title("SOUND");
     turn(EN_K2, -5);
     ok &= dx_kit[2].b[DXP_DECAY] < DX_KIT_DEF[2].b[DXP_DECAY];
-    bad += check("  SOUND 3: MODE steps the wave / filter / SNAP; SOUND 2: DECAY the side's decay", ok);
+    bad += check("  SOUND 2: MODE steps the wave / filter / SNAP; SOUND: DECAY the side's decay", ok);
     {   /* (V10.7.8) MODE past the 24 of before: the filter GR's eight (the guiro's scrape), PMOD's card its SCRAPE; every
          * one of the 32 back to itself */
         uint8_t m0 = dx_kit[2].mode;
         uint32_t ix;
-        go_title("SOUND 3");
-        for (ix = 0; ix < 40u; ix++) turn(EN_K2, 1);    /* (a step a detent) */
+        go_title("SOUND 2");
+        for (ix = 0; ix < 40u; ix++) turn(EN_K4, 1);    /* (a step a detent) */
         ok = ((dx_kit[2].mode >> 2) & 3u) == DXF_GR && (dx_kit[2].mode & 3u) == DXW_BELL && dx_kit_ok(dx_kit);
         for (ix = 0; ix < 32u; ix++) ok &= dx_mode_ix(dx_mode_of(ix)) == ix;
         go_title("SOUND");
         frame();                                        /* (SOUND's card drawn with GR's SCRAPE) */
         dx_kit[2].mode = m0;
-        bad += check("  SOUND 3: MODE on to the filter GR (32 modes, each its own), the kit valid", ok);
+        bad += check("  SOUND 2: MODE on to the filter GR (32 modes, each its own), the kit valid", ok);
         go_title("SOUND 3");
     }
     key_down(key_at(1, 3)); frame(); key_up(key_at(1, 3)); frame(); frame();   /* a key on the track: its lane */
@@ -12608,7 +12618,7 @@ static int test_lz_edit(void)
     ui_power_on(); set_engine_of(TSEL, 0); frame();
     press(B_EDIT); frame();
     ok = pd_on() && lz_fam() == LZ_EDIT && pd_level() == 0u && lz_tab_lit(0) && lz_crumb_is("EDIT \xB7 SOUND \xB7 EDIT \xB7 OSC") &&
-         lz_count_is("1/8");                                        /* (V10.7.35, the owner: EDIT 1 MORPH . FILTER FILTER 2 TONE
+         lz_count_is("1/8");                                        /* (V10.7.35, the owner: EDIT 1 MORPH . FILTER EROSION TONE
                                                                      * . VOICES VOICES 2 . AUTO KNOBS; ANALOG has no EDIT 2) */
     turn(EN_SELECT, 1); frame();                                    /* (the engine's own page, in the sound's group) */
     ok &= pd_level() == 1u && lz_tab_lit(0) && str_eq(cur_page()->title, "MORPH") && lz_count_is("2/8");
@@ -12668,22 +12678,23 @@ static int test_lz_edit(void)
     turn(EN_SELECT, 1); frame();
     ok &= str_eq(cur_page()->title, "VOICES 2");
     v = TSEL->p[P_DETUNE];
-    turn(EN_K2, 3); frame();
+    turn(EN_K1, 3); frame();                                        /* (V10.7.37, the owner: ALLOC gone, UNISON on KNOB 1) */
     ok &= TSEL->p[P_DETUNE] != v;
     v = TSEL->p[P_SIMG];
-    turn(EN_K4, 3); frame();                                        /* (codex/coherence) KNOB 4 IMAGE, STEREO's page gone */
+    turn(EN_K3, 3); frame();                                        /* (codex/coherence) IMAGE, STEREO's page gone */
     ok &= TSEL->p[P_SIMG] != v && !nav_put(SEC_EDIT, "STEREO");
     {
         int16_t *hv;
-        ok &= str_eq(page_desc(cur_page(), 1, &hv)->label, "UNISON") && str_eq(page_desc(cur_page(), 3, &hv)->label, "IMAGE");
+        ok &= str_eq(page_desc(cur_page(), 0, &hv)->label, "UNISON") && str_eq(page_desc(cur_page(), 1, &hv)->label, "VEL") &&
+              str_eq(page_desc(cur_page(), 2, &hv)->label, "IMAGE") && !page_desc(cur_page(), 3, &hv);
         set_engine_of(TSEL, ENGI_INPUT); frame();                   /* (EXT: no IMAGE, its voice is one) */
-        ok &= str_eq(cur_page()->title, "VOICES 2") && page_desc(cur_page(), 3, &hv)->label[0] == '-';
+        ok &= str_eq(cur_page()->title, "VOICES 2") && page_desc(cur_page(), 2, &hv)->label[0] == '-';
     }
     set_engine_of(TSEL, ENGI_DRUM); frame();
-    ok &= !nav_put(SEC_EDIT, "VOICES 2") && !nav_put(SEC_EDIT, "AUTO KNOBS") && nav_put(SEC_EDIT, "STEREO");
+    ok &= !nav_put(SEC_EDIT, "VOICES 2") && !nav_put(SEC_EDIT, "VOICES") && !nav_put(SEC_EDIT, "AUTO KNOBS") && nav_put(SEC_EDIT, "OUT");
     set_engine_of(TSEL, ENGI_FM6); frame();
     ok &= !nav_put(SEC_EDIT, "FOCUS") && nav_put(SEC_EDIT, "OPERATOR");
-    bad += check("0.9.2 EDIT > PLAY (codex/coherence: was VOICE; POLY, GL MODE): PLAY 2 (ALLOC, UNISON, VEL, IMAGE) after it, not on DRUM; FOCUS on the synths only", ok);
+    bad += check("0.9.2 EDIT > VOICES (POLY, GL MODE): VOICES 2 (V10.7.37: UNISON, VEL, IMAGE; ALLOC automatic) after it, not on DRUM; FOCUS on the synths only", ok);
     {   /* (V10.7.33) VOICES 3: KNOB 1 CRUSH, the track's (0..127 shown 0..100 %), on every engine's chain (a kit's too); DIST's
          * TYPE without it (SOFT HARD FOLD RECT AMP) */
         int16_t *hv;
@@ -12693,8 +12704,8 @@ static int test_lz_edit(void)
         for (e = 0, ok = 1; e < 3u; e++) {              /* (V10.7.35: a synth's on TONE, a kit's on VOICES 3) */
             static const uint8_t EG[3] = {0, ENGI_FM6, ENGI_DRUM};
             set_engine_of(TSEL, EG[e]); frame();
-            ok &= nav_put(SEC_EDIT, e < 2u ? "TONE" : "VOICES 3") && !nav_put(SEC_EDIT, e < 2u ? "VOICES 3" : "TONE") &&
-                  !nav_put(SEC_EDIT, "FILTER 3");
+            ok &= nav_put(SEC_EDIT, e < 2u ? "TONE" : "OUT") && !nav_put(SEC_EDIT, "VOICES 3") && (e < 2u || !nav_put(SEC_EDIT, "TONE")) &&
+                  !nav_put(SEC_EDIT, "FILTER 3");   /* (V10.7.37: a kit's CRUSH on OUT) */
         }
         set_engine_of(TSEL, 0); go_title("TONE"); frame();
         ok &= str_eq(page_desc(cur_page(), 0, &hv)->label, "KEY TRK") && str_eq(page_desc(cur_page(), 2, &hv)->label, "LIFE");
@@ -12704,7 +12715,7 @@ static int test_lz_edit(void)
         ok &= cru_v[song.sel] > 0 && cru_v[1] == 0;
         d = track_desc(TSEL, P_DTYPE);
         ok &= d->max == 4 && str_eq(d->names[3], "RECT") && str_eq(d->names[4], "AMP");
-        bad += check("V10.7.35 EDIT > TONE: KEY TRK, CRUSH (the track's), LIFE (a kit's CRUSH on VOICES 3); DIST TYPE SOFT HARD FOLD RECT AMP", ok);
+        bad += check("V10.7.35 EDIT > TONE: KEY TRK, CRUSH (the track's), LIFE (V10.7.37: a kit's CRUSH on OUT); DIST TYPE SOFT HARD FOLD RECT AMP", ok);
         cru_v[song.sel] = 0;
     }
     ui_power_on();
@@ -13368,7 +13379,7 @@ static int test_engvis(void)
     }
     {   /* DRUM-X: KIT's beings (EDIT 1) and SOUND 1..4; KIT 2, KIT 3, X-MOD keep the colony; a hit squashes its being, a
          * ratchet's hits each */
-        static const char *const PG[] = {"EDIT 1", "SOUND", "SOUND 4", "EDIT 2", "KIT 3", "KIT LFO"};
+        static const char *const PG[] = {"EDIT 1", "SOUND", "SOUND 3", "EDIT 2", "KIT 3", "KIT LFO"};
         uint32_t k, h0, n = 0;
         int ran[6];
         vxt_case(ENGI_DRUM, "DRUM-X", "EDIT 1", 2, &mv, &st);
@@ -13443,12 +13454,12 @@ static void rv_walk(uint32_t sec)                      /* the button from HOME, 
  * (0.9.1's numbering, the level the page is drawn as), its pages; each must be reached at that level */
 typedef struct { uint8_t fam, lv, kind; const char *t[13]; } old_lv_t;   /* kind: EDIT's (0 synth 1 FM6 2 DRUM), 9 any */
 static const old_lv_t OLD_LV[] = {
-    {FAM_EDIT, 0, 0, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 0, {"FILTER", "FILTER 2", "TONE", "MORPH", "RETRIG", "ROTOR", "VOICES", "VOICES 2", "WORDS"}},
+    {FAM_EDIT, 0, 0, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 0, {"FILTER", "EROSION", "TONE", "MORPH", "RETRIG", "ROTOR", "VOICES", "VOICES 2", "WORDS"}},
     {FAM_EDIT, 2, 0, {"AUTO KNOBS"}},
-    {FAM_EDIT, 0, 1, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 1, {"FILTER", "FILTER 2", "TONE", "VOICES", "VOICES 2"}},
+    {FAM_EDIT, 0, 1, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 1, {"FILTER", "EROSION", "TONE", "VOICES", "VOICES 2"}},
     {FAM_EDIT, 2, 1, {"OPERATOR", "OP ENV", "OPERATOR 2"}},
-    {FAM_EDIT, 0, 2, {"EDIT 1", "EDIT 2", "KIT 3"}}, {FAM_EDIT, 1, 2, {"KIT LFO", "FILTER", "STEREO", "LEVELS", "LEVELS 2", "VOICES"}},
-    {FAM_EDIT, 2, 2, {"SOUND", "SOUND 2", "SOUND 3", "SOUND 4"}},
+    {FAM_EDIT, 0, 2, {"EDIT 1", "EDIT 2", "KIT 3"}}, {FAM_EDIT, 1, 2, {"KIT LFO", "EROSION", "FILTER", "OUT", "LEVELS", "LEVELS 2"}},
+    {FAM_EDIT, 2, 2, {"SOUND", "SOUND 2", "SOUND 3"}},   /* (V10.7.37: three; STEREO, VOICES gone, OUT and EROSION new) */
     {FAM_ENV, 1, 9, {"ENV", "ENV DEST"}},
 #if FELUCCA_ENVX
     {FAM_ENV, 0, 9, {"ENV"}},   /* (codex/coherence: TRACKS DEST gone) */ {FAM_ENV, 2, 9, {"STAGE"}},   /* (V10.7.32: TRACKS,
@@ -13701,7 +13712,8 @@ static void tk_start(uint32_t from)                     /* 0 home, 1 seq, 2 fxdl
 }
 static int test_nav_tasks(void)
 {
-    static const uint8_t WANT[14] = {5, 3, 5, 6, 34, 10, 9, 2, 3, 3, 4, 8, 19, 5};   /* (V10.7.33: PRESETS a list, task 10
+    static const uint8_t WANT[14] = {5, 3, 5, 6, 34, 10, 9, 2, 3, 3, 4, 7, 19, 5};   /* (V10.7.37: task 12 the snare's key, no
+                                                         * SOUND knob: a gesture less) */   /* (V10.7.33: PRESETS a list, task 10
                                                          * three: open, the next, OCT+) */   /* (V10.7.32: SAVE opens on PROJECTS, USER
                                                          * its next: task 6 a tap less) */   /* (2463a3b, 2026-11-04: SEQ > LENGTH >
                                                          * RHYTHM between LENGTH and TRACK: tasks 11 and 13 a detent more) */   /* (V10.37: COMPS before GLOBAL, SYSTEM a tap further) */   /* (V10.1: SAVE composes first, 106 -> 108) */   /* (seq2: task 5 by STEP's KNOB 1, no BAR;
@@ -13770,12 +13782,17 @@ static int test_nav_tasks(void)
             tk_start(1); tk_btn(B_SEQ); tk_go(EN_SELECT, 2); tk_val(EN_K4, -127);   /* (past RHYTHM) */
             ok = str_eq(cur_page()->title, "TRACK") && TSEL->p[P_HRQ] == 0;
             break;
-        case 11:                                        /* DRUM-X (track 4): the snare's DECAY */
-            tk_start(0); tk_btn(B_EDIT); tk_go(EN_ALGO, 3); tk_btn(B_EDIT); tk_go(EN_SELECT, 1); tk_go(EN_K1, 1);
+        case 11: {                                      /* DRUM-X (track 4): the snare's DECAY (V10.7.37: the snare's key
+                                                         * struck picks it, DECAY on SOUND's KNOB 2: a gesture less) */
+            uint32_t sk;
+            tk_start(0); tk_btn(B_EDIT); tk_go(EN_ALGO, 3); tk_btn(B_EDIT);
+            for (sk = 0; sk < 26u && kb_map(TSEL, sk) != 38u; sk++) {}
+            key_down(sk); frame(); key_up(sk); frames(4); tk_n++;
             { uint32_t c = dx_ui_lane & 7u; uint8_t *dv = dx_ui_side ? dx_kit[c].b : dx_kit[c].a, d0 = dv[DXP_DECAY];
               tk_val(EN_K2, -6);
-              ok = song.sel == 3u && str_eq(cur_page()->title, "SOUND 2") && c == 1u && dv[DXP_DECAY] != d0; }
+              ok = song.sel == 3u && str_eq(cur_page()->title, "SOUND") && c == 1u && dv[DXP_DECAY] != d0; }
             break;
+        }
         case 12:                                        /* COMP 2 of step 9 */
             tk_start(1); tk_go(EN_K1, 8); tk_go(EN_SELECT, 10); tk_val(EN_K1, 1);   /* (2463a3b: RHYTHM, ten) */   /* (seq2c: eight detents to COMP 2, V10.16 nine;
                                                          * seq2d: the step picked on STEP, KNOB 1 its ACTION) */
@@ -13796,7 +13813,7 @@ static int test_nav_tasks(void)
     }
     printf("ui:   the race: %u %u %u %u %u %u %u %u %u %u %u %u %u %u = %u actions (0.9.1: 75)\n", got[0], got[1], got[2], got[3],
            got[4], got[5], got[6], got[7], got[8], got[9], got[10], got[11], got[12], got[13], tot);
-    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 116u);   /* (V10.7.36: 116, PART SLOTS before USER) */   /* (V10.7.32: 112; V10.7.33: 114; V10.7.35: 115, FM6 the sound first) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
+    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 115u);   /* (V10.7.37: 115, the kit's sound by its key) */   /* (V10.7.36: 116, PART SLOTS before USER) */   /* (V10.7.32: 112; V10.7.33: 114; V10.7.35: 115, FM6 the sound first) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
     ui_power_on();
     return bad;
 }
@@ -14347,6 +14364,8 @@ static int test_help_line(void)
     ok &= help_line(b) && str_eq(b, "HOME+SELECT DICE  HOME+PRESETS BPM") && text_w(&AF_X, b) <= 228;
     go_title("AUTO KNOBS"); frame();
     ok &= help_line(b) && str_eq(b, "PICK A KNOB AND WHAT MOVES IT");
+    set_engine_of(TSEL, ENGI_DRUM); go_title("SOUND 2"); frame();   /* (V10.7.37: a kit's sound pages, no SOUND knob) */
+    ok &= help_line(b) && str_eq(b, "A KEY PICKS ITS SOUND  EDIT+BLACK MUTE") && text_w(&AF_X, b) <= 228;
     go_title("TOOLS"); frame();
     ok &= help_line(b) && !strncmp(b, "OCT+ ", 5);       /* (an action page: its OCT+ / OCT-) */
     go_title("ENV"); frame();

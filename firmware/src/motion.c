@@ -44,9 +44,9 @@ static int motion_param(uint32_t id)
      * changes never become automation. FX sends and continuous mix are safe. */
     return id == MOT_DJF || (id < P_COUNT && (id <= P_REL || (id >= P_ED_FLT && id <= P_LD_AMP) ||
         (id >= P_DIST && id <= P_REV) || id == P_GLIDE || id == P_PAN ||
-        id == P_DETUNE || (id >= P_FM1_ATK && id <= P_FM4_LEVEL) || (id >= P_SOFS && id <= P_LN7) ||
+        id - P_ALLOC < 2u || (id >= P_FM1_ATK && id <= P_FM4_LEVEL) || (id >= P_SOFS && id <= P_LN7) ||
         id == P_DTONE || id == P_MSSLW || id == P_FCUT || id == P_FRES || (id >= P_MS0 && id <= P_MS15) || id >= P_E0));   /* (the sequence offset OFS
-        * PIT, the DRUM lane levels, DIST's TONE, the modulation sequence's slew and levels, E0..E7) */
+        * PIT, the DRUM lane levels, (V10.7.37) a kit's EROSION NOISE in ALLOC's slot, DIST's TONE, the modulation sequence's slew and levels, E0..E7) */
 }
 /* the range of id's values on track t (MOT_DJF: the global's) */
 static const param_desc_t *motion_desc(const track_t *t, uint32_t id)

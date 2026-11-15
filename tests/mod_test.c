@@ -1279,7 +1279,7 @@ static void test_jiant_fx(void)
 }
 
 
-/* (codex/filter2-mod) F.NOISE (MS_FNZ): EDIT > FILTER 2's modulator as a source. On PITCH, FILTER 2's NOISE at 0 (the
+/* (codex/filter2-mod) F.NOISE (MS_FNZ): EDIT > EROSION's modulator as a source. On PITCH, EROSION's NOISE at 0 (the
  * filter untouched): STEP at RATE ~55 % moves the pitch in steps (the upward zero crossings a window vary); no slot: the
  * pitch steady; SOFT the same, glided. The windows' crossings, most / fewest */
 static double fnz_spread(uint32_t mode_v, int routed)
@@ -1311,7 +1311,7 @@ static double fnz_spread(uint32_t mode_v, int routed)
     }
     return lo ? (double)hi / lo : 0;
 }
-/* (codex/filter2-mod) FILTER 2's DEST: STEP at NOISE 100 %, DEST stored 127 - v (FILT 127, MIX 64, PITCH 0): the pitch's
+/* (codex/filter2-mod) EROSION's DEST: STEP at NOISE 100 %, DEST stored 127 - v (FILT 127, MIX 64, PITCH 0): the pitch's
  * spread (as fnz_spread, no slot); VOICE's slot is its CONS: DEST off there */
 static double dest_spread(int16_t dest, const char *eng)
 {
@@ -1349,20 +1349,20 @@ static void test_dest(void)
     double f = dest_spread(127, "ANALOG"), m = dest_spread(64, "ANALOG"), p = dest_spread(0, "ANALOG");
     char what[160];
     int32_t vp;
-    snprintf(what, sizeof what, "FILTER 2 DEST (STEP, NOISE 100 %%): the pitch's spread FILT x%.2f, MIX x%.2f, PITCH x%.2f", f, m, p);
+    snprintf(what, sizeof what, "EROSION DEST (STEP, NOISE 100 %%): the pitch's spread FILT x%.2f, MIX x%.2f, PITCH x%.2f", f, m, p);
     check(what, f < 1.1 && m > 1.25 && p > m * 1.2 && p < 4.5);
     fresh(eng_by_name("VOICE"), 0);                     /* (VOICE: its CONS in DEST's slot, DEST off) */
     trk[0].p[P_FNMD] = 89; trk[0].p[P_FNZ] = 0; trk[0].p[P_FDST] = 0;
     trk_note_on(&trk[0], 60, 100);
     blocks(200);
     vp = fnb[0].pit;
-    check("FILTER 2 DEST: VOICE's slot its CONS, DEST off there (the pitch untouched)", vp == 0);
+    check("EROSION DEST: VOICE's slot its CONS, DEST off there (the pitch untouched)", vp == 0);
 }
 static void test_fnoise(void)
 {
     double s0 = fnz_spread(89, 0), s1 = fnz_spread(89, 1), s2 = fnz_spread(115, 1);
     char what[160];
-    snprintf(what, sizeof what, "F.NOISE -> PITCH (FILTER 2 NOISE 0): STEP x%.2f, SOFT x%.2f, no slot x%.2f", s1, s2, s0);
+    snprintf(what, sizeof what, "F.NOISE -> PITCH (EROSION NOISE 0): STEP x%.2f, SOFT x%.2f, no slot x%.2f", s1, s2, s0);
     check(what, s0 > 0 && s0 < 1.06 && s1 > 1.2 && s2 > 1.1);
     fresh(ENGI_DRUM, 0);                                /* (a kit's: its lane levels in those slots, no modulator) */
     memset(fns, 0x55, sizeof fns);

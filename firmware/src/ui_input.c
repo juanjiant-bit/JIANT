@@ -1523,8 +1523,12 @@ static void edit_param(uint32_t slot, int32_t steps)
         }
         return;
     }
-    if (DX_KIT3(pg)) {                                    /* (0.6.54) KIT 3: BP, FEEDBK (0.6.58: IMAGE on STEREO) */
+    if (DX_KIT3(pg)) {                                    /* (0.6.54) KIT 3: BP, FEEDBK */
         dx_kit3_knob(slot, steps);
+        return;
+    }
+    if (slot == 3u && pg->id[3] == P_DKEYMODE) {          /* (V10.7.37) OUT's KEY MAP (its 0..9, ui_dx.c) */
+        dx_keymap_turn(steps);
         return;
     }
     if(pg->graph==GR_LYRSTEP) {

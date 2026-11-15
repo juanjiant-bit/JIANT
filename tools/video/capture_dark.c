@@ -214,7 +214,7 @@ static void feat_beat(uint32_t q)
     if (q >= B(16, 0) && q < B(18, 0)) trk[T_DRUM].p[P_E0] = (int16_t)(20 + (q - B(16, 0)) * 11u);
     if (q == B(18, 0)) { trk[T_DRUM].p[P_E0] = 30; dx_ui_lane = 1; page(T_DRUM, "SOUND"); caption(q, "DRUMS", "EVERY VOICE ITS OWN", "pitch · decay · noise · color · wave|layer · feedback · its own send", 0); }
     if (q == B(19, 0)) dx_ui_lane = 3;
-    if (q == B(20, 0)) { page(T_DRUM, "STEREO"); caption(q, "DRUMS", "STEREO IMAGE", "one knob places the whole kit|each voice on its own orbit", 0); }
+    if (q == B(20, 0)) { page(T_DRUM, "OUT"); caption(q, "DRUMS", "STEREO IMAGE", "one knob places the whole kit|each voice on its own orbit", 0); }
     if (q >= B(20, 0) && q < B(22, 0)) trk[T_DRUM].p[P_DXIMG] = (int16_t)(10 + (q - B(20, 0)) * 14u);
     /* the engines */
     if (q == B(22, 0)) { page(T_BASS, "EDIT 1"); caption(q, "ENGINES", "ANALOG", "saw · square · sync · ring|TRIO: three oscillators", 0); }
@@ -417,11 +417,11 @@ static void seq_beat(uint32_t q)
     if (q == B(42, 0)) { drums(DRIVE); page(T_DRUM, "EDIT 1"); caption(q, "DETAILS", "DRUM-X MORPH", "two kits in one|MORPH glides from A to B", 0); }
     if (q >= B(42, 0) && q < B(44, 0)) trk[T_DRUM].p[P_E0] = (int16_t)(20 + (q - B(42, 0)) * 12u);
     if (q == B(44, 0)) {
-        trk[T_DRUM].p[P_E0] = 30; dx_ui_lane = 1; dx_snd[1] = (uint8_t)(3u << 6 | 63u); page(T_DRUM, "SOUND 4");
+        trk[T_DRUM].p[P_E0] = 30; dx_ui_lane = 1; dx_snd[1] = (uint8_t)(3u << 6 | 63u); page(T_DRUM, "SOUND 3");
         caption(q, "DETAILS", "DRUM SENDS", "each drum voice to CHORUS · DELAY · REVERB|its own amount: the snare to the hall", 0);
     }
     if (q == B(45, 0)) { dx_ui_lane = 3; dx_snd[3] = (uint8_t)(2u << 6 | 40u); }
-    if (q == B(46, 0)) { dx_snd[1] = (uint8_t)(3u << 6 | 40u); page(T_DRUM, "STEREO"); caption(q, "DETAILS", "STEREO IMAGE", "one knob spreads the kit|the kick stays in the middle", 0); }
+    if (q == B(46, 0)) { dx_snd[1] = (uint8_t)(3u << 6 | 40u); page(T_DRUM, "OUT"); caption(q, "DETAILS", "STEREO IMAGE", "one knob spreads the kit|the kick stays in the middle", 0); }
     if (q >= B(46, 0) && q < B(48, 0)) trk[T_DRUM].p[P_DXIMG] = (int16_t)(10 + (q - B(46, 0)) * 14u);
     if (q == B(48, 0)) { page(T_LEAD, "MORPH"); caption(q, "DETAILS", "MORPH ON THE ENGINES", "ANALOG · PHASE · LOFI|one knob through every wave", 0); }
     if (q >= B(48, 0) && q < B(50, 0)) trk[T_LEAD].p[P_MORPH] = (int16_t)((q - B(48, 0)) * 15u);

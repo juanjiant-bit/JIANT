@@ -129,7 +129,7 @@ static const icon_map_t ICON_MAP[] = {
     /* fx sends, voice */
     {"DIST", ICON_DIST}, {"CHORUS", ICON_CHORUS}, {"DLY", ICON_DELAY}, {"REV", ICON_REVERB},
     {"POLY", ICON_VOICE}, {"GLIDE", ICON_GLIDE}, {"GL MODE", ICON_GLIDE}, {"PRIO", ICON_ORDER}, {"UNISON", ICON_DETUNE},
-    {"ALLOC", ICON_VOICE}, {"PAN", ICON_PAN}, {"MUTE", ICON_MUTE},
+    {"PAN", ICON_PAN}, {"MUTE", ICON_MUTE},   /* (V10.7.37: ALLOC gone) */
     /* global */
     {"BPM", ICON_TEMPO}, {"CLOCK", ICON_TEMPO}, {"TUNE", ICON_TUNE}, {"TIME", ICON_TIME},
     {"FEEDBK", ICON_FEEDBACK}, {"COLOR", ICON_TONE}, {"MIX", ICON_MIX}, {"SIZE", ICON_SIZE},

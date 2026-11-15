@@ -39,7 +39,7 @@
  * Nothing active (every slot with SRC, DST or AMT at 0): no work, and the sound is bit-identical. */
 enum { MS_OFF, MS_LFO, MS_ENV, MS_VEL, MS_KEY, MS_RAND, MS_MODW, MS_AT, MS_EXPR, MS_M1, MS_STEP = MS_M1 + 4, MS_NOISE, MS_PROX, MS_ENV2,
        MS_FOLLOW, MS_T1, MS_OCTUP = MS_T1 + NTRK, MS_OCTDN, MS_FNZ, MS_LIFE, MS_BEING, MS_N };   /* (V10.54) FOLLOW: the audio input's envelope */
-/* (codex/filter2-mod, the owner: FILTER 2's modulator "on the cutoff or the pitch") F.NOISE: EDIT > FILTER 2's value
+/* (codex/filter2-mod, the owner: EROSION's modulator "on the cutoff or the pitch") F.NOISE: EDIT > EROSION's value
  * (voice.c fn_tick: SOFT STEP BREAK bipolar, DUST's spikes 0..1, METAL SOFT's wander), whatever its NOISE; appended (the
  * ids before it kept: projects, presets, the editor). A kit's, EXT's: 0 */
 /* (V10.7.22, the owner) OCT+ / OCT-: the expression keys as sources (seq.c kx_block), 0..1 / bipolar; a route from one on

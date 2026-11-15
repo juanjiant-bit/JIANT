@@ -229,7 +229,7 @@ enum {                          /* per-track parameters */
  * lane 8 level (127 every synth part holds): 127 - (bit 0 OCT- VIBRATO, bit 1 OCT+ BEND), automation only */
 #define P_XPR P_LN7
 /* (codex/filters2, the owner: a noise modulator on the filter, KB TRACKING, metallic / broken / noisy textures; LP24
- * clean to aggressive) EDIT > FILTER 2 (voice.c fn_tick, fn_tex) and FILTER's DRIVE, in DRUM-X's lane 3..7 level slots:
+ * clean to aggressive) EDIT > EROSION (voice.c fn_tick, fn_tex) and FILTER's DRIVE, in DRUM-X's lane 3..7 level slots:
  * 127 there (what every synth part holds: its presets set it) is OFF / as before. Not a kit's (its lane levels) nor
  * EXT's (its SWARM, eng_input.c SW_SLOT). KEY: 127 - v of the full tracking; ANALOG (its filter always tracked a fifth
  * of the key): its place (v + 28) & 127, 127 at 27 (21 %, as before). NOISE, RATE, DRIVE: 127 - v. MODE: 127 - v,
@@ -239,10 +239,20 @@ enum {                          /* per-track parameters */
 #define P_FNRT P_LN4
 #define P_FNMD P_LN5
 #define P_FDRV P_LN6
-/* (codex/filter2-mod, the owner) FILTER 2's DEST: the modulator on CUT, on the pitch or both, a crossfade in five steps
+/* (codex/filter2-mod, the owner) EROSION's DEST: the modulator on CUT, on the pitch or both, a crossfade in five steps
  * (127 - v: 0 FILTER, 127 PITCH; 127 stored, what every synth part holds, FILTER: V10.7.30's), in lane 1's slot: VOICE's
  * CONS there (VOICE: FILTER always, its F.NOISE through the matrix) */
 #define P_FDST P_LN1
+/* (V10.7.37, the owner) a kit's EROSION (EDIT > EROSION on a DRUM track: the synths' noise modulator, voice.c fn_tick, on
+ * the kit's FILTER CUT and its hits' pitch): NOISE RATE MODE DEST in four slots a DRUM part never read (its voices are
+ * POLY, no glide, no unison; ALLOC retired the same version): NOISE in ALLOC's (0 in every DRUM part before it: a preset
+ * load sets TP's 0, and VOICES 2 was not a kit's page), RATE in UNISON's, MODE in GL MODE's (SOFT STEP METAL BREAK
+ * DUST), DEST in PRIO's (FILT F75 MIX P75 PITCH), each as it reads (params.c DERO_DESC, a DRUM part's; NOISE 0: the
+ * kit bit for bit as before) */
+#define P_DNZ P_ALLOC
+#define P_DNRT P_DETUNE
+#define P_DNMD P_GLMODE
+#define P_DDST P_PRIO
 static inline uint32_t fkey_rank(int32_t v) { return ((uint32_t)v + 28u) & 127u; }
 static inline uint32_t vcons_rank(int32_t v) { return ((uint32_t)v + 33u) & 127u; }
 static inline uint32_t vcons_q6(int32_t v)
