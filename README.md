@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.35
+## This release: V10.7.36
 
 ### Installing
 
@@ -482,6 +482,15 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.36 — beta (2026-11-15)
+- **WEST COAST replaces NOISE** (engine 11, the same PROGRAM CHANGE numbers): a sine core, FM from a second sine, a **wavefolder** and a **low-pass gate** (filter and VCA on one vactrol-like envelope: a fast strike, a late close). EDIT 1 **FOLD · SYMM · MOD · RATIO**, EDIT 2 **GATE · DECAY · RES · DUST**. Velocity folds more and opens the gate. 20 presets (plucks, BONGO, MARIMBA, bells, GAMELAN, folded basses, leads, drones) and NOISE's eight remade with DUST at their old numbers. A project or user sound with NOISE opens as WEST in a DUST patch (NOISE's TRK, DRIFT and CRUSH have no match).
+- **FX punch-ins redesigned** (hold FX, press a key): **B3 REVERSE, C4 TAPE STOP, G4 WOBBLE, A4 DLY 1/16, G5 COMB; F#3 PITCH UP, G#3 PITCH DN, A#3 FREEZE, C#4 REV ALL, D#4 DLY ALL (full wet), F#4 RING, A#4 LIFE MAX**, and a new **GLITCH** (ratchets to 1/64, rolls, reverse, octave slices, dropouts, CD skips, crush bursts, tape-stop slivers, on a 4-bar phrase). The repeats, OCT±, 1/2 TEMPO, STUT, ATK+, ARP, RANDOM and LOOP 3/5/7 stay. Gone: the LPF/HPF keys (FX + KNOB 1 FILTER stays), MUTE T1–T6 (mute lives on GLO), the TRK ALL/SYN/DRM selector (the note effects act on every track), DEC−/DEC+, and the CLR AUTO key: the lane is cleared only with **REC + FX** or **FX + PRESETS, KNOB 4 CLEAR**.
+- **HOME:** LIFE · MACROS · **LIVE MIX** · TRACKS · TIMELINE · ARRANGE · PARTS · GEN. **HOME + SELECT on MACROS** dices the macros (elsewhere it opens GEN).
+- **SAVE:** TOOLS · PROJECTS · **PART SLOTS** · USER · PRESETS.
+- **EDIT held** draws no map: its knobs are MOMENTARY on the page you see, its keys work as before.
+- **MENU:** four large rows a page.
+- **REC and SAVE held:** only the keys that act, as large tiles, with a line saying what the layer is for.
 
 ### V10.7.35 — beta (2026-11-14)
 - **SELECT on HOME › MACROS turns the page** like everywhere: SELECT alone reaches LIVE MIX. The macros' dice: **HOME + SELECT on MACROS** (elsewhere HOME + SELECT opens GEN, as before).
