@@ -30,6 +30,22 @@ export function restoreSectors(nor, sectors) {
 
 export const HOLD_MS = 24;
 
+/* (emu-transfer) the editor's backup commands into the emulator (web/emu/transfer-api.h: the firmware's
+ * editor_backup.c): a request [cmd, ...args] (7-bit bytes) in, the device's reply [...] out, null when it sends none.
+ * The page's transfer panel (transfer.js) talks to it over a MessagePort of its own ("edport"), so the page's
+ * own messages stay as they are. A flash write goes out with the next frame's sectors, as a save from the panel does. */
+export function edServe(ex, req) {
+  if (!ex.web_ed || !Array.isArray(req) || !req.length || req.length > 400) return null;
+  new Uint8Array(ex.memory.buffer, ex.web_ed_buf(), req.length).set(req.map((v) => v & 255));
+  const n = ex.web_ed(req.length);
+  return n ? Array.from(new Uint8Array(ex.memory.buffer, ex.web_ed_reply(), n)) : null;
+}
+export function edVersion(ex) {
+  if (!ex.web_version) return "";
+  const m = new Uint8Array(ex.memory.buffer, ex.web_version(), 64), z = m.indexOf(0);
+  return String.fromCharCode(...m.subarray(0, z < 0 ? 64 : z));
+}
+
 if (typeof registerProcessor === "function") {
   const clock = globalThis.performance ? () => globalThis.performance.now() : () => Date.now();
   class Felucca extends AudioWorkletProcessor {
@@ -74,6 +90,17 @@ if (typeof registerProcessor === "function") {
       else if (m.type === "master") ex.web_master(m.value | 0);
       else if (m.type === "midi") ex.web_midi(m.data[0] | 0, m.data[1] | 0, m.data[2] | 0);
       else if (m.type === "visible") this.period = m.on ? 1 / 30 : 1 / 4;
+      else if (m.type === "edport" && m.port) {        // (emu-transfer) the transfer panel's channel
+        const port = m.port;
+        port.onmessage = (e) => {
+          const q = e.data || {}, x = this.ex;
+          let reply = null, error = "";
+          try { reply = x ? edServe(x, q.req) : null; } catch (err) { error = String(err && err.message || err); }
+          port.postMessage({ seq: q.seq, reply, error, version: x ? edVersion(x) : "" });
+          if (x) this.sentDraws = -1;                   // (the screen after a restore, at once)
+        };
+        port.postMessage({ seq: 0, reply: null, version: edVersion(ex) });
+      }
     }
 
     publish() {
