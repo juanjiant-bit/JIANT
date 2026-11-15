@@ -713,10 +713,15 @@ static __attribute__((noinline)) void master_begin(void)
                                                          * limiter's headroom (0.5.1: was 16000, it limited 95 % of the time) */
 #define LEV_GATE 400                                    /* -38 dB */
 static int32_t lev_env, lev_g = 32768, lev_cur = 32768, lev_dg;   /* the gain now and its step a sample (master_out) */
-static __attribute__((noinline)) void lev_block(uint32_t n)
+static int32_t dc_l, dc_r;                              /* (master_out's DC blockers, LOWCUT: below; lev_block reads them) */
+static volatile uint8_t fx_lowcut;
+/* (V10.7.42) out (mix_block's, not under the FX layer: 0 there): a silent block (every sample in 0) through master_out
+ * at rest (the DC blockers and the limiter settled, no LOWCUT) is 0 out with the states as they were: out cleared, 1
+ * returned (mix_block: the master not run; lev_cur's ramp not run on: the next block sets it anew) */
+static __attribute__((noinline)) int lev_block(uint32_t n, int32_t *out)
 {
     uint32_t i, j;
-    int32_t g0 = lev_g;
+    int32_t g0 = lev_g, any = 0;
     for (j = 0; j < n; j += 32u) {                      /* (ctl64) every 32 samples, as with blocks of 32: the peak of
                                                          * them, the follower, the gain (a bass note's cycle read over 64
                                                          * samples peaks higher: the leveler lifted it less); the gain
@@ -729,6 +734,7 @@ static __attribute__((noinline)) void lev_block(uint32_t n)
             if (l > pk) pk = l;
             if (r > pk) pk = r;
         }
+        any |= pk;
         lev_env += pk > lev_env ? (pk - lev_env) >> 6 : -((lev_env - pk) >> 11);   /* (0.5.1: ~45 ms up, ~1.5 s down: it
                                                          * rides the song's loudness, not each hit; was ~1 / ~46 ms) */
         g1 = 32768;                                     /* (below the gate: back to unity, slowly) */
@@ -749,6 +755,11 @@ static __attribute__((noinline)) void lev_block(uint32_t n)
     }
     lev_cur = g0;                                       /* (master_out ramps it across the block, after the DC block) */
     lev_dg = (lev_g - g0) / (int32_t)n;
+    if (!out || any | dc_l | dc_r | fx_lowcut || lim_env > LIM_T)   /* (a DC blocker at 0 holds there whatever its
+                                                         * remainder: 0 .. 4095 into >> 12) */
+        return 0;
+    memset(out, 0, 2u * n * sizeof out[0]);
+    return 1;
 }
 /* DUCK (G_DUCK 0..100, G_DREL its release 40 .. 600 ms): a kick (eng_drum.c duck_hit) takes the parts that are not
  * DRUM down by up to 30 dB in ~2 ms, holds them there ~25 ms, and they come back with the release, shaped as a
@@ -2502,9 +2513,10 @@ static __attribute__((noinline)) void drum_mix(int32_t *ol, int32_t *or_, uint32
                                                int32_t dgl, int32_t gr, int32_t dgr, int32_t pm0, int32_t pm1,
                                                int32_t *const sd[3])   /* (0.6.71: this core's sends) */
 {
-    uint32_t i, b, on = dx_xon;
+    dx_core_t *dc = &DXC;                               /* (0.7.8: this core's; V10.7.42: read once) */
+    uint32_t i, b, on = dc->xon;
     int32_t dpm = (pm1 - pm0) / (int32_t)(n ? n : 1u), mute = pm0 != 32768 || pm1 != 32768;
-    int32_t *sl = dx_sl, *sr = dx_sr, (*sb)[CTL] = dx_sb;   /* (0.7.8: this core's) */
+    int32_t *sl = dc->sl, *sr = dc->sr, (*sb)[CTL] = dc->sb;
     if (n > CTL)
         n = CTL;
     if (mute)                                           /* (the FX layer's mute: on what is taken and sent too) */
@@ -2540,11 +2552,20 @@ static __attribute__((noinline)) void track_follow_peak(const track_t *t, const 
     uint32_t ti = (uint32_t)(t - trk), i, st = ((life.fol & ~life.tapm) >> ti & 1u) ? 4u : 1u;   /* (V10.7.34: LIFE's
                                                          * own, every 4th sample) */
     int32_t pl = 0, pr = 0, level = mp_lvl[ti] >> 8, pan = mp_pan[ti] >> 8;
-    for (i = 0; i < n; i += st) {
-        int32_t l = b[i] - ((dx_xon & 1u) ? dx_sl[i] : 0), r = b[i] - ((dx_xon & 1u) ? dx_sr[i] : 0);
-        l = l < 0 ? -l : l; r = r < 0 ? -r : r;
-        if (l > pl) pl = l;
-        if (r > pr) pr = r;
+    const dx_core_t *dc = &DXC;                         /* (V10.7.42) this core's, once: MC_CPU() was read twice a sample */
+    if (dc->xon & 1u)                                   /* a kit's IMAGE: each side its own */
+        for (i = 0; i < n; i += st) {
+            int32_t l = b[i] - dc->sl[i], r = b[i] - dc->sr[i];
+            l = l < 0 ? -l : l; r = r < 0 ? -r : r;
+            if (l > pl) pl = l;
+            if (r > pr) pr = r;
+        }
+    else {                                              /* (V10.7.42) no IMAGE: both sides the part's sum, one scan */
+        for (i = 0; i < n; i += st) {
+            int32_t l = b[i] < 0 ? -b[i] : b[i];
+            if (l > pl) pl = l;
+        }
+        pr = pl;
     }
     if (ENGINES[t->engine] != &ENG_DRUM) level = mulq15(level, duck_g1);
     pl = ((pl >> 2) * level) >> 10; pr = ((pr >> 2) * level) >> 10;
@@ -3175,7 +3196,8 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
     }
     if (clip_g)
         clip_block(n);
-    lev_block(n);                                       /* (JIANT 0.5) the leveler: the loudness held */
+    if (lev_block(n, perf ? 0 : out))                   /* (JIANT 0.5) the leveler: the loudness held; (V10.7.42) a silent */
+        return;                                         /* block at rest: its out 0, the master not run */
     if (perf) {
         perf_master(out, n);
         return;

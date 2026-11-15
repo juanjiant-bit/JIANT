@@ -2129,7 +2129,7 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
         else
             e->render(t, v, out + off, n, &m);
         if (img) {
-            int32_t g = pn > 0 ? pn : -pn, *sd = (pn > 0 ? dx_sl : dx_sr) + off;
+            int32_t g = pn > 0 ? pn : -pn, *sd = (pn > 0 ? DXC.sl : DXC.sr) + off;   /* (V10.7.42: one core read) */
             for (j = 0; j < n; j++)
                 sd[j] += (out[off + j] - vb[j]) * g >> 6;
         }

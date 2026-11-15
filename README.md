@@ -483,6 +483,14 @@ same license.
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
 
+### V10.7.42 — beta
+- **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version
+  since V10.7.23 was measured: the +7.7 % of CPU TEST is all BALANCE, on since V10.7.33 (+3.3 %), and LIFE (+4.2 %); nothing runs
+  per sample for a feature that is off. Now a silent block skips the master (idle 326 → 181 instructions a sample, V10.7.23:
+  296). LIFE's followers are lighter, and FREEZE no longer divides every sample. The sound is bit for bit the same.
+- **FREEZE let go: the tracks back at the full rate.** Since V10.7.41 they stayed at half the rate after a FREEZE, until
+  the next punch-in.
+
 ### V10.7.41 (2026-11-15)
 - **WEST with RES high no longer breaks on the peaks**: past RES ~43 the gate's input is lowered with its resonance
   (x0.25 at 127), so its ring stays inside the gate's arithmetic (it wrapped around: a crack on every peak). Below RES 43
