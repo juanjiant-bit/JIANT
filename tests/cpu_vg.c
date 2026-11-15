@@ -138,7 +138,7 @@ int main(void)
 {
     static const struct { const char *eng, *pre; uint32_t notes; } E[] = {
         {"ANALOG", "FAT BASS", 8}, {"PHASE", "STRING", 8}, {"LOFI", "BYTE BENT", 8}, {"VOICE", "WOW BASS", 4},
-        {"WHEEL", "ROCK DRIVE", 8}, {"DRUM", "", 8}, {"NOISE", "METAL", 8}, {"FM6", "BRASS", 8}, {"ANIMAL", "ROAR", 8}};
+        {"WHEEL", "ROCK DRIVE", 8}, {"DRUM", "", 8}, {"WEST", "METAL", 8}, {"FM6", "BRASS", 8}, {"ANIMAL", "ROAR", 8}};
     static const int16_t AM[AN_NMODE][8] = {           /* (0.8.3) ANIMAL's modes, every option on, no gaps */
         {AN_CMOS, 127, 127, 64, 63, 127, 0, 40}, {AN_PULSE, 127, 127, 26, 63, 127, 0, 22},
         {AN_WHSTL, 127, 127, 40, 63, 127, 0, 22}, {AN_WING, 127, 127, 64, 63, 127, 0, 22},
@@ -173,6 +173,20 @@ int main(void)
         for (k = 0; k < 8u; k++)
             trk_note_on(&trk[0], 48 + 4 * k, 100);
         snprintf(name, sizeof name, "eng/ANIMAL.%s", N_ANIMAL_MODE[i]);
+        vg_section(name);
+    }
+    for (i = 0; i < 2u; i++) {                          /* (V10.7.36) WEST's heaviest corners: every stage on, the hiss and
+                                                         * the impulses (the core gone); the core sounding, modulated, the
+                                                         * dust pinging the gate */
+        static const int16_t WC[2][8] = {{127, 127, 127, 15, 64, 127, 127, 127}, {127, 127, 127, 15, 64, 127, 127, 60}};
+        uint32_t k;
+        vg_quiet();
+        vg_part(0, ENGI_WEST, 0, 0);
+        for (k = 0; k < 8u; k++)
+            trk[0].p[P_E0 + k] = WC[i][k];
+        for (k = 0; k < 8u; k++)
+            trk_note_on(&trk[0], 48 + 4 * k, 100);
+        snprintf(name, sizeof name, "eng/WEST.%s", i ? "FM" : "HEAVY");
         vg_section(name);
     }
     for (i = 0; i < 2u; i++) {                          /* (0.8.5) VOICE singing words (sing.c): 4 voices, a lyric */

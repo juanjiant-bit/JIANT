@@ -1143,8 +1143,8 @@ static int test_morph(void)
     bad += check("EDIT > MORPH on ANALOG, not on FM6", ok);
     return bad;
 }
-/* (0.6.46) INIT SOUND dry (no effect sends), FM6 the init voice (OP1 alone at 99, SLOT OWN); NOISE DUST at DENS 0
- * still crackles */
+/* (0.6.46) INIT SOUND dry (no effect sends), FM6 the init voice (OP1 alone at 99, SLOT OWN); (V10.7.36) WEST at DUST 96
+ * (NOISE's DUST: the impulses alone) crackles */
 static int test_init_dry(void)
 {
     int bad = 0, ok = 1;
@@ -1174,17 +1174,17 @@ static int test_init_dry(void)
         t = &trk[0];
         song.master_q12 = 4096;
         for (k = 1; k < NTRK; k++) trk[k].p[P_MUTE] = 1;
-        set_engine_of(t, 11u);                                  /* NOISE */
+        set_engine_of(t, 11u);                                  /* (V10.7.36) WEST, NOISE's slot */
         t->engine = t->eng_req;
-        t->p[P_E0] = 1;                                         /* DUST */
-        t->p[P_E5] = 0;                                         /* DENS 0 */
+        t->p[P_E7] = 96;                                        /* DUST 96: the impulses alone, the core silent */
+        t->p[P_E5] = 127;                                       /* DECAY: the gate held open */
         for (b = 0; b < 8u; b++) mix_block(o, CTL);
         trk_note_on(t, 60, 100);
         for (b = 0; b < 400u; b++) {
             mix_block(o, CTL);
             for (i = 0; i < 2u * CTL; i++) pk = o[i] > pk ? o[i] : -o[i] > pk ? -o[i] : pk;
         }
-        bad += check("NOISE DUST at DENS 0 still crackles", pk > 200);
+        bad += check("WEST at DUST 96 (NOISE's DUST mode, as a NOISE project opens): it crackles", pk > 200);
     }
     return bad;
 }
@@ -6330,11 +6330,11 @@ static int test_fm4_retired(void)
     bad += check("PRESETS KNOB 2: the engines in order (V10.6d: DRUM ANALOG PHASE FM6 VOICE ANIMAL MATH ..; EXT last, round), DIGITAL skipped, back to the first",
                  seen == all && TSEL->eng_req == 0u && eng_step(0, 1) == ENGI_PHASE && eng_step(ENGI_FM6, 1) == ENGI_VOICE &&
                  eng_step(ENGI_FM6, -1) == ENGI_PHASE && eng_step(0, -1) == ENGI_DRUM && eng_step(ENGI_DRUM, 1) == 0u &&
-                 eng_step(ENGI_VOICE, 1) == ENGI_ANIMAL && eng_step(ENGI_ANIMAL, 1) == ENGI_LOFI && eng_step(ENGI_DRUM, -1) == ENGI_INPUT && eng_step(ENGI_NOISE, 1) == ENGI_STRING &&
+                 eng_step(ENGI_VOICE, 1) == ENGI_ANIMAL && eng_step(ENGI_ANIMAL, 1) == ENGI_LOFI && eng_step(ENGI_DRUM, -1) == ENGI_INPUT && eng_step(ENGI_WEST, 1) == ENGI_STRING &&
                  eng_step(ENGI_STRING, 1) == ENGI_ADD && eng_step(ENGI_ADD, 1) == ENGI_INPUT && eng_step(ENGI_INPUT, 1) == ENGI_DRUM);   /* (V10.54: INPUT last) */
     {   /* the display order (engines.c ENGINE_ORDER, 0.9.9): every engine one can pick once; the PRESETS list follows it
          * (was ANALOG FM6 PHASE LOFI VOICE WHEEL NOISE DRUM ANIMAL: test_engine_order_099 has PROGRAM CHANGE's) */
-        static const char *const ORDER[] = {"DRUM", "ANALOG", "PHASE", "FM6", "VOICE", "ANIMAL", "MATH", "WHEEL", "NOISE", "STRING", "ADD", "EXT"};
+        static const char *const ORDER[] = {"DRUM", "ANALOG", "PHASE", "FM6", "VOICE", "ANIMAL", "MATH", "WHEEL", "WEST", "STRING", "ADD", "EXT"};
         uint32_t last = 0xFFu, r = 0, n = 0;
         ok = NENG_SHOWN == NELEM(ORDER);
         for (i = 0; ok && i < NENG_SHOWN; i++)
@@ -6349,7 +6349,7 @@ static int test_fm4_retired(void)
             last = e;
             r++;
         }
-        bad += check("engines shown DRUM ANALOG PHASE FM6 VOICE ANIMAL MATH WHEEL NOISE STRING ADD EXT (ENGINE_ORDER); PRESETS lists them so",
+        bad += check("engines shown DRUM ANALOG PHASE FM6 VOICE ANIMAL MATH WHEEL WEST STRING ADD EXT (ENGINE_ORDER; V10.7.36 WEST NOISE's place); PRESETS lists them so",
                      ok && r == NENG_SHOWN);
     }
     /* a user preset stored with engine 1: kept as it is, it loads as FM6 with the init patch (V10.6s) */
@@ -13294,7 +13294,7 @@ static int test_engvis(void)
         {ENGI_FM6, "TINE EP", "OP ENV", 4, "FM6 envelope's bicho, OP ENV"}, {ENGI_FM6, "BRASS", "OPERATOR 2", 4, "FM6 colony, OPERATOR 2"},
         {ENGI_FM6, "MARIMBA", "EDIT 1", 4, "FM6 colony, EDIT 1 (V10.7.24: was HOME BEING)"},
         {7, "ROCK DRIVE", "EDIT 1", 5, "WHEEL worms, EDIT"}, {7, "GOSPEL", "EDIT 1", 5, "WHEEL worms, EDIT 1 (V10.7.24: was HOME BEING)"},
-        {11, "RAIN", "EDIT 1", 6, "NOISE swarm, EDIT"}, {11, "SEA", "EDIT 1", 6, "NOISE swarm, EDIT 1 (V10.7.24: was HOME BEING)"},
+        {11, "RAIN", "EDIT 1", 6, "WEST wave, EDIT (V10.7.36: NOISE's swarm)"}, {11, "SEA", "EDIT 1", 6, "WEST wave, EDIT 1 (V10.7.24: was HOME BEING)"},
         {2, "BRASS", "EDIT 1", 7, "PHASE snail, EDIT"}, {2, "CZ PIANO", "EDIT 1", 7, "PHASE snail, EDIT 1 (V10.7.24: was HOME BEING)"},
         {3, "BYTEBEAT", "EDIT 1", 8, "LOFI caterpillar BYTE, EDIT"}, {3, "FLOAT PAD", "EDIT 2", 8, "LOFI caterpillar FLOAT, EDIT"},
         {3, "PULSE LD", "EDIT 1", 8, "LOFI caterpillar PLS, EDIT"}, {3, "GB ARP", "EDIT 1", 8, "LOFI caterpillar, EDIT 1 (V10.7.24: was HOME BEING)"}};
@@ -14000,12 +14000,12 @@ static int test_power_on_099(void)
 static int test_engine_order_099(void)
 {
     static const char *const IDX[NENGINES] = {"ANALOG", 0, "PHASE", "MATH", "-", "VOICE", "-", "WHEEL", "STRING", "-", "DRUM",
-                                              "NOISE", "FM6", "ADD", "ANIMAL"};
+                                              "WEST", "FM6", "ADD", "ANIMAL"};   /* (V10.7.36: WEST in NOISE's 11) */
     static const char *const PC[] = {"ANALOG", "FM6",
 #if FELUCCA_FM4
                                      "DIGITAL",
 #endif
-                                     "PHASE", "MATH", "VOICE", "WHEEL", "NOISE", "DRUM", "ANIMAL", "STRING", "ADD", "EXT"};   /* (V10.54) */
+                                     "PHASE", "MATH", "VOICE", "WHEEL", "WEST", "DRUM", "ANIMAL", "STRING", "ADD", "EXT"};   /* (V10.54; V10.7.36 WEST) */
     int bad = 0, ok = 1;
     uint32_t i, e, k, n, all, seen = 0;
     project_store_t st;
@@ -14014,8 +14014,8 @@ static int test_engine_order_099(void)
     for (e = 0; e < NENGINES; e++)                     /* the stores' numbers: never renumbered */
         ok &= !IDX[e] || str_eq(ENGINES[e]->name, IDX[e]);
     ok &= ENGI_DRUM == 10u && ENGI_VOICE == 5u && ENGI_ANIMAL == 14u && ENGI_LOFI == 3u && ENGI_ANALOG == 0u && ENGI_FM6 == 12u &&
-          ENGI_PHASE == 2u && ENGI_WHEEL == 7u && ENGI_NOISE == 11u;
-    bad += check("0.9.9 engine order: ENGINES[] as before (0 ANALOG .. 10 DRUM 11 NOISE 12 FM6 14 ANIMAL)", ok);
+          ENGI_PHASE == 2u && ENGI_WHEEL == 7u && ENGI_WEST == 11u;
+    bad += check("0.9.9 engine order: ENGINES[] as before (0 ANALOG .. 10 DRUM 11 WEST (NOISE's) 12 FM6 14 ANIMAL)", ok);
     for (n = 0, ok = 1; n < NENG_SHOWN; n++) {         /* place -> engine -> place */
         e = eng_vis(n);
         ok &= eng_ok(e) && eng_rank(e) == n && !((seen >> e) & 1u);
@@ -14043,8 +14043,9 @@ static int test_engine_order_099(void)
             n = ee == e1 && q == k1;
         }
         (void)k2;
-        if (!n && !(e1 == ENGI_ANIMAL && k1 >= 24u) && !(e1 == ENGI_STRING && k1 >= 16u))
-            break;   /* (V10.6h: ANIMAL's appended tonal ones by the list alone; V10.7.26 STRING's VIOLIN VIOLA CELLO) */
+        if (!n && !(e1 == ENGI_ANIMAL && k1 >= 24u) && !(e1 == ENGI_STRING && k1 >= 16u) && !(e1 == ENGI_WEST && k1 >= WEST_PC))
+            break;   /* (V10.6h: ANIMAL's appended tonal ones by the list alone; V10.7.26 STRING's VIOLIN VIOLA CELLO; V10.7.36
+                      * WEST's west coast after NOISE's eight) */
     }
     ok &= i == all && NELEM(PC) == NENG_SHOWN;
     {   /* (V10.6h) PROGRAM CHANGE as 0.9.8 counted: MATH 18 (LOFI's), ANIMAL 24; ANIMAL's first is right after VOICE's
@@ -14056,6 +14057,11 @@ static int test_engine_order_099(void)
 #endif
         ok &= preset_all_at_in(base + 15u, &q, ENGINE_PC_ORDER) == ENGI_LOFI && q == 4u;
         ok &= preset_all_at_in(base + 18u, &q, ENGINE_PC_ORDER) == ENGI_VOICE && q == preset_nth(ENGINES[ENGI_VOICE], 0);
+        base += 18u + preset_shown(ENGI_VOICE) + preset_shown(ENGI_WHEEL);   /* (V10.7.36) NOISE's numbers: WEST's eight */
+        for (k = 0; k < 8u; k++)
+            ok &= preset_all_at_in(base + k, &q, ENGINE_PC_ORDER) == ENGI_WEST && q == k;
+        ok &= preset_all_at_in(base + 8u, &q, ENGINE_PC_ORDER) == ENGI_DRUM && q == 0u && WEST_PC == 8u &&
+              str_eq(ENG_WEST.presets[0].name, "WIND") && str_eq(ENG_WEST.presets[7].name, "TAPE AIR");
     }
     for (i = 0; i < NELEM(PC); i++)
         ok &= str_eq(ENGINES[ENGINE_PC_ORDER[i]]->name, PC[i]);

@@ -356,8 +356,12 @@ def sound():
          'whose tongue, jaw, lips and velum sing the phoneme.'),
         ('WHEEL', HEAT[5], 'REG SUB BODY TOP', 'PERC CLICK DRIVE SPEED', 'Drawbar organ: registrations, percussion, rotary. '
          '<b>Its picture</b> (0.9.6): nine tube worms, one a drawbar, bent by the rotor.'),
-        ('NOISE', HEAT[4], 'MODE COLOR FREQ PEAK', 'TRK DENSE DRIFT CRUSH', 'Coloured and metallic noise, tracked or free. '
-         '<b>Its picture</b> (0.9.6): a swarm walking by COLOR, swirling by FREQ.'),
+        ('WEST', HEAT[4], 'FOLD SYMM MOD RATIO', 'GATE DECAY RES DUST',
+         '(V10.7.36, NOISE\'s place) West coast: a sine, FM from a second one (RATIO 0.5–8, bell ratios 1.41 2.76 5.40), a '
+         '<b>wavefolder</b> (FOLD, SYMM: even harmonics) into a <b>low-pass gate</b> (a vactrol: filter + VCA struck together; '
+         'GATE filter ↔ VCA, DECAY the strike, past 88 held open: drones). <b>DUST</b>: crackle that pings the gate, the core '
+         'gone past 72, hiss past 96. Harder notes fold more. A NOISE project opens as a DUST patch. Plucks, BONGO, MARIMBA, '
+         'bells, FOLD BASS, leads, drones. <b>Its picture</b>: the folded wave, lit by the gate.'),
         ('DRUM-X', '#ff7a00', 'MORPH TUNE TONE DECAY', 'NOISE FM ENV FOLD DRIVE',
          '8 sounds BD SD CP CH OH TM RS CB, sides A / B: <b>MORPH</b> morphs the kit. The kit first: <b>KIT 3</b> BP FEEDBK, <b>KIT LFO</b> RATE DEPTH SHAPE '
          'RAND. Then a sound (KNOB 1 the sound): SIDE PITCH PMOD · DECAY NOISE COLOR · MODE PM.TYPE DRIVE · <b>LAYER</b> (no note) FEEDBK '
@@ -377,7 +381,7 @@ def sound():
          'GROUP: syllables + gaps; TEMP °C speeds a cricket up (Dolbear). A note is a call. <b>Its picture</b> (0.9.4): '
          'bird ↔ insect ↔ mammal by MODE, leaned by SIZE.'),
     ]
-    ORDER = ['DRUM-X', 'ANALOG', 'PHASE', 'FM6', 'VOICE', 'ANIMAL', 'MATH', 'WHEEL', 'NOISE', 'STRING', 'ADD', 'EXT']   # (V10.6e: the band first; EXT last)
+    ORDER = ['DRUM-X', 'ANALOG', 'PHASE', 'FM6', 'VOICE', 'ANIMAL', 'MATH', 'WHEEL', 'WEST', 'STRING', 'ADD', 'EXT']   # (V10.6e: the band first; EXT last)
     eng.sort(key=lambda r: ORDER.index(r[0]))                     # (src/engines.c ENGINE_ORDER: PRESETS, KNOB 2 ENG)
     t = '<table><tr><th>ENGINE</th><th>EDIT 1</th><th>EDIT 2</th><th>WHAT TO KNOW</th></tr>'
     for n, c, e1, e2, d in eng:

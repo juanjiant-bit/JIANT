@@ -47,10 +47,11 @@ static uint32_t eng(const char *n)
         if (str_eq(ENGINES[e]->name, n)) return e;
     return 0;
 }
-/* the boot state, n tracks: T1 a kit, T2 a pad, T3 FM6, T4 NOISE, T5 a lead, T6 a bass (the rest asleep) */
+/* the boot state, n tracks: T1 a kit, T2 a pad, T3 FM6, T4 WEST (V10.7.36: NOISE's slot and its first preset's name), T5 a
+ * lead, T6 a bass (the rest asleep) */
 static void scene(uint32_t n, int32_t life, int32_t knobs, int32_t tl)
 {
-    static const char *const E[6] = {"DRUM", "ANALOG", "FM6", "NOISE", "PHASE", "ANALOG"};
+    static const char *const E[6] = {"DRUM", "ANALOG", "FM6", "WEST", "PHASE", "ANALOG"};
     static const uint8_t PR[6] = {0, 1, 0, 0, 0, 2};
     uint32_t k;
     memset(dly_buf, 0, sizeof dly_buf); memset(cho_buf, 0, sizeof cho_buf); memset(rev_comb, 0, sizeof rev_comb);

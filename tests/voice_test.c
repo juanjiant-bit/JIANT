@@ -1735,9 +1735,9 @@ static void check_theme(void)
     ok &= names == 8u && param_turn(d, v, 1) == 120 && param_turn(d, 64, 1) == 88 && param_turn(d, 64, -1) == 56 &&
           param_turn(d, 127, -2) == 88;
     check("THEME: LOVE .. FIRE in 7 detents, each onto its name's middle (stored 0..127 as before)", ok);
-    ok = param_turn(&FMT_WDESC[7], 0, 1) == 38 && param_turn(&NOISE_LONG, 0, 3) == 56 &&
+    ok = param_turn(&FMT_WDESC[7], 0, 1) == 38 && param_turn(&ENG_WEST.edit[3], 0, 3) == 3 &&
          param_turn(&FMT_WDESC[0], 5, 1) == 6;       /* (LOOP 5 names; LEN 8; POS no names: a value; V10.6d: LOFI's WAV# gone with its chips) */
-    check("  the other named values a name a detent (LOOP, NOISE LEN); POS a value a detent", ok);
+    check("  the other named values a name a detent (LOOP; V10.7.36 WEST RATIO, an enum: a ratio a detent); POS a value a detent", ok);
     {                                                    /* (0.9.17) between the detents: the blend */
         static char t8[2048], tv[2048];
         uint32_t s1, l, same = 1, diff = 1;

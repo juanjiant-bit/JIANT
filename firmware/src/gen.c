@@ -2930,7 +2930,8 @@ static __attribute__((noinline)) void gen_make(void)
         for (j = 0; j < gs.pn; j++) h = h * 7u + gs.pdeg[j];
         gq = q;
         for (j = 0; j < 8u && gsr.h[j] != (uint16_t)h; j++) {}
-        if (j == 8u || k == 8u) { gsr.h[gsr.at++ & 7u] = (uint16_t)h; break; }
+        if (j == 8u || k == 12u) { gsr.h[gsr.at++ & 7u] = (uint16_t)h; break; }   /* (V10.7.36: 12 tries, was 8: a genre of
+                                                         * few cores, DEMBOW's, found one again after eight) */
         gp.seed = (uint16_t)(rng() % 10000u);           /* (its core one of the last eight: another seed) */
         gseed(GS_PICK);
         gmut = GENRE[gs.gi];

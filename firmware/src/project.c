@@ -13,8 +13,9 @@
  * 83 more track parameters (4 bytes each).
  * (V10.6s) FUN1 .. FUN6 (Felucca betas to 1.0.2) are retired: such a project is refused (not a project, as a
  * damaged one), never half read. So is what only they needed: the GM drum part of track 4 before 1.0 (`parts` 0),
- * the PHYS MODEL DUST / DRUM of before 1.0 (`phys`, written PROJ_PHYS, read by none) and SAMPLE's PERC set in a
- * project (it plays as ANALOG's first, as SAMPLE does: proj_phys_gone).
+ * the PHYS MODEL DUST / DRUM of before 1.0 (`phys`, written PROJ_PHYS) and SAMPLE's PERC set in a
+ * project (it plays as ANALOG's first, as SAMPLE does: proj_phys_gone). (V10.7.36) `phys` is read again: under 3,
+ * engine 11 is NOISE (projects until V10.7.35), its tracks open as WEST (proj_phys_gone, core.h west_from_noise).
  *
  * Format 8 ("FUN8", written since 1.0) = FUN7 with each track's FM6 patch (eng_fm6.c, the 128-byte packed
  * record, 4 x 128 bytes just before the name): a project is self-contained. On load an FM6 track's SLOT shows F n
@@ -75,7 +76,8 @@
 #define PROJ_MAGIC_V7 0x46554E37u              /* "FUN7": serialized (byte params, packed steps), chain, motion */
 #define PROJ_NG_V2 27u                         /* G_COUNT of formats 1 and 2 */
 #define PROJ_LT 4u                             /* the tracks of every format before FUNC */
-#define PROJ_PHYS 2u                           /* project_t.phys: PHYS without DUST and DRUM (see the top) */
+#define PROJ_PHYS 3u                           /* project_t.phys: PHYS without DUST and DRUM (2, see the top); (V10.7.36)
+                                                * 3: engine 11 is WEST (below: NOISE, proj_phys_gone) */
 #define PROJ_NAME_LEN 12u                      /* the name: FUN7 bytes PROJ_NAME_OFF.. (the reserved tail's end) */
 typedef struct {                               /* one track */
     int16_t p[P_COUNT];
@@ -358,7 +360,9 @@ static void proj_fm4(project_t *q)
 
 /* tracks of a retired engine (PHYS 9 in TONIC; SAMPLE 4, GRAIN 8, SLICE 13 in JIANT: core.h eng_gone) -> ANALOG with its first preset's EDIT values
  * and envelope; the mix, the sends, the matrix and the steps stay. Their motion events on the EDIT values go (PHYS's
- * meanings do not carry over). Idempotent */
+ * meanings do not carry over). (V10.7.36) A project of before WEST (phys < 3: every one saved until V10.7.35) has
+ * NOISE on engine 11: those tracks' EDIT values become WEST's (core.h west_from_noise: a DUST patch), their motion on
+ * them goes; then phys 3. Idempotent */
 static void proj_phys_gone(project_t *q)
 {
     const preset_t *pr = &ENGINES[ENGI_PHYS_TO]->presets[0];
@@ -378,6 +382,26 @@ static void proj_phys_gone(project_t *q)
         d->p[P_REL] = pr->env[3];
         if (d->preset < PROJ_DEF_KEEP)
             d->preset = 0;
+        hit = 1;
+    }
+    if (q->phys < PROJ_PHYS) {                          /* (V10.7.36) a project of before WEST: engine 11 was NOISE */
+        uint32_t w = 0, n;
+        for (k = 0; k < NTRK; k++)
+            if (q->t[k].engine == ENGI_WEST) {          /* (its preset number stays: WEST's 0..7 are NOISE's names) */
+                west_from_noise(&q->t[k].p[P_E0]);
+                w |= 1u << k;
+            }
+        for (i = n = 0; w && i < q->motion.count && i < MOTION_MAX; i++) {   /* their motion on the EDIT values goes */
+            const motion_event_t *e = &q->motion.event[i];
+            if (((w >> MOTION_TRK(e)) & 1u) && MOTION_ID(e) >= P_E0)
+                continue;
+            q->motion.event[n++] = *e;
+        }
+        for (i = n; w && i < q->motion.count && i < MOTION_MAX; i++)
+            memset(&q->motion.event[i], 0, sizeof q->motion.event[i]);
+        if (w)
+            q->motion.count = (uint8_t)n;
+        q->phys = PROJ_PHYS;
         hit = 1;
     }
     if (hit)

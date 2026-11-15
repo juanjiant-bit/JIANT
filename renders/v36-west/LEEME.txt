@@ -1,0 +1,49 @@
+JIANT V10.7.36 (rama codex/v36-west) - motor WEST (costa oeste), en el lugar de NOISE
+=====================================================================================
+
+Qué hay acá
+-----------
+Renders del firmware tal cual (el mismo código de sonido que corre en el FM-1, compilado en la computadora con
+tests/hostsim.c), 44,1 kHz, estéreo, 16 bits, con la mezcla y los envíos de efectos de cada preset.
+
+  00_WIND.wav .. 19_INIT_WEST.wav   cada preset de WEST tocando una vez su patrón sugerido (16 pasos a 120 BPM,
+                                    2 s) y 1,5 s de cola. Los números son los del preset (0..19).
+  noise_project_before.wav          un proyecto hecho con NOISE (V10.7.35): T1 WIND (patrón PAD), T2 RAIN (PAD, una
+                                    octava arriba), T3 METAL (BELL), 4 compases. Así sonaba con el motor NOISE.
+  noise_project_after.wav           el MISMO proyecto abierto con este firmware: sus pistas de NOISE pasan solas a
+                                    WEST en un patch de DUST (project.c proj_phys_gone, core.h west_from_noise).
+                                    Valores que quedan (FOLD SYMM MOD RATIO GATE DECAY RES DUST):
+                                      T1 WIND   0  0  0 1   0 106 100 127   (ruido blanco, el gate como pasabajos)
+                                      T2 RAIN   0  0  0 1   0 115  80  96   (los impulsos solos, el seno callado)
+                                      T3 METAL 90 30 45 2  64 127  40   0   (tono plegado y modulado, RATIO 1.41)
+                                    No es el mismo sonido (NOISE ya no existe) pero es el mismo papel en la mezcla:
+                                    viento, gotas, metal. El resto de la pista (envolvente, mezcla, envíos) igual.
+
+El motor
+--------
+Seno -> FM (un segundo seno) -> WAVEFOLDER -> LOW-PASS GATE (filtro + VCA con una sola envolvente, modelo de vactrol:
+abre rápido y cierra tarde). EDIT 1: FOLD SYMM MOD RATIO. EDIT 2: GATE DECAY RES DUST.
+  FOLD   cuánto se dobla la onda sobre sí misma (x1 .. x9): brillo metálico, vivo; el nivel no sube.
+  SYMM   offset dentro del plegador: armónicos pares.
+  MOD    profundidad de FM del segundo seno.
+  RATIO  relación del modulador: 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 (campanas: 1.41 1.73 2.76 5.40).
+  GATE   0 pasabajos solo, 64 los dos (lo clásico), 127 VCA solo.
+  DECAY  el golpe, 5 ms .. 4 s; pasado 88 una nota sostenida deja el gate abierto (drones).
+  RES    resonancia del gate.
+  DUST   ruido en el gate: 1-72 chisporroteo que además golpea el gate (gotas, notas fantasma); 72-96 el seno se
+         apaga; 96-127 entra el siseo. En 0 no hay nada de ruido (bit por bit).
+Velocidad: más fuerte = más plegado y más abierto. FLT mueve el techo del gate, SHP el plegado, PIT la afinación.
+
+Los presets
+-----------
+  0..7  los ocho de NOISE, mismos nombres y lugares (PROGRAM CHANGE y el generador siguen nombrando lo mismo),
+        rehechos con DUST: WIND, RAIN (el polvo golpea el gate: gotas en la nota), ARCADE, METAL, SEA, HISS PAD,
+        INIT NOISE, TAPE AIR.
+  8..19 la costa oeste (aparecen primero en la lista): WEST PLUCK, BONGO, MARIMBA, WEST BELL, GAMELAN, FOLD BASS,
+        RUBBER BASS, WEST LEAD, FOLD LEAD, FOLD DRONE, DUST DRONE, INIT WEST.
+
+Cómo se hicieron
+----------------
+Un programa chico (no está en el árbol) que incluye tests/hostsim.c: el "antes" compilado contra codex/v35 (NOISE),
+el "después" y los presets contra codex/v36-west. Para escucharlos de nuevo con el firmware: build/west_demo/ (lo
+escribe tests/west_test.c desde tests/run_tests.sh, con el patrón dos veces).
