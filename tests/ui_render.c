@@ -1311,9 +1311,11 @@ static void setup(int s)
         if (s == S_PL_HOME) { ui.home = 1; ui.hlv = 0; } else go_title("ENV");
         snd_mark(TSEL);
         pl_open();
-        pl_cur = (uint16_t)(preset_pos(&t) + 4u);
+        if (s == S_PL_HOME) pl_turn(3, 1);               /* (TYPE BASS) */
+        preset_pos(&t);
+        pl_go(s == S_PL_HOME ? 2u : (preset_pos(&t) + 3u) % t);   /* (V10.7.41: three turns on, each loaded: the
+                                                         * sound sounding lit) */
         if (s == S_PL_EDITED) TSEL->p[P_E0] = (int16_t)(TSEL->p[P_E0] ^ 3);
-        if (s == S_PL_HOME) { pl_turn(3, 1); pl_cur = 3; }   /* (TYPE BASS) */
         break;
     }
     case S_HELP_MACROS: ui_help = 1; ui.home = 1; ui.hlv = 0; break;   /* (V10.7.33) HELP: HOME + OCT+ */

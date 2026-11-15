@@ -132,7 +132,7 @@ def controls():
         ('2', 'THE BUTTON: IN, OR ON', 'From another section: the page you were last on there. Already inside: the '
          'first page of the next group (round).', 'FX › DELAY 2: FX → REVERB · EDIT › FILTER: EDIT → AUTO KNOBS'),
         ('3', 'PRESETS LOADS SOUNDS', 'Always the track\'s sounds, by a list: the first turn opens it, each turn loads '
-         'the sound at once, OCT+ keeps it, OCT− back to the one before. K1 track · K2 engine · K3 FACTORY/USER/FAVORITE · K4 type. '
+         'the sound at once (lit), nothing to confirm, OCT− back to the one before. K1 track · K2 engine · K3 FACTORY/USER/FAVORITE · K4 type. '
          'The SEQ step: SEQ held + PRESETS.', 'FX › DELAY: PRESETS ▶ PRESETS ▶ OCT+'),
         ('4', 'KNOB 1 PICKS', 'The step, the bar, the slot, the stage, the operator, the kit\'s sound, the row. The track: '
          'always ALGORITHM.', 'SEQ › STEP: K1 = all 64 steps · SEQ › BAR: K1 = the bar'),
@@ -149,7 +149,7 @@ def controls():
         ('SELECT', '<b>Walks the section\'s pages</b>, a page a detent, stopping at the ends (the MENU: every row). Held with a button: '
                    'HOME <b>GEN</b>; EDIT · SEQ · LFO · FX their <b>dice</b> (OK keeps, CANCEL back); GLO the tempo; ENV · SCL · ARP · SAVE their chain.'),
         ('PRESETS', '<b>Always sounds, by a list</b> on every page: the first turn opens it, <b>each turn loads the sound</b> (heard at once, '
-                    'a held note goes on), <b>OCT+ keeps it</b>, OCT− back to the sound before the list, a few seconds untouched close it. K1 the track, K2 the next engine, K3 FACTORY · USER · FAVORITE, K4 the type (BASS LEAD PAD …); '
+                    'a held note goes on), the one sounding lit, <b>nothing to confirm</b> (OCT+ closes), OCT− back to the sound before the list, a few seconds untouched close it. K1 the track, K2 the next engine, K3 FACTORY · USER · FAVORITE, K4 the type (BASS LEAD PAD …); '
                     'REC a favourite; ● the sound edited, not saved. Held with a button: <b>EDIT</b> the next engine\'s first sound, '
                     '<b>SEQ</b> the step (its number large), <b>HOME</b> the tempo.'),
         ('ALGORITHM', 'Selects the track from any page: T1–T4, or T1–T6 with TRACKS 6. MENU: the tabs. A layer held: MAP · KNOBS · STATE.'),
@@ -295,7 +295,7 @@ def controls():
         ('HOME · GLO · SAVE', HEAT[6], [('LIFE', 'LIFE FILTER PITCH FX · LIFE 0: still'), ('MACROS', 'M1 M2 M3 M4 · BPM large · HOME+SELECT dice'), ('TRACKS', 'TRACK LEVEL PAN REV'), ('LIVE MIX', 'FILTER SPACE CLIP DUCK'),
                                  ('KEYS', 'RATE LOOP DENS DJ FILT (the keys: live modifiers)'), ('RAILS', 'TARGET RATE LOOP DENS'),
                                  ('MIXER', 'LEVEL PAN MUTE G.SWING'), ('GLOBAL', 'BPM G.SWING CLOCK TUNE'), ('COMP', 'ACTION LENGTH COND VALUE'), ('COMP 2', 'the global lane: its TRACKS, MONO / POLY'),
-                                 ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('PORTS', ['USB', 'TRS IN', 'BT', '-']), ('PRESETS', 'TRACK ENG SOURCE TYPE · turns load, OCT+ keep, OCT- back, REC fav'),
+                                 ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('PORTS', ['USB', 'TRS IN', 'BT', '-']), ('PRESETS', 'TRACK ENG SOURCE TYPE · turns load (lit), OCT+ close, OCT- back, REC fav'),
                                  ('USER', 'SLOT LOAD ERASE SAVE'), ('PROJECTS', 'PROJECT LOAD ERASE SAVE'), ('PART SLOTS', 'PART LOAD ERASE SAVE'), ('ARRANGE', 'ROW PART BARS SCENE (OCT+ adds a row, OCT− deletes the one picked)'), ('TIMELINE', 'ROW PART BARS VAR · T1–T6: FROM'), ('PARTS', 'TRACK PART ROW LOOP/SONG · OCT+ go, OCT− song / stop'),
                                  ('TOOLS', 'K1 TARGET (PROJECT TRACK SOUND SONG SYSTEM) · K2 the action · hold OCT+ a second; CLEAR PROJECT (SAVE\'s first page): OCT+ asks, the saved copy kept')]),
     ]

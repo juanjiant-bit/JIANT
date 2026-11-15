@@ -14552,11 +14552,38 @@ static int test_presets_audition(void)
         for (k = 0, held = 0; k < NVOICE; k++) held |= t->v[k].active && t->v[k].gate && t->v[k].note == 60u;
         ok &= held && t->engine == t->eng_req && !(keep_req & 1u);
     }
+    for (i = 0; i < 6u; i++) {                          /* (the owner) the row lit: the sound loaded, sounding */
+        uint32_t total, now, rows = (graph_h() - 2u) / 20u, first, r, lit = 0, nlit = 0, y, x;
+        turn(EN_PRESET, i & 1u ? 1 : 2);
+        now = preset_pos(&total);
+        rows = rows > 7u ? 7u : rows;
+        first = now < rows / 2u ? 0u : now - rows / 2u;
+        if (total > rows && first + rows > total) first = total - rows;
+        cv_begin(240, graph_h(), T_SURF);
+        cv_oy = 0;
+        graph_lz_presets();
+        for (r = 0; r < rows; r++) {                    /* (a row: the accent's bar its height, its name in the theme's) */
+            uint32_t n = 0, m = 0;
+            for (y = 2u + r * 20u; y < 2u + r * 20u + 19u; y++) {
+                for (x = 90; x < 94u; x++) n += cv_px[y * 240u + x] == swap16(T_ACCENT);
+                for (x = 96; x < 220u; x++) m += cv_px[y * 240u + x] == swap16(T_THEME);
+            }
+            if (n >= 70u && m >= 20u) { lit = first + r; nlit++; }
+        }
+        ok &= nlit == 1u && lit == now && now == pl_cur - 1u && pl_ret;   /* (no OCT+: loaded as it is lit) */
+        for (b = 0; b < 40u; b++) events_block(CTL), mix_block(o, CTL);
+        for (k = 0, held = 0; k < NVOICE; k++) held |= t->v[k].active && t->v[k].gate && t->v[k].note == 60u;
+        ok &= held;                                     /* (the note plays on in it) */
+    }
+    {
+        uint32_t pr = t->preset, en = t->eng_req;
+        frames(PL_MS + 200u);                           /* (never OCT+: closed untouched, the last sound kept) */
+        ok &= !pl_ret && t->preset == pr && t->eng_req == en;
+    }
     trk_note_off(t, 60);
     for (b = 0; b < 400u; b++) events_block(CTL), mix_block(o, CTL);
     for (k = 0, held = 0; k < NVOICE; k++) held |= t->v[k].active && t->v[k].gate;
     ok &= !held;
-    press(B_OCTUP);
     for (k = 0; k < NTRK; k++)                          /* (one kit: none elsewhere) */
         if (k != 3u && trk_eng(&trk[k]) == ENGI_DRUM) set_engine_of(&trk[k], ENGI_ANALOG);
     song.sel = 3;
@@ -14567,8 +14594,9 @@ static int test_presets_audition(void)
     ok &= trk_eng(TSEL) == ENGI_DRUM && memcmp(kit, dx_kit, sizeof kit) != 0;
     press(B_OCTDN);
     ok &= trk_eng(TSEL) == ENGI_DRUM && !memcmp(kit, dx_kit, sizeof kit);
-    return check("V10.7.41 PRESETS' audition: a key held sounds on through every sound loaded and ends when let go; a kit "
-                 "heard as it is picked, OCT- the kit back", ok);
+    return check("V10.7.41 PRESETS' audition: a key held sounds on through every sound loaded and ends when let go; each "
+                 "turn loads, the row lit (the accent's bar, the name in the theme's colour) the sound loaded, no OCT+ needed; a kit heard as it is picked, "
+                 "OCT- the kit back", ok);
 }
 static int test_string_excite(void)
 {

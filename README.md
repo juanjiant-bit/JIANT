@@ -486,8 +486,9 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
 ### V10.7.41 — beta (2026-11-15)
 - **PRESETS heard as you turn** (a user: "a lot of button presses just to preview a preset"): the list stays (its first
   turn opens it), and every sound you move to (PRESETS, or KNOB 2's next engine) is **loaded at once**, as before
-  V10.7.33; a held note or the playing sequencer goes on in each sound, a DRUM-X track hears each kit. **OCT+** keeps it
-  and closes the list, **OCT−** puts back the sound of every track loaded from the list as it was when the list opened
+  V10.7.33; a held note or the playing sequencer goes on in each sound, a DRUM-X track hears each kit. The sound loaded
+  and sounding is lit (its name in the theme's colour, an orange bar the row's height). Nothing needs OCT+ (it only
+  closes the list), **OCT−** puts back the sound of every track loaded from the list as it was when the list opened
   (UNDO too), and leaving any other way (a few seconds untouched, a button) keeps what you hear. The same for every list
   PRESETS opens (FACTORY, USER, FAVORITE, a type) and SAVE › PRESETS.
 - **VOICE organic again, still on the step** (a user: "it sounded 1000000 % better, now it sounds robotic"). Measured

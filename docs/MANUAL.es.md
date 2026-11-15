@@ -86,7 +86,8 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
   PRESETS la recorre, **KNOB 1** la pista, **KNOB 2** el motor siguiente, **KNOB 3** el origen (**FACTORY · USER ·
   FAVORITE**), **KNOB 4** el tipo (**ALL · BASS · LEAD · PAD …**). **V10.7.41: cada sonido al que llegás se carga en
   el acto**, así lo escuchás mientras girás (mantené una nota o dejá sonar el secuenciador: sigue en cada sonido; una
-  pista DRUM-X escucha cada kit). **OCT+** lo deja y cierra la lista; **OCT−** devuelve el sonido (de cada pista que
+  pista DRUM-X escucha cada kit). El sonido cargado, el que suena, se ve encendido: su nombre en el color del tema
+  (violeta) con una barra naranja. **No hay que confirmar nada**: OCT+ solo cierra la lista; **OCT−** devuelve el sonido (de cada pista que
   cargaste desde la lista) a como estaba al abrirla; salir de cualquier otra forma (unos segundos sin tocar, un botón)
   deja lo que escuchás. UNDO también vuelve al sonido de antes de la lista. **REC** lo marca favorito. Un punto (●) en
   el sonido de la pista: editado y sin guardar. SAVE › PRESETS es la misma lista.

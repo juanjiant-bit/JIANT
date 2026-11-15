@@ -1,0 +1,18 @@
+renders/v41-presets — la lista de PRESETS antes y después (V10.7.41). Se borran antes del release.
+
+Capturas de tests/ui_render.c (la pantalla real, x2), en la paleta JIANT y en HUESO (la clara):
+  presets_list_*          la lista sobre ENV, tres giros adelante de T2
+  presets_list_home_*     la lista sobre HOME, TYPE BASS
+  presets_list_edited_*   el sonido de la pista editado sin guardar (el punto)
+  comparacion_presets_list.png   antes | después, lado a lado
+
+Antes (V10.7.40): girar movía un cursor (la fila apenas teñida, SQR LEAD) y el sonido que sonaba seguía siendo otro
+(PAD, una rayita naranja); había que apretar OCT+ para escucharlo.
+
+Después (V10.7.41): cada giro carga el sonido en el acto. La fila del sonido cargado, el que suena, se ve encendida: el
+nombre en el color del tema (violeta: elegido) y una barra naranja de toda la altura de la fila (naranja: activo). No
+hay que confirmar nada: OCT+ solo cierra la lista, OCT− vuelve al sonido de antes de abrirla, cualquier otra salida deja
+lo que suena. Las notas mantenidas y el secuenciador siguen sonando en cada sonido.
+
+(Un relleno violeta entero se probó y no pasa el contraste de tests/ui_render.c en SELVA y HUESO: texto sobre el tema;
+por eso el nombre va en violeta sobre el tinte de la fila.)

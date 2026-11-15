@@ -83,7 +83,8 @@ Everything since V10.6c, the last public version, in one list; each item links t
   scrolls it, **KNOB 1** the track, **KNOB 2** the next engine, **KNOB 3** the source (**FACTORY · USER · FAVORITE**),
   **KNOB 4** the type (**ALL · BASS · LEAD · PAD …**). **V10.7.41: every sound you move to is loaded at once**, so you
   hear it while you turn (hold a note or let the sequencer play: it goes on in each sound, a DRUM-X track hears each
-  kit). **OCT+** keeps it and closes the list; **OCT−** puts back the sound (every track you loaded into from the list)
+  kit). The sound loaded and sounding is lit: its name in the theme's colour (violet) with an orange bar. **Nothing to
+  confirm**: OCT+ only closes the list; **OCT−** puts back the sound (every track you loaded into from the list)
   as it was when the list opened; leaving it any other way (a few seconds untouched, a button) keeps what you hear.
   UNDO also goes back to the sound before the list. **REC** marks a favourite. A dot (●) on the track's sound: edited,
   not saved. SAVE › PRESETS is the same list.
