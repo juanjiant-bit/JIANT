@@ -97,6 +97,8 @@ footer small { font-size: 11px; opacity: .8; }
   <span><kbd>Shift</kbd>-click holds a button</span>
 </p>
 
+<details class="stems" id="xfer"><summary>FM-1 ⇄ emulator</summary></details>
+
 <details class="stems" id="stems">
   <summary>Stems: a backup's song or section as separate WAV tracks (ZIP)</summary>
   <p>Back up the FM-1 from the editor or the installer ("Back up": a <code>JIANT-backup-….json</code> file), then load it here.
@@ -526,6 +528,11 @@ async function midiOn() {
   });
 }
 
+// ------------------------------------------------------------------ the FM-1 panel (transfer-ui.js: SEND TO FM-1, GET FROM FM-1, backups)
+let xfer = null;
+import("./transfer-ui.js").then((m) => { xfer = m.mountTransfer(document.getElementById("xfer")); if (node) xfer.attach(node); },
+                                (e) => console.warn("JIANT: the FM-1 panel did not load", e));
+
 // ------------------------------------------------------------------ switching on
 const status = document.getElementById("status");
 const say = (t) => { status.textContent = t; status.hidden = !t; };
@@ -565,6 +572,7 @@ async function switchOn() {
     syncKeys();
     send({ type: "visible", on: !document.hidden });
     midiOn();
+    xfer?.attach(node);
   } catch (err) {
     node = null;
     go.disabled = false;

@@ -1,0 +1,1527 @@
+(emu-transfer, codex/v38-emu-transfer) The FM-1 panel on main's beta emulator shell. Apply on main:
+    git apply web/emu/index-additive.patch      (made against origin/main, checked with git apply --check)
+What it changes:
+  web/emu/index-additive.html  an empty <details id="xfer"> before the Ko-fi line, the .stems box style (main's shell has
+                               no stems section), the panel loaded with import("./transfer-ui.js") at load and attached
+                               to the worklet node once switched on (two lines in switchOn)
+  web/emu/worklet.js           edServe / edVersion and the "edport" message: the panel's MessagePort to the backup commands
+  web/emu/transfer-api.h       new: the firmware's editor_backup.c in the wasm (include guard: appended and #included once)
+  web/emu/transfer.js, transfer-ui.js, fm1mock.mjs, transfer_test.mjs, browser_transfer_test.mjs   new (as on the branch)
+  .github/workflows/emulator-beta.yml, emulator.yml   transfer-api.h appended to felucca_web.c next to additive-api.h;
+                               transfer.js and transfer-ui.js copied into emu/ next to worklet.js
+The pinned beta source (web/EMULATOR_BETA.json, 7c771ab) was built this way and checked: additive-boot-test.mjs passes,
+transfer_test.mjs passes on that wasm, browser_transfer_test.mjs passes on the patched shell (EMU_DIR=...).
+private-preview.yml (it appends additive-api.h too) is left as it is: add the same two lines there if that build should
+have the panel.
+
+diff --git a/.github/workflows/emulator-beta.yml b/.github/workflows/emulator-beta.yml
+index f16d56a..bebd2a0 100644
+--- a/.github/workflows/emulator-beta.yml
++++ b/.github/workflows/emulator-beta.yml
+@@ -72,6 +72,8 @@ jobs:
+           (cd build/emusrc && python3 -c "import sys;sys.path.insert(0,'tools');import build;build.generate()")
+           cp web/emu/additive-api.h build/emusrc/web/emu/additive-api.h
+           cat web/emu/additive-api.h >> build/emusrc/web/emu/felucca_web.c
++          cp web/emu/transfer-api.h build/emusrc/web/emu/transfer-api.h
++          cat web/emu/transfer-api.h >> build/emusrc/web/emu/felucca_web.c
+           (cd build/emusrc && sh web/emu/build.sh)
+           node web/emu/additive-boot-test.mjs build/emusrc/build/emu/felucca.wasm
+       - name: Replace only emu/
+@@ -89,6 +91,7 @@ jobs:
+           shell=Path('web/emu/index-additive.html').read_text().replace('@VERSION@',v).replace('@PREVIEW@',' (beta)')
+           (compiled/'index.html').write_text(shell)
+           shutil.copy('web/emu/worklet.js',compiled/'worklet.js')
++          for f in ('transfer.js','transfer-ui.js'):shutil.copy('web/emu/'+f,compiled/f)   # (emu-transfer) the FM-1 panel
+           dest=pages/'emu'
+           if dest.exists():shutil.rmtree(dest)
+           shutil.copytree(compiled,dest)
+diff --git a/.github/workflows/emulator.yml b/.github/workflows/emulator.yml
+index bf931a2..5f5f66c 100644
+--- a/.github/workflows/emulator.yml
++++ b/.github/workflows/emulator.yml
+@@ -45,6 +45,8 @@ jobs:
+             if [ "$E" = ADDITIVE ]; then
+               cp web/emu/additive-api.h /tmp/emusrc/web/emu/additive-api.h
+               cat web/emu/additive-api.h >> /tmp/emusrc/web/emu/felucca_web.c
++              cp web/emu/transfer-api.h /tmp/emusrc/web/emu/transfer-api.h
++              cat web/emu/transfer-api.h >> /tmp/emusrc/web/emu/felucca_web.c
+             fi
+             if (cd /tmp/emusrc && python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()" \
+                 && sh web/emu/build.sh); then
+@@ -67,6 +69,8 @@ jobs:
+           shell = Path(template).read_text().replace("@VERSION@", version).replace("@PREVIEW@", "")
+           target.write_text(shell)
+           shutil.copy("web/emu/worklet.js", "build/emu/worklet.js")
++          for f in ("transfer.js", "transfer-ui.js", "../fm1backup.js"):   # (emu-transfer) the FM-1 panel
++              shutil.copy("web/emu/" + f, "build/emu/" + Path(f).name)
+           PY
+           if [ "$E" = ADDITIVE ]; then
+             node web/emu/additive-boot-test.mjs build/emu/felucca.wasm
+@@ -198,7 +202,7 @@ jobs:
+       - name: the front page and the emulator under emu/
+         run: |
+           mkdir -p build/pages/emu
+-          for f in index.html worklet.js fm1backup.js felucca.wasm fonts; do
++          for f in index.html worklet.js fm1backup.js transfer.js transfer-ui.js felucca.wasm fonts; do
+             if [ -e "build/emu/$f" ]; then mv "build/emu/$f" build/pages/emu/; fi
+           done
+           cp -r build/emu/. build/pages/
+diff --git a/web/emu/browser_transfer_test.mjs b/web/emu/browser_transfer_test.mjs
+new file mode 100644
+index 0000000..dcac44a
+--- /dev/null
++++ b/web/emu/browser_transfer_test.mjs
+@@ -0,0 +1,167 @@
++// SPDX-License-Identifier: GPL-3.0-only
++// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
++// (emu-transfer) The FM-1 panel in a real browser (Playwright's Chromium), after web/emu/build.sh:
++//   node web/emu/browser_transfer_test.mjs [out-dir-for-screenshots]
++// The page is build/emu as the site serves it; navigator.requestMIDIAccess is replaced by a simulated FM-1 (fm1mock.mjs)
++// whose firmware is a second felucca.wasm (its own song made by the generator in PROJECT 3, a user preset 20). Checks:
++// switch on, CONNECT FM-1 (its version, USB), the pickers show both sides, SEND a project asks first (the FM-1's
++// PROJECT 3 named), REPLACE writes and verifies, GET a project back, DOWNLOAD BACKUP gives the editor's file, a pulled
++// cable says what is half-written and RETRY finishes, a Bluetooth port shows the EXPERIMENTAL warning; phone width.
++import fs from "fs";
++import http from "http";
++import path from "path";
++import { createRequire } from "module";
++const require = createRequire(import.meta.url);
++const { chromium } = require("playwright");
++
++const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
++const OUT = process.argv[2] || null;
++const EMU = process.env.EMU_DIR || path.join(ROOT, "build/emu");     // (EMU_DIR: another built emu/, e.g. the beta shell's)
++const SITE = { "/emu/fm1mock.mjs": "web/emu/fm1mock.mjs", "/fm1backup.js": "web/fm1backup.js" };
++const TYPES = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".wasm": "application/wasm", ".woff": "font/woff", ".json": "application/json" };
++const server = http.createServer((q, r) => {
++  let u = decodeURIComponent(q.url.split("?")[0]);
++  if (u === "/emu/") u = "/emu/index.html";
++  const file = SITE[u] ? path.join(ROOT, SITE[u]) : u.startsWith("/emu/") ? path.join(EMU, u.slice(5)) : null;
++  if (!file || !fs.existsSync(file)) { r.writeHead(404); r.end(); return; }
++  r.writeHead(200, { "content-type": TYPES[path.extname(file)] || "application/octet-stream" }); r.end(fs.readFileSync(file));
++});
++await new Promise((res) => server.listen(0, res));
++const base = `http://127.0.0.1:${server.address().port}/emu/`;
++
++let fails = 0;
++const check = (what, ok) => { console.log(`browser: ${what.padEnd(80)} ${ok ? "ok" : "FAIL"}`); if (!ok) fails++; };
++
++/* the simulated FM-1 in the page: a second firmware, its PROJECT 3 a generated piece, a user preset in slot 20 */
++const FAKE = ({ portName, pullAfter }) => {
++  navigator.requestMIDIAccess = async () => {
++    if (window.__fm1) return window.__fm1.access;
++    const [{ jsDevice, wasmDevice, midiAccess }, { edServe, edVersion }] = await Promise.all([import("./fm1mock.mjs"), import("./worklet.js")]);
++    const { instance } = await WebAssembly.instantiate(await (await fetch("felucca.wasm")).arrayBuffer(), {});
++    const ex = instance.exports; ex._initialize(); ex.web_nor_erase(); ex.web_seed(5); ex.web_boot();
++    for (let i = 0; i < 12; i++) ex.web_render(1024);
++    ex.web_gen(3, 42, 70, 2); for (let i = 0; i < 30; i++) ex.web_render(1024);
++    const X = await import("./transfer.js"), self = X.emuSideFromExports(ex, edServe);
++    await X.transfer(self, self, { what: "project", from: 0, to: 2 });   // (its PROJECT 3: a piece of its own)
++    const dev = wasmDevice(ex, edServe, "JIANT " + edVersion(ex));
++    if (window.__debug) { const h = dev.handle; dev.handle = (c, a) => { const r = h(c, a); if (c === 67 && a[0] !== 1 || !r) console.warn("fm1", c, a.slice(0, 2), r && r.slice(0, 3)); return r; }; }
++    const access = midiAccess(dev, { name: portName, pullAfter, delay: 1 });
++    window.__fm1 = { ex, access, dev };
++    return access;
++  };
++};
++
++async function page(browser, opt = {}) {
++  const ctx = await browser.newContext({ viewport: opt.phone ? { width: 390, height: 844 } : { width: 1100, height: 900 }, deviceScaleFactor: 2,
++                                         locale: opt.lang || "en-US", acceptDownloads: true, isMobile: !!opt.phone, hasTouch: !!opt.phone });
++  const p = await ctx.newPage();
++  p.on("pageerror", (e) => console.log("pageerror:", e.message));
++  p.on("console", (m) => { if (m.type() === "warning" || m.type() === "error") console.log("console:", m.text()); });
++  if (process.env.DEBUG) await p.addInitScript(() => { window.__debug = 1; });
++  await p.addInitScript(FAKE, { portName: opt.portName || "FM-1", pullAfter: opt.pullAfter ?? null });
++  await p.goto(base);
++  await p.click("#go");
++  await p.waitForSelector("#start", { state: "hidden", timeout: 20000 });
++  await p.waitForFunction(() => document.querySelector("#xfer .dev")?.textContent.includes("V10"), null, { timeout: 10000 });
++  await p.evaluate(() => { document.getElementById("xfer").open = true; });
++  return p;
++}
++const text = (p) => p.locator("#xfer").innerText();
++const shot = async (p, name) => { if (OUT) { fs.mkdirSync(OUT, { recursive: true }); await p.locator("#xfer").screenshot({ path: path.join(OUT, name) }); } };
++const waitMsg = async (p, re, ms = 60000) => {
++  try { await p.waitForFunction((r) => new RegExp(r).test(document.querySelector("#xfer").innerText), re.source, { timeout: ms }); }
++  catch (e) { console.log("panel:", await text(p)); throw e; }
++};
++
++const browser = await chromium.launch();
++try {
++  { /* USB: connect, send a project (asked first), get it back, download the backup */
++    const p = await page(browser);
++    await shot(p, "1-panel-before-connect.png");
++    await p.getByRole("button", { name: "Connect FM-1" }).click();
++    await waitMsg(p, /over USB/);
++    const t = await text(p);
++    check("connect: the FM-1 named with its firmware version, over USB", /FM-1: JIANT V10\.\d+\.\d+ over USB/.test(t));
++    const opts = await p.locator("#xfer select").nth(1).locator("option").allInnerTexts();
++    check(`the FM-1's projects listed with what is there (${opts[2]})`, opts.length === 6 && /^3 · .+\[ABCD\]|^3 · .+\[/.test(opts[2]));
++    /* GET FROM FM-1 first: its PROJECT 3 into the emulator's empty PROJECT 1 (nothing to replace: said) */
++    await p.locator("#xfer select").nth(0).selectOption("0");
++    await p.locator("#xfer select").nth(1).selectOption("2");
++    await shot(p, "2-connected.png");
++    await p.getByRole("button", { name: "← GET FROM FM-1" }).click();
++    await p.waitForSelector("#xfer .ask");
++    check("GET into an empty emulator slot: said, nothing to replace", /Nothing stored there yet/.test(await p.locator("#xfer .ask").innerText()));
++    await p.getByRole("button", { name: "Copy", exact: true }).click();
++    await waitMsg(p, /Done: PROJECT 1 on the emulator, written and verified/);
++    const emuOpts = await p.locator("#xfer select").nth(0).locator("option").allInnerTexts();
++    check(`the emulator's PROJECT 1 has it now (${emuOpts[0]})`, /\[ABCD\]/.test(emuOpts[0]));
++    /* SEND it to the FM-1's PROJECT 3: asked first, the FM-1's backup offered */
++    await p.locator("#xfer select").nth(0).selectOption("0");
++    await p.locator("#xfer select").nth(1).selectOption("2");
++    await p.getByRole("button", { name: "SEND TO FM-1 →" }).click();
++    await p.waitForSelector("#xfer .ask");
++    const ask = await p.locator("#xfer .ask").innerText();
++    check("SEND asks before replacing the FM-1's PROJECT 3, offers its backup first", /replaces on the FM-1/.test(ask) && /PROJECT 3/.test(ask) && /Save a backup of the FM-1 first/.test(ask));
++    await shot(p, "3-ask-before-overwrite.png");
++    const [dl] = await Promise.all([p.waitForEvent("download"), p.getByRole("button", { name: "Save a backup of the FM-1 first" }).click()]);
++    const fm1file = JSON.parse(fs.readFileSync(await dl.path(), "utf8"));
++    check(`the FM-1's backup saved first (${dl.suggestedFilename()}, ${fm1file.objects.length} objects)`, fm1file.format === "felucca-backup" && fm1file.objects.length === 35);
++    await p.getByRole("button", { name: "Replace" }).click();
++    await waitMsg(p, /Done: PROJECT 3 on the FM-1, written and verified/);
++    await shot(p, "4-sent-verified.png");
++    /* a user preset: the FM-1 has none: the emulator's empty slot refused */
++    await p.getByLabel("User preset").click();
++    const [dl2] = await Promise.all([p.waitForEvent("download"), p.getByRole("button", { name: "DOWNLOAD BACKUP" }).click()]);
++    const f = JSON.parse(fs.readFileSync(await dl2.path(), "utf8"));
++    check(`DOWNLOAD BACKUP: ${dl2.suggestedFilename()}, the editor's format (${f.objects.length} objects)`, /^JIANT-emu-backup-\d{4}-\d\d-\d\d\.json$/.test(dl2.suggestedFilename()) && f.format === "felucca-backup" && f.objects.length === 35);
++    await shot(p, "5-download-backup.png");
++    /* IMPORT BACKUP: the FM-1's file back into the emulator */
++    await p.setInputFiles("#xfer input[type=file]", await dl.path());
++    await p.waitForSelector("#xfer .ask");
++    await p.getByRole("button", { name: "Replace" }).click();
++    await waitMsg(p, /Imported: \d+ objects into the emulator, verified/);
++    check("IMPORT BACKUP: the FM-1's file into the emulator, verified", true);
++    await p.context().close();
++  }
++  { /* the cable pulled half-way: what is new, what old; RETRY after plugging in */
++    const p = await page(browser, { pullAfter: 20 });
++    await p.getByRole("button", { name: "Connect FM-1" }).click();
++    await waitMsg(p, /over USB/);
++    await p.locator("#xfer select").nth(1).selectOption("2");
++    await p.getByRole("button", { name: "← GET FROM FM-1" }).click();          // (the emulator's PROJECT 1: a piece)
++    await p.getByRole("button", { name: "Copy", exact: true }).click();
++    await waitMsg(p, /Done: PROJECT 1 on the emulator/);
++    await p.locator("#xfer select").nth(1).selectOption("1");                  // (to the FM-1's empty PROJECT 2)
++    await p.getByRole("button", { name: "SEND TO FM-1 →" }).click();
++    await p.getByRole("button", { name: "Copy", exact: true }).click();
++    await waitMsg(p, /half-way/, 90000);
++    const t = await text(p);
++    check("dropped: the half-written project said (NEW sections, OLD rest, how to fix), RETRY offered", /NEW: PROJECT 2 sections A/.test(t) && /still OLD/.test(t) && /RETRY/.test(t));
++    await shot(p, "6-dropped-half-way.png");
++    await p.evaluate(() => window.__fm1.access.plug());
++    await p.getByRole("button", { name: "RETRY" }).click();
++    await waitMsg(p, /Done: PROJECT 2 on the FM-1, written and verified/, 90000);
++    check("dropped: RETRY after plugging in again finishes it, verified", true);
++    await p.context().close();
++  }
++  { /* Bluetooth, in Spanish, on a phone */
++    const p = await page(browser, { portName: "FM-1 Bluetooth", lang: "es-AR", phone: true });
++    await p.getByRole("button", { name: "Conectar FM-1" }).click();
++    await waitMsg(p, /por Bluetooth/);
++    const t = await text(p);
++    check("Bluetooth: connected, marked EXPERIMENTAL with the warning (Spanish)", /EXPERIMENTAL/.test(t) && /se recomienda USB/.test(t));
++    const wide = await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
++    check("phone width: no horizontal scroll", wide);
++    await shot(p, "7-phone-bluetooth-es.png");
++    await p.getByLabel("Todo").click();
++    await p.getByRole("button", { name: "ENVIAR AL FM-1 →" }).click();
++    await p.waitForSelector("#xfer .ask");
++    await shot(p, "8-phone-ask-everything-es.png");
++    await p.context().close();
++  }
++} finally {
++  await browser.close();
++  server.close();
++}
++console.log(fails ? `BROWSER TRANSFER TESTS FAILED (${fails})` : "browser: all ok");
++process.exit(fails ? 1 : 0);
+diff --git a/web/emu/fm1mock.mjs b/web/emu/fm1mock.mjs
+new file mode 100644
+index 0000000..d3e3fa7
+--- /dev/null
++++ b/web/emu/fm1mock.mjs
+@@ -0,0 +1,99 @@
++// SPDX-License-Identifier: GPL-3.0-only
++// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
++// (emu-transfer) A simulated FM-1 behind a simulated Web MIDI access, for transfer_test.mjs: SysEx in (F0 7D 46 4C cmd
++// args F7), one reply out, asynchronously, as a USB-MIDI port delivers it. Two devices:
++//   jsDevice    the backup protocol as web/EDITOR_PROTOCOL.md "v7: full backup" says (LIST snapshot, GET in pieces,
++//               PUT begin / data / commit / abort, the rc codes, stale after a begin), INFO with its tags, and the
++//               faults a test asks for: an older firmware (its version, its object count, its project size, no
++//               JIANT tag), a cable pulled after n PUT pieces, a reply lost
++//   wasmDevice  the firmware itself (felucca.wasm, transfer-api.h: editor_backup.c) answering, INFO made up from its
++//               version as the device's would start
++import { BACKUP_IDS, BACKUP_IDS_8, bkU32, bkR32, bkPack, bkUnpack, bkCrc } from "../fm1backup.js";
++
++/* an INFO reply: version, NENGINES, P_COUNT, G_COUNT, NSTEP, P_E0, the engines' names, NTRK, CHAIN_ROWS, the tags */
++export function infoReply({ version = "JIANT V10.7.36", jiant = true, backupCaps = 3, engines = ["ANALOG", "-", "PHASE"] } = {}) {
++  const s = (t) => [...t].map((c) => c.charCodeAt(0) & 127).concat(0);
++  return [...s(version), engines.length, 99, 40, 64, 91, ...engines.flatMap(s), 6, 16,
++          0x55, 1, 3, 0x4D, 1, 64, 1, 0x42, 1, backupCaps, ...(jiant ? [0x4A, 1, 1] : []), 0x43, 2, 1, 3];
++}
++
++export function jsDevice(objs = new Map(), opt = {}) {
++  const d = { objs: new Map(objs), log: [], pieces: 0, snap: null, stage: null, dead: false, opt };
++  const ids = () => opt.ids || BACKUP_IDS;
++  d.handle = (cmd, a) => {
++    if (cmd === 1) return infoReply(opt.info || {});
++    if (cmd === 65) {                                      // LIST: the snapshot (id 0 as it is now)
++      d.snap = new Map(ids().map((id) => [id, (d.objs.get(id) || new Uint8Array(0)).slice()])); d.stage = null;
++      const out = [1, 0, ids().length];
++      for (const id of ids()) { const v = d.snap.get(id); out.push(id, ...bkU32(v.length), ...bkU32(bkCrc(v))); }
++      return out;
++    }
++    if (cmd === 66) {
++      const id = a[0], off = bkR32(a, 1), n = a[6] | a[7] << 7;
++      if (!d.snap) return [id, 5, ...bkU32(off), 0, 0];
++      const v = id === 0 ? d.snap.get(0) : d.objs.get(id) || new Uint8Array(0);
++      if (!ids().includes(id) || !n || n > 256 || off + n > v.length) return [id, 1, ...bkU32(off), 0, 0];
++      return [id, 0, ...bkU32(off), n & 127, n >> 7, ...bkPack(v.subarray(off, off + n))];
++    }
++    if (cmd === 67) {
++      const [op, id] = a;
++      if (op === 0) {
++        d.snap = null;                                     // (a begin ends the snapshot: a GET now gets rc 5)
++        if (!ids().includes(id) || id === 8 && opt.refuse8) { d.log.push(`refused ${id}`); return [op, id, 1]; }
++        const size = bkR32(a, 2);
++        if (opt.maxProject && id >= 40 && size > opt.maxProject) { d.log.push(`refused ${id}`); return [op, id, 1]; }
++        d.stage = { id, size, crc: bkR32(a, 7), bytes: [] };
++        return [op, id, 0];
++      }
++      if (!d.stage || d.stage.id !== id) return [op, id, 5];
++      if (op === 1) {
++        if (bkR32(a, 2) !== d.stage.bytes.length) return [op, id, 1];
++        const n = Math.min(256, d.stage.size - d.stage.bytes.length);
++        d.stage.bytes.push(...bkUnpack(a.slice(7), n));
++        d.pieces++;
++        return [op, id, 0];
++      }
++      if (op === 2) {
++        const st = d.stage; d.stage = null;
++        if (!commitOk(st)) return [op, id, 2];
++        d.objs.set(id, Uint8Array.from(st.bytes)); d.log.push(id);
++        return [op, id, 0];
++      }
++      if (op === 3) { d.stage = null; d.log.push(`abort ${id}`); return [op, id, 0]; }
++    }
++    return null;
++  };
++  return d;
++}
++/* the commit's own CRC check (the stage's CRC against what arrived): a test may corrupt a piece in flight */
++const commitOk = (st) => bkCrc(Uint8Array.from(st.bytes)) === st.crc && st.bytes.length === st.size;
++
++export function wasmDevice(ex, edServe, version) {
++  return { handle: (cmd, a) => cmd === 1 ? infoReply({ version }) : edServe(ex, [cmd, ...a]), log: [], objs: null };
++}
++
++/* a Web MIDI access with one in/out pair named `name` around device d. opt.pullAfter: the cable pulled after that many
++ * PUT data pieces (both ports "disconnected", nothing answered); opt.loseReply(cmd, args): that reply never arrives */
++export function midiAccess(d, { name = "FM-1", manufacturer = "M-VAVE", pullAfter = Infinity, loseReply = null, delay = 0 } = {}) {
++  const input = { name, manufacturer, state: "connected", onmidimessage: null, open: async () => {} };
++  const output = { name, manufacturer, state: "connected", open: async () => {} };
++  let pieces = 0;
++  pullAfter ??= Infinity;
++  output.send = (bytes) => {
++    if (output.state === "disconnected") throw new DOMException("disconnected", "InvalidStateError");
++    const b = Array.from(bytes);
++    if (b[0] !== 0xF0 || b[1] !== 0x7D || b[2] !== 0x46 || b[3] !== 0x4C || b.at(-1) !== 0xF7) return;
++    const cmd = b[4], args = b.slice(5, -1);
++    if (cmd === 67 && args[0] === 1 && ++pieces > pullAfter) { input.state = output.state = "disconnected"; return; }
++    if (loseReply && loseReply(cmd, args)) return;
++    const r = d.handle(cmd, args);
++    if (r) reply([cmd, ...r]);
++  };
++  const reply = ([cmd, ...body]) => setTimeout(() => {
++    if (input.state !== "disconnected") input.onmidimessage?.({ data: Uint8Array.from([0xF0, 0x7D, 0x46, 0x4C, cmd, ...body, 0xF7]) });
++  }, delay);
++  const access = { inputs: new Map([["in", input]]), outputs: new Map([["out", output]]), input, output,
++                   plug() { input.state = output.state = "connected"; pieces = -Infinity; } };
++  return access;
++}
++export { BACKUP_IDS_8 };
+diff --git a/web/emu/index-additive.html b/web/emu/index-additive.html
+index 0ce7650..16babf8 100644
+--- a/web/emu/index-additive.html
++++ b/web/emu/index-additive.html
+@@ -70,6 +70,8 @@ a { color: inherit; }
+ #sample-bank-controls select { max-width:100%; font:inherit; }
+ kbd { font: 600 11px ui-monospace, Menlo, monospace; border: 1px solid var(--rule); padding: 0 4px; color: var(--fg); }
+ footer { margin-top: 12px; font-size: 12px; }
++.stems { margin: 16px auto 0; max-width: 60em; color: var(--dim); font-size: 12px; border: 1px solid var(--edge); padding: 6px 12px; }
++.stems summary { cursor: pointer; color: var(--fg); }
+ footer nav a { margin: 0 6px; }
+ footer small { font-size: 11px; opacity: .8; }
+ </style>
+@@ -94,6 +96,8 @@ footer small { font-size: 11px; opacity: .8; }
+ </p>
+ 
+ 
++<details class="stems" id="xfer"><summary>FM-1 ⇄ emulator</summary></details>
++
+ <p class="kofi" style="border-left:3px solid #ec6e50;padding:4px 0 4px 12px">If you resonate with my work, consider supporting me on <a href="https://ko-fi.com/juanjiant" target="_blank" rel="noopener" style="color:inherit;font-weight:600">Ko-fi</a> (in Argentina: <a href="https://cafecito.app/juanjiant" target="_blank" rel="noopener" style="color:inherit;font-weight:600">Cafecito</a>). Thanks for all the good energy, hope you enjoy this little beast 🫶✨🎹</p>
+ <footer>
+   <small class="version">@VERSION@@PREVIEW@</small><br>
+@@ -449,6 +453,11 @@ async function midiOn() {
+   } catch { /* no permission: the panel only */ }
+ }
+ 
++// ------------------------------------------------------------------ the FM-1 panel (transfer-ui.js: SEND TO FM-1, GET FROM FM-1, backups)
++let xfer = null;
++import("./transfer-ui.js").then((m) => { xfer = m.mountTransfer(document.getElementById("xfer")); if (node) xfer.attach(node); },
++                                (e) => console.warn("JIANT: the FM-1 panel did not load", e));
++
+ // ------------------------------------------------------------------ switching on
+ const status = document.getElementById("status");
+ const say = (t) => { status.textContent = t; status.hidden = !t; };
+@@ -495,6 +504,7 @@ async function switchOn() {
+     syncKeys();
+     send({ type: "visible", on: !document.hidden });
+     midiOn();
++    xfer?.attach(node);
+   } catch (err) {
+     node = null;
+     go.disabled = false;
+diff --git a/web/emu/transfer-api.h b/web/emu/transfer-api.h
+new file mode 100644
+index 0000000..198fc59
+--- /dev/null
++++ b/web/emu/transfer-api.h
+@@ -0,0 +1,63 @@
++/* SPDX-License-Identifier: GPL-3.0-only
++ * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
++/* (V10.7.36 emu-transfer) The emulator answers the editor's full-backup commands (web/EDITOR_PROTOCOL.md "v7: full
++ * backup": 65 BACKUP_LIST, 66 BACKUP_GET, 67 BACKUP_PUT) with the firmware's own code: editor_backup.c, built here as
++ * tests/backup_test.c builds it. So the page moves projects, user presets and whole backups between this emulator and a
++ * real FM-1 (web/emu/transfer.js) with one protocol and one format on both sides, the bytes the FM-1 itself writes.
++ * Included at the end of felucca_web.c (after everything editor_backup.c uses: storage, projects, user presets, songs,
++ * settings, the panel). Nothing of the firmware changes for this file.
++ *   web_ed_buf()   the request: cmd, then its arguments (7-bit bytes, as between F0 7D 46 4C and F7)
++ *   web_ed(n)      runs it; the reply's length (0: no reply, as the device sends none), the reply at web_ed_reply()
++ *   web_version()  FELUCCA_VERSION, as the device's INFO names it */
++#ifndef JIANT_TRANSFER_API                 /* (appended by a site build as additive-api.h is, and #included here: once) */
++#define JIANT_TRANSFER_API 1
++enum { ED_BACKUP_LIST = 65, ED_BACKUP_GET, ED_BACKUP_PUT };
++static uint8_t web_ed_req[400], web_ed_rep[400];
++static uint32_t web_ed_n;
++static void ed_b(uint32_t v) { if (web_ed_n < sizeof web_ed_rep) web_ed_rep[web_ed_n++] = (uint8_t)(v & 127u); }
++static uint32_t ed_unpack7(const uint8_t *a, uint32_t na, uint8_t *out, uint32_t max)   /* as editor.c's */
++{
++    uint32_t n = 0;
++    while (na && n < max) {
++        uint32_t m = *a++, j, k;
++        na--;
++        k = na > 7u ? 7u : na;
++        if (!k || n + k > max || (m >> k))
++            return 0;
++        for (j = 0; j < k; j++, na--)
++            out[n++] = (uint8_t)(*a++ | ((m >> j) & 1u) << 7);
++    }
++    return na ? 0u : n;
++}
++/* editor.c's: the transport stopped before a flash operation, within 100 ms. Here the device's clock runs only with
++ * the audio the worklet asks for, so the wait runs the device itself (web_ms: the audio ISR stops it at its next block) */
++static void web_ms(void);
++static int ed_flash_stop(void)
++{
++    uint32_t t0 = fm1_ms;
++    if (!transport_busy())
++        return 0;
++    transport_req = 2;
++    while ((song.playing || chain_busy()) && fm1_ms - t0 < 100u)
++        web_ms();
++    return song.playing || chain_busy();
++}
++#include "../../firmware/src/editor_backup.c"
++
++EXPORT uint8_t *web_ed_buf(void) { return web_ed_req; }
++EXPORT uint8_t *web_ed_reply(void) { return web_ed_rep; }
++EXPORT uint32_t web_ed(uint32_t n)
++{
++    uint32_t i;
++    web_ed_n = 0;
++    if (!n || n > sizeof web_ed_req)
++        return 0;
++    for (i = 0; i < n; i++)
++        if (web_ed_req[i] > 127u)                      /* (every data byte of a SysEx is 7 bit) */
++            return 0;
++    if (!web_booted || !ed_backup_handle(web_ed_req[0], web_ed_req + 1, n - 1u))
++        return 0;
++    return web_ed_n;
++}
++EXPORT const char *web_version(void) { return FELUCCA_VERSION; }
++#endif
+diff --git a/web/emu/transfer-ui.js b/web/emu/transfer-ui.js
+new file mode 100644
+index 0000000..ff9c3c6
+--- /dev/null
++++ b/web/emu/transfer-ui.js
+@@ -0,0 +1,358 @@
++// SPDX-License-Identifier: GPL-3.0-only
++// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
++// (V10.7.36 emu-transfer) The emulator page's FM-1 panel: SEND TO FM-1 / GET FROM FM-1 (a project, a user preset or
++// everything, over USB Web MIDI; Bluetooth MIDI marked EXPERIMENTAL), DOWNLOAD BACKUP / IMPORT BACKUP (the emulator's
++// flash as the installer's and the editor's backup file). The work is transfer.js's; this file is the page's part.
++// English and Spanish (the browser's language, a switch in the panel).
++//   const x = mountTransfer(document.getElementById("xfer"));   // at load: the panel, its buttons waiting
++//   x.attach(node);                                              // once the emulator is on (its AudioWorkletNode)
++import * as X from "./transfer.js";
++
++const T = {
++  en: {
++    title: "FM-1 ⇄ emulator: send what you made to your FM-1, get it back, backups",
++    emu: "Emulator", fm1: "FM-1", off: "switch the emulator on first", notConn: "not connected", connect: "Connect FM-1",
++    reconnect: "Reconnect", usb: "USB", bt: "Bluetooth", what: "What", project: "Project", preset: "User preset", all: "Everything",
++    send: "SEND TO FM-1 →", get: "← GET FROM FM-1", download: "DOWNLOAD BACKUP", importB: "IMPORT BACKUP", retry: "RETRY",
++    settings: "also the settings (MENU options, palette, button calibration)",
++    emuSlot: "Emulator slot", fm1Slot: "FM-1 slot", empty: "(empty)", noName: "(no name)",
++    allDesc: "every project (1–6) with its song rows, the 32 user presets, the music playing now",
++    btWarn: "EXPERIMENTAL: the FM-1 is connected over Bluetooth MIDI. It is slow and may drop in the middle; USB is recommended. A dropped transfer says what to do and can be retried.",
++    help: "Chrome or Edge on a computer, or Chrome on Android with a USB OTG cable. Transfers stop playback on both. On iPhone / iPad: DOWNLOAD BACKUP here and restore the file later with the editor on a computer.",
++    connecting: "Looking for the FM-1…", reading: "Reading", writing: "Writing", verifying: "Verifying…",
++    connected: (v, how) => `${v} over ${how}`, olderNote: (e) => `(the emulator is ${e})`,
++    askTitle: (where) => `This replaces on the ${where}:`, askNone: (where) => `Nothing stored there yet on the ${where}.`,
++    askSave: (where) => `Save a backup of the ${where} first`, askGo: "Replace", askGoNew: "Copy", cancel: "Cancel",
++    saved: (n) => `Backup saved: ${n}. Keep it until you check the result.`,
++    done: (what, where) => `Done: ${what} on the ${where}, written and verified.`,
++    doneAll: (n, where) => `Done: ${n} objects on the ${where}, written and verified.`,
++    downloaded: (n) => `Downloaded ${n}: restore it with the editor (Complete backup > Restore backup) on any FM-1 with JIANT V10.6p or later, or IMPORT BACKUP here.`,
++    imported: (n) => `Imported: ${n} objects into the emulator, verified.`, songsLeft: (s) => ` Songs ${s} of that backup were not taken (this firmware keeps 6).`,
++    projectN: (n) => `PROJECT ${n}`, presetN: (n) => `user preset ${n}`, everything: "everything",
++    rows: "its song rows", bank1: "user presets 1–16", bank2: "user presets 17–32", patches: "the presets' FM6 patches", live: "the music playing", settingsW: "the settings",
++    sections: (s, k) => `PROJECT ${s + 1} sections ${k.split("").join(", ")}`,
++    err: {
++      nomidi: "This browser has no Web MIDI. Use Chrome or Edge on a computer, or Chrome on Android (USB OTG). On iPhone / iPad: DOWNLOAD BACKUP, then restore it with the editor on a computer.",
++      denied: "MIDI access was not allowed. Allow MIDI (with SysEx) for this site in the browser's settings and try again.",
++      notfound: "No FM-1 answered. Plug it in over USB, switch it on (JIANT running, not the update screen), close the editor or other pages using it, and press Connect FM-1.",
++      fwOld: (v) => `The FM-1's firmware (${v || "unknown"}) is too old for this: it needs JIANT V10.6p or later (6 songs, backup restore). Update it with the installer first (it offers a backup before installing).`,
++      fwOldFormat: (v) => `The FM-1's firmware (${v}) stores projects in an older format than this emulator's and would refuse them. Update the FM-1 with the installer to the emulator's version first. User presets can still be sent.`,
++      emuOld: (v) => `The FM-1 (${v}) is newer than this emulator: reload the page to get the current emulator, then try again.`,
++      playing: "The device did not stop playing. Stop it and try again.",
++      emptySlot: (n) => `User preset ${n} is empty: pick a stored one.`,
++      lost: "The connection dropped before anything was written: nothing changed. Reconnect the FM-1 (USB recommended) and press RETRY.",
++      verify: (ids) => `Written, but the read-back does not match (${ids}). Press RETRY; if it happens again, restore the backup you saved.`,
++      stale: "The FM-1 reset the transfer (another page or the editor used it, or it was idle too long). Press RETRY.",
++      changed: "The data changed while it was being read. Stop playback and press RETRY.",
++      flash: "The FM-1 could not write its flash. Press RETRY; if it happens again, power-cycle it.",
++      validation: "The device refused the data (it failed its checks). Nothing of that object was written.",
++      busy: "A transfer is running.",
++      file: (m) => `Not a JIANT / Felucca backup file: ${m}`,
++      partial: (where, newP, oldP, lost) => `${lost ? "The connection dropped" : "The transfer stopped"} half-way. On the ${where} these are NEW: ${newP}; these are still OLD: ${oldP}. The project plays a mix of both until it is finished. Press RETRY to send it all again (reconnect first), or restore the backup you saved.`,
++      other: (m) => `Error: ${m}`,
++    },
++  },
++  es: {
++    title: "FM-1 ⇄ emulador: pasá lo que hiciste a tu FM-1, traelo de vuelta, backups",
++    emu: "Emulador", fm1: "FM-1", off: "primero encendé el emulador", notConn: "no conectado", connect: "Conectar FM-1",
++    reconnect: "Reconectar", usb: "USB", bt: "Bluetooth", what: "Qué", project: "Proyecto", preset: "Preset de usuario", all: "Todo",
++    send: "ENVIAR AL FM-1 →", get: "← TRAER DEL FM-1", download: "DESCARGAR BACKUP", importB: "IMPORTAR BACKUP", retry: "REINTENTAR",
++    settings: "también los ajustes (opciones del MENU, paleta, calibración de botones)",
++    emuSlot: "Lugar en el emulador", fm1Slot: "Lugar en el FM-1", empty: "(vacío)", noName: "(sin nombre)",
++    allDesc: "todos los proyectos (1–6) con sus filas de canción, los 32 presets de usuario, la música que suena ahora",
++    btWarn: "EXPERIMENTAL: el FM-1 está conectado por MIDI Bluetooth. Es lento y se puede cortar en el medio; se recomienda USB. Si se corta, te dice qué hacer y podés reintentar.",
++    help: "Chrome o Edge en una computadora, o Chrome en Android con un cable USB OTG. Las transferencias detienen la reproducción en ambos. En iPhone / iPad: DESCARGAR BACKUP acá y restaurar el archivo después con el editor en una computadora.",
++    connecting: "Buscando el FM-1…", reading: "Leyendo", writing: "Escribiendo", verifying: "Verificando…",
++    connected: (v, how) => `${v} por ${how}`, olderNote: (e) => `(el emulador es ${e})`,
++    askTitle: (where) => `Esto reemplaza en el ${where}:`, askNone: (where) => `Todavía no hay nada guardado ahí en el ${where}.`,
++    askSave: (where) => `Guardar antes un backup del ${where}`, askGo: "Reemplazar", askGoNew: "Copiar", cancel: "Cancelar",
++    saved: (n) => `Backup guardado: ${n}. Guardalo hasta comprobar el resultado.`,
++    done: (what, where) => `Listo: ${what} en el ${where}, escrito y verificado.`,
++    doneAll: (n, where) => `Listo: ${n} objetos en el ${where}, escritos y verificados.`,
++    downloaded: (n) => `Descargado ${n}: restauralo con el editor (Complete backup > Restore backup) en cualquier FM-1 con JIANT V10.6p o posterior, o con IMPORTAR BACKUP acá.`,
++    imported: (n) => `Importado: ${n} objetos en el emulador, verificados.`, songsLeft: (s) => ` Las canciones ${s} de ese backup no se tomaron (este firmware guarda 6).`,
++    projectN: (n) => `el PROYECTO ${n}`, presetN: (n) => `el preset de usuario ${n}`, everything: "todo",
++    rows: "sus filas de canción", bank1: "presets de usuario 1–16", bank2: "presets de usuario 17–32", patches: "los patches FM6 de los presets", live: "la música que suena", settingsW: "los ajustes",
++    sections: (s, k) => `PROYECTO ${s + 1} secciones ${k.split("").join(", ")}`,
++    err: {
++      nomidi: "Este navegador no tiene Web MIDI. Usá Chrome o Edge en una computadora, o Chrome en Android (USB OTG). En iPhone / iPad: DESCARGAR BACKUP y restauralo con el editor en una computadora.",
++      denied: "No se permitió el acceso MIDI. Permití MIDI (con SysEx) para este sitio en los ajustes del navegador y probá de nuevo.",
++      notfound: "Ningún FM-1 respondió. Conectalo por USB, encendelo (con JIANT, no en la pantalla de actualización), cerrá el editor u otras páginas que lo usen y tocá Conectar FM-1.",
++      fwOld: (v) => `El firmware del FM-1 (${v || "desconocido"}) es demasiado viejo para esto: necesita JIANT V10.6p o posterior (6 canciones, restauración de backup). Actualizalo primero con el instalador (ofrece un backup antes de instalar).`,
++      fwOldFormat: (v) => `El firmware del FM-1 (${v}) guarda los proyectos en un formato más viejo que el de este emulador y los rechazaría. Actualizá el FM-1 con el instalador a la versión del emulador. Los presets de usuario sí se pueden enviar.`,
++      emuOld: (v) => `El FM-1 (${v}) es más nuevo que este emulador: recargá la página para tener el emulador actual y probá de nuevo.`,
++      playing: "El equipo no dejó de reproducir. Detenelo y probá de nuevo.",
++      emptySlot: (n) => `El preset de usuario ${n} está vacío: elegí uno guardado.`,
++      lost: "La conexión se cortó antes de escribir nada: no cambió nada. Reconectá el FM-1 (mejor por USB) y tocá REINTENTAR.",
++      verify: (ids) => `Se escribió, pero la lectura de control no coincide (${ids}). Tocá REINTENTAR; si vuelve a pasar, restaurá el backup que guardaste.`,
++      stale: "El FM-1 reinició la transferencia (otra página o el editor lo usó, o pasó mucho tiempo). Tocá REINTENTAR.",
++      changed: "Los datos cambiaron mientras se leían. Detené la reproducción y tocá REINTENTAR.",
++      flash: "El FM-1 no pudo escribir su memoria. Tocá REINTENTAR; si vuelve a pasar, apagalo y encendelo.",
++      validation: "El equipo rechazó los datos (no pasaron sus controles). No se escribió nada de ese objeto.",
++      busy: "Hay una transferencia en curso.",
++      file: (m) => `No es un archivo de backup de JIANT / Felucca: ${m}`,
++      partial: (where, newP, oldP, lost) => `${lost ? "La conexión se cortó" : "La transferencia se detuvo"} a la mitad. En el ${where} esto quedó NUEVO: ${newP}; esto sigue VIEJO: ${oldP}. El proyecto suena como una mezcla de ambos hasta terminarlo. Tocá REINTENTAR para enviarlo todo de nuevo (reconectá primero), o restaurá el backup que guardaste.`,
++      other: (m) => `Error: ${m}`,
++    },
++  },
++};
++
++const CSS = `
++#xfer .row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 6px 0; }
++#xfer select { font: inherit; max-width: 100%; min-width: 0; }
++#xfer label.slot { display: flex; flex-direction: column; gap: 2px; flex: 1 1 13em; min-width: 0; }
++#xfer button { font: inherit; padding: 4px 12px; background: #fff; color: #000; border: 0; cursor: pointer; }
++#xfer button.go { font-weight: 700; letter-spacing: .03em; }
++#xfer button:disabled { opacity: .4; cursor: default; }
++#xfer button.lang { background: transparent; color: var(--fg); border: 1px solid var(--edge); padding: 1px 8px; }
++#xfer .dev { color: var(--fg); }
++#xfer .dev b { font-weight: 600; }
++#xfer .warn { border-left: 3px solid #ff9f0a; padding: 4px 10px; background: rgba(255, 159, 10, .12); color: var(--fg); margin: 6px 0; }
++#xfer .ask { border: 1px solid var(--edge); background: rgba(255, 255, 255, .25); padding: 6px 10px; margin: 6px 0; color: var(--fg); }
++#xfer .ask ul { margin: 2px 0 6px; padding-left: 18px; }
++#xfer progress { width: 100%; height: 10px; accent-color: #1d1d1f; }
++#xfer .msg { color: var(--fg); margin: 4px 0; white-space: pre-line; }
++#xfer .msg.bad { color: #8a1111; font-weight: 600; }
++#xfer .msg.good { color: #0d4a22; font-weight: 600; }
++#xfer fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; }
++#xfer small { color: var(--dim); }
++@media (max-width: 520px) { #xfer .acts button { flex: 1 1 45%; } }
++`;
++
++export function mountTransfer(root, opt = {}) {
++  let lang = (() => { try { return localStorage.getItem("jiant-emu-lang"); } catch { return null; } })() ||
++             ((opt.lang || navigator.language || "en").slice(0, 2) === "es" ? "es" : "en");
++  if (!T[lang]) lang = "en";
++  const t = () => T[lang];
++  if (!document.getElementById("xfer-css")) {
++    const st = document.createElement("style"); st.id = "xfer-css"; st.textContent = CSS; document.head.append(st);
++  }
++  root.id = "xfer";
++  root.classList.add("stems");
++  /* the page's keyboard plays the emulator: keys pressed in this panel (a select's arrows) stay here */
++  for (const ev of ["keydown", "keyup"]) root.addEventListener(ev, (e) => e.stopPropagation());
++
++  const S = { emu: null, fm1: null, info: null, link: null, access: null, emuCat: null, fm1Cat: null, emuList: null, fm1List: null,
++              what: "project", busy: false, retry: null, msg: "", msgKind: "", ask: null, progress: null };
++
++  const h = (tag, attrs = {}, ...kids) => {
++    const e = document.createElement(tag);
++    for (const [k, v] of Object.entries(attrs)) {
++      if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
++      else if (v === true) e.setAttribute(k, "");
++      else if (v !== false && v != null) e.setAttribute(k, v);
++    }
++    for (const k of kids.flat()) if (k != null && k !== false) e.append(k);
++    return e;
++  };
++  const fileIn = h("input", { type: "file", accept: ".json,application/json", hidden: true, onchange: () => importFile() });
++
++  // ------------------------------------------------------------------ what each slot holds, as an option's text
++  const songText = (s) => `${s.n + 1} · ${s.used ? (s.name || t().noName) + "  [" + s.stored.map((v, i) => v ? "ABCD"[i] : "-").join("") + "]" : t().empty}`;
++  const presetText = (p, k) => `${String(k + 1).padStart(2, "0")} · ${p ? `${p.name} · ${p.engineName}` : t().empty}`;
++  const options = (cat, sel) => {
++    if (S.what === "all") return [h("option", { value: "all" }, t().allDesc)];
++    if (!cat) return [h("option", { value: "" }, "—")];
++    const list = S.what === "project" ? cat.songs.map((s) => [s.n, songText(s)]) : cat.presets.map((p, k) => [k, presetText(p, k)]);
++    return list.map(([v, txt]) => h("option", { value: v, selected: String(v) === String(sel) }, txt));
++  };
++  let selEmu = 0, selFm1 = 0;
++
++  function render() {
++    const L = t(), on = !!S.emu, conn = !!S.fm1, idle = !S.busy;
++    const how = S.fm1?.bluetooth ? L.bt : L.usb;
++    root.replaceChildren(...[
++      h("summary", {}, L.title),
++      h("div", { class: "row" },
++        h("span", { class: "dev" }, h("b", {}, L.emu + ": "), on ? (S.emu.version || "?") : L.off),
++        h("span", { class: "dev" }, h("b", {}, L.fm1 + ": "), conn ? L.connected(S.info.version, how) : L.notConn,
++          conn && S.emu?.version && !S.info.version.endsWith(S.emu.version) ? " " + L.olderNote(S.emu.version) : ""),
++        h("button", { type: "button", disabled: !on || !idle, onclick: () => run(connect) }, conn ? L.reconnect : L.connect),
++        h("button", { type: "button", class: "lang", onclick: () => { lang = lang === "es" ? "en" : "es"; try { localStorage.setItem("jiant-emu-lang", lang); } catch {} render(); } }, lang === "es" ? "EN" : "ES")),
++      S.fm1?.bluetooth ? h("div", { class: "warn", role: "note" }, L.btWarn) : null,
++      h("div", { class: "row" },
++        h("fieldset", {}, h("legend", { hidden: true }, L.what),
++          ...["project", "preset", "all"].map((w) => h("label", {}, h("input", { type: "radio", name: "xfer-what", value: w, checked: S.what === w, disabled: !idle,
++            onchange: () => { S.what = w; selEmu = selFm1 = 0; render(); } }), " " + L[w])))),
++      h("div", { class: "row" },
++        h("label", { class: "slot" }, h("small", {}, L.emuSlot),
++          h("select", { disabled: !on || !idle || S.what === "all", onchange: (e) => { selEmu = +e.target.value; } }, options(S.emuCat, selEmu))),
++        h("label", { class: "slot" }, h("small", {}, L.fm1Slot),
++          h("select", { disabled: !conn || !idle || S.what === "all", onchange: (e) => { selFm1 = +e.target.value; } }, options(S.fm1Cat, selFm1)))),
++      S.what === "all" ? h("div", { class: "row" }, h("label", {}, h("input", { type: "checkbox", id: "xfer-settings", checked: S.settings, disabled: !idle, onchange: (e) => { S.settings = e.target.checked; } }), " " + L.settings)) : null,
++      h("div", { class: "row acts" },
++        h("button", { type: "button", class: "go", disabled: !on || !conn || !idle, onclick: () => run(() => start("to")) }, L.send),
++        h("button", { type: "button", class: "go", disabled: !on || !conn || !idle, onclick: () => run(() => start("from")) }, L.get)),
++      h("div", { class: "row acts" },
++        h("button", { type: "button", disabled: !on || !idle, onclick: () => run(downloadEmu) }, L.download),
++        h("button", { type: "button", disabled: !on || !idle, onclick: () => fileIn.click() }, L.importB), fileIn),
++      S.ask ? askBox() : null,
++      S.progress ? h("progress", { max: 100, value: S.progress.v }) : null,
++      S.progress?.text ? h("div", { class: "msg" }, S.progress.text) : null,
++      S.msg ? h("div", { class: "msg " + S.msgKind, role: "status" }, S.msg) : null,
++      S.retry && idle ? h("div", { class: "row" }, h("button", { type: "button", class: "go", onclick: () => run(S.retry) }, L.retry)) : null,
++      h("p", {}, h("small", {}, L.help))].flat().filter((k) => k != null && k !== false));
++    if (S.keepOpen !== false) root.open = root.open || !!S.msg || !!S.ask;
++  }
++  const say = (msg, kind = "") => { S.msg = msg; S.msgKind = kind; render(); };
++  const settingsOn = () => !!S.settings;
++
++  // ------------------------------------------------------------------ the question before writing
++  function askBox() {
++    const a = S.ask, L = t(), where = a.dst === "fm1" ? L.fm1 : L.emu.toLowerCase();
++    const label = (o) => o.kind === "project" ? `${L.projectN(o.n + 1)} “${o.name || L.noName}”` : `${L.presetN(o.n + 1)} “${o.name}”`;
++    return h("div", { class: "ask", role: "alertdialog" },
++      a.items.length ? [h("div", {}, L.askTitle(where)), h("ul", {}, a.items.slice(0, 8).map((o) => h("li", {}, label(o))), a.items.length > 8 ? h("li", {}, `+${a.items.length - 8}`) : null)]
++                     : h("div", {}, L.askNone(where)),
++      a.dst === "fm1" && S.fm1?.bluetooth ? h("div", { class: "warn" }, L.btWarn) : null,
++      h("div", { class: "row" },
++        h("button", { type: "button", onclick: () => run(() => saveBackupOf(a.dst)) }, L.askSave(where)),
++        h("button", { type: "button", class: "go", onclick: () => { const go = a.go; S.ask = null; run(go); } }, a.items.length ? L.askGo : L.askGoNew),
++        h("button", { type: "button", onclick: () => { S.ask = null; render(); } }, L.cancel)));
++  }
++
++  // ------------------------------------------------------------------ operations
++  async function run(fn) {
++    if (S.busy) { say(t().err.busy, "bad"); return; }
++    S.busy = true; S.msg = ""; render();
++    try { await fn(); }
++    catch (e) { S.progress = null; say(errorText(e), "bad"); console.warn("JIANT transfer:", e); }
++    finally { S.busy = false; render(); }
++  }
++  function errorText(e) {
++    const E = t().err, where = S.lastDst === "emu" ? t().emu.toLowerCase() : t().fm1;
++    if (e?.code === "partial") {
++      const name = (p) => p.song != null ? t().sections(p.song, p.sections) : t()[{ rows: "rows", bank1: "bank1", bank2: "bank2", patches: "patches", live: "live", settings: "settingsW" }[p]] || p;
++      return E.partial(where, X.describeIds(e.written).map(name).join("; "), X.describeIds(e.pending).map(name).join("; ") || "—", e.lost);
++    }
++    const f = E[e?.code];
++    if (typeof f === "function") return f(e.detail || S.info?.version);
++    if (f) return f;
++    return E.other(e?.message || String(e));
++  }
++  const progress = (label) => (done, total, phase) => {
++    S.progress = { v: Math.round(100 * done / Math.max(1, total)), text: phase === "verify" ? t().verifying : `${phase === "read" ? t().reading : t().writing}${label ? " " + label : ""}… ${Math.round(100 * done / Math.max(1, total))} %` };
++    render();
++  };
++
++  async function connect() {
++    if (!navigator.requestMIDIAccess) throw new X.XferError("nomidi");
++    S.progress = { v: 0, text: t().connecting }; render();
++    try { S.link?.close(); } catch {}
++    S.fm1 = S.info = S.fm1Cat = null;
++    try { S.access = await navigator.requestMIDIAccess({ sysex: true }); }
++    catch (e) { throw new X.XferError("denied", e?.message); }
++    const c = await X.connectFM1(S.access);
++    S.fm1 = c.side; S.info = c.info; S.link = c.link;
++    S.access.onstatechange = (ev) => {
++      const p = ev.port;
++      if (S.link && (p === S.link.input || p === S.link.output) && p.state === "disconnected") { S.link.close(); S.fm1 = null; render(); }
++    };
++    await refresh();
++    S.progress = null;
++  }
++  /* both sides' contents for the pickers (each LIST stops that side's playback) */
++  async function refresh() {
++    if (S.emu) { S.emuList = await X.list(S.emu); S.emuCat = await X.catalog(S.emu, S.info?.engines || X.ENGINES, S.emuList); }
++    if (S.fm1) {
++      S.fm1List = await X.list(S.fm1);
++      const e = S.emuList && X.compat(S.info, S.fm1List, S.emuList, "to", "preset");
++      if (e) throw e;
++      S.fm1Cat = await X.catalog(S.fm1, S.info?.engines || X.ENGINES, S.fm1List);
++    }
++    render();
++  }
++  async function ensureFm1() {
++    if (S.fm1 && S.link && !S.link.closed) return;
++    await connect();
++  }
++
++  function jobOf(dir) {
++    const from = dir === "to" ? selEmu : selFm1, to = dir === "to" ? selFm1 : selEmu;
++    if (S.what === "all") return { what: "all", settings: settingsOn() };
++    return { what: S.what, from, to };
++  }
++  /* SEND (dir "to") or GET (dir "from"): the format checked, the question asked (with the backup offered), then the job */
++  async function start(dir) {
++    await ensureFm1();
++    await refresh();
++    const job = jobOf(dir), src = dir === "to" ? S.emu : S.fm1, dst = dir === "to" ? S.fm1 : S.emu;
++    const e = X.compat(S.info, S.fm1List, S.emuList, dir, job.what);
++    if (e) throw e;
++    const srcCat = dir === "to" ? S.emuCat : S.fm1Cat, dstCat = dir === "to" ? S.fm1Cat : S.emuCat;
++    if (job.what === "preset" && !srcCat.presets[job.from]) throw new X.XferError("emptySlot", String(job.from + 1));
++    const dstName = dir === "to" ? "fm1" : "emu";
++    S.ask = { dst: dstName, items: X.overwrites(dstCat, job), go: () => doJob(src, dst, job, dstName) };
++    render();
++  }
++  async function doJob(src, dst, job, dstName) {
++    S.lastDst = dstName;
++    S.retry = null;
++    const again = async () => { if (dstName === "fm1" || src.kind === "fm1") await connect(); await doJob(dstName === "fm1" ? S.emu : S.fm1, dstName === "fm1" ? S.fm1 : S.emu, job, dstName); };
++    try {
++      const L = t(), label = job.what === "project" ? L.projectN(job.to + 1) : job.what === "preset" ? L.presetN(job.to + 1) : L.everything;
++      const r = await X.transfer(src, dst, job, progress(label));
++      try { await refresh(); } catch {}                // (the pickers as they are now, then the message)
++      S.progress = null;
++      const where = dstName === "fm1" ? L.fm1 : L.emu.toLowerCase();
++      say(job.what === "all" ? L.doneAll(r.verified.length, where) : L.done(label, where), "good");
++    } catch (e) {
++      if (["partial", "lost", "verify", "stale", "changed", "flash", "playing"].includes(e.code) || /timed out|closed/i.test(e.message)) S.retry = again;
++      throw e;
++    }
++  }
++
++  function download(name, obj) {
++    const url = URL.createObjectURL(new Blob([JSON.stringify(obj)], { type: "application/json" }));
++    const a = h("a", { href: url, download: name }); document.body.append(a); a.click(); a.remove();
++    setTimeout(() => URL.revokeObjectURL(url), 2000);
++  }
++  async function saveBackupOf(who) {
++    const side = who === "fm1" ? S.fm1 : S.emu;
++    const file = await X.backupFile(side, progress(""));
++    const name = X.backupName(who === "fm1" ? "fm1" : "emu");
++    download(name, file);
++    S.progress = null;
++    say(t().saved(name), "good");
++    if (who === "fm1") await refresh().catch(() => {});
++  }
++  async function downloadEmu() {
++    const file = await X.backupFile(S.emu, progress(""));
++    const name = X.backupName("emu");
++    download(name, file);
++    S.progress = null;
++    say(t().downloaded(name), "good");
++  }
++  async function importFile() {
++    const f = fileIn.files && fileIn.files[0];
++    fileIn.value = "";
++    if (!f || !S.emu) return;
++    run(async () => {
++      let text;
++      try { if (f.size > 600000) throw new Error("too large"); text = await f.text(); X.readBackup(text); }
++      catch (e) { throw new X.XferError("file", e.message); }
++      await refresh();
++      const job = { what: "all" };
++      S.ask = { dst: "emu", items: X.overwrites(S.emuCat, job), go: async () => {
++        S.lastDst = "emu";
++        const r = await X.restoreFile(S.emu, text, { settings: settingsOn() }, progress(""));
++        await refresh().catch(() => {});
++        S.progress = null;
++        say(t().imported(r.verified.length) + (r.songsLeft.length ? t().songsLeft(r.songsLeft.join(", ")) : ""), "good");
++      } };
++      render();
++    });
++  }
++
++  render();
++  return {
++    /* the emulator is on: its worklet answers on a channel of its own */
++    attach(node) {
++      const ch = new MessageChannel();
++      S.emu = X.emuSideFromPort(ch.port1);
++      node.port.postMessage({ type: "edport", port: ch.port2 }, [ch.port2]);
++      setTimeout(render, 200);
++    },
++    state: S, render,
++  };
++}
+diff --git a/web/emu/transfer.js b/web/emu/transfer.js
+new file mode 100644
+index 0000000..87bae9e
+--- /dev/null
++++ b/web/emu/transfer.js
+@@ -0,0 +1,391 @@
++// SPDX-License-Identifier: GPL-3.0-only
++// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
++// (V10.7.36 emu-transfer) What you made in the browser emulator onto a real FM-1 and back, and the emulator's flash as a
++// backup file. One protocol and one format on both sides: the editor's full backup (web/EDITOR_PROTOCOL.md "v7: full
++// backup", BACKUP_LIST / GET / PUT, 65..67) and its file (fm1backup.js, "felucca-backup" v1, as the installer and the
++// editor write and the editor restores). The emulator answers those commands with the firmware's own editor_backup.c
++// (transfer-api.h, worklet.js edServe); the FM-1 over Web MIDI (fm1backup.js BackupConnection).
++//   a project   = a song (SAVE > PROJECT 1..6): its four sections (ids 40 + 4 song .. 43 + 4 song) and its rows, scenes,
++//                 track sources and variations in the song index (id 10, one object for every song: read, the song's
++//                 part replaced, written back)
++//   a preset    = a user preset slot (1..32): its record in its bank (id 6: 1..16, id 7: 17..32) and its FM6 patch /
++//                 VOICE lyric entry (id 9), record first, patch second (as the device stores one: up_store)
++//   everything  = every song and the index, the user presets and their patches, the music playing (id 0, RAM only),
++//                 the settings (id 1) only when asked (they carry the FM-1's button calibration)
++// Each object is committed by the device on its own (it checks the length, the CRC and the content first; nothing is
++// written before the commit) and verified after by a new LIST: its size and CRC-32 as sent. A transfer that stops
++// half-way says which objects are new, which are old, and how to finish (RETRY sends it all again).
++// No DOM here: the page's panel is transfer-ui.js; node tests: transfer_test.mjs.
++
++/* fm1backup.js sits next to this file in the built site (web/emu/build.sh copies it) and one level up in the tree */
++const BK = await import("./fm1backup.js").catch(() => import("../fm1backup.js"));
++export const { BACKUP_CMD, BACKUP_IDS, bkU32, bkR32, bkPack, bkUnpack, bkCrc, bkManifest, readBackup, captureBackup,
++               BackupConnection, songsNotRestored } = BK;
++
++export const NSONG = 6, NPRESET = 32, CHUNK = 256;
++/* the engines by number (EDITOR_PROTOCOL.md "engine byte"), when no INFO names them (the emulator alone) */
++export const ENGINES = ["ANALOG", "-", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL", "STRING", "-", "DRUM", "WEST", "FM6", "ADD", "ANIMAL", "INPUT"];
++export const SONG_IDS = (s) => [40 + 4 * s, 41 + 4 * s, 42 + 4 * s, 43 + 4 * s];
++const SECTION = "ABCD";
++
++// ---------------------------------------------------------------------------------------------- errors
++/* every error the panel shows carries a code (transfer-ui.js translates it) and a detail */
++export class XferError extends Error {
++  constructor(code, detail = "", extra = {}) { super(`${code}${detail ? ": " + detail : ""}`); this.code = code; this.detail = detail; Object.assign(this, extra); }
++}
++const RC_TEXT = { 1: "invalid", 2: "validation", 3: "playing", 4: "flash", 5: "stale" };
++const isLink = (e) => e && !(e instanceof XferError) && /timed out|closed|busy|disconnect|lost|InvalidState/i.test(String(e.message || e) + (e.name || ""));
++
++// ---------------------------------------------------------------------------------------------- INFO
++/* the device's INFO reply (cmd 1): its version string, its engines' names, its tracks and the tagged blocks this file
++ * needs: 42 01 caps (bit 0 backup read, bit 1 restore) and 4A 01 1 (JIANT). As web/index_pkg.html reads it */
++export function parseInfo(a) {
++  let pos = a.indexOf(0);
++  if (pos < 0) throw new XferError("noinfo");
++  const version = String.fromCharCode(...a.slice(0, pos)); pos++;
++  const nengines = a[pos]; pos += 5;
++  const engines = [];
++  for (let i = 0; i < nengines; i++) {
++    const end = a.indexOf(0, pos);
++    if (end < 0) throw new XferError("noinfo");
++    engines.push(String.fromCharCode(...a.slice(pos, end))); pos = end + 1;
++  }
++  const ntrk = a[pos], ext = a.slice(pos + 1);
++  let backupCaps = 0, jiant = false;
++  for (let i = 0; i + 2 < ext.length; i++) {
++    if (ext[i] === 0x42 && ext[i + 1] === 1 && !backupCaps) backupCaps = ext[i + 2];
++    if (ext[i] === 0x4A && ext[i + 1] === 1 && ext[i + 2] === 1) jiant = true;
++  }
++  return { version, engines, ntrk, backupCaps, jiant: jiant || /^JIANT /i.test(version) };
++}
++
++// ---------------------------------------------------------------------------------------------- the two sides
++/* A side: { kind: "emu" | "fm1", request([cmd, args], opt) -> reply body, version, slow }. The emulator's requests go
++ * to edServe (worklet.js) through a MessagePort, or straight into the exports (node) */
++export function emuSideFromExports(ex, edServe, version = "") {
++  return { kind: "emu", version, slow: 1, request: async ([cmd, args]) => {
++    const r = edServe(ex, [cmd, ...args]);
++    if (!r) throw new Error("Backup timed out (the emulator sent no reply)");
++    return r;
++  } };
++}
++export function emuSideFromPort(port, timeout = 8000) {
++  let seq = 0;
++  const waiting = new Map();
++  const side = { kind: "emu", version: "", slow: 1 };
++  port.onmessage = (e) => {
++    const m = e.data || {};
++    if (m.version) side.version = m.version;
++    const w = waiting.get(m.seq);
++    if (!w) return;
++    waiting.delete(m.seq); clearTimeout(w.t);
++    if (m.reply) w.res(m.reply); else w.rej(new Error(m.error || "Backup timed out (the emulator sent no reply)"));
++  };
++  port.start?.();
++  side.request = ([cmd, args]) => new Promise((res, rej) => {
++    const s = ++seq, t = setTimeout(() => { waiting.delete(s); rej(new Error("Backup timed out (the emulator)")); }, timeout);
++    waiting.set(s, { res, rej, t });
++    port.postMessage({ seq: s, req: [cmd, ...args] });
++  });
++  return side;
++}
++
++/* the FM-1's MIDI ports: every input with an output of the same name, the FM-1's first (its own USB name), then
++ * the others that could be it (a USB hub's, a Bluetooth pairing's); never the browser's or the OS's virtual ports */
++const NOT_FM1 = /wavetable|iac driver|midi through|loopmidi|loopbe|virtual|rtpmidi|network session|emulator/i;
++export const isBluetooth = (p) => /bluetooth|\bble\b|\bbt\b|wireless/i.test(`${p.name || ""} ${p.manufacturer || ""}`);
++export function candidatePorts(access) {
++  const outs = [...access.outputs.values()], out = [];
++  for (const input of access.inputs.values()) {
++    if (input.state === "disconnected" || NOT_FM1.test(input.name || "")) continue;
++    const output = outs.find((o) => o.name === input.name && o.state !== "disconnected");
++    if (output) out.push({ input, output, name: input.name || "MIDI", bluetooth: isBluetooth(input) || isBluetooth(output) });
++  }
++  const rank = (c) => (/fm-1|jiant|felucca/i.test(c.name) ? 0 : 2) + (c.bluetooth ? 1 : 0);
++  return out.sort((a, b) => rank(a) - rank(b));
++}
++/* the first candidate that answers INFO as an FM-1 does: { side, info, name, bluetooth, link }. A slow link (Bluetooth)
++ * gets longer waits for every request */
++export async function connectFM1(access, opt = {}) {
++  const tried = [];
++  for (const c of candidatePorts(access)) {
++    try { await c.input.open?.(); await c.output.open?.(); } catch (_) { continue; }
++    const link = new BackupConnection(c.input, c.output);
++    try {
++      const info = parseInfo(await link.request([1, []], { timeout: c.bluetooth ? 4000 : 1500, retries: 1 }));
++      const slow = c.bluetooth ? 3 : 1;
++      const side = { kind: "fm1", version: info.version, slow, bluetooth: c.bluetooth, name: c.name,
++                     request: (r, o = {}) => link.request(r, { ...o, timeout: (o.timeout || 1200) * slow }) };
++      return { side, info, name: c.name, bluetooth: c.bluetooth, link };
++    } catch (e) { link.close(); tried.push(c.name); }
++  }
++  throw new XferError("notfound", tried.join(", "));
++}
++
++// ---------------------------------------------------------------------------------------------- reading
++const LIST_OPT = { timeout: 8000, retries: 1 };
++/* the device's objects now: [{id, size, crc}] (the LIST stops its playback and takes the snapshot GET reads) */
++export async function list(side) {
++  const a = await side.request([BACKUP_CMD.LIST, []], LIST_OPT);
++  if (a[0] === 1 && a[1] === 3) throw new XferError("playing");
++  const m = bkManifest(a);
++  m.byId = new Map(m.map((o) => [o.id, o]));
++  return m;
++}
++/* bytes off .. off + n of object id (in 256-byte pieces); a late reply to an earlier try is skipped */
++export async function getBytes(side, id, off, n, onBytes = () => {}) {
++  const out = new Uint8Array(n);
++  for (let p = 0; p < n; p += CHUNK) {
++    const size = Math.min(CHUNK, n - p), at = off + p;
++    const match = (r) => r[0] === id && r.length >= 7 && (() => { try { return bkR32(r, 2) === at; } catch (_) { return false; } })();
++    const a = await side.request([BACKUP_CMD.GET, [id, ...bkU32(at), size & 127, size >>> 7]], { timeout: 2500, retries: 2, match });
++    if (a[1]) throw new XferError(a[1] === 5 ? "stale" : a[1] === 3 ? "playing" : "readfail", `${id} rc ${a[1]}`);
++    if (a[0] !== id || bkR32(a, 2) !== at || (a[7] | a[8] << 7) !== size) throw new XferError("readfail", `${id}`);
++    out.set(bkUnpack(a.slice(9), size), p);
++    onBytes(size);
++  }
++  return out;
++}
++/* a whole object as the LIST named it, its CRC checked */
++export async function getObject(side, o, onBytes) {
++  const bytes = o.size ? await getBytes(side, o.id, 0, o.size, onBytes) : new Uint8Array(0);
++  if (bkCrc(bytes) !== o.crc) throw new XferError("changed", `${o.id}`);
++  return bytes;
++}
++/* a project's name: the 12 bytes before the store's hash (project.c PROJ_NAME_OFF; every format), as proj_name_get */
++export function nameOf(tail) {
++  let s = "";
++  for (const b of tail) {
++    if (!b) break;
++    if (b < 32 || b > 126) return "";
++    s += String.fromCharCode(b >= 97 && b <= 122 ? b - 32 : b);
++  }
++  return s;
++}
++// the user preset banks (upreset.c up_bank_t: magic "UPB1", rsize 192, nslot 16, then 16 records) and their patches
++// (up_fm6.c upf_t: magic "UPF6", ver 1, nslot 32, used bits, rsv, then 32 x {tag u32, 112 packed bytes})
++export const UP = { BANK: 8 + 16 * 192, REC: 192, MAGIC: 0x31425055, USED: 0xA5 };
++export const UPF = { SIZE: 16 + 32 * 116, ENT: 116, MAGIC: 0x36465055 };
++const le32 = (b, o) => (b[o] | b[o + 1] << 8 | b[o + 2] << 16 | b[o + 3] << 24) >>> 0;
++const put32 = (b, o, v) => { b[o] = v & 255; b[o + 1] = v >>> 8 & 255; b[o + 2] = v >>> 16 & 255; b[o + 3] = v >>> 24 & 255; };
++export function emptyBank() {
++  const b = new Uint8Array(UP.BANK); put32(b, 0, UP.MAGIC); b[4] = UP.REC; b[5] = 0; b[6] = 16; b[7] = 0; return b;
++}
++export function emptyUpf() {
++  const b = new Uint8Array(UPF.SIZE); put32(b, 0, UPF.MAGIC); b[4] = 1; b[6] = 32; return b;
++}
++const bankOk = (b) => b.length === UP.BANK && le32(b, 0) === UP.MAGIC && (b[4] | b[5] << 8) === UP.REC && (b[6] | b[7] << 8) === 16;
++const upfOk = (b) => b.length === UPF.SIZE && le32(b, 0) === UPF.MAGIC && (b[4] | b[5] << 8) === 1 && (b[6] | b[7] << 8) === 32;
++/* a preset record (192 bytes) as the panel lists it, or null when the slot is empty (upreset.c up_valid, in short) */
++export function presetOf(rec, engines = []) {
++  if (!rec || rec[0] !== UP.USED || !rec[1] || rec[1] > 5 || !rec[4]) return null;
++  let name = "";
++  for (let i = 4; i < 16 && rec[i]; i++) name += String.fromCharCode(rec[i]);
++  return { name, engine: rec[2], engineName: engines[rec[2]] || `ENG ${rec[2]}` };
++}
++/* what a side holds, for the pickers: its songs (used, name of section A, the sections stored) and its 32 presets */
++export async function catalog(side, engines = [], m = null) {
++  m = m || await list(side);
++  const songs = [];
++  for (let s = 0; s < NSONG; s++) {
++    const secs = SONG_IDS(s).map((id) => m.byId.get(id));
++    const stored = secs.map((o) => !!(o && o.size));
++    let name = "";
++    const a = secs.find((o) => o && o.size >= 16);
++    if (a) name = nameOf(await getBytes(side, a.id, a.size - 16, 12));
++    songs.push({ n: s, used: stored.some(Boolean), stored, name });
++  }
++  const presets = [];
++  for (const id of [6, 7]) {
++    const o = m.byId.get(id), bank = o && o.size ? await getObject(side, o) : null;
++    for (let k = 0; k < 16; k++) presets.push(bank && bankOk(bank) ? presetOf(bank.subarray(8 + k * UP.REC, 8 + (k + 1) * UP.REC), engines) : null);
++  }
++  return { songs, presets, manifest: m };
++}
++
++// ---------------------------------------------------------------------------------------------- format checks
++/* null, or why this FM-1 cannot take / give what the emulator has: not JIANT or no restore (an older or other
++ * firmware), another number of songs (JIANT before V10.6p kept 8), an older project format than the emulator's (its
++ * firmware would refuse the sections: update it with the installer). dir "to": emulator -> FM-1; "from": FM-1 -> emulator */
++export function compat(info, fm1List, emuList, dir, what) {
++  if (!info || !info.jiant || (info.backupCaps & 3) !== 3) return new XferError("fwOld", info ? info.version : "");
++  if (fm1List.length !== BACKUP_IDS.length) return new XferError("fwOld", info.version);
++  const f0 = fm1List.byId.get(0)?.size || 0, e0 = emuList.byId.get(0)?.size || 0;
++  if (what !== "preset") {
++    if (dir === "to" && f0 < e0) return new XferError("fwOldFormat", info.version);
++    if (dir === "from" && f0 > e0) return new XferError("emuOld", info.version);
++  }
++  return null;
++}
++
++// ---------------------------------------------------------------------------------------------- writing
++/* one object, begin / 256-byte pieces / commit; a failed piece aborts it (nothing written: the device writes only at
++ * its commit). rc 1 at begin: the device does not take this object (an older firmware's): { refused: true } */
++export async function putObject(side, id, bytes, onBytes = () => {}) {
++  const ask = async (args) => {
++    const a = await side.request([BACKUP_CMD.PUT, args], { timeout: 4000, retries: 0 });
++    if (a[1] !== args[1] && a[1] !== 127) throw new XferError("writefail", `${id}`);
++    return a[2];
++  };
++  let rc = await ask([0, id, ...bkU32(bytes.length), ...bkU32(bkCrc(bytes))]);
++  if (rc === 1) return { refused: true };
++  if (rc) throw new XferError(RC_TEXT[rc] || "writefail", `${id} rc ${rc}`);
++  try {
++    for (let off = 0; off < bytes.length; off += CHUNK) {
++      const piece = bytes.subarray(off, off + CHUNK);
++      rc = await ask([1, id, ...bkU32(off), ...bkPack(piece)]);
++      if (rc) throw new XferError(RC_TEXT[rc] || "writefail", `${id} rc ${rc}`);
++      onBytes(piece.length);
++    }
++    rc = await ask([2, id]);
++    if (rc) throw new XferError(RC_TEXT[rc] || "writefail", `${id} rc ${rc}`);
++  } catch (e) {
++    await ask([3, id]).catch(() => {});
++    throw e;
++  }
++  return { refused: false };
++}
++
++// ---------------------------------------------------------------------------------------------- the song index
++// song_chain.c song_index_t (version 4, 2344 bytes): magic, version, cur, rsv[2]; rows[8] (36 bytes: count, rsv[3],
++// 16 x {slot, bars}); scene[8][16] (8 bytes); tsrc[8][16] (u32); tvar[8][16] (u32). Room for 8 songs, 6 used
++export const IDX = { SIZE: 2344, MAGIC: 0x474E4F53, V: 4, ROWS: 8, ROW: 36, SCENE: 296, SCENE_N: 128, TSRC: 1320, TVAR: 1832, VAR_N: 64 };
++/* an index of any version the firmware takes (2: 1320 bytes, 3: 1832, 4) as version 4: the parts missing empty */
++export function indexV4(b) {
++  if (!b || b.length < 8 || le32(b, 0) !== IDX.MAGIC) throw new XferError("badIndex");
++  if (b.length === IDX.SIZE && b[4] === IDX.V) return b.slice();
++  if ((b.length === IDX.TSRC && b[4] === 2) || (b.length === IDX.TVAR && b[4] === 3)) {
++    const o = new Uint8Array(IDX.SIZE); o.set(b); o[4] = IDX.V; return o;
++  }
++  throw new XferError("badIndex", `${b.length}`);
++}
++/* dst's index with song d's rows, scenes, track sources and variations taken from song s of src (cur kept) */
++export function mergeIndex(dst, d, src, s) {
++  const o = indexV4(dst), from = indexV4(src);
++  for (const [at, n] of [[IDX.ROWS, IDX.ROW], [IDX.SCENE, IDX.SCENE_N], [IDX.TSRC, IDX.VAR_N], [IDX.TVAR, IDX.VAR_N]]) {
++    const base = at === IDX.ROWS ? 8 : at;
++    o.set(from.subarray(base + s * n, base + (s + 1) * n), base + d * n);
++  }
++  return o;
++}
++
++// ---------------------------------------------------------------------------------------------- the jobs
++/* job: { what: "project", from: s, to: d } | { what: "preset", from: k, to: j } | { what: "all", settings: bool,
++ * live: bool }. src and dst are sides. onProgress(done, total, phase). Returns { written: [ids], verified: [ids],
++ * refused: [ids] }. On a failure after a first commit: an XferError "partial" with .written (the objects already new)
++ * and .pending (the ones still old), .cause (the error) */
++export async function transfer(src, dst, job, onProgress = () => {}) {
++  let done = 0, total = 1;
++  const tick = (n, phase) => { done += n; onProgress(Math.min(done, total), total, phase); };
++  const sm = await list(src);
++  const plan = [];                                     // [id, bytes]
++  if (job.what === "project") {
++    const ids = SONG_IDS(job.from), dsts = SONG_IDS(job.to);
++    total = ids.reduce((n, id) => n + 2 * (sm.byId.get(id)?.size || 0), 0) + 3 * IDX.SIZE;
++    for (let k = 0; k < 4; k++) plan.push([dsts[k], await getObject(src, sm.byId.get(ids[k]), (n) => tick(n, "read"))]);
++    const sIdx = await getObject(src, sm.byId.get(10), (n) => tick(n, "read"));
++    const dm = await list(dst);
++    const dIdx = await getObject(dst, dm.byId.get(10), (n) => tick(n, "read"));
++    plan.push([10, mergeIndex(dIdx, job.to, sIdx, job.from)]);   // (the rows last: they name the sections)
++  } else if (job.what === "preset") {
++    const sb = 6 + (job.from >> 4), db = 6 + (job.to >> 4);
++    total = 4 * (UP.BANK + UPF.SIZE);
++    const sBank = await getObject(src, sm.byId.get(sb), (n) => tick(n, "read"));
++    const sUpf = await getObject(src, sm.byId.get(9), (n) => tick(n, "read"));
++    const rec = bankOk(sBank) ? sBank.subarray(8 + (job.from & 15) * UP.REC, 8 + ((job.from & 15) + 1) * UP.REC) : null;
++    if (!rec || !presetOf(rec)) throw new XferError("emptySlot", `${job.from + 1}`);
++    const dm = await list(dst);
++    let dBank = await getObject(dst, dm.byId.get(db), (n) => tick(n, "read"));
++    let dUpf = await getObject(dst, dm.byId.get(9), (n) => tick(n, "read"));
++    dBank = bankOk(dBank) ? dBank.slice() : emptyBank();
++    dUpf = upfOk(dUpf) ? dUpf.slice() : emptyUpf();
++    dBank.set(rec, 8 + (job.to & 15) * UP.REC);
++    const sUsed = upfOk(sUpf) ? le32(sUpf, 8) : 0, has = (sUsed >>> job.from) & 1;
++    const at = 16 + job.to * UPF.ENT;
++    if (has) dUpf.set(sUpf.subarray(16 + job.from * UPF.ENT, 16 + (job.from + 1) * UPF.ENT), at);
++    else dUpf.fill(0, at, at + UPF.ENT);
++    put32(dUpf, 8, has ? le32(dUpf, 8) | (1 << job.to) : le32(dUpf, 8) & ~(1 << job.to));
++    plan.push([db, dBank], [9, dUpf]);                 // (the record first, its patch second: up_store's order)
++  } else if (job.what === "all") {
++    const ids = [6, 7, 9, 10, ...Array.from({ length: 24 }, (_, i) => 40 + i)];
++    if (job.settings) ids.push(1);
++    if (job.live !== false) ids.push(0);               // (the music playing: RAM only, last)
++    total = ids.reduce((n, id) => n + 2 * (sm.byId.get(id)?.size || 0), 0);
++    for (const id of ids) plan.push([id, await getObject(src, sm.byId.get(id), (n) => tick(n, "read"))]);
++  } else throw new XferError("badJob", String(job.what));
++  return writePlan(dst, plan, tick);
++}
++
++/* the plan's objects into dst, then a LIST: each stored object's size and CRC as sent (ids 0 and 1 are not stored as
++ * sent: the music playing is re-packed, the settings re-exported; the device checked them at the commit) */
++async function writePlan(dst, plan, tick) {
++  const written = [], refused = [];
++  try {
++    for (const [id, bytes] of plan) {
++      const r = await putObject(dst, id, bytes, (n) => tick(n, "write"));
++      if (r.refused) { refused.push(id); tick(bytes.length, "write"); } else written.push(id);
++    }
++  } catch (e) {
++    const pending = plan.map(([id]) => id).filter((id) => !written.includes(id) && !refused.includes(id));
++    if (!written.length) throw isLink(e) ? new XferError("lost", e.message, { written, pending, cause: e }) : e;
++    throw new XferError("partial", e.code || e.message, { written, pending, cause: e, lost: isLink(e) });
++  }
++  tick(0, "verify");
++  const m = await list(dst), verified = [], bad = [];
++  for (const [id, bytes] of plan) {
++    if (!written.includes(id)) continue;
++    if (id === 0 || id === 1) { verified.push(id); continue; }
++    const o = m.byId.get(id);
++    if (o && o.size === bytes.length && o.crc === bkCrc(bytes)) { verified.push(id); continue; }
++    /* the song index: the device keeps its own current song (cur, byte 5) through a restore, and the running device
++     * stamps its LOOP / SONG mode into the current song's rows (rsv[2], SONG_MODE_TAG): read back, compared without
++     * those bytes */
++    if (id === 10 && o && o.size === bytes.length) {
++      const back = await getObject(dst, o), a = back.slice(), b = bytes.slice();
++      for (const k of [5, ...Array.from({ length: 8 }, (_, s) => 8 + s * IDX.ROW + 3)]) a[k] = b[k] = 0;
++      if (a.every((v, i) => v === b[i])) { verified.push(id); continue; }
++    }
++    bad.push(id);
++  }
++  if (bad.length) throw new XferError("verify", bad.join(", "), { written, pending: [], bad });
++  return { written, verified, refused };
++}
++
++/* a whole backup file (fm1backup.js readBackup: any archive the editor restores, 8-song ones too) into a side, as
++ * the editor restores it (the songs, the presets, then the settings when asked, the live music last), each object
++ * verified. Ids the side does not take (an 8-song archive's songs 7, 8; the retired bank 8) are left out and said */
++export async function restoreFile(dst, file, opt = {}, onProgress = () => {}) {
++  const archive = readBackup(file);
++  const by = new Map(archive.objects.map((o) => [o.id, o]));
++  const ids = archive.objects.map((o) => o.id).filter((id) => id >= 6 && id !== 8);
++  if (opt.settings) ids.push(1);
++  if (opt.live !== false) ids.push(0);
++  const plan = ids.map((id) => [id, by.get(id).bytes]);
++  let done = 0;
++  const total = plan.reduce((n, [, b]) => n + b.length, 0);
++  const r = await writePlan(dst, plan, (n) => { done += n; onProgress(Math.min(done, total), total, "write"); });
++  return { ...r, archive, songsLeft: songsNotRestored(r.refused.filter((id) => by.get(id).size)) };   // (with data only)
++}
++
++/* a side's complete backup file: exactly what the installer's and the editor's "Back up" write (captureBackup) */
++export async function backupFile(side, onProgress) {
++  return captureBackup((r, o) => side.request(r, o), side.version || "", onProgress);
++}
++export const backupName = (who, d = new Date()) => `JIANT-${who === "emu" ? "emu-" : ""}backup-${d.toISOString().slice(0, 10)}.json`;
++/* the objects a job will overwrite on dst that hold something, for the question before writing */
++export function overwrites(dstCat, job) {
++  if (job.what === "project") return dstCat.songs[job.to].used ? [{ kind: "project", n: job.to, name: dstCat.songs[job.to].name }] : [];
++  if (job.what === "preset") return dstCat.presets[job.to] ? [{ kind: "preset", n: job.to, name: dstCat.presets[job.to].name }] : [];
++  return [...dstCat.songs.filter((s) => s.used).map((s) => ({ kind: "project", n: s.n, name: s.name })),
++          ...dstCat.presets.map((p, n) => p && { kind: "preset", n, name: p.name }).filter(Boolean)];
++}
++/* the ids of a "partial" error as the person reads them: "PROJECT 3 sections A, B", "the song rows", "preset bank" */
++export function describeIds(ids) {
++  const out = [];
++  const secs = new Map();
++  for (const id of ids) {
++    if (id >= 40 && id < 64) { const s = (id - 40) >> 2; secs.set(s, (secs.get(s) || "") + SECTION[(id - 40) & 3]); }
++    else out.push({ 0: "live", 1: "settings", 6: "bank1", 7: "bank2", 9: "patches", 10: "rows" }[id] || `#${id}`);
++  }
++  return [...[...secs].map(([s, k]) => ({ song: s, sections: k })), ...out];
++}
+diff --git a/web/emu/transfer_test.mjs b/web/emu/transfer_test.mjs
+new file mode 100644
+index 0000000..226c55b
+--- /dev/null
++++ b/web/emu/transfer_test.mjs
+@@ -0,0 +1,258 @@
++// SPDX-License-Identifier: GPL-3.0-only
++// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
++// (emu-transfer) The emulator <-> FM-1 transfers (web/emu/transfer.js) against a mocked Web MIDI FM-1 (fm1mock.mjs):
++//   node web/emu/transfer_test.mjs                          the protocol model on both sides (no build needed)
++//   node web/emu/transfer_test.mjs build/emu/felucca.wasm   then the firmware itself on both sides (the emulator's
++//                                                           wasm, and a second instance as the FM-1 behind the mock)
++// Checks: detection (version, USB / Bluetooth), the refusals of an older firmware, a project (sections and the index's
++// part of that song only), a user preset (its bank record and its FM6 patch entry), everything, the verify after
++// writing, the overwrite list asked about first, a cable pulled mid-transfer (said: which objects are new, which old;
++// RETRY finishes it), a backup file of the emulator read by the editor's / installer's reader and restored byte-exact.
++import fs from "fs";
++import * as X from "./transfer.js";
++import { jsDevice, wasmDevice, midiAccess, BACKUP_IDS_8 } from "./fm1mock.mjs";
++import { edServe, edVersion } from "./worklet.js";
++
++let fails = 0;
++const check = (what, ok) => { console.log(`transfer: ${what.padEnd(84)} ${ok ? "ok" : "FAIL"}`); if (!ok) fails++; };
++const same = (a, b) => !!a && !!b && a.length === b.length && a.every((v, i) => v === b[i]);
++const rejects = async (p) => { try { await p; return null; } catch (e) { return e; } };
++
++// ---------------------------------------------------------------------------------------------- made-up contents
++const rnd = (n, seed) => Uint8Array.from({ length: n }, (_, i) => (i * 131 + seed * 17 + (i >> 3)) & 255);
++const le = (b, o, v) => { b[o] = v & 255; b[o + 1] = v >> 8 & 255; b[o + 2] = v >> 16 & 255; b[o + 3] = v >>> 24 & 255; };
++function section(seed, name) {
++  const b = rnd(3840, seed);
++  b.fill(0, 3824, 3836);
++  for (let i = 0; i < name.length; i++) b[3824 + i] = name.charCodeAt(i);
++  return b;
++}
++function index(seed) {
++  const b = rnd(X.IDX.SIZE, seed); le(b, 0, X.IDX.MAGIC); b[4] = 4; b[5] = 0; return b;
++}
++function record(name, engine = 0) {
++  const r = new Uint8Array(192); r[0] = 0xA5; r[1] = 4; r[2] = engine; r[3] = 99;
++  for (let i = 0; i < name.length; i++) r[4 + i] = name.charCodeAt(i);
++  for (let i = 16; i < 192; i++) r[i] = (i * 7 + name.length) % 120;
++  return r;
++}
++function bank(recs) { const b = X.emptyBank(); for (const [k, r] of recs) b.set(r, 8 + k * 192); return b; }
++function upf(ents) { const b = X.emptyUpf(); let used = 0; for (const [k, seed] of ents) { b.set(rnd(116, seed), 16 + k * 116); used |= 1 << k; } le(b, 8, used); return b; }
++
++function emuContent() {   /* the emulator's: PROJECT 1 (A, B, D), PROJECT 2 (A); presets 1 (an FM6 one with its patch), 5 */
++  return new Map([[0, rnd(3840, 1)], [1, rnd(572, 2)], [10, index(3)],
++    [40, section(4, "MY SONG")], [41, section(5, "")], [43, section(6, "")], [44, section(7, "SECOND")],
++    [6, bank([[0, record("PAD ONE", 12)], [4, record("BASS 5", 0)]])], [9, upf([[0, 9]])]]);
++}
++function fm1Content() {   /* the FM-1's: PROJECT 3 (A..D), presets 20, 21; another index */
++  return new Map([[0, rnd(3840, 11)], [1, rnd(572, 12)], [10, index(13)],
++    [48, section(14, "OLD THREE")], [49, section(15, "")], [50, section(16, "")], [51, section(17, "")],
++    [7, bank([[3, record("KEEP 20", 3)], [4, record("OLD 21", 5)]])], [9, upf([[20, 18]])]]);
++}
++const jsSide = (d, kind = "emu") => ({ kind, version: "JIANT V10.7.36", slow: 1, request: async ([cmd, a]) => {
++  const r = d.handle(cmd, a); if (!r) throw new Error("Backup timed out"); return r; } });
++
++// ---------------------------------------------------------------------------------------------- the protocol model
++async function modelTests() {
++  { /* detection: the FM-1 over USB; a Bluetooth port marked */
++    const dev = jsDevice(fm1Content()), acc = midiAccess(dev);
++    const c = await X.connectFM1(acc);
++    check(`detect: the FM-1 over USB answers INFO (${c.info.version}, backup caps ${c.info.backupCaps})`, c.info.jiant && c.info.backupCaps === 3 && !c.bluetooth && c.info.version === "JIANT V10.7.36");
++    c.link.close();
++    const bt = await X.connectFM1(midiAccess(jsDevice(fm1Content()), { name: "FM-1 Bluetooth" }));
++    check("detect: a port paired over Bluetooth is marked (EXPERIMENTAL) and gets longer waits", bt.bluetooth && bt.side.slow > 1);
++    bt.link.close();
++    const none = await rejects(X.connectFM1({ inputs: new Map(), outputs: new Map() }));
++    check("detect: no FM-1 -> notfound", none?.code === "notfound");
++    const order = X.candidatePorts({ inputs: new Map([["a", { name: "IAC Driver Bus 1", state: "connected" }], ["b", { name: "USB MIDI Interface", state: "connected" }], ["c", { name: "FM-1", state: "connected" }]]),
++                                     outputs: new Map([["a", { name: "IAC Driver Bus 1", state: "connected" }], ["b", { name: "USB MIDI Interface", state: "connected" }], ["c", { name: "FM-1", state: "connected" }]]) });
++    check("detect: virtual ports never probed, the FM-1's own port first", order.length === 2 && order[0].name === "FM-1");
++  }
++  { /* older firmware: refused with the reason, before anything is read or written */
++    const emu = jsSide(jsDevice(emuContent())), em = await X.list(emu);
++    const cases = [
++      ["not JIANT (no backup restore)", { info: { version: "FELUCCA 1.0.2", jiant: false, backupCaps: 1 } }, "fwOld"],
++      ["JIANT with 8 songs (before V10.6p, 43 objects)", { ids: BACKUP_IDS_8 }, "fwOld"],
++      ["an older project format (its live music 3744 bytes, FUNA)", { small: true }, "fwOldFormat"]];
++    for (const [what, o, code] of cases) {
++      const content = fm1Content();
++      if (o.small) content.set(0, rnd(3744, 1));
++      const dev = jsDevice(content, o), c = await X.connectFM1(midiAccess(dev));
++      const fl = await X.list(c.side), e = X.compat(c.info, fl, em, "to", "project");
++      check(`old firmware: ${what} -> ${code}`, e?.code === code && dev.log.length === 0);
++      c.link.close();
++    }
++    const content = fm1Content(); content.set(0, rnd(3744, 1));
++    const c = await X.connectFM1(midiAccess(jsDevice(content)));
++    check("old firmware: a user preset still goes to a FUNA FM-1 (the records' layout is the same)", !X.compat(c.info, await X.list(c.side), em, "to", "preset"));
++    const olderEmu = emuContent(); olderEmu.set(0, rnd(3744, 1));
++    const em2 = await X.list(jsSide(jsDevice(olderEmu))), c2 = await X.connectFM1(midiAccess(jsDevice(fm1Content())));
++    check("a newer FM-1 than the emulator: GET FROM FM-1 refused (the emulator would not read it) -> emuOld", X.compat(c2.info, await X.list(c2.side), em2, "from", "project")?.code === "emuOld");
++    c.link.close(); c2.link.close();
++  }
++  { /* catalogs and the question before overwriting */
++    const emu = jsSide(jsDevice(emuContent())), dev = jsDevice(fm1Content()), c = await X.connectFM1(midiAccess(dev));
++    const ec = await X.catalog(emu, ["ANALOG"]), fc = await X.catalog(c.side, ["ANALOG"]);
++    check(`catalog: the emulator's PROJECT 1 "${ec.songs[0].name}" A B - D, PROJECT 2, presets 1 and 5`,
++          ec.songs[0].name === "MY SONG" && ec.songs[0].stored.join() === "true,true,false,true" && ec.songs[1].name === "SECOND" &&
++          !ec.songs[2].used && ec.presets[0]?.name === "PAD ONE" && ec.presets[4]?.name === "BASS 5" && !ec.presets[1]);
++    check(`catalog: the FM-1's PROJECT 3 "${fc.songs[2].name}", presets 20 "${fc.presets[19]?.name}" and 21`, fc.songs[2].name === "OLD THREE" && fc.presets[19]?.name === "KEEP 20" && fc.presets[20]?.name === "OLD 21");
++    const ow = X.overwrites(fc, { what: "project", to: 2 }), none = X.overwrites(fc, { what: "project", to: 3 });
++    check("overwrite: PROJECT 3 on the FM-1 is asked about (its name), an empty PROJECT 4 is not", ow.length === 1 && ow[0].name === "OLD THREE" && none.length === 0);
++    check("overwrite: preset 21 asked about; everything lists every stored project and preset", X.overwrites(fc, { what: "preset", to: 20 }).length === 1 &&
++          X.overwrites(fc, { what: "all" }).length === 3);
++    c.link.close();
++  }
++  { /* a project: PROJECT 1 of the emulator to PROJECT 3 of the FM-1 */
++    const ed = jsDevice(emuContent()), emu = jsSide(ed), dev = jsDevice(fm1Content()), c = await X.connectFM1(midiAccess(dev));
++    const before = dev.objs.get(10).slice(), steps = [];
++    const r = await X.transfer(emu, c.side, { what: "project", from: 0, to: 2 }, (d, t) => steps.push([d, t]));
++    const idx = dev.objs.get(10), src = ed.objs.get(10);
++    const part = (b, s) => [[8, 36], [296, 128], [1320, 64], [1832, 64]].map(([o, n]) => Array.from(b.subarray(o + s * n, o + (s + 1) * n)).join()).join("|");
++    let othersKept = true;
++    for (const s of [0, 1, 3, 4, 5, 6, 7]) othersKept &&= part(idx, s) === part(before, s);
++    check("project: sections A B D sent, C emptied (the slot as the emulator has it)", same(dev.objs.get(48), ed.objs.get(40)) && same(dev.objs.get(49), ed.objs.get(41)) &&
++          dev.objs.get(50).length === 0 && same(dev.objs.get(51), ed.objs.get(43)));
++    check("project: the index has PROJECT 3's rows, scenes, sources, variations from PROJECT 1; every other song's kept", part(idx, 2) === part(src, 0) && othersKept && idx[5] === before[5]);
++    check(`project: verified (${r.verified.length} objects), the rows written last, progress to 100 %`, r.verified.length === 5 && dev.log.at(-1) === 10 && steps.at(-1)[0] === steps.at(-1)[1]);
++    check("project: the FM-1's other objects untouched (live music, settings, presets)", same(dev.objs.get(0), fm1Content().get(0)) && same(dev.objs.get(1), fm1Content().get(1)) && same(dev.objs.get(7), fm1Content().get(7)));
++    c.link.close();
++  }
++  { /* a preset: emulator 1 (FM6, a patch) to FM-1 21 (over "OLD 21"), then 5 (no patch) to 22 */
++    const ed = jsDevice(emuContent()), emu = jsSide(ed), dev = jsDevice(fm1Content()), c = await X.connectFM1(midiAccess(dev));
++    await X.transfer(emu, c.side, { what: "preset", from: 0, to: 20 });
++    const b7 = dev.objs.get(7), u = dev.objs.get(9), used = (u[8] | u[9] << 8 | u[10] << 16 | u[11] << 24) >>> 0;
++    check("preset: the record into bank 2's slot 5 (21), slot 20 kept", same(b7.subarray(8 + 4 * 192, 8 + 5 * 192), ed.objs.get(6).subarray(8, 200)) &&
++          same(b7.subarray(8 + 3 * 192, 8 + 4 * 192), record("KEEP 20", 3)));
++    check("preset: its FM6 patch entry to 21, 20's patch kept, the used bits", same(u.subarray(16 + 20 * 116, 16 + 21 * 116), ed.objs.get(9).subarray(16, 132)) && (used >>> 20 & 1) && dev.log.slice(-2).join() === "7,9");
++    await X.transfer(emu, c.side, { what: "preset", from: 4, to: 21 });
++    const u2 = dev.objs.get(9), used2 = (u2[8] | u2[9] << 8 | u2[10] << 16 | u2[11] << 24) >>> 0;
++    check("preset: one without a patch clears the slot's entry", !(used2 >>> 21 & 1) && u2.subarray(16 + 21 * 116, 16 + 22 * 116).every((v) => !v) && (used2 >>> 20 & 1));
++    const e = await rejects(X.transfer(emu, c.side, { what: "preset", from: 2, to: 0 }));
++    check("preset: an empty slot is not sent (emptySlot), nothing written", e?.code === "emptySlot");
++    const fresh = jsDevice(new Map([[0, rnd(3840, 1)], [1, rnd(572, 2)], [10, index(3)]])), c2 = await X.connectFM1(midiAccess(fresh));
++    await X.transfer(emu, c2.side, { what: "preset", from: 0, to: 1 });
++    check("preset: onto an FM-1 with no presets yet: a new bank and patch table made", fresh.objs.get(6).length === 3080 && fresh.objs.get(9).length === 3728);
++    c.link.close(); c2.link.close();
++  }
++  { /* everything, the settings only when asked */
++    const ed = jsDevice(emuContent()), emu = jsSide(ed), dev = jsDevice(fm1Content()), c = await X.connectFM1(midiAccess(dev));
++    const r = await X.transfer(emu, c.side, { what: "all" });
++    let songs = true;
++    for (let id = 40; id < 64; id++) songs &&= same(dev.objs.get(id) || new Uint8Array(0), ed.objs.get(id) || new Uint8Array(0));
++    check(`everything: every song, the index, presets, patches, the live music (${r.verified.length} verified)`, songs && same(dev.objs.get(10), ed.objs.get(10)) &&
++          same(dev.objs.get(6), ed.objs.get(6)) && dev.objs.get(7).length === 0 && same(dev.objs.get(0), ed.objs.get(0)));
++    check("everything: the FM-1's settings kept (its calibration), unless asked", same(dev.objs.get(1), fm1Content().get(1)));
++    await X.transfer(emu, c.side, { what: "all", settings: true });
++    check("everything + settings: the settings sent too", same(dev.objs.get(1), ed.objs.get(1)));
++    c.link.close();
++  }
++  { /* the cable pulled during a project: said, which sections are new; RETRY finishes it */
++    const ed = jsDevice(emuContent()), emu = jsSide(ed), dev = jsDevice(fm1Content());
++    const acc = midiAccess(dev, { pullAfter: 20 }), c = await X.connectFM1(acc);
++    const e = await rejects(X.transfer(emu, c.side, { what: "project", from: 0, to: 2 }));
++    const parts = X.describeIds(e?.written || []);
++    check(`dropped: "partial" (new: ${JSON.stringify(parts)}; still old: ${X.describeIds(e?.pending || []).map((p) => p.sections || p).join(" ")})`,
++          e?.code === "partial" && e.lost && e.written.length >= 1 && e.pending.includes(10) && parts[0]?.song === 2);
++    check("dropped: the half-sent section was never committed (the device writes at the commit only)", !dev.log.includes(e.pending[0]) && same(dev.objs.get(51), fm1Content().get(51)));
++    c.link.close();
++    acc.plug();
++    const c2 = await X.connectFM1(acc), r = await X.transfer(emu, c2.side, { what: "project", from: 0, to: 2 });
++    check("dropped: RETRY after plugging in again finishes it, verified", r.verified.length === 5 && same(dev.objs.get(51), ed.objs.get(43)));
++    c2.link.close();
++    const dev2 = jsDevice(fm1Content()), acc2 = midiAccess(dev2, { pullAfter: 3 }), c3 = await X.connectFM1(acc2);
++    const e2 = await rejects(X.transfer(emu, c3.side, { what: "project", from: 0, to: 2 }));
++    check("dropped before the first commit: \"lost\", nothing changed on the FM-1", e2?.code === "lost" && dev2.log.length === 0);
++    c3.link.close();
++  }
++  { /* a reply lost once: the read is asked again; a write is not (aborted, said) */
++    const ed = jsDevice(emuContent()), emu = jsSide(ed), dev = jsDevice(fm1Content());
++    let lost = 0;
++    const c = await X.connectFM1(midiAccess(dev, { loseReply: (cmd, a) => cmd === 66 && a[0] === 10 && !lost++ }));
++    const r = await X.transfer(emu, c.side, { what: "project", from: 0, to: 3 });
++    check("a lost GET reply is retried, the transfer completes", r.verified.length === 5 && lost >= 1);
++    c.link.close();
++  }
++  { /* verify catches a device that stored something else */
++    const ed = jsDevice(emuContent()), emu = jsSide(ed), dev = jsDevice(fm1Content());
++    const h = dev.handle; dev.handle = (cmd, a) => { const r = h(cmd, a); if (cmd === 67 && a[0] === 2 && a[1] === 41) dev.objs.get(41)[7] ^= 1; return r; };
++    const c = await X.connectFM1(midiAccess(dev)), e = await rejects(X.transfer(emu, c.side, { what: "project", from: 0, to: 0 }));
++    check("verify: an object read back with another CRC -> \"verify\" naming it", e?.code === "verify" && e.bad?.includes(41));
++    c.link.close();
++  }
++  { /* the emulator's backup file: the installer's / editor's reader takes it; import round trip byte-exact */
++    const ed = jsDevice(emuContent()), emu = jsSide(ed);
++    const file = await X.backupFile(emu), text = JSON.stringify(file), back = X.readBackup(text);
++    check(`backup file: "${file.format}" v${file.version}, ${file.objects.length} objects, readBackup (the editor's restore) takes it`, back.objects.length === 35 && file.format === "felucca-backup");
++    const ed2 = jsDevice(new Map([[0, rnd(3840, 30)], [1, rnd(572, 31)], [10, index(32)]])), emu2 = jsSide(ed2);
++    const r = await X.restoreFile(emu2, text, { settings: true });
++    const again = await X.backupFile(emu2);
++    check(`import: the file into another emulator, every object byte-exact (${r.verified.length} verified)`, again.objects.every((o, i) => o.data === file.objects[i].data));
++    const old = { ...file, objects: [...file.objects, ...Array.from({ length: 8 }, (_, i) => ({ id: 64 + i, size: 0, crc: 0, data: "" }))] };
++    old.objects[old.objects.length - 1] = { id: 71, size: 3, crc: X.bkCrc(Uint8Array.of(1, 2, 3)), data: "AQID" };
++    const r8 = await X.restoreFile(jsSide(jsDevice(new Map())), old);
++    check(`import: an 8-song backup (before V10.6p): song 8 refused and said (${r8.songsLeft})`, r8.songsLeft.join() === "8");
++  }
++}
++
++// ---------------------------------------------------------------------------------------------- the firmware itself
++async function wasmTests(path) {
++  const bytes = fs.readFileSync(path);
++  const boot = async (seed) => {
++    const { instance } = await WebAssembly.instantiate(bytes, {});
++    const ex = instance.exports; ex._initialize(); ex.web_nor_erase(); ex.web_master(700); ex.web_seed(seed); ex.web_boot();
++    for (let i = 0; i < 12; i++) ex.web_render(1024);
++    return ex;
++  };
++  const emuEx = await boot(7), fmEx = await boot(8);
++  if (!emuEx.web_ed) { check("the wasm has the backup commands (web_ed: transfer-api.h)", false); return; }
++  emuEx.web_gen(6, 11, 60, 2);                           // a piece: TECHNO, FORM CLUB (sections and rows)
++  for (let i = 0; i < 30; i++) emuEx.web_render(1024);
++  const emu = X.emuSideFromExports(emuEx, edServe, edVersion(emuEx));
++  const acc = midiAccess(wasmDevice(fmEx, edServe, "JIANT " + edVersion(fmEx)));
++  const c = await X.connectFM1(acc);
++  const em = await X.list(emu), fl = await X.list(c.side);
++  check(`wasm: the emulator (${emu.version}) lists 35 objects, the FM-1 (${c.info.version}) too, same format`, em.length === 35 && fl.length === 35 && !X.compat(c.info, fl, em, "to", "all"));
++  const ec = await X.catalog(emu);
++  check(`wasm: the generator's piece is PROJECT 1 (sections ${ec.songs[0].stored.map((v, i) => v ? "ABCD"[i] : "-").join("")})`, ec.songs[0].used);
++  const r = await X.transfer(emu, c.side, { what: "project", from: 0, to: 2 });
++  const fm = await X.list(c.side), eml = await X.list(emu);
++  let eq = true;
++  for (let k = 0; k < 4; k++) eq &&= fm.byId.get(48 + k).crc === eml.byId.get(40 + k).crc && fm.byId.get(48 + k).size === eml.byId.get(40 + k).size;
++  check(`wasm: PROJECT 1 -> the FM-1's PROJECT 3, the firmware took and verified it (${r.verified.length})`, eq && r.verified.includes(10));
++  check("wasm: the FM-1 opens PROJECT 3 with the song's rows", fmEx.web_song_select(2) === 0 && (fmEx.web_render(4096), fmEx.web_song_rows() === emuEx.web_song_rows()) && fmEx.web_song_rows() >= 2);
++  /* a user preset made in the emulator (a record of the firmware's layout, PUT as the editor's restore would) */
++  const rec = record("WASM PAD", 0); rec[1] = 4; rec[3] = 99;
++  for (let i = 16; i < 16 + 99; i++) rec[i] = 64;
++  await X.putObject(emu, 6, bank([[2, rec]]));
++  check("wasm: a user preset in the emulator's slot 3", emuEx.web_test_user_preset(2) === 1);
++  await X.transfer(emu, c.side, { what: "preset", from: 2, to: 19 });
++  check("wasm: -> the FM-1's slot 20 (its firmware validates the bank), verified", fmEx.web_test_user_preset(19) === 1 && !fmEx.web_test_user_preset(2));
++  /* GET FROM FM-1: its PROJECT 3 into the emulator's PROJECT 5 */
++  const r2 = await X.transfer(c.side, emu, { what: "project", from: 2, to: 4 });
++  check("wasm: GET FROM FM-1: PROJECT 3 into the emulator's PROJECT 5, verified", r2.verified.length === 5);
++  /* everything, then the file round trip on the firmware */
++  const r3 = await X.transfer(emu, c.side, { what: "all" });
++  check(`wasm: everything to the FM-1 (${r3.verified.length} objects verified)`, r3.verified.length >= 5);
++  const file = await X.backupFile(emu), text = JSON.stringify(file);
++  check(`wasm: DOWNLOAD BACKUP: ${file.objects.length} objects, the editor's reader takes it`, X.readBackup(text).objects.length === 35);
++  const fresh = await boot(9), side2 = X.emuSideFromExports(fresh, edServe, edVersion(fresh));
++  await X.restoreFile(side2, text, { settings: true });
++  const again = await X.backupFile(side2);
++  const stored = (o) => o.id >= 2;                       // (0 the music re-packed, 1 the settings re-exported)
++  const diff = again.objects.filter((o, i) => stored(o) && o.data !== file.objects[i].data).map((o) => o.id);
++  check(`wasm: IMPORT BACKUP into a fresh emulator: every stored object byte-exact${diff.length ? " (differ: " + diff + ")" : ""}`, !diff.length);
++  check("wasm: and its settings and live music taken (sizes as the file's)", again.objects[1].size === file.objects[1].size && again.objects[0].size === file.objects[0].size);
++  /* playing: a LIST stops it first (the firmware's ed_flash_stop, run by the emulator's own clock) */
++  emuEx.web_play(1); for (let i = 0; i < 8; i++) emuEx.web_render(1024);
++  const playing = emuEx.web_playing();
++  await X.list(emu);
++  check("wasm: the emulator playing: LIST stops it and answers", playing && !emuEx.web_playing());
++  c.link.close();
++}
++
++await modelTests();
++if (process.argv[2]) await wasmTests(process.argv[2]);
++else console.log("transfer: (no felucca.wasm given: the firmware-on-both-sides checks skipped)");
++console.log(fails ? `TRANSFER TESTS FAILED (${fails})` : "transfer: all ok");
++process.exit(fails ? 1 : 0);
+diff --git a/web/emu/worklet.js b/web/emu/worklet.js
+index 6c5f830..f2c588c 100644
+--- a/web/emu/worklet.js
++++ b/web/emu/worklet.js
+@@ -28,6 +28,22 @@ export function restoreSectors(nor, sectors) {
+ 
+ export const HOLD_MS = 24;
+ 
++/* (emu-transfer) the editor's backup commands into the emulator (web/emu/transfer-api.h: the firmware's
++ * editor_backup.c): a request [cmd, ...args] (7-bit bytes) in, the device's reply [...] out, null when it sends none.
++ * The page's transfer panel (transfer.js) talks to it over a MessagePort of its own ("edport"), so the page's
++ * own messages stay as they are. A flash write goes out with the next frame's sectors, as a save from the panel does. */
++export function edServe(ex, req) {
++  if (!ex.web_ed || !Array.isArray(req) || !req.length || req.length > 400) return null;
++  new Uint8Array(ex.memory.buffer, ex.web_ed_buf(), req.length).set(req.map((v) => v & 255));
++  const n = ex.web_ed(req.length);
++  return n ? Array.from(new Uint8Array(ex.memory.buffer, ex.web_ed_reply(), n)) : null;
++}
++export function edVersion(ex) {
++  if (!ex.web_version) return "";
++  const m = new Uint8Array(ex.memory.buffer, ex.web_version(), 64), z = m.indexOf(0);
++  return String.fromCharCode(...m.subarray(0, z < 0 ? 64 : z));
++}
++
+ if (typeof registerProcessor === "function") {
+   const clock = globalThis.performance ? () => globalThis.performance.now() : () => Date.now();
+   class Felucca extends AudioWorkletProcessor {
+@@ -86,6 +102,17 @@ if (typeof registerProcessor === "function") {
+       else if (m.type === "master") ex.web_master(m.value | 0);
+       else if (m.type === "midi") ex.web_midi(m.data[0] | 0, m.data[1] | 0, m.data[2] | 0);
+       else if (m.type === "visible") this.period = m.on ? 1 / 30 : 1 / 4;
++      else if (m.type === "edport" && m.port) {        // (emu-transfer) the transfer panel's channel
++        const port = m.port;
++        port.onmessage = (e) => {
++          const q = e.data || {}, x = this.ex;
++          let reply = null, error = "";
++          try { reply = x ? edServe(x, q.req) : null; } catch (err) { error = String(err && err.message || err); }
++          port.postMessage({ seq: q.seq, reply, error, version: x ? edVersion(x) : "" });
++          if (x) this.sentDraws = -1;                   // (the screen after a restore, at once)
++        };
++        port.postMessage({ seq: 0, reply: null, version: edVersion(ex) });
++      }
+     }
+ 
+     publish() {

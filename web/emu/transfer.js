@@ -23,6 +23,8 @@ export const { BACKUP_CMD, BACKUP_IDS, bkU32, bkR32, bkPack, bkUnpack, bkCrc, bk
                BackupConnection, songsNotRestored } = BK;
 
 export const NSONG = 6, NPRESET = 32, CHUNK = 256;
+/* the engines by number (EDITOR_PROTOCOL.md "engine byte"), when no INFO names them (the emulator alone) */
+export const ENGINES = ["ANALOG", "-", "PHASE", "LOFI", "SAMPLE", "VOICE", "TRIO", "WHEEL", "STRING", "-", "DRUM", "WEST", "FM6", "ADD", "ANIMAL", "INPUT"];
 export const SONG_IDS = (s) => [40 + 4 * s, 41 + 4 * s, 42 + 4 * s, 43 + 4 * s];
 const SECTION = "ABCD";
 
@@ -328,16 +330,19 @@ async function writePlan(dst, plan, tick) {
     if (!written.length) throw isLink(e) ? new XferError("lost", e.message, { written, pending, cause: e }) : e;
     throw new XferError("partial", e.code || e.message, { written, pending, cause: e, lost: isLink(e) });
   }
+  tick(0, "verify");
   const m = await list(dst), verified = [], bad = [];
   for (const [id, bytes] of plan) {
     if (!written.includes(id)) continue;
     if (id === 0 || id === 1) { verified.push(id); continue; }
     const o = m.byId.get(id);
     if (o && o.size === bytes.length && o.crc === bkCrc(bytes)) { verified.push(id); continue; }
-    /* the song index: the device keeps its own current song (cur, byte 5) through a restore: read back, compared
-     * without that byte */
+    /* the song index: the device keeps its own current song (cur, byte 5) through a restore, and the running device
+     * stamps its LOOP / SONG mode into the current song's rows (rsv[2], SONG_MODE_TAG): read back, compared without
+     * those bytes */
     if (id === 10 && o && o.size === bytes.length) {
-      const back = await getObject(dst, o), a = back.slice(), b = bytes.slice(); a[5] = b[5] = 0;
+      const back = await getObject(dst, o), a = back.slice(), b = bytes.slice();
+      for (const k of [5, ...Array.from({ length: 8 }, (_, s) => 8 + s * IDX.ROW + 3)]) a[k] = b[k] = 0;
       if (a.every((v, i) => v === b[i])) { verified.push(id); continue; }
     }
     bad.push(id);

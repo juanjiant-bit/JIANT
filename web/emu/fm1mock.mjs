@@ -78,6 +78,7 @@ export function midiAccess(d, { name = "FM-1", manufacturer = "M-VAVE", pullAfte
   const input = { name, manufacturer, state: "connected", onmidimessage: null, open: async () => {} };
   const output = { name, manufacturer, state: "connected", open: async () => {} };
   let pieces = 0;
+  pullAfter ??= Infinity;
   output.send = (bytes) => {
     if (output.state === "disconnected") throw new DOMException("disconnected", "InvalidStateError");
     const b = Array.from(bytes);

@@ -9,6 +9,8 @@
  *   web_ed_buf()   the request: cmd, then its arguments (7-bit bytes, as between F0 7D 46 4C and F7)
  *   web_ed(n)      runs it; the reply's length (0: no reply, as the device sends none), the reply at web_ed_reply()
  *   web_version()  FELUCCA_VERSION, as the device's INFO names it */
+#ifndef JIANT_TRANSFER_API                 /* (appended by a site build as additive-api.h is, and #included here: once) */
+#define JIANT_TRANSFER_API 1
 enum { ED_BACKUP_LIST = 65, ED_BACKUP_GET, ED_BACKUP_PUT };
 static uint8_t web_ed_req[400], web_ed_rep[400];
 static uint32_t web_ed_n;
@@ -58,3 +60,4 @@ EXPORT uint32_t web_ed(uint32_t n)
     return web_ed_n;
 }
 EXPORT const char *web_version(void) { return FELUCCA_VERSION; }
+#endif
