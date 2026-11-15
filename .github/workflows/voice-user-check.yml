@@ -153,8 +153,8 @@ jobs:
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/vel | tee build/song-check/vel.log
           cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/vel_seq_test.c -lm -o build/song-check/vel-seq
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/vel-seq | tee build/song-check/vel-seq.log
-          cc -O1 -g -w -fsanitize=address,undefined -Ifirmware/src tests/boot_lz4_test.c -o build/song-check/boot-lz4
-          ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/boot-lz4 | tee build/song-check/boot-lz4.log
+          cc -O1 -g -w -fsanitize=address,undefined -Ifirmware/src tests/boot_lzb_test.c -o build/song-check/boot-lzb
+          ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/boot-lzb | tee build/song-check/boot-lzb.log
       - name: Verified pre-split baseline for UI regression comparison
         uses: actions/checkout@v4
         with:

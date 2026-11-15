@@ -11,7 +11,7 @@ extern uint32_t _hot_start[], _hot_end[], _hot_load[];   /* (0.6.78) core 0's ho
 extern uint32_t _low_start[], _low_end[];                /* (0.6.78) main-loop buffers below the RAM code (app.ld) */
 #endif
 extern char _etext[];                                    /* (V10.6z5) .text's end: their load images from here, */
-#include "boot_lz4.h"                                    /* packed (tools/build.py, app.ld PACKED) */
+#include "boot_lzb.h"                                    /* packed (tools/build.py, app.ld PACKED; V10.7.43: LZB) */
 
 
 /* TIMER5 outranks ALNK0, so the scan keeps its 100 us pace while a half buffer renders: before,
@@ -547,14 +547,14 @@ void fm1_cstart(void)
         *d = 0;
     for (d = _low_start; d < _low_end; d++)
         *d = 0;
-    {                                           /* (V10.6z5) unpacked, not copied (boot_lz4.h): from _etext on (the */
+    {                                           /* (V10.6z5) unpacked, not copied (boot_lzb.h): from _etext on (the */
         const uint8_t *z = (const uint8_t *)_etext;     /* image's end), one LZ4 block each, in this order (build.py) */
-        z = boot_lz4(z, (uint8_t *)_rt_start, (uint8_t *)_rt_end);     /* flash driver code that must run from RAM */
+        z = boot_lzb(z, (uint8_t *)_rt_start, (uint8_t *)_rt_end);     /* flash driver code that must run from RAM */
 #if FELUCCA_DUAL_CORE                                                  /* (0.6.71) the second core's waiting loop */
-        z = boot_lz4(z, (uint8_t *)_c1t_start, (uint8_t *)_c1t_end);   /* (hal/fm1_multicore.h; without it no block) */
+        z = boot_lzb(z, (uint8_t *)_c1t_start, (uint8_t *)_c1t_end);   /* (hal/fm1_multicore.h; without it no block) */
 #endif
-        z = boot_lz4(z, (uint8_t *)_hot_start, (uint8_t *)_hot_end);   /* (0.6.78) core 0's hottest audio code */
-        boot_lz4(z, (uint8_t *)_data_start, (uint8_t *)_data_end);
+        z = boot_lzb(z, (uint8_t *)_hot_start, (uint8_t *)_hot_end);   /* (0.6.78) core 0's hottest audio code */
+        boot_lzb(z, (uint8_t *)_data_start, (uint8_t *)_data_end);
     }
     if (pw_crumb == PW_CR_START || pw_crumb == PW_CR_SKIP)
         pw_crumb = PW_CR_SKIP;                  /* (V10.46) the last start hung here or before the UI: not again */

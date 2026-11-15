@@ -40,6 +40,11 @@
  * ends creak; nasals a quiet murmur with less presence, the tap a short dip. LANG OFF bit for bit as before. */
 #define FMT_FOLOW 30
 #include "sing.c"
+/* (V10.7.43) MODE TRACT (P_VTRACT): the tube renders instead (eng_tract.c, included below) */
+static void tract_note_on(track_t *t, voice_t *v);
+static void tract_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m);
+static void tract_mode(track_t *t);
+static const param_desc_t *tract_desc(const track_t *t, uint32_t k, const param_desc_t *d);
 #define FMT_TALK_MASK 0x01FFFFFF
 
 /* formants (Hz) of A E I O U: adult male means, Hillenbrand et al., JASA 97
@@ -229,6 +234,10 @@ static __attribute__((noinline)) int32_t fmt_glot(const int16_t *p, const voice_
 
 static void formant_note_on(track_t *t, voice_t *v)
 {
+    if (t->p[P_VTRACT]) {                               /* (V10.7.43) TRACT */
+        tract_note_on(t, v);
+        return;
+    }
     if (t->p[P_VLANG]) {                                /* WORDS: the next syllable (sing_block); a fresh voice from */
         sing_note(t);                                   /* rest (s[7] unused); (V10.40) a retrigger near silence (under
                                                          * -42 dB) too: its resonators rang the last vowel at full level
@@ -409,7 +418,11 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
     v->s[6] = lp;
 }
 
-static void formant_block(track_t *t) { sing_block(t); }   /* (LANG OFF: nothing) */
+static void formant_block(track_t *t)                  /* (LANG OFF: nothing; V10.7.43: TRACT's shape) */
+{
+    sing_block(t);
+    tract_mode(t);
+}
 /* WORDS: the release sings the coda (the last consonants) at the level the note had, not faded with the release: the
  * level at the release (s[7]) held while a timed coda phoneme sounds (a held voiced one, n l m, fades as the ADSR
  * does). LANG OFF: the ADSR as it is */
@@ -444,7 +457,7 @@ static const param_desc_t FMT_WDESC[8] = {
 static const param_desc_t *formant_desc(const track_t *t, uint32_t k)
 {
     const param_desc_t *d = &FMT_WDESC[k & 7u];
-    return t->p[P_VLANG] && d->label ? d : 0;
+    return tract_desc(t, k, t->p[P_VLANG] && d->label ? d : 0);   /* (V10.7.43: TRACT's labels) */
 }
 
 static void formant_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const vmod_t *m)
@@ -457,6 +470,10 @@ static void formant_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, con
     int32_t y1 = v->s[0], y2 = v->s[1], y3 = v->s[2], y4 = v->s[3], y5 = v->s[4], y6 = v->s[5];
     int32_t y7 = (int32_t)v->ph[1], y8 = (int32_t)v->ph[2], lp = v->s[6], nst = 0;
 
+    if (p[P_VTRACT]) {                                  /* (V10.7.43) TRACT: the tube */
+        tract_render(t, v, out, n, m);
+        return;
+    }
     if (p[P_VLANG]) {                                   /* (0.8.5) WORDS */
         formant_word_render(t, v, out, n, m);
         return;
@@ -560,6 +577,8 @@ static void formant_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, con
     v->s[6] = lp;
 }
 
+#include "eng_tract.c"          /* (V10.7.43) MODE TRACT: the tube (its presets TRACT_PRESETS) */
+
 static const preset_t FORMANT_PRESETS[] = {
     /* VOWEL VOWL2 TALK SHIFT | BUZZ BREATH Q RAND. (V10.6i, reworked in place: the stored numbers kept, PROGRAM CHANGE
      * too; browsed in VOICE_ORDER) LANG OFF: ENV / LFO -> FILTER and MOD CUT move the vowel (A E I O U), SHP the BUZZ */
@@ -596,10 +615,12 @@ static const preset_t FORMANT_PRESETS[] = {
      MODS(P_LWAVE, LW_SH, P_LRATE, -10, MMOD(1, PS_LFO, PD_SHP, 30), MMOD(2, PS_LFO, PD_PAN, 30))},   /* S&H 1/16 */
     {"WHISPER JA", {0, 64, 0, 3, 50, 120, 52, 0}, {40, 90, 110, 80}, 0, TAG(VOX), FX(0, 40, 30, 70), PAT(5), WORDS(LG_JA, 7),
      MODS(MMOD(1, PS_RAND, PD_PAN, 40), MMOD(2, PS_RAND, PD_REV, 30))},                  /* each word elsewhere */
+    TRACT_PRESETS                       /* (V10.7.43, appended: 15 ..) */
 };
 /* (V10.6i) the browsing order: to play, then the experiments, then INIT */
 static const uint8_t VOICE_ORDER[] = {0, 4, 1, 6, 2, 7, 8, 9, 10,   /* to play */
                                       11, 5, 12, 13, 14,            /* experiments */
+                                      TRACT_ORDER                   /* (V10.7.43) the tube's */
                                       3};                           /* INIT */
 _Static_assert(sizeof VOICE_ORDER == NELEM(FORMANT_PRESETS), "VOICE's browsing order: every preset once");
 

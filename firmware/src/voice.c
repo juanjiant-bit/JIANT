@@ -667,6 +667,8 @@ static uint32_t trk_nvoice(const track_t *t)
     const engine_t *e = ENGINES[t->engine];
     uint32_t c = e->poly ? e->poly : NVOICE, u = (uint32_t)t->p[P_VCAP] - 2u;   /* (every cap <= NVOICE) VOICES n: u = n - 1;
                                                          * AUTO (0, 1) wraps past any cap */
+    if (t->engine == ENGI_VOICE && t->p[P_VTRACT])        /* (V10.7.43) VOICE's TRACT: two voices (eng_tract.c) */
+        c = TR_NV;
     if (sys_load && t->engine == ENGI_FM6 && c > LITE_FM6_POLY)
         c = LITE_FM6_POLY;
     if (!e->oneshot) {

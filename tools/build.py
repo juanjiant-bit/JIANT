@@ -34,6 +34,7 @@ LDR = OUT / "loader"
 sys.path.insert(0, str(SRC / "tools"))
 import fm1pkg_make  # noqa: E402
 import lz4blk  # noqa: E402
+import lzb  # noqa: E402
 import size_fns  # noqa: E402
 
 APP_XIP = 0x02000120                # app.bin offset 0 in the XIP map; the SPL jumps here
@@ -110,6 +111,7 @@ def generate():
             [tools / "gen_tables.py", GEN / "felucca_tables.h"],
             [tools / "gen_lyrics.py", GEN / "felucca_lyrics.h"],   # (0.8.5) VOICE's words (sing.c)
             [tools / "gen_fm6_patches.py", GEN / "felucca_fm6.h"],
+            [tools / "gen_packed.py", FW / "src" / "ui_draw.c", GEN / "felucca_packed.h"],   # (V10.7.43) HELP's lines, packed
             [tools / "gen_drum_maps.py", FW / "src" / "gen_tables.c", FW / "src" / "song_dice.c", GEN / "gen_drum_maps.h",
              GEN / "dice_bars.h", GEN / "gen_bass.h"]]   # (0.9.7)
     procs = [subprocess.Popen([sys.executable, *map(str, c)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -463,7 +465,7 @@ def build_app():
         if hot:   # (JIANT 0.6.78) optimised first, then HOT_FNS put in .hot_text, then only the code generator: a
             # section attribute before the optimiser would stop it inlining anything into them (this clang inlines
             # nothing across sections), so they come out as they were, only in RAM (app.ld)
-            tc("cc", *cf, "-S", "-emit-llvm", "-c", OUT / "felucca_size.ll", "-o", OUT / "felucca_opt.ll")
+            tc("cc", *cf, "-Xclang", "-fmerge-functions", "-S", "-emit-llvm", "-c", OUT / "felucca_size.ll", "-o", OUT / "felucca_opt.ll")
             ir, n = hot_sections((OUT / "felucca_opt.ll").read_text())
             if n != len(HOT_FNS):
                 raise SystemExit(f"hot RAM code: {n} of the {len(HOT_FNS)} functions found in the IR ({HOT_FNS})")
@@ -593,9 +595,9 @@ def build_app():
     # .ram_text, .c1_text (0.6.71: the second core's loop), .hot_text (0.6.78: core 0's hot audio code) and .data follow .text at their load addresses; crt0 copies
     # them by words
     # (V10.6z5) packed: app.ld links their load images outside the flash (PACKED); here one LZ4 block each
-    # (tools/lz4blk.py compress_small), one after the other from _etext on (the end of .text), in this order; main.c
-    # fm1_cstart unpacks them into their sections (firmware/src/boot_lz4.h). Each block is unpacked here as boot_lz4
-    # does it and must give its section back byte for byte
+    # (V10.6z5..V10.7.41 LZ4), one after the other from _etext on (the end of .text), in this order; main.c
+    # fm1_cstart unpacks them into their sections; (V10.7.43) LZB blocks (tools/lzb.py, firmware/src/boot_lzb.h: ~2.8 KB
+    # less). Each block is unpacked here as boot_lzb does it and must give its section back byte for byte
     load = symv("_etext")
     if load % 4 or load - APP_XIP != len(img):
         raise SystemExit(f"_etext {load:#x}: not word aligned or not the end of .text")
@@ -606,14 +608,14 @@ def build_app():
         if len(blob) != symv(hi) - symv(lo):
             raise SystemExit(f"{sect}: {len(blob)} B, its section {lo}..{hi} {symv(hi) - symv(lo)} B")
         at = len(stream)
-        stream += lz4blk.compress_small(blob) if blob else b""
-        back, end = lz4blk.boot_unpack(bytes(stream), at, len(blob))
+        stream += lzb.pack(blob) if blob else b""
+        back, end = lzb.unpack(bytes(stream), at, len(blob))
         if back != blob or end != len(stream):
-            raise SystemExit(f"{sect}: its LZ4 block does not unpack to it (boot_lz4)")
+            raise SystemExit(f"{sect}: its LZB block does not unpack to it (boot_lzb)")
         raw_total += len(blob)
-    (OUT / "boot_lz4.bin").write_bytes(stream)   # (tests/boot_lz4_test.c unpacks it with boot_lz4.h)
+    (OUT / "boot_lzb.bin").write_bytes(stream)   # (tests/boot_lzb_test.c unpacks it with boot_lzb.h)
     img += stream
-    print(f"boot: RAM code and data {raw_total} B packed to {len(stream)} B (LZ4, unpacked by fm1_cstart)")
+    print(f"boot: RAM code and data {raw_total} B packed to {len(stream)} B (LZB, unpacked by fm1_cstart)")
     img += b"\xff" * (-len(img) % 4)
     bt_segment(img, symv)
     (OUT / "felucca.bin").write_bytes(img)

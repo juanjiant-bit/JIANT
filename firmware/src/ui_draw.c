@@ -1085,30 +1085,34 @@ static int clip_tag(char *b)
  * LIFE (253), TRACKS (254: GLO's mute and solo keys, as MIXER's; its panel shows the line too),
  * or its section's (100 + SEC_*); none: the breadcrumb. One string, the lines one after another */
 static const uint8_t HELP_K[] = {250, 251, 252, 253, 254, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
-static const char HELP_S[] =
-    "HOME+SELECT DICE  HOME+PRESETS BPM\0"
-    "HOME+PRESETS BPM  HOME+SELECT GEN\0"
-    "OCT+ A PIECE  OCT- BACK\0"
-    "LIFE 0 STILL  LINES: WHO MOVES WHOM\0"
-    "GLO+BLACK KEYS MUTE  GLO+WHITE SOLO\0"
-    "OCT+ LOAD  OCT- CLOSE  REC FAVORITE\0"
-    "PICK A KNOB AND WHAT MOVES IT\0"
-    "REC: KEYS WRITE  SEQ+PRESETS STEP\0"
-    "KEYS PICK THE STEP  SEQ+PRESETS STEP\0"
-    "OCT+ NEW  OCT- THE ONE BEFORE\0"
-    "OCT- NUDGE ALL  OCT+ THE STEP\0"
-    "OCT+ DICE ROLES  OCT- ALL KEEP\0"
-    "KEYS PICK THE STEP\0"
-    "GLO+BLACK KEYS MUTE  GLO+SELECT BPM\0"
-    "EDIT+SELECT DICE  EDIT+PRESETS ENGINE\0"
-    "SEQ+SELECT DICE  SEQ+PRESETS STEP\0"
-    "FX+SELECT DICE  HOLD FX: PERFORM KEYS\0"
-    "GLO+SELECT BPM  +F4 TAP  +G4 UNDO\0"
-    "LFO+SELECT DICE  HOLD LFO: MACROS\0"
-    "SCL+A KEY: ROOT\0";
+/* (V10.7.43) packed: tools/gen_packed.py reads this #define (the text never in the image as it is) into felucca_packed.h's
+ * HELP_Z (LZB, 643 B in ~340), gz.h gz_get unpacks it when a line is asked for */
+#define HELP_TEXT \
+    "HOME+SELECT DICE  HOME+PRESETS BPM\0" \
+    "HOME+PRESETS BPM  HOME+SELECT GEN\0" \
+    "OCT+ A PIECE  OCT- BACK\0" \
+    "LIFE 0 STILL  LINES: WHO MOVES WHOM\0" \
+    "GLO+BLACK KEYS MUTE  GLO+WHITE SOLO\0" \
+    "OCT+ LOAD  OCT- CLOSE  REC FAVORITE\0" \
+    "PICK A KNOB AND WHAT MOVES IT\0" \
+    "REC: KEYS WRITE  SEQ+PRESETS STEP\0" \
+    "KEYS PICK THE STEP  SEQ+PRESETS STEP\0" \
+    "OCT+ NEW  OCT- THE ONE BEFORE\0" \
+    "OCT- NUDGE ALL  OCT+ THE STEP\0" \
+    "OCT+ DICE ROLES  OCT- ALL KEEP\0" \
+    "KEYS PICK THE STEP\0" \
+    "GLO+BLACK KEYS MUTE  GLO+SELECT BPM\0" \
+    "EDIT+SELECT DICE  EDIT+PRESETS ENGINE\0" \
+    "SEQ+SELECT DICE  SEQ+PRESETS STEP\0" \
+    "FX+SELECT DICE  HOLD FX: PERFORM KEYS\0" \
+    "GLO+SELECT BPM  +F4 TAP  +G4 UNDO\0" \
+    "LFO+SELECT DICE  HOLD LFO: MACROS\0" \
+    "SCL+A KEY: ROOT\0"
+#include "felucca_packed.h"
+_Static_assert(sizeof HELP_TEXT == HELP_NB, "felucca_packed.h: HELP_TEXT changed, build again (tools/gen_packed.py)");
 static const char *help_find(uint32_t k)
 {
-    const char *s = HELP_S;
+    const char *s = (const char *)gz_get(HELP_Z, HELP_NB);   /* (the lines in the buffer until another table's asked) */
     uint32_t i;
     for (i = 0; i < sizeof HELP_K; i++, s += str_len(s) + 1u)
         if (HELP_K[i] == k)

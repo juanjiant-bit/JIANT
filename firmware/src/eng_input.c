@@ -21,7 +21,6 @@ static uint8_t sw_on;
 enum { AIN_IN1, AIN_IN2, AIN_SUM, AIN_ST, AIN_SW, AIN_N };   /* (SWARM: the drone of the surroundings) */
 static const char *const N_AIN_SRC[] = {"IN 1", "IN 2", "1+2", "STEREO", "SWARM"};
 static const char *const N_AIN_PLAY[] = {"THRU", "KEYS"};
-static const int16_t SW_FULL[P_COUNT] = {[P_E4] = 127};   /* (SWARM's fill: WIDTH whole, DIST none) */
 static int16_t ain_gg[NTRK];                             /* GATE's gain now, Q15 */
 static uint8_t ain_upd[NTRK];                            /* this block's GATE not yet stepped (ain_block) */
 static uint8_t ain_any;                                  /* a track is INPUT (mod.c macro_master, once a block) */
@@ -34,7 +33,7 @@ static __attribute__((noinline)) void ain_fill(const track_t *t, int32_t *out, u
     uint32_t ti = (uint32_t)(t - trk) % NTRK, src = (uint32_t)clamp(p[P_E0], 0, AIN_N - 1), i;
     int32_t g = clamp(p[P_E1], 0, 127), thr = clamp(p[P_E2], 0, 127), sh = clamp(p[P_E6], 0, 127) * 14 / 127;
     uint32_t hold = (1u << (clamp(p[P_E7], 0, 127) * 5 / 127)) - 1u;   /* RATE: 1 .. 32 samples held */
-    int32_t g0 = ain_gg[ti], g1 = g0, pk = 0, w = 0;
+    int32_t g0 = ain_gg[ti], g1 = g0, pk = 0, w = 0, sw = 0;
     g = g * g;                                           /* GAIN: Q12, 64 = 1.0, 127 = +12 dB */
     const int32_t *bl = uin_l, *br = uin_r;
     if (src == AIN_SW) {                                 /* (SWARM: its own block, stereo, whole; its knobs are the
@@ -44,11 +43,12 @@ static __attribute__((noinline)) void ain_fill(const track_t *t, int32_t *out, u
         g = 4096;
         thr = sh = 0;
         hold = 0;
-        p = SW_FULL;
+        sw = 1;                                          /* (its fill: WIDTH whole, DIST none; V10.7.43: was a whole
+                                                          * table of the parameters, SW_FULL, for these two) */
     }
     if (side && src == AIN_ST) {
-        int32_t d = clamp(p[P_DIST], 0, 64);
-        w = clamp(p[P_E4], 0, 127) * (d ? 256 - d * 3 : 256) >> 8;   /* (DIST shapes the sum only: narrower) */
+        int32_t d = sw ? 0 : clamp(p[P_DIST], 0, 64);
+        w = (sw ? 127 : clamp(p[P_E4], 0, 127)) * (d ? 256 - d * 3 : 256) >> 8;   /* (DIST shapes the sum only: narrower) */
         if (w)
             dx_xon |= 1u;
     }
