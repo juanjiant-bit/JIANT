@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.38
+## This release: V10.7.39
 
 ### Installing
 
@@ -483,14 +483,18 @@ same license.
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
 
+### V10.7.39 — beta (2026-11-15)
+- **A track's voices, set by hand**: EDIT › VOICES 2 is now **UNISON · VEL · IMAGE · VOICES**. **VOICES** (KNOB 4) caps
+  how many of the 8 shared voices a track may hold (AUTO, as before, or 1 to 8; POLY, DRONE and the UNISON stack), and
+  the page shows **ALL n/8**, every track's voices against the 8, so the whole system's polyphony is set on purpose
+  instead of overloading. Old projects open on AUTO.
+
 ### V10.7.38 — beta (2026-11-15)
 - **WEST drawn as its circuit** on EDIT: the two sine cores, the folder and the vactrol gate, each moving with its knob.
 - **FILTER 2 is now EROSION** on every synth, and **DRUM-X** has it too: its pages go from fifteen to **twelve** (the drum
   VOICES page is gone). The kit's sound was reviewed: velocity brightens only the accents (above 100), and the kit's
   DECAY ranges from a fifth to five times each sound's own.
-- **ALLOC is automatic**: VOICES 2 is now **UNISON · VEL · IMAGE · VOICES**. **VOICES** (KNOB 4) caps how many of the 8
-  shared voices a track may hold (AUTO, or 1 to 8; POLY, DRONE and the UNISON stack), and the page shows **ALL n/8**,
-  every track's voices against the 8, so the whole system's polyphony is set on purpose instead of overloading.
+- **ALLOC is automatic**: VOICES 2 is now **UNISON · VEL · IMAGE**.
 - **MATH › RETRIG › TIME** (KNOB 2): **NOTE** (as before, each note restarts the formula's time) or a tempo rate,
   1/1 to 1/32 and the triplets 1/4T 1/8T 1/16T, so the formula's slow time follows the transport across notes.
 - **PROX** (the Bluetooth proximity control): **SLEW** 0–100 % (how slowly it follows: 30 ms to 770 ms to reach 90 %) and
