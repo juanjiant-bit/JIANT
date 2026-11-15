@@ -1357,7 +1357,7 @@ static void setup(int s)
     }
     case S_LY_FX_KNOBS: case S_LY_FX_STATE:            /* (0.8.5) a layer's lens: FX's KNOBS, STATE */
         go_home(); ui.layer = LAYER_FX; ui.lylv = s == S_LY_FX_KNOBS ? 1 : 2;
-        perf_held = perf_act = PF_BIT(PF_R16) | PF_BIT(PF_LPF) | PF_BIT(PF_M1 + 1);
+        perf_held = perf_act = PF_BIT(PF_R16) | PF_BIT(PF_REV) | PF_BIT(PF_PDN);
         perf_k[0] = -40; perf_k[1] = 25; perf_k[3] = 30;
         break;
     case S_LY_GLO_STATE: go_home(); ui.layer = LAYER_GLO; ui.lylv = 2; break;
@@ -1492,7 +1492,7 @@ static void setup(int s)
     case S_FX_PEEK: go_title("ENV"); ui.layer = LAYER_FX; break;
     case S_FX_HELD:
         go_home(); ui.layer = LAYER_FX;
-        perf_held = perf_act = PF_BIT(PF_R16) | PF_BIT(PF_LPF) | PF_BIT(PF_M1 + 1);
+        perf_held = perf_act = PF_BIT(PF_R16) | PF_BIT(PF_REV) | PF_BIT(PF_PDN);
         perf_k[0] = -40; perf_k[1] = 25; perf_k[3] = 30; ui.hot_col = 0; ui.hot_t = 30;
         break;
     case S_FX_LANE: case S_FX_LANE_K: {             /* (V10.7.32) FX held, playing, the punch-in lane along its foot (32
@@ -1504,19 +1504,19 @@ static void setup(int s)
         for (i = 0; i < 32u; i++) pfx_lane_put(i, L[i]);
         pfx_lph = 9u * pfx_lane_step(beat_samples());   /* (the playhead on step 10) */
         go_home(); ui.layer = LAYER_FX;
-        perf_held = perf_act = PF_BIT(PF_LPF);
+        perf_held = perf_act = PF_BIT(PF_REV);
         perf_k[0] = -40;
         if (s == S_FX_LANE_K) { fx_lane_k = 1; ui.hot_col = 1; ui.hot_t = 30; }
         break;
     }
     case S_FX_WAIT:
         song.playing = 1; song.g[G_BPM] = 72; ui.layer = LAYER_FX;
-        perf_held = PF_BIT(PF_R16) | PF_BIT(PF_R8) | PF_BIT(PF_LPF); perf_act = PF_BIT(PF_LPF);
+        perf_held = PF_BIT(PF_R16) | PF_BIT(PF_R8) | PF_BIT(PF_REV); perf_act = PF_BIT(PF_REV);
         perf_k[2] = 100;
         break;
     case S_FX_HARM:                                 /* (TONIC: no harmonizer) HPF playing, KNOB 4 DEPTH turned */
         song.playing = 1; ui.layer = LAYER_FX;
-        perf_held = perf_act = PF_BIT(PF_HPF);
+        perf_held = perf_act = PF_BIT(PF_TAPE);
         perf_k[3] = 60; ui.hot_col = 3; ui.hot_t = 30;
         break;
     case S_REVERB: go_title("REVERB"); song.g[G_RTYPE] = 1; ui.hot_col = 0; ui.hot_t = 30; break;   /* TYPE: SPRING */

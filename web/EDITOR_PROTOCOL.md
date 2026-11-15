@@ -179,9 +179,11 @@ sends the state as it is first (`TRANSPORT`, `PUNCH`; `MUTATE` counts from then 
   this needs neither the setting nor a clock reader.
 - **PUNCH** (41): `m0 m1 m2 m3 tracks`: the punch-in / FX-layer effects running (held, latched, a scene's, the
   punch-in lane's step) as `m0 | m1 << 7 | m2 << 14 | m3 << 21`; 0 while a menu or dialog turns them off. Bits
-  (frozen): 0 REPEAT 1/8, 1 REPEAT 1/16, 2 REPEAT 1/32, 3 LPF, 4 HPF, 5 OCT−, 6 OCT+, 7 1/2 TEMPO, 8 DEC−, 9 DEC+,
-  10 STUTTER 1/8, 11 STUTTER 1/16, 12 ATK+, 13 ARP, 14 RANDOM, 15..20 the mutes of tracks 1..6 (black keys), 21
-  GLITCH, 22 LOOP 3, 23 LOOP 5, 24 LOOP 7. `tracks`: the MIDI effects' tracks, 0 ALL, 1 SYN, 2 DRM.
+  (frozen; V10.7.36 gave 3, 4 and 15..20 new keys and added 25): 0 REPEAT 1/8, 1 REPEAT 1/16, 2 REPEAT 1/32,
+  3 REVERSE (was LPF), 4 TAPE STOP (was HPF), 5 OCT−, 6 OCT+, 7 1/2 TEMPO, 8 DEC−, 9 DEC+, 10 STUTTER 1/8,
+  11 STUTTER 1/16, 12 ATK+, 13 ARP, 14 RANDOM, 15 PITCH UP, 16 PITCH DOWN, 17 FREEZE, 18 REV ALL, 19 DLY ALL, 20 RING
+  (15..20 were the mutes of tracks 1..6), 21 GLITCH, 22 LOOP 3, 23 LOOP 5, 24 LOOP 7, 25 LIFE MAX. `tracks`: the MIDI
+  effects' tracks, always 0 (ALL) since V10.7.36 (1 SYN, 2 DRM before).
 - **MUTATE** (42): `track, count`: a EUCLID MUTATE of that track (EVERY's, or OCT+ on the MUTATE page); count is
   the track's MUTATEs since power-on, 7 bits, so a missed frame shows as a jump.
 
@@ -388,7 +390,7 @@ at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device 
 | cmd (1.0) | Request args | Reply args |
 | --- | --- | --- |
 | 40 TRANSPORT (push) | — | playing (0/1), beat of the bar (0..3), bar lo, bar hi (the bars since PLAY, 14 bits): on PLAY / STOP and each beat while playing (only while `WATCH` was sent with bit 2) |
-| 41 PUNCH (push) | — | the effects running, 4 × 7 bits LSB first (the bit numbers in "1.0: performance pushes"), then their tracks (0 ALL, 1 SYN, 2 DRM): on every change (only with `WATCH` bit 3) |
+| 41 PUNCH (push) | — | the effects running, 4 × 7 bits LSB first (the bit numbers in "1.0: performance pushes"), then their tracks (0 ALL; V10.7.36 always 0): on every change (only with `WATCH` bit 3) |
 | 42 MUTATE (push) | — | track, its MUTATE count (7 bits, wrapping): a EUCLID MUTATE of that track (only with `WATCH` bit 4) |
 
 | cmd (v7) | Request args | Reply args |

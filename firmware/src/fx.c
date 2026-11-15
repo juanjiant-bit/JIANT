@@ -2497,7 +2497,7 @@ static __attribute__((noinline)) int32_t autopan(const track_t *t, uint32_t ti, 
 
 /* (JIANT 0.6.48) a DRUM part's IMAGE and SENDs (eng_drum.c dx_sl dx_sr dx_sb), after mix_part's loop put its sum in: what
  * each side gives up (at the part's LEVEL ramp lq and PAN gains gl gr, as that loop), each bus fed by its sounds; pm0 ..
- * pm1 the FX layer's mute over the block (perform.c perf_mute: 32768 open) */
+ * pm1 GLO's solo mute over the block (perform.c perf_mute: 32768 open) */
 static __attribute__((noinline)) void drum_mix(int32_t *ol, int32_t *or_, uint32_t n, int32_t lq, int32_t dl, int32_t gl,
                                                int32_t dgl, int32_t gr, int32_t dgr, int32_t pm0, int32_t pm1,
                                                int32_t *const sd[3])   /* (0.6.71: this core's sends) */
@@ -2633,7 +2633,7 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
         int32_t pm0 = 32768, pm1 = 32768;               /* (0.6.48: drum_mix's; pf.mg counts only while muting) */
         if ((pf.mute >> (t - trk)) & 1u) {
             pm0 = pf.mg[ti];
-            perf_mute((uint32_t)(t - trk), b, n);       /* perform.c: a black key in the FX layer */
+            perf_mute((uint32_t)(t - trk), b, n);       /* perform.c: GLO's solo (the others muted) */
             pm1 = pf.mg[ti];
         }
         if ((mix_skip >> ti) & 1u) {                    /* (0.7.1) left out of the mix (rendered: its state runs) */
@@ -3089,7 +3089,7 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
     if (fx_stems)                                       /* (0.7.1) a part not mixed this block: a silent stem */
         memset(stem_buf, 0, sizeof stem_buf);
     pfx_rec_held = perf_kill ? 0u : perf_held & PF_MIDI;
-    pfx_block(n, (perf_kill ? 0u : (perf_held | perf_latched) & (PF_MIDI | PF_LOOPS)) | scene_pfx);
+    pfx_block(n, (perf_kill ? 0u : (perf_held | perf_latched) & PF_NOTES) | scene_pfx);   /* (V10.7.36: LIFE MAX too) */
     events_block(n);
     if (song.playing)                                   /* (JIANT) the modulation sequences' clock (mod.c): the block's end on
                                                          * the transport's grid (through tempo changes, an external clock) */
@@ -3127,8 +3127,8 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
     if (fx_bad)
         fx_trip(c1j, n);
     mc_mask_last = (uint8_t)c1m;
-    if (pfx_any)
-        pfx_end();                                      /* (DEC- / DEC+ back) */
+    if (pfx_any || pfx_life.on)
+        pfx_end();                                      /* (DEC- / DEC+ back; LIFE MAX's) */
     if (perf)
         perf_pre(mix_l, mix_r, sl_l, sl_r, send_d, send_r, n);   /* (THROW: the SLICER's bus too) */
     for (i = 0; i < n; i++) {                           /* (0.6.75) the buses' return and sides (the block before's sends); */

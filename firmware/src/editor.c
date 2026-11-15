@@ -204,15 +204,15 @@ static __attribute__((noinline)) int ed_perf(uint32_t *n)
         ed_send();
         (*n)++;
     }
-    if ((ed_w.ext & 2u) && (m != ed_w.punch || pfx_tgt != ed_w.ptgt)) {
+    if ((ed_w.ext & 2u) && (m != ed_w.punch || ed_w.ptgt)) {
         if (!ed_room())
             return 0;
         ed_w.punch = m;
-        ed_w.ptgt = pfx_tgt;
+        ed_w.ptgt = 0;
         ed_begin(ED_PUNCH);
         for (i = 0; i < 4u; i++)
             ed_b(m >> (7u * i));
-        ed_b(pfx_tgt);
+        ed_b(0);                                        /* (the tracks: ALL, V10.7.36 always) */
         ed_send();
         (*n)++;
     }

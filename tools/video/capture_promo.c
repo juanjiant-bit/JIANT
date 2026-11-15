@@ -298,8 +298,8 @@ static void at_beat(uint32_t q)
     }
     if (q == B(32, 2)) hold_btn(B_FX, 0);
     if (bar == 33u) { perf_press(PF_R16, q % 4u == 0u); perf_press(PF_OCTU, q % 4u == 1u); perf_press(PF_S16, q % 4u >= 2u); }
-    if (bar == 34u) { perf_press(PF_S16, 0); perf_press(PF_R32, q % 2u == 0u); perf_press(PF_LPF, q % 2u == 1u); }
-    if (q == B(35, 0)) { perf_press(PF_R32, 0); perf_press(PF_LPF, 0); perf_press(PF_R16, 0); perf_press(PF_OCTU, 0); hold_btn(B_FX, 1); }
+    if (bar == 34u) { perf_press(PF_S16, 0); perf_press(PF_R32, q % 2u == 0u); perf_press(PF_REV, q % 2u == 1u); }
+    if (q == B(35, 0)) { perf_press(PF_R32, 0); perf_press(PF_REV, 0); perf_press(PF_R16, 0); perf_press(PF_OCTU, 0); hold_btn(B_FX, 1); }
     if (q == B(35, 1)) hold_btn(B_FX, 0);
     /* ---- the mystery */
     if (q == B(36, 0)) {

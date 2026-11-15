@@ -719,7 +719,7 @@ KNOBS · STATE** (it remembers the level; SELECT keeps its combos: GLO + SELECT 
 skins) **MAP** is the keyboard itself, F3 to G5: every key that does something is named upright on it (light on the
 white keys, tinted on the black ones), the one held lit orange, the value now violet, a muted track pale, what cannot be
 pressed now dim, and each white key's note under it; **KNOBS**: the four as gauges in their knobs' colours (JIANT: their values' heat), the layer's
-key words under them (e.g. **PLAY RESTART · GLO DONE**); **STATE**: what is on, as chips (FX: the lock, the tracks, the
+key words under them (e.g. **PLAY RESTART · GLO DONE**); **STATE**: what is on, as chips (FX: the lock, the
 latch, the effects held; GLO: each track ON / MUTE, the drum groups, UNDO, MUTATE; LFO: the latch and each macro's
 routes; REC, SAVE, SCL, EDIT, SEQ theirs). The header names the layer in words, **[GLO] SET**. The footer is the
 breadcrumb, **FX · MAP**. The keys and knobs do exactly what they did.
@@ -729,7 +729,8 @@ breadcrumb, **FX · MAP**. The keys and knobs do exactly what they did.
 | Keys | Effect |
 | --- | --- |
 | F3 G3 A3 | REPEAT 1/8, 1/16, 1/32 |
-| B3 / C4 | LPF / HPF |
+| B3 | REVERSE (each 1/16 the one before, backwards) |
+| C4 | TAPE STOP (slows to a stop over a beat, then silence) |
 | D4 / E4 | OCT− / OCT+ |
 | F4 | 1/2 TEMPO |
 | G4 / A4 | DEC− / DEC+ |
@@ -738,8 +739,13 @@ breadcrumb, **FX · MAP**. The keys and knobs do exactly what they did.
 | E5 | ARP |
 | F5 | RANDOM |
 | G5 | erases the punch-in lane |
-| Black keys 1–6 (F#3 G#3 A#3 C#4 D#4 F#4) | mute T1–T6 while held |
-| A#4 | which tracks the note effects touch: ALL / SYN / DRM |
+| F#3 / G#3 | PITCH UP / PITCH DOWN (the whole mix, up to an octave over a bar) |
+| A#3 | FREEZE (the reverb holds its cloud) |
+| C#4 / D#4 | REV ALL / DLY ALL (full wet: only the reverb / the delay) |
+| F#4 | RING (ring modulation at the scale's root) |
+| G#4 / C#5 / D#5 | LOOP 3 / 5 / 7 |
+| A#4 | LIFE MAX (HOME › LIFE at 100 % while held) |
+| F#5 | GLITCH |
 | **Knobs** | **FX KNOBS** (the footer's name since V10.7.32; it said MACROS): FILTER, CRUSH, THROW, DEPTH |
 | **PRESETS** (V10.7.32) | turned right: KNOB 1–4 the punch-in lane's (LEN, RES, —, CLEAR); left: the FX KNOBS again (also when FX is let go) |
 | (the foot) | (V10.7.32) the punch-in lane, its cells and its playhead, along the screen's foot while FX is held |
@@ -2809,29 +2815,43 @@ right) asks **CLEAR PUNCH IN LANE?** (OCT+ yes). (PRESETS, because every key of 
 FX + SELECT is the FX dice; the layer's KNOBS view says **PRESETS LANE**.) To record: REC armed and playing (not in a song), hold FX and the effect's key; the steps it
 passes get it; **G5** held erases where the playhead passes. Saved with the section.
 
-- **On the audio**: REPEAT 1/8, 1/16, 1/32 (F3 G3 A3), LPF (B3), HPF (C4). REPEAT starts on the next 1/16 while
-  playing. Below about 81 BPM, REPEAT 1/8 is too long for its buffer and is shown dimmed.
+- **On the audio** (V10.7.36): REPEAT 1/8, 1/16, 1/32 (F3 G3 A3); **REVERSE** (B3): each 1/16 (a 1/8 above ~167 BPM,
+  a 1/32 below ~82) is the one before it played backwards, again and again while held (the first 1/16 after the press
+  plays live while it is taken); **TAPE STOP** (C4): the mix slows to a stop, pitch and speed falling, over a beat (half
+  a beat below ~86 BPM), then silence while held. These start on the next 1/16 while playing. Below about 81 BPM,
+  REPEAT 1/8 is too long for its buffer and is shown dimmed. **PITCH UP / PITCH DOWN** (F#3 G#3): the whole mix glides
+  up / down while held, an octave over about a bar, then stays there, in time; let go and it snaps back. REPEAT,
+  REVERSE, TAPE STOP, PITCH and GLITCH share one buffer: the last pressed plays, letting it go returns to the one held
+  before. **FREEZE** (A#3): the reverb holds its cloud (its SIZE at the top: CLOUD stops writing its line, the other
+  reverbs ring on), nothing new goes into it. **REV ALL / DLY ALL** (C#4 D#4): full wet, every track into the reverb /
+  the delay (its MIX at least 100), the dry muted: only the effect is heard; let go, the dry is back and the tail rings
+  on. **RING** (F#4): ring modulation of the master by a sine two octaves over the selected track's scale root (C5 …
+  B5), its depth wobbling once a bar; never louder than the mix. **LIFE MAX** (A#4): HOME › LIFE's LIFE, FILTER, PITCH
+  and FX at 100 % while held; let go, your values exactly (never saved). All of them at once when pressed (except as
+  said), out with a short ramp.
 - **On the notes**: OCT− / OCT+ (D4 E4), 1/2 TEMPO (F4), DEC− (short, plucky) / DEC+ (long) (G4 A4), STUTTER 1/8 / 1/16
   (B4 C5), ATK+ (slow attacks, drums too) (D5), ARP (E5; on a DRUM track a new fill every press), RANDOM (F5). They come
-  in on the next 1/16. **A#4** chooses which tracks they touch: ALL, SYN (synths) or DRM (drums); the header shows it.
+  in on the next 1/16 and act on every track (V10.7.36: the ALL / SYN / DRM selector of A#4 is gone; a lane saved with
+  SYN or DRM plays on every track).
 - **Knobs** while FX is held (the **FX KNOBS**; FX + PRESETS right: the lane's, above): **FILTER** (left low-pass, right high-pass), **CRUSH**, **THROW** (sends the dry mix into
   the delay and reverb), **DEPTH** (the REPEAT's level). (0.9.9-snd2) While THROW sends, and for 12 s after (its tail),
   the delay's repeats go through a band, tape-echo style: a low cut at ~180 Hz and a low-pass at ~4.8 kHz that closes
   to ~3 kHz as FEEDBK goes up and further (~1.8 kHz) over the tail: a thrown drum loop rings out as echoes instead of a
   wash of hats and snare noise (each pass loses the noise much faster than the notes). The delay without THROW is as
-  before.
-- **Black keys 1–6**: mute T1–T6 while held (not saved).
+  before. (V10.7.36: the LPF / HPF keys and the MUTE T1–T6 keys are gone; FILTER is KNOB 1, the mutes are GLO's.)
 - (0.9.9-snd2) **G5 CLR AUTO** (named on the map): FX + G5 empties the punch-in lane (its automation) and nothing
   else, stopped or playing; while recording it still erases only where the playhead passes. The lane's KNOB 4 (FX +
   PRESETS) is **CLEAR** too (the same, with a dialog).
-- (0.9.9-snd2) **G#4 LOOP 3**, **C#5 LOOP 5**, **D#5 LOOP 7**: while held, every track (of those A#4 picks) repeats
+- (0.9.9-snd2) **G#4 LOOP 3**, **C#5 LOOP 5**, **D#5 LOOP 7**: while held, every track repeats
   its last 3, 5 or 7 steps (from the step playing when it comes in, on the next 1/16), not on the bar: odd loops that
-  turn against the 4/4. Let go and each track is back where it would have been. **F#5 GLITCH** (from 0.9.18): the
-  master cut on the 1/16s, each one live, repeated, reversed, an octave up or down, gated, skipping or crushed, by its
-  place in a 2-bar cycle (the same every time, so it grooves); here at its default settings.
+  turn against the 4/4. Let go and each track is back where it would have been. **F#5 GLITCH** (from 0.9.18, V10.7.36
+  richer): the master cut on the transport's 1/16s, each one live or a ratchet (the last 1/16, 1/32 or 1/64 again and
+  again), a roll falling in pitch, reversed, an octave up or down, short dropouts, a CD skip, a sample-rate crush
+  burst or a tape-stop sliver, by its place in a 4-bar phrase (the same every time, so it grooves; the phrase's last
+  beat a fill), never silent for more than part of a 1/16.
 
 **The punch-in lane**: each section has a lane of 64 steps of 1/16 (4 bars). With **REC armed and playing** (not
-during a song), the **note effects (D4–F5)** you hold are recorded into it, one per step (REPEAT, LPF, HPF and the mutes
+during a song), the **note effects (D4–F5)** you hold are recorded into it, one per step (the audio effects, LOOP and LIFE MAX
 are not recorded). Hold **FX + G5** while playing to erase where the play head passes; stopped, FX + G5 erases the whole
 lane. **REC held + FX** also clears it (along with the track's FX automation).
 

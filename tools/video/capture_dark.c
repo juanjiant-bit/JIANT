@@ -254,8 +254,8 @@ static void feat_beat(uint32_t q)
     }
     if (q == B(46, 2)) hold_btn(B_FX, 0);            /* (held past HOLD, nothing used: locked open) */
     if (bar == 47u) { perf_press(PF_R16, q % 4u == 0u); perf_press(PF_OCTU, q % 4u == 1u); perf_press(PF_S16, q % 4u >= 2u); }
-    if (bar == 48u) { perf_press(PF_S16, 0); perf_press(PF_LPF, q % 4u < 3u); perf_press(PF_R8, q % 4u == 3u); }
-    if (q == B(49, 0)) { perf_press(PF_LPF, 0); perf_press(PF_R8, 0); hold_btn(B_FX, 1); }   /* FX again: unlocked */
+    if (bar == 48u) { perf_press(PF_S16, 0); perf_press(PF_REV, q % 4u < 3u); perf_press(PF_R8, q % 4u == 3u); }
+    if (q == B(49, 0)) { perf_press(PF_REV, 0); perf_press(PF_R8, 0); hold_btn(B_FX, 1); }   /* FX again: unlocked */
     if (q == B(49, 1)) hold_btn(B_FX, 0);
     if (q == B(50, 0)) { hold_btn(B_LFO, 1); caption(q, "PERFORMANCE", "MACROS", "4 macros over what's playing|their dice roll new routes", 0); }
     if (q >= B(50, 0) && q < B(51, 0)) for (k = 0; k < 4u; k++) macro_v[k] = (uint8_t)clamp((int32_t)((q - B(50, 0) + 1u) * (10u + 4u * k)), 0, 127);

@@ -18,12 +18,15 @@
  *                      (JIANT) the sequencer plays a step of its pattern at random now and then (seq.c seq_tick)
  * (JIANT) Quantized: an effect pressed while the transport runs goes in on the next 1/16 of the transport (clk_pos),
  * so a repeat starts on the grid; let go, at once. The lane records the presses as they were (to the nearest step).
- * Of the repeats (STUTTER, ARP) the fastest held plays. A#4 (black key 8) steps the tracks they act on: ALL,
- * SYN (the synths), DRM (DRUM tracks) (pfx_tgt; the layer's header says it).
+ * Of the repeats (STUTTER, ARP) the fastest held plays. They act on every track (V10.7.36: A#4 is LIFE MAX now, the
+ * ALL / SYN / DRM selector is gone; a lane saved with SYN or DRM plays on every track).
+ * (V10.7.36) A#4 LIFE MAX: HOME > LIFE's LIFE FILTER PITCH FX at 100 % for the block (before macro_master: LIFE's own
+ * block sees them, the parts too), the user's values back in pfx_end: nothing outside the ISR sees them, nothing saves
+ * them; at once, not on the 1/16.
  * The punch-in lane (the automation): a section's 64 steps of 1/16 (4 bars, from the transport's start or the
  * section's), one effect a step (pfx_lane: a nibble, 0 none, 1..10 D4 .. F5) and the tracks it acts on (pfx_ltgt).
  * Recording (REC armed, playing, not a song): the steps that pass while a MIDI effect is held get it (the lowest held),
- * with the tracks A#4 picked; G5 held erases them. Stopped, FX + G5 clears the lane. Played back with the held ones.
+ * G5 held erases them. Stopped, FX + G5 clears the lane. Played back with the held ones.
  * Saved with the section (project.c FUNA: the 33 spare bytes at PROJ_PFX_OFF), staged by the song (song_chain.c).
  * In the ISR: pfx_block before the events (what acts on each track, the repeats, the decays put in), pfx_end after
  * the parts (the decays back: as mod.c, nothing outside the ISR sees them). Idle: one test a block. */
@@ -31,6 +34,8 @@ static uint8_t pfx_in;                /* a repeat's own note-on (pfx_note lets i
 static uint8_t pfx_any;               /* a track has something running (or to put back) */
 static uint32_t pfx_blk;              /* blocks: the notes of one block were struck together */
 static uint32_t pfx_seed = 0x9E3779B9u;
+static struct { int16_t keep[4]; uint8_t on; } pfx_life __attribute__((section(".pool")));   /* (V10.7.36) LIFE MAX: the
+                                                         * user's LIFE FILTER PITCH FX while it holds them at 100 */
 
 /* (0.6.72) a repeat holds the track: trk_note_on drops its notes (seq.c MIDI OUT sends none of them either) */
 static int pfx_holds(const track_t *t) { return !pfx_in && (t->pfx & PFX_REP); }
@@ -147,6 +152,14 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
 {
     uint32_t k, b = beat_samples(), lane = 0, raw = held & pfx_rec_held, nw;
     pfx_blk++;
+    if (held & PF_BIT(PF_LMAX)) {                       /* (V10.7.36) LIFE MAX: 100 % for this block (pfx_end: back) */
+        for (k = 0; k < 4u; k++) {
+            pfx_life.keep[k] = life_v[k];
+            life_v[k] = 100;
+        }
+        pfx_life.on = 1;
+        held &= ~PF_BIT(PF_LMAX);
+    }
     pfx_qon &= held;                                    /* (JIANT) let go: at once; pressed: on the next 1/16 */
     nw = held & ~pfx_qon;
     if (nw) {
@@ -177,7 +190,7 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
                 pfx_lane_put(st, w);
             }
             if (raw)
-                pfx_ltgt = pfx_tgt;
+                pfx_ltgt = 0;
         } else {
             if (pfx_rh && st == pfx_rst && !half && st != pfx_rs0)
                 pfx_lane_put(st, pfx_rold);             /* let go in a step's first half: that step as it was */
@@ -193,7 +206,7 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
     for (k = 0; k < NTRK; k++) {
         track_t *t = &trk[k];
         int drum = t->engine == ENGI_DRUM;
-        uint32_t on = (!pfx_tgt || (pfx_tgt == 1u) == !drum ? held : 0u) | (!pfx_ltgt || (pfx_ltgt == 1u) == !drum ? lane : 0u);
+        uint32_t on = held | lane;                      /* (V10.7.36: every track) */
         uint32_t old = t->pfx, f, rep, per = 0;
         rep = on & (PF_BIT(PF_S16) | PF_BIT(PF_S8) | PF_BIT(PF_ARP));
         per = (rep & (PF_BIT(PF_S16) | PF_BIT(PF_ARP))) ? b / 4u : b / 2u;   /* (JIANT 0.4: 1/8, 1/16; ARP 1/16) */
@@ -253,10 +266,15 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
     }
 }
 
-/* after the parts: what DEC- / DEC+ changed, back */
+/* after the parts: what DEC- / DEC+ changed, back; (V10.7.36) LIFE MAX's */
 static __attribute__((noinline)) void pfx_end(void)
 {
     uint32_t k;
+    if (pfx_life.on) {
+        for (k = 0; k < 4u; k++)
+            life_v[k] = pfx_life.keep[k];
+        pfx_life.on = 0;
+    }
     for (k = 0; k < NTRK; k++)
         if (trk[k].pfx & PFX_DEC) {
             int drum = trk[k].engine == ENGI_DRUM;

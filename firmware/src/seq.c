@@ -1425,13 +1425,12 @@ static __attribute__((noinline)) void dxo_tick(track_t *t, uint32_t n)
     }
 }
 
-/* the effect of key k in the FX layer (PF_N none): the first PF_M1 white keys (F3 .. A4) in order, black keys
- * 1..4 (F#3 G#3 A#3 C#4) the track mutes */
+/* the effect of key k in the FX layer (PF_N none): the first PF_NW white keys (F3 .. F5) in order, G5 CLR AUTO, the
+ * black keys F#3 .. F#5 by perform.c PF_BK */
 static uint32_t perf_key(uint32_t k)
 {
     uint32_t p = key_place(k);
-    static const uint8_t BK[5] = {PF_LP3, PF_TGT, PF_LP5, PF_LP7, PF_GLT};   /* (snd2) black keys 7..11: G#4 A#4 C#5 D#5 F#5 */
-    return !key_black(k) ? (p < PF_M1 ? p : p == PF_M1 ? PF_CLR : PF_N) : p < NTRK ? PF_M1 + p : p - NTRK < 5u ? BK[p - NTRK] : PF_N;
+    return !key_black(k) ? (p < PF_NW ? p : p == PF_NW ? PF_CLR : PF_N) : p < 11u ? PF_BK[p] : PF_N;
 }
 
 /* (0.6.14) the arp's note list let go (held / nheld). (V10.7.33) The keys' LATCH (ARP OFF and HOLD ON: the notes kept

@@ -2291,7 +2291,7 @@ static void gen_parts(void)
             } else if (k == 3u) {                       /* D BREAK: no drums, no bass; the chords wetter; (0.6.97) the
                                                          * synths an octave up on the break's last bar */
                 memset(pfx_lane, 0, sizeof pfx_lane);
-                pfx_ltgt = 1;
+                pfx_ltgt = 0;                            /* (V10.7.36: every track; the drums are muted here) */
                 for (i = 48; i < 64u; i++) pfx_lane_put(i, 2u);
                 gmute(dr);
                 gmute(bs);

@@ -186,10 +186,11 @@ def controls():
                   ' walks every page of the section.</p>') + '</div>')
 
     b.append(sec('LAYERS · HOLD A BUTTON'))
-    fx_w = {'F3': 'REP 1/8', 'G3': 'REP 1/16', 'A3': 'REP 1/32', 'B3': 'LPF', 'C4': 'HPF', 'D4': 'OCT−', 'E4': 'OCT+',
+    fx_w = {'F3': 'REP 1/8', 'G3': 'REP 1/16', 'A3': 'REP 1/32', 'B3': 'REVERSE', 'C4': 'TAPE STOP', 'D4': 'OCT−', 'E4': 'OCT+',
             'F4': '½ TEMPO', 'G4': 'DEC−', 'A4': 'DEC+', 'B4': 'STUT 1/8', 'C5': 'STUT 1/16', 'D5': 'ATK+', 'E5': 'ARP',
             'F5': 'RAND', 'G5': 'CLR AUTO'}
-    fx_b = {'F#3': 'M1', 'G#3': 'M2', 'A#3': 'M3', 'C#4': 'M4', 'D#4': 'M5', 'F#4': 'M6', 'G#4': 'LOOP 3', 'A#4': 'TGT',
+    fx_b = {'F#3': 'PITCH UP', 'G#3': 'PITCH DN', 'A#3': 'FREEZE', 'C#4': 'REV ALL', 'D#4': 'DLY ALL', 'F#4': 'RING',
+            'G#4': 'LOOP 3', 'A#4': 'LIFE MAX',
             'C#5': 'LOOP 5', 'D#5': 'LOOP 7', 'F#5': 'GLITCH'}
     glo_w = {'F3': 'SOLO 1', 'G3': 'SOLO 2', 'A3': 'SOLO 3', 'B3': 'SOLO 4', 'C4': 'SOLO 5', 'D4': 'SOLO 6',
              'E4': 'ALL', 'F4': 'TAP', 'G4': 'UNDO'}
@@ -202,9 +203,10 @@ def controls():
     b.append('<div class="grid g2">')
     b.append(card('FX · PUNCH-IN EFFECTS', HEAT[5], keyboard(fx_w, fx_b) +
                   '<p>A key plays its effect while held (MENU FX LATCH ON: toggles); hold FX and let go untouched: <b>LOCKED</b> '
-                  'open, FX again unlocks; OCT- all off. In on the next 1/16. Black 1–6 mute T1–T6, A#4 picks which tracks the MIDI ones '
-                  'touch (all · synths · drums). G#4 C#5 D#5 loop the last 3 / 5 / 7 steps; F#5 <b>GLITCH</b> skips on the 1/16 grid, its cycle '
-                  'locked to the bar (par9). With REC armed and playing they record into the section\'s lane, drawn along the screen\'s foot '
+                  'open, FX again unlocks; OCT- all off. REPEAT, REVERSE, TAPE STOP, GLITCH and the note ones in on the next 1/16, the rest at once. '
+                  'F#3 G#3 glide the mix an octave up / down over a bar; A#3 freezes the reverb; C#4 D#4 full wet (only reverb / delay); '
+                  'F#4 ring mod on the root; A#4 <b>LIFE MAX</b> (LIFE at 100 % while held). G#4 C#5 D#5 loop the last 3 / 5 / 7 steps; '
+                  'F#5 <b>GLITCH</b>: ratchets, rolls, reverse, octaves, dropouts, crush and tape-stop slivers on the 1/16 grid, a 4-bar phrase. With REC armed and playing they record into the section\'s lane, drawn along the screen\'s foot '
                   'while FX is held; G5 clears it. <b>FX + PRESETS</b> right: the knobs are the lane\'s (LEN RES - CLEAR), left: the FX KNOBS.</p>'
                   '<h4>FX KNOBS</h4>' + knobs('FILTER', 'CRUSH', 'THROW', 'DEPTH')))
     b.append(card('GLO · MIX', HEAT[1], keyboard(glo_w, glo_b) +
@@ -500,7 +502,7 @@ def sound():
                   '<h4>EQ · 4 BANDS (par9)</h4>' + knobs('LOW', 'LO MID', 'HI MID', 'HIGH') +
                   '<p style="margin-top:6px">−12…+12 dB, wide and gentle (~200 Hz, 1 kHz, 4 kHz); at 0 it costs nothing. The page draws the curve '
                   '(SCOPE ON: the master live behind it); EQ and TAPE change only when a project loads.</p>'
-                  '<h4>PUNCH-IN FX (FX HELD)</h4><p>REPEAT 1/8 · 1/16 · 1/32 (1/8 from 41 BPM, 1/16 from 21: V10.59), LPF, HPF, LOOP 3 / 5 / 7, GLITCH on the grid; '
+                  '<h4>PUNCH-IN FX (FX HELD)</h4><p>REPEAT 1/8 · 1/16 · 1/32 (1/8 from 41 BPM, 1/16 from 21: V10.59), REVERSE, TAPE STOP, PITCH UP / DOWN, FREEZE, REV ALL, DLY ALL, RING, LIFE MAX, LOOP 3 / 5 / 7, GLITCH on the grid; '
                   'on the notes: OCT−/+, ½ TEMPO, DEC−/+, STUTTER, ATK+, ARP, RANDOM. FX KNOBS: FILTER CRUSH THROW DEPTH (FX + PRESETS: the lane\'s). '
                   'Recordable per section.</p>'))
     b.append('</div>')
