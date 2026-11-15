@@ -1455,12 +1455,13 @@ static VX_CODE void vx_west(const track_t *t, const int32_t *A, int32_t en_home)
     vxf_t f = vx_uf(A, 100, 0);
     int32_t en = vx_level(t, 6, en_home), cell = 0, lamp = 0, i, px = 0, py = 0, h, g, fo = clamp(p[P_E0], 0, 127) << 4;
     int32_t symm = clamp(p[P_E1], 0, 127) * 129, md = clamp(p[P_E2], 0, 127), dust = clamp(p[P_E7], 0, 127);
-    uint32_t mt = vxs.mt[6], age = vx_age(t, 6, 0), R = WEST_RATIO[(uint32_t)clamp(p[P_E3], 0, 15)], d0 = vx_ang(mt, 120);
+    uint32_t mt = vxs.mt[6], age = vx_age(t, 6, 0), R = WEST_RATIO[(uint32_t)clamp(p[P_E3], 0, 31) & 15u], d0 = vx_ang(mt, 120);
     vxs.kc = 1;
     for (i = 0; i < NVOICE; i++)
         if (t->v[i].active) {
-            cell = t->v[i].s[5] > cell ? t->v[i].s[5] : cell;
-            lamp = t->v[i].s[2] > lamp ? t->v[i].s[2] : lamp;
+            int32_t li = west_exp2n(t->v[i].s[5] >> 8), lp = t->v[i].s[2] & 15 ? 11000 + t->v[i].vel * 171 : 0;
+            cell = li > cell ? li : cell;
+            lamp = lp > lamp ? lp : lamp;
         }
     cell = clamp(cell, 0, 32767) >> 7;                   /* (0..255) */
     lamp = clamp(lamp, 0, 32767) >> 7;

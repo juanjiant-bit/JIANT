@@ -1,7 +1,7 @@
 # FELUCCA golden renders (tests/regress.c): name, FNV-1a 64 of the output samples.
 # Rewritten by GOLDEN_UPDATE=1 tests/run_tests.sh -- only for an intended change of the sound.
 # (V10.7.34) LIFE 0 (run_tests.sh: LIFE=0 regress): the renders of before LIFE, bit for bit; never rewritten (V10.7.36:
-# but NOISE's eight, gone with the engine, and WEST's twenty added)
+# but NOISE's eight, gone with the engine, and WEST's twenty added; V10.7.37: WEST's twenty again, the engine remade)
 preset/ANALOG/00_SAW_LEAD 55eeb8345bde3b83
 preset/ANALOG/01_SOFT_PAD 5801b39a2846ebbb
 preset/ANALOG/02_SQR_BASS 54cd64bec87a3c5c
@@ -111,26 +111,26 @@ preset/DRUM/07_TECHNO_RAW 17e10b426894e91c
 preset/DRUM/08_BREAKS 50ec4b510f1d737c
 preset/DRUM/09_HIP_HOP b58b53ad1b0ee824
 preset/DRUM/10_LATIN_PERC 37f1bed5517430e4
-preset/WEST/00_WIND 2ca099990d757a24
-preset/WEST/01_RAIN 511d4b984011bb90
-preset/WEST/02_ARCADE 1b976020ca617f04
-preset/WEST/03_METAL 5f12ef86676eb471
-preset/WEST/04_SEA e408eecfd03aeb3e
-preset/WEST/05_HISS_PAD aad455c5994e3282
-preset/WEST/06_INIT_NOISE 90390424bb6db5c8
-preset/WEST/07_TAPE_AIR a7c69b5960868db4
-preset/WEST/08_WEST_PLUCK 824ade7cf741da08
-preset/WEST/09_BONGO 8bd51eb26dba09bc
-preset/WEST/10_MARIMBA 96bd2084239798d8
-preset/WEST/11_WEST_BELL e41c2e556cbf5ad8
-preset/WEST/12_GAMELAN 07e9c725c26010d7
-preset/WEST/13_FOLD_BASS 8193bc9e90b92144
-preset/WEST/14_RUBBER_BASS f4a817be1f19f1f4
-preset/WEST/15_WEST_LEAD 71a70876cef2a961
-preset/WEST/16_FOLD_LEAD 612376ecbc1d48a0
-preset/WEST/17_FOLD_DRONE ac8eeccf445c0e38
-preset/WEST/18_DUST_DRONE d2a85c5c4afa6a21
-preset/WEST/19_INIT_WEST f86ed5b621b52654
+preset/WEST/00_WIND 3923213abb29e794
+preset/WEST/01_RAIN 566de70071641d63
+preset/WEST/02_ARCADE 4de510626d4b9fec
+preset/WEST/03_METAL 2e74549db67000d1
+preset/WEST/04_SEA 920860762f77c967
+preset/WEST/05_HISS_PAD 7b9d631871672199
+preset/WEST/06_INIT_NOISE a42c4e95d7b890e4
+preset/WEST/07_TAPE_AIR 96f63e9536164860
+preset/WEST/08_WEST_PLUCK 5198e25c8dd76018
+preset/WEST/09_BONGO ab0a1df98160d3a4
+preset/WEST/10_MARIMBA 79d1da65e6e6fe70
+preset/WEST/11_WEST_BELL c4e0b070ffc5c3bc
+preset/WEST/12_GAMELAN 0a11f27163707c01
+preset/WEST/13_FOLD_BASS 0407e712b14c6c88
+preset/WEST/14_RUBBER_BASS 02dc34d65c471080
+preset/WEST/15_WEST_LEAD ff8d2cb353737d88
+preset/WEST/16_FOLD_LEAD 299372b55f7d4b18
+preset/WEST/17_FOLD_DRONE 80c164306c4a7f57
+preset/WEST/18_DUST_DRONE 4556f17fe324527e
+preset/WEST/19_INIT_WEST 339326115e23a20c
 preset/FM6/00_TINE_EP b16b6226fe794239
 preset/FM6/01_BELL 3648b62314fe72b0
 preset/FM6/02_FM_BASS 6bdd5f41ed91ecc8

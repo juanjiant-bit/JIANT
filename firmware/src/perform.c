@@ -19,7 +19,9 @@
  *                   KNOB 4 CLEAR (CLR AUTO, G5's before, is gone)
  *   black F#3 G#3   PITCH UP / DOWN: the whole mix's pitch ramps up / down while held, 12 semitones over a bar, then
  *                   stays; in time (a crossfaded delay-line shifter on the buffer)
- *         A#3       FREEZE: the reverb holds its cloud (its SIZE 127, fx.c's freeze; nothing new sent into it)
+ *         A#3       FREEZE: the master held as it is, a drone (V10.7.37: a buffer effect; perf_frz): the next 1/4 beat
+ *                   (100 .. 280 ms) captured, then sustained as overlapping windowed grains reading it forward and
+ *                   wrapping, their places jittered ~1.5 ms; the live mix muted while it holds
  *         C#4 D#4   REV ALL / DLY ALL: full wet, every track into the reverb / the delay, the dry muted; let go, the
  *                   dry back, the tail rings on
  *         F#4       RING: the master ring-modulated by a sine two octaves over the scale's root (C5 .. B5), its
@@ -32,7 +34,7 @@
  * The MIDI effects act on every track (the TRK ALL / SYN / DRM selector is gone: a lane saved with SYN or DRM: ALL).
  * REPEAT, REVERSE, TAPE STOP and GLITCH start on the next 1/16 (at once while stopped); the others at once; all end
  * when let go, with a 2.9 ms ramp. Effects of different kinds stack; of the buffer effects (REPEAT REVERSE TAPE STOP
- * PITCH GLITCH COMB) the last pressed plays, and letting it go returns to the one held before.
+ * PITCH GLITCH COMB FREEZE) the last pressed plays, and letting it go returns to the one held before.
  * The buffer: the SLICER's recordings (sl_buf, 32 KB) borrowed as one stereo loop of 8192 frames at 22.05 kHz
  * (371 ms). While borrowed, STUT tracks play live; their recordings are dropped afterwards. A REPEAT 1/8 longer
  * than the loop at the tempo (below 81 BPM) records at 11 kHz (V10.59: lo-fi, down to ~41 BPM; slower: dimmed).
@@ -42,7 +44,7 @@
  * effect on, the next press turns it off (perf_latched; letting the key or FX go does nothing), the macros keep
  * their values when FX is let go, FX + OCT- turns everything off (ui_layer.c), so does the menu or a dialog.
  * Chain: the buffer effect -> FILTER -> CRUSH -> RING -> WOBBLE, after the master level and before master_out (the limiter);
- * THROW, REV ALL, DLY ALL, DLY 1/16's send, FREEZE's send and GLO's solo (the others muted) act before the buses (fx.c mix_block /
+ * THROW, REV ALL, DLY ALL, DLY 1/16's send and GLO's solo (the others muted) act before the buses (fx.c mix_block /
  * mix_part). Idle (no key, no knob, no ramp left) every stage is skipped: the output is bit-identical. */
 enum { PF_R8, PF_R16, PF_R32, PF_REV, PF_TAPE,
        PF_OCTD, PF_OCTU, PF_HALF, PF_WOB, PF_D16, PF_S8, PF_S16, PF_ATK, PF_ARP, PF_RND,   /* the MIDI ones (pfx.c), but
@@ -60,7 +62,7 @@ static const uint8_t PF_BK[11] = {PF_PUP, PF_PDN, PF_FRZ, PF_RVA, PF_DLA, PF_RIN
 #define PF_REPEAT 0x7u                                         /* the three REPEAT rates */
 #define PF_PITCH (PF_BIT(PF_PUP) | PF_BIT(PF_PDN))
 #define PF_Q (PF_REPEAT | PF_BIT(PF_REV) | PF_BIT(PF_TAPE) | PF_BIT(PF_GLT))   /* start on the 1/16 */
-#define PF_BUF (PF_Q | PF_PITCH | PF_BIT(PF_COMB))             /* the buffer effects (the last pressed plays) */
+#define PF_BUF (PF_Q | PF_PITCH | PF_BIT(PF_COMB) | PF_BIT(PF_FRZ))   /* the buffer effects (the last pressed plays) */
 #define PF_LOOPS (PF_BIT(PF_LP3) | PF_BIT(PF_LP5) | PF_BIT(PF_LP7))             /* (snd2) on the sequencer (pfx.c), as the MIDI ones */
 #define PF_MIDI ((((1u << (PF_RND + 1)) - 1u) & ~((1u << PF_OCTD) - 1u)) & ~(PF_BIT(PF_WOB) | PF_BIT(PF_D16)))   /* PF_OCTD ..
                                                                * PF_RND, on the notes (pfx.c), less WOBBLE and DLY 1/16 */
@@ -76,7 +78,7 @@ _Static_assert(PB_FRAMES <= SL_FR && !(PB_FRAMES & (PB_FRAMES - 1u)), "the REPEA
 #define PT_LO 320u
 #define PT_X 256u
 #define GL_SPAN 7680u                         /* (snd2) GLITCH: the longest slice it reads back (the loop holds two and a margin) */
-enum { BM_NONE, BM_LOOP, BM_GLT, BM_REV, BM_TAPE, BM_PIT, BM_COMB };
+enum { BM_NONE, BM_LOOP, BM_GLT, BM_REV, BM_TAPE, BM_PIT, BM_COMB, BM_FRZ };
 enum { GA_PASS, GA_RPT, GA_REV, GA_UP, GA_DN, GA_GATE, GA_SKIP, GA_CRU, GA_ROLL, GA_TST };
 /* (0.9.9-snd2) GLITCH's knobs of 0.9.18 (ui_layer.c GX_K there), here fixed at its defaults: DENS 50 PITCH 0 SIZE 0 VARI 1 */
 enum { GX_DENS = 50, GX_PITCH = 0, GX_SIZE = 0, GX_VARI = 1 };
@@ -148,6 +150,11 @@ static struct {
             uint32_t t, d;
             int32_t g, zl, zr;
         } c;
+        struct {                       /* (V10.7.37) FREEZE: samples into the hop, the hop (half a grain), the starts (in the
+                                        * window's samples) of the grain in its first half and of the one in its second,
+                                        * grains so far (the jitter's draw) */
+            uint32_t t, h, sa, sb, k;
+        } z;
     } u;
     /* the filters, CRUSH, THROW, mutes */
     int32_t lc, hc, la, ha;            /* KNOB 1's: cutoffs (Q8 index) and shares (Q15) of the low-pass and high-pass */
@@ -158,11 +165,11 @@ static struct {
     int32_t td;                        /* THROW: the share of the dry mix sent, Q15 */
     int32_t mg[NTRK];                  /* mute gains, Q15 (32768 = open) */
 } pf = {.src = PF_N, .next = PF_N, .lc = PF_TOP, .mg = {[0 ... NTRK - 1] = 32768}};   /* (every track open: 0.6, six) */
-/* (V10.7.36) REV ALL, DLY ALL, FREEZE's send, RING, WOBBLE, DLY 1/16: in the pool (the RAM's .bss is full; zeroed at
+/* (V10.7.36) REV ALL, DLY ALL, RING, WOBBLE, DLY 1/16: in the pool (the RAM's .bss is full; zeroed at
  * boot) */
 static struct {
-    int32_t rw, dw, fz, rg, ew, wg;    /* shares, Q15: REV ALL's, DLY ALL's (the dry muted by the larger), FREEZE's (the
-                                        * reverb's send shut), RING's, DLY 1/16's send, WOBBLE's */
+    int32_t rw, dw, rg, ew, wg;        /* shares, Q15: REV ALL's, DLY ALL's (the dry muted by the larger), RING's, DLY
+                                        * 1/16's send, WOBBLE's */
     uint32_t rph, wph;                 /* RING: the sine's phase, its depth's wobble */
     uint32_t etail;                    /* DLY 1/16 let go: samples its time and a low feedback still hold the delay */
     int32_t wl[2], wb[2];              /* WOBBLE's filter: low-pass and band states, L R */
@@ -225,7 +232,7 @@ static __attribute__((noinline)) void perf_buf_start(uint32_t e)
 {
     static const uint8_t BM[PF_N] = {[PF_R8] = BM_LOOP, [PF_R16] = BM_LOOP, [PF_R32] = BM_LOOP, [PF_REV] = BM_REV,
                                            [PF_TAPE] = BM_TAPE, [PF_PUP] = BM_PIT, [PF_PDN] = BM_PIT, [PF_GLT] = BM_GLT,
-                                           [PF_COMB] = BM_COMB};
+                                           [PF_COMB] = BM_COMB, [PF_FRZ] = BM_FRZ};
     if (!sl_lent) {
         sl_lent = 1;
         perf_drop_slicer();
@@ -260,6 +267,12 @@ static __attribute__((noinline)) void perf_buf_start(uint32_t e)
         pf.u.r.k = e == PF_PDN;                   /* (down) */
     } else if (pf.mode == BM_COMB) {              /* COMB: its own line, the first 1024 frames (44.1 kHz), from silence */
         memset(sl_buf, 0, 1024u * sizeof sl_buf[0]);
+    } else if (pf.mode == BM_FRZ) {               /* FREEZE: a window of a 1/4 beat (100 .. 280 ms), grains of half of it */
+        uint32_t b = beat_samples() / 4u;
+        pf.len = b < 4410u ? 4410u : b > 12348u ? 12348u : b;
+        pf.u.z.h = pf.len / 4u;
+        pf.u.z.sb = pf.len / 2u;                  /* (first heard: the grain in its second half, the window's last
+                                                   * quarter; the next from its start) */
     }
 }
 
@@ -342,8 +355,8 @@ static __attribute__((noinline)) int perf_begin(uint32_t n)
         pf.act |= q;
     }
     perf_act = pf.act;
-    if ((pf.act & (PF_BIT(PF_FRZ) | PF_BIT(PF_DLA) | PF_BIT(PF_D16))) || pfw.etail) {   /* (V10.7.36) FREEZE's SIZE, the
-                                                     * delay's (perf_gfx: through a register, out of the RAM code's reach) */
+    if ((pf.act & (PF_BIT(PF_DLA) | PF_BIT(PF_D16))) || pfw.etail) {   /* (V10.7.36) the delay's (perf_gfx: through a
+                                                     * register, out of the RAM code's reach) */
         void (*f)(uint32_t) = perf_gfx;
         FM1_OPAQUE(f);
         f(n);
@@ -396,13 +409,13 @@ static __attribute__((noinline)) void perf_mute(uint32_t k, int32_t *b, uint32_t
         perf_hush_end(k);
 }
 
-/* (V10.7.36) REV ALL, DLY ALL: the dry mix (and the SLICER's bus) all into the reverb / the delay, the dry muted;
- * FREEZE: the reverb's send shut (it holds what it has). Each ramps over 2.9 ms */
+/* (V10.7.36) REV ALL, DLY ALL: the dry mix (and the SLICER's bus) all into the reverb / the delay, the dry muted. Each
+ * ramps over 2.9 ms */
 static __attribute__((noinline)) void perf_wet(int32_t *ml, int32_t *mr, int32_t *bl, int32_t *br, int32_t *sd, int32_t *sr,
                                                uint32_t n)
 {
     uint32_t i, a = pf.act;
-    int32_t rt = (a >> PF_RVA) & 1u ? 32768 : 0, dt = (a >> PF_DLA) & 1u ? 32768 : 0, ft = (a >> PF_FRZ) & 1u ? 32768 : 0;
+    int32_t rt = (a >> PF_RVA) & 1u ? 32768 : 0, dt = (a >> PF_DLA) & 1u ? 32768 : 0;
     int32_t et = (a >> PF_D16) & 1u ? 32768 : 0;
     for (i = 0; i < n; i++) {
         int32_t x = (ml[i] + mr[i] + bl[i] + br[i]) >> 1, g;
@@ -411,13 +424,10 @@ static __attribute__((noinline)) void perf_wet(int32_t *ml, int32_t *mr, int32_t
             sd[i] += mulq16(x, (uint32_t)pfw.ew << 1);
         pfw.rw += clamp(rt - pfw.rw, -SL_SLOPE, SL_SLOPE);
         pfw.dw += clamp(dt - pfw.dw, -SL_SLOPE, SL_SLOPE);
-        pfw.fz += clamp(ft - pfw.fz, -SL_SLOPE, SL_SLOPE);
         if (pfw.rw)
             sr[i] += mulq16(x, (uint32_t)pfw.rw << 1);
         if (pfw.dw)
             sd[i] += mulq16(x, (uint32_t)pfw.dw << 1);
-        if (pfw.fz)
-            sr[i] = mulq16(sr[i], (uint32_t)(32768 - pfw.fz) << 1);
         g = pfw.rw > pfw.dw ? pfw.rw : pfw.dw;
         if (g) {
             uint32_t k = (uint32_t)(32768 - g) << 1;
@@ -428,7 +438,7 @@ static __attribute__((noinline)) void perf_wet(int32_t *ml, int32_t *mr, int32_t
         }
     }
 }
-/* .. FREEZE: the reverb's SIZE at its top (fx.c: CLOUD's line held, the others ringing on); DLY ALL: the delay's MIX at
+/* .. DLY ALL: the delay's MIX at
  * least 100; DLY 1/16: the delay's TIME 1/16 and FEEDBK 95 (fx.c dly_fb: under self-oscillation, its loop's saturation
  * bounds it), MIX at least 100; let go, a bar of TIME 1/16 at FEEDBK 30: the echoes die out quickly, then the user's
  * delay (the matrix's offset, gfx_off, written again by macro_master every block) */
@@ -436,8 +446,6 @@ static void pf_goff(uint32_t k, int32_t v) { gfx_off[k] = (int16_t)(gfx_off[k] +
 static __attribute__((noinline)) void perf_gfx(uint32_t n)
 {
     uint32_t e = (pf.act >> PF_D16) & 1u;
-    if (pf.act & PF_BIT(PF_FRZ))
-        gfx_off[GF_RSIZE] = 255;
     if (e)
         pfw.etail = 16u * (pf.P ? pf.P : 1u);
     else if (pfw.etail)
@@ -449,7 +457,7 @@ static __attribute__((noinline)) void perf_gfx(uint32_t n)
     if ((pf.act & (PF_BIT(PF_DLA) | PF_BIT(PF_D16))) && gfx_val(GF_DMIX) < 100)
         pf_goff(GF_DMIX, 100);
 }
-#define PF_WET (PF_BIT(PF_RVA) | PF_BIT(PF_DLA) | PF_BIT(PF_FRZ) | PF_BIT(PF_D16))
+#define PF_WET (PF_BIT(PF_RVA) | PF_BIT(PF_DLA) | PF_BIT(PF_D16))
 
 /* before the buses: THROW (KNOB 3) adds the dry mix (and the SLICER's bus, bl / br) to the delay and reverb sends */
 static __attribute__((noinline)) void perf_pre(int32_t *ml, int32_t *mr, int32_t *bl, int32_t *br, int32_t *sd, int32_t *sr,
@@ -465,7 +473,7 @@ static __attribute__((noinline)) void perf_pre(int32_t *ml, int32_t *mr, int32_t
             sr[i] += x;
         }
     }
-    if ((pf.act & PF_WET) || pfw.rw || pfw.dw || pfw.fz || pfw.ew) {   /* (V10.7.36, as perf_gfx: through a register) */
+    if ((pf.act & PF_WET) || pfw.rw || pfw.dw || pfw.ew) {   /* (V10.7.36, as perf_gfx: through a register) */
         void (*f)(int32_t *, int32_t *, int32_t *, int32_t *, int32_t *, int32_t *, uint32_t) = perf_wet;
         FM1_OPAQUE(f);
         f(ml, mr, bl, br, sd, sr, n);
@@ -831,6 +839,37 @@ static __attribute__((noinline)) int perf_comb(int32_t l, int32_t r)
     return 1;
 }
 
+/* ----------------------------------------------------------------- FREEZE --- */
+/* (V10.7.37) a buffer effect: len samples (a 1/4 beat) recorded (live meanwhile), then held: two grains of 2 h samples
+ * (h = len / 4) overlapping by half, each windowed by sin^2 (their windows sum to 1: no seam, no level step), reading the
+ * window forward: each new grain starts h after the one before (where it reads now: in phase with it) and ~1.5 ms
+ * jittered, back at the window's start (jittered) when the next would pass its end. 1 = it plays (pf.yl yr) */
+static __attribute__((noinline)) int perf_frz(int32_t l, int32_t r)
+{
+    uint32_t t, h = pf.u.z.h, n = pf.wr;
+    int32_t w, al, ar, bl, br;
+    if (!pf.state) {
+        pf.wr = pb_rec(pf.wr, l, r);
+        if (++pf.rp >= pf.len)
+            pf.state = 1;
+        return 0;
+    }
+    t = pf.u.z.t;
+    if (t >= h) {                                  /* the next grain: the one in its first half to its second */
+        uint32_t j = pf_hash(++pf.u.z.k) % 129u, s = pf.u.z.sa + h + j - 64u;
+        pf.u.z.sb = pf.u.z.sa;
+        pf.u.z.sa = s + 2u * h > pf.len || (int32_t)s < 0 ? j : s;
+        pf.u.z.t = t = 0;
+    }
+    w = (32768 - sine_i(t * (0x80000000u / h) + 0x40000000u)) >> 1;   /* sin^2: the first half's rising window */
+    pb_at(pf.u.z.sa + t, n, &al, &ar);
+    pb_at(pf.u.z.sb + h + t, n, &bl, &br);
+    pf.yl = bl + mulq16(al - bl, (uint32_t)w << 1);
+    pf.yr = br + mulq16(ar - br, (uint32_t)w << 1);
+    pf.u.z.t = t + 1u;
+    return 1;
+}
+
 /* the buffer effect faded out: the next one, or the buffer back. Once per effect, out of the per-sample loop
  * (noinline: its calls stay out of perf_block's loop code) */
 static __attribute__((noinline)) void perf_buf_done(void)
@@ -873,8 +912,9 @@ static __attribute__((noinline)) void perf_buf(int32_t *pl, int32_t *pr)
                 pf.rp = 0;
             on = 1;
         }
-    } else if ((on = pf.mode == BM_GLT ? perf_glt(l, r) : pf.mode == BM_COMB ? perf_comb(l, r) : perf_rtp(l, r)) != 0) {   /* (snd2) GLITCH; (V10.7.36) REVERSE,
-                                                     * TAPE STOP, PITCH */
+    } else if ((on = pf.mode == BM_GLT ? perf_glt(l, r) : pf.mode == BM_COMB ? perf_comb(l, r) :
+                     pf.mode == BM_FRZ ? perf_frz(l, r) : perf_rtp(l, r)) != 0) {   /* (snd2) GLITCH; (V10.7.36) REVERSE,
+                                                     * TAPE STOP, PITCH; (V10.7.37) FREEZE */
         yl = pf.yl;
         yr = pf.yr;
     }
@@ -963,6 +1003,6 @@ static __attribute__((noinline)) void perf_block(int32_t *bl, int32_t *br, uint3
         f(bl, br, n);
     }
     pf.busy = pf.act || pf.mode != BM_NONE || pf.w || pf.la || pf.ha || pf.cw || pf.td || pf.mute || perf_k[0] ||
-              perf_k[1] || perf_k[2] || pfw.rw || pfw.dw || pfw.fz || pfw.rg ||
+              perf_k[1] || perf_k[2] || pfw.rw || pfw.dw || pfw.rg ||
               pfw.ew || pfw.wg || pfw.etail;
 }
