@@ -1437,7 +1437,8 @@ static void check_ontime(void)
     static double y[FS * 3];
     static int32_t o[2 * CTL];
     char what[240];
-    double nlo = 1e9, nhi = -1e9, alo = 1e9, ahi = -1e9, klo = 1e9, khi = -1e9;
+    double nlo = 1e9, nhi = -1e9, alo = 1e9, ahi = -1e9, klo = 1e9, khi = -1e9, k0 = -1e9;
+    uint32_t og;
     uint32_t k, d, i, j;
     for (k = 0; k < NELEM(SY); k++)
         for (d = 1; d <= 2u; d++) {                      /* 1/8, 1/16 */
@@ -1472,12 +1473,14 @@ static void check_ontime(void)
                 if (k < 8u && a > ahi) ahi = a;
             }
         }
+    for (og = 0; og < 2u; og++)                          /* (V10.7.41) ORGANIC 100 % (its consonants ~30 ms), 0 */
     for (k = 0; k < NELEM(SY); k++) {                    /* keys: from silence and after a note */
         for (d = 0; d < 2u; d++) {
             double t = -1;
             char txt[64];
             snprintf(txt, sizeof txt, "%s%s", d ? "a " : "", SY[k]);
             vsetup(preset_of("CANTOR ES"), LG_ES, txt);
+            trk[0].p[P_VORG] = og ? 0 : 127;
             if (d) {
                 trk_note_on(&trk[0], 60, 100); vrender(0, FS / 4); trk_note_off(&trk[0], 60); vrender(0, FS / 20);
             }
@@ -1487,14 +1490,15 @@ static void check_ontime(void)
                 if (sing[0].nsy == d + 1u && sing[0].i == sing[0].nu) t = (i + CTL) * 1000.0 / FS;
             }
             if (t < klo) klo = t;
-            if (t > khi) khi = t;
+            if (og && t > k0) k0 = t;
+            if (!og && t > khi) khi = t;
         }
     }
-    printf("voice:   on time: sequenced vowel reached %.1f .. %.1f ms of the step, heard %.1f .. %.1f; keys %.1f .. %.1f ms\n",
-           nlo, nhi, alo, ahi, klo, khi);
+    printf("voice:   on time: sequenced vowel reached %.1f .. %.1f ms of the step, heard %.1f .. %.1f; keys %.1f .. %.1f ms "
+           "(ORGANIC 0: %.1f)\n", nlo, nhi, alo, ahi, klo, khi, k0);
     snprintf(what, sizeof what, "on time: a sequenced syllable's vowel on its step (reached %.0f .. %.0f ms, heard %.0f .. %.0f; "
-             "-16 .. 3, +-16), a key's within %.0f ms (<= 14)", nlo, nhi, alo, ahi, khi);
-    check(what, nlo >= -16.0 && nhi <= 3.0 && alo >= -16.0 && ahi <= 16.0 && klo >= 0 && khi <= 14.0);
+             "-16 .. 3, +-16), a key's within %.0f ms (<= 32; V10.7.41 ORGANIC 0: %.0f, <= 14)", nlo, nhi, alo, ahi, khi, k0);
+    check(what, nlo >= -16.0 && nhi <= 3.0 && alo >= -16.0 && ahi <= 16.0 && klo >= 0 && khi <= 32.0 && k0 <= 14.0);
 }
 
 static void check_cost(void)

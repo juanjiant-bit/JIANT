@@ -38,6 +38,14 @@ public version) or earlier: [What's new in this version](#whats-new-in-this-vers
 
 Everything since V10.6c, the last public version, in one list; each item links to its place in the manual.
 
+**PRESETS heard as you turn, VOICE organic again (V10.7.41)**
+- **The PRESETS list loads each sound as you move to it** (as before V10.7.33): play or hold a note and turn; **OCT+**
+  keeps the sound, **OCT−** goes back to the one from before the list, anything else keeps what you hear. See
+  [Easy to understand](#whats-new-in-this-version) below and the PRESETS row of [The panel](#1-the-panel).
+- **VOICE sings like V10.7.23 again**, with its vowels still on the step: a vibrato on every held note, the old jitter,
+  quick consonant glides, a steady level, a key's consonants heard. **EDIT › TONE › ORGANIC** (VOICE's KNOB 4) turns
+  the singer's life down to a machine. See [VOICE: words](#voice-words-and-lyrics-085).
+
 **LIFE: the voices alive, the tracks moving each other (V10.7.34)**
 - **HOME › LIFE**, HOME's new first page: every voice breathes on its own (a few cents of pitch, its filter, its level),
   a held note has an arc (it starts with energy, blooms, then tires), and the tracks move each other before the effects
@@ -73,9 +81,12 @@ Everything since V10.6c, the last public version, in one list; each item links t
 **Easy to understand (V10.7.33)**
 - **PRESETS always loads sounds, through a list.** Its first turn opens the list over the page (nothing loads); PRESETS
   scrolls it, **KNOB 1** the track, **KNOB 2** the next engine, **KNOB 3** the source (**FACTORY · USER · FAVORITE**),
-  **KNOB 4** the type (**ALL · BASS · LEAD · PAD …**). **OCT+** loads the sound picked; **OCT−**, or a few seconds
-  untouched, closes it with no change. **REC** marks a favourite. A dot (●) on the track's sound: edited, not saved.
-  SAVE › PRESETS is the same list.
+  **KNOB 4** the type (**ALL · BASS · LEAD · PAD …**). **V10.7.41: every sound you move to is loaded at once**, so you
+  hear it while you turn (hold a note or let the sequencer play: it goes on in each sound, a DRUM-X track hears each
+  kit). **OCT+** keeps it and closes the list; **OCT−** puts back the sound (every track you loaded into from the list)
+  as it was when the list opened; leaving it any other way (a few seconds untouched, a button) keeps what you hear.
+  UNDO also goes back to the sound before the list. **REC** marks a favourite. A dot (●) on the track's sound: edited,
+  not saved. SAVE › PRESETS is the same list.
 - **SEQ held + PRESETS** moves the step on any SEQ page, its number large on screen (the 16 keys still pick steps).
 - **The tempo**: large on HOME › MACROS; **HOME held + PRESETS** changes it (GLO + SELECT still does). GLO › MIXER's
   KNOB 4 is now **G.SWING**, the global swing.
@@ -247,7 +258,7 @@ The names below are the ones the firmware uses (the HARDWARE CALIBRATION screen 
 | --- | --- |
 | **SELECT** (encoder) | Alone (0.9.2): **walks the section's pages**, one page a detent, as one chain, stopping at its first and last page (no levels, no zoom; see [How navigation works](#how-navigation-works-six-rules-092)). In the MENU: its rows, all four tabs in one chain. With a button held: **HOME** + SELECT **GEN**, **EDIT / SEQ / LFO / FX** + SELECT that part's **dice**, **GLO** + SELECT the **tempo**, **ENV / SCL / ARP / SAVE** + SELECT walk that section's chain from wherever you are. |
 | **ALGORITHM** (encoder) | Selects the track from any page: T1–T6 (T1–T4 with TRACKS 4). The track is always ALGORITHM's (0.9.2: PRESETS no longer picks it on ENV, LFO, CHORD, ARP). In the MENU: the next / previous tab. With a layer held: its view, MAP ↔ KNOBS ↔ STATE. |
-| **PRESETS** (encoder) | **Always sounds, through a list** (V10.7.33): its first turn opens the list over any page (nothing loads), PRESETS scrolls it, OCT+ loads the sound picked, OCT− or a few seconds untouched close it; KNOB 1 the track, KNOB 2 the next engine, KNOB 3 FACTORY / USER / FAVORITE, KNOB 4 the type; REC a favourite (see "Easy to understand (V10.7.33)" above). In the MENU it does nothing; with a button held: **EDIT** the first sound of the next / previous engine (V10.7), **SEQ** the step (its number large), **HOME** the tempo. It never changes page, track, module or row. |
+| **PRESETS** (encoder) | **Always sounds, through a list** (V10.7.33): its first turn opens the list over any page (nothing loads), PRESETS scrolls it and (V10.7.41) loads each sound at once, OCT+ keeps it, OCT− puts back the sound from before the list, a few seconds untouched close it keeping the sound; KNOB 1 the track, KNOB 2 the next engine, KNOB 3 FACTORY / USER / FAVORITE, KNOB 4 the type; REC a favourite (see "Easy to understand (V10.7.33)" above). In the MENU it does nothing; with a button held: **EDIT** the first sound of the next / previous engine (V10.7), **SEQ** the step (its number large), **HOME** the tempo. It never changes page, track, module or row. |
 | **KNOB 1–4** | The four cards (columns) on screen. A page that picks something picks it with **KNOB 1** (the step, the bar, the slot, the stage, the operator, the kit's sound, the row). With a layer held, the layer's own knobs. Turning fast sweeps the whole range, slowly fine-tunes (MENU › CONTROL › KNOB ACCEL turns this off). In the MENU: KNOB n the setting on card n. |
 | **MASTER** | The output volume. |
 
@@ -438,8 +449,8 @@ knobs, their pictures and every function are the same, only the way between them
 2. **The section's button: in, or on.** From another section it brings you back to the page you were last on there.
    Already inside, it jumps to the **first page of the next group** (and goes round). On FX › DELAY 2, FX goes to
    REVERB; on EDIT › FILTER, EDIT goes to AUTO KNOBS.
-3. **PRESETS loads sounds.** Always, in every section, through its list (V10.7.33: the first turn opens it, OCT+
-   loads, OCT− closes). It never changes page, track or module (in the MENU it does nothing). The SEQ step: SEQ held +
+3. **PRESETS loads sounds.** Always, in every section, through its list (V10.7.33: the first turn opens it; V10.7.41:
+   each turn loads the sound at once, OCT+ keeps it, OCT− goes back to the sound from before). It never changes page, track or module (in the MENU it does nothing). The SEQ step: SEQ held +
    PRESETS; the tempo: HOME held + PRESETS.
 4. **KNOB 1 picks.** When a page picks something (a step, a bar, a slot, a stage, an operator, the kit's sound, a
    row) KNOB 1 is the one that picks it. The track is always **ALGORITHM**'s. SEQ › STEP: KNOB 1 walks all 64 steps,
@@ -476,7 +487,7 @@ it was in 0.9.1, with its knobs and its picture (the ones 0.8.5's lenses drew).
 | Section | Groups (the button) · pages (SELECT) | Pages |
 | --- | --- | --- |
 | **HOME** | (V10.7.24; V10.7.32 the song's pages; V10.7.34 LIFE, TRACKS; V10.7.36 LIVE MIX second) **LIFE**: LIFE — **MACROS**: MACROS — **LIVE MIX**: LIVE MIX — **TRACKS**: TRACKS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **GEN**: GEN 1 · GEN 2 · GEN 3 | 10 |
-| **EDIT** (a synth) | (V10.7.35) **SOUND**: EDIT 1 · EDIT 2 · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (those the engine and the track have) — **TONE**: FILTER · EROSION · TONE (KEY TRK · CRUSH · LIFE) — **VOICES**: VOICES · VOICES 2 (EXT: VOICES 3) — **AUTO KNOBS**: AUTO KNOBS | up to 11 |
+| **EDIT** (a synth) | (V10.7.35) **SOUND**: EDIT 1 · EDIT 2 · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (those the engine and the track have) — **TONE**: FILTER · EROSION · TONE (KEY TRK · CRUSH · LIFE; VOICE: · ORGANIC, V10.7.41) — **VOICES**: VOICES · VOICES 2 (EXT: VOICES 3) — **AUTO KNOBS**: AUTO KNOBS | up to 11 |
 | **EDIT** (FM6) | (V10.7.35) **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **TONE**: FILTER · EROSION · TONE — **VOICES**: VOICES · VOICES 2 | 10 |
 | **EDIT** (DRUM) | (V10.7.37) **KIT**: KIT · KIT 2 · KIT 3 — **SOUND**: SOUND · SOUND 2 · SOUND 3 (the sound a key struck) — **LEVELS**: LEVELS · LEVELS 2 — **MOD**: KIT LFO · EROSION — **TONE**: FILTER · OUT | 12 |
 | **SEQ** | (V10.6) **STEP**: STEP — **PATTERN**: LENGTH · RHYTHM · TRACK — **EUCLID**: EUCLID · MODES · MUTATE — **PLAYHEADS**: PLAYHEADS — **STRETCH**: STRETCH — **STEP COND**: STEP COND · COND 2 — **LOCKS**: LOCKS · LYRICS (VOICE) — **TRACK GEN**: TRACK GEN | 14 |
@@ -634,6 +645,7 @@ since 0.6.51: every project opens as it was.
 | OPERATOR 2 | OP | MODE | DETUNE | KEY VEL (the operator's velocity; was VEL) | FM6 |
 | FILTER | TYPE | CUT | RES | DRIVE (ANALOG) / DIST (others) | every engine |
 | EROSION (V10.7.37; was FILTER 2) | NOISE | RATE | MODE (SOFT STEP METAL BREAK DUST) | DEST (FILT .. PITCH; not on VOICE) | every engine but EXT (DRUM: its own, below) |
+| TONE (V10.7.35) | KEY TRK | CRUSH | LIFE (the track's) | VOICE: **ORGANIC** (V10.7.41: 0..100 %, default 100: the singer's life; see [VOICE: words](#voice-words-and-lyrics-085)) | every engine but EXT (DRUM: OUT) |
 | KIT 3 | BP | FEEDBK | HANDS | GLUE | DRUM (the whole kit) |
 | KIT LFO | RATE | DEPTH | SHAPE | RAND | DRUM (the whole kit) |
 | EROSION (V10.7.37) | NOISE | RATE | MODE (SOFT STEP METAL BREAK DUST) | DEST (FILT F75 MIX P75 PITCH) | DRUM (the kit's FILTER and its hits' pitch) |
@@ -665,7 +677,7 @@ since 0.6.51: every project opens as it was.
 
 | Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- |
-| PRESETS (V10.7.33: the list) | TRACK | ENG (KNOB 2: the next engine's first sound) | SOURCE (FACTORY / USER / FAVORITE) | TYPE (ALL BASS LEAD PAD KEYS PLUCK BELL VOX DRUM FX) · PRESETS scrolls, OCT+ loads, OCT− closes, REC a favourite |
+| PRESETS (V10.7.33: the list) | TRACK | ENG (KNOB 2: the next engine's first sound) | SOURCE (FACTORY / USER / FAVORITE) | TYPE (ALL BASS LEAD PAD KEYS PLUCK BELL VOX DRUM FX) · PRESETS scrolls and loads (V10.7.41), OCT+ keeps, OCT− back, REC a favourite |
 | USER | SLOT (U01–U32) | LOAD (action) | ERASE (action) | SAVE (action) |
 | PROJECTS / PART SLOTS (the PROJECT page) | PROJECT (1–6: picks it, does not open it; on PART SLOTS: PART A–D) | LOAD (action: opens the picked project; PART SLOTS: the part) | ERASE (action) | SAVE (action: then NAME, KNOB 3 SONG / LOOP) |
 | TOOLS (V10.24; V10.7.22 SAVE's first page) | TARGET (PROJECT, TRACK, SOUND, SONG, SYSTEM; was SCOPE) | ACTION (CLEAR PROJECT · CLEAR SEQ · INIT SOUND · DELETE ROW, CLEAR SONG · CPU TEST) | — | DO: **OCT+ held a second** (CLEAR PROJECT: OCT+ asks, OCT+ again does it) |
@@ -1130,6 +1142,19 @@ formants (F1 down, F2 across: where the tongue is), with the voicing and noise l
 *m n l* and the glides come through in context; *b d g*, *v z* and the English *r* are approximations, and
 intelligibility drops at very short notes (a syllable's consonants take 40–100 ms before its vowel). Spanish and
 Japanese read best (their spelling is regular); English needs the editor's phonemes (or your own).
+
+**Organic, and on time (V10.7.41).** After V10.7.24 put the vowel on the step, VOICE had grown steadier and slower
+(a user: "it sounded organic, now it sounds robotic"). V10.7.41 brings back what V10.7.23 had and keeps the timing:
+the vowel still lands on the step (the sequencer starts its consonants early) and on the key. Back: a **vibrato on
+every note held past ~0.3 s** (±20 cents, ~5.5 Hz, each note its own rate), the glottal **jitter and shimmer** at their
+old amount, **quick consonant-to-vowel glides** (~20–40 ms, as speech; they had slowed to 100–150 ms, a talk box's
+slide), a **steady level** (the swell down a note and a phrase is at most −1 dB, was −4 and −3.5: quieter and duller),
+and **a key's consonants heard** (squeezed into ~30 ms, was ~10: the vowel still within ~30 ms of the key). Kept but
+smaller: the pitch's slow wander (an eighth, ±2 cents), the scoop into a phrase's first note (2–25 cents) and the
+legato landing (a 4 % overshoot, was ~30 cents). **EDIT › TONE › ORGANIC** (KNOB 4, VOICE only; 100 % by default,
+what every older project and preset opens with): towards 0 % the singer's life fades out (no vibrato, jitter, wander,
+scoop or creak, the pitch as played) and a key's consonants are squeezed to ~10 ms, the tightest timing: a machine. On
+LANG OFF (the vowels) it does nothing.
 
 **Cost.** No state per voice (the articulation is the track's); ~1 KB of RAM for the six lyrics and singers; the
 English dictionary (~11 KB of the Bluetooth segment's flash) is the editor's since V10.7.33; about +9 % CPU over

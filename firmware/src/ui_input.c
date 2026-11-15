@@ -2198,9 +2198,7 @@ static void sound_dice_of(track_t *t, int quiet)
     uint32_t e = trk_eng(t), i, l;
     if (e == ENGI_DRUM && drum_elsewhere(t)) {          /* (0.8.3, reported again) the section's one kit is another
                                                          * track's: its drums stay as they are */
-        static char m[16] = "KIT OF T? KEPT";
-        m[8] = (char)('0' + drum_elsewhere(t));
-        ui_message(m);
+        kit_kept(drum_elsewhere(t));                    /* (ui.c) */
         return;
     }
     if (e == ENGI_DRUM) {
@@ -3093,12 +3091,12 @@ static void ui_input_frame(void)
                 break;
             if (live_page())                            /* (p2) LIVE: OCT- RETURN / held BYPASS, OCT+ COMMIT */
                 break;                                  /* (ui_live.c live_frame) */
-            if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_BROWSE) {   /* (V10.7.33) PRESETS' list: OCT+
-                                                         * loads the sound picked, OCT- closes it as it was */
+            if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_BROWSE) {   /* (V10.7.33) PRESETS' list:
+                                                         * (V10.7.41) OCT+ keeps the sound heard, OCT- the sounds before */
                 if (b == B_OCTUP)
-                    pl_load();
-                else
                     pl_close();
+                else
+                    pl_back();
                 oct = 0;                                /* (GEN back under it: not its OCT+ / OCT- too) */
                 break;
             }
