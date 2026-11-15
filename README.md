@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.37
+## This release: V10.7.38
 
 ### Installing
 
@@ -482,6 +482,19 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.38 — beta (2026-11-15)
+- **WEST drawn as its circuit** on EDIT: the two sine cores, the folder and the vactrol gate, each moving with its knob.
+- **FILTER 2 is now EROSION** on every synth, and **DRUM-X** has it too: its pages go from fifteen to **twelve** (the drum
+  VOICES page is gone). The kit's sound was reviewed: velocity brightens only the accents (above 100), and the kit's
+  DECAY ranges from a fifth to five times each sound's own.
+- **ALLOC is automatic**: VOICES 2 is now **UNISON · VEL · IMAGE**.
+- **MATH › RETRIG › TIME** (KNOB 2): **NOTE** (as before, each note restarts the formula's time) or a tempo rate,
+  1/1 to 1/32 and the triplets 1/4T 1/8T 1/16T, so the formula's slow time follows the transport across notes.
+- **PROX** (the Bluetooth proximity control): **SLEW** 0–100 % (how slowly it follows: 30 ms to 770 ms to reach 90 %) and
+  **SENS** 0–7 (up to ×4.5 around the middle), on KNOB 3 and KNOB 4 of its page.
+- **The emulator talks to the FM-1**: SEND TO FM-1, GET FROM FM-1, DOWNLOAD BACKUP and IMPORT BACKUP move the projects
+  between the emulator and the keyboard over USB MIDI.
 
 ### V10.7.37 — beta (2026-11-15)
 - **WEST remade, with Buchla and Serge character.** Its low-pass gate is a **vactrol** model (an LED lighting a light-dependent resistor): a quick but not instant attack and a slow, nonlinear decay, fast at first then a long tail that lasts longer as it darkens, so a short strike rings like a struck bongo and long DECAYs sustain. The cores go from sine (Buchla) to triangle (Serge), folded smoothly; the presets revoiced.
