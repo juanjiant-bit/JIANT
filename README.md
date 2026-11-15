@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.39
+## This release: V10.7.40
 
 ### Installing
 
@@ -482,6 +482,11 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.40 — beta (2026-11-15)
+- **FM6 never reaches a glitch**: under a heavy load the dearest part's held voices (FM6 first: it costs 60 % at half the
+  rate) go to half the sample rate as soon as the load stays past **75 %** (ECO: 55 %), no longer only after the guard
+  trips at 85 %; they come back at the full rate under 55 %. With a light load nothing changes: full quality.
 
 ### V10.7.39 — beta (2026-11-15)
 - **A track's voices, set by hand**: EDIT › VOICES 2 is now **UNISON · VEL · IMAGE · VOICES**. **VOICES** (KNOB 4) caps

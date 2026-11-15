@@ -1034,6 +1034,7 @@ static int32_t voice_lvl(const track_t *t, const voice_t *v)   /* (codex/voices)
 static __attribute__((noinline)) void voice_soft(void)
 {
     static uint8_t div, near;
+    uint32_t lim;
     uint32_t p, i, busy = 0, cap, h, dear = NPART, dc = 0, again = 0;
     uint8_t own[NPART];
     if (++div & 3u)
@@ -1084,8 +1085,8 @@ static __attribute__((noinline)) void voice_soft(void)
         h = HURRY_ROOM;
     for (p = 0; p < NPART; p++)
         rel_hurry[p] = VSOFT & 1u ? (uint8_t)((own[p] > h ? own[p] : h) + load_tight) : 0u;
-    near = (VSOFT & 2u) && (load_tight || h || load_pred_q8 >
-                            ((sys_load == LOAD_ECO ? LOAD_ADMIT_ECO : LOAD_ADMIT) - HALF_NEAR) << 8);
+    lim = ((sys_load == LOAD_ECO ? LOAD_ADMIT_ECO : LOAD_ADMIT) - HALF_NEAR) << 8;   /* (75 %, ECO 55 %) */
+    near = (VSOFT & 2u) && (load_tight || h || load_pred_q8 > lim);
     for (again = (VSOFT & 4u) ? (again + 1u) >> 1 : 0u; busy > cap && again; again--) {   /* over the budget by tails
                                                          * that counted half and were played again (a note in its own
                                                          * voice asks for no room): a voice given up for each two, as a
@@ -1098,9 +1099,12 @@ static __attribute__((noinline)) void voice_soft(void)
         voice_kill(&vp->v[k]);
         busy = voices_load();
     }
-    if (!near || load_avg_q8 <= (GUARD_OFF << 8))
+    if (!near || (!load_tight && load_avg_q8 <= lim))   /* (V10.7.40, the owner: before a glitch) the average past the
+                                                         * admission's limit less HALF_NEAR (75 %, ECO 55 %) for HALF_WAIT,
+                                                         * or the guard tripped: the dearest part's held voices at half the
+                                                         * rate; back at the full rate under HALF_BACK (55 %) */
         vh_wait = 0;
-    else if (load_tight && ++vh_wait >= HALF_WAIT && dear < NPART) {   /* still tripped with the tails at half: the dearest
+    else if (++vh_wait >= HALF_WAIT && dear < NPART) {   /* still tripped with the tails at half: the dearest
                                                          * part's held voices too */
         vh_held |= (uint8_t)(1u << dear);
         vh_wait = 0;
