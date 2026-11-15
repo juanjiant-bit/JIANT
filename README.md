@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.40
+## This release: V10.7.42
 
 ### Installing
 
@@ -483,7 +483,7 @@ same license.
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
 
-### V10.7.41 — beta (2026-11-15)
+### V10.7.43 — beta (2026-11-15)
 - **PRESETS heard as you turn** (a user: "a lot of button presses just to preview a preset"): the list stays (its first
   turn opens it), and every sound you move to (PRESETS, or KNOB 2's next engine) is **loaded at once**, as before
   V10.7.33; a held note or the playing sequencer goes on in each sound, a DRUM-X track hears each kit. The sound loaded
@@ -500,6 +500,20 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
   consonants in ~30 ms; the sequencer still starts the consonants early so the vowel lands on the step.
   **EDIT › TONE › ORGANIC** (VOICE's KNOB 4, 100 % by default and in every older project) fades the singer's life down
   to a machine at 0 % (the pitch as played, a key's vowel at once). LANG OFF (the vowels) is unchanged.
+
+### V10.7.42 (2026-11-15)
+- **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version
+  since V10.7.23 was measured: the +7.7 % of CPU TEST is all BALANCE, on since V10.7.33 (+3.3 %), and LIFE (+4.2 %); nothing runs
+  per sample for a feature that is off. Now a silent block skips the master (idle 326 → 181 instructions a sample, V10.7.23:
+  296). LIFE's followers are lighter, and FREEZE no longer divides every sample. The sound is bit for bit the same.
+- **FREEZE let go: the tracks back at the full rate.** Since V10.7.41 they stayed at half the rate after a FREEZE, until
+  the next punch-in.
+
+### V10.7.41 (2026-11-15)
+- **WEST with RES high no longer breaks on the peaks**: past RES ~43 the gate's input is lowered with its resonance
+  (x0.25 at 127), so its ring stays inside the gate's arithmetic (it wrapped around: a crack on every peak). Below RES 43
+  nothing changes; of the factory sounds only WIND, RAIN, HISS PAD, BONGO and RUBBER BASS (RES high) change.
+- **FREEZE lighter**: while it holds, the tracks under it (not heard) play at half the sample rate where they can.
 
 ### V10.7.40 — beta (2026-11-15)
 - **FM6 never reaches a glitch**: under a heavy load the dearest part's held voices (FM6 first: it costs 60 % at half the

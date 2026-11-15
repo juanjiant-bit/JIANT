@@ -655,7 +655,7 @@ static int page_visible(uint32_t i)
                                                          * synth's; filter2-mod: FILTER 3 KEY, VOICE's EROSION no DEST) */
         return PAGES[i].id[0] == P_LN0 || PAGES[i].id[0] == P_LN4 ? te == ENGI_DRUM : te != ENGI_DRUM &&
                te != ENGI_INPUT && (te == ENGI_VOICE) == (PAGES[i].id[3] == (PAGES[i].id[0] == P_FKEY ? P_VORG : 0xFFu));
-                                                         /* (V10.7.41: VOICE's TONE with ORGANIC, the others' without) */
+                                                         /* (V10.7.43: VOICE's TONE with ORGANIC, the others' without) */
     if (PAGES[i].graph == GR_FOCUS)                     /* (0.8.5) FOCUS: a synth's (FM6: OPERATOR, DRUM: SOUND; V10.54 not INPUT's) */
         return te != ENGI_DRUM && te != ENGI_FM6 && te != ENGI_INPUT &&
                !(FELUCCA_FM4 && te == ENGI_DIGITAL);
@@ -888,7 +888,7 @@ static uint32_t lock_id(uint32_t k)
 
 static void ev_enter(void);
 static uint16_t pl_cur;                             /* (V10.7.33) PRESETS' list: the sound picked + 1 (0: the track's own) */
-static uint8_t pl_snd;                              /* (V10.7.41) the tracks it loaded into since it opened (OCT- puts back) */
+static uint8_t pl_snd;                              /* (V10.7.43) the tracks it loaded into since it opened (OCT- puts back) */
 static uint8_t ndg_step;                            /* (V10.25) SEQ > STRETCH's NUDGE: 0 the sequence by steps (blue), 1 the
                                                      * cursor step's MICRO timing (red); OCT- / OCT+ pick it */
 static uint32_t tl_t0;                              /* (V10.24) TOOLS: OCT+ held since (0: not), its action and track */
@@ -1734,7 +1734,7 @@ static uint32_t drum_elsewhere(const track_t *t)
     return 0;
 }
 static __attribute__((noinline)) void kit_kept(uint32_t o)   /* "KIT OF Tn KEPT": the section's kit is track o's (1 + its index;
-                                                         * V10.7.41: one copy, apply_preset's and the dice's) */
+                                                         * V10.7.43: one copy, apply_preset's and the dice's) */
 {
     static char m[16] = "KIT OF T? KEPT";
     m[8] = (char)('0' + o);
@@ -2101,7 +2101,7 @@ static void track_select(uint32_t i)
 
 /* (V10.7.33, the owner: "PRESETS always loads sounds, via a list") PRESETS' list: SAVE > PRESETS' page, or over any page
  * when PRESETS is turned off it (its first turn opens it). PRESETS scrolls it, KNOB 1 the track, 2 the next engine's
- * first, 3 the SOURCE, 4 the TYPE. (V10.7.41, a user: "a lot of button presses just to preview a preset") every move of
+ * first, 3 the SOURCE, 4 the TYPE. (V10.7.43, a user: "a lot of button presses just to preview a preset") every move of
  * the pick loads it, heard at once (as before V10.7.33); OCT+ keeps it and closes, OCT- puts back the sounds the tracks
  * had when the list opened (the UNDO mark taken at its first load: pl_snd, the tracks heard since) and closes; left any
  * other way (a button, PL_MS untouched) the sound heard stays. REC marks a FAVORITE. pl_cur the sound picked (list
@@ -2140,7 +2140,7 @@ static void pl_close(void)
     pl_cur = pl_snd = 0;
     ui.force = 1;
 }
-static void pl_go(uint32_t n)                           /* (V10.7.41) the pick moved: n loaded, heard at once */
+static void pl_go(uint32_t n)                           /* (V10.7.43) the pick moved: n loaded, heard at once */
 {
     if (!pl_snd)
         undo_mark();                                    /* (the sounds as the list found them: OCT- and UNDO) */

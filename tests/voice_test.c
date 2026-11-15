@@ -1473,7 +1473,7 @@ static void check_ontime(void)
                 if (k < 8u && a > ahi) ahi = a;
             }
         }
-    for (og = 0; og < 2u; og++)                          /* (V10.7.41) ORGANIC 100 % (its consonants ~30 ms), 0 */
+    for (og = 0; og < 2u; og++)                          /* (V10.7.43) ORGANIC 100 % (its consonants ~30 ms), 0 */
     for (k = 0; k < NELEM(SY); k++) {                    /* keys: from silence and after a note */
         for (d = 0; d < 2u; d++) {
             double t = -1;
@@ -1497,7 +1497,7 @@ static void check_ontime(void)
     printf("voice:   on time: sequenced vowel reached %.1f .. %.1f ms of the step, heard %.1f .. %.1f; keys %.1f .. %.1f ms "
            "(ORGANIC 0: %.1f)\n", nlo, nhi, alo, ahi, klo, khi, k0);
     snprintf(what, sizeof what, "on time: a sequenced syllable's vowel on its step (reached %.0f .. %.0f ms, heard %.0f .. %.0f; "
-             "-16 .. 3, +-16), a key's within %.0f ms (<= 32; V10.7.41 ORGANIC 0: %.0f, <= 14)", nlo, nhi, alo, ahi, khi, k0);
+             "-16 .. 3, +-16), a key's within %.0f ms (<= 32; V10.7.43 ORGANIC 0: %.0f, <= 14)", nlo, nhi, alo, ahi, khi, k0);
     check(what, nlo >= -16.0 && nhi <= 3.0 && alo >= -16.0 && ahi <= 16.0 && klo >= 0 && khi <= 32.0 && k0 <= 14.0);
 }
 

@@ -14445,7 +14445,7 @@ static int test_auto_knobs(void)
 /* (V10.7.33, the owner) PRESETS always loads sounds, through its list: off it, its first turn opens it over the page and
  * loads nothing; KNOB 1 the track, 2 the next engine's first, 3 the SOURCE, 4 the TYPE; REC a FAVORITE; the track's
  * sound marked once edited (unsaved), unmarked when saved or loaded. SEQ held + PRESETS the step, HOME held + PRESETS the
- * tempo. (V10.7.41, a user: "a lot of button presses just to preview a preset") every move of the pick loads it at once
+ * tempo. (V10.7.43, a user: "a lot of button presses just to preview a preset") every move of the pick loads it at once
  * (PRESETS, KNOB 2); OCT+ keeps it and closes; OCT- puts back what every track it loaded into had when the list opened;
  * left any other way (untouched PL_MS, a button) the sound heard stays */
 static int test_presets_back(void)
@@ -14459,7 +14459,7 @@ static int test_presets_back(void)
     pg = ui.page;
     turn(EN_PRESET, 1);
     ok = !ui.home && cur_page()->graph == GR_BROWSE && pl_ret == 1u && TSEL->preset == pr0 && TSEL->eng_req == e0;
-    turn(EN_PRESET, 1);                                 /* (V10.7.41: the pick moved, loaded at once) */
+    turn(EN_PRESET, 1);                                 /* (V10.7.43: the pick moved, loaded at once) */
     ok &= (TSEL->preset != pr0 || TSEL->eng_req != e0) && pl_cur != 0u && pl_snd == 1u << 4 && pl_ret == 1u;
     turn(EN_PRESET, 1);
     ok &= preset_pos(&total) == pl_cur - 1u;            /* (the sound heard is the one picked) */
@@ -14522,9 +14522,9 @@ static int test_presets_back(void)
         song.g[G_BPM] = bpm;
     }
     list_put(0);
-    return check("PRESETS: a list (opened by its first turn; V10.7.41 each turn loads the sound picked at once, OCT+ keeps it, OCT- the sounds before, untouched / a button: kept; KNOB 1-4 TRACK ENGINE SOURCE TYPE, the edit mark); SEQ held + PRESETS the step, HOME held + PRESETS the tempo (V10.7.33)", ok);
+    return check("PRESETS: a list (opened by its first turn; V10.7.43 each turn loads the sound picked at once, OCT+ keeps it, OCT- the sounds before, untouched / a button: kept; KNOB 1-4 TRACK ENGINE SOURCE TYPE, the edit mark); SEQ held + PRESETS the step, HOME held + PRESETS the tempo (V10.7.33)", ok);
 }
-/* (V10.7.41) PRESETS' audition under the hands: a key held through the loads sounds on in each sound (same engine or
+/* (V10.7.43) PRESETS' audition under the hands: a key held through the loads sounds on in each sound (same engine or
  * another), let go it ends; a DRUM-X track's kits loaded as they are picked, OCT- puts the kit back */
 static int test_presets_audition(void)
 {
@@ -14594,7 +14594,7 @@ static int test_presets_audition(void)
     ok &= trk_eng(TSEL) == ENGI_DRUM && memcmp(kit, dx_kit, sizeof kit) != 0;
     press(B_OCTDN);
     ok &= trk_eng(TSEL) == ENGI_DRUM && !memcmp(kit, dx_kit, sizeof kit);
-    return check("V10.7.41 PRESETS' audition: a key held sounds on through every sound loaded and ends when let go; each "
+    return check("V10.7.43 PRESETS' audition: a key held sounds on through every sound loaded and ends when let go; each "
                  "turn loads, the row lit (the accent's bar, the name in the theme's colour) the sound loaded, no OCT+ needed; a kit heard as it is picked, "
                  "OCT- the kit back", ok);
 }

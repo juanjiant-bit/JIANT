@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* (V10.7.41, renders/v41-voice: removed before release) A VOICE track singing a lyric to a fixed tune, dry, into a WAV,
+/* (V10.7.43, renders/v41-voice: removed before release) A VOICE track singing a lyric to a fixed tune, dry, into a WAV,
  * played by the keys (live) or by the sequencer (seq):
  *   render_voice OUT.wav PRESET live|seq "LYRIC" [LANG]
  * Built against tests/hostsim.c of either tree (the same calls): V10.7.23 (841f7dd9) for "antes", V10.7.40 (58c9d1bc)

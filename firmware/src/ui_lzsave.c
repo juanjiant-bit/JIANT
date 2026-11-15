@@ -431,7 +431,7 @@ static __attribute__((noinline)) void graph_sound(void)
 }
 /* (V10.24, the user's pick A) PRESETS in two columns: at the left the engines (their being, how many presets), the
  * selected track's lit; at the right the list (LIST's) around the sound, its engine named only when another's.
- * (V10.7.41) PRESETS plays each as it passes (ui.c pl_go), the one sounding a bar in the theme's colour; OCT- brings
+ * (V10.7.43) PRESETS plays each as it passes (ui.c pl_go), the one sounding a bar in the theme's colour; OCT- brings
  * back the sound from before the list (pl_back) */
 static __attribute__((noinline)) void graph_lz_presets(void)
 {
@@ -465,7 +465,7 @@ static __attribute__((noinline)) void graph_lz_presets(void)
     for (i = first; i < total && i < first + rows; i++) {
         int32_t y = 2 + (int32_t)(i - first) * 20;
         int sel = i == cur;
-        uint16_t bg = i == now || sel ? T_TINT : T_SURF;   /* (V10.7.41, the owner: "no se entiende") the sound loaded
+        uint16_t bg = i == now || sel ? T_TINT : T_SURF;   /* (V10.7.43, the owner: "no se entiende") the sound loaded
                                                          * and sounding: its name in the theme's colour (chosen) on the
                                                          * row's tint, the accent's bar the row's height (sounding) */
         char nm[13];
@@ -480,7 +480,7 @@ static __attribute__((noinline)) void graph_lz_presets(void)
         }
         if (bg != T_SURF)
             cv_rect(90, y, 146, 19, bg);
-        if (i == now)                                   /* (V10.7.33) the track's sound: a bar (V10.7.41 the row's
+        if (i == now)                                   /* (V10.7.33) the track's sound: a bar (V10.7.43 the row's
                                                          * height); edited and not saved, a dot */
             cv_rrect(90, snd_dirty(TSEL) ? y + 6 : y, snd_dirty(TSEL) ? 6 : 4, snd_dirty(TSEL) ? 7 : 19,
                      snd_dirty(TSEL) ? 3 : 0, T_ACCENT, bg);

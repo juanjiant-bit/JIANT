@@ -151,7 +151,10 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     uint32_t minc = (inc >> 8) * WEST_RATIO[rt & 15], dep = (uint32_t)(md * md * 13) >> 1;   /* (state in locals:
                                                          * out[] may alias v->s[]) */
     uint32_t r = 1753000000u / (inc | 1u), i = 0;      /* r: ~18 kHz / the note */
-    int32_t rng = (int32_t)v->ph[2], kd = 8192 - clamp(p[P_E6], 0, 127) * 6800 / 127, hold = 0, osc = 32767, hiss = 0;
+    int32_t rng = (int32_t)v->ph[2], kd = 8192 - clamp(p[P_E6], 0, 127) * 6800 / 127, ks, hold = 0, osc = 32767, hiss = 0;
+    ks = kd < 5461 ? kd * 3 >> 1 : 8192;               /* (V10.7.41, the owner: RES 100 broke on the peaks) past RES ~43 the
+                                                         * gate's input lowered with its resonance (x0.25 at 127): its ring kept
+                                                         * inside the gate's product (it wrapped 32 bits) */
     int32_t thr = 0, kick = dust * 200, fdep = (127 - gate) * 520, vdep = gate * 520, gcap, fg, ceil, flo, kf, k0;
     int32_t am = md > 100 ? (md - 100) * 600 : 0;
     {   /* FOLD (+ SHP, velocity), squared: 0 .. 2016 (Q8 over x1) */
@@ -259,9 +262,13 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
             }
             /* the gate's low-pass (dsp.c tsvf_lp, rounded: no DC walk at low cutoffs), at half level (the sums of
              * its products inside 32 bits with the dust's peaks) */
-            v3 = (y >> 1) - ic2;
+            v3 = (((y >> 1) * ks) >> 13) - ic2;
             v1 = (c.a1 * ic1 + c.a2 * v3 + 4096) >> 13;
             v2 = ic2 + ((c.a2 * ic1 + c.a3 * v3 + 4096) >> 13);
+#ifdef WEST_PROBE
+            west_hits += (uint32_t)(2 * v1 - ic1 > 150000 || 2 * v1 - ic1 < -150000 || 2 * v2 - ic2 > 150000 || 2 * v2 - ic2 < -150000);
+            west_wrap += (uint32_t)((v2 << 1) > 65535 || (v2 << 1) < -65535);
+#endif
             ic1 = clamp(2 * v1 - ic1, -150000, 150000);
             ic2 = clamp(2 * v2 - ic2, -150000, 150000);
             ga += dga;

@@ -29,6 +29,8 @@
  * 9. demos into DEMODIR: every preset playing its suggested pattern; a NOISE project before (as V10.7.35 played it)
  *    is renders/v36-west's, not here. */
 #define main hostsim_main
+#define WEST_PROBE 1                                /* (V10.7.41) eng_west.c counts the gate's overflows */
+static unsigned west_hits, west_wrap;
 #include "hostsim.c"
 #undef main
 #define PROJ_HOST 1
@@ -231,6 +233,35 @@ static void bounded(void)
                 printf("west:   %-12s DC %+.4f\n", ENG_WEST.presets[pi].name, dc);
             }
         check(what, !dcbad);
+    }
+}
+
+
+/* (V10.7.41, the owner: "WEST with RES at 100 breaks the audio on the peaks") every preset at RES 127, one note at a
+ * time (C1 .. C6, velocity 127, 0.5 s): the gate's output never past what its level's product holds (it wrapped 32
+ * bits: a full-scale jump), its states never clamped */
+static void res_peaks(void)
+{
+    static double yy[FS / 2];
+    uint32_t pi, nt, i, bad = 0;
+    double worst = 0;
+    int16_t e[8];
+    for (pi = 0; pi < ENG_WEST.npresets; pi++) {
+        memcpy(e, pe(pi), sizeof e);
+        e[6] = 127;
+        for (nt = 24; nt <= 84; nt += 6) {
+            note_render(e, nt, 127, yy, FS / 2, 0);
+            for (i = 1; i < FS / 2; i++) {
+                double d = fabs(yy[i] - yy[i - 1]) * 32768.0 / VOICE_FS;
+                if (d > worst) worst = d;
+            }
+        }
+    }
+    bad = west_hits || west_wrap;
+    {
+        char what[200];
+        snprintf(what, sizeof what, "RES 127, every preset, C1..C6 vel 127: the gate's product never past 16 bits (%u samples), its states never at their bounds (%u); largest step %.3f", west_wrap, west_hits, worst);
+        check(what, !bad);
     }
 }
 
@@ -753,6 +784,7 @@ int main(int argc, char **argv)
 {
     if (getenv("COSTONLY")) { cost(); return bad != 0; }
     bounded();
+    res_peaks();
     fold();
     gate();
     vactrol();

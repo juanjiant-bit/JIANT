@@ -299,7 +299,7 @@ static const param_desc_t NONE_DESC = {"-", F_PCTINV, 0, 127, 127, 0};      /* (
                                                          * the range IMAGE's (an NRPN or a lock keeps its meaning) */
 static const param_desc_t VLYR_DESC = {"LYRIC", F_ENUM, 0, LYR_N - 1, 0, N_LYRIC};  /* P_VLANG, P_VLYR (sing.c) */
 static const param_desc_t VCONS_DESC = {"CONS", F_INT, 0, 127, 127, 0};   /* (V10.6y) P_VCONS: 127 = 100 % (core.h) */
-static const param_desc_t VORG_DESC = {"ORGANIC", F_PCT, 0, 127, 127, 0};   /* (V10.7.41) P_VORG (core.h): TONE's KNOB 4 */
+static const param_desc_t VORG_DESC = {"ORGANIC", F_PCT, 0, 127, 127, 0};   /* (V10.7.43) P_VORG (core.h): TONE's KNOB 4 */
 /* (codex/filters2) EROSION and FILTER's DRIVE (core.h P_FKEY ..): 127 = 0 %, SOFT; ANALOG's KEY 127 = 21 % (fkey_rank) */
 static const char *const N_FNMD[] = {"DUST", "BREAK", "METAL", "STEP", "SOFT", 0};   /* (by the value: shown right to left) */
 /* (codex/filter2-mod) RATE as METAL takes it (its sine's ratio to the note) and BREAK (its step), voice.c fn_tick */
@@ -333,7 +333,7 @@ static const param_desc_t *track_desc(const track_t *t, uint32_t id)
     if (DERO_ID(id) && en == &ENG_DRUM) return &DERO_DESC[id - P_GLMODE];   /* (V10.7.37) its EROSION */
     if ((id == P_VLANG || id == P_VLYR || id == P_VCONS) && en == &ENG_FORMANT)
         return id == P_VLANG ? &VLANG_DESC : id == P_VLYR ? &VLYR_DESC : &VCONS_DESC;
-    if (id == P_VORG && en == &ENG_FORMANT)           /* (V10.7.41) VOICE's TONE, KNOB 4: ORGANIC */
+    if (id == P_VORG && en == &ENG_FORMANT)           /* (V10.7.43) VOICE's TONE, KNOB 4: ORGANIC */
         return &VORG_DESC;
     if (id == P_FDST && en != &ENG_DRUM && en != &ENG_INPUT)   /* (filter2-mod) a synth's DEST (VOICE's CONS above) */
         return &FN_DESC[8];
@@ -851,7 +851,7 @@ static const page_t PAGES[] = {
     {"TONE", FAM_EDIT, SC_TRACK, GR_NONE, {P_FKEY, ID_CRU, ID_LIF, 0xFF}},   /* (V10.7.35, the owner: was FILTER 3 and VOICES 3,
                                                          * a knob or two each) KEY TRK, CRUSH, LIFE. (filter2-mod) KEY: the keyboard tracking (was
                                                          * EROSION's first: DRIVE stays FILTER's, the knob of its power) */
-    {"TONE", FAM_EDIT, SC_TRACK, GR_NONE, {P_FKEY, ID_CRU, ID_LIF, P_VORG}},   /* .. (V10.7.41) VOICE's: ORGANIC (core.h) */
+    {"TONE", FAM_EDIT, SC_TRACK, GR_NONE, {P_FKEY, ID_CRU, ID_LIF, P_VORG}},   /* .. (V10.7.43) VOICE's: ORGANIC (core.h) */
     {"SOUND", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* DRUM: a sound of the kit (ui_dx.c): PITCH DECAY SIDE PMOD */
     {"SOUND 2", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* NOISE COLOR DRIVE MODE */
     {"SOUND 3", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.7.37: three, was four) PM.TYPE LAYER FEEDBK SEND */

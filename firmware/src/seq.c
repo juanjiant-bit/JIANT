@@ -55,7 +55,7 @@ static volatile uint8_t kb_asleep;       /* MENU > SCREEN OFF (ui.c): the screen
 static uint8_t last_note = 60;
 static volatile uint8_t transport_req;   /* 1 start, 2 stop, 3 restart (from the UI) */
 static volatile uint8_t panic_req;       /* bit per track: release every sounding note (preset / engine change) */
-static volatile uint8_t keep_req;        /* (V10.7.41) .. a PRESETS list's audition: what is held sounds on in the new one */
+static volatile uint8_t keep_req;        /* (V10.7.43) .. a PRESETS list's audition: what is held sounds on in the new one */
 static volatile uint8_t midi_hint;       /* MIDI IN played track n - 1, which is not the selected one (the UI says so) */
 
 static uint32_t trk_index(const track_t *t) { return (uint32_t)(t - trk); }
@@ -3430,7 +3430,7 @@ static void events_block(uint32_t n)
     if (pr)
         mo_flush_of(pr);                               /* (0.6.72) their MIDI OUT notes too */
     fo = pr;                                           /* (0.6.13) sound loads: what sounds fades on the old sound */
-    kp = keep_req & pr;                                /* (V10.7.41) an audition's: the held notes carried */
+    kp = keep_req & pr;                                /* (V10.7.43) an audition's: the held notes carried */
     keep_req ^= kp;
     pr |= ovf_pr;                                      /* (a lost MIDI note-off: every track, panic_block) */
     ovf_pr = 0;

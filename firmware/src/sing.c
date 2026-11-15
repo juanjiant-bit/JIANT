@@ -1162,8 +1162,8 @@ static __attribute__((noinline)) void sy_tick(const track_t *t, sing_t *s, uint3
         tv = P->av << 7;
         if (k == PC_VOW && (s->i ? ph_vowel(s->ph[s->i - 1u]) : 1))
             sh = 5;                                      /* a diphthong's glide, (voice2) a vowel from the last: slower
-                                                         * (V10.7.41: ~40 ms again; voice3's ~75 a talk box's) */
-        break;                                           /* (V10.7.41) a vowel from a consonant as quick as V10.7.23's
+                                                         * (V10.7.43: ~40 ms again; voice3's ~75 a talk box's) */
+        break;                                           /* (V10.7.43) a vowel from a consonant as quick as V10.7.23's
                                                          * (voice3's 100 .. 150 ms slid like a talk box: robotic) */
     }
     if (F) {                                             /* (V10.40: the frication's, once) */
@@ -1365,7 +1365,7 @@ static void sing_block(track_t *t)
                 T = (T & 0xFFFFu) + k;
                 s->nlead = (uint8_t)(T < 63u ? T : 63u);
             } else {
-                uint32_t ld = (s->lead & 63u) * 2u;      /* (V10.7.41) a key's onset: ORGANIC 0 squeezed as voice2's */
+                uint32_t ld = (s->lead & 63u) * 2u;      /* (V10.7.43) a key's onset: ORGANIC 0 squeezed as voice2's */
                 b = !ld ? (T >= SY_PLO ? SY_MIN : SY_LIVE) + ((uint32_t)clamp(t->p[P_VORG], 0, 127) * SY_BL(20u) >> 7)
                         : ld > k + SY_MIN ? ld - k : SY_MIN;   /* (~10 ms), 100 % (the default) its consonants in ~30
                                                          * ms, heard (the vowel ~30 ms after the key, never later) */
@@ -1391,7 +1391,7 @@ static void sing_block(track_t *t)
     s->gated = (uint8_t)gated;
     sy_tick(t, s, lang);
     {   /* (voice3) the singer's clocks; the vibrato (formant_word_render): ~5.6 Hz, each note its rate (5 .. 6 Hz),
-         * wandering +-1 Hz; (V10.7.41, a user: "it sounded organic, now robotic") on every note held past ~0.29 s again,
+         * wandering +-1 Hz; (V10.7.43, a user: "it sounded organic, now robotic") on every note held past ~0.29 s again,
          * as V10.7.23's (voice3's: notes of 0.5 s only, a third faint), +-18 .. 22 ct, in over ~0.4 s; the swell
          * (formant_amp): the vowel in over ~80 ms (from rest from -3 dB), then a little down, -1.2 dB at most, the
          * phrase's peaks -1 dB at most (voice3's -4 and -3.5 dB: a voice that sank, quieter, duller) */

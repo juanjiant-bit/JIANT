@@ -774,7 +774,7 @@ static uint32_t voices_busy(void)                       /* sounding voices of al
 enum { VH_OFF, VH_IN, VH_RE, VH_ON, VH_OUT };           /* a voice's rate: full; half from its next whole block (IN: its
                                                          * state a sample on first, RE: as it is); half; back to full */
 static uint8_t rel_hurry[NTRK];                         /* (eng_fm6.c reads it) */
-static uint8_t vh_wait, vh_held;                        /* blocks tripped; bit p: part p's held voices at half */
+static uint8_t vh_wait, vh_held, frz_on;   /* (V10.7.41) frz_on: FREEZE holding (perform.c perf_block) */                        /* blocks tripped; bit p: part p's held voices at half */
 static int32_t vh_c[NTRK * NVOICE] __attribute__((section(".pool")));   /* a voice: VH_* (bits 0..2), its last sample at
                                                          * half the rate << 3 (the pool: zero at boot; 224 B of it were
                                                          * left over its 8 KiB of headroom, the RAM has none) */
@@ -1111,6 +1111,10 @@ static __attribute__((noinline)) void voice_soft(void)
     }
     if (!load_tight && load_avg_q8 < (HALF_BACK << 8))
         vh_held = 0;
+    if (frz_on)                                         /* (V10.7.41, the owner: FREEZE glitched a full project) the
+                                                         * tracks under a FREEZE holding are not heard: every part that can
+                                                         * at half the rate, the full rate back as it lets go */
+        vh_held = (1u << NTRK) - 1u;
 }
 
 /* (codex/voices) a voice's block at half the rate: CTL / 2 samples of the engine, each twice as far on (its phase
@@ -2125,7 +2129,7 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
         else
             e->render(t, v, out + off, n, &m);
         if (img) {
-            int32_t g = pn > 0 ? pn : -pn, *sd = (pn > 0 ? dx_sl : dx_sr) + off;
+            int32_t g = pn > 0 ? pn : -pn, *sd = (pn > 0 ? DXC.sl : DXC.sr) + off;   /* (V10.7.42: one core read) */
             for (j = 0; j < n; j++)
                 sd[j] += (out[off + j] - vb[j]) * g >> 6;
         }

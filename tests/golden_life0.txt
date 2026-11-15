@@ -1,7 +1,5 @@
 # FELUCCA golden renders (tests/regress.c): name, FNV-1a 64 of the output samples.
 # Rewritten by GOLDEN_UPDATE=1 tests/run_tests.sh -- only for an intended change of the sound.
-# (V10.7.34) LIFE 0 (run_tests.sh: LIFE=0 regress): the renders of before LIFE, bit for bit; never rewritten (V10.7.36:
-# but NOISE's eight, gone with the engine, and WEST's twenty added; V10.7.37: WEST's twenty again, the engine remade)
 preset/ANALOG/00_SAW_LEAD 55eeb8345bde3b83
 preset/ANALOG/01_SOFT_PAD 5801b39a2846ebbb
 preset/ANALOG/02_SQR_BASS 54cd64bec87a3c5c
@@ -111,21 +109,21 @@ preset/DRUM/07_TECHNO_RAW 43bf34d71131bc10
 preset/DRUM/08_BREAKS 06d4242405338f64
 preset/DRUM/09_HIP_HOP 10749289f9bd54bc
 preset/DRUM/10_LATIN_PERC 79fdc29e91415d9c
-preset/WEST/00_WIND 3923213abb29e794
-preset/WEST/01_RAIN 566de70071641d63
+preset/WEST/00_WIND 7893b8660cb6ff0b
+preset/WEST/01_RAIN 6306f5aaed3dd999
 preset/WEST/02_ARCADE 4de510626d4b9fec
 preset/WEST/03_METAL 2e74549db67000d1
 preset/WEST/04_SEA 920860762f77c967
-preset/WEST/05_HISS_PAD 7b9d631871672199
+preset/WEST/05_HISS_PAD dff3fb01f2b6e602
 preset/WEST/06_INIT_NOISE a42c4e95d7b890e4
 preset/WEST/07_TAPE_AIR 96f63e9536164860
 preset/WEST/08_WEST_PLUCK 5198e25c8dd76018
-preset/WEST/09_BONGO ab0a1df98160d3a4
+preset/WEST/09_BONGO afe4b5f16fc6da94
 preset/WEST/10_MARIMBA 79d1da65e6e6fe70
 preset/WEST/11_WEST_BELL c4e0b070ffc5c3bc
 preset/WEST/12_GAMELAN 0a11f27163707c01
 preset/WEST/13_FOLD_BASS 0407e712b14c6c88
-preset/WEST/14_RUBBER_BASS 02dc34d65c471080
+preset/WEST/14_RUBBER_BASS 95956bbae81543a4
 preset/WEST/15_WEST_LEAD ff8d2cb353737d88
 preset/WEST/16_FOLD_LEAD 299372b55f7d4b18
 preset/WEST/17_FOLD_DRONE 80c164306c4a7f57

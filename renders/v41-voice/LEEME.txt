@@ -1,4 +1,4 @@
-renders/v41-voice — VOICE orgánica otra vez, con la vocal en el paso (V10.7.41). Se borran antes del release.
+renders/v41-voice — VOICE orgánica otra vez, con la vocal en el paso (V10.7.43). Se borran antes del release.
 
 Un usuario: "La VOICE sonaba 1000000 % mejor en versiones anteriores. Vi en las notas que ahora las vocales van
 sincronizadas con las teclas. Para mí antes era mucho más única: sonaba orgánica, ahora suena bastante robótica."
@@ -10,7 +10,7 @@ La melodía: 7 notas (La3 Do4 Re4 Mi4 Re4 Do4 La3, en corcheas 2 2 2 3 1 2 4 a 9
 letra de cada idioma:
   ES  "Bajo la luna canta el mar, quiero contigo caminar"
   EN  "Love me under silver light, hold my hand tonight" (la V10.7.23 la lee con su diccionario; la V10.7.40 y la
-      V10.7.41 cantan los fonemas que manda el editor: "/LAHV MI AHNDER SIHLVER LAAIHT ..."; es el mismo inglés)
+      V10.7.43 cantan los fonemas que manda el editor: "/LAHV MI AHNDER SIHLVER LAAIHT ..."; es el mismo inglés)
   JA  "sakura no hana ga saku yoru ni kimi to"
 
 Dos formas de tocarla:
@@ -20,7 +20,7 @@ Dos formas de tocarla:
 Por cada preset y forma, tres versiones:
   _1_antes_v10.7.23     la última antes de "VOICE canta en el paso" (841f7dd9): la que el usuario recuerda.
   _2_v10.7.40           la beta actual (58c9d1bc): la que suena "robótica".
-  _3_despues_v10.7.41   esta rama.
+  _3_despues_v10.7.43   esta rama.
   _4_despues_organic_0  esta rama con EDIT › TONE › ORGANIC en 0 % (solo CANTOR ES): la máquina.
 
 Presets: CANTOR ES, CANTORA ES, SINGER EN, UTA JA, WORD CHOIR (secuenciador); CANTOR ES y SINGER EN (teclas).
@@ -47,7 +47,7 @@ Lo que cambió entre la V10.7.24 y la V10.7.40 en cómo canta una sílaba (sing.
 6. Las consonantes de una tecla se perdían. Para que la vocal llegue con la tecla, las consonantes se apretaban en
    ~10 ms: "jo" o "me" sonaban casi como "o" o "e" con un clic.
 
-Qué se recuperó (V10.7.41), sin perder el tiempo
+Qué se recuperó (V10.7.43), sin perder el tiempo
 -------------------------------------------------
 
 - Las transiciones rápidas de la V10.7.23 (consonante → vocal ~20–40 ms; un diptongo ~40 ms).
@@ -65,9 +65,9 @@ Medición (CANTOR ES con el secuenciador; las otras dan lo mismo):
                          nivel     notas con vibrato   desvío de la altura   vaivén lento (0,2–3 Hz)
   V10.7.23              −19,4 dB        4 de 14              5,5 cents             1,0 cents
   V10.7.40              −23,9 dB       11 de 14             16,8 cents            15,3 cents
-  V10.7.41              −20,7 dB        4 de 14              5,5 cents             2,0 cents
-  V10.7.41 ORGANIC 0    −20,6 dB        0 de 14              1,4 cents             0,4 cents
-(las de la V10.7.40 "con vibrato" son sobre todo el vaivén; en la V10.7.41, como en la V10.7.23, las notas de 1/4 y
+  V10.7.43              −20,7 dB        4 de 14              5,5 cents             2,0 cents
+  V10.7.43 ORGANIC 0    −20,6 dB        0 de 14              1,4 cents             0,4 cents
+(las de la V10.7.40 "con vibrato" son sobre todo el vaivén; en la V10.7.43, como en la V10.7.23, las notas de 1/4 y
 más largas.)
 
 ORGANIC (EDIT › TONE, KNOB 4, solo VOICE)

@@ -437,9 +437,10 @@ static __attribute__((noinline)) void drum_side_begin(const track_t *t, uint32_t
         syn_cur[ti] = (uint8_t)cur;
         syn_img[ti] = (uint8_t)(n <= CTL ? (d ? cur * (256 - d * 3) >> 8 : cur) : 0);
         if (syn_img[ti]) {
-            dx_xon |= 1u;
+            dx_core_t *c = &DXC;                         /* (V10.7.42: the core read once, not twice a sample) */
+            c->xon |= 1u;
             for (j = 0; j < n; j++)
-                dx_sl[j] = dx_sr[j] = 0;
+                c->sl[j] = c->sr[j] = 0;
         }
         return;
     }

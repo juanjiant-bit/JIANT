@@ -3092,7 +3092,7 @@ static void ui_input_frame(void)
             if (live_page())                            /* (p2) LIVE: OCT- RETURN / held BYPASS, OCT+ COMMIT */
                 break;                                  /* (ui_live.c live_frame) */
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_BROWSE) {   /* (V10.7.33) PRESETS' list:
-                                                         * (V10.7.41) OCT+ keeps the sound heard, OCT- the sounds before */
+                                                         * (V10.7.43) OCT+ keeps the sound heard, OCT- the sounds before */
                 if (b == B_OCTUP)
                     pl_close();
                 else
