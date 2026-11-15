@@ -741,7 +741,7 @@ breadcrumb, **FX · MAP**. The keys and knobs do exactly what they did.
 | F5 | RANDOM |
 | G5 | COMB (a resonant comb at the scale's root) |
 | F#3 / G#3 | PITCH UP / PITCH DOWN (the whole mix, up to an octave over a bar) |
-| A#3 | FREEZE (the reverb holds its cloud) |
+| A#3 | FREEZE (the mix held as a drone) |
 | C#4 / D#4 | REV ALL / DLY ALL (full wet: only the reverb / the delay) |
 | F#4 | RING (ring modulation at the scale's root) |
 | G#4 / C#5 / D#5 | LOOP 3 / 5 / 7 |
@@ -922,29 +922,36 @@ before loads as it was. PROGRAM CHANGE keeps 0.9.8's numbers (see [14](#14-midi-
 
 ### WEST: west coast (V10.7.36)
 
-WEST takes NOISE's place (engine 11: its number, its PROGRAM CHANGE numbers). It is a west-coast voice: a **sine**
-whose phase a second sine modulates (FM), into a **wavefolder** that bends the wave back on itself, into a **low-pass
-gate**: a low-pass filter and a VCA driven together by one envelope through a model of a **vactrol** (a lamp lighting a
-light-dependent resistor: it opens quickly and closes late, slower as it darkens). A note *strikes* it: a pluck, a
-bongo, a bell; held long, a drone.
+WEST takes NOISE's place (engine 11: its number, its PROGRAM CHANGE numbers); V10.7.37 remade it. It is a west-coast voice after the
+Buchla and Serge systems: a **complex oscillator** (a principal core, a **sine** as the Buchla 259's or a **triangle**
+as Serge's, phase-modulated by a **modulation oscillator**), into a **wavefolder** that bends the wave back on itself,
+into a **low-pass gate**: a low-pass filter and a VCA driven together by a **vactrol** (an LED lighting a
+light-dependent resistor, the 292's). A note *strikes* it: the LED flashes for ~4 ms, the cell lights up in 1.5–3 ms
+(fast, not instant: the soft "thock" of a pinged gate) and darkens slowly and unevenly, fast at first, then a long
+tail that gets longer the darker it gets: a pluck, a bongo, a marimba, a bell; held long, a drone.
 
 | | EDIT 1 (FOLD) | EDIT 2 (GATE) |
 | --- | --- | --- |
-| KNOB 1 | **FOLD**: the folder's gain, x1 .. x9. The wave folds over itself: more and more (odd) harmonics, metallic and alive, its level the same | **GATE**: what the gate does: 0 a low-pass alone (the level stays, the highs close), 64 both (the classic), 127 a VCA alone (the folds stay, the level falls) |
-| KNOB 2 | **SYMM**: an offset into the folder: asymmetric folds, even harmonics (the 2nd, a hollow, reedy colour) | **DECAY**: the strike, 5 ms .. 4 s; past 88 a held note keeps the gate partly open (127: open while held, a drone); let go, it closes within ~150 ms |
-| KNOB 3 | **MOD**: FM depth from the second sine into the first (index up to ~5) | **RES**: the gate's filter resonance (a ring on the strike) |
-| KNOB 4 | **RATIO**: the modulator's ratio to the note: 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 (1.41, 1.73, 2.76, 5.40: bells and bars) | **DUST**: noise into the gate. 1–72 crackle (random impulses, 1 .. 600 a second) that also *pings* the gate (ghost notes, drops); 72–96 the sine fades out (the impulses alone); 96–127 hiss comes in (white noise, full at 127). 0: none at all |
+| KNOB 1 | **FOLD**: the folder's gain, x1 .. x9. The wave folds over itself: more and more harmonics in a singing sweep, its level the same. The folds are integrated (each sample takes the fold's mean over its span), so they stay smooth instead of buzzing; high notes fold less (no aliasing) | **GATE**: what the gate does: 0 a low-pass alone (the level stays, the highs close), 64 both (the classic combo), 127 a VCA alone (the folds stay, the level falls) |
+| KNOB 2 | **SYMM**: an offset into the folder: asymmetric folds, even harmonics (the 2nd, a hollow, reedy colour) | **DECAY**: the vactrol's memory: the cell about 40 dB dark in 20 ms (0) .. 1 s (80) .. 10 s (127). Past 80 a held note keeps the LED lit (by the ADSR's level, all of it at 127): it sustains, darker the lower; let go, the cell decays as it would |
+| KNOB 3 | **MOD**: the modulation oscillator's depth on the core (FM, linear through zero, index up to ~5); past 100 it also modulates the amplitude (AM, ring-like sidebands) | **RES**: the gate's filter resonance, bounded (a pinged gate rings down in pitch as it closes: the bongo's knock) |
+| KNOB 4 | **RATIO**: the modulator's ratio to the note: 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 with the **sine** core (Buchla: smooth, round folds); then the same sixteen with a **T**, 0.5T .. 8T, with the **triangle** core and a triangle folder (Serge: brighter, glassier folds). (1.41, 1.73, 2.76, 5.40: bells and bars) | **DUST**: noise into the gate. 1–72 crackle (random impulses, 1 .. 600 a second) that also *flash* the cell (ghost notes, drops); 72–96 the core fades out (the impulses alone); 96–127 hiss comes in (white noise, full at 127). 0: none at all |
 
-- **Velocity**: a harder note folds more and opens the gate's ceiling (±10 semitones): brighter and louder.
+- **The light colours the sound** as in a west-coast patch: the cell's conductance (its light to the 0.75) sets the
+  filter's cutoff and the VCA, and also the fold (from 0.4 to all of FOLD) and the FM index (0.3 .. all of MOD): a
+  strike blooms bright and mellows as it fades, louder is brighter.
+- **Velocity**: a harder note lights the cell brighter, folds more and opens the gate's ceiling (±10 semitones).
 - **The track's macros**: FLT (CUT, the matrix's CUT, LIFE's filter) moves the gate's ceiling, SHP folds (an LFO on
   SHAPE breathes the folds), PIT the pitch. The ceiling follows the key by half, the closed gate the key itself.
   LIFE (its per-voice wander of the shape), DRONE, UNISON and the MOD matrix's E1–E8 work as on every engine.
-- **The strike also folds**: the fold follows the gate's level (half of it when closed), so a pluck's timbre blooms
-  and darkens with its level, the way a west-coast patch does.
-- **Presets** (WEST PLUCK and the others first in the list): **WEST PLUCK**, **BONGO**, **MARIMBA**, **WEST BELL**,
-  **GAMELAN**, **FOLD BASS**, **RUBBER BASS**, **WEST LEAD**, **FOLD LEAD** (pressure folds it), **FOLD DRONE** (the
-  folds breathing), **DUST DRONE**, **INIT WEST**; then NOISE's eight, remade with DUST: **WIND**, **RAIN** (the dust
-  pings the gate: drops at the note), **ARCADE**, **METAL**, **SEA**, **HISS PAD**, **TAPE AIR**, **INIT NOISE**.
+- **Presets** (WEST PLUCK and the others first in the list; V10.7.37 revoiced and level-matched): **WEST PLUCK** (the
+  classic pinged, folded sine), **BONGO** (short, resonant: the knock falls in pitch), **MARIMBA** (the 4th partial
+  from the modulator, a soft mallet), **WEST BELL** (1.41, the gate mostly a VCA: it rings bright), **GAMELAN** (2.76,
+  asymmetric folds), **FOLD BASS** (the triangle core folded, Serge), **RUBBER BASS** (the octave below in the FM, a
+  resonant low-pass gate), **WEST LEAD** (triangle core, held open; MODW folds it), **FOLD LEAD** (pressure folds it),
+  **FOLD DRONE** (the folds breathing), **DUST DRONE**, **INIT WEST**; then NOISE's eight, remade with DUST: **WIND**,
+  **RAIN** (the dust flashes the gate: drops at the note), **ARCADE**, **METAL** (the triangle core at a bar's mode),
+  **SEA**, **HISS PAD**, **TAPE AIR**, **INIT NOISE**.
   The generator's noise and texture roles pick SEA, TAPE AIR, HISS PAD and INIT NOISE as before.
 - **Projects and user presets made with NOISE** (V10.7.35 and before) open as WEST in a DUST patch (nothing to do):
   NOISE's noise modes become DUST (ANLG's white noise: DUST 127; DUST's impulses: DUST 96, the sine silent), the gate a
@@ -1189,7 +1196,7 @@ with V10.7.24), in the same thermal line art, the bichos' face shared with DRUM-
   makes its worm leap and shout, CLICK lets bubbles out of their mouths, DUST drifts motes.
 - **WEST: the folded wave** (V10.7.36; NOISE's swarm before): two cycles of the wave exactly as the engine folds it
   (FOLD, SYMM, MOD and RATIO bend it), scrolling with the sound; it brightens and folds further as the gate opens on a
-  strike and dims as it closes. Above it the lamp (the vactrol's light) glows on each note; DUST scatters flickering
+  strike and dims as it closes. Above it the LED (the vactrol's strike) glows on each note; DUST scatters flickering
   motes; a face under it shuts its eyes on a strike.
 - **PHASE: a snail.** The shell's chambers sit at the **bent phase** (even at DCW 0; as DCW rises they crowd where the
   phase rushes, which is what phase distortion does), coloured by the output; **the foot's sole is the wave** (WAVE and
@@ -2858,9 +2865,13 @@ passes get it. Saved with the section. (V10.7.36: G5 no longer erases it; REC he
   a beat below ~86 BPM), then silence while held. These start on the next 1/16 while playing. Below about 81 BPM,
   REPEAT 1/8 is too long for its buffer and is shown dimmed. **PITCH UP / PITCH DOWN** (F#3 G#3): the whole mix glides
   up / down while held, an octave over about a bar, then stays there, in time; let go and it snaps back. REPEAT,
-  REVERSE, TAPE STOP, PITCH and GLITCH share one buffer: the last pressed plays, letting it go returns to the one held
-  before. **FREEZE** (A#3): the reverb holds its cloud (its SIZE at the top: CLOUD stops writing its line, the other
-  reverbs ring on), nothing new goes into it. **REV ALL / DLY ALL** (C#4 D#4): full wet, every track into the reverb /
+  REVERSE, TAPE STOP, PITCH, GLITCH, COMB and FREEZE share one buffer: the last pressed plays, letting it go returns to
+  the one held before. **FREEZE** (A#3, V10.7.37): the mix itself is frozen: from the press it captures the next quarter
+  of a beat (100–280 ms; you hear it live meanwhile), then holds it as a continuous drone, two overlapping, smoothly
+  windowed grains reading that moment forward and looping back, a little jittered (~1.5 ms) so it lives; no click, no
+  loop seam. The live mix is muted while held (KNOB 4 DEPTH lets some of it back, as for the other buffer effects);
+  let go, it ramps back to the live mix. (Before V10.7.37 FREEZE held the reverb's cloud: CLOUD's SIZE 127 still does.)
+  **REV ALL / DLY ALL** (C#4 D#4): full wet, every track into the reverb /
   the delay (its MIX at least 100), the dry muted: only the effect is heard; let go, the dry is back and the tail rings
   on. **RING** (F#4): ring modulation of the master by a sine two octaves over the selected track's scale root (C5 …
   B5), its depth wobbling once a bar; never louder than the mix. **LIFE MAX** (A#4): HOME › LIFE's LIFE, FILTER, PITCH

@@ -21,7 +21,7 @@
  *                   stays; in time (a crossfaded delay-line shifter on the buffer)
  *         A#3       FREEZE: the master held as it is, a drone (V10.7.37: a buffer effect; perf_frz): the next 1/4 beat
  *                   (100 .. 280 ms) captured, then sustained as overlapping windowed grains reading it forward and
- *                   wrapping, their places jittered ~1.5 ms; the live mix muted while it holds
+ *                   wrapping (to a random place), their places jittered ~1.5 ms; the live mix muted while it holds
  *         C#4 D#4   REV ALL / DLY ALL: full wet, every track into the reverb / the delay, the dry muted; let go, the
  *                   dry back, the tail rings on
  *         F#4       RING: the master ring-modulated by a sine two octaves over the scale's root (C5 .. B5), its
@@ -140,7 +140,10 @@ static struct {
         struct {                       /* (V10.7.36) REVERSE, TAPE STOP, PITCH: samples held (REVERSE: into its window), the
                                         * window (TAPE: the stop's length); REVERSE: the window's start (the loop's sample),
                                         * windows past; TAPE: the read place (Q16), the speed (Q24); PITCH: the delay read
-                                        * (Q16), the one it fades from and the fade's samples left, the speed (Q16) */
+                                        * (Q16), the one it fades from and the fade's samples left, the speed (Q16);
+                                        * (V10.7.37) FREEZE: samples into the hop, the hop (half a grain), the grain in its
+                                        * first half's start (the window's samples), grains so far, the one in its second
+                                        * half's start (t len s0 k d) */
             uint32_t t, len, s0, k;
             uint32_t d, xd, xn;
             int32_t v;
@@ -150,11 +153,6 @@ static struct {
             uint32_t t, d;
             int32_t g, zl, zr;
         } c;
-        struct {                       /* (V10.7.37) FREEZE: samples into the hop, the hop (half a grain), the starts (in the
-                                        * window's samples) of the grain in its first half and of the one in its second,
-                                        * grains so far (the jitter's draw) */
-            uint32_t t, h, sa, sb, k;
-        } z;
     } u;
     /* the filters, CRUSH, THROW, mutes */
     int32_t lc, hc, la, ha;            /* KNOB 1's: cutoffs (Q8 index) and shares (Q15) of the low-pass and high-pass */
@@ -270,8 +268,8 @@ static __attribute__((noinline)) void perf_buf_start(uint32_t e)
     } else if (pf.mode == BM_FRZ) {               /* FREEZE: a window of a 1/4 beat (100 .. 280 ms), grains of half of it */
         uint32_t b = beat_samples() / 4u;
         pf.len = b < 4410u ? 4410u : b > 12348u ? 12348u : b;
-        pf.u.z.h = pf.len / 4u;
-        pf.u.z.sb = pf.len / 2u;                  /* (first heard: the grain in its second half, the window's last
+        pf.u.r.len = pf.len / 4u;
+        pf.u.r.d = pf.len / 2u;                   /* (first heard: the grain in its second half, the window's last
                                                    * quarter; the next from its start) */
     }
 }
@@ -680,9 +678,12 @@ static __attribute__((noinline)) int perf_glt(int32_t l, int32_t r)
  * PITCH UP / DOWN: a delay read at the speed v (Q16): the delay shrinks (up) or grows (down) by 1 - v a sample; at its
  *   end it jumps by PT_G (46 ms), the old read faded out over PT_X samples (one read otherwise: no comb). v from 1 to 2
  *   (or 1/2) over a bar: 12 semitones, then held (2^x ~ 1 + x (0.6565 + 0.3435 x)). 1 = it plays (pf.yl yr) */
+static int perf_frz(int32_t l, int32_t r);
 static __attribute__((noinline)) int perf_rtp(int32_t l, int32_t r)
 {
     uint32_t g0, t = pf.u.r.t, L = pf.u.r.len, g = 32768u;
+    if (pf.mode == BM_FRZ)                          /* (V10.7.37: from here, perf_buf as it was) */
+        return perf_frz(l, r);
     pf.wr = pb_rec(pf.wr, l, r);
     g0 = 2u * pf.wr + pf.odd;
     if (pf.mode == BM_REV) {
@@ -843,30 +844,30 @@ static __attribute__((noinline)) int perf_comb(int32_t l, int32_t r)
 /* (V10.7.37) a buffer effect: len samples (a 1/4 beat) recorded (live meanwhile), then held: two grains of 2 h samples
  * (h = len / 4) overlapping by half, each windowed by sin^2 (their windows sum to 1: no seam, no level step), reading the
  * window forward: each new grain starts h after the one before (where it reads now: in phase with it) and ~1.5 ms
- * jittered, back at the window's start (jittered) when the next would pass its end. 1 = it plays (pf.yl yr) */
+ * jittered, back to a random place past the window's first eighth when the next would pass its end. 1 = it plays (pf.yl yr) */
 static __attribute__((noinline)) int perf_frz(int32_t l, int32_t r)
 {
-    uint32_t t, h = pf.u.z.h, n = pf.wr;
-    int32_t w, al, ar, bl, br;
+    uint32_t t = pf.u.r.t, h = pf.u.r.len;
+    int32_t w, al, ar;
     if (!pf.state) {
         pf.wr = pb_rec(pf.wr, l, r);
         if (++pf.rp >= pf.len)
             pf.state = 1;
         return 0;
     }
-    t = pf.u.z.t;
     if (t >= h) {                                  /* the next grain: the one in its first half to its second */
-        uint32_t j = pf_hash(++pf.u.z.k) % 129u, s = pf.u.z.sa + h + j - 64u;
-        pf.u.z.sb = pf.u.z.sa;
-        pf.u.z.sa = s + 2u * h > pf.len || (int32_t)s < 0 ? j : s;
-        pf.u.z.t = t = 0;
+        uint32_t q = pf_hash(++pf.u.r.k), s = pf.u.r.s0 + h + q % 129u - 64u;
+        pf.u.r.d = pf.u.r.s0;
+        pf.u.r.s0 = s + 2u * h > pf.len || (int32_t)s < 0 ? h / 2u + (q >> 8) % (3u * h / 2u) : s;   /* (back: anywhere
+                                                   * past the window's first eighth, its attack, so no tick repeats) */
+        t = 0;
     }
+    pf.u.r.t = t + 1u;
     w = (32768 - sine_i(t * (0x80000000u / h) + 0x40000000u)) >> 1;   /* sin^2: the first half's rising window */
-    pb_at(pf.u.z.sa + t, n, &al, &ar);
-    pb_at(pf.u.z.sb + h + t, n, &bl, &br);
-    pf.yl = bl + mulq16(al - bl, (uint32_t)w << 1);
-    pf.yr = br + mulq16(ar - br, (uint32_t)w << 1);
-    pf.u.z.t = t + 1u;
+    pb_ring_f((pf.u.r.s0 + t) << 16, &al, &ar);
+    pb_ring_f((pf.u.r.d + h + t) << 16, &pf.yl, &pf.yr);
+    pf.yl += mulq16(al - pf.yl, (uint32_t)w << 1);
+    pf.yr += mulq16(ar - pf.yr, (uint32_t)w << 1);
     return 1;
 }
 
@@ -912,9 +913,8 @@ static __attribute__((noinline)) void perf_buf(int32_t *pl, int32_t *pr)
                 pf.rp = 0;
             on = 1;
         }
-    } else if ((on = pf.mode == BM_GLT ? perf_glt(l, r) : pf.mode == BM_COMB ? perf_comb(l, r) :
-                     pf.mode == BM_FRZ ? perf_frz(l, r) : perf_rtp(l, r)) != 0) {   /* (snd2) GLITCH; (V10.7.36) REVERSE,
-                                                     * TAPE STOP, PITCH; (V10.7.37) FREEZE */
+    } else if ((on = pf.mode == BM_GLT ? perf_glt(l, r) : pf.mode == BM_COMB ? perf_comb(l, r) : perf_rtp(l, r)) != 0) {   /* (snd2) GLITCH; (V10.7.36) REVERSE,
+                                                     * TAPE STOP, PITCH; (V10.7.37) FREEZE (perf_rtp's) */
         yl = pf.yl;
         yr = pf.yr;
     }

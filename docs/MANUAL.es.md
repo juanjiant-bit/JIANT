@@ -772,7 +772,7 @@ SEQ las suyas). El encabezado nombra la capa en palabras, **[GLO] SET**. El pie 
 | F5 | RANDOM |
 | G5 | COMB (un filtro peine resonante en la tónica de la escala) |
 | F#3 / G#3 | PITCH UP / PITCH DOWN (toda la mezcla, hasta una octava en un compás) |
-| A#3 | FREEZE (la reverb congela su nube) |
+| A#3 | FREEZE (la mezcla sostenida como un drone) |
 | C#4 / D#4 | REV ALL / DLY ALL (todo mojado: solo la reverb / el delay) |
 | F#4 | RING (modulación en anillo en la tónica de la escala) |
 | G#4 / C#5 / D#5 | LOOP 3 / 5 / 7 |
@@ -965,29 +965,37 @@ click; las notas siguen.
 
 ### WEST: costa oeste (V10.7.36)
 
-WEST ocupa el lugar de NOISE (el motor 11: su número, sus números de PROGRAM CHANGE). Es una voz de costa oeste: un
-**seno** cuya fase modula un segundo seno (FM), entra a un **wavefolder** que dobla la onda sobre sí misma, y de ahí a
-una **low-pass gate**: un filtro pasabajos y un VCA movidos juntos por una sola envolvente a través de un modelo de
-**vactrol** (una lámpara que ilumina una resistencia sensible a la luz: abre rápido y cierra tarde, más lento cuanto más
-se oscurece). Una nota lo *golpea*: un pluck, un bongó, una campana; sostenida largo, un drone.
+WEST ocupa el lugar de NOISE (el motor 11: su número, sus números de PROGRAM CHANGE); la V10.7.37 lo rehízo. Es una voz
+de costa oeste a la manera de los sistemas Buchla y Serge: un **oscilador complejo** (un núcleo principal, un **seno**
+como el del 259 de Buchla o un **triángulo** como los de Serge, con la fase modulada por un **oscilador de
+modulación**), entra a un **wavefolder** que dobla la onda sobre sí misma, y de ahí a una **low-pass gate**: un filtro
+pasabajos y un VCA movidos juntos por un **vactrol** (un LED que ilumina una resistencia sensible a la luz, el del
+292). Una nota lo *golpea*: el LED destella ~4 ms, la célula se ilumina en 1,5–3 ms (rápido pero no instantáneo: el
+"toc" suave de un gate golpeado) y se oscurece lento y desparejo, rápido al principio y después una cola larga, más
+larga cuanto más oscura: un pluck, un bongó, una marimba, una campana; sostenida largo, un drone.
 
 | | EDIT 1 (FOLD) | EDIT 2 (GATE) |
 | --- | --- | --- |
-| KNOB 1 | **FOLD**: la ganancia del plegador, x1 .. x9. La onda se dobla sobre sí misma: cada vez más armónicos (impares), metálica y viva, con el mismo nivel | **GATE**: qué hace el gate: 0 solo pasabajos (el nivel queda, se cierran los agudos), 64 las dos cosas (lo clásico), 127 solo VCA (los pliegues quedan, baja el nivel) |
-| KNOB 2 | **SYMM**: un offset a la entrada del plegador: pliegues asimétricos, armónicos pares (el 2.º, un color hueco, de lengüeta) | **DECAY**: el golpe, 5 ms .. 4 s; pasado 88 una nota sostenida deja el gate algo abierto (127: abierto mientras se sostiene, un drone); al soltar se cierra en ~150 ms |
-| KNOB 3 | **MOD**: profundidad de FM del segundo seno sobre el primero (índice hasta ~5) | **RES**: la resonancia del filtro del gate (un anillo en el golpe) |
-| KNOB 4 | **RATIO**: la relación del modulador con la nota: 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 (1.41, 1.73, 2.76, 5.40: campanas y barras) | **DUST**: ruido dentro del gate. 1–72 crepitar (impulsos al azar, 1 .. 600 por segundo) que además *golpea* el gate (notas fantasma, gotas); 72–96 el seno se apaga (solo los impulsos); 96–127 entra el siseo (ruido blanco, completo en 127). 0: nada de ruido |
+| KNOB 1 | **FOLD**: la ganancia del plegador, x1 .. x9. La onda se dobla sobre sí misma: cada vez más armónicos en un barrido que canta, con el mismo nivel. Los pliegues están integrados (cada muestra toma la media del pliegue en su tramo), así quedan suaves en vez de zumbar; las notas agudas pliegan menos (sin aliasing) | **GATE**: qué hace el gate: 0 solo pasabajos (el nivel queda, se cierran los agudos), 64 las dos cosas (el combo clásico), 127 solo VCA (los pliegues quedan, baja el nivel) |
+| KNOB 2 | **SYMM**: un offset a la entrada del plegador: pliegues asimétricos, armónicos pares (el 2.º, un color hueco, de lengüeta) | **DECAY**: la memoria del vactrol: la célula unos 40 dB a oscuras en 20 ms (0) .. 1 s (80) .. 10 s (127). Pasado 80 una nota sostenida deja el LED encendido (con el nivel del ADSR, todo en 127): sostiene, más oscura cuanto más bajo; al soltar, la célula decae como lo haría |
+| KNOB 3 | **MOD**: la profundidad del oscilador de modulación sobre el núcleo (FM lineal que pasa por cero, índice hasta ~5); pasado 100 también modula la amplitud (AM, bandas laterales como de anillo) | **RES**: la resonancia del filtro del gate, acotada (un gate golpeado suena bajando de altura mientras se cierra: el golpe del bongó) |
+| KNOB 4 | **RATIO**: la relación del modulador con la nota: 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 con el núcleo **seno** (Buchla: pliegues redondos, suaves); después los mismos dieciséis con una **T**, 0.5T .. 8T, con el núcleo **triángulo** y un plegador triangular (Serge: pliegues más brillantes, de vidrio). (1.41, 1.73, 2.76, 5.40: campanas y barras) | **DUST**: ruido dentro del gate. 1–72 crepitar (impulsos al azar, 1 .. 600 por segundo) que además *destellan* la célula (notas fantasma, gotas); 72–96 el núcleo se apaga (solo los impulsos); 96–127 entra el siseo (ruido blanco, completo en 127). 0: nada de ruido |
 
-- **Velocidad**: una nota más fuerte pliega más y abre el techo del gate (±10 semitonos): más brillante y más fuerte.
+- **La luz colorea el sonido** como en un patch de costa oeste: la conductancia de la célula (su luz a la 0,75) fija el
+  corte del filtro y el VCA, y también el pliegue (de 0,4 a todo FOLD) y el índice de FM (0,3 .. todo MOD): un golpe
+  florece brillante y se suaviza al apagarse; más fuerte es más brillante.
+- **Velocidad**: una nota más fuerte ilumina más la célula, pliega más y abre el techo del gate (±10 semitonos).
 - **Las macros de la pista**: FLT (CUT, el CUT de la matriz, el filtro de LIFE) mueve el techo del gate, SHP pliega (un
   LFO a SHAPE hace respirar los pliegues), PIT la afinación. El techo sigue a la tecla a medias, el gate cerrado a la
   tecla misma. LIFE (su vagar por voz de la forma), DRONE, UNISON y los E1–E8 de la matriz MOD andan como en todos.
-- **El golpe también pliega**: el pliegue sigue el nivel del gate (la mitad cerrado), así el timbre de un pluck florece
-  y se oscurece con su nivel, como en un patch de costa oeste.
-- **Presets** (WEST PLUCK y los otros primero en la lista): **WEST PLUCK**, **BONGO**, **MARIMBA**, **WEST BELL**,
-  **GAMELAN**, **FOLD BASS**, **RUBBER BASS**, **WEST LEAD**, **FOLD LEAD** (la presión lo pliega), **FOLD DRONE** (los
-  pliegues respirando), **DUST DRONE**, **INIT WEST**; después los ocho de NOISE, rehechos con DUST: **WIND**, **RAIN**
-  (el polvo golpea el gate: gotas en la nota), **ARCADE**, **METAL**, **SEA**, **HISS PAD**, **TAPE AIR**,
+- **Presets** (WEST PLUCK y los otros primero en la lista; la V10.7.37 los revoceó y emparejó en nivel): **WEST PLUCK**
+  (el clásico seno plegado y golpeado), **BONGO** (corto, resonante: el golpe baja de altura), **MARIMBA** (el 4.º
+  parcial desde el modulador, una maza blanda), **WEST BELL** (1.41, el gate casi un VCA: suena brillante), **GAMELAN**
+  (2.76, pliegues asimétricos), **FOLD BASS** (el núcleo triángulo plegado, Serge), **RUBBER BASS** (la octava de abajo en
+  la FM, un gate pasabajos resonante), **WEST LEAD** (núcleo triángulo, sostenido abierto; MODW lo pliega), **FOLD LEAD**
+  (la presión lo pliega), **FOLD DRONE** (los pliegues respirando), **DUST DRONE**, **INIT WEST**; después los ocho de
+  NOISE, rehechos con DUST: **WIND**, **RAIN** (el polvo destella el gate: gotas en la nota), **ARCADE**, **METAL** (el
+  núcleo triángulo en un modo de barra), **SEA**, **HISS PAD**, **TAPE AIR**,
   **INIT NOISE**. Los roles de ruido y textura del generador eligen SEA, TAPE AIR, HISS PAD e INIT NOISE como antes.
 - **Proyectos y presets de usuario hechos con NOISE** (V10.7.35 y antes) abren como WEST en un patch de DUST (no hay
   que hacer nada): los modos de ruido de NOISE pasan a DUST (el ruido blanco de ANLG: DUST 127; los impulsos de DUST:
@@ -1245,7 +1253,7 @@ solo mientras la pista suena:
   su DEPTH), PERC hace saltar y gritar a su gusano, CLICK les saca burbujas por la boca, DUST deja motas.
 - **WEST: la onda plegada** (V10.7.36; antes el enjambre de NOISE): dos ciclos de la onda tal como la pliega el motor
   (FOLD, SYMM, MOD y RATIO la doblan), corriendo con el sonido; brilla y se pliega más cuando el gate se abre con un
-  golpe y se apaga cuando se cierra. Arriba, la lámpara (la luz del vactrol) se enciende con cada nota; DUST desparrama
+  golpe y se apaga cuando se cierra. Arriba, el LED (el golpe del vactrol) se enciende con cada nota; DUST desparrama
   motas que titilan; una cara abajo cierra los ojos con cada golpe.
 - **PHASE: un caracol.** Las cámaras de la caparazón están en la **fase doblada** (parejas con DCW en 0; al subir el DCW
   se amontonan donde la fase corre, que es lo que hace la distorsión de fase), coloreadas por la salida; **la suela del
@@ -3017,9 +3025,13 @@ REC mantenido + FX o este CLEAR de la KNOB 4.)
   arrancan en la siguiente 1/16 mientras suena. Por debajo de unos 81 BPM, REPEAT 1/8 es demasiado largo para su buffer
   y aparece atenuado. **PITCH UP / PITCH DOWN** (F#3 G#3): toda la mezcla sube / baja mientras la mantenés, una octava
   en más o menos un compás, y se queda ahí, a tempo; al soltar vuelve de golpe (con una rampa corta). REPEAT, REVERSE,
-  TAPE STOP, PITCH y GLITCH comparten un buffer: suena el último apretado, y al soltarlo vuelve el que estaba antes.
-  **FREEZE** (A#3): la reverb congela su nube (su SIZE al máximo: CLOUD deja de escribir su línea, las otras reverbs
-  siguen sonando) y no le entra nada nuevo. **REV ALL / DLY ALL** (C#4 D#4): todo mojado, cada pista a la reverb / al
+  TAPE STOP, PITCH, GLITCH, COMB y FREEZE comparten un buffer: suena el último apretado, y al soltarlo vuelve el que
+  estaba antes. **FREEZE** (A#3, V10.7.37): se congela la mezcla misma: desde que lo apretás captura el siguiente cuarto
+  de tiempo (100–280 ms; mientras tanto se oye en vivo) y lo sostiene como un drone continuo, dos granos superpuestos con
+  ventanas suaves que leen ese momento hacia adelante y vuelven al principio, con un poco de jitter (~1,5 ms) para que
+  viva; sin clic ni costura de loop. La mezcla en vivo queda muda mientras lo mantenés (KNOB 4 DEPTH deja volver algo,
+  como con los otros efectos de buffer); al soltar vuelve en rampa a la mezcla en vivo. (Antes de la V10.7.37 FREEZE
+  congelaba la nube de la reverb: el SIZE 127 de CLOUD lo sigue haciendo.) **REV ALL / DLY ALL** (C#4 D#4): todo mojado, cada pista a la reverb / al
   delay (su MIX al menos 100), la señal seca muda: solo se oye el efecto; al soltar vuelve la seca y la cola sigue
   sonando. **RING** (F#4): modulación en anillo del master con un seno dos octavas arriba de la tónica de la escala de
   la pista elegida (C5 … B5), con su profundidad ondulando una vez por compás; nunca más fuerte que la mezcla.

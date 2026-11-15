@@ -183,7 +183,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | WEST 11 | 115 | FOLD | 0..127 | 40 | |
 | WEST 11 | 116 | SYMM | 0..127 | 0 | |
 | WEST 11 | 117 | MOD | 0..127 | 0 | |
-| WEST 11 | 118 | RATIO | 0..15 | 1 | 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 |
+| WEST 11 | 118 | RATIO | 0..31 | 1 | 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 0.5T 1T 1.41T 1.5T 1.73T 2T 2.5T 2.76T 3T 3.5T 4T 5T 5.40T 6T 7T 8T |
 | WEST 11 | 119 | GATE | 0..127 | 64 | |
 | WEST 11 | 120 | DECAY | 0..127 | 60 | |
 | WEST 11 | 121 | RES | 0..127 | 20 | |

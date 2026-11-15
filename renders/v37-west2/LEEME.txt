@@ -1,0 +1,46 @@
+JIANT V10.7.37 (rama codex/v37-west2): WEST rehecho y FREEZE nuevo
+====================================================================
+
+Todo renderizado en el host con el mismo código del firmware (hostsim), 44,1 kHz, estéreo,
+la mezcla completa (envíos de efectos del preset incluidos), sin normalizar.
+
+1. Los presets de WEST (00_ .. 19_)
+   Cada preset toca una vez su patrón sugerido (16 pasos a 120 BPM, 1/16) y deja 2 s de cola.
+   00..07 son los nombres de NOISE (WIND RAIN ARCADE METAL SEA HISS PAD INIT NOISE TAPE AIR), en sus
+   mismos números de preset y PROGRAM CHANGE; 08..19 son los de costa oeste:
+     08 WEST PLUCK   el pluck clásico: seno plegado, el gate golpeado
+     09 BONGO        corto y resonante: el golpe baja de altura mientras el vactrol se apaga
+     10 MARIMBA      el 4.º parcial desde el modulador, una maza blanda
+     11 WEST BELL    FM 1.41 (inarmónica), el gate casi un VCA: suena brillante y se suaviza
+     12 GAMELAN      FM 2.76 (una barra libre), pliegues asimétricos
+     13 FOLD BASS    núcleo triángulo plegado (Serge), el gate casi pasabajos
+     14 RUBBER BASS  la octava de abajo en la FM, gate pasabajos resonante: rebota
+     15 WEST LEAD    núcleo triángulo, sostenido (DECAY 112: el LED queda encendido); MODW lo pliega
+     16 FOLD LEAD    seno plegado al máximo y con offset; la presión lo pliega, vibrato
+     17 FOLD DRONE   los pliegues respirando (LFO a SHP), núcleo triángulo
+     18 DUST DRONE   un tono sostenido que el polvo hace destellar
+     19 INIT WEST    el punto de partida
+
+2. La comparación con V10.7.36 (v36_08_ .. v36_19_)
+   La misma frase (el mismo patrón) con el preset del mismo nombre de la V10.7.36, para escuchar
+   la diferencia: el vactrol nuevo (golpe rápido pero no instantáneo, caída rápida al principio y
+   cola larga), los pliegues integrados (más suaves, cantan en vez de zumbar), el índice de FM y el
+   pliegue que siguen a la luz (la campana brilla al golpe y se suaviza).
+
+3. vactrol_ping_DECAY.wav
+   Golpes sueltos (la nota soltada a los 20 ms: solo el "ping" al LED), uno cada 2 s, con DECAY
+   10, 30, 50, 70, 90, 110 (FOLD 50, GATE 64, RES 30, La3); después la misma serie con RES 100 y La2
+   (el bongó: el filtro resonante cae de altura con la luz). Se oye que DECAY es la memoria del
+   vactrol: el ataque es igual en todos, la cola cada vez más larga, y siempre más lenta cuanto más
+   oscura.
+
+4. FREEZE_drums_chord.wav
+   Batería y un acorde (la pista ácida muda), 120 BPM: un compás en seco, FREEZE (A#3) apretado
+   en el compás 2 durante dos compases, soltado en el 4, un compás más en seco.
+   FREEZE captura el cuarto de tiempo siguiente a apretarlo (en vivo mientras tanto) y lo sostiene
+   como un drone: dos granos con ventana sin^2 que se superponen a la mitad, leyendo ese momento
+   hacia adelante y volviendo a un lugar al azar (después del ataque, para que no se repita un
+   golpe), con ~1,5 ms de jitter; la mezcla en vivo queda muda; al soltar vuelve en rampa.
+   Sin clics: el salto más grande entre muestras mientras sostiene es ~300 (en seco, ~6000-9800
+   por la batería). Nota: congela el golpe del bombo y el ataque del acorde, por eso suena unos
+   4 dB más fuerte que el compás en seco.
