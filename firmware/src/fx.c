@@ -522,10 +522,9 @@ static __attribute__((noinline)) void bal_block(uint32_t n)
     int32_t l0 = bal.lp[0], l1 = bal.lp[1], l2 = bal.lp[2], r0 = bal.lp[3], r1 = bal.lp[4], r2 = bal.lp[5];
     int32_t s0 = 0, s1 = 0, s2 = 0, s3 = 0, h0, h1, h2, h3, k, a0 = A[0], a1 = A[1], a2 = A[2];
     uint32_t i;
-    for (k = 0; k < 6 && (uint32_t)(bal.lp[k] + 39) < 79u; k++) {}   /* the split's tails out (a state under 40: the
-                                                         * ~200 Hz one-pole's floor stops a negative one there; what it
-                                                         * added, ~-60 dBFS at most, goes) and a silent block: silent
-                                                         * out, not run, the gains held */
+    for (k = 0; k < 6 && (uint32_t)(bal.lp[k] + 63) < 127u; k++) {}   /* the split's tails out (a state under 4: the
+                                                         * one-poles' floor; what it added, ~-80 dBFS at most, goes) and a
+                                                         * silent block: silent out, not run, the gains held */
     for (i = 0; k == 6 && i < n && !(mix_l[i] | mix_r[i] | wet[i]); i++) {}
     if (k == 6 && i == n) {
         memset(bal.lp, 0, sizeof bal.lp);
@@ -563,14 +562,20 @@ static __attribute__((noinline)) void bal_block(uint32_t n)
     h0 = bal.g[0] - bal.g[1]; h1 = bal.g[1] - bal.g[2]; h2 = bal.g[2] - bal.g[3]; h3 = bal.g[3];
     for (i = 0; i < n; i++) {                           /* (the bands' sum as x g3 + l0 (g0 - g1) + l1 (g1 - g2) + l2 (g2 - g3)) */
         int32_t xl = mix_l[i] + wet[i], xr = mix_r[i] + wet[i];
-        l0 += ((xl - l0) >> 3) * a0 >> 12; l1 += ((xl - l1) >> 3) * a1 >> 12; l2 += ((xl - l2) >> 3) * a2 >> 12;
-        r0 += ((xr - r0) >> 3) * a0 >> 12; r1 += ((xr - r1) >> 3) * a1 >> 12; r2 += ((xr - r2) >> 3) * a2 >> 12;
+        /* (V10.7.43, the owner: "a little bitcrush in the releases") the one-poles' states 16 x the mix (their step
+         * the same: d / 4 x a >> 9 on x16 is d x a >> 15): a quiet tail followed down to +-4 (it was +-40: the ~200 Hz
+         * band stuck under it, then moved in steps); the bands' corrections on half steps, summed, then cut once (each
+         * was cut to steps of 16 before its gain: up to 8 a step on a tail) */
+        l0 += ((xl - (l0 >> 4)) >> 2) * a0 >> 9; l1 += ((xl - (l1 >> 4)) >> 2) * a1 >> 9; l2 += ((xl - (l2 >> 4)) >> 2) * a2 >> 9;
+        r0 += ((xr - (r0 >> 4)) >> 2) * a0 >> 9; r1 += ((xr - (r1 >> 4)) >> 2) * a1 >> 9; r2 += ((xr - (r2 >> 4)) >> 2) * a2 >> 9;
         if (!(i & 7u)) {                                /* (both sides' bands summed: the mid's, twice) */
-            int32_t b0 = l0 + r0, b1 = l1 + r1 - b0, b2 = l2 + r2 - l1 - r1, b3 = xl + xr - l2 - r2;
+            int32_t b0 = (l0 + r0) >> 4, b1 = ((l1 + r1) >> 4) - b0, b2 = (l2 + r2 - l1 - r1) >> 4, b3 = xl + xr - ((l2 + r2) >> 4);
             s0 += b0 < 0 ? -b0 : b0; s1 += b1 < 0 ? -b1 : b1; s2 += b2 < 0 ? -b2 : b2; s3 += b3 < 0 ? -b3 : b3;
         }
-        mix_l[i] = xl + ((xl >> 4) * h3 >> 8) + ((l0 >> 4) * h0 >> 8) + ((l1 >> 4) * h1 >> 8) + ((l2 >> 4) * h2 >> 8);
-        mix_r[i] = xr + ((xr >> 4) * h3 >> 8) + ((r0 >> 4) * h0 >> 8) + ((r1 >> 4) * h1 >> 8) + ((r2 >> 4) * h2 >> 8);
+        mix_l[i] = xl + (((xl >> 1) * h3 + (l0 >> 5) * h0 + (l1 >> 5) * h1 + (l2 >> 5) * h2) >> 11);   /* (the gains'
+                                                         * bounds, BAL_LO .. BAL_HI: |h0| + .. + |h3| < 12216, the sum
+                                                         * within 2^31 to |x| 2^18, the master's clamp) */
+        mix_r[i] = xr + (((xr >> 1) * h3 + (r0 >> 5) * h0 + (r1 >> 5) * h1 + (r2 >> 5) * h2) >> 11);
         wet[i] = 0;
     }
     bal.lp[0] = l0; bal.lp[1] = l1; bal.lp[2] = l2; bal.lp[3] = r0; bal.lp[4] = r1; bal.lp[5] = r2;
@@ -714,6 +719,25 @@ static __attribute__((noinline)) void master_begin(void)
 #define LEV_GATE 400                                    /* -38 dB */
 static int32_t lev_env, lev_g = 32768, lev_cur = 32768, lev_dg;   /* the gain now and its step a sample (master_out) */
 static int32_t dc_l, dc_r;                              /* (master_out's DC blockers, LOWCUT: below; lev_block reads them) */
+/* (V10.7.43, the owner: "a little bitcrush in the releases") the master in Q15 x 8: in, the mix x MASTER with
+ * nothing dropped (master_in: it was (mix >> 2) x MASTER >> 10, the mix's 2 low bits gone and the knob's product cut
+ * to whole Q15 units: a tail's steps of 4 at the knob's top, coarser under it, the 24-bit DAC fed Q15 << 7); out,
+ * 3 more bits than Q15 (MASTER_FRB): mix_block / perf_master put out Q15 (USB, the scope, the click) and the bits
+ * below it in out_fr, a byte a frame, which the DAC takes (audio.c). The DC blockers, LOWCUT and the leveler work at that
+ * precision; the limiter's gain on Q15 as before; the soft clip on Q15, the bits below it passed (its slope ~1 where
+ * they matter) */
+#define MASTER_FRB 3
+static uint8_t out_fr[CTL];                             /* (L's bits below Q15, R's << MASTER_FRB: master_put) */
+static inline int32_t master_in(int32_t m, int32_t mg)  /* m x mg / 4096, Q15 x 2^MASTER_FRB (|m| < 2^21, as before) */
+{
+    return ((((m >> 2) * mg) >> (10 - MASTER_FRB))) + (((m & 3) * mg) >> (12 - MASTER_FRB));
+}
+static inline void master_put(int32_t *out, uint32_t i, int32_t l, int32_t r)
+{
+    out[2u * i] = l >> MASTER_FRB;
+    out[2u * i + 1u] = r >> MASTER_FRB;
+    out_fr[i] = (uint8_t)((l & ((1 << MASTER_FRB) - 1)) | (r & ((1 << MASTER_FRB) - 1)) << MASTER_FRB);
+}
 static volatile uint8_t fx_lowcut;
 /* (V10.7.42) out (mix_block's, not under the FX layer: 0 there): a silent block (every sample in 0) through master_out
  * at rest (the DC blockers and the limiter settled, no LOWCUT) is 0 out with the states as they were: out cleared, 1
@@ -759,6 +783,7 @@ static __attribute__((noinline)) int lev_block(uint32_t n, int32_t *out)
                                                          * remainder: 0 .. 4095 into >> 12) */
         return 0;
     memset(out, 0, 2u * n * sizeof out[0]);
+    memset(out_fr, 0, n);
     return 1;
 }
 /* DUCK (G_DUCK 0..100, G_DREL its release 40 .. 600 ms): a kick (eng_drum.c duck_hit) takes the parts that are not
@@ -809,8 +834,12 @@ static __attribute__((noinline)) void usb_fixed_dac(int32_t *out, uint32_t n)   
 {
     uint32_t i;
     int32_t m = (int32_t)song.master_q12;
-    for (i = 0; i < 2u * n; i++)
-        out[i] = (out[i] * m) >> 12;                /* (|out| <= 32767 after the soft clip: fits) */
+    for (i = 0; i < n; i++) {                       /* (V10.7.43: with the bits below Q15, out_fr) */
+        uint32_t f = out_fr[i];
+        int32_t l = ((out[2u * i] * (1 << MASTER_FRB) + (int32_t)(f & ((1u << MASTER_FRB) - 1u))) * m) >> 12;
+        int32_t r = ((out[2u * i + 1u] * (1 << MASTER_FRB) + (int32_t)(f >> MASTER_FRB)) * m) >> 12;   /* (fits: Q18 x Q12) */
+        master_put(out, i, l, r);
+    }
 }
 static volatile uint8_t fx_lowcut;     /* settings: 1 LOWCUT 12 dB/oct ~110 Hz, 2 BASS+ (the small speaker):
                                         * 12 dB/oct ~220 Hz plus the harmonics of the bass (spk_bass) */
@@ -871,29 +900,29 @@ static inline void master_out(int32_t *l, int32_t *r)
     *r = dc_block(*r, &dc_r, &dce_r);
     if (fx_lowcut) {                  /* two one-pole high-passes, error feedback as dc_block (the */
         uint32_t sh = fx_lowcut == 2u ? 5u : 6u;    /* rounded step stopped at |x - lc| < 32: an offset) */
-        int32_t b = fx_lowcut == 2u ? spk_bass((*l + *r) >> 1) : 0;
+        int32_t b = fx_lowcut == 2u ? spk_bass((*l + *r) >> (1 + MASTER_FRB)) << MASTER_FRB : 0;   /* (its harmonics on Q15) */
         *l = lowcut1(*l, &lc_l1, &lce[0], sh);
         *l = lowcut1(*l, &lc_l2, &lce[1], sh) + b;
         *r = lowcut1(*r, &lc_r1, &lce[2], sh);
         *r = lowcut1(*r, &lc_r2, &lce[3], sh) + b;
     }
-    *l = (clamp(*l, -262143, 262143) * (lev_cur >> 4)) >> 11;   /* (JIANT 0.5) the leveler's gain (lev_block) */
-    *r = (clamp(*r, -262143, 262143) * (lev_cur >> 4)) >> 11;
+    *l = mulq16(clamp(*l, -(262143 << MASTER_FRB), 262143 << MASTER_FRB) << 1, (uint32_t)lev_cur);   /* (JIANT 0.5) the leveler's gain (lev_block) */
+    *r = mulq16(clamp(*r, -(262143 << MASTER_FRB), 262143 << MASTER_FRB) << 1, (uint32_t)lev_cur);
     lev_cur += lev_dg;
     al = *l < 0 ? -*l : *l;
     ar = *r < 0 ? -*r : *r;
-    a = al > ar ? al : ar;
+    a = (al > ar ? al : ar) >> MASTER_FRB;
     if (a > lim_env)
         lim_env += (a - lim_env) >> 2;
     else if (lim_env > LIM_T)
         lim_env -= ((lim_env - LIM_T) >> 11) + 1;   /* (0.5.1: ~45 ms back, was ~90) */
     if (lim_env > LIM_T) {
         int32_t g = (int32_t)(((uint32_t)LIM_T << 15) / (uint32_t)lim_env);   /* < 32768 */
-        *l = ((*l >> 4) * g) >> 11;                      /* >> 4 first: |l| may be far above Q15 */
-        *r = ((*r >> 4) * g) >> 11;
+        *l = ((*l >> (4 + MASTER_FRB)) * g) >> (11 - MASTER_FRB);        /* >> 4 first: |l| may be far above Q15 */
+        *r = ((*r >> (4 + MASTER_FRB)) * g) >> (11 - MASTER_FRB);
     }
-    *l = softclip(*l);
-    *r = softclip(*r);
+    *l = (softclip(*l >> MASTER_FRB) << MASTER_FRB) + (*l & ((1 << MASTER_FRB) - 1));
+    *r = (softclip(*r >> MASTER_FRB) << MASTER_FRB) + (*r & ((1 << MASTER_FRB) - 1));
 }
 
 /* length of one division (N_DIV order) in samples at the song tempo */
@@ -2670,7 +2699,10 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
         }
         if ((track_follow_mask >> ti) & 1u) TRACK_FOLLOW(t, b, n);
         for (i = 0; i < n; i++, lq += dl, gl += dgl, gr += dgr) {
-            int32_t x = ((b[i] >> 2) * (lq >> 8)) >> 10, a = x < 0 ? -x : x;   /* pre-shift: 8 loud voices */
+            int32_t x = (((b[i] >> 2) * (lq >> 8)) >> 10) + (((b[i] & 3) * (lq >> 8)) >> 12), a = x < 0 ? -x : x;   /* pre-shift:
+                                                         * 8 loud voices; (V10.7.43) the 2 bits it drops put back after
+                                                         * LEVEL (they were lost before it: a part's steps of 2.5 at
+                                                         * LEVEL's default, 9.5 at its top) */
             int32_t xs = clamp(x, -xmax, xmax);         /* sends: mulq15 would overflow */
             if (a > pk)
                 pk = a;
@@ -2810,11 +2842,10 @@ static __attribute__((noinline)) void perf_master(int32_t *out, uint32_t n)
         mix_r[i] = (((mix_r[i] + wet[i]) >> 2) * mg) >> 10;
     }
     perf_block(mix_l, mix_r, n);
-    for (i = 0; i < n; i++) {
-        int32_t l = mix_l[i], r = mix_r[i];
+    for (i = 0; i < n; i++) {                           /* (V10.7.43: the FX layer's effects on Q15, as before) */
+        int32_t l = mix_l[i] << MASTER_FRB, r = mix_r[i] << MASTER_FRB;
         master_out(&l, &r);
-        out[2u * i] = l;
-        out[2u * i + 1u] = r;
+        master_put(out, i, l, r);
     }
 }
 
@@ -3203,11 +3234,10 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
         return;
     }
     for (i = 0; i < n; i++) {
-        int32_t l = (((mix_l[i] + wet[i]) >> 2) * mg) >> 10;
-        int32_t r = (((mix_r[i] + wet[i]) >> 2) * mg) >> 10;
+        int32_t l = master_in(mix_l[i] + wet[i], mg);
+        int32_t r = master_in(mix_r[i] + wet[i], mg);
         master_out(&l, &r);
-        out[2u * i] = l;
-        out[2u * i + 1u] = r;
+        master_put(out, i, l, r);
     }
 }
 
