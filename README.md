@@ -483,6 +483,19 @@ same license.
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
 
+### V10.7.43 — beta (2026-11-15)
+- **VOICE › TRACT, a vocal tract you shape**: VOICE's second **MODE** (EDIT › WORDS, KNOB 4: VOWEL / TRACT). A physical
+  model (an original implementation of Kelly–Lochbaum's tube, from the textbooks): 22 sections from the glottis to the
+  lips, a nose at the velum, a glottis that pulses and breathes. **EDIT 1 FRONT · OPEN · ROUND · NASAL** (the tongue, the
+  jaw, the lips, the velum), **EDIT 2 BREATH · VIB · RATE · TENSE**. The shape glides between vowels (AH ~770 / 1100 Hz,
+  EE ~250 / 2050, OO ~280 / 840); with WORDS the syllables move it (m n ng open the nose, p t k close it, s sh f hiss at
+  the narrowing), the vowel on the step as VOICE's. Two voices a track (about an FM6 pair's CPU). The EDIT picture
+  draws the head where the knobs put it and the tube's real widths under it. Seven presets: TUBE AH, TUBE EE, TUBE OO,
+  TUBE CHOIR, BASS SINGR, WHISPER TB, TALK TUBE. VOWEL mode, every old preset and project: as before, bit for bit.
+- Room for it in the flash, with nothing else changed: the RAM code the FM-1 unpacks at power-on is packed tighter (LZB,
+  an LZ77 of bits, 28.3 KB → 25.5 KB of the image), so are the packed tables and HELP's lines; identical functions
+  merged.
+
 ### V10.7.41 (2026-11-15)
 - **WEST with RES high no longer breaks on the peaks**: past RES ~43 the gate's input is lowered with its resonance
   (x0.25 at 127), so its ring stays inside the gate's arithmetic (it wrapped around: a crack on every peak). Below RES 43

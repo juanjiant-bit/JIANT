@@ -277,7 +277,7 @@ def controls():
                          ('EQ', ['LOW', 'LO MID', 'HI MID', 'HIGH']), ('BALANCE', 'AMOUNT - - -')]),
         ('EDIT', HEAT[3], [('EDIT 1', 'E1 E2 E3 E4'), ('EDIT 2', 'E5 E6 E7 E8'), ('EXT', 'SOURCE GAIN GATE MODE'), ('SHAPE', 'WIDTH RING BITS RATE'), ('SWARM', 'SIDE RATE MOVE TONE'), ('SWARM 2', 'SIDE NOISE MOD NOW'),
                            ('MORPH', 'MORPH DRIFT - -'), ('ROTOR', 'DEPTH DUST - -'),
-                           ('WORDS', 'LANG LYRIC CONS (OCT+ TYPE)'), ('RETRIG', 'RTRG - - -'), ('OPERATOR', 'OP COARSE FINE OUTPUT'),
+                           ('WORDS', 'LANG LYRIC CONS MODE (VOWEL / TRACT; OCT+ TYPE)'), ('RETRIG', 'RTRG - - -'), ('OPERATOR', 'OP COARSE FINE OUTPUT'),
                            ('OP ENV', 'OP STAGE RATE LEVEL'), ('OPERATOR 2', 'OP MODE DETUNE KEY VEL'), ('FILTER', 'TYPE CUT RES DRIVE'),
                            ('VOICES', 'POLY GLIDE GL MODE PRIO'), ('VOICES 2', 'UNISON VEL IMAGE VOICES (AUTO 1..8; ALL n/8)'), ('VOICES 3', 'CRUSH LIFE - - (EXT)'), ('AUTO KNOBS', 'KNOB VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS GLUE'),
                            ('KIT LFO', 'RATE DEPTH SHAPE RAND'), ('LEVELS', 'KICK SNARE CLAP HATCL'),
@@ -354,7 +354,9 @@ def sound():
          'a note each (POS THEME ARTIC SHIFT · BUZZ BREATH Q LOOP); LYRIC TEXT (OCT+ on WORDS types it, KNOB 3 dice, '
          'D# PH 1–3 the phonemes; V10.7.33: the web editor turns words into phonemes, English with the CMU dictionary) '
          'or W1–16 words, S1–8 scat; "-" holds the vowel. <b>Its picture</b> (0.9.4): a CT head '
-         'whose tongue, jaw, lips and velum sing the phoneme.'),
+         'whose tongue, jaw, lips and velum sing the phoneme. <b>TRACT</b> (V10.7.43, WORDS KNOB 4 MODE): a vocal tract as a '
+         'tube, FRONT OPEN ROUND NASAL · BREATH VIB RATE TENSE; presets TUBE AH / EE / OO, TUBE CHOIR, BASS SINGR, WHISPER TB, '
+         'TALK TUBE.'),
         ('WHEEL', HEAT[5], 'REG SUB BODY TOP', 'PERC CLICK DRIVE SPEED', 'Drawbar organ: registrations, percussion, rotary. '
          '<b>Its picture</b> (0.9.6): nine tube worms, one a drawbar, bent by the rotor.'),
         ('WEST', HEAT[4], 'FOLD SYMM MOD RATIO', 'GATE DECAY RES DUST',

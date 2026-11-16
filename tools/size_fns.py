@@ -185,7 +185,7 @@ def main(src, dst):
                   # a block, its note; a step's RAMP, the master's macros once a block, a CLOUD grain born
                   "comp_run", "live_q", "live_adv", "seq_due", "fugue_tick", "seq_lane_rat", "seq_ratchet", "mo_block",
                   "panic_block", "kx_block", "dxo_tick", "load_half", "fm1__anim_frame", "fm1__an_start", "sy_tick",
-                  "sy_voices", "tract_desc", "tract_note_on", "tract_block", "tr_shape", "tr_k",
+                  "sy_voices", "tract_desc", "tract_note_on", "tract_block", "tract_mode", "tr_shape", "tr_k",
                   "ramp_run", "macro_master", "cl_spawn"}
     names, hit = ((size_names() | cold_ui) - isr) | input_size | event_size, set()
     def mark(m):

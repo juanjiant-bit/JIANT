@@ -38,6 +38,9 @@ versión pública) o de antes: [Qué hay de nuevo en esta versión](#qué-hay-de
 
 Todo lo que cambió desde la V10.6c, la última versión pública, en una lista; cada punto lleva a su lugar en el manual.
 
+**TRACT: un tracto vocal como un tubo (V10.7.43)**
+- El segundo **MODE** de VOICE (EDIT › WORDS, KNOB 4): un modelo físico del tracto vocal, un tubo al que le das forma con **FRONT OPEN ROUND NASAL** y una glotis con **BREATH VIB RATE TENSE**; WORDS canta a través de él. Siete presets (TUBE AH … TALK TUBE). Ver [TRACT](#voice-tract-un-tracto-vocal-como-un-tubo-v10743).
+
 **LIFE: las voces vivas, las pistas moviéndose entre sí (V10.7.34)**
 - **HOME › LIFE**, la nueva primera página de HOME: cada voz respira por su cuenta (unos cents de afinación, su filtro,
   su nivel), una nota mantenida tiene un arco (arranca con energía, florece y después se cansa) y las pistas se mueven
@@ -658,7 +661,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | --- | --- | --- | --- | --- | --- |
 | EDIT 1 | E1 | E2 | E3 | E4 | todos los motores (ver [4](#4-motores)) |
 | EDIT 2 | E5 | E6 | E7 | E8 | todos los motores |
-| WORDS | LANG | LYRIC | CONS (V10.6y: el largo de las consonantes, 50–400 %; POS pasa a EDIT 1 con LANG prendido) | (OCT+ TYPE: la letra) | VOICE (0.8.5, [palabras](#voice-palabras-y-letras-085)) |
+| WORDS | LANG | LYRIC | CONS (V10.6y: el largo de las consonantes, 50–400 %; POS pasa a EDIT 1 con LANG prendido) | MODE (V10.7.43: VOWEL / TRACT, [el tubo](#voice-tract-un-tracto-vocal-como-un-tubo-v10743); OCT+ TYPE: la letra) | VOICE (0.8.5, [palabras](#voice-palabras-y-letras-085)) |
 | RETRIG | RTRG | TIME (V10.7.37: NOTE, o 1/1 .. 1/32 y tresillos) | — | — | MATH (BYTE, FLOAT) |
 | MORPH | MORPH | — | — | — | ANALOG (SAW..SIN), PHASE |
 | OPERATOR | OP | COARSE (la relación, o los Hz fijos; era RATIO / FIXED) | FINE | OUTPUT (el nivel del operador; era LEVEL) | FM6 |
@@ -1191,6 +1194,33 @@ el japonés se leen mejor (su ortografía es regular); el inglés necesita los f
 el diccionario inglés (~11 KB de la flash del segmento Bluetooth) es del editor desde la V10.7.33; alrededor de +9 %
 de CPU sobre las vocales de VOICE, así que
 cuatro voces cantando siguen costando bastante menos que las ocho de ANALOG.
+
+### VOICE: TRACT, un tracto vocal como un tubo (V10.7.43)
+
+VOICE tiene un segundo **MODE**: EDIT > **WORDS**, **KNOB 4 MODE** (**VOWEL**, la voz de formantes de siempre;
+**TRACT**). En TRACT el sonido es un modelo físico: un tubo de 22 secciones de la glotis a los labios (17 cm, el de un
+adulto), las ondas del aire subiendo y bajando y reflejándose donde cambia su ancho (Kelly–Lochbaum), una nariz unida en
+el velo, una glotis que pulsa (un pulso de flujo de Rosenberg) y respira. Vos le das forma al tubo; las vocales salen de
+ahí.
+
+| Página | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+| --- | --- | --- | --- | --- |
+| EDIT 1 | **FRONT** (la lengua: atrás .. adelante) | **OPEN** (lengua baja y mandíbula abierta: vocales cerradas .. abiertas) | **ROUND** (los labios redondeados) | **NASAL** (0..12: el velo abierto) |
+| EDIT 2 | **BREATH** (aire; arriba un susurro) | **VIB** (vibrato, entra en ~0,4 s) | **RATE** (vibrato 3..8 Hz) | **TENSE** (la glotis: floja y suave .. apretada y brillante) |
+
+- **Las vocales**: FRONT 0 / OPEN alto es **AH** (~770 / 1100 Hz), FRONT alto / OPEN 0 es **EE** (~250 / 2050), FRONT
+  bajo / OPEN 0 / ROUND alto es **OO** (~280 / 840). Todo lo de en medio también es vocal; al girar una perilla la
+  lengua se desliza (~23 ms), nunca salta. **NASAL** abre la nariz: aparece un cero en el espectro (lo nasal).
+- **WORDS con TRACT**: con LANG prendido las sílabas mueven el tubo: las vocales ponen la lengua y los labios, **m n ñ
+  ng** abren el velo y cierran los labios o la lengua, **p t k b d g** cierran el tubo y explotan, **s sh f th** lo
+  estrechan y soplan en el estrechamiento. La vocal sigue cayendo en el paso (como en VOICE). EDIT 1 queda POS THEME ARTIC
+  NASAL, EDIT 2 BREATH VIB RATE LOOP.
+- **Dos voces** por pista en TRACT. ENV / LFO → FILTER mueve FRONT, → SHAPE mueve TENSE.
+- **El dibujo**: la cabeza (lengua, mandíbula, labios y velo donde los ponen las perillas) y debajo el tubo mismo, cada
+  sección tan ancha como es (la del velo encendida con la nariz abierta).
+- **Presets** (VOICE, después de los demás): **TUBE AH**, **TUBE EE**, **TUBE OO**, **TUBE CHOIR** (un pad, la lengua a la
+  deriva), **BASS SINGR** (un cantante grave, mono), **WHISPER TB** (solo aire), **TALK TUBE** (palabras en inglés).
+- Un filtro tipo COMB en una pista TRACT pasa a BP (el tubo usa la memoria del COMB, como STRING).
 
 ### Tres motores dibujan su propia criatura (0.9.4)
 

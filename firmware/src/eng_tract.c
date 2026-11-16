@@ -342,7 +342,7 @@ static __attribute__((noinline)) void tract_render(track_t *t, voice_t *v, int32
 
 /* VOICE's hooks (eng_formant.c): once a block, the MODE (a change: what sounds goes on from rest, the other mode's state
  * not this one's) and TRACT's shape; EDIT's labels */
-static void tract_mode(track_t *t)
+static __attribute__((noinline)) void tract_mode(track_t *t)
 {
     uint32_t ti = (uint32_t)(t - trk) % NTRK, on = t->p[P_VTRACT] != 0, i, j;
     if (on != tr_mode[ti]) {

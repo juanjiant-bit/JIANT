@@ -257,6 +257,14 @@ static VX_CODE uint32_t vx_voice_target(const track_t *t, int16_t *a, int32_t *v
         *fri = s->gf > 0 ? s->gf >> 6 : 0;
         if (cls == PC_PLO && s->st == 0u) *fri = 0;
         if (cls == PC_SIL) *voi = 0;
+    } else if (t->p[P_VTRACT]) {                         /* (V10.7.43) TRACT: the tongue where FRONT OPEN ROUND put it */
+        f1 = 270 + t->p[P_E1] * 4;
+        f2 = 800 + t->p[P_E0] * 12 - t->p[P_E2] * 3;
+        rnd = t->p[P_E2] > 64;
+        cls = t->p[P_E3] > 3 ? PC_NAS : PC_VOW;          /* (the velum open: drawn as a nasal's) */
+        *voi = 256 - t->p[P_E4] * t->p[P_E4] / 64;
+        *asp = t->p[P_E4] * 2;
+        *fri = 0;
     } else {                                             /* VOWEL -> VOWEL2 over TALK (as formant_render) */
         int32_t v0 = t->p[P_E0], v1 = t->p[P_E1], k = 0, j;
         uint32_t g = 0;
@@ -1972,6 +1980,15 @@ static int vx_draw(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h,
     if (e == &ENG_FORMANT) {                             /* (the tract ~80 x 62 units about (-20, 37): the crown off) */
         s = vx_fit(w, h, 80, 62);
         vx_voice(t, cx + 5 * s / 4, cy - 37 * s / 16, s, en_home);
+        if (t->p[P_VTRACT]) {                           /* (V10.7.43) TRACT: the tube as it is, glottis .. lips, each
+                                                         * section as wide as its area's square root (eng_tract.c) */
+            const int16_t *a = tr_ctl((uint32_t)(t - trk))->a;
+            int32_t i, cw = w / TR_N, x0 = x + (w - cw * TR_N) / 2, my = y + h - 8, d;
+            for (i = 0; i < TR_N; i++) {
+                d = (int32_t)isqrt32((uint32_t)clamp(a[i], 1, 2048)) / 8 + 1;
+                cv_rect(x0 + i * cw, my - d, cw - 1, 2 * d, i == 10 && a[TR_N] > 2 ? T_THEME : T_TEXT);
+            }
+        }
     } else if (trk_eng(t) == ENGI_DRUM) {    /* (the kit ~128 x 92) */
         s = vx_fit(w, h, 128, 92);
         vx_kit(t, cx - (s >> 4), cy + (48 * s >> 8), s, en_home, -1);

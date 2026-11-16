@@ -8,6 +8,8 @@
  * Each section: the state set, a warm-up, then CALLGRIND_ZERO_STATS, NB blocks of mix_block (the whole audio block:
  * the sequencer, the parts, the buses, the master) and CALLGRIND_DUMP_STATS_AT(its name). Sections:
  *   eng/<ENGINE>   one part, 8 notes held (VOICE: 4), the engine's heaviest preset (hostsim.c's list)
+ *   eng/VOICE.TRACT (V10.7.43) VOICE's MODE TRACT, its two voices, the nose open (.WORDS: singing); eng/FM6.2 two FM6
+ *                  voices, to weigh them against
  *   eng/ANIMAL.<MODE>  (0.8.3) ANIMAL's five sources at their heaviest: 8 notes, no gaps (GROUP HOLD), every option on
  *   rev/<TYPE>     a pad soaked in the reverb, each REVERB TYPE (ROOM SPRING SHIMR RESO CLOUD)
  *   dly/<RATE>     (0.8.4) a pad into the delay, its line at the full rate, half, a quarter (fx.c dly_lo); (snd2)
@@ -198,6 +200,23 @@ int main(void)
         trk[0].p[P_VLYR] = 0;
         snprintf(name, sizeof name, "eng/VOICE.%s", i ? "EN" : "ES");
         vg_section(name);
+    }
+    for (i = 0; i < 4u; i++) {                          /* (V10.7.43) VOICE's MODE TRACT (eng_tract.c): its two voices (TUBE
+                                                         * AH as it is; .NASAL the nose open, its heaviest; .WORDS singing),
+                                                         * and FM6's two voices (BRASS) to weigh them against */
+        static const char *const TN[4] = {"eng/VOICE.TRACT", "eng/VOICE.TRACT.NASAL", "eng/VOICE.TRACT.WORDS", "eng/FM6.2"};
+        vg_quiet();
+        if (i < 3u) {
+            lyr_set(0, i == 2u ? "strength through the starlight" : "");
+            vg_part(0, ENGI_VOICE, vg_preset(ENGI_VOICE, i == 2u ? "TALK TUBE" : "TUBE AH"), 2);
+            if (i == 1u) {
+                trk[0].p[P_E3] = 12;
+                trk[0].p[P_E4] = 40;
+            }
+            trk[0].p[P_VLYR] = 0;
+        } else
+            vg_part(0, ENGI_FM6, vg_preset(ENGI_FM6, "BRASS"), 2);
+        vg_section(TN[i]);
     }
     for (i = 0; i < 5u; i++) {
         vg_quiet();

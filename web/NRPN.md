@@ -70,7 +70,8 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 68 | GATE | 0..127 | 127 | |
 | 69 | REL | 0..127 | 0 | |
 | 70 | REC Q | 0..127 | 127 | |
-| 71 | MORPH | 0..127 | 0 | |
+| 71 | MORPH | 0..127 | 0 | (ANALOG PHASE MATH WHEEL STRING DRUM WEST FM6 ADD ANIMAL EXT) |
+| 71 | MODE | 0..1 | 0 | VOWEL TRACT (VOICE) |
 | 72 | C.LEN | 0..64 | 0 | OFF 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 ... |
 | 73 | DRIFT | 0..127 | 127 | |
 | 74 | IMAGE | 0..127 | 0 | (ANALOG PHASE MATH WHEEL STRING DRUM WEST FM6 ADD ANIMAL EXT) |

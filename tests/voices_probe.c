@@ -784,5 +784,22 @@ int main(int argc, char **argv)
     if (!strcmp(mode, "stress")) { stress_table(argc > 2 ? argv[2] : 0); return 0; }
     if (!strcmp(mode, "wav")) return wav_pairs(argc > 2 ? argv[2] : 0);
     if (!strcmp(mode, "test")) return tests();
+    if (!strcmp(mode, "tract")) {                       /* (V10.7.43) VOICE's TRACT: two voices against FM6's two */
+        uint32_t k, fm = 0;
+        double f2;
+        for (k = 0; k < ENG_FM6.npresets && !str_eq(ENG_FM6.presets[k].name, "BRASS"); k++)
+            ;
+        fm = k % ENG_FM6.npresets;
+        f2 = cost_run(ENGI_FM6, fm, 2, 0) - cost_run(ENGI_FM6, fm, 0, 0);
+        printf("host timing, relative only: FM6 BRASS, two voices %.2f ns/sample\n", f2);
+        for (k = 0; k < ENG_FORMANT.npresets; k++) {
+            const preset_t *pr = &ENG_FORMANT.presets[k];
+            double c2;
+            if (!pr->mod || pr->mod[0] != P_VTRACT) continue;
+            c2 = cost_run(ENGI_VOICE, k, 2, 0) - cost_run(ENGI_VOICE, k, 0, 0);
+            printf("TRACT %-10s two voices %6.2f ns/sample  x FM6's two %.2f\n", pr->name, c2, c2 / f2);
+        }
+        return 0;
+    }
     return 2;
 }

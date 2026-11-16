@@ -38,6 +38,9 @@ public version) or earlier: [What's new in this version](#whats-new-in-this-vers
 
 Everything since V10.6c, the last public version, in one list; each item links to its place in the manual.
 
+**TRACT: a vocal tract as a tube (V10.7.43)**
+- VOICE's second **MODE** (EDIT › WORDS, KNOB 4): a physical model of the vocal tract, a tube you shape with **FRONT OPEN ROUND NASAL** and a glottis with **BREATH VIB RATE TENSE**; WORDS sings through it. Seven presets (TUBE AH … TALK TUBE). See [TRACT](#voice-tract-a-vocal-tract-as-a-tube-v10743).
+
 **LIFE: the voices alive, the tracks moving each other (V10.7.34)**
 - **HOME › LIFE**, HOME's new first page: every voice breathes on its own (a few cents of pitch, its filter, its level),
   a held note has an arc (it starts with energy, blooms, then tires), and the tracks move each other before the effects
@@ -626,7 +629,7 @@ since 0.6.51: every project opens as it was.
 | --- | --- | --- | --- | --- | --- |
 | EDIT 1 | E1 | E2 | E3 | E4 | every engine (see [4](#4-engines)) |
 | EDIT 2 | E5 | E6 | E7 | E8 | every engine |
-| WORDS | LANG | LYRIC | CONS (V10.6y: the consonants' length, 50–400 %; POS on EDIT 1 when LANG is on) | (OCT+ TYPE: the lyric) | VOICE (0.8.5, [words](#voice-words-and-lyrics-085)) |
+| WORDS | LANG | LYRIC | CONS (V10.6y: the consonants' length, 50–400 %; POS on EDIT 1 when LANG is on) | MODE (V10.7.43: VOWEL / TRACT, [the tube](#voice-tract-a-vocal-tract-as-a-tube-v10743); OCT+ TYPE: the lyric) | VOICE (0.8.5, [words](#voice-words-and-lyrics-085)) |
 | RETRIG | RTRG | TIME (V10.7.37: NOTE, or 1/1 .. 1/32 and triplets) | — | — | MATH (BYTE, FLOAT) |
 | MORPH | MORPH | — | — | — | ANALOG (SAW..SIN), PHASE |
 | OPERATOR | OP | COARSE (the ratio, or the fixed Hz; was RATIO / FIXED) | FINE | OUTPUT (the operator's level; was LEVEL) | FM6 |
@@ -1134,6 +1137,32 @@ Japanese read best (their spelling is regular); English needs the editor's phone
 **Cost.** No state per voice (the articulation is the track's); ~1 KB of RAM for the six lyrics and singers; the
 English dictionary (~11 KB of the Bluetooth segment's flash) is the editor's since V10.7.33; about +9 % CPU over
 VOICE's vowels, so four voices singing still cost well under ANALOG's eight.
+
+### VOICE: TRACT, a vocal tract as a tube (V10.7.43)
+
+VOICE has a second **MODE**: EDIT > **WORDS**, **KNOB 4 MODE** (**VOWEL**, the formant voice as always; **TRACT**). In
+TRACT the sound is a physical model: a tube of 22 sections from the glottis to the lips (17 cm, an adult's), the air's
+waves going up and down it and reflecting where its width changes (Kelly–Lochbaum), a nose joined at the velum, a
+glottis that pulses (a Rosenberg flow pulse) and breathes. You shape the tube; the vowels come out of it.
+
+| Page | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
+| --- | --- | --- | --- | --- |
+| EDIT 1 | **FRONT** (the tongue: back .. front) | **OPEN** (the tongue low and the jaw open: high .. low vowels) | **ROUND** (the lips rounded) | **NASAL** (0..12: the velum open) |
+| EDIT 2 | **BREATH** (air; at the top a whisper) | **VIB** (vibrato depth, it comes in over ~0.4 s) | **RATE** (vibrato 3..8 Hz) | **TENSE** (the glottis: lax and soft .. pressed and bright) |
+
+- **The vowels**: FRONT 0 / OPEN high is **AH** (~770 / 1100 Hz), FRONT high / OPEN 0 is **EE** (~250 / 2050), FRONT
+  low / OPEN 0 / ROUND high is **OO** (~280 / 840). Everything between is a vowel too; turning a knob the tongue glides
+  there (~23 ms), it never jumps. **NASAL** opens the nose: a zero appears in the spectrum (the nasal quality).
+- **WORDS with TRACT**: LANG on, the syllables move the tube: the vowels set the tongue and the lips, **m n ñ ng**
+  open the velum and close the lips or the tongue, **p t k b d g** close the tube and burst, **s sh f th** narrow it and
+  hiss at the narrowing. The vowel still lands on the step (as VOICE's). EDIT 1 then reads POS THEME ARTIC NASAL, EDIT 2
+  BREATH VIB RATE LOOP.
+- **Two voices** a track in TRACT (a pad plays the two last notes). ENV / LFO → FILTER moves FRONT, → SHAPE moves TENSE.
+- **The picture**: the head (its tongue, jaw, lips, velum where the knobs put them) and under it the tube itself, each
+  section as wide as it really is (the velum's section lit when the nose is open).
+- **Presets** (VOICE, after the others): **TUBE AH**, **TUBE EE**, **TUBE OO**, **TUBE CHOIR** (a pad, the tongue
+  drifting), **BASS SINGR** (a low singer, mono), **WHISPER TB** (only breath), **TALK TUBE** (English words).
+- A COMB filter type on a TRACT track turns to BP (the tube uses the COMB's memory, as STRING does).
 
 ### Three engines draw their own creature (0.9.4)
 
