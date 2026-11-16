@@ -27,6 +27,8 @@
  *                  the buffers, the master)
  *   seq/mono4      (0.9.9 ctl64) four MONO tracks (ANALOG FM6 VOICE WHEEL) at 1/16, 150 BPM, one note a step, each
  *                  cutting the one before (GATE past the step: a legato retrigger each step), dry
+ *   song/cputest6  (V10.7.43, after peak/) CPU TEST's song on six tracks (TRACKS 6)
+ *   ero/E.MODE     (V10.7.43) a pad (ANALOG, FM6) with EROSION NOISE 64 in each MODE (.P: METAL on PITCH), .off NOISE 0
  *   peak/VOICE.EN6 (0.9.0, last) six VOICE EN tracks starting a word in one block: that block's instructions, the worst
  *                  of 24 rounds (cpu_vg.py: not per sample) */
 #define UI_TEST_NO_MAIN
@@ -363,5 +365,38 @@ int main(void)
     perf_held = PF_BIT(PF_FRZ);
     vg_section("mix/full.freeze");
     perf_held = 0;
+    {   /* (V10.7.43, the owner: "to play more than 4 tracks again") song/cputest6: CPU TEST's song on six tracks (GLO >
+         * SYSTEM TRACKS 6: five synths and the kit) */
+        transport_req = 2; ui_input();
+        ui_power_on();
+        trk_live = NTRK;
+        cpu_test_song();
+        transport_req = 1; ui_input();
+        vg_section("song/cputest6");
+        transport_req = 2; ui_input();
+        trk_live = 4;
+    }
+    {   /* (V10.7.43, the owner: "EROSION eats a lot of CPU") ero/<ENGINE>.<MODE>: a pad of 4 notes, EDIT > EROSION NOISE
+         * 64 in each MODE (DEST FILTER; .P DEST PITCH), against .off (NOISE 0) */
+        static const char *const MD[5] = {"SOFT", "STEP", "METAL", "BREAK", "DUST"};
+        static const uint8_t MV[5] = {110, 90, 64, 40, 10};    /* (P_FNMD stored: fn_mode's inverse) */
+        static const uint8_t EE[2] = {ENGI_ANALOG, ENGI_FM6};
+        static const char *const EN[2] = {"ANALOG", "FM6"};
+        char nm[40];
+        uint32_t e, m, dp;
+        for (e = 0; e < 2u; e++)
+            for (m = 0; m < 7u; m++) {
+                vg_quiet();
+                vg_part(0, EE[e], 0, 4);
+                trk[0].p[P_CHOR] = trk[0].p[P_DLY] = trk[0].p[P_REV] = 0;
+                dp = m == 6u;
+                if (m) {
+                    uint32_t mm = dp ? 2u : m - 1u;
+                    trk[0].p[P_FNZ] = 127 - 64; trk[0].p[P_FNMD] = MV[mm]; trk[0].p[P_FDST] = dp ? 10 : 120;
+                }
+                snprintf(nm, sizeof nm, "ero/%s.%s%s", EN[e], m ? MD[dp ? 2u : m - 1u] : "off", dp ? ".P" : "");
+                vg_section(nm);
+            }
+    }
     return 0;
 }

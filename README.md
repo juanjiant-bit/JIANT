@@ -507,6 +507,15 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
   listened to at an eighth of the rate; **AMOUNT 25 by default** (was 50: about −3 dB on that band when it piles up).
 - **CPU**: CPU TEST 3075 → 2884 instructions a sample (−6.2 %; V10.7.23: 2864): BALANCE +94 → +20, LIFE +88 → +30,
   CLOUD's grains read and aged in one pass (−41, bit for bit). Renders before and after: renders/v43-life (LEEME.txt).
+- **PANIC (PLAY held) silences the FX too** (a user: "all tracks muted and noise I can't stop"): besides every voice
+  and note, the reverb (CLOUD frozen at SIZE 100 % included), the delay (its loop at 100 % too) and the chorus are
+  cleared at once, and a held or latched punch-in (FREEZE …) is let go. Its message then shows the fresh start:
+  **EMPTY SONG: SAVE>TOOLS CLEAR**.
+- **EROSION lighter**: the part's filter it keeps in runs a lean loop once settled (bit for bit): EROSION on an FM6
+  pad +75 → +51 instructions a sample in every MODE but METAL.
+- **6 tracks**: CPU TEST's song on TRACKS 6 measures 2977 instructions a sample, under V10.7.42's 4-track 3075.
+- Fixes: LIFE's cross-FM could wrap on a loud attack (a click); PRESETS' OCT− said SOUND BACK when there was nothing
+  to put back.
 
 ### V10.7.42 (2026-11-15)
 - **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version
