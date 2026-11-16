@@ -53,9 +53,10 @@ static void audio_block(int32_t *out, uint32_t n)       /* mix (fx.c), then Q15 
     for (i = 1; i < n; i += 2u)                         /* the HOME scope: the music, before the click */
         scope_buf[scope_w++ & (SCOPE_N - 1u)] = (int16_t)out[2u * i];
     click_render(out, n);                               /* the metronome (click.c): the DAC only, not USB */
-    for (i = 0; i < n; i++) {
-        out[2u * i] *= 1 << OUT_SHIFT;
-        out[2u * i + 1u] *= 1 << OUT_SHIFT;
+    for (i = 0; i < 2u * n; i++)                        /* (V10.7.43) and the master's bits below Q15 (fx.c out_fr) */
+    {                                                   /* (Q15 << OUT_SHIFT's; then 0 for the next block) */
+        out[i] = out[i] * (1 << OUT_SHIFT) + OUT_FR(i);
+        out_fr[i] = 0;
     }
 }
 

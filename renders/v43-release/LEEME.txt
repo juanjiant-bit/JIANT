@@ -1,0 +1,47 @@
+V10.7.43 - colas limpias (el "bitcrush" en los releases)
+=========================================================
+
+Qué se oye
+----------
+En V10.7.42 la cola de un golpe de DRUM-X o de un pluck bajaba en escalones: la mezcla
+perdía sus 2 bits bajos antes del master y antes del LEVEL de cada pista, el producto del
+knob MASTER se cortaba a unidades enteras de Q15, y BALANCE cortaba sus bandas a pasos de
+16. En los últimos 50-60 dB de la cola eso suena como un bitcrush suave, un granulado.
+
+En V10.7.43 la mezcla conserva esos bits: el LEVEL de la pista trabaja en Q11, el master
+entra con 3 bits bajo Q15, que llegan al DAC (24 bits) sin pasar por el redondeo, y
+BALANCE sigue la cola hasta +-4 (antes +-40). Las colas bajan lisas.
+
+Archivos
+--------
+Cada sonido se toca una sola vez, 3 s, sin envíos (una reverb tendría una cola propia).
+Son WAV de 24 bits con la palabra del DAC tal cual:
+
+  <SONIDO>_dry_...   seco: MASTER al máximo, BALANCE y LIFE apagados
+  <SONIDO>_proj_...  en un proyecto: BALANCE y LIFE en sus valores por defecto,
+                     MASTER a la mitad del pote (-12 dB)
+
+  KICK, SNARE, HAT   DRUM-X
+  STRING             STRING NYLON (pluck)
+  WEST               WEST PLUCK
+
+  _antes_V10.7.42    antes (e6dbc19)
+  _despues_V10.7.43  después
+
+Para oír la diferencia, subí mucho el volumen (o normalizá) en la parte final de la cola.
+Con +40 dB se oye clarísimo: antes la cola chisporrotea, después baja limpia.
+
+Medidas (tests/release_clean_test.c, escalón medio de la cola en unidades Q15)
+-------------------------------------------------------------------------------
+                 antes     después
+  KICK seco      3.63      ~1.4
+  STRING seco    3.74      1.26
+  WEST seco      3.66      1.27
+  KICK proyecto  1.24      0.39
+  STRING proy.   1.08      0.34
+  WEST proyecto  1.10      0.34
+
+Los golden renders cambian por la precisión de la cola. Con BALANCE y LIFE apagados la
+diferencia es de unos pocos LSB (rms ~3.5 LSB de mediana). Con BALANCE encendido, el
+leveler y las bandas de BALANCE (que son adaptativas) reaccionan a esa diferencia y la
+ganancia se mueve hasta ~1 % (~0.1 dB). No cambia ningún otro sonido.

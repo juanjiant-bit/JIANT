@@ -420,6 +420,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "regression: golden renders, health, voices, CPU budget" "$OUT/regress" tests/golden.txt tests/cpu_baseline.txt
     # (V10.7.34) LIFE 0: every golden render of before LIFE bit for bit (tests/golden_life0.txt, never rewritten)
     run "regression: LIFE 0, the golden renders of before LIFE bit for bit" env -u GOLDEN_UPDATE LIFE=0 "$OUT/regress" tests/golden_life0.txt tests/cpu_baseline.txt
+    $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/release_clean_test" tests/release_clean_test.c -lm
+    run "releases (V10.7.43): the DRUM-X hits' and the plucks' tails smooth to the DAC, dry and in a project" "$OUT/release_clean_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/life_test" tests/life_test.c -lm
     run "LIFE (V10.7.34): LIFE 0 still, the voices alive, bounded at 100, who moves whom, the matrix's LIFE BEING and LIFE, HOME > LIFE, kept in a project" "$OUT/life_test"
     $CC -O2 -w -pthread -Ibuild/gen -Ifirmware/src -o "$OUT/mc_thread_test" tests/mc_thread_test.c -lm
