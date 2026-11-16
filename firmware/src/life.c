@@ -43,7 +43,7 @@ typedef struct {
     int16_t breath[NTRK];                               /* the LIFE source (bipolar) */
     int16_t w[NTRK][NTRK];                              /* w[i][j]: how much track j moves track i, Q15 (slewed) */
     int16_t xc[NTRK], xh[NTRK];                         /* track i's this block, at its LIFE 100 %: cutoff, shape (<< 8) */
-    volatile int16_t pk[NTRK];                          /* each track's peak this block (fx.c mix_part) */
+    volatile int32_t pk[NTRK];                          /* each track's peak this block (fx.c mix_part) */
     uint8_t dir[NTRK];                                  /* the swim's bounces (bit 0 x, bit 1 y) */
     uint8_t pres, on, init, kit, blk, tapm, pmc;        /* (tapm: the tracks whose samples are kept; pmc: the ones moved) */
     lpm_t pm[LPM_N];
@@ -104,19 +104,22 @@ static LIFE_SZ void life_master(void)
     }
     for (i = 0; i < NTRK; i++) {                        /* the follower, the energy, the swim (always: the page, the sources) */
         int32_t en = life.en[i];
-        life.fo[i] = (int16_t)follow_step(life.fo[i], life.pk[i]);
+        life.fo[i] = (int16_t)follow_step(life.fo[i], clamp(life.pk[i], 0, 32767));
         life.pk[i] = 0;
         e[i] = clamp(life.fo[i] * 2, 0, 32767);
         en += e[i] > en ? (e[i] - en) >> 3 : -((en + 1023) >> 10);   /* (up in ~10 ms, down over ~1.5 s) */
         life.en[i] = (int16_t)en;
-        life.kit = (uint8_t)((life.kit & ~(1u << i)) | (uint32_t)(trk[i].engine == ENGI_DRUM) << i);
         if (i < trk_live && !trk[i].p[P_MUTE])
             pres |= (uint32_t)(en > 600) << i;
         if (ph == i)
             life_swim(i, en);
     }
-    if (sw)
+    if (sw) {
         life.pres = (uint8_t)pres;
+        for (i = 0, k = 0; i < NTRK; i++)               /* (the kits) */
+            k |= (uint32_t)(trk[i].engine == ENGI_DRUM) << i;
+        life.kit = (uint8_t)k;
+    }
     pres = life.pres;
     life.on = life_v[LIFE_AMT] > 0;
     if (!life.on) {                                     /* (LIFE 0: nothing on the sound) */
@@ -130,6 +133,9 @@ static LIFE_SZ void life_master(void)
     for (i = 0; i < NTRK; i++) {                        /* track i, moved by the others */
         uint32_t pred = i, mj = NTRK;
         int32_t cs = 0, mx = 0;
+        if ((ph & 3u) != 3u)                            /* (the followers on the voices every 4th block, ~6 ms: they
+                                                         * move slowly; the weights and the pairs in the 8th) */
+            break;
         life.xc[i] = life.xh[i] = 0;
         if (sw) {
             for (k = 1; k < NTRK; k++) {                /* the one before it in the ring of those that sound */
@@ -169,6 +175,8 @@ static LIFE_SZ void life_master(void)
                     break;
                 }
     }
+    for (k = 1; k < LPM_N && life_v[LIFE_AMT] <= 50; k++)   /* (one pair up to LIFE 50, more past it: the CPU's) */
+        bi[k] = NTRK;
     for (k = 0; k < LPM_N; k++) {                       /* the pairs: each slot's target, who it is */
         lpm_t *q = &life.pm[k];
         int32_t dt = 0;

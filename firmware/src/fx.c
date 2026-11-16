@@ -2682,7 +2682,7 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
             }
             uin_mix(ol, or_, sc, sd, sr, n, lq0, dl, gl0, dgl, gr0, dgr, c, d, r, pm1, &pk);
         }
-        life.pk[ti] = (int16_t)(pk < 32767 ? pk : 32767);
+        life.pk[ti] = pk;
         if (pk > t->peak)
             t->peak = pk;
         if (fx_stems)
