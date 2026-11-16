@@ -30,9 +30,9 @@ con seis filtros por muestra).
 
 Archivos (estéreo, 44,1 kHz, 16 bits)
 -------------------------------------
-gen1_seed7_antes_e6dbc19_life{0,50,100}.wav     un tema de GEN (género 1, semilla 7), 10 s, antes (e6dbc19)
+gen1_seed7_antes_55ac974_life{0,50,100}.wav     un tema de GEN (género 1, semilla 7), 10 s, antes (55ac974: codex/v35, V10.7.42 + la audición de PRESETS)
 gen1_seed7_despues_V10.7.43_life{0,50,100}.wav  el mismo tema, después
-gen4_seed3_antes_e6dbc19_life{0,50,100}.wav     otro tema de GEN (género 4, semilla 3), 10 s, antes
+gen4_seed3_antes_55ac974_life{0,50,100}.wav     otro tema de GEN (género 4, semilla 3), 10 s, antes
 gen4_seed3_despues_V10.7.43_life{0,50,100}.wav  el mismo tema, después
   BALANCE como lo deja GEN (de fábrica: 50 antes, 25 después). LIFE 0 de después difiere de LIFE 0 de antes solo
   por BALANCE y por las colas limpias (renders/v43-release).
@@ -45,9 +45,9 @@ gen4_seed3_despues_V10.7.43_life{0,50,100}.wav  el mismo tema, después
   corría con los valores de fábrica. Ahora LIFE no cambia la afinación: lo que se oye es solo la intermodulación,
   sutil en 50 y clara en 100.
 
-drone_duet_life0_{antes_e6dbc19,despues_V10.7.43}.wav    dúo de drones (bajo ANALOG + FM6), 14 s, LIFE 0
-drone_duet_life100_{antes_e6dbc19,despues_V10.7.43}.wav  el mismo dúo con LIFE 100 (después: X-FM 100)
-six_tracks_life100_{antes_e6dbc19,despues_V10.7.43}.wav  seis pistas (kit, pad, FM6, WEST, PHASE, bajo), todo en 100
+drone_duet_life0_{antes_55ac974,despues_V10.7.43}.wav    dúo de drones (bajo ANALOG + FM6), 14 s, LIFE 0
+drone_duet_life100_{antes_55ac974,despues_V10.7.43}.wav  el mismo dúo con LIFE 100 (después: X-FM 100)
+six_tracks_life100_{antes_55ac974,despues_V10.7.43}.wav  seis pistas (kit, pad, FM6, WEST, PHASE, bajo), todo en 100
 
 Lo medido (tests/life_test.c, sección 5)
 ----------------------------------------

@@ -1095,8 +1095,8 @@ static __attribute__((noinline)) void sy_tick(const track_t *t, sing_t *s, uint3
     int32_t a15 = (127 - clamp(t->p[P_E2], 0, 127)) * 258, tv = 0, ta = 0, tf = 0, tff = 3300, tfb = 250, tbm;
     int32_t tF[3];
     const phon_t *P, *Q, *F = 0;
-    uint32_t fsh = 6;
-    sing_x_t *x = &sing_x[(uint32_t)(s - sing) % NTRK];
+    uint32_t fsh = 6, sl = 0, ti = (uint32_t)(s - sing) % NTRK;
+    sing_x_t *x = &sing_x[ti];
     if (s->tb && !--s->tb)
         sy_adv(s, lang);
     c = sing_phon(s);
@@ -1161,10 +1161,11 @@ static __attribute__((noinline)) void sy_tick(const track_t *t, sing_t *s, uint3
     default:                                             /* vowels, glides, liquids, nasals */
         tv = P->av << 7;
         if (k == PC_VOW && (s->i ? ph_vowel(s->ph[s->i - 1u]) : 1))
-            sh = 5;                                      /* a diphthong's glide, (voice2) a vowel from the last: slower
-                                                         * (V10.7.43: ~40 ms again; voice3's ~75 a talk box's) */
-        break;                                           /* (V10.7.43) a vowel from a consonant as quick as V10.7.23's
-                                                         * (voice3's 100 .. 150 ms slid like a talk box: robotic) */
+            sh = 6;                                      /* a diphthong's glide, (voice2) a vowel from the last: slower,
+                                                         * (voice3) ~75 ms as sung (was ~40) */
+        else if (k == PC_VOW && s->i == s->nu)
+            sl = 3;                                      /* (voice3) a vowel from a consonant: in ~100 .. 150 ms */
+        break;
     }
     if (F) {                                             /* (V10.40: the frication's, once) */
         tf = (F->af << fsh) * a15 >> 15;
@@ -1199,10 +1200,13 @@ static __attribute__((noinline)) void sy_tick(const track_t *t, sing_t *s, uint3
             tF[0] += (tF[0] * x->wn * 30) >> 16;
         }
     }
+    if (sl && (x->nl ? x->nl < 17u : sing_io[ti].ioi < 276u))
+        sl = 2;                                          /* (quick notes, under ~0.4 s: the vowel heard, quicker) */
     for (j = 0; j < 6u; j++) {
         int16_t *a = j < 3u ? &x->fq[j] : &s->f[j - 3u];
         int32_t d = (j < 3u ? tF[j] : x->fq[j - 3u]) - *a;
-        *a = (int16_t)(*a + (d >> sh) + (d > 0 && (d >> sh) == 0));
+        uint32_t q = sh + sl - (sl && j >= 3u);         /* (the second stage a little quicker) */
+        *a = (int16_t)(*a + (d >> q) + (d > 0 && (d >> q) == 0));
     }
     s->ff = (int16_t)(s->ff + ((tff - s->ff) >> (2 - SY_CB)));   /* (voice2: over 2 blocks, F4 no jump on the vowel) */
     s->fb = (int16_t)(s->fb + ((tfb - s->fb) >> (1 - SY_CB)));
@@ -1365,14 +1369,12 @@ static void sing_block(track_t *t)
                 T = (T & 0xFFFFu) + k;
                 s->nlead = (uint8_t)(T < 63u ? T : 63u);
             } else {
-                uint32_t ld = (s->lead & 63u) * 2u;      /* (V10.7.43) a key's onset: ORGANIC 0 squeezed as voice2's */
-                b = !ld ? (T >= SY_PLO ? SY_MIN : SY_LIVE) + ((uint32_t)clamp(t->p[P_VORG], 0, 127) * SY_BL(20u) >> 7)
-                        : ld > k + SY_MIN ? ld - k : SY_MIN;   /* (~10 ms), 100 % (the default) its consonants in ~30
-                                                         * ms, heard (the vowel ~30 ms after the key, never later) */
+                b = (s->lead & 63u) * 2u;
+                b = !b ? (T >= SY_PLO ? SY_MIN : SY_LIVE) : b > k + SY_MIN ? b - k : SY_MIN;
                 x->fl |= T >= SY_PLO ? SXF_CJ : 0u;      /* (voice3) a plosive: the pitch moves on under it */
                 T &= 0xFFFFu;
-                if (b > T && (!ld || ld > s->nlead + 2u))
-                    b = T;                               /* (a lead not the one read ahead, a key's: as written) */
+                if (b > T && (s->lead & 63u) * 2u > s->nlead + 2u)
+                    b = T;                               /* (a lead not the one read ahead: as written) */
                 b = T && b != T ? (b << 7) / T : 0u;     /* (a lead longer than the onset read ahead: the onset */
                 s->oq = (uint8_t)(b < 255u ? b : 255u);  /* stretched to it, up to x2: the vowel on the step still) */
                 sy_enter(s, lang);
@@ -1391,11 +1393,10 @@ static void sing_block(track_t *t)
     s->gated = (uint8_t)gated;
     sy_tick(t, s, lang);
     {   /* (voice3) the singer's clocks; the vibrato (formant_word_render): ~5.6 Hz, each note its rate (5 .. 6 Hz),
-         * wandering +-1 Hz; (V10.7.43, a user: "it sounded organic, now robotic") on every note held past ~0.29 s again,
-         * as V10.7.23's (voice3's: notes of 0.5 s only, a third faint), +-18 .. 22 ct, in over ~0.4 s; the swell
-         * (formant_amp): the vowel in over ~80 ms (from rest from -3 dB), then a little down, -1.2 dB at most, the
-         * phrase's peaks -1 dB at most (voice3's -4 and -3.5 dB: a voice that sank, quieter, duller) */
-        uint32_t sd = ti + x->ps * 8u, age = x->vb >> 1, h;
+         * wandering +-1 Hz, from ~0.2 s into the vowel, in over ~0.12 s, on notes of 0.5 s and more (a key's: while it
+         * is held that long); the swell (formant_amp): the vowel in over ~80 ms (from rest from -3 dB), then
+         * ~-9 dB/s (-4 dB at most), the phrase's peaks -1.5 dB/s (-3.5 dB at most) */
+        uint32_t sd = ti + x->ps * 8u, age = x->vb >> 1, L = x->nl ? x->nl * 16u : age, h;
         int32_t e, st;
         x->vb = (uint16_t)(x->vb + (CTL / 32u) * (x->vb < 0xFFFFu - CTL / 32u));   /* (vb in blocks of 32) */
         h = sy_hash(sd, s->nsy);
@@ -1404,12 +1405,13 @@ static void sing_block(track_t *t)
         x->wn = (int8_t)((sy_noise(sd + 0x3Au, x->pb, 7) * 75 >> 15) +   /* (~9 ct RMS, 0.3 .. 2.5 Hz; the tuning */
                          (sy_noise(sd + 0x51u, x->pb, 10) * 38 >> 15));  /* +-16 ct, a point each 1.5 s) */
         x->va = (uint8_t)(x->va + (x->va < 255u && (s->i >= s->nu || (x->fl & SXF_REL))));
-        e = x->va < 200u ? 0 : 144 + (int32_t)((h >> 24) & 31u);
-        if (!(x->fl & SXF_REL)) {                        /* (in over ~0.4 s, out in ~60 ms at most; let go: as it was) */
-            x->ve = (uint8_t)(e > x->ve ? x->ve + ((x->vb >> 1) & 1u) : x->ve - (x->ve - e < 4 ? x->ve - e : 4));
+        e = x->va < 138u || L < 345u ? 0 : (h >> 24) < 70u ? 61 : 163 + (int32_t)(((h >> 24) - 70u) * 91u >> 8);
+        if (!(x->fl & SXF_REL)) {                        /* (from the vowel's start, x 0.3, 0.8 .. 1.25; in over ~120 */
+            x->ve = (uint8_t)(e > x->ve ? x->ve + (e - x->ve < 2 ? e - x->ve : 2) :   /* ms, out in ~45 at most; */
+                              x->ve - (x->ve - e < 8 ? x->ve - e : 8));               /* let go: as it was) */
             /* (the swell in amplitude: straight lines, near enough) */
-            st = x->pb > 1300u ? 3600 : (int32_t)(x->pb * 11u >> 2);
-            e = 32768 - st - (x->va < 60u ? 0 : age > 362u ? 4000 : ((int32_t)age - 60) * 13);
+            st = x->pb > 1300u ? 10800 : (int32_t)(x->pb * 33u >> 2);
+            e = 32768 - st - (x->va < 60u ? 0 : age > 362u ? 12093 : ((int32_t)age - 60) * 40);
             x->w = (uint16_t)(x->w + ((e - x->w) >> 2));
         }
     }

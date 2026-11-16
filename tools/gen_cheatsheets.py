@@ -131,8 +131,8 @@ def controls():
          'No levels, no zoom.', 'FX: SENDS → DIST → AUTO PAN → BUSES → DELAY → DELAY 2 → … → EQ'),
         ('2', 'THE BUTTON: IN, OR ON', 'From another section: the page you were last on there. Already inside: the '
          'first page of the next group (round).', 'FX › DELAY 2: FX → REVERB · EDIT › FILTER: EDIT → AUTO KNOBS'),
-        ('3', 'PRESETS LOADS SOUNDS', 'Always the track\'s sounds, by a list: the first turn opens it, each turn loads '
-         'the sound at once (lit), nothing to confirm, OCT− back to the one before. K1 track · K2 engine · K3 FACTORY/USER/FAVORITE · K4 type. '
+        ('3', 'PRESETS LOADS SOUNDS', 'Always the track\'s sounds, by a list: the first turn opens it, PRESETS scrolls, '
+         'OCT+ loads, OCT− (or a few seconds) closes. K1 track · K2 engine · K3 FACTORY/USER/FAVORITE · K4 type. '
          'The SEQ step: SEQ held + PRESETS.', 'FX › DELAY: PRESETS ▶ PRESETS ▶ OCT+'),
         ('4', 'KNOB 1 PICKS', 'The step, the bar, the slot, the stage, the operator, the kit\'s sound, the row. The track: '
          'always ALGORITHM.', 'SEQ › STEP: K1 = all 64 steps · SEQ › BAR: K1 = the bar'),
@@ -148,8 +148,8 @@ def controls():
         ('MASTER', 'Master volume.'),
         ('SELECT', '<b>Walks the section\'s pages</b>, a page a detent, stopping at the ends (the MENU: every row). Held with a button: '
                    'HOME <b>GEN</b>; EDIT · SEQ · LFO · FX their <b>dice</b> (OK keeps, CANCEL back); GLO the tempo; ENV · SCL · ARP · SAVE their chain.'),
-        ('PRESETS', '<b>Always sounds, by a list</b> on every page: the first turn opens it, <b>each turn loads the sound</b> (heard at once, '
-                    'a held note goes on), the one sounding lit, <b>nothing to confirm</b> (OCT+ closes), OCT− back to the sound before the list, a few seconds untouched close it. K1 the track, K2 the next engine, K3 FACTORY · USER · FAVORITE, K4 the type (BASS LEAD PAD …); '
+        ('PRESETS', '<b>Always sounds, by a list</b> on every page: the first turn opens it, PRESETS scrolls, <b>OCT+ loads</b>, OCT− or a few '
+                    'seconds untouched close it. K1 the track, K2 the next engine, K3 FACTORY · USER · FAVORITE, K4 the type (BASS LEAD PAD …); '
                     'REC a favourite; ● the sound edited, not saved. Held with a button: <b>EDIT</b> the next engine\'s first sound, '
                     '<b>SEQ</b> the step (its number large), <b>HOME</b> the tempo.'),
         ('ALGORITHM', 'Selects the track from any page: T1–T4, or T1–T6 with TRACKS 6. MENU: the tabs. A layer held: MAP · KNOBS · STATE.'),
@@ -279,7 +279,7 @@ def controls():
                            ('MORPH', 'MORPH DRIFT - -'), ('ROTOR', 'DEPTH DUST - -'),
                            ('WORDS', 'LANG LYRIC CONS (OCT+ TYPE)'), ('RETRIG', 'RTRG - - -'), ('OPERATOR', 'OP COARSE FINE OUTPUT'),
                            ('OP ENV', 'OP STAGE RATE LEVEL'), ('OPERATOR 2', 'OP MODE DETUNE KEY VEL'), ('FILTER', 'TYPE CUT RES DRIVE'),
-                           ('VOICES', 'POLY GLIDE GL MODE PRIO'), ('VOICES 2', 'UNISON VEL IMAGE VOICES (AUTO 1..8; ALL n/8)'), ('VOICES 3', 'CRUSH LIFE - - (EXT)'), ('TONE', 'KEY TRK CRUSH LIFE ORGANIC (VOICE)'), ('AUTO KNOBS', 'KNOB VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS GLUE'),
+                           ('VOICES', 'POLY GLIDE GL MODE PRIO'), ('VOICES 2', 'UNISON VEL IMAGE VOICES (AUTO 1..8; ALL n/8)'), ('VOICES 3', 'CRUSH LIFE - - (EXT)'), ('AUTO KNOBS', 'KNOB VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS GLUE'),
                            ('KIT LFO', 'RATE DEPTH SHAPE RAND'), ('LEVELS', 'KICK SNARE CLAP HATCL'),
                            ('LEVELS 2', 'HATOP TOM RIM BELL'), ('SOUND', 'PITCH DECAY SIDE PMOD'),
                            ('SOUND 2', 'NOISE (kick: CLICK) COLOR DRIVE MODE'), ('SOUND 3', 'PM.TYPE LAYER FEEDBK SEND'),
@@ -295,7 +295,7 @@ def controls():
         ('HOME · GLO · SAVE', HEAT[6], [('LIFE', 'LIFE REACH X-FM SWIM · LIFE 0: still'), ('MACROS', 'M1 M2 M3 M4 · BPM large · HOME+SELECT dice'), ('TRACKS', 'TRACK LEVEL PAN REV'), ('LIVE MIX', 'FILTER SPACE CLIP DUCK'),
                                  ('KEYS', 'RATE LOOP DENS DJ FILT (the keys: live modifiers)'), ('RAILS', 'TARGET RATE LOOP DENS'),
                                  ('MIXER', 'LEVEL PAN MUTE G.SWING'), ('GLOBAL', 'BPM G.SWING CLOCK TUNE'), ('COMP', 'ACTION LENGTH COND VALUE'), ('COMP 2', 'the global lane: its TRACKS, MONO / POLY'),
-                                 ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('PORTS', ['USB', 'TRS IN', 'BT', '-']), ('PRESETS', 'TRACK ENG SOURCE TYPE · turns load (lit), OCT+ close, OCT- back, REC fav'),
+                                 ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('PORTS', ['USB', 'TRS IN', 'BT', '-']), ('PRESETS', 'TRACK ENG SOURCE TYPE · OCT+ load, OCT- close, REC fav'),
                                  ('USER', 'SLOT LOAD ERASE SAVE'), ('PROJECTS', 'PROJECT LOAD ERASE SAVE'), ('PART SLOTS', 'PART LOAD ERASE SAVE'), ('ARRANGE', 'ROW PART BARS SCENE (OCT+ adds a row, OCT− deletes the one picked)'), ('TIMELINE', 'ROW PART BARS VAR · T1–T6: FROM'), ('PARTS', 'TRACK PART ROW LOOP/SONG · OCT+ go, OCT− song / stop'),
                                  ('TOOLS', 'K1 TARGET (PROJECT TRACK SOUND SONG SYSTEM) · K2 the action · hold OCT+ a second; CLEAR PROJECT (SAVE\'s first page): OCT+ asks, the saved copy kept')]),
     ]
@@ -353,8 +353,7 @@ def sound():
          'Formant voice (after klattsch): vowels, talk, breath. <b>WORDS</b> (0.8.5): LANG ES / EN / JA sings syllables, '
          'a note each (POS THEME ARTIC SHIFT · BUZZ BREATH Q LOOP); LYRIC TEXT (OCT+ on WORDS types it, KNOB 3 dice, '
          'D# PH 1–3 the phonemes; V10.7.33: the web editor turns words into phonemes, English with the CMU dictionary) '
-         'or W1–16 words, S1–8 scat; "-" holds the vowel; the vowel on the step. TONE\'s <b>ORGANIC</b> (V10.7.43): '
-         'the singer\'s vibrato, jitter, glides (100 %) down to a machine (0). <b>Its picture</b> (0.9.4): a CT head '
+         'or W1–16 words, S1–8 scat; "-" holds the vowel. <b>Its picture</b> (0.9.4): a CT head '
          'whose tongue, jaw, lips and velum sing the phoneme.'),
         ('WHEEL', HEAT[5], 'REG SUB BODY TOP', 'PERC CLICK DRIVE SPEED', 'Drawbar organ: registrations, percussion, rotary. '
          '<b>Its picture</b> (0.9.6): nine tube worms, one a drawbar, bent by the rotor.'),
