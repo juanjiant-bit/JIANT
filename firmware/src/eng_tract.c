@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* (V10.7.43) TRACT: VOICE's second MODE (EDIT > WORDS KNOB 4: VOWEL / TRACT), a vocal tract simulated as a tube.
+/* (V10.7.44) TRACT: VOICE's second MODE (EDIT > WORDS KNOB 4: VOWEL / TRACT), a vocal tract simulated as a tube.
  * An original implementation, written from the textbook descriptions only (no other synthesizer's code read):
  *   J. L. Kelly, C. Lochbaum, "Vocal tract modeling", Proc. 4th Int. Congr. Acoustics (1962): the tube as cylindrical
  *     sections, a scattering junction between two, k = (A1 - A2) / (A1 + A2) of their areas;
@@ -365,7 +365,7 @@ static const param_desc_t *tract_desc(const track_t *t, uint32_t k, const param_
     return t->p[P_VTRACT] && !d ? &TR_DESC[k & 7u] : d;   /* (WORDS: POS THEME ARTIC, LOOP theirs) */
 }
 
-/* (V10.7.43) the tube's presets, appended to FORMANT_PRESETS (15 ..: every number before kept). FRONT OPEN ROUND NASAL |
+/* (V10.7.44) the tube's presets, appended to FORMANT_PRESETS (15 ..: every number before kept). FRONT OPEN ROUND NASAL |
  * BREATH VIB RATE TENSE (WORDS: POS THEME ARTIC NASAL | BREATH VIB RATE LOOP); MODE TRACT in their movement */
 #define TRACT_PRESETS                                                                                                 \
     {"TUBE AH", {10, 115, 0, 0, 12, 34, 64, 70}, {20, 70, 115, 70}, 0, TAG(VOX), FX(0, 20, 20, 45), PAT(5),          \

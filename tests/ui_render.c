@@ -1814,7 +1814,7 @@ static void setup(int s)
         memset(vxs.fr, 0xFF, sizeof vxs.fr);
         go_title("EDIT 2");
         break;
-    case S_TRACT_E1: case S_TRACT_E2: case S_TRACT_WORDS: case S_TRACT_NASAL: {   /* (V10.7.43) VOICE's MODE TRACT */
+    case S_TRACT_E1: case S_TRACT_E2: case S_TRACT_WORDS: case S_TRACT_NASAL: {   /* (V10.7.44) VOICE's MODE TRACT */
         uint32_t k;
         eng(ENGI_VOICE_UI);
         for (k = 0; k < ENG_FORMANT.npresets && !str_eq(ENG_FORMANT.presets[k].name, s == S_TRACT_E2 ? "TUBE EE" : "TUBE AH"); k++)

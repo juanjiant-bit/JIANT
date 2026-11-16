@@ -784,7 +784,7 @@ int main(int argc, char **argv)
     if (!strcmp(mode, "stress")) { stress_table(argc > 2 ? argv[2] : 0); return 0; }
     if (!strcmp(mode, "wav")) return wav_pairs(argc > 2 ? argv[2] : 0);
     if (!strcmp(mode, "test")) return tests();
-    if (!strcmp(mode, "tract")) {                       /* (V10.7.43) VOICE's TRACT: two voices against FM6's two */
+    if (!strcmp(mode, "tract")) {                       /* (V10.7.44) VOICE's TRACT: two voices against FM6's two */
         uint32_t k, fm = 0;
         double f2;
         for (k = 0; k < ENG_FM6.npresets && !str_eq(ENG_FM6.presets[k].name, "BRASS"); k++)

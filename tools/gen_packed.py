@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
-"""(V10.7.43) the main loop's texts kept packed in the image (gz.h: one LZB block each, tools/lzb.py, unpacked when
+"""(V10.7.44) the main loop's texts kept packed in the image (gz.h: one LZB block each, tools/lzb.py, unpacked when
 asked): HELP's lines (ui_draw.c HELP_TEXT, 643 B in ~340). Read from the source's #define (its string literals, one
 after the other), so the text is edited where it is used; ui_draw.c checks the size against it (a stale header fails).
   gen_packed.py UI_DRAW.C OUT.h"""

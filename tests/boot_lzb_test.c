@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* (V10.7.43) Host test of the boot's LZB unpacker (firmware/src/boot_lzb.h: main.c fm1_cstart, gz.h): the RAM code and
+/* (V10.7.44) Host test of the boot's LZB unpacker (firmware/src/boot_lzb.h: main.c fm1_cstart, gz.h): the RAM code and
  * the initialised data are LZB blocks in the app image (tools/build.py, tools/lzb.py pack; V10.6z5..V10.7.41: LZ4).
  *   - the build's own blocks (build/boot_lzb.bin; when there is a build): unpacked one after the other into the
  *     sizes of build/{ramtext,c1text,hottext,data}.bin they are byte for byte those sections, each block ending where

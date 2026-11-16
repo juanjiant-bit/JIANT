@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
-"""(V10.7.43) LZB: the packed blocks of the app image (the RAM code and data the boot unpacks, firmware/src/boot_lzb.h;
+"""(V10.7.44) LZB: the packed blocks of the app image (the RAM code and data the boot unpacks, firmware/src/boot_lzb.h;
 the main loop's packed tables, gz.h), an LZ77 of bits, smaller than the LZ4 blocks it replaces (~13 % on the pi32v2's
 code, LZ4's optimal parse ~12 %: 28.3 KB of RAM code and data in ~26 KB). A block has no header and no end mark: it
 ends where its output is full (the size is the reader's).

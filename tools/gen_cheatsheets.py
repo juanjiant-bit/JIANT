@@ -9,7 +9,7 @@ import html, os
 
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(R, 'docs', 'cheatsheet')
-VERSION = 'V10.7.41'   # (the release; a rename is this one line)
+VERSION = 'V10.7.42'   # (the release; a rename is this one line)
 
 HEAT = ['#22d3ee', '#3b82f6', '#8b5cf6', '#d946ef', '#ef4444', '#ff7a00', '#facc15', '#f4f1ea']
 
@@ -354,7 +354,7 @@ def sound():
          'a note each (POS THEME ARTIC SHIFT · BUZZ BREATH Q LOOP); LYRIC TEXT (OCT+ on WORDS types it, KNOB 3 dice, '
          'D# PH 1–3 the phonemes; V10.7.33: the web editor turns words into phonemes, English with the CMU dictionary) '
          'or W1–16 words, S1–8 scat; "-" holds the vowel. <b>Its picture</b> (0.9.4): a CT head '
-         'whose tongue, jaw, lips and velum sing the phoneme. <b>TRACT</b> (V10.7.43, WORDS KNOB 4 MODE): a vocal tract as a '
+         'whose tongue, jaw, lips and velum sing the phoneme. <b>TRACT</b> (V10.7.44, WORDS KNOB 4 MODE): a vocal tract as a '
          'tube, FRONT OPEN ROUND NASAL · BREATH VIB RATE TENSE; presets TUBE AH / EE / OO, TUBE CHOIR, BASS SINGR, WHISPER TB, '
          'TALK TUBE.'),
         ('WHEEL', HEAT[5], 'REG SUB BODY TOP', 'PERC CLICK DRIVE SPEED', 'Drawbar organ: registrations, percussion, rotary. '

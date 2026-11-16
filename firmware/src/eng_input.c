@@ -43,7 +43,7 @@ static __attribute__((noinline)) void ain_fill(const track_t *t, int32_t *out, u
         g = 4096;
         thr = sh = 0;
         hold = 0;
-        sw = 1;                                          /* (its fill: WIDTH whole, DIST none; V10.7.43: was a whole
+        sw = 1;                                          /* (its fill: WIDTH whole, DIST none; V10.7.44: was a whole
                                                           * table of the parameters, SW_FULL, for these two) */
     }
     if (side && src == AIN_ST) {

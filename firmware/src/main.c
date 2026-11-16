@@ -11,7 +11,7 @@ extern uint32_t _hot_start[], _hot_end[], _hot_load[];   /* (0.6.78) core 0's ho
 extern uint32_t _low_start[], _low_end[];                /* (0.6.78) main-loop buffers below the RAM code (app.ld) */
 #endif
 extern char _etext[];                                    /* (V10.6z5) .text's end: their load images from here, */
-#include "boot_lzb.h"                                    /* packed (tools/build.py, app.ld PACKED; V10.7.43: LZB) */
+#include "boot_lzb.h"                                    /* packed (tools/build.py, app.ld PACKED; V10.7.44: LZB) */
 
 
 /* TIMER5 outranks ALNK0, so the scan keeps its 100 us pace while a half buffer renders: before,

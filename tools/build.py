@@ -111,7 +111,7 @@ def generate():
             [tools / "gen_tables.py", GEN / "felucca_tables.h"],
             [tools / "gen_lyrics.py", GEN / "felucca_lyrics.h"],   # (0.8.5) VOICE's words (sing.c)
             [tools / "gen_fm6_patches.py", GEN / "felucca_fm6.h"],
-            [tools / "gen_packed.py", FW / "src" / "ui_draw.c", GEN / "felucca_packed.h"],   # (V10.7.43) HELP's lines, packed
+            [tools / "gen_packed.py", FW / "src" / "ui_draw.c", GEN / "felucca_packed.h"],   # (V10.7.44) HELP's lines, packed
             [tools / "gen_drum_maps.py", FW / "src" / "gen_tables.c", FW / "src" / "song_dice.c", GEN / "gen_drum_maps.h",
              GEN / "dice_bars.h", GEN / "gen_bass.h"]]   # (0.9.7)
     procs = [subprocess.Popen([sys.executable, *map(str, c)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -596,7 +596,7 @@ def build_app():
     # them by words
     # (V10.6z5) packed: app.ld links their load images outside the flash (PACKED); here one LZ4 block each
     # (V10.6z5..V10.7.41 LZ4), one after the other from _etext on (the end of .text), in this order; main.c
-    # fm1_cstart unpacks them into their sections; (V10.7.43) LZB blocks (tools/lzb.py, firmware/src/boot_lzb.h: ~2.8 KB
+    # fm1_cstart unpacks them into their sections; (V10.7.44) LZB blocks (tools/lzb.py, firmware/src/boot_lzb.h: ~2.8 KB
     # less). Each block is unpacked here as boot_lzb does it and must give its section back byte for byte
     load = symv("_etext")
     if load % 4 or load - APP_XIP != len(img):

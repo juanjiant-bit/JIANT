@@ -269,7 +269,8 @@ static __attribute__((noinline)) void perf_buf_start(uint32_t e)
         uint32_t b = beat_samples() / 4u;
         pf.len = b < 4410u ? 4410u : b > 12348u ? 12348u : b;
         pf.u.r.len = pf.len / 4u;
-        pf.u.r.d = pf.len / 2u;                   /* (first heard: the grain in its second half, the window's last
+        pf.u.r.xd = 0x80000000u / pf.u.r.len;    /* (V10.7.42) the window's step a sample (perf_frz: no divide a sample) */
+        pf.u.r.d = pf.len / 2u;                  /* (first heard: the grain in its second half, the window's last
                                                    * quarter; the next from its start) */
     }
 }
@@ -330,6 +331,8 @@ static __attribute__((noinline)) int perf_begin(uint32_t n)
         pf.sync = 0;
         perf_act = 0;
         trk_hush = 0;
+        frz_on = 0;                                 /* (V10.7.42) a FREEZE let go: its last block's 1 held the tracks at
+                                                     * half the rate for good (perf_block runs no more to clear it) */
         return 0;
     }
     pf.P = beat_samples() >> 2;
@@ -863,7 +866,8 @@ static __attribute__((noinline)) int perf_frz(int32_t l, int32_t r)
         t = 0;
     }
     pf.u.r.t = t + 1u;
-    w = (32768 - sine_i(t * (0x80000000u / h) + 0x40000000u)) >> 1;   /* sin^2: the first half's rising window */
+    w = (32768 - sine_i(t * pf.u.r.xd + 0x40000000u)) >> 1;   /* sin^2: the first half's rising window (xd: 2^31 / h,
+                                                   * perf_buf_start) */
     pb_ring_f((pf.u.r.s0 + t) << 16, &al, &ar);
     pb_ring_f((pf.u.r.d + h + t) << 16, &pf.yl, &pf.yr);
     pf.yl += mulq16(al - pf.yl, (uint32_t)w << 1);

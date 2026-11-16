@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* (V10.7.43) The packed blocks of the app image: the RAM code's and the initialised data's load images (main.c
+/* (V10.7.44) The packed blocks of the app image: the RAM code's and the initialised data's load images (main.c
  * fm1_cstart), the main loop's packed tables (gz.h). LZB blocks (tools/lzb.py: an LZ77 of bits, the format there),
  * which replace V10.6z5's LZ4 blocks (~2.8 KB of flash less: 28.3 KB of them in ~25.5 KB).
  *

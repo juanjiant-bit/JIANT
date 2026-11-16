@@ -196,7 +196,7 @@ run "keys and buttons: fast press, long release, bouncy contacts (one note each)
 $CC -Ibuild/gen -Ifirmware/src -o "$OUT/vel_diag_test" tests/vel_diag_test.c
 run "velocity diagnostic (V10.6z5): the scan's ADC slots, MASTER kept, drive, presses and captures on synthetic traces" "$OUT/vel_diag_test"
 $CC -Ifirmware/src -o "$OUT/boot_lzb_test" tests/boot_lzb_test.c
-run "the boot's packed RAM code (V10.6z5; V10.7.43 LZB): blocks back byte for byte, the build's own too" "$OUT/boot_lzb_test"
+run "the boot's packed RAM code (V10.6z5; V10.7.44 LZB): blocks back byte for byte, the build's own too" "$OUT/boot_lzb_test"
 
 $CC -o "$OUT/midi_uart_test" tests/midi_uart_test.c
 run "TRS MIDI parser" "$OUT/midi_uart_test"

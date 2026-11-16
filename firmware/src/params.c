@@ -330,7 +330,7 @@ static const param_desc_t *track_desc(const track_t *t, uint32_t id)
     if (id == P_VCAP && en == &ENG_INPUT) return &NONE_DESC;   /* (V10.7.38) VOICES: EXT's voice is one */
     if (id == P_DKEYMODE && en == &ENG_DRUM) return &DKEYMODE_DESC;
     if (DERO_ID(id) && en == &ENG_DRUM) return &DERO_DESC[id - P_GLMODE];   /* (V10.7.37) its EROSION */
-    if (id == P_VTRACT && en == &ENG_FORMANT)          /* (V10.7.43) VOICE's MODE: VOWEL / TRACT (eng_tract.c) */
+    if (id == P_VTRACT && en == &ENG_FORMANT)          /* (V10.7.44) VOICE's MODE: VOWEL / TRACT (eng_tract.c) */
         return &VMODE_DESC;
     if ((id == P_VLANG || id == P_VLYR || id == P_VCONS) && en == &ENG_FORMANT)
         return id == P_VLANG ? &VLANG_DESC : id == P_VLYR ? &VLYR_DESC : &VCONS_DESC;

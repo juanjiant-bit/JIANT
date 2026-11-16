@@ -30,10 +30,11 @@ eng/WEST.HEAVY 2787
 eng/WEST.TRI 2685
 eng/WHEEL 2076
 mix/full 2753
+mix/full.freeze 2582
 mix/full.glitch 2972
 mix/full.repeat 2960
-mix/idle 307
-mix/idle.tail 305
+mix/idle 181
+mix/idle.tail 180
 peak/VOICE.EN6 232823
 rev/CLOUD 1685
 rev/RESO 1439

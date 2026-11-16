@@ -1085,7 +1085,7 @@ static int clip_tag(char *b)
  * LIFE (253), TRACKS (254: GLO's mute and solo keys, as MIXER's; its panel shows the line too),
  * or its section's (100 + SEC_*); none: the breadcrumb. One string, the lines one after another */
 static const uint8_t HELP_K[] = {250, 251, 252, 253, 254, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
-/* (V10.7.43) packed: tools/gen_packed.py reads this #define (the text never in the image as it is) into felucca_packed.h's
+/* (V10.7.44) packed: tools/gen_packed.py reads this #define (the text never in the image as it is) into felucca_packed.h's
  * HELP_Z (LZB, 643 B in ~340), gz.h gz_get unpacks it when a line is asked for */
 #define HELP_TEXT \
     "HOME+SELECT DICE  HOME+PRESETS BPM\0" \

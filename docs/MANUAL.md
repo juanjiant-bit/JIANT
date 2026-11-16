@@ -1,6 +1,6 @@
 # JIANT FM — User Manual
 
-**JIANT FM V10.7.41 for the M-VAVE FM-1**
+**JIANT FM V10.7.42 for the M-VAVE FM-1**
 
 > *Versión en español: [MANUAL.es.md](MANUAL.es.md).*
 
@@ -38,8 +38,8 @@ public version) or earlier: [What's new in this version](#whats-new-in-this-vers
 
 Everything since V10.6c, the last public version, in one list; each item links to its place in the manual.
 
-**TRACT: a vocal tract as a tube (V10.7.43)**
-- VOICE's second **MODE** (EDIT › WORDS, KNOB 4): a physical model of the vocal tract, a tube you shape with **FRONT OPEN ROUND NASAL** and a glottis with **BREATH VIB RATE TENSE**; WORDS sings through it. Seven presets (TUBE AH … TALK TUBE). See [TRACT](#voice-tract-a-vocal-tract-as-a-tube-v10743).
+**TRACT: a vocal tract as a tube (V10.7.44)**
+- VOICE's second **MODE** (EDIT › WORDS, KNOB 4): a physical model of the vocal tract, a tube you shape with **FRONT OPEN ROUND NASAL** and a glottis with **BREATH VIB RATE TENSE**; WORDS sings through it. Seven presets (TUBE AH … TALK TUBE). See [TRACT](#voice-tract-a-vocal-tract-as-a-tube-v10744).
 
 **LIFE: the voices alive, the tracks moving each other (V10.7.34)**
 - **HOME › LIFE**, HOME's new first page: every voice breathes on its own (a few cents of pitch, its filter, its level),
@@ -629,7 +629,7 @@ since 0.6.51: every project opens as it was.
 | --- | --- | --- | --- | --- | --- |
 | EDIT 1 | E1 | E2 | E3 | E4 | every engine (see [4](#4-engines)) |
 | EDIT 2 | E5 | E6 | E7 | E8 | every engine |
-| WORDS | LANG | LYRIC | CONS (V10.6y: the consonants' length, 50–400 %; POS on EDIT 1 when LANG is on) | MODE (V10.7.43: VOWEL / TRACT, [the tube](#voice-tract-a-vocal-tract-as-a-tube-v10743); OCT+ TYPE: the lyric) | VOICE (0.8.5, [words](#voice-words-and-lyrics-085)) |
+| WORDS | LANG | LYRIC | CONS (V10.6y: the consonants' length, 50–400 %; POS on EDIT 1 when LANG is on) | MODE (V10.7.44: VOWEL / TRACT, [the tube](#voice-tract-a-vocal-tract-as-a-tube-v10744); OCT+ TYPE: the lyric) | VOICE (0.8.5, [words](#voice-words-and-lyrics-085)) |
 | RETRIG | RTRG | TIME (V10.7.37: NOTE, or 1/1 .. 1/32 and triplets) | — | — | MATH (BYTE, FLOAT) |
 | MORPH | MORPH | — | — | — | ANALOG (SAW..SIN), PHASE |
 | OPERATOR | OP | COARSE (the ratio, or the fixed Hz; was RATIO / FIXED) | FINE | OUTPUT (the operator's level; was LEVEL) | FM6 |
@@ -1138,7 +1138,7 @@ Japanese read best (their spelling is regular); English needs the editor's phone
 English dictionary (~11 KB of the Bluetooth segment's flash) is the editor's since V10.7.33; about +9 % CPU over
 VOICE's vowels, so four voices singing still cost well under ANALOG's eight.
 
-### VOICE: TRACT, a vocal tract as a tube (V10.7.43)
+### VOICE: TRACT, a vocal tract as a tube (V10.7.44)
 
 VOICE has a second **MODE**: EDIT > **WORDS**, **KNOB 4 MODE** (**VOWEL**, the formant voice as always; **TRACT**). In
 TRACT the sound is a physical model: a tube of 22 sections from the glottis to the lips (17 cm, an adult's), the air's

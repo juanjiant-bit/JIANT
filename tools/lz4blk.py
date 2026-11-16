@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
 # Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """Minimal LZ4 *block* format (no frame), written for the Felucca loader
-wrapper (V10.7.43: the app image's packed blocks are LZB, tools/lzb.py): greedy hash-chain-free compressor and a decoder for self-checks.
+wrapper (V10.7.44: the app image's packed blocks are LZB, tools/lzb.py): greedy hash-chain-free compressor and a decoder for self-checks.
 Spec: https://github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md
 (min match 4, last 5 bytes literals, last match starts >= 12 bytes before the end)."""
 

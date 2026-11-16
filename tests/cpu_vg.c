@@ -8,7 +8,7 @@
  * Each section: the state set, a warm-up, then CALLGRIND_ZERO_STATS, NB blocks of mix_block (the whole audio block:
  * the sequencer, the parts, the buses, the master) and CALLGRIND_DUMP_STATS_AT(its name). Sections:
  *   eng/<ENGINE>   one part, 8 notes held (VOICE: 4), the engine's heaviest preset (hostsim.c's list)
- *   eng/VOICE.TRACT (V10.7.43) VOICE's MODE TRACT, its two voices, the nose open (.WORDS: singing); eng/FM6.2 two FM6
+ *   eng/VOICE.TRACT (V10.7.44) VOICE's MODE TRACT, its two voices, the nose open (.WORDS: singing); eng/FM6.2 two FM6
  *                  voices, to weigh them against
  *   eng/ANIMAL.<MODE>  (0.8.3) ANIMAL's five sources at their heaviest: 8 notes, no gaps (GROUP HOLD), every option on
  *   rev/<TYPE>     a pad soaked in the reverb, each REVERB TYPE (ROOM SPRING SHIMR RESO CLOUD)
@@ -16,7 +16,8 @@
  *                  .drive: DRIVE 100; .throw: THROW held (KNOB 3 of the FX layer at 100), the loop's band in
  *   cho/pad        (snd2) a pad into the chorus only, RATE 40 (.fast: 127)
  *   mix/full       six parts: four ANALOG / FM6 chords, drums, every FX on; (snd2) .repeat / .glitch: the FX layer's
- *                  REPEAT 1/16 / GLITCH held on it
+ *                  REPEAT 1/16 / GLITCH held on it; (V10.7.42, the last section) .freeze: FREEZE held (perform.c
+ *                  perf_frz, voice.c voice_soft)
  *   seq/plain      the sequencer: six tracks of chords / hits on every step at 200 BPM
  *   seq/heavy      .. with two step components on each (ARP / RATCHET x8, RANDOM / OCT+ at 75 %), DIV, LEN, chord glides
  *   seqtick/plain  (p2, main 0.9.11) the sequencer alone (events_block, no render): seq/plain's six tracks
@@ -201,7 +202,7 @@ int main(void)
         snprintf(name, sizeof name, "eng/VOICE.%s", i ? "EN" : "ES");
         vg_section(name);
     }
-    for (i = 0; i < 4u; i++) {                          /* (V10.7.43) VOICE's MODE TRACT (eng_tract.c): its two voices (TUBE
+    for (i = 0; i < 4u; i++) {                          /* (V10.7.44) VOICE's MODE TRACT (eng_tract.c): its two voices (TUBE
                                                          * AH as it is; .NASAL the nose open, its heaviest; .WORDS singing),
                                                          * and FM6's two voices (BRASS) to weigh them against */
         static const char *const TN[4] = {"eng/VOICE.TRACT", "eng/VOICE.TRACT.NASAL", "eng/VOICE.TRACT.WORDS", "eng/FM6.2"};
@@ -371,5 +372,15 @@ int main(void)
             if (sing[k].nsy < 24u) { printf("cpu_vg: peak/VOICE.EN6: track %u sang %u syllables\n", k, sing[k].nsy); return 1; }
         trk_live = live;                            /* (the sections after as they were) */
     }
+    vg_quiet();                                         /* (V10.7.42, last: the sections before as they were) mix/full */
+    for (i = 0; i < 4u; i++) {                          /* under FREEZE held (perform.c perf_frz; voice.c voice_soft: */
+        vg_part(i, i == 1u ? ENGI_FM6 : ENGI_ANALOG, 0, 4);   /* the tracks under it at half the rate) */
+        trk[i].p[P_DLY] = 60; trk[i].p[P_REV] = 60; trk[i].p[P_CHOR] = 60; trk[i].p[P_DIST] = 40;
+    }
+    vg_part(5, ENGI_DRUM, 0, 4);
+    song.g[G_RTYPE] = 4;
+    perf_held = PF_BIT(PF_FRZ);
+    vg_section("mix/full.freeze");
+    perf_held = 0;
     return 0;
 }

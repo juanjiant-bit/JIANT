@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* (flash) Tables of the main loop's kept packed in the image, each one LZB block (tools/lzb.py pack; LZ4 until V10.7.43; the
+/* (flash) Tables of the main loop's kept packed in the image, each one LZB block (tools/lzb.py pack; LZ4 until V10.7.44; the
  * generators check each by unpacking it): the bass archetypes' steps (gen_bass.h BA_STEP_Z), the drum maps' lanes
  * (gen_drum_maps.h GM_LANE_Z), FM6's factory patches (felucca_fm6.h FM6_FACTORY_Z). gz_get gives the table asked for,
  * unpacked by the boot's own boot_lzb into one buffer of the pool that the last one asked for shares: the same bytes

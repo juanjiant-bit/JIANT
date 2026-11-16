@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.41
+## This release: V10.7.42
 
 ### Installing
 
@@ -483,7 +483,7 @@ same license.
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
 
-### V10.7.43 — beta (2026-11-15)
+### V10.7.44 — beta (2026-11-16)
 - **VOICE › TRACT, a vocal tract you shape**: VOICE's second **MODE** (EDIT › WORDS, KNOB 4: VOWEL / TRACT). A physical
   model (an original implementation of Kelly–Lochbaum's tube, from the textbooks): 22 sections from the glottis to the
   lips, a nose at the velum, a glottis that pulses and breathes. **EDIT 1 FRONT · OPEN · ROUND · NASAL** (the tongue, the
@@ -495,6 +495,13 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
 - Room for it in the flash, with nothing else changed: the RAM code the FM-1 unpacks at power-on is packed tighter (LZB,
   an LZ77 of bits, 28.3 KB → 25.5 KB of the image), so are the packed tables and HELP's lines; identical functions
   merged.
+### V10.7.42 (2026-11-15)
+- **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version
+  since V10.7.23 was measured: the +7.7 % of CPU TEST is all BALANCE, on since V10.7.33 (+3.3 %), and LIFE (+4.2 %); nothing runs
+  per sample for a feature that is off. Now a silent block skips the master (idle 326 → 181 instructions a sample, V10.7.23:
+  296). LIFE's followers are lighter, and FREEZE no longer divides every sample. The sound is bit for bit the same.
+- **FREEZE let go: the tracks back at the full rate.** Since V10.7.41 they stayed at half the rate after a FREEZE, until
+  the next punch-in.
 
 ### V10.7.41 (2026-11-15)
 - **WEST with RES high no longer breaks on the peaks**: past RES ~43 the gate's input is lowered with its resonance

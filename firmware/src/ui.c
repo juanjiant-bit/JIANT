@@ -2215,7 +2215,7 @@ static uint32_t act_cols(void)                   /* the columns that are actions
     if (pg->graph == GR_PUNCH) return 8u;               /* (0.6.99) PUNCH: KNOB 4 CLEAR */
     if (pg->graph == GR_EVENTS || pg->graph==GR_TRACKGEN) return 16u;
     if (pg->graph == GR_TOOLS) return 15u;
-    if (pg->graph==GR_LYRSTEP) return 8u;               /* (V10.7.43: WORDS' KNOB 4 is VOICE's MODE, OCT+ still TYPE) */
+    if (pg->graph==GR_LYRSTEP) return 8u;               /* (V10.7.44: WORDS' KNOB 4 is VOICE's MODE, OCT+ still TYPE) */
     if (pg->graph == GR_SONG)
         return 1u;                               /* (0.8.5) ADD a row (PLAY: the song) */
     if (pg->graph == GR_PATS)

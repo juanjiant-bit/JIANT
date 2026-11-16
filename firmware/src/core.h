@@ -223,7 +223,7 @@ enum {                          /* per-track parameters */
                                          * lofi_tq) */
 #define P_DKEYMODE P_LRTRG        /* DRUM-X only: 0 classic, 1 extended performance octaves. */
 #define P_VLYR P_DXIMG
-/* (V10.7.43) VOICE's MODE (EDIT > WORDS KNOB 4: VOWEL, TRACT the tube, eng_tract.c) in MORPH's slot (ANALOG PHASE's, never
+/* (V10.7.44) VOICE's MODE (EDIT > WORDS KNOB 4: VOWEL, TRACT the tube, eng_tract.c) in MORPH's slot (ANALOG PHASE's, never
  * offered on a VOICE track: 0 there in every project and preset before it, VOWEL) */
 #define P_VTRACT P_MORPH
 /* (V10.6y, alex.knip) VOICE's CONS (EDIT > WORDS KNOB 3): its consonants' length, 50 .. 400 %, in DRUM-X's lane 2 level

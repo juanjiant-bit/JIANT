@@ -1,6 +1,6 @@
 # JIANT FM — Manual de usuario
 
-**JIANT FM V10.7.41 para el M-VAVE FM-1**
+**JIANT FM V10.7.42 para el M-VAVE FM-1**
 
 > *English version: [MANUAL.md](MANUAL.md).*
 
@@ -38,8 +38,8 @@ versión pública) o de antes: [Qué hay de nuevo en esta versión](#qué-hay-de
 
 Todo lo que cambió desde la V10.6c, la última versión pública, en una lista; cada punto lleva a su lugar en el manual.
 
-**TRACT: un tracto vocal como un tubo (V10.7.43)**
-- El segundo **MODE** de VOICE (EDIT › WORDS, KNOB 4): un modelo físico del tracto vocal, un tubo al que le das forma con **FRONT OPEN ROUND NASAL** y una glotis con **BREATH VIB RATE TENSE**; WORDS canta a través de él. Siete presets (TUBE AH … TALK TUBE). Ver [TRACT](#voice-tract-un-tracto-vocal-como-un-tubo-v10743).
+**TRACT: un tracto vocal como un tubo (V10.7.44)**
+- El segundo **MODE** de VOICE (EDIT › WORDS, KNOB 4): un modelo físico del tracto vocal, un tubo al que le das forma con **FRONT OPEN ROUND NASAL** y una glotis con **BREATH VIB RATE TENSE**; WORDS canta a través de él. Siete presets (TUBE AH … TALK TUBE). Ver [TRACT](#voice-tract-un-tracto-vocal-como-un-tubo-v10744).
 
 **LIFE: las voces vivas, las pistas moviéndose entre sí (V10.7.34)**
 - **HOME › LIFE**, la nueva primera página de HOME: cada voz respira por su cuenta (unos cents de afinación, su filtro,
@@ -661,7 +661,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | --- | --- | --- | --- | --- | --- |
 | EDIT 1 | E1 | E2 | E3 | E4 | todos los motores (ver [4](#4-motores)) |
 | EDIT 2 | E5 | E6 | E7 | E8 | todos los motores |
-| WORDS | LANG | LYRIC | CONS (V10.6y: el largo de las consonantes, 50–400 %; POS pasa a EDIT 1 con LANG prendido) | MODE (V10.7.43: VOWEL / TRACT, [el tubo](#voice-tract-un-tracto-vocal-como-un-tubo-v10743); OCT+ TYPE: la letra) | VOICE (0.8.5, [palabras](#voice-palabras-y-letras-085)) |
+| WORDS | LANG | LYRIC | CONS (V10.6y: el largo de las consonantes, 50–400 %; POS pasa a EDIT 1 con LANG prendido) | MODE (V10.7.44: VOWEL / TRACT, [el tubo](#voice-tract-un-tracto-vocal-como-un-tubo-v10744); OCT+ TYPE: la letra) | VOICE (0.8.5, [palabras](#voice-palabras-y-letras-085)) |
 | RETRIG | RTRG | TIME (V10.7.37: NOTE, o 1/1 .. 1/32 y tresillos) | — | — | MATH (BYTE, FLOAT) |
 | MORPH | MORPH | — | — | — | ANALOG (SAW..SIN), PHASE |
 | OPERATOR | OP | COARSE (la relación, o los Hz fijos; era RATIO / FIXED) | FINE | OUTPUT (el nivel del operador; era LEVEL) | FM6 |
@@ -1195,7 +1195,7 @@ el diccionario inglés (~11 KB de la flash del segmento Bluetooth) es del editor
 de CPU sobre las vocales de VOICE, así que
 cuatro voces cantando siguen costando bastante menos que las ocho de ANALOG.
 
-### VOICE: TRACT, un tracto vocal como un tubo (V10.7.43)
+### VOICE: TRACT, un tracto vocal como un tubo (V10.7.44)
 
 VOICE tiene un segundo **MODE**: EDIT > **WORDS**, **KNOB 4 MODE** (**VOWEL**, la voz de formantes de siempre;
 **TRACT**). En TRACT el sonido es un modelo físico: un tubo de 22 secciones de la glotis a los labios (17 cm, el de un

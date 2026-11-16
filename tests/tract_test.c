@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* (V10.7.43) VOICE's MODE TRACT (src/eng_tract.c: a Kelly-Lochbaum tube) on the host, through hostsim.c as regress.c.
+/* (V10.7.44) VOICE's MODE TRACT (src/eng_tract.c: a Kelly-Lochbaum tube) on the host, through hostsim.c as regress.c.
  *   build/host/tract_test [DEMODIR]     (run_tests.sh: build/tract_demo; DEMODIR: each preset, a vowel sweep, a phrase)
  * 1. formants: AH EE OO whispered (BREATH 127: the noise draws the tube's response), F1 / F2 by FFT in their regions
  *    (AH ~700 / 1100 Hz, EE ~300 / 2300, OO ~300 / 800), and sung at C2 (its spectral envelope's F1 F2 the same);
