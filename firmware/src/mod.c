@@ -289,12 +289,12 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
     mod_t *const mp = &MOD;                          /* (0.6.71) this core's */
     const int16_t *p = t->p;
     int32_t lfo, off[NMSLOT + 3u];
-    uint32_t k, j, ls = life_snd_on(t);                 /* (V10.7.34) LIFE on the sends (life.c) */
+    uint32_t k, j;
     mp->on = 0;
     for (k = 0; k < NMSLOT; k++)
         if (p[P_M1SRC + 3u * k] && p[P_M1DST + 3u * k] && p[P_M1AMT + 3u * k])
             break;
-    if (k == NMSLOT && !ls)
+    if (k == NMSLOT)
         return 0;
     lfo = mulq15(t->lfo_val, t->lfo_fade);              /* (the LFO of the block before: track_render ticks it) */
     for (j = k; j < NMSLOT; j++)
@@ -302,7 +302,7 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
             ms_tick(t);                                 /* (once, for every slot reading it) */
             break;
         }
-    mp->on = k < NMSLOT ? 1u : 2u;                      /* (V10.7.34: 2, LIFE's sends alone: no voice's work) */
+    mp->on = 1;
     mp->amp = 0;
     mp->nv = mp->nk = 0;
     mp->pit = mp->cut = mp->shp = 0;
@@ -348,8 +348,6 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
                                                                                                * as before its in-time values) */
         }
     }
-    if (ls)
-        life_snd(t, mp, off);                           /* (V10.7.34) the other tracks on its sends */
     for (j = 0; j < mp->nk; j++) {
         uint32_t id = mp->kid[j];
         const param_desc_t *pd = mod_track_desc(t, id);

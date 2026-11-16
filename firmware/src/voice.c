@@ -2027,8 +2027,8 @@ typedef struct {
     int32_t lfo, tune, tune_fine, bend16, bend_fine, damt;
     uint32_t ti, fade;
     int32_t img;                                        /* (V10.49) IMAGE on a synth part in POLY: 0 off, else its width */
-    int32_t lv, lcut, lfine;                            /* (V10.7.34) LIFE (life.c): each voice's depth (0..256), the other
-                                                         * tracks' cutoff and pitch on this one (0: none) */
+    int32_t lcut, lshp;                                 /* (V10.7.34) LIFE (life.c; V10.7.43: its followers): the cutoff
+                                                         * and the shape it moves on every voice (0: none) */
 } vctx_t;
 /* one voice's block: its control tick (the envelope, the glide, the modulation) and its render into out[off .. off + n)
  * (the part's buffer from its sample; (ctl64) n < CTL: a note starting or ending inside the block, track_render: the
@@ -2108,10 +2108,12 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
     if (v->vel > 110)                               /* accent opens the filter with the env */
         m.cutoff += (m.envq15 * 24) >> 7;
     m.shape = (64 << 8) + ((c->lfo * p[P_LD_SHP]) >> 7) + ((m.envq15 * p[P_ED_SHP]) >> 7);
-    if (MOD.on == 1u)                               /* the modulation matrix (mod.c; 2: LIFE's sends alone) */
+    if (MOD.on)                                     /* the modulation matrix (mod.c) */
         mod_voice(t, v, &m, fsum);
-    if (c->lv | c->lcut | c->lfine)                     /* (V10.7.34) LIFE: the voice's own, the other tracks' (life.c) */
-        life_voice(c->ti * NVOICE + (uint32_t)(v - t->v), v, &m, &c->lv, !off);
+    if (c->lcut | c->lshp) {                            /* (V10.7.34) LIFE's followers (life.c life_ctx) */
+        m.cutoff = clamp(m.cutoff + c->lcut, -150 * 256, 150 * 256);
+        m.shape += c->lshp;
+    }
     m.cutoff += fn_voice(t, v->pitch16, c->ti);     /* (filters2) EROSION */
     vo_off_c[MC_CPU() & 1u] = (uint8_t)off;
     {
@@ -2198,12 +2200,12 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
         vctx_t c;
         c.lfo = lfo; c.tune = tune; c.tune_fine = tune_fine; c.bend16 = bend16; c.bend_fine = bend_fine;
         c.damt = damt; c.ti = ti; c.fade = fade; c.img = syn_img[ti];
-        c.lv = c.lcut = c.lfine = 0;
+        c.lcut = c.lshp = 0;
         if (life_v[LIFE_AMT]) {                          /* (V10.7.34) LIFE (life.c), through a register: track_render is
                                                          * the RAM copy's too (mix_part_m0), life.c past its direct reach */
             int32_t (*f)(uint32_t, int32_t *) = life_ctx;
             FM1_OPAQUE(f);
-            lpt = f(ti, &c.lv);
+            lpt = f(ti, &c.lcut);
         }
         for (i = 0; i < NVOICE; i++) {
             voice_t *v = &t->v[i];
@@ -2246,7 +2248,7 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
     }
     if (e == &ENG_INPUT)                                /* (V10.54) INPUT, PLAY THRU: the input (eng_input.c) */
         nr += AIN_THRU(t, out, n);                     /* (through a pointer: track_render runs from RAM too) */
-    if (nr && (life.pg[ti] || (lpt && life.pa[ti]))) {   /* (V10.7.34) LIFE's cross-FM, the AUDIO end of its PITCH */
+    if (nr && ((life.pmc >> ti) & 1u)) {                /* (V10.7.34) LIFE's cross-FM (V10.7.43: its pairs) */
         void (*f)(uint32_t, int32_t *, uint32_t, int32_t) = life_pm;
         FM1_OPAQUE(f);
         f(ti, out, n, lpt);
