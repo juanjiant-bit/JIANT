@@ -16,16 +16,15 @@ sintetizador vocal.
   EDIT 2: BREATH (aire; arriba susurro) · VIB (vibrato) · RATE (3..8 Hz) · TENSE (glotis floja/apretada)
   Con WORDS: POS THEME ARTIC NASAL | BREATH VIB RATE LOOP; las sílabas mueven el tubo.
 
-Los WAV (44,1 kHz, estéreo, sin efectos salvo un poco de reverb)
+Los WAV (mono, 16 bits, 44,1 kHz, 3,5–4,5 s; sin efectos salvo un poco de reverb)
 -----------------------------------------------------------------
   tube_ah.wav, tube_ee.wav, tube_oo.wav   las tres vocales (AH ~770/1100 Hz, EE ~250/2050, OO ~280/840)
   tube_choir.wav                          un pad: dos voces, la lengua a la deriva (LFO DRIFT en FILTER)
   bass_singr.wav                          un cantante grave, mono
   whisper_tb.wav                          solo aire (BREATH arriba)
   talk_tube.wav                           TALK TUBE: una frase en inglés con WORDS
-  sung_phrase_en.wav                      la misma frase cantada en una melodía de 16 notas
-  vowel_sweep.wav                         la lengua da una vuelta por el espacio vocal (FRONT y OPEN en círculo,
-                                          ROUND al final): el tubo se desliza, nunca salta
+  sung_phrase_en.wav                      la misma frase cantada en una melodía (10 notas)
+  vowel_sweep.wav                         AH → EE → OO → AH en una nota: el tubo se desliza, nunca salta
 
 Los PNG (pantallas del equipo, paleta JIANT, x2)
 -------------------------------------------------
@@ -39,6 +38,10 @@ Cómo se generan
 ---------------
   build/host/tract_test renders/v43-tract       (los WAV; tests/tract_test.c)
   build/host/ui_render ... (escenas tract_*)    (las pantallas; tests/ui_render.c)
+
+Realismo: aire al empezar y al soltar (sin compuerta dura), vibrato que entra a los ~0,4 s con
+profundidad y velocidad algo irregulares, jitter por bloque, ruido de aspiración filtrado (turbulencia,
+no siseo) modulado por la apertura de la glotis.
 
 CPU (callgrind, tests/cpu_vg.c): dos voces TRACT 1371 instrucciones/muestra contra 1309 de dos voces
 FM6 (la nariz abierta: 1549). Flash: el tubo ocupa ~3,5 KB; se liberaron empaquetando mejor el código

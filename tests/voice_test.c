@@ -1212,6 +1212,8 @@ static void check_presets(void)
     for (k = getenv("VDC") ? 0u : 7u; k < ENG_FORMANT.npresets; k++) {   /* (VDC: the vowel presets too, for comparison) */
         double m = 0, r;
         uint32_t i, j, live = 0;
+        if (!getenv("VDC") && !(ENG_FORMANT.presets[k].xp & 3u))
+            continue;                                    /* (V10.7.44: TRACT's vowel presets come after the words') */
         vsetup((int32_t)k, 0, "la sol mar canta");
         trk[0].p[P_VLYR] = ENG_FORMANT.presets[k].xp >> 2;
         for (j = 0; j < 4u; j++) {

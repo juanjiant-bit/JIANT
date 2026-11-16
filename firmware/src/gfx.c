@@ -729,12 +729,13 @@ static int32_t kern(const aafont_t *f, uint32_t a, uint32_t b)       /* 1/16 px 
     uint32_t lo, hi;
     if (ga < 0 || (uint32_t)ga >= f->nk)
         return 0;
+    const uint8_t *kp = f->kp ? f->kp : gz_get(AF_M_KP_Z, AF_M_KP_NB);   /* (V10.7.44: AF_M's packed, gz.h) */
     lo = f->ki[ga];
     hi = f->ki[ga + 1];
     while (lo < hi) {                                /* (a's pairs, by b) */
-        uint32_t m = (lo + hi) / 2u, c = f->kp[2u * m];
+        uint32_t m = (lo + hi) / 2u, c = kp[2u * m];
         if (c == b)
-            return (int8_t)f->kp[2u * m + 1u];
+            return (int8_t)kp[2u * m + 1u];
         if (c < b)
             lo = m + 1u;
         else

@@ -150,16 +150,17 @@ static __attribute__((noinline)) void tract_block(track_t *t)
             c->fpl = (uint8_t)(TR_PL[pl] | 1u);
         }
         g[0] = s->gv;
-        g[1] = s->ga;
-        g[2] = s->gf;
+        g[1] = s->ga >> 1;                               /* (its aspiration through the whole tube: half, as heard) */
+        g[2] = cl == PC_PLO ? s->gf >> 1 : s->gf;      /* (a burst inside the tube rings in it: half) */
     } else {                                             /* the knobs, FILTER's modulation on FRONT, the tongue wandering */
         int32_t w = sy_noise(ti + 7u, c->clk++, 9);      /* (a slow, small drift: a point every ~0.75 s) */
         tg[0] = (p[P_E0] << 1) + (c->cut >> 7) + (w >> 12);
         tg[1] = (p[P_E1] << 1) + (w >> 13);
         tg[2] = p[P_E2] << 1;
     }
-    g[0] = (g[0] * (32767 - br * br * 2)) >> 15;         /* BREATH: the voicing out at the top, the noise in */
-    g[1] += br * 258;
+    g[0] = (g[0] * (32767 - ((br * br * 2080) >> 10))) >> 15;   /* BREATH: the voicing out at the top (none at 127), the
+                                                         * noise in */
+    g[1] += br * br * 2;                                 /* (quadratic: a little air low, a whisper at the top) */
     for (j = 0; j < 6u; j++) {
         int32_t x = (j < 3u ? clamp(tg[j], 0, 256) : tg[j]) << 8;
         if (!c->on)
@@ -202,6 +203,14 @@ static __attribute__((noinline)) void tract_note_on(track_t *t, voice_t *v)
     if (t->p[P_VLANG])
         sing_note(t);
     if (vi < TR_NV && !v->env && !v->env_out) {          /* a fresh voice (not a retrigger): from rest */
+        uint32_t k, live = 0;
+        for (k = 0; k < NVOICE; k++)
+            live |= &t->v[k] != v && t->v[k].active;
+        if (!live) {                                     /* (from silence: the tube at its target, its wander from its
+                                                         * start: a phrase sung again sounds the same) */
+            tr_ctl((uint32_t)(t - trk))->on = 0;
+            tr_ctl((uint32_t)(t - trk))->clk = 0;
+        }
         int32_t *w = tr_wav((uint32_t)(t - trk), vi), i;
         for (i = 0; i < TR_W; i++)
             w[i] = 0;
@@ -221,7 +230,7 @@ static __attribute__((noinline)) void tract_render(track_t *t, voice_t *v, int32
     const int16_t *p = t->p;
     uint32_t ti = (uint32_t)(t - trk) % NTRK, vi = (uint32_t)(v - t->v), i, nt = (n + 1u) >> 1, inc, ph, te, tp, rp, rn;
     tr_ctl_t *c = tr_ctl(ti);
-    int32_t *R, *L, *NR, *NL, gv, dgv, ga, dga, gf, dgf, rg, lp, np, up, yp, dp, dc, nst, nzp = 0, tn, vib, jr, e, o;
+    int32_t *R, *L, *NR, *NL, gv, dgv, ga, dga, gf, dgf, rg, lp, np, up, yp, dp, dc, nst, nzp = 0, an = 0, tn, vib, jr, e, o;
     if (vi >= TR_NV)
         return;
     R = tr_wav(ti, vi);
@@ -241,8 +250,11 @@ static __attribute__((noinline)) void tract_render(track_t *t, voice_t *v, int32
     /* the vibrato: VIB up to +-60 ct, RATE 3 .. 8 Hz, in over ~0.4 s */
     e = v->s[4] < 280 ? v->s[4] : 280;
     v->s[4]++;
-    vib = (clamp(p[P_E5], 0, 127) * e) >> 8;
-    v->ph[1] += (uint32_t)(292100 + clamp(p[P_E6], 0, 127) * 3834) * CTL;   /* (2^32 x Hz / FS) */
+    jr = sy_noise(vi * 31u + ti, (uint32_t)v->s[4], 7);  /* (a slow wander, +-32768: the vibrato never a machine's, +-20 %
+                                                         * of its depth and +-10 % of its rate) */
+    vib = ((clamp(p[P_E5], 0, 127) * e) >> 8) * (131072 + jr - (jr >> 2)) >> 17;
+    o = 292100 + clamp(p[P_E6], 0, 127) * 3834;          /* (2^32 x Hz / FS) */
+    v->ph[1] += (uint32_t)(o + (((o >> 8) * (jr >> 3)) >> 7)) * CTL;
     vib = (sine_i(v->ph[1]) * vib) >> 15;                /* (1/4096 of the increment: ~0.42 ct) */
     jr = (int32_t)(noise32((int32_t *)&v->ph[2]) >> 16) - 32768;   /* (jitter: each block its period, ~0.3 %) */
     inc += (uint32_t)((int32_t)(inc >> 12) * (vib + ((jr * 13) >> 15)));
@@ -256,8 +268,9 @@ static __attribute__((noinline)) void tract_render(track_t *t, voice_t *v, int32
     rg = 12780 + ((tn * 13) >> 8);
     gv = c->g[0][0];
     dgv = (c->g[0][1] - gv) >> 5;
-    ga = c->g[1][0];
-    dga = (c->g[1][1] - ga) >> 5;
+    ga = c->g[1][0] + (clamp(12000 - v->env_out, 0, 12000) >> 2);   /* (air before and after the voice: an onset and
+                                                         * a release breathy, never a hard gate) */
+    dga = (c->g[1][1] - c->g[1][0]) >> 5;
     gf = c->g[2][0];
     dgf = (c->g[2][1] - gf) >> 5;
     ph = v->ph[0];
@@ -278,7 +291,8 @@ static __attribute__((noinline)) void tract_render(track_t *t, voice_t *v, int32
                 u = (32768 - u) >> 1;
         }
         nz = (int32_t)(noise32(&nst) >> 17) - 16384;
-        u = ((u * gv) >> 18) + (((nz * (ph < te ? ga : ga >> 2)) >> 17));   /* (~4096 at the most) */
+        an += (nz - an) >> 2;                            /* (aspiration: the turbulence low-passed, ~1 kHz: a breath, no hiss) */
+        u = ((u * gv) >> 18) + (((an * (ph < te ? ga : ga >> 2)) >> 18));   /* (~1024 at the most) */
         ph += inc;
         /* even junctions: the glottis, 2 .. 20 (the velum's at 10), the lips; the nose's 2 .. 10, the nostrils */
         R[0] = ((rg * L[0]) >> 14) + ((u * c->k[0]) >> 8);
@@ -321,7 +335,7 @@ static __attribute__((noinline)) void tract_render(track_t *t, voice_t *v, int32
         /* the radiation: the volume velocity differenced */
         o = soft_knee(clamp((y - up) * TR_GAIN, -32767, 32767), 24000);
         up = y;
-        dc += o - dp - (dc >> 9);                        /* (a DC block after the knee: -3 dB at ~14 Hz) */
+        dc += o - dp - ((dc + 256) >> 9);                /* (a DC block after the knee: -3 dB at ~14 Hz; rounded, no bias) */
         dp = o;
         y = dc;
         a = amp_at(m, 2u * i);                           /* (the level's ramp: one point a pair) */
@@ -350,7 +364,8 @@ static __attribute__((noinline)) void tract_mode(track_t *t)
         tr_ctl(ti)->on = 0;
         for (i = 0; i < NVOICE; i++) {
             voice_t *v = &t->v[i];
-            v->ph[0] = v->ph[1] = v->ph[2] = 0;
+            v->ph[0] = v->ph[1] = 0;
+            v->ph[2] = on ? 0x2545F491u ^ (i * 0x9E3779B9u) ^ v->note : 0;   /* (TRACT: the noise's seed, as tract_note_on's) */
             for (j = 0; j < 7u; j++)
                 v->s[j] = 0;
             if (on && i < TR_NV)

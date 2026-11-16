@@ -66,7 +66,7 @@ static void trender(double *y, uint32_t n)
         wave_peak();
         for (j = 0; j < CTL; j++) {
             if (y && i + j < n) y[i + j] = (o[2 * j] + o[2 * j + 1]) / 65536.0;
-            if (wav) wav_put(wav, o[2 * j], o[2 * j + 1]);
+            if (wav) { int16_t m = (int16_t)clamp((o[2 * j] + o[2 * j + 1]) >> 1, -32768, 32767); fwrite(&m, 2, 1, wav); }
         }
         frames += CTL;
     }
@@ -381,6 +381,18 @@ static void check_glide(void)
         check("TRACT plays two voices at most (four keys held)", act == 2u);
     }
 }
+/* a mono 16-bit 44.1 kHz WAV's header (the demos: the mix of the two channels) */
+static void mono_hdr(FILE *f, uint32_t frames)
+{
+    uint32_t v;
+    uint16_t a = 1, ch = 1, ba = 2, bits = 16;
+    uint32_t sr = FS, br = FS * 2;
+    fwrite("RIFF", 1, 4, f); v = 36 + frames * 2; fwrite(&v, 4, 1, f);
+    fwrite("WAVEfmt ", 1, 8, f); v = 16; fwrite(&v, 4, 1, f);
+    fwrite(&a, 2, 1, f); fwrite(&ch, 2, 1, f); fwrite(&sr, 4, 1, f); fwrite(&br, 4, 1, f);
+    fwrite(&ba, 2, 1, f); fwrite(&bits, 2, 1, f);
+    fwrite("data", 1, 4, f); v = frames * 2; fwrite(&v, 4, 1, f);
+}
 static void demo(const char *dir, const char *name, int32_t pi, const char *text, uint32_t sweep)
 {
     static const uint8_t MEL[] = {48, 50, 52, 55, 57, 55, 52, 50, 48, 52, 55, 60, 57, 55, 52, 48};
@@ -389,7 +401,7 @@ static void demo(const char *dir, const char *name, int32_t pi, const char *text
     snprintf(path, sizeof path, "%s/%s.wav", dir, name);
     if (!(wav = fopen(path, "wb")))
         return;
-    wav_hdr(wav, 0);
+    mono_hdr(wav, 0);
     frames = 0;
     tsetup(pi);
     trk[0].p[P_ATK] = ENG_FORMANT.presets[pi].env[0];
@@ -398,19 +410,20 @@ static void demo(const char *dir, const char *name, int32_t pi, const char *text
         lyr_set(0, text);
         trk[0].p[P_VLYR] = 0;
     }
-    if (sweep) {                                         /* the vowel space: FRONT and OPEN around, ROUND last */
+    if (sweep) {                                         /* AH -> EE -> OO -> AH, 1.2 s each way, held 0.3 s at each */
+        static const int16_t K[4][3] = {{10, 115, 0}, {127, 0, 0}, {38, 0, 127}, {10, 115, 0}};
         trk_note_on(&trk[0], 45, 100);
-        for (k = 0; k < 6u * FS / CTL; k++) {
-            double u = (double)k / (6.0 * FS / CTL);
-            trk[0].p[P_E0] = (int16_t)(63.5 + 63.5 * cos(2 * M_PI * u));
-            trk[0].p[P_E1] = (int16_t)(63.5 + 63.5 * sin(2 * M_PI * u));
-            trk[0].p[P_E2] = (int16_t)(u > 0.75 ? (u - 0.75) * 4 * 127 : 0);
+        for (k = 0; k < 4u * FS / CTL; k++) {
+            uint32_t seg = k / (FS / CTL), q = k % (FS / CTL);
+            double u = seg < 3u ? (q < FS / CTL / 4u ? 0.0 : (double)(q - FS / CTL / 4u) / (FS / CTL * 3u / 4u)) : 0.0;
+            for (j = 0; j < 3u; j++)
+                trk[0].p[P_E0 + j] = (int16_t)(K[seg < 3u ? seg : 3u][j] + (seg < 3u ? (K[seg + 1u][j] - K[seg][j]) * u : 0));
             trender(0, CTL);
         }
         trk_note_off(&trk[0], 45);
-        trender(0, FS);
+        trender(0, FS / 2);
     } else {
-        uint32_t n = text ? 16u : 8u, len = FS * 60u / 100u / 2u;
+        uint32_t n = text ? 10u : 8u, len = FS * 60u / 100u / 2u;
         for (k = 0; k < n; k++) {
             uint32_t note = text ? MEL[k] : MEL[(k * 3u) % 16u] - (ENG_FORMANT.presets[pi].mono & 1u ? 12u : 0u);
             trk_note_on(&trk[0], note, 100);
@@ -421,10 +434,10 @@ static void demo(const char *dir, const char *name, int32_t pi, const char *text
             trk_note_off(&trk[0], note + 7u);
             for (j = 0; j < len / 4u; j += CTL) trender(0, CTL);
         }
-        trender(0, FS);
+        trender(0, FS / 2);
     }
     fseek(wav, 0, SEEK_SET);
-    wav_hdr(wav, frames);
+    mono_hdr(wav, frames);
     fclose(wav);
     wav = 0;
 }

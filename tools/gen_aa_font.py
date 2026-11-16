@@ -254,12 +254,22 @@ def emit(face, tracking, gamma, kern_min):
     lines.append(gtext)
     if keys:
         lines.append(ar.c_array(f"AF_{name}_KI", "uint16_t", ki, 12))
-        lines.append(ar.c_array(f"AF_{name}_KP", "uint8_t", kp, 24))
+        if name == "M":   # (V10.7.44) the medium face's pairs packed (gz.h: one LZB block, unpacked as a text is laid out;
+            # its kp 0, gfx.c kern): 908 B in ~650
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            import lzb
+            z = lzb.pack(bytes(kp))
+            assert lzb.unpack(z, 0, len(kp))[0] == bytes(kp)
+            lines.append(f'#include "gz.h"\n#define AF_{name}_KP_NB {len(kp)}u')
+            lines.append(ar.c_array(f"AF_{name}_KP_Z", "uint8_t", list(z), 24))
+            lines.append(f'_Static_assert(AF_{name}_KP_NB <= GZ_MAX, "gz.h: AF_{name}_KP fits the buffer");')
+        else:
+            lines.append(ar.c_array(f"AF_{name}_KP", "uint8_t", kp, 24))
     ex = ", ".join(str(CODE.get(c, c)) for c in extras) or "0"
     lines.append(f"static const uint8_t AF_{name}_EX[{max(1, len(extras))}] = {{{ex}}};")
     lines.append(f"static const aafont_t AF_{name} = {{{r['h']}, {r['asc']}, {first}, {last}, {len(extras)}, {nki}, "
                  f"AF_{name}_GH, AF_{name}_GP, AF_{name}_DATA, {'AF_%s_KI' % name if keys else '0'}, "
-                 f"{'AF_%s_KP' % name if keys else '0'}, AF_{name}_EX, {psh}, {'AF_%s_HC' % name if hc else '0'}}};")
+                 f"{'AF_%s_KP' % name if keys and name != 'M' else '0'}, AF_{name}_EX, {psh}, {'AF_%s_HC' % name if hc else '0'}}};")
     if "H" in chars or "0" in chars:                  # the capitals' band (gfx.c CAP_IN: centring text by it; V, the
         cap = table[chars.index("H" if "H" in chars else "0") * phases]   # figures' face: a figure's)
         lines.append(f"#define AF_{name}_CAP_Y {cap[3]}   /* the ink of H: rows {cap[3]} .. {cap[3] + cap[5] - 1} of the line */")
