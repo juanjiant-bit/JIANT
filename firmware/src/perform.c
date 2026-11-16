@@ -212,7 +212,7 @@ static void perf_press(uint32_t e, int down)
 static void perf_start(void) { pf.ph = 0; pf.sync = 1; pfx_lph = 0; }   /* seq_start: a 1/16 starts with the transport */
 
 /* the SLICER's recordings dropped (when the buffer is taken and given back) */
-static void perf_drop_slicer(void) { slicer_drop(); }
+#define perf_drop_slicer slicer_drop                    /* (V10.7.43: was a second copy of it) */
 
 /* the buffer effect to play: the last pressed of those running */
 static uint32_t perf_pick(uint32_t a)

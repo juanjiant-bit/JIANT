@@ -569,7 +569,7 @@ static __attribute__((noinline)) void bal_block(uint32_t n)
         l0 += ((xl - (l0 >> 4)) >> 2) * a0 >> 9; l1 += ((xl - (l1 >> 4)) >> 2) * a1 >> 9; l2 += ((xl - (l2 >> 4)) >> 2) * a2 >> 9;
         r0 += ((xr - (r0 >> 4)) >> 2) * a0 >> 9; r1 += ((xr - (r1 >> 4)) >> 2) * a1 >> 9; r2 += ((xr - (r2 >> 4)) >> 2) * a2 >> 9;
         if (!(i & 7u)) {                                /* (both sides' bands summed: the mid's, twice) */
-            int32_t b0 = (l0 + r0) >> 4, b1 = ((l1 + r1) >> 4) - b0, b2 = (l2 + r2 - l1 - r1) >> 4, b3 = xl + xr - ((l2 + r2) >> 4);
+            int32_t b0 = l0 + r0, b1 = l1 + r1 - b0, b2 = l2 + r2 - l1 - r1, b3 = ((xl + xr) << 4) - l2 - r2;   /* (x 16) */
             s0 += b0 < 0 ? -b0 : b0; s1 += b1 < 0 ? -b1 : b1; s2 += b2 < 0 ? -b2 : b2; s3 += b3 < 0 ? -b3 : b3;
         }
         mix_l[i] = xl + (((xl >> 1) * h3 + (l0 >> 5) * h0 + (l1 >> 5) * h1 + (l2 >> 5) * h2) >> 11);   /* (the gains'
@@ -579,7 +579,8 @@ static __attribute__((noinline)) void bal_block(uint32_t n)
         wet[i] = 0;
     }
     bal.lp[0] = l0; bal.lp[1] = l1; bal.lp[2] = l2; bal.lp[3] = r0; bal.lp[4] = r1; bal.lp[5] = r2;
-    bal.s[0] += s0 << 1; bal.s[1] += s1 << 1; bal.s[2] += s2 << 1; bal.s[3] += s3 << 1;   /* (x 2: as 32 a block) */
+    bal.s[0] += s0 >> 3; bal.s[1] += s1 >> 3; bal.s[2] += s2 >> 3; bal.s[3] += s3 >> 3;   /* (x 2: as 32 a block; V10.7.43:
+                                                         * the bands summed x 16) */
 }
 /* (0.9.1) the master DJ FILTER (G_DJF, GLO > MIXER KNOB 4): one bipolar knob on the whole mix, just before CLIP and the
  * leveler. 0: out of the chain, not run at all (the mix bit for bit as without it). Below 0 a low-pass sweeping down
@@ -779,8 +780,10 @@ static __attribute__((noinline)) int lev_block(uint32_t n, int32_t *out)
     if (!out || any | dc_l | dc_r | fx_lowcut || lim_env > LIM_T)   /* (a DC blocker at 0 holds there whatever its
                                                          * remainder: 0 .. 4095 into >> 12) */
         return 0;
-    memset(out, 0, 2u * n * sizeof out[0]);
-    memset(out_fr, 0, 2u * n);
+    for (i = 0; i < 2u * n; i++) {                     /* (V10.7.43: the bits below Q15 too, out_fr) */
+        out[i] = 0;
+        out_fr[i] = 0;
+    }
     return 1;
 }
 /* DUCK (G_DUCK 0..100, G_DREL its release 40 .. 600 ms): a kick (eng_drum.c duck_hit) takes the parts that are not
@@ -833,7 +836,8 @@ static __attribute__((noinline)) void usb_fixed_dac(int32_t *out, uint32_t n)   
     int32_t m = (int32_t)song.master_q12;
     for (i = 0; i < 2u * n; i++)
         out[i] = (out[i] * m) >> 12;                /* (|out| <= 32767 after the soft clip: fits) */
-    memset(out_fr, 0, 2u * n);                           /* (V10.7.43: the bits below Q15 not scaled here: none) */
+                                                    /* (V10.7.43: no bits below Q15 here, out_fr all 0: the
+                                                     * master's in at MASTER_FULL, mix_block) */
 }
 static volatile uint8_t fx_lowcut;     /* settings: 1 LOWCUT 12 dB/oct ~110 Hz, 2 BASS+ (the small speaker):
                                         * 12 dB/oct ~220 Hz plus the harmonics of the bass (spk_bass) */
@@ -2836,12 +2840,12 @@ static __attribute__((noinline)) void perf_master(int32_t *out, uint32_t n)
         mix_r[i] = (((mix_r[i] + wet[i]) >> 2) * mg) >> 10;
     }
     perf_block(mix_l, mix_r, n);
-    memset(out_fr, 0, 2u * n);                               /* (V10.7.43: the FX layer's effects on Q15, as before) */
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < n; i++) {                           /* (V10.7.43: the FX layer's effects on Q15, as before) */
         int32_t l = mix_l[i], r = mix_r[i];
         master_out(&l, &r);
         out[2u * i] = l;
         out[2u * i + 1u] = r;
+        out_fr[2u * i] = out_fr[2u * i + 1u] = 0;
     }
 }
 
