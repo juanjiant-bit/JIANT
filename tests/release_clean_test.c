@@ -66,8 +66,8 @@ static void render(const snd_t *s, int proj)
         mix_block(o, CTL);
         for (i = 0; i < CTL; i++) {
 #ifdef MASTER_FRB
-            dac[k + i] = o[2 * i] * 128 + (out_fr[2 * i] << (7 - MASTER_FRB));
-            dacr[k + i] = o[2 * i + 1] * 128 + (out_fr[2 * i + 1] << (7 - MASTER_FRB));
+            dac[k + i] = o[2 * i] * 128 + out_fr[2 * i];
+            dacr[k + i] = o[2 * i + 1] * 128 + out_fr[2 * i + 1];
 #else
             dac[k + i] = o[2 * i] * 128;                /* (V10.7.42 and before: Q15 << 7) */
             dacr[k + i] = o[2 * i + 1] * 128;

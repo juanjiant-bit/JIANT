@@ -728,7 +728,8 @@ static int32_t dc_l, dc_r;                              /* (master_out's DC bloc
  * tail under the leveler's gate: its gain eased back to 1, the limiter off, the soft clip's slope 1, the DC blocker
  * settled); on a loud sound, which they leave within a step, they are under it. USB, the scope and the click: Q15 */
 #define MASTER_FRB 3
-static uint8_t out_fr[2u * CTL] __attribute__((section(".pool")));   /* (the bits below Q15, L R as out: mix_block; the
+static uint8_t out_fr[2u * CTL] __attribute__((section(".pool"), aligned(4)));   /* (the bits below Q15 where the DAC
+                                                         * takes them, Q22, L R as out: mix_block; the
                                                          * pool: zeroed at boot, out of .data + .bss) */
 static inline int32_t master_in(int32_t m, int32_t mg)  /* m x mg / 4096, Q15 x 2^MASTER_FRB: (m >> 2) x mg's range (|m| <
                                                          * 2^21); MASTER on 1024 steps (its pot's own k^2 / 256 steps
@@ -2845,7 +2846,7 @@ static __attribute__((noinline)) void perf_master(int32_t *out, uint32_t n)
         master_out(&l, &r);
         out[2u * i] = l;
         out[2u * i + 1u] = r;
-        out_fr[2u * i] = out_fr[2u * i + 1u] = 0;
+        *(uint16_t *)(void *)(out_fr + 2u * i) = 0;     /* (both: one store) */
     }
 }
 
@@ -3235,8 +3236,8 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
     }
     for (i = 0; i < n; i++) {
         int32_t l = master_in(mix_l[i] + wet[i], mg), r = master_in(mix_r[i] + wet[i], mg);
-        out_fr[2u * i] = (uint8_t)(l & ((1 << MASTER_FRB) - 1));
-        out_fr[2u * i + 1u] = (uint8_t)(r & ((1 << MASTER_FRB) - 1));
+        out_fr[2u * i] = (uint8_t)((l & ((1 << MASTER_FRB) - 1)) << (7 - MASTER_FRB));   /* (audio.c OUT_SHIFT 7) */
+        out_fr[2u * i + 1u] = (uint8_t)((r & ((1 << MASTER_FRB) - 1)) << (7 - MASTER_FRB));
         l >>= MASTER_FRB;
         r >>= MASTER_FRB;
         master_out(&l, &r);

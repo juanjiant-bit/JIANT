@@ -22,7 +22,7 @@ drum_mix 125
 drum_bus 102
 drum_glue 231
 slicer_bus 798
-fm1_alnk0_irq 76
+fm1_alnk0_irq 89
 fm1_timer5_irq 29135
 ep4_tx 0
 ep4_fill 88

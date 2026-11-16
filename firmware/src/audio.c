@@ -54,7 +54,7 @@ static void audio_block(int32_t *out, uint32_t n)       /* mix (fx.c), then Q15 
         scope_buf[scope_w++ & (SCOPE_N - 1u)] = (int16_t)out[2u * i];
     click_render(out, n);                               /* the metronome (click.c): the DAC only, not USB */
     for (i = 0; i < 2u * n; i++)                        /* (V10.7.43) and the master's bits below Q15 (fx.c out_fr) */
-        out[i] = out[i] * (1 << OUT_SHIFT) + (out_fr[i] << (OUT_SHIFT - MASTER_FRB));
+        out[i] = out[i] * (1 << OUT_SHIFT) + out_fr[i];   /* (there already: Q15 << OUT_SHIFT's) */
 }
 
 /* Overload, the last resort: a half that came late (the DMA moved on while it rendered: a click) fades one voice over
