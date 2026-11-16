@@ -38,15 +38,6 @@ versión pública) o de antes: [Qué hay de nuevo en esta versión](#qué-hay-de
 
 Todo lo que cambió desde la V10.6c, la última versión pública, en una lista; cada punto lleva a su lugar en el manual.
 
-**PRESETS se escucha al girar, VOICE orgánica otra vez (V10.7.43)**
-- **La lista de PRESETS carga cada sonido al llegar a él** (como antes de la V10.7.33): tocá o mantené una nota y girá;
-  **OCT+** deja el sonido, **OCT−** vuelve al de antes de la lista, cualquier otra cosa deja lo que escuchás. Ver
-  "Fácil de entender" más abajo y la fila de PRESETS en [El panel](#1-el-panel).
-- **VOICE vuelve a cantar como la V10.7.23**, con sus vocales todavía en el paso: vibrato en cada nota mantenida, el
-  jitter de antes, transiciones rápidas de las consonantes, un nivel parejo, las consonantes de una tecla se oyen.
-  **EDIT › TONE › ORGANIC** (KNOB 4 de VOICE) baja la vida del cantante hasta una máquina. Ver
-  [VOICE: palabras](#voice-palabras-y-letras-085).
-
 **LIFE: las voces vivas, las pistas moviéndose entre sí (V10.7.34)**
 - **HOME › LIFE**, la nueva primera página de HOME: cada voz respira por su cuenta (unos cents de afinación, su filtro,
   su nivel), una nota mantenida tiene un arco (arranca con energía, florece y después se cansa) y las pistas se mueven
@@ -84,13 +75,9 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
 **Fácil de entender (V10.7.33)**
 - **PRESETS siempre carga sonidos, con una lista.** El primer giro abre la lista sobre la página (no carga nada);
   PRESETS la recorre, **KNOB 1** la pista, **KNOB 2** el motor siguiente, **KNOB 3** el origen (**FACTORY · USER ·
-  FAVORITE**), **KNOB 4** el tipo (**ALL · BASS · LEAD · PAD …**). **V10.7.43: cada sonido al que llegás se carga en
-  el acto**, así lo escuchás mientras girás (mantené una nota o dejá sonar el secuenciador: sigue en cada sonido; una
-  pista DRUM-X escucha cada kit). El sonido cargado, el que suena, se ve encendido: su nombre en el color del tema
-  (violeta) con una barra naranja. **No hay que confirmar nada**: OCT+ solo cierra la lista; **OCT−** devuelve el sonido (de cada pista que
-  cargaste desde la lista) a como estaba al abrirla; salir de cualquier otra forma (unos segundos sin tocar, un botón)
-  deja lo que escuchás. UNDO también vuelve al sonido de antes de la lista. **REC** lo marca favorito. Un punto (●) en
-  el sonido de la pista: editado y sin guardar. SAVE › PRESETS es la misma lista.
+  FAVORITE**), **KNOB 4** el tipo (**ALL · BASS · LEAD · PAD …**). **OCT+** carga el sonido elegido; **OCT−**, o unos
+  segundos sin tocar nada, la cierra sin cambios. **REC** lo marca favorito. Un punto (●) en el sonido de la pista:
+  editado y sin guardar. SAVE › PRESETS es la misma lista.
 - **SEQ mantenido + PRESETS** mueve el paso en cualquier página de SEQ, con su número grande en pantalla (las 16 teclas
   siguen eligiendo pasos).
 - **El tempo**: grande en HOME › MACROS; **HOME mantenido + PRESETS** lo cambia (GLO + SELECT también). La KNOB 4 de
@@ -277,7 +264,7 @@ Los nombres de abajo son los que usa el firmware (la pantalla HARDWARE CALIBRATI
 | --- | --- |
 | **SELECT** (encoder) | Solo (0.9.2): **recorre las páginas de la sección**, una página por paso, en una sola cadena, frenando en la primera y en la última (sin niveles, sin zoom; ver [Cómo funciona la navegación](#cómo-funciona-la-navegación-seis-reglas-092)). En el MENU: sus filas, las cuatro pestañas en una cadena. Con un botón mantenido: **HOME** + SELECT **GEN**, **EDIT / SEQ / LFO / FX** + SELECT los **dados** de esa parte, **GLO** + SELECT el **tempo**, **ENV / SCL / ARP / SAVE** + SELECT recorren la cadena de esa sección desde donde estés. |
 | **ALGORITHM** (encoder) | Elige la pista desde cualquier página: T1–T6 (T1–T4 con TRACKS 4). La pista es siempre de ALGORITHM (0.9.2: PRESETS ya no la elige en ENV, LFO, CHORD, ARP). En el MENU: la pestaña siguiente / anterior. Con una capa mantenida: su vista, MAP ↔ KNOBS ↔ STATE. |
-| **PRESETS** (encoder) | **Siempre sonidos, con una lista** (V10.7.33): el primer giro abre la lista sobre cualquier página (no carga nada), PRESETS la recorre y (V10.7.43) carga cada sonido en el acto, OCT+ lo deja, OCT− devuelve el sonido de antes de la lista, unos segundos sin tocar la cierran dejando el sonido; KNOB 1 la pista, KNOB 2 el motor siguiente, KNOB 3 FACTORY / USER / FAVORITE, KNOB 4 el tipo; REC un favorito. En el MENU no hace nada; con un botón mantenido: **EDIT** el primer sonido del motor siguiente / anterior (V10.7), **SEQ** el paso (su número grande), **HOME** el tempo. Nunca cambia de página, de pista, de módulo ni de fila. |
+| **PRESETS** (encoder) | **Siempre sonidos, con una lista** (V10.7.33): el primer giro abre la lista sobre cualquier página (no carga nada), PRESETS la recorre, OCT+ carga el sonido elegido, OCT− o unos segundos sin tocar la cierran; KNOB 1 la pista, KNOB 2 el motor siguiente, KNOB 3 FACTORY / USER / FAVORITE, KNOB 4 el tipo; REC un favorito. En el MENU no hace nada; con un botón mantenido: **EDIT** el primer sonido del motor siguiente / anterior (V10.7), **SEQ** el paso (su número grande), **HOME** el tempo. Nunca cambia de página, de pista, de módulo ni de fila. |
 | **KNOB 1–4** | Las cuatro tarjetas (columnas) de la pantalla. Una página que elige algo lo elige con **KNOB 1** (el paso, el compás, el slot, la etapa, el operador, el sonido del kit, la fila). Con una capa mantenida, las perillas propias de la capa. Girar rápido recorre todo el rango, despacio ajusta fino (MENU › CONTROL › KNOB ACCEL lo desactiva). En el MENU: KNOB n el ajuste de la tarjeta n. |
 | **MASTER** | El volumen de salida. |
 
@@ -476,8 +463,8 @@ páginas, sus perillas, sus dibujos y todas las funciones son las mismas, solo c
 2. **El botón de la sección: entrar o saltar.** Desde otra sección te devuelve a la última página donde estabas ahí. Si
    ya estás adentro, salta a la **primera página del grupo siguiente** (y da la vuelta). En FX › DELAY 2, FX va a REVERB;
    en EDIT › FILTER, EDIT va a AUTO KNOBS.
-3. **PRESETS carga sonidos.** Siempre, en todas las secciones, con su lista (V10.7.33: el primer giro la abre;
-   V10.7.43: cada giro carga el sonido en el acto, OCT+ lo deja, OCT− vuelve al de antes). Nunca cambia de página, de pista ni de módulo (en el MENU no hace nada). El paso de SEQ: SEQ
+3. **PRESETS carga sonidos.** Siempre, en todas las secciones, con su lista (V10.7.33: el primer giro la abre, OCT+
+   carga, OCT− la cierra). Nunca cambia de página, de pista ni de módulo (en el MENU no hace nada). El paso de SEQ: SEQ
    mantenido + PRESETS; el tempo: HOME mantenido + PRESETS.
 4. **KNOB 1 elige.** Si una página elige algo (un paso, un compás, un slot, una etapa, un operador, el sonido del kit,
    una fila), KNOB 1 es la que lo elige. La pista, siempre **ALGORITHM**. SEQ › STEP: KNOB 1 recorre los 64 pasos,
@@ -515,7 +502,7 @@ la misma de la 0.9.1, con sus perillas y su dibujo (los que dibujaban las lentes
 | Sección | Grupos (el botón) · páginas (SELECT) | Páginas |
 | --- | --- | --- |
 | **HOME** | (V10.7.24; V10.7.32 las páginas del tema; V10.7.34 LIFE, TRACKS; V10.7.36 LIVE MIX segunda) **LIFE**: LIFE — **MACROS**: MACROS — **LIVE MIX**: LIVE MIX — **TRACKS**: TRACKS — **TIMELINE**: TIMELINE — **ARRANGE**: ARRANGE — **PARTS**: PARTS — **GEN**: GEN 1 · GEN 2 · GEN 3 | 10 |
-| **EDIT** (un sinte) | (V10.7.35) **SOUND**: EDIT 1 · EDIT 2 · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (los que tengan el motor y la pista) — **TONE**: FILTER · EROSION · TONE (KEY TRK · CRUSH · LIFE; VOICE: · ORGANIC, V10.7.43) — **VOICES**: VOICES · VOICES 2 (EXT: VOICES 3) — **AUTO KNOBS**: AUTO KNOBS | hasta 11 |
+| **EDIT** (un sinte) | (V10.7.35) **SOUND**: EDIT 1 · EDIT 2 · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2 (los que tengan el motor y la pista) — **TONE**: FILTER · EROSION · TONE (KEY TRK · CRUSH · LIFE) — **VOICES**: VOICES · VOICES 2 (EXT: VOICES 3) — **AUTO KNOBS**: AUTO KNOBS | hasta 11 |
 | **EDIT** (FM6) | (V10.7.35) **SOUND**: EDIT 1 (ALGO) · EDIT 2 (PATCH) — **OPERATOR**: OPERATOR · OP ENV · OPERATOR 2 — **TONE**: FILTER · EROSION · TONE — **VOICES**: VOICES · VOICES 2 | 10 |
 | **EDIT** (DRUM) | (V10.7.37) **KIT**: KIT · KIT 2 · KIT 3 — **SOUND**: SOUND · SOUND 2 · SOUND 3 (el sonido de la última tecla) — **LEVELS**: LEVELS · LEVELS 2 — **MOD**: KIT LFO · EROSION — **TONE**: FILTER · OUT | 12 |
 | **SEQ** | (V10.6) **STEP**: STEP — **PATTERN**: LENGTH · RHYTHM · TRACK — **EUCLID**: EUCLID · MODES · MUTATE — **PLAYHEADS**: PLAYHEADS — **STRETCH**: STRETCH — **STEP COND**: STEP COND · COND 2 — **LOCKS**: LOCKS · LYRICS (VOICE) — **TRACK GEN**: TRACK GEN | 14 |
@@ -679,7 +666,6 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | OPERATOR 2 | OP | MODE | DETUNE | KEY VEL (la velocidad del operador; era VEL) | FM6 |
 | FILTER | TYPE | CUT | RES | DRIVE (ANALOG) / DIST (los demás) | todos los motores |
 | EROSION (V10.7.37; era FILTER 2) | NOISE | RATE | MODE (SOFT STEP METAL BREAK DUST) | DEST (FILT .. PITCH; no en VOICE) | todos menos EXT (DRUM: el suyo, abajo) |
-| TONE (V10.7.35) | KEY TRK | CRUSH | LIFE (el de la pista) | VOICE: **ORGANIC** (V10.7.43: 0..100 %, 100 de fábrica: la vida de un cantante; ver [VOICE: palabras](#voice-palabras-y-letras-085)) | todos menos EXT (DRUM: OUT) |
 | KIT 3 | BP | FEEDBK | HANDS | GLUE | DRUM (todo el kit) |
 | KIT LFO | RATE | DEPTH | SHAPE | RAND | DRUM (todo el kit) |
 | EROSION (V10.7.37) | NOISE | RATE | MODE (SOFT STEP METAL BREAK DUST) | DEST (FILT F75 MIX P75 PITCH) | DRUM (el FILTER del kit y la altura de sus golpes) |
@@ -710,7 +696,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 
 | Página | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- |
-| PRESETS (V10.7.33: la lista) | TRACK | ENG (KNOB 2: el primer sonido del motor siguiente) | SOURCE (FACTORY / USER / FAVORITE) | TYPE (ALL BASS LEAD PAD KEYS PLUCK BELL VOX DRUM FX) · PRESETS la recorre y carga (V10.7.43), OCT+ lo deja, OCT− vuelve, REC un favorito |
+| PRESETS (V10.7.33: la lista) | TRACK | ENG (KNOB 2: el primer sonido del motor siguiente) | SOURCE (FACTORY / USER / FAVORITE) | TYPE (ALL BASS LEAD PAD KEYS PLUCK BELL VOX DRUM FX) · PRESETS la recorre, OCT+ carga, OCT− cierra, REC un favorito |
 | USER | SLOT (U01–U32) | LOAD (acción) | ERASE (acción) | SAVE (acción) |
 | PROJECTS / PART SLOTS (la página PROJECT) | PROJECT (1–6: lo elige, no lo abre; en PART SLOTS: PART A–D) | LOAD (acción: abre el proyecto elegido; en PART SLOTS, la parte) | ERASE (acción) | SAVE (acción: después NAME, KNOB 3 SONG / LOOP) |
 | TOOLS (V10.24; V10.7.22 la primera página de SAVE) | TARGET (PROJECT, TRACK, SOUND, SONG, SYSTEM; era SCOPE) | ACTION (CLEAR PROJECT · CLEAR SEQ · INIT SOUND · DELETE ROW, CLEAR SONG · CPU TEST) | — | DO: **OCT+ mantenido un segundo** (CLEAR PROJECT: OCT+ pregunta, OCT+ otra vez lo hace) |
@@ -1195,20 +1181,6 @@ la letra de nuevo para recuperar el inglés del diccionario.
 palabra en grande, los fonemas de su sílaba (el que suena, iluminado), tu texto desde ahí, y un diagrama de vocales
 cuyo punto se mueve con los formantes (F1 hacia abajo, F2 de lado: dónde está la lengua), con los niveles de voz y
 ruido.
-
-**Orgánica, y a tiempo (V10.7.43).** Desde que la V10.7.24 puso la vocal en el paso, VOICE se había vuelto más quieta y
-lenta (un usuario: "sonaba orgánica, ahora suena robótica"). La V10.7.43 recupera lo que tenía la V10.7.23 y mantiene el
-tiempo: la vocal sigue cayendo en el paso (el secuenciador adelanta sus consonantes) y en la tecla. Vuelven: un
-**vibrato en cada nota mantenida más de ~0,3 s** (±20 cents, ~5,5 Hz, cada nota con su velocidad), el **jitter y shimmer**
-de la glotis en su cantidad de antes, **transiciones rápidas de consonante a vocal** (~20–40 ms, como al hablar; se
-habían vuelto de 100–150 ms, el deslizamiento de un talk box), un **nivel parejo** (la caída en una nota y en una frase
-es de −1 dB como mucho, era −4 y −3,5: más baja y apagada) y **las consonantes de una tecla se oyen** (apretadas en ~30
-ms, eran ~10: la vocal sigue a menos de ~30 ms de la tecla). Quedan pero más chicos: el vaivén lento de la afinación (un
-octavo, ±2 cents), la entrada desde abajo en la primera nota de una frase (2–25 cents) y la llegada en legato (se pasa un
-4 %, eran ~30 cents). **EDIT › TONE › ORGANIC** (KNOB 4, solo VOICE; 100 % de fábrica, con lo que abre todo proyecto y
-preset anterior): hacia 0 % la vida del cantante se apaga (sin vibrato, jitter, vaivén, entrada ni voz rota, la altura
-tal cual se toca) y las consonantes de una tecla se aprietan a ~10 ms, el tiempo más justo: una máquina. Con LANG OFF
-(las vocales) no hace nada.
 
 **Qué esperar.** Es síntesis por formantes, como un chip de voz antiguo que canta: las vocales, *s sh f*, *t k p*,
 *ch*, *m n l* y las semivocales se entienden en contexto; *b d g*, *v z* y la *r* inglesa son aproximadas, y se

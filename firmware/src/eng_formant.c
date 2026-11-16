@@ -160,21 +160,19 @@ static __attribute__((noinline)) int32_t fmt_land(int32_t u, int32_t c)
     return (((a * a) >> 12) * (4096 - ((c * u) >> 4))) >> 12;
 }
 /* (voice3) the pitch of a singer, after a male voice measured: the note's increment (*p16 its pitch) moved by
- *   a landing from the last note (legato: ~60 ms 10 .. 90 %, 4 % past it (V10.7.43; was ~30 ct); after an unvoiced consonant in ~100 ms,
+ *   a landing from the last note (legato: ~90 ms 10 .. 90 %, ~30 ct past it; after an unvoiced consonant in ~100 ms,
  *     under it, on the note by the vowel); a glide with GLIDE set: as sung (fmt_sung), the vibrato waits;
- *   a scoop from rest (from below in ~50 ms, or from above in ~25 ms, a little past it; V10.7.43: 2 .. 25 ct, was up
- *     to 50), on the vowel's time;
- *   a wander (sing_block wn, an eighth of it since V10.7.43: ~1 ct RMS, 0.3 .. 2.5 Hz, and the tuning, +-2 ct, slower:
- *     each note a little off, drifting), never a step at a note;
- *   the vibrato (sing_x ve: V10.7.43 on every note held ~0.29 s, as V10.7.23's), +-18 .. 22 ct, its width each cycle
- *     its own (+-30 %). ORGANIC (P_VORG) scales all of it with hum.
+ *   a scoop from rest (7 notes in 10 over 20 ct: from below up to -75 ct in ~50 ms, or from above in ~25 ms, a little
+ *     past it), on the vowel's time;
+ *   a wander (sing_block wn: ~9 ct RMS, 0.3 .. 2.5 Hz; and the tuning, +-16 ct, slower: each note a little off,
+ *     drifting), never a step at a note;
+ *   the vibrato (sing_x ve: on long notes, a third of them faint), +-19 ct, its width each cycle its own (+-30 %).
  * BUZZ at its top (hum 0) a machine: the pitch as played. The scoop's draws the note's and the voice's (sy_hash) */
 static __attribute__((noinline)) uint32_t fmt_life(const track_t *t, const voice_t *v, const vmod_t *m, sing_x_t *sx,
                                                    int32_t hum, int32_t *pp16, uint32_t vi)
 {
     uint32_t inc;
-    int32_t age = sx->vb >> 1, p16 = m->pitch16, fine = m->fine, po = sx->wn >> 3, d;   /* (the wander: sing_block's;
-                                                         * V10.7.43 an eighth, +-6 ct at most: voice3's +-47 wobbled) */
+    int32_t age = sx->vb >> 1, p16 = m->pitch16, fine = m->fine, po = sx->wn, d;   /* (the wander: sing_block's) */
     if (v->pitch_cur != v->pitch16 && t->p[P_GLIDE]) {  /* GLIDE: as sung (an S-curve), no vibrato */
         inc = fmt_sung(v, m, pp16);
         sx->vb = FMT_SCOOP;
@@ -182,9 +180,8 @@ static __attribute__((noinline)) uint32_t fmt_life(const track_t *t, const voice
         p16 += v->pitch16 - v->pitch_cur;                /* (the words' own landing, not voice.c's glide) */
         d = v->gfrom - v->pitch16;
         if (d && d > -193 && d < 193 && !(sx->fl & SXF_RST)) {
-            d *= fmt_land(age * (sx->fl & SXF_CJ ? 59 : 24), sx->fl & SXF_CJ ? 16 : d > 32 || d < -32 ? 28 : 32);
-                                                         /* (V10.7.43: past it 4 % at most, ~8 ct on a tone, in ~90 ms;
-                                                          * voice3's ~30 ct over ~140 ms swooped, out of tune) */
+            d *= fmt_land(age * (sx->fl & SXF_CJ ? 59 : 16), sx->fl & SXF_CJ ? 16 : d > 32 || d < -32 ? 40 : 60);
+                                                         /* (past it ~30 ct, a wide leap no more than ~35) */
             p16 += d >> 12;                              /* (1/16 st Q12: its fraction in the fine tune, as fmt_sung) */
             fine += ((d >> 4) & 255) * 237 >> 12;
         }
@@ -198,9 +195,9 @@ static __attribute__((noinline)) uint32_t fmt_life(const track_t *t, const voice
     if (!hum)
         return inc;
     /* the rest in 1/4096 of the increment (~0.42 ct) */
-    if ((sx->fl & SXF_RST) && sx->va < 216u) {          /* the scoop: below or above, (V10.7.43) 2 .. 25 ct, the time each note's */
+    if ((sx->fl & SXF_RST) && sx->va < 216u) {          /* the scoop: below or above, 5 .. 50 ct, the time each note's */
         uint32_t h = sy_hash(vi + sx->ps * 64u, sx->ps);   /* (the phrase's seed, the voice) */
-        int32_t dep = (int32_t)(5u + (((h >> 16) * 46u) >> 16)) * 19 >> 4, u = sx->va * (20 + (int32_t)((h >> 8) & 7u));
+        int32_t dep = (int32_t)(5u + (((h >> 16) * 46u) >> 16)) * 19 >> 3, u = sx->va * (20 + (int32_t)((h >> 8) & 7u));
         if (h & 1u) {                                    /* (from above: twice as quick) */
             u <<= 1;
             dep = -dep;
@@ -280,14 +277,13 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
     /* (0.9.8) the singer: a vibrato on a held note (~5.5 Hz, +-~20 ct, after ~0.3 s, in over ~0.4 s; none while the
      * pitch glides, then it waits again), each voice of a choir at its own phase; each glottal period its own length
      * (jitter, ~0.3 %) and level (shimmer, ~0.4 dB). BUZZ at its top (the last ~12 %) steadies them away: a machine */
-    hum = clamp((127 - p[P_E4]) * 4, 0, 64) * (clamp(p[P_VORG], 0, 127) + 1) >> 7;   /* (V10.7.43) x ORGANIC */
+    hum = clamp((127 - p[P_E4]) * 4, 0, 64);
     inc = fmt_life(t, v, m, sx, hum, &p16, (uint32_t)(v - t->v) & 3u);   /* (voice3: the scoop, the landing, the vibrato, */
                                                         /* the wander) */
     /* (voice3) about half the phrase ends creak (sing_block SXF_CRK; voice2's: all), let go, under ~-6 dB: every other
      * glottal period much softer and longer (the pitch heard an octave down), rough, airy; none at BUZZ's top */
     fry = sx->fl & SXF_CRK ? (clamp(16000 - v->env_out, 0, 12000) * hum) >> 14 : 0;
-    jd = ((hum * 3) >> 4) * (16 + fry) >> 4;            /* +-12 / 4096 at the most (held; V10.7.43: as V10.7.23's again,
-                                                         * voice3's half of it a steadier, more synthetic source) */
+    jd = ((hum * 3) >> 5) * (16 + fry) >> 4;            /* +-6 / 4096 at the most (held) */
     jr = v->vjit;                                        /* (the period under way: as it began) */
     if (jr == FMT_FRESH) {                               /* (V10.40: a retrigger near silence, formant_note_on) */
         jr = 0;
@@ -395,8 +391,7 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
             incj = inc + (uint32_t)(incq * (jr - (f << 2)));
             shim = 32768 + ((jr - (f * 7 >> 1)) << 7);
         }
-        out[i] += voice_amp(s, m, i) * 21 >> 3;   /* (V10.6y: x 2.875, formant_render's; V10.7.43 x 2.625: the level kept up, a
-                                                 * C5 at full velocity under full scale) */
+        out[i] += voice_amp(s, m, i) * 23 >> 3;   /* (V10.6y: x 2.875, formant_render's) */
     }
     v->ph[0] = ph;
     v->vjit = (int8_t)jr;

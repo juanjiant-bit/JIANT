@@ -79,8 +79,7 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 75 | TIME | 0..127 | 127 | (MATH) |
 | 76 | CHORD | 0..11 | 0 | OFF TRIAD 7TH ADD9 SUS2 SUS4 MAJ MIN 7 MAJ7 MIN7 POWER |
 | 77 | VOICING | 0..3 | 0 | CLOSE LEAD OPEN +BASS |
-| 78 | DEPTH | 0..127 | 127 | (ANALOG PHASE MATH WHEEL STRING DRUM WEST FM6 ADD ANIMAL EXT) |
-| 78 | ORGANIC | 0..127 | 127 | (VOICE) |
+| 78 | DEPTH | 0..127 | 127 | |
 | 79 | STRUM | 0..127 | 0 | |
 | 80 | VEL | 0..127 | 127 | |
 | 81 | ROTATE | -32..32 | 0 | |

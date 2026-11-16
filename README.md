@@ -491,15 +491,6 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
   closes the list), **OCT−** puts back the sound of every track loaded from the list as it was when the list opened
   (UNDO too), and leaving any other way (a few seconds untouched, a button) keeps what you hear. The same for every list
   PRESETS opens (FACTORY, USER, FAVORITE, a type) and SAVE › PRESETS.
-- **VOICE organic again, still on the step** (a user: "it sounded 1000000 % better, now it sounds robotic"). Measured
-  against V10.7.23: since V10.7.24/25 a sung vowel slid in from its consonant over 100–150 ms (a talk box's glide), the
-  vibrato came only on notes of 0.5 s, the glottal jitter had halved, the pitch wandered up to ±47 cents and landed
-  ~30 cents past a legato note, each note and phrase sank up to −4 / −3.5 dB (4–8 dB quieter, duller), and a key's
-  consonants were squeezed into ~10 ms. Now: V10.7.23's quick consonant glides, a vibrato on every note held past ~0.3 s (in over ~0.4 s),
-  the old jitter and shimmer, a steady level, an eighth of the wander, half the scoop and a 4 % landing, and a key's
-  consonants in ~30 ms; the sequencer still starts the consonants early so the vowel lands on the step.
-  **EDIT › TONE › ORGANIC** (VOICE's KNOB 4, 100 % by default and in every older project) fades the singer's life down
-  to a machine at 0 % (the pitch as played, a key's vowel at once). LANG OFF (the vowels) is unchanged.
 
 ### V10.7.42 (2026-11-15)
 - **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version

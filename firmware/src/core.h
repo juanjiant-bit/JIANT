@@ -228,11 +228,6 @@ enum {                          /* per-track parameters */
  * place (vcons_rank, params.c param_turn) is the value + 33, mod 128 (127 at 32: 50 .. 98 % left of it, 103 .. 400 %
  * right). vcons_q6: the length, 1/64 (sing.c sy_enter) */
 #define P_VCONS P_LN1
-/* (V10.7.43, a user: "VOICE sounded organic, now robotic") VOICE's ORGANIC (EDIT > TONE KNOB 4): how much of a singer's
- * life it keeps (the jitter, shimmer, vibrato, wander, scoop and creak; a key's consonants heard, ~30 ms) against a
- * machine (0: the pitch as played, a key's vowel at once, ~10 ms), in WHEEL's DEPTH slot (127 there in every project
- * and preset before: 100 %, organic) */
-#define P_VORG P_WRDEP
 /* (V10.6z4) a synth's expression keys as the sequencer recorded them (seq.c kx_block, ui_input.c kx_frame), in DRUM-X's
  * lane 8 level (127 every synth part holds): 127 - (bit 0 OCT- VIBRATO, bit 1 OCT+ BEND), automation only */
 #define P_XPR P_LN7
