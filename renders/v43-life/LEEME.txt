@@ -1,0 +1,56 @@
+JIANT FM — V10.7.43: LIFE es interacción entre pistas; BALANCE más liviano
+==========================================================================
+
+Qué cambió
+----------
+LIFE ahora es solo intermodulación entre pistas. El sonido de una pista se modula en fase, a velocidad de audio,
+con el sonido de otra (cross-FM). Pasa por una línea corta de 32 muestras cuyo retardo lo mueven las muestras de
+la otra pista. Así cada parcial se mueve según su frecuencia, como en FM, y aparecen bandas laterales entre los
+parciales. Funciona en todos los motores; un kit de batería mueve a las otras pistas, pero nunca lo mueven a él.
+
+Los pares salen de los pesos de influencia de los seres (HOME > LIFE): a cada pista la mueve sobre todo la anterior
+en el anillo de las que suenan, y un poco las demás. Suena un par hasta LIFE 50 % y dos por encima. La profundidad
+crece con LIFE al cuadrado: es suave de fábrica (LIFE 25) y bien audible en LIFE 100.
+
+LIFE ya no toca nada más: ni afinación, ni filtro, ni SHAPE, ni envíos, ni seguidores que muevan parámetros. Eso lo
+hace la matriz de modulación (las fuentes LIFE y BEING siguen ahí, para rutearlas a mano). Con X-FM en 0, LIFE 100
+suena bit por bit igual que LIFE 0 (tests/life_test.c lo comprueba).
+
+Las perillas de HOME > LIFE son LIFE, REACH, X-FM y SWIM (antes LIFE, FILTER, PITCH y FX):
+  LIFE    la cantidad
+  REACH   cuánto pesan las otras pistas al lado de la anterior (0: solo la anterior; 30 de fábrica; 100: todas igual)
+  X-FM    la profundidad del cross-FM
+  SWIM    el ritmo al que nadan los seres (cambia quién mueve a quién)
+LIFE 0 sigue siendo bit por bit el sonido sin LIFE.
+
+BALANCE ahora es un balanceador liviano de fondo. Solo baja los medios graves (unos 150–800 Hz, el barro) cuando
+se amontonan contra la mezcla entera, y nunca sube nada. De fábrica está en 25 (antes 50): unos −3 dB sobre esa
+banda cuando sobra. Escucha a un octavo de la frecuencia de muestreo (antes era un EQ dinámico de cuatro bandas
+con seis filtros por muestra).
+
+Archivos (estéreo, 44,1 kHz, 16 bits)
+-------------------------------------
+gen1_seed7_antes_e6dbc19_life{0,50,100}.wav     un tema de GEN (género 1, semilla 7), 10 s, antes (e6dbc19)
+gen1_seed7_despues_V10.7.43_life{0,50,100}.wav  el mismo tema, después
+gen4_seed3_antes_e6dbc19_life{0,50,100}.wav     otro tema de GEN (género 4, semilla 3), 10 s, antes
+gen4_seed3_despues_V10.7.43_life{0,50,100}.wav  el mismo tema, después
+  BALANCE como lo deja GEN (de fábrica: 50 antes, 25 después). LIFE 0 de después difiere de LIFE 0 de antes solo
+  por BALANCE y por las colas limpias (renders/v43-release).
+
+  Cuánto se aleja cada render del de LIFE 0 del mismo tema (la diferencia, contra el nivel del tema):
+                     antes LIFE 50 / 100     después LIFE 50 / 100
+    gen1 seed 7      −2,1 / −2,0 dB          −32,8 / −19,1 dB
+    gen4 seed 3      −5,4 / −3,3 dB          −24,7 / −13,0 dB
+  Antes, LIFE movía afinación y filtros de cada voz: la forma de onda entera cambiaba, pero el cross-FM no
+  corría con los valores de fábrica. Ahora LIFE no cambia la afinación: lo que se oye es solo la intermodulación,
+  sutil en 50 y clara en 100.
+
+drone_duet_life0_{antes_e6dbc19,despues_V10.7.43}.wav    dúo de drones (bajo ANALOG + FM6), 14 s, LIFE 0
+drone_duet_life100_{antes_e6dbc19,despues_V10.7.43}.wav  el mismo dúo con LIFE 100 (después: X-FM 100)
+six_tracks_life100_{antes_e6dbc19,despues_V10.7.43}.wav  seis pistas (kit, pad, FM6, WEST, PHASE, bajo), todo en 100
+
+Lo medido (tests/life_test.c, sección 5)
+----------------------------------------
+Un FM6 movido por el bajo de un ANALOG. La energía entre los parciales (las bandas laterales) da −52,6 dB en
+LIFE 0, −49,6 dB en LIFE 50 y −43,2 dB en LIFE 100. El espectro se aleja del de LIFE 0 unos 5,6 dB en LIFE 50 y
+7,1 dB en LIFE 100. Los 10 motores (todos menos el kit) cambian cuando otra pista los mueve.

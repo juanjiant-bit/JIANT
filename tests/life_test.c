@@ -1,19 +1,19 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* (V10.7.34) LIFE (firmware/src/life.c): build/host/life_test [DEMO_DIR]
+/* (V10.7.34; V10.7.43 rebuilt) LIFE (firmware/src/life.c): build/host/life_test [DEMO_DIR]
  * 1. still: LIFE 0 renders bit for bit as every track's LIFE 0 with the global one and its three knobs at 100 (and so as
- *    before LIFE: tests/golden_life0.txt, run_tests.sh's LIFE=0 regress); a matrix's T1 ENV the same with LIFE's followers
- *    running (its own are scanned every 4th sample, the matrix's never).
- * 2. alive: the default LIFE moves a held chord (its voices each their own way: their pitch, cutoff and level wander),
- *    a note's arc (energy, bloom, tiring) over its first seconds.
- * 3. bounded: everything at 100 on six tracks (drums, a pad, FM, noise, a lead, a bass): no sample past full scale more
- *    than the same mix at LIFE 0 has, no runaway (the cross-FM line's delay inside it), silence after the notes end.
- * 4. who moves whom: two tracks a duet (each the other's), three a ring (the one before most), a kit ducking a pad's
- *    filter, a pad opening one's, the sends up, the cross-FM's samples kept for the next block only when asked.
- * 5. the matrix: LIFE and BEING as sources (bipolar, moving), LIFE as a destination (a slot lives a track whose LIFE is 0),
- *    the names appended; HOME > LIFE drawn (the beings, their lines), its knobs; kept in a project ('X' 'L'), one without
- *    it at the defaults.
- * DEMO_DIR: WAVs (LIFE 0 / default / high; a cross-mod drone duet; a GEN song with LIFE) and the LIFE page's PNG data */
+ *    before LIFE: tests/golden_life0.txt, run_tests.sh's LIFE=0 regress); a matrix's T1 ENV the same with LIFE on.
+ * 2. alive: the default LIFE moves the sound; and nothing but the tracks' intermodulation (V10.7.43): LIFE 100 with
+ *    X-FM 0 bit for bit as LIFE 0 (no pitch, no filter, no parameter followed); REACH: the rest's share of the weights.
+ * 3. bounded: everything at 100 on six tracks (drums, a pad, FM, WEST, a lead, a bass): no sample past full scale more
+ *    than the same mix at LIFE 0 has, no runaway, the cross-FM's depth inside its line, silence after the notes end.
+ * 4. who moves whom: two tracks a duet (each the other's), three a ring (the one before most), a muted track leaves it;
+ *    the cross-FM's pairs: one up to LIFE 50, two past it, a kit never the one moved, X-FM 0 none.
+ * 5. the cross-FM really modulates: a drone's spectrum against LIFE 0 further at LIFE 50 and again at 100, sidebands
+ *    between its partials; every engine but the kit moved by it.
+ * 6. the matrix: LIFE and BEING as sources, LIFE as a destination; HOME > LIFE drawn (the beings, their lines), its
+ *    knobs LIFE REACH X-FM SWIM; kept in a project ('X' 'L'), one without it at the defaults.
+ * DEMO_DIR: WAVs (LIFE 0 / default / high; a cross-FM drone duet; six tracks at 100) and the LIFE page's PNG data */
 #define HOST_LIFE LIFE_DEF              /* (the firmware's power-on: LIFE on) */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"
@@ -68,7 +68,7 @@ static void scene(uint32_t n, int32_t life, int32_t knobs, int32_t tl)
     life_defaults();
     life_reset();
     life_v[LIFE_AMT] = (int16_t)life;
-    if (knobs >= 0) life_v[LIFE_FILT] = life_v[LIFE_PIT] = life_v[LIFE_FX] = (int16_t)knobs;
+    if (knobs >= 0) life_v[LIFE_RCH] = life_v[LIFE_XFM] = life_v[LIFE_SWM] = (int16_t)knobs;
     for (k = 0; k < NTRK; k++) life_v[LIFE_N + k] = (int16_t)tl;
     hsh = 0xCBF29CE484222325ull;
     pk = nclip = 0;
@@ -105,8 +105,58 @@ static void r_tracks0(void) { scene(6, 100, 100, 0); play(6, 3, 1); }
 static void r_def(void) { scene(6, LIFE_DEF, -1, 100); play(6, 3, 1); }
 static void r_mx0(void) { scene(6, 0, -1, 100); trk[1].p[P_M1SRC] = MS_T1; trk[1].p[P_M1DST] = MD_CUT; trk[1].p[P_M1AMT] = -40; play(6, 2, 1); }
 static void r_mx1(void) { scene(6, 50, 100, 0); trk[1].p[P_M1SRC] = MS_T1; trk[1].p[P_M1DST] = MD_CUT; trk[1].p[P_M1AMT] = -40; play(6, 2, 1); }
-static void r_slot0(void) { scene(2, 50, 0, 0); play(2, 2, 0); }
-static void r_slot1(void) { scene(2, 50, 0, 0); trk[1].p[P_M1SRC] = MS_LFO; trk[1].p[P_M1DST] = MD_LIFE; trk[1].p[P_M1AMT] = 63; play(2, 2, 0); }
+static void r_nox(void) { scene(6, 100, 100, 100); life_v[LIFE_XFM] = 0; play(6, 3, 1); }   /* (X-FM 0: LIFE's
+                                                         * beings and weights running, nothing on the sound) */
+static void r_slot0(void) { scene(2, 50, 100, 0); play(2, 2, 0); }
+static void r_slot1(void) { scene(2, 50, 100, 0); trk[1].p[P_M1SRC] = MS_LFO; trk[1].p[P_M1DST] = MD_LIFE; trk[1].p[P_M1AMT] = 63; play(2, 2, 0); }
+
+/* (V10.7.43) the cross-FM's own test: a drone duet (T1 ANALOG's bass moving T2), its mono output kept from 1 s; the spectrum of 8192 samples (Hann, the bins to 12 kHz) */
+#define XN 8192u
+static float xbuf[XN];
+static double xspec[XN / 2u];
+static void xrender(uint32_t e2, int32_t amt)
+{
+    uint32_t b, i, k = 0;
+    scene(2, amt, 100, 100);
+    life_v[LIFE_SWM] = 30;
+    host_preset(&trk[0], eng("ANALOG"), 2); host_preset(&trk[1], e2, 0);
+    memset(&trk[0].p[P_M1SRC], 0, 12u * sizeof trk[0].p[0]); memset(&trk[1].p[P_M1SRC], 0, 12u * sizeof trk[1].p[0]);
+    for (i = 0; i < 2u; i++) trk[i].p[P_REV] = trk[i].p[P_DLY] = trk[i].p[P_CHOR] = 0;
+    trk_note_on(&trk[0], 45, 110); trk_note_on(&trk[1], 70, 100);   /* (110 Hz, 466 Hz: its sidebands off the bass's
+                                                         * partials) */
+    for (b = 0; b < (FS + XN) / CTL + 1u; b++) {
+        mix_block(ob, CTL);
+        if (b >= FS / CTL)
+            for (i = 0; i < CTL && k < XN; i++) xbuf[k++] = (float)(ob[2u * i] + ob[2u * i + 1u]);
+    }
+}
+static void xdft(void)
+{
+    uint32_t f, i;
+    for (f = 1; f < XN / 2u && f * FS / XN < 12000u; f++) {
+        double re = 0, im = 0, w = 2 * M_PI * f / XN;
+        for (i = 0; i < XN; i++) {
+            double h = 0.5 - 0.5 * cos(2 * M_PI * i / XN), x = xbuf[i] * h;
+            re += x * cos(w * i); im -= x * sin(w * i);
+        }
+        xspec[f] = re * re + im * im + 1.0;
+    }
+}
+/* the share of the energy outside the 24 strongest partials (+-3 bins): what sits between them, the sidebands */
+static double xside(void)
+{
+    static uint8_t keep[XN / 2u];
+    double all = 0, out = 0;
+    uint32_t f, n, nb = 12000u * XN / FS;
+    memset(keep, 0, sizeof keep);
+    for (n = 0; n < 24u; n++) {
+        uint32_t m = 0;
+        for (f = 1; f < nb; f++) if (!keep[f] && (!m || xspec[f] > xspec[m])) m = f;
+        for (f = m > 3u ? m - 3u : 1u; f <= m + 3u && f < nb; f++) keep[f] = 1;
+    }
+    for (f = 1; f < nb; f++) { all += xspec[f]; if (!keep[f]) out += xspec[f]; }
+    return out / all;
+}
 
 static void wav_go(const char *dir, const char *name, uint32_t secs)
 {
@@ -149,10 +199,10 @@ static void demos(const char *dir)
         wav_end();
     }
     for (i = 0; i < 2u; i++) {                          /* the drone duet: two drones moving each other */
-        scene(2, i ? 60 : 0, -1, 100);
+        scene(2, i ? 100 : 0, -1, 100);
         host_preset(&trk[0], eng("ANALOG"), 1); host_preset(&trk[1], eng("FM6"), 0);
         memset(&trk[0].p[P_M1SRC], 0, 12u * sizeof trk[0].p[0]); memset(&trk[1].p[P_M1SRC], 0, 12u * sizeof trk[1].p[0]);
-        life_v[LIFE_FILT] = 70; life_v[LIFE_PIT] = 80; life_v[LIFE_FX] = 40;
+        life_v[LIFE_RCH] = 30; life_v[LIFE_XFM] = 100; life_v[LIFE_SWM] = 30;
         wav_go(dir, i ? "05_drone_duet_life.wav" : "04_drone_duet_life0.wav", 14);
         trk_note_on(&trk[0], 45, 110); trk_note_on(&trk[1], 57, 100);
         for (b = 0; b < 12u * FS / CTL; b++) {
@@ -178,30 +228,22 @@ int main(int argc, char **argv)
     setvbuf(stdout, 0, _IONBF, 0);
     /* 1 */
     a = child(r_still); b = child(r_tracks0); c = child(r_def);
-    ck("1. LIFE 0 == every track's LIFE 0 under LIFE 100 (FILTER PITCH FX 100): bit for bit", a && a == b);
+    ck("1. LIFE 0 == every track's LIFE 0 under LIFE 100 (REACH X-FM SWIM 100): bit for bit", a && a == b);
     a = child(r_mx0); b = child(r_mx1);
-    ck("   a matrix's T1 ENV -> CUT: the same, LIFE's own followers running beside it", a && a == b);
+    ck("   a matrix's T1 ENV -> CUT: the same, LIFE on beside it", a && a == b);
     /* 2 */
     ck("2. the default LIFE moves the sound (a mix of six against LIFE 0)", c && c != child(r_still));
+    ck("   nothing but the intermodulation: LIFE 100, X-FM 0 bit for bit as LIFE 0 (no pitch, filter or parameter moved)",
+       child(r_nox) == child(r_still));
     {
-        int32_t lo[NVOICE], hi[NVOICE], d = 0;
-        uint32_t k;
-        scene(2, LIFE_DEF, 0, 100);
-        trk[0].p[P_MUTE] = 1;
-        trk_note_on(&trk[1], 60, 100); trk_note_on(&trk[1], 64, 100); trk_note_on(&trk[1], 67, 100);
-        for (k = 0; k < NVOICE; k++) lo[k] = 1 << 30, hi[k] = -(1 << 30);
-        for (i = 0; i < 4u * FS / CTL; i++) {
-            blk(1);
-            for (k = 0; k < 3u; k++) {
-                int32_t x = life.vn[NVOICE + k][0];
-                lo[k] = x < lo[k] ? x : lo[k];
-                hi[k] = x > hi[k] ? x : hi[k];
-            }
-        }
-        for (k = 0; k < 3u; k++) d += hi[k] - lo[k] > 3000;
-        ck("   each voice of a held chord wanders its own way (three voices, three wanders)",
-           d == 3 && life.vn[NVOICE][0] != life.vn[NVOICE + 1][0] && life.vn[NVOICE + 1][0] != life.vn[NVOICE + 2][0]);
-        ck("   a held note's arc: blooming, then tiring (its blocks counted)", life.vblk[NVOICE] > 2000u);
+        int32_t w0, w1;
+        scene(3, 50, 100, 100); life_v[LIFE_RCH] = 0;
+        play(3, 2, 0);
+        w0 = life.w[1][2];
+        scene(3, 50, 100, 100); life_v[LIFE_RCH] = 100;
+        play(3, 2, 0);
+        w1 = life.w[1][2];
+        ck("   REACH: 0 the one before alone moves a track, 100 the rest as much (T2 by T3)", w0 == 0 && w1 > 20000);
     }
     /* 3 */
     {
@@ -212,33 +254,85 @@ int main(int argc, char **argv)
         pk = 0;
         blk(FS / CTL);
         ck("   .. and silence after the notes end (no runaway)", pk < 64);
-        for (i = 0; i < NTRK; i++) {
-            int32_t d0 = (((life.pa[i] >> 7) * (65535 >> 7)) * 14) >> 8;
-            if ((d0 >> 8) >= (int32_t)LPM_L - 2) break;
-        }
-        ck("   the cross-FM line's delay always inside it", i == NTRK && nc0 >= 0);
+        for (i = 0; i < LPM_N && life.pm[i].dc <= LPM_D && life.pm[i].b <= LPM_D; i++) {}
+        ck("   the cross-FM's depth inside its line (+-13 samples about its centre, the line 32)", i == LPM_N &&
+           2 * LPM_D < (int32_t)(LPM_L - 2u) << 8);
     }
     /* 4 */
     {
+        uint32_t k, np = 0, kit = 0;
         scene(2, 50, 100, 100);
         play(2, 2, 0);
         ck("4. two tracks: a duet, each moving the other", life.w[0][1] > 8000 && life.w[1][0] > 8000);
-        ck("   the kit (T1) ducks the pad's (T2) filter, the pad opens the kit's; the sends up", life.xc[1] <= 0 && life.xc[0] >= 0 && life.xs[1] > 0);
-        ck("   PITCH 100: the cross-FM on, the samples of the one moving kept for the next block", life.pa[1] > 30000 && (life.tapm & 3u) == 3u);
         scene(3, 50, 50, 100);
         play(3, 2, 0);
         ck("   three tracks: a ring, each held most by the one before it", life.w[1][0] > life.w[1][2] && life.w[2][1] > life.w[2][0] &&
            life.w[0][2] > life.w[0][1]);
-        ck("   PITCH 50: no cross-FM, nothing kept", !life.pa[0] && !life.tapm);
         trk[1].p[P_MUTE] = 1;
         blk(4u * FS / CTL);
         ck("   a track muted leaves the ring (its lines fade)", life.w[2][1] < 2000 && life.w[2][0] > 8000);
+        scene(6, 50, 100, 100);
+        play(6, 2, 0);
+        for (k = 0; k < LPM_N; k++) np += life.pm[k].car < NTRK && life.pm[k].dc > 0;
+        ck("   the cross-FM: LIFE 50, one pair, its samples kept for the next block", np == 1 && life.tapm && life.pmc);
+        scene(6, 100, 100, 100);
+        play(6, 2, 0);
+        for (k = 0, np = 0; k < LPM_N; k++) {
+            np += life.pm[k].car < NTRK && life.pm[k].dc > 0;
+            kit |= life.pm[k].car == 0u;
+        }
+        ck("   LIFE 100: two pairs, the kit (T1) never the one moved", np == 2 && !kit && !(life.pmc & 1u));
+        scene(6, 100, 0, 100);
+        play(6, 2, 0);
+        ck("   X-FM 0: no pair, nothing kept", !life.pmc && !life.tapm);
     }
     /* 5 */
     {
+        static double ref[XN / 2u];
+        double sd[3] = {0, 0, 0}, sb[3];
+        int32_t A[3] = {0, 50, 100};
+        uint32_t k, f, e, nb = 12000u * XN / FS, moved = 0, tried = 0;
+        char miss[160] = "";
+        for (k = 0; k < 3u; k++) {
+            xrender(eng("FM6"), A[k]);
+            xdft();
+            if (!k) memcpy(ref, xspec, sizeof ref);
+            for (f = 1; f < nb; f++) sd[k] += fabs(10 * log10(xspec[f] / ref[f]));
+            sd[k] /= nb;
+            sb[k] = xside();
+        }
+        printf("life:   cross-FM, FM6 moved by ANALOG's bass: the spectrum from LIFE 0's %.2f / %.2f dB (LIFE 50 / 100), between the partials %.1f %.1f %.1f dB of the whole (LIFE 0 / 50 / 100)\n",
+               sd[1], sd[2], 10 * log10(sb[0]), 10 * log10(sb[1]), 10 * log10(sb[2]));
+        ck("5. the cross-FM modulates: the spectrum further from LIFE 0's at 50, further again at 100 (X-FM 100)",
+           sd[1] > 1.0 && sd[2] > sd[1]);
+        ck("   .. its sidebands: more energy between the partials as LIFE goes up", sb[1] > sb[0] * 1.5 && sb[2] > sb[1]);
+        for (e = 0; e < NENGINES; e++) {                /* every engine moved by it (a kit moves, it is never moved) */
+            uint64_t h0;
+            uint32_t on = 0, b;
+            if (e == ENGI_DRUM || e == ENGI_INPUT || (!FELUCCA_FM4 && e == ENGI_DIGITAL) || !ENGINES[e]->name[0] || ENGINES[e]->name[0] == '-') continue;
+            tried++;
+            for (k = 0; k < 2u; k++) {
+                scene(2, k ? 100 : 0, 100, 100);
+                host_preset(&trk[0], eng("ANALOG"), 2); host_preset(&trk[1], e, 0);
+                memset(&trk[0].p[P_M1SRC], 0, 12u * sizeof trk[0].p[0]); memset(&trk[1].p[P_M1SRC], 0, 12u * sizeof trk[1].p[0]);
+                trk_note_on(&trk[0], 45, 110); trk_note_on(&trk[1], 60, 110);
+                for (b = 0; b < FS / CTL; b++) {
+                    blk(1);
+                    for (f = 0; f < LPM_N; f++) on |= k && life.pm[f].car == 1u && life.pm[f].dc > 0;
+                }
+                if (!k) h0 = hsh;
+                else if (on && hsh != h0) moved++;
+                else if (str_len(miss) < 140u) { str_cpy(miss + str_len(miss), " ", 2); str_cpy(miss + str_len(miss), ENGINES[e]->name, 12); }
+            }
+        }
+        printf("life:   cross-FM on every engine: %u of %u moved%s%s\n", moved, tried, miss[0] ? ", not:" : "", miss);
+        ck("   .. on every engine (but the kit): each one moved by the other track's samples", moved == tried && tried >= 8u);
+    }
+    /* 6 */
+    {
         int32_t lo = 32767, hi = -32768, blo = 32767, bhi = -32768;
         a = child(r_slot0); b = child(r_slot1);
-        ck("5. the matrix: LFO -> LIFE lives a track whose own LIFE is 0", a && b && a != b);
+        ck("6. the matrix: LFO -> LIFE lives a track whose own LIFE is 0", a && b && a != b);
         scene(2, 0, -1, 100);
         play(2, 1, 0);
         for (i = 0; i < 60u * FS / CTL; i++) {
@@ -262,8 +356,8 @@ int main(int argc, char **argv)
         for (i = 0; i < 4u; i++) trk_note_on(&trk[i], 48 + 7 * i, 110);
         blk(FS / 4u / CTL);
         ui.force = 1; frames(64);
-        ck("   HOME > LIFE: its page, LIFE FILTER PITCH FX on its cards", home_life() && !strncmp(ui.col[0], "LIFE|", 5) &&
-           !strncmp(ui.col[3], "FX|", 3));
+        ck("   HOME > LIFE: its page, LIFE REACH X-FM SWIM on its cards", home_life() && !strncmp(ui.col[0], "LIFE|", 5) &&
+           !strncmp(ui.col[1], "REACH|", 6) && !strncmp(ui.col[2], "X-FM|", 5) && !strncmp(ui.col[3], "SWIM|", 5));
         memcpy(s0, host_screen, sizeof s0);
         if (argc > 1) ppm(argv[1], "life_page.ppm");
         life_v[LIFE_AMT] = 0;
@@ -278,15 +372,15 @@ int main(int argc, char **argv)
         static project_store_t st;
         int ok;
         ui_power_on();
-        ck("   power-on: LIFE at its defaults (25 %, FILTER 30, PITCH 10, FX 25, every track 100)",
-           life_v[LIFE_AMT] == LIFE_DEF && life_v[LIFE_FILT] == 30 && life_v[LIFE_PIT] == 10 && life_v[LIFE_FX] == 25 &&
+        ck("   power-on: LIFE at its defaults (25 %, REACH 30, X-FM 70, SWIM 30, every track 100)",
+           life_v[LIFE_AMT] == LIFE_DEF && life_v[LIFE_RCH] == 30 && life_v[LIFE_XFM] == 70 && life_v[LIFE_SWM] == 30 &&
            life_v[LIFE_N] == 100 && life_v[LIFE_N + NTRK - 1] == 100);
-        life_v[LIFE_AMT] = 70; life_v[LIFE_PIT] = 66; life_v[LIFE_N + 2] = 0;
+        life_v[LIFE_AMT] = 70; life_v[LIFE_XFM] = 66; life_v[LIFE_N + 2] = 0;
         project_capture(&proj_scratch);
         ok = proj_pack(&st, &proj_scratch);
         life_defaults();
         ok = ok && proj_import(&proj_scratch, &st, sizeof st) && project_restore_runtime(&proj_scratch) == 0;
-        ck("   a project keeps LIFE 70, PITCH 66, T3's LIFE 0", ok && life_v[LIFE_AMT] == 70 && life_v[LIFE_PIT] == 66 &&
+        ck("   a project keeps LIFE 70, X-FM 66, T3's LIFE 0", ok && life_v[LIFE_AMT] == 70 && life_v[LIFE_XFM] == 66 &&
            life_v[LIFE_N + 2] == 0 && life_v[LIFE_N + 1] == 100);
         life_defaults();
         project_capture(&proj_scratch);

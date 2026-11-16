@@ -748,26 +748,27 @@ static int16_t eq_v[4] __attribute__((section(".bss.tape")));   /* (out of the m
 #define ID_CRU 0xEEu                                    /* (V10.7.33) EDIT > VOICES 3's CRUSH, the track's (fx.c track_crush):
                                                          * 'X' 'C' (project.c proj_xm), as NOISE */
 #ifndef BAL_DEF
-#define BAL_DEF 50
+#define BAL_DEF 25
 #endif
 static const param_desc_t XM_DESC[3] __attribute__((section(".rodata.tape"))) = {
     PD("AMOUNT", F_PCT, 0, 100, BAL_DEF), PD("NOISE", F_PCT, 0, 100, 0), PD("CRUSH", F_PCT, 0, 127, 0)};
 static int16_t bal_v __attribute__((section(".bss.tape")));   /* (BAL_DEF set at power-on: main.c, system_init) */
 static int16_t dnz_v[NTRK] __attribute__((section(".bss.tape")));
 static int16_t cru_v[NTRK] __attribute__((section(".pool")));   /* (V10.7.33) CRUSH (0..127: DIST's DRIVE, shown 0..100 %) */
-/* (V10.7.34, the owner: "organic, self-modulating voices") LIFE (life.c): HOME > LIFE's four, LIFE FILTER PITCH FX (0..100;
+/* (V10.7.34, the owner: "organic, self-modulating voices") LIFE (life.c): HOME > LIFE's four (V10.7.43: LIFE REACH X-FM
+ * SWIM, were LIFE FILTER PITCH FX; their places in a project the same) (0..100;
  * LIFE 0: every voice and track as before, bit for bit), then each track's LIFE (EDIT > VOICES 3 KNOB 2, ID_LIF; 0..100,
  * times the global one). Not song or track parameters (as BALANCE: no slot left): kept with the project ('X' 'L',
  * project.c proj_xm; a project without it, every one before V10.7.34: these defaults, LIFE on) */
 #define ID_LIF 0xEFu
-enum { LIFE_AMT, LIFE_FILT, LIFE_PIT, LIFE_FX, LIFE_N };
+enum { LIFE_AMT, LIFE_RCH, LIFE_XFM, LIFE_SWM, LIFE_N };
 #ifndef LIFE_DEF
 #define LIFE_DEF 25
 #endif
-static const int8_t LIFE_DEFS[LIFE_N] = {LIFE_DEF, 30, 10, 25};
+static const int8_t LIFE_DEFS[LIFE_N] = {LIFE_DEF, 30, 70, 30};
 #define LIFE_TDEF 100
 static const param_desc_t LIFE_DESC __attribute__((section(".rodata.tape"))) = PD("LIFE", F_PCT, 0, 100, LIFE_TDEF);   /* (the track's) */
-static const char *const LIFE_NM[LIFE_N] = {"LIFE", "FILTER", "PITCH", "FX"};   /* (HOME > LIFE's cards) */
+static const char *const LIFE_NM[LIFE_N] = {"LIFE", "REACH", "X-FM", "SWIM"};   /* (HOME > LIFE's cards) */
 static int16_t life_v[LIFE_N + NTRK] __attribute__((section(".pool")));   /* (life_defaults at power-on: main.c) */
 static int32_t life_def(uint32_t k) { return k < LIFE_N ? LIFE_DEFS[k] : LIFE_TDEF; }   /* (value k of life_v) */
 static void life_defaults(void)

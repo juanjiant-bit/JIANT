@@ -172,3 +172,53 @@ None of these is applied. They change the sound, so they are the owner's decisio
 
 1(b) and 2(a) together are estimated to bring CPU TEST to about 3000, with no audible change expected, but not bit for
 bit. Both features off brings it to V10.7.23's level.
+
+## 6. V10.7.43: LIFE and BALANCE as the owner decided
+
+The owner's decision (Juan): LIFE is the interaction between the tracks only, the tracks intermodulating each other (no
+pitch, no filter, no parameter followed: the matrix does that); BALANCE a light balancer in the background, lower in
+amount and in cost. Both stay on by default (LIFE 25, BALANCE 25, was 50).
+
+**Was the cross-FM happening before?** Not at the defaults. `life_pm` ran only with PITCH past 50, and PITCH powers on
+at 10: 0 of 2756 blocks of a drone duet, at LIFE 25 and at LIFE 100.
+
+What changed (life.c, fx.c):
+
+- **LIFE**: the voices' wander and arc (`life_voice`), the sends (`life_snd`), the pitch sag, LIFE's own followers scan
+  (`life.fol`) and the followers on cutoff and SHAPE (a V10.7.43 beta) are gone. What is left is the cross-FM: up to two
+  pairs (one up to LIFE 50), chosen every 8th block by the beings' weights (REACH: the other tracks' share beside the one
+  before), the moved track's sum through a 32-sample line driven by the other's samples of the block before (`life_tap`:
+  a copy, no scan), ~17 instructions a sample per pair. `life_master` runs its pair search only every 8th block.
+- **BALANCE**: one band (the low mids, the difference of two one-poles) a side at an eighth of the rate (the mean of 8
+  samples), the correction ramped back at the full rate, the analysis every 4 blocks. Was 2 × 3 one-poles and 4 band
+  gains every sample.
+- **CLOUD** (bit for bit, all 219 golden renders): each grain read and aged in one visit (was a second pass, `cl_age`),
+  and the reads stop past the last grain sounding (`cl_on`, a bit per grain). `cloud_clock` (CLOUD at rest) moved out of
+  `rev_idle`'s RAM code: −284 B of RAM code, for +126 B in `rev_cloud`.
+- The clean releases (renders/v43-release) cost nothing measurable: `master_in` and the bits below Q15 (`out_fr`, masked
+  and cleared in `audio.c`, outside the RAM code).
+
+e6dbc19 (V10.7.42 public + PRESETS / VOICE) → V10.7.43, the same `cpu_vg.c` (host instructions a sample):
+
+| section | V10.7.23 | e6dbc19 | V10.7.43 | Δ | V10.7.43, BALANCE 0 | V10.7.43, LIFE 0 |
+|---|---|---|---|---|---|---|
+| song/cputest | 2864 | 3075 | **2884** | -191 (-6.2 %) | 2863 | 2853 |
+| song/cputest.eq | 3090 | 3297 | **3106** | -191 (-5.8 %) | 3085 | 3074 |
+| mix/full | 2660 | 2855 | **2698** | -157 (-5.5 %) | 2677 | 2652 |
+| mix/full.freeze | – | 2582 | **2424** | -158 (-6.1 %) | 2403 | 2380 |
+| mix/idle | 296 | 181 | **176** | -5 (-2.8 %) | 167 | 172 |
+| seq/plain | 2278 | 2483 | **2365** | -118 (-4.8 %) | 2344 | 2319 |
+| seq/mono4 | 1233 | 1417 | **1318** | -99 (-7.0 %) | 1297 | 1272 |
+| rev/ROOM | 1344 | 1484 | **1383** | -101 (-6.8 %) | 1362 | 1378 |
+| rev/CLOUD | 1589 | 1729 | **1590** | -139 (-8.0 %) | 1569 | 1585 |
+| eng/DRUM | 1229 | 1376 | **1272** | -104 (-7.6 %) | 1252 | 1267 |
+| eng/FM6 | 1579 | 1718 | **1617** | -101 (-5.9 %) | 1597 | 1612 |
+| dly/full | 1378 | 1515 | **1414** | -101 (-6.7 %) | 1393 | 1409 |
+
+The cost on song/cputest: **BALANCE +94 → +21**, **LIFE +88 → +31** (the pair's line ~17, the per-part hooks and the
+tap the rest), CLOUD −41. The target, V10.7.23's 2864, is **not quite reached**: 2884 is 20 over (0.7 %). With BALANCE
+at 0 it is 2863, with LIFE at 0 2853, and with both at 0 about 2832 (32 under V10.7.23). Tried and left out: the pair's
+line with its centre and gain stepped every 8 samples (no gain on the host).
+
+Firmware: image 583664 B of 584336 (672 B free), RAM code 32576 B (headroom 2240 B), pool spare 10656 B, RAM .data +
+.bss 98136 B, BT segment unchanged.

@@ -495,92 +495,86 @@ static __attribute__((noinline)) void eq_block(uint32_t n)
     }
 }
 /* (V10.7.30, the owner: "everything gets muddy when I add tracks and it becomes a ball of mids") BALANCE (FX > BALANCE,
- * params.c bal_v, 0 off .. 100, BAL_DEF): a slow dynamic EQ just before the EQ (so the EQ stays as you set it, on top),
- * on its four bands: each side split as eq_block splits it (three one-poles: ~200 Hz, ~1 kHz, ~4 kHz; the mid alone,
- * its correction added to both, would put a sound panned hard on the other side too). The bands' level (the mean of
- * |left + right band| over every eighth sample, before any gain) followed slowly (~0.75 s: the
- * song's balance, not a hit's), in log2 (Q8), against a balanced mix's curve (BAL_T: a commercial mix's -4.5 dB /
- * octave through this split, the lows 3 dB richer and the top 1.5 dB darker, as electronic music sits); each band's
- * distance from it less their mean (only the balance between the bands, not the loudness: that is the leveler's)
- * brought back by a share, AMOUNT / 50 x BAL_R: the LO MIDS only down, twice their excess (their band to -12 dB: ~-6
- * dB at 400 Hz, where the bands' overlap leaves it: the mud), the lows a quarter (+-1.5 dB: a cut there would fill the
- * dip back), the HI MIDS half (+-2 dB), the highs half (+-3 dB); within 0.5 dB of the curve nothing. The control every
- * fourth block, the corrections gliding (~0.75 s on top of the follower: well under 1 dB of ripple at the
- * beat, no pumping), the gains held through a block, a step of at most 64 (~0.13 dB) a block. The followers held under
- * BAL_GATE (a tail, silence: the balance kept for the next sound). AMOUNT 0: the gains back to 0, then not run (the
- * mix bit for bit as without it) */
-#define BAL_GATE 200                                    /* (the four bands' means summed: ~-45 dBFS) */
-static struct { int32_t lp[6], g[4], e[4], c[4], s[4], tg[4]; uint8_t blk; } bal __attribute__((section(".pool")));   /* (V10.7.33: the
-                                                         * pool, zeroed at boot: RAM's .data + .bss as before BALANCE came in) */
-static const int16_t BAL_T[4] __attribute__((section(".rodata.tape"))) = {361, 81, -92, -286};   /* the curve, log2 Q8 */
-static const int16_t BAL_R[4] __attribute__((section(".rodata.tape"))) = {64, 512, 128, 128};   /* the share, Q8 */
-static const int16_t BAL_LO[4] __attribute__((section(".rodata.tape"))) = {-64, -510, -85, -128};   /* its bounds */
-static const int16_t BAL_HI[4] __attribute__((section(".rodata.tape"))) = {64, 0, 85, 128};
+ * params.c bal_v, 0 off .. 100, BAL_DEF). (V10.7.43, the owner: "a light mix balancer, in the background") Just before
+ * the EQ: the mix's low mids (~150 .. 800 Hz: the mud) brought down when they pile up, nothing else. Each side split
+ * at an eighth of the rate (the mean of eight samples: two one-poles, their difference the band), the correction added
+ * back at the full rate, ramped from one group of eight to the next. The band's level (the mean of |left + right| over
+ * the block, the group's) against the whole mix's, in log2 (Q8), each fourth block, followed slowly (~0.75 s: the
+ * song's balance, not a hit's); over a balanced mix's share (BAL_T) by more than 0.5 dB, the band down by twice the
+ * excess x AMOUNT / 50 (its gain at most -2 octaves: ~-6 dB at 450 Hz, the band's overlap), never up; the correction
+ * gliding (~0.75 s), its gain a step of at most 64 (Q12) a block. Under BAL_GATE (a tail, silence) the followers held.
+ * AMOUNT 0: the gain back to 0, then not run (the mix bit for bit as without it). ~4 multiplies a group of eight a side;
+ * V10.7.43: AMOUNT 25 by default, was 50 */
+#define BAL_GATE 600                                    /* (the whole mix's: ~-50 dBFS) */
+#define BAL_T (-350)                                    /* (the band's share of a balanced mix, log2 Q8: ~-8 dB) */
+static struct { int32_t lp[4], e[2], s[2], c, g, tg, x[2]; uint8_t blk; } bal __attribute__((section(".pool")));   /* (the
+                                                         * pool, zeroed at boot) */
 static __attribute__((noinline)) void bal_block(uint32_t n)
 {
-    static const int16_t A[3] __attribute__((section(".rodata.tape"))) = {922, 4349, 14220};   /* (eq_block's) */
-    int32_t l0 = bal.lp[0], l1 = bal.lp[1], l2 = bal.lp[2], r0 = bal.lp[3], r1 = bal.lp[4], r2 = bal.lp[5];
-    int32_t s0 = 0, s1 = 0, s2 = 0, s3 = 0, h0, h1, h2, h3, k, a0 = A[0], a1 = A[1], a2 = A[2];
+    int32_t l1 = bal.lp[0], l2 = bal.lp[1], r1 = bal.lp[2], r2 = bal.lp[3], cl = bal.x[0], cr = bal.x[1], g = bal.g;
+    int32_t sb = 0, sf = 0, k;
     uint32_t i;
-    for (k = 0; k < 6 && (uint32_t)(bal.lp[k] + 63) < 127u; k++) {}   /* the split's tails out (a state under 4: the
-                                                         * one-poles' floor; what it added, ~-80 dBFS at most, goes) and a
-                                                         * silent block: silent out, not run, the gains held */
-    for (i = 0; k == 6 && i < n && !(mix_l[i] | mix_r[i] | wet[i]); i++) {}
-    if (k == 6 && i == n) {
+    for (k = 0; k < 4 && (uint32_t)(bal.lp[k] + 511) < 1023u; k++) {}   /* the split's tails out (V10.7.43: a state
+                                                         * under 4 of the mix's units, x 128 there; what it added, ~-80 dBFS
+                                                         * at most, goes) and a silent block: silent out, not run, the gain
+                                                         * held */
+    for (i = 0; k == 4 && i < n && !(mix_l[i] | mix_r[i] | wet[i]); i++) {}
+    if (k == 4 && i == n) {
         memset(bal.lp, 0, sizeof bal.lp);
+        bal.x[0] = bal.x[1] = 0;
         return;
     }
     if (!(++bal.blk & 3u)) {                            /* the control, every fourth block: the four blocks' sums (bal.s)
-                                                         * -> the band gains to reach (bal.tg: 2^correction - 1, Q12) */
-        int32_t lg[4], an = 0, m = (bal.s[0] + bal.s[1] + bal.s[2] + bal.s[3]) >> CTL_LOG2;
-        for (k = 0; k < 4; k++) {
+                                                         * -> the band's gain to reach (bal.tg: 2^correction - 1, Q12) */
+        int32_t lg[2], c, f, x;
+        for (k = 0; k < 2; k++) {
             int32_t e = bal.e[k], b;
-            if (m > BAL_GATE)
+            if ((bal.s[1] >> CTL_LOG2) > BAL_GATE)
                 bal.e[k] = e += ((bal.s[k] >> CTL_LOG2) * 8 - e) >> 7;
             e = e > 16 ? e : 16;
             b = 31 - __builtin_clz((uint32_t)e);
-            lg[k] = (b << 8) + (int32_t)(((uint32_t)e << (31 - b)) >> 23 & 255u) - BAL_T[k];
-            an += lg[k];
+            lg[k] = (b << 8) + (int32_t)(((uint32_t)e << (31 - b)) >> 23 & 255u);
             bal.s[k] = 0;
         }
-        an >>= 2;
-        for (k = 0; k < 4; k++) {
-            int32_t dv = lg[k] - an, c, f, x;
-            dv = dv > 21 ? dv - 21 : dv < -21 ? dv + 21 : 0;   /* (0.5 dB: as good as on the curve) */
-            c = clamp(-dv * BAL_R[k] * bal_v / 12800, BAL_LO[k], BAL_HI[k]) << 8;
-            bal.c[k] += (c - bal.c[k]) >> 7;
-            if (bal.c[k] - c < 512 && c - bal.c[k] < 512)   /* (there: exactly; AMOUNT 0 settles at 0) */
-                bal.c[k] = c;
-            c = bal.c[k] >> 8;                              /* (log2 Q8) */
-            f = c & 255;
-            x = 4096 + ((f * (2689 + ((1407 * f) >> 8))) >> 8);   /* 2^(f / 256), Q12 */
-            bal.tg[k] = (c >= 0 ? x << (c >> 8) : x >> -(c >> 8)) - 4096;
-        }
+        x = lg[0] - lg[1] - BAL_T - 21;                 /* (0.5 dB: as good as on the curve) */
+        c = clamp(-x * bal_v / 25, -510, 0) << 8;       /* (twice the excess at AMOUNT 50) */
+        bal.c += (c - bal.c) >> 7;
+        if (bal.c - c < 512 && c - bal.c < 512)         /* (there: exactly; AMOUNT 0 settles at 0) */
+            bal.c = c;
+        c = bal.c >> 8;                                 /* (log2 Q8) */
+        f = c & 255;
+        x = 4096 + ((f * (2689 + ((1407 * f) >> 8))) >> 8);   /* 2^(f / 256), Q12 */
+        bal.tg = (x >> -(c >> 8)) - 4096;
     }
-    for (k = 0; k < 4; k++)
-        bal.g[k] += clamp(bal.tg[k] - bal.g[k], -64, 64);
-    h0 = bal.g[0] - bal.g[1]; h1 = bal.g[1] - bal.g[2]; h2 = bal.g[2] - bal.g[3]; h3 = bal.g[3];
-    for (i = 0; i < n; i++) {                           /* (the bands' sum as x g3 + l0 (g0 - g1) + l1 (g1 - g2) + l2 (g2 - g3)) */
-        int32_t xl = mix_l[i] + wet[i], xr = mix_r[i] + wet[i];
-        /* (V10.7.43, the owner: "a little bitcrush in the releases") the one-poles' states 16 x the mix (their step
-         * the same: d / 4 x a >> 9 on x16 is d x a >> 15): a quiet tail followed down to +-4 (it was +-40: the ~200 Hz
-         * band stuck under it, then moved in steps); the bands' corrections on half steps, summed, then cut once (each
-         * was cut to steps of 16 before its gain: up to 8 a step on a tail) */
-        l0 += ((xl - (l0 >> 4)) >> 2) * a0 >> 9; l1 += ((xl - (l1 >> 4)) >> 2) * a1 >> 9; l2 += ((xl - (l2 >> 4)) >> 2) * a2 >> 9;
-        r0 += ((xr - (r0 >> 4)) >> 2) * a0 >> 9; r1 += ((xr - (r1 >> 4)) >> 2) * a1 >> 9; r2 += ((xr - (r2 >> 4)) >> 2) * a2 >> 9;
-        if (!(i & 7u)) {                                /* (both sides' bands summed: the mid's, twice) */
-            int32_t b0 = l0 + r0, b1 = l1 + r1 - b0, b2 = l2 + r2 - l1 - r1, b3 = ((xl + xr) << 4) - l2 - r2;   /* (x 16) */
-            s0 += b0 < 0 ? -b0 : b0; s1 += b1 < 0 ? -b1 : b1; s2 += b2 < 0 ? -b2 : b2; s3 += b3 < 0 ? -b3 : b3;
-        }
-        mix_l[i] = xl + (((xl >> 1) * h3 + (l0 >> 5) * h0 + (l1 >> 5) * h1 + (l2 >> 5) * h2) >> 11);   /* (the gains'
-                                                         * bounds, BAL_LO .. BAL_HI: |h0| + .. + |h3| < 12216, the sum
-                                                         * within 2^31 to |x| 2^18, the master's clamp) */
-        mix_r[i] = xr + (((xr >> 1) * h3 + (r0 >> 5) * h0 + (r1 >> 5) * h1 + (r2 >> 5) * h2) >> 11);
-        wet[i] = 0;
+    g += clamp(bal.tg - g, -64, 64);
+    bal.g = g;
+    for (i = 0; i + 8u <= n; i += 8u) {                 /* a group of eight: its mean through the split, the correction
+                                                         * ramped to it */
+        int32_t w = wet[i] + wet[i + 1u] + wet[i + 2u] + wet[i + 3u] + wet[i + 4u] + wet[i + 5u] + wet[i + 6u] + wet[i + 7u];
+        int32_t xl = mix_l[i] + mix_l[i + 1u] + mix_l[i + 2u] + mix_l[i + 3u] + mix_l[i + 4u] + mix_l[i + 5u] +
+                     mix_l[i + 6u] + mix_l[i + 7u] + w;
+        int32_t xr = mix_r[i] + mix_r[i + 1u] + mix_r[i + 2u] + mix_r[i + 3u] + mix_r[i + 4u] + mix_r[i + 5u] +
+                     mix_r[i + 6u] + mix_r[i + 7u] + w, bl, br, dl, dr, *ml = mix_l + i, *mr = mix_r + i;
+        /* (V10.7.43, the owner: "a little bitcrush in the releases") the one-poles' states 128 x the mix (16 x the
+         * group's sum; d / 16 x 161 >> 2 is 16 x d x 643 / 4096): a quiet tail followed down to ~1 of the mix's units,
+         * the band's correction on quarter steps before its gain. (V10.7.43, "lighter": an eighth of the rate, was a
+         * quarter) */
+        l1 += ((xl - (l1 >> 4)) >> 4) * 161 >> 2; l2 += ((xl - (l2 >> 4) + 16) >> 5) * 612 >> 1;   /* (~150 Hz, ~800 Hz
+                                                         * at 5.5 kHz; within 2^31 to |x| 2^21, the master's) */
+        r1 += ((xr - (r1 >> 4)) >> 4) * 161 >> 2; r2 += ((xr - (r2 >> 4) + 16) >> 5) * 612 >> 1;
+        bl = l2 - l1; br = r2 - r1;
+        sb += (bl + br) >> 4 < 0 ? -((bl + br) >> 4) : (bl + br) >> 4;   /* (as the group's sum) */
+        sf += xl + xr < 0 ? -(xl + xr) : xl + xr;
+        dl = (((bl >> 9) * g >> 10) - cl) >> 3;         /* (the correction: the band x its gain, an eighth of the way a
+                                                         * sample) */
+        dr = (((br >> 9) * g >> 10) - cr) >> 3;
+        ml[0] += cl += dl; ml[1] += cl += dl; ml[2] += cl += dl; ml[3] += cl += dl;
+        ml[4] += cl += dl; ml[5] += cl += dl; ml[6] += cl += dl; ml[7] += cl += dl;
+        mr[0] += cr += dr; mr[1] += cr += dr; mr[2] += cr += dr; mr[3] += cr += dr;
+        mr[4] += cr += dr; mr[5] += cr += dr; mr[6] += cr += dr; mr[7] += cr += dr;
     }
-    bal.lp[0] = l0; bal.lp[1] = l1; bal.lp[2] = l2; bal.lp[3] = r0; bal.lp[4] = r1; bal.lp[5] = r2;
-    bal.s[0] += s0 >> 3; bal.s[1] += s1 >> 3; bal.s[2] += s2 >> 3; bal.s[3] += s3 >> 3;   /* (x 2: as 32 a block; V10.7.43:
-                                                         * the bands summed x 16) */
+    bal.lp[0] = l1; bal.lp[1] = l2; bal.lp[2] = r1; bal.lp[3] = r2; bal.x[0] = cl; bal.x[1] = cr;
+    bal.s[0] += sb; bal.s[1] += sf;                      /* (both as |left + right| summed over a block's 64 samples) */
 }
 /* (0.9.1) the master DJ FILTER (G_DJF, GLO > MIXER KNOB 4): one bipolar knob on the whole mix, just before CLIP and the
  * leveler. 0: out of the chain, not run at all (the mix bit for bit as without it). Below 0 a low-pass sweeping down
@@ -1542,6 +1536,8 @@ static inline int32_t rv_knee(int32_t x)
     return x < 0 ? -a : a;
 }
 static struct { uint32_t pos, inc; uint16_t len, age; int16_t pl, pr; } cl_g[CL_N];
+static uint16_t cl_on __attribute__((section(".pool")));   /* (V10.7.43) bit k: cl_g[k] sounding (its len not 0), so
+                                                         * that the reads stop past the last one */
 static uint32_t cl_rand(void) { fx.cl_rng = fx.cl_rng * 1664525u + 1013904223u; return fx.cl_rng >> 8; }
 /* CLOUD (G_RTYPE 4, JIANT 0.5, made wet in 0.5.1): a granular wash. The input and the cloud's own tail fed back
  * (SIZE: the tail ~0.09, the grains ~0.43: the wash builds on itself) are written at half rate into a 0.74 s line;
@@ -1576,21 +1572,23 @@ static void cl_spawn(int32_t gap, int32_t wd, uint32_t ar)
         cl_g[k].age = 0;
         cl_g[k].pl = (int16_t)(128 - pan);               /* (0 .. 256: 128 the centre) */
         cl_g[k].pr = (int16_t)(128 + pan);
+        cl_on |= (uint16_t)(1u << k);
     }
 }
-static void cl_age(void)                                 /* the grains two samples on (after their reads) */
+static void cl_age(void)                                 /* the grains two samples on (cloud_clock's) */
 {
     uint32_t k;
     for (k = 0; k < CL_N; k++)
         if (cl_g[k].len) {
             cl_g[k].pos += cl_g[k].inc << 1;
             cl_g[k].age = (uint16_t)(cl_g[k].age + 2u);
-            if (cl_g[k].age >= cl_g[k].len) cl_g[k].len = 0;
+            if (cl_g[k].age >= cl_g[k].len) cl_g[k].len = 0, cl_on &= (uint16_t)~(1u << k);
         }
 }
 /* CLOUD at rest (room_used clear, no input): its line's clock, the scheduler (and its random numbers), the grains'
  * ages, the network's clocks: everything that moves with no sound, nothing read or summed (all of it exactly 0) */
-static void cloud_clock(uint32_t n)
+static __attribute__((noinline)) void cloud_clock(uint32_t n)   /* (V10.7.43: out of rev_idle's RAM code, through a
+                                                         * register: once a block, at rest) */
 {
     uint32_t i, freeze = GFX(GF_RSIZE) >= 127 && fx.cl_fill >= 32768u, ar = semi_q16(rev_air());
     int32_t gap = 1700 - song.g[G_RRATE] * 11, wd = song.g[G_RWIDE];
@@ -1642,19 +1640,24 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
                                                          * written (half rate): half the work; in between, the two
                                                          * averaged (a linear step, half a sample late) */
             int32_t gl = 0, gr = 0, ws = 0;
-            for (k = 0; k < CL_N; k++) {
-                if (!cl_g[k].len) continue;
+            uint32_t on = cl_on;
+            for (k = 0; on; k++, on >>= 1) {             /* (V10.7.43: each grain read, then two samples on: cl_age's,
+                                                         * in the same visit; up to the last one sounding) */
+                uint32_t L = cl_g[k].len;
+                if (!(on & 1u)) continue;
                 {
-                    uint32_t p = cl_g[k].pos >> 16, f = (cl_g[k].pos >> 8) & 255u, a = cl_g[k].age, L = cl_g[k].len;
+                    uint32_t ps = cl_g[k].pos, p = ps >> 16, f = (ps >> 8) & 255u, a = cl_g[k].age;
                     int32_t x0 = cloud_buf[p & (CL_LEN - 1u)], x1 = cloud_buf[(p + 1u) & (CL_LEN - 1u)];
                     int32_t x = x0 + (((x1 - x0) * (int32_t)f) >> 8), w = (int32_t)((a < L - a ? a : L - a) * 2u * 256u / L);
                     x = (x * w) >> 8;
                     ws += w;
                     gl += (x * cl_g[k].pl) >> 7;
                     gr += (x * cl_g[k].pr) >> 7;
+                    cl_g[k].pos = ps + (cl_g[k].inc << 1);
+                    cl_g[k].age = (uint16_t)(a += 2u);
+                    if (a >= L) cl_g[k].len = 0, cl_on &= (uint16_t)~(1u << k);
                 }
             }
-            cl_age();
             if (ws > CL_WMAX) {                          /* (p1, main 0.9.14 / 0.9.16) the overlap at most CL_WMAX / 256 */
                 int32_t q = (CL_WMAX << 11) / ws;        /* grains' worth: the windows' sum grows with RATE (up to 12), */
                 gl = (gl * q) >> 11;                     /* and x SIZE's feedback (0.43) the loop's gain passed 1 from */
@@ -1711,9 +1714,12 @@ static __attribute__((noinline)) int rev_idle(uint32_t ty, const int32_t *rev_in
         reso_block(per);
         fx.rs_w = (uint16_t)(fx.rs_w + n);
         break;
-    case 4:
-        cloud_clock(n);
+    case 4: {
+        void (*f)(uint32_t) = cloud_clock;
+        FM1_OPAQUE(f);
+        f(n);
         break;
+    }
     default:
         if (song.g[G_RMOD] || song.g[G_RWIDE]) room_mod_clock(n);
         else room_clock(n);
@@ -1755,6 +1761,7 @@ static void rev_state_clear(void)
     sh_tlp = 0;
     for (i = 0; i < CL_N; i++)
         cl_g[i].len = 0;
+    cl_on = 0;
     fx.cl_gl = fx.cl_gr = 0;
     fx.cl_dc = 0;
     fx.cl_fill = 0;
@@ -2578,29 +2585,30 @@ static __attribute__((noinline)) void drum_mix(int32_t *ol, int32_t *or_, uint32
  * calibrate the control signal. UI meters and shared FX returns are excluded. */
 static __attribute__((noinline)) void track_follow_peak(const track_t *t, const int32_t *b, uint32_t n)
 {
-    uint32_t ti = (uint32_t)(t - trk), i, st = ((life.fol & ~life.tapm) >> ti & 1u) ? 4u : 1u;   /* (V10.7.34: LIFE's
-                                                         * own, every 4th sample) */
+    uint32_t ti = (uint32_t)(t - trk), i;
     int32_t pl = 0, pr = 0, level = mp_lvl[ti] >> 8, pan = mp_pan[ti] >> 8;
     const dx_core_t *dc = &DXC;                         /* (V10.7.42) this core's, once: MC_CPU() was read twice a sample */
-    if (dc->xon & 1u)                                   /* a kit's IMAGE: each side its own */
-        for (i = 0; i < n; i += st) {
-            int32_t l = b[i] - dc->sl[i], r = b[i] - dc->sr[i];
-            l = l < 0 ? -l : l; r = r < 0 ? -r : r;
-            if (l > pl) pl = l;
-            if (r > pr) pr = r;
-        }
-    else {                                              /* (V10.7.42) no IMAGE: both sides the part's sum, one scan */
-        for (i = 0; i < n; i += st) {
-            int32_t l = b[i] < 0 ? -b[i] : b[i];
-            if (l > pl) pl = l;
-        }
-        pr = pl;
-    }
     if (ENGINES[t->engine] != &ENG_DRUM) level = mulq15(level, duck_g1);
-    pl = ((pl >> 2) * level) >> 10; pr = ((pr >> 2) * level) >> 10;
-    pl = pl * (64 - (pan > 0 ? pan : 0)) >> 6;
-    pr = pr * (64 + (pan < 0 ? pan : 0)) >> 6;
-    track_pk[ti] = (int16_t)clamp(pl > pr ? pl : pr, 0, 32767);
+    if ((track_follow_mask >> ti) & 1u) {               /* (V10.7.43: not for LIFE's samples alone) */
+        if (dc->xon & 1u)                               /* a kit's IMAGE: each side its own */
+            for (i = 0; i < n; i++) {
+                int32_t l = b[i] - dc->sl[i], r = b[i] - dc->sr[i];
+                l = l < 0 ? -l : l; r = r < 0 ? -r : r;
+                if (l > pl) pl = l;
+                if (r > pr) pr = r;
+            }
+        else {                                          /* (V10.7.42) no IMAGE: both sides the part's sum, one scan */
+            for (i = 0; i < n; i++) {
+                int32_t l = b[i] < 0 ? -b[i] : b[i];
+                if (l > pl) pl = l;
+            }
+            pr = pl;
+        }
+        pl = ((pl >> 2) * level) >> 10; pr = ((pr >> 2) * level) >> 10;
+        pl = pl * (64 - (pan > 0 ? pan : 0)) >> 6;
+        pr = pr * (64 + (pan < 0 ? pan : 0)) >> 6;
+        track_pk[ti] = (int16_t)clamp(pl > pr ? pl : pr, 0, 32767);
+    }
     if ((life.tapm >> ti) & 1u)                         /* (V10.7.34) its samples for LIFE's cross-FM (life.c) */
         life_tap(ti, b, n, level);
 }
@@ -2665,7 +2673,8 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
         gr = 4096 + (p0 < 0 ? p0 >> 2 : 0);
         dgl = ((4096 - (mp_pan[ti] > 0 ? mp_pan[ti] >> 2 : 0)) - gl) >> CTL_LOG2;
         dgr = ((4096 + (mp_pan[ti] < 0 ? mp_pan[ti] >> 2 : 0)) - gr) >> CTL_LOG2;
-        int32_t c = t->p[P_CHOR] * 258, d = t->p[P_DLY] * 258, r = t->p[P_REV] * 258, pk = t->peak;
+        int32_t c = t->p[P_CHOR] * 258, d = t->p[P_DLY] * 258, r = t->p[P_REV] * 258, pk = 0;   /* (V10.7.43: the block's
+                                                         * own peak, LIFE's follower; the meter's the most of them) */
         int32_t xmax = c > d ? c : d, *ol = c1 ? c1_mix.l : mix_l, *or_ = c1 ? c1_mix.r : mix_r;
         int32_t *sc = c1 ? c1_mix.c : send_c, *sd = c1 ? c1_mix.d : send_d, *sr = c1 ? c1_mix.rv : send_r;
         if (slicer_routes((uint32_t)(t - trk))) {       /* (JIANT 0.6.3) into the SLICER's bus, not the dry mix */
@@ -2697,7 +2706,7 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
             int32_t *const sx[3] = {sc, sd, sr};
             drum_mix(ol, or_, n, lq, dl, gl, dgl, gr, dgr, pm0, pm1, sx);
         }
-        if ((track_follow_mask >> ti) & 1u) TRACK_FOLLOW(t, b, n);
+        if (((track_follow_mask | life.tapm) >> ti) & 1u) TRACK_FOLLOW(t, b, n);   /* (V10.7.43: LIFE's samples too) */
         for (i = 0; i < n; i++, lq += dl, gl += dgl, gr += dgr) {
             int32_t x = ((b[i] >> 1) * (lq >> 9)) >> 10, a = x < 0 ? -x : x;   /* pre-shift: 8 loud voices (V10.7.43:
                                                          * >> 1 and LEVEL Q11, was >> 2 and Q12: a part's steps on the
@@ -2724,7 +2733,9 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
             }
             uin_mix(ol, or_, sc, sd, sr, n, lq0, dl, gl0, dgl, gr0, dgr, c, d, r, pm1, &pk);
         }
-        t->peak = pk;
+        life.pk[ti] = pk;
+        if (pk > t->peak)
+            t->peak = pk;
         if (fx_stems)
             stem_post(st, pre, ol, or_, n);
     }
@@ -3216,7 +3227,7 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
                                                          * the flash past the tables, out of a direct call's reach) */
         f(n);
     }
-    if (FELUCCA_XFX && (bal_v || (bal.g[0] | bal.g[1] | bal.g[2] | bal.g[3]))) {   /* (V10.7.30) BALANCE, before the EQ */
+    if (FELUCCA_XFX && (bal_v || bal.g)) {   /* (V10.7.30) BALANCE, before the EQ */
         void (*f)(uint32_t) = bal_block;
         FM1_OPAQUE(f);
         f(n);

@@ -3246,7 +3246,7 @@ static void ui_input_frame(void)
         }
         if (home_macros()) {                            /* (0.8.5) HOME's MACROS: M1..M4 */
             macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
-        } else if (home_life()) {                       /* (V10.7.34) HOME's LIFE: LIFE FILTER PITCH FX (life.c) */
+        } else if (home_life()) {                       /* (V10.7.34) HOME's LIFE: LIFE REACH X-FM SWIM (life.c) */
             life_v[k & 3u] = (int16_t)clamp(life_v[k & 3u] + accel(EN_K1 + k, s, 100), 0, 100);
         } else if (home_tracks()) {                     /* (V10.7.34) HOME > TRACKS: the track, its LEVEL PAN REV */
             trk_knob(k, s);

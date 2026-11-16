@@ -500,6 +500,22 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
   consonants in ~30 ms; the sequencer still starts the consonants early so the vowel lands on the step.
   **EDIT › TONE › ORGANIC** (VOICE's KNOB 4, 100 % by default and in every older project) fades the singer's life down
   to a machine at 0 % (the pitch as played, a key's vowel at once). LANG OFF (the vowels) is unchanged.
+- **Clean releases** (the owner: "a little bitcrush in the releases"): the tails of DRUM-X hits and of plucks no longer
+  step down in a soft grain. The mix kept dropping its low bits (before the master, before each track's LEVEL, in
+  MASTER's product, in BALANCE's bands); now they are kept, and the master's 3 bits under 16-bit reach the 24-bit DAC.
+  A tail's step 3.6 → 1.3 dry and 1.1 → 0.35 in a project (tests/release_clean_test.c). Loud sounds are unchanged
+  (a few LSB). Renders: renders/v43-release (LEEME.txt).
+- **LIFE is the tracks intermodulating each other, and nothing else.** A track's sound is phase-modulated at audio
+  rate by another's (cross-FM, through a short line), on every engine (a kit moves, it is never moved). Until now this
+  only ran with PITCH past 50 (10 at power-on), so by default it never happened. One pair up to LIFE 50, two above,
+  chosen by the beings' influence weights; gentle at the default, clearly audible at 100. LIFE no longer moves any
+  pitch, filter, SHAPE or send, and no follower drives a parameter (the matrix's LIFE, BEING and T ENV sources are
+  there for that). HOME › LIFE's knobs: **LIFE REACH X-FM SWIM** (REACH: how much the other tracks weigh beside the
+  one before). LIFE 0 is still bit for bit the sound without LIFE.
+- **BALANCE lighter, in the background**: only the low mids (the mud, ~150–800 Hz) come down when they pile up,
+  listened to at an eighth of the rate; **AMOUNT 25 by default** (was 50: about −3 dB on that band when it piles up).
+- **CPU**: CPU TEST 3075 → 2884 instructions a sample (−6.2 %; V10.7.23: 2864): BALANCE +94 → +20, LIFE +88 → +30,
+  CLOUD's grains read and aged in one pass (−41, bit for bit). Renders before and after: renders/v43-life (LEEME.txt).
 
 ### V10.7.42 (2026-11-15)
 - **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version

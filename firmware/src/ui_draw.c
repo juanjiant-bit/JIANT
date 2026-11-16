@@ -1336,7 +1336,7 @@ static void draw_columns(void)
         }
         return;
     }
-    if (home_life()) {                                  /* (V10.7.34) HOME's LIFE: LIFE FILTER PITCH FX (life.c) */
+    if (home_life()) {                                  /* (V10.7.34) HOME's LIFE: LIFE REACH X-FM SWIM (life.c) */
         for (c = 0; c < 4u; c++) {
             fmt_int(val, life_v[c]);
             draw_column(c, LIFE_NM[c], val, "%", c && !life_v[LIFE_AMT] ? T_DIM : VAL(c), life_v[c] * 10,
