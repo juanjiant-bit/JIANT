@@ -2171,12 +2171,20 @@ static __attribute__((noinline)) int delay_zero(const int32_t *in, uint32_t n, u
  * cycle of the feedback) is gone with it: it used to come back stepped in with the gate's reopening, a tick. What
  * moves whatever the sound keeps moving meanwhile (the chorus's LFO and the glides, the delay's WOW: the clocks). */
 static uint8_t rest_ph;                                  /* the rest's clearing: 0 .. 6 (done) */
+static volatile uint8_t fx_panic;                        /* (V10.7.43, a user: "noise I can't stop") PANIC (seq.c
+                                                         * panic_do): the buses at rest whatever they hold (a FREEZE of
+                                                         * CLOUD, a delay's loop at 100 %), their lines cleared over the
+                                                         * six blocks, nothing sent heard meanwhile; then as ever */
 static __attribute__((noinline)) int fx_rest(int32_t *wet, uint32_t n, uint32_t cinc, int32_t cdepth, int32_t cw,
                                              int32_t dmix)
 {
     uint32_t rt = (uint32_t)song.g[G_RTYPE] <= 4u ? (uint32_t)song.g[G_RTYPE] : 0u, ph = rest_ph, i;
     int32_t wm, dwm;
-    if (fxg_g || fxg_dly || GFX(GF_DFDBK) >= 100 || fx.dsw || fx.din_g || (rt == 4u && GFX(GF_RSIZE) >= 127) ||
+    if (fx_panic) {                                     /* (PANIC: from the rest's start, the gates shut) */
+        if (fx_panic == 1u)
+            ph = 0, fxg_g = fxg_dly = 0, fx.cl_fill = 0;
+        fx_panic = ph < 5u ? 2u : 0u;
+    } else if (fxg_g || fxg_dly || GFX(GF_DFDBK) >= 100 || fx.dsw || fx.din_g || (rt == 4u && GFX(GF_RSIZE) >= 127) ||
         REV_LITE[sys_load % 3u][rt] != fx.rtype) {
         rest_ph = 0;
         return 0;
@@ -2244,7 +2252,7 @@ static inline __attribute__((always_inline)) void fx_buses(const int32_t *cho_in
     int32_t cs = song.g[G_CSTER], cw = 80 + wd / 2;    /* (0.6.9) the chorus's side: 0 as before, - to mono, + ~2x */
     cw = cs >= 0 ? cw + cs * 2 : (cw * (64 + cs)) >> 6;
 #ifndef FX_REST_OFF                                     /* (tests/fx_rest_test.c: the reference without it) */
-    if (!any && fx.primed && fx_rest(wet, n, cinc, cdepth, cw, dmix)) {   /* (cpu5) at rest: not run */
+    if ((!any || fx_panic) && fx.primed && fx_rest(wet, n, cinc, cdepth, cw, dmix)) {   /* (cpu5) at rest: not run */
         fx.db_t = 0; fx.db_a = 0;                       /* (snd2: the tail gone, THROW's band with it) */
         return;
     }

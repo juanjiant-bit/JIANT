@@ -250,6 +250,38 @@ static int panic_test(void)
     bad += check("  (something hung before) and the transport stopped", ok && !song.playing);
     midi(0x82, 60, 0); midi(0x92, 62, 100);
     bad += check("  MIDI IN plays again after it", sounded());
+    {   /* (V10.7.43, a user: "all tracks muted and generative noise I can't stop") PANIC silences the FX too: CLOUD frozen
+         * at SIZE 100 %, the delay's loop at 100 %, the chorus; then a send plays again */
+        int32_t o[2 * CTL];
+        uint32_t b, i;
+        double e0 = 0, e1 = 0, e2 = 0;
+        reset(MO_OFF);
+        set_engine_of(&trk[1], ENGI_ANALOG); apply_preset_to(&trk[1], 0); trk[1].engine = trk[1].eng_req;
+        trk[1].p[P_MUTE] = 0; trk[1].p[P_SUS] = 127; trk[1].p[P_REL] = 10; song.master_q12 = 4096;   /* (MASTER full: the tests leave it 0) */
+        for (b = 0; b < 64u; b++) { events_block(CTL); mix_block(o, CTL); }
+        song.g[G_RTYPE] = 4; song.g[G_DFDBK] = 100;
+        trk[1].p[P_REV] = 120; trk[1].p[P_DLY] = 120; trk[1].p[P_CHOR] = 100;
+        trk_note_on(&trk[1], 60, 120);
+        for (b = 0; b < 700u; b++) { events_block(CTL); mix_block(o, CTL); }
+        song.g[G_RSIZE] = 127;                          /* (CLOUD's FREEZE: the line full, held) */
+        trk_all_off(&trk[1]);
+        for (b = 0; b < 700u; b++) { events_block(CTL); mix_block(o, CTL); }
+        for (b = 0; b < 64u; b++) { events_block(CTL); mix_block(o, CTL); for (i = 0; i < 2u * CTL; i++) e0 += (double)o[i] * o[i]; }
+        panic_all = 1;
+        for (b = 0; b < 16u; b++) { events_block(CTL); mix_block(o, CTL); }
+        {   /* (the master's DC blocker still settling from the frozen wash: a DC under -40 dB, gone over seconds; the
+             * sound, the AC, measured) */
+            double m = 0;
+            for (b = 0; b < 64u; b++) { events_block(CTL); mix_block(o, CTL); for (i = 0; i < 2u * CTL; i++) e1 += (double)o[i] * o[i], m += o[i]; }
+            e1 -= m * m / (64.0 * 2 * CTL);
+        }
+        bad += check("PANIC: the FX silenced too (CLOUD frozen, the delay's loop at 100 %, the chorus): 40 dB down at once", e0 > 1e6 && e1 < e0 * 1e-4 && !fx_panic);
+        song.g[G_RSIZE] = 60; song.g[G_DFDBK] = 40;
+        trk_note_on(&trk[1], 64, 120);
+        for (b = 0; b < 200u; b++) { events_block(CTL); mix_block(o, CTL); for (i = 0; i < 2u * CTL; i++) e2 += (double)o[i] * o[i]; }
+        trk_all_off(&trk[1]);
+        bad += check("  .. and they play again after it", e2 > 1e6);
+    }
     return bad;
 }
 

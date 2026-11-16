@@ -251,7 +251,9 @@ static __attribute__((noinline)) void life_pm(uint32_t ti, int32_t *out, uint32_
         db = (b1 - b0) >> CTL_LOG2; dk = (k1 - k0) >> CTL_LOG2;
         w = q->wp;
         for (i = 0; i < n; i++, w++, b0 += db, k0 += dk) {
-            int32_t d = b0 + (((s[i] >> 3) * (k0 >> 2)) >> 10), f, x0;
+            int32_t d = b0 + (((s[i] >> 7) * (k0 >> 2)) >> 6), f, x0;   /* (V10.7.43: s >> 7, was >> 3: |s| 2^19.7 x
+                                                         * k0 / 4 (2^17.7 at a follower's floor, a loud attack) within
+                                                         * 32 bits; it wrapped there) */
             uint32_t r;
             ln[w & (LPM_L - 1u)] = out[i];
             if ((uint32_t)d > (uint32_t)(LPM_L - 2u) << 8)

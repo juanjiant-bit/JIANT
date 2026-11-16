@@ -2175,11 +2175,11 @@ static void pl_knob(uint32_t slot, int32_t s)
 }
 static void pl_back(void)                               /* OCT-: the sounds as the list found them (OCT+: pl_close) */
 {
-    uint32_t k;
+    uint32_t k, ok = 0;
     for (k = 0; k < NTRK; k++)
         if ((pl_snd >> k) & 1u)
-            (void)undo_sound(k);
-    if (pl_snd)
+            ok |= !undo_sound(k);
+    if (ok)                                             /* (V10.7.43: said only when it did: no mark, nothing back) */
         ui_message("SOUND BACK");
     pl_close();
 }

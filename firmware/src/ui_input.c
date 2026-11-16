@@ -2687,6 +2687,7 @@ static void ui_input_frame(void)
         panic_all = 1;
         transport_req = 2;
         ui_message("PANIC: ALL NOTES OFF");
+        str_cpy(ui.msg2, "EMPTY SONG: SAVE>TOOLS CLEAR", sizeof ui.msg2);   /* (V10.7.43: a fresh start, then) */
     }
     layer_arm(pressed, now);
     if (((pressed >> panel.btn[B_REC]) & 1u) && ui.ly == LAYER_REC)

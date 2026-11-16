@@ -495,6 +495,18 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
             ic2 = out[0];
         }
         k = 8192 - cres * 7600 / 127;
+        if (was && on && fo == TF_DRY && !md && ft == FT_LP) {   /* (V10.7.43, the owner: "EROSION eats a lot of CPU":
+                                                         * a low-pass settled, no TYPE's fade, no METAL: the loop below's
+                                                         * steps that it takes, bit for bit; EROSION keeps the SVF in) */
+            fn_coef(&c, cut, k);
+            mph += mi;
+            for (i = 0; i < n; i++) {
+                int32_t v3 = out[i] - ic2, v1 = (c.a1 * ic1 + c.a2 * v3) >> 13, v2 = ic2 + ((c.a2 * ic1 + c.a3 * v3) >> 13);
+                ic1 = clamp(2 * v1 - ic1, -150000, 150000);
+                ic2 = clamp(2 * v2 - ic2, -150000, 150000);
+                out[i] = soft_knee(v2, 30000);
+            }
+        } else
         for (i = 0; i < n; i++) {
             int32_t x = out[i], y, w = (int32_t)((i + 1u) << (12 - CTL_LOG2));   /* 0 .. 1 over the block, Q12 */
             int32_t v3, v1, v2;
