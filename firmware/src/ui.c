@@ -654,7 +654,8 @@ static int page_visible(uint32_t i)
     if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] >= P_LN0 && PAGES[i].id[0] <= P_LN7)   /* (filters2: EROSION, a
                                                          * synth's; filter2-mod: FILTER 3 KEY, VOICE's EROSION no DEST) */
         return PAGES[i].id[0] == P_LN0 || PAGES[i].id[0] == P_LN4 ? te == ENGI_DRUM : te != ENGI_DRUM &&
-               te != ENGI_INPUT && (PAGES[i].id[0] == P_FKEY || (te == ENGI_VOICE) == (PAGES[i].id[3] == 0xFFu));
+               te != ENGI_INPUT && (PAGES[i].id[0] == P_FKEY || PAGES[i].id[0] == P_FNZ);   /* (V10.7.43: one EROSION,
+                                                         * DEST gone: VOICE's as every synth's) */
     if (PAGES[i].graph == GR_FOCUS)                     /* (0.8.5) FOCUS: a synth's (FM6: OPERATOR, DRUM: SOUND; V10.54 not INPUT's) */
         return te != ENGI_DRUM && te != ENGI_FM6 && te != ENGI_INPUT &&
                !(FELUCCA_FM4 && te == ENGI_DIGITAL);

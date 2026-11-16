@@ -53,6 +53,7 @@ static track_t *part(uint32_t e, int ft, int cut, int res, int note)
     memset(tf_on, 0, sizeof tf_on); memset(tf_cmb, 0, sizeof tf_cmb); memset(tf_xb, 0, sizeof tf_xb);
     memset(tf_ft, 0, sizeof tf_ft); memset(tf_l24, 0, sizeof tf_l24);
     memset(fns, 0, sizeof fns); memset(ms_s, 0, sizeof ms_s);   /* (filter2-mod: the modulator, LP24's gain and push) */
+    memset(fnb, 0, sizeof fnb);                         /* (V10.7.43: METAL's line on the pitch, its fade, from rest) */
     t->p[P_FTYPE] = (int16_t)ft;
     t->p[P_FCUT] = t->p[P_E4] = (int16_t)cut;
     t->p[P_FRES] = t->p[P_E5] = (int16_t)res;
@@ -548,59 +549,22 @@ int main(int argc, char **argv)
               ac[0] > 0.95 && ac[1] < ac[0] - 0.1 && ch[0] > 0.3 && tl < 1,
               "autocorrelation at the period x1 %.3f, x1.41 %.3f; changed by %.2f of the sine; after %.2f", ac[0], ac[1], ch[0], tl);
     }
-    {   /* BREAK in time: CUT held through each 1/16 (its own clock, the transport stopped), jumping between them */
-        track_t *t = part(ENGI_PHASE, 0, 70, 40, 48);
-        uint32_t len = beat_samples() / 4u, s0, k, nb = 0;
-        double within = 0, between = 0, prev = -1;
-        t->p[P_FNZ] = 0;
-        t->p[P_FNMD] = 38;
-        t->p[P_FNRT] = 127 - 40;                        /* (1/16) */
-        sph = 0;
-        fns[0].clk = 0;
-        run(t, 1, 48, 0, FS * 2u, 16000, 0);
-        for (s0 = len * 2u; s0 + len <= FS * 2u; s0 += len) {   /* (its steps: a block late, two to glide) */
-            double m = 0, v = 0, r;
-            uint32_t c = 0;
-            for (k = s0 + 4u * CTL; k + 512u <= s0 + len; k += 512u) {
-                r = 20 * log10(rms(k, k + 512u) + 1);
-                m += r;
-                v += r * r;
-                c++;
-            }
-            m /= c;
-            within += sqrt(v / c - m * m > 0 ? v / c - m * m : 0);
-            if (prev >= 0)
-                between += fabs(m - prev);
-            prev = m;
-            nb++;
-        }
-        within /= nb;
-        between /= nb - 1;
-        check("BREAK in time: CUT steady within a 1/16, jumping between them", within < 1.0 && between > 3 * within,
-              "level spread %.2f dB within a step, %.2f dB step to step", within, between);
-    }
-    {   /* DUST's density: the time CUT is up (a 2 kHz sine over CUT: a block 6 dB over the quietest), RATE 0 / 100 % */
-        double n[2];
-        int k;
-        for (k = 0; k < 2; k++) {
-            track_t *t = part(ENGI_PHASE, 0, 50, 30, 48);
-            uint32_t i, c = 0;
-            double prev = 0;
+    {   /* (V10.7.43, EROSION minimal) the old MODEs STEP BREAK DUST read as NOISE (an old project's): bit for bit */
+        static int32_t ref[MAXN];
+        static const uint8_t OV[4] = {90, 38, 12, 110};   /* (STEP BREAK DUST, then NOISE's own) */
+        int same = 1;
+        uint32_t k;
+        for (k = 0; k < 4u; k++) {
+            track_t *t = part(ENGI_PHASE, 0, 70, 40, 48);
             t->p[P_FNZ] = 0;
-            t->p[P_FNMD] = 12;
-            t->p[P_FNRT] = (int16_t)(k ? 0 : 127);
+            t->p[P_FNMD] = OV[k];
+            t->p[P_FNRT] = 127 - 40;
             sph = 0;
-            run(t, 3, 48, 2000.0, FS * 4u, 16000, 0);
-            for (i = FS / 4u; i < FS * 4u; i += CTL) { /* (the quietest block: CUT at rest) */
-                double r = rms(i, i + CTL) + 1;
-                prev = prev == 0 || r < prev ? r : prev;
-            }
-            for (i = FS / 4u; i < FS * 4u; i += CTL)
-                c += rms(i, i + CTL) + 1 > prev * 2;
-            n[k] = (double)c * CTL / (FS * 15u / 4u);
+            run(t, 1, 48, 0, FS, 16000, 0);
+            if (!k) memcpy(ref, buf, sizeof ref);
+            else same &= !memcmp(ref, buf, sizeof ref);
         }
-        check("DUST: sparse spikes at RATE 0, dense at 100 % (the time CUT is up 6 dB or more)", n[0] > 0.001 && n[0] < 0.05 &&
-              n[1] > 0.5, "%.1f %% and %.0f %% of the time", n[0] * 100, n[1] * 100);
+        check("the old MODEs STEP BREAK DUST read as NOISE (a project of before): bit for bit", same, 0);
     }
 
     /* demos */

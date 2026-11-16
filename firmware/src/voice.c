@@ -219,41 +219,28 @@ static uint32_t beat_samples(void);                     /* (fx.c) */
  * fifth of the key; 127 / 27 of it the whole key), LP24's DRIVE */
 static __attribute__((noinline)) void fn_tick(const track_t *t, const engine_t *e, uint32_t ti, uint32_t ok)
 {
-    static const int8_t PAT[16] = {127, -128, 40, -128, 127, 90, -128, 64, 127, -128, -40, 127, -128, 64, 100, -96};
     static const uint16_t RAT[8] = {128, 256, 361, 384, 512, 707, 768, 1024};   /* METAL's ratios, Q8 */
     fnst_t *s = &fns[ti];
     fnb_t *b = &fnb[ti];
     uint32_t dk = e == &ENG_DRUM;                       /* (V10.7.37) a kit's EROSION (core.h P_DNZ: its values as they read) */
     int32_t d = ok ? fn_inv(t->p, P_FNZ) : dk ? t->p[P_DNZ] & 127 : 0, r = dk ? t->p[P_DNRT] & 127 : fn_inv(t->p, P_FNRT), v, dep;
-    uint32_t o = s->ph, m = dk ? (uint32_t)t->p[P_DNMD] & 7u : fn_mode(t->p), z, pw;
+    uint32_t o = s->ph, m = dk ? (uint32_t)t->p[P_DNMD] & 7u : fn_mode(t->p), pw;
     b->kq = !ok ? 0 : (int32_t)(e == &ENG_ANALOG ? fkey_rank(t->p[P_FKEY]) : (uint32_t)fn_inv(t->p, P_FKEY)) * 1024 / 27;
     b->drv = (uint8_t)(e == &ENG_ANALOG ? t->p[P_E6] & 127 : ok ? fn_inv(t->p, P_FDRV) : 0);
     b->cut = b->span = b->pit = b->pmd = s->mdep = s->src = dx_ero_pit[ti] = 0;
     b->amt = (uint8_t)((d * (d + 127)) >> 8);
     if (!ok && !(dk && d))                              /* (a kit's at NOISE 0: as before, not run, F.NOISE 0) */
         return;
-    pw = dk ? (uint32_t)clamp(t->p[P_DDST], 0, 4) * 32u :
-         e == &ENG_FORMANT ? 0 : (4 - (((uint32_t)t->p[P_FDST] & 127u) * 5u >> 7)) * 32u;   /* (DEST: the pitch's share,
-                                                         * Q7; VOICE's FILTER, its CONS there) */
+    m = m == FN_METAL ? FN_METAL : FN_SOFT;            /* (V10.7.43, the owner: "EROSION minimal") two MODEs: NOISE (the
+                                                         * old SOFT; STEP BREAK DUST read as it) and METAL */
+    pw = m == FN_METAL && !dk ? 128u : 0u;   /* (V10.7.43: no DEST: NOISE on the CUT, METAL on a
+                                                         * synth's pitch (fn_pm: no filter recomputed), a kit's CUT) */
     s->ph += LFO_INC[r] << 3;                           /* (0.4 .. 320 Hz) */
     if (s->ph < o) {
         s->a = s->b;
         s->b = (int16_t)(fn_rand(s, ti) >> 16);
     }
-    v = m == FN_STEP ? s->b : s->a + (((s->b - s->a) * (int32_t)(s->ph >> 17)) >> 15);
-    if (m == FN_BREAK) {                                /* (in time: the transport's place, stopped its own clock) */
-        uint32_t len = beat_samples() / (2u * (1u + ((uint32_t)r >> 5))), k;
-        k = (song.playing ? ms_clock : (s->clk += CTL)) / (len ? len : 1u);
-        z = (k & 15u) * 2654435761u ^ (k >> 4 & 1u) * 0x9E37u;
-        v = (z >> 24) < 52u ? (int32_t)(int8_t)(z >> 8) << 8 : PAT[k & 15u] << 8;
-        v = s->env += (v - s->env) >> 1;                /* (a jump glided over two blocks: no click) */
-    } else if (m == FN_DUST) {
-        z = fn_rand(s, ti);
-        if ((z >> 16) < (uint32_t)((r + 8) * (r + 8) * 3) && (int32_t)(z & 32767u) > s->env)
-            s->env = 8192 + (int32_t)((z & 32767u) * 3u >> 2);
-        v = s->env;
-        s->env -= s->env >> 2;
-    }
+    v = s->a + (((s->b - s->a) * (int32_t)(s->ph >> 17)) >> 15);
     s->src = (int16_t)v;                                /* (every MODE's within 16 bits) */
     if (!d)
         return;
@@ -327,7 +314,8 @@ static __attribute__((noinline)) int32_t fn_voice(const track_t *t, int32_t p16,
     const engine_t *e = ENGINES[t->engine];
     if (e == &ENG_DRUM || e == &ENG_INPUT)
         return 0;
-    if ((p[P_FNZ] & p[P_FDRV] & p[P_FKEY]) < 127 && !tf_on[ti])
+    if ((p[P_FNZ] & p[P_FDRV] & p[P_FKEY]) < 127 && !tf_on[ti])   /* (track_post for it: METAL's fn_pm, NOISE's filter;
+                                                         * an open filter with no span is not run, tf_run) */
         tf_on[ti] = 2;
     return e != &ENG_ANALOG && e != &ENG_LOFI ? 0 : (p[P_FNZ] < 127 ? fnb[ti].cut : 0) +
            (p[P_FKEY] < 127 ? ((p16 - 60 * 16) * (fnb[ti].kq - (e == &ENG_ANALOG ? 1024 : 0))) >> 8 : 0);

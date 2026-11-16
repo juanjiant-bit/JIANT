@@ -1352,14 +1352,14 @@ static void test_dest(void)
     double f = dest_spread(127, "ANALOG"), m = dest_spread(64, "ANALOG"), p = dest_spread(0, "ANALOG");
     char what[160];
     int32_t vp;
-    snprintf(what, sizeof what, "EROSION DEST (STEP, NOISE 100 %%): the pitch's spread FILT x%.2f, MIX x%.2f, PITCH x%.2f", f, m, p);
-    check(what, f < 1.1 && m > 1.25 && p > m * 1.2 && p < 4.5);
+    snprintf(what, sizeof what, "EROSION (V10.7.43: no DEST) NOISE on the CUT: the pitch's spread x%.2f, the same whatever an old DEST (x%.2f x%.2f)", f, m, p);
+    check(what, f < 1.1 && m == f && p == f);
     fresh(eng_by_name("VOICE"), 0);                     /* (VOICE: its CONS in DEST's slot, DEST off) */
     trk[0].p[P_FNMD] = 89; trk[0].p[P_FNZ] = 0; trk[0].p[P_FDST] = 0;
     trk_note_on(&trk[0], 60, 100);
     blocks(200);
     vp = fnb[0].pit;
-    check("EROSION DEST: VOICE's slot its CONS, DEST off there (the pitch untouched)", vp == 0);
+    check("EROSION: VOICE's NOISE off its pitch too (its slot its CONS)", vp == 0);
 }
 static void test_fnoise(void)
 {

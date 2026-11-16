@@ -36,7 +36,9 @@ static inline uint32_t ft_of(const int16_t *p)
  * (codex/filter2-mod) open under EROSION's METAL too (NOISE on, MODE METAL: voice.c fn_mode, FN_METAL_ON), the part's */
 static __attribute__((noinline)) uint32_t fn_metal(const int16_t *p)   /* (voice.c FN_METAL_ON: one copy) */
 {
-    return p[P_FNZ] < 127 && ((uint32_t)(p[P_FNMD] & 127) * 5u >> 7) == 2u;
+    (void)p;
+    return 0;                                           /* (V10.7.43: METAL on the pitch, fn_pm: the voices' filters
+                                                         * their own) */
 }
 static inline uint32_t ft_voice(const int16_t *p)
 {

@@ -300,7 +300,8 @@ static const param_desc_t NONE_DESC = {"-", F_PCTINV, 0, 127, 127, 0};      /* (
 static const param_desc_t VLYR_DESC = {"LYRIC", F_ENUM, 0, LYR_N - 1, 0, N_LYRIC};  /* P_VLANG, P_VLYR (sing.c) */
 static const param_desc_t VCONS_DESC = {"CONS", F_INT, 0, 127, 127, 0};   /* (V10.6y) P_VCONS: 127 = 100 % (core.h) */
 /* (codex/filters2) EROSION and FILTER's DRIVE (core.h P_FKEY ..): 127 = 0 %, SOFT; ANALOG's KEY 127 = 21 % (fkey_rank) */
-static const char *const N_FNMD[] = {"DUST", "BREAK", "METAL", "STEP", "SOFT", 0};   /* (by the value: shown right to left) */
+static const char *const N_FNMD[] = {"NOISE", "NOISE", "METAL", "NOISE", "NOISE", 0};   /* (by the value: shown right to
+                                                         * left; V10.7.43: two MODEs, the old ones' places kept) */
 /* (codex/filter2-mod) RATE as METAL takes it (its sine's ratio to the note) and BREAK (its step), voice.c fn_tick */
 static const char *const N_FRAT[] = {"x4", "x3", "x2.76", "x2", "x1.5", "x1.41", "x1", "x0.5", 0};
 static const char *const N_FDIV[] = {"1/32", "1/16T", "1/16", "1/8", 0};
@@ -312,7 +313,8 @@ static const param_desc_t FN_DESC[10] = {{"KEY TRK", F_PCTINV, 0, 127, 127, 0}, 
     {"DEST", F_INT, 0, 127, 127, N_FDST}, {"TIME", F_INT, 0, 127, 127, N_LTIME}};   /* (V10.7.37) MATH's RETRIG TIME (core.h
                                                          * P_LTIME): NOTE, or the transport at a rate (eng_lofi.c lofi_tq) */
 /* (V10.7.37) a kit's EROSION (core.h P_DNZ ..), in P_GLMODE .. P_DETUNE's order: MODE DEST NOISE RATE, each as it reads */
-static const char *const N_DNMD[] = {"SOFT", "STEP", "METAL", "BREAK", "DUST"};
+static const char *const N_DNMD[] = {"NOISE", "NOISE", "METAL", "NOISE", "NOISE"};   /* (V10.7.43: two, 1 3 4 aliases
+                                                         * of NOISE: enum_orig) */
 static const char *const N_DDST[] = {"FILT", "F75", "MIX", "P75", "PITCH"};
 static const param_desc_t DERO_DESC[4] = {{"MODE", F_ENUM, 0, 4, 0, N_DNMD}, {"DEST", F_ENUM, 0, 4, 0, N_DDST},
                                           {"NOISE", F_PCT, 0, 127, 0, 0}, {"RATE", F_PCT, 0, 127, 40, 0}};
@@ -336,9 +338,9 @@ static const param_desc_t *track_desc(const track_t *t, uint32_t id)
         return &FN_DESC[8];
     if (id >= P_FKEY && id <= P_FDRV && en != &ENG_DRUM && en != &ENG_INPUT)   /* (filters2) a synth's EROSION, DRIVE */
     {
-        uint32_t m = id == P_FNRT ? ((uint32_t)t->p[P_FNMD] & 127u) * 5u >> 7 : 0u;   /* (filter2-mod: RATE by the MODE) */
-        return id == P_FKEY && en == &ENG_ANALOG ? &FKEYA_DESC : m == 2u ? &FN_DESC[6] : m == 1u ? &FN_DESC[7] :
-               &FN_DESC[id - P_FKEY];
+        uint32_t m = id == P_FNRT ? ((uint32_t)t->p[P_FNMD] & 127u) * 5u >> 7 : 0u;   /* (filter2-mod: RATE by the MODE;
+                                                         * V10.7.43: METAL's RATIO, else RATE) */
+        return id == P_FKEY && en == &ENG_ANALOG ? &FKEYA_DESC : m == 2u ? &FN_DESC[6] : &FN_DESC[id - P_FKEY];
     }
     if (id >= P_E0 && id <= P_E7) {                   /* the engine asked for (t->engine follows after a fade) */
         const engine_t *e = en;
@@ -394,7 +396,8 @@ static int16_t param_store_def(uint32_t e, uint32_t id)
  * -> the value v stands for */
 static int32_t enum_orig(const param_desc_t *d, int32_t v)   /* (filters2: MS20's 5, LP24 hot, eng_analog.c) */
 {
-    return d->names == N_FTYPE && v == FT_LP24H ? FT_LP24 : d->names == N_VCAP && v == 1 ? 0 : v;   /* (V10.7.38: VOICES'
+    return d->names == N_FTYPE && v == FT_LP24H ? FT_LP24 : d->names == N_VCAP && v == 1 ? 0 :
+           d->names == N_DNMD && v != 2 ? 0 : v;   /* (V10.7.43: a kit's EROSION MODE: NOISE or METAL) */   /* (V10.7.38: VOICES'
                                                          * old REUSE, AUTO) */
 }
 static uint32_t as_mix(uint32_t h, const void *p, uint32_t n)   /* FNV-1a, continued (project.c autosave_sig; song_play.c snd_sig) */
@@ -825,7 +828,7 @@ static const page_t PAGES[] = {
     {"OUT", FAM_EDIT, SC_TRACK, GR_DXIMG, {P_DXIMG, ID_CRU, 0xFF, P_DKEYMODE}},   /* (V10.7.37, the owner) the kit's way out:
                                                          * IMAGE (was STEREO's), CRUSH and LIFE (VOICES 3's), KEY MAP (KIT 4's:
                                                          * 0..9, ui_input.c dx_keymap_turn) */
-    {"EROSION", FAM_EDIT, SC_TRACK, GR_NONE, {P_DNZ, P_DNRT, P_DNMD, P_DDST}},   /* (V10.7.37) a kit's EROSION: the noise
+    {"EROSION", FAM_EDIT, SC_TRACK, GR_NONE, {P_DNZ, P_DNRT, P_DNMD, 0xFF}},   /* (V10.7.37) a kit's EROSION: the noise
                                                          * modulator on its FILTER's CUT and the hits' pitch (core.h P_DNZ) */
     {"OPERATOR", FAM_EDIT, SC_TRACK, GR_FMOP, {0xFF, 0xFF, 0xFF, 0xFF}},    /* FM6 only: KNOB 1 the operator, then its */
     {"OP ENV", FAM_EDIT, SC_TRACK, GR_FMENV, {0xFF, 0xFF, 0xFF, 0xFF}},     /* bytes of the track's patch (ui_fm6op.c): */
@@ -835,11 +838,10 @@ static const page_t PAGES[] = {
                                                          * DRV: the part's DIST, after it) */
     {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_FCUT, P_FRES, P_FDRV}},   /* (filters2) every other engine's:
                                                          * DRIVE into the filter (DIST: FX > DIST) */
-    {"EROSION", FAM_EDIT, SC_TRACK, GR_NONE, {P_FNZ, P_FNRT, P_FNMD, P_FDST}},   /* (filter2-mod) NOISE RATE MODE DEST, ui.c
+    {"EROSION", FAM_EDIT, SC_TRACK, GR_NONE, {P_FNZ, P_FNRT, P_FNMD, 0xFF}},   /* (filter2-mod) NOISE RATE MODE DEST, ui.c
                                                          * page_visible: VOICE's without DEST (its CONS's slot); KEY on
                                                          * FILTER 3. (filters2) KEY NOISE RATE MODE: not a
                                                          * kit's, nor EXT's (voice.c fn_tick) */
-    {"EROSION", FAM_EDIT, SC_TRACK, GR_NONE, {P_FNZ, P_FNRT, P_FNMD, 0xFF}},   /* .. VOICE's */
     {"TONE", FAM_EDIT, SC_TRACK, GR_NONE, {P_FKEY, ID_CRU, 0xFF, 0xFF}},   /* (V10.7.35, the owner: was FILTER 3 and VOICES 3,
                                                          * a knob or two each) KEY TRK, CRUSH, LIFE. (filter2-mod) KEY: the keyboard tracking (was
                                                          * EROSION's first: DRIVE stays FILTER's, the knob of its power) */
