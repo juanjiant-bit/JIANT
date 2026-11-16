@@ -630,7 +630,7 @@ static int page_visible(uint32_t i)
     if (PAGES[i].graph == GR_SONG && (PAGES[i].fam == FAM_SEQ || PAGES[i].title[0] == 'C'))   /* (V10.7.32: CLIPS, PARTS' grid) */
         return 0;                                       /* (0.6.24) the song in one place: SAVE > ARRANGE (SEQ > SONG
                                                          * was the same page twice; kept in the table: its index) */
-    if ((!FELUCCA_LIVE && PAGES[i].graph == GR_LIVE) || (!FELUCCA_XFX && PAGES[i].fam == FAM_FX && PAGES[i].id[0] == ID_BAL))
+    if ((!FELUCCA_LIVE && PAGES[i].graph == GR_LIVE))
         return 0;                                       /* (V10.7.30) KEYS RAILS, BALANCE out (core.h): kept in the table */
     if ((!FELUCCA_SPLIT && (uint32_t)(PAGES[i].graph - GR_SPLIT) < 2u) || (!FELUCCA_ENVX && PAGES[i].graph == GR_STAGE))
         return 0;                                       /* (V10.7.32) KEY SPLIT, KEY SPLIT 2, ENV > STAGE out (core.h) */

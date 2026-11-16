@@ -75,11 +75,11 @@ static const char *const N_APSYNC[] = {"FREE", "BEAT"};                  /* (JIA
 static const char *const N_APDIV[] = {"4BAR", "2BAR", "1BAR", "1/2", "1/4", "1/8", "1/16", "1/32"};   /* .. BEAT (fx.c AP_SIXT) */
 /* modulation matrix (mod.c): sources, destinations (E1..E8 = P_E0..P_E7: shown with the engine's labels) */
 static const char *const N_MSRC[] = {"OFF", "LFO", "ENV", "VEL", "KEY", "RAND", "MODW", "AT", "EXPR",
-                                     "M1", "M2", "M3", "M4", "STEP", "NOISE", "PROX", "ENV2", "IN ENV", "T1 ENV", "T2 ENV", "T3 ENV", "T4 ENV", "T5 ENV", "T6 ENV", "OCT+", "OCT-", "F.NOISE", "LIFE", "BEING"};   /* (V10.7.22) OCT+ OCT-: the expression keys; (filter2-mod) F.NOISE: EROSION's */   /* (V10.22) ENV2 */   /* (0.7.8) NOISE; (V10.14) PROX */   /* (JIANT: the macros, LFO held; the modulation sequence) */
+                                     "M1", "M2", "M3", "M4", "STEP", "NOISE", "PROX", "ENV2", "IN ENV", "T1 ENV", "T2 ENV", "T3 ENV", "T4 ENV", "T5 ENV", "T6 ENV", "OCT+", "OCT-", "F.NOISE"};   /* (V10.7.22) OCT+ OCT-: the expression keys; (filter2-mod) F.NOISE: EROSION's */   /* (V10.22) ENV2 */   /* (0.7.8) NOISE; (V10.14) PROX */   /* (JIANT: the macros, LFO held; the modulation sequence) */
 static const char *const N_MDST[] = {"OFF", "PITCH", "CUT", "SHP", "AMP", "PAN", "DIST", "CHO", "DLY", "REV", "L.RATE",
                                      "L.PIT", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8",
                                      "CLIP", "PNCH",   /* (JIANT: the master, FX > MASTER) */
-                                     "D.TIM", "D.FB", "D.TON", "D.MIX", "R.SIZ", "R.DMP", "C.RAT", "C.DEP", "F.CUT", "LEVEL", "LIFE"};   /* (0.7.0) the FX buses'
+                                     "D.TIM", "D.FB", "D.TON", "D.MIX", "R.SIZ", "R.DMP", "C.RAT", "C.DEP", "F.CUT", "LEVEL"};   /* (0.7.0) the FX buses'
                                                          * globals (DELAY TIME FDBK TONE MIX, REVERB SIZE DAMP, CHORUS RATE
                                                          * DEPTH): mod.c macro_master, fx.c GFX() */
 static const char *const N_ENGNAME[] = {"ANALOG", FELUCCA_FM4 ? "DIGITAL" : "-", "PHASE", "MATH", "-", "VOICE", "-", "WHEEL", "STRING", "-",
@@ -744,18 +744,15 @@ static int16_t eq_v[4] __attribute__((section(".bss.tape")));   /* (out of the m
 #define ID_DNZ 0xEDu
 #define ID_CRU 0xEEu                                    /* (V10.7.33) EDIT > VOICES 3's CRUSH, the track's (fx.c track_crush):
                                                          * 'X' 'C' (project.c proj_xm), as NOISE */
-#ifndef BAL_DEF
-#define BAL_DEF 25
-#endif
+#define BAL_DEF 50                                      /* (V10.7.43: BALANCE gone; the byte a project keeps for it, as
+                                                         * V10.7.30 .. 42 read it: their default) */
 static const param_desc_t XM_DESC[3] __attribute__((section(".rodata.tape"))) = {
     PD("AMOUNT", F_PCT, 0, 100, BAL_DEF), PD("NOISE", F_PCT, 0, 100, 0), PD("CRUSH", F_PCT, 0, 127, 0)};
-static int16_t bal_v __attribute__((section(".bss.tape")));   /* (BAL_DEF set at power-on: main.c, system_init) */
 static int16_t dnz_v[NTRK] __attribute__((section(".bss.tape")));
 static int16_t cru_v[NTRK] __attribute__((section(".pool")));   /* (V10.7.33) CRUSH (0..127: DIST's DRIVE, shown 0..100 %) */
-/* (V10.7.34, the owner: "organic, self-modulating voices") LIFE (life.c): HOME > LIFE's four (V10.7.43: LIFE REACH X-FM
- * SWIM, were LIFE FILTER PITCH FX; their places in a project the same) (0..100;
- * LIFE 0: every voice and track as before, bit for bit), then each track's LIFE (EDIT > VOICES 3 KNOB 2, ID_LIF; 0..100,
- * times the global one). Not song or track parameters (as BALANCE: no slot left): kept with the project ('X' 'L',
+/* (V10.7.34, the owner: "organic, self-modulating voices") LIFE (life.c): (V10.7.43) HOME > LIFE's one value, LIFE_AMT
+ * (0..100; LIFE 0: every track as without it, bit for bit). The rest of life_v (V10.7.34 .. 42's FILTER PITCH FX and each
+ * track's LIFE, ID_LIF) kept at their defaults: a project's bytes for them read and ignored. Not song or track parameters (as BALANCE: no slot left): kept with the project ('X' 'L',
  * project.c proj_xm; a project without it, every one before V10.7.34: these defaults, LIFE on) */
 #define ID_LIF 0xEFu
 enum { LIFE_AMT, LIFE_RCH, LIFE_XFM, LIFE_SWM, LIFE_N };
@@ -764,8 +761,6 @@ enum { LIFE_AMT, LIFE_RCH, LIFE_XFM, LIFE_SWM, LIFE_N };
 #endif
 static const int8_t LIFE_DEFS[LIFE_N] = {LIFE_DEF, 30, 70, 30};
 #define LIFE_TDEF 100
-static const param_desc_t LIFE_DESC __attribute__((section(".rodata.tape"))) = PD("LIFE", F_PCT, 0, 100, LIFE_TDEF);   /* (the track's) */
-static const char *const LIFE_NM[LIFE_N] = {"LIFE", "REACH", "X-FM", "SWIM"};   /* (HOME > LIFE's cards) */
 static int16_t life_v[LIFE_N + NTRK] __attribute__((section(".pool")));   /* (life_defaults at power-on: main.c) */
 static int32_t life_def(uint32_t k) { return k < LIFE_N ? LIFE_DEFS[k] : LIFE_TDEF; }   /* (value k of life_v) */
 static void life_defaults(void)
@@ -790,9 +785,8 @@ static const page_t PAGES[] = {
                                                          * (0.7.6) FX's second page, at hand (was after SL PITCH) */
     {"TAPE", FAM_FX, SC_GLOBAL, GR_NONE, {ID_TAPE, ID_TWOW, 0xFF, 0xFF}},
     {"EQ", FAM_FX, SC_GLOBAL, GR_NONE, {ID_EQ0, ID_EQ0 + 1u, ID_EQ0 + 2u, ID_EQ0 + 3u}},   /* (p9) the master's EQ, last */   /* (0.9.9-snd8) the master's tape, after MASTER */
-    {"BALANCE", FAM_FX, SC_GLOBAL, GR_NONE, {ID_BAL, 0xFF, 0xFF, 0xFF}},   /* (V10.7.30) the master's BALANCE, after its EQ */
     {"DIST", FAM_FX, SC_TRACK, GR_NONE, {P_DTYPE, P_DTONE, FELUCCA_XFX ? ID_DNZ : 0xFF, 0xFF}},   /* JIANT: the drive's type and tone; V10.7.30 NOISE */
-    {"VOICES 3", FAM_EDIT, SC_TRACK, GR_NONE, {ID_CRU, ID_LIF, 0xFF, 0xFF}},   /* (V10.7.33) CRUSH, the track's bit reducer (was DIST's
+    {"VOICES 3", FAM_EDIT, SC_TRACK, GR_NONE, {ID_CRU, 0xFF, 0xFF, 0xFF}},   /* (V10.7.33) CRUSH, the track's bit reducer (was DIST's
                                                          * TYPE; PLAY and PLAY 2 have no knob free) */
     {"AUTO PAN", FAM_FX, SC_TRACK, GR_NONE, {P_APDEP, P_APRATE, P_APSYNC, P_APWAVE}},   /* (JIANT 0.6.9) the track's pan swung */
     {"BUSES", FAM_FX, SC_GLOBAL, GR_BUSES, {G_DMIX, G_RSIZE, G_CDEPTH, G_SLDEP}},   /* (0.8.5) FX's lens: the buses' main values */
@@ -828,7 +822,7 @@ static const page_t PAGES[] = {
      * (SOUND 1..4, KNOB 1 the sound on each), (0.6.58) then the volumes (LEVELS, LEVELS 2); (0.7.8) STEREO after X-MOD */
     {"KIT 3", FAM_EDIT, SC_TRACK, GR_DXIMG, {0xFF, 0xFF, 0xFF, 0xFF}},     /* TONE's BP and FEEDBK (the kit's) */
     {"KIT LFO", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},     /* (JIANT 0.5.1) the kit's LFO on MORPH, RAND */
-    {"OUT", FAM_EDIT, SC_TRACK, GR_DXIMG, {P_DXIMG, ID_CRU, ID_LIF, P_DKEYMODE}},   /* (V10.7.37, the owner) the kit's way out:
+    {"OUT", FAM_EDIT, SC_TRACK, GR_DXIMG, {P_DXIMG, ID_CRU, 0xFF, P_DKEYMODE}},   /* (V10.7.37, the owner) the kit's way out:
                                                          * IMAGE (was STEREO's), CRUSH and LIFE (VOICES 3's), KEY MAP (KIT 4's:
                                                          * 0..9, ui_input.c dx_keymap_turn) */
     {"EROSION", FAM_EDIT, SC_TRACK, GR_NONE, {P_DNZ, P_DNRT, P_DNMD, P_DDST}},   /* (V10.7.37) a kit's EROSION: the noise
@@ -846,7 +840,7 @@ static const page_t PAGES[] = {
                                                          * FILTER 3. (filters2) KEY NOISE RATE MODE: not a
                                                          * kit's, nor EXT's (voice.c fn_tick) */
     {"EROSION", FAM_EDIT, SC_TRACK, GR_NONE, {P_FNZ, P_FNRT, P_FNMD, 0xFF}},   /* .. VOICE's */
-    {"TONE", FAM_EDIT, SC_TRACK, GR_NONE, {P_FKEY, ID_CRU, ID_LIF, 0xFF}},   /* (V10.7.35, the owner: was FILTER 3 and VOICES 3,
+    {"TONE", FAM_EDIT, SC_TRACK, GR_NONE, {P_FKEY, ID_CRU, 0xFF, 0xFF}},   /* (V10.7.35, the owner: was FILTER 3 and VOICES 3,
                                                          * a knob or two each) KEY TRK, CRUSH, LIFE. (filter2-mod) KEY: the keyboard tracking (was
                                                          * EROSION's first: DRIVE stays FILTER's, the knob of its power) */
     {"SOUND", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* DRUM: a sound of the kit (ui_dx.c): PITCH DECAY SIDE PMOD */
@@ -975,12 +969,9 @@ static uint8_t sl_ui_step;       /* (JIANT 0.6.3) the SL PITCH page: the step KN
  * master's TAPE (noinline: page_desc is recorded code) */
 static __attribute__((noinline)) const param_desc_t *page_desc_v(uint32_t id, int16_t **valp)
 {
-    if (id == ID_LIF) {                               /* (V10.7.34) the track's LIFE (life.c) */
-        *valp = &life_v[LIFE_N + song.sel % NTRK];
-        return &LIFE_DESC;
-    }
-    if (id >= ID_BAL && id <= ID_CRU) {               /* (V10.7.30) BALANCE; the track's NOISE; (V10.7.33) its CRUSH */
-        *valp = id == ID_BAL ? &bal_v : id == ID_DNZ ? &dnz_v[song.sel % NTRK] : &cru_v[song.sel % NTRK];
+    if (id >= ID_DNZ && id <= ID_CRU) {               /* (V10.7.30) the track's NOISE; (V10.7.33) its CRUSH (V10.7.43: BALANCE
+                                                         * gone) */
+        *valp = id == ID_DNZ ? &dnz_v[song.sel % NTRK] : &cru_v[song.sel % NTRK];
         return &XM_DESC[id - ID_BAL];
     }
     if (id >= ID_EQ0 && id < ID_EQ0 + 4u) {           /* (p9) the master's EQ */

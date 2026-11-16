@@ -5,7 +5,7 @@
  *   build/host/release_clean_test [WAVDIR]
  * Each sound (the DRUM-X kick, snare, hat, tom, clap; STRING NYLON, WEST PLUCK, ANALOG PLUCK) struck once and
  * rendered as the DAC word (audio.c audio_block: Q15 << 7 and, since V10.7.43, the master's bits below Q15, fx.c
- * out_fr), two ways: dry (MASTER full, BALANCE and LIFE off) and in a project (BALANCE and LIFE at their defaults,
+ * out_fr), two ways: dry (MASTER full, BALANCE and LIFE off) and in a project (LIFE at its default (V10.7.43: BALANCE gone),
  * MASTER at half the pot: -12 dB); no sends either way (a reverb's tail is a noise of its own).
  * The tail: the first 4096 samples 48 .. 60 dB under the hit's loudest 1024. Its staircase: the mean step of the DAC
  * word where it moves (Q15 units; a smooth tail moving under a step a sample shows the quantiser's step). Its floor:
@@ -50,7 +50,6 @@ static void render(const snd_t *s, int proj)
         dx_kit_load(0);
     t->p[P_DIST] = 0;
     if (proj) {
-        bal_v = BAL_DEF;
         life_v[LIFE_AMT] = LIFE_DEF;
         life_reset();
         song.master_q12 = master_of_pot(512);           /* (half the pot: -12 dB) */

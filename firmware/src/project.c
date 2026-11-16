@@ -249,8 +249,7 @@ static __attribute__((noinline)) uint32_t proj_xm(project_t *q, const uint8_t *b
         if (room) {
             if (pos + h + NTRK > room || b[pos] != 'X' || b[pos + 1u] != (x ? 'C' : 'M'))
                 continue;
-            if (!x)
-                q->bal = (int8_t)(b[pos + 2u] - BAL_DEF);   /* (its range: project_restore_runtime's) */
+            /* (V10.7.43: BALANCE gone, its byte, b[pos + 2], read and ignored) */
             for (k = 0; k < NTRK; k++)
                 v[k] = (int16_t)(b[pos + h + k] > 127u - 27u * !x ? 127u - 27u * !x : b[pos + h + k]);
             pos += h + NTRK;
@@ -1317,6 +1316,12 @@ static void proj_bound(project_t *q)
             s->vel &= 127u;
             if (s->probability > 101u) s->probability = 0;
         }
+        for (i = 0; i < NMSLOT; i++) {                  /* (V10.7.43) a route on a source or destination gone (LIFE,
+                                                         * BEING; LIFE): off, not clamped onto the last (F.NOISE, LEVEL) */
+            int16_t *m = &q->t[t].p[P_M1SRC + 3u * i];
+            if (m[0] >= MS_N || m[1] >= MD_N)
+                m[0] = m[1] = m[2] = 0;
+        }
         for (i = 0; i < P_COUNT; i++) {
             const param_desc_t *d = param_desc_of(q->t[t].engine % NENGINES, i);
             q->t[t].p[i] = (int16_t)param_fit(d, q->t[t].p[i]);   /* (a retired KIT: the kit it plays) */
@@ -1353,7 +1358,7 @@ static __attribute__((noinline)) void proj_master_put(project_t *p)
     uint32_t k;
     for (k = 0; k < 4u; k++) p->eq[k] = (int8_t)eq_v[k];
     p->tp[0] = (uint8_t)tape_v[0]; p->tp[1] = (uint8_t)tape_v[1];
-    p->bal = (int8_t)(bal_v - BAL_DEF);                 /* (V10.7.30) BALANCE, the tracks' NOISE */
+    p->bal = 0;                                         /* (V10.7.43: BALANCE gone; its byte BAL_DEF, inert) */
     memcpy(p->dnz, dnz_v, sizeof p->dnz);
     memcpy(p->cru, cru_v, sizeof p->cru);               /* (V10.7.33) CRUSH */
     for (k = 0; k < LIFE_N + NTRK; k++)                   /* (V10.7.34) LIFE, less its defaults */
@@ -1619,11 +1624,11 @@ static int project_restore_runtime(const project_t *input)
         uint32_t k;
         for (k = 0; k < 4u; k++) eq_v[k] = clamp(p->eq[k], -12, 12);
         tape_v[0] = p->tp[0] > 100u ? 100 : p->tp[0]; tape_v[1] = p->tp[1] > 100u ? 100 : p->tp[1];
-        bal_v = (int16_t)clamp(p->bal + BAL_DEF, 0, 100);   /* (V10.7.30) BALANCE, NOISE */
         memcpy(dnz_v, p->dnz, sizeof dnz_v);            /* (0 .. 100: proj_xm's, or the knob's) */
         memcpy(cru_v, p->cru, sizeof cru_v);            /* (V10.7.33) CRUSH (0 .. 127: proj_xm's, or the knob's) */
-        for (k = 0; k < LIFE_N + NTRK; k++)               /* (V10.7.34) LIFE */
-            life_v[k] = (int16_t)clamp(p->life[k] + life_def(k), 0, 100);
+        life_defaults();                                /* (V10.7.34) LIFE; (V10.7.43) its one value, the rest a
+                                                         * project of before kept read and ignored */
+        life_v[LIFE_AMT] = (int16_t)clamp(p->life[LIFE_AMT] + life_def(LIFE_AMT), 0, 100);
     }
     {                                                   /* (V10.31) SCENE */
         uint32_t i;
@@ -1736,7 +1741,6 @@ static __attribute__((noinline)) void system_init(void)   /* (snd8: out of its c
     for (i = 0; i < G_COUNT; i++) song.g[i] = GP[i].def;
     tape_v[0] = tape_v[1] = 0;                          /* (snd8) the master's TAPE out */
     eq_v[0] = eq_v[1] = eq_v[2] = eq_v[3] = 0;          /* (p9) its EQ flat */
-    bal_v = BAL_DEF;                                    /* (V10.7.30) BALANCE on, no NOISE */
     memset(dnz_v, 0, sizeof dnz_v);
     memset(cru_v, 0, sizeof cru_v);                     /* (V10.7.33) no CRUSH */
     life_defaults();                                    /* (V10.7.34) LIFE as at power-on */
@@ -2046,7 +2050,6 @@ static uint32_t autosave_sig(void)
     h = as_mix(h, scn_pat, sizeof scn_pat);
     h = as_mix(h, eq_v, sizeof eq_v);                   /* the master's EQ and TAPE (an EQ change alone: */
     h = as_mix(h, tape_v, sizeof tape_v);               /* autosaved, RESTORE LAST gives it back) */
-    h = as_mix(h, &bal_v, sizeof bal_v);                /* (V10.7.30) BALANCE, NOISE */
     h = as_mix(h, dnz_v, sizeof dnz_v);
     h = as_mix(h, cru_v, sizeof cru_v);                 /* (V10.7.33) CRUSH */
     h = as_mix(h, life_v, sizeof life_v);               /* (V10.7.34) LIFE */

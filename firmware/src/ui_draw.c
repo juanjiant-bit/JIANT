@@ -1336,12 +1336,11 @@ static void draw_columns(void)
         }
         return;
     }
-    if (home_life()) {                                  /* (V10.7.34) HOME's LIFE: LIFE REACH X-FM SWIM (life.c) */
-        for (c = 0; c < 4u; c++) {
-            fmt_int(val, life_v[c]);
-            draw_column(c, LIFE_NM[c], val, "%", c && !life_v[LIFE_AMT] ? T_DIM : VAL(c), life_v[c] * 10,
-                        c == 0u ? ICON_MOD : c == 1u ? ICON_CUTOFF : c == 2u ? ICON_PITCH : ICON_REVERB);
-        }
+    if (home_life()) {                                  /* (V10.7.34) HOME's LIFE: (V10.7.43) LIFE alone, KNOB 1 (life.c) */
+        fmt_int(val, life_v[LIFE_AMT]);
+        draw_column(0, "LIFE", val, "%", VAL(0), life_v[LIFE_AMT] * 10, ICON_MOD);
+        for (c = 1; c < 4u; c++)
+            empty_column(c);
         return;
     }
     if (home_tracks()) {                                /* (V10.7.34) HOME > TRACKS: the track (KNOB 1), its LEVEL PAN REV */

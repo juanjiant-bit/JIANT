@@ -1,19 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* (V10.7.34; V10.7.43 rebuilt) LIFE (firmware/src/life.c): build/host/life_test [DEMO_DIR]
- * 1. still: LIFE 0 renders bit for bit as every track's LIFE 0 with the global one and its three knobs at 100 (and so as
- *    before LIFE: tests/golden_life0.txt, run_tests.sh's LIFE=0 regress); a matrix's T1 ENV the same with LIFE on.
- * 2. alive: the default LIFE moves the sound; and nothing but the tracks' intermodulation (V10.7.43): LIFE 100 with
- *    X-FM 0 bit for bit as LIFE 0 (no pitch, no filter, no parameter followed); REACH: the rest's share of the weights.
- * 3. bounded: everything at 100 on six tracks (drums, a pad, FM, WEST, a lead, a bass): no sample past full scale more
- *    than the same mix at LIFE 0 has, no runaway, the cross-FM's depth inside its line, silence after the notes end.
- * 4. who moves whom: two tracks a duet (each the other's), three a ring (the one before most), a muted track leaves it;
- *    the cross-FM's pairs: one up to LIFE 50, two past it, a kit never the one moved, X-FM 0 none.
- * 5. the cross-FM really modulates: a drone's spectrum against LIFE 0 further at LIFE 50 and again at 100, sidebands
- *    between its partials; every engine but the kit moved by it.
- * 6. the matrix: LIFE and BEING as sources, LIFE as a destination; HOME > LIFE drawn (the beings, their lines), its
- *    knobs LIFE REACH X-FM SWIM; kept in a project ('X' 'L'), one without it at the defaults.
- * DEMO_DIR: WAVs (LIFE 0 / default / high; a cross-FM drone duet; six tracks at 100) and the LIFE page's PNG data */
+/* (V10.7.34; V10.7.43 rebuilt: one value, the tracks' cross-FM alone) LIFE (firmware/src/life.c): build/host/life_test
+ * 1. still: LIFE 0 renders bit for bit as without LIFE (tests/golden_life0.txt, run_tests.sh's LIFE=0 regress, and here: a
+ *    project's old LIFE values and matrix routes on the old LIFE / BEING / LIFE ids change nothing).
+ * 2. the curve: 0 at 0, rising, ~1 % at 25, ~6 % at 50, ~25 % at 75, all at 100 (logarithmic: fine at the bottom).
+ * 3. alive and bounded: the default moves a mix of six; everything at 100 bounded, silence after the notes end.
+ * 4. the ring: two tracks a duet (each moves the other), one pair up to LIFE 50, two past it, a kit never the one moved.
+ * 5. the cross-FM modulates: a drone's spectrum further from LIFE 0's at 50 and again at 100, sidebands between its
+ *    partials; every engine but the kit moved by it.
+ * 6. HOME > LIFE: its one card (KNOB 1), its lines the pairs; kept in a project, the old bytes ignored. */
 #define HOST_LIFE LIFE_DEF              /* (the firmware's power-on: LIFE on) */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"
@@ -49,7 +44,7 @@ static uint32_t eng(const char *n)
 }
 /* the boot state, n tracks: T1 a kit, T2 a pad, T3 FM6, T4 WEST (V10.7.36: NOISE's slot and its first preset's name), T5 a
  * lead, T6 a bass (the rest asleep) */
-static void scene(uint32_t n, int32_t life, int32_t knobs, int32_t tl)
+static void scene(uint32_t n, int32_t life)
 {
     static const char *const E[6] = {"DRUM", "ANALOG", "FM6", "WEST", "PHASE", "ANALOG"};
     static const uint8_t PR[6] = {0, 1, 0, 0, 0, 2};
@@ -68,8 +63,6 @@ static void scene(uint32_t n, int32_t life, int32_t knobs, int32_t tl)
     life_defaults();
     life_reset();
     life_v[LIFE_AMT] = (int16_t)life;
-    if (knobs >= 0) life_v[LIFE_RCH] = life_v[LIFE_XFM] = life_v[LIFE_SWM] = (int16_t)knobs;
-    for (k = 0; k < NTRK; k++) life_v[LIFE_N + k] = (int16_t)tl;
     hsh = 0xCBF29CE484222325ull;
     pk = nclip = 0;
 }
@@ -100,25 +93,23 @@ static uint64_t child(void (*f)(void))                  /* f's hash in a fork()e
     close(fd[0]); close(fd[1]);
     return h;
 }
-static void r_still(void) { scene(6, 0, -1, 100); play(6, 3, 1); }
-static void r_tracks0(void) { scene(6, 100, 100, 0); play(6, 3, 1); }
-static void r_def(void) { scene(6, LIFE_DEF, -1, 100); play(6, 3, 1); }
-static void r_mx0(void) { scene(6, 0, -1, 100); trk[1].p[P_M1SRC] = MS_T1; trk[1].p[P_M1DST] = MD_CUT; trk[1].p[P_M1AMT] = -40; play(6, 2, 1); }
-static void r_mx1(void) { scene(6, 50, 100, 0); trk[1].p[P_M1SRC] = MS_T1; trk[1].p[P_M1DST] = MD_CUT; trk[1].p[P_M1AMT] = -40; play(6, 2, 1); }
-static void r_nox(void) { scene(6, 100, 100, 100); life_v[LIFE_XFM] = 0; play(6, 3, 1); }   /* (X-FM 0: LIFE's
-                                                         * beings and weights running, nothing on the sound) */
-static void r_slot0(void) { scene(2, 50, 100, 0); play(2, 2, 0); }
-static void r_slot1(void) { scene(2, 50, 100, 0); trk[1].p[P_M1SRC] = MS_LFO; trk[1].p[P_M1DST] = MD_LIFE; trk[1].p[P_M1AMT] = 63; play(2, 2, 0); }
-
-/* (V10.7.43) the cross-FM's own test: a drone duet (T1 ANALOG's bass moving T2), its mono output kept from 1 s; the spectrum of 8192 samples (Hann, the bins to 12 kHz) */
+static void r_still(void) { scene(6, 0); play(6, 3, 1); }
+static void r_def(void) { scene(6, LIFE_DEF); play(6, 3, 1); }
+static void r_old(void)                                 /* (LIFE 0, a project of before: its other values, its routes) */
+{
+    scene(6, 0);
+    life_v[LIFE_RCH] = 100; life_v[LIFE_XFM] = 0; life_v[LIFE_SWM] = 100; life_v[LIFE_N + 1] = 0;
+    trk[1].p[P_M1SRC] = MS_LIFE; trk[1].p[P_M1DST] = MD_CUT; trk[1].p[P_M1AMT] = 60;
+    trk[2].p[P_M1SRC] = MS_LFO; trk[2].p[P_M1DST] = MD_LIFE; trk[2].p[P_M1AMT] = 60;
+    play(6, 3, 1);
+}
 #define XN 8192u
 static float xbuf[XN];
 static double xspec[XN / 2u];
 static void xrender(uint32_t e2, int32_t amt)
 {
     uint32_t b, i, k = 0;
-    scene(2, amt, 100, 100);
-    life_v[LIFE_SWM] = 30;
+    scene(2, amt);
     host_preset(&trk[0], eng("ANALOG"), 2); host_preset(&trk[1], e2, 0);
     memset(&trk[0].p[P_M1SRC], 0, 12u * sizeof trk[0].p[0]); memset(&trk[1].p[P_M1SRC], 0, 12u * sizeof trk[1].p[0]);
     for (i = 0; i < 2u; i++) trk[i].p[P_REV] = trk[i].p[P_DLY] = trk[i].p[P_CHOR] = 0;
@@ -158,140 +149,64 @@ static double xside(void)
     return out / all;
 }
 
-static void wav_go(const char *dir, const char *name, uint32_t secs)
-{
-    char p[512];
-    snprintf(p, sizeof p, "%s/%s", dir, name);
-    wav = fopen(p, "wb");
-    if (wav) wav_hdr(wav, secs * FS / CTL * CTL);
-}
-static void wav_end(void) { if (wav) fclose(wav); wav = 0; }
-static void ppm(const char *dir, const char *name)       /* the screen as drawn, a PPM (renders/: PNG by tools) */
-{
-    char p[512];
-    FILE *f;
-    uint32_t i;
-    snprintf(p, sizeof p, "%s/%s", dir, name);
-    if (!(f = fopen(p, "wb"))) return;
-    fprintf(f, "P6\n240 240\n255\n");
-    for (i = 0; i < 240u * 240u; i++) {
-        uint16_t c = swap16(host_screen[i]);
-        fputc((c >> 11) << 3 | (c >> 13), f); fputc(((c >> 5) & 63u) << 2 | ((c >> 9) & 3u), f); fputc((c & 31u) << 3 | ((c >> 2) & 7u), f);
-    }
-    fclose(f);
-}
 
-static void demos(const char *dir)
+int main(void)
 {
-    static const int32_t L[3] = {0, LIFE_DEF, 90};
-    static const char *const N[3] = {"01_chord_life0.wav", "02_chord_life25.wav", "03_chord_life90.wav"};
-    uint32_t i, b;
-    scene(2, 0, -1, 100);                               /* (a block of warm-up: the tests above left the UI's state) */
-    play(2, 1, 1);
-    for (i = 0; i < 3u; i++) {                          /* a held pad chord, alone: the voices breathing */
-        scene(2, L[i], -1, 100);
-        trk_live = 2; trk[0].p[P_MUTE] = 1;
-        wav_go(dir, N[i], 10);
-        trk_note_on(&trk[1], 57, 100); trk_note_on(&trk[1], 60, 90); trk_note_on(&trk[1], 64, 80); trk_note_on(&trk[1], 69, 70);
-        blk(8u * FS / CTL);
-        trk_all_off(&trk[1]);
-        blk(2u * FS / CTL);
-        wav_end();
-    }
-    for (i = 0; i < 2u; i++) {                          /* the drone duet: two drones moving each other */
-        scene(2, i ? 100 : 0, -1, 100);
-        host_preset(&trk[0], eng("ANALOG"), 1); host_preset(&trk[1], eng("FM6"), 0);
-        memset(&trk[0].p[P_M1SRC], 0, 12u * sizeof trk[0].p[0]); memset(&trk[1].p[P_M1SRC], 0, 12u * sizeof trk[1].p[0]);
-        life_v[LIFE_RCH] = 30; life_v[LIFE_XFM] = 100; life_v[LIFE_SWM] = 30;
-        wav_go(dir, i ? "05_drone_duet_life.wav" : "04_drone_duet_life0.wav", 14);
-        trk_note_on(&trk[0], 45, 110); trk_note_on(&trk[1], 57, 100);
-        for (b = 0; b < 12u * FS / CTL; b++) {
-            if (b % (3u * FS / CTL) == 0u) trk_note_on(&trk[1], b % (6u * FS / CTL) ? 52 : 57, 100);
-            blk(1);
-        }
-        trk_all_off(&trk[0]); trk_all_off(&trk[1]);
-        blk(2u * FS / CTL);
-        wav_end();
-    }
-    {   /* six tracks, everything at 100 (the bounded test's mix) */
-        scene(6, 100, 100, 100);
-        wav_go(dir, "06_six_tracks_life100.wav", 7);
-        play(6, 6, 1);
-        wav_end();
-    }
-}
-
-int main(int argc, char **argv)
-{
-    uint64_t a, b, c;
-    uint32_t i;
+    uint64_t a, b;
+    uint32_t i, k;
     setvbuf(stdout, 0, _IONBF, 0);
     /* 1 */
-    a = child(r_still); b = child(r_tracks0); c = child(r_def);
-    ck("1. LIFE 0 == every track's LIFE 0 under LIFE 100 (REACH X-FM SWIM 100): bit for bit", a && a == b);
-    a = child(r_mx0); b = child(r_mx1);
-    ck("   a matrix's T1 ENV -> CUT: the same, LIFE on beside it", a && a == b);
+    a = child(r_still); b = child(r_old);
+    ck("1. LIFE 0: an old project's LIFE values and its routes on LIFE / BEING / LIFE change nothing, bit for bit", a && a == b);
+    ck("   the old LIFE / BEING / LIFE ids past the matrix's (inert, hidden)", MS_LIFE >= MS_N && MS_BEING >= MS_N && MD_LIFE >= MD_N);
     /* 2 */
-    ck("2. the default LIFE moves the sound (a mix of six against LIFE 0)", c && c != child(r_still));
-    ck("   nothing but the intermodulation: LIFE 100, X-FM 0 bit for bit as LIFE 0 (no pitch, filter or parameter moved)",
-       child(r_nox) == child(r_still));
     {
-        int32_t w0, w1;
-        scene(3, 50, 100, 100); life_v[LIFE_RCH] = 0;
-        play(3, 2, 0);
-        w0 = life.w[1][2];
-        scene(3, 50, 100, 100); life_v[LIFE_RCH] = 100;
-        play(3, 2, 0);
-        w1 = life.w[1][2];
-        ck("   REACH: 0 the one before alone moves a track, 100 the rest as much (T2 by T3)", w0 == 0 && w1 > 20000);
+        int32_t d[5], up = 1;
+        for (i = 0; i < 5u; i++) d[i] = life_depth((int32_t)i * 25);
+        for (i = 1; i <= 100u; i++) up &= life_depth((int32_t)i) >= life_depth((int32_t)i - 1);
+        printf("life:   the curve (Q10): %d %d %d %d %d at 0 25 50 75 100\n", d[0], d[1], d[2], d[3], d[4]);
+        ck("2. the curve: 0 at 0, rising, ~1 % at 25, ~6 % at 50, ~25 % at 75, all at 100", !d[0] && up && d[1] > 4 && d[1] < 30 &&
+           d[2] > 40 && d[2] < 90 && d[3] > 200 && d[3] < 300 && d[4] == 1024);
     }
     /* 3 */
+    ck("3. the default LIFE moves the sound (a mix of six against LIFE 0)", child(r_def) != child(r_still));
     {
         int32_t pk0, nc0;
-        scene(6, 0, -1, 100); play(6, 3, 0); pk0 = pk; nc0 = nclip;
-        scene(6, 100, 100, 100); play(6, 3, 3);
-        ck("3. everything at 100, six tracks: bounded (no more samples at full scale than LIFE 0's mix)", nclip <= nc0 + 64 && pk <= 32767);
+        scene(6, 0); play(6, 3, 0); pk0 = pk; nc0 = nclip;
+        scene(6, 100); play(6, 3, 3);
+        ck("   LIFE 100, six tracks: bounded (no more samples at full scale than LIFE 0's mix)", nclip <= nc0 + 64 && pk <= 32767 && pk0 > 0);
         pk = 0;
         blk(FS / CTL);
         ck("   .. and silence after the notes end (no runaway)", pk < 64);
         for (i = 0; i < LPM_N && life.pm[i].dc <= LPM_D && life.pm[i].b <= LPM_D; i++) {}
-        ck("   the cross-FM's depth inside its line (+-13 samples about its centre, the line 32)", i == LPM_N &&
-           2 * LPM_D < (int32_t)(LPM_L - 2u) << 8);
+        ck("   its depth inside its line", i == LPM_N && 2 * LPM_D < (int32_t)(LPM_L - 2u) << 8);
     }
     /* 4 */
     {
-        uint32_t k, np = 0, kit = 0;
-        scene(2, 50, 100, 100);
-        play(2, 2, 0);
-        ck("4. two tracks: a duet, each moving the other", life.w[0][1] > 8000 && life.w[1][0] > 8000);
-        scene(3, 50, 50, 100);
+        uint32_t np = 0, kit = 0;
+        scene(3, 100);                                  /* (T1 the kit, T2 the pad, T3 FM6) */
+        trk[0].p[P_MUTE] = 1;
         play(3, 2, 0);
-        ck("   three tracks: a ring, each held most by the one before it", life.w[1][0] > life.w[1][2] && life.w[2][1] > life.w[2][0] &&
-           life.w[0][2] > life.w[0][1]);
-        trk[1].p[P_MUTE] = 1;
-        blk(4u * FS / CTL);
-        ck("   a track muted leaves the ring (its lines fade)", life.w[2][1] < 2000 && life.w[2][0] > 8000);
-        scene(6, 50, 100, 100);
-        play(6, 2, 0);
         for (k = 0; k < LPM_N; k++) np += life.pm[k].car < NTRK && life.pm[k].dc > 0;
-        ck("   the cross-FM: LIFE 50, one pair, its samples kept for the next block", np == 1 && life.tapm && life.pmc);
-        scene(6, 100, 100, 100);
+        ck("4. two tracks: a duet, each moving the other", np == 2 && (life.pmc & 6u) == 6u && (life.tapm & 6u) == 6u);
+        scene(6, 50);
+        play(6, 2, 0);
+        for (k = 0, np = 0; k < LPM_N; k++) np += life.pm[k].car < NTRK && life.pm[k].dc > 0;
+        ck("   LIFE 50: one pair", np == 1 && life.tapm && life.pmc);
+        scene(6, 100);
         play(6, 2, 0);
         for (k = 0, np = 0; k < LPM_N; k++) {
             np += life.pm[k].car < NTRK && life.pm[k].dc > 0;
             kit |= life.pm[k].car == 0u;
         }
         ck("   LIFE 100: two pairs, the kit (T1) never the one moved", np == 2 && !kit && !(life.pmc & 1u));
-        scene(6, 100, 0, 100);
-        play(6, 2, 0);
-        ck("   X-FM 0: no pair, nothing kept", !life.pmc && !life.tapm);
     }
     /* 5 */
     {
         static double ref[XN / 2u];
         double sd[3] = {0, 0, 0}, sb[3];
         int32_t A[3] = {0, 50, 100};
-        uint32_t k, f, e, nb = 12000u * XN / FS, moved = 0, tried = 0;
+        uint32_t f, e, nb = 12000u * XN / FS, moved = 0, tried = 0;
         char miss[160] = "";
         for (k = 0; k < 3u; k++) {
             xrender(eng("FM6"), A[k]);
@@ -303,20 +218,19 @@ int main(int argc, char **argv)
         }
         printf("life:   cross-FM, FM6 moved by ANALOG's bass: the spectrum from LIFE 0's %.2f / %.2f dB (LIFE 50 / 100), between the partials %.1f %.1f %.1f dB of the whole (LIFE 0 / 50 / 100)\n",
                sd[1], sd[2], 10 * log10(sb[0]), 10 * log10(sb[1]), 10 * log10(sb[2]));
-        ck("5. the cross-FM modulates: the spectrum further from LIFE 0's at 50, further again at 100 (X-FM 100)",
-           sd[1] > 1.0 && sd[2] > sd[1]);
-        ck("   .. its sidebands: more energy between the partials as LIFE goes up", sb[1] > sb[0] * 1.5 && sb[2] > sb[1]);
+        ck("5. the cross-FM modulates: the spectrum further from LIFE 0's at 50, further again at 100", sd[1] > 0.3 && sd[2] > sd[1]);
+        ck("   .. its sidebands: more energy between the partials as LIFE goes up", sb[1] > sb[0] && sb[2] > sb[1] * 1.5);
         for (e = 0; e < NENGINES; e++) {                /* every engine moved by it (a kit moves, it is never moved) */
-            uint64_t h0;
-            uint32_t on = 0, b;
+            uint64_t h0 = 0;
+            uint32_t on = 0, b2;
             if (e == ENGI_DRUM || e == ENGI_INPUT || (!FELUCCA_FM4 && e == ENGI_DIGITAL) || !ENGINES[e]->name[0] || ENGINES[e]->name[0] == '-') continue;
             tried++;
             for (k = 0; k < 2u; k++) {
-                scene(2, k ? 100 : 0, 100, 100);
+                scene(2, k ? 100 : 0);
                 host_preset(&trk[0], eng("ANALOG"), 2); host_preset(&trk[1], e, 0);
                 memset(&trk[0].p[P_M1SRC], 0, 12u * sizeof trk[0].p[0]); memset(&trk[1].p[P_M1SRC], 0, 12u * sizeof trk[1].p[0]);
                 trk_note_on(&trk[0], 45, 110); trk_note_on(&trk[1], 60, 110);
-                for (b = 0; b < FS / CTL; b++) {
+                for (b2 = 0; b2 < FS / CTL; b2++) {
                     blk(1);
                     for (f = 0; f < LPM_N; f++) on |= k && life.pm[f].car == 1u && life.pm[f].dc > 0;
                 }
@@ -329,79 +243,52 @@ int main(int argc, char **argv)
         ck("   .. on every engine (but the kit): each one moved by the other track's samples", moved == tried && tried >= 8u);
     }
     /* 6 */
-    {
-        int32_t lo = 32767, hi = -32768, blo = 32767, bhi = -32768;
-        a = child(r_slot0); b = child(r_slot1);
-        ck("6. the matrix: LFO -> LIFE lives a track whose own LIFE is 0", a && b && a != b);
-        scene(2, 0, -1, 100);
-        play(2, 1, 0);
-        for (i = 0; i < 60u * FS / CTL; i++) {
-            int32_t x = mod_tsrc(&trk[1], MS_LIFE, 0), y = mod_tsrc(&trk[1], MS_BEING, 0);
-            blk(1);
-            lo = x < lo ? x : lo; hi = x > hi ? x : hi; blo = y < blo ? y : blo; bhi = y > bhi ? y : bhi;
-        }
-        ck("   LIFE and BEING sources: bipolar, moving (with LIFE 0 too)", lo < -8000 && hi > 8000 && bhi - blo > 16000 &&
-           MS_BIPOLAR(MS_LIFE) && MS_BIPOLAR(MS_BEING));
-        ck("   their names appended (LIFE BEING; destination LIFE), the old ids kept",
-           str_eq(N_MSRC[MS_LIFE], "LIFE") && str_eq(N_MSRC[MS_BEING], "BEING") && MS_LIFE == MS_FNZ + 1 &&
-           str_eq(N_MDST[MD_LIFE], "LIFE") && MD_LIFE == MD_LEVEL + 1 && MS_N <= 32 && MD_N <= 64);
-    }
-    {   /* HOME > LIFE drawn: beings and lines */
+    {   /* HOME > LIFE drawn: one card, the pairs' lines */
         static uint16_t s0[240 * 240];
         ui_power_on();
         frame();
         nav_go(SEC_HOME, HE_LIFE, 0);
-        scene(4, 60, 60, 100);
+        scene(4, 100);
         play(4, 2, 0);
         for (i = 0; i < 4u; i++) trk_note_on(&trk[i], 48 + 7 * i, 110);
         blk(FS / 4u / CTL);
         ui.force = 1; frames(64);
-        ck("   HOME > LIFE: its page, LIFE REACH X-FM SWIM on its cards", home_life() && !strncmp(ui.col[0], "LIFE|", 5) &&
-           !strncmp(ui.col[1], "REACH|", 6) && !strncmp(ui.col[2], "X-FM|", 5) && !strncmp(ui.col[3], "SWIM|", 5));
+        ck("6. HOME > LIFE: its page, LIFE alone on KNOB 1", home_life() && !strncmp(ui.col[0], "LIFE|", 5));
         memcpy(s0, host_screen, sizeof s0);
-        if (argc > 1) ppm(argv[1], "life_page.ppm");
         life_v[LIFE_AMT] = 0;
         blk(FS / 8u / CTL);
         ui.force = 1; frames(64);
         ck("   .. drawn: its lines go with LIFE 0 (the beings stay)", memcmp(s0, host_screen, sizeof s0) != 0);
-        if (argc > 1) ppm(argv[1], "life_page_still.ppm");
-        life_v[LIFE_AMT] = 60;
         for (i = 0; i < 4u; i++) trk_all_off(&trk[i]);
     }
     {   /* kept with a project */
         static project_store_t st;
         int ok;
         ui_power_on();
-        ck("   power-on: LIFE at its defaults (25 %, REACH 30, X-FM 70, SWIM 30, every track 100)",
-           life_v[LIFE_AMT] == LIFE_DEF && life_v[LIFE_RCH] == 30 && life_v[LIFE_XFM] == 70 && life_v[LIFE_SWM] == 30 &&
-           life_v[LIFE_N] == 100 && life_v[LIFE_N + NTRK - 1] == 100);
-        life_v[LIFE_AMT] = 70; life_v[LIFE_XFM] = 66; life_v[LIFE_N + 2] = 0;
+        ck("   power-on: LIFE at its default (25 %)", life_v[LIFE_AMT] == LIFE_DEF);
+        life_v[LIFE_AMT] = 70; life_v[LIFE_XFM] = 5; life_v[LIFE_N + 2] = 0;   /* (the old values: as a project of before) */
         project_capture(&proj_scratch);
         ok = proj_pack(&st, &proj_scratch);
         life_defaults();
+        life_v[LIFE_AMT] = 3;
         ok = ok && proj_import(&proj_scratch, &st, sizeof st) && project_restore_runtime(&proj_scratch) == 0;
-        ck("   a project keeps LIFE 70, X-FM 66, T3's LIFE 0", ok && life_v[LIFE_AMT] == 70 && life_v[LIFE_XFM] == 66 &&
-           life_v[LIFE_N + 2] == 0 && life_v[LIFE_N + 1] == 100);
+        ck("   a project keeps LIFE 70; its other old LIFE bytes read and ignored", ok && life_v[LIFE_AMT] == 70 &&
+           life_v[LIFE_XFM] == 70 && life_v[LIFE_N + 2] == 100);
         life_defaults();
         project_capture(&proj_scratch);
         ok = proj_pack(&st, &proj_scratch);
         life_v[LIFE_AMT] = 0;
         ok = ok && proj_import(&proj_scratch, &st, sizeof st) && project_restore_runtime(&proj_scratch) == 0;
-        ck("   one without 'X' 'L' (every project before V10.7.34) opens with LIFE on, at its defaults", ok && life_v[LIFE_AMT] == LIFE_DEF);
+        ck("   one without 'X' 'L' (every project before V10.7.34) opens with LIFE on, at its default", ok && life_v[LIFE_AMT] == LIFE_DEF);
     }
-    {   /* EDIT > VOICES 3 KNOB 2: the track's LIFE */
+    {   /* the track's LIFE gone from EDIT (TONE, VOICES 3, OUT) */
         int16_t *vp = 0;
-        const param_desc_t *d;
-        for (i = 0; i < NPAGES && !str_eq(PAGES[i].title, "VOICES 3"); i++) {}
-        d = i < NPAGES ? page_desc(&PAGES[i], 1, &vp) : 0;
-        ck("   EDIT > VOICES 3 KNOB 2: the track's LIFE (0 .. 100 %)", d && str_eq(d->label, "LIFE") && vp == &life_v[LIFE_N + song.sel] &&
-           d->max == 100);
-        for (i = 0; i < NPAGES && !str_eq(PAGES[i].title, "TONE"); i++) {}   /* (V10.7.35: a synth's on TONE, KNOB 3) */
-        d = i < NPAGES ? page_desc(&PAGES[i], 2, &vp) : 0;
-        ck("   EDIT > TONE KNOB 3: the track's LIFE too (V10.7.35)", d && str_eq(d->label, "LIFE") && vp == &life_v[LIFE_N + song.sel]);
+        uint32_t n = 0, j;
+        for (i = 0; i < NPAGES; i++)
+            for (j = 0; j < 4u; j++) n += PAGES[i].id[j] == ID_LIF;
+        (void)vp;
+        ck("   EDIT: the track's own LIFE gone from every page", n == 0u);
     }
-    if (argc > 1)
-        demos(argv[1]);
     printf("life: %s\n", bad ? "FAILED" : "all ok");
     return bad != 0;
 }

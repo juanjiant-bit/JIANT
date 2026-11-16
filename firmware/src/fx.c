@@ -494,88 +494,6 @@ static __attribute__((noinline)) void eq_block(uint32_t n)
         mix_r[i] = x[1];
     }
 }
-/* (V10.7.30, the owner: "everything gets muddy when I add tracks and it becomes a ball of mids") BALANCE (FX > BALANCE,
- * params.c bal_v, 0 off .. 100, BAL_DEF). (V10.7.43, the owner: "a light mix balancer, in the background") Just before
- * the EQ: the mix's low mids (~150 .. 800 Hz: the mud) brought down when they pile up, nothing else. Each side split
- * at an eighth of the rate (the mean of eight samples: two one-poles, their difference the band), the correction added
- * back at the full rate, ramped from one group of eight to the next. The band's level (the mean of |left + right| over
- * the block, the group's) against the whole mix's, in log2 (Q8), each fourth block, followed slowly (~0.75 s: the
- * song's balance, not a hit's); over a balanced mix's share (BAL_T) by more than 0.5 dB, the band down by twice the
- * excess x AMOUNT / 50 (its gain at most -2 octaves: ~-6 dB at 450 Hz, the band's overlap), never up; the correction
- * gliding (~0.75 s), its gain a step of at most 64 (Q12) a block. Under BAL_GATE (a tail, silence) the followers held.
- * AMOUNT 0: the gain back to 0, then not run (the mix bit for bit as without it). ~4 multiplies a group of eight a side;
- * V10.7.43: AMOUNT 25 by default, was 50 */
-#define BAL_GATE 600                                    /* (the whole mix's: ~-50 dBFS) */
-#define BAL_T (-350)                                    /* (the band's share of a balanced mix, log2 Q8: ~-8 dB) */
-static struct { int32_t lp[4], e[2], s[2], c, g, tg, x[2]; uint8_t blk; } bal __attribute__((section(".pool")));   /* (the
-                                                         * pool, zeroed at boot) */
-static __attribute__((noinline)) void bal_block(uint32_t n)
-{
-    int32_t l1 = bal.lp[0], l2 = bal.lp[1], r1 = bal.lp[2], r2 = bal.lp[3], cl = bal.x[0], cr = bal.x[1], g = bal.g;
-    int32_t sb = 0, sf = 0, k;
-    uint32_t i;
-    for (k = 0; k < 4 && (uint32_t)(bal.lp[k] + 511) < 1023u; k++) {}   /* the split's tails out (V10.7.43: a state
-                                                         * under 4 of the mix's units, x 128 there; what it added, ~-80 dBFS
-                                                         * at most, goes) and a silent block: silent out, not run, the gain
-                                                         * held */
-    for (i = 0; k == 4 && i < n && !(mix_l[i] | mix_r[i] | wet[i]); i++) {}
-    if (k == 4 && i == n) {
-        memset(bal.lp, 0, sizeof bal.lp);
-        bal.x[0] = bal.x[1] = 0;
-        return;
-    }
-    if (!(++bal.blk & 3u)) {                            /* the control, every fourth block: the four blocks' sums (bal.s)
-                                                         * -> the band's gain to reach (bal.tg: 2^correction - 1, Q12) */
-        int32_t lg[2], c, f, x;
-        for (k = 0; k < 2; k++) {
-            int32_t e = bal.e[k], b;
-            if ((bal.s[1] >> CTL_LOG2) > BAL_GATE)
-                bal.e[k] = e += ((bal.s[k] >> CTL_LOG2) * 8 - e) >> 7;
-            e = e > 16 ? e : 16;
-            b = 31 - __builtin_clz((uint32_t)e);
-            lg[k] = (b << 8) + (int32_t)(((uint32_t)e << (31 - b)) >> 23 & 255u);
-            bal.s[k] = 0;
-        }
-        x = lg[0] - lg[1] - BAL_T - 21;                 /* (0.5 dB: as good as on the curve) */
-        c = clamp(-x * bal_v / 25, -510, 0) << 8;       /* (twice the excess at AMOUNT 50) */
-        bal.c += (c - bal.c) >> 7;
-        if (bal.c - c < 512 && c - bal.c < 512)         /* (there: exactly; AMOUNT 0 settles at 0) */
-            bal.c = c;
-        c = bal.c >> 8;                                 /* (log2 Q8) */
-        f = c & 255;
-        x = 4096 + ((f * (2689 + ((1407 * f) >> 8))) >> 8);   /* 2^(f / 256), Q12 */
-        bal.tg = (x >> -(c >> 8)) - 4096;
-    }
-    g += clamp(bal.tg - g, -64, 64);
-    bal.g = g;
-    for (i = 0; i + 8u <= n; i += 8u) {                 /* a group of eight: its mean through the split, the correction
-                                                         * ramped to it */
-        int32_t w = wet[i] + wet[i + 1u] + wet[i + 2u] + wet[i + 3u] + wet[i + 4u] + wet[i + 5u] + wet[i + 6u] + wet[i + 7u];
-        int32_t xl = mix_l[i] + mix_l[i + 1u] + mix_l[i + 2u] + mix_l[i + 3u] + mix_l[i + 4u] + mix_l[i + 5u] +
-                     mix_l[i + 6u] + mix_l[i + 7u] + w;
-        int32_t xr = mix_r[i] + mix_r[i + 1u] + mix_r[i + 2u] + mix_r[i + 3u] + mix_r[i + 4u] + mix_r[i + 5u] +
-                     mix_r[i + 6u] + mix_r[i + 7u] + w, bl, br, dl, dr, *ml = mix_l + i, *mr = mix_r + i;
-        /* (V10.7.43, the owner: "a little bitcrush in the releases") the one-poles' states 128 x the mix (16 x the
-         * group's sum; d / 16 x 161 >> 2 is 16 x d x 643 / 4096): a quiet tail followed down to ~1 of the mix's units,
-         * the band's correction on quarter steps before its gain. (V10.7.43, "lighter": an eighth of the rate, was a
-         * quarter) */
-        l1 += ((xl - (l1 >> 4)) >> 4) * 161 >> 2; l2 += ((xl - (l2 >> 4) + 16) >> 5) * 612 >> 1;   /* (~150 Hz, ~800 Hz
-                                                         * at 5.5 kHz; within 2^31 to |x| 2^21, the master's) */
-        r1 += ((xr - (r1 >> 4)) >> 4) * 161 >> 2; r2 += ((xr - (r2 >> 4) + 16) >> 5) * 612 >> 1;
-        bl = l2 - l1; br = r2 - r1;
-        sb += (bl + br) >> 4 < 0 ? -((bl + br) >> 4) : (bl + br) >> 4;   /* (as the group's sum) */
-        sf += xl + xr < 0 ? -(xl + xr) : xl + xr;
-        dl = (((bl >> 9) * g >> 10) - cl) >> 3;         /* (the correction: the band x its gain, an eighth of the way a
-                                                         * sample) */
-        dr = (((br >> 9) * g >> 10) - cr) >> 3;
-        ml[0] += cl += dl; ml[1] += cl += dl; ml[2] += cl += dl; ml[3] += cl += dl;
-        ml[4] += cl += dl; ml[5] += cl += dl; ml[6] += cl += dl; ml[7] += cl += dl;
-        mr[0] += cr += dr; mr[1] += cr += dr; mr[2] += cr += dr; mr[3] += cr += dr;
-        mr[4] += cr += dr; mr[5] += cr += dr; mr[6] += cr += dr; mr[7] += cr += dr;
-    }
-    bal.lp[0] = l1; bal.lp[1] = l2; bal.lp[2] = r1; bal.lp[3] = r2; bal.x[0] = cl; bal.x[1] = cr;
-    bal.s[0] += sb; bal.s[1] += sf;                      /* (both as |left + right| summed over a block's 64 samples) */
-}
 /* (0.9.1) the master DJ FILTER (G_DJF, GLO > MIXER KNOB 4): one bipolar knob on the whole mix, just before CLIP and the
  * leveler. 0: out of the chain, not run at all (the mix bit for bit as without it). Below 0 a low-pass sweeping down
  * (darker), above 0 a high-pass sweeping up (thinner): a trapezoidal SVF (A. Simper's, as dsp.c tsvf) in 64-bit products,
@@ -3233,11 +3151,6 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
         void (*f)(uint32_t) = tape_block;
         FM1_OPAQUE(f);                                  /* (through a register: mix_block runs from RAM, tape_block is in
                                                          * the flash past the tables, out of a direct call's reach) */
-        f(n);
-    }
-    if (FELUCCA_XFX && (bal_v || bal.g)) {   /* (V10.7.30) BALANCE, before the EQ */
-        void (*f)(uint32_t) = bal_block;
-        FM1_OPAQUE(f);
         f(n);
     }
     if (eq_v[0] || eq_v[1] || eq_v[2] || eq_v[3] || eqs.g[0] || eqs.g[1] || eqs.g[2] || eqs.g[3]) {   /* (p9) the EQ */

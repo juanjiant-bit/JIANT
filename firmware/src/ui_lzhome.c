@@ -260,12 +260,12 @@ static void eco_water(int32_t bot, uint32_t still)       /* the cytoplasm: granu
         cv_rect(gx, gy, 1 + (int32_t)(h >> 31), 1 + (int32_t)(h >> 31), ux_mix(T_SURF, T_THEME, 22 + (int32_t)(h >> 29) * 4));
     }
 }
-/* (V10.7.34) and LIFE (lf 1; life.c): the beings where the sound has them (its swim: agitated loud, calm in silence; its
- * breath their size), and between them who moves whom, a line from the one that moves to the one moved, thicker as it moves
- * it more (its weight x its sound now), a dot near the one moved; LIFE 0: no lines, STILL */
+/* (V10.7.34) and LIFE (lf 1; life.c): the beings as on MACROS, and between them who moves whom (V10.7.43: the cross-FM's
+ * pairs), a line from the one that moves to the one moved, thicker as it moves it more (its depth x its sound now), a dot
+ * near the one moved; LIFE 0: no lines, STILL */
 static void graph_eco(uint32_t lf)
 {
-    uint32_t c, j, links = 0, still = ANIM_OFF() != 0;
+    uint32_t c, links = 0, still = ANIM_OFF() != 0;
     int32_t bx[ECO_N], by[ECO_N], bot = eco_bot(), lo;
     (void)eco_step();                                   /* (the swim, once a frame) */
     (void)bg_energy();                                  /* (the output's level kept as it was read: once a frame) */
@@ -275,31 +275,26 @@ static void graph_eco(uint32_t lf)
         eco_at(c, &bx[c], &by[c]);                      /* (codex/anim: between its last two steps) */
         bx[c] >>= 4;
         by[c] >>= 4;
-        if (lf) {                                       /* (LIFE: the sound's swim) */
-            bx[c] = (12 + ((life.bx[c] * 216) >> 16)) << 4;
-            by[c] = (8 + ((life.by[c] * (bot - 16)) >> 16)) << 4;
-        }
     }
-    for (c = 0, j = 1500; c < ECO_N * ECO_N && lf; c++)   /* (LIFE) the strongest link: the faint ones (a third of it) not
-                                                         * drawn, the picture kept readable */
-        if (c / ECO_N != c % ECO_N) {
-            int32_t st = (life.w[c / ECO_N][c % ECO_N] * life.en[c % ECO_N]) >> 15;
-            j = st / 3 > (int32_t)j ? (uint32_t)(st / 3) : j;
-        }
-    for (c = 0, lo = (int32_t)j; c < ECO_N && lf && life.on; c++)   /* (LIFE) the lines first, under the beings */
-        for (j = 0; j < ECO_N; j++) {
-            int32_t st = j == c || eco_off(c) || eco_off(j) ? 0 : (life.w[c][j] * life.en[j]) >> 15, k;
-            uint16_t col = ux_mix(T_THEME, T_ACCENT, st >> 7 < 100 ? st >> 7 : 100);
-            if (st < lo)
-                continue;
-            for (k = 0; k < 3 && st > lo + k * 6000; k++)   /* (1 .. 3 px thick: stronger, thicker) */
-                og_line(bx[j] + k * 16, by[j], bx[c] + k * 16, by[c], col);
-            links++;
-            cv_rect(((bx[c] * 3 + bx[j]) >> 6) - 1, ((by[c] * 3 + by[j]) >> 6) - 1, 3, 3, col);   /* (a dot near the one
+    for (c = 0, lo = 600; c < LPM_N && lf && life.on; c++) {   /* (LIFE) the pairs' lines first, under the beings */
+        const lpm_t *q = &life.pm[c];
+        uint32_t m = q->car, s = q->src & 7u;
+        int32_t st, k;
+        uint16_t col;
+        if (m >= ECO_N || s >= ECO_N || m == s || eco_off(m) || eco_off(s))
+            continue;
+        st = (int32_t)(((int64_t)q->dc * life.en[s]) / LPM_D);   /* (its depth x the mover's sound, 0 .. 32767) */
+        if (st < lo)
+            continue;
+        col = ux_mix(T_THEME, T_ACCENT, st >> 7 < 100 ? st >> 7 : 100);
+        for (k = 0; k < 3 && st > lo + k * 6000; k++)   /* (1 .. 3 px thick: stronger, thicker) */
+            og_line(bx[s] + k * 16, by[s], bx[m] + k * 16, by[m], col);
+        links++;
+        cv_rect(((bx[m] * 3 + bx[s]) >> 6) - 1, ((by[m] * 3 + by[s]) >> 6) - 1, 3, 3, col);   /* (a dot near the one
                                                          * moved: which way) */
-        }
+    }
     for (c = 0; c < ECO_N; c++) {
-        int32_t r = lf ? eco.r[c] * (256 + life.breath[c] / 1024) / 256 : eco.r[c], rad = r >> 4, px = bx[c] >> 4,
+        int32_t r = eco.r[c], rad = r >> 4, px = bx[c] >> 4,
                 py = by[c] >> 4, ny;
         char num[2] = {(char)('1' + c), 0};
         eco_being(c, bx[c], by[c], r);

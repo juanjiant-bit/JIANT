@@ -126,7 +126,7 @@ int main(int argc, char **argv)
         for (k = 0; k < GP_N; k++) gp.amt[k] = GA_AUTO;
         gp.complex = 50; gp.swing = GA_AUTO; gp.human = 30;
         gen_go();
-        if (getenv("BAL")) bal_v = (int16_t)atoi(getenv("BAL"));   /* (V10.7.30) BALANCE's AMOUNT (else as GEN left it) */
+        /* (V10.7.30 .. 42: BAL=a, BALANCE's AMOUNT; V10.7.43 gone) */   /* (V10.7.30) BALANCE's AMOUNT (else as GEN left it) */
         if (getenv("LIFE")) life_v[LIFE_AMT] = (int16_t)atoi(getenv("LIFE"));   /* (V10.7.34) LIFE (else as GEN left it) */
         pd = gs.trk_of[RL_PAD];
         spell();

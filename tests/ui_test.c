@@ -223,7 +223,6 @@ static void ui_power_on(void)
     memset(up_bank, 0, sizeof up_bank);
     for (i = 0; i < G_COUNT; i++)
         song.g[i] = GP[i].def;
-    bal_v = HOST_BAL;                             /* (V10.7.30: as main.c's power-on; hostsim.c HOST_BAL) */
     life_defaults();                              /* (V10.7.34) LIFE as main.c's power-on (LIFE=a: its amount) */
     life_v[LIFE_AMT] = (int16_t)(getenv("LIFE") ? atoi(getenv("LIFE")) : HOST_LIFE);   /* (hostsim.c HOST_LIFE) */
     life_reset();
@@ -5434,12 +5433,11 @@ static int test_rec_combos(void)
     pfx_rh = 0; frame();
     bad += check("  V10.7.34 an FX held recording into the punch-in lane: REC FX AUTOM, how to clear it", ok);
     /* (0.9.9-snd2) the FX chain: MASTER its last page, after PUNCH (ui_lens.c CE_FX), its module last on BUSES */
-    bad += check("  FX chain: ... SL PITCH, MASTER, its TAPE, EQ and BALANCE last (the BUSES tiles too; V10.7.32 PUNCH IN on the FX held)",
-                 (FELUCCA_XFX ? !strcmp(CE_FX[NELEM(CE_FX) - 1u].t, "BALANCE") && !strcmp(CE_FX[NELEM(CE_FX) - 2u].t, "EQ") &&
-                  !strcmp(CE_FX[NELEM(CE_FX) - 3u].t, "TAPE") : !strcmp(CE_FX[NELEM(CE_FX) - 1u].t, "EQ") &&
+    bad += check("  FX chain: ... SL PITCH, MASTER, its TAPE, EQ last (V10.7.43: BALANCE gone) (the BUSES tiles too; V10.7.32 PUNCH IN on the FX held)",
+                 (!strcmp(CE_FX[NELEM(CE_FX) - 1u].t, "EQ") &&
                   !strcmp(CE_FX[NELEM(CE_FX) - 2u].t, "TAPE")) &&
-                 !strcmp(CE_FX[NELEM(CE_FX) - 4u + !FELUCCA_XFX].t, "MASTER") &&
-                 !strcmp(CE_FX[NELEM(CE_FX) - 5u + !FELUCCA_XFX].t, "SL PITCH") && !page_visible(fx_page("PUNCH IN")) &&
+                 !strcmp(CE_FX[NELEM(CE_FX) - 3u].t, "MASTER") &&
+                 !strcmp(CE_FX[NELEM(CE_FX) - 4u].t, "SL PITCH") && !page_visible(fx_page("PUNCH IN")) &&
                  !strcmp(CG_FX[NELEM(CG_FX) - 1u].nm, "MASTER") && !strcmp(FX_MOD[FX_NMOD - 1u], "MASTER"));
     {   /* (V10.7.36) FX + G5 is COMB: the punch-in lane and the tracks' automation stay (the lane is cleared by REC + FX
          * or FX + PRESETS, KNOB 4 CLEAR only), named on the map */
@@ -9029,18 +9027,18 @@ static int test_scl_alltr(void)
  * the page left. (Was 0.8.5's lens: SELECT TRACK <-> BUSES <-> EFFECT, PRESETS the module, the FX tap the level's next) */
 static int test_fx_sections(void)
 {
-    static const char *const CH[18] = {"SENDS", "DIST", "AUTO PAN", "BUSES", "DELAY", "DELAY 2", "DELAY 3", "REVERB", "REVERB 2",
-                                       "CHORUS", "SLICER", "SLICER IN", "SLICER IN2", "SL PITCH", "MASTER", "TAPE", "EQ",
-                                       "BALANCE"};   /* (V10.7.30: BALANCE; V10.7.32: PUNCH IN on the FX held) */
+    static const char *const CH[17] = {"SENDS", "DIST", "AUTO PAN", "BUSES", "DELAY", "DELAY 2", "DELAY 3", "REVERB", "REVERB 2",
+                                       "CHORUS", "SLICER", "SLICER IN", "SLICER IN2", "SL PITCH", "MASTER", "TAPE", "EQ"};   /* (V10.7.30 .. 42:
+                                       * BALANCE last; V10.7.32: PUNCH IN on the FX held) */
     static const char *const TP[6] = {"BUSES", "DELAY", "REVERB", "CHORUS", "SLICER", "MASTER"};
     int bad = 0, ok;
     uint32_t pr;
     ui_power_on();
-    bad += check("0.9.2 FX: one chain of 18 (TRK BUS DLY REV CHO SLC MST; snd8: MASTER, TAPE; p9: EQ; BALANCE; V10.7.32 no PUNCH IN) by SELECT, no wrap; an FX tap each group's first, round",
-                 chain_walk(B_FX, CH, FELUCCA_XFX ? 18 : 17, TP, 6));
+    bad += check("0.9.2 FX: one chain of 17 (TRK BUS DLY REV CHO SLC MST; snd8: MASTER, TAPE; p9: EQ; V10.7.43 no BALANCE; V10.7.32 no PUNCH IN) by SELECT, no wrap; an FX tap each group's first, round",
+                 chain_walk(B_FX, CH, 17, TP, 6));
     ui_power_on(); go_home(); frame(); press(B_FX); frame();
     ok = fx_on() && fx_level() == FXL_TRACK && lz_on() && card_y() == LZ_CARD_Y && lz_tabs() == 7u && lz_tab_lit(0) &&
-         lz_crumb_is("FX \xB7 TRACK \xB7 SENDS") && lz_count_is("1/18");
+         lz_crumb_is("FX \xB7 TRACK \xB7 SENDS") && lz_count_is("1/17");
     turn(EN_SELECT, 3); frame();
     ok &= fx_level() == FXL_BUSES && cur_page()->graph == GR_BUSES && lz_tab_lit(1) && lz_crumb_is("FX \xB7 BUSES \xB7 BUSES");
     ok &= cur_page()->id[0] == G_DMIX && cur_page()->id[1] == G_RSIZE && cur_page()->id[2] == G_CDEPTH && cur_page()->id[3] == G_SLDEP;
@@ -9048,7 +9046,7 @@ static int test_fx_sections(void)
     ok &= song.g[G_RSIZE] > 50;
     turn(EN_SELECT, 2); frame();
     ok &= fx_level() == FXL_EFFECT && str_eq(cur_page()->title, "DELAY 2") && lz_tab_lit(2) &&
-          lz_crumb_is("FX \xB7 DELAY \xB7 DELAY 2") && lz_count_is("6/18") && ui.fxmod == 0u;
+          lz_crumb_is("FX \xB7 DELAY \xB7 DELAY 2") && lz_count_is("6/17") && ui.fxmod == 0u;
     {   /* the eight tabs: their short names (the full ones do not fit) */
         const char *nm[8], *tab[8];
         uint8_t cnt[8];
@@ -9060,14 +9058,14 @@ static int test_fx_sections(void)
     ok &= str_eq(cur_page()->title, "DELAY 2") && (TSEL->preset != pr || TSEL->eng_req != trk_def_engine(0));
     frames(320); press(B_FX); frame();
     ok &= str_eq(cur_page()->title, "REVERB") && ui.fxmod == 1u;
-    bad += !FELUCCA_XFX ? 0 : check("0.9.2 FX: tabs (seven, short names, dots), crumb FX . DELAY . DLY 2 6/18; BUSES' knobs; PRESETS a sound (was the module)", ok);
+    bad += !FELUCCA_XFX ? 0 : check("0.9.2 FX: tabs (seven, short names, dots), crumb FX . DELAY . DLY 2 6/17; BUSES' knobs; PRESETS a sound (was the module)", ok);
     go_home(); frame();
     press(B_FX); frame();
     ok = str_eq(cur_page()->title, "REVERB") && fx_level() == FXL_EFFECT;
     ui_load = LOAD_ECO; frame();                                   /* LOAD ECO: no CHORUS, no SLICER */
     turn(EN_SELECT, 1); frame(); ok &= str_eq(cur_page()->title, "REVERB 2");
     turn(EN_SELECT, 1); frame(); ok &= str_eq(cur_page()->title, "MASTER");   /* (CHORUS, SLICER skipped) */
-    ok &= lz_tabs() == 5u && lz_count_is("10/13");
+    ok &= lz_tabs() == 5u && lz_count_is("10/12");
     frames(320); press(B_FX); frame(); ok &= str_eq(cur_page()->title, "FX");   /* (round: TRACK's SENDS) */
     ui_load = LOAD_FULL; frame();
     bad += !FELUCCA_XFX ? 0 : check("0.9.2 FX: from elsewhere the page left; LOAD ECO: CHORUS and SLICER out of the chain and the tabs", ok);
@@ -12500,27 +12498,25 @@ static int test_lz_home(void)
     press(B_HOME); frame();                                         /* a HOME tap on GEN: round to LIFE (V10.7.34) */
     ok &= !ui.confirm && ui.home && home_level() == 3u && home_life() && !home_macros() && lz_tab_lit(0) &&
           lz_crumb_is("HOME \xB7 LIFE \xB7 LIFE") && lz_count_is("1/10");
-    {   /* (V10.7.34) LIFE's four: LIFE REACH X-FM SWIM (life.c; V10.7.43, were LIFE FILTER PITCH FX), the macros and
-         * the sound untouched */
-        int16_t l0[4], e = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
+    {   /* (V10.7.34) LIFE (life.c; V10.7.43: its one value, KNOB 1; the other knobs nothing), the macros and the sound
+         * untouched */
+        int16_t l0 = 0, e = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
         uint8_t m0[4];
         life_defaults();                            /* (the firmware's power-on: LIFE on; the tests' HOST_LIFE 0) */
-        memcpy(l0, life_v, sizeof l0);
+        l0 = life_v[LIFE_AMT];
         memcpy(m0, macro_v, sizeof m0);
-        ok &= l0[LIFE_AMT] == LIFE_DEF && !strncmp(ui.col[0], "LIFE|", 5) && !strncmp(ui.col[1], "REACH|", 6) &&
-              !strncmp(ui.col[2], "X-FM|", 5) && !strncmp(ui.col[3], "SWIM|", 5);
+        ok &= l0 == LIFE_DEF && !strncmp(ui.col[0], "LIFE|", 5);
         for (c = 0; c < 4u; c++) { turn(EN_K1 + c, 2); frame(); }
-        for (c = 0; c < 4u; c++) ok &= life_v[c] == l0[c] + 2;
+        ok &= life_v[LIFE_AMT] == l0 + 2;
         turn(EN_K1, -300); frame();
         ok &= life_v[LIFE_AMT] == 0 && strstr(ui.col[0], "|0|") != 0;
         ok &= !memcmp(m0, macro_v, sizeof m0) && TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == e;
-        memcpy(life_v, l0, sizeof l0);
         life_v[LIFE_AMT] = HOST_LIFE;
     }
     turn(EN_SELECT, 1); frame();                                    /* SELECT right: MACROS */
     ok &= home_macros() && lz_count_is("2/10");
     bad += check("V10.7.24 HOME: PARTS, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: "
-                 "LIFE (V10.7.34: its KNOB 1..4 LIFE REACH X-FM SWIM), SELECT on to MACROS", ok);
+                 "LIFE (V10.7.34; V10.7.43 its KNOB 1 alone), SELECT on to MACROS", ok);
     press(B_HOME); turn(EN_SELECT, 6); frame();                     /* GEN 2 */
     ok = gen_on() && gen_page() == 1u;
     press(B_ENV); frame();                                          /* not modal: a section's button leaves it */
@@ -12736,7 +12732,7 @@ static int test_lz_edit(void)
                   !nav_put(SEC_EDIT, "FILTER 3");   /* (V10.7.37: a kit's CRUSH on OUT) */
         }
         set_engine_of(TSEL, 0); go_title("TONE"); frame();
-        ok &= str_eq(page_desc(cur_page(), 0, &hv)->label, "KEY TRK") && str_eq(page_desc(cur_page(), 2, &hv)->label, "LIFE");
+        ok &= str_eq(page_desc(cur_page(), 0, &hv)->label, "KEY TRK") && !page_desc(cur_page(), 2, &hv);   /* (V10.7.43: the track's LIFE gone) */
         d = page_desc(cur_page(), 1, &hv);
         ok &= d && str_eq(d->label, "CRUSH") && hv == &cru_v[song.sel] && d->max == 127 && !cru_v[song.sel];
         turn(EN_K2, 5); frame();

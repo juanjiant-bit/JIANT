@@ -116,9 +116,6 @@ static const nv_t CE_FX[] = {NV("FX", "SENDS", 0, FXL_TRACK), NV("DIST", 0, 0, F
                              NV("SLICER IN2", 0, 5, FXL_EFFECT), NV("SL PITCH", 0, 5, FXL_EFFECT),
                              NV("MASTER", 0, 6, FXL_EFFECT), NV("TAPE", 0, 6, FXL_EFFECT),
                              NV("EQ", 0, 6, FXL_EFFECT)
-#if FELUCCA_XFX
-                             , NV("BALANCE", 0, 6, FXL_EFFECT)
-#endif
                             };   /* (p9: the master's EQ) */   /* (0.9.9-snd2: MASTER last, the
                                                          * end of the chain; snd8: its TAPE) */
 static const ng_t CG_FX[] = {{"TRACK", "TRK"}, {"BUSES", "BUS"}, {"DELAY", "DLY"}, {"REVERB", "REV"}, {"CHORUS", "CHO"},

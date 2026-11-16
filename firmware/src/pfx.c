@@ -154,10 +154,8 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
     uint32_t k, b = beat_samples(), lane = 0, raw = held & pfx_rec_held, nw;
     pfx_blk++;
     if (held & PF_BIT(PF_LMAX)) {                       /* (V10.7.36) LIFE MAX: 100 % for this block (pfx_end: back) */
-        for (k = 0; k < 4u; k++) {
-            pfx_life.keep[k] = life_v[k];
-            life_v[k] = 100;
-        }
+        pfx_life.keep[0] = life_v[LIFE_AMT];            /* (V10.7.43: LIFE's one value) */
+        life_v[LIFE_AMT] = 100;
         pfx_life.on = 1;
         held &= ~PF_BIT(PF_LMAX);
     }
@@ -254,8 +252,7 @@ static __attribute__((noinline)) void pfx_end(void)
 {
     uint32_t k;
     if (pfx_life.on) {
-        for (k = 0; k < 4u; k++)
-            life_v[k] = pfx_life.keep[k];
+        life_v[LIFE_AMT] = pfx_life.keep[0];
         pfx_life.on = 0;
     }
     for (k = 0; k < NTRK; k++)
