@@ -172,3 +172,50 @@ None of these is applied. They change the sound, so they are the owner's decisio
 
 1(b) and 2(a) together are estimated to bring CPU TEST to about 3000, with no audible change expected, but not bit for
 bit. Both features off brings it to V10.7.23's level.
+
+## 6. V10.7.43: LIFE and BALANCE as the owner decided
+
+The owner's decision (Juan): LIFE cut down to the cross-FM between the tracks and a little of the followers; BALANCE a
+light balancer in the background. Both stay on by default (LIFE 25, BALANCE 50).
+
+**Was the cross-FM happening?** Not at the defaults. `life_pm` ran only with PITCH past 50, and PITCH powers on at 10:
+0 of 2756 blocks of a drone duet, at LIFE 25 and at LIFE 100. At PITCH 100 it ran, its delay swing clipped against the
+line's ends.
+
+What changed (life.c, fx.c):
+
+- **LIFE**: the voices' wander and arc (`life_voice`), the sends (`life_snd`), the pitch sag and LIFE's own followers
+  scan (`life.fol`, every 4th sample on every live track) are gone. The follower is each track's peak of the block, which
+  `mix_part`'s loop already finds for the meter (the meter still gets its maximum), followed once a block; onto each
+  voice's cutoff and SHAPE every 4th block. The cross-FM: up to two pairs (one up to LIFE 50), chosen every 8th block by
+  the weights, the moved track's sum through a 32-sample line driven by the other's samples of the block before
+  (`life_tap`: a copy, no scan), ~17 instructions a sample per pair.
+- **BALANCE**: one band (the low mids, the difference of two one-poles) a side at a quarter of the rate (the mean of 4
+  samples), the correction ramped back at the full rate, the analysis once every 4 blocks. Was 2 × 3 one-poles and 4
+  band gains every sample.
+
+| section | V10.7.23 | V10.7.42 | V10.7.43 | Δ vs V10.7.42 | V10.7.43, BALANCE 0 | V10.7.43, LIFE 0 |
+|---|---|---|---|---|---|---|
+| song/cputest | 2864 | 3075 | **2936** | −139 (−4.5 %) | 2909 | 2902 |
+| song/cputest.eq | 3090 | 3297 | 3160 | −137 (−4.2 %) | 3133 | 3125 |
+| mix/full | 2660 | 2855 | 2753 | −102 (−3.6 %) | 2726 | 2703 |
+| mix/full.freeze | – | 2582 | 2478 | −104 (−4.0 %) | 2450 | 2428 |
+| mix/idle | 296 | 181 | 178 | −3 | 168 | 171 |
+| seq/plain | 2278 | 2483 | 2379 | −104 (−4.2 %) | 2352 | 2327 |
+| seq/mono4 | 1233 | 1416 | 1327 | −89 (−6.3 %) | 1300 | 1278 |
+| rev/ROOM | 1344 | 1484 | 1392 | −92 (−6.2 %) | 1365 | 1385 |
+| rev/CLOUD | 1589 | 1729 | 1637 | −92 (−5.3 %) | 1610 | 1631 |
+| eng/DRUM | 1229 | 1376 | 1282 | −94 (−6.8 %) | 1254 | 1275 |
+| eng/FM6 | 1579 | 1718 | 1627 | −91 (−5.3 %) | 1600 | 1620 |
+| dly/full | 1378 | 1515 | 1423 | −92 (−6.1 %) | 1396 | 1417 |
+
+The cost on song/cputest: **BALANCE +94 → +27**, **LIFE +88 → +34** (+17 the pair's line, +8 the per-part hooks,
++1 a block's weights and followers, the rest the follower's store and the tap). The target, V10.7.23's 2864, is
+**not reached**: 2936 is 72 over. With both features at 0 it would be about 2875, already 11 over V10.7.23 (the
+residue measured in §5). So the rest has to come from code that runs whether LIFE and BALANCE are on or not. One
+candidate was measured: CLOUD's grains aged in their read loop, and only the sounding ones visited. It is bit for bit
+and saves 40 / sample, but it costs ~120 B of RAM code, and the RAM code has 32 B to spare above its 2048 B floor. It
+is left out.
+
+Firmware: image 583524 B of 584336 (812 B free; was 36), RAM code 32744 B (headroom 2072 B), pool spare 10752 B (was
+9024), RAM .data + .bss 98136 B, BT segment unchanged.

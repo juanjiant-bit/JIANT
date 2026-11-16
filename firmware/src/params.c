@@ -762,7 +762,7 @@ enum { LIFE_AMT, LIFE_FOL, LIFE_XFM, LIFE_SWM, LIFE_N };
 #ifndef LIFE_DEF
 #define LIFE_DEF 25
 #endif
-static const int8_t LIFE_DEFS[LIFE_N] = {LIFE_DEF, 30, 50, 30};
+static const int8_t LIFE_DEFS[LIFE_N] = {LIFE_DEF, 30, 70, 30};
 #define LIFE_TDEF 100
 static const param_desc_t LIFE_DESC __attribute__((section(".rodata.tape"))) = PD("LIFE", F_PCT, 0, 100, LIFE_TDEF);   /* (the track's) */
 static const char *const LIFE_NM[LIFE_N] = {"LIFE", "FOLLOW", "X-FM", "SWIM"};   /* (HOME > LIFE's cards) */

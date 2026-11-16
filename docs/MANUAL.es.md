@@ -45,7 +45,7 @@ Todo lo que cambió desde la V10.6c, la última versión pública, en una lista;
   cross-FM a lo Lyra). **KNOB 1 LIFE** (0: el sinte clásico, quieto, exactamente como antes), **2 FILTER**, **3 PITCH**,
   **4 FX**. En la pantalla: un ser por pista, nadando según suena, una línea de cada pista a la que mueve, más gruesa
   cuanto más la mueve. Prendido de fábrica (LIFE 25 %): un proyecto guardado antes también abre con LIFE; bajalo a 0
-  para el sonido de antes. Mirá [LIFE](#life-las-voces-vivas-v10734).
+  para el sonido de antes. Mirá [LIFE](#life-las-voces-vivas-v10734-rehecho-en-la-v10743).
 - El LIFE de cada pista: **EDIT › VOICES 3, KNOB 2** (0..100 %, por el de HOME): dejá un canal quieto, o que viva uno solo.
 - La matriz MOD: fuentes **LIFE** (la respiración de la pista) y **BEING** (la altura de su ser en el agua), destino
   **LIFE** (un LFO, una envolvente, el ENV de otra pista cambiando cuánto vive una pista). **T1 ENV … T6 ENV** (el
@@ -520,8 +520,8 @@ dibujo del paso grande es el de STEP COND); el **SENDS** de FX es la página FX;
 nivel PROJECT) y **PROJECTS** (el nivel LIBRARY); EDIT 1 / EDIT 2 del kit DRUM son **KIT** / **KIT 2**. La página nueva
 **BAR** es el dibujo de los compases de PATTERN con KNOB 1 el compás y KNOB 2 LEN.
 
-- **LIFE** (V10.7.34, la primera página de HOME): LIFE, FILTER, PITCH, FX, los seres y quién mueve a quién: mirá
-  [LIFE](#life-las-voces-vivas-v10734). SELECT a la derecha sigue a MACROS.
+- **LIFE** (V10.7.34, la primera página de HOME): LIFE, FOLLOW, X-FM, SWIM (V10.7.43; eran FILTER, PITCH, FX), los seres y quién mueve a quién: mirá
+  [LIFE](#life-las-voces-vivas-v10734-rehecho-en-la-v10743). SELECT a la derecha sigue a MACROS.
 - **MACROS** (V10.7.24: la primera página de HOME hasta la V10.7.34, con el dibujo de ECO; ECO, BEING y ROUTES se fueron: las cuatro
   perillas del sonido viven en EDIT): **KNOB 1–4** son **M1–M4**, las macros del proyecto (como LFO mantenido; se guardan
   con el proyecto y las escenas del SONG como siempre), cada tarjeta apagada mientras ningún slot de MOD la nombre. Los
@@ -2872,20 +2872,18 @@ ancho). Se oculta con LOAD ECO (la tarjeta de envío de chorus de una pista dice
 - **CLIP**: saturación que agrega carácter, no volumen.
 - **PUNCH**: engorda las pistas DRUM.
 - **DUCK**: el bombo baja todo lo demás; **REL** es su release.
-- **BALANCE** (V10.7.30, de vuelta en la imagen en la V10.7.33; FX › BALANCE, la página después de EQ; **AMOUNT** 0–100 %, **50 de fábrica: prendido**): un EQ dinámico y
-  lento sobre las cuatro bandas del EQ, para la "pelota de medios" en que se convierte una mezcla llena. Escucha el
-  balance de la mezcla entre las bandas (a lo largo de un segundo, no golpe a golpe) y lo compara con la curva de una
-  mezcla balanceada (la pendiente de una mezcla comercial, los graves un poco más ricos y los agudos un poco más oscuros,
-  como se para la música electrónica). Cuando **los medios graves (200 Hz–1 kHz) se amontonan** los baja, unos −2 a
-  −4 dB donde están en un tema denso de GEN típico al 50 % (hasta ~−6 dB); nunca los sube. Los graves se mueven ±1,5 dB
-  como mucho, la banda de 1–4 kHz ±2 dB, los agudos ±3 dB, hacia la curva; a menos de 0,5 dB de ella no se mueve nada.
-  Solo el balance entre las bandas, nunca el volumen (eso es del leveler). Las correcciones se deslizan (bastante menos
-  de 1 dB de ondulación al ritmo: no bombea) y se sostienen en los silencios. 0 es apagado (la mezcla bit a bit como
-  sin él, el EQ como lo pusiste). 100 corrige el doble (dentro de los mismos límites). Se guarda con el proyecto; un
-  proyecto guardado antes de V10.7.30 abre con BALANCE en 50 (prendido: la idea es que el barro se vaya, también en tus
-  temas viejos); ponelo en 0 y guardá para dejar uno como estaba. Trabaja justo antes del EQ, con su propia división
-  en las mismas cuatro bandas, así que el EQ queda exactamente como lo pusiste, encima. Costo: unos pocos por ciento de
-  la CPU de audio con AMOUNT prendido (nada en silencio).
+- **BALANCE** (V10.7.30; más liviano en la V10.7.43; FX › BALANCE, la página después de EQ; **AMOUNT** 0–100 %, **50 de fábrica:
+  prendido**): un balanceador liviano de la mezcla que trabaja por detrás, para la "pelota de medios" en que se
+  convierte una mezcla llena. Escucha cuánto de la mezcla está en los **medios graves (unos 150–800 Hz, el barro)**
+  contra la mezcla entera (a lo largo de un segundo, no golpe a golpe). Cuando se amontonan más allá de lo que tiene una
+  mezcla balanceada, baja esa banda, unos −2 a −4 dB en una mezcla densa al 50 %, como mucho unos −6 dB; nunca la sube,
+  y no toca nada más (los graves, los agudos, el volumen: eso es del leveler). A menos de 0,5 dB de lo balanceado no se
+  mueve nada; la corrección se desliza (no bombea) y se sostiene en los silencios. Cada lado se divide por su cuenta (un
+  sonido paneado a un lado se queda en su lado). 0 es apagado (la mezcla bit a bit como sin él, el EQ como lo pusiste).
+  100 corrige el doble. Se guarda con el proyecto; un proyecto guardado antes de V10.7.30 abre con BALANCE en 50.
+  Trabaja justo antes del EQ, así que el EQ queda exactamente como lo pusiste, encima. Costo: más o menos un 1 % de la
+  CPU de audio con AMOUNT prendido (escucha a un cuarto de la frecuencia; nada en silencio). Hasta la V10.7.42 era un EQ
+  dinámico de cuatro bandas que además inclinaba los graves y los agudos, un 3 % de la CPU.
 
 ### DJ FILTER (0.9.1, GLO › LIVE › KEYS KNOB 4; en MIXER hasta V10.36)
 
@@ -2944,43 +2942,49 @@ pequeña curva de respuesta donde iría la barra.
 - **STEP MOD**: un secuenciador de modulación de 16 pasos por pista, como un secuenciador de CV. KNOB 1 elige el paso,
   KNOB 2 fija su nivel, LEN y SLEW; DIV en STEP MOD 2. Usalo desde MOD con SRC **STEP**.
 
-### LIFE: las voces vivas (V10.7.34)
+### LIFE: las voces vivas (V10.7.34; rehecho en la V10.7.43)
 
-Sin LIFE un sinte está quieto salvo que le armes el movimiento a mano. Con LIFE, las voces de JIANT viven solas:
+Sin LIFE un sinte está quieto salvo que le armes el movimiento a mano. Con LIFE, las pistas de JIANT tocan unas con
+otras, como en una Lyra:
 
-- **Cada voz con su propia vida** (todos los motores): un vagar lento y orgánico propio, así las notas de un acorde
-  respiran separadas: su afinación (unos cents, y una leve desafinación propia de la nota), su filtro, su forma cuando
-  otra cosa ya la mueve, su nivel (una respiración de más o menos un decibel). **Una nota mantenida tiene un arco**:
-  arranca con energía (el vagar más rápido y más ancho, más cuanto más fuerte la tocaste), **florece** (el filtro se abre
-  un poco en el primer segundo y medio) y después **se cansa** (desde unos tres segundos, un poco más oscura y con la
-  respiración más lenta). Una nota legato sigue con el arco.
-- **Las pistas se mueven entre sí**, antes de los efectos, como en una Lyra: el sonido seco de cada pista del bloque
-  anterior (su envolvente y, en la punta de PITCH, sus propias muestras) mueve a las otras. Quién mueve a quién: a cada
-  pista la mueve sobre todo la anterior entre las que suenan (dos pistas: un dúo, cada una la de la otra; más: una
-  ronda), un poco el resto, y más cuando sus seres nadan cerca. Con un bloque de demora (1,5 ms): sin orden, sin un lazo
-  que se dispare, y un poco de la inestabilidad de una Lyra.
+- **Cross-FM (X-FM): las pistas se modulan en FM entre sí.** El sonido de una pista se modula en fase, a velocidad de
+  audio, con el sonido de otra: cada parcial se mueve según su frecuencia, como en FM, y aparecen bandas laterales entre
+  ellos, en todos los motores (un kit mueve a las otras pero nunca lo mueven a él). Quién mueve a quién sale de los seres
+  de abajo: a cada pista la mueve sobre todo la anterior entre las que suenan (dos pistas: un dúo, cada una la de la
+  otra; más: una ronda), más cuando sus seres nadan cerca. Suenan los pares más fuertes: **uno a la vez hasta LIFE 50 %,
+  dos por encima** (el límite de la CPU). La profundidad sigue al sonido de la otra pista (sus picos recorren toda la
+  profundidad), crece con LIFE al cuadrado (suave de fábrica, profunda en 100) y con X-FM, y entra y sale deslizándose
+  cuando cambian los pares. Con un bloque de demora (1,5 ms): sin orden, sin un lazo que se dispare.
+- **Los seguidores (FOLLOW)**: un poco de la envolvente de cada pista sobre los parámetros propios de su motor: el
+  sonido de las otras sobre su **corte** (un kit **agacha** los filtros de las otras en cada golpe, cualquier otra pista
+  los **abre**), su propio sonido sobre su **SHAPE**, el timbre del motor (el FOLD de WEST, los moduladores de FM6, la
+  profundidad de PHASE, el brillo de STRING, VOICE, MATH, ADD, ANIMAL; el sonido plano de ANALOG y WHEEL queda como
+  está). Una vez por bloque, en cada voz.
+- Desde la V10.7.43 LIFE ya no automatiza parámetros por su cuenta: el vagar propio de cada voz, el arco de la nota, el
+  hundimiento de afinación y los envíos que respiraban ya no están.
 
 | HOME › LIFE | Qué hace |
 | --- | --- |
 | **KNOB 1 LIFE** | Cuánto vive todo, 0..100 % (25 % al prender y en todo proyecto guardado antes de la V10.7.34). **0: el sinte clásico, quieto, bit por bit como antes.** |
-| **KNOB 2 FILTER** | Cuánto mueven las pistas el corte de las otras: un kit **agacha** los filtros de las otras en cada golpe, cualquier otra pista los **abre** mientras suena (30 %). |
-| **KNOB 3 PITCH** | Hasta 50 %: el nivel de las otras **hunde** a una pista unos cents (hasta ~30 ct), como una fuente vieja bajo un golpe. Pasado el 50 %: **cross-FM** a velocidad de audio, el sonido de cada pista modulado en fase por el de las otras (10 %). |
-| **KNOB 4 FX** | Cuánto tiran las otras a una pista a sus envíos (CHORUS, DELAY, REVERB: hasta el doble de donde están; una pista seca sigue seca) (25 %). |
+| **KNOB 2 FOLLOW** | Cuánto mueven los seguidores el corte y el SHAPE de cada motor (30 %). |
+| **KNOB 3 X-FM** | La profundidad del cross-FM (70 %): con LIFE 100 y X-FM 70 o más, la más profunda (±13 muestras de vaivén de fase). |
+| **KNOB 4 SWIM** | Qué tan rápido nadan los seres, o sea qué tan rápido cambia quién mueve a quién (30 %: como antes; 0 un cuarto, 100 casi el triple). |
 
 La pantalla muestra lo que oís: un **ser** por pista (su especie, colores y cara como en MACROS), nadando en el agua al
 ritmo de su sonido (agitado fuerte, tranquilo en silencio) y respirando (su tamaño: la fuente **LIFE**). Una **línea**
 va de cada pista a la que mueve, más gruesa y cálida cuanto más la mueve, con un punto cerca de la movida; arriba a la
-izquierda el LIFE (**STILL** en 0), a la derecha las líneas contadas. FILTER, PITCH y FX quedan tenues con LIFE en 0.
+izquierda el LIFE (**STILL** en 0), a la derecha las líneas contadas. FOLLOW, X-FM y SWIM quedan tenues con LIFE en 0.
 
 - **Una pista quieta, o que viva una sola**: **EDIT › TONE, KNOB 3** (un kit: **OUT**, KNOB 3; EXT: VOICES 3, KNOB 2) es el LIFE propio de la pista (0..100 %, 100 %
   de fábrica), por el de HOME. En 0 la pista queda quieta y no la mueven las otras (ella sí las sigue moviendo). El
   destino **LIFE** de la matriz se le suma bloque a bloque.
 - **En la matriz**: **LIFE** (la respiración), **BEING** (el nado, arriba +) y **T1 ENV … T6 ENV** como fuentes; **LIFE**
   como destino.
-- **Se guarda con el proyecto** (LIFE, FILTER, PITCH, FX, el LIFE de cada pista); un proyecto guardado antes de la
-  V10.7.34 abre con los valores de fábrica, LIFE prendido. Para el sonido exacto de antes, bajá LIFE a 0.
-- **Costo**: de fábrica, más o menos un 4 % más de CPU del audio en un tema completo; en 0, nada que se note. El
-  cross-FM (PITCH pasado el 50 %) suma una línea corta por cada pista a la que llega.
+- **Se guarda con el proyecto** (LIFE, FOLLOW, X-FM, SWIM, el LIFE de cada pista: los lugares de FILTER, PITCH y FX de la
+  V10.7.34); un proyecto guardado antes de la V10.7.34 abre con los valores de fábrica, LIFE prendido. Para el sonido
+  exacto de antes, bajá LIFE a 0.
+- **Costo**: de fábrica, más o menos un 1 % de la CPU del audio en un tema completo (era un 4 % hasta la V10.7.42); un
+  segundo par (LIFE por encima del 50 %) más o menos medio por ciento más; en 0, nada que se note.
 
 ### Macros M1–M4
 
@@ -3100,7 +3104,7 @@ REC mantenido + FX o este CLEAR de la KNOB 4.)
   delay (su MIX al menos 100), la señal seca muda: solo se oye el efecto; al soltar vuelve la seca y la cola sigue
   sonando. **RING** (F#4): modulación en anillo del master con un seno dos octavas arriba de la tónica de la escala de
   la pista elegida (C5 … B5), con su profundidad ondulando una vez por compás; nunca más fuerte que la mezcla.
-  **LIFE MAX** (A#4): LIFE, FILTER, PITCH y FX de HOME › LIFE al 100 % mientras la mantenés; al soltar, tus valores
+  **LIFE MAX** (A#4): LIFE, FOLLOW, X-FM y SWIM de HOME › LIFE al 100 % (dos pares de cross-FM, los más profundos) mientras la mantenés; al soltar, tus valores
   exactos (nunca se guarda). Todas entran al apretar (salvo lo dicho) y salen con una rampa corta.
 - (V10.7.36) **WOBBLE** (G4): un pasabajos resonante en el master que abre y cierra una vez por cada 1/8 del
   transporte, a tempo. **DLY 1/16** (A4): el bus de delay a 1/16 con una realimentación muy alta (justo debajo de la

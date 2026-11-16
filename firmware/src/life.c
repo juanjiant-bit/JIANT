@@ -91,7 +91,9 @@ static LIFE_SZ void life_master(void)
                                                          * block, one a block in turn; the weights and the pairs in the 8th) */
     int32_t e[NTRK], best[LPM_N], bi[LPM_N], bj[LPM_N];
     int32_t fol = (life_v[LIFE_AMT] * life_v[LIFE_FOL] * 105) >> 10;   /* (FOLLOW at this LIFE, Q10: 0..1025) */
-    int32_t xfm = (life_v[LIFE_AMT] * life_v[LIFE_XFM] * 105) >> 10;   /* (X-FM at this LIFE, Q10) */
+    int32_t xfm = clamp((((life_v[LIFE_AMT] * life_v[LIFE_AMT]) / 100) * life_v[LIFE_XFM] * 150) >> 10, 0, 1024);   /* (X-FM
+                                                         * at this LIFE, Q10: LIFE squared, gentle at its default, the
+                                                         * deepest at 100 from X-FM 70) */
     if (!life.init) {                                   /* (where they start: two rows of three) */
         static const uint16_t X0[NTRK] = {12000, 32000, 52000, 22000, 42000, 60000};
         life.init = 1;
@@ -166,7 +168,8 @@ static LIFE_SZ void life_master(void)
         }
         life.xc[i] = (int16_t)((clamp(cs, -32767, 32767) * fol) >> 12);   /* (+-32 steps << 8 at 100 %) */
         life.xh[i] = (int16_t)((e[i] * fol * 3) >> 14);  /* (its own sound on its SHAPE: up to +24 steps << 8) */
-        if (sw && xfm && !((life.kit >> i) & 1u) && mj < NTRK)   /* (a pair candidate: the strongest of its movers) */
+        if (sw && xfm && !((life.kit >> i) & 1u) && mj < NTRK && life_v[LIFE_N + i])   /* (a pair candidate: the strongest
+                                                         * of its movers; a kit, a track at LIFE 0 never) */
             for (k = 0; k < LPM_N; k++)
                 if (mx > best[k]) {
                     for (j = LPM_N - 1u; j > k; j--)
@@ -253,8 +256,9 @@ static __attribute__((noinline)) void life_pm(uint32_t ti, int32_t *out, uint32_
             continue;
         if (n > CTL) n = CTL;
         b1 = (q->dc * lpt) >> 8;                        /* (the centre: the swing's depth, so 0 .. 2 x) */
-        k1 = life.tap_blk[par][k] == mns_clk - 1u ? (b1 * life.tlv[par][k]) >> 12 : 0;   /* (its samples of the block
-                                                         * before, at their LEVEL: a full-scale one swings the depth) */
+        k1 = life.tap_blk[par][k] == mns_clk - 1u ?     /* (its samples of the block before, against its own follower:
+                                                         * its peaks swing the whole depth, however loud it plays) */
+             ((b1 * life.tlv[par][k]) / (life.fo[q->src & 7u] > 512 ? life.fo[q->src & 7u] : 512)) << 3 : 0;
         if (q->last != mns_clk - 1u) {                  /* (starting, or after a gap: the line from silence) */
             memset(ln, 0, sizeof q->ln);
             q->b = q->k = 0;

@@ -483,6 +483,19 @@ same license.
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
 
+### V10.7.43 — beta (2026-11-16)
+- **LIFE rebuilt around the tracks FM-ing each other.** Until now its cross-FM only ran with PITCH past 50 (10 at
+  power-on), so by default it never happened. Now it is the heart of LIFE: a track's sound phase-modulated at audio rate
+  by another's, through a short line, on every engine (a kit moves, it is never moved). One pair up to LIFE 50, two above,
+  chosen by the beings' weights; gentle at the default, deep at 100. And **FOLLOW**: a little of each track's envelope on
+  its engine's own cutoff and SHAPE (WEST's FOLD, FM6's modulators, PHASE's depth ...). The voices' wander, the note's
+  arc, the pitch sag and the sends breathing are gone. HOME › LIFE's knobs: **LIFE FOLLOW X-FM SWIM**. LIFE 0 is still
+  bit for bit the sound without LIFE.
+- **BALANCE lighter, in the background**: only the low mids (the mud, ~150–800 Hz) come down when they pile up,
+  listened to at a quarter of the rate; no more four-band EQ every sample.
+- **CPU**: CPU TEST 3075 → 2936 instructions a sample (−4.5 %): BALANCE +94 → +27, LIFE +88 → +34 (docs/CPU_HISTORY.md).
+  Renders before and after: renders/v43-life (LEEME.txt).
+
 ### V10.7.42 (2026-11-15)
 - **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version
   since V10.7.23 was measured: the +7.7 % of CPU TEST is all BALANCE, on since V10.7.33 (+3.3 %), and LIFE (+4.2 %); nothing runs

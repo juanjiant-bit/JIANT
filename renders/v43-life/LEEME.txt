@@ -1,0 +1,57 @@
+JIANT FM — V10.7.43: LIFE rehecho y BALANCE liviano. Renders de antes (V10.7.42) y después (V10.7.43)
+=========================================================================================================
+
+Qué cambió
+----------
+LIFE ya no automatiza parámetros. Quedan dos cosas:
+
+1. Cross-FM real entre pistas (X-FM). El sonido de una pista se modula en fase, a velocidad de audio, con el sonido
+   de otra. Pasa por una línea corta de 32 muestras cuyo retardo lo mueven las muestras de la otra pista. Así cada
+   parcial se mueve según su frecuencia, como en FM, y aparecen bandas laterales. Funciona en todos los motores; un
+   kit de batería mueve a las otras pistas pero nunca lo mueven a él. Los pares salen de los pesos de los seres
+   (HOME > LIFE): suena un par hasta LIFE 50 % y dos por encima. La profundidad crece con LIFE al cuadrado: es suave
+   de fábrica (LIFE 25) y llega a ±13 muestras en LIFE 100 con X-FM 70 o más.
+2. Un poco de los seguidores. Una vez por bloque, cada pista tiene un seguidor de envolvente. No cuesta nada por
+   muestra: es el pico que ya mide la mezcla. Mueve, en cada motor, su corte (un kit lo agacha, las otras pistas lo
+   abren) y su SHAPE, o sea el timbre propio del motor: el FOLD de WEST, los moduladores de FM6, la profundidad de
+   PHASE, etc.
+
+Se fueron el vagar propio de cada voz, el arco de la nota, el hundimiento de afinación y los envíos que respiraban.
+Las perillas de HOME > LIFE ahora son LIFE, FOLLOW, X-FM y SWIM (antes LIFE, FILTER, PITCH y FX); en el proyecto
+ocupan los mismos lugares. LIFE 0 sigue siendo bit por bit el sonido sin LIFE.
+
+BALANCE ahora es un balanceador liviano que trabaja por detrás. Solo baja los medios graves (unos 150–800 Hz, el
+barro) cuando se amontonan contra la mezcla entera: hasta unos −6 dB, y nunca sube nada. Escucha a un cuarto de la
+frecuencia de muestreo (dos one-poles por lado). Antes era un EQ dinámico de cuatro bandas con seis filtros por
+muestra.
+
+¿Pasaba el cross-FM antes?
+--------------------------
+En la V10.7.42, con los valores de fábrica, no. El cross-FM solo corría con PITCH por encima de 50, y PITCH venía
+en 10. Medido: 0 de 2756 bloques, tanto en LIFE 25 como en LIFE 100. Con PITCH en 100 sí corría, y fuerte: el
+vaivén del retardo se recortaba contra los bordes de la línea. Llegaba a todos los motores, porque actuaba sobre la
+suma de la pista.
+
+Archivos (estéreo, 44,1 kHz, 16 bits)
+-------------------------------------
+gen1_seed7_V10.7.42_life{0,50,100}.wav   un tema de GEN (género 1, semilla 7), 10 s, antes
+gen1_seed7_V10.7.43_life{0,50,100}.wav   el mismo tema, después
+gen4_seed3_V10.7.42_life{0,50,100}.wav   otro tema de GEN (género 4, semilla 3), 10 s, antes
+gen4_seed3_V10.7.43_life{0,50,100}.wav   el mismo tema, después
+  En los dos "after", BALANCE está en 50 (de fábrica).
+  LIFE 0 en V10.7.43 difiere de LIFE 0 en V10.7.42 solo por BALANCE. Con BALANCE en 0 son idénticos bit por bit:
+  las 219 renders de tests/regress.c.
+
+duet_V10.7.42_life0.wav              dúo de drones (bajo ANALOG + FM6), 4 s, LIFE 0
+duet_V10.7.42_life100_pitch10.wav    el mismo dúo, LIFE 100 con PITCH de fábrica: sin cross-FM (solo vagar/arco)
+duet_V10.7.42_life100_pitch100.wav   el mismo dúo, LIFE 100, PITCH 100: el cross-FM viejo, recortado
+duet_V10.7.43_life0.wav              dúo de drones de tests/life_test.c (ANALOG + FM6), 14 s, LIFE 0
+duet_V10.7.43_life100_xfm100.wav     el mismo dúo, LIFE 100, X-FM 100: el cross-FM nuevo, bien audible
+six_tracks_V10.7.43_life100.wav      seis pistas (kit, pad, FM6, WEST, PHASE, bajo) con todo en 100: dos pares
+
+Lo medido (tests/life_test.c, sección 5)
+----------------------------------------
+Probé un FM6 movido por el bajo de un ANALOG, con FOLLOW en 0 para que no cambie nada más que el cross-FM. La
+energía entre los parciales (las bandas laterales) da −53,2 dB en LIFE 0, −49,7 dB en LIFE 50 y −43,1 dB en LIFE 100.
+El espectro se aleja del de LIFE 0 unos 6,0 dB en LIFE 50 y 7,2 dB en LIFE 100. Además, los 10 motores, todos menos
+el kit, cambian cuando otra pista los mueve.
