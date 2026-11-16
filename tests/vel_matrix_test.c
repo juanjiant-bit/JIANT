@@ -13,9 +13,9 @@
 #include "hostsim.c"
 #undef main
 
-#define VEL_HASH_127R 0xd4355752u
-#define VEL_HASH_64 0xd408d383u
-#define VEL_HASH_0 0xdb036bc8u
+#define VEL_HASH_127R 0xe4529166u   /* (V10.7.43: the clean releases, the mix's bits below Q15 kept; was 0xd4355752) */
+#define VEL_HASH_64 0x3a488cfcu     /* (V10.7.43: the clean releases, the mix's bits below Q15 kept; was 0xd408d383) */
+#define VEL_HASH_0 0x483eea89u      /* (V10.7.43: the clean releases, the mix's bits below Q15 kept; was 0xdb036bc8) */
 
 static int bad;
 static void ck(const char *what, int ok)

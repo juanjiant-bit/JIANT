@@ -37,7 +37,7 @@ static uint32_t mfnv(uint32_t h, const void *p, uint32_t n)
 }
 
 /* ---- 2. a project of before: the steps' MICRO set as 0.9.0 stored it (cwhen's bits 4-7, sixteenths) ---- */
-#define MICRO_OLD_090 0x168a3b7au   /* (V10.7.37: 0x91835b33 before DRUM-X's review, the kit in the project; V10.7.17: 0x6377849c before ROOM's network, the mix's reverb; 2026-11-09 bug review: 0xe7ee65d3 until the sounds and defaults since V10.6
+#define MICRO_OLD_090 0x6ff64f45u   /* (V10.7.43: 0x168a3b7a before the clean releases, the mix's bits below Q15 kept; V10.7.37: 0x91835b33 before DRUM-X's review, the kit in the project; V10.7.17: 0x6377849c before ROOM's network, the mix's reverb; 2026-11-09 bug review: 0xe7ee65d3 until the sounds and defaults since V10.6
                                          * (GATE 100 % for new tracks V10.6z4, the levelled presets V10.6t, V10.7's mix):
                                          * the steps' places, checked below, as before. 0.9.9 ctl64: the render in blocks of 64 differs from 0.9.0's bit for bit
                                          * (the notes at their samples, the fades); was 0xd5c5b5c5: the steps' places as read

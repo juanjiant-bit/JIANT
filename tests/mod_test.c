@@ -86,6 +86,7 @@ static void fresh(uint32_t e, uint32_t pi)        /* the boot state (no FX tails
     memset(rev_comb, 0, sizeof rev_comb);
     memset(&rev_u, 0, sizeof rev_u);
     memset(&fx, 0, sizeof fx);
+    memset(&bal, 0, sizeof bal);                    /* (V10.7.43: BALANCE's followers too, as at boot) */
     memset(fxq_c, 0, sizeof fxq_c); memset(fxq_d, 0, sizeof fxq_d); memset(fxq_r, 0, sizeof fxq_r);   /* (0.6.75: the buses' queued sends) */
     lim_env = LIM_T; lev_env = 0; lev_g = lev_cur = 32768; lev_dg = 0;
     memset(mp_seen, 0, sizeof mp_seen); memset(dist_w, 0, sizeof dist_w);      /* (0.6.8: LEVEL / PAN glide, DST blend; 0.6.9: AUTO PAN) */
@@ -1208,6 +1209,9 @@ static void test_jiant_fx(void)
         check("MSEQ: STEP reads the level of the step now (LEN wraps), SLEW glides to it", ok);
     }
     fresh(0, 0);
+    lim_env = LIM_T; lev_env = 0; lev_g = lev_cur = 32768; lev_dg = 0; dc_l = dc_r = dce_l = dce_r = 0;   /* (V10.7.43: the
+                                                         * master's state as at power-on, as audio_test's: its DC blockers
+                                                         * left apart by the tests before kept L and R a rounding apart) */
     trk[0].p[P_DLY] = 110; trk[0].p[P_CHOR] = 0; song.g[G_WIDTH] = 0;
     h0 = phrase_lr(&d0);
     fresh(0, 0);

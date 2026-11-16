@@ -219,7 +219,9 @@ static double usb_run(uint32_t fixed, uint32_t master, int dac_is_tap_scaled_ok[
         audio_block(out, 32);
         for (i = 0; i < 64u; i++) {
             int32_t want = fixed ? ((host_tap[i] * (int32_t)master) >> 12) << OUT_SHIFT : host_tap[i] << OUT_SHIFT;
-            if (out[i] != want) dac_is_tap_scaled_ok[0] = 0;
+            if (out[i] >> OUT_SHIFT != want >> OUT_SHIFT || (fixed && out[i] != want))   /* (V10.7.43: the DAC also gets the
+                                                         * master's bits below Q15, under USB's Q15; none at USB FIXED) */
+                dac_is_tap_scaled_ok[0] = 0;
         }
         if (b >= 100u) { usb += block_rms(host_tap, 32); dac += block_rms(out, 32) / (1 << OUT_SHIFT); }
     }

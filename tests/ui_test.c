@@ -12500,14 +12500,15 @@ static int test_lz_home(void)
     press(B_HOME); frame();                                         /* a HOME tap on GEN: round to LIFE (V10.7.34) */
     ok &= !ui.confirm && ui.home && home_level() == 3u && home_life() && !home_macros() && lz_tab_lit(0) &&
           lz_crumb_is("HOME \xB7 LIFE \xB7 LIFE") && lz_count_is("1/10");
-    {   /* (V10.7.34) LIFE's four: LIFE FILTER PITCH FX (life.c), the macros and the sound untouched */
+    {   /* (V10.7.34) LIFE's four: LIFE REACH X-FM SWIM (life.c; V10.7.43, were LIFE FILTER PITCH FX), the macros and
+         * the sound untouched */
         int16_t l0[4], e = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
         uint8_t m0[4];
         life_defaults();                            /* (the firmware's power-on: LIFE on; the tests' HOST_LIFE 0) */
         memcpy(l0, life_v, sizeof l0);
         memcpy(m0, macro_v, sizeof m0);
-        ok &= l0[LIFE_AMT] == LIFE_DEF && !strncmp(ui.col[0], "LIFE|", 5) && !strncmp(ui.col[1], "FILTER|", 7) &&
-              !strncmp(ui.col[2], "PITCH|", 6) && !strncmp(ui.col[3], "FX|", 3);
+        ok &= l0[LIFE_AMT] == LIFE_DEF && !strncmp(ui.col[0], "LIFE|", 5) && !strncmp(ui.col[1], "REACH|", 6) &&
+              !strncmp(ui.col[2], "X-FM|", 5) && !strncmp(ui.col[3], "SWIM|", 5);
         for (c = 0; c < 4u; c++) { turn(EN_K1 + c, 2); frame(); }
         for (c = 0; c < 4u; c++) ok &= life_v[c] == l0[c] + 2;
         turn(EN_K1, -300); frame();
@@ -12519,7 +12520,7 @@ static int test_lz_home(void)
     turn(EN_SELECT, 1); frame();                                    /* SELECT right: MACROS */
     ok &= home_macros() && lz_count_is("2/10");
     bad += check("V10.7.24 HOME: PARTS, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: "
-                 "LIFE (V10.7.34: its KNOB 1..4 LIFE FILTER PITCH FX), SELECT on to MACROS", ok);
+                 "LIFE (V10.7.34: its KNOB 1..4 LIFE REACH X-FM SWIM), SELECT on to MACROS", ok);
     press(B_HOME); turn(EN_SELECT, 6); frame();                     /* GEN 2 */
     ok = gen_on() && gen_page() == 1u;
     press(B_ENV); frame();                                          /* not modal: a section's button leaves it */
