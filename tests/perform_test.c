@@ -1268,7 +1268,7 @@ static int test_new(void)
                     perf_press(PF_LMAX, 1);
                 if (m && f == 66048u) {             /* in the block: 100 (pfx_block), back after it (pfx_end) */
                     pfx_block(CTL, PF_BIT(PF_LMAX));
-                    ok &= life_v[0] == 100 && life_v[1] == 100 && life_v[2] == 100 && life_v[3] == 100 && pfx_life.on;
+                    ok &= life_v[0] == 100 && life_v[1] == U[1] && life_v[2] == U[2] && life_v[3] == U[3] && pfx_life.on;   /* (V10.7.43: LIFE's one value) */
                     pfx_end();
                 }
                 mix_block(o, CTL);
@@ -1283,7 +1283,7 @@ static int test_new(void)
             transport_req = 2;
             mix_block(o, CTL);
         }
-        snprintf(what, sizeof what, "LIFE MAX: LIFE FILTER PITCH FX 100 in each block, the user's 20 30 10 25 outside it and "
+        snprintf(what, sizeof what, "LIFE MAX: LIFE 100 in each block (V10.7.43: its one value), the user's 20 outside it and "
                  "after (the sound moved by %d)", d);
         bad += check(what, ok && d > 500 && !pfx_life.on);
         life_defaults();
