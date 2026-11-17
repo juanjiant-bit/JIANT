@@ -36,3 +36,19 @@ THROW's sample loop is skipped while its target and ramp are both zero. The mast
 ## Recording phase report
 
 A separate tester described instruments starting on bars two or three after recording. `tests/record_phase_test.c` reproduces live overdubs armed on bars 1, 2 and 3 with six equal-length tracks and internal clock: all six clocks stay aligned, and STOP/PLAY returns every clock to step one. The notes remain at their recorded global positions (steps 1, 17, 33). This reproduces the apparent late musical entrances without transport drift. The original tester's recording mode, pattern lengths, FIT/division and clock source are unknown, so the reported case is not conclusively diagnosed and no speculative transport change is made.
+
+## Comparative profile
+
+The same CPU TEST song, 1,024 warmup blocks, 512 settled FX blocks and 256 measured blocks (64 samples each), GCC `-O2` and Callgrind, against V47 `ed52df2`. The host is given spare measured CPU to expose work without emulating the real device's feedback loop. The new voice caps intentionally change dense chords; a third audio effect request is refused.
+
+| Tracks / request | V47 instructions/sample | V48 instructions/sample |
+| --- | ---: | ---: |
+| 4 / no punch | 2861.63 | 2827.80 |
+| 4 / D16 + reverse | 3167.78 | 3026.81 |
+| 6 / no punch | 3302.78 | 3059.55 |
+| 6 / D16 + reverse | 3609.31 | 3259.49 |
+| 6 / D16 + reverse + wobble | 3751.73 | 3359.50 |
+
+Raw results are in `v48-punch-profile.json`. Before changing the default AUTO cap, 20 four-track activation/filter/crush/throw/release traces were sample-identical to V47, isolating the idle-work optimization from the intentional admission changes. Device timing still needs beta validation.
+
+The full generator suite also caught three Drum & Bass mix regressions after reducing kit polyphony: the bass stood 3.4–4.5 dB above the drums. Its existing genre mix trim is reduced by 3 dB; this changes no render cost and keeps the existing mix-balance assertions unchanged.

@@ -905,7 +905,7 @@ static const uint8_t GMIX[][3] = {
     GMX(-3, 2, -2, 7, 7, 4),   /* DEMBOW (V10.7.2: the marimba's riff and the chants' arp up: phonk's levels) */
     GMX(-3, 0, 1, 7, 7, 5),   /* ELECTRO */
     GMX(-2, 2, -2, 5, 6, 5),   /* BREAKBEAT (V10.7.2: the bass +1.5, z10's ~1.8 under) */
-    GMX(-3, -3, 0, 6, 5, 6),   /* DRUM & BASS */
+    GMX(-3, -5, 0, 6, 5, 6),   /* DRUM & BASS: V48, bass -3 dB with bounded kit polyphony */
     GMX(-1, -3, 1, 4, -1, 3),   /* IDM GLITCH */
     GMX(-3, 0, 0, 3, 3, 4),   /* IDM AMBIENT */
     GMX(0, -3, 0, 2, 5, 3),   /* IDM WEIRD */

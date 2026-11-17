@@ -1,0 +1,198 @@
+[
+  {
+    "binary": "punch-ref",
+    "tracks": 4,
+    "case": "none",
+    "ips": 2861.63,
+    "output": "bits=0 tracks=4 transitions=0 hash=fac50f180f003b86 act=0 mode=0"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 4,
+    "case": "d16",
+    "ips": 3007.99,
+    "output": "bits=512 tracks=4 transitions=0 hash=30def7f51ece5531 act=512 mode=0"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 4,
+    "case": "rev",
+    "ips": 3101.94,
+    "output": "bits=8 tracks=4 transitions=0 hash=bc34ee2201b22e7a act=8 mode=3"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 4,
+    "case": "d16_rev",
+    "ips": 3167.78,
+    "output": "bits=520 tracks=4 transitions=0 hash=d6771900f614c895 act=520 mode=3"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 4,
+    "case": "d16_wob",
+    "ips": 3150.18,
+    "output": "bits=768 tracks=4 transitions=0 hash=c09b4cd6b1eac692 act=768 mode=0"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 4,
+    "case": "rev_wob",
+    "ips": 3244.38,
+    "output": "bits=264 tracks=4 transitions=0 hash=f26d984b7a814d5b act=264 mode=3"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 4,
+    "case": "d16_rev_wob",
+    "ips": 3310.48,
+    "output": "bits=776 tracks=4 transitions=0 hash=0abae141e378eb66 act=776 mode=3"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 6,
+    "case": "none",
+    "ips": 3302.78,
+    "output": "bits=0 tracks=6 transitions=0 hash=c2024d4bb26c5ad1 act=0 mode=0"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 6,
+    "case": "d16",
+    "ips": 3449.52,
+    "output": "bits=512 tracks=6 transitions=0 hash=cea9accd055de280 act=512 mode=0"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 6,
+    "case": "rev",
+    "ips": 3543.1,
+    "output": "bits=8 tracks=6 transitions=0 hash=e1c59726ade95a33 act=8 mode=3"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 6,
+    "case": "d16_rev",
+    "ips": 3609.31,
+    "output": "bits=520 tracks=6 transitions=0 hash=c3acc09d117c2dbd act=520 mode=3"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 6,
+    "case": "d16_wob",
+    "ips": 3593.1,
+    "output": "bits=768 tracks=6 transitions=0 hash=d81ee1b35deef496 act=768 mode=0"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 6,
+    "case": "rev_wob",
+    "ips": 3685.64,
+    "output": "bits=264 tracks=6 transitions=0 hash=3bd917ff2da28639 act=264 mode=3"
+  },
+  {
+    "binary": "punch-ref",
+    "tracks": 6,
+    "case": "d16_rev_wob",
+    "ips": 3751.73,
+    "output": "bits=776 tracks=6 transitions=0 hash=ef65b1fc75e8233c act=776 mode=3"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 4,
+    "case": "none",
+    "ips": 2827.8,
+    "output": "bits=0 tracks=4 transitions=0 hash=32b72f2707c3b43f act=0 mode=0"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 4,
+    "case": "d16",
+    "ips": 2875.32,
+    "output": "bits=512 tracks=4 transitions=0 hash=cdccb4210a47a0c1 act=512 mode=0"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 4,
+    "case": "rev",
+    "ips": 2989.33,
+    "output": "bits=8 tracks=4 transitions=0 hash=3a9171729e474085 act=8 mode=3"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 4,
+    "case": "d16_rev",
+    "ips": 3026.81,
+    "output": "bits=520 tracks=4 transitions=0 hash=d0ac6e93c5a40a23 act=520 mode=3"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 4,
+    "case": "d16_wob",
+    "ips": 3018.7,
+    "output": "bits=768 tracks=4 transitions=0 hash=1e9e7e1aa2f88fb7 act=768 mode=0"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 4,
+    "case": "rev_wob",
+    "ips": 3130.27,
+    "output": "bits=264 tracks=4 transitions=0 hash=f2732a2e9e652898 act=264 mode=3"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 4,
+    "case": "d16_rev_wob",
+    "ips": 3130.27,
+    "output": "bits=776 tracks=4 transitions=0 hash=f2732a2e9e652898 act=264 mode=3"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 6,
+    "case": "none",
+    "ips": 3059.55,
+    "output": "bits=0 tracks=6 transitions=0 hash=b494f002a66db3d1 act=0 mode=0"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 6,
+    "case": "d16",
+    "ips": 3108.02,
+    "output": "bits=512 tracks=6 transitions=0 hash=16a1330778a855e6 act=512 mode=0"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 6,
+    "case": "rev",
+    "ips": 3221.17,
+    "output": "bits=8 tracks=6 transitions=0 hash=b5b2aff1ae12f6ab act=8 mode=3"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 6,
+    "case": "d16_rev",
+    "ips": 3259.49,
+    "output": "bits=520 tracks=6 transitions=0 hash=3836d0a446902407 act=520 mode=3"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 6,
+    "case": "d16_wob",
+    "ips": 3251.39,
+    "output": "bits=768 tracks=6 transitions=0 hash=02441bd0d05ca6e7 act=768 mode=0"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 6,
+    "case": "rev_wob",
+    "ips": 3359.5,
+    "output": "bits=264 tracks=6 transitions=0 hash=3af7bf73bd783ca3 act=264 mode=3"
+  },
+  {
+    "binary": "punch-cpu",
+    "tracks": 6,
+    "case": "d16_rev_wob",
+    "ips": 3359.5,
+    "output": "bits=776 tracks=6 transitions=0 hash=3af7bf73bd783ca3 act=264 mode=3"
+  }
+]

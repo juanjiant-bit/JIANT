@@ -69,6 +69,8 @@ jobs:
           build/song-check/perform > build/song-check/perform.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/record_phase_test.c -lm -o build/song-check/record-phase
           build/song-check/record-phase | tee build/song-check/record-phase.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/gen_test.c -lm -o build/song-check/gen
+          build/song-check/gen > build/song-check/gen.log
       - name: Independent DRUM-X kits and concurrent rendering
         run: |
           cc -O1 -g -w -Wno-implicit-function-declaration -Wno-incompatible-pointer-types -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/drum_kits_test.c -lm -o build/song-check/drum-kits
