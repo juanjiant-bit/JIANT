@@ -128,6 +128,9 @@ int main(int argc, char **argv)
         gen_go();
         /* (V10.7.30 .. 42: BAL=a, BALANCE's AMOUNT; V10.7.43 gone) */   /* (V10.7.30) BALANCE's AMOUNT (else as GEN left it) */
         if (getenv("LIFE")) life_v[LIFE_AMT] = (int16_t)atoi(getenv("LIFE"));   /* (V10.7.34) LIFE (else as GEN left it) */
+        if (getenv("TALK")) life_v[LIFE_TALK] = (int16_t)atoi(getenv("TALK"));   /* (V10.7.44) its other three */
+        if (getenv("BREAK")) life_v[LIFE_BRK] = (int16_t)atoi(getenv("BREAK"));
+        if (getenv("WEB")) life_v[LIFE_WEB] = (int16_t)atoi(getenv("WEB"));
         pd = gs.trk_of[RL_PAD];
         spell();
         printf("\n=== %s  seed %u  energy %u  form %s  %d BPM  swing %d\n", gs.g->name, seed, energy, form == 2u ? "SONG" : form ? "PARTS" : "LOOP",

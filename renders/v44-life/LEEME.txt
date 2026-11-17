@@ -1,0 +1,20 @@
+JIANT FM — V10.7.44 (beta): LIFE con cuatro perillas (LIFE, TALK, BREAK, WEB), como en JIANT BYTE
+================================================================================================
+
+Qué cambió
+----------
+HOME > LIFE tiene ahora cuatro perillas:
+- LIFE (KNOB 1, la barra horizontal arriba del panel): cuánto vive todo. LIFE 0 es bit por bit el sonido sin LIFE,
+  y es el valor al encender.
+- TALK (KNOB 2): cuánto oye cada pista a las otras. Su sonido entra en la fase de la pista: FM entre pistas. La curva
+  ya se oye abajo (~5 % de la profundidad en 12, ~27 % en 50) y se vuelve salvaje arriba. Oyen hasta tres pistas a
+  la vez, las que más oyen; un kit nunca.
+- BREAK (KNOB 3): cuánto la rompe el sonido de las otras. Mientras las otras suenan, el CRUSH de la pista sube; vuelve
+  cuando se callan. Sirve para todos los motores.
+- WEB (KNOB 4): quién oye a quién. 0: cada pista oye a la anterior (una ronda). 100: todas oyen a todas.
+Al subir LIFE desde 0, TALK, BREAK y WEB arrancan en 50, 40 y 30.
+Los proyectos de V10.7.43 abren con su LIFE; TALK, BREAK y WEB quedan en esos valores.
+
+Archivos (estéreo, 44,1 kHz, 16 bits; 10 s cada uno)
+----------------------------------------------------
+gen1_seed7_V10.7.44_life{0,50,100}.wav   un tema de GEN (género 1, semilla 7), con TALK BREAK WEB al encender
