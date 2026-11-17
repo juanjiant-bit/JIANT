@@ -496,26 +496,22 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
   MASTER's product, in BALANCE's bands); now they are kept, and the master's 3 bits under 16-bit reach the 24-bit DAC.
   A tail's step 3.6 → 1.3 dry and 1.1 → 0.35 in a project (tests/release_clean_test.c). Loud sounds are unchanged
   (a few LSB). Renders: renders/v43-release (LEEME.txt).
-- **LIFE is the tracks intermodulating each other, and nothing else.** A track's sound is phase-modulated at audio
-  rate by another's (cross-FM, through a short line), on every engine (a kit moves, it is never moved). Until now this
-  only ran with PITCH past 50 (10 at power-on), so by default it never happened. One pair up to LIFE 50, two above,
-  chosen by the beings' influence weights; gentle at the default, clearly audible at 100. LIFE no longer moves any
-  pitch, filter, SHAPE or send, and no follower drives a parameter (the matrix's LIFE, BEING and T ENV sources are
-  there for that). HOME › LIFE's knobs: **LIFE REACH X-FM SWIM** (REACH: how much the other tracks weigh beside the
-  one before). LIFE 0 is still bit for bit the sound without LIFE.
-- **BALANCE lighter, in the background**: only the low mids (the mud, ~150–800 Hz) come down when they pile up,
-  listened to at an eighth of the rate; **AMOUNT 25 by default** (was 50: about −3 dB on that band when it piles up).
-- **CPU**: CPU TEST 3075 → 2884 instructions a sample (−6.2 %; V10.7.23: 2864): BALANCE +94 → +20, LIFE +88 → +30,
-  CLOUD's grains read and aged in one pass (−41, bit for bit). Renders before and after: renders/v43-life (LEEME.txt).
+- **LIFE is one knob: the tracks FM each other.** HOME › LIFE KNOB 1 (0–100 %): each sounding track phase-modulates
+  the next in the ring (two tracks: a duet), at audio rate, on every engine (a kit moves, it is never moved); one pair up
+  to 50 %, two above. A logarithmic curve: subtle at the bottom (~1 % of the depth at 25), extreme noise at 100. LIFE
+  moves no pitch, filter or send and drives no parameter. Gone: REACH / X-FM / SWIM, each track's LIFE, the matrix's
+  LIFE and BEING sources and LIFE destination (a project with them loads fine, those routes off). LIFE 0 is bit for bit
+  the sound without LIFE.
+- **BALANCE removed** (FX › BALANCE). A project that stored it loads fine and ignores it.
+- **EROSION minimal**: two MODEs, **NOISE** (a random gliding at RATE, on the cutoff) and **METAL** (a sine at a RATIO of
+  the note, on the pitch, as FM); no DEST. The old SOFT / STEP / BREAK / DUST play as NOISE. At NOISE 0 it costs nothing.
+- **CPU**: CPU TEST 3075 → 2836 instructions a sample (−7.8 %; V10.7.23: 2864); CPU TEST on 6 tracks 2966. CLOUD's
+  grains read and aged in one pass (bit for bit). Renders: renders/v43-life, renders/v43-release (LEEME.txt).
 - **PANIC (PLAY held) silences the FX too** (a user: "all tracks muted and noise I can't stop"): besides every voice
   and note, the reverb (CLOUD frozen at SIZE 100 % included), the delay (its loop at 100 % too) and the chorus are
   cleared at once, and a held or latched punch-in (FREEZE …) is let go. Its message then shows the fresh start:
   **EMPTY SONG: SAVE>TOOLS CLEAR**.
-- **EROSION lighter**: the part's filter it keeps in runs a lean loop once settled (bit for bit): EROSION on an FM6
-  pad +75 → +51 instructions a sample in every MODE but METAL.
-- **6 tracks**: CPU TEST's song on TRACKS 6 measures 2977 instructions a sample, under V10.7.42's 4-track 3075.
-- Fixes: LIFE's cross-FM could wrap on a loud attack (a click); PRESETS' OCT− said SOUND BACK when there was nothing
-  to put back.
+- Fixes: PRESETS' OCT− said SOUND BACK when there was nothing to put back.
 
 ### V10.7.42 (2026-11-15)
 - **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version

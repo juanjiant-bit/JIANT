@@ -167,7 +167,7 @@ def controls():
         ('HOME', 'LIFE (the tracks FM-ing each other: intermodulation only)  |  MACROS (M1–M4 over the beings)  |  LIVE MIX (FILTER · SPACE · CLIP · DUCK on the mix)  |  TRACKS (every track a lane: K1 track, LEVEL PAN REV; GLO + black key mute, + white key solo)  |  TIMELINE  |  ARRANGE  |  PARTS (tracks × parts: a head the part, a cell the track)  |  GEN: GEN 1 · GEN 2 · GEN 3', 'MENU'),
         ('EDIT', 'SOUND: EDIT 1 · EDIT 2  |  TONE: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2  |  AUTO KNOBS  |  VOICES: VOICES · VOICES 2 · VOICES 3 (last). EXT: EDIT 1 / 2 are EXT and SHAPE. FM6: SOUND (ALGO · PATCH)  |  TONE: FILTER  |  OPERATOR: OPERATOR · OP ENV · OPERATOR 2  |  VOICES. DRUM: KIT: KIT · KIT 2 · KIT 3  |  SOUND: SOUND 1–3 (the sound a key struck)  |  LEVELS 1–2  |  MOD: KIT LFO · EROSION  |  TONE: FILTER · OUT', 'INIT · RECALL · sound mutes'),
         ('SEQ', 'STEP  |  PATTERN: LENGTH · RHYTHM · TRACK  |  EUCLID: EUCLID · MODES · MUTATE  |  PLAYHEADS  |  STRETCH  |  STEP COND: STEP COND · COND 2  |  LOCKS: LOCKS · LYRICS  |  TRACK GEN', 'SEQ TOOLS'),
-        ('FX', 'TRACK: SENDS · DIST · AUTO PAN  |  BUSES  |  DELAY: DELAY 1–3  |  REVERB 1–2  |  CHORUS  |  SLICER: SLICER · SLICER IN 1–2 · SL PITCH  |  MASTER · TAPE · EQ · BALANCE',
+        ('FX', 'TRACK: SENDS · DIST · AUTO PAN  |  BUSES  |  DELAY: DELAY 1–3  |  REVERB 1–2  |  CHORUS  |  SLICER: SLICER · SLICER IN 1–2 · SL PITCH  |  MASTER · TAPE · EQ',
          'PUNCH-IN FX · the lane at the foot'),
         ('GLO', 'MIX: MIXER · BUS SENDS  |  COMP: COMP · COMP 2  |  SETUP: GLOBAL · SYSTEM · PORTS (at power-on GLO opens MIXER)', 'MUTE · SOLO · LEVEL · TAP'),
         ('ENV', 'ENV: ENV · ENV DEST · ENV 2', '—'),
@@ -274,16 +274,16 @@ def controls():
                          ('DELAY', 'TIME FEEDBK TONE MIX'), ('DELAY 2', 'WIDE PITCH SPRAY MOD'), ('DELAY 3', ['TYPE', 'PING', 'DRIVE', 'R TIME']),
                          ('REVERB', 'TYPE SIZE DAMP PRE/AIR'), ('REVERB 2', 'MOD RATE FILT WIDE'),
                          ('CHORUS', 'RATE DEPTH STEREO -'), ('FX + PRESETS', 'LEN RES REC CLEAR (the punch-in lane, FX held)'), ('MASTER', 'CLIP PUNCH DUCK REL'), ('TAPE', 'TAPE WOW - -'),
-                         ('EQ', ['LOW', 'LO MID', 'HI MID', 'HIGH']), ('BALANCE', 'AMOUNT - - -')]),
+                         ('EQ', ['LOW', 'LO MID', 'HI MID', 'HIGH'])]),
         ('EDIT', HEAT[3], [('EDIT 1', 'E1 E2 E3 E4'), ('EDIT 2', 'E5 E6 E7 E8'), ('EXT', 'SOURCE GAIN GATE MODE'), ('SHAPE', 'WIDTH RING BITS RATE'), ('SWARM', 'SIDE RATE MOVE TONE'), ('SWARM 2', 'SIDE NOISE MOD NOW'),
                            ('MORPH', 'MORPH DRIFT - -'), ('ROTOR', 'DEPTH DUST - -'),
                            ('WORDS', 'LANG LYRIC CONS (OCT+ TYPE)'), ('RETRIG', 'RTRG - - -'), ('OPERATOR', 'OP COARSE FINE OUTPUT'),
                            ('OP ENV', 'OP STAGE RATE LEVEL'), ('OPERATOR 2', 'OP MODE DETUNE KEY VEL'), ('FILTER', 'TYPE CUT RES DRIVE'),
-                           ('VOICES', 'POLY GLIDE GL MODE PRIO'), ('VOICES 2', 'UNISON VEL IMAGE VOICES (AUTO 1..8; ALL n/8)'), ('VOICES 3', 'CRUSH LIFE - - (EXT)'), ('AUTO KNOBS', 'KNOB VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS GLUE'),
+                           ('VOICES', 'POLY GLIDE GL MODE PRIO'), ('VOICES 2', 'UNISON VEL IMAGE VOICES (AUTO 1..8; ALL n/8)'), ('VOICES 3', 'CRUSH - - - (EXT)'), ('AUTO KNOBS', 'KNOB VALUE SRC AMT'), ('KIT 3', 'BP FEEDBK HANDS GLUE'),
                            ('KIT LFO', 'RATE DEPTH SHAPE RAND'), ('LEVELS', 'KICK SNARE CLAP HATCL'),
                            ('LEVELS 2', 'HATOP TOM RIM BELL'), ('SOUND', 'PITCH DECAY SIDE PMOD'),
                            ('SOUND 2', 'NOISE (kick: CLICK) COLOR DRIVE MODE'), ('SOUND 3', 'PM.TYPE LAYER FEEDBK SEND'),
-                           ('EROSION (DRUM-X)', 'NOISE RATE MODE DEST'), ('OUT', 'IMAGE CRUSH LIFE KEY MAP (DRUM-X)')]),
+                           ('EROSION (DRUM-X)', 'NOISE RATE MODE -'), ('OUT', 'IMAGE CRUSH - KEY MAP (DRUM-X)')]),
         ('SCL · ARP', HEAT[2], [('SCALE', 'ROOT SCALE KEY SNAP TRANSP'), ('CHORD', 'CHORD VOICING STRUM -'), ('SCENE', 'ON TRACK ROLE CHORD'), ('ARP', 'MODE RATE OCT GATE'),
                                 ('ARP 2', 'ARP SWG PROB HOLD ORDER')]),
         ('SEQ', HEAT[4], [('LENGTH', 'LEN DIV SWING GATE'), ('RHYTHM', 'SPAN FIT - -'), ('STRETCH', 'x/÷ REPEAT NUDGE ROTATE'), ('NUDGE', 'OCT− blue: the whole sequence by steps · OCT+ red: the cursor step in 64ths (MICRO)'), ('PLAYHEADS', 'HEAD RATE DIR INTVL'),
@@ -292,7 +292,7 @@ def controls():
                           ('STEP', 'STEP NOTE TIME VEL'), ('STEP · DRUM', 'STEP LANE HIT ACC'), 
                           ('LOCKS · TOP', 'ALL PLAY LOCK REC · OCT+ CLEAR ALL'), ('LOCKS', 'ROW STEP PARAM VALUE · LOCK / REC'),
                           ('STEP COND', 'STEP TYPE VAL EVERY'), ('COND 2', 'STEP TYPE VAL EVERY')]),
-        ('HOME · GLO · SAVE', HEAT[6], [('LIFE', 'LIFE REACH X-FM SWIM · LIFE 0: still'), ('MACROS', 'M1 M2 M3 M4 · BPM large · HOME+SELECT dice'), ('TRACKS', 'TRACK LEVEL PAN REV'), ('LIVE MIX', 'FILTER SPACE CLIP DUCK'),
+        ('HOME · GLO · SAVE', HEAT[6], [('LIFE', 'LIFE (one knob: the tracks FM each other) · 0: still'), ('MACROS', 'M1 M2 M3 M4 · BPM large · HOME+SELECT dice'), ('TRACKS', 'TRACK LEVEL PAN REV'), ('LIVE MIX', 'FILTER SPACE CLIP DUCK'),
                                  ('KEYS', 'RATE LOOP DENS DJ FILT (the keys: live modifiers)'), ('RAILS', 'TARGET RATE LOOP DENS'),
                                  ('MIXER', 'LEVEL PAN MUTE G.SWING'), ('GLOBAL', 'BPM G.SWING CLOCK TUNE'), ('COMP', 'ACTION LENGTH COND VALUE'), ('COMP 2', 'the global lane: its TRACKS, MONO / POLY'),
                                  ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('PORTS', ['USB', 'TRS IN', 'BT', '-']), ('PRESETS', 'TRACK ENG SOURCE TYPE · OCT+ load, OCT- close, REC fav'),
@@ -368,7 +368,7 @@ def sound():
          'Then a sound (V10.7.37: the one a key struck): PITCH DECAY SIDE PMOD · NOISE (the kick\'s <b>CLICK</b>) COLOR DRIVE MODE · '
          'PM.TYPE <b>LAYER</b> (no note) FEEDBK <b>SEND</b> (CHO / DLY / REV). LEVELS. <b>KIT LFO</b> RATE DEPTH SHAPE RAND, '
          '<b>EROSION</b> (the noise modulator on the kit\'s FILTER and its hits\' pitch). FILTER, then <b>OUT</b>: IMAGE (a knob '
-         'through the kit\'s stereo placings) CRUSH LIFE <b>KEY MAP</b> (EXTENDED (default) +1 FILLS, −1 KICK / TOM or one sound '
+         'through the kit\'s stereo placings) CRUSH <b>KEY MAP</b> (EXTENDED (default) +1 FILLS, −1 KICK / TOM or one sound '
          'chromatic, −2 FX KIT, −3 FLAM; or CLASSIC). Velocity colours each hit; a closed hat chokes the open one. '
          'KIT and SOUND 1–3 draw the kit as little beings that squash and shout on each hit (0.9.4).'),
         ('EXT', HEAT[0], 'SOURCE GAIN GATE PLAY', 'WIDTH RING BITS RATE',
@@ -398,10 +398,9 @@ def sound():
                   '±32 st, RES how much it rings. ANALOG and MATH: per voice; the others: on the track, following '
                   'LFO / ENV DEST FLT (DRV: ANALOG\'s own; the others drive the track into the filter; DRUM-X, EXT: the track\'s DIST).</p>'
                   + knobs('NOISE', 'RATE', 'MODE', 'DEST') +
-                  '<p style="margin-top:8px"><b>EROSION</b>: a modulator, NOISE its depth (±3.5 oct on CUT, ±1 oct on pitch); MODE '
-                  '<b>SOFT · STEP</b> random, gliding or held (RATE 0.4 .. 320 Hz), <b>METAL</b> audio-rate at a RATIO of the note '
-                  '(x0.5 .. x4: on pitch, FM), <b>BREAK</b> in time (DIV 1/8 .. 1/32), <b>DUST</b> spikes (RATE: density); <b>DEST</b> '
-                  'FILT · F75 · MIX · P75 · PITCH (VOICE: FILT; V10.7.37: DRUM-X too, on its FILTER and its hits). <b>FILTER 3</b>: KEY tracking 0 .. 100 % (ANALOG starts at 21 %). '
+                  '<p style="margin-top:8px"><b>EROSION</b> (V10.7.43: two MODEs): NOISE its depth; <b>NOISE</b> a random gliding at RATE '
+                  '(0.4 .. 320 Hz) on CUT (±3.5 oct), <b>METAL</b> audio-rate at a RATIO of the note (x0.5 .. x4) on the pitch, as FM '
+                  '(DRUM-X: on its FILTER). <b>FILTER 3</b>: KEY tracking 0 .. 100 % (ANALOG starts at 21 %). '
                   'MOD source <b>F.NOISE</b>: the raw modulator. LP24 with DRV: level kept, RES top sings.</p>'))
     b.append(card('VOICE · PLAYING', HEAT[2], knobs('VCE', 'GLD', 'GLMOD', 'PRIO') +
                   '<p style="margin-top:8px">POLY · MONO · LEG · UNI · DRONE (held after the key, the next note glides; '

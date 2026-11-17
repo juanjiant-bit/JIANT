@@ -280,7 +280,7 @@ layer's shortcuts; on the DRUM grid they are steps and lanes; on the NAME screen
 | Combination | Result |
 | --- | --- |
 | **GLO** held + **PLAY** | Restart from the top without stopping (internal clock). |
-| **PLAY** held (~0.7 s) | **PANIC: ALL NOTES OFF**. The transport stops and every sound ends at once: every track's voices, latched chords, arpeggios, punch-in repeats and the notes MIDI IN holds (a key or MIDI note let go afterwards does nothing; the next one plays as usual). MIDI OUT sends the note-off of every note it sent and All Notes Off (CC123) on the tracks' channels 1–6 (from MENU › SYSTEM › MIDI BASE CH on) (not with MIDI OUT OFF). For a note left hanging by a controller that lost its note-off; MIDI IN's CC120 / CC123 still do the same for their channel. |
+| **PLAY** held (~0.7 s) | **PANIC: ALL NOTES OFF**. The transport stops and every sound ends at once: every track's voices, latched chords, arpeggios, punch-in repeats and the notes MIDI IN holds (a key or MIDI note let go afterwards does nothing; the next one plays as usual). (V10.7.43) It also silences the FX: the reverb (CLOUD frozen at SIZE 100 % too), the delay (its loop at 100 % too) and the chorus are cleared, and a held or latched punch-in (FREEZE …) is let go. Its message then shows **EMPTY SONG: SAVE>TOOLS CLEAR**, for a fresh start. MIDI OUT sends the note-off of every note it sent and All Notes Off (CC123) on the tracks' channels 1–6 (from MENU › SYSTEM › MIDI BASE CH on) (not with MIDI OUT OFF). For a note left hanging by a controller that lost its note-off; MIDI IN's CC120 / CC123 still do the same for their channel. |
 | **GLO** held + **SELECT** | Tempo, from any page. |
 | **GLO** held + **G4** | **UNDO** the last big change (again: redo). |
 | **REC** held alone, let go | (V10.7) **UNDO** too: held past HOLD (~0.5 s) with no key, knob, button or OCT touched; again: redo. Anything used while held keeps it the REC layer; a tap still arms recording. |
@@ -1327,7 +1327,7 @@ LP24 with its DRIVE at 55 % or more.
 
 ### EROSION: NOISE, RATE, MODE, DEST · FILTER 3: KEY (every engine but EXT)
 
-EDIT > **EROSION** (V10.7.37: the page was called FILTER 2; codex/filters2), after FILTER, is a modulator: NOISE · RATE · MODE · **DEST**. **FILTER 3**
+EDIT > **EROSION** (V10.7.37: the page was called FILTER 2; codex/filters2), after FILTER, is a modulator: NOISE · RATE · MODE (V10.7.43: two MODEs, **NOISE** a random gliding at RATE on CUT, **METAL** a sine at a RATIO of the note on the pitch, as FM; DEST gone, the old SOFT STEP BREAK DUST play as NOISE; at NOISE 0 it costs nothing). The text below is V10.7.42's. **FILTER 3**
 (codex/filter2-mod) holds **KEY**. All of them at their stored default are off: every project and preset of before
 sounds the same.
 
@@ -1467,7 +1467,7 @@ DRUM-X is a synthesized kit of eight sounds, **BD SD CP CH OH TM RS CB**, genera
     dense, the peaks held). Saved with the project (a project of before opens with it OFF).
   - **KIT LFO**: **RATE** (OFF, 4BAR … 1/32, in time), **DEPTH** (how far MORPH swings), **SHAPE** (SINE, TRI, SAW, RAMP,
     S&H), **RAND** (each hit gets its own MORPH and a little tune).
-  - **EROSION** (V10.7.37): the synths' noise modulator on the kit (NOISE RATE MODE DEST): its FILTER's cutoff and its
+  - **EROSION** (V10.7.37): the synths' noise modulator on the kit (NOISE RATE MODE; V10.7.43: NOISE or METAL, both on its FILTER, no DEST): its FILTER's cutoff and its
     hits' pitch. See [EROSION](#erosion-noise-rate-mode-dest--filter-3-key-every-engine-but-ext).
   - **FILTER**: the kit's: TYPE, CUT, RES, DIST.
   - **OUT** (V10.7.37): **IMAGE** (was the STEREO page's, below), **CRUSH** and **LIFE** (were VOICES 3's: the track's bit
@@ -2726,18 +2726,8 @@ from before).
 - **CLIP**: saturation that adds character, not volume.
 - **PUNCH**: fattens the DRUM tracks.
 - **DUCK**: the kick pulls the rest down; **REL** is its release.
-- **BALANCE** (V10.7.30; V10.7.43 lighter; FX › BALANCE, the page after EQ; **AMOUNT** 0–100 %, **25 by default: on**): a light
-  mix balancer working in the background, for the "ball of mids" a full mix becomes. It listens to how much of the mix
-  sits in the **low mids (about 150–800 Hz, the mud)** against the whole mix (over about a second, not hit by hit). When
-  they pile up past a balanced mix's share it brings that band down, about −1 to −3 dB on a dense mix at 25 % (V10.7.43:
-  was 50 %; −2 to −4 dB there), at most about −6 dB; it never boosts it, and touches nothing else (the lows, the highs, the loudness: that is the leveler's).
-  Within 0.5 dB of the balanced share nothing moves; the correction glides (no pumping) and holds through silence.
-  Each side is split on its own (a hard-panned sound stays on its side). 0 is off (the mix bit for bit as without it,
-  the EQ as you set it). 100 corrects twice as hard. Saved with the project; a project saved before V10.7.30 opens with
-  BALANCE at 25 (a value saved in a project is kept as it was). It works just before the EQ, so the EQ stays exactly as
-  you set it, on top. Cost: under 1 % of the audio CPU while AMOUNT is on (it listens at an eighth of the rate; nothing
-  in silence). Until V10.7.42 it was a
-  four-band dynamic EQ that also tilted the lows and the highs, about 3 % of the CPU.
+- **BALANCE** (V10.7.30 .. V10.7.42) is gone in V10.7.43: FX › BALANCE no longer exists; a project that stored a BALANCE value
+  opens fine and ignores it.
 
 ### DJ FILTER (0.9.1, GLO › LIVE › KEYS KNOB 4; on MIXER until V10.36)
 
@@ -2792,45 +2782,20 @@ curve where the bar would be.
 - **STEP MOD**: a 16-step modulation sequencer per track, like a CV sequencer. KNOB 1 picks the step, KNOB 2 sets its
   level, LEN and SLEW; DIV on STEP MOD 2. Use it from MOD with SRC **STEP**.
 
-### LIFE: the voices alive (V10.7.34; rebuilt in V10.7.43)
+### LIFE: the tracks FM each other (V10.7.34; one knob since V10.7.43)
 
-Without LIFE a synth is still unless you build its movement by hand. With it, JIANT's tracks play off each other, as on
-a Lyra. Since V10.7.43 LIFE is **only the interaction between the tracks**: they intermodulate each other, nothing else.
+**HOME › LIFE, KNOB 1** is the only control (0–100 %, 25 % at power-on). LIFE is the interaction between the tracks and
+nothing else: each sounding track **phase-modulates the next one in the ring of tracks that sound** (two tracks: a duet,
+each moving the other), at audio rate, as cross-FM: every partial moves by its frequency and sidebands appear between them,
+on every engine. A drum kit moves the next track but is never moved. One pair plays up to LIFE 50 %, two above it (the
+CPU's limit), the loudest movers first. The curve is logarithmic: about 1 % of the depth at 25, 6 % at 50, 25 % at 75 and
+all of it at 100 (extreme, a noisy wash). **LIFE 0 is bit for bit the sound without LIFE.**
 
-- **Cross-FM (X-FM): the tracks FM each other.** A track's sound is phase-modulated, at audio rate, by another track's
-  sound: every partial moves by its frequency, as in FM, and sidebands appear between them, on every engine (a drum kit
-  moves the others but is never moved). Who moves whom comes from the beings below: each track is held most by the one
-  before it among those that sound (two tracks: a duet, each the other's; more: a ring), more when their beings swim
-  close. The strongest pairs play: **one at a time up to LIFE 50 %, two above it** (the CPU's limit). The depth follows
-  the other track's sound (its peaks swing the whole depth), grows with LIFE squared (gentle at its default, deep at
-  100) and with X-FM, and glides in and out as the pairs change. One block late (1.5 ms): no order, no feedback that
-  runs away.
-- **Nothing else.** LIFE moves no pitch, no filter, no SHAPE, no send, and no follower drives a parameter: that is the
-  modulation matrix's job (its **LIFE** and **BEING** sources and **T1 ENV … T6 ENV** are there to route by hand). With
-  X-FM at 0, LIFE 100 sounds bit for bit as LIFE 0. The voices' own wander, the note's arc, the pitch sag, the sends
-  breathing (until V10.7.42) and the followers on cutoff and SHAPE (a V10.7.43 beta) are gone.
-
-| HOME › LIFE | What it does |
-| --- | --- |
-| **KNOB 1 LIFE** | How much everything lives, 0..100 % (25 % at power-on and in every project saved before V10.7.34). **0: the classic, still synth, bit for bit as before.** |
-| **KNOB 2 REACH** | How much the other tracks weigh beside the one before (30 %): 0 only the one before moves a track, 100 every track that sounds as much. |
-| **KNOB 3 X-FM** | The cross-FM's depth (70 %): at LIFE 100 and X-FM 70 or more, the deepest (±13 samples of phase swing). |
-| **KNOB 4 SWIM** | How fast the beings swim, so how fast who moves whom changes (30 %: as before; 0 a quarter, 100 almost three times). |
-
-The screen shows what you hear: one **being** per track (its species, colours and face as on MACROS), swimming in the
-water at the pace of its sound (agitated when loud, calm in silence) and breathing (its size: the **LIFE** source). A
-**line** goes from each track to the one it moves, thicker and warmer the more it moves it, a dot near the one moved;
-at the top left the LIFE amount (**STILL** at 0), at the right the lines counted. REACH, X-FM and SWIM stay dim at LIFE 0.
-
-- **One track still, or only one alive**: **EDIT › TONE, KNOB 3** (a kit: **OUT**, KNOB 3; EXT: VOICES 3, KNOB 2) is the track's own LIFE (0..100 %, 100 % by
-  default), times HOME's. At 0 the track is still and is not moved by the others (it still moves them). The matrix's
-  **LIFE** destination adds to it a block at a time.
-- **In the matrix**: **LIFE** (the breath), **BEING** (the swim, up +) and **T1 ENV … T6 ENV** as sources; **LIFE** as a
-  destination.
-- **Kept with the project** (LIFE, REACH, X-FM, SWIM, each track's LIFE: the places of V10.7.34's FILTER, PITCH and FX);
-  a project saved before V10.7.34 opens with the defaults, LIFE on. For the exact old sound of a project, turn LIFE to 0.
-- **Cost**: at the default about 1 % of the audio's CPU in a full song (it was 4 % until V10.7.42); a second pair (LIFE
-  above 50 %) about half a percent more; at 0 nothing to speak of.
+LIFE moves no pitch, filter, SHAPE or send, and has no followers on parameters: the modulation matrix does that (its T1 ENV
+… T6 ENV sources). Gone in V10.7.43: REACH, X-FM and SWIM, each track's own LIFE (EDIT › TONE / VOICES 3 / OUT), and the
+matrix's LIFE and BEING sources and LIFE destination. A project that stored them opens fine and ignores them (a route on
+them loads off). The screen shows the beings as on MACROS and a line for each pair, from the track that moves to the one
+moved (a dot near it). **LIFE MAX** (A#4 punch-in) holds LIFE at 100 % while pressed.
 
 ### Macros M1–M4
 
