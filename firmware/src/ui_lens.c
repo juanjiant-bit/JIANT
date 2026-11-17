@@ -54,12 +54,12 @@ enum { SV_LIB, SV_PROJ, SV_SOUND };
 /* (V10.7.34, the owner) TRACKS right after MACROS: every track a lane (ui_lzhome.c graph_tracks), HOME's own screen
  * (ui.hlv 2), its group */
 /* (V10.7.36, the owner) LIVE MIX right after MACROS */
-enum { HE_LIFE = FELUCCA_LIFE - 1, HE_MACROS, HE_SCOPE, HE_TRACKS, HE_TIMELINE, HE_ARRANGE, HE_PARTS, HE_GEN };
+enum { HE_LIFE = FELUCCA_LIFE - 1, HE_ENGINE, HE_SCOPE, HE_TRACKS, HE_TIMELINE, HE_ARRANGE, HE_PARTS, HE_GEN };
 static const nv_t CE_HOME[] = {
 #if FELUCCA_LIFE
                                NV(0, "LIFE", 0, 0),
 #endif
-                               NV(0, "MACROS", FELUCCA_LIFE ? 1 : 0, 0), NV(0, "LIVE MIX", FELUCCA_LIFE ? 2 : 1, 1),
+                               NV(0, "ENGINE", FELUCCA_LIFE ? 1 : 0, 0), NV(0, "LIVE MIX", FELUCCA_LIFE ? 2 : 1, 1),
                                NV(0, "TRACKS", FELUCCA_LIFE ? 3 : 2, 3), NV("TIMELINE", 0, FELUCCA_LIFE ? 4 : 3, SV_PROJ),
                                NV("ARRANGE", 0, FELUCCA_LIFE ? 5 : 4, SV_PROJ), NV("PARTS", 0, FELUCCA_LIFE ? 6 : 5, SV_PROJ),
                                NV(0, "GEN 1", FELUCCA_LIFE ? 7 : 6, 2), NV(0, "GEN 2", FELUCCA_LIFE ? 7 : 6, 2),
@@ -68,7 +68,7 @@ static const ng_t CG_HOME[] = {
 #if FELUCCA_LIFE
                                {"LIFE", 0},
 #endif
-                               {"MACROS", "MACRO"}, {"LIVE MIX", "LIVE"}, {"TRACKS", "TRK"}, {"TIMELINE", "TIME"},
+                               {"ENGINE", "ENG"}, {"LIVE MIX", "LIVE"}, {"TRACKS", "TRK"}, {"TIMELINE", "TIME"},
                                {"ARRANGE", "ARR"}, {"PARTS", 0}, {"GEN", 0}};
 static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("MORPH", 0, 0, 1), NV("RETRIG", 0, 0, 1),
                               NV("ROTOR", 0, 0, 1), NV("WORDS", 0, 0, 1), NV("SWARM", 0, 0, 1), NV("SWARM 2", 0, 0, 1),
@@ -123,7 +123,7 @@ static const ng_t CG_FX[] = {{"TRACK", "TRK"}, {"BUSES", "BUS"}, {"DELAY", "DLY"
                              {"SLICER", "SLC"}, {"MASTER", "MST"}};   /* (V10.7.32, the owner: PUNCH IN on the FX held,
                                                          * ui_layer.c ly_lane; its page out, ui.c page_visible) */
 #if FELUCCA_LIVE
-static const nv_t CE_GLO[] = {NV("KEYS", 0, 0, 0), NV("RAILS", 0, 0, 0), NV("MIXER", 0, 1, 0), NV("BUS SENDS", 0, 1, 0),
+static const nv_t CE_GLO[] = {NV("RAILS", "LIVE", 0, 0), NV("KEYS", "KEY FX", 0, 0), NV("MIXER", 0, 1, 0), NV("BUS SENDS", 0, 1, 0),
                               NV("COMP", 0, 2, 3), NV("COMP 2", 0, 2, 3), NV("GLOBAL", 0, 3, 1),
                               NV("SYSTEM", 0, 3, 2), NV("PORTS", 0, 3, 2)
 #if FELUCCA_SPLIT
@@ -232,7 +232,7 @@ static uint32_t home_cur(void)
     if (gen_on())
         return HE_GEN + gen_page();
     if (ui.home)
-        return FELUCCA_LIFE && ui.hlv == 2u ? (uint32_t)HE_LIFE : ui.hlv == 3u ? HE_TRACKS : ui.hlv == 1u ? HE_SCOPE : HE_MACROS;
+        return FELUCCA_LIFE && ui.hlv == 2u ? (uint32_t)HE_LIFE : ui.hlv == 3u ? HE_TRACKS : ui.hlv == 1u ? HE_SCOPE : HE_ENGINE;
     for (k = HE_TIMELINE; k < HE_GEN && !str_eq(PAGES[ui.page].title, CE_HOME[k].t); k++) {}
     return k < HE_GEN ? k : HE_ARRANGE;
 }
@@ -270,12 +270,12 @@ static uint32_t nav_cur(void)
 static uint32_t nav_lv(void) { return nav_ch(nav_sec())->e[nav_cur()].lv; }   /* the 0.8.5 lens level it is drawn as */
 static uint32_t pd_level(void) { return nav_lv(); }
 static uint32_t save_level(void) { return nav_lv(); }
-static uint32_t home_level(void) { return gen_on() ? 2u : ui.hlv >= 2u ? ui.hlv + 1u : ui.hlv; }   /* (V10.7.24) 0 MACROS, 1 SCOPE, 2 GEN,
+static uint32_t home_level(void) { return gen_on() ? 2u : ui.hlv >= 2u ? ui.hlv + 1u : ui.hlv; }   /* (V10.7.24) 0 ENGINE, 1 SCOPE, 2 GEN,
                                                          * (V10.7.34) 3 LIFE, 4 TRACKS (HOME's own
                                                          * screens: the song's pages are SAVE's lens, save_level) */
-static int home_macros(void) { return ui.home && !ui.menu && !gen_on() && !ui.hlv; }   /* MACROS: M1..M4 */
+static int home_engine(void) { return ui.home && !ui.menu && !gen_on() && !ui.hlv; }   /* selected channel: filter + three engine controls */
 static int home_scope(void) { return ui.home && !gen_on() && ui.hlv == 1u; }   /* SCOPE: the mix's four (ui.c home_knob) */
-static int home_life(void) { return ui.home && !gen_on() && ui.hlv == 2u; }   /* (V10.7.34) LIFE: its four (ui_input.c life_knob) */
+static int home_life(void) { return FELUCCA_LIFE && ui.home && !gen_on() && ui.hlv == 2u; }   /* (V10.7.34) LIFE: its four (ui_input.c life_knob) */
 static int home_tracks(void) { return ui.home && !gen_on() && ui.hlv == 3u; }   /* (V10.7.34) TRACKS: TRACK LEVEL PAN REV */
 /* the entries shown now (on this track, at this LOAD), in order: their indices in v (NAV_MAX at most: the longest chain,
  * FX's 17 since snd8's TAPE, fits: ui_test checks every chain against it; snd8b's 17th page overran a 16 and crashed
@@ -339,7 +339,7 @@ static void nav_go(uint32_t sec, uint32_t e, int outside)
         } else {
             if (gen_on())
                 ui.confirm = 0;
-            ui.hlv = (uint8_t)(FELUCCA_LIFE && e == HE_LIFE ? 2u : e == HE_TRACKS ? 3u : e == HE_SCOPE);   /* (0 MACROS, 1 SCOPE, 2 LIFE, 3 TRACKS) */
+            ui.hlv = (uint8_t)(FELUCCA_LIFE && e == HE_LIFE ? 2u : e == HE_TRACKS ? 3u : e == HE_SCOPE);   /* (0 ENGINE, 1 SCOPE, 2 LIFE, 3 TRACKS) */
         }
         if (!ui.home)
             go_home();

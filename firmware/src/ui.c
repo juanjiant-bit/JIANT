@@ -326,7 +326,7 @@ static struct {
     uint8_t nmem[13];            /* (0.9.2) each section's page last shown, its chain's entry ^ its default (ui_lens.c
                                   * nav_mem: EDIT one per kind of track) */
     uint8_t fxmod;               /* (0.8.5) FX: the effect last shown (BUSES' tile lit) */
-    uint8_t hlv, hset[2];        /* .. HOME: MACROS (0), SCOPE (1), LIFE (2) or TRACKS (3, V10.7.34) (V10.7.24; hset: unused since, the RAM's layout kept) */
+    uint8_t hlv, hset[2];        /* .. HOME: ENGINE (0), SCOPE (1), LIFE (2) or TRACKS (3, V10.7.34) (V10.7.24; hset: unused since, the RAM's layout kept) */
     uint8_t focus;               /* .. EDIT > FOCUS: the parameter (E1..E8: 0..7) */
     uint8_t stage;               /* .. ENV > STAGE: the stage (ATK DEC SUS REL: 0..3) */
     uint8_t ent_len, ent_arp, ent_res, ent_ord, ent_oct, ent_nn;   /* (0.6.37) that entry while held (ui_input.c
@@ -881,10 +881,19 @@ static int lock_page_ok(uint32_t i)
             return 1;
     return 0;
 }
+/* HOME: the selected engine's filter and three timbre controls. Keep this mapping
+ * shared by display, editing and step locks. MACROS remain on the LFO layer. */
+static uint32_t home_engine_id(uint32_t k)
+{
+    uint32_t e = trk_eng(TSEL);
+    if (e == ENGI_ANALOG || (FELUCCA_FM4 && e == ENGI_DIGITAL))
+        return P_E0 + (k < 2u ? k + 4u : k - 2u);
+    return k ? trk_engp(TSEL)->knob[(k - 1u) % 4u] : P_FCUT;
+}
 static uint32_t lock_id(uint32_t k)
 {
     uint32_t id = ui.plk_src && lock_page_ok(ui.plk_src - 1u) ? PAGES[ui.plk_src - 1u].id[k & 3u]
-                                                               : trk_engp(TSEL)->knob[k & 3u];
+                                                               : home_engine_id(k & 3u);
     return id < P_COUNT && motion_param(id) ? id : 0xFFu;
 }
 

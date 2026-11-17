@@ -300,7 +300,7 @@ static int commit(void)
     bad += check("  GIRO +2: ROTATE -2; THIN 50 %: the track's CHANCE 50 %", ok);
 
     t = lsetup();                                       /* the dialog, on RIELES */
-    nav_put(SEC_GLO, "RAILS");
+    nav_put(SEC_GLO, "LIVE");
     frame();
     lv.rate[0] = 2;
     frame();
@@ -347,7 +347,7 @@ static int pages(void)
     stop_transport();
     for (k = 0; k < NTRK; k++)
         *(drum_track(&trk[k]) ? &kdrm : &ksyn) |= 1u << k;
-    nav_put(SEC_GLO, "RAILS");
+    nav_put(SEC_GLO, "LIVE");
     frame();
     ok = lv_tracks() == 0x3Fu;
     for (k = 1; k < 9u; k++) {
@@ -382,7 +382,7 @@ static int pages(void)
 
     lsetup();
     stop_transport();
-    nav_put(SEC_GLO, "KEYS");
+    nav_put(SEC_GLO, "KEY FX");
     frame();
     kx2 = key_at(0, 1);
     kb1 = key_at(1, 0);
@@ -436,15 +436,13 @@ static int pages(void)
     ui_power_on();
     frame();
     press(B_GLO); frame();
-    ok = str_eq(cur_page()->title, "MIXER");
-    turn(EN_SELECT, -1); frame();
-    ok &= str_eq(cur_page()->title, "RAILS") && crumb_is("GLO \xB7 LIVE \xB7 RAILS", FELUCCA_SPLIT ? "2/11" : "2/9");   /* (e3c9e26, 2026-11-04: KEY
-                                                         * SPLIT and KEY SPLIT 2 under SYSTEM, 11 pages; was 9) */
-    turn(EN_SELECT, -1); frame();
-    turn(EN_SELECT, -1); frame();
-    ok &= str_eq(cur_page()->title, "KEYS") && crumb_is("GLO \xB7 LIVE \xB7 KEYS", FELUCCA_SPLIT ? "1/11" : "1/9") && tabs_lit(&k) == 4u && !k &&
-          song.grid == 3;
-    bad += check("GLO: MIXER at power-on; SELECT back RAILS, KEYS (the chain's first, LIVE · four tabs: codex/coherence SETUP)", ok);
+    turn(EN_SELECT, -2); frame();
+    ok = str_eq(cur_page()->title, "RAILS") && crumb_is("GLO \xB7 LIVE \xB7 LIVE", FELUCCA_SPLIT ? "1/11" : "1/9");
+    turn(EN_SELECT, 1); frame();
+    ok &= str_eq(cur_page()->title, "KEYS") && crumb_is("GLO \xB7 LIVE \xB7 KEY FX", FELUCCA_SPLIT ? "2/11" : "2/9") && tabs_lit(&k) == 4u && !k && song.grid == 3;
+    turn(EN_SELECT, 1); frame();
+    ok &= str_eq(cur_page()->title, "MIXER") && song.grid != 3;
+    bad += check("GLO opens LIVE; SELECT reaches KEY FX then MIXER, notes only intercepted on KEY FX", ok);
     ui_power_on();
     return bad;
 }

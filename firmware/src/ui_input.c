@@ -547,6 +547,15 @@ static void tracks_edit(uint32_t slot, int32_t steps)
  * FREEZE of CLOUD, unless it was there), DRIVE CLIP, DUCK. MOMENTARY (EDIT held): written, not recorded */
 static void home_knob(uint32_t k, int32_t s)
 {
+    if (home_engine()) {
+        uint32_t id = home_engine_id(k & 3u);
+        const param_desc_t *d = track_desc(TSEL, id);
+        int32_t was = TSEL->p[id];
+        TSEL->p[id] = (int16_t)param_turn(d, was, accel(EN_K1 + k, s, d->fmt == F_ENUM ? 0 : d->max - d->min));
+        excite_turn(TSEL, &TSEL->p[id], was);
+        if (!mom_on) knob_cap(TSEL, id);
+        return;
+    }
     uint32_t id = HS_ID[k & 3u];
     int32_t v = song.g[id], to;
     if (!(k & 3u)) {
@@ -2785,16 +2794,7 @@ static void ui_input_frame(void)
                                                          * HOME > MACROS the macros' dice (the MACRO layer's F3), once a turn */
                 ui.home_t0 |= 2u;
                 if (!pj_sel_ms || fm1_ms - pj_sel_ms > 400u) {
-                    if (home_macros()) {
-                        if (chain_busy()) {
-                            ui_message("SONG PLAYS: STOP IT TO EDIT");
-                        } else {
-                            macro_dice(1);
-                            ui_message("MACROS DICED");
-                        }
-                    } else {
-                        nav_go(SEC_HOME, HE_GEN + gen_page(), 1);
-                    }
+                    nav_go(SEC_HOME, HE_GEN + gen_page(), 1);
                 }
             } else if (k) {
                 if (f == FAM_EDIT)                      /* (0.9.9-seq2f) EDIT + SELECT: the sound dice again (SELECT is
@@ -3198,7 +3198,7 @@ static void ui_input_frame(void)
     if (gen_on() && (oct & 2u)) {                       /* (0.9.2) GEN, HOME's pages: OCT+ the piece (the screen stays, */
         gen_press();                 /* OCT+ again: another), OCT- back to MACROS */
     } else if (gen_on() && (oct & 1u)) {
-        nav_go(SEC_HOME, HE_MACROS, 0);
+        nav_go(SEC_HOME, HE_ENGINE, 0);
     } else if (act_cols() && (oct & 2u)) {              /* action pages: OCT+ does the picked action, */
         act_do();
     } else if (act_cols() && (oct & 1u)) {              /* OCT- drops it, or (none picked) goes HOME; PHRASES: back to */
@@ -3297,8 +3297,8 @@ static void ui_input_frame(void)
             ui.hot_col = (uint8_t)k;
             ui.hot_t = 40, ui.knob_ms = fm1_ms;
         }
-        if (home_macros()) {                            /* (0.8.5) HOME's MACROS: M1..M4 */
-            macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
+        if (home_engine()) {
+            home_knob(k, s);
         } else if (home_life()) {                       /* (V10.7.34) HOME's LIFE: (V10.7.43) KNOB 1 its one value */
             if (!k)
                 life_v[LIFE_AMT] = (int16_t)clamp(life_v[LIFE_AMT] + accel(EN_K1, s, 100), 0, 100);

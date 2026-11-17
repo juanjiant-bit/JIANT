@@ -195,7 +195,7 @@ def build_loader():
 HOT_FNS = ("mix_block", "mix_part_m0", "fx_run0", "perf_rtp", "pf_svf", "perf_pre", "perf_block", "perf_master", "slicer_bus",
            "dly_lo", "dly_grain", "dly_grain_adv", "dly_wow_adv", "dly_line_clear", "dly_rate", "fx_rest",
            "rev_run", "rev_idle", "rev_room", "rev_room_mod", "rev_spring", "rev_spring_side", "rev_cloud", "rev_shimmer",
-           "rev_reso", "cho_admit", "dist_shape", "dist_amp")
+           "rev_reso", "dist_shape", "dist_amp")
 
 
 def share_strings(ir, keep=()):
@@ -331,7 +331,7 @@ LATE_SRC = ("gen.c", "favorites.c", "gen_track.c")   # movable main-loop generat
 
 def late_fns():
     # REC arming is UI-only; keep its undo checkpoint out of the pinned DSP gaps.
-    names = {"rec_tap", "ly_keyname", "ag", "text_w", "gls_prep",
+    names = {"home_knob", "ui_input_frame", "rec_tap", "ly_keyname", "ag", "text_w", "gls_prep",
              # Only the overflowing UI gaps move: keep all audio addresses pinned without wasting large holes.
              "fm1_irq_on", "large_kind", "draw_confirm", "vx_analog", "toast_clear", "draw_text_box", "as_mix",
              "ed_bk_r32", "set_engine", "step_lanes", "song_copy_section", "palette_from_stored",
@@ -345,6 +345,7 @@ def late_tables():
     """the generator's own constant tables (gen.c, gen_tables.c): out of .rodata like the UI's recorded ones ('n'), so a
     new one never moves the sound's merged constants after .rodata"""
     names = set()
+    names |= {"LV_RNAME", "LV_TG", "LV_WK", "LV_BK", "layer_cards.M"}
     for f in ("gen.c", "gen_tables.c", "eng_string.c", "eng_add.c", "ui_engvis.c"):   # (0.9.9-snd5: the two engines' own
         # tables and descriptors, the creatures' new ones: out of .rodata too, the sound's tables where they were)
         txt = (FW / "src" / f).read_text()
@@ -541,6 +542,11 @@ def build_app():
                 keep = [name for name in keep if name not in clocks]
                 at = keep.index("seq_step") if "seq_step" in keep else 0
                 keep[at:at] = clocks
+            if keep and "cho_admit" not in keep:
+                # Chorus admission runs once per block, not per sample. Keep this
+                # small flash helper within reach of fx_run0 after leaving HOT_FNS.
+                at = keep.index("tvel") if "tvel" in keep else 0
+                keep.insert(at, "cho_admit")
             compile_hot([])
             LAYOUT_LD.write_text("".join(f"*(.text.{n})\n" for n in keep) + "*(.text*)\n")
             # This preliminary link has not packed UI tables into the audio

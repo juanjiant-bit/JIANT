@@ -757,7 +757,7 @@ static void live_scene(int s)
     seq_start();
     live_publish();
     for (k = 0; k < 2800u; k++) { events_block(CTL); if (!(k % 64u)) live_publish(); }
-    nav_put(SEC_GLO, s >= S_LIVE_MANO ? "KEYS" : "RAILS");   /* (codex/coherence: were MANO, RIELES) */
+    nav_put(SEC_GLO, s >= S_LIVE_MANO ? "KEY FX" : "LIVE");   /* (codex/coherence: were MANO, RIELES) */
     if (s == S_LIVE_RIELES_T3) { ui.hot_col = 0; ui.hot_t = 30; }
 }
 

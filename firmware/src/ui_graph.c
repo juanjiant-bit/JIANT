@@ -2118,11 +2118,11 @@ static void draw_graph(void)
         graph_ht = LG_H_GRAPH - 6;
         if (k == SK_SCOPE) {                         /* (V10.8, testers: LARGE hid the animations) HOME: the tracks'
                                                       * creatures in a row, the scope only if none has one */
-            uint32_t n = home_scope() ? 0u : trk_live ? trk_live : 1u, i, w = 228u / (n ? n : 1u), any = 0;   /* (V10.7.24:
+            uint32_t n = home_scope() ? 0u : home_engine() ? 1u : trk_live ? trk_live : 1u, i, w = 228u / (n ? n : 1u), any = 0;   /* (V10.7.24:
                                                       * SCOPE the scope) */
             vx_small = 1;
             for (i = 0; i < n; i++)
-                any |= (uint32_t)vx_draw(&trk[i], 6 + (int32_t)(i * w), 2, (int32_t)w - 4, (int32_t)graph_ht - 4, -1);
+                any |= (uint32_t)vx_draw(home_engine() ? TSEL : &trk[i], 6 + (int32_t)(i * w), 2, (int32_t)w - 4, (int32_t)graph_ht - 4, -1);
             vx_small = 0;
             if (!any) graph_scope(c);
         } else if (k == SK_ADSR) graph_adsr(t, c);

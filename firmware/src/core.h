@@ -101,8 +101,7 @@ static inline const char *desc_unit(const param_desc_t *d)   /* F_INT_CT .. F_RE
 }
 
 #ifndef FELUCCA_LIVE
-#define FELUCCA_LIVE 0  /* (V10.7.30, the owner: "RAILS out, KEYS if it costs") GLO > LIVE's KEYS and RAILS pages (ui_live.c):
-                         * out of GLOBAL and the image; the LIVE modifiers the FX layer drives (seq_live.c) stay */
+#define FELUCCA_LIVE 1  /* GLO: LIVE controls and KEY FX; temporary, synchronized sequence modifiers. */
 #endif
 #ifndef FELUCCA_SPLIT
 #define FELUCCA_SPLIT 0 /* (V10.7.32, the owner) GLO > KEY SPLIT and KEY SPLIT 2 (ui.c split_*): out of GLOBAL and the image,

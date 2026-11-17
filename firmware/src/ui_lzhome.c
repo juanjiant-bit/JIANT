@@ -19,6 +19,7 @@
 #define ECO_N NTRK
 static const int16_t ECO_PX[ECO_N] = {44, 120, 196, 64, 146, 206}, ECO_PY[ECO_N] = {34, 28, 40, 84, 78, 86};   /* (where they
                                                          * start, as 0.8.4's HOME) */
+/* Keep the UI storage allocated: dropping unused fields changes audio RAM addressing. */
 static struct {
     int32_t en[ECO_N], pen[ECO_N];                      /* each track's level now (0..256, slewed); (codex/anim) where it
                                                          * was a step before (Q8 px, y << 16 | x: eco_at) */
@@ -27,7 +28,7 @@ static struct {
     uint32_t tm[ECO_N];                                 /* each being's time (it runs with its sound) */
     uint32_t f0;                                        /* (codex/anim) the swim's last step (ui.c anim_fr ticks) */
     uint8_t init, top;                                  /* (top: unused since V10.7.23, AIR gone: the RAM's layout kept) */
-} eco;
+} eco __attribute__((used, aligned(4)));
 /* (0.9.7, variant A) each being's face and colours, worked out once a drawn frame by eco_step for eco_being: its three
  * isotherms' colours by its level (c0 outer .. c2), its last hit's time (fm1_ms, low 16 bits: the eyes shut 0.1 s), its face's EF_*
  * (fl); init: the hits' times set. (Sized as the 0.9.6 critters were, in their place: the RAM's layout and so the sound
@@ -37,7 +38,7 @@ static struct {
     uint16_t c0[EH_N], c1[EH_N], c2[EH_N], ms[EH_N];
     uint8_t fl[EH_N];
     uint8_t init;
-} eco_fc;
+} eco_fc __attribute__((used, aligned(4)));
 enum { EF_SHUT = 1, EF_SLEEP = 2, EF_UP = 4 };
 #define eco_ft (eco_fc.ms[ECO_N])                       /* (codex/anim, in the room left: the levels' last look, ticks) */          /* (0.9.7) the face's: eyes shut (a hit), asleep, looking up */
 static int eco_off(uint32_t c) { return trk[c].p[P_MUTE] || c >= trk_live; }   /* (muted, or asleep: TRACKS 4) */
@@ -102,6 +103,19 @@ static __attribute__((noinline)) void eco_swim(uint32_t now, int32_t bot)
 }
 static uint32_t eco_step(void)
 {
+#if !FELUCCA_LIFE
+    /* TRACKS needs peak meters only. Do not animate the retired six-being scene. */
+    uint32_t now = anim_fr, c, k, dt = (uint16_t)((uint16_t)now - eco_ft);
+    if (!dt) return 0;
+    for (c = 0; c < ECO_N; c++) {
+        int32_t v = clamp(trk[c].peak * 256 / 7000, 0, 256);
+        trk[c].peak = 0;
+        for (k = 0; k < (((now >> 1) - (eco_ft >> 1)) & 0x7FFFu) && k < 8u; k++)
+            eco.en[c] = v > eco.en[c] ? v : eco.en[c] + (v - eco.en[c]) / 4;
+    }
+    eco_ft = (uint16_t)now;
+    return dt;
+#else
     uint32_t c, k, now = anim_fr, dt = (uint16_t)((uint16_t)now - eco_ft);
     int32_t bot = eco_bot();                            /* (the panel's floor, the number's line under it: 0.8.4's 104 of
                                                          * 122, the lens's 140 its 122) */
@@ -146,6 +160,7 @@ static uint32_t eco_step(void)
     eco_swim(now, bot);
     eco_fc.init = 1;
     return dt;
+#endif
 }
 /* (0.9.7, variant A) a small ellipse (Q4: centre, radii at least 0.6 px) in ten lines */
 static void eco_ell(int32_t cx, int32_t cy, int32_t rx, int32_t ry, uint16_t c)
@@ -308,17 +323,9 @@ static void graph_eco(uint32_t lf)
         cv_text(6, 2, &AF_X, b, life_v[LIFE_AMT] ? T_TEXT : T_DIM);
         fmt_int(b, (int32_t)links);
         str_cpy(b + str_len(b), links == 1u ? " LINK" : " LINKS", 7);
-    } else if (ui.hot_t && ui.hot_col < 4u) {           /* MACROS: a macro turned, where it goes ("M2 T1 CUT+40 T3 ..",
-                                                         * the MACRO layer's list); else the routes counted; LATCH */
-        b[0] = 'M';
-        b[1] = (char)('1' + ui.hot_col);
-        b[2] = ' ';
-        if (!macro_routes(ui.hot_col, b + 3, sizeof b - 3u))
-            str_cpy(b + 3, "NO ROUTE", sizeof b - 3u);
-        cv_clip_text(6, 2, &AF_X, b, T_TEXT, T_SURF, 176);
     } else {
-        fmt_int(b, (int32_t)routes_count());
-        str_cpy(b + str_len(b), " ROUTES", 8);
+        b[0] = 'T'; b[1] = (char)('1' + song.sel); b[2] = ' '; b[3] = 0;
+        str_app(b, trk_engp(TSEL)->name, sizeof b - str_len(b));
         cv_text(6, 2, &AF_X, b, T_TEXT);
     }
     if (lf)
@@ -406,6 +413,10 @@ static void graph_home_lz(void)
         graph_scope(ACC);
     else if (home_level() == 4u)
         graph_tracks();
-    else
-        graph_eco(home_level() == 3u);
+    else if (home_life())
+        graph_eco(1);
+    else {
+        (void)vx_draw(TSEL, 8, 4, 224, (int32_t)graph_h() - 18, -1);
+        cv_text(4, (int32_t)graph_h() - 11, &AF_X, "ALGORITHM: TRACK  HOLD LFO: MACROS", T_TEXT);
+    }
 }
