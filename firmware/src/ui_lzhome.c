@@ -338,22 +338,38 @@ static void graph_eco(uint32_t lf)
 static int tk_off(uint32_t c) { return eco_off(c) || (perf_solo && !((perf_solo >> c) & 1u)); }
 static const char *help_find(uint32_t k);               /* (ui_draw.c) */
 /* what TRACKS shows changed: the mutes, the solo, the selection, the selected track's steps and length (SEQ held's tools
- * and knobs); playing or sounding (a level not yet fallen): every other frame, as MACROS */
-static uint32_t tracks_sig(void)
+ * and knobs); (V10.7.43, the users: it was heavy, drawn every other frame while playing) each lane's playhead and its
+ * level's band (8; with a playhead's move, else at most every 8th tick; under a high load at most every 4th tick):
+ * drawn when one of them moves, the panel sent where it changed (cv_blit_cells: the lanes that moved) */
+static __attribute__((noinline)) uint32_t tracks_sig(void)
 {
-    uint32_t c, h = perf_solo * 977u + song.sel * 31u + trk_live + (uint32_t)TSEL->p[P_SLEN] * 7919u, live = song.playing;
+    static struct { uint32_t last, lh, lv, q, lq; } k __attribute__((section(".pool")));   /* (the .bss full: its
+                                                         * growth lengthens the code that reaches it) */
+    uint32_t c, h = perf_solo * 977u + song.sel * 31u + trk_live + (uint32_t)TSEL->p[P_SLEN] * 7919u, l = 0;
+    uint32_t hi = load_tight || load_avg_q8 > (70u << 8);
+    (void)eco_step();                                   /* (the levels, once a frame: graph_signature runs each, before the
+                                                         * draw) */
+    if (hi && (anim_fr >> 2) == k.q)
+        return k.last;
+    k.q = anim_fr >> 2;
     for (c = 0; c < NTRK; c++) {
-        live |= trk[c].peak > 0 || eco.en[c] > 3;
-        h += (uint32_t)trk[c].p[P_MUTE] << (c + 20u);
+        const track_t *t = &trk[c];
+        h = (h ^ ((uint32_t)t->p[P_MUTE] << 20) ^ (song.playing ? (uint32_t)seq_src(t, t->seq_idx) << 8 : 0u)) * 16777619u;
+        l = (l ^ (eco.en[c] > 3 ? ((uint32_t)eco.en[c] >> 5) + 1u : 0u)) * 16777619u;
     }
-    return (h ^ steps_hash(TSEL)) + (live ? anim_fr / 2u * 2654435761u : 0u);
+    h ^= steps_hash(TSEL);
+    if (h != k.lh || anim_fr >> 3 != k.lq || !l)        /* (the levels' bands with a playhead's move, else every 8th tick:
+                                                         * ~120 ms) */
+        k.lv = l;
+    k.lq = anim_fr >> 3;
+    k.lh = h;
+    return k.last = h ^ k.lv;
 }
 static __attribute__((noinline)) void graph_tracks(void)
 {
     uint32_t n = trk_live ? trk_live : 1u, c, i;
     int32_t rh = ((int32_t)graph_h() - 22) / (int32_t)n;
-    (void)eco_step();                                   /* (the levels, once a frame) */
-    for (c = 0; c < n; c++) {
+    for (c = 0; c < n; c++) {                           /* (the levels stepped by tracks_sig) */
         const track_t *t = &trk[c];
         uint32_t len = (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP), ph = song.playing ? seq_src(t, t->seq_idx) : NSTEP;
         int32_t y = 2 + (int32_t)c * rh, h = rh - 3, nh = h - 6, en = eco.en[c], lo, hi, dr = drum_track(t),

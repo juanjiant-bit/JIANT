@@ -12382,6 +12382,21 @@ static int test_home_tracks(void)
     i = trk[0].seq_idx;
     vxt_run(300, 1);
     ok &= song.playing && trk[0].seq_idx != i && memcmp(a, host_screen + LZ_GRAPH_Y * 240, sizeof a) != 0;
+    {   /* (V10.7.43, the users: TRACKS heavy) its cost: the host's time of one draw, the draws in 2 s playing (at 120 BPM:
+         * a lane redrawn when its playhead or its level's band moves, not every other frame), fewer under a high load */
+        uint32_t k, nd = 0, nh = 0, sg;
+        struct timespec t0, t1;
+        clock_gettime(CLOCK_MONOTONIC, &t0);
+        for (k = 0; k < 200u; k++) { cv_begin(240, graph_h(), T_BG); graph_tracks(); }
+        clock_gettime(CLOCK_MONOTONIC, &t1);
+        for (k = 0; k < 125u; k++) { sg = ui.graph_sig; vxt_run(16, 1); nd += ui.graph_sig != sg; }
+        load_avg_q8 = 90u << 8;                         /* (a high load) */
+        for (k = 0; k < 125u; k++) { sg = ui.graph_sig; vxt_run(16, 1); nh += ui.graph_sig != sg; }
+        load_avg_q8 = 0;
+        printf("  TRACKS: a draw %.1f us (host), %u draws in 2 s playing, %u under a high load\n",
+               ((t1.tv_sec - t0.tv_sec) * 1e9 + (t1.tv_nsec - t0.tv_nsec)) / 200e3, (unsigned)nd, (unsigned)nh);
+        ok &= nd > 8u && nd <= 50u && nh < nd;               /* (V10.7.42: 67, every other frame) */
+    }
     stop_transport(); frames(64);
     pl_list_open();                                     /* SAVE + PRESETS: the list over it, OCT- back (V10.7.43) */
     ok &= !ui.home && cur_page()->graph == GR_BROWSE;

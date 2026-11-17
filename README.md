@@ -523,6 +523,9 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
 - **A kit's VOICES** (DRUM-X): EDIT › VOICES 2 › VOICES (KNOB 4, as on a synth) caps the kit's hits at 1–8 to cut
   the load; AUTO (the default) is as before. KICK, SNARE and CLAP stay protected: the kit gives up its other hits
   first. A project of V10.7.37–42 with an EROSION DEST loads AUTO.
+- **HOME › TRACKS lighter**: it was drawn every other frame while playing; now a lane's change (its playhead, its
+  level's band) draws it and only what changed goes to the screen; under a high audio load at most every 4th tick.
+  67 → 43 draws in 2 s playing (32 under load), a draw ~60 µs on the host.
 
 ### V10.7.42 (2026-11-15)
 - **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version
