@@ -101,98 +101,98 @@
     "binary": "punch-cpu",
     "tracks": 4,
     "case": "none",
-    "ips": 2827.8,
+    "ips": 2828.89,
     "output": "bits=0 tracks=4 transitions=0 hash=32b72f2707c3b43f act=0 mode=0"
   },
   {
     "binary": "punch-cpu",
     "tracks": 4,
     "case": "d16",
-    "ips": 2875.32,
+    "ips": 2876.56,
     "output": "bits=512 tracks=4 transitions=0 hash=cdccb4210a47a0c1 act=512 mode=0"
   },
   {
     "binary": "punch-cpu",
     "tracks": 4,
     "case": "rev",
-    "ips": 2989.33,
+    "ips": 2990.44,
     "output": "bits=8 tracks=4 transitions=0 hash=3a9171729e474085 act=8 mode=3"
   },
   {
     "binary": "punch-cpu",
     "tracks": 4,
     "case": "d16_rev",
-    "ips": 3026.81,
+    "ips": 3028.04,
     "output": "bits=520 tracks=4 transitions=0 hash=d0ac6e93c5a40a23 act=520 mode=3"
   },
   {
     "binary": "punch-cpu",
     "tracks": 4,
     "case": "d16_wob",
-    "ips": 3018.7,
+    "ips": 3019.93,
     "output": "bits=768 tracks=4 transitions=0 hash=1e9e7e1aa2f88fb7 act=768 mode=0"
   },
   {
     "binary": "punch-cpu",
     "tracks": 4,
     "case": "rev_wob",
-    "ips": 3130.27,
+    "ips": 3131.38,
     "output": "bits=264 tracks=4 transitions=0 hash=f2732a2e9e652898 act=264 mode=3"
   },
   {
     "binary": "punch-cpu",
     "tracks": 4,
     "case": "d16_rev_wob",
-    "ips": 3130.27,
+    "ips": 3131.38,
     "output": "bits=776 tracks=4 transitions=0 hash=f2732a2e9e652898 act=264 mode=3"
   },
   {
     "binary": "punch-cpu",
     "tracks": 6,
     "case": "none",
-    "ips": 3059.55,
+    "ips": 3060.65,
     "output": "bits=0 tracks=6 transitions=0 hash=b494f002a66db3d1 act=0 mode=0"
   },
   {
     "binary": "punch-cpu",
     "tracks": 6,
     "case": "d16",
-    "ips": 3108.02,
+    "ips": 3109.25,
     "output": "bits=512 tracks=6 transitions=0 hash=16a1330778a855e6 act=512 mode=0"
   },
   {
     "binary": "punch-cpu",
     "tracks": 6,
     "case": "rev",
-    "ips": 3221.17,
+    "ips": 3222.27,
     "output": "bits=8 tracks=6 transitions=0 hash=b5b2aff1ae12f6ab act=8 mode=3"
   },
   {
     "binary": "punch-cpu",
     "tracks": 6,
     "case": "d16_rev",
-    "ips": 3259.49,
+    "ips": 3260.73,
     "output": "bits=520 tracks=6 transitions=0 hash=3836d0a446902407 act=520 mode=3"
   },
   {
     "binary": "punch-cpu",
     "tracks": 6,
     "case": "d16_wob",
-    "ips": 3251.39,
+    "ips": 3252.62,
     "output": "bits=768 tracks=6 transitions=0 hash=02441bd0d05ca6e7 act=768 mode=0"
   },
   {
     "binary": "punch-cpu",
     "tracks": 6,
     "case": "rev_wob",
-    "ips": 3359.5,
+    "ips": 3360.61,
     "output": "bits=264 tracks=6 transitions=0 hash=3af7bf73bd783ca3 act=264 mode=3"
   },
   {
     "binary": "punch-cpu",
     "tracks": 6,
     "case": "d16_rev_wob",
-    "ips": 3359.5,
+    "ips": 3360.61,
     "output": "bits=776 tracks=6 transitions=0 hash=3af7bf73bd783ca3 act=264 mode=3"
   }
 ]

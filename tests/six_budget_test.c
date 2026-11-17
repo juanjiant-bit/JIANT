@@ -90,6 +90,8 @@ int main(void)
     perf_budget(d);unsigned debt=load_fx_q8;
     trk_note_on(&trk[0],48,100);
     bad+=check("voice prediction preserves newly admitted FX cost until measurements catch up",debt==(10u<<8)&&load_pred_q8>=(70u<<8));
+    reset6();load_all_q8=40u<<8;load_pred_q8=200u<<8;
+    bad+=check("stale repeated-note debt cannot permanently refuse a punch with spare CPU",perf_budget(d)==d&&load_pred_q8==(50u<<8));
     reset6();ok=pfm_get(0,15)==PF_DECP&&pfm_get(0,26)==PF_DECM&&pfm_get(0,24)==PF_RVA;
     for(k=0;k<6;k++)ok&=pfm_get(0,16+k)==PA_M1+k;
     pfm.map[0][15]=PF_COMB+1;ok&=pfm_get(0,15)==PF_COMB;

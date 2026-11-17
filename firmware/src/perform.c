@@ -383,6 +383,7 @@ static __attribute__((noinline)) uint32_t perf_budget(uint32_t held)
     }
     for (e = 0; e < PF_N; e++) if ((held & ~keep & ~perf_denied) & PF_BIT(e)) {
         uint32_t cost = 10u << 8; /* conservative reserve per new audio effect */
+        load_bound();
         if (count >= max || load_pred_q8 + cost > (load_limit() << 8)) perf_denied |= PF_BIT(e);
         else { keep |= PF_BIT(e); count++; load_pred_q8 += cost; load_fx_q8 += cost; }
     }

@@ -8,7 +8,7 @@ The V47 tester reports were short audio interruptions under load, particularly w
 - With six live tracks, each synth has at most two voices and each kit at most three. Lower user/engine caps win. Once the guard engages, measured expensive channels can tighten to one voice. These are runtime limits; saved sound parameters are preserved.
 - The existing shared eight-voice budget remains; twelve voices are available only after sustained low total CPU on two healthy cores. Six-track admission reserves one slot for each other unmuted, non-input channel that has not sounded yet. At capacity it reuses a released voice of the same channel or refuses the new note rather than stealing another channel's held note.
 - Six-track note prediction closes at 78% of the deadline (ECO stays at 70%). The averaged guard engages at 75%, or three consecutive halves above 82%; recovery starts below 60%. Fading voices still count until their rendering ends.
-- Audio punch-ins are limited to two, one at measured average CPU >=70%, and none at >=80%. Mutually exclusive buffer effects occupy one slot. Each newly admitted effect reserves ten percentage points in the predictor while actual measurements catch up. This reserve decays over about 93 ms and cannot be erased by note admission. A refused/shed press stays refused until released, preventing repeated automatic on/off transitions. Existing gain ramps and release tails still run.
+- Audio punch-ins are limited to two, one at measured average CPU >=70%, and none at >=80%. Mutually exclusive buffer effects occupy one slot. Each newly admitted effect reserves ten percentage points in the predictor while actual measurements catch up. This reserve decays over about 93 ms and cannot be erased by note admission. Stale repeated-note debt is reconciled against sounding work before admitting a new effect, so recovered headroom is usable. A refused/shed press stays refused until released, preventing repeated automatic on/off transitions. Existing gain ramps and release tails still run.
 - Mutes and note/sequencer effects do not use audio-punch slots; their voices remain subject to the voice budget. DEC+ only extends tails while the guard is clear and average CPU is below 70%. DEC- shortens synth decay/release and kit decay; FM6 can also shorten native patches with zero envelope offsets. Parameter edits are restored after every render block.
 
 ## Default punch layout
@@ -43,11 +43,11 @@ The same CPU TEST song, 1,024 warmup blocks, 512 settled FX blocks and 256 measu
 
 | Tracks / request | V47 instructions/sample | V48 instructions/sample |
 | --- | ---: | ---: |
-| 4 / no punch | 2861.63 | 2827.80 |
-| 4 / D16 + reverse | 3167.78 | 3026.81 |
-| 6 / no punch | 3302.78 | 3059.55 |
-| 6 / D16 + reverse | 3609.31 | 3259.49 |
-| 6 / D16 + reverse + wobble | 3751.73 | 3359.50 |
+| 4 / no punch | 2861.63 | 2828.89 |
+| 4 / D16 + reverse | 3167.78 | 3028.04 |
+| 6 / no punch | 3302.78 | 3060.65 |
+| 6 / D16 + reverse | 3609.31 | 3260.73 |
+| 6 / D16 + reverse + wobble | 3751.73 | 3360.61 |
 
 Raw results are in `v48-punch-profile.json`. Before changing the default AUTO cap, 20 four-track activation/filter/crush/throw/release traces were sample-identical to V47, isolating the idle-work optimization from the intentional admission changes. Device timing still needs beta validation.
 

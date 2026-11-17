@@ -1011,16 +1011,18 @@ static uint32_t load_sounding_q8(void)                  /* what every sounding v
     }
     return s;
 }
+/* Reconcile speculative note/FX debt with work that can still be sounding.
+ * Repeated same-slot notes must not permanently block a later punch-in. */
+static __attribute__((noinline)) void load_bound(void)
+{
+    uint32_t most = load_all_q8 + load_sounding_q8() + load_fx_q8;
+    if (load_pred_q8 > most) load_pred_q8 = most;
+    if (load_pred_q8 < load_all_q8) load_pred_q8 = load_all_q8;
+}
 static int load_admit(const track_t *t)                 /* room for a voice of part t? taken if so */
 {
-    uint32_t limit = load_limit() << 8, add, most;
-    add = load_pred_q8 > load_all_q8 ? load_pred_q8 - load_all_q8 : 0u;
-    most = load_sounding_q8() + load_fx_q8;
-    if (add > most) {
-        add = most;
-        load_pred_q8 = load_all_q8 + add;
-    }
-    if (load_all_q8 + add + load_cost_q8(t) > limit)
+    load_bound();
+    if (load_pred_q8 + load_cost_q8(t) > (load_limit() << 8))
         return 0;
     load_take(t);
     return 1;
