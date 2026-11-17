@@ -484,13 +484,11 @@ same license.
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
 
 ### V10.7.43 — beta (2026-11-15)
-- **PRESETS heard as you turn** (a user: "a lot of button presses just to preview a preset"): the list stays (its first
-  turn opens it), and every sound you move to (PRESETS, or KNOB 2's next engine) is **loaded at once**, as before
-  V10.7.33; a held note or the playing sequencer goes on in each sound, a DRUM-X track hears each kit. The sound loaded
-  and sounding is lit (its name in the theme's colour, an orange bar the row's height). Nothing needs OCT+ (it only
-  closes the list), **OCT−** puts back the sound of every track loaded from the list as it was when the list opened
-  (UNDO too), and leaving any other way (a few seconds untouched, a button) keeps what you hear. The same for every list
-  PRESETS opens (FACTORY, USER, FAVORITE, a type) and SAVE › PRESETS.
+- **PRESETS as before V10.7.33** (the owner): turning **PRESETS** loads the next / previous sound of the track's
+  engine at once, round within the engine, its name shown, the page staying as it is; **EDIT + PRESETS** jumps to the
+  next / previous engine; a held note or the playing sequencer goes on in each sound. The list is still there:
+  **SAVE held + PRESETS** opens it over the page (or SAVE › PRESETS): every move loads the sound picked (lit), OCT+
+  closes, **OCT−** puts back the sounds the list found; UNDO brings back the sound before a browse.
 - **Clean releases** (the owner: "a little bitcrush in the releases"): the tails of DRUM-X hits and of plucks no longer
   step down in a soft grain. The mix kept dropping its low bits (before the master, before each track's LEVEL, in
   MASTER's product, in BALANCE's bands); now they are kept, and the master's 3 bits under 16-bit reach the 24-bit DAC.

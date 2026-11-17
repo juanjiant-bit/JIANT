@@ -316,21 +316,27 @@ static void turn(uint32_t role, int32_t s)
     frame();
     host_ticks += 200000u;                        /* (no knob acceleration between the turns) */
 }
-/* (V10.7.33) PRESETS loads through its list: off it, its first turn opens it; s sounds on, OCT+ loads (and closes it
- * over a page). A button held, the MENU, a dialog, NAME: the knob as before */
+/* PRESETS: (V10.7.43) each detent loads the engine's next sound, as before V10.7.33 (SAVE > PRESETS: its list, OCT+). A
+ * button held, the MENU, a dialog, NAME: the knob as is */
 static void pr_turn(int32_t s)
 {
     if (fm1_in.buttons || ui.menu || dlg_on() || name_on()) {
         turn(EN_PRESET, s);
         return;
     }
-    if (ui.home || cur_page()->graph != GR_BROWSE)
-        turn(EN_PRESET, 1);
-    turn(EN_PRESET, s);
-    press(B_OCTUP);
+    if (!ui.home && cur_page()->graph == GR_BROWSE) {   /* (SAVE > PRESETS' list) */
+        turn(EN_PRESET, s);
+        press(B_OCTUP);
+        return;
+    }
+    while (s) {                                         /* (V10.7.43: as before V10.7.33, each detent a sound loaded) */
+        turn(EN_PRESET, s > 0 ? 1 : -1);
+        s += s > 0 ? -1 : 1;
+    }
 }
 static void btn_down(uint32_t label);
 static void btn_up(uint32_t label);
+static void pl_list_open(void);
 static void seq_turn(int32_t s)                   /* (V10.7.33) SEQ held + PRESETS: the step, s detents (was PRESETS alone) */
 {
     btn_down(B_SEQ); frame();
@@ -499,9 +505,9 @@ static int test_sound_loads(void)
                  preset_pat_hint() == 12 && ui.ppick == 12 && str_eq(PATTERNS[12].name, "ARP"));
     t->p[P_AMODE] = 2;
     before = *t;
-    for (i = 0; i < ENGINES[0]->npresets; i++)   /* several loads, into the next engine */
+    for (i = 0; i < ENGINES[0]->npresets; i++)   /* several loads, round the engine's (V10.7.43: EDIT + PRESETS the next) */
         pr_turn(1);
-    bad += check("browsing on, into another engine: the steps still untouched", t->eng_req != before.eng_req &&
+    bad += check("browsing on, round the engine's sounds: the steps still untouched", t->eng_req == before.eng_req &&
                  !memcmp(t->step, before.step, sizeof t->step) && t->p[P_AMODE] == 2);
     t->step[0].note[0] = 99;                      /* recorded after the loads */
     {
@@ -11074,16 +11080,17 @@ static int test_preset_types(void)
         ok = song.playing != 0;
         for (t = 0; t < trk_live; t++) {
             song.sel = (uint8_t)t; frame();
+            uint32_t ne = 0, e0 = TSEL->eng_req, kk;
             p0 = preset_all_pos(&all);
-            for (i = 0; i < 2u * all; i++) {           /* right round the list, then left round it */
-                uint32_t a2, want = (preset_all_pos(&a2) + (i < all ? 1u : all - 1u)) % all;
-                pr_turn(i < all ? 1 : -1); events_block(CTL); frame();
-                ok &= preset_all_pos(&a2) == want && a2 == all;
+            for (i = 0; i < all; i++) ne += preset_all_at(i, &kk) == e0;
+            for (i = 0; i < 2u * ne; i++) {            /* (V10.7.43) right round the engine's sounds, then left round them */
+                pr_turn(i < ne ? 1 : -1); events_block(CTL); frame();
+                ok &= TSEL->eng_req == e0;
             }
             ok &= preset_all_pos(&all) == p0 && !msg_is("LIST ALL");
         }
         stop_transport(); frame();
-        bad += check("  LIST ALL: every track's PRESETS knob both ways round the whole list, playing (every engine, back again)", ok);
+        bad += check("  LIST ALL: every track's PRESETS knob both ways round its engine's sounds (V10.7.43), playing, back again", ok);
     }
     return bad;
 }
@@ -12352,7 +12359,7 @@ static int test_home_tracks(void)
     vxt_run(300, 1);
     ok &= song.playing && trk[0].seq_idx != i && memcmp(a, host_screen + LZ_GRAPH_Y * 240, sizeof a) != 0;
     stop_transport(); frames(64);
-    turn(EN_PRESET, 1); frame();                        /* PRESETS: the list over it, OCT- back */
+    pl_list_open();                                     /* SAVE + PRESETS: the list over it, OCT- back (V10.7.43) */
     ok &= !ui.home && cur_page()->graph == GR_BROWSE;
     press(B_OCTDN); frames(64);
     ok &= home_tracks();
@@ -14445,6 +14452,10 @@ static int test_auto_knobs(void)
  * tempo. (V10.7.43, a user: "a lot of button presses just to preview a preset") every move of the pick loads it at once
  * (PRESETS, KNOB 2); OCT+ keeps it and closes; OCT- puts back what every track it loaded into had when the list opened;
  * left any other way (untouched PL_MS, a button) the sound heard stays */
+static void pl_list_open(void)                    /* (V10.7.43) the list over the page: SAVE held + PRESETS */
+{
+    btn_down(B_SAVE); frame(); turn(EN_PRESET, 1); btn_up(B_SAVE); frame();
+}
 static int test_presets_back(void)
 {
     int ok;
@@ -14454,7 +14465,7 @@ static int test_presets_back(void)
     e0 = TSEL->eng_req; pr0 = TSEL->preset;
     go_title("ENV"); frame();
     pg = ui.page;
-    turn(EN_PRESET, 1);
+    pl_list_open();
     ok = !ui.home && cur_page()->graph == GR_BROWSE && pl_ret == 1u && TSEL->preset == pr0 && TSEL->eng_req == e0;
     turn(EN_PRESET, 1);                                 /* (V10.7.43: the pick moved, loaded at once) */
     ok &= (TSEL->preset != pr0 || TSEL->eng_req != e0) && pl_cur != 0u && pl_snd == 1u << 4 && pl_ret == 1u;
@@ -14462,7 +14473,7 @@ static int test_presets_back(void)
     ok &= preset_pos(&total) == pl_cur - 1u;            /* (the sound heard is the one picked) */
     press(B_OCTDN);                                     /* OCT-: the sound the list found */
     ok &= ui.page == pg && !ui.home && !pl_ret && TSEL->preset == pr0 && TSEL->eng_req == e0 && msg_is("SOUND BACK");
-    turn(EN_PRESET, 1); turn(EN_PRESET, 1); turn(EN_PRESET, 1);
+    pl_list_open(); turn(EN_PRESET, 1); turn(EN_PRESET, 1);
     pr1 = TSEL->preset; e1 = TSEL->eng_req;
     ok &= pr1 != pr0 || e1 != e0;
     press(B_OCTUP);                                     /* OCT+: kept, closed */
@@ -14470,11 +14481,11 @@ static int test_presets_back(void)
     ok &= !snd_dirty(TSEL);
     TSEL->p[P_E0] = (int16_t)(TSEL->p[P_E0] ^ 1);
     ok &= snd_dirty(TSEL);                              /* (edited: the list's mark) */
-    turn(EN_PRESET, 1); turn(EN_PRESET, 1);
+    pl_list_open(); turn(EN_PRESET, 1);
     pr0 = TSEL->preset; e0 = TSEL->eng_req;
     frames(PL_MS + 200u);                               /* (untouched: closed, the sound heard kept) */
     ok &= ui.page == pg && !pl_ret && TSEL->preset == pr0 && TSEL->eng_req == e0 && (pr0 != pr1 || e0 != e1);
-    turn(EN_PRESET, 1); turn(EN_PRESET, -1); turn(EN_PRESET, -1);
+    pl_list_open(); turn(EN_PRESET, -1); turn(EN_PRESET, -1);
     pr1 = TSEL->preset; e1 = TSEL->eng_req;
     press(B_LFO); frame();                              /* (left by a button: kept) */
     ok &= !pl_ret && cur_page()->fam == FAM_LFO && TSEL->preset == pr1 && TSEL->eng_req == e1 && (pr1 != pr0 || e1 != e0);
@@ -14483,7 +14494,7 @@ static int test_presets_back(void)
     go_home(); frame();
     e0 = trk[1].eng_req; pr0 = trk[1].preset;
     e1 = trk[2].eng_req; pr1 = trk[2].preset;
-    turn(EN_PRESET, 1);
+    pl_list_open();
     ok &= !ui.home && pl_ret == 2u;
     turn(EN_K2, 1);                                     /* KNOB 2: the next engine's first, loaded */
     ok &= trk[1].eng_req != e0;
@@ -14494,7 +14505,7 @@ static int test_presets_back(void)
     press(B_OCTDN);                                     /* OCT-: both tracks as the list found them */
     ok &= ui.home && !pl_ret && trk[1].eng_req == e0 && trk[1].preset == pr0 && trk[2].eng_req == e1 &&
           trk[2].preset == pr1 && song.sel == 2u;
-    turn(EN_PRESET, 1);
+    pl_list_open();
     turn(EN_K3, 1);                                     /* KNOB 3: USER (the user's sounds alone) */
     ok &= pl_src() == 1u;
     turn(EN_K3, 1);                                     /* .. FAVORITES */
@@ -14519,7 +14530,7 @@ static int test_presets_back(void)
         song.g[G_BPM] = bpm;
     }
     list_put(0);
-    return check("PRESETS: a list (opened by its first turn; V10.7.43 each turn loads the sound picked at once, OCT+ keeps it, OCT- the sounds before, untouched / a button: kept; KNOB 1-4 TRACK ENGINE SOURCE TYPE, the edit mark); SEQ held + PRESETS the step, HOME held + PRESETS the tempo (V10.7.33)", ok);
+    return check("PRESETS: a list (V10.7.43: SAVE held + PRESETS opens it over the page, PRESETS alone the next sound; each turn loads the sound picked at once, OCT+ keeps it, OCT- the sounds before, untouched / a button: kept; KNOB 1-4 TRACK ENGINE SOURCE TYPE, the edit mark); SEQ held + PRESETS the step, HOME held + PRESETS the tempo (V10.7.33)", ok);
 }
 /* (V10.7.43) PRESETS' audition under the hands: a key held through the loads sounds on in each sound (same engine or
  * another), let go it ends; a DRUM-X track's kits loaded as they are picked, OCT- puts the kit back */
@@ -14539,7 +14550,7 @@ static int test_presets_audition(void)
     t->engine = t->eng_req;
     for (b = 0; b < 8u; b++) events_block(CTL), mix_block(o, CTL);
     go_title("ENV"); frame();
-    turn(EN_PRESET, 1);                                 /* (the list open) */
+    pl_list_open();                                     /* (the list open: SAVE held + PRESETS, V10.7.43) */
     trk_note_on(t, 60, 100);
     for (b = 0; b < 20u; b++) events_block(CTL), mix_block(o, CTL);
     ok = 1;
@@ -14587,7 +14598,7 @@ static int test_presets_audition(void)
     set_engine_of(TSEL, ENGI_DRUM);
     dx_kit_load(0);
     memcpy(kit, dx_kit, sizeof kit);
-    turn(EN_PRESET, 1); turn(EN_PRESET, 1);             /* (the next kit, loaded) */
+    pl_list_open(); turn(EN_PRESET, 1);                 /* (the next kit, loaded) */
     ok &= trk_eng(TSEL) == ENGI_DRUM && memcmp(kit, dx_kit, sizeof kit) != 0;
     press(B_OCTDN);
     ok &= trk_eng(TSEL) == ENGI_DRUM && !memcmp(kit, dx_kit, sizeof kit);
