@@ -395,7 +395,9 @@ static __attribute__((noinline)) void macro_master(void)
     }
     ain_any = (uint8_t)any;
     ain_sw = (uint8_t)sw1;
-    life_master();                                      /* (V10.7.34) LIFE's block: the beings, who moves whom */
+#if FELUCCA_LIFE
+    life_master();
+#endif                                      /* (V10.7.34) LIFE's block: the beings, who moves whom */
     clip_eff = (int16_t)clamp(song.g[G_CLIP] + off[0], 0, 100);
     pnch_eff = (int16_t)clamp(song.g[G_PUNCH] + off[1], 0, 100);
     for (k = 0; k < 8u; k++)

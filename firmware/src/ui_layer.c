@@ -1048,6 +1048,8 @@ static __attribute__((noinline)) void pfm_say(uint32_t lay, int32_t s)
     if (s) {
         uint32_t key = 31u - (uint32_t)__builtin_clz(kb_layer & ((1u << 27) - 1u)), l = pfm.lay % 3u, sl = perf_slot(key);
         uint32_t e = (pfm_get(l, sl) + (s > 0 ? 1u : PA_N - 1u)) % PA_N;
+        if (!FELUCCA_LIFE && e == PF_LMAX)                /* (V10.7.45: LIFE out, its punch-in skipped) */
+            e = (e + (s > 0 ? 1u : PA_N - 1u)) % PA_N;
         pfm.map[l][sl] = pfm_row(l)[sl] = (uint8_t)(e + 1u);
         str_cpy(b, e == PF_N ? "-" : PF_NAME[e], sizeof b);
     } else {

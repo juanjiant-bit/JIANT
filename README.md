@@ -17,7 +17,7 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.44
+## This release: V10.7.45
 
 ### Installing
 
@@ -103,8 +103,8 @@ Every detail: the [Changelog](#changelog) and the manual's
 
 If the FM-1 crashes, the red screen stays **10 seconds** and names the core, the VEC, PC and SP, and the bus master
 that wrote or read where it should not. **Take a photo of it**, then power on and open **MENU › ABOUT**, which keeps
-the CRASH line until power-off. Report both, with the version you installed, in a
-[GitHub issue](https://github.com/juanjiant-bit/JIANT/issues/new/choose).
+the CRASH line until power-off. Report both, with the version you installed, on the JIANT Discord server
+(GitHub issues are closed).
 
 ## Navigation
 

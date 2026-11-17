@@ -69,17 +69,17 @@ enum { PF_R8, PF_R16, PF_R32, PF_REV, PF_TAPE,
  * settings (ui.c pfm_save; settings_persist.c pfm_load), in the pool (zeroed at boot: the defaults) */
 static const uint8_t PF_DEF[3][27] = {
     {0, 1, 2, 3, 4, 5, 6, 7, PF_FRZ, 9, 10, 11, 12, 13, 14, PF_COMB,
-     PA_M1, PA_M1 + 1, PA_M1 + 2, PA_M1 + 3, PF_RVA, PF_RING, PF_LP3, PF_LMAX, PF_LP5, PF_LP7, PF_GLT},
+     PA_M1, PA_M1 + 1, PA_M1 + 2, PA_M1 + 3, PF_RVA, PF_RING, PF_LP3, PF_DLA, PF_LP5, PF_LP7, PF_GLT},
     {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, PF_COMB,
-     PF_PUP, PF_PDN, PF_FRZ, PF_RVA, PF_DLA, PF_RING, PF_LP3, PF_LMAX, PF_LP5, PF_LP7, PF_GLT},
+     PF_PUP, PF_PDN, PF_FRZ, PF_RVA, PF_DLA, PF_RING, PF_LP3, PF_LPF, PF_LP5, PF_LP7, PF_GLT},
     {0, 1, 2, PF_LPF, PF_HPF, 5, 6, 7, PF_DECM, PF_DECP, 10, 11, 12, 13, 14, PA_LOCK,
-     PA_M1, PA_M1 + 1, PA_M1 + 2, PA_M1 + 3, PA_M1 + 4, PA_M1 + 5, PF_LP3, PF_LMAX, PF_LP5, PF_LP7, PF_GLT}};
+     PA_M1, PA_M1 + 1, PA_M1 + 2, PA_M1 + 3, PA_M1 + 4, PA_M1 + 5, PF_LP3, PF_RVA, PF_LP5, PF_LP7, PF_GLT}};
 static struct { uint8_t map[3][27], lay, kmute, lockrq; } pfm __attribute__((section(".pool")));
 #define FELUCCA_PFM 1                                 /* (settings_persist.c: the layouts loaded) */
 static uint32_t pfm_get(uint32_t l, uint32_t s)
 {
     uint32_t b = pfm.map[l][s];
-    return b && b <= PA_N ? b - 1u : PF_DEF[l][s];
+    return b && b <= PA_N && (FELUCCA_LIFE || b - 1u != PF_LMAX) ? b - 1u : PF_DEF[l][s];   /* (V10.7.45: LIFE MAX gone, a saved one the layout's) */
 }
 #define PF_BIT(e) (1u << (e))
 #define PF_REPEAT 0x7u                                         /* the three REPEAT rates */
