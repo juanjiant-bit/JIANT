@@ -216,6 +216,6 @@ sends/ANALOG/delay 4d0a60684b76a7a0
 sends/ANALOG/reverb 1a9a37ccdc64106c
 sends/ANALOG/all 7483195a25ec3225
 sends/ANALOG/dist 1962a4920e4dfc2c
-song/4track_mix d2f956c9322778c3
+song/4track_mix 4d8741ee93e892e7
 slicer/gate/ANALOG_ACID ca8aa69bd572d660
-slicer/song_gate_stut dc8962b8707c2b06
+slicer/song_gate_stut af28fb96f007ebed

@@ -26,7 +26,7 @@
  * env: GOLDEN_UPDATE=1 rewrites GOLDEN_FILE, BUDGET_UPDATE=1 rewrites CPU_FILE (on purpose: review the
  * diff), VERBOSE=1 prints every render's numbers, JOBS=n children at once (default 8). */
 #define main hostsim_main
-#define HOST_LIFE LIFE_DEF                 /* (V10.7.34) the golden renders at the default LIFE, as the firmware powers on (LIFE=0:
+#define HOST_LIFE 25                       /* (V10.7.34) the golden renders with LIFE on (V10.7.44: at 25, TALK BREAK WEB at power-on; LIFE=0:
                                           * tests/golden_life0.txt, the renders of before) */
 #include "hostsim.c"
 #undef main
