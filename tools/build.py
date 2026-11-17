@@ -191,7 +191,8 @@ def build_loader():
 # (0.9.9-beta4) and the buses' per-block code both cores run (fx.c fx_buses, from fx_run0 on either core): the delay's
 # line (dly_lo and its helpers), the reverb models and their dispatch, the chorus's admission, the DIST's shapers; the
 # I-cache (32 KiB, shared by both cores and the UI) kept for the engines (Kirill's audit, LOOM-8)
-HOT_FNS = ("mix_block", "mix_part_m0", "fx_run0", "perf_begin", "perf_pre", "perf_block", "perf_master", "slicer_bus",
+# V48: keep the per-sample reverse/filter helpers hot; perf_begin runs once per block.
+HOT_FNS = ("mix_block", "mix_part_m0", "fx_run0", "perf_rtp", "pf_svf", "perf_pre", "perf_block", "perf_master", "slicer_bus",
            "dly_lo", "dly_grain", "dly_grain_adv", "dly_wow_adv", "dly_line_clear", "dly_rate", "fx_rest",
            "rev_run", "rev_idle", "rev_room", "rev_room_mod", "rev_spring", "rev_spring_side", "rev_cloud", "rev_shimmer",
            "rev_reso", "cho_admit", "dist_shape", "dist_amp")

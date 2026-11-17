@@ -68,8 +68,9 @@ enum { PF_R8, PF_R16, PF_R32, PF_REV, PF_TAPE,
  * DEC- DEC+, six mutes, G5 LOCK). perf_map: what the user set (action + 1; 0 the layout's own), saved in the system
  * settings (ui.c pfm_save; settings_persist.c pfm_load), in the pool (zeroed at boot: the defaults) */
 static const uint8_t PF_DEF[3][27] = {
-    {0, 1, 2, 3, 4, 5, 6, 7, PF_FRZ, 9, 10, 11, 12, 13, 14, PF_COMB,
-     PA_M1, PA_M1 + 1, PA_M1 + 2, PA_M1 + 3, PF_RVA, PF_RING, PF_LP3, PF_DLA, PF_LP5, PF_LP7, PF_GLT},
+    /* V48 default: six mutes, DEC+ / DEC- replace COMB / GLITCH. Saved custom keys stay intact. */
+    {0, 1, 2, 3, 4, 5, 6, 7, PF_FRZ, 9, 10, 11, 12, 13, 14, PF_DECP,
+     PA_M1, PA_M1 + 1, PA_M1 + 2, PA_M1 + 3, PA_M1 + 4, PA_M1 + 5, PF_LP3, PF_DLA, PF_RVA, PF_LP7, PF_DECM},
     {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, PF_COMB,
      PF_PUP, PF_PDN, PF_FRZ, PF_RVA, PF_DLA, PF_RING, PF_LP3, PF_LPF, PF_LP5, PF_LP7, PF_GLT},
     {0, 1, 2, PF_LPF, PF_HPF, 5, 6, 7, PF_DECM, PF_DECP, 10, 11, 12, 13, 14, PA_LOCK,
@@ -200,7 +201,7 @@ static struct {
 static const uint8_t PF_DEN[PF_R32 + 1] = {2, 4, 8};
 static uint32_t perf_len(uint32_t e) { return e <= PF_R32 ? beat_samples() / PF_DEN[e] : 0u; }
 /* the effects that can run at the tempo: a REPEAT longer than the loop cannot */
-static uint32_t perf_avail(void)
+static __attribute__((noinline)) uint32_t perf_avail(void)
 {
     uint32_t e, m = ~0u, b = beat_samples();
     for (e = PF_R8; e <= PF_R32; e++)
@@ -360,12 +361,42 @@ static __attribute__((noinline)) void perf_unhush(void)   /* (out of perf_begin:
                 pf.mg[k] = 32768;
         }
 }
+/* Reserve estimated FX work before a new punch enters, in both track modes.
+ * A denied press stays denied until release, avoiding audible on/off hunting.
+ * Only one buffer effect renders at a time, so it occupies one slot. */
+static uint32_t perf_denied, perf_allowed;
+static __attribute__((noinline)) uint32_t perf_budget(uint32_t held)
+{
+    uint32_t e, pick, keep, count, max = 2u;
+    perf_denied &= held;
+    pick = perf_pick(held);
+    held &= ~PF_BUF;
+    if (pick != PF_N) held |= PF_BIT(pick);
+    held &= ~perf_denied;
+    keep = held & perf_allowed;
+    if (load_all_q8 >= (70u << 8)) max = 1u;
+    if (load_all_q8 >= (80u << 8)) max = 0u;
+    count = (uint32_t)__builtin_popcount(keep);
+    while (count > max) {
+        uint32_t drop = keep & (0u - keep);
+        keep &= ~drop; perf_denied |= drop; count--;
+    }
+    for (e = 0; e < PF_N; e++) if ((held & ~keep & ~perf_denied) & PF_BIT(e)) {
+        uint32_t cost = 10u << 8; /* conservative reserve per new audio effect */
+        load_bound();
+        if (count >= max || load_pred_q8 + cost > (load_limit() << 8)) perf_denied |= PF_BIT(e);
+        else { keep |= PF_BIT(e); count++; load_pred_q8 += cost; load_fx_q8 += cost; }
+    }
+    perf_allowed = keep;
+    return keep;
+}
 static void perf_gfx(uint32_t n);
 static __attribute__((noinline)) int perf_begin(uint32_t n)
 {
     uint32_t held = perf_kill ? 0u : (perf_held | perf_latched) & perf_avail() & ~PF_NOTES;
     uint32_t q, k, ph0, bnd, mon = perf_kill ? 0u : (perf_solo ? ~(uint32_t)perf_solo & ((1u << NTRK) - 1u) : 0u) | pfm.kmute;
     int32_t m;
+    held = perf_budget(held);
     if (!held && !mon && !pf.busy && !(perf_k[0] | perf_k[1] | perf_k[2])) {   /* idle: the clock only */
         pf.ph += n;
         pf.sync = 0;
@@ -469,17 +500,19 @@ static __attribute__((noinline)) void perf_wet(int32_t *ml, int32_t *mr, int32_t
     uint32_t i, a = pf.act;
     int32_t rt = (a >> PF_RVA) & 1u ? 32768 : 0, dt = (a >> PF_DLA) & 1u ? 32768 : 0;
     int32_t et = (a >> PF_D16) & 1u ? 32768 : 0;
+    /* Settled gains need no ramps or multiplies. Share the sample loop with
+     * the transition path, preserving two delay additions for D16 + DLY ALL. */
+    uint32_t ramp = pfw.ew != et || pfw.rw != rt || pfw.dw != dt;
     for (i = 0; i < n; i++) {
         int32_t x = (ml[i] + mr[i] + bl[i] + br[i]) >> 1, g;
-        pfw.ew += clamp(et - pfw.ew, -SL_SLOPE, SL_SLOPE);   /* (DLY 1/16: the dry kept, all of it into the delay too) */
-        if (pfw.ew)
-            sd[i] += mulq16(x, (uint32_t)pfw.ew << 1);
-        pfw.rw += clamp(rt - pfw.rw, -SL_SLOPE, SL_SLOPE);
-        pfw.dw += clamp(dt - pfw.dw, -SL_SLOPE, SL_SLOPE);
-        if (pfw.rw)
-            sr[i] += mulq16(x, (uint32_t)pfw.rw << 1);
-        if (pfw.dw)
-            sd[i] += mulq16(x, (uint32_t)pfw.dw << 1);
+        if (ramp) {
+            pfw.ew += clamp(et - pfw.ew, -SL_SLOPE, SL_SLOPE);
+            pfw.rw += clamp(rt - pfw.rw, -SL_SLOPE, SL_SLOPE);
+            pfw.dw += clamp(dt - pfw.dw, -SL_SLOPE, SL_SLOPE);
+        }
+        if (pfw.ew) sd[i] += ramp ? mulq16(x, (uint32_t)pfw.ew << 1) : x;
+        if (pfw.rw) sr[i] += ramp ? mulq16(x, (uint32_t)pfw.rw << 1) : x;
+        if (pfw.dw) sd[i] += ramp ? mulq16(x, (uint32_t)pfw.dw << 1) : x;
         g = pfw.rw > pfw.dw ? pfw.rw : pfw.dw;
         if (g) {
             uint32_t k = (uint32_t)(32768 - g) << 1;
@@ -494,7 +527,7 @@ static __attribute__((noinline)) void perf_wet(int32_t *ml, int32_t *mr, int32_t
  * least 100; DLY 1/16: the delay's TIME 1/16 and FEEDBK 95 (fx.c dly_fb: under self-oscillation, its loop's saturation
  * bounds it), MIX at least 100; let go, a bar of TIME 1/16 at FEEDBK 30: the echoes die out quickly, then the user's
  * delay (the matrix's offset, gfx_off, written again by macro_master every block) */
-static void pf_goff(uint32_t k, int32_t v) { gfx_off[k] = (int16_t)(gfx_off[k] + v - gfx_val(k)); }
+static __attribute__((noinline)) void pf_goff(uint32_t k, int32_t v) { gfx_off[k] = (int16_t)(gfx_off[k] + v - gfx_val(k)); }
 static __attribute__((noinline)) void perf_gfx(uint32_t n)
 {
     uint32_t e = (pf.act >> PF_D16) & 1u;
@@ -517,7 +550,7 @@ static __attribute__((noinline)) void perf_pre(int32_t *ml, int32_t *mr, int32_t
 {
     uint32_t i;
     int32_t m = perf_k[2] * 327;
-    for (i = 0; i < n; i++) {
+    if (m || pf.td) for (i = 0; i < n; i++) {
         pf.td += clamp(m - pf.td, -SL_SLOPE, SL_SLOPE);
         if (pf.td) {
             int32_t x = mulq16((ml[i] + mr[i] + bl[i] + br[i]) >> 1, (uint32_t)pf.td << 1);
@@ -722,7 +755,7 @@ static __attribute__((noinline)) int perf_rtp(int32_t l, int32_t r)
 {
     uint32_t g0, t = pf.u.r.t, L = pf.u.r.len, g = 32768u;
     if (pf.mode == BM_FRZ)                          /* (V10.7.37: from here, perf_buf as it was) */
-        return perf_frz(l, r);
+        { int (*f)(int32_t, int32_t) = perf_frz; FM1_OPAQUE(f); return f(l, r); }
     pf.wr = pb_rec(pf.wr, l, r);
     g0 = 2u * pf.wr + pf.odd;
     if (pf.mode == BM_REV) {
@@ -969,7 +1002,7 @@ static __attribute__((noinline)) void perf_buf(int32_t *pl, int32_t *pr)
 }
 
 /* one channel of a state-variable filter (k = 1): x in Q15 >> 2 */
-static inline int32_t pf_svf(int32_t x, int32_t *z, const int16_t *c, int hp)
+static __attribute__((noinline)) int32_t pf_svf(int32_t x, int32_t *z, const int16_t *c, int hp)
 {
     int32_t v3 = x - z[1], v1 = (c[0] * z[0] + c[1] * v3) >> 14, v2 = z[1] + ((c[1] * z[0] + c[2] * v3) >> 14);
     z[0] = 2 * v1 - z[0];
@@ -992,6 +1025,13 @@ static __attribute__((noinline)) void perf_block(int32_t *bl, int32_t *br, uint3
     frz_on = pf.mode == BM_FRZ && pf.state;            /* (V10.7.41: voice.c voice_soft) */
     if (pf.split)
         perf_switch(a);
+    uint32_t filter = lt || ht || ct || pf.la || pf.ha || pf.cw;
+    if (!filter) {
+        memset(pf.lz, 0, sizeof pf.lz);
+        memset(pf.hz, 0, sizeof pf.hz);
+    }
+    if (pf.mode == BM_NONE && !(pf.act & PF_BUF) && !filter)
+        goto post;
     for (i = 0; i < n; i++) {
         int32_t l = bl[i], r = br[i];
         if (i == pf.split) {
@@ -1000,39 +1040,42 @@ static __attribute__((noinline)) void perf_block(int32_t *bl, int32_t *br, uint3
         }
         if (pf.mode != BM_NONE)
             perf_buf(&l, &r);
-        pf.la += clamp(lt - pf.la, -SL_SLOPE, SL_SLOPE);
-        if (pf.la) {
-            int32_t fl = pf_svf(clamp(l >> 2, -32767, 32767), &pf.lz[0], pf.lk, 0) << 2;
-            int32_t fr = pf_svf(clamp(r >> 2, -32767, 32767), &pf.lz[2], pf.lk, 0) << 2;
-            l = pf_mix(l, fl, pf.la);
-            r = pf_mix(r, fr, pf.la);
-        } else {
-            pf.lz[0] = pf.lz[1] = pf.lz[2] = pf.lz[3] = 0;
-        }
-        pf.ha += clamp(ht - pf.ha, -SL_SLOPE, SL_SLOPE);
-        if (pf.ha) {
-            int32_t fl = pf_svf(clamp(l >> 2, -32767, 32767), &pf.hz[0], pf.hk, 1) << 2;
-            int32_t fr = pf_svf(clamp(r >> 2, -32767, 32767), &pf.hz[2], pf.hk, 1) << 2;
-            l = pf_mix(l, fl, pf.ha);
-            r = pf_mix(r, fr, pf.ha);
-        } else {
-            pf.hz[0] = pf.hz[1] = pf.hz[2] = pf.hz[3] = 0;
-        }
-        {   /* CRUSH: fewer bits, a held sample (KNOB 2) */
-            pf.cw += clamp(ct - pf.cw, -SL_SLOPE, SL_SLOPE);
-            if (pf.cw) {
-                if (++pf.cn >= hold) {
-                    pf.cn = 0;
-                    pf.chl = ((l >> sh) << sh) + (1 << (sh - 1u));
-                    pf.chr = ((r >> sh) << sh) + (1 << (sh - 1u));
+        if (filter) {
+            pf.la += clamp(lt - pf.la, -SL_SLOPE, SL_SLOPE);
+            if (pf.la) {
+                int32_t fl = pf_svf(clamp(l >> 2, -32767, 32767), &pf.lz[0], pf.lk, 0) << 2;
+                int32_t fr = pf_svf(clamp(r >> 2, -32767, 32767), &pf.lz[2], pf.lk, 0) << 2;
+                l = pf_mix(l, fl, pf.la);
+                r = pf_mix(r, fr, pf.la);
+            } else {
+                pf.lz[0] = pf.lz[1] = pf.lz[2] = pf.lz[3] = 0;
+            }
+            pf.ha += clamp(ht - pf.ha, -SL_SLOPE, SL_SLOPE);
+            if (pf.ha) {
+                int32_t fl = pf_svf(clamp(l >> 2, -32767, 32767), &pf.hz[0], pf.hk, 1) << 2;
+                int32_t fr = pf_svf(clamp(r >> 2, -32767, 32767), &pf.hz[2], pf.hk, 1) << 2;
+                l = pf_mix(l, fl, pf.ha);
+                r = pf_mix(r, fr, pf.ha);
+            } else {
+                pf.hz[0] = pf.hz[1] = pf.hz[2] = pf.hz[3] = 0;
+            }
+            {   /* CRUSH: fewer bits, a held sample (KNOB 2) */
+                pf.cw += clamp(ct - pf.cw, -SL_SLOPE, SL_SLOPE);
+                if (pf.cw) {
+                    if (++pf.cn >= hold) {
+                        pf.cn = 0;
+                        pf.chl = ((l >> sh) << sh) + (1 << (sh - 1u));
+                        pf.chr = ((r >> sh) << sh) + (1 << (sh - 1u));
+                    }
+                    l = pf_mix(l, pf.chl, pf.cw);
+                    r = pf_mix(r, pf.chr, pf.cw);
                 }
-                l = pf_mix(l, pf.chl, pf.cw);
-                r = pf_mix(r, pf.chr, pf.cw);
             }
         }
         bl[i] = l;
         br[i] = r;
     }
+post:
     if ((pf.act & PF_BIT(PF_RING)) || pfw.rg) {    /* (V10.7.36, as perf_gfx: through a register) */
         void (*f)(int32_t *, int32_t *, uint32_t) = perf_ring;
         FM1_OPAQUE(f);

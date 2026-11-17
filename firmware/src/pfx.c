@@ -244,7 +244,10 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
             for (j = 0; j < 2u - (uint32_t)drum; j++) {
                 int16_t *v = &t->p[drum ? P_E3 : j ? P_REL : P_DEC];
                 pfx_keep[k][j] = *v;
-                *v = (int16_t)(sh ? *v / 3 : *v + (127 - *v) * 2 / 3);
+                if (sh)
+                    *v = (int16_t)(t->engine == ENGI_FM6 ? *v - 85 : *v / 3);
+                else if (!load_tight && load_all_q8 < (70u << 8))
+                    *v = (int16_t)(*v + (127 - *v) * 2 / 3); /* long tails only with spare CPU */
             }
         }
         if ((f & PFX_ATK) && !drum) {                   /* (JIANT) ATK+: the attack slow (DRUM: eng_drum.c) */

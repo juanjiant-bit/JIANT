@@ -4328,11 +4328,11 @@ static int test_layer(void)
     ui_power_on();
     usb.config = 1; mo = mo_w;
     btn_down(B_FX); key_down(white(15)); frame();
-    ok = ui.layer == LAYER_FX && !gates() && mo_w == mo && perf_held == PF_BIT(PF_COMB) && (kb_layer >> white(15)) & 1u;
+    ok = ui.layer == LAYER_FX && !gates() && mo_w == mo && perf_held == PF_BIT(PF_DECP) && (kb_layer >> white(15)) & 1u;
     turn(EN_K4, -40);
     ok &= perf_k[3] == 40;
     key_up(white(15)); btn_up(B_FX); frame();
-    bad += check("FX + G5: COMB held, silent, no MIDI; KNOB 4 turns; FX let go: K4 back to 0",
+    bad += check("FX + G5: DEC+ held, silent, no MIDI; KNOB 4 turns; FX let go: K4 back to 0",
                  ok && !perf_held && !ui.layer && !perf_k[3] && mo_w == mo);
     /* REVERB > TYPE (FX family, global): ROOM / SPRING on KNOB 1, kept by a project */
     ui_power_on();
@@ -4475,7 +4475,7 @@ static int test_layer(void)
         song.g[G_BPM] = 120;
     }
     key_up(white(1)); btn_up(B_FX); frame();
-    bad += check("map LEDs: held lit, the 16 white effects breathe (G5 COMB too), a too-long REPEAT dark", ok);
+    bad += check("map LEDs: held lit, the 16 white effects breathe (G5 DEC+ too), a too-long REPEAT dark", ok);
     usb.config = 0;
     return bad;
 }
@@ -5450,7 +5450,7 @@ static int test_rec_combos(void)
                  !strcmp(CE_FX[NELEM(CE_FX) - 3u].t, "MASTER") &&
                  !strcmp(CE_FX[NELEM(CE_FX) - 4u].t, "SL PITCH") && !page_visible(fx_page("PUNCH IN")) &&
                  !strcmp(CG_FX[NELEM(CG_FX) - 1u].nm, "MASTER") && !strcmp(FX_MOD[FX_NMOD - 1u], "MASTER"));
-    {   /* (V10.7.36) FX + G5 is COMB: the punch-in lane and the tracks' automation stay (the lane is cleared by REC + FX
+    {   /* (V10.7.36) FX + G5 is DEC+: the punch-in lane and the tracks' automation stay (the lane is cleared by REC + FX
          * or FX + PRESETS, KNOB 4 CLEAR only), named on the map */
         char nm[12];
         uint32_t st, k2;
@@ -5462,13 +5462,13 @@ static int test_rec_combos(void)
             btn_down(B_FX); frame(); key_down(white(15)); frame();
             st = ly_keyname(LAYER_FX, 0, 15u, nm);
             mix_block(o2, CTL); mix_block(o2, CTL);
-            ok = (perf_held & PF_BIT(PF_COMB)) != 0u;
+            ok = (perf_held & PF_BIT(PF_DECP)) != 0u;
             key_up(white(15)); btn_up(B_FX); frame();
-            ok &= pfx_lane[0] == 0x11 && pfx_lane[5] == 0x30 && motion_find(t, 4, P_DIST) >= 0 && !strcmp(nm, "COMB") &&
+            ok &= pfx_lane[0] == 0x11 && pfx_lane[5] == 0x30 && motion_find(t, 4, P_DIST) >= 0 && !strcmp(nm, "DEC+") &&
                   st != LS_OFF && st != LS_DIM;
             if (k2) { transport_req = 2; mix_block(o2, CTL); }
-            bad += check(k2 ? "  FX + G5 COMB playing: the punch-in lane and the FX automation stay"
-                            : "  FX + G5 COMB stopped: the lane and the FX automation stay, named on the map", ok);
+            bad += check(k2 ? "  FX + G5 DEC+ playing: the punch-in lane and the FX automation stay"
+                            : "  FX + G5 DEC+ stopped: the lane and the FX automation stay, named on the map", ok);
         }
         memset(pfx_lane, 0, sizeof pfx_lane);
     }
@@ -9275,6 +9275,7 @@ static int test_load_budget(void)
     ui_power_on();
     for (e = 0; e < NENGINES && ENGINES[e] != &ENG_ANALOG; e++) {}
     set_engine_of(t, e); t->engine = t->eng_req; t->p[P_VOICE] = V_POLY; t->p[P_SUS] = 127; t->p[P_MUTE] = 0;
+    t->p[P_VCAP] = 9; /* explicit eight: exercise shared-budget tail handling separately from AUTO four */
     trk_note_on(t, 60, 100); trk_note_on(t, 64, 100); trk_note_on(t, 67, 100);
     n0 = voices_busy();
     load_tight = 1;
@@ -10625,6 +10626,8 @@ static int test_click_menu(void)
         int16_t rt0 = song.g[G_RTYPE], dp0 = song.g[G_DPIT];
         int32_t o[2u * CTL];
         track_t ft = trk[0];
+        uint32_t six0 = trk_live > 4;
+        trks_put(0); /* check the original LOAD policies; six-track automatic caps have their own suite */
         load_put(1u);
         ok = sys_load == LOAD_LITE;
         song.g[G_RTYPE] = 2; mix_block(o, CTL); mix_block(o, CTL);
@@ -10638,7 +10641,7 @@ static int test_click_menu(void)
         song.g[G_RTYPE] = 2; go_title("REVERB"); frame();
         ok &= strstr(ui.col[0], "|SHIMR|LITE") != 0;   /* the card says it is swapped */
         load_put(2u);
-        ok &= !sys_load && trk_nvoice(&ft) == FM6_POLY;
+        ok &= !sys_load && trk_nvoice(&ft) == 4u;
         song.g[G_RTYPE] = 2; mix_block(o, CTL); mix_block(o, CTL);
         ok &= fx.rtype == 2u;                           /* FULL: SHIMMER again */
         press(B_HOME); frame();
@@ -10658,7 +10661,7 @@ static int test_click_menu(void)
             ft.engine = ENGI_FM6;
             ok &= trk_nvoice(&ft) == LITE_FM6_POLY;
             ft.engine = ENGI_DRUM;
-            ok &= trk_nvoice(&ft) == (ENGINES[ENGI_DRUM]->poly ? ENGINES[ENGI_DRUM]->poly : NVOICE);
+            ok &= trk_nvoice(&ft) == 4u;
             for (i = 0; i < NPAGES; i++) {
                 int sl = PAGES[i].graph == GR_SLCR || PAGES[i].graph == GR_SLPIT || str_eq(PAGES[i].title, "CHORUS");
                 if (sl) hidden &= !page_visible(i);
@@ -10678,6 +10681,7 @@ static int test_click_menu(void)
             bad += check("LOAD ECO: reverb SPRING (4 stages), no SLICER / chorus (pages hidden), 4 voices a synth, 6 shared, DRUM as ever; FULL back", ok);
         }
         song.g[G_RTYPE] = rt0; song.g[G_DPIT] = dp0; mix_block(o, CTL); mix_block(o, CTL);
+        trks_put(six0);
     }
     {   /* (0.6.71) the second core: some synth parts on it (here run at once, as core 1: mc_host), each core with its
          * own buffers; the sound bit for bit the one core's. A diced song, six tracks, FM6 and ANALOG among them, the
@@ -12730,13 +12734,13 @@ static int test_lz_edit(void)
         int16_t *hv;
         ok &= str_eq(page_desc(cur_page(), 0, &hv)->label, "UNISON") && str_eq(page_desc(cur_page(), 1, &hv)->label, "VEL") &&
               str_eq(page_desc(cur_page(), 2, &hv)->label, "IMAGE") && str_eq(page_desc(cur_page(), 3, &hv)->label, "VOICES");
-        ok &= TSEL->p[P_VCAP] == 0 && trk_nvoice(TSEL) == NVOICE;   /* (V10.7.38, the owner) VOICES: AUTO, n + 1 stored for n */
+        ok &= TSEL->p[P_VCAP] == 0 && trk_nvoice(TSEL) == 4u;   /* (V10.7.38, the owner) VOICES: AUTO, n + 1 stored for n */
         turn(EN_K4, 1); frame();                                    /* (1, the old REUSE: an AUTO the knob passes over) */
         ok &= TSEL->p[P_VCAP] == 2 && trk_nvoice(TSEL) == 1u;
         turn(EN_K4, 2); frame();
         ok &= TSEL->p[P_VCAP] == 4 && trk_nvoice(TSEL) == 3u;
         turn(EN_K4, -3); frame();
-        ok &= TSEL->p[P_VCAP] == 0 && trk_nvoice(TSEL) == NVOICE;
+        ok &= TSEL->p[P_VCAP] == 0 && trk_nvoice(TSEL) == 4u;
         set_engine_of(TSEL, ENGI_INPUT); frame();                   /* (EXT: no IMAGE, no VOICES, its voice is one) */
         ok &= str_eq(cur_page()->title, "VOICES 2") && page_desc(cur_page(), 2, &hv)->label[0] == '-' &&
               page_desc(cur_page(), 3, &hv)->label[0] == '-';
@@ -12745,14 +12749,14 @@ static int test_lz_edit(void)
     ok &= !nav_put(SEC_EDIT, "VOICES") && !nav_put(SEC_EDIT, "AUTO KNOBS") && nav_put(SEC_EDIT, "OUT");
     {   /* (V10.7.43) a kit's VOICES 2: VOICES alone, on KNOB 4 (DEST's slot: a DEST of before AUTO); it caps the kit's hits */
         const param_desc_t *d;
-        int16_t hv;
+        int16_t *hv;
         ok &= nav_put(SEC_EDIT, "VOICES 2") && (d = page_desc(cur_page(), 3, &hv)) != 0 && str_eq(d->label, "VOICES");
         {
             static track_t k;                       /* (the engine as the audio swaps it in) */
             k = *TSEL;
             k.engine = ENGI_DRUM;
             k.p[P_DDST] = 2;                        /* (a DEST of before: AUTO) */
-            ok &= trk_nvoice(&k) == DV_NLANE;
+            ok &= trk_nvoice(&k) == 4u;
             k.p[P_DDST] = 7;                        /* ("3") */
             ok &= trk_nvoice(&k) == 3u;
         }
@@ -12775,9 +12779,9 @@ static int test_lz_edit(void)
         project_load(1);
         frame();
         param_format(track_desc(&trk[0], P_VCAP), trk[0].p[P_VCAP], s, &u);
-        ok = trk[0].engine == 0u && trk_nvoice(&trk[0]) == NVOICE && str_eq(s, "AUTO") && trk[1].p[P_VCAP] == 4 &&
+        ok = trk[0].engine == 0u && trk_nvoice(&trk[0]) == 4u && str_eq(s, "AUTO") && trk[1].p[P_VCAP] == 4 &&
              trk_nvoice(&trk[1]) == 3u;
-        bad += check("V10.7.38 VOICES: a project with ALLOC REUSE loads AUTO (8 voices), VOICES 3 kept through a save", ok);
+        bad += check("V10.7.38 VOICES: a project with ALLOC REUSE loads AUTO (4 voices), VOICES 3 kept through a save", ok);
     }
     {   /* (V10.7.33) VOICES 3: KNOB 1 CRUSH, the track's (0..127 shown 0..100 %), on every engine's chain (a kit's too); DIST's
          * TYPE without it (SOFT HARD FOLD RECT AMP) */
@@ -14391,8 +14395,8 @@ static int test_scene(void)
     bad += check("SCENE page: KNOB 1 ON, KNOB 2 the track, its role shown", ok);
     key_down(white(7));                                  /* (C4 or so) */
     for (i = 0; i < 4u; i++) events_block(CTL);
-    ok = trk_gates(5) == 3u && trk_gates(4) == 1u && trk_gates(1) == 1u && trk[3].arp_phys > 0u && trk_gates(0) == 0u && trk_gates(2) == 0u;
-    bad += check("SCENE: one key, T6 a triad, T5 the bass, T2 the lead, T4 its arp; the kit and T3 (KEEP) not", ok);
+    ok = trk_gates(5) == 2u && trk_gates(4) == 1u && trk_gates(1) == 1u && trk[3].arp_phys > 0u && trk_gates(0) == 0u && trk_gates(2) == 0u;
+    bad += check("SCENE: one key, T6 capped at two chord voices, T5 bass, T2 lead, T4 arp; KEEP untouched", ok);
     key_up(white(7));
     for (i = 0; i < 4u; i++) events_block(CTL);
     bad += check("SCENE: the key up ends every role", trk_gates(5) == 0u && trk_gates(4) == 0u && trk_gates(1) == 0u && !trk[3].arp_phys);
