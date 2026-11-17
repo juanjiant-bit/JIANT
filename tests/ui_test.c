@@ -1229,7 +1229,7 @@ static int test_dximg(void)
     int16_t img;
     uint32_t l, side = 0;
     project_store_t st;
-    memset(dx_snd, 0, sizeof dx_snd);
+    memset(DX_UI.snd, 0, sizeof DX_UI.snd);
     dximg_hit(38, 0, &el, &er, &sr);                     /* the snare, IMAGE 0 */
     ok &= el > 0 && el - er < el / 32 && er - el < el / 32 && sr == 0 && !dx_xon;   /* (the master's own tiny width) */
     bad += check("DRUM IMAGE 0, no SEND: the part mono as before (L = R), nothing to the reverb", ok);
@@ -1281,37 +1281,39 @@ static int test_dximg(void)
         mc_host_cpu = keep_cpu;
         memset(dx_core, 0, sizeof dx_core);
     }
-    memset(dx_snd, 0, sizeof dx_snd);
-    dx_snd[DV_SNARE] = 3u << 6 | 63u;                   /* the snare alone to the REVERB */
+    memset(DX_UI.snd, 0, sizeof DX_UI.snd);
+    DX_UI.snd[DV_SNARE] = 3u << 6 | 63u;                   /* the snare alone to the REVERB */
     {
         int64_t a, b2, s1, s2;
         uint8_t keep[8];
-        memcpy(keep, dx_snd, sizeof keep);
+        memcpy(keep, DX_UI.snd, sizeof keep);
         dximg_hit(38, 0, &a, &b2, &s1);
-        memcpy(dx_snd, keep, sizeof keep);
+        memcpy(DX_UI.snd, keep, sizeof keep);
         dximg_hit(36, 0, &a, &b2, &s2);                 /* the kick: no SEND */
         bad += check("DRUM SEND: the snare's REVERB feeds the bus, the kick's none", s1 > 0 && s2 == 0);
     }
     ui_power_on();
-    memset(dx_snd, 0, sizeof dx_snd);
-    dx_snd[2] = 2u << 6 | 40u;
+    set_engine(ENGI_DRUM);
+    memset(DX_UI.snd, 0, sizeof DX_UI.snd);
+    DX_UI.snd[2] = 2u << 6 | 40u;
     project_capture(&proj_scratch);
     ok = proj_pack(&st, &proj_scratch);
-    memset(dx_snd, 0, sizeof dx_snd);
+    memset(DX_UI.snd, 0, sizeof DX_UI.snd);
     ok &= proj_import(&proj_scratch, &st, sizeof st) && !project_restore_runtime(&proj_scratch);
-    ok &= dx_snd[2] == (2u << 6 | 40u) && !dx_snd[0];
+    ok &= DX_UI.snd[2] == (2u << 6 | 40u) && !DX_UI.snd[0];
     bad += check("DRUM SEND: kept with the project (FUNC 'D' 'S')", ok);
-    memset(dx_snd, 0, sizeof dx_snd);
+    memset(DX_UI.snd, 0, sizeof DX_UI.snd);
     ui_power_on();
-    dx_hands = 9;                                       /* (0.7.8) KIT 3 > HANDS: in the kit's byte 0 beside the mutes */
+    set_engine(ENGI_DRUM);
+    DX_UI.hands = 9;                                       /* (0.7.8) KIT 3 > HANDS: in the kit's byte 0 beside the mutes */
     dx_mute_set(DXG_HAT);
     project_capture(&proj_scratch);
     ok = proj_pack(&st, &proj_scratch);
-    dx_hands = 0; dx_mute_set(0);
+    DX_UI.hands = 0; dx_mute_set(0);
     ok &= proj_import(&proj_scratch, &st, sizeof st) && !project_restore_runtime(&proj_scratch);
-    ok &= dx_hands == 9u && (dx_mute & DXG_ALL) == DXG_HAT;
+    ok &= DX_UI.hands == 9u && (DX_UI.mute & DXG_ALL) == DXG_HAT;
     bad += check("DRUM HANDS: kept with the project, beside the group mutes (0.7.9)", ok);
-    dx_hands = 0; dx_mute_set(0);
+    DX_UI.hands = 0; dx_mute_set(0);
     ui_power_on();
     {   /* (V10.31) SCENE kept with the project ('S' 'C'); none stored: OFF, all KEEP */
         static const uint8_t R6[NTRK] = {SC_KEEP, SC_CHORD, SC_BASS, SC_KEEP, SC_LEAD, SC_ARP};
@@ -1348,17 +1350,17 @@ static uint64_t dxlay_hash(uint32_t lane, uint8_t ly)
     int32_t y[CTL];
     uint32_t b, i;
     uint64_t h = 1469598103934665603ull;
-    uint8_t keep = dx_lay[lane], tone = dx_tone;
+    uint8_t keep = DX_UI.lay[lane], tone = DX_UI.tone;
     memset(&v, 0, sizeof v);
-    dx_lay[lane] = ly;
-    dx_tone = 0;
+    DX_UI.lay[lane] = ly;
+    DX_UI.tone = 0;
     dx_trigger(&v);
     for (b = 0; b < 30u; b++) {
-        dx_run(&dx_kit[lane], &v, 64, 0, 0, 0, 0, 0, 0, y, CTL);
+        dx_run(&DX_UI.lane[lane], &v, 64, 0, 0, 0, 0, 0, 0, y, CTL);
         for (i = 0; i < CTL; i++) h = (h ^ (uint32_t)y[i]) * 1099511628211ull;
     }
-    dx_lay[lane] = keep;
-    dx_tone = tone;
+    DX_UI.lay[lane] = keep;
+    DX_UI.tone = tone;
     return h;
 }
 static int test_dxlay(void)
@@ -1367,18 +1369,19 @@ static int test_dxlay(void)
     uint32_t i;
     project_store_t st;
     ui_power_on();
-    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+    set_engine(ENGI_DRUM); /* Edit and persist an actual DRUM track. */
+    memcpy(DX_UI.lane, DX_KIT_DEF, sizeof DX_UI.lane);
     ok &= dxlay_hash(DV_SNARE, 0) == dxlay_hash(DV_SNARE, 0);
     ok &= dxlay_hash(DV_SNARE, 12) != dxlay_hash(DV_SNARE, 0) && dxlay_hash(DV_BELL, 0x30) != dxlay_hash(DV_BELL, 0);
     ok &= dxlay_hash(DV_HATC, 15) != dxlay_hash(DV_HATC, 6);
     bad += check("DRUM LAYER / FEEDBK: each sound's, 0 as it was, more another sound", ok);
-    memcpy(dx_lay, DX_LAY_DEF, sizeof dx_lay);
-    dx_lay[DV_BELL] = 0x5Fu;
+    memcpy(DX_UI.lay, DX_LAY_DEF, sizeof DX_UI.lay);
+    DX_UI.lay[DV_BELL] = 0x5Fu;
     project_capture(&proj_scratch);
     ok = proj_pack(&st, &proj_scratch);
-    memset(dx_lay, 0, sizeof dx_lay);
+    memset(DX_UI.lay, 0, sizeof DX_UI.lay);
     ok &= proj_import(&proj_scratch, &st, sizeof st) && !project_restore_runtime(&proj_scratch);
-    ok &= dx_lay[DV_BELL] == 0x5Fu && dx_lay[DV_SNARE] == DX_LAY_DEF[DV_SNARE];
+    ok &= DX_UI.lay[DV_BELL] == 0x5Fu && DX_UI.lay[DV_SNARE] == DX_LAY_DEF[DV_SNARE];
     bad += check("DRUM LAYER: kept with the project (FUNC 'D' 'L')", ok);
     fg_set[2][1] = (fg_set_t){8, 2, -5};                 /* (0.6.52) FUGUE: T3's head 3 x3 PING -5 */
     project_capture(&proj_scratch);
@@ -1389,7 +1392,7 @@ static int test_dxlay(void)
     memset(fg_set, 0, sizeof fg_set);
     bad += check("FUGUE: kept with the project (FUNC 'F' 'G')", ok);
     system_init();
-    ok = !memcmp(dx_lay, DX_KITS[TRK_PR_DRUM].lay, sizeof dx_lay) && 1;   /* (V10.6d: the power-on kit's, ACOUSTIC) */
+    ok = !memcmp(DX_UI.lay, DX_KITS[TRK_PR_DRUM].lay, sizeof DX_UI.lay) && 1;   /* (V10.6d: the power-on kit's, ACOUSTIC) */
     for (i = 0; i < NTRK; i++) {   /* (0.9.9) TRK_DEF's preset sound (was the engine's own defaults: EDIT, envelope) */
         const engine_t *e = ENGINES[trk[i].eng_req % NENGINES];
         const preset_t *pr = &e->presets[TRK_DEF[i][1]];
@@ -1571,25 +1574,26 @@ static int test_dx_glue(void)
     int ok, bad = 0;
     uint32_t k;
     ui_power_on();
-    dx_glue = 0;
+    set_engine(ENGI_DRUM); /* Edit and persist an actual DRUM track. */
+    DX_UI.glue = 0;
     for (k = 0; k < 20u; k++)
         dx_kit3_knob(3u, 1);
-    ok = dx_glue == 15u;
+    ok = DX_UI.glue == 15u;
     for (k = 0; k < 7u; k++)
         dx_kit3_knob(3u, -1);
-    ok &= dx_glue == 8u && DX_TONE_FB(dx_tone) == 0u && dx_hands == 0u;
+    ok &= DX_UI.glue == 8u && DX_TONE_FB(DX_UI.tone) == 0u && DX_UI.hands == 0u;
     bad += check("DRUM-X GLUE on KIT 3 KNOB 4: 0 .. 15, the other knobs untouched", ok);
     project_capture(&before);
     ok = proj_pack(&a, &before) && proj_import(&after, &a, sizeof a) && after.dx_hands >> 4 == 8u;
-    dx_glue = 0;
+    DX_UI.glue = 0;
     project_capture(&before);
     ok &= proj_pack(&b, &before) && proj_import(&after, &b, sizeof b) && after.dx_hands >> 4 == 0u &&
           memcmp(&a, &b, sizeof a) != 0;
     after.dx_hands = (uint8_t)(after.dx_hands | 5u << 4);
     after.sum = proj_sum(&after);
-    ok &= !project_restore_runtime(&after) && dx_glue == 5u;
+    ok &= !project_restore_runtime(&after) && DX_UI.glue == 5u;
     bad += check("DRUM-X GLUE in the project: 8 back as 8, OFF as OFF, restored to the kit", ok);
-    dx_glue = 0;
+    DX_UI.glue = 0;
     return bad;
 }
 static int test_lfo_free(void)
@@ -2134,7 +2138,7 @@ static void busy_project(void)
     }
     set_engine_of(&trk[2], ENGI_FM6); set_engine_of(&trk[5], ENGI_ANALOG);
     song.g[G_BPM] = 97; song.g[G_RTYPE] = 3; song.g[G_TUNE] = 5; song.g[G_CLOCK] = 1;
-    tape_v[0] = 30; eq_v[1] = -4; dx_tone = 0x35u; dx_mot[XM_DPTH] = 50; pfx_lane[3] = 9;
+    tape_v[0] = 30; eq_v[1] = -4; DX_UI.tone = 0x35u; DX_UI.mot[XM_DPTH] = 50; pfx_lane[3] = 9;
     lyr_set(4, "LA LA");
     project_save(1);
     chain_config.count = 3;
@@ -4348,13 +4352,14 @@ static int test_layer(void)
                  ok && song.g[G_RTYPE] == 4);
     {   /* (0.5.1) the DRUM-X kit's X-MOD kept by a project (the kit's reserved bytes) */
         static const uint8_t XM[4] = {6, 90, 4, 70};
-        memcpy(dx_mot, XM, 4);
+        set_engine(ENGI_DRUM);
+        memcpy(DX_UI.mot, XM, 4);
         song.playing = 0;
         project_save(2);
-        memset(dx_mot, 0, 4);
+        memset(DX_UI.mot, 0, 4);
         project_load(2);
-        bad += check("X-MOD: a project keeps the kit's RATE DPTH SHPE RAND", !memcmp(dx_mot, XM, 4));
-        memset(dx_mot, 0, 4);
+        bad += check("X-MOD: a project keeps the kit's RATE DPTH SHPE RAND", !memcmp(DX_UI.mot, XM, 4));
+        memset(DX_UI.mot, 0, 4);
     }
     go_title("CHORUS");
     bad += check("  CHORUS page: CRT CDP STER (0.6.9)", cur_page()->fam == FAM_FX && cur_page()->id[0] == G_CRATE &&
@@ -4813,15 +4818,15 @@ static int test_edit_cycle(void)
         bad += check("V10.7.37 EDIT chain (DRUM): KIT (KIT KIT 2 KIT 3) . SOUND (1..3) . LEVELS (LEVELS LEVELS 2) . MOD (KIT LFO EROSION) . TONE (FILTER OUT VOICES 2)",
                      chain_walk(B_EDIT, CH_K, NELEM(CH_K), TP_K, NELEM(TP_K)));
         {   /* (0.6.58) KIT 3 turns BP and FEEDBK, (0.7.8) KNOB 3 the CLAP's HANDS, never IMAGE; STEREO's KNOB 1 is IMAGE */
-            uint8_t t0 = dx_tone, h0 = dx_hands;
+            uint8_t t0 = DX_UI.tone, h0 = DX_UI.hands;
             int16_t i0 = TSEL->p[P_DXIMG];
             go_title("KIT 3"); frame();
             turn(EN_K3, 3); frame();
-            ok = TSEL->p[P_DXIMG] == i0 && dx_tone == t0 && dx_hands > h0;
-            dx_hands = h0;
+            ok = TSEL->p[P_DXIMG] == i0 && DX_UI.tone == t0 && DX_UI.hands > h0;
+            DX_UI.hands = h0;
             go_title("OUT"); frame();
             turn(EN_K1, 5); frame();
-            ok &= TSEL->p[P_DXIMG] > i0 && dx_tone == t0;
+            ok &= TSEL->p[P_DXIMG] > i0 && DX_UI.tone == t0;
             TSEL->p[P_DXIMG] = i0;
             {   /* (V10.7.37) OUT's KNOB 4 the KEY MAP, 0..9 (KIT 4's): EXTENDED's KIK/TOM, then a sound's chromatic run */
                 int16_t km = TSEL->p[P_DKEYMODE];
@@ -5061,13 +5066,13 @@ static int test_quick_layers(void)
     lay_combo(B_GLO, black(6)); key_up(black(6)); frame();       /* black keys 7..10: the DRUM group mutes */
     lay_combo(B_GLO, black(8)); key_up(black(8));
     a = leds_at(0); b2 = leds_at(250);
-    ok = dx_mute == (DXG_KICK | DXG_HAT) && ((a & b2) >> black(7)) & 1u && !(((a | b2) >> black(6)) & 1u) &&
+    ok = DX_UI.mute == (DXG_KICK | DXG_HAT) && ((a & b2) >> black(7)) & 1u && !(((a | b2) >> black(6)) & 1u) &&
          !(((a | b2) >> black(8)) & 1u) && trk[1].p[P_MUTE] == 1;
     btn_up(B_GLO); frame();
     lay_combo(B_GLO, black(8)); key_up(black(8)); btn_up(B_GLO); frame();
-    ok &= dx_mute == DXG_KICK;
+    ok &= DX_UI.mute == DXG_KICK;
     lay_combo(B_GLO, white(6)); key_up(white(6)); btn_up(B_GLO); frame();
-    ok &= dx_mute == 0;
+    ok &= DX_UI.mute == 0;
     bad += check("GLO + black keys 7..10: KICK SNARE HAT PERC group mutes latched (lit = sounding), E4 clears them", ok);
     lay_combo(B_GLO, black(1)); key_up(black(1)); btn_up(B_GLO); frame();   /* (T2 muted again, as the test goes on) */
     lay_combo(B_GLO, black(1)); key_up(black(1)); frame();
@@ -5154,7 +5159,7 @@ static int test_quick_layers(void)
     set_engine_of(TSEL, ENGI_DRUM); go_home(); frame();
     my_steps(TSEL);
     before = *TSEL;
-    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+    memcpy(DX_UI.lane, DX_KIT_DEF, sizeof DX_UI.lane);
     live.cur = -1;
     lay_combo(B_EDIT, white(1)); key_up(white(1)); btn_up(B_EDIT); frame();
     ok = !ui.confirm && msg_is("NOTHING SAVED");
@@ -5171,25 +5176,25 @@ static int test_quick_layers(void)
     project_save(0);                                    /* the safe state: the section, stored (the music's slot) */
     ok = 1;
     TSEL->p[P_E0] = 3; TSEL->p[P_E2] = 120;              /* the sound and the kit wander off */
-    dx_kit[1].a[DXP_PITCH] = 99;
+    DX_UI.lane[1].a[DXP_PITCH] = 99;
     lay_combo(B_EDIT, white(1));
     ok &= ui.confirm == CF_RECALL_SOUND;
     key_up(white(1)); btn_up(B_EDIT); frame();
     press(B_OCTUP);
     ok &= !ui.confirm && msg_is("SOUND RECALLED") && TSEL->p[P_E0] == before.p[P_E0] &&
-          TSEL->p[P_E2] == before.p[P_E2] && dx_kit[1].a[DXP_PITCH] == DX_KIT_DEF[1].a[DXP_PITCH] &&
+          TSEL->p[P_E2] == before.p[P_E2] && DX_UI.lane[1].a[DXP_PITCH] == DX_KIT_DEF[1].a[DXP_PITCH] &&
           !memcmp(TSEL->step, before.step, sizeof before.step) && TSEL->eng_req == ENGI_DRUM;
     bad += check("  G3 RECALL (dialog, OCT+): the sound and the DRUM-X kit as the section stored them; the steps stay", ok);
     TSEL->p[P_E0] = 3;
-    dx_kit[1].a[DXP_PITCH] = 99;
+    DX_UI.lane[1].a[DXP_PITCH] = 99;
     {   /* (0.8.3) another DRUM track keeps the section's one kit: INIT leaves it (the kit is checked alone below) */
         uint32_t k, other = 0;
         for (k = 0; k < NTRK; k++) if (&trk[k] != TSEL && trk[k].eng_req == ENGI_DRUM) { other = k + 1u; break; }
         if (other) {
             btn_down(B_EDIT); frame(); key_down(white(0)); frame(); key_up(white(0)); btn_up(B_EDIT); frame();
             press(B_OCTUP);
-            bad += check("  F3 INIT with another DRUM track: the sound inits, the kit (theirs too) stays", msg_is("INIT, KIT KEPT") &&
-                         dx_kit[1].a[DXP_PITCH] == 99);
+            bad += check("  F3 INIT with another DRUM track: the sound inits, the kit (theirs too) stays", msg_is("SOUND INIT") &&
+                         DX_UI.lane[1].a[DXP_PITCH] == DX_KIT_DEF[1].a[DXP_PITCH]);
             trk[other - 1u].eng_req = 0;                 /* (then alone: the factory kit, as before) */
             TSEL->p[P_E0] = 3;
         }
@@ -5203,14 +5208,14 @@ static int test_quick_layers(void)
     press(B_OCTUP);
     bad += check("  F3 INIT (dialog, closes the layer, no tap; OCT+): the engine's first preset, the factory kit", ok &&
                  !ui.confirm && msg_is("SOUND INIT") && TSEL->p[P_E0] == ENG_DRUM.presets[0].e[0] &&
-                 dx_kit[1].a[DXP_PITCH] == DX_KIT_DEF[1].a[DXP_PITCH] && !memcmp(TSEL->step, before.step, sizeof before.step));
+                 DX_UI.lane[1].a[DXP_PITCH] == DX_KIT_DEF[1].a[DXP_PITCH] && !memcmp(TSEL->step, before.step, sizeof before.step));
     set_engine_of(TSEL, 0);
     TSEL->p[P_E1] = (int16_t)(TSEL->p[P_E1] + 7);
     btn_down(B_EDIT); frame(); key_down(white(0)); frame(); key_up(white(0)); btn_up(B_EDIT); frame();
     press(B_OCTUP);
     bad += check("  INIT on a synth: the engine's own defaults (0.6.49), dry", msg_is("SOUND INIT") &&
                  TSEL->p[P_E1] == ENGINES[0]->edit[1].def && TSEL->p[P_E4] == ENGINES[0]->edit[4].def && !TSEL->p[P_REV]);
-    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+    memcpy(DX_UI.lane, DX_KIT_DEF, sizeof DX_UI.lane);
     live.cur = -1;
 
     /* no layer in the menu or a dialog: GLO + a key plays */
@@ -8626,13 +8631,13 @@ static int test_lane_mutes(void)
     dx_mute_set(0);
     btn_down(B_EDIT); frame(); key_down(black(2)); frame(); key_up(black(2));
     a = leds_at(0); b2 = leds_at(250);
-    ok = (dx_mute & DXM_LANE(2)) && drum_muted(39) && !drum_muted(38) && !((a | b2) >> black(2) & 1u) &&
+    ok = (DX_UI.mute & DXM_LANE(2)) && drum_muted(39) && !drum_muted(38) && !((a | b2) >> black(2) & 1u) &&
          ((a & b2) >> black(1)) & 1u;
     btn_up(B_EDIT); frame();
     project_capture(&p);
     ok &= (p.dx_mute & DXM_LANE(2)) != 0;
     lay_combo(B_EDIT, black(2)); key_up(black(2)); btn_up(B_EDIT); frame();
-    ok &= !dx_mute;
+    ok &= !DX_UI.mute;
     bad += check("EDIT + black keys 1..8 on DRUM: each sound muted (CP here), lit = sounding; in the section", ok);
     return bad;
 }
@@ -8668,7 +8673,7 @@ static int test_dx_sound(void)
     int bad = 0, ok;
     uint32_t k, seen = 0;
     ui_power_on();
-    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);         /* (earlier tests may have turned SOUND's knobs) */
+    memcpy(DX_UI.lane, DX_KIT_DEF, sizeof DX_UI.lane);         /* (earlier tests may have turned SOUND's knobs) */
     set_engine_of(TSEL, ENGI_DRUM);
     for (k = 0; k < NPAGES; k++) seen |= PAGES[k].graph == GR_DXSND && page_visible(k);   /* (0.8.5: the lens's sets) */
     ok = seen;
@@ -8680,28 +8685,28 @@ static int test_dx_sound(void)
     go_title("SOUND");                                 /* (V10.7.37: no SOUND knob; the sound a key struck: CP here) */
     dx_ui_lane = 2; dx_ui_side = 0; dx_ui_seen = last_note;   /* (no key since: the page keeps its sound) */
     turn(EN_K3, 1);                                    /* SIDE: B */
-    k = dx_kit[2].b[DXP_PITCH];
+    k = DX_UI.lane[2].b[DXP_PITCH];
     turn(EN_K1, 3);                                    /* PITCH */
-    ok = dx_ui_lane == 2u && dx_ui_side == 1u && dx_kit[2].b[DXP_PITCH] > k && dx_kit[2].a[DXP_PITCH] == DX_KIT_DEF[2].a[DXP_PITCH];
+    ok = dx_ui_lane == 2u && dx_ui_side == 1u && DX_UI.lane[2].b[DXP_PITCH] > k && DX_UI.lane[2].a[DXP_PITCH] == DX_KIT_DEF[2].a[DXP_PITCH];
     bad += check("  SOUND: PITCH, SIDE (V10.7.37: KNOB 1, KNOB 3) edit that sound's patch (the other patch stays)", ok);
     go_title("SOUND 2");                               /* (V10.7.37: MODE on SOUND 2's KNOB 4) */
     turn(EN_K4, 1);
-    ok = dx_kit[2].mode != DX_KIT_DEF[2].mode && ((dx_kit[2].mode >> 2) & 3u) <= DXF_HP && dx_ui_lane == 2u;
+    ok = DX_UI.lane[2].mode != DX_KIT_DEF[2].mode && ((DX_UI.lane[2].mode >> 2) & 3u) <= DXF_HP && dx_ui_lane == 2u;
     go_title("SOUND");
     turn(EN_K2, -5);
-    ok &= dx_kit[2].b[DXP_DECAY] < DX_KIT_DEF[2].b[DXP_DECAY];
+    ok &= DX_UI.lane[2].b[DXP_DECAY] < DX_KIT_DEF[2].b[DXP_DECAY];
     bad += check("  SOUND 2: MODE steps the wave / filter / SNAP; SOUND: DECAY the side's decay", ok);
     {   /* (V10.7.8) MODE past the 24 of before: the filter GR's eight (the guiro's scrape), PMOD's card its SCRAPE; every
          * one of the 32 back to itself */
-        uint8_t m0 = dx_kit[2].mode;
+        uint8_t m0 = DX_UI.lane[2].mode;
         uint32_t ix;
         go_title("SOUND 2");
         for (ix = 0; ix < 40u; ix++) turn(EN_K4, 1);    /* (a step a detent) */
-        ok = ((dx_kit[2].mode >> 2) & 3u) == DXF_GR && (dx_kit[2].mode & 3u) == DXW_BELL && dx_kit_ok(dx_kit);
+        ok = ((DX_UI.lane[2].mode >> 2) & 3u) == DXF_GR && (DX_UI.lane[2].mode & 3u) == DXW_BELL && dx_kit_ok(DX_UI.lane);
         for (ix = 0; ix < 32u; ix++) ok &= dx_mode_ix(dx_mode_of(ix)) == ix;
         go_title("SOUND");
         frame();                                        /* (SOUND's card drawn with GR's SCRAPE) */
-        dx_kit[2].mode = m0;
+        DX_UI.lane[2].mode = m0;
         bad += check("  SOUND 2: MODE on to the filter GR (32 modes, each its own), the kit valid", ok);
         go_title("SOUND 3");
     }
@@ -8709,10 +8714,10 @@ static int test_dx_sound(void)
     ok = dx_ui_lane == drum_lane(last_note);
     bad += check("  a key struck picks the sound it plays", ok);
     project_save(0);
-    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+    memcpy(DX_UI.lane, DX_KIT_DEF, sizeof DX_UI.lane);
     project_load(0);
-    bad += check("  the kit is the section's: saved and loaded with it", dx_kit[2].b[DXP_PITCH] > DX_KIT_DEF[2].b[DXP_PITCH]);
-    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+    bad += check("  the kit is the section's: saved and loaded with it", DX_UI.lane[2].b[DXP_PITCH] > DX_KIT_DEF[2].b[DXP_PITCH]);
+    memcpy(DX_UI.lane, DX_KIT_DEF, sizeof DX_UI.lane);
     ui_power_on();
     return bad;
 }
@@ -10020,40 +10025,41 @@ static int test_drum_kits(void)
     for (i = 0; i < NTRK; i++)                          /* (0.8.1: this track the only DRUM one: the kit is its to load) */
         if (&trk[i] != TSEL && trk[i].eng_req == ENGI_DRUM) set_engine_of(&trk[i], ENGI_ANALOG);
     set_engine(ENGI_DRUM);
+    dx_kit_load(0); /* This test starts with the factory kit, independent of earlier tests. */
     ok = k909 == 1u && ENG_DRUM.npresets == 11u && DX_NKIT == 11u && TSEL->preset == 0 &&   /* (V10.7.8: LATIN PERC) */
-         dx_kit[DV_KICK].a[DXP_PMOD] == DX_KIT_DEF[DV_KICK].a[DXP_PMOD];
+         DX_UI.lane[DV_KICK].a[DXP_PMOD] == DX_KIT_DEF[DV_KICK].a[DXP_PMOD];
     TSEL->preset = (uint8_t)(k909 - 1u);
     pr_turn(1);                                 /* browsing (HOME): 909 CLUB */
-    ok &= TSEL->preset == k909 && !memcmp(dx_kit, DX_KITS[k909].lane, sizeof dx_kit) && !memcmp(dx_lay, DX_KITS[k909].lay, sizeof dx_lay) &&
-          !memcmp(dx_snd, DX_KITS[k909].snd, sizeof dx_snd) && dx_snd[DV_SNARE] == DX_KITS[k909].snd[DV_SNARE] &&
-          dx_kit[DV_KICK].a[DXP_PMOD] == DX_KIT_DEF[DV_KICK].a[DXP_PMOD] + 20 && (dx_kit[DV_KICK].mode & DX_DRIVE);
+    ok &= TSEL->preset == k909 && !memcmp(DX_UI.lane, DX_KITS[k909].lane, sizeof DX_UI.lane) && !memcmp(DX_UI.lay, DX_KITS[k909].lay, sizeof DX_UI.lay) &&
+          !memcmp(DX_UI.snd, DX_KITS[k909].snd, sizeof DX_UI.snd) && DX_UI.snd[DV_SNARE] == DX_KITS[k909].snd[DV_SNARE] &&
+          DX_UI.lane[DV_KICK].a[DXP_PMOD] == DX_KIT_DEF[DV_KICK].a[DXP_PMOD] + 20 && (DX_UI.lane[DV_KICK].mode & DX_DRIVE);
     bad += check("DRUM presets: 909 CLUB browsed on a DRUM track loads its kit (sounds, LAYERs, SENDs: the kick driven, +20 PMOD)", ok);
     set_engine(ENGI_ANALOG);
     set_engine(ENGI_DRUM);                              /* an engine switch (preset 0 applied): the section's kit stays */
-    ok = TSEL->preset == 0 && !memcmp(dx_kit, DX_KITS[k909].lane, sizeof dx_kit);
+    ok = TSEL->preset == 0 && !memcmp(DX_UI.lane, DX_KITS[k909].lane, sizeof DX_UI.lane);
     init_sound_of(TSEL, ENGI_DRUM);                     /* INIT SOUND: the knobs, the kit as the section has it */
-    ok &= !memcmp(dx_kit, DX_KITS[k909].lane, sizeof dx_kit);
+    ok &= !memcmp(DX_UI.lane, DX_KITS[k909].lane, sizeof DX_UI.lane);
     for (i = 1; i < ENG_DRUM.npresets; i++) {           /* every kit loads whole and differs from the factory one */
         apply_preset(i);
-        ok &= TSEL->preset == i && !memcmp(dx_kit, DX_KITS[i].lane, sizeof dx_kit) && memcmp(dx_kit, DX_KIT_DEF, sizeof dx_kit) != 0 &&
+        ok &= TSEL->preset == i && !memcmp(DX_UI.lane, DX_KITS[i].lane, sizeof DX_UI.lane) && memcmp(DX_UI.lane, DX_KIT_DEF, sizeof DX_UI.lane) != 0 &&
               dx_kit_ok(DX_KITS[i].lane);               /* (every value in range: the project would take it) */
     }
     apply_preset(0);
-    ok &= !memcmp(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+    ok &= !memcmp(DX_UI.lane, DX_KIT_DEF, sizeof DX_UI.lane);
     bad += check("  an engine switch and INIT SOUND keep the section's kit; the eight other kits each their own, DRUM-X browsed: the factory", ok);
     {   /* (0.8.1, reported) T4 plays DRUM-X; browsing T5's sounds past the DRUM kits leaves T4's kit alone */
         uint32_t t4 = 3u, t5 = 4u;
         set_engine(ENGI_ANALOG);                       /* (the track above back to a synth: T4 the only drums) */
         song.sel = (uint8_t)t4; set_engine(ENGI_DRUM); apply_preset(k909);
-        dx_kit[DV_SNARE].a[DXP_PMOD] = 7;              /* (T4's kit, edited by hand) */
+        DX_UI.lane[DV_SNARE].a[DXP_PMOD] = 7;              /* (T4's kit, edited by hand) */
         song.sel = (uint8_t)t5; set_engine(ENGI_ANALOG); frame();
         TSEL->eng_req = ENGI_DRUM; apply_preset(4u);    /* T5 passing INDUSTRIAL while browsing */
-        ok = dx_kit[DV_SNARE].a[DXP_PMOD] == 7 && !memcmp(dx_lay, DX_KITS[k909].lay, sizeof dx_lay) && str_eq(ui.msg, "KIT OF T4 KEPT");
+        ok = dx_cfg[t4].lane[DV_SNARE].a[DXP_PMOD] == 7 && !memcmp(DX_UI.lane, DX_KITS[4].lane, sizeof DX_UI.lane);
         set_engine(ENGI_ANALOG);
-        ok &= dx_kit[DV_SNARE].a[DXP_PMOD] == 7;
+        ok &= dx_cfg[t4].lane[DV_SNARE].a[DXP_PMOD] == 7;
         song.sel = (uint8_t)t4; apply_preset(4u);       /* on T4 itself: the kit is its own to change */
-        ok &= !memcmp(dx_kit, DX_KITS[4].lane, sizeof dx_kit);
-        bad += check("  T4 on DRUM-X: T5 browsing past the kits keeps T4's kit (KIT OF T4 KEPT); on T4 itself a kit loads", ok);
+        ok &= !memcmp(DX_UI.lane, DX_KITS[4].lane, sizeof DX_UI.lane);
+        bad += check("  T4 and T5 on DRUM-X: each preset changes only its own kit", ok);
     }
     return bad;
 }
@@ -10701,7 +10707,7 @@ static int test_click_menu(void)
         for (k = 0; k < NPART; k++)                     /* (0.6.73) the drums' IMAGE and their sounds' SENDs on */
             if (ENGINES[trk[k].eng_req] == &ENG_DRUM)
                 trk[k].p[P_DXIMG] = 60;
-        dx_snd[DV_SNARE] = (3u << 6) | 40u; dx_snd[DV_HATC] = (2u << 6) | 40u;
+        DX_UI.snd[DV_SNARE] = (3u << 6) | 40u; DX_UI.snd[DV_HATC] = (2u << 6) | 40u;
         if (!song.playing) transport_req = 1;
         for (k = 0; k < 2u; k++) {
             pid_t pid;
@@ -13866,7 +13872,7 @@ static int test_nav_tasks(void)
             tk_start(0); tk_btn(B_EDIT); tk_go(EN_ALGO, 3); tk_btn(B_EDIT);
             for (sk = 0; sk < 26u && kb_map(TSEL, sk) != 38u; sk++) {}
             key_down(sk); frame(); key_up(sk); frames(4); tk_n++;
-            { uint32_t c = dx_ui_lane & 7u; uint8_t *dv = dx_ui_side ? dx_kit[c].b : dx_kit[c].a, d0 = dv[DXP_DECAY];
+            { uint32_t c = dx_ui_lane & 7u; uint8_t *dv = dx_ui_side ? DX_UI.lane[c].b : DX_UI.lane[c].a, d0 = dv[DXP_DECAY];
               tk_val(EN_K2, -6);
               ok = song.sel == 3u && str_eq(cur_page()->title, "SOUND") && c == 1u && dv[DXP_DECAY] != d0; }
             break;
@@ -14012,10 +14018,10 @@ static int test_power_on_099(void)
     }
     ok &= load_depth == 0 && song.sel == 0u;
     {                                                          /* (the kit: ACOUSTIC's, TRK_DEF's preset) */
-        static __typeof__(dx_kit) kk;
-        memcpy(&kk, &dx_kit, sizeof dx_kit);
+        static __typeof__(DX_UI.lane) kk;
+        memcpy(&kk, &DX_UI.lane, sizeof DX_UI.lane);
         dx_kit_load(TRK_PR_DRUM);
-        ok &= !memcmp(&kk, &dx_kit, sizeof dx_kit);
+        ok &= !memcmp(&kk, &DX_UI.lane, sizeof DX_UI.lane);
     }
     bad += check("V10.7.11 power-on: T1 DRUM-X ACOUSTIC, T2 ANALOG PLUCK, T3 PHASE INIT SAW, T4 FM6 FM BASS, T5 VOICE CHANT, T6 ANIMAL WHISTLE", ok);
     ok = drums == 1u && drum_track(&trk[0]) && drum_elsewhere(&trk[1]) == 1u && !drum_elsewhere(&trk[0]);
@@ -14644,11 +14650,11 @@ static int test_presets_audition(void)
     song.sel = 3;
     set_engine_of(TSEL, ENGI_DRUM);
     dx_kit_load(0);
-    memcpy(kit, dx_kit, sizeof kit);
+    memcpy(kit, DX_UI.lane, sizeof kit);
     pl_list_open(); turn(EN_PRESET, 1);                 /* (the next kit, loaded) */
-    ok &= trk_eng(TSEL) == ENGI_DRUM && memcmp(kit, dx_kit, sizeof kit) != 0;
+    ok &= trk_eng(TSEL) == ENGI_DRUM && memcmp(kit, DX_UI.lane, sizeof kit) != 0;
     press(B_OCTDN);
-    ok &= trk_eng(TSEL) == ENGI_DRUM && !memcmp(kit, dx_kit, sizeof kit);
+    ok &= trk_eng(TSEL) == ENGI_DRUM && !memcmp(kit, DX_UI.lane, sizeof kit);
     return check("V10.7.43 PRESETS' audition: a key held sounds on through every sound loaded and ends when let go; each "
                  "turn loads, the row lit (the accent's bar, the name in the theme's colour) the sound loaded, no OCT+ needed; a kit heard as it is picked, "
                  "OCT- the kit back", ok);

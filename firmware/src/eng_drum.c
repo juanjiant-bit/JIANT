@@ -3,7 +3,7 @@
  * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* DRUM: JIANT's drum engine, DRUM-X (drumx_voice.c, after Sonic Charge's Microtonic): a kit of 8 lanes, KICK, SNARE,
  * CLAP, HAT CL, HAT OP, TOM, RIM, BELL, each a synthesized sound with two patches A and B and a MORPH between them.
- * The kit is the section's (drumx_voice.c dx_kit), edited on EDIT > SOUND. Felucca's DRUM kits (STD and the model
+ * The kit is the section's (drumx_voice.c DX_UI.lane), edited on EDIT > SOUND. Felucca's DRUM kits (STD and the model
  * kits 80 10 66 55 77, drum_voice.c) were retired in JIANT 0.1: a sound or project that picked one plays DRUM-X.
  *
  * Keys and notes: the keys play the General MIDI drum map with the kick on the first C (C KICK, C# RIM,
@@ -47,9 +47,10 @@ typedef struct {
  * MORPH, +-64), SHPE (SINE TRI SAW RAMP S&H), RAND (each hit its own MORPH, up to +-64, and tune, up to +-1
  * semitone: no two hits alike). dx_mot_v: the LFO's MORPH offset this block (fx.c dx_mot_block) */
 enum { XM_RATE, XM_DPTH, XM_SHPE, XM_RAND };
-static uint8_t dx_mot[4];
-static int32_t dx_mot_v;
-static uint32_t dx_mot_rng = 0x9E3779B9u;
+
+static int32_t dx_mot_value[NTRK];
+#define dx_mot_v (dx_mot_value[song.sel])
+static uint32_t dx_rng[NTRK] = {[0 ... NTRK-1] = 0x9E3779B9u};
 
 static drum_lane_t drum_kit[NPART][DV_NLANE];   /* (0.6.53: in .bss, was .pool: the pool kept for the FX lines) */
 
@@ -63,9 +64,10 @@ static const uint8_t DXG_LANE[DV_NLANE] = {DXG_KICK, DXG_SNARE, DXG_SNARE, DXG_H
 /* .. and each sound's own mute (EDIT held + black keys 1..8 on a DRUM track, ui_layer.c): bit 8 + lane */
 #define DXM_LANE(l) (1u << (8u + (l)))
 #define DXM_ALL 0xFF0Fu
-static volatile uint16_t dx_mute;                       /* DXG_* groups | DXM_LANE lanes */
-static void dx_mute_set(uint32_t m) { dx_mute = (uint16_t)(m & DXM_ALL); }
-static int dx_lane_muted(uint32_t l) { return (DXG_LANE[l & 7u] & dx_mute) || (dx_mute & DXM_LANE(l & 7u)); }
+                       /* DXG_* groups | DXM_LANE lanes */
+static void dx_mute_set(uint32_t m) { DX_UI.mute = (uint16_t)(m & DXM_ALL); }
+static int dx_muted(const dx_config_t *kit, uint32_t l) { return (DXG_LANE[l & 7u] & kit->mute) || (kit->mute & DXM_LANE(l & 7u)); }
+static int dx_lane_muted(uint32_t l) { return dx_muted(&DX_UI, l); }
 
 static int16_t clip_eff, pnch_eff;   /* G_CLIP / G_PUNCH as the master plays them (mod.c macro_master) */
 /* The drum bus (JIANT, MENU-less: FX > MASTER). PUNCH (G_PUNCH 0..100, no detector: each hit's own age), made to
@@ -198,9 +200,9 @@ static uint32_t drum_note_lane(const track_t *t, uint32_t note)
     return fx ? DX_EXT_FX[fx-1u]&7u : drum_lane(note);
 }
 
-/* a note of a muted group (dx_mute): voice.c trk_note_on drops it */
+/* a note of a muted group (DX_UI.mute): voice.c trk_note_on drops it */
 static int drum_muted(uint32_t note) { return dx_lane_muted(drum_lane(note)); }
-static int drum_muted_t(const track_t *t, uint32_t note) { return dx_lane_muted(drum_note_lane(t,note)); }
+static int drum_muted_t(const track_t *t, uint32_t note) { return dx_muted(dx_of(t), drum_note_lane(t,note)); }
 
 /* the lane's name (5 characters at most) */
 static const char *drum_lane_name(const track_t *t, uint32_t l)
@@ -323,11 +325,11 @@ static __attribute__((noinline)) void drum_note_on(track_t *t, voice_t *v)
                                                           * notes) would end a fresh voice at env 0 in env_tick */
     L->mg = DXG_FADE;
     L->age = 0;
-    if (dx_mot[XM_RAND]) {                               /* (0.5.1) X-MOD RAND: this hit's own MORPH and tune */
-        int32_t r = dx_mot[XM_RAND];
-        dx_mot_rng = dx_mot_rng * 1664525u + 1013904223u;
-        L->rm = (int8_t)(((int32_t)(dx_mot_rng >> 24) - 128) * r >> 8);
-        L->rt = (int8_t)(((int32_t)((dx_mot_rng >> 16) & 255u) - 128) * r >> 10);
+    if (dx_of(t)->mot[XM_RAND]) {                               /* (0.5.1) X-MOD RAND: this hit's own MORPH and tune */
+        int32_t r = dx_of(t)->mot[XM_RAND];
+        dx_rng[(uint32_t)(t - trk)] = dx_rng[(uint32_t)(t - trk)] * 1664525u + 1013904223u;
+        L->rm = (int8_t)(((int32_t)(dx_rng[(uint32_t)(t - trk)] >> 24) - 128) * r >> 8);
+        L->rt = (int8_t)(((int32_t)((dx_rng[(uint32_t)(t - trk)] >> 16) & 255u) - 128) * r >> 10);
     } else {
         L->rm = L->rt = 0;
     }
@@ -358,7 +360,7 @@ static int32_t drum_amp(track_t *t, voice_t *v, int32_t adsr)
     return 32767;
 }
 
-/* (JIANT 0.6.48) IMAGE (P_DXIMG, a track's) and each sound's SEND (dx_snd, the kit's: saved with it, project.c). The
+/* (JIANT 0.6.48) IMAGE (P_DXIMG, a track's) and each sound's SEND (DX_UI.snd, the kit's: saved with it, project.c). The
  * part stays one mono sum through its chain (DRV, FILTER, DIST); each sound's pan comes out as what it takes from one
  * side (dx_sl / dx_sr: L = sum - dx_sl, R = sum - dx_sr, fx.c drum_mix), and its SEND as its own feed of a bus (dx_sb),
  * both from the hit as it leaves the voice: no stage run twice. DRV, DIST and the FILTER shape the sum only, so with
@@ -366,7 +368,7 @@ static int32_t drum_amp(track_t *t, voice_t *v, int32_t adsr)
  * of this runs */
 #define DXS_BUS(s) ((uint32_t)(s) >> 6)                  /* 0 none, 1 CHORUS, 2 DELAY, 3 REVERB */
 #define DXS_AMT(s) ((int32_t)(s) & 63)                   /* 0..63 */
-static uint8_t dx_snd[DV_NLANE];
+
 static uint32_t drum_hit_fx(const drum_lane_t *L)
 {
     uint32_t i=L->dm>>2;
@@ -375,7 +377,7 @@ static uint32_t drum_hit_fx(const drum_lane_t *L)
 static uint32_t drum_send(const track_t *t, uint32_t l)   /* (V10.7.10: the kit's, an EXTENDED FX hit's too) */
 {
     (void)t;
-    return dx_snd[l&7u];
+    return dx_of(t)->snd[l&7u];
 }
 /* (JIANT 0.7.8) a core's own (mod.c's mod_c the same way): the two cores render two parts at once (fx.c mix_block), and
  * with one set the other core's part cleared dx_xon and the sides mid-render: the image on and off block by block (a
@@ -474,7 +476,6 @@ static __attribute__((noinline)) void drum_side_begin(const track_t *t, uint32_t
 /* lane l's sides and bus this block (drum_render's loop feeds them as it adds the hit to the part): 0 when none. (0.6.81)
  * g[0..3]: what it gives up of the left at the block's start and end, of the right at its start and end (a pan crossing
  * the middle within a block fades out of one side into the other) */
-static int32_t dx_dump[CTL];                             /* (the bus not fed: a sink, so the loop has no branch) */
 static __attribute__((noinline)) int drum_side_of(dx_core_t *dc, uint32_t l, uint32_t send, int32_t *g, int32_t **d2, int32_t *a)
 {
     int32_t p0 = dc->lpan0[l & 7u], p1 = dc->lpan[l & 7u];
@@ -491,7 +492,9 @@ static __attribute__((noinline)) int drum_side_of(dx_core_t *dc, uint32_t l, uin
         p0 = p1 = 0;
     g[0] = p0 > 0 ? p0 : 0; g[1] = p1 > 0 ? p1 : 0;
     g[2] = p0 < 0 ? -p0 : 0; g[3] = p1 < 0 ? -p1 : 0;
-    *d2 = *a ? dc->sb[b - 1u] : dx_dump;
+    /* With amount zero the loop only adds zero. Reuse this core's first bus
+     * instead of a shared sink (which would race between concurrent kits). */
+    *d2 = dc->sb[*a ? b - 1u : 0u];
     return p0 || p1 || *a;
 }
 /* the voice's output loop with them: the hit into the part, its sides and its bus at once; (0.6.81) each side ramped
@@ -529,7 +532,7 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     vmod_t ml;                                           /* (only its amplitude ramp is read: voice_amp) */
     if (!L)
         return;
-    if (dx_lane_muted((uint32_t)v->s[0]) || L->mg < DXG_FADE) {   /* its group muted:
+    if (dx_muted(dx_of(t), (uint32_t)v->s[0]) || L->mg < DXG_FADE) {   /* its group muted:
                                                           * fading (to the end, if unmuted meanwhile), then ended */
         uint32_t g0 = L->mg;
         if (!g0) {
@@ -578,7 +581,7 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
         int32_t d = L->bd - L->bc;
         L->bc = (int16_t)(L->bc + (d > 0 ? (d < L->bs ? d : L->bs) : (-d < L->bs ? d : -L->bs)));
     }
-    const dx_lane_t *patch=&dx_kit[(uint32_t)v->s[0] & (DV_NLANE-1u)];
+    const dx_lane_t *patch=&dx_of(t)->lane[(uint32_t)v->s[0] & (DV_NLANE-1u)];
     uint32_t hitfx=drum_hit_fx(L);
     {   /* (V10.7.37) the kit's DECAY on a gentler curve, d (128 - |d|) / 128: the kits' 54..76 as they were within a step,
          * its ends x / 5 (was x / 22: every sound a tick, or every one 1.5 s); each hit's velocity on its COLOR, (v - 100)
@@ -588,7 +591,7 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
         if (vc < 0)                                      /* (an accent brighter; a soft hit as before: a high-pass's
                                                          * noise darker would be louder) */
             vc = 0;
-        dx_run_fx(patch, &L->x, p[P_E0] + dx_mot_v + L->rm + lfo_shp,
+        dx_run_fx(dx_of(t), patch, &L->x, p[P_E0] + dx_mot_value[(uint32_t)(t - trk)] + L->rm + lfo_shp,
            L->st * 16 + L->rt + L->bc + (p[P_E1] - 64) * 3 + t->pfx_pit + lfo_pit,
            dk + DXO_DEC[L->dm & 3u] + ((hitfx&DXF_LONG)?36:0),
            p[P_E2] - 64 + DXO_TON[L->dm & 3u] + vc, p[P_E4] - 64 + DXO_TON[L->dm & 3u] + ((hitfx&DXF_NOISE)?32:0),
@@ -635,7 +638,7 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     }
 }
 
-static uint8_t dx_glue;                                 /* (0.9.9-snd1) GLUE, below */
+                                 /* (0.9.9-snd1) GLUE, below */
 static int32_t glue_g[NTRK];                            /* .. a DRUM track's gain at the last block's end, Q15 (0: rest) */
 static __attribute__((noinline)) void drum_glue(uint32_t ti, int32_t *out, uint32_t n, uint32_t side);
 /* (JIANT 0.6.16) the kit's sum, once a block (voice.c track_render): DRV x1..x4 into the soft clip, its level kept,
@@ -666,7 +669,7 @@ static __attribute__((noinline)) void drum_bus(const track_t *t, int32_t *out, u
             sr[i] = ((sr[i] >> 2) * k) >> 10;
         }
     }
-    if (dx_glue)                                        /* (0.9.9-snd1) GLUE, on */
+    if (dx_of(t)->glue)                                        /* (0.9.9-snd1) GLUE, on */
         drum_glue((uint32_t)(t - trk) % NTRK, out, n, side);
     else
         glue_g[(uint32_t)(t - trk) % NTRK] = 0;
@@ -680,7 +683,7 @@ static __attribute__((noinline)) void drum_bus(const track_t *t, int32_t *out, u
  * the gain the sum got, as drum_bus's (every 4th sample) */
 static __attribute__((noinline)) void drum_glue(uint32_t ti, int32_t *out, uint32_t n, uint32_t side)
 {
-    int32_t x = (int32_t)dx_glue * 256 / 15, th = 24000 - (2 * x - ((x * x) >> 8)) * 14000 / 256, pk = 0, g0, g1, tg = 32768, dg, kn, mk;
+    int32_t x = (int32_t)dx_cfg[ti].glue * 256 / 15, th = 24000 - (2 * x - ((x * x) >> 8)) * 14000 / 256, pk = 0, g0, g1, tg = 32768, dg, kn, mk;
     int32_t k = 4096, *sl = dx_sl, *sr = dx_sr;
     uint32_t i;
     for (i = 0; i < n; i++) {                           /* the peak (the sum's, as drum_bus left it: x2) */
@@ -744,13 +747,14 @@ static const preset_t DRUM_PRESETS[] = {                /* (0.7.2) one a factory
 };
 _Static_assert(sizeof DRUM_PRESETS / sizeof DRUM_PRESETS[0] == sizeof DX_KITS / sizeof DX_KITS[0], "a DRUM preset a kit");
 /* (0.7.2) a factory kit into the section's: the sounds, their LAYERs, their SENDs (the project saves them) */
-static void dx_kit_load(uint32_t k)
+_Static_assert(sizeof(dx_kit_t) == __builtin_offsetof(dx_config_t, mot), "factory kit prefix");
+static __attribute__((noinline)) void dx_kit_load_of(track_t *t, uint32_t k)
 {
     const dx_kit_t *K = &DX_KITS[k % DX_NKIT];
-    memcpy(dx_kit, K->lane, sizeof dx_kit);
-    memcpy(dx_lay, K->lay, sizeof dx_lay);
-    memcpy(dx_snd, K->snd, sizeof dx_snd);
+    dx_config_t *d = &dx_cfg[(uint32_t)(t - trk)];
+    memcpy(d, K, sizeof *K);
 }
+static void dx_kit_load(uint32_t k) { dx_kit_load_of(TSEL, k); }
 
 static const engine_t ENG_DRUM = {
     .name = "DRUM",

@@ -197,6 +197,7 @@ run "keys and buttons: fast press, long release, bouncy contacts (one note each)
 $CC -Ibuild/gen -Ifirmware/src -o "$OUT/vel_diag_test" tests/vel_diag_test.c
 run "velocity diagnostic (V10.6z5): the scan's ADC slots, MASTER kept, drive, presses and captures on synthetic traces" "$OUT/vel_diag_test"
 $CC -Ifirmware/src -o "$OUT/boot_lz4_test" tests/boot_lz4_test.c
+run "boot outer compression, malformed streams and output bounds" python3 tests/boot_huff_test.py
 run "the boot's packed RAM code (V10.6z5): LZ4 blocks back byte for byte, the build's own too" "$OUT/boot_lz4_test"
 
 $CC -o "$OUT/midi_uart_test" tests/midi_uart_test.c
@@ -436,6 +437,8 @@ if [ -f build/gen/felucca_tables.h ]; then
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/filter_test" tests/filter_test.c -lm
     run "FILTER: every TYPE bounded at RES 127 across the keyboard, COMB / COMB- in tune, no zipper, RES the ring, MS20, demos" \
         "$OUT/filter_test" build/filter_demo
+    $CC -O1 -w -Wno-implicit-function-declaration -Wno-incompatible-pointer-types -Ibuild/gen -Ifirmware/src -o "$OUT/drum_kits_test" tests/drum_kits_test.c -lm
+    run "independent DRUM-X kits: presets, sections, legacy projects, malformed/full saves" "$OUT/drum_kits_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/drumx_test" tests/drumx_test.c -lm
     mkdir -p build/drumx_demo
     run "DRUM-X: every lane sounds and ends, MORPH, PITCH, NOIS, hat choke, group mutes, demos" "$OUT/drumx_test" build/drumx_demo

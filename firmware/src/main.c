@@ -10,7 +10,9 @@ extern uint32_t _c1t_start[], _c1t_end[], _c1t_load[];   /* (0.6.71) the second 
 extern uint32_t _hot_start[], _hot_end[], _hot_load[];   /* (0.6.78) core 0's hottest audio code (app.ld .hot_text) */
 extern uint32_t _low_start[], _low_end[];                /* (0.6.78) main-loop buffers below the RAM code (app.ld) */
 #endif
+extern char _app_slot_end[];
 extern char _etext[];                                    /* (V10.6z5) .text's end: their load images from here, */
+#include "boot_huff.h"
 #include "boot_lz4.h"                                    /* packed (tools/build.py, app.ld PACKED) */
 
 
@@ -542,12 +544,15 @@ void fm1_cstart(void)
     fm1_irq_init();
     for (d = _bss_start; d < _bss_end; d++)
         *d = 0;
-    for (d = _pool_start; d < _pool_end; d++)
-        *d = 0;
     for (d = _low_start; d < _low_end; d++)
         *d = 0;
-    {                                           /* (V10.6z5) unpacked, not copied (boot_lz4.h): from _etext on (the */
-        const uint8_t *z = (const uint8_t *)_etext;     /* image's end), one LZ4 block each, in this order (build.py) */
+    {                                           /* Restore packed RAM code/data before either core starts audio. */
+        const uint8_t *z = (const uint8_t *)_pool_start;
+        /* The pool is scratch until these copies finish; then zero it normally.
+         * Neither core nor any audio/USB DMA is running at this point. */
+        if (!boot_huff((const uint8_t *)_etext, (const uint8_t *)_app_slot_end,
+                       (uint8_t *)_pool_start, (uint32_t)((uint8_t *)_pool_end - (uint8_t *)_pool_start)))
+            fm1_enter_uboot();
         z = boot_lz4(z, (uint8_t *)_rt_start, (uint8_t *)_rt_end);     /* flash driver code that must run from RAM */
 #if FELUCCA_DUAL_CORE                                                  /* (0.6.71) the second core's waiting loop */
         z = boot_lz4(z, (uint8_t *)_c1t_start, (uint8_t *)_c1t_end);   /* (hal/fm1_multicore.h; without it no block) */
@@ -555,6 +560,8 @@ void fm1_cstart(void)
         z = boot_lz4(z, (uint8_t *)_hot_start, (uint8_t *)_hot_end);   /* (0.6.78) core 0's hottest audio code */
         boot_lz4(z, (uint8_t *)_data_start, (uint8_t *)_data_end);
     }
+    for (d = _pool_start; d < _pool_end; d++)
+        *d = 0;
     if (pw_crumb == PW_CR_START || pw_crumb == PW_CR_SKIP)
         pw_crumb = PW_CR_SKIP;                  /* (V10.46) the last start hung here or before the UI: not again */
     else {

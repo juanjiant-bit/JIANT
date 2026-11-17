@@ -47,8 +47,10 @@ static struct { volatile uint32_t notes, buttons; } fm1_in;
  * kit as the firmware's tracks do, before any test runs (__attribute: __attribute__ is defined away above) */
 static void __attribute((constructor)) host_dx_kit_boot(void)
 {
-    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
-    memcpy(dx_lay, DX_LAY_DEF, sizeof dx_lay);
+    for (uint32_t i=0;i<NTRK;i++) {
+        memcpy(dx_cfg[i].lane, DX_KIT_DEF, sizeof dx_cfg[i].lane);
+        memcpy(dx_cfg[i].lay, DX_LAY_DEF, sizeof dx_cfg[i].lay);
+    }
 }
 #include "../firmware/src/params.c"
 #include "../firmware/src/mod.c"

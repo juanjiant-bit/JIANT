@@ -6,7 +6,7 @@
  * addresses after .text, ~33 KB) and main.c fm1_cstart copied them word by word. Now app.ld links their load images
  * outside the flash (region PACKED) and tools/build.py stores each one as an LZ4 block
  * (https://github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md, no frame, no length), the four one after the other
- * from _etext on (the end of .text), in the order .ram_text, .c1_text, .hot_text, .data; fm1_cstart unpacks them with
+ * inside the outer Huffman stream at _etext (boot_huff.h), in the order .ram_text, .c1_text, .hot_text, .data; fm1_cstart unpacks them with
  * boot_lz4 below into their sections. What is in RAM after the start is byte for byte what the copy put there
  * (tools/build.py unpacks every block with the same algorithm in Python and compares before it writes the image;
  * tests/boot_lz4_test.c runs this C code on the build's own sections). ~5 KB of flash.

@@ -72,7 +72,7 @@ static int extensions(void)
     bad+=check("EXT -2: per-hit FX captured; ordinary hits restore kit, no stuck key",ok);
     /* A hit can start after side_begin: bus contents must not leak from the
      * previously rendered track on the same core. */
-    dt->p[P_DXIMG]=0;memset(dx_snd,0,sizeof dx_snd);
+    dt->p[P_DXIMG]=0;memset(DX_UI.snd,0,sizeof DX_UI.snd);
     dx_core_t *dc=&DXC;dc->xon=0;
     for(k=0;k<CTL;k++) dc->sb[2][k]=123456;
     trk_note_on(dt,drum_fx_note(0),100);
@@ -86,13 +86,13 @@ static int extensions(void)
         for(q=0;q<DX_NKIT;q++) for(k=0;k<8;k++) okk &= DX_KITS[q].snd[k]==0;
         bad+=check("V10.7.10: every factory kit (LATIN PERC too) with all eight SENDs OFF",okk);
     }
-    dx_snd[DV_KICK]=(uint8_t)(3u<<6|63u);              /* (the kit's own SEND: REV 63) */
+    DX_UI.snd[DV_KICK]=(uint8_t)(3u<<6|63u);              /* (the kit's own SEND: REV 63) */
     dc->xon=0;
     for(k=0;k<CTL;k++) dc->sb[2][k]=123456;
     trk_note_on(dt,drum_fx_note(0),100);
     ok=drum_side_of(dc,DV_KICK,drum_send(dt,DV_KICK),g,&bus,&amt)&&amt==63&&bus==dc->sb[2];
     for(k=0;k<CTL;k++) ok &= !bus[k];
-    dx_snd[DV_KICK]=0;
+    DX_UI.snd[DV_KICK]=0;
     bad+=check("EXT sends: lazy per-core bus clearing for intra-block note-on",ok);
     uint32_t hashes[27];ok=1;
     for(k=0;k<27;k++) {

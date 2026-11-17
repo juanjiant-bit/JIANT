@@ -87,6 +87,15 @@ int main(int argc, char **argv)
         uint32_t e = (!strcmp(scene, "voice") || !strcmp(scene, "cleanvoice") || !strcmp(scene, "noisemod")) ? ENGI_VOICE : (!strcmp(scene, "parallel") || !strcmp(scene, "pan")) ? (k & 1u ? ENGI_ANALOG : ENGI_FM6) : EN[k];
         if (!strcmp(scene, "twovoice") && k == 4u) e = ENGI_VOICE;
         if (!strcmp(scene, "polyphony")) e = k & 1u ? ENGI_VOICE : ENGI_FM6;
+        if (!strcmp(scene, "kits")) {
+            e = ENGI_DRUM;
+            memcpy(dx_cfg[k].lane, DX_KITS[k+1].lane, sizeof dx_cfg[k].lane);
+            memcpy(dx_cfg[k].lay, DX_KITS[k+1].lay, sizeof dx_cfg[k].lay);
+            memcpy(dx_cfg[k].snd, DX_KITS[k+1].snd, sizeof dx_cfg[k].snd);
+            dx_cfg[k].tone = k; dx_cfg[k].hands = k; dx_cfg[k].glue = k;
+            dx_cfg[k].mot[XM_RATE] = 3; dx_cfg[k].mot[XM_DPTH] = 50;
+            dx_cfg[k].mot[XM_RAND] = 70; dx_cfg[k].mot[XM_SHPE] = 4;
+        }
         host_preset(&trk[k], e, 0);
         trk[k].p[P_VOICE] = !strcmp(scene, "polyphony") ? V_POLY : V_MONO;
         trk[k].p[P_SUS] = 127;
@@ -118,6 +127,9 @@ int main(int argc, char **argv)
         if (!strcmp(scene, "fade") && b == 512u) host_preset_req(&trk[1], ENGI_ANALOG, 0);
         if (!strcmp(scene, "transition") && b == 128u) trk_live = 4;
         if (!strcmp(scene, "transition") && b == 256u) trk_live = 6;
+        if (!strcmp(scene, "kits") && !(b % 16u)) {
+            for (k=0;k<NPART;k++) trk_note_on(&trk[k], DRUM_LANE_NOTE[(b/16u+k)%8u], 100);
+        }
         mix_block(out, CTL);
         if (!strcmp(scene, "polyphony") && b == 127u && (voices_busy() != 12u || voice_kills)) return 1;
         if (mc_mask_last && mc_mask_last != (1u << NPART) - 1u) both++;
@@ -131,7 +143,7 @@ int main(int argc, char **argv)
         pthread_join(worker, 0);
     }
     if (fail_at && (failures != 1u || mc_host || jobs != fail_at)) return 1;
-    if (!fail_at && mc_host && (!strcmp(scene, "parallel") || !strcmp(scene, "pan") || !strcmp(scene, "cleanvoice")) && !both) return 1;
+    if (!fail_at && mc_host && (!strcmp(scene, "parallel") || !strcmp(scene, "pan") || !strcmp(scene, "cleanvoice") || !strcmp(scene, "kits")) && !both) return 1;
     printf("mc-thread: %s %s hash=%016llx jobs=%u failures=%u overlap=%u\n", mode, scene, (unsigned long long)hash, jobs, failures, both);
     return 0;
 }

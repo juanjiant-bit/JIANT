@@ -59,7 +59,7 @@ static void song_idx_touch(void);             /* song_main.c: the index changed,
 /* the state now as a scene (main loop: KNOB 4 on SONG; ISR: SONG REC) */
 static void scene_capture(scene_t *s)
 {
-    uint32_t i, m = dx_mute & DXG_ALL, on = 1u;
+    uint32_t i, m = dx_cfg[0].mute & DXG_ALL, on = 1u;
     m <<= 4;
     for (i = 0; i < NTRK; i++)
         if (trk[i].p[P_MUTE]) {
@@ -101,24 +101,23 @@ typedef struct {                      /* a track of a section, as the ISR puts i
 static struct {
     sec_trk_t t[NTRK];
     motion_store_t motion;
-    dx_lane_t dx[8];                  /* the section's DRUM-X kit */
-    uint16_t dx_mute;                 /* .. its mutes (groups, sounds) */
     uint8_t pfx_lane[32], pfx_ltgt;   /* .. its punch-in lane (pfx.c) */
     int16_t slg[G_SL_N];              /* .. (0.6.3) its SLICER (the globals G_SLMODE ..) */
     volatile uint8_t ready;           /* main: staged; ISR: taken (0) */
     uint8_t row, section;             /* the song row it is for (SEC_LIVE: a live jump), the section (0..3) */
     uint32_t src;                     /* (V10.6s) CLIPS: each track's part as a row's tsrc has it (SONG REC's rows) */
 } sec_stage __attribute__((section(".lowbuf")));
+static dx_config_t sec_kits[NTRK] __attribute__((section(".pool")));
 static uint8_t sec_stage_fit[NTRK] __attribute__((section(".pool")));   /* (0.6.78: app.ld LOWBUF) */
 /* (V10.6z8, a GENE user: "I change the instruments and at the end of the phrase they go back") a sound the player
  * changed while a song or a quick chain plays is kept across its sections: bit k track k (its engine, preset, sound
- * parameters: not param_kept's, its FM6 patch), bit NTRK the DRUM-X kit. Seen at each section's change (song_play.c
+ * parameters: not param_kept's, its FM6 patch and its DRUM-X kit). Seen at each section's change (song_play.c
  * sec_apply): the sound unlike what the section before put in (snd_h, snd_seen: valid) is the player's; the
  * sections still bring the steps, the pattern, the mix and the mutes. Let go by a throw (song_draft_begin), anything
  * loaded (project_restore_runtime), a live jump or CLIPS (sec_apply, no song), EDIT > RECALL (project_recall_sound) */
 static uint8_t snd_held __attribute__((section(".bss.snd"))), snd_seen __attribute__((section(".bss.snd")));   /* (its own
                                               * section: out of the merged statics, whose reach every function pays) */
-static uint32_t snd_h[NTRK + 1u] __attribute__((section(".bss.snd")));
+static uint32_t snd_h[NTRK] __attribute__((section(".bss.snd")));
 static struct {
     chain_config_t config;
     volatile uint8_t armed, running, row, remaining;   /* remaining: the bars of the row still to play */

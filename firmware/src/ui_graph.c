@@ -1116,7 +1116,7 @@ static uint16_t heat_col(int32_t v)
 static void graph_drum(const track_t *t, int32_t sel)
 {
     const drum_lane_t *K = drum_kit_of(t);
-    int32_t morph = clamp(t->p[P_E0] + dx_mot_v, 0, 127), mx = 30 + morph * 180 / 127;   /* (0.5.1: X-MOD live) */
+    int32_t morph = clamp(t->p[P_E0] + dx_mot_value[(uint32_t)(t - trk)], 0, 127), mx = 30 + morph * 180 / 127;   /* (0.5.1: X-MOD live) */
     uint32_t l;
     cv_rect(30, 12, 180, 1, T_LINE);
     cv_rect(30, 11, mx - 30, 3, heat_col(morph * 2));
@@ -1124,7 +1124,7 @@ static void graph_drum(const track_t *t, int32_t sel)
     cv_text_r(226, 8, &AF_S, "B", morph >= 64 ? T_THEME : T_DIM, T_SURF);
     for (l = 0; l < 8u; l++) {
         int32_t x = 18 + (int32_t)l * 26, e = K && K[l].x.live ? K[l].x.ea >> 22 : 0, h = 4 + e * 66 / 256;
-        int muted = dx_lane_muted(l);
+        int muted = dx_muted(dx_of(t), l);
         cv_rect(x, 94 - 70, 16, 70, T_SURF);
         cv_rect(x + 7, 24, 2, 70, T_LINE);
         if (!muted)

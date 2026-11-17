@@ -75,7 +75,7 @@ BTAPP_FN static uint32_t gls_hear(uint32_t span, uint16_t (*w)[12], uint16_t (*b
                                                          * lane of little noise, not METAL; a hit only where it rings:
                                                          * LONG or a long decay, the 808's, a tuned tom's) */
                     uint32_t c = j == NLANE, ln = c ? drum_note_lane(t, (uint32_t)s->note[0]) & 7u : j;
-                    const dx_lane_t *x = &dx_kit[ln];
+                    const dx_lane_t *x = &dx_cfg[k].lane[ln];
                     nt = s->note[0];
                     if ((c ? !s->n || !drum_ext(t) || nt >= 27 :
                              !((s->hit >> j) & 1u) || (((x->mode >> 5) & 3u) != DXM_LONG && x->a[DXP_DECAY] < 80u)) ||

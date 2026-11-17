@@ -34,6 +34,7 @@ LDR = OUT / "loader"
 sys.path.insert(0, str(SRC / "tools"))
 import fm1pkg_make  # noqa: E402
 import lz4blk  # noqa: E402
+import boot_huff  # noqa: E402
 import size_fns  # noqa: E402
 
 APP_XIP = 0x02000120                # app.bin offset 0 in the XIP map; the SPL jumps here
@@ -612,7 +613,12 @@ def build_app():
             raise SystemExit(f"{sect}: its LZ4 block does not unpack to it (boot_lz4)")
         raw_total += len(blob)
     (OUT / "boot_lz4.bin").write_bytes(stream)   # (tests/boot_lz4_test.c unpacks it with boot_lz4.h)
-    img += stream
+    packed = boot_huff.pack(bytes(stream))
+    if boot_huff.unpack(packed) != bytes(stream):
+        raise SystemExit("boot: Huffman stream does not restore the LZ4 blocks")
+    (OUT / "boot_huff.bin").write_bytes(packed)
+    print(f"boot: outer Huffman {len(stream)} B -> {len(packed)} B; restored before audio starts")
+    img += packed
     print(f"boot: RAM code and data {raw_total} B packed to {len(stream)} B (LZ4, unpacked by fm1_cstart)")
     img += b"\xff" * (-len(img) % 4)
     bt_segment(img, symv)

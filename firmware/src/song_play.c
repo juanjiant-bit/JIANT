@@ -8,17 +8,16 @@
 /* The song, the audio ISR's part (song_chain.c: what it is). Included at the end of seq.c. */
 static uint32_t chain_bar(void) { return 16u * div_samples(2); }        /* a 4/4 bar: 16 steps of 1/16 (DIV 2) */
 
-/* (V10.6z8) track k's sound as snd_held sees it (k NTRK: the DRUM-X kit); FM6's SLOT left out (song_poll's
+/* (V10.6z8) track k's sound and kit as snd_held sees it; FM6's SLOT left out (song_poll's
  * fm6_adopt sets it after a section) */
 static uint32_t snd_sig(uint32_t k)
 {
     const track_t *t = &trk[k];
     uint32_t h = 0, j;
-    if (k >= NTRK)
-        return as_mix(h, dx_kit, sizeof dx_kit);
     for (j = 0; j < P_COUNT; j++)
         if (!param_kept(j) && (j != P_E7 || t->eng_req != ENGI_FM6))
             h = h * 31u + (uint16_t)t->p[j];
+    if (t->eng_req == ENGI_DRUM) h = as_mix(h, &dx_cfg[k], DX_CONFIG_BYTES - sizeof dx_cfg[k].mute);
     return as_mix(h + t->eng_req * 977u + t->preset, fm6_patch[k], FP_SIZE);
 }
 /* .. the player's: changed since the section before put it in */
@@ -44,11 +43,13 @@ static void sec_apply(void)
             if (t->eng_req != s->engine)
                 panic_req |= (uint8_t)(1u << i);          /* (another engine: what the keys hold ends too) */
             t->eng_req = s->engine;
+            dx_cfg[i] = sec_kits[i];
             t->preset = s->preset;
             t->user = 0;
             memcpy(fm6_patch[i], s->fm6, FP_SIZE + 1u);
             fm6_pgen[i]++;
         }
+        dx_cfg[i].mute = sec_kits[i].mute;
         t->seq_fit = sec_stage_fit[i];
         for (j = 0; j < P_COUNT; j++)
             if (!own || param_kept(j))
@@ -62,11 +63,9 @@ static void sec_apply(void)
         snd_h[i] = snd_sig(i);
     }
     motion = sec_stage.motion;
-    if (!snd_own(NTRK))
-        memcpy(dx_kit, sec_stage.dx, sizeof dx_kit);
-    snd_h[NTRK] = snd_sig(NTRK);
+
     snd_seen = chain.running ? 0xFFu : 0u;
-    dx_mute_set(sec_stage.dx_mute);
+
     memcpy(pfx_lane, sec_stage.pfx_lane, sizeof pfx_lane);
     memcpy(&song.g[G_SLMODE], sec_stage.slg, sizeof sec_stage.slg);   /* (0.6.3) the SLICER's bus as the section has it */
     pfx_ltgt = sec_stage.pfx_ltgt;
@@ -100,7 +99,7 @@ static void scene_apply(uint32_t row)
     }
     for (i = 0; i < NTRK; i++)
         trk[i].p[P_MUTE] = (int16_t)(i < 4u ? (s->mute >> i) & 1u : (s->on >> (i - 3u)) & 1u);
-    dx_mute_set((uint16_t)((dx_mute & ~DXG_ALL) | ((s->mute >> 4) & DXG_ALL)));
+    for (i = 0; i < NTRK; i++) dx_cfg[i].mute = (uint16_t)((dx_cfg[i].mute & ~DXG_ALL) | ((s->mute >> 4) & DXG_ALL));
 }
 static void chain_apply(void)                         /* a song row's section in */
 {

@@ -2236,18 +2236,13 @@ static int32_t dice_by(int32_t v, int32_t lo, int32_t hi, int32_t span)
 {
     return clamp(v + (int32_t)(rng() % (uint32_t)(2 * span + 1)) - span, lo, hi);
 }
-static void sound_dice_of(track_t *t, int quiet)
+static __attribute__((noinline)) void sound_dice_of(track_t *t, int quiet)
 {
     uint32_t e = trk_eng(t), i, l;
-    if (e == ENGI_DRUM && drum_elsewhere(t)) {          /* (0.8.3, reported again) the section's one kit is another
-                                                         * track's: its drums stay as they are */
-        kit_kept(drum_elsewhere(t));                    /* (ui.c) */
-        return;
-    }
     if (e == ENGI_DRUM) {
         for (l = 0; l < 8u; l++) {
             const dx_lane_t *D = &DX_KIT_DEF[l];
-            dx_lane_t *L = &dx_kit[l];
+            dx_lane_t *L = &dx_cfg[(uint32_t)(t - trk)].lane[l];
             for (i = 0; i < DXP_N; i++) {               /* (COLOR: the brightness, down 40 but up 12 at most) */
                 int32_t up = i == DXP_COLOR ? 12 : 127;
                 L->a[i] = (uint8_t)dice_by(D->a[i], 0, D->a[i] + up < 127 ? D->a[i] + up : 127, 40);
@@ -2260,7 +2255,7 @@ static void sound_dice_of(track_t *t, int quiet)
                                                          * one sound in three */
             static const uint8_t LO[8] = {0, 4, 0, 6, 6, 0, 3, 8}, HI[8] = {6, 15, 8, 15, 15, 7, 12, 15};
             uint32_t la = LO[l] + rng() % (HI[l] - LO[l] + 1u), fb = rng() % 3u ? 0u : 1u + rng() % 9u;
-            dx_lay[l] = (uint8_t)(la | fb << 4);
+            dx_cfg[(uint32_t)(t - trk)].lay[l] = (uint8_t)(la | fb << 4);
         }
         if (!quiet) ui_message("KIT DICED");
         return;
@@ -3049,13 +3044,12 @@ static void ui_input_frame(void)
             } else if (kind == CF_INIT_SOUND) {         /* (DRUM: the factory DRUM-X kit too) */
                 if (!chain_busy()) {
                     init_sound_of(TSEL, TSEL->eng_req);
-                    if (drum_track(TSEL) && !drum_elsewhere(TSEL)) {   /* (0.8.3: not another track's kit) */
-                        memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
-                        memset(dx_mot, 0, sizeof dx_mot);   /* (0.5.1: X-MOD off) */
-                        memset(dx_snd, 0, sizeof dx_snd);   /* (0.6.48: no SEND) */
-                        memcpy(dx_lay, DX_LAY_DEF, sizeof dx_lay);   /* (0.6.49: the factory LAYERs) */
+                    if (drum_track(TSEL)) {
+                        dx_config_t *kit_edit = dx_edit();
+                        dx_kit_load(0);
+                        memset(kit_edit->mot, 0, sizeof kit_edit->mot);   /* (0.5.1: X-MOD off) */
                     }
-                    ui_message(drum_track(TSEL) && drum_elsewhere(TSEL) ? "INIT, KIT KEPT" : "SOUND INIT");
+                    ui_message("SOUND INIT");
                 }
             } else if (kind == CF_RECALL_SOUND) {       /* the section's stored sound (ui_layer.c EDIT); (V10.6z8) a song
                                                          * playing too: the track's sound follows the sections again */

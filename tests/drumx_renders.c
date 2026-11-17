@@ -140,7 +140,7 @@ int main(int argc, char **argv)
         for (l = 0; l < 2u; l++) {
             t = kit(0);
             for (j = 0; j < 5u; j++) {
-                dx_kit[CL[l]].a[DXP_NOISE] = dx_kit[CL[l]].b[DXP_NOISE] = CV[j];
+                DX_UI.lane[CL[l]].a[DXP_NOISE] = DX_UI.lane[CL[l]].b[DXP_NOISE] = CV[j];
                 hit(t, NOTE[CL[l]], 100);
                 run(j * FS * 3u / 5u, (j + 1u) * FS * 3u / 5u);
             }

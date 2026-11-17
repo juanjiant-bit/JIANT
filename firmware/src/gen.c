@@ -1720,7 +1720,7 @@ static __attribute__((noinline)) void gen_kit(track_t *t)
     uint32_t l, i;
     for (l = 0; l < 8u; l++) {
         const dx_lane_t *D = &DX_KIT_DEF[l];
-        dx_lane_t *L = &dx_kit[l];
+        dx_lane_t *L = &dx_cfg[(uint32_t)(t - trk)].lane[l];
         L->mode = D->mode;
         for (i = 0; i < DXP_N; i++) {
             int32_t j = grr(-6, 6) * (int32_t)gs.complex / 100;
@@ -1732,27 +1732,27 @@ static __attribute__((noinline)) void gen_kit(track_t *t)
             L->b[i] = (uint8_t)clamp(D->b[i] + o, 0, 127);
         }
     }
-    dx_glue = (uint8_t)(GG_GLUE(GGR) * 4u);                /* (0.9.9-gen1) DRUM-X GLUE where the genre bus-compresses */
+    dx_cfg[(uint32_t)(t - trk)].glue = (uint8_t)(GG_GLUE(GGR) * 4u);                /* (0.9.9-gen1) DRUM-X GLUE where the genre bus-compresses */
     {   /* (0.6.94) the snare a snare (it came out tonal): mostly noise, shorter, less of the pitch sweep, the noise's
          * band a little brighter, and its own FEEDBK on top of the LAYER */
-        dx_lane_t *S = &dx_kit[DV_SNARE];
+        dx_lane_t *S = &dx_cfg[(uint32_t)(t - trk)].lane[DV_SNARE];
         int32_t nz = grr(26, 40), dc = grr(10, 18), pm = grr(8, 14), cl = grr(4, 10);
         S->a[DXP_NOISE] = (uint8_t)clamp(S->a[DXP_NOISE] + nz, 0, 127); S->b[DXP_NOISE] = (uint8_t)clamp(S->b[DXP_NOISE] + nz, 0, 127);
         S->a[DXP_DECAY] = (uint8_t)clamp(S->a[DXP_DECAY] - dc, 0, 127); S->b[DXP_DECAY] = (uint8_t)clamp(S->b[DXP_DECAY] - dc, 0, 127);
         S->a[DXP_PMOD] = (uint8_t)clamp(S->a[DXP_PMOD] - pm, 0, 127); S->b[DXP_PMOD] = (uint8_t)clamp(S->b[DXP_PMOD] - pm, 0, 127);
         S->a[DXP_COLOR] = (uint8_t)clamp(S->a[DXP_COLOR] + cl, 0, 127); S->b[DXP_COLOR] = (uint8_t)clamp(S->b[DXP_COLOR] + cl, 0, 127);
-        dx_lay[DV_SNARE] = (uint8_t)(DX_LAY_L(DX_LAY_DEF[DV_SNARE]) | ((uint32_t)grr(2, 4) << 4));   /* (gen2: FEEDBK 2..4, was 3..6) */
+        dx_cfg[(uint32_t)(t - trk)].lay[DV_SNARE] = (uint8_t)(DX_LAY_L(DX_LAY_DEF[DV_SNARE]) | ((uint32_t)grr(2, 4) << 4));   /* (gen2: FEEDBK 2..4, was 3..6) */
     }
     {   /* (0.6.97) the snare and the clap into the reverb (the kit's space), the rim into the delay where the genre is
-         * wet (dub, dub techno ..): the kit's own SENDs (eng_drum.c dx_snd) */
+         * wet (dub, dub techno ..): the kit's own SENDs (eng_drum.c dx_cfg[(uint32_t)(t - trk)].snd) */
         int32_t wet = (int32_t)gs.g->wet, rv = clamp((12 + grr(0, 16)) * (40 + wet) / 100, 6, 63);   /* (gen2: drier) */
-        dx_snd[DV_SNARE] = (uint8_t)((3u << 6) | (uint32_t)rv);
-        dx_snd[DV_CLAP] = (uint8_t)((3u << 6) | (uint32_t)clamp(rv + grr(-6, 10), 6, 63));
-        dx_snd[DV_RIM] = (uint8_t)(wet >= 60 ? (2u << 6) | (uint32_t)grr(20, 45) : 0u);
-        dx_snd[DV_HATO] = (uint8_t)(wet >= 70 && gch(50) ? (3u << 6) | (uint32_t)grr(8, 20) : 0u);
+        dx_cfg[(uint32_t)(t - trk)].snd[DV_SNARE] = (uint8_t)((3u << 6) | (uint32_t)rv);
+        dx_cfg[(uint32_t)(t - trk)].snd[DV_CLAP] = (uint8_t)((3u << 6) | (uint32_t)clamp(rv + grr(-6, 10), 6, 63));
+        dx_cfg[(uint32_t)(t - trk)].snd[DV_RIM] = (uint8_t)(wet >= 60 ? (2u << 6) | (uint32_t)grr(20, 45) : 0u);
+        dx_cfg[(uint32_t)(t - trk)].snd[DV_HATO] = (uint8_t)(wet >= 70 && gch(50) ? (3u << 6) | (uint32_t)grr(8, 20) : 0u);
     }
     for (l = DV_HATC; l <= DV_HATO; l++) {               /* (0.6.94) the hats: a band-pass high up, more noise in them */
-        dx_lane_t *H = &dx_kit[l];
+        dx_lane_t *H = &dx_cfg[(uint32_t)(t - trk)].lane[l];
         int32_t nz = grr(18, 28), cl = grr(10, 18);
         H->mode = (uint8_t)((H->mode & ~0x0Cu) | (DXF_BP << 2));
         H->a[DXP_NOISE] = (uint8_t)clamp(H->a[DXP_NOISE] + nz, 0, 127); H->b[DXP_NOISE] = (uint8_t)clamp(H->b[DXP_NOISE] + nz, 0, 127);
@@ -1764,13 +1764,13 @@ static __attribute__((noinline)) void gen_kit(track_t *t)
          * driven: GSP_HEAVY) */
         uint32_t d = gs.g->drum, lo = d == DM_CUMBIA || d - DM_CUMB2 < 2u || d - DM_BAILE < 2u ? DV_CLAP : d == DM_REGG || d == DM_REGG2 ? DV_TOM : DV_BELL;
         uint32_t hi = d - DM_BAILE < 2u ? DV_HATC : DV_BELL;
-        memcpy(&dx_kit[lo], &DX_KITS[DXK_LATIN].lane[lo], (hi - lo) * sizeof dx_kit[0]);   /* (none: DV_BELL) */
-        memset(&dx_lay[lo], 0, hi - lo);
-        if (hi - lo == 5u) dx_kit[DV_HATC].a[DXP_PMOD] = (uint8_t)grr(96, 116);   /* (CUMBIA: the guiro's SCRAPE) */
+        memcpy(&dx_cfg[(uint32_t)(t - trk)].lane[lo], &DX_KITS[DXK_LATIN].lane[lo], (hi - lo) * sizeof dx_cfg[(uint32_t)(t - trk)].lane[0]);   /* (none: DV_BELL) */
+        memset(&dx_cfg[(uint32_t)(t - trk)].lay[lo], 0, hi - lo);
+        if (hi - lo == 5u) dx_cfg[(uint32_t)(t - trk)].lane[DV_HATC].a[DXP_PMOD] = (uint8_t)grr(96, 116);   /* (CUMBIA: the guiro's SCRAPE) */
     }
     if (gx.on)                                          /* (0.8.6) EXPLORE: the sounds far from the kit's, each its own */
         for (l = 0; l < 8u; l++) {
-            dx_lane_t *L = &dx_kit[l];
+            dx_lane_t *L = &dx_cfg[(uint32_t)(t - trk)].lane[l];
             for (i = 0; i < DXP_N; i++) {
                 int32_t j = gch(40) ? grr(-20, 20) : 0;
                 L->a[i] = (uint8_t)clamp(L->a[i] + j, 0, 127);

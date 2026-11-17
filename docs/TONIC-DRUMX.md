@@ -25,10 +25,25 @@ del oscilador, o SNAP: 1/4 de su caída).
 El MORPH (0 = A, 127 = B) interpola valor por valor y se lee en cada bloque, así que se puede mover mientras
 el golpe suena. Todo es punto fijo con productos de 32 bits.
 
-## Kit por sección
+## Kits independientes por pista (candidato)
 
-Un kit de 8 sonidos ocupa 88 B. Va dentro de cada sección, que tiene 192 B libres (decisión del usuario): cada
-variación A–D puede tener su propio kit.
+Cada pista DRUM tiene su propio kit de ocho sonidos. Se pueden usar cuatro kits simultáneos y también seis con
+TRACKS 6. Seleccioná la pista, elegí DRUM con EDIT + PRESETS y cargá un preset: SOUND, KIT 3, KIT LFO, los envíos y
+los mutes de sonidos pertenecen a esa pista. Los mutes de grupos en GLO siguen controlando todas las baterías.
+
+Cada sección A–D guarda los kits de sus pistas. ARRANGE > FROM trae también el kit de la pista de origen.
+Editar un kit durante la canción mantiene ese sonido en los cambios de sección; RECALL libera solo esa pista.
+
+Los proyectos anteriores se abren copiando el kit compartido a cada pista. El formato FUNC conserva sus offsets y
+agrega un bloque opcional DK v1: cuatro bytes de cabecera y 114 bytes por kit que difiere del base. El tamaño máximo
+del proyecto sigue siendo 3840 bytes: si los patrones, automatización y kits no entran, el guardado se rechaza sin
+sobrescribir el archivo anterior. Firmware anterior ignora DK: al volver a una versión anterior se oye el kit base;
+volver a guardar allí pierde las diferencias entre kits.
+
+Las voces y los efectos maestros siguen compartiendo el presupuesto existente. El render de las pistas DRUM puede
+repartirse entre los dos núcleos, con buffers y aleatoriedad independientes. RAND y S&H ya no comparten su secuencia
+aleatoria entre pistas; los patches de proyectos antiguos se conservan, pero esas variaciones pueden diferir.
+No se duplica una reverb por kit ni se amplía el límite de voces.
 
 ## Etapas
 

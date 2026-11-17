@@ -12,9 +12,9 @@ static int drum_motion_reference(void)
     for(unsigned bpm=20;bpm<=300;bpm++) for(unsigned rate=1;rate<=8;rate++)
         for(unsigned shape=0;shape<5;shape++) for(unsigned play=0;play<2;play++) {
             song.g[G_BPM]=(int16_t)bpm;song.playing=(uint8_t)play;
-            dx_mot[XM_RATE]=(uint8_t)rate;dx_mot[XM_DPTH]=127;dx_mot[XM_SHPE]=(uint8_t)shape;
+            DX_UI.mot[XM_RATE]=(uint8_t)rate;DX_UI.mot[XM_DPTH]=127;DX_UI.mot[XM_SHPE]=(uint8_t)shape;
             ms_clock=0xAABBCDDu;dx_mot_free=UINT32_MAX-31u;
-            dx_mot_cyc=UINT32_MAX;dx_mot_rng=42;dx_mot_sh=57;
+            dx_mot_cyc=UINT32_MAX;dx_rng[song.sel]=42;dx_mot_sh=57;
             uint32_t len=beat_samples()*q[rate]/4u;
             if(rate==8) len=beat_samples()/8u;
             if(len<64u) len=64u;

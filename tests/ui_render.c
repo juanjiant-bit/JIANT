@@ -1140,7 +1140,7 @@ static void setup(int s)
         set_engine_of(TSEL, ENGI_DRUM); TSEL->p[P_DXIMG] = 40; go_title("OUT");
         break;
     case S_DXSEND:                                      /* (0.6.48) SEND: the snare to the REVERB, 70 % */
-        set_engine_of(TSEL, ENGI_DRUM); dx_ui_lane = 1; dx_snd[1] = 3u << 6 | 47u; dx_lay[1] = 0x26; go_title("SOUND 3");
+        set_engine_of(TSEL, ENGI_DRUM); dx_ui_lane = 1; DX_UI.snd[1] = 3u << 6 | 47u; DX_UI.lay[1] = 0x26; go_title("SOUND 3");
         break;
     case S_MORPH:                                       /* (0.6.45) ANALOG SAW, MORPH 50 */
         set_engine_of(TSEL, ENGI_ANALOG); TSEL->p[P_E0] = 0; TSEL->p[P_MORPH] = 50; go_page(GR_MORPH);

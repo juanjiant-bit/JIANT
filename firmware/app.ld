@@ -37,6 +37,7 @@ MEMORY
 }
 SECTIONS
 {
+    _app_slot_end = ORIGIN(XIP) + LENGTH(XIP);
     /* (V10.12) the Bluetooth segment (firmware/bt/bt_seg.c, its own unit): its header first (bt_seg.c bt_head, filled by
      * tools/build.py), then its code and constants, outside the app slot; written by the update loader from the
      * package's bt.bin (firmware/loader/ldr_core.c), checked by the app before any call (src/bt_hw.c). First here so

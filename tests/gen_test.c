@@ -109,8 +109,8 @@ static uint64_t gen_proj_hash(void)
     }
     h = gfnv(h, motion.event, motion.count * sizeof motion.event[0]);
     h = gfnv(h, song.g, sizeof song.g);
-    h = gfnv(h, dx_kit, sizeof dx_kit); h = gfnv(h, dx_snd, sizeof dx_snd); h = gfnv(h, dx_lay, sizeof dx_lay);
-    h = gfnv(h, dx_mot, sizeof dx_mot); h = gfnv(h, &dx_glue, 1); h = gfnv(h, &dx_tone, sizeof dx_tone); h = gfnv(h, &dx_hands, sizeof dx_hands);
+    h = gfnv(h, DX_UI.lane, sizeof DX_UI.lane); h = gfnv(h, DX_UI.snd, sizeof DX_UI.snd); h = gfnv(h, DX_UI.lay, sizeof DX_UI.lay);
+    h = gfnv(h, DX_UI.mot, sizeof DX_UI.mot); h = gfnv(h, &DX_UI.glue, 1); h = gfnv(h, &DX_UI.tone, sizeof DX_UI.tone); h = gfnv(h, &DX_UI.hands, sizeof DX_UI.hands);
     h = gfnv(h, glane, sizeof glane); h = gfnv(h, &gl_mono, sizeof gl_mono);
     h = gfnv(h, fg_set, sizeof fg_set); h = gfnv(h, pfx_lane, sizeof pfx_lane); h = gfnv(h, macro_v, sizeof macro_v);
     {   /* (gen6c) the rows without GEN's marks: whose the sections in flash are is not the piece */
@@ -137,7 +137,7 @@ static void gen_dirty(uint32_t seed)
         for (i = 0; i < 8u; i++) { t->step[i].comp = CP_RAND; t->step[i].probability = 50; }
         motion_set_event(t, 5, P_FCUT, 20);
     }
-    dx_glue = 9; dx_tone = 3; dx_hands = 1; dx_mot[0] = 5; dx_snd[0] = 77;
+    DX_UI.glue = 9; DX_UI.tone = 3; DX_UI.hands = 1; DX_UI.mot[0] = 5; DX_UI.snd[0] = 77;
     memset(glane, 0x5A, sizeof glane); gl_mono = 1;
     memset(fg_set, 1, sizeof fg_set);
     memset(pfx_lane, 0x33, sizeof pfx_lane);
@@ -694,8 +694,8 @@ int main(void)
         rows = nseen;
         bad += gcheck("HOUSE x 8 seeds: three hat rows at least (the pools)", rows >= 3u);
         gen_with(G_HOUSE, 3, 50, 0);
-        bad += gcheck("the kit's snare and clap into the reverb (SEND bus 3, 6..63)", DXS_BUS(dx_snd[DV_SNARE]) == 3u && DXS_AMT(dx_snd[DV_SNARE]) >= 6 &&
-                      DXS_BUS(dx_snd[DV_CLAP]) == 3u);
+        bad += gcheck("the kit's snare and clap into the reverb (SEND bus 3, 6..63)", DXS_BUS(DX_UI.snd[DV_SNARE]) == 3u && DXS_AMT(DX_UI.snd[DV_SNARE]) >= 6 &&
+                      DXS_BUS(DX_UI.snd[DV_CLAP]) == 3u);
         for (seeds = 1; seeds <= 4u; seeds++) {         /* (V10.6n) CUMBIA: the bass in its register (A1 .. A#4) */
             gen_with(genre_of("CUMBIA"), seeds, 50, 0);
             bs = gs.trk_of[RL_BASS];
@@ -854,16 +854,16 @@ int main(void)
     {
         gen_reset();
         gen_with(G_HOUSE, 5, 50, 0);                          /* HOUSE (a drum track) */
-        if (dx_kit[DV_SNARE].a[DXP_NOISE] < 100u) printf("  snare: noise %u / %u, decay %u, lay %02x\n", dx_kit[DV_SNARE].a[DXP_NOISE], dx_kit[DV_SNARE].b[DXP_NOISE], dx_kit[DV_SNARE].a[DXP_DECAY], dx_lay[DV_SNARE]);
+        if (DX_UI.lane[DV_SNARE].a[DXP_NOISE] < 100u) printf("  snare: noise %u / %u, decay %u, lay %02x\n", DX_UI.lane[DV_SNARE].a[DXP_NOISE], DX_UI.lane[DV_SNARE].b[DXP_NOISE], DX_UI.lane[DV_SNARE].a[DXP_DECAY], DX_UI.lay[DV_SNARE]);
         bad += gcheck("the generated snare: NOISE >= 100 both ends, DECAY under the factory kit's, FEEDBK 2..4, LAYER kept",
-                      dx_kit[DV_SNARE].a[DXP_NOISE] >= 100u && dx_kit[DV_SNARE].b[DXP_NOISE] >= 100u &&
-                      dx_kit[DV_SNARE].a[DXP_DECAY] < DX_KIT_DEF[DV_SNARE].a[DXP_DECAY] && DX_LAY_FB(dx_lay[DV_SNARE]) >= 2u &&
-                      DX_LAY_FB(dx_lay[DV_SNARE]) <= 4u && DX_LAY_L(dx_lay[DV_SNARE]) == DX_LAY_L(DX_LAY_DEF[DV_SNARE]));
+                      DX_UI.lane[DV_SNARE].a[DXP_NOISE] >= 100u && DX_UI.lane[DV_SNARE].b[DXP_NOISE] >= 100u &&
+                      DX_UI.lane[DV_SNARE].a[DXP_DECAY] < DX_KIT_DEF[DV_SNARE].a[DXP_DECAY] && DX_LAY_FB(DX_UI.lay[DV_SNARE]) >= 2u &&
+                      DX_LAY_FB(DX_UI.lay[DV_SNARE]) <= 4u && DX_LAY_L(DX_UI.lay[DV_SNARE]) == DX_LAY_L(DX_LAY_DEF[DV_SNARE]));
         bad += gcheck("the generated hats: a band-pass (not the factory HP), COLOR >= 120, NOISE >= 112, the kick and clap as the kit's",
-                      ((dx_kit[DV_HATC].mode >> 2) & 3u) == DXF_BP && ((dx_kit[DV_HATO].mode >> 2) & 3u) == DXF_BP &&
-                      dx_kit[DV_HATC].a[DXP_COLOR] >= 120u && dx_kit[DV_HATO].b[DXP_COLOR] >= 120u &&
-                      dx_kit[DV_HATC].a[DXP_NOISE] >= 112u && dx_kit[DV_HATO].a[DXP_NOISE] >= 112u &&
-                      dx_kit[DV_KICK].mode == DX_KIT_DEF[DV_KICK].mode && dx_kit[DV_CLAP].mode == DX_KIT_DEF[DV_CLAP].mode);
+                      ((DX_UI.lane[DV_HATC].mode >> 2) & 3u) == DXF_BP && ((DX_UI.lane[DV_HATO].mode >> 2) & 3u) == DXF_BP &&
+                      DX_UI.lane[DV_HATC].a[DXP_COLOR] >= 120u && DX_UI.lane[DV_HATO].b[DXP_COLOR] >= 120u &&
+                      DX_UI.lane[DV_HATC].a[DXP_NOISE] >= 112u && DX_UI.lane[DV_HATO].a[DXP_NOISE] >= 112u &&
+                      DX_UI.lane[DV_KICK].mode == DX_KIT_DEF[DV_KICK].mode && DX_UI.lane[DV_CLAP].mode == DX_KIT_DEF[DV_CLAP].mode);
     }
     /* ---- (0.6.93) the ARP amount is its density: a fifth of the steps at 20 %, most of them at 100 % */
     {
@@ -1141,7 +1141,7 @@ int main(void)
         }
         bad += gcheck("(0.9.9-gen1) clean base: the same seed from 3 different states, the same project (8 of 8)", same == n);
         bad += gcheck("  the clean base cleared the player's hand: LFO, DIV, MUTATE, comps, GLUE, lanes, PLAY mode",
-                      trk[0].p[P_SDIV] == 2 && !trk[0].p[P_MSND] && trk[0].step[1].probability != 50 && dx_tone == 0 && !gl_mono && !macro_v[0]);
+                      trk[0].p[P_SDIV] == 2 && !trk[0].p[P_MSND] && trk[0].step[1].probability != 50 && DX_UI.tone == 0 && !gl_mono && !macro_v[0]);
     }
     /* ---- (0.9.9-gen1) each genre's archetypes: the bass's and the lead's engine, filter and wave the archetype's;
      * the acid house's 303; the 808, the EBM's LP24 driven (MS20 once), the wobble, GLUE, MUTATE where the grammar has them */
@@ -1169,7 +1169,7 @@ int main(void)
                     if (ft != 7u && t->p[P_FTYPE] != (int16_t)ft) flt_bad++;
                     if (t->eng_req == EG_A && a->o[0][0] == EG_A && !(a->wv & GNOWV) && t->p[P_E0] != (int16_t)(a->wv & 7u) && t->p[P_E0] != (int16_t)((a->wv >> 3) & 7u)) wave_bad++;
                 }
-                if (dr < NTRK && gs.act[RL_DRUM] && dx_glue != GG_GLUE(gg) * 4u) glue_bad++;
+                if (dr < NTRK && gs.act[RL_DRUM] && DX_UI.glue != GG_GLUE(gg) * 4u) glue_bad++;
                 if (dr < NTRK && !gs.act[RL_DRUM] && trk[dr].step[0].time == ST_NOTE) kit_bad++;
                 (void)muts;                             /* (V10.6: MUTATE gone, no genre sets it) */
                 if (dr < NTRK && gs.act[RL_DRUM] && (gs.g->drum == DM_HOUSE || gs.g->drum == DM_TECHNO || gs.g->drum == DM_TECHHOUSE)) {
@@ -1317,11 +1317,11 @@ int main(void)
                     uint32_t l;
                     kits++;
                     for (l = 0; l < 8u; l++)
-                        if (dx_kit[l].a[DXP_DECAY] > DMAX[l] || dx_kit[l].b[DXP_DECAY] > DMAX[l]) {
+                        if (DX_UI.lane[l].a[DXP_DECAY] > DMAX[l] || DX_UI.lane[l].b[DXP_DECAY] > DMAX[l]) {
                             kit_bad++;
-                            printf("  %s: lane %u DECAY %u / %u over %u\n", gs.g->name, l, dx_kit[l].a[DXP_DECAY], dx_kit[l].b[DXP_DECAY], DMAX[l]);
+                            printf("  %s: lane %u DECAY %u / %u over %u\n", gs.g->name, l, DX_UI.lane[l].a[DXP_DECAY], DX_UI.lane[l].b[DXP_DECAY], DMAX[l]);
                         }
-                    if (dx_glue > 8u || d->p[P_LEVEL] > 112 || DX_LAY_FB(dx_lay[DV_SNARE]) > 4u) kit_bad++;   /* (gen3: the mix
+                    if (DX_UI.glue > 8u || d->p[P_LEVEL] > 112 || DX_LAY_FB(DX_UI.lay[DV_SNARE]) > 4u) kit_bad++;   /* (gen3: the mix
                                                          * 9 dB louder into the leveler: 104; the share below) */
                 }
             }
@@ -1721,9 +1721,9 @@ int main(void)
                 len = (uint32_t)d->p[P_SLEN]; bars = len / 16u; bpm = (uint32_t)song.g[G_BPM];
                 son = gs.g->drum == DM_CUMBIA; rom = gi == 1u && !(gs.g->spec & GSP_HEAVY);
                 if (gi == 0u) {
-                    if (((dx_kit[DV_HATC].mode >> 2) & 3u) != DXF_GR || dx_kit[DV_HATC].a[DXP_PMOD] < 90u ||
-                        memcmp(&dx_kit[DV_TOM], &DX_KITS[DXK_LATIN].lane[DV_TOM], sizeof dx_kit[0]) ||
-                        memcmp(&dx_kit[DV_CLAP], &DX_KITS[DXK_LATIN].lane[DV_CLAP], sizeof dx_kit[0])) ok_g = 0;
+                    if (((DX_UI.lane[DV_HATC].mode >> 2) & 3u) != DXF_GR || DX_UI.lane[DV_HATC].a[DXP_PMOD] < 90u ||
+                        memcmp(&DX_UI.lane[DV_TOM], &DX_KITS[DXK_LATIN].lane[DV_TOM], sizeof DX_UI.lane[0]) ||
+                        memcmp(&DX_UI.lane[DV_CLAP], &DX_KITS[DXK_LATIN].lane[DV_CLAP], sizeof DX_UI.lane[0])) ok_g = 0;
                     for (br = 0; br + 1u < bars; br++) {
                         uint32_t l = 0, sh = 0, ch = 0;
                         for (p = 0; p < 16u; p++) {
@@ -1750,10 +1750,10 @@ int main(void)
                         arps += p < (uint32_t)ar->p[P_SLEN];
                         if (gs.act[RL_PAD] && trk[gs.trk_of[RL_PAD]].p[P_LEVEL] >= ar->p[P_LEVEL]) ok_r = 0;
                     }
-                    if (rom ? 0 : memcmp(&dx_kit[DV_TOM], &DX_KITS[DXK_LATIN].lane[DV_TOM], sizeof dx_kit[0])) ok_r = 0;
+                    if (rom ? 0 : memcmp(&DX_UI.lane[DV_TOM], &DX_KITS[DXK_LATIN].lane[DV_TOM], sizeof DX_UI.lane[0])) ok_r = 0;
                 } else {
                     if (!(bpm >= 128u && bpm <= 136u) && !(bpm >= 145u && bpm <= 152u)) ok_b = 0;
-                    if (gs.act[RL_PAD] || memcmp(&dx_kit[DV_CLAP], &DX_KITS[DXK_LATIN].lane[DV_CLAP], sizeof dx_kit[0])) ok_b = 0;
+                    if (gs.act[RL_PAD] || memcmp(&DX_UI.lane[DV_CLAP], &DX_KITS[DXK_LATIN].lane[DV_CLAP], sizeof DX_UI.lane[0])) ok_b = 0;
                     for (br = 0; br < bars; br++) {
                         uint32_t cb = 0, rest = 0, sl = 0, last = br + 1u == bars;
                         for (p = 0; p < 16u; p++) {

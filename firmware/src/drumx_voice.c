@@ -166,23 +166,31 @@ static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32
  * envelope (1..40 ms) down to the lane's own: an attack's beater / click / metal edge, the tail as the kit has it
  * (the old FM, a fixed harmonic FM over the whole hit, muddied every sound). The oscillator and the noise each run their own loop (the wave and the
  * filter picked once a block), skipped when the mix leaves them out; gains and the pitch step per sample */
+/* Independent per-track kit data; sample voices and their shared budget are unchanged. */
+typedef struct {
+    dx_lane_t lane[8];
+    uint8_t lay[8], snd[8], mot[4], tone, hands, glue, reserved;
+    uint16_t mute;
+} dx_config_t;
+#define DX_CONFIG_BYTES 114u /* DK v1 wire size. */
+static dx_config_t dx_cfg[NTRK] __attribute__((section(".pool")));
+static __attribute__((noinline, pure)) dx_config_t *dx_edit(void) { return &dx_cfg[song.sel]; }
+#define DX_UI (*dx_edit())
+static const dx_config_t *dx_of(const track_t *t) { return &dx_cfg[(uint32_t)(t - trk)]; }
+
 /* (JIANT 0.6.36) EDIT > TONE, the kit's (project.c keeps it in the kit's reserved byte 7: 0 in older projects, off):
  * low nibble BP, a band-pass on the metal sounds (the hats, the rim, the cowbell), 1..15 its centre ~1.5 .. 9 kHz;
  * high nibble FEEDBK, every sound's oscillator fed back into its own phase (1..15: warm, growl, grit, noise) */
-static uint8_t dx_tone;
+
 /* (JIANT 0.7.9) KIT 3 > HANDS, the kit's (project.c keeps it in the high nibble of the kit's reserved byte 0, the
  * mute groups' low nibble: 0 in older projects, off): 1..15 more hands on the CLAP, each the hit's noise struck again
  * at a moment of its own (~3 .. 45 ms after it, the dice thrown again each hit: no tempo in it) and at a level of its
  * own, then dying as the hit does: a few people clapping, then a crowd. 0: the clap as it was */
-static uint8_t dx_hands;
-static dx_lane_t dx_kit[8] __attribute__((section(".data.dx_kit")));                              /* (the music's kit: DX_KITS below; V10.6o: no initializer, the
-                                                          * power-on and a project set it) */
+
 /* (JIANT 0.6.49) EDIT > LAYER, each sound's (the kit's: project.c keeps it, FUNC's 'D' 'L' block; 0 before it): low
  * nibble LAYER, a second oscillator (a triangle) at sqrt 2 of the pitch (the most out of tune with it there is) frequency-modulated
  * by the first, more as it goes up (1..15: a metal edge .. a clang with no note: the sound melts into the rhythm and
  * stays out of the harmony); high nibble FEEDBK, the sound's own oscillator fed back (on top of TONE's, the kit's) */
-static uint8_t dx_lay[8] __attribute__((section(".data.dx_lay")));                                /* (V10.6o: no initializer; the power-on and a project set it: the
-                                                          * factory kit's, DX_LAY_DEF) */
 #define DX_LAY_L(x) ((uint32_t)(x) & 15u)
 #define DX_LAY_FB(x) ((uint32_t)(x) >> 4)
 #define DX_TONE_BP(t) ((uint32_t)(t) & 15u)
@@ -191,9 +199,9 @@ static uint8_t dx_lay[8] __attribute__((section(".data.dx_lay")));              
  * the noise's gain at the block's start and end, gn and *g1 (Q23), times 1 + the hands in. Hand k strikes at its own
  * moment (this hit's dice, v->hseed, 3 .. 45 ms), at its own level, then decays as the hit: in the sum it is the hit's
  * envelope times its level over where that envelope was when it struck, so one sum carries them all (v->hsum, Q12) */
-static __attribute__((noinline)) int32_t dx_hands_step(dx_voice_t *v, uint32_t n, int32_t gn, int32_t *g1, int32_t en1)
+static __attribute__((noinline)) int32_t dx_hands_step(uint32_t hands, dx_voice_t *v, uint32_t n, int32_t gn, int32_t *g1, int32_t en1)
 {
-    uint32_t k, nh = dx_hands ? 1u + (uint32_t)dx_hands * 5u / 15u : 0u, span = 60u + (uint32_t)dx_hands * 60u, p0 = v->hpos;
+    uint32_t k, nh = hands ? 1u + (uint32_t)hands * 5u / 15u : 0u, span = 60u + (uint32_t)hands * 60u, p0 = v->hpos;
     int32_t s0 = v->hsum, s = s0, w = 2 * 23 / (int32_t)(2u * nh + 1u);   /* (V10.6q: the more hands the softer each: the
                                                           * crowd about as loud as a few, was +10.6 dB at 15) */
     if (p0 < 768u) {                                     /* (V10.6q) the 808's: three claps 11.6 ms apart, each a falling
@@ -231,15 +239,15 @@ static __attribute__((noinline)) int dx_scrape(dx_voice_t *v, int32_t *y, uint32
         v->hpos = (uint16_t)(sp + n);
     return ((sp + n) * sinc) >> 16 > kl;
 }
-static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *v, int32_t morph, int32_t tune16,
+static __attribute__((noinline)) void dx_run_fx(const dx_config_t *kit, const dx_lane_t *L, dx_voice_t *v, int32_t morph, int32_t tune16,
                                              int32_t dofs, int32_t cofs, int32_t nofs, int32_t warp, int32_t fm, int32_t *y,
                                              uint32_t n, uint32_t feedback)
 {
     int32_t q[DXP_N], p16, depth, ea0, ea1, en1, ep1, og, ng, ga, dga, gn, dgn, kd, inc, dinc, mt, cw, cx, d0;
     uint32_t i, k, wave = L->mode & 3u, flt = (L->mode >> 2) & 3u, ta, t0, tn, tp, kb, inc1, sp, gr = flt == DXF_GR, slen = 0, sinc = 0;
     tsvf_t c;
-    uint32_t nf = n, ln = L >= dx_kit && L < dx_kit + 8 ? (uint32_t)(L - dx_kit) : 0u;
-    int32_t lay = (int32_t)DX_LAY_L(dx_lay[ln]), lfb = (int32_t)DX_TONE_FB(dx_tone) + (int32_t)DX_LAY_FB(dx_lay[ln]) + (int32_t)feedback;
+    uint32_t nf = n, ln = L >= kit->lane && L < kit->lane + 8 ? (uint32_t)(L - kit->lane) : 0u;
+    int32_t lay = (int32_t)DX_LAY_L(kit->lay[ln]), lfb = (int32_t)DX_TONE_FB(kit->tone) + (int32_t)DX_LAY_FB(kit->lay[ln]) + (int32_t)feedback;
     if (!v->live && !v->trig) {
         for (i = 0; i < n; i++)
             y[i] = 0;
@@ -370,7 +378,7 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
     {
         int32_t g1 = mulq15(ng >> 3, en1 >> 15) << 11;
         if (ln == DV_CLAP && (v->hpos < 1200u || v->hsum))   /* (V10.6q) the 808's claps; (0.7.9) HANDS: more hands */
-            gn = dx_hands_step(v, n, gn, &g1, en1);
+            gn = dx_hands_step(kit->hands, v, n, gn, &g1, en1);
         dgn = (g1 - gn) / (int32_t)n;
     }
     inc = (int32_t)(v->inc >> 4) * 2;                    /* (>> 4: the step fits; x 2: half rate) */
@@ -484,13 +492,13 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
     }
     if (gr && dx_scrape(v, y, n, sp, slen, sinc))      /* (V10.7.8) GR: past its last tick, the hit is over */
         ea1 = en1 = 0;
-    if (DX_TONE_BP(dx_tone) && (0xD8u >> ln) & 1u) {     /* (0.6.36) TONE's BP on the metal sounds (the hats, the rim,
+    if (DX_TONE_BP(kit->tone) && (0xD8u >> ln) & 1u) {     /* (0.6.36) TONE's BP on the metal sounds (the hats, the rim,
                                                           * the cowbell); (V10.6q) around the sound's own COLOR, an
                                                           * octave under it .. over it, half dry (was 1.5 .. 9 kHz for all
                                                           * four and the band alone: 14 dB apart, the hats darkened) */
         int32_t b1 = v->b1, b2 = v->b2;
         tsvf_t cb;
-        tsvf_coef_k(&cb, (q[DXP_COLOR] + 2 * (int32_t)DX_TONE_BP(dx_tone) - 2) << 8, 1800);   /* (half rate: + an octave) */
+        tsvf_coef_k(&cb, (q[DXP_COLOR] + 2 * (int32_t)DX_TONE_BP(kit->tone) - 2) << 8, 1800);   /* (half rate: + an octave) */
         for (i = 0; i < n; i++) {
             int32_t v3 = y[i] - b2, v1 = (cb.a1 * b1 + cb.a2 * v3) >> 13, v2 = b2 + ((cb.a2 * b1 + cb.a3 * v3) >> 13);
             b1 = clamp(2 * v1 - b1, -150000, 150000);
@@ -521,9 +529,9 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
 
 /* (0.7.2) the factory kits: DRUM's presets (eng_drum.c DRUM_PRESETS, one a kit, in this order), each the eight sounds
  * ({mode, A, B}, A and B {PITCH PMOD DECAY NOISE COLOR}), their LAYERs and their SENDs (bus << 6 | amount). The first
- * is the factory kit (DX_KIT_DEF, below). dx_kit is the music's kit: a section's (project.c keeps it in the project,
+ * is the factory kit (DX_KIT_DEF, below). dx_cfg holds each track's kit in a section (project.c keeps it in the project,
  * the song stages it with the section), edited on EDIT > SOUND (ui_input.c). Loaded whole by a preset (ui.c
- * apply_preset_to: dx_kit_load) into the section's kit; INIT SOUND and a new project take the first */
+ * apply_preset_to: dx_kit_load) into the selected track's kit; INIT SOUND and a new project take the first */
 /* (V10.6z8, the owner: "the kicks sound like a snare", "the hats a giant low clap") every KICK as before V10.6q (LP,
  * its old NOISE and COLOR: V10.6q's HP noise at 40 was the snare in it); the 808 BOOM, LOFI DUST, ACOUSTIC, DUB ROOTS
  * and HIP HOP hats' COLOR up (their band at 1.2 .. 2.5 kHz under the preset's TONE: now ~5 .. 8 kHz) */
@@ -699,4 +707,4 @@ static int dx_kit_ok(const dx_lane_t *k)
 /* Classic callers retain exactly the original feedback path. */
 static void dx_run(const dx_lane_t *L, dx_voice_t *v, int32_t morph, int32_t tune16,
                    int32_t dofs, int32_t cofs, int32_t nofs, int32_t warp, int32_t fm, int32_t *y, uint32_t n)
-{ dx_run_fx(L,v,morph,tune16,dofs,cofs,nofs,warp,fm,y,n,0); }
+{ dx_run_fx(&DX_UI,L,v,morph,tune16,dofs,cofs,nofs,warp,fm,y,n,0); }
