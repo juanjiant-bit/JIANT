@@ -509,7 +509,12 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
   and note, the reverb (CLOUD frozen at SIZE 100 % included), the delay (its loop at 100 % too) and the chorus are
   cleared at once, and a held or latched punch-in (FREEZE …) is let go. Its message then shows the fresh start:
   **EMPTY SONG: SAVE>TOOLS CLEAR**.
-- Fixes: PRESETS' OCT− said SOUND BACK when there was nothing to put back.
+- **Punch-in FX you choose** (Discord users): hold **FX**, hold a key and turn **SELECT**: that key plays the next /
+  previous effect (today's, plus the ones gone in V10.7.36: MUTE T1–T6, LOCK, DEC− / DEC+, LPF / HPF, or none). Three
+  layouts, **FX + OCT+** steps 1 → 2 → 3: 1 the new default (foalma: FREEZE on G4 where WOBBLE was, T1–T4 MUTE back on
+  F#3 G#3 A#3 C#4, REV ALL one key over on D#4, the rest as before), 2 V10.7.36's, 3 the one before V10.7.36 (LPF HPF,
+  DEC− DEC+, six mutes, G5 LOCK). Kept in the system settings (older settings: the defaults); the FX map shows each
+  key's effect. DEC and LPF / HPF are not written to the punch-in lane.
 
 ### V10.7.42 (2026-11-15)
 - **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version

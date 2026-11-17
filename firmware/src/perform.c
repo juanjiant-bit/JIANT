@@ -55,9 +55,31 @@ enum { PF_R8, PF_R16, PF_R32, PF_REV, PF_TAPE,
        PF_LP3, PF_LP5, PF_LP7,                             /* .. G#4 LOOP 3, C#5 LOOP 5, D#5 LOOP 7: the last steps again (pfx.c) */
        PF_LMAX,                                            /* A#4 LIFE MAX (pfx.c) */
        PF_COMB,                                            /* G5 COMB */
-       PF_N };
+       PF_LPF, PF_HPF, PF_DECM, PF_DECP,                   /* (V10.7.43, assignable: before V10.7.36's) LPF HPF (a sweep
+                                                           * over a bar while held), DEC- DEC+ (pfx.c) */
+       PF_N,                                               /* none (an empty key) */
+       PA_M1,                                              /* (V10.7.43) MUTE T1..T6 while held (not P_MUTE), LOCK (the
+                                                           * layer locked open, again: unlocked; ui_layer.c) */
+       PA_LOCK = PA_M1 + NTRK, PA_N };
 /* the black keys F#3 .. F#5 (seq.c perf_key, ui_layer.c's map) */
-static const uint8_t PF_BK[11] = {PF_PUP, PF_PDN, PF_FRZ, PF_RVA, PF_DLA, PF_RING, PF_LP3, PF_LMAX, PF_LP5, PF_LP7, PF_GLT};
+/* (V10.7.43, the users) the keys' effects: three layouts (FX held + SELECT), any key any effect (FX held, the key held
+ * + SELECT); a slot: white keys 0..15 (F3 .. G5), black 16..26 (F#3 .. F#5). 1: today's with FREEZE on G4 (WOBBLE's),
+ * T1..T4 MUTE on F#3 G#3 A#3 C#4 (as before V10.7.36), REV ALL on D#4; 2: V10.7.36's; 3: before V10.7.36's (LPF HPF,
+ * DEC- DEC+, six mutes, G5 LOCK). perf_map: what the user set (action + 1; 0 the layout's own), saved in the system
+ * settings (ui.c pfm_save; settings_persist.c pfm_load), in the pool (zeroed at boot: the defaults) */
+static const uint8_t PF_DEF[3][27] = {
+    {0, 1, 2, 3, 4, 5, 6, 7, PF_FRZ, 9, 10, 11, 12, 13, 14, PF_COMB,
+     PA_M1, PA_M1 + 1, PA_M1 + 2, PA_M1 + 3, PF_RVA, PF_RING, PF_LP3, PF_LMAX, PF_LP5, PF_LP7, PF_GLT},
+    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, PF_COMB,
+     PF_PUP, PF_PDN, PF_FRZ, PF_RVA, PF_DLA, PF_RING, PF_LP3, PF_LMAX, PF_LP5, PF_LP7, PF_GLT},
+    {0, 1, 2, PF_LPF, PF_HPF, 5, 6, 7, PF_DECM, PF_DECP, 10, 11, 12, 13, 14, PA_LOCK,
+     PA_M1, PA_M1 + 1, PA_M1 + 2, PA_M1 + 3, PA_M1 + 4, PA_M1 + 5, PF_LP3, PF_LMAX, PF_LP5, PF_LP7, PF_GLT}};
+static struct { uint8_t map[3][27], lay, kmute, lockrq; } pfm __attribute__((section(".pool")));
+static uint32_t pfm_get(uint32_t l, uint32_t s)
+{
+    uint32_t b = pfm.map[l][s];
+    return b && b <= PA_N ? b - 1u : PF_DEF[l][s];
+}
 #define PF_BIT(e) (1u << (e))
 #define PF_REPEAT 0x7u                                         /* the three REPEAT rates */
 #define PF_PITCH (PF_BIT(PF_PUP) | PF_BIT(PF_PDN))
@@ -66,8 +88,8 @@ static const uint8_t PF_BK[11] = {PF_PUP, PF_PDN, PF_FRZ, PF_RVA, PF_DLA, PF_RIN
 #define PF_LOOPS (PF_BIT(PF_LP3) | PF_BIT(PF_LP5) | PF_BIT(PF_LP7))             /* (snd2) on the sequencer (pfx.c), as the MIDI ones */
 #define PF_MIDI ((((1u << (PF_RND + 1)) - 1u) & ~((1u << PF_OCTD) - 1u)) & ~(PF_BIT(PF_WOB) | PF_BIT(PF_D16)))   /* PF_OCTD ..
                                                                * PF_RND, on the notes (pfx.c), less WOBBLE and DLY 1/16 */
-#define PF_NOTES (PF_MIDI | PF_LOOPS | PF_BIT(PF_LMAX))        /* pfx.c's, not perform's */
-_Static_assert(PF_N <= 32 && PF_OCTD == 5 && PF_RND == 14 && PF_GLT == 21 && PF_LP7 == 24, "PF bits: the lane, the scenes, the PUNCH push");
+#define PF_NOTES (PF_MIDI | PF_LOOPS | PF_BIT(PF_LMAX) | PF_BIT(PF_DECM) | PF_BIT(PF_DECP))        /* pfx.c's, not perform's */
+_Static_assert(PF_N <= 31 && NTRK == 6 && PF_OCTD == 5 && PF_RND == 14 && PF_GLT == 21 && PF_LP7 == 24, "PF bits: the lane, the scenes, the PUNCH push");
 #define PB_FRAMES SL_FR                       /* stereo frames in sl_buf (a power of 2: the mask), 371 ms at 22.05 kHz */
 _Static_assert(PB_FRAMES <= SL_FR && !(PB_FRAMES & (PB_FRAMES - 1u)), "the REPEAT loop in sl_buf");
 #define PB_MAX (2u * PB_FRAMES)               /* the longest loop, 44.1 kHz samples */
@@ -159,7 +181,7 @@ static struct {
     int32_t lz[4], hz[4];              /* their states: L ic1 ic2, R ic1 ic2 */
     int16_t lk[3], hk[3];              /* their coefficients this block */
     int32_t cw, cc, chl, chr;          /* CRUSH share, amount, held sample */
-    uint32_t cn;
+    uint32_t cn, lt, ht;               /* (V10.7.43) samples LPF / HPF held (their sweep over a bar) */
     int32_t td;                        /* THROW: the share of the dry mix sent, Q15 */
     int32_t mg[NTRK];                  /* mute gains, Q15 (32768 = open) */
 } pf = {.src = PF_N, .next = PF_N, .lc = PF_TOP, .mg = {[0 ... NTRK - 1] = 32768}};   /* (every track open: 0.6, six) */
@@ -190,8 +212,25 @@ static uint32_t perf_avail(void)
 static uint32_t pfx_lph;              /* samples into the punch-in lane (pfx.c): from the transport's start, a section's */
 static uint8_t pfx_lane[32], pfx_ltgt;   /* the section's punch-in lane (pfx.c); its tracks (V10.7.36: always ALL, 0;
                                           * a lane saved with SYN 1 or DRM 2 plays on every track too) */
-static void perf_press(uint32_t e, int down)
+static __attribute__((noinline)) void perf_pspec(uint32_t e, uint32_t down)   /* (V10.7.43) MUTE T1..T6 (FX
+                                                         * LATCH: toggled), LOCK (ui_layer.c layer_masks) */
 {
+    uint32_t m = 1u << (e - PA_M1);
+    if (e == PA_LOCK)
+        pfm.lockrq |= (uint8_t)down;
+    else if (!perf_latch_on)
+        pfm.kmute = (uint8_t)(down ? pfm.kmute | m : pfm.kmute & ~m);
+    else if (down)
+        pfm.kmute ^= (uint8_t)m;
+}
+static __attribute__((noinline)) void perf_press(uint32_t e, int down)
+{
+    if (e > PF_N && e < PA_N) {          /* (out of the RAM code, through a register: its reach) */
+        void (*f)(uint32_t, uint32_t) = perf_pspec;
+        FM1_OPAQUE(f);
+        f(e, (uint32_t)down);
+        return;
+    }
     if (e >= PF_N)
         return;
     if (perf_latch_on) {                  /* FX LATCH: a press turns it on or off, letting go does nothing */
@@ -324,7 +363,7 @@ static void perf_gfx(uint32_t n);
 static __attribute__((noinline)) int perf_begin(uint32_t n)
 {
     uint32_t held = perf_kill ? 0u : (perf_held | perf_latched) & perf_avail() & ~PF_NOTES;
-    uint32_t q, k, ph0, bnd, mon = perf_kill || !perf_solo ? 0u : ~(uint32_t)perf_solo & ((1u << NTRK) - 1u);
+    uint32_t q, k, ph0, bnd, mon = perf_kill ? 0u : (perf_solo ? ~(uint32_t)perf_solo & ((1u << NTRK) - 1u) : 0u) | pfm.kmute;
     int32_t m;
     if (!held && !mon && !pf.busy && !(perf_k[0] | perf_k[1] | perf_k[2])) {   /* idle: the clock only */
         pf.ph += n;
@@ -366,6 +405,17 @@ static __attribute__((noinline)) int perf_begin(uint32_t n)
     m = perf_k[0];
     {
         int32_t lt = m < 0 ? PF_TOP + m * (PF_TOP - PF_LOW) / 100 : PF_TOP, ht = m > 0 ? m * (PF_TOP - PF_LOW) / 100 : 0;
+        uint32_t bar = 16u * pf.P;                  /* (V10.7.43) LPF down from open over a bar while held, HPF up */
+        pf.lt = (pf.act >> PF_LPF) & 1u ? pf.lt + n : 0u;
+        pf.ht = (pf.act >> PF_HPF) & 1u ? pf.ht + n : 0u;
+        if (pf.lt) {
+            int32_t v = PF_TOP - (int32_t)((uint32_t)(PF_TOP - PF_LOW) / 64u * ((pf.lt < bar ? pf.lt : bar) * 64u / bar));
+            lt = v < lt ? v : lt;
+        }
+        if (pf.ht) {
+            int32_t v = (int32_t)((uint32_t)(PF_TOP - PF_LOW) / 64u * ((pf.ht < bar ? pf.ht : bar) * 64u / bar));
+            ht = v > ht ? v : ht;
+        }
         pf.lc += clamp(lt - pf.lc, -PF_CSTEP, PF_CSTEP);   /* ~45 ms over the range */
         pf.hc += clamp(ht - pf.hc, -PF_CSTEP, PF_CSTEP);
         for (k = 0; k < 3u; k++) {                  /* the coefficients, between two table rows */

@@ -142,6 +142,12 @@ static uint32_t layer_held(void) { return ui.ly && ly_down(ui.ly) && layer_allow
  * since): nothing, its keys stay notes and FX starts no effect with no map shown; FX's effects only with FX */
 static void layer_masks(void)
 {
+    if (pfm.lockrq) {                                   /* (V10.7.43) an FX key's LOCK: the layer locked open, again: */
+        pfm.lockrq = 0;                                 /* unlocked */
+        fx_lock ^= 1u;
+        ui_message(fx_lock ? "FX LOCKED: [FX] TO UNLOCK" : "FX UNLOCKED");
+        ui.force = 1;
+    }
     uint32_t m = !layer_allowed() || (ui.ly && (ui.ly_t0 & LY_DEAD)) ? 0u
                : ui.ly ? ly_bit(ui.ly) : layer_bits() & ~fm1_in.buttons;
     kb_mask = m;
@@ -889,8 +895,14 @@ static uint32_t layer_oct(uint32_t pressed, uint32_t oct)
     mine = oct & lys.oct;
     if ((mine & 1u) && lys.l == LAYER_FX) {             /* OCT- (FX LATCH): every effect and macro off */
         perf_latched = 0;
+        pfm.kmute = 0;
         perf_k[0] = perf_k[1] = perf_k[2] = perf_k[3] = 0;
         ui_message("FX ALL OFF");
+    }
+    if (ui.ly == LAYER_FX && layer_held() && ((pressed >> up) & 1u) && !((fm1_in.buttons >> dn) & 1u)) {   /* (V10.7.43)
+                                                         * FX + OCT+ (not OCT- with it: UBOOT's): the next layout */
+        lys.oct |= 2u;                                  /* (no octave) */
+        pfm_say((pfm.lay + 1u) % 3u, 0);
     }
     if (lys.l == LAYER_SAVE && (mine & 2u)) {           /* SAVE + OCT+: STORE the music into the section playing */
         if (live.cur < 0)
@@ -907,6 +919,10 @@ static uint32_t layer_oct(uint32_t pressed, uint32_t oct)
 /* --------------------------------------------------------- the LEDs --- */
 /* lit = in effect now (held, the value, a track sounding), breathing = can be pressed (*br: dark .. ~60 % and
  * back, ~1.1 s, hal/fm1_input.h fm1_led_breath; was a hard 250 ms blink, #119), dark = nothing there */
+static __attribute__((noinline)) uint32_t pfm_lit(uint32_t e)   /* (V10.7.43) an FX key's MUTE on, its LOCK */
+{
+    return e == PA_LOCK ? fx_lock : (pfm.kmute >> (e - PA_M1)) & 1u;
+}
 static int glo_sounding(uint32_t t) { return !trk[t].p[P_MUTE] && (!perf_solo || ((perf_solo >> t) & 1u)); }
 static int glo_drums(void)                              /* a track plays DRUM: GLO shows its group mutes */
 {
@@ -925,8 +941,8 @@ static uint32_t layer_leds(uint32_t *br)
         uint32_t p = key_place(k), b = (uint32_t)key_black(k), on = 0, can = 0, e;
         if (l == LAYER_FX) {                            /* effects breathe, held lit, a too-long REPEAT dark */
             e = perf_key(k);
-            can = e < PF_N && ((ok >> e) & 1u);
-            on = can && ((held >> e) & 1u);
+            can = e > PF_N || (e < PF_N && ((ok >> e) & 1u));
+            on = can && (e > PF_N ? pfm_lit(e) : (held >> e) & 1u);
         } else if (l == LAYER_GLO) {                    /* sounding lit; SOLO held lit, the others, C4, F4 breathe */
             on = b ? (p < NTRK && glo_sounding(p)) || (p >= NTRK && p < NTRK + 4u && !((dx_mute >> (p - NTRK)) & 1u))
                    : p < NTRK && ((lys.solo >> k) & 1u);      /* (a group sounding: lit) */
@@ -969,10 +985,10 @@ static uint32_t layer_leds(uint32_t *br)
  * the accent, a muted track KEY, unavailable its name DIM, its note under it; KNOBS the four as gauges in their knobs'
  * colours over the layer's keys (the keycaps' words); STATE what is on, as chips. (Until 0.8.8: cells with note names,
  * the Felucca map.) The keys and knobs do what they did: only the drawing is new */
-static const char *const PF_NAME[PF_N] = {"RPT 1/8", "RPT 1/16", "RPT 1/32", "REVERSE", "TAPESTOP",   /* (perform.c PF_*) */
+static const char *const PF_NAME[PA_N] = {"RPT 1/8", "RPT 1/16", "RPT 1/32", "REVERSE", "TAPESTOP",   /* (perform.c PF_*) */
     "OCT-", "OCT+", "1/2 TEMPO", "WOBBLE", "DLY 1/16", "STUT 1/8", "STUT 1/16", "ATK+", "ARP", "RANDOM",   /* the MIDI ones (pfx.c) */
     "PITCH UP", "PITCH DN", "FREEZE", "REV ALL", "DLY ALL", "RING", "GLITCH", "LOOP 3", "LOOP 5", "LOOP 7", "LIFE MAX",
-    "COMB"};
+    "COMB", "LPF", "HPF", "DEC-", "DEC+", "", "MUTE T1", "MUTE T2", "MUTE T3", "MUTE T4", "MUTE T5", "MUTE T6", "LOCK"};
 static const char W_NOTE[16] = {'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G'};
 static const char B_NOTE[11] = {'F', 'G', 'A', 'C', 'D', 'F', 'G', 'A', 'C', 'D', 'F'};   /* black keys 1..11: F# G# .. F#5 */
 static const uint8_t PK_BLK[11] = {1, 2, 3, 5, 6, 8, 9, 10, 12, 13, 15};   /* a black key: left of white key n */
@@ -1018,17 +1034,42 @@ static uint32_t macro_sig(void)
             h = (h ^ (uint32_t)trk[i].p[P_M1SRC + k]) * 16777619u;
     return h + snd_id() * 31u;
 }
+/* (V10.7.43, the users) FX + a key held + SELECT: that key's effect, the next / previous of every one (an empty key
+ * among them; the last key pressed of those held); FX + OCT+: the next layout (1..3; layer_oct). Saved with the system
+ * settings: favorites.factory[7|2|13][5..31] (WHEEL's PHASE's ADD's rows past their stars: none has 40 sounds), the
+ * layout factory[6][18] (TRIO's retired row) */
+static uint8_t *pfm_row(uint32_t l) { static const uint8_t R[3] = {7, 2, 13}; return &favorites.factory[R[l % 3u]][5]; }
+static __attribute__((noinline)) void pfm_say(uint32_t lay, int32_t s)
+{
+    char b[20];
+    if (s) {
+        uint32_t key = 31u - (uint32_t)__builtin_clz(kb_layer & ((1u << 27) - 1u)), l = pfm.lay % 3u, sl = perf_slot(key);
+        uint32_t e = (pfm_get(l, sl) + (s > 0 ? 1u : PA_N - 1u)) % PA_N;
+        pfm.map[l][sl] = pfm_row(l)[sl] = (uint8_t)(e + 1u);
+        str_cpy(b, e == PF_N ? "-" : PF_NAME[e], sizeof b);
+    } else {
+        pfm.lay = favorites.factory[6][18] = (uint8_t)lay;
+        str_cpy(b, "FX LAYOUT 1", sizeof b);
+        b[10] = (char)('1' + lay);
+    }
+    big_say(b);
+    settings_save();
+    ui.force = 1;
+}
+static void pfm_turn(int32_t s) { if (kb_layer & ((1u << 27) - 1u)) pfm_say(0, s); }
+
 /* key p (white, or black: blk) of layer l: its name into nm (12; "" none), its state */
 static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
 {
     uint32_t busy = chain_busy() ? LS_DIM : LS_OFF;
     nm[0] = 0;
     if (l == LAYER_FX) {
-        uint32_t held = perf_kill ? 0u : perf_held | perf_latched, e = blk ? (p < 11u ? PF_BK[p] : PF_N) : p < PF_NW ? p
-                      : p == PF_NW ? PF_COMB : PF_N;   /* (V10.7.36: G5 COMB, was CLR AUTO) */
-        if (e >= PF_N)
+        uint32_t held = perf_kill ? 0u : perf_held | perf_latched, e = pfm_get(pfm.lay % 3u, blk ? 16u + p : p);
+        if (e == PF_N || p >= (blk ? 11u : 16u))        /* (V10.7.43: the layout's, the user's map) */
             return LS_OFF;
         str_cpy(nm, PF_NAME[e], 12);
+        if (e > PF_N)                                   /* MUTE T1..T6 muted, LOCK locked */
+            return !pfm_lit(e) ? LS_OFF : e == PA_LOCK ? LS_HELD : LS_MUTE;
         return !((perf_avail() >> e) & 1u) ? LS_DIM : !((held >> e) & 1u) ? LS_OFF :
                ((perf_act >> e) & 1u) || ((PF_NOTES >> e) & 1u) ? LS_HELD : LS_WAIT;
     }

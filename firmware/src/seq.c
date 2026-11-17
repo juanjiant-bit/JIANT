@@ -1427,13 +1427,9 @@ static __attribute__((noinline)) void dxo_tick(track_t *t, uint32_t n)
     }
 }
 
-/* the effect of key k in the FX layer (PF_N none): the first PF_NW white keys (F3 .. F5) in order, G5 COMB, the
- * black keys F#3 .. F#5 by perform.c PF_BK */
-static uint32_t perf_key(uint32_t k)
-{
-    uint32_t p = key_place(k);
-    return !key_black(k) ? (p < PF_NW ? p : p == PF_NW ? PF_COMB : PF_N) : p < 11u ? PF_BK[p] : PF_N;
-}
+/* the effect of key k in the FX layer (PF_N none, PA_*: perform.c PF_DEF and the user's map) */
+static uint32_t perf_slot(uint32_t k) { return key_black(k) ? 16u + key_place(k) : key_place(k); }   /* (0..26) */
+static uint32_t perf_key(uint32_t k) { return pfm_get(pfm.lay % 3u, perf_slot(k)); }   /* (V10.7.43: the layout's) */
 
 /* (0.6.14) the arp's note list let go (held / nheld). (V10.7.33) The keys' LATCH (ARP OFF and HOLD ON: the notes kept
  * sounding) is gone: ARP 2's HOLD is the arpeggiator's alone, voice mode DRONE holds the keys' notes (project.c: a
@@ -1688,8 +1684,12 @@ static void keyboard_block(void)
             if (lay) {                            /* a layer's button held (or locked): the key is the layer's */
                 kb_note[k] = KB_SILENT;           /* (ui_layer.c), with FX an effect (perform.c) */
                 kb_layer |= 1u << k;
-                if (fx)
-                    perf_press(perf_key(k), 1);
+                kb_oct[k] = (int8_t)(fx ? perf_key(k) : PF_N);   /* (V10.7.43: the effect pressed, the one let go) */
+                if (fx) {
+                    void (*f)(uint32_t, int) = perf_press;   /* (through a register: the RAM code's reach) */
+                    FM1_OPAQUE(f);
+                    f((uint32_t)kb_oct[k], 1);
+                }
                 continue;
             }
             if (song.grid >= 2u) {                /* NAME (ui_name.c): every key types, none sounds; (p2) 3: GLO > LIVE
@@ -1721,7 +1721,11 @@ static void keyboard_block(void)
         } else {
             if ((kb_layer >> k) & 1u) {
                 kb_layer &= ~(1u << k);
-                perf_press(perf_key(k), 0);
+                {
+                    void (*f)(uint32_t, int) = perf_press;
+                    FM1_OPAQUE(f);
+                    f((uint32_t)kb_oct[k], 0);
+                }
                 continue;
             }
             if (kb_note[k] == KB_SILENT) {
@@ -3363,6 +3367,7 @@ static void panic_do(void)
                                                          * primed: nothing to clear, no flag left waiting) */
     perf_latched = 0;                                   /* .. a latched or held punch-in (FREEZE ..) dropped */
     perf_held = 0;
+    pfm.kmute = 0;
 }
 static __attribute__((noinline)) void panic_block(void)   /* (mo_block, before events_block's panic_req) */
 {

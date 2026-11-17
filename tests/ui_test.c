@@ -9602,18 +9602,31 @@ static int test_fx_latch(void)
     led_pos[panel.btn[B_FX]] = 0u << 3 | 1u;
     go_home(); ui_leds();
     ok = (fm1_led[0] & 2u) != 0u;
-    btn_down(B_FX); key_down(m1); frame(); key_up(m1); frame();   /* a black key (PITCH UP) latches too */
-    ok &= perf_latched == (PF_BIT(PF_REV) | PF_BIT(PF_PUP));
+    btn_down(B_FX); key_down(m1); frame(); key_up(m1); frame();   /* a black key (V10.7.43: MUTE T1) latches too */
+    ok &= perf_latched == PF_BIT(PF_REV) && pfm.kmute == 1u;
     key_down(lpf); frame(); key_up(lpf); frame();                 /* B3 again: REVERSE off */
-    ok &= perf_latched == PF_BIT(PF_PUP);
+    ok &= !perf_latched && pfm.kmute == 1u;
     btn_up(B_FX); frame();
     bad += check("  the FX LED lit while something is on; a black key latches; B3 again: REVERSE off", ok);
     btn_down(B_FX); frame(); turn(EN_K1, -40);
     ok = song.octave == 0 && oct_leds() == 1u;
     btn_down(B_OCTDN); frame(); btn_up(B_OCTDN); frame();
-    ok &= !perf_latched && !perf_k[0] && !perf_k[1] && song.octave == 0 && msg_is("FX ALL OFF");
+    ok &= !perf_latched && !pfm.kmute && !perf_k[0] && !perf_k[1] && song.octave == 0 && msg_is("FX ALL OFF");
     btn_up(B_FX); frame();
     bad += check("  FX + OCT-: every latched effect and macro off (no octave)", ok);
+    {   /* (V10.7.43) FX + a key held + SELECT: that key's effect (saved in the settings); FX + SELECT: the layout */
+        btn_down(B_FX); key_down(lpf); frame(); turn(EN_SELECT, 1); frame(); key_up(lpf); frame(); btn_up(B_FX); frame();
+        ok = pfm.map[0][3] == PF_TAPE + 1u && pfm_row(0)[3] == PF_TAPE + 1u && perf_key(lpf) == PF_TAPE;
+        perf_latched = 0;                           /* (FX LATCH ON here: the press latched REVERSE) */
+        btn_down(B_FX); frame(); btn_down(B_OCTUP); frame(); btn_up(B_OCTUP); frame(); btn_up(B_FX); frame();
+        ok &= pfm.lay == 1u && favorites.factory[6][18] == 1u && perf_key(lpf) == PF_REV && !perf_latched && song.octave == 0;
+        btn_down(B_FX); frame(); btn_down(B_OCTUP); frame(); btn_up(B_OCTUP); frame();
+        btn_down(B_OCTUP); frame(); btn_up(B_OCTUP); frame(); btn_up(B_FX); frame();
+        ok &= pfm.lay == 0u && song.octave == 0 && !ui.confirm;
+        pfm.map[0][3] = pfm_row(0)[3] = 0;
+        perf_latched = 0;
+        bad += check("  FX + B3 + SELECT: B3's effect the next one (TAPESTOP); FX + OCT+: layout 2, 3, 1 (no octave)", ok && perf_key(lpf) == PF_REV);
+    }
     /* the quick combo: FX down and OCT- before HOLD, nothing else touched (it was nobody's: no ALL OFF, no octave) */
     btn_down(B_FX); key_down(lpf); frame(); key_up(lpf); frame(); turn(EN_K2, 20); btn_up(B_FX); frame();
     frames(400);
