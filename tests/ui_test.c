@@ -9930,6 +9930,17 @@ static int test_knob_accel(void)
         ok &= g > 12 + 12;
         bad += check("#126 KNOB ACCEL on the FX layer (FILTER: a 12-detent flick >= 50, OFF 12, slow 12) and GLO LEVEL", ok);
     }
+    {   /* (V10.7.43) FX FILTER snaps open: across the centre, or a quick turn towards it; a slow one steps */
+        int32_t a, b, c;
+        ui_power_on(); go_home(); frames(64);
+        btn_down(B_FX); frames(560);
+        perf_k[0] = 30; turn(EN_K1, -1); a = perf_k[0];
+        perf_k[0] = 2; turn(EN_K1, -3); b = perf_k[0];
+        perf_k[0] = -60; fm1_ms -= 6u; turn(EN_K1, 12); c = perf_k[0];
+        btn_up(B_FX); frames(400);
+        printf("  FX FILTER snap: 30 -1 %d, 2 -3 %d, -60 +12 fast %d\n", (int)a, (int)b, (int)c);
+        bad += check("FX FILTER: a slow step towards the centre steps, across it or quick: fully open (0)", a == 29 && b == 0 && c == 0);
+    }
     {   /* saved with the settings; settings from before it: ON (the bit means OFF) */
         persist_t p;
         ui_prefs = PREF_ACCEL_OFF;

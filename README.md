@@ -515,6 +515,8 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
   F#3 G#3 A#3 C#4, REV ALL one key over on D#4, the rest as before), 2 V10.7.36's, 3 the one before V10.7.36 (LPF HPF,
   DEC− DEC+, six mutes, G5 LOCK). Kept in the system settings (older settings: the defaults); the FX map shows each
   key's effect. DEC and LPF / HPF are not written to the punch-in lane.
+- **FX › FILTER snaps open** (KNOB 1 with FX): a quick turn towards the centre, or one across it, opens the filter
+  fully at once (bypass) for a fast transition; a slow turn still steps.
 
 ### V10.7.42 (2026-11-15)
 - **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version

@@ -827,7 +827,12 @@ static void layer_knob(uint32_t k, int32_t s)
     } else if (l == LAYER_FX) {                         /* perform.c perf_k, not recorded */
         if (k == 3u)
             s = -s;                                     /* DEPTH (100 - perf_k[3]) rises to the right (#40: it fell) */
-        perf_k[k] = (int8_t)clamp(perf_k[k] + accel(EN_K1 + k, s, k ? 100 : 200), k ? 0 : -100, 100);   /* (#126) */
+        int32_t d = accel(EN_K1 + k, s, k ? 100 : 200), v = clamp(perf_k[k] + d, k ? 0 : -100, 100);   /* (#126) */
+        if (!k && perf_k[0] && (v ^ perf_k[0]) < 0)     /* (V10.7.43, the users) FILTER: across the centre, or a quick */
+            v = 0;                                      /* turn towards it (a 10 % step): open, at once */
+        if (!k && d * perf_k[0] < 0 && d * d >= 100)
+            v = 0;
+        perf_k[k] = (int8_t)v;
     } else if (l == LAYER_GLO) {                        /* T1..T4 LEVEL (T5, T6 selected: T3..T6), recorded as on MIXER */
         track_t *t = &trk[k + trk_base4()];
         int16_t *vp = &t->p[P_LEVEL];
