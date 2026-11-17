@@ -103,7 +103,7 @@ static uint32_t gc_hash(void)                         /* (GEN_CPU_DRY) the whole
         h = gc_fnv(h, trk[k].step, sizeof trk[k].step);
     }
     h = gc_fnv(h, song.g, sizeof song.g); h = gc_fnv(h, motion.event, motion.count * sizeof motion.event[0]);
-    h = gc_fnv(h, dx_kit, sizeof dx_kit); h = gc_fnv(h, glane, sizeof glane); h = gc_fnv(h, fg_set, sizeof fg_set);
+    h = gc_fnv(h, DX_UI.lane, sizeof DX_UI.lane); h = gc_fnv(h, glane, sizeof glane); h = gc_fnv(h, fg_set, sizeof fg_set);
     h = gc_fnv(h, macro_v, sizeof macro_v); h = gc_fnv(h, &chain_config, sizeof chain_config);
     for (k = 0; k < 4u; k++) h = gc_fnv(h, proj_slot[k].raw, sizeof proj_slot[k].raw);
     return h;

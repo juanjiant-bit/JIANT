@@ -6,7 +6,7 @@
 //   node web/emu/emu_test.mjs build/emu/felucca.wasm [NATIVE.f32]
 // Checks: it boots (splash, then HOME on the screen, the HOME LED; the power-on LED sweep under the splash, over by
 // 1 s), a held key sounds and lights its LED, PLAY
-// starts the sequencer (PLAY's green LED), a user preset saved from the panel (SAVE, OCT+, OCT+) reaches the flash,
+// starts the sequencer (PLAY's green LED), a user preset saved from the USER page reaches the flash,
 // and the flash sectors kept as the page keeps them bring it back in a fresh instance; the same gestures twice
 // give the same audio (deterministic), with NATIVE.f32 (web/emu/native_check.c) the native build's, bit for bit.
 // Then the cost: 1 s of a heavy song (FM6, TRIO, VOICE chords, DRUM) against real time (BENCH_MAX, default 0.5:
@@ -127,12 +127,18 @@ check("FX held: its button and the effects' keys breathe, none lit; let go: lock
 
 // ---- a user preset saved from the panel, kept across a fresh instance
 const w0 = a.ex.web_flash_writes_count();
-a.tap(B.SAVE);
+// SAVE opens PROJECTS at power-on (since V10.7.32). Walk its groups to USER,
+// then return from HOME to arm SAVE, just as tests/ui_test.c:test_save does.
+a.tap(B.SAVE); // PROJECTS
+a.tap(B.SAVE); // PART SLOTS
+a.tap(B.SAVE); // USER
+a.tap(B.HOME);
+a.tap(B.SAVE); // USER, SAVE armed
 a.tap(B.OCTUP);
 a.tap(B.OCTUP);
 a.render(200);
 const saved = storeSectors(new Uint8Array(a.mem.buffer, a.ex.web_nor(), a.ex.web_nor_size()));
-check(`SAVE, OCT+, OCT+: user preset 1 written (${Object.keys(saved).length} sectors kept)`,
+check(`USER, SAVE, OCT+, OCT+: user preset 1 written (${Object.keys(saved).length} sectors kept)`,
       a.ex.web_test_user_preset(0) === 1 && a.ex.web_flash_writes_count() > w0 && Object.keys(saved).length > 0);
 const kept = JSON.parse(JSON.stringify(Object.fromEntries(     // as the page keeps them (base64 in localStorage)
   Object.entries(saved).map(([k, v]) => [k, Buffer.from(v).toString("base64")]))));

@@ -207,7 +207,7 @@ static const genome_t LANE_G[8] = {
 static void graph_colony(const track_t *t, int32_t sel)
 {
     const drum_lane_t *K = drum_kit_of(t);
-    int32_t morph = clamp(t->p[P_E0] + dx_mot_v, 0, 127), mx = 30 + morph * 180 / 127;   /* (0.5.1: X-MOD live) */
+    int32_t morph = clamp(t->p[P_E0] + dx_mot_value[(uint32_t)(t - trk)], 0, 127), mx = 30 + morph * 180 / 127;   /* (0.5.1: X-MOD live) */
     uint32_t l;
     cv_rect(30, 12, 180, 1, T_LINE);                     /* MORPH: A .. B */
     cv_rect(30, 11, mx - 30, 3, heat_col(morph * 2));
@@ -215,7 +215,7 @@ static void graph_colony(const track_t *t, int32_t sel)
     cv_text_r(226, 8, &AF_S, "B", morph >= 64 ? T_THEME : T_DIM, T_SURF);
     for (l = 0; l < 8u; l++) {
         int32_t x = 33 + (int32_t)(l % 4u) * 58, y = 38 + (int32_t)(l / 4u) * 46;
-        int32_t e = K && K[l].x.live ? K[l].x.ea >> 22 : 0, muted = dx_lane_muted(l);
+        int32_t e = K && K[l].x.live ? K[l].x.ea >> 22 : 0, muted = dx_muted(dx_of(t), l);
         const genome_t *g = &LANE_G[l];
         bfeat_t f = {g->k0, g->ss * 6, 40, g->lob, l == 2u ? 3 : 1, 160, 0, 0};
         if (muted)

@@ -200,7 +200,7 @@ static int song_scenes(void)
     ok = chain_prepare() == 0;
     seq_start(); seq_tick(t, CTL);
     ok &= chain.running && trk[1].p[P_MUTE] == 1 && !trk[0].p[P_MUTE] && macro_v[0] == 99 &&
-          (scene_pfx & PF_BIT(PF_OCTU)) && (dx_mute & DXG_HAT);
+          (scene_pfx & PF_BIT(PF_OCTU)) && (DX_UI.mute & DXG_HAT);
     bad += check("SCENE: the row goes in with its mutes (T2, DRUM's HAT), M1 99 and OCT+ held", ok);
     seq_stop(); song_poll();
     bad += check("  the song's end: the scene's punch-in effect ends, the music comes back", !scene_pfx && !trk[1].p[P_MUTE]);

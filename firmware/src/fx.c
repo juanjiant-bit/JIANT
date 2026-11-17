@@ -2671,42 +2671,47 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
 
 /* (JIANT 0.5.1) DRUM-X X-MOD's LFO, a block: its cycle RATE's bars or notes of the tempo, on the transport's grid while
  * it plays (ms_clock: in time with the bar), free while stopped; dx_mot_v (eng_drum.c) the MORPH offset, +-DPTH/2 */
-static uint32_t dx_mot_free, dx_mot_cyc;
-static int32_t dx_mot_sh;
+static uint32_t dx_mot_free, dx_mot_cyc[NTRK];
+static int32_t dx_mot_sh[NTRK];
 static __attribute__((noinline)) void dx_mot_block(uint32_t n)
 {
-    static const uint8_t Q8[9] = {0, 64, 32, 16, 8, 4, 2, 1, 1};   /* the cycle in 1/16 notes x 4 .. (1/32: half) */
-    uint32_t r = dx_mot[XM_RATE], len, pos, ph, cyc;
-    int32_t w;
+    static const uint8_t Q8[9] = {0, 64, 32, 16, 8, 4, 2, 1, 1};
+    uint32_t ti;
     dx_mot_free += n;
-    if (!r || r > 8u || !dx_mot[XM_DPTH]) {
-        dx_mot_v = 0;
-        return;
-    }
-    /* Both branches read the same block's tempo. Avoid the duplicated tempo
-     * conversion at the fastest rate, preserving its exact integer period. */
-    len = beat_samples();
-    len = r == 8u ? len / 8u : len * Q8[r] / 4u;       /* a quarter = 4 sixteenths */
-    if (len < 64u)
-        len = 64u;
-    pos = song.playing ? ms_clock : dx_mot_free;
-    cyc = pos / len;
-    ph = (uint32_t)(((uint64_t)(pos % len) << 32) / len);
-    switch (dx_mot[XM_SHPE]) {
-    case 1: w = ph < 0x80000000u ? (int32_t)(ph >> 15) - 32768 : 98303 - (int32_t)(ph >> 15); break;   /* TRI */
-    case 2: w = (int32_t)(ph >> 16) - 32768; break;                                                   /* SAW */
-    case 3: w = 32767 - (int32_t)(ph >> 16); break;                                                   /* RAMP */
-    case 4:                                                                                             /* S&H */
-        if (cyc != dx_mot_cyc) {
-            dx_mot_rng = dx_mot_rng * 1664525u + 1013904223u;
-            dx_mot_sh = (int32_t)(dx_mot_rng >> 16) - 32768;
+    for (ti = 0; ti < trk_live; ti++) {
+        if (trk[ti].eng_req != ENGI_DRUM) { dx_mot_value[ti] = 0; continue; }
+        uint32_t r = dx_cfg[ti].mot[XM_RATE], len, pos, ph, cyc;
+        int32_t w;
+
+        if (!r || r > 8u || !dx_cfg[ti].mot[XM_DPTH]) {
+            dx_mot_value[ti] = 0;
+            continue;
         }
-        w = dx_mot_sh;
-        break;
-    default: w = osc_sine(ph); break;                                                                  /* SINE */
+        /* Both branches read the same block's tempo. Avoid the duplicated tempo
+         * conversion at the fastest rate, preserving its exact integer period. */
+        len = beat_samples();
+        len = r == 8u ? len / 8u : len * Q8[r] / 4u;       /* a quarter = 4 sixteenths */
+        if (len < 64u)
+            len = 64u;
+        pos = song.playing ? ms_clock : dx_mot_free;
+        cyc = pos / len;
+        ph = (uint32_t)(((uint64_t)(pos % len) << 32) / len);
+        switch (dx_cfg[ti].mot[XM_SHPE]) {
+        case 1: w = ph < 0x80000000u ? (int32_t)(ph >> 15) - 32768 : 98303 - (int32_t)(ph >> 15); break;   /* TRI */
+        case 2: w = (int32_t)(ph >> 16) - 32768; break;                                                   /* SAW */
+        case 3: w = 32767 - (int32_t)(ph >> 16); break;                                                   /* RAMP */
+        case 4:                                                                                             /* S&H */
+            if (cyc != dx_mot_cyc[ti]) {
+                dx_rng[ti] = dx_rng[ti] * 1664525u + 1013904223u;
+                dx_mot_sh[ti] = (int32_t)(dx_rng[ti] >> 16) - 32768;
+            }
+            w = dx_mot_sh[ti];
+            break;
+        default: w = osc_sine(ph); break;                                                                  /* SINE */
+        }
+        dx_mot_cyc[ti] = cyc;
+        dx_mot_value[ti] = (w * dx_cfg[ti].mot[XM_DPTH]) >> 16;             /* (+-DPTH / 2) */
     }
-    dx_mot_cyc = cyc;
-    dx_mot_v = (w * dx_mot[XM_DPTH]) >> 16;             /* (+-DPTH / 2) */
 }
 
 /* (0.9.8) MENU > USB STEMS: the SLICER as mix_block runs it (with FX ON the returns into it first), traced (slicer.c
@@ -2902,18 +2907,17 @@ static int mc_voice_noise(const track_t *t)
             t->p[P_M1DST + 3u*k] == MD_E1 + 5u) return 1;
     return 0;
 }
-/* The greedy measured-cost split keeps dependency groups together: DRUM's kit, VOICE's breath noise, AUTO PAN's
+/* The greedy measured-cost split keeps dependency groups together: VOICE's breath noise, AUTO PAN's
  * random stream. Shared-rng LFOs follow the buses on core 1. As in SLOOP's units_split, ownership outranks cost. */
 static __attribute__((noinline)) uint32_t mc_split(uint32_t c1)   /* c1: what core 1 has already (0.6.75: the buses) */
 {
-    uint32_t i, j, k, c0 = 0, mask = 0, fixed = 0, cost[NPART], unit[NPART], dep[3] = {0, 0, 0}, left = 0;
+    uint32_t i, j, k, c0 = 0, mask = 0, fixed = 0, cost[NPART], unit[NPART], dep[2] = {0, 0}, left = 0;
     for (i = 0; i < NPART; i++) {
         const track_t *t = &trk[i];
         uint32_t bit = 1u << i;
         unit[i] = bit; cost[i] = 0;
-        if (ENGINES[t->engine] == &ENG_DRUM) dep[0] |= bit;
-        if (ENGINES[t->engine] == &ENG_FORMANT && mc_voice_noise(t)) dep[1] |= bit;
-        if ((t->p[P_APDEP] && t->p[P_APWAVE] >= 4) || t->xf_on) dep[2] |= bit;
+        if (ENGINES[t->engine] == &ENG_FORMANT && mc_voice_noise(t)) dep[0] |= bit;
+        if ((t->p[P_APDEP] && t->p[P_APWAVE] >= 4) || t->xf_on) dep[1] |= bit;
         if (mc_rng_part(i)) fixed |= bit;
         /* Parts put to sleep still fade: render that transition serially, including voice_kill's counters. */
         if (i >= trk_live)

@@ -148,7 +148,7 @@ static void row_vary(step_t *st, uint32_t len, int kit, uint32_t v, uint32_t see
 static int song_stage(uint32_t s, uint32_t row)
 {
     project_t *p = &proj_scratch;
-    uint32_t own = clip_mix ? 4u : s & 3u, k, i, u, n = 0, on = 0, dx_from = own, use = 0, srcs[NTRK], src = 0;
+    uint32_t own = clip_mix ? 4u : s & 3u, k, i, u, n = 0, on = 0, use = 0, srcs[NTRK], src = 0;
     sec_stage.ready = 0;
     for (k = 0; k < NTRK; k++) {
         uint32_t c = (uint32_t)(clip_go[k] ? clip_go[k] : clip_now[k]) - 1u;
@@ -188,17 +188,12 @@ static int song_stage(uint32_t s, uint32_t row)
                 d->p[P_MUTE] = 1;
             fm6_unpack(p->fm6[k], d->fm6);
             fm6_sanitize(d->fm6);
+            proj_kit_get(p, k, &sec_kits[k]);
             on |= p->motion.on & (1u << k);
-            if (e == ENGI_DRUM && sec != own)
-                dx_from = sec;
         }
         for (i = 0; i < p->motion.count && i < MOTION_MAX && n < MOTION_MAX; i++)
             if (srcs[MOTION_TRK(&p->motion.event[i]) % NTRK] == sec)
                 sec_stage.motion.event[n++] = p->motion.event[i];
-        if (sec == dx_from) {
-            memcpy(sec_stage.dx, p->dx, sizeof sec_stage.dx);
-            sec_stage.dx_mute = (uint16_t)(p->dx_mute & DXM_ALL);
-        }
     }
     memset(sec_stage.motion.event + n, 0, (MOTION_MAX - n) * sizeof sec_stage.motion.event[0]);
     sec_stage.motion.count = (uint8_t)n;
@@ -676,7 +671,7 @@ static void song_poll(void)
         uint32_t held = 0;
         chain.ended = 0;
         str_cpy(name, proj_name, sizeof name);
-        for (k = 0; k <= NTRK; k++)                   /* (V10.6z8) the sounds the player changed (the last section's */
+        for (k = 0; k < NTRK; k++)                    /* (V10.6z8) the sounds the player changed (the last section's */
             held |= snd_own(k) << k;                  /* changes too: motion_end put the sounds' own values back) */
         if (held) {                                   /* (V10.7.6) the music as the song left it, aside */
             project_capture(&proj_scratch);
@@ -689,12 +684,9 @@ static void song_poll(void)
             str_cpy(proj_name, name, PROJ_NAME_LEN + 1u);
             ui_message("SONG END");
             if (held && proj_import(&proj_scratch, &proj_wire, sizeof proj_wire)) {   /* (V10.7.6) then the held */
-                if (!(held >> NTRK & 1u))             /* sounds over it (engine, preset, sound, FM6 patch: sound_put; */
-                    memcpy(proj_scratch.dx, dx_kit, sizeof proj_scratch.dx);   /* the kit when held): nothing else lost */
                 for (k = 0; k < NTRK; k++)
                     if (held >> k & 1u)
                         sound_put(&proj_scratch, k);
-                memcpy(dx_kit, proj_scratch.dx, sizeof dx_kit);
                 snd_held = (uint8_t)held;             /* (PLAY again: still the player's) */
             }
         }

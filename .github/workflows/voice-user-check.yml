@@ -1,7 +1,7 @@
 name: VOICE user lyric candidate
 on:
   push:
-    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46]
+    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits]
 permissions:
   contents: read
 concurrency:
@@ -60,6 +60,12 @@ jobs:
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/overload | tee build/song-check/overload.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/anim_test.c -lm -o build/song-check/anim
           build/song-check/anim > build/song-check/anim.log
+      - name: Independent DRUM-X kits and concurrent rendering
+        run: |
+          cc -O1 -g -w -Wno-implicit-function-declaration -Wno-incompatible-pointer-types -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/drum_kits_test.c -lm -o build/song-check/drum-kits
+          ASAN_OPTIONS=detect_leaks=0 build/song-check/drum-kits | tee build/song-check/drum-kits.log
+          cc -O2 -w -pthread -Ibuild/gen -Ifirmware/src tests/mc_thread_test.c -lm -o build/song-check/mc-kits
+          python3 tests/mc_thread_test.py build/song-check/mc-kits | tee build/song-check/mc-kits.log
       - name: Firmware memory and reach checks
         run: tail -n 20 build/song-check/target.log
       - name: Lossless font metadata and isolated per-track generator
@@ -163,6 +169,7 @@ jobs:
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/vel | tee build/song-check/vel.log
           cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/vel_seq_test.c -lm -o build/song-check/vel-seq
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/vel-seq | tee build/song-check/vel-seq.log
+          python3 tests/boot_huff_test.py
           cc -O1 -g -w -fsanitize=address,undefined -Ifirmware/src tests/boot_lz4_test.c -o build/song-check/boot-lz4
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/boot-lz4 | tee build/song-check/boot-lz4.log
       - name: Verified pre-split baseline for UI regression comparison
@@ -199,3 +206,33 @@ jobs:
             build/layout.ld
             build/felucca.map
             tools/audio_layout.txt
+  emulator-candidate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install Pillow==12.3.0 numpy==2.3.5 fonttools==4.61.1
+      - run: python3 -c "import sys;sys.path.insert(0,'tools');import build;build.generate()"
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build and compare emulator audio with native firmware
+        run: |
+          sh web/emu/build.sh
+          cc -O2 -ffp-contract=off -w -Wno-implicit-function-declaration -Wno-incompatible-pointer-types -Ibuild/gen -Ifirmware/src web/emu/native_check.c -lm -o build/emu/native-check
+          build/emu/native-check build/emu/native.f32
+          node web/emu/emu_test.mjs build/emu/felucca.wasm build/emu/native.f32
+          node web/emu/transfer_test.mjs build/emu/felucca.wasm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drum-kits-emulator-candidate
+          path: |
+            build/emu/*.html
+            build/emu/*.js
+            build/emu/*.wasm
+            build/emu/fonts

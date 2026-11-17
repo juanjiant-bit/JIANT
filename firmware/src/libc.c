@@ -29,7 +29,7 @@ int memcmp(const void *a, const void *b, unsigned n)
     return 0;
 }
 
-static int str_eq(const char *a, const char *b)
+static __attribute__((noinline)) int str_eq(const char *a, const char *b)
 {
     while (*a && *a == *b) {
         a++;

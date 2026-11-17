@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
  * JIANT (FELUCCA TONIC): EDIT > SOUND .. SOUND 3, a sound of the DRUM-X kit (docs/TONIC-DRUMX.md). */
 /* Shown in the EDIT family on a DRUM track (ui.c page_visible). They edit the section's kit
- * (drumx_voice.c dx_kit, saved with the section: project.c FUNA), the sound a key struck on the track last (dx_follow;
+ * (drumx_voice.c DX_UI.lane, saved with the section: project.c FUNA), the sound a key struck on the track last (dx_follow;
  * V10.7.37: no SOUND knob any more, the panel's header names it):
  *   SOUND    PITCH, DECAY, SIDE (patch A or B), PMOD (V10.7.8 the filter GR, the guiro's scrape: PMOD its SCRAPE)
  *   SOUND 2  NOISE (the kick's CLICK), COLOR, DRIVE (OFF / ON), MODE (the oscillator's wave, the noise filter, SNAP: 32
@@ -60,25 +60,26 @@ static const uint8_t DX_PV[2][4] = {{DXP_PITCH, DXP_DECAY, 0xFF, DXP_PMOD}, {DXP
 /* KNOB k (0..3) turned s on a SOUND page or KIT LFO */
 static __attribute__((noinline)) void dx_knob(const page_t *pg, uint32_t k, int32_t s)
 {
-    dx_lane_t *L = &dx_kit[dx_ui_lane & 7u];
+    dx_config_t *kit_edit = dx_edit();
+    dx_lane_t *L = &kit_edit->lane[dx_ui_lane & 7u];
     uint8_t *v = dx_ui_side ? L->b : L->a;
     uint32_t pn = dx_pagen(pg), i;
     int32_t d = s > 0 ? 1 : -1;
     k &= 3u;
     if (pn == 4u) {                                     /* (JIANT 0.5.1) KIT LFO: the kit's, not a sound's */
         static const uint8_t MX[4] = {8, 127, 4, 127};
-        int32_t v0 = dx_mot[k];
-        dx_mot[k] = (uint8_t)clamp(v0 + (MX[k] > 8 ? accel(EN_K1 + k, s, 127) : d), 0, MX[k]);
+        int32_t v0 = kit_edit->mot[k];
+        kit_edit->mot[k] = (uint8_t)clamp(v0 + (MX[k] > 8 ? accel(EN_K1 + k, s, 127) : d), 0, MX[k]);
         return;
     }
     if (pn == 3u) {                                     /* SOUND 3: PM.TYPE, LAYER, FEEDBK, SEND */
-        uint8_t *ly = &dx_lay[dx_ui_lane & 7u];
+        uint8_t *ly = &kit_edit->lay[dx_ui_lane & 7u];
         int32_t la = (int32_t)DX_LAY_L(*ly), fb = (int32_t)DX_LAY_FB(*ly);
         if (k == 0u)
             L->mode = (uint8_t)((L->mode & ~0x60u) | (uint32_t)clamp((int32_t)((L->mode >> 5) & 3u) + d, 0, 3) << 5);
         else if (k == 1u) la = clamp(la + d, 0, 15);
         else if (k == 2u) fb = clamp(fb + d, 0, 15);
-        else dx_snd[dx_ui_lane & 7u] = dx_send_of(clamp(dx_send_ix(dx_snd[dx_ui_lane & 7u]) + d, 0, 48));
+        else kit_edit->snd[dx_ui_lane & 7u] = dx_send_of(clamp(dx_send_ix(kit_edit->snd[dx_ui_lane & 7u]) + d, 0, 48));
         *ly = (uint8_t)(la | fb << 4);
         return;
     }
@@ -93,16 +94,17 @@ static __attribute__((noinline)) void dx_knob(const page_t *pg, uint32_t k, int3
     else                                                /* .. and MODE */
         L->mode = (uint8_t)((L->mode & 0xE0u) | (dx_mode_of((uint32_t)clamp((int32_t)dx_mode_ix(L->mode) + d, 0, 31)) & 0x1Fu));
 }
-/* KIT 3 (the whole kit): KNOB 1 BP, 2 FEEDBK (TONE's, dx_tone), (0.7.9) 3 HANDS (the CLAP's, dx_hands), (0.9.9-snd1)
- * 4 GLUE (the bus's, eng_drum.c dx_glue: KIT 3's free knob) */
+/* KIT 3 (the whole kit): KNOB 1 BP, 2 FEEDBK (TONE's, DX_UI.tone), (0.7.9) 3 HANDS (the CLAP's, DX_UI.hands), (0.9.9-snd1)
+ * 4 GLUE (the bus's, eng_drum.c DX_UI.glue: KIT 3's free knob) */
 static void dx_kit3_knob(uint32_t k, int32_t s)
 {
-    uint32_t bp = DX_TONE_BP(dx_tone), fb = DX_TONE_FB(dx_tone);
+    dx_config_t *kit_edit = dx_edit();
+    uint32_t bp = DX_TONE_BP(kit_edit->tone), fb = DX_TONE_FB(kit_edit->tone);
     if (k == 0u) bp = (uint32_t)clamp((int32_t)bp + (s > 0 ? 1 : -1), 0, 15);
     else if (k == 1u) fb = (uint32_t)clamp((int32_t)fb + (s > 0 ? 1 : -1), 0, 15);
-    else if (k == 2u) dx_hands = (uint8_t)clamp((int32_t)dx_hands + (s > 0 ? 1 : -1), 0, 15);
-    else dx_glue = (uint8_t)clamp((int32_t)dx_glue + (s > 0 ? 1 : -1), 0, 15);
-    dx_tone = (uint8_t)(bp | fb << 4);
+    else if (k == 2u) kit_edit->hands = (uint8_t)clamp((int32_t)kit_edit->hands + (s > 0 ? 1 : -1), 0, 15);
+    else kit_edit->glue = (uint8_t)clamp((int32_t)kit_edit->glue + (s > 0 ? 1 : -1), 0, 15);
+    kit_edit->tone = (uint8_t)(bp | fb << 4);
 }
 /* (V10.7.37) OUT's KNOB 4, the KEY MAP (KIT 4's until then): 0 CLASSIC, 1 EXTENDED (the -1 octave KICK / TOM), 2..9
  * EXTENDED, the -1 octave one sound's chromatic run (eng_drum.c drum_chrom); its card */
@@ -114,7 +116,8 @@ static void dx_keymap_card(uint32_t c)
 }
 static __attribute__((noinline)) void dx_kit3_cards(void)
 {
-    uint32_t bp = DX_TONE_BP(dx_tone), fb = DX_TONE_FB(dx_tone);
+    dx_config_t *kit_edit = dx_edit();
+    uint32_t bp = DX_TONE_BP(kit_edit->tone), fb = DX_TONE_FB(kit_edit->tone);
     char val[12];
     if (bp) {                                           /* (its centre, as the filter sets it) */
         uint32_t hz = CUTOFF_HZ[78u + bp * 2u];
@@ -126,17 +129,18 @@ static __attribute__((noinline)) void dx_kit3_cards(void)
                 (int32_t)bp * 1000 / 15, ICON_TONE);
     fmt_int(val, (int32_t)fb);
     gauge_column(1, "FEEDBK", fb ? val : "OFF", fb ? VAL(1u) : T_DIM, (int32_t)fb * 1000 / 15);
-    fmt_int(val, (int32_t)dx_hands);                    /* (0.7.9) the CLAP's HANDS */
-    gauge_column(2, "HANDS", dx_hands ? val : "OFF", dx_hands ? VAL(2u) : T_DIM, (int32_t)dx_hands * 1000 / 15);
-    fmt_int(val, (int32_t)dx_glue);                     /* (0.9.9-snd1) the bus's GLUE */
-    gauge_column(3, "GLUE", dx_glue ? val : "OFF", dx_glue ? VAL(3u) : T_DIM, (int32_t)dx_glue * 1000 / 15);
+    fmt_int(val, (int32_t)kit_edit->hands);                    /* (0.7.9) the CLAP's HANDS */
+    gauge_column(2, "HANDS", kit_edit->hands ? val : "OFF", kit_edit->hands ? VAL(2u) : T_DIM, (int32_t)kit_edit->hands * 1000 / 15);
+    fmt_int(val, (int32_t)kit_edit->glue);                     /* (0.9.9-snd1) the bus's GLUE */
+    gauge_column(3, "GLUE", kit_edit->glue ? val : "OFF", kit_edit->glue ? VAL(3u) : T_DIM, (int32_t)kit_edit->glue * 1000 / 15);
 }
 
 /* the four cards of a SOUND page or KIT LFO */
 static void dx_cards(const page_t *pg)
 {
+    dx_config_t *kit_edit = dx_edit();
     static const char *const BUS[4] = {"OFF", "CHO", "DLY", "REV"};
-    const dx_lane_t *L = &dx_kit[dx_ui_lane & 7u];
+    const dx_lane_t *L = &kit_edit->lane[dx_ui_lane & 7u];
     const uint8_t *v = dx_ui_side ? L->b : L->a;
     uint32_t pn = dx_pagen(pg), k;
     char val[12];
@@ -144,17 +148,17 @@ static void dx_cards(const page_t *pg)
     if (pn == 4u) {                                     /* (JIANT 0.5.1) KIT LFO */
         static const char *const RT[9] = {"OFF", "4BAR", "2BAR", "1BAR", "1/2", "1/4", "1/8", "1/16", "1/32"};
         static const char *const SH[5] = {"SINE", "TRI", "SAW", "RAMP", "S&H"};
-        gauge_column(0, "RATE", RT[dx_mot[XM_RATE] % 9u], dx_mot[XM_RATE] ? VAL(0u) : T_DIM, dx_mot[XM_RATE] * 125);
-        fmt_int(val, dx_mot[XM_DPTH]);
-        gauge_column(1, "DEPTH", val, dx_mot[XM_DPTH] ? VAL(1u) : T_DIM, dx_mot[XM_DPTH] * 1000 / 127);
-        hot_gauge_column(2, "SHAPE", SH[dx_mot[XM_SHPE] % 5u], dx_mot[XM_SHPE] * 250);
-        fmt_int(val, dx_mot[XM_RAND]);
-        gauge_column(3, "RAND", val, dx_mot[XM_RAND] ? VAL(3u) : T_DIM, dx_mot[XM_RAND] * 1000 / 127);
+        gauge_column(0, "RATE", RT[kit_edit->mot[XM_RATE] % 9u], kit_edit->mot[XM_RATE] ? VAL(0u) : T_DIM, kit_edit->mot[XM_RATE] * 125);
+        fmt_int(val, kit_edit->mot[XM_DPTH]);
+        gauge_column(1, "DEPTH", val, kit_edit->mot[XM_DPTH] ? VAL(1u) : T_DIM, kit_edit->mot[XM_DPTH] * 1000 / 127);
+        hot_gauge_column(2, "SHAPE", SH[kit_edit->mot[XM_SHPE] % 5u], kit_edit->mot[XM_SHPE] * 250);
+        fmt_int(val, kit_edit->mot[XM_RAND]);
+        gauge_column(3, "RAND", val, kit_edit->mot[XM_RAND] ? VAL(3u) : T_DIM, kit_edit->mot[XM_RAND] * 1000 / 127);
         return;
     }
     if (pn == 3u) {                                     /* SOUND 3 */
         static const char *const PM[4] = {"DECAY", "LONG", "NOISE", "SINE"};
-        uint32_t ly = dx_lay[dx_ui_lane & 7u], la = DX_LAY_L(ly), fb = DX_LAY_FB(ly), sn = dx_snd[dx_ui_lane & 7u];
+        uint32_t ly = kit_edit->lay[dx_ui_lane & 7u], la = DX_LAY_L(ly), fb = DX_LAY_FB(ly), sn = kit_edit->snd[dx_ui_lane & 7u];
         int32_t ix = dx_send_ix(sn);
         char un[8];
         hot_gauge_column(0, "PM.TYPE", PM[(L->mode >> 5) & 3u], (int32_t)((L->mode >> 5) & 3u) * 333);
@@ -191,12 +195,13 @@ static void dx_cards(const page_t *pg)
 /* what the cards and the panel show changed */
 static uint32_t dx_sig(void)
 {
-    const dx_lane_t *L = &dx_kit[dx_ui_lane & 7u];
+    dx_config_t *kit_edit = dx_edit();
+    const dx_lane_t *L = &kit_edit->lane[dx_ui_lane & 7u];
     uint32_t h = (uint32_t)dx_ui_lane * 31u + dx_ui_side * 977u + L->mode * 131u, i;
-    h ^= (uint32_t)dx_mot[0] << 24 ^ (uint32_t)dx_mot[1] << 16 ^ (uint32_t)dx_mot[2] << 8 ^ dx_mot[3];   /* (X-MOD) */
-    h = (h ^ (uint32_t)TSEL->p[P_DKEYMODE] << 24 ^ dx_tone ^ (uint32_t)dx_hands << 8 ^ (uint32_t)dx_glue << 12) * 2654435761u;   /* (TONE, HANDS, GLUE) */
+    h ^= (uint32_t)kit_edit->mot[0] << 24 ^ (uint32_t)kit_edit->mot[1] << 16 ^ (uint32_t)kit_edit->mot[2] << 8 ^ kit_edit->mot[3];   /* (X-MOD) */
+    h = (h ^ (uint32_t)TSEL->p[P_DKEYMODE] << 24 ^ kit_edit->tone ^ (uint32_t)kit_edit->hands << 8 ^ (uint32_t)kit_edit->glue << 12) * 2654435761u;   /* (TONE, HANDS, GLUE) */
     for (i = 0; i < DV_NLANE; i++)                      /* (0.6.48) the SENDs, (0.6.49) the LAYERs */
-        h = (h ^ dx_snd[i] ^ (uint32_t)dx_lay[i] << 8) * 16777619u;
+        h = (h ^ kit_edit->snd[i] ^ (uint32_t)kit_edit->lay[i] << 8) * 16777619u;
     for (i = 0; i < DXP_N; i++)
         h = (h ^ (uint32_t)L->a[i] << 8 ^ L->b[i]) * 16777619u;
     return h;

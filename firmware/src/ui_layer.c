@@ -7,7 +7,7 @@
  *   FX   HOLD  the performance effects (perform.c) and the track mutes while held; KNOB 1..4 its macros
  *   GLO  SET   black keys 1..4 (F#3 G#3 A#3 C#4) T1..T4 MUTE (latched; lit = sounding), F3..B3 SOLO T1..T4 while
  *              held (HOLD cells, a corner triangle), C4 UNMUTE ALL, F4 TAP tempo; KNOB 1..4 T1..T4 LEVEL;
- *              black keys 5..8 (D#4 F#4 G#4 A#4) the DRUM group mutes KICK SNARE HAT PERC (eng_drum.c dx_mute; the
+ *              black keys 5..8 (D#4 F#4 G#4 A#4) the DRUM group mutes KICK SNARE HAT PERC (eng_drum.c DX_UI.mute; the
  *              row shows while a track plays DRUM; C4 unmutes them too);
  *              GLO + PLAY: from the top without stopping
  *   SCL  SET   any key: its note name is ROOT; KNOB 1..4 ROOT SCL CHRD VOIC (LY_SCL: the SCL page's first two,
@@ -749,13 +749,13 @@ static __attribute__((noinline)) void layer_key(uint32_t l, uint32_t k)
             if (p < NTRK)
                 trk[p].p[P_MUTE] = (int16_t)!trk[p].p[P_MUTE];
             else if (p < NTRK + 4u)
-                dx_mute_set(dx_mute ^ (1u << (p - NTRK)));
+                for (uint32_t k = 0; k < NTRK; k++) dx_cfg[k].mute ^= (uint16_t)(1u << (p - NTRK));
         } else if (p < NTRK) {
             lys.solo |= 1u << k;                        /* (layer_masks: perf_solo while held) */
         } else if (p == GLO_ALL) {
             for (i = 0; i < NTRK; i++)
                 trk[i].p[P_MUTE] = 0;
-            dx_mute_set(0);
+            for (uint32_t k = 0; k < NTRK; k++) dx_cfg[k].mute = 0;
         } else if (p == GLO_TAP) {
             glo_tap();
         } else if (p == GLO_UNDO) {
@@ -771,7 +771,7 @@ static __attribute__((noinline)) void layer_key(uint32_t l, uint32_t k)
             ui_message(p ? "MACROS CLEARED" : "MACROS DICED");
         }
     } else if (l == LAYER_EDIT && key_black(k) && p < NLANE && drum_track(TSEL)) {
-        dx_mute_set(dx_mute ^ DXM_LANE(p));             /* DRUM: black keys 1..8 mute each sound (lit = sounding) */
+        dx_mute_set(DX_UI.mute ^ DXM_LANE(p));             /* DRUM: black keys 1..8 mute each sound (lit = sounding) */
     } else if (l == LAYER_EDIT && !key_black(k) && p <= LY_RECALL) {
         if (chain_busy())
             ui_message("SONG PLAYS: STOP IT TO EDIT");
@@ -949,7 +949,7 @@ static uint32_t layer_leds(uint32_t *br)
             can = e > PF_N || (e < PF_N && ((ok >> e) & 1u));
             on = can && (e > PF_N ? pfm_lit(e) : (held >> e) & 1u);
         } else if (l == LAYER_GLO) {                    /* sounding lit; SOLO held lit, the others, C4, F4 breathe */
-            on = b ? (p < NTRK && glo_sounding(p)) || (p >= NTRK && p < NTRK + 4u && !((dx_mute >> (p - NTRK)) & 1u))
+            on = b ? (p < NTRK && glo_sounding(p)) || (p >= NTRK && p < NTRK + 4u && !((DX_UI.mute >> (p - NTRK)) & 1u))
                    : p < NTRK && ((lys.solo >> k) & 1u);      /* (a group sounding: lit) */
             can = !b && ((p < NTRK && p < trk_live) || p == GLO_ALL || (p == GLO_TAP && !song.g[G_CLOCK]) ||
                          (p == GLO_UNDO && undo_ok));
@@ -1086,7 +1086,7 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
         }
         if (blk && p < NTRK + 4u && glo_drums()) {
             str_cpy(nm, GLO_GROUP[p - NTRK], 12);
-            return (dx_mute >> (p - NTRK)) & 1u ? LS_MUTE : LS_OFF;
+            return (DX_UI.mute >> (p - NTRK)) & 1u ? LS_MUTE : LS_OFF;
         }
         if (blk)
             return LS_OFF;
@@ -1414,6 +1414,7 @@ static void lst_chip(const char *a, const char *v, int on)
 }
 static __attribute__((noinline)) void layer_state(uint32_t l)
 {
+    dx_config_t *kit_edit = dx_edit();
     static const char *const LN[LAYER_N] = {"", "FX", "GLO", "SCL", "EDIT", "SEQ", "REC", "SAVE", "LFO"};
     uint32_t k, e;
     char b[48], v[8];
@@ -1436,7 +1437,7 @@ static __attribute__((noinline)) void layer_state(uint32_t l)
             lst_chip(t, trk[k].p[P_MUTE] ? "MUTE" : k >= trk_live ? "ASLEEP" : "ON", !trk[k].p[P_MUTE] && k < trk_live);
         }
         for (k = 0; glo_drums() && k < 4u; k++)
-            lst_chip(GLO_GROUP[k], (dx_mute >> k) & 1u ? "MUTE" : "ON", !((dx_mute >> k) & 1u));
+            lst_chip(GLO_GROUP[k], (kit_edit->mute >> k) & 1u ? "MUTE" : "ON", !((kit_edit->mute >> k) & 1u));
         lst_chip("UNDO", undo_ok ? "READY" : "-", undo_ok);
     } else if (l == LAYER_MACRO) {                      /* the latch, each macro's routes */
         lst_chip("LATCH", mac_latch ? "ON" : "OFF", mac_latch);
@@ -1484,6 +1485,7 @@ static __attribute__((noinline)) void layer_state(uint32_t l)
 }
 static __attribute__((noinline)) void draw_layer(void)
 {
+    dx_config_t *kit_edit = dx_edit();
     uint32_t l = ui.layer % LAYER_N, sig = l * 7919u + ux.gen * 977u;
     layer_cards(l);
     if (l == LAYER_FX)
@@ -1493,7 +1495,7 @@ static __attribute__((noinline)) void draw_layer(void)
         sig += perf_solo * 31u + (uint32_t)song.g[G_CLOCK] * 5u +
                (uint32_t)(trk[0].p[P_MUTE] | trk[1].p[P_MUTE] << 1 | trk[2].p[P_MUTE] << 2 | trk[3].p[P_MUTE] << 3 |
                           trk[4].p[P_MUTE] << 4 | trk[5].p[P_MUTE] << 5) * 131u +
-               ((uint32_t)dx_mute * 2u + (uint32_t)glo_drums()) * 4099u;
+               ((uint32_t)kit_edit->mute * 2u + (uint32_t)glo_drums()) * 4099u;
     else if (l == LAYER_SCL)
         sig += (uint32_t)TSEL->p[P_SCALE] * 31u;
     else if (l == LAYER_REC)
@@ -1508,7 +1510,7 @@ static __attribute__((noinline)) void draw_layer(void)
     else if (l == LAYER_SEQ)
         sig += (uint32_t)drum_track(TSEL) * 31u + ui.lane * 5u + (uint32_t)chain_busy() * 3u + (uint32_t)TSEL->p[P_E0] * 131u + song.sel * 977u;
     else
-        sig += snd_id() * 31u + (uint32_t)preset_favorite() * 13u + (uint32_t)chain_busy() * 3u + (uint32_t)(project_recall_slot() + 1) * 5u + dx_mute * 7919u +
+        sig += snd_id() * 31u + (uint32_t)preset_favorite() * 13u + (uint32_t)chain_busy() * 3u + (uint32_t)(project_recall_slot() + 1) * 5u + kit_edit->mute * 7919u +
                (uint32_t)drum_track(TSEL) * 11u + up_gen * 101u;
     sig += ui.lylv * 0x9E3779B1u + (ui.lylv == 1u ? str_hash(7u, ly_card[0].v) + str_hash(9u, ly_card[1].v) * 3u +
                                      str_hash(11u, ly_card[2].v) * 5u + str_hash(13u, ly_card[3].v) * 7u : 0u);

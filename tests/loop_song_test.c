@@ -37,7 +37,7 @@ static void lt_clear(void)
     }
     set_engine_of(&trk[0], ENGI_DRUM);
     set_engine_of(&trk[3], 0);                          /* (T4 a synth: ANALOG; ui_test's power-on has DRUM-X there) */
-    memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
+    memcpy(DX_UI.lane, DX_KIT_DEF, sizeof DX_UI.lane);
     song.g[G_BPM] = 124;
 }
 static void lt_drums(uint32_t len)
@@ -326,13 +326,13 @@ int main(void)
     lt_clear(); lt_drums(16);
     {   /* an 808 line on DRUM-X's KICK, its chromatic run (EXTENDED: notes 0..12 the kick a semitone each) */
         static const uint8_t L[8] = {9, 9, 12, 16, 9, 7, 12, 9};   /* (A A C E A G C A as the run's pitch classes) */
-        int32_t base = (392 + dx_kit[DV_KICK].a[DXP_PITCH] * 12) / 16;
+        int32_t base = (392 + DX_UI.lane[DV_KICK].a[DXP_PITCH] * 12) / 16;
         for (k = 0; k < 16u; k++) {                     /* (the drums' kick lane off: the line alone, on its notes) */
             trk[0].step[k].hit &= (uint8_t)~(1u << DV_KICK);
             if (!trk[0].step[k].hit) trk[0].step[k].time = ST_REST;
         }
         trk[0].p[P_DKEYMODE] = 1;
-        dx_kit[DV_KICK].mode = (uint8_t)((dx_kit[DV_KICK].mode & 0x9Fu) | DXM_LONG << 5);
+        DX_UI.lane[DV_KICK].mode = (uint8_t)((DX_UI.lane[DV_KICK].mode & 0x9Fu) | DXM_LONG << 5);
         for (k = 0; k < 8u; k++) {
             uint8_t nt = (uint8_t)(((L[k] - base + 6) % 12 + 12) % 12);
             step_t *s = &trk[0].step[k * 2u];

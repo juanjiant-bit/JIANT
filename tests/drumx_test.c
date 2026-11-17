@@ -11,7 +11,7 @@
  * 4. the closed hat chokes the open one (below -60 dB of its level within 10 ms).
  * 5. the knobs: MRPH on KNOB 1, NOIS moves every lane's noise.
  * 5w. FOLD: every lane another sound at 127, never at full scale.
- * 5b. the group mutes (dx_mute): a muted group's hits are silent (any kit), the others still sound; muting a
+ * 5b. the group mutes (DX_UI.mute): a muted group's hits are silent (any kit), the others still sound; muting a
  *    ringing group fades it out: its voice ends within 10 ms, the output 26 dB under the unmuted hit's, no step
  *    larger than the hit's own; unmuting sounds again.
  * 5c. the master (JIANT): PNCH 100 lifts a kick's first 8 ms (+30 %) and lowers its tail; DUCK 100: a held synth
@@ -142,15 +142,15 @@ int main(int argc, char **argv)
                     double e0 = 0, e1 = 0;
                     for (w = 0; w < (h == 2u ? 2u : 1u); w++) {
                         dx_voice_t v;
-                        dx_lane_t L = dx_kit[ln];
+                        dx_lane_t L = DX_UI.lane[ln];
                         int32_t *y = w ? y0 : y1;
                         if (w)
                             L.a[DXP_NOISE] = L.b[DXP_NOISE] = 0;
-                        dx_kit[ln] = L;
+                        DX_UI.lane[ln] = L;
                         memset(&v, 0, sizeof v);
                         dx_trigger(&v);
                         for (b = 0; b + CTL <= FS / 4u; b += CTL)
-                            dx_run_fx(&dx_kit[ln], &v, (int32_t)m, 0, d, c, nz, 0, 0, y + b, CTL, 0);
+                            dx_run_fx(&DX_UI, &DX_UI.lane[ln], &v, (int32_t)m, 0, d, c, nz, 0, 0, y + b, CTL, 0);
                     }
                     dx_kit_load(k);
                     if (h < 2u) {
@@ -183,14 +183,14 @@ int main(int argc, char **argv)
         dx_kit_load(DXK_LATIN);
         for (w = 0; w < 3u; w++) {
             dx_voice_t v;
-            dx_lane_t L = dx_kit[DV_HATC];
+            dx_lane_t L = DX_UI.lane[DV_HATC];
             double e = 0, ep = 0;
             uint32_t first = 0, last = 0, k;
             if (w == 2u) L.a[DXP_PMOD] = 0;
             memset(&v, 0, sizeof v);
             v.sv = w == 1u ? 80u : 127u;
             dx_trigger(&v);
-            for (b = 0; b + CTL <= FS / 2u; b += CTL) dx_run_fx(&L, &v, 0, 0, 0, 0, 0, 0, 0, y + b, CTL, 0);
+            for (b = 0; b + CTL <= FS / 2u; b += CTL) dx_run_fx(&DX_UI, &L, &v, 0, 0, 0, 0, 0, 0, 0, y + b, CTL, 0);
             if (w == 0u) live = v.live;
             for (k = 0; k + 220u <= FS / 2u; k += 220u) {   /* 5 ms windows: where it sounds, its dips (ticks) */
                 double r = 0;
@@ -386,17 +386,17 @@ int main(int argc, char **argv)
                 double dbp = 0, dfb = 0, e0 = 0;
                 int32_t pk2 = 0;
                 int metal = l2 == DV_HATC || l2 == DV_HATO || l2 == DV_RIM || l2 == DV_BELL;
-                dx_tone = 0; strike(kitx(64, 64), l2, FS / 8u); memcpy(r0, buf, sizeof r0);
-                dx_tone = 8; strike(kitx(64, 64), l2, FS / 8u);
+                DX_UI.tone = 0; strike(kitx(64, 64), l2, FS / 8u); memcpy(r0, buf, sizeof r0);
+                DX_UI.tone = 8; strike(kitx(64, 64), l2, FS / 8u);
                 for (i = 0; i < FS / 8u; i++) { dbp += fabs((double)buf[i] - r0[i]); e0 += fabs((double)r0[i]); }
-                dx_tone = 12u << 4; strike(kitx(64, 64), l2, FS / 8u);
+                DX_UI.tone = 12u << 4; strike(kitx(64, 64), l2, FS / 8u);
                 for (i = 0; i < FS / 8u; i++) { dfb += fabs((double)buf[i] - r0[i]); pk2 = abs(buf[i]) > pk2 ? abs(buf[i]) : pk2; }
                 if (getenv("DX_TONE")) printf("lane %u bp %.3f fb %.3f pk %d\n", l2, dbp / (e0 + 1), dfb / (e0 + 1), pk2);
                 if (metal) okb &= dbp / (e0 + 1) > 0.1;
                 else if (l2 == DV_KICK || l2 == DV_TOM) okb &= dbp / (e0 + 1) < 0.05;   /* (the noisy ones: another each hit) */
                 okf &= (dfb / (e0 + 1) > 0.05 || l2 == DV_CLAP) && pk2 < 32700;   /* (the clap: no oscillator) */
             }
-            dx_tone = 0;
+            DX_UI.tone = 0;
             check("TONE (0.6.36): BP on the hats, rim and cowbell only; FEEDBK moves every sound, under full scale", okb && okf, 0);
         }
         {   /* (0.9.9-snd1) FEEDBK and FM ENV on curves (drumx_voice.c DX_FB_CURVE, dx_fm_env, dx_fm_lim): monotonic, most
@@ -420,7 +420,7 @@ int main(int argc, char **argv)
                     if (kk)
                         t->p[P_E5] = FMV[k2];
                     else
-                        dx_tone = (uint8_t)(FB[k2] << 4);
+                        DX_UI.tone = (uint8_t)(FB[k2] << 4);
                     same_noise(t);
                     strike(t, DV_TOM, FS / 8u);
                     for (i = 1; i < FS / 8u; i++) {
@@ -430,7 +430,7 @@ int main(int argc, char **argv)
                     br[kk][k2] = d / (e + 1);
                     if (k2 && br[kk][k2] < br[kk][k2 - 1] * 0.8)   /* (the tom's noise: another each hit) */
                         mono = 0;
-                    dx_tone = 0;
+                    DX_UI.tone = 0;
                 }
             check("FEEDBK, FM ENV on curves (0.9.9-snd1, V10.6q): monotonic, FEEDBK under 2 rad, FM ENV's extreme in the last steps", okc,
                   "FEEDBK beta %.2f at 8, %.2f at 12, %.2f at 15; FM ENV index %.2f rad at 64, %.2f at 114, %.2f at 127",
@@ -452,7 +452,7 @@ int main(int argc, char **argv)
             int other;
             for (h = 0; h < 2u; h++) {
                 track_t *tk = kitx(64, 64);
-                dx_hands = (uint8_t)(h ? 15 : 0);
+                DX_UI.hands = (uint8_t)(h ? 15 : 0);
                 same_noise(tk);
                 strike(tk, DV_CLAP, FS / 8u);
                 for (i = 0; i < FS / 8u; i++) {
@@ -464,9 +464,9 @@ int main(int argc, char **argv)
             }
             {
                 track_t *tk = kitx(64, 64);
-                dx_hands = 15; same_noise(tk); strike(tk, DV_KICK, FS / 8u); memcpy(r1, buf, sizeof r1);
+                DX_UI.hands = 15; same_noise(tk); strike(tk, DV_KICK, FS / 8u); memcpy(r1, buf, sizeof r1);
                 tk = kitx(64, 64);
-                dx_hands = 0; same_noise(tk); strike(tk, DV_KICK, FS / 8u);
+                DX_UI.hands = 0; same_noise(tk); strike(tk, DV_KICK, FS / 8u);
             }
             {   /* (the kick: its energy the same, within 1 %) */
                 double k0 = 0, k1 = 0;
@@ -477,7 +477,7 @@ int main(int argc, char **argv)
                    a0[1] / (a0[0] + 1), pk2);
             check("HANDS (0.7.9): 15 more clap after the strike (x2 the energy in 1 .. 60 ms), the strike as it was, under full "
                   "scale; the kick untouched", e[1] > e[0] * 2.0 && a0[1] < a0[0] * 2.0 && pk2 < 32700 && other, 0);
-            dx_hands = 0;
+            DX_UI.hands = 0;
         }
     }
     {
@@ -503,22 +503,22 @@ int main(int argc, char **argv)
         static int32_t a0[FS / 8];
         double d0 = 0, d1 = 0, d2 = 0;
         track_t *t;
-        dx_lane_t keep = dx_kit[DV_KICK];
-        dx_kit[DV_KICK].a[DXP_NOISE] = dx_kit[DV_KICK].b[DXP_NOISE] = 0;   /* (no noise: two plain hits are alike) */
-        memset(dx_mot, 0, sizeof dx_mot);
+        dx_lane_t keep = DX_UI.lane[DV_KICK];
+        DX_UI.lane[DV_KICK].a[DXP_NOISE] = DX_UI.lane[DV_KICK].b[DXP_NOISE] = 0;   /* (no noise: two plain hits are alike) */
+        memset(DX_UI.mot, 0, sizeof DX_UI.mot);
         t = kitx(64, 64); strike(t, DV_KICK, FS / 8u); memcpy(a0, buf, sizeof a0);
         t = kitx(64, 64); strike(t, DV_KICK, FS / 8u);
         for (i = 0; i < FS / 8u; i++) d0 += fabs((double)buf[i] - a0[i]);
-        dx_mot[XM_RAND] = 120;
+        DX_UI.mot[XM_RAND] = 120;
         t = kitx(64, 64); strike(t, DV_KICK, FS / 8u); memcpy(a0, buf, sizeof a0);
         t = kitx(64, 64); strike(t, DV_KICK, FS / 8u);
         for (i = 0; i < FS / 8u; i++) d1 += fabs((double)buf[i] - a0[i]);
-        dx_mot[XM_RAND] = 0; dx_mot[XM_RATE] = 5; dx_mot[XM_DPTH] = 127; dx_mot[XM_SHPE] = 2;
+        DX_UI.mot[XM_RAND] = 0; DX_UI.mot[XM_RATE] = 5; DX_UI.mot[XM_DPTH] = 127; DX_UI.mot[XM_SHPE] = 2;
         t = kitx(64, 64); strike(t, DV_KICK, FS / 8u); memcpy(a0, buf, sizeof a0);
         t = kitx(64, 64); strike(t, DV_KICK, FS / 5u);      /* (another place in the LFO's cycle) */
         for (i = 0; i < FS / 8u; i++) d2 += fabs((double)buf[i] - a0[i]);
-        memset(dx_mot, 0, sizeof dx_mot);
-        dx_kit[DV_KICK] = keep;
+        memset(DX_UI.mot, 0, sizeof DX_UI.mot);
+        DX_UI.lane[DV_KICK] = keep;
         check("X-MOD: off, hits alike (within 5 %); RAND, each hit its own; the LFO moves MORPH between hits",
               d0 * 20 < d1 && d0 * 20 < d2 && d1 / (FS / 8u) > 50, "diff off %.0f, RAND %.0f, LFO %.0f",
               d0 / (FS / 8u), d1 / (FS / 8u), d2 / (FS / 8u));
@@ -532,17 +532,17 @@ int main(int argc, char **argv)
         static const uint8_t MD[5] = {0, 1u << 5, 2u << 5, 3u << 5, 0x80u};
         double dn = 0, ds = 0, pk0 = 0, pk4 = 0, rm0 = 0, rm4 = 0;
         uint32_t c0, c1, m, pkx = 0;
-        dx_lane_t keep = dx_kit[DV_KICK];
+        dx_lane_t keep = DX_UI.lane[DV_KICK];
         for (m = 0; m < 5u; m++) {
             track_t *t = kitx(0, 64);
-            dx_kit[DV_KICK].mode = (uint8_t)((keep.mode & 0x1Fu) | MD[m]);
-            dx_kit[DV_KICK].a[DXP_PMOD] = 110;
+            DX_UI.lane[DV_KICK].mode = (uint8_t)((keep.mode & 0x1Fu) | MD[m]);
+            DX_UI.lane[DV_KICK].a[DXP_PMOD] = 110;
             strike(t, DV_KICK, FS / 4u);
             memcpy(r[m], buf, sizeof r[m]);
             for (i = 0; i < FS / 4u; i++)
                 pkx = (uint32_t)abs(buf[i]) > pkx ? (uint32_t)abs(buf[i]) : pkx;
         }
-        dx_kit[DV_KICK] = keep;
+        DX_UI.lane[DV_KICK] = keep;
         memcpy(buf, r[0], sizeof r[0]); c0 = crossings(FS * 30u / 1000u, FS * 120u / 1000u);
         memcpy(buf, r[1], sizeof r[1]); c1 = crossings(FS * 30u / 1000u, FS * 120u / 1000u);
         for (i = 0; i < FS / 4u; i++) {
@@ -557,7 +557,7 @@ int main(int argc, char **argv)
         rm4 = sqrt(rm4 / (FS / 4u));
         check("PMOD modes and DRIVE: LONG a longer sweep, NOISE and SINE their own, DRIVE denser, under full scale",
               c1 > c0 + 2u && dn / (FS / 4u) > 200 && ds / (FS / 4u) > 200 && rm4 / pk4 > rm0 / pk0 * 1.15 && pkx < 32767u &&
-              !memcmp(&dx_kit[DV_KICK], &keep, sizeof keep),
+              !memcmp(&DX_UI.lane[DV_KICK], &keep, sizeof keep),
               "crossings 30-120 ms %u -> %u, crest %.2f -> %.2f", c0, c1, pk0 / rm0, pk4 / rm4);
     }
 
@@ -699,7 +699,7 @@ int main(int argc, char **argv)
         t->p[P_E7] = 40;
         for (m = 0; m < 3u; m++) {
             double r = 0;
-            dx_glue = G[m];
+            DX_UI.glue = G[m];
             for (k = 0; k < nn; k += CTL) {
                 for (j = 0; j < CTL; j++)
                     buf[k + j] = in[k + j];
@@ -712,7 +712,7 @@ int main(int argc, char **argv)
             }
             cr[m] = pkg[m] / sqrt(r / nn);
             if (m == 1u) {                               /* GLUE turned OFF after it was on: as fresh */
-                dx_glue = 0;
+                DX_UI.glue = 0;
                 for (k = 0; k < nn; k += CTL) {
                     for (j = 0; j < CTL; j++)
                         buf[k + j] = in[k + j];
@@ -727,7 +727,7 @@ int main(int argc, char **argv)
               "crest %.2f -> %.2f -> %.2f, peak %d %d %d (x2 scale)", cr[0], cr[1], cr[2], pkg[0], pkg[1], pkg[2]);
         check("GLUE OFF: the bus bit for bit as without it (the goldens: OFF is the kit as before), also after it was on",
               bad0 == 0u, "%u samples differ", bad0);
-        dx_glue = 0;
+        DX_UI.glue = 0;
         t->p[P_E7] = 0;
     }
     {   /* (V10.7.37) the kit's EROSION (core.h P_DNZ): NOISE 0 with RATE MODE DEST anywhere, nothing of it runs (the

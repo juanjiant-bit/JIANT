@@ -796,7 +796,7 @@ static uint32_t lz_level(void)
 }
 
 /* transient message in the top bar, right of the transport and the BPM: a + b */
-static void ui_say(const char *a, const char *b)
+static __attribute__((noinline)) void ui_say(const char *a, const char *b)
 {
     uint32_t n;
     str_cpy(ui.msg, a, sizeof ui.msg);
@@ -1742,18 +1742,11 @@ static __attribute__((noinline)) void kit_kept(uint32_t o)   /* "KIT OF Tn KEPT"
     m[8] = (char)('0' + o);
     ui_message(m);
 }
-static void apply_preset(uint32_t pi)                 /* the selected track's sound (browsing, the editor, PROGRAM CHANGE) */
+static __attribute__((noinline)) void apply_preset(uint32_t pi)
 {
     apply_preset_to(TSEL, pi);
-    if (trk_eng(TSEL) == ENGI_DRUM) {      /* (0.7.2) DRUM: the preset is a factory kit, into the section's kit
-                                                       * (drumx_voice.c DX_KITS; a project load or an engine switch keeps the
-                                                       * section's kit: apply_preset_to alone) */
-        uint32_t o = drum_elsewhere(TSEL);
-        if (!o)
-            dx_kit_load(pi % ENG_DRUM.npresets);
-        else                                           /* (0.8.1, reported: browsing T5's sounds past the kits changed T4's
-                                                        * drums) the kit is shared: another track's stays as it is */
-            kit_kept(o);
+    if (trk_eng(TSEL) == ENGI_DRUM) {
+        fm1_irq_off(); dx_kit_load(pi % ENG_DRUM.npresets); fm1_irq_on();
     }
 }
 static void set_engine(uint32_t ei) { set_engine_of(TSEL, ei); }
@@ -1770,7 +1763,7 @@ static void vel_at_route(track_t *t)
 /* (0.6.46) INIT SOUND, NEW PROJECT, (0.6.49) the power-on: the engine's own defaults (its EDIT values as the engine
  * declares them, not its first preset's colour; the envelope, VOICE and the filter envelope as a new track has them),
  * dry (no DIST CHOR DLY REV send: the effects are the player's to add), on FM6 the init voice */
-static void init_sound_of(track_t *t, uint32_t ei)
+static __attribute__((noinline)) void init_sound_of(track_t *t, uint32_t ei)
 {
     static const uint8_t ENVP[6] = {P_ATK, P_DEC, P_SUS, P_REL, P_ED_FLT, P_VOICE};
     const engine_t *e;
@@ -1791,13 +1784,13 @@ static void init_sound_of(track_t *t, uint32_t ei)
 /* (0.9.9) the power-on, INIT SYSTEM and NEW PROJECT: part i (engines.c TRK_DEF) its engine with its preset's sound
  * (the EDIT values, the envelope, MONO / POLY, VOICE's words, FM6's patch), over the engine's defaults as INIT SOUND
  * leaves them, and dry: no DIST CHOR DLY REV send (the effects are the player's to add). Was INIT SOUND's alone */
-static void power_sound_of(track_t *t, uint32_t i)
+static __attribute__((noinline)) void power_sound_of(track_t *t, uint32_t i)
 {
     uint32_t k;
     init_sound_of(t, TRK_DEF[i % NPART][0]);
     apply_preset_to(t, TRK_DEF[i % NPART][1]);
     if (TRK_DEF[i % NPART][0] == ENGI_DRUM)           /* (V10.6d) DRUM-X: its preset's kit too (ACOUSTIC's, soft) */
-        dx_kit_load(TRK_DEF[i % NPART][1]);
+        dx_kit_load_of(t, TRK_DEF[i % NPART][1]);
     for (k = 0; k < 4u; k++)
         t->p[P_DIST + k] = 0;
     vel_at_route(t);                          /* (V10.6z6) the keys' pressure audible on a new project's sounds */

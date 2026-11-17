@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../firmware/src/boot_lz4.h"
+#include "../firmware/src/boot_huff.h"
 
 static int fails;
 static void check(const char *what, int ok)
@@ -88,6 +89,17 @@ int main(void)
         if (!stream) {
             printf("boot_lz4: (no build/boot_lz4.bin: the build's blocks not checked)\n");
         } else {
+            long hn;
+            uint8_t *outer = slurp("build/boot_huff.bin", &hn);
+            if (outer) {
+                memset(out, 0xA5, sizeof out);
+                int ok = boot_huff(outer, outer + hn, out, (uint32_t)sn);
+                check("outer Huffman restores the exact LZ4 stream and respects its output bound",
+                      ok && !memcmp(out, stream, (size_t)sn) && out[sn] == 0xA5);
+                if (!ok) return 1;
+                memcpy(stream, out, (size_t)sn);
+                free(outer);
+            }
             const uint8_t *z = stream;
             int same = 1;
             uint32_t total = 0;

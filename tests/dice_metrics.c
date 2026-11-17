@@ -205,7 +205,7 @@ int main(int argc, char **argv)
                 if (r == RL_DRUM) {
                     uint32_t l;
                     kit_n++;
-                    for (l = 0; l < 8u; l++) { kit_lanes++; kit_send += (dx_snd[l] & 63u) != 0; }
+                    for (l = 0; l < 8u; l++) { kit_lanes++; kit_send += (DX_UI.snd[l] & 63u) != 0; }
                 }
             }
         }

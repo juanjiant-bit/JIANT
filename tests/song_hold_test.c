@@ -96,20 +96,20 @@ int main(void)
     set_engine_of(&trk[b], eng_b);                      /* another engine */
     trk[b].p[P_DEC] = (int16_t)(trk[b].p[P_DEC] > 60 ? 20 : 100);   /* and a sound knob (DEC) */
     dec_b = (uint32_t)trk[b].p[P_DEC];
-    dx_kit[0].a[DXP_DECAY] = (uint8_t)(dx_kit[0].a[DXP_DECAY] > 64u ? 10u : 120u);   /* the DRUM-X kit (EDIT > SOUND) */
-    kit0 = dx_kit[0];
+    dx_cfg[d].lane[0].a[DXP_DECAY] = (uint8_t)(dx_cfg[d].lane[0].a[DXP_DECAY] > 64u ? 10u : 120u);   /* the DRUM-X kit (EDIT > SOUND) */
+    kit0 = dx_cfg[d].lane[0];
     slen_ok = steps_ok = 1;
     differs = 0;
     for (rows = 0; rows < 8 && next_row(); rows++) {
         const proj_trk_t *pa = row_trk(a);
         ok &= pa && trk[a].preset == pre_a && trk[b].eng_req == eng_b && trk[b].p[P_DEC] == (int16_t)dec_b &&
-              !memcmp(&dx_kit[0], &kit0, sizeof kit0) && (snd_held & (1u << a | 1u << b | 1u << NTRK)) ==
-                                                              (1u << a | 1u << b | 1u << NTRK);
+              !memcmp(&dx_cfg[d].lane[0], &kit0, sizeof kit0) && (snd_held & (1u << a | 1u << b | 1u << d)) ==
+                                                              (1u << a | 1u << b | 1u << d);
         differs |= pa && sec_preset(pa) != pre_a;     /* (the section would have put its own back) */
         slen_ok &= pa && trk[a].p[P_SLEN] == pa->p[P_SLEN];
         steps_ok &= pa && (row_var(chain.row, a) || !memcmp(trk[a].step, pa->step, sizeof trk[a].step));
         for (k = 0; k < NTRK; k++)                      /* the others: the section's sound, as before */
-            if (k != a && k != b) {
+            if (k != a && k != b && k != d) {
                 const proj_trk_t *pk = row_trk(k);
                 ok &= pk && trk[k].eng_req == eng_live(pk->engine) && trk[k].preset == sec_preset(pk);
             }
@@ -134,7 +134,7 @@ int main(void)
         int16_t atk_b = trk[b].p[P_ATK];
         seq_stop(); song_poll(); frame();
         ok = trk[b].eng_req == eng_b && trk[b].p[P_DEC] == (int16_t)dec_b && trk[b].p[P_ATK] == atk_b &&
-             !memcmp(&dx_kit[0], &kit0, sizeof kit0) && (snd_held & (1u << b | 1u << NTRK)) == (1u << b | 1u << NTRK) &&
+             !memcmp(&dx_cfg[d].lane[0], &kit0, sizeof kit0) && (snd_held & (1u << b | 1u << d)) == (1u << b | 1u << d) &&
              !(snd_held & 1u << a);
         bad += check("V10.7.6 SONG HOLD: STOP keeps the held sounds (engine, knobs, the last section's change, the kit)", ok);
         ok = live.cur == 0 && proj_cur == 0;
@@ -146,7 +146,7 @@ int main(void)
         bad += check("V10.7.6 SONG HOLD: .. over the music before PLAY (its unsaved edits, the other tracks' sounds)", ok);
         press(B_PLAY); events_block(CTL); song_poll(); frame();
         ok = chain.running && next_row() && trk[b].eng_req == eng_b && trk[b].p[P_DEC] == (int16_t)dec_b &&
-             trk[b].p[P_ATK] == atk_b && !memcmp(&dx_kit[0], &kit0, sizeof kit0);
+             trk[b].p[P_ATK] == atk_b && !memcmp(&dx_cfg[d].lane[0], &kit0, sizeof kit0);
         bad += check("V10.6z8 SONG HOLD: PLAY again keeps holding them", ok);
     }
 
