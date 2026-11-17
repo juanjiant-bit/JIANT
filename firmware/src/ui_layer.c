@@ -1041,9 +1041,7 @@ static uint32_t macro_sig(void)
 }
 /* (V10.7.43, the users) FX + a key held + SELECT: that key's effect, the next / previous of every one (an empty key
  * among them; the last key pressed of those held); FX + OCT+: the next layout (1..3; layer_oct). Saved with the system
- * settings: favorites.factory[7|2|13][5..31] (WHEEL's PHASE's ADD's rows past their stars: none has 40 sounds), the
- * layout factory[6][18] (TRIO's retired row) */
-static uint8_t *pfm_row(uint32_t l) { static const uint8_t R[3] = {7, 2, 13}; return &favorites.factory[R[l % 3u]][5]; }
+ * settings (favorites.c pfm_row) */
 static __attribute__((noinline)) void pfm_say(uint32_t lay, int32_t s)
 {
     char b[20];
