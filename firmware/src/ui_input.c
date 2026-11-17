@@ -926,6 +926,20 @@ static void cp_seq(uint32_t paste)
         cp_copy(~(uint64_t)0 >> (NSTEP-len));
     }
 }
+/* (V10.7.45) a step held + SELECT: the next (or last) page whose KNOB 1..4 lock, said as "LOCK · NAME" */
+static __attribute__((noinline)) void lock_walk(int32_t s)
+{
+    uint32_t i = ui.plk_src ? ui.plk_src - 1u : 0u, n;
+    for (n = 0; n < NPAGES; n++) {
+        i = s > 0 ? (i + 1u) % NPAGES : (i + NPAGES - 1u) % NPAGES;
+        if (lock_page_ok(i) && page_visible(i))
+            break;
+    }
+    if (n == NPAGES)
+        return;
+    ui.plk_src = (uint8_t)(i + 1u);
+    ui_say("LOCK \xB7 ", PAGES[i].title);
+}
 /* REC tapped: 1 = it pasted (or refused), not an arming tap. */
 static int cp_paste_rec(void)
 {
@@ -2726,6 +2740,11 @@ static void ui_input_frame(void)
     if (((pressed >> panel.btn[B_SAVE]) & 1u) && ui.ly == LAYER_SAVE)
         ui.save_t0 |= 2u;                               /* (SAVE too: layer_tap opens its pages) */
     layer_oct_open(pressed);                            /* (OCT± with a SET layer's button down: it opens now) */
+    if ((pressed & (1u << panel.btn[B_OCTUP] | 1u << panel.btn[B_OCTDN])) && !ui.menu && !ui.confirm && !ui.ly && cp_held()) {
+        /* (V10.7.45, a user: Eugen) step keys held: OCT+ COPIES them, OCT- PASTES there (no octave; SELECT walks the lock pages) */
+        if ((pressed >> panel.btn[B_OCTUP]) & 1u) cp_copy(cp_held()); else cp_paste_rec();
+        pressed &= ~(1u << panel.btn[B_OCTUP] | 1u << panel.btn[B_OCTDN]);
+    }
     oct = oct_taps(pressed, ui.menu || ui.confirm || act_cols() || name_on() || layer_set_open());
     oct = layer_oct(pressed, oct);                      /* (a SET layer's OCT-: put back) */
     if (!ui.home && !ui.menu && !ui.confirm && !ui.ly && cur_page()->graph == GR_TOOLS && ((pressed >> panel.btn[B_OCTUP]) & 1u))
@@ -3244,9 +3263,9 @@ static void ui_input_frame(void)
         }
     } else if ((s = panel_enc(EN_SELECT)) != 0 && !lay && !ui.menu) {   /* (0.9.2, rule 1) SELECT alone: the section's
                                                         * chain, a page a detent (HOME's: MACROS TIMELINE ARRANGE PARTS SCOPE GENE 1..3) */
-        uint64_t cph = cp_held();
-        if (cph)                                        /* (seq2h) step keys held: COPY them (the range between) */
-            cp_copy(cph);
+        if (cp_held())                                  /* (V10.7.45) step keys held: the page their KNOB 1..4 lock
+                                                         * (0.9.12's walk back; COPY / PASTE on OCT+ / OCT-) */
+            lock_walk(s);
         else                                            /* (V10.7.34, the owner: HOME > MACROS too, its dice
                                                          * HOME + SELECT there, V10.7.36) */
             nav_select(s);

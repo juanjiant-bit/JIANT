@@ -8156,11 +8156,11 @@ static int test_copy_paste(void)
     ok = motion_set_lock(t, 2, P_PAN, 20) == 0;
     open_family(FAM_SEQ); frame();
     ok &= cur_page()->graph == GR_ROLL && !grid_on() && !clip_tag(tag);
-    cp_keys_down(2, 3);                                  /* steps 3 and 4 held, SELECT turned */
-    turn(EN_SELECT, 1);
+    cp_keys_down(2, 3);                                  /* steps 3 and 4 held, OCT+ pressed (V10.7.45) */
+    press(B_OCTUP);
     ok &= clip.n == 2u && msg_is("COPIED 2 STEPS") && clip.nl == 1u && clip_tag(tag) && str_eq(tag, "[2]") && !song.rec;
     cp_keys_up();
-    bad += check("seq2h COPY: two step keys + SELECT copy the range (its notes, TIE, components, a lock), the footer's [2]", ok);
+    bad += check("seq2h COPY: two step keys + OCT+ copy the range (its notes, TIE, components, a lock), the footer's [2]", ok);
     cp_keys_down(9, 9);                                  /* step 10 held, REC tapped: PASTE */
     press(B_REC);
     cp_keys_up();
@@ -8171,18 +8171,18 @@ static int test_copy_paste(void)
     bad += check("  UNDO (GLO + G4) takes the paste back", ok);
     t = &trk[0];
     cp_keys_down(0, 3);                                  /* steps 1..4, pasted at 14 with LEN 16: 14 15 16 1 */
-    turn(EN_SELECT, 1);
+    press(B_OCTUP);
     cp_keys_up();
     memcpy(keep, t->step, sizeof keep);
     cp_keys_down(13, 13);
-    press(B_REC);
+    press(B_OCTDN);
     cp_keys_up();
     ok = clip.n == 4u && !memcmp(&t->step[13], &keep[0], 3 * sizeof(step_t)) && !memcmp(&t->step[0], &keep[3], sizeof(step_t)) &&
          !memcmp(&t->step[16], &keep[16], 48 * sizeof(step_t)) && !memcmp(&t->step[1], &keep[1], 12 * sizeof(step_t));
     bad += check("  a range pasted past the bar's end goes round within LEN (14 15 16 1), nothing past LEN", ok);
     memcpy(keep, t->step, sizeof keep);
     cp_keys_down(0, 15);                                 /* keys 1 and 16: the whole bar */
-    turn(EN_SELECT, 1);
+    press(B_OCTUP);
     cp_keys_up();
     track_select(1); frame();
     cp_keys_down(0, 0);
@@ -8202,7 +8202,7 @@ static int test_copy_paste(void)
     grid_hit(&trk[2], 4, 0, 1); grid_hit(&trk[2], 4, 2, 1); grid_acc(&trk[2], 4, 2, 1);
     memcpy(keep, trk[2].step, sizeof keep);
     cp_keys_down(4, 4);                                  /* a hit there: held for the copy, it stays */
-    turn(EN_SELECT, 1);
+    press(B_OCTUP);
     cp_keys_up();
     cp_keys_down(8, 8);                                  /* an empty step: the press's hit, then the paste over it */
     press(B_REC);
@@ -8226,6 +8226,15 @@ static int test_copy_paste(void)
     ok &= song.rec == 1u;
     song.rec = 0;
     bad += check("  REC alone still arms; a step key held with the clipboard empty too", ok);
+    frames(400);
+    {
+        uint8_t was = ui.plk_src;
+        cp_keys_down(5, 5);                              /* (V10.7.45, Eugen) a step held + SELECT: the lock page walks */
+        turn(EN_SELECT, 1);
+        ok = ui.plk_src != was && ui.plk_src && ui.msg_t && !memcmp(ui.msg, "LOCK", 4) && clip.n == 0u;
+        cp_keys_up();
+    }
+    bad += check("  a step held + SELECT walks the pages its KNOB 1..4 lock (LOCK \xB7 page), no copy", ok);
     return bad;
 }
 static int test_foot_steps(void)
