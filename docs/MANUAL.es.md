@@ -520,7 +520,7 @@ dibujo del paso grande es el de STEP COND); el **SENDS** de FX es la página FX;
 nivel PROJECT) y **PROJECTS** (el nivel LIBRARY); EDIT 1 / EDIT 2 del kit DRUM son **KIT** / **KIT 2**. La página nueva
 **BAR** es el dibujo de los compases de PATTERN con KNOB 1 el compás y KNOB 2 LEN.
 
-- **LIFE** (V10.7.34, la primera página de HOME): LIFE, REACH, X-FM, SWIM (V10.7.43; eran FILTER, PITCH, FX), los seres y quién mueve a quién: mirá
+- **LIFE** (V10.7.34, la primera página de HOME): LIFE (la barra), TALK, BREAK, WEB (V10.7.44), los seres y quién mueve a quién: mirá
   [LIFE](#life-las-voces-vivas-v10734-rehecho-en-la-v10743). SELECT a la derecha sigue a MACROS.
 - **MACROS** (V10.7.24: la primera página de HOME hasta la V10.7.34, con el dibujo de ECO; ECO, BEING y ROUTES se fueron: las cuatro
   perillas del sonido viven en EDIT): **KNOB 1–4** son **M1–M4**, las macros del proyecto (como LFO mantenido; se guardan
@@ -2934,18 +2934,23 @@ pequeña curva de respuesta donde iría la barra.
 
 ### LIFE: las pistas se modulan en FM entre sí (V10.7.34; una sola perilla desde la V10.7.43)
 
-**HOME › LIFE, KNOB 1** es el único control (0–100 %, 25 % al prender). LIFE es la interacción entre pistas y nada más:
-cada pista que suena **modula en fase a la siguiente en la ronda de pistas que suenan** (dos pistas: un dúo, cada una
-mueve a la otra), a velocidad de audio, como un cross-FM: cada parcial se mueve según su frecuencia y aparecen bandas
-laterales, en todos los motores. Un kit mueve a la pista siguiente pero nunca lo mueven a él. Suena un par hasta LIFE 50 %
-y dos por encima (el límite de la CPU), primero los que más suenan. La curva es logarítmica: más o menos un 1 % de la
-profundidad en 25, 6 % en 50, 25 % en 75 y toda en 100 (extremo, un ruido). **LIFE 0 es bit por bit el sonido sin LIFE.**
+(V10.7.44, el diseño de JIANT BYTE) **HOME › LIFE tiene cuatro perillas.** **KNOB 1 LIFE** (0–100 %, la barra que cruza
+el panel arriba) es cuánto vive todo; **0 al prender**, y **LIFE 0 es bit por bit el sonido sin LIFE.** Las tarjetas de
+abajo:
 
-LIFE no mueve afinación, filtro, SHAPE ni envíos, y no tiene seguidores sobre parámetros: eso lo hace la matriz (sus
-fuentes T1 ENV … T6 ENV). Ya no están (V10.7.43): REACH, X-FM y SWIM, el LIFE propio de cada pista (EDIT › TONE / VOICES 3 /
-OUT) y las fuentes LIFE y BEING y el destino LIFE de la matriz. Un proyecto que los guardó abre bien y los ignora (una ruta
-sobre ellos carga apagada). La pantalla muestra los seres como en MACROS y una línea por cada par, de la pista que mueve a
-la movida (con un punto cerca de ella). **LIFE MAX** (punch-in A#4) deja LIFE en 100 % mientras lo mantenés.
+- **TALK** (KNOB 2, 50 % al prender): cuánto oye cada pista a las otras. Su sonido entra en su fase a velocidad de
+  audio: cross-FM entre las pistas, cada parcial movido según su frecuencia, bandas laterales entre ellos, en todos los
+  motores. La profundidad es LIFE × TALK con una curva que ya se oye abajo (más o menos un 5 % en 12, 27 % en 50) y se
+  vuelve salvaje en 100. Oyen hasta tres pistas a la vez, las que más oyen (el límite de la CPU); un kit se oye, nunca oye.
+- **BREAK** (KNOB 3, 40 %): cuánto la rompe el sonido de las otras. Mientras suenan las pistas que oye, su **CRUSH** sube
+  (hasta ~100 % con LIFE × BREAK 100) y vuelve cuando se callan. En todos los motores, también los kits.
+- **WEB** (KNOB 4, 30 %): quién oye a quién. En 0 cada pista oye solo a la anterior en la ronda de pistas que suenan (dos
+  pistas: un dúo); en 100 todas oyen a todas.
+
+La pantalla muestra los seres como en MACROS y una línea de cada pista oída a la que la oye (con un punto cerca de la que
+oye), más brillante cuanto más fuerte suena, más gruesa con TALK. Un proyecto guardado con la V10.7.43 abre con su LIFE, y
+TALK, BREAK y WEB en los valores de arriba. **LIFE MAX** (punch-in A#4) deja LIFE en 100 % mientras lo mantenés. LIFE no
+mueve afinación, filtro ni envíos: eso lo hacen las fuentes T1 ENV … T6 ENV de la matriz.
 
 ### Macros M1–M4
 

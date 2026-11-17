@@ -495,7 +495,7 @@ STEP COND's); FX's **SENDS** is the FX page; SAVE's PROJECT page is **PART SLOTS
 LIBRARY level); the DRUM kit's EDIT 1 / EDIT 2 are **KIT** / **KIT 2**. The new **BAR** page is PATTERN's picture of
 the bars with KNOB 1 the bar and KNOB 2 LEN.
 
-- **LIFE** (V10.7.34, HOME's first page): LIFE, REACH, X-FM, SWIM (V10.7.43; were FILTER, PITCH, FX), the beings and who moves whom: see
+- **LIFE** (V10.7.34, HOME's first page): LIFE (the bar), TALK, BREAK, WEB (V10.7.44), the beings and who moves whom: see
   [LIFE](#life-the-voices-alive-v10734-rebuilt-in-v10743). SELECT right goes on to MACROS.
 - **MACROS** (V10.7.24: HOME's first page until V10.7.34, ECO's picture; ECO, BEING and ROUTES went: the sound's four knobs live on
   EDIT): **KNOB 1–4** are **M1–M4**, the project's macros (as LFO held; kept with the project and the SONG's scenes as
@@ -2784,18 +2784,22 @@ curve where the bar would be.
 
 ### LIFE: the tracks FM each other (V10.7.34; one knob since V10.7.43)
 
-**HOME › LIFE, KNOB 1** is the only control (0–100 %, 25 % at power-on). LIFE is the interaction between the tracks and
-nothing else: each sounding track **phase-modulates the next one in the ring of tracks that sound** (two tracks: a duet,
-each moving the other), at audio rate, as cross-FM: every partial moves by its frequency and sidebands appear between them,
-on every engine. A drum kit moves the next track but is never moved. One pair plays up to LIFE 50 %, two above it (the
-CPU's limit), the loudest movers first. The curve is logarithmic: about 1 % of the depth at 25, 6 % at 50, 25 % at 75 and
-all of it at 100 (extreme, a noisy wash). **LIFE 0 is bit for bit the sound without LIFE.**
+(V10.7.44, JIANT BYTE's design) **HOME › LIFE has four knobs.** **KNOB 1 LIFE** (0–100 %, the bar across the top of the
+panel) is how alive it all is; **0 at power-on**, and **LIFE 0 is bit for bit the sound without LIFE.** The cards below:
 
-LIFE moves no pitch, filter, SHAPE or send, and has no followers on parameters: the modulation matrix does that (its T1 ENV
-… T6 ENV sources). Gone in V10.7.43: REACH, X-FM and SWIM, each track's own LIFE (EDIT › TONE / VOICES 3 / OUT), and the
-matrix's LIFE and BEING sources and LIFE destination. A project that stored them opens fine and ignores them (a route on
-them loads off). The screen shows the beings as on MACROS and a line for each pair, from the track that moves to the one
-moved (a dot near it). **LIFE MAX** (A#4 punch-in) holds LIFE at 100 % while pressed.
+- **TALK** (KNOB 2, 50 % at power-on): how much each track hears the others. Their sound goes into its phase at audio
+  rate: cross-FM between the tracks, every partial moved by its frequency, sidebands between them, on every engine. The
+  depth is LIFE × TALK on a curve heard from the bottom (about 5 % of it at 12, 27 % at 50) that goes wild at 100. Up
+  to three tracks hear at a time, the ones that hear the most (the CPU's limit); a drum kit is heard, it never hears.
+- **BREAK** (KNOB 3, 40 %): how much the others' sound breaks it. While the tracks it hears play, its **CRUSH** rises
+  (up to ~100 % at LIFE × BREAK 100) and falls back as they go quiet. Every engine, the kits too.
+- **WEB** (KNOB 4, 30 %): who hears whom. At 0 each track hears only the one before it in the ring of tracks that sound
+  (two tracks: a duet); at 100 every track hears all the others.
+
+The screen shows the beings as on MACROS and a line from each track heard to the one hearing it (a dot near the one that
+hears), brighter as it plays louder, thicker with TALK. A project saved by V10.7.43 opens with its LIFE, TALK BREAK and WEB
+at the values above. **LIFE MAX** (A#4 punch-in) holds LIFE at 100 % while pressed. LIFE moves no pitch, filter or send;
+the matrix's T1 ENV … T6 ENV sources do that.
 
 ### Macros M1–M4
 

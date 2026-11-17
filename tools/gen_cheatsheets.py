@@ -164,7 +164,7 @@ def controls():
     ]
     t = '<table>' + ''.join(f'<tr><td class="n">{e(n)}</td><td>{d}</td></tr>' for n, d in rows) + '</table>'
     pb = [
-        ('HOME', 'LIFE (the tracks FM-ing each other: intermodulation only)  |  MACROS (M1–M4 over the beings)  |  LIVE MIX (FILTER · SPACE · CLIP · DUCK on the mix)  |  TRACKS (every track a lane: K1 track, LEVEL PAN REV; GLO + black key mute, + white key solo)  |  TIMELINE  |  ARRANGE  |  PARTS (tracks × parts: a head the part, a cell the track)  |  GEN: GEN 1 · GEN 2 · GEN 3', 'MENU'),
+        ('HOME', 'LIFE (LIFE bar · TALK · BREAK · WEB: the tracks hear each other)  |  MACROS (M1–M4 over the beings)  |  LIVE MIX (FILTER · SPACE · CLIP · DUCK on the mix)  |  TRACKS (every track a lane: K1 track, LEVEL PAN REV; GLO + black key mute, + white key solo)  |  TIMELINE  |  ARRANGE  |  PARTS (tracks × parts: a head the part, a cell the track)  |  GEN: GEN 1 · GEN 2 · GEN 3', 'MENU'),
         ('EDIT', 'SOUND: EDIT 1 · EDIT 2  |  TONE: FILTER · MORPH · RETRIG · ROTOR · WORDS · SWARM · SWARM 2  |  AUTO KNOBS  |  VOICES: VOICES · VOICES 2 · VOICES 3 (last). EXT: EDIT 1 / 2 are EXT and SHAPE. FM6: SOUND (ALGO · PATCH)  |  TONE: FILTER  |  OPERATOR: OPERATOR · OP ENV · OPERATOR 2  |  VOICES. DRUM: KIT: KIT · KIT 2 · KIT 3  |  SOUND: SOUND 1–3 (the sound a key struck)  |  LEVELS 1–2  |  MOD: KIT LFO · EROSION  |  TONE: FILTER · OUT', 'INIT · RECALL · sound mutes'),
         ('SEQ', 'STEP  |  PATTERN: LENGTH · RHYTHM · TRACK  |  EUCLID: EUCLID · MODES · MUTATE  |  PLAYHEADS  |  STRETCH  |  STEP COND: STEP COND · COND 2  |  LOCKS: LOCKS · LYRICS  |  TRACK GEN', 'SEQ TOOLS'),
         ('FX', 'TRACK: SENDS · DIST · AUTO PAN  |  BUSES  |  DELAY: DELAY 1–3  |  REVERB 1–2  |  CHORUS  |  SLICER: SLICER · SLICER IN 1–2 · SL PITCH  |  MASTER · TAPE · EQ',
@@ -292,7 +292,7 @@ def controls():
                           ('STEP', 'STEP NOTE TIME VEL'), ('STEP · DRUM', 'STEP LANE HIT ACC'), 
                           ('LOCKS · TOP', 'ALL PLAY LOCK REC · OCT+ CLEAR ALL'), ('LOCKS', 'ROW STEP PARAM VALUE · LOCK / REC'),
                           ('STEP COND', 'STEP TYPE VAL EVERY'), ('COND 2', 'STEP TYPE VAL EVERY')]),
-        ('HOME · GLO · SAVE', HEAT[6], [('LIFE', 'LIFE (one knob: the tracks FM each other) · 0: still'), ('MACROS', 'M1 M2 M3 M4 · BPM large · HOME+SELECT dice'), ('TRACKS', 'TRACK LEVEL PAN REV'), ('LIVE MIX', 'FILTER SPACE CLIP DUCK'),
+        ('HOME · GLO · SAVE', HEAT[6], [('LIFE', 'LIFE (the bar) TALK BREAK WEB · LIFE 0: still'), ('MACROS', 'M1 M2 M3 M4 · BPM large · HOME+SELECT dice'), ('TRACKS', 'TRACK LEVEL PAN REV'), ('LIVE MIX', 'FILTER SPACE CLIP DUCK'),
                                  ('KEYS', 'RATE LOOP DENS DJ FILT (the keys: live modifiers)'), ('RAILS', 'TARGET RATE LOOP DENS'),
                                  ('MIXER', 'LEVEL PAN MUTE G.SWING'), ('GLOBAL', 'BPM G.SWING CLOCK TUNE'), ('COMP', 'ACTION LENGTH COND VALUE'), ('COMP 2', 'the global lane: its TRACKS, MONO / POLY'),
                                  ('SYSTEM', 'TRACKS LOAD ROUTE CPU'), ('PORTS', ['USB', 'TRS IN', 'BT', '-']), ('PRESETS', 'TRACK ENG SOURCE TYPE · OCT+ load, OCT- close, REC fav'),

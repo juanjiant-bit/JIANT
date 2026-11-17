@@ -483,6 +483,14 @@ same license.
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
 
+### V10.7.44 — beta
+- **LIFE: four knobs, the tracks talk** (the owner: "LIFE does too little"; JIANT BYTE's design). HOME › LIFE: **LIFE**
+  (KNOB 1, a bar across the top of the panel, 0 at power-on: bit for bit the sound without it), **TALK** (how much each
+  track hears the others: their sound in its phase, cross-FM heard from low values, wild at the top; up to three tracks
+  hear at a time), **BREAK** (the track's CRUSH rises while the tracks it hears play, back as they go quiet; every engine),
+  **WEB** (0: each track hears the one before it; 100: all hear all). Turned up from 0: TALK 50, BREAK 40, WEB 30. A
+  V10.7.43 project opens with its LIFE, the other three at those. Renders: renders/v44-life (LEEME.txt).
+
 ### V10.7.43 — beta (2026-11-15)
 - **PRESETS as before V10.7.33** (the owner): turning **PRESETS** loads the next / previous sound of the track's
   engine at once, round within the engine, its name shown, the page staying as it is; **EDIT + PRESETS** jumps to the
