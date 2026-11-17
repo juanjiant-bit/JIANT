@@ -1,0 +1,33 @@
+{
+  "measurement": "host Callgrind, simulated load; not device CPU percent",
+  "rows": [
+    {
+      "engine": "ANALOG",
+      "full_instructions": 105276597,
+      "adaptive_instructions": 82806728,
+      "saving_percent": 21.34,
+      "samples": 32768
+    },
+    {
+      "engine": "WHEEL",
+      "full_instructions": 130004241,
+      "adaptive_instructions": 96749701,
+      "saving_percent": 25.58,
+      "samples": 32768
+    },
+    {
+      "engine": "FM6",
+      "full_instructions": 107791289,
+      "adaptive_instructions": 99694651,
+      "saving_percent": 7.51,
+      "samples": 32768
+    },
+    {
+      "engine": "ADD",
+      "full_instructions": 103356065,
+      "adaptive_instructions": 83089169,
+      "saving_percent": 19.61,
+      "samples": 32768
+    }
+  ]
+}

@@ -512,6 +512,7 @@ typedef struct {                 /* per-voice control-rate modulation, computed 
     int32_t envq15;              /* env value (for engines that use it as a mod source) */
     int32_t env2q15;             /* (V10.22) ENV 2 (mod.c MS_ENV2) */
     int32_t fine;                /* the residual below 1/16 semitone in inc: unison detune, TUNE, bend (1/4096) */
+    uint32_t rate_shift;         /* 0 normal, 1 adaptive half-rate; partial event blocks are still normal */
 } vmod_t;
 
 typedef struct {
@@ -579,7 +580,7 @@ typedef struct {                 /* an engine (engines.c ENGINES[]; the eng_*.c 
     uint8_t whole;
     /* (codex/voices) a voice of it can render at half the rate (voice.c voice_half): 1 = with its phase increments
      * doubled and its filter an octave up (vmod_t: inc, pitch16, cutoff), any number of samples; 2 = it sees CTL / 2
-     * samples and does it itself (FM6); 0 = no */
+     * samples and does it itself (FM6; ADD/WHEEL use rate_shift); 0 = no */
     uint8_t half;
     /* (V10.7.21: these three bytes beside the others, in their padding: 8 B less an engine) */
     void (*note_on)(struct track *t, voice_t *v);

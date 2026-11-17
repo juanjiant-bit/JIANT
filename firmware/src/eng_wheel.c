@@ -255,6 +255,7 @@ static void wheel_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         r = inc < DRW_XOVER;                            /* 1: the low rotor */
         g1 = mulq15(g1, T->am[r]);
         inc += (uint32_t)((int32_t)(inc >> 16) * T->fm[r]);
+        inc <<= m->rate_shift;   /* foldback and rotor crossover stay at their physical frequencies */
         V->gp[k] = g1;
         if (!g0 && !g1) {
             V->ph[k] = ph + inc * n;
@@ -266,7 +267,7 @@ static void wheel_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
                 acc[i] += (SINE[ph >> 22] * g1) >> 15;
             }
         } else {                                        /* gain ramp over the block (CTL samples) */
-            int32_t gq = g0 << CTL_LOG2, dg = g1 - g0;
+            int32_t gq = g0 << CTL_LOG2, dg = (g1 - g0) * (1 << m->rate_shift);
             for (i = 0; i < n; i++) {
                 ph += inc;
                 gq += dg;
@@ -286,7 +287,7 @@ static void wheel_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         int32_t nst = V->nz, hp = V->hp, dc;
         V->clk = (V->clk * 3) >> 2;                     /* tau ~2.5 ms */
         clk1 = mulq15(V->clk, T->clk);
-        dc = clk1 - clk0;
+        dc = (clk1 - clk0) * (1 << m->rate_shift);
         clk0 <<= 5;
         for (i = 0; i < n; i++) {
             int32_t z = (int32_t)(noise32(&nst) >> 17) - 16384, y = z - hp;
@@ -362,6 +363,7 @@ static const engine_t ENG_WHEEL = {
     .npresets = NELEM(WHEEL_PRESETS),
     .note_on = wheel_note_on,
     .render = wheel_render,
+    .half = 2,                  /* native rate flag: oscillator/ramp speed; rotor and percussion keep real time */
     .knob = {P_E0, P_E4, P_E6, P_E7},
     .block = wheel_block,
 };
