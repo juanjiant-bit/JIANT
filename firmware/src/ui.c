@@ -664,6 +664,8 @@ static int page_visible(uint32_t i)
         return te == ENGI_INPUT;
     if (PAGES[i].id[0] == P_DETUNE || PAGES[i].id[0] == P_VOICE)   /* (0.8.5) VOICES 2, (V10.7.37) VOICES: not a kit's */
         return te != ENGI_DRUM;
+    if (PAGES[i].id[3] == P_DDST)                       /* (V10.7.43) a kit's VOICES 2 */
+        return te == ENGI_DRUM;
     if (PAGES[i].id[0] == P_DNZ)                        /* (V10.7.37) EROSION: a kit's (a synth's: its lane slots, above) */
         return te == ENGI_DRUM;
     if (PAGES[i].graph >= GR_FMOP && PAGES[i].graph <= GR_FMENV)   /* (0.6.10) OPERATOR, OP ENV, OPERATOR 2: FM6's */

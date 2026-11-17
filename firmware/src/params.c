@@ -315,8 +315,10 @@ static const param_desc_t FN_DESC[10] = {{"KEY TRK", F_PCTINV, 0, 127, 127, 0}, 
 /* (V10.7.37) a kit's EROSION (core.h P_DNZ ..), in P_GLMODE .. P_DETUNE's order: MODE DEST NOISE RATE, each as it reads */
 static const char *const N_DNMD[] = {"NOISE", "NOISE", "METAL", "NOISE", "NOISE"};   /* (V10.7.43: two, 1 3 4 aliases
                                                          * of NOISE: enum_orig) */
-static const char *const N_DDST[] = {"FILT", "F75", "MIX", "P75", "PITCH"};
-static const param_desc_t DERO_DESC[4] = {{"MODE", F_ENUM, 0, 4, 0, N_DNMD}, {"DEST", F_ENUM, 0, 4, 0, N_DDST},
+/* (V10.7.43, the users) a kit's VOICES in DEST's slot (P_DDST, EROSION's DEST gone): 4 + n for n voices; 0 .. 4 (a
+ * DEST of V10.7.37 .. 42) AUTO, aliases the knob passes over (enum_orig; voice.c trk_nvoice) */
+static const char *const N_KVC[] = {"AUTO", "AUTO", "AUTO", "AUTO", "AUTO", "1", "2", "3", "4", "5", "6", "7", "8"};
+static const param_desc_t DERO_DESC[4] = {{"MODE", F_ENUM, 0, 4, 0, N_DNMD}, {"VOICES", F_ENUM, 0, 12, 0, N_KVC},
                                           {"NOISE", F_PCT, 0, 127, 0, 0}, {"RATE", F_PCT, 0, 127, 40, 0}};
 #define DERO_ID(id) ((uint32_t)(id) - P_GLMODE < 4u)
 #define FKEYA_DESC (FN_DESC[5])
@@ -397,7 +399,7 @@ static int16_t param_store_def(uint32_t e, uint32_t id)
 static int32_t enum_orig(const param_desc_t *d, int32_t v)   /* (filters2: MS20's 5, LP24 hot, eng_analog.c) */
 {
     return d->names == N_FTYPE && v == FT_LP24H ? FT_LP24 : d->names == N_VCAP && v == 1 ? 0 :
-           d->names == N_DNMD && v != 2 ? 0 : v;   /* (V10.7.43: a kit's EROSION MODE: NOISE or METAL) */   /* (V10.7.38: VOICES'
+           d->names == N_DNMD && v != 2 ? 0 : d->names == N_KVC && v < 5 ? 0 : v;   /* (V10.7.43: a kit's EROSION MODE: NOISE or METAL) */   /* (V10.7.38: VOICES'
                                                          * old REUSE, AUTO) */
 }
 static uint32_t as_mix(uint32_t h, const void *p, uint32_t n)   /* FNV-1a, continued (project.c autosave_sig; song_play.c snd_sig) */
@@ -911,6 +913,8 @@ static const page_t PAGES[] = {
                                                          * Felucca, on no page until 0.8.5), (after V10.7.2) VEL,
                                                          * (codex/coherence) IMAGE, the voices across (POLY; V10.49's STEREO
                                                          * page gone; was VOICE 2) */
+    {"VOICES 2", FAM_EDIT, SC_TRACK, GR_NONE, {0xFF, 0xFF, 0xFF, P_DDST}},   /* (V10.7.43) a kit's: VOICES on KNOB 4, as
+                                                         * a synth's (core.h P_DDST) */
     {"AUTO KNOBS", FAM_EDIT, SC_TRACK, GR_FOCUS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* EDIT's detail on a synth: PARAM (E1..E8), its
                                                          * VALUE, the MOD slot aimed at it: SRC AMT (ui_input.c focus_knob) */
     {"STAGE", FAM_ENV, SC_TRACK, GR_STAGE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* ENV's detail: STAGE (ATK DEC SUS REL), its

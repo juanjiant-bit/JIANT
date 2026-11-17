@@ -4807,10 +4807,10 @@ static int test_edit_cycle(void)
         /* (161d079, 2026-10-28: KIT 4, the KEY MAP, after KIT 3 in the KIT group) */
         /* (V10.7.37, the owner: twelve pages, was fifteen) */
         static const char *const CH_K[] = {"KIT", "KIT 2", "KIT 3", "SOUND", "SOUND 2", "SOUND 3", "LEVELS", "LEVELS 2",
-                                           "KIT LFO", "EROSION", "FILTER", "OUT"};
+                                           "KIT LFO", "EROSION", "FILTER", "OUT", "VOICES 2"};   /* (V10.7.43: the kit's VOICES) */
         static const char *const TP_K[] = {"SOUND", "LEVELS", "KIT LFO", "FILTER"};
         set_engine_of(TSEL, ENGI_DRUM);
-        bad += check("V10.7.37 EDIT chain (DRUM): KIT (KIT KIT 2 KIT 3) . SOUND (1..3) . LEVELS (LEVELS LEVELS 2) . MOD (KIT LFO EROSION) . TONE (FILTER OUT)",
+        bad += check("V10.7.37 EDIT chain (DRUM): KIT (KIT KIT 2 KIT 3) . SOUND (1..3) . LEVELS (LEVELS LEVELS 2) . MOD (KIT LFO EROSION) . TONE (FILTER OUT VOICES 2)",
                      chain_walk(B_EDIT, CH_K, NELEM(CH_K), TP_K, NELEM(TP_K)));
         {   /* (0.6.58) KIT 3 turns BP and FEEDBK, (0.7.8) KNOB 3 the CLAP's HANDS, never IMAGE; STEREO's KNOB 1 is IMAGE */
             uint8_t t0 = dx_tone, h0 = dx_hands;
@@ -12727,10 +12727,24 @@ static int test_lz_edit(void)
               page_desc(cur_page(), 3, &hv)->label[0] == '-';
     }
     set_engine_of(TSEL, ENGI_DRUM); frame();
-    ok &= !nav_put(SEC_EDIT, "VOICES 2") && !nav_put(SEC_EDIT, "VOICES") && !nav_put(SEC_EDIT, "AUTO KNOBS") && nav_put(SEC_EDIT, "OUT");
+    ok &= !nav_put(SEC_EDIT, "VOICES") && !nav_put(SEC_EDIT, "AUTO KNOBS") && nav_put(SEC_EDIT, "OUT");
+    {   /* (V10.7.43) a kit's VOICES 2: VOICES alone, on KNOB 4 (DEST's slot: a DEST of before AUTO); it caps the kit's hits */
+        const param_desc_t *d;
+        int16_t hv;
+        ok &= nav_put(SEC_EDIT, "VOICES 2") && (d = page_desc(cur_page(), 3, &hv)) != 0 && str_eq(d->label, "VOICES");
+        {
+            static track_t k;                       /* (the engine as the audio swaps it in) */
+            k = *TSEL;
+            k.engine = ENGI_DRUM;
+            k.p[P_DDST] = 2;                        /* (a DEST of before: AUTO) */
+            ok &= trk_nvoice(&k) == DV_NLANE;
+            k.p[P_DDST] = 7;                        /* ("3") */
+            ok &= trk_nvoice(&k) == 3u;
+        }
+    }
     set_engine_of(TSEL, ENGI_FM6); frame();
     ok &= !nav_put(SEC_EDIT, "FOCUS") && nav_put(SEC_EDIT, "OPERATOR");
-    bad += check("0.9.2 EDIT > VOICES (POLY, GL MODE): VOICES 2 (V10.7.37: UNISON, VEL, IMAGE; ALLOC automatic; V10.7.38 VOICES AUTO 1 .. 8) after it, not on DRUM; FOCUS on the synths only", ok);
+    bad += check("0.9.2 EDIT > VOICES (POLY, GL MODE): VOICES 2 (V10.7.37: UNISON, VEL, IMAGE; ALLOC automatic; V10.7.38 VOICES AUTO 1 .. 8) after it, on DRUM VOICES alone (V10.7.43); FOCUS on the synths only", ok);
     {   /* (V10.7.38) a project of before: ALLOC REUSE (1, VOICES' slot) loads AUTO; VOICES 3 (4) saved and loaded */
         const char *u = "";
         char s[8];

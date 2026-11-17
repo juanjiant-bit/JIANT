@@ -520,6 +520,9 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
 - **GLITCH as before V10.7.36** (the users: more musical): ratchets of a 1/16 or 1/32 (no 1/64), the 1/16 reversed,
   an octave up or down, gates, CD skips and a milder crush, in the 2-bar groove of before; V10.7.36's ROLL and
   tape-stop slivers are gone. Cheaper: no division a sample, the window's gain only on its edges.
+- **A kit's VOICES** (DRUM-X): EDIT › VOICES 2 › VOICES (KNOB 4, as on a synth) caps the kit's hits at 1–8 to cut
+  the load; AUTO (the default) is as before. KICK, SNARE and CLAP stay protected: the kit gives up its other hits
+  first. A project of V10.7.37–42 with an EROSION DEST loads AUTO.
 
 ### V10.7.42 (2026-11-15)
 - **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version
