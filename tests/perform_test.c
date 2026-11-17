@@ -1345,9 +1345,9 @@ static int test_new(void)
             }
         }
         rep = (uint32_t)__builtin_popcount(kinds & ~1u);
-        snprintf(what, sizeof what, "GLITCH: %u of its 9 kinds in 8 bars, the longest silence %u samples (a 1/16: %u)", rep,
+        snprintf(what, sizeof what, "GLITCH: %u of its 7 kinds in 8 bars, the longest silence %u samples (a 1/16: %u)", rep,
                  longest, P16);
-        bad += check(what, rep >= 7u && longest < P16);
+        bad += check(what, rep >= 6u && longest < P16);
     }
     return bad;
 }

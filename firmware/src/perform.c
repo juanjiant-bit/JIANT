@@ -101,7 +101,7 @@ _Static_assert(PB_FRAMES <= SL_FR && !(PB_FRAMES & (PB_FRAMES - 1u)), "the REPEA
 #define PT_X 256u
 #define GL_SPAN 7680u                         /* (snd2) GLITCH: the longest slice it reads back (the loop holds two and a margin) */
 enum { BM_NONE, BM_LOOP, BM_GLT, BM_REV, BM_TAPE, BM_PIT, BM_COMB, BM_FRZ };
-enum { GA_PASS, GA_RPT, GA_REV, GA_UP, GA_DN, GA_GATE, GA_SKIP, GA_CRU, GA_ROLL, GA_TST };
+enum { GA_PASS, GA_RPT, GA_REV, GA_UP, GA_DN, GA_GATE, GA_SKIP, GA_CRU };
 /* (0.9.9-snd2) GLITCH's knobs of 0.9.18 (ui_layer.c GX_K there), here fixed at its defaults: DENS 50 PITCH 0 SIZE 0 VARI 1 */
 enum { GX_DENS = 50, GX_PITCH = 0, GX_SIZE = 0, GX_VARI = 1 };
 
@@ -612,27 +612,22 @@ static uint32_t pf_hash(uint32_t h)
 static uint32_t semi_q16(int32_t st);              /* fx.c: 2^(st / 12), Q16 */
 
 /* ------------------------------------------------------------------ GLITCH --- */
-/* (0.9.9-snd2, ported from 0.9.18; V10.7.36 more of it) the master cut on the transport's 1/16s: each one, by a hash of
- * its place in a 2-bar cycle (two of them, a bar pair each in turn: a 4-bar phrase, the same every time, so it grooves;
- * half of the 1/16s glitched, the beats a quarter, the phrase's last beat nearly all: a fill), played live or: a ratchet
- * (the last 1/16, 1/32 or 1/64 again and again), a ROLL (1/32 or 1/64 repeats, each 3 semitones lower), the last 1/16
- * reversed, an octave up or down, gated (dropouts of a 1/32 or 1/64), SKIP (a CD skipping: tiny fragments, 0.7 ms edges),
- * CRUSH (live, 6 .. 9 bits off, held 2 .. 12 samples: the rate down) or a tape-stop sliver (the 1/16 slowing to a halt).
- * Every slice windowed (SL_RAMP). Below ~82 BPM only its gates, crushes and live slices (the loop holds 371 ms). An
- * action by 5 bits of the hash: ratchets most */
-static const uint8_t GA_OF[32] = {GA_RPT, GA_RPT, GA_RPT, GA_RPT, GA_RPT, GA_RPT, GA_RPT, GA_RPT, GA_ROLL, GA_ROLL,
-                                  GA_ROLL, GA_REV, GA_REV, GA_REV, GA_REV, GA_UP, GA_UP, GA_UP, GA_DN, GA_DN, GA_DN,
-                                  GA_GATE, GA_GATE, GA_GATE, GA_SKIP, GA_SKIP, GA_CRU, GA_CRU, GA_CRU, GA_TST, GA_TST, GA_TST};
+/* (0.9.9-snd2, ported from 0.9.18; V10.7.43 as before V10.7.36, the users: more musical, cheaper) the master cut on
+ * the transport's 1/16s: each one, by a hash of its place in a 2-bar cycle (the same every time, so it grooves; half of
+ * the 1/16s glitched, the beats a quarter), played live or: a ratchet (the last 1/16 or 1/32 again and again; no 1/64
+ * since V10.7.43), the last 1/16 reversed, an octave up or down, gated (dropouts of a 1/32 or 1/64), SKIP (a CD
+ * skipping: tiny fragments, 0.7 ms edges) or CRUSH (live, 6 or 7 bits off, held 1 .. 3 samples). V10.7.36's ROLL and
+ * tape-stop slivers are gone (a division a sample). Every slice windowed (SL_RAMP; the gain only on its edges). Below
+ * ~82 BPM only its gates, crushes and live slices (the loop holds 371 ms). An action by 4 bits of the hash: ratchets
+ * most */
+static const uint8_t GA_OF[16] = {GA_RPT, GA_RPT, GA_RPT, GA_RPT, GA_RPT, GA_RPT, GA_REV, GA_REV, GA_UP, GA_DN,
+                                  GA_GATE, GA_GATE, GA_SKIP, GA_SKIP, GA_CRU, GA_CRU};
 /* a segment's start: where it reads (Q16) and how fast (SKIP: a place in the 1/16, two segments at each) */
 static __attribute__((noinline)) void perf_glt_seg(void)
 {
     uint32_t a = pf.u.g.a, L = pf.u.g.l, g0 = pf.u.g.g0, s = g0 - L;
     pf.u.g.rate = 65536;
-    if (a == GA_RPT) {
-        pf.u.g.rate = (int32_t)semi_q16(clamp((int32_t)(pf.u.g.k < 24u ? pf.u.g.k : 24u) * GX_PITCH, -24, 24));
-    } else if (a == GA_ROLL) {
-        pf.u.g.rate = (int32_t)semi_q16(-3 * (int32_t)(pf.u.g.k < 4u ? pf.u.g.k : 4u));
-    } else if (a == GA_REV) {
+    if (a == GA_REV) {
         s = g0 - 1u;
         pf.u.g.rate = -65536;
     } else if (a == GA_UP) {
@@ -640,8 +635,6 @@ static __attribute__((noinline)) void perf_glt_seg(void)
         pf.u.g.rate = 131072;
     } else if (a == GA_DN) {
         pf.u.g.rate = 32768;
-    } else if (a == GA_TST) {
-        s = g0 - 8u;                                /* (from the live place, falling behind: perf_glt) */
     } else if (a == GA_SKIP) {
         s = g0 - pf.u.g.sp + pf_hash(pf.gs * 64u + (pf.u.g.k >> 1)) % (pf.u.g.sp / L) * L;   /* (p9c: on its own grid,
                                                          * a whole number of fragments into the 1/16, not any sample) */
@@ -651,21 +644,19 @@ static __attribute__((noinline)) void perf_glt_seg(void)
 /* the next 1/16's slice */
 static __attribute__((noinline)) void perf_glt_step(void)
 {
-    uint32_t c = pf.gs & 63u, h = pf_hash((pf.gs & 31u) + 0x51u + ((uint32_t)(GX_VARI - 1) << 5) + ((pf.gs >> 5) & 1u) * 0x3A7u),
-             s16 = pf.P ? pf.P : 1u, sp = s16 < GL_SPAN ? s16 : GL_SPAN, d = GX_DENS, z = GX_SIZE, j = (h >> 12) % 3u, a, L;
-    d = c >= 60u ? 90u : c & 3u ? d : d * d / 100u;   /* (the beats fewer; the phrase's last beat: a fill) */
-    a = ((h >> 24) * 100u >> 8) < d ? GA_OF[(h >> 7) & 31u] : GA_PASS;
+    uint32_t h = pf_hash((pf.gs & 31u) + 0x51u + ((uint32_t)(GX_VARI - 1) << 5)), s16 = pf.P ? pf.P : 1u,
+             sp = s16 < GL_SPAN ? s16 : GL_SPAN, d = GX_DENS, z = GX_SIZE, j = (h >> 12) % 3u, a, L;
+    a = ((h >> 24) * 100u >> 8) < (pf.gs & 3u ? d : d * d / 100u) ? GA_OF[(h >> 8) & 15u] : GA_PASS;
     pf.u.g.g0 = 2u * pf.wr + pf.odd;                /* (the loop's sample now) */
     if ((s16 + sp > PB_MAX - 512u || pf.u.g.g0 < sp) && a != GA_GATE && a != GA_CRU)
         a = GA_PASS;                                /* (too slow: what it would read is gone; or not recorded yet) */
-    L = a == GA_RPT ? sp >> (z + j) : a == GA_ROLL ? sp >> (1u + z + j % 2u)
-      : a == GA_GATE ? (s16 / 2u) >> (z / 2u + 1u + j % 2u) : a == GA_SKIP ? sp >> (3u + z / 2u + j % 2u)
-      : a == GA_UP ? sp / 2u : a == GA_CRU || a == GA_TST ? s16 : sp;
+    L = a == GA_RPT ? sp >> (z + j % 2u) : a == GA_GATE ? (s16 / 2u) >> (z / 2u + j % 2u)
+      : a == GA_SKIP ? sp >> (3u + z / 2u + j % 2u) : a == GA_UP ? sp / 2u : a == GA_CRU ? s16 : sp;
     pf.u.g.a = (uint8_t)a;
     pf.u.g.l = L < 2u * SL_RAMP ? 2u * SL_RAMP : L;
     pf.u.g.sp = sp;
-    pf.u.g.h = (uint8_t)(2u + (h >> 14) % 11u);
-    pf.u.g.sh = (uint8_t)(6u + j + (h >> 20) % 2u);
+    pf.u.g.h = (uint8_t)(1u + (h >> 14) % 3u);   /* (V10.7.43: a milder crush, held 1 .. 3, 6 or 7 bits) */
+    pf.u.g.sh = (uint8_t)(6u + (h >> 20) % 2u);
     pf.u.g.n = 255u;
     pf.u.g.u = pf.u.g.k = pf.gph = 0;
     perf_glt_seg();
@@ -684,8 +675,8 @@ static __attribute__((noinline)) int perf_glt(int32_t l, int32_t r)
         }
         if (a == GA_GATE) {
             g = pf.u.g.k & 1u ? 0u : g;
-            pf.yl = mulq16(l, g << 1);
-            pf.yr = mulq16(r, g << 1);
+            pf.yl = l;
+            pf.yr = r;
         } else if (a == GA_CRU) {
             if (++pf.u.g.n >= pf.u.g.h) {
                 int32_t b = 1 << (pf.u.g.sh - 1u);
@@ -693,18 +684,12 @@ static __attribute__((noinline)) int perf_glt(int32_t l, int32_t r)
                 pf.u.g.cl = ((l + b) >> pf.u.g.sh) << pf.u.g.sh;
                 pf.u.g.cr = ((r + b) >> pf.u.g.sh) << pf.u.g.sh;
             }
-            pf.yl = mulq16(pf.u.g.cl, g << 1);
-            pf.yr = mulq16(pf.u.g.cr, g << 1);
+            pf.yl = pf.u.g.cl;
+            pf.yr = pf.u.g.cr;
         } else {
-            uint32_t at = pf.u.g.src + (uint32_t)((int32_t)u * (pf.u.g.rate >> 2)) * 4u;
-            if (a == GA_TST) {                      /* (V10.7.36) a tape stop in the 1/16: the speed falling to 0, the
-                                                     * read u - u^2 / 2L behind; quieter in its last quarter */
-                uint32_t v = L - u;
-                at = pf.u.g.src + ((u - u * u / (2u * L)) << 16);
-                if (4u * v < L && (v << 17) / L < g)
-                    g = (v << 17) / L;
-            }
-            pb_ring_f(at, &pf.yl, &pf.yr);
+            pb_ring_f(pf.u.g.src + (uint32_t)((int32_t)u * (pf.u.g.rate >> 2)) * 4u, &pf.yl, &pf.yr);
+        }
+        if (g != 32768u) {                          /* (V10.7.43: the window's edges only) */
             pf.yl = mulq16(pf.yl, g << 1);
             pf.yr = mulq16(pf.yr, g << 1);
         }

@@ -517,6 +517,9 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
   key's effect. DEC and LPF / HPF are not written to the punch-in lane.
 - **FX › FILTER snaps open** (KNOB 1 with FX): a quick turn towards the centre, or one across it, opens the filter
   fully at once (bypass) for a fast transition; a slow turn still steps.
+- **GLITCH as before V10.7.36** (the users: more musical): ratchets of a 1/16 or 1/32 (no 1/64), the 1/16 reversed,
+  an octave up or down, gates, CD skips and a milder crush, in the 2-bar groove of before; V10.7.36's ROLL and
+  tape-stop slivers are gone. Cheaper: no division a sample, the window's gain only on its edges.
 
 ### V10.7.42 (2026-11-15)
 - **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version
