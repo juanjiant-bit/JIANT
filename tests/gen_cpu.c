@@ -6,7 +6,9 @@
  * TEST's song (TRACKS 4) timed the same way: what the FM-1 is measured on, the heaviest it plays cleanly. The time is the
  * thread's own (another process on the host not counted); the render is deterministic, so each piece is played REP times
  * and each half keeps its fastest, and a piece near the budget is measured twice more and keeps its least. The numbers on
- * CPU TEST's scale, its callgrind count (3083 instructions a sample, GEN_CPU_REF): avg the whole song, win4 its heaviest
+ * CPU TEST's scale, its callgrind count (tests/cpu_baseline_vg.txt song/cputest, GEN_CPU_NOW: 2836 in V10.7.43), against
+ * the device's budget: the old CPU TEST's 3083 instructions a sample (GEN_CPU_REF; V10.7.43: CPU TEST got cheaper, the
+ * FM-1 did not get slower: a piece is measured against what the FM-1 played cleanly). avg the whole song, win4 its heaviest
  * 4 s (the budget's measure), win its heaviest second, p99.5 and worst its halves; then GEN's estimate (gen.c gcpu_est,
  * the same scale), the tempo, the reverb, a field a track (role, engine and preset, voices, MONO, sends), F the pieces'
  * numbers for the fit (engine, voices, notes a step, gcpu_est's voices) and the voices each track sounded.
@@ -244,7 +246,7 @@ int main(int argc, char **argv)
 {
     uint32_t from = argc > 1 ? (uint32_t)atoi(argv[1]) : 0, to = argc > 2 ? (uint32_t)atoi(argv[2]) : NGENRE + 1u;
     uint32_t seeds = argc > 3 ? (uint32_t)atoi(argv[3]) : 8, rep = argc > 5 ? (uint32_t)atoi(argv[5]) : 3;
-    double secs = argc > 4 ? atof(argv[4]) : 12.0, ref = getenv("GEN_CPU_REF") ? atof(getenv("GEN_CPU_REF")) : 3083.0;
+    double secs = argc > 4 ? atof(argv[4]) : 12.0, ref = getenv("GEN_CPU_REF") ? atof(getenv("GEN_CPU_REF")) : 3083.0, now = 0, bud;
     uint32_t nh = (uint32_t)(secs * FS / HALF_FRAMES), g, s, c;
     cost_t ct, x;
     if (nh > MAXH) nh = MAXH;
@@ -258,7 +260,19 @@ int main(int argc, char **argv)
     for (c = 0; c < 6u && ct.win4 > ct.avg * 1.03; c++)   /* (its heaviest 4 s ~1 % over its average: a busy host the rest) */
         ct = least(ct, measure(nh, rep));
     CALLGRIND_DUMP_STATS_AT("cputest");
-    scale = ref / ct.avg;
+    if (getenv("GEN_CPU_NOW"))                          /* (V10.7.43) CPU TEST today, on callgrind's scale */
+        now = atof(getenv("GEN_CPU_NOW"));
+    else {
+        FILE *bf = fopen("tests/cpu_baseline_vg.txt", "r");
+        char ln[96];
+        while (bf && fgets(ln, sizeof ln, bf))
+            if (sscanf(ln, "song/cputest %lf", &now) == 1)
+                break;
+        if (bf) fclose(bf);
+    }
+    if (now <= 0) now = ref;
+    scale = now / ct.avg;
+    bud = ref / now;                                    /* (the budget over CPU TEST's own: 3083 / 2836 = 1.087) */
     feat[0] = 0;
     report("CPU TEST", 0, 0, ct);
 pieces:
@@ -284,20 +298,21 @@ pieces:
                     for (s = 0; s < n; s++) {
                         fg = g; fs = 1u + s * 1237u % 9973u + g * 7u; fc = c ? 100u : 50u;
                         x = measure(nh, rep);
-                        if (x.win4 > ct.win4 * 0.97)    /* (near: twice more, the least) */
+                        if (x.win4 > ct.win4 * bud * 0.97)   /* (near: twice more, the least) */
                             x = least(x, least(measure(nh, rep), measure(nh, rep)));
                         for (k = fm = 0; k < trk_live; k++) fm += trk[k].eng_req == ENGI_FM6 && gs.act[gs.role[k]] && !trk[k].p[P_MUTE];
                         cnt++;
-                        if (x.win4 / ct.win4 > worst) worst = x.win4 / ct.win4;
-                        if (x.win4 > ct.win4 || (gcpu_est() > GCPU_MAX && (fm || song.g[G_RTYPE] == 4))) {
+                        if (x.win4 / (ct.win4 * bud) > worst) worst = x.win4 / (ct.win4 * bud);
+                        if (x.win4 > ct.win4 * bud || (gcpu_est() > GCPU_MAX && (fm || song.g[G_RTYPE] == 4))) {
                             printf("gen_cpu: OVER  TRACKS %u ", six ? 6u : 4u);
                             report(gs.g->name, fs, fc, x);
                             bad++;
                         }
                     }
         }
-        printf("gen_cpu: %u pieces at full (%u a genre, TRACKS 4 and 6), the heaviest %.0f instructions a sample (CPU TEST %.0f: "
-               "%.1f %%): %s\n", cnt, 4u * n, worst * ct.win4 * scale, ct.win4 * scale, worst * 100.0, bad ? "FAILED" : "all within the budget");
+        printf("gen_cpu: %u pieces at full (%u a genre, TRACKS 4 and 6), the heaviest %.0f instructions a sample (the budget %.0f, "
+               "the old CPU TEST; CPU TEST now %.0f: %.1f %% of the budget): %s\n", cnt, 4u * n, worst * ct.win4 * bud * scale,
+               ct.win4 * bud * scale, ct.win4 * scale, worst * 100.0, bad ? "FAILED" : "all within the budget");
         return bad ? 1 : 0;
     }
     if (getenv("GEN_CPU_LIST")) {                       /* (a file of "GENRE SEED COMPLEX" lines: those pieces) */

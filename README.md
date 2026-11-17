@@ -526,6 +526,9 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
 - **HOME › TRACKS lighter**: it was drawn every other frame while playing; now a lane's change (its playhead, its
   level's band) draws it and only what changed goes to the screen; under a high audio load at most every 4th tick.
   67 → 43 draws in 2 s playing (32 under load), a draw ~60 µs on the host.
+- Tests: GEN's CPU check (tests/gen_cpu.c) measures each piece against the FM-1's budget (the old CPU TEST, 3083
+  instructions a sample), not against today's cheaper CPU TEST (2836): it failed at 101.8 % only because CPU TEST got
+  lighter; now the heaviest of 116 pieces is at 93.9 % of the budget.
 
 ### V10.7.42 (2026-11-15)
 - **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version
