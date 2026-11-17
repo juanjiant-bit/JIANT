@@ -662,22 +662,21 @@ static volatile uint8_t sys_load;
 #define LITE_FM6_POLY 2u
 #define ECO_POLY 4u
 #define ECO_VOICES 6u            /* (0.6.70) LOAD ECO: the voices all parts share (NVOICE else) */
+static uint32_t track_auto_cap(const track_t *t, uint32_t cap);
 static uint32_t trk_nvoice(const track_t *t)
 {
     const engine_t *e = ENGINES[t->engine];
-    uint32_t c = e->poly ? e->poly : NVOICE, u = (uint32_t)t->p[P_VCAP] - 2u;   /* (every cap <= NVOICE) VOICES n: u = n - 1;
-                                                         * AUTO (0, 1) wraps past any cap */
+    uint32_t c = e->poly ? e->poly : NVOICE;
+    uint32_t u = e->oneshot ? (uint32_t)t->p[P_DDST] - 5u : (uint32_t)t->p[P_VCAP] - 2u;
+    /* V48: AUTO is four voices, for synths and kits. Explicit lower/higher
+     * user caps still work within the engine and automatic six-track limits. */
+    if (u >= NVOICE) u = 3u;
     if (sys_load && t->engine == ENGI_FM6 && c > LITE_FM6_POLY)
         c = LITE_FM6_POLY;
-    if (!e->oneshot) {
-        if (sys_load == LOAD_ECO && c > ECO_POLY)
-            c = ECO_POLY;
-        if (u < c)
-            c = u + 1u;
-    } else if ((u = (uint32_t)t->p[P_DDST] - 5u) < c) { /* (V10.7.43) a kit's VOICES (params.c N_KVC) */
-        c = u + 1u;
-    }
-    return c;
+    if (!e->oneshot && sys_load == LOAD_ECO && c > ECO_POLY)
+        c = ECO_POLY;
+    if (u < c) c = u + 1u;
+    return trk_live > 4u ? track_auto_cap(t, c) : c;
 }
 
 /* the part's voice mode: P_VOICE, POLY for an engine of hits (engine_t.oneshot: DRUM); (V10.7.33) DRONE allocates as
@@ -788,6 +787,7 @@ static __attribute__((noinline)) void load_half(uint32_t pct, uint32_t pct_all, 
     uint32_t eco = sys_load == LOAD_ECO;
     uint32_t on_avg = eco ? GUARD_ON_AVG_ECO : GUARD_ON_AVG, on_run = eco ? GUARD_ON_RUN_ECO : GUARD_ON_RUN;
     uint32_t off = eco ? GUARD_OFF_ECO : GUARD_OFF;
+    if (trk_live > 4u && !eco) { on_avg = 75u; on_run = 82u; off = 60u; }
     load_avg_q8 = (load_avg_q8 * ((1u << GUARD_AVG_LOG2) - 1u) + (pct << 8) + (1u << (GUARD_AVG_LOG2 - 1u))) >> GUARD_AVG_LOG2;
     load_all_q8 = (load_all_q8 * ((1u << GUARD_AVG_LOG2) - 1u) + (pct_all << 8) + (1u << (GUARD_AVG_LOG2 - 1u))) >> GUARD_AVG_LOG2;
     load_cores2 = (uint8_t)cores2;
@@ -796,7 +796,8 @@ static __attribute__((noinline)) void load_half(uint32_t pct, uint32_t pct_all, 
     guard_run = pct_all > on_run ? (uint8_t)(guard_run < 255u ? guard_run + 1u : 255u) : 0u;
     if (guard_run >= GUARD_RUN || load_all_q8 > (on_avg << 8)) {
         uint32_t busy = voices_busy(), cap = voice_cap0();
-        if (busy < GUARD_MIN) busy = GUARD_MIN;
+        uint32_t floor = trk_live > GUARD_MIN ? trk_live : GUARD_MIN;
+        if (busy < floor) busy = floor;
         if (busy > cap) busy = cap;
         if (!load_tight || !guard_cap || busy < guard_cap) {   /* a trip, or one on the way back: down to what sounds */
             guard_cap = (uint8_t)busy;
@@ -833,7 +834,7 @@ static __attribute__((noinline)) uint32_t voices_load(void)
     uint32_t p, i, n = 0;
     for (p = 0; p < NPART; p++)
         for (i = 0; i < NVOICE; i++)
-            if (trk[p].v[i].active && trk[p].v[i].stage != 4u)
+            if (trk[p].v[i].active && (trk_live > 4u || trk[p].v[i].stage != 4u))
                 n += 2u - ((VSOFT & 4u) && VH_ST(vh_c[p * NVOICE + i]) == VH_ON && !voice_held(&trk[p], &trk[p].v[i]));
     return (n + 1u) >> 1;
 }
@@ -942,6 +943,7 @@ static uint32_t quiet_tail(track_t **pp)
 #define LOAD_ADD_LOG2 (12u - CTL_LOG2)                 /* what the admitted voices added decays over ~93 ms (128 blocks of 32,
                                                          * the average's time: as their load shows in it, load_block) */
 static uint32_t mc_tk[NTRK];                            /* (fx.c measures it: a part's block in TIMER4 ticks, smoothed) */
+static uint32_t load_fx_q8;                            /* new FX work not yet reflected in the measured average */
 static uint32_t load_steals;                            /* voices given up by the admission (console status) */
 static uint32_t load_cost_q8(const track_t *t)          /* a voice more of part t: its share of a half, %, Q8 */
 {
@@ -956,6 +958,34 @@ static uint32_t load_cost_q8(const track_t *t)          /* a voice more of part 
         c = (e == &ENG_FM6 ? 4u : e == &ENG_LOFI ? 2u : 3u) * LOAD_W_PCT * 256u;
     return load_cores2 ? (c * LOAD_SHARE_Q8) >> 8 : c;
 }
+/* Six tracks share a finite deadline: bound each channel before allocating,
+ * then tighten the expensive channels using their measured per-voice cost. */
+static __attribute__((noinline)) uint32_t track_auto_cap(const track_t *t, uint32_t cap)
+{
+    uint32_t n = ENGINES[t->engine]->oneshot ? 3u : 2u;
+    if (load_tight) {
+        uint32_t cost = load_cost_q8(t), budget = cost ? (12u << 8) / cost : n;
+        if (budget < n) n = budget ? budget : 1u;
+    }
+    return cap < n ? cap : n;
+}
+static uint32_t load_limit(void)
+{
+    return sys_load == LOAD_ECO ? LOAD_ADMIT_ECO : trk_live > 4u ? 78u : LOAD_ADMIT;
+}
+/* Reserve one slot for each other unmuted channel that has not sounded yet.
+ * Fading voices still consume CPU and count until their render actually ends. */
+static __attribute__((noinline)) int voice_full(const track_t *self)
+{
+    uint32_t used = voices_load(), p, i;
+    if (trk_live > 4u) for (p = 0; p < trk_live; p++) {
+        const track_t *t = &trk[p];
+        if (t == self || t->p[P_MUTE] || t->engine == ENGI_INPUT) continue;
+        for (i = 0; i < NVOICE && !t->v[i].active; i++) {}
+        used += i == NVOICE;
+    }
+    return used >= voice_cap();
+}
 static void load_take(const track_t *t)                 /* a voice added: into the prediction */
 {
     load_pred_q8 += load_cost_q8(t);
@@ -964,6 +994,7 @@ static void load_block(void)                            /* a block rendered (tra
                                                          * host too): the prediction back toward the average */
 {
     uint32_t add = load_pred_q8 > load_all_q8 ? load_pred_q8 - load_all_q8 : 0u;
+    load_fx_q8 -= (load_fx_q8 + (1u << (LOAD_ADD_LOG2 - 1u))) >> LOAD_ADD_LOG2;
     load_pred_q8 = load_all_q8 + add - ((add + (1u << (LOAD_ADD_LOG2 - 1u))) >> LOAD_ADD_LOG2);
 }
 static uint32_t load_sounding_q8(void)                  /* what every sounding voice costs: the most the voices admitted
@@ -982,9 +1013,9 @@ static uint32_t load_sounding_q8(void)                  /* what every sounding v
 }
 static int load_admit(const track_t *t)                 /* room for a voice of part t? taken if so */
 {
-    uint32_t limit = (sys_load == LOAD_ECO ? LOAD_ADMIT_ECO : LOAD_ADMIT) << 8, add, most;
+    uint32_t limit = load_limit() << 8, add, most;
     add = load_pred_q8 > load_all_q8 ? load_pred_q8 - load_all_q8 : 0u;
-    most = load_sounding_q8();
+    most = load_sounding_q8() + load_fx_q8;
     if (add > most) {
         add = most;
         load_pred_q8 = load_all_q8 + add;
@@ -1002,7 +1033,7 @@ static uint32_t load_victim(track_t *self, track_t **pp)
     int32_t quiet = 0x7FFFFFFF;
     for (p = 0; p < NPART; p++) {
         track_t *t = &trk[p];
-        if (trk_vmode(t) != V_POLY && t != self)
+        if (t != self && (trk_live > 4u || trk_vmode(t) != V_POLY))
             continue;                                   /* (a mono part's tail is its lead's voice: kept) */
         for (i = 0; i < NVOICE; i++) {
             const voice_t *v = &t->v[i];
@@ -1046,7 +1077,7 @@ static __attribute__((noinline)) void voice_soft(void)
     cap = voice_cap();
     for (p = 0; p < NPART; p++) {
         track_t *t = &trk[p];
-        uint32_t nh = 0, used = 0, c;
+        uint32_t nh = 0, used = 0, c, local = trk_live > 4u ? trk_nvoice(t) : NVOICE;
         for (i = 0; i < NVOICE; i++) {
             voice_t *v = &t->v[i];
             int32_t *vc = &vh_c[p * NVOICE + i];
@@ -1055,6 +1086,7 @@ static __attribute__((noinline)) void voice_soft(void)
                 *vc = VH_OFF;
                 continue;
             }
+            if (i >= local && v->stage != 4u) voice_kill(v);
             if (voice_held(t, v)) {
                 if ((vh_held >> p) & 1u)
                     s = s ? s : VH_IN;
@@ -1089,7 +1121,7 @@ static __attribute__((noinline)) void voice_soft(void)
         h = HURRY_ROOM;
     for (p = 0; p < NPART; p++)
         rel_hurry[p] = VSOFT & 1u ? (uint8_t)((own[p] > h ? own[p] : h) + load_tight) : 0u;
-    lim = ((sys_load == LOAD_ECO ? LOAD_ADMIT_ECO : LOAD_ADMIT) - HALF_NEAR) << 8;   /* (75 %, ECO 55 %) */
+    lim = (load_limit() - HALF_NEAR) << 8;   /* (75 %, ECO 55 %) */
     near = (VSOFT & 2u) && (load_tight || h || load_pred_q8 > lim);
     for (again = (VSOFT & 4u) ? (again + 1u) >> 1 : 0u; busy > cap && again; again--) {   /* over the budget by tails
                                                          * that counted half and were played again (a note in its own
@@ -1169,16 +1201,17 @@ static __attribute__((noinline)) int voice_room(track_t *t, int soft)   /* (V10.
 {
     track_t *vp = 0;
     uint32_t k;
-    if (voices_load() < voice_cap()) {
+    if (!voice_full(t)) {
         if (load_tight && (k = quiet_tail(&vp)) < NVOICE) {
             voice_kill(&vp->v[k]);                      /* (the load budget: a dying tail makes the room) */
             voice_trims++;
         }
-        if (soft)                                       /* (cpu5) an extra UNISON voice: only within the prediction */
+        if (soft || trk_live > 4u)                      /* six tracks: no hard-note escape from the prediction */
             return load_admit(t);
         load_take(t);                                   /* (a lead is never refused: counted) */
         return 1;
     }
+    if (trk_live > 4u) return 0;                        /* reuse this channel's slots; never steal another channel */
     k = voice_victim(t, soft, &vp);
     if (k == NVOICE)
         return !soft;                                   /* hard: over the budget (cannot happen: each of the
@@ -1189,8 +1222,8 @@ static __attribute__((noinline)) int voice_room(track_t *t, int soft)   /* (V10.
 
 static voice_t *voice_reuse(track_t *t, voice_t *v)
 {
-    if (v->stage == 4u)
-        voice_room(t, 0);                               /* its budget was taken before this block */
+    if (v->stage == 4u && !voice_room(t, 0))
+        return 0;                                      /* its budget was taken before this block */
     return v;
 }
 
@@ -1208,7 +1241,7 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
     int32_t bd = 0x7FFFFFFF;
     if (t->engine == ENGI_DRUM) {
         voice_t *v = drum_reuse(t, note);
-        if (v)
+        if (v && (trk_live <= 4u || (uint32_t)(v - t->v) < np))
             return voice_reuse(t, v);
     }
     for (i = 0; i < np; i++) {
@@ -1218,7 +1251,7 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
     }
     if (nfree) {
         track_t *vp = 0;
-        uint32_t full = voices_load() >= voice_cap(), k, own = np;
+        uint32_t full = voice_full(t), k, own = np;
         if (full || load_tight) {                       /* (0.6.16: the load budget too; 0.6.18: a dying tail) */
             /* At capacity, this part's released slot can be retriggered in place.
              * Taking another part's release instead both cuts its tail and renders
@@ -1231,6 +1264,7 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
                 if (own < np)
                     return &t->v[own];
             }
+            if (full && trk_live > 4u) return 0;         /* no extra slot and no released voice of our own */
             k = full ? voice_victim(t, 0, &vp) : quiet_tail(&vp);
             if (k < np && vp == t)
                 return &t->v[k];                        /* our own: restart it in place (no click) */
@@ -1244,6 +1278,7 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
         } else if (!load_admit(t)) {                    /* (cpu5) predicted past the budget: a released voice given up
                                                          * for it (its own first, in place), the count stays */
             k = load_victim(t, &vp);
+            if (trk_live > 4u && (k == NVOICE || vp != t)) return 0;
             if (k < NVOICE) {
                 if (vp == t)
                     return &t->v[k];
@@ -1685,6 +1720,7 @@ static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
     }
     if (mode == V_POLY) {
         voice_t *v = voice_alloc(t, note);
+        if (!v) return;
         voice_begin(t, v, note, vel, t->p[P_GLIDE] != 0 && !ENGINES[t->engine]->oneshot && t->p[P_VOICE] != V_DRONE, 0, 0u);
         return;
     }

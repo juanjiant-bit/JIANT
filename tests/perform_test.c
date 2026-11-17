@@ -55,7 +55,8 @@ static void perf_reset(void)
     pf.src = pf.next = PF_N;
     pf.lc = PF_TOP;
     for (uint32_t m = 0; m < NTRK; m++) pf.mg[m] = 32768;
-    perf_held = perf_act = 0;
+    perf_held = perf_act = perf_denied = perf_allowed = 0;
+    load_all_q8 = load_pred_q8 = load_fx_q8 = 0;
     perf_kill = 0;
     memset((void *)perf_k, 0, sizeof perf_k);
     perf_latched = 0;
@@ -402,8 +403,10 @@ static int test_keys(void)
             l = perf_key(6) == PF_LPF && perf_key(7) == PF_HPF && perf_key(14) == PF_DECM && perf_key(16) == PF_DECP &&
                 perf_key(13) == PA_M1 + 5u && perf_key(26) == PA_LOCK;
             pfm.lay = 0;
-            bad += check("FX layouts: 1 G4 FREEZE, F#3 MUTE T1, D#4 REV ALL; 2 every effect of V10.7.36; 3 LPF HPF DEC MUTE LOCK",
-                         perf_key(14) == PF_FRZ && perf_key(1) == PA_M1 && perf_key(10) == PF_RVA && m == (1u << 27) - 1u && l);
+            bad += check("FX layouts: default six mutes, DEC+/DEC-, REV ALL on LOOP5; legacy layouts and custom keys",
+                         perf_key(14) == PF_FRZ && perf_key(1) == PA_M1 && perf_key(10) == PA_M1 + 4u && pfm_get(0, 21) == PA_M1 + 5u &&
+                         pfm_get(0, 15) == PF_DECP && pfm_get(0, 26) == PF_DECM && pfm_get(0, 24) == PF_RVA &&
+                         m == (((1u << 27) - 1u) & ~PF_BIT(PF_LMAX)) && l);
             pfm.map[0][0] = PF_COMB + 1u;
             l = perf_key(0) == PF_COMB;
             pfm.map[0][0] = 0;

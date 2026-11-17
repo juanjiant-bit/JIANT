@@ -47,8 +47,11 @@ static void fresh(void)
     memset(trk, 0, sizeof trk);
     memset(&song, 0, sizeof song);
     memset(&chain, 0, sizeof chain);
-    host_tracks_init();
-    for (p = 0; p < NPART; p++) host_preset(&trk[p], 0, 0);
+    host_tracks_init(); trk_live = 4; /* legacy four-track guard fixtures; six-track admission tested separately */
+    for (p = 0; p < NPART; p++) {
+        host_preset(&trk[p], 0, 0);
+        trk[p].p[P_VCAP] = 9; /* explicit eight: exercise the original full-budget guard cases */
+    }
     memset(&felucca_dbg, 0, sizeof felucca_dbg);
     audio_cpu_rem = audio_halves = audio_max_us = 0;
     shed_req = 0; shed_count = 0;
@@ -542,7 +545,7 @@ static void polyphony_headroom(void)
 {
     uint32_t k, i, kills, gates = 0;
     int32_t out[2 * CTL];
-    fresh(); mc_host = 1; mc_off = 0; sys_load = LOAD_FULL;
+    fresh(); trk_live = 6; mc_host = 1; mc_off = 0; sys_load = LOAD_FULL;
     check("polyphony: starts with the conservative eight-voice budget", voice_cap() == 8);
     for (i = 0; i < 15; i++) shed_check(HALF_TICKS * 40u / 100u);
     check("polyphony: one short calm interval cannot expand admission", voice_cap() == 8);
