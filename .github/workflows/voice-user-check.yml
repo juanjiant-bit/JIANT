@@ -1,7 +1,7 @@
 name: VOICE user lyric candidate
 on:
   push:
-    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits, codex/punch-cpu, codex/six-phrases]
+    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits, codex/punch-cpu, codex/six-phrases, codex/home-live]
 permissions:
   contents: read
 concurrency:
@@ -80,6 +80,13 @@ jobs:
           done | tee build/song-check/six-phrase.log
           cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,undefined -fno-sanitize=shift,signed-integer-overflow -Ibuild/gen -Ifirmware/src tests/adaptive_rate_test.c -lm -o build/song-check/adaptive-rate
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/adaptive-rate | tee build/song-check/adaptive-rate.log
+      - name: V50 HOME engine controls and LIVE performance
+        run: |
+          set -euo pipefail
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src -Itests tests/home_engine_test.c -lm -o build/song-check/home-engine
+          build/song-check/home-engine | tee build/song-check/home-engine.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src -Itests tests/live_test.c -lm -o build/song-check/live
+          build/song-check/live | tee build/song-check/live.log
       - name: Independent DRUM-X kits and concurrent rendering
         run: |
           cc -O1 -g -w -Wno-implicit-function-declaration -Wno-incompatible-pointer-types -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/drum_kits_test.c -lm -o build/song-check/drum-kits

@@ -1084,9 +1084,10 @@ static int clip_tag(char *b)
  * an action page its OCT+ / OCT- (foot_hint); else its picture's (GR_*), HOME's MACROS (250) and LIVE MIX (251), GEN (252),
  * LIFE (253), TRACKS (254: GLO's mute and solo keys, as MIXER's; its panel shows the line too),
  * or its section's (100 + SEC_*); none: the breadcrumb. One string, the lines one after another */
-static const uint8_t HELP_K[] = {250, 251, 252, 253, 254, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
+static const uint8_t HELP_K[] = {GR_LIVE, 250, 251, 252, 253, 254, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
 static const char HELP_S[] =
-    "HOME+SELECT DICE  HOME+PRESETS BPM\0"
+    "OCT- RESET  OCT+ WRITE  SELECT KEY FX\0"
+    "ALGORITHM TRACK  HOLD LFO MACROS\0"
     "HOME+PRESETS BPM  HOME+SELECT GEN\0"
     "OCT+ A PIECE  OCT- BACK\0"
     "LIFE 0 STILL  LINES: WHO MOVES WHOM\0"
@@ -1327,12 +1328,12 @@ static void draw_columns(void)
     char val[12];
     const char *unit;
     (void)motion_mask(song.sel, card_mot_mask);       /* (PLAY OFF: no scan) */
-    if (home_macros()) {                                /* (0.8.5) HOME's MACROS: M1..M4, 0..100 % (V10.7.24: dim without a
-                                                         * route, as the MACRO layer's) */
-        static const char *const M[4] = {"M1", "M2", "M3", "M4"};
+    if (home_engine()) {
         for (c = 0; c < 4u; c++) {
-            fmt_int(val, macro_v[c] * 100 / 127);
-            draw_column(c, M[c], val, "%", macro_routes(c, 0, 0) ? VAL(c) : T_DIM, macro_v[c] * 1000 / 127, ICON_MIX);
+            uint32_t id = home_engine_id(c);
+            const param_desc_t *d = track_desc(TSEL, id);
+            card_mot_of(&TSEL->p[id]);
+            pf_column(c, c ? d->label : "FILTER", d, TSEL->p[id], VAL(c), param_icon(d, TSEL->p[id]));
         }
         return;
     }

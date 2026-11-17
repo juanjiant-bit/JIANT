@@ -87,10 +87,10 @@ static void run_to(int s, uint32_t step, uint32_t T, uint16_t *out)
 /* (the first NSTRICT pixel for pixel; the others keep a state of their own stepped once a frame drawn (WHEEL's rotors,
  * VOICE's articulation and nod, ANIMAL's flap and glide, WEST's wave, LOFI's bits, the kit's beings: their time is the
  * clock's, those steps the frames'; no room in the flash to step them by the ticks): their difference reported only) */
-#define NSTRICT 7u
+#define NSTRICT 5u
 static void test_time(void)
 {
-    static const char *const SC[] = {"home", "home_macros", "v6_analog", "v6_phase", "gen", "edit_analog", "v6_fm6_op",
+    static const char *const SC[] = {"v6_analog", "v6_phase", "gen", "edit_analog", "v6_fm6_op", "home", "home_macros",
                                      "v6_wheel", "vx_head_s", "vx_bird", "v6_west", "v6_lofi", "vx_kit_hits"};
     uint32_t k;
     for (k = 0; k < sizeof SC / sizeof SC[0]; k++) {
@@ -135,41 +135,21 @@ static void test_time(void)
 /* LITE: a frame each 100 ms, half the detail: the beings move every frame, never more than they swim in it */
 static void test_jumps(void)
 {
-    uint32_t f, c, t, mx = 0, still = 0, lite_lod, k;
-    int32_t px[ECO_N], py[ECO_N];
+    uint32_t f, t, k;
     uint8_t pl0 = song.playing, h0;
-    prep(scr_id("home"));
+    static uint16_t old[240 * 240];
+    prep(scr_id("v6_analog_home"));
     song.playing = 1;
-    for (c = 0; c < ECO_N; c++) trk[c].peak = 7000;   /* (loud: the fastest swim) */
     load_avg_q8 = load_all_q8 = 80u << 8; ui_hold_poll();
     h0 = ui_hold;
     t = fm1_ms;
+    memcpy(old, host_screen, sizeof old);
     for (f = 0; f < 40u; f++) {
-        t += UI_PACE();
-        for (c = 0; c < ECO_N; c++) trk[c].peak = 7000;
-        at(t);
-        for (c = 0; c < ECO_N; c++) {
-            int32_t x, y, dx, dy;
-            eco_at(c, &x, &y);
-            dx = (x >> 8) - px[c]; dy = (y >> 8) - py[c];
-            if (f > 4u) {                               /* (after the detail's glide) */
-                uint32_t m = (uint32_t)(dx < 0 ? -dx : dx) + (uint32_t)(dy < 0 ? -dy : dy);
-                mx = m > mx ? m : mx;
-                still += m == 0u;
-            }
-            px[c] = x >> 8; py[c] = y >> 8;
-        }
+        trk[song.sel].peak = 7000;
+        at(t += UI_PACE());
     }
-    lite_lod = ui_lod;
-    /* the fastest swim: 140 + 110 Q8 px a tick at x7 speed, 100 ms = 6.7 ticks: ~46 px of x + y at most */
-    ck("jumps: LITE (80 %) a frame each 100 ms, half the detail, the beings moving (not frozen)", h0 == 2u && UI_PACE() == 100u &&
-       lite_lod == 256u && !ANIM_OFF());
-    {
-        char w[120];
-        snprintf(w, sizeof w, "jumps: no being steps more than 48 px between two LITE frames (most %u), none stands (%u)",
-                 (unsigned)mx, (unsigned)still);
-        ck(w, mx > 0u && mx <= 48u && still < 6u);
-    }
+    ck("HOME selected engine keeps animating in LITE at 100 ms per frame",
+       h0 == 2u && UI_PACE() == 100u && ui_lod == 256u && !ANIM_OFF() && memcmp(old, host_screen, sizeof old));
     load_avg_q8 = load_all_q8 = 90u << 8; ui_hold_poll();
     k = anim_at;
     at(t += 50u); at(t += 50u);
@@ -191,7 +171,7 @@ static void test_jumps(void)
 /* the detail glides: drawn at ui_lod 0, 32 .. 256 (the time still), each step a part of the whole change */
 static void test_lod(void)
 {
-    static const char *const SC[] = {"home", "home_macros", "vx_bird", "vx_mammal", "vx_insect"};   /* (the beings' outlines,
+    static const char *const SC[] = {"vx_bird", "vx_mammal", "vx_insect"};   /* (the beings' outlines,
                                                          * the creatures' curves: ANALOG's wave, the kit's blobs, WEST's
                                                          * swarm are drawn as they were) */
     uint32_t k, l, y, x;

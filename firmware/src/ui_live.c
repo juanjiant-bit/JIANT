@@ -313,14 +313,14 @@ static __attribute__((noinline)) void live_cards(void)
     const char *u = "";
     if (!mano)
         lv_card(c++, "TARGET", LV_TG[lv.tgt % 9u], "", 1, (int32_t)lv.tgt * 125);   /* (codex/coherence: was PISTAS) */
-    lv_card(c, "RATE", LV_RNAME[r + LV_X1], "", r, ratio_of(-4, 4, r));
+    lv_card(c, "SPEED", LV_RNAME[r + LV_X1], "", r, ratio_of(-4, 4, r));
     fmt_int(val, LV_CUT[ci]);
     c++;
     lv_card(c, "LOOP", ci ? val : "OFF", ci ? "ST" : "", ci, (int32_t)ci * 100);   /* (KEYS: from the playhead, RAILS: from
                                                          * step 1; the one window) */
     if (mano) {
         fmt_int(val, dn < 0 ? 100 + 10 * dn : 100);
-        lv_card(2, "DENS", val, "%", dn < 0, dn < 0 ? -dn * 111 : 0);   /* (KEYS: thinner only) */
+        lv_card(2, "DENSITY", val, "%", dn < 0, dn < 0 ? -dn * 111 : 0);   /* (KEYS: thinner only) */
         djf_format(song.g[G_DJF], val, &u);
         card_mot_next = (uint8_t)motion_djf_any();
         card_curve_next = (int16_t)(song.g[G_DJF] + 256);
@@ -329,7 +329,7 @@ static __attribute__((noinline)) void live_cards(void)
     }
     val[0] = 'x';
     fmt_int(val + (dn > 0), dn > 0 ? 1 + dn : 100 + 10 * dn);
-    lv_card(3, "DENS", val, dn > 0 ? "RAT" : "%", dn, ratio_of(-9, 3, dn));
+    lv_card(3, "DENSITY", val, dn > 0 ? "RAT" : "%", dn, ratio_of(-9, 3, dn));
 }
 #define LV_RX 16                                        /* the rails: x 16 .. 236 */
 #define LV_RW 220
@@ -410,10 +410,15 @@ static void lv_board(int32_t y)
 static __attribute__((noinline)) void graph_live(void)
 {
     int mano = lv_isman();
-    int32_t h = (int32_t)graph_h(), by = h - 44, rh = (mano ? by - 3 : h) / NTRK, lh = rh - 4;
+    int32_t h = (int32_t)graph_h(), by = h - 44, rh = (mano ? by - 16 : h - 28) / NTRK, lh = rh - 3;
+    char heading[32];
+    str_cpy(heading, mano ? "HOLD KEYS: FX" : "LIVE: ", sizeof heading);
+    if (!mano) str_app(heading, LV_TG[lv.tgt % 9u], sizeof heading - str_len(heading));
+    cv_text(4, 1, &AF_X, heading, T_TEXT);
+    cv_text_r(236, 1, &AF_X, lv.byp ? "BYPASS" : lv.busy ? "MODIFIED" : "ORIGINAL", lv.busy ? T_ACCENT : T_DIM, T_SURF);
     uint32_t tg = lv_tracks(), i;
     for (i = 0; i < NTRK; i++) {
-        int32_t y = (int32_t)i * rh + 2, by0 = y + lh - 8;
+        int32_t y = (int32_t)i * rh + 15, by0 = y + lh - 8;
         char d[2] = {(char)('1' + i), 0};
         uint16_t bg = i == song.sel ? T_ACCENT : cv_bg;
         lv_rail(i, y, lh);
@@ -425,6 +430,8 @@ static __attribute__((noinline)) void graph_live(void)
     }
     if (mano)
         lv_board(by);
+    else
+        cv_text(4, h - 11, &AF_X, "OCT- RESET  HOLD: ORIGINAL", T_TEXT);
 }
 /* the panel's signature: playing, every frame (the playheads move); stopped, all of LIVE's state (a page entered, an
  * UNDO: ui.force) */
