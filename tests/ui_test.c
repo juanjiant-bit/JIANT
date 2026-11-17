@@ -12544,25 +12544,26 @@ static int test_lz_home(void)
     press(B_HOME); frame();                                         /* a HOME tap on GEN: round to LIFE (V10.7.34) */
     ok &= !ui.confirm && ui.home && home_level() == 3u && home_life() && !home_macros() && lz_tab_lit(0) &&
           lz_crumb_is("HOME \xB7 LIFE \xB7 LIFE") && lz_count_is("1/10");
-    {   /* (V10.7.34) LIFE (life.c; V10.7.43: its one value, KNOB 1; the other knobs nothing), the macros and the sound
-         * untouched */
-        int16_t l0 = 0, e = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
+    {   /* (V10.7.34) LIFE (life.c; V10.7.44: KNOB 1 LIFE, the bar; KNOBS 2..4 TALK BREAK WEB's cards), the macros and the
+         * sound untouched */
+        int16_t e = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]], l0[4];
         uint8_t m0[4];
-        life_defaults();                            /* (the firmware's power-on: LIFE on; the tests' HOST_LIFE 0) */
-        l0 = life_v[LIFE_AMT];
+        life_defaults();                            /* (the firmware's power-on: LIFE off) */
+        memcpy(l0, life_v, sizeof l0);
         memcpy(m0, macro_v, sizeof m0);
-        ok &= l0 == LIFE_DEF && !strncmp(ui.col[0], "LIFE|", 5);
+        ok &= l0[0] == LIFE_DEF && !strncmp(ui.col[1], "TALK|", 5) && !strncmp(ui.col[3], "WEB|", 4);
         for (c = 0; c < 4u; c++) { turn(EN_K1 + c, 2); frame(); }
-        ok &= life_v[LIFE_AMT] == l0 + 2;
-        turn(EN_K1, -300); frame();
-        ok &= life_v[LIFE_AMT] == 0 && strstr(ui.col[0], "|0|") != 0;
+        for (c = 0; c < 4u; c++) ok &= life_v[c] == l0[c] + 2;
+        turn(EN_K3, -300); frame();
+        ok &= life_v[LIFE_BRK] == 0 && strstr(ui.col[2], "|0|") != 0;
         ok &= !memcmp(m0, macro_v, sizeof m0) && TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == e;
+        life_defaults();
         life_v[LIFE_AMT] = HOST_LIFE;
     }
     turn(EN_SELECT, 1); frame();                                    /* SELECT right: MACROS */
     ok &= home_macros() && lz_count_is("2/10");
     bad += check("V10.7.24 HOME: PARTS, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: "
-                 "LIFE (V10.7.34; V10.7.43 its KNOB 1 alone), SELECT on to MACROS", ok);
+                 "LIFE (V10.7.34; V10.7.44 LIFE TALK BREAK WEB), SELECT on to MACROS", ok);
     press(B_HOME); turn(EN_SELECT, 6); frame();                     /* GEN 2 */
     ok = gen_on() && gen_page() == 1u;
     press(B_ENV); frame();                                          /* not modal: a section's button leaves it */

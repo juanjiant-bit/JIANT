@@ -242,6 +242,7 @@ static __attribute__((noinline)) uint32_t proj_xm(project_t *q, const uint8_t *b
         memset(q->dnz, 0, sizeof q->dnz);
         memset(q->cru, 0, sizeof q->cru);
         memset(q->life, 0, sizeof q->life);
+        q->life[LIFE_AMT] = LIFE_OLD;                   /* (V10.7.44: no 'X' 'L', LIFE as V10.7.43 played it) */
     }
     for (x = 0; x < 2u; x++) {                          /* 'X' 'M' (AMOUNT, NOISE), then 'X' 'C' (CRUSH) */
         uint32_t h = 3u - x, any = x ? 0u : (uint32_t)q->bal;
@@ -272,7 +273,8 @@ static __attribute__((noinline)) uint32_t proj_xm(project_t *q, const uint8_t *b
                 q->life[k] = (int8_t)(b[pos + 2u + k] - life_def(k));   /* (V10.7.44: a wrap) */
         return 0;
     }
-    for (k = 0, x = 0; k < LIFE_N + NTRK; k++) x |= (uint32_t)(uint8_t)q->life[k];
+    for (k = 0, x = 0; k < LIFE_N + NTRK; k++) x |= (uint32_t)(uint8_t)(q->life[k] - (k ? 0 : LIFE_OLD));   /* (but
+                                                         * LIFE_OLD alone: written) */
     if (x) {
         if (b) {
             b[pos + n] = 'X'; b[pos + n + 1u] = 'L';

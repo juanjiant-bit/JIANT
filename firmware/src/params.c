@@ -758,14 +758,16 @@ static int16_t cru_v[NTRK] __attribute__((section(".pool")));   /* (V10.7.33) CR
 /* (V10.7.34, the owner: "organic, self-modulating voices") LIFE (life.c): (V10.7.44) HOME > LIFE's four, LIFE TALK BREAK
  * WEB (0..100; LIFE 0: every track as without it, bit for bit); the tracks' own (ID_LIF) kept at their defaults. Not
  * song or track parameters (as BALANCE: no slot left): kept with the project ('X' 'L', project.c proj_xm), each less
- * LIFE_DEFS (the bytes' base: V10.7.34 .. 43's defaults, so a project of before reads LIFE as it was, the other three
- * at LIFE_PON's) */
+ * LIFE_DEFS (the bytes' base: V10.7.34 .. 43's defaults for the other three, so a project of before reads them at
+ * LIFE_PON's) */
 #define ID_LIF 0xEFu
 enum { LIFE_AMT, LIFE_TALK, LIFE_BRK, LIFE_WEB, LIFE_N };
 #ifndef LIFE_DEF
 #define LIFE_DEF 0                                      /* (V10.7.44: power-on off) */
 #endif
-static const int8_t LIFE_DEFS[LIFE_N] = {25, 30, 70, 30};
+static const int8_t LIFE_DEFS[LIFE_N] = {LIFE_DEF, 30, 70, 30};   /* (LIFE's byte its value; a project without
+                                                         * 'X' 'L' LIFE_OLD, project.c proj_xm) */
+#define LIFE_OLD 25                                     /* (V10.7.34 .. 43's power-on) */
 static const int8_t LIFE_PON[LIFE_N] = {LIFE_DEF, 50, 40, 30};   /* (power-on: turned up from 0, musical) */
 #define LIFE_TDEF 100
 static int16_t life_v[LIFE_N + NTRK] __attribute__((section(".pool")));   /* (life_defaults at power-on: main.c) */

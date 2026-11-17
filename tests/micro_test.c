@@ -91,7 +91,8 @@ static uint32_t old_render(void)
 static uint32_t old_pack(project_store_t *st, project_t *q)
 {
     old_steps();
-    life_defaults();                                    /* (V10.7.34) LIFE as the firmware powers on: no 'X' 'L' written */
+    life_defaults();                                    /* (V10.7.34) LIFE as 0.9.0 .. V10.7.43 knew it: no 'X' 'L' written */
+    life_v[LIFE_AMT] = 25;                              /* (V10.7.44: power-on 0, stored; 25 the bytes' base) */
     project_capture(q);
     if (!proj_pack(st, q))
         return 0;
