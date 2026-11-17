@@ -3359,7 +3359,8 @@ static void panic_do(void)
         mo_koff(i >> 7, i & 127u);
     scn_keys = 0;
     midi_in_overflow = 1;
-    fx_panic = 1;                                       /* (V10.7.43) the buses' tails too (fx.c fx_rest) */
+    fx_panic = fx.primed;                               /* (V10.7.43) the buses' tails too (fx.c fx_rest; never
+                                                         * primed: nothing to clear, no flag left waiting) */
     perf_latched = 0;                                   /* .. a latched or held punch-in (FREEZE ..) dropped */
     perf_held = 0;
 }
