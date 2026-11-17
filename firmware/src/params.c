@@ -773,6 +773,8 @@ static void life_defaults(void)
     uint32_t k;
     for (k = 0; k < LIFE_N + NTRK; k++)
         life_v[k] = (int16_t)life_def(k);
+    life_v[LIFE_AMT] = 0;                               /* (V10.7.45, the owner: LIFE off by default; a project's bytes
+                                                         * still read against LIFE_DEF, so what one saved stays) */
 }
 static uint8_t lfo_ph_mem[NTRK];
 static int lfo_mode_of(const track_t *t) { return t->p[P_LPHASE] < 0; }   /* 1 FREE */

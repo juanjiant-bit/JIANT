@@ -2182,7 +2182,7 @@ static int test_init_system(void)
         project_capture(&now);
         ok2 = !ui.confirm && msg_is("PROJECT CLEARED") && song.g[G_TUNE] == 5 && song.g[G_CLOCK] == 1;   /* (the setup stays) */
         now.g[G_TUNE] = ref.g[G_TUNE]; now.g[G_CLOCK] = ref.g[G_CLOCK]; now.sel = ref.sel; now.sum = ref.sum;
-        ok2 &= life_v[LIFE_AMT] == LIFE_DEF && life_v[LIFE_N] == LIFE_TDEF;   /* (V10.7.34) LIFE as the firmware's power-on */
+        ok2 &= life_v[LIFE_AMT] == 0 && life_v[LIFE_N] == LIFE_TDEF;   /* (V10.7.34) LIFE as the firmware's power-on */
         memcpy(now.life, ref.life, sizeof now.life);            /* (.. the tests' power-on: HOST_LIFE 0) */
         for (k = 0; k < NTRK; k++) {                            /* (an empty step keeps its note value: a rest) */
             ok2 &= seq_is_empty(&trk[k]);
@@ -12551,7 +12551,7 @@ static int test_lz_home(void)
         life_defaults();                            /* (the firmware's power-on: LIFE on; the tests' HOST_LIFE 0) */
         l0 = life_v[LIFE_AMT];
         memcpy(m0, macro_v, sizeof m0);
-        ok &= l0 == LIFE_DEF && !strncmp(ui.col[0], "LIFE|", 5);
+        ok &= l0 == 0 && !strncmp(ui.col[0], "LIFE|", 5);
         for (c = 0; c < 4u; c++) { turn(EN_K1 + c, 2); frame(); }
         ok &= life_v[LIFE_AMT] == l0 + 2;
         turn(EN_K1, -300); frame();
