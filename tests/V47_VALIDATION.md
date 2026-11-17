@@ -35,6 +35,8 @@ budget is unchanged. This improves possible parallelism, not the total processin
 - Deterministic Callgrind CPU checks: all 60 sections within the existing budget versus the V45/V46 reference.
   CPU TEST 2833 versus 2831 instructions/sample; six-track CPU TEST 2927 versus 2925 (about +0.1%).
   These are host instruction counts, not measured percentages on the FM-1.
+- The emulator save test now navigates PROJECTS > PART SLOTS > USER before arming SAVE. Its old direct
+  SAVE gesture fails on both unmodified V46 and this candidate; the corrected gesture saves on both.
 - Emulator native build linked and rendered the heavy-song smoke scenario. CI separately builds WebAssembly,
   compares native/Wasm audio, and tests transfers. It uploads a preview artifact without deploying Pages.
 

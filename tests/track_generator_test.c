@@ -8,13 +8,14 @@
 static int drum_motion_reference(void)
 {
     int ok=1;unsigned cases=0;
+    set_engine(ENGI_DRUM);
     static const uint8_t q[9]={0,64,32,16,8,4,2,1,1};
     for(unsigned bpm=20;bpm<=300;bpm++) for(unsigned rate=1;rate<=8;rate++)
         for(unsigned shape=0;shape<5;shape++) for(unsigned play=0;play<2;play++) {
             song.g[G_BPM]=(int16_t)bpm;song.playing=(uint8_t)play;
             DX_UI.mot[XM_RATE]=(uint8_t)rate;DX_UI.mot[XM_DPTH]=127;DX_UI.mot[XM_SHPE]=(uint8_t)shape;
             ms_clock=0xAABBCDDu;dx_mot_free=UINT32_MAX-31u;
-            dx_mot_cyc=UINT32_MAX;dx_rng[song.sel]=42;dx_mot_sh=57;
+            dx_mot_cyc[song.sel]=UINT32_MAX;dx_rng[song.sel]=42;dx_mot_sh[song.sel]=57;
             uint32_t len=beat_samples()*q[rate]/4u;
             if(rate==8) len=beat_samples()/8u;
             if(len<64u) len=64u;
@@ -24,7 +25,7 @@ static int drum_motion_reference(void)
                       shape==2?(int32_t)(ph>>16)-32768:shape==3?32767-(int32_t)(ph>>16):
                       (int32_t)((42u*1664525u+1013904223u)>>16)-32768;
             dx_mot_block(64);
-            ok &= dx_mot_cyc==cyc&&dx_mot_v==(w*127)>>16&&dx_mot_free==32u;
+            ok &= dx_mot_cyc[song.sel]==cyc&&dx_mot_v==(w*127)>>16&&dx_mot_free==32u;
             cases++;
         }
     printf("DRUM motion: %u old-formula comparisons\n",cases);
