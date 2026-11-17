@@ -65,6 +65,9 @@ static void host_life(void)
 {
     life_defaults();
     life_v[LIFE_AMT] = (int16_t)(getenv("LIFE") ? atoi(getenv("LIFE")) : HOST_LIFE);
+    if (getenv("TALK")) life_v[LIFE_TALK] = (int16_t)atoi(getenv("TALK"));   /* (V10.7.44) LIFE's other three */
+    if (getenv("BREAK")) life_v[LIFE_BRK] = (int16_t)atoi(getenv("BREAK"));
+    if (getenv("WEB")) life_v[LIFE_WEB] = (int16_t)atoi(getenv("WEB"));
     life_reset();
 }
 

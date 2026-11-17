@@ -67,7 +67,13 @@ static LIFE_SZ void life_master(void)
         life.pres = (uint8_t)pres;
     pres = life.pres;
     life.on = life_v[LIFE_AMT] > 0;
-    web = life.on ? life_v[LIFE_WEB] * 256 / 100 : 0;   /* (LIFE 0: no one hears, nothing on the sound) */
+    if (!life.on && !life.pmc) {                        /* (LIFE 0, the lines out: no one hears, nothing on the sound) */
+        memset(life.w, 0, sizeof life.w);
+        memset(life.brk, 0, sizeof life.brk);
+        life.tapm = life.sel = 0;
+        return;
+    }
+    web = life.on ? life_v[LIFE_WEB] * 256 / 100 : 0;
     amt = life_v[LIFE_AMT] * life_v[LIFE_BRK] / 100;    /* BREAK at LIFE: its most (0..100), steeper at the top */
     bm = amt * (amt + 60) / 160;
     for (i = 0; i < NTRK; i++) {                        /* track i: who it hears, how much */
