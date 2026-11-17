@@ -509,7 +509,26 @@ Every update is listed here, newest first. (Since 0.6.80 at the end of the page:
   and note, the reverb (CLOUD frozen at SIZE 100 % included), the delay (its loop at 100 % too) and the chorus are
   cleared at once, and a held or latched punch-in (FREEZE …) is let go. Its message then shows the fresh start:
   **EMPTY SONG: SAVE>TOOLS CLEAR**.
-- Fixes: PRESETS' OCT− said SOUND BACK when there was nothing to put back.
+- **Punch-in FX you choose** (Discord users): hold **FX**, hold a key and turn **SELECT**: that key plays the next /
+  previous effect (today's, plus the ones gone in V10.7.36: MUTE T1–T6, LOCK, DEC− / DEC+, LPF / HPF, or none). Three
+  layouts, **FX + OCT+** steps 1 → 2 → 3: 1 the new default (foalma: FREEZE on G4 where WOBBLE was, T1–T4 MUTE back on
+  F#3 G#3 A#3 C#4, REV ALL one key over on D#4, the rest as before), 2 V10.7.36's, 3 the one before V10.7.36 (LPF HPF,
+  DEC− DEC+, six mutes, G5 LOCK). Kept in the system settings (older settings: the defaults); the FX map shows each
+  key's effect. DEC and LPF / HPF are not written to the punch-in lane.
+- **FX › FILTER snaps open** (KNOB 1 with FX): a quick turn towards the centre, or one across it, opens the filter
+  fully at once (bypass) for a fast transition; a slow turn still steps.
+- **GLITCH as before V10.7.36** (the users: more musical): ratchets of a 1/16 or 1/32 (no 1/64), the 1/16 reversed,
+  an octave up or down, gates, CD skips and a milder crush, in the 2-bar groove of before; V10.7.36's ROLL and
+  tape-stop slivers are gone. Cheaper: no division a sample, the window's gain only on its edges.
+- **A kit's VOICES** (DRUM-X): EDIT › VOICES 2 › VOICES (KNOB 4, as on a synth) caps the kit's hits at 1–8 to cut
+  the load; AUTO (the default) is as before. KICK, SNARE and CLAP stay protected: the kit gives up its other hits
+  first. A project of V10.7.37–42 with an EROSION DEST loads AUTO.
+- **HOME › TRACKS lighter**: it was drawn every other frame while playing; now a lane's change (its playhead, its
+  level's band) draws it and only what changed goes to the screen; under a high audio load at most every 4th tick.
+  67 → 43 draws in 2 s playing (32 under load), a draw ~60 µs on the host.
+- Tests: GEN's CPU check (tests/gen_cpu.c) measures each piece against the FM-1's budget (the old CPU TEST, 3083
+  instructions a sample), not against today's cheaper CPU TEST (2836): it failed at 101.8 % only because CPU TEST got
+  lighter; now the heaviest of 116 pieces is at 93.9 % of the budget.
 
 ### V10.7.42 (2026-11-15)
 - **CPU: silence back to half the cost of V10.7.23, the rest of the margin found** (docs/CPU_HISTORY.md). Every version

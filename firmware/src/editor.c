@@ -190,7 +190,8 @@ static void ed_known(uint32_t k, uint32_t id)            /* the editor's own cha
  * latched, a scene's, the lane's) and each EUCLID MUTATE. 0: no room in the SysEx ring (the rest waits) */
 static __attribute__((noinline)) int ed_perf(uint32_t *n)
 {
-    uint32_t i, play = song.playing != 0, m = perf_kill ? 0u : (perf_held | perf_latched | scene_pfx | pfx_lnow) & (PF_BIT(PF_N) - 1u);
+    uint32_t i, play = song.playing != 0, m = perf_kill ? 0u : (perf_held | perf_latched | scene_pfx | pfx_lnow) & (PF_BIT(PF_COMB + 1) - 1u);   /* (V10.7.43: the 27 bits of
+                                                         * the protocol; LPF HPF DEC- DEC+ after them, not pushed) */
     if ((ed_w.ext & 1u) && (play != ed_w.tp_play || (play && beat_n != ed_w.tp_beat))) {
         if (!ed_room())
             return 0;

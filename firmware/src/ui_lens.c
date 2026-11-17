@@ -86,7 +86,8 @@ static const ng_t CG_FM6[] = {{"SOUND", 0}, {"OPERATOR", "OPS"}, {"TONE", 0}, {"
 static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0, 0), NV("KIT 3", 0, 0, 0),
                               NV("SOUND", 0, 1, 2), NV("SOUND 2", 0, 1, 2), NV("SOUND 3", 0, 1, 2),
                               NV("LEVELS", 0, 2, 1), NV("LEVELS 2", 0, 2, 1), NV("KIT LFO", 0, 3, 1), NV("EROSION", 0, 3, 1),
-                              NV("FILTER", 0, 4, 1), NV("OUT", 0, 4, 1)};   /* (V10.7.37, the owner: twelve, was fifteen) KIT
+                              NV("FILTER", 0, 4, 1), NV("OUT", 0, 4, 1), NV("VOICES 2", 0, 4, 1)};   /* (V10.7.43: the
+                                                         * kit's VOICES back, on KNOB 4 as a synth's) */   /* (V10.7.37, the owner: twelve, was fifteen) KIT
                                                          * KIT 2 KIT 3 | SOUND SOUND 2 SOUND 3 (the sound a key struck) |
                                                          * LEVELS LEVELS 2 | KIT LFO EROSION | FILTER OUT (IMAGE CRUSH LIFE
                                                          * KEY MAP: STEREO, VOICES 3 and KIT 4's); the kit's VOICES gone */

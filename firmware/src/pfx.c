@@ -123,7 +123,7 @@ static __attribute__((noinline)) void pfx_fire(track_t *t, int arp)
 }
 
 /* the attacks ATK+ took out (pfx_end puts them back) */
-static int16_t pfx_keep[NTRK];
+static int16_t pfx_keep[NTRK][3];   /* ATK+'s, (V10.7.43) DEC-/DEC+'s: what they changed, put back */
 static uint32_t pfx_qon;            /* (JIANT) the effects in (quantized to the 1/16) */
 static volatile uint32_t pfx_lnow;  /* (V10.6z3) the effect the punch-in lane plays now (PF bit; the editor's PUNCH push) */
 
@@ -210,7 +210,7 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
         uint32_t lpn = (on >> PF_LP3) & 1u ? 3u : (on >> PF_LP5) & 1u ? 5u : (on >> PF_LP7) & 1u ? 7u : 0u;   /* (snd2) LOOP
                                                          * 3 / 5 / 7 (the shortest held wins) */
         f = ((on >> PF_RND) & 1u ? PFX_RND : 0u) | ((on >> PF_HALF) & 1u ? PFX_HALF : 0u) | (rep ? PFX_REP : 0u) |
-            ((on >> PF_ATK) & 1u ? PFX_ATK : 0u) |
+            ((on >> PF_ATK) & 1u ? PFX_ATK : 0u) | (on & (PF_BIT(PF_DECM) | PF_BIT(PF_DECP)) ? PFX_DEC : 0u) |
             (lpn && song.playing ? PFX_LOOP : 0u);
         /* (p2) 1/2 TEMPO and LOOP are LIVE's RATE /2 and a LOOP (seq_live.c live_q): its ghost keeps where the track
          * would be, let go it is back there */
@@ -238,8 +238,17 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
                 pfx_hush(t);                            /* gated half */
             }
         }
+        if (f & PFX_DEC) {                              /* (V10.7.43, back) the decays, short (DEC-) or long (DEC+): the
+                                                         * synth's DEC and REL, a kit's DECY */
+            uint32_t j, sh = (on >> PF_DECM) & 1u;
+            for (j = 0; j < 2u - (uint32_t)drum; j++) {
+                int16_t *v = &t->p[drum ? P_E3 : j ? P_REL : P_DEC];
+                pfx_keep[k][j] = *v;
+                *v = (int16_t)(sh ? *v / 3 : *v + (127 - *v) * 2 / 3);
+            }
+        }
         if ((f & PFX_ATK) && !drum) {                   /* (JIANT) ATK+: the attack slow (DRUM: eng_drum.c) */
-            pfx_keep[k] = t->p[P_ATK];
+            pfx_keep[k][2] = t->p[P_ATK];
             t->p[P_ATK] = (int16_t)(t->p[P_ATK] + (127 - t->p[P_ATK]) * 2 / 3);
         }
         if (f || t->pfx_pit)
@@ -255,7 +264,14 @@ static __attribute__((noinline)) void pfx_end(void)
         life_v[LIFE_AMT] = pfx_life.keep[0];
         pfx_life.on = 0;
     }
-    for (k = 0; k < NTRK; k++)
+    for (k = 0; k < NTRK; k++) {
+        if (trk[k].pfx & PFX_DEC) {                     /* (V10.7.43) DEC- / DEC+'s, back */
+            int drum = trk[k].engine == ENGI_DRUM;
+            if (!drum)
+                trk[k].p[P_REL] = pfx_keep[k][1];
+            trk[k].p[drum ? P_E3 : P_DEC] = pfx_keep[k][0];
+        }
         if ((trk[k].pfx & PFX_ATK) && trk[k].engine != ENGI_DRUM)
-            trk[k].p[P_ATK] = pfx_keep[k];
+            trk[k].p[P_ATK] = pfx_keep[k][2];
+    }
 }

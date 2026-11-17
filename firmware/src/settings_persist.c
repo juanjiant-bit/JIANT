@@ -88,6 +88,14 @@ static int settings_import(persist_t *p, int n)
 #ifdef FELUCCA_FAVORITES
     memcpy(&favorites, &p->favorites, sizeof favorites);
     favorites.filter = favorites.filter == 1u;
+#ifdef FELUCCA_PFM
+    {   /* (V10.7.43) the FX keys' layouts (ui_layer.c pfm_turn; 0 in older settings: the defaults) */
+        uint32_t l;
+        for (l = 0; l < 3u; l++)
+            memcpy(pfm.map[l], pfm_row(l), sizeof pfm.map[l]);
+        pfm.lay = (uint8_t)(favorites.factory[6][18] % 3u);
+    }
+#endif
 #if defined(FM4_NPRESETS) && !FELUCCA_FM4
     {   /* DIGITAL's starred presets (engine 1, retired) -> the FM6 presets that cover them (fm4_convert.c) */
         uint32_t k;

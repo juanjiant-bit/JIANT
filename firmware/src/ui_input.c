@@ -2494,6 +2494,8 @@ static uint32_t layer_held(void);
 static int layer_knobs_quiet(void);
 static uint32_t layer_gesture(uint32_t now, uint32_t combo);
 static void layer_show(void);
+static void pfm_turn(int32_t s);
+static void pfm_say(uint32_t lay, int32_t s);
 static void layer_tap(uint32_t l);
 static void layer_keys(uint32_t keys);
 static void layer_knob(uint32_t k, int32_t s);
@@ -2758,7 +2760,10 @@ static void ui_input_frame(void)
         static uint32_t pj_sel_ms;
         uint32_t f = held_family(), hb = (fm1_in.buttons >> panel.btn[B_HOME]) & 1u;
         int32_t ps;
-        if (!ui.menu && !dlg_on() && !name_on() && (f != FAM_COUNT || hb) && f != FAM_GLO &&
+        if (f == FAM_FX && kb_layer && !ui.menu && !dlg_on() && !name_on() && (ps = panel_enc(EN_SELECT)) != 0) {
+            pfm_turn(ps);                               /* (V10.7.43) FX + a key held + SELECT: that key's effect (no dice) */
+            fx_pr_turn = 1;
+        } else if (!ui.menu && !dlg_on() && !name_on() && (f != FAM_COUNT || hb) && f != FAM_GLO &&
             (ps = panel_enc(EN_SELECT)) != 0) {
             uint32_t k = f == FAM_EDIT ? CF_DICE_SOUND : f == FAM_SEQ ? CF_DICE_SEQ : f == FAM_LFO ? CF_DICE_LFO :
                          f == FAM_FX ? CF_DICE_FX : 0u;
@@ -2835,6 +2840,8 @@ static void ui_input_frame(void)
     if (!layer_allowed()) {
         perf_kill = 1;                                  /* (effects off until their keys are let go) */
         perf_latched = 0;                               /* (FX LATCH: the latched ones and the macros off) */
+        if (perf_latch_on)
+            pfm.kmute = 0;                              /* (V10.7.43: the mutes latched too; held: let go clears) */
         perf_k[0] = perf_k[1] = perf_k[2] = perf_k[3] = 0;
     }
     else if (!kb_layer)

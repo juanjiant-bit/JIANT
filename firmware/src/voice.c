@@ -674,6 +674,8 @@ static uint32_t trk_nvoice(const track_t *t)
             c = ECO_POLY;
         if (u < c)
             c = u + 1u;
+    } else if ((u = (uint32_t)t->p[P_DDST] - 5u) < c) { /* (V10.7.43) a kit's VOICES (params.c N_KVC) */
+        c = u + 1u;
     }
     return c;
 }
@@ -1277,8 +1279,10 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
     for (i = 0; i < np; i++)                             /* the lowest held note is protected */
         if (t->v[i].active && t->v[i].stage != 4u && voice_held(t, &t->v[i]) && (low == np || t->v[i].note < t->v[low].note))
             low = i;
-    for (i = 0; i < np; i++)                             /* oldest released (not one fading out for another part) */
-        if (!voice_held(t, &t->v[i]) && t->v[i].stage != 4u && (best == np || t->v[i].age < t->v[best].age))
+    for (i = 0; i < np; i++)                             /* oldest released (not one fading out for another part; a
+                                                         * kit's kick snare clap last, V10.7.43: its VOICES) */
+        if (!voice_held(t, &t->v[i]) && t->v[i].stage != 4u && !voice_core_drum(t, &t->v[i]) &&
+            (best == np || t->v[i].age < t->v[best].age))
             best = i;
     if (best == np)
         for (i = 0; i < np; i++)                         /* oldest held, not the bass */

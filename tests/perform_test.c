@@ -374,7 +374,7 @@ static int test_keys(void)
     {   /* the keys without an effect (none since V10.7.36): the layer's, nothing */
         uint32_t q, ok = 1, assigned = 0;
         for (q = 0; q < 27u; q++)
-            if (perf_key(q) < PF_N)
+            if (perf_key(q) != PF_N)                /* (V10.7.43: MUTE T1..T4 in the default layout too) */
                 assigned |= 1u << q;
         kb_mask = perf_mask = fx;
         mo0 = mo_w;
@@ -391,7 +391,31 @@ static int test_keys(void)
         }
         fm1_in.buttons = 0;
         bad += check("every effect on a key (16 white, 11 black); a key without one would be silent, nothing held",
-                     ok && (uint32_t)__builtin_popcount(assigned) == PF_N);   /* (16 white F3 .. G5, 11 black) */
+                     ok && (uint32_t)__builtin_popcount(assigned) == 27u);   /* (16 white F3 .. G5, 11 black) */
+        {   /* (V10.7.43) the layouts: 1 FREEZE on G4, T1..T4 MUTE, REV ALL on D#4; 2 V10.7.36's (every effect of then);
+             * 3 LPF HPF DEC- DEC+ and the six mutes; a key the user set; MUTE held mutes its track, let go opens it */
+            uint32_t m = 0, l;
+            pfm.lay = 1;
+            for (q = 0; q < 27u; q++)
+                m |= perf_key(q) < 27u ? 1u << perf_key(q) : 0u;
+            pfm.lay = 2;
+            l = perf_key(6) == PF_LPF && perf_key(7) == PF_HPF && perf_key(14) == PF_DECM && perf_key(16) == PF_DECP &&
+                perf_key(13) == PA_M1 + 5u && perf_key(26) == PA_LOCK;
+            pfm.lay = 0;
+            bad += check("FX layouts: 1 G4 FREEZE, F#3 MUTE T1, D#4 REV ALL; 2 every effect of V10.7.36; 3 LPF HPF DEC MUTE LOCK",
+                         perf_key(14) == PF_FRZ && perf_key(1) == PA_M1 && perf_key(10) == PF_RVA && m == (1u << 27) - 1u && l);
+            pfm.map[0][0] = PF_COMB + 1u;
+            l = perf_key(0) == PF_COMB;
+            pfm.map[0][0] = 0;
+            fm1_in.buttons = fx;
+            fm1_in.notes = 1u << 1;                 /* F#3: MUTE T1 */
+            keyboard_block();
+            l &= pfm.kmute == 1u;
+            fm1_in.notes = 0;
+            keyboard_block();
+            fm1_in.buttons = 0;
+            bad += check("a key set by the user plays its effect; MUTE T1 held mutes T1, let go: open", l && !pfm.kmute);
+        }
         kb_mask = perf_mask = 0;
     }
     usb.config = 0;
@@ -1321,9 +1345,9 @@ static int test_new(void)
             }
         }
         rep = (uint32_t)__builtin_popcount(kinds & ~1u);
-        snprintf(what, sizeof what, "GLITCH: %u of its 9 kinds in 8 bars, the longest silence %u samples (a 1/16: %u)", rep,
+        snprintf(what, sizeof what, "GLITCH: %u of its 7 kinds in 8 bars, the longest silence %u samples (a 1/16: %u)", rep,
                  longest, P16);
-        bad += check(what, rep >= 7u && longest < P16);
+        bad += check(what, rep >= 6u && longest < P16);
     }
     return bad;
 }

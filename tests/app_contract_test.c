@@ -434,10 +434,10 @@ static void pushes_10(void)
     }
     g_check("PUNCH: OCT+ (bit 6) and LOOP 5 (bit 23) held, on every track", r, n);
     ok("PUNCH bits: R8 0, REVERSE 3, TAPE STOP 4, OCT- 5, OCT+ 6, WOBBLE 8, DLY 1/16 9, RANDOM 14, PITCH UP..RING 15..20, "
-       "GLITCH 21, LOOP3/5/7 22..24, LIFE MAX 25, COMB 26, 27 bits",
+       "GLITCH 21, LOOP3/5/7 22..24, LIFE MAX 25, COMB 26, 27 bits (V10.7.43: LPF HPF DEC- DEC+ after them, not pushed)",
        PF_R8 == 0 && PF_REV == 3 && PF_TAPE == 4 && PF_OCTD == 5 && PF_OCTU == 6 && PF_WOB == 8 && PF_D16 == 9 &&
        PF_RND == 14 && PF_PUP == 15 && PF_RING == 20 && PF_GLT == 21 && PF_LP3 == 22 && PF_LP7 == 24 && PF_LMAX == 25 &&
-       PF_COMB == 26 && PF_N == 27);
+       PF_COMB == 26 && PF_LPF == 27);
     pfx_lnow = PF_BIT(PF_S16);
     perf_held = 0;
     pump();
