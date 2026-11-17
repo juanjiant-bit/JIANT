@@ -19,6 +19,19 @@ always offers the current public version first, and the earlier ones under it.
 
 ## This release: V10.7.45
 
+A stability release on top of V10.7.43–44's lighter CPU:
+
+- **LIFE is out for now** (it could crash and cost a lot of CPU for little audible change); it comes back reworked in
+  a later beta. Saved projects open as before.
+- **Copy and paste steps with OCT** (a user, Eugen): hold step keys + **OCT+** copies them, a held step + **OCT−**
+  pastes there; a held step + **SELECT** walks the pages its KNOB 1–4 lock ("LOCK · page").
+- **Punch-in FX you choose** (V10.7.44): hold FX, press a key and turn SELECT; three layouts on **FX + OCT+**; the
+  default brings MUTE T1–T4 back, FREEZE on G4, REV ALL on D#4.
+- **CPU back under V10.7.23** (V10.7.43): BALANCE removed, EROSION reduced to NOISE / METAL, clean note releases,
+  PANIC clears the FX, PRESETS turn sounds as before V10.7.33 (EDIT + PRESETS jumps engines).
+
+What each version changed: [CHANGELOG.md](CHANGELOG.md) · en castellano: [CHANGELOG.es.md](CHANGELOG.es.md).
+
 ### Installing
 
 Open the **[web installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/)** in Chrome or Edge on a computer
@@ -84,7 +97,7 @@ Every detail: the [Changelog](#changelog) and the manual's
 ### What's in it
 
 - **Engines**: DRUM-X (synthesized drums with a morph between two sides), ANALOG, FM6 (six operators, 32 algorithms,
-  DX7 banks), PHASE, MATH (bytebeat and floatbeat), VOICE (sings words in Spanish, English and Japanese), WHEEL, NOISE,
+  DX7 banks), PHASE, MATH (bytebeat and floatbeat), VOICE (sings words in Spanish, English and Japanese), WHEEL, WEST (a west-coast voice: folders and a low-pass gate),
   ANIMAL (birds, insects and frogs from physical models), STRING (a plucked, struck or bowed string, and guitar
   feedback), ADD (additive) and EXT (the USB audio input, or SWARM). No samples.
 - **Sequencer**: 64 steps a track, piano roll and drum grid, step components, EUCLID and MODES, MUTATE, PLAYHEADS,
@@ -340,7 +353,10 @@ An 8-sound kit (BD SD CP CH OH TM RS CB) generated in real time, Microtonic styl
 
 ### Punch-in FX: effects you play and record
 
-> *In the 0.9.1x line (installer: 0.9.17), not yet in 0.9.9-beta4a:* the sweeps, TAPE STOP, the performance macros and recorded FX lanes below (0.9.15-0.9.17).
+> **Now (V10.7.44+):** each key's effect is yours: hold **FX**, hold a key and turn **SELECT** (any effect, MUTE T1–T6,
+> LOCK, DEC−/DEC+, LPF/HPF or nothing). Three layouts on **FX + OCT+**; the default has T1–T4 MUTE, FREEZE on G4,
+> REV ALL on D#4. The history below tells how they got here.
+
 With FX held the keys become effects that act while hel…8050 tokens truncated…er a pattern of another
   length they drift across the notes (polymeter, as the OP-Z's). The COMP page marks the lane and where it is.
   Automatable. Costs nothing on the audio: a copy of the step once per step.
@@ -482,6 +498,25 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.7.45 — public (2026-11-17)
+- **LIFE out of the system for now** (the owner): it could crash and raised the CPU a lot for little audible change.
+  HOME has no LIFE page and nothing of it runs in the audio; a project that stored it opens as before. The A#4 punch-in
+  (was LIFE MAX) plays DLY ALL (layout 1), LPF (layout 2) or REV ALL (layout 3); a key set to LIFE MAX goes back to
+  its layout's effect. LIFE comes back reworked in a later beta.
+- **Steps copied and pasted with OCT** (a user, Eugen): step keys held + **OCT+** copy them (one, a range, the bar),
+  a held step + **OCT−** pastes there; the octave does not move. REC on a held step still pastes.
+- **A held step + SELECT walks the lock pages again** (0.9.12's): the pages its KNOB 1–4 lock, "LOCK · page".
+- Crash reports go to the JIANT Discord (GitHub issues are closed).
+
+### V10.7.44 — public (2026-11-17)
+- **Punch-in FX you choose** (Discord users): hold **FX**, hold a key and turn **SELECT**: any of today's effects,
+  MUTE T1–T6, LOCK, DEC−/DEC+, LPF/HPF or nothing. **Three layouts** on **FX + OCT+**, kept at power-off; the default
+  brings T1–T4 MUTE back, FREEZE on G4, REV ALL on D#4.
+- **FX FILTER snaps open:** a quick turn towards the centre (or across it) opens the filter at once.
+- **GLITCH as before V10.7.36** (ratchets, reverse, octaves, gates, skips, a milder crush), lighter on the CPU.
+- **DRUM-X voices:** EDIT › VOICES 2 › VOICES also limits a kit's voices (kick, snare and clap never cut).
+- **HOME › TRACKS lighter:** it redraws only what changes and slows down under a high load.
 
 ### V10.7.43 — beta (2026-11-15)
 - **PRESETS as before V10.7.33** (the owner): turning **PRESETS** loads the next / previous sound of the track's
