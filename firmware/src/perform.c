@@ -75,6 +75,7 @@ static const uint8_t PF_DEF[3][27] = {
     {0, 1, 2, PF_LPF, PF_HPF, 5, 6, 7, PF_DECM, PF_DECP, 10, 11, 12, 13, 14, PA_LOCK,
      PA_M1, PA_M1 + 1, PA_M1 + 2, PA_M1 + 3, PA_M1 + 4, PA_M1 + 5, PF_LP3, PF_LMAX, PF_LP5, PF_LP7, PF_GLT}};
 static struct { uint8_t map[3][27], lay, kmute, lockrq; } pfm __attribute__((section(".pool")));
+#define FELUCCA_PFM 1                                 /* (settings_persist.c: the layouts loaded) */
 static uint32_t pfm_get(uint32_t l, uint32_t s)
 {
     uint32_t b = pfm.map[l][s];
