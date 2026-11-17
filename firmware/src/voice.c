@@ -2166,7 +2166,7 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
     bend16 = bend >= 0 ? bend / 16 : -((-bend + 15) / 16);
     bend_fine = (bend - bend16 * 16) * 2367 / 2560;
     uint32_t nr = 0, fade = t->xf_on && t->xf, snap = fade && xf_snap_t == ti;
-    int32_t damt, lpt = 0;
+    int32_t damt;
     int16_t pe_new[8], p_new[P_COUNT];
     for (i = 0; i < n; i++)
         out[i] = 0;
@@ -2198,12 +2198,6 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
         vctx_t c;
         c.lfo = lfo; c.tune = tune; c.tune_fine = tune_fine; c.bend16 = bend16; c.bend_fine = bend_fine;
         c.damt = damt; c.ti = ti; c.fade = fade; c.img = syn_img[ti];
-        if (life_v[LIFE_AMT]) {                          /* (V10.7.34) LIFE (life.c), through a register: track_render is
-                                                         * the RAM copy's too (mix_part_m0), life.c past its direct reach */
-            int32_t (*f)(uint32_t) = life_ctx;
-            FM1_OPAQUE(f);
-            lpt = f(ti);
-        }
         for (i = 0; i < NVOICE; i++) {
             voice_t *v = &t->v[i];
             uint32_t k = v->sub;
@@ -2245,10 +2239,10 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
     }
     if (e == &ENG_INPUT)                                /* (V10.54) INPUT, PLAY THRU: the input (eng_input.c) */
         nr += AIN_THRU(t, out, n);                     /* (through a pointer: track_render runs from RAM too) */
-    if (nr && ((life.pmc >> ti) & 1u)) {                /* (V10.7.34) LIFE's cross-FM (V10.7.43: its pairs) */
-        void (*f)(uint32_t, int32_t *, uint32_t, int32_t) = life_pm;
+    if (nr && ((life.pmc >> ti) & 1u)) {                /* (V10.7.34) LIFE's cross-FM (V10.7.44: TALK) */
+        void (*f)(uint32_t, int32_t *, uint32_t) = life_pm;
         FM1_OPAQUE(f);
-        f(ti, out, n, lpt);
+        f(ti, out, n);
     }
     if (nr && e == &ENG_DRUM)                           /* (0.6.16) DRUM-X: DRV and the knee on the kit's sum */
         drum_bus(t, out, n);

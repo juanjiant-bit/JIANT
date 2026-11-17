@@ -1336,11 +1336,14 @@ static void draw_columns(void)
         }
         return;
     }
-    if (home_life()) {                                  /* (V10.7.34) HOME's LIFE: (V10.7.43) LIFE alone, KNOB 1 (life.c) */
-        fmt_int(val, life_v[LIFE_AMT]);
-        draw_column(0, "LIFE", val, "%", VAL(0), life_v[LIFE_AMT] * 10, ICON_MOD);
-        for (c = 1; c < 4u; c++)
-            empty_column(c);
+    if (home_life()) {                                  /* (V10.7.34) HOME's LIFE: (V10.7.44) KNOB 1 LIFE (the panel's bar,
+                                                         * ui_lzhome.c), TALK BREAK WEB (life.c); dim at LIFE 0 */
+        static const char *const L[3] = {"TALK", "BREAK", "WEB"};
+        empty_column(0);
+        for (c = 1; c < 4u; c++) {
+            fmt_int(val, life_v[c]);
+            draw_column(c, L[c - 1u], val, "%", life_v[LIFE_AMT] ? VAL(c) : T_DIM, life_v[c] * 10, ICON_MOD);
+        }
         return;
     }
     if (home_tracks()) {                                /* (V10.7.34) HOME > TRACKS: the track (KNOB 1), its LEVEL PAN REV */

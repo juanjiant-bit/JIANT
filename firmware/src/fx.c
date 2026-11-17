@@ -305,7 +305,8 @@ static __attribute__((noinline)) void crush_block(track_t *t, int32_t *b, uint32
 {
     uint32_t ti = (uint32_t)(t - trk) % NTRK, i, r = dist_rnd | 1u;
     cru_t *c = &cru_s[ti];
-    int32_t d = cru_v[ti], w0 = c->w, w1 = d >= 8 ? 4096 : d * 512, dw, g, k, mk, st0, sh;
+    int32_t d = cru_v[ti] + life.brk[ti], w0 = c->w, w1 = d >= 8 ? 4096 : d * 512, dw, g, k, mk, st0, sh;   /* (V10.7.44:
+                                                         * LIFE's BREAK on top, life.c) */
     int32_t hp = c->hp, l1 = c->l1, l2 = c->l2, dc = c->dc, hold = c->hold, ph = c->ph, stp = c->st;
     if (w1 != w0)
         w1 = w1 - w0 > 64 || w0 - w1 > 64 ? w0 + (w1 - w0) / 2 : w1;
@@ -344,7 +345,8 @@ static __attribute__((noinline)) void crush_block(track_t *t, int32_t *b, uint32
 }
 static void track_crush(track_t *t, int32_t *b, uint32_t n)
 {
-    if (cru_v[(uint32_t)(t - trk) % NTRK] || cru_s[(uint32_t)(t - trk) % NTRK].w) {
+    uint32_t ti = (uint32_t)(t - trk) % NTRK;
+    if (cru_v[ti] || life.brk[ti] || cru_s[ti].w) {
         void (*f)(track_t *, int32_t *, uint32_t) = crush_block;
         FM1_OPAQUE(f);
         f(t, b, n);

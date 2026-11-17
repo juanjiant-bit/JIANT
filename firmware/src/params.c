@@ -755,24 +755,27 @@ static const param_desc_t XM_DESC[3] __attribute__((section(".rodata.tape"))) = 
     PD("AMOUNT", F_PCT, 0, 100, BAL_DEF), PD("NOISE", F_PCT, 0, 100, 0), PD("CRUSH", F_PCT, 0, 127, 0)};
 static int16_t dnz_v[NTRK] __attribute__((section(".bss.tape")));
 static int16_t cru_v[NTRK] __attribute__((section(".pool")));   /* (V10.7.33) CRUSH (0..127: DIST's DRIVE, shown 0..100 %) */
-/* (V10.7.34, the owner: "organic, self-modulating voices") LIFE (life.c): (V10.7.43) HOME > LIFE's one value, LIFE_AMT
- * (0..100; LIFE 0: every track as without it, bit for bit). The rest of life_v (V10.7.34 .. 42's FILTER PITCH FX and each
- * track's LIFE, ID_LIF) kept at their defaults: a project's bytes for them read and ignored. Not song or track parameters (as BALANCE: no slot left): kept with the project ('X' 'L',
- * project.c proj_xm; a project without it, every one before V10.7.34: these defaults, LIFE on) */
+/* (V10.7.34, the owner: "organic, self-modulating voices") LIFE (life.c): (V10.7.44) HOME > LIFE's four, LIFE TALK BREAK
+ * WEB (0..100; LIFE 0: every track as without it, bit for bit); the tracks' own (ID_LIF) kept at their defaults. Not
+ * song or track parameters (as BALANCE: no slot left): kept with the project ('X' 'L', project.c proj_xm), each less
+ * LIFE_DEFS (the bytes' base: V10.7.34 .. 43's defaults, so a project of before reads LIFE as it was, the other three
+ * at LIFE_PON's) */
 #define ID_LIF 0xEFu
-enum { LIFE_AMT, LIFE_RCH, LIFE_XFM, LIFE_SWM, LIFE_N };
+enum { LIFE_AMT, LIFE_TALK, LIFE_BRK, LIFE_WEB, LIFE_N };
 #ifndef LIFE_DEF
-#define LIFE_DEF 25
+#define LIFE_DEF 0                                      /* (V10.7.44: power-on off) */
 #endif
-static const int8_t LIFE_DEFS[LIFE_N] = {LIFE_DEF, 30, 70, 30};
+static const int8_t LIFE_DEFS[LIFE_N] = {25, 30, 70, 30};
+static const int8_t LIFE_PON[LIFE_N] = {LIFE_DEF, 50, 40, 30};   /* (power-on: turned up from 0, musical) */
 #define LIFE_TDEF 100
 static int16_t life_v[LIFE_N + NTRK] __attribute__((section(".pool")));   /* (life_defaults at power-on: main.c) */
-static int32_t life_def(uint32_t k) { return k < LIFE_N ? LIFE_DEFS[k] : LIFE_TDEF; }   /* (value k of life_v) */
+static int32_t life_def(uint32_t k) { return k < LIFE_N ? LIFE_DEFS[k] : LIFE_TDEF; }   /* (a byte's base) */
+static int32_t life_rel(uint32_t k) { return k && k < LIFE_N ? LIFE_PON[k] : life_def(k); }   /* (project_t's base) */
 static void life_defaults(void)
 {
     uint32_t k;
     for (k = 0; k < LIFE_N + NTRK; k++)
-        life_v[k] = (int16_t)life_def(k);
+        life_v[k] = (int16_t)(k < LIFE_N ? LIFE_PON[k] : LIFE_TDEF);
 }
 static uint8_t lfo_ph_mem[NTRK];
 static int lfo_mode_of(const track_t *t) { return t->p[P_LPHASE] < 0; }   /* 1 FREE */

@@ -1,15 +1,18 @@
 /* SPDX-License-Identifier: GPL-3.0-only
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
-/* (V10.7.34; V10.7.43 rebuilt: one value, the tracks' cross-FM alone) LIFE (firmware/src/life.c): build/host/life_test
- * 1. still: LIFE 0 renders bit for bit as without LIFE (tests/golden_life0.txt, run_tests.sh's LIFE=0 regress, and here: a
- *    project's old LIFE values and matrix routes on the old LIFE / BEING / LIFE ids change nothing).
- * 2. the curve: 0 at 0, rising, ~1 % at 25, ~6 % at 50, ~25 % at 75, all at 100 (logarithmic: fine at the bottom).
- * 3. alive and bounded: the default moves a mix of six; everything at 100 bounded, silence after the notes end.
- * 4. the ring: two tracks a duet (each moves the other), one pair up to LIFE 50, two past it, a kit never the one moved.
- * 5. the cross-FM modulates: a drone's spectrum further from LIFE 0's at 50 and again at 100, sidebands between its
- *    partials; every engine but the kit moved by it.
- * 6. HOME > LIFE: its one card (KNOB 1), its lines the pairs; kept in a project, the old bytes ignored. */
-#define HOST_LIFE LIFE_DEF              /* (the firmware's power-on: LIFE on) */
+/* (V10.7.34; V10.7.43 one value; V10.7.44 LIFE TALK BREAK WEB, JIANT BYTE's) LIFE (firmware/src/life.c):
+ * build/host/life_test
+ * 1. still: LIFE 0 renders bit for bit as without LIFE (tests/golden_life0.txt, run_tests.sh's LIFE=0 regress, and here:
+ *    TALK BREAK WEB, a project's old values and matrix routes on the old LIFE / BEING / LIFE ids change nothing).
+ * 2. TALK's curve: 0 at 0, rising, heard from the bottom (~3 % at 10, ~11 % at 25, ~27 % at 50), all at 100.
+ * 3. alive and bounded: LIFE 50 moves a mix of six; everything at 100 bounded, silence after the notes end.
+ * 4. the web: two tracks a duet (each hears the other); WEB 0 each the one before it, WEB 100 all; up to LPM_N that
+ *    hear, a kit never one; BREAK: CRUSH up while the others sound, back after; none at BREAK 0; TALK 0 no line.
+ * 5. TALK modulates: a drone's spectrum further from LIFE 0's at 50 and again at 100, sidebands between its partials;
+ *    every engine but the kit moved by it.
+ * 6. HOME > LIFE: TALK BREAK WEB's cards (KNOBS 2..4), LIFE the bar (KNOB 1), the lines; kept in a project; V10.7.43's
+ *    bytes: its LIFE, the other three at their power-on. */
+#define HOST_LIFE LIFE_DEF              /* (the firmware's power-on: LIFE off) */
 #define UI_TEST_NO_MAIN 1
 #include "ui_test.c"
 #include <sys/wait.h>
@@ -94,11 +97,11 @@ static uint64_t child(void (*f)(void))                  /* f's hash in a fork()e
     return h;
 }
 static void r_still(void) { scene(6, 0); play(6, 3, 1); }
-static void r_def(void) { scene(6, LIFE_DEF); play(6, 3, 1); }
+static void r_def(void) { scene(6, 50); play(6, 3, 1); }
 static void r_old(void)                                 /* (LIFE 0, a project of before: its other values, its routes) */
 {
     scene(6, 0);
-    life_v[LIFE_RCH] = 100; life_v[LIFE_XFM] = 0; life_v[LIFE_SWM] = 100; life_v[LIFE_N + 1] = 0;
+    life_v[LIFE_TALK] = 100; life_v[LIFE_BRK] = 100; life_v[LIFE_WEB] = 100; life_v[LIFE_N + 1] = 0;
     trk[1].p[P_M1SRC] = MS_LIFE; trk[1].p[P_M1DST] = MD_CUT; trk[1].p[P_M1AMT] = 60;
     trk[2].p[P_M1SRC] = MS_LFO; trk[2].p[P_M1DST] = MD_LIFE; trk[2].p[P_M1AMT] = 60;
     play(6, 3, 1);
@@ -157,7 +160,7 @@ int main(void)
     setvbuf(stdout, 0, _IONBF, 0);
     /* 1 */
     a = child(r_still); b = child(r_old);
-    ck("1. LIFE 0: an old project's LIFE values and its routes on LIFE / BEING / LIFE change nothing, bit for bit", a && a == b);
+    ck("1. LIFE 0: TALK BREAK WEB at 100, the routes on LIFE / BEING / LIFE change nothing, bit for bit", a && a == b);
     ck("   the old LIFE / BEING / LIFE ids past the matrix's (inert, hidden)", MS_LIFE >= MS_N && MS_BEING >= MS_N && MD_LIFE >= MD_N);
     /* 2 */
     {
@@ -165,11 +168,11 @@ int main(void)
         for (i = 0; i < 5u; i++) d[i] = life_depth((int32_t)i * 25);
         for (i = 1; i <= 100u; i++) up &= life_depth((int32_t)i) >= life_depth((int32_t)i - 1);
         printf("life:   the curve (Q10): %d %d %d %d %d at 0 25 50 75 100\n", d[0], d[1], d[2], d[3], d[4]);
-        ck("2. the curve: 0 at 0, rising, ~1 % at 25, ~6 % at 50, ~25 % at 75, all at 100", !d[0] && up && d[1] > 4 && d[1] < 30 &&
-           d[2] > 40 && d[2] < 90 && d[3] > 200 && d[3] < 300 && d[4] == 1024);
+        ck("2. TALK's curve: 0 at 0, rising, ~3 % at 10, ~11 % at 25, ~27 % at 50, all at 100", !d[0] && up &&
+           life_depth(10) > 20 && d[1] > 90 && d[1] < 140 && d[2] > 250 && d[2] < 320 && d[3] > 500 && d[4] == 1024);
     }
     /* 3 */
-    ck("3. the default LIFE moves the sound (a mix of six against LIFE 0)", child(r_def) != child(r_still));
+    ck("3. LIFE 50 (TALK BREAK WEB at their power-on) moves the sound (a mix of six against LIFE 0)", child(r_def) != child(r_still));
     {
         int32_t pk0, nc0;
         scene(6, 0); play(6, 3, 0); pk0 = pk; nc0 = nclip;
@@ -178,28 +181,39 @@ int main(void)
         pk = 0;
         blk(FS / CTL);
         ck("   .. and silence after the notes end (no runaway)", pk < 64);
-        for (i = 0; i < LPM_N && life.pm[i].dc <= LPM_D && life.pm[i].b <= LPM_D; i++) {}
-        ck("   its depth inside its line", i == LPM_N && 2 * LPM_D < (int32_t)(LPM_L - 2u) << 8);
+        for (i = 0; i < NTRK && life.dc[i] <= LPM_D && life.b[i] <= LPM_D; i++) {}
+        ck("   its depth inside its line", i == NTRK && 2 * LPM_D < (int32_t)(LPM_L - 2u) << 8);
     }
     /* 4 */
     {
-        uint32_t np = 0, kit = 0;
+        uint32_t np = 0, kit = 0, ring = 1, all = 1, j;
         scene(3, 100);                                  /* (T1 the kit, T2 the pad, T3 FM6) */
         trk[0].p[P_MUTE] = 1;
         play(3, 2, 0);
-        for (k = 0; k < LPM_N; k++) np += life.pm[k].car < NTRK && life.pm[k].dc > 0;
-        ck("4. two tracks: a duet, each moving the other", np == 2 && (life.pmc & 6u) == 6u && (life.tapm & 6u) == 6u);
-        scene(6, 50);
+        for (k = 0; k < NTRK; k++) np += life.dc[k] > 0;
+        ck("4. two tracks: a duet, each hearing the other", np == 2 && (life.pmc & 6u) == 6u && (life.tapm & 6u) == 6u);
+        scene(6, 70); life_v[LIFE_WEB] = 0;
         play(6, 2, 0);
-        for (k = 0, np = 0; k < LPM_N; k++) np += life.pm[k].car < NTRK && life.pm[k].dc > 0;
-        ck("   LIFE 50: one pair", np == 1 && life.tapm && life.pmc);
-        scene(6, 100);
+        for (i = 1; i < 6u; i++)                        /* (WEB 0: each the one before it, alone) */
+            for (j = 0; j < 6u; j++) ring &= (life.w[i][j] > 0) == (j == i - 1u);
+        for (k = 0, np = 0; k < NTRK; k++) np += (life.sel >> k) & 1u;
+        kit = life.dc[0] > 0;
+        scene(6, 70); life_v[LIFE_WEB] = 100;
         play(6, 2, 0);
-        for (k = 0, np = 0; k < LPM_N; k++) {
-            np += life.pm[k].car < NTRK && life.pm[k].dc > 0;
-            kit |= life.pm[k].car == 0u;
-        }
-        ck("   LIFE 100: two pairs, the kit (T1) never the one moved", np == 2 && !kit && !(life.pmc & 1u));
+        for (i = 0; i < 6u; i++)
+            for (j = 0; j < 6u; j++) all &= (life.w[i][j] == 256) == (j != i);
+        ck("   WEB 0: each hears the one before it; WEB 100: all of them each other", ring && all);
+        kit |= life.dc[0] > 0;
+        ck("   up to LPM_N hear at a time, the kit (T1) never one", np == LPM_N && !kit && !(life.pmc & 1u));
+        for (i = 0, k = 0; i < 6u; i++) k += life.brk[i] > 0;
+        ck("   BREAK: CRUSH up while the others sound", k >= 5u);
+        blk(2 * FS / CTL);
+        for (i = 0, k = 0; i < 6u; i++) k += life.brk[i];
+        ck("   .. back to none when they are quiet", !k);
+        scene(6, 70); life_v[LIFE_BRK] = 0; life_v[LIFE_TALK] = 0;
+        play(6, 2, 0);
+        for (i = 0, k = 0; i < 6u; i++) k += life.brk[i];
+        ck("   BREAK 0: no CRUSH; TALK 0: no line", !k && !life.pmc && !life.tapm);
     }
     /* 5 */
     {
@@ -232,7 +246,7 @@ int main(void)
                 trk_note_on(&trk[0], 45, 110); trk_note_on(&trk[1], 60, 110);
                 for (b2 = 0; b2 < FS / CTL; b2++) {
                     blk(1);
-                    for (f = 0; f < LPM_N; f++) on |= k && life.pm[f].car == 1u && life.pm[f].dc > 0;
+                    on |= k && life.dc[1] > 0;
                 }
                 if (!k) h0 = hsh;
                 else if (on && hsh != h0) moved++;
@@ -253,7 +267,8 @@ int main(void)
         for (i = 0; i < 4u; i++) trk_note_on(&trk[i], 48 + 7 * i, 110);
         blk(FS / 4u / CTL);
         ui.force = 1; frames(64);
-        ck("6. HOME > LIFE: its page, LIFE alone on KNOB 1", home_life() && !strncmp(ui.col[0], "LIFE|", 5));
+        ck("6. HOME > LIFE: its page, TALK BREAK WEB on KNOBS 2..4", home_life() && !strncmp(ui.col[1], "TALK|", 5) &&
+           !strncmp(ui.col[2], "BREAK|", 6) && !strncmp(ui.col[3], "WEB|", 4));
         memcpy(s0, host_screen, sizeof s0);
         life_v[LIFE_AMT] = 0;
         blk(FS / 8u / CTL);
@@ -265,21 +280,32 @@ int main(void)
         static project_store_t st;
         int ok;
         ui_power_on();
-        ck("   power-on: LIFE at its default (25 %)", life_v[LIFE_AMT] == LIFE_DEF);
-        life_v[LIFE_AMT] = 70; life_v[LIFE_XFM] = 5; life_v[LIFE_N + 2] = 0;   /* (the old values: as a project of before) */
+        ck("   power-on: LIFE off, TALK BREAK WEB at theirs", !life_v[LIFE_AMT] && life_v[LIFE_TALK] == LIFE_PON[1] &&
+           life_v[LIFE_BRK] == LIFE_PON[2] && life_v[LIFE_WEB] == LIFE_PON[3]);
+        life_v[LIFE_AMT] = 70; life_v[LIFE_TALK] = 5; life_v[LIFE_WEB] = 100; life_v[LIFE_N + 2] = 0;
         project_capture(&proj_scratch);
         ok = proj_pack(&st, &proj_scratch);
         life_defaults();
-        life_v[LIFE_AMT] = 3;
         ok = ok && proj_import(&proj_scratch, &st, sizeof st) && project_restore_runtime(&proj_scratch) == 0;
-        ck("   a project keeps LIFE 70; its other old LIFE bytes read and ignored", ok && life_v[LIFE_AMT] == 70 &&
-           life_v[LIFE_XFM] == 70 && life_v[LIFE_N + 2] == 100);
+        ck("   a project keeps LIFE TALK BREAK WEB; the track's old LIFE byte ignored", ok && life_v[LIFE_AMT] == 70 &&
+           life_v[LIFE_TALK] == 5 && life_v[LIFE_BRK] == LIFE_PON[2] && life_v[LIFE_WEB] == 100 && life_v[LIFE_N + 2] == 100);
         life_defaults();
+        life_v[LIFE_AMT] = 60;
+        project_capture(&proj_scratch);
+        {                                               /* (its bytes: V10.7.43's at its defaults, 30 70 30) */
+            const uint8_t *q = (const uint8_t *)&st, *e = q + sizeof st - 6;
+            ok = proj_pack(&st, &proj_scratch);
+            for (; q < e && !(q[0] == 'X' && q[1] == 'L' && q[2] == 60 && q[3] == 30 && q[4] == 70 && q[5] == 30); q++) {}
+            ck("   TALK BREAK WEB at their power-on: V10.7.43's bytes (a project of V10.7.43: its LIFE, these)", ok && q < e);
+        }
+        life_defaults();
+        life_v[LIFE_AMT] = 25;
         project_capture(&proj_scratch);
         ok = proj_pack(&st, &proj_scratch);
-        life_v[LIFE_AMT] = 0;
+        life_defaults();
         ok = ok && proj_import(&proj_scratch, &st, sizeof st) && project_restore_runtime(&proj_scratch) == 0;
-        ck("   one without 'X' 'L' (every project before V10.7.34) opens with LIFE on, at its default", ok && life_v[LIFE_AMT] == LIFE_DEF);
+        ck("   one without 'X' 'L' (V10.7.43 at its LIFE 25, or before V10.7.34) opens with LIFE 25, as it played",
+           ok && life_v[LIFE_AMT] == 25 && life_v[LIFE_TALK] == LIFE_PON[1]);
     }
     {   /* the track's LIFE gone from EDIT (TONE, VOICES 3, OUT) */
         int16_t *vp = 0;

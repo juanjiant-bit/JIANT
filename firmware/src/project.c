@@ -269,7 +269,7 @@ static __attribute__((noinline)) uint32_t proj_xm(project_t *q, const uint8_t *b
     if (room) {
         if (pos + 2u + LIFE_N + NTRK <= room && b[pos] == 'X' && b[pos + 1u] == 'L')
             for (k = 0; k < LIFE_N + NTRK; k++)
-                q->life[k] = (int8_t)((b[pos + 2u + k] > 100u ? 100 : b[pos + 2u + k]) - life_def(k));
+                q->life[k] = (int8_t)(b[pos + 2u + k] - life_def(k));   /* (V10.7.44: a wrap) */
         return 0;
     }
     for (k = 0, x = 0; k < LIFE_N + NTRK; k++) x |= (uint32_t)(uint8_t)q->life[k];
@@ -1362,7 +1362,7 @@ static __attribute__((noinline)) void proj_master_put(project_t *p)
     memcpy(p->dnz, dnz_v, sizeof p->dnz);
     memcpy(p->cru, cru_v, sizeof p->cru);               /* (V10.7.33) CRUSH */
     for (k = 0; k < LIFE_N + NTRK; k++)                   /* (V10.7.34) LIFE, less its defaults */
-        p->life[k] = (int8_t)(clamp(life_v[k], 0, 100) - life_def(k));
+        p->life[k] = (int8_t)(clamp(life_v[k], 0, 100) - life_rel(k));
 }
 static void project_capture(project_t *p)
 {
@@ -1626,9 +1626,10 @@ static int project_restore_runtime(const project_t *input)
         tape_v[0] = p->tp[0] > 100u ? 100 : p->tp[0]; tape_v[1] = p->tp[1] > 100u ? 100 : p->tp[1];
         memcpy(dnz_v, p->dnz, sizeof dnz_v);            /* (0 .. 100: proj_xm's, or the knob's) */
         memcpy(cru_v, p->cru, sizeof cru_v);            /* (V10.7.33) CRUSH (0 .. 127: proj_xm's, or the knob's) */
-        life_defaults();                                /* (V10.7.34) LIFE; (V10.7.43) its one value, the rest a
-                                                         * project of before kept read and ignored */
-        life_v[LIFE_AMT] = (int16_t)clamp(p->life[LIFE_AMT] + life_def(LIFE_AMT), 0, 100);
+        life_defaults();                                /* (V10.7.34) LIFE; (V10.7.44) its four (a project of before: its
+                                                         * LIFE, the other three at their power-on) */
+        for (k = 0; k < LIFE_N; k++)
+            life_v[k] = (int16_t)clamp(p->life[k] + life_rel(k), 0, 100);
     }
     {                                                   /* (V10.31) SCENE */
         uint32_t i;

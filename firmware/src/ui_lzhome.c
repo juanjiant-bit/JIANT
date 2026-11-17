@@ -276,22 +276,22 @@ static void graph_eco(uint32_t lf)
         bx[c] >>= 4;
         by[c] >>= 4;
     }
-    for (c = 0, lo = 600; c < LPM_N && lf && life.on; c++) {   /* (LIFE) the pairs' lines first, under the beings */
-        const lpm_t *q = &life.pm[c];
-        uint32_t m = q->car, s = q->src & 7u;
+    for (c = 0, lo = 600; c < ECO_N * ECO_N && lf && life.on; c++) {   /* (LIFE) who hears whom first, under the
+                                                         * beings: WEB's weights x the one heard's sound, thicker with TALK */
+        uint32_t m = c / ECO_N, s = c % ECO_N;
         int32_t st, k;
         uint16_t col;
-        if (m >= ECO_N || s >= ECO_N || m == s || eco_off(m) || eco_off(s))
+        if (m == s || m >= NTRK || eco_off(m) || eco_off(s) || life.w[m][s] <= 0)
             continue;
-        st = (int32_t)(((int64_t)q->dc * life.en[s]) / LPM_D);   /* (its depth x the mover's sound, 0 .. 32767) */
+        st = (life.w[m][s] * life.en[s]) >> 8;          /* (0 .. 32767) */
         if (st < lo)
             continue;
         col = ux_mix(T_THEME, T_ACCENT, st >> 7 < 100 ? st >> 7 : 100);
-        for (k = 0; k < 3 && st > lo + k * 6000; k++)   /* (1 .. 3 px thick: stronger, thicker) */
+        for (k = 0; k < 3 && st > lo + k * 6000 && k * 34 <= life_v[LIFE_TALK]; k++)   /* (1 .. 3 px: louder, more TALK) */
             og_line(bx[s] + k * 16, by[s], bx[m] + k * 16, by[m], col);
         links++;
         cv_rect(((bx[m] * 3 + bx[s]) >> 6) - 1, ((by[m] * 3 + by[s]) >> 6) - 1, 3, 3, col);   /* (a dot near the one
-                                                         * moved: which way) */
+                                                         * that hears: which way) */
     }
     for (c = 0; c < ECO_N; c++) {
         int32_t r = eco.r[c], rad = r >> 4, px = bx[c] >> 4,
@@ -302,10 +302,13 @@ static void graph_eco(uint32_t lf)
         if (px < 150 || ny < bot - 30)                  /* (V10.7.33: not under the tempo's corner) */
             cv_text_in(px - 30, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM : T_TEXT, T_SURF);
     }
-    if (lf) {                                           /* (LIFE) its amount, the lines counted */
+    if (lf) {                                           /* (LIFE, V10.7.44) its amount a bar the panel's width, KNOB 1;
+                                                         * the lines counted */
+        cv_frame(4, 1, 232, 12, life_v[LIFE_AMT] ? T_THEME : T_DIM);
+        cv_rect(6, 3, life_v[LIFE_AMT] * 228 / 100, 8, ux_mix(T_SURF, T_THEME, 45));
         fmt_int(b, life_v[LIFE_AMT]);
         str_cpy(b + str_len(b), life_v[LIFE_AMT] ? "% LIFE" : "% STILL", 8);
-        cv_text(6, 2, &AF_X, b, life_v[LIFE_AMT] ? T_TEXT : T_DIM);
+        cv_text(8, 2, &AF_X, b, life_v[LIFE_AMT] ? T_TEXT : T_DIM);
         fmt_int(b, (int32_t)links);
         str_cpy(b + str_len(b), links == 1u ? " LINK" : " LINKS", 7);
     } else if (ui.hot_t && ui.hot_col < 4u) {           /* MACROS: a macro turned, where it goes ("M2 T1 CUT+40 T3 ..",
@@ -322,7 +325,7 @@ static void graph_eco(uint32_t lf)
         cv_text(6, 2, &AF_X, b, T_TEXT);
     }
     if (lf)
-        cv_text_r(234, 2, &AF_X, b, links ? T_ACCENT : T_DIM, T_SURF);
+        cv_text_r(232, 2, &AF_X, b, links ? T_ACCENT : T_DIM, T_SURF);
     else
         cv_text_r(234, 2, &AF_X, mac_latch ? "LATCH" : "HOLD LFO", mac_latch ? T_ACCENT : T_TEXT, T_SURF);
     fmt_int(b, song.g[G_BPM]);                          /* (V10.7.33, the owner) the tempo large: HOME held + PRESETS */
