@@ -711,7 +711,7 @@ static volatile uint8_t load_tight;
 #define GUARD_STEP ((uint32_t)FS / 2u / HALF_FRAMES)    /* halves of calm a voice given back: 0.5 s */
 #define GUARD_MIN 4u                                    /* the cap never under this: a lead for each of 4 tracks */
 static uint32_t load_avg_q8, load_all_q8;               /* the render's share of a half (%, Q8), averaged; with TIMER5
-                                                         * nested in it (audio.c: the extra voices' admission) */
+                                                         * nested in it (audio.c: the total deadline budget) */
 static uint32_t load_pred_q8;                           /* the admission's prediction: the average, plus what the
                                                          * voices admitted since add (load_admit) */
 static uint8_t guard_run, guard_cap, load_cores2;       /* halves in a row past GUARD_ON_RUN; the cap while tripped
@@ -791,8 +791,10 @@ static __attribute__((noinline)) void load_half(uint32_t pct, uint32_t pct_all, 
     load_avg_q8 = (load_avg_q8 * ((1u << GUARD_AVG_LOG2) - 1u) + (pct << 8) + (1u << (GUARD_AVG_LOG2 - 1u))) >> GUARD_AVG_LOG2;
     load_all_q8 = (load_all_q8 * ((1u << GUARD_AVG_LOG2) - 1u) + (pct_all << 8) + (1u << (GUARD_AVG_LOG2 - 1u))) >> GUARD_AVG_LOG2;
     load_cores2 = (uint8_t)cores2;
-    guard_run = pct > on_run ? (uint8_t)(guard_run < 255u ? guard_run + 1u : 255u) : 0u;
-    if (guard_run >= GUARD_RUN || load_avg_q8 > (on_avg << 8)) {
+    /* V10.7.46: nested input/USB work consumes the same DMA deadline. Keep
+     * render-only diagnostics, but budget voices against the whole half. */
+    guard_run = pct_all > on_run ? (uint8_t)(guard_run < 255u ? guard_run + 1u : 255u) : 0u;
+    if (guard_run >= GUARD_RUN || load_all_q8 > (on_avg << 8)) {
         uint32_t busy = voices_busy(), cap = voice_cap0();
         if (busy < GUARD_MIN) busy = GUARD_MIN;
         if (busy > cap) busy = cap;
@@ -803,7 +805,7 @@ static __attribute__((noinline)) void load_half(uint32_t pct, uint32_t pct_all, 
         load_tight = 1;
         guard_calm = 0;
     } else if (load_tight) {
-        if (load_avg_q8 >= (off << 8) || guard_run) {
+        if (load_all_q8 >= (off << 8) || guard_run) {
             guard_calm = 0;
         } else if (++guard_calm >= GUARD_STEP) {        /* calm: a voice back, and so on */
             guard_calm = 0;
@@ -813,8 +815,8 @@ static __attribute__((noinline)) void load_half(uint32_t pct, uint32_t pct_all, 
             }
         }
     }
-    if (load_pred_q8 < load_avg_q8)
-        load_pred_q8 = load_avg_q8;                     /* (what the voices added decays by the block: load_block) */
+    if (load_pred_q8 < load_all_q8)
+        load_pred_q8 = load_all_q8;                     /* (what the voices added decays by the block: load_block) */
 }
 
 /* Key-up ends a melodic hold, but a one-shot drum is still a live hit.
@@ -961,8 +963,8 @@ static void load_take(const track_t *t)                 /* a voice added: into t
 static void load_block(void)                            /* a block rendered (track_render, part 1: every block, on the
                                                          * host too): the prediction back toward the average */
 {
-    uint32_t add = load_pred_q8 > load_avg_q8 ? load_pred_q8 - load_avg_q8 : 0u;
-    load_pred_q8 = load_avg_q8 + add - ((add + (1u << (LOAD_ADD_LOG2 - 1u))) >> LOAD_ADD_LOG2);
+    uint32_t add = load_pred_q8 > load_all_q8 ? load_pred_q8 - load_all_q8 : 0u;
+    load_pred_q8 = load_all_q8 + add - ((add + (1u << (LOAD_ADD_LOG2 - 1u))) >> LOAD_ADD_LOG2);
 }
 static uint32_t load_sounding_q8(void)                  /* what every sounding voice costs: the most the voices admitted
                                                          * since the average can have added (a bound on the prediction:
@@ -981,13 +983,13 @@ static uint32_t load_sounding_q8(void)                  /* what every sounding v
 static int load_admit(const track_t *t)                 /* room for a voice of part t? taken if so */
 {
     uint32_t limit = (sys_load == LOAD_ECO ? LOAD_ADMIT_ECO : LOAD_ADMIT) << 8, add, most;
-    add = load_pred_q8 > load_avg_q8 ? load_pred_q8 - load_avg_q8 : 0u;
+    add = load_pred_q8 > load_all_q8 ? load_pred_q8 - load_all_q8 : 0u;
     most = load_sounding_q8();
     if (add > most) {
         add = most;
-        load_pred_q8 = load_avg_q8 + add;
+        load_pred_q8 = load_all_q8 + add;
     }
-    if (load_avg_q8 + add + load_cost_q8(t) > limit)
+    if (load_all_q8 + add + load_cost_q8(t) > limit)
         return 0;
     load_take(t);
     return 1;
@@ -1101,7 +1103,7 @@ static __attribute__((noinline)) void voice_soft(void)
         voice_kill(&vp->v[k]);
         busy = voices_load();
     }
-    if (!near || (!load_tight && load_avg_q8 <= lim))   /* (V10.7.40, the owner: before a glitch) the average past the
+    if (!near || (!load_tight && load_all_q8 <= lim))   /* (V10.7.40, the owner: before a glitch) the average past the
                                                          * admission's limit less HALF_NEAR (75 %, ECO 55 %) for HALF_WAIT,
                                                          * or the guard tripped: the dearest part's held voices at half the
                                                          * rate; back at the full rate under HALF_BACK (55 %) */
@@ -1111,7 +1113,7 @@ static __attribute__((noinline)) void voice_soft(void)
         vh_held |= (uint8_t)(1u << dear);
         vh_wait = 0;
     }
-    if (!load_tight && load_avg_q8 < (HALF_BACK << 8))
+    if (!load_tight && load_all_q8 < (HALF_BACK << 8))
         vh_held = 0;
     if (frz_on)                                         /* (V10.7.41, the owner: FREEZE glitched a full project) the
                                                          * tracks under a FREEZE holding are not heard: every part that can

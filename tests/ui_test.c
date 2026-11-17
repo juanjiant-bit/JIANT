@@ -10591,27 +10591,27 @@ static int test_click_menu(void)
          * 50 ms, the values snap, half the detail), LITE from 75 % (a frame each 100 ms; until codex/anim the animation
          * froze here), FREEZE from 85 % (the last resort); each its own way back; never while stopped. The animation's
          * clock follows the time while it moves, whatever the frames, and stands while frozen */
-        uint32_t q0 = load_avg_q8, f0, m0 = fm1_ms;
+        uint32_t q0 = load_avg_q8, a0 = load_all_q8, f0, m0 = fm1_ms;
         uint8_t pl0 = song.playing;
         song.playing = 1;
-        load_avg_q8 = 59u << 8; ui_hold_poll(); ok = ui_hold == 0u && !ANIM_OFF() && UI_PACE() == 15u;
-        load_avg_q8 = 60u << 8; ui_hold_poll(); ok &= ui_hold == 1u && !ANIM_OFF() && ANIM_SNAP() && UI_PACE() == 50u;
+        load_avg_q8 = load_all_q8 = 59u << 8; ui_hold_poll(); ok = ui_hold == 0u && !ANIM_OFF() && UI_PACE() == 15u;
+        load_avg_q8 = load_all_q8 = 60u << 8; ui_hold_poll(); ok &= ui_hold == 1u && !ANIM_OFF() && ANIM_SNAP() && UI_PACE() == 50u;
         anim_sync(); f0 = anim_at; fm1_ms += 45u; anim_sync(); ok &= anim_at == f0 + 45u;   /* (SLOW: it moves, by the time) */
-        load_avg_q8 = 74u << 8; ui_hold_poll(); ok &= ui_hold == 1u;
-        load_avg_q8 = 51u << 8; ui_hold_poll(); ok &= ui_hold == 1u;            /* (not back yet) */
-        load_avg_q8 = 75u << 8; ui_hold_poll(); ok &= ui_hold == 2u && !ANIM_OFF() && UI_PACE() == 100u;
+        load_avg_q8 = load_all_q8 = 74u << 8; ui_hold_poll(); ok &= ui_hold == 1u;
+        load_avg_q8 = load_all_q8 = 51u << 8; ui_hold_poll(); ok &= ui_hold == 1u;            /* (not back yet) */
+        load_avg_q8 = load_all_q8 = 75u << 8; ui_hold_poll(); ok &= ui_hold == 2u && !ANIM_OFF() && UI_PACE() == 100u;
         f0 = anim_at; fm1_ms += 100u; anim_sync(); ok &= anim_at == f0 + 100u;   /* (LITE: it moves) */
-        load_avg_q8 = 84u << 8; ui_hold_poll(); ok &= ui_hold == 2u;
-        load_avg_q8 = 85u << 8; ui_hold_poll(); ok &= ui_hold == 3u && ANIM_OFF() && UI_PACE() == 50u;
+        load_avg_q8 = load_all_q8 = 84u << 8; ui_hold_poll(); ok &= ui_hold == 2u;
+        load_avg_q8 = load_all_q8 = 85u << 8; ui_hold_poll(); ok &= ui_hold == 3u && ANIM_OFF() && UI_PACE() == 50u;
         f0 = anim_at; fm1_ms += 300u; anim_sync(); ok &= anim_at == f0;           /* (FREEZE: still) */
-        load_avg_q8 = 79u << 8; ui_hold_poll(); ok &= ui_hold == 3u;            /* (not back yet) */
-        load_avg_q8 = 77u << 8; ui_hold_poll(); ok &= ui_hold == 2u && !ANIM_OFF();
+        load_avg_q8 = load_all_q8 = 79u << 8; ui_hold_poll(); ok &= ui_hold == 3u;            /* (not back yet) */
+        load_avg_q8 = load_all_q8 = 77u << 8; ui_hold_poll(); ok &= ui_hold == 2u && !ANIM_OFF();
         f0 = anim_at; fm1_ms += 30u; anim_sync(); ok &= anim_at == f0 + 30u;     /* (on from where it stood: no jump) */
-        load_avg_q8 = 66u << 8; ui_hold_poll(); ok &= ui_hold == 2u;            /* (not back yet) */
-        load_avg_q8 = 64u << 8; ui_hold_poll(); ok &= ui_hold == 1u && !ANIM_OFF();
-        load_avg_q8 = 49u << 8; ui_hold_poll(); ok &= ui_hold == 0u && !ANIM_SNAP();
-        load_avg_q8 = 90u << 8; song.playing = 0; ui_hold_poll(); ok &= ui_hold == 0u;   /* (stopped: never) */
-        song.playing = pl0; load_avg_q8 = q0; ui_hold_poll();
+        load_avg_q8 = load_all_q8 = 66u << 8; ui_hold_poll(); ok &= ui_hold == 2u;            /* (not back yet) */
+        load_avg_q8 = load_all_q8 = 64u << 8; ui_hold_poll(); ok &= ui_hold == 1u && !ANIM_OFF();
+        load_avg_q8 = load_all_q8 = 49u << 8; ui_hold_poll(); ok &= ui_hold == 0u && !ANIM_SNAP();
+        load_avg_q8 = load_all_q8 = 90u << 8; song.playing = 0; ui_hold_poll(); ok &= ui_hold == 0u;   /* (stopped: never) */
+        song.playing = pl0; load_avg_q8 = q0; load_all_q8 = a0; ui_hold_poll();
         fm1_ms = m0 + 1000u; anim_sync(); ui_lod = 0;
         bad += check("UI under load: SLOW from 60 %, LITE from 75 % (it moves on, by the clock), FREEZE from 85 %, each back lower, never stopped", ok);
     }
@@ -12401,9 +12401,9 @@ static int test_home_tracks(void)
         for (k = 0; k < 200u; k++) { cv_begin(240, graph_h(), T_BG); graph_tracks(); }
         clock_gettime(CLOCK_MONOTONIC, &t1);
         for (k = 0; k < 125u; k++) { sg = ui.graph_sig; vxt_run(16, 1); nd += ui.graph_sig != sg; }
-        load_avg_q8 = 90u << 8;                         /* (a high load) */
+        load_avg_q8 = load_all_q8 = 90u << 8;                         /* (a high load) */
         for (k = 0; k < 125u; k++) { sg = ui.graph_sig; vxt_run(16, 1); nh += ui.graph_sig != sg; }
-        load_avg_q8 = 0;
+        load_avg_q8 = load_all_q8 = 0;
         printf("  TRACKS: a draw %.1f us (host), %u draws in 2 s playing, %u under a high load\n",
                ((t1.tv_sec - t0.tv_sec) * 1e9 + (t1.tv_nsec - t0.tv_nsec)) / 200e3, (unsigned)nd, (unsigned)nh);
         ok &= nd > 8u && nd <= 50u && nh < nd;               /* (V10.7.42: 67, every other frame) */

@@ -160,10 +160,15 @@ static void dma(void)
     fresh();
     expected = HALF_FRAMES * 1000000u / FS;            /* the half's deadline in us */
     host_us = expected * 90u / 100u; host_nest = expected * 30u / 100u;   /* the render 60 %, TIMER5 nested 30 % */
-    for (i = 0; i < 64u; i++) fm1_alnk0_irq();
-    check("TIMER5 nested in the render counts toward the deadline (the extra voices), not toward the guard",
-          !shed_req && !load_tight && felucca_dbg.last_us == host_us - host_nest &&
+    for (i = 0; i < 128u; i++) fm1_alnk0_irq();
+    check("sustained 90% deadline load engages the guard even when render alone is 60%",
+          !shed_req && load_tight && felucca_dbg.last_us == host_us - host_nest &&
           load_all_q8 > (HEAD_OFF << 8) && load_avg_q8 < (GUARD_OFF << 8));
+    for (i = 0; i < GUARD_STEP * 8u; i++) fm1_alnk0_irq();
+    check("guard does not reopen while nested work still leaves only 10% headroom", load_tight);
+    load_block();
+    check("voice prediction retains nested work between audio blocks", load_pred_q8 >= load_all_q8);
+    check("a new voice cannot spend CPU time already occupied by nested interrupts", !load_admit(&trk[0]));
     fresh(); host_nest = 0;
     host_us = 5000;
     fm1_alnk0_irq(); host_us = 100; fm1_alnk0_irq(); host_us = 5000; fm1_alnk0_irq();

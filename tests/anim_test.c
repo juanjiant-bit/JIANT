@@ -141,7 +141,7 @@ static void test_jumps(void)
     prep(scr_id("home"));
     song.playing = 1;
     for (c = 0; c < ECO_N; c++) trk[c].peak = 7000;   /* (loud: the fastest swim) */
-    load_avg_q8 = 80u << 8; ui_hold_poll();
+    load_avg_q8 = load_all_q8 = 80u << 8; ui_hold_poll();
     h0 = ui_hold;
     t = fm1_ms;
     for (f = 0; f < 40u; f++) {
@@ -170,7 +170,7 @@ static void test_jumps(void)
                  (unsigned)mx, (unsigned)still);
         ck(w, mx > 0u && mx <= 48u && still < 6u);
     }
-    load_avg_q8 = 90u << 8; ui_hold_poll();
+    load_avg_q8 = load_all_q8 = 90u << 8; ui_hold_poll();
     k = anim_at;
     at(t += 50u); at(t += 50u);
     ck("jumps: FREEZE (90 %) the last resort: the clock still", ui_hold == 3u && anim_at == k);
@@ -179,11 +179,11 @@ static void test_jumps(void)
         for (f = 0; f < 10u; f++) at(t += 50u);
         ck("still: frozen, ten frames send no pixel", sent == s0);
     }
-    load_avg_q8 = 70u << 8; ui_hold_poll();
+    load_avg_q8 = load_all_q8 = 70u << 8; ui_hold_poll();
     k = anim_at;
     at(t += 100u);
     ck("jumps: back to LITE, on from where it stood (100 ms on, no jump)", ui_hold == 2u && anim_at == k + 100u);
-    load_avg_q8 = 0; song.playing = 0; ui_hold_poll();
+    load_avg_q8 = load_all_q8 = 0; song.playing = 0; ui_hold_poll();
     for (f = 0; f < 30u; f++) at(t + 200u + 15u * f);
     ck("lod: back to the whole detail once the load is gone", ui_lod == 0u && ui_hold == 0u);
     song.playing = pl0;
@@ -272,7 +272,7 @@ static void cost(const char *n, uint32_t step, int lite)
     double us;
     prep(scr_id(n));
 #ifdef ANIM_TICK
-    if (lite) { song.playing = 1; load_avg_q8 = (lite == 1 ? 80u : 65u) << 8; ui_hold_poll(); }
+    if (lite) { song.playing = 1; load_avg_q8 = load_all_q8 = (lite == 1 ? 80u : 65u) << 8; ui_hold_poll(); }
 #endif
     (void)lite;
     t = fm1_ms;
@@ -289,7 +289,7 @@ static void cost(const char *n, uint32_t step, int lite)
     printf("cost  %-14s %s %7.1f us/frame %8.0f us/s %7llu px/frame\n", n, lite == 1 ? "LITE 10/s" : lite ? "SLOW 20/s" : "FULL 66/s", us, us * 1000.0 / step,
            (unsigned long long)(sent / N));
 #ifdef ANIM_TICK
-    load_avg_q8 = 0; song.playing = 0; ui_hold_poll(); ui_lod = 0;
+    load_avg_q8 = load_all_q8 = 0; song.playing = 0; ui_hold_poll(); ui_lod = 0;
 #endif
 }
 static void costs(void)
@@ -340,7 +340,7 @@ static void frames_out(const char *dir)
             host_ticks += (t - fm1_ms) * 1000u;
             fm1_ms = t;
             pl0 = song.playing;
-            if (r) { song.playing = 1; load_avg_q8 = 80u << 8; ui_hold_poll(); }
+            if (r) { song.playing = 1; load_avg_q8 = load_all_q8 = 80u << 8; ui_hold_poll(); }
             for (f = 0; f * STEP[r] < 1200u; f++) {
                 char p[512];
                 FILE *o;
@@ -359,7 +359,7 @@ static void frames_out(const char *dir)
                     }
                 fclose(o);
             }
-            load_avg_q8 = 0; song.playing = pl0; ui_hold_poll();
+            load_avg_q8 = load_all_q8 = 0; song.playing = pl0; ui_hold_poll();
         }
 }
 #endif
@@ -373,6 +373,10 @@ int main(int argc, char **argv)
     test_jumps();
     test_lod();
     test_still();
+    song.playing = 1; load_avg_q8 = 60u << 8; load_all_q8 = 90u << 8;
+    ui_hold_poll();
+    ck("nested work counts toward UI FREEZE to protect audio", ui_hold == 3);
+    song.playing = 0; load_avg_q8 = load_all_q8 = 0; ui_hold_poll();
 #endif
     costs();
 #ifdef ANIM_TICK

@@ -174,6 +174,11 @@ static inline int fm1_mc_run(void (*fn)(uint32_t), uint32_t arg)
         fm1_mc_lost = 3;
         return 0;
     }
+    /* One mailbox, not a queue: a late USB resampler may not have read its
+     * job yet. Leave ownership intact; the mixer can render on core 0. */
+    FM1_C1_SYNC();
+    if (fm1_mc_box.done != fm1_mc_box.job)
+        return 0;
     job = fm1_mc_box.job + 1u;
     fm1_mc_box.fn = fn;
     fm1_mc_box.arg = arg;

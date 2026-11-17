@@ -1,7 +1,7 @@
 name: VOICE user lyric candidate
 on:
   push:
-    branches: [codex/voice-user-lyrics, codex/swarm]
+    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46]
 permissions:
   contents: read
 concurrency:
@@ -50,6 +50,16 @@ jobs:
             python3 -c "import sys,pathlib;sys.path.insert(0,'tools');import build;p=pathlib.Path('build/felucca.map');r=build.map_inputs(p.read_text()) if p.exists() else [];print('Largest sections:', sorted(r,key=lambda x:x[2],reverse=True)[:35]);print('Save/GEN sections:',[(n,a,z,o) for n,a,z,o in r if n.startswith(('.text.song_', '.text.gen_', '.text.project_save', '.text.lib_scan'))]);print('Cold bank:',[l for l in p.read_text().splitlines() if '_bt_end' in l or '_bt_start' in l] if p.exists() else [])"
             exit 1
           }
+      - name: V46 realtime overload and core ownership regressions
+        run: |
+          set -euo pipefail
+          python3 tests/realtime_regression_test.py
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/audio_test.c -lm -o build/song-check/audio
+          build/song-check/audio | tee build/song-check/audio.log
+          cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,undefined -fno-sanitize=shift,signed-integer-overflow -Ibuild/gen -Ifirmware/src tests/overload_stress_test.c -lm -o build/song-check/overload
+          ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/overload | tee build/song-check/overload.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/anim_test.c -lm -o build/song-check/anim
+          build/song-check/anim > build/song-check/anim.log
       - name: Firmware memory and reach checks
         run: tail -n 20 build/song-check/target.log
       - name: Lossless font metadata and isolated per-track generator

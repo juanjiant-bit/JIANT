@@ -184,6 +184,7 @@ run() { echo "== $1"; shift; "$@" || fail=1; }
 
 $CC -O2 -o "$OUT/core1_stop_test" tests/core1_stop_test.c
 run "core 1 halt: delayed bus fault and restored protection" "$OUT/core1_stop_test"
+run "realtime: pending core-1 job ownership" python3 tests/realtime_regression_test.py
 
 $CC -o "$OUT/storage_test" tests/storage_test.c
 run "flash storage (A/B, torn writes)" "$OUT/storage_test"
@@ -360,6 +361,8 @@ if [ -f build/gen/felucca_tables.h ]; then
         "$OUT/ui_render_fm4" build/ui_fm4 build/ui_fm4_slot
     $CC -w -Ibuild/gen -Ifirmware/src -o "$OUT/audio_test" tests/audio_test.c -lm
     run "audio: overload protection, bounded fades and DMA diagnostics" "$OUT/audio_test"
+    $CC -O1 -g -w -fsanitize=address,undefined -fno-sanitize=shift,signed-integer-overflow -fno-sanitize-recover=all -Ibuild/gen -Ifirmware/src -o "$OUT/overload_stress_test" tests/overload_stress_test.c -lm
+    run "audio: every preset on four tracks through sustained overload and recovery" env ASAN_OPTIONS=detect_leaks=0 "$OUT/overload_stress_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/click_test" tests/click_test.c -lm
     run "metronome and count-in: beats sample for sample (internal and external clock), accent, level, MASTER, not in USB, count-in timing, notes onto step 1" "$OUT/click_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/fit_test" tests/fit_test.c -lm

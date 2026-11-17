@@ -141,7 +141,7 @@ static const uint8_t UI_ON[3] = {60u, 75u, 85u}, UI_OFF[3] = {50u, 65u, 78u};   
 #define ANIM_SNAP() (ANIM_OFF() || sys_load || ui_hold)
 static void ui_hold_poll(void)
 {
-    uint32_t pct = song.playing ? load_avg_q8 >> 8 : 0u, h = 0;
+    uint32_t pct = song.playing ? load_all_q8 >> 8 : 0u, h = 0;   /* include nested work in the deadline budget */
     while (h < 3u && pct >= (h < ui_hold ? UI_OFF[h] : UI_ON[h]))   /* (each step up past its own, down under its own) */
         h++;
     ui_hold = (uint8_t)h;
