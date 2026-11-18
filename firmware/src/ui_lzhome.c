@@ -403,7 +403,7 @@ static __attribute__((noinline)) void graph_tracks(void)
         if (ph < len)                                   /* the playhead */
             cv_rect(69 + (int32_t)ph * 164 / (int32_t)len, y + 2, 1, h - 4, off ? T_DIM : T_ACCENT);
     }
-    cv_clip_text(4, (int32_t)graph_h() - 14, &AF_X, help_find(254u), T_TEXT, T_SURF, 232);   /* (the help line's words) */
+    cv_clip_text(4, (int32_t)graph_h() - 14, &AF_X, help_find(home_sounds() ? 250u : 254u), T_TEXT, T_SURF, 232);   /* (the help line's words) */
 }
 /* (V10.7.24) HOME's panel: MACROS the beings (graph_eco), SCOPE the mix's oscilloscope over the whole panel (ui_graph.c
  * graph_scope, as hot as it is loud); (V10.7.34) LIFE graph_eco's, TRACKS its lanes */
@@ -411,7 +411,7 @@ static void graph_home_lz(void)
 {
     if (home_level() == 1u)
         graph_scope(ACC);
-    else if (home_level() == 4u)
+    else if (home_tracks() || home_sounds())
         graph_tracks();
     else if (home_life())
         graph_eco(1);

@@ -129,7 +129,7 @@ static int shift_limits(void)
     seq_start();n=run_at(t,64,nt,at,128);
     bad+=check("SHIFT +63 moves first step to last and replaces it",n==63 && nt[62]==24 && at[62]==63);
     t=pat(64,notes);comp_set(&t->step[0],0,CA_SHIFT,CC_NM,CNM_MAKE(16,16),32,126);
-    t->loops=15;memset(shift_valid,0,sizeof shift_valid);shift_prepare_pass(t,64,15);
+    t->loops=15;memset(shift_stamp,0,sizeof shift_stamp);shift_prepare_pass(t,64,15);
     for(i=0;i<31;i++)ok &= shift_step(t,i)==&t->step[i+1];
     ok &= shift_step(t,31)->time==ST_REST && shift_step(t,63)==&t->step[0];
     bad+=check("SHIFT maximum LENGTH 32 and N:M 16:16 wrap a 64-step pattern safely",ok);

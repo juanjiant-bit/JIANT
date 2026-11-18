@@ -3297,7 +3297,9 @@ static void ui_input_frame(void)
             ui.hot_col = (uint8_t)k;
             ui.hot_t = 40, ui.knob_ms = fm1_ms;
         }
-        if (home_engine()) {
+        if (home_sounds()) {
+            sounds_knob(k, s);
+        } else if (home_engine()) {
             home_knob(k, s);
         } else if (home_life()) {                       /* (V10.7.34) HOME's LIFE: (V10.7.43) KNOB 1 its one value */
             if (!k)

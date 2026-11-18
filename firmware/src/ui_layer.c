@@ -222,7 +222,7 @@ static __attribute__((noinline)) int16_t *mom_vp(uint32_t k, const param_desc_t 
     if (ui.menu || ui.confirm || gen_on() || mac_latch || lock_held())
         return 0;
     if (ui.home) {                                      /* (V10.7.24) SCOPE: its globals (SPACE: MIX, SIZE kept too) */
-        if (home_life() || home_tracks())   /* (V10.7.34: LIFE's and TRACKS' knobs not momentary) */
+        if (home_life() || home_tracks() || home_sounds())   /* (V10.7.34: LIFE's and TRACKS' knobs not momentary) */
             return 0;
         if (home_engine()) {
             uint32_t id = home_engine_id(k);

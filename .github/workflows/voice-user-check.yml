@@ -1,7 +1,7 @@
 name: VOICE user lyric candidate
 on:
   push:
-    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits, codex/punch-cpu, codex/six-phrases, codex/home-live, codex/kit-continuity, codex/two-track-voices, codex/voice-cost-v52]
+    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits, codex/punch-cpu, codex/six-phrases, codex/home-live, codex/kit-continuity, codex/two-track-voices, codex/voice-cost-v52, codex/reference-v53]
 permissions:
   contents: read
 concurrency:
@@ -50,6 +50,13 @@ jobs:
             python3 -c "import sys,pathlib;sys.path.insert(0,'tools');import build;p=pathlib.Path('build/felucca.map');r=build.map_inputs(p.read_text()) if p.exists() else [];print('Largest sections:', sorted(r,key=lambda x:x[2],reverse=True)[:35]);print('Save/GEN sections:',[(n,a,z,o) for n,a,z,o in r if n.startswith(('.text.song_', '.text.gen_', '.text.project_save', '.text.lib_scan'))]);print('Cold bank:',[l for l in p.read_text().splitlines() if '_bt_end' in l or '_bt_start' in l] if p.exists() else [])"
             exit 1
           }
+      - name: V53 reference workflow, ACID HOUSE and SHIFT cache
+        run: |
+          set -euo pipefail
+          cc -O1 -w -Wno-implicit-function-declaration -Itests -Ibuild/gen -Ifirmware/src tests/reference_test.c -lm -o build/song-check/reference
+          build/song-check/reference | tee build/song-check/reference.log
+          cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,bounds -Itests -Ibuild/gen -Ifirmware/src tests/step_extensions_test.c -lm -o build/song-check/step-extensions
+          ASAN_OPTIONS=detect_leaks=0 build/song-check/step-extensions | tee build/song-check/step-extensions.log
       - name: V46 realtime overload and core ownership regressions
         run: |
           set -euo pipefail

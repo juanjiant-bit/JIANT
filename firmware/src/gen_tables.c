@@ -852,6 +852,11 @@ static const ggenre_t GENRE[] = {
      {BA_WOBBLE, BA_PH808, BA_JUNGLE}, 29, KM_DOUBLE, 110, {PR_I_VI, PR_MINOR4, PR_AEOL}, 2, CS_SPARSE, VM_RICH,
      {AP_BROKEN, AP_UPDOWN}, LD_HOOK, AMT(95, 100, 50, 40, 45), {KIT_808, SR_808, SR_PAD, SR_PLUCK, SR_BELL}, SR_TEXTURE,
      0, 1, 35, 0, FM_PARTS, 0, HF_POP | HX_RAISE, 0},
+    /* V53: 0.9.9's dedicated acid recipe, appended so existing genre IDs stay put. */
+    {"ACID HOUSE", 122, 130, 8, {SC_MIN, SC_PHRY, SC_DOR, SC_MIN}, DM_HOUSE, 100, KIT_909, 0, HC_HOUSE, FL_ROLL, 0,
+     {BA_ACID, BA_ACID, BA_ACID}, 36, KM_SUSTAIN, 60, {PR_ONE, PR_I_VII, PR_I_IV}, 2, CS_STAB, VM_SUS,
+     {AP_UP, AP_SEQ}, LD_NONE, AMT(85, 90, 30, 20, 0), {KIT_909, SR_ACID, SR_STAB, SR_PLUCK, SR_LEAD}, SR_NOISE,
+     0, 1, 35, 0, FM_CLUB, 0, HF_LOOP, 0},
 };
 #define NGENRE (sizeof GENRE / sizeof GENRE[0])
 /* (0.9.9-gen1) each genre's PATTERN GRAMMAR past its maps and archetypes (GENRE's order): on the bass, how many ACCENTs
@@ -880,6 +885,7 @@ static const uint16_t GGRAM[] = {   /* (gen3: + LIFT, 2 = none; V10.6n: the owne
     GG(2, 0, 0, 2, 0, 0, 6), GG(1, 0, 1, 1, 1, 0, 4),   /* ELECTRO METAL TECHNO ROCK */
     GG(0, 1, 0, 0, 0, 1, 2), GG(1, 2, 0, 2, 1, 0, 5), GG(2, 1, 0, 2, 0, 0, 4),   /* DREAM POP PHONK BAILE FUNK */
     GG(0, 0, 0, 0, 0, 0, 4), GG(1, 2, 0, 1, 1, 0, 5),   /* JAZZ HIP HOP */
+    GG(0, 0, 0, 1, 0, 0, 2),   /* ACID HOUSE: gen_acid owns accents and slides */
 };
 _Static_assert(sizeof GGRAM / sizeof GGRAM[0] == NGENRE, "GGRAM: a grammar a genre");
 /* (the GENE mix pass, the owner: "it sounds unprofessional, previous versions better mixed") each genre's mix, a role's
@@ -921,6 +927,7 @@ static const uint8_t GMIX[][3] = {
     GMX(-3, 2, -3, 7, 4, 4),   /* BAILE FUNK (V10.7.8: the 808 4.5 dB up, the chops under) */
     GMX(0, 0, 0, 1, 0, -2),   /* JAZZ */
     GMX(-3, -2, -1, 7, 5, 4),   /* HIP HOP */
+    GMX(-1, 2, 1, 0, 7, 0),   /* ACID HOUSE */
 };
 _Static_assert(sizeof GMIX / sizeof GMIX[0] == NGENRE, "GMIX: a mix a genre");
 /* (V10.6z10, the owner: "every throw of a genre the same song") each genre's groove DNA (GENRE's order, EXPLORE last):
@@ -957,7 +964,9 @@ static const uint16_t GDNA[NGENRE + 1u] = {
                                                          * CLASSIC FUGA */
     GD(5, 9, GPL_HAT | GPL_OH | GPL_TM), GD(3, 7, GPL_HAT | GPL_OH | GPL_TM) | GPL_SWAP,   /* ELECTRO METAL TECHNO ROCK */
     GD(3, 14, GPL_HAT | GPL_OH | GPL_RS), GD(3, 13, GPL_RS | GPL_TM), GD(10, 13, GPL_RS),   /* DREAM POP PHONK BAILE FUNK */
-    GD(3, 11, 0), GD(3, 13, GPL_OH | GPL_RS | GPL_CB), GD(6, 11, GPL_ALL) | GPL_SWAP,   /* JAZZ (its bombs) HIP HOP EXPLORE */
+    GD(3, 11, 0), GD(3, 13, GPL_OH | GPL_RS | GPL_CB),   /* JAZZ (its bombs) HIP HOP */
+    GD(7, 15, GPL_ALL) | GPL_SWAP,   /* ACID HOUSE */
+    GD(6, 11, GPL_ALL) | GPL_SWAP,   /* EXPLORE stays last */
 };
 /* (V10.6z10) the IDM throws' breaks (GSP_EDIT 1 .. 3: AMBIENT, WEIRD, GLITCH): half the throws one of three others */
 static const uint8_t IDM_ALT[3][3] = {{DM_BOOMBAP, DM_FUNKY, DM_THINK}, {DM_AMEN, DM_FUNKY, DM_THINK}, {DM_BREAKS, DM_FUNKY, DM_THINK}};

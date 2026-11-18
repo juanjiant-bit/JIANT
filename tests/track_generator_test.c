@@ -44,10 +44,10 @@ static int verify(track_t *t,unsigned genre,unsigned role,unsigned len)
     project_capture(&before);
     __typeof__(gp) p=gp;__typeof__(gs) s=gs;__typeof__(gx) x=gx;ggenre_t g=gmut;uint32_t q=gq;
     char name[20];memcpy(name,gmut_name,20);
-    shift_valid[0][k]=shift_valid[1][k]=1;
+    shift_stamp[0][k]=shift_stamp[1][k]=1;
     t->jump_to=5;t->rev=1;
     trackgen_make();project_capture(&after);
-    ok &= !shift_valid[0][k]&&!shift_valid[1][k];
+    ok &= !shift_stamp[0][k]&&!shift_stamp[1][k];
     ok &= !t->jump_to&&!t->rev;
     ok &= !memcmp(&p,&gp,sizeof p)&&!memcmp(&s,&gs,sizeof s)&&!memcmp(&x,&gx,sizeof x)&&
           !memcmp(&g,&gmut,sizeof g)&&q==gq&&!memcmp(name,gmut_name,20);

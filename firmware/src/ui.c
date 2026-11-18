@@ -96,26 +96,13 @@ static void list_put(uint32_t v)
 #define prefs_rev (favorites.factory[15][25])  /* (JIANT 0.6.44) the settings' revision (a byte no engine uses: engine 15):
                                                 * 0 before; 1: FX LATCH turned ON once (main.c prefs_update); 2: OFF once (0.6.64) */
 #define PREF_ANIM_OFF 2u                       /* MENU > ANIM OFF (#46): values snap (no rolling digits, no glide) */
-/* (0.6.57) values snap: MENU > ANIM OFF, or LOAD LITE / ECO (the rolling digits, the roll's and the tabs' glides are
- * frames drawn again for a look: the time goes to the keys and knobs instead; the beings still move) */
-/* (0.9.9-beta4) the UI held while the music plays with the render's averaged share of a half (voice.c load_avg_q8, ~93
- * ms) past UI_HOLD_ON %: frames every 50 ms instead of 15 and the animation off, as MENU > ANIM OFF (the HOME beings,
- * the engines' creatures, the live graphs still: their signatures stop changing, nothing is drawn again), until it
- * falls under UI_HOLD_OFF % or the music stops (ui_hold_poll, main.c: once a frame). The I-cache is one for both cores
- * and the UI: a frame drawn is the engines' code evicted (Kirill's audit, LOOM-8) */
-/* (codex/voices, the owner: "the frozen animations come quite soon with the CPU") SLOW from 60 %, FREEZE from 75 %;
- * (codex/anim) FREEZE the last resort, after LITE: */
-/* (codex/anim, the owner: "smooth, not frozen: lower the drawing's cost as real-time 3D engines do") three steps, each its
- * own way back, all on the average:
- *   1 SLOW    from 60 % (back under 50: UI_ON, UI_OFF): a frame every 50 ms, the values snap, the pictures at half
- *             their detail (ui_lod: a polyline's every other point left out, glided there: ui_organic.c pl_pt)
- *   2 LITE    from 75 % (back to SLOW under 65): a frame every 100 ms, as SLOW otherwise. Until
- *             codex/anim this step froze the animation
- *   3 FREEZE  from 85 % (the voices' guard's own: voice.c GUARD_ON_AVG; back to LITE under 78): the
- *             last resort, as beta4's hold: the animation still, a frame every 50 ms
- * Everything that moves takes its place from the animation's clock (anim_at, ms; anim_fr its 15 ms ticks, a frame at
- * full pace), never from the frames drawn: fewer frames show the same motion, never a stop and a jump. The clock runs
- * with fm1_ms (latched once a frame: anim_sync) and stands still while ANIM_OFF() */
+/* V53: return to 0.9.9's priority for audio under load. While playing,
+ * decorative motion freezes at 60% total deadline load, resumes below 50%.
+ * This avoids evicting audio from the shared instruction cache for decoration.
+ * Useful changes (notes, controls, meters, playheads) still redraw. Poll/render
+ * pace stays 50 ms in SLOW, 100 ms in LITE (75%), 50 ms in FREEZE (85%).
+ * Values snap under pressure; the animation clock excludes frozen time so
+ * motion resumes smoothly, without a catch-up jump. Stopping restores it. */
 static uint8_t ui_hold;
 static uint32_t anim_at;                               /* the animation's clock (ms): fm1_ms - anim_off while it moves */
 typedef struct {                                       /* (in the pool's spare hashes, gfx.c DC_USE: no new RAM) */
@@ -131,12 +118,14 @@ typedef char anim_st_fits[sizeof(anim_st_t) <= 2u * (DC_MAX - DC_USE) ? 1 : -1];
 #define anim_tk (anim_st.tk)
 #define ui_lod (anim_st.lod)
 #define lod_ms (anim_st.ms)
-static const uint8_t UI_ON[3] = {60u, 75u, 85u}, UI_OFF[3] = {50u, 65u, 78u};   /* SLOW, LITE, FREEZE: from, back under
-                                                         * (FREEZE from the voices' guard's own 85 %: voice.c GUARD_ON_AVG) */
+static const uint8_t UI_ON[3] = {60u, 75u, 85u}, UI_OFF[3] = {50u, 65u, 78u};   /* pacing hysteresis */
 #define ANIM_TICK 15u                                  /* a tick of the animation: a frame at full pace (main.c) */
 #define LOD_MS 300u                                    /* a change of detail glided over this long (a few frames) */
 #define UI_PACE() (ui_hold == 2u ? 100u : ui_hold ? 50u : 15u)   /* ms a frame at least (main.c) */
-#define ANIM_OFF() ((ui_prefs & PREF_ANIM_OFF) || ui_hold > 2u)
+/* V53: yield decorative drawing at 60%, as in 0.9.9. Controls, meters and
+ * playheads retain their own signatures; animation resumes below 50% without
+ * catching up the time spent frozen. No audio voices are shed by this policy. */
+#define ANIM_OFF() ((ui_prefs & PREF_ANIM_OFF) || ui_hold)
 #define anim_fr anim_tk                                /* the animation's ticks (the same time draws the same picture) */
 #define ANIM_SNAP() (ANIM_OFF() || sys_load || ui_hold)
 static void ui_hold_poll(void)
@@ -1849,7 +1838,7 @@ static uint32_t preset_all_pos(uint32_t *total)          /* list index of the se
             cur = n + preset_rank(en, preset_orig(en, TSEL->preset % (en->npresets ? en->npresets : 1u)));
         n += preset_shown(e);
     }
-    if (user_of(TSEL) < UP_SLOTS)
+    if (!home_sounds() && user_of(TSEL) < UP_SLOTS)
         cur = n + up_rank(user_of(TSEL));
     *total = n + up_count();
     return cur;
@@ -1910,7 +1899,7 @@ static int preset_in(uint32_t e, uint32_t k)
 static uint32_t preset_pos(uint32_t *total)
 {
     uint32_t all, current = preset_all_pos(&all), n = 0, pos = 0xFFFFFFFFu;
-    if (!list_type && !favorites.filter) {              /* FACTORY, ALL: the engines' presets in order */
+    if (home_sounds() || (!list_type && !favorites.filter)) { /* SOUNDS or FACTORY, ALL: the engines' presets in order */
         *total = all - up_count();
         return current < *total ? current : *total;
     }
@@ -1926,7 +1915,7 @@ static uint32_t preset_pos(uint32_t *total)
 static uint32_t preset_at(uint32_t n, uint32_t *k)
 {
     uint32_t all;
-    if (!list_type && !favorites.filter) return preset_all_at(n, k);
+    if (home_sounds() || (!list_type && !favorites.filter)) return preset_all_at(n, k);
     preset_all_pos(&all);
     for (uint32_t i = 0; i < all; i++) {
         uint32_t e = preset_all_at(i, k);
@@ -2046,6 +2035,7 @@ static uint32_t eng_list_pos(uint32_t *total)
     uint32_t e = trk_eng(TSEL), np = preset_shown(e), u = user_of(TSEL), k, n = 0;
     uint32_t cur = np ? preset_rank(en, preset_orig(en, TSEL->preset % en->npresets)) : 0u;   /* (#124: the aliases
                                         * skipped, as on PRESETS: SAMPLE 1 loads as 0, so counting it stuck KNOB 2) */
+    if (home_sounds()) { *total = np; return cur; }
     for (k = 0; k < UP_SLOTS; k++)
         if (up_used(k) && up_engine(k) == e) {
             if (k == u)
@@ -2054,6 +2044,21 @@ static uint32_t eng_list_pos(uint32_t *total)
         }
     *total = np + n;
     return cur;
+}
+
+/* HOME > SOUNDS: reuse the existing preset loader and engine navigation,
+ * without inheriting the browser's type/favorite filter. The selected track's
+ * factory sounds only; saved user sounds remain in SAVE > USER / PRESETS. */
+static void presets_turn(int32_t s);
+static void sounds_knob(uint32_t k, int32_t s)
+{
+    if (k == 1u)
+        presets_turn(s);
+    else if (!k) {
+        undo_mark();
+        keep_req |= (uint8_t)(1u << song.sel);
+        preset_engine_jump(s);
+    }
 }
 
 /* Seven display rows. Favorites use a bounded window, not a repeating carousel.

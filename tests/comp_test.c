@@ -333,7 +333,9 @@ static int format(void)
         bad += check("  .. and plays the arpeggio over its TIEs, the TRIG's step, the OCT on loop 1 of 4 as before", ok);
     }
     {   /* in memory (GEN, DICE): comp_legacy then comp_migrate */
-        step_t s[4];
+        /* Migration visits the entire stored pattern, including inactive steps;
+         * len=4 is the playback span, not the allocation size. */
+        step_t s[NSTEP];
         memset(s, 0, sizeof s);
         s[0].time = ST_NOTE; s[0].n = 1; s[0].note[0] = 60;
         comp_legacy(&s[0], 0, CP_OCT, 4);                 /* ALT: up on odd loops, down on the others, both slots */
