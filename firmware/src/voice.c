@@ -930,7 +930,7 @@ static __attribute__((noinline)) void voice_soft(void)
 static __attribute__((noinline)) void voice_half(track_t *t, const engine_t *e, voice_t *v, int32_t *out, uint32_t n,
                                                  const vmod_t *m, uint32_t vi)
 {
-    uint32_t st = VH_ST(vh_c[vi]), i, gen = e->half == 1u;
+    uint32_t st = VH_ST(vh_c[vi]), i, gen = e->half == 1u || e->half == 3u;
     int32_t hb[CTL / 2], x = 0, pv = vh_c[vi] >> 3;
     vmod_t h = *m;
     if (n != CTL || st == VH_OUT) {
@@ -949,7 +949,8 @@ static __attribute__((noinline)) void voice_half(track_t *t, const engine_t *e, 
             e->render(t, v, &x, 1, m);
         h.inc <<= 1;
         h.pitch16 = clamp(h.pitch16 + 192, 0, 2047);
-        h.cutoff += HALF_CUT;
+        if (e->half == 1u)                              /* (half 3: cutoff is not a filter's there, PHASE's DCW) */
+            h.cutoff += HALF_CUT;
     }
     for (i = 0; i < CTL / 2u; i++)
         hb[i] = 0;

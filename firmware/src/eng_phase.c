@@ -265,5 +265,6 @@ static const engine_t ENG_PHASE = {
     .npresets = NELEM(PHASE_PRESETS),
     .note_on = phase_note_on,
     .render = phase_render,
+    .half = 3,                   /* (V10.7.56) the generic half rate, its DCW as it is */
     .knob = {P_E2, P_E3, P_E4, P_REL},
 };
