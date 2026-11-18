@@ -268,11 +268,11 @@ static void wheel_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
                 acc[i] += (SINE[ph >> 22] * g1) >> 15;
             }
         } else {                                        /* gain ramp over the block (CTL samples) */
-            int32_t gq = g0 << CTL_LOG2, dg = g1 - g0;
+            int32_t gq = g0 << (CTL_LOG2 - vsh), dg = g1 - g0;   /* (V10.7.56: the block's samples, any rate) */
             for (i = 0; i < n; i++) {
                 ph += inc;
                 gq += dg;
-                acc[i] += (SINE[ph >> 22] * (gq >> CTL_LOG2)) >> 15;
+                acc[i] += (SINE[ph >> 22] * (gq >> (CTL_LOG2 - vsh))) >> 15;
             }
         }
         V->ph[k] = ph;

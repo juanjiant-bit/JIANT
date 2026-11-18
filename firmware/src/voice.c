@@ -1016,7 +1016,7 @@ static __attribute__((noinline)) void voice_half(track_t *t, const engine_t *e, 
                                                          * folds, no bright floor of many tails */
         int32_t y = st == VH_ON ? vh_lp[vi] : hb[0];
         for (i = 0; i < CTL / 2u; i++)
-            hb[i] = y += (hb[i] - y) >> 1;
+            hb[i] = y += ((hb[i] - y) * 3) >> 2;           /* (pole 0.25: ~5.5 kHz at 22 kHz) */
         vh_lp[vi] = y;
     } else
         vh_lp[vi] = hb[CTL / 2u - 1u];

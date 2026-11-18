@@ -64,7 +64,8 @@ static void add_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const v
     int32_t np = 256 + clamp(p[P_E3], 0, 127) * 2048 / 127, sh = clamp(p[P_E4], -64, 63), dec = clamp(p[P_E6], 0, 127);
     int32_t mot = clamp(p[P_E7], -64, 63), cmb = clamp(p[P_E5] + ((m->shape - (64 << 8)) >> 8), 0, 127) * 2;
     uint32_t i, k, age = (uint32_t)V->perc, rate = dec >= 127 ? 0u : str_exp2n((uint32_t)dec * 2201u / 127u) * 19u / 65u;
-    uint32_t shz = sh > 0 ? (uint32_t)(sh * sh) * 19478u : 0u;   /* (SHIFT up: + sh^2 / 5 Hz to every partial) */
+    uint32_t vsh = VH_SH(), shz = sh > 0 ? ((uint32_t)(sh * sh) * 19478u) << vsh : 0u;   /* (SHIFT up: + sh^2 / 5 Hz to every
+                                                         * partial; V10.7.56: the same Hz at half the rate) */
     if (n > CTL)
         n = CTL;
     for (k = 0; k < DRW_NP; k++) {                       /* the levels: BRIGHT's tilt, COMB's notches, PARTIALS */
@@ -114,11 +115,11 @@ static void add_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const v
                 acc[i] += (SINE[ph >> 22] * g1) >> 15;
             }
         } else {                                         /* the gain ramped over the block */
-            int32_t gq = g0 << CTL_LOG2, dg = g1 - g0;
+            int32_t gq = g0 << (CTL_LOG2 - vsh), dg = g1 - g0;   /* (V10.7.56: the block's samples, any rate) */
             for (i = 0; i < n; i++) {
                 ph += inc;
                 gq += dg;
-                acc[i] += (SINE[ph >> 22] * (gq >> CTL_LOG2)) >> 15;
+                acc[i] += (SINE[ph >> 22] * (gq >> (CTL_LOG2 - vsh))) >> 15;
             }
         }
         V->ph[k] = ph;
@@ -188,5 +189,6 @@ static const engine_t ENG_ADD = {
     .npresets = NELEM(ADD_PRESETS),
     .note_on = add_note_on,
     .render = add_render,
+    .half = 1,                   /* (V10.7.56) the generic half rate (partials past its Nyquist out by AD_TOP) */
     .knob = {P_E0, P_E3, P_E5, P_E6},
 };
