@@ -281,12 +281,20 @@ static drum_lane_t *drum_lane_of(track_t *t, const voice_t *v)
 static voice_t *drum_reuse(track_t *t, uint32_t note)
 {
     drum_lane_t *K = drum_kit_of(t);
-    uint32_t lane = drum_note_lane(t,note), owner = K ? K[lane].owner : 0;
+    uint32_t lane = drum_note_lane(t,note), owner = K ? K[lane].owner : 0, i;
     voice_t *v;
+    /* A sub-sample retrigger still owns its OLD lane until render. Reuse its
+     * intended lane now, including alternate GM pitches, without replacing
+     * a different pending hit through that stale owner entry. */
+    for (i = 0; i < NVOICE; i++) {
+        v = &t->v[i];
+        if (v->active && v->sub && (v->pn_flags & PN_START) && drum_note_lane(t, v->note) == lane)
+            return v;
+    }
     if (!owner || owner > NVOICE)
         return 0;
     v = &t->v[owner - 1u];
-    return v->active && (uint32_t)v->s[0] == lane ? v : 0;
+    return v->active && !(v->sub && (v->pn_flags & PN_START)) && (uint32_t)v->s[0] == lane ? v : 0;
 }
 
 static __attribute__((noinline)) void drum_note_on(track_t *t, voice_t *v)

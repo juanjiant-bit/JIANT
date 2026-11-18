@@ -10661,7 +10661,7 @@ static int test_click_menu(void)
             ft.engine = ENGI_FM6;
             ok &= trk_nvoice(&ft) == LITE_FM6_POLY;
             ft.engine = ENGI_DRUM;
-            ok &= trk_nvoice(&ft) == 4u;
+            ok &= trk_nvoice(&ft) == 8u;
             for (i = 0; i < NPAGES; i++) {
                 int sl = PAGES[i].graph == GR_SLCR || PAGES[i].graph == GR_SLPIT || str_eq(PAGES[i].title, "CHORUS");
                 if (sl) hidden &= !page_visible(i);
@@ -12717,7 +12717,7 @@ static int test_lz_edit(void)
             k = *TSEL;
             k.engine = ENGI_DRUM;
             k.p[P_DDST] = 2;                        /* (a DEST of before: AUTO) */
-            ok &= trk_nvoice(&k) == 4u;
+            ok &= trk_nvoice(&k) == 8u;
             k.p[P_DDST] = 7;                        /* ("3") */
             ok &= trk_nvoice(&k) == 3u;
         }

@@ -23,15 +23,15 @@ int main(void)
     trk[0].p[P_VCAP]=2;ok&=trk_nvoice(&trk[0])==1;trk[0].p[P_VCAP]=0;
     trk_live=4;ok&=trk_nvoice(&trk[0])==4;trk_live=6;
     set_engine_of(&trk[0],ENGI_DRUM);trk[0].engine=ENGI_DRUM;
-    ok&=trk_nvoice(&trk[0])==4;
-    bad+=check("six-track AUTO keeps four voices per engine, lower user cap respected",ok);
+    ok&=trk_nvoice(&trk[0])==8;
+    bad+=check("six-track AUTO keeps four synth voices and all kit lanes, explicit cap respected",ok);
     reset6();trks_put(0);ok=1;
     for(k=0;k<NENGINES;k++)if(eng_ok(k)) {
         trk[0].engine=k;trk[0].p[P_VCAP]=0;trk[0].p[P_DDST]=0;
         unsigned cap=ENGINES[k]->poly?ENGINES[k]->poly:NVOICE;
-        ok&=trk_nvoice(&trk[0])==(cap<4?cap:4);
+        ok&=trk_nvoice(&trk[0])==(ENGINES[k]->oneshot?cap:cap<4?cap:4);
     }
-    bad+=check("every engine AUTO uses at most four voices before six-track protection",ok);
+    bad+=check("synth AUTO uses at most four voices and kit AUTO keeps every lane",ok);
     reset6();ok=1;
     for(k=0;k<6;k++)for(i=0;i<8;i++) {
         trk_note_on(&trk[k],48+i*2,100);ok&=voices_load()<=voice_cap();
@@ -77,7 +77,7 @@ int main(void)
     bad+=check("explicit channel-cap reduction fades surplus voices and keeps charging their CPU",ok);
     reset6();trk_live=4;set_engine_of(&trk[0],ENGI_DRUM);trk[0].engine=ENGI_DRUM;trk[0].p[P_DDST]=12;
     for(i=0;i<6;i++)trk_note_on(&trk[0],DRUM_LANE_NOTE[i],100);
-    trk_live=6;trk[0].p[P_DDST]=0;for(b=0;b<4;b++)voice_soft();
+    trk_live=6;trk[0].p[P_DDST]=8;for(b=0;b<4;b++)voice_soft();
     trk_note_on(&trk[0],DRUM_LANE_NOTE[5],100);ok=1;
     for(i=4;i<NVOICE;i++)if(trk[0].v[i].active)ok&=trk[0].v[i].stage==4;
     bad+=check("a kit lane outside the new cap cannot reactivate a fading surplus slot",ok);

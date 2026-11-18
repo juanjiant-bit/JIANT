@@ -1,0 +1,849 @@
+{
+  "method": "GCC 14 -O2 x86-64, Callgrind 3.24.0; host instructions, not FM-1 CPU percentages",
+  "channel_default_presets": {
+    "channel/0-ANALOG": {
+      "instructions": 10301891,
+      "instructions_per_unit": 628.7775268554688
+    },
+    "channel/10-DRUM": {
+      "instructions": 16561543,
+      "instructions_per_unit": 1010.8363647460938
+    },
+    "channel/11-WEST": {
+      "instructions": 9319909,
+      "instructions_per_unit": 568.8421020507812
+    },
+    "channel/12-FM6": {
+      "instructions": 14141266,
+      "instructions_per_unit": 863.1143798828125
+    },
+    "channel/13-ADD": {
+      "instructions": 10542604,
+      "instructions_per_unit": 643.469482421875
+    },
+    "channel/14-ANIMAL": {
+      "instructions": 2123831,
+      "instructions_per_unit": 129.62835693359375
+    },
+    "channel/2-PHASE": {
+      "instructions": 10522849,
+      "instructions_per_unit": 642.2637329101562
+    },
+    "channel/3-MATH": {
+      "instructions": 11508749,
+      "instructions_per_unit": 702.4382934570312
+    },
+    "channel/5-VOICE": {
+      "instructions": 13154585,
+      "instructions_per_unit": 802.8921508789062
+    },
+    "channel/7-WHEEL": {
+      "instructions": 12626947,
+      "instructions_per_unit": 770.6876831054688
+    },
+    "channel/8-STRING": {
+      "instructions": 8216584,
+      "instructions_per_unit": 501.50048828125
+    }
+  },
+  "ui_frames": {
+    "ui/gen/100ms": {
+      "instructions": 47019696,
+      "instructions_per_unit": 783661.6
+    },
+    "ui/gen/15ms": {
+      "instructions": 26154219,
+      "instructions_per_unit": 435903.65
+    },
+    "ui/gen/50ms": {
+      "instructions": 24016887,
+      "instructions_per_unit": 400281.45
+    },
+    "ui/home_macros/100ms": {
+      "instructions": 56531739,
+      "instructions_per_unit": 942195.65
+    },
+    "ui/home_macros/15ms": {
+      "instructions": 31263233,
+      "instructions_per_unit": 521053.88333333336
+    },
+    "ui/home_macros/50ms": {
+      "instructions": 28655861,
+      "instructions_per_unit": 477597.68333333335
+    },
+    "ui/home_trk6/100ms": {
+      "instructions": 14851145,
+      "instructions_per_unit": 247519.08333333334
+    },
+    "ui/home_trk6/15ms": {
+      "instructions": 7970589,
+      "instructions_per_unit": 132843.15
+    },
+    "ui/home_trk6/50ms": {
+      "instructions": 9932581,
+      "instructions_per_unit": 165543.01666666666
+    },
+    "ui/roll_playing/100ms": {
+      "instructions": 2016743,
+      "instructions_per_unit": 33612.38333333333
+    },
+    "ui/roll_playing/15ms": {
+      "instructions": 2016843,
+      "instructions_per_unit": 33614.05
+    },
+    "ui/roll_playing/50ms": {
+      "instructions": 2016623,
+      "instructions_per_unit": 33610.38333333333
+    },
+    "ui/save_timeline_loop/100ms": {
+      "instructions": 48360807,
+      "instructions_per_unit": 806013.45
+    },
+    "ui/save_timeline_loop/15ms": {
+      "instructions": 8919954,
+      "instructions_per_unit": 148665.9
+    },
+    "ui/save_timeline_loop/50ms": {
+      "instructions": 24737771,
+      "instructions_per_unit": 412296.18333333335
+    },
+    "ui/v6_fm6_op/100ms": {
+      "instructions": 58146713,
+      "instructions_per_unit": 969111.8833333333
+    },
+    "ui/v6_fm6_op/15ms": {
+      "instructions": 28495484,
+      "instructions_per_unit": 474924.73333333334
+    },
+    "ui/v6_fm6_op/50ms": {
+      "instructions": 29735197,
+      "instructions_per_unit": 495586.61666666664
+    },
+    "ui/vx_kit_hits/100ms": {
+      "instructions": 77479709,
+      "instructions_per_unit": 1291328.4833333334
+    },
+    "ui/vx_kit_hits/15ms": {
+      "instructions": 75247589,
+      "instructions_per_unit": 1254126.4833333334
+    },
+    "ui/vx_kit_hits/50ms": {
+      "instructions": 40240008,
+      "instructions_per_unit": 670666.8
+    }
+  },
+  "kit_adaptive": {
+    "0": {
+      "full": {
+        "instructions": 213536013,
+        "instructions_per_unit": 3258.300979614258
+      },
+      "adaptive": {
+        "instructions": 183017304,
+        "instructions_per_unit": 2792.6224365234375
+      },
+      "host_work_reduction_pct": 14.292066509643032
+    },
+    "7": {
+      "full": {
+        "instructions": 246610804,
+        "instructions_per_unit": 3762.9822387695312
+      },
+      "adaptive": {
+        "instructions": 200327508,
+        "instructions_per_unit": 3056.7551879882812
+      },
+      "host_work_reduction_pct": 18.767748715502343
+    },
+    "12": {
+      "full": {
+        "instructions": 234652176,
+        "instructions_per_unit": 3580.508056640625
+      },
+      "adaptive": {
+        "instructions": 204125459,
+        "instructions_per_unit": 3114.707321166992
+      },
+      "host_work_reduction_pct": 13.009347503344692
+    },
+    "13": {
+      "full": {
+        "instructions": 207960937,
+        "instructions_per_unit": 3173.2320709228516
+      },
+      "adaptive": {
+        "instructions": 180416664,
+        "instructions_per_unit": 2752.9398193359375
+      },
+      "host_work_reduction_pct": 13.244926377687937
+    }
+  },
+  "reference_harness_before_fix": {
+    "cho/pad": {
+      "instructions": 22406573,
+      "instructions_per_unit": 1367.5886840820312
+    },
+    "cho/pad.fast": {
+      "instructions": 22768446,
+      "instructions_per_unit": 1389.6756591796875
+    },
+    "dly/full": {
+      "instructions": 22922973,
+      "instructions_per_unit": 1399.1072387695312
+    },
+    "dly/full.drive": {
+      "instructions": 23250230,
+      "instructions_per_unit": 1419.0814208984375
+    },
+    "dly/full.throw": {
+      "instructions": 24446558,
+      "instructions_per_unit": 1492.0994873046875
+    },
+    "dly/half": {
+      "instructions": 25609032,
+      "instructions_per_unit": 1563.05126953125
+    },
+    "dly/half.drive": {
+      "instructions": 25743365,
+      "instructions_per_unit": 1571.2503051757812
+    },
+    "dly/quarter": {
+      "instructions": 26265856,
+      "instructions_per_unit": 1603.140625
+    },
+    "eng/ANALOG": {
+      "instructions": 23912248,
+      "instructions_per_unit": 1459.48779296875
+    },
+    "eng/ANIMAL": {
+      "instructions": 22925948,
+      "instructions_per_unit": 1399.288818359375
+    },
+    "eng/ANIMAL.CMOS": {
+      "instructions": 17195483,
+      "instructions_per_unit": 1049.5289916992188
+    },
+    "eng/ANIMAL.GLOTT": {
+      "instructions": 21782271,
+      "instructions_per_unit": 1329.4843139648438
+    },
+    "eng/ANIMAL.PULSE": {
+      "instructions": 16868537,
+      "instructions_per_unit": 1029.5737915039062
+    },
+    "eng/ANIMAL.WHSTL": {
+      "instructions": 16258793,
+      "instructions_per_unit": 992.3579711914062
+    },
+    "eng/ANIMAL.WING": {
+      "instructions": 15311190,
+      "instructions_per_unit": 934.5208740234375
+    },
+    "eng/DRUM": {
+      "instructions": 16523733,
+      "instructions_per_unit": 1008.5286254882812
+    },
+    "eng/FM6": {
+      "instructions": 26233251,
+      "instructions_per_unit": 1601.1505737304688
+    },
+    "eng/PHASE": {
+      "instructions": 22564616,
+      "instructions_per_unit": 1377.23486328125
+    },
+    "eng/VOICE": {
+      "instructions": 23328881,
+      "instructions_per_unit": 1423.8818969726562
+    },
+    "eng/VOICE.EN": {
+      "instructions": 28973074,
+      "instructions_per_unit": 1768.3760986328125
+    },
+    "eng/VOICE.ES": {
+      "instructions": 28988760,
+      "instructions_per_unit": 1769.33349609375
+    },
+    "eng/WEST": {
+      "instructions": 26898567,
+      "instructions_per_unit": 1641.7582397460938
+    },
+    "eng/WEST.HEAVY": {
+      "instructions": 28375428,
+      "instructions_per_unit": 1731.898681640625
+    },
+    "eng/WEST.TRI": {
+      "instructions": 27531368,
+      "instructions_per_unit": 1680.38134765625
+    },
+    "eng/WHEEL": {
+      "instructions": 22970969,
+      "instructions_per_unit": 1402.0366821289062
+    },
+    "ero/ANALOG.BREAK": {
+      "instructions": 15362894,
+      "instructions_per_unit": 937.6766357421875
+    },
+    "ero/ANALOG.DUST": {
+      "instructions": 15362160,
+      "instructions_per_unit": 937.6318359375
+    },
+    "ero/ANALOG.METAL": {
+      "instructions": 16187369,
+      "instructions_per_unit": 987.9985961914062
+    },
+    "ero/ANALOG.METAL.P": {
+      "instructions": 16187322,
+      "instructions_per_unit": 987.9957275390625
+    },
+    "ero/ANALOG.SOFT": {
+      "instructions": 18177710,
+      "instructions_per_unit": 1109.4793701171875
+    },
+    "ero/ANALOG.STEP": {
+      "instructions": 17091181,
+      "instructions_per_unit": 1043.1629028320312
+    },
+    "ero/ANALOG.off": {
+      "instructions": 18099834,
+      "instructions_per_unit": 1104.7261962890625
+    },
+    "ero/FM6.BREAK": {
+      "instructions": 19949230,
+      "instructions_per_unit": 1217.6043701171875
+    },
+    "ero/FM6.DUST": {
+      "instructions": 19948915,
+      "instructions_per_unit": 1217.5851440429688
+    },
+    "ero/FM6.METAL": {
+      "instructions": 20057397,
+      "instructions_per_unit": 1224.2063598632812
+    },
+    "ero/FM6.METAL.P": {
+      "instructions": 20057679,
+      "instructions_per_unit": 1224.2235717773438
+    },
+    "ero/FM6.SOFT": {
+      "instructions": 19948815,
+      "instructions_per_unit": 1217.5790405273438
+    },
+    "ero/FM6.STEP": {
+      "instructions": 19947795,
+      "instructions_per_unit": 1217.5167846679688
+    },
+    "ero/FM6.off": {
+      "instructions": 19120639,
+      "instructions_per_unit": 1167.0311889648438
+    },
+    "mix/full": {
+      "instructions": 43481205,
+      "instructions_per_unit": 2653.8821411132812
+    },
+    "mix/full.freeze": {
+      "instructions": 38096287,
+      "instructions_per_unit": 2325.2128295898438
+    },
+    "mix/full.glitch": {
+      "instructions": 45469790,
+      "instructions_per_unit": 2775.2557373046875
+    },
+    "mix/full.repeat": {
+      "instructions": 45385703,
+      "instructions_per_unit": 2770.1234741210938
+    },
+    "mix/idle": {
+      "instructions": 2758407,
+      "instructions_per_unit": 168.35980224609375
+    },
+    "mix/idle.tail": {
+      "instructions": 2742103,
+      "instructions_per_unit": 167.36468505859375
+    },
+    "peak/VOICE.EN6.r00": {
+      "instructions": 165464,
+      "instructions_per_unit": 165464.0
+    },
+    "peak/VOICE.EN6.r01": {
+      "instructions": 224904,
+      "instructions_per_unit": 224904.0
+    },
+    "peak/VOICE.EN6.r02": {
+      "instructions": 217104,
+      "instructions_per_unit": 217104.0
+    },
+    "peak/VOICE.EN6.r03": {
+      "instructions": 221408,
+      "instructions_per_unit": 221408.0
+    },
+    "peak/VOICE.EN6.r04": {
+      "instructions": 211863,
+      "instructions_per_unit": 211863.0
+    },
+    "peak/VOICE.EN6.r05": {
+      "instructions": 225431,
+      "instructions_per_unit": 225431.0
+    },
+    "peak/VOICE.EN6.r06": {
+      "instructions": 215859,
+      "instructions_per_unit": 215859.0
+    },
+    "peak/VOICE.EN6.r07": {
+      "instructions": 217562,
+      "instructions_per_unit": 217562.0
+    },
+    "peak/VOICE.EN6.r08": {
+      "instructions": 214266,
+      "instructions_per_unit": 214266.0
+    },
+    "peak/VOICE.EN6.r09": {
+      "instructions": 222480,
+      "instructions_per_unit": 222480.0
+    },
+    "peak/VOICE.EN6.r10": {
+      "instructions": 219831,
+      "instructions_per_unit": 219831.0
+    },
+    "peak/VOICE.EN6.r11": {
+      "instructions": 220472,
+      "instructions_per_unit": 220472.0
+    },
+    "peak/VOICE.EN6.r12": {
+      "instructions": 220894,
+      "instructions_per_unit": 220894.0
+    },
+    "peak/VOICE.EN6.r13": {
+      "instructions": 216536,
+      "instructions_per_unit": 216536.0
+    },
+    "peak/VOICE.EN6.r14": {
+      "instructions": 213886,
+      "instructions_per_unit": 213886.0
+    },
+    "peak/VOICE.EN6.r15": {
+      "instructions": 219729,
+      "instructions_per_unit": 219729.0
+    },
+    "peak/VOICE.EN6.r16": {
+      "instructions": 218035,
+      "instructions_per_unit": 218035.0
+    },
+    "peak/VOICE.EN6.r17": {
+      "instructions": 222009,
+      "instructions_per_unit": 222009.0
+    },
+    "peak/VOICE.EN6.r18": {
+      "instructions": 215879,
+      "instructions_per_unit": 215879.0
+    },
+    "peak/VOICE.EN6.r19": {
+      "instructions": 215972,
+      "instructions_per_unit": 215972.0
+    },
+    "peak/VOICE.EN6.r20": {
+      "instructions": 219425,
+      "instructions_per_unit": 219425.0
+    },
+    "peak/VOICE.EN6.r21": {
+      "instructions": 224516,
+      "instructions_per_unit": 224516.0
+    },
+    "peak/VOICE.EN6.r22": {
+      "instructions": 212415,
+      "instructions_per_unit": 212415.0
+    },
+    "peak/VOICE.EN6.r23": {
+      "instructions": 217291,
+      "instructions_per_unit": 217291.0
+    },
+    "rev/CLOUD": {
+      "instructions": 25696361,
+      "instructions_per_unit": 1568.3814086914062
+    },
+    "rev/RESO": {
+      "instructions": 22410487,
+      "instructions_per_unit": 1367.8275756835938
+    },
+    "rev/ROOM": {
+      "instructions": 22410681,
+      "instructions_per_unit": 1367.8394165039062
+    },
+    "rev/SHIMR": {
+      "instructions": 24046365,
+      "instructions_per_unit": 1467.6736450195312
+    },
+    "rev/SPRING": {
+      "instructions": 23306666,
+      "instructions_per_unit": 1422.5260009765625
+    },
+    "seq/heavy": {
+      "instructions": 36637527,
+      "instructions_per_unit": 2236.1771850585938
+    },
+    "seq/mono4": {
+      "instructions": 20570542,
+      "instructions_per_unit": 1255.5262451171875
+    },
+    "seq/plain": {
+      "instructions": 37281006,
+      "instructions_per_unit": 2275.4520263671875
+    },
+    "seqtick/live": {
+      "instructions": 1493017,
+      "instructions_per_unit": 91.12652587890625
+    },
+    "seqtick/plain": {
+      "instructions": 1328292,
+      "instructions_per_unit": 81.072509765625
+    },
+    "song/cputest": {
+      "instructions": 46534725,
+      "instructions_per_unit": 2840.2542114257812
+    },
+    "song/cputest.djf": {
+      "instructions": 48902457,
+      "instructions_per_unit": 2984.7691040039062
+    },
+    "song/cputest.eq": {
+      "instructions": 49473967,
+      "instructions_per_unit": 3019.6513061523438
+    },
+    "song/cputest6": {
+      "instructions": 47486256,
+      "instructions_per_unit": 2898.3310546875
+    }
+  },
+  "reference_harness_after_fix": {
+    "cho/pad": {
+      "instructions": 22413741,
+      "instructions_per_unit": 1368.0261840820312
+    },
+    "cho/pad.fast": {
+      "instructions": 22775614,
+      "instructions_per_unit": 1390.1131591796875
+    },
+    "dly/full": {
+      "instructions": 22930141,
+      "instructions_per_unit": 1399.5447387695312
+    },
+    "dly/full.drive": {
+      "instructions": 23257398,
+      "instructions_per_unit": 1419.5189208984375
+    },
+    "dly/full.throw": {
+      "instructions": 24453982,
+      "instructions_per_unit": 1492.5526123046875
+    },
+    "dly/half": {
+      "instructions": 25616200,
+      "instructions_per_unit": 1563.48876953125
+    },
+    "dly/half.drive": {
+      "instructions": 25750533,
+      "instructions_per_unit": 1571.6878051757812
+    },
+    "dly/quarter": {
+      "instructions": 26273024,
+      "instructions_per_unit": 1603.578125
+    },
+    "eng/ANALOG": {
+      "instructions": 23919416,
+      "instructions_per_unit": 1459.92529296875
+    },
+    "eng/ANIMAL": {
+      "instructions": 22932970,
+      "instructions_per_unit": 1399.7174072265625
+    },
+    "eng/ANIMAL.CMOS": {
+      "instructions": 17202541,
+      "instructions_per_unit": 1049.9597778320312
+    },
+    "eng/ANIMAL.GLOTT": {
+      "instructions": 21789326,
+      "instructions_per_unit": 1329.9149169921875
+    },
+    "eng/ANIMAL.PULSE": {
+      "instructions": 16875727,
+      "instructions_per_unit": 1030.0126342773438
+    },
+    "eng/ANIMAL.WHSTL": {
+      "instructions": 16265890,
+      "instructions_per_unit": 992.7911376953125
+    },
+    "eng/ANIMAL.WING": {
+      "instructions": 15318255,
+      "instructions_per_unit": 934.9520874023438
+    },
+    "eng/DRUM": {
+      "instructions": 20557407,
+      "instructions_per_unit": 1254.7245483398438
+    },
+    "eng/FM6": {
+      "instructions": 26240380,
+      "instructions_per_unit": 1601.585693359375
+    },
+    "eng/PHASE": {
+      "instructions": 22571656,
+      "instructions_per_unit": 1377.66455078125
+    },
+    "eng/VOICE": {
+      "instructions": 23335921,
+      "instructions_per_unit": 1424.3115844726562
+    },
+    "eng/VOICE.EN": {
+      "instructions": 28980231,
+      "instructions_per_unit": 1768.8129272460938
+    },
+    "eng/VOICE.ES": {
+      "instructions": 28995743,
+      "instructions_per_unit": 1769.7597045898438
+    },
+    "eng/WEST": {
+      "instructions": 26905798,
+      "instructions_per_unit": 1642.1995849609375
+    },
+    "eng/WEST.HEAVY": {
+      "instructions": 28382248,
+      "instructions_per_unit": 1732.31494140625
+    },
+    "eng/WEST.TRI": {
+      "instructions": 27538117,
+      "instructions_per_unit": 1680.7932739257812
+    },
+    "eng/WHEEL": {
+      "instructions": 22978393,
+      "instructions_per_unit": 1402.4898071289062
+    },
+    "ero/ANALOG.BREAK": {
+      "instructions": 15370062,
+      "instructions_per_unit": 938.1141357421875
+    },
+    "ero/ANALOG.DUST": {
+      "instructions": 15369328,
+      "instructions_per_unit": 938.0693359375
+    },
+    "ero/ANALOG.METAL": {
+      "instructions": 16194793,
+      "instructions_per_unit": 988.4517211914062
+    },
+    "ero/ANALOG.METAL.P": {
+      "instructions": 16194746,
+      "instructions_per_unit": 988.4488525390625
+    },
+    "ero/ANALOG.SOFT": {
+      "instructions": 18184878,
+      "instructions_per_unit": 1109.9168701171875
+    },
+    "ero/ANALOG.STEP": {
+      "instructions": 17098349,
+      "instructions_per_unit": 1043.6004028320312
+    },
+    "ero/ANALOG.off": {
+      "instructions": 18107002,
+      "instructions_per_unit": 1105.1636962890625
+    },
+    "ero/FM6.BREAK": {
+      "instructions": 19956398,
+      "instructions_per_unit": 1218.0418701171875
+    },
+    "ero/FM6.DUST": {
+      "instructions": 19956083,
+      "instructions_per_unit": 1218.0226440429688
+    },
+    "ero/FM6.METAL": {
+      "instructions": 20064820,
+      "instructions_per_unit": 1224.659423828125
+    },
+    "ero/FM6.METAL.P": {
+      "instructions": 20065103,
+      "instructions_per_unit": 1224.6766967773438
+    },
+    "ero/FM6.SOFT": {
+      "instructions": 19955983,
+      "instructions_per_unit": 1218.0165405273438
+    },
+    "ero/FM6.STEP": {
+      "instructions": 19954963,
+      "instructions_per_unit": 1217.9542846679688
+    },
+    "ero/FM6.off": {
+      "instructions": 19127807,
+      "instructions_per_unit": 1167.4686889648438
+    },
+    "mix/full": {
+      "instructions": 43487797,
+      "instructions_per_unit": 2654.2844848632812
+    },
+    "mix/full.freeze": {
+      "instructions": 38102879,
+      "instructions_per_unit": 2325.6151733398438
+    },
+    "mix/full.glitch": {
+      "instructions": 45476382,
+      "instructions_per_unit": 2775.6580810546875
+    },
+    "mix/full.repeat": {
+      "instructions": 45392295,
+      "instructions_per_unit": 2770.5258178710938
+    },
+    "mix/idle": {
+      "instructions": 2765319,
+      "instructions_per_unit": 168.78167724609375
+    },
+    "mix/idle.tail": {
+      "instructions": 2749143,
+      "instructions_per_unit": 167.79437255859375
+    },
+    "peak/VOICE.EN6.r00": {
+      "instructions": 165481,
+      "instructions_per_unit": 165481.0
+    },
+    "peak/VOICE.EN6.r01": {
+      "instructions": 224920,
+      "instructions_per_unit": 224920.0
+    },
+    "peak/VOICE.EN6.r02": {
+      "instructions": 217122,
+      "instructions_per_unit": 217122.0
+    },
+    "peak/VOICE.EN6.r03": {
+      "instructions": 221426,
+      "instructions_per_unit": 221426.0
+    },
+    "peak/VOICE.EN6.r04": {
+      "instructions": 211881,
+      "instructions_per_unit": 211881.0
+    },
+    "peak/VOICE.EN6.r05": {
+      "instructions": 225447,
+      "instructions_per_unit": 225447.0
+    },
+    "peak/VOICE.EN6.r06": {
+      "instructions": 215877,
+      "instructions_per_unit": 215877.0
+    },
+    "peak/VOICE.EN6.r07": {
+      "instructions": 217580,
+      "instructions_per_unit": 217580.0
+    },
+    "peak/VOICE.EN6.r08": {
+      "instructions": 214284,
+      "instructions_per_unit": 214284.0
+    },
+    "peak/VOICE.EN6.r09": {
+      "instructions": 222496,
+      "instructions_per_unit": 222496.0
+    },
+    "peak/VOICE.EN6.r10": {
+      "instructions": 219849,
+      "instructions_per_unit": 219849.0
+    },
+    "peak/VOICE.EN6.r11": {
+      "instructions": 220490,
+      "instructions_per_unit": 220490.0
+    },
+    "peak/VOICE.EN6.r12": {
+      "instructions": 220912,
+      "instructions_per_unit": 220912.0
+    },
+    "peak/VOICE.EN6.r13": {
+      "instructions": 216552,
+      "instructions_per_unit": 216552.0
+    },
+    "peak/VOICE.EN6.r14": {
+      "instructions": 213904,
+      "instructions_per_unit": 213904.0
+    },
+    "peak/VOICE.EN6.r15": {
+      "instructions": 219747,
+      "instructions_per_unit": 219747.0
+    },
+    "peak/VOICE.EN6.r16": {
+      "instructions": 218053,
+      "instructions_per_unit": 218053.0
+    },
+    "peak/VOICE.EN6.r17": {
+      "instructions": 222025,
+      "instructions_per_unit": 222025.0
+    },
+    "peak/VOICE.EN6.r18": {
+      "instructions": 215897,
+      "instructions_per_unit": 215897.0
+    },
+    "peak/VOICE.EN6.r19": {
+      "instructions": 215990,
+      "instructions_per_unit": 215990.0
+    },
+    "peak/VOICE.EN6.r20": {
+      "instructions": 219443,
+      "instructions_per_unit": 219443.0
+    },
+    "peak/VOICE.EN6.r21": {
+      "instructions": 224532,
+      "instructions_per_unit": 224532.0
+    },
+    "peak/VOICE.EN6.r22": {
+      "instructions": 212433,
+      "instructions_per_unit": 212433.0
+    },
+    "peak/VOICE.EN6.r23": {
+      "instructions": 217309,
+      "instructions_per_unit": 217309.0
+    },
+    "rev/CLOUD": {
+      "instructions": 25703529,
+      "instructions_per_unit": 1568.8189086914062
+    },
+    "rev/RESO": {
+      "instructions": 22417655,
+      "instructions_per_unit": 1368.2650756835938
+    },
+    "rev/ROOM": {
+      "instructions": 22417871,
+      "instructions_per_unit": 1368.2782592773438
+    },
+    "rev/SHIMR": {
+      "instructions": 24053533,
+      "instructions_per_unit": 1468.1111450195312
+    },
+    "rev/SPRING": {
+      "instructions": 23264686,
+      "instructions_per_unit": 1419.9637451171875
+    },
+    "seq/heavy": {
+      "instructions": 36651245,
+      "instructions_per_unit": 2237.0144653320312
+    },
+    "seq/mono4": {
+      "instructions": 20577166,
+      "instructions_per_unit": 1255.9305419921875
+    },
+    "seq/plain": {
+      "instructions": 37288721,
+      "instructions_per_unit": 2275.9229125976562
+    },
+    "seqtick/live": {
+      "instructions": 1498373,
+      "instructions_per_unit": 91.45343017578125
+    },
+    "seqtick/plain": {
+      "instructions": 1333393,
+      "instructions_per_unit": 81.38385009765625
+    },
+    "song/cputest": {
+      "instructions": 46429836,
+      "instructions_per_unit": 2833.852294921875
+    },
+    "song/cputest.djf": {
+      "instructions": 48543809,
+      "instructions_per_unit": 2962.8789672851562
+    },
+    "song/cputest.eq": {
+      "instructions": 49681510,
+      "instructions_per_unit": 3032.3187255859375
+    },
+    "song/cputest6": {
+      "instructions": 47498634,
+      "instructions_per_unit": 2899.0865478515625
+    }
+  }
+}
