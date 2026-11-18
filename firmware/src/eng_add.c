@@ -89,7 +89,7 @@ static void add_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const v
         if (sh < 0)                                      /* SHIFT down: the ratios stretched (a stiff string, a bell bent) */
             r = clamp(r + ((r * ((-sh * (r - 1024)) >> 10)) >> 10), 256, 40000);
         inc = (m->inc >> 10) * (uint32_t)r + shz;
-        if (inc >= AD_TOP || !lv[k])
+        if (inc >= (AD_TOP >> m->rate_shift) || !lv[k])
             g1 = 0;
         else {
             uint32_t rk = rate + rate * k / 2u, x;       /* (its decay: Q16 octaves a block; the higher ones sooner) */
@@ -104,6 +104,7 @@ static void add_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const v
             }
         }
         V->gp[k] = g1;
+        inc <<= m->rate_shift;
         if (!g0 && !g1) {
             V->ph[k] = ph + inc * n;
             continue;
@@ -114,7 +115,7 @@ static void add_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const v
                 acc[i] += (SINE[ph >> 22] * g1) >> 15;
             }
         } else {                                         /* the gain ramped over the block */
-            int32_t gq = g0 << CTL_LOG2, dg = g1 - g0;
+            int32_t gq = g0 << CTL_LOG2, dg = (g1 - g0) * (1 << m->rate_shift);
             for (i = 0; i < n; i++) {
                 ph += inc;
                 gq += dg;
@@ -188,5 +189,6 @@ static const engine_t ENG_ADD = {
     .npresets = NELEM(ADD_PRESETS),
     .note_on = add_note_on,
     .render = add_render,
+    .half = 2,                  /* native rate flag: partial phases, ramps and Nyquist; block-age stays in real time */
     .knob = {P_E0, P_E3, P_E5, P_E6},
 };

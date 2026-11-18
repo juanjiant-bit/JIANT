@@ -5,7 +5,7 @@ static void reset6(void)
 {
     ui_power_on(); trks_put(1); voice_headroom=load_tight=guard_cap=0;
     load_avg_q8=load_all_q8=load_pred_q8=load_fx_q8=0; load_cores2=1;
-    memset(mc_tk,0,sizeof mc_tk); perf_denied=perf_allowed=0;
+    memset(mc_tk,0,sizeof mc_tk);memset(mc_nv,0,sizeof mc_nv); perf_denied=perf_allowed=0;
     for(unsigned k=0;k<6;k++) {
         set_engine_of(&trk[k],ENGI_ANALOG);trk[k].engine=ENGI_ANALOG;
         trk[k].p[P_VOICE]=V_POLY;trk[k].p[P_VCAP]=0;trk[k].p[P_MUTE]=0;
@@ -19,12 +19,12 @@ int main(void)
 {
     unsigned bad=0,ok=1,k,i,b;static int32_t out[2*CTL];
     reset6();
-    ok=trk_nvoice(&trk[0])==2;
+    ok=trk_nvoice(&trk[0])==4;
     trk[0].p[P_VCAP]=2;ok&=trk_nvoice(&trk[0])==1;trk[0].p[P_VCAP]=0;
     trk_live=4;ok&=trk_nvoice(&trk[0])==4;trk_live=6;
     set_engine_of(&trk[0],ENGI_DRUM);trk[0].engine=ENGI_DRUM;
-    ok&=trk_nvoice(&trk[0])==3;
-    bad+=check("six-track caps: synth 2, drum 3, lower user cap respected; AUTO defaults to four",ok);
+    ok&=trk_nvoice(&trk[0])==4;
+    bad+=check("six-track AUTO keeps four voices per engine, lower user cap respected",ok);
     reset6();trks_put(0);ok=1;
     for(k=0;k<NENGINES;k++)if(eng_ok(k)) {
         trk[0].engine=k;trk[0].p[P_VCAP]=0;trk[0].p[P_DDST]=0;
@@ -36,14 +36,14 @@ int main(void)
     for(k=0;k<6;k++)for(i=0;i<8;i++) {
         trk_note_on(&trk[k],48+i*2,100);ok&=voices_load()<=voice_cap();
     }
-    for(k=0;k<6;k++)ok&=sounding(k)>=1&&sounding(k)<=2;
+    for(k=0;k<6;k++)ok&=sounding(k)>=1&&sounding(k)<=4;
     bad+=check("six chords reserve a voice per channel without exceeding the shared budget",ok);
     reset6();ok=1;
     for(k=0;k<6;k++) {set_engine_of(&trk[k],ENGI_DRUM);trk[k].engine=ENGI_DRUM;}
     for(k=0;k<6;k++)for(i=0;i<8;i++) {
         trk_note_on(&trk[k],DRUM_LANE_NOTE[i],100);ok&=voices_load()<=voice_cap();
     }
-    for(k=0;k<6;k++)ok&=sounding(k)>=1&&sounding(k)<=3;
+    for(k=0;k<6;k++)ok&=sounding(k)>=1&&sounding(k)<=4;
     bad+=check("six kits cannot bypass the global budget with protected kick/snare/clap hits",ok);
     reset6();trk_note_on(&trk[0],48,100);
     load_all_q8=load_pred_q8=79u<<8;
@@ -51,9 +51,9 @@ int main(void)
     bad+=check("no fallback admits an extra six-track voice above the CPU prediction",sounding(0)==1);
     reset6();trk_note_on(&trk[0],48,100);trk_note_on(&trk[0],60,100);
     load_tight=1;mc_tk[0]=12000;mc_tk[1]=200;
-    bad+=check("measured expensive channel tightens to one voice before cheaper channels",trk_nvoice(&trk[0])==1&&trk_nvoice(&trk[1])==2);
     for(b=0;b<4;b++)voice_soft();
-    bad+=check("notes above a reduced channel cap fade instead of surviving outside the cap",trk[0].v[1].stage==4);
+    bad+=check("CPU pressure does not shrink a channel cap or fade its held chord",
+        trk_nvoice(&trk[0])==4&&trk[0].v[0].stage!=4&&trk[0].v[1].stage!=4);
     reset6();load_all_q8=load_pred_q8=40u<<8;
     unsigned d=PF_BIT(PF_D16),r=PF_BIT(PF_REV),w=PF_BIT(PF_WOB),mask=d|r|w;
     unsigned got=perf_budget(mask);
@@ -71,21 +71,21 @@ int main(void)
     bad+=check("FX shed before the deadline in both four- and six-track modes",ok);
     reset6();
     trk_live=4;trk[0].p[P_VCAP]=9;for(i=0;i<6;i++)trk_note_on(&trk[0],48+i,100);
-    trk_live=6;for(b=0;b<4;b++)voice_soft();ok=1;
-    for(i=2;i<NVOICE;i++)if(trk[0].v[i].active)ok&=trk[0].v[i].stage==4;
+    trk_live=6;trk[0].p[P_VCAP]=0;for(b=0;b<4;b++)voice_soft();ok=1;
+    for(i=4;i<NVOICE;i++)if(trk[0].v[i].active)ok&=trk[0].v[i].stage==4;
     unsigned fading=sounding(0);ok&=voices_load()==fading;
-    bad+=check("four-to-six transition fades surplus voices and keeps charging their CPU",ok);
+    bad+=check("explicit channel-cap reduction fades surplus voices and keeps charging their CPU",ok);
     reset6();trk_live=4;set_engine_of(&trk[0],ENGI_DRUM);trk[0].engine=ENGI_DRUM;trk[0].p[P_DDST]=12;
     for(i=0;i<6;i++)trk_note_on(&trk[0],DRUM_LANE_NOTE[i],100);
-    trk_live=6;for(b=0;b<4;b++)voice_soft();
+    trk_live=6;trk[0].p[P_DDST]=0;for(b=0;b<4;b++)voice_soft();
     trk_note_on(&trk[0],DRUM_LANE_NOTE[5],100);ok=1;
-    for(i=3;i<NVOICE;i++)if(trk[0].v[i].active)ok&=trk[0].v[i].stage==4;
+    for(i=4;i<NVOICE;i++)if(trk[0].v[i].active)ok&=trk[0].v[i].stage==4;
     bad+=check("a kit lane outside the new cap cannot reactivate a fading surplus slot",ok);
     reset6();trk_note_on(&trk[0],48,100);trk_note_on(&trk[0],60,100);
     trk_note_on(&trk[1],64,100);trk_note_off(&trk[1],64);
     trk[1].v[0].env_out=1;load_all_q8=load_pred_q8=79u<<8;
     track_t *victim=0;unsigned slot=load_victim(&trk[0],&victim);
-    bad+=check("overload reuses this channel before considering another channel's tail",slot<NVOICE&&victim==&trk[0]);
+    bad+=check("overload cannot replace a held chord or another channel's tail",slot==NVOICE);
     reset6();load_all_q8=load_pred_q8=60u<<8;
     perf_budget(d);unsigned debt=load_fx_q8;
     trk_note_on(&trk[0],48,100);

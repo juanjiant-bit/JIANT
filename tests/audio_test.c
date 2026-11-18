@@ -550,7 +550,7 @@ static void polyphony_headroom(void)
     for (i = 0; i < 15; i++) shed_check(HALF_TICKS * 40u / 100u);
     check("polyphony: one short calm interval cannot expand admission", voice_cap() == 8);
     shed_check(HALF_TICKS * 40u / 100u);
-    check("polyphony: 16 calm halves on two cores admit 12 shared voices", voice_cap() == 12);
+    check("polyphony: 16 calm halves on two cores admit 16 shared voices for six tracks", voice_cap() == 16);
     for (k = 0; k < NPART; k++) {
         host_preset(&trk[k], k & 1 ? ENGI_VOICE : ENGI_FM6, 0);
         trk[k].p[P_VOICE] = V_POLY; trk[k].p[P_SUS] = 127;
@@ -563,8 +563,8 @@ static void polyphony_headroom(void)
         for (i = 0; i < NVOICE; i++) gates += trk[k].v[i].active && trk[k].v[i].gate;
     check("polyphony: rendering retains all 12 gates without stealing", gates == 12 && voice_kills == kills);
     for (i = 0; i < 96; i++) shed_check(HALF_TICKS * 70u / 100u);
-    check("polyphony: higher measured load (70 % on average) closes extra admission without killing held notes",
-          voice_cap() == 8 && voices_busy() == 12 && voice_kills == kills && !load_tight);
+    check("polyphony: usable measured load (70 %) keeps six-track admission open without killing held notes",
+          voice_cap() == 16 && voices_busy() == 12 && voice_kills == kills && !load_tight);
     voice_headroom = poly_calm = 0;
     for (i = 0; i < 64; i++) { t5_nested_ticks = HALF_TICKS * 60u / 100u; shed_check(HALF_TICKS * 70u / 100u); }
     check("polyphony: nested IRQ load cannot open extra admission", voice_cap() == 8 && !load_tight);

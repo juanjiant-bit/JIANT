@@ -14395,8 +14395,8 @@ static int test_scene(void)
     bad += check("SCENE page: KNOB 1 ON, KNOB 2 the track, its role shown", ok);
     key_down(white(7));                                  /* (C4 or so) */
     for (i = 0; i < 4u; i++) events_block(CTL);
-    ok = trk_gates(5) == 2u && trk_gates(4) == 1u && trk_gates(1) == 1u && trk[3].arp_phys > 0u && trk_gates(0) == 0u && trk_gates(2) == 0u;
-    bad += check("SCENE: one key, T6 capped at two chord voices, T5 bass, T2 lead, T4 arp; KEEP untouched", ok);
+    ok = trk_gates(5) == 3u && trk_gates(4) == 1u && trk_gates(1) == 1u && trk[3].arp_phys > 0u && trk_gates(0) == 0u && trk_gates(2) == 0u;
+    bad += check("SCENE: one key, complete T6 triad, T5 bass, T2 lead, T4 arp; KEEP untouched", ok);
     key_up(white(7));
     for (i = 0; i < 4u; i++) events_block(CTL);
     bad += check("SCENE: the key up ends every role", trk_gates(5) == 0u && trk_gates(4) == 0u && trk_gates(1) == 0u && !trk[3].arp_phys);

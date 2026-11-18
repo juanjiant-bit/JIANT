@@ -1444,6 +1444,10 @@ int main(void)
                     uint32_t b, nb, i, p, w;
                     gen_reset();
                     gen_with(g + 1u, 4040u + 11u * g + 1000u * sd, 50, 0);
+                    /* Mix balance, with the healthy two-core headroom the device
+                     * establishes before PLAY. The host has no audio ISR clock;
+                     * the separate budget tests cover closed admission. */
+                    voice_headroom = load_cores2 = 1;
                     for (p = 0; p < NTRK; p++) {
                         const track_t *t = &trk[p];
                         const engine_t *en = ENGINES[t->eng_req % NENGINES];
@@ -1503,6 +1507,7 @@ int main(void)
                n, bass_bad, mel_bad, front_bad, list_bad, sub_bad);
         bad += gcheck("(the GENE mix pass) the electronic genres x 3: the bass and the melodic parts heard, the drums in front (MINIMAL's sub over them), the presets' lists kept",
                       n >= 30u && bass_bad <= 1u && mel_bad <= 2u && front_bad <= 2u && !list_bad && !sub_bad);
+        voice_headroom = load_cores2 = 0;
     }
     /* ---- (0.9.9-gen1) the same seed, the same piece (and a different one from another seed), every genre */
     {

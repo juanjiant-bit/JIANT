@@ -662,21 +662,21 @@ static volatile uint8_t sys_load;
 #define LITE_FM6_POLY 2u
 #define ECO_POLY 4u
 #define ECO_VOICES 6u            /* (0.6.70) LOAD ECO: the voices all parts share (NVOICE else) */
-static uint32_t track_auto_cap(const track_t *t, uint32_t cap);
 static uint32_t trk_nvoice(const track_t *t)
 {
     const engine_t *e = ENGINES[t->engine];
     uint32_t c = e->poly ? e->poly : NVOICE;
     uint32_t u = e->oneshot ? (uint32_t)t->p[P_DDST] - 5u : (uint32_t)t->p[P_VCAP] - 2u;
     /* V48: AUTO is four voices, for synths and kits. Explicit lower/higher
-     * user caps still work within the engine and automatic six-track limits. */
+     * user caps still work within the engine's limit. Track count must not
+     * turn a four-note chord into two notes when CPU time is available. */
     if (u >= NVOICE) u = 3u;
     if (sys_load && t->engine == ENGI_FM6 && c > LITE_FM6_POLY)
         c = LITE_FM6_POLY;
     if (!e->oneshot && sys_load == LOAD_ECO && c > ECO_POLY)
         c = ECO_POLY;
     if (u < c) c = u + 1u;
-    return trk_live > 4u ? track_auto_cap(t, c) : c;
+    return c;
 }
 
 /* the part's voice mode: P_VOICE, POLY for an engine of hits (engine_t.oneshot: DRUM); (V10.7.33) DRONE allocates as
@@ -720,6 +720,7 @@ static uint32_t guard_calm, guard_trips;                /* halves of calm toward
  * sustained deadline headroom on two healthy cores. No extra per-part slots. */
 static uint8_t voice_headroom;
 #define FULL_VOICES 12u
+#define SIX_VOICES 16u             /* two four-note chords, kit and three melodic lines; CPU admission still applies */
 /* (0.6.17) what the audio did since power-on, for MENU > ABOUT (audio.c fills it): the slowest half's share of its
  * time (%), the halves that came late (each a click), the voices the overload guard faded */
 static struct { volatile uint32_t peak, late, shed; } load_diag;
@@ -728,7 +729,7 @@ static struct { volatile uint32_t peak, late, shed; } load_diag;
 static uint32_t voice_cap0(void)                        /* the budget as set (LOAD, the extra voices) */
 {
     return sys_load == LOAD_ECO ? ECO_VOICES :
-           sys_load == LOAD_FULL && voice_headroom ? FULL_VOICES : NVOICE;
+           sys_load == LOAD_FULL && voice_headroom ? (trk_live > 4u ? SIX_VOICES : FULL_VOICES) : NVOICE;
 }
 static uint32_t voice_cap(void)                         /* .. under the guard's cap while it is tripped */
 {
@@ -775,7 +776,7 @@ static uint32_t voices_busy(void)                       /* sounding voices of al
 enum { VH_OFF, VH_IN, VH_RE, VH_ON, VH_OUT };           /* a voice's rate: full; half from its next whole block (IN: its
                                                          * state a sample on first, RE: as it is); half; back to full */
 static uint8_t rel_hurry[NTRK];                         /* (eng_fm6.c reads it) */
-static uint8_t vh_wait, vh_held, frz_on;   /* (V10.7.41) frz_on: FREEZE holding (perform.c perf_block) */                        /* blocks tripped; bit p: part p's held voices at half */
+static uint8_t vh_wait, vh_held, vh_calm, frz_on;       /* held channels at half rate; calm passes before restoring quality */
 static int32_t vh_c[NTRK * NVOICE] __attribute__((section(".pool")));   /* a voice: VH_* (bits 0..2), its last sample at
                                                          * half the rate << 3 (the pool: zero at boot; 224 B of it were
                                                          * left over its 8 KiB of headroom, the RAM has none) */
@@ -943,6 +944,7 @@ static uint32_t quiet_tail(track_t **pp)
 #define LOAD_ADD_LOG2 (12u - CTL_LOG2)                 /* what the admitted voices added decays over ~93 ms (128 blocks of 32,
                                                          * the average's time: as their load shows in it, load_block) */
 static uint32_t mc_tk[NTRK];                            /* (fx.c measures it: a part's block in TIMER4 ticks, smoothed) */
+static uint8_t mc_nv[NTRK];                             /* voices at that measurement, before the next chord's note-ons */
 static uint32_t load_fx_q8;                            /* new FX work not yet reflected in the measured average */
 static uint32_t load_steals;                            /* voices given up by the admission (console status) */
 static uint32_t load_cost_q8(const track_t *t)          /* a voice more of part t: its share of a half, %, Q8 */
@@ -951,6 +953,7 @@ static uint32_t load_cost_q8(const track_t *t)          /* a voice more of part 
     const engine_t *e = ENGINES[t->engine];
     for (k = 0; k < NVOICE; k++)
         nv += t->v[k].active;
+    if (mc_nv[ti]) nv = mc_nv[ti];                     /* newly admitted notes have not made the measured work cheaper */
     if (mc_tk[ti] && nv) {                              /* measured: the part's block over its voices, a half of them */
         uint32_t half = mc_tk[ti] * (HALF_FRAMES / CTL) / nv;
         c = half * 25600u / (HALF_FRAMES * LOAD_FRAME_TICKS);
@@ -958,31 +961,26 @@ static uint32_t load_cost_q8(const track_t *t)          /* a voice more of part 
         c = (e == &ENG_FM6 ? 4u : e == &ENG_LOFI ? 2u : 3u) * LOAD_W_PCT * 256u;
     return load_cores2 ? (c * LOAD_SHARE_Q8) >> 8 : c;
 }
-/* Six tracks share a finite deadline: bound each channel before allocating,
- * then tighten the expensive channels using their measured per-voice cost. */
-static __attribute__((noinline)) uint32_t track_auto_cap(const track_t *t, uint32_t cap)
-{
-    uint32_t n = ENGINES[t->engine]->oneshot ? 3u : 2u;
-    if (load_tight) {
-        uint32_t cost = load_cost_q8(t), budget = cost ? (12u << 8) / cost : n;
-        if (budget < n) n = budget ? budget : 1u;
-    }
-    return cap < n ? cap : n;
-}
 static uint32_t load_limit(void)
 {
     return sys_load == LOAD_ECO ? LOAD_ADMIT_ECO : trk_live > 4u ? 78u : LOAD_ADMIT;
 }
 /* Reserve one slot for each other unmuted channel that has not sounded yet.
  * Fading voices still consume CPU and count until their render actually ends. */
+static void load_bound(void);
 static __attribute__((noinline)) int voice_full(const track_t *self)
 {
-    uint32_t used = voices_load(), p, i;
+    uint32_t used = voices_load(), reserve = 0, p, i;
     if (trk_live > 4u) for (p = 0; p < trk_live; p++) {
         const track_t *t = &trk[p];
         if (t == self || t->p[P_MUTE] || t->engine == ENGI_INPUT) continue;
         for (i = 0; i < NVOICE && !t->v[i].active; i++) {}
         used += i == NVOICE;
+        if (i == NVOICE) reserve += load_cost_q8(t);
+    }
+    if (trk_live > 4u) {
+        load_bound();
+        if (load_pred_q8 + load_cost_q8(self) + reserve > (load_limit() << 8)) return 1;
     }
     return used >= voice_cap();
 }
@@ -1048,6 +1046,7 @@ static uint32_t load_victim(track_t *self, track_t **pp)
     }
     if (best < NVOICE || trk_vmode(self) != V_POLY)
         return best;
+    if (trk_live > 4u) return NVOICE;                  /* CPU pressure may recycle a release, never amputate a held chord */
     low = lowest_held(self);
     for (i = 0; i < NVOICE; i++) {
         const voice_t *v = &self->v[i];
@@ -1071,7 +1070,7 @@ static int32_t voice_lvl(const track_t *t, const voice_t *v)   /* (codex/voices)
 static __attribute__((noinline)) void voice_soft(void)
 {
     static uint8_t div, near;
-    uint32_t lim;
+    uint32_t lim, restore = load_all_q8;
     uint32_t p, i, busy = 0, cap, h, dear = NPART, dc = 0, again = 0;
     uint8_t own[NPART];
     if (++div & 3u)
@@ -1079,7 +1078,7 @@ static __attribute__((noinline)) void voice_soft(void)
     cap = voice_cap();
     for (p = 0; p < NPART; p++) {
         track_t *t = &trk[p];
-        uint32_t nh = 0, used = 0, c, local = trk_live > 4u ? trk_nvoice(t) : NVOICE;
+        uint32_t nh = 0, reduced = 0, used = 0, c, local = trk_live > 4u ? trk_nvoice(t) : NVOICE;
         for (i = 0; i < NVOICE; i++) {
             voice_t *v = &t->v[i];
             int32_t *vc = &vh_c[p * NVOICE + i];
@@ -1097,6 +1096,7 @@ static __attribute__((noinline)) void voice_soft(void)
                     s = s == VH_ON ? VH_OUT : VH_OFF;
                 }
                 nh += !s;
+                reduced += s == VH_ON;
             } else if (v->stage != 4u) {
                 if (rel_hurry[p] && voice_lvl(t, v) < TAIL_END) {
                     voice_kill(v);
@@ -1116,6 +1116,7 @@ static __attribute__((noinline)) void voice_soft(void)
             dc = c;
             dear = p;
         }
+        if (ENGINES[t->engine]->half) restore += reduced * load_cost_q8(t);
     }
     busy = (busy + 1u) >> 1;
     h = busy + HURRY_ROOM > cap ? busy + HURRY_ROOM - cap : 0u;
@@ -1137,18 +1138,20 @@ static __attribute__((noinline)) void voice_soft(void)
         voice_kill(&vp->v[k]);
         busy = voices_load();
     }
-    if (!near || (!load_tight && load_all_q8 <= lim))   /* (V10.7.40, the owner: before a glitch) the average past the
+    if (!near || (!load_tight && load_all_q8 <= lim && (trk_live <= 4u || load_pred_q8 <= lim)))   /* (V10.7.40, the owner: before a glitch) the average past the
                                                          * admission's limit less HALF_NEAR (75 %, ECO 55 %) for HALF_WAIT,
                                                          * or the guard tripped: the dearest part's held voices at half the
                                                          * rate; back at the full rate under HALF_BACK (55 %) */
         vh_wait = 0;
-    else if (++vh_wait >= HALF_WAIT && dear < NPART) {   /* still tripped with the tails at half: the dearest
-                                                         * part's held voices too */
+    else if (++vh_wait >= (trk_live > 4u ? 2u : HALF_WAIT) && dear < NPART) {   /* six tracks: act before the admission ceiling */
         vh_held |= (uint8_t)(1u << dear);
         vh_wait = 0;
     }
-    if (!load_tight && load_all_q8 < (HALF_BACK << 8))
-        vh_held = 0;
+    /* The low reading may be the saving itself. Restore only when estimated
+     * full-rate work also fits, after ~0.75 s calm; otherwise quality hunts. */
+    if (!load_tight && restore < (HALF_BACK << 8)) {
+        if (trk_live <= 4u || ++vh_calm >= 128u) { vh_held = 0; vh_calm = 0; }
+    } else vh_calm = 0;
     if (frz_on)                                         /* (V10.7.41, the owner: FREEZE glitched a full project) the
                                                          * tracks under a FREEZE holding are not heard: every part that can
                                                          * at half the rate, the full rate back as it lets go */
@@ -1169,16 +1172,21 @@ static __attribute__((noinline)) void voice_half(track_t *t, const engine_t *e, 
     int32_t hb[CTL / 2], x = 0, pv = vh_c[vi] >> 3;
     vmod_t h = *m;
     if (n != CTL || st == VH_OUT) {
+        int32_t last = out[n - 1u];
         if (st == VH_OUT && n == CTL && gen) {
             x = out[1];
             e->render(t, v, out + 1, CTL - 1u, m);
             out[0] += (pv + out[1] - x) >> 1;
-        } else
+        } else {
+            x = out[0];
             e->render(t, v, out, n, m);
-        vh_c[vi] = (int32_t)(st == VH_ON ? VH_RE : st == VH_OUT ? VH_OFF : st);
+            if (st == VH_OUT && n == CTL) out[0] = x + ((pv + out[0] - x) >> 1);
+        }
+        vh_c[vi] = (out[n - 1u] - last) * 8 + (int32_t)(st == VH_ON ? VH_RE : st == VH_OUT ? VH_OFF : st);
         return;
     }
     h.amp1 = 2 * m->amp1 - m->amp0;                     /* (the engine's ramp is CTL long: its half gets to amp1) */
+    h.rate_shift = 1;
     if (gen) {
         if (st == VH_IN)
             e->render(t, v, &x, 1, m);
@@ -1189,8 +1197,8 @@ static __attribute__((noinline)) void voice_half(track_t *t, const engine_t *e, 
     for (i = 0; i < CTL / 2u; i++)
         hb[i] = 0;
     e->render(t, v, hb, CTL / 2u, &h);
-    if (st != VH_ON)                                    /* the sample before the first: the one rendered, else a line back */
-        pv = st == VH_IN && gen ? 2 * x - hb[0] : 2 * hb[0] - hb[1];
+    if (st != VH_ON && gen)                             /* generic oscillator's sample at the original rate */
+        pv = st == VH_IN ? 2 * x - hb[0] : 2 * hb[0] - hb[1];
     for (i = 0; i < CTL / 2u; i++) {
         out[2u * i] += (pv + hb[i]) >> 1;
         out[2u * i + 1u] += pv = hb[i];
@@ -2080,6 +2088,7 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
 {
     const int16_t *p = t->p;
     vmod_t m;
+    m.rate_shift = 0;
     int32_t env, pitch, dfine, dcut, fsum;
     {
         env = hold ? v->env >> 9 : env_tick(t, v, rel_hurry[c->ti]);   /* (hold: a note let go inside the block, up to its sample: the
@@ -2164,10 +2173,14 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
             memcpy(vb, out + off, n * sizeof *out);
         }
         vi += c->ti * NVOICE;
+        if (((vh_held >> c->ti) & 1u) && !VH_ST(vh_c[vi])) vh_c[vi] += VH_IN;
         if (VH_ST(vh_c[vi]) && e->half && !off)         /* (codex/voices) at half the rate */
             voice_half(t, e, v, out, n, &m, vi);
-        else
+        else {
+            int32_t last = out[off + n - 1u];
             e->render(t, v, out + off, n, &m);
+            if (e->half) vh_c[vi] = (out[off + n - 1u] - last) * 8; /* previous sample for the next rate transition */
+        }
         if (img) {
             int32_t g = pn > 0 ? pn : -pn, *sd = (pn > 0 ? DXC.sl : DXC.sr) + off;   /* (V10.7.42: one core read) */
             for (j = 0; j < n; j++)

@@ -82,11 +82,15 @@ int main(int argc, char **argv)
     host_tracks_init(); mc_host = strcmp(mode, "serial") != 0;
     /* Force admission in the serial reference too: compare exactly the same
      * twelve voices, regardless of the device's two-core admission policy. */
-    if (!strcmp(scene, "polyphony")) voice_headroom = 1;
+    if (!strcmp(scene, "polyphony") || !strcmp(scene, "adaptive")) voice_headroom = 1;
     for (k = 0; k < NTRK; k++) {
         uint32_t e = (!strcmp(scene, "voice") || !strcmp(scene, "cleanvoice") || !strcmp(scene, "noisemod")) ? ENGI_VOICE : (!strcmp(scene, "parallel") || !strcmp(scene, "pan")) ? (k & 1u ? ENGI_ANALOG : ENGI_FM6) : EN[k];
         if (!strcmp(scene, "twovoice") && k == 4u) e = ENGI_VOICE;
         if (!strcmp(scene, "polyphony")) e = k & 1u ? ENGI_VOICE : ENGI_FM6;
+        if (!strcmp(scene, "adaptive")) {
+            static const uint8_t ae[6]={ENGI_ANALOG,ENGI_ADD,ENGI_DRUM,ENGI_WHEEL,ENGI_FM6,ENGI_PHASE};
+            e=ae[k];load_cores2=1;
+        }
         if (!strcmp(scene, "kits")) {
             e = ENGI_DRUM;
             memcpy(dx_cfg[k].lane, DX_KITS[k+1].lane, sizeof dx_cfg[k].lane);
@@ -97,7 +101,7 @@ int main(int argc, char **argv)
             dx_cfg[k].mot[XM_RAND] = 70; dx_cfg[k].mot[XM_SHPE] = 4;
         }
         host_preset(&trk[k], e, 0);
-        trk[k].p[P_VOICE] = !strcmp(scene, "polyphony") ? V_POLY : V_MONO;
+        trk[k].p[P_VOICE] = (!strcmp(scene, "polyphony") || !strcmp(scene, "adaptive")) ? V_POLY : V_MONO;
         trk[k].p[P_SUS] = 127;
         if (!strcmp(scene, "cleanvoice")) {
             trk[k].p[P_VLANG]=0; trk[k].p[P_E5]=0;
@@ -117,12 +121,15 @@ int main(int argc, char **argv)
         }
         trk_note_on(&trk[k], e == ENGI_DRUM ? DRUM_LANE_NOTE[0] : 48 + k * 2, 100);
         if (!strcmp(scene, "polyphony")) trk_note_on(&trk[k], 55 + k * 2, 100);
+        if (!strcmp(scene,"adaptive") && k<2u)
+            for(unsigned j=1;j<4;j++)trk_note_on(&trk[k],48+k*2+j*3,100);
     }
     if (!strcmp(scene, "shared")) {
         trk[0].p[P_M1SRC] = MS_LFO; trk[0].p[P_M1DST] = MD_RATE; trk[0].p[P_M1AMT] = 30;
         song.g[G_DSPRY] = 80; song.g[G_DPIT] = 3;
     }
     for (b = 0; b < 1024u; b++) {
+        if (!strcmp(scene,"adaptive")) load_all_q8=load_pred_q8=(b<384u?68u:10u)<<8;
         if (!strcmp(scene, "fade") && b == 192u) host_preset_req(&trk[0], ENGI_VOICE, 2);
         if (!strcmp(scene, "fade") && b == 512u) host_preset_req(&trk[1], ENGI_ANALOG, 0);
         if (!strcmp(scene, "transition") && b == 128u) trk_live = 4;

@@ -1,7 +1,7 @@
 name: VOICE user lyric candidate
 on:
   push:
-    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits, codex/punch-cpu]
+    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits, codex/punch-cpu, codex/six-phrases]
 permissions:
   contents: read
 concurrency:
@@ -71,6 +71,15 @@ jobs:
           build/song-check/record-phase | tee build/song-check/record-phase.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/gen_test.c -lm -o build/song-check/gen
           build/song-check/gen > build/song-check/gen.log
+      - name: V49 six musical lines and adaptive sample rate
+        run: |
+          set -euo pipefail
+          cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,undefined -fno-sanitize=shift,signed-integer-overflow -Itests -Ibuild/gen -Ifirmware/src tests/six_phrase_test.c -lm -o build/song-check/six-phrase
+          for engine in 0 2 3 5 7 8 11 12 13 14; do
+            ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/six-phrase "$engine"
+          done | tee build/song-check/six-phrase.log
+          cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,undefined -fno-sanitize=shift,signed-integer-overflow -Ibuild/gen -Ifirmware/src tests/adaptive_rate_test.c -lm -o build/song-check/adaptive-rate
+          ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/adaptive-rate | tee build/song-check/adaptive-rate.log
       - name: Independent DRUM-X kits and concurrent rendering
         run: |
           cc -O1 -g -w -Wno-implicit-function-declaration -Wno-incompatible-pointer-types -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/drum_kits_test.c -lm -o build/song-check/drum-kits

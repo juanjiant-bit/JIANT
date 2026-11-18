@@ -84,7 +84,8 @@ static __attribute__((noinline)) uint32_t shed_check(uint32_t all)
     /* Admission hysteresis: include nested interrupts in the spare-time test.
      * Existing notes are never killed merely because this admission closes.
      * Only FULL and a healthy second core may grow beyond the original eight. */
-    if (sys_load != LOAD_FULL || !mc_live() || mc_off || load_tight || load_all_q8 > (HEAD_OFF << 8)) {
+    if (sys_load != LOAD_FULL || !mc_live() || mc_off || load_tight ||
+        load_all_q8 > ((trk_live > 4u ? 75u : HEAD_OFF) << 8)) {
         voice_headroom = poly_calm = 0;
     } else if (!voice_headroom) {
         if (load_all_q8 < (HEAD_ON << 8)) {

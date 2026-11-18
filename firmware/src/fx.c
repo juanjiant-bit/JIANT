@@ -2869,7 +2869,9 @@ static uint32_t mc_cost(const track_t *t)               /* a part's share of the
 static uint32_t mc_tk[NTRK], mc_fx_tk;                  /* (and the buses': fx_run) */
 static inline __attribute__((always_inline)) void mix_part_t(track_t *t, uint32_t n)   /* mix_part, timed */
 {
-    uint32_t t0 = MC_TICKS(), i = (uint32_t)(t - trk) % NTRK, d;
+    uint32_t t0 = MC_TICKS(), i = (uint32_t)(t - trk) % NTRK, d, k, nv = 0;
+    for (k = 0; k < NVOICE; k++) nv += t->v[k].active;
+    mc_nv[i] = (uint8_t)nv;
     mix_part(t, n);
     d = MC_TICKS() - t0;
     mc_tk[i] = d > mc_tk[i] ? mc_tk[i] + ((d - mc_tk[i]) >> 1) : mc_tk[i] - ((mc_tk[i] - d) >> 3);   /* (up fast) */
