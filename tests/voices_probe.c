@@ -773,6 +773,37 @@ static int tests(void)
     return t_fail ? 1 : 0;
 }
 
+/* (V10.7.56) every engine's every preset, a chord and a line: half the rate against the full one under 4 kHz (dB under
+ * the signal; near 0 = another pitch or sound, the engine not following voice_half's doubled increments) and the
+ * interpolation's own share; prints the worst of each engine and the presets past LIM */
+static int half_quality(double lim)
+{
+    static int32_t full[WAV_MAX], half[WAV_MAX], ref[WAV_MAX];
+    uint32_t e, pr, k, n, bad = 0;
+    for (e = 0; e < NENGINES; e++) {
+        const engine_t *en = ENGINES[e];
+        double worst = -999, wref = -999;
+        const char *wn = "";
+        if (!en || !en->half || e == ENGI_DRUM || !en->npresets) continue;
+        for (pr = 0; pr < en->npresets; pr++) {
+            for (k = 0; k < 2u; k++) {
+                phrase_t ph = {en->presets[pr].name, (uint8_t)e, (uint8_t)pr, 4, (uint8_t)k, {48, 55, 60, 64}, 500, 200, -1};
+                double d, r;
+                if (k) { ph.note[0] = 60; ph.note[1] = 67; ph.note[2] = 72; ph.note[3] = 64; }
+                n = phrase_fork(&ph, 0, full, FS * 4u);
+                phrase_fork(&ph, 1, half, FS * 4u);
+                resample_ref(full, ref, n);
+                d = rms_db(full, half, n, 1);
+                r = rms_db(ref, half, n, 1);
+                if (r > wref) wref = r;
+                if (d > worst) { worst = d; wn = en->presets[pr].name; }
+                if (d > lim) { printf("  %-8s %-14s %s half vs full under 4 kHz %6.1f dB (vs the interpolation %6.1f)\n", en->name, en->presets[pr].name, k ? "line " : "chord", d, r); bad++; }
+            }
+        }
+        printf("%-8s worst %6.1f dB (%s), the engine's own part worst %6.1f dB\n", en->name, worst, wn, wref);
+    }
+    return bad != 0;
+}
 int main(int argc, char **argv)
 {
     const char *mode = argc > 1 ? argv[1] : "cost";
@@ -784,5 +815,6 @@ int main(int argc, char **argv)
     if (!strcmp(mode, "stress")) { stress_table(argc > 2 ? argv[2] : 0); return 0; }
     if (!strcmp(mode, "wav")) return wav_pairs(argc > 2 ? argv[2] : 0);
     if (!strcmp(mode, "test")) return tests();
+    if (!strcmp(mode, "halfq")) return half_quality(argc > 2 ? atof(argv[2]) : -12.0);
     return 2;
 }
