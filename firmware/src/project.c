@@ -1309,6 +1309,18 @@ static void project_capture(project_t *p)
 
 /* the music as it is now -> slot, named `name` (0: the current name; "" none); 0 saved, nonzero refused or failed.
  * The current name becomes the saved one */
+/* p named name (0: its own name kept) and packed into proj_wire: 0 the pack failed (its message) (V10.7.39: SAVE's and
+ * RENAME's one copy) */
+static __attribute__((noinline)) int proj_name_pack(project_t *p, const char *name)
+{
+    if (name) {
+        memset(p->name, 0, sizeof p->name);
+        memcpy(p->name, name, str_len(name) < PROJ_NAME_LEN ? str_len(name) : PROJ_NAME_LEN);
+    }
+    proj_wire_gen++;
+    if (!proj_pack(&proj_wire, p)) { proj_err(); return 0; }
+    return 1;
+}
 static int project_save_as(uint32_t slot, const char *name)
 {
     project_t *p = &proj_scratch;
@@ -1317,32 +1329,25 @@ static int project_save_as(uint32_t slot, const char *name)
         return 1;
     }
     project_capture(p);
-    if (name) {
-        memset(p->name, 0, sizeof p->name);
-        memcpy(p->name, name, str_len(name) < PROJ_NAME_LEN ? str_len(name) : PROJ_NAME_LEN);
-    }
-    proj_wire_gen++;
-    if (!proj_pack(&proj_wire, p)) { proj_err(); return 2; }
+    if (!proj_name_pack(p, name)) return 2;
 
 #if FELUCCA_FLASH
+    if (flash_ok && !song_draft && st_save(proj_obj(slot), &proj_wire, sizeof proj_wire)) {
+        ui_message("SAVE ERROR");
+        return 2;
+    }
+#endif
+    memcpy(&proj_slot[slot & 3u], &proj_wire, sizeof proj_wire);   /* (V10.7.39: one tail for both, as it was in each) */
+    proj_name_get(proj_name, (const uint8_t *)p->name);
+    proj_cur = (uint8_t)(slot & 3u);
+    live.cur = (int8_t)(slot & 3u);                     /* (0.6.12: the section playing, SAVE > PROJECT shows it) */
+#if FELUCCA_FLASH
     if (flash_ok && !song_draft) {
-        if (st_save(proj_obj(slot), &proj_wire, sizeof proj_wire)) {
-            ui_message("SAVE ERROR");
-            return 2;
-        }
-        memcpy(&proj_slot[slot & 3u], &proj_wire, sizeof proj_wire);
-        proj_name_get(proj_name, (const uint8_t *)p->name);
-        proj_cur = (uint8_t)(slot & 3u);
-        live.cur = (int8_t)(slot & 3u);                 /* (0.6.12: the section playing, SAVE > PROJECT shows it) */
         live.dirty &= (uint8_t)~(1u << (slot & 3u));    /* (stored in flash now) */
         ui_message("SAVED");
         return 0;
     }
 #endif
-    memcpy(&proj_slot[slot & 3u], &proj_wire, sizeof proj_wire);
-    proj_name_get(proj_name, (const uint8_t *)p->name);
-    proj_cur = (uint8_t)(slot & 3u);
-    live.cur = (int8_t)(slot & 3u);
     ui_message(song_draft ? "PART STORED IN DRAFT" : "SAVED (NO FLASH)");
     return 0;
 }
@@ -1373,10 +1378,7 @@ static int project_rename(uint32_t slot, const char *name)
         ui_message("EMPTY SLOT");
         return 1;
     }
-    memset(p->name, 0, sizeof p->name);
-    memcpy(p->name, name, str_len(name) < PROJ_NAME_LEN ? str_len(name) : PROJ_NAME_LEN);
-    proj_wire_gen++;
-    if (!proj_pack(&proj_wire, p)) { proj_err(); return 2; }
+    if (!proj_name_pack(p, name)) return 2;
 #if FELUCCA_FLASH
     if (flash_ok && st_save(proj_obj(slot), &proj_wire, sizeof proj_wire)) {
         ui_message("SAVE ERROR");
@@ -1405,6 +1407,15 @@ static int project_recall_slot(void)
  * and sound (the parameters a sound load sets: not LEVEL PAN MUTE, the pattern's, the SLICER: param_kept), its FM6
  * patch; a DRUM track also the section's DRUM-X kit. The steps and the motion stay. 0 done, 1 nothing stored there */
 static void sound_put(project_t *p, uint32_t k);
+static __attribute__((noinline)) void dx_take(const project_t *p)   /* DRUM-X's TONE, HANDS, GLUE, SENDs and LAYERs
+                                                         * from a project (V10.7.39: one copy of what both loads did) */
+{
+    dx_tone = p->dx_tone;                               /* (0.6.36: its TONE) */
+    dx_hands = p->dx_hands & 15u;                       /* (0.7.9: its HANDS) */
+    dx_glue = p->dx_hands >> 4;                         /* (snd1: its GLUE) */
+    memcpy(dx_snd, p->dx_snd, sizeof dx_snd);           /* (0.6.48: its SENDs) */
+    memcpy(dx_lay, p->dx_lay, sizeof dx_lay);           /* (0.6.49: its LAYERs) */
+}
 static __attribute__((noinline)) int project_recall_sound(uint32_t slot, uint32_t k)
 {
     project_t *p = &proj_scratch;
@@ -1446,11 +1457,7 @@ static void sound_put(project_t *p, uint32_t k)
     if (e == ENGI_DRUM) {
         memcpy(dx_kit, dx_kit_ok(p->dx) ? p->dx : DX_KIT_DEF, sizeof dx_kit);
         memcpy(dx_mot, p->dx_mot, sizeof dx_mot);
-        dx_tone = p->dx_tone;
-        dx_hands = p->dx_hands & 15u;
-        dx_glue = p->dx_hands >> 4;
-        memcpy(dx_snd, p->dx_snd, sizeof dx_snd);
-        memcpy(dx_lay, p->dx_lay, sizeof dx_lay);
+        dx_take(p);
     }
     fm1_irq_on();
     if (t == TSEL)
@@ -1508,11 +1515,7 @@ static int project_restore_runtime(const project_t *input)
             scn_pat[i] = (uint8_t)((p->scpat[i / 2u] >> (4u * (i & 1u))) & 15u) % SC_NPAT;
         }
     }
-    dx_tone = p->dx_tone;                               /* (0.6.36: its TONE) */
-    dx_hands = p->dx_hands & 15u;                       /* (0.7.9: its HANDS) */
-    dx_glue = p->dx_hands >> 4;                         /* (snd1: its GLUE) */
-    memcpy(dx_snd, p->dx_snd, sizeof dx_snd);           /* (0.6.48: its SENDs) */
-    memcpy(dx_lay, p->dx_lay, sizeof dx_lay);           /* (0.6.49: its LAYERs) */
+    dx_take(p);                                         /* (its TONE, HANDS, GLUE, SENDs, LAYERs) */
     fg_load(p);                                         /* (0.6.52: its FUGUE) */
     memcpy(pfx_lane, p->pfx_lane, sizeof pfx_lane);    /* (the section's punch-in lane) */
     pfx_ltgt = p->pfx_ltgt > 2u ? 0u : p->pfx_ltgt;

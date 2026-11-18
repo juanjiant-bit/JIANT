@@ -44,6 +44,29 @@ static struct {
     char last[20];                                      /* the last piece: "HOUSE 0421" */
 } gp = {GEN_EXPLORE, 1, 50, 1, {GA_AUTO, GA_AUTO, GA_AUTO, GA_AUTO, GA_AUTO}, 50, GA_AUTO, 30, 0, 0, 0, ""};
 
+/* (V10.7.39) the cost model of gcpu_est (below, gen_make's), on CPU TEST's scale (instructions a sample on the host: its
+ * song 3083): a track its engine's own cost (in eighths), the voices the piece keeps sounding GCPU_VOX each, the reverb's
+ * type over SHIMR's (in eighths). Fitted to GEN's pieces measured (tests/gen_cpu.c: every genre at full and as it opens,
+ * TRACKS 4 and 6, the heaviest 4 s of each piece's song) */
+static const uint8_t GCPU_ENG[NENGINES] = {10, 0, 13, 8, 0, 13, 0, 7, 23, 0, 36, 10, 32, 6, 4, 0};   /* (ANALOG -
+                                                         * PHASE MATH - VOICE - WHEEL STRING - DRUM WEST FM6 ADD ANIMAL EXT;
+                                                         * WEST's and MATH's as ANALOG's: GEN's pieces have none, or few) */
+#define GCPU_VOX 79u                                    /* a voice sounding, any engine's (by engine no better); the piece's
+                                                         * eight at most (the voices' budget: voice.c NVOICE) */
+static const uint8_t GCPU_REV[5] = {7, 3, 0, 7, 22};    /* ROOM SPRING SHIMR RESO CLOUD (RESO's as ROOM's: none measured) */
+#define GCPU_BASE 1382u                                 /* the rest: the sequencer, the buses, the master */
+#ifndef GCPU_GX
+#define GCPU_GX 400u                                    /* EXPLORE's own: its playheads, its wilder components (its
+                                                         * pieces the most various: the fit's 228 and its spread, ~6 %) */
+#endif
+#ifndef GCPU_MAX
+#define GCPU_MAX 2400u /* (V10.7.56, the owner: GEN at 85 % glitches on the FM-1; was 2850) */                                  /* the estimate's limit: CPU TEST's 3083 less the model's error
+                                                         * (~7 %: the heaviest four seconds of each piece's song) */
+#endif
+static uint8_t gcpu_lite __attribute__((section(".bss.dice")));   /* (gcpu_fit) the piece made again lighter: 1 FM6 on
+                                                         * one track at most, 2 on none and CLOUD -> SHIMR (its own
+                                                         * section, as gsr's: the merged statics keep their places) */
+
 /* the generator's own random numbers: a stream a part, from the seed */
 static uint32_t gq = 1;
 static uint32_t gr(void) { gq ^= gq << 13; gq ^= gq >> 17; gq ^= gq << 5; return gq; }
@@ -118,6 +141,22 @@ static struct { uint8_t on, add, mute, u, room, heard, dark, hx; gprog_t v; } gl
                                                          * heavy; hx: the genre's harmony; v: the verse's progression, the
                                                          * genre's own, n 0 none: gls_reharm) */
 static ggenre_t gmut;                                   /* (0.6.95) the genre as this throw plays it (its neighbours' parts) */
+/* (V10.7.39: was a copy a field, the same fields; flash for the CPU's budget) RANDOM's mutant: these fields of a genre
+ * into gmut, the list's first byte its length */
+#define GMO(f) (uint8_t)__builtin_offsetof(ggenre_t, f)
+static const uint8_t GMT_DRUMS[] = {7, GMO(drum), GMO(kit), GMO(ghosts), GMO(hats), GMO(fills), GMO(sd_micro), GMO(snd[GP_DRUMS])};
+static const uint8_t GMT_BASS[] = {8, GMO(bass[0]), GMO(bass[1]), GMO(bass[2]), GMO(bass_lo), GMO(kick_mode), GMO(bass_gate),
+                                   GMO(snd[GP_BASS]), GMO(tex)};
+static const uint8_t GMT_CHORDS[] = {8, GMO(prog[0]), GMO(prog[1]), GMO(prog[2]), GMO(cbars), GMO(pads), GMO(voicing),
+                                     GMO(snd[GP_CHORDS]), GMO(hx)};
+static const uint8_t GMT_ARP[] = {3, GMO(arp[0]), GMO(arp[1]), GMO(snd[GP_ARP])};
+static const uint8_t GMT_LEAD[] = {2, GMO(lead), GMO(snd[GP_LEAD])};
+static const uint8_t GMT_SPACE[] = {4, GMO(rtype), GMO(dtime), GMO(wet), GMO(dtype)};
+static __attribute__((noinline)) void gmut_take(const ggenre_t *s, const uint8_t *f)
+{
+    uint32_t k;
+    for (k = 1; k <= f[0]; k++) ((uint8_t *)&gmut)[f[k]] = ((const uint8_t *)s)[f[k]];
+}
 static char gmut_name[20];
 #define GGR (gs.gi < NGENRE ? (uint32_t)GGRAM[gs.gi] : 0u)       /* (0.9.9-gen1) this piece's grammar (EXPLORE: none) */
 
@@ -1550,9 +1589,10 @@ static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint3
                                                          * owner's references: minimal's and EBM's sub as written) */
     const engine_t *en;
     if (r->o[o][0] == 255u) o = 0;
-    if (r->o[o][0] == ENGI_FM6 && gs.fm6 >= 2u) o = o == 2u ? 0u : 2u;   /* (FM6 twice at most: the third option, or the
-                                                         * first where the third is the FM6: never FM6 again; V10.6z10:
-                                                         * the two to whichever roles a throw makes first, gen_make) */
+    if (r->o[o][0] == ENGI_FM6 && gs.fm6 + gcpu_lite >= 2u && (role != RL_BASS || !gcpu_lite)) o = o == 2u ? 0u : 2u;   /* (FM6 twice at most: the third
+                                                         * option, or the first where the third is the FM6: never FM6
+                                                         * again; V10.6z10: the two to whichever roles a throw makes first,
+                                                         * gen_make; V10.7.39: once or never for the CPU, gcpu_fit) */
     e = r->o[o][0]; pre = r->o[o][1];
     if (gx.eng >= 0 && (uint32_t)gx.eng != e) { e = (uint32_t)gx.eng; pre = 255; }   /* (0.8.6) EXPLORE: any engine */
     if (gx.on) {                                        /* (EXPLORE: ANIMAL and VOICE on one track each at most) */
@@ -2305,7 +2345,8 @@ static int8_t gx_engine(uint32_t r)
     uint32_t e;
     if (((gx.odd & GXO_TIMBRE) == 0u || r != gx.orole) && !gch(r == RL_BASS ? 20 : 40)) return -1;
     e = E[gr() % (r == RL_LEAD || r == RL_TEX ? 7u : 6u)];
-    return (int8_t)(e == EG_FM && gs.fm6 >= 2u ? EG_WH : e);
+    return (int8_t)(e == EG_FM && gs.fm6 + gcpu_lite >= 2u ? EG_WH : e);   /* (V10.7.39: once or never for the CPU,
+                                                         * gcpu_fit) */
 }
 /* the sound past its recipe: a VOICE singing words (any language, a dice's phrase or scat), a distortion's type, a
  * wide glide, a vibrato, detune */
@@ -2673,6 +2714,32 @@ BTAPP_FN static void gen_pick(void)
 static struct { uint16_t h[8], s[4]; uint8_t at, thrown, sat; } gsr __attribute__((section(".bss.dice")));   /* (the genre in
                                                          * h; V10.7.2: s the last four seeds thrown) */
 #include "gen_loop.c"
+/* (V10.7.39, the owner: "glitches and the CPU at 90 %" with GEN at full) the piece's cost, estimated once it is made:
+ * on SAVE > TOOLS 6 CPU TEST's scale (its song 3083 instructions a sample on the host, what the FM-1 is measured on;
+ * tests/gen_cpu.c measures the pieces against it). A track: its engine's own cost and its voices' (what its steps keep
+ * sounding: a note its gate and its release, ~1.5 x REL's time to -60 dB, a tie a step more; VOICES AUTO, GEN's); the
+ * reverb's type; EXPLORE's own (its playheads, its wilder components). Weights fitted to the pieces measured */
+static __attribute__((noinline)) uint32_t gcpu_est(void)
+{
+    uint32_t k, i, c = GCPU_BASE + 8u * GCPU_REV[song.g[G_RTYPE]] + (gx.on ? GCPU_GX : 0u), v = 0;
+    for (k = 0; k < NTRK; k++) {
+        const track_t *t = &trk[k];
+        const step_t *s = t->step;
+        uint32_t e = t->eng_req, len = (uint32_t)t->p[P_SLEN], occ = 0, held = 0, w;   /* (GEN's: 1 .. NSTEP) */
+        uint32_t rel = TIME_MS_X10[t->p[P_REL]] * (uint32_t)song.g[G_BPM] / 6262u + (uint32_t)t->p[P_SGATE] / 8u;
+        if (k >= trk_live || !gs.act[gs.role[k]] || t->p[P_MUTE]) continue;
+        for (i = 0; i < len; i++, s++) {                /* (in steps, Q4) */
+            if (s->time == ST_TIE) { occ += held << 4; continue; }
+            held = s->time != ST_NOTE ? 0u : s->n ? s->n : 1u;
+            occ += held * rel;
+        }
+        occ /= len;
+        w = t->p[P_VOICE] != V_POLY || e == ENGI_DRUM ? 16u : 128u;   /* (a kit, a MONO line: one voice; else eight) */
+        v += occ < w ? occ : w;
+        c += 8u * GCPU_ENG[e];
+    }
+    return c + GCPU_VOX * (v < 128u ? v : 128u) / 16u;
+}
 static __attribute__((noinline)) void gen_make(void)
 {
     const ggenre_t *g;
@@ -2696,21 +2763,15 @@ static __attribute__((noinline)) void gen_make(void)
                                                              * (V10.6m: 15 %, was 45: a collage, not a genre) */
             const ggenre_t *b = &GENRE[gr() % NGENRE], *c = &GENRE[gr() % NGENRE];
             uint32_t k2, n2 = 0;
-            gmut.drum = b->drum; gmut.kit = b->kit; gmut.ghosts = b->ghosts; gmut.hats = b->hats; gmut.fills = b->fills;
-            gmut.sd_micro = b->sd_micro; gmut.snd[GP_DRUMS] = b->snd[GP_DRUMS];
+            gmut_take(b, GMT_DRUMS);                    /* (the drums of one, the bass of another, the rest from either:
+                                                         * gmut_take's lists) */
             gmut.drum_pct = (uint8_t)(b->drum_pct > g->drum_pct ? b->drum_pct : g->drum_pct);
-            for (k2 = 0; k2 < 3u; k2++) gmut.bass[k2] = c->bass[k2];
-            gmut.bass_lo = c->bass_lo; gmut.kick_mode = c->kick_mode; gmut.bass_gate = c->bass_gate; gmut.snd[GP_BASS] = c->snd[GP_BASS];
-            if (gch(50)) {
-                for (k2 = 0; k2 < 3u; k2++) gmut.prog[k2] = b->prog[k2];
-                gmut.cbars = b->cbars; gmut.pads = b->pads; gmut.voicing = b->voicing; gmut.snd[GP_CHORDS] = b->snd[GP_CHORDS];
-                gmut.hx = b->hx;                            /* (0.8.3: the harmony with its progressions) */
-            }
-            if (gch(50)) { gmut.arp[0] = c->arp[0]; gmut.arp[1] = c->arp[1]; gmut.snd[GP_ARP] = c->snd[GP_ARP]; }
-            if (gch(50)) { gmut.lead = b->lead; gmut.snd[GP_LEAD] = b->snd[GP_LEAD]; }
-            if (gch(50)) { gmut.rtype = b->rtype; gmut.dtime = b->dtime; gmut.wet = b->wet; gmut.dtype = b->dtype; }
+            gmut_take(c, GMT_BASS);
+            if (gch(50)) gmut_take(b, GMT_CHORDS);      /* (0.8.3: the harmony with its progressions) */
+            if (gch(50)) gmut_take(c, GMT_ARP);
+            if (gch(50)) gmut_take(b, GMT_LEAD);
+            if (gch(50)) gmut_take(b, GMT_SPACE);
             gmut.scale[1] = b->scale[0]; gmut.scale[3] = c->scale[0];
-            gmut.tex = c->tex;
             gmut.bpm_lo = (uint8_t)(((uint32_t)g->bpm_lo + b->bpm_lo) / 2u);
             gmut.bpm_hi = (uint8_t)(((uint32_t)g->bpm_hi + b->bpm_hi) / 2u);
             if (gmut.bpm_hi < gmut.bpm_lo + 4u) gmut.bpm_hi = (uint8_t)(gmut.bpm_lo + 4u);
@@ -2891,7 +2952,8 @@ static __attribute__((noinline)) void gen_make(void)
     song.g[G_DMOD] = (int16_t)(wet >= 70u ? grr(20, 50) : g->human >= 40u && gch(50) ? grr(10, 36) : 0);   /* (0.6.97: the
                                                          * tape's wobble on the long tails) */
     /* (the grain delay's PITCH and SPRAY, ALL TR: 0, the clean base's) */
-    song.g[G_RTYPE] = g->rtype;
+    song.g[G_RTYPE] = (int16_t)(g->rtype == 4u && gcpu_lite > 1u ? 2u : g->rtype);   /* (V10.7.39, gcpu_fit: CLOUD's
+                                                         * grains given up for SHIMR's wash for the CPU) */
     song.g[G_RSIZE] = (int16_t)clamp(grr(40, 80) + (int32_t)wet / 2, 0, 127);
     song.g[G_RRATE] = (int16_t)grr(10, 60);
     song.g[G_RWIDE] = (int16_t)grr(40, 100);
@@ -2930,6 +2992,25 @@ parts:
     gs.song = 0;
     if (gls.on) { gls.on = 0; gls.mute = 0; gls_sig = gls_hash(); }
 }
+/* (V10.7.39) a piece over the FM-1's budget (gcpu_est past GCPU_MAX) made again: FM6 (the dearest engine, six operators
+ * a voice) on one track at most, the other its recipe's other option; still over, on none, and CLOUD ->
+ * SHIMR (CLOUD costs ~10 % more than the other types). The steps, the mix and the space as they were (their own streams);
+ * the sounds after the one changed drawn again. VOICES capped was measured too: a piece keeps few voices sounding, a cap
+ * saves ~1 % and its steals cost again */
+static __attribute__((noinline)) void gcpu_fit(void)
+{
+    uint32_t k, n;
+    while (gcpu_lite < 2u && gcpu_est() > GCPU_MAX) {
+        gcpu_lite++;
+        gen_make();
+    }
+    gcpu_lite = 0;
+    for (n = 0; n < 6u && gcpu_est() > GCPU_MAX; n++)   /* (V10.7.56) still over: the chords' tails shorter (fewer voices
+                                                         * sounding at once), a step at a time */
+        for (k = 0; k < trk_live; k++)
+            if (trk[k].eng_req != ENGI_DRUM && trk[k].p[P_VOICE] == V_POLY && trk[k].p[P_REL] > 24)
+                trk[k].p[P_REL] = (int16_t)(trk[k].p[P_REL] - 8);
+}
 /* the piece made from the settings (UNDO brings back what was there); the message */
 static void gen_go(void)
 {
@@ -2949,6 +3030,7 @@ static void gen_go(void)
     }
     gls.u = gp.form == 3u;
     gen_make();
+    if (!gls.u) gcpu_fit();                             /* (V10.7.39) within the FM-1's budget */
     str_cpy(gp.last, gs.g->name, sizeof gp.last);
     k = str_len(gp.last);
     b[0] = ' '; b[1] = (char)('0' + gp.seed / 1000u % 10u); b[2] = (char)('0' + gp.seed / 100u % 10u);
