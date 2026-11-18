@@ -1,0 +1,58 @@
+V10.7.54 beta — DRUM-X and staccato bass
+
+The missing-bass report can be reproduced with the production sequencer,
+DRUM-X (preset 0) and ANALOG FAT BASS (preset 14, factory LEGATO). On each
+beat, kick, snare, clap and closed hat start together, followed by hats on
+the other sixteenths. A bass note starts on each beat and its release ends
+before the next beat. Other parts are empty and unmuted. The earlier
+two-track regression reused a sustained synth at mostly fixed deadline load.
+
+                                               V10.7.53       V10.7.54
+  Bass attacks started (expected 47)                 1              47
+  Bass gate windows with stem audio (of 399)          8             399
+  Kit hits started (expected 327)                   281             327
+
+The same run spans 64–78% modeled DMA utilization with either firmware.
+In V54 the bass actually reaches half rate in 391 of the 399 checked
+windows. TRACKS 4 and TRACKS 6 give the same V54 result.
+
+V53 let a note burst keep speculative CPU charges for work already reflected
+in the moving average of the DMA deadline. With the kit playing first, the
+allocator could deny the return of the bass after a rest. This leaves a
+gap in the bass stem even though the kit continues. V54 tracks each part's
+measured contribution over the same 4096-frame timescale. At allocation,
+only the positive incremental work of existing voices can keep that part's
+old charge outstanding. A new slot still incurs its full estimated cost.
+The calculation includes active fades and outstanding FX work. Measurements
+lose weight during silence and an engine change starts a fresh estimate.
+A same-engine patch or rate change accrues credit from subsequent renders.
+
+Voice count and CPU eligibility are now evaluated together, removing a
+second pass over sounding voices on the strict admission path. Strict FULL
+retains its 78% threshold, per-part caps, adaptive quality and overload
+handling. No preset, song or engine DSP parameters were changed.
+
+The host regression uses real sequence timing, the mixer, gate state,
+per-note ages and the rendered bass stem. Device ticks are modeled at
+80 ticks per part plus 1600 per active voice, with a modeled 25% saving
+for eligible reduced synthesis. Each DMA half includes two 64-frame renders;
+the longer core's time plus background work supplies its deadline reading.
+These figures are not measurements on a physical FM-1.
+
+Live input still has a boundary. With 55% modeled base load, all eight
+keyboard/MIDI presses sounded and released. At 59%, seven of eight sounded:
+one keyboard request reached 75.90% measured average plus a 2.22% estimate,
+above the 78% threshold even with speculative debt removed. Sustained 94%
+background load also blocked a new attack. Heavier projects can still lose
+notes. Validation of the reported project on a physical FM-1 remains open.
+
+Reproduce: compile tests/measured_admission_test.c as in voice-user-check.yml
+and run 'measured-admission bass 6 55' or 'measured-admission bass 6 59'.
+The workflow also checks TRACKS 4, expensive patch transitions, active fades,
+engine changes, silence, previous two-track and six-track cases, and overload.
+Use this candidate on the beta channel only. The public versions remain
+V10.7.23 and v0.9.9-par12.
+
+FM-1 target validation passed. App image 584316 / 584336 bytes, RAM data
+97936 / 98304, RAM code 32612 / 34816, pool spare 8704. Local candidate
+package SHA-256: 3875aee29ac32cb07c8578bed2b5233f3007dd3b5a3872a1274888db398d8066.

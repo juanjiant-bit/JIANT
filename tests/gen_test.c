@@ -169,7 +169,7 @@ static uint32_t render_load(uint32_t blocks)
         if (i % 32u == 0u) { ui_input(); song_poll(); host_ticks += 20000u; fm1_ms += 20u; }
         memset(o, 0, sizeof o);
         mix_block(o, CTL);
-        l = load_sounding_q8() >> 8;
+        l = load_sounding_q8(0) >> 8;
         if (l > most) most = l;
     }
     transport_req = 2;

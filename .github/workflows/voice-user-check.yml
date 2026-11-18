@@ -1,7 +1,7 @@
 name: VOICE user lyric candidate
 on:
   push:
-    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits, codex/punch-cpu, codex/six-phrases, codex/home-live, codex/kit-continuity, codex/two-track-voices, codex/voice-cost-v52, codex/reference-v53]
+    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits, codex/punch-cpu, codex/six-phrases, codex/home-live, codex/kit-continuity, codex/two-track-voices, codex/voice-cost-v52, codex/reference-v53, codex/beta-bass-continuity]
 permissions:
   contents: read
 concurrency:
@@ -106,6 +106,14 @@ jobs:
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/measured-admission units | tee build/song-check/measured-admission.log
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/measured-admission 4 40 1400 | tee -a build/song-check/measured-admission.log
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/measured-admission 6 35 1000 | tee -a build/song-check/measured-admission.log
+      - name: V54 sequenced DRUM-X and FAT BASS gate audio
+        run: |
+          set -euo pipefail
+          for tracks in 4 6; do
+            for live_base in 55 59; do
+              ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/measured-admission bass "$tracks" "$live_base"
+            done
+          done | tee build/song-check/bass-continuity.log
       - name: Six-channel POLY keyboard and step entry
         run: |
           set -euo pipefail

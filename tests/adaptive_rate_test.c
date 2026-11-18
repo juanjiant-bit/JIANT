@@ -10,6 +10,7 @@ static void fresh(unsigned engine)
     trk_live=6;sys_load=LOAD_FULL;voice_headroom=1;load_cores2=1;
     load_tight=guard_cap=guard_run=vh_wait=vh_held=vh_calm=frz_on=0;
     load_avg_q8=load_all_q8=load_pred_q8=0;load_fx_q8=0;
+    memset(mc_paid_ticks,0,sizeof mc_paid_ticks);
     memset(mc_tk,0,sizeof mc_tk);memset(mc_vt,0,sizeof mc_vt);memset(mc_nv,0,sizeof mc_nv);memset(vh_c,0,sizeof vh_c);
     for(unsigned p=0;p<6;p++) {
         host_preset(&trk[p],engine,0);trk[p].p[P_VOICE]=V_POLY;
@@ -98,6 +99,21 @@ int main(void)
     ck("new engine's first measurement replaces the previous estimate",mc_vt[0]==2000&&mc_ve[0]==ENGI_FM6);
     mc_vt[0]=0xffffffffu;
     ck("extreme timing cannot wrap into free admission",load_cost_q8(&trk[0])==(100u<<8));
+    fresh(ENGI_ANALOG);
+    track_t *part = &trk[0];
+    trk_note_on(part, 48, 100);
+    for (unsigned b = 0; b < 512; b++) mc_measure(part, 1000, 1);
+    unsigned prior = mc_paid_ticks[0];
+    mc_measure(part, 6000, 1);    /* same engine, much dearer patch / return to full rate */
+    ck("a cost jump cannot instantly earn credit at its new price",
+       mc_paid_ticks[0] < prior + 100 && 2 * load_sounding_q8(1) > load_cost_q8(part));
+    part->v[0].stage = 4;
+    ck("a fading slot remains charged until its renderer finishes", load_sounding_q8(1) > 0);
+    part->engine = ENGI_FM6;
+    ck("another engine cannot claim this part's measured credit",
+       load_sounding_q8(1) == load_cost_q8(part));
+    for (unsigned b = 0; b < 512; b++) mc_measure(part, 80, 0);
+    ck("silence retires old rendering credit", !mc_paid_ticks[0]);
     fresh(ENGI_ANALOG);load_all_q8=load_pred_q8=72u<<8;
     trk_note_on(&trk[0],48,100);ck("empty channels cannot consume hypothetical CPU",voices_busy()==1);
     for(unsigned p=1;p<6;p++)trk[p].p[P_MUTE]=1;

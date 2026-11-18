@@ -159,7 +159,7 @@ def main(src, dst):
                   "uin_ep_config", "voice_begin", "voice_cap", "voice_off_at", "voice_room", "voice_start_rec",
                   "wheel_note_on",
                   # V49: admission/control work once per note, never inside a sample loop.
-                  "voice_full", "voice_alloc", "load_bound", "load_sounding_q8", "load_victim",
+                  "voice_budget", "voice_alloc", "load_bound", "load_sounding_q8", "load_victim", "load_cost_q8", "load_ticks_q8", "load_limit",
                   # (V10.6z6) SWARM's block (its voices' values, not their samples: ain_swarm), its melody's step, its
                   # FAR / NEAR values
                   "sw_prep", "sw_step", "sw_sv",

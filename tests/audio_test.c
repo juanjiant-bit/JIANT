@@ -171,7 +171,7 @@ static void dma(void)
     check("guard does not reopen while nested work still leaves only 10% headroom", load_tight);
     load_block();
     check("voice prediction retains nested work between audio blocks", load_pred_q8 >= load_all_q8);
-    check("a new voice cannot spend CPU time already occupied by nested interrupts", !load_admit(&trk[0]));
+    check("a new voice cannot spend CPU time already occupied by nested interrupts", !voice_room(&trk[0], 1));
     fresh(); host_nest = 0;
     host_us = 5000;
     fm1_alnk0_irq(); host_us = 100; fm1_alnk0_irq(); host_us = 5000; fm1_alnk0_irq();

@@ -2876,7 +2876,13 @@ static __attribute__((noinline)) uint32_t mc_count(const track_t *t)
 }
 static __attribute__((noinline)) void mc_measure(track_t *t, uint32_t d, uint32_t nv)
 {
-    uint32_t i = (uint32_t)(t - trk) % NTRK;
+    uint32_t i = (uint32_t)(t - trk);
+    /* The deadline already includes recently rendered work. Keep its same-engine
+     * contribution through short rests, decaying on the same 4096-frame clock.
+     * Silence, engine fades and invalid intervals earn no credit. */
+    int32_t paid = mc_ve[i] == t->engine ? mc_paid_ticks[i] : 0;
+    int32_t sample = nv && d < CTL * LOAD_FRAME_TICKS ? (int32_t)d : 0;
+    mc_paid_ticks[i] = (uint16_t)(paid + ((sample - paid) >> LOAD_ADD_LOG2));
     mc_nv[i] = (uint8_t)nv;
     mc_tk[i] = d > mc_tk[i] ? mc_tk[i] + ((d - mc_tk[i]) >> 1) : mc_tk[i] - ((mc_tk[i] - d) >> 3);
     if (nv && d) {
