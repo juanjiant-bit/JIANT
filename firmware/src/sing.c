@@ -37,8 +37,14 @@
  * words are read by sy_en_rules' letter rules, as a word the dictionary lacks. The reads are the main loop's (sing_init,
  * lyr_set) and, for a word not resolved there, the audio's (either core): plain XIP data reads, as from the app's
  * flash (the flash writes park core 1 and hold the interrupts, the same for both) */
+#ifndef FELUCCA_EN_DICT
+#define FELUCCA_EN_DICT 0        /* (V10.7.56, the owner: the room for the half rate in every engine) the English dictionary
+                                  * out: English words by sy_en_rules' letter rules, as a word it lacked */
+#endif
 #if FELUCCA_BT
+#if FELUCCA_EN_DICT
 #define LY_DICT_SEC __attribute__((section(".btapp.rodata"), used))
+#endif
 static volatile uint8_t ly_en_ok;                      /* (main.c: the segment checked) */
 #else
 static volatile uint8_t ly_en_ok = 1;                  /* (the host: one image) */
@@ -410,8 +416,8 @@ static uint32_t sy_en_find(const char *key, uint32_t kn, uint8_t *out)
     uint32_t lo = 0, hi = (uint32_t)NELEM(LY_EN_IDX), n;
     ly_rd_t r;
     char w[24];
-    if (!ly_en_ok)
-        return 0;                                        /* (V10.15) no segment: the rules (sy_word) */
+    if (!FELUCCA_EN_DICT || !ly_en_ok)
+        return 0;                                        /* (V10.15) no segment: the rules (sy_word); V10.7.56: none */
     if (kn && key[0] >= 'a' && key[0] <= 'z') {          /* the blocks from the one before the key's letter's first */
         lo = LY_EN_LET[key[0] - 'a'];
         hi = LY_EN_LET[key[0] - 'a' + 1];

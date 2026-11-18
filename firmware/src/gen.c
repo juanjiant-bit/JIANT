@@ -540,7 +540,7 @@ static uint32_t gdna(uint8_t *map)
                                                          * at COMPLEX 0, .. 3 past 80) */
     return km;
 }
-static void gen_drums(track_t *t, uint32_t len)
+BTAPP_FN static void gen_drums(track_t *t, uint32_t len)   /* (V10.7.56: the segment's, as gen_pick: callers gated by bt_hw_seg) */
 {
     const ggenre_t *g = gs.g;
     uint8_t map[8];                                     /* (0.9.7) lane numbers (gen_drum_maps.h; 0: none) */
@@ -799,7 +799,7 @@ static __attribute__((noinline)) int glatin(void)
     uint32_t d = gs.g->drum;
     return d == DM_CUMBIA || d - DM_REGG < 2u || d - DM_CUMB2 < 5u || !gs.gi;
 }
-static void gen_bass(track_t *t, uint32_t len)
+BTAPP_FN static void gen_bass(track_t *t, uint32_t len)   /* (V10.7.56: the segment's, as gen_pick: callers gated by bt_hw_seg) */
 {
     const ggenre_t *g = gs.g;
     const barch_t *a = &BASS_ARCH[gs.ba];
@@ -923,7 +923,7 @@ static uint32_t gchord_at(uint32_t i, int32_t lo, int32_t hi, int32_t *n, int32_
     if (rootless && (q == Q_7 || q == Q_9) && !c->alt && giv(c, 8) == 14) q = Q_R9;
     return gvoice(c, q, lo, hi, prev, np, mode, n);
 }
-static void gen_pads(track_t *t, uint32_t len)
+BTAPP_FN static void gen_pads(track_t *t, uint32_t len)   /* (V10.7.56: the segment's, as gen_pick: callers gated by bt_hw_seg) */
 {
     const ggenre_t *g = gs.g;
     uint32_t i, a = gs.amt[GP_CHORDS], last = 0xFFFFu, cnt = 0, style = g->pads, mode = gvo_mode(), fam = HXF(gs.hx);
@@ -1282,7 +1282,7 @@ static void gen_riff(track_t *t, uint32_t len, uint32_t ri)
         gnote(&t->step[i], n, 1, f == 1u ? 114 : f == 3u ? 62 : 94, f == 2u ? SF_SLIDE : 0u);   /* (an accent, a ghost) */
     }
 }
-static void gen_lead(track_t *t, uint32_t len)
+BTAPP_FN static void gen_lead(track_t *t, uint32_t len)   /* (V10.7.56: the segment's, as gen_pick: callers gated by bt_hw_seg) */
 {
     const ggenre_t *g = gs.g;
     uint32_t i, j, a = gs.amt[GP_LEAD], bars = (len + 15u) / 16u, style = g->lead, fam = HXF(gs.hx), legato = gs.energy < 34u ? 4u : 2u;
@@ -1853,7 +1853,7 @@ static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
 }
 
 /* ---------------------------------------------------------------------------------------- the form: parts --- */
-static void gen_role(track_t *t, uint32_t k, uint32_t len)   /* a track's part as its role plays it */
+BTAPP_FN static void gen_role(track_t *t, uint32_t k, uint32_t len)   /* (V10.7.56: the segment's, the English dictionary's room) */   /* a track's part as its role plays it */
 {
     uint32_t r = gs.role[k];
     if (!gs.act[r] || (r == RL_TEX && k != gs.trk_of[RL_TEX])) return;

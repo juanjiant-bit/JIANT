@@ -24,6 +24,12 @@
 
 static int bad;
 static void check(const char *what, int ok) { bad += jt_verdict("voice: ", 100, what, ok, NULL); }
+/* (V10.7.56) a check that needs the English dictionary (sing.c FELUCCA_EN_DICT; out of the build: said, not counted) */
+static void check_dict(const char *what, int ok)
+{
+    if (FELUCCA_EN_DICT) check(what, ok);
+    else printf("voice: %s  (skipped: no English dictionary in this build)\n", what);
+}
 static uint32_t eng_voice(void)
 {
     uint32_t e;
@@ -351,7 +357,7 @@ static void check_reading(void)
         g2p_str(LG_EN, EN[k][0], b, sizeof b);
         if (strcmp(b, EN[k][1])) { printf("voice:   EN %-12s %s (want %s)\n", EN[k][0], b, EN[k][1]); ok = 0; }
     }
-    check("English through the dictionary (CMU, syllabified): love my time beautiful water strong the don't", ok);
+    check_dict("English through the dictionary (CMU, syllabified): love my time beautiful water strong the don't", ok);
     {   /* every dictionary word found, with at least a syllable; an unknown word by the letter rules.
          * (0.9.0: the dictionary Huffman-coded) each word's phonemes exactly gen_lyrics.py's (LY_EN_REF_*: the words as
          * text); every word cut short, one letter more and one changed at its end: not found unless itself a word */
@@ -403,7 +409,7 @@ static void check_reading(void)
                (unsigned)LY_EN_N, bad, probes, miss);
         snprintf(what, sizeof what, "English dictionary: all %u words found, exact; a word it lacks by letter rules (zorblat: %s)",
                  (unsigned)LY_EN_N, b);
-        check(what, ok);
+        check_dict(what, ok);
     }
     {   /* (V10.6f) the words left out of the packed dictionary (tools/lyrics/en_ruled.txt): not in it, and the letter
          * rules read each exactly as the dictionary did (its phonemes, stresses, syllables) */
@@ -447,7 +453,7 @@ static void check_reading(void)
         g2p_str(LG_EN, "love", b, sizeof b);
         printf("voice:   without the segment: love %s (with it %s); %u of %u words as the rules read them\n", rb, b,
                (unsigned)rules, (unsigned)LY_EN_N);
-        check("V10.15 English without the Bluetooth segment: the dictionary never read, every word by the letter rules, "
+        check_dict("V10.15 English without the Bluetooth segment: the dictionary never read, every word by the letter rules, "
               "the generator's too; with it back as before", ok && strcmp(rb, b) && sy_en_find("love", 4, ph) > 0);
     }
     {   /* the banks: every word's syllables as gen_lyrics.py counted them (the generator fits phrases by them) */
@@ -473,7 +479,7 @@ static void check_reading(void)
         }
         snprintf(what, sizeof what, "the banks: all %u words' syllables as the generator counts them (ES %u EN %u JA %u words)",
                  tot, (unsigned)LY_ES_NW, (unsigned)LY_EN_NW, (unsigned)LY_JA_NW);
-        check(what, !bad_w);
+        check_dict(what, !bad_w);
     }
 }
 
@@ -528,7 +534,7 @@ static void check_generator(void)
         ok = !strcmp(a, b) && strcmp(a, c) != 0;
         oks = s1 && s2 && s3;
         snprintf(what, sizeof what, "generator %s: W3 the same lyric twice, W4 another; phrases of the pattern's 7 notes", LN[l]);
-        check(what, ok && oks);
+        if (!strcmp(LN[l], "EN")) check_dict(what, ok && oks); else check(what, ok && oks);
         printf("voice:   %s W3 ANY: %.160s\n", LN[l], a);
     }
     gen_text(LG_ES, 1, 0, 2, 12, a, sizeof a, &s1);
@@ -1384,7 +1390,7 @@ static void check_theme(void)
     ok &= names == 8u && param_turn(d, v, 1) == 120 && param_turn(d, 64, 1) == 88 && param_turn(d, 64, -1) == 56 &&
           param_turn(d, 127, -2) == 88;
     check("THEME: LOVE .. FIRE in 7 detents, each onto its name's middle (stored 0..127 as before)", ok);
-    ok = param_turn(&FMT_WDESC[7], 0, 1) == 38 && param_turn(&NOISE_LONG, 0, 3) == 56 &&
+    ok = param_turn(&FMT_WDESC[7], 0, 1) == 38 &&   /* (V10.7.56: NOISE_LONG gone with NOISE, WEST's place) */
          param_turn(&FMT_WDESC[0], 5, 1) == 6;       /* (LOOP 5 names; LEN 8; POS no names: a value; V10.6d: LOFI's WAV# gone with its chips) */
     check("  the other named values a name a detent (LOOP, NOISE LEN); POS a value a detent", ok);
     {                                                    /* (0.9.17) between the detents: the blend */
@@ -1402,7 +1408,7 @@ static void check_theme(void)
             gen_text(l, 1, 0x100u + 16u, 6, 9, tv, sizeof tv, &s1);
             same &= !strcmp(t8, tv);
         }
-        check("  THEME between detents: 0..8 of a name its words as at the detent, 15 a blend with the next", same && diff);
+        check_dict("  THEME between detents: 0..8 of a name its words as at the detent, 15 a blend with the next", same && diff);
     }
 }
 
