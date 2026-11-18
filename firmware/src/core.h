@@ -42,6 +42,10 @@ static uint8_t mc_host;
 static MC_HOST_STORAGE uint8_t mc_host_cpu; /* the concurrent host test uses thread-local core identity */
 #define MC_CPU() ((uint32_t)mc_host_cpu)
 #endif
+/* (V10.7.56) the rate a voice renders at (voice.c voice_half): 0 full, 1 half, 2 a quarter, each core its own; an engine
+ * that keeps its own sample-rate constants (a fold's limit, a noise's filter) reads it */
+static uint8_t vh_sh_c[2];
+#define VH_SH() ((uint32_t)vh_sh_c[MC_CPU() & 1u])
 /* (JIANT 0.6.78) the hottest audio code in RAM, for core 0 (felucca.c FELUCCA_HOTRAM): app.ld puts these functions'
  * sections (-ffunction-sections) in .hot_text by name, so the compiler builds them as before (this clang inlines
  * nothing across a section attribute, not even a static inline). Core 1 keeps running the flash copies (fx.c

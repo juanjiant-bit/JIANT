@@ -365,6 +365,7 @@ static uint32_t phrase_render(const phrase_t *ph, uint32_t mode, int32_t *buf, u
     host_tracks_init();
     memset(vh_c, 0, sizeof vh_c);
     host_preset(&trk[0], ph->e, ph->pr);
+    if (getenv("PE")) trk[0].p[P_E0 + atoi(getenv("PE"))] = (int16_t)atoi(getenv("PV"));   /* (an experiment: an engine knob forced) */
     trk[0].p[P_VOICE] = ph->mono ? V_LEGATO : V_POLY;
     if (ph->rel >= 0) trk[0].p[P_REL] = ph->rel;
     for (b = 0; b < total && n + CTL <= cap; b++) {

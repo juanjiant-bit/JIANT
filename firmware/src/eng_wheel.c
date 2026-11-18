@@ -147,15 +147,17 @@ static __attribute__((noinline)) void drw_dust_pick(const track_t *t, drw_trk_t 
 static __attribute__((noinline)) void drw_dust(drw_trk_t *W, int32_t *acc, uint32_t n)
 {
     uint32_t i;
-    int32_t nst = W->dnz, lp = W->dlp, pop = W->dpop, rate = W->dust * W->dust / 64;   /* up to ~170 pops a second */
+    int32_t nst = W->dnz, lp = W->dlp, pop = W->dpop, rate = (W->dust * W->dust / 64) << VH_SH();   /* up to ~170 pops a
+                                                         * second (V10.7.56: as many at half the rate) */
+    uint32_t sh = VH_SH();
     for (i = 0; i < n; i++) {
         uint32_t r = noise32(&nst);
         int32_t z = (int32_t)(r >> 17) - 16384;
         if ((int32_t)(r & 0xFFFFu) < rate)              /* a pop: a random click, gone in ~0.1 ms */
             pop = (((int32_t)(r >> 18) - 8192) * W->dust) >> 6;
-        lp += (z - lp) >> 2;                            /* the hiss: noise under ~5 kHz, ~-30 dB at 100 % */
+        lp += (z - lp) >> (2u - sh);                    /* the hiss: noise under ~5 kHz, ~-30 dB at 100 % */
         acc[i] += pop + ((lp * W->dust) >> 11);
-        pop = (pop * 3) >> 2;
+        pop = sh ? (pop * 9) >> 4 : (pop * 3) >> 2;
     }
     W->dnz = nst;
     W->dlp = lp;
@@ -249,10 +251,10 @@ static void wheel_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         int32_t g1 = T->g[k], g0 = V->gp[k], r;
         if ((int32_t)k == T->pk)
             g1 += mulq15(T->plev, perc1);
-        while (x > DRW_FOLD_LIM[k])                     /* fold back above ~6 kHz */
+        while ((x >> VH_SH()) > DRW_FOLD_LIM[k])        /* fold back above ~6 kHz (V10.7.56: the full rate's step) */
             x >>= 1;
         inc = drw_ratio(k, x);
-        r = inc < DRW_XOVER;                            /* 1: the low rotor */
+        r = (inc >> VH_SH()) < DRW_XOVER;               /* 1: the low rotor (V10.7.56: the full rate's step) */
         g1 = mulq15(g1, T->am[r]);
         inc += (uint32_t)((int32_t)(inc >> 16) * T->fm[r]);
         V->gp[k] = g1;
@@ -290,7 +292,7 @@ static void wheel_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         clk0 <<= 5;
         for (i = 0; i < n; i++) {
             int32_t z = (int32_t)(noise32(&nst) >> 17) - 16384, y = z - hp;
-            hp += y >> 3;
+            hp += y >> (3u - VH_SH());                  /* (V10.7.56: the same corner at half the rate) */
             clk0 += dc;
             acc[i] += (y * (clk0 >> 5)) >> 15;
         }
@@ -362,6 +364,7 @@ static const engine_t ENG_WHEEL = {
     .npresets = NELEM(WHEEL_PRESETS),
     .note_on = wheel_note_on,
     .render = wheel_render,
+    .half = 1,                   /* (V10.7.56) the generic half rate; its fold, click and dust follow VH_SH */
     .knob = {P_E0, P_E4, P_E6, P_E7},
     .block = wheel_block,
 };

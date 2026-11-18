@@ -976,7 +976,9 @@ static __attribute__((noinline)) void voice_half(track_t *t, const engine_t *e, 
         h.amp1 = 4 * m->amp1 - 3 * m->amp0;
         for (i = 0; i < CTL / 4u; i++)
             hq[i] = 0;
+        vh_sh_c[MC_CPU() & 1u] = 2;
         e->render(t, v, hq, CTL / 4u, &h);
+        vh_sh_c[MC_CPU() & 1u] = 0;
         if (st != VH_ON)
             pv = 2 * hq[0] - hq[1];
         for (i = 0; i < CTL / 4u; i++) {
@@ -1000,7 +1002,9 @@ static __attribute__((noinline)) void voice_half(track_t *t, const engine_t *e, 
     }
     for (i = 0; i < CTL / 2u; i++)
         hb[i] = 0;
+    vh_sh_c[MC_CPU() & 1u] = 1;
     e->render(t, v, hb, CTL / 2u, &h);
+    vh_sh_c[MC_CPU() & 1u] = 0;
     if (st != VH_ON)                                    /* the sample before the first: the one rendered, else a line back */
         pv = st == VH_IN && gen ? 2 * x - hb[0] : 2 * hb[0] - hb[1];
     for (i = 0; i < CTL / 2u; i++) {
