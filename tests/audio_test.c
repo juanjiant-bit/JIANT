@@ -166,7 +166,7 @@ static void dma(void)
     for (i = 0; i < 128u; i++) fm1_alnk0_irq();
     check("sustained 90% deadline load engages the guard even when render alone is 60%",
           !shed_req && load_tight && felucca_dbg.last_us == host_us - host_nest &&
-          load_all_q8 > (HEAD_OFF << 8) && load_avg_q8 < (GUARD_OFF << 8));
+          load_all_q8 > (GUARD_ON_AVG << 8) && load_avg_q8 < (GUARD_OFF << 8));
     for (i = 0; i < GUARD_STEP * 8u; i++) fm1_alnk0_irq();
     check("guard does not reopen while nested work still leaves only 10% headroom", load_tight);
     load_block();

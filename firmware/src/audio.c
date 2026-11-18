@@ -74,21 +74,24 @@ static uint32_t shed_count;
  * a key scan or USB burst nested in the render is not the sound's, but it is the deadline's (out of line: keeps the
  * ISR's render loops as they were) */
 #define HALF_TICKS ((HALF_FRAMES * 1000000u / FS) * FM1_TICKS_PER_US)   /* a half's time in TIMER4 ticks */
-#define HEAD_ON 50u                                    /* the extra voices: the whole half's average under 50 % .. */
-#define HEAD_OFF 65u                                   /* .. for 16 halves; over 65 % (or the guard on) they close */
+#define HEAD_ON 60u                                    /* 16 calm whole halves, including nested interrupts */
+#define HEAD_OFF 65u                                   /* four-track legacy admission still closes here */
 static uint8_t poly_calm;                             /* consecutive halves with room for extra voices */
 static __attribute__((noinline)) uint32_t shed_check(uint32_t all)
 {
     uint32_t r = all - t5_nested_ticks;                /* (0.6.19) the budget on the render alone */
     load_half(r * 100u / HALF_TICKS, all * 100u / HALF_TICKS, mc_live() && !mc_off);
-    /* Admission hysteresis: include nested interrupts in the spare-time test.
-     * Existing notes are never killed merely because this admission closes.
-     * Only FULL and a healthy second core may grow beyond the original eight. */
-    if (sys_load != LOAD_FULL || !mc_live() || mc_off || load_tight ||
-        load_all_q8 > ((trk_live > 4u ? 75u : HEAD_OFF) << 8)) {
+    /* Six-track admission already strictly budgets every new slot. Retain its
+     * earned ceiling: load_half caps growth to the sounding work on overload
+     * and restores slots gradually. Resetting this ceiling too stranded kits
+     * and chords at eight after a transient, even at 55% load.
+     * Four-track legacy allocation has hard-note bypasses; keep its existing
+     * closing threshold, but allow moderate-load recovery below HEAD_ON. */
+    if (sys_load != LOAD_FULL || !mc_live() || mc_off ||
+        (trk_live <= 4u && (load_tight || load_all_q8 > (HEAD_OFF << 8)))) {
         voice_headroom = poly_calm = 0;
     } else if (!voice_headroom) {
-        if (load_all_q8 < (HEAD_ON << 8)) {
+        if (!load_tight && all < HALF_TICKS * HEAD_ON / 100u && load_all_q8 < (HEAD_ON << 8)) {
             if (++poly_calm >= 16u) voice_headroom = 1;
         } else poly_calm = 0;
     }
