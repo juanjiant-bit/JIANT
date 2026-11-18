@@ -2867,14 +2867,37 @@ static uint32_t mc_cost(const track_t *t)               /* a part's share of the
 #define MC_VW 1u
 #endif
 static uint32_t mc_tk[NTRK], mc_fx_tk;                  /* (and the buses': fx_run) */
+static __attribute__((noinline)) uint32_t mc_count(const track_t *t)
+{
+    uint32_t nv = 0, k;
+    if (t->xf_on || t->eng_req != t->engine) return 0;
+    for (k = 0; k < NVOICE; k++) nv += t->v[k].active;
+    return nv;
+}
+static __attribute__((noinline)) void mc_measure(track_t *t, uint32_t d, uint32_t nv)
+{
+    uint32_t i = (uint32_t)(t - trk) % NTRK;
+    mc_nv[i] = (uint8_t)nv;
+    mc_tk[i] = d > mc_tk[i] ? mc_tk[i] + ((d - mc_tk[i]) >> 1) : mc_tk[i] - ((mc_tk[i] - d) >> 3);
+    if (nv && d) {
+        uint32_t v = d / nv;
+        /* Whole-track smoothing divided by today's voice count charged the
+         * last kick for an earlier whole kit. Normalize each matched sample
+         * first; retain it through silence, until this engine is measured again. */
+        if (!mc_vt[i] || mc_ve[i] != t->engine) mc_vt[i] = v;
+        else mc_vt[i] = v > mc_vt[i] ? mc_vt[i] + ((v - mc_vt[i]) >> 1) : mc_vt[i] - ((mc_vt[i] - v) >> 3);
+        mc_ve[i] = t->engine;
+    }
+}
+#ifndef MC_PART_TICKS
+#define MC_PART_TICKS(t) MC_TICKS()
+#endif
 static inline __attribute__((always_inline)) void mix_part_t(track_t *t, uint32_t n)   /* mix_part, timed */
 {
-    uint32_t t0 = MC_TICKS(), i = (uint32_t)(t - trk) % NTRK, d, k, nv = 0;
-    for (k = 0; k < NVOICE; k++) nv += t->v[k].active;
-    mc_nv[i] = (uint8_t)nv;
+    uint32_t t0 = MC_PART_TICKS(t), d, nv = mc_count(t);
     mix_part(t, n);
-    d = MC_TICKS() - t0;
-    mc_tk[i] = d > mc_tk[i] ? mc_tk[i] + ((d - mc_tk[i]) >> 1) : mc_tk[i] - ((mc_tk[i] - d) >> 3);   /* (up fast) */
+    d = MC_PART_TICKS(t) - t0;
+    mc_measure(t, d, nv);
 }
 static void mix_part_m(track_t *t, uint32_t n) { mix_part_t(t, n); }   /* (core 1: from the flash) */
 #if FELUCCA_HOTRAM                                       /* (0.6.78) core 0's copy, in RAM (app.ld .hot_text) */

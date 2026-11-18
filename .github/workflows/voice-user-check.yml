@@ -1,7 +1,7 @@
 name: VOICE user lyric candidate
 on:
   push:
-    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits, codex/punch-cpu, codex/six-phrases, codex/home-live, codex/kit-continuity, codex/two-track-voices]
+    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits, codex/punch-cpu, codex/six-phrases, codex/home-live, codex/kit-continuity, codex/two-track-voices, codex/voice-cost-v52]
 permissions:
   contents: read
 concurrency:
@@ -85,6 +85,20 @@ jobs:
           set -euo pipefail
           cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,undefined -fno-sanitize=shift,signed-integer-overflow -Itests -Ibuild/gen -Ifirmware/src tests/two_track_admission_test.c -lm -o build/song-check/two-track-admission
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/two-track-admission | tee build/song-check/two-track-admission.log
+      - name: V52 measured voice costs and recovery above guard release
+        run: |
+          set -euo pipefail
+          cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,undefined -fno-sanitize=shift,signed-integer-overflow -Itests -Ibuild/gen -Ifirmware/src tests/policy_recovery_test.c -lm -o build/song-check/policy-recovery
+          for tracks in 4 6; do
+            for scenario in 0 1 2; do
+              ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/policy-recovery "$scenario" "$tracks"
+            done
+          done | tee build/song-check/policy-recovery.log
+          ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/policy-recovery 3 6 | tee -a build/song-check/policy-recovery.log
+          cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,undefined -fno-sanitize=shift,signed-integer-overflow -Itests -Ibuild/gen -Ifirmware/src tests/measured_admission_test.c -lm -o build/song-check/measured-admission
+          ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/measured-admission units | tee build/song-check/measured-admission.log
+          ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/measured-admission 4 40 1400 | tee -a build/song-check/measured-admission.log
+          ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/measured-admission 6 35 1000 | tee -a build/song-check/measured-admission.log
       - name: Six-channel POLY keyboard and step entry
         run: |
           set -euo pipefail

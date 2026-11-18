@@ -10,7 +10,7 @@ static void fresh(unsigned engine)
     trk_live=6;sys_load=LOAD_FULL;voice_headroom=1;load_cores2=1;
     load_tight=guard_cap=guard_run=vh_wait=vh_held=vh_calm=frz_on=0;
     load_avg_q8=load_all_q8=load_pred_q8=0;load_fx_q8=0;
-    memset(mc_tk,0,sizeof mc_tk);memset(mc_nv,0,sizeof mc_nv);memset(vh_c,0,sizeof vh_c);
+    memset(mc_tk,0,sizeof mc_tk);memset(mc_vt,0,sizeof mc_vt);memset(mc_nv,0,sizeof mc_nv);memset(vh_c,0,sizeof vh_c);
     for(unsigned p=0;p<6;p++) {
         host_preset(&trk[p],engine,0);trk[p].p[P_VOICE]=V_POLY;
         trk[p].p[P_SUS]=127;trk[p].p[P_VCAP]=0;trk[p].p[P_MUTE]=0;
@@ -73,23 +73,34 @@ int main(void)
     for(unsigned b=0;b<16;b++)mix_block(out,CTL);
     ck("sustained six-track pressure selects cheaper rendering before the 78% ceiling",vh_held!=0&&!load_tight);
     unsigned mask=vh_held,kills=voice_kills;
-    for(unsigned p=0;p<6;p++) {mc_tk[p]=5000;mc_nv[p]=4;}
+    for(unsigned p=0;p<6;p++) {mc_measure(&trk[p],5000,4);}
     load_all_q8=load_pred_q8=50u<<8;
     for(unsigned b=0;b<1024;b++)voice_soft();
     ck("saving itself cannot immediately switch expensive held chords back to full rate",(vh_held&mask)==mask);
-    load_all_q8=load_pred_q8=10u<<8;memset(mc_tk,0,sizeof mc_tk);
+    load_all_q8=load_pred_q8=10u<<8;memset(mc_tk,0,sizeof mc_tk);memset(mc_vt,0,sizeof mc_vt);
     for(unsigned b=0;b<64;b++)voice_soft();
     ck("a brief lull cannot oscillate render quality",(vh_held&mask)==mask);
     for(unsigned b=0;b<1024;b++)voice_soft();
     ck("sustained full-rate headroom restores normal quality",vh_held==0);
     for(unsigned p=0;p<2;p++)for(unsigned i=0;i<4;i++)ok&=trk[p].v[i].active&&trk[p].v[i].gate&&trk[p].v[i].stage!=4;
     ck("quality transitions retain all eight held chord notes",ok&&voice_kills==kills);
-    fresh(ENGI_ANALOG);trk_note_on(&trk[0],48,100);mc_tk[0]=2000;mc_nv[0]=1;
+    fresh(ENGI_ANALOG);trk_note_on(&trk[0],48,100);mc_measure(&trk[0],2000,1);
     unsigned cost=load_cost_q8(&trk[0]);trk[0].v[1].active=1;
     ck("queued voices cannot dilute a previous per-voice CPU measurement",load_cost_q8(&trk[0])==cost);
+    fresh(ENGI_ANALOG);mc_measure(&trk[0],8000,8);
+    cost=load_cost_q8(&trk[0]);mc_measure(&trk[0],1000,1);
+    ck("matched normalization keeps an eight-to-one voice transition stable",load_cost_q8(&trk[0])==cost);
+    mc_measure(&trk[0],80,0);
+    ck("silence retains the last valid per-voice measurement",load_cost_q8(&trk[0])==cost);
+    trk[0].engine=ENGI_FM6;
+    ck("engine switch cannot reuse the previous engine's measured cost",load_cost_q8(&trk[0])!=cost);
+    mc_measure(&trk[0],2000,1);cost=load_cost_q8(&trk[0]);
+    ck("new engine's first measurement replaces the previous estimate",mc_vt[0]==2000&&mc_ve[0]==ENGI_FM6);
+    mc_vt[0]=0xffffffffu;
+    ck("extreme timing cannot wrap into free admission",load_cost_q8(&trk[0])==(100u<<8));
     fresh(ENGI_ANALOG);load_all_q8=load_pred_q8=72u<<8;
-    trk_note_on(&trk[0],48,100);ck("a chord cannot consume the silent channels' reserved CPU",voices_busy()==0);
+    trk_note_on(&trk[0],48,100);ck("empty channels cannot consume hypothetical CPU",voices_busy()==1);
     for(unsigned p=1;p<6;p++)trk[p].p[P_MUTE]=1;
-    trk_note_on(&trk[0],48,100);ck("muted channels do not waste the reserved CPU",voices_busy()==1);
+    trk_note_on(&trk[0],52,100);ck("muting empty channels does not change measured admission",voices_busy()==2);
     printf("adaptive rate: %s\n",bad?"FAILED":"all passed");return !!bad;
 }

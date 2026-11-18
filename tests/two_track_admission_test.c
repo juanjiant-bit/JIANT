@@ -116,10 +116,12 @@ int main(void)
                 init(tracks); halves(32, 35); phrase(0);
                 halves(128, 95);   /* overload with no new notes; recovery must not stay at eight */
                 check("real overload engages guard", load_tight);
-                check("guard never expands beyond the sounding work", voice_cap() <= 8 + notes);
+                unsigned busy = voices_busy();
+                trk_note_on(&trk[synth], 90, 100);
+                check("overload does not grow sounding work", voices_busy() <= busy);
                 halves(6000, 55);
                 check("guard recovers at moderate measured load", !load_tight);
-                check("shared ceiling returns", voice_cap() == (tracks == 6 ? 16 : 12));
+                check("shared ceiling returns", voice_cap() == 16);
                 unsigned kills = voice_kills;
                 for (unsigned step = 0; step < 16; step++) phrase(step);
                 check("no recovery steals or fades", voice_kills == kills);

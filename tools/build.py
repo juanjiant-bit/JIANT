@@ -547,6 +547,13 @@ def build_app():
                 # small flash helper within reach of fx_run0 after leaving HOT_FNS.
                 at = keep.index("tvel") if "tvel" in keep else 0
                 keep.insert(at, "cho_admit")
+            if keep:
+                # Per-block timing helpers are called by the RAM mixer. Keep
+                # them beside admission, inside the target's short-call reach.
+                timing = ["mc_count", "mc_measure"]
+                keep = [name for name in keep if name not in timing]
+                at = keep.index("load_cost_q8") if "load_cost_q8" in keep else 0
+                keep[at:at] = timing
             compile_hot([])
             LAYOUT_LD.write_text("".join(f"*(.text.{n})\n" for n in keep) + "*(.text*)\n")
             # This preliminary link has not packed UI tables into the audio

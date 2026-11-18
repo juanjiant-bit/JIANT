@@ -32,7 +32,7 @@ int main(void)
         static const unsigned notes[] = {48, 52, 55, 59};
         for (unsigned j = 0; j < 4; j++) trk_note_on(&trk[1], notes[j], 100);
         printf("web TRACKS=%u: kit=%u chord=%u cap=%u\n", tracks, web_count(0), web_count(1), voice_cap());
-        if (trk_live != tracks || voice_cap() != (tracks == 6 ? 16 : 12) ||
+        if (trk_live != tracks || voice_cap() != 16 ||
             web_count(0) != 8 || web_count(1) != 4) failed++;
         render_ms(3);
         if (web_count(0) != 8 || web_count(1) != 4) failed++;

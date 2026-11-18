@@ -75,20 +75,14 @@ static uint32_t shed_count;
  * ISR's render loops as they were) */
 #define HALF_TICKS ((HALF_FRAMES * 1000000u / FS) * FM1_TICKS_PER_US)   /* a half's time in TIMER4 ticks */
 #define HEAD_ON 60u                                    /* 16 calm whole halves, including nested interrupts */
-#define HEAD_OFF 65u                                   /* four-track legacy admission still closes here */
 static uint8_t poly_calm;                             /* consecutive halves with room for extra voices */
 static __attribute__((noinline)) uint32_t shed_check(uint32_t all)
 {
     uint32_t r = all - t5_nested_ticks;                /* (0.6.19) the budget on the render alone */
     load_half(r * 100u / HALF_TICKS, all * 100u / HALF_TICKS, mc_live() && !mc_off);
-    /* Six-track admission already strictly budgets every new slot. Retain its
-     * earned ceiling: load_half caps growth to the sounding work on overload
-     * and restores slots gradually. Resetting this ceiling too stranded kits
-     * and chords at eight after a transient, even at 55% load.
-     * Four-track legacy allocation has hard-note bypasses; keep its existing
-     * closing threshold, but allow moderate-load recovery below HEAD_ON. */
-    if (sys_load != LOAD_FULL || !mc_live() || mc_off ||
-        (trk_live <= 4u && (load_tight || load_all_q8 > (HEAD_OFF << 8)))) {
+    /* Healthy FULL now budgets every new slot in either TRACKS mode. Keep
+     * its ceiling while measured admission/rate reduction control actual work. */
+    if (sys_load != LOAD_FULL || !mc_live() || mc_off) {
         voice_headroom = poly_calm = 0;
     } else if (!voice_headroom) {
         if (!load_tight && all < HALF_TICKS * HEAD_ON / 100u && load_all_q8 < (HEAD_ON << 8)) {
