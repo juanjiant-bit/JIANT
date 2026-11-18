@@ -594,6 +594,8 @@ static uint8_t rel_hurry[NTRK];                         /* (eng_fm6.c reads it) 
 static uint8_t vh_wait, vh_held;                        /* blocks tripped; bit p: part p's held voices at half */
 static uint8_t vh_quart;                                /* (V10.7.56) bit p: part p's FM6 voices at a quarter of the rate
                                                          * (every part's held voices already at half and still over) */
+static int32_t vh_lp[NTRK * NVOICE] __attribute__((section(".pool")));   /* (V10.7.56) a tail at half the rate: its
+                                                         * low-pass (~5.5 kHz, the tail's own sample) */
 static int32_t vh_c[NTRK * NVOICE] __attribute__((section(".pool")));   /* a voice: VH_* (bits 0..2), its last sample at
                                                          * half the rate << 3 (the pool: zero at boot; 224 B of it were
                                                          * left over its 8 KiB of headroom, the RAM has none) */
@@ -887,7 +889,8 @@ static __attribute__((noinline)) void voice_soft(void)
                 }
                 nh += !s;
             } else if (v->stage != 4u) {
-                if (rel_hurry[p] && voice_lvl(t, v) < TAIL_END) {
+                if ((rel_hurry[p] || VPOL_ON()) && voice_lvl(t, v) < TAIL_END) {   /* (V10.7.56: always, no noise floor
+                                                         * of tails under -60 dB) */
                     voice_kill(v);
                     voice_trims++;
                 } else if (near && !s)
@@ -1008,6 +1011,15 @@ static __attribute__((noinline)) void voice_half(track_t *t, const engine_t *e, 
     *vs = 0;
     if (st != VH_ON)                                    /* the sample before the first: the one rendered, else a line back */
         pv = st == VH_IN && gen ? 2 * x - hb[0] : 2 * hb[0] - hb[1];
+    if (!v->gate && VPOL_ON()) {                       /* (V10.7.56, the owner) a released voice: its tail low-passed
+                                                         * (one pole, ~5.5 kHz at 22 kHz): no fizz of the half rate's
+                                                         * folds, no bright floor of many tails */
+        int32_t y = st == VH_ON ? vh_lp[vi] : hb[0];
+        for (i = 0; i < CTL / 2u; i++)
+            hb[i] = y += (hb[i] - y) >> 1;
+        vh_lp[vi] = y;
+    } else
+        vh_lp[vi] = hb[CTL / 2u - 1u];
     for (i = 0; i < CTL / 2u; i++) {
         out[2u * i] += (pv + hb[i]) >> 1;
         out[2u * i + 1u] += pv = hb[i];
