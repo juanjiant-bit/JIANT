@@ -261,6 +261,10 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
     uint32_t mul = lofi_motion(p[P_E4]), ts = v->ph[1], var = vr;   /* (0.5.4) MOTN: the slow time, Q8 */
     uint32_t sy = p[P_E4] >= 128, sr = 0, sb = sy ? lofi_sync(&sr) : 0u;   /* (p6) SYNC */
     hold *= 1 + (p[P_E5] >> 3);                         /* (0.5.4) GRIT: each sample held up to 16 x longer */
+    uint32_t vsh = VH_SH();                             /* (V10.7.56) at half the rate: the hold half as many samples, */
+    int32_t sk = vsh ? 3 : 2;                           /* the two smoothing poles squared (1/2 -> 3/4 a sample), SYNC's */
+    hold = (hold + (int32_t)vsh) >> vsh;                /* step twice */
+    sr <<= vsh;
     for (i = 0; i < n; i++) {
         if (--cnt <= 0) {
             uint32_t te;
@@ -279,10 +283,10 @@ static __attribute__((noinline)) void lofi_byte_render(track_t *t, voice_t *v, i
         tt += tf >> 24;
         tf &= 0xFFFFFFu;
         ts += ((ti >> 8) * mul) >> 16;
-        l1 += ((held >> 1) - l1) >> 1;                  /* (JIANT 0.5) the 8-bit steps rounded: two one-poles before
+        l1 += (((held >> 1) - l1) * sk) >> 2;           /* (JIANT 0.5) the 8-bit steps rounded: two one-poles before
                                                          * the filter (BYTE was knife-sharp); 0.9.11: at ~4.9 kHz, were
                                                          * ~6.3 (x 0.6): their images softer, the steps' edges filed */
-        l2 += (l1 - l2) >> 1;
+        l2 += ((l1 - l2) * sk) >> 2;
         out[i] += voice_amp(soft_knee(svf_mode(flt, l2, &ic1, &ic2, ft, kd), 16000) << 1, m, i);
     }
     v->s[3] = l1;
@@ -304,7 +308,7 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
     const int16_t *p = t->p;
     uint32_t f = (uint32_t)p[P_E2] >> 2, tt = (uint32_t)v->s[2], tf = v->ph[0], ts = v->ph[1], i;
     uint32_t ti = inc >> 3;                             /* (t a sample, Q24: 32 a cycle of the note) */
-    uint32_t sy = p[P_E4] >= 128, sr = 0, sb = sy ? lofi_sync(&sr) : 0u;   /* (p6) SYNC */
+    uint32_t sy = p[P_E4] >= 128, sr = 0, sb = sy ? lofi_sync(&sr) : 0u, vsh = VH_SH();   /* (p6) SYNC */
     uint32_t mul = lofi_motion(p[P_E4]), var = (uint32_t)clamp(p[P_E3] + ((m->shape - (64 << 8)) >> 8), 0, 127);   /*
                                                          * (0.6.81: SHAPE moves VAR, as BYTE's) */
     uint32_t bs = p[P_E6] ? 13u - (uint32_t)p[P_E6] / 11u : 0u;   /* BEND: t ^ t >> 13 .. 2 */
@@ -313,6 +317,7 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
     int32_t rs = p[P_FRES] > 50 ? p[P_FRES] : 50, kd = 8192 - rs * 7600 / 127, y1 = v->s[4], y2 = v->s[5];
     int32_t aux = v->s[3], fb = v->s[0], fbk = p[P_E5], sm = (int32_t)v->ph[2];   /* (sm: LOFI_SOFT's state) */
     uint32_t chip = (uint32_t)p[P_E0], qs = chip == CHIP_8BIT ? 0u : chip == CHIP_1BIT ? 15u : 12u;   /* (CHIP: the bits) */
+    sr <<= vsh;
     for (i = 0; i < n; i++) {
         uint32_t te, tl, tw;
         int32_t s;
@@ -337,7 +342,8 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
         tt += tf >> 24;
         tf &= 0xFFFFFFu;
         ts += ((ti >> 8) * mul) >> 16;
-        sm = LOFI_SOFT(s >> 1, sm);
+        sm = vsh ? sm + ((((s >> 1) - sm) * 55) >> 6) : LOFI_SOFT(s >> 1, sm);   /* (V10.7.56: at half the rate the
+                                                         * pole squared, 1 - (3/8)^2) */
         out[i] += voice_amp(soft_knee(svf_mode(flt, sm, &y1, &y2, ft, kd), 16000) << 1, m, i);
     }
     v->ph[2] = (uint32_t)sm;
@@ -455,6 +461,7 @@ static const engine_t ENG_LOFI = {
     .npresets = NELEM(LOFI_PRESETS),
     .note_on = lofi_note_on,
     .render = lofi_render,
+    .half = 1,                   /* (V10.7.56) the generic half rate; GRIT's hold, the smoothing, SYNC follow VH_SH */
     .knob = {P_E1, P_E2, P_E3, P_REL},
     .keep = 0x31,                /* the held sample and the filter */
     .desc = lofi_desc,
