@@ -5,11 +5,10 @@
  *            creatures, DRUM-X's kit, GEN's helix drawn at 66 frames a second and at 10 (frames dropped, long gaps):
  *            the panel identical at the same time (ui.c anim_at, the clock; ui_lzhome.c eco_swim / eco_at, the swim in
  *            fixed steps drawn between them)
- *   jumps    LITE (75 %: a frame each 100 ms) the beings move on, no step between two frames past what they swim in it,
- *            and no stop (until codex/anim this load froze them, then they jumped)
+ *   jumps    decoration freezes from 60%, controls keep drawing, recovery below 50% excludes paused time
  *   lod      a change of detail glides over a few frames (ui.c ui_lod, ui_organic.c pl_pt, ui_graph.c scope_lod): each
  *            step of it changes the picture by a part of the whole change; at half detail fewer lines are drawn
- *   still    FREEZE (85 %, the last resort): nothing is drawn or sent; a still page in COLORS sends nothing (gfx.c
+ *   still    decoration paused (from 60%): nothing is drawn or sent; a still page in COLORS sends nothing (gfx.c
  *            cv_blit_cells on the panel)
  *   cost     a frame's cost (us on the host, only the ratios mean anything) and the LCD pixels sent, at full pace and at
  *            LITE (a frame each 100 ms, half the detail), HOME, BEING, EDIT per engine, GEN, the kit, the scope
@@ -132,40 +131,41 @@ static void test_time(void)
         }
     }
 }
-/* LITE: a frame each 100 ms, half the detail: the beings move every frame, never more than they swim in it */
+/* V53: freeze decoration before the audio guard has to shed voices. Real
+ * controls still paint; hysteresis and the paused clock avoid flicker/jumps. */
 static void test_jumps(void)
 {
     uint32_t f, t, k;
-    uint8_t pl0 = song.playing, h0;
+    uint8_t pl0 = song.playing;
     static uint16_t old[240 * 240];
     prep(scr_id("v6_analog_home"));
     song.playing = 1;
-    load_avg_q8 = load_all_q8 = 80u << 8; ui_hold_poll();
-    h0 = ui_hold;
-    t = fm1_ms;
+    load_avg_q8 = load_all_q8 = 60u << 8; ui_hold_poll();
+    t = fm1_ms; k = anim_at;
+    for (f = 0; f < 40u; f++) at(t += UI_PACE());
+    ck("60% freezes decorative time before audio overload", ui_hold == 1u && ANIM_OFF() && anim_at == k);
+    { uint64_t s0 = sent;
+      for (f = 0; f < 10u; f++) at(t += UI_PACE());
+      ck("still: frozen stable HOME sends no pixels", sent == s0); }
     memcpy(old, host_screen, sizeof old);
-    for (f = 0; f < 40u; f++) {
-        trk[song.sel].peak = 7000;
-        at(t += UI_PACE());
-    }
-    ck("HOME selected engine keeps animating in LITE at 100 ms per frame",
-       h0 == 2u && UI_PACE() == 100u && ui_lod == 256u && !ANIM_OFF() && memcmp(old, host_screen, sizeof old));
+    TSEL->p[home_engine_id(0)] ^= 16;
+    at(t += UI_PACE());
+    ck("filter control still redraws under load", memcmp(old, host_screen, sizeof old) && anim_at == k);
+    load_avg_q8 = load_all_q8 = 80u << 8; ui_hold_poll();
+    at(t += UI_PACE());
+    ck("LITE keeps decoration paused with 100 ms pacing", ui_hold == 2u && UI_PACE() == 100u && ANIM_OFF() && anim_at == k);
     load_avg_q8 = load_all_q8 = 90u << 8; ui_hold_poll();
-    k = anim_at;
-    at(t += 50u); at(t += 50u);
-    ck("jumps: FREEZE (90 %) the last resort: the clock still", ui_hold == 3u && anim_at == k);
-    {   /* nothing drawn when nothing changes: frozen, frames send nothing */
-        uint64_t s0 = sent;
-        for (f = 0; f < 10u; f++) at(t += 50u);
-        ck("still: frozen, ten frames send no pixel", sent == s0);
-    }
-    load_avg_q8 = load_all_q8 = 70u << 8; ui_hold_poll();
-    k = anim_at;
-    at(t += 100u);
-    ck("jumps: back to LITE, on from where it stood (100 ms on, no jump)", ui_hold == 2u && anim_at == k + 100u);
-    load_avg_q8 = load_all_q8 = 0; song.playing = 0; ui_hold_poll();
+    at(t += UI_PACE());
+    ck("FREEZE keeps 50 ms pacing for controls", ui_hold == 3u && UI_PACE() == 50u && anim_at == k);
+    load_avg_q8 = load_all_q8 = 55u << 8; ui_hold_poll();
+    at(t += UI_PACE());
+    ck("55% hysteresis avoids restarting decoration too early", ui_hold == 1u && anim_at == k);
+    load_avg_q8 = load_all_q8 = 49u << 8; ui_hold_poll();
+    at(t += 15u);
+    ck("below 50% resumes from paused time without catch-up", !ui_hold && !ANIM_OFF() && anim_at == k + 15u);
+    load_avg_q8 = load_all_q8 = 90u << 8; song.playing = 0; ui_hold_poll();
     for (f = 0; f < 30u; f++) at(t + 200u + 15u * f);
-    ck("lod: back to the whole detail once the load is gone", ui_lod == 0u && ui_hold == 0u);
+    ck("stopping restores full detail despite stale high load", ui_lod == 0u && ui_hold == 0u);
     song.playing = pl0;
 }
 /* the detail glides: drawn at ui_lod 0, 32 .. 256 (the time still), each step a part of the whole change */

@@ -1,5 +1,7 @@
 # JIANT FM — Manual de usuario
 
+**Actualización V10.7.53:** HOME → **SOUNDS** permite elegir el motor de cada canal sin combinaciones de botones. ALGORITHM selecciona la pista; KNOB 1 el motor, KNOB 2 sus presets de fábrica. El modo y los límites de voces siguen en EDIT → VOICES / VOICES 2. Podés repetir motores, incluyendo varios DRUM-X con kits independientes. Los sonidos guardados siguen en SAVE → USER/PRESETS. HOME → ENGINE conserva filtro y tres controles del motor; las macros están en LFO mantenido. **ACID HOUSE** vuelve como género seleccionable en GEN. Durante reproducción, las animaciones se pausan desde 60% de carga y vuelven por debajo de 50%; controles y playheads siguen actualizándose.
+
 **JIANT FM V10.7.45 para el M-VAVE FM-1**
 
 > *English version: [MANUAL.md](MANUAL.md).*

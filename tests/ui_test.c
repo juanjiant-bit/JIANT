@@ -10602,25 +10602,25 @@ static int test_click_menu(void)
         uint8_t pl0 = song.playing;
         song.playing = 1;
         load_avg_q8 = load_all_q8 = 59u << 8; ui_hold_poll(); ok = ui_hold == 0u && !ANIM_OFF() && UI_PACE() == 15u;
-        load_avg_q8 = load_all_q8 = 60u << 8; ui_hold_poll(); ok &= ui_hold == 1u && !ANIM_OFF() && ANIM_SNAP() && UI_PACE() == 50u;
-        anim_sync(); f0 = anim_at; fm1_ms += 45u; anim_sync(); ok &= anim_at == f0 + 45u;   /* (SLOW: it moves, by the time) */
+        load_avg_q8 = load_all_q8 = 60u << 8; ui_hold_poll(); ok &= ui_hold == 1u && ANIM_OFF() && ANIM_SNAP() && UI_PACE() == 50u;
+        anim_sync(); f0 = anim_at; fm1_ms += 45u; anim_sync(); ok &= anim_at == f0;   /* (SLOW: it moves, by the time) */
         load_avg_q8 = load_all_q8 = 74u << 8; ui_hold_poll(); ok &= ui_hold == 1u;
         load_avg_q8 = load_all_q8 = 51u << 8; ui_hold_poll(); ok &= ui_hold == 1u;            /* (not back yet) */
-        load_avg_q8 = load_all_q8 = 75u << 8; ui_hold_poll(); ok &= ui_hold == 2u && !ANIM_OFF() && UI_PACE() == 100u;
-        f0 = anim_at; fm1_ms += 100u; anim_sync(); ok &= anim_at == f0 + 100u;   /* (LITE: it moves) */
+        load_avg_q8 = load_all_q8 = 75u << 8; ui_hold_poll(); ok &= ui_hold == 2u && ANIM_OFF() && UI_PACE() == 100u;
+        f0 = anim_at; fm1_ms += 100u; anim_sync(); ok &= anim_at == f0;   /* (LITE: it moves) */
         load_avg_q8 = load_all_q8 = 84u << 8; ui_hold_poll(); ok &= ui_hold == 2u;
         load_avg_q8 = load_all_q8 = 85u << 8; ui_hold_poll(); ok &= ui_hold == 3u && ANIM_OFF() && UI_PACE() == 50u;
         f0 = anim_at; fm1_ms += 300u; anim_sync(); ok &= anim_at == f0;           /* (FREEZE: still) */
         load_avg_q8 = load_all_q8 = 79u << 8; ui_hold_poll(); ok &= ui_hold == 3u;            /* (not back yet) */
-        load_avg_q8 = load_all_q8 = 77u << 8; ui_hold_poll(); ok &= ui_hold == 2u && !ANIM_OFF();
-        f0 = anim_at; fm1_ms += 30u; anim_sync(); ok &= anim_at == f0 + 30u;     /* (on from where it stood: no jump) */
+        load_avg_q8 = load_all_q8 = 77u << 8; ui_hold_poll(); ok &= ui_hold == 2u && ANIM_OFF();
+        f0 = anim_at; fm1_ms += 30u; anim_sync(); ok &= anim_at == f0;     /* (on from where it stood: no jump) */
         load_avg_q8 = load_all_q8 = 66u << 8; ui_hold_poll(); ok &= ui_hold == 2u;            /* (not back yet) */
-        load_avg_q8 = load_all_q8 = 64u << 8; ui_hold_poll(); ok &= ui_hold == 1u && !ANIM_OFF();
+        load_avg_q8 = load_all_q8 = 64u << 8; ui_hold_poll(); ok &= ui_hold == 1u && ANIM_OFF();
         load_avg_q8 = load_all_q8 = 49u << 8; ui_hold_poll(); ok &= ui_hold == 0u && !ANIM_SNAP();
         load_avg_q8 = load_all_q8 = 90u << 8; song.playing = 0; ui_hold_poll(); ok &= ui_hold == 0u;   /* (stopped: never) */
         song.playing = pl0; load_avg_q8 = q0; load_all_q8 = a0; ui_hold_poll();
         fm1_ms = m0 + 1000u; anim_sync(); ui_lod = 0;
-        bad += check("UI under load: SLOW from 60 %, LITE from 75 % (it moves on, by the clock), FREEZE from 85 %, each back lower, never stopped", ok);
+        bad += check("UI under load: decoration paused from 60%, pacing 50/100/50 ms, recovery below 50%, never stopped", ok);
     }
     {   /* (0.6.29) 6 LITE: the heavy parts swapped while they sound, the project's values kept */
         int16_t rt0 = song.g[G_RTYPE], dp0 = song.g[G_DPIT];
@@ -11276,6 +11276,8 @@ static int test_bpm_lock(void)
     turn(EN_SELECT, 1);
     ok &= ui.home && home_tracks();
     turn(EN_SELECT, 1);
+    ok &= home_sounds();
+    turn(EN_SELECT, 1);
     ok &= !ui.home && nav_sec() == SEC_HOME && SONG_TRK(cur_page()) && song.g[G_BPM] == b0;
     turn(EN_SELECT, 2);
     ok &= !ui.home && !ui.confirm && str_eq(cur_page()->title, "PARTS");   /* (.. ARRANGE PARTS GEN) */
@@ -11676,13 +11678,13 @@ static int test_skin(void)
             if (!okp) { printf("  %s\n", PAGES[i].title); break; }
         }
         ok = okp;
-        for (i = 0; i < 5u; i++) {                                /* HOME's own: MACROS, SCOPE, GEN, (V10.7.34) LIFE, TRACKS
+        for (i = 0; i < 6u; i++) {                                /* HOME's own: MACROS, SCOPE, GEN, (V10.7.34) LIFE, TRACKS
                                                          * (V10.7.32: the song's pages between them, SAVE's lens: in the loop above) */
-            static const uint8_t HL[5] = {1, 2, 7, 0, 3};   /* (V10.7.36: LIVE MIX the third tab) */
+            static const uint8_t HL[6] = {1, 2, 8, 0, 3, 4};   /* (V10.7.36: LIVE MIX the third tab) */
             if (!FELUCCA_LIFE && i == 3u)              /* (V10.7.45: LIFE out of the system) */
                 continue;
             ui_power_on(); frame();
-            if (i) nav_go(SEC_HOME, i == 1u ? HE_SCOPE : i == 2u ? HE_GEN : i == 3u ? HE_LIFE : HE_TRACKS, 0);
+            if (i) nav_go(SEC_HOME, i == 1u ? HE_SCOPE : i == 2u ? HE_GEN : i == 3u ? HE_LIFE : i == 4u ? HE_TRACKS : HE_SOUNDS, 0);
             frames(100);
             ok &= lz_on() && lz_fam() == LZ_HOME && lz_level() == HL[i] - (FELUCCA_LIFE ? 0 : 1) && skin_ink(LZ_FOOT_Y, 240) > 0;   /* (the tabs:
                                                          * LIFE 0, MACROS 1, TRACKS 2, LIVE MIX 6, GEN 7) */
@@ -12390,8 +12392,10 @@ static int test_home_tracks(void)
     ok &= help_line(b) && str_eq(b, "GLO+BLACK KEYS MUTE  GLO+WHITE SOLO") && text_w(&AF_X, b) <= 228;
     btn_down(B_HOME); frame(); press(B_OCTUP); btn_up(B_HOME); frames(64);
     turn(EN_SELECT, 1); frame();
+    ok &= home_sounds();
+    turn(EN_SELECT, 1); frame();
     ok &= !ui.home && str_eq(cur_page()->title, "TIMELINE");
-    turn(EN_SELECT, -1); frame();
+    turn(EN_SELECT, -2); frame();
     ok &= home_tracks();
     turn(EN_SELECT, -1); frame();
     ok &= home_scope();                                 /* (V10.7.36: LIVE MIX before TRACKS) */
@@ -12411,7 +12415,7 @@ static int test_lz_home(void)
     uint32_t c, k;
     ui_power_on(); frame();
     ok = ui.home && lz_on() && lz_fam() == LZ_HOME && home_level() == 0u && home_engine() && !home_scope() && lz_tab_lit(0) &&
-         lz_tabs() == 7u && lz_crumb_is("HOME \xB7 ENGINE \xB7 ENGINE") && lz_count_is("1/9");   /* (V10.7.34: LIFE before it) */
+         lz_tabs() == 8u && lz_crumb_is("HOME \xB7 ENGINE \xB7 ENGINE") && lz_count_is("1/10");   /* (V10.7.34: LIFE before it) */
     for (c = 0; c < 4u; c++) {
         uint32_t id = home_engine_id(c);
         const param_desc_t *d = track_desc(TSEL, id);
@@ -12423,35 +12427,37 @@ static int test_lz_home(void)
     ok &= !strncmp(ui.col[0], "FILTER|", 7);
     press(B_HOME); frame();                                         /* (V10.7.36, the owner) LIVE MIX right after MACROS */
     ok &= ui.home && home_level() == 1u && home_scope() && !home_engine() && lz_tab_lit(1) &&
-          lz_crumb_is("HOME \xB7 LIVE MIX \xB7 LIVE MIX") && lz_count_is("2/9") && !strncmp(ui.col[0], "FILTER|", 7) &&
+          lz_crumb_is("HOME \xB7 LIVE MIX \xB7 LIVE MIX") && lz_count_is("2/10") && !strncmp(ui.col[0], "FILTER|", 7) &&
           !strncmp(ui.col[1], "SPACE|", 6) && !strncmp(ui.col[2], "CLIP|", 5) && !strncmp(ui.col[3], "DUCK|", 5);
     {   /* (V10.7.32) a HOME tap: the next group, the song's pages HOME's (its tabs, crumb, count, header, LED) */
         static const char *const SP[3] = {"TIMELINE", "ARRANGE", "PARTS"};
         static const char *const SC[3] = {"HOME \xB7 TIMELINE \xB7 TIMELINE", "HOME \xB7 ARRANGE \xB7 ARRANGE",
                                           "HOME \xB7 PARTS \xB7 PARTS"};
-        char cn[8] = "4/9", ttl[40];
+        char cn[8] = "5/10", ttl[40];
         press(B_HOME); frame();                         /* (V10.7.34) TRACKS, HOME's own */
         ok &= ui.home && home_tracks() && home_level() == 4u && !home_engine() && !home_scope() && !home_life() && lz_tab_lit(2) &&
-              lz_crumb_is("HOME \xB7 TRACKS \xB7 TRACKS") && lz_count_is("3/9") && !strncmp(ui.col[0], "TRACK|", 6) &&
+              lz_crumb_is("HOME \xB7 TRACKS \xB7 TRACKS") && lz_count_is("3/10") && !strncmp(ui.col[0], "TRACK|", 6) &&
               !strncmp(ui.col[1], "LEVEL|", 6) && !strncmp(ui.col[2], "PAN|", 4) && !strncmp(ui.col[3], "REV|", 4);
+        press(B_HOME); frame();
+        ok &= home_sounds() && lz_count_is("4/10") && lz_tab_lit(3);
         for (c = 0; c < 3u; c++) {
             press(B_HOME); frame();
-            cn[0] = (char)('4' + c);
+            cn[0] = (char)('5' + c);
             ok &= !ui.home && nav_sec() == SEC_HOME && str_eq(cur_page()->title, SP[c]) && cur_fam() == FAM_HOME &&
-                  lz_tab_lit(3u + c) && lz_crumb_is(SC[c]) && lz_count_is(cn) && lz_tabs() == 7u;
+                  lz_tab_lit(4u + c) && lz_crumb_is(SC[c]) && lz_count_is(cn) && lz_tabs() == 8u;
             (void)head_title(ttl);
             ok &= ttl[0] != 'P';                        /* (HOME's header: the track's sound, not the project) */
         }
     }
-    turn(EN_SELECT, -4); frame();                                   /* PARTS .. MACROS (ARRANGE TIMELINE TRACKS LIVE MIX) */
-    ok &= home_scope() && lz_count_is("2/9");
+    turn(EN_SELECT, -5); frame();                                   /* PARTS .. MACROS (ARRANGE TIMELINE TRACKS LIVE MIX) */
+    ok &= home_scope() && lz_count_is("2/10");
     turn(EN_SELECT, -1); frame();
-    ok &= home_engine() && lz_count_is("1/9");
+    ok &= home_engine() && lz_count_is("1/10");
     turn(EN_SELECT, -1); frame();                                   /* (V10.7.45: LIFE out) SELECT left on MACROS: it stays (no dice) */
     ok &= home_engine() && !home_life() && ui.home && !ui.confirm && !msg_is("MACROS DICED");
     turn(EN_SELECT, 1); frame();                                    /* (V10.7.36) SELECT alone: LIVE MIX next */
-    ok &= home_scope() && lz_count_is("2/9");
-    bad += check("V10.7.36 HOME: MACROS LIVE MIX TRACKS TIMELINE ARRANGE PARTS GEN 1..3 one chain by SELECT (MACROS too, no dice), a HOME tap the next group; tabs, crumb, n/9 (V10.7.45: no LIFE); "
+    ok &= home_scope() && lz_count_is("2/10");
+    bad += check("V10.7.36 HOME: MACROS LIVE MIX TRACKS TIMELINE ARRANGE PARTS GEN 1..3 one chain by SELECT (MACROS too, no dice), a HOME tap the next group; tabs, crumb, n/10 (V10.7.45: no LIFE); "
                  "MACROS' KNOB 1..4 M1..M4", ok);
     {   /* SCOPE's four: the globals on the whole mix, the macros and the sound untouched */
         int16_t cl = song.g[G_CLIP], du = song.g[G_DUCK], dm, rs, e = TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
@@ -12509,9 +12515,9 @@ static int test_lz_home(void)
         bad += check("V10.7.24 HOME SCOPE: the mix's oscilloscope over the panel", ok);
     }
     fm1_ms += 1000u;
-    turn(EN_SELECT, 5); frame();                                    /* GEN 1 (TRACKS TIMELINE ARRANGE PARTS on the way) */
-    ok = gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(6) && lz_crumb_is("HOME \xB7 GEN \xB7 GEN 1") &&
-          lz_count_is("7/9");
+    turn(EN_SELECT, 6); frame();                                    /* GEN 1 (TRACKS TIMELINE ARRANGE PARTS on the way) */
+    ok = gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(7) && lz_crumb_is("HOME \xB7 GEN \xB7 GEN 1") &&
+          lz_count_is("8/10");
     k = gp.genre;
     {   /* (V10.7.22, the owner) PRESETS on GEN: the sound, as on every page but SEQ's; the GENRE only by KNOB 1 */
         uint32_t pr = TSEL->preset, en = TSEL->eng_req;
@@ -12522,17 +12528,17 @@ static int test_lz_home(void)
     ok &= gp.genre == (k == GEN_EXPLORE ? 0u : k == NGENRE ? GEN_EXPLORE : k + 1u);   /* KNOB 1: the GENRE, its order
                                                          * (0.8.6: EXPLORE, RANDOM, the genres) */
     turn(EN_SELECT, 1); frame();
-    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GEN \xB7 GEN 2") && lz_count_is("8/9");
+    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GEN \xB7 GEN 2") && lz_count_is("9/10");
     turn(EN_SELECT, -2); frame();                                   /* back: PARTS, GEN shut */
     ok &= !ui.confirm && !gen_on() && str_eq(cur_page()->title, "PARTS");
     turn(EN_SELECT, 1); frame();
     ok &= gen_on() && gen_page() == 0u;
     press(B_HOME); frame();                                         /* a HOME tap on GEN: round to MACROS (V10.7.45: LIFE out) */
     ok &= !ui.confirm && ui.home && home_level() == 0u && home_engine() && !home_life() && lz_tab_lit(0) &&
-          lz_crumb_is("HOME \xB7 ENGINE \xB7 ENGINE") && lz_count_is("1/9");
+          lz_crumb_is("HOME \xB7 ENGINE \xB7 ENGINE") && lz_count_is("1/10");
     bad += check("V10.7.24 HOME: PARTS, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: "
                  "MACROS (V10.7.45: LIFE out of the system)", ok);
-    press(B_HOME); turn(EN_SELECT, 6); frame();                     /* GEN 2 */
+    press(B_HOME); turn(EN_SELECT, 7); frame();                     /* GEN 2 */
     ok = gen_on() && gen_page() == 1u;
     press(B_ENV); frame();                                          /* not modal: a section's button leaves it */
     ok &= !ui.confirm && !ui.home && str_eq(cur_page()->title, "ENV");
@@ -12546,14 +12552,14 @@ static int test_lz_home(void)
     bad += check("V10.7.24 HOME: GEN is HOME's pages, not modal (ENV leaves it, HOME comes back to GEN 2, ALGORITHM works); OCT- MACROS", ok);
     {   /* (V10.8, testers) GEN's GENRE kept when GEN is left and opened again */
         uint32_t g0;
-        press(B_HOME); turn(EN_SELECT, 5); frame();     /* GEN 1 */
+        press(B_HOME); turn(EN_SELECT, 6); frame();     /* GEN 1 */
         ok = gen_on() && gen_page() == 0u;
         turn(EN_K1, 3); frame();                        /* (V10.7.22: KNOB 1 the GENRE; PRESETS the sound) */
         g0 = gp.genre;
         press(B_OCTDN); frame();                        /* out (MACROS) */
         open_family(FAM_ENV); frame();
         go_home(); frames(64);
-        press(B_HOME); turn(EN_SELECT, 5); frame();
+        press(B_HOME); turn(EN_SELECT, 6); frame();
         ok &= gen_on() && gp.genre == g0 && g0 != GEN_EXPLORE;
         press(B_OCTDN); frame();
         bad += check("V10.8 GEN: the GENRE picked stays after leaving GEN (was EXPLORE again each visit)", ok);
@@ -13697,11 +13703,12 @@ static int test_lz_reach(void)
                 uint32_t n = 0;
                 go_home(); frames(32); press(B_HOME); frames(32);
                 turn(EN_SELECT, -10); frames(2);
-                for (k = 0; k < 9u + FELUCCA_LIFE; k++) {   /* (V10.7.34: LIFE first, TRACKS after MACROS) */
+                for (k = 0; k < 10u + FELUCCA_LIFE; k++) {   /* (V10.7.34: LIFE first, TRACKS after MACROS) */
                     n += nav_cur() == k && nav_sec() == SEC_HOME &&
                          (k >= HE_GEN ? gen_on() && home_level() == 2u && gen_page() == k - HE_GEN :
                           k == HE_LIFE ? ui.home && home_life() && home_level() == 3u :
                           k == HE_ENGINE ? ui.home && home_engine() && !home_scope() :
+                          k == HE_SOUNDS ? ui.home && home_sounds() && home_level() == 5u :
                           k == HE_TRACKS ? ui.home && home_tracks() && home_level() == 4u && !home_engine() :
                           k == HE_SCOPE ? ui.home && home_scope() && home_level() == 1u :
                           !ui.home && save_on() && lz_fam() == LZ_SAVE && save_level() == SV_PROJ &&
@@ -13709,7 +13716,7 @@ static int test_lz_reach(void)
                     turn(EN_SELECT, 1);             /* (V10.7.34: SELECT on MACROS too) */
                     frames(2);
                 }
-                okh &= n == 9u + FELUCCA_LIFE;
+                okh &= n == 10u + FELUCCA_LIFE;
                 press(B_OCTDN); frames(2);
             }
         }

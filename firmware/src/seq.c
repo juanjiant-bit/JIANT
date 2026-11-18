@@ -10,7 +10,9 @@ static int32_t split_oct(uint32_t high) { return (int8_t)split_cfg[4u + high]; }
 /* (V10.7.32) the split plays only with its pages in the image (core.h FELUCCA_SPLIT): a project's split is kept as it was
  * stored (loaded, saved back), not played */
 #define SPLIT_ON (FELUCCA_SPLIT && split_cfg[0])
-static uint8_t shift_valid[2][NTRK];
+/* One nonzero key holds both the pass and length. Keep the cache check cheap:
+ * seq_early asks for the next step on every audio block, even without SHIFT. */
+static uint32_t shift_stamp[2][NTRK];
 /* Keyboard, scale, arpeggiator, sequencer and transport.
  * Everything here runs in the audio ISR, once per CTL-sample block (64 samples since 0.9.9 ctl64; the note-ons it
  * fires carry the sample within the block they fall on: ev_off, voice.c), and
@@ -825,7 +827,9 @@ static __attribute__((noinline)) uint32_t step_samples(const track_t *t, uint32_
 static uint32_t seq_src(const track_t *t, uint32_t idx)
 {
     int32_t len = t->p[P_SLEN] > 0 ? t->p[P_SLEN] : 1, o = t->p[P_SOFS] % len;
-    return (uint32_t)(((int32_t)(idx % (uint32_t)len) - o + len) % len);
+    int32_t src = (int32_t)(idx % (uint32_t)len) - o;
+    /* Both operands are within one pattern: wrap once, not another divide. */
+    return (uint32_t)(src < 0 ? src + len : src >= len ? src - len : src);
 }
 
 #include "seq_live.c"                              /* (p2, main 0.9.11) GLO > LIVE: the live modifiers, the ghost playhead */
@@ -1770,7 +1774,7 @@ static void fg_reset(void);                         /* (fugue.c) */
 static void gl_reset(void);                         /* (seq2f: the global lane) */
 static void seq_start(void)
 {
-    memset(shift_valid, 0, sizeof shift_valid);
+    memset(shift_stamp, 0, sizeof shift_stamp);
     uint32_t i;
     ms_clock = 0;                                  /* (JIANT) the modulation sequences from their step 0 */
     if (mo_clock_on()) {                           /* (0.6.72) MIDI OUT CLOCK / ALL: START, the clock from here */
@@ -1863,9 +1867,10 @@ static uint32_t comp_count(const track_t *t, const step_t *s, uint32_t k)
     }
 }
 /* SHIFT: a circular, non-destructive playback map. Conditions are pass based so
- * earlier destinations can be known before their source step is reached. */
-static uint8_t shift_map[2][NTRK][NSTEP], shift_len[2][NTRK];
-static uint16_t shift_pass[2][NTRK];
+ * earlier destinations can be known before their source step is reached. All
+ * callers pass an actual trk[] entry, as seq_tick does; its index is already
+ * bounded and needs no modulo in the per-block lookahead. */
+static uint8_t shift_map[2][NTRK][NSTEP];
 static int shift_cond(const track_t *t, const step_t *s, uint32_t k, uint32_t p)
 {
     uint32_t c = CO_COND(k ? s->comp2 : s->comp), nm = s->cnm[k];
@@ -1880,13 +1885,13 @@ static int shift_cond(const track_t *t, const step_t *s, uint32_t k, uint32_t p)
 }
 static void shift_prepare_pass(const track_t *t, uint32_t len, uint32_t pass)
 {
-    uint32_t ti = trk_index(t) % NTRK, bank = pass & 1u, i, k, j;
+    uint32_t ti = trk_index(t), bank = pass & 1u, i, k, j;
     len = (uint32_t)clamp((int32_t)len, 1, NSTEP);
-    if (shift_valid[bank][ti] && shift_pass[bank][ti] == pass && shift_len[bank][ti] == len) return;   /* (V10.7.6: the
-                                                     * map kept first: seq_early asks every block and track) */
+    uint32_t stamp = (pass << 8) | len;
+    if (shift_stamp[bank][ti] == stamp) return;
     int16_t move[NSTEP] = {0};
     const step_t *st = seq_steps(t);
-    shift_valid[bank][ti] = 1; shift_pass[bank][ti] = (uint16_t)pass; shift_len[bank][ti] = (uint8_t)len;
+    shift_stamp[bank][ti] = stamp;
     for (i = 0; i < len; i++) for (k = 0; k < 2u; k++) {
         uint32_t a = CO_ACT(k ? st[i].comp2 : st[i].comp);
         if (a == CA_SHIFT && shift_cond(t, &st[i], k, pass)) {
@@ -1909,8 +1914,8 @@ static void shift_prepare_pass(const track_t *t, uint32_t len, uint32_t pass)
 static const step_t *shift_step_pass(const track_t *t, uint32_t idx, uint32_t pass)
 {
     static const step_t rest = {{0}, 0, ST_REST};
-    uint32_t ti = trk_index(t) % NTRK, bank = pass & 1u, src = seq_src(t, idx);
-    if (shift_valid[bank][ti]) src = shift_map[bank][ti][src];
+    uint32_t ti = trk_index(t), bank = pass & 1u, src = seq_src(t, idx);
+    if (shift_stamp[bank][ti]) src = shift_map[bank][ti][src];
     return src == 255u ? &rest : &seq_steps(t)[src];
 }
 

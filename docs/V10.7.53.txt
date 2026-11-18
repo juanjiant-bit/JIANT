@@ -1,0 +1,57 @@
+V10.7.53 — reference-version improvements
+
+References:
+  v0.9.9-par12: 527c7e462a1542cbbde2c2cbf6b4bf151954127d
+  V10.7.23:    841f7dd90cf733c50942ae9292d2e2cb52619bd8
+  Before:     V10.7.52 / 0eb53eab35ad2631ba44542db845b08442714abf
+
+0.9.9's useful behavior: stop decorative drawing before audio is overloaded.
+During playback V53 pauses decorative animation from 60% averaged TOTAL deadline
+load, resumes below 50%, and excludes the paused time from the animation clock.
+Controls, meters and playheads still refresh. Existing 50/100/50 ms pacing stays.
+The audio admission thresholds, downsampling policy and default four synth voices
+are unchanged. DRUM-X retains its separate kit allocation and independent kits.
+
+The per-block sequencer uses one SHIFT cache stamp for pass and length, rather
+than separate validity, pass and length checks. Actual track indices need no
+modulo. ROTATE wraps the bounded difference once instead of doing a third divide.
+SHIFT's two pass banks, transport/track-generation invalidation, timing and stored
+patterns are preserved. reference_test exhaustively compares valid ROTATE lengths,
+offsets and positions with the old formula; existing SHIFT and timing tests cover
+conditional wraps, ratchets, early notes and the final saturated pass.
+
+V10.7.23 workflow feedback: repeated engines were still possible in V52 through
+EDIT + PRESETS. V53 makes the choice visible in HOME > SOUNDS. ALGORITHM selects
+the track; KNOB 1 its engine; KNOB 2 its factory preset. The browser's USER/type/
+favorite filter cannot hide engines here and is left untouched. Existing user
+sounds remain available through SAVE > USER/PRESETS. ENGINE keeps filter plus
+three engine controls; hold LFO for macros. This is repeated engine assignment,
+not a new one-button clone of an edited track. Sequence data is not replaced.
+
+ACID HOUSE returns as a dedicated GEN genre, using 0.9.9's 303 recipe and grammar.
+It is appended after HIP HOP, preserving all existing named genre IDs. EXPLORE
+remains the computed last option. Current groove variation and CPU admission
+remain active; the generator's full suite includes the added genre.
+
+Host comparison (GCC, Callgrind; instruction counts, NOT FM-1 CPU percentages):
+  sequencer only, six mono lines: 76.06 -> 73.82 instructions/sample (-2.94%)
+  same lines including synthesis: 1147.74 -> 1145.50 (-0.20%)
+  kit + four-note chord + four mono: 2239.44 -> 2239.06 (-0.02%)
+  idle: 321.73 -> 321.36 (-0.12%)
+  HOME drawing at simulated 65% load: about -95.8% work
+  GEN drawing at simulated 65% load: about -95.0% work
+The drawing reduction is NOT a reduction of total audio/device CPU by that amount.
+The audio probes preserve observed voice counts. UI probes run three seconds with
+changing track peaks; their musical play position is static, so they do not measure
+a moving timeline. Low-load drawing and the roll remain essentially unchanged.
+
+Reproduction data/programs are in /workspace/jiant-analysis/v099-reference and
+/workspace/jiant-punch/build/v53/profile on the working machine. The common audio
+and UI probes are compiled against each source revision with identical options.
+
+Validation: reference_test, full UI, animation, home controls/navigation, complete
+GEN suite, per-track generator, step extensions and CTL64 timing on the host;
+target build and the candidate workflow additionally enforce memory/reach budgets,
+six-part and kit continuity, admission recovery, concurrent rendering, persistence,
+FX overload, recording and native/emulator agreement. No physical FM-1 is attached;
+hardware CPU, cache/IRQ contention and musical stress still need device confirmation.

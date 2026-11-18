@@ -1084,13 +1084,19 @@ static int clip_tag(char *b)
  * an action page its OCT+ / OCT- (foot_hint); else its picture's (GR_*), HOME's MACROS (250) and LIVE MIX (251), GEN (252),
  * LIFE (253), TRACKS (254: GLO's mute and solo keys, as MIXER's; its panel shows the line too),
  * or its section's (100 + SEC_*); none: the breadcrumb. One string, the lines one after another */
-static const uint8_t HELP_K[] = {GR_LIVE, 250, 251, 252, 253, 254, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
+static const uint8_t HELP_K[] = {GR_LIVE, 250, 251, 252,
+#if FELUCCA_LIFE
+    253,
+#endif
+    254, GR_BROWSE, GR_FOCUS, GR_ROLL, GR_COMP, GR_EUCLID, GR_SHAPE, GR_SCENE, GR_GCOMP, GR_TRK, 100u + SEC_EDIT, 100u + SEC_SEQ, 100u + SEC_FX, 100u + SEC_GLO, 100u + SEC_LFO, 100u + SEC_SCL};
 static const char HELP_S[] =
     "OCT- RESET  OCT+ WRITE  SELECT KEY FX\0"
     "ALGORITHM TRACK  HOLD LFO MACROS\0"
     "HOME+PRESETS BPM  HOME+SELECT GEN\0"
     "OCT+ A PIECE  OCT- BACK\0"
+#if FELUCCA_LIFE
     "LIFE 0 STILL  LINES: WHO MOVES WHOM\0"
+#endif
     "GLO+BLACK KEYS MUTE  GLO+WHITE SOLO\0"
     "OCT+ LOAD  OCT- CLOSE  REC FAVORITE\0"
     "PICK A KNOB AND WHAT MOVES IT\0"
@@ -1240,10 +1246,12 @@ static void engine_columns(void)
     str_cpy(u, "/", 8);
     fmt_int(u + 1, (int32_t)total);
     if (cur + 1u >= 100u && total >= 100u) u[0] = 0;
-    draw_column(0, "ENG", ENGINES[e]->name, "", VAL(0u), (int32_t)eng_rank(e) * 1000 / (NENG_SHOWN > 1 ? NENG_SHOWN - 1 : 1),
-                engine_icon(ENGINES[e]->name));
-    draw_column(1, "No.", val, u, VAL(1u), total > 1u ? (int32_t)(cur * 1000u / (total - 1u)) : 0, ICON_NONE);
-    hot_text_column(2, "FAV", preset_favorite() ? "ON" : "OFF");
+    hot_text_column(0, "ENG", ENGINES[e]->name);
+    unit_column(1, "No.", val, u, VAL(1u));
+    if (!home_sounds()) {
+        hot_text_column(2, "FAV", preset_favorite() ? "ON" : "OFF");
+    } else
+        empty_column(2);
     empty_column(3);
 }
 /* (0.9.9-seq2d / seq2f) the step components' cards: GLO > COMPS / COMPS 2, SEQ > COMP / COMP 2. (gen3) Its own function,
@@ -1328,6 +1336,10 @@ static void draw_columns(void)
     char val[12];
     const char *unit;
     (void)motion_mask(song.sel, card_mot_mask);       /* (PLAY OFF: no scan) */
+    if (home_sounds()) {
+        engine_columns();
+        return;
+    }
     if (home_engine()) {
         for (c = 0; c < 4u; c++) {
             uint32_t id = home_engine_id(c);

@@ -1,5 +1,7 @@
 # JIANT FM — User Manual
 
+**V10.7.53 update:** HOME → **SOUNDS** selects each channel's engine without a button chord. ALGORITHM selects the track; KNOB 1 selects its engine, KNOB 2 its factory presets. Voice mode and limits remain in EDIT → VOICES / VOICES 2. Engines can repeat, including several DRUM-X tracks with independent kits. Saved user sounds remain in SAVE → USER/PRESETS. HOME → ENGINE retains its filter and three engine controls; hold LFO for macros. **ACID HOUSE** returns as a selectable GEN genre. During playback, decorative animation pauses from 60% load and resumes below 50%; controls and playheads still update.
+
 **JIANT FM V10.7.45 for the M-VAVE FM-1**
 
 > *Versión en español: [MANUAL.es.md](MANUAL.es.md).*
