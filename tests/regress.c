@@ -996,6 +996,63 @@ static void slug(char *d, const char *s, size_t n)
 #define MAXJ 512
 static job_t J[MAXJ];
 static uint32_t nj;
+/* (V10.7.56) the checks of the shared budget of before (it is LOAD ECO's still): run with VPOL off */
+#define LEGACY(f) static int legacy_##f(char *m, uint32_t n) { int r; vpol_on = 0; r = f(m, n); vpol_on = VPOL; return r; }
+LEGACY(chk_budget) LEGACY(chk_retrigger_budget) LEGACY(chk_mode_budget) LEGACY(chk_cap_mode_budget)
+LEGACY(chk_steal_fade) LEGACY(chk_keep_mono) LEGACY(chk_keep_legato) LEGACY(chk_keep_unison)
+/* (V10.7.56) VPOL: no voice taken from another part: a chord part (its sequence's chords) holds four-note chords, three
+ * single lines play random notes; the chord's notes and each line's last note always sound, a line at most 2 voices,
+ * all free after the note-offs */
+static int chk_vpol(char *msg, uint32_t n)
+{
+    static const uint8_t CH[4][4] = {{48, 52, 55, 59}, {45, 48, 52, 55}, {41, 45, 48, 52}, {43, 47, 50, 53}};
+    uint32_t p, k, i, lost = 0, over = 0, c = 0, last[NPART] = {0}, ok;
+    host_tracks_init();
+    for (p = 0; p < NPART; p++) {
+        host_preset(&trk[p], p == 3u ? ENGI_FM6 : ENGI_ANALOG, p ? 0u : 1u);
+        trk[p].p[P_VOICE] = V_POLY;
+        trk[p].p[P_AMODE] = 0;
+        trk[p].p[P_SUS] = 100;
+        trk[p].p[P_REL] = 70;
+    }
+    trk[0].step[0].time = ST_NOTE; trk[0].step[0].n = 4;
+    song.sel = 3;
+    vpol_chord = 0xFF;
+    vpol_scan();
+    for (k = 0; k < 6u * FS / CTL; k++) {
+        if (k % 80u == 0u) {
+            for (i = 0; i < 4u; i++) trk_note_off(&trk[0], CH[c][i]);
+            c = (c + 1u) & 3u;
+            for (i = 0; i < 4u; i++) trk_note_on(&trk[0], CH[c][i], 90);
+        }
+        if (k % 6u == 0u)
+            for (p = 1; p < 3u; p++) {
+                if (last[p]) trk_note_off(&trk[p], last[p]);
+                last[p] = 48u + rnd(36);
+                trk_note_on(&trk[p], last[p], 80);
+            }
+        blk();
+        for (p = 0; p < 3u; p++) {
+            uint32_t held = 0, act = 0, found = 0;
+            for (i = 0; i < NVOICE; i++) {
+                const voice_t *v = &trk[p].v[i];
+                act += v->active && v->stage != 4u;
+                held += v->active && v->gate && v->stage != 4u;
+                found |= v->active && v->gate && v->note == last[p];
+            }
+            if (p == 0u ? held < 4u : !found) lost++;
+            if (p && act > VPOL_LINE) over++;
+        }
+    }
+    for (i = 0; i < 4u; i++) trk_note_off(&trk[0], CH[c][i]);
+    for (p = 1; p < 3u; p++) if (last[p]) trk_note_off(&trk[p], last[p]);
+    rel_at = fpos;
+    finish();
+    ok = !lost && !over && vpol_chord == 0u && R.free_s >= 0;
+    snprintf(msg, n, "the chord part (its sequence's) and two single lines: notes lost %u blocks, a line over %u voices %u blocks, "
+             "the chord part %d, all free %.2f s after the note-offs", lost, VPOL_LINE, over, vpol_chord, R.free_s);
+    return ok;
+}
 static job_t *add(uint32_t kind, const char *name)
 {
     job_t *j = &J[nj++];
@@ -1075,17 +1132,18 @@ int main(int argc, char **argv)
 
     /* 4: the voice checks */
     k0 = nj;
-    add(J_CHECK, "voices: budget of 8 across 4 parts")->check = chk_budget;
-    add(J_CHECK, "voices: reuse before the stolen tail fades")->check = chk_retrigger_budget;
-    add(J_CHECK, "voices: budget after a live mode change")->check = chk_mode_budget;
-    add(J_CHECK, "voices: budget after voice mode changes")->check = chk_cap_mode_budget;
+    add(J_CHECK, "voices: budget of 8 across 4 parts")->check = legacy_chk_budget;
+    add(J_CHECK, "voices: reuse before the stolen tail fades")->check = legacy_chk_retrigger_budget;
+    add(J_CHECK, "voices: budget after a live mode change")->check = legacy_chk_mode_budget;
+    add(J_CHECK, "voices: budget after voice mode changes")->check = legacy_chk_cap_mode_budget;
     add(J_CHECK, "voices: note-offs after live voice mode changes")->check = chk_mode_release;
-    add(J_CHECK, "voices: a stolen voice fades")->check = chk_steal_fade;
+    add(J_CHECK, "voices: a stolen voice fades")->check = legacy_chk_steal_fade;
     add(J_CHECK, "voices: a bass note given up does not click (0.6.74)")->check = chk_kill_bass;
-    add(J_CHECK, "voices: MONO keeps its note")->check = chk_keep_mono;
-    add(J_CHECK, "voices: LEGATO keeps its note")->check = chk_keep_legato;
-    add(J_CHECK, "voices: UNISON keeps its note")->check = chk_keep_unison;
+    add(J_CHECK, "voices: MONO keeps its note")->check = legacy_chk_keep_mono;
+    add(J_CHECK, "voices: LEGATO keeps its note")->check = legacy_chk_keep_legato;
+    add(J_CHECK, "voices: UNISON keeps its note")->check = legacy_chk_keep_unison;
     add(J_CHECK, "voices: VOICE engine cap")->check = chk_voice_cap;
+    add(J_CHECK, "voices: no voice taken from another part (V10.7.56)")->check = chk_vpol;
     add(J_CHECK, "routing: no hanging notes")->check = chk_hang;
     run_jobs(J, nj, jobs_at_once);
 
@@ -1172,8 +1230,8 @@ int main(int argc, char **argv)
         if (r->tail_peak > LIM_TAIL && !swarm)
             snprintf(why + strlen(why), sizeof why - strlen(why), " not silent at the end: peak %d (limit %d);",
                      r->tail_peak, LIM_TAIL);
-        if (r->vmax > NVOICE)
-            snprintf(why + strlen(why), sizeof why - strlen(why), " %u voices (budget %u);", r->vmax, NVOICE);
+        if (r->vmax > voice_cap0())
+            snprintf(why + strlen(why), sizeof why - strlen(why), " %u voices (budget %u);", r->vmax, voice_cap0());
         if (why[0]) {
             printf("regress: HEALTH FAIL  %s:%s\n", j->name, why);
             h_fail++;

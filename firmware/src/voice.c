@@ -500,6 +500,9 @@ static struct { volatile uint32_t peak, late, shed; } load_diag;
 #ifndef VPOL
 #define VPOL 1u
 #endif
+static uint8_t vpol_on = VPOL;                          /* (a test may run the shared budget of before) */
+#define VPOL_ON() (vpol_on && sys_load != LOAD_ECO)         /* (LOAD ECO, the owner's own choice to spend less: its shared
+                                                         * budget of ECO_VOICES as before) */
 #define VPOL_VOICES 16u                                 /* the voices the parts may sound together (the hurry's measure) */
 #define VPOL_LINE 2u
 static uint8_t vpol_chord = 0xFF;                       /* the chord part (0xFF: none) */
@@ -515,18 +518,30 @@ static __attribute__((noinline)) void vpol_scan(void)   /* (voice_soft, ~1.5 s) 
             n += t->step[i].time == ST_NOTE && t->step[i].n > 2u;
         if (n > best) { best = n; bp = p; }
     }
-    vpol_chord = (uint8_t)bp;
+    if (bp != 0xFF)                                     /* (none in the sequences: the part found playing one stays) */
+        vpol_chord = (uint8_t)bp;
 }
+static int voice_held(const track_t *t, const voice_t *v);
 static uint32_t vpol_quota(const track_t *t, uint32_t np)   /* a part's voices under VPOL */
 {
     uint32_t ti = (uint32_t)(t - trk);
-    if (!VPOL || ENGINES[t->engine]->oneshot || ti == vpol_chord || ti == song.sel || np <= VPOL_LINE)
+    uint32_t i, held = 0;
+    if (!VPOL_ON() || ENGINES[t->engine]->oneshot || ti == vpol_chord || ti == song.sel || np <= VPOL_LINE)
         return np;
+    if (vpol_chord == 0xFF || vpol_chord >= trk_live) { /* no chord part yet: the first holding a third note (SCENE's
+                                                         * triad, a chord played in) is it */
+        for (i = 0; i < NVOICE; i++)
+            held += t->v[i].active && t->v[i].stage != 4u && voice_held(t, &t->v[i]);
+        if (held >= VPOL_LINE) {
+            vpol_chord = (uint8_t)ti;
+            return np;
+        }
+    }
     return VPOL_LINE;
 }
 static uint32_t voice_cap0(void)                        /* the budget as set (LOAD, the extra voices) */
 {
-    if (VPOL && sys_load != LOAD_ECO)
+    if (VPOL_ON())
         return VPOL_VOICES;
     return sys_load == LOAD_ECO ? ECO_VOICES :
            sys_load == LOAD_FULL && voice_headroom ? FULL_VOICES : NVOICE;
@@ -913,7 +928,7 @@ static __attribute__((noinline)) void voice_soft(void)
     }
     if (!near || load_avg_q8 <= (GUARD_OFF << 8))
         vh_wait = 0;
-    else if (VPOL && load_tight && dear == NPART && ++vh_wait >= HALF_WAIT / 8u) {   /* (V10.7.56) every held voice that
+    else if (VPOL_ON() && load_tight && dear == NPART && ++vh_wait >= HALF_WAIT / 8u) {   /* (V10.7.56) every held voice that
                                                          * can at half, still over: FM6 down to a quarter, part by part */
         for (p = 0; p < NPART; p++)
             if (ENGINES[trk[p].engine] == &ENG_FM6 && !((vh_quart >> p) & 1u)) {
@@ -921,12 +936,12 @@ static __attribute__((noinline)) void voice_soft(void)
                 break;
             }
         vh_wait = 0;
-    } else if ((load_tight || VPOL) && ++vh_wait >= (VPOL ? HALF_WAIT / 8u : HALF_WAIT) && dear < NPART) {   /* still tripped with the tails at half: the dearest
+    } else if ((load_tight || VPOL_ON()) && ++vh_wait >= (VPOL_ON() ? HALF_WAIT / 8u : HALF_WAIT) && dear < NPART) {   /* still tripped with the tails at half: the dearest
                                                          * part's held voices too */
         vh_held |= (uint8_t)(1u << dear);
         vh_wait = 0;
     }
-    if (!load_tight && load_avg_q8 < ((VPOL ? HALF_BACK - 10u : HALF_BACK) << 8))
+    if (!load_tight && load_avg_q8 < ((VPOL_ON() ? HALF_BACK - 10u : HALF_BACK) << 8))
         vh_held = vh_quart = 0;
     else if (!load_tight)
         vh_quart = 0;                                   /* (the guard let go: FM6 back to half first) */
@@ -1000,7 +1015,7 @@ static int voice_room(track_t *t, int soft)
 {
     track_t *vp = 0;
     uint32_t k;
-    if (VPOL) {                                         /* (V10.7.56) the load is the half rate's (voice_soft), no steal */
+    if (VPOL_ON()) {                                    /* (V10.7.56) the load is the half rate's (voice_soft), no steal */
         if (soft)
             return load_admit(t);
         load_take(t);
@@ -1053,8 +1068,15 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
             return voice_reuse(t, &t->v[i]);
         nfree += !t->v[i].active;
     }
-    if (nfree && VPOL)
-        load_take(t);                                   /* (V10.7.56: counted; the load is the half rate's) */
+    if (nfree && VPOL_ON()) {
+        track_t *vp = 0;
+        uint32_t k;
+        if (load_tight && (k = quiet_tail(&vp)) < NVOICE) {   /* (a tail under -50 dB, not heard: its CPU back) */
+            voice_kill(&vp->v[k]);
+            voice_trims++;
+        }
+        load_take(t);
+    }                                   /* (V10.7.56: counted; the load is the half rate's) */
     else if (nfree) {
         track_t *vp = 0;
         uint32_t full = voices_load() >= voice_cap(), k, own = np;

@@ -10504,7 +10504,7 @@ static int test_click_menu(void)
             ok &= strstr(ui.col[0], "|ROOM|ECO") != 0;
             load_put(2u);
             song.g[G_RTYPE] = 1; fxq_r[0] = 4000; mix_block(o, CTL);
-            ok &= voice_cap() == NVOICE && fx.sp_ns == SP_N;   /* FULL: all of them */
+            ok &= voice_cap() == (VPOL ? VPOL_VOICES : NVOICE) && fx.sp_ns == SP_N;   /* FULL: all of them (V10.7.56: VPOL's 16) */
             for (i = 0; i < NPAGES && !str_eq(PAGES[i].title, "SLICER"); i++) {}
             ok &= slicer_on() && page_visible(i);
             song.g[G_SLMODE] = sm0;

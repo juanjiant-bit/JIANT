@@ -105,6 +105,7 @@ preset/DRUM/06_DUB_ROOTS 9cd4ab9c6900258c
 preset/DRUM/07_TECHNO_RAW 6d181a3cbe5dc200
 preset/DRUM/08_BREAKS f00574893f4e3160
 preset/DRUM/09_HIP_HOP 0c32e6fdbd29750c
+preset/DRUM/10_LATIN_PERC 1634331360547380
 preset/WEST/00_WIND d2bd3e6db59c2cf9
 preset/WEST/01_RAIN 6f4cf1489b7fb183
 preset/WEST/02_ARCADE e850431dffae340c
@@ -201,7 +202,7 @@ drums/drum_gm_kit 29dce68cb7627214
 mode/ANALOG/POLY 2ce3389d8e146736
 mode/ANALOG/MONO 5ab80bfef71da1dd
 mode/ANALOG/LEGATO adf454ccb31d946f
-mode/ANALOG/UNISON 7999268ee61da582
+mode/ANALOG/UNISON 0bc80adaab33b1e4
 mode/VOICE/POLY 84f21e0514aa1792
 mode/VOICE/MONO a1521935a506ecef
 mode/VOICE/LEGATO 3b7a297e5ee7fe31
@@ -212,6 +213,6 @@ sends/ANALOG/delay 2ec344675796f4d0
 sends/ANALOG/reverb c729377f2c8da194
 sends/ANALOG/all 4841fc0395b7fa8a
 sends/ANALOG/dist cdb38420c25052b4
-song/4track_mix 426e64b0125333e5
+song/4track_mix 8127028b68e9c565
 slicer/gate/ANALOG_ACID ae0248dc346288c0
-slicer/song_gate_stut 4bb07c857b7b7175
+slicer/song_gate_stut 257d5065ea236c16

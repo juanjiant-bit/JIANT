@@ -832,7 +832,8 @@ int main(int argc, char **argv)
     }
     if (!strcmp(mode, "stress")) { stress_table(argc > 2 ? argv[2] : 0); return 0; }
     if (!strcmp(mode, "wav")) return wav_pairs(argc > 2 ? argv[2] : 0);
-    if (!strcmp(mode, "test")) return tests();
+    if (!strcmp(mode, "test")) { vpol_on = 0; return tests(); }   /* (the shared budget's measures, LOAD ECO's; VPOL:
+                                                         * regress chk_vpol and the stress scenes) */
     if (!strcmp(mode, "halfq")) return half_quality(argc > 2 ? atof(argv[2]) : -12.0);
     return 2;
 }
