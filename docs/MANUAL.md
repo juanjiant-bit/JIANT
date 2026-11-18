@@ -1404,15 +1404,17 @@ UNI's voices are, 0..100 %; was DETUNE, a bare number), **VEL**, **IMAGE** (the 
 was its own STEREO page; not on EXT). (V10.7.37) **ALLOC** is gone from the page: the voices are allocated by
 themselves, **REUSE** (a new note takes the free voice nearest its pitch, so a glide travels least) when **GLIDE** is
 on, **ROT** (round robin, each note a fresh voice) when it is off. A project or a preset saved with ALLOC set loads as
-before but plays by that rule (ALLOC REUSE with GLIDE off now rotates). (V10.7.38) **VOICES** (KNOB 4, in ALLOC's
-place): how many of the 8 shared voices this track may hold, **AUTO** (the engine's own count, as before) or **1** ..
-**8**. It holds in POLY and DRONE (a new note past it takes one of the track's own voices, as an engine's cap does) and
-sets UNI's stack; MONO and LEG play one voice anyway, a kit is never capped, EXT has one voice (no VOICES). A sound
-keeps it (user presets); a factory sound or the dice loads AUTO, and a project or preset with ALLOC (ROT or REUSE)
-loads AUTO. The page draws the track's voices and, top right, **ALL n/8**: every track's voices at most (its VOICES
-or the engine's in POLY, UNI and DRONE, one in MONO and LEG) against the 8 they share, to see where the polyphony goes
-before it overloads. **VOICES 3** (V10.7.33, EXT's): **CRUSH**, the
-track's bit reducer (see [Per track](#per-track)); a kit's is on **OUT**. The six tracks share a budget of 8 voices; FM6 plays at most four per track. (0.9.8) VOICE glides as a singer: an S-curve in
+before but plays by that rule (ALLOC REUSE with GLIDE off now rotates). **VOICES** (KNOB 4) sets the track limit from **1** to **8**. **AUTO** allows a synth up to four voices
+within the engine's limit and a DRUM-X kit all eight lanes. POLY and DRONE use those slots for notes,
+and UNI uses them for its stack. MONO and LEG use one. EXT has no VOICES setting. User presets save
+the setting. Factory sounds, the dice and presets made with ALLOC select AUTO.
+
+At the top right, **ALL n/total** shows the sum of the configured tracks' maxima against the current
+shared voice budget. With TRACKS 6 and both audio cores running, the total is **16** in FULL, LITE and ECO.
+Eight overlapping kit hits, a four-note chord and four mono lines can occupy all sixteen. The allocator
+keeps a slot available for each other unmuted playable part and checks CPU time before starting a new voice.
+**VOICES 3** (V10.7.33, EXT's): **CRUSH**, the
+track's bit reducer (see [Per track](#per-track)); a kit's is on **OUT**. (0.9.8) VOICE glides as a singer: an S-curve in
 pitch over the same time (the other engines: a straight line, as before).
 
 **DRONE** (V10.7.33, every engine but DRUM, which ignores it): a note keeps sounding after its key is let go. The next
@@ -3159,8 +3161,8 @@ How heavy the sound may get.
 | LOAD | What changes while it sounds |
 | --- | --- |
 | **FULL** (default) | Everything as set. |
-| **LITE** | SHIMMER and CLOUD reverbs play as ROOM, RESO as SPRING; the GRAIN delay plays plain; FM6 plays two voices. The screen draws lighter: the beings and graphs animate at about 20 frames a second with simpler outlines, and values change at once (no rolling digits). |
-| **ECO** | LITE, plus every reverb plays as a light SPRING, **no SLICER** (its tracks go straight to the mix), **no chorus** (their pages are hidden), at most **4 voices** per synth track and **6 voices** between all tracks (8 otherwise, 12 with both cores; the drums count too). When the load climbs, nearly silent tails are let go sooner. The screen at about 14 frames a second, the beings simpler still. |
+| **LITE** | SHIMMER and CLOUD reverbs play as ROOM, RESO as SPRING; the GRAIN delay plays plain; FM6 can play four voices with TRACKS 6 and both cores running, or two with four tracks or a single core. The screen draws lighter: the beings and graphs animate at about 20 frames a second with simpler outlines, and values change at once (no rolling digits). |
+| **ECO** | LITE, plus every reverb plays as a light SPRING, **no SLICER** (its tracks go straight to the mix), **no chorus** (their pages are hidden), at most **4 voices** per synth track and **16 shared voices** with six tracks on two cores, or **6 shared voices** with four tracks or a single core. When the load climbs, nearly silent tails are let go sooner. The screen at about 14 frames a second, the beings simpler still. |
 
 LOAD only changes how things are rendered: **projects keep their settings** and sound as saved on FULL (or on another
 FM-1). The cards of swapped effects say LITE or ECO. LOAD frees **CPU**, not RAM: the firmware reserves all its memory

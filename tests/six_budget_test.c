@@ -54,6 +54,18 @@ int main(void)
     for(b=0;b<4;b++)voice_soft();
     bad+=check("CPU pressure does not shrink a channel cap or fade its held chord",
         trk_nvoice(&trk[0])==4&&trk[0].v[0].stage!=4&&trk[0].v[1].stage!=4);
+    reset6(); mc_host = 1;
+    set_engine_of(&trk[0], ENGI_DRUM); trk[0].engine = ENGI_DRUM;
+    for (i = 0; i < 8; i++) trk_note_on(&trk[0], DRUM_LANE_NOTE[i], 100);
+    trk[1].p[P_VCAP] = 9;
+    for (i = 0; i < 8; i++) trk_note_on(&trk[1], 48 + i, 100);
+    unsigned kills = voice_kills;
+    ok = sounding(0) == 8 && sounding(1) == 4;
+    for (k = 2; k < 6; k++) trk_note_on(&trk[k], 60 + k, 100);
+    for (k = 2; k < 6; k++) ok &= sounding(k) == 1;
+    bad += check("full kit and a greedy second part leave each remaining part a slot without cross-track fades",
+                 ok && voices_load() == 16 && voice_kills == kills);
+    mc_host = 0;
     reset6();load_all_q8=load_pred_q8=40u<<8;
     unsigned d=PF_BIT(PF_D16),r=PF_BIT(PF_REV),w=PF_BIT(PF_WOB),mask=d|r|w;
     unsigned got=perf_budget(mask);

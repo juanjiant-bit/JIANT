@@ -10721,6 +10721,8 @@ static int test_click_menu(void)
                 int32_t o[2u * CTL];
                 uint64_t hh = 1469598103934665603ull, u = 0;
                 uint32_t b, j;
+                /* Compare renderer ownership with the same admitted score on both sides. */
+                voice_headroom = load_cores2 = 1;
                 mc_host = (uint8_t)k;
                 song.master_q12 = 4096;                 /* (heard: the test's power-on leaves MASTER at 0) */
                 for (b = 0; b < 4000u; b++) {

@@ -1471,16 +1471,18 @@ se abren las voces de UNI, 0..100 %; era DETUNE, un número pelado), **VEL**, **
 estéreo en POLY; era su propia página STEREO; no en EXT). (V10.7.37) **ALLOC** ya no está en la página: las voces se
 reparten solas, **REUSE** (una nota nueva toma la voz libre más cercana a su altura, así el glide recorre lo menos
 posible) con **GLIDE** prendido, **ROT** (rueda, cada nota una voz fresca) con GLIDE apagado. Un proyecto o preset
-guardado con ALLOC carga igual pero toca con esa regla (ALLOC REUSE con GLIDE apagado ahora rota). (V10.7.38)
-**VOICES** (KNOB 4, donde estaba ALLOC): cuántas de las 8 voces compartidas puede tomar esta pista, **AUTO** (las del
-motor, como antes) o **1** .. **8**. Vale en POLY y DRONE (una nota nueva pasado el tope toma una de las voces de la
-propia pista, como el tope de un motor) y fija el tamaño del UNI; MONO y LEG tocan una voz igual, un kit nunca se
-limita, EXT tiene una sola voz (sin VOICES). El sonido lo guarda (presets de usuario); un sonido de fábrica o el dado
-cargan AUTO, y un proyecto o preset con ALLOC (ROT o REUSE) carga AUTO. La página dibuja las voces de la pista y,
-arriba a la derecha, **ALL n/8**: el máximo de voces de todas las pistas (su VOICES o el del motor en POLY, UNI y
-DRONE, una en MONO y LEG) contra las 8 que comparten, para ver adónde va la polifonía antes de sobrecargar. **VOICES 3**
-(V10.7.33, de EXT): **CRUSH**, el reductor de bits de la pista (ver [Por pista](#por-pista)); el de un kit está en **OUT**. Las seis pistas comparten un presupuesto de 8 voces; FM6 toca como máximo cuatro por
-pista. (0.9.8) VOICE hace el glide como un cantante: una curva en S de la altura en el mismo tiempo (los
+guardado con ALLOC carga igual pero toca con esa regla (ALLOC REUSE con GLIDE apagado ahora rota). **VOICES** (KNOB 4) fija el máximo de **1** a **8** voces para esa pista. **AUTO** permite hasta cuatro
+voces en un sinte, dentro del límite del motor, y los ocho sonidos de un kit DRUM-X. POLY y DRONE usan
+esas voces para notas. UNI las usa para apilar osciladores. MONO y LEG usan una. EXT carece de este
+ajuste. Los presets de usuario lo guardan. Los sonidos de fábrica, el dado y los presets con ALLOC cargan AUTO.
+
+Arriba a la derecha, **ALL n/total** muestra la suma de los máximos configurados de las pistas frente
+al cupo compartido actual. Con TRACKS 6 y los dos núcleos de audio activos, el total es **16** en FULL,
+LITE y ECO. Pueden sonar ocho golpes superpuestos de kit, cuatro notas de acorde y cuatro líneas mono.
+Al acercarse al cupo, el sistema guarda un hueco para cada otra pista habilitada y sin mute.
+El inicio de cada voz nueva también depende de la carga medida.
+**VOICES 3**
+(V10.7.33, de EXT): **CRUSH**, el reductor de bits de la pista (ver [Por pista](#por-pista)); el de un kit está en **OUT**. (0.9.8) VOICE hace el glide como un cantante: una curva en S de la altura en el mismo tiempo (los
 demás motores: una recta, como antes).
 
 **DRONE** (V10.7.33, todos los motores menos DRUM, que lo ignora): una nota sigue sonando después de soltar la tecla. La
@@ -3338,8 +3340,8 @@ Cuán pesado puede ponerse el sonido.
 | LOAD | Qué cambia mientras suena |
 | --- | --- |
 | **FULL** (por defecto) | Todo tal como está configurado. |
-| **LITE** | Las reverbs SHIMMER y CLOUD suenan como ROOM, RESO como SPRING; el delay GRAIN suena común; FM6 toca dos voces. La pantalla se dibuja más liviana: los seres y gráficos se animan a unos 20 cuadros por segundo con contornos más simples, y los valores cambian al instante (sin dígitos que ruedan). |
-| **ECO** | LITE, más: todas las reverbs suenan como un SPRING liviano, **sin SLICER** (sus pistas van directo a la mezcla), **sin chorus** (sus páginas se ocultan), como máximo **4 voces** por pista de sinte y **6 voces** entre todas las pistas (8 si no, 12 con los dos núcleos; la batería también cuenta). Cuando la carga sube, las colas casi en silencio se sueltan antes. La pantalla a unos 14 cuadros por segundo, los seres aún más simples. |
+| **LITE** | Las reverbs SHIMMER y CLOUD suenan como ROOM, RESO como SPRING; el delay GRAIN suena común; FM6 puede tocar cuatro voces con TRACKS 6 y dos núcleos activos, o dos con cuatro pistas o un solo núcleo. La pantalla se dibuja más liviana: los seres y gráficos se animan a unos 20 cuadros por segundo con contornos más simples, y los valores cambian al instante (sin dígitos que ruedan). |
+| **ECO** | LITE, más: todas las reverbs suenan como un SPRING liviano, **sin SLICER** (sus pistas van directo a la mezcla), **sin chorus** (sus páginas se ocultan), como máximo **4 voces** por pista de sinte y **16 voces compartidas** con seis pistas y dos núcleos, o **6** con cuatro pistas o un solo núcleo. Cuando la carga sube, las colas casi en silencio se sueltan antes. La pantalla a unos 14 cuadros por segundo, los seres aún más simples. |
 
 LOAD solo cambia cómo se renderizan las cosas: **los proyectos conservan su configuración** y suenan como se guardaron
 en FULL (o en otro FM-1). Las tarjetas de los efectos sustituidos dicen LITE o ECO. LOAD libera **CPU**, no RAM: el

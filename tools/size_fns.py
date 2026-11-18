@@ -159,7 +159,10 @@ def main(src, dst):
                   "uin_ep_config", "voice_begin", "voice_cap", "voice_off_at", "voice_room", "voice_start_rec",
                   "wheel_note_on",
                   # V49: admission/control work once per note, never inside a sample loop.
-                  "voice_full", "voice_alloc", "load_bound", "load_sounding_q8", "load_victim",
+                  "voice_budget", "voice_alloc", "load_bound", "load_sounding_q8", "load_victim", "load_cost_q8", "load_ticks_q8", "load_limit",
+                  "voice_reuse", "voice_cap0", "voice_strict", "six_dual", "quiet_tail", "load_take",
+                  # Deadline accounting runs once per DMA half, outside the render loop.
+                  "load_half", "shed_check",
                   # (V10.6z6) SWARM's block (its voices' values, not their samples: ain_swarm), its melody's step, its
                   # FAR / NEAR values
                   "sw_prep", "sw_step", "sw_sv",

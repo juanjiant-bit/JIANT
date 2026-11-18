@@ -228,7 +228,7 @@ static int32_t dist_w[NTRK];                            /* the blend the last bl
 static int32_t dist_nlp[NTRK] __attribute__((section(".pool")));   /* (V10.7.33: the pool, as BALANCE's) */
 static __attribute__((noinline)) void dist_noise(track_t *t, int32_t *b, uint32_t n)
 {
-    uint32_t ti = (uint32_t)(t - trk) % NTRK, r = dist_rnd | 1u, i;
+    uint32_t ti = (uint32_t)(t - trk), r = dist_rnd | 1u, i;
     int32_t lp = dist_nlp[ti], amt = dnz_v[ti], thr = 8000 - amt * 40, gn = (amt * 3 * dist_w[ti]) >> 12;
     int32_t k = clamp(32000 - t->p[P_DIST] * 95 + t->p[P_DTONE] * 300, 2500, 32767);
     for (i = 0; i < n; i++) {
@@ -244,7 +244,7 @@ static __attribute__((noinline)) void dist_noise(track_t *t, int32_t *b, uint32_
 static void track_dist(track_t *t, int32_t *b, uint32_t n)
 {
     int32_t d = t->p[P_DIST], i, g, k, mk, b0 = softclip(2400), w0, w1, dw, full;
-    uint32_t type = (uint32_t)t->p[P_DTYPE], ti = (uint32_t)(t - trk) % NTRK;
+    uint32_t type = (uint32_t)t->p[P_DTYPE], ti = (uint32_t)(t - trk);
     w0 = dist_w[ti];
     w1 = d >= 8 ? 4096 : d * 512;
     if (w1 != w0)                                       /* (half the way a block, then there) */
@@ -303,7 +303,7 @@ typedef struct { int32_t hp, l1, l2, dc, hold, ph, st, w; } cru_t;
 static cru_t cru_s[NTRK] __attribute__((section(".pool")));
 static __attribute__((noinline)) void crush_block(track_t *t, int32_t *b, uint32_t n)
 {
-    uint32_t ti = (uint32_t)(t - trk) % NTRK, i, r = dist_rnd | 1u;
+    uint32_t ti = (uint32_t)(t - trk), i, r = dist_rnd | 1u;
     cru_t *c = &cru_s[ti];
     int32_t d = cru_v[ti], w0 = c->w, w1 = d >= 8 ? 4096 : d * 512, dw, g, k, mk, st0, sh;
     int32_t hp = c->hp, l1 = c->l1, l2 = c->l2, dc = c->dc, hold = c->hold, ph = c->ph, stp = c->st;
@@ -344,7 +344,7 @@ static __attribute__((noinline)) void crush_block(track_t *t, int32_t *b, uint32
 }
 static void track_crush(track_t *t, int32_t *b, uint32_t n)
 {
-    if (cru_v[(uint32_t)(t - trk) % NTRK] || cru_s[(uint32_t)(t - trk) % NTRK].w) {
+    if (cru_v[(uint32_t)(t - trk)] || cru_s[(uint32_t)(t - trk)].w) {
         void (*f)(track_t *, int32_t *, uint32_t) = crush_block;
         FM1_OPAQUE(f);
         f(t, b, n);
@@ -2546,9 +2546,9 @@ static void (*const volatile TRACK_FOLLOW)(const track_t *, const int32_t *, uin
 static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t n)   /* (0.6.78: inlined in both
                                                          * copies of mix_part_m, flash and RAM) */
 {
-    uint32_t i, c1 = MC_CPU() & 1u;                     /* (0.6.71) on the second core: its own buffers */
+    uint32_t i, ti = (uint32_t)(t - trk), c1 = MC_CPU() & 1u;                     /* (0.6.71) on the second core: its own buffers */
     int32_t *b = c1 ? c1_buf : part_buf;
-    if ((uint32_t)(t - trk) >= trk_live) {              /* (0.6.18) TRACKS 4: asleep, nothing rendered. (0.6.19) Its
+    if (ti >= trk_live) {              /* (0.6.18) TRACKS 4: asleep, nothing rendered. (0.6.19) Its
                                                          * voices first fade out over a block (voice_kill: they were
                                                          * cut at once, a click), its mute let go (perform.c) */
         uint32_t k, on = 0;
@@ -2558,9 +2558,9 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
                     voice_kill(&t->v[k]);
                 on = 1;
             }
-        pf.mg[(uint32_t)(t - trk) % NTRK] = 32768;
+        pf.mg[ti] = 32768;
         if (!on) {
-            mp_seen[(uint32_t)(t - trk) % NTRK] = 0;
+            mp_seen[ti] = 0;
             return;
         }
     }
@@ -2568,17 +2568,16 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
     /* (0.7.5) USB IN+OUT: the host's audio came in on the last live track. (V10.56) Only in STEMS+IN now: on IN+OUT an app
      * that monitors what it records (KOALA) sent the FM-1's own output back, mixed in again: a digital feedback loop. The
      * input is heard where an INPUT track takes it (eng_input.c) */
-    int uin = uin_on && fx_stems == 2u && !ain_any && (uint32_t)(t - trk) + 1u == trk_live;
+    int uin = uin_on && fx_stems == 2u && !ain_any && ti + 1u == trk_live;
     if (track_render(t, b, n))
         t->tail = (uint8_t)(512u / CTL);                /* blocks of DIST state to run out after the last voice */
     else if (!uin && (!t->tail || !t->p[P_DIST] || !--t->tail)) {
-        mp_seen[(uint32_t)(t - trk) % NTRK] = 0;       /* (silent: the next sound at its LEVEL and PAN) */
+        mp_seen[ti] = 0;       /* (silent: the next sound at its LEVEL and PAN) */
         if (MOD.on)
             mod_end(t);
         return;
     }
     {
-        uint32_t ti = (uint32_t)(t - trk) % NTRK;
         int32_t lvl = LEVEL_Q12[t->p[P_LEVEL] & 127] << 8, pan = t->p[P_PAN] << 8, l0, p0, lq, dl, gl, gr, dgl, dgr;
         if (t->p[P_APDEP] > 0)                          /* (0.6.9) AUTO PAN */
             pan = clamp(pan + autopan(t, ti, n), -(64 << 8), 63 << 8);
@@ -2820,6 +2819,7 @@ static int mc_wait(void) { return 0; }
 #define mc_live() (mc_host != 0)
 #endif
 static volatile uint8_t mc_off;                          /* REC held at power-on: one core this session (main.c) */
+static int dual_render(void) { return !mc_off && mc_live(); }
 static volatile int8_t mc_cur = -1;                      /* the part core 1 is in (a job given up: its matrix put back) */
 static uint8_t mc_mask_last;                             /* the parts core 1 had the last block (MENU > ABOUT, tests) */
 static uint32_t mc_jobs;                                 /* (0.6.72) blocks core 1 rendered parts in (console status) */
@@ -2876,7 +2876,13 @@ static __attribute__((noinline)) uint32_t mc_count(const track_t *t)
 }
 static __attribute__((noinline)) void mc_measure(track_t *t, uint32_t d, uint32_t nv)
 {
-    uint32_t i = (uint32_t)(t - trk) % NTRK;
+    uint32_t i = (uint32_t)(t - trk);
+    /* The deadline already includes recently rendered work. Keep its same-engine
+     * contribution through short rests, decaying on the same 4096-frame clock.
+     * Silence, engine fades and invalid intervals earn no credit. */
+    int32_t paid = mc_ve[i] == t->engine ? mc_paid_ticks[i] : 0;
+    int32_t sample = nv && d < CTL * LOAD_FRAME_TICKS ? (int32_t)d : 0;
+    mc_paid_ticks[i] = (uint16_t)(paid + ((sample - paid) >> LOAD_ADD_LOG2));
     mc_nv[i] = (uint8_t)nv;
     mc_tk[i] = d > mc_tk[i] ? mc_tk[i] + ((d - mc_tk[i]) >> 1) : mc_tk[i] - ((mc_tk[i] - d) >> 3);
     if (nv && d) {
@@ -3035,6 +3041,7 @@ static __attribute__((noinline)) void mc_join(uint32_t n)   /* core 1's parts in
 static __attribute__((noinline)) void mc_lost(void)    /* core 1 given up mid-job: a part's matrix values put back */
 {
     int32_t k = mc_cur;
+    voice_headroom = load_cores2 = 0;
     if (k >= 0 && k < (int32_t)NPART && mod_c[1].on) {
         mod_c[0] = mod_c[1];
         mod_end(&trk[k]);
@@ -3118,7 +3125,7 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
     master_begin();
     duck_block();
     { int (*f)(uint32_t) = perf_begin; FM1_OPAQUE(f); perf = f(n); }                               /* the FX hold layer at work (perform.c) */
-    if (!mc_off && mc_live()) {                         /* (0.6.71) core 1 at its parts meanwhile; (0.6.75) and the buses */
+    if (dual_render()) {                         /* (0.6.71) core 1 at its parts meanwhile; (0.6.75) and the buses */
         c1m = mc_split(mc_fx_tk + 4u * MC_VW);
         if (mc_run(mc_job, c1m | MC_FX | n << 8))
             c1j = 1;
