@@ -267,6 +267,10 @@ jobs:
           node-version: '22'
       - name: Build and compare emulator audio with native firmware
         run: |
+          set -euo pipefail
+          mkdir -p build/emu
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/web_polyphony_test.c -lm -o build/emu/web-polyphony
+          build/emu/web-polyphony
           sh web/emu/build.sh
           cc -O2 -ffp-contract=off -w -Wno-implicit-function-declaration -Wno-incompatible-pointer-types -Ibuild/gen -Ifirmware/src web/emu/native_check.c -lm -o build/emu/native-check
           build/emu/native-check build/emu/native.f32

@@ -268,6 +268,10 @@ static void web_power_on(void)
     fm1_adc_init();
     panel_init();
     felucca_init();
+    /* Model the normal FM-1's healthy two-core admission. The host mixer runs
+     * core 1's jobs synchronously; no browser thread or invented CPU timing.
+     * Leaving this off permanently limited the emulator to eight voices. */
+    mc_host = 1;
     master_boot();                        /* main.c (#137): the pot's level from the first block */
     kb_boot_hold = 1;                     /* main.c (#137): the keys silent under the splash */
     audio_init();

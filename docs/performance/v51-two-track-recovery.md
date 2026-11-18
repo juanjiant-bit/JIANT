@@ -51,3 +51,13 @@ No synth preset's intentional voice mode is changed by this patch.
 
 Target build: image 583,416/584,336 bytes; RAM data 97,904/98,304;
 RAM code 32,736/34,816; pool spare 8,704 bytes. All existing build guards pass.
+
+## Emulator parity
+
+The emulator also left `mc_host` disabled at boot. Consequently it never earned
+FULL headroom and DRUM-X plus an ANALOG tetrad lost four kit voices, even without
+simulated CPU pressure. It now enables the existing synchronous host-core mixer
+after initialization, modeling the normal healthy FM-1 allocation policy without
+creating a browser worker or inventing timing measurements. The real device's
+core-fault restrictions are unchanged. `tests/web_polyphony_test.c` checks actual
+emulator boot, four/six-track settings, kit plus tetrad and single-core fallback.
