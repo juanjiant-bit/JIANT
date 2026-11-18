@@ -183,7 +183,7 @@ async function editorMock() {
   const rq = async (r, o) => link.request(r, o);
   const info = E.parse[E.CMD.INFO](await rq(E.req.info()));
   ok(info.nengines === 16 && info.engines[15] === "EXT" && info.engines[1] === "-" && info.engines[12] === "FM6" && info.engines[13] === "ADD" && info.engines[14] === "ANIMAL"
- && info.engines[5] === "VOICE" && info.engines[6] === "-" && info.engines[7] === "WHEEL" && info.engines[8] === "STRING" && info.engines[9] === "-" && info.engines[10] === "DRUM" && info.engines[11] === "NOISE" && info.pcount === 123 && info.pe0 === 115 && info.engines[4] === "-",
+ && info.engines[5] === "VOICE" && info.engines[6] === "-" && info.engines[7] === "WHEEL" && info.engines[8] === "STRING" && info.engines[9] === "-" && info.engines[10] === "DRUM" && info.engines[11] === "WEST" && info.pcount === 123 && info.pe0 === 115 && info.engines[4] === "-",
     "editor: INFO");
   let descs = 0;
   for (let i = 0; i < info.pcount; i++) if (E.parse[E.CMD.DESC](await rq(E.req.desc(0, i))).label) descs++;
@@ -291,9 +291,9 @@ async function editorMock() {
   ok(!prefs.favorites[info.nengines][31] && !E.devicePresetRows(info, names, prefs).some((r) => r.user), "editor: erased slot disappears and loses star");
   {   /* the lists in the device's order (engines.c ENGINE_ORDER, 0.9.9): DRUM VOICE ANIMAL first, "-" never; the numbers stay */
     const shown = E.engineOrder(info.engines).map((i) => info.engines[i]);
-    ok(shown.join() === "DRUM,ANALOG,PHASE,FM6,VOICE,ANIMAL,MATH,WHEEL,NOISE,STRING,ADD,EXT" &&
+    ok(shown.join() === "DRUM,ANALOG,PHASE,FM6,VOICE,ANIMAL,MATH,WHEEL,WEST,STRING,ADD,EXT" &&
        E.engineOrder(info.engines).join() === "10,0,2,12,5,14,3,7,11,8,13,15",
-       "editor: engines listed DRUM ANALOG PHASE FM6 VOICE ANIMAL MATH WHEEL NOISE (V10.6d; indices kept)");
+       "editor: engines listed DRUM ANALOG PHASE FM6 VOICE ANIMAL MATH WHEEL WEST (V10.6d; indices kept)");
     ok(E.engineOrder(["ANALOG", "X", "-", "DRUM", "FM6"]).join() === "3,0,4,1", "editor: an unknown engine follows the known ones");
     ok(E.engineOrder(["ANALOG", "DIGITAL", "FM6", "DRUM"]).join() === "3,0,2,1", "editor: DIGITAL (FELUCCA_FM4 builds) after the others");
     m.state.favorites[10][0] = m.state.favorites[12][0] = true;

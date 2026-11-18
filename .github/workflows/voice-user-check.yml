@@ -1,7 +1,7 @@
-name: VOICE user lyric candidate
+name: V23 editing and WEST beta
 on:
   push:
-    branches: [codex/voice-user-lyrics, codex/swarm]
+    branches: [codex/v23-editing-beta]
 permissions:
   contents: read
 concurrency:
@@ -52,6 +52,51 @@ jobs:
           }
       - name: Firmware memory and reach checks
         run: tail -n 20 build/song-check/target.log
+      - name: Stopped note preview and unquantized recording
+        run: |
+          set -euo pipefail
+          cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/v23_editing_test.c -lm -o build/song-check/editing
+          ASAN_OPTIONS=detect_leaks=0 build/song-check/editing | tee build/song-check/editing.log
+          cc -O1 -g -w -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/tail_priority_test.c -lm -o build/song-check/tail-priority
+          ASAN_OPTIONS=detect_leaks=0 build/song-check/tail-priority | tee build/song-check/tail-priority.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/micro_test.c -lm -o build/song-check/micro
+          build/song-check/micro | tee build/song-check/micro.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/rec_workflow_test.c -lm -o build/song-check/rec-workflow
+          build/song-check/rec-workflow | tee build/song-check/rec-workflow.log
+      - name: V23 audio, punch-ins and WEST
+        run: |
+          set -euo pipefail
+          cc -O2 -w -Ibuild/gen -Ifirmware/src tests/regress.c -lm -o build/song-check/regress
+          build/song-check/regress tests/golden.txt tests/cpu_baseline.txt | tee build/song-check/regress.log
+          cc -O1 -w -Ibuild/gen -Ifirmware/src tests/west_test.c -lm -o build/song-check/west
+          build/song-check/west | tee build/song-check/west.log
+          for test in audio perform upreset; do
+            cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/${test}_test.c -lm -o build/song-check/$test
+            build/song-check/$test | tee build/song-check/$test.log
+          done
+          cc -O2 -w -pthread -Ibuild/gen -Ifirmware/src tests/mc_thread_test.c -lm -o build/song-check/mc-thread
+          python3 tests/mc_thread_test.py build/song-check/mc-thread | tee build/song-check/mc-thread.log
+          python3 tests/target_budget.py build/felucca.dis
+      - name: V23 reference hashes
+        uses: actions/checkout@v4
+        with:
+          ref: 841f7dd90cf733c50942ae9292d2e2cb52619bd8
+          path: build/v23-reference
+          persist-credentials: false
+      - name: Preserve all common V23 audio renders and punch code
+        run: |
+          python3 - <<'PYREF'
+          from pathlib import Path
+          def hashes(p):
+              return dict(line.split() for line in Path(p).read_text().splitlines() if line and not line.startswith('#'))
+          before=hashes('build/v23-reference/tests/golden.txt');after=hashes('tests/golden.txt')
+          common={k:v for k,v in before.items() if not k.startswith('preset/NOISE/')}
+          assert len(common)==195
+          assert all(after.get(k)==v for k,v in common.items()),'V23 sound changed outside WEST'
+          for name in ['perform.c','pfx.c','audio.c']:
+              assert (Path('firmware/src')/name).read_bytes()==(Path('build/v23-reference/firmware/src')/name).read_bytes(),name+' changed'
+          print('PASS 195 unchanged reference renders; original punch-ins and audio ISR')
+          PYREF
       - name: Lossless font metadata and isolated per-track generator
         run: |
           set -euo pipefail
@@ -151,25 +196,11 @@ jobs:
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/vel-seq | tee build/song-check/vel-seq.log
           cc -O1 -g -w -fsanitize=address,undefined -Ifirmware/src tests/boot_lz4_test.c -o build/song-check/boot-lz4
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/boot-lz4 | tee build/song-check/boot-lz4.log
-      - name: Verified pre-split baseline for UI regression comparison
-        uses: actions/checkout@v4
-        with:
-          ref: f5f6b1bde3a2eefa14444ad2212626c7aa4d46a8
-          path: build/ui-baseline
-          persist-credentials: false
-      - name: Full UI comparison against known baseline
+      - name: Full UI including native timeline and large controls
         run: |
           set -euo pipefail
-          (cd build/ui-baseline && python3 -c "import sys;sys.path.insert(0,'tools');import build;build.generate()")
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/ui_test.c -lm -o build/song-check/ui-full
-          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/ui-baseline/build/gen -Ibuild/ui-baseline/firmware/src build/ui-baseline/tests/ui_test.c -lm -o build/song-check/ui-base
-          set +e
-          build/song-check/ui-full > build/song-check/ui-full.log
-          FULL_RC=$?
-          build/song-check/ui-base > build/song-check/ui-base.log
-          BASE_RC=$?
-          set -e
-          python3 tests/ui_baseline_compare.py build/song-check/ui-base.log build/song-check/ui-full.log "$BASE_RC" "$FULL_RC"
+          build/song-check/ui-full | tee build/song-check/ui-full.log
       - name: Recorded audio layout
         if: always()
         run: cat tools/audio_layout.txt
@@ -185,3 +216,34 @@ jobs:
             build/layout.ld
             build/felucca.map
             tools/audio_layout.txt
+  emulator-candidate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install Pillow==12.3.0 numpy==2.3.5 fonttools==4.61.1
+      - run: python3 -c "import sys;sys.path.insert(0,'tools');import build;build.generate()"
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build and compare emulator audio with native firmware
+        run: |
+          set -euo pipefail
+          mkdir -p build/emu
+          sh web/emu/build.sh
+          cc -O2 -ffp-contract=off -w -Wno-implicit-function-declaration -Wno-incompatible-pointer-types -Ibuild/gen -Ifirmware/src web/emu/native_check.c -lm -o build/emu/native-check
+          build/emu/native-check build/emu/native.f32
+          node web/emu/emu_test.mjs build/emu/felucca.wasm build/emu/native.f32
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drum-kits-emulator-candidate
+          path: |
+            build/emu/*.html
+            build/emu/*.js
+            build/emu/*.wasm
+            build/emu/fonts

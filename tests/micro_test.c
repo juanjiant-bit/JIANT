@@ -121,16 +121,24 @@ static void test_micro_value(void)
 
 static void test_micro_old(void)
 {
-    project_store_t st;
+    project_store_t st = {0};
     project_t q, r;
-    uint32_t h = old_render(), hp, k, i, ok = 1;
+    uint32_t h = old_render(), hp, sum, k, i, ok = 1;
     char what[120];
     snprintf(what, sizeof what, "a project of before (MICRO in sixteenths, early and late, a kit, swing): sample for sample 0.9.0's (%08x)", h);
     ck(what, h == MICRO_OLD_090 && old_peak > 2000);
     hp = old_pack(&st, &q);
-    snprintf(what, sizeof what, "  saved: 0.9.0's bytes (%08x), no 'M' 'F'", hp);
+    ck("  saved: WEST format marker at byte 64; current image imports with its original checksum",
+       hp != 0 && st.raw[64] == 3u && proj_import(&r, &st, sizeof st));
+    /* This fixture uses ANALOG and DRUM. Reconstruct the pre-WEST wire image by changing its
+     * single format marker and the checksum covering it, then compare every byte to the old golden. */
+    st.raw[64] = 2u;
+    sum = proj_hash(st.raw, sizeof st.raw - 4u);
+    memcpy(st.raw + sizeof st.raw - 4u, &sum, sizeof sum);
+    hp = mfnv(2166136261u, st.raw, sizeof st.raw);
+    snprintf(what, sizeof what, "  saved with the pre-WEST marker: historical project bytes (%08x), no 'M' 'F'", hp);
     ck(what, hp == MICRO_PACK_090);
-    ok = proj_import(&r, &st, sizeof st);
+    ok = proj_import(&r, &st, sizeof st) && r.phys == 3u;
     for (k = 0; k < 3u; k++)
         for (i = 0; i < 16u; i++)
             ok &= ST_MICRO(&r.t[k].step[i]) == 4 * ((int32_t)(int8_t)q.t[k].step[i].cwhen >> 4) && !(r.t[k].step[i].flags & SF_MFINE);

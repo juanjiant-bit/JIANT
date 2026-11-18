@@ -127,7 +127,11 @@ check("FX held: its button and the effects' keys breathe, none lit; let go: lock
 
 // ---- a user preset saved from the panel, kept across a fresh instance
 const w0 = a.ex.web_flash_writes_count();
-a.tap(B.SAVE);
+a.tap(B.SAVE); // TIMELINE
+a.tap(B.SAVE); // PROJECT
+a.tap(B.SAVE); // USER
+a.tap(B.HOME);
+a.tap(B.SAVE); // arm SAVE on USER
 a.tap(B.OCTUP);
 a.tap(B.OCTUP);
 a.render(200);

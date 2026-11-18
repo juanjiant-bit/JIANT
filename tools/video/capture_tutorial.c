@@ -186,7 +186,7 @@ static void song_build(void)
     sound(T_PAD, "ANALOG", "DARK PAD");
     sound(T_LEAD, "PHASE", "PD LEAD");
     sound(T_ARP, "FM6", "FM PLUCK");
-    sound(T_METAL, "NOISE", "METAL");
+    sound(T_METAL, "WEST", "METAL");
     for (k = 0; k < NTRK; k++) {
         track_defaults_steps(&trk[k]);
         trk[k].p[P_ROOT] = 5; trk[k].p[P_SCALE] = 0;     /* F, chromatic: the chords as written */

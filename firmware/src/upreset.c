@@ -47,6 +47,9 @@
 #define UP_V04_MARK 0x47u                        /* (JIANT 0.4) .. and LOFI's / ANALOG's E values today's (core.h sound_v04) */
 #define UP_VEL_AT (UP_FM_AT - 1u)                /* (V10.7.6) packed[]'s byte before (past P_COUNT, 0 in every record before): */
 #define UP_VEL_MARK 'V'                          /* P_TVEL (VEL) as stored; without it MUTATE's config or a V10.7.3..7.5 VEL: 127 */
+#define UP_WEST_AT (UP_VEL_AT - 3u)              /* byte 139, shared with newer WEST banks */
+#define UP_WEST_MARK 'W'
+_Static_assert(P_COUNT <= UP_WEST_AT, "WEST marker must follow the packed values");
 typedef struct {
     uint8_t used, ver, engine, np;               /* UP_USED, UP_VER, engine, P_COUNT when stored */
     char name[12];                               /* ASCII 32..126, 0-padded (no 0 when 12 long) */
@@ -93,6 +96,16 @@ static void up_migrate(up_rec_t *r)
     if (r->ver >= 4u && r->np <= UP_VEL_AT && r->packed[UP_VEL_AT] != UP_VEL_MARK) {   /* (V10.7.6) VEL 100 % */
         if (P_TVEL + 8u < r->np && r->engine != ENGI_DIGITAL) up_set_value(r, P_TVEL, 127);   /* (DIGITAL: its OP4) */
         r->packed[UP_VEL_AT] = UP_VEL_MARK;
+    }
+    if (r->ver >= 4u && r->np <= UP_WEST_AT && r->packed[UP_WEST_AT] != UP_WEST_MARK) {   /* (V10.7.36) NOISE -> WEST */
+        if (r->engine == ENGI_WEST) {
+            int16_t e[8];
+            uint32_t i;
+            for (i = 0; i < 8u; i++) e[i] = up_value(r, r->np - 8u + i);
+            west_from_noise(e);
+            for (i = 0; i < 8u; i++) up_set_value(r, r->np - 8u + i, e[i]);
+        }
+        r->packed[UP_WEST_AT] = UP_WEST_MARK;
     }
 }
 
@@ -200,7 +213,7 @@ static __attribute__((noinline)) int up_parse(const uint8_t *a, uint32_t na, up_
     r->ver = UP_VER;
     r->engine = a[1];
     r->np = P_COUNT;
-    r->packed[UP_FM_AT] = UP_V04_MARK; r->packed[UP_VEL_AT] = UP_VEL_MARK;
+    r->packed[UP_FM_AT] = UP_V04_MARK; r->packed[UP_VEL_AT] = UP_VEL_MARK; r->packed[UP_WEST_AT] = UP_WEST_MARK;
     for (i = 0; i < n; i++)
         r->name[i] = (char)a[2 + i];
     for (i = 0; i < P_COUNT; i++, k += 2u)
@@ -360,7 +373,7 @@ static int up_store(uint32_t k, const char *name)
     r.ver = UP_VER;
     r.engine = TSEL->eng_req;
     r.np = P_COUNT;
-    r.packed[UP_FM_AT] = UP_V04_MARK; r.packed[UP_VEL_AT] = UP_VEL_MARK;
+    r.packed[UP_FM_AT] = UP_V04_MARK; r.packed[UP_VEL_AT] = UP_VEL_MARK; r.packed[UP_WEST_AT] = UP_WEST_MARK;
     up_set_name(&r, k, name);
     for (i = 0; i < P_COUNT; i++)
         up_set_value(&r, i, motion_base_value(TSEL, i));

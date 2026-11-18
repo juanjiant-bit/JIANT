@@ -1031,8 +1031,8 @@ static void vx_bug_scene(uint32_t l, uint32_t dm, uint32_t n)
 }
 /* (0.9.6) the six creatures of the mock-up's family (ui_engvis.c): track 1 as engine e (preset pre), the knobs k[0..7]
  * (-99: the preset's), a note (none: silent) played and rung a while, then on page (0: HOME's BEING); age: ms since the
- * note when drawn (its squash, its blink), mt: the creature's time (its phases, NOISE's swarm moving) */
-enum { ENGI_PHASE_UI = 2, ENGI_LOFI_UI = 3, ENGI_WHEEL_UI = 7, ENGI_NOISE_UI = 11 };   /* (engines.c ENGINES[]) */
+ * note when drawn (its squash, its blink), mt: the creature's time (its animation phases) */
+enum { ENGI_PHASE_UI = 2, ENGI_LOFI_UI = 3, ENGI_WHEEL_UI = 7, ENGI_WEST_UI = 11 };   /* (engines.c ENGINES[]) */
 static void v6_scene(uint32_t e, const char *pre, const char *page, const int16_t *k, uint32_t note, uint32_t age, uint32_t c)
 {
     uint32_t i;
@@ -1056,7 +1056,6 @@ static void v6_scene(uint32_t e, const char *pre, const char *page, const int16_
     vx_age(TSEL, c, 0);                                  /* (the note seen, age ms ago) */
     vxs.nms[c] = fm1_ms - age;
     vxs.mt[c] = 30u * 256u * 3u + c * 977u;
-    vxs.swt = vxs.mt[c] >> 8;
     if (page) go_title(page); else { ui.home = 1; ui.hlv = 1; ui.hset[1] = 0; }
 }
 static void setup(int s)
@@ -1354,7 +1353,7 @@ static void setup(int s)
     case S_OP_ENV: eng(1); go_title("OP1 ENV"); break;
     case S_EDIT_WHEEL: eng(7); go_title("EDIT 1"); ui.hot_col = 1; ui.hot_t = 30; break;
     case S_EDIT_SAMPLE: eng(5); go_title("EDIT 1"); break;   /* (JIANT: SAMPLE retired; VOICE in its place) */
-    case S_EDIT_GRAIN: eng(11); go_title("EDIT 2"); break;   /* (GRAIN retired: NOISE's second page) */
+    case S_EDIT_GRAIN: eng(11); go_title("EDIT 2"); break;   /* (GRAIN retired: WEST's second page) */
     case S_ALG1: case S_ALG2: case S_ALG3: case S_ALG4: case S_ALG5: case S_ALG6: case S_ALG7: case S_ALG8:
         eng(1); TSEL->p[P_E0] = (int16_t)(s - S_ALG1);      /* the 8 DIGITAL charts; FB on the odd ones, IDX high .. 0 */
         TSEL->p[P_E6] = (s - S_ALG1) & 1 ? 40 : 0; TSEL->p[P_E4] = (int16_t)((S_ALG8 - s) * 18);
@@ -1782,11 +1781,11 @@ static void setup(int s)
     case S_V6_WHEEL_FAST: { static const int16_t K[8] = {15, 0, 0, 0, 2, 100, 60, 2}; v6_scene(ENGI_WHEEL_UI, "JAZZ PERC", "EDIT 2", K, 62, 60, 5); break; }
     case S_V6_WHEEL_HOME: v6_scene(ENGI_WHEEL_UI, "GOSPEL", 0, 0, 55, 300, 5); break;
     case S_V6_WHEEL_FULL: v6_scene(ENGI_WHEEL_UI, "ROCK DRIVE", "EDIT 1", 0, 60, 300, 5); ui_scope = 0; break;
-    case S_V6_NOISE: { static const int16_t K[8] = {1, 40, 80, 90, 64, 100, 30, 0}; v6_scene(ENGI_NOISE_UI, "RAIN", "EDIT 1", K, 60, 300, 6); break; }
-    case S_V6_NOISE_LFSR: { static const int16_t K[8] = {2, 64, 90, 40, 64, 32, 0, 40}; v6_scene(ENGI_NOISE_UI, "ARCADE", "EDIT 2", K, 60, 300, 6); break; }
-    case S_V6_NOISE_WHITE: { static const int16_t K[8] = {0, 0, 120, 10, 64, 0, 60, 0}; v6_scene(ENGI_NOISE_UI, "WIND", "EDIT 1", K, 48, 900, 6); break; }
-    case S_V6_NOISE_HOME: v6_scene(ENGI_NOISE_UI, "SEA", 0, 0, 48, 300, 6); break;
-    case S_V6_NOISE_FULL: { static const int16_t K[8] = {1, 40, 80, 90, 64, 100, 30, 0}; v6_scene(ENGI_NOISE_UI, "RAIN", "EDIT 1", K, 60, 300, 6); ui_scope = 0; break; }
+    case S_V6_NOISE: { static const int16_t K[8] = {40, 0, 0, 1, 64, 8, 60, 56}; v6_scene(ENGI_WEST_UI, "RAIN", "EDIT 1", K, 60, 300, 6); break; }
+    case S_V6_NOISE_LFSR: { static const int16_t K[8] = {100, 40, 70, 7, 80, 60, 30, 0}; v6_scene(ENGI_WEST_UI, "ARCADE", "EDIT 2", K, 60, 300, 6); break; }
+    case S_V6_NOISE_WHITE: { static const int16_t K[8] = {30, 40, 20, 0, 20, 124, 50, 90}; v6_scene(ENGI_WEST_UI, "WIND", "EDIT 1", K, 48, 900, 6); break; }
+    case S_V6_NOISE_HOME: v6_scene(ENGI_WEST_UI, "SEA", 0, 0, 48, 300, 6); break;
+    case S_V6_NOISE_FULL: { static const int16_t K[8] = {60, 20, 30, 5, 64, 80, 40, 20}; v6_scene(ENGI_WEST_UI, "RAIN", "EDIT 1", K, 60, 300, 6); ui_scope = 0; break; }
     case S_V6_PHASE: v6_scene(ENGI_PHASE_UI, "BRASS", "EDIT 1", 0, 50, 300, 7); break;
     case S_V6_PHASE_RING: { static const int16_t K[8] = {3, 2, 90, 60, 30, 1, 80, 70}; v6_scene(ENGI_PHASE_UI, "BELL", "EDIT 2", K, 62, 50, 7); break; }
     case S_V6_PHASE_HOME: v6_scene(ENGI_PHASE_UI, "CZ PIANO", 0, 0, 57, 300, 7); break;

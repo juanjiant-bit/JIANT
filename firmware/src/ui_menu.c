@@ -349,19 +349,21 @@ static __attribute__((noinline)) void menu_panel(void)
                                                         * (The tab's name and "ALGO: TAB . SELECT: ROW" stood over them:
                                                         * the tabs and the breadcrumb say both) */
         uint32_t r0 = menu_set() * 4u;
-        while (r0 && r0 + 8u > ((n + 3u) & ~3u))
-            r0 -= 4u;
-        for (r = r0; r < n && r < r0 + 8u; r++) {
+        uint32_t rows = menu_large() ? 4u : 8u;
+        while (r0 && r0 + rows > ((n + 3u) & ~3u)) r0 -= 4u;
+        for (r = r0; r < n && r < r0 + rows; r++) {
             uint32_t row = f + r, in = r / 4u == menu_set();
-            int32_t y = 2 + (int32_t)(r - r0) * 17, h = 16;
+            int32_t h = menu_large() ? 32 : 16, y = 2 + (int32_t)(r - r0) * (h + 1);
+            const aafont_t *font = menu_large() ? &AF_M : &AF_S;
+            int32_t ty = menu_large() ? CAP_IN(M, h) : CAP_IN(S, h);
             uint16_t bg = in ? T_TINT : T_RAISE;
             cv_rect(8, y, 224, h, bg);
             if (row == ui.menu_sel)
                 cv_rect(8, y, 3, h, T_ACCENT);
             GFX_HOOK_ALIGN(0, y, 0, y + h, AL_V, "menu row name centred up/down");
-            cv_text_on(16, y + CAP_IN(S, h), &AF_S, MI_NAME[row], in ? T_TEXT : T_MID, bg);
+            cv_text_on(16, y + ty, font, MI_NAME[row], T_TEXT, bg);
             menu_val(row, v);
-            cv_text_r(in ? 216 : 226, y + CAP_IN(S, h), &AF_S, v, in ? T_TEXT : T_MID, bg);
+            cv_text_r(in ? 216 : 226, y + ty, font, v, T_TEXT, bg);
             if (in) {
                 char kn[2] = {(char)('1' + r % 4u), 0};
                 cv_text(220, y + 2 - AF_X_CAP_Y, &AF_X, kn, T_THEME);

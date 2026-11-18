@@ -45,9 +45,8 @@
  *   WHEEL   TUBÍCOLAS: nine tube worms, one a drawbar, as tall as its level (the digits under them), their crowns as
  *           many tentacles as the harmonic; the rotor a current bending them (its real phase and speed), PERC the
  *           worm it strikes, CLICK bubbles, DUST motes
- *   NOISE   ENJAMBRE: a swarm of protozoa round a queen with a face: COLOR their walk (white jitter .. brown drift), FREQ
- *           their swirl and the ring they keep, PEAK how tight; DUST's impulses flare them; LFSR / META the register
- *           marching in columns, one a bit
+ *   WEST    (V10.7.36, NOISE's ENJAMBRE before) LA ONDA PLEGADA: the folded wave as the engine folds it, brighter and
+ *           further folded as the gate opens, the lamp glowing above it, DUST's motes, a face under it
  *   PHASE   CARACOL: a snail whose shell's chambers sit at the bent phase (WAVE / WAVE2 at DCW, crowding where it
  *           rushes), the foot's sole the wave, FB frays the spiral, SUB its outer whorl, the eyestalks pulling in on a
  *           note; the second line a little one following (RING a thread)
@@ -67,9 +66,8 @@
 #define VX_SEG BTAPP_FN                                  /* (V10.48) LOFI's, ANIMAL's and STRING's creatures in the Bluetooth
                                                          * segment (the app slot full): without it vx_draw says none (the
                                                          * being instead) */
-#define VX_NE 9                                          /* the creatures: VOICE ANIMAL DRUM-X ANALOG FM6 WHEEL NOISE PHASE LOFI
+#define VX_NE 9                                          /* the creatures: VOICE ANIMAL DRUM-X ANALOG FM6 WHEEL WEST PHASE LOFI
                                                          * ((0.9.9-snd5) STRING ADD: PHASE's and WHEEL's slots, below) */
-#define VX_NSW 56                                        /* NOISE's swarm (the mock-up's 84: its cost) */
 typedef struct { int32_t cx, cy, s; } vxf_t;            /* a unit (Q4: 16) -> Q4 px: c + u * s / 256 */
 static struct {
     uint32_t tm[VX_NE], fr[VX_NE];                       /* each one's time (it runs with its sound), the frame it ran */
@@ -77,8 +75,6 @@ static struct {
     uint32_t mt[VX_NE], ms[VX_NE];                       /* (0.9.6) the mock-up's time (Q8 frames, 30 a second: with the sound), ms */
     uint32_t nage[VX_NE], nms[VX_NE];                    /* .. the newest note seen (voice_t.age), when it came (fm1_ms) */
     int16_t wv[256];                                     /* ANALOG's / PHASE's two cycles; LOFI's last 256 samples out (Q12) */
-    int16_t sw[VX_NSW][5];                               /* NOISE: the swarm (x y vx vy Q8 units, its flare Q8) */
-    uint32_t rs, swt;                                    /* .. its random state, the mock-up frames it has run */
     uint32_t rph[2], bub[9], fhold;                      /* WHEEL: the rotors as last seen sounding, CLICK's bubbles; OP ENV's hold */
     int16_t bd[8];                                       /* LOFI: the byte's bits, slewed (0..256) */
     uint32_t crawl, cmt;                                 /* .. its crawl (16-bit turns), the time it was taken at */
@@ -1448,88 +1444,89 @@ static VX_CODE void vx_wheel(const track_t *t, const int32_t *A, int32_t en_home
     vxs.kc = 0;
 }
 
-/* -------------------------------------------------------------------------------------------- NOISE --- */
-/* the swarm's step (the mock-up's, a frame of 30 a second): COLOR their walk, FREQ their swirl and its ring, PEAK
- * how tight, DUST's impulses flare them (DENSE) */
-static VX_CODE void vx_nz_step(const track_t *t, int32_t en)
+/* --------------------------------------------------------------------------------------------- WEST --- */
+/* (V10.7.37, the owner: "A, circuito"; V10.7.36's folded wave before) the engine as its signal flow, line art in the
+ * thermal colours: the MOD oscillator's box (its wave at RATIO, as bright as MOD is deep) down into the OSC box (the core
+ * wave, MOD bending its phase), an arrow to FOLD (two cycles of the core through the folder as FOLD SYMM fold them, the
+ * strike folding harder), an arrow to the LPG: its lamp, a round face glowing with the gate's level (lit at once by a
+ * strike, fading as slowly as DECAY: a vactrol), DUST's motes at its door, and under it the decay's tail, the strike
+ * running down it. A pulse runs along the wires while it sounds; still in silence (its time the sound's, vx_level). From
+ * the knobs, the track's level and its newest note only (not the engine's state: eng_west.c is its own) */
+/* the circuit's boxes (x0 y0 x1 y1, units: MOD OSC FOLD LPG, their names at the top) and wires (from, to: across or down) */
+static const int8_t VW_B[4][4] = {{-60, -45, -30, -23}, {-60, -13, -30, 9}, {-24, -30, 24, 22}, {30, -30, 60, 8}};
+static const int8_t VW_W[3][4] = {{-45, -23, -45, -13}, {-30, -2, -24, -2}, {24, -8, 30, -8}};
+static const char *const VW_N[4] = {"MOD", "OSC", "FOLD", "LPG"};
+/* a wave of n points across x0..x1 (Q4 units) about y, a units high: wf(th) (th the point's turn, 16-bit) */
+static void vx_wv(const vxf_t *f, int32_t x0, int32_t x1, int32_t y, int32_t a, uint32_t n, uint32_t cyc, uint32_t d0,
+                  const int32_t *k, int32_t h)
 {
-    const int16_t *p = t->p;
-    int32_t col = (p[P_E1] * 516 >> 8), peak = (p[P_E3] * 516 >> 8), rp = (12 * 256 + p[P_E2] * 26 * 256 / 127), dens = (p[P_E5] * 516 >> 8);
-    int32_t sp = (4 + (p[P_E2] * 60 >> 8)) * (256 + en) / 256, jit = (256 - col) * 358 / 256 * (77 + en) / 256 + (col * 90 >> 8);
-    int32_t pull = 3 + (peak * 15 >> 8), damp = 230 + (col * 20 >> 8), i;
-    uint32_t r = vxs.rs ? vxs.rs : 2463534242u;
-    for (i = 0; i < VX_NSW; i++) {
-        int16_t *q = vxs.sw[i];
-        int32_t x = q[0], y = q[1], ax = x < 0 ? -x : x, ay = y < 0 ? -y : y, rr = (ax > ay ? ax + ay * 3 / 8 : ay + ax * 3 / 8) + 1;
-        int32_t vx = q[2], vy = q[3], k = (rr - rp) * pull / 256;
-        vx = (vx * damp >> 8) + ((int32_t)(vx_rnd(&r) & 255u) - 128) * jit / 256 - y * sp / 1000 - x * k / rr;
-        vy = (vy * damp >> 8) + (((int32_t)(vx_rnd(&r) & 255u) - 128) * jit / 256) * 4 / 5 + x * sp / 1000 - y * k / rr;
-        if ((p[P_E0] & 3) == NZ_DUST && (int32_t)(vx_rnd(&r) & 65535u) < dens * dens / 50 * (51 + en) / 256) {
-            q[4] = 256;                                  /* (an impulse: it flares, it jumps) */
-            vx += ((int32_t)(vx_rnd(&r) & 255u) - 128) * 6;
-            vy += ((int32_t)(vx_rnd(&r) & 255u) - 128) * 6;
+    uint32_t i;
+    int32_t px = 0, py = 0;
+    for (i = 0; i <= n; i++) {
+        uint32_t th = (uint32_t)((cyc * i << 16) / n) + d0;   /* (cyc: turns over the box, Q8) */
+        int32_t v = og_sin(th >> 8), X = x0 + (x1 - x0) * (int32_t)i / (int32_t)n, Y;
+        if (k) {                                         /* the core: MOD's bend; FOLD: then folded (k[2] the gain, k[3] SYMM) */
+            v = og_sin((th >> 8) + (uint32_t)((og_sin((uint32_t)((th >> 8) * (uint32_t)k[0]) >> 8) * k[1]) >> 9));
+            if (k[2])
+                v = og_sin((uint32_t)((((v * k[2]) >> 8) + k[3]) >> 1));
         }
-        vx -= x / 250;
-        vy -= y / 166;
-        q[4] = (int16_t)((q[4] * 217 >> 8));
-        x += vx / 2;
-        y += vy / 2;
-        if (x > 62 * 256 || x < -62 * 256 || y > 46 * 256 || y < -46 * 256) { x = (x * 77 >> 8); y = (y * 77 >> 8); vx = vy = 0; }
-        q[0] = (int16_t)clamp(x, -32000, 32000); q[1] = (int16_t)clamp(y, -32000, 32000);
-        q[2] = (int16_t)clamp(vx, -32000, 32000); q[3] = (int16_t)clamp(vy, -32000, 32000);
+        Y = y - ((v * a) >> 15);
+        if (i) vx_line(f, px, py, X, Y, h);
+        px = X;
+        py = Y;
     }
-    vxs.rs = r;
 }
-/* ENJAMBRE */
-static VX_CODE void vx_noise(const track_t *t, const int32_t *A, int32_t en_home)
+static VX_CODE void vx_west(const track_t *t, const int32_t *A, int32_t en_home)
 {
     const int16_t *p = t->p;
-    vxf_t f = vx_uf(A, 100, 0);
-    int32_t en = vx_level(t, 6, en_home), md = p[P_E0] & 3, peak = (p[P_E3] * 516 >> 8), i, j, n;
-    uint32_t mt = vxs.mt[6], age = vx_age(t, 6, 0), reg = 0;
-    int32_t sq = vx_sq(77 + (en * 154 >> 8), age), sx = 256 + (sq * 77 >> 8), sy = 256 - (sq * 77 >> 8);
+    vxf_t f = vx_uf(A, 100, 0), g;
+    int32_t en = vx_level(t, 6, en_home), i, fo = p[P_E0] & 127, md = p[P_E2] & 127, lamp, hb, hw, k[4];
+    uint32_t mt = vxs.mt[6], age = vx_age(t, 6, 0), R = WEST_RATIO[(uint32_t)p[P_E3] & 15u], d0 = vx_ang(mt, 60) << 8,
+             half = 40u + (uint32_t)(p[P_E5] & 127) * 12u;   /* (DECAY's half life, 40 ms .. 1.6 s) */
     vxs.kc = 1;
-    if (!vxs.sw[0][0] && !vxs.sw[0][1])                  /* (scattered, the first time) */
-        for (i = 0; i < VX_NSW; i++) {
-            vxs.sw[i][0] = (int16_t)((vx_hash((uint32_t)i * 13u + 1u) - 128) * 80);
-            vxs.sw[i][1] = (int16_t)((vx_hash((uint32_t)i * 29u + 7u) - 128) * 60);
+    lamp = en ? vx_fall(age, half) : 0;                  /* the lamp: struck at once, fading with DECAY (silence: dark) */
+    lamp = clamp(lamp > en ? lamp : en, 0, 256);
+    hb = 64 + en / 3;                                    /* (the boxes) */
+    hw = 90 + en / 2;                                    /* (the waves) */
+    k[0] = (int32_t)R;                                   /* (RATIO, Q8) */
+    k[1] = md;
+    k[2] = 0;
+    k[3] = (p[P_E1] & 127) * 129;                        /* (SYMM: its offset into the folder) */
+    g = f;
+    g.s <<= 4;                                           /* (g: whole units, the boxes' and the wires' corners) */
+    for (i = 0; i < 4; i++) {                            /* the boxes, corners cut (FOLD and the LPG lit by the strike), named
+                                                         * (not at EDIT's small panel beside the scope: over the waves) */
+        const int8_t *q = VW_B[i];
+        int32_t P[16] = {q[0] + 3, q[1], q[2] - 3, q[1], q[2], q[1] + 3, q[2], q[3] - 3, q[2] - 3, q[3], q[0] + 3, q[3], q[0], q[3] - 3,
+                         q[0], q[1] + 3};
+        vx_poly(&g, P, 8, 1, hb + lamp * i / 12);
+        if (f.s >= 290)
+            vx_text(f.cx + ((q[0] + q[2]) * f.s >> 5), f.cy + ((q[1] + 2) * f.s >> 4), VW_N[i], vx_col(hb + 40));
+    }
+    for (i = 0; i < 3; i++) {                            /* the wires and their heads, lit while it sounds */
+        const int8_t *q = VW_W[i];
+        int32_t a = q[2] != q[0];
+        vx_line(&g, q[0], q[1], q[2], q[3], hw);
+        vx_line(&g, q[2] - (a ? 3 : 2), q[3] - (a ? 2 : 3), q[2], q[3], hw);
+        vx_line(&g, q[2] - (a ? 3 : -2), q[3] - (a ? -2 : 3), q[2], q[3], hw);
+    }
+    vx_wv(&f, -57 * 16, -33 * 16, -30 * 16, 5 * 16, 12u + R * 3u / 64u, R, vx_ang(mt, 60) * R, 0, 50 + md * 3 / 2);   /* MOD's wave (RATIO cycles) */
+    vx_wv(&f, -57 * 16, -33 * 16, 2 * 16, 5 * 16, 24, 256, d0, k, hw);   /* the core's (one cycle, MOD bending it) */
+    k[2] = 256 + ((fo * fo >> 3) * (128 + lamp / 2) >> 8);   /* FOLD's gain, x1 .. x9 (the strike folds harder) */
+    vx_wv(&f, -21 * 16, 21 * 16, -2 * 16, 15 * 16, 40, 512, d0, k, hw + lamp / 3);   /* the folded wave (two cycles) */
+    vx_ring(&f, 45 * 16, -7 * 16, 128, 128, 60 + lamp * 3 / 4);   /* the lamp, its glow, its face */
+    vx_bface(&f, 45 * 16, -7 * 16, 112, lamp, age < 90u, lamp);
+    {   /* the decay's tail under the gate, the strike running down it (1.6 s across) */
+        int32_t px = 0, py = 0, X, Y;
+        vx_line(&f, 30 * 16, 33 * 16, 60 * 16, 33 * 16, hb);
+        for (i = 0; i <= 16; i++) {
+            X = (30 + i * 30 / 16) * 16;
+            Y = (33 - vx_fall((uint32_t)i * 100u, half) * 18 / 256) * 16;
+            if (i) vx_line(&f, px, py, X, Y, hw);
+            px = X;
+            py = Y;
         }
-    for (n = 0; vxs.swt < mt >> 8 && n < 6; n++, vxs.swt++)   /* (its frames as its time ran: still in silence) */
-        vx_nz_step(t, en);
-    vxs.swt = mt >> 8;
-    if (md >= NZ_LFSR) {                                 /* LFSR / META: the register marching in columns, a column a bit */
-        for (i = 0; i < NVOICE; i++)
-            if (t->v[i].active) { reg = t->v[i].ph[1]; break; }
-        for (i = 0; i < 16; i++) {
-            int32_t on = md == NZ_LFSR ? (int32_t)(reg >> i & 1u) : vx_hash(((uint32_t)i + (mt >> 9)) % 16u * 7u + (uint32_t)(p[P_E5] >> 4)) > 128;
-            int32_t X = -56 * 16 + i * 118;
-            for (j = 0; j < 5; j++) {
-                int32_t Y = (-36 + j * 6 + (on ? 0 : 36)) * 16;
-                if (on) vx_line(&f, X - 16, Y, X + 22, Y, 128 + (en * 102 >> 8));
-                else vx_dot(&f, X, Y, 16, 46);
-            }
-        }
     }
-    for (i = md >= NZ_LFSR ? VX_NSW / 2 : 0; i < VX_NSW; i++) {   /* the protozoa: a stroke along their way, a dot */
-        const int16_t *q = vxs.sw[i];
-        int32_t vx = q[2], vy = q[3], av = vx < 0 ? -vx : vx, bv = vy < 0 ? -vy : vy, v = (av > bv ? av + bv * 3 / 8 : bv + av * 3 / 8) + 1;
-        int32_t s = v < 3 * 256 ? v : 3 * 256, L = 16 + (s * 230 >> 12), x = q[0] / 16, y = q[1] / 16;
-        int32_t c = q[4] > 51 ? 218 + (q[4] * 38 >> 8) : clamp(31 + (s * 31 >> 8) + (en * 46 >> 8), 0, 179);
-        vx_line(&f, x - vx * L / v, y - vy * L / v, x + vx * L * 2 / 5 / v, y + vy * L * 2 / 5 / v, c);
-        if (i % 3 == 0) vx_dot(&f, x, y, 16, c);
-    }
-    if (peak > 51) {                                     /* PEAK: the ring they keep */
-        int32_t rp = (12 * 16 + p[P_E2] * 26 * 16 / 127);
-        vxs.dal = (int16_t)(256 - peak / 2);
-        vx_ring(&f, 0, 0, rp, rp, 77 + (peak * 102 >> 8));
-        vxs.dal = 0;
-    }
-    og_node(f.cx, f.cy, (9 * f.s) >> 8, T_SURF);         /* the queen */
-    {
-        vxb_t g = {0, 0, 0, 256, sx, sy, 6, 14 + (en * 50 >> 8), 50 + (en * 100 >> 8), (en * 80 >> 8), 3, 4};
-        vx_body(&f, &g, 144, 96, mt * 90u >> 8, 51 + (en * 90 >> 8), 108 + (en * 90 >> 8), 56, 32);
-    }
-    vx_bface(&f, 0, 0, 144, (en * 307 >> 8), age < 90u, 0);
     vxs.kc = 0;
 }
 
@@ -1963,7 +1960,7 @@ static int32_t vx_fit(int32_t w, int32_t h, int32_t uw, int32_t uh)   /* a unit'
     return w * 256 / uw < h * 256 / uh ? w * 256 / uw : h * 256 / uh;
 }
 typedef struct { const engine_t *e; void (*f)(const track_t *, const int32_t *, int32_t); } vxe_t;
-static const vxe_t VX_F[] = {{&ENG_ANALOG, vx_analog}, {&ENG_WHEEL, vx_wheel}, {&ENG_NOISE, vx_noise}, {&ENG_PHASE, vx_phase},
+static const vxe_t VX_F[] = {{&ENG_ANALOG, vx_analog}, {&ENG_WHEEL, vx_wheel}, {&ENG_WEST, vx_west}, {&ENG_PHASE, vx_phase},
                              {&ENG_LOFI, vx_lofi}, {&ENG_STRING, vx_string}};   /* (0.9.9-snd5; V10.7.13+: ADD's gone, room for
                                                          * FORM MY LOOP: it draws the being) */
 static int vx_draw(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h, int32_t en_home)

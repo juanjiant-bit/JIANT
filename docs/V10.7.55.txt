@@ -1,0 +1,40 @@
+V10.7.55 beta — V10.7.23 with WEST and readable editing
+
+Base: 841f7dd90cf733c50942ae9292d2e2cb52619bd8 (V10.7.23).
+This branch starts from V10.7.23, not the V10.7.54 audio core.
+
+WEST replaces NOISE in engine slot 11, with 20 presets. Legacy NOISE projects
+and user presets are converted on load. This conversion approximates their
+sounds; NOISE is not bit-identical after conversion. Other common reference
+sounds remain unchanged. WEST's initial cost estimate is 4 (like FM6) until
+the existing per-track CPU measurement takes over.
+
+The original V10.7.23 punch-ins, voice limits, predictive admission and
+downsampling remain in place. Shared-budget reuse prefers the quietest released
+tail before the oldest, following Yehnah; held-note and drum protections remain.
+See YEHNAH_REFERENCE.txt for attribution, scope and validation. This beta does not include the later
+16-voice experimental policy or the later punch-in remapping.
+
+LARGE controls are enabled once on updating preferences. The existing LARGE
+setting can subsequently be turned off and that choice is respected. LARGE
+menus display four rows with larger lettering; compact mode keeps eight.
+
+Stopped note preview: selecting a piano-roll step, changing its note focus
+or pitch, or selecting a drum lane requests a brief audition (about 1/3 s).
+The audio thread owns the preview voices. Playback, armed recording, held
+keys, incoming MIDI or a page change cancels it. It refuses to compete with
+unrelated active voices; it never records, sends MIDI notes or changes the
+transport. Previewing a drum step auditions the selected lane. Chord preview
+uses the selected track's original voice mode and limits.
+
+TIMELINE is already present in this base, as the first SAVE page. Native
+arrangement, parts and clips are retained. REC Q OFF is also already present:
+REC + B3 toggles quantization, or use REC Q in the recording controls. Timing
+is preserved at the original 1/64-step resolution, not continuous timestamps.
+
+Validation: target size/layout and instruction budgets; reference audio
+hashes; WEST extremes and migration; preview ownership, cancellation and
+expiry with AddressSanitizer; full UI; recording/microtiming; projects and
+presets; threaded mixer; native and WebAssembly audio comparison in CI.
+Physical FM-1 listening and worst-case CPU headroom still require beta use.
+The public installer and public emulator remain on the stable release policy.

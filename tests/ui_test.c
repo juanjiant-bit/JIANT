@@ -6240,11 +6240,11 @@ static int test_fm4_retired(void)
     bad += check("PRESETS KNOB 2: the engines in order (V10.6d: DRUM ANALOG PHASE FM6 VOICE ANIMAL MATH ..; EXT last, round), DIGITAL skipped, back to the first",
                  seen == all && TSEL->eng_req == 0u && eng_step(0, 1) == ENGI_PHASE && eng_step(ENGI_FM6, 1) == ENGI_VOICE &&
                  eng_step(ENGI_FM6, -1) == ENGI_PHASE && eng_step(0, -1) == ENGI_DRUM && eng_step(ENGI_DRUM, 1) == 0u &&
-                 eng_step(ENGI_VOICE, 1) == ENGI_ANIMAL && eng_step(ENGI_ANIMAL, 1) == ENGI_LOFI && eng_step(ENGI_DRUM, -1) == ENGI_INPUT && eng_step(ENGI_NOISE, 1) == ENGI_STRING &&
+                 eng_step(ENGI_VOICE, 1) == ENGI_ANIMAL && eng_step(ENGI_ANIMAL, 1) == ENGI_LOFI && eng_step(ENGI_DRUM, -1) == ENGI_INPUT && eng_step(ENGI_WEST, 1) == ENGI_STRING &&
                  eng_step(ENGI_STRING, 1) == ENGI_ADD && eng_step(ENGI_ADD, 1) == ENGI_INPUT && eng_step(ENGI_INPUT, 1) == ENGI_DRUM);   /* (V10.54: INPUT last) */
     {   /* the display order (engines.c ENGINE_ORDER, 0.9.9): every engine one can pick once; the PRESETS list follows it
          * (was ANALOG FM6 PHASE LOFI VOICE WHEEL NOISE DRUM ANIMAL: test_engine_order_099 has PROGRAM CHANGE's) */
-        static const char *const ORDER[] = {"DRUM", "ANALOG", "PHASE", "FM6", "VOICE", "ANIMAL", "MATH", "WHEEL", "NOISE", "STRING", "ADD", "EXT"};
+        static const char *const ORDER[] = {"DRUM", "ANALOG", "PHASE", "FM6", "VOICE", "ANIMAL", "MATH", "WHEEL", "WEST", "STRING", "ADD", "EXT"};
         uint32_t last = 0xFFu, r = 0, n = 0;
         ok = NENG_SHOWN == NELEM(ORDER);
         for (i = 0; ok && i < NENG_SHOWN; i++)
@@ -13601,12 +13601,12 @@ static int test_power_on_099(void)
 static int test_engine_order_099(void)
 {
     static const char *const IDX[NENGINES] = {"ANALOG", 0, "PHASE", "MATH", "-", "VOICE", "-", "WHEEL", "STRING", "-", "DRUM",
-                                              "NOISE", "FM6", "ADD", "ANIMAL"};
+                                              "WEST", "FM6", "ADD", "ANIMAL"};
     static const char *const PC[] = {"ANALOG", "FM6",
 #if FELUCCA_FM4
                                      "DIGITAL",
 #endif
-                                     "PHASE", "MATH", "VOICE", "WHEEL", "NOISE", "DRUM", "ANIMAL", "STRING", "ADD", "EXT"};   /* (V10.54) */
+                                     "PHASE", "MATH", "VOICE", "WHEEL", "WEST", "DRUM", "ANIMAL", "STRING", "ADD", "EXT"};   /* (V10.54) */
     int bad = 0, ok = 1;
     uint32_t i, e, k, n, all, seen = 0;
     project_store_t st;
@@ -13615,7 +13615,7 @@ static int test_engine_order_099(void)
     for (e = 0; e < NENGINES; e++)                     /* the stores' numbers: never renumbered */
         ok &= !IDX[e] || str_eq(ENGINES[e]->name, IDX[e]);
     ok &= ENGI_DRUM == 10u && ENGI_VOICE == 5u && ENGI_ANIMAL == 14u && ENGI_LOFI == 3u && ENGI_ANALOG == 0u && ENGI_FM6 == 12u &&
-          ENGI_PHASE == 2u && ENGI_WHEEL == 7u && ENGI_NOISE == 11u;
+          ENGI_PHASE == 2u && ENGI_WHEEL == 7u && ENGI_WEST == 11u;
     bad += check("0.9.9 engine order: ENGINES[] as before (0 ANALOG .. 10 DRUM 11 NOISE 12 FM6 14 ANIMAL)", ok);
     for (n = 0, ok = 1; n < NENG_SHOWN; n++) {         /* place -> engine -> place */
         e = eng_vis(n);
@@ -13637,14 +13637,20 @@ static int test_engine_order_099(void)
     ok = preset_all_at(0, &k) == ENGI_DRUM && k == 0u;            /* the PRESETS list: DRUM-X first */
     e = preset_all_at(preset_shown(ENGI_DRUM), &k);
     ok &= e == ENGI_ANALOG && k == preset_nth(ENGINES[ENGI_ANALOG], 0);   /* the last kit, then ANALOG's first (V10.6d) */
-    for (i = 0, n = 0; i < all; i++) {                             /* the same sounds in both orders */
-        uint32_t k1, k2, e1 = preset_all_at(i, &k1), e2;
-        for (e2 = 0, n = 0; e2 < all + 1u && !n; e2++) {   /* (V10.6h: PROGRAM CHANGE counts one more: 18 - 12 + 24 - 29) */
-            uint32_t q, ee = preset_all_at_in(e2, &q, ENGINE_PC_ORDER);
-            n = ee == e1 && q == k1;
+    uint32_t pc_count = up_count();
+    for (i = 0; i < NENG_SHOWN; i++)
+        pc_count += pc_shown(ENGINE_PC_ORDER[i], 1);
+    for (i = 0; i < all; i++) {
+        uint32_t preset, engine = preset_all_at(i, &preset);
+        int in_pc = 0;
+        for (uint32_t pc = 0; pc < pc_count && !in_pc; pc++) {
+            uint32_t q, e_pc = preset_all_at_in(pc, &q, ENGINE_PC_ORDER);
+            in_pc = e_pc == engine && q == preset;
         }
-        (void)k2;
-        if (!n && !(e1 == ENGI_ANIMAL && k1 >= 24u)) break;   /* (V10.6h: ANIMAL's appended tonal ones by the list alone) */
+        /* ANIMAL added five sounds after its 24 programs. WEST keeps NOISE's eight. */
+        int browser_only = (engine == ENGI_ANIMAL && preset >= 24u) || (engine == ENGI_WEST && preset >= 8u);
+        if (in_pc == browser_only)
+            break;
     }
     ok &= i == all && NELEM(PC) == NENG_SHOWN;
     {   /* (V10.6h) PROGRAM CHANGE as 0.9.8 counted: MATH 18 (LOFI's), ANIMAL 24; ANIMAL's first is right after VOICE's
@@ -13661,7 +13667,7 @@ static int test_engine_order_099(void)
         ok &= str_eq(ENGINES[ENGINE_PC_ORDER[i]]->name, PC[i]);
     e = preset_all_at_in(0, &k, ENGINE_PC_ORDER);
     ok &= e == ENGI_ANALOG && k == 0u;                              /* PROGRAM CHANGE 0: ANALOG SAW LEAD, as in 0.9.8 */
-    bad += check("  PRESETS lists DRUM-X first; PROGRAM CHANGE keeps 0.9.8's numbers (0 = ANALOG SAW LEAD), the same sounds", ok);
+    bad += check("  PRESETS lists DRUM-X first; PROGRAM CHANGE keeps the legacy numbers, including WEST's first eight", ok);
     {   /* a project of 0.9.8's parts (T1 ANALOG ACID .. T4 DRUM-X): saved, then the 0.9.9 power-on, then loaded */
         int16_t p0[NTRK][P_COUNT];
         uint8_t e0[NTRK], pr0[NTRK];

@@ -136,11 +136,11 @@ static int32_t v14_at(const uint8_t *r) { return (int32_t)(r[0] | r[1] << 7) - 8
 /* ------------------------------------------------------------------ the frozen tables */
 /* the engine byte: numbers fixed for good, new engines appended. The names INFO sends (the display may differ) */
 static const char *const ENGINE_NAMES[16] = {"ANALOG", "-", "PHASE", "MATH", "-", "VOICE", "-", "WHEEL",
-                                             "STRING", "-", "DRUM", "NOISE", "FM6", "ADD", "ANIMAL", "EXT"};
+                                             "STRING", "-", "DRUM", "WEST", "FM6", "ADD", "ANIMAL", "EXT"};
 /* the app's own table (Fm1Link Fm1State.engineName, VisFeed ENG): the number of each engine it names */
 static const struct { uint32_t id; const engine_t *e; const char *app; } APP_ENGINES[] = {
     {0, &ENG_ANALOG, "ANALOG"}, {2, &ENG_PHASE, "PHASE"}, {3, &ENG_LOFI, "LOFI"}, {5, &ENG_FORMANT, "VOICE"},
-    {7, &ENG_WHEEL, "WHEEL"}, {10, &ENG_DRUM, "DRUM"}, {11, &ENG_NOISE, "NOISE"}, {12, &ENG_FM6, "FM6"},
+    {7, &ENG_WHEEL, "WHEEL"}, {10, &ENG_DRUM, "DRUM"}, {11, &ENG_WEST, "WEST"}, {12, &ENG_FM6, "FM6"},
     {14, &ENG_ANIMAL, "ANIMAL"}, {8, &ENG_STRING, "STRING"}, {13, &ENG_ADD, "ADD"}, {15, &ENG_INPUT, "EXT"},
 };
 /* the contract's command numbers (frozen) and the app's parameter ids */
@@ -171,7 +171,17 @@ static int contract_constants(void)
        ED_MENU[APP_MO_INDEX][1] == APP_MO_ID && ED_MENU[APP_MO_INDEX][0] == MI_MIDIOUT && MO_ALL == APP_MO_ALL);
     for (i = 0; i < NENGINES; i++)
         same &= !strcmp(ENGINES[i]->name, ENGINE_NAMES[i]);
-    ok("engine id table: 0 ANALOG 2 PHASE 3 MATH 5 VOICE 7 WHEEL 8 STRING 10 DRUM 11 NOISE 12 FM6 13 ADD 14 ANIMAL 15 EXT", same);
+    ok("engine id table: 0 ANALOG 2 PHASE 3 MATH 5 VOICE 7 WHEEL 8 STRING 10 DRUM 11 WEST 12 FM6 13 ADD 14 ANIMAL 15 EXT", same);
+    {
+        uint32_t pc = 0, k = 0;
+        for (i = 0; i < NENG_SHOWN && ENGINE_PC_ORDER[i] != ENGI_WEST; i++)
+            pc += pc_shown(ENGINE_PC_ORDER[i], 1);
+        same = pc_shown(ENGI_WEST, 0) == 20u && pc_shown(ENGI_WEST, 1) == 8u;
+        for (i = 0; i < 8u; i++)
+            same &= preset_all_at_in(pc + i, &k, ENGINE_PC_ORDER) == ENGI_WEST && k == i;
+        same &= preset_all_at_in(pc + 8u, &k, ENGINE_PC_ORDER) == ENGI_DRUM && k == 0u;
+        ok("WEST browser has 20 sounds; the eight old program numbers and the following drum program stay in place", same);
+    }
     same = 1;
     for (i = 0; i < NELEM(APP_ENGINES); i++)
         same &= ENGINES[APP_ENGINES[i].id] == APP_ENGINES[i].e;

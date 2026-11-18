@@ -199,8 +199,14 @@ static __attribute__((noinline)) void mo_knobs(void)
 }
 static void kx_block(void);
 static void panic_block(void);
+/* Keep editor state out of the original DSP globals' address layout. */
+static volatile uint32_t preview_req __attribute__((section(".pool")));
+static volatile uint16_t preview_left __attribute__((section(".pool")));
+static __attribute__((noinline)) void preview_block(uint32_t n);
 static __attribute__((noinline)) void mo_block(uint32_t n)   /* events_block: the setting changed; the clock */
 {
+    /* Stopped editor work stays in this existing flash helper, outside hot RAM. */
+    if (preview_req || preview_left) preview_block(n);
     kx_block();                                     /* (V10.6z4) the expression keys (from here: RAM code calls none
                                                      * of the image's last functions) */
     panic_block();                                  /* (stuck notes) PANIC, a lost MIDI note-off (cold: out of RAM code) */
@@ -3379,6 +3385,8 @@ static __attribute__((noinline)) void panic_block(void)   /* (mo_block, before e
         midi_in_overflow = 0;
     }
 }
+#include "seq_preview.c"
+
 static void events_block(uint32_t n)
 {
     uint32_t i, pr, fo, seq_n = n;

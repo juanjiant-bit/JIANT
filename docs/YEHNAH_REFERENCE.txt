@@ -1,0 +1,57 @@
+Yehnah as a shared engineering reference — 2026-11-18
+
+Reference: Mello-D/yehnah, commit a26c7869560a026654504a9b53010a23a2e12b76
+https://github.com/Mello-D/yehnah/tree/a26c7869560a026654504a9b53010a23a2e12b76
+License: GPL-3.0. Yehnah credits JIANT and Felucca; this adaptation credits
+Mello-D's released-tail ordering in firmware/src/voice.c.
+JIANT starting point: V10.7.55 candidate based on V10.7.23, commit 2dd53d4.
+
+First adopted idea
+When the shared budget has to reuse a released voice, choose the quietest
+release, with age breaking ties. Previously the shared allocator chose the
+oldest release even when a much quieter one was available. Held-note priority,
+the protected lowest chord tone, one-shot drum semantics and kick/snare/clap
+protection stay as in JIANT. FM6 uses JIANT's existing per-voice peak because
+its envelope lives in the operators; its generic env_out is not a useful
+loudness reading. This is an envelope/peak heuristic, not a psychoacoustic
+measure of the final mix, and it does not add voices or eliminate stealing.
+Same-track reuse and the predictive-load allocator retain their existing rules.
+
+Useful comparisons, without importing incompatible policies
+- Yehnah voice.c: 8 shared voices, up to 12 with sustained dual-core headroom;
+  ECO has 6. Its additional cost budget weights JUNO/DRIFT, FM6/PLAITS and
+  HYBRID/VOICE. This can cause reuse before the voice-count ceiling is reached.
+- Yehnah audio.c and docs/CPU_099_BETA.md: explicit admission hysteresis and
+  overload diagnostics; twelve voices are not promised for every patch/USB/FX
+  combination. JIANT .23 already has measured per-track cost prediction and
+  adaptive soft measures; its policy is not replaced by Yehnah's static table.
+- Yehnah's allocator tests gate directly. JIANT additionally treats a one-shot
+  drum as held after key-up. Preserve that distinction when sharing changes.
+- Yehnah morphing routes A's notes to both tracks and crossfades the pair;
+  B's independent sequence is suppressed. Three pairs therefore are not six
+  independent arrangements and are not evidence of additional CPU headroom.
+- Engine/preset inventory and existing baseline files do not establish a
+  performance ranking between firmware builds. Comparable scenes and real
+  FM-1 timing are required. No new engines or interface redesign are imported
+  as part of this allocation change. Original V23 punch-ins remain unchanged.
+
+Validation
+tests/tail_priority_test.c demonstrates two failing choices before the change
+and passes after it, with AddressSanitizer/bounds checks. It covers equal-level
+ties, FM6 levels, mono/chord-bass protection, fading voices, one-shot drum key-up
+and soft selection. Its real note-admission scene is four drum hits + a four
+note chord + four mono tracks = 12 voices. Headroom is injected by the host:
+this test proves allocator behavior, not sustainable physical-device load.
+The 216 reference audio renders remain unchanged. All host CPU and target
+instruction budgets pass; concurrent mixer modes agree. The target image is
+581396 of 584336 bytes; RAM data+BSS 97776 of 98304, hot RAM code 32732 of 34816
+(same RAM use as before this change). Hardware listening is pending.
+
+Next joint investigation
+Use identical six-track projects, engine/preset choices, note lengths, FX and
+USB modes. Compare peak render time, late audio buffers, stolen voices by reason
+and track, and time spent at reduced sample rate. Add release/drum overlaps to
+reach 16 voices only after establishing the 12-voice scene on hardware. Preserve
+musical timing and held notes while measuring which quality reductions actually
+save time on the FM-1. Exchange reproducible cases and source commits with the
+developer when authorized; no external message has been sent automatically.

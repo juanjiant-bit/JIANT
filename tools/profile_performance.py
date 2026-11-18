@@ -8,7 +8,7 @@ before, after = sys.argv[1:3]
 repeats = int(sys.argv[3]) if len(sys.argv) > 3 else 9
 cases = [(name, ['track', str(e), str(p), '1', '4', '0', '0', '6'])
          for name,e,p in [('ANALOG',0,0),('PHASE',2,0),('LOFI',3,0),('VOICE vowels',5,0),
-                         ('VOICE words',5,7),('WHEEL',7,0),('DRUM',10,0),('NOISE',11,0),('FM6',12,0),('ANIMAL',14,0)]]
+                         ('VOICE words',5,7),('WHEEL',7,0),('DRUM',10,0),('WEST',11,0),('FM6',12,0),('ANIMAL',14,0)]]
 cases += [('FM6 '+str(n)+' operators', ['fmops','12','0','1','4','0','0',str(n)]) for n in (6,4,2)]
 cases += [('FX '+name, ['fx','0','0','1','0',str(mask),str(rt),'6'])
           for name,mask,rt in [('no input',0,0),('chorus input',1,0),('delay input',2,0),

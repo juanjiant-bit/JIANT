@@ -622,9 +622,13 @@ static int voice_core_drum(const track_t *t, const voice_t *v)
 {
     return t->engine == ENGI_DRUM && (uint32_t)v->s[0] < 3u;
 }
+/* Quiet released tails first, after Mello-D/yehnah a26c786 (voice.c).
+ * Keep JIANT's held/one-shot priorities; use voice_lvl for FM6's own envelope. */
+static int32_t voice_lvl(const track_t *t, const voice_t *v);
 static uint32_t voice_victim(const track_t *self, int soft, track_t **pp)
 {
     uint32_t p, i, best = NVOICE, cat = 4;
+    int32_t quiet = 0;
     for (p = 0; p < NPART; p++) {
         track_t *t = &trk[p];
         uint32_t mode = trk_vmode(t);
@@ -644,8 +648,11 @@ static uint32_t voice_victim(const track_t *self, int soft, track_t **pp)
                 c = 3;                                  /* held, not the bass, not a kick snare clap */
             else
                 continue;
-            if (c < cat || (c == cat && v->age < (*pp)->v[best].age)) {
+            int32_t level = c == 1u ? voice_lvl(t, v) : 0;
+            if (c < cat || (c == cat && (level < quiet ||
+                (level == quiet && v->age < (*pp)->v[best].age)))) {
                 cat = c;
+                quiet = level;
                 best = i;
                 *pp = t;
             }
@@ -701,7 +708,7 @@ static uint32_t quiet_tail(track_t **pp)
 #define LOAD_SHARE_Q8 154u                              /* 0.6: the two cores' share (the FM-1: the split is by cost) */
 #define LOAD_FRAME_TICKS 544u                           /* TIMER4 ticks a frame (24 MHz / 44,117.6 Hz: audio.c DAC_TICKS) */
 #define LOAD_W_PCT 1u                                   /* a weight unit of mc_cost (fx.c) as % of a half: an estimate
-                                                         * until the part is measured (FM6 4 %, LOFI / NOISE 2, else 3) */
+                                                         * until the part is measured (engines.c eng_voice_weight) */
 #define LOAD_ADD_LOG2 (12u - CTL_LOG2)                 /* what the admitted voices added decays over ~93 ms (128 blocks of 32,
                                                          * the average's time: as their load shows in it, load_block) */
 static uint32_t mc_tk[NTRK];                            /* (fx.c measures it: a part's block in TIMER4 ticks, smoothed) */
@@ -716,7 +723,7 @@ static uint32_t load_cost_q8(const track_t *t)          /* a voice more of part 
         uint32_t half = mc_tk[ti] * (HALF_FRAMES / CTL) / nv;
         c = half * 25600u / (HALF_FRAMES * LOAD_FRAME_TICKS);
     } else
-        c = (e == &ENG_FM6 ? 4u : e == &ENG_LOFI || e == &ENG_NOISE ? 2u : 3u) * LOAD_W_PCT * 256u;
+        c = eng_voice_weight(e) * LOAD_W_PCT * 256u;
     return load_cores2 ? (c * LOAD_SHARE_Q8) >> 8 : c;
 }
 static void load_take(const track_t *t)                 /* a voice added: into the prediction */

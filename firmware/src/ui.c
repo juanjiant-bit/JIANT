@@ -195,6 +195,11 @@ static void prefs_update(void)
         prefs_rev = 4u;
         settings_save();
     }
+    if (prefs_rev < 5u) {                              /* V55: readable controls once; later user choices persist. */
+        ui_prefs |= PREF_LARGE;
+        prefs_rev = 5u;
+        settings_save();
+    }
 }
 /* MENU > AUDIO CLICK, CLICK LEVEL, COUNT-IN (1.1, Discussion #131; click.c, seq.c): two bits each in another byte no
  * engine uses, saved with the settings: bits 0-1 CLICK (OFF REC ON), 2-3 CLICK LEVEL (stored 0 MID, 1 LOW, 2 HIGH),
@@ -1236,6 +1241,21 @@ static void grid_acc(track_t *t, uint32_t i, uint32_t l, uint32_t on)
     s->acc = (uint8_t)(on ? s->acc | b : s->acc & ~b);
 }
 
+/* Audition is a request to the audio owner, never a main-loop voice edit. */
+static int ui_preview_ok(void)
+{
+    return !ui.home && !ui.menu && !ui.confirm && !ui.layer &&
+           cur_page()->graph == GR_ROLL && !song.playing && !song.rec && !seq_counting();
+}
+static void ui_preview(void)
+{
+    if (ui_preview_ok()) {
+        uint32_t focus = drum_track(TSEL) ? ui.lane + 1u : ui.pr_focus;
+        RING_PUBLISH();
+        preview_req = ((song.sel + 1u) << 16) | (focus << 8) | ui.cursor;
+    }
+}
+
 /* SEQ cursor: wraps inside the pattern length, the bank follows, a step entry ends */
 static void cursor_set(int32_t c)
 {
@@ -1244,6 +1264,7 @@ static void cursor_set(int32_t c)
     ui.bank = (uint8_t)(ui.cursor / 16u);
     ui.entry_open = 0;
     ui.pr_focus = 0;                                    /* (0.6.81: another step, the whole chord) */
+    ui_preview();
 }
 
 static void cursor_fix(void)                           /* LEN got shorter: onto the last step */
@@ -1511,7 +1532,7 @@ static const uint8_t *preset_order(const engine_t *e, uint32_t *n)
     if (e == &ENG_STRING) { *n = sizeof STRING_ORDER; return STRING_ORDER; }
     if (e == &ENG_ADD) { *n = sizeof ADD_ORDER; return ADD_ORDER; }
     if (e == &ENG_PHASE) { *n = sizeof PHASE_ORDER; return PHASE_ORDER; }
-    if (e == &ENG_NOISE) { *n = sizeof NOISE_ORDER; return NOISE_ORDER; }
+    if (e == &ENG_WEST) { *n = sizeof WEST_ORDER; return WEST_ORDER; }
     if (e == &ENG_FM6) { *n = sizeof FM6_ORDER; return FM6_ORDER; }
     if (e == &ENG_WHEEL) { *n = sizeof WHEEL_ORDER; return WHEEL_ORDER; }
     *n = 0;
@@ -1801,7 +1822,7 @@ static uint32_t preset_all_pos(uint32_t *total)          /* list index of the se
  * as LOFI's 18 (the chip presets' numbers onto MATH's voices), ANIMAL its first 24 (the 5 tonal ones appended are
  * reached by the list, not by a program number); the user presets after them as before */
 static const uint8_t LOFI_PC[18] = {0, 1, 2, 8, 9, 10, 11, 3, 4, 5, 6, 7, 5, 3, 4, 4, 3, 6};
-static uint32_t pc_shown(uint32_t e, int pc) { return !pc ? preset_shown(e) : e == ENGI_LOFI ? 18u : e == ENGI_ANIMAL ? 24u : preset_shown(e); }
+static uint32_t pc_shown(uint32_t e, int pc) { return !pc ? preset_shown(e) : e == ENGI_LOFI ? 18u : e == ENGI_ANIMAL ? 24u : e == ENGI_WEST ? WEST_PC : preset_shown(e); }
 static uint32_t preset_all_at_in(uint32_t n, uint32_t *k, const uint8_t *order)
 {
     uint32_t e, r;
@@ -1947,7 +1968,8 @@ static void midi_pc_poll(void)
             midi_pc_req[i] = 0;
             song.sel = (uint8_t)i;
             preset_all_pos(&all);
-            all = all - preset_shown(ENGI_LOFI) - preset_shown(ENGI_ANIMAL) + pc_shown(ENGI_LOFI, 1) + pc_shown(ENGI_ANIMAL, 1);
+            all = all - preset_shown(ENGI_LOFI) - preset_shown(ENGI_ANIMAL) - preset_shown(ENGI_WEST)
+                  + pc_shown(ENGI_LOFI, 1) + pc_shown(ENGI_ANIMAL, 1) + pc_shown(ENGI_WEST, 1);
             if (n < all) {                              /* (V10.6h: as PROGRAM CHANGE counts them) */
                 e = preset_all_at_in(n, &k, ENGINE_PC_ORDER);   /* (0.9.9: 0.9.8's numbers) */
                 if (e == NENGINES) {

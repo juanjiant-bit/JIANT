@@ -603,8 +603,10 @@ static void grid_edit(uint32_t slot, int32_t steps)
 {
     if (slot == 0u)
         cursor_set(ui.cursor + steps);
-    else if (slot == 1u)
+    else if (slot == 1u) {
         ui.lane = (uint8_t)clamp((int32_t)ui.lane + (steps > 0 ? 1 : -1), 0, NLANE - 1);
+        ui_preview();
+    }
     else if (slot == 2u)
         grid_hit_set(TSEL, ui.cursor, ui.lane,
                      (uint32_t)clamp((int32_t)grid_hit_of(&TSEL->step[ui.cursor], ui.lane) + (steps > 0 ? 1 : -1), 0, LM_N));
@@ -996,6 +998,7 @@ static __attribute__((noinline)) void step_edit(uint32_t slot, int32_t steps)
         if (slot == 3u) micro_edit(steps);
         else if (drum_track(TSEL)) { if (slot == 0u) cursor_set(ui.cursor + steps); else ui_message("A KIT: STEP + MICRO"); }
         else note_edit(slot, steps);
+        if (slot < 3u) ui_preview();
         return;
     }
     if (drum_track(TSEL)) {
@@ -1017,6 +1020,7 @@ static __attribute__((noinline)) void step_edit(uint32_t slot, int32_t steps)
             st->note[i] = (uint8_t)clamp(st->note[i] + steps, 1, 127);
         st->time = ST_NOTE;
         last_note = st->note[0];
+        ui_preview();
         break;
     case 2: {                                             /* TIME (0.8.4), one range: REST < TIE < NOTE < 2 ST .. 16 ST;
                                                            * right a NOTE longer (len_turn), left shorter, then a TIE, a
@@ -2546,6 +2550,7 @@ static void ui_input_frame(void);
 static void ui_input(void)
 {
     ui_input_frame();
+    if (!ui_preview_ok() && (preview_req || preview_left)) preview_req = PREVIEW_CANCEL;
     eu_tick();                                          /* (V10.16) EUCLID's MUTATE, on the bar */
     scale_link();                                       /* (JIANT 0.4) one scale for every melodic track (after the
                                                          * frame's edits) */
