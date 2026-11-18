@@ -206,6 +206,11 @@ int main(void)
         snprintf(name, sizeof name, "rev/%s", RT[i]);
         vg_section(name);
     }
+    vg_quiet();                                         /* (V10.7.56) the same pad dry: the reverbs' own cost against it */
+    song.g[G_RTYPE] = 0;
+    vg_part(0, ENGI_ANALOG, 0, 4);
+    trk[0].p[P_REV] = 0;
+    vg_section("rev/dry");
     for (i = 0; i < 3u; i++) {                          /* (0.8.4) the delay's line at each rate (fx.c dly_lo): 634 ms
                                                          * full, 1.03 s half, 2.13 s a quarter (DLY_LEN 32768) */
         static const char *const DN[3] = {"dly/full", "dly/half", "dly/quarter"};

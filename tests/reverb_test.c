@@ -72,7 +72,7 @@ static struct {
     int32_t dly_lp, dly_hp, wm;          /* (0.6.86) the loop's low cut; the tape's drift (Q8) */
     uint32_t wph, fph;
     uint32_t w;                          /* (V10.7.17) ROOM: the ring's write count */
-    int32_t comb_lp[4];
+    int32_t comb_lp[4], rprev, rnext;    /* (V10.7.56: ROOM at half the rate, its last output and the next) */
     uint32_t dl_now, dl_old, dl_xf;      /* (0.6.81) TIME's crossfade; DEPTH and MIX gliding (fx.c) */
     int32_t cd, dm;
 } rf;
@@ -126,14 +126,17 @@ static void ref_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_
         ref_dly[rf.dly_w & (DLY_LEN - 1u)] = (int16_t)dly_sat((dly_in[i] >> 1) + mulq15(clamp(x - ((rf.dly_hp + 128) >> 8), -32767, 32767), fb));
         rf.dly_w++;
         y += mulq15(x << 1, rf.dm);
-        {   /* (V10.7.17) ROOM: the 4-line network, written out here as plainly as it reads (fx.c rev_room) */
-            static const uint32_t LEN[4] = {919, 997, 1061, 1119}, ALEN[2] = {577, 447};
+        if (!(i & 1u)) {   /* (V10.7.56) ROOM at half the rate: the 4-line network a pair of samples at a time, its
+                            * lines half as long, DAMP's pole squared; the pair's last sample its output, the first the
+                            * mean with the one before (fx.c rev_room), written out here as plainly as it reads */
+            static const uint32_t LEN[4] = {460, 498, 531, 559}, ALEN[2] = {288, 224};
             uint32_t base = 0, ab = 0;
-            int32_t in = (rev_in[i] * 2120 + 16384) >> 15, o[4], s = 0, g = (32768 - (((32768 - size) * 28500) >> 15)) >> 1;
+            int32_t in = ((rev_in[i] + rev_in[i + 1u]) * 1060 + 16384) >> 15, o[4], s = 0, g = (32768 - (((32768 - size) * 28500) >> 15)) >> 1;
             int32_t dk = song.g[G_RDAMP] * 166, ao[2];
+            dk = (dk * dk + 16384) >> 15;
             rf.w--;
             for (k = 0; k < 4u; k++) {                          /* each line's oldest sample */
-                o[k] = ref_ring[(rf.w + base + LEN[k]) & 4095u];
+                o[k] = ref_ring[(rf.w + base + LEN[k]) & 2047u];
                 base += LEN[k];
                 int32_t d = rf.comb_lp[k] - o[k];               /* (its damping: rounded; within 1, o) */
                 rf.comb_lp[k] = abs(d) <= 1 ? o[k] : o[k] + (int32_t)floor(d * (double)dk / 32768.0 + 0.5);
@@ -141,19 +144,23 @@ static void ref_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_
             }
             for (k = base = 0; k < 4u; k++) {                   /* the Householder mix, SIZE's gain (rounded), the send */
                 int32_t v = (int32_t)floor((double)(2 * rf.comb_lp[k] - s) * g / 32768.0 + 0.5) + (k & 1u ? -in : in);
-                ref_ring[(rf.w + base) & 4095u] = (int16_t)clamp(v, -32768, 32767);
+                ref_ring[(rf.w + base) & 2047u] = (int16_t)clamp(v, -32768, 32767);
                 base += LEN[k];
             }
             a = rf.comb_lp[0] - rf.comb_lp[1] + rf.comb_lp[2] - rf.comb_lp[3];   /* (out: even lines against odd) */
             for (k = 0; k < 2u; k++) {
-                ao[k] = ref_ap[(rf.w + ab + ALEN[k]) & 1023u];
+                ao[k] = ref_ap[(rf.w + ab + ALEN[k]) & 511u];
                 ab += ALEN[k];
             }
             for (k = ab = 0; k < 2u; k++) {                     /* Freeverb's allpasses, o / 2 towards zero */
-                ref_ap[(rf.w + ab) & 1023u] = (int16_t)clamp(a + ao[k] / 2, -32768, 32767);
+                ref_ap[(rf.w + ab) & 511u] = (int16_t)clamp(a + ao[k] / 2, -32768, 32767);
                 a = ao[k] - a;
                 ab += ALEN[k];
             }
+            rf.rnext = a;
+            a = (rf.rprev + a) / 2;                             /* (towards zero) */
+        } else {
+            a = rf.rprev = rf.rnext;
         }
         y += a;
         wet[i] = y;

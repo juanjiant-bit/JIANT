@@ -82,7 +82,7 @@ static struct {
     int32_t dt1, dt2, rt1, rt2;          /* .. (0.6.86) the resonant TONE (delay loop) and FILT (reverb input) filters */
     int32_t cd_cur, cw_cur, dm_cur;      /* .. the chorus's DEPTH, its side's width, the delay's MIX as they are (glide) */
     uint16_t rv_w;                       /* (V10.7.17) ROOM's ring's write count (down by one a sample) */
-    int32_t comb_lp[4];
+    int32_t comb_lp[4], rvh_prev;   /* (V10.7.56: ROOM at half the rate, its last output) */
     uint8_t rtype;                       /* the reverb model running (G_RTYPE: 0 ROOM, 1 SPRING, 0.5: 2 SHIMMER 3 RESO 4 CLOUD) */
     uint32_t sh_w, sh_ph;                /* (JIANT 0.5) SHIMMER: its line's write count, the grains' phase (Q16, 0.6.12) */
     int32_t rs_lp[4];                    /* .. RESO: the combs' loop low-passes */
@@ -961,7 +961,7 @@ static __attribute__((noinline)) int room_zero(const int32_t *in, uint32_t n)
     uint32_t i;
     if (room_used) return 0;
     for (i = 0; i < n; i++) if (in[i]) { room_used = 1; return 0; }
-    room_clock(n);
+    room_clock(n / 2u);                                 /* (V10.7.56: ROOM at half the rate) */
     return 1;
 }
 /* ROOM with MOD / WIDE (rev_room_mod) at rest: its LFO's phase on, the lines' offsets where the block's end puts them */
@@ -998,37 +998,51 @@ static void room_mod_clock(uint32_t n)
         L = o_ + r_;                                                                                               \
     }
 static inline int32_t rv_st(int32_t v) { return clamp(v, -32768, 32767); }
+/* (V10.7.56, the owner: "stable and lighter") ROOM at half the rate, always: the send's pairs averaged into the network
+ * at 22 kHz, its lines and allpasses half as long (the same times: 460 498 531 560, 288 / 224), DAMP's pole squared (the
+ * same darkening a second), SIZE's gain a pass as it was (the passes as long in time: the decay the same), and each
+ * output sample the last of its pair, the first the mean with the one before. What is lost: the tail above 11 kHz */
+#define RVH_B1 460u
+#define RVH_B2 958u
+#define RVH_B3 1489u
+#define RVH_AP 288u
+#define RVH_APR 512u
+#define RVH_RING 2048u                                  /* (the fourth line: the ring's rest, 2048 - 1489 = 559) */
 static __attribute__((noinline)) void rev_room(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
     if (room_zero(rev_in, n)) return;
     uint32_t i, w = fx.rv_w;
-    int32_t g = rev_size(), dk = GFX(GF_RDAMP) * RV_KD;
+    int32_t g = rev_size(), dk = GFX(GF_RDAMP) * RV_KD, pv = fx.rvh_prev;
     int32_t l0 = fx.comb_lp[0], l1 = fx.comb_lp[1], l2 = fx.comb_lp[2], l3 = fx.comb_lp[3];
     int16_t *R = rev_comb, *A = rev_comb + RV_RING;
+    dk = (dk * dk + 16384) >> 15;
 #define RV_LP RV_DAMP
-    for (i = 0; i < n; i++) {
-        uint32_t a0 = --w & (RV_RING - 1u), a1 = (w + RV_B1) & (RV_RING - 1u), a2 = (w + RV_B2) & (RV_RING - 1u);
-        uint32_t a3 = (w + RV_B3) & (RV_RING - 1u), p0 = w & (RV_APR - 1u), p1 = (w + RV_AP0) & (RV_APR - 1u);
-        int32_t in = (rev_in[i] * RV_IN + 16384) >> 15, s, y, o0, o1;   /* (rounded) */
-        RV_LP(l0, R[a1])                                /* (line k read where line k + 1 writes) */
+    for (i = 0; i + 1u < n; i += 2u) {
+        uint32_t a0 = --w & (RVH_RING - 1u), a1 = (w + RVH_B1) & (RVH_RING - 1u), a2 = (w + RVH_B2) & (RVH_RING - 1u);
+        uint32_t a3 = (w + RVH_B3) & (RVH_RING - 1u), p0 = w & (RVH_APR - 1u), p1 = (w + RVH_AP) & (RVH_APR - 1u);
+        int32_t in = ((rev_in[i] + rev_in[i + 1u]) * (RV_IN / 2) + 16384) >> 15, s, y, o0, o1;
+        RV_LP(l0, R[a1])
         RV_LP(l1, R[a2])
         RV_LP(l2, R[a3])
         RV_LP(l3, R[a0])
-        s = l0 + l2;                                    /* (out: the even lines against the odd ones) */
+        s = l0 + l2;
         y = l1 + l3;
         R[a0] = (int16_t)rv_st(in + RV_Q((2 * l0 - s - y) * g));
         R[a1] = (int16_t)rv_st(RV_Q((2 * l1 - s - y) * g) - in);
         R[a2] = (int16_t)rv_st(in + RV_Q((2 * l2 - s - y) * g));
         R[a3] = (int16_t)rv_st(RV_Q((2 * l3 - s - y) * g) - in);
         s -= y;
-        o0 = A[p1];                                     /* the allpasses: 577 then 447 */
+        o0 = A[p1];
         o1 = A[p0];
         A[p0] = (int16_t)rv_st(s + RV_HALF(o0));
         y = o0 - s;
         A[p1] = (int16_t)rv_st(y + RV_HALF(o1));
-        out[i] += o1 - y;
+        y = o1 - y;
+        out[i] += RV_HALF(pv + y);
+        out[i + 1u] += pv = y;
     }
 #undef RV_LP
+    fx.rvh_prev = pv;
     fx.rv_w = (uint16_t)w;
     fx.comb_lp[0] = l0; fx.comb_lp[1] = l1; fx.comb_lp[2] = l2; fx.comb_lp[3] = l3;
 }
@@ -1474,7 +1488,7 @@ static __attribute__((noinline)) int rev_idle(uint32_t ty, const int32_t *rev_in
         fx.sp_w = (uint16_t)(fx.sp_w + n);
         break;
     case 2:                                             /* SHIMMER: ROOM's clocks, its grains' phase, its line's */
-        room_clock(n);
+        room_clock(n / 2u);
         fx.sh_ph += (uint32_t)((int32_t)semi_q16(clamp(12 + rev_air(), -12, 24)) - 65536) * n;
         fx.sh_w += n;
         break;
@@ -1487,7 +1501,7 @@ static __attribute__((noinline)) int rev_idle(uint32_t ty, const int32_t *rev_in
         break;
     default:
         if (song.g[G_RMOD] || song.g[G_RWIDE]) room_mod_clock(n);
-        else room_clock(n);
+        else room_clock(n / 2u);
         break;
     }
     return 1;
@@ -1498,7 +1512,14 @@ static void rev_run(uint32_t ty, const int32_t *rev_in, int32_t *out, uint32_t n
     if (rev_idle(ty, rev_in, n))
         return;
     switch (ty) {
-    case 1: rev_spring(rev_in, out, n); if (song.g[G_RWIDE]) rev_spring_side(n, song.g[G_RWIDE]); break;
+    case 1:
+        rev_spring(rev_in, out, n);
+        if (song.g[G_RWIDE]) {                          /* (V10.7.56: from flash, through a register: the reach) */
+            void (*f)(uint32_t, int32_t) = rev_spring_side;
+            FM1_OPAQUE(f);
+            f(n, song.g[G_RWIDE]);
+        }
+        break;
     case 2: rev_shimmer(rev_in, out, n); break;
     case 3: rev_reso(rev_in, out, n); break;
     case 4: rev_cloud(rev_in, out, n); break;
@@ -1520,6 +1541,7 @@ static void rev_state_clear(void)
         rev_u.ap[i] = 0;
     for (i = 0; i < 4u; i++)
         fx.comb_lp[i] = fx.rs_lp[i] = 0;
+    fx.rvh_prev = 0;
     fx.sp_lp = fx.sp_hp = fx.sp_he = 0;
     for (i = 0; i < CTL; i++)                           /* (JIANT 0.5) SHIMMER's feedback, CLOUD's grains */
         shim_fb[i] = 0;
