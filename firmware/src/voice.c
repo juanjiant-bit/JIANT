@@ -667,10 +667,10 @@ static uint32_t trk_nvoice(const track_t *t)
     const engine_t *e = ENGINES[t->engine];
     uint32_t c = e->poly ? e->poly : NVOICE;
     uint32_t u = e->oneshot ? (uint32_t)t->p[P_DDST] - 5u : (uint32_t)t->p[P_VCAP] - 2u;
-    /* V48: AUTO is four voices, for synths and kits. Explicit lower/higher
-     * user caps still work within the engine's limit. Track count must not
-     * turn a four-note chord into two notes when CPU time is available. */
-    if (u >= NVOICE) u = 3u;
+    /* AUTO: four synth voices, but every lane of a one-shot kit. A kit's
+     * hats/toms must not compete for the single slot left by kick/snare/clap.
+     * Explicit user caps and the shared measured CPU budget still apply. */
+    if (u >= NVOICE) u = e->oneshot ? NVOICE - 1u : 3u;
     if (sys_load && t->engine == ENGI_FM6 && c > LITE_FM6_POLY)
         c = LITE_FM6_POLY;
     if (!e->oneshot && sys_load == LOAD_ECO && c > ECO_POLY)
@@ -854,11 +854,12 @@ static uint32_t lowest_held(const track_t *t)           /* index of the lowest h
  * Returns its index, *pp its part; NVOICE = none */
 /* (V10.7.21, the owner: "never cut the drums, above all kick, snare, claps: the feel goes at once") a kit's KICK, SNARE
  * and CLAP hits (DRUM-X lanes 0..2, drum_note_on keeps the lane in s[0]) are never given up for another voice: neither the
- * budget (voice_victim, load_victim, the part's own steal) nor the overload guard (audio.c shed_voice) takes them; a new
- * one is never refused (voice_room: hard, over the budget if it must) */
+ * budget (voice_victim, load_victim, the part's own steal) nor the overload guard (audio.c shed_voice) takes them.
+ * New slots still require CPU admission; protection is not an overload bypass. */
 static int voice_core_drum(const track_t *t, const voice_t *v)
 {
-    return t->engine == ENGI_DRUM && (uint32_t)v->s[0] < 3u;
+    return t->engine == ENGI_DRUM &&
+           (v->sub && (v->pn_flags & PN_START) ? drum_note_lane(t, v->note) : (uint32_t)v->s[0]) < 3u;
 }
 static uint32_t voice_victim(const track_t *self, int soft, track_t **pp)
 {
@@ -980,6 +981,20 @@ static __attribute__((noinline)) int voice_full(const track_t *self)
     }
     if (trk_live > 4u) {
         load_bound();
+        /* Request cheaper synthesis before this burst renders. Do not spend
+         * hypothetical savings: admission keeps charging the measured cost
+         * until the audio ISR observes the reduction. */
+        if ((VSOFT & 2u) && load_pred_q8 + load_cost_q8(self) + reserve > ((load_limit() - HALF_NEAR) << 8)) {
+            uint32_t dear = NTRK, cost = 0;
+            for (p = 0; p < trk_live; p++) if (!((vh_held >> p) & 1u) && ENGINES[trk[p].engine]->half) {
+                uint32_t n = 0, c;
+                for (i = 0; i < NVOICE; i++) n += trk[p].v[i].active;
+                n += &trk[p] == self;
+                c = n * load_cost_q8(&trk[p]);
+                if (c > cost) { dear = p; cost = c; }
+            }
+            if (dear < NTRK) { vh_held |= (uint8_t)(1u << dear); vh_calm = 0; }
+        }
         if (load_pred_q8 + load_cost_q8(self) + reserve > (load_limit() << 8)) return 1;
     }
     return used >= voice_cap();
@@ -1335,6 +1350,9 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
         for (i = 0; i < np; i++)                         /* oldest held, not the bass */
             if (i != low && !voice_core_drum(t, &t->v[i]) && (best == np || t->v[i].age < t->v[best].age))
                 best = i;
+    /* A deliberately tiny kit cap may contain only protected core hits.
+     * An auxiliary hit cannot silently overwrite slot zero in that case. */
+    if (best == np && t->engine == ENGI_DRUM && drum_note_lane(t, note) >= 3u) return 0;
     return voice_reuse(t, &t->v[best == np ? 0 : best]);
 }
 

@@ -137,7 +137,11 @@ static void vg_seq(int heavy)
     song.g[G_BPM] = 200;
     transport_req = 1; ui_input();
 }
-int main(void)
+
+#ifndef CPU_VG_MAIN
+#define CPU_VG_MAIN main
+#endif
+int CPU_VG_MAIN(void)
 {
     static const struct { const char *eng, *pre; uint32_t notes; } E[] = {
         {"ANALOG", "FAT BASS", 8}, {"PHASE", "STRING", 8}, {"LOFI", "BYTE BENT", 8}, {"VOICE", "WOW BASS", 4},

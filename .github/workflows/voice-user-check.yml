@@ -1,7 +1,7 @@
 name: VOICE user lyric candidate
 on:
   push:
-    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits, codex/punch-cpu, codex/six-phrases, codex/home-live]
+    branches: [codex/voice-user-lyrics, codex/swarm, codex/audio-cpu-v46, codex/drum-kits, codex/punch-cpu, codex/six-phrases, codex/home-live, codex/kit-continuity]
 permissions:
   contents: read
 concurrency:
@@ -80,6 +80,13 @@ jobs:
           done | tee build/song-check/six-phrase.log
           cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,undefined -fno-sanitize=shift,signed-integer-overflow -Ibuild/gen -Ifirmware/src tests/adaptive_rate_test.c -lm -o build/song-check/adaptive-rate
           ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/adaptive-rate | tee build/song-check/adaptive-rate.log
+      - name: Full kit continuity with five melodic tracks
+        run: |
+          set -euo pipefail
+          cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,undefined -fno-sanitize=shift,signed-integer-overflow -Itests -Ibuild/gen -Ifirmware/src tests/kit_continuity_test.c -lm -o build/song-check/kit-continuity
+          for engine in 0 2 3 5 7 8 11 12 13 14; do
+            ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/kit-continuity "$engine"
+          done | tee build/song-check/kit-continuity.log
       - name: V50 HOME engine controls and LIVE performance
         run: |
           set -euo pipefail

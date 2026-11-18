@@ -344,7 +344,11 @@ static void frames_out(const char *dir)
 }
 #endif
 
-int main(int argc, char **argv)
+
+#ifndef ANIM_TEST_MAIN
+#define ANIM_TEST_MAIN main
+#endif
+int ANIM_TEST_MAIN(int argc, char **argv)
 {
     rep = fopen("/dev/null", "w");
     al_off = 1;
