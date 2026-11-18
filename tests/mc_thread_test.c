@@ -82,7 +82,10 @@ int main(int argc, char **argv)
     host_tracks_init(); mc_host = strcmp(mode, "serial") != 0;
     /* Force admission in the serial reference too: compare exactly the same
      * twelve voices, regardless of the device's two-core admission policy. */
-    if (!strcmp(scene, "polyphony") || !strcmp(scene, "adaptive")) voice_headroom = 1;
+    /* Use identical numerical admission for the serial reference and the
+     * two-core jobs; these dense scenes compare rendering and RNG ownership. */
+    if (!strcmp(scene, "polyphony") || !strcmp(scene, "adaptive") || !strcmp(scene, "kits"))
+        voice_headroom = 1;
     for (k = 0; k < NTRK; k++) {
         uint32_t e = (!strcmp(scene, "voice") || !strcmp(scene, "cleanvoice") || !strcmp(scene, "noisemod")) ? ENGI_VOICE : (!strcmp(scene, "parallel") || !strcmp(scene, "pan")) ? (k & 1u ? ENGI_ANALOG : ENGI_FM6) : EN[k];
         if (!strcmp(scene, "twovoice") && k == 4u) e = ENGI_VOICE;

@@ -79,10 +79,10 @@ static uint8_t poly_calm;                             /* consecutive halves with
 static __attribute__((noinline)) uint32_t shed_check(uint32_t all)
 {
     uint32_t r = all - t5_nested_ticks;                /* (0.6.19) the budget on the render alone */
-    load_half(r * 100u / HALF_TICKS, all * 100u / HALF_TICKS, mc_live() && !mc_off);
+    load_half(r * 100u / HALF_TICKS, all * 100u / HALF_TICKS, dual_render());
     /* Healthy FULL now budgets every new slot in either TRACKS mode. Keep
      * its ceiling while measured admission/rate reduction control actual work. */
-    if (sys_load != LOAD_FULL || !mc_live() || mc_off) {
+    if (sys_load != LOAD_FULL || !load_cores2) {
         voice_headroom = poly_calm = 0;
     } else if (!voice_headroom) {
         if (!load_tight && all < HALF_TICKS * HEAD_ON / 100u && load_all_q8 < (HEAD_ON << 8)) {

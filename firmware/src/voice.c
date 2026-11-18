@@ -79,7 +79,7 @@ static int32_t comb_fb[NTRK], comb_lp[NTRK];            /* .. the feedback there
 static __attribute__((noinline)) void track_comb(track_t *t, int32_t *out, uint32_t n, int32_t cut, int32_t res,
                                                  uint32_t neg)
 {
-    uint32_t ti = (uint32_t)(t - trk) % NTRK, i, per, w = comb_w[ti], pq, pq1;
+    uint32_t ti = (uint32_t)(t - trk), i, per, w = comb_w[ti], pq, pq1;
     int32_t p16 = trk_newest(t, comb_p16[ti]), r = clamp(res, 0, 127), lp = comb_lp[ti], dq, dfb, fbc, gn, fb, a, m, xq;
     int32_t dmp = 6400 + r * 55;                        /* (the damping's pole, Q14) */
     int16_t *b = comb_buf[ti];
@@ -432,7 +432,7 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
                                              int32_t dw, uint32_t own, int32_t ccut, int32_t cres)
 {
     const int16_t *p = t->p;
-    uint32_t ti = (uint32_t)(t - trk) % NTRK, i;
+    uint32_t ti = (uint32_t)(t - trk), i;
     int32_t cut = ccut << 8, envq = 0, ic1 = tf_ic1[ti], ic2 = tf_ic2[ti], k, kq;   /* (snd1: ccut, P_FCUT but on
                                                          * ANALOG, whose own filter returned above but for LP24) */
     tsvf_t c;
@@ -535,7 +535,7 @@ static int32_t tf_tmp[CTL];
 static __attribute__((noinline)) void track_filter(track_t *t, int32_t *out, uint32_t n, uint32_t own, int32_t ccut,
                                                    int32_t cres)
 {
-    uint32_t ti = (uint32_t)(t - trk) % NTRK, r = ft_of(t->p), ft, fo, i;
+    uint32_t ti = (uint32_t)(t - trk), r = ft_of(t->p), ft, fo, i;
     uint32_t act = (tf_on[ti] == 1u && !own) || tf_cmb[ti];
     int32_t w0, dw;
     if (own && !FT_POST(r) && !FN_METAL_ON(t->p))
@@ -586,7 +586,7 @@ static __attribute__((noinline)) void track_filter(track_t *t, int32_t *out, uin
  * whole filter (track_filter). Its own function: the audio ISR's loop stays as it was */
 static __attribute__((noinline)) void track_post(track_t *t, const engine_t *e, int32_t *out, uint32_t n)
 {
-    uint32_t ti = (uint32_t)(t - trk) % NTRK, ok = e != &ENG_DRUM && e != &ENG_INPUT;
+    uint32_t ti = (uint32_t)(t - trk), ok = e != &ENG_DRUM && e != &ENG_INPUT;
     fn_tick(t, e, ti, ok);                              /* (filters2) EROSION, a block (on the voices' own filters the
                                                          * next block: voice_block) */
     if (e != &ENG_ANALOG && fnb[ti].drv)                /* FILTER's DRIVE: into the filter (ANALOG's: its voices') */
@@ -659,6 +659,8 @@ static void lfo_fade_restart(uint32_t mask)
  * ECO_VOICES between all (voice_cap), the load budget sooner (audio.c TIGHT_ON_ECO) */
 enum { LOAD_FULL, LOAD_LITE, LOAD_ECO };
 static volatile uint8_t sys_load;
+static int dual_render(void);                            /* mixer health / REC-at-boot single-core override */
+static int six_dual(void) { return trk_live > 4u && dual_render(); }
 #define LITE_FM6_POLY 2u
 #define ECO_POLY 4u
 #define ECO_VOICES 6u            /* (0.6.70) LOAD ECO: the voices all parts share (NVOICE else) */
@@ -671,7 +673,7 @@ static uint32_t trk_nvoice(const track_t *t)
      * hats/toms must not compete for the single slot left by kick/snare/clap.
      * Explicit user caps and the shared measured CPU budget still apply. */
     if (u >= NVOICE) u = e->oneshot ? NVOICE - 1u : 3u;
-    if (sys_load && t->engine == ENGI_FM6 && c > LITE_FM6_POLY)
+    if (sys_load && t->engine == ENGI_FM6 && !six_dual() && c > LITE_FM6_POLY)
         c = LITE_FM6_POLY;
     if (!e->oneshot && sys_load == LOAD_ECO && c > ECO_POLY)
         c = ECO_POLY;
@@ -727,8 +729,9 @@ static struct { volatile uint32_t peak, late, shed; } load_diag;
  * crackled on ECO: the peaks are the voices, a tail ringing on each part as the next hits come) */
 static uint32_t voice_cap0(void)                        /* the budget as set (LOAD, the extra voices) */
 {
-    return sys_load == LOAD_ECO ? ECO_VOICES :
-           sys_load == LOAD_FULL && voice_headroom ? FULL_VOICES : NVOICE;
+    if (six_dual() || (sys_load == LOAD_FULL && voice_headroom))
+        return FULL_VOICES;
+    return sys_load == LOAD_ECO ? ECO_VOICES : NVOICE;
 }
 static uint32_t voice_cap(void)                         /* .. under the guard's cap while it is tripped */
 {
@@ -736,7 +739,7 @@ static uint32_t voice_cap(void)                         /* .. under the guard's 
     /* Healthy FULL admission uses measured work, not the number sounding at
      * an earlier overload trough. Otherwise drums/short chords cannot refill
      * their slots while the guard remains active after successful rate reduction. */
-    if (sys_load == LOAD_FULL && voice_headroom) return c;
+    if (c == FULL_VOICES) return c;
     return load_tight && guard_cap && guard_cap < c ? guard_cap : c;
 }
 static int voice_strict(void) { return trk_live > 4u || (sys_load == LOAD_FULL && voice_headroom); }
@@ -836,10 +839,10 @@ static int voice_held(const track_t *t, const voice_t *v)
  * rounded up */
 static __attribute__((noinline)) uint32_t voices_load(void)
 {
-    uint32_t p, i, n = 0;
+    uint32_t p, i, n = 0, strict = voice_strict();
     for (p = 0; p < NPART; p++)
         for (i = 0; i < NVOICE; i++)
-            if (trk[p].v[i].active && (voice_strict() || trk[p].v[i].stage != 4u))
+            if (trk[p].v[i].active && (strict || trk[p].v[i].stage != 4u))
                 n += 2u - ((VSOFT & 4u) && VH_ST(vh_c[p * NVOICE + i]) == VH_ON && !voice_held(&trk[p], &trk[p].v[i]));
     return (n + 1u) >> 1;
 }
@@ -980,8 +983,10 @@ static void load_bound(void);
 enum { VOICE_FULL = 1, VOICE_EXPENSIVE = 2 };
 static __attribute__((noinline)) uint32_t voice_budget(const track_t *self)
 {
-    uint32_t used = voices_load(), p, i;
-    if (trk_live > 4u && !voice_headroom) for (p = 0; p < trk_live; p++) {
+    uint32_t used = voices_load(), cap = voice_cap(), p, i;
+    /* With six playable parts, protect the last physical slot for each idle
+     * unmuted synth/kit. Empty tracks add no predicted CPU work. */
+    if (trk_live > 4u && used + trk_live > cap) for (p = 0; p < trk_live; p++) {
         const track_t *t = &trk[p];
         if (t == self || t->p[P_MUTE] || t->engine == ENGI_INPUT) continue;
         for (i = 0; i < NVOICE && !t->v[i].active; i++) {}
@@ -1007,7 +1012,7 @@ static __attribute__((noinline)) uint32_t voice_budget(const track_t *self)
         }
         if (budget) return VOICE_FULL | VOICE_EXPENSIVE;
     }
-    return budget | (used >= voice_cap() ? VOICE_FULL : 0u);
+    return budget | (used >= cap ? VOICE_FULL : 0u);
 }
 static void load_take(const track_t *t)                 /* a voice added: into the prediction */
 {
@@ -1251,11 +1256,16 @@ static __attribute__((noinline)) int voice_room(track_t *t, int soft)   /* (V10.
     return 1;
 }
 
-static voice_t *voice_reuse(track_t *t, voice_t *v)
+static voice_t *voice_reuse(track_t *t, voice_t *v, int soft)
 {
-    if (v->stage == 4u && !voice_room(t, 0))
-        return 0;                                      /* its budget was taken before this block */
-    return v;
+    if (!v->active || v->stage != 4u) return v;
+    /* Strict admission already counts this fade. Replaying its own slot
+         * creates no additional renderer. A busy deadline can still finish the fade. */
+    if (six_dual() && !guard_run && voices_load() <= FULL_VOICES) {
+        load_bound();
+        if (load_pred_q8 <= (load_limit() << 8)) return v;
+    }
+    return voice_room(t, soft) ? v : 0;
 }
 
 /* POLY allocation (within the engine's voice cap). DRUM: reuse its lane; other engines: the same note.
@@ -1273,11 +1283,11 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
     if (t->engine == ENGI_DRUM) {
         voice_t *v = drum_reuse(t, note);
         if (v && (!voice_strict() || (uint32_t)(v - t->v) < np))
-            return voice_reuse(t, v);
+            return voice_reuse(t, v, 0);
     }
     for (i = 0; i < np; i++) {
         if (t->v[i].active && t->v[i].note == note)
-            return voice_reuse(t, &t->v[i]);
+            return voice_reuse(t, &t->v[i], 0);
         nfree += !t->v[i].active;
     }
     if (nfree) {
@@ -1355,7 +1365,7 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
     /* A deliberately tiny kit cap may contain only protected core hits.
      * An auxiliary hit cannot silently overwrite slot zero in that case. */
     if (best == np && t->engine == ENGI_DRUM && drum_note_lane(t, note) >= 3u) return 0;
-    return voice_reuse(t, &t->v[best == np ? 0 : best]);
+    return voice_reuse(t, &t->v[best == np ? 0 : best], 0);
 }
 
 /* (VOICE) a glide sets out from where the voice sounds: the S-curve (eng_formant.c glide_sung) folded into pitch_cur (a
@@ -1585,7 +1595,7 @@ static void mono_play(track_t *t, uint32_t note, uint32_t vel, int retrig, int g
         int32_t fine = nv > 1u ? k * t->p[P_DETUNE] * 56 / 889 : 0;   /* up to ~±40 cents */
         if (retrig || !v->active || !v->gate) {
             uint32_t phr = 0;
-            if ((!v->active || v->stage == 4u) && !voice_room(t, i > 0))
+            if (v->active ? !voice_reuse(t, v, i > 0) : !voice_room(t, i > 0))
                 continue;                                   /* no room for this extra UNISON voice */
             if (nv > 1u && i && !ENGINES[t->engine]->sampled) {   /* random start phases: */
                 static uint32_t seed = 0x1234567u;          /* in phase they stack, evenly spread they cancel */
@@ -1712,12 +1722,12 @@ static volatile uint8_t asleep_hit;                     /* (0.6.28) a note went 
                                                          * silenced track's voices end, it costs nothing) */
 static void trk_note_on(track_t *t, uint32_t note, uint32_t vel)
 {
-    uint32_t any = 0, i, mode = trk_vmode(t);
-    if ((uint32_t)(t - trk) >= trk_live && !t->p[P_MUTE]) {
+    uint32_t any = 0, i, ti = (uint32_t)(t - trk), mode = trk_vmode(t);
+    if (ti >= trk_live && !t->p[P_MUTE]) {
         asleep_hit = 1;                                 /* (0.6.28) a note for a track asleep: the UI says so */
         return;
     }
-    if (t->p[P_MUTE] || ((trk_hush >> ((uint32_t)(t - trk) % NTRK)) & 1u) ||
+    if (t->p[P_MUTE] || ((trk_hush >> ti) & 1u) ||
         (t->engine == ENGI_DRUM && drum_muted_t(t, note)))   /* (DRUM: its group mutes) */
         return;
     if (pfx_note(t, note, vel))                         /* the punch-in effects (pfx.c): a repeat holds the track */
@@ -2325,10 +2335,10 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
     }
     if (nr && e == &ENG_DRUM)                           /* (0.6.16) DRUM-X: DRV and the knee on the kit's sum */
         drum_bus(t, out, n);
-    if (nr && (t->p[P_FTYPE] || t->p[P_FCUT] < 127 || t->p[P_FRES] || tf_on[(uint32_t)(t - trk) % NTRK] ||
+    if (nr && (t->p[P_FTYPE] || t->p[P_FCUT] < 127 || t->p[P_FRES] || tf_on[ti] ||
                ((e == &ENG_WHEEL || e == &ENG_DRUM) && (t->p[P_LD_FLT] || t->p[P_ED_FLT])) ||   /* (0.6.81: their
                                                          * only filter, for the LFO / ENV -> FILTER) */
-               tf_xb[(uint32_t)(t - trk) % NTRK] || tf_cmb[(uint32_t)(t - trk) % NTRK]))
+               tf_xb[ti] || tf_cmb[ti]))
         /* (JIANT 0.5) the FILTER (track_post); 0.6.8: and a block more to leave the chain (track_filter's fade) */
         track_post(t, e, out, n);
     if (snap)

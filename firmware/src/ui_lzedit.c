@@ -114,12 +114,11 @@ static void graph_voice_lz(const track_t *t, const page_t *pg)
     fmt_int(b, (int32_t)nv);
     str_cat(b, nv == 1u ? " VOICE" : " VOICES", 40);
     ed_cap(10, 6, b, T_TEXT);
-    for (i = 0; i < NTRK; i++)                          /* (V10.7.38, the owner) ALL: every track's voices at most (its
-                                                         * VOICES; MONO, LEGATO one) against the 8 they share */
-        all += (9u >> (trk[i].p[P_VOICE] & 3)) & 1u ? trk_nvoice(&trk[i]) : 1u;   /* (POLY 0, UNISON 3, DRONE 4 & 3: 0;
+    for (i = 0; i < trk_live; i++)                       /* configured parts' maxima against shared slots */
+        all += (9u >> trk_vmode(&trk[i])) & 1u ? trk_nvoice(&trk[i]) : 1u;   /* (POLY 0, UNISON 3, DRONE 4 & 3: 0;
                                                          * a kit's P_VOICE 0) */
     str_cpy(b, "ALL ", 40);
-    fmt_frac(b + 4, (int32_t)all, NVOICE);
+    fmt_frac(b + 4, (int32_t)all, voice_cap());
     cv_text_r(230, 6 - AF_X_CAP_Y, &AF_X, b, T_DIM, T_SURF);
     for (i = 0; i < NVOICE; i++) {
         int32_t y = 17 + (int32_t)i * 9, lv = 0;

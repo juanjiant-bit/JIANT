@@ -1,4 +1,4 @@
-V10.7.54 beta — DRUM-X and staccato bass
+V10.7.54 beta — six-part polyphony and DRUM-X with staccato bass
 
 The missing-bass report can be reproduced with the production sequencer,
 DRUM-X (preset 0) and ANALOG FAT BASS (preset 14, factory LEGATO). On each
@@ -53,6 +53,49 @@ engine changes, silence, previous two-track and six-track cases, and overload.
 Use this candidate on the beta channel only. The public versions remain
 V10.7.23 and v0.9.9-par12.
 
-FM-1 target validation passed. App image 584316 / 584336 bytes, RAM data
+Six tracks and sixteen shared slots
+
+With TRACKS 6 and two live audio cores, FULL, LITE and ECO can use 16 slots
+from the first audio block. Each part still has up to eight local slots.
+The allocator reserves the last physical slot for each other unmuted synth
+or kit when the pool is nearly full. An idle part incurs no predicted CPU
+cost. With six tracks, FM6 can play a four-note chord in all three modes.
+Four-track and single-core fallback budgets are preserved. The measured
+admission thresholds remain 78% in strict FULL/LITE and 70% in ECO.
+The VOICES page shows the configured maxima against the current shared cap.
+
+The earlier bass correction on its own still needed sixteen calm halves to
+open the FULL ceiling, and capped LITE at eight and ECO at six. In the same
+six-part score from cold boot, it reached peaks of 16, 8 and 6 respectively.
+Even FULL lost five kit hits and 93 melodic gate observations during startup.
+The amended candidate ran both the twelve-voice and sixteen-voice scores in
+all three modes, with the kit first, fourth and last in the sequencer order.
+
+Each sixteen-voice run played eight DRUM-X lanes, a held four-note FM6 chord
+and four changing mono lines. All 220 sequenced drum hits started, all 2520
+melodic note observations matched, and all 1890 track-stem windows contained
+audio. A separate MIDI kick during playback overlapped the other seven
+already-sounding kit voices with 16 active renderers. Eighty older one-shot
+tails persisted across later steps. The twelve-voice score used a four-lane
+kit and started all 140 requested hits. These tests boot the production
+sequencer and mixer with no pre-earned headroom. The modeled per-voice cost
+is 850 ticks, plus 80 ticks per part and 35%, then 45%, modeled base load.
+The sixteen-voice score reached 67% modeled deadline load. FM6 actually ran
+at half rate for 1505 control blocks in FULL/LITE and 3055 in ECO.
+
+A fading renderer still occupies its slot. With 16 occupied, a kit hit,
+chord note and mono lead can each retrigger their own fading slot when the
+measured budget permits. The regression also starts after a 95% transient:
+sustained 65% permits the in-place attacks even while the guard is latched.
+At 95% sustained load the fade completes instead. Numerical capacity and
+the existing quality controls cannot guarantee every preset, effect and
+transport combination fits the hardware deadline. Physical FM-1 validation
+is pending.
+
+Run the same measured-admission executable with 'six 0 8 0'. The arguments
+select LOAD (0 FULL, 1 LITE, 2 ECO), kit lanes (4 or 8), and kit track
+(zero-based). CI runs all eighteen combinations used here.
+
+Final FM-1 target checks passed. App image 584240 / 584336 bytes, RAM data
 97936 / 98304, RAM code 32612 / 34816, pool spare 8704. Local candidate
-package SHA-256: 3875aee29ac32cb07c8578bed2b5233f3007dd3b5a3872a1274888db398d8066.
+package SHA-256 e11ebb08269c441a304265397cd537d9a8f49bef50905bd923e1c02a8a0f9db6.

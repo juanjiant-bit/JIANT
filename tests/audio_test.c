@@ -546,9 +546,9 @@ static void polyphony_headroom(void)
     uint32_t k, i, kills, gates = 0;
     int32_t out[2 * CTL];
     fresh(); trk_live = 6; mc_host = 1; mc_off = 0; sys_load = LOAD_FULL;
-    check("polyphony: starts with the conservative eight-voice budget", voice_cap() == 8);
+    check("polyphony: healthy six-track core pair starts with sixteen physical slots", voice_cap() == 16);
     for (i = 0; i < 15; i++) shed_check(HALF_TICKS * 40u / 100u);
-    check("polyphony: one short calm interval cannot expand admission", voice_cap() == 8);
+    check("polyphony: first beats need no earned ceiling", voice_cap() == 16 && !voice_headroom);
     shed_check(HALF_TICKS * 40u / 100u);
     check("polyphony: 16 calm halves on two cores admit 16 shared voices for six tracks", voice_cap() == 16);
     for (k = 0; k < NPART; k++) {
@@ -567,13 +567,18 @@ static void polyphony_headroom(void)
           voice_cap() == 16 && voices_busy() == 12 && voice_kills == kills && !load_tight);
     voice_headroom = poly_calm = 0;
     for (i = 0; i < 64; i++) { t5_nested_ticks = HALF_TICKS * 60u / 100u; shed_check(HALF_TICKS * 70u / 100u); }
-    check("polyphony: nested IRQ load cannot open extra admission", voice_cap() == 8 && !load_tight);
+    check("polyphony: six-track numerical room is independent of nested IRQ headroom", voice_cap() == 16 && !voice_headroom && !load_tight);
     t5_nested_ticks = 0; sys_load = LOAD_LITE;
     for (i = 0; i < 32; i++) shed_check(0);
-    check("polyphony: LITE stays at eight", voice_cap() == 8);
+    check("polyphony: six-track LITE provides sixteen shared slots", voice_cap() == 16);
     sys_load = LOAD_ECO;
     for (i = 0; i < 32; i++) shed_check(0);
-    check("polyphony: ECO stays at six", voice_cap() == 6);
+    check("polyphony: six-track ECO provides sixteen slots with the lower CPU limit", voice_cap() == 16 && load_limit() == 70);
+    trk_live = 4;
+    check("polyphony: four-track ECO keeps its six-slot fallback", voice_cap() == 6);
+    sys_load = LOAD_LITE;
+    check("polyphony: four-track LITE keeps its eight-slot fallback", voice_cap() == 8);
+    trk_live = 6;
     sys_load = LOAD_FULL; mc_host = 0;
     for (i = 0; i < 32; i++) shed_check(0);
     check("polyphony: single-core fallback stays at eight", voice_cap() == 8);

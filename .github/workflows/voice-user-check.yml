@@ -114,6 +114,16 @@ jobs:
               ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/measured-admission bass "$tracks" "$live_base"
             done
           done | tee build/song-check/bass-continuity.log
+      - name: Six live parts from the first audio block in FULL, LITE and ECO
+        run: |
+          set -euo pipefail
+          for mode in 0 1 2; do
+            for lanes in 4 8; do
+              for kit in 0 3 5; do
+                ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1 build/song-check/measured-admission six "$mode" "$lanes" "$kit"
+              done
+            done
+          done | tee build/song-check/six-capacity.log
       - name: Six-channel POLY keyboard and step entry
         run: |
           set -euo pipefail

@@ -221,8 +221,134 @@ static int bass_phrase(unsigned tracks, unsigned live_base)
     return !!bad || !blocked;
 }
 
+static int six_parts(unsigned mode, unsigned kit_size, unsigned rotate)
+{
+    static const uint8_t pitches[] = {48, 52, 55, 59};
+    unsigned kit = rotate % NTRK, chord = (kit + 1) % NTRK;
+    unsigned hits = 0, misses = 0, gates = 0, gaps = 0, peak_voices = 0, overlap = 0;
+    unsigned audio[NTRK] = {0}, heard[NTRK] = {0}, strong = 0, soft_steps = 0;
+    unsigned ringing = 0, rate_blocks = 0;
+    int previous = -1;
+    host_tracks_init();
+    trk_live = NTRK;
+    mc_host = fx_stems = 1;
+    sys_load = mode;
+    song.g[G_BPM] = 120;
+    for (unsigned p = 0; p < NTRK; p++) {
+        track_t *t = &trk[p];
+        host_preset(t, p == kit ? ENGI_DRUM : p == chord ? ENGI_FM6 : ENGI_ANALOG, p == kit ? 0 : p == chord ? 4 : 14);
+        if (p == kit) dx_kit_load_of(t, 0);
+        if (p == chord) t->p[P_VOICE] = V_POLY;
+        t->p[P_SLEN] = 4;
+        for (unsigned step = 0; step < 4; step++) {
+            uint8_t lead = 36 + p + step;
+            if (p == kit) {
+                put_step(t, step, 0, pitches, ST_NOTE, 0);
+                t->step[step].hit = step & 1 ? 0x0b : (1u << kit_size) - 1u;
+            } else if (p == chord) {
+                put_step(t, step, step ? 0 : 4, pitches, step ? ST_TIE : ST_NOTE, 0);
+            } else put_step(t, step, 1, &lead, ST_NOTE, 0);
+        }
+    }
+    /* Start on the very first control block, before any audio deadline reading.
+     * Repeated masked hits overlap the earlier one-shot tails on odd steps. */
+    base_pct = 35; voice_ticks = 850; transport_req = 1;
+    for (unsigned b = 0; b < 3400; b++) {
+        if (b == 1700) base_pct = 45;
+        unsigned age = vage;
+        if (b == 2 && kit_size == 8)
+            midi_in_q[mi_w++ % MQ] = 9u | ((0x90u + kit) << 8) | (36u << 16) | (110u << 24);
+        bass_block();
+        if (b == 2 && kit_size == 8) {
+            voice_t *kick = drum_reuse(&trk[kit], 36);
+            if (kick && kick->age > age && voices_busy() == 16) {
+                for (unsigned l = 1; l < 8; l++) {
+                    voice_t *tail = drum_reuse(&trk[kit], DRUM_LANE_NOTE[l]);
+                    ringing += tail && tail->active && tail->age <= age;
+                }
+            }
+        }
+        for (unsigned j = 0; j < NVOICE; j++)
+            if (VH_ST(vh_c[chord * NVOICE + j]) == VH_ON) {rate_blocks++; break;}
+        int step = trk[kit].seq_idx;
+        unsigned used = voices_busy();
+        if (used > peak_voices) peak_voices = used;
+        if (step != previous) {
+            if (previous >= 0 && strong != (1u << NTRK) - 1u) soft_steps++;
+            strong = 0;
+            unsigned mask = trk[kit].step[step].hit;
+            for (unsigned l = 0; l < kit_size; l++) {
+                voice_t *v = drum_reuse(&trk[kit], DRUM_LANE_NOTE[l]);
+                if (mask & (1u << l)) {
+                    hits++;
+                    if (!v || !v->active || v->age <= age) misses++;
+                } else if (v && v->active && v->age <= age) overlap++;
+            }
+            previous = step;
+        }
+        if (trk[kit].seq_pos > 2 * CTL && trk[kit].seq_pos < 10 * CTL) {
+            for (unsigned p = 0; p < NTRK; p++) {
+                audio[p]++;
+                int maximum = 0;
+                for (unsigned f = 0; f < CTL; f++)
+                    if (abs(stem_buf[p][f]) > maximum) maximum = abs(stem_buf[p][f]);
+                heard[p] += maximum > 0;
+                if (maximum > 32) strong |= 1u << p;
+                if (p == kit) continue;
+                unsigned n = p == chord ? 4 : 1;
+                for (unsigned j = 0; j < n; j++) {
+                    gates++;
+                    if (!present(p, p == chord ? pitches[j] : 36 + p + step)) gaps++;
+                }
+            }
+        }
+    }
+    unsigned silent = 0;
+    for (unsigned p = 0; p < NTRK; p++) silent += audio[p] - heard[p];
+    printf("six LOAD=%u kit track=%u cap=%u peak=%u/%u drum=%u/%u held=%u/%u "
+           "stem gaps=%u/%u overlapping tails=%u modeled deadline=%u..%u%%\n",
+           mode, kit + 1, voice_cap(), peak_voices, kit_size + 8, hits - misses, hits,
+           gates - gaps, gates, silent, NTRK * audio[0], overlap, low, peak);
+    printf("FM6 reduced blocks=%u, earlier kit voices under MIDI kick at sixteen=%u\n", rate_blocks, ringing);
+    int bad = (kit_size == 8 && (!rate_blocks || ringing != 7)) || voice_cap() != 16 || peak_voices != kit_size + 8 || misses || gaps || silent || soft_steps || !overlap;
+    if (kit_size == 8) {
+        /* A fade still occupies its own paid renderer. Replaying it must neither
+         * introduce another slot nor cut another part while all sixteen are busy. */
+        base_pct = 35;
+        for (unsigned b = 0; b < 400 && (voices_busy() != 16 || load_tight ||
+                 load_pred_q8 > (load_limit() << 8)); b++) bass_block();
+        /* A prior overload can keep the guard latched even after real deadline
+         * room has returned. The active physical slot is still on the clock. */
+        for (unsigned b = 0; b < 128; b++) shed_check(HALF_TICKS * 95 / 100);
+        for (unsigned b = 0; b < 400; b++) shed_check(HALF_TICKS * 65 / 100);
+        if (!load_tight || guard_run) bad++;
+        unsigned lead = (chord + 1) % NTRK;
+        unsigned parts[] = {kit, chord, lead};
+        for (unsigned j = 0; j < 3; j++) {
+            track_t *t = &trk[parts[j]];
+            voice_t *v = j ? &t->v[0] : drum_reuse(t, 36);
+            if (!v || !v->active || voices_busy() != 16) {bad++; break;}
+            unsigned note = v->note, age = v->age;
+            voice_kill(v);
+            unsigned kills = voice_kills;
+            trk_note_on(t, note, 100);
+            if (v->age == age || v->stage == 4 || voice_kills != kills || voices_busy() != 16)
+                bad++;
+        }
+        for (unsigned b = 0; b < 128; b++) shed_check(HALF_TICKS * 95 / 100);
+        voice_t *v = &trk[lead].v[0];
+        unsigned age = v->age;
+        voice_kill(v);
+        trk_note_on(&trk[lead], v->note, 100);
+        if (v->age != age || v->stage != 4 || voices_load() != 16) bad++;
+        printf("own-slot retriggers after recovery and refusal during overload: errors=%u\n", bad);
+    }
+    return !!bad;
+}
+
 int main(int argc, char **argv)
 {
+    if (argc == 5 && !strcmp(argv[1], "six")) return six_parts(atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));
     if (argc == 4 && !strcmp(argv[1], "bass")) return bass_phrase(atoi(argv[2]), atoi(argv[3]));
     if(argc>1&&!strcmp(argv[1],"units"))return cost_units();
     if (argc > 1) active_tracks = atoi(argv[1]);
