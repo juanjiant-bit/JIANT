@@ -240,7 +240,7 @@ static void wheel_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
     const drw_trk_t *T = &drw_t[drw_part(t)];
     drw_vc_t *V = &drw_v[drw_part(t)][(uint32_t)(v - t->v) % NVOICE];
     int32_t acc[CTL], perc1, clk0, clk1;
-    uint32_t i, k;
+    uint32_t i, k, vsh = VH_SH();
     if (n > CTL)
         n = CTL;
     for (i = 0; i < n; i++)
@@ -251,10 +251,10 @@ static void wheel_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         int32_t g1 = T->g[k], g0 = V->gp[k], r;
         if ((int32_t)k == T->pk)
             g1 += mulq15(T->plev, perc1);
-        while ((x >> VH_SH()) > DRW_FOLD_LIM[k])        /* fold back above ~6 kHz (V10.7.56: the full rate's step) */
+        while ((x >> vsh) > DRW_FOLD_LIM[k])        /* fold back above ~6 kHz (V10.7.56: the full rate's step) */
             x >>= 1;
         inc = drw_ratio(k, x);
-        r = (inc >> VH_SH()) < DRW_XOVER;               /* 1: the low rotor (V10.7.56: the full rate's step) */
+        r = (inc >> vsh) < DRW_XOVER;               /* 1: the low rotor (V10.7.56: the full rate's step) */
         g1 = mulq15(g1, T->am[r]);
         inc += (uint32_t)((int32_t)(inc >> 16) * T->fm[r]);
         V->gp[k] = g1;
@@ -292,7 +292,7 @@ static void wheel_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const
         clk0 <<= 5;
         for (i = 0; i < n; i++) {
             int32_t z = (int32_t)(noise32(&nst) >> 17) - 16384, y = z - hp;
-            hp += y >> (3u - VH_SH());                  /* (V10.7.56: the same corner at half the rate) */
+            hp += y >> (3u - vsh);                  /* (V10.7.56: the same corner at half the rate) */
             clk0 += dc;
             acc[i] += (y * (clk0 >> 5)) >> 15;
         }

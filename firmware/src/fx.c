@@ -1467,7 +1467,11 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
         }
     }
     if (song.g[G_RMOD] || wd)
-        rev_room_mod(g, t, n, wd * 2);                   /* (its side x2 as well: the network at half the level) */
+    {   /* (its side x2 as well: the network at half the level; V10.7.56: from flash, through a register) */
+        void (*f)(const int32_t *, int32_t *, uint32_t, int32_t) = rev_room_mod;
+        FM1_OPAQUE(f);
+        f(g, t, n, wd * 2);
+    }
     else
         rev_room(g, t, n);
     for (i = 0; i < n; i++) {
@@ -1524,7 +1528,11 @@ static void rev_run(uint32_t ty, const int32_t *rev_in, int32_t *out, uint32_t n
     case 3: rev_reso(rev_in, out, n); break;
     case 4: rev_cloud(rev_in, out, n); break;
     default:
-        if (song.g[G_RMOD] || song.g[G_RWIDE]) rev_room_mod(rev_in, out, n, song.g[G_RWIDE]);
+        if (song.g[G_RMOD] || song.g[G_RWIDE]) {        /* (V10.7.56: from flash, through a register) */
+            void (*f)(const int32_t *, int32_t *, uint32_t, int32_t) = rev_room_mod;
+            FM1_OPAQUE(f);
+            f(rev_in, out, n, song.g[G_RWIDE]);
+        }
         else rev_room(rev_in, out, n);
         break;
     }
