@@ -225,6 +225,19 @@ static void stress_events(uint32_t step, uint32_t dense)
         if (s == 5u || s == 8u || s == 13u || s == 0u) { uint32_t q = (s + 15u) & 15u; st_off(&trk[5], (s ? ch : pc)[q & 3u] + 12u + (q % 3u == 0u ? 12u : 0u)); }
         return;
     }
+    if (dense == 2u) {                                  /* (V10.7.56, the owner's scene) a whole kit, one chord part of four
+                                                         * notes, the other four single lines (bass, lead, arp, keys) */
+        if (!(s & 3u)) st_on(&trk[0], DRUM_LANE_NOTE[0], 110);               /* kick */
+        if (s % 8u == 4u) { st_on(&trk[0], DRUM_LANE_NOTE[1], 100); st_on(&trk[0], DRUM_LANE_NOTE[2], 90); }   /* snare, clap */
+        st_on(&trk[0], DRUM_LANE_NOTE[3], 70);                               /* closed hats, sixteenths */
+        if (s % 8u == 6u) st_on(&trk[0], DRUM_LANE_NOTE[4], 80);             /* open hat */
+        if (!(s & 1u)) { st_off(&trk[1], (s ? ch : pc)[0] - 12u); st_on(&trk[1], ch[0] - 12u, 100); }   /* bass, eighths */
+        if (s == 0u) { for (k = 0; k < 4u; k++) st_off(&trk[2], pc[k] + 12u); for (k = 0; k < 4u; k++) st_on(&trk[2], ch[k] + 12u, 90); }   /* the chords */
+        if (s % 4u == 0u) { st_off(&trk[3], (s ? ch : pc)[((s >> 2) + 3u) & 3u] + 24u); st_on(&trk[3], ch[(s >> 2) & 3u] + 24u, 90); }   /* lead */
+        { uint32_t q = (s + 15u) & 15u; st_off(&trk[4], (s ? ch : pc)[q & 3u] + 24u); st_on(&trk[4], ch[s & 3u] + 24u, 80); }   /* arp */
+        if (s == 2u || s == 10u) { st_off(&trk[5], pc[1] + 12u); st_off(&trk[5], ch[1] + 12u); st_on(&trk[5], ch[1] + 12u, 85); }   /* keys */
+        return;
+    }
     if (!(s & 3u)) st_on(&trk[0], DRUM_LANE_NOTE[0], 110);                   /* kick */
     if (s % 8u == 4u) st_on(&trk[0], DRUM_LANE_NOTE[1], 100);                /* snare */
     st_on(&trk[0], DRUM_LANE_NOTE[3], 70);                                   /* hats */
@@ -257,6 +270,8 @@ static void stress_init(void)
     trk[4].p[P_REL] = 40;
     host_preset(&trk[5], ENGI_ANALOG, 23);              /* GLASS KEYS: REL 65 */
     for (p = 0; p < NPART; p++) { trk[p].p[P_LEVEL] = 100; }
+    trk[2].step[0].time = ST_NOTE; trk[2].step[0].n = 4;   /* (VPOL: the pad's sequence holds chords) */
+    trk_live = NPART; song.sel = 0;
 }
 /* the scene: bars of it; soft: VSOFT's bits. wav: its mix written there */
 static void stress_run(uint32_t soft, uint32_t bars, uint32_t dense, const char *wav)
@@ -295,6 +310,8 @@ static void stress_table(const char *dir)
         {28, 3, 0, "A  six parts, light load: the count of voices rules"},
         {28, 6, 0, "B  six parts, heavy load: the load rules"},
         {28, 6, 1, "C  dense (more notes held than the budget), heavy load"},
+        {28, 3, 2, "D  the owner's: a whole kit, a 4-note chord part, four single lines; light load"},
+        {28, 6, 2, "E  the owner's, heavy load"},
     };
     static const struct { uint32_t soft; const char *name; } SOFT[] = {
         {0, "off (V10.7.20)"}, {1, "1 releases hurried"}, {6, "2+4 half rate"}, {3, "1+2, as built"}, {7, "1+2+4 (half count)"}, {11, "1+2+8 (a part's cap)"}};
