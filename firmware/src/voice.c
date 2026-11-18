@@ -577,6 +577,8 @@ enum { VH_OFF, VH_IN, VH_RE, VH_ON, VH_OUT };           /* a voice's rate: full;
                                                          * state a sample on first, RE: as it is); half; back to full */
 static uint8_t rel_hurry[NTRK];                         /* (eng_fm6.c reads it) */
 static uint8_t vh_wait, vh_held;                        /* blocks tripped; bit p: part p's held voices at half */
+static uint8_t vh_quart;                                /* (V10.7.56) bit p: part p's FM6 voices at a quarter of the rate
+                                                         * (every part's held voices already at half and still over) */
 static int32_t vh_c[NTRK * NVOICE] __attribute__((section(".pool")));   /* a voice: VH_* (bits 0..2), its last sample at
                                                          * half the rate << 3 (the pool: zero at boot; 224 B of it were
                                                          * left over its 8 KiB of headroom, the RAM has none) */
@@ -911,13 +913,23 @@ static __attribute__((noinline)) void voice_soft(void)
     }
     if (!near || load_avg_q8 <= (GUARD_OFF << 8))
         vh_wait = 0;
-    else if ((load_tight || VPOL) && ++vh_wait >= (VPOL ? HALF_WAIT / 8u : HALF_WAIT) && dear < NPART) {   /* still tripped with the tails at half: the dearest
+    else if (VPOL && load_tight && dear == NPART && ++vh_wait >= HALF_WAIT / 8u) {   /* (V10.7.56) every held voice that
+                                                         * can at half, still over: FM6 down to a quarter, part by part */
+        for (p = 0; p < NPART; p++)
+            if (ENGINES[trk[p].engine] == &ENG_FM6 && !((vh_quart >> p) & 1u)) {
+                vh_quart |= (uint8_t)(1u << p);
+                break;
+            }
+        vh_wait = 0;
+    } else if ((load_tight || VPOL) && ++vh_wait >= (VPOL ? HALF_WAIT / 8u : HALF_WAIT) && dear < NPART) {   /* still tripped with the tails at half: the dearest
                                                          * part's held voices too */
         vh_held |= (uint8_t)(1u << dear);
         vh_wait = 0;
     }
     if (!load_tight && load_avg_q8 < ((VPOL ? HALF_BACK - 10u : HALF_BACK) << 8))
-        vh_held = 0;
+        vh_held = vh_quart = 0;
+    else if (!load_tight)
+        vh_quart = 0;                                   /* (the guard let go: FM6 back to half first) */
 }
 
 /* (codex/voices) a voice's block at half the rate: CTL / 2 samples of the engine, each twice as far on (its phase
@@ -941,6 +953,25 @@ static __attribute__((noinline)) void voice_half(track_t *t, const engine_t *e, 
         } else
             e->render(t, v, out, n, m);
         vh_c[vi] = (int32_t)(st == VH_ON ? VH_RE : st == VH_OUT ? VH_OFF : st);
+        return;
+    }
+    if (e->half == 2u && ((vh_quart >> (vi / NVOICE)) & 1u)) {   /* (V10.7.56) FM6 at a quarter: 11 kHz, CTL / 4
+                                                         * samples, each the last of its four, the others on the line */
+        int32_t hq[CTL / 4];
+        h.amp1 = 4 * m->amp1 - 3 * m->amp0;
+        for (i = 0; i < CTL / 4u; i++)
+            hq[i] = 0;
+        e->render(t, v, hq, CTL / 4u, &h);
+        if (st != VH_ON)
+            pv = 2 * hq[0] - hq[1];
+        for (i = 0; i < CTL / 4u; i++) {
+            int32_t d = hq[i] - pv;
+            out[4u * i] += pv + (d >> 2);
+            out[4u * i + 1u] += pv + (d >> 1);
+            out[4u * i + 2u] += pv + d - (d >> 2);
+            out[4u * i + 3u] += pv = hq[i];
+        }
+        vh_c[vi] = pv * 8 + VH_ON;
         return;
     }
     h.amp1 = 2 * m->amp1 - m->amp0;                     /* (the engine's ramp is CTL long: its half gets to amp1) */

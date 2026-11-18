@@ -439,7 +439,8 @@ static void fm6_render(track_t *t, voice_t *v, int32_t *out, uint32_t len, const
     uint32_t tr = (uint32_t)(t - trk), i;
     const uint8_t *p;
     int32_t bus[FM6_N], lf, fb, lvl, k, a, da, pk = 0;
-    uint32_t tb, hf = len == FM6_N / 2u;                /* (codex/voices) half the rate: voice.c voice_half */
+    uint32_t tb, hf = len == FM6_N / 2u ? 1u : len == FM6_N / 4u ? 2u : 0u;   /* (codex/voices) half the rate, (V10.7.56)
+                                                         * a quarter: voice.c voice_half */
     if (!n || !n->live || (len != FM6_N && !hf))
         return;
     p = fm6_eff[tr].p;
@@ -448,7 +449,7 @@ static void fm6_render(track_t *t, voice_t *v, int32_t *out, uint32_t len, const
     if (rel_hurry[tr] && !v->gate && (v->s[0] < HURRY_LVL || load_tight))   /* (codex/voices) the budget nearly full: its
                                                          * release sooner, once it is under -20 dB (voice.c VSOFT 1) */
         fm6_note_hurry(n, 100000 << rel_hurry[tr]);     /* (-40 dB in 0.8 s, 0.4 s, 0.2 s at least) */
-    n->penv.half = (uint8_t)(hf | (hf != n->penv.half) << 1);   /* (the rate, and its change: fm6_note_compute) */
+    n->penv.half = (uint8_t)(hf | (n->penv.half & 3u) << 2);   /* (the rate and the last one: fm6_note_compute) */
     v->s[0] = 0;
     lf = fm6_note_logfreq(m->pitch16 + (p[FP_TRNSP] - 24) * 16, m->fine);
     fb = clamp(fm6_eff[tr].fb + ((m->shape - (64 << 8)) >> 11), 0, 7);

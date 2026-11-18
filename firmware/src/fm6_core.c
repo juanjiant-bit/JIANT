@@ -530,7 +530,7 @@ static int fm6_note_compute(fm6_note_t *n, const uint8_t *p, int32_t *out, int32
     uint32_t pmd = (uint32_t)((p[FP_LPMD] % 100u) * 165u >> 6) * (uint32_t)lfo_delay;   /* Q32 */
     int32_t senslfo = FM6_PMS[p[FP_LPMS] & 7u] * (lfo_val - (1 << 23));
     int32_t pmod = (int32_t)(mul64_us(pmd, senslfo) >> 39), pitch_mod;
-    uint32_t amd = (uint32_t)((p[FP_LAMD] % 100u) * 165u >> 6), amod, car = fm6_carriers(alg), k, hf = n->penv.half & 1u;
+    uint32_t amd = (uint32_t)((p[FP_LAMD] % 100u) * 165u >> 6), amod, car = fm6_carriers(alg), k, hf = n->penv.half & 3u, h0 = (n->penv.half >> 2) & 3u;
     pmod = pmod < 0 ? -pmod : pmod;
     pitch_mod = fm6_penv_get(&n->penv, p) + (senslfo < 0 ? -pmod : pmod);
     amod = (uint32_t)(mul64_us(amd, lfo_delay) >> 8);                 /* Q24 */
@@ -540,9 +540,11 @@ static int fm6_note_compute(fm6_note_t *n, const uint8_t *p, int32_t *out, int32
         int32_t level = fm6_env_get(&n->env[k], op);
         uint32_t ams = FM6_AMSENS[op[FP_AMS] & 3u];
         n->op[k].freq = fm6_freq((n->fixed >> k) & 1u ? n->base[k] : logfreq + n->base[k] + pitch_mod + dt[k]) << hf;
-        if (n->penv.half & 2u)                     /* (codex/voices) the rate changes: the operator a sample on (its samples
-                                                    * the block's odd ones, voice.c voice_half) or back */
-            n->op[k].phase = (int32_t)((uint32_t)n->op[k].phase + (uint32_t)(hf ? n->op[k].freq >> 1 : -n->op[k].freq));
+        if (hf != h0)                              /* (codex/voices) the rate changes: the operator on to its block's last
+                                                    * sample of each 2 (4) (voice.c voice_half), or back: (2^hf - 1) - (2^h0 - 1)
+                                                    * samples at the full rate */
+            n->op[k].phase = (int32_t)((uint32_t)n->op[k].phase +
+                                       (uint32_t)((int32_t)(n->op[k].freq >> hf) * ((1 << hf) - (1 << h0))));
         if (ams) {                                 /* msfa: pt = exp(sensamp / 262144 * 0.07 + 12.2) */
             uint32_t sensamp = (uint32_t)(umul64(amod, ams) >> 24);
             int32_t lg = FM6_AMS_C0 + (int32_t)(umul64(sensamp, FM6_AMS_K) >> 10);
