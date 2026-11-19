@@ -127,16 +127,16 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | ANALOG 0 | 122 | INT | -24..24 | 0 | |
 | PHASE 2 | 115 | WAVE | 0..7 | 0 | SAW SQR PLS DSIN SPLS RSAW RTRI RTRP |
 | PHASE 2 | 116 | WAVE2 | 0..8 | 0 | - SAW SQR PLS DSIN SPLS RSAW RTRI RTRP |
-| PHASE 2 | 117 | DCW | 0..127 | 60 | |
+| PHASE 2 | 117 | BRIGHT | 0..127 | 60 | |
 | PHASE 2 | 118 | ENV | 0..127 | 64 | |
 | PHASE 2 | 119 | DETUNE | 0..127 | 0 | |
 | PHASE 2 | 120 | LINE | 0..1 | 0 | MIX RING |
 | PHASE 2 | 121 | SUB | 0..127 | 0 | |
-| PHASE 2 | 122 | FB | 0..127 | 0 | |
+| PHASE 2 | 122 | FEEDBACK | 0..127 | 0 | |
 | MATH 3 | 115 | CHIP | 0..3 | 2 | 4BIT 4B/2 8BIT 1BIT |
 | MATH 3 | 116 | WAVE | 5..6 | 5 | BYTE FLOAT |
 | MATH 3 | 117 | ALGO | 0..191 | 64 | |
-| MATH 3 | 118 | VAR | 0..127 | 0 | |
+| MATH 3 | 118 | VARIANT | 0..127 | 0 | |
 | MATH 3 | 119 | MOTION | 0..255 | 0 | |
 | MATH 3 | 120 | GRIT | 0..127 | 0 | |
 | MATH 3 | 121 | BEND | 0..127 | 0 | |
@@ -147,9 +147,9 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | VOICE 5 | 118 | SHIFT | -12..12 | 0 | |
 | VOICE 5 | 119 | BUZZ | 0..127 | 64 | |
 | VOICE 5 | 120 | BREATH | 0..127 | 10 | |
-| VOICE 5 | 121 | Q | 0..127 | 64 | |
+| VOICE 5 | 121 | RESO | 0..127 | 64 | |
 | VOICE 5 | 122 | RAND | 0..127 | 0 | |
-| WHEEL 7 | 115 | REG | 0..15 | 4 | FLUTE MELLO HOLLW SMOOT 3BAR BLUES GOSPL ROCK TOPS CLARI REED STRNG CHAPL BRITE BASS FULL |
+| WHEEL 7 | 115 | DRAWBAR | 0..15 | 4 | FLUTE MELLO HOLLW SMOOT 3BAR BLUES GOSPL ROCK TOPS CLARI REED STRNG CHAPL BRITE BASS FULL |
 | WHEEL 7 | 116 | SUB | -8..8 | 0 | |
 | WHEEL 7 | 117 | BODY | -8..8 | 0 | |
 | WHEEL 7 | 118 | TOP | -8..8 | 0 | |
@@ -174,7 +174,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | DRUM 10 | 121 | FOLD | 0..127 | 0 | |
 | DRUM 10 | 122 | DRIVE | 0..127 | 0 | |
 | WEST 11 | 115 | FOLD | 0..127 | 40 | |
-| WEST 11 | 116 | SYMM | 0..127 | 0 | |
+| WEST 11 | 116 | SYMMETRY | 0..127 | 0 | |
 | WEST 11 | 117 | MOD | 0..127 | 0 | |
 | WEST 11 | 118 | RATIO | 0..31 | 1 | 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 0.5T 1T 1.41T 1.5T 1.73T 2T 2.5T 2.76T 3T 3.5T 4T 5T 5.40T 6T 7T 8T |
 | WEST 11 | 119 | GATE | 0..127 | 64 | |
@@ -182,7 +182,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | WEST 11 | 121 | RES | 0..127 | 20 | |
 | WEST 11 | 122 | DUST | 0..127 | 0 | |
 | FM6 12 | 115 | ALG | 0..32 | 0 | |
-| FM6 12 | 116 | FB | -7..7 | 0 | |
+| FM6 12 | 116 | FEEDBACK | -7..7 | 0 | |
 | FM6 12 | 117 | MOD | -64..63 | 0 | |
 | FM6 12 | 118 | RATIO | -16..16 | 0 | |
 | FM6 12 | 119 | MOD ENV | -64..63 | 0 | |

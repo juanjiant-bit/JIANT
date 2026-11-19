@@ -57,7 +57,7 @@ static const param_desc_t AN_DESC[] = {
     {"TOUCH", F_PCT, 0, 127, 100, 0}, {"COUPLE", F_PCT, 0, 127, 0, 0},
     {"SIZE", F_PCT, 0, 127, 64, 0}, {"STICKY", F_BIPCT, -64, 63, 0, 0},
     {"GROUP", F_INT, 0, 15, 0, 0}, {"FM", F_INT, 0, 40, 22, 0},
-    {"CLICK", F_PCT, 0, 127, 100, 0}, {"Q", F_PCT, 0, 127, 0, 0},
+    {"CLICK", F_PCT, 0, 127, 100, 0}, {"RESO", F_PCT, 0, 127, 0, 0},
     {"DETUNE", F_BIPCT, -64, 63, 0, 0},
     {"BUZZ", F_PCT, 0, 127, 100, 0}, {"DRIFT", F_PCT, 0, 127, 0, 0},
     {"DOPPLR", F_BIPCT, -64, 63, 0, 0},
@@ -569,7 +569,7 @@ static const preset_t ANIMAL_PRESETS[] = {
 
 static const engine_t ENG_ANIMAL = {
     .name = "ANIMAL",
-    .page_title = {"SRC", "CALL"},
+    .page_title = {"CREATURE", "HABITS"},
     .edit = {
         {"MODE", F_ENUM, 0, AN_NMODE - 1, 0, N_ANIMAL_MODE},
         {"PRESS", F_PCT, 0, 127, 100, 0},

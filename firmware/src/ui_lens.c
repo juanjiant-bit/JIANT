@@ -367,10 +367,9 @@ static __attribute__((noinline)) const char *nav_page_name(void)
         const char *pt = trk_engp(TSEL)->page_title[PAGES[ui.page].id[0] != P_E0];
         if (trk_eng(TSEL) == ENGI_ANALOG)              /* (codex/coherence) EDIT . OSC: ANALOG has no EDIT 2 */
             b[4] = 0;
-        if (pt && pt[0] && pt[0] != '-') {
-            str_cpy(b + str_len(b), " \xB7 ", 4);
-            str_cpy(b + str_len(b), pt, 24 - str_len(b));
-        }
+        if (pt && pt[0] && pt[0] != '-')                /* (V10.7.60, the owner: the engine's page by its own name, OSC
+                                                         * WAVES FORMULA .., not EDIT 1 / EDIT 2) */
+            str_cpy(b, pt, 24);
     }
     return b;
 }

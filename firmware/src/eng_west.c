@@ -369,7 +369,7 @@ static const engine_t ENG_WEST = {
     .page_title = {"FOLD", "GATE"},
     .edit = {
         {"FOLD", F_PCT, 0, 127, 40, 0},
-        {"SYMM", F_PCT, 0, 127, 0, 0},
+        {"SYMMETRY", F_PCT, 0, 127, 0, 0},
         {"MOD", F_PCT, 0, 127, 0, 0},
         {"RATIO", F_ENUM, 0, 31, 1, N_WEST_RATIO},
         {"GATE", F_PCT, 0, 127, 64, 0},

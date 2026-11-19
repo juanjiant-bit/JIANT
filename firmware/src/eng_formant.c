@@ -544,7 +544,7 @@ _Static_assert(sizeof VOICE_ORDER == NELEM(FORMANT_PRESETS), "VOICE's browsing o
 
 static const engine_t ENG_FORMANT = {
     .name = "VOICE",
-    .page_title = {"VOWL", "SOURCE"},                  /* (codex/coherence: SOURCE, was TONE, the group after it) */
+    .page_title = {"VOWELS", "SOURCE"},                  /* (codex/coherence: SOURCE, was TONE, the group after it) */
     .edit = {
         {"VOWEL", F_INT, 0, 127, 0, 0},
         {"VOWEL2", F_INT, 0, 127, 64, 0},
@@ -552,7 +552,7 @@ static const engine_t ENG_FORMANT = {
         {"SHIFT", F_SEMI, -12, 12, 0, 0},
         {"BUZZ", F_PCT, 0, 127, 64, 0},
         {"BREATH", F_PCT, 0, 127, 10, 0},
-        {"Q", F_PCT, 0, 127, 64, 0},
+        {"RESO", F_PCT, 0, 127, 64, 0},
         {"RAND", F_PCT, 0, 127, 0, 0},
     },
     .presets = FORMANT_PRESETS,

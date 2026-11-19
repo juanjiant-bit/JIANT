@@ -250,16 +250,16 @@ _Static_assert(sizeof PHASE_ORDER == NELEM(PHASE_PRESETS), "PHASE's browsing ord
 
 static const engine_t ENG_PHASE = {
     .name = "PHASE",
-    .page_title = {"PHS", "LINE"},
+    .page_title = {"WAVES", "SHAPE"},
     .edit = {
         {"WAVE", F_ENUM, 0, 7, 0, N_PD_WAVE},
         {"WAVE2", F_ENUM, 0, 8, 0, N_PD_WAVE2},
-        {"DCW", F_PCT, 0, 127, 60, 0},
+        {"BRIGHT", F_PCT, 0, 127, 60, 0},
         {"ENV", F_PCT, 0, 127, 64, 0},
         {"DETUNE", F_INT_CT, 0, 127, 0, 0},
         {"LINE", F_ENUM, 0, 1, 0, N_PD_LINE},
         {"SUB", F_PCT, 0, 127, 0, 0},
-        {"FB", F_PCT, 0, 127, 0, 0},
+        {"FEEDBACK", F_PCT, 0, 127, 0, 0},
     },
     .presets = PHASE_PRESETS,
     .npresets = NELEM(PHASE_PRESETS),

@@ -349,9 +349,9 @@ _Static_assert(sizeof WHEEL_ORDER == NELEM(WHEEL_PRESETS), "WHEEL's browsing ord
 
 static const engine_t ENG_WHEEL = {
     .name = "WHEEL",
-    .page_title = {"BARS", "COLOR"},                   /* (codex/coherence: COLOR, was TONE, the group after it) */
+    .page_title = {"DRAWBARS", "COLOR"},                   /* (codex/coherence: COLOR, was TONE, the group after it) */
     .edit = {
-        {"REG", F_ENUM, 0, 15, 4, N_DRW_REG},
+        {"DRAWBAR", F_ENUM, 0, 15, 4, N_DRW_REG},
         {"SUB", F_INT, -8, 8, 0, 0},
         {"BODY", F_INT, -8, 8, 0, 0},
         {"TOP", F_INT, -8, 8, 0, 0},

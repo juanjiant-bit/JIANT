@@ -446,12 +446,12 @@ _Static_assert(sizeof MATH_ORDER == NELEM(LOFI_PRESETS), "MATH's browsing order:
 
 static const engine_t ENG_LOFI = {
     .name = "MATH",
-    .page_title = {"MATH", "TIME"},
+    .page_title = {"FORMULA", "MOTION"},
     .edit = {
         {"CHIP", F_ENUM, 0, 3, 2, N_CHIP},           /* (FLOAT: 8BIT reads FULL, lofi_desc) */
         {"WAVE", F_ENUM, RW_BYTE, RW_FLOAT, RW_BYTE, N_RWAVE},
         {"ALGO", F_INT, 0, 127, 64, 0},              /* (the knob 0..191 and the names: lofi_desc) */
-        {"VAR", F_PCT, 0, 127, 0, 0},
+        {"VARIANT", F_PCT, 0, 127, 0, 0},
         {"MOTION", F_INT, 0, 127, 0, 0},             /* (V10.6d: 0 the default; the knob to 255 SYNC: lofi_desc) */
         {"GRIT", F_PCT, 0, 127, 0, 0},               /* (FLOAT: FEEDBK) */
         {"BEND", F_PCT, 0, 127, 0, 0},

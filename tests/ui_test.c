@@ -12299,7 +12299,7 @@ static int test_lz_edit(void)
     uint32_t pr;
     ui_power_on(); set_engine_of(TSEL, 0); frame();
     press(B_EDIT); frame();
-    ok = pd_on() && lz_fam() == LZ_EDIT && pd_level() == 0u && lz_tab_lit(0) && lz_crumb_is("EDIT \xB7 SOUND \xB7 EDIT \xB7 OSC") &&
+    ok = pd_on() && lz_fam() == LZ_EDIT && pd_level() == 0u && lz_tab_lit(0) && lz_crumb_is("EDIT \xB7 SOUND \xB7 OSC") &&
          lz_count_is("1/6");                                        /* (codex/coherence: EDIT . OSC, ANALOG has no EDIT 2) */
     turn(EN_SELECT, 1); frame();                                    /* (V10.7.21 ANALOG: no EDIT 2) */
     ok &= pd_level() == 1u && lz_tab_lit(1) && str_eq(cur_page()->title, "FILTER") && lz_crumb_is("EDIT \xB7 TONE \xB7 FILTER") &&
