@@ -8905,7 +8905,7 @@ static int test_scl_alltr(void)
     t = TSEL;
     go_title("SCL"); frame();
     d = page_desc(cur_page(), 3u, &vp);
-    ok = d == &GP[G_STRN] && vp == &song.g[G_STRN] && str_eq(d->label, "ALL TRACKS");
+    ok = d == &GP[G_STRN] && vp == &song.g[G_STRN] && str_eq(d->label, "ALL TRK");
     song.g[G_STRN] = 0; t->p[P_TRANS] = 0;
     song.rec = 1;                                      /* (recording: the global is no track lock) */
     turn(EN_K4, 1); turn(EN_K4, 1); frame();
@@ -12358,7 +12358,7 @@ static int test_lz_edit(void)
     ui_power_on(); set_engine_of(TSEL, 0); go_title("PLAY"); frame();
     {
         int16_t *hv;
-        ok = str_eq(page_desc(cur_page(), 0, &hv)->label, "POLY") && str_eq(page_desc(cur_page(), 2, &hv)->label, "GLIDE TYPE") &&
+        ok = str_eq(page_desc(cur_page(), 0, &hv)->label, "POLY") && str_eq(page_desc(cur_page(), 2, &hv)->label, "GL TYPE") &&
              str_eq(page_desc(cur_page(), 3, &hv)->label, "IMAGE");   /* (V10.7.60: IMAGE on PLAY, at hand) */
     }
     v = TSEL->p[P_SIMG];

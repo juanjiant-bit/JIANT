@@ -56,7 +56,7 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 61 | ATK | 0..127 | 0 | (ANALOG PHASE WHEEL STRING WEST FM6 ADD ANIMAL EXT) |
 | 61 | RESTART | 0..1 | 1 | (MATH) |
 | 61 | LANG | 0..9 | 0 | OFF ES EN JA RU DE FR ZH PT GN (VOICE) |
-| 61 | KEY MAP | 0..1 | 1 | CLASSIC EXTENDED (DRUM) |
+| 61 | KEY MAP | 0..9 | 1 | BASIC EXTRA KICK SNARE CLAP HH CL HH OP TOM RIM BELL (DRUM) |
 | 62 | CHANCE | 0..127 | 0 | |
 | 63 | HUMAN | 0..127 | 127 | |
 | 64 | ATK | 0..127 | 0 | |
@@ -85,8 +85,8 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 84 | SNARE | 0..127 | 127 | (ANALOG PHASE MATH WHEEL STRING DRUM WEST FM6 ADD ANIMAL EXT) |
 | 84 | CONS | 0..127 | 127 | (VOICE) |
 | 85 | CLAP | 0..127 | 127 | |
-| 86 | HH CLOSED | 0..127 | 127 | |
-| 87 | HH OPEN | 0..127 | 127 | |
+| 86 | HH CL | 0..127 | 127 | |
+| 87 | HH OP | 0..127 | 127 | |
 | 88 | TOM | 0..127 | 127 | |
 | 89 | RIM | 0..127 | 127 | |
 | 90 | BELL | 0..127 | 127 | |
@@ -132,7 +132,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | PHASE 2 | 119 | DETUNE | 0..127 | 0 | |
 | PHASE 2 | 120 | LINE | 0..1 | 0 | MIX RING |
 | PHASE 2 | 121 | SUB | 0..127 | 0 | |
-| PHASE 2 | 122 | FEEDBACK | 0..127 | 0 | |
+| PHASE 2 | 122 | FEEDBK | 0..127 | 0 | |
 | MATH 3 | 115 | CHIP | 0..3 | 2 | 4BIT 4B/2 8BIT 1BIT |
 | MATH 3 | 116 | WAVE | 5..6 | 5 | BYTE FLOAT |
 | MATH 3 | 117 | ALGO | 0..191 | 64 | |
@@ -149,7 +149,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | VOICE 5 | 120 | BREATH | 0..127 | 10 | |
 | VOICE 5 | 121 | RESO | 0..127 | 64 | |
 | VOICE 5 | 122 | RAND | 0..127 | 0 | |
-| WHEEL 7 | 115 | DRAWBAR | 0..15 | 4 | FLUTE MELLO HOLLW SMOOT 3BAR BLUES GOSPL ROCK TOPS CLARI REED STRNG CHAPL BRITE BASS FULL |
+| WHEEL 7 | 115 | BARS | 0..15 | 4 | FLUTE MELLO HOLLW SMOOT 3BAR BLUES GOSPL ROCK TOPS CLARI REED STRNG CHAPL BRITE BASS FULL |
 | WHEEL 7 | 116 | SUB | -8..8 | 0 | |
 | WHEEL 7 | 117 | BODY | -8..8 | 0 | |
 | WHEEL 7 | 118 | TOP | -8..8 | 0 | |
@@ -174,7 +174,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | DRUM 10 | 121 | FOLD | 0..127 | 0 | |
 | DRUM 10 | 122 | DRIVE | 0..127 | 0 | |
 | WEST 11 | 115 | FOLD | 0..127 | 40 | |
-| WEST 11 | 116 | SYMMETRY | 0..127 | 0 | |
+| WEST 11 | 116 | SKEW | 0..127 | 0 | |
 | WEST 11 | 117 | MOD | 0..127 | 0 | |
 | WEST 11 | 118 | RATIO | 0..31 | 1 | 0.5 1 1.41 1.5 1.73 2 2.5 2.76 3 3.5 4 5 5.40 6 7 8 0.5T 1T 1.41T 1.5T 1.73T 2T 2.5T 2.76T 3T 3.5T 4T 5T 5.40T 6T 7T 8T |
 | WEST 11 | 119 | GATE | 0..127 | 64 | |
@@ -182,7 +182,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | WEST 11 | 121 | RES | 0..127 | 20 | |
 | WEST 11 | 122 | DUST | 0..127 | 0 | |
 | FM6 12 | 115 | ALG | 0..32 | 0 | |
-| FM6 12 | 116 | FEEDBACK | -7..7 | 0 | |
+| FM6 12 | 116 | FEEDBK | -7..7 | 0 | |
 | FM6 12 | 117 | MOD | -64..63 | 0 | |
 | FM6 12 | 118 | RATIO | -16..16 | 0 | |
 | FM6 12 | 119 | MOD ENV | -64..63 | 0 | |
@@ -244,7 +244,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | 33 | WIDE | 0..127 | 0 | |
 | 34 | PITCH | -12..12 | 0 | |
 | 35 | SCATTER | 0..127 | 0 | |
-| 36 | ALL TRACKS | -14..14 | 0 | |
+| 36 | ALL TRK | -14..14 | 0 | |
 | 37 | MODE | 0..2 | 0 | OFF GATE STUT |
 | 38 | PAT | 1..16 | 1 | |
 | 39 | RATE | 0..5 | 1 | 1/8 1/16 1/32 8T 16T 32T |
@@ -280,4 +280,4 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | 69 | LEN | 1..64 | 64 | |
 | 70 | RES | 0..2 | 1 | 1/8 1/16 1/32 |
 | 71 | DRIVE | 0..100 | 0 | |
-| 72 | RIGHT TIME | 0..6 | 0 | =L x1/2 x2/3 x3/4 x4/3 x3/2 x2 |
+| 72 | RIGHT | 0..6 | 0 | =L x1/2 x2/3 x3/4 x4/3 x3/2 x2 |

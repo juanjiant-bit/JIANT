@@ -351,7 +351,7 @@ static const engine_t ENG_WHEEL = {
     .name = "WHEEL",
     .page_title = {"DRAWBARS", "COLOR"},                   /* (codex/coherence: COLOR, was TONE, the group after it) */
     .edit = {
-        {"DRAWBAR", F_ENUM, 0, 15, 4, N_DRW_REG},
+        {"BARS", F_ENUM, 0, 15, 4, N_DRW_REG},
         {"SUB", F_INT, -8, 8, 0, 0},
         {"BODY", F_INT, -8, 8, 0, 0},
         {"TOP", F_INT, -8, 8, 0, 0},

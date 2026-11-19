@@ -138,7 +138,7 @@ static const param_desc_t TP[P_COUNT] = {
     [P_REV] = PD("REV", F_PCT, 0, 127, 0),
     [P_VOICE] = PE("POLY", N_VOICE, 0),         /* (codex/coherence: was VOICE, the engine's, the group's and the page's) */
     [P_GLIDE] = PD("GLIDE", F_TIME, 0, 127, 0),
-    [P_GLMODE] = PE("GLIDE TYPE", N_GLMODE, 0),    /* (codex/coherence: the glide's MODE) */
+    [P_GLMODE] = PE("GL TYPE", N_GLMODE, 0),    /* (codex/coherence: the glide's MODE) */
     [P_PRIO] = PE("NOTE PRIO", N_PRIO, 0),
     [P_ALLOC] = PE("VOICE ORDER", N_ALLOC, 0),
     [P_DETUNE] = PD("UNISON", F_PCT, 0, 127, 40),   /* (codex/coherence) UNISON's detune, how far apart (was DETUNE, a
@@ -167,8 +167,8 @@ static const param_desc_t TP[P_COUNT] = {
     [P_POFS] = PD("PITCH", F_SEMI, -24, 24, 0),   /* its notes PIT semitones up (not on a kit) */
 /* the DRUM engine's lane levels (eng_drum.c, #97): 100 % = the kit as designed (the sound before 1.1) */
 #define LANE(k, l) [P_LN0 + (k)] = PD(l, F_PCT, 0, 127, 127)
-    LANE(0, "KICK"), LANE(1, "SNARE"), LANE(2, "CLAP"), LANE(3, "HH CLOSED"),
-    LANE(4, "HH OPEN"), LANE(5, "TOM"), LANE(6, "RIM"), LANE(7, "BELL"),
+    LANE(0, "KICK"), LANE(1, "SNARE"), LANE(2, "CLAP"), LANE(3, "HH CL"),
+    LANE(4, "HH OP"), LANE(5, "TOM"), LANE(6, "RIM"), LANE(7, "BELL"),
 #undef LANE
     [P_DTYPE] = PE("TYPE", N_DTYPE, 0),         /* (JIANT) DIST: SOFT (as before) HARD FOLD CRUSH RECT AMP */
     [P_DTONE] = PD("TONE", F_BIPCT, -64, 63, 0),   /* .. its tone: darker / brighter */
@@ -223,7 +223,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_DPING] = {"PING", F_ENUM, 0, 1, 0, N_ONOFF},   /* (0.6.90) PING-PONG: the repeats left, right, left .. */
     [G_PFXLEN] = PD("LEN", F_INT, 1, 64, 64),    /* (0.6.99) the punch-in lane: its steps and their size */
     [G_PFXRES] = {"RES", F_ENUM, 0, 2, 1, N_PFXRES},
-    [G_DRTIM] = PE("RIGHT TIME", N_DRTIM, 0),           /* (V10.49) the right echo's time, a ratio of TIME (fx.c dly_rate) */
+    [G_DRTIM] = PE("RIGHT", N_DRTIM, 0),           /* (V10.49) the right echo's time, a ratio of TIME (fx.c dly_rate) */
     [G_DDRV] = PD("DRIVE", F_PCT, 0, 100, 0),    /* (snd2) the delay's loop driven: 0 clean as before, 100 x4 into the clip */
     [G_DMOD] = PD("MOD", F_PCT, 0, 127, 0),      /* (0.6.89: 0, the repeats exact copies, by default) */     /* (0.6.86) the delay's drift: WOW + FLUTTER (fx.c dly_wow_adv) */
     [G_RMOD] = PD("MOD", F_PCT, 0, 127, 0),      /* the reverb's modulation depth (ROOM: the combs, SPRING: its wobble) */
@@ -233,7 +233,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_RWIDE] = PD("WIDE", F_PCT, 0, 127, 0),    /* .. its width: its combs (ROOM) / taps (SPRING) apart, left and right */
     [G_DPIT] = PD("PITCH", F_SEMI, -12, 12, 0),  /* the GRAIN delay: each repeat through two grains this far up / down */
     [G_DSPRY] = PD("SCATTER", F_PCT, 0, 127, 0),    /* .. their spray: each grain from a random place (0: plain delay) */
-    [G_STRN] = PD("ALL TRACKS", F_INT, -14, 14, 0),  /* (JIANT 0.4) every sequence this many steps up / down its scale (0.6.45:
+    [G_STRN] = PD("ALL TRK", F_INT, -14, 14, 0),  /* (JIANT 0.4) every sequence this many steps up / down its scale (0.6.45:
                                                   * named ALL TR, was STRN: nobody knew what moved their notes) */
     [G_SLMODE] = PE("MODE", N_SLCR, 0),         /* (JIANT 0.6.3) the SLICER bus (slicer.c) */
     [G_SLPAT] = PD("PAT", F_INT, 1, 16, 1),
@@ -287,8 +287,9 @@ static const param_desc_t TVEL_DESC = {"VEL", F_PCT, 0, 127, 127, 0};   /* (afte
 static const param_desc_t WROT_DESC[2] = {               /* (0.7.8) WHEEL's ROTOR: P_WRDEP (127 = 100 %, as before), P_WDUST */
     {"DEPTH", F_PCT, 0, 127, 127, 0}, {"DUST", F_PCTINV, 0, 127, 127, 0}};
 static const param_desc_t VLANG_DESC = {"LANG", F_ENUM, 0, LG_N - 1, 0, N_LANG};   /* (0.8.5) VOICE's words: */
-static const char *const N_DKEYMODE[] = {"CLASSIC", "EXTENDED"};
-static const param_desc_t DKEYMODE_DESC = {"KEY MAP",F_ENUM,0,1,1,N_DKEYMODE};   /* (2..9: EXTENDED, eng_drum.c drum_chrom) */
+static const char *const N_DKEYMODE[] = {"BASIC", "EXTRA", "KICK", "SNARE", "CLAP", "HH CL", "HH OP", "TOM", "RIM", "BELL"};
+static const param_desc_t DKEYMODE_DESC = {"KEY MAP",F_ENUM,0,9,1,N_DKEYMODE};   /* (V10.7.62: 2..9 named, the sound OCT -1
+                                                         * plays up the keys, eng_drum.c drum_chrom; on PLAY's KNOB 4) */
 static const param_desc_t SIMG_DESC = {"IMAGE", F_PCTINV, 0, 127, 127, 0};   /* (V10.49) P_SIMG: 127 = 0 % */
 static const param_desc_t NONE_DESC = {"-", F_PCTINV, 0, 127, 127, 0};      /* (codex/coherence) EXT's P_SIMG: no card on PLAY 2,
                                                          * the range IMAGE's (an NRPN or a lock keeps its meaning) */
@@ -937,9 +938,10 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         return page_desc_v(id, valp);
     if (id == P_SIMG && pg->fam == FAM_EDIT && pg->title[0] == 'P' && pg->title[4] == 0 &&
         ENGINES[eng_idx(TSEL->eng_req)] == &ENG_DRUM) {   /* (V10.7.60) PLAY's IMAGE: a synth's; a kit's is EDIT > STEREO
-                                                         * (P_SIMG there is its KICK level) */
-        *valp = 0;
-        return 0;
+                                                         * (P_SIMG there is its KICK level). (V10.7.62, the owner: KIT 4
+                                                         * was KEY MAP alone, three cards empty) a kit's KEY MAP here */
+        *valp = &TSEL->p[P_DKEYMODE];
+        return &DKEYMODE_DESC;
     }
     if (id == G_LOADP) {                              /* (0.6.30) the same */
         *valp = &load_ui;

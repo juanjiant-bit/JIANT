@@ -1462,7 +1462,7 @@ static void draw_columns(void)
         hot_text_column(1, "RES", N_PFXRES[(uint32_t)clamp(song.g[G_PFXRES], 0, 2)]);
         fmt_int(val, (int32_t)n);
         text_column(2, pfx_rec_ok() ? "REC" : song.playing ? "PLAY" : "STEPS", pfx_rec_ok() ? "ON" : song.playing ? "ON" : val, pfx_rec_ok() ? T_ACCENT : T_MID);
-        draw_act_column(3, "CLR AUTO", n ? T_MID : T_DIM, ICON_X_MOTION_DEL);   /* (snd2: the lane only) */
+        draw_act_column(3, "ERASE", n ? T_MID : T_DIM, ICON_X_MOTION_DEL);   /* (snd2: the lane only) */
         return;
     }
     if (cur_page()->graph == GR_MOTION) {

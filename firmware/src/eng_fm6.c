@@ -545,7 +545,7 @@ static const engine_t ENG_FM6 = {
     .page_title = {"ALGO", "PATCH"},                    /* (codex/coherence: ALGO, was OPS, the OPERATOR group's tab) */
     .edit = {
         {"ALG", F_INT, 0, 32, 0, N_FM6_ALG},
-        {"FEEDBACK", F_INT, -7, 7, 0, 0},
+        {"FEEDBK", F_INT, -7, 7, 0, 0},
         {"MOD", F_BIPCT, -64, 63, 0, 0},
         {"RATIO", F_INT, -16, 16, 0, 0},
         {"MOD ENV", F_BIPCT, -64, 63, 0, 0},

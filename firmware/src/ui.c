@@ -2146,7 +2146,7 @@ static const char *act_name(uint32_t c)          /* column c's action (the foote
 {
     static const char *const UP_GO[3] = {"LOAD", "ERASE", "SAVE"};
     uint32_t id = cur_page()->id[c & 3u];
-    if (cur_page()->graph == GR_PUNCH) return "CLR AUTO";   /* (snd2) the punch-in lane only */
+    if (cur_page()->graph == GR_PUNCH) return "ERASE";   /* (snd2) the punch-in lane only (V10.7.62: CLR AUTO cut) */
     if (cur_page()->graph == GR_MOTION) return "CLEAR";
     if (cur_page()->graph == GR_EVENTS) return ev_act_name();
     if (cur_page()->graph == GR_LYRIC) return "TYPE";

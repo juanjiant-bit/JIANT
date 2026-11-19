@@ -24,7 +24,7 @@ BTAPP_FN static void trackgen_cards_bt(void)
     const tg_config_t *c=&tg_config[song.sel%NTRK];char b[12];
     hot_text_column(0,"GENRE",c->genre==GEN_EXPLORE?"EXPLORE":c->genre?GENRE[(c->genre-1u)%NGENRE].name:"RANDOM");
     fmt_int(b,c->seed);hot_text_column(1,"SEED",b);
-    fmt_int(b,c->complex);hot_text_column(2,drum_track(TSEL)?"COMPLEX":"ROLE",drum_track(TSEL)?b:TG_ROLE[c->role%4u]);
+    fmt_int(b,c->complex);hot_text_column(2,drum_track(TSEL)?"BUSY":"ROLE",drum_track(TSEL)?b:TG_ROLE[c->role%4u]);
     fmt_int(b,c->energy);hot_unit_column(3,"ENERGY",b,"%");
 }
 static void trackgen_knob(uint32_t k,int32_t s) {if(bt_hw_seg()) trackgen_knob_bt(k,s);}

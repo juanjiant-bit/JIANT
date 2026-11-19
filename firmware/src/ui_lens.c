@@ -53,7 +53,7 @@ static const nv_t CE_FM6[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("
                               NV("OPERATOR", 0, 2, 2), NV("OP ENV", 0, 2, 2), NV("OPERATOR 2", 0, 2, 2), NV("PLAY", 0, 3, 1),
                               NV("MORE", 0, 3, 1)};
 static const ng_t CG_FM6[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}, {"PLAY", 0}};
-static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0, 0), NV("KIT 3", 0, 0, 0), NV("KIT 4", 0, 0, 0),
+static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0, 0), NV("KIT 3", 0, 0, 0),   /* (V10.7.62: KIT 4's KEY MAP on PLAY) */
                               NV("SOUND", 0, 1, 2), NV("SOUND 2", 0, 1, 2), NV("SOUND 3", 0, 1, 2), NV("SOUND 4", 0, 1, 2),
                               NV("LEVELS", 0, 2, 1), NV("LEVELS 2", 0, 2, 1), NV("X-MOD", "CROSS MOD", 3, 1), NV("FILTER", 0, 3, 1),
                               NV("STEREO", 0, 3, 1), NV("PLAY", 0, 3, 1)};   /* (codex/coherence: PLAY, was VOICE; in TONE,
