@@ -643,13 +643,18 @@ static int page_visible(uint32_t i)
     if (PAGES[i].graph == GR_FOCUS)                     /* (0.8.5) FOCUS: a synth's (FM6: OPERATOR, DRUM: SOUND; V10.54 not INPUT's) */
         return trk_eng(TSEL) != ENGI_DRUM && trk_eng(TSEL) != ENGI_FM6 && trk_eng(TSEL) != ENGI_INPUT &&
                !(FELUCCA_FM4 && trk_eng(TSEL) == ENGI_DIGITAL);
-    if (PAGES[i].id[0] == P_ALLOC)                      /* (0.8.5) VOICE 2: not a kit's */
-        return trk_eng(TSEL) != ENGI_DRUM;
+    if (PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] == P_DETUNE) {   /* (V10.7.60) MORE: an engine's without extras,
+                                                         * not a kit's */
+        uint32_t e = trk_eng(TSEL);
+        return e != ENGI_DRUM && e != ENGI_ANALOG && ENGINES[e] != &ENG_PHASE && trk_engp(TSEL) != &ENG_WHEEL &&
+               !(trk_engp(TSEL) == &ENG_LOFI && TSEL->p[P_E1] >= RW_BYTE);
+    }
     if (PAGES[i].graph >= GR_FMOP && PAGES[i].graph <= GR_FMENV)   /* (0.6.10) OPERATOR, OP ENV, OPERATOR 2: FM6's */
         return trk_eng(TSEL) == ENGI_FM6;
     if (PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] == P_WRDEP)   /* (0.7.8) ROTOR: WHEEL's */
         return trk_engp(TSEL) == &ENG_WHEEL;
-    if (PAGES[i].id[0] == P_LRTRG && PAGES[i].id[1] == 0xFFu)   /* (0.6.12) RETRIG: LOFI BYTE / FLOAT's */
+    if (PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] == P_LRTRG && PAGES[i].id[2] == P_DETUNE)   /* (0.6.12) RETRIG: LOFI BYTE /
+                                                         * FLOAT's (V10.7.60: its MORE) */
         return trk_engp(TSEL) == &ENG_LOFI && TSEL->p[P_E1] >= RW_BYTE;
     if (PAGES[i].scope == SC_ENGINE && PAGES[i].fam == FAM_EDIT)   /* (V10.7.21) ANALOG: its own EDIT 1 (INT in NOISE's
                                                          * place), no EDIT 2; every other engine EDIT 1 and EDIT 2 */

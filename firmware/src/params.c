@@ -746,10 +746,13 @@ static const page_t PAGES[] = {
     {"WORDS", FAM_EDIT, SC_TRACK, GR_LYRIC, {P_VLANG, P_VLYR, P_VCONS, 0xFF}},   /* (0.8.5) VOICE: LANG LYRIC, (V10.6y) CONS
                                                          * where POS was (POS: EDIT 1's KNOB 1, LANG on), OCT+ TYPE
                                                          * (the lyric on the NAME screen, ui_name.c) */
-    {"RETRIG", FAM_EDIT, SC_TRACK, GR_NONE, {P_LRTRG, 0xFF, 0xFF, 0xFF}},
-    {"MORPH", FAM_EDIT, SC_TRACK, GR_MORPH, {P_MORPH, P_DRIFT, 0xFF, 0xFF}},   /* (0.6.45) ANALOG PHASE LOFI: the wave morphs;
+    /* (V10.7.60, the owner: fewer pages) MORE, the voices' last page: an engine's few extras (MATH BYTE's RESTART; ANALOG
+     * and PHASE's MORPH DRIFT; WHEEL's ROTOR DEPTH DUST) with UNISON and VEL; one MORE an engine (page_visible). ALLOC
+     * and NOTE PRIO off the panel (kept: the editor, NRPN, the projects) */
+    {"MORE", FAM_EDIT, SC_TRACK, GR_NONE, {P_LRTRG, 0xFF, P_DETUNE, P_TVEL}},
+    {"MORE", FAM_EDIT, SC_TRACK, GR_MORPH, {P_MORPH, P_DRIFT, P_DETUNE, P_TVEL}},   /* (0.6.45) the wave morphs;
                                                          * (0.7.8) DRIFT: the voices wander */
-    {"ROTOR", FAM_EDIT, SC_TRACK, GR_NONE, {P_WRDEP, P_WDUST, 0xFF, 0xFF}},   /* (0.7.8) WHEEL: the rotor's depth, DUST */
+    {"MORE", FAM_EDIT, SC_TRACK, GR_NONE, {P_WRDEP, P_WDUST, P_DETUNE, P_TVEL}},   /* (0.7.8) WHEEL: the rotor's depth, DUST */
     /* (JIANT 0.6.54) DRUM: the whole kit first (KIT = EDIT 1, KIT 2 = EDIT 2, KIT 3, X-MOD, FILTER), then a sound
      * (SOUND 1..4, KNOB 1 the sound on each), (0.6.58) then the volumes (LEVELS, LEVELS 2); (0.7.8) STEREO after X-MOD */
     {"KIT 3", FAM_EDIT, SC_TRACK, GR_DXIMG, {0xFF, 0xFF, 0xFF, 0xFF}},     /* TONE's BP and FEEDBK (the kit's) */
@@ -824,7 +827,7 @@ static const page_t PAGES[] = {
     {"EUCLID", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_EU0, ID_EU0 + 1u, ID_EU0 + 2u, ID_EU0 + 3u}},   /* (V10.6, MUTATE's place)
                                                          * HITS STEPS ROTATE, LANE / VARY (ui_euclid.c) */
     /* (0.8.5) LENTE everywhere (ui_lens.c): pages the mock-up added, appended (the table's order is no one's index) */
-    {"PLAY 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_ALLOC, P_DETUNE, P_TVEL, P_PRIO}},   /* ALLOC, UNISON's detune (in TP since
+    {"MORE", FAM_EDIT, SC_TRACK, GR_NONE, {P_DETUNE, P_TVEL, 0xFF, 0xFF}},   /* (V10.7.60: was PLAY 2's ALLOC UNISON VEL PRIO) */   /* ALLOC, UNISON's detune (in TP since
                                                          * Felucca, on no page until 0.8.5), (after V10.7.2) VEL,
                                                          * (codex/coherence) IMAGE, the voices across (POLY; V10.49's STEREO
                                                          * page gone; was VOICE 2) */

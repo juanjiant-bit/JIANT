@@ -4675,13 +4675,13 @@ static int test_edit_cycle(void)
 {
     /* (0.9.2: one chain, SELECT a page a detent; an EDIT tap the next group's first. Was 0.8.5's lens: SELECT a level, the
      * tap the level's next set) */
-    static const char *const CH_A[] = {"EDIT 1", "FILTER", "MORPH", "FOCUS", "PLAY", "PLAY 2"};   /* (JIANT 0.5:
+    static const char *const CH_A[] = {"EDIT 1", "FILTER", "FOCUS", "PLAY", "MORE"};   /* (V10.7.60: MORPH and PLAY 2 one MORE) */   /* (JIANT 0.5:
                                                          * ANALOG's FILTER; 0.6.45: MORPH; V10.7.21: no EDIT 2; codex/coherence:
                                                          * PLAY, was VOICE; STEREO's IMAGE on PLAY 2) */
     static const char *const TP_A[] = {"FILTER", "FOCUS", "PLAY"};
-    static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "FILTER", "OPERATOR", "OP ENV", "OPERATOR 2", "PLAY", "PLAY 2"};
+    static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "FILTER", "OPERATOR", "OP ENV", "OPERATOR 2", "PLAY", "MORE"};
     static const char *const TP_F[] = {"FILTER", "OPERATOR", "PLAY"};
-    static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "PLAY", "PLAY 2", "OP1 ENV", "OP2 ENV", "OP3 ENV",
+    static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "PLAY", "MORE", "OP1 ENV", "OP2 ENV", "OP3 ENV",
                                        "OP4 ENV", "OP LEVEL"};
     static const char *const TP_D[] = {"FILTER", "OP1 ENV"};
     int bad = 0, ok;
@@ -4780,9 +4780,9 @@ static int test_edit_cycle(void)
     go_title("OP2 ENV");
     set_engine_of(TSEL, 0); frame();
     bad += check("an OP page of a track no longer DIGITAL falls back to EDIT 1", str_eq(cur_page()->title, "EDIT 1"));
-    go_title("MORPH"); frame();                         /* (0.9.2: a page put by code brings its entry) */
+    go_title("FOCUS"); frame();                         /* (0.9.2: a page put by code brings its entry) */
     go_home(); press(B_EDIT);
-    bad += check("EDIT remembers its last page (as every section: rule 2)", str_eq(cur_page()->title, "MORPH"));
+    bad += check("EDIT remembers its last page (as every section: rule 2)", str_eq(cur_page()->title, "FOCUS"));
     return bad;
 }
 
@@ -8801,8 +8801,8 @@ static int test_lofi_rtrg(void)
     v->ph[0] = v->ph[1] = 12345u;
     trk_note_on(t, 62, 100);                            /* (MONO: another key retriggers; the same one held does not) */
     bad += check("  ON: the formula from its start", v->ph[0] == 0u && v->ph[1] == 0u);
-    go_title("RETRIG");
-    bad += check("  the RETRIG page: MATH FLOAT's, RTRG on KNOB 1", str_eq(cur_page()->title, "RETRIG") &&
+    go_title("MORE");                                   /* (V10.7.60: RETRIG's on MORE, the first of them) */
+    bad += check("  the MORE page: MATH FLOAT's RESTART on KNOB 1", str_eq(cur_page()->title, "MORE") && cur_page()->id[0] == P_LRTRG &&
                  str_eq(track_desc(t, P_LRTRG)->label, "RESTART"));
     t->p[P_E1] = RW_BYTE;
     bad += check("  and BYTE's", page_visible(ui.page));
@@ -12300,17 +12300,17 @@ static int test_lz_edit(void)
     ui_power_on(); set_engine_of(TSEL, 0); frame();
     press(B_EDIT); frame();
     ok = pd_on() && lz_fam() == LZ_EDIT && pd_level() == 0u && lz_tab_lit(0) && lz_crumb_is("EDIT \xB7 SOUND \xB7 OSC") &&
-         lz_count_is("1/6");                                        /* (codex/coherence: EDIT . OSC, ANALOG has no EDIT 2) */
+         lz_count_is("1/5");                                        /* (codex/coherence: EDIT . OSC, ANALOG has no EDIT 2) */
     turn(EN_SELECT, 1); frame();                                    /* (V10.7.21 ANALOG: no EDIT 2) */
     ok &= pd_level() == 1u && lz_tab_lit(1) && str_eq(cur_page()->title, "FILTER") && lz_crumb_is("EDIT \xB7 TONE \xB7 FILTER") &&
-          lz_count_is("2/6");
+          lz_count_is("2/5");
     frames(320); press(B_EDIT); frame();                            /* EDIT: the next group, FOCUS */
     ok &= pd_level() == 2u && lz_tab_lit(2) && str_eq(cur_page()->title, "FOCUS") && lz_crumb_is("EDIT \xB7 FOCUS \xB7 FOCUS") &&
-          lz_count_is("4/6");
+          lz_count_is("3/5");
     turn(EN_SELECT, 3); frame();
-    ok &= str_eq(cur_page()->title, "PLAY 2");                      /* (V10.49: PLAY PLAY 2 last; no wrap) */
+    ok &= str_eq(cur_page()->title, "MORE");                        /* (V10.7.60: PLAY MORE last; no wrap) */
     turn(EN_SELECT, -3); frame();
-    ok &= pd_level() == 1u && str_eq(cur_page()->title, "MORPH");    /* (MORPH FOCUS PLAY PLAY 2: three back) */
+    ok &= pd_level() == 1u && str_eq(cur_page()->title, "FILTER");   /* (FILTER FOCUS PLAY MORE: three back) */
     frames(320); press(B_EDIT); frame();
     ok &= str_eq(cur_page()->title, "FOCUS");
     frames(320); press(B_EDIT); frame();
@@ -12357,21 +12357,22 @@ static int test_lz_edit(void)
     turn(EN_K4, 3); frame();                                        /* (V10.7.60) KNOB 4 IMAGE, STEREO's page gone */
     ok &= TSEL->p[P_SIMG] != v && !nav_put(SEC_EDIT, "STEREO");
     turn(EN_SELECT, 1); frame();
-    ok &= str_eq(cur_page()->title, "PLAY 2");
+    ok &= str_eq(cur_page()->title, "MORE");                        /* (V10.7.60: ANALOG's MORE MORPH DRIFT UNISON VEL) */
     v = TSEL->p[P_DETUNE];
-    turn(EN_K2, 3); frame();
+    turn(EN_K3, 3); frame();
     ok &= TSEL->p[P_DETUNE] != v;
     {
         int16_t *hv;
-        ok &= str_eq(page_desc(cur_page(), 1, &hv)->label, "UNISON") && str_eq(page_desc(cur_page(), 3, &hv)->label, "NOTE PRIO");
+        ok &= str_eq(page_desc(cur_page(), 0, &hv)->label, "MORPH") && str_eq(page_desc(cur_page(), 2, &hv)->label, "UNISON") &&
+              str_eq(page_desc(cur_page(), 3, &hv)->label, "VEL");
         set_engine_of(TSEL, ENGI_INPUT); go_title("PLAY"); frame();   /* (EXT: no IMAGE, its voice is one) */
         ok &= str_eq(cur_page()->title, "PLAY") && page_desc(cur_page(), 3, &hv)->label[0] == '-';
     }
     set_engine_of(TSEL, ENGI_DRUM); frame();
-    ok &= !nav_put(SEC_EDIT, "PLAY 2") && !nav_put(SEC_EDIT, "FOCUS") && nav_put(SEC_EDIT, "STEREO");
+    ok &= !nav_put(SEC_EDIT, "MORE") && !nav_put(SEC_EDIT, "FOCUS") && nav_put(SEC_EDIT, "STEREO");
     set_engine_of(TSEL, ENGI_FM6); frame();
     ok &= !nav_put(SEC_EDIT, "FOCUS") && nav_put(SEC_EDIT, "OPERATOR");
-    bad += check("0.9.2 EDIT > PLAY (codex/coherence: was VOICE; POLY, GL MODE; V10.7.60: IMAGE): PLAY 2 (ALLOC, UNISON, VEL, NOTE PRIO) after it, not on DRUM; FOCUS on the synths only", ok);
+    bad += check("0.9.2 EDIT > PLAY (codex/coherence: was VOICE; POLY, GL MODE; V10.7.60: IMAGE): MORE (an engine's extras, UNISON, VEL) after it, not on DRUM; FOCUS on the synths only", ok);
     ui_power_on();
     return bad;
 }
@@ -13073,9 +13074,9 @@ static void rv_walk(uint32_t sec)                      /* the button from HOME, 
  * (0.9.1's numbering, the level the page is drawn as), its pages; each must be reached at that level */
 typedef struct { uint8_t fam, lv, kind; const char *t[13]; } old_lv_t;   /* kind: EDIT's (0 synth 1 FM6 2 DRUM), 9 any */
 static const old_lv_t OLD_LV[] = {
-    {FAM_EDIT, 0, 0, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 0, {"FILTER", "MORPH", "RETRIG", "ROTOR", "PLAY", "PLAY 2", "WORDS"}},
+    {FAM_EDIT, 0, 0, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 0, {"FILTER", "PLAY", "MORE", "WORDS"}},
     {FAM_EDIT, 2, 0, {"FOCUS"}},
-    {FAM_EDIT, 0, 1, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 1, {"FILTER", "PLAY", "PLAY 2"}},
+    {FAM_EDIT, 0, 1, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 1, {"FILTER", "PLAY", "MORE"}},
     {FAM_EDIT, 2, 1, {"OPERATOR", "OP ENV", "OPERATOR 2"}},
     {FAM_EDIT, 0, 2, {"EDIT 1", "EDIT 2", "KIT 3"}}, {FAM_EDIT, 1, 2, {"X-MOD", "FILTER", "STEREO", "LEVELS", "LEVELS 2", "PLAY"}},
     {FAM_EDIT, 2, 2, {"SOUND", "SOUND 2", "SOUND 3", "SOUND 4"}},
@@ -13126,7 +13127,7 @@ static int coh_ok(uint32_t sec, const char *a, const char *b)
     static const struct { uint8_t sec; const char *a, *b; } OK[] = {
         {SEC_ENV, "ENV", "TRACKS"}, {SEC_GLO, "MIXER", "GLOBAL"}, {SEC_FX, "SENDS", "DIST"},
         {SEC_FX, "BUSES", "DLY"}, {SEC_FX, "BUSES", "REVERB"}, {SEC_FX, "BUSES", "CHORUS"}, {SEC_FX, "BUSES", "SLICER"},
-        {SEC_EDIT, "PLAY 2", FELUCCA_FM4 ? "OP LEVEL" : "-"}};   /* (FELUCCA_FM4's retired DIGITAL: P_TVEL is its OP4 LEVEL) */
+        {SEC_EDIT, "MORE", FELUCCA_FM4 ? "OP LEVEL" : "-"}};   /* (FELUCCA_FM4's retired DIGITAL: P_TVEL is its OP4 LEVEL) */
     uint32_t i;
     for (i = 0; i < NELEM(OK); i++)
         if (OK[i].sec == sec && ((str_eq(OK[i].a, a) && str_eq(OK[i].b, b)) || (str_eq(OK[i].a, b) && str_eq(OK[i].b, a))))

@@ -1263,7 +1263,7 @@ static void setup(int s)
     }
     case S_ED_FILTER: go_title("FILTER"); TSEL->p[P_E5] = 90; break;   /* (0.8.5) EDIT's lens: TONE, FILTER (ANALOG) */
     case S_ED_FILTER_BP: eng(7); go_title("FILTER"); TSEL->p[P_FTYPE] = 2; TSEL->p[P_DIST] = 60; ui.hot_col = 1; ui.hot_t = 30; break;
-    case S_ED_VOICE2: go_title("PLAY 2"); TSEL->p[P_VOICE] = 3; trk[0].v[0].stage = 2; trk[0].v[0].env = 9u << 20; break;
+    case S_ED_VOICE2: nav_put(SEC_EDIT, "MORE"); TSEL->p[P_VOICE] = 3; trk[0].v[0].stage = 2; trk[0].v[0].env = 9u << 20; break;
     case S_ED_FOCUS: case S_ED_FOCUS_MOD:              /* .. FOCUS: CUT, (MOD) M2 moving it */
         go_title("FOCUS"); ui.focus = 4;
         if (s == S_ED_FOCUS_MOD) { TSEL->p[P_M2SRC] = 1; TSEL->p[P_M2DST] = MD_E1 + 4; TSEL->p[P_M2AMT] = 40; }
@@ -1648,7 +1648,7 @@ static void setup(int s)
      * song B16 C16 A32 D8 C16 A32 (scenes on 2 and 4, END LOOP); seven user sounds */
     case S_PG0 ... S_PG_END: {   /* (V10.1) the pages the manual had no screen of: by title, on the engine they need */
         static const struct { const char *t; uint32_t e, sec; } PG[S_PG_END - S_PG0 + 1] =
-        {{"RETRIG", ENGI_LOFI, SEC_EDIT}, {"ROTOR", ENGI_WHEEL, SEC_EDIT}, {"LENGTH", 0xFFu, SEC_SEQ}, {"MODES", 0xFFu, SEC_SEQ}, {"DLY 3", 0xFFu, SEC_FX}, {"SL BUS", 0xFFu, SEC_FX}, {"TAPE", 0xFFu, SEC_FX}, {"EQ", 0xFFu, SEC_FX}, {"SYSTEM 2", 0xFFu, SEC_GLO}, {"G.COMP", 0xFFu, SEC_GLO}, {"G.COMP 2", 0xFFu, SEC_GLO}, {"KIT 2", ENGI_DRUM, SEC_EDIT}, {"KIT 3", ENGI_DRUM, SEC_EDIT}, {"KIT 4", ENGI_DRUM, SEC_EDIT}, {"LEVELS", ENGI_DRUM, SEC_EDIT}, {"LEVELS 2", ENGI_DRUM, SEC_EDIT}, {"X-MOD", ENGI_DRUM, SEC_EDIT}};
+        {{"MORE", ENGI_LOFI, SEC_EDIT}, {"MORE", ENGI_WHEEL, SEC_EDIT}, {"LENGTH", 0xFFu, SEC_SEQ}, {"MODES", 0xFFu, SEC_SEQ}, {"DLY 3", 0xFFu, SEC_FX}, {"SL BUS", 0xFFu, SEC_FX}, {"TAPE", 0xFFu, SEC_FX}, {"EQ", 0xFFu, SEC_FX}, {"SYSTEM 2", 0xFFu, SEC_GLO}, {"G.COMP", 0xFFu, SEC_GLO}, {"G.COMP 2", 0xFFu, SEC_GLO}, {"KIT 2", ENGI_DRUM, SEC_EDIT}, {"KIT 3", ENGI_DRUM, SEC_EDIT}, {"KIT 4", ENGI_DRUM, SEC_EDIT}, {"LEVELS", ENGI_DRUM, SEC_EDIT}, {"LEVELS 2", ENGI_DRUM, SEC_EDIT}, {"X-MOD", ENGI_DRUM, SEC_EDIT}};
         if (PG[s - S_PG0].e != 0xFFu) eng(PG[s - S_PG0].e);
         nav_scene(PG[s - S_PG0].sec, PG[s - S_PG0].t);
         break;

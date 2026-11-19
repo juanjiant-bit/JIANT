@@ -61,7 +61,7 @@ static const struct { const char *l, *h; } KNOB_HINT[] = {
     {"VEL MOD", "VELOCITY TO MOD"},
     {"SPREAD", "STEREO SPREAD"},
     {"FOLD", "WAVEFOLDER"},
-    {"SYMM", "FOLD SYMMETRY"},
+    {"SYMMETRY", "FOLD SYMMETRY"},
     {"DUST", "CRACKLE NOISE"},
     {"EXCITE", "PLUCK EXCITER"},
     {"POS", "PLUCK POSITION"},
@@ -80,7 +80,9 @@ static const struct { const char *l, *h; } KNOB_HINT[] = {
     {"AMOUNT", "HOW MUCH"},
     {"DEST", "WHAT IT MOVES"},
     {"BANK", "FILL BANK"},
-    {"TUNE", "MASTER TUNE"}};
+    {"TUNE", "MASTER TUNE"},
+    {"DRAWBAR", "ORGAN REGISTER"}, {"VARIANT", "FORMULA VARIANT"}, {"RESO", "RESONANCE"}, {"FEEDBACK", "SELF FEEDBACK"},
+    {"MORPH", "WAVE MORPH"}, {"DRIFT", "VOICES WANDER"}, {"STICKY", "STAYS IN A STATE"}};
 static void knob_hint(const char *label)
 {
     uint32_t i;
