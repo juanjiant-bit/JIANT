@@ -166,7 +166,10 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
                                                          * the folded corners' rate under ~3 kHz) */
         gcap = r >= 96u ? 4096 : r <= 6u ? 256 : (int32_t)r * 43;
     /* the gate's ceiling (+ FLT, velocity, the key by half) and its floor (the key, half an octave under it) */
-    ceil = clamp((112 << 8) + m->cutoff + (vel - 64) * 48 + (m->pitch16 - 60 * 16) * 9, 0, 127 << 8);
+    uint32_t vsh = VH_SH(), rep;                        /* (V10.7.56) at half the rate: the key's share of the ceiling as at
+                                                         * the full rate (pitch16 is an octave up there), the vactrol's
+                                                         * steps run as often a second, the DC block and DUST's rate kept */
+    ceil = clamp((112 << 8) + m->cutoff + (vel - 64) * 48 + (m->pitch16 - 60 * 16) * 9 - 1728 * (int32_t)vsh, 0, 127 << 8);
     flo = clamp((m->pitch16 - 362) * 19 - (6 << 8), 0, ceil);
     fdep = fdep > 32767 ? 32767 : fdep;
     vdep = vdep > 32767 ? 32767 : vdep;
@@ -181,26 +184,32 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
         int32_t e8 = dust <= 72 ? dust * 33 : dust <= 96 ? 2376 : 2376 + (dust - 96) * 15;
         uint32_t rate = 1u << (e8 >> 8);
         rate += (rate * (uint32_t)(e8 & 255)) >> 8;
-        thr = (int32_t)((rate * 97391u) >> 16);         /* per 2^16 of a sample */
+        thr = (int32_t)((rate * 97391u) >> 16) << vsh;  /* per 2^16 of a sample */
         osc = dust <= 72 ? 32767 : dust >= 96 ? 0 : (96 - dust) * 1365;
         hiss = dust > 96 ? (dust - 96) * 1057 : 0;
+        if (vsh)                                        /* (V10.7.56: white noise at half the rate: its power in half the
+                                                         * band, -3 dB to stay as loud under 11 kHz) */
+            hiss = (hiss * 23170) >> 15;
     }
     p0 = ((uint32_t)xg0 << 7) + off;                    /* (F0 read when needed: fv -1) */
     while (i < n) {
         uint32_t len = n - i < WS_SUB ? n - i : WS_SUB, end = i + len;
-        int32_t li, gc, lf, lv, g, dt, dga, dg, dd, drv = hold;
+        int32_t li, gc, lf, lv, g, dt, dga, dg, dd, drv;
         tsvf_t c;
-        if (strk) {                                     /* the strike's pulse: the LED, harder brighter */
-            drv = 11000 + vel * 171 > drv ? 11000 + vel * 171 : drv;
-            strk--;
-        }
-        li = west_exp2n(dark >> 8);                     /* the cell's light, Q15 */
-        if (drv > li) {                                 /* lit: quickly, not at once (~1.5 .. 3 ms) */
-            li += ((drv - li) * (4096 + (drv >> 3))) >> 15;
-            dark = west_log2n(li);
-        } else {                                        /* darkening: slower the darker */
-            dark += k0 + ((kf * west_exp2n((dark >> 8) * 3 >> 2)) >> 9);
-            dark = dark > WL_DARK ? WL_DARK : dark;
+        for (rep = 0; rep < (1u << vsh); rep++) {       /* (V10.7.56: a step a WS_SUB samples of the full rate) */
+            drv = hold;
+            if (strk) {                                 /* the strike's pulse: the LED, harder brighter */
+                drv = 11000 + vel * 171 > drv ? 11000 + vel * 171 : drv;
+                strk--;
+            }
+            li = west_exp2n(dark >> 8);                 /* the cell's light, Q15 */
+            if (drv > li) {                             /* lit: quickly, not at once (~1.5 .. 3 ms) */
+                li += ((drv - li) * (4096 + (drv >> 3))) >> 15;
+                dark = west_log2n(li);
+            } else {                                    /* darkening: slower the darker */
+                dark += k0 + ((kf * west_exp2n((dark >> 8) * 3 >> 2)) >> 9);
+                dark = dark > WL_DARK ? WL_DARK : dark;
+            }
         }
         gc = dark >= WL_DARK ? 0 : west_exp2n((dark >> 8) * 3 >> 2);   /* the conductance: the light to the 0.75 */
         lf = mulq15(fdep, (dark >> 8) * 7 >> 4);        /* the filter's share of it (~6 st an octave), the VCA's */
@@ -243,7 +252,7 @@ static void west_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
                 xg0 = xg;
                 if (am)
                     y = mulq15(y, 32767 - am + mulq15(am, ms));
-                dc += ((y << 8) - dc) >> 9;             /* (~14 Hz: SYMM's DC gone within ~12 ms) */
+                dc += ((y << 8) - dc) >> (9u - vsh);    /* (~14 Hz: SYMM's DC gone within ~12 ms) */
                 y -= dc >> 8;
                 if (osc != 32767)
                     y = mulq15(y, osc);
@@ -372,6 +381,7 @@ static const engine_t ENG_WEST = {
     .npresets = NELEM(WEST_PRESETS),
     .note_on = west_note_on,
     .render = west_render,
+    .half = 1,                   /* (V10.7.56) the generic half rate; the vactrol, the key's ceiling, DC, DUST follow VH_SH */
     .knob = {P_E0, P_E2, P_E5, P_E7},
     .keep = 0xF3,                /* the filter, the DC blocker, the cell, the gain, the folder's input (a retrigger strikes
                                   * the LED anew: the light from where it is) */
