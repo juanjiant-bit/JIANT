@@ -179,10 +179,14 @@ static void string_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
         if ((v->ph[1] >> 16) < 512u)                     /* (under ~-36 dB: damped out, no limit cycle left ringing) */
             g = (g * 29000) >> 15;
     }
-    bf = (int32_t)((327u * str_exp2n(2048u - (uint32_t)clamp(p[P_E6], 0, 127) * 896u / 127u)) >> 8);   /* (2 sin(pi f / FS), Q15: 70 .. 790 Hz) */
+    uint32_t vsh = VH_SH(), st;                         /* (V10.7.56, voice.c voice_half: half 2) at half the rate the loop
+                                                         * still runs on the full rate's time (its line, its period, no
+                                                         * resampling at a change of rate: in tune, seamless); each output
+                                                         * sample two of its steps on, BODY's and the DC block's Hz kept */
+    bf = (int32_t)((327u * str_exp2n(2048u - (uint32_t)clamp(p[P_E6], 0, 127) * 896u / 127u)) >> 8) << vsh;   /* (2 sin(pi f / FS), Q15: 70 .. 790 Hz) */
     if (n > CTL)
         n = CTL;
-    for (i = 0; i < n; i++) {
+    for (st = 0; st < (n << vsh); st++) {              /* (st: the full rate's samples; i the output's) */
         int32_t s;
         if (++cnt >= D) {                                /* a pass of the loop */
             int32_t x0 = b[(w + ST_SL - (uint32_t)di) % ST_SL], x1 = b[(w + ST_SL - (uint32_t)di - 1u) % ST_SL];
@@ -212,6 +216,9 @@ static void string_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
             y1 = yy;
             cnt = 0;
         }
+        if ((st & vsh) != vsh)                           /* (at half the rate: every other one heard) */
+            continue;
+        i = st >> vsh;
         s = y0 + (((y1 - y0) * (int32_t)cnt) >> d);
         if (body) {                                      /* BODY: a band at SIZE under the string */
             int32_t hi;
@@ -229,7 +236,7 @@ static void string_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, cons
             s = (c * fol) >> 15;                         /* (V10.23, a tester: "FDBK barely heard": the bloom's
                                                          * level was taken twice, here and in fol, -15 dB more) */
         }
-        dc += ((s << 12) - dc) >> 10;                    /* (the output's DC blocked: ~7 Hz; Q12, what sticks under a
+        dc += ((s << 12) - dc) >> (10u - vsh);                    /* (the output's DC blocked: ~7 Hz; Q12, what sticks under a
                                                          * quarter of a step: rounded away) */
         s -= (dc + 2048) >> 12;
         pk = s > pk ? s : -s > pk ? -s : pk;
@@ -324,6 +331,7 @@ static const engine_t ENG_STRING = {
     .keep = 0xF3u,                                       /* (s[0] s[1] s[4..7]: struck again, the loop rings on) */
     .note_on = string_note_on,
     .render = string_render,
+    .half = 2,                   /* (V10.7.56) it sees CTL / 2 samples: the loop on the full rate's time (string_render) */
     .knob = {P_E0, P_E1, P_E2, P_E3},
     .block = string_block,
     .ownenv = 1,                                         /* (p5: RELEASE its damper; the sequencer's short gates let it ring) */
