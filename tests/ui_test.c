@@ -9531,6 +9531,8 @@ static int test_fx_latch(void)
         ok &= !ui.layer && ui.home == h && ui.page == pg;
     }
     btn_down(B_FX); frame(); frames(800); press(B_OCTUP); btn_up(B_FX); frame();
+    ok &= song.octave == -1;                                      /* (V10.7.62: FX + OCT+ is DICE, no octave) */
+    frames(64); press(B_OCTUP);
     ok &= song.octave == 0;
     btn_down(B_FX); frame(); btn_up(B_FX); frame();               /* FX tap: its page still */
     ok &= !ui.home && cur_page()->fam == FAM_FX;
@@ -9542,7 +9544,7 @@ static int test_fx_latch(void)
     ok &= song.octave == 0 && !msg_is("MIX PUT BACK");
     btn_up(B_GLO); frame();
     ok &= ui.home && !ui.layer;
-    bad += check("  FX LATCH OFF: FX + OCT- quick / held shifts the octave (no page); FX tap: the FX page; "
+    bad += check("  FX LATCH OFF: FX + OCT- quick / held shifts the octave (no page; OCT+ DICE); FX tap: the FX page; "
                  "GLO + OCT- quick: no octave, nothing put back", ok);
     fx_latch = PREF_LATCH | PREF_ACCEL_OFF;
     frame();

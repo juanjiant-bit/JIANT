@@ -3125,6 +3125,8 @@ static void ui_input_frame(void)
             uint32_t both = (1u << panel.btn[B_OCTDN]) | (1u << panel.btn[B_OCTUP]);
             if (act_cols() || layer_set_open() || gen_on())   /* action pages: enter / back (below); SET layers: OCT-; GEN */
                 break;
+            if (b == B_OCTUP && ui.ly == LAYER_FX && layer_held())   /* (V10.7.62) FX + OCT+: DICE (ui_layer.c), no octave */
+                break;
             if (live_page())                            /* (p2) LIVE: OCT- RETURN / held BYPASS, OCT+ COMMIT */
                 break;                                  /* (ui_live.c live_frame) */
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_BROWSE) {   /* (V10.24) PRESETS: OCT+ keeps

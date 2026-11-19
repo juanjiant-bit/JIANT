@@ -54,7 +54,7 @@ typedef struct {
 } layer_t;
 static const layer_t LAYERS[LAYER_N] = {
     {0, 0, 0, "", {{0, 0}, {0, 0}, {0, 0}}},
-    {B_FX, LK_HOLD, FAM_HOME, "[FX] HOLD", {{KC_KEYS, "EFFECTS"}, {KC_K14, "MACROS"}, {0, 0}}},   /* (LET GO: the header's HOLD) */
+    {B_FX, LK_HOLD, FAM_HOME, "[FX] HOLD", {{KC_KEYS, "EFFECTS"}, {KC_K14, "MACROS"}, {KC_OCTUP, "DICE"}}},   /* (LET GO: the header's HOLD) */
     {B_GLO, LK_SET, FAM_HOME, "[GLO] SET", {{KC_PLAY, "RESTART"}, {KC_GLO, "DONE"}, {0, 0}}},
     {B_SCL, LK_SET, FAM_SCL, "[SCL] SET", {{KC_KEYS, "ROOT"}, {KC_SCL, "DONE"}, {0, 0}}},
     {B_EDIT, LK_SET, FAM_EDIT, "[EDIT] SET", {{KC_SELECT, "DICE"}, {KC_K14, "TWEAK"}, {KC_KEYS, "INIT / RECALL"}}},   /* (0.9.9-seq2e:
@@ -140,12 +140,17 @@ static uint32_t layer_held(void) { return ui.ly && ly_down(ui.ly) && layer_allow
  * armed: any layer button not already down (one pressed meanwhile is armed below; one held over from before
  * is ignored, its keys stay notes); armed but dead (pressed under a dialog, a menu or NAME that has closed
  * since): nothing, its keys stay notes and FX starts no effect with no map shown; FX's effects only with FX */
+static uint8_t dice_latched;                    /* (V10.7.62) FX LATCH: FX + OCT+ turns DICE on, again off */
 static void layer_masks(void)
 {
     uint32_t m = !layer_allowed() || (ui.ly && (ui.ly_t0 & LY_DEAD)) ? 0u
                : ui.ly ? ly_bit(ui.ly) : layer_bits() & ~fm1_in.buttons;
     kb_mask = m;
     perf_mask = m & ly_bit(LAYER_FX);
+    perf_dice = (uint8_t)(dice_latched || (ui.ly == LAYER_FX && layer_held() && !perf_latch_on &&
+                                           ((fm1_in.buttons >> panel.btn[B_OCTUP]) & 1u)));   /* (V10.7.62) FX + OCT+ */
+    if (perf_dice && ui.ly == LAYER_FX)
+        lys.used = 1;                                   /* (DICE used it: no FX LOCK when let go) */
     fx_lock_on = (uint8_t)(fx_lock && !ui.ly && layer_allowed());
 }
 
@@ -893,8 +898,13 @@ static uint32_t layer_oct(uint32_t pressed, uint32_t oct)
     if ((mine & 1u) && lys.l == LAYER_FX) {             /* OCT- (FX LATCH): every effect and macro off */
         perf_latched = 0;
         perf_k[0] = perf_k[1] = perf_k[2] = perf_k[3] = 0;
+        dice_latched = 0;
         fx_macro_back();
         ui_message("FX ALL OFF");
+    }
+    if ((mine & 2u) && lys.l == LAYER_FX) {             /* (V10.7.62) OCT+ (FX LATCH): DICE on / off */
+        dice_latched ^= 1u;
+        ui_message(dice_latched ? "DICE: A NEW FX EACH BEAT" : "DICE OFF");
     }
     if (lys.l == LAYER_SAVE && (mine & 2u)) {           /* SAVE + OCT+: STORE the music into the section playing */
         if (live.cur < 0)

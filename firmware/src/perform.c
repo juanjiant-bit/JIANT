@@ -69,6 +69,8 @@ static volatile uint8_t perf_latch_on;   /* main: MENU > FX LATCH ON (#40): a ke
 static volatile uint32_t perf_latched;   /* ISR: the effects latched (FX LATCH; main clears it: OCT-, the menu) */
 static volatile uint32_t perf_act;    /* ISR: .. running (a 1/16 one from its start on) */
 static uint32_t perf_ord[PF_N], perf_seq;   /* press order: the last pressed buffer effect plays */
+static volatile uint8_t perf_dice;    /* (V10.7.62, the owner) main: FX + OCT+ held (FX LATCH: toggled): DICE, a buffer
+                                       * effect picked at random each beat (perf_dice_step) */
 
 /* the ZDF state-variable filter at cutoff index i (30 Hz * 2^(i / 7), 0..63: up to 15.4 kHz), k = 1:
  * a1 a2 a3 in Q14 (tools: g = tan(pi fc / fs), a1 = 1 / (1 + g (g + k)), a2 = g a1, a3 = g a2) */
@@ -262,9 +264,38 @@ static __attribute__((noinline)) void perf_unhush(void)   /* (out of perf_begin:
                 pf.mg[k] = 32768;
         }
 }
+/* (V10.7.62) DICE: while perf_dice, each beat (the transport's, else a free one) one of the buffer effects at random
+ * (REPEAT 1/8 1/16 1/32, REVERSE, TAPE STOP, PITCH UP / DOWN, STRETCH), the last pressed (perf_pick); its bit */
+static __attribute__((noinline)) uint32_t perf_dice_step(uint32_t n)
+{
+    static const uint8_t DE[8] = {PF_R8, PF_R16, PF_R32, PF_REV, PF_TAPE, PF_PUP, PF_PDN, PF_STR};
+    static uint32_t e __attribute__((section(".pool"))), ph __attribute__((section(".pool"))),   /* (the pool: RAM's .bss */
+        last __attribute__((section(".pool"))), rs __attribute__((section(".pool")));            /* full; set off at once) */
+    uint32_t b = beat_samples(), beat;
+    if (!perf_dice) {
+        e = PF_N;
+        last = ~0u;
+        return 0;
+    }
+    ph += n;
+    beat = song.playing && clk_pos != CLK_START ? clk_n / 4u : ph / (b ? b : 1u);
+    if (beat != last || e == PF_N) {
+        uint32_t k, ok = perf_avail();
+        last = beat;
+        for (k = 0; k < 8u; k++) {                  /* (a REPEAT too long for the tempo: another) */
+            rs = rs * 1664525u + 1013904223u;
+            if ((ok >> DE[rs >> 29]) & 1u && DE[rs >> 29] != e)
+                break;
+        }
+        e = DE[rs >> 29];
+        perf_ord[e] = ++perf_seq;
+    }
+    return PF_BIT(e);
+}
+static uint32_t (*const volatile PERF_DICE)(uint32_t) = perf_dice_step;   /* (out of perf_begin's RAM code: its reach) */
 static __attribute__((noinline)) int perf_begin(uint32_t n)
 {
-    uint32_t held = perf_kill ? 0u : (perf_held | perf_latched | (perf_solo ? (~(uint32_t)perf_solo & ((1u << NTRK) - 1u)) << PF_M1 : 0u)) & perf_avail() & ~(PF_MIDI | PF_LOOPS);
+    uint32_t held = perf_kill ? 0u : (perf_held | perf_latched | PERF_DICE(n) | (perf_solo ? (~(uint32_t)perf_solo & ((1u << NTRK) - 1u)) << PF_M1 : 0u)) & perf_avail() & ~(PF_MIDI | PF_LOOPS);
     uint32_t q, k, ph0, bnd;
     int32_t m;
     if (!held && !pf.busy && !(perf_k[0] | perf_k[1] | perf_k[2])) {   /* idle: the clock only */

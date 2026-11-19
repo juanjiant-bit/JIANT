@@ -61,6 +61,26 @@ int main(void)
         snprintf(what, sizeof what, "MACROS: M1 full closes the filters (energy %.2f of the open one)", e2 / e0);
         bad += check(what, e2 < e0 * 0.6);
     }
+    {   /* (V10.7.62) FX + OCT+: DICE, a buffer effect at random each beat while held, no octave; FX let go: none */
+        int8_t oc;
+        uint32_t k, seen = 0, b;
+        static int32_t o[2 * CTL];
+        sine_song();
+        oc = song.octave;
+        btn_down(B_FX); frames(480);                    /* (the layer open: past HOLD) */
+        btn_down(B_OCTUP); frames(32);
+        for (k = 0; k < 400u; k++) {
+            frame();
+            for (b = 0; b < 8u; b++) mix_block(o, CTL);
+            seen |= perf_act & PF_BUF;
+        }
+        ok = perf_dice && song.octave == oc && __builtin_popcount(seen) >= 3;
+        btn_up(B_OCTUP); frames(32); btn_up(B_FX); frames(64);
+        for (b = 0; b < 8u; b++) mix_block(o, CTL);
+        ok &= !perf_dice && !(perf_act & PF_BUF);
+        if (!ok) printf("  dice %u latched %u ly %u octave %d seen %x act %x\n", perf_dice, dice_latched, ui.ly, song.octave, seen, perf_act);
+        bad += check("DICE: FX + OCT+ plays a new buffer effect each beat (no octave); let go: none", ok);
+    }
     printf(bad ? "macro-mx: %d FAILED\n" : "macro-mx: all ok\n", bad);
     return bad != 0;
 }
