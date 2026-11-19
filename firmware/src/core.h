@@ -748,7 +748,7 @@ enum { CC_ALWAYS, CC_P25, CC_P50, CC_P75, CC_FIRST, CC_NFIRST, CC_FILL, CC_NFILL
 #define CV_RAMP_OPP(v) (((uint32_t)(v) & 15u) >= CV_RAMP_NC)
 #define CV_RAMP_CURVE(v) (((uint32_t)(v) & 15u) % CV_RAMP_NC)
 #define CV_RAMP_OK(v) ((uint32_t)(v) < 32u && ((uint32_t)(v) & 15u) < 2u * CV_RAMP_NC)   /* (BARS: 1..16, clen % 16) */
-static const uint8_t CA_VMAX[CA_N] = {0, 191, 127, 2, 2, 20, 3, 1, 239, 6, 0, 11, 2, 24, 126, 10};   /* KNOB 4's list, 0.. */
+static const uint8_t CA_VMAX[CA_N] = {0, 191, 127, 2, 2, 20, 3, 1, 239, 6, 16, 11, 2, 24, 126, 10};   /* (V10.7.59: FILL 16) */   /* KNOB 4's list, 0.. */
 static const uint8_t CA_VDEF[CA_N] = {0, 0x08, 0, 0, 0, 0, 0, 0, 0x38, 1, 0, 0, 0, 14, 63, 0};    /* (stored VALUE) */
 static int comp_any(const step_t *s) { return CO_ACT(s->comp) || CO_ACT(s->comp2); }
 typedef struct {                 /* a step as formats 1..4 (projects to FUN4) stored it: no hits */

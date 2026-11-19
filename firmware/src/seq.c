@@ -2113,6 +2113,59 @@ static void gl_take(track_t *t, const step_t *s, uint32_t ti, uint32_t g)
         c->base = (uint8_t)(G->g0 + G->len);
     }
 }
+/* (V10.7.59, the owner: LOCK out, FILL in) FILL: over its LENGTH the step a fill, a bank's figure spread over it (a drum
+ * kit: its hits, rolls rising; a synth: the step's note rolled, up, down, by octaves ..). VALUE 0..7 a bank, 8 RANDOM (one
+ * each launch), 9..16 STAIR x1..x8 (the banks one by one, each N launches). Its accent rises to the end */
+#define CV_FILL_RND 8u
+static uint8_t fill_cnt[NTRK];
+static uint32_t fill_rng = 0x2545F491u;
+static uint32_t fill_bank(uint32_t ti, uint32_t v)
+{
+    if (v < CV_FILL_RND) return v;
+    if (v == CV_FILL_RND) { fill_rng = fill_rng * 1664525u + 1013904223u; return fill_rng >> 29; }
+    return (uint32_t)(fill_cnt[ti]++ / (v - CV_FILL_RND)) % 8u;
+}
+/* a fill's step: bank b, place j of len, the step's note nt (a synth's) */
+static __attribute__((noinline)) void fill_apply(track_t *t, step_t *c, uint32_t b, uint32_t j, uint32_t len, uint32_t nt)
+{
+    static const uint8_t DK[8][8] = {   /* (the kit's lanes' notes: KICK 36 SNARE 38 CLAP 39 HATS 42 / 46 TOM 45 RIM 37) */
+        {38, 38, 38, 38, 38, 38, 38, 38}, {45, 45, 45, 45, 45, 38, 38, 36}, {42, 42, 42, 46, 42, 42, 42, 46},
+        {36, 38, 36, 38, 36, 36, 38, 38}, {39, 39, 39, 39, 39, 39, 39, 39}, {0, 0, 0, 0, 0, 0, 0, 36},
+        {37, 45, 37, 45, 37, 38, 37, 38}, {38, 45, 38, 42, 39, 45, 38, 36}};
+    static const uint8_t DR[8][8] = {   /* the hits a step (1 none) */
+        {1, 1, 2, 2, 2, 3, 4, 4}, {1, 1, 1, 1, 2, 2, 2, 2}, {2, 2, 4, 1, 2, 4, 4, 1}, {1, 1, 1, 2, 1, 2, 2, 4},
+        {1, 1, 2, 2, 3, 3, 4, 4}, {1, 1, 1, 1, 1, 1, 1, 1}, {1, 1, 1, 2, 1, 2, 2, 2}, {1, 2, 1, 2, 3, 2, 4, 4}};
+    uint32_t q = len > 8u ? j * 8u / len : j % 8u, r, n;
+    c->time = ST_NOTE;
+    c->vel = (uint8_t)(70u + 50u * (j + 1u) / (len ? len : 1u));
+    c->probability = 0;
+    if (t->engine == ENGI_DRUM) {
+        n = DK[b & 7u][q];
+        c->hit = 0;
+        c->n = n ? 1u : 0u;
+        c->note[0] = (uint8_t)n;
+        if (!n) c->time = ST_REST;
+        r = DR[b & 7u][q];
+    } else {
+        static const int8_t UP[8] = {0, 2, 4, 5, 7, 9, 11, 12};
+        int32_t x = (int32_t)nt;
+        r = 1;
+        switch (b & 7u) {
+        case 0: r = 1u + q / 2u; break;                                 /* ROLL: x1 .. x4 */
+        case 1: x += UP[q]; break;                                      /* UP the major scale's places */
+        case 2: x -= UP[q]; break;                                      /* DOWN */
+        case 3: x += q & 1u ? 12 : 0; r = 2; break;                     /* OCTAVE: jumping */
+        case 4: r = 3; x += q & 1u ? 7 : 0; break;                      /* TRIPLET: x3, the fifth between */
+        case 5: r = 4; break;                                           /* FADE: x4 (DECAY below) */
+        case 6: fill_rng = fill_rng * 1664525u + 1013904223u; x += (int32_t)(fill_rng >> 28) - 7; break;   /* RANDOM */
+        default: x += (int32_t)q; r = 2; break;                         /* RISE: a semitone a place */
+        }
+        c->n = 1;
+        c->note[0] = (uint8_t)clamp(x, 0, 127);
+        if ((b & 7u) == 5u) t->cx_dec = 1;
+    }
+    if (r > 1u) t->cx_rat = (uint8_t)(r > 8u ? 8u : r);
+}
 /* the step the track plays now, with its components: the spans before it a step older (gone after their LENGTH), this
  * step's own (C1, then C2: those whose CONDITION holds start a span of their LENGTH, this step its first), then what
  * every span does here, the oldest first: s itself when nothing replaces or silences it, else t->cvs (cv_on: a RATCH
@@ -2121,7 +2174,7 @@ static __attribute__((noinline)) const step_t *comp_run(track_t *t, const step_t
                                                     * in mix_block's RAM code) */
 {
     uint32_t i, n = 0, k, acted = 0, rep = 0, rq = 0, rb = 0, arp = 0, av = 0, mute = 0, ti = trk_index(t) % NTRK, cnt;
-    uint32_t g = 0, gm = 0, ps, grep = 0, chord = 0;
+    uint32_t g = 0, gm = 0, ps, grep = 0, chord = 0, fb = 0, fj = 0, fl = 0, fn = 60;
     const step_t *src = s;
     uint8_t probability = s->probability;   /* save before cvs can replace an aliased C.LEN input */
     t->cx_deg = t->cx_oct = 0;
@@ -2173,8 +2226,6 @@ static __attribute__((noinline)) const step_t *comp_run(track_t *t, const step_t
                 ok = 1;
             }
         }
-        if (a == CA_LOCK && !ok)
-            t->cx_lock = 2;                         /* (its step's locks not this pass) */
         if (!ok)
             continue;
         acted = 1;
@@ -2190,6 +2241,10 @@ static __attribute__((noinline)) const step_t *comp_run(track_t *t, const step_t
         c->act = (uint8_t)a; c->val = (uint8_t)v; c->mv = (int8_t)mv;
         c->len = c->left = (uint8_t)(l < CL_MAX ? l + 1u : 1u);
         c->base = 0;
+        if (a == CA_LOCK) {                         /* (V10.7.59) FILL: its bank now, the step's note */
+            c->base = (uint8_t)fill_bank(ti, v);
+            c->mv = (int8_t)((s->time == ST_NOTE && s->n ? s->note[0] : 60u) - 64);
+        }
         if (a == CA_SEQ) {                          /* the note it starts from, a note further each pass */
             uint32_t per;
             seq_unit(t, len, 0, &cnt);
@@ -2214,7 +2269,7 @@ static __attribute__((noinline)) const step_t *comp_run(track_t *t, const step_t
         case CA_MUTE: mute = 1; break;
         case CA_TRANS: t->cx_deg = (int8_t)clamp(t->cx_deg + c->mv, -100, 100); break;
         case CA_RAND: if (v % 7u + 1u > t->cx_rnd) t->cx_rnd = (uint8_t)(v % 7u + 1u); break;
-        case CA_LOCK: if (j && t->cx_lock != 2u) t->cx_lock = 1; break;
+        case CA_LOCK: fb = 1u + c->base; fj = j; fl = c->len; fn = (uint32_t)(c->mv + 64); break;   /* (V10.7.59) FILL */
         case CA_SOUND: t->cx_tch = (uint8_t)(1u + v % 3u); break;
         case CA_BEND: t->cx_bend = (uint8_t)(1u + v % 25u); break;
         case CA_CHORD: chord = 1u + v % CD_POW; break;
@@ -2223,7 +2278,7 @@ static __attribute__((noinline)) const step_t *comp_run(track_t *t, const step_t
     }
     if (!arp)
         t->arp_from = 0;
-    if (!rep && !arp && !mute && !chord)
+    if (!rep && !arp && !mute && !chord && !fb)
         return s;
     if (rep == 2u || rep == 3u)                     /* STUTTER: its step again (3), or nothing between (2) */
         src = rep == 3u ? &t->cvp : s;
@@ -2249,6 +2304,8 @@ static __attribute__((noinline)) const step_t *comp_run(track_t *t, const step_t
     if (chord && t->cvs.time == ST_NOTE && t->cvs.n)
         t->cvs.n = (uint8_t)chord_build_mode(t, t->cvs.note[0], t->cvs.note, chord);
     t->cvs.comp = t->cvs.carg = t->cvs.comp2 = t->cvs.carg2 = 0;
+    if (fb && !mute)                                /* (V10.7.59) FILL: the figure's step */
+        fill_apply(t, &t->cvs, fb - 1u, fj, fl, fn);
     if (arp == 1u) {                                /* ARP: from here (seq_step: cva, arp_from) */
         t->cvs.comp = CO_MAKE(CA_ARP, 0u);
         t->cvs.carg = (uint8_t)av;

@@ -920,7 +920,7 @@ static void rate_name(const track_t *t, uint32_t n, char *b)
 /* (gen3) the names short, each read whole on its card: the value's M where it fits with its unit (COMP's 49 px), else S
  * (ui_test test_comp_cards: every value of every knob, every page) */
 static const char *const CA_NAMES[CA_N + 1u] = {"OFF", "ARP", "SEQ", "OCT+", "OCT-", "RATCH", "STUT", "MUTE", "TRANS",
-                                                "RAND", "LOCK", "RAMP", "SOUND", "BEND", "SHIFT", "CHORD", "TRIG"};
+                                                "RAND", "FILL", "RAMP", "SOUND", "BEND", "SHIFT", "CHORD", "TRIG"};
 static const char *const CC_NAMES[CC_NM] = {"ALWAYS", "25%", "50%", "75%", "1ST", "!1ST", "FILL", "!FILL", "PRE",
                                             "!PRE", "NEI", "!NEI", "ELSE"};
 #define CCL_NM 135u                                     /* N:M, M 2..16, N 1..M */
@@ -1030,11 +1030,13 @@ static void comp_vname(const track_t *t, const step_t *s, uint32_t a, uint32_t v
         if (CV_TR_RANGE(v) > 1u) { un[0] = 'R'; fmt_int(un + 1, (int32_t)CV_TR_RANGE(v)); } else str_cpy(un, "FIX", 8);
         break;
     case CA_RAND: str_cpy(lb, "RANGE", 8); fmt_int(val, (int32_t)(v % 7u) + 1); str_cpy(un, "DEG", 8); break;
-    case CA_LOCK: {
-        uint32_t id, n = 0;
-        int16_t lv;
-        for (id = 0; id < P_COUNT; id++) n += (uint32_t)motion_lock_get(t, (uint32_t)(s - t->step) % NSTEP, id, &lv);
-        str_cpy(lb, "LOCKS", 8); fmt_int(val, (int32_t)n);
+    case CA_LOCK: {                                    /* (V10.7.59) FILL: BANK, its name (a kit's / a synth's), STAIR xN */
+        static const char *const DB[8] = {"SNARE", "TOMS", "HATS", "KICK", "CLAPS", "BREAK", "RIM", "MIX"};
+        static const char *const SB[8] = {"ROLL", "UP", "DOWN", "OCTAVE", "TRIPLET", "FADE", "RANDOM", "RISE"};
+        str_cpy(lb, "BANK", 8);
+        if (v < 8u) str_cpy(val, t->engine == ENGI_DRUM ? DB[v] : SB[v], 8);
+        else if (v == 8u) str_cpy(val, "RANDOM", 8);
+        else { str_cpy(val, "STAIR", 8); un[0] = 'x'; fmt_int(un + 1, (int32_t)(v - 8u)); }
         break;
     }
     case CA_RAMP: {                                    /* (V10.6v) FROM over its CURVE ("KNOB" "EXP"); no LOCK on the step:
