@@ -4,6 +4,102 @@
 /* Felucca UI input: LEDs, knobs and buttons, SEQ step entry, panel setup. */
 #include "ui_name.c"                                    /* NAME: naming user presets and projects */
 static uint8_t fx_mon;                                  /* (V10.7.59) ui_layer.c: the FX layer moved the MACROS */
+/* (V10.7.60, the users: "I don't know what I turned") a knob's plain meaning in the header while it turns (its card
+ * keeps the value): the labels that need one */
+static const struct { const char *l, *h; } KNOB_HINT[] = {
+    {"CUT", "FILTER CUTOFF"},
+    {"RES", "FILTER RESONANCE"},
+    {"DRIVE", "SATURATION"},
+    {"DIST", "DISTORTION"},
+    {"DLY", "DELAY SEND"},
+    {"REV", "REVERB SEND"},
+    {"CHORUS", "CHORUS SEND"},
+    {"ATK", "ATTACK TIME"},
+    {"DEC", "DECAY TIME"},
+    {"SUS", "SUSTAIN LEVEL"},
+    {"REL", "RELEASE TIME"},
+    {"GLIDE", "GLIDE TIME"},
+    {"GLIDE TYPE", "GLIDE: RATE OR TIME"},
+    {"NOTE PRIO", "WHICH NOTE WINS"},
+    {"VOICE ORDER", "HOW VOICES ARE USED"},
+    {"UNISON", "DETUNED STACK"},
+    {"POLY", "VOICE MODE"},
+    {"VEL", "VELOCITY AMOUNT"},
+    {"IMAGE", "STEREO WIDTH"},
+    {"LEN", "PATTERN LENGTH"},
+    {"DIV", "STEP SPEED"},
+    {"SWING", "SWING AMOUNT"},
+    {"GATE", "NOTE LENGTH"},
+    {"CHANCE", "STEP PROBABILITY"},
+    {"HUMAN", "TIMING HUMANIZE"},
+    {"REC GRID", "REC QUANTIZE"},
+    {"HITS", "EUCLID HITS"},
+    {"STEPS", "EUCLID STEPS"},
+    {"ROTATE", "EUCLID ROTATION"},
+    {"FEEDBK", "DELAY REPEATS"},
+    {"TONE", "BRIGHTNESS"},
+    {"MIX", "WET / DRY"},
+    {"DAMP", "HIGH DAMPING"},
+    {"PRE", "PRE-DELAY"},
+    {"CLIP", "MASTER CLIPPER"},
+    {"PUNCH", "DRUM PUNCH"},
+    {"DUCK", "SIDECHAIN DUCK"},
+    {"WOW", "TAPE WOBBLE"},
+    {"ROOT", "SCALE ROOT"},
+    {"QUANT", "SNAP TO SCALE"},
+    {"ALL TRACKS", "TRANSPOSE ALL"},
+    {"VOICING", "CHORD SPREAD"},
+    {"STRUM", "STRUM TIME"},
+    {"ORDER", "ARP ORDER"},
+    {"PROB", "ARP PROBABILITY"},
+    {"HOLD", "ARP LATCH"},
+    {"FADE", "LFO FADE IN"},
+    {"SLEW", "SMOOTHING"},
+    {"RATIO", "FM RATIO"},
+    {"ALG", "FM ALGORITHM"},
+    {"MOD ENV", "MOD ENVELOPE"},
+    {"VEL MOD", "VELOCITY TO MOD"},
+    {"SPREAD", "STEREO SPREAD"},
+    {"FOLD", "WAVEFOLDER"},
+    {"SYMM", "FOLD SYMMETRY"},
+    {"DUST", "CRACKLE NOISE"},
+    {"EXCITE", "PLUCK EXCITER"},
+    {"POS", "PLUCK POSITION"},
+    {"BOW", "BOWING"},
+    {"BODY", "BODY RESONANCE"},
+    {"BRIGHT", "BRIGHTNESS"},
+    {"RESTART", "PHASE RESET"},
+    {"SCATTER", "GRAIN SCATTER"},
+    {"RIGHT TIME", "RIGHT ECHO TIME"},
+    {"PING", "PING-PONG"},
+    {"DCW", "WAVE BRIGHTNESS"},
+    {"SUB", "SUB OSCILLATOR"},
+    {"DETUNE", "DETUNE"},
+    {"MACRO", "WHICH MACRO"},
+    {"ROUTE", "MACRO ROUTE 1-8"},
+    {"AMOUNT", "HOW MUCH"},
+    {"DEST", "WHAT IT MOVES"},
+    {"BANK", "FILL BANK"},
+    {"TUNE", "MASTER TUNE"}};
+static void knob_hint(const char *label)
+{
+    uint32_t i;
+    char b[40];
+    if (!label || (ui_help_off & 1u))                  /* (MENU > DISPLAY > HELP OFF) */
+        return;
+    for (i = 0; i < NELEM(KNOB_HINT) && !str_eq(KNOB_HINT[i].l, label); i++) {}
+    if (i == NELEM(KNOB_HINT) || str_eq(KNOB_HINT[i].l, KNOB_HINT[i].h))
+        return;
+    str_cpy(b, label, sizeof b);
+    str_cpy(b + str_len(b), ": ", sizeof b - str_len(b));
+    str_cpy(b + str_len(b), KNOB_HINT[i].h, sizeof b - str_len(b));
+    if (ui.msg_t && str_eq(ui.msg, b)) {
+        ui.msg_t = 40;                                  /* (still turning: it stays) */
+        return;
+    }
+    ui_say(b, "");
+}
+
 static void fx_macro_back(void);
 /* ----------------------------------------------------------- LEDs --- */
 /* The LED picture is built off-line and copied one byte per column: clearing
@@ -3155,6 +3251,11 @@ static void ui_input_frame(void)
             pg->graph == GR_GCOMP || pg->graph == GR_LIVE) {   /* (not an empty column) */
             ui.hot_col = (uint8_t)k;
             ui.hot_t = 40, ui.knob_ms = fm1_ms;
+        }
+        if (!ui.home && !ui.menu && !ui.confirm) {      /* (V10.7.60) its meaning in the header */
+            const param_desc_t *hd = page_desc(pg, k, &hv);
+            if (hd)
+                knob_hint(hd->label);
         }
         if (home_macros()) {                            /* (0.8.5) HOME's MACROS / ROUTES: M1..M4 */
             macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);

@@ -7,7 +7,7 @@
  * controls (HOLD: the layer threshold, KNOB ACCEL, FX LATCH, BPM LOCK; 1.2: SCALE LEDS, the keys), the sound (SPEAKER EQ: FLAT LOWCUT BASS+,
  * USB LEVEL; 1.1: CLICK, CLICK LEVEL, COUNT-IN), USB SERIAL, RESTORE LAST (1.2), then CALIBRATION (the setup screen: HARDWARE CALIBRATION) and ABOUT, the two rows with no
  * value (MI_VALUES: the rows before them hold one). 1.0.5: in four tabs (MI_TAB). */
-enum { MI_COLOR, MI_SCOPE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_HOLD, MI_ACCEL, MI_LATCH, MI_BPMLOCK, MI_SCLLED, MI_MIDIOUT,
+enum { MI_COLOR, MI_SCOPE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_HELP, MI_HOLD, MI_ACCEL, MI_LATCH, MI_BPMLOCK, MI_SCLLED, MI_MIDIOUT,
        MI_MIDIMAP, MI_LEARN, MI_VEL, MI_VELMIN, MI_AT, MI_VLEARN, MI_LOWCUT, MI_USB,
        MI_CLICK, MI_CLKLVL, MI_COUNTIN, MI_TRACKS, MI_LOAD, MI_OCTBEND, MI_SERIAL, MI_RESTORE, MI_CPU, MI_CLOCK, MI_BT, MI_PANEL, MI_ABOUT, MI_COUNT };   /* (1.1: the
                                                                                              * metronome's rows in AUDIO; 1.2: RESTORE LAST in
@@ -15,7 +15,7 @@ enum { MI_COLOR, MI_SCOPE, MI_LARGE, MI_ANIM, MI_LEDS, MI_SCROFF, MI_HOLD, MI_AC
                                                                                              * CLOCK in SYSTEM; codex/coherence: INIT SYSTEM gone,
                                                                                              * SAVE > TOOLS > CLEAR PROJECT the one place) */
 #define MI_VALUES MI_PANEL
-static const char *const MI_NAME[MI_COUNT] = {"COLOR", "SCOPE", "LARGE", "ANIM", "LEDS", "SCREEN OFF", "HOLD", "KNOB ACCEL", "FX LATCH", "BPM LOCK",
+static const char *const MI_NAME[MI_COUNT] = {"COLOR", "SCOPE", "LARGE", "ANIM", "LEDS", "SCREEN OFF", "HELP", "HOLD", "KNOB ACCEL", "FX LATCH", "BPM LOCK",
                                               "SCALE LEDS", "MIDI OUT", "MIDI MAP", "LEARN",
                                               "VELOCITY", "VEL MIN", "AFTERTOUCH", "VEL LEARN",
                                               "SPEAKER EQ", "USB LEVEL", "CLICK", "CLICK LEVEL", "COUNT-IN", "TRACKS", "LOAD",
@@ -35,6 +35,7 @@ static const uint8_t MI_TAB[MI_COUNT] = {
     MTAB_DISPLAY,                                                           /* ANIM */
     MTAB_DISPLAY,                                                           /* LEDS */
     MTAB_DISPLAY,                                                           /* SCREEN OFF (1.1.5) */
+    MTAB_DISPLAY,                                                           /* HELP (V10.7.60: a knob's meaning in the header) */
     MTAB_CONTROL, MTAB_CONTROL, MTAB_CONTROL, MTAB_CONTROL,                 /* HOLD KNOB ACCEL FX LATCH BPM LOCK */
     MTAB_CONTROL,                                                           /* SCALE LEDS (1.2) */
     MTAB_CONTROL,                                                           /* MIDI OUT (JIANT 0.6.72) */
@@ -68,7 +69,7 @@ static uint32_t mtab_rows(uint32_t t)                  /* .. and how many it has
         n += MI_TAB[i] == t;
     return n;
 }
-static const char *const SCOPEOPT_N[2] = {"OFF", "ON"};   /* (0.9.7) ui.c ui_scope */
+static const char *const SCOPEOPT_N[2] = {"OFF", "ON"};   /* (0.9.7) ui.c ui_scope; (V10.7.60) HELP's too */
 /* the two-valued rows: a bit of ui_prefs (PREF_REC: of ui_rec_prefs, ui.c PREF_SCALE_LEDS) and its names (bit clear =
  * the default, bit set). A step up (a knob right,
  * OCT+) = ON on the ON / OFF rows (the switch's knob to the right; ANIM, USB SERIAL: their bit clears), else the
@@ -189,6 +190,7 @@ static uint32_t menu_get(uint32_t row)
     switch (row) {
     case MI_COLOR: return settings.palette % NPALETTES;
     case MI_SCOPE: return ui_scope != 0u;
+    case MI_HELP: return !(ui_help_off & 1u);
     case MI_LOWCUT: return settings.lowcut % 3u;
     case MI_USB: return (ui_prefs & PREF_USB_FIXED) ? 1u + usb_lvl % 5u : 0u;
     case MI_SERIAL: return usb_host_want ? 5u : usb_out == 3u ? 4u : usb_out == 2u ? 3u : usb_out ? 2u : (ui_prefs & PREF_SERIAL_OFF) ? 1u : 0u;
@@ -220,7 +222,7 @@ static const char *menu_vname(uint32_t row, uint32_t v)
         return vr->nm + v % vr->n * vr->w;
     switch (row) {
     case MI_COLOR: return UI_PALETTES[v % NPALETTES].name;
-    case MI_SCOPE: return SCOPEOPT_N[v & 1u];
+    case MI_SCOPE: case MI_HELP: return SCOPEOPT_N[v & 1u];
     case MI_LOWCUT: return SPK_EQ[v % 3u];
     case MI_USB: return USBLVL_N[v % 6u];
     case MI_SERIAL: return USBOUT_N[v % 6u];
@@ -268,7 +270,8 @@ static void menu_put(uint32_t row, uint32_t v)
         palette_set(v);                                /* (the menu signature redraws) */
         ui.force = 1;
         break;
-    case MI_SCOPE: ui_scope = (uint8_t)(v & 1u); ui.force = 1; break;   /* (0.9.7) the EDIT pages so from the next frame */
+    case MI_SCOPE: ui_scope = (uint8_t)(v & 1u); ui.force = 1; break;
+    case MI_HELP: ui_help_off = (uint8_t)((ui_help_off & ~1u) | !(v & 1u)); break;   /* (V10.7.60) */   /* (0.9.7) the EDIT pages so from the next frame */
     case MI_LOWCUT: settings.lowcut = v; fx_lowcut = (uint8_t)v; break;
     case MI_USB:                                   /* (at once; every frame too: ui_input) */
         ui_prefs = (uint8_t)(v ? ui_prefs | PREF_USB_FIXED : ui_prefs & ~PREF_USB_FIXED);

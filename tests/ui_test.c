@@ -2788,19 +2788,20 @@ static int test_menu_tabs(void)
     }
     for (i = 0; i < MI_COUNT; i++) ok &= MI_TAB[i] < MTAB_COUNT;
     ui_prefs = 0;
-    bad += check("MENU tabs: DISPLAY CONTROL AUDIO SYSTEM (6 12 8 7 rows: STYLE retired; codex/coherence INIT SYSTEM gone; 0.8.9 SKIN, retired V10.7.23; 0.9.7 SCOPE, 0.9.9-stab CPU CLOCK, p1 CPU CORES, MIDI MAP, LEARN, LOAD in AUDIO; V10.12 BLUETOOTH; V10.6z4 OCT BEND in AUDIO; V10.6z6 VELOCITY VEL MIN AFTERTOUCH VEL LEARN in CONTROL), each in a run, their rows and values fit the lens's panel",
-                 ok && MTAB_COUNT == 4u && str_eq(MTAB_NAME[0], "DISPLAY") && mtab_rows(MTAB_DISPLAY) == 6u &&
+    bad += check("MENU tabs: DISPLAY CONTROL AUDIO SYSTEM (7 12 8 7 rows: V10.7.60 HELP; STYLE retired; codex/coherence INIT SYSTEM gone; 0.8.9 SKIN, retired V10.7.23; 0.9.7 SCOPE, 0.9.9-stab CPU CLOCK, p1 CPU CORES, MIDI MAP, LEARN, LOAD in AUDIO; V10.12 BLUETOOTH; V10.6z4 OCT BEND in AUDIO; V10.6z6 VELOCITY VEL MIN AFTERTOUCH VEL LEARN in CONTROL), each in a run, their rows and values fit the lens's panel",
+                 ok && MTAB_COUNT == 4u && str_eq(MTAB_NAME[0], "DISPLAY") && mtab_rows(MTAB_DISPLAY) == 7u &&
                  mtab_rows(MTAB_CONTROL) == 12u && mtab_rows(MTAB_AUDIO) == 8u && mtab_rows(MTAB_SYSTEM) == 7u);   /* (0.6.58: INIT SYSTEM;
                                                                          * 0.6.72: MIDI OUT in CONTROL; 0.9.9-stab: CPU CLOCK in SYSTEM) */
 
     ui_power_on();
     hold(B_HOME);
     ok = ui.menu == 1 && ui.menu_sel == MI_COLOR && menu_tab() == MTAB_DISPLAY;
-    for (i = 0; i < 5u; i++) turn(EN_SELECT, 1);     /* (0.9.2: SELECT every row, tab after tab; was PRESETS in a tab, round;
-                                                     * 0.9.7: SCOPE a row more; STYLE, SKIN retired: a row less each) */
-    ok &= ui.menu_sel == MI_SCROFF;
+    for (i = 0; i < 6u; i++) turn(EN_SELECT, 1);     /* (0.9.2: SELECT every row, tab after tab; was PRESETS in a tab, round;
+                                                     * 0.9.7: SCOPE a row more; STYLE, SKIN retired: a row less each;
+                                                     * V10.7.60: HELP a row more) */
+    ok &= ui.menu_sel == MI_HELP;
     turn(EN_SELECT, 1); ok &= ui.menu_sel == MI_HOLD && menu_tab() == MTAB_CONTROL;   /* (into the next tab) */
-    turn(EN_SELECT, -1); ok &= ui.menu_sel == MI_SCROFF;
+    turn(EN_SELECT, -1); ok &= ui.menu_sel == MI_HELP;
     turn(EN_SELECT, -40); ok &= ui.menu_sel == MI_COLOR; /* (no wrap) */
     turn(EN_PRESET, 1); ok &= ui.menu_sel == MI_COLOR;   /* (PRESETS: nothing, rule 3) */
     turn(EN_SELECT, 40); ok &= ui.menu_sel == MI_ABOUT;
@@ -2956,9 +2957,9 @@ static int test_menu_tabs(void)
     hold(B_HOME);
     frame();
     ok = ui.menu == 1 && ui.mlv == 1u && lz_on() && lz_fam() == LZ_MENU && lz_tabs() == 4u && lz_tab_lit(0) &&
-         lz_crumb_is("MENU \xB7 DISPLAY \xB7 COLOR") && lz_count_is("1/33");
+         lz_crumb_is("MENU \xB7 DISPLAY \xB7 COLOR") && lz_count_is("1/34");
     turn(EN_SELECT, 1); frame();
-    ok &= ui.mlv == 1u && lz_tab_lit(0) && lz_crumb_is("MENU \xB7 DISPLAY \xB7 SCOPE") && lz_count_is("2/33");
+    ok &= ui.mlv == 1u && lz_tab_lit(0) && lz_crumb_is("MENU \xB7 DISPLAY \xB7 SCOPE") && lz_count_is("2/34");
     turn(EN_ALGO, 1); frame();
     ok &= menu_tab() == MTAB_CONTROL && lz_tab_lit(1) && lz_crumb_is("MENU \xB7 CONTROL \xB7 HOLD");
     turn(EN_SELECT, 2); frame();
@@ -2967,7 +2968,7 @@ static int test_menu_tabs(void)
     ok &= (fx_latch & 1u) != 0u;
     turn(EN_K3, -1); frame();
     menu_close();
-    bad += check("0.9.2 MENU: four tabs (the row's lit), MENU . TAB . ROW and n/33 (STYLE retired; codex/coherence: INIT SYSTEM gone; 0.9.7: SCOPE; 0.9.9-stab: CPU CLOCK; p1: CPU CORES, MIDI MAP, LEARN; V10.12: BLUETOOTH; V10.6z4: OCT BEND; V10.6z6: the keys' four; V10.7.23: SKIN retired); ALGORITHM the tab, any knob the value", ok && MI_COUNT == 33u);
+    bad += check("0.9.2 MENU: four tabs (the row's lit), MENU . TAB . ROW and n/33 (STYLE retired; codex/coherence: INIT SYSTEM gone; 0.9.7: SCOPE; 0.9.9-stab: CPU CLOCK; p1: CPU CORES, MIDI MAP, LEARN; V10.12: BLUETOOTH; V10.6z4: OCT BEND; V10.6z6: the keys' four; V10.7.23: SKIN retired); ALGORITHM the tab, any knob the value", ok && MI_COUNT == 34u);
 
     /* (V10.12) MENU > SYSTEM > BLUETOOTH: OFF by default (no mark: older settings), refused while playing, ON kept in
      * TRIO's retired favourites row with its mark; here (no radio, no segment) ON reads MISSING (V10.7.10: was NO SEG)
@@ -11799,7 +11800,7 @@ static int test_style(void)
     for (ok = 1, i = 0; i < MI_COUNT; i++)
         ok &= !str_eq(MI_NAME[i], "STYLE");
     ok &= MI_COLOR == 0u && MI_SCOPE == 1u && MI_LARGE == 2u && MI_ANIM == 3u && MI_LEDS == 4u && MI_SCROFF == 5u &&
-          MI_HOLD == 6u && mtab_rows(MTAB_DISPLAY) == 6u && mtab_first(MTAB_CONTROL) == MI_HOLD;
+          MI_HELP == 6u && MI_HOLD == 7u && mtab_rows(MTAB_DISPLAY) == 7u && mtab_first(MTAB_CONTROL) == MI_HOLD;
     bad += check("MENU: no STYLE row, no SKIN row (FLAT and COLORS the ones); DISPLAY's six rows, the rest renumbered in order", ok);
     {
         persist_t p, q;
