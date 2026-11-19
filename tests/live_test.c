@@ -347,42 +347,10 @@ static int pages(void)
     stop_transport();
     for (k = 0; k < NTRK; k++)
         *(drum_track(&trk[k]) ? &kdrm : &ksyn) |= 1u << k;
-    nav_put(SEC_GLO, "RAILS");
-    frame();
-    ok = lv_tracks() == 0x3Fu;
-    for (k = 1; k < 9u; k++) {
-        turn(EN_K1, 1);
-        ok &= lv.tgt == k && lv_tracks() == (k < 7u ? TG[k] : k == 7u ? ksyn : kdrm);
-    }
-    for (k = 0; k < 9u; k++) turn(EN_K1, -1);
-    ok &= lv.tgt == 0 && lv_tracks() == 0x3Fu && song.grid == 0;
-    bad += check("RAILS KNOB 1 TARGET: ALL, then T1 .. T6 one by one, then SYN and DRM; the keys play notes here", ok);
-    turn(EN_K1, 3);                                     /* T3: RATE x2, CORTE 8, DENS 70 % */
-    turn(EN_K2, 2);
-    turn(EN_K3, 5);
-    turn(EN_K4, -3);
-    frame();
-    ok = lv.rate[2] == 2 && !lv.rate[0] && lv.want[2].cut == 8 && !(lv.want[2].fl & LF_HERE) && lv.want[2].drop == 30;
-    if (!ok) printf("  tgt %u rate %d %d cut %u fl %u drop %u\n", lv.tgt, lv.rate[2], lv.rate[0], lv.want[2].cut, lv.want[2].fl, lv.want[2].drop);
-    k = song.octave;
-    press(B_OCTDN);
-    frames(64);
-    ok &= !lv.rate[2] && lv_neutral(&lv.want[2]) && song.octave == (int8_t)k;
-    bad += check("  T3: RATE x2 CORTE 8 DENS 70 %; OCT- tapped RETURN (the octave untouched)", ok);
-    turn(EN_K2, 2);
-    fm1_in.buttons |= 1u << panel.btn[B_OCTDN];
-    host_pressed |= 1u << panel.btn[B_OCTDN];
-    frames(480);
-    ok = lv.byp && lv_neutral(&lv.want[2]);
-    fm1_in.buttons &= ~(1u << panel.btn[B_OCTDN]);
-    frame();
-    frame();
-    ok &= !lv.byp && lv.want[2].rate == 2;
-    bad += check("  OCT- held: BYPASS (nothing live while held); let go, the modifiers again", ok);
-
+    (void)TG; (void)ksyn; (void)kdrm;                  /* (V10.7.58: RAILS's own page gone, KEYS's shown as RAILS) */
     lsetup();
     stop_transport();
-    nav_put(SEC_GLO, "KEYS");
+    nav_put(SEC_GLO, "RAILS");
     frame();
     kx2 = key_at(0, 1);
     kb1 = key_at(1, 0);
@@ -438,13 +406,11 @@ static int pages(void)
     press(B_GLO); frame();
     ok = str_eq(cur_page()->title, "MIXER");
     turn(EN_SELECT, -1); frame();
-    ok &= str_eq(cur_page()->title, "RAILS") && crumb_is("GLO \xB7 LIVE \xB7 RAILS", "2/11");   /* (e3c9e26, 2026-11-04: KEY
-                                                         * SPLIT and KEY SPLIT 2 under SYSTEM, 11 pages; was 9) */
     turn(EN_SELECT, -1); frame();
-    turn(EN_SELECT, -1); frame();
-    ok &= str_eq(cur_page()->title, "KEYS") && crumb_is("GLO \xB7 LIVE \xB7 KEYS", "1/11") && tabs_lit(&k) == 4u && !k &&
+    /* (V10.7.58: RAILS, KEYS's page, the chain's first; 10 pages) */
+    ok &= str_eq(cur_page()->title, "KEYS") && crumb_is("GLO \xB7 LIVE \xB7 RAILS", "1/10") && tabs_lit(&k) == 4u && !k &&
           song.grid == 3;
-    bad += check("GLO: MIXER at power-on; SELECT back RAILS, KEYS (the chain's first, LIVE · four tabs: codex/coherence SETUP)", ok);
+    bad += check("GLO: MIXER at power-on; SELECT back to RAILS (KEYS\x27s page: the chain's first, LIVE · four tabs: codex/coherence SETUP)", ok);
     ui_power_on();
     return bad;
 }

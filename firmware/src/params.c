@@ -700,8 +700,8 @@ static const page_t PAGES[] = {
     {"MOD", FAM_LFO, SC_TRACK, GR_MOD, {0xFF, P_M1SRC, P_M1DST, P_M1AMT}},   /* KNOB 1: the slot (mod_ui_slot) */
     {"MSEQ", FAM_LFO, SC_TRACK, GR_MSEQ, {0xFF, P_MS0, P_MSLEN, P_MSSLW}},   /* JIANT: KNOB 1 the step (ms_ui_step) */
     {"MSEQ 2", FAM_LFO, SC_TRACK, GR_NONE, {P_MSDIV, 0xFF, 0xFF, 0xFF}},
-    {"FX", FAM_FX, SC_TRACK, GR_FX, {P_CHOR, P_DLY, P_REV, 0xFF}},   /* (codex/coherence) SENDS: the sends only (DIST: its
-                                                         * own page, after it) */
+    {"FX", FAM_FX, SC_TRACK, GR_FX, {P_CHOR, P_DLY, P_REV, P_DIST}},   /* (codex/coherence) SENDS: the sends; (V10.7.58,
+                                                         * the owner) DIST back on KNOB 4 (and on its own page) */
     {"MASTER", FAM_FX, SC_GLOBAL, GR_NONE, {G_CLIP, G_PUNCH, G_DUCK, G_DREL}},   /* JIANT: clipper, drum bus, ducking;
                                                          * (0.7.6) FX's second page, at hand (was after SL PITCH) */
     {"TAPE", FAM_FX, SC_GLOBAL, GR_NONE, {ID_TAPE, ID_TWOW, 0xFF, 0xFF}},
@@ -828,9 +828,8 @@ static const page_t PAGES[] = {
                                                          * modes' amounts */
     {"LFO 2", FAM_LFO, SC_TRACK, GR_LFO, {ID_LPHS, 0xFF, 0xFF, 0xFF}},   /* (0.9.18) PHASE: where TRIG starts (FREE: dimmed) */
     {"KEYS", FAM_GLO, SC_GLOBAL, GR_LIVE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (p2, main 0.9.11) GLO > LIVE: the keys a board of
-                                                         * live modifiers (ui_live.c, seq_live.c) */
-    {"RAILS", FAM_GLO, SC_GLOBAL, GR_LIVE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* .. the six sequences as rails, four knobs
-                                                         * (codex/coherence: KEYS RAILS, were MANO RIELES) */
+                                                         * live modifiers (ui_live.c, seq_live.c); (V10.7.58, the owner) shown as RAILS in GLO, the
+                                                         * old RAILS page gone (the two were nearly the same) */
     {"TIMELINE", FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (add15) the song as lanes (was ARRANGE 2): a row's tracks, the section each
                                                          * plays from (song_chain.c row_src; ui_input.c song_trk_knob) */
     {"MUTATE", FAM_SEQ, SC_TRACK, GR_EUCLID, {ID_MU0, ID_MU0 + 1u, ID_MU0 + 2u, ID_MU0 + 3u}},

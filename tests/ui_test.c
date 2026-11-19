@@ -12526,7 +12526,7 @@ static int test_lz_glo(void)
     ui_power_on(); frame();
     press(B_GLO); frame();
     ok = pd_on() && lz_fam() == LZ_GLO && pd_level() == 0u && str_eq(cur_page()->title, "MIXER") && lz_tab_lit(1) &&
-         lz_crumb_is("GLO \xB7 MIX \xB7 MIXER") && lz_count_is("3/11");   /* (snd8: SYSTEM 2; p2: LIVE's two first) */
+         lz_crumb_is("GLO \xB7 MIX \xB7 MIXER") && lz_count_is("2/10");   /* (snd8: SYSTEM 2; p2: LIVE first; V10.7.58: one) */
     turn(EN_SELECT, 1); frame();
     ok &= str_eq(cur_page()->title, "SENDS") && lz_crumb_is("GLO \xB7 MIX \xB7 SENDS");
     v = TSEL->p[P_DLY];
@@ -12539,7 +12539,7 @@ static int test_lz_glo(void)
     turn(EN_SELECT, 1); frame();                        /* (codex/coherence: SETUP, GLOBAL SYSTEM SYSTEM 2 KEY SPLIT) */
     ok &= pd_level() == 2u && str_eq(cur_page()->title, "SYSTEM") && lz_tab_lit(3) && lz_crumb_is("GLO \xB7 SETUP \xB7 SYSTEM");
     frames(320); press(B_GLO); frame();
-    ok &= str_eq(cur_page()->title, "KEYS") && lz_tab_lit(0) && lz_crumb_is("GLO \xB7 LIVE \xB7 KEYS") && lz_count_is("1/11");
+    ok &= str_eq(cur_page()->title, "KEYS") && lz_tab_lit(0) && lz_crumb_is("GLO \xB7 LIVE \xB7 RAILS") && lz_count_is("1/10");
     frames(320); press(B_GLO); frame();                 /* (p2: LIVE first in the chain; at power-on GLO opens MIXER) */
     ok &= pd_level() == 0u && str_eq(cur_page()->title, "MIXER");
     turn(EN_SELECT, 3); frame();
@@ -13112,7 +13112,7 @@ static const char *coh_name(uint32_t sec, uint32_t e) { const nv_t *v = &nav_ch(
 static int coh_ok(uint32_t sec, const char *a, const char *b)
 {
     static const struct { uint8_t sec; const char *a, *b; } OK[] = {
-        {SEC_ENV, "ENV", "TRACKS"}, {SEC_GLO, "MIXER", "GLOBAL"},
+        {SEC_ENV, "ENV", "TRACKS"}, {SEC_GLO, "MIXER", "GLOBAL"}, {SEC_FX, "SENDS", "DIST"},
         {SEC_FX, "BUSES", "DLY"}, {SEC_FX, "BUSES", "REVERB"}, {SEC_FX, "BUSES", "CHORUS"}, {SEC_FX, "BUSES", "SLICER"},
         {SEC_EDIT, "PLAY 2", FELUCCA_FM4 ? "OP LEVEL" : "-"}};   /* (FELUCCA_FM4's retired DIGITAL: P_TVEL is its OP4 LEVEL) */
     uint32_t i;
@@ -13178,8 +13178,8 @@ static int test_coherence(void)
     {   /* .. and the names: the groups' and the pages' as the review asked (SAVE's PART, PUNCH IN, PLAY, KEYS RAILS) */
         int16_t *hv;
         ui_power_on(); frame();
-        ok = nav_put(SEC_SAVE, "PART SLOTS") && nav_put(SEC_FX, "PUNCH IN") && nav_put(SEC_GLO, "KEYS") &&
-             nav_put(SEC_GLO, "RAILS") && !nav_put(SEC_GLO, "MANO") && !nav_put(SEC_ENV, "TRACKS DEST") &&
+        ok = nav_put(SEC_SAVE, "PART SLOTS") && nav_put(SEC_FX, "PUNCH IN") && !nav_put(SEC_GLO, "KEYS") &&
+             nav_put(SEC_GLO, "RAILS") && str_eq(cur_page()->title, "KEYS") && !nav_put(SEC_GLO, "MANO") && !nav_put(SEC_ENV, "TRACKS DEST") &&
              nav_put(SEC_EDIT, "PLAY") && !nav_put(SEC_EDIT, "VOICE") && !nav_put(SEC_EDIT, "STEREO");
         for (i = 0; i < MI_COUNT; i++)
             ok &= !str_eq(MI_NAME[i], "INIT SYSTEM");   /* (one action, one name: SAVE > TOOLS > CLEAR PROJECT) */
@@ -13187,7 +13187,7 @@ static int test_coherence(void)
         ok &= str_eq(page_desc(cur_page(), 1, &hv)->label, "PUNCH");   /* (the drums' punch: the master's own) */
         for (i = 0; i < NPAGES; i++)
             ok &= !str_eq(PAGES[i].title, "PUNCH") && !str_eq(PAGES[i].title, "VOICE") && !str_eq(PAGES[i].title, "COMPS");
-        bad += check("codex/coherence: the names (PART SLOTS, PUNCH IN, KEYS RAILS, PLAY; no INIT SYSTEM, no TRACKS DEST, no STEREO on a synth)", ok);
+        bad += check("codex/coherence: the names (PART SLOTS, PUNCH IN, RAILS (KEYS\x27s page, V10.7.58), PLAY; no INIT SYSTEM, no TRACKS DEST, no STEREO on a synth)", ok);
     }
     ui_power_on();
     return bad;
