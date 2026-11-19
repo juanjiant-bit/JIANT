@@ -179,9 +179,10 @@ sends the state as it is first (`TRANSPORT`, `PUNCH`; `MUTATE` counts from then 
   this needs neither the setting nor a clock reader.
 - **PUNCH** (41): `m0 m1 m2 m3 tracks`: the punch-in / FX-layer effects running (held, latched, a scene's, the
   punch-in lane's step) as `m0 | m1 << 7 | m2 << 14 | m3 << 21`; 0 while a menu or dialog turns them off. Bits
-  (frozen): 0 REPEAT 1/8, 1 REPEAT 1/16, 2 REPEAT 1/32, 3 LPF, 4 HPF, 5 OCT−, 6 OCT+, 7 1/2 TEMPO, 8 DEC−, 9 DEC+,
-  10 STUTTER 1/8, 11 STUTTER 1/16, 12 ATK+, 13 ARP, 14 RANDOM, 15..20 the mutes of tracks 1..6 (black keys), 21
-  GLITCH, 22 LOOP 3, 23 LOOP 5, 24 LOOP 7. `tracks`: the MIDI effects' tracks, 0 ALL, 1 SYN, 2 DRM.
+  (frozen): 0 REPEAT 1/8, 1 REPEAT 1/16, 2 REPEAT 1/32, 3 REVERSE (was LPF), 4 FREEZE (was HPF), 5 OCT−, 6 OCT+,
+  7 1/2 TEMPO, 8 DEC−, 9 DEC+, 10 STUTTER 1/8, 11 STUTTER 1/16, 12 ATK+, 13 ARP, 14 RANDOM, 15..20 the mutes of tracks
+  1..6 (black keys), 21 STRETCH (was GLITCH), 22 LOOP 3, 23 PITCH UP (was LOOP 5), 24 PITCH DOWN (was LOOP 7), 25 TAPE
+  STOP (V10.7.59). `tracks`: the MIDI effects' tracks, always 0 ALL since V10.7.59 (1 SYN, 2 DRM before).
 - **MUTATE** (42): `track, count`: a EUCLID MUTATE of that track (EVERY's, or OCT+ on the MUTATE page); count is
   the track's MUTATEs since power-on, 7 bits, so a missed frame shows as a jump.
 

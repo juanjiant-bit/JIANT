@@ -4159,9 +4159,9 @@ static int test_layer(void)
     {   /* the effects momentary (FX LATCH OFF, the default): a key held plays it, let go stops it */
         uint32_t k = white(3);                         /* (the LPF key) */
         key_down(k); frame();
-        ok &= (perf_held & PF_BIT(PF_LPF)) != 0u && !perf_latched;
+        ok &= (perf_held & PF_BIT(PF_REV)) != 0u && !perf_latched;
         key_up(k); frame();
-        ok &= !(perf_held & PF_BIT(PF_LPF)) && !perf_latched;
+        ok &= !(perf_held & PF_BIT(PF_REV)) && !perf_latched;
     }
     press(B_FX); frames(64);
     ok &= !fx_lock && !ui.layer;
@@ -4253,7 +4253,7 @@ static int test_layer(void)
     ui_power_on();
     btn_down(B_FX); key_down(white(3)); frame();          /* white key 4 (B3): LPF */
     btn_up(B_FX); frame();
-    ok = (perf_held & PF_BIT(PF_LPF)) && ui.layer == LAYER_FX;
+    ok = (perf_held & PF_BIT(PF_REV)) && ui.layer == LAYER_FX;
     key_down(white(0)); frame();
     ok &= gates() > 0 && !((kb_layer >> white(0)) & 1u);
     key_up(white(0)); key_up(white(3)); frame();
@@ -9464,11 +9464,11 @@ static int test_fx_latch(void)
     frame();                                                      /* (ui_input hands the setting to the ISR) */
     btn_down(B_FX); key_down(lpf); frame(); key_up(lpf); frame();
     turn(EN_K2, 30);
-    ok = perf_latched == PF_BIT(PF_LPF) && !perf_held && ui.layer == LAYER_FX && str_eq(layer_head(), "[FX] LATCH") &&
+    ok = perf_latched == PF_BIT(PF_REV) && !perf_held && ui.layer == LAYER_FX && str_eq(layer_head(), "[FX] LATCH") &&
          (layer_leds(0) >> lpf) & 1u;
     btn_up(B_FX); frame();
-    ok &= perf_latched == PF_BIT(PF_LPF) && perf_k[1] == 30 && !ui.layer;
-    ok &= perf_begin(CTL) && (perf_act & PF_BIT(PF_LPF));                 /* it runs with nothing held */
+    ok &= perf_latched == PF_BIT(PF_REV) && perf_k[1] == 30 && !ui.layer;
+    ok &= perf_begin(CTL) && (perf_act & PF_BIT(PF_REV));                 /* it runs with nothing held */
     bad += check("  FX LATCH ON: FX + B3 latches LPF, CRUSH stays at 30 after FX is let go", ok);
     ui_leds();
     memset(led_pos, 0xFF, sizeof led_pos);
@@ -9476,7 +9476,7 @@ static int test_fx_latch(void)
     go_home(); ui_leds();
     ok = (fm1_led[0] & 2u) != 0u;
     btn_down(B_FX); key_down(m1); frame(); key_up(m1); frame();   /* a mute latches too */
-    ok &= perf_latched == (PF_BIT(PF_LPF) | PF_BIT(PF_M1));
+    ok &= perf_latched == (PF_BIT(PF_REV) | PF_BIT(PF_M1));
     key_down(lpf); frame(); key_up(lpf); frame();                 /* B3 again: LPF off */
     ok &= perf_latched == PF_BIT(PF_M1);
     btn_up(B_FX); frame();
@@ -9490,7 +9490,7 @@ static int test_fx_latch(void)
     /* the quick combo: FX down and OCT- before HOLD, nothing else touched (it was nobody's: no ALL OFF, no octave) */
     btn_down(B_FX); key_down(lpf); frame(); key_up(lpf); frame(); turn(EN_K2, 20); btn_up(B_FX); frame();
     frames(400);
-    ok = perf_latched == PF_BIT(PF_LPF) && perf_k[1] == 20 && !ui.layer;
+    ok = perf_latched == PF_BIT(PF_REV) && perf_k[1] == 20 && !ui.layer;
     btn_down(B_FX); frame(); btn_down(B_OCTDN); frame();
     ok &= ui.layer == LAYER_FX && song.octave == 0;               /* (a combo: the map at once) */
     btn_up(B_OCTDN); frame();
@@ -9559,14 +9559,14 @@ static int test_fx_latch(void)
         ok = fx_lock && ui.layer == LAYER_FX;
         key_down(lpf); frame(); key_up(lpf); frame();
         turn(EN_K2, 10);
-        ok &= perf_latched == PF_BIT(PF_LPF) && perf_k[1] == 10 && ui.layer == LAYER_FX;
+        ok &= perf_latched == PF_BIT(PF_REV) && perf_k[1] == 10 && ui.layer == LAYER_FX;
         press(B_OCTDN);
         ok &= !perf_latched && !perf_k[1] && song.octave == 0;
         key_down(lpf); frame(); key_up(lpf); frame();
         press(B_FX); frames(64);
-        ok &= !fx_lock && !ui.layer && perf_latched == PF_BIT(PF_LPF) && ui.home;
+        ok &= !fx_lock && !ui.layer && perf_latched == PF_BIT(PF_REV) && ui.home;
         key_down(lpf); frame(); key_up(lpf); frame();                 /* (unlocked: the key plays its note) */
-        ok &= perf_latched == PF_BIT(PF_LPF);
+        ok &= perf_latched == PF_BIT(PF_REV);
         perf_latched = 0;
         bad += check("  FX LATCH: FX held and let go unused locks the FX layer open (keys, knobs, OCT- ALL OFF); FX again "
                      "unlocks, the effects stay", ok);

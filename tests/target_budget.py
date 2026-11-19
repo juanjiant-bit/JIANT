@@ -29,7 +29,7 @@ FUNCS = ["analog_render", "digital_render", "digital_render_legacy", "digital_re
                                                             # 0.8.9: in RAM, on core 1 with CORES 2; was uac_tap48)
          "click_render",                                    # the metronome's click (click.c), while it sounds
          "mod_begin", "mod_voice", "mod_end",                 # the modulation matrix (mod.c), called when active
-         "perf_begin", "perf_mute", "perf_pre", "perf_block", "perf_master", "perf_buf", "perf_glt",   # the FX layer (perform.c), when busy (snd2: its buffer effects out of perf_block, GLITCH)
+         "perf_begin", "perf_mute", "perf_pre", "perf_block", "perf_master", "perf_buf", "perf_rtp", "perf_str", "perf_frz",   # the FX layer (perform.c), when busy (its buffer effects out of perf_block; V10.7.59: REVERSE TAPE PITCH STRETCH, FREEZE)
          "rev_room", "rev_spring", "dist_amp", "dx_hands_step", "drw_dust",                # the reverb bus (fx.c): REVERB TYPE ROOM / SPRING
          "dly_lo",                                          # (0.8.4) the delay at half / a quarter rate (fx.c)
          "animal_render",                                   # (JIANT 0.8.3) ANIMAL (eng_animal.c): its five sources (one loop a voice)

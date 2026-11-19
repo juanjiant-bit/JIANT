@@ -266,10 +266,10 @@ int main(void)
     vg_part(5, ENGI_DRUM, 0, 4);
     song.g[G_RTYPE] = 4;
     vg_section("mix/full");
-    perf_held = PF_BIT(PF_R16);                         /* (snd2) the FX layer's buffer: REPEAT 1/16, then GLITCH, on it */
+    perf_held = PF_BIT(PF_R16);                         /* (snd2) the FX layer's buffer: REPEAT 1/16, then STRETCH, on it */
     vg_section("mix/full.repeat");
-    perf_held = PF_BIT(PF_GLT);
-    vg_section("mix/full.glitch");
+    perf_held = PF_BIT(PF_STR);
+    vg_section("mix/full.stretch");                      /* (V10.7.59: STRETCH where GLITCH was) */
     perf_held = 0;
     vg_seq(0);
     vg_section("seq/plain");

@@ -1432,7 +1432,8 @@ static __attribute__((noinline)) void dxo_tick(track_t *t, uint32_t n)
 static uint32_t perf_key(uint32_t k)
 {
     uint32_t p = key_place(k);
-    static const uint8_t BK[5] = {PF_LP3, PF_TGT, PF_LP5, PF_LP7, PF_GLT};   /* (snd2) black keys 7..11: G#4 A#4 C#5 D#5 F#5 */
+    static const uint8_t BK[5] = {PF_LP3, PF_TAPE, PF_PUP, PF_PDN, PF_STR};   /* black keys 7..11: G#4 A#4 C#5 D#5 F#5
+                                                         * (V10.7.59: LOOP 3, TAPE STOP, PITCH UP / DOWN, STRETCH) */
     return !key_black(k) ? (p < PF_M1 ? p : p == PF_M1 ? PF_CLR : PF_N) : p < NTRK ? PF_M1 + p : p - NTRK < 5u ? BK[p - NTRK] : PF_N;
 }
 

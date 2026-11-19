@@ -26,7 +26,7 @@ eng/WEST.HEAVY 2594
 eng/WEST.TRI 2493
 eng/WHEEL 1907
 mix/full 3339
-mix/full.glitch 3471
+mix/full.stretch 3471
 mix/full.repeat 3505
 mix/idle 297
 mix/idle.tail 295

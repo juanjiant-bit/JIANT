@@ -18,8 +18,8 @@
  *                      (JIANT) the sequencer plays a step of its pattern at random now and then (seq.c seq_tick)
  * (JIANT) Quantized: an effect pressed while the transport runs goes in on the next 1/16 of the transport (clk_pos),
  * so a repeat starts on the grid; let go, at once. The lane records the presses as they were (to the nearest step).
- * Of the repeats (STUTTER, ARP) the fastest held plays. A#4 (black key 8) steps the tracks they act on: ALL,
- * SYN (the synths), DRM (DRUM tracks) (pfx_tgt; the layer's header says it).
+ * Of the repeats (STUTTER, ARP) the fastest held plays. (V10.7.59) They act on every track (A#4, which stepped ALL / SYN /
+ * DRM, is TAPE STOP's: pfx_tgt stays ALL; a lane saved with SYN or DRM keeps its tracks).
  * The punch-in lane (the automation): a section's 64 steps of 1/16 (4 bars, from the transport's start or the
  * section's), one effect a step (pfx_lane: a nibble, 0 none, 1..10 D4 .. F5) and the tracks it acts on (pfx_ltgt).
  * Recording (REC armed, playing, not a song): the steps that pass while a MIDI effect is held get it (the lowest held),
@@ -198,8 +198,7 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
         rep = on & (PF_BIT(PF_S16) | PF_BIT(PF_S8) | PF_BIT(PF_ARP));
         per = (rep & (PF_BIT(PF_S16) | PF_BIT(PF_ARP))) ? b / 4u : b / 2u;   /* (JIANT 0.4: 1/8, 1/16; ARP 1/16) */
         t->pfx_pit = (int16_t)(((on >> PF_OCTU) & 1u) * 192 - ((on >> PF_OCTD) & 1u) * 192);
-        uint32_t lpn = (on >> PF_LP3) & 1u ? 3u : (on >> PF_LP5) & 1u ? 5u : (on >> PF_LP7) & 1u ? 7u : 0u;   /* (snd2) LOOP
-                                                         * 3 / 5 / 7 (the shortest held wins) */
+        uint32_t lpn = (on >> PF_LP3) & 1u ? 3u : 0u;   /* (snd2) LOOP 3 (V10.7.59: LOOP 5 / 7's keys are PITCH's) */
         f = ((on >> PF_RND) & 1u ? PFX_RND : 0u) | ((on >> PF_HALF) & 1u ? PFX_HALF : 0u) | (rep ? PFX_REP : 0u) |
             (on & (PF_BIT(PF_DSHT) | PF_BIT(PF_DLNG)) ? PFX_DEC : 0u) | ((on >> PF_ATK) & 1u ? PFX_ATK : 0u) |
             (lpn && song.playing ? PFX_LOOP : 0u);

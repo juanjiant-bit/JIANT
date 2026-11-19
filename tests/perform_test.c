@@ -145,10 +145,10 @@ static int test_timing(void)
         run(120, 0, ev, 1, 12000);
         bad += check("stopped: a 1/16 effect starts at once", (perf_act & PF_BIT(PF_R16)) && !same(992, 12000));
     }
-    {   /* the immediate ones: LPF moves at once */
-        ev_t ev[] = {{992, PF_LPF + 1}};
+    {   /* the immediate ones: FREEZE (V10.7.59, was LPF) at once, not on the 1/16 */
+        ev_t ev[] = {{992, PF_FRZ + 1}};
         run(120, 1, ev, 1, 3000);
-        bad += check("LPF starts at once (not on the 1/16)", same(0, 992) && !same(992, 3000));
+        bad += check("FREEZE starts at once (not on the 1/16)", !(PF_Q & PF_BIT(PF_FRZ)) && (perf_act & PF_BIT(PF_FRZ)));
     }
     return bad;
 }
@@ -443,7 +443,8 @@ static int test_misc(void)
     char what[160];
     static const struct { const char *name; int e; uint32_t off; } C[] = {
         {"REPEAT 1/8", PF_R8, 30000}, {"REPEAT 1/16", PF_R16, 30000}, {"REPEAT 1/32", PF_R32, 30000},
-        {"LPF", PF_LPF, 60000}, {"HPF", PF_HPF, 60000}};
+        {"REVERSE", PF_REV, 30000}, {"TAPE STOP", PF_TAPE, 60000}, {"PITCH UP", PF_PUP, 100000},
+        {"PITCH DOWN", PF_PDN, 100000}, {"STRETCH", PF_STR, 60000}};   /* (V10.7.59: were LPF HPF) */
     uint32_t c, t;
     int32_t own;
     test_signal(110, 16000, 110, 16000);
@@ -461,27 +462,17 @@ static int test_misc(void)
         bad += check(what, mx <= 4 * own);
         bad += check("  back to the live signal, bit for bit", same(C[c].off + 3000, C[c].off + 9000));
     }
-    {   /* the filters at their ends; full scale in, no overflow */
-        ev_t ev[] = {{0, PF_LPF + 1}};
-        test_signal(5000, 30000, 5000, 30000);
-        run(120, 1, ev, 1, 100000);
-        snprintf(what, sizeof what, "LPF held a bar: a 5 kHz sine down to %d of 30000", peak(out_l, 92000, 100000));
-        bad += check(what, peak(out_l, 92000, 100000) < 3000 && peak(out_r, 92000, 100000) < 3000);
-        ev[0].e = PF_HPF + 1;
-        test_signal(80, 30000, 80, 30000);
-        run(120, 1, ev, 1, 100000);
-        snprintf(what, sizeof what, "HPF held a bar: an 80 Hz sine down to %d of 30000", peak(out_l, 92000, 100000));
-        bad += check(what, peak(out_l, 92000, 100000) < 3000);
+    {   /* full scale in, no overflow (V10.7.59: the LPF / HPF keys gone; KNOB 1's FILTER below) */
         for (t = 0; t < NT; t++) {                 /* full scale square waves, past Q15 */
             in_l[t] = (t / 37u) & 1u ? 120000 : -120000;
             in_r[t] = (t / 53u) & 1u ? 120000 : -120000;
         }
         {
-            ev_t e2[] = {{0, PF_LPF + 1}, {0, PF_HPF + 1}, {0, PF_R16 + 1}};
+            ev_t e2[] = {{0, PF_R16 + 1}};
             run_crush = 100;
-            run(120, 1, e2, 3, 100000);
+            run(120, 1, e2, 1, 100000);
             run_crush = 0;
-            snprintf(what, sizeof what, "4x full scale through LPF + HPF + KNOB 2 CRUSH + REPEAT: peak %d (no wrap)",
+            snprintf(what, sizeof what, "4x full scale through KNOB 2 CRUSH + REPEAT: peak %d (no wrap)",
                      peak(out_l, 0, 100000) > peak(out_r, 0, 100000) ? peak(out_l, 0, 100000) : peak(out_r, 0, 100000));
             bad += check(what, peak(out_l, 0, 100000) < 300000 && peak(out_r, 0, 100000) < 300000);
         }
@@ -561,7 +552,7 @@ static uint64_t instr_now(void)
 }
 static double cost_run(int on)
 {
-    static const int ALL[] = {PF_R16, PF_LPF, PF_HPF, PF_M1 + 2};
+    static const int ALL[] = {PF_R16, PF_FRZ, PF_M1 + 2};
     uint32_t f, k;
     uint64_t i0;
     int32_t o[2 * CTL];
@@ -606,8 +597,8 @@ static void demo_at(uint32_t t)
 {
     static const struct { uint32_t t; int e; } D[] = {     /* press +(e + 1), let go -(e + 1) */
         {88192, PF_R8 + 1}, {110080, -(PF_R8 + 1)}, {110080, PF_R16 + 1}, {121088, PF_R32 + 1},
-        {126592, -(PF_R32 + 1)}, {132096, -(PF_R16 + 1)}, {176384, PF_LPF + 1}, {264576, -(PF_LPF + 1)},
-        {264576, PF_HPF + 1}, {308672, -(PF_HPF + 1)}, {440896, PF_M1 + 1}, {462848, -(PF_M1 + 1)}};
+        {126592, -(PF_R32 + 1)}, {132096, -(PF_R16 + 1)}, {176384, PF_REV + 1}, {220480, -(PF_REV + 1)},
+        {264576, PF_TAPE + 1}, {308672, -(PF_TAPE + 1)}, {440896, PF_M1 + 1}, {462848, -(PF_M1 + 1)}};
     uint32_t i;
     if (t == 462848u)
         perf_k[2] = 100;                            /* KNOB 3 THROW for a moment */
@@ -955,27 +946,96 @@ static int loop_case(uint32_t e, uint32_t nn, const uint8_t *want, uint32_t nw)
                           : "LOOP 7: the last 7 steps again (2 .. 8 2 ..), let go where it would have been",
                  ok && i0 == trk[0].seq_idx && p0 == trk[0].seq_pos);
 }
-/* (0.9.9-snd2) GLITCH (F#5), 0.9.18's: it cuts some 1/16s and leaves others live, the same every time (it grooves);
- * let go, live again bit for bit */
-static int test_glt(void)
+static uint32_t zc_raw(const int32_t *x, uint32_t a, uint32_t b)   /* zero crossings, upwards */
 {
-    static int32_t keep[8u * P16];
-    uint32_t j, live = 0, cut = 0;
-    int bad = 0, rep;
-    ev_t eg[] = {{P16, PF_GLT + 1}, {17u * P16, -(PF_GLT + 1)}};
-    test_signal(220.0, 12000.0, 330.0, 12000.0);
-    run_crush = run_k4 = 0;
-    run(120, 1, eg, 2, 20u * P16);
-    for (j = 2; j < 16u; j++) {                     /* each 1/16 of the held bar: live (as the input) or glitched */
-        if (same(j * P16 + 64u, (j + 1u) * P16 - 64u)) live++; else cut++;
+    uint32_t c = 0;
+    for (a++; a < b; a++)
+        c += x[a - 1] < 0 && x[a] >= 0;
+    return c;
+}
+static int32_t max_step(const int32_t *x, uint32_t a, uint32_t b)
+{
+    int32_t m = 0;
+    for (a++; a < b; a++)
+        m = abs(x[a] - x[a - 1]) > m ? abs(x[a] - x[a - 1]) : m;
+    return m;
+}
+/* (V10.7.36's, back in V10.7.59) REVERSE, TAPE STOP, PITCH UP / DOWN; (V10.7.59) STRETCH */
+static int test_new(void)
+{
+    int bad = 0;
+    char what[200];
+    uint32_t t;
+    {   /* REVERSE: pressed mid-1/16, starts on the next; its first window records (live), then each 1/16 is the one
+         * before it backwards */
+        ev_t ev[] = {{992, PF_REV + 1}, {12u * P16 + 100u, -(PF_REV + 1)}};
+        int32_t e = 0, pk;
+        uint32_t w;
+        test_signal(110, 12000, 165, 9000);
+        run(120, 1, ev, 2, 14u * P16);
+        for (w = 2; w < 11u; w++)
+            for (t = (w + 1u) * P16 + 200u; t < (w + 2u) * P16 - 200u; t++) {
+                int32_t d = abs(out_l[t] - in_l[(w + 1u) * P16 - 3u - (t - (w + 1u) * P16)]);
+                e = d > e ? d : e;
+            }
+        pk = peak(out_l, 2u * P16, 12u * P16);
+        snprintf(what, sizeof what, "REVERSE: live until the next 1/16 and one more, then each 1/16 the one before backwards "
+                 "(error %d of 12000, peak %d)", e, pk);
+        bad += check(what, same(0, 2u * P16) && e < 400 && pk <= 12100);
+        bad += check("  let go: the live signal again after the ramp, bit for bit; the buffer given back",
+                     same(12u * P16 + 400u, 14u * P16) && !sl_lent && pf.mode == BM_NONE);
     }
-    memcpy(keep, out_l + P16, sizeof keep);
-    run(120, 1, eg, 2, 20u * P16);
-    rep = !memcmp(keep, out_l + P16, sizeof keep);
-    printf("perform: GLITCH: %u of 14 1/16s glitched, %u live; the same the second time: %s\n", (unsigned)cut,
-           (unsigned)live, rep ? "yes" : "no");
-    bad += check("GLITCH: some 1/16s cut, some live, the same every time; let go, live again", cut >= 3u && live >= 3u &&
-                 rep && same(18u * P16, 20u * P16));
+    {   /* TAPE STOP: a beat (4 x 1/16 at 120) slowing (fewer crossings), then silence while held */
+        ev_t ev[] = {{P16, PF_TAPE + 1}, {12u * P16, -(PF_TAPE + 1)}};
+        uint32_t c0, c1, c2;
+        int32_t sil, pk;
+        test_signal(440, 12000, 440, 12000);
+        run(120, 1, ev, 2, 14u * P16);
+        c0 = zc_raw(out_l, 2u * P16 + 200u, 2u * P16 + 2200u);
+        c1 = zc_raw(out_l, 4u * P16 + 200u, 4u * P16 + 2200u);
+        c2 = zc_raw(in_l, 4u * P16 + 200u, 4u * P16 + 2200u);
+        sil = peak(out_l, 6u * P16 + 600u, 12u * P16);
+        pk = peak(out_l, 2u * P16, 12u * P16);
+        snprintf(what, sizeof what, "TAPE STOP: slower and lower (crossings %u -> %u, live %u), then silent while held "
+                 "(peak %d), bounded (%d)", c0, c1, c2, sil, pk);
+        bad += check(what, c1 < c0 * 3u / 4u && c0 > c2 * 3u / 4u && sil == 0 && pk <= 12100);
+        bad += check("  let go: the live signal again after the ramp, bit for bit", same(12u * P16 + 400u, 14u * P16));
+    }
+    {   /* PITCH UP / DOWN: at once; an octave up / down after a bar (about 2x / 0.5x the crossings), in time */
+        static const int E[2] = {PF_PUP, PF_PDN};
+        uint32_t j;
+        for (j = 0; j < 2u; j++) {
+            ev_t ev[] = {{992, E[j] + 1}, {28u * P16, -(E[j] + 1)}};
+            uint32_t c, c0;
+            int32_t pk, st;
+            test_signal(330, 12000, 330, 12000);
+            run(120, 1, ev, 2, 30u * P16);
+            c = zc_raw(out_l, 20u * P16, 27u * P16);
+            c0 = zc_raw(in_l, 20u * P16, 27u * P16);
+            pk = peak(out_l, 0, 28u * P16);
+            st = max_step(out_l, 0, 30u * P16);
+            snprintf(what, sizeof what, "PITCH %s: after a bar %u crossings for %u (x%.2f), peak %d, largest step %d",
+                     j ? "DOWN" : "UP", c, c0, (double)c / c0, pk, st);
+            bad += check(what, (j ? c > c0 * 4u / 10u && c < c0 * 6u / 10u : c > c0 * 18u / 10u && c < c0 * 22u / 10u) &&
+                         !same(992, 2u * P16) && pk <= 12500 && st < 3000);
+            bad += check("  let go: back with the ramp, bit for bit", same(28u * P16 + 400u, 30u * P16) && !sl_lent);
+        }
+    }
+    {   /* STRETCH: half a beat recorded (live meanwhile), then played back slower at its own pitch: as many crossings
+         * a second as the input (a 330 Hz sine: its pitch kept), not the live signal, bounded; let go, live again */
+        ev_t ev[] = {{P16, PF_STR + 1}, {20u * P16, -(PF_STR + 1)}};
+        uint32_t c, c0;
+        int32_t pk;
+        test_signal(330, 12000, 330, 12000);
+        run(120, 1, ev, 2, 22u * P16);
+        c = zc_raw(out_l, 8u * P16, 18u * P16);
+        c0 = zc_raw(in_l, 8u * P16, 18u * P16);
+        pk = peak(out_l, 0, 20u * P16);
+        snprintf(what, sizeof what, "STRETCH: after half a beat its own pitch (%u crossings for %u), bounded (peak %d)", c, c0, pk);
+        bad += check(what, c > c0 * 9u / 10u && c < c0 * 11u / 10u && same(0, 2u * P16) && pk <= 12500);
+        bad += check("  let go: the live signal again after the ramp, bit for bit; the buffer given back",
+                     same(20u * P16 + 400u, 22u * P16) && !sl_lent && pf.mode == BM_NONE);
+    }
     return bad;
 }
 static int test_loops(void)
@@ -984,8 +1044,7 @@ static int test_loops(void)
     static const uint8_t W7[14] = {2, 3, 4, 5, 6, 7, 8, 2, 3, 4, 5, 6, 7, 8};
     int bad = 0;
     bad += loop_case(PF_LP3, 3u, W3, 9u);
-    bad += loop_case(PF_LP5, 5u, W5, 10u);
-    bad += loop_case(PF_LP7, 7u, W7, 14u);
+    (void)W5; (void)W7;                                 /* (V10.7.59: LOOP 5 / 7's keys are PITCH's) */
     return bad;
 }
 
@@ -993,7 +1052,7 @@ int main(int argc, char **argv)
 {
     int bad = 0;
     bad += test_loops();
-    bad += test_glt();
+    bad += test_new();
     bad += test_timing();
     bad += test_stereo();
     bad += test_too_long();

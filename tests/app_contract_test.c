@@ -435,19 +435,20 @@ static void pushes_10(void)
     g_check("TRANSPORT each beat while playing: 1, beat 1, bar 200 (lo, hi)", r, n);
     pump();
     ok("the same beat: no push", !frames(C_TRANSPORT));
-    perf_held = PF_BIT(PF_OCTU) | PF_BIT(PF_LP5);
+    perf_held = PF_BIT(PF_OCTU) | PF_BIT(PF_PUP);
     pfx_tgt = 2;
     pump();
     r = frame(C_PUNCH, &n);
     {
-        uint32_t m = PF_BIT(PF_OCTU) | PF_BIT(PF_LP5);
+        uint32_t m = PF_BIT(PF_OCTU) | PF_BIT(PF_PUP);
         g_new(); g_b(m & 127, "mask"); g_b(m >> 7 & 127, "mask"); g_b(m >> 14 & 127, "mask"); g_b(m >> 21 & 127, "mask");
         g_b(2, "tracks: DRM");
     }
-    g_check("PUNCH: OCT+ (bit 6) and LOOP 5 (bit 23) held, on the DRUM tracks", r, n);
-    ok("PUNCH bits frozen: R8 0, LPF 3, OCT- 5, OCT+ 6, RANDOM 14, mutes 15..20, GLITCH 21, LOOP3/5/7 22..24, 25 bits",
-       PF_R8 == 0 && PF_LPF == 3 && PF_OCTD == 5 && PF_OCTU == 6 && PF_RND == 14 && PF_M1 == 15 && PF_GLT == 21 &&
-       PF_LP3 == 22 && PF_LP7 == 24 && PF_N == 25);
+    g_check("PUNCH: OCT+ (bit 6) and PITCH UP (bit 23, was LOOP 5) held, on the DRUM tracks", r, n);
+    ok("PUNCH bits frozen: R8 0, REVERSE 3 (was LPF), OCT- 5, OCT+ 6, RANDOM 14, mutes 15..20, STRETCH 21 (was GLITCH), "
+       "LOOP3 22, PITCH UP / DN 23 24 (were LOOP 5 / 7), TAPE STOP 25, 26 bits",
+       PF_R8 == 0 && PF_REV == 3 && PF_OCTD == 5 && PF_OCTU == 6 && PF_RND == 14 && PF_M1 == 15 && PF_STR == 21 &&
+       PF_LP3 == 22 && PF_PDN == 24 && PF_TAPE == 25 && PF_N == 26);
     pfx_lnow = PF_BIT(PF_S16);
     perf_held = 0;
     pump();

@@ -117,9 +117,9 @@ static uint32_t layer_btn(void) { return LAYERS[ui.layer % LAYER_N].btn; }
 static uint32_t layer_open(void);
 static const char *layer_head(void)                     /* FX: LATCH, and the MIDI effects' tracks (A#4) */
 {
-    static const char *const H[3][3] = {{"[FX] HOLD", "[FX] HOLD SYN", "[FX] HOLD DRM"},
-                                        {"[FX] LATCH", "[FX] LATCH SYN", "[FX] LATCH DRM"},
-                                        {"[FX] LOCKED", "[FX] LOCK SYN", "[FX] LOCK DRM"}};
+    static const char *const H[3][3] = {{"[FX] HOLD", "[FX] HOLD", "[FX] HOLD"},   /* (V10.7.59: every track, no SYN DRM) */
+                                        {"[FX] LATCH", "[FX] LATCH", "[FX] LATCH"},
+                                        {"[FX] LOCKED", "[FX] LOCKED", "[FX] LOCKED"}};
     if (ui.layer == LAYER_MACRO && !layer_open())       /* (JIANT 0.4) the MACRO layer latched */
         return "[LFO] LATCH";
     return ui.layer == LAYER_FX ? H[fx_lock && !ui.ly ? 2 : perf_latch_on ? 1 : 0][pfx_tgt % 3u] : LAYERS[ui.layer % LAYER_N].head;
@@ -954,7 +954,8 @@ static uint32_t layer_leds(uint32_t *br)
  * the accent, a muted track KEY, unavailable its name DIM, its note under it; KNOBS the four as gauges in their knobs'
  * colours over the layer's keys (the keycaps' words); STATE what is on, as chips. (Until 0.8.8: cells with note names,
  * the Felucca map.) The keys and knobs do what they did: only the drawing is new */
-static const char *const PF_NAME[PF_M1] = {"RPT 1/8", "RPT 1/16", "RPT 1/32", "LPF", "HPF",   /* the audio ones (perform.c) */
+static const char *const PF_NAME[PF_M1] = {"RPT 1/8", "RPT 1/16", "RPT 1/32", "REVERSE", "FREEZE",   /* the audio ones
+                                                         * (perform.c; V10.7.59: REVERSE FREEZE, were LPF HPF) */
     "OCT-", "OCT+", "1/2 TEMPO", "DEC-", "DEC+", "STUT 1/8", "STUT 1/16", "ATK+", "ARP", "RANDOM"};   /* the MIDI ones (pfx.c) */
 static const char W_NOTE[16] = {'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G'};
 static const char B_NOTE[11] = {'F', 'G', 'A', 'C', 'D', 'F', 'G', 'A', 'C', 'D', 'F'};   /* black keys 1..11: F# G# .. F#5 */
@@ -1008,19 +1009,15 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
     nm[0] = 0;
     if (l == LAYER_FX) {
         uint32_t held = perf_kill ? 0u : perf_held | perf_latched, e = blk ? PF_M1 + p : p;
-        static const char *const TG[3] = {"TRK ALL", "TRK SYN", "TRK DRM"};
-        if (blk && p == 7u) {
-            str_cpy(nm, TG[pfx_tgt % 3u], 12);
-            return LS_OFF;
-        }
         if (!blk && p == PF_M1) {                       /* (snd2) G5: CLEAR AUTOMATION, the punch-in lane's */
             str_cpy(nm, "CLR AUTO", 12);
             return pfx_clr ? LS_HELD : LS_OFF;
         }
-        if (blk && p >= NTRK && p != 7u && p <= 10u) {  /* (snd2) G#4 LOOP 3, C#5 LOOP 5, D#5 LOOP 7, F#5 GLITCH */
-            static const char *const BN[4] = {"LOOP 3", "LOOP 5", "LOOP 7", "GLITCH"};
-            static const uint8_t BE[4] = {PF_LP3, PF_LP5, PF_LP7, PF_GLT};
-            uint32_t j = p == 6u ? 0u : p - 7u;
+        if (blk && p >= NTRK && p <= 10u) {             /* G#4 LOOP 3, (V10.7.59) A#4 TAPE STOP, C#5 D#5 PITCH UP / DOWN, F#5
+                                                         * STRETCH */
+            static const char *const BN[5] = {"LOOP 3", "TAPE STOP", "PITCH UP", "PITCH DN", "STRETCH"};
+            static const uint8_t BE[5] = {PF_LP3, PF_TAPE, PF_PUP, PF_PDN, PF_STR};
+            uint32_t j = p - NTRK;
             e = BE[j];
             str_cpy(nm, BN[j], 12);
             return !((held >> e) & 1u) ? LS_OFF : ((perf_act >> e) & 1u) || ((PF_LOOPS >> e) & 1u) ? LS_HELD : LS_WAIT;
@@ -1318,12 +1315,14 @@ static __attribute__((noinline)) void layer_state(uint32_t l)
     lst_n = 0;
     if (l == LAYER_FX) {                                /* the lock, the tracks, the latch, the effects held */
         uint32_t held = perf_kill ? 0u : perf_held | perf_latched;
-        static const char *const TG[3] = {"ALL", "SYN", "DRM"};
+        static const char *const BN[5] = {"LOOP 3", "TAPE STOP", "PITCH UP", "PITCH DN", "STRETCH"};
+        static const uint8_t BE[5] = {PF_LP3, PF_TAPE, PF_PUP, PF_PDN, PF_STR};
         lst_chip("LOCK", 0, fx_lock);
-        lst_chip("TRACKS", TG[pfx_tgt % 3u], 1);
         lst_chip("FX LATCH", perf_latch_on ? "ON" : "OFF", perf_latch_on);
         for (e = 0; e < PF_M1; e++)
             lst_chip(PF_NAME[e], 0, (held >> e) & 1u);
+        for (e = 0; e < 5u; e++)
+            lst_chip(BN[e], 0, (held >> BE[e]) & 1u);
     } else if (l == LAYER_GLO) {                        /* the tracks, the DRUM groups, UNDO */
         for (k = 0; k < NTRK; k++) {
             char t[3] = {'T', (char)('1' + k), 0};
