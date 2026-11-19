@@ -96,9 +96,11 @@ jobs:
           # tails under -60 dB let go and low-passed, the English dictionary out: every common render still there
           # (tests/golden.txt reviewed with them), the punch-ins and the audio ISR still V23's
           assert all(k in after for k in common),'a V23 render gone'
-          for name in ['perform.c','pfx.c','audio.c']:
+          # (V10.7.59, the owner) the punch-ins redesigned (perform.c: REVERSE FREEZE TAPE STOP PITCH STRETCH) and the
+          # punch-in STUT on the transport's grid (pfx.c): tests/perform_test.c and tests/rep_sync_test.c hold them now
+          for name in ['audio.c']:
               assert (Path('firmware/src')/name).read_bytes()==(Path('build/v23-reference/firmware/src')/name).read_bytes(),name+' changed'
-          print('PASS 195 reference renders present; original punch-ins and audio ISR')
+          print('PASS 195 reference renders present; the audio ISR V23\'s')
           PYREF
       - name: Lossless font metadata and isolated per-track generator
         run: |
