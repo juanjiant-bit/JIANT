@@ -1,0 +1,139 @@
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant). All rights reserved.
+/* (V10.7.62) LIFE (mod.c life_block, HOME > LIFE): all 0 runs nothing (no route, no follower asked); each knob moves the
+ * tracks by the others' sound, audibly (PUMP ducks, FILTER and TIMBRE change the sound, FX sends more to the buses); a
+ * project keeps it ('L' 'F') and one without it writes no block. Built and run by CI (voice-user-check.yml) */
+#define UI_TEST_NO_MAIN 1
+#include "ui_test.c"
+
+static double bright, side;                     /* the last render's: its slope's energy, its L - R's (over its own) */
+static double rms_song(uint32_t blocks, double *diff, const int32_t *ref)
+{
+    static int32_t o[2 * CTL];
+    double e = 0, d = 0, sd = 0, pl = 0;
+    uint32_t b, i;
+    (void)diff; (void)ref;
+    for (b = 0; b < blocks; b++) {
+        mix_block(o, CTL);
+        for (i = 0; i < CTL; i++) {
+            double l = o[2u * i], r = o[2u * i + 1u];
+            e += l * l + r * r;
+            d += (l - pl) * (l - pl);
+            sd += (l - r) * (l - r);
+            pl = l;
+        }
+    }
+    bright = e > 0 ? d / e : 0;
+    side = e > 0 ? sd / e : 0;
+    return e;
+}
+static int32_t o_sil[2 * CTL];
+static void duet(void)                          /* T2 and T3 a held note each, the others silent */
+{
+    uint32_t k;
+    ui_power_on();
+    for (k = 0; k < NTRK; k++) if (k != 1u && k != 2u) trk[k].p[P_MUTE] = 1;
+    song.master_q12 = 2048;
+    for (k = 0; k < 3000u; k++) mix_block(o_sil, CTL);   /* (the buses' tails out, the same seed: each run alike) */
+    rng_state = 0x1234567u;
+    trk_note_on(&trk[1], 36, 120);
+    trk_note_on(&trk[2], 48, 100);
+}
+static void kit_duet(void)                      /* T1 a kit (a kick each 1/4 s), T3 a held note, the others silent */
+{
+    uint32_t k;
+    ui_power_on();
+    set_engine_of(&trk[0], ENGI_DRUM); trk[0].engine = trk[0].eng_req;
+    for (k = 0; k < NTRK; k++) if (k != 0u && k != 2u) trk[k].p[P_MUTE] = 1;
+    song.master_q12 = 2048;
+    for (k = 0; k < 3000u; k++) mix_block(o_sil, CTL);
+    rng_state = 0x1234567u;
+    trk_note_on(&trk[2], 48, 100);
+}
+static double kick_song(uint32_t blocks, double *kit)   /* T3's follower summed (T1's in *kit) */
+{
+    static int32_t o[2 * CTL];
+    double e = 0, k = 0;
+    uint32_t b;
+    for (b = 0; b < blocks; b++) {
+        if (b % 375u == 0u) trk_note_on(&trk[0], 36, 127);
+        if (b % 375u == 40u) trk_note_off(&trk[0], 36);
+        mix_block(o, CTL);
+        e += track_env[2];
+        k += track_env[0];
+    }
+    *kit = k;
+    return e;
+}
+int main(void)
+{
+    int bad = 0, ok, q;
+    double e0, e1;
+    static const char *const NM[4] = {"FILTER", "TIMBRE", "PUMP", "FX"};
+    ok = !life_on && !life_v[0] && !life_v[1] && !life_v[2] && !life_v[3];
+    bad += check("LIFE: off at power-on (nothing runs)", ok);
+    {   /* (the yardstick: the voices' free phases move a render a few %: four runs, their spread) */
+        double ea, br0 = 0, sd0 = 0, lo = 1e30, hi = 0;
+        e0 = 0;
+        for (q = 0; q < 4; q++) {
+            duet();
+            ea = rms_song(600, 0, 0);
+            e0 += ea / 4.0; br0 += bright / 4.0; sd0 += side / 4.0;
+            lo = ea < lo ? ea : lo; hi = ea > hi ? ea : hi;
+        }
+        printf("  off: energy %.1f%% run to run, slope %.4f, side %.4f\n", 100.0 * (hi - lo) / e0, br0, sd0);
+        bad += check("LIFE: off, no follower asked for it", !life_on && !(track_follow_mask & 6u));
+        for (q = 0; q < 4; q++) {
+            char what[120];
+            double r;
+            if (q == 2)                                 /* (PUMP: with a kit, below; two synths duck each other) */
+                continue;
+            {
+                double br1 = 0, sd1 = 0, ex;
+                int u;
+                e1 = 0;
+                for (u = 0; u < 4; u++) {               /* (four runs, as the yardstick's) */
+                    duet();
+                    life_v[q] = 100;
+                    ex = rms_song(600, 0, 0);
+                    e1 += ex / 4.0; br1 += bright / 4.0; sd1 += side / 4.0;
+                }
+                r = q == 0 ? br1 / br0 : q == 3 ? sd1 / sd0 : e1 / e0;
+            }   /* (FILTER: brighter; FX: wider; TIMBRE: its
+                                                         * shape, the energy) */
+            snprintf(what, sizeof what, "LIFE %s 100: the tracks move each other (%s x%.2f)", NM[q],
+                     q == 0 ? "slope" : q == 3 ? "side" : "energy", r);
+            bad += check(what, life_on && fabs(r - 1.0) > 0.1);
+            life_v[q] = 0;
+        }
+    }
+    {   /* PUMP: a kit's kicks duck the synth (the kit not pumped): T3's follower on average, against LIFE with FX at 1 %
+         * (the followers running, nothing pumped) */
+        double ek0, ek1, kt0, kt1;
+        kit_duet(); life_v[3] = 1; ek0 = kick_song(1500, &kt0); life_v[3] = 0;
+        kit_duet(); life_v[3] = 1; life_v[2] = 100; ek1 = kick_song(1500, &kt1); life_v[2] = life_v[3] = 0;
+        {
+            char what[120];
+            snprintf(what, sizeof what, "LIFE PUMP 100 with a kit: the kicks duck the synth (its level x%.2f, the kit's x%.2f)",
+                     ek1 / ek0, kt1 / kt0);
+            bad += check(what, ek1 < ek0 * 0.6 && fabs(kt1 / kt0 - 1.0) < 0.1);
+        }
+    }
+    {   /* a project: LIFE off writes no block; on, 'L' 'F' kept and back after a load */
+        uint32_t n0, n1;
+        project_t p;
+        ui_power_on();
+        project_capture(&p);
+        n0 = proj_packed_size(&p);
+        life_v[0] = 40; life_v[2] = 77;
+        project_capture(&p);
+        n1 = proj_packed_size(&p);
+        ok = n1 == n0 + 2u + sizeof p.lf && !project_save(1);
+        if (!ok) printf("  sizes %u %u\n", n0, n1);
+        life_v[0] = life_v[2] = 0;
+        project_load(1); frames(4);
+        ok &= life_v[0] == 40 && life_v[1] == 0 && life_v[2] == 77 && life_v[3] == 0;
+        bad += check("LIFE: saved with the project and loaded back; off writes no block", ok);
+    }
+    printf(bad ? "life: %d FAILED\n" : "life: all ok\n", bad);
+    return bad != 0;
+}

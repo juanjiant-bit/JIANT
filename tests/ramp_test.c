@@ -165,6 +165,18 @@ static int ramp_tests(void)
         rcheck("old projects: JUMP whose VALUE is no RAMP none (REV, steps 33..64, 12..15), one that is a RAMP; "
                "CP_JUMP / CP_REV none; the global lane's none; it plays", ok);
     }
+    {   /* (V10.7.62) its END: HOLD stays at the lock's value past its LENGTH (8 steps of a 16), till the next launch; BOUNCE
+         * (8 steps of a 12) goes back down over its LENGTH, not relaunched when the pattern comes round (step 12) */
+        t = rpat(16, CV_RAMP_ENDV(1), 7, 100, 1);
+        seq_start(); rrun(t, 20, v); seq_stop();
+        ok = v[7] >= 98 && v[10] == 100 && v[15] == 100 && v[17] < 70;
+        if (!ok) printf("  HOLD: %d %d %d %d\n", v[7], v[10], v[15], v[17]);
+        t = rpat(12, CV_RAMP_ENDV(2), 7, 100, 1);
+        seq_start(); rrun(t, 24, v); seq_stop();
+        ok &= v[7] >= 98 && v[11] >= 64 && v[11] <= 80 && v[12] > 55 && v[12] < v[11] && v[15] <= 45 && v[19] >= 64;
+        if (!ok) printf("  PING: %d %d %d %d %d\n", v[7], v[11], v[12], v[15], v[19]);
+        rcheck("END: HOLD stays at the lock till the next launch; PING back and forth, not relaunched", ok);
+    }
     {   /* SEQ > COMP: KNOB 1 to RAMP (16 steps, "LOCK A PARAM" without a lock), KNOB 2 past 32 steps into bars, KNOB 4
          * FROM + CURVE; the cards */
         uint32_t a;
@@ -192,11 +204,12 @@ static int ramp_tests(void)
             for (sk = 0; sk < 1u; sk++)                 /* (V10.7.23: COLORS, the one skin) */
                 for (lg = 0; lg < 2u; lg++)
                     for (l = 0; l < 16u; l++)
-                        for (v = 0; v < 12u; v++) {
+                        for (v = 0; v <= CA_VMAX[CA_RAMP]; v++) {   /* (V10.7.62: with its END) */
                             if (lg) ui_prefs |= PREF_LARGE; else ui_prefs &= ~PREF_LARGE;
-                            t->step[0].carg = (uint8_t)(CV_RAMP_BARS | v); t->step[0].clen[0] = (uint8_t)l;
+                            t->step[0].carg = (uint8_t)(CV_RAMP_BARS | comp_vat(CA_RAMP, v)); t->step[0].clen[0] = (uint8_t)l;
                             ut_card_bad = 0; ut_card_txt = 0;
                             ui.force = 1; frame();
+                            if (ut_card_bad && !cut) printf("  cut: LARGE %u bars %u value %u: %s\n", lg, l + 1u, v, ut_card_what);
                             cut += ut_card_bad != 0u;
                         }
             ui_prefs &= ~PREF_LARGE;

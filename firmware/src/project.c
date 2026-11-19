@@ -126,6 +126,8 @@ typedef struct {
     uint8_t fit[NTRK];                         /* FIT/SPAN per track; optional RF extension */
     uint8_t mx[MX_N * 3u];                     /* (V10.7.59) the MACROS' routes (mod.c mx_r: macro, destination, amount):
                                                 * FUNC's 'M' 'X' block, the last, when not the defaults; absent: them */
+    uint8_t lf[4];                             /* (V10.7.62) LIFE (params.c life_v, 0..100): FUNC's 'L' 'F' block after
+                                                * MACROS', when any is set; absent: all 0 (off) */
     uint32_t sum;
 } project_t;
 _Static_assert(sizeof(gcomp_t) == 5u, "the global lane as stored");
@@ -626,6 +628,8 @@ static uint32_t proj_packed_size(const project_t *q)
     for (i = 0; i < sizeof q->scpat; i++) if (q->scpat[i]) { n += 2u + sizeof q->scpat; break; }
     if (proj_mx_custom(q))                              /* (V10.7.59) the MACROS' routes, when not the defaults */
         n += 2u + sizeof q->mx;
+    if (q->lf[0] | q->lf[1] | q->lf[2] | q->lf[3])       /* (V10.7.62) LIFE, when on */
+        n += 2u + sizeof q->lf;
     return n;
 }
 static int proj_split_ok(const uint8_t *s)
@@ -818,6 +822,9 @@ static int proj_pack(project_store_t *out, const project_t *q)
     if (i < sizeof q->scpat) { b[pos++] = 'S'; b[pos++] = 'P'; memcpy(b + pos, q->scpat, sizeof q->scpat); pos += sizeof q->scpat; }
     if (proj_mx_custom(q)) {                            /* (V10.7.59) the MACROS' routes (after SCENE's patterns: the last) */
         b[pos++] = 'M'; b[pos++] = 'X'; memcpy(b + pos, q->mx, sizeof q->mx); pos += sizeof q->mx;
+    }
+    if (q->lf[0] | q->lf[1] | q->lf[2] | q->lf[3]) {     /* (V10.7.62) LIFE (the last) */
+        b[pos++] = 'L'; b[pos++] = 'F'; memcpy(b + pos, q->lf, sizeof q->lf); pos += sizeof q->lf;
     }
     memcpy(b + PROJC_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJC_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
@@ -1144,8 +1151,17 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         pos += 2u + sizeof q->scpat;
     }
     proj_mx_def(q);                                     /* (V10.7.59) the MACROS' routes: as saved, else the defaults */
-    if (pos + 2u + sizeof q->mx <= room && b[pos] == 'M' && b[pos + 1u] == 'X')
+    if (pos + 2u + sizeof q->mx <= room && b[pos] == 'M' && b[pos + 1u] == 'X') {
         memcpy(q->mx, b + pos + 2u, sizeof q->mx);
+        pos += 2u + sizeof q->mx;
+    }
+    memset(q->lf, 0, sizeof q->lf);                     /* (V10.7.62) LIFE: as saved, else off */
+    if (pos + 2u + sizeof q->lf <= room && b[pos] == 'L' && b[pos + 1u] == 'F') {
+        uint32_t k;
+        for (k = 0; k < sizeof q->lf; k++)
+            q->lf[k] = b[pos + 2u + k] > 100u ? 100u : b[pos + 2u + k];
+        pos += 2u + sizeof q->lf;
+    }
     proj_new_tracks(q, nt);                             /* (a FUNC of fewer tracks: the rest at power-on) */
     for (t = nt; t < NTRK; t++)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);
@@ -1295,6 +1311,7 @@ static __attribute__((noinline)) void proj_master_put(project_t *p)
 {
     uint32_t k;
     proj_mx_put(p);                                     /* (V10.7.59) the MACROS' routes, song-wide as the master's */
+    for (k = 0; k < 4u; k++) p->lf[k] = (uint8_t)clamp(life_v[k], 0, 100);   /* (V10.7.62) LIFE, the same */
     for (k = 0; k < 4u; k++) p->eq[k] = (int8_t)eq_v[k];
     p->tp[0] = (uint8_t)tape_v[0]; p->tp[1] = (uint8_t)tape_v[1];
 }
@@ -1557,6 +1574,7 @@ static int project_restore_runtime(const project_t *input)
         for (k = 0; k < 4u; k++) eq_v[k] = clamp(p->eq[k], -12, 12);
         tape_v[0] = p->tp[0] > 100u ? 100 : p->tp[0]; tape_v[1] = p->tp[1] > 100u ? 100 : p->tp[1];
         proj_mx_get(p);                                 /* (V10.7.59) the MACROS' routes */
+        for (k = 0; k < 4u; k++) life_v[k] = p->lf[k] > 100u ? 100 : p->lf[k];   /* (V10.7.62) LIFE */
     }
     {                                                   /* (V10.31) SCENE */
         uint32_t i;
@@ -1669,6 +1687,7 @@ static __attribute__((noinline)) void system_init(void)   /* (snd8: out of its c
     for (i = 0; i < G_COUNT; i++) song.g[i] = GP[i].def;
     tape_v[0] = tape_v[1] = 0;                          /* (snd8) the master's TAPE out */
     eq_v[0] = eq_v[1] = eq_v[2] = eq_v[3] = 0;          /* (p9) its EQ flat */
+    life_v[0] = life_v[1] = life_v[2] = life_v[3] = 0;  /* (V10.7.62) LIFE off */
     for (i = 0; i < 5u; i++) song.g[KEEP[i]] = kept[i];
     kept[0] = dice_secs;
     chain_defaults(&chain_config);
@@ -1978,6 +1997,7 @@ static uint32_t autosave_sig(void)
     h = as_mix(h, scn_pat, sizeof scn_pat);
     h = as_mix(h, eq_v, sizeof eq_v);                   /* the master's EQ and TAPE (an EQ change alone: */
     h = as_mix(h, tape_v, sizeof tape_v);               /* autosaved, RESTORE LAST gives it back) */
+    h = as_mix(h, life_v, sizeof life_v);               /* (V10.7.62) LIFE */
     return as_mix(h, proj_name, sizeof proj_name);
 }
 

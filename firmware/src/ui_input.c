@@ -2960,6 +2960,20 @@ static void ui_input_frame(void)
                 pat_load_ui(&trk[ui.confirm_trk % NTRK], pat_pick());
             } else if (kind == CF_CLEAR_PFX) {         /* (0.6.99) FX > PUNCH > CLEAR */
                 if (!chain_busy()) { memset(pfx_lane, 0, sizeof pfx_lane); pfx_ltgt = 0; ui_message("PUNCH IN LANE CLEARED"); }
+            } else if (kind == CF_CLEAR_COMP) {        /* (V10.7.62) every step component of the track */
+                track_t *t = &trk[ui.confirm_trk % NTRK];
+                uint32_t i, n = 0;
+                if (!chain_busy()) {
+                    undo_mark();
+                    for (i = 0; i < NSTEP; i++) {
+                        step_t *s = &t->step[i];
+                        n += comp_any(s);
+                        s->comp = s->carg = s->comp2 = s->carg2 = 0;
+                        s->clen[0] = s->clen[1] = s->cnm[0] = s->cnm[1] = 0;
+                        s->cwhen &= 0xF0u;              /* (the step's own TIMING kept) */
+                    }
+                    ui_message(n ? "STEP FX CLEARED" : "NO STEP FX");
+                }
             } else if (kind == CF_CLEAR_MOTION) {
                 track_t *t = &trk[ui.confirm_trk % NTRK];
                 if (!chain_busy()) { load_begin(t, LOAD_PAT); motion_clear(t); load_end(t); ui_message("AUTOMATION CLEARED"); }
@@ -3135,6 +3149,11 @@ static void ui_input_frame(void)
                 ui.force = 1;
                 break;
             }
+            if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_COMP && b == B_OCTDN && !fm1_in.notes) {
+                if (chain_busy()) ui_message("SONG PLAYS: STOP IT TO EDIT");   /* (V10.7.62) STEP FX: OCT- clears the */
+                else confirm_open(CF_CLEAR_COMP, song.sel);                    /* track's (a dialog) */
+                break;
+            }
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_EUCLID) {   /* (V10.6) EUCLID / MODES: */
                 eu_oct(b == B_OCTUP, cur_page()->id[0] == ID_MU0);   /* OCT+ a new variation, OCT- the one before;
                                                          * (V10.16) MUTATE: a mutation now, back to the anchor */
@@ -3276,8 +3295,18 @@ static void ui_input_frame(void)
             const param_desc_t *d = home_param(k, &vp);
             int32_t was = *vp;
             *vp = (int16_t)param_turn(d, *vp, accel(EN_K1 + k, s, d->fmt == F_ENUM ? 0 : d->max - d->min));
-            knob_cap(TSEL, (uint32_t)(vp - TSEL->p));
-            excite_turn(TSEL, vp, was);
+            if (home_life()) {                          /* (V10.7.62) LIFE: the project's, no track's */
+                static const char *const LH[4] = {"FILTER: HITS CLOSE, NOTES OPEN", "TIMBRE: THE OTHERS SHAPE IT",
+                                                  "PUMP: THE KICKS DUCK THE SYNTHS", "FX: THE OTHERS FEED THE SENDS"};
+                if (ui.msg_t && str_eq(ui.msg, LH[k & 3u]))
+                    ui.msg_t = 40;                      /* (still turning: it stays) */
+                else if (!(ui_help_off & 1u))
+                    ui_say(LH[k & 3u], "");
+            }
+            else {
+                knob_cap(TSEL, (uint32_t)(vp - TSEL->p));
+                excite_turn(TSEL, vp, was);
+            }
         } else {
             edit_param(k, s);
         }

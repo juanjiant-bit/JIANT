@@ -40,7 +40,7 @@ typedef struct { const char *t, *nm; uint8_t g, lv; } nv_t;   /* PAGES title (HO
 typedef struct { const char *nm, *tab; } ng_t;                /* a group: its name, its tab's when the name is too wide */
 typedef struct { const nv_t *e; const ng_t *g; uint8_t n, ng; } ch_t;
 #define NV(t, nm, g, lv) {t, nm, g, lv}
-static const nv_t CE_HOME[] = {NV(0, "ECO", 0, 0), NV(0, "MACROS", 0, 0), NV(0, "BEING", 1, 1), NV(0, "ROUTES", 1, 1),
+static const nv_t CE_HOME[] = {NV(0, "ECO", 0, 0), NV(0, "LIFE", 0, 0), NV(0, "BEING", 1, 1), NV(0, "ROUTES", 1, 1),
                                NV(0, "GENE 1", 2, 2), NV(0, "GENE 2", 2, 2), NV(0, "GENE 3", 2, 2)};
 static const ng_t CG_HOME[] = {{"ECO", 0}, {"BEING", 0}, {"GENE", 0}};
 static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("WORDS", 0, 1, 1),
@@ -158,7 +158,7 @@ static uint32_t nv_page(uint32_t sec, uint32_t e)
 }
 static int nv_ok(uint32_t sec, uint32_t e)   /* (V10.7.59, the owner: HOME > MACROS gone, the FX layer's knobs are the macros) */
 {
-    return sec == SEC_HOME ? e < NELEM(CE_HOME) && e != 1u : nv_page(sec, e) < NPAGES;
+    return sec == SEC_HOME ? e < NELEM(CE_HOME) : nv_page(sec, e) < NPAGES;   /* (V10.7.62: ECO's second, LIFE) */
 }
 /* the entry shown: HOME's from its state (ui.hlv, ui.hset, GEN's page); the others the one remembered when it is the page
  * shown, else the page's own (put by code: in the group left, the default page's, then the chain's first), else
@@ -196,7 +196,8 @@ static uint32_t pd_level(void) { return nav_lv(); }
 static uint32_t save_level(void) { return nav_lv(); }
 static uint32_t home_level(void) { return gen_on() ? 2u : ui.hlv ? 1u : 0u; }
 static uint32_t home_set(void) { return ui.hset[home_level() & 1u] & 1u; }
-static int home_macros(void) { return ui.home && !ui.menu && !gen_on() && home_set(); }   /* MACROS / ROUTES: M1..M4 */
+static int home_macros(void) { return ui.home && !ui.menu && home_level() == 1u && home_set(); }   /* ROUTES: M1..M4 */
+static int home_life(void) { return ui.home && !ui.menu && home_level() == 0u && home_set(); }   /* (V10.7.62) LIFE */
 /* the entries shown now (on this track, at this LOAD), in order: their indices in v (NAV_MAX at most: the longest chain,
  * FX's 17 since snd8's TAPE, fits: ui_test checks every chain against it; snd8b's 17th page overran a 16 and crashed
  * FX); how many */

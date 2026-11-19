@@ -12,8 +12,8 @@
  *          level (quiet cyan and blue .. loud red, orange, yellow), and where its nuclei were a small face: two eyes that
  *          shut on a hit, a mouth that opens with the level; muted, asleep (a dim outline, its eyes shut). MUTATE: when a
  *          mutation lands the being looks up, its number lights white and one ring in the accent opens (the critters and
- *          the ring of twelve dots, gone). MACROS: the macros' routes counted at the top left, LATCH / HOLD LFO at the
- *          right
+ *          the ring of twelve dots, gone). LIFE (V10.7.62): the same, a line from each track to the one it moves
+ *          (the ring's), as bright as it sounds (a kit's in the accent)
  *   BEING  the track's being large in the middle, its four HOME knobs as organs at the corners (a gauge each, its name
  *          and value, a vein to the body), the sound's name under it; ROUTES: the being small, M1..M4 down the left
  *          with their routes drawn to their destinations ("T1 CUT+40")
@@ -238,16 +238,6 @@ static void lz_arc(int32_t cx, int32_t cy, int32_t r, int32_t w, int32_t f, uint
 }
 
 /* ------------------------------------------------------------------------------------------------ the panels --- */
-static uint32_t routes_count(void)                      /* the MOD slots whose SRC is a macro, every track */
-{
-    uint32_t i, k, n = 0;
-    for (i = 0; i < NTRK; i++)
-        for (k = 0; k < 4u; k++) {
-            const int16_t *p = &trk[i].p[P_M1SRC + 3u * k];
-            n += p[0] >= MS_M1 && p[0] < MS_M1 + 4 && p[1] && p[2];
-        }
-    return n;
-}
 /* ECO: 0.8.4's HOME (graph_ecosys) in the lens's panel: the cytoplasm's granules drifting, the six beings swimming free
  * over the whole panel (0.9.7: variant A, eco_being), each with its number under it (the selected one larger, its number in
  * the theme's colour; a mutation landed, white) */
@@ -270,6 +260,15 @@ static void graph_eco(void)
         bx[c] >>= 4;
         by[c] >>= 4;
     }
+    if (home_set() && life_on) {                        /* (V10.7.62) LIFE: who moves whom, as bright as the mover sounds */
+        uint32_t n = trk_live < ECO_N ? trk_live : ECO_N, j;
+        for (c = 0; c < n; c++) {
+            j = (c + n - 1u) % n;
+            if (j != c)
+                og_line_a(bx[j], by[j], bx[c], by[c], trk[j].engine == ENGI_DRUM ? T_ACCENT : T_THEME,
+                          clamp(48 + track_env[j] / 96, 48, 256));
+        }
+    }
     for (c = 0; c < ECO_N; c++) {
         int32_t rad = eco.r[c] >> 4, px = bx[c] >> 4, py = by[c] >> 4, ny;
         char num[2] = {(char)('1' + c), 0};
@@ -277,12 +276,8 @@ static void graph_eco(void)
         ny = clamp(py + rad / 2 + 4, 4, bot);
         cv_text_in(px - 30, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM : T_MID, T_SURF);
     }
-    if (home_set()) {                                   /* MACROS: the routes, LATCH */
-        fmt_int(b, (int32_t)routes_count());
-        str_cpy(b + str_len(b), " ROUTES", 8);
-        cv_text(6, 2, &AF_X, b, T_DIM);
-        cv_text_r(234, 2, &AF_X, mac_latch ? "LATCH" : "HOLD LFO", mac_latch ? T_ACCENT : T_DIM, T_SURF);
-    }
+    if (home_set())                                     /* (V10.7.62) LIFE (was MACROS: the FX layer's knobs since V10.7.59) */
+        cv_text(6, 2, &AF_X, life_on ? "THE TRACKS MOVE EACH OTHER" : "LIFE OFF: TURN A KNOB", life_on ? T_MID : T_DIM);
 }
 /* BEING: the track's being large, its HOME knobs as organs at the corners */
 static const int16_t ORG_X[4] = {30, 210, 30, 210}, ORG_Y[4] = {28, 28, 116, 116};

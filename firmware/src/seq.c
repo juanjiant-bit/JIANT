@@ -1785,7 +1785,8 @@ static uint32_t kb_drum_keys(void)
 /* (V10.6v) RAMP (core.h CV_RAMP_*): a track's one gliding parameter (the RAMP launched last): its id + 1 (0 none), the
  * step that launched it, VALUE, LENGTH - 1; how far, Q24 of the way (past RAMP_ONE: the knob's value coming back, in
  * samples); the lock's value it goes to */
-typedef struct { uint8_t id, st, val, len; uint32_t pos; int16_t to; } ramp_t;
+typedef struct { uint8_t id, st, val, len; uint32_t pos; int16_t to; uint8_t back; } ramp_t;   /* (back: BOUNCE on its
+                                                     * way back, V10.7.62) */
 static ramp_t rmp[NTRK] __attribute__((section(".bss.swarm")));   /* (out of the merged statics, as fx.c's djf) */
 #define RAMP_ONE (1u << 24)
 #define RAMP_BACK 1024u                             /* (~23 ms: the knob's value back without a click) */
@@ -2355,13 +2356,14 @@ static __attribute__((noinline)) void ramp_run(track_t *t, const step_t *s, uint
         if (!(e = motion_lock_at(t, st)))           /* (no lock: nothing) */
             break;
         id = MOTION_ID(e) + 1u;
-        if (r->id == id && r->st == st &&           /* (running from here, more than half a step to go: on) */
-            r->pos + RAMP_ONE / (2u * (val & CV_RAMP_BARS ? (l % 16u + 1u) << 4 : l + 1u)) < RAMP_ONE)
+        if (r->id == id && r->st == st &&           /* (running from here, more than half a step to go: on; a BOUNCE */
+            (CV_RAMP_END(val) == 2u ||              /* never relaunched, V10.7.62) */
+             r->pos + RAMP_ONE / (2u * (val & CV_RAMP_BARS ? (l % 16u + 1u) << 4 : l + 1u)) < RAMP_ONE))
             break;
         if (r->id && r->id != id)
             t->p[r->id - 1u] = motion_base[ti][r->id - 1u];   /* (another one: its knob's value back) */
         r->id = (uint8_t)id; r->st = (uint8_t)st; r->val = (uint8_t)val; r->len = (uint8_t)l;
-        r->pos = 0; r->to = MOTION_VAL(e);
+        r->pos = 0; r->to = MOTION_VAL(e); r->back = 0;
         break;
     }
     if (!r->id)
@@ -2381,6 +2383,18 @@ static __attribute__((noinline)) void ramp_run(track_t *t, const step_t *s, uint
             r->pos = RAMP_ONE;
         from = CV_RAMP_OPP(r->val) ? (to >= (d->min + d->max) >> 1 ? d->min : d->max) : base;
         b = (uint32_t)ramp_curve(CV_RAMP_CURVE(r->val), (int32_t)(r->pos >> 9)) >> 5;
+        if (r->back) {                              /* (V10.7.62) BOUNCE: on its way back, the same curve */
+            int32_t x = from;
+            from = to; to = x;
+        }
+        if (r->pos == RAMP_ONE && CV_RAMP_END(r->val) == 2u) {
+            r->pos = 0;                             /* (BOUNCE: the other way, again) */
+            r->back ^= 1u;
+        }
+    } else if (CV_RAMP_END(r->val) == 1u) {         /* (V10.7.62) HOLD: it stays there (a stop, the next launch: the
+                                                     * knob's back) */
+        t->p[id] = (int16_t)to;
+        return;
     } else if (b >= RAMP_BACK) {                    /* (its end: the knob's) */
         t->p[id] = (int16_t)base;
         r->id = 0;

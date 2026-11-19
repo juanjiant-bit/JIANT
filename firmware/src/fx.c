@@ -2393,9 +2393,9 @@ static __attribute__((noinline)) void drum_mix(int32_t *ol, int32_t *or_, uint32
  * calibrate the control signal. UI meters and shared FX returns are excluded. */
 static __attribute__((noinline)) void track_follow_peak(const track_t *t, const int32_t *b, uint32_t n)
 {
-    uint32_t ti = (uint32_t)(t - trk), i;
+    uint32_t ti = (uint32_t)(t - trk), i, st = (life_fol >> ti) & 1u ? 4u : 1u;   /* (V10.7.62: LIFE's alone, a 4th) */
     int32_t pl = 0, pr = 0, level = mp_lvl[ti] >> 8, pan = mp_pan[ti] >> 8;
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < n; i += st) {
         int32_t l = b[i] - ((dx_xon & 1u) ? dx_sl[i] : 0), r = b[i] - ((dx_xon & 1u) ? dx_sr[i] : 0);
         l = l < 0 ? -l : l; r = r < 0 ? -r : r;
         if (l > pl) pl = l;

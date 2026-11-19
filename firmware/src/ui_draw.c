@@ -1999,6 +1999,10 @@ static void confirm_text(char *a, char *b)
     case CF_CLEAR_PFX:
         str_cpy(a, "CLEAR PUNCH IN LANE?", 24);   /* (snd2: the lane only) */
         break;
+    case CF_CLEAR_COMP:                                 /* (V10.7.62) SEQ > STEP FX, OCT- */
+        str_cpy(a, "CLEAR T1 STEP FX?", 24); a[7] = (char)('1' + k % NTRK);
+        str_cpy(b, "THE NOTES STAY", 24);
+        break;
     case CF_OVR_USER:
         str_cpy(a, "OVERWRITE ", 24);
         up_slot_label(a + str_len(a), k);

@@ -398,7 +398,7 @@ static uint16_t val_col(uint32_t c) { return c == ui.hot_col && ui.hot_t ? T_ACC
 enum { CF_NONE, CF_CLEAR_SEQ, CF_CLEAR_TRK, CF_OVR_PROJ, CF_OVR_USER, CF_LOAD_PAT,
        CF_DEL_ROW, CF_CLEAR_SONG, CF_INIT_SOUND, CF_CLEAR_MOTION, CF_ERASE_USER, CF_CLEAR_PFX,
        CF_RECALL_SOUND, CF_CLEAR_ALL, CF_DICE_ALL, CF_INIT_SYS, CF_DICE_SOUND, CF_DICE_SEQ, CF_DICE_LFO,
-       CF_DICE_FX, CF_CPU_TEST, CF_MUT_BACK, CF_LIVE_COMMIT, CF_ERASE_SECT, CF_OVR_SONG, CF_ERASE_SONG };   /* ui.confirm: TOOLS' clears; (0.6.21) HOME + SELECT:
+       CF_DICE_FX, CF_CPU_TEST, CF_MUT_BACK, CF_LIVE_COMMIT, CF_ERASE_SECT, CF_OVR_SONG, CF_ERASE_SONG, CF_CLEAR_COMP };   /* ui.confirm: TOOLS' clears; (0.6.21) HOME + SELECT:
                                    * everything diced; (0.6.65) EDIT + SELECT: keep the diced sound?; (0.6.67) SEQ / LFO / FX + SELECT:
                                    * keep the diced sequence / LFO / effects?;
                                    * SAVE over a used slot; a pattern over the user's steps;
@@ -994,6 +994,7 @@ static uint32_t comp_vidx(uint32_t a, uint32_t v)
         return ((((v & CV_ARP_SCALE) ? 4u : 0u) + CP_RNG(v)) * 4u + CP_ORD(v)) * CP_NRATE + r % CP_NRATE;
     case CA_RATCH: return ((v & 7u) % 7u) * 3u + CV_RAT_DEC(v);
     case CA_TRANS: return (CV_TR_RANGE(v) - 1u) * 15u + (uint32_t)(CV_TR_MOVE(v) + 7);
+    case CA_RAMP: return CV_RAMP_END(v) % 3u * 2u * CV_RAMP_NC + (v & 15u);   /* (V10.7.62: its END, then FROM CURVE) */
     default: return v;
     }
 }
@@ -1006,6 +1007,7 @@ static uint32_t comp_vat(uint32_t a, uint32_t i)
     }
     case CA_RATCH: return i / 3u | (i % 3u) << 3;
     case CA_TRANS: return CV_TR_MAKE((int32_t)(i % 15u) - 7, i / 15u + 1u);
+    case CA_RAMP: return i % (2u * CV_RAMP_NC) | CV_RAMP_ENDV(i / (2u * CV_RAMP_NC) % 3u);
     default: return i;
     }
 }
@@ -1048,7 +1050,10 @@ static void comp_vname(const track_t *t, const step_t *s, uint32_t a, uint32_t v
     case CA_RAMP: {                                    /* (V10.6v) FROM over its CURVE ("KNOB" "EXP"); no LOCK on the step:
                                                          * NO LOCK (it does nothing) */
         static const char *const CRV[CV_RAMP_NC] = {"LIN", "EXP", "LOG", "S", "STEPS", "ZIGZAG"};
-        str_cpy(lb, !motion_lock_at(t, (uint32_t)(s - t->step) % NSTEP) ? "NO LOCK" : CV_RAMP_OPP(v) ? "OPP" : "KNOB", 8);
+        static const char *const FR[2][3] = {{"KNOB", "HOLD", "PING"}, {"OPP", "OP HOLD", "OP PING"}};   /* (V10.7.62) its
+                                                         * END on the label (BACK: FROM alone, as before): the card's
+                                                         * value has no room for a unit beside EXP or ZIGZAG */
+        str_cpy(lb, !motion_lock_at(t, (uint32_t)(s - t->step) % NSTEP) ? "NO LOCK" : FR[CV_RAMP_OPP(v)][CV_RAMP_END(v) % 3u], 8);
         str_cpy(val, CRV[CV_RAMP_CURVE(v)], 8);
         break;
     }
@@ -2043,6 +2048,10 @@ static uint8_t mac_latch;
 static const param_desc_t *home_param(uint32_t k, int16_t **vp)
 {
     uint32_t id = trk_engp(TSEL)->knob[k & 3u];
+    if (home_life()) {                               /* (V10.7.62) HOME > LIFE: params.c life_v */
+        *vp = &life_v[k & 3u];
+        return &LIFE_DESC[k & 3u];
+    }
     *vp = &TSEL->p[id];
     return track_desc(TSEL, id);
 }

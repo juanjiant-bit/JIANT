@@ -72,7 +72,7 @@ static const char *const N_APSYNC[] = {"FREE", "BEAT"};                  /* (JIA
 static const char *const N_APDIV[] = {"4BAR", "2BAR", "1BAR", "1/2", "1/4", "1/8", "1/16", "1/32"};   /* .. BEAT (fx.c AP_SIXT) */
 /* modulation matrix (mod.c): sources, destinations (E1..E8 = P_E0..P_E7: shown with the engine's labels) */
 static const char *const N_MSRC[] = {"OFF", "LFO", "ENV", "VEL", "KEY", "RAND", "MODW", "AT", "EXPR",
-                                     "M1", "M2", "M3", "M4", "STEP", "NOISE", "PROX", "ENV2", "IN ENV", "T1 ENV", "T2 ENV", "T3 ENV", "T4 ENV", "T5 ENV", "T6 ENV", "OCT+", "OCT-"};   /* (V10.7.22) OCT+ OCT-: the expression keys */   /* (V10.22) ENV2 */   /* (0.7.8) NOISE; (V10.14) PROX */   /* (JIANT: the macros, LFO held; the modulation sequence) */
+                                     "M1", "M2", "M3", "M4", "MSEQ", "NOISE", "PROX", "ENV2", "IN ENV", "T1 ENV", "T2 ENV", "T3 ENV", "T4 ENV", "T5 ENV", "T6 ENV", "OCT+", "OCT-"};   /* (V10.7.22) OCT+ OCT-: the expression keys */   /* (V10.22) ENV2 */   /* (0.7.8) NOISE; (V10.14) PROX */   /* (JIANT: the macros, LFO held; the modulation sequence) */
 static const char *const N_MDST[] = {"OFF", "PITCH", "CUT", "SHP", "AMP", "PAN", "DIST", "CHO", "DLY", "REV", "L.RATE",
                                      "L.PIT", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8",
                                      "CLIP", "PNCH",   /* (JIANT: the master, FX > MASTER) */
@@ -697,6 +697,14 @@ static const param_desc_t MX_DESC[4] = {PE("ROUTE", N_MXR, 0), PE("MACRO", N_MXM
                                         PD("AMOUNT", F_BIPCT, -64, 63, 0)};
 static int16_t mx_sel;
 _Static_assert(sizeof N_MXR / sizeof N_MXR[0] == MX_N, "a name a route");
+/* (V10.7.62, the owner: "the tracks interacting, completely audible, as light as it can be") LIFE: HOME > LIFE, ECO's
+ * second page: each track moved by the others' sound, a block late (mod.c life_block): KNOB 1 FILTER (a kit's hits close
+ * the others' filter, a voice's open it), 2 TIMBRE (the same on the shape), 3 PUMP (a kit's hits duck the others' level),
+ * 4 FX (the reverb and delay sends breathe). All 0: nothing runs, the sound bit for bit as before. Kept with the project
+ * ('L' 'F', project.c) */
+static const param_desc_t LIFE_DESC[4] = {PD("FILTER", F_PCT, 0, 100, 0), PD("TIMBRE", F_PCT, 0, 100, 0),
+                                          PD("PUMP", F_PCT, 0, 100, 0), PD("FX", F_PCT, 0, 100, 0)};
+static int16_t life_v[4] __attribute__((section(".bss.tape")));
 #define ID_EQ0 0xE0u
 static const param_desc_t EQ_DESC[4] __attribute__((section(".rodata.tape"))) = {
     PD("LOW", F_INT, -12, 12, 0), PD("LO MID", F_INT, -12, 12, 0), PD("HI MID", F_INT, -12, 12, 0), PD("HIGH", F_INT, -12, 12, 0)};

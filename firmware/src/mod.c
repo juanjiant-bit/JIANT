@@ -71,6 +71,10 @@ static uint8_t macro_v[4];       /* (JIANT) the macros M1..M4, 0..127: the proje
  * track. Kept with the project (project.c 'M' 'X'); a new one (and one saved before) the defaults: M1 the tracks' filters
  * closing, M2 the reverb's send, M3 the delay's, M4 the drive. A macro at 0 does nothing: the sound bit for bit */
 /* (MX_N, mx_t, mx_r: params.c, LFO > MACROS's) */
+/* (V10.7.62) LIFE's sources a track (life_block) and whether it runs */
+static int16_t life_x[NTRK] __attribute__((section(".bss.tape"))), life_p[NTRK] __attribute__((section(".bss.tape")));
+static uint8_t life_on __attribute__((section(".bss.tape")));
+static uint8_t life_fol __attribute__((section(".bss.tape")));
 static uint8_t mx_on;            /* bit r: route r acts this block (macro_master: its destination, amount, macro not 0) */
 static uint8_t mx_trk;           /* .. one of them on a track's destination (mod_begin) */
 static void mx_defaults(void)
@@ -113,6 +117,7 @@ static const param_desc_t *mod_track_desc(const track_t *t, uint32_t id)
     return &TP[id];
 }
 
+#define LF_N 5u                  /* (V10.7.62) LIFE's routes a track: FILTER TIMBRE PUMP, FX's reverb and delay sends */
 typedef struct {                 /* the part in mix_part (one at a time) */
     uint8_t on;                  /* a slot is active: track_render calls mod_voice */
     uint8_t amp;                 /* an AMP slot: the voice gain applies */
@@ -120,8 +125,9 @@ typedef struct {                 /* the part in mix_part (one at a time) */
     int32_t pit, cut, shp, gain; /* per voice, from the per-track sources (gain Q15) */
     uint8_t vsrc[NMSLOT], vdst[NMSLOT];
     int8_t vamt[NMSLOT];
-    uint8_t kid[NMSLOT + MX_N];  /* per-block: the parameter, its stored value (V10.7.59: the MACROS' routes too) */
-    int16_t keep[NMSLOT + MX_N];
+    uint8_t kid[NMSLOT + MX_N + LF_N];   /* per-block: the parameter, its stored value (V10.7.59: the MACROS' routes
+                                         * too; V10.7.62: LIFE's) */
+    int16_t keep[NMSLOT + MX_N + LF_N];
 } mod_t;
 static mod_t mod_c[2];                      /* (JIANT 0.6.71) one a core: each renders its own parts at once (fx.c mix_block) */
 #define MOD (mod_c[MC_CPU() & 1u])
@@ -285,19 +291,61 @@ static __attribute__((noinline)) void ms_tick(track_t *t)
     t->ms_v += ((target - t->ms_v) * (32767 / (1 + s * s / (8 * (int32_t)CTL / 32)))) >> 15;   /* (a block of 32's step: 1 / (1 + s^2 / 8)) */
 }
 
+/* (V10.7.62) LIFE's routes on track t (mod_begin, once a part's block, LIFE on): FILTER and TIMBRE per voice (a filter
+ * the voices lack: the track's), PUMP the level, FX the reverb and delay sends; at 100 % twice a slot's full amount.
+ * Out of mod_begin's loop (and of the RAM code: a call through a pointer) */
+static __attribute__((noinline)) void life_mod(track_t *t, int32_t *off)
+{
+    static const uint8_t LD[LF_N] = {MD_CUT, MD_SHP, MD_LEVEL, MD_REV, MD_DLY};
+    mod_t *const mp = &MOD;
+    uint32_t q, j, ti = (uint32_t)(t - trk) % NTRK, e = t->engine;
+    for (q = 0; q < LF_N; q++) {
+        uint32_t d = LD[q], id;
+        int32_t a = life_v[q < 3u ? q : 3u] * 127 / 100, x = q == 2u ? life_p[ti] : life_x[ti];
+        const param_desc_t *pd;
+        if (!a || !x)
+            continue;
+        if (d == MD_CUT && (e == ENGI_WHEEL || e == ENGI_DRUM || e == ENGI_STRING || e == ENGI_INPUT || e == ENGI_ANALOG))
+            d = MD_FCUT;                                /* (ANALOG: its CUTOFF, P_E4, a block's: lighter than a voice's) */
+        if (d == MD_CUT) {
+            mp->cut += (x * a) >> 7;
+            continue;
+        }
+        if (d == MD_SHP && e == ENGI_ANALOG)            /* (ANALOG: its DRIVE, a block's; its shape would take MORPH's
+                                                         * heavier loop) */
+            d = MD_E1 + 6u;
+        else if (d == MD_SHP) {
+            mp->shp += (x * a) >> 7;
+            continue;
+        }
+        id = d == MD_FCUT && e == ENGI_ANALOG ? P_E4 : mod_param(d);
+        pd = mod_track_desc(t, id);
+        for (j = 0; j < mp->nk && mp->kid[j] != id; j++)
+            ;
+        if (j == mp->nk) {
+            mp->kid[j] = (uint8_t)id;
+            mp->keep[j] = t->p[id];
+            off[j] = 0;
+            mp->nk++;
+        }
+        off[j] += (((x * a) >> 6) * (pd->max - pd->min)) >> 15;
+    }
+}
+static void (*const volatile LIFE_MOD)(track_t *, int32_t *) = life_mod;   /* (mod_begin's RAM copy: its reach) */
+
 /* before a part's block (fx.c mix_part): the per-track offsets, the per-block destinations into t->p.
  * 0 = no slot active (then nothing changed) */
 static __attribute__((noinline)) int mod_begin(track_t *t)
 {
     mod_t *const mp = &MOD;                          /* (0.6.71) this core's */
     const int16_t *p = t->p;
-    int32_t lfo, off[NMSLOT + MX_N];
+    int32_t lfo, off[NMSLOT + MX_N + LF_N];
     uint32_t k, j, n;
     mp->on = 0;
     for (k = 0; k < NMSLOT; k++)
         if (p[P_M1SRC + 3u * k] && p[P_M1DST + 3u * k] && p[P_M1AMT + 3u * k])
             break;
-    if (k == NMSLOT && !mx_trk)
+    if (k == NMSLOT && !mx_trk && !life_on)
         return 0;
     lfo = mulq15(t->lfo_val, t->lfo_fade);              /* (the LFO of the block before: track_render ticks it) */
     for (j = k; j < NMSLOT; j++)
@@ -353,6 +401,8 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
                                                                                                * as before its in-time values) */
         }
     }
+    if (life_on)                                        /* (V10.7.62) LIFE's routes */
+        LIFE_MOD(t, off);
     for (j = 0; j < mp->nk; j++) {
         uint32_t id = mp->kid[j];
         const param_desc_t *pd = mod_track_desc(t, id);
@@ -362,6 +412,51 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
         t->p[id] = (int16_t)clamp(mp->keep[j] + off[j], lo, hi);
     }
     return 1;
+}
+
+/* (V10.7.62) LIFE (params.c life_v: HOME > LIFE): each track moved by the others' sound of the block before, their
+ * followers (track_env). Who moves whom: most the track before it in the ring of the tracks (two: each the other's), the
+ * rest a quarter. A kit's hits close (negative), a voice's open (positive): life_x, the FILTER, TIMBRE and FX routes'
+ * source (mod_begin). PUMP: a kit's hits (no kit sounding: the ring's) duck a synth's level, life_p (a kit is not pumped).
+ * Per block only: no voice or sample work of its own; every value is a matrix offset, restored after the part */
+static __attribute__((noinline)) void life_block(void)
+{
+    uint32_t i, j, r, n = trk_live < NTRK ? trk_live : NTRK, kit = 0, on = 0, prv[NTRK], last = NTRK;
+    life_on = (uint8_t)((life_v[0] | life_v[1] | life_v[2] | life_v[3]) != 0 && n > 1u);
+    life_fol = 0;
+    if (!life_on)
+        return;
+    for (i = 0; i < n; i++) {
+        kit |= (uint32_t)(trk[i].engine == ENGI_DRUM) << i;
+        on |= (uint32_t)!trk[i].p[P_MUTE] << i;         /* (the ring: the tracks not muted, in order) */
+    }
+    for (r = 0; r < 2u; r++)                            /* (each one's before it, round the ring: the last's the first's) */
+        for (i = 0; i < n; i++)
+            if ((on >> i) & 1u) {
+                if (last < NTRK) prv[i] = last;
+                last = i;
+            }
+    for (i = 0; i < n; i++) {
+        int32_t x = 0, pk = 0, pr = 0;
+        if (!((on >> i) & 1u)) {
+            life_x[i] = life_p[i] = 0;
+            continue;
+        }
+        for (j = 0; j < n; j++) {
+            int32_t e = track_env[j], w = j == prv[i] ? 4 : 1;
+            if (j == i || !((on >> j) & 1u))
+                continue;
+            x += ((kit >> j) & 1u ? -e : e) * w;
+            if ((kit >> j) & 1u)
+                pk += e * w;
+            else
+                pr += e * w;
+        }
+        life_x[i] = (int16_t)clamp(x >> 1, -32767, 32767);   /* (x2 over the weights' 4: a follower seldom peaks full) */
+        life_p[i] = (int16_t)((kit >> i) & 1u ? 0 : -clamp((pk ? pk : pr) >> 1, 0, 32767));   /* (no kit sounding: the ring's) */
+    }
+    life_fol = (uint8_t)(on & ~track_follow_mask);      /* (the followers LIFE alone asks for: every 4th sample, fx.c) */
+    track_follow_mask |= (uint8_t)on;                   /* (every track's follower: the next block's) */
 }
 
 /* (JIANT) once an audio block, before the parts (fx.c): CLIP and PUNCH as the master plays them, the stored
@@ -427,6 +522,7 @@ static __attribute__((noinline)) void macro_master(void)
         mx_on = (uint8_t)on;
         mx_trk = (uint8_t)tr;
     }
+    life_block();                                       /* (V10.7.62) LIFE */
     ain_any = (uint8_t)any;
     ain_sw = (uint8_t)sw1;
     clip_eff = (int16_t)clamp(song.g[G_CLIP] + off[0], 0, 100);

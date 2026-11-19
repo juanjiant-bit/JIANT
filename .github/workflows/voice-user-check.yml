@@ -165,6 +165,8 @@ jobs:
           build/song-check/perform | tee build/song-check/perform.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/macro_mx_test.c -lm -o build/song-check/macro-mx
           build/song-check/macro-mx | tee build/song-check/macro-mx.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/life_test.c -lm -o build/song-check/life
+          build/song-check/life | tee build/song-check/life.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/fill_test.c -lm -o build/song-check/fill
           build/song-check/fill | tee build/song-check/fill.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/image_test.c -lm -o build/song-check/image
