@@ -220,9 +220,18 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
         }
         t->pfx = (uint8_t)f;
         if (rep) {
+            uint32_t go;
             t->pfx_sc += n;
-            if (t->pfx_sc >= per) {
-                t->pfx_sc = t->pfx_sc - per < per ? t->pfx_sc - per : 0u;
+            if (song.playing && clk_pos != CLK_START) {   /* (V10.7.59) playing: on the transport's grid (a 1/8 on the
+                                                         * beat and its half, never a 1/16 off it; no drift of a period
+                                                         * counted in blocks: the owner's stumbles) */
+                uint32_t s16 = div_samples(2), pq = per >= s16 + s16 / 2u ? 2u : 1u, G = pq * s16;
+                uint32_t g = ((clk_n % pq) * s16 + clk_pos + n) % G;
+                go = !g || G - g < n;
+            } else
+                go = t->pfx_sc >= per;
+            if (go) {
+                t->pfx_sc = t->pfx_sc >= per && t->pfx_sc - per < per ? t->pfx_sc - per : 0u;
                 pfx_fire(t, rep == PF_BIT(PF_ARP));
             } else if (t->pfx_snn && t->pfx_sc >= per / 2u) {
                 pfx_hush(t);                            /* gated half */

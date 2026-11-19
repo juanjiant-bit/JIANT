@@ -154,6 +154,13 @@ jobs:
           build/song-check/draft | tee build/song-check/draft.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/loop_song_test.c -lm -o build/song-check/loop
           timeout 120 build/song-check/loop | tee build/song-check/loop.log
+      - name: Repeats on the tempo (RATCH, STUTTER, the punch-in STUT) and the FX punch-ins (V10.7.59)
+        run: |
+          set -euo pipefail
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/rep_sync_test.c -lm -o build/song-check/rep-sync
+          build/song-check/rep-sync | tee build/song-check/rep-sync.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/perform_test.c -lm -o build/song-check/perform
+          build/song-check/perform | tee build/song-check/perform.log
       - name: Matrix and track follower regression
         run: |
           set -euo pipefail
