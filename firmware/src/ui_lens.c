@@ -55,7 +55,7 @@ static const nv_t CE_FM6[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("
 static const ng_t CG_FM6[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}, {"PLAY", 0}};
 static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0, 0), NV("KIT 3", 0, 0, 0), NV("KIT 4", 0, 0, 0),
                               NV("SOUND", 0, 1, 2), NV("SOUND 2", 0, 1, 2), NV("SOUND 3", 0, 1, 2), NV("SOUND 4", 0, 1, 2),
-                              NV("LEVELS", 0, 2, 1), NV("LEVELS 2", 0, 2, 1), NV("X-MOD", 0, 3, 1), NV("FILTER", 0, 3, 1),
+                              NV("LEVELS", 0, 2, 1), NV("LEVELS 2", 0, 2, 1), NV("X-MOD", "CROSS MOD", 3, 1), NV("FILTER", 0, 3, 1),
                               NV("STEREO", 0, 3, 1), NV("PLAY", 0, 3, 1)};   /* (codex/coherence: PLAY, was VOICE; in TONE,
                                                          * a kit's one page of it) */
 static const ng_t CG_DRM[] = {{"KIT", 0}, {"SOUND", 0}, {"LEVELS", "LEVEL"}, {"TONE", 0}};
@@ -70,10 +70,10 @@ enum { LV_PAT, LV_BAR, LV_STEP, LV_N };                 /* SEQ's pictures: the b
 static const nv_t CE_SEQ[] = {NV("STEP", 0, 0, LV_BAR), NV("PATTERN", "LENGTH", 1, LV_PAT), NV("RHYTHM", 0, 1, LV_PAT), NV("TRACK", 0, 1, LV_PAT),
                               NV("EUCLID", 0, 2, LV_PAT), NV("MODES", 0, 2, LV_PAT), NV("MUTATE", 0, 2, LV_PAT),
                               NV("PLAYHEADS", 0, 3, LV_PAT), NV("STRETCH", 0, 4, LV_PAT),
-                              NV("COMP", 0, 5, LV_STEP), NV("COMP 2", 0, 5, LV_STEP), NV("AUTOMATION", 0, 6, LV_BAR),
+                              NV("COMP", "STEP FX", 5, LV_STEP), NV("COMP 2", "STEP FX 2", 5, LV_STEP), NV("AUTOMATION", 0, 6, LV_BAR),
                               NV("AUTO LIST", 0, 6, LV_BAR), NV("LYRIC STEP",0,6,LV_BAR),NV("TRACK GEN",0,7,LV_BAR)};
 static const ng_t CG_SEQ[] = {{"STEP", 0}, {"PATTERN", "PAT"}, {"EUCLID", "EUCL"}, {"PLAYHEADS", "HEAD"}, {"STRETCH", "STR"},
-                              {"COMP", 0}, {"AUTO", 0}, {"TRACK GEN", "GEN"}};   /* (codex/coherence: PATTERN, was LENGTH: its
+                              {"STEP FX", "SFX"}, {"AUTO", 0}, {"TRACK GEN", "GEN"}};   /* (V10.7.59: STEP FX, was COMP) */   /* (codex/coherence: PATTERN, was LENGTH: its
                                                          * LENGTH RHYTHM TRACK; TRACK GEN, was GENERATE) */
 enum { FXL_TRACK, FXL_BUSES, FXL_EFFECT };
 static const nv_t CE_FX[] = {NV("FX", "SENDS", 0, FXL_TRACK), NV("DIST", 0, 0, FXL_TRACK), NV("AUTO PAN", 0, 0, FXL_TRACK),
@@ -88,7 +88,7 @@ static const ng_t CG_FX[] = {{"TRACK", "TRK"}, {"BUSES", "BUS"}, {"DELAY", "DLY"
                              {"SLICER", "SLC"}, {"PUNCH IN", "PCH"}, {"MASTER", "MST"}};
 static const nv_t CE_GLO[] = {NV("KEYS", "RAILS", 0, 0), NV("MIXER", 0, 1, 0), NV("SENDS", 0, 1, 0),
                               NV("G.COMP", 0, 2, 3), NV("G.COMP 2", 0, 2, 3), NV("GLOBAL", 0, 3, 1),
-                              NV("SYSTEM", 0, 3, 2), NV("SYSTEM 2", 0, 3, 2), NV("KEY SPLIT", 0, 3, 2), NV("KEY SPLIT 2", 0, 3, 2)};   /* (V10.37) the performing pages first, the
+                              NV("SYSTEM", 0, 3, 2), NV("SYSTEM 2", "MIDI", 3, 2), NV("KEY SPLIT", 0, 3, 2), NV("KEY SPLIT 2", 0, 3, 2)};   /* (V10.37) the performing pages first, the
                                                          * settings (GLOBAL, SYSTEM) last */   /* (0.9.9-seq2f) the global lane; (p2) LIVE first
                                                          * (ui_live.c) */
 static const ng_t CG_GLO[] = {{"LIVE", 0}, {"MIX", 0}, {"G.COMP", "GCMP"}, {"SETUP", 0}};   /* (codex/coherence: SETUP, the
@@ -99,8 +99,8 @@ static const nv_t CE_ENV[] = {NV("ENV", 0, 0, 1), NV("ENV DEST", 0, 0, 1), NV("E
                                                          * (TRACKS DEST, ENV DEST's twin, gone) */
 static const ng_t CG_ENV[] = {{"ENV", 0}, {"STAGE", 0}, {"TRACKS", 0}};
 static const nv_t CE_LFO[] = {NV("MOD", 0, 0, 0), NV("LFO", 0, 1, 1), NV("LFO 2", 0, 1, 1), NV("LFO DEST", 0, 1, 1),
-                              NV("MSEQ", 0, 2, 2), NV("MSEQ 2", 0, 2, 2)};   /* (0.9.18: LFO 2, PHASE) */
-static const ng_t CG_LFO[] = {{"MOD", 0}, {"LFO", 0}, {"MSEQ", 0}};
+                              NV("MSEQ", "MOD SEQ", 2, 2), NV("MSEQ 2", "MOD SEQ 2", 2, 2)};   /* (0.9.18: LFO 2, PHASE) */
+static const ng_t CG_LFO[] = {{"MOD", 0}, {"LFO", 0}, {"MOD SEQ", "MSEQ"}};   /* (V10.7.59: MOD SEQ) */
 static const nv_t CE_SCL[] = {NV("SCL", "KEY", 0, 0),   /* (codex/coherence: KEY, its group's name) */
                                NV("CHORD", 0, 1, 1), NV("SCENE", 0, 2, 2)};   /* (V10.25 SCENE) */
 static const ng_t CG_SCL[] = {{"KEY", 0}, {"CHORD", 0}, {"SCENE", 0}};

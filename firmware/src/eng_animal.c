@@ -55,7 +55,7 @@ static const uint8_t AN_GROUP[16][2] = {{1, 0}, {1, 0}, {1, 1}, {1, 3}, {2, 2}, 
 /* Sparse overrides: the old 5x8 table held 25 empty descriptors. */
 static const param_desc_t AN_DESC[] = {
     {"TOUCH", F_PCT, 0, 127, 100, 0}, {"COUPLE", F_PCT, 0, 127, 0, 0},
-    {"CAP", F_PCT, 0, 127, 64, 0}, {"HYST", F_BIPCT, -64, 63, 0, 0},
+    {"SIZE", F_PCT, 0, 127, 64, 0}, {"STICKY", F_BIPCT, -64, 63, 0, 0},
     {"GROUP", F_INT, 0, 15, 0, 0}, {"FM", F_INT, 0, 40, 22, 0},
     {"CLICK", F_PCT, 0, 127, 100, 0}, {"Q", F_PCT, 0, 127, 0, 0},
     {"DETUNE", F_BIPCT, -64, 63, 0, 0},

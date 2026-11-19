@@ -4745,8 +4745,8 @@ static int test_edit_cycle(void)
     {   /* #97: a DRUM track's lane levels on EDIT > LANES (KICK SNARE CLAP HATCL) and LANES 2 (HATOP TOM RIM BELL) */
         /* (161d079, 2026-10-28: KIT 4, the KEY MAP, after KIT 3 in the KIT group) */
         static const char *const CH_K[] = {"KIT", "KIT 2", "KIT 3", "KIT 4", "SOUND", "SOUND 2", "SOUND 3", "SOUND 4", "LEVELS",
-                                           "LEVELS 2", "X-MOD", "FILTER", "STEREO", "PLAY"};
-        static const char *const TP_K[] = {"SOUND", "LEVELS", "X-MOD"};
+                                           "LEVELS 2", "CROSS MOD", "FILTER", "STEREO", "PLAY"};   /* (V10.7.59: CROSS MOD, was X-MOD) */
+        static const char *const TP_K[] = {"SOUND", "LEVELS", "CROSS MOD"};
         set_engine_of(TSEL, ENGI_DRUM);
         bad += check("0.9.2 EDIT chain (DRUM): KIT (KIT KIT 2 KIT 3 KIT 4) . SOUND (1..4) . LEVELS (LEVELS LEVELS 2) . TONE (X-MOD FILTER STEREO PLAY)",
                      chain_walk(B_EDIT, CH_K, NELEM(CH_K), TP_K, NELEM(TP_K)));
@@ -7855,9 +7855,10 @@ static int test_lente(void)
     /* (2463a3b, 2026-11-04, FIT / SPAN: SEQ > LENGTH > RHYTHM after LENGTH; 92fc1d7, 2026-11-05: the GENERATE tab at the
      * end (LYRIC STEP only on a VOICE track): 14 pages in eight tabs, was 12 in seven) */
     static const char *const CH[14] = {"STEP", "LENGTH", "RHYTHM", "TRACK", "EUCLID", "MODES", "MUTATE", "PLAYHEADS", "STRETCH",
-                                       "COMP", "COMP 2", "AUTOMATION", "AUTO LIST", "TRACK GEN"};   /* (codex/coherence: TRACK
+                                       "STEP FX", "STEP FX 2", "AUTOMATION", "AUTO LIST", "TRACK GEN"};   /* (V10.7.59: STEP FX,
+                                                         * was COMP) (codex/coherence: TRACK
                                                          * GEN, was GENERATE) */
-    static const char *const TP[7] = {"LENGTH", "EUCLID", "PLAYHEADS", "STRETCH", "COMP", "AUTOMATION", "TRACK GEN"};
+    static const char *const TP[7] = {"LENGTH", "EUCLID", "PLAYHEADS", "STRETCH", "STEP FX", "AUTOMATION", "TRACK GEN"};
     int bad = 0, ok;
     uint32_t q, sig;
     ui_power_on();
@@ -7878,7 +7879,7 @@ static int test_lente(void)
           lz_crumb_is("SEQ \xB7 PATTERN \xB7 TRACK");                              /* (TRACK under the PAT tab) */
     turn(EN_SELECT, 6); frames(32);
     ok &= str_eq(cur_page()->title, "COMP") && seq_roll_view(cur_page()) && lz_tab_lit(5) && lz_count_is("10/14") &&
-          lz_crumb_is("SEQ \xB7 COMP \xB7 COMP");
+          lz_crumb_is("SEQ \xB7 STEP FX \xB7 STEP FX");
     turn(EN_SELECT, 1); frames(32);
     ok &= str_eq(cur_page()->title, "COMP 2") && lz_tab_lit(5) && lz_count_is("11/14");
     bad += check("seq2 SEQ: enters at STEP (1/14, eight tabs); LENGTH the roll (seq2b), RHYTHM, TRACK under its tab, COMP the roll, COMP 2 after it", ok);
@@ -7949,7 +7950,7 @@ static int test_lente(void)
         char ti[20];
         go_title("COMP 2"); frame();
         page_title(ti);
-        ok = str_eq(ti, "COMP 2 2/2");
+        ok = str_eq(ti, "STEP FX 2 2/2");
         go_title("PATTERN"); frame();
         page_title(ti);
         ok &= str_eq(ti, "LENGTH 1/3");                 /* (seq2: PATTERN named LENGTH, RHYTHM (2463a3b) and TRACK after it) */
@@ -8797,7 +8798,7 @@ static int test_lofi_rtrg(void)
     bad += check("  ON: the formula from its start", v->ph[0] == 0u && v->ph[1] == 0u);
     go_title("RETRIG");
     bad += check("  the RETRIG page: MATH FLOAT's, RTRG on KNOB 1", str_eq(cur_page()->title, "RETRIG") &&
-                 str_eq(track_desc(t, P_LRTRG)->label, "RTRG"));
+                 str_eq(track_desc(t, P_LRTRG)->label, "RESTART"));
     t->p[P_E1] = RW_BYTE;
     bad += check("  and BYTE's", page_visible(ui.page));
     return bad;
@@ -8899,7 +8900,7 @@ static int test_scl_alltr(void)
     t = TSEL;
     go_title("SCL"); frame();
     d = page_desc(cur_page(), 3u, &vp);
-    ok = d == &GP[G_STRN] && vp == &song.g[G_STRN] && str_eq(d->label, "ALL TR");
+    ok = d == &GP[G_STRN] && vp == &song.g[G_STRN] && str_eq(d->label, "ALL TRACKS");
     song.g[G_STRN] = 0; t->p[P_TRANS] = 0;
     song.rec = 1;                                      /* (recording: the global is no track lock) */
     turn(EN_K4, 1); turn(EN_K4, 1); frame();
@@ -12342,7 +12343,7 @@ static int test_lz_edit(void)
     ui_power_on(); set_engine_of(TSEL, 0); go_title("PLAY"); frame();
     {
         int16_t *hv;
-        ok = str_eq(page_desc(cur_page(), 0, &hv)->label, "POLY") && str_eq(page_desc(cur_page(), 2, &hv)->label, "GL MODE");
+        ok = str_eq(page_desc(cur_page(), 0, &hv)->label, "POLY") && str_eq(page_desc(cur_page(), 2, &hv)->label, "GLIDE TYPE");
     }
     turn(EN_SELECT, 1); frame();
     ok &= str_eq(cur_page()->title, "PLAY 2");
@@ -12441,9 +12442,9 @@ static int test_lz_mod(void)
     turn(EN_SELECT, 1); frame();
     ok &= str_eq(cur_page()->title, "LFO DEST");
     turn(EN_SELECT, 1); frame();
-    ok &= pd_level() == 2u && str_eq(cur_page()->title, "MSEQ") && lz_crumb_is("LFO \xB7 MSEQ \xB7 MSEQ");
+    ok &= pd_level() == 2u && str_eq(cur_page()->title, "MSEQ") && lz_crumb_is("LFO \xB7 MOD SEQ \xB7 MOD SEQ");
     turn(EN_SELECT, 1); frame();
-    ok &= str_eq(cur_page()->title, "MSEQ 2") && lz_crumb_is("LFO \xB7 MSEQ \xB7 MSEQ 2") && lz_count_is("6/6");
+    ok &= str_eq(cur_page()->title, "MSEQ 2") && lz_crumb_is("LFO \xB7 MOD SEQ \xB7 MOD SEQ 2") && lz_count_is("6/6");
     frames(320); press(B_LFO); frame();
     ok &= pd_level() == 0u && str_eq(cur_page()->title, "MOD") && lz_tab_lit(0) && lz_crumb_is("LFO \xB7 MOD \xB7 MOD");
     bad += check("0.9.2 LFO: opens on LFO; MOD . LFO (LFO, LFO 2, LFO DEST) . MSEQ (MSEQ, MSEQ 2) by SELECT; an LFO tap round to MOD", ok);

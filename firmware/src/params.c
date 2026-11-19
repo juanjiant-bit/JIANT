@@ -138,9 +138,9 @@ static const param_desc_t TP[P_COUNT] = {
     [P_REV] = PD("REV", F_PCT, 0, 127, 0),
     [P_VOICE] = PE("POLY", N_VOICE, 0),         /* (codex/coherence: was VOICE, the engine's, the group's and the page's) */
     [P_GLIDE] = PD("GLIDE", F_TIME, 0, 127, 0),
-    [P_GLMODE] = PE("GL MODE", N_GLMODE, 0),    /* (codex/coherence: the glide's MODE) */
-    [P_PRIO] = PE("PRIO", N_PRIO, 0),
-    [P_ALLOC] = PE("ALLOC", N_ALLOC, 0),
+    [P_GLMODE] = PE("GLIDE TYPE", N_GLMODE, 0),    /* (codex/coherence: the glide's MODE) */
+    [P_PRIO] = PE("NOTE PRIO", N_PRIO, 0),
+    [P_ALLOC] = PE("VOICE ORDER", N_ALLOC, 0),
     [P_DETUNE] = PD("UNISON", F_PCT, 0, 127, 40),   /* (codex/coherence) UNISON's detune, how far apart (was DETUNE, a
                                                      * bare number: the engines' DETUNE is another) */
     [P_PAN] = PD("PAN", F_BIPCT, -64, 63, 0),
@@ -167,8 +167,8 @@ static const param_desc_t TP[P_COUNT] = {
     [P_POFS] = PD("PITCH", F_SEMI, -24, 24, 0),   /* its notes PIT semitones up (not on a kit) */
 /* the DRUM engine's lane levels (eng_drum.c, #97): 100 % = the kit as designed (the sound before 1.1) */
 #define LANE(k, l) [P_LN0 + (k)] = PD(l, F_PCT, 0, 127, 127)
-    LANE(0, "KICK"), LANE(1, "SNARE"), LANE(2, "CLAP"), LANE(3, "HATCL"),
-    LANE(4, "HATOP"), LANE(5, "TOM"), LANE(6, "RIM"), LANE(7, "BELL"),
+    LANE(0, "KICK"), LANE(1, "SNARE"), LANE(2, "CLAP"), LANE(3, "HH CLOSED"),
+    LANE(4, "HH OPEN"), LANE(5, "TOM"), LANE(6, "RIM"), LANE(7, "BELL"),
 #undef LANE
     [P_DTYPE] = PE("TYPE", N_DTYPE, 0),         /* (JIANT) DIST: SOFT (as before) HARD FOLD CRUSH RECT AMP */
     [P_DTONE] = PD("TONE", F_BIPCT, -64, 63, 0),   /* .. its tone: darker / brighter */
@@ -208,7 +208,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_SAVE] = PE("SAVE", N_GO, 0),
     [G_ENGSEL] = PE("ENG", N_ENGNAME, 0),
     [G_CLIP] = PD("CLIP", F_PCT, 0, 100, 0),     /* the master clipper: drive x1 .. x4 into the soft clip */
-    [G_CLRSEQ] = PE("CLRSQ", N_GO, 0),
+    [G_CLRSEQ] = PE("CLEAR SEQ", N_GO, 0),
     [G_INITSND] = PE("INIT", N_GO, 0),
     /* the reverb's model on the REVERB page: the id of the old GM drum channel (G_DRCH, inert since 1.0) */
     [G_RTYPE] = PE("TYPE", N_RTYPE, 0),
@@ -223,7 +223,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_DPING] = {"PING", F_ENUM, 0, 1, 0, N_ONOFF},   /* (0.6.90) PING-PONG: the repeats left, right, left .. */
     [G_PFXLEN] = PD("LEN", F_INT, 1, 64, 64),    /* (0.6.99) the punch-in lane: its steps and their size */
     [G_PFXRES] = {"RES", F_ENUM, 0, 2, 1, N_PFXRES},
-    [G_DRTIM] = PE("R TIME", N_DRTIM, 0),           /* (V10.49) the right echo's time, a ratio of TIME (fx.c dly_rate) */
+    [G_DRTIM] = PE("RIGHT TIME", N_DRTIM, 0),           /* (V10.49) the right echo's time, a ratio of TIME (fx.c dly_rate) */
     [G_DDRV] = PD("DRIVE", F_PCT, 0, 100, 0),    /* (snd2) the delay's loop driven: 0 clean as before, 100 x4 into the clip */
     [G_DMOD] = PD("MOD", F_PCT, 0, 127, 0),      /* (0.6.89: 0, the repeats exact copies, by default) */     /* (0.6.86) the delay's drift: WOW + FLUTTER (fx.c dly_wow_adv) */
     [G_RMOD] = PD("MOD", F_PCT, 0, 127, 0),      /* the reverb's modulation depth (ROOM: the combs, SPRING: its wobble) */
@@ -232,8 +232,8 @@ static const param_desc_t GP[G_COUNT] = {
     [G_RFILT] = PD("FILT", F_BIPCT, -64, 63, 0), /* (JIANT 0.3) the reverb's input: darker (low-pass) / brighter (low cut) */
     [G_RWIDE] = PD("WIDE", F_PCT, 0, 127, 0),    /* .. its width: its combs (ROOM) / taps (SPRING) apart, left and right */
     [G_DPIT] = PD("PITCH", F_SEMI, -12, 12, 0),  /* the GRAIN delay: each repeat through two grains this far up / down */
-    [G_DSPRY] = PD("SPRAY", F_PCT, 0, 127, 0),    /* .. their spray: each grain from a random place (0: plain delay) */
-    [G_STRN] = PD("ALL TR", F_INT, -14, 14, 0),  /* (JIANT 0.4) every sequence this many steps up / down its scale (0.6.45:
+    [G_DSPRY] = PD("SCATTER", F_PCT, 0, 127, 0),    /* .. their spray: each grain from a random place (0: plain delay) */
+    [G_STRN] = PD("ALL TRACKS", F_INT, -14, 14, 0),  /* (JIANT 0.4) every sequence this many steps up / down its scale (0.6.45:
                                                   * named ALL TR, was STRN: nobody knew what moved their notes) */
     [G_SLMODE] = PE("MODE", N_SLCR, 0),         /* (JIANT 0.6.3) the SLICER bus (slicer.c) */
     [G_SLPAT] = PD("PAT", F_INT, 1, 16, 1),
@@ -254,7 +254,7 @@ static const param_desc_t GP[G_COUNT] = {
     [G_SLP0 + 14] = PD("PITCH", F_SEMI, -24, 24, 0), [G_SLP15] = PD("PITCH", F_SEMI, -24, 24, 0),
 };
 
-static const param_desc_t LOFI_RTRG = {"RTRG", F_ONOFF, 0, 1, 1, 0};   /* (0.6.12) P_LRTRG on a MATH track (V10.6d: ON its default) */
+static const param_desc_t LOFI_RTRG = {"RESTART", F_ONOFF, 0, 1, 1, 0};   /* (0.6.12) P_LRTRG on a MATH track (V10.6d: ON its default) */
 static const param_desc_t TRK_CHANCE = {"CHANCE", F_PCTINV, 0, 127, 0, 0};   /* (0.6.37) P_TCHAN: 0 = 100 % */
 static const param_desc_t MORPH_DESC = {"MORPH", F_PCT, 0, 127, 0, 0};   /* (0.6.45) P_MORPH */
 static const char *const N_CLEN[] = {"OFF", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15",
@@ -281,7 +281,7 @@ static const param_desc_t ENV2_DESC[4] = {             /* (V10.22) ENV > ENV 2 (
 static const param_desc_t HUM_DESC[3] = {                /* (0.6.87) SEQ > HUMAN: P_HVEL P_HTIM P_HGAT (127 = 0 %) */
     {"HUMAN", F_PCTINV, 0, 127, 127, 0}, {"TIME", F_PCTINV, 0, 127, 127, 0}, {"GATE", F_PCTINV, 0, 127, 127, 0}};   /* (0.6.92:
                                                          * one amount, P_HVEL; TIME and GATE stay stored, 127) */
-static const param_desc_t RECQ_DESC = {"REC Q", F_PCT, 0, 127, 127, 0};   /* (0.6.88) P_HRQ: 100 % on the grid */
+static const param_desc_t RECQ_DESC = {"REC GRID", F_PCT, 0, 127, 127, 0};   /* (0.6.88) P_HRQ: 100 % on the grid */
 static const param_desc_t DRIFT_DESC = {"DRIFT", F_PCTINV, 0, 127, 127, 0};   /* (0.7.8) P_DRIFT: 127 = 0 % */
 static const param_desc_t TVEL_DESC = {"VEL", F_PCT, 0, 127, 127, 0};   /* (after V10.7.2) P_TVEL: 127 = 100 % (core.h) */
 static const param_desc_t WROT_DESC[2] = {               /* (0.7.8) WHEEL's ROTOR: P_WRDEP (127 = 100 %, as before), P_WDUST */

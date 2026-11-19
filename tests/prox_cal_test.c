@@ -148,7 +148,7 @@ int main(void)
     {
         int16_t g[G_COUNT];
         ui_power_on();
-        ok = nav_put(SEC_GLO, "SYSTEM 2");
+        ok = nav_put(SEC_GLO, "MIDI");
         frame();
         memcpy(g, song.g, sizeof g);
         for (i = 0; i < 4u; i++) {

@@ -548,8 +548,8 @@ static const engine_t ENG_FM6 = {
         {"FB", F_INT, -7, 7, 0, 0},
         {"MOD", F_BIPCT, -64, 63, 0, 0},
         {"RATIO", F_INT, -16, 16, 0, 0},
-        {"MEG", F_BIPCT, -64, 63, 0, 0},
-        {"VMOD", F_INT, -7, 7, 0, 0},
+        {"MOD ENV", F_BIPCT, -64, 63, 0, 0},
+        {"VEL MOD", F_INT, -7, 7, 0, 0},
         {"SPREAD", F_PCT, 0, 127, 0, 0},                 /* (codex/coherence) the carriers apart (was DETUNE: OPERATOR 2's
                                                          * is the operator's own) */
         {"SLOT", F_INT, 0, FM6_OWN + FM6_NBANK, 0, N_FM6_PATCH},

@@ -205,7 +205,7 @@ static int drum_muted_t(const track_t *t, uint32_t note) { return dx_lane_muted(
 /* the lane's name (5 characters at most) */
 static const char *drum_lane_name(const track_t *t, uint32_t l)
 {
-    static const char *const N[NLANE] = {"KICK", "SNARE", "CLAP", "HATCL", "HATOP", "TOM", "RIM", "BELL"};
+    static const char *const N[NLANE] = {"KICK", "SNARE", "CLAP", "HH CLOSED", "HH OPEN", "TOM", "RIM", "BELL"};
     (void)t;
     return N[l & (NLANE - 1u)];
 }
