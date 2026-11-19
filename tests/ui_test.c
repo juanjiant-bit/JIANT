@@ -12350,27 +12350,28 @@ static int test_lz_edit(void)
     ui_power_on(); set_engine_of(TSEL, 0); go_title("PLAY"); frame();
     {
         int16_t *hv;
-        ok = str_eq(page_desc(cur_page(), 0, &hv)->label, "POLY") && str_eq(page_desc(cur_page(), 2, &hv)->label, "GLIDE TYPE");
+        ok = str_eq(page_desc(cur_page(), 0, &hv)->label, "POLY") && str_eq(page_desc(cur_page(), 2, &hv)->label, "GLIDE TYPE") &&
+             str_eq(page_desc(cur_page(), 3, &hv)->label, "IMAGE");   /* (V10.7.60: IMAGE on PLAY, at hand) */
     }
+    v = TSEL->p[P_SIMG];
+    turn(EN_K4, 3); frame();                                        /* (V10.7.60) KNOB 4 IMAGE, STEREO's page gone */
+    ok &= TSEL->p[P_SIMG] != v && !nav_put(SEC_EDIT, "STEREO");
     turn(EN_SELECT, 1); frame();
     ok &= str_eq(cur_page()->title, "PLAY 2");
     v = TSEL->p[P_DETUNE];
     turn(EN_K2, 3); frame();
     ok &= TSEL->p[P_DETUNE] != v;
-    v = TSEL->p[P_SIMG];
-    turn(EN_K4, 3); frame();                                        /* (codex/coherence) KNOB 4 IMAGE, STEREO's page gone */
-    ok &= TSEL->p[P_SIMG] != v && !nav_put(SEC_EDIT, "STEREO");
     {
         int16_t *hv;
-        ok &= str_eq(page_desc(cur_page(), 1, &hv)->label, "UNISON") && str_eq(page_desc(cur_page(), 3, &hv)->label, "IMAGE");
-        set_engine_of(TSEL, ENGI_INPUT); frame();                   /* (EXT: no IMAGE, its voice is one) */
-        ok &= str_eq(cur_page()->title, "PLAY 2") && page_desc(cur_page(), 3, &hv)->label[0] == '-';
+        ok &= str_eq(page_desc(cur_page(), 1, &hv)->label, "UNISON") && str_eq(page_desc(cur_page(), 3, &hv)->label, "NOTE PRIO");
+        set_engine_of(TSEL, ENGI_INPUT); go_title("PLAY"); frame();   /* (EXT: no IMAGE, its voice is one) */
+        ok &= str_eq(cur_page()->title, "PLAY") && page_desc(cur_page(), 3, &hv)->label[0] == '-';
     }
     set_engine_of(TSEL, ENGI_DRUM); frame();
     ok &= !nav_put(SEC_EDIT, "PLAY 2") && !nav_put(SEC_EDIT, "FOCUS") && nav_put(SEC_EDIT, "STEREO");
     set_engine_of(TSEL, ENGI_FM6); frame();
     ok &= !nav_put(SEC_EDIT, "FOCUS") && nav_put(SEC_EDIT, "OPERATOR");
-    bad += check("0.9.2 EDIT > PLAY (codex/coherence: was VOICE; POLY, GL MODE): PLAY 2 (ALLOC, UNISON, VEL, IMAGE) after it, not on DRUM; FOCUS on the synths only", ok);
+    bad += check("0.9.2 EDIT > PLAY (codex/coherence: was VOICE; POLY, GL MODE; V10.7.60: IMAGE): PLAY 2 (ALLOC, UNISON, VEL, NOTE PRIO) after it, not on DRUM; FOCUS on the synths only", ok);
     ui_power_on();
     return bad;
 }
@@ -13106,7 +13107,10 @@ static uint32_t coh_key(const page_t *pg, uint32_t k)
 {
     static const uint16_t TRK[4] = {1u + P_LEVEL, 1u + P_PAN, 1u + P_MUTE, 0x200u + G_BPM};
     uint32_t id = pg->id[k];
+    int16_t *cv;
     if (id == 0xFFu || pg->scope == SC_STEP || pg->graph == GR_SLOTS || pg->graph == GR_TOOLS)
+        return 0;
+    if (id == P_SIMG && !page_desc(pg, k, &cv))         /* (V10.7.60: PLAY's IMAGE, none on a kit) */
         return 0;
     if (pg->scope == SC_TRK)
         return TRK[k & 3u];

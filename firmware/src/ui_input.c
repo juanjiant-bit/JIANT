@@ -2236,11 +2236,21 @@ static void presets_turn(int32_t s)
         return;
     }
 
-    if (!ui.home && PAGES[ui.page].fam == FAM_SEQ) {
-        char b[12];
-        cursor_set((int32_t)ui.cursor + s);
-        str_cpy(b, "STEP ", sizeof b);
-        fmt_int(b + 5, (int32_t)ui.cursor + 1);
+    if (!ui.home && PAGES[ui.page].fam == FAM_SEQ) {   /* (V10.7.60, the owner) PRESETS: slow a step, fast a whole bar; the
+                                                         * bar and the step said, on every SEQ page */
+        char b[24];
+        int32_t len = TSEL->p[P_SLEN] > 0 ? TSEL->p[P_SLEN] : 1, d = accel(EN_PRESET, s, len), nb = (len + 15) / 16;
+        if (nb > 1 && (d >= 4 || d <= -4)) {
+            int32_t bar = clamp((int32_t)ui.cursor / 16 + (d > 0 ? 1 : -1), 0, nb - 1);
+            cursor_set(bar * 16 + (int32_t)ui.cursor % 16 < len ? bar * 16 + (int32_t)ui.cursor % 16 : len - 1);
+        } else
+            cursor_set((int32_t)ui.cursor + s);
+        str_cpy(b, "BAR ", sizeof b);
+        fmt_int(b + 4, (int32_t)ui.cursor / 16 + 1);
+        str_cpy(b + str_len(b), "/", sizeof b - str_len(b));
+        fmt_int(b + str_len(b), nb);
+        str_cpy(b + str_len(b), "  STEP ", sizeof b - str_len(b));
+        fmt_int(b + str_len(b), (int32_t)ui.cursor + 1);
         ui_message(b);
         return;
     }

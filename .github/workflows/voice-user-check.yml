@@ -167,6 +167,8 @@ jobs:
           build/song-check/macro-mx | tee build/song-check/macro-mx.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/fill_test.c -lm -o build/song-check/fill
           build/song-check/fill | tee build/song-check/fill.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/image_test.c -lm -o build/song-check/image
+          build/song-check/image | tee build/song-check/image.log
       - name: Matrix and track follower regression
         run: |
           set -euo pipefail

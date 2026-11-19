@@ -2412,6 +2412,35 @@ static void (*const volatile TRACK_FOLLOW)(const track_t *, const int32_t *, uin
 
 /* one synth part into the dry mix and the sends; a part with no voice sounding costs
  * the LFO tick and a cleared buffer only (after the DIST tail has run out) */
+/* (V10.7.60, the owner) IMAGE on a part that is not POLY (one voice: nothing to place apart): a spread, the part's sound
+ * through three first-order allpasses (its phase turned, a part its own corners) as a side, + left, - right: wide in
+ * stereo, gone in a mono sum (L + R the dry part as it was). No delay line (the RAM): 4 words a part. Its level the
+ * part's, ramped as the mix's (lq .. dl); w 0..127 */
+static int32_t spr_z[NTRK][4];
+static uint8_t spr_w[NTRK];
+static __attribute__((noinline)) void mix_spread(uint32_t ti, const int32_t *b, int32_t *ol, int32_t *or_, uint32_t n,
+                                                 int32_t lq, int32_t dl, uint32_t w)
+{
+    static const int16_t A[NTRK][3] = {{-26000, 9000, 22000}, {-24000, 12000, 20000}, {-28000, 6000, 24000},
+                                       {-22000, 14000, 18000}, {-27000, 8000, 23000}, {-25000, 11000, 21000}};
+    const int16_t *c = A[ti % NTRK];
+    int32_t *z = spr_z[ti % NTRK], g0 = spr_w[ti], g1 = (int32_t)w;
+    uint32_t i, k;
+    spr_w[ti] = (uint8_t)w;
+    for (i = 0; i < n; i++, lq += dl) {
+        int32_t x = ((b[i] >> 2) * (lq >> 8)) >> 10, y = x, g = g0 + (g1 - g0) * (int32_t)i / (int32_t)n;
+        for (k = 0; k < 3u; k++) {                      /* y = a x + z; z = x - a y (the allpass, Q15) */
+            int32_t o = ((c[k] * y) >> 15) + z[k];
+            z[k] = y - ((c[k] * o) >> 15);
+            y = o;
+        }
+        y = (y * g) >> 8;                               /* (127: about half the dry's level as a side) */
+        ol[i] += y;
+        or_[i] -= y;
+    }
+    if (!w && !g0)
+        z[0] = z[1] = z[2] = 0;
+}
 static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t n)   /* (0.6.78: inlined in both
                                                          * copies of mix_part_m, flash and RAM) */
 {
@@ -2513,6 +2542,11 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
                 sr[i] += mulq15(xs, r);
             ol[i] += (x * gl) >> 12;
             or_[i] += (x * gr) >> 12;
+        }
+        if (syn_spr[ti] || spr_w[ti]) {                 /* (V10.7.60) IMAGE off POLY (through a register: the RAM code's reach) */
+            void (*f)(uint32_t, const int32_t *, int32_t *, int32_t *, uint32_t, int32_t, int32_t, uint32_t) = mix_spread;
+            FM1_OPAQUE(f);
+            f(ti, b, ol, or_, n, lq0, dl, syn_spr[ti]);
         }
         uint32_t st = ti;                               /* (0.8.0) the stem the last of the mix goes to */
         if (uin && !t->p[P_MUTE] && !((trk_hush >> ti) & 1u)) {   /* (0.7.5) the host's audio, in its stem too */

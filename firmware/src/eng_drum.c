@@ -427,15 +427,18 @@ static int32_t dx_img_k(const track_t *t)
  * (tf_sides) and fx.c drum_mix; narrowed by DIST as the kit's; slewed a little a block (no jump when turned). Its
  * width this block, per part: syn_img (0 off) */
 static uint8_t syn_img[NTRK], syn_cur[NTRK];
+static uint8_t syn_spr[NTRK];   /* (V10.7.60, the owner) IMAGE off POLY: the part's spread (fx.c mix_spread), 0 none */
 static __attribute__((noinline)) void drum_side_begin(const track_t *t, uint32_t n)
 {
     int32_t img = clamp(t->p[P_DXIMG], 0, 127), k;
     if (t->engine % NENGINES != ENGI_DRUM) {             /* (V10.49) a synth part */
         uint32_t ti = (uint32_t)(t - trk) % NTRK, j;
-        int32_t want = t->p[P_VOICE] == V_POLY && t->engine != ENGI_INPUT ? 127 - clamp(t->p[P_SIMG], 0, 127) : 0, cur = syn_cur[ti], d = clamp(t->p[P_DIST], 0, 64);
+        int32_t want = t->engine != ENGI_INPUT ? 127 - clamp(t->p[P_SIMG], 0, 127) : 0, cur = syn_cur[ti], d = clamp(t->p[P_DIST], 0, 64);
+        int poly = t->p[P_VOICE] == V_POLY;
         cur += clamp(want - cur, -4, 4);
         syn_cur[ti] = (uint8_t)cur;
-        syn_img[ti] = (uint8_t)(n <= CTL ? (d ? cur * (256 - d * 3) >> 8 : cur) : 0);
+        syn_img[ti] = (uint8_t)(n <= CTL && poly ? (d ? cur * (256 - d * 3) >> 8 : cur) : 0);
+        syn_spr[ti] = (uint8_t)(n <= CTL && !poly ? cur : 0);   /* (V10.7.60) MONO / LEGATO / UNISON: a spread instead */
         if (syn_img[ti]) {
             dx_xon |= 1u;
             for (j = 0; j < n; j++)
