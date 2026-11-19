@@ -328,6 +328,24 @@ static void mom_poll(void)                              /* every pass */
 static void undo_ui(void);
 /* the armed layer lets go (its button up): FX's macros snap back (FX LATCH: they stay); one that
  * opened, or a combo: KNOB 1..4 quiet for a while (#39: the knob still turning is not the page's) */
+/* (V10.7.59, the owner) the FX layer's KNOB 1..4 are the MACROS (M1..M4, their routes on LFO > MACROS): turned with FX
+ * held, from what they were; FX let go, back there (FX LATCH: they stay, OCT- ALL OFF puts them back) */
+static uint8_t fx_mb[4], fx_mon;
+static void fx_macro_turn(uint32_t k, int32_t s)
+{
+    if (!fx_mon) {
+        memcpy(fx_mb, macro_v, sizeof fx_mb);
+        fx_mon = 1;
+    }
+    macro_v[k & 3u] = (uint8_t)clamp(macro_v[k & 3u] + accel(EN_K1 + k, s, 127), 0, 127);
+}
+static void fx_macro_back(void)
+{
+    if (fx_mon) {
+        memcpy(macro_v, fx_mb, sizeof fx_mb);
+        fx_mon = 0;
+    }
+}
 static __attribute__((noinline)) void layer_let_go(uint32_t quiet)
 {
     if (ui.ly == LAYER_SAVE && lys.nqc >= 2u)           /* SAVE: two or more sections tapped: a quick chain */
@@ -336,8 +354,10 @@ static __attribute__((noinline)) void layer_let_go(uint32_t quiet)
         (void)song_select(lys.song - 1u);
     lys.nqc = 0;
     lys.song = 0;
-    if (ui.ly == LAYER_FX && !perf_latch_on)
+    if (ui.ly == LAYER_FX && !perf_latch_on) {
         perf_k[0] = perf_k[1] = perf_k[2] = perf_k[3] = 0;
+        fx_macro_back();
+    }
     if (ui.ly == LAYER_FX && (ui.ly_t0 & LY_OPEN) && !(ui.ly_t0 & (LY_DEAD | LY_COMBO)) &&
         !lys.used && !kb_layer && layer_allowed()) {
         fx_lock = 1;                                    /* (0.6.44) held open, nothing used, let go: locked open;
@@ -803,10 +823,8 @@ static void layer_knob(uint32_t k, int32_t s)
 {
     uint32_t l = layer_open();
     lys.used = 1;
-    if (l == LAYER_FX) {                                /* perform.c perf_k, not recorded */
-        if (k == 3u)
-            s = -s;                                     /* DEPTH (100 - perf_k[3]) rises to the right (#40: it fell) */
-        perf_k[k] = (int8_t)clamp(perf_k[k] + accel(EN_K1 + k, s, k ? 100 : 200), k ? 0 : -100, 100);   /* (#126) */
+    if (l == LAYER_FX) {                                /* (V10.7.59) the MACROS (was perform.c's FILTER CRUSH THROW DEPTH) */
+        fx_macro_turn(k, s);
     } else if (l == LAYER_GLO) {                        /* T1..T4 LEVEL (T5, T6 selected: T3..T6), recorded as on MIXER */
         track_t *t = &trk[k + trk_base4()];
         int16_t *vp = &t->p[P_LEVEL];
@@ -875,6 +893,7 @@ static uint32_t layer_oct(uint32_t pressed, uint32_t oct)
     if ((mine & 1u) && lys.l == LAYER_FX) {             /* OCT- (FX LATCH): every effect and macro off */
         perf_latched = 0;
         perf_k[0] = perf_k[1] = perf_k[2] = perf_k[3] = 0;
+        fx_macro_back();
         ui_message("FX ALL OFF");
     }
     if (lys.l == LAYER_SAVE && (mine & 2u)) {           /* SAVE + OCT+: STORE the music into the section playing */
@@ -1193,19 +1212,19 @@ static __attribute__((noinline)) void layer_cards(uint32_t l)
     char val[12];
     const char *unit;
     uint32_t c;
-    if (l == LAYER_FX) {                                /* FILTER CRUSH THROW DEPTH */
-        int32_t m = perf_k[0];
-        fmt_int(val, m < 0 ? -m : m);
-        draw_column(0, "FILTER", m ? val : "OFF", m < 0 ? "LP" : m > 0 ? "HP" : "", m ? VAL(0u) : T_DIM, (m + 100) * 5,
-                    ICON_CUTOFF);
-        fmt_int(val, perf_k[1]);
-        draw_column(1, "CRUSH", perf_k[1] ? val : "OFF", perf_k[1] ? "%" : "", perf_k[1] ? VAL(1u) : T_DIM,
-                    perf_k[1] * 10, ICON_BITS);
-        fmt_int(val, perf_k[2]);
-        draw_column(2, "THROW", perf_k[2] ? val : "OFF", perf_k[2] ? "%" : "", perf_k[2] ? VAL(2u) : T_DIM,
-                    perf_k[2] * 10, ICON_DELAY);
-        fmt_int(val, 100 - perf_k[3]);
-        draw_column(3, "DEPTH", val, "%", VAL(3u), (100 - perf_k[3]) * 10, ICON_MIX);
+    if (l == LAYER_FX) {                                /* (V10.7.59) M1..M4, named by their first route's destination */
+        for (c = 0; c < 4u; c++) {
+            uint32_t r, d = 0;
+            char nm[8] = {'M', (char)('1' + c), 0};
+            for (r = 0; r < MX_N && !d; r++)
+                if ((mx_r[r].m & 3u) == c && mx_r[r].d && mx_r[r].a)
+                    d = mx_r[r].d;
+            if (d && d < NELEM(N_MDST))
+                str_cpy(nm, N_MDST[d], sizeof nm);
+            fmt_int(val, macro_v[c] * 100 / 127);
+            draw_column(c, nm, macro_v[c] ? val : "OFF", macro_v[c] ? "%" : "", macro_v[c] ? VAL(c) : T_DIM,
+                        macro_v[c] * 1000 / 127, ICON_MIX);
+        }
     } else if (l == LAYER_GLO) {                        /* T1..T4 LEVEL (T5, T6 selected: T3..T6; the icon; muted: dim) */
         for (c = 0; c < 4u; c++) {
             uint32_t t = c + trk_base4();

@@ -3,6 +3,8 @@
  * Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* Felucca UI input: LEDs, knobs and buttons, SEQ step entry, panel setup. */
 #include "ui_name.c"                                    /* NAME: naming user presets and projects */
+static uint8_t fx_mon;                                  /* (V10.7.59) ui_layer.c: the FX layer moved the MACROS */
+static void fx_macro_back(void);
 /* ----------------------------------------------------------- LEDs --- */
 /* The LED picture is built off-line and copied one byte per column: clearing
  * and relighting would let the 10 kHz scan catch the dark gap and flicker. */
@@ -356,7 +358,7 @@ static __attribute__((noinline)) void ui_leds(void)
         led_put(nl, panel.btn[FAM_BTN[fam]], 1);
     if ((k = arp_led()) != 2u && (!ui.layer || layer_btn() != B_ARP))
         led_put(nl, panel.btn[B_ARP], FAM_BTN[fam] == B_ARP ? !k : (int)k);   /* (on ARP's page: dark flashes) */
-    if (!ui.layer && (perf_latched || perf_k[0] || perf_k[1] || perf_k[2] || perf_k[3]))
+    if (!ui.layer && (perf_latched || fx_mon || perf_k[0] || perf_k[1] || perf_k[2] || perf_k[3]))
         led_put(nl, panel.btn[B_FX], 1);                /* FX LATCH: lit while an effect or a macro is on */
     if (ui.layer)                                       /* the layer's button breathes while its map is up */
         led_put(nb, panel.btn[layer_btn()], 1);
@@ -2717,6 +2719,7 @@ static void ui_input_frame(void)
         perf_kill = 1;                                  /* (effects off until their keys are let go) */
         perf_latched = 0;                               /* (FX LATCH: the latched ones and the macros off) */
         perf_k[0] = perf_k[1] = perf_k[2] = perf_k[3] = 0;
+        fx_macro_back();                                /* (V10.7.59: the MACROS as before the FX layer) */
     }
     else if (!kb_layer)
         perf_kill = 0;

@@ -188,6 +188,8 @@ static void ui_power_on(void)
         sing_init();                              /* (0.9.0: as felucca_init, VOICE's English generator words) */
     memset(trk, 0, sizeof trk);
     memset(&song, 0, sizeof song);
+    memset(macro_v, 0, sizeof macro_v); fx_mon = 0;   /* (V10.7.59: the macros at power-on, the FX layer's knobs) */
+    mx_defaults();
     scn_on = 0; scn_keys = 0;                     /* (V10.25: SCENE off at power-on, its roles the defaults) */
     memset(eu, 0, sizeof eu);                     /* (EUCLID / MUTATE: the session's, none at power-on) */
     ndg_step = 0;
@@ -4264,11 +4266,11 @@ static int test_layer(void)
     usb.config = 1; mo = mo_w;
     btn_down(B_FX); key_down(white(15)); frame();
     ok = ui.layer == LAYER_FX && !gates() && mo_w == mo && !perf_held && (kb_layer >> white(15)) & 1u;
-    turn(EN_K4, -40);
-    ok &= perf_k[3] == 40;
+    turn(EN_K4, 40);
+    ok &= macro_v[3] > 0;                                /* (V10.7.59: KNOB 4 is M4) */
     key_up(white(15)); btn_up(B_FX); frame();
-    bad += check("FX + G5: nothing held, silent, no MIDI; KNOB 4 turns; FX let go: K4 back to 0",
-                 ok && !perf_held && !ui.layer && !perf_k[3] && mo_w == mo);
+    bad += check("FX + G5: nothing held, silent, no MIDI; KNOB 4 (M4) turns; FX let go: M4 back to 0",
+                 ok && !perf_held && !ui.layer && !macro_v[3] && mo_w == mo);
     /* REVERB > TYPE (FX family, global): ROOM / SPRING on KNOB 1, kept by a project */
     ui_power_on();
     go_title("REVERB");
@@ -4312,13 +4314,14 @@ static int test_layer(void)
         int16_t atk = TSEL->p[P_ATK];
         uint32_t ev = motion.count;
         btn_down(B_FX); frame();
-        turn(EN_K1, -12); turn(EN_K2, 30);
-        ok = perf_k[0] == -12 && perf_k[1] == 30 && TSEL->p[P_ATK] == atk && motion.count == ev && ui.layer == LAYER_FX;
+        turn(EN_K1, 12); turn(EN_K2, 30);
+        ok = macro_v[0] && macro_v[1] && TSEL->p[P_ATK] == atk && motion.count == ev && ui.layer == LAYER_FX;   /* (V10.7.59:
+                                                         * the MACROS) */
         turn(EN_PRESET, 3);
         ok &= user_of(TSEL) == UP_SLOTS && TSEL->preset == trk[0].preset;
         btn_up(B_FX); frame();
         bad += check("FX + KNOB 1 / 2: the macros, not ATK, not recorded; FX let go: back to 0, no tap",
-                     ok && !perf_k[0] && !perf_k[1] && str_eq(cur_page()->title, "ENV"));
+                     ok && !macro_v[0] && !macro_v[1] && str_eq(cur_page()->title, "ENV"));
     }
     song.rec = 0; song.playing = 0;
     /* buttons in the layer: PLAY works, SAVE, HOME, a page button are swallowed */
@@ -7395,7 +7398,8 @@ static void rc_take(rc_state_t *st)
         st->mot[i] = motion_count(&trk[i]);
     }
     memcpy(st->g, song.g, sizeof st->g);
-    memcpy(st->k, perf_k, sizeof st->k);
+    {   uint32_t j; for (j = 0; j < 4u; j++) st->k[j] = (int8_t)macro_v[j]; }   /* (V10.7.59: the FX layer's knobs are
+                                                         * the MACROS) */
     st->sel = song.sel;
     st->home = ui.home;
     st->page = ui.page;
@@ -7411,7 +7415,7 @@ static void rc_enc(uint32_t role, int32_t s, int late)
  * the detents come after the reads. a: the state with the layer open, b: after it closed */
 static void rc_run(uint32_t lb, uint32_t mode, uint32_t k, uint32_t pg, int late, rc_state_t *a, rc_state_t *b)
 {
-    int32_t d = (lb == B_GLO || (lb == B_FX && k == 3u)) ? -1 : 1;   /* (GLO LEVEL, FX DEPTH: room to move) */
+    int32_t d = lb == B_GLO ? -1 : 1;                   /* (GLO LEVEL: room to move; V10.7.59 FX: the MACROS, up from 0) */
     uint32_t i;
     ui_power_on();
     if (pg < NPAGES) { ui.home = 0; ui.page = (uint8_t)pg; page_entered(); }
@@ -7557,7 +7561,7 @@ static int test_layer_knob_race(void)
                     }
                     ok = !memcmp(&a0, &a1, sizeof a0) && !memcmp(&b0, &b1, sizeof b0) &&
                          lk_same(LL[l]) && song.sel == 0u &&
-                         !perf_k[0] && !perf_k[1] && !perf_k[2] && !perf_k[3];
+                         !macro_v[0] && !macro_v[1] && !macro_v[2] && !macro_v[3];
                     if (LL[l] == LAYER_FX)                  /* the layer's own control moved */
                         ok &= a1.k[k] == 3;
                     else if (LL[l] == LAYER_GLO)
@@ -7610,12 +7614,12 @@ static int test_layer_knob_race(void)
         for (i = 0; i < 5u; i++) { rc_enc(EN_K1, 1, 1); frame(); }
         frame();
         btn_up(B_FX); frames(400);
-        ok = perf_k[0] == 5 && *vp == c;
+        ok = macro_v[0] == 5 && *vp == c;
         btn_down(B_FX); frames(560); press(B_OCTDN); btn_up(B_FX); frames(400);
-        ok &= !perf_k[0] && *vp == c;
+        ok &= !macro_v[0] && *vp == c;
     }
     fx_latch = PREF_ACCEL_OFF;
-    bad += check("  FX LATCH: FILTER stays after FX is let go, HOME's KNOB 1 never moves; FX + OCT- turns it off", ok);
+    bad += check("  FX LATCH: M1 stays after FX is let go, HOME's KNOB 1 never moves; FX + OCT- puts it back (V10.7.59)", ok);
     /* no layer: a late detent is HOME's KNOB 1's, once (the next pass) */
     ui_power_on();
     go_home(); frames(64);
@@ -9448,11 +9452,12 @@ static int test_fx_latch(void)
     uint32_t lpf = white(3), m1 = black(0);
     ui_power_on();
     btn_down(B_FX); frame();
-    turn(EN_K4, 5);  ok = perf_k[3] == 0;                         /* DEPTH 100 %: right stays at 100 */
-    turn(EN_K4, -30); ok &= perf_k[3] == 30;                      /* left: 70 % */
-    turn(EN_K4, 10); ok &= perf_k[3] == 20;                       /* right: 80 % */
+    turn(EN_K4, -5); ok = macro_v[3] == 0;                        /* (V10.7.59: M4) 0: left stays at 0 */
+    turn(EN_K4, 30); ok &= macro_v[3] > 0;                        /* right: up */
+    {   uint32_t m = macro_v[3];
+        turn(EN_K4, -5); ok &= macro_v[3] < m; }                  /* left: down */
     btn_up(B_FX); frame();
-    bad += check("#40 FX + KNOB 4: DEPTH rises to the right, falls to the left", ok && !perf_k[3]);
+    bad += check("#40 FX + KNOB 4: M4 rises to the right, falls to the left; FX let go: back", ok && !macro_v[3]);
     /* OFF (the default; a byte older settings leave 0) */
     ui_power_on();
     ok = !(fx_latch & 1u);
@@ -9468,9 +9473,9 @@ static int test_fx_latch(void)
     ok = perf_latched == PF_BIT(PF_REV) && !perf_held && ui.layer == LAYER_FX && str_eq(layer_head(), "[FX] LATCH") &&
          (layer_leds(0) >> lpf) & 1u;
     btn_up(B_FX); frame();
-    ok &= perf_latched == PF_BIT(PF_REV) && perf_k[1] == 30 && !ui.layer;
+    ok &= perf_latched == PF_BIT(PF_REV) && macro_v[1] > 0 && !ui.layer;
     ok &= perf_begin(CTL) && (perf_act & PF_BIT(PF_REV));                 /* it runs with nothing held */
-    bad += check("  FX LATCH ON: FX + B3 latches LPF, CRUSH stays at 30 after FX is let go", ok);
+    bad += check("  FX LATCH ON: FX + B3 latches REVERSE, M2 stays after FX is let go", ok);
     ui_leds();
     memset(led_pos, 0xFF, sizeof led_pos);
     led_pos[panel.btn[B_FX]] = 0u << 3 | 1u;
@@ -9485,17 +9490,17 @@ static int test_fx_latch(void)
     btn_down(B_FX); frame(); turn(EN_K1, -40);
     ok = song.octave == 0 && oct_leds() == 1u;
     btn_down(B_OCTDN); frame(); btn_up(B_OCTDN); frame();
-    ok &= !perf_latched && !perf_k[0] && !perf_k[1] && song.octave == 0 && msg_is("FX ALL OFF");
+    ok &= !perf_latched && !macro_v[0] && !macro_v[1] && song.octave == 0 && msg_is("FX ALL OFF");
     btn_up(B_FX); frame();
     bad += check("  FX + OCT-: every latched effect and macro off (no octave)", ok);
     /* the quick combo: FX down and OCT- before HOLD, nothing else touched (it was nobody's: no ALL OFF, no octave) */
     btn_down(B_FX); key_down(lpf); frame(); key_up(lpf); frame(); turn(EN_K2, 20); btn_up(B_FX); frame();
     frames(400);
-    ok = perf_latched == PF_BIT(PF_REV) && perf_k[1] == 20 && !ui.layer;
+    ok = perf_latched == PF_BIT(PF_REV) && macro_v[1] > 0 && !ui.layer;
     btn_down(B_FX); frame(); btn_down(B_OCTDN); frame();
     ok &= ui.layer == LAYER_FX && song.octave == 0;               /* (a combo: the map at once) */
     btn_up(B_OCTDN); frame();
-    ok &= !perf_latched && !perf_k[1] && song.octave == 0 && msg_is("FX ALL OFF");
+    ok &= !perf_latched && !macro_v[1] && song.octave == 0 && msg_is("FX ALL OFF");
     {   uint32_t h = ui.home, pg = ui.page;
         btn_up(B_FX); frame();
         ok &= !ui.layer && ui.home == h && ui.page == pg;   /* (no tap: no page) */
@@ -9560,9 +9565,9 @@ static int test_fx_latch(void)
         ok = fx_lock && ui.layer == LAYER_FX;
         key_down(lpf); frame(); key_up(lpf); frame();
         turn(EN_K2, 10);
-        ok &= perf_latched == PF_BIT(PF_REV) && perf_k[1] == 10 && ui.layer == LAYER_FX;
+        ok &= perf_latched == PF_BIT(PF_REV) && macro_v[1] > 0 && ui.layer == LAYER_FX;
         press(B_OCTDN);
-        ok &= !perf_latched && !perf_k[1] && song.octave == 0;
+        ok &= !perf_latched && !macro_v[1] && song.octave == 0;
         key_down(lpf); frame(); key_up(lpf); frame();
         press(B_FX); frames(64);
         ok &= !fx_lock && !ui.layer && perf_latched == PF_BIT(PF_REV) && ui.home;
@@ -9771,10 +9776,10 @@ static int test_knob_accel(void)
                 fm1_ms += GAP[c] - 16u;                         /* (frame() adds 16) */
                 frame();
             }
-            got[c] = perf_k[0];
+            got[c] = macro_v[0];                            /* (V10.7.59: KNOB 1 is M1) */
             btn_up(B_FX); frames(400);
         }
-        printf("  #126 FX FILTER, 12 detents: ON 10 ms %d, OFF %d, ON 70 ms %d, ON 6 right 6 left %d\n", (int)got[0],
+        printf("  #126 FX M1, 12 detents: ON 10 ms %d, OFF %d, ON 70 ms %d, ON 6 right 6 left %d\n", (int)got[0],
                (int)got[1], (int)got[2], (int)got[3]);
         ok = got[0] >= 50 && got[1] == 12 && got[2] == 12 && got[3] == 0;
         ui_power_on(); ui_prefs = 0;
@@ -10207,8 +10212,11 @@ static int test_chord_glide(void)
 {
     int bad = 0, ok;
     track_t *t;
-    uint32_t i, k, ages[NVOICE], nact = 0, fresh = 0, fading = 0, rel = 0;
+    uint32_t i, k, ages[NVOICE], nact = 0, fresh = 0, fading = 0, rel = 0, vp0 = vpol_on;
     ui_power_on();
+    vpol_on = 0;                                        /* (V10.7.59: no audio rendered here, the tails' level unknown: VPOL
+                                                         * would let them go at once; it passed while an earlier test left
+                                                         * LOAD ECO on, VPOL off) */
     t = &trk[0];
     set_engine_of(t, ENGI_ANALOG); apply_preset_to(t, 1); t->engine = t->eng_req;
     t->p[P_VOICE] = V_POLY; t->p[P_SLEN] = 4; t->p[P_SGATE] = 120; t->p[P_SUS] = 120;
@@ -10248,6 +10256,8 @@ static int test_chord_glide(void)
         else if (t->v[k].active && t->v[k].stage == 3u) rel++;   /* (C5 left: the nearest new note is C5 itself) */
     }
     ok = nact == 3u && rel == 1u;
+    if (!ok) printf("  chord glide 4->3: %u held, %u releasing\n", nact, rel);
+    vpol_on = vp0;
     bad += check("chord glide: 4 -> 3 notes, the one left goes to its nearest new note as it is released", ok);
     transport_req = 2; ui_input();
     for (i = 0; i < 40u; i++) events_block(CTL);
@@ -11099,8 +11109,8 @@ static int test_bpm_lock(void)
     turn(EN_SELECT, -1);
     ok &= str_eq(cur_page()->title, "GLOBAL");
     go_home(); frame(); turn(EN_SELECT, 1);
-    ok &= ui.home && !ui.confirm && home_level() == 0u && home_set();   /* (0.9.2: ECO MACROS BEING ROUTES GEN ..) */
-    turn(EN_SELECT, 3);
+    ok &= ui.home && !ui.confirm && home_level() == 1u && !home_set();   /* (V10.7.59: ECO BEING ROUTES GEN ..) */
+    turn(EN_SELECT, 2);
     ok &= ui.home && ui.confirm == CF_DICE_ALL && song.g[G_BPM] == b0;   /* (0.6.69) HOME: GEN */
     press(B_OCTDN); frame(); ok &= !ui.confirm;
     go_title("EDIT 1"); frame(); turn(EN_SELECT, 1);
@@ -12165,30 +12175,26 @@ static int test_lz_home(void)
     uint32_t c, k;
     ui_power_on(); frame();
     ok = ui.home && lz_on() && lz_fam() == LZ_HOME && home_level() == 0u && !home_set() && lz_tab_lit(0) && lz_tabs() == 3u &&
-         lz_crumb_is("HOME \xB7 ECO \xB7 ECO") && lz_count_is("1/7");   /* (seven pages, as the n/7 below; the "1/8" came
+         lz_crumb_is("HOME \xB7 ECO \xB7 ECO") && lz_count_is("1/6");   /* (V10.7.59: MACROS gone, six) */   /* (seven pages, as the n/7 below; the "1/8" came
                                                          * with e147a98's import, 2026-11-04, the rest of the test says 7) */
     press(B_HOME); frame();                                         /* a HOME tap: BEING (the next group) */
     ok &= ui.home && home_level() == 1u && !home_set() && lz_tab_lit(1) && lz_crumb_is("HOME \xB7 BEING \xB7 BEING") &&
-          lz_count_is("3/7");
-    turn(EN_SELECT, -1); frame();                                   /* SELECT left: MACROS */
-    ok &= home_level() == 0u && home_set() && home_macros() && lz_crumb_is("HOME \xB7 ECO \xB7 MACROS") && lz_count_is("2/7");
+          lz_count_is("2/6");
     k = macro_v[0];
-    turn(EN_K1, 3); frame();
-    ok &= macro_v[0] == (uint8_t)(k + 3u) && !strncmp(ui.col[0], "M1|", 3);
     c = (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
-    turn(EN_SELECT, -1); frame();                                   /* ECO: the HOME knobs */
+    turn(EN_SELECT, -1); frame();                                   /* SELECT left: ECO, the HOME knobs (V10.7.59: no MACROS) */
     turn(EN_K1, 1); frame();
     ok &= !home_set() && home_level() == 0u && (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] != c &&
-          macro_v[0] == (uint8_t)(k + 3u);
+          macro_v[0] == (uint8_t)k && lz_crumb_is("HOME \xB7 ECO \xB7 ECO");
     turn(EN_SELECT, -1); frame();                                   /* (no wrap) */
     ok &= home_level() == 0u && !home_set() && ui.home && !ui.confirm;
-    bad += check("0.9.2 HOME: ECO MACROS BEING .. one chain by SELECT (no wrap), a HOME tap the next group; tabs, crumb, n/7", ok);
-    turn(EN_SELECT, 3); frame();                                    /* ROUTES */
-    ok = home_level() == 1u && home_set() && home_macros() && lz_crumb_is("HOME \xB7 BEING \xB7 ROUTES") && lz_count_is("4/7");
+    bad += check("0.9.2 HOME: ECO BEING .. one chain by SELECT (no wrap), a HOME tap the next group; tabs, crumb, n/6 (V10.7.59: no MACROS)", ok);
+    turn(EN_SELECT, 2); frame();                                    /* ROUTES */
+    ok = home_level() == 1u && home_set() && home_macros() && lz_crumb_is("HOME \xB7 BEING \xB7 ROUTES") && lz_count_is("3/6");
     fm1_ms += 1000u;
     turn(EN_SELECT, 1); frame();                                    /* GEN 1 */
     ok &= gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(2) && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 1") &&
-          lz_count_is("5/7");
+          lz_count_is("4/6");
     k = gp.genre;
     {   /* (V10.7.22, the owner) PRESETS on GEN: the sound, as on every page but SEQ's; the GENRE only by KNOB 1 */
         uint32_t pr = TSEL->preset, en = TSEL->eng_req;
@@ -12199,7 +12205,7 @@ static int test_lz_home(void)
     ok &= gp.genre == (k == GEN_EXPLORE ? 0u : k == NGENRE ? GEN_EXPLORE : k + 1u);   /* KNOB 1: the GENRE, its order
                                                          * (0.8.6: EXPLORE, RANDOM, the genres) */
     turn(EN_SELECT, 1); frame();
-    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 2") && lz_count_is("6/7");
+    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 2") && lz_count_is("5/6");
     turn(EN_SELECT, -2); frame();                                   /* back: ROUTES, GEN shut */
     ok &= !ui.confirm && ui.home && home_level() == 1u && home_set();
     turn(EN_SELECT, 1); frame();
@@ -12207,7 +12213,7 @@ static int test_lz_home(void)
     press(B_HOME); frame();                                         /* a HOME tap on GEN: round to ECO */
     ok &= !ui.confirm && ui.home && home_level() == 0u && !home_set();
     bad += check("0.9.2 HOME: ROUTES, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: ECO", ok);
-    turn(EN_SELECT, 5); frame();                                    /* GEN 2 */
+    turn(EN_SELECT, 4); frame();                                    /* GEN 2 */
     ok = gen_on() && gen_page() == 1u;
     press(B_ENV); frame();                                          /* not modal: a section's button leaves it */
     ok &= !ui.confirm && !ui.home && str_eq(cur_page()->title, "ENV");
@@ -12221,26 +12227,26 @@ static int test_lz_home(void)
     bad += check("0.9.2 HOME: GEN is HOME's pages, not modal (ENV leaves it, HOME comes back to GEN 2, ALGORITHM works); OCT- ECO", ok);
     {   /* (V10.8, testers) GEN's GENRE kept when GEN is left and opened again */
         uint32_t g0;
-        turn(EN_SELECT, 4); frame();                    /* GEN 1 */
+        turn(EN_SELECT, 3); frame();                    /* GEN 1 */
         ok = gen_on() && gen_page() == 0u;
         turn(EN_K1, 3); frame();                        /* (V10.7.22: KNOB 1 the GENRE; PRESETS the sound) */
         g0 = gp.genre;
         press(B_OCTDN); frame();                        /* out (ECO) */
         open_family(FAM_ENV); frame();
         go_home(); frames(64);
-        turn(EN_SELECT, 4); frame();
+        turn(EN_SELECT, 3); frame();
         ok &= gen_on() && gp.genre == g0 && g0 != GEN_EXPLORE;
         press(B_OCTDN); frame();
         bad += check("V10.8 GEN: the GENRE picked stays after leaving GEN (was EXPLORE again each visit)", ok);
     }
-    turn(EN_SELECT, 2); frame();                                    /* BEING */
+    turn(EN_SELECT, 1); frame();                                    /* BEING */
     open_family(FAM_ENV); frame();
     ok = !ui.home;
     press(B_HOME); frame();                                         /* HOME from elsewhere: where it was left */
     ok &= ui.home && home_level() == 1u && home_set() == 0u;
     {   /* the beings drawn: the ECO panel differs from frame to frame while the tracks sound (their life, their faces) */
         static uint16_t a[240 * 140];
-        turn(EN_SELECT, -2); frame();
+        turn(EN_SELECT, -1); frame();
         for (c = 0; c < NTRK; c++) trk[c].peak = 9000;
         frames(64);
         memcpy(a, host_screen + LZ_GRAPH_Y * 240, sizeof a);
@@ -12436,7 +12442,7 @@ static int test_lz_mod(void)
     ui_power_on(); frame();
     press(B_LFO); frame();
     ok = pd_on() && lz_fam() == LZ_MOD && pd_level() == 1u && str_eq(cur_page()->title, "LFO") && lz_tab_lit(1) &&
-         lz_crumb_is("LFO \xB7 LFO \xB7 LFO") && lz_count_is("2/6");
+         lz_crumb_is("LFO \xB7 LFO \xB7 LFO") && lz_count_is("3/7");   /* (V10.7.59: MACROS beside MOD) */
     turn(EN_SELECT, 1); frame();
     ok &= str_eq(cur_page()->title, "LFO 2") && lz_crumb_is("LFO \xB7 LFO \xB7 LFO 2");   /* (0.9.18: PHASE) */
     turn(EN_SELECT, 1); frame();
@@ -12444,7 +12450,7 @@ static int test_lz_mod(void)
     turn(EN_SELECT, 1); frame();
     ok &= pd_level() == 2u && str_eq(cur_page()->title, "MSEQ") && lz_crumb_is("LFO \xB7 MOD SEQ \xB7 MOD SEQ");
     turn(EN_SELECT, 1); frame();
-    ok &= str_eq(cur_page()->title, "MSEQ 2") && lz_crumb_is("LFO \xB7 MOD SEQ \xB7 MOD SEQ 2") && lz_count_is("6/6");
+    ok &= str_eq(cur_page()->title, "MSEQ 2") && lz_crumb_is("LFO \xB7 MOD SEQ \xB7 MOD SEQ 2") && lz_count_is("7/7");
     frames(320); press(B_LFO); frame();
     ok &= pd_level() == 0u && str_eq(cur_page()->title, "MOD") && lz_tab_lit(0) && lz_crumb_is("LFO \xB7 MOD \xB7 MOD");
     bad += check("0.9.2 LFO: opens on LFO; MOD . LFO (LFO, LFO 2, LFO DEST) . MSEQ (MSEQ, MSEQ 2) by SELECT; an LFO tap round to MOD", ok);
@@ -13245,17 +13251,18 @@ static int test_lz_reach(void)
                         if (j == NPAGES) { seen_old[i][k] |= 2u; continue; }   /* (not this engine's, this LOAD's) */
                         if (rv_has(OLD_LV[i].t[k], OLD_LV[i].fam, OLD_LV[i].lv)) seen_old[i][k] |= 1u;
                     }
-            {   /* HOME: its seven pages (ECO MACROS BEING ROUTES GEN 1..3), each drawn as before */
-                static const uint8_t HL[7] = {0, 0, 1, 1, 2, 2, 2};
-                uint32_t n = 0;
+            {   /* HOME: its six pages (ECO BEING ROUTES GEN 1..3; V10.7.59: MACROS gone), each drawn as before */
+                static const uint8_t HE[6] = {0, 2, 3, 4, 5, 6}, HL[7] = {0, 0, 1, 1, 2, 2, 2};
+                uint32_t n = 0, e;
                 go_home(); frames(32); press(B_HOME); frames(32);
                 turn(EN_SELECT, -10); frames(2);
-                for (k = 0; k < 7u; k++) {
-                    n += nav_cur() == k && home_level() == HL[k] && (k >= 4u ? gen_on() && gen_page() == k - 4u : ui.home &&
-                         home_set() == (k & 1u));
+                for (k = 0; k < 6u; k++) {
+                    e = HE[k];
+                    n += nav_cur() == e && home_level() == HL[e] && (e >= 4u ? gen_on() && gen_page() == e - 4u : ui.home &&
+                         home_set() == (e & 1u));
                     turn(EN_SELECT, 1); frames(2);
                 }
-                okh &= n == 7u;
+                okh &= n == 6u;
                 press(B_OCTDN); frames(2);
             }
         }
@@ -13268,7 +13275,7 @@ static int test_lz_reach(void)
     bad += check("0.9.2 reach: every page each engine shows (LOFI BYTE, LOAD ECO too) by its button and SELECT alone", ok);
     bad += check("0.9.2 reach: every parameter of those pages (the ids on them)", okp);
     bad += check("0.9.2 reach: every 0.9.1 lens page at its 0.9.1 level (drawn as it was; NOTE's STEP view merged)", okold);
-    bad += check("0.9.2 reach: HOME's seven pages by SELECT (ECO MACROS BEING ROUTES GEN 1..3)", okh);
+    bad += check("0.9.2 reach: HOME's six pages by SELECT (ECO BEING ROUTES GEN 1..3; V10.7.59: no MACROS)", okh);
     ui_power_on();
     return bad;
 }

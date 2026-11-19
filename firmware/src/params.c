@@ -686,6 +686,17 @@ static int16_t tape_v[2] __attribute__((section(".bss.tape")));
 /* (p9, the owner: "a light 4-band EQ on the master, to refine the song") FX > EQ: LOW (under ~200 Hz), LO MID (200 Hz ..
  * 1 kHz), HI MID (1 .. 4 kHz), HIGH (over 4 kHz), -12 .. +12 dB each (fx.c eq_block; all 0: not run). Kept with the
  * project ('E' 'Q', project.c proj_eq) */
+#define MX_N 8u                                         /* (V10.7.59) the MACROS' routes (mod.c) */
+typedef struct { int16_t m, d, a; } mx_t;               /* (int16: LFO > MACROS edits them in place) */
+static mx_t mx_r[MX_N];
+/* (V10.7.59) LFO > MACROS: KNOB 1 the route (1 .. MX_N), 2 its macro, 3 its destination, 4 its amount (mod.c mx_r) */
+#define ID_MX0 0xECu
+static const char *const N_MXR[] = {"1", "2", "3", "4", "5", "6", "7", "8"};
+static const char *const N_MXM[] = {"M1", "M2", "M3", "M4"};
+static const param_desc_t MX_DESC[4] = {PE("ROUTE", N_MXR, 0), PE("MACRO", N_MXM, 0), PE("DEST", N_MDST, 0),
+                                        PD("AMOUNT", F_BIPCT, -64, 63, 0)};
+static int16_t mx_sel;
+_Static_assert(sizeof N_MXR / sizeof N_MXR[0] == MX_N, "a name a route");
 #define ID_EQ0 0xE0u
 static const param_desc_t EQ_DESC[4] __attribute__((section(".rodata.tape"))) = {
     PD("LOW", F_INT, -12, 12, 0), PD("LO MID", F_INT, -12, 12, 0), PD("HI MID", F_INT, -12, 12, 0), PD("HIGH", F_INT, -12, 12, 0)};
@@ -698,6 +709,8 @@ static const page_t PAGES[] = {
     {"LFO", FAM_LFO, SC_TRACK, GR_LFO, {P_LRATE, P_LWAVE, ID_LMODE, P_LFADE}},   /* (0.9.18: MODE where PHASE was) */
     {"LFO DEST", FAM_LFO, SC_TRACK, GR_NONE, {P_LD_PIT, P_LD_FLT, P_LD_SHP, P_LD_AMP}},
     {"MOD", FAM_LFO, SC_TRACK, GR_MOD, {0xFF, P_M1SRC, P_M1DST, P_M1AMT}},   /* KNOB 1: the slot (mod_ui_slot) */
+    {"MACROS", FAM_LFO, SC_GLOBAL, GR_NONE, {ID_MX0, ID_MX0 + 1u, ID_MX0 + 2u, ID_MX0 + 3u}},   /* (V10.7.59) the MACROS'
+                                                         * own matrix (mod.c mx_r), beside the tracks' */
     {"MSEQ", FAM_LFO, SC_TRACK, GR_MSEQ, {0xFF, P_MS0, P_MSLEN, P_MSSLW}},   /* JIANT: KNOB 1 the step (ms_ui_step) */
     {"MSEQ 2", FAM_LFO, SC_TRACK, GR_NONE, {P_MSDIV, 0xFF, 0xFF, 0xFF}},
     {"FX", FAM_FX, SC_TRACK, GR_FX, {P_CHOR, P_DLY, P_REV, P_DIST}},   /* (codex/coherence) SENDS: the sends; (V10.7.58,
@@ -873,6 +886,11 @@ static uint8_t sl_ui_step;       /* (JIANT 0.6.3) the SL PITCH page: the step KN
  * master's TAPE (noinline: page_desc is recorded code) */
 static __attribute__((noinline)) const param_desc_t *page_desc_v(uint32_t id, int16_t **valp)
 {
+    if (id >= ID_MX0 && id < ID_MX0 + 4u) {           /* (V10.7.59) LFO > MACROS */
+        mx_t *r = &mx_r[(uint32_t)mx_sel % MX_N];
+        *valp = id == ID_MX0 ? &mx_sel : id == ID_MX0 + 1u ? &r->m : id == ID_MX0 + 2u ? &r->d : &r->a;
+        return &MX_DESC[id - ID_MX0];
+    }
     if (id >= ID_EQ0 && id < ID_EQ0 + 4u) {           /* (p9) the master's EQ */
         *valp = &eq_v[id - ID_EQ0];
         return &EQ_DESC[id - ID_EQ0];
@@ -903,7 +921,7 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         *valp = &trks_ui;
         return &TRKS_DESC;
     }
-    if ((id >= ID_TAPE && id <= ID_LMODE) || (id >= ID_EQ0 && id < ID_EQ0 + 4u))   /* (0.9.18) the LFO's MODE and PHASE;
+    if ((id >= ID_TAPE && id <= ID_LMODE) || (id >= ID_EQ0 && id < ID_EQ0 + 4u) || (id >= ID_MX0 && id < ID_MX0 + 4u))   /* (0.9.18) the LFO's MODE and PHASE;
                                                          * (snd8) the master's TAPE; (p9) its EQ */
         return page_desc_v(id, valp);
     if (id == G_LOADP) {                              /* (0.6.30) the same */

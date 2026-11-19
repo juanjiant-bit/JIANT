@@ -98,7 +98,7 @@ static const nv_t CE_ENV[] = {NV("ENV", 0, 0, 1), NV("ENV DEST", 0, 0, 1), NV("E
                                                          * TRACKS, the six tracks' envelopes at a glance (ENV's knobs), last
                                                          * (TRACKS DEST, ENV DEST's twin, gone) */
 static const ng_t CG_ENV[] = {{"ENV", 0}, {"STAGE", 0}, {"TRACKS", 0}};
-static const nv_t CE_LFO[] = {NV("MOD", 0, 0, 0), NV("LFO", 0, 1, 1), NV("LFO 2", 0, 1, 1), NV("LFO DEST", 0, 1, 1),
+static const nv_t CE_LFO[] = {NV("MOD", 0, 0, 0), NV("MACROS", 0, 0, 0), NV("LFO", 0, 1, 1), NV("LFO 2", 0, 1, 1), NV("LFO DEST", 0, 1, 1),
                               NV("MSEQ", "MOD SEQ", 2, 2), NV("MSEQ 2", "MOD SEQ 2", 2, 2)};   /* (0.9.18: LFO 2, PHASE) */
 static const ng_t CG_LFO[] = {{"MOD", 0}, {"LFO", 0}, {"MOD SEQ", "MSEQ"}};   /* (V10.7.59: MOD SEQ) */
 static const nv_t CE_SCL[] = {NV("SCL", "KEY", 0, 0),   /* (codex/coherence: KEY, its group's name) */
@@ -126,7 +126,7 @@ static const ch_t CHAINS[NAV_KEYS] = {CH(CE_HOME, CG_HOME), CH(CE_SYN, CG_SYN), 
                                       CH(CE_DIG, CG_DIG)};
 /* the page each opens on at power-on (the mock-up's): SEQ its STEP, ENV its ENV, LFO its LFO, (p2) GLO its MIXER (LIVE's
  * pages before it: a GLO tap inside, rule 2), (V10.7.22) SAVE its TIMELINE (TOOLS before it); ui.nmem holds it ^ this */
-static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0};   /* (V10.7.58: GLO MIXER 1, RAILS gone) */
+static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 1, 0, 2, 0, 0, 1, 0, 0, 0};   /* (V10.7.59: LFO its LFO, after MACROS) */   /* (V10.7.58: GLO MIXER 1, RAILS gone) */
 static uint32_t nav_key(uint32_t sec) { uint32_t k = sec == SEC_EDIT ? edit_kind() : 0u; return k ? SEC_N - 1u + k : sec; }
 static const ch_t *nav_ch(uint32_t sec) { return &CHAINS[nav_key(sec)]; }
 static uint32_t nav_mem(uint32_t key) { return (uint32_t)(ui.nmem[key] ^ NAV_DEF[key]); }
@@ -156,7 +156,10 @@ static uint32_t nv_page(uint32_t sec, uint32_t e)
             return i;
     return NPAGES;
 }
-static int nv_ok(uint32_t sec, uint32_t e) { return sec == SEC_HOME ? e < NELEM(CE_HOME) : nv_page(sec, e) < NPAGES; }
+static int nv_ok(uint32_t sec, uint32_t e)   /* (V10.7.59, the owner: HOME > MACROS gone, the FX layer's knobs are the macros) */
+{
+    return sec == SEC_HOME ? e < NELEM(CE_HOME) && e != 1u : nv_page(sec, e) < NPAGES;
+}
 /* the entry shown: HOME's from its state (ui.hlv, ui.hset, GEN's page); the others the one remembered when it is the page
  * shown, else the page's own (put by code: in the group left, the default page's, then the chain's first), else
  * (PHRASES, CHANCE: out of the chain) the one left */

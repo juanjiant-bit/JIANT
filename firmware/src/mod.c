@@ -66,6 +66,19 @@ static inline int32_t gfx_val(uint32_t k)
 }
 #define GFX(k) gfx_val(k)
 static uint8_t macro_v[4];       /* (JIANT) the macros M1..M4, 0..127: the project's (project.c), LFO held turns them */
+/* (V10.7.59, the owner) the MACROS' own matrix, beside the tracks' (their slots stay the sound's): MX_N routes, each a
+ * macro onto a destination of every track (the master's once) by an amount, as a slot with SRC M1..M4 would be on each
+ * track. Kept with the project (project.c 'M' 'X'); a new one (and one saved before) the defaults: M1 the tracks' filters
+ * closing, M2 the reverb's send, M3 the delay's, M4 the drive. A macro at 0 does nothing: the sound bit for bit */
+/* (MX_N, mx_t, mx_r: params.c, LFO > MACROS's) */
+static uint8_t mx_on;            /* bit r: route r acts this block (macro_master: its destination, amount, macro not 0) */
+static uint8_t mx_trk;           /* .. one of them on a track's destination (mod_begin) */
+static void mx_defaults(void)
+{
+    static const mx_t D[4] = {{0, MD_CUT, -40}, {1, MD_REV, 48}, {2, MD_DLY, 48}, {3, MD_DIST, 40}};
+    uint32_t i;
+    for (i = 0; i < MX_N; i++) mx_r[i] = i < 4u ? D[i] : (mx_t){0, 0, 0};
+}
 _Static_assert(NELEM(N_MSRC) == MS_N && NELEM(N_MDST) == MD_N, "N_MSRC / N_MDST == MS_* / MD_*");
 _Static_assert(PS_LFO == MS_LFO && PS_ENV2 == MS_ENV2 && PS_NOISE == MS_NOISE && PS_MODW == MS_MODW && PS_RAND == MS_RAND &&
                PD_VIB == MD_VIB && PD_E1 == MD_E1 && PD_FCUT == MD_FCUT && PD_LEVEL == MD_LEVEL && PD_REV == MD_REV,
@@ -107,8 +120,8 @@ typedef struct {                 /* the part in mix_part (one at a time) */
     int32_t pit, cut, shp, gain; /* per voice, from the per-track sources (gain Q15) */
     uint8_t vsrc[NMSLOT], vdst[NMSLOT];
     int8_t vamt[NMSLOT];
-    uint8_t kid[NMSLOT];         /* per-block: the parameter, its stored value */
-    int16_t keep[NMSLOT];
+    uint8_t kid[NMSLOT + MX_N];  /* per-block: the parameter, its stored value (V10.7.59: the MACROS' routes too) */
+    int16_t keep[NMSLOT + MX_N];
 } mod_t;
 static mod_t mod_c[2];                      /* (JIANT 0.6.71) one a core: each renders its own parts at once (fx.c mix_block) */
 #define MOD (mod_c[MC_CPU() & 1u])
@@ -278,13 +291,13 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
 {
     mod_t *const mp = &MOD;                          /* (0.6.71) this core's */
     const int16_t *p = t->p;
-    int32_t lfo, off[NMSLOT];
-    uint32_t k, j;
+    int32_t lfo, off[NMSLOT + MX_N];
+    uint32_t k, j, n;
     mp->on = 0;
     for (k = 0; k < NMSLOT; k++)
         if (p[P_M1SRC + 3u * k] && p[P_M1DST + 3u * k] && p[P_M1AMT + 3u * k])
             break;
-    if (k == NMSLOT)
+    if (k == NMSLOT && !mx_trk)
         return 0;
     lfo = mulq15(t->lfo_val, t->lfo_fade);              /* (the LFO of the block before: track_render ticks it) */
     for (j = k; j < NMSLOT; j++)
@@ -297,9 +310,17 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
     mp->nv = mp->nk = 0;
     mp->pit = mp->cut = mp->shp = 0;
     mp->gain = 32767;
-    for (; k < NMSLOT; k++) {
-        uint32_t s = (uint32_t)p[P_M1SRC + 3u * k], d = (uint32_t)p[P_M1DST + 3u * k];
-        int32_t a = p[P_M1AMT + 3u * k], x;
+    for (n = NMSLOT + MX_N; k < n; k++) {               /* the track's slots, then (V10.7.59) the MACROS' routes */
+        uint32_t s, d;
+        int32_t a, x;
+        if (k < NMSLOT) {
+            s = (uint32_t)p[P_M1SRC + 3u * k]; d = (uint32_t)p[P_M1DST + 3u * k]; a = p[P_M1AMT + 3u * k];
+        } else {
+            const mx_t *r = &mx_r[k - NMSLOT];
+            if (!((mx_on >> (k - NMSLOT)) & 1u))
+                continue;
+            s = MS_M1 + (r->m & 3u); d = r->d; a = r->a;
+        }
         if (!s || !d || !a || s >= MS_N || d >= MD_N || (d >= MD_CLIP && d < MD_MASTER_END))   /* (the master's: macro_master) */
             continue;
         /* These engines have no voice-level CUT consumer: use their track filter. */
@@ -381,6 +402,30 @@ static __attribute__((noinline)) void macro_master(void)
                                                          * depth the same) */
             }
         }
+    }
+    {   /* (V10.7.59) the MACROS' routes: which act; the master's destinations once (not a track's each) */
+        uint32_t on = 0, tr = 0;
+        for (k = 0; k < MX_N; k++) {
+            const mx_t *r = &mx_r[k];
+            uint32_t d = r->d;
+            int32_t v;
+            if (!d || d >= MD_N || !r->a || !macro_v[r->m & 3u])
+                continue;
+            on |= 1u << k;
+            if (d < MD_CLIP || d >= MD_MASTER_END) {
+                tr = 1;
+                continue;
+            }
+            v = (macro_v[r->m & 3u] * 258 * r->a) >> 6;
+            if (d <= MD_PNCH)
+                off[d - MD_CLIP] += (v * 100) >> 15;
+            else {
+                const param_desc_t *pd = &GP[GFX_ID[d - MD_DTIME]];
+                off[d - MD_CLIP] += (v * (d == MD_DTIME ? DT_FREE + 47 : pd->max - pd->min)) >> 15;
+            }
+        }
+        mx_on = (uint8_t)on;
+        mx_trk = (uint8_t)tr;
     }
     ain_any = (uint8_t)any;
     ain_sw = (uint8_t)sw1;

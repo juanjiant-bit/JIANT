@@ -124,6 +124,8 @@ typedef struct {
     char name[PROJ_NAME_LEN];                  /* the project's name: upper-case ASCII 32..126, 0-padded; "" = none */
     uint8_t split[8];                         /* optional KS extension, absent = OFF */
     uint8_t fit[NTRK];                         /* FIT/SPAN per track; optional RF extension */
+    uint8_t mx[MX_N * 3u];                     /* (V10.7.59) the MACROS' routes (mod.c mx_r: macro, destination, amount):
+                                                * FUNC's 'M' 'X' block, the last, when not the defaults; absent: them */
     uint32_t sum;
 } project_t;
 _Static_assert(sizeof(gcomp_t) == 5u, "the global lane as stored");
@@ -198,6 +200,45 @@ static __attribute__((noinline)) uint32_t proj_tp(const project_t *q, const uint
     w->tp[0] = b[pos + 2u] > 100u ? 100 : b[pos + 2u];
     w->tp[1] = b[pos + 3u] > 100u ? 100 : b[pos + 3u];
     return 4u;
+}
+
+/* (V10.7.59) the MACROS' routes <-> a project's bytes; the defaults (mod.c mx_defaults) */
+static void proj_mx_put(project_t *p)
+{
+    uint32_t k;
+    for (k = 0; k < MX_N; k++) {
+        p->mx[3u * k] = mx_r[k].m & 3u; p->mx[3u * k + 1u] = mx_r[k].d; p->mx[3u * k + 2u] = (uint8_t)mx_r[k].a;
+    }
+}
+static void proj_mx_get(const project_t *p)
+{
+    uint32_t k;
+    for (k = 0; k < MX_N; k++) {
+        mx_r[k].m = p->mx[3u * k] & 3u;
+        mx_r[k].d = p->mx[3u * k + 1u] < MD_N ? p->mx[3u * k + 1u] : 0u;
+        mx_r[k].a = (int8_t)clamp((int8_t)p->mx[3u * k + 2u], -64, 63);
+    }
+}
+static void proj_mx_def(project_t *p)
+{
+    mx_t keep[MX_N];
+    memcpy(keep, mx_r, sizeof keep);
+    mx_defaults();
+    proj_mx_put(p);
+    memcpy(mx_r, keep, sizeof keep);
+}
+static int proj_mx_custom(const project_t *q)
+{
+    uint8_t def[MX_N * 3u];
+    mx_t keep[MX_N];
+    uint32_t k;
+    memcpy(keep, mx_r, sizeof keep);
+    mx_defaults();
+    for (k = 0; k < MX_N; k++) {
+        def[3u * k] = mx_r[k].m & 3u; def[3u * k + 1u] = mx_r[k].d; def[3u * k + 2u] = (uint8_t)mx_r[k].a;
+    }
+    memcpy(mx_r, keep, sizeof keep);
+    return memcmp(def, q->mx, sizeof def) != 0;
 }
 
 /* (p9) the master's EQ: 'E' 'Q' and its four gains (-12 .. 12, a byte each), when any is set; a project without it
@@ -583,6 +624,8 @@ static uint32_t proj_packed_size(const project_t *q)
         if (q->fit[t]) { n += 2u + NTRK; break; }
     for (i = 0; i < sizeof q->split; i++) if (q->split[i]) { n += 2u + sizeof q->split; break; }
     for (i = 0; i < sizeof q->scpat; i++) if (q->scpat[i]) { n += 2u + sizeof q->scpat; break; }
+    if (proj_mx_custom(q))                              /* (V10.7.59) the MACROS' routes, when not the defaults */
+        n += 2u + sizeof q->mx;
     return n;
 }
 static int proj_split_ok(const uint8_t *s)
@@ -773,6 +816,9 @@ static int proj_pack(project_store_t *out, const project_t *q)
     if (i < sizeof q->split) { b[pos++] = 'K'; b[pos++] = 'S'; memcpy(b + pos, q->split, sizeof q->split); pos += sizeof q->split; }
     for (i = 0; i < sizeof q->scpat && !q->scpat[i]; i++) {}   /* (V10.6k) SCENE's patterns (the last) */
     if (i < sizeof q->scpat) { b[pos++] = 'S'; b[pos++] = 'P'; memcpy(b + pos, q->scpat, sizeof q->scpat); pos += sizeof q->scpat; }
+    if (proj_mx_custom(q)) {                            /* (V10.7.59) the MACROS' routes (after SCENE's patterns: the last) */
+        b[pos++] = 'M'; b[pos++] = 'X'; memcpy(b + pos, q->mx, sizeof q->mx); pos += sizeof q->mx;
+    }
     memcpy(b + PROJC_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJC_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
     for (i = 0; i < 4u; i++)
@@ -1093,8 +1139,13 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         pos += 2u + sizeof q->split;
     }
     memset(q->scpat, 0, sizeof q->scpat);
-    if (pos + 2u + sizeof q->scpat <= room && b[pos] == 'S' && b[pos + 1u] == 'P')   /* (V10.6k) */
+    if (pos + 2u + sizeof q->scpat <= room && b[pos] == 'S' && b[pos + 1u] == 'P') {   /* (V10.6k) */
         memcpy(q->scpat, b + pos + 2u, sizeof q->scpat);
+        pos += 2u + sizeof q->scpat;
+    }
+    proj_mx_def(q);                                     /* (V10.7.59) the MACROS' routes: as saved, else the defaults */
+    if (pos + 2u + sizeof q->mx <= room && b[pos] == 'M' && b[pos + 1u] == 'X')
+        memcpy(q->mx, b + pos + 2u, sizeof q->mx);
     proj_new_tracks(q, nt);                             /* (a FUNC of fewer tracks: the rest at power-on) */
     for (t = nt; t < NTRK; t++)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);
@@ -1243,6 +1294,7 @@ static void proj_fetch(uint32_t slot)
 static __attribute__((noinline)) void proj_master_put(project_t *p)
 {
     uint32_t k;
+    proj_mx_put(p);                                     /* (V10.7.59) the MACROS' routes, song-wide as the master's */
     for (k = 0; k < 4u; k++) p->eq[k] = (int8_t)eq_v[k];
     p->tp[0] = (uint8_t)tape_v[0]; p->tp[1] = (uint8_t)tape_v[1];
 }
@@ -1504,6 +1556,7 @@ static int project_restore_runtime(const project_t *input)
         uint32_t k;
         for (k = 0; k < 4u; k++) eq_v[k] = clamp(p->eq[k], -12, 12);
         tape_v[0] = p->tp[0] > 100u ? 100 : p->tp[0]; tape_v[1] = p->tp[1] > 100u ? 100 : p->tp[1];
+        proj_mx_get(p);                                 /* (V10.7.59) the MACROS' routes */
     }
     {                                                   /* (V10.31) SCENE */
         uint32_t i;
@@ -1626,6 +1679,7 @@ static __attribute__((noinline)) void system_init(void)   /* (snd8: out of its c
     memset(song_idx.tvar[song_cur], 0, sizeof song_idx.tvar[song_cur]);
     memset(pfx_lane, 0, sizeof pfx_lane);
     for (i = 0; i < 4u; i++) macro_v[i] = 0;
+    mx_defaults();                                      /* (V10.7.59) the MACROS' routes, the defaults */
     for (i = 0; i < NTRK; i++) trk[i].seq_fit = 0;
     for (i = 0; i < NTRK; i++) lyr_set(i, "");          /* (0.8.5) no lyrics */
     memset(glane, 0, sizeof glane);                     /* (0.9.9-seq2f) no global component, POLY */
