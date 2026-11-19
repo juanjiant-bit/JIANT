@@ -82,7 +82,7 @@ static struct {
     int32_t dt1, dt2, rt1, rt2;          /* .. (0.6.86) the resonant TONE (delay loop) and FILT (reverb input) filters */
     int32_t cd_cur, cw_cur, dm_cur;      /* .. the chorus's DEPTH, its side's width, the delay's MIX as they are (glide) */
     uint16_t rv_w;                       /* (V10.7.17) ROOM's ring's write count (down by one a sample) */
-    int32_t comb_lp[4], rvh_prev;   /* (V10.7.56: ROOM at half the rate, its last output) */
+    int32_t comb_lp[4], rvh_prev, rvh_side;   /* (V10.7.56: ROOM at half the rate, its last output) */
     uint8_t rtype;                       /* the reverb model running (G_RTYPE: 0 ROOM, 1 SPRING, 0.5: 2 SHIMMER 3 RESO 4 CLOUD) */
     uint32_t sh_w, sh_ph;                /* (JIANT 0.5) SHIMMER: its line's write count, the grains' phase (Q16, 0.6.12) */
     int32_t rs_lp[4];                    /* .. RESO: the combs' loop low-passes */
@@ -964,15 +964,17 @@ static __attribute__((noinline)) int room_zero(const int32_t *in, uint32_t n)
     room_clock(n / 2u);                                 /* (V10.7.56: ROOM at half the rate) */
     return 1;
 }
+/* (V10.7.58) ROOM's MOD depth, Q8 samples at half the rate: 0.125 .. 126 (~5.7 ms, as before) */
+#define RM_DEPTH() (song.g[G_RMOD] ? 32 + song.g[G_RMOD] * song.g[G_RMOD] * 2 : 0)
 /* ROOM with MOD / WIDE (rev_room_mod) at rest: its LFO's phase on, the lines' offsets where the block's end puts them */
 static void room_mod_clock(uint32_t n)
 {
     uint32_t k;
-    int32_t depth = song.g[G_RMOD] ? 64 + song.g[G_RMOD] * song.g[G_RMOD] * 4 : 0;
+    int32_t depth = RM_DEPTH();
     fx.rm_ph += LFO_INC[song.g[G_RRATE] & 127];
     for (k = 0; k < 4u; k++)
         fx.rm_m[k] = (int32_t)(((uint32_t)(osc_sine(fx.rm_ph + k * 0x40000000u) + 32768) * (uint32_t)depth) >> 16);
-    room_clock(n);
+    room_clock(n / 2u);                                 /* (V10.7.58: at half the rate too) */
 }
 
 /* ROOM (G_RTYPE 0), V10.7.17: a feedback delay network (was 4 parallel combs, Freeverb's: a tail of few echoes, its
@@ -1053,27 +1055,30 @@ static __attribute__((noinline)) void rev_room(const int32_t *rev_in, int32_t *o
  * against 3, 4 as a side (left +, right -) into mix_l / mix_r. Its own loop: with MOD and WIDE 0 the plain one runs
  * (MOD 0 here: offsets 0, the plain one's sound, bit for bit) */
 static __attribute__((noinline)) void rev_room_mod(const int32_t *rev_in, int32_t *out, uint32_t n, int32_t wd)
-{
-    static const uint16_t RV_B[4] = {RV_B1, RV_B2, RV_B3, RV_RING};   /* (each line's read: its base + its length) */
+{   /* (V10.7.58) at half the rate as rev_room: its lines (RVH_*), DAMP's pole squared, the offsets in its samples (the
+     * depth halved: the same time), each pair's send averaged in, its output and its side the last of the pair, the
+     * first the mean with the one before (the full rate's network from flash was CLOUD's dearest part) */
+    static const uint16_t RV_BH[4] = {RVH_B1, RVH_B2, RVH_B3, RVH_RING};   /* (each line's read: its base + its length) */
     uint32_t i, k, w = fx.rv_w;
-    int32_t g = rev_size(), dk = GFX(GF_RDAMP) * RV_KD, m1[4], dm[4];
-    int32_t depth = song.g[G_RMOD] ? 64 + song.g[G_RMOD] * song.g[G_RMOD] * 4 : 0;   /* Q8 samples: 0.25 .. 252 (~5.7 ms) */
+    int32_t g = rev_size(), dk = GFX(GF_RDAMP) * RV_KD, m1[4], dm[4], pv = fx.rvh_prev, ps = fx.rvh_side;
+    int32_t depth = RM_DEPTH();
     int16_t *R = rev_comb, *A = rev_comb + RV_RING;
+    dk = (dk * dk + 16384) >> 15;
     fx.rm_ph += LFO_INC[song.g[G_RRATE] & 127];
     for (k = 0; k < 4u; k++) {
         m1[k] = (int32_t)(((uint32_t)(osc_sine(fx.rm_ph + k * 0x40000000u) + 32768) * (uint32_t)depth) >> 16);
         if ((uint32_t)fx.rm_m[k] > 0xFFFFu)             /* (0.6.76) past any depth (252 Q8): a wrong word would read */
             fx.rm_m[k] = m1[k];                         /* far outside the lines; from the new offset */
-        dm[k] = (m1[k] - fx.rm_m[k]) / (int32_t)CTL;    /* (Q8, per sample) */
+        dm[k] = (m1[k] - fx.rm_m[k]) / (int32_t)(CTL / 2u);   /* (Q8, per pair) */
     }
-    for (i = 0; i < n; i++) {
-        int32_t in = (rev_in[i] * RV_IN + 16384) >> 15, s = 0, sd = 0, y, o0, o1;
+    for (i = 0; i + 1u < n; i += 2u) {
+        int32_t in = ((rev_in[i] + rev_in[i + 1u]) * (RV_IN / 2) + 16384) >> 15, s = 0, sd = 0, y, o0, o1;
         uint32_t p0, p1;
         w--;
         for (k = 0; k < 4u; k++) {
             int32_t m = fx.rm_m[k] += dm[k];
-            uint32_t j0 = w + RV_B[k] - ((uint32_t)m >> 8);   /* (a shorter delay: nearer the write) */
-            int32_t a = R[j0 & (RV_RING - 1u)], b = R[(j0 - 1u) & (RV_RING - 1u)], l = fx.comb_lp[k];
+            uint32_t j0 = w + RV_BH[k] - ((uint32_t)m >> 8);   /* (a shorter delay: nearer the write) */
+            int32_t a = R[j0 & (RVH_RING - 1u)], b = R[(j0 - 1u) & (RVH_RING - 1u)], l = fx.comb_lp[k];
             RV_DAMP(l, a + (((b - a) * (m & 255)) >> 8))
             fx.comb_lp[k] = l;
             s += l;
@@ -1081,23 +1086,31 @@ static __attribute__((noinline)) void rev_room_mod(const int32_t *rev_in, int32_
         }
         for (k = 0; k < 4u; k++) {
             int32_t v = RV_Q((2 * fx.comb_lp[k] - s) * g);
-            R[(w + (k ? RV_B[k - 1u] : 0u)) & (RV_RING - 1u)] = (int16_t)rv_st(k & 1u ? v - in : v + in);
+            R[(w + (k ? RV_BH[k - 1u] : 0u)) & (RVH_RING - 1u)] = (int16_t)rv_st(k & 1u ? v - in : v + in);
         }
         s = fx.comb_lp[0] - fx.comb_lp[1] + fx.comb_lp[2] - fx.comb_lp[3];
         if (wd) {
             sd = (sd * wd) >> 7;
-            fx_sl[i] += sd;
-            fx_sr[i] -= sd;
+            y = RV_HALF(ps + sd);
+            fx_sl[i] += y;
+            fx_sr[i] -= y;
+            fx_sl[i + 1u] += sd;
+            fx_sr[i + 1u] -= sd;
+            ps = sd;
         }
-        p0 = w & (RV_APR - 1u);
-        p1 = (w + RV_AP0) & (RV_APR - 1u);
+        p0 = w & (RVH_APR - 1u);
+        p1 = (w + RVH_AP) & (RVH_APR - 1u);
         o0 = A[p1];
         o1 = A[p0];
         A[p0] = (int16_t)rv_st(s + RV_HALF(o0));
         y = o0 - s;
         A[p1] = (int16_t)rv_st(y + RV_HALF(o1));
-        out[i] += o1 - y;
+        y = o1 - y;
+        out[i] += RV_HALF(pv + y);
+        out[i + 1u] += pv = y;
     }
+    fx.rvh_prev = pv;
+    fx.rvh_side = ps;
     fx.rv_w = (uint16_t)w;
     for (k = 0; k < 4u; k++)
         fx.rm_m[k] = m1[k];                             /* (exact at the block's end) */
@@ -1326,7 +1339,8 @@ static inline int32_t rv_knee(int32_t x)
     a = 24576 + (softclip(clamp(a - 24576, 0, 16384) * 4) >> 2);
     return x < 0 ? -a : a;
 }
-static struct { uint32_t pos, inc; uint16_t len, age; int16_t pl, pr; } cl_g[CL_N];
+static struct { uint32_t pos, inc, wk; uint16_t len, age; int16_t pl, pr; } cl_g[CL_N];   /* (V10.7.58: wk, the window's
+                                                         * slope, 512 / len Q16: drawn at its birth, no divide a sample) */
 static uint32_t cl_rand(void) { fx.cl_rng = fx.cl_rng * 1664525u + 1013904223u; return fx.cl_rng >> 8; }
 /* CLOUD (G_RTYPE 4, JIANT 0.5, made wet in 0.5.1): a granular wash. The input and the cloud's own tail fed back
  * (SIZE: the tail ~0.09, the grains ~0.43: the wash builds on itself) are written at half rate into a 0.74 s line;
@@ -1359,6 +1373,7 @@ static void cl_spawn(int32_t gap, int32_t wd, uint32_t ar)
         cl_g[k].inc = inc + (cl_rand() % 129u) - 64u;   /* (the line at half rate; each grain
                                                          * a few cents off: a chorused shimmer, not one pitch) */
         cl_g[k].age = 0;
+        cl_g[k].wk = (512u << 16) / cl_g[k].len;
         cl_g[k].pl = (int16_t)(128 - pan);               /* (0 .. 256: 128 the centre) */
         cl_g[k].pr = (int16_t)(128 + pan);
     }
@@ -1393,7 +1408,7 @@ static void cloud_clock(uint32_t n)
     if (song.g[G_RMOD] || wd)
         room_mod_clock(n);
     else
-        room_clock(n);
+        room_clock(n / 2u);                             /* (V10.7.58: rev_room's half rate, as its kernel moves it) */
 }
 static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *out, uint32_t n)
 {
@@ -1432,7 +1447,7 @@ static __attribute__((noinline)) void rev_cloud(const int32_t *rev_in, int32_t *
                 {
                     uint32_t p = cl_g[k].pos >> 16, f = (cl_g[k].pos >> 8) & 255u, a = cl_g[k].age, L = cl_g[k].len;
                     int32_t x0 = cloud_buf[p & (CL_LEN - 1u)], x1 = cloud_buf[(p + 1u) & (CL_LEN - 1u)];
-                    int32_t x = x0 + (((x1 - x0) * (int32_t)f) >> 8), w = (int32_t)((a < L - a ? a : L - a) * 2u * 256u / L);
+                    int32_t x = x0 + (((x1 - x0) * (int32_t)f) >> 8), w = (int32_t)(((a < L - a ? a : L - a) * cl_g[k].wk) >> 16);
                     x = (x * w) >> 8;
                     ws += w;
                     gl += (x * cl_g[k].pl) >> 7;
@@ -1549,7 +1564,7 @@ static void rev_state_clear(void)
         rev_u.ap[i] = 0;
     for (i = 0; i < 4u; i++)
         fx.comb_lp[i] = fx.rs_lp[i] = 0;
-    fx.rvh_prev = 0;
+    fx.rvh_prev = fx.rvh_side = 0;
     fx.sp_lp = fx.sp_hp = fx.sp_he = 0;
     for (i = 0; i < CTL; i++)                           /* (JIANT 0.5) SHIMMER's feedback, CLOUD's grains */
         shim_fb[i] = 0;

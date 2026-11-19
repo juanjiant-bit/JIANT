@@ -594,6 +594,15 @@ static uint8_t rel_hurry[NTRK];                         /* (eng_fm6.c reads it) 
 static uint8_t vh_wait, vh_held;                        /* blocks tripped; bit p: part p's held voices at half */
 static uint8_t vh_quart;                                /* (V10.7.56) bit p: part p's FM6 voices at a quarter of the rate
                                                          * (every part's held voices already at half and still over) */
+#define HALF_PRED 80u                                   /* (V10.7.58) %: a note that takes the prediction past this
+                                                         * puts its part's held voices at half the rate at once (the
+                                                         * guard only sees a half once it ran late) */
+static void vh_pred(const track_t *t)
+{
+    uint32_t p = (uint32_t)(t - trk);
+    if ((VSOFT & 2u) && p < NPART && ENGINES[t->engine]->half && load_pred_q8 > (HALF_PRED << 8))
+        vh_held |= (uint8_t)(1u << p);
+}
 static int32_t vh_lp[NTRK * NVOICE] __attribute__((section(".pool")));   /* (V10.7.56) a tail at half the rate: its
                                                          * low-pass (~5.5 kHz, the tail's own sample) */
 static int32_t vh_c[NTRK * NVOICE] __attribute__((section(".pool")));   /* a voice: VH_* (bits 0..2), its last sample at
@@ -944,7 +953,8 @@ static __attribute__((noinline)) void voice_soft(void)
         vh_held |= (uint8_t)(1u << dear);
         vh_wait = 0;
     }
-    if (!load_tight && load_avg_q8 < ((VPOL_ON() ? HALF_BACK - 10u : HALF_BACK) << 8))
+    if (!load_tight && (VPOL_ON() ? load_pred_q8 < ((HALF_BACK - 10u) << 8) : load_avg_q8 < (HALF_BACK << 8)))   /* (V10.7.58:
+                                                         * the prediction, its notes' half kept while they weigh) */
         vh_held = vh_quart = 0;
     else if (!load_tight)
         vh_quart = 0;                                   /* (the guard let go: FM6 back to half first) */
@@ -1036,6 +1046,7 @@ static int voice_room(track_t *t, int soft)
         if (soft)
             return load_admit(t);
         load_take(t);
+        vh_pred(t);
         return 1;
     }
     if (voices_load() < voice_cap()) {
@@ -1093,6 +1104,7 @@ static voice_t *voice_alloc(track_t *t, uint32_t note)
             voice_trims++;
         }
         load_take(t);
+        vh_pred(t);
     }                                   /* (V10.7.56: counted; the load is the half rate's) */
     else if (nfree) {
         track_t *vp = 0;

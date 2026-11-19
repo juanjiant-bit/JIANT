@@ -772,8 +772,9 @@ static void test_jiant(void)
                 mx[kk] = (uint32_t)fx.rm_m[0] > mx[kk] ? (uint32_t)fx.rm_m[0] : mx[kk];
             }
         }
-        printf("reverb:   (MOD: the offset's swing 16: %u, 127: %u samples)\n", mx[0] >> 8, mx[1] >> 8);
-        check("reverb MOD: 127 swings the combs ~5.7 ms (240 samples or more), 16 a few", mx[1] >> 8 >= 240u && mx[0] >> 8 < 8u);
+        printf("reverb:   (MOD: the offset's swing 16: %u, 127: %u samples at half the rate)\n", mx[0] >> 8, mx[1] >> 8);
+        check("reverb MOD: 127 swings the combs ~5.7 ms (120 samples or more at 22 kHz, V10.7.58), 16 a few",
+              mx[1] >> 8 >= 120u && mx[0] >> 8 < 4u);
     }
     /* DUCK 100: the gain down past -26 dB within 3 ms, held there at 20 ms, back up after the release */
     {

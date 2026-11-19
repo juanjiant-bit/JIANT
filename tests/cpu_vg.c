@@ -206,6 +206,17 @@ int main(void)
         snprintf(name, sizeof name, "rev/%s", RT[i]);
         vg_section(name);
     }
+    for (i = 0; i < 2u; i++) {                          /* (V10.7.58) ROOM and CLOUD with MOD and WIDE: their network
+                                                         * modulated (rev_room_mod, at half the rate since V10.7.58) */
+        vg_quiet();
+        song.g[G_RTYPE] = (int16_t)(i ? 4 : 0);
+        song.g[G_RMOD] = 40;
+        song.g[G_RWIDE] = 64;
+        vg_part(0, ENGI_ANALOG, 0, 4);
+        trk[0].p[P_REV] = 127;
+        vg_section(i ? "rev/CLOUD.MW" : "rev/ROOM.MW");
+        song.g[G_RMOD] = song.g[G_RWIDE] = 0;
+    }
     vg_quiet();                                         /* (V10.7.56) the same pad dry: the reverbs' own cost against it */
     song.g[G_RTYPE] = 0;
     vg_part(0, ENGI_ANALOG, 0, 4);
