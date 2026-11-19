@@ -614,6 +614,8 @@ static void drum_budget(void)
 int main(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
+    vpol_on = 0;                                        /* (V10.7.56) the guard's and the shared budget's checks: LOAD ECO's
+                                                         * budget as before (VPOL: regress chk_vpol, voices_probe stress) */
     usb_level();
     boot_keys();
     overload(); dma();

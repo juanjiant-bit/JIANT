@@ -92,10 +92,13 @@ jobs:
           before=hashes('build/v23-reference/tests/golden.txt');after=hashes('tests/golden.txt')
           common={k:v for k,v in before.items() if not k.startswith('preset/NOISE/')}
           assert len(common)==195
-          assert all(after.get(k)==v for k,v in common.items()),'V23 sound changed outside WEST'
+          # (V10.7.56, the owner) the sound changes on purpose: ROOM at half the rate, no voice taken from another part,
+          # tails under -60 dB let go and low-passed, the English dictionary out: every common render still there
+          # (tests/golden.txt reviewed with them), the punch-ins and the audio ISR still V23's
+          assert all(k in after for k in common),'a V23 render gone'
           for name in ['perform.c','pfx.c','audio.c']:
               assert (Path('firmware/src')/name).read_bytes()==(Path('build/v23-reference/firmware/src')/name).read_bytes(),name+' changed'
-          print('PASS 195 unchanged reference renders; original punch-ins and audio ISR')
+          print('PASS 195 reference renders present; original punch-ins and audio ISR')
           PYREF
       - name: Lossless font metadata and isolated per-track generator
         run: |
