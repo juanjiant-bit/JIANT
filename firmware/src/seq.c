@@ -87,11 +87,16 @@ static void ev_at(uint32_t k) { ev_off = k < blk_n ? k : blk_n; }   /* (blk_n: t
 /* a note the FM-1 plays (not a key's): sounded, and with ALL sent as it sounds: the punch-ins' OCT- / OCT+ and RANDOM
  * on it (pfx.c pfx_pit, pfx_rpit: drawn by trk_note_on) */
 static int dxp_overrides(const track_t *t);
+static uint8_t scn_on;                              /* (V10.7.63) SCENE: 0 OFF, 1 the keys lead, 2..7 T1..T6's notes lead */
+static void scene_follow(track_t *t, uint32_t note, uint32_t vel);
+static void (*volatile scene_follow_fp)(track_t *, uint32_t, uint32_t) = scene_follow;   /* (out of RAM code's reach) */
 static void seq_note_on(track_t *t, uint32_t note, uint32_t vel)
 {
     if(dxp_overrides(t)) return; /* held fill owns this track; direct/live notes stay independent */
     uint32_t i = trk_index(t) % NTRK, send = mo_lvl == MO_ALL && note < 128u && mo_plays(t, note) && !pfx_holds(t);
     trk_note_on(t, note, vel);
+    if (scn_on >= 2u && trk_index(t) == scn_on - 2u)  /* (V10.7.63) SCENE led by this track's notes */
+        scene_follow_fp(t, note, vel);
     if (send) {
         uint32_t x = (uint32_t)clamp((int32_t)note + (t->pfx_pit + t->pfx_rpit) / 16, 0, 127);
         if (mo_out[i][note])
@@ -567,6 +572,9 @@ static void rec_release(track_t *t, uint32_t note);
  * records every track with a role into its own steps. The roles are the session's (RAM) */
 enum { SC_KEEP, SC_CHORD, SC_ARP, SC_BASS, SC_LEAD, SC_DRUM, SC_N };
 static uint8_t scn_on, scn_role[NTRK];   /* (V10.26: all KEEP until set or diced) */
+static volatile uint8_t scn_frel;                   /* (V10.7.63) main: SCENE changed, its followed notes to let go */
+static uint8_t scn_fnote = 60;                      /* .. the leading track's last note (the SCENE graph) */
+static uint32_t scn_blk;                            /* .. events_block's count (a chord step's notes: one block) */
 /* (V10.6j) BASS and LEAD play a pattern over the key's chord (the track's arp: notes, MODE, RATE (N_DIV), GATE, PROB);
  * the kit's DRUM writes a beat of its own a key (ui_scene.c sc_beat: the main loop, scn_dreq the key + 1) */
 static uint8_t scn_pat[NTRK];
@@ -582,7 +590,7 @@ static uint32_t scn_keys;                           /* the keys down that play t
 static int rec_on(const track_t *t)
 {
     uint32_t i = trk_index(t);                       /* (not modulo: the internal parts past NTRK never record) */
-    return (((song.rec >> i) & 1u) || (scn_on && song.rec && i < NTRK && scn_role[i])) && song.playing && !chain.running;
+    return (((song.rec >> i) & 1u) || (scn_on == 1u && song.rec && i < NTRK && scn_role[i])) && song.playing && !chain.running;
 }
 static int pfx_rec_ok(void) { return song.rec && song.playing && !chain.running; }   /* (pfx.c: the punch-in lane) */
 
@@ -1606,10 +1614,45 @@ static int scn_held(uint32_t i, uint32_t x)        /* another SCENE key holds no
                 return 1;
     return 0;
 }
+/* track i's part of a SCENE key k (its note `root` on that track, velocity vel; sl: the notes started, for their end;
+ * rec: the keys record, a led scene does not) */
+static __attribute__((noinline)) void sc_track(uint32_t i, uint32_t k, uint32_t root, uint32_t vel, uint8_t *sl, int rec)
+{
+    track_t *t = &trk[i];
+    uint32_t j, n;
+    uint8_t o[KB_CH + 1];
+    if (drum_track(t)) {                                /* (V10.6j) the kit's DRUM: a beat of its own for the key */
+        if (scn_role[i] == SC_DRUM)
+            scn_dreq = (uint8_t)(k + 1u);
+        return;
+    }
+    if (!scn_role[i] || scn_role[i] == SC_DRUM || root > 127u)   /* (DRUM: a kit's alone; stuck notes: a key QUANT WHITE
+                                                         * silences: none, it was note 255, its key-up lost) */
+        return;
+    if ((scn_role[i] == SC_BASS || scn_role[i] == SC_LEAD) && scn_pat[i] % SC_NPAT == SC_GEN) {
+        /* (V10.6m) GEN: the key's chord moves the line (the root's interval from the key's, the nearest way; QUANT
+         * SEQ: in scale) */
+        t->trn = (int8_t)(((root + 132u - (uint32_t)t->p[P_ROOT]) % 12u + 5u) % 12u - 5);
+        return;
+    }
+    n = scn_notes(t, scn_role[i], root, o, 0);
+    if (rec && n > 1u && rec_on(t) && !t->p[P_AMODE])  /* (a chord: into one step, as key_on) */
+        for (j = 0; j < n; j++)
+            rec_note(t, o[j], vel);
+    in_norec = (uint8_t)(n > 1u || !rec);
+    for (j = 0; j < n && j < KB_CH; j++) {
+        if (midi_local_held(t, o[j]))
+            continue;
+        sl[j] = (uint8_t)(o[j] + 1u);
+        input_on(t, o[j], vel);
+        if (mo_key(t))
+            mo_kon(i, o[j], vel);
+    }
+    in_norec = 0;
+}
 static void scene_key(uint32_t k, int on)
 {
-    uint32_t i, j, n, s;
-    uint8_t o[KB_CH + 1];
+    uint32_t i, j, s;
     for (s = 0; s < SC_SL && scn_sl[s].key != (on ? 0u : k + 1u); s++)
         ;
     if (s == SC_SL)                                  /* (key-up: nothing started; down: SC_SL keys held already) */
@@ -1631,37 +1674,37 @@ static void scene_key(uint32_t k, int on)
             mo_koff(i, x - 1u);
         }
     }
-    for (i = 0; on && i < trk_live && i < NTRK; i++) {
-        track_t *t = &trk[i];
-        if (drum_track(t)) {                            /* (V10.6j) the kit's DRUM: a beat of its own for the key */
-            if (scn_role[i] == SC_DRUM)
-                scn_dreq = (uint8_t)(k + 1u);
-            continue;
-        }
-        if (!scn_role[i] || scn_role[i] == SC_DRUM || kb_map(t, k) > 127u)   /* (DRUM: a kit's alone; stuck notes: a key
-                                                         * QUANT WHITE silences: none, it was note 255, its key-up lost) */
-            continue;
-        if ((scn_role[i] == SC_BASS || scn_role[i] == SC_LEAD) && scn_pat[i] % SC_NPAT == SC_GEN) {
-            /* (V10.6m) GEN: the key's chord moves the line (the root's interval from the key's, the nearest way; QUANT
-             * SEQ: in scale) */
-            t->trn = (int8_t)(((kb_map(t, k) + 132u - (uint32_t)t->p[P_ROOT]) % 12u + 5u) % 12u - 5);
-            continue;
-        }
-        n = scn_notes(t, scn_role[i], kb_map(t, k), o, 0);
-        if (n > 1u && rec_on(t) && !t->p[P_AMODE])      /* (a chord: into one step, as key_on) */
-            for (j = 0; j < n; j++)
-                rec_note(t, o[j], KB_VEL(k));
-        in_norec = (uint8_t)(n > 1u);
-        for (j = 0; j < n && j < KB_CH; j++) {
-            if (midi_local_held(t, o[j]))
-                continue;
-            scn_sl[s].n[i][j] = (uint8_t)(o[j] + 1u);
-            input_on(t, o[j], KB_VEL(k));
-            if (mo_key(t))
-                mo_kon(i, o[j], KB_VEL(k));
-        }
-        in_norec = 0;
-    }
+    for (i = 0; on && i < trk_live && i < NTRK; i++)
+        sc_track(i, k, kb_map(&trk[i], k), KB_VEL(k), scn_sl[s].n[i], 1);
+}
+/* (V10.7.63, the owner: "it does not react to the sequence") SCENE led by a track (scn_on 2..7: T1..T6): each of its
+ * notes (its sequence's, its arp's) is a key for the others: their notes of the one before let go, the new ones on (a
+ * chord step: its first note leads, the rest of the block ignored); a stop, or SCENE changed, lets them all go */
+static uint8_t scn_fn[NTRK][KB_CH] __attribute__((section(".pool")));
+static uint32_t scn_fblk __attribute__((section(".pool")));
+static __attribute__((noinline)) void scene_follow_off(void)
+{
+    uint32_t i, j;
+    for (i = 0; i < NTRK; i++)
+        for (j = 0; j < KB_CH; j++)
+            if (scn_fn[i][j]) {
+                input_off(&trk[i], scn_fn[i][j] - 1u);
+                mo_koff(i, scn_fn[i][j] - 1u);
+                scn_fn[i][j] = 0;
+            }
+}
+static void (*volatile scene_foff_fp)(void) = scene_follow_off;   /* (seq_stop, events_block: RAM code's reach) */
+static __attribute__((noinline)) void scene_follow(track_t *lt, uint32_t note, uint32_t vel)
+{
+    uint32_t i, li = trk_index(lt) % NTRK;
+    if (scn_fblk == scn_blk + 1u || note > 127u)        /* (this block led already: a chord's other notes) */
+        return;
+    scn_fblk = scn_blk + 1u;
+    scn_fnote = (uint8_t)note;
+    scene_follow_off();
+    for (i = 0; i < trk_live && i < NTRK; i++)
+        if (i != li)
+            sc_track(i, note % 27u, note, vel, scn_fn[i], 0);
 }
 
 /* (the keys' block is RAM code: SCENE's call goes through a pointer, out of the direct calls' +-4 MiB reach check;
@@ -1737,7 +1780,7 @@ static void keyboard_block(void)
             kb_oct[k] = (int8_t)(!song.grid && drum_track(&trk[kb_trk[k]]) ? song.octave + (split_cfg[0] ? split_oct(k >= split_cut(0)) : 0) : 0);   /* split drum octave retained until release */
             if (kb_note[k] == KB_SILENT)
                 continue;
-            if (scn_on && !song.grid && !split_cfg[0]) {           /* (V10.25) SCENE: every track with a role */
+            if (scn_on == 1u && !song.grid && !split_cfg[0]) {     /* (V10.25) SCENE: every track with a role */
                 scn_keys |= 1u << k;
                 scene_fp(k, 1);
                 continue;
@@ -2679,6 +2722,7 @@ static void seq_release(track_t *t)
 
 static void seq_stop(void)
 {
+    scene_foff_fp();                                /* (V10.7.63) a led SCENE's notes */
     uint32_t i;
     if (song.playing && mo_clock_on())             /* (0.6.72) MIDI OUT CLOCK / ALL: STOP */
         mo_send(0xFCu, 0, 0);
@@ -3461,6 +3505,11 @@ static __attribute__((noinline)) void panic_block(void)   /* (mo_block, before e
 
 static void events_block(uint32_t n)
 {
+    scn_blk++;                                      /* (V10.7.63: SCENE's chord steps, one lead a block) */
+    if (scn_frel) {                                 /* (V10.7.63) SCENE changed: what a track led let go */
+        scn_frel = 0;
+        scene_foff_fp();
+    }
     uint32_t i, pr, fo, seq_n = n;
     uint32_t clock_mode = (uint32_t)song.g[G_CLOCK];
     blk_n = n ? n : 1u;                                /* (ctl64: ev_at) */

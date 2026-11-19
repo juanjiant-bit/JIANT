@@ -1121,7 +1121,7 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
     memset(q->scene, 0, sizeof q->scene);
     if (pos + 2u + sizeof q->scene <= room && b[pos] == 'S' && b[pos + 1u] == 'C') {   /* (V10.31) SCENE (else OFF, all KEEP) */
         memcpy(q->scene, b + pos + 2u, sizeof q->scene);
-        q->scene[0] &= 1u;
+        q->scene[0] &= 7u;                              /* (V10.7.63: 2..7 a track leads) */
         pos += 2u + sizeof q->scene;
     }
     if (pos + 3u <= room && b[pos] == 'D' && b[pos + 1u] == 'R') {   /* (V10.49) the delay's R TIME (else =L) */
@@ -1347,7 +1347,7 @@ static void project_capture(project_t *p)
     {                                                   /* (V10.31) SCENE */
         uint32_t i;
         memset(p->scene, 0, sizeof p->scene);
-        p->scene[0] = scn_on & 1u;
+        p->scene[0] = scn_on & 7u;                       /* (V10.7.63: 2..7 a track leads) */
         for (i = 0; i < NTRK; i++) p->scene[1u + i / 2u] |= (uint8_t)((scn_role[i] & 15u) << (4u * (i & 1u)));
         memset(p->scpat, 0, sizeof p->scpat);
         for (i = 0; i < NTRK; i++) p->scpat[i / 2u] |= (uint8_t)((scn_pat[i] % SC_NPAT) << (4u * (i & 1u)));
@@ -1579,7 +1579,7 @@ static int project_restore_runtime(const project_t *input)
     {                                                   /* (V10.31) SCENE */
         uint32_t i;
         memcpy(split_cfg, p->split, sizeof split_cfg);
-        scn_on = p->scene[0] & 1u;
+        scn_on = (uint8_t)(p->scene[0] & 7u);
         for (i = 0; i < NTRK; i++) {
             uint32_t r = (p->scene[1u + i / 2u] >> (4u * (i & 1u))) & 15u;
             scn_role[i] = (uint8_t)(r < SC_N ? r : SC_KEEP);

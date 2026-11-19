@@ -118,6 +118,40 @@ int main(void)
             bad += check(what, ek1 < ek0 * 0.6 && fabs(kt1 / kt0 - 1.0) < 0.1);
         }
     }
+    {   /* (V10.7.63) SCENE led by a track: T1's sequence (C4, then F4 at step 8) plays T2's CHORD (its chord follows each
+         * note); the keys stay T1's own; a stop lets T2's notes go */
+        uint32_t i, k, c, got0 = 0, got1 = 0;
+        ui_power_on();
+        for (i = 0; i < NTRK; i++) {
+            track_t *t = &trk[i];
+            track_defaults_steps(t);
+            t->p[P_SLEN] = 16; t->p[P_SDIV] = 2; t->p[P_SSWING] = 0; t->p[P_SGATE] = 50;
+            if (i > 1u) t->p[P_MUTE] = 1;
+            for (k = 0; k < 16u; k++) t->step[k] = (step_t){{0}, 0, ST_REST, 0, 100};
+        }
+        for (i = 0; i < 2u; i++) { set_engine_of(&trk[i], ENGI_ANALOG); trk[i].engine = trk[i].eng_req; trk[i].p[P_SCALE] = 1; trk[i].p[P_ROOT] = 0; }
+        trk[0].step[0] = (step_t){{60u}, 1, ST_NOTE, 0, 100};
+        trk[0].step[8] = (step_t){{65u}, 1, ST_NOTE, 0, 100};
+        scn_role[0] = SC_KEEP; scn_role[1] = SC_CHORD; trk[1].p[P_AMODE] = 0; trk[1].p[P_VOICE] = V_POLY;
+        scn_on = 2;                                     /* (T1 leads) */
+        song.g[G_BPM] = 120; song.g[G_SWING] = 0;
+        seq_start(); song.playing = 1;
+        for (c = 0; c < 66150u; c += CTL) {             /* (1.5 s at 120: step 8 at 1 s, both notes) */
+            events_block(CTL);
+            for (i = 0; i < NVOICE; i++)
+                if (trk[1].v[i].active && trk[1].v[i].stage < 3u) {
+                    got0 |= trk[1].v[i].note == 60u || trk[1].v[i].note == 64u || trk[1].v[i].note == 67u;
+                    got1 |= trk[1].v[i].note == 65u || trk[1].v[i].note == 69u || trk[1].v[i].note == 72u;
+                }
+        }
+        seq_stop(); song.playing = 0;
+        events_block(CTL);
+        for (i = 0, k = 0; i < NVOICE; i++) k += trk[1].v[i].active && trk[1].v[i].stage < 3u;
+        ok = got0 && got1 && !k && !scn_fn[1][0];
+        if (!ok) printf("  scene follow: C %u F %u held after stop %u\n", got0, got1, k);
+        bad += check("SCENE led by T1's sequence: T2's CHORD follows its notes (C, then F); a stop lets it go", ok);
+        scn_on = 0; memset(scn_role, 0, sizeof scn_role);
+    }
     {   /* a project: LIFE off writes no block; on, 'L' 'F' kept and back after a load */
         uint32_t n0, n1;
         project_t p;

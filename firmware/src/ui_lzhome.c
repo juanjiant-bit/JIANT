@@ -247,7 +247,6 @@ static void graph_eco(void)
     int32_t bx[ECO_N], by[ECO_N], bot = eco_bot();
     (void)eco_step();                                   /* (the swim, once a frame) */
     (void)bg_energy();                                  /* (the output's level kept as it was read: once a frame) */
-    char b[16];
     for (k = 0; k < 22u; k++) {                         /* the cytoplasm: granules drifting */
         uint32_t h = k * 2654435761u;
         int32_t gx = 10 + (int32_t)((h >> 8) % 220u + anim_fr * (1u + (h >> 28)) / 6u) % 220;   /* (still: where they were) */

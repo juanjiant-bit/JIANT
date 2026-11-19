@@ -1507,7 +1507,7 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
                   (uint32_t)t->p[P_E2] << 24)) * 16777619u;
     if (pg->graph == GR_SCENE) {                     /* (V10.25) the roles, the track picked, the last key */
         for (i = 0; i < NTRK; i++) h = (h ^ scn_role[i] ^ (uint32_t)drum_track(&trk[i]) << 4 ^ (uint32_t)trk[i].p[P_CHRD] << 8) * 16777619u;
-        h = (h ^ scn_on ^ (uint32_t)sc_trk << 2 ^ (uint32_t)last_note << 8) * 16777619u;
+        h = (h ^ scn_on ^ (uint32_t)sc_trk << 2 ^ (uint32_t)last_note << 8 ^ (uint32_t)scn_fnote << 16 ^ (uint32_t)scn_pat[sc_trk % NTRK] << 24) * 16777619u;
     }
     if (pg->graph == GR_EUCLID) {                    /* (V10.6) the pattern, the lane, the key, the step playing */
         h = (h ^ steps_sig(t) ^ (uint32_t)t->p[P_SLEN] << 24) * 16777619u;
