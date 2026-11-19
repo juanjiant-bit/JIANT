@@ -815,6 +815,19 @@ static int half_quality(double lim)
                 d = rms_db(full, half, n, 1);
                 r = rms_db(ref, half, n, 1);
                 if (r > wref) wref = r;
+                if (getenv("SPEC")) {                      /* (the spectrum instead: the largest band difference under
+                                                         * 4 kHz, dB: noise and jitter as heard, not sample by sample) */
+                    double bf[NBAND], bh[NBAND], mx = 0;
+                    uint32_t q;
+                    band_power(full, n, bf);
+                    band_power(half, n, bh);
+                    {
+                        double sf = 0, sh = 0;
+                        for (q = 0; q < 3u; q++) { sf += bf[q]; sh += bh[q]; }
+                        mx = fabs(10 * log10((sh + 1e-9) / (sf + 1e-9)));   /* (the level under 4 kHz, dB apart) */
+                    }
+                    d = mx;
+                }
                 if (d > worst) { worst = d; wn = en->presets[pr].name; }
                 if (d > lim) { printf("  %-8s %-14s %s half vs full under 4 kHz %6.1f dB (vs the interpolation %6.1f)\n", en->name, en->presets[pr].name, k ? "line " : "chord", d, r); bad++; }
             }

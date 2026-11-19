@@ -206,7 +206,10 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
     shim = 32768 + (jr << 7);
     ratio = fmt_ratio(p[P_E3] * 16 + ((FMT_FOLOW * (p16 - 60 * 16) * 516) >> 16));   /* (the pitch sung: its glide) */
     bws = fmt_ratio((64 - p[P_E6]) * 4);
-    f0 = (uint32_t)(umul64(inc, 705600u) >> 32);
+    uint32_t vsh = VH_SH();                             /* (V10.7.56) at half the rate: as formant_render's, and the
+                                                         * articulation's ramps over the block's samples, the frication's
+                                                         * band (1 - z^-1 there: its peak at the same 11 kHz) */
+    f0 = (uint32_t)(umul64(inc, 705600u) >> 32) >> vsh;
     bm = clamp(sg->bm, 8, 64);
     bw[0] = BW0[0] * (bm < 24 ? bm : 24);               /* (0.9.8) a nasal's, a lateral's F1 less widened than F2 F3: */
     bw[1] = BW0[1] * bm;                                /* the murmur low and round, the mouth's formants damped */
@@ -221,20 +224,25 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
         fa[j] = clamp(f, 60 * 16, 7000 * 16);
         ba[j] = clamp(b, 20 * 16, 1500 * 16);
     }
-    fres_coef(&r1, (uint32_t)fa[0], (uint32_t)ba[0]);
-    fres_coef(&r2, (uint32_t)fa[1], (uint32_t)ba[1]);
-    fres_coef(&r3, (uint32_t)fa[2], (uint32_t)ba[2]);
+    fres_coef(&r1, (uint32_t)fa[0] << vsh, (uint32_t)ba[0] << vsh);
+    fres_coef(&r2, (uint32_t)fa[1] << vsh, (uint32_t)ba[1] << vsh);
+    fres_coef(&r3, (uint32_t)fa[2] << vsh, (uint32_t)ba[2] << vsh);
     /* (V10.40) F5: 4300 Hz, 300 Hz wide, moved as F1 .. F3 (ratio: a SHIFT up kept it over F4; at most ~x5, under
      * FS / 2) */
-    fres_coef(&r5, ((ratio >> 4) * 4300u) >> 8, ((ratio >> 4) * 300u) >> 8);   /* (Hz x 16; 32 bits: ratio < 2^18) */
+    {
+        uint32_t f5 = ((ratio >> 4) * 4300u) >> 8;      /* (Hz x 16; 32 bits: ratio < 2^18) */
+        fres_coef(&r5, (vsh && f5 > 9500u * 16u ? 9500u * 16u : f5) << vsh, (((ratio >> 4) * 300u) >> 8) << vsh);
+    }
     fw = clamp(sg->gf * 16, 0, 32767);                  /* frication's weight: F4 its resonance (SHIFT not on it), */
     r4r = ratio + (uint32_t)((((int32_t)65536 - (int32_t)ratio) * fw) >> 15);   /* no presence on the noise */
     fres_coef(&r4, (uint32_t)clamp((int32_t)(umul64((uint32_t)clamp(sg->ff, 200, 7600) * 16u, r4r) >> 16),
-                                   60 * 16, 7600 * 16),
+                                   60 * 16, 7600 * 16) << vsh,
               (uint32_t)clamp((int32_t)(umul64((uint32_t)clamp(sg->fb, 50, 5000) * 16u, r4r) >> 16), 20 * 16,
-                              5000 * 16));
+                              5000 * 16) << vsh);
     buzz = fmt_glot(p, v, m, g);
     tilt = 1900 + ((buzz * 96) >> 8);                   /* (0.9.8) a softer source than the vowels' (~6 kHz at 80 %) */
+    if (vsh)
+        tilt = 2 * tilt - ((tilt * tilt) >> 14);
     te = g[0];
     tp = g[1];
     rp = g[2];
@@ -243,14 +251,21 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
     gn = (p[P_E5] * 258 * sg->gv) >> 15;                /* (V10.40) as the voicing does: a closure silent (the breath */
                                                         /* through F1 filled the gap of p t k: -17 dB, now -30 and under) */
     gv = (sg->pv * gvb) >> 15;                          /* the articulation's gains, ramped over the block */
-    dgv = (((sg->gv * gvb) >> 15) - gv) >> CTL_LOG2;
+    dgv = (((sg->gv * gvb) >> 15) - gv) >> (CTL_LOG2 - vsh);
     ga = sg->pa;
-    dga = (sg->ga - ga) >> CTL_LOG2;
+    dga = (sg->ga - ga) >> (CTL_LOG2 - vsh);
     gf = sg->pf;
-    dgf = (sg->gf - gf) >> CTL_LOG2;
+    dgf = (sg->gf - gf) >> (CTL_LOG2 - vsh);
+    if (vsh) {                                          /* (white noise at half the rate: -3 dB, as loud under 11 kHz) */
+        gn = (gn * 23170) >> 15;
+        ga = (ga * 23170) >> 15;
+        dga = (dga * 23170) >> 15;
+        gf = (gf * 23170) >> 15;
+        dgf = (dgf * 23170) >> 15;
+    }
     og = 7800 - ((p[P_E6] - 64) * 30);                 /* (V10.40: x 0.6, the peakier F1 F2 F3 and F5 as loud as before) */
     og = (int32_t)(mul64_us(fmt_ratio((60 * 16 - p16) / 4), og) >> 16);
-    ogk = mul64_sh15((og >> 2) * (6 + (buzz >> 11)), 32767 - fw);   /* (0.9.8: less presence) */
+    ogk = mul64_sh15((og >> 2) * (6 + (buzz >> 11)), 32767 - fw) >> vsh;   /* (0.9.8: less presence) */
     for (i = 0; i < n; i++) {
         int32_t e, x, a, s, nz, fz;
         if (ph < tp)
@@ -269,7 +284,7 @@ static void __attribute__((noinline)) formant_word_render(track_t *t, voice_t *v
             x += ph < te ? (nz * gn) >> 15 : (nz * gn) >> 16;   /* breath: with the glottis open */
         x += (nz * ga) >> 14;                           /* aspiration: h, after p t k (V10.40: x 2, the output's x 0.6) */
         ga += dga;
-        fz = ((nz - nzq) * gf) >> 15;
+        fz = ((nz - (vsh ? nzp : nzq)) * gf) >> 15;
         fz += fz >> 1;                                  /* (V10.40: x 1.5, the output's x 0.6: s ~-17 dB) frication: noise, (0.9.8) band-passed (1 - z^-2: none at DC */
         nzq = nzp;                                      /* nor at the top, no fizz past ~12 kHz), into F4 */
         nzp = nz;
@@ -545,7 +560,8 @@ static const engine_t ENG_FORMANT = {
     .note_on = formant_note_on,
     .render = formant_render,
     .half = 3,                   /* (V10.7.56) the half rate without the cutoff's octave (it moves the vowel here); WORDS
-                                  * at the full rate (voice.c voice_half) */
+                                  * at the full rate for now (voice.c voice_half; formant_word_render's own half-rate
+                                  * parts there for when its level matches) */
     .knob = {P_E0, P_E4, P_E5, P_E2},
     .poly = 4,
     .desc = formant_desc,

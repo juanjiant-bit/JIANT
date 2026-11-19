@@ -1926,7 +1926,8 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
         }
         vi += c->ti * NVOICE;
         if (VH_ST(vh_c[vi]) && e->half && !off && !(e == &ENG_FORMANT && t->p[P_VLANG]))   /* (codex/voices) at half
-                                                         * the rate (V10.7.56: VOICE's WORDS not: their timings a sample) */
+                                                         * the rate (V10.7.57: VOICE's WORDS not yet: their level at half
+                                                         * the rate up to 11 dB off, voices_probe SPEC=1 halfq) */
             voice_half(t, e, v, out, n, &m, vi);
         else
             e->render(t, v, out + off, n, &m);
