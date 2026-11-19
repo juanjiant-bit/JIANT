@@ -424,7 +424,8 @@ static __attribute__((noinline)) void vel_note(track_t *t, uint32_t vel)   /* (m
  * second tone an octave up), +BASS (the root an octave down added). STRUM: the notes one after the other, low to
  * high. The root alone on a kit and on MONO / LEGATO / UNISON. The keys only (MIDI notes play as they come); the
  * notes go to the sequencer's recording and the ARP as the key's own would */
-enum { CD_OFF, CD_TRI, CD_SEV, CD_ADD9, CD_SUS2, CD_SUS4, CD_MAJ, CD_MIN, CD_DOM7, CD_MAJ7, CD_MIN7, CD_POW };
+enum { CD_OFF, CD_TRI, CD_SEV, CD_ADD9, CD_SUS2, CD_SUS4, CD_MAJ, CD_MIN, CD_DOM7, CD_MAJ7, CD_MIN7, CD_POW,
+       CD_SET0, CD_NSET = 5 };                         /* (V10.7.63) the chord SETS: POP JAZZ SOUL DREAM QUART */
 enum { CV_CLOSE, CV_LEAD, CV_OPEN, CV_BASS };
 static uint8_t chord_last[NTRK][KB_CH], chord_nlast[NTRK];   /* the last chord each track played (LEAD) */
 /* (0.8.3) the first of the intervals p (n of them) the scale (mask) has over a root rel semitones above ROOT; -1 none */
@@ -439,17 +440,24 @@ static int32_t chord_pick(uint32_t mask, int32_t rel, const int8_t *p, uint32_t 
 static uint32_t chord_build_mode(const track_t *t, uint32_t root, uint8_t *out, uint32_t mode)
 {
     static const int8_t DIA[5][4] = {{0, 2, 4, -1}, {0, 2, 4, 6}, {0, 2, 4, 8}, {0, 1, 4, -1}, {0, 3, 4, -1}};
+    /* (V10.7.63, a user's wish: chord sets to play progressions from the keys) each SET a colour for each degree of the
+     * key: the steps of the scale stacked (always in the key): TRIAD, 7TH, ADD9, SUS2, SUS4, 9TH (root 3rd 7th 9th: four
+     * notes, the fifth left out), QUARTAL (fourths of the scale). Our own sets: POP JAZZ SOUL DREAM QUART */
+    static const int8_t SST[7][4] = {{0, 2, 4, -1}, {0, 2, 4, 6}, {0, 2, 4, 8}, {0, 1, 4, -1}, {0, 3, 4, -1}, {0, 2, 6, 8},
+                                     {0, 3, 6, -1}};
+    static const uint8_t SETS[CD_NSET][7] = {{2, 1, 0, 2, 4, 1, 1}, {5, 5, 1, 1, 5, 1, 1}, {5, 5, 1, 5, 2, 5, 4},
+                                             {2, 3, 1, 2, 3, 2, 4}, {6, 6, 6, 6, 6, 6, 6}};
     static const int8_t SHP[6][4] = {{0, 4, 7, -1}, {0, 3, 7, -1}, {0, 4, 7, 10}, {0, 4, 7, 11}, {0, 3, 7, 10},
                                      {0, 7, 12, -1}};
     const engine_t *e = ENGINES[eng_idx(t->eng_req)];
     uint32_t vc = (uint32_t)t->p[P_CVOI], n = 0, i, j, ti = trk_index(t) % NTRK, any = mode & 0x80u, peek = mode & 0x40u;
     int32_t nt[KB_CH + 1], r = (int32_t)root;           /* (V10.25 SCENE any: any voice; V10.27 peek: the screen's, */
     mode &= 0x3Fu;                                      /* LEAD's last chord not written: drawing changed the voicing) */
-    if (!mode || mode > CD_POW || e->oneshot || (e->keys && e->keys(t, 0) >= 0) || (t->p[P_VOICE] != V_POLY && !any)) {
+    if (!mode || mode >= CD_SET0 + CD_NSET || e->oneshot || (e->keys && e->keys(t, 0) >= 0) || (t->p[P_VOICE] != V_POLY && !any)) {
         out[0] = (uint8_t)root;
         return 1;
     }
-    if (mode >= CD_MAJ) {
+    if (mode >= CD_MAJ && mode <= CD_POW) {
         for (i = 0; i < 4u && SHP[mode - CD_MAJ][i] >= 0; i++)
             nt[n++] = r + SHP[mode - CD_MAJ][i];
     } else {                                    /* every other note of the scale from the key's */
@@ -465,8 +473,10 @@ static uint32_t chord_build_mode(const track_t *t, uint32_t root, uint8_t *out, 
                 deg[c++] = i;
             }
         if (c == 7u) {                          /* a mode of seven: its own chord on the degree (diatonic) */
-            for (i = 0; i < 4u && DIA[mode - CD_TRI][i] >= 0; i++) {
-                uint32_t k = at + (uint32_t)DIA[mode - CD_TRI][i];
+            const int8_t *of = mode >= CD_SET0 ? SST[SETS[mode - CD_SET0][at % 7u]] : DIA[mode - CD_TRI];   /* (a SET:
+                                                         * the degree's colour) */
+            for (i = 0; i < 4u && of[i] >= 0; i++) {
+                uint32_t k = at + (uint32_t)of[i];
                 nt[n++] = r + (int32_t)deg[k % c] + 12 * (int32_t)(k / c) - (int32_t)deg[at];
             }
         } else {                                /* (0.8.3) five, six or eight notes (PEN MPEN BLUES WHOLE DIMHW DIMWH):
@@ -480,6 +490,8 @@ static uint32_t chord_build_mode(const track_t *t, uint32_t root, uint8_t *out, 
             static const int8_t T3[4] = {4, 3, 5, 2}, F5[3] = {7, 8, 6}, F5M[3] = {7, 6, 8}, S7[3] = {10, 11, 9}, S7D[2] = {9, 10},
                                 S9[2] = {14, 15}, S2[2] = {2, 1}, S4[2] = {5, 6};
             int32_t rel = (r - rt + 120) % 12, th, fi, x;
+            if (mode >= CD_SET0)                /* (a SET in a scale of five, six or eight: its sevenths) */
+                mode = CD_SEV;
 #define CPK(P) chord_pick(mask, rel, P, sizeof P)
             th = mode == CD_SUS2 ? CPK(S2) : mode == CD_SUS4 ? CPK(S4) : -1;
             if (th < 0) th = CPK(T3);

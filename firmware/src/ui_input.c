@@ -51,6 +51,7 @@ static const char KNOB_HINT[] =
     "ROOT" "\0" "SCALE ROOT" "\0"
     "QUANT" "\0" "SNAP TO SCALE" "\0"
     "ALL TRK" "\0" "TRANSPOSE ALL TRACKS" "\0"
+    "CHORD" "\0" "SETS: EACH KEY ITS OWN CHORD" "\0"
     "VOICING" "\0" "CHORD SPREAD" "\0"
     "STRUM" "\0" "STRUM TIME" "\0"
     "ORDER" "\0" "ARP ORDER" "\0"

@@ -152,6 +152,26 @@ int main(void)
         bad += check("SCENE led by T1's sequence: T2's CHORD follows its notes (C, then F); a stop lets it go", ok);
         scn_on = 0; memset(scn_role, 0, sizeof scn_role);
     }
+    {   /* (V10.7.63) the chord SETS (SCL > CHORD past POWER): each degree its colour, in the key (C major) */
+        track_t *t = &trk[0];
+        uint8_t o[KB_CH + 1];
+        uint32_t n1, n2, n3;
+        ui_power_on();
+        set_engine_of(t, ENGI_ANALOG); t->engine = t->eng_req; t->p[P_VOICE] = V_POLY; t->p[P_SCALE] = 1; t->p[P_ROOT] = 0;
+        t->p[P_CVOI] = 0; chord_nlast[0] = 0;
+        t->p[P_CHRD] = CD_SET0;                         /* POP */
+        n1 = chord_build(t, 60, o);
+        ok = n1 == 4u && o[0] == 60 && o[1] == 64 && o[2] == 67 && o[3] == 74;   /* I: ADD9 */
+        n2 = chord_build(t, 62, o);
+        ok &= n2 == 4u && o[0] == 62 && o[1] == 65 && o[2] == 69 && o[3] == 72;  /* ii: 7TH */
+        t->p[P_CHRD] = CD_SET0 + 1;                     /* JAZZ */
+        n3 = chord_build(t, 67, o);
+        ok &= n3 == 4u && o[0] == 67 && o[1] == 71 && o[2] == 77 && o[3] == 81;  /* V: 9TH (no fifth) */
+        t->p[P_CHRD] = CD_SET0 + 4;                     /* QUART */
+        ok &= chord_build(t, 64, o) == 3u && o[0] == 64 && o[1] == 69 && o[2] == 74;   /* iii: fourths */
+        bad += check("CHORD SETS: POP I add9, ii 7th; JAZZ V 9th; QUART fourths, all in the key", ok);
+        t->p[P_CHRD] = 0;
+    }
     {   /* a project: LIFE off writes no block; on, 'L' 'F' kept and back after a load */
         uint32_t n0, n1;
         project_t p;

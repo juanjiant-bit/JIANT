@@ -271,10 +271,10 @@ static const param_desc_t DXIMG_DESC = {"IMAGE", F_INT, 0, 127, 0, 0};       /* 
 static const param_desc_t *eu_desc(uint32_t k, int16_t **valp);
 static const param_desc_t *sc_desc(uint32_t k, int16_t **valp);   /* (V10.25) ui_scene.c */
 static const char *const N_CHRD[] = {"OFF", "TRIAD", "7TH", "ADD9", "SUS2", "SUS4", "MAJ", "MIN", "7", "MAJ7", "MIN7",
-                                     "POWER", 0};
+                                     "POWER", "POP", "JAZZ", "SOUL", "DREAM", "QUART", 0};   /* (V10.7.63: the SETS) */
 static const char *const N_CVOI[] = {"CLOSE", "LEAD", "OPEN", "+BASS", 0};
 static const param_desc_t CHORD_DESC[3] = {              /* (0.6.81) SCL > CHORD: P_CHRD P_CVOI P_CSTR */
-    {"CHORD", F_ENUM, 0, 11, 0, N_CHRD}, {"VOICING", F_ENUM, 0, 3, 0, N_CVOI}, {"STRUM", F_PCT, 0, 127, 0, 0}};
+    {"CHORD", F_ENUM, 0, 16, 0, N_CHRD}, {"VOICING", F_ENUM, 0, 3, 0, N_CVOI}, {"STRUM", F_PCT, 0, 127, 0, 0}};
 static const param_desc_t ENV2_DESC[4] = {             /* (V10.22) ENV > ENV 2 (core.h P_E2*): as ENV's */
     {"ATK", F_TIME, 0, 127, 0, 0}, {"DEC", F_TIME, 0, 127, 0, 0}, {"SUS", F_PCT, 0, 127, 0, 0},
     {"REL", F_TIME, 0, 127, 0, 0}};
