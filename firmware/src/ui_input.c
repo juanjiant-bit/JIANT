@@ -2807,7 +2807,7 @@ static void ui_input_frame(void)
             if (f == FAM_COUNT) {                       /* HOME held: GEN, HOME's generator */
                 ui.home_t0 |= 2u;
                 if (!pj_sel_ms || fm1_ms - pj_sel_ms > 400u)
-                    nav_go(SEC_HOME, 4u + gen_page(), 1);
+                    nav_go(SEC_HOME, HE_GEN + gen_page(), 1);
             } else if (k) {
                 if (f == FAM_EDIT)                      /* (0.9.9-seq2f) EDIT + SELECT: the sound dice again (SELECT is
                                                          * no sound parameter; the presets: PRESETS only) */

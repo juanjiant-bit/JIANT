@@ -40,9 +40,18 @@ typedef struct { const char *t, *nm; uint8_t g, lv; } nv_t;   /* PAGES title (HO
 typedef struct { const char *nm, *tab; } ng_t;                /* a group: its name, its tab's when the name is too wide */
 typedef struct { const nv_t *e; const ng_t *g; uint8_t n, ng; } ch_t;
 #define NV(t, nm, g, lv) {t, nm, g, lv}
+/* (V10.7.63, the owner: "the arrange's redesign back": V10.7.32's, HOME = see and build the song) the song's pages HOME's,
+ * a group of their own between BEING and GENE: TIMELINE (each row's tracks: muted, from another part, varied), ARRANGE
+ * (the rows: part and bars), PARTS, CLIPS. PAGES' FAM_SAVE GR_SONG pages as they were (drawn and played as before);
+ * HOME's tabs, breadcrumb and header (nav_sec). SAVE keeps saving and loading */
+enum { SV_LIB, SV_PROJ, SV_SOUND };
+#define HE_SONG 4u                                      /* CE_HOME: the song's first entry, */
+#define HE_GEN 8u                                       /* .. GENE 1's */
 static const nv_t CE_HOME[] = {NV(0, "ECO", 0, 0), NV(0, "LIFE", 0, 0), NV(0, "BEING", 1, 1), NV(0, "ROUTES", 1, 1),
-                               NV(0, "GENE 1", 2, 2), NV(0, "GENE 2", 2, 2), NV(0, "GENE 3", 2, 2)};
-static const ng_t CG_HOME[] = {{"ECO", 0}, {"BEING", 0}, {"GENE", 0}};
+                               NV("TIMELINE", 0, 2, SV_PROJ), NV("ARRANGE", 0, 2, SV_PROJ), NV("PARTS", 0, 2, SV_PROJ),
+                               NV("CLIPS", 0, 2, SV_PROJ),
+                               NV(0, "GENE 1", 3, 2), NV(0, "GENE 2", 3, 2), NV(0, "GENE 3", 3, 2)};
+static const ng_t CG_HOME[] = {{"ECO", 0}, {"BEING", 0}, {"SONG", 0}, {"GENE", 0}};
 static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("WORDS", 0, 1, 1),
                               NV("SWARM", 0, 1, 1), NV("SWARM 2", 0, 1, 1), NV("FOCUS", 0, 2, 2), NV("PLAY", 0, 3, 1), NV("MORE", 0, 3, 1)};   /* (V10.7.60:
                                                          * MORPH RETRIG ROTOR and PLAY 2 one MORE) */   /* (the
@@ -106,18 +115,16 @@ static const nv_t CE_SCL[] = {NV("SCL", "KEY", 0, 0),   /* (codex/coherence: KEY
 static const ng_t CG_SCL[] = {{"KEY", 0}, {"CHORD", 0}, {"SCENE", 0}};
 static const nv_t CE_ARP[] = {NV("ARP", 0, 0, 2), NV("ARP 2", 0, 0, 2)};
 static const ng_t CG_ARP[] = {{"ARP", 0}};
-enum { SV_LIB, SV_PROJ, SV_SOUND };
+
 /* (V10.7.22, the owner: "CLEAR PROJECT in SAVE, on the first page, at the start") TOOLS SAVE's first page, its own tab,
  * CLEAR PROJECT its first action; SAVE at power-on still opens TIMELINE (NAV_DEF: the music first, not a page that
  * clears it), TOOLS one SELECT to the left, or a SAVE tap from SOUND (round) */
 /* (codex/coherence) one name for the song's parts A-D (PART); SONG the four pages that edit and play its rows and parts
  * together (ARRANGE next to TIMELINE), PROJECT what is stored: PART SLOTS (was SECTIONS, in SONG) and PROJECTS */
-static const nv_t CE_SAVE[] = {NV("TOOLS", 0, 0, SV_LIB),
-                               NV("TIMELINE", 0, 1, SV_PROJ), NV("ARRANGE", 0, 1, SV_PROJ), NV("PARTS", 0, 1, SV_PROJ),
-                               NV("CLIPS", 0, 1, SV_PROJ),   /* (V10.1) composing first; V10.6o PARTS; V10.6s CLIPS */
-                               NV("PROJECT", "PART SLOTS", 2, SV_PROJ), NV("PROJECT", "PROJECTS", 2, SV_LIB),
-                               NV("USER", 0, 3, SV_SOUND), NV("PRESETS", 0, 3, SV_SOUND)};
-static const ng_t CG_SAVE[] = {{"TOOLS", 0}, {"SONG", 0}, {"PROJECT", 0}, {"SOUND", 0}};
+static const nv_t CE_SAVE[] = {NV("TOOLS", 0, 0, SV_LIB),   /* (V10.7.63: the song's pages HOME's) */
+                               NV("PROJECT", "PART SLOTS", 1, SV_PROJ), NV("PROJECT", "PROJECTS", 1, SV_LIB),
+                               NV("USER", 0, 2, SV_SOUND), NV("PRESETS", 0, 2, SV_SOUND)};
+static const ng_t CG_SAVE[] = {{"TOOLS", 0}, {"PROJECT", 0}, {"SOUND", 0}};
 #define CH(e, g) {e, g, (uint8_t)NELEM(e), (uint8_t)NELEM(g)}
 #define NAV_KEYS (SEC_N + 3u)                           /* the sections' memories: EDIT's synth one, then FM6 DRUM DIGITAL */
 static const ch_t CHAINS[NAV_KEYS] = {CH(CE_HOME, CG_HOME), CH(CE_SYN, CG_SYN), CH(CE_SEQ, CG_SEQ), CH(CE_FX, CG_FX),
@@ -126,7 +133,7 @@ static const ch_t CHAINS[NAV_KEYS] = {CH(CE_HOME, CG_HOME), CH(CE_SYN, CG_SYN), 
                                       CH(CE_DIG, CG_DIG)};
 /* the page each opens on at power-on (the mock-up's): SEQ its STEP, ENV its ENV, LFO its LFO, (p2) GLO its MIXER (LIVE's
  * pages before it: a GLO tap inside, rule 2), (V10.7.22) SAVE its TIMELINE (TOOLS before it); ui.nmem holds it ^ this */
-static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 1, 0, 2, 0, 0, 1, 0, 0, 0};   /* (V10.7.59: LFO its LFO, after MACROS) */   /* (V10.7.58: GLO MIXER 1, RAILS gone) */
+static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 1, 0, 2, 0, 0, 2, 0, 0, 0};   /* (V10.7.63: SAVE its PROJECTS) */   /* (V10.7.59: LFO its LFO, after MACROS) */   /* (V10.7.58: GLO MIXER 1, RAILS gone) */
 static uint32_t nav_key(uint32_t sec) { uint32_t k = sec == SEC_EDIT ? edit_kind() : 0u; return k ? SEC_N - 1u + k : sec; }
 static const ch_t *nav_ch(uint32_t sec) { return &CHAINS[nav_key(sec)]; }
 static uint32_t nav_mem(uint32_t key) { return (uint32_t)(ui.nmem[key] ^ NAV_DEF[key]); }
@@ -142,7 +149,8 @@ static uint32_t sec_of_fam(uint32_t f)
 static int gen_on(void) { return ui.confirm == CF_DICE_ALL; }   /* GEN: HOME's last group (the generator's screen) */
 static int dlg_on(void) { return ui.confirm && ui.confirm != CF_DICE_ALL; }   /* a dialog over the page */
 static uint32_t gen_page(void);                         /* (gen.c) */
-static uint32_t nav_sec(void) { return ui.home || gen_on() ? SEC_HOME : sec_of_fam(PAGES[ui.page].fam); }
+static int song_pg(uint32_t i) { return PAGES[i].graph == GR_SONG && PAGES[i].fam == FAM_SAVE; }   /* (V10.7.63) HOME's */
+static uint32_t nav_sec(void) { return ui.home || gen_on() || song_pg(ui.page) ? SEC_HOME : sec_of_fam(PAGES[ui.page].fam); }
 /* entry e of section sec: its PAGES index shown now (NPAGES: not on this track, LOAD ECO's, HOME's own) */
 static uint32_t nv_page(uint32_t sec, uint32_t e)
 {
@@ -151,14 +159,16 @@ static uint32_t nv_page(uint32_t sec, uint32_t e)
     if (e >= c->n || !c->e[e].t)
         return NPAGES;
     for (i = 0; i < NPAGES; i++)
-        if ((PAGES[i].fam == f || (sec == SEC_GLO && PAGES[i].fam == FAM_TRK)) && str_eq(PAGES[i].title, c->e[e].t) &&
+        if ((PAGES[i].fam == f || (sec == SEC_GLO && PAGES[i].fam == FAM_TRK) || (sec == SEC_HOME && song_pg(i))) &&
+            str_eq(PAGES[i].title, c->e[e].t) &&
             page_visible(i))
             return i;
     return NPAGES;
 }
 static int nv_ok(uint32_t sec, uint32_t e)   /* (V10.7.59, the owner: HOME > MACROS gone, the FX layer's knobs are the macros) */
 {
-    return sec == SEC_HOME ? e < NELEM(CE_HOME) : nv_page(sec, e) < NPAGES;   /* (V10.7.62: ECO's second, LIFE) */
+    return sec == SEC_HOME && !CE_HOME[e < NELEM(CE_HOME) ? e : 0].t ? e < NELEM(CE_HOME) : nv_page(sec, e) < NPAGES;   /* (V10.7.62:
+                                                         * ECO's second, LIFE; V10.7.63 the song's pages) */
 }
 /* the entry shown: HOME's from its state (ui.hlv, ui.hset, GEN's page); the others the one remembered when it is the page
  * shown, else the page's own (put by code: in the group left, the default page's, then the chain's first), else
@@ -167,8 +177,12 @@ static uint32_t nav_cur(void)
 {
     uint32_t sec = nav_sec(), key = nav_key(sec), e = nav_mem(key), k, pass, s;
     const ch_t *c = &CHAINS[key];
-    if (sec == SEC_HOME)
-        return gen_on() ? 4u + gen_page() : (ui.hlv ? 2u : 0u) + (ui.hset[ui.hlv ? 1 : 0] & 1u);
+    if (sec == SEC_HOME && (ui.home || gen_on()))
+        return gen_on() ? HE_GEN + gen_page() : (ui.hlv ? 2u : 0u) + (ui.hset[ui.hlv ? 1 : 0] & 1u);
+    if (sec == SEC_HOME) {                              /* (V10.7.63) a song page */
+        for (k = HE_SONG; k < HE_GEN && nv_page(sec, k) != ui.page; k++) {}
+        return k < HE_GEN ? k : HE_SONG;
+    }
     s = ((((ui.page * 31u + key) * 131u + e) * 257u + TSEL->eng_req) * 8191u + ((uint32_t)(uint16_t)TSEL->p[P_E1] ^ (uint32_t)(uint16_t)TSEL->p[P_E0] << 8)) * 7u +
         sys_load + 1u;
     if (s == ui.nav_sig)
@@ -248,15 +262,16 @@ static void nav_go(uint32_t sec, uint32_t e, int outside)
         return;
     e = k;
     nav_mem_put(key, e);
-    if (sec == SEC_HOME) {
-        if (e >= 4u) {                                  /* GEN: the generator's screen, HOME's last group */
+    if (sec == SEC_HOME && c->e[e].t) {                 /* (V10.7.63) a song page: as any section's (below) */
+    } else if (sec == SEC_HOME) {
+        if (e >= HE_GEN) {                              /* GEN: the generator's screen, HOME's last group */
             if (!gen_on()) {
                 confirm_open(CF_DICE_ALL, song.sel);
                 gen_open();
                 if (!bt_hw_seg())                       /* (V10.7.10: GEN's code is in the Bluetooth segment) */
                     seg_missing();
             }
-            gen_page_put(e - 4u);
+            gen_page_put(e - HE_GEN);
         } else {
             if (gen_on())
                 ui.confirm = 0;
