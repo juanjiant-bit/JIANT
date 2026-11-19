@@ -394,7 +394,10 @@ static void formant_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, con
     /* SHIFT (semitones) and FOLOW (key tracking around C4, fixed), one ratio for all four */
     ratio = fmt_ratio(p[P_E3] * 16 + ((FMT_FOLOW * (v->pitch_cur - 60 * 16) * 516) >> 16));   /* FOLOW / 127 */
     bws = fmt_ratio((64 - p[P_E6]) * 4);                /* Q: bandwidth x2.5 .. x0.4 */
-    f0 = (uint32_t)(umul64(inc, 705600u) >> 32);   /* F0 in Hz * 16 */
+    uint32_t vsh = VH_SH();                             /* (V10.7.56) at half the rate: F0 from the full rate's step, the
+                                                         * resonators at the half rate's (2 F / FS), the tilt's pole
+                                                         * squared, the presence's slope and the breath's level kept */
+    f0 = (uint32_t)(umul64(inc, 705600u) >> 32) >> vsh;   /* F0 in Hz * 16 */
     for (j = 0; j < 3; j++) {
         int32_t f = fa[j], b = ba[j];
         f = (int32_t)(mul64_us(ratio, f) >> 16);
@@ -406,24 +409,31 @@ static void formant_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, con
         fa[j] = clamp(f, 60 * 16, 7000 * 16);
         ba[j] = clamp(b, 20 * 16, 1500 * 16);
     }
-    fres_coef(&r1, (uint32_t)fa[0], (uint32_t)ba[0]);
-    fres_coef(&r2, (uint32_t)fa[1], (uint32_t)ba[1]);
-    fres_coef(&r3, (uint32_t)fa[2], (uint32_t)ba[2]);
-    fres_coef(&r4, (uint32_t)clamp((int32_t)(umul64(3300u * 16u, ratio) >> 16), 60 * 16, 7000 * 16),
-              (uint32_t)clamp((int32_t)(umul64((uint32_t)(umul64(250u * 16u, ratio) >> 16), bws) >> 16), 20 * 16, 1500 * 16));
+    if (vsh)                                            /* (under the half rate's Nyquist) */
+        for (j = 0; j < 3; j++)
+            fa[j] = fa[j] > 9500 * 16 ? 9500 * 16 : fa[j];
+    fres_coef(&r1, (uint32_t)fa[0] << vsh, (uint32_t)ba[0] << vsh);
+    fres_coef(&r2, (uint32_t)fa[1] << vsh, (uint32_t)ba[1] << vsh);
+    fres_coef(&r3, (uint32_t)fa[2] << vsh, (uint32_t)ba[2] << vsh);
+    fres_coef(&r4, (uint32_t)clamp((int32_t)(umul64(3300u * 16u, ratio) >> 16), 60 * 16, vsh ? 9500 * 16 : 7000 * 16) << vsh,
+              (uint32_t)clamp((int32_t)(umul64((uint32_t)(umul64(250u * 16u, ratio) >> 16), bws) >> 16), 20 * 16, 1500 * 16) << vsh);
 
     /* source: BUZZ (+ SHP modulation, + velocity) -> open quotient and tilt */
     tilt = 2500 + ((buzz * 109) >> 8);                  /* one-pole coefficient Q14: dark .. open */
+    if (vsh)
+        tilt = 2 * tilt - ((tilt * tilt) >> 14);
     te = g[0];
     tp = g[1];
     rp = g[2];
     rn = g[3];
     gv = 32767 - p[P_E5] * p[P_E5] * 2;                 /* BREATH: voicing fades at the top */
     gn = p[P_E5] * 258;                                 /* noise: Q15, up to 1.0 */
+    if (vsh)
+        gn = (gn * 23170) >> 15;
     if (gn) nst = formant_nz;
     og = 13000 - ((p[P_E6] - 64) * 50);                 /* output: narrower bands ring louder */
     og = (int32_t)(mul64_us(fmt_ratio((60 * 16 - v->pitch_cur) / 4), og) >> 16);   /* 1.5 dB / oct: low notes are sparse pulses */
-    ogk = (og >> 2) * (4 + (buzz >> 10));               /* presence k = 1 .. 4.9 */
+    ogk = ((og >> 2) * (4 + (buzz >> 10))) >> vsh;      /* presence k = 1 .. 4.9 (a slope: half at half the rate) */
 
     for (i = 0; i < n; i++) {
         int32_t e, x, a, s;
@@ -534,6 +544,8 @@ static const engine_t ENG_FORMANT = {
     .npresets = NELEM(FORMANT_PRESETS),
     .note_on = formant_note_on,
     .render = formant_render,
+    .half = 3,                   /* (V10.7.56) the half rate without the cutoff's octave (it moves the vowel here); WORDS
+                                  * at the full rate (voice.c voice_half) */
     .knob = {P_E0, P_E4, P_E5, P_E2},
     .poly = 4,
     .desc = formant_desc,

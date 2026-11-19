@@ -1925,7 +1925,8 @@ static uint32_t voice_block(track_t *t, const engine_t *e, voice_t *v, int32_t *
             memcpy(vb, out + off, n * sizeof *out);
         }
         vi += c->ti * NVOICE;
-        if (VH_ST(vh_c[vi]) && e->half && !off)         /* (codex/voices) at half the rate */
+        if (VH_ST(vh_c[vi]) && e->half && !off && !(e == &ENG_FORMANT && t->p[P_VLANG]))   /* (codex/voices) at half
+                                                         * the rate (V10.7.56: VOICE's WORDS not: their timings a sample) */
             voice_half(t, e, v, out, n, &m, vi);
         else
             e->render(t, v, out + off, n, &m);
