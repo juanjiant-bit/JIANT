@@ -54,7 +54,7 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 39 | PAN | -64..63 | 0 | |
 | 44 | UNISON | 0..127 | 40 | |
 | 61 | ATK | 0..127 | 0 | (ANALOG PHASE WHEEL STRING WEST FM6 ADD ANIMAL EXT) |
-| 61 | RTRG | 0..1 | 1 | (MATH) |
+| 61 | RESTART | 0..1 | 1 | (MATH) |
 | 61 | LANG | 0..9 | 0 | OFF ES EN JA RU DE FR ZH PT GN (VOICE) |
 | 61 | KEY MAP | 0..1 | 1 | CLASSIC EXTENDED (DRUM) |
 | 62 | CHANCE | 0..127 | 0 | |
@@ -65,7 +65,7 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 67 | SUS | 0..127 | 0 | |
 | 68 | GATE | 0..127 | 127 | |
 | 69 | REL | 0..127 | 0 | |
-| 70 | REC Q | 0..127 | 127 | |
+| 70 | REC GRID | 0..127 | 127 | |
 | 71 | MORPH | 0..127 | 0 | |
 | 72 | C.LEN | 0..64 | 0 | OFF 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 ... |
 | 73 | DRIFT | 0..127 | 127 | |
@@ -85,8 +85,8 @@ its own way the engines are named. P_E0..P_E7 (CC98 115..122) are the engine's E
 | 84 | SNARE | 0..127 | 127 | (ANALOG PHASE MATH WHEEL STRING DRUM WEST FM6 ADD ANIMAL EXT) |
 | 84 | CONS | 0..127 | 127 | (VOICE) |
 | 85 | CLAP | 0..127 | 127 | |
-| 86 | HATCL | 0..127 | 127 | |
-| 87 | HATOP | 0..127 | 127 | |
+| 86 | HH CLOSED | 0..127 | 127 | |
+| 87 | HH OPEN | 0..127 | 127 | |
 | 88 | TOM | 0..127 | 127 | |
 | 89 | RIM | 0..127 | 127 | |
 | 90 | BELL | 0..127 | 127 | |
@@ -185,8 +185,8 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | FM6 12 | 116 | FB | -7..7 | 0 | |
 | FM6 12 | 117 | MOD | -64..63 | 0 | |
 | FM6 12 | 118 | RATIO | -16..16 | 0 | |
-| FM6 12 | 119 | MEG | -64..63 | 0 | |
-| FM6 12 | 120 | VMOD | -7..7 | 0 | |
+| FM6 12 | 119 | MOD ENV | -64..63 | 0 | |
+| FM6 12 | 120 | VEL MOD | -7..7 | 0 | |
 | FM6 12 | 121 | SPREAD | 0..127 | 0 | |
 | FM6 12 | 122 | SLOT | 0..40 | 0 | |
 | ADD 13 | 115 | MODE | 0..9 | 0 | HARM ODD WIDE BELL BAR DRUM PRIME FIFTH SUB PLATE |
@@ -200,8 +200,8 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | ANIMAL 14 | 115 | MODE | 0..4 | 0 | CMOS PULSE WHSTL WING GLOTT |
 | ANIMAL 14 | 116 | TOUCH | 0..127 | 100 | |
 | ANIMAL 14 | 117 | COUPLE | 0..127 | 0 | |
-| ANIMAL 14 | 118 | CAP | 0..127 | 64 | |
-| ANIMAL 14 | 119 | HYST | -64..63 | 0 | |
+| ANIMAL 14 | 118 | SIZE | 0..127 | 64 | |
+| ANIMAL 14 | 119 | STICKY | -64..63 | 0 | |
 | ANIMAL 14 | 120 | RATE | 0..127 | 80 | |
 | ANIMAL 14 | 121 | GROUP | 0..15 | 0 | |
 | ANIMAL 14 | 122 | FM | 0..40 | 22 | |
@@ -243,8 +243,8 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | 32 | FILT | -64..63 | 0 | |
 | 33 | WIDE | 0..127 | 0 | |
 | 34 | PITCH | -12..12 | 0 | |
-| 35 | SPRAY | 0..127 | 0 | |
-| 36 | ALL TR | -14..14 | 0 | |
+| 35 | SCATTER | 0..127 | 0 | |
+| 36 | ALL TRACKS | -14..14 | 0 | |
 | 37 | MODE | 0..2 | 0 | OFF GATE STUT |
 | 38 | PAT | 1..16 | 1 | |
 | 39 | RATE | 0..5 | 1 | 1/8 1/16 1/32 8T 16T 32T |
@@ -280,4 +280,4 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | 69 | LEN | 1..64 | 64 | |
 | 70 | RES | 0..2 | 1 | 1/8 1/16 1/32 |
 | 71 | DRIVE | 0..100 | 0 | |
-| 72 | R TIME | 0..6 | 0 | =L x1/2 x2/3 x3/4 x4/3 x3/2 x2 |
+| 72 | RIGHT TIME | 0..6 | 0 | =L x1/2 x2/3 x3/4 x4/3 x3/2 x2 |
