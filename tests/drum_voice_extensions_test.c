@@ -272,33 +272,20 @@ static int lyrics(void)
     bad+=check("Project round trip preserves languages, fixed lyrics and EXT key map",ok);
     return bad;
 }
-/* (V10.6r) SCENE: the kit's DRUM role GEN, GENE's drums a key a variation */
+/* (V10.7.63, the owner: GEN gone from SCENE) the kit's DRUM styles: FOUR BREAK HALF SPARSE, no GEN; a style still writes
+ * its beat */
 static int scene_gen(void)
 {
-    int bad=0,ok;int16_t *vp;uint32_t k,i,h[4];
+    int bad=0,ok;int16_t *vp;
     ui_power_on();song.playing=0;
     set_engine_of(&trk[0],ENGI_DRUM);trk[0].engine=trk[0].eng_req;
     sc_trk=0;scn_role[0]=SC_DRUM;
     const param_desc_t *d=sc_desc(3,&vp);
-    ok=d->max==SC_DGEN&&!strcmp(d->names[SC_DGEN],"GEN");
-    tg_config[0].energy=33;tg_config[0].complex=7;
-    trk[0].p[P_SLEN]=16;sc_put(3,SC_DGEN);
-    d=sc_desc(3,&vp);ok&=scn_pat[0]==SC_DGEN&&*vp==SC_DGEN;
-    bad+=check("SCENE DRUM: GEN shown and chosen",ok);
-    ok=1;
-    for(k=0;k<4;k++) {
-        for(i=0;i<NSTEP;i++) gclear(&trk[0].step[i]);
-        scn_dreq=(uint8_t)(k+1u);sc_beat();
-        uint32_t n=0,x=2166136261u;
-        for(i=0;i<32;i++){const step_t *s=&trk[0].step[i];n+=s->time==ST_NOTE&&s->hit;x=(x^s->hit^i<<8)*16777619u;}
-        ok &= n>=4&&trk[0].p[P_SLEN]>=32;h[k]=x;
-    }
-    ok &= h[0]!=h[1]&&h[0]!=h[2]&&h[0]!=h[3]&&h[1]!=h[2];
-    ok &= tg_config[0].energy==33&&tg_config[0].complex==7&&tg_config[0].role!=4u;
-    bad+=check("SCENE DRUM GEN: each key a GENE beat (base, dense, break, fill); TRACK GEN's settings kept",ok);
-    sc_put(3,1);ok=scn_pat[0]==1;
+    ok=d->max==SC_DGEN-1&&!strcmp(d->names[SC_DGEN-1],"SPARSE");
+    trk[0].p[P_SLEN]=16;
+    sc_put(3,1);ok&=scn_pat[0]==1;
     scn_dreq=3;sc_beat();
-    bad+=check("SCENE DRUM: the fixed styles still play",ok&&trk[0].step[0].hit);
+    bad+=check("SCENE DRUM: FOUR BREAK HALF SPARSE, no GEN; a style still plays",ok&&trk[0].step[0].hit);
     scn_role[0]=SC_KEEP;
     return bad;
 }

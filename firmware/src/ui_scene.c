@@ -11,9 +11,9 @@ static int16_t sc_v[4];
 static param_desc_t sc_d;
 static const char *const SC_ROLE[SC_N] = {"KEEP", "CHORD", "ARP", "BASS", "LEAD", "DRUM"};
 /* (V10.6j) KNOB 4 by the role: BASS LEAD their pattern (seq.c SC_PAT), DRUM its beat's style */
-static const char *const SC_PN[3][SC_NPAT] = {{"ROOT", "PUMP", "OCTAVE", "R-5", "WALK", "ROLL", "BOUNCE", "ACID", "GEN"},
-                                         {"HOOK", "ARC", "RISE", "STEPS", "SPARSE", "BOUNCE", "CONVRG", "RANDOM", "GEN"},
-                                         {"FOUR", "BREAK", "HALF", "SPARSE", "GEN"}};
+static const char *const SC_PN[3][SC_GEN] = {{"ROOT", "PUMP", "OCTAVE", "R-5", "WALK", "ROLL", "BOUNCE", "ACID"},
+                                         {"HOOK", "ARC", "RISE", "STEPS", "SPARSE", "BOUNCE", "CONVRG", "RANDOM"},
+                                         {"FOUR", "BREAK", "HALF", "SPARSE"}};   /* (V10.7.63, the owner: GEN gone, confusing) */
 static const param_desc_t *sc_desc(uint32_t k, int16_t **valp)
 {
     static const char *const ONOFF[8] = {"OFF", "KEYS", "T1", "T2", "T3", "T4", "T5", "T6"};   /* (V10.7.63:
@@ -32,8 +32,8 @@ static const param_desc_t *sc_desc(uint32_t k, int16_t **valp)
     else if (k == 1u) { sc_d.label = "TRACK"; sc_d.max = NTRK - 1; sc_d.names = TN; sc_v[1] = sc_trk; }
     else if (k == 2u && dr) { sc_d.label = "ROLE"; sc_d.max = 1; sc_d.names = KR; sc_v[2] = r == SC_DRUM; }   /* (V10.6j) a kit: KEEP, DRUM */
     else if (k == 2u) { sc_d.label = "ROLE"; sc_d.max = SC_DRUM - 1; sc_d.names = SC_ROLE; sc_v[2] = r < SC_DRUM ? r : SC_KEEP; }
-    else { sc_d.label = r == SC_DRUM ? "STYLE" : "PATTERN"; sc_d.max = r == SC_DRUM ? SC_DGEN : SC_GEN;
-           sc_d.names = SC_PN[r == SC_DRUM ? 2 : r == SC_LEAD]; sc_v[3] = (int16_t)(scn_pat[sc_trk % NTRK] % (r == SC_DRUM ? SC_DGEN + 1u : SC_NPAT)); }
+    else { sc_d.label = r == SC_DRUM ? "STYLE" : "PATTERN"; sc_d.max = r == SC_DRUM ? SC_DGEN - 1 : SC_GEN - 1;
+           sc_d.names = SC_PN[r == SC_DRUM ? 2 : r == SC_LEAD]; sc_v[3] = (int16_t)(scn_pat[sc_trk % NTRK] % (r == SC_DRUM ? SC_DGEN : SC_GEN)); }
     *valp = &sc_v[k];
     return &sc_d;
 }
@@ -43,18 +43,13 @@ static void sc_setup(uint32_t i)                        /* track i set up for it
     uint32_t r = scn_role[i % NTRK];
     if (drum_track(t) || r == SC_KEEP) return;
     if (r == SC_ARP) { if (!t->p[P_AMODE]) t->p[P_AMODE] = AM_UP; }
-    else if ((r == SC_BASS || r == SC_LEAD) && scn_pat[i % NTRK] % SC_NPAT == SC_GEN) {   /* (V10.6m) GEN: the track's own line
-                                                         * (sc_gen), each key's chord moving it in the scale */
-        t->p[P_AMODE] = AM_TRNS; t->p[P_QUANT] = QN_SEQ; t->trn = 0;
-    } else if (r == SC_BASS || r == SC_LEAD) {           /* (V10.6j) the pattern: the arp over the chord's notes */
+    else if (r == SC_BASS || r == SC_LEAD) {           /* (V10.6j) the pattern: the arp over the chord's notes */
         const uint8_t *q = SC_PAT[r == SC_LEAD][scn_pat[i % NTRK] & 7u];
         t->p[P_AMODE] = q[1]; t->p[P_ARATE] = q[2]; t->p[P_AOCT] = 1; t->p[P_AGATE] = q[3]; t->p[P_APROB] = q[4];
     }
     else t->p[P_AMODE] = AM_OFF;
     if (r == SC_CHORD) t->p[P_VOICE] = V_POLY;
 }
-static void sc_gen(uint32_t i);                         /* (V10.6m) gen_track.c */
-static uint8_t sc_dk;                                   /* (V10.6r) DRUM GEN: the last key (its variation, sc_gen) */
 /* (V10.26) the roles diced: one track for each of CHORD ARP BASS LEAD at most (never two doing the same, never two
  * playing chords: the polyphony), the melodic tracks awake only, the rest KEEP; at least two roles */
 /* (V10.6n) the scene's key: every melodic track in one mode (its ROOT kept); a track with no scale (CHR) made a
@@ -106,9 +101,8 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
     } else if (k == 1u)
         sc_trk = (uint8_t)clamp(v, 0, NTRK - 1);
     else if (k == 3u) {                                  /* (V10.6j) BASS LEAD: the pattern; DRUM: the style */
-        scn_pat[sc_trk % NTRK] = (uint8_t)clamp(v, 0, SC_GEN);
+        scn_pat[sc_trk % NTRK] = (uint8_t)clamp(v, 0, SC_GEN - 1);
         sc_setup(sc_trk);
-        sc_gen(sc_trk);
     } else if (k == 2u && drum_track(&trk[sc_trk % NTRK]))
         scn_role[sc_trk % NTRK] = v ? SC_DRUM : SC_KEEP;
     else if (k == 2u) {
@@ -121,7 +115,6 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
                 ui_message(b);
             }
         sc_setup(sc_trk);
-        sc_gen(sc_trk);
     }
     ui.force = 1;
 }
@@ -167,8 +160,6 @@ static void graph_scene(void)
         b[1] = (char)('1' + sc_trk % NTRK);
         if (scn_on >= 2u && sc_trk % NTRK == scn_on - 2u)
             str_cpy(b + 3, "LEADS: ITS NOTES PLAY THE OTHERS", 45);
-        else if ((r == SC_BASS || r == SC_LEAD) && scn_pat[sc_trk % NTRK] % SC_NPAT == SC_GEN)
-            str_cpy(b + 3, "GEN: ITS OWN LINE, MOVED BY THE NOTES", 45);
         else
             str_cpy(b + 3, RD[r], 45);
         cv_text_in(4, (int32_t)h - 22, 232, &AF_X, scn_on ? b : "SCENE OFF: KNOB 1 KEYS OR A TRACK LEADS", scn_on ? T_TEXT : T_DIM, T_SURF);
@@ -189,8 +180,7 @@ static __attribute__((noinline)) void sc_beat(void)
     scn_dreq = 0;
     for (i = 0; i < NTRK && !(drum_track(&trk[i]) && scn_role[i] == SC_DRUM); i++) ;
     if (i == NTRK) return;
-    st = scn_pat[i] % (SC_DGEN + 1u); d = (k - 1u) % 12u; x = k * 2654435761u + st * 40503u;
-    if (st == SC_DGEN) { sc_dk = (uint8_t)(k - 1u); sc_gen(i); return; }   /* (V10.6r) GEN: GENE's drums, the key's variation */
+    st = scn_pat[i] % SC_DGEN; d = (k - 1u) % 12u; x = k * 2654435761u + st * 40503u;
     for (j = 0; j < 16u; j++) {
         uint32_t b = 1u << j, h = 0;
         x = x * 1664525u + 1013904223u;

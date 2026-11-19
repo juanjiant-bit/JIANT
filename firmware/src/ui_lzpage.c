@@ -353,15 +353,13 @@ static int graph_key_lz(const track_t *t, const page_t *pg)
 }
 
 /* GLO  MIX: the six strips (draw_tracks, track_col6; SENDS: the four sends as bars); GLOBAL keeps its bar of sixteenths;
- *      SYSTEM: the tracks that play as chips, LOAD's three settings (the one set lit), MIDI's route, the CPU load over
- *      the last seconds as a line */
+ *      SYSTEM: the tracks that play as chips, LOAD's three settings (the one set lit), MIDI's route, (V10.7.63) the output's scope
+ *      and the CPU in % */
+static void scope_at(int32_t x0, int32_t pw, int32_t cy, int32_t a, uint16_t c);   /* (ui_graph.c) */
 static __attribute__((noinline)) void graph_system(void)
 {
     static const char *const LD[3] = {"ECO", "LITE", "FULL"};
-    static uint8_t cpu[56], cpu_at;
-    static uint32_t cpu_ms;
     uint32_t c, k, ld = 3;
-    int32_t py = 0;
     const char *u = "";
     char b[24];
     int16_t *vp;
@@ -389,17 +387,8 @@ static __attribute__((noinline)) void graph_system(void)
     param_format(&GP[G_ROUTE], song.g[G_ROUTE], b + 5, &u);
     b[0] = 'M'; b[1] = 'I'; b[2] = 'D'; b[3] = 'I'; b[4] = ' ';
     ed_cap(134, 38, b, T_DIM);
-    if (fm1_ms - cpu_ms >= 250u) {                      /* (a sample each quarter second) */
-        cpu_ms = fm1_ms;
-        cpu[cpu_at++ % 56u] = (uint8_t)clamp((int32_t)(song.cpu_q8 * 100u / 256u), 0, 100);
-    }
-    for (k = 0; k < 56u; k++) {
-        int32_t y = 126 - cpu[(cpu_at + k) % 56u] * 56 / 100;
-        if (k)
-            cv_line_t(8 + (int32_t)(k - 1u) * 4, py, 8 + (int32_t)k * 4, y, T_THEME, 2);
-        py = y;
-    }
-    cv_rect(8, 127, 224, 1, T_RAISE);
+    scope_at(8, 224, 96, 28, T_THEME);                  /* (V10.7.63, the owner: an animation that said little: the
+                                                         * output's scope, the CPU's number at its right) */
     str_cpy(b, "CPU ", 24);
     fmt_int(b + 4, (int32_t)(song.cpu_q8 * 100u / 256u));
     str_cpy(b + str_len(b), "%", 2);

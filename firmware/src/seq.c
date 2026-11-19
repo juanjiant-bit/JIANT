@@ -578,7 +578,8 @@ static uint32_t scn_blk;                            /* .. events_block's count (
 /* (V10.6j) BASS and LEAD play a pattern over the key's chord (the track's arp: notes, MODE, RATE (N_DIV), GATE, PROB);
  * the kit's DRUM writes a beat of its own a key (ui_scene.c sc_beat: the main loop, scn_dreq the key + 1) */
 static uint8_t scn_pat[NTRK];
-enum { SC_GEN = 8, SC_NPAT, SC_DGEN = 4 };            /* (V10.6r) DRUM's 5th: GEN, GENE's drums (gen_track.c sc_gen) */                       /* (V10.6m) BASS LEAD's 9th: GEN, the generator's line (ui_scene.c sc_gen) */
+enum { SC_GEN = 8, SC_NPAT, SC_DGEN = 4 };            /* (V10.7.63, the owner: GEN gone: SC_GEN BASS LEAD's patterns,
+                                                         * SC_DGEN DRUM's styles; a project's GEN plays the first) */            /* (V10.6r) DRUM's 5th: GEN, GENE's drums (gen_track.c sc_gen) */                       /* (V10.6m) BASS LEAD's 9th: GEN, the generator's line (ui_scene.c sc_gen) */
 static volatile uint8_t scn_dreq;
 enum { SN_ROOT, SN_R5, SN_ROCT, SN_TRI, SN_R5O, SN_SEV };
 static const uint8_t SC_PAT[2][8][5] = {
@@ -1629,12 +1630,6 @@ static __attribute__((noinline)) void sc_track(uint32_t i, uint32_t k, uint32_t 
     if (!scn_role[i] || scn_role[i] == SC_DRUM || root > 127u)   /* (DRUM: a kit's alone; stuck notes: a key QUANT WHITE
                                                          * silences: none, it was note 255, its key-up lost) */
         return;
-    if ((scn_role[i] == SC_BASS || scn_role[i] == SC_LEAD) && scn_pat[i] % SC_NPAT == SC_GEN) {
-        /* (V10.6m) GEN: the key's chord moves the line (the root's interval from the key's, the nearest way; QUANT
-         * SEQ: in scale) */
-        t->trn = (int8_t)(((root + 132u - (uint32_t)t->p[P_ROOT]) % 12u + 5u) % 12u - 5);
-        return;
-    }
     n = scn_notes(t, scn_role[i], root, o, 0);
     if (rec && n > 1u && rec_on(t) && !t->p[P_AMODE])  /* (a chord: into one step, as key_on) */
         for (j = 0; j < n; j++)
