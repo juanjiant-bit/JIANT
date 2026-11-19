@@ -4748,11 +4748,11 @@ static int test_edit_cycle(void)
 #endif
     {   /* #97: a DRUM track's lane levels on EDIT > LANES (KICK SNARE CLAP HATCL) and LANES 2 (HATOP TOM RIM BELL) */
         /* (161d079, 2026-10-28: KIT 4, the KEY MAP, after KIT 3 in the KIT group) */
-        static const char *const CH_K[] = {"KIT", "KIT 2", "KIT 3", "KIT 4", "SOUND", "SOUND 2", "SOUND 3", "SOUND 4", "LEVELS",
+        static const char *const CH_K[] = {"KIT", "KIT 2", "KIT 3", "SOUND", "SOUND 2", "SOUND 3", "SOUND 4", "LEVELS",
                                            "LEVELS 2", "CROSS MOD", "FILTER", "STEREO", "PLAY"};   /* (V10.7.59: CROSS MOD, was X-MOD) */
         static const char *const TP_K[] = {"SOUND", "LEVELS", "CROSS MOD"};
         set_engine_of(TSEL, ENGI_DRUM);
-        bad += check("0.9.2 EDIT chain (DRUM): KIT (KIT KIT 2 KIT 3 KIT 4) . SOUND (1..4) . LEVELS (LEVELS LEVELS 2) . TONE (X-MOD FILTER STEREO PLAY)",
+        bad += check("0.9.2 EDIT chain (DRUM): KIT (KIT KIT 2 KIT 3; V10.7.62: KIT 4's KEY MAP on PLAY) . SOUND (1..4) . LEVELS (LEVELS LEVELS 2) . TONE (X-MOD FILTER STEREO PLAY)",
                      chain_walk(B_EDIT, CH_K, NELEM(CH_K), TP_K, NELEM(TP_K)));
         {   /* (0.6.58) KIT 3 turns BP and FEEDBK, (0.7.8) KNOB 3 the CLAP's HANDS, never IMAGE; STEREO's KNOB 1 is IMAGE */
             uint8_t t0 = dx_tone, h0 = dx_hands;
@@ -13119,7 +13119,10 @@ static uint32_t coh_key(const page_t *pg, uint32_t k)
     int16_t *cv;
     if (id == 0xFFu || pg->scope == SC_STEP || pg->graph == GR_SLOTS || pg->graph == GR_TOOLS)
         return 0;
-    if (id == P_SIMG && !page_desc(pg, k, &cv))         /* (V10.7.60: PLAY's IMAGE, none on a kit) */
+    if (id == P_SIMG && pg->fam == FAM_EDIT && page_desc(pg, k, &cv) == &DKEYMODE_DESC)   /* (V10.7.62: a kit's KEY MAP
+                                                         * on PLAY, IMAGE's place) */
+        return 1u + P_DKEYMODE;
+    if (id == P_SIMG && !page_desc(pg, k, &cv))
         return 0;
     if (pg->scope == SC_TRK)
         return TRK[k & 3u];
