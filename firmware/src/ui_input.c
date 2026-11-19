@@ -6,95 +6,107 @@
 static uint8_t fx_mon;                                  /* (V10.7.59) ui_layer.c: the FX layer moved the MACROS */
 /* (V10.7.60, the users: "I don't know what I turned") a knob's plain meaning in the header while it turns (its card
  * keeps the value): the labels that need one */
-static const struct { const char *l, *h; } KNOB_HINT[] = {
-    {"CUT", "FILTER CUTOFF"},
-    {"RES", "FILTER RESONANCE"},
-    {"DRIVE", "SATURATION"},
-    {"DIST", "DISTORTION"},
-    {"DLY", "DELAY SEND"},
-    {"REV", "REVERB SEND"},
-    {"CHORUS", "CHORUS SEND"},
-    {"ATK", "ATTACK TIME"},
-    {"DEC", "DECAY TIME"},
-    {"SUS", "SUSTAIN LEVEL"},
-    {"REL", "RELEASE TIME"},
-    {"GLIDE", "GLIDE TIME"},
-    {"GLIDE TYPE", "GLIDE: RATE OR TIME"},
-    {"NOTE PRIO", "WHICH NOTE WINS"},
-    {"VOICE ORDER", "HOW VOICES ARE USED"},
-    {"UNISON", "DETUNED STACK"},
-    {"POLY", "VOICE MODE"},
-    {"VEL", "VELOCITY AMOUNT"},
-    {"IMAGE", "STEREO WIDTH"},
-    {"LEN", "PATTERN LENGTH"},
-    {"DIV", "STEP SPEED"},
-    {"SWING", "SWING AMOUNT"},
-    {"GATE", "NOTE LENGTH"},
-    {"CHANCE", "STEP PROBABILITY"},
-    {"HUMAN", "TIMING HUMANIZE"},
-    {"REC GRID", "REC QUANTIZE"},
-    {"HITS", "EUCLID HITS"},
-    {"STEPS", "EUCLID STEPS"},
-    {"ROTATE", "EUCLID ROTATION"},
-    {"FEEDBK", "DELAY REPEATS"},
-    {"TONE", "BRIGHTNESS"},
-    {"MIX", "WET / DRY"},
-    {"DAMP", "HIGH DAMPING"},
-    {"PRE", "PRE-DELAY"},
-    {"CLIP", "MASTER CLIPPER"},
-    {"PUNCH", "DRUM PUNCH"},
-    {"DUCK", "SIDECHAIN DUCK"},
-    {"WOW", "TAPE WOBBLE"},
-    {"ROOT", "SCALE ROOT"},
-    {"QUANT", "SNAP TO SCALE"},
-    {"ALL TRACKS", "TRANSPOSE ALL"},
-    {"VOICING", "CHORD SPREAD"},
-    {"STRUM", "STRUM TIME"},
-    {"ORDER", "ARP ORDER"},
-    {"PROB", "ARP PROBABILITY"},
-    {"HOLD", "ARP LATCH"},
-    {"FADE", "LFO FADE IN"},
-    {"SLEW", "SMOOTHING"},
-    {"RATIO", "FM RATIO"},
-    {"ALG", "FM ALGORITHM"},
-    {"MOD ENV", "MOD ENVELOPE"},
-    {"VEL MOD", "VELOCITY TO MOD"},
-    {"SPREAD", "STEREO SPREAD"},
-    {"FOLD", "WAVEFOLDER"},
-    {"SYMMETRY", "FOLD SYMMETRY"},
-    {"DUST", "CRACKLE NOISE"},
-    {"EXCITE", "PLUCK EXCITER"},
-    {"POS", "PLUCK POSITION"},
-    {"BOW", "BOWING"},
-    {"BODY", "BODY RESONANCE"},
-    {"BRIGHT", "BRIGHTNESS"},
-    {"RESTART", "PHASE RESET"},
-    {"SCATTER", "GRAIN SCATTER"},
-    {"RIGHT TIME", "RIGHT ECHO TIME"},
-    {"PING", "PING-PONG"},
-    {"DCW", "WAVE BRIGHTNESS"},
-    {"SUB", "SUB OSCILLATOR"},
-    {"DETUNE", "DETUNE"},
-    {"MACRO", "WHICH MACRO"},
-    {"ROUTE", "MACRO ROUTE 1-8"},
-    {"AMOUNT", "HOW MUCH"},
-    {"DEST", "WHAT IT MOVES"},
-    {"BANK", "FILL BANK"},
-    {"TUNE", "MASTER TUNE"},
-    {"DRAWBAR", "ORGAN REGISTER"}, {"VARIANT", "FORMULA VARIANT"}, {"RESO", "RESONANCE"}, {"FEEDBACK", "SELF FEEDBACK"},
-    {"MORPH", "WAVE MORPH"}, {"DRIFT", "VOICES WANDER"}, {"STICKY", "STAYS IN A STATE"}};
+/* (V10.60) a knob's meaning, by its label: "LABEL" "\0" "HINT" "\0" in one string (V10.7.62, BYTE's: no pointers,
+ * ~600 B of flash); its end the "" after the last */
+static const char KNOB_HINT[] =
+    "CUT" "\0" "FILTER CUTOFF" "\0"
+    "RES" "\0" "FILTER RESONANCE" "\0"
+    "DRIVE" "\0" "SATURATION" "\0"
+    "DIST" "\0" "DISTORTION" "\0"
+    "DLY" "\0" "DELAY SEND" "\0"
+    "REV" "\0" "REVERB SEND" "\0"
+    "CHORUS" "\0" "CHORUS SEND" "\0"
+    "ATK" "\0" "ATTACK TIME" "\0"
+    "DEC" "\0" "DECAY TIME" "\0"
+    "SUS" "\0" "SUSTAIN LEVEL" "\0"
+    "REL" "\0" "RELEASE TIME" "\0"
+    "GLIDE" "\0" "GLIDE TIME" "\0"
+    "GLIDE TYPE" "\0" "GLIDE: RATE OR TIME" "\0"
+    "NOTE PRIO" "\0" "WHICH NOTE WINS" "\0"
+    "VOICE ORDER" "\0" "HOW VOICES ARE USED" "\0"
+    "UNISON" "\0" "DETUNED STACK" "\0"
+    "POLY" "\0" "VOICE MODE" "\0"
+    "VEL" "\0" "VELOCITY AMOUNT" "\0"
+    "IMAGE" "\0" "STEREO WIDTH" "\0"
+    "LEN" "\0" "PATTERN LENGTH" "\0"
+    "DIV" "\0" "STEP SPEED" "\0"
+    "SWING" "\0" "SWING AMOUNT" "\0"
+    "GATE" "\0" "NOTE LENGTH" "\0"
+    "CHANCE" "\0" "STEP PROBABILITY" "\0"
+    "HUMAN" "\0" "TIMING HUMANIZE" "\0"
+    "REC GRID" "\0" "REC QUANTIZE" "\0"
+    "HITS" "\0" "EUCLID HITS" "\0"
+    "STEPS" "\0" "EUCLID STEPS" "\0"
+    "ROTATE" "\0" "EUCLID ROTATION" "\0"
+    "FEEDBK" "\0" "DELAY REPEATS" "\0"
+    "TONE" "\0" "BRIGHTNESS" "\0"
+    "MIX" "\0" "WET / DRY" "\0"
+    "DAMP" "\0" "HIGH DAMPING" "\0"
+    "PRE" "\0" "PRE-DELAY" "\0"
+    "CLIP" "\0" "MASTER CLIPPER" "\0"
+    "PUNCH" "\0" "DRUM PUNCH" "\0"
+    "DUCK" "\0" "SIDECHAIN DUCK" "\0"
+    "WOW" "\0" "TAPE WOBBLE" "\0"
+    "ROOT" "\0" "SCALE ROOT" "\0"
+    "QUANT" "\0" "SNAP TO SCALE" "\0"
+    "ALL TRACKS" "\0" "TRANSPOSE ALL" "\0"
+    "VOICING" "\0" "CHORD SPREAD" "\0"
+    "STRUM" "\0" "STRUM TIME" "\0"
+    "ORDER" "\0" "ARP ORDER" "\0"
+    "PROB" "\0" "ARP PROBABILITY" "\0"
+    "HOLD" "\0" "ARP LATCH" "\0"
+    "FADE" "\0" "LFO FADE IN" "\0"
+    "SLEW" "\0" "SMOOTHING" "\0"
+    "RATIO" "\0" "FM RATIO" "\0"
+    "ALG" "\0" "FM ALGORITHM" "\0"
+    "MOD ENV" "\0" "MOD ENVELOPE" "\0"
+    "VEL MOD" "\0" "VELOCITY TO MOD" "\0"
+    "SPREAD" "\0" "STEREO SPREAD" "\0"
+    "FOLD" "\0" "WAVEFOLDER" "\0"
+    "SYMMETRY" "\0" "FOLD SYMMETRY" "\0"
+    "DUST" "\0" "CRACKLE NOISE" "\0"
+    "EXCITE" "\0" "PLUCK EXCITER" "\0"
+    "POS" "\0" "PLUCK POSITION" "\0"
+    "BOW" "\0" "BOWING" "\0"
+    "BODY" "\0" "BODY RESONANCE" "\0"
+    "BRIGHT" "\0" "BRIGHTNESS" "\0"
+    "RESTART" "\0" "PHASE RESET" "\0"
+    "SCATTER" "\0" "GRAIN SCATTER" "\0"
+    "RIGHT TIME" "\0" "RIGHT ECHO TIME" "\0"
+    "PING" "\0" "PING-PONG" "\0"
+    "DCW" "\0" "WAVE BRIGHTNESS" "\0"
+    "SUB" "\0" "SUB OSCILLATOR" "\0"
+    "DETUNE" "\0" "DETUNE" "\0"
+    "MACRO" "\0" "WHICH MACRO" "\0"
+    "ROUTE" "\0" "MACRO ROUTE 1-8" "\0"
+    "AMOUNT" "\0" "HOW MUCH" "\0"
+    "DEST" "\0" "WHAT IT MOVES" "\0"
+    "BANK" "\0" "FILL BANK" "\0"
+    "TUNE" "\0" "MASTER TUNE" "\0"
+    "DRAWBAR" "\0" "ORGAN REGISTER" "\0"
+    "VARIANT" "\0" "FORMULA VARIANT" "\0"
+    "RESO" "\0" "RESONANCE" "\0"
+    "FEEDBACK" "\0" "SELF FEEDBACK" "\0"
+    "MORPH" "\0" "WAVE MORPH" "\0"
+    "DRIFT" "\0" "VOICES WANDER" "\0"
+    "STICKY" "\0" "STAYS IN A STATE" "\0";
+
 static void knob_hint(const char *label)
 {
-    uint32_t i;
+    const char *l = KNOB_HINT, *h = KNOB_HINT;
     char b[40];
     if (!label || (ui_help_off & 1u))                  /* (MENU > DISPLAY > HELP OFF) */
         return;
-    for (i = 0; i < NELEM(KNOB_HINT) && !str_eq(KNOB_HINT[i].l, label); i++) {}
-    if (i == NELEM(KNOB_HINT) || str_eq(KNOB_HINT[i].l, KNOB_HINT[i].h))
+    for (; *l; l = h + str_len(h) + 1) {
+        h = l + str_len(l) + 1;
+        if (str_eq(l, label))
+            break;
+    }
+    if (!*l || str_eq(l, h))
         return;
     str_cpy(b, label, sizeof b);
     str_cpy(b + str_len(b), ": ", sizeof b - str_len(b));
-    str_cpy(b + str_len(b), KNOB_HINT[i].h, sizeof b - str_len(b));
+    str_cpy(b + str_len(b), h, sizeof b - str_len(b));
     if (ui.msg_t && str_eq(ui.msg, b)) {
         ui.msg_t = 40;                                  /* (still turning: it stays) */
         return;
