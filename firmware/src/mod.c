@@ -345,6 +345,7 @@ static __attribute__((noinline)) void life_mod(track_t *t, int32_t *off)
             mod_voice_add(MS_M1, d, x, a, &mp->pit, &mp->cut, &mp->shp, &mp->gain);
             return;
         }
+        if (d == MD_PAN && (ti & 1u)) a = -a;            /* (PAN: every other track the other way, the image spread) */
         id = mod_param(d);
         pd = mod_track_desc(t, id);
         for (j = 0; j < mp->nk && mp->kid[j] != id; j++)

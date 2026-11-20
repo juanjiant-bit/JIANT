@@ -146,6 +146,7 @@ static void pk_mod(void);
 static void pk_mod_bt(void);
 static void pk_name(uint32_t e, uint32_t o, char *nm);
 #define PK_DST(o) (((o) & 15u) | ((o) >> 7) << 4)     /* a PARAM key's destination from its options */
+#define PK_SHP(e, o) ((((o) >> 4) & 7u) | ((e) >> 5 & 1u) << 3)   /* .. its HOW (0..11: e's bit 5 the fourth bit) */
 
 static void layer_masks(void)
 {
@@ -1043,7 +1044,7 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
         uint32_t held = perf_kill ? 0u : perf_held | perf_latched, sl = blk ? 16u + p : p, e;
         if (blk ? p >= 11u : p >= 16u)
             return LS_OFF;
-        e = pk.edit ? (pk.we[sl] ? pk.we[sl] - 1u : perf_def(sl)) : pk.e[sl] ? pk.e[sl] - 1u : perf_def(sl);   /* (V10.7.65:
+        e = pk.edit ? (pk.we[sl] ? (pk.we[sl] & 31u) - 1u : perf_def(sl)) : pk.e[sl] ? (pk.e[sl] & 31u) - 1u : perf_def(sl);   /* (V10.7.65:
                                                          * the slot's, the editor's copy) */
         pk_name(e, pk.edit ? pk.wo[sl] : pk.o[sl], nm);
         if (pk.edit)                                    /* (the key being set lit) */
@@ -1235,7 +1236,8 @@ static void pk_load(void)                               /* the slot played, from
     memcpy(pk.o, pk_row(pk.slot, 1), PK_KEYS);
     memcpy(pk.x, pk_row(pk.slot, 2), PK_KEYS);
     for (s = 0; s < PK_KEYS; s++)
-        if (pk.e[s] > PK_N) pk.e[s] = 0;               /* (unknown: the map's own) */
+        if ((pk.e[s] & 31u) > PK_N || (pk.e[s] > 31u && (pk.e[s] & 31u) != PK_MOD + 1u)) pk.e[s] = 0;   /* (unknown: the
+                                                         * map's own; bit 5 a PARAM key's HOW only) */
     pk.qpend = pk.exd = pk.exs = 0;
     memset(pk.mt, 0, sizeof pk.mt);
     pk.mod = pk.mon = pk.edit = pk.pkey = 0;
@@ -1255,17 +1257,22 @@ static void pk_name(uint32_t e, uint32_t o, char *nm)
     if (e >= PF_M1 && e < PF_M1 + NTRK) nm[6] = (char)('1' + e - PF_M1);
 }
 static int32_t pk_amt(uint32_t x) { return (int32_t)((x & 31u) ^ 16u) - 16; }   /* -10..10: tens of % */
-/* a PARAM key's SHAPE at t ms of its period per: 0..127 (HOLD, RAMP UP / DN once, SINE, STUTTER, S&H) */
+/* a PARAM key's SHAPE at t ms of its period per: 0..127. HOLD, RAMP UP / DN (once), DROP (fast, a pitch envelope's), SINE,
+ * STUTTER, STUT ACC (faster and faster over the period: 4 cuts to 32), S&H, PAT 1..4 (16-step gates over the period) */
 static uint32_t pk_shape(uint32_t sh, uint32_t t, uint32_t per, uint32_t seed)
 {
-    uint32_t ph = (t % per) * 256u / per;
+    static const uint16_t PAT[4] = {0x2492u, 0xDB6Bu, 0xB5B7u, 0xD511u};
+    uint32_t u = t * 256u / per, ph = u & 255u, q;
     switch (sh) {
     case 0: return 127u;
-    case 1: return t >= per ? 127u : t * 127u / per;
-    case 2: return t >= per ? 0u : 127u - t * 127u / per;
-    case 3: return (uint32_t)(64 + ((sine_i(ph << 24) * 63) >> 15));
-    case 4: return ph < 128u ? 127u : 0u;
-    default: return ((t / per + seed) * 2654435761u) >> 25;
+    case 1: return u >= 256u ? 127u : u / 2u;
+    case 2: return u >= 256u ? 0u : 127u - u / 2u;
+    case 3: q = u >= 256u ? 0u : 256u - u; return q * q / 256u * q / 256u / 2u;
+    case 4: return (uint32_t)(64 + ((sine_i(ph << 24) * 63) >> 15));
+    case 5: return ph < 128u ? 127u : 0u;
+    case 6: q = u >= 256u ? 18u * 256u + 32u * (u - 256u) : 4u * u + 14u * u * u / 256u; return (q & 255u) < 128u ? 127u : 0u;
+    case 7: return ((t / per + seed) * 2654435761u) >> 25;
+    default: return (PAT[(sh - 8u) & 3u] >> ((u / 16u) & 15u)) & 1u ? 127u : 0u;
     }
 }
 static uint32_t pk_per(uint32_t x)             /* TIME (x bits 5-7: 1/16 .. 8 BARS) in ms */
@@ -1290,13 +1297,13 @@ static void pk_mod_bt(void)   /* (V10.7.66: out of the segment, its room) */
             continue;
         }
         if (!(pk.mon & b)) { pk.mon |= (uint8_t)b; pk.mv0[m] = macro_v[m]; }
-        v = pk_shape((o >> 4) & 7u, fm1_ms - pk.mt0[m], pk_per(pk.mx[m]), m);
+        v = pk_shape(pk.ms[m], fm1_ms - pk.mt0[m], pk_per(pk.mx[m]), m);
         macro_v[m] = (uint8_t)clamp((int32_t)pk.mv0[m] + (int32_t)v * pk_amt(pk.mx[m]) / 10, 0, 127);
     }
     if (pk.pkey) {
         pkr_d = PD_MD[(PK_DST(pk.po) - 4u) % (PD_N - 4u)];
         pkr_a = (int8_t)(pk_amt(pk.px) * 64 / 10);
-        v = pk_shape((pk.po >> 4) & 7u, fm1_ms - pk.pt0, pk_per(pk.px), 5u);
+        v = pk_shape(pk.ps, fm1_ms - pk.pt0, pk_per(pk.px), 5u);
         pkr_v = (uint8_t)v;
     } else
         pkr_v = 0;
@@ -1304,7 +1311,7 @@ static void pk_mod_bt(void)   /* (V10.7.66: out of the segment, its room) */
 static void pk_mod(void) { if (pk.mod | pk.mon | pk.pkey | pkr_v) pk_mod_bt(); }
 static int pk_page(void) { return (ui.ly == LAYER_FX && layer_held()) || (fx_lock && (!ui.ly || ui.ly == LAYER_FX)); }   /* (held,
                                                          * or locked open: fx_lock_on is the frame after) */
-static uint32_t pke_e(uint32_t s) { return pk.we[s] ? pk.we[s] - 1u : perf_def(s); }
+static uint32_t pke_e(uint32_t s) { return pk.we[s] ? (pk.we[s] & 31u) - 1u : perf_def(s); }
 static int pke_tgt(uint32_t e) { return (e >= PF_OCTD && e <= PF_RND) || e == PF_LP3; }
 static BTAPP_FN void pke_load(uint32_t sl)
 {
@@ -1313,7 +1320,8 @@ static BTAPP_FN void pke_load(uint32_t sl)
     memcpy(pk.wo, pk_row(sl, 1), PK_KEYS);
     memcpy(pk.wx, pk_row(sl, 2), PK_KEYS);
 }
-static const char PK_SH[6][8] = {"HOLD", "RAMP UP", "RAMP DN", "SINE", "STUTTER", "S&H"};
+static const char PK_SH[12][9] = {"HOLD", "RAMP UP", "RAMP DN", "DROP", "SINE", "STUTTER", "STUT ACC", "S&H", "PAT 1",
+                                  "PAT 2", "PAT 3", "PAT 4"};
 static const char PK_MD[3][6] = {"HOLD", "LATCH", "QUANT"};
 static const char PK_TM[8][7] = {"1/16", "1/8", "1/4", "1/2", "1 BAR", "2 BARS", "4 BARS", "8 BARS"};
 static BTAPP_FN void pke_help(uint32_t s)               /* the key's effect and how, in the header */
@@ -1322,15 +1330,16 @@ static BTAPP_FN void pke_help(uint32_t s)               /* the key's effect and 
     char nm[12];
     pk_name(e, o, nm);
     ui_message(nm);
-    str_cpy(ui.msg2, e == PK_MOD ? PK_SH[((o >> 4) & 7u) % 6u] : PK_MD[((o >> 4) & 3u) % 3u], sizeof ui.msg2);
+    str_cpy(ui.msg2, e == PK_MOD ? PK_SH[PK_SHP(pk.we[s], o) % 12u] : PK_MD[((o >> 4) & 3u) % 3u], sizeof ui.msg2);
 }
 /* KNOB 1 WHAT (an effect, or PARAM: a macro or a parameter), 2 HOW (an effect: HOLD LATCH QUANT; PARAM: its SHAPE),
  * 3 AMOUNT (an effect: its TARGET; PARAM: -100 .. +100 %), 4 TIME (PARAM: 1/16 .. 8 BARS) */
 static BTAPP_FN void pke_knob_bt(uint32_t k, int32_t d)
 {
     uint32_t s = pk.ekey % PK_KEYS, e = pke_e(s), r = pk.we[s] ? pk.wo[s] : 0u, x = pk.we[s] ? pk.wx[s] : 0u;
-    uint32_t o = e == PK_MOD ? PK_DST(r) : r & 15u, w = e == PK_MOD ? PK_MOD + o : e, hw = (r >> 4) & 7u;   /* (o: the
+    uint32_t o = e == PK_MOD ? PK_DST(r) : r & 15u, w = e == PK_MOD ? PK_MOD + o : e;   /* (o: the
                                                          * destination, or an effect's TARGET) */
+    uint32_t hw = e == PK_MOD ? PK_SHP(pk.we[s], r) : (r >> 4) & 3u;
     if (!(kb_layer & ((1u << 27) - 1u))) {
         ui_message("HOLD A KEY");
         return;
@@ -1345,12 +1354,12 @@ static BTAPP_FN void pke_knob_bt(uint32_t k, int32_t d)
         if (e == PK_MOD && !pk_amt(x)) x = 10u | 4u << 5;   /* (a new PARAM: +100 %, 1 BAR) */
         hw = 0;
     } else if (k == 1u && e != PF_N && e != PF_CLR)
-        hw = (uint32_t)clamp((int32_t)hw + d, 0, e == PK_MOD ? 5 : 2);
+        hw = (uint32_t)clamp((int32_t)hw + d, 0, e == PK_MOD ? 11 : 2);
     else if (k == 2u && pke_tgt(e))
         o = (uint32_t)clamp((int32_t)o + d, 0, 8);
     else if (k == 3u && e == PK_MOD)
         x = (x & 31u) | (uint32_t)clamp((int32_t)(x >> 5) + d, 0, 7) << 5;
-    pk.we[s] = (uint8_t)(e + 1u);
+    pk.we[s] = (uint8_t)((e + 1u) | (e == PK_MOD ? (hw >> 3) << 5 : 0u));   /* (HOW's fourth bit in bit 5) */
     pk.wo[s] = (uint8_t)((o & 15u) | (e == PK_MOD ? hw & 7u : hw & 3u) << 4 | (o & 16u) << 3);   /* (dest bit 4 in bit 7) */
     pk.wx[s] = (uint8_t)x;
     pke_help(s);
@@ -1373,7 +1382,7 @@ static BTAPP_FN void pke_cards_bt(void)
     hot_text_column(0, "WHAT", nm);
     if (e == PK_MOD) {
         int32_t a = pk_amt(x) * 10;
-        text_column(1, "HOW", PK_SH[((o >> 4) & 7u) % 6u], VAL(1u));
+        text_column(1, "HOW", PK_SH[PK_SHP(pk.we[s], o) % 12u], VAL(1u));
         nm[0] = a < 0 ? '-' : '+'; a = a < 0 ? -a : a;
         nm[1] = a >= 100 ? '1' : (char)('0' + a / 10); nm[2] = a >= 100 ? '0' : (char)('0' + a % 10);
         nm[3] = a >= 100 ? '0' : '%'; nm[4] = a >= 100 ? '%' : 0; nm[5] = 0;

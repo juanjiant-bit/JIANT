@@ -83,8 +83,8 @@ static struct {
     uint32_t qpend;                                 /* QUANT keys waiting for the beat */
     uint32_t exd, exs, mt[NTRK];                    /* TARGET: the effects kept off the kits / the synths, a track's own */
     uint8_t mod, mon, mo[4], mv0[4];                /* MOD keys held (M1..M4), moving, their options, the macros before */
-    uint8_t mx[4], pkey, po, px;                    /* (V10.7.66) their AMOUNT / TIME; the PARAM key held (slot + 1), its
-                                                     * options */
+    uint8_t mx[4], ms[4], pkey, po, px, ps;         /* (V10.7.66) their AMOUNT / TIME, HOW; the PARAM key held (slot + 1),
+                                                     * its options */
     uint32_t mt0[4], pt0, magic;                    /* .. since when (ms); PK_MAGIC once loaded (the pool: not zeroed) */
 } pk __attribute__((section(".pool")));
 

@@ -1456,7 +1456,7 @@ static uint32_t perf_def(uint32_t s);
 static uint32_t perf_key(uint32_t k)
 {
     uint32_t s = perf_slot(k);
-    return s < PK_KEYS && pk.e[s] ? pk.e[s] - 1u : perf_def(s);
+    return s < PK_KEYS && pk.e[s] ? (pk.e[s] & 31u) - 1u : perf_def(s);
 }
 static uint32_t perf_def(uint32_t s)                  /* slot s's effect as the map always had it */
 {
@@ -1478,12 +1478,13 @@ static void pk_target(uint32_t e, uint32_t tg)
 /* (V10.7.66) a PARAM key down or up (perf_kpress, from the RAM code: flash, through PK_PRESS) */
 static __attribute__((noinline)) void pk_press(uint32_t s, uint32_t o, int down)
 {
-    uint32_t b = (o & 15u) | (o >> 7) << 4;            /* (its destination: ui_layer.c PK_DST) */
+    uint32_t b = (o & 15u) | (o >> 7) << 4, h = ((o >> 4) & 7u) | (pk.e[s] >> 5 & 1u) << 3;   /* (its destination, its
+                                                         * HOW: ui_layer.c PK_DST PK_SHP) */
     if (b < 4u) {
-        if (down) { pk.mo[b] = (uint8_t)o; pk.mx[b] = pk.x[s]; pk.mt0[b] = fm1_ms; pk.mod |= (uint8_t)(1u << b); }
+        if (down) { pk.mo[b] = (uint8_t)o; pk.ms[b] = (uint8_t)h; pk.mx[b] = pk.x[s]; pk.mt0[b] = fm1_ms; pk.mod |= (uint8_t)(1u << b); }
         else pk.mod &= (uint8_t)~(1u << b);
     } else if (down) {
-        pk.po = (uint8_t)o; pk.px = pk.x[s]; pk.pt0 = fm1_ms; pk.pkey = (uint8_t)(s + 1u);
+        pk.po = (uint8_t)o; pk.ps = (uint8_t)h; pk.px = pk.x[s]; pk.pt0 = fm1_ms; pk.pkey = (uint8_t)(s + 1u);
     } else if (pk.pkey == s + 1u)
         pk.pkey = 0;
 }

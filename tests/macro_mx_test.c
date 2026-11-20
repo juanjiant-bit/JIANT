@@ -193,6 +193,38 @@ int main(void)
         bad += check("PUNCH-IN PARAM on a bus: DLY MIX up while held, as it was when let go", ok);
         pk.magic = 0; frame();
     }
+    {   /* (V10.7.66, the owner: "be creative") the HOWs: DROP falls fast, STUT ACC cuts faster and faster, PAT 1 its
+         * gates; PAN every other track the other way; a PARAM key's HOW past 7 kept (e's bit 5) */
+        uint32_t t, cuts0 = 0, cuts1 = 0, last = 0, v;
+        int16_t p0, p1;
+        uint32_t s0 = key_at(0, 0);
+        ok = pk_shape(3, 0, 1000, 0) >= 126u && pk_shape(3, 300, 1000, 0) < 50u && !pk_shape(3, 1000, 1000, 0);
+        for (t = 0; t < 1000u; t += 2u) {               /* (STUT ACC: its cuts in the first and the last quarter) */
+            v = pk_shape(6, t, 1000, 0);
+            if (v != last) { if (t < 250u) cuts0++; else if (t >= 750u) cuts1++; }
+            last = v;
+        }
+        ok &= cuts1 > cuts0 * 2u;
+        ok &= pk_shape(8, 0, 1600, 0) == 0u && pk_shape(8, 100, 1600, 0) == 127u;   /* (PAT 1: 0x2492, step 1 on) */
+        ui_power_on();
+        pk.magic = 0; frame();
+        trk[0].p[P_PAN] = 0; trk[1].p[P_PAN] = 0;
+        pk.e[0] = (PK_MOD + 1u) | 1u << 5; pk.o[0] = 10u | 0u << 4; pk.x[0] = 10u | 4u << 5;   /* (PAN, HOW 8: PAT 1) */
+        btn_down(B_FX); frames(480);
+        key_down(s0); frames(64);
+        ok &= pk.ps == 8u && pkr_d == MD_PAN;
+        pk.ps = 0;                                      /* (HOLD for the pans' check) */
+        frames(64);
+        frames(32);                                     /* (pk_mod: HOLD's value) */
+        mod_begin(&trk[0]); p0 = trk[0].p[P_PAN]; mod_end(&trk[0]);   /* (the block's values, as mix_part has them) */
+        mod_begin(&trk[1]); p1 = trk[1].p[P_PAN]; mod_end(&trk[1]);
+        key_up(s0); frames(64);
+        btn_up(B_FX); frames(64);
+        ok &= (p0 > 0) != (p1 > 0);
+        if (!ok) printf("  how: cuts %u %u pans %d %d ps %u d %u\n", cuts0, cuts1, p0, p1, pk.ps, pkr_d);
+        bad += check("PUNCH-IN HOWs: DROP, STUT ACC faster, PAT 1; PAN every other track the other way", ok);
+        pk.magic = 0; frame();
+    }
     printf(bad ? "macro-mx: %d FAILED\n" : "macro-mx: all ok\n", bad);
     return bad != 0;
 }
