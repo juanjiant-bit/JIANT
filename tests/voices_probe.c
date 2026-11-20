@@ -32,7 +32,6 @@ static volatile uint32_t sink;
 static void force_half(uint32_t p)                      /* part p's voices at half the rate from their next block */
 {
     uint32_t i;
-    if (getenv("QUART")) vh_quart = 0xFF;               /* (V10.7.56: FM6 at a quarter instead) */
     for (i = 0; i < NVOICE; i++)
         if (trk[p].v[i].active && !VH_ST(vh_c[p * NVOICE + i]))
             vh_c[p * NVOICE + i] = VH_IN;
