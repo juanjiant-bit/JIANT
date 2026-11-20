@@ -4921,17 +4921,14 @@ static int test_quick_layers(void)
             ok &= okk && !ui.confirm && sig > 0u && msg_is("LFO DICED");
             rs = song.g[G_RSIZE]; rv = TSEL->p[P_REV];
             fm1_ms += 1200u;
-            for (j = 0, okk = 0; j < 4u && !okk; j++) {   /* (a dice may land where it was: again) */
-                held_turn(B_FX, 1); fm1_ms += 1200u;
-                okk = ui.confirm == CF_DICE_FX && (song.g[G_RSIZE] != rs || TSEL->p[P_REV] != rv);
-            }
-            press(B_OCTDN); frame();
-            ok &= okk && !ui.confirm && song.g[G_RSIZE] == rs && TSEL->p[P_REV] == rv && msg_is("FX BACK") && !fx_lock;
+            held_turn(B_FX, 1); fm1_ms += 1200u;          /* (V10.7.66, the owner: FX + SELECT no dice) */
+            ok &= !ui.confirm && song.g[G_RSIZE] == rs && TSEL->p[P_REV] == rv;
+            press(B_FX); frames(64);
             bpm = song.g[G_BPM];
             btn_down(B_GLO); frame(); turn(EN_SELECT, 3); frame(); btn_up(B_GLO); frames(4);
             ok &= song.g[G_BPM] != bpm;
             song.g[G_BPM] = bpm;
-            bad += check("0.6.67: ENV + SELECT its chain (0.9.2: from its page left); SEQ / LFO / FX + SELECT their dice (CANCEL back, OK kept); GLO + SELECT the tempo", ok);
+            bad += check("0.6.67: ENV + SELECT its chain (0.9.2: from its page left); SEQ / LFO + SELECT their dice (CANCEL back, OK kept; FX none); GLO + SELECT the tempo", ok);
             fm1_ms += 1200u;
         }
         {   /* (0.6.7) turned in the press's own frame, or before HOLD: the map never comes while it is held; held again
