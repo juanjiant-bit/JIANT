@@ -2868,6 +2868,17 @@ static __attribute__((noinline)) void gen_make(void)
             if (np < 2u && !gs.act[RL_PAD] && gp.amt[GP_CHORDS] == GA_AUTO) {   /* (V10.8: a part set OFF stays off) */ gs.act[RL_PAD] = 1; gs.amt[GP_CHORDS] = 60; pri[np++] = RL_PAD; }
         }
         for (k = 0; k < GP_N - 1u; k++) if (!gs.act[PRI[k + 1u]]) pri[np++] = PRI[k + 1u];   /* (the silent ones after) */
+        if (g->spec & GSP_FUGUE) {                      /* (V10.7.64, the owner: "FUGA starts silent") its voices, the
+                                                         * subject (the lead) and the answer (the arp's), before the
+                                                         * continuo (the pad): with four tracks (T5 T6 asleep) the song's
+                                                         * first rows were the subject alone, unheard */
+            uint32_t pi = np, mi = 0, q;
+            for (k = 0; k < np; k++) {
+                if (pri[k] == RL_PAD) pi = k;
+                if (pri[k] == RL_LEAD || pri[k] == RL_ARP) mi = k;
+            }
+            if (pi < mi) { for (q = pi; q < mi; q++) pri[q] = pri[q + 1u]; pri[mi] = RL_PAD; }
+        }
         for (k = 0; k < NTRK && dr == NTRK; k++) if (drum_track(&trk[k])) dr = k;
         if (dr == NTRK) { dr = nlive > 3u ? 3u : nlive - 1u; set_engine_of(&trk[dr], ENGI_DRUM); }
         for (k = 0; k < RL_N; k++) gs.trk_of[k] = NTRK;
