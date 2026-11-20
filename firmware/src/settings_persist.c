@@ -86,6 +86,16 @@ static int settings_import(persist_t *p, int n)
 #ifdef FELUCCA_FAVORITES
     memcpy(&favorites, &p->favorites, sizeof favorites);
     favorites.filter = favorites.filter == 1u;
+#if defined(FM4_NPRESETS) && !FELUCCA_FM4
+    {   /* DIGITAL's starred presets (engine 1, retired) -> the FM6 presets that cover them (fm4_convert.c) */
+        uint32_t k;
+        for (k = 0; k < FM4_NPRESETS; k++)
+            if ((favorites.factory[ENGI_DIGITAL][0] >> k) & 1u)
+                favorites.factory[ENGI_FM6][FM4_TO_FM6[k] / 8u] |= (uint8_t)(1u << (FM4_TO_FM6[k] % 8u));
+        favorites.factory[ENGI_DIGITAL][0] = 0;   /* (p1, as main 0.9.12: the row's bytes 1..31 MIDI MAP and LEARN's,
+                                                   * midi_learn.c) */
+    }
+#endif
 #ifdef SMP_SET_PERC
     if ((favorites.factory[ENGI_SAMPLE][0] >> SMP_SET_PERC) & 1u) {   /* SAMPLE's PERC (preset 4, retired): DRUM's */
         favorites.factory[ENGI_DRUM][0] |= 1u;                         /* kit (core.h drum_from_perc) */
