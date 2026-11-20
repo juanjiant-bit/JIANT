@@ -89,7 +89,7 @@ static const nv_t CE_FX[] = {NV("FX", "SENDS", 0, FXL_TRACK), NV("DIST", 0, 0, F
                              NV("BUSES", 0, 1, FXL_BUSES), NV("DLY", 0, 2, FXL_EFFECT), NV("DLY 2", 0, 2, FXL_EFFECT),
                              NV("DLY 3", 0, 2, FXL_EFFECT), NV("REVERB", 0, 3, FXL_EFFECT), NV("REVERB 2", 0, 3, FXL_EFFECT),
                              NV("CHORUS", 0, 4, FXL_EFFECT), NV("SLICER", 0, 5, FXL_EFFECT), NV("SL BUS", 0, 5, FXL_EFFECT),
-                             NV("SL BUS 2", 0, 5, FXL_EFFECT), NV("SL PITCH", 0, 5, FXL_EFFECT), NV("PUNCH IN", 0, 6, FXL_EFFECT), NV("PUNCH LANE", "LANE", 6, FXL_EFFECT),
+                             NV("SL BUS 2", 0, 5, FXL_EFFECT), NV("SL PITCH", 0, 5, FXL_EFFECT), NV("PUNCH IN", 0, 6, FXL_EFFECT), NV("MACROS", 0, 6, FXL_EFFECT), NV("PUNCH LANE", "LANE", 6, FXL_EFFECT),
                              NV("MASTER", 0, 7, FXL_EFFECT), NV("TAPE", 0, 7, FXL_EFFECT),
                              NV("EQ", 0, 7, FXL_EFFECT)};   /* (p9: the master's EQ) */   /* (0.9.9-snd2: MASTER last, the
                                                          * end of the chain; snd8: its TAPE) */
@@ -107,7 +107,7 @@ static const nv_t CE_ENV[] = {NV("ENV", 0, 0, 1), NV("ENV DEST", 0, 0, 1), NV("E
                                                          * TRACKS, the six tracks' envelopes at a glance (ENV's knobs), last
                                                          * (TRACKS DEST, ENV DEST's twin, gone) */
 static const ng_t CG_ENV[] = {{"ENV", 0}, {"STAGE", 0}, {"TRACKS", 0}};
-static const nv_t CE_LFO[] = {NV("MOD", 0, 0, 0), NV("MACROS", 0, 0, 0), NV("LFO", 0, 1, 1), NV("LFO 2", 0, 1, 1), NV("LFO DEST", 0, 1, 1),
+static const nv_t CE_LFO[] = {NV("MOD", 0, 0, 0), NV("LFO", 0, 1, 1), NV("LFO 2", 0, 1, 1), NV("LFO DEST", 0, 1, 1),
                               NV("MSEQ", "MOD SEQ", 2, 2), NV("MSEQ 2", "MOD SEQ 2", 2, 2)};   /* (0.9.18: LFO 2, PHASE) */
 static const ng_t CG_LFO[] = {{"MOD", 0}, {"LFO", 0}, {"MOD SEQ", "MSEQ"}};   /* (V10.7.59: MOD SEQ) */
 static const nv_t CE_SCL[] = {NV("SCL", "KEY", 0, 0),   /* (codex/coherence: KEY, its group's name) */
@@ -133,7 +133,7 @@ static const ch_t CHAINS[NAV_KEYS] = {CH(CE_HOME, CG_HOME), CH(CE_SYN, CG_SYN), 
                                       CH(CE_DIG, CG_DIG)};
 /* the page each opens on at power-on (the mock-up's): SEQ its STEP, ENV its ENV, LFO its LFO, (p2) GLO its MIXER (LIVE's
  * pages before it: a GLO tap inside, rule 2), (V10.7.22) SAVE its TIMELINE (TOOLS before it); ui.nmem holds it ^ this */
-static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 1, 0, 2, 0, 0, 2, 0, 0, 0};   /* (V10.7.63: SAVE its PROJECTS) */   /* (V10.7.59: LFO its LFO, after MACROS) */   /* (V10.7.58: GLO MIXER 1, RAILS gone) */
+static const uint8_t NAV_DEF[NAV_KEYS] = {0, 0, 0, 0, 1, 0, 1, 0, 0, 2, 0, 0, 0};   /* (V10.7.66: LFO its LFO, MACROS gone to FX) */   /* (V10.7.63: SAVE its PROJECTS) */   /* (V10.7.59: LFO its LFO, after MACROS) */   /* (V10.7.58: GLO MIXER 1, RAILS gone) */
 static uint32_t nav_key(uint32_t sec) { uint32_t k = sec == SEC_EDIT ? edit_kind() : 0u; return k ? SEC_N - 1u + k : sec; }
 static const ch_t *nav_ch(uint32_t sec) { return &CHAINS[nav_key(sec)]; }
 static uint32_t nav_mem(uint32_t key) { return (uint32_t)(ui.nmem[key] ^ NAV_DEF[key]); }
@@ -167,7 +167,8 @@ static uint32_t nv_page(uint32_t sec, uint32_t e)
 }
 static int nv_ok(uint32_t sec, uint32_t e)   /* (V10.7.59, the owner: HOME > MACROS gone, the FX layer's knobs are the macros) */
 {
-    return sec == SEC_HOME && !CE_HOME[e < NELEM(CE_HOME) ? e : 0].t ? e < NELEM(CE_HOME) : nv_page(sec, e) < NPAGES;   /* (V10.7.62:
+    return sec == SEC_HOME && !CE_HOME[e < NELEM(CE_HOME) ? e : 0].t ? e < NELEM(CE_HOME) && e != 3u : nv_page(sec, e) < NPAGES;   /* (V10.7.66:
+                                                         * ROUTES, the macros, gone: FX > PUNCH IN's only) */   /* (V10.7.62:
                                                          * ECO's second, LIFE; V10.7.63 the song's pages) */
 }
 /* the entry shown: HOME's from its state (ui.hlv, ui.hset, GEN's page); the others the one remembered when it is the page

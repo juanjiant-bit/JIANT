@@ -54,8 +54,9 @@ typedef struct {
 } layer_t;
 static const layer_t LAYERS[LAYER_N] = {
     {0, 0, 0, "", {{0, 0}, {0, 0}, {0, 0}}},
-    {B_FX, LK_HOLD, FAM_HOME, "[FX] HOLD", {{KC_KEYS, "EFFECTS"}, {KC_K14, "MACROS"}, {KC_OCTUP, "EDIT"}}},   /* (LET GO: the header's HOLD; V10.7.65: OCT+ the editor, was DICE) */
-    {B_GLO, LK_SET, FAM_HOME, "[GLO] SET", {{KC_PLAY, "RESTART"}, {KC_GLO, "DONE"}, {0, 0}}},
+    {B_FX, LK_HOLD, FAM_HOME, "[FX] HOLD", {{KC_KEYS, "EFFECTS"}, {KC_K14, "MACROS"}, {0, 0}}},   /* (V10.7.66: the editor is FX > PUNCH IN's OCT+) */   /* (LET GO: the header's HOLD; V10.7.65: OCT+ the editor, was DICE) */
+    {B_GLO, LK_SET, FAM_HOME, "[GLO] SET", {{KC_PLAY, "RESTART"}, {KC_GLO, "DONE"}, {KC_KEYS, "G4 UNDO"}}},   /* (V10.7.66:
+                                                                     * UNDO said where it is) */
     {B_SCL, LK_SET, FAM_SCL, "[SCL] SET", {{KC_KEYS, "ROOT"}, {KC_SCL, "DONE"}, {0, 0}}},
     {B_EDIT, LK_SET, FAM_EDIT, "[EDIT] SET", {{KC_SELECT, "DICE"}, {KC_K14, "TWEAK"}, {KC_KEYS, "INIT / RECALL"}}},   /* (0.9.9-seq2e:
                                                                      * KNOB 1..4 MOMENTARY: mom_knob; seq2f: SELECT the sound dice) */
@@ -104,7 +105,9 @@ static int tools_page(void)
     return !ui.home && pg->fam == FAM_SEQ && pg->graph != GR_PATS && pg->graph != GR_SONG;   /* (0.8.3: every level
                                                          * of LENTE's, STRETCH PLAYHEADS MUTATE AUTO LIST too) */
 }
-static int ly_avail(uint32_t l) { return l != LAYER_SEQ || tools_page(); }   /* (REC: on every page) */
+static int ly_avail(uint32_t l) { return l != LAYER_MACRO && (l != LAYER_SEQ || tools_page()); }   /* (REC: on every page;
+                                                         * V10.7.66, the owner: the macros FX > PUNCH IN's only, LFO's
+                                                         * layer gone) */
 static uint32_t ly_down(uint32_t l) { return l && (fm1_in.buttons & ly_bit(l)) != 0u; }
 static uint32_t layer_bits(void)
 {

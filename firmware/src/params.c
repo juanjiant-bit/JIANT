@@ -722,7 +722,7 @@ static const page_t PAGES[] = {
     {"LFO", FAM_LFO, SC_TRACK, GR_LFO, {P_LRATE, P_LWAVE, ID_LMODE, P_LFADE}},   /* (0.9.18: MODE where PHASE was) */
     {"LFO DEST", FAM_LFO, SC_TRACK, GR_NONE, {P_LD_PIT, P_LD_FLT, P_LD_SHP, P_LD_AMP}},
     {"MOD", FAM_LFO, SC_TRACK, GR_MOD, {0xFF, P_M1SRC, P_M1DST, P_M1AMT}},   /* KNOB 1: the slot (mod_ui_slot) */
-    {"MACROS", FAM_LFO, SC_GLOBAL, GR_NONE, {ID_MX0, ID_MX0 + 1u, ID_MX0 + 2u, ID_MX0 + 3u}},   /* (V10.7.59) the MACROS'
+    {"MACROS", FAM_FX, SC_GLOBAL, GR_NONE, {ID_MX0, ID_MX0 + 1u, ID_MX0 + 2u, ID_MX0 + 3u}},   /* (V10.7.59) the MACROS'
                                                          * own matrix (mod.c mx_r), beside the tracks' */
     {"MSEQ", FAM_LFO, SC_TRACK, GR_MSEQ, {0xFF, P_MS0, P_MSLEN, P_MSSLW}},   /* JIANT: KNOB 1 the step (ms_ui_step) */
     {"MSEQ 2", FAM_LFO, SC_TRACK, GR_NONE, {P_MSDIV, 0xFF, 0xFF, 0xFF}},

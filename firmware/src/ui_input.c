@@ -2820,7 +2820,7 @@ static void ui_input_frame(void)
         int32_t ps;
         if (!ui.menu && !dlg_on() && !name_on() && (f != FAM_COUNT || hb) && f != FAM_GLO &&
             (ps = panel_enc(EN_SELECT)) != 0) {
-            uint32_t k = f == FAM_EDIT ? CF_DICE_SOUND : f == FAM_SEQ ? CF_DICE_SEQ : f == FAM_LFO ? CF_DICE_LFO :
+            uint32_t k = f == FAM_EDIT ? CF_DICE_SOUND : f == FAM_SEQ ? CF_DICE_SEQ : 
                          0u;                    /* (V10.7.66, the owner: FX + SELECT's dice gone) */
             if (f == FAM_COUNT) {                       /* HOME held: GEN, HOME's generator */
                 ui.home_t0 |= 2u;
