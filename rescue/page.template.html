@@ -46,6 +46,7 @@ a{color:var(--acc)}
 <h2><span class="n">1</span><span data-t="s1"></span></h2>
 <label class="opt"><input type="radio" name="board" value="zero" checked><span><b>Waveshare RP2040-Zero</b><small data-t="zero"></small></span></label>
 <label class="opt"><input type="radio" name="board" value="xiao"><span><b>Seeed XIAO RP2040</b><small data-t="xiao"></small></span></label>
+<label class="opt"><input type="radio" name="board" value="pico"><span><b>Raspberry Pi Pico</b><small data-t="pico"></small></span></label>
 </section>
 
 <section class="card">
@@ -85,13 +86,15 @@ a{color:var(--acc)}
 <script type="module">
 %%BUILDER%%
 
-const BASE = { zero: "%%BASE_ZERO%%", xiao: "%%BASE_XIAO%%" };
+const BASE = { zero: "%%BASE_ZERO%%", xiao: "%%BASE_XIAO%%", pico: "%%BASE_PICO%%" };
+const BOARD_NAME = { zero: "RP2040-Zero", xiao: "XIAO RP2040", pico: "Raspberry Pi Pico" };
 
 const T = {
 es: {
 lead: "Repara un FM-1 que no enciende (hard brick) con un RP2040 y nada más: sin Python, sin terminal. Esta página crea un archivo .uf2 que lleva dentro el firmware oficial V15; lo copias al RP2040 y él solo restaura el FM-1, conectado a un PC o a un simple cargador USB.",
 s1: "Tu placa", zero: "La de la guía de GoodPerson42. Cables: verde → 0, blanco → 1, negro → GND.",
 xiao: "Cables: verde → D6, blanco → D7, negro → GND.",
+pico: "Y placas tipo Pico, como la Ultimate Pico RP2040 morada (pines 0, 1 y G junto al USB-C). Cables: verde → GP0 (pin 1), blanco → GP1 (pin 2), negro → GND (pin 3). Su LED es de un color: parpadeo lento = esperando, parpadeo rápido = error, fijo = listo.",
 s2: "Firmware: JIANT o V15 oficial", s2m: "Un paquete de JIANT (.fwsc, el del instalador) o el FM-1.fwsc de la V15 oficial de M-VAVE (699.956 bytes). Se comprueban: cualquier otro se rechaza (la V16 no cabe). No sale de tu navegador.",
 s2j: "Si tu FM-1 venía con la V16, usa JIANT: funciona con el arranque de la V16; con la V15 no está comprobado.",
 pick: "Elegir .fwsc",
@@ -125,6 +128,7 @@ en: {
 lead: "Fix an FM-1 that does not turn on (hard brick) with an RP2040 and nothing else: no Python, no terminal. This page makes a .uf2 file that carries the official V15 firmware; copy it to the RP2040 and it restores the FM-1 by itself, plugged into a computer or a plain USB charger.",
 s1: "Your board", zero: "The one in GoodPerson42's guide. Wires: green → 0, white → 1, black → GND.",
 xiao: "Wires: green → D6, white → D7, black → GND.",
+pico: "And Pico-style boards such as the purple Ultimate Pico RP2040 (pins 0, 1 and G next to the USB-C). Wires: green → GP0 (pin 1), white → GP1 (pin 2), black → GND (pin 3). Its LED has one colour: slow blink = waiting, fast blink = error, steady = done.",
 s2: "Firmware: JIANT or official V15", s2m: "A JIANT package (.fwsc, the installer's) or M-VAVE's official V15 FM-1.fwsc (699,956 bytes). Both are checked: anything else is refused (V16 does not fit). It never leaves your browser.",
 s2j: "If your FM-1 came with V16, use JIANT: it runs with V16's boot head; V15 is not tested with it.",
 pick: "Choose .fwsc",
@@ -227,7 +231,7 @@ $("make").onclick = async () => {
     a.download = "fm1-rescue.uf2";
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-    say("makeSt", "made", "ok", ` (${board === "zero" ? "RP2040-Zero" : "XIAO RP2040"}, ${(uf2.length / 1024).toFixed(0)} KB)`);
+    say("makeSt", "made", "ok", ` (${BOARD_NAME[board]}, ${(uf2.length / 1024).toFixed(0)} KB)`);
   } catch (err) { say("makeSt", "fail", "err", err.message); }
 };
 render();

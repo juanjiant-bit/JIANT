@@ -33,6 +33,10 @@
 #define LED_G 15
 #define LED_B 16
 #define LED_ON 1
+#elif FM1T_LED_MONO
+// Raspberry Pi Pico and Pico-style boards: one plain LED on GP25, lit high.
+// Colours become on/off; autorescue.c uses blink patterns instead.
+#define LED_MONO_PIN 25
 #elif FM1T_LED_WS2812
 // Waveshare RP2040-Zero: one WS2812 on GP16, driven by a PIO0 state machine.
 #define LED_WS_PIN 16
@@ -95,6 +99,15 @@ static void led_init(void) {
     sm_config_set_clkdiv(&c, (float)clock_get_hz(clk_sys) / (800000.0f * cycles));
     pio_sm_init(pio, (uint)sm_led, off, &c);
     pio_sm_set_enabled(pio, (uint)sm_led, true);
+}
+#elif FM1T_LED_MONO
+void rgb(bool r, bool g, bool b) {
+    gpio_put(LED_MONO_PIN, r || g || b);
+}
+
+static void led_init(void) {
+    gpio_init(LED_MONO_PIN);
+    gpio_set_dir(LED_MONO_PIN, GPIO_OUT);
 }
 #else
 void rgb(bool r, bool g, bool b) {

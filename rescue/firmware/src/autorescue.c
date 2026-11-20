@@ -225,7 +225,11 @@ void ar_task(void) {
     case AR_OFF:
         return;
     case AR_BAD_PAYLOAD:
+#if FM1T_LED_MONO
+        rgb(blink_fast, false, false);          // one LED: the same as an error
+#else
         rgb(blink_slow, false, !blink_slow);
+#endif
         return;
     case AR_DONE:
         rgb(false, true, false);
@@ -264,7 +268,11 @@ void ar_task(void) {
              "FM-1 OFF, unplug and re-plug this board, then switch the FM-1 ON.");
     }
     if (mounted && foreign) {
+#if FM1T_LED_MONO
+        rgb((now / 100000) % 10 == 0, false, false);    // one LED: a short flash every second
+#else
         rgb(true, false, true);
+#endif
     } else {
         rgb(blink_slow, blink_slow, false);
     }

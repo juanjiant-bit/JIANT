@@ -26,9 +26,11 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${FM1T_PIO_USB_PA
 # headers it ships are removed so the ones generated from the patched .pio
 # files are used.
 # zero: Waveshare RP2040-Zero (GP0 = D+, GP1 = D-, WS2812 status LED on GP16).
+# pico: Raspberry Pi Pico and Pico-style RP2040 boards (GP0 = D+, GP1 = D-, plain LED on GP25).
 set(FM1T_BOARD xiao CACHE STRING "Board: xiao, zero or debugprobe")
-set_property(CACHE FM1T_BOARD PROPERTY STRINGS xiao zero debugprobe)
+set_property(CACHE FM1T_BOARD PROPERTY STRINGS xiao zero pico debugprobe)
 set(FM1T_LED_WS2812 0)
+set(FM1T_LED_MONO 0)
 if (FM1T_BOARD STREQUAL "debugprobe")
     set(FM1T_PROBE_PATCH ${CMAKE_CURRENT_LIST_DIR}/lib/pico-pio-usb-debugprobe.patch)
     execute_process(
@@ -46,8 +48,11 @@ elseif (FM1T_BOARD STREQUAL "xiao")
 elseif (FM1T_BOARD STREQUAL "zero")
     set(FM1T_BOARD_DEBUGPROBE 0)
     set(FM1T_LED_WS2812 1)
+elseif (FM1T_BOARD STREQUAL "pico")
+    set(FM1T_BOARD_DEBUGPROBE 0)
+    set(FM1T_LED_MONO 1)
 else()
-    message(FATAL_ERROR "FM1T_BOARD must be xiao, zero or debugprobe, not ${FM1T_BOARD}")
+    message(FATAL_ERROR "FM1T_BOARD must be xiao, zero, pico or debugprobe, not ${FM1T_BOARD}")
 endif()
 
 # TinyUSB debug level (CFG_TUSB_DEBUG). 2 logs host enumeration during M0.
@@ -84,7 +89,8 @@ function(fm1t_add_firmware TARGET)
     # tusb_config.h
     target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
     target_compile_definitions(${TARGET} PRIVATE FM1T_BOARD_DEBUGPROBE=${FM1T_BOARD_DEBUGPROBE}
-                                                 FM1T_LED_WS2812=${FM1T_LED_WS2812})
+                                                 FM1T_LED_WS2812=${FM1T_LED_WS2812}
+                                                 FM1T_LED_MONO=${FM1T_LED_MONO})
 
     target_link_libraries(${TARGET}
         pico_stdlib

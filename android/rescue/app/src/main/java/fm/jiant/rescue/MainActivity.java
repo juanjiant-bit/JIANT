@@ -4,7 +4,7 @@
 //      it runs under the boot head of V15 and of V16), the official V15
 //      (also in the APK, hash-checked), or a .fwsc of your own. JieLi's
 //      wl82loader.bin ships in the APK.
-//   2. The RP2040 (RP2040-Zero or XIAO) is plugged into the phone with an OTG
+//   2. The RP2040 (RP2040-Zero, XIAO or a Pico-style board) is plugged into the phone with an OTG
 //      adapter while BOOT is held: the app programs it over PICOBOOT, with the
 //      V15 inside (no file copy, no computer). A board that already runs the
 //      rescue firmware is sent back to BOOTSEL by the app itself.
@@ -187,17 +187,20 @@ public class MainActivity extends Activity {
         LinearLayout c2 = card(root);
         text(c2, t("2 · Tu placa", "2 · Your board"), 16, true);
         RadioGroup g = new RadioGroup(this);
-        RadioButton zero = new RadioButton(this), xiao = new RadioButton(this);
+        RadioButton zero = new RadioButton(this), xiao = new RadioButton(this), pico = new RadioButton(this);
         zero.setText(t("Waveshare RP2040-Zero  (verde → 0, blanco → 1, negro → GND)",
                 "Waveshare RP2040-Zero  (green → 0, white → 1, black → GND)"));
         xiao.setText(t("Seeed XIAO RP2040  (verde → D6, blanco → D7, negro → GND)",
                 "Seeed XIAO RP2040  (green → D6, white → D7, black → GND)"));
-        zero.setId(View.generateViewId());
-        xiao.setId(View.generateViewId());
-        g.addView(zero);
-        g.addView(xiao);
-        (board().equals("xiao") ? xiao : zero).setChecked(true);
-        g.setOnCheckedChangeListener((gr, id) -> prefs.edit().putString("board", id == xiao.getId() ? "xiao" : "zero").apply());
+        pico.setText(t("Raspberry Pi Pico, Ultimate Pico u otra placa tipo Pico  (verde → GP0 pin 1, blanco → GP1 pin 2, negro → GND pin 3)",
+                "Raspberry Pi Pico, Ultimate Pico or another Pico-style board  (green → GP0 pin 1, white → GP1 pin 2, black → GND pin 3)"));
+        for (RadioButton r : new RadioButton[] {zero, xiao, pico}) {
+            r.setId(View.generateViewId());
+            g.addView(r);
+        }
+        (board().equals("xiao") ? xiao : board().equals("pico") ? pico : zero).setChecked(true);
+        g.setOnCheckedChangeListener((gr, id) -> prefs.edit()
+                .putString("board", id == xiao.getId() ? "xiao" : id == pico.getId() ? "pico" : "zero").apply());
         c2.addView(g);
 
         LinearLayout c3 = card(root);
@@ -760,8 +763,11 @@ public class MainActivity extends Activity {
                               "It is running another firmware. Switch it off, re-plug the RP2040, switch it on."), 0);
                 } else {
                     show(t("Enciende el FM-1 ahora", "Switch the FM-1 on now"),
-                            t("Tiene que haber estado apagado. El LED del RP2040 parpadea en amarillo.",
-                              "It must have been off. The RP2040's LED blinks yellow."), 0);
+                            board().equals("pico")
+                                    ? t("Tiene que haber estado apagado. El LED de la Pico parpadea lento.",
+                                        "It must have been off. The Pico's LED blinks slowly.")
+                                    : t("Tiene que haber estado apagado. El LED del RP2040 parpadea en amarillo.",
+                                        "It must have been off. The RP2040's LED blinks yellow."), 0);
                 }
                 break;
             case "run":

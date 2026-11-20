@@ -23,6 +23,10 @@
 //   purple, steady        the FM-1 runs a firmware that has no soft key:
 //                         switch it off, re-plug the board, switch it on
 //   red/blue alternating  the payload is damaged: rebuild the .uf2
+//
+// One-LED boards (Raspberry Pi Pico, FM1T_LED_MONO): slow blink = waiting,
+// flicker = working, steady = done, fast blink = error or damaged payload,
+// a short flash every second = another firmware is running on the FM-1.
 
 #include <stdbool.h>
 

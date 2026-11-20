@@ -10,7 +10,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 : "${PICO_SDK_PATH:?set PICO_SDK_PATH to pico-sdk 2.2.0}"
 BUILD="${BUILD:-$HERE/firmware/build}"
 mkdir -p "$HERE/base"
-for spec in zero:waveshare_rp2040_zero xiao:seeed_xiao_rp2040; do
+for spec in zero:waveshare_rp2040_zero xiao:seeed_xiao_rp2040 pico:pico; do
     board=${spec%%:*}
     pico_board=${spec#*:}
     cmake -S "$HERE/firmware" -B "$BUILD/$board" -DPICO_SDK_PATH="$PICO_SDK_PATH" \

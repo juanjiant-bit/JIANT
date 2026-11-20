@@ -17,7 +17,7 @@ después te va diciendo qué hacer mientras repara el FM-1.
 |---|---|
 | Móvil Android 7 o más nuevo | con USB OTG (casi todos los actuales) |
 | Adaptador **OTG** USB-C (o micro-USB) a USB-A, o un cable USB-C a USB-C | para enchufar el RP2040 al móvil |
-| **Waveshare RP2040-Zero** o **Seeed XIAO RP2040** | la placa de la guía de GoodPerson42 |
+| **Waveshare RP2040-Zero**, **Seeed XIAO RP2040** o **Raspberry Pi Pico** (o una placa tipo Pico, como la morada **Ultimate Pico RP2040**) | la Zero es la de la guía de GoodPerson42 |
 | Cable USB-C con 4 hilos sueltos | negro, rojo, blanco, verde |
 | Nada más | JIANT, la V15 oficial y el loader van dentro de la app: no hace falta internet |
 
@@ -35,15 +35,15 @@ desconocido" si Android lo pide.
    - **V15 oficial de M-VAVE** (incluida, comprobada por su hash). Con un FM-1 que venía en V16 **no está
      comprobado** que arranque: en ese caso usa JIANT.
    - "Elegir otro .fwsc": otra versión de JIANT o tu propio archivo de la V15 (cualquier otro se rechaza).
-2. **Elige tu placa:** RP2040-Zero o XIAO RP2040.
+2. **Elige tu placa:** RP2040-Zero, XIAO RP2040 o Raspberry Pi Pico (también clones tipo Pico).
 3. **Cableado**, con el FM-1 **apagado** (el rojo no se conecta):
 
-   | Hilo | RP2040-Zero | XIAO RP2040 |
-   |---|---|---|
-   | verde (D+) | `0` | `D6` |
-   | blanco (D−) | `1` | `D7` |
-   | negro (GND) | `GND` | `GND` |
-   | rojo (5 V) | — | — |
+   | Hilo | RP2040-Zero | XIAO RP2040 | Pico / tipo Pico |
+   |---|---|---|---|
+   | verde (D+) | `0` | `D6` | `GP0` (pin 1) |
+   | blanco (D−) | `1` | `D7` | `GP1` (pin 2) |
+   | negro (GND) | `GND` | `GND` | `GND` (pin 3) |
+   | rojo (5 V) | — | — | — |
 
    Enchufa el USB-C de esos hilos al FM-1.
 4. **Conecta el RP2040 al móvil** con el adaptador OTG y acepta el aviso de acceso USB (marca "usar siempre" para
@@ -71,7 +71,9 @@ Para reparar otro FM-1 basta con desconectar y volver a conectar el RP2040.
 | Error: "Una escritura no se completó…" | Apaga el FM-1, reconecta el RP2040 y repite: retoma donde quedó. |
 
 El LED del RP2040 dice lo mismo sin mirar el móvil: amarillo parpadeando = esperando que enciendas el FM-1,
-azul = trabajando, verde fijo = listo, rojo parpadeando rápido = error.
+azul = trabajando, verde fijo = listo, rojo parpadeando rápido = error. La Pico tiene un LED de un solo color:
+parpadeo lento = esperando, parpadeo irregular = trabajando, fijo = listo, parpadeo rápido = error. Las placas tipo
+Pico que tengan el LED en otro pin funcionan igual, solo que sin LED: sigue el progreso en la app.
 
 ## Qué hace exactamente
 

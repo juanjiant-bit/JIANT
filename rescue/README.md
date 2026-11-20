@@ -7,11 +7,12 @@ El RP2040 lleva dentro el firmware oficial V15 y hace todo él solo; el PC solo 
 (o ni eso: después basta un cargador USB).
 
 1. Abre **`fm1-rescue.html`** (Chrome, Edge o Firefox; funciona también como archivo local), elige tu placa
-   (RP2040-Zero o XIAO RP2040) y el firmware: un paquete **JIANT** (`.fwsc` del instalador) o el `FM-1.fwsc`
+   (RP2040-Zero, XIAO RP2040 o Raspberry Pi Pico / tipo Pico) y el firmware: un paquete **JIANT** (`.fwsc` del instalador) o el `FM-1.fwsc`
    **V15** oficial. Si el FM-1 venía con la **V16**, usa JIANT (arranca con la cabecera de la V16; la V15 no
    está comprobada con ella). Pulsa **Crear fm1-rescue.uf2**.
 2. Mantén **BOOT** y conecta el RP2040 al PC; arrastra `fm1-rescue.uf2` a la unidad `RPI-RP2`.
-3. Desconéctalo. FM-1 **apagado**; cables: verde → `0`, blanco → `1`, negro → `GND`, rojo sin conectar.
+3. Desconéctalo. FM-1 **apagado**; cables: verde → `0` (Pico: `GP0`, pin 1), blanco → `1` (Pico: `GP1`, pin 2),
+   negro → `GND`, rojo sin conectar.
 4. Conecta el RP2040 a un PC o cargador (LED amarillo parpadeando) y **enciende el FM-1**.
 5. LED azul = trabajando; **verde fijo** = listo: apaga el FM-1, quita los cables, enciéndelo (arranca V15).
    Rojo parpadeando = error: apaga el FM-1, reconecta el RP2040 y repite.
@@ -53,7 +54,7 @@ Not yet tested on hardware.
 | `fm1-rescue.html` | the page (generated, self-contained: builder + both base firmwares inlined) |
 | `builder.js` | `.fwsc` → V15 region, payload, merged UF2 (browser and Node) |
 | `make_uf2.mjs` | command-line builder: `node make_uf2.mjs BASE.uf2 FM-1.fwsc wl82loader.bin OUT.uf2` |
-| `base/` | prebuilt rescue firmware for RP2040-Zero and XIAO RP2040 (no loader, no M-VAVE code) |
+| `base/` | prebuilt rescue firmware for RP2040-Zero, XIAO RP2040 and Raspberry Pi Pico (one-colour LED on GP25: blink patterns) |
 | `firmware/` | FM-1 Transporter `14fd4df` + `src/payload.c`, `src/autorescue.c`, WS2812 LED for the Zero |
 | `firmware/test/` | host test of `payload.c` + `autorescue.c` against a mock FM-1 |
 | `build.sh` | rebuilds `base/` and the page; with `FM1_V15` and `FM1_LOADER` also runs the host test |
