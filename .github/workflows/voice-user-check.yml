@@ -1,7 +1,7 @@
 name: V23 editing and WEST beta
 on:
   push:
-    branches: [codex/v23-editing-beta, codex/v56-fm]
+    branches: [codex/v23-editing-beta, codex/v56-fm, codex/v65-punch]
 permissions:
   contents: read
 concurrency:
