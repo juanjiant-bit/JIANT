@@ -1,5 +1,5 @@
 #!/bin/sh
-# android/rescue/test/run.sh V15.fwsc V16.fwsc wl82loader.bin WEB.uf2 BASE_ZERO.uf2
+# android/rescue/test/run.sh V15.fwsc V16.fwsc wl82loader.bin WEB.uf2 BASE_ZERO.uf2 [JIANT.fwsc JIANT_REGION.bin]
 # WEB.uf2: node rescue/make_uf2.mjs BASE_ZERO.uf2 V15.fwsc wl82loader.bin WEB.uf2
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 // FM-1 Rescue for Android: one screen that does the whole unbrick.
-//   1. The official V15 FM-1.fwsc is chosen once (hash-checked, kept in the
-//      app); JieLi's wl82loader.bin is downloaded once (hash-checked).
+//   1. What to restore: JIANT (the public package, inside the APK, the default:
+//      it runs under the boot head of V15 and of V16), the official V15
+//      (downloaded once, hash-checked), or a .fwsc of your own. JieLi's
+//      wl82loader.bin ships in the APK.
 //   2. The RP2040 (RP2040-Zero or XIAO) is plugged into the phone with an OTG
 //      adapter while BOOT is held: the app programs it over PICOBOOT, with the
 //      V15 inside (no file copy, no computer). A board that already runs the
@@ -72,10 +74,13 @@ public class MainActivity extends Activity {
     private SharedPreferences prefs;
 
     private TextView fwscText, loaderText, stage, detail, log;
+    private RadioButton srcJiant, srcV15, srcCustom;
     private ProgressBar progress;
     private Button reflash;
 
-    private byte[] fwsc, loader;
+    private byte[] loader;
+    private byte[] jiantPkg, v15Pkg, customPkg;     // the three sources; null until available
+    private String jiantVersion = "", customLabel = "";
     private volatile boolean busy;              // a USB job is running
     private volatile String monitoring;         // device name the status link is open on
     private volatile boolean stopMonitor;
@@ -149,15 +154,35 @@ public class MainActivity extends Activity {
                 "Fix an FM-1 that does not turn on with an RP2040 and this phone. No computer."), 14, false);
 
         LinearLayout c1 = card(root);
-        text(c1, t("1 · Firmware oficial V15", "1 · Official V15 firmware"), 16, true);
-        fwscText = text(c1, "", 14, false);
-        button(c1, t("O elegir mi propio FM-1.fwsc", "Or choose my own FM-1.fwsc")).setOnClickListener(v -> {
+        text(c1, t("1 · Qué firmware instalar", "1 · Which firmware to install"), 16, true);
+        RadioGroup src = new RadioGroup(this);
+        srcJiant = new RadioButton(this);
+        srcV15 = new RadioButton(this);
+        srcCustom = new RadioButton(this);
+        for (RadioButton r : new RadioButton[] {srcJiant, srcV15, srcCustom}) {
+            r.setId(View.generateViewId());
+            src.addView(r);
+        }
+        srcCustom.setVisibility(View.GONE);
+        switch (prefs.getString("src", "jiant")) {
+            case "v15": srcV15.setChecked(true); break;
+            case "custom": srcCustom.setChecked(true); break;
+            default: srcJiant.setChecked(true);
+        }
+        src.setOnCheckedChangeListener((gr, id) -> {
+            prefs.edit().putString("src", id == srcV15.getId() ? "v15" : id == srcCustom.getId() ? "custom" : "jiant").apply();
+            if (id == srcV15.getId() && v15Pkg == null) net.execute(this::downloadV15);
+            updateFileTexts();
+        });
+        c1.addView(src);
+        fwscText = text(c1, "", 13, false);
+        button(c1, t("Elegir otro .fwsc (V15 o JIANT)", "Choose another .fwsc (V15 or JIANT)")).setOnClickListener(v -> {
             Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             i.addCategory(Intent.CATEGORY_OPENABLE);
             i.setType("*/*");
             startActivityForResult(i, PICK_FWSC);
         });
-        loaderText = text(c1, "", 13, false);
+        loaderText = text(c1, "", 12, false);
 
         LinearLayout c2 = card(root);
         text(c2, t("2 · Tu placa", "2 · Your board"), 16, true);
@@ -235,16 +260,65 @@ public class MainActivity extends Activity {
 
     // ------------------------------------------------------------ files
 
-    private File fwscFile() { return new File(getFilesDir(), "FM-1-V15.fwsc"); }
+    private File v15File() { return new File(getFilesDir(), "FM-1-V15.fwsc"); }
+    private File customFile() { return new File(getFilesDir(), "custom.fwsc"); }
+
+    private String source() { return prefs.getString("src", "jiant"); }
+
+    /** The package to restore, or null while it is not available. */
+    private byte[] selected() {
+        switch (source()) {
+            case "v15": return v15Pkg;
+            case "custom": return customPkg;
+            default: return jiantPkg;
+        }
+    }
+
+    /** What the board logs and the payload carries. */
+    private String label() {
+        switch (source()) {
+            case "v15": return "FM-1_015 official V15";
+            case "custom": return customLabel;
+            default: return "JIANT " + jiantVersion;
+        }
+    }
+
+    private String installedName() {
+        switch (source()) {
+            case "v15": return "V15";
+            case "custom": return customLabel;
+            default: return "JIANT " + jiantVersion;
+        }
+    }
 
     private void loadFiles() {
+        // The public JIANT, put in by android/rescue/fetch_jiant.py when the APK is built.
+        try (InputStream in = getAssets().open("jiant.fwsc"); InputStream js = getAssets().open("jiant.json")) {
+            byte[] d = readAll(in);
+            RescueImage.checkFirmware(d);
+            String meta = new String(readAll(js), StandardCharsets.UTF_8);
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"version\"\\s*:\\s*\"([^\"]*)\"").matcher(meta);
+            jiantVersion = m.find() ? m.group(1) : "";
+            jiantPkg = d;
+        } catch (Exception e) {
+            jiantPkg = null;
+            logLine("JIANT: " + e.getMessage());
+        }
         try {
-            if (fwscFile().exists()) {
-                byte[] d = Files.readAllBytes(fwscFile().toPath());
+            if (v15File().exists()) {
+                byte[] d = Files.readAllBytes(v15File().toPath());
                 RescueImage.checkV15(d);
-                fwsc = d;
+                v15Pkg = d;
             }
-        } catch (Exception e) { fwsc = null; }
+        } catch (Exception e) { v15Pkg = null; }
+        try {
+            if (customFile().exists()) {
+                byte[] d = Files.readAllBytes(customFile().toPath());
+                RescueImage.Firmware f = RescueImage.checkFirmware(d);
+                customLabel = prefs.getString("customLabel", f.identity);
+                customPkg = d;
+            }
+        } catch (Exception e) { customPkg = null; }
         // jl-uboot-tool's loader ships in the APK (MIT, assets/wl82loader-LICENSE.txt).
         try (InputStream in = getAssets().open("wl82loader.bin")) {
             loader = RescueImage.checkLoader(readAll(in));
@@ -252,19 +326,45 @@ public class MainActivity extends Activity {
             loader = null;
             logLine("loader: " + e.getMessage());
         }
+        if (jiantPkg == null && source().equals("jiant")) {
+            prefs.edit().putString("src", "v15").apply();
+            ui.post(() -> srcV15.setChecked(true));
+        }
         updateFileTexts();
-        if (fwsc == null) net.execute(this::downloadV15);
+        if (v15Pkg == null && source().equals("v15")) net.execute(this::downloadV15);
     }
 
     private volatile boolean downloading;
 
     private void updateFileTexts() {
         ui.post(() -> {
-            fwscText.setText(fwsc != null ? t("✓ V15 oficial lista (verificada por su hash)", "✓ Official V15 ready (hash-verified)")
-                    : downloading ? t("Descargando la V15 oficial…", "Downloading the official V15…")
-                    : t("No se pudo descargar la V15 (¿sin internet?). Se reintenta sola, o elige tu FM-1.fwsc de la V15.",
-                        "Could not download V15 (no internet?). It retries by itself, or choose your V15 FM-1.fwsc."));
-            fwscText.setTextColor(fwsc != null ? 0xFF2E8B57 : 0xFF1D1D1B);
+            srcJiant.setText(jiantPkg != null
+                    ? t("JIANT " + jiantVersion + "  (incluido · recomendado: sirve para FM-1 que venían en V15 o en V16)",
+                        "JIANT " + jiantVersion + "  (included · recommended: works on FM-1s that came with V15 or V16)")
+                    : t("JIANT (no incluido en esta compilación)", "JIANT (not included in this build)"));
+            srcJiant.setEnabled(jiantPkg != null);
+            srcV15.setText(t("V15 oficial de M-VAVE  (se descarga la primera vez)",
+                    "Official M-VAVE V15  (downloaded the first time)"));
+            srcCustom.setText(t("Mi archivo: ", "My file: ") + customLabel);
+            srcCustom.setVisibility(customPkg != null ? View.VISIBLE : View.GONE);
+
+            String st;
+            int color = 0xFF2E8B57;
+            if (selected() != null) {
+                st = t("✓ Listo para instalar: ", "✓ Ready to install: ") + installedName();
+                if (source().equals("v15")) st += t(". Ojo: si tu FM-1 venía en V16, usa JIANT.",
+                        ". Note: if your FM-1 came with V16, use JIANT.");
+            } else if (source().equals("v15")) {
+                st = downloading ? t("Descargando la V15 oficial…", "Downloading the official V15…")
+                        : t("No se pudo descargar la V15 (¿sin internet?). Se reintenta sola.",
+                            "Could not download V15 (no internet?). It retries by itself.");
+                color = 0xFF1D1D1B;
+            } else {
+                st = t("No disponible.", "Not available.");
+                color = 0xFFC0392B;
+            }
+            fwscText.setText(st);
+            fwscText.setTextColor(color);
             loaderText.setText(loader != null ? t("✓ Loader de JieLi incluido", "✓ JieLi loader included")
                     : t("✗ El loader incluido está dañado: reinstala la app.", "✗ The bundled loader is damaged: reinstall the app."));
         });
@@ -272,7 +372,7 @@ public class MainActivity extends Activity {
 
     /** The official V15, downloaded once and kept; accepted only if its firmware region hash is V15's. */
     private void downloadV15() {
-        if (fwsc != null) return;
+        if (v15Pkg != null || downloading) return;
         downloading = true;
         updateFileTexts();
         try {
@@ -282,18 +382,16 @@ public class MainActivity extends Activity {
             byte[] d;
             try (InputStream in = c.getInputStream()) { d = readAll(in); }
             RescueImage.checkV15(d);
-            if (fwsc == null) {
-                try (FileOutputStream o = new FileOutputStream(fwscFile())) { o.write(d); }
-                fwsc = d;
-                logLine(t("V15 descargada y verificada", "V15 downloaded and verified"));
-            }
+            try (FileOutputStream o = new FileOutputStream(v15File())) { o.write(d); }
+            v15Pkg = d;
+            logLine(t("V15 descargada y verificada", "V15 downloaded and verified"));
             downloading = false;
             updateFileTexts();
         } catch (Exception e) {
             downloading = false;
             logLine("V15: " + e.getMessage());
             updateFileTexts();
-            ui.postDelayed(() -> net.execute(this::downloadV15), 15000);
+            if (source().equals("v15")) ui.postDelayed(() -> net.execute(this::downloadV15), 15000);
         }
     }
 
@@ -311,14 +409,28 @@ public class MainActivity extends Activity {
         Uri u = data.getData();
         try (InputStream in = getContentResolver().openInputStream(u)) {
             byte[] d = readAll(in);
-            RescueImage.checkV15(d);
-            try (FileOutputStream o = new FileOutputStream(fwscFile())) { o.write(d); }
-            fwsc = d;
-            logLine("V15 OK");
+            RescueImage.Firmware f = RescueImage.checkFirmware(d);
+            if (f.official) {
+                try (FileOutputStream o = new FileOutputStream(v15File())) { o.write(d); }
+                v15Pkg = d;
+                prefs.edit().putString("src", "v15").apply();
+                ui.post(() -> srcV15.setChecked(true));
+                logLine("V15 OK");
+            } else {
+                try (FileOutputStream o = new FileOutputStream(customFile())) { o.write(d); }
+                customPkg = d;
+                String name = u.getLastPathSegment() == null ? "" : u.getLastPathSegment();
+                name = name.substring(name.lastIndexOf('/') + 1).replaceAll("\\.fwsc$", "");
+                customLabel = (name.isEmpty() ? f.identity : name + " (" + f.identity + ")");
+                if (customLabel.length() > 60) customLabel = customLabel.substring(0, 60);
+                prefs.edit().putString("src", "custom").putString("customLabel", customLabel).apply();
+                ui.post(() -> srcCustom.setChecked(true));
+                logLine(t("Paquete aceptado: ", "Package accepted: ") + customLabel);
+            }
         } catch (RescueImage.Refused e) {
             logLine(t("Rechazado: ", "Refused: ") + e.getMessage());
             ui.post(() -> {
-                fwscText.setText(t("✗ No es la V15 oficial. ", "✗ Not the official V15. ") + e.getMessage());
+                fwscText.setText(t("✗ Rechazado: ", "✗ Refused: ") + e.getMessage());
                 fwscText.setTextColor(0xFFC0392B);
             });
             return;
@@ -379,10 +491,10 @@ public class MainActivity extends Activity {
         reflash.setVisibility(fw != null && monitoring != null ? View.VISIBLE : View.GONE);
 
         if (boot != null) {
-            if (fwsc == null || loader == null) {
+            if (selected() == null || loader == null) {
                 show(t("RP2040 conectado", "RP2040 connected"),
-                        fwsc == null ? t("Esperando la V15 (paso 1): necesita internet la primera vez.",
-                                         "Waiting for V15 (step 1): it needs the internet the first time.")
+                        selected() == null ? t("Esperando el firmware del paso 1 (la V15 necesita internet la primera vez).",
+                                         "Waiting for the firmware of step 1 (V15 needs the internet the first time).")
                                      : t("El loader incluido está dañado: reinstala la app.", "The bundled loader is damaged: reinstall the app."), 0);
                 return;
             }
@@ -413,7 +525,10 @@ public class MainActivity extends Activity {
         try {
             show(t("Preparando…", "Preparing…"), "", 0);
             byte[] base = readAll(getAssets().open("fm1-rescue-base-" + board() + ".uf2"));
-            TreeMap<Integer, byte[]> plan = RescueImage.build(base, fwsc, loader);
+            byte[] pkg = selected();
+            if (pkg == null) throw new IOException(t("no hay firmware elegido", "no firmware chosen"));
+            TreeMap<Integer, byte[]> plan = RescueImage.build(base, pkg, label(), loader);
+            prefs.edit().putString("lastInstalled", installedName()).apply();
 
             UsbInterface itf = null;
             UsbEndpoint in = null, out = null;
@@ -548,7 +663,7 @@ public class MainActivity extends Activity {
             case "off":
             case "bad-payload":
                 // A plain Transporter, or a damaged payload: reprogram it, once per plug-in.
-                if (fwsc != null && loader != null && autoReset.add(d.getDeviceName())) {
+                if (selected() != null && loader != null && autoReset.add(d.getDeviceName())) {
                     show(t("Actualizando el RP2040…", "Updating the RP2040…"), "", 0);
                     resetToBootsel(d);
                 } else {
@@ -577,10 +692,10 @@ public class MainActivity extends Activity {
                 break;
             case "done":
                 show(t("¡Listo! ✓", "Done! ✓"),
-                        t("Apaga el FM-1, quita los cables y vuelve a encenderlo: arranca con la V15. "
-                          + "Después instala el firmware que quieras de la forma normal.",
-                          "Switch the FM-1 off, remove the wires and switch it on: it boots V15. "
-                          + "Then install any firmware you like the usual way."), 1000);
+                        t("Apaga el FM-1, quita los cables y vuelve a encenderlo: arranca con "
+                          + prefs.getString("lastInstalled", "el firmware instalado") + ". Los datos guardados (canciones, ajustes) no se tocaron.",
+                          "Switch the FM-1 off, remove the wires and switch it on: it boots "
+                          + prefs.getString("lastInstalled", "the installed firmware") + ". Saved data (songs, settings) was not touched."), 1000);
                 break;
             case "error":
                 show(t("Error", "Error"), errorText(s), 0);

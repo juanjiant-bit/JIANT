@@ -24,7 +24,8 @@ android {
     }
     sourceSets {
         // The rescue firmware for each board, from rescue/base (rescue/build.sh).
-        main { assets.srcDirs += ["../../../rescue/base"] }
+        // assets-jiant: the public JIANT package (fetch_jiant.py, run by the android workflow; not in git).
+        main { assets.srcDirs += ["../../../rescue/base", "src/main/assets-jiant"] }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17

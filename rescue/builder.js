@@ -106,7 +106,7 @@ export function parseFwsc(data) {
   if (off + len > image.length) throw new Error("flash.bin runs past the package");
   if (len < FW_END) throw new Error("flash.bin is too short: not a complete FM-1 package");
   const flash = image.subarray(off, off + len);
-  return { identity, region: flash.slice(FW_START, FW_END) };
+  return { identity, region: flash.slice(FW_START, FW_END), flashLen: len };
 }
 
 // The V15 package, checked by the hash of its firmware region.
@@ -119,6 +119,31 @@ export async function checkV15(fwscBytes) {
       "Only the official M-VAVE V15 FM-1.fwsc (699,956 bytes) is accepted.");
   }
   return { identity, region, sha };
+}
+
+const LOADER_MARK = new TextEncoder().encode("FELUCCA-LOADER-1");
+function hasMark(d) {
+  outer: for (let i = 0; i + LOADER_MARK.length <= d.length; i++) {
+    for (let k = 0; k < LOADER_MARK.length; k++) if (d[i + k] !== LOADER_MARK[k]) continue outer;
+    return true;
+  }
+  return false;
+}
+
+// The official V15 (by its region hash), or a JIANT / Felucca-family package made by tools/fm1pkg_make.py:
+// identity FM-1_9xx, flash.bin exactly 0x93000, Felucca's own loader in it. JIANT runs under the boot head of
+// V15 and of V16, so it is the one for an FM-1 that came with V16. Same rules as RescueImage.checkFirmware.
+export async function checkPackage(fwscBytes) {
+  const { identity, region, flashLen } = parseFwsc(fwscBytes);
+  const sha = await sha256hex(region);
+  if (sha === V15_REGION_SHA256) return { identity, region, sha, official: true, label: `${identity || "FM-1_015"} official V15` };
+  if (identity === "FM-1_015") throw new Error("it says V15 but its firmware hash is not V15's: damaged or modified");
+  if (!/^FM-1_9\d\d$/.test(identity))
+    throw new Error(`not the official V15 nor a JIANT package (identity ${identity || "none"}); the official V16 does not fit the rescue`);
+  if (flashLen !== FW_END) throw new Error("this package runs past 0x92FFF; the rescue cannot write it");
+  if (!hasMark(fwscBytes)) throw new Error("not a package made by JIANT's tools");
+  if (region.every(b => b === 0xff || b === 0)) throw new Error("the firmware region of this package is blank");
+  return { identity, region, sha, official: false, label: `${identity} JIANT` };
 }
 
 export async function checkLoader(bytes) {
@@ -222,9 +247,9 @@ export function mergeUf2(baseUf2, payload) {
   return emitUf2(blocks);
 }
 
-export async function buildRescueUf2({ baseUf2, fwsc, loader }) {
-  const v = await checkV15(fwsc);
+export async function buildRescueUf2({ baseUf2, fwsc, loader, label }) {
+  const v = await checkPackage(fwsc);
   await checkLoader(loader);
-  const payload = buildPayload(v.region, loader, v.sha, `${v.identity || "FM-1_015"} official V15`);
-  return { uf2: mergeUf2(baseUf2, payload), identity: v.identity };
+  const payload = buildPayload(v.region, loader, v.sha, label || v.label);
+  return { uf2: mergeUf2(baseUf2, payload), identity: v.identity, official: v.official };
 }

@@ -107,6 +107,8 @@ public class RescueTest {
         byte[] v15 = Files.readAllBytes(Path.of(a[0])), v16 = Files.readAllBytes(Path.of(a[1]));
         byte[] loader = Files.readAllBytes(Path.of(a[2])), web = Files.readAllBytes(Path.of(a[3]));
         byte[] base = Files.readAllBytes(Path.of(a[4]));
+        byte[] jiant = a.length > 5 ? Files.readAllBytes(Path.of(a[5])) : null;
+        byte[] jiantRegion = a.length > 6 ? Files.readAllBytes(Path.of(a[6])) : null;
 
         System.out.println("1. V15 accepted, V16 and a damaged package refused, loader checked");
         RescueImage.V15 v = RescueImage.checkV15(v15);
@@ -136,6 +138,26 @@ public class RescueTest {
         };
         try { new Picoboot(stuck).program(plan, (w, d, t) -> {}); check(false, "no error"); }
         catch (IOException e) { check(e.getMessage().contains("10108000"), e.getMessage()); }
+
+        if (jiant != null) {
+            System.out.println("3b. a JIANT package (fm1pkg_make.py) is accepted and written as is");
+            RescueImage.Firmware f = RescueImage.checkFirmware(jiant);
+            check(!f.official && f.identity.equals("FM-1_910"), "identity " + f.identity);
+            check(Arrays.equals(f.region, jiantRegion), "JIANT region differs from builder.js's");
+            TreeMap<Integer, byte[]> jp = RescueImage.build(base, jiant, "JIANT V10.7.58 (FM-1_910)", loader);
+            MockRp2040 r2 = new MockRp2040();
+            new Picoboot(r2).program(jp, (w, d, t) -> {});
+            check(Arrays.equals(Arrays.copyOfRange(r2.flash, 0x108000, 0x108000 + RescueImage.FW_LEN), jiantRegion),
+                  "payload region != JIANT region");
+            check(new String(r2.flash, 0x100000 + 52, 25, java.nio.charset.StandardCharsets.US_ASCII)
+                  .equals("JIANT V10.7.58 (FM-1_910)"), "label");
+            byte[] noLoader = jiant.clone();
+            for (int i = 0; i + 16 <= noLoader.length; i++)
+                if (new String(noLoader, i, 16, java.nio.charset.StandardCharsets.US_ASCII).equals("FELUCCA-LOADER-1")) noLoader[i] = 'X';
+            try { RescueImage.checkFirmware(noLoader); check(false, "package without Felucca loader accepted"); }
+            catch (RescueImage.Refused e) { }
+            try { RescueImage.checkFirmware(v16); check(false, "V16 accepted"); } catch (RescueImage.Refused e) { }
+        }
 
         System.out.println("4. status lines");
         RescueStatus s = RescueStatus.parse("OK state=run phase=write sector=72/143 written=3 same=69 err=none addr=000000");

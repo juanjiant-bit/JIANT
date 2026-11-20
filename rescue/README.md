@@ -7,7 +7,9 @@ El RP2040 lleva dentro el firmware oficial V15 y hace todo él solo; el PC solo 
 (o ni eso: después basta un cargador USB).
 
 1. Abre **`fm1-rescue.html`** (Chrome, Edge o Firefox; funciona también como archivo local), elige tu placa
-   (RP2040-Zero o XIAO RP2040) y el `FM-1.fwsc` **V15** oficial. Pulsa **Crear fm1-rescue.uf2**.
+   (RP2040-Zero o XIAO RP2040) y el firmware: un paquete **JIANT** (`.fwsc` del instalador) o el `FM-1.fwsc`
+   **V15** oficial. Si el FM-1 venía con la **V16**, usa JIANT (arranca con la cabecera de la V16; la V15 no
+   está comprobada con ella). Pulsa **Crear fm1-rescue.uf2**.
 2. Mantén **BOOT** y conecta el RP2040 al PC; arrastra `fm1-rescue.uf2` a la unidad `RPI-RP2`.
 3. Desconéctalo. FM-1 **apagado**; cables: verde → `0`, blanco → `1`, negro → `GND`, rojo sin conectar.
 4. Conecta el RP2040 a un PC o cargador (LED amarillo parpadeando) y **enciende el FM-1**.
@@ -29,8 +31,9 @@ ni puertos serie; el orden "primero el RP2040, después encender el FM-1" lo mar
 - **Nunca** escribe la cabecera de arranque (`0x0000..0x3FFF`) ni los datos (`0x93000..`: ajustes, sonidos,
   canciones). No hace la copia de seguridad doble del método con Python: si quieres un volcado previo, usa la
   placa sin V15 (es un FM-1 Transporter normal) con su web app o `fm1t.py`.
-- La página solo acepta la V15 oficial (hash de la región `6edf3c37…`); la V16 no cabe en esa zona.
-- El `.uf2` final no se distribuye: contiene firmware de M-VAVE; cada usuario lo crea con su propio `.fwsc`.
+- Acepta la V15 oficial (hash de la región `6edf3c37…`) o un paquete de JIANT hecho con `tools/fm1pkg_make.py`
+  (identidad `FM-1_9xx`, `flash.bin` de exactamente `0x93000`, con el loader de Felucca). La V16 no cabe.
+- Con la V15, el `.uf2` final no se distribuye (contiene firmware de M-VAVE). Con JIANT sí se podría (GPL).
 
 **Estado:** probado en PC (lógica del firmware real contra un FM-1 simulado, `firmware/test/`), **aún no
 probado en hardware**. Úsalo con la batería cargada y bajo tu responsabilidad.

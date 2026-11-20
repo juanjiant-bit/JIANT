@@ -52,6 +52,7 @@ a{color:var(--acc)}
 <h2><span class="n">2</span><span data-t="s2"></span></h2>
 <p class="st" data-t="s2m" style="margin-top:0"></p>
 <label class="btn s"><span data-t="pick"></span><input type="file" id="fwsc" accept=".fwsc"></label>
+<p class="st" data-t="s2j"></p>
 <div class="st" id="fwscSt"></div>
 </section>
 
@@ -190,7 +191,7 @@ function parseFwsc(data) {
   if (off + len > image.length) throw new Error("flash.bin runs past the package");
   if (len < FW_END) throw new Error("flash.bin is too short: not a complete FM-1 package");
   const flash = image.subarray(off, off + len);
-  return { identity, region: flash.slice(FW_START, FW_END) };
+  return { identity, region: flash.slice(FW_START, FW_END), flashLen: len };
 }
 
 // The V15 package, checked by the hash of its firmware region.
@@ -203,6 +204,31 @@ async function checkV15(fwscBytes) {
       "Only the official M-VAVE V15 FM-1.fwsc (699,956 bytes) is accepted.");
   }
   return { identity, region, sha };
+}
+
+const LOADER_MARK = new TextEncoder().encode("FELUCCA-LOADER-1");
+function hasMark(d) {
+  outer: for (let i = 0; i + LOADER_MARK.length <= d.length; i++) {
+    for (let k = 0; k < LOADER_MARK.length; k++) if (d[i + k] !== LOADER_MARK[k]) continue outer;
+    return true;
+  }
+  return false;
+}
+
+// The official V15 (by its region hash), or a JIANT / Felucca-family package made by tools/fm1pkg_make.py:
+// identity FM-1_9xx, flash.bin exactly 0x93000, Felucca's own loader in it. JIANT runs under the boot head of
+// V15 and of V16, so it is the one for an FM-1 that came with V16. Same rules as RescueImage.checkFirmware.
+async function checkPackage(fwscBytes) {
+  const { identity, region, flashLen } = parseFwsc(fwscBytes);
+  const sha = await sha256hex(region);
+  if (sha === V15_REGION_SHA256) return { identity, region, sha, official: true, label: `${identity || "FM-1_015"} official V15` };
+  if (identity === "FM-1_015") throw new Error("it says V15 but its firmware hash is not V15's: damaged or modified");
+  if (!/^FM-1_9\d\d$/.test(identity))
+    throw new Error(`not the official V15 nor a JIANT package (identity ${identity || "none"}); the official V16 does not fit the rescue`);
+  if (flashLen !== FW_END) throw new Error("this package runs past 0x92FFF; the rescue cannot write it");
+  if (!hasMark(fwscBytes)) throw new Error("not a package made by JIANT's tools");
+  if (region.every(b => b === 0xff || b === 0)) throw new Error("the firmware region of this package is blank");
+  return { identity, region, sha, official: false, label: `${identity} JIANT` };
 }
 
 async function checkLoader(bytes) {
@@ -306,11 +332,11 @@ function mergeUf2(baseUf2, payload) {
   return emitUf2(blocks);
 }
 
-async function buildRescueUf2({ baseUf2, fwsc, loader }) {
-  const v = await checkV15(fwsc);
+async function buildRescueUf2({ baseUf2, fwsc, loader, label }) {
+  const v = await checkPackage(fwsc);
   await checkLoader(loader);
-  const payload = buildPayload(v.region, loader, v.sha, `${v.identity || "FM-1_015"} official V15`);
-  return { uf2: mergeUf2(baseUf2, payload), identity: v.identity };
+  const payload = buildPayload(v.region, loader, v.sha, label || v.label);
+  return { uf2: mergeUf2(baseUf2, payload), identity: v.identity, official: v.official };
 }
 
 
@@ -321,8 +347,9 @@ es: {
 lead: "Repara un FM-1 que no enciende (hard brick) con un RP2040 y nada más: sin Python, sin terminal. Esta página crea un archivo .uf2 que lleva dentro el firmware oficial V15; lo copias al RP2040 y él solo restaura el FM-1, conectado a un PC o a un simple cargador USB.",
 s1: "Tu placa", zero: "La de la guía de GoodPerson42. Cables: verde → 0, blanco → 1, negro → GND.",
 xiao: "Cables: verde → D6, blanco → D7, negro → GND.",
-s2: "Firmware oficial V15", s2m: "El archivo FM-1.fwsc de la V15 de M-VAVE (699.956 bytes; también llamado FM-1v15.fwsc). Se comprueba por su hash: cualquier otro se rechaza. No sale de tu navegador.",
-pick: "Elegir FM-1.fwsc",
+s2: "Firmware: JIANT o V15 oficial", s2m: "Un paquete de JIANT (.fwsc, el del instalador) o el FM-1.fwsc de la V15 oficial de M-VAVE (699.956 bytes). Se comprueban: cualquier otro se rechaza (la V16 no cabe). No sale de tu navegador.",
+s2j: "Si tu FM-1 venía con la V16, usa JIANT: funciona con el arranque de la V16; con la V15 no está comprobado.",
+pick: "Elegir .fwsc",
 s3: "Loader de JieLi", s3m: "wl82loader.bin, de jl-uboot-tool (kagaimiq, MIT). Se descarga solo de GitHub y se comprueba su hash.",
 pickl: "Elegir wl82loader.bin",
 s4: "Crear el archivo", make: "Crear fm1-rescue.uf2",
@@ -333,7 +360,7 @@ steps: [
 "Desconecta el RP2040. Con el FM-1 <b>apagado</b>, conecta los tres cables (rojo sin conectar) y enchufa el USB-C al FM-1.",
 "Conecta el RP2040 a un PC o a un cargador USB. El LED parpadea en <b>amarillo</b>.",
 "<b>Enciende el FM-1.</b> El LED se pone azul mientras trabaja (1–3 minutos).",
-"<b>Verde fijo</b> = listo. Apaga el FM-1, quita los cables y vuelve a encenderlo: arranca la V15. Luego instala el firmware que quieras de la forma normal.",
+"<b>Verde fijo</b> = listo. Apaga el FM-1, quita los cables y vuelve a encenderlo: arranca con el firmware elegido. Luego puedes cambiarlo con el instalador de JIANT.",
 ],
 led: "Qué dice el LED",
 leds: [
@@ -346,15 +373,16 @@ leds: [
 ["linear-gradient(90deg,#c0392b 50%,#2f6fe0 50%)","Rojo/azul alternando","El .uf2 está dañado: créalo otra vez."],
 ],
 foot: "Solo se escribe la zona del firmware (0x4000–0x92FFF), sector a sector, cada uno verificado; la cabecera de arranque y tus datos (ajustes, sonidos, canciones) no se tocan. Sin la V15 dentro, la placa funciona como un FM-1 Transporter normal. Basado en FM-1 Transporter (Leo Kuroshita, MIT), MvaveFM1Unbricker (Quixotic7, MIT) y jl-uboot-tool (kagaimiq, MIT). Herramienta no oficial: úsala bajo tu responsabilidad, con la batería cargada.",
-ok15: "V15 oficial verificada", ldrok: "Loader descargado y verificado", ldrfail: "No se pudo descargar: elígelo a mano (está en jl-uboot-tool, data/loaderblobs/usb/wl82loader.bin).",
+ok15: "Verificado: ", ldrok: "Loader descargado y verificado", ldrfail: "No se pudo descargar: elígelo a mano (está en jl-uboot-tool, data/loaderblobs/usb/wl82loader.bin).",
 made: "Listo: fm1-rescue.uf2 descargado", fail: "Rechazado: ",
 },
 en: {
 lead: "Fix an FM-1 that does not turn on (hard brick) with an RP2040 and nothing else: no Python, no terminal. This page makes a .uf2 file that carries the official V15 firmware; copy it to the RP2040 and it restores the FM-1 by itself, plugged into a computer or a plain USB charger.",
 s1: "Your board", zero: "The one in GoodPerson42's guide. Wires: green → 0, white → 1, black → GND.",
 xiao: "Wires: green → D6, white → D7, black → GND.",
-s2: "Official V15 firmware", s2m: "M-VAVE's V15 FM-1.fwsc (699,956 bytes; also named FM-1v15.fwsc). It is checked by its hash: anything else is refused. It never leaves your browser.",
-pick: "Choose FM-1.fwsc",
+s2: "Firmware: JIANT or official V15", s2m: "A JIANT package (.fwsc, the installer's) or M-VAVE's official V15 FM-1.fwsc (699,956 bytes). Both are checked: anything else is refused (V16 does not fit). It never leaves your browser.",
+s2j: "If your FM-1 came with V16, use JIANT: it runs with V16's boot head; V15 is not tested with it.",
+pick: "Choose .fwsc",
 s3: "JieLi loader", s3m: "wl82loader.bin from jl-uboot-tool (kagaimiq, MIT). Downloaded from GitHub automatically and hash-checked.",
 pickl: "Choose wl82loader.bin",
 s4: "Make the file", make: "Make fm1-rescue.uf2",
@@ -365,7 +393,7 @@ steps: [
 "Unplug the RP2040. With the FM-1 <b>off</b>, connect the three wires (red stays unconnected) and plug the USB-C into the FM-1.",
 "Plug the RP2040 into a computer or a USB charger. The LED blinks <b>yellow</b>.",
 "<b>Switch the FM-1 on.</b> The LED turns blue while it works (1–3 minutes).",
-"<b>Steady green</b> = done. Switch the FM-1 off, remove the wires, switch it on: it boots V15. Then install any firmware you like the usual way.",
+"<b>Steady green</b> = done. Switch the FM-1 off, remove the wires, switch it on: it boots the chosen firmware. You can change it later with the JIANT installer.",
 ],
 led: "What the LED says",
 leds: [
@@ -378,7 +406,7 @@ leds: [
 ["linear-gradient(90deg,#c0392b 50%,#2f6fe0 50%)","Red/blue alternating","The .uf2 is damaged: make it again."],
 ],
 foot: "Only the firmware area (0x4000–0x92FFF) is written, sector by sector, each one verified; the boot head and your data (settings, sounds, songs) are not touched. Without V15 inside, the board works as a plain FM-1 Transporter. Built on FM-1 Transporter (Leo Kuroshita, MIT), MvaveFM1Unbricker (Quixotic7, MIT) and jl-uboot-tool (kagaimiq, MIT). Unofficial tool: use it at your own risk, on a charged battery.",
-ok15: "Official V15 verified", ldrok: "Loader downloaded and verified", ldrfail: "Could not download it: choose it yourself (jl-uboot-tool, data/loaderblobs/usb/wl82loader.bin).",
+ok15: "Verified: ", ldrok: "Loader downloaded and verified", ldrfail: "Could not download it: choose it yourself (jl-uboot-tool, data/loaderblobs/usb/wl82loader.bin).",
 made: "Done: fm1-rescue.uf2 downloaded", fail: "Refused: ",
 }};
 
@@ -416,8 +444,8 @@ $("fwsc").onchange = async e => {
   fwsc = null; v15 = null; ready();
   try {
     fwsc = new Uint8Array(await f.arrayBuffer());
-    v15 = await checkV15(fwsc);
-    say("fwscSt", "ok15", "ok", ` (${f.name}, ${v15.identity})`);
+    v15 = await checkPackage(fwsc);
+    say("fwscSt", "ok15", "ok", `${v15.official ? "V15" : "JIANT"} (${f.name}, ${v15.identity})`);
   } catch (err) { say("fwscSt", "fail", "err", err.message); }
   ready();
 };

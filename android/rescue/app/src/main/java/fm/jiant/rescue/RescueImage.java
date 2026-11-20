@@ -48,14 +48,23 @@ public final class RescueImage {
         public Refused(String msg) { super(msg); }
     }
 
-    /** The V15 region and the package identity. */
+    /** A firmware the rescue can write: its region 0x4000..0x92FFF and what it is. */
+    public static final class Firmware {
+        public final String identity;   // "FM-1_015", "FM-1_9xx"
+        public final boolean official;  // the official M-VAVE V15
+        public final byte[] region;
+        public final String sha256;     // of the region
+        Firmware(String identity, boolean official, byte[] region, String sha256) {
+            this.identity = identity; this.official = official; this.region = region; this.sha256 = sha256;
+        }
+    }
+
+    /** Kept for the V15-only callers and tests. */
     public static final class V15 {
         public final String identity;
         public final byte[] region;
         public final String sha256;
-        V15(String identity, byte[] region, String sha256) {
-            this.identity = identity; this.region = region; this.sha256 = sha256;
-        }
+        V15(Firmware f) { identity = f.identity; region = f.region; sha256 = f.sha256; }
     }
 
     private RescueImage() {}
@@ -103,7 +112,11 @@ public final class RescueImage {
 
     // ---- .fwsc ----
 
-    public static V15 checkV15(byte[] data) throws Refused {
+    private static final class Parsed {
+        String identity; byte[] region; long flashLen;
+    }
+
+    private static Parsed parse(byte[] data) throws Refused {
         int stride = FWSC_BLOCK + 1, head = stride * FWSC_MARKED_BLOCKS;
         if (data.length < head) throw new Refused("not an FM-1 .fwsc package (too short)");
         ByteArrayOutputStream img = new ByteArrayOutputStream(data.length);
@@ -130,13 +143,50 @@ public final class RescueImage {
         if (off < 0) throw new Refused("no flash.bin in the package");
         if (off + len > image.length) throw new Refused("flash.bin runs past the package");
         if (len < FW_END) throw new Refused("not a complete FM-1 package");
-        byte[] region = Arrays.copyOfRange(image, (int) off + FW_START, (int) off + FW_END);
-        String sha = sha256(region);
-        if (!sha.equals(V15_REGION_SHA256)) {
-            throw new Refused("this is not the official V15 (" + (id.length() > 0 ? id : "no identity")
-                    + "). Only M-VAVE's V15 FM-1.fwsc (699,956 bytes) is accepted.");
+        Parsed p = new Parsed();
+        p.identity = id.toString();
+        p.region = Arrays.copyOfRange(image, (int) off + FW_START, (int) off + FW_END);
+        p.flashLen = len;
+        return p;
+    }
+
+    public static V15 checkV15(byte[] data) throws Refused {
+        Firmware f = checkFirmware(data);
+        if (!f.official) throw new Refused("this is not the official V15 (" + f.identity + ")");
+        return new V15(f);
+    }
+
+    private static final byte[] FELUCCA_LOADER = "FELUCCA-LOADER-1".getBytes(StandardCharsets.US_ASCII);
+
+    private static boolean contains(byte[] hay, byte[] needle) {
+        outer:
+        for (int i = 0; i + needle.length <= hay.length; i++) {
+            for (int k = 0; k < needle.length; k++) if (hay[i + k] != needle[k]) continue outer;
+            return true;
         }
-        return new V15(id.toString(), region, sha);
+        return false;
+    }
+
+    /**
+     * The official V15 (by its region hash), or a JIANT / Felucca-family package made by
+     * tools/fm1pkg_make.py: identity FM-1_9xx, flash.bin exactly 0x93000 (nothing past the
+     * region the rescue writes), Felucca's own update loader in it, a non-blank region.
+     */
+    public static Firmware checkFirmware(byte[] data) throws Refused {
+        Parsed p = parse(data);
+        String sha = sha256(p.region);
+        if (sha.equals(V15_REGION_SHA256)) return new Firmware(p.identity, true, p.region, sha);
+        if (p.identity.equals("FM-1_015"))
+            throw new Refused("it says V15 but its firmware hash is not V15's: damaged or modified");
+        if (!p.identity.matches("FM-1_9\\d\\d"))
+            throw new Refused("not the official V15 nor a JIANT package (identity "
+                    + (p.identity.isEmpty() ? "none" : p.identity) + "). The official V16 does not fit the rescue.");
+        if (p.flashLen != FW_END) throw new Refused("this package runs past 0x92FFF; the rescue cannot write it");
+        if (!contains(data, FELUCCA_LOADER)) throw new Refused("not a package made by JIANT's tools");
+        boolean blank = true;
+        for (byte b : p.region) if (b != (byte) 0xFF && b != 0) { blank = false; break; }
+        if (blank) throw new Refused("the firmware region of this package is blank");
+        return new Firmware(p.identity, false, p.region, sha);
     }
 
     public static byte[] checkLoader(byte[] b) throws Refused {
@@ -148,6 +198,12 @@ public final class RescueImage {
     // ---- payload ----
 
     public static byte[] buildPayload(V15 v, byte[] loader) {
+        return buildPayload(new Firmware(v.identity, true, v.region, v.sha256),
+                (v.identity.isEmpty() ? "FM-1_015" : v.identity) + " official V15", loader);
+    }
+
+    /** label: what the board logs and restores, e.g. "JIANT V10.7.58 (FM-1_910)". */
+    public static byte[] buildPayload(Firmware v, String label, byte[] loader) {
         byte[] p = new byte[PL_IMAGE_OFF + FW_LEN];
         Arrays.fill(p, (byte) 0xFF);
         ByteBuffer h = ByteBuffer.wrap(p, 0, 256).order(ByteOrder.LITTLE_ENDIAN);
@@ -157,9 +213,8 @@ public final class RescueImage {
         h.putInt(16, 1).putInt(20, 256).putInt(24, PL_LOADER_OFF).putInt(28, LOADER_LEN)
          .putInt(32, crc32(loader, 0, loader.length)).putInt(36, PL_IMAGE_OFF).putInt(40, FW_START)
          .putInt(44, FW_LEN).putInt(48, crc32(v.region, 0, v.region.length));
-        byte[] label = ((v.identity.isEmpty() ? "FM-1_015" : v.identity) + " official V15")
-                .getBytes(StandardCharsets.US_ASCII);
-        System.arraycopy(label, 0, p, 52, Math.min(label.length, 63));
+        byte[] lab = label.replaceAll("[^\\x20-\\x7E]", "?").getBytes(StandardCharsets.US_ASCII);
+        System.arraycopy(lab, 0, p, 52, Math.min(lab.length, 63));
         for (int i = 0; i < 32; i++) p[116 + i] = (byte) Integer.parseInt(v.sha256.substring(2 * i, 2 * i + 2), 16);
         h.putInt(252, crc32(p, 0, 252));
         System.arraycopy(loader, 0, p, PL_LOADER_OFF, LOADER_LEN);
@@ -211,7 +266,13 @@ public final class RescueImage {
     }
 
     public static TreeMap<Integer, byte[]> build(byte[] baseUf2, byte[] fwsc, byte[] loader) throws Refused {
-        V15 v = checkV15(fwsc);
-        return flashPlan(baseUf2, buildPayload(v, checkLoader(loader)));
+        return build(baseUf2, fwsc, null, loader);
+    }
+
+    /** label null: "<identity> official V15" or "<identity> JIANT". */
+    public static TreeMap<Integer, byte[]> build(byte[] baseUf2, byte[] fwsc, String label, byte[] loader) throws Refused {
+        Firmware f = checkFirmware(fwsc);
+        if (label == null) label = f.identity + (f.official ? " official V15" : " JIANT");
+        return flashPlan(baseUf2, buildPayload(f, label, checkLoader(loader)));
     }
 }
