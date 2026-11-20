@@ -85,7 +85,11 @@ La tarjeta **Diagnóstico** lee el registro interno del RP2040 y dice en palabra
   hasta que respondió. Si pasa mucho tiempo, apaga y enciende el FM-1 sin tocar la app.
 - **Reiniciar la señal de arranque:** reinicia el RP2040 en modo "señal de arranque" (útil después de apagar el
   FM-1, si la app quedó en otro estado).
-- **Compartir registro:** manda el registro completo (app + RP2040) por WhatsApp, correo, etc., para revisarlo.
+- **Guardar diagnóstico (.zip):** guarda en **Descargas** `fm1-rescue-diagnostico-FECHA.zip` y ofrece enviarlo.
+  Lleva `resumen.txt` (diagnóstico, móvil, placa, firmware elegido, dispositivos USB conectados),
+  `registro-app.txt` (todo lo que hizo la app), `consola-rp2040.txt` (el registro interno del RP2040, el mismo que
+  guardan los `logs\transporter-*.log` del método con Python) y `estados.txt` (el progreso del rescate).
+- **Compartir registro:** manda el registro como texto por WhatsApp, correo, etc.
 
 ## Qué hace exactamente
 

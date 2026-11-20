@@ -15,6 +15,7 @@ package fm.jiant.rescue;
 
 import android.app.Activity;
 import android.app.PendingIntent;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -32,6 +33,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -49,16 +51,19 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class MainActivity extends Activity {
     private static final int PID_RESCUE = 0x000A;     // rescue / Transporter firmware
@@ -77,6 +82,9 @@ public class MainActivity extends Activity {
     private volatile Diagnosis diag = new Diagnosis();
     private final StringBuilder fullLog = new StringBuilder();
     private volatile String pendingCmd;          // a data-port request from the UI (e.g. "rekey")
+    private final StringBuilder consoleLog = new StringBuilder();   // the RP2040's console, raw
+    private final StringBuilder statusLog = new StringBuilder();    // rescue status lines, when they change
+    private volatile String lastStatusLine = "";
     private RadioButton srcJiant, srcV15, srcCustom;
     private ProgressBar progress;
     private Button reflash;
@@ -235,6 +243,7 @@ public class MainActivity extends Activity {
         diagHead = text(c5, t("Esperando el registro del RP2040", "Waiting for the RP2040's log"), 15, true);
         diagText = text(c5, t("Aparece cuando el RP2040 ya tiene el firmware de rescate y está conectado al móvil.",
                 "It shows up once the RP2040 runs the rescue firmware and is plugged into the phone."), 13, false);
+        button(c5, t("Guardar diagnóstico (.zip)", "Save diagnostics (.zip)")).setOnClickListener(v -> saveDiagnostics());
         button(c5, t("Compartir registro", "Share the log")).setOnClickListener(v -> shareLog());
         button(c5, t("Reiniciar la señal de arranque", "Restart the boot signal")).setOnClickListener(v -> {
             pendingCmd = "rekey";
@@ -287,6 +296,10 @@ public class MainActivity extends Activity {
         d.feed(line);
         synchronized (fullLog) {
             fullLog.append("RP2040 ").append(line).append('\n');
+        }
+        synchronized (consoleLog) {
+            consoleLog.append(line).append('\n');
+            if (consoleLog.length() > 2_000_000) consoleLog.delete(0, consoleLog.length() - 1_500_000);
             if (fullLog.length() > 400_000) fullLog.delete(0, fullLog.length() - 300_000);
         }
         if (!Diagnosis.noise(line) && !line.contains("KEY: ") ) {
@@ -300,6 +313,119 @@ public class MainActivity extends Activity {
         ui.post(() -> {
             diagHead.setText(sum[0]);
             diagText.setText(sum[1]);
+        });
+    }
+
+    private static String stamp() {
+        return new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT).format(new java.util.Date());
+    }
+
+    private static byte[] readFile(File f) throws IOException {
+        try (InputStream in = new FileInputStream(f)) { return readAll(in); }
+    }
+
+    /** What the phone, the app and the USB bus look like now, for the diagnostics zip. */
+    private String diagReport() {
+        StringBuilder r = new StringBuilder();
+        String[] sum = diag.summary(es);
+        r.append("FM-1 Rescue diagnostics\n").append(stamp()).append("\n\n");
+        r.append("Diagnosis: ").append(sum[0]).append("\n  ").append(sum[1]).append("\n\n");
+        String ver = "?";
+        try { ver = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { }
+        r.append("App ").append(ver).append(", board ").append(board()).append(", firmware ").append(installedName())
+         .append(" (source ").append(source()).append(")\n");
+        r.append("Bundled: JIANT ").append(jiantPkg != null ? jiantVersion : "no").append(", V15 ")
+         .append(v15Pkg != null ? "yes" : "no").append(", loader ").append(loader != null ? "ok" : "no").append("\n");
+        r.append("Phone: ").append(Build.MANUFACTURER).append(' ').append(Build.MODEL).append(", Android ")
+         .append(Build.VERSION.RELEASE).append(" (API ").append(Build.VERSION.SDK_INT).append(")\n");
+        r.append("Last rescue status: ").append(lastStatusLine.isEmpty() ? "(none)" : lastStatusLine).append("\n\n");
+        Diagnosis d = diag;
+        r.append("Keying=").append(d.keying).append(" packets=").append(d.packets).append(" ack=").append(d.ack)
+         .append(" ackAfter=").append(d.ackAfter).append(" falseAcks=").append(d.falseAcks).append(" swapped=").append(d.swapped)
+         .append("\nhandoff=").append(d.handoff).append(" mounted=").append(d.mounted).append(" vidpid=").append(d.vidPid)
+         .append(" uboot=").append(d.uboot).append(" ready=").append(d.ready).append(" inquiryFailed=").append(d.inquiryFailed)
+         .append("\nnoMountYet=").append(d.noMountYet).append(" reattaches=").append(d.reattaches).append(" chip=").append(d.chip)
+         .append(" done=").append(d.done).append(" error=").append(d.error).append(' ').append(d.errorLine).append("\n\n");
+        r.append("USB devices:\n");
+        for (UsbDevice u : usbManager.getDeviceList().values()) {
+            r.append(String.format(Locale.ROOT, "  %s  %04X:%04X", u.getDeviceName(), u.getVendorId(), u.getProductId()));
+            try { r.append("  \"").append(u.getProductName()).append("\" by \"").append(u.getManufacturerName()).append('"'); }
+            catch (Exception e) { }
+            r.append(usbManager.hasPermission(u) ? "  (permission)" : "  (no permission)").append('\n');
+            for (int i = 0; i < u.getInterfaceCount(); i++) {
+                UsbInterface f = u.getInterface(i);
+                r.append(String.format(Locale.ROOT, "    itf %d class %02X/%02X/%02X, %d endpoints\n", f.getId(),
+                        f.getInterfaceClass(), f.getInterfaceSubclass(), f.getInterfaceProtocol(), f.getEndpointCount()));
+            }
+        }
+        return r.toString();
+    }
+
+    /** Saves a zip with everything that explains a run into Downloads, then offers to share it. */
+    private void saveDiagnostics() {
+        String name = "fm1-rescue-diagnostico-"
+                + new java.text.SimpleDateFormat("yyyyMMdd-HHmmss", Locale.ROOT).format(new java.util.Date()) + ".zip";
+        net.execute(() -> {
+            try {
+                ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                try (ZipOutputStream z = new ZipOutputStream(bo)) {
+                    String a, c, st;
+                    synchronized (fullLog) { a = fullLog.toString(); }
+                    synchronized (consoleLog) { c = consoleLog.toString(); }
+                    synchronized (statusLog) { st = statusLog.toString(); }
+                    String[][] files = {
+                        {"LEEME.txt", t("Diagnóstico de FM-1 Rescue. resumen.txt: estado y equipo; registro-app.txt: todo "
+                                + "lo que hizo la app; consola-rp2040.txt: el registro interno del RP2040 (FM-1 Transporter); "
+                                + "estados.txt: el progreso del rescate.\n",
+                                "FM-1 Rescue diagnostics. resumen.txt: state and devices; registro-app.txt: everything the "
+                                + "app did; consola-rp2040.txt: the RP2040's own log (FM-1 Transporter); estados.txt: the "
+                                + "rescue's progress.\n")},
+                        {"resumen.txt", diagReport()},
+                        {"registro-app.txt", a},
+                        {"consola-rp2040.txt", c.isEmpty() ? "(no console read yet)\n" : c},
+                        {"estados.txt", st.isEmpty() ? "(no status yet)\n" : st},
+                    };
+                    for (String[] f : files) {
+                        z.putNextEntry(new ZipEntry(f[0]));
+                        z.write(f[1].getBytes(StandardCharsets.UTF_8));
+                        z.closeEntry();
+                    }
+                }
+                byte[] zip = bo.toByteArray();
+                Uri uri = null;
+                String where;
+                if (Build.VERSION.SDK_INT >= 29) {
+                    ContentValues cv = new ContentValues();
+                    cv.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+                    cv.put(MediaStore.MediaColumns.MIME_TYPE, "application/zip");
+                    cv.put(MediaStore.MediaColumns.RELATIVE_PATH, "Download");
+                    uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv);
+                    if (uri == null) throw new IOException("Downloads not available");
+                    try (OutputStream o = getContentResolver().openOutputStream(uri)) { o.write(zip); }
+                    where = t("Descargas/", "Download/") + name;
+                } else {
+                    File dir = getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS);
+                    if (dir == null) dir = getFilesDir();
+                    File f = new File(dir, name);
+                    try (FileOutputStream o = new FileOutputStream(f)) { o.write(zip); }
+                    where = f.getAbsolutePath();
+                }
+                logLine(t("Diagnóstico guardado: ", "Diagnostics saved: ") + where);
+                final Uri shareUri = uri;
+                ui.post(() -> {
+                    android.widget.Toast.makeText(this, t("Guardado en ", "Saved to ") + where,
+                            android.widget.Toast.LENGTH_LONG).show();
+                    if (shareUri != null) {
+                        Intent i = new Intent(Intent.ACTION_SEND);
+                        i.setType("application/zip");
+                        i.putExtra(Intent.EXTRA_STREAM, shareUri);
+                        i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        startActivity(Intent.createChooser(i, t("Enviar diagnóstico", "Send diagnostics")));
+                    }
+                });
+            } catch (Exception e) {
+                logLine(t("No se pudo guardar el diagnóstico: ", "Could not save diagnostics: ") + e);
+            }
         });
     }
 
@@ -371,14 +497,14 @@ public class MainActivity extends Activity {
         } catch (Exception e) { v15Pkg = null; }
         try {
             if (v15Pkg == null && v15File().exists()) {
-                byte[] d = Files.readAllBytes(v15File().toPath());
+                byte[] d = readFile(v15File());
                 RescueImage.checkV15(d);
                 v15Pkg = d;
             }
         } catch (Exception e) { v15Pkg = null; }
         try {
             if (customFile().exists()) {
-                byte[] d = Files.readAllBytes(customFile().toPath());
+                byte[] d = readFile(customFile());
                 RescueImage.Firmware f = RescueImage.checkFirmware(d);
                 customLabel = prefs.getString("customLabel", f.identity);
                 customPkg = d;
@@ -807,8 +933,16 @@ public class MainActivity extends Activity {
                     pending.append(new String(buf, 0, n, StandardCharsets.US_ASCII));
                     int nl;
                     while ((nl = pending.indexOf("\n")) >= 0) {
-                        RescueStatus st = RescueStatus.parse(pending.substring(0, nl));
+                        String raw = pending.substring(0, nl).trim();
+                        RescueStatus st = RescueStatus.parse(raw);
                         pending.delete(0, nl + 1);
+                        if (st != null && !raw.equals(lastStatusLine)) {
+                            lastStatusLine = raw;
+                            synchronized (statusLog) {
+                                statusLog.append(stamp()).append("  ").append(raw).append('\n');
+                                if (statusLog.length() > 500_000) statusLog.delete(0, statusLog.length() - 400_000);
+                            }
+                        }
                         if (st != null) {
                             lastStatus = now;
                             warned = false;
