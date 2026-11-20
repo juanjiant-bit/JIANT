@@ -250,17 +250,7 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
     int32_t cut = ccut << 8, envq = 0, ic1 = tf_ic1[ti], ic2 = tf_ic2[ti], k;   /* (snd1: ccut, P_FCUT but on
                                                          * ANALOG, whose own filter returned above but for MS20) */
     tsvf_t c;
-    if (FT_IS_COMB(ft)) {
-        if (!tf_cmb[ti]) {                              /* (0.6.81) in: its line cleared (the last time's, stale) */
-            memset(comb_buf[ti], 0, sizeof comb_buf[ti]);
-            comb_pq[ti] = 0;                            /* (snd1: no glide in, its damping from rest) */
-            comb_lp[ti] = 0;
-        }
-        track_comb(t, out, n, ccut, cres, ft == FT_COMBN);
-        tf_cmb[ti] = 1;
-        return;
-    }
-    if (own && ft != FT_MS20 && ft != FT_LP24)
+    if (own && ft != FT_MS20 && ft != FT_LP24 && !FT_IS_COMB(ft))
         return;
     if (t->engine == ENGI_DRUM)
         envq = (uint16_t)drum_env(t) + 1;                   /* (gen6d: the kit's ENV, its voices held at full) */
@@ -268,6 +258,18 @@ static __attribute__((noinline)) void tf_run(track_t *t, int32_t *out, uint32_t 
         for (i = 0; i < NVOICE; i++)
             if (t->v[i].active && t->v[i].stage && t->v[i].stage < 4u && (t->v[i].env >> 9) > envq)
                 envq = t->v[i].env >> 9;
+    if (FT_IS_COMB(ft)) {                               /* (V10.7.65, the owner: "the COMB's cut-off does not move")
+                                                         * its CUT moved by the LFO and the ENV too, as the SVF's */
+        if (!tf_cmb[ti]) {                              /* (0.6.81) in: its line cleared (the last time's, stale) */
+            memset(comb_buf[ti], 0, sizeof comb_buf[ti]);
+            comb_pq[ti] = 0;                            /* (snd1: no glide in, its damping from rest) */
+            comb_lp[ti] = 0;
+        }
+        track_comb(t, out, n, ccut + ((((mulq15(t->lfo_val, t->lfo_fade) * p[P_LD_FLT]) >> 7) + ((envq * p[P_ED_FLT]) >> 7)) >> 8),
+                   cres, ft == FT_COMBN);
+        tf_cmb[ti] = 1;
+        return;
+    }
     {   /* (0.6.81) the sweep kept where it is heard: CUT moved down so its top stays open at most (an open filter swept
          * up did nothing: half an LFO's cycle, a whole ENV, lost) */
         int32_t span = (p[P_LD_FLT] < 0 ? -p[P_LD_FLT] : p[P_LD_FLT]) * 256 + (p[P_ED_FLT] > 0 ? p[P_ED_FLT] * 256 : 0);
