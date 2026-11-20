@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FM-1 Rescue</title>
+<style>
+:root{--bg:#f6f5f1;--fg:#1d1d1b;--mut:#6f6e69;--card:#fff;--line:#e2e0da;--acc:#ff7a00;--ok:#2e8b57;--err:#c0392b;--code:#efede7}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121211;--fg:#ecebe6;--mut:#9a9993;--card:#1c1c1a;--line:#2d2d2a;--ok:#5cc08a;--err:#e5736a;--code:#262623}}
+:root[data-theme="dark"]{--bg:#121211;--fg:#ecebe6;--mut:#9a9993;--card:#1c1c1a;--line:#2d2d2a;--ok:#5cc08a;--err:#e5736a;--code:#262623}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;padding:32px 16px 64px}
+main{max-width:620px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px}
+h1{font-size:22px;margin:0}
+h2{font-size:16px;margin:0 0 8px}
+.lang button{background:none;border:1px solid var(--line);color:var(--fg);border-radius:6px;padding:2px 8px;font:inherit;font-size:13px;cursor:pointer}
+.lang button.on{border-color:var(--acc);color:var(--acc)}
+.lead{color:var(--mut);margin:0 0 24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--acc);color:#fff;font-size:12px;font-weight:700;margin-right:8px;vertical-align:1px}
+label.opt{display:flex;gap:10px;align-items:flex-start;padding:6px 0;cursor:pointer}
+label.opt small{display:block;color:var(--mut)}
+.btn{display:inline-block;background:var(--acc);color:#fff;border:0;border-radius:8px;padding:9px 18px;font:inherit;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.s{background:none;color:var(--fg);border:1px solid var(--line);font-weight:400}
+input[type=file]{display:none}
+.st{margin-top:8px;font-size:14px;color:var(--mut);word-break:break-word}
+.st.ok{color:var(--ok)}.st.err{color:var(--err)}
+ol{padding-left:22px;margin:8px 0}li{margin:4px 0}
+code{background:var(--code);border-radius:4px;padding:0 4px;font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td{padding:5px 6px;border-top:1px solid var(--line);vertical-align:top}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin-right:6px}
+.foot{color:var(--mut);font-size:13px;margin-top:24px}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<main>
+<header><h1>FM-1 Rescue</h1><div class="lang"><button data-l="es">ES</button> <button data-l="en">EN</button></div></header>
+<p class="lead" data-t="lead"></p>
+
+<section class="card">
+<h2><span class="n">1</span><span data-t="s1"></span></h2>
+<label class="opt"><input type="radio" name="board" value="zero" checked><span><b>Waveshare RP2040-Zero</b><small data-t="zero"></small></span></label>
+<label class="opt"><input type="radio" name="board" value="xiao"><span><b>Seeed XIAO RP2040</b><small data-t="xiao"></small></span></label>
+</section>
+
+<section class="card">
+<h2><span class="n">2</span><span data-t="s2"></span></h2>
+<p class="st" data-t="s2m" style="margin-top:0"></p>
+<label class="btn s"><span data-t="pick"></span><input type="file" id="fwsc" accept=".fwsc"></label>
+<div class="st" id="fwscSt"></div>
+</section>
+
+<section class="card">
+<h2><span class="n">3</span><span data-t="s3"></span></h2>
+<p class="st" data-t="s3m" style="margin-top:0"></p>
+<div class="st" id="ldrSt"></div>
+<label class="btn s" id="ldrPick" hidden><span data-t="pickl"></span><input type="file" id="ldr" accept=".bin"></label>
+</section>
+
+<section class="card">
+<h2><span class="n">4</span><span data-t="s4"></span></h2>
+<button class="btn" id="make" disabled data-t="make"></button>
+<div class="st" id="makeSt"></div>
+</section>
+
+<section class="card">
+<h2><span class="n">5</span><span data-t="s5"></span></h2>
+<ol id="steps"></ol>
+</section>
+
+<section class="card">
+<h2 data-t="led"></h2>
+<table id="leds"></table>
+</section>
+
+<p class="foot" data-t="foot"></p>
+</main>
+
+<script type="module">
+%%BUILDER%%
+
+const BASE = { zero: "%%BASE_ZERO%%", xiao: "%%BASE_XIAO%%" };
+
+const T = {
+es: {
+lead: "Repara un FM-1 que no enciende (hard brick) con un RP2040 y nada más: sin Python, sin terminal. Esta página crea un archivo .uf2 que lleva dentro el firmware oficial V15; lo copias al RP2040 y él solo restaura el FM-1, conectado a un PC o a un simple cargador USB.",
+s1: "Tu placa", zero: "La de la guía de GoodPerson42. Cables: verde → 0, blanco → 1, negro → GND.",
+xiao: "Cables: verde → D6, blanco → D7, negro → GND.",
+s2: "Firmware oficial V15", s2m: "El archivo FM-1.fwsc de la V15 de M-VAVE (699.956 bytes; también llamado FM-1v15.fwsc). Se comprueba por su hash: cualquier otro se rechaza. No sale de tu navegador.",
+pick: "Elegir FM-1.fwsc",
+s3: "Loader de JieLi", s3m: "wl82loader.bin, de jl-uboot-tool (kagaimiq, MIT). Se descarga solo de GitHub y se comprueba su hash.",
+pickl: "Elegir wl82loader.bin",
+s4: "Crear el archivo", make: "Crear fm1-rescue.uf2",
+s5: "Usarlo",
+steps: [
+"Mantén pulsado <b>BOOT</b> en el RP2040 y conéctalo al PC. Aparece una unidad <code>RPI-RP2</code>.",
+"Arrastra <code>fm1-rescue.uf2</code> a esa unidad. Se cierra sola cuando termina.",
+"Desconecta el RP2040. Con el FM-1 <b>apagado</b>, conecta los tres cables (rojo sin conectar) y enchufa el USB-C al FM-1.",
+"Conecta el RP2040 a un PC o a un cargador USB. El LED parpadea en <b>amarillo</b>.",
+"<b>Enciende el FM-1.</b> El LED se pone azul mientras trabaja (1–3 minutos).",
+"<b>Verde fijo</b> = listo. Apaga el FM-1, quita los cables y vuelve a encenderlo: arranca la V15. Luego instala el firmware que quieras de la forma normal.",
+],
+led: "Qué dice el LED",
+leds: [
+["#e5c100","Amarillo parpadeando","Esperando: enciende el FM-1 (tiene que estar apagado antes)."],
+["#e5c100","Amarillo fijo","El FM-1 respondió; entrando en modo de arranque."],
+["#2f6fe0","Azul parpadeando","Leyendo y escribiendo. No desconectes nada."],
+["#2e8b57","Verde fijo","Terminado y verificado."],
+["#c0392b","Rojo parpadeando rápido","Error. Apaga el FM-1, desconecta y vuelve a conectar el RP2040, y enciende el FM-1 otra vez. Si sigue: revisa los cables (prueba a cambiar verde y blanco) y la batería."],
+["#9b4dca","Morado fijo","El FM-1 está encendido con un firmware que no se deja reiniciar en modo de arranque: apágalo, reconecta el RP2040, enciéndelo."],
+["linear-gradient(90deg,#c0392b 50%,#2f6fe0 50%)","Rojo/azul alternando","El .uf2 está dañado: créalo otra vez."],
+],
+foot: "Solo se escribe la zona del firmware (0x4000–0x92FFF), sector a sector, cada uno verificado; la cabecera de arranque y tus datos (ajustes, sonidos, canciones) no se tocan. Sin la V15 dentro, la placa funciona como un FM-1 Transporter normal. Basado en FM-1 Transporter (Leo Kuroshita, MIT), MvaveFM1Unbricker (Quixotic7, MIT) y jl-uboot-tool (kagaimiq, MIT). Herramienta no oficial: úsala bajo tu responsabilidad, con la batería cargada.",
+ok15: "V15 oficial verificada", ldrok: "Loader descargado y verificado", ldrfail: "No se pudo descargar: elígelo a mano (está en jl-uboot-tool, data/loaderblobs/usb/wl82loader.bin).",
+made: "Listo: fm1-rescue.uf2 descargado", fail: "Rechazado: ",
+},
+en: {
+lead: "Fix an FM-1 that does not turn on (hard brick) with an RP2040 and nothing else: no Python, no terminal. This page makes a .uf2 file that carries the official V15 firmware; copy it to the RP2040 and it restores the FM-1 by itself, plugged into a computer or a plain USB charger.",
+s1: "Your board", zero: "The one in GoodPerson42's guide. Wires: green → 0, white → 1, black → GND.",
+xiao: "Wires: green → D6, white → D7, black → GND.",
+s2: "Official V15 firmware", s2m: "M-VAVE's V15 FM-1.fwsc (699,956 bytes; also named FM-1v15.fwsc). It is checked by its hash: anything else is refused. It never leaves your browser.",
+pick: "Choose FM-1.fwsc",
+s3: "JieLi loader", s3m: "wl82loader.bin from jl-uboot-tool (kagaimiq, MIT). Downloaded from GitHub automatically and hash-checked.",
+pickl: "Choose wl82loader.bin",
+s4: "Make the file", make: "Make fm1-rescue.uf2",
+s5: "Use it",
+steps: [
+"Hold <b>BOOT</b> on the RP2040 and plug it into the computer. An <code>RPI-RP2</code> drive appears.",
+"Drag <code>fm1-rescue.uf2</code> onto that drive. It closes by itself when done.",
+"Unplug the RP2040. With the FM-1 <b>off</b>, connect the three wires (red stays unconnected) and plug the USB-C into the FM-1.",
+"Plug the RP2040 into a computer or a USB charger. The LED blinks <b>yellow</b>.",
+"<b>Switch the FM-1 on.</b> The LED turns blue while it works (1–3 minutes).",
+"<b>Steady green</b> = done. Switch the FM-1 off, remove the wires, switch it on: it boots V15. Then install any firmware you like the usual way.",
+],
+led: "What the LED says",
+leds: [
+["#e5c100","Yellow, blinking","Waiting: switch the FM-1 on (it must be off before)."],
+["#e5c100","Yellow, steady","The FM-1 answered; entering boot mode."],
+["#2f6fe0","Blue, blinking","Reading and writing. Do not unplug anything."],
+["#2e8b57","Green, steady","Done and verified."],
+["#c0392b","Red, fast blinking","Error. Switch the FM-1 off, unplug and re-plug the RP2040, switch the FM-1 on again. If it stays: check the wires (try swapping green and white) and the battery."],
+["#9b4dca","Purple, steady","The FM-1 runs a firmware that cannot be sent to boot mode: switch it off, re-plug the RP2040, switch it on."],
+["linear-gradient(90deg,#c0392b 50%,#2f6fe0 50%)","Red/blue alternating","The .uf2 is damaged: make it again."],
+],
+foot: "Only the firmware area (0x4000–0x92FFF) is written, sector by sector, each one verified; the boot head and your data (settings, sounds, songs) are not touched. Without V15 inside, the board works as a plain FM-1 Transporter. Built on FM-1 Transporter (Leo Kuroshita, MIT), MvaveFM1Unbricker (Quixotic7, MIT) and jl-uboot-tool (kagaimiq, MIT). Unofficial tool: use it at your own risk, on a charged battery.",
+ok15: "Official V15 verified", ldrok: "Loader downloaded and verified", ldrfail: "Could not download it: choose it yourself (jl-uboot-tool, data/loaderblobs/usb/wl82loader.bin).",
+made: "Done: fm1-rescue.uf2 downloaded", fail: "Refused: ",
+}};
+
+const $ = id => document.getElementById(id);
+let lang = (navigator.language || "").startsWith("es") ? "es" : "en";
+try { lang = localStorage.getItem("fm1r-lang") || lang; } catch (e) {}
+let fwsc = null, loader = null, v15 = null;
+const status = {};
+
+function say(id, key, cls = "", extra = "") {
+  status[id] = [key, cls, extra];
+  const e = $(id);
+  e.textContent = (key ? T[lang][key] : "") + extra;
+  e.className = "st " + cls;
+}
+function render() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach(e => { e.textContent = T[lang][e.dataset.t]; });
+  document.querySelectorAll(".lang button").forEach(b => b.classList.toggle("on", b.dataset.l === lang));
+  $("steps").innerHTML = T[lang].steps.map(s => `<li>${s}</li>`).join("");
+  $("leds").innerHTML = T[lang].leds.map(([c, a, b]) =>
+    `<tr><td style="white-space:nowrap"><span class="dot" style="background:${c}"></span>${a}</td><td>${b}</td></tr>`).join("");
+  for (const id in status) say(id, ...status[id]);
+}
+document.querySelectorAll(".lang button").forEach(b => b.onclick = () => {
+  lang = b.dataset.l;
+  try { localStorage.setItem("fm1r-lang", lang); } catch (e) {}
+  render();
+});
+const ready = () => { $("make").disabled = !(v15 && loader); };
+
+$("fwsc").onchange = async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  fwsc = null; v15 = null; ready();
+  try {
+    fwsc = new Uint8Array(await f.arrayBuffer());
+    v15 = await checkV15(fwsc);
+    say("fwscSt", "ok15", "ok", ` (${f.name}, ${v15.identity})`);
+  } catch (err) { say("fwscSt", "fail", "err", err.message); }
+  ready();
+};
+async function useLoader(bytes) {
+  loader = await checkLoader(bytes);
+  say("ldrSt", "ldrok", "ok");
+  $("ldrPick").hidden = true;
+  ready();
+}
+$("ldr").onchange = async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try { await useLoader(new Uint8Array(await f.arrayBuffer())); }
+  catch (err) { say("ldrSt", "fail", "err", err.message); }
+};
+(async () => {
+  try {
+    const r = await fetch(LOADER_URL);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    await useLoader(new Uint8Array(await r.arrayBuffer()));
+  } catch (err) {
+    say("ldrSt", "ldrfail", "err");
+    $("ldrPick").hidden = false;
+  }
+})();
+
+$("make").onclick = async () => {
+  try {
+    const board = document.querySelector("input[name=board]:checked").value;
+    const baseUf2 = Uint8Array.from(atob(BASE[board]), c => c.charCodeAt(0));
+    const { uf2 } = await buildRescueUf2({ baseUf2, fwsc, loader });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([uf2], { type: "application/octet-stream" }));
+    a.download = "fm1-rescue.uf2";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    say("makeSt", "made", "ok", ` (${board === "zero" ? "RP2040-Zero" : "XIAO RP2040"}, ${(uf2.length / 1024).toFixed(0)} KB)`);
+  } catch (err) { say("makeSt", "fail", "err", err.message); }
+};
+render();
+</script>
+</body>
+</html>
