@@ -773,21 +773,8 @@ int main(void)
         song_index_load();
         ok &= song_cur == NSONG - 1u && song_idx.cur == NSONG - 1u && song_idx.rows[4].count == 1u &&
               song_idx.rows[4].row[0].bars == 5u && !song_idx.rsv[1];
-        memset(nor + FL_SAMPLES, 0xFF, FL_SAMPLES_SIZE);
-        ui.msg[0] = 0;
-        song_retired();                                 /* (none stored there: nothing said, checked) */
-        ok &= !ui.msg[0] && song_idx.rsv[1] == 1u;
-        song_idx.rsv[1] = 0;
-        memcpy(nor + FL_SAMPLES + 9u * ST_SECTOR, &h, sizeof h);   /* (song 8's section C, copy B) */
-        memcpy(keep, nor + FL_SAMPLES, sizeof keep);
-        song_retired();
-        ok &= str_eq(ui.msg, "SONGS 7-8 RETIRED") && ui.msg2[0] && song_idx.rsv[1] == 1u && song_idx_dirty;
-        ok &= song_index_save() == 0;                   /* (as song_poll writes it: the flag with it) */
-        ui.msg[0] = 0;
-        song_index_load();
-        song_retired();
-        ok &= !ui.msg[0] && song_idx.rsv[1] == 1u && !memcmp(keep, nor + FL_SAMPLES, sizeof keep);
-        bad += check("6 songs: an index on song 8 loads on song 6, songs 7-8 still stored said once, their flash kept", ok);
+        /* (V10.7.66) songs 7-8's notice retired (song_retired gone): only the index's move is checked */
+        bad += check("6 songs: an index on song 8 loads on song 6", ok);
         song_cur = 0; song_idx.cur = 0;
     }
     transport_req = 0;
