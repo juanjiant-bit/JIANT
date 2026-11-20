@@ -145,6 +145,8 @@ static void pk_load(void);
 static void pk_mod(void);
 static void pk_mod_bt(void);
 static void pk_name(uint32_t e, uint32_t o, char *nm);
+#define PK_DST(o) (((o) & 15u) | ((o) >> 7) << 4)     /* a PARAM key's destination from its options */
+
 static void layer_masks(void)
 {
     uint32_t m = !layer_allowed() || (ui.ly && (ui.ly_t0 & LY_DEAD)) ? 0u
@@ -1049,7 +1051,7 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
         if (e == PF_CLR)
             return pfx_clr ? LS_HELD : LS_OFF;
         if (e == PK_MOD)
-            return (pk.o[sl] & 15u) < 4u ? ((pk.mod >> (pk.o[sl] & 3u)) & 1u ? LS_HELD : LS_OFF) :
+            return PK_DST(pk.o[sl]) < 4u ? ((pk.mod >> (pk.o[sl] & 3u)) & 1u ? LS_HELD : LS_OFF) :
                    pk.pkey == sl + 1u ? LS_HELD : LS_OFF;
         if (e >= PF_N)
             return LS_OFF;
@@ -1240,14 +1242,16 @@ static void pk_load(void)                               /* the slot played, from
     pk.magic = PK_MAGIC;
 }
 /* a PARAM key's destination (its options' bits 0-3): M1..M4, then a parameter of every track */
-#define PD_N 14u
-static const char PD_NM[PD_N][8] = {"M1", "M2", "M3", "M4", "CUT", "PITCH", "TIMBRE", "VOLUME", "PAN", "DIST", "CHORUS",
-                                    "DELAY", "REVERB", "VIBRATO"};
+#define PD_N 32u                                        /* (bits 0-3 and 7: the owner, "more destinations") */
+static const char PD_NM[PD_N][9] = {"M1", "M2", "M3", "M4", "CUT", "FILTER", "PITCH", "VIBRATO", "TIMBRE", "VOLUME", "PAN",
+                                    "DIST", "CHORUS", "DELAY", "REVERB", "LFO RATE", "EDIT 1", "EDIT 2", "EDIT 3", "EDIT 4",
+                                    "EDIT 5", "EDIT 6", "EDIT 7", "EDIT 8", "DLY TIME", "DLY FDBK", "DLY TONE", "DLY MIX",
+                                    "REV SIZE", "REV DAMP", "CHO RATE", "CHO DPTH"};
 static void pk_name(uint32_t e, uint32_t o, char *nm)
 {
     static const char *const BN[5] = {"LOOP 3", "PITCH UP", "PITCH DN", "TAPE STOP", "STRETCH"};
     str_cpy(nm, e < PF_M1 ? PF_NAME[e] : e < PF_M1 + NTRK ? "MUTE T1" : e == PF_STR ? BN[4] : e >= PF_LP3 && e <= PF_TAPE ?
-            BN[e - PF_LP3] : e == PF_CLR ? "CLR AUTO" : e == PK_MOD ? PD_NM[(o & 15u) % PD_N] : "-", 12);
+            BN[e - PF_LP3] : e == PF_CLR ? "CLR AUTO" : e == PK_MOD ? PD_NM[PK_DST(o)] : "-", 12);
     if (e >= PF_M1 && e < PF_M1 + NTRK) nm[6] = (char)('1' + e - PF_M1);
 }
 static int32_t pk_amt(uint32_t x) { return (int32_t)((x & 31u) ^ 16u) - 16; }   /* -10..10: tens of % */
@@ -1270,7 +1274,10 @@ static uint32_t pk_per(uint32_t x)             /* TIME (x bits 5-7: 1/16 .. 8 BA
 }
 /* PARAM keys held: a macro moved from where it was by AMOUNT x SHAPE (let go: as it was); a parameter of every track
  * (mod.c pkr_*: as a macro route, the last key held) */
-static const uint8_t PD_MD[PD_N - 4u] = {MD_CUT, MD_PITCH, MD_SHP, MD_AMP, MD_PAN, MD_DIST, MD_CHO, MD_DLY, MD_REV, MD_VIB};
+static const uint8_t PD_MD[PD_N - 4u] = {MD_CUT, MD_FCUT, MD_PITCH, MD_VIB, MD_SHP, MD_AMP, MD_PAN, MD_DIST, MD_CHO, MD_DLY,
+                                         MD_REV, MD_RATE, MD_E1, MD_E1 + 1, MD_E1 + 2, MD_E1 + 3, MD_E1 + 4, MD_E1 + 5,
+                                         MD_E1 + 6, MD_E1 + 7, MD_DTIME, MD_DFDBK, MD_DCOL, MD_DMIX, MD_RSIZE, MD_RDAMP,
+                                         MD_CRATE, MD_CDEPTH};
 static void pk_mod_bt(void)   /* (V10.7.66: out of the segment, its room) */
 {
     uint32_t m, v;
@@ -1287,7 +1294,7 @@ static void pk_mod_bt(void)   /* (V10.7.66: out of the segment, its room) */
         macro_v[m] = (uint8_t)clamp((int32_t)pk.mv0[m] + (int32_t)v * pk_amt(pk.mx[m]) / 10, 0, 127);
     }
     if (pk.pkey) {
-        pkr_d = PD_MD[((pk.po & 15u) - 4u) % (PD_N - 4u)];
+        pkr_d = PD_MD[(PK_DST(pk.po) - 4u) % (PD_N - 4u)];
         pkr_a = (int8_t)(pk_amt(pk.px) * 64 / 10);
         v = pk_shape((pk.po >> 4) & 7u, fm1_ms - pk.pt0, pk_per(pk.px), 5u);
         pkr_v = (uint8_t)v;
@@ -1321,8 +1328,9 @@ static BTAPP_FN void pke_help(uint32_t s)               /* the key's effect and 
  * 3 AMOUNT (an effect: its TARGET; PARAM: -100 .. +100 %), 4 TIME (PARAM: 1/16 .. 8 BARS) */
 static BTAPP_FN void pke_knob_bt(uint32_t k, int32_t d)
 {
-    uint32_t s = pk.ekey % PK_KEYS, e = pke_e(s), o = pk.we[s] ? pk.wo[s] : 0u, x = pk.we[s] ? pk.wx[s] : 0u;
-    uint32_t w = e == PK_MOD ? PK_MOD + (o & 15u) % PD_N : e, hw = (o >> 4) & 7u;
+    uint32_t s = pk.ekey % PK_KEYS, e = pke_e(s), r = pk.we[s] ? pk.wo[s] : 0u, x = pk.we[s] ? pk.wx[s] : 0u;
+    uint32_t o = e == PK_MOD ? PK_DST(r) : r & 15u, w = e == PK_MOD ? PK_MOD + o : e, hw = (r >> 4) & 7u;   /* (o: the
+                                                         * destination, or an effect's TARGET) */
     if (!(kb_layer & ((1u << 27) - 1u))) {
         ui_message("HOLD A KEY");
         return;
@@ -1339,11 +1347,11 @@ static BTAPP_FN void pke_knob_bt(uint32_t k, int32_t d)
     } else if (k == 1u && e != PF_N && e != PF_CLR)
         hw = (uint32_t)clamp((int32_t)hw + d, 0, e == PK_MOD ? 5 : 2);
     else if (k == 2u && pke_tgt(e))
-        o = (o & 0xF0u) | (uint32_t)clamp((int32_t)(o & 15u) + d, 0, 8);
+        o = (uint32_t)clamp((int32_t)o + d, 0, 8);
     else if (k == 3u && e == PK_MOD)
         x = (x & 31u) | (uint32_t)clamp((int32_t)(x >> 5) + d, 0, 7) << 5;
     pk.we[s] = (uint8_t)(e + 1u);
-    pk.wo[s] = (uint8_t)((o & 15u) | hw << 4);
+    pk.wo[s] = (uint8_t)((o & 15u) | (e == PK_MOD ? hw & 7u : hw & 3u) << 4 | (o & 16u) << 3);   /* (dest bit 4 in bit 7) */
     pk.wx[s] = (uint8_t)x;
     pke_help(s);
     ui.force = 1;

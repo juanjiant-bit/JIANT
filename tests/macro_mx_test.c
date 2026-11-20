@@ -153,7 +153,7 @@ int main(void)
         pk.magic = 0; frame();
     }
     {   /* (V10.7.66) FX > PUNCH IN: KNOB 1..4 the macros; the editor: KNOB 1 past the effects into the parameters
-         * (VIBRATO the last), +100 % and 1 BAR at first, KNOB 3 the amount */
+         * (CHO DPTH the last), +100 % and 1 BAR at first, KNOB 3 the amount */
         uint32_t s0 = key_at(0, 0), m0;
         ui_power_on();
         memset(&favorites.factory[0][5], 0, 27); memset(&favorites.factory[2][5], 0, 27); memset(&favorites.factory[7][5], 0, 27);
@@ -165,7 +165,7 @@ int main(void)
         btn_down(B_OCTUP); frames(32); btn_up(B_OCTUP); frames(32);
         key_down(s0); frames(32);
         turn(EN_K1, -1); frames(32);
-        ok &= pk.edit && pk.we[0] == PK_MOD + 1u && (pk.wo[0] & 15u) == 13u && pk_amt(pk.wx[0]) == 10 && (pk.wx[0] >> 5) == 4u;
+        ok &= pk.edit && pk.we[0] == PK_MOD + 1u && PK_DST(pk.wo[0]) == PD_N - 1u && pk_amt(pk.wx[0]) == 10 && (pk.wx[0] >> 5) == 4u;
         turn(EN_K3, -3); frames(32);
         ok &= pk_amt(pk.wx[0]) == 7;
         key_up(s0); frames(32);
@@ -173,6 +173,25 @@ int main(void)
         ok &= !pk.edit;
         bad += check("FX > PUNCH IN: its knobs the macros; the editor's KNOB 1 into the parameters, KNOB 3 the amount", ok);
         macro_v[2] = 0; pk.magic = 0; frame();
+    }
+    {   /* (V10.7.66) a PARAM key on a bus: DLY MIX +100 % HOLD, the delay's mix up while held (macro_master), back after */
+        uint32_t s0 = key_at(0, 0);
+        static int32_t o[2 * CTL];
+        int32_t g0, g1, g2;
+        sine_song();
+        pk.magic = 0; frame();
+        pk.e[0] = PK_MOD + 1u; pk.o[0] = 27u & 15u | (27u >> 4) << 7; pk.x[0] = 10u | 4u << 5;   /* (DLY MIX) */
+        mix_block(o, CTL); g0 = GFX(GF_DMIX);
+        btn_down(B_FX); frames(480);
+        key_down(s0); frames(64);
+        mix_block(o, CTL); g1 = GFX(GF_DMIX);
+        key_up(s0); frames(64);
+        mix_block(o, CTL); g2 = GFX(GF_DMIX);
+        btn_up(B_FX); frames(64);
+        ok = pkr_d == MD_DMIX && g1 > g0 && g2 == g0;
+        if (!ok) printf("  bus: d %u g %d %d %d\n", pkr_d, g0, g1, g2);
+        bad += check("PUNCH-IN PARAM on a bus: DLY MIX up while held, as it was when let go", ok);
+        pk.magic = 0; frame();
     }
     printf(bad ? "macro-mx: %d FAILED\n" : "macro-mx: all ok\n", bad);
     return bad != 0;

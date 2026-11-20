@@ -1478,7 +1478,7 @@ static void pk_target(uint32_t e, uint32_t tg)
 /* (V10.7.66) a PARAM key down or up (perf_kpress, from the RAM code: flash, through PK_PRESS) */
 static __attribute__((noinline)) void pk_press(uint32_t s, uint32_t o, int down)
 {
-    uint32_t b = o & 15u;
+    uint32_t b = (o & 15u) | (o >> 7) << 4;            /* (its destination: ui_layer.c PK_DST) */
     if (b < 4u) {
         if (down) { pk.mo[b] = (uint8_t)o; pk.mx[b] = pk.x[s]; pk.mt0[b] = fm1_ms; pk.mod |= (uint8_t)(1u << b); }
         else pk.mod &= (uint8_t)~(1u << b);

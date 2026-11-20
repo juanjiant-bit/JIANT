@@ -333,8 +333,9 @@ static __attribute__((noinline)) void life_mod(track_t *t, int32_t *off)
         }
         off[j] += (((x * a) >> 6) * (pd->max - pd->min)) >> 15;
     }
-    if (pkr_v && pkr_d && pkr_a) {                      /* (V10.7.66, the owner) a punch-in key's parameter, as a macro
-                                                         * route on every track (ui_layer.c pk_mod_bt) */
+    if (pkr_v && pkr_d && pkr_a && (pkr_d < MD_CLIP || pkr_d >= MD_MASTER_END)) {   /* (V10.7.66, the owner) a punch-in
+                                                         * key's parameter, as a macro route on every track (ui_layer.c
+                                                         * pk_mod_bt; the buses': macro_master) */
         uint32_t d = pkr_d, id;
         int32_t a = pkr_a, x = pkr_v * 258;
         const param_desc_t *pd;
@@ -544,6 +545,11 @@ static __attribute__((noinline)) void macro_master(void)
                 const param_desc_t *pd = &GP[GFX_ID[d - MD_DTIME]];
                 off[d - MD_CLIP] += (v * (d == MD_DTIME ? DT_FREE + 47 : pd->max - pd->min)) >> 15;
             }
+        }
+        if (pkr_v && pkr_a && pkr_d >= MD_DTIME && pkr_d < MD_MASTER_END) {   /* (V10.7.66) a punch-in key on a bus */
+            const param_desc_t *pd = &GP[GFX_ID[pkr_d - MD_DTIME]];
+            int32_t v = (pkr_v * 258 * pkr_a) >> 6;
+            off[pkr_d - MD_CLIP] += (v * (pkr_d == MD_DTIME ? DT_FREE + 47 : pd->max - pd->min)) >> 15;
         }
         mx_on = (uint8_t)on;
         mx_trk = (uint8_t)tr;
