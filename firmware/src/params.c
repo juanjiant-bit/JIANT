@@ -747,7 +747,9 @@ static const page_t PAGES[] = {
     {"SL BUS", FAM_FX, SC_GLOBAL, GR_SLCR, {G_SLT1, G_SLT1 + 1, G_SLT1 + 2, G_SLT1 + 3}},   /* what goes in */
     {"SL BUS 2", FAM_FX, SC_GLOBAL, GR_SLCR, {G_SLT1 + 4, G_SLT6, G_SLFX, 0xFF}},
     {"SL PITCH", FAM_FX, SC_GLOBAL, GR_SLPIT, {0xFF, G_SLP0, G_SLPLEN, G_SLPQ}},   /* KNOB 1 the step (sl_ui_step) */
-    {"PUNCH IN", FAM_FX, SC_GLOBAL, GR_PUNCH, {G_PFXLEN, G_PFXRES, 0xFF, 0xFF}},   /* (0.6.99) the punch-in lane: LEN RES, REC,
+    {"PUNCH IN", FAM_FX, SC_GLOBAL, GR_PUNCH, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.7.66, the owner) KNOB 1..4 the MACROS M1..M4
+                                                         * (ui_input.c, ui_draw.c), OCT+ the punch-in editor */
+    {"PUNCH LANE", FAM_FX, SC_GLOBAL, GR_PUNCH, {G_PFXLEN, G_PFXRES, 0xFF, 0xFF}},   /* (0.6.99) the punch-in lane: LEN RES, REC,
                                                          * CLEAR (codex/coherence: was PUNCH, MASTER's knob's name) */
     {"SCL", FAM_SCL, SC_TRACK, GR_SCALE, {P_ROOT, P_SCALE, P_QUANT, ID_ALLTR}},   /* (JIANT: ROOT, SCALE every melodic track's;
                                                          * 0.7.6: ALL TR, the global, where TRANS was: SCL 2 gone) */

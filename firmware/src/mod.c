@@ -66,6 +66,9 @@ static inline int32_t gfx_val(uint32_t k)
 }
 #define GFX(k) gfx_val(k)
 static uint8_t macro_v[4];       /* (JIANT) the macros M1..M4, 0..127: the project's (project.c), LFO held turns them */
+static volatile uint8_t pkr_d, pkr_v;   /* (V10.7.66, the owner) a punch-in key's parameter: its destination (MD_*), its
+                                 * shape's value now (0..127, 0: none), on every track as a macro route would be */
+static volatile int8_t pkr_a;   /* .. its amount (AMT: 64 the whole range) */
 /* (V10.7.59, the owner) the MACROS' own matrix, beside the tracks' (their slots stay the sound's): MX_N routes, each a
  * macro onto a destination of every track (the master's once) by an amount, as a slot with SRC M1..M4 would be on each
  * track. Kept with the project (project.c 'M' 'X'); a new one (and one saved before) the defaults: M1 the tracks' filters
@@ -125,9 +128,9 @@ typedef struct {                 /* the part in mix_part (one at a time) */
     int32_t pit, cut, shp, gain; /* per voice, from the per-track sources (gain Q15) */
     uint8_t vsrc[NMSLOT], vdst[NMSLOT];
     int8_t vamt[NMSLOT];
-    uint8_t kid[NMSLOT + MX_N + LF_N];   /* per-block: the parameter, its stored value (V10.7.59: the MACROS' routes
+    uint8_t kid[NMSLOT + MX_N + LF_N + 1u];   /* per-block: the parameter, its stored value (V10.7.59: the MACROS' routes
                                          * too; V10.7.62: LIFE's) */
-    int16_t keep[NMSLOT + MX_N + LF_N];
+    int16_t keep[NMSLOT + MX_N + LF_N + 1u];
 } mod_t;
 static mod_t mod_c[2];                      /* (JIANT 0.6.71) one a core: each renders its own parts at once (fx.c mix_block) */
 #define MOD (mod_c[MC_CPU() & 1u])
@@ -330,6 +333,29 @@ static __attribute__((noinline)) void life_mod(track_t *t, int32_t *off)
         }
         off[j] += (((x * a) >> 6) * (pd->max - pd->min)) >> 15;
     }
+    if (pkr_v && pkr_d && pkr_a) {                      /* (V10.7.66, the owner) a punch-in key's parameter, as a macro
+                                                         * route on every track (ui_layer.c pk_mod_bt) */
+        uint32_t d = pkr_d, id;
+        int32_t a = pkr_a, x = pkr_v * 258;
+        const param_desc_t *pd;
+        if (d == MD_CUT && (e == ENGI_WHEEL || e == ENGI_DRUM || e == ENGI_STRING || e == ENGI_INPUT)) d = MD_FCUT;
+        if (d <= MD_AMP) {
+            mp->amp |= d == MD_AMP;
+            mod_voice_add(MS_M1, d, x, a, &mp->pit, &mp->cut, &mp->shp, &mp->gain);
+            return;
+        }
+        id = mod_param(d);
+        pd = mod_track_desc(t, id);
+        for (j = 0; j < mp->nk && mp->kid[j] != id; j++)
+            ;
+        if (j == mp->nk) {
+            mp->kid[j] = (uint8_t)id;
+            mp->keep[j] = t->p[id];
+            off[j] = 0;
+            mp->nk++;
+        }
+        off[j] += (((x * a) >> 6) * (pd->max - pd->min)) >> 15;
+    }
 }
 static void (*const volatile LIFE_MOD)(track_t *, int32_t *) = life_mod;   /* (mod_begin's RAM copy: its reach) */
 
@@ -339,13 +365,13 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
 {
     mod_t *const mp = &MOD;                          /* (0.6.71) this core's */
     const int16_t *p = t->p;
-    int32_t lfo, off[NMSLOT + MX_N + LF_N];
+    int32_t lfo, off[NMSLOT + MX_N + LF_N + 1u];
     uint32_t k, j, n;
     mp->on = 0;
     for (k = 0; k < NMSLOT; k++)
         if (p[P_M1SRC + 3u * k] && p[P_M1DST + 3u * k] && p[P_M1AMT + 3u * k])
             break;
-    if (k == NMSLOT && !mx_trk && !life_on)
+    if (k == NMSLOT && !mx_trk && !life_on && !pkr_v)
         return 0;
     lfo = mulq15(t->lfo_val, t->lfo_fade);              /* (the LFO of the block before: track_render ticks it) */
     for (j = k; j < NMSLOT; j++)
@@ -401,7 +427,7 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
                                                                                                * as before its in-time values) */
         }
     }
-    if (life_on)                                        /* (V10.7.62) LIFE's routes */
+    if (life_on || pkr_v)                               /* (V10.7.62) LIFE's routes; (V10.7.66) a punch-in key's */
         LIFE_MOD(t, off);
     for (j = 0; j < mp->nk; j++) {
         uint32_t id = mp->kid[j];

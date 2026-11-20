@@ -2891,15 +2891,8 @@ static void ui_input_frame(void)
                     combo = 1;
             }
         panel_enc(EN_PRESET);                           /* (a stray turn would load another sound) */
-        {   /* (0.8.5) ALGORITHM: the layer's lens, MAP <-> KNOBS <-> STATE (no wrap; was dropped: another track there,
-             * OCT- put back the layer's track only) */
-            int32_t a = panel_enc(EN_ALGO);
-            if (a && ui.layer) {
-                ui.lylv = (uint8_t)clamp((int32_t)ui.lylv + a, 0, 2);
-                ui.force = 1;
-                combo = 1;
-            }
-        }
+        panel_enc(EN_ALGO);                             /* (V10.7.66, the owner: the layer's KNOBS / STATE gone, MAP
+                                                         * only: ALGORITHM nothing here) */
         if (glo && (sel = panel_enc(EN_SELECT)) != 0)   /* GLO + SELECT: the tempo, a combo (OCT- puts it back) */
             combo = 1;
     } else if (fx_lock_on) {                            /* (0.6.44) the FX layer locked open: KNOB 1..4 its macros */
@@ -3293,7 +3286,9 @@ static void ui_input_frame(void)
             gen_knob(k, s);
             continue;
         }
-        if (mac_latch && !ui.menu && !ui.confirm) {     /* (JIANT 0.4) the MACRO layer latched: M1..M4 */
+        if ((mac_latch || (!ui.home && cur_page()->graph == GR_PUNCH && cur_page()->id[0] == 0xFF)) && !ui.menu &&
+            !ui.confirm) {                              /* (JIANT 0.4) the MACRO layer latched: M1..M4; (V10.7.66) FX >
+                                                         * PUNCH IN: its knobs the macros */
             macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
             continue;
         }

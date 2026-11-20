@@ -873,15 +873,12 @@ static uint32_t tabs_now(const char **nm, const char **tab, uint8_t *cnt, uint32
         return MTAB_COUNT;
     }
     if (f == LZ_LAYER) {                                /* a layer: its views (ALGORITHM), no dots */
-        static const char *const LLV[3] = {"MAP", "KNOBS", "STATE"};
-        for (k = 0; k < 3u; k++) {
-            nm[k] = LLV[k];
-            tab[k] = 0;
-            cnt[k] = 0;
-        }
-        *lv = ui.lylv % 3u;
+        nm[0] = "MAP";                                  /* (V10.7.66: KNOBS / STATE gone) */
+        tab[0] = 0;
+        cnt[0] = 0;
+        *lv = 0;
         *at = 0;
-        return 3;
+        return 1;
     }
     n = nav_groups(cnt, gi, lv, at, &i, &m);
     for (k = 0; k < n; k++) {
@@ -949,10 +946,8 @@ static __attribute__((noinline)) void foot_crumbs(char *b, uint32_t n)   /* b ho
     }
     if (f == LZ_LAYER) {
         static const char *const LN[LAYER_N] = {"", "FX", "GLO", "SCL", "EDIT", "SEQ", "REC", "SAVE", "LFO"};
-        static const char *const LLV[3] = {"MAP", "KNOBS", "STATE"};
         str_cpy(b, LN[ui.layer % LAYER_N], n);
-        str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), LLV[ui.lylv % 3u], 8);
+        str_cpy(b + str_len(b), " \xB7 MAP", 8);
         return;
     }
     {
@@ -982,8 +977,8 @@ static int32_t crumb_count(char *b)
         k = ui.menu_sel % MI_COUNT;
         n = MI_COUNT;
     } else if (lz_fam() == LZ_LAYER) {
-        k = ui.lylv % 3u;
-        n = 3;
+        k = 0;
+        n = 1;
     } else {
         uint8_t cnt[8], gi[8];
         uint32_t g, p;
@@ -1218,6 +1213,23 @@ static __attribute__((noinline)) void comp_columns(void)
     }
 }
 /* (V10.30, flash) a parameter's card: its value formatted, its gauge (d's ratio of v) */
+/* (V10.7.66, the owner) M1..M4 as cards: "M1 CUT", by its first route's destination; 0 OFF */
+static __attribute__((noinline)) void macro_cards(void)
+{
+    char val[12];
+    uint32_t c;
+    for (c = 0; c < 4u; c++) {
+        uint32_t r, d = 0;
+        char nm[10] = {'M', (char)('1' + c), 0};
+        for (r = 0; r < MX_N && !d; r++)
+            if ((mx_r[r].m & 3u) == c && mx_r[r].d && mx_r[r].a)
+                d = mx_r[r].d;
+        if (d && d < NELEM(N_MDST)) { nm[2] = ' '; str_cpy(nm + 3, N_MDST[d], 6); }
+        fmt_int(val, macro_v[c] * 100 / 127);
+        draw_column(c, nm, macro_v[c] ? val : "OFF", macro_v[c] ? "%" : "", macro_v[c] ? VAL(c) : T_DIM,
+                    macro_v[c] * 1000 / 127, ICON_MIX);
+    }
+}
 static void pf_column(uint32_t c, const char *label, const param_desc_t *d, int32_t v, uint16_t col, uint32_t icon)
 {
     char val[12];
@@ -1231,12 +1243,9 @@ static void draw_columns(void)
     char val[12];
     const char *unit;
     (void)motion_mask(song.sel, card_mot_mask);       /* (PLAY OFF: no scan) */
-    if (home_macros()) {                                /* (0.8.5) HOME's MACROS / ROUTES: M1..M4, 0..100 % */
-        static const char *const M[4] = {"M1", "M2", "M3", "M4"};
-        for (c = 0; c < 4u; c++) {
-            fmt_int(val, macro_v[c] * 100 / 127);
-            draw_column(c, M[c], val, "%", VAL(c), macro_v[c] * 1000 / 127, ICON_MIX);
-        }
+    if (home_macros() || (!ui.home && cur_page()->graph == GR_PUNCH && cur_page()->id[0] == 0xFF)) {   /* (0.8.5) HOME's
+                                                         * MACROS / ROUTES, (V10.7.66) FX > PUNCH IN: M1..M4, 0..100 % */
+        macro_cards();
         return;
     }
     if (ui.home) {

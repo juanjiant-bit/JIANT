@@ -1475,6 +1475,19 @@ static void pk_target(uint32_t e, uint32_t tg)
     if (tg >= 2u) pk.exs |= b;                       /* DRM, a track: off the synths */
     if (tg >= 3u && tg - 3u < NTRK) pk.mt[tg - 3u] |= b;
 }
+/* (V10.7.66) a PARAM key down or up (perf_kpress, from the RAM code: flash, through PK_PRESS) */
+static __attribute__((noinline)) void pk_press(uint32_t s, uint32_t o, int down)
+{
+    uint32_t b = o & 15u;
+    if (b < 4u) {
+        if (down) { pk.mo[b] = (uint8_t)o; pk.mx[b] = pk.x[s]; pk.mt0[b] = fm1_ms; pk.mod |= (uint8_t)(1u << b); }
+        else pk.mod &= (uint8_t)~(1u << b);
+    } else if (down) {
+        pk.po = (uint8_t)o; pk.px = pk.x[s]; pk.pt0 = fm1_ms; pk.pkey = (uint8_t)(s + 1u);
+    } else if (pk.pkey == s + 1u)
+        pk.pkey = 0;
+}
+static void (*const volatile PK_PRESS)(uint32_t, uint32_t, int) = pk_press;
 /* key k of the FX layer down or up: its effect as its MODE has it (HOLD as before; LATCH a press on / off; QUANT from
  * the next beat while held), a MOD key's macro (ui_layer.c pk_mod), nothing while editing */
 static __attribute__((noinline)) void perf_kpress(uint32_t k, int down)
@@ -1484,10 +1497,9 @@ static __attribute__((noinline)) void perf_kpress(uint32_t k, int down)
         if (down && s < PK_KEYS) pk.ekey = (uint8_t)s;
         return;
     }
-    if (e == PK_MOD) {                              /* a MOD: its macro moved by the main loop while held (pk_mod) */
-        b = o & 3u;
-        if (down) { pk.mo[b] = (uint8_t)o; pk.mt0[b] = fm1_ms; pk.mod |= (uint8_t)(1u << b); }
-        else pk.mod &= (uint8_t)~(1u << b);
+    if (e == PK_MOD) {                              /* a PARAM key: a macro (M1..M4) or a parameter moved by the main
+                                                     * loop while held (ui_layer.c pk_mod; pk_press out of RAM) */
+        PK_PRESS(s, o, down);
         return;
     }
     if (e < PF_N) pk_target(e, o & 15u);

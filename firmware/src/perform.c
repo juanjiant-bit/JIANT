@@ -77,13 +77,15 @@ static uint32_t perf_ord[PF_N], perf_seq;   /* press order: the last pressed buf
 enum { PK_MOD = PF_CLR + 1, PK_N };                 /* MOD: a MACRO (its TARGET M1..M4) moved while held */
 #define PK_KEYS 27u
 static struct {
-    uint8_t e[PK_KEYS], o[PK_KEYS], slot;           /* the slot played */
-    uint8_t we[PK_KEYS], wo[PK_KEYS], eslot;        /* the editor's copy, the slot it edits */
+    uint8_t e[PK_KEYS], o[PK_KEYS], x[PK_KEYS], slot;   /* the slot played (V10.7.66 x: a PARAM key's AMOUNT, TIME) */
+    uint8_t we[PK_KEYS], wo[PK_KEYS], wx[PK_KEYS], eslot;   /* the editor's copy, the slot it edits */
     volatile uint8_t edit, ekey;                    /* the editor open (keys edit, play nothing); the key held last */
     uint32_t qpend;                                 /* QUANT keys waiting for the beat */
     uint32_t exd, exs, mt[NTRK];                    /* TARGET: the effects kept off the kits / the synths, a track's own */
     uint8_t mod, mon, mo[4], mv0[4];                /* MOD keys held (M1..M4), moving, their options, the macros before */
-    uint32_t mt0[4], magic;                         /* .. since when (ms); PK_MAGIC once loaded (the pool: not zeroed) */
+    uint8_t mx[4], pkey, po, px;                    /* (V10.7.66) their AMOUNT / TIME; the PARAM key held (slot + 1), its
+                                                     * options */
+    uint32_t mt0[4], pt0, magic;                    /* .. since when (ms); PK_MAGIC once loaded (the pool: not zeroed) */
 } pk __attribute__((section(".pool")));
 
 /* the ZDF state-variable filter at cutoff index i (30 Hz * 2^(i / 7), 0..63: up to 15.4 kHz), k = 1:
