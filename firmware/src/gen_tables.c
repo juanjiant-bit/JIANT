@@ -864,7 +864,7 @@ static const ggenre_t GENRE[] = {
      * (its LFO on the filter) growled through the drive, a phrygian or minor stab, a hoover's riff */
     {"DUBSTEP", 138, 142, 0, {SC_MIN, SC_PHRY, SC_HARM, SC_MIN}, DM_DUBSTEP, 100, KIT_BREAKS, 0, HC_FLAT, FL_DROP, 0,
      {BA_WOBBLE, BA_DNB, BA_PEDAL}, 28, KM_SUSTAIN, 90, {PR_ONE, PR_PHRY, PR_I_VI}, 2, CS_SPARSE, VM_POWER,
-     {AP_CHOP, AP_PULSE}, LD_RIFF, AMT(100, 100, 30, 25, 45), {KIT_BREAKS, SR_REESE, SR_PAD, SR_PLUCK, SR_HOOVER}, SR_NOISE,
+     {AP_CHOP, AP_PULSE}, LD_RIFF, AMT(100, 100, 30, 25, 45), {KIT_BREAKS, SR_WOW, SR_PAD, SR_PLUCK, SR_HOOVER}, SR_NOISE,
      1, 2, 25, DT(0, FXS_GROWL), FM_PARTS, 0, HF_LOOP, GSP_PUMP},
     /* My Bloody Valentine, Slowdive, Ride: a rock beat under a wall of fuzz (the pads and the guitar driven, chorused,
      * drowned in CLOUD), a pedal bass, I IV and dreamy changes, a voice far back */

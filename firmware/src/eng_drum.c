@@ -750,7 +750,8 @@ static const engine_t ENG_DRUM = {
         {"TONE", F_PCT, 0, 127, 64, 0},
         {"DECAY", F_PCT, 0, 127, 64, 0},
         {"NOISE", F_PCT, 0, 127, 64, 0},
-        {"ATTACK", F_PCT, 0, 127, 0, 0},            /* (V10.7.63, the owner: KIT's KNOB 2, TUNE's place; was FM ENV) */             /* (JIANT: was ACC; 0.6.36: was FM, a fixed FM: the FM struck
+        {"SNAP", F_PCT, 0, 127, 0, 0},              /* (V10.7.63, the owner: KIT's KNOB 2, TUNE's place; was FM ENV; V10.7.64
+                                                         * SNAP, was ATTACK: the hit's click) */             /* (JIANT: was ACC; 0.6.36: was FM, a fixed FM: the FM struck
                                                          * with the hit, gone with the pitch envelope) */
         {"BODY", F_PCT, 0, 127, 0, 0},              /* (V10.7.63: the shell's resonator; was FOLD, WARP) */
         {"DRIVE", F_PCT, 0, 127, 0, 0},

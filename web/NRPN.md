@@ -170,7 +170,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | DRUM 10 | 117 | TONE | 0..127 | 64 | |
 | DRUM 10 | 118 | DECAY | 0..127 | 64 | |
 | DRUM 10 | 119 | NOISE | 0..127 | 64 | |
-| DRUM 10 | 120 | ATTACK | 0..127 | 0 | |
+| DRUM 10 | 120 | SNAP | 0..127 | 0 | |
 | DRUM 10 | 121 | BODY | 0..127 | 0 | |
 | DRUM 10 | 122 | DRIVE | 0..127 | 0 | |
 | WEST 11 | 115 | FOLD | 0..127 | 40 | |

@@ -181,7 +181,7 @@ static void dx_cards(const page_t *pg)
                                  *const F[4] = {"LP", "BP", "HP", "GUIRO"};
         uint32_t m = L->mode, f = (m >> 2) & 3u;
         hot_gauge_column(1, "WAVE", W[m & 3u], (int32_t)(m & 3u) * 333);
-        draw_column(2, "FILTER", F[f], (m >> 4) & 1u ? "SNAP" : "", VAL(2u), (int32_t)(f * 2u + ((m >> 4) & 1u)) * 1000 / 7, ICON_TONE);
+        draw_column(2, "FILTER", F[f], (m >> 4) & 1u ? "SHORT" : "", VAL(2u), (int32_t)(f * 2u + ((m >> 4) & 1u)) * 1000 / 7, ICON_TONE);
         hot_gauge_column(3, "P.ENV", PM[(m >> 5) & 3u], (int32_t)((m >> 5) & 3u) * 333);
         return;
     }

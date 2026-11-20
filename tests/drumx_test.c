@@ -436,11 +436,11 @@ int main(int argc, char **argv)
                         mono = 0;
                     dx_tone = 0;
                 }
-            check("ATTACK (FM ENV) on its curve (0.9.9-snd1, V10.6q): monotonic, its extreme in the last steps", okc,
+            check("SNAP (FM ENV) on its curve (0.9.9-snd1, V10.6q): monotonic, its extreme in the last steps", okc,
                   "index %.2f rad at 64, %.2f at 114, %.2f at 127",
                   dx_fm_env(64) * 0.02454, dx_fm_env(114) * 0.02454, dx_fm_env(127) * 0.02454);
             check("  the tom brighter as it rises, half the knob well under the top", mono && br[1][2] < br[1][4] * 0.5,
-                  "ATTACK 0 32 64 95 127: %.4f %.4f %.4f %.4f %.4f", br[1][0], br[1][1], br[1][2], br[1][3], br[1][4]);
+                  "SNAP 0 32 64 95 127: %.4f %.4f %.4f %.4f %.4f", br[1][0], br[1][1], br[1][2], br[1][3], br[1][4]);
             check("  FM ENV's index under Nyquist: a C2 hit's as it is, an 8 kHz one's eased",
                   dx_fm_lim(200, pitch_inc(36u * 16u), 4096u) >= 195 && dx_fm_lim(200, pitch_inc(120u * 16u), 4096u) < 100, "%d %d",
                   dx_fm_lim(200, pitch_inc(36u * 16u), 4096u), dx_fm_lim(200, pitch_inc(120u * 16u), 4096u));

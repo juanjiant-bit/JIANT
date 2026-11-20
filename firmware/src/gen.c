@@ -2393,7 +2393,9 @@ static __attribute__((noinline)) void gx_sound(track_t *t, uint32_t r)
         t->p[P_LWAVE] = (int16_t)(gr() % 2u); t->p[P_LD_PIT] = 1;
         t->p[P_LRATE] = (int16_t)(line ? grr(GVIB_RLO, GVIB_RHI) : grr(30, 50));
         if (line) { t->p[P_LFADE] = (int16_t)grr(70, 84); t->p[P_LD_FLT] = 0; }
-    } else if (!t->p[P_LD_PIT] && gch(r == RL_PAD || r == RL_TEX ? 85 : r == RL_BASS ? 45 : 65)) {
+    } else if (!t->p[P_LD_PIT] && !(t->p[P_LRATE] < 0 && t->p[P_LD_FLT] >= 20) &&   /* (V10.7.64, the owner: a wobble on
+                                                         * the beat kept, not slowed to a breath) */
+               gch(r == RL_PAD || r == RL_TEX ? 85 : r == RL_BASS ? 45 : 65)) {
         /* (V10.6l, the owner: EXPLORE's interest in movement, not in steps thrown about) the filter breathing: a slow
          * LFO (a bar to four, or free and slow; S&H on an arp now and then) faded in, the filter half closed under it */
         static const int8_t SY[5] = {-1, -2, -3, -4, -6};   /* (4 BAR .. 1/2: N_LSYNC) */
