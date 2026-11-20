@@ -131,7 +131,8 @@ static __attribute__((noinline)) void gkick_of(const track_t *t, uint32_t len)  
 }
 static uint32_t gseed_mix(uint32_t part)
 {
-    return part == GS_PICK ? 0u : (gs.gi + 1u) * 0x85EBCA6Bu ^ (part - GS_BASS < 3u ? gs.sec * 0x2545F491u : 0u);
+    return part == GS_PICK ? 0u : ((gs.gi >= NGENRE ? 27u : gs.gi) + 1u) * 0x85EBCA6Bu ^ (part - GS_BASS < 3u ? gs.sec * 0x2545F491u : 0u);   /* (V10.7.63:
+                                                         * EXPLORE's 27 as before the three genres: its pieces the same) */
 }
 /* (FROM LOOP, gen_loop.c) on: the song being made from the player's loop; add: the tracks it gave a part (an empty
  * one's); mute: the player's muted tracks; u: FROM LOOP's song (GLO + G4: the loop alone again); room: no part was
@@ -1852,6 +1853,36 @@ static __attribute__((noinline)) void gen_mix(track_t *t, uint32_t r)
         t->p[P_DIST] = (int16_t)grr(40, 60);
 }
 
+/* (V10.7.63, the owner: "the effects, the distortion, used far better") the genre's FX STYLE (gen_tables.c FXS_, its
+ * dtype's bits 2-4) on a role after the mix: DIST between its low and high (never under what the sound had: a heavy
+ * genre's), through the style's TYPE (SOFT HARD FOLD CRUSH RECT AMP), more at a high ENERGY; the fuzz's and the warm
+ * style's chorus on the pads, the arp and the texture. Roles DRUM BASS PAD LEAD ARP TEX */
+static const uint8_t GFXS[FXS_WARM][RL_N][3] = {
+    /* GRIT  */ {{8, 18, 0}, {18, 32, 0}, {0, 10, 0}, {10, 22, 1}, {0, 10, 0}, {0, 0, 0}},
+    /* FUZZ  */ {{5, 12, 0}, {20, 35, 5}, {55, 85, 1}, {40, 65, 1}, {45, 75, 5}, {40, 70, 1}},
+    /* GROWL */ {{20, 35, 1}, {55, 85, 2}, {10, 25, 0}, {30, 50, 4}, {0, 15, 0}, {20, 40, 3}},
+    /* METAL */ {{20, 35, 1}, {40, 60, 5}, {75, 100, 5}, {50, 75, 5}, {30, 50, 1}, {0, 0, 0}},
+    /* LOFI  */ {{15, 30, 3}, {10, 20, 0}, {15, 30, 3}, {10, 25, 3}, {10, 25, 3}, {20, 40, 3}},
+    /* WARM  */ {{5, 12, 0}, {15, 28, 0}, {10, 22, 0}, {8, 18, 0}, {5, 15, 0}, {0, 10, 0}}};
+BTAPP_FN static void gen_fxs(track_t *t, uint32_t r)
+{
+    uint32_t s = ((uint32_t)gs.g->dtype >> 2) % (FXS_WARM + 1u);
+    const uint8_t *f;
+    int32_t d;
+    if (!s || r >= RL_N) return;
+    f = GFXS[s - 1u][r];
+    if (f[1]) {
+        d = grr(f[0], f[1]) * (70 + (int32_t)gs.energy * 6 / 10) / 100;   /* (ENERGY 0: 70 %, 100: 130 %) */
+        if (d > t->p[P_DIST]) {                         /* (the drive's loudness taken back: the drums stay in front) */
+            t->p[P_LEVEL] = (int16_t)clamp(t->p[P_LEVEL] - (d - t->p[P_DIST]) / 3, 1, 127);
+            t->p[P_DIST] = (int16_t)clamp(d, 0, 127);
+        }
+        t->p[P_DTYPE] = f[2];
+    }
+    if ((s == FXS_FUZZ || s == FXS_WARM) && (r == RL_PAD || r == RL_ARP || r == RL_TEX))
+        t->p[P_CHOR] = (int16_t)(s == FXS_FUZZ ? grr(50, 90) : grr(25, 50));
+}
+
 /* ---------------------------------------------------------------------------------------- the form: parts --- */
 BTAPP_FN static void gen_role(track_t *t, uint32_t k, uint32_t len)   /* (V10.7.56: the segment's, the English dictionary's room) */   /* a track's part as its role plays it */
 {
@@ -2801,7 +2832,8 @@ static __attribute__((noinline)) void gen_make(void)
         if (!gsr.thrown || gp.genre - 1u >= NGENRE || gs.mutant) break;
         q = gq;
         gseed(GS_DRUMS);
-        h = gdna(map) ^ (gs.ba + gp.genre * 64u + gmut.drum * 4096u) * 2654435761u;
+        h = gdna(map) ^ (gs.ba + (gp.genre == GEN_EXPLORE ? 28u : gp.genre) * 64u + gmut.drum * 4096u) * 2654435761u;   /* (V10.7.63:
+                                                         * EXPLORE's 28 as before the three genres: its pieces the same) */
         for (j = 0; j < gs.pn; j++) h = h * 7u + gs.pdeg[j];
         gq = q;
         for (j = 0; j < 8u && gsr.h[j] != (uint16_t)h; j++) {}
@@ -2872,7 +2904,7 @@ static __attribute__((noinline)) void gen_make(void)
     }
     gen_scale_page();
     gseed(GS_MIX);
-    for (k = 0; k < NTRK; k++) gen_mix(&trk[k], gs.role[k]);
+    for (k = 0; k < NTRK; k++) { gen_mix(&trk[k], gs.role[k]); gen_fxs(&trk[k], gs.role[k]); }   /* (V10.7.63: its FX) */
     for (k = 0; k < NTRK && gx.on; k++)                 /* (0.8.6) EXPLORE: wider (V10.6n: no track's own swing: the pulse
                                                          * one) */
         if (gs.role[k] != RL_DRUM && gs.role[k] != RL_BASS) trk[k].p[P_PAN] = (int16_t)grr(-45, 45);
@@ -3348,7 +3380,8 @@ BTAPP_FN static void gen_panel_bt(void)
  * colours: each seed its DNA); under ARRANGE's first row when a song is arranged, none past it */
 static void gen_helix(void)
 {
-    uint32_t n = chain_config.count, x, s = gp.seed * 2654435761u + gp.genre * 40503u, t = 0, i;
+    uint32_t n = chain_config.count, x, s = gp.seed * 2654435761u + (gp.genre == GEN_EXPLORE ? 28u : gp.genre) * 40503u, t = 0, i;   /* (V10.7.63:
+                                                         * EXPLORE's 28 as before) */
     int32_t cy = n ? 116 : 94, a = n ? 5 : 16, x0 = n ? 24 : 6;   /* (V10.6i) arranged: a band of its own under the lanes */
     int heat = 1;   /* (V10.6q, the owner) the DNA in the thermal palette */
     uint16_t f = T_THEME, b = T_ACCENT;
