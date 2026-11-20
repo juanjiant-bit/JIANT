@@ -13980,6 +13980,25 @@ static int test_scene(void)
         bad += check("SCENE DRUM stopped: the beat loops while a key is held, silent after (V10.7.64)", ok);
         scn_role[0] = SC_KEEP; scn_on = 0;
     }
+    {   /* (V10.7.64, the owner) LEADER PRESS: a key's note on every live track at once (each its own sound), its key-up
+         * ends them all; T5 T6 asleep with four, untouched */
+        int16_t *vp;
+        uint32_t g[NTRK];
+        for (i = 1; i < NTRK; i++) set_engine_of(&trk[i], ENGI_ANALOG);
+        for (i = 0; i < 60u; i++) events_block(CTL);
+        sc_put(0, 8);
+        ok = scn_on == 8u && str_eq(sc_desc(0, &vp)->names[8], "PRESS");
+        key_down(white(9));
+        for (i = 0; i < 4u; i++) events_block(CTL);
+        for (i = 0; i < NTRK; i++) g[i] = trk_gates(i);
+        ok &= g[1] == 1u && g[2] == 1u && g[3] == 1u && g[4] == 0u && g[5] == 0u;
+        key_up(white(9));
+        for (i = 0; i < 4u; i++) events_block(CTL);
+        ok &= trk_gates(1) == 0u && trk_gates(2) == 0u && trk_gates(3) == 0u;
+        if (!ok) printf("  press: gates %u %u %u %u %u %u\n", g[0], g[1], g[2], g[3], g[4], g[5]);
+        bad += check("SCENE PRESS: a key on every live track at once, off with its key-up (V10.7.64)", ok);
+        sc_put(0, 0);
+    }
     return bad;
 }
 /* (V10.24) SAVE > PRESETS: KNOB 1 plays each sound as it passes; OCT- brings back the one from before the browse, OCT+

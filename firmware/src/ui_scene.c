@@ -16,7 +16,8 @@ static const char *const SC_PN[3][SC_GEN] = {{"ROOT", "PUMP", "OCTAVE", "R-5", "
                                          {"FOUR", "BREAK", "HALF", "SPARSE"}};   /* (V10.7.63, the owner: GEN gone, confusing) */
 static const param_desc_t *sc_desc(uint32_t k, int16_t **valp)
 {
-    static const char *const ONOFF[8] = {"OFF", "KEYS", "T1", "T2", "T3", "T4", "T5", "T6"};   /* (V10.7.63:
+    static const char *const ONOFF[9] = {"OFF", "KEYS", "T1", "T2", "T3", "T4", "T5", "T6", "PRESS"};   /* (V10.7.64,
+                                                         * the owner: PRESS, the keys on every track at once) */   /* (V10.7.63:
                                                          * who leads the roles: the keys, or a track's notes) */
     static const char *const TN[NTRK] = {"T1", "T2", "T3", "T4", "T5", "T6"};
     static const char *const KR[2] = {"KEEP", "DRUM"};
@@ -31,7 +32,7 @@ static const param_desc_t *sc_desc(uint32_t k, int16_t **valp)
         return track_desc(t, P_CHRD);
     }
     sc_d.fmt = F_ENUM; sc_d.min = 0; sc_d.def = 0;
-    if (k == 0u) { sc_d.label = "LEADER"; sc_d.max = 7; sc_d.names = ONOFF; sc_v[0] = scn_on; }
+    if (k == 0u) { sc_d.label = "LEADER"; sc_d.max = 8; sc_d.names = ONOFF; sc_v[0] = scn_on; }
     else if (k == 1u) { sc_d.label = "TRACK"; sc_d.max = (int16_t)(trk_live > 0u && trk_live < NTRK ? trk_live - 1u : NTRK - 1u);   /* (V10.7.64:
                                                          * the live tracks only, T5 T6 asleep with four) */
                         sc_d.names = TN; sc_v[1] = sc_trk; }
@@ -85,8 +86,13 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
 {
     uint32_t i, need = 0;
     if (k == 0u) {
-        scn_on = (uint8_t)clamp(v, 0, 7);
+        scn_on = (uint8_t)clamp(v, 0, 8);
         scn_frel = 1;                                    /* (V10.7.63: a led scene's notes let go) */
+        if (scn_on == 8u) {                              /* (V10.7.64) PRESS: the key's note on every live track, its own
+                                                         * sound each; no roles, no dice, the scale as it is */
+            ui_message("SCENE PRESS: KEYS PLAY EVERY TRACK");
+            return;
+        }
         if (scn_on >= 2u && !drum_track(&trk[scn_on - 2u]))
             scn_role[scn_on - 2u] = SC_KEEP;             /* (the leading track plays its own sequence) */
         for (i = 0, need = 0; i < NTRK; i++) need |= scn_role[i];
@@ -135,11 +141,11 @@ static void graph_scene(void)
         uint16_t c = r == SC_KEEP ? T_DIM : r == SC_CHORD ? T_THEME : r == SC_ARP ? T_MID : r == SC_BASS ? T_ACCENT : T_TEXT;
         char b[3] = {'T', (char)('1' + i), 0};
         cv_text_in(x, 2, cw - 4, &AF_X, b, i == sc_trk ? T_TEXT : T_DIM, T_SURF);
-        cv_text_in(x - 2, 14, cw, &AF_X, scn_on >= 2u && i == scn_on - 2u ? "LEADS" : drum_track(t) && r == SC_KEEP ? "KIT" : SC_ROLE[r],
+        cv_text_in(x - 2, 14, cw, &AF_X, scn_on == 8u ? "PRESS" : scn_on >= 2u && i == scn_on - 2u ? "LEADS" : drum_track(t) && r == SC_KEEP ? "KIT" : SC_ROLE[r],
                    scn_on >= 2u && i == scn_on - 2u ? T_ACCENT : c, T_SURF);
         if (i == sc_trk) cv_frame(x - 3, 0, cw - 1, 25, T_ACCENT);
         if (i >= trk_live) continue;
-        if (r == SC_KEEP || r == SC_DRUM) {              /* its own sequence: the steps, dim; DRUM: the beat's lanes lit */
+        if ((r == SC_KEEP || r == SC_DRUM) && scn_on != 8u) {   /* its own sequence: the steps, dim; DRUM: the beat's lanes lit */
             for (j = 0; j < 16u; j++) {
                 uint32_t h = t->step[j].hit;
                 int32_t y = y0 + (int32_t)j * yh / 16;
@@ -151,7 +157,7 @@ static void graph_scene(void)
             }
             continue;
         }
-        n = scn_notes(t, r, scn_on >= 2u ? scn_fnote : last_note, o, 1);   /* the last key's (or leading note's) notes on it */
+        n = scn_on == 8u ? (o[0] = (uint8_t)last_note, 1u) : scn_notes(t, r, scn_on >= 2u ? scn_fnote : last_note, o, 1);   /* the last key's (or leading note's) notes on it */
         for (j = 0; j < n; j++) {
             int32_t y = y0 + yh - 4 - (clamp(o[j], 36, 96) - 36) * (yh - 6) / 60;
             cv_rect(x + 2 + (r == SC_ARP ? (int32_t)j * 7 : 0), y, r == SC_ARP ? 6 : cw - 10, 3, note_col(o[j]));
@@ -163,7 +169,9 @@ static void graph_scene(void)
         uint32_t r = scn_role[sc_trk % NTRK] % SC_N;
         char b[48] = "T1 ";
         b[1] = (char)('1' + sc_trk % NTRK);
-        if (scn_on >= 2u && sc_trk % NTRK == scn_on - 2u)
+        if (scn_on == 8u)
+            str_cpy(b, "PRESS: EVERY TRACK PLAYS THE KEYS", 48);
+        else if (scn_on >= 2u && sc_trk % NTRK == scn_on - 2u)
             str_cpy(b + 3, "LEADS: ITS NOTES PLAY THE OTHERS", 45);
         else
             str_cpy(b + 3, RD[r], 45);

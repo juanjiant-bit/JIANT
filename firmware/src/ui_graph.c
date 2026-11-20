@@ -157,59 +157,7 @@ static uint32_t vx_on_mask(const track_t *t)            /* (V10.49) the part's v
             m = (m ^ (1u << i) ^ (uint32_t)(clamp(t->v[i].env_out, 0, 32767) >> 12) << (i * 3u % 24u) ^ t->v[i].note << 8) * 16777619u;
     return m;
 }
-static void graph_dximg(const track_t *t)
-{
-    static const char *const AB[DV_NLANE] = {"BD", "SD", "CP", "CH", "OH", "TM", "RS", "CB"};
-    int32_t img = clamp(t->p[P_DXIMG], 0, 127), k = img ? dx_img_k(t) : 0, cx = PANEL_X0 + PANEL_W / 2;
-    uint32_t l;
-    if (trk_eng(t) != ENGI_DRUM) {                       /* (V10.52) a synth: the stereo field, L .. R; each voice sounding a
-                                                          * blob at its place (IMAGE: voice.c), its size its level now, its
-                                                          * note over it; the silent ones a tick where they would sit; the
-                                                          * span IMAGE opens as a bar under the field (POLY only) */
-        static const int8_t VP[8] = {-64, 64, -32, 32, -48, 48, -16, 16};
-        int poly = t->p[P_VOICE] == V_POLY;
-        int32_t half = PANEL_W / 2 - 16, fy = 62, sp;
-        char b[8];
-        img = poly ? 127 - clamp(t->p[P_SIMG], 0, 127) : 0;   /* (P_SIMG: stored inverted) */
-        sp = img * half / 127;
-        cv_text(PANEL_X0, 4 - AF_S_CAP_Y, &AF_S, "L", T_DIM);
-        cv_text_r(PANEL_X0 + PANEL_W, 4 - AF_S_CAP_Y, &AF_S, "R", T_DIM, T_SURF);
-        cv_rect(PANEL_X0 + 6, fy, PANEL_W - 12, 1, T_LINE);   /* the field */
-        cv_rect(cx, fy - 22, 1, 44, T_RAISE);                  /* the middle */
-        if (sp)
-            cv_rect(cx - sp, fy + 26, 2 * sp + 1, 3, heat_col(60u + (uint32_t)img));   /* the span */
-        for (l = 0; l < 8u && l < NVOICE; l++) {
-            const voice_t *v = &t->v[l];
-            int32_t x = cx + VP[l] * sp / 64;
-            if (!v->active) {
-                cv_rect(x, fy + 3, 1, 4, T_RAISE);
-                continue;
-            }
-            {
-                int32_t a = clamp(v->env_out, 0, 32767), r = 3 + a * 9 / 32767;
-                uint16_t c = heat_col(110u + (uint32_t)(a >> 8));
-                cv_rrect(x - r, fy - r, 2 * r + 1, 2 * r + 1, r, c, T_SURF);
-                note_name(b, v->note);
-                if (sp)                                  /* (in the middle, IMAGE 0: the notes in a row over it) */
-                    cv_text_in(x - 14, fy - r - 12, 28, &AF_S, b, T_TEXT, T_SURF);
-                else
-                    cv_text_in(PANEL_X0 + 6 + (int32_t)l * 26, 22, 26, &AF_S, b, T_TEXT, T_SURF);
-            }
-        }
-        cv_text(PANEL_X0, 100 - AF_S_CAP_Y, &AF_S, poly ? (img ? "IMAGE: VOICES SPREAD" : "IMAGE 0: ALL CENTRED") : "POLY ONLY",
-                poly && img ? T_MID : T_DIM);
-        return;
-    }
-    cv_rect(cx, 0, 1, 96, T_RAISE);
-    for (l = 0; l < DV_NLANE; l++) {
-        int32_t p = img ? dx_img_pan(l, img) * k >> 8 : 0, y = (int32_t)l * 12;
-        int32_t x = cx + p * (PANEL_W / 2 - 14) / 64;
-        uint16_t c = k < 256 && img ? T_MID : heat_col(60u + l * 22u);   /* (narrowed by DRV DIST FILTER: grey) */
-        cv_rect(p < 0 ? x : cx, y + 6, p < 0 ? cx - x : x - cx, 1, c);
-        cv_rrect(x - 13, y, 26, 12, 2, c, T_SURF);
-        cv_text_in(x - 13, y + CAP_IN(S, 12), 26, &AF_S, AB[l], T_INK, c);
-    }
-}
+/* (V10.7.64: graph_dximg gone with its pages, STEREO KIT 3 KIT 4) */
 
 /* (0.8.5) VOICE's words (sing.c sing_view): what the track sings. The lyric's source (the language, TEXT / W n / S n,
  * the theme) and the syllables sung; the word sounding, large; its syllable's phonemes, the one sounding lit; the
@@ -1490,9 +1438,6 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
                   (uint32_t)((s->ga | s->gf) >> 12))) * 16777619u;
         h = (h ^ str_hash(lyr_gen[(t - trk) % NTRK], s->w)) * 16777619u;
     }
-    if (pg->graph == GR_DXIMG)                       /* (0.6.48) IMAGE and how wide it plays */
-        h = (h ^ ((uint32_t)t->p[P_DXIMG] << 16 | (uint32_t)dx_img_k(t) | (uint32_t)t->p[P_SIMG] << 24 |
-                  (trk_eng(t) != ENGI_DRUM ? vx_on_mask(t) << 9 : 0u))) * 16777619u;   /* (V10.49: a synth's, its voices lit) */
     if (pg->fam == FAM_EDIT && trk_engp(t) == &ENG_INPUT)   /* (V10.54) INPUT: its meters live */
         h = (h ^ ((uint32_t)(ain_pk[0] >> 10) | (uint32_t)(ain_pk[1] >> 10) << 6 | (uint32_t)(mod_follow >> 10) << 12 |
                   (uint32_t)(ain_gg[(uint32_t)(t - trk) % NTRK] >> 12) << 18)) * 16777619u;
@@ -2199,13 +2144,6 @@ static void draw_graph(void)
             break;
         case GR_MORPH:
             graph_morph(t);
-            break;
-        case GR_DXIMG:                               /* (0.6.58) KIT 3: the colony; STEREO: IMAGE */
-            if (DX_KIT3(pg)) {
-                cv_oy = 0;
-                graph_colony(t, -1);
-            } else
-                graph_dximg(t);
             break;
         case GR_ROLL:
         case GR_TRACKGEN:

@@ -1374,7 +1374,7 @@ static void project_capture(project_t *p)
     {                                                   /* (V10.31) SCENE */
         uint32_t i;
         memset(p->scene, 0, sizeof p->scene);
-        p->scene[0] = scn_on & 7u;                       /* (V10.7.63: 2..7 a track leads) */
+        p->scene[0] = scn_on & 15u;                      /* (V10.7.63: 2..7 a track leads; V10.7.64: 8 PRESS) */
         for (i = 0; i < NTRK; i++) p->scene[1u + i / 2u] |= (uint8_t)((scn_role[i] & 15u) << (4u * (i & 1u)));
         memset(p->scpat, 0, sizeof p->scpat);
         for (i = 0; i < NTRK; i++) p->scpat[i / 2u] |= (uint8_t)((scn_pat[i] % SC_NPAT) << (4u * (i & 1u)));
@@ -1608,7 +1608,7 @@ static int project_restore_runtime(const project_t *input)
     {                                                   /* (V10.31) SCENE */
         uint32_t i;
         memcpy(split_cfg, p->split, sizeof split_cfg);
-        scn_on = (uint8_t)(p->scene[0] & 7u);
+        scn_on = (uint8_t)((p->scene[0] & 15u) > 8u ? 0u : p->scene[0] & 15u);
         for (i = 0; i < NTRK; i++) {
             uint32_t r = (p->scene[1u + i / 2u] >> (4u * (i & 1u))) & 15u;
             scn_role[i] = (uint8_t)(r < SC_N ? r : SC_KEEP);

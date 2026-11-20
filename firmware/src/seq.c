@@ -603,7 +603,8 @@ static uint32_t scn_keys;                           /* the keys down that play t
 static int rec_on(const track_t *t)
 {
     uint32_t i = trk_index(t);                       /* (not modulo: the internal parts past NTRK never record) */
-    return (((song.rec >> i) & 1u) || (scn_on == 1u && song.rec && i < NTRK && scn_role[i])) && song.playing && !chain.running;
+    return (((song.rec >> i) & 1u) || (scn_on == 1u && song.rec && i < NTRK && scn_role[i]) ||
+            (scn_on == 8u && song.rec && i < trk_live)) && song.playing && !chain.running;   /* (V10.7.64: PRESS records on all) */
 }
 static int pfx_rec_ok(void) { return song.rec && song.playing && !chain.running; }   /* (pfx.c: the punch-in lane) */
 
@@ -1634,6 +1635,16 @@ static __attribute__((noinline)) void sc_track(uint32_t i, uint32_t k, uint32_t 
     track_t *t = &trk[i];
     uint32_t j, n;
     uint8_t o[KB_CH + 1];
+    if (scn_on == 8u) {                                 /* (V10.7.64, the owner) PRESS: the key's own note (this track's
+                                                         * octave and scale: kb_map) on every live track */
+        if (root > 127u || midi_local_held(t, root)) return;
+        sl[0] = (uint8_t)(root + 1u);
+        in_norec = (uint8_t)!rec;
+        input_on(t, root, vel);
+        in_norec = 0;
+        if (mo_key(t)) mo_kon(i, root, vel);
+        return;
+    }
     if (drum_track(t)) {                                /* (V10.6j) the kit's DRUM: a beat of its own for the key */
         if (scn_role[i] == SC_DRUM)
             scn_dreq = (uint8_t)(k + 1u);
@@ -1814,7 +1825,8 @@ static void keyboard_block(void)
             kb_oct[k] = (int8_t)(!song.grid && drum_track(&trk[kb_trk[k]]) ? song.octave + (split_cfg[0] ? split_oct(k >= split_cut(0)) : 0) : 0);   /* split drum octave retained until release */
             if (kb_note[k] == KB_SILENT)
                 continue;
-            if (scn_on == 1u && !song.grid && !split_cfg[0]) {     /* (V10.25) SCENE: every track with a role */
+            if ((scn_on == 1u || scn_on == 8u) && !song.grid && !split_cfg[0]) {   /* (V10.25) SCENE: every track with a
+                                                         * role; (V10.7.64) PRESS: every live track */
                 scn_keys |= 1u << k;
                 scene_fp(k, 1);
                 continue;
