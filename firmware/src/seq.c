@@ -1635,8 +1635,14 @@ static __attribute__((noinline)) void sc_track(uint32_t i, uint32_t k, uint32_t 
     uint32_t j, n;
     uint8_t o[KB_CH + 1];
     if (drum_track(t)) {                                /* (V10.6j) the kit's DRUM: a beat of its own for the key */
-        if (scn_role[i] == SC_DRUM)
+        if (scn_role[i] == SC_DRUM) {
             scn_dreq = (uint8_t)(k + 1u);
+            if (!song.playing && rec) {                 /* (V10.7.64, the owner: "a key: nothing sounds") stopped, the
+                                                         * key's kick heard at once; the beat with PLAY */
+                input_on(t, DRUM_LANE_NOTE[0], vel);
+                sl[0] = (uint8_t)(DRUM_LANE_NOTE[0] + 1u);
+            }
+        }
         return;
     }
     if (!scn_role[i] || scn_role[i] == SC_DRUM || root > 127u)   /* (DRUM: a kit's alone; stuck notes: a key QUANT WHITE

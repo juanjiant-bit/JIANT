@@ -20,8 +20,11 @@ static const param_desc_t *sc_desc(uint32_t k, int16_t **valp)
                                                          * who leads the roles: the keys, or a track's notes) */
     static const char *const TN[NTRK] = {"T1", "T2", "T3", "T4", "T5", "T6"};
     static const char *const KR[2] = {"KEEP", "DRUM"};
-    track_t *t = &trk[sc_trk % NTRK];
-    uint32_t r = scn_role[sc_trk % NTRK], dr = drum_track(t);
+    track_t *t;
+    uint32_t r, dr;
+    if (trk_live && sc_trk >= trk_live) sc_trk = (uint8_t)(trk_live - 1u);   /* (V10.7.64: never an asleep track,
+                                                         * T6 was the default with four live) */
+    t = &trk[sc_trk % NTRK]; r = scn_role[sc_trk % NTRK]; dr = drum_track(t);
     k &= 3u;
     if (k == 3u && r != SC_BASS && r != SC_LEAD && !(dr && r == SC_DRUM)) {   /* the picked track's own CHORD */
         *valp = &t->p[P_CHRD];
@@ -29,7 +32,9 @@ static const param_desc_t *sc_desc(uint32_t k, int16_t **valp)
     }
     sc_d.fmt = F_ENUM; sc_d.min = 0; sc_d.def = 0;
     if (k == 0u) { sc_d.label = "LEADER"; sc_d.max = 7; sc_d.names = ONOFF; sc_v[0] = scn_on; }
-    else if (k == 1u) { sc_d.label = "TRACK"; sc_d.max = NTRK - 1; sc_d.names = TN; sc_v[1] = sc_trk; }
+    else if (k == 1u) { sc_d.label = "TRACK"; sc_d.max = (int16_t)(trk_live > 0u && trk_live < NTRK ? trk_live - 1u : NTRK - 1u);   /* (V10.7.64:
+                                                         * the live tracks only, T5 T6 asleep with four) */
+                        sc_d.names = TN; sc_v[1] = sc_trk; }
     else if (k == 2u && dr) { sc_d.label = "ROLE"; sc_d.max = 1; sc_d.names = KR; sc_v[2] = r == SC_DRUM; }   /* (V10.6j) a kit: KEEP, DRUM */
     else if (k == 2u) { sc_d.label = "ROLE"; sc_d.max = SC_DRUM - 1; sc_d.names = SC_ROLE; sc_v[2] = r < SC_DRUM ? r : SC_KEEP; }
     else { sc_d.label = r == SC_DRUM ? "STYLE" : "PATTERN"; sc_d.max = r == SC_DRUM ? SC_DGEN - 1 : SC_GEN - 1;
@@ -99,7 +104,7 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
                        scn_on == 1u ? "SCENE: KEYS PLAY THE ROLES" : b);
         }
     } else if (k == 1u)
-        sc_trk = (uint8_t)clamp(v, 0, NTRK - 1);
+        sc_trk = (uint8_t)clamp(v, 0, (int32_t)(trk_live > 0u && trk_live < NTRK ? trk_live - 1u : NTRK - 1u));
     else if (k == 3u) {                                  /* (V10.6j) BASS LEAD: the pattern; DRUM: the style */
         scn_pat[sc_trk % NTRK] = (uint8_t)clamp(v, 0, SC_GEN - 1);
         sc_setup(sc_trk);
@@ -154,7 +159,7 @@ static void graph_scene(void)
     }
     {   /* (V10.7.63, the owner: "confusing") what the picked track's role does, in words; then the keys */
         static const char *const RD[SC_N] = {"PLAYS ITS OWN SEQUENCE", "HOLDS EACH NOTE'S CHORD", "ARPEGGIATES EACH NOTE'S CHORD",
-                                             "A BASS LINE UNDER THE NOTES", "A LINE ABOVE THE NOTES", "A BEAT THAT CHANGES WITH THEM"};
+                                             "A BASS LINE UNDER THE NOTES", "A LINE ABOVE THE NOTES", "EACH KEY A NEW BEAT (PLAY TO HEAR IT)"};
         uint32_t r = scn_role[sc_trk % NTRK] % SC_N;
         char b[48] = "T1 ";
         b[1] = (char)('1' + sc_trk % NTRK);

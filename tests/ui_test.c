@@ -13915,6 +13915,7 @@ static int test_scene(void)
         bad += check("SCENE DICE: never two tracks with one role (one CHORD at most), the kit KEEP, two roles at least", !bad2);
     }
     {   static const uint8_t R0[NTRK] = {SC_KEEP, SC_LEAD, SC_KEEP, SC_ARP, SC_BASS, SC_CHORD}; memcpy(scn_role, R0, sizeof R0); }
+    sc_trk = 5;                                          /* (V10.7.64: the page keeps to the live tracks; six here) */
     turn(EN_K1, 1);
     ok = scn_on == 1u;
     turn(EN_K2, -1);                                     /* (T6 -> T5: BASS) */
@@ -13956,6 +13957,13 @@ static int test_scene(void)
     turn(EN_K1, -1);
     bad += check("SCENE OFF: a key plays the selected track again", !scn_on);
     trks_put(0);
+    {   /* (V10.7.64, the owner: "DRUM: a key, nothing sounds, nothing drawn") four tracks: the page on a live one (it was
+         * T6, asleep), KNOB 2 the live ones only */
+        int16_t *vp;
+        sc_trk = 5;
+        ok = sc_desc(1, &vp)->max == 3 && sc_trk == 3u;
+        bad += check("SCENE with four tracks: KNOB 2 T1..T4, never an asleep track (V10.7.64)", ok);
+    }
     return bad;
 }
 /* (V10.24) SAVE > PRESETS: KNOB 1 plays each sound as it passes; OCT- brings back the one from before the browse, OCT+
