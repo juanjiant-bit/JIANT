@@ -75,6 +75,18 @@ azul = trabajando, verde fijo = listo, rojo parpadeando rápido = error. La Pico
 parpadeo lento = esperando, parpadeo irregular = trabajando, fijo = listo, parpadeo rápido = error. Las placas tipo
 Pico que tengan el LED en otro pin funcionan igual, solo que sin LED: sigue el progreso en la app.
 
+## Diagnóstico
+
+La tarjeta **Diagnóstico** lee el registro interno del RP2040 y dice en palabras simples hasta dónde llegó:
+"Enviando la señal de arranque… (envíos: N)", "¡El FM-1 respondió!", "Cables D+ y D− invertidos",
+"Respondió, pero no se conecta por USB", "El FM-1 está en modo de arranque ✓"… con qué probar en cada caso.
+
+- **Paciencia con la señal de arranque:** en un FM-1 real hicieron falta más de 3 minutos (415.840 envíos)
+  hasta que respondió. Si pasa mucho tiempo, apaga y enciende el FM-1 sin tocar la app.
+- **Reiniciar la señal de arranque:** reinicia el RP2040 en modo "señal de arranque" (útil después de apagar el
+  FM-1, si la app quedó en otro estado).
+- **Compartir registro:** manda el registro completo (app + RP2040) por WhatsApp, correo, etc., para revisarlo.
+
 ## Qué hace exactamente
 
 - **En el RP2040** (por PICOBOOT, el protocolo del bootrom que usa `picotool`): borra, escribe y **relee** cada

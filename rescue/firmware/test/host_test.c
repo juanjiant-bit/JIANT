@@ -136,6 +136,13 @@ int main(int argc, char **argv) {
     fclose(f);
     static uint8_t before[JL_FLASH_SIZE];
 
+    printf("0. before the payload is checked the status says boot, never off\n");
+    {
+        char line[160];
+        ar_status_line(line, sizeof(line));
+        CHECK(strncmp(line, "state=boot ", 11) == 0, "status line: %s", line);
+    }
+
     printf("1. bricked unit (random app region) -> restored, head and data untouched\n");
     reset_unit(0x5A);
     memcpy(before, fm1, sizeof(fm1));

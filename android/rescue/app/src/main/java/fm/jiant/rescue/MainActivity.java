@@ -73,7 +73,10 @@ public class MainActivity extends Activity {
     private UsbManager usbManager;
     private SharedPreferences prefs;
 
-    private TextView fwscText, loaderText, stage, detail, log;
+    private TextView fwscText, loaderText, stage, detail, log, diagHead, diagText;
+    private volatile Diagnosis diag = new Diagnosis();
+    private final StringBuilder fullLog = new StringBuilder();
+    private volatile String pendingCmd;          // a data-port request from the UI (e.g. "rekey")
     private RadioButton srcJiant, srcV15, srcCustom;
     private ProgressBar progress;
     private Button reflash;
@@ -227,6 +230,18 @@ public class MainActivity extends Activity {
             if (d != null && usbManager.hasPermission(d)) resetToBootsel(d);
         });
 
+        LinearLayout c5 = card(root);
+        text(c5, t("Diagnóstico", "Diagnostics"), 16, true);
+        diagHead = text(c5, t("Esperando el registro del RP2040", "Waiting for the RP2040's log"), 15, true);
+        diagText = text(c5, t("Aparece cuando el RP2040 ya tiene el firmware de rescate y está conectado al móvil.",
+                "It shows up once the RP2040 runs the rescue firmware and is plugged into the phone."), 13, false);
+        button(c5, t("Compartir registro", "Share the log")).setOnClickListener(v -> shareLog());
+        button(c5, t("Reiniciar la señal de arranque", "Restart the boot signal")).setOnClickListener(v -> {
+            pendingCmd = "rekey";
+            logLine(t("Reiniciando la señal: apaga el FM-1, espera 3 s y enciéndelo cuando lo pida la app.",
+                    "Restarting the signal: switch the FM-1 off, wait 3 s and switch it on when the app says so."));
+        });
+
         log = new TextView(this);
         log.setTypeface(Typeface.MONOSPACE);
         log.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
@@ -252,6 +267,11 @@ public class MainActivity extends Activity {
     }
 
     private void logLine(String s) {
+        synchronized (fullLog) {
+            fullLog.append(new java.text.SimpleDateFormat("HH:mm:ss", Locale.ROOT).format(new java.util.Date()))
+                   .append("  ").append(s).append('\n');
+            if (fullLog.length() > 400_000) fullLog.delete(0, fullLog.length() - 300_000);
+        }
         ui.post(() -> {
             String all = log.getText() + s + "\n";
             if (all.length() > 4000) all = all.substring(all.length() - 4000);
@@ -260,6 +280,42 @@ public class MainActivity extends Activity {
     }
 
     private String board() { return prefs.getString("board", "zero"); }
+
+    /** Console line from the RP2040: into the full log, the diagnosis, and (unless noise) the screen. */
+    private void consoleLine(String line) {
+        Diagnosis d = diag;
+        d.feed(line);
+        synchronized (fullLog) {
+            fullLog.append("RP2040 ").append(line).append('\n');
+            if (fullLog.length() > 400_000) fullLog.delete(0, fullLog.length() - 300_000);
+        }
+        if (!Diagnosis.noise(line) && !line.contains("KEY: ") ) {
+            ui.post(() -> {
+                String all = log.getText() + "› " + line + "\n";
+                if (all.length() > 4000) all = all.substring(all.length() - 4000);
+                log.setText(all);
+            });
+        }
+        String[] sum = d.summary(es);
+        ui.post(() -> {
+            diagHead.setText(sum[0]);
+            diagText.setText(sum[1]);
+        });
+    }
+
+    private void shareLog() {
+        String text;
+        synchronized (fullLog) { text = fullLog.toString(); }
+        String[] sum = diag.summary(es);
+        String head = "FM-1 Rescue " + board() + " · " + installedName() + "\n" + sum[0] + "\n" + sum[1] + "\n\n";
+        Intent i = new Intent(Intent.ACTION_SEND);
+        i.setType("text/plain");
+        i.putExtra(Intent.EXTRA_SUBJECT, "FM-1 Rescue log");
+        String body = head + text;
+        if (body.length() > 90_000) body = head + "…\n" + text.substring(text.length() - 90_000 + head.length());
+        i.putExtra(Intent.EXTRA_TEXT, body);
+        startActivity(Intent.createChooser(i, t("Compartir registro", "Share the log")));
+    }
 
     // ------------------------------------------------------------ files
 
@@ -698,34 +754,75 @@ public class MainActivity extends Activity {
             }
             if (!c.claimInterface(data, true)) throw new IOException("data port busy");
             c.controlTransfer(0x21, 0x22, 0x0001, 2, null, 0, 1000);     // DTR on CDC 1 (interface 2)
+
+            // The console (CDC 0, data interface 1): the Transporter's log, read all the time (an
+            // unread console can stall it) and turned into the diagnosis.
+            UsbEndpoint cin = null;
+            for (int i = 0; i < d.getInterfaceCount(); i++) {
+                UsbInterface f = d.getInterface(i);
+                if (f.getId() == 1 && f.getInterfaceClass() == UsbConstants.USB_CLASS_CDC_DATA && c.claimInterface(f, true)) {
+                    for (int e = 0; e < f.getEndpointCount(); e++) {
+                        UsbEndpoint ep = f.getEndpoint(e);
+                        if (ep.getDirection() == UsbConstants.USB_DIR_IN && ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK) cin = ep;
+                    }
+                }
+            }
+            diag = new Diagnosis();
+            if (cin != null) c.controlTransfer(0x21, 0x22, 0x0001, 0, null, 0, 1000);   // DTR on CDC 0
+            else logLine(t("Sin consola del RP2040: no habrá diagnóstico", "No RP2040 console: no diagnostics"));
+
             byte[] req = "rescue\n".getBytes(StandardCharsets.US_ASCII);
-            byte[] buf = new byte[256];
-            StringBuilder pending = new StringBuilder();
-            int silent = 0;
+            byte[] buf = new byte[512], cbuf = new byte[512];
+            StringBuilder pending = new StringBuilder(), cpending = new StringBuilder();
+            long nextReq = 0, lastStatus = System.currentTimeMillis();
+            boolean warned = false;
             while (!stopMonitor) {
-                c.bulkTransfer(out, req, req.length, 500);
-                long until = System.currentTimeMillis() + 500;
-                RescueStatus st = null;
-                while (System.currentTimeMillis() < until && st == null) {
-                    int n = c.bulkTransfer(in, buf, buf.length, 200);
-                    if (n <= 0) continue;
+                long now = System.currentTimeMillis();
+                String cmd = pendingCmd;
+                if (cmd != null) {
+                    pendingCmd = null;
+                    byte[] cb = (cmd + "\n").getBytes(StandardCharsets.US_ASCII);
+                    c.bulkTransfer(out, cb, cb.length, 500);
+                    if (cmd.equals("rekey")) diag = new Diagnosis();
+                }
+                if (now >= nextReq) {
+                    c.bulkTransfer(out, req, req.length, 300);
+                    nextReq = now + 700;
+                }
+                if (cin != null) {
+                    int n = c.bulkTransfer(cin, cbuf, cbuf.length, 40);
+                    if (n > 0) {
+                        cpending.append(new String(cbuf, 0, n, StandardCharsets.ISO_8859_1));
+                        int nl;
+                        while ((nl = cpending.indexOf("\n")) >= 0) {
+                            String line = cpending.substring(0, nl).replace("\r", "");
+                            cpending.delete(0, nl + 1);
+                            consoleLine(line);
+                        }
+                        if (cpending.length() > 4096) cpending.setLength(0);
+                    }
+                }
+                int n = c.bulkTransfer(in, buf, buf.length, 40);
+                if (n > 0) {
                     pending.append(new String(buf, 0, n, StandardCharsets.US_ASCII));
                     int nl;
                     while ((nl = pending.indexOf("\n")) >= 0) {
-                        RescueStatus s = RescueStatus.parse(pending.substring(0, nl));
+                        RescueStatus st = RescueStatus.parse(pending.substring(0, nl));
                         pending.delete(0, nl + 1);
-                        if (s != null) st = s;
+                        if (st != null) {
+                            lastStatus = now;
+                            warned = false;
+                            report(d, st);
+                        }
                     }
+                    if (pending.length() > 4096) pending.setLength(0);
                 }
-                if (st == null) {
-                    if (++silent == 6) show(t("La placa no responde", "The board does not answer"),
+                if (!warned && now - lastStatus > 5000) {
+                    warned = true;
+                    show(t("La placa no responde", "The board does not answer"),
                             t("¿Es una placa con el firmware FM-1 Rescue? Desconéctala y vuelve a conectarla.",
                               "Is it a board with the FM-1 Rescue firmware? Unplug and re-plug it."), 0);
-                } else {
-                    silent = 0;
-                    report(d, st);
                 }
-                sleep(500);
             }
         } catch (Exception e) {
             logLine("monitor: " + e.getMessage());
@@ -737,17 +834,39 @@ public class MainActivity extends Activity {
     }
 
     private String lastState = "";
+    private long offSince;
+
+    /** The board's identity for "once per board": its serial number (unique RP2040 ID), else the port. */
+    private String boardKey(UsbDevice d) {
+        try {
+            String sn = d.getSerialNumber();
+            if (sn != null && !sn.isEmpty()) return sn;
+        } catch (SecurityException e) { /* no permission yet */ }
+        return d.getDeviceName();
+    }
 
     private void report(UsbDevice d, RescueStatus s) {
         if (!s.state.equals(lastState)) {
             logLine("FM-1 Rescue: " + s.state + (s.err.equals("none") ? "" : " (" + s.err + " @ " + s.addr + ")"));
             lastState = s.state;
         }
+        if (!s.state.equals("off")) offSince = 0;
         switch (s.state) {
+            case "boot":
+                show(t("Iniciando el RP2040…", "Starting the RP2040…"), "", 0);
+                break;
             case "off":
+                // "off" for a few seconds in a row: a plain Transporter (no payload). Older rescue firmware
+                // also said "off" for its first seconds, so a single "off" proves nothing.
+                if (offSince == 0) offSince = System.currentTimeMillis();
+                if (System.currentTimeMillis() - offSince < 4000) {
+                    show(t("Comprobando el RP2040…", "Checking the RP2040…"), "", 0);
+                    break;
+                }
+                // fall through
             case "bad-payload":
-                // A plain Transporter, or a damaged payload: reprogram it, once per plug-in.
-                if (selected() != null && loader != null && autoReset.add(d.getDeviceName())) {
+                // A plain Transporter, or a damaged payload: reprogram it, once per board.
+                if (selected() != null && loader != null && autoReset.add(boardKey(d))) {
                     show(t("Actualizando el RP2040…", "Updating the RP2040…"), "", 0);
                     resetToBootsel(d);
                 } else {

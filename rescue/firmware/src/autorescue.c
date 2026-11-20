@@ -30,7 +30,7 @@ typedef enum {
 typedef enum { PH_IDLE, PH_CHECK, PH_WRITE, PH_VERIFY } ar_phase_t;
 
 // Written by core 1, read by core 0 for the `rescue` status line.
-static volatile ar_state_t state = AR_OFF;
+static volatile ar_state_t state = AR_BOOT;    // until ar_init has looked at the payload
 static volatile ar_err_t err;
 static volatile ar_phase_t phase;
 static volatile uint32_t err_addr;
@@ -41,7 +41,7 @@ static bool any_written;
 static uint8_t __attribute__((aligned(4))) sec[JL_SECTOR_SIZE];
 
 bool ar_enabled(void) {
-    return state != AR_OFF;
+    return state != AR_OFF && state != AR_BOOT;
 }
 
 ar_state_t ar_state(void) {
@@ -49,7 +49,7 @@ ar_state_t ar_state(void) {
 }
 
 void ar_status_line(char *s, unsigned n) {
-    static const char *const names[] = {"off", "wait", "run", "done", "error", "bad-payload"};
+    static const char *const names[] = {"off", "boot", "wait", "run", "done", "error", "bad-payload"};
     static const char *const errs[] = {"none", "link", "chip", "write", "verify"};
     static const char *const phases[] = {"idle", "check", "write", "verify"};
     ar_state_t st = state;
@@ -223,6 +223,7 @@ void ar_task(void) {
 
     switch (state) {
     case AR_OFF:
+    case AR_BOOT:
         return;
     case AR_BAD_PAYLOAD:
 #if FM1T_LED_MONO

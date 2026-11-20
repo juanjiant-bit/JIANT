@@ -32,6 +32,7 @@
 
 typedef enum {
     AR_OFF,         // no payload: plain Transporter
+    AR_BOOT,        // the payload is not checked yet (the first moments after power-on)
     AR_WAIT,        // waiting for UBOOT
     AR_RUN,
     AR_DONE,

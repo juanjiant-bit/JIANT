@@ -37,6 +37,9 @@ void fm1_rekey(void) {
 static volatile bool console_ready;
 
 static void core1_main(void) {
+    // The payload first: until then the data port reports "boot", never "off" (which the Android app
+    // takes as "no payload, reprogram this board" - it did, in a loop, during the console wait).
+    ar_init();
     for (int i = 0; i < CONSOLE_WAIT_MS / 100 && !console_ready; i++) {
         sleep_ms(100);
     }
@@ -51,7 +54,6 @@ static void core1_main(void) {
     printf("If the FM-1 runs stock V15, leave it on: fm1t enters UBOOT via the soft key.\n");
     printf("Otherwise switch it OFF, and ON again once the key is running.\n");
 
-    ar_init();
     recovery_init();
 #if FM1T_HOST_ONLY
     // Host bring-up without the key path: attach any full-speed device, or an
