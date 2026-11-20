@@ -26,6 +26,10 @@ public final class RescueImage {
     public static final int LOADER_LEN = 24064;
     public static final String LOADER_SHA256 =
             "d41da6126760c9d66660bcc0cac8d27d221806c5e369a8036921efe68dca5376";
+    /** The official M-VAVE V15 FM-1.fwsc (file sha256 db1642b2..., the genuine one), as kept in
+     *  Quixotic7/FM1Backups at a pinned commit; checkV15 accepts it only by its region hash. */
+    public static final String V15_URL = "https://raw.githubusercontent.com/Quixotic7/FM1Backups/"
+            + "8cbc3b066ed15ec6a0d5a990efb78b56f6c17183/V15-FM-1.fwsc";
     public static final String LOADER_URL =
             "https://raw.githubusercontent.com/kagaimiq/jl-uboot-tool/"
             + "adb3f18889e88ac512ce0a3c4d8cc3d3cb30696a/data/loaderblobs/usb/wl82loader.bin";

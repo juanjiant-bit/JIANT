@@ -19,8 +19,7 @@ después te va diciendo qué hacer mientras repara el FM-1.
 | Adaptador **OTG** USB-C (o micro-USB) a USB-A, o un cable USB-C a USB-C | para enchufar el RP2040 al móvil |
 | **Waveshare RP2040-Zero** o **Seeed XIAO RP2040** | la placa de la guía de GoodPerson42 |
 | Cable USB-C con 4 hilos sueltos | negro, rojo, blanco, verde |
-| El archivo **FM-1.fwsc de la V15 oficial** (699.956 bytes) | también llamado `FM-1v15.fwsc` o `V15-FM-1.fwsc` |
-| Internet **la primera vez** | para descargar el loader de JieLi (24 KB); luego funciona sin conexión |
+| Internet **la primera vez** | la app descarga sola la V15 oficial (700 KB); luego funciona sin conexión |
 
 ## Instalar
 
@@ -30,8 +29,9 @@ desconocido" si Android lo pide.
 
 ## Usar
 
-1. **Abre la app y elige el `FM-1.fwsc` de la V15.** Se comprueba por su hash; si no es la V15 oficial, se
-   rechaza (la V16 no sirve aquí). Solo hay que hacerlo una vez: la app lo guarda.
+1. **Abre la app con internet.** Descarga sola la V15 oficial y la comprueba por su hash (sale "✓ V15 oficial
+   lista"). Solo la primera vez: la guarda. Si prefieres usar tu propio `FM-1.fwsc` de la V15, pulsa "O elegir
+   mi propio FM-1.fwsc" (cualquier otro archivo se rechaza; la V16 no sirve aquí).
 2. **Elige tu placa:** RP2040-Zero o XIAO RP2040.
 3. **Cableado**, con el FM-1 **apagado** (el rojo no se conecta):
 
@@ -78,8 +78,17 @@ azul = trabajando, verde fijo = listo, rojo parpadeando rápido = error.
   V15, cada uno verificado, con una relectura final completa.
 - **Nunca** toca la cabecera de arranque (`0x0000..0x3FFF`) ni tus datos (`0x93000..`: ajustes, sonidos,
   canciones). A diferencia del método con Python, **no** guarda una copia completa del FM-1 antes.
-- El móvil solo alimenta el RP2040 y lee su progreso. Nada sale del móvil salvo la descarga del loader desde
-  GitHub (`kagaimiq/jl-uboot-tool`, commit fijado, hash comprobado).
+- El móvil solo alimenta el RP2040 y lee su progreso. Lo único que se descarga es la V15: el `V15-FM-1.fwsc` de
+  [Quixotic7/FM1Backups](https://github.com/Quixotic7/FM1Backups) en un commit fijado, idéntico al archivo de
+  M-VAVE (sha256 `db1642b2…`), y la app solo lo acepta si el hash de su región de firmware es el de la V15.
+  La V15 no va dentro del APK porque es software de M-VAVE; el loader de JieLi sí (jl-uboot-tool, MIT,
+  licencia en `assets/wl82loader-LICENSE.txt`).
+
+### ¿Y la V16?
+
+No se puede escribir con este método. La V16 ocupa hasta `0xA8FFF` (más allá de la zona `0x4000..0x92FFF`) y trae
+su propio bootloader en la cabecera, que este método nunca toca para no arriesgar un brick peor. Se repara con
+la V15 y después se actualiza a la V16 (o a JIANT) con el instalador normal.
 
 ## Para desarrolladores
 
@@ -96,8 +105,8 @@ Compilar: `gradle -p android/rescue assembleDebug` (JDK 17, Gradle 8.9); el firm
 
 ## English
 
-FM-1 Rescue for Android unbricks an FM-1 with an RP2040 and the phone: choose the official V15 `FM-1.fwsc`
-once, pick the board, wire green → GP0, white → GP1, black → GND (FM-1 off, red unconnected), hold BOOT and
+FM-1 Rescue for Android unbricks an FM-1 with an RP2040 and the phone: on first launch it downloads the
+official V15 (pinned, hash-checked; or choose your own), JieLi's loader is bundled; pick the board, wire green → GP0, white → GP1, black → GND (FM-1 off, red unconnected), hold BOOT and
 plug the RP2040 into the phone with an OTG adapter. The app programs the board over PICOBOOT, reboots it, and
 then shows the rescue's progress read from the board: "switch the FM-1 on now", "repairing…", "done". Only
 the differing sectors of `0x4000..0x92FFF` are written, each verified; the boot head and user data are never

@@ -151,7 +151,7 @@ public class MainActivity extends Activity {
         LinearLayout c1 = card(root);
         text(c1, t("1 · Firmware oficial V15", "1 · Official V15 firmware"), 16, true);
         fwscText = text(c1, "", 14, false);
-        button(c1, t("Elegir FM-1.fwsc", "Choose FM-1.fwsc")).setOnClickListener(v -> {
+        button(c1, t("O elegir mi propio FM-1.fwsc", "Or choose my own FM-1.fwsc")).setOnClickListener(v -> {
             Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             i.addCategory(Intent.CATEGORY_OPENABLE);
             i.setType("*/*");
@@ -236,7 +236,6 @@ public class MainActivity extends Activity {
     // ------------------------------------------------------------ files
 
     private File fwscFile() { return new File(getFilesDir(), "FM-1-V15.fwsc"); }
-    private File loaderFile() { return new File(getFilesDir(), "wl82loader.bin"); }
 
     private void loadFiles() {
         try {
@@ -246,39 +245,55 @@ public class MainActivity extends Activity {
                 fwsc = d;
             }
         } catch (Exception e) { fwsc = null; }
-        try {
-            if (loaderFile().exists()) loader = RescueImage.checkLoader(Files.readAllBytes(loaderFile().toPath()));
-        } catch (Exception e) { loader = null; }
+        // jl-uboot-tool's loader ships in the APK (MIT, assets/wl82loader-LICENSE.txt).
+        try (InputStream in = getAssets().open("wl82loader.bin")) {
+            loader = RescueImage.checkLoader(readAll(in));
+        } catch (Exception e) {
+            loader = null;
+            logLine("loader: " + e.getMessage());
+        }
         updateFileTexts();
-        if (loader == null) net.execute(this::downloadLoader);
+        if (fwsc == null) net.execute(this::downloadV15);
     }
+
+    private volatile boolean downloading;
 
     private void updateFileTexts() {
         ui.post(() -> {
-            fwscText.setText(fwsc != null ? t("✓ V15 oficial verificada", "✓ Official V15 verified")
-                    : t("Elige el FM-1.fwsc de la V15 de M-VAVE (699.956 bytes). Se comprueba por su hash.",
-                        "Choose M-VAVE's V15 FM-1.fwsc (699,956 bytes). It is checked by its hash."));
+            fwscText.setText(fwsc != null ? t("✓ V15 oficial lista (verificada por su hash)", "✓ Official V15 ready (hash-verified)")
+                    : downloading ? t("Descargando la V15 oficial…", "Downloading the official V15…")
+                    : t("No se pudo descargar la V15 (¿sin internet?). Se reintenta sola, o elige tu FM-1.fwsc de la V15.",
+                        "Could not download V15 (no internet?). It retries by itself, or choose your V15 FM-1.fwsc."));
             fwscText.setTextColor(fwsc != null ? 0xFF2E8B57 : 0xFF1D1D1B);
-            loaderText.setText(loader != null ? t("✓ Loader de JieLi listo", "✓ JieLi loader ready")
-                    : t("Descargando el loader de JieLi (jl-uboot-tool)…", "Downloading JieLi's loader (jl-uboot-tool)…"));
+            loaderText.setText(loader != null ? t("✓ Loader de JieLi incluido", "✓ JieLi loader included")
+                    : t("✗ El loader incluido está dañado: reinstala la app.", "✗ The bundled loader is damaged: reinstall the app."));
         });
     }
 
-    private void downloadLoader() {
+    /** The official V15, downloaded once and kept; accepted only if its firmware region hash is V15's. */
+    private void downloadV15() {
+        if (fwsc != null) return;
+        downloading = true;
+        updateFileTexts();
         try {
-            HttpURLConnection c = (HttpURLConnection) new URL(RescueImage.LOADER_URL).openConnection();
+            HttpURLConnection c = (HttpURLConnection) new URL(RescueImage.V15_URL).openConnection();
             c.setConnectTimeout(15000);
-            c.setReadTimeout(15000);
+            c.setReadTimeout(30000);
             byte[] d;
             try (InputStream in = c.getInputStream()) { d = readAll(in); }
-            RescueImage.checkLoader(d);
-            try (FileOutputStream o = new FileOutputStream(loaderFile())) { o.write(d); }
-            loader = d;
+            RescueImage.checkV15(d);
+            if (fwsc == null) {
+                try (FileOutputStream o = new FileOutputStream(fwscFile())) { o.write(d); }
+                fwsc = d;
+                logLine(t("V15 descargada y verificada", "V15 downloaded and verified"));
+            }
+            downloading = false;
             updateFileTexts();
         } catch (Exception e) {
-            ui.post(() -> loaderText.setText(t("No se pudo descargar el loader (¿sin internet?). Se reintenta…",
-                    "Could not download the loader (no internet?). Retrying…")));
-            ui.postDelayed(() -> net.execute(this::downloadLoader), 10000);
+            downloading = false;
+            logLine("V15: " + e.getMessage());
+            updateFileTexts();
+            ui.postDelayed(() -> net.execute(this::downloadV15), 15000);
         }
     }
 
@@ -366,8 +381,9 @@ public class MainActivity extends Activity {
         if (boot != null) {
             if (fwsc == null || loader == null) {
                 show(t("RP2040 conectado", "RP2040 connected"),
-                        fwsc == null ? t("Elige primero el FM-1.fwsc (paso 1).", "Choose the FM-1.fwsc first (step 1).")
-                                     : t("Esperando el loader de JieLi…", "Waiting for JieLi's loader…"), 0);
+                        fwsc == null ? t("Esperando la V15 (paso 1): necesita internet la primera vez.",
+                                         "Waiting for V15 (step 1): it needs the internet the first time.")
+                                     : t("El loader incluido está dañado: reinstala la app.", "The bundled loader is damaged: reinstall the app."), 0);
                 return;
             }
             if (!permitted(boot)) return;
@@ -537,8 +553,8 @@ public class MainActivity extends Activity {
                     resetToBootsel(d);
                 } else {
                     show(t("El RP2040 no tiene la V15 dentro", "The RP2040 has no V15 inside"),
-                            t("Elige el FM-1.fwsc y pulsa \"Volver a grabar el RP2040\".",
-                              "Choose the FM-1.fwsc and press \"Reprogram the RP2040\"."), 0);
+                            t("Espera a que la V15 esté lista y pulsa \"Volver a grabar el RP2040\".",
+                              "Wait for V15 to be ready and press \"Reprogram the RP2040\"."), 0);
                 }
                 break;
             case "wait":
