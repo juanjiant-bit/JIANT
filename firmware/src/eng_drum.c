@@ -617,7 +617,7 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
     }
 }
 
-static uint8_t dx_glue;                                 /* (0.9.9-snd1) GLUE, below */
+static int16_t dx_glue __attribute__((section(".bss.tape")));   /* (V10.7.63: a knob's value, KIT 2) */                                 /* (0.9.9-snd1) GLUE, below */
 static int16_t dx_gain __attribute__((section(".bss.tape")));   /* (V10.7.63, the owner) a kit's KIT 2 KNOB 4 GAIN, 0..12 dB
                                                          * clean into its bus's knee (eng_drum.c drum_bus; the kit's DRIVE,
                                                          * P_E7, kept and playing, off the panel: SENDS's DIST the drive) */
@@ -750,9 +750,9 @@ static const engine_t ENG_DRUM = {
         {"TONE", F_PCT, 0, 127, 64, 0},
         {"DECAY", F_PCT, 0, 127, 64, 0},
         {"NOISE", F_PCT, 0, 127, 64, 0},
-        {"FM ENV", F_PCT, 0, 127, 0, 0},             /* (JIANT: was ACC; 0.6.36: was FM, a fixed FM: the FM struck
+        {"ATTACK", F_PCT, 0, 127, 0, 0},            /* (V10.7.63, the owner: KIT's KNOB 2, TUNE's place; was FM ENV) */             /* (JIANT: was ACC; 0.6.36: was FM, a fixed FM: the FM struck
                                                          * with the hit, gone with the pitch envelope) */
-        {"FOLD", F_PCT, 0, 127, 0, 0},              /* (JIANT 0.5: a wavefolder, was WARP) */
+        {"BODY", F_PCT, 0, 127, 0, 0},              /* (V10.7.63: the shell's resonator; was FOLD, WARP) */
         {"DRIVE", F_PCT, 0, 127, 0, 0},
     },
     .presets = DRUM_PRESETS,

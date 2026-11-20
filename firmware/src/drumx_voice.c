@@ -70,8 +70,7 @@ static __attribute__((noinline)) uint32_t dx_pow2(uint32_t x)
  * growing a saw's edge, rubber, metal), then 2.2 and 3.0 (noise, as most of it was: k x 4096, beta 1.2 at 6, 1.57 at 8);
  * and fed back the mean of the last two
  * outputs (the DX7's: the period-2 hunting of a one-sample loop gone: clean, no fizz) */
-static const uint16_t DX_FB_CURVE[16] = {0, 712, 2013, 3699, 5697, 7961, 10465, 13188, 16113, 19230, 22521, 25981, 29600,
-                                         33377, 37300, 41370};   /* (V10.6q: the curve on to 15, 1.98 rad; its 2.2 and 3.0 rad,
+/* (V10.7.63: FEEDBK gone, its curve with it) */   /* (V10.6q: the curve on to 15, 1.98 rad; its 2.2 and 3.0 rad,
                                                           * noise and 8 % DC, gone) */
 /* FM ENV (DRUM's E5, 0..127) -> the FM index the hit strikes with (dx_run's ix: 1 = 0.0245 rad): 3.26 (2^(6 x) - 1)
  * up to 114 (x = FM ENV / 127: 0.56 rad at 64, ~3.3 at 114: a beater, a click, a metal edge), then a line to the old
@@ -235,10 +234,13 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
                                              uint32_t n, uint32_t feedback)
 {
     int32_t q[DXP_N], p16, depth, ea0, ea1, en1, ep1, og, ng, ga, dga, gn, dgn, kd, inc, dinc, mt, cw, cx;
+    int32_t body = clamp(warp, 0, 127);
     uint32_t i, k, wave = L->mode & 3u, flt = (L->mode >> 2) & 3u, ta, tn, tp, kb, inc1, sp, gr = flt == DXF_GR, slen = 0, sinc = 0;
     tsvf_t c;
     uint32_t nf = n, ln = L >= dx_kit && L < dx_kit + 8 ? (uint32_t)(L - dx_kit) : 0u;
-    int32_t lay = (int32_t)DX_LAY_L(dx_lay[ln]), lfb = (int32_t)DX_TONE_FB(dx_tone) + (int32_t)DX_LAY_FB(dx_lay[ln]) + (int32_t)feedback;
+    int32_t lay = (int32_t)DX_LAY_L(dx_lay[ln]), lfb = 0;   /* (V10.7.63, the owner: FEEDBK "high squeals, no use": gone,
+                                                          * the kit's, the sound's, a hit's; LAYER off the panel, a kit's own) */
+    (void)feedback;
     if (!v->live && !v->trig) {
         for (i = 0; i < n; i++)
             y[i] = 0;
@@ -360,7 +362,6 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
     dinc = ((int32_t)(inc1 >> 4) * 2 - inc) / (int32_t)n;
     if (og) {                                            /* the oscillator */
         uint32_t ph = v->ph;
-        int32_t fold = clamp(warp, 0, 127);
         fm = clamp(fm, 0, 127);
         warp = fm || lfb || lay ? 0x100 : 0;            /* (FM ENV, FEEDBK, LAYER: the loop below; the flag stripped there) */
         if (cw) {                                        /* (V10.6q) the 808's cowbell: two squares at the pitch and x1.47
@@ -372,7 +373,7 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
             uint32_t ph2 = v->ph2, st = (uint32_t)inc << 4;
             int32_t u = (q[DXP_COLOR] - 64) * 520, t = u < 0 ? u + 33280 : 32767;   /* (ring 0 .. 1 up to 64, FM 0 .. 1 over it) */
             int32_t ka = (int32_t)((1u << 29) / ((st >> 8) | 1u)), kb = (ka * 2787) >> 12;   /* (the edges' gains, Q8) */
-            int32_t a = v->mo, fbk = DX_FB_CURVE[lfb > 15 ? 15 : lfb], um;
+            int32_t a = v->mo, fbk = 0, um;
             u = u < 0 ? 0 : u;
             um = u + ((fm ? dx_fm_env(fm) * v->ep >> 15 : 0) * 43);   /* (FM ENV: A's modulation struck with the hit) */
             for (i = 0; i < n; i++, inc += dinc, ga += dga) {
@@ -407,7 +408,7 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
             uint32_t ph2 = v->ph2, ratio = wave == DXW_SINE ? 8192u : DX_RATIO[wave];
             int32_t base = wave == DXW_SINE ? 0 : dx_fm_lim(q[DXP_COLOR] * 3, inc1, ratio), fe = fm ? dx_fm_lim(dx_fm_env(fm), inc1, ratio) : 0;   /* (snd1) */
             int32_t ix = base + ((fe * v->ep) >> 15), dix = ((base + ((fe * ep1) >> 15)) - ix) / (int32_t)n;
-            int32_t o = v->mo, o1 = v->mo1, fbk = DX_FB_CURVE[lfb > 15 ? 15 : lfb];   /* (FEEDBK: on its curve, snd1) */
+            int32_t o = v->mo, o1 = v->mo1, fbk = 0;
             dx_layer(v, y, n, &ph, &ph2, &o, &o1, inc, dinc, ga, dga, ix, dix, ratio, fbk, lay);   /* (0.6.49) LAYER: a second
                                                           * one at sqrt 2, FM'd by the first (V10.6q: its loop the only
                                                           * one, LAYER 0 none of it) */
@@ -423,17 +424,6 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
                                                           * 22000 again, its punch as before V10.6q) */
             for (i = 0; i < n; i++)
                 y[i] = (softclip(y[i] * 3) * dl) >> 15;
-        }
-        if (fold) {                                      /* (JIANT 0.5) FOLD: after the envelope, so it follows it */
-            int32_t g = 16 + ((fold * fold * 5) >> 10), c = g * 6144 / (8 + g);   /* (Q4: x1 .. x5.9 on fold^2; V10.6q,
-                                                          * was on fold: +5..+14 dB at the first steps); out x 1.5 g / (0.5
-                                                          * + g), Q12: x1 at the start (was x1.5 at once) */
-            for (i = 0; i < n; i++) {
-                int32_t v = clamp((y[i] * g) >> 4, -5 * 16384, 5 * 16384), a;
-                for (a = 0; a < 3; a++)
-                    v = v > 16384 ? 32768 - v : v < -16384 ? -32768 - v : v;
-                y[i] = (v * c) >> 12;
-            }
         }
     } else {
         for (i = 0; i < n; i++)
@@ -467,18 +457,22 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
     }
     if (gr && dx_scrape(v, y, n, sp, slen, sinc))      /* (V10.7.8) GR: past its last tick, the hit is over */
         ea1 = en1 = 0;
-    if (DX_TONE_BP(dx_tone) && (0xD8u >> ln) & 1u) {     /* (0.6.36) TONE's BP on the metal sounds (the hats, the rim,
-                                                          * the cowbell); (V10.6q) around the sound's own COLOR, an
-                                                          * octave under it .. over it, half dry (was 1.5 .. 9 kHz for all
-                                                          * four and the band alone: 14 dB apart, the hats darkened) */
-        int32_t b1 = v->b1, b2 = v->b2;
+    if (body) {                                          /* (V10.7.63, the owner: FOLD "a more interesting timbre") BODY:
+                                                          * the shell, a resonator a membrane's second mode over the
+                                                          * sound's pitch (x1.59; the metals a bar's, x2.76) rung by the
+                                                          * hit, the oscillator and the noise: more ring, a longer note
+                                                          * and louder as it goes up (its state TONE's BP's, gone) */
+        int32_t b1 = v->b1, b2 = v->b2, kq = 1600 - body * 11;
         tsvf_t cb;
-        tsvf_coef_k(&cb, (q[DXP_COLOR] + 2 * (int32_t)DX_TONE_BP(dx_tone) - 2) << 8, 1800);   /* (half rate: + an octave) */
-        for (i = 0; i < n; i++) {
+        tsvf_coef_k(&cb, ((((p16 + ((0xD8u >> ln) & 1u ? 281 : 128) - 1104) * 4785) >> 8) + 13909) + (14 << 8), kq);
+        for (i = 0; i < n; i++) {                        /* (its band as it rings: x Q at the centre, Q 2.6 .. 20) */
             int32_t v3 = y[i] - b2, v1 = (cb.a1 * b1 + cb.a2 * v3) >> 13, v2 = b2 + ((cb.a2 * b1 + cb.a3 * v3) >> 13);
             b1 = clamp(2 * v1 - b1, -150000, 150000);
             b2 = clamp(2 * v2 - b2, -150000, 150000);
-            y[i] = clamp((y[i] >> 1) + v1 - (v1 >> 2), -32767, 32767);   /* (its centre a little louder: the band sings) */
+            v3 = y[i] - ((y[i] * body) >> 10) + ((v1 * body) >> 7);
+            v1 = v3 < 0 ? -v3 : v3;                      /* (a knee over 20000: a kick's ring round, not cut) */
+            if (v1 > 20000) v1 = 20000 + ((softclip((v1 - 20000) * 2) * 12000) >> 15);
+            y[i] = v3 < 0 ? -v1 : v1;
         }
         v->b1 = b1;
         v->b2 = b2;

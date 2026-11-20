@@ -38,17 +38,18 @@ int main(void)
     bad += check(".. and saved again, no ACOUST block", proj_pack(&store, &r) && (at = sc_at(&store, &r)) != 0u &&
                  (store.raw[at - 3u] != 'D' || store.raw[at - 2u] != 'A' || store.raw[at - 1u] != 77));
     set_engine_of(TSEL, ENGI_DRUM);
-    for (page = 0; page < NPAGES; page++) if (str_eq(PAGES[page].title, "KIT 4")) break;
-    bad += check("KIT 4 is reachable only on DRUM", page < NPAGES && page_visible(page));
+    for (page = 0; page < NPAGES; page++) if (str_eq(PAGES[page].title, "SOUND 4")) break;   /* (V10.7.63: KIT 4, PLAY gone:
+                                                         * the KEY MAP on SOUND 4's KNOB 4) */
+    bad += check("SOUND 4 is reachable only on DRUM", page < NPAGES && page_visible(page));
     ui.home = 0; ui.page = page;
     TSEL->p[P_DKEYMODE] = 0;
-    dx_kit3_knob(1, 1);
-    bad += check("KIT 4 knob 2 edits the KEY MAP", TSEL->p[P_DKEYMODE] == 1);
-    dx_kit3_knob(0, 64);
-    bad += check("KIT 4 knob 1 does nothing", TSEL->p[P_DKEYMODE] == 1);
+    dx_knob(&PAGES[page], 3, 1);
+    bad += check("SOUND 4 knob 4 edits the KEY MAP", TSEL->p[P_DKEYMODE] == 1);
+    dx_knob(&PAGES[page], 0, 64);
+    bad += check("SOUND 4 knob 1 leaves it", TSEL->p[P_DKEYMODE] == 1);
     TSEL->p[P_DKEYMODE] = 0;
     set_engine_of(TSEL, ENGI_ANALOG);
-    bad += check("KIT 4 hidden on other engines", !page_visible(page));
+    bad += check("SOUND 4 hidden on other engines", !page_visible(page));
     bad += check("ADD kept at engine 13; no SAMPLE engine", ENGINES[13] == &ENG_ADD && eng_gone(ENGI_SAMPLE));
     printf("ACOUST retired: %s\n", bad ? "FAILED" : "passed");
     return !!bad;

@@ -936,20 +936,21 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
     if ((id >= ID_TAPE && id <= ID_LMODE) || (id >= ID_EQ0 && id < ID_EQ0 + 4u) || (id >= ID_MX0 && id < ID_MX0 + 4u))   /* (0.9.18) the LFO's MODE and PHASE;
                                                          * (snd8) the master's TAPE; (p9) its EQ */
         return page_desc_v(id, valp);
-    if (ENGINES[eng_idx(TSEL->eng_req)] == &ENG_DRUM && pg->fam == FAM_EDIT && slot == 3u &&
-        ((id == P_E7 && pg->scope == SC_ENGINE) || (id == P_DIST && pg->title[0] == 'F'))) {   /* (V10.7.63, the owner) a
-                                                         * kit's KIT 2 KNOB 4 its GAIN (its DRIVE off the panel: SENDS's
-                                                         * DIST), FILTER's its IMAGE (STEREO gone; DIST: SENDS's) */
-        static const param_desc_t GAIN_DESC = {"GAIN", F_INT, 0, 12, 0, 0};
-        *valp = id == P_E7 ? &dx_gain : &TSEL->p[P_DXIMG];
-        return id == P_E7 ? &GAIN_DESC : &DXIMG_DESC;
+    if (ENGINES[eng_idx(TSEL->eng_req)] == &ENG_DRUM && pg->fam == FAM_EDIT && pg->scope == SC_ENGINE &&
+        ((slot == 1u && (id == P_E1 || id == P_E5)) || (slot >= 2u && id >= P_E6))) {   /* (V10.7.63, the owner) a kit's
+                                                         * KIT  MORPH ATTACK TONE DECAY (TUNE off the panel, kept)
+                                                         * KIT 2 NOISE BODY GLUE GAIN (KIT 3, BUS, gone: its GLUE here; its
+                                                         * DRIVE off the panel: SENDS's DIST) */
+        static const param_desc_t GLUE_DESC = {"GLUE", F_INT, 0, 15, 0, 0}, GAIN_DESC = {"GAIN", F_INT, 0, 12, 0, 0};
+        if (id == P_E1) { *valp = &TSEL->p[P_E5]; return track_desc(TSEL, P_E5); }
+        if (id == P_E5) { *valp = &TSEL->p[P_E6]; return track_desc(TSEL, P_E6); }
+        *valp = id == P_E6 ? &dx_glue : &dx_gain;
+        return id == P_E6 ? &GLUE_DESC : &GAIN_DESC;
     }
-    if (id == P_SIMG && pg->fam == FAM_EDIT && pg->title[0] == 'P' && pg->title[4] == 0 &&
-        ENGINES[eng_idx(TSEL->eng_req)] == &ENG_DRUM) {   /* (V10.7.60) PLAY's IMAGE: a synth's; a kit's is EDIT > STEREO
-                                                         * (P_SIMG there is its KICK level). (V10.7.62, the owner: KIT 4
-                                                         * was KEY MAP alone, three cards empty) a kit's KEY MAP here */
-        *valp = &TSEL->p[P_DKEYMODE];
-        return &DKEYMODE_DESC;
+    if (ENGINES[eng_idx(TSEL->eng_req)] == &ENG_DRUM && pg->fam == FAM_EDIT && slot == 3u && id == P_DIST &&
+        pg->title[0] == 'F') {                          /* (V10.7.63) a kit's FILTER: its IMAGE (STEREO gone; DIST: SENDS's) */
+        *valp = &TSEL->p[P_DXIMG];
+        return &DXIMG_DESC;
     }
     if (id == G_LOADP) {                              /* (0.6.30) the same */
         *valp = &load_ui;

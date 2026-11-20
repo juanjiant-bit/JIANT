@@ -62,12 +62,11 @@ static const nv_t CE_FM6[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("
                               NV("OPERATOR", 0, 2, 2), NV("OP ENV", 0, 2, 2), NV("OPERATOR 2", 0, 2, 2), NV("PLAY", 0, 3, 1),
                               NV("MORE", 0, 3, 1)};
 static const ng_t CG_FM6[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}, {"PLAY", 0}};
-static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0, 0), NV("KIT 3", "BUS", 0, 0),   /* (V10.7.62: KIT 4's KEY MAP on PLAY) */
+static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0, 0),   /* (V10.7.63, the owner: 8 pages) */
                               NV("SOUND", 0, 1, 2), NV("SOUND 2", 0, 1, 2), NV("SOUND 3", 0, 1, 2), NV("SOUND 4", 0, 1, 2),
-                              NV("X-MOD", "CROSS MOD", 2, 1), NV("FILTER", 0, 2, 1), NV("PLAY", 0, 2, 1)};   /* (V10.7.63, the owner:
-                                                         * "too many pages": 13 -> 10; LEVELS' levels on SOUND, STEREO's IMAGE
-                                                         * on FILTER, KIT 3 is the BUS) */   /* (codex/coherence: PLAY, was VOICE; in TONE,
-                                                         * a kit's one page of it) */
+                              NV("X-MOD", "CROSS MOD", 2, 1), NV("FILTER", 0, 2, 1)};   /* ("too many pages":
+                                                         * 13 -> 8; LEVELS' levels on SOUND, STEREO's IMAGE on FILTER, BUS's
+                                                         * GLUE on KIT 2, PLAY's KEY MAP on SOUND 4) */
 static const ng_t CG_DRM[] = {{"KIT", 0}, {"SOUND", 0}, {"TONE", 0}};
 static const nv_t CE_DIG[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("PLAY", 0, 1, 1),
                               NV("MORE", 0, 1, 1), NV("OP1 ENV", 0, 2, 2), NV("OP2 ENV", 0, 2, 2), NV("OP3 ENV", 0, 2, 2),

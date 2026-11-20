@@ -10,6 +10,8 @@ static uint8_t fx_mon;                                  /* (V10.7.59) ui_layer.c
  * ~600 B of flash); its end the "" after the last */
 static const char KNOB_HINT[] =
     "GAIN" "\0" "KIT LOUDER, CLEAN, +12 DB" "\0"
+    "ATTACK" "\0" "EVERY HIT'S CLICK" "\0"
+    "GLUE" "\0" "KIT BUS COMPRESSOR" "\0"
     "LEADER" "\0" "KEYS OR A TRACK PLAY THE ROLES" "\0"
     "CUT" "\0" "FILTER CUTOFF" "\0"
     "RES" "\0" "FILTER RESONANCE" "\0"

@@ -1324,9 +1324,9 @@ static int test_dxlay(void)
     ui_power_on();
     memcpy(dx_kit, DX_KIT_DEF, sizeof dx_kit);
     ok &= dxlay_hash(DV_SNARE, 0) == dxlay_hash(DV_SNARE, 0);
-    ok &= dxlay_hash(DV_SNARE, 12) != dxlay_hash(DV_SNARE, 0) && dxlay_hash(DV_BELL, 0x30) != dxlay_hash(DV_BELL, 0);
+    ok &= dxlay_hash(DV_SNARE, 12) != dxlay_hash(DV_SNARE, 0) && dxlay_hash(DV_BELL, 0x30) == dxlay_hash(DV_BELL, 0);
     ok &= dxlay_hash(DV_HATC, 15) != dxlay_hash(DV_HATC, 6);
-    bad += check("DRUM LAYER / FEEDBK: each sound's, 0 as it was, more another sound", ok);
+    bad += check("DRUM LAYER: each sound's (a kit's, off the panel), 0 as it was; FEEDBK gone (V10.7.63)", ok);
     memcpy(dx_lay, DX_LAY_DEF, sizeof dx_lay);
     dx_lay[DV_BELL] = 0x5Fu;
     project_capture(&proj_scratch);
@@ -1527,13 +1527,13 @@ static int test_dx_glue(void)
     uint32_t k;
     ui_power_on();
     dx_glue = 0;
-    for (k = 0; k < 20u; k++)
-        dx_kit3_knob(3u, 1);
-    ok = dx_glue == 15u;
-    for (k = 0; k < 7u; k++)
-        dx_kit3_knob(3u, -1);
-    ok &= dx_glue == 8u && DX_TONE_FB(dx_tone) == 0u && dx_hands == 0u;
-    bad += check("DRUM-X GLUE on KIT 3 KNOB 4: 0 .. 15, the other knobs untouched", ok);
+    set_engine_of(TSEL, ENGI_DRUM);
+    go_title("EDIT 2"); frame();                       /* (V10.7.63: BUS gone, GLUE on KIT 2's KNOB 3) */
+    for (k = 0; k < 20u; k++) { turn(EN_K3, 1); frame(); }
+    ok = dx_glue == 15;
+    for (k = 0; k < 7u; k++) { turn(EN_K3, -1); frame(); }
+    ok &= dx_glue == 8 && dx_hands == 0u;
+    bad += check("DRUM-X GLUE on KIT 2 KNOB 3 (V10.7.63): 0 .. 15, the other knobs untouched", ok);
     project_capture(&before);
     ok = proj_pack(&a, &before) && proj_import(&after, &a, sizeof a) && after.dx_hands >> 4 == 8u;
     dx_glue = 0;
@@ -4741,25 +4741,26 @@ static int test_edit_cycle(void)
 #endif
     {   /* #97: a DRUM track's lane levels on EDIT > LANES (KICK SNARE CLAP HATCL) and LANES 2 (HATOP TOM RIM BELL) */
         /* (161d079, 2026-10-28: KIT 4, the KEY MAP, after KIT 3 in the KIT group) */
-        static const char *const CH_K[] = {"KIT", "KIT 2", "BUS", "SOUND", "SOUND 2", "SOUND 3", "SOUND 4", "CROSS MOD",
-                                           "FILTER", "PLAY"};   /* (V10.7.63, the owner: 13 -> 10; KIT 3 the BUS, LEVELS and
-                                                         * STEREO gone) */
+        static const char *const CH_K[] = {"KIT", "KIT 2", "SOUND", "SOUND 2", "SOUND 3", "SOUND 4", "CROSS MOD",
+                                           "FILTER"};   /* (V10.7.63, the owner: 13 -> 8; BUS, PLAY, LEVELS, STEREO gone) */
         static const char *const TP_K[] = {"SOUND", "CROSS MOD"};
         set_engine_of(TSEL, ENGI_DRUM);
-        bad += check("0.9.2 EDIT chain (DRUM): KIT (KIT KIT 2 BUS) . SOUND (1..4) . TONE (CROSS MOD FILTER PLAY) (V10.7.63)",
+        bad += check("0.9.2 EDIT chain (DRUM): KIT (KIT KIT 2) . SOUND (1..4) . TONE (CROSS MOD FILTER) (V10.7.63)",
                      chain_walk(B_EDIT, CH_K, NELEM(CH_K), TP_K, NELEM(TP_K)));
-        {   /* (0.6.58) KIT 3 turns BP and FEEDBK, (0.7.8) KNOB 3 the CLAP's HANDS, never IMAGE; STEREO's KNOB 1 is IMAGE */
-            uint8_t t0 = dx_tone, h0 = dx_hands;
+        {   /* (V10.7.63) the CLAP's SOUND 2 KNOB 4 its HANDS (BUS gone), never IMAGE; FILTER's KNOB 4 is IMAGE */
+            uint8_t t0 = dx_tone, h0 = dx_hands, l0 = dx_ui_lane;
             int16_t i0 = TSEL->p[P_DXIMG];
-            go_title("KIT 3"); frame();
-            turn(EN_K3, 3); frame();
+            go_title("SOUND 2"); frame();
+            dx_ui_lane = DV_CLAP; dx_ui_seen = last_note;
+            turn(EN_K4, 3); frame();
             ok = TSEL->p[P_DXIMG] == i0 && dx_tone == t0 && dx_hands > h0;
+            dx_ui_lane = l0;
             dx_hands = h0;
             go_title("FILTER"); frame();
             turn(EN_K4, 5); frame();
             ok &= TSEL->p[P_DXIMG] > i0 && dx_tone == t0;
             TSEL->p[P_DXIMG] = i0;
-            bad += check("KIT 3: KNOB 3 turns HANDS (0.7.9), not IMAGE; FILTER: KNOB 4 turns IMAGE (V10.7.63)", ok);
+            bad += check("SOUND 2 on the CLAP: KNOB 4 turns HANDS, not IMAGE; FILTER: KNOB 4 turns IMAGE (V10.7.63)", ok);
         }
         go_title("SOUND"); frame();
         dx_ui_lane = 5; dx_ui_seen = last_note;        /* (TOM) */
@@ -8561,19 +8562,22 @@ static int test_dx_sound(void)
     go_title("SOUND");
     turn(EN_K3, -5);                                   /* (V10.7.63: DECAY on SOUND's KNOB 3) */
     ok &= dx_kit[2].b[DXP_DECAY] < DX_KIT_DEF[2].b[DXP_DECAY];
-    bad += check("  SOUND 3: MODE steps the wave / filter / SNAP; SOUND: DECAY the side's decay", ok);
+    bad += check("  SOUND 3: WAVE steps the wave (V10.7.63); SOUND: DECAY the side's decay", ok);
     {   /* (V10.7.8) MODE past the 24 of before: the filter GR's eight (the guiro's scrape), PMOD's card its SCRAPE; every
          * one of the 32 back to itself */
         uint8_t m0 = dx_kit[2].mode;
         uint32_t ix;
         go_title("SOUND 3");
-        for (ix = 0; ix < 40u; ix++) turn(EN_K2, 1);    /* (a step a detent) */
-        ok = ((dx_kit[2].mode >> 2) & 3u) == DXF_GR && (dx_kit[2].mode & 3u) == DXW_BELL && dx_kit_ok(dx_kit);
-        for (ix = 0; ix < 32u; ix++) ok &= dx_mode_ix(dx_mode_of(ix)) == ix;
+        for (ix = 0; ix < 40u; ix++) turn(EN_K2, 1);    /* (a step a detent; V10.7.63: WAVE, FILTER, P.ENV each its knob) */
+        for (ix = 0; ix < 40u; ix++) turn(EN_K3, 1);
+        ok = ((dx_kit[2].mode >> 2) & 3u) == DXF_GR && (dx_kit[2].mode & 3u) == DXW_BELL && ((dx_kit[2].mode >> 4) & 1u) &&
+             dx_kit_ok(dx_kit);
+        for (ix = 0; ix < 3u; ix++) turn(EN_K3, -1);    /* (GR+ GR HP+ HP) */
+        ok &= ((dx_kit[2].mode >> 2) & 3u) == DXF_HP && !((dx_kit[2].mode >> 4) & 1u) && (dx_kit[2].mode & 3u) == DXW_BELL;
         go_title("SOUND");
         frame();                                        /* (SOUND's card drawn with GR's SCRAPE) */
         dx_kit[2].mode = m0;
-        bad += check("  SOUND 3: MODE on to the filter GR (32 modes, each its own), the kit valid", ok);
+        bad += check("  SOUND 3: WAVE to BELL, FILTER on to GR + SNAP and back, each its own (V10.7.63), the kit valid", ok);
         go_title("SOUND 3");
     }
     key_down(key_at(1, 3)); frame(); key_up(key_at(1, 3)); frame(); frame();   /* a key on the track: its lane */
@@ -13002,7 +13006,7 @@ static int test_engvis(void)
     }
     {   /* DRUM-X: KIT's beings (EDIT 1) and SOUND 1..4; KIT 2, KIT 3, X-MOD keep the colony; a hit squashes its being, a
          * ratchet's hits each */
-        static const char *const PG[] = {"EDIT 1", "SOUND", "SOUND 4", "EDIT 2", "KIT 3", "X-MOD"};
+        static const char *const PG[] = {"EDIT 1", "SOUND", "SOUND 4", "EDIT 2", "EDIT 2", "X-MOD"};   /* (V10.7.63: KIT 3 gone) */
         uint32_t k, h0, n = 0;
         int ran[6];
         vxt_case(ENGI_DRUM, "DRUM-X", "EDIT 1", 2, &mv, &st);
@@ -13080,7 +13084,7 @@ static const old_lv_t OLD_LV[] = {
     {FAM_EDIT, 2, 0, {"FOCUS"}},
     {FAM_EDIT, 0, 1, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 1, {"FILTER", "PLAY", "MORE"}},
     {FAM_EDIT, 2, 1, {"OPERATOR", "OP ENV", "OPERATOR 2"}},
-    {FAM_EDIT, 0, 2, {"EDIT 1", "EDIT 2", "KIT 3"}}, {FAM_EDIT, 1, 2, {"X-MOD", "FILTER", "PLAY"}},   /* (V10.7.63: STEREO LEVELS LEVELS 2 gone) */
+    {FAM_EDIT, 0, 2, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 2, {"X-MOD", "FILTER"}},   /* (V10.7.63: STEREO LEVELS BUS PLAY gone) */
     {FAM_EDIT, 2, 2, {"SOUND", "SOUND 2", "SOUND 3", "SOUND 4"}},
     {FAM_ENV, 0, 9, {"ENV"}},   /* (codex/coherence: TRACKS DEST gone) */ {FAM_ENV, 1, 9, {"ENV", "ENV DEST"}}, {FAM_ENV, 2, 9, {"STAGE"}},
     {FAM_LFO, 0, 9, {"MOD"}}, {FAM_LFO, 1, 9, {"LFO", "LFO 2", "LFO DEST"}}, {FAM_LFO, 2, 9, {"MSEQ", "MSEQ 2"}},

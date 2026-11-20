@@ -22,25 +22,6 @@ static void dx_follow(void)
     }
 }
 
-/* the mode as one value 0..31: wave x 6 + filter x 2 + SNAP, and back; (V10.7.8) the filter GR's eight after them */
-static uint32_t dx_mode_ix(uint32_t m)
-{
-    return ((m >> 2) & 3u) == DXF_GR ? 24u + (m & 3u) * 2u + ((m >> 4) & 1u) : (m & 3u) * 6u + ((m >> 2) & 3u) * 2u + ((m >> 4) & 1u);
-}
-static uint8_t dx_mode_of(uint32_t ix)
-{
-    return ix >= 24u ? (uint8_t)((ix - 24u) / 2u | DXF_GR << 2 | (ix & 1u) << 4) : (uint8_t)(ix / 6u | (ix % 6u / 2u) << 2 | (ix & 1u) << 4);
-}
-static void dx_mode_name(char *b, uint32_t m)        /* "FM BP+" (b: 8 bytes) */
-{
-    static const char *const W[4] = {"SIN", "FM", "MTL", "BEL"}, *const F[4] = {"LP", "BP", "HP", "GR"};
-    str_cpy(b, W[m & 3u], 8);
-    str_cpy(b + str_len(b), " ", 8 - str_len(b));
-    str_cpy(b + str_len(b), F[(m >> 2) & 3u], 8 - str_len(b));
-    if ((m >> 4) & 1u)
-        str_cpy(b + str_len(b), "+", 8 - str_len(b));
-}
-
 /* (JIANT 0.6.54) the pages, the whole kit first, then a sound: KIT (EDIT 1), KIT 2 (EDIT 2), KIT 3 (TONE's BP and FEEDBK,
  * IMAGE: dx_kit3_*), X-MOD, FILTER, LEVELS; then SOUND 1..4, KNOB 1 the sound on each:
  *   (V10.7.63, the owner: "too many pages") SOUND LANE PITCH DECAY LEVEL     SOUND 3  LANE MODE PM.TYPE SEND
@@ -74,24 +55,30 @@ static __attribute__((noinline)) void dx_knob(const page_t *pg, uint32_t k, int3
         dx_lane_turn(s);
         return;
     }
-    if (pn == 8u) {                                     /* (V10.7.63) SOUND 4: SIDE, LAYER, FEEDBK */
-        uint8_t *ly = &dx_lay[dx_ui_lane & 7u];
-        int32_t la = (int32_t)DX_LAY_L(*ly), fb = (int32_t)DX_LAY_FB(*ly);
-        if (k == 1u) { dx_ui_side = s > 0; return; }
-        if (k == 2u) la = clamp(la + (s > 0 ? 1 : -1), 0, 15);
-        else fb = clamp(fb + (s > 0 ? 1 : -1), 0, 15);
-        *ly = (uint8_t)(la | fb << 4);
+    if (pn == 8u) {                                     /* (V10.7.63, the owner) SOUND 4: SIDE, SEND, the kit's KEY MAP
+                                                         * (PLAY gone; LAYER, FEEDBK off the panel) */
+        if (k == 1u) dx_ui_side = s > 0;
+        else if (k == 2u)
+            dx_snd[dx_ui_lane & 7u] = dx_send_of(clamp(dx_send_ix(dx_snd[dx_ui_lane & 7u]) + (s > 0 ? 1 : -1), 0, 48));
+        else
+            TSEL->p[P_DKEYMODE] = (int16_t)clamp(TSEL->p[P_DKEYMODE] + (s > 0 ? 1 : -1), 0, 9);
         return;
     }
-    if (pn == 3u) {                                     /* SOUND 3: MODE, the pitch modulation's type, (V10.7.63) SEND (its
-                                                         * DRIVE off the panel: the track's DIST, SENDS) */
-        if (k == 1u)
-            L->mode = (uint8_t)((L->mode & 0xE0u) |
-                                (dx_mode_of((uint32_t)clamp((int32_t)dx_mode_ix(L->mode) + (s > 0 ? 1 : -1), 0, 31)) & 0x1Fu));
-        else if (k == 2u)
-            L->mode = (uint8_t)((L->mode & ~0x60u) | (uint32_t)clamp((int32_t)((L->mode >> 5) & 3u) + (s > 0 ? 1 : -1), 0, 3) << 5);
-        else
-            dx_snd[dx_ui_lane & 7u] = dx_send_of(clamp(dx_send_ix(dx_snd[dx_ui_lane & 7u]) + (s > 0 ? 1 : -1), 0, 48));
+    if (pn == 3u) {                                     /* (V10.7.63, the owner: "MODE, PM.TYPE: not understood at all")
+                                                         * SOUND 3: WAVE, FILTER (LP BP HP GR, each with SNAP: its noise a
+                                                         * click), P.ENV (the pitch envelope's shape) */
+        uint32_t m = L->mode, f = ((m >> 2) & 3u) * 2u + ((m >> 4) & 1u);
+        int32_t d = s > 0 ? 1 : -1;
+        if (k == 1u) m = (m & ~3u) | (uint32_t)clamp((int32_t)(m & 3u) + d, 0, 3);
+        else if (k == 2u) {
+            f = (uint32_t)clamp((int32_t)f + d, 0, 7);
+            m = (m & ~0x1Cu) | (f >> 1) << 2 | (f & 1u) << 4;
+        } else m = (m & ~0x60u) | (uint32_t)clamp((int32_t)((m >> 5) & 3u) + d, 0, 3) << 5;
+        L->mode = (uint8_t)m;
+        return;
+    }
+    if (pn == 2u && k == 3u && (dx_ui_lane & 7u) == DV_CLAP) {   /* (V10.7.63) the CLAP's: HANDS (BUS's, gone) */
+        dx_hands = (uint8_t)clamp((int32_t)dx_hands + (s > 0 ? 1 : -1), 0, 15);
         return;
     }
     if (pn == 2u) {                                     /* (V10.7.63) SOUND 2: NOISE COLOR PMOD (the side's) */
@@ -172,32 +159,30 @@ static void dx_cards(const page_t *pg)
     }
     str_cpy(ln, DX_LANE_ABBR[dx_ui_lane & 7u], sizeof ln);   /* KNOB 1: the sound (SOUND, SOUND 2, SOUND 4 its side too: the
                                                          * values') */
-    if (pn != 3u) {
+    if (pn < 3u) {
         ln[2] = ' ';
         ln[3] = dx_ui_side ? 'B' : 'A';
         ln[4] = 0;
     }
     hot_gauge_column(0, "SOUND", ln, (int32_t)(dx_ui_lane & 7u) * 1000 / 7);
-    if (pn == 8u) {                                     /* (V10.7.63) SOUND 4: SIDE LAYER FEEDBK */
-        uint32_t ly = dx_lay[dx_ui_lane & 7u], la = DX_LAY_L(ly), fb = DX_LAY_FB(ly);
-        hot_gauge_column(1, "SIDE", dx_ui_side ? "B" : "A", dx_ui_side ? 1000 : 0);
-        fmt_int(val, (int32_t)la);
-        gauge_column(2, "LAYER", la ? val : "OFF", la ? VAL(2u) : T_DIM, (int32_t)la * 1000 / 15);
-        fmt_int(val, (int32_t)fb);
-        gauge_column(3, "FEEDBK", fb ? val : "OFF", fb ? VAL(3u) : T_DIM, (int32_t)fb * 1000 / 15);
-        return;
-    }
-    if (pn == 3u) {                                     /* SOUND 3: MODE PM.TYPE SEND */
-        static const char *const PM[4] = {"DECAY", "LONG", "NOISE", "SINE"};
-        uint32_t sn = dx_snd[dx_ui_lane & 7u];
+    if (pn == 8u) {                                     /* (V10.7.63) SOUND 4: SIDE SEND KEY MAP */
+        uint32_t sn = dx_snd[dx_ui_lane & 7u], km = (uint32_t)TSEL->p[P_DKEYMODE] % 10u;
         int32_t ix = dx_send_ix(sn);
         char un[8];
-        dx_mode_name(val, L->mode);
-        hot_gauge_column(1, "MODE", val, (int32_t)dx_mode_ix(L->mode) * 1000 / 31);
-        hot_gauge_column(2, "PM.TYPE", PM[(L->mode >> 5) & 3u], (int32_t)((L->mode >> 5) & 3u) * 333);
+        hot_gauge_column(1, "SIDE", dx_ui_side ? "B" : "A", dx_ui_side ? 1000 : 0);
         fmt_int(un, ix ? ((ix - 1) % 16 + 1) * 100 / 16 : 0);
         str_cpy(un + str_len(un), "%", 2);
-        draw_column(3, "SEND", BUS[DXS_BUS(sn)], ix ? un : "", ix ? VAL(3u) : T_DIM, ix * 1000 / 48, ICON_MIX);
+        draw_column(2, "SEND", BUS[DXS_BUS(sn)], ix ? un : "", ix ? VAL(2u) : T_DIM, ix * 1000 / 48, ICON_MIX);
+        hot_gauge_column(3, "KEY MAP", N_DKEYMODE[km], (int32_t)km * 1000 / 9);
+        return;
+    }
+    if (pn == 3u) {                                     /* SOUND 3: WAVE FILTER P.ENV */
+        static const char *const PM[4] = {"DECAY", "LONG", "NOISE", "SINE"}, *const W[4] = {"SINE", "FM", "METAL", "BELL"},
+                                 *const F[4] = {"LP", "BP", "HP", "GUIRO"};
+        uint32_t m = L->mode, f = (m >> 2) & 3u;
+        hot_gauge_column(1, "WAVE", W[m & 3u], (int32_t)(m & 3u) * 333);
+        draw_column(2, "FILTER", F[f], (m >> 4) & 1u ? "SNAP" : "", VAL(2u), (int32_t)(f * 2u + ((m >> 4) & 1u)) * 1000 / 7, ICON_TONE);
+        hot_gauge_column(3, "P.ENV", PM[(m >> 5) & 3u], (int32_t)((m >> 5) & 3u) * 333);
         return;
     }
     if (pn == 2u) {                                     /* SOUND 2: NOISE COLOR PMOD */
@@ -205,6 +190,11 @@ static void dx_cards(const page_t *pg)
         hot_gauge_column(1, "NOISE", val, v[DXP_NOISE] * 1000 / 127);
         fmt_int(val, v[DXP_COLOR]);
         hot_gauge_column(2, "COLOR", val, v[DXP_COLOR] * 1000 / 127);
+        if ((dx_ui_lane & 7u) == DV_CLAP) {             /* (V10.7.63) the CLAP's HANDS */
+            fmt_int(val, (int32_t)dx_hands);
+            gauge_column(3, "HANDS", dx_hands ? val : "OFF", dx_hands ? VAL(3u) : T_DIM, (int32_t)dx_hands * 1000 / 15);
+            return;
+        }
         fmt_int(val, v[DXP_PMOD]);
         hot_gauge_column(3, ((L->mode >> 2) & 3u) == DXF_GR ? "SCRAPE" : "PMOD", val, v[DXP_PMOD] * 1000 / 127);   /* (V10.7.8: GR's) */
         return;

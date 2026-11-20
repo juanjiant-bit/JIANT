@@ -637,8 +637,12 @@ static int page_visible(uint32_t i)
     if (PAGES[i].graph == GR_PATS || PAGES[i].graph == GR_CHANCE)   /* (0.6.37) PHRASES, a step's CHANCE: out of the */
         return !ui.home && ui.page == i;               /* SEQ pages' cycle (only where code put the screen) */
     if (PAGES[i].graph == GR_DXSND || PAGES[i].graph == GR_DXIMG)   /* (0.6.48: IMAGE; V10.49: STEREO a synth's too) */
-        return trk_eng(TSEL) == ENGI_DRUM && !(PAGES[i].title[3] == ' ' && PAGES[i].title[4] == '4') &&
+        return trk_eng(TSEL) == ENGI_DRUM && !(PAGES[i].title[0] == 'K' && PAGES[i].title[3] == ' ') &&   /* (V10.7.63: KIT 3
+                                                         * BUS gone too: GLUE on KIT 2, HANDS the CLAP's SOUND 2) */
                !(PAGES[i].title[0] == 'S' && PAGES[i].title[1] == 'T');   /* (V10.7.63: STEREO gone, its IMAGE on FILTER) */
+    if (PAGES[i].fam == FAM_EDIT && PAGES[i].id[0] == P_VOICE && trk_eng(TSEL) == ENGI_DRUM)
+        return 0;                                       /* (V10.7.63, the owner) PLAY not a kit's (POLY GLIDE PRIO): its
+                                                         * KEY MAP on SOUND 4 */
     if (PAGES[i].id[0] == P_LN0 || PAGES[i].id[0] == P_LN4)
         return 0;                                       /* (V10.7.63: LEVELS gone, a sound's LEVEL on SOUND) */   /* (V10.7.62:
                                                          * KIT 4 gone, its KEY MAP on PLAY; kept in the table: its index) */              /* (codex/coherence: a synth's IMAGE on PLAY 2) */

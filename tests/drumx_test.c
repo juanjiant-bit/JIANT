@@ -10,7 +10,7 @@
  *    falls (more crossings in its first 20 ms than in 100..120 ms).
  * 4. the closed hat chokes the open one (below -60 dB of its level within 10 ms).
  * 5. the knobs: MRPH on KNOB 1, NOIS moves every lane's noise.
- * 5w. FOLD: every lane another sound at 127, never at full scale.
+ * 5w. BODY (V10.7.63, was FOLD): every lane rings another way at 127, the kick and the tom fuller, never at full scale.
  * 5b. the group mutes (dx_mute): a muted group's hits are silent (any kit), the others still sound; muting a
  *    ringing group fades it out: its voice ends within 10 ms, the output 26 dB under the unmuted hit's, no step
  *    larger than the hit's own; unmuting sounds again.
@@ -314,13 +314,15 @@ int main(int argc, char **argv)
               "snare tail RMS %.0f / %.0f", r0, r1);
     }
 
-    /* 5w: FOLD 0 the patch as it is; 127 another sound (every lane), no overflow, still ends */
+    /* 5w (V10.7.63): BODY (E6, was FOLD) 0 the patch as it is; 127 the shell rung: every lane moved, the kick and the
+     * tom fuller (+2 dB or more), no overflow, still ends */
     {
         uint32_t lw, ok2 = 1;
-        double d = 0;
+        double d = 0, e0, e1, kt = 9;
         for (lw = 0; lw < 8u; lw++) {
             int32_t a0[FS / 8], pk = 0;
             track_t *t = kitx(64, 64);
+            same_noise(t);
             strike(t, lw, FS / 8u);
             memcpy(a0, buf, sizeof a0);
             t = kitx(64, 64);
@@ -328,15 +330,18 @@ int main(int argc, char **argv)
             ok2 &= !strike(t, lw, MAXN) || 1;
             t = kitx(64, 64);
             t->p[P_E6] = 127;
+            same_noise(t);
             strike(t, lw, FS / 8u);
-            for (i = 0, d = 0; i < FS / 8u; i++) {
+            for (i = 0, d = 0, e0 = e1 = 0; i < FS / 8u; i++) {
                 d += fabs((double)buf[i] - a0[i]);
+                e0 += (double)a0[i] * a0[i];
+                e1 += (double)buf[i] * buf[i];
                 pk = abs(buf[i]) > pk ? abs(buf[i]) : pk;
             }
-            ok2 &= (lw == DV_CLAP || d / (FS / 8u) > 100) && pk < 32700;   /* (V10.6q: the noise the same each hit now:
-                                                          * the clap, no oscillator, no fold; the hats' folded metal filtered) */
+            if (lw == DV_KICK || lw == DV_TOM) kt = e1 / (e0 + 1) < kt ? e1 / (e0 + 1) : kt;
+            ok2 &= d > 0 && pk < 32700;
         }
-        check("FOLD 127: every lane a different sound, under full scale", ok2, 0);
+        check("BODY 127: every lane rung, the kick and the tom fuller, under full scale", ok2 && kt > 1.4, "kick / tom x%.2f", kt);
     }
 
     /* 5f (JIANT 0.3): FM (E5, once ACC): 0 the patch as it is; its bands each another timbre, every lane, under full
@@ -377,26 +382,28 @@ int main(int argc, char **argv)
             }
         }
         check("FM ENV (E5, 0.6.36): the attack struck, the tail as the kit has it, under full scale, still ends", ok2 && ok3, 0);
-        {   /* (0.6.36) TONE: BP moves the metal sounds only (hats, rim, cowbell), FEEDBK every sound; under full scale */
+        {   /* (V10.7.63, the owner: FEEDBK "high squeals, no use", BP "not working well") a project's TONE byte (BP,
+             * FEEDBK) and a sound's FEEDBK nibble change nothing */
             static int32_t r0[FS / 8];
             uint32_t l2;
-            int okb = 1, okf = 1;
+            int same = 1;
+            double dw = 0;
             for (l2 = 0; l2 < 8u; l2++) {
-                double dbp = 0, dfb = 0, e0 = 0;
-                int32_t pk2 = 0;
-                int metal = l2 == DV_HATC || l2 == DV_HATO || l2 == DV_RIM || l2 == DV_BELL;
-                dx_tone = 0; strike(kitx(64, 64), l2, FS / 8u); memcpy(r0, buf, sizeof r0);
-                dx_tone = 8; strike(kitx(64, 64), l2, FS / 8u);
-                for (i = 0; i < FS / 8u; i++) { dbp += fabs((double)buf[i] - r0[i]); e0 += fabs((double)r0[i]); }
-                dx_tone = 12u << 4; strike(kitx(64, 64), l2, FS / 8u);
-                for (i = 0; i < FS / 8u; i++) { dfb += fabs((double)buf[i] - r0[i]); pk2 = abs(buf[i]) > pk2 ? abs(buf[i]) : pk2; }
-                if (getenv("DX_TONE")) printf("lane %u bp %.3f fb %.3f pk %d\n", l2, dbp / (e0 + 1), dfb / (e0 + 1), pk2);
-                if (metal) okb &= dbp / (e0 + 1) > 0.1;
-                else if (l2 == DV_KICK || l2 == DV_TOM) okb &= dbp / (e0 + 1) < 0.05;   /* (the noisy ones: another each hit) */
-                okf &= (dfb / (e0 + 1) > 0.05 || l2 == DV_CLAP) && pk2 < 32700;   /* (the clap: no oscillator) */
+                double dd = 0, e0 = 0, db = 0;
+                uint8_t ly = dx_lay[l2];
+                track_t *t = kitx(64, 64);
+                dx_tone = 0; same_noise(t); strike(t, l2, FS / 8u); memcpy(r0, buf, sizeof r0);
+                t = kitx(64, 64);
+                same_noise(t); strike(t, l2, FS / 8u);   /* (the same again: what moves anyway, the buses' tails) */
+                for (i = 0; i < FS / 8u; i++) db += fabs((double)buf[i] - r0[i]);
+                t = kitx(64, 64);
+                dx_tone = 12u << 4 | 8u; dx_lay[l2] = (uint8_t)(ly | 15u << 4); same_noise(t); strike(t, l2, FS / 8u);
+                for (i = 0; i < FS / 8u; i++) { dd += fabs((double)buf[i] - r0[i]); e0 += fabs((double)r0[i]); }
+                same &= dd <= db * 1.5 + e0 * 0.01;    /* (BP moved the metals > 0.1 of it, FEEDBK every sound > 0.05) */
+                dw = (dd - db) / (e0 + 1) > dw ? (dd - db) / (e0 + 1) : dw;
+                dx_tone = 0; dx_lay[l2] = ly;
             }
-            dx_tone = 0;
-            check("TONE (0.6.36): BP on the hats, rim and cowbell only; FEEDBK moves every sound, under full scale", okb && okf, 0);
+            check("BP, FEEDBK gone (V10.7.63): the kit's TONE and a sound's FEEDBK change nothing", same, "%.4f at most", dw);
         }
         {   /* (0.9.9-snd1) FEEDBK and FM ENV on curves (drumx_voice.c DX_FB_CURVE, dx_fm_env, dx_fm_lim): monotonic, most
              * of the travel musical, the extreme in the last steps; the tom's brightness (the first difference's energy
@@ -406,13 +413,11 @@ int main(int argc, char **argv)
             double br[2][5];
             uint32_t k2, kk;
             int mono = 1, okc = 1;
-            for (k2 = 1; k2 < 16u; k2++)
-                okc &= DX_FB_CURVE[k2] > DX_FB_CURVE[k2 - 1u];
             for (k2 = 1; k2 < 128u; k2++)
                 okc &= dx_fm_env((int32_t)k2) >= dx_fm_env((int32_t)k2 - 1);
-            okc &= DX_FB_CURVE[15] < 45000 && dx_fm_env(114) * 2 < dx_fm_env(127) && dx_fm_env(64) * 4 < 64 * 3;   /* (V10.6q:
+            okc &= dx_fm_env(114) * 2 < dx_fm_env(127) && dx_fm_env(64) * 4 < 64 * 3;   /* (V10.6q:
                                                           * FEEDBK's noise zone gone, FM ENV's middle heard) */
-            for (kk = 0; kk < 2u; kk++)
+            for (kk = 1; kk < 2u; kk++)
                 for (k2 = 0; k2 < 5u; k2++) {
                     track_t *t = kitx(64, 64);
                     double e = 0, d = 0;
@@ -431,13 +436,11 @@ int main(int argc, char **argv)
                         mono = 0;
                     dx_tone = 0;
                 }
-            check("FEEDBK, FM ENV on curves (0.9.9-snd1, V10.6q): monotonic, FEEDBK under 2 rad, FM ENV's extreme in the last steps", okc,
-                  "FEEDBK beta %.2f at 8, %.2f at 12, %.2f at 15; FM ENV index %.2f rad at 64, %.2f at 114, %.2f at 127",
-                  DX_FB_CURVE[8] * M_PI / 65536, DX_FB_CURVE[12] * M_PI / 65536, DX_FB_CURVE[15] * M_PI / 65536,
+            check("ATTACK (FM ENV) on its curve (0.9.9-snd1, V10.6q): monotonic, its extreme in the last steps", okc,
+                  "index %.2f rad at 64, %.2f at 114, %.2f at 127",
                   dx_fm_env(64) * 0.02454, dx_fm_env(114) * 0.02454, dx_fm_env(127) * 0.02454);
-            check("  the tom brighter as each rises, half the knob well under the top", mono && br[0][2] < br[0][4] * 0.5 &&
-                  br[1][2] < br[1][4] * 0.5, "FEEDBK 0 4 8 12 15: %.4f %.4f %.4f %.4f %.4f; FM ENV 0 32 64 95 127: %.4f %.4f %.4f %.4f %.4f",
-                  br[0][0], br[0][1], br[0][2], br[0][3], br[0][4], br[1][0], br[1][1], br[1][2], br[1][3], br[1][4]);
+            check("  the tom brighter as it rises, half the knob well under the top", mono && br[1][2] < br[1][4] * 0.5,
+                  "ATTACK 0 32 64 95 127: %.4f %.4f %.4f %.4f %.4f", br[1][0], br[1][1], br[1][2], br[1][3], br[1][4]);
             check("  FM ENV's index under Nyquist: a C2 hit's as it is, an 8 kHz one's eased",
                   dx_fm_lim(200, pitch_inc(36u * 16u), 4096u) >= 195 && dx_fm_lim(200, pitch_inc(120u * 16u), 4096u) < 100, "%d %d",
                   dx_fm_lim(200, pitch_inc(36u * 16u), 4096u), dx_fm_lim(200, pitch_inc(120u * 16u), 4096u));
