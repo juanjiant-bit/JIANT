@@ -46,16 +46,17 @@ desconocido" si Android lo pide.
    | rojo (5 V) | — | — |
 
    Enchufa el USB-C de esos hilos al FM-1.
-4. **Mantén pulsado BOOT** en el RP2040 y conéctalo al móvil con el adaptador OTG. Acepta el aviso de acceso USB
-   (marca "usar siempre" para que no vuelva a salir).
+4. **Conecta el RP2040 al móvil** con el adaptador OTG y acepta el aviso de acceso USB (marca "usar siempre" para
+   que no vuelva a salir). No hace falta pulsar BOOT si la placa trae MicroPython, un programa de demostración, el
+   firmware de rescate o el FM-1 Transporter: la app la pasa sola a modo de grabación. Si aun así no la detecta,
+   desconéctala y vuelve a enchufarla **manteniendo BOOT** pulsado.
 5. La app **graba el RP2040 sola** (unos 15 segundos, con barra de progreso) y lo reinicia.
 6. Cuando la app diga **"Enciende el FM-1 ahora"**, enciéndelo. Verás "Reparando el FM-1…" con el progreso
    (1–3 minutos). **No desconectes nada.**
 7. **"¡Listo!"** → apaga el FM-1, quita los cables y vuelve a encenderlo: arranca con lo que elegiste (JIANT o
    V15). Desde ahí puedes cambiar de firmware con el instalador web de JIANT (incluido volver a la V16 oficial).
 
-Si el RP2040 ya tiene el firmware de rescate (o el FM-1 Transporter), no hace falta pulsar BOOT: la app lo
-pasa a modo de grabación ella misma. Para reparar otro FM-1 basta con desconectar y volver a conectar el RP2040.
+Para reparar otro FM-1 basta con desconectar y volver a conectar el RP2040.
 
 ## Si algo sale mal
 
@@ -63,6 +64,7 @@ pasa a modo de grabación ella misma. Para reparar otro FM-1 basta con desconect
 |---|---|
 | "Permite el acceso USB" | Acepta el aviso de Android. |
 | "No se pudo grabar el RP2040" | Desconéctalo y vuelve a conectarlo con BOOT pulsado. Prueba otro adaptador OTG. |
+| "No responde al reinicio" | El programa que trae la placa no admite el reinicio automático: conéctala con BOOT pulsado. |
 | "Apaga el FM-1" | El FM-1 estaba encendido con otro firmware. Apágalo, reconecta el RP2040, enciéndelo. |
 | Error: "Se perdió la conexión…" | Revisa los cables; prueba a intercambiar verde y blanco. Batería cargada. |
 | Error: "Esto no parece un FM-1" | No se escribió nada. Revisa que sea un FM-1. |
@@ -119,4 +121,5 @@ the official V15 (bundled too, hash-checked); JieLi's loader is bundled. Pick th
 plug the RP2040 into the phone with an OTG adapter. The app programs the board over PICOBOOT, reboots it, and
 then shows the rescue's progress read from the board: "switch the FM-1 on now", "repairing…", "done". Only
 the differing sectors of `0x4000..0x92FFF` are written, each verified; the boot head and user data are never
-touched. Version 0.1, **not yet tested on hardware**.
+touched. A board running something else (MicroPython, a demo, a Pico SDK program) is sent to BOOTSEL by the
+app (reset interface or 1200-baud touch), so BOOT is usually not needed. Version 0.1, **not yet tested on hardware**.

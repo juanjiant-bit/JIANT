@@ -204,11 +204,11 @@ public class MainActivity extends Activity {
         text(c3, t("3 · Conectar", "3 · Connect"), 16, true);
         text(c3, t("• FM-1 APAGADO. Cable rojo sin conectar.\n"
                 + "• Conecta los 3 cables del RP2040 al USB-C del FM-1.\n"
-                + "• Mantén BOOT en el RP2040 y enchúfalo a este móvil con un adaptador OTG.\n"
+                + "• Enchufa el RP2040 a este móvil con un adaptador OTG (si no lo detecta: con BOOT pulsado).\n"
                 + "• La app hace el resto y te dice cuándo encender el FM-1.",
                 "• FM-1 OFF. Red wire unconnected.\n"
                 + "• Connect the RP2040's 3 wires to the FM-1's USB-C.\n"
-                + "• Hold BOOT on the RP2040 and plug it into this phone with an OTG adapter.\n"
+                + "• Plug the RP2040 into this phone with an OTG adapter (if it is not seen: holding BOOT).\n"
                 + "• The app does the rest and tells you when to switch the FM-1 on."), 14, false);
 
         LinearLayout c4 = card(root);
@@ -525,11 +525,79 @@ public class MainActivity extends Activity {
             }
             return;
         }
+        UsbDevice other = otherRp2040();
+        if (other != null) {
+            // An RP2040 with some other firmware (MicroPython, a demo, a Pico SDK program): send it to BOOTSEL
+            // ourselves, once per plug-in, so BOOT does not have to be held.
+            if (!permitted(other)) return;
+            if (kicked.add(other.getDeviceName())) {
+                show(t("RP2040 con otro programa", "RP2040 with another program"),
+                        t("Pasándolo a modo de grabación…", "Switching it to programming mode…"), 0);
+                usb.execute(() -> kickToBootsel(other));
+            } else {
+                show(t("No responde al reinicio", "It does not answer the reset"),
+                        t("Desconéctalo, mantén BOOT pulsado y vuelve a enchufarlo.",
+                          "Unplug it, hold BOOT and plug it in again."), 0);
+            }
+            return;
+        }
         if (monitoring == null) {
             show(t("Conecta el RP2040", "Plug in the RP2040"),
-                    t("Mantén BOOT en el RP2040 y enchúfalo al móvil con un adaptador OTG.",
-                      "Hold BOOT on the RP2040 and plug it into the phone with an OTG adapter."), 0);
+                    t("Enchúfalo al móvil con un adaptador OTG. Si la app no lo detecta, desconéctalo y vuelve a "
+                      + "enchufarlo manteniendo BOOT pulsado.",
+                      "Plug it into the phone with an OTG adapter. If the app does not see it, unplug it and plug "
+                      + "it in again holding BOOT."), 0);
         }
+    }
+
+    private final Set<String> kicked = new HashSet<>();
+
+    /** A Raspberry Pi VID device that is neither the boot ROM nor the rescue firmware. */
+    private UsbDevice otherRp2040() {
+        for (UsbDevice d : usbManager.getDeviceList().values()) {
+            if (d.getVendorId() == Picoboot.VID && d.getProductId() != Picoboot.PID_BOOTSEL
+                    && d.getProductId() != PID_RESCUE) return d;
+        }
+        return null;
+    }
+
+    /**
+     * Reboots a running RP2040 into BOOTSEL: the Raspberry Pi reset interface (Pico SDK programs,
+     * picotool's way), else the "1200 baud touch" on each CDC port (MicroPython, Arduino, Pico SDK).
+     * Runs on the USB thread; the board drops off the bus if it worked.
+     */
+    private void kickToBootsel(UsbDevice d) {
+        UsbDeviceConnection c = usbManager.openDevice(d);
+        if (c == null) return;
+        try {
+            boolean done = false;
+            for (int i = 0; i < d.getInterfaceCount() && !done; i++) {
+                UsbInterface f = d.getInterface(i);
+                if (f.getInterfaceClass() == UsbConstants.USB_CLASS_VENDOR_SPEC && f.getInterfaceSubclass() == 0
+                        && f.getInterfaceProtocol() == 1) {
+                    c.claimInterface(f, true);
+                    logLine(t("Reinicio a BOOT por la interfaz de reset", "Reset to BOOT via the reset interface"));
+                    c.controlTransfer(0x41, 0x01, 0, f.getId(), null, 0, 1000);     // RESET_REQUEST_BOOTSEL
+                    done = true;
+                }
+            }
+            for (int i = 0; i < d.getInterfaceCount() && !done; i++) {
+                UsbInterface f = d.getInterface(i);
+                if (f.getInterfaceClass() != UsbConstants.USB_CLASS_COMM) continue;
+                c.claimInterface(f, true);
+                byte[] coding = {(byte) 0xB0, 0x04, 0, 0, 0, 0, 8};                  // 1200 baud, 8N1
+                logLine(t("Reinicio a BOOT con 1200 baudios (puerto ", "Reset to BOOT with 1200 baud (port ")
+                        + f.getId() + ")");
+                c.controlTransfer(0x21, 0x22, 0x0003, f.getId(), null, 0, 500);     // DTR + RTS on
+                c.controlTransfer(0x21, 0x20, 0, f.getId(), coding, coding.length, 500);   // SET_LINE_CODING
+                c.controlTransfer(0x21, 0x22, 0x0000, f.getId(), null, 0, 500);     // DTR off: the "touch"
+            }
+        } catch (Exception e) {
+            logLine("reset: " + e.getMessage());
+        } finally {
+            c.close();
+        }
+        sleep(2500);
     }
 
     /** Programs the board in BOOTSEL over PICOBOOT. Runs on the USB thread. */
