@@ -9,6 +9,7 @@ static uint8_t fx_mon;                                  /* (V10.7.59) ui_layer.c
 /* (V10.60) a knob's meaning, by its label: "LABEL" "\0" "HINT" "\0" in one string (V10.7.62, BYTE's: no pointers,
  * ~600 B of flash); its end the "" after the last */
 static const char KNOB_HINT[] =
+    "GAIN" "\0" "KIT LOUDER, CLEAN, +12 DB" "\0"
     "LEADER" "\0" "KEYS OR A TRACK PLAY THE ROLES" "\0"
     "CUT" "\0" "FILTER CUTOFF" "\0"
     "RES" "\0" "FILTER RESONANCE" "\0"

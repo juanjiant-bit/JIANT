@@ -618,6 +618,9 @@ static void drum_render(track_t *t, voice_t *v, int32_t *out, uint32_t n, const 
 }
 
 static uint8_t dx_glue;                                 /* (0.9.9-snd1) GLUE, below */
+static int16_t dx_gain __attribute__((section(".bss.tape")));   /* (V10.7.63, the owner) a kit's KIT 2 KNOB 4 GAIN, 0..12 dB
+                                                         * clean into its bus's knee (eng_drum.c drum_bus; the kit's DRIVE,
+                                                         * P_E7, kept and playing, off the panel: SENDS's DIST the drive) */
 static int32_t glue_g[NTRK];                            /* .. a DRUM track's gain at the last block's end, Q15 (0: rest) */
 static __attribute__((noinline)) void drum_glue(uint32_t ti, int32_t *out, uint32_t n, uint32_t side);
 /* (JIANT 0.6.16) the kit's sum, once a block (voice.c track_render): DRV x1..x4 into the soft clip, its level kept,
@@ -631,11 +634,15 @@ static __attribute__((noinline)) void drum_bus(const track_t *t, int32_t *out, u
         mk = (int32_t)((19661u << 15) / (uint32_t)softclip((19661 * g) >> 12));
         k = (g * mk) >> 15;                              /* (the curve's slope at 0: a quiet sum's gain) */
     }
+    static const uint16_t GN[13] = {4096, 4596, 5157, 5786, 6492, 7284, 8173, 9170, 10289, 11544, 12953, 14533, 16306};
+    int32_t gn = GN[(uint32_t)dx_gain % 13u];           /* (V10.7.63) GAIN, Q12: 0 .. +12 dB */
     for (i = 0; i < n; i++) {
         int32_t s = out[i] >> 1, y = s;
         if (g)                                           /* (0.6.19: s held to +-131071: s * g fits; several loud hits
                                                          * at once with DRV high wrapped it: a full-scale click) */
             y = (softclip((clamp(s, -131071, 131071) * g) >> 12) * mk) >> 15;
+        if (gn != 4096)                                 /* (GAIN: clean up to the knee, its top soft) */
+            y = (clamp(y, -131071, 131071) * gn) >> 12;
         y = soft_knee(y, 24000);
         out[i] = y << 1;
         if (side && (g || y != s)) {                     /* (0.7.9: the curve flat here, nothing to scale) */                                      /* (0.7.8) IMAGE: what each side gives up through the same

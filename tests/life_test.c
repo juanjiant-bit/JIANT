@@ -64,6 +64,22 @@ static double kick_song(uint32_t blocks, double *kit)   /* T3's follower summed 
     *kit = k;
     return e;
 }
+static double kit_energy(int g)                  /* (V10.7.63) a kick on a kit alone at GAIN g */
+{
+    static int32_t o[2 * CTL];
+    double e = 0;
+    uint32_t b, j;
+    ui_power_on();
+    set_engine_of(&trk[0], ENGI_DRUM); trk[0].engine = trk[0].eng_req;
+    for (b = 1; b < NTRK; b++) trk[b].p[P_MUTE] = 1;
+    dx_gain = (int16_t)g; frames(64); song.master_q12 = 2048;
+    trk_note_on(&trk[0], 36, 100);
+    for (b = 0; b < 600u; b++) {
+        mix_block(o, CTL);
+        for (j = 0; j < 2u * CTL; j++) e += (double)o[j] * o[j];
+    }
+    return e;
+}
 int main(void)
 {
     int bad = 0, ok, q;
@@ -171,6 +187,21 @@ int main(void)
         ok &= chord_build(t, 64, o) == 3u && o[0] == 64 && o[1] == 69 && o[2] == 74;   /* iii: fourths */
         bad += check("CHORD SETS: POP I add9, ii 7th; JAZZ V 9th; QUART fourths, all in the key", ok);
         t->p[P_CHRD] = 0;
+    }
+    {   /* (V10.7.63) a kit's GAIN (KIT 2 KNOB 4): the kit louder (its DRIVE off the panel, still playing), kept with the
+         * project ('K' 'G') */
+        project_t p;
+        double e0g = kit_energy(0), e1g = kit_energy(12);
+        ok = e1g > e0g * 3.0;                           /* (+12 dB: x16 in power, the knee taking its top) */
+        dx_gain = 7;
+        project_capture(&p);
+        ok &= p.dx_gain == 7u && !project_save(1);
+        dx_gain = 0;
+        project_load(1); frames(4);
+        ok &= dx_gain == 7;
+        if (!ok) printf("  gain: energy %g -> %g, loaded %d\n", e0g, e1g, dx_gain);
+        bad += check("DRUM-X GAIN: +12 dB the kit louder; saved with the project and back", ok);
+        dx_gain = 0;
     }
     {   /* a project: LIFE off writes no block; on, 'L' 'F' kept and back after a load */
         uint32_t n0, n1;

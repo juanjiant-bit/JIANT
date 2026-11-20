@@ -936,6 +936,14 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
     if ((id >= ID_TAPE && id <= ID_LMODE) || (id >= ID_EQ0 && id < ID_EQ0 + 4u) || (id >= ID_MX0 && id < ID_MX0 + 4u))   /* (0.9.18) the LFO's MODE and PHASE;
                                                          * (snd8) the master's TAPE; (p9) its EQ */
         return page_desc_v(id, valp);
+    if (ENGINES[eng_idx(TSEL->eng_req)] == &ENG_DRUM && pg->fam == FAM_EDIT && slot == 3u &&
+        ((id == P_E7 && pg->scope == SC_ENGINE) || (id == P_DIST && pg->title[0] == 'F'))) {   /* (V10.7.63, the owner) a
+                                                         * kit's KIT 2 KNOB 4 its GAIN (its DRIVE off the panel: SENDS's
+                                                         * DIST), FILTER's its IMAGE (STEREO gone; DIST: SENDS's) */
+        static const param_desc_t GAIN_DESC = {"GAIN", F_INT, 0, 12, 0, 0};
+        *valp = id == P_E7 ? &dx_gain : &TSEL->p[P_DXIMG];
+        return id == P_E7 ? &GAIN_DESC : &DXIMG_DESC;
+    }
     if (id == P_SIMG && pg->fam == FAM_EDIT && pg->title[0] == 'P' && pg->title[4] == 0 &&
         ENGINES[eng_idx(TSEL->eng_req)] == &ENG_DRUM) {   /* (V10.7.60) PLAY's IMAGE: a synth's; a kit's is EDIT > STEREO
                                                          * (P_SIMG there is its KICK level). (V10.7.62, the owner: KIT 4

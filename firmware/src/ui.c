@@ -637,7 +637,10 @@ static int page_visible(uint32_t i)
     if (PAGES[i].graph == GR_PATS || PAGES[i].graph == GR_CHANCE)   /* (0.6.37) PHRASES, a step's CHANCE: out of the */
         return !ui.home && ui.page == i;               /* SEQ pages' cycle (only where code put the screen) */
     if (PAGES[i].graph == GR_DXSND || PAGES[i].graph == GR_DXIMG)   /* (0.6.48: IMAGE; V10.49: STEREO a synth's too) */
-        return trk_eng(TSEL) == ENGI_DRUM && !(PAGES[i].title[3] == ' ' && PAGES[i].title[4] == '4');   /* (V10.7.62:
+        return trk_eng(TSEL) == ENGI_DRUM && !(PAGES[i].title[3] == ' ' && PAGES[i].title[4] == '4') &&
+               !(PAGES[i].title[0] == 'S' && PAGES[i].title[1] == 'T');   /* (V10.7.63: STEREO gone, its IMAGE on FILTER) */
+    if (PAGES[i].id[0] == P_LN0 || PAGES[i].id[0] == P_LN4)
+        return 0;                                       /* (V10.7.63: LEVELS gone, a sound's LEVEL on SOUND) */   /* (V10.7.62:
                                                          * KIT 4 gone, its KEY MAP on PLAY; kept in the table: its index) */              /* (codex/coherence: a synth's IMAGE on PLAY 2) */
     if (PAGES[i].scope == SC_TRACK && PAGES[i].id[0] >= P_LN0 && PAGES[i].id[0] <= P_LN7)
         return trk_eng(TSEL) == ENGI_DRUM;
