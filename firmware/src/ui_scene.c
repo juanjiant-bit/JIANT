@@ -159,7 +159,7 @@ static void graph_scene(void)
     }
     {   /* (V10.7.63, the owner: "confusing") what the picked track's role does, in words; then the keys */
         static const char *const RD[SC_N] = {"PLAYS ITS OWN SEQUENCE", "HOLDS EACH NOTE'S CHORD", "ARPEGGIATES EACH NOTE'S CHORD",
-                                             "A BASS LINE UNDER THE NOTES", "A LINE ABOVE THE NOTES", "EACH KEY A NEW BEAT (PLAY TO HEAR IT)"};
+                                             "A BASS LINE UNDER THE NOTES", "A LINE ABOVE THE NOTES", "EACH KEY A NEW BEAT, PLAYING WHILE HELD"};
         uint32_t r = scn_role[sc_trk % NTRK] % SC_N;
         char b[48] = "T1 ";
         b[1] = (char)('1' + sc_trk % NTRK);

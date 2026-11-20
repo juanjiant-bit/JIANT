@@ -13964,6 +13964,22 @@ static int test_scene(void)
         ok = sc_desc(1, &vp)->max == 3 && sc_trk == 3u;
         bad += check("SCENE with four tracks: KNOB 2 T1..T4, never an asleep track (V10.7.64)", ok);
     }
+    {   /* (V10.7.64, the owner: "every part with its key") the kit's DRUM, stopped: its beat loops while a key is held,
+         * silent after the key-up */
+        static int32_t o[2 * CTL];
+        double e1 = 0, e2 = 0;
+        uint32_t b, j;
+        for (i = 0; i < NTRK; i++) scn_role[i] = SC_KEEP;
+        scn_role[0] = SC_DRUM; scn_on = 1; song.master_q12 = 4096;
+        key_down(white(9)); frame();
+        for (b = 0; b < 1400u; b++) { if (!(b % 11u)) frame(); mix_block(o, CTL); if (b >= 700u) for (j = 0; j < 2u * CTL; j++) e1 += (double)o[j] * o[j]; }
+        key_up(white(9)); frame();
+        for (b = 0; b < 1400u; b++) { if (!(b % 11u)) frame(); mix_block(o, CTL); if (b >= 1000u) for (j = 0; j < 2u * CTL; j++) e2 += (double)o[j] * o[j]; }
+        ok = e1 > 1e9 && e2 < e1 / 1000.0;
+        if (!ok) printf("  scene drum: held %g, after %g\n", e1, e2);
+        bad += check("SCENE DRUM stopped: the beat loops while a key is held, silent after (V10.7.64)", ok);
+        scn_role[0] = SC_KEEP; scn_on = 0;
+    }
     return bad;
 }
 /* (V10.24) SAVE > PRESETS: KNOB 1 plays each sound as it passes; OCT- brings back the one from before the browse, OCT+

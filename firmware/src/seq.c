@@ -1635,14 +1635,8 @@ static __attribute__((noinline)) void sc_track(uint32_t i, uint32_t k, uint32_t 
     uint32_t j, n;
     uint8_t o[KB_CH + 1];
     if (drum_track(t)) {                                /* (V10.6j) the kit's DRUM: a beat of its own for the key */
-        if (scn_role[i] == SC_DRUM) {
+        if (scn_role[i] == SC_DRUM)
             scn_dreq = (uint8_t)(k + 1u);
-            if (!song.playing && rec) {                 /* (V10.7.64, the owner: "a key: nothing sounds") stopped, the
-                                                         * key's kick heard at once; the beat with PLAY */
-                input_on(t, DRUM_LANE_NOTE[0], vel);
-                sl[0] = (uint8_t)(DRUM_LANE_NOTE[0] + 1u);
-            }
-        }
         return;
     }
     if (!scn_role[i] || scn_role[i] == SC_DRUM || root > 127u)   /* (DRUM: a kit's alone; stuck notes: a key QUANT WHITE
@@ -1707,6 +1701,33 @@ static __attribute__((noinline)) void scene_follow_off(void)
             }
 }
 static void (*volatile scene_foff_fp)(void) = scene_follow_off;   /* (seq_stop, events_block: RAM code's reach) */
+/* (V10.7.64, the owner: "every part with its key") SCENE's DRUM stopped: while a key is held its beat loops at the
+ * kit's step length (from its first step once the key's beat is written: sc_beat), let go it stops; with PLAY the
+ * kit's own sequence plays it */
+static uint32_t scn_dpos __attribute__((section(".pool"))), scn_dstep __attribute__((section(".pool")));
+static __attribute__((noinline)) void scene_drum_tick(uint32_t n)
+{
+    uint32_t i, l, h;
+    track_t *t;
+    if (scn_on != 1u || !scn_keys || song.playing || scn_dreq) {   /* (no key, playing, or the beat not yet written) */
+        if (!scn_keys || song.playing) scn_dpos = scn_dstep = 0;
+        return;
+    }
+    for (i = 0; i < trk_live && i < NTRK && !(drum_track(&trk[i]) && scn_role[i] == SC_DRUM); i++) {}
+    if (i >= trk_live || i >= NTRK) return;
+    t = &trk[i];
+    if (!scn_dpos) {                                    /* a step's hits */
+        h = t->step[scn_dstep & 15u].hit;
+        for (l = 0; l < NLANE; l++)
+            if ((h >> l) & 1u) {
+                trk_note_on(t, DRUM_LANE_NOTE[l], (scn_dstep & 3u) ? 90u : 112u);
+                trk_note_off(t, DRUM_LANE_NOTE[l]);
+            }
+    }
+    scn_dpos += n;
+    if (scn_dpos >= div_samples((uint32_t)t->p[P_SDIV])) { scn_dpos = 0; scn_dstep++; }
+}
+static void (*volatile scene_dtick_fp)(uint32_t) = scene_drum_tick;
 static __attribute__((noinline)) void scene_follow(track_t *lt, uint32_t note, uint32_t vel)
 {
     uint32_t i, li = trk_index(lt) % NTRK;
@@ -3519,6 +3540,8 @@ static __attribute__((noinline)) void panic_block(void)   /* (mo_block, before e
 static void events_block(uint32_t n)
 {
     scn_blk++;                                      /* (V10.7.63: SCENE's chord steps, one lead a block) */
+    if (scn_keys | scn_dpos)                        /* (V10.7.64) SCENE's DRUM looping while a key is held */
+        scene_dtick_fp(n);
     if (scn_frel) {                                 /* (V10.7.63) SCENE changed: what a track led let go */
         scn_frel = 0;
         scene_foff_fp();
