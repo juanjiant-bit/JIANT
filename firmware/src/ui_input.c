@@ -2678,6 +2678,7 @@ static void ui_input(void)
     ui_input_frame();
     if (!ui_preview_ok() && (preview_req || preview_left)) preview_req = PREVIEW_CANCEL;
     eu_tick();                                          /* (V10.16) EUCLID's MUTATE, on the bar */
+    gen_tick();                                         /* (V10.7.66) GEN on the bar, ENTRY BUILD */
     scale_link();                                       /* (JIANT 0.4) one scale for every melodic track (after the
                                                          * frame's edits) */
 }

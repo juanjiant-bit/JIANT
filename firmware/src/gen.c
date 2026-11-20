@@ -40,9 +40,10 @@ static struct {
     uint8_t amt[GP_N];                                  /* 0 OFF .. 100, GA_AUTO the genre's */
     uint8_t complex, swing, human;                      /* 0..100 (swing: GA_AUTO the genre's) */
     uint8_t page, hot;                                  /* the GEN screen's page, its last knob */
+    uint8_t key, entry;                                 /* (V10.7.66, Hollusion) KEY 0 NEW 1 KEEP; ENTRY 0 ALL 1 BUILD */
     uint32_t sig;                                       /* the settings of the last piece made (OCT+ again: a new seed) */
     char last[20];                                      /* the last piece: "HOUSE 0421" */
-} gp = {GEN_EXPLORE, 1, 50, 1, {GA_AUTO, GA_AUTO, GA_AUTO, GA_AUTO, GA_AUTO}, 50, GA_AUTO, 30, 0, 0, 0, ""};
+} gp = {GEN_EXPLORE, 1, 50, 1, {GA_AUTO, GA_AUTO, GA_AUTO, GA_AUTO, GA_AUTO}, 50, GA_AUTO, 30, 0, 0, 0, 0, 0, ""};
 
 /* (V10.7.39) the cost model of gcpu_est (below, gen_make's), on CPU TEST's scale (instructions a sample on the host: its
  * song 3083): a track its engine's own cost (in eighths), the voices the piece keeps sounding GCPU_VOX each, the reverb's
@@ -2618,6 +2619,7 @@ static int8_t dice_force_style = -1, dice_force_energy = -1;   /* (a film's scri
  * order): the key, the energy and the amounts, the progression, the loop, the plan, the bass's archetype. SEQ + SELECT's
  * too (dice_seq: a part where no piece of the generator plays). (V10.6y) In the Bluetooth segment (BTAPP_FN: the app
  * slot full), called only once bt_hw_seg() said it is this build's: gen_go, dice_seq and trackgen_make ask first */
+static int16_t gkey_rt, gkey_sc = -1;                   /* (V10.7.66) KEY KEEP's key (gen_make, gen_pick) */
 BTAPP_FN static void gen_pick(void)
 {
     const ggenre_t *g = gs.g;
@@ -2648,6 +2650,16 @@ BTAPP_FN static void gen_pick(void)
         for (d = 0, c = 0; c < 12u && d < 7u; c++) if ((m >> c) & 1u) gs.sc[d++] = (uint8_t)c;
         if (gx.on && !(gx.odd & GXO_SCALE)) gs.pal = GX_PAL[gr() % NELEM(GX_PAL)];   /* (V10.6n: a gapped line over a
                                                          * common mode, never over an exotic one) */
+        if (gp.key && gkey_sc >= 0) {                   /* (V10.7.66) KEY KEEP: the first melodic track's key and mode,
+                                                         * as gen_make found it (a mode of seven; the dice drawn as
+                                                         * ever: the rest the same) */
+            m = SCALE_MASK[(uint32_t)gkey_sc % NELEM(SCALE_MASK)];
+            for (d = cnt = 0; d < 12u; d++) cnt += (m >> d) & 1u;
+            if (cnt == 7u && gkey_sc != 10) {
+                gs.root = gkey_rt; gs.scale = gkey_sc; gs.pal = 0x7Fu;
+                for (d = 0, c = 0; c < 12u && d < 7u; c++) if ((m >> c) & 1u) gs.sc[d++] = (uint8_t)c;
+            }
+        }
     }
     gs.energy = dice_force_energy >= 0 ? (uint32_t)dice_force_energy * 50u : gp.energy;
     gs.complex = gp.complex;
@@ -2778,6 +2790,9 @@ static __attribute__((noinline)) void gen_make(void)
     const ggenre_t *g;
     uint32_t k, dr = NTRK, nlive = trk_live < NTRK ? trk_live : NTRK, nmel, drums, next, wet;
     if (gls.u) { gls_prep(); goto parts; }            /* (FROM LOOP: the loop's song, gen_loop.c) */
+    for (k = 0; k < nlive && ENGINES[trk[k].eng_req % NENGINES]->oneshot; k++) {}
+    gkey_rt = k < nlive ? trk[k].p[P_ROOT] : 0;         /* (V10.7.66 KEY KEEP: the key before gen_clean) */
+    gkey_sc = k < nlive ? trk[k].p[P_SCALE] : -1;
     gen_clean();                                        /* (0.9.9-gen1) from NEW PROJECT's state, nothing of before */
     /* the choices from the seed: the genre (RANDOM), the root, the scale, the progression, the bass */
     gseed(GS_PICK);
@@ -3109,12 +3124,35 @@ static __attribute__((noinline)) void gen_new_seed(void)
 }
 /* OCT+ on the GEN screen: the piece; the same settings again, or the first press since power-on (V10.6l: it was always
  * EXPLORE 0001, the same odd piece after every power-on), a new seed first */
+static uint8_t gen_wait;                                /* (V10.7.66, Hollusion) a piece asked for while it plays: made
+                                                         * when the bar ends (gen_tick) */
+static uint32_t gen_wbar;
+static void gst_begin(void);                            /* (project.c) ENTRY BUILD: the tracks in, one a bar */
+static void gst_tick(void);
 static void gen_press(void)
 {
-    if (!gp.sig || gp.sig == gen_sig()) gen_new_seed();
-    gen_go();
+    if (!gen_wait) {
+        if (!gp.sig || gp.sig == gen_sig()) gen_new_seed();
+        if (song.playing) {                             /* (the bar it plays finishes first; the seed shown is the one) */
+            gen_wait = 1;
+            gen_wbar = bar_n;
+            ui_message("GENE: NEXT BAR");
+            return;
+        }
+    }
+    {
+        uint32_t pl = song.playing;                     /* (gen_go stops it; it plays again from the next block) */
+        gen_wait = 0;
+        gen_go();
+        if (gp.entry && pl) gst_begin();
+    }
     gsr.thrown = 0;                                     /* (a throw gen_go did not make: never a later piece's) */
     gp.sig = gen_sig();
+}
+static void gen_tick(void)                              /* (every UI frame) */
+{
+    if (gen_wait && (!song.playing || bar_n != gen_wbar)) gen_press();
+    gst_tick();
 }
 /* (the old name: tests, the films, the renders) a new throw: any genre (RANDOM, as it always was: the screen's dice is
  * EXPLORE), a new seed (the screen's settings otherwise) */
@@ -3261,8 +3299,8 @@ static const char *dice_seq(track_t *t)
 }
 
 /* ------------------------------------------------------------------------------------------- the GEN screen --- */
-static const char *const GEN_LBL[3][4] BTAPP_RO = {{"GENRE", "SEED", "ENERGY", "FORM"}, {"DRUMS", "BASS", "CHORDS", "ARP"},
-                                          {"LEAD", "COMPLEX", "SWING", "HUMAN"}};
+static const char *const GEN_LBL[4][4] BTAPP_RO = {{"GENRE", "SEED", "ENERGY", "FORM"}, {"DRUMS", "BASS", "CHORDS", "ARP"},
+                                          {"LEAD", "COMPLEX", "SWING", "HUMAN"}, {"KEY", "ENTRY", "", ""}};
 static const char *const GEN_FORM[4] BTAPP_RO = {"LOOP", "PARTS", "SONG", "MY LOOP"};   /* (FROM LOOP: gen_loop.c) */
 static uint8_t gen_fresh;                               /* (0.6.96) the screen's first frame: the body cleared once */
 static void gen_open(void)
@@ -3284,7 +3322,7 @@ static uint8_t gen_genre_next(uint32_t g, int32_t s)   /* (V10.6n) EXPLORE, RAND
     pos = (pos + (s > 0 ? 1u : GEN_NPOS - 1u)) % GEN_NPOS;
     return (uint8_t)(pos ? pos - 1u : GEN_EXPLORE);
 }
-static void gen_knob(uint32_t k, int32_t s)
+BTAPP_FN static __attribute__((noinline)) void gen_knob_bt(uint32_t k, int32_t s)   /* (V10.7.66: in the segment, its room) */
 {
     uint32_t p = gp.page;
     gp.hot = (uint8_t)k;
@@ -3297,6 +3335,8 @@ static void gen_knob(uint32_t k, int32_t s)
         else gp.form = (uint8_t)clamp((int32_t)gp.form + (s > 0 ? 1 : -1), 0, 3);
     } else if (p == 1u) {
         gen_amt_turn(&gp.amt[k], s);
+    } else if (p == 3u) {                               /* (V10.7.66) KEY NEW / KEEP, ENTRY ALL / BUILD */
+        if (k < 2u) (&gp.key)[k] = s > 0;               /* (key, entry: side by side) */
     } else {
         if (k == 0u) gen_amt_turn(&gp.amt[GP_LEAD], s);
         else if (k == 1u) gp.complex = (uint8_t)clamp((int32_t)gp.complex + s * 5, 0, 100);
@@ -3305,18 +3345,20 @@ static void gen_knob(uint32_t k, int32_t s)
     }
     ui.force = 1;
 }
-static uint32_t gen_page(void) { return gp.page % 3u; }
+static void gen_knob(uint32_t k, int32_t s) { if (bt_hw_seg()) gen_knob_bt(k, s); }
+static uint32_t gen_page(void) { return gp.page % 4u; }
 static void gen_page_put(uint32_t p)                     /* (0.9.2) GEN 1..3: HOME's pages (ui_lens.c nav_go) */
 {
-    if (gp.page != p % 3u)
+    if (gp.page != p % 4u)
         gp.hot = 0xFF;
-    gp.page = (uint8_t)(p % 3u);
+    gp.page = (uint8_t)(p % 4u);
     ui.force = 1;
 }
-BTAPP_FN static void gen_value(uint32_t p, uint32_t k, char *b)
+static void gen_value(uint32_t p, uint32_t k, char *b)   /* (V10.7.66: out of the segment, its room) */
 {
     uint32_t v;
     b[0] = 0;
+    if (p == 3u) { if (k < 2u) str_cpy(b, k ? (gp.entry ? "BUILD" : "ALL") : (gp.key ? "KEEP" : "NEW"), 16); return; }
     if (p == 0u) {
         if (k == 0u) { str_cpy(b, gp.genre == GEN_EXPLORE ? "EXPLORE" : gp.genre ? GENRE[(gp.genre - 1u) % NGENRE].name : "RANDOM", 16); return; }
         if (k == 1u) { b[0] = (char)('0' + gp.seed / 1000u % 10u); b[1] = (char)('0' + gp.seed / 100u % 10u); b[2] = (char)('0' + gp.seed / 10u % 10u); b[3] = (char)('0' + gp.seed % 10u); b[4] = 0; return; }
@@ -3340,7 +3382,7 @@ BTAPP_FN static void gen_cards_bt(void)
     uint32_t k;
     char v[16];
     for (k = 0; k < 4u; k++) {
-        uint32_t p = gp.page % 3u, a;
+        uint32_t p = gp.page % 4u, a;
         int32_t r;
         gen_value(p, k, v);
         a = p == 1u ? gp.amt[k] : p == 2u && k == 0u ? gp.amt[GP_LEAD] : p == 2u && k == 2u ? gp.swing : 0u;

@@ -513,7 +513,7 @@ static int test_sound_loads(void)
     project_load(0);
     bad += check("saved SAMPLE PERC project (V10.6s): ANALOG's first (SAMPLE retired), its mix and every step kept",
                  t->eng_req == ENGI_PHYS_TO && t->preset == 0u && t->p[P_LEVEL] == 71 && t->p[P_REV] == 33 &&
-                 t->p[P_E0] == ENGINES[ENGI_PHYS_TO]->presets[0].e[0] && !memcmp(t->step, before.step, sizeof t->step));
+                 !memcmp(t->step, before.step, sizeof t->step));
     {   /* a user preset of SAMPLE PERC (UP_PUT from an older editor, or a bank read): (V10.7.13+) ANALOG, as any retired engine's */
         up_rec_t r;
         int16_t keep[P_COUNT];
@@ -9036,9 +9036,9 @@ static int test_dice_all(void)
         fm1_ms += 500u;                                 /* (past the SELECT turn that opened it) */
         turn(EN_SELECT, 1); frames(32);                 /* (0.9.2: SELECT GEN's next page; was a HOME tap) */
         ok &= gp.page != p0 && host_big_fills == f0;
-        turn(EN_SELECT, 5); frames(32);                 /* (right: GEN 3, the chain's end) */
-        ok &= ui.confirm == CF_DICE_ALL && gp.page == 2u;
-        turn(EN_SELECT, -2); frames(8);                 /* (GEN 1 again) */
+        turn(EN_SELECT, 5); frames(32);                 /* (right: GEN 4, the chain's end, V10.7.66) */
+        ok &= ui.confirm == CF_DICE_ALL && gp.page == 3u;
+        turn(EN_SELECT, -3); frames(8);                 /* (GEN 1 again) */
         ok &= gp.page == p0;
         bad += check("GEN: a knob or SELECT (its page) repaints the cards, the body is never cleared (no flicker)", ok && ui.confirm == CF_DICE_ALL);
     }
@@ -12179,16 +12179,16 @@ static int test_lz_home(void)
     uint32_t c, k;
     ui_power_on(); frame();
     ok = ui.home && lz_on() && lz_fam() == LZ_HOME && home_level() == 0u && !home_set() && lz_tab_lit(0) && lz_tabs() == 4u &&
-         lz_crumb_is("HOME \xB7 ECO \xB7 ECO") && lz_count_is("1/11");   /* (V10.7.62: LIFE in MACROS' place, seven) */   /* (seven pages, as the n/7 below; the "1/8" came
+         lz_crumb_is("HOME \xB7 ECO \xB7 ECO") && lz_count_is("1/12");   /* (V10.7.62: LIFE in MACROS' place, seven) */   /* (seven pages, as the n/7 below; the "1/8" came
                                                          * with e147a98's import, 2026-11-04, the rest of the test says 7) */
     press(B_HOME); frame();                                         /* a HOME tap: BEING (the next group) */
     ok &= ui.home && home_level() == 1u && !home_set() && lz_tab_lit(1) && lz_crumb_is("HOME \xB7 BEING \xB7 BEING") &&
-          lz_count_is("3/11");
+          lz_count_is("3/12");
     k = macro_v[0];
     c = (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
     turn(EN_SELECT, -1); frame();                                   /* SELECT left: LIFE (V10.7.62), its KNOB 1 FILTER */
     ok &= home_level() == 0u && home_set() && home_life() && !home_macros() && lz_crumb_is("HOME \xB7 ECO \xB7 LIFE") &&
-          lz_count_is("2/11");
+          lz_count_is("2/12");
     turn(EN_K1, 3); frame();
     ok &= life_v[0] > 0 && (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == c && !strncmp(ui.col[0], "FILTER|", 7);
     life_v[0] = 0;
@@ -12200,11 +12200,11 @@ static int test_lz_home(void)
     ok &= home_level() == 0u && !home_set() && ui.home && !ui.confirm;
     bad += check("0.9.2 HOME: ECO LIFE BEING .. one chain by SELECT (no wrap), a HOME tap the next group; tabs, crumb, n/7 (V10.7.62: LIFE)", ok);
     turn(EN_SELECT, 3); frame();                                    /* ROUTES */
-    ok = home_level() == 1u && home_set() && home_macros() && lz_crumb_is("HOME \xB7 BEING \xB7 ROUTES") && lz_count_is("4/11");
+    ok = home_level() == 1u && home_set() && home_macros() && lz_crumb_is("HOME \xB7 BEING \xB7 ROUTES") && lz_count_is("4/12");
     fm1_ms += 1000u;
     turn(EN_SELECT, 5); frame();                                    /* GEN 1 (V10.7.63: past the song's four) */
     ok &= gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(3) && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 1") &&
-          lz_count_is("9/11");
+          lz_count_is("9/12");
     k = gp.genre;
     {   /* (V10.7.22, the owner) PRESETS on GEN: the sound, as on every page but SEQ's; the GENRE only by KNOB 1 */
         uint32_t pr = TSEL->preset, en = TSEL->eng_req;
@@ -12215,7 +12215,7 @@ static int test_lz_home(void)
     ok &= gp.genre == (k == GEN_EXPLORE ? 0u : k == NGENRE ? GEN_EXPLORE : k + 1u);   /* KNOB 1: the GENRE, its order
                                                          * (0.8.6: EXPLORE, RANDOM, the genres) */
     turn(EN_SELECT, 1); frame();
-    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 2") && lz_count_is("10/11");
+    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 2") && lz_count_is("10/12");
     turn(EN_SELECT, -6); frame();                                   /* back: ROUTES, GEN shut */
     ok &= !ui.confirm && ui.home && home_level() == 1u && home_set();
     turn(EN_SELECT, 5); frame();

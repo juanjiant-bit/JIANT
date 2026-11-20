@@ -312,21 +312,14 @@ static void proj_fm4(project_t *q)                    /* (V10.7.66: no conversio
  * meanings do not carry over). Idempotent */
 static void proj_phys_gone(project_t *q)
 {
-    const preset_t *pr = &ENGINES[ENGI_PHYS_TO]->presets[0];
-    uint32_t k, i, hit = 0;
+    uint32_t k, hit = 0;
     for (k = 0; k < NTRK; k++) {                        /* (V10.7.13+, room for FORM MY LOOP: no nearest sound any more, a
                                                          * retired engine's track ANALOG's first preset, its motion as
                                                          * it was) */
         proj_trk_t *d = &q->t[k];
         if (!eng_gone(d->engine))
             continue;
-        d->engine = ENGI_PHYS_TO;
-        for (i = 0; i < 8u; i++)
-            d->p[P_E0 + i] = (int16_t)pr->e[i];
-        d->p[P_ATK] = pr->env[0];
-        d->p[P_DEC] = pr->env[1];
-        d->p[P_SUS] = pr->env[2];
-        d->p[P_REL] = pr->env[3];
+        d->engine = ENGI_PHYS_TO;                       /* (V10.7.66: its values as they were, ANALOG's ranges) */
         if (d->preset < PROJ_DEF_KEEP)
             d->preset = 0;
         hit = 1;
@@ -1752,6 +1745,8 @@ static int project_clear(void)                          /* 0 done (the caller: G
     ui_message("PROJECT CLEARED");
     return 0;
 }
+static uint8_t gst_old;                                 /* (V10.7.66 ENTRY BUILD, gst_*) bit k: track k still the
+                                                         * piece before */
 static void undo_mark(void)
 {
     project_capture(&proj_scratch);
@@ -1763,6 +1758,7 @@ static int undo_do(void)                                /* 0: done */
     uint8_t cur = proj_cur, play = song.playing;
     if (!undo_ok)
         return 1;
+    gst_old = 0;                                        /* (ENTRY BUILD called off) */
     project_capture(&proj_scratch);
     if (!proj_pack(&undo_st[1], &proj_scratch) || !proj_import(&proj_scratch, &undo_st[0], sizeof undo_st[0]))
         return 1;
@@ -1781,6 +1777,41 @@ static int undo_do(void)                                /* 0: done */
     if (play)
         transport_req = 1;                              /* (the restore stopped it: it plays on) */
     return 0;
+}
+
+/* (V10.7.66, Hollusion) GEN's ENTRY BUILD: the new piece in a track a bar, the kit first, then the others in their
+ * order; until its bar each track plays the piece before (the UNDO mark, undo_st[0]); the new one kept in undo_st[1]
+ * (UNDO calls it off). Its sound and its steps; the globals (tempo, key, FX) the new piece's from the start */
+static uint32_t gst_bar;
+static void gst_put(uint32_t st, uint32_t k)
+{
+    if (!proj_import(&proj_scratch, &undo_st[st], sizeof undo_st[st]))
+        return;
+    sound_put(&proj_scratch, k);
+    fm1_irq_off();
+    memcpy(trk[k].step, proj_scratch.t[k].step, sizeof trk[k].step);
+    fm1_irq_on();
+}
+static void gst_begin(void)
+{
+    uint32_t k, first = 0;
+    gst_old = 0;
+    project_capture(&proj_scratch);
+    if (!undo_ok || !proj_pack(&undo_st[1], &proj_scratch))
+        return;
+    for (k = trk_live; k--;) if (trk[k].eng_req == ENGI_DRUM) first = k;
+    for (k = 0; k < trk_live; k++)
+        if (k != first) { gst_put(0, k); gst_old |= (uint8_t)(1u << k); }
+    gst_bar = 0;                                        /* (gen_go plays it again from the top: bar 0) */
+}
+static void gst_tick(void)
+{
+    uint32_t k;
+    if (!gst_old || !song.playing || bar_n == gst_bar) return;   /* (stopped: it goes on when it plays again) */
+    gst_bar = bar_n;
+    for (k = 0; !((gst_old >> k) & 1u); k++) {}         /* (the kit came in first: the others in their order) */
+    gst_put(1, k);
+    gst_old &= (uint8_t)~(1u << k);
 }
 
 /* (0.6.65) the sound dice's CANCEL (ui_input.c CF_DICE_SOUND): track k's sound back from the undo mark taken just

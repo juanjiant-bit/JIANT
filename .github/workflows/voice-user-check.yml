@@ -1,7 +1,7 @@
 name: V23 editing and WEST beta
 on:
   push:
-    branches: [codex/v23-editing-beta, codex/v56-fm, codex/v65-punch]
+    branches: [codex/v23-editing-beta, codex/v56-fm, codex/v65-punch, codex/v66-clean]
 permissions:
   contents: read
 concurrency:
@@ -165,6 +165,8 @@ jobs:
           build/song-check/perform | tee build/song-check/perform.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/macro_mx_test.c -lm -o build/song-check/macro-mx
           build/song-check/macro-mx | tee build/song-check/macro-mx.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/gen_entry_test.c -lm -o build/song-check/gen-entry
+          build/song-check/gen-entry | tee build/song-check/gen-entry.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/life_test.c -lm -o build/song-check/life
           build/song-check/life | tee build/song-check/life.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/fill_test.c -lm -o build/song-check/fill
