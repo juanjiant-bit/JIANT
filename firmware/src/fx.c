@@ -2478,6 +2478,8 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
     {
         uint32_t ti = (uint32_t)(t - trk) % NTRK;
         int32_t lvl = LEVEL_Q12[t->p[P_LEVEL] & 127] << 8, pan = t->p[P_PAN] << 8, l0, p0, lq, dl, gl, gr, dgl, dgr;
+        if (trk_gain[ti])                               /* (V10.7.64) GAIN: up to +12 dB, clean, on the level */
+            lvl = (int32_t)(((int64_t)lvl * TGAIN_Q12[(uint32_t)trk_gain[ti] % 13u]) >> 12);
         if (t->p[P_APDEP] > 0)                          /* (0.6.9) AUTO PAN */
             pan = clamp(pan + autopan(t, ti, n), -(64 << 8), 63 << 8);
         if (!mp_seen[ti]) {

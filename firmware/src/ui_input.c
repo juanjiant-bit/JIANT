@@ -1580,10 +1580,6 @@ static void edit_param(uint32_t slot, int32_t steps)
         }
         return;
     }
-    if (DX_KIT3(pg)) {                                    /* (0.6.54) KIT 3: BP, FEEDBK (0.6.58: IMAGE on STEREO) */
-        dx_kit3_knob(slot, steps);
-        return;
-    }
     if(pg->graph==GR_LYRSTEP) {
         if(!slot) cursor_set((int32_t)ui.cursor+steps);
         if(slot==1u) {lyric_word=(uint8_t)clamp((int32_t)lyric_word+steps,0,31);lyric_syl=1;}

@@ -203,6 +203,36 @@ int main(void)
         bad += check("DRUM-X GAIN: +12 dB the kit louder; saved with the project and back", ok);
         dx_gain = 0;
     }
+    {   /* (V10.7.64, the owner: GAIN in the engines, DIST the SENDS' only) a track's GAIN: louder on its level, kept
+         * ('T' 'G'); the pages: FILTER TYPE CUT RES IMAGE, PLAY POLY GLIDE UNISON VEL, ANALOG's MORE its GAIN */
+        project_t p;
+        static int32_t o[2 * CTL];
+        double e[2] = {0, 0};
+        uint32_t b, j, r, fi = NPAGES, pi = NPAGES;
+        for (r = 0; r < 2u; r++) {
+            ui_power_on();
+            for (b = 1; b < NTRK; b++) trk[b].p[P_MUTE] = 1;
+            trk_gain[0] = (int16_t)(r ? 12 : 0); frames(64); song.master_q12 = 1024;
+            trk_note_on(&trk[0], 60, 100);
+            for (b = 0; b < 400u; b++) { mix_block(o, CTL); for (j = 0; j < 2u * CTL; j++) e[r] += (double)o[j] * o[j]; }
+            trk_note_off(&trk[0], 60);
+        }
+        ok = e[1] > e[0] * 4.0;
+        trk_gain[0] = 0; trk_gain[2] = 9;
+        project_capture(&p);
+        ok &= p.tgain[2] == 9u && !project_save(1);
+        trk_gain[2] = 0;
+        project_load(1); frames(4);
+        ok &= trk_gain[2] == 9 && !trk_gain[0];
+        trk_gain[2] = 0;
+        for (j = 0; j < NPAGES; j++) {
+            if (str_eq(PAGES[j].title, "FILTER") && PAGES[j].id[1] == P_FCUT) fi = j;
+            if (str_eq(PAGES[j].title, "PLAY")) pi = j;
+        }
+        ok &= fi < NPAGES && PAGES[fi].id[3] == P_SIMG && pi < NPAGES && PAGES[pi].id[2] == P_DETUNE && PAGES[pi].id[3] == P_TVEL;
+        if (!ok) printf("  track gain: energy %g -> %g; tg %u / %d %d; fi %u pi %u\n", e[0], e[1], p.tgain[2], trk_gain[2], trk_gain[0], fi, pi);
+        bad += check("GAIN in the engines: a track +12 dB louder, saved and back; FILTER's IMAGE, PLAY's UNISON VEL", ok);
+    }
     {   /* a project: LIFE off writes no block; on, 'L' 'F' kept and back after a load */
         uint32_t n0, n1;
         project_t p;

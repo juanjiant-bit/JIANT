@@ -663,6 +663,10 @@ static int16_t trks_ui;
 #define G_LOADP 0xFDu
 /* (0.7.6) a track page's slot holding the global ALL TR (G_STRN): SCL's KNOB 4, where TRANS was (page_desc) */
 #define ID_ALLTR 0xFCu
+#define ID_GAIN 0xDFu                                   /* (V10.7.64) a track's GAIN (trk_gain) */
+static int16_t trk_gain[NTRK] __attribute__((section(".bss.tape")));   /* (V10.7.64, the owner: GAIN, not DRIVE)
+                                                         * 0..12 dB clean on the track's level (fx.c) */
+static const uint16_t TGAIN_Q12[13] = {4096, 4596, 5157, 5786, 6492, 7284, 8173, 9170, 10289, 11544, 12953, 14533, 16306};
 static const char *const N_LOAD[] = {"ECO", "LITE", "FULL"};
 static const param_desc_t LOAD_DESC = PE("LOAD", N_LOAD, 2);
 static int16_t load_ui;
@@ -758,10 +762,10 @@ static const page_t PAGES[] = {
     /* (V10.7.60, the owner: fewer pages) MORE, the voices' last page: an engine's few extras (MATH BYTE's RESTART; ANALOG
      * and PHASE's MORPH DRIFT; WHEEL's ROTOR DEPTH DUST) with UNISON and VEL; one MORE an engine (page_visible). ALLOC
      * and NOTE PRIO off the panel (kept: the editor, NRPN, the projects) */
-    {"MORE", FAM_EDIT, SC_TRACK, GR_NONE, {P_LRTRG, 0xFF, P_DETUNE, P_TVEL}},
-    {"MORE", FAM_EDIT, SC_TRACK, GR_MORPH, {P_MORPH, P_DRIFT, P_DETUNE, P_TVEL}},   /* (0.6.45) the wave morphs;
+    {"MORE", FAM_EDIT, SC_TRACK, GR_NONE, {P_LRTRG, 0xFF, 0xFF, 0xFF}},   /* (V10.7.64: UNISON VEL on PLAY) */
+    {"MORE", FAM_EDIT, SC_TRACK, GR_MORPH, {P_MORPH, P_DRIFT, ID_GAIN, 0xFF}},   /* (V10.7.64: ANALOG's GAIN, its DRIVE off the panel) */   /* (0.6.45) the wave morphs;
                                                          * (0.7.8) DRIFT: the voices wander */
-    {"MORE", FAM_EDIT, SC_TRACK, GR_NONE, {P_WRDEP, P_WDUST, P_DETUNE, P_TVEL}},   /* (0.7.8) WHEEL: the rotor's depth, DUST */
+    {"MORE", FAM_EDIT, SC_TRACK, GR_NONE, {P_WRDEP, P_WDUST, 0xFF, 0xFF}},   /* (0.7.8) WHEEL: the rotor's depth, DUST */
     /* (JIANT 0.6.54) DRUM: the whole kit first (KIT = EDIT 1, KIT 2 = EDIT 2, KIT 3, X-MOD, FILTER), then a sound
      * (SOUND 1..4, KNOB 1 the sound on each), (0.6.58) then the volumes (LEVELS, LEVELS 2); (0.7.8) STEREO after X-MOD */
     {"KIT 3", FAM_EDIT, SC_TRACK, GR_DXIMG, {0xFF, 0xFF, 0xFF, 0xFF}},     /* TONE's BP and FEEDBK (the kit's) */
@@ -772,8 +776,8 @@ static const page_t PAGES[] = {
     {"OPERATOR", FAM_EDIT, SC_TRACK, GR_FMOP, {0xFF, 0xFF, 0xFF, 0xFF}},    /* FM6 only: KNOB 1 the operator, then its */
     {"OP ENV", FAM_EDIT, SC_TRACK, GR_FMENV, {0xFF, 0xFF, 0xFF, 0xFF}},     /* bytes of the track's patch (ui_fm6op.c): */
     {"OPERATOR 2", FAM_EDIT, SC_TRACK, GR_FMOP2, {0xFF, 0xFF, 0xFF, 0xFF}}, /* CRS FINE LEVEL / STG RATE LEVEL / MODE DTUN VEL */
-    {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_E4, P_E5, P_E6}},   /* (JIANT 0.5) ANALOG: TYPE CUT RES DRV */
-    {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_FCUT, P_FRES, P_DIST}},   /* .. every other engine's (on the part;
+    {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_E4, P_E5, P_SIMG}},   /* (V10.7.64, the owner: IMAGE up front, DRV off the panel) */   /* (JIANT 0.5) ANALOG: TYPE CUT RES DRV */
+    {"FILTER", FAM_EDIT, SC_TRACK, GR_NONE, {P_FTYPE, P_FCUT, P_FRES, P_SIMG}},   /* (V10.7.64: IMAGE; the DIST SENDS's only) */   /* .. every other engine's (on the part;
                                                          * DRV: the part's DIST, after it) */
     {"SOUND", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},   /* DRUM: a sound of the kit (ui_dx.c) */
     {"SOUND 2", FAM_EDIT, SC_TRACK, GR_DXSND, {0xFF, 0xFF, 0xFF, 0xFF}},
@@ -786,7 +790,7 @@ static const page_t PAGES[] = {
     {"OP3 ENV", FAM_EDIT, SC_TRACK, GR_ADSR, {P_FM3_ATK, P_FM3_DEC, P_FM3_SUS, P_FM3_REL}},
     {"OP4 ENV", FAM_EDIT, SC_TRACK, GR_ADSR, {P_FM4_ATK, P_FM4_DEC, P_FM4_SUS, P_FM4_REL}},
     {"OP LEVEL", FAM_EDIT, SC_TRACK, GR_NONE, {P_FM1_LEVEL, P_FM2_LEVEL, P_FM3_LEVEL, P_FM4_LEVEL}},
-    {"PLAY", FAM_EDIT, SC_TRACK, GR_NONE, {P_VOICE, P_GLIDE, P_GLMODE, P_SIMG}},   /* (V10.7.60, the owner: IMAGE at hand, NOTE PRIO to PLAY 2) */   /* (codex/coherence: was VOICE) POLY GLIDE
+    {"PLAY", FAM_EDIT, SC_TRACK, GR_NONE, {P_VOICE, P_GLIDE, P_DETUNE, P_TVEL}},   /* (V10.7.64: PLAY and MORE one page; GL MODE off the panel) */   /* (V10.7.60, the owner: IMAGE at hand, NOTE PRIO to PLAY 2) */   /* (codex/coherence: was VOICE) POLY GLIDE
                                                          * GL MODE PRIO */
     {"GLOBAL", FAM_GLO, SC_GLOBAL, GR_NONE, {G_BPM, G_SWING, G_CLOCK, G_TUNE}},
     {"SYSTEM", FAM_GLO, SC_GLOBAL, GR_NONE, {G_TRKS, G_LOADP, G_ROUTE, G_INFO}},   /* (0.6.18) TRACKS 4 / 6; (0.6.30)
@@ -925,6 +929,13 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         *valp = 0;
         return 0;
     }
+    if (id == ID_GAIN || (id == P_E6 && pg->scope == SC_ENGINE && pg->fam == FAM_EDIT &&
+                          ENGINES[eng_idx(TSEL->eng_req)] == &ENG_WHEEL)) {   /* (V10.7.64) GAIN: ANALOG's MORE, WHEEL's
+                                                         * COLOR (DRIVE's place; their DRIVE off the panel, kept) */
+        static const param_desc_t TGAIN_DESC = {"GAIN", F_INT, 0, 12, 0, 0};
+        *valp = &trk_gain[(uint32_t)(TSEL - trk) % NTRK];
+        return &TGAIN_DESC;
+    }
     if (id == ID_ALLTR) {                             /* (0.7.6) SCL's KNOB 4: the global ALL TR on the track page */
         *valp = &song.g[G_STRN];
         return &GP[G_STRN];
@@ -947,7 +958,7 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         *valp = id == P_E6 ? &dx_glue : &dx_gain;
         return id == P_E6 ? &GLUE_DESC : &GAIN_DESC;
     }
-    if (ENGINES[eng_idx(TSEL->eng_req)] == &ENG_DRUM && pg->fam == FAM_EDIT && slot == 3u && id == P_DIST &&
+    if (ENGINES[eng_idx(TSEL->eng_req)] == &ENG_DRUM && pg->fam == FAM_EDIT && slot == 3u && id == P_SIMG &&
         pg->title[0] == 'F') {                          /* (V10.7.63) a kit's FILTER: its IMAGE (STEREO gone; DIST: SENDS's) */
         *valp = &TSEL->p[P_DXIMG];
         return &DXIMG_DESC;

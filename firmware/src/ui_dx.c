@@ -94,49 +94,6 @@ static __attribute__((noinline)) void dx_knob(const page_t *pg, uint32_t k, int3
     }
     v[k == 1u ? DXP_PITCH : DXP_DECAY] = (uint8_t)clamp(v[k == 1u ? DXP_PITCH : DXP_DECAY] + accel(EN_K1 + k, s, 127), 0, 127);
 }
-/* KIT 3 (the whole kit): KNOB 1 BP, 2 FEEDBK (TONE's, dx_tone), (0.7.9) 3 HANDS (the CLAP's, dx_hands), (0.9.9-snd1)
- * 4 GLUE (the bus's, eng_drum.c dx_glue: KIT 3's free knob) */
-static void dx_kit3_knob(uint32_t k, int32_t s)
-{
-    if(cur_page()->title[4]=='4') {                    /* KIT 4: KNOB 1 the KEY MAP (V10.6o: KNOB 1's ACOUST gone; codex/
-                                                         * coherence: was KNOB 2) */
-        if(!k) TSEL->p[P_DKEYMODE]=(int16_t)clamp(TSEL->p[P_DKEYMODE]+(s>0?1:-1),0,9);   /* (V10.6r) 2..9: OCT -1 a lane's chromatic run */
-        return;
-    }
-    uint32_t bp = DX_TONE_BP(dx_tone), fb = DX_TONE_FB(dx_tone);
-    if (k == 0u) bp = (uint32_t)clamp((int32_t)bp + (s > 0 ? 1 : -1), 0, 15);
-    else if (k == 1u) fb = (uint32_t)clamp((int32_t)fb + (s > 0 ? 1 : -1), 0, 15);
-    else if (k == 2u) dx_hands = (uint8_t)clamp((int32_t)dx_hands + (s > 0 ? 1 : -1), 0, 15);
-    else dx_glue = (uint8_t)clamp((int32_t)dx_glue + (s > 0 ? 1 : -1), 0, 15);
-    dx_tone = (uint8_t)(bp | fb << 4);
-}
-static __attribute__((noinline)) void dx_kit3_cards(void)
-{
-    if(cur_page()->title[4]=='4') {
-        empty_column(1);
-        hot_unit_column(0,"KEY MAP",drum_ext(TSEL)?"EXTENDED":"CLASSIC",!drum_ext(TSEL)?"":drum_chrom(TSEL)<0?"KIK/TOM":drum_lane_name(TSEL,(uint32_t)drum_chrom(TSEL)&7u));
-        empty_column(2);
-        empty_column(3);
-        return;
-    }
-    uint32_t bp = DX_TONE_BP(dx_tone), fb = DX_TONE_FB(dx_tone);
-    char val[12];
-    if (bp) {                                           /* (its centre, as the filter sets it) */
-        uint32_t hz = CUTOFF_HZ[78u + bp * 2u];
-        if (hz < 1000u) fmt_int(val, (int32_t)hz);
-        else fmt_fix(val, (int32_t)(hz / 100u), 1);
-    } else
-        str_cpy(val, "OFF", sizeof val);
-    draw_column(0, "BP", val, bp ? (CUTOFF_HZ[78u + bp * 2u] < 1000u ? "Hz" : "kHz") : "", bp ? VAL(0u) : T_DIM,
-                (int32_t)bp * 1000 / 15, ICON_TONE);
-    fmt_int(val, (int32_t)fb);
-    gauge_column(1, "FEEDBK", fb ? val : "OFF", fb ? VAL(1u) : T_DIM, (int32_t)fb * 1000 / 15);
-    fmt_int(val, (int32_t)dx_hands);                    /* (0.7.9) the CLAP's HANDS */
-    gauge_column(2, "HANDS", dx_hands ? val : "OFF", dx_hands ? VAL(2u) : T_DIM, (int32_t)dx_hands * 1000 / 15);
-    fmt_int(val, (int32_t)dx_glue);                     /* (0.9.9-snd1) the bus's GLUE */
-    gauge_column(3, "GLUE", dx_glue ? val : "OFF", dx_glue ? VAL(3u) : T_DIM, (int32_t)dx_glue * 1000 / 15);
-}
-
 /* the four cards of a SOUND page or X-MOD */
 static void dx_cards(const page_t *pg)
 {

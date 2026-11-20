@@ -4672,7 +4672,7 @@ static int test_edit_cycle(void)
                                                          * ANALOG's FILTER; 0.6.45: MORPH; V10.7.21: no EDIT 2; codex/coherence:
                                                          * PLAY, was VOICE; STEREO's IMAGE on PLAY 2) */
     static const char *const TP_A[] = {"FILTER", "FOCUS", "PLAY"};
-    static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "FILTER", "OPERATOR", "OP ENV", "OPERATOR 2", "PLAY", "MORE"};
+    static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "FILTER", "OPERATOR", "OP ENV", "OPERATOR 2", "PLAY"};   /* (V10.7.64: MORE gone) */
     static const char *const TP_F[] = {"FILTER", "OPERATOR", "PLAY"};
     static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "PLAY", "MORE", "OP1 ENV", "OP2 ENV", "OP3 ENV",
                                        "OP4 ENV", "OP LEVEL"};
@@ -4698,7 +4698,7 @@ static int test_edit_cycle(void)
         ok = cur_page()->id[0] == P_E0 && cur_page()->id[1] == P_E1 && cur_page()->id[2] == P_E2 && cur_page()->id[3] == P_E7 &&
              str_eq(page_desc(cur_page(), 3, &hv)->label, "INT");
         go_title("FILTER"); frame();
-        ok &= cur_page()->id[0] == P_FTYPE && cur_page()->id[1] == P_E4 && cur_page()->id[2] == P_E5 && cur_page()->id[3] == P_E6;
+        ok &= cur_page()->id[0] == P_FTYPE && cur_page()->id[1] == P_E4 && cur_page()->id[2] == P_E5 && cur_page()->id[3] == P_SIMG;   /* (V10.7.64: IMAGE; DRIVE off the panel) */
         go_title("FOCUS"); frame();
         for (k = 0; k < 8u; k++) {                      /* (FOCUS's PARAM walks E1..E8: NOISE among them) */
             seen |= str_eq(track_desc(TSEL, P_E0 + focus_k())->label, "NOISE");
@@ -4726,7 +4726,7 @@ static int test_edit_cycle(void)
         go_title("EDIT 1"); frame();
         ok &= cur_page()->id[3] == P_E3;
         set_engine_of(TSEL, 0); frame();
-        bad += check("V10.7.21 ANALOG: EDIT 1 WAVE DETUNE MIX INT, FILTER TYPE CUT RES DRIVE, NOISE / MIX on FOCUS, SAW3 EDIT 1 WAVE INT INT 3 DETUNE; PHASE EDIT 1 + 2", ok);
+        bad += check("V10.7.21 ANALOG: EDIT 1 WAVE DETUNE MIX INT, FILTER TYPE CUT RES IMAGE (V10.7.64), NOISE / MIX on FOCUS, SAW3 EDIT 1 WAVE INT INT 3 DETUNE; PHASE EDIT 1 + 2", ok);
     }
 #if FELUCCA_FM4
     set_engine_of(TSEL, 1);
@@ -12353,32 +12353,40 @@ static int test_lz_edit(void)
     ok &= (TSEL->preset != pr || TSEL->eng_req != 0u) && focus_k() == 4u;   /* (rule 3: PRESETS a sound, not the parameter) */
     bad += check("0.9.2 EDIT > FOCUS: KNOB 1 the parameter, 2 its value, 3 the MOD source (a free slot), 4 its AMT; PRESETS a sound", ok);
     ui_power_on(); set_engine_of(TSEL, 0); go_title("PLAY"); frame();
-    {
+    {   /* (V10.7.64, the owner) PLAY: POLY GLIDE UNISON VEL (MORE's two, GL MODE off the panel); FILTER's KNOB 4 IMAGE;
+         * ANALOG's MORE: MORPH DRIFT GAIN */
         int16_t *hv;
-        ok = str_eq(page_desc(cur_page(), 0, &hv)->label, "POLY") && str_eq(page_desc(cur_page(), 2, &hv)->label, "GL TYPE") &&
-             str_eq(page_desc(cur_page(), 3, &hv)->label, "IMAGE");   /* (V10.7.60: IMAGE on PLAY, at hand) */
-    }
-    v = TSEL->p[P_SIMG];
-    turn(EN_K4, 3); frame();                                        /* (V10.7.60) KNOB 4 IMAGE, STEREO's page gone */
-    ok &= TSEL->p[P_SIMG] != v && !nav_put(SEC_EDIT, "STEREO");
-    turn(EN_SELECT, 1); frame();
-    ok &= str_eq(cur_page()->title, "MORE");                        /* (V10.7.60: ANALOG's MORE MORPH DRIFT UNISON VEL) */
-    v = TSEL->p[P_DETUNE];
-    turn(EN_K3, 3); frame();
-    ok &= TSEL->p[P_DETUNE] != v;
-    {
-        int16_t *hv;
-        ok &= str_eq(page_desc(cur_page(), 0, &hv)->label, "MORPH") && str_eq(page_desc(cur_page(), 2, &hv)->label, "UNISON") &&
-              str_eq(page_desc(cur_page(), 3, &hv)->label, "VEL");
-        set_engine_of(TSEL, ENGI_INPUT); go_title("PLAY"); frame();   /* (EXT: no IMAGE, its voice is one) */
-        ok &= str_eq(cur_page()->title, "PLAY") && page_desc(cur_page(), 3, &hv)->label[0] == '-';
+        ok = str_eq(page_desc(cur_page(), 0, &hv)->label, "POLY") && str_eq(page_desc(cur_page(), 2, &hv)->label, "UNISON") &&
+             str_eq(page_desc(cur_page(), 3, &hv)->label, "VEL");
+        v = TSEL->p[P_DETUNE];
+        turn(EN_K3, 3); frame();
+        ok &= TSEL->p[P_DETUNE] != v;
+        go_title("FILTER"); frame();
+        ok &= str_eq(page_desc(cur_page(), 3, &hv)->label, "IMAGE");
+        v = TSEL->p[P_SIMG];
+        turn(EN_K4, 3); frame();
+        ok &= TSEL->p[P_SIMG] != v && !nav_put(SEC_EDIT, "STEREO");
+        go_title("PLAY"); frame();
+        turn(EN_SELECT, 1); frame();
+        ok &= str_eq(cur_page()->title, "MORE") && str_eq(page_desc(cur_page(), 0, &hv)->label, "MORPH") &&
+              str_eq(page_desc(cur_page(), 2, &hv)->label, "GAIN");
+        v = trk_gain[song.sel];
+        turn(EN_K3, 2); frame();
+        ok &= trk_gain[song.sel] > v;
+        trk_gain[song.sel] = 0;
+        set_engine_of(TSEL, ENGI_INPUT); go_title("FILTER"); frame();   /* (EXT: no IMAGE, its voice is one) */
+        ok &= str_eq(cur_page()->title, "FILTER") && page_desc(cur_page(), 3, &hv)->label[0] == '-';
+        set_engine_of(TSEL, ENGI_PHASE); frame();
+        ok &= !nav_put(SEC_EDIT, "MORE") || str_eq(cur_page()->title, "MORE");
+        set_engine_of(TSEL, ENGI_FM6); frame();
+        ok &= !nav_put(SEC_EDIT, "MORE");               /* (the plain MORE gone: its UNISON VEL on PLAY) */
     }
     set_engine_of(TSEL, ENGI_DRUM); frame();
     ok &= !nav_put(SEC_EDIT, "MORE") && !nav_put(SEC_EDIT, "FOCUS") && !nav_put(SEC_EDIT, "STEREO");   /* (V10.7.63: a kit's
                                                          * IMAGE on FILTER, STEREO gone) */
     set_engine_of(TSEL, ENGI_FM6); frame();
     ok &= !nav_put(SEC_EDIT, "FOCUS") && nav_put(SEC_EDIT, "OPERATOR");
-    bad += check("0.9.2 EDIT > PLAY (codex/coherence: was VOICE; POLY, GL MODE; V10.7.60: IMAGE): MORE (an engine's extras, UNISON, VEL) after it, not on DRUM; FOCUS on the synths only", ok);
+    bad += check("0.9.2 EDIT > PLAY (V10.7.64: POLY GLIDE UNISON VEL; FILTER's IMAGE; ANALOG's MORE GAIN; no plain MORE), not on DRUM; FOCUS on the synths only", ok);
     ui_power_on();
     return bad;
 }
@@ -13082,7 +13090,7 @@ typedef struct { uint8_t fam, lv, kind; const char *t[13]; } old_lv_t;   /* kind
 static const old_lv_t OLD_LV[] = {
     {FAM_EDIT, 0, 0, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 0, {"FILTER", "PLAY", "MORE", "WORDS"}},
     {FAM_EDIT, 2, 0, {"FOCUS"}},
-    {FAM_EDIT, 0, 1, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 1, {"FILTER", "PLAY", "MORE"}},
+    {FAM_EDIT, 0, 1, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 1, {"FILTER", "PLAY"}},   /* (V10.7.64: FM6's MORE gone) */
     {FAM_EDIT, 2, 1, {"OPERATOR", "OP ENV", "OPERATOR 2"}},
     {FAM_EDIT, 0, 2, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 2, {"X-MOD", "FILTER"}},   /* (V10.7.63: STEREO LEVELS BUS PLAY gone) */
     {FAM_EDIT, 2, 2, {"SOUND", "SOUND 2", "SOUND 3", "SOUND 4"}},
@@ -13196,7 +13204,7 @@ static int test_coherence(void)
         }
     }
     bad += check("codex/coherence: every section, every engine: no neighbouring pages with the same parameters, none on two "
-                 "pages of a section but the deliberate (ENV TRACKS, FX BUSES, GLO MIXER BPM)", ok && walked > 150u);
+                 "pages of a section but the deliberate (ENV TRACKS, FX BUSES, GLO MIXER BPM)", ok && walked > 140u);   /* (V10.7.64: 149, MORE and BUS gone) */
     {   /* .. and the names: the groups' and the pages' as the review asked (SAVE's PART, PUNCH IN, PLAY, KEYS RAILS) */
         int16_t *hv;
         ui_power_on(); frame();

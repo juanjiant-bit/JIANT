@@ -1292,10 +1292,6 @@ static void draw_columns(void)
         dx_cards(cur_page());
         return;
     }
-    if (DX_KIT3(cur_page())) {                         /* (0.6.54) EDIT > KIT 3 */
-        dx_kit3_cards();
-        return;
-    }
     if (SONG_PARTS(cur_page())) {                      /* (V10.6o) PARTS: PART, its ROW in the song, its loop's BARS, PLAY */
         uint32_t s = ui.part & 3u, r = ui.song_row;
         val[0] = (char)('A' + s); val[1] = 0;
