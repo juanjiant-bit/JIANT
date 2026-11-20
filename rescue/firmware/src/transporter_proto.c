@@ -70,6 +70,16 @@ void fm1_proto_rx(const char *buf, unsigned len) {
             fm1_rekey();
             continue;
         }
+        if (!strcmp(rx_line, "rescue")) {
+            // Answered here, on core 0, so the progress can be read while
+            // core 1 is busy writing (the FM-1 Rescue Android app polls it).
+            char st[160] = "OK ";
+            ar_status_line(st + 3, sizeof(st) - 4);
+            strcat(st, "\n");
+            tud_cdc_n_write_str(DATA_ITF, st);
+            tud_cdc_n_write_flush(DATA_ITF);
+            continue;
+        }
         if (!strcmp(rx_line, "ping")) {
             // Answered here so fm1t can find the port while core 1 is still
             // busy with the USB_KEY recovery.
@@ -335,9 +345,7 @@ void fm1_proto_poll(void) {
     }
     if (!argc) return;
 
-    if (!strcmp(argv[0], "rescue")) {
-        tx_line("OK %s", ar_describe());
-    } else if (!strcmp(argv[0], "status")) {
+    if (!strcmp(argv[0], "status")) {
         tx_line("OK uboot=%d v15=%d loader=%d loader_running=%d", fm1_host_uboot_ready(),
                 fm1_host_v15_mounted(), jl_have_loader(), jl_loader_running());
     } else if (!strcmp(argv[0], "uboot")) {

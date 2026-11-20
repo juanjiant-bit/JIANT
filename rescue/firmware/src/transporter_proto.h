@@ -6,8 +6,9 @@
 // a raw binary payload:
 //
 //   ping                  -> PONG
-//   rescue                -> OK state=<off|wait|run|done|error|bad-payload> err=...
-//                            (stand-alone rescue, see autorescue.h)
+//   rescue                -> OK state=... phase=... sector=n/143 ... (stand-alone
+//                            rescue progress, see ar_status_line; answered on
+//                            core 0, also while a restore runs)
 //   status                -> OK uboot=<0|1> v15=<0|1> loader=<0|1>
 //   uboot                 -> OK uboot | OK softkey | ERR no-v15
 //                            (soft key: stock V15 -> mask ROM UBOOT1.00)

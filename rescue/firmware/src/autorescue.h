@@ -43,4 +43,11 @@ void ar_task(void);
 
 bool ar_enabled(void);
 ar_state_t ar_state(void);
-const char *ar_describe(void);
+const char *ar_describe(void);     // core 1
+
+// One status line (no newline) for the data port's `rescue` request; safe on
+// core 0 while core 1 works:
+//   state=<off|wait|run|done|error|bad-payload>[ foreign=1] phase=<idle|check|
+//   write|verify> sector=<n>/143 written=<n> same=<n> err=<none|link|chip|
+//   write|verify> addr=<hex>
+void ar_status_line(char *s, unsigned n);

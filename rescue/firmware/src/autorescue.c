@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "pico/stdlib.h"
-#include "hardware/watchdog.h"
 
 #include "jieli_uboot.h"
 #include "log.h"
@@ -19,8 +18,6 @@
 #define WRITE_TRIES 3
 #define SOFTKEY_DELAY_MS 1500       // after a V15 mount, let the probe finish first
 #define FOREIGN_AFTER_MS 15000      // mounted, neither UBOOT nor V15, for this long
-#define DONE_SCRATCH 2              // watchdog scratch: survives the host's re-attach reboots
-#define DONE_MAGIC 0x444F4E45       // "DONE"
 
 typedef enum {
     E_NONE,
@@ -30,12 +27,16 @@ typedef enum {
     E_VERIFY,       // the final read does not match
 } ar_err_t;
 
-static ar_state_t state = AR_OFF;
-static ar_err_t err;
-static uint32_t err_addr;
-static uint32_t n_written, n_same;
+typedef enum { PH_IDLE, PH_CHECK, PH_WRITE, PH_VERIFY } ar_phase_t;
+
+// Written by core 1, read by core 0 for the `rescue` status line.
+static volatile ar_state_t state = AR_OFF;
+static volatile ar_err_t err;
+static volatile ar_phase_t phase;
+static volatile uint32_t err_addr;
+static volatile uint32_t n_written, n_same, cur_sector;
+static volatile bool foreign;
 static bool any_written;
-static bool foreign;
 
 static uint8_t __attribute__((aligned(4))) sec[JL_SECTOR_SIZE];
 
@@ -47,13 +48,21 @@ ar_state_t ar_state(void) {
     return state;
 }
 
-const char *ar_describe(void) {
-    static char s[96];
+void ar_status_line(char *s, unsigned n) {
     static const char *const names[] = {"off", "wait", "run", "done", "error", "bad-payload"};
     static const char *const errs[] = {"none", "link", "chip", "write", "verify"};
-    snprintf(s, sizeof(s), "state=%s err=%s addr=%06lX written=%lu same=%lu", names[state],
-             errs[err], (unsigned long)err_addr, (unsigned long)n_written,
-             (unsigned long)n_same);
+    static const char *const phases[] = {"idle", "check", "write", "verify"};
+    ar_state_t st = state;
+    snprintf(s, n, "state=%s%s phase=%s sector=%lu/%lu written=%lu same=%lu err=%s addr=%06lX",
+             names[st], (st == AR_WAIT && foreign) ? " foreign=1" : "", phases[phase],
+             (unsigned long)cur_sector, (unsigned long)(PL_IMAGE_LEN / JL_SECTOR_SIZE),
+             (unsigned long)n_written, (unsigned long)n_same, errs[err],
+             (unsigned long)err_addr);
+}
+
+const char *ar_describe(void) {     // core 1 only
+    static char s[128];
+    ar_status_line(s, sizeof(s));
     return s;
 }
 
@@ -68,12 +77,6 @@ void ar_init(void) {
         return;
     case PL_VALID:
         break;
-    }
-    if (watchdog_hw->scratch[DONE_SCRATCH] == DONE_MAGIC) {
-        // The host rebooted the board after the FM-1 left UBOOT: stay done.
-        state = AR_DONE;
-        dlog("RESCUE: already done in this power cycle");
-        return;
     }
     state = AR_WAIT;
     dlog("RESCUE: stand-alone mode. Switch the FM-1 ON now (it must be OFF before).");
@@ -107,8 +110,10 @@ static bool read_sector(uint32_t addr) {
 // (after fail()) on an error.
 static bool write_pass(const uint8_t *image, uint32_t base, uint32_t len) {
     n_written = n_same = 0;
+    phase = PH_WRITE;
     for (uint32_t off = 0; off < len; off += JL_SECTOR_SIZE) {
         uint32_t addr = base + off;
+        cur_sector = off / JL_SECTOR_SIZE + 1;
         const uint8_t *want = image + off;
         rgb(false, false, (off / JL_SECTOR_SIZE) & 1);
         if (!read_sector(addr)) {
@@ -142,7 +147,9 @@ static bool write_pass(const uint8_t *image, uint32_t base, uint32_t len) {
 }
 
 static bool verify_pass(const uint8_t *image, uint32_t base, uint32_t len) {
+    phase = PH_VERIFY;
     for (uint32_t off = 0; off < len; off += JL_SECTOR_SIZE) {
+        cur_sector = off / JL_SECTOR_SIZE + 1;
         rgb(false, (off / JL_SECTOR_SIZE) & 1, true);
         if (!read_sector(base + off) || memcmp(sec, image + off, JL_SECTOR_SIZE) != 0) {
             dlog("RESCUE: verify mismatch or read error at %06lX", (unsigned long)(base + off));
@@ -157,6 +164,8 @@ static void run(void) {
     const uint8_t *image = payload_image();
     uint64_t t0 = time_us_64();
     state = AR_RUN;
+    phase = PH_CHECK;
+    cur_sector = 0;
     rgb(false, false, true);
     dlog("RESCUE: FM-1 in boot mode - restoring %s", h->label);
 
@@ -194,7 +203,7 @@ static void run(void) {
              (unsigned long)n_written, (unsigned long)n_same);
         if (n_written == 0 || verify_pass(image, h->image_addr, h->image_len)) {
             state = AR_DONE;
-            watchdog_hw->scratch[DONE_SCRATCH] = DONE_MAGIC;
+            phase = PH_IDLE;
             rgb(false, true, false);
             dlog("RESCUE: DONE in %.1f s. Switch the FM-1 OFF, remove the wires, switch it ON.",
                  (time_us_64() - t0) / 1e6);

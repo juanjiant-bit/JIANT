@@ -148,7 +148,10 @@ int main(int argc, char **argv) {
         CHECK(sector_writes[s] <= 1, "sector %05X written %d times", s * 4096, sector_writes[s]);
     }
     CHECK(total == 143, "%d sectors written, expected 143", total);
-    CHECK(test_watchdog.scratch[2] == 0x444F4E45, "done flag not set");
+    char line[160];
+    ar_status_line(line, sizeof(line));
+    CHECK(strstr(line, "state=done phase=idle sector=143/143 written=143 same=0") != NULL,
+          "status line: %s", line);
 
     printf("2. half-written unit -> only the differing sectors are written\n");
     reset_unit(0x11);
@@ -194,12 +197,12 @@ int main(int argc, char **argv) {
     CHECK(drive(100) == AR_ERROR, "state %s", ar_describe());
     CHECK(strstr(ar_describe(), "err=write addr=020000") != NULL, "%s", ar_describe());
 
-    printf("7. already done in this power cycle -> stays done, no writes\n");
+    printf("7. second unit on the same board power cycle -> restored again\n");
     reset_unit(0x66);
-    test_watchdog.scratch[2] = 0x444F4E45;
-    memcpy(before, fm1, sizeof(fm1));
-    CHECK(drive(10) == AR_DONE, "state %s", ar_describe());
-    CHECK(memcmp(fm1, before, sizeof(fm1)) == 0, "flash changed");
+    CHECK(drive(100) == AR_DONE, "state %s", ar_describe());
+    total = 0;
+    for (int s = 0; s < (int)(JL_FLASH_SIZE / JL_SECTOR_SIZE); s++) total += sector_writes[s];
+    CHECK(total == 143, "%d sectors written", total);
 
     printf("8. damaged payload (one image byte flipped) -> refused, nothing written\n");
     reset_unit(0x77);

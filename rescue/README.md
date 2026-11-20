@@ -14,6 +14,9 @@ El RP2040 lleva dentro el firmware oficial V15 y hace todo él solo; el PC solo 
 5. LED azul = trabajando; **verde fijo** = listo: apaga el FM-1, quita los cables, enciéndelo (arranca V15).
    Rojo parpadeando = error: apaga el FM-1, reconecta el RP2040 y repite.
 
+**Sin ordenador:** la app Android **FM-1 Rescue** (`android/rescue`, ver su [LÉEME](../android/rescue/LEEME.md)) hace
+todo desde el móvil: graba el RP2040 por OTG y muestra el progreso de la reparación.
+
 Comparado con la guía con Python: no hay que instalar Python, ni `setup`, ni `wizard`, ni escribir `WRITE`,
 ni puertos serie; el orden "primero el RP2040, después encender el FM-1" lo marca el LED.
 
@@ -53,7 +56,8 @@ Not yet tested on hardware.
 | `build.sh` | rebuilds `base/` and the page; with `FM1_V15` and `FM1_LOADER` also runs the host test |
 
 Payload layout: `firmware/src/payload.h` (at 1 MiB in the RP2040 flash). Without a payload the firmware is
-a plain FM-1 Transporter; its data port also answers `rescue` with the rescue state.
+a plain FM-1 Transporter; its data port also answers `rescue` with the rescue state and progress (on core 0,
+also while a restore runs), which the Android app (`android/rescue`) polls.
 
 ## Credits and licence
 
