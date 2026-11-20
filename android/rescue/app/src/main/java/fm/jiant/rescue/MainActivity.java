@@ -2,7 +2,7 @@
 // FM-1 Rescue for Android: one screen that does the whole unbrick.
 //   1. What to restore: JIANT (the public package, inside the APK, the default:
 //      it runs under the boot head of V15 and of V16), the official V15
-//      (downloaded once, hash-checked), or a .fwsc of your own. JieLi's
+//      (also in the APK, hash-checked), or a .fwsc of your own. JieLi's
 //      wl82loader.bin ships in the APK.
 //   2. The RP2040 (RP2040-Zero or XIAO) is plugged into the phone with an OTG
 //      adapter while BOOT is held: the app programs it over PICOBOOT, with the
@@ -292,7 +292,7 @@ public class MainActivity extends Activity {
     }
 
     private void loadFiles() {
-        // The public JIANT, put in by android/rescue/fetch_jiant.py when the APK is built.
+        // The public JIANT, put in by android/rescue/fetch_firmware.py when the APK is built.
         try (InputStream in = getAssets().open("jiant.fwsc"); InputStream js = getAssets().open("jiant.json")) {
             byte[] d = readAll(in);
             RescueImage.checkFirmware(d);
@@ -304,8 +304,14 @@ public class MainActivity extends Activity {
             jiantPkg = null;
             logLine("JIANT: " + e.getMessage());
         }
+        // The official V15: inside the APK (fetch_firmware.py), else the copy downloaded or chosen earlier.
+        try (InputStream in = getAssets().open("FM-1-V15.fwsc")) {
+            byte[] d = readAll(in);
+            RescueImage.checkV15(d);
+            v15Pkg = d;
+        } catch (Exception e) { v15Pkg = null; }
         try {
-            if (v15File().exists()) {
+            if (v15Pkg == null && v15File().exists()) {
                 byte[] d = Files.readAllBytes(v15File().toPath());
                 RescueImage.checkV15(d);
                 v15Pkg = d;
@@ -343,8 +349,9 @@ public class MainActivity extends Activity {
                         "JIANT " + jiantVersion + "  (included · recommended: works on FM-1s that came with V15 or V16)")
                     : t("JIANT (no incluido en esta compilación)", "JIANT (not included in this build)"));
             srcJiant.setEnabled(jiantPkg != null);
-            srcV15.setText(t("V15 oficial de M-VAVE  (se descarga la primera vez)",
-                    "Official M-VAVE V15  (downloaded the first time)"));
+            srcV15.setText(v15Pkg != null || !downloading
+                    ? t("V15 oficial de M-VAVE  (incluida)", "Official M-VAVE V15  (included)")
+                    : t("V15 oficial de M-VAVE  (descargando…)", "Official M-VAVE V15  (downloading…)"));
             srcCustom.setText(t("Mi archivo: ", "My file: ") + customLabel);
             srcCustom.setVisibility(customPkg != null ? View.VISIBLE : View.GONE);
 
@@ -429,8 +436,14 @@ public class MainActivity extends Activity {
             }
         } catch (RescueImage.Refused e) {
             logLine(t("Rechazado: ", "Refused: ") + e.getMessage());
+            String why = e.getMessage().contains("FM-1_016")
+                    ? t("Esto es la V16 oficial: no cabe en la zona que escribe el rescate. Usa JIANT; después, si quieres, "
+                        + "instala la V16 con \"Volver al oficial\" del instalador web.",
+                        "This is the official V16: it does not fit the area the rescue writes. Use JIANT; then, if you "
+                        + "like, install V16 with the web installer's \"Return to official\".")
+                    : e.getMessage();
             ui.post(() -> {
-                fwscText.setText(t("✗ Rechazado: ", "✗ Refused: ") + e.getMessage());
+                fwscText.setText(t("✗ Rechazado: ", "✗ Refused: ") + why);
                 fwscText.setTextColor(0xFFC0392B);
             });
             return;

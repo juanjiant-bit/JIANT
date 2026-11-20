@@ -19,7 +19,7 @@ después te va diciendo qué hacer mientras repara el FM-1.
 | Adaptador **OTG** USB-C (o micro-USB) a USB-A, o un cable USB-C a USB-C | para enchufar el RP2040 al móvil |
 | **Waveshare RP2040-Zero** o **Seeed XIAO RP2040** | la placa de la guía de GoodPerson42 |
 | Cable USB-C con 4 hilos sueltos | negro, rojo, blanco, verde |
-| Nada más | JIANT y el loader van dentro de la app. Internet solo si eliges la V15 oficial (se descarga una vez) |
+| Nada más | JIANT, la V15 oficial y el loader van dentro de la app: no hace falta internet |
 
 ## Instalar
 
@@ -32,8 +32,8 @@ desconocido" si Android lo pide.
 1. **Elige qué instalar** (paso 1 de la app):
    - **JIANT** (incluido, recomendado): funciona tanto en FM-1 que venían con la **V15** como con la **V16**,
      porque arranca con la cabecera de arranque de las dos.
-   - **V15 oficial de M-VAVE**: se descarga sola la primera vez y se comprueba por su hash. Con un FM-1 que venía
-     en V16 **no está comprobado** que arranque: en ese caso usa JIANT.
+   - **V15 oficial de M-VAVE** (incluida, comprobada por su hash). Con un FM-1 que venía en V16 **no está
+     comprobado** que arranque: en ese caso usa JIANT.
    - "Elegir otro .fwsc": otra versión de JIANT o tu propio archivo de la V15 (cualquier otro se rechaza).
 2. **Elige tu placa:** RP2040-Zero o XIAO RP2040.
 3. **Cableado**, con el FM-1 **apagado** (el rojo no se conecta):
@@ -82,11 +82,13 @@ azul = trabajando, verde fijo = listo, rojo parpadeando rápido = error.
 - **Nunca** toca la cabecera de arranque (`0x0000..0x3FFF`) ni tus datos (`0x93000..`: ajustes, sonidos,
   canciones). A diferencia del método con Python, **no** guarda una copia completa del FM-1 antes.
 - El móvil solo alimenta el RP2040 y lee su progreso.
-- **JIANT** va dentro del APK: el paquete público que ofrece el instalador web (`fetch_jiant.py` lo mete al
+- **JIANT** va dentro del APK: el paquete público que ofrece el instalador web (`fetch_firmware.py` lo mete al
   compilar; GPL-3.0, con la licencia Apache-2.0 de los archivos del SDK de JieLi que lleva).
-- **La V15** no va dentro (es software de M-VAVE): se descarga de
-  [Quixotic7/FM1Backups](https://github.com/Quixotic7/FM1Backups) en un commit fijado, idéntica al archivo de
-  M-VAVE (sha256 `db1642b2…`), y solo se acepta si el hash de su región de firmware es el de la V15.
+- **La V15** también va dentro: `fetch_firmware.py` la toma al compilar de
+  [Quixotic7/FM1Backups](https://github.com/Quixotic7/FM1Backups) en un commit fijado y solo la acepta si es el
+  archivo original de M-VAVE (sha256 `db1642b2…`); la app vuelve a comprobar el hash de su región de firmware.
+  No se guarda en git. Es software de M-VAVE: incluirla es decisión del autor de la app. Si una compilación no
+  la trae, la app la descarga de ese mismo sitio.
 - El loader de JieLi va dentro (jl-uboot-tool, MIT, licencia en `assets/wl82loader-LICENSE.txt`).
 - Si el FM-1 tenía otro firmware personalizado (Felucca, Skiff…) y con JIANT no arranca, repite el rescate
   eligiendo la V15: los datos de otros firmwares pueden confundir a JIANT.
@@ -113,7 +115,7 @@ Compilar: `gradle -p android/rescue assembleDebug` (JDK 17, Gradle 8.9); el firm
 ## English
 
 FM-1 Rescue for Android unbricks an FM-1 with an RP2040 and the phone: firmware to restore: JIANT (bundled, the default; runs under both the V15 and the V16 boot head) or the
-official V15 (downloaded once, hash-checked); JieLi's loader is bundled. Pick the board, wire green → GP0, white → GP1, black → GND (FM-1 off, red unconnected), hold BOOT and
+the official V15 (bundled too, hash-checked); JieLi's loader is bundled. Pick the board, wire green → GP0, white → GP1, black → GND (FM-1 off, red unconnected), hold BOOT and
 plug the RP2040 into the phone with an OTG adapter. The app programs the board over PICOBOOT, reboots it, and
 then shows the rescue's progress read from the board: "switch the FM-1 on now", "repairing…", "done". Only
 the differing sectors of `0x4000..0x92FFF` are written, each verified; the boot head and user data are never
