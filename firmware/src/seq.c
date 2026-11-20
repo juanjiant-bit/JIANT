@@ -1450,14 +1450,62 @@ static __attribute__((noinline)) void dxo_tick(track_t *t, uint32_t n)
 }
 
 /* the effect of key k in the FX layer (PF_N none): the first PF_M1 white keys (F3 .. A4) in order, black keys
- * 1..4 (F#3 G#3 A#3 C#4) the track mutes */
+ * 1..4 (F#3 G#3 A#3 C#4) the track mutes; (V10.7.65) the slot's own where the editor set one (perform.c pk) */
+static uint32_t perf_slot(uint32_t k) { return key_black(k) ? 16u + key_place(k) : key_place(k); }   /* (0..26) */
+static uint32_t perf_def(uint32_t s);
 static uint32_t perf_key(uint32_t k)
 {
-    uint32_t p = key_place(k);
+    uint32_t s = perf_slot(k);
+    return s < PK_KEYS && pk.e[s] ? pk.e[s] - 1u : perf_def(s);
+}
+static uint32_t perf_def(uint32_t s)                  /* slot s's effect as the map always had it */
+{
+    uint32_t p = s >= 16u ? s - 16u : s;
     static const uint8_t BK[5] = {PF_LP3, PF_TAPE, PF_PUP, PF_PDN, PF_STR};   /* black keys 7..11: G#4 A#4 C#5 D#5 F#5
                                                          * (V10.7.59: LOOP 3, TAPE STOP, PITCH UP / DOWN, STRETCH) */
-    return !key_black(k) ? (p < PF_M1 ? p : p == PF_M1 ? PF_CLR : PF_N) : p < NTRK ? PF_M1 + p : p - NTRK < 5u ? BK[p - NTRK] : PF_N;
+    return s < 16u ? (p < PF_M1 ? p : p == PF_M1 ? PF_CLR : PF_N) : p < NTRK ? PF_M1 + p : p - NTRK < 5u ? BK[p - NTRK] : PF_N;
 }
+/* (V10.7.65) the editor's TARGET of effect e: the tracks it acts on (pfx.c pfx_block reads exd / exs / mt) */
+static void pk_target(uint32_t e, uint32_t tg)
+{
+    uint32_t b = PF_BIT(e), i;
+    pk.exd &= ~b; pk.exs &= ~b;
+    for (i = 0; i < NTRK; i++) pk.mt[i] &= ~b;
+    if (tg == 1u || tg >= 3u) pk.exd |= b;           /* SYN, a track: off the kits */
+    if (tg >= 2u) pk.exs |= b;                       /* DRM, a track: off the synths */
+    if (tg >= 3u && tg - 3u < NTRK) pk.mt[tg - 3u] |= b;
+}
+/* key k of the FX layer down or up: its effect as its MODE has it (HOLD as before; LATCH a press on / off; QUANT from
+ * the next beat while held), a MOD key's macro (ui_layer.c pk_mod), nothing while editing */
+static __attribute__((noinline)) void perf_kpress(uint32_t k, int down)
+{
+    uint32_t s = perf_slot(k), e = perf_key(k), o = s < PK_KEYS && pk.e[s] ? pk.o[s] : 0u, m = (o >> 4) & 3u, b;
+    if (pk.edit) {
+        if (down && s < PK_KEYS) pk.ekey = (uint8_t)s;
+        return;
+    }
+    if (e == PK_MOD) {                              /* a MOD: its macro moved by the main loop while held (pk_mod) */
+        b = o & 3u;
+        if (down) { pk.mo[b] = (uint8_t)o; pk.mt0[b] = fm1_ms; pk.mod |= (uint8_t)(1u << b); }
+        else pk.mod &= (uint8_t)~(1u << b);
+        return;
+    }
+    if (e < PF_N) pk_target(e, o & 15u);
+    if (e >= PF_N || !m || perf_latch_on) {
+        perf_press(e, down);
+        return;
+    }
+    b = PF_BIT(e);
+    if (m == 1u) {                                  /* LATCH */
+        if (down) { perf_latched ^= b; perf_ord[e] = ++perf_seq; }
+    } else if (down) {                              /* QUANT: on the next beat (perform.c pk_step) */
+        pk.qpend |= b;
+    } else {
+        pk.qpend &= ~b;
+        perf_press(e, 0);
+    }
+}
+static void (*const volatile PERF_KP)(uint32_t, int) = perf_kpress;   /* (keyboard_block: its reach) */
 
 /* (0.6.14) LATCH: ARP OFF and ARP 2's HOLD ON, the keys' notes keep sounding when let go; the first key of the next
  * chord (no key down) lets the latched ones go. In the arp's note list (held / nheld / arp_phys, unused with ARP OFF);
@@ -1805,7 +1853,7 @@ static void keyboard_block(void)
                 kb_note[k] = KB_SILENT;           /* (ui_layer.c), with FX an effect (perform.c) */
                 kb_layer |= 1u << k;
                 if (fx)
-                    perf_press(perf_key(k), 1);
+                    PERF_KP(k, 1);                /* (V10.7.65: its MODE, the editor) */
                 continue;
             }
             if (song.grid >= 2u) {                /* NAME (ui_name.c): every key types, none sounds; (p2) 3: GLO > LIVE
@@ -1838,7 +1886,7 @@ static void keyboard_block(void)
         } else {
             if ((kb_layer >> k) & 1u) {
                 kb_layer &= ~(1u << k);
-                perf_press(perf_key(k), 0);
+                PERF_KP(k, 0);
                 continue;
             }
             if (kb_note[k] == KB_SILENT) {

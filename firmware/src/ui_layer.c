@@ -54,7 +54,7 @@ typedef struct {
 } layer_t;
 static const layer_t LAYERS[LAYER_N] = {
     {0, 0, 0, "", {{0, 0}, {0, 0}, {0, 0}}},
-    {B_FX, LK_HOLD, FAM_HOME, "[FX] HOLD", {{KC_KEYS, "EFFECTS"}, {KC_K14, "MACROS"}, {KC_OCTUP, "DICE"}}},   /* (LET GO: the header's HOLD) */
+    {B_FX, LK_HOLD, FAM_HOME, "[FX] HOLD", {{KC_KEYS, "EFFECTS"}, {KC_K14, "MACROS"}, {KC_OCTUP, "EDIT"}}},   /* (LET GO: the header's HOLD; V10.7.65: OCT+ the editor, was DICE) */
     {B_GLO, LK_SET, FAM_HOME, "[GLO] SET", {{KC_PLAY, "RESTART"}, {KC_GLO, "DONE"}, {0, 0}}},
     {B_SCL, LK_SET, FAM_SCL, "[SCL] SET", {{KC_KEYS, "ROOT"}, {KC_SCL, "DONE"}, {0, 0}}},
     {B_EDIT, LK_SET, FAM_EDIT, "[EDIT] SET", {{KC_SELECT, "DICE"}, {KC_K14, "TWEAK"}, {KC_KEYS, "INIT / RECALL"}}},   /* (0.9.9-seq2e:
@@ -140,17 +140,20 @@ static uint32_t layer_held(void) { return ui.ly && ly_down(ui.ly) && layer_allow
  * armed: any layer button not already down (one pressed meanwhile is armed below; one held over from before
  * is ignored, its keys stay notes); armed but dead (pressed under a dialog, a menu or NAME that has closed
  * since): nothing, its keys stay notes and FX starts no effect with no map shown; FX's effects only with FX */
-static uint8_t dice_latched;                    /* (V10.7.62) FX LATCH: FX + OCT+ turns DICE on, again off */
+#define PK_MAGIC 0x504B4555u
+static void pk_load(void);
+static void pk_mod(void);
+static BTAPP_FN void pk_mod_bt(void);
+static void pk_name(uint32_t e, char *nm);
 static void layer_masks(void)
 {
     uint32_t m = !layer_allowed() || (ui.ly && (ui.ly_t0 & LY_DEAD)) ? 0u
                : ui.ly ? ly_bit(ui.ly) : layer_bits() & ~fm1_in.buttons;
     kb_mask = m;
     perf_mask = m & ly_bit(LAYER_FX);
-    perf_dice = (uint8_t)(dice_latched || (ui.ly == LAYER_FX && layer_held() && !perf_latch_on &&
-                                           ((fm1_in.buttons >> panel.btn[B_OCTUP]) & 1u)));   /* (V10.7.62) FX + OCT+ */
-    if (perf_dice && ui.ly == LAYER_FX)
-        lys.used = 1;                                   /* (DICE used it: no FX LOCK when let go) */
+    if (pk.magic != PK_MAGIC)                           /* (V10.7.65) the punch-in keys: the slot played (once) */
+        pk_load();
+    pk_mod();                                           /* .. a MOD key's macro moving */
     fx_lock_on = (uint8_t)(fx_lock && !ui.ly && layer_allowed());
 }
 
@@ -824,11 +827,14 @@ static void layer_keys(uint32_t keys)
 }
 
 /* KNOB 1..4 in the open layer: its own (FX macros, GLO levels, EDIT's sound), else the four of its page */
+static BTAPP_FN void pke_knob_bt(uint32_t k, int32_t d);
 static void layer_knob(uint32_t k, int32_t s)
 {
     uint32_t l = layer_open();
     lys.used = 1;
-    if (l == LAYER_FX) {                                /* (V10.7.59) the MACROS (was perform.c's FILTER CRUSH THROW DEPTH) */
+    if (l == LAYER_FX && pk.edit) {                     /* (V10.7.65) the punch-in editor: the held key's */
+        if (bt_hw_seg()) pke_knob_bt(k, s);
+    } else if (l == LAYER_FX) {                         /* (V10.7.59) the MACROS (was perform.c's FILTER CRUSH THROW DEPTH) */
         fx_macro_turn(k, s);
     } else if (l == LAYER_GLO) {                        /* T1..T4 LEVEL (T5, T6 selected: T3..T6), recorded as on MIXER */
         track_t *t = &trk[k + trk_base4()];
@@ -898,13 +904,8 @@ static uint32_t layer_oct(uint32_t pressed, uint32_t oct)
     if ((mine & 1u) && lys.l == LAYER_FX) {             /* OCT- (FX LATCH): every effect and macro off */
         perf_latched = 0;
         perf_k[0] = perf_k[1] = perf_k[2] = perf_k[3] = 0;
-        dice_latched = 0;
         fx_macro_back();
         ui_message("FX ALL OFF");
-    }
-    if ((mine & 2u) && lys.l == LAYER_FX) {             /* (V10.7.62) OCT+ (FX LATCH): DICE on / off */
-        dice_latched ^= 1u;
-        ui_message(dice_latched ? "DICE: A NEW FX EACH BEAT" : "DICE OFF");
     }
     if (lys.l == LAYER_SAVE && (mine & 2u)) {           /* SAVE + OCT+: STORE the music into the section playing */
         if (live.cur < 0)
@@ -1037,28 +1038,24 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
     uint32_t busy = chain_busy() ? LS_DIM : LS_OFF;
     nm[0] = 0;
     if (l == LAYER_FX) {
-        uint32_t held = perf_kill ? 0u : perf_held | perf_latched, e = blk ? PF_M1 + p : p;
-        if (!blk && p == PF_M1) {                       /* (snd2) G5: CLEAR AUTOMATION, the punch-in lane's */
-            str_cpy(nm, "CLR AUTO", 12);
-            return pfx_clr ? LS_HELD : LS_OFF;
-        }
-        if (blk && p >= NTRK && p <= 10u) {             /* G#4 LOOP 3, (V10.7.59) A#4 TAPE STOP, C#5 D#5 PITCH UP / DOWN, F#5
-                                                         * STRETCH */
-            static const char *const BN[5] = {"LOOP 3", "TAPE STOP", "PITCH UP", "PITCH DN", "STRETCH"};
-            static const uint8_t BE[5] = {PF_LP3, PF_TAPE, PF_PUP, PF_PDN, PF_STR};
-            uint32_t j = p - NTRK;
-            e = BE[j];
-            str_cpy(nm, BN[j], 12);
-            return !((held >> e) & 1u) ? LS_OFF : ((perf_act >> e) & 1u) || ((PF_LOOPS >> e) & 1u) ? LS_HELD : LS_WAIT;
-        }
-        if (blk ? p >= NTRK : p >= PF_M1)
+        uint32_t held = perf_kill ? 0u : perf_held | perf_latched, sl = blk ? 16u + p : p, e;
+        if (blk ? p >= 11u : p >= 16u)
             return LS_OFF;
-        if (blk) {
-            str_cpy(nm, "MUTE T1", 12);
-            nm[6] = (char)('1' + p);
+        e = pk.edit ? (pk.we[sl] ? pk.we[sl] - 1u : perf_def(sl)) : pk.e[sl] ? pk.e[sl] - 1u : perf_def(sl);   /* (V10.7.65:
+                                                         * the slot's, the editor's copy) */
+        pk_name(e, nm);
+        if (pk.edit)                                    /* (the key being set lit) */
+            return sl == pk.ekey && kb_layer ? LS_HELD : e >= PF_N && e != PK_MOD ? LS_DIM : LS_OFF;
+        if (e == PF_CLR)
+            return pfx_clr ? LS_HELD : LS_OFF;
+        if (e == PK_MOD)
+            return (pk.mod >> (pk.o[sl] & 3u)) & 1u ? LS_HELD : LS_OFF;
+        if (e >= PF_N)
+            return LS_OFF;
+        if (e >= PF_M1 && e < PF_M1 + NTRK)
             return (held >> e) & 1u ? LS_MUTE : LS_OFF;
-        }
-        str_cpy(nm, PF_NAME[p], 12);
+        if (e >= PF_M1)                                 /* LOOP 3, TAPE STOP, PITCH, STRETCH */
+            return !((held >> e) & 1u) ? LS_OFF : ((perf_act >> e) & 1u) || ((PF_LOOPS >> e) & 1u) ? LS_HELD : LS_WAIT;
         return !((perf_avail() >> e) & 1u) ? LS_DIM : !((held >> e) & 1u) ? LS_OFF :
                ((perf_act >> e) & 1u) || ((PF_MIDI >> e) & 1u) ? LS_HELD : LS_WAIT;
     }
@@ -1217,12 +1214,177 @@ static __attribute__((noinline)) void rec_columns(void)
             empty_column(c);
     }
 }
+/* (V10.7.65, the owner) THE PUNCH-IN EDITOR (perform.c pk): OCT+ on the FX layer (held, or locked open) opens it, OCT-
+ * leaves; a key held and KNOB 1..4 its EFFECT TARGET AMOUNT MODE (the help in the header), SELECT the slot (1..4), OCT+
+ * saves the slot and plays it. The slots: spare bytes of the settings' favourite rows (engines of few presets: 27 from
+ * byte 5), the effects' row and the options' row each; the slot played favorites.factory[6][18] (TRIO's retired row) */
+static uint8_t *pk_row(uint32_t sl, uint32_t o)
+{
+    static const uint8_t R[4][2] = {{0, 2}, {3, 5}, {7, 10}, {11, 12}};
+    return &favorites.factory[R[sl & 3u][o & 1u]][5];
+}
+static void pk_load(void)                               /* the slot played, from the settings */
+{
+    uint32_t s;
+    pk.slot = (uint8_t)(favorites.factory[6][18] & 3u);
+    memcpy(pk.e, pk_row(pk.slot, 0), PK_KEYS);
+    memcpy(pk.o, pk_row(pk.slot, 1), PK_KEYS);
+    for (s = 0; s < PK_KEYS; s++)
+        if (pk.e[s] > PK_N) pk.e[s] = 0;               /* (unknown: the map's own) */
+    pk.qpend = pk.exd = pk.exs = 0;
+    memset(pk.mt, 0, sizeof pk.mt);
+    pk.mod = pk.mon = pk.edit = 0;
+    pk.magic = PK_MAGIC;
+}
+static void pk_name(uint32_t e, char *nm)
+{
+    static const char *const BN[5] = {"LOOP 3", "PITCH UP", "PITCH DN", "TAPE STOP", "STRETCH"};
+    str_cpy(nm, e < PF_M1 ? PF_NAME[e] : e < PF_M1 + NTRK ? "MUTE T1" : e == PF_STR ? BN[4] : e >= PF_LP3 && e <= PF_TAPE ?
+            BN[e - PF_LP3] : e == PF_CLR ? "CLR AUTO" : e == PK_MOD ? "MOD" : "-", 12);
+    if (e >= PF_M1 && e < PF_M1 + NTRK) nm[6] = (char)('1' + e - PF_M1);
+}
+/* a MOD key held: its macro (TARGET M1..M4) moved, its SHAPE (RAMP UP / DOWN, SINE, S&H) over its AMOUNT (1 BEAT, 1 BAR,
+ * 2, 4 BARS), from where the key went down; let go, the macro as it was */
+static BTAPP_FN void pk_mod_bt(void)
+{
+    static const uint8_t BT[4] = {1, 4, 8, 16};
+    uint32_t m;
+    for (m = 0; m < 4u; m++) {
+        uint32_t b = 1u << m, o = pk.mo[m], per, t, ph, v;
+        if (!((pk.mod | pk.mon) & b)) continue;
+        if (!(pk.mod & b)) {
+            pk.mon &= (uint8_t)~b;
+            macro_v[m] = pk.mv0[m];
+            continue;
+        }
+        if (!(pk.mon & b)) { pk.mon |= (uint8_t)b; pk.mv0[m] = macro_v[m]; }
+        per = 60000u * BT[o >> 6] / (uint32_t)clamp(song.g[G_BPM], 20, 300);
+        t = fm1_ms - pk.mt0[m];
+        ph = (t % per) * 256u / per;
+        switch ((o >> 4) & 3u) {
+        case 0: v = ph / 2u; break;
+        case 1: v = 127u - ph / 2u; break;
+        case 2: v = (uint32_t)(64 + ((sine_i(ph << 24) * 63) >> 15)); break;
+        default: v = ((t / per + m) * 2654435761u) >> 25;
+        }
+        macro_v[m] = (uint8_t)(v > 127u ? 127u : v);
+    }
+}
+static void pk_mod(void) { if ((pk.mod | pk.mon) && bt_hw_seg()) pk_mod_bt(); }
+static int pk_page(void) { return (ui.ly == LAYER_FX && layer_held()) || (fx_lock && (!ui.ly || ui.ly == LAYER_FX)); }   /* (held,
+                                                         * or locked open: fx_lock_on is the frame after) */
+static uint32_t pke_e(uint32_t s) { return pk.we[s] ? pk.we[s] - 1u : perf_def(s); }
+static int pke_tgt(uint32_t e) { return e == PK_MOD ? 2 : (e >= PF_OCTD && e <= PF_RND) || e == PF_LP3; }   /* (2: M1..M4) */
+static BTAPP_FN void pke_load(uint32_t sl)
+{
+    pk.eslot = (uint8_t)(sl & 3u);
+    memcpy(pk.we, pk_row(sl, 0), PK_KEYS);
+    memcpy(pk.wo, pk_row(sl, 1), PK_KEYS);
+}
+static BTAPP_FN void pke_help(uint32_t s)               /* what the key's effect and mode do, in the header */
+{
+    static BTAPP_RO const char M[8][15] = {"WHILE HELD", "PRESS ON / OFF", "ON NEXT BEAT", "", "RAMPS UP",
+                                           "RAMPS DOWN", "SWINGS", "RANDOM STEPS"};
+    uint32_t e = pke_e(s);
+    char nm[12];
+    pk_name(e, nm);                                     /* (the effect's name, then what its mode does) */
+    ui_message(nm);
+    str_cpy(ui.msg2, M[((pk.we[s] ? pk.wo[s] : 0u) >> 4 & 3u) + (e == PK_MOD ? 4u : 0u)], sizeof ui.msg2);
+}
+static BTAPP_FN void pke_knob_bt(uint32_t k, int32_t d)
+{
+    uint32_t s = pk.ekey % PK_KEYS, e = pke_e(s), o = pk.we[s] ? pk.wo[s] : 0u, tg = o & 15u, am = o >> 6, md = (o >> 4) & 3u;
+    if (!(kb_layer & ((1u << 27) - 1u))) {
+        ui_message("HOLD A KEY");
+        return;
+    }
+    d = d > 0 ? 1 : -1;
+    if (k == 0u) { e = (e + PK_N + (uint32_t)d) % PK_N; tg = 0; }
+    else if (k == 1u && pke_tgt(e)) tg = (uint32_t)clamp((int32_t)tg + d, 0, pke_tgt(e) == 2 ? 3 : 8);
+    else if (k == 2u && e == PK_MOD) am = (uint32_t)clamp((int32_t)am + d, 0, 3);
+    else if (k == 3u && e != PF_N && e != PF_CLR) md = (uint32_t)clamp((int32_t)md + d, 0, e == PK_MOD ? 3 : 2);
+    pk.we[s] = (uint8_t)(e + 1u);
+    pk.wo[s] = (uint8_t)(tg | md << 4 | am << 6);
+    pke_help(s);
+    ui.force = 1;
+}
+static BTAPP_FN void pke_cards_bt(void)
+{
+    static BTAPP_RO const char TG[9][4] = {"ALL", "SYN", "DRM", "T1", "T2", "T3", "T4", "T5", "T6"};
+    static BTAPP_RO const char MD[8][8] = {"HOLD", "LATCH", "QUANT", "", "RAMP UP", "RAMP DN", "SINE", "S&H"};
+    static BTAPP_RO const char AM[4][7] = {"1 BEAT", "1 BAR", "2 BARS", "4 BARS"};
+    uint32_t s = pk.ekey % PK_KEYS, e = pke_e(s), o = pk.we[s] ? pk.wo[s] : 0u, c;
+    char nm[12];
+    if (!(kb_layer & ((1u << 27) - 1u))) {              /* no key held: the slot, the way out */
+        nm[0] = (char)('1' + pk.eslot); nm[1] = 0;
+        hot_text_column(0, "SLOT", nm);
+        empty_column(1);
+        empty_column(2);
+        empty_column(3);
+        return;
+    }
+    pk_name(e, nm);
+    hot_text_column(0, "EFFECT", nm);
+    if (pke_tgt(e) == 2) {                              /* MOD: the macro, by its first route's destination */
+        uint32_t r, dd = 0, m = o & 3u;
+        char t[8] = {'M', (char)('1' + m), 0};
+        for (r = 0; r < MX_N && !dd; r++)
+            if ((mx_r[r].m & 3u) == m && mx_r[r].d && mx_r[r].a) dd = mx_r[r].d;
+        if (dd && dd < NELEM(N_MDST)) str_cpy(t, N_MDST[dd], sizeof t);
+        text_column(1, "TARGET", t, VAL(1u));
+    } else
+        text_column(1, "TARGET", pke_tgt(e) ? TG[o & 15u] : "-", pke_tgt(e) ? VAL(1u) : T_DIM);
+    text_column(2, "AMOUNT", e == PK_MOD ? AM[o >> 6] : "-", e == PK_MOD ? VAL(2u) : T_DIM);
+    c = e == PF_N || e == PF_CLR;
+    text_column(3, e == PK_MOD ? "SHAPE" : "MODE", c ? "-" : MD[((o >> 4) & 3u) + (e == PK_MOD ? 4u : 0u)], c ? T_DIM : VAL(3u));
+}
+/* OCT+ / OCT- on the FX layer: open, save; leave. 1: taken */
+static BTAPP_FN int pke_oct_bt(int up)
+{
+    char b[16] = "SAVED SLOT 1";
+    if (!pk.edit) {
+        if (!up) return 0;
+        pke_load(pk.slot);
+        pk.edit = 1;
+        fx_lock = 1;                                    /* (the FX layer locked open: the keys its, the map shown) */
+        ui_message("HOLD A KEY");
+        str_cpy(ui.msg2, "OCT+ SAVE OCT- EXIT", sizeof ui.msg2);
+    } else if (up) {
+        memcpy(pk_row(pk.eslot, 0), pk.we, PK_KEYS);
+        memcpy(pk_row(pk.eslot, 1), pk.wo, PK_KEYS);
+        favorites.factory[6][18] = pk.eslot;
+        settings_save();
+        pk_load();                                      /* (the slot played now; the editor shut) */
+        pk.edit = 1;
+        b[11] = (char)('1' + pk.eslot);
+        ui_message(b);
+        ui.msg2[0] = 0;
+    } else {
+        pk.edit = 0;
+        fx_lock = 0;                                    /* (back to the PUNCH IN page) */
+        ui.msg2[0] = 0;
+    }
+    ui.force = 1;
+    return 1;
+}
+static BTAPP_FN void pke_sel_bt(int32_t d)
+{
+    char b[8] = "SLOT 1";
+    pke_load((uint32_t)((int32_t)pk.eslot + (d > 0 ? 1 : 3)));
+    b[5] = (char)('1' + pk.eslot);
+    ui_message(b);
+    ui.force = 1;
+}
+static int pke_oct(int up) { if (!bt_hw_seg()) { if (up) seg_missing(); return up; } return pke_oct_bt(up); }
+
 static __attribute__((noinline)) void layer_cards(uint32_t l)
 {
     char val[12];
     const char *unit;
     uint32_t c;
-    if (l == LAYER_FX) {                                /* (V10.7.59) M1..M4, named by their first route's destination */
+    if (l == LAYER_FX && pk.edit) {                     /* (V10.7.65) the punch-in editor */
+        if (bt_hw_seg()) pke_cards_bt();
+    } else if (l == LAYER_FX) {                         /* (V10.7.59) M1..M4, named by their first route's destination */
         for (c = 0; c < 4u; c++) {
             uint32_t r, d = 0;
             char nm[8] = {'M', (char)('1' + c), 0};

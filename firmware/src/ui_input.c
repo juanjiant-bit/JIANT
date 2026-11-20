@@ -2565,6 +2565,9 @@ static void layer_knob(uint32_t k, int32_t s);
 static int layer_play(void);
 static int layer_set_open(void);
 static uint32_t layer_oct(uint32_t pressed, uint32_t oct);
+static int pk_page(void);                               /* (V10.7.65) ui_layer.c: the punch-in editor */
+static int pke_oct(int up);
+static void pke_sel_bt(int32_t d);
 static void layer_oct_open(uint32_t pressed);
 static int layer_allowed(void);
 static void mom_knob(uint32_t k, int32_t s);            /* (0.9.9-seq2e) MOMENTARY: EDIT held + KNOB 1..4 */
@@ -2774,6 +2777,20 @@ static void ui_input_frame(void)
     if (((pressed >> panel.btn[B_SAVE]) & 1u) && ui.ly == LAYER_SAVE)
         ui.save_t0 |= 2u;                               /* (SAVE too: layer_tap opens its pages) */
     layer_oct_open(pressed);                            /* (OCT± with a SET layer's button down: it opens now) */
+    {   /* (V10.7.65, the owner) FX > PUNCH IN: OCT+ the punch-in editor (an ERASE picked on KNOB 4: OCT+ does it, as
+         * before); in it OCT+ saves the slot, OCT- back to the page, SELECT the slot */
+        uint32_t u = 1u << panel.btn[B_OCTUP], d = 1u << panel.btn[B_OCTDN];
+        int32_t sd;
+        if (pk.edit && !ui.menu && !ui.confirm) {
+            if ((pressed & u) && pke_oct(1)) pressed &= ~u;
+            else if ((pressed & d) && pke_oct(0)) pressed &= ~d;
+            if (pk.edit && bt_hw_seg() && (sd = panel_enc(EN_SELECT)) != 0) pke_sel_bt(sd);
+            if (pk.edit && !pk_page() && ui.ly != LAYER_FX)
+                pk.edit = 0;                            /* (the layer shut, FX tapped: the editor too, unsaved) */
+        } else if ((pressed & u) && !(fm1_in.buttons & d) && !ui.home && !ui.menu && !ui.confirm && !ui.ly && !ui.act &&
+                   cur_page()->graph == GR_PUNCH && pke_oct(1))
+            pressed &= ~u;
+    }
     oct = oct_taps(pressed, ui.menu || ui.confirm || act_cols() || name_on() || layer_set_open());
     oct = layer_oct(pressed, oct);                      /* (a SET layer's OCT-: put back) */
     if (!ui.home && !ui.menu && !ui.confirm && !ui.ly && cur_page()->graph == GR_TOOLS && ((pressed >> panel.btn[B_OCTUP]) & 1u))

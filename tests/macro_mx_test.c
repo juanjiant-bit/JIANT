@@ -61,25 +61,73 @@ int main(void)
         snprintf(what, sizeof what, "MACROS: M1 full closes the filters (energy %.2f of the open one)", e2 / e0);
         bad += check(what, e2 < e0 * 0.6);
     }
-    {   /* (V10.7.62) FX + OCT+: DICE, a buffer effect at random each beat while held, no octave; FX let go: none */
+    {   /* (V10.7.65, the owner) the PUNCH-IN EDITOR: FX + OCT+ opens it (DICE gone, no octave), a key held + KNOB 1 its
+         * EFFECT, KNOB 4 its MODE, OCT+ saves the slot and plays it, OCT- leaves; the slot's keys then play so (LATCH: a
+         * press on, the next off; QUANT: from the next beat); untouched keys as the map always had them */
         int8_t oc;
-        uint32_t k, seen = 0, b;
+        uint32_t k, b, s0, def = 1;
         static int32_t o[2 * CTL];
         sine_song();
+        memset(&favorites.factory[0][5], 0, 27); memset(&favorites.factory[2][5], 0, 27);   /* (slot 1 as at the factory) */
+        favorites.factory[6][18] = 0;
+        pk.magic = 0; frame();
+        for (k = 0; k < PK_KEYS; k++) def &= pk.e[k] == 0u;
+        ok = def && pk.slot == 0u;
+        s0 = key_at(0, 0);                              /* (F3: slot 0, RPT 1/8 at the factory) */
+        ok &= perf_key(s0) == PF_R8;
         oc = song.octave;
-        btn_down(B_FX); frames(480);                    /* (the layer open: past HOLD) */
-        btn_down(B_OCTUP); frames(32);
-        for (k = 0; k < 400u; k++) {
-            frame();
-            for (b = 0; b < 8u; b++) mix_block(o, CTL);
-            seen |= perf_act & PF_BUF;
-        }
-        ok = perf_dice && song.octave == oc && __builtin_popcount(seen) >= 3;
-        btn_up(B_OCTUP); frames(32); btn_up(B_FX); frames(64);
-        for (b = 0; b < 8u; b++) mix_block(o, CTL);
-        ok &= !perf_dice && !(perf_act & PF_BUF);
-        if (!ok) printf("  dice %u latched %u ly %u octave %d seen %x act %x\n", perf_dice, dice_latched, ui.ly, song.octave, seen, perf_act);
-        bad += check("DICE: FX + OCT+ plays a new buffer effect each beat (no octave); let go: none", ok);
+        go_title("PUNCH IN"); frames(32);              /* (the owner: OCT+ on FX > PUNCH IN, not FX + OCT+) */
+        btn_down(B_OCTUP); frames(32); btn_up(B_OCTUP); frames(32);
+        ok &= pk.edit && fx_lock && song.octave == oc;
+        key_down(s0); frames(32);
+        turn(EN_K1, 1); frames(32);                     /* EFFECT: RPT 1/16 */
+        turn(EN_K4, 1); frames(32);                     /* MODE: LATCH */
+        key_up(s0); frames(32);
+        ok &= pk.we[0] == PF_R16 + 1u && ((pk.wo[0] >> 4) & 3u) == 1u && !(perf_held | perf_latched);   /* (nothing played) */
+        btn_down(B_OCTUP); frames(32); btn_up(B_OCTUP); frames(32);   /* save slot 1 */
+        ok &= pk.e[0] == PF_R16 + 1u && favorites.factory[0][5] == PF_R16 + 1u && pk.edit;
+        btn_down(B_OCTDN); frames(32); btn_up(B_OCTDN); frames(32);   /* leave: the PUNCH IN page again */
+        ok &= !pk.edit && !fx_lock && perf_key(s0) == PF_R16 && cur_page()->graph == GR_PUNCH && song.octave == oc;
+        btn_down(B_FX); frames(480);
+        key_down(s0); frames(32); key_up(s0); frames(32);
+        ok &= (perf_latched >> PF_R16) & 1u;            /* LATCH: on, and stays */
+        key_down(s0); frames(32); key_up(s0); frames(32);
+        ok &= !((perf_latched >> PF_R16) & 1u);         /* .. the next press off */
+        pk.o[0] = 2u << 4;                              /* QUANT: from the next beat while held */
+        key_down(s0);
+        for (b = 0; b < 4u; b++) mix_block(o, CTL);
+        ok &= (pk.qpend >> PF_R16) & 1u;
+        for (b = 0; b < 600u; b++) mix_block(o, CTL);   /* (a beat at 120: ~345 blocks) */
+        ok &= (perf_held >> PF_R16) & 1u && !pk.qpend;
+        key_up(s0); frames(32);
+        ok &= !((perf_held >> PF_R16) & 1u);
+        btn_up(B_FX); frames(64);
+        if (!ok) printf("  editor: def %u edit %u we %u wo %x e %u held %x latched %x qpend %x\n", def, pk.edit, pk.we[0], pk.wo[0], pk.e[0], perf_held, perf_latched, pk.qpend);
+        bad += check("PUNCH-IN EDITOR: OCT+ on FX > PUNCH IN opens, a key + KNOB 1 / 4 its effect and mode, OCT+ saves, OCT- leaves; LATCH, QUANT play so", ok);
+        memset(&favorites.factory[0][5], 0, 27); memset(&favorites.factory[2][5], 0, 27); pk.magic = 0; frame();
+    }
+    {   /* (V10.7.65) MOD: a key moves its macro (TARGET M2, RAMP UP over a beat) while held, as it was when let go;
+         * SELECT in the editor picks the slot, OCT+ saves and plays it */
+        uint32_t s0 = key_at(0, 0), mv, mx = 0, k;
+        pk.magic = 0; frame();
+        pk.e[0] = PK_MOD + 1u; pk.o[0] = 1u;            /* M2, RAMP UP, 1 BEAT */
+        macro_v[1] = 20; mv = macro_v[1];
+        btn_down(B_FX); frames(480);
+        key_down(s0);
+        for (k = 0; k < 30u; k++) { frames(16); if (macro_v[1] > mx) mx = macro_v[1]; }
+        key_up(s0); frames(48);
+        ok = mx > 60u && macro_v[1] == mv;
+        btn_up(B_FX); frames(64);
+        go_title("PUNCH IN"); frames(32);
+        btn_down(B_OCTUP); frames(32); btn_up(B_OCTUP); frames(32);
+        turn(EN_SELECT, 1); frames(32);
+        ok &= pk.edit && pk.eslot == 1u;
+        btn_down(B_OCTUP); frames(32); btn_up(B_OCTUP); frames(32);
+        ok &= pk.slot == 1u && favorites.factory[6][18] == 1u;
+        btn_down(B_OCTDN); frames(32); btn_up(B_OCTDN); frames(32);
+        if (!ok) printf("  mod: max %u now %u was %u; edit %u eslot %u slot %u\n", mx, macro_v[1], mv, pk.edit, pk.eslot, pk.slot);
+        bad += check("PUNCH-IN MOD: a key moves its macro while held, back when let go; SELECT a slot, OCT+ plays it", ok);
+        favorites.factory[6][18] = 0; macro_v[1] = 0; pk.magic = 0; frame();
     }
     printf(bad ? "macro-mx: %d FAILED\n" : "macro-mx: all ok\n", bad);
     return bad != 0;

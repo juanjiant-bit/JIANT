@@ -1443,8 +1443,6 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
                   (uint32_t)(ain_gg[(uint32_t)(t - trk) % NTRK] >> 12) << 18)) * 16777619u;
     if (pg->fam == FAM_EDIT && trk_engp(t) == &ENG_INPUT && t->p[P_E0] == AIN_SW)   /* (SWARM: it moves every frame) */
         h ^= anim_fr * 2654435761u;
-    if (DX_KIT3(pg))                                 /* (0.8.8) KIT 3's colony lives every frame, as KIT's (was still) */
-        h ^= anim_fr * 2654435761u;
     if (pg->graph >= GR_FMOP && pg->graph <= GR_FMENV)   /* (0.9.6) FM6's operators: the colony lives, as the beings */
         h ^= anim_fr / 2u * 2246822519u;
     if (pg->graph == GR_MORPH)                       /* (0.6.45) the wave, MORPH */

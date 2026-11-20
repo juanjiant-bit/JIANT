@@ -104,6 +104,7 @@ static int settings_import(persist_t *p, int n)
 #endif
 #endif
     if (p->panel.magic == PANEL_MAGIC) panel = p->panel;
+    pk.magic = 0;                                   /* (V10.7.65: the punch-in slots read again, ui_layer.c pk_load) */
     return current ? 1 : 2;
 }
 

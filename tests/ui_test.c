@@ -9527,7 +9527,10 @@ static int test_fx_latch(void)
         ok &= !ui.layer && ui.home == h && ui.page == pg;
     }
     btn_down(B_FX); frame(); frames(800); press(B_OCTUP); btn_up(B_FX); frame();
-    ok &= song.octave == -1;                                      /* (V10.7.62: FX + OCT+ is DICE, no octave) */
+    ok &= song.octave == -1 && !pk.edit;                          /* (V10.7.65: FX + OCT+ nothing, DICE gone, no octave; the
+                                                         * punch-in editor is OCT+ on FX > PUNCH IN) */
+    if (!ok) printf("  latchoff: edit %u oct %d lock %u layer %u\n", pk.edit, song.octave, fx_lock, ui.layer);
+    song.octave = -1;
     frames(64); press(B_OCTUP);
     ok &= song.octave == 0;
     btn_down(B_FX); frame(); btn_up(B_FX); frame();               /* FX tap: its page still */
@@ -9540,7 +9543,7 @@ static int test_fx_latch(void)
     ok &= song.octave == 0 && !msg_is("MIX PUT BACK");
     btn_up(B_GLO); frame();
     ok &= ui.home && !ui.layer;
-    bad += check("  FX LATCH OFF: FX + OCT- quick / held shifts the octave (no page; OCT+ DICE); FX tap: the FX page; "
+    bad += check("  FX LATCH OFF: FX + OCT- quick / held shifts the octave (no page; OCT+ nothing); FX tap: the FX page; "
                  "GLO + OCT- quick: no octave, nothing put back", ok);
     fx_latch = PREF_LATCH | PREF_ACCEL_OFF;
     frame();
@@ -9572,6 +9575,7 @@ static int test_fx_latch(void)
         ok &= !fx_lock && !ui.layer && perf_latched == PF_BIT(PF_REV) && ui.home;
         key_down(lpf); frame(); key_up(lpf); frame();                 /* (unlocked: the key plays its note) */
         ok &= perf_latched == PF_BIT(PF_REV);
+        if (!ok) printf("  latch: lock %u layer %u latched %x m1 %u oct %d home %u edit %u\n", fx_lock, ui.layer, perf_latched, macro_v[1], song.octave, ui.home, pk.edit);
         perf_latched = 0;
         bad += check("  FX LATCH: FX held and let go unused locks the FX layer open (keys, knobs, OCT- ALL OFF); FX again "
                      "unlocks, the effects stay", ok);

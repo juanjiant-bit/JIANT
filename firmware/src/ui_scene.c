@@ -90,7 +90,7 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
         scn_frel = 1;                                    /* (V10.7.63: a led scene's notes let go) */
         if (scn_on == 8u) {                              /* (V10.7.64) PRESS: the key's note on every live track, its own
                                                          * sound each; no roles, no dice, the scale as it is */
-            ui_message("SCENE PRESS: KEYS PLAY EVERY TRACK");
+            ui_message("PRESS: EVERY TRACK PLAYS THE KEYS");
             return;
         }
         if (scn_on >= 2u && !drum_track(&trk[scn_on - 2u]))
@@ -165,7 +165,7 @@ static void graph_scene(void)
     }
     {   /* (V10.7.63, the owner: "confusing") what the picked track's role does, in words; then the keys */
         static const char *const RD[SC_N] = {"PLAYS ITS OWN SEQUENCE", "HOLDS EACH NOTE'S CHORD", "ARPEGGIATES EACH NOTE'S CHORD",
-                                             "A BASS LINE UNDER THE NOTES", "A LINE ABOVE THE NOTES", "EACH KEY A NEW BEAT, PLAYING WHILE HELD"};
+                                             "A BASS LINE UNDER THE NOTES", "A LINE ABOVE THE NOTES", "A NEW BEAT EACH KEY, WHILE HELD"};
         uint32_t r = scn_role[sc_trk % NTRK] % SC_N;
         char b[48] = "T1 ";
         b[1] = (char)('1' + sc_trk % NTRK);

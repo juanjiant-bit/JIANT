@@ -69,8 +69,22 @@ static volatile uint8_t perf_latch_on;   /* main: MENU > FX LATCH ON (#40): a ke
 static volatile uint32_t perf_latched;   /* ISR: the effects latched (FX LATCH; main clears it: OCT-, the menu) */
 static volatile uint32_t perf_act;    /* ISR: .. running (a 1/16 one from its start on) */
 static uint32_t perf_ord[PF_N], perf_seq;   /* press order: the last pressed buffer effect plays */
-static volatile uint8_t perf_dice;    /* (V10.7.62, the owner) main: FX + OCT+ held (FX LATCH: toggled): DICE, a buffer
-                                       * effect picked at random each beat (perf_dice_step) */
+/* (V10.7.65, the owner: "each user sets what each key does and how") the PUNCH-IN EDITOR's keys: 27 (F3 .. G5 white
+ * 0..15, F#3 .. F#5 black 16..26), each an effect (e: 0 the slot's default, today's map; else effect + 1: PF_* , PF_CLR,
+ * PK_MOD a MACRO moved) and its options (o: TARGET bits 0-3 ALL SYN DRM T1..T6, MODE bits 4-5 HOLD LATCH QUANT
+ * (a MOD: its shape RAMP UP / DOWN, SINE, S&H), AMOUNT bits 6-7 (a MOD: 1 BEAT, 1 BAR, 2, 4 BARS)); four slots in the
+ * settings (ui_layer.c pke_*), the one played here. In the pool (set at power-on: pk_load) */
+enum { PK_MOD = PF_CLR + 1, PK_N };                 /* MOD: a MACRO (its TARGET M1..M4) moved while held */
+#define PK_KEYS 27u
+static struct {
+    uint8_t e[PK_KEYS], o[PK_KEYS], slot;           /* the slot played */
+    uint8_t we[PK_KEYS], wo[PK_KEYS], eslot;        /* the editor's copy, the slot it edits */
+    volatile uint8_t edit, ekey;                    /* the editor open (keys edit, play nothing); the key held last */
+    uint32_t qpend;                                 /* QUANT keys waiting for the beat */
+    uint32_t exd, exs, mt[NTRK];                    /* TARGET: the effects kept off the kits / the synths, a track's own */
+    uint8_t mod, mon, mo[4], mv0[4];                /* MOD keys held (M1..M4), moving, their options, the macros before */
+    uint32_t mt0[4], magic;                         /* .. since when (ms); PK_MAGIC once loaded (the pool: not zeroed) */
+} pk __attribute__((section(".pool")));
 
 /* the ZDF state-variable filter at cutoff index i (30 Hz * 2^(i / 7), 0..63: up to 15.4 kHz), k = 1:
  * a1 a2 a3 in Q14 (tools: g = tan(pi fc / fs), a1 = 1 / (1 + g (g + k)), a2 = g a1, a3 = g a2) */
@@ -264,38 +278,36 @@ static __attribute__((noinline)) void perf_unhush(void)   /* (out of perf_begin:
                 pf.mg[k] = 32768;
         }
 }
-/* (V10.7.62) DICE: while perf_dice, each beat (the transport's, else a free one) one of the buffer effects at random
- * (REPEAT 1/8 1/16 1/32, REVERSE, TAPE STOP, PITCH UP / DOWN, STRETCH), the last pressed (perf_pick); its bit */
-static __attribute__((noinline)) uint32_t perf_dice_step(uint32_t n)
+/* (V10.7.65) the editor's QUANT keys, on the beat (the transport's, else a free one): held from now on (pk); 0 bits of
+ * its own */
+static __attribute__((noinline)) uint32_t pk_step(uint32_t n)
 {
-    static const uint8_t DE[8] = {PF_R8, PF_R16, PF_R32, PF_REV, PF_TAPE, PF_PUP, PF_PDN, PF_STR};
-    static uint32_t e __attribute__((section(".pool"))), ph __attribute__((section(".pool"))),   /* (the pool: RAM's .bss */
-        last __attribute__((section(".pool"))), rs __attribute__((section(".pool")));            /* full; set off at once) */
-    uint32_t b = beat_samples(), beat;
-    if (!perf_dice) {
-        e = PF_N;
+    static uint32_t ph __attribute__((section(".pool"))), last __attribute__((section(".pool")));
+    uint32_t b = beat_samples(), beat, e, m;
+    if (!pk.qpend) {
         last = ~0u;
         return 0;
     }
     ph += n;
     beat = song.playing && clk_pos != CLK_START ? clk_n / 4u : ph / (b ? b : 1u);
-    if (beat != last || e == PF_N) {
-        uint32_t k, ok = perf_avail();
+    if (last == ~0u || beat == last) {
         last = beat;
-        for (k = 0; k < 8u; k++) {                  /* (a REPEAT too long for the tempo: another) */
-            rs = rs * 1664525u + 1013904223u;
-            if ((ok >> DE[rs >> 29]) & 1u && DE[rs >> 29] != e)
-                break;
-        }
-        e = DE[rs >> 29];
-        perf_ord[e] = ++perf_seq;
+        return 0;
     }
-    return PF_BIT(e);
+    last = beat;
+    m = pk.qpend;
+    pk.qpend = 0;
+    for (e = 0; m; e++, m >>= 1)
+        if (m & 1u) {
+            perf_held |= PF_BIT(e);
+            perf_ord[e] = ++perf_seq;
+        }
+    return 0;
 }
-static uint32_t (*const volatile PERF_DICE)(uint32_t) = perf_dice_step;   /* (out of perf_begin's RAM code: its reach) */
+static uint32_t (*const volatile PERF_PK)(uint32_t) = pk_step;   /* (out of perf_begin's RAM code: its reach) */
 static __attribute__((noinline)) int perf_begin(uint32_t n)
 {
-    uint32_t held = perf_kill ? 0u : (perf_held | perf_latched | PERF_DICE(n) | (perf_solo ? (~(uint32_t)perf_solo & ((1u << NTRK) - 1u)) << PF_M1 : 0u)) & perf_avail() & ~(PF_MIDI | PF_LOOPS);
+    uint32_t held = perf_kill ? 0u : (perf_held | perf_latched | PERF_PK(n) | (perf_solo ? (~(uint32_t)perf_solo & ((1u << NTRK) - 1u)) << PF_M1 : 0u)) & perf_avail() & ~(PF_MIDI | PF_LOOPS);
     uint32_t q, k, ph0, bnd;
     int32_t m;
     if (!held && !pf.busy && !(perf_k[0] | perf_k[1] | perf_k[2])) {   /* idle: the clock only */

@@ -193,7 +193,9 @@ static __attribute__((noinline)) void pfx_block(uint32_t n, uint32_t held)
     for (k = 0; k < NTRK; k++) {
         track_t *t = &trk[k];
         int drum = t->engine == ENGI_DRUM;
-        uint32_t on = (!pfx_tgt || (pfx_tgt == 1u) == !drum ? held : 0u) | (!pfx_ltgt || (pfx_ltgt == 1u) == !drum ? lane : 0u);
+        uint32_t on = ((!pfx_tgt || (pfx_tgt == 1u) == !drum ? held : 0u) & ~((drum ? pk.exd : pk.exs) & ~pk.mt[k])) |   /* (V10.7.65:
+                                                         * a key's TARGET) */
+                      (!pfx_ltgt || (pfx_ltgt == 1u) == !drum ? lane : 0u);
         uint32_t old = t->pfx, f, rep, per = 0;
         rep = on & (PF_BIT(PF_S16) | PF_BIT(PF_S8) | PF_BIT(PF_ARP));
         per = (rep & (PF_BIT(PF_S16) | PF_BIT(PF_ARP))) ? b / 4u : b / 2u;   /* (JIANT 0.4: 1/8, 1/16; ARP 1/16) */
