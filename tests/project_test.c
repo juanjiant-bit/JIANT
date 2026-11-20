@@ -317,9 +317,8 @@ int main(void)
                    !memcmp((c).t[1].p, p, sizeof p) && (c).t[0].engine == 0u && !memcmp((c).fm6[0], FM6_INIT, FM6_PACKED))
         ok = proj_pack(&st, &a) && proj_import(&c, &st, sizeof st);
         bad += check("FUNC with a DIGITAL track: FM6, the init patch its own, its values kept", ok && FM4_OK(c));
-        bad += check("  its motion on INDEX / OP LEVEL / E7 goes; a send's and the other track's stay",
-                     c.motion.count == 2u && c.motion.event[0].param == P_CHOR && c.motion.event[1].place == 3u &&
-                     c.motion.event[1].param == P_E4 && motion_valid(&c.motion) && proj_ok(&c));
+        bad += check("  its motion kept as it was (V10.7.66: no DIGITAL migration)",
+                     c.motion.count == 5u && motion_valid(&c.motion) && proj_ok(&c));
         bad += check("  imported again: as it is (FM6 now)", proj_import(&d, &c, sizeof c) && !memcmp(&d, &c, sizeof d));
 #undef FM4_OK
     }

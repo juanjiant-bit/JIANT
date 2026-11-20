@@ -591,13 +591,10 @@ static void projects(void)
         q.motion.event[0].place = 2u << 6; q.motion.event[0].param = P_E0 + 2; q.motion.event[0].value = 30;   /* T3 FREQ */
         q.motion.event[1].place = 2u << 6; q.motion.event[1].param = P_LEVEL; q.motion.event[1].value = 90;   /* T3 LEVEL */
         q.motion.event[2].place = 0u << 6; q.motion.event[2].param = P_E0 + 2; q.motion.event[2].value = 30;  /* T1's E */
-        memcpy(want, NOISE_E[k], sizeof want);
-        west_from_noise(want);
+        memcpy(want, NOISE_E[k], sizeof want);           /* (V10.7.66: NOISE's values and motion kept as they were) */
         proj_phys_gone(&q);
         ok &= !memcmp(&q.t[2].p[P_E0], want, sizeof want) && q.phys == PROJ_PHYS && q.t[2].engine == ENGI_WEST &&
-              q.t[2].preset == k && !memcmp(&q.t[0].p[P_E0], NOISE_E[k], sizeof NOISE_E[k]) && q.motion.count == 2 &&
-              q.motion.event[0].param == P_LEVEL && q.motion.event[1].param == P_E0 + 2 && MOTION_TRK(&q.motion.event[1]) == 0;
-        ok &= want[7] >= 96 || k == 2u || k == 3u;       /* (the noise modes a DUST patch: the core silent) */
+              q.t[2].preset == k && !memcmp(&q.t[0].p[P_E0], NOISE_E[k], sizeof NOISE_E[k]) && q.motion.count == 3;
         proj_phys_gone(&q);                              /* (again: nothing) */
         ok &= !memcmp(&q.t[2].p[P_E0], want, sizeof want);
         {
@@ -607,9 +604,9 @@ static void projects(void)
             sounds &= rms(y, FS / 4) > 0.01;
         }
     }
-    check("NOISE projects (phys 2): engine 11's values west_from_noise's, its EDIT motion gone, the rest kept, phys 3; twice the same",
+    check("NOISE projects (phys 2): kept as they were (V10.7.66), phys 3; twice the same",
           ok);
-    check("  each of NOISE's eight sounds so migrated: bounded and sounding", sounds);
+    check("  each of NOISE's eight sounds as kept: bounded and sounding", sounds);
     memset(&q, 0, sizeof q);
     q.phys = PROJ_PHYS;
     q.t[2].engine = ENGI_WEST;

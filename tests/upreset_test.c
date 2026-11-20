@@ -199,18 +199,17 @@ int main(void)
         }
         ok = r.packed[UP_WEST_AT] == UP_WEST_MARK && r.ver >= 4u;   /* (UP_PUT's record: marked) */
         w.packed[UP_WEST_AT] = y.packed[UP_WEST_AT] = 0;
-        memcpy(want, NZ, sizeof want);
-        west_from_noise(want);
+        memcpy(want, NZ, sizeof want);                  /* (V10.7.66: NOISE's values no longer converted, only marked) */
         up_migrate(&w);
         up_migrate(&x);
         up_migrate(&y);
-        ok &= w.packed[UP_WEST_AT] == UP_WEST_MARK && y.packed[UP_WEST_AT] == UP_WEST_MARK && want[7] == 96;
+        ok &= w.packed[UP_WEST_AT] == UP_WEST_MARK && y.packed[UP_WEST_AT] == UP_WEST_MARK ;
         for (k = 0; k < 8u; k++)
             ok &= up_value(&w, P_E0 + k) == want[k] && up_value(&x, P_E0 + k) == NZ[k] && up_value(&y, P_E0 + k) == NZ[k];
         up_migrate(&w);
         for (k = 0; k < 8u; k++)
             ok &= up_value(&w, P_E0 + k) == want[k];
-        bad += check("NOISE record -> WEST once (DUST), marked kept", ok);
+        bad += check("NOISE record: its values as they were, marked (V10.7.66)", ok);
     }
 
     /* PHYS MODEL DRUM (before 1.0): (V10.6s) no longer the DRUM engine: from flash (a record of an older layout too)

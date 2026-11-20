@@ -1578,15 +1578,11 @@ static uint32_t preset_nth(const engine_t *e, uint32_t n)
  * (fm4_convert.c). Every path that brings a DIGITAL sound into a track ends here: a track never keeps engine 1 */
 static void fm4_apply(track_t *t, int16_t *p)
 {
-    uint8_t v[FP_SIZE + 1u];
-    uint32_t pr = fm4_convert(p, v), tr = trk_index(t), f;
-    fm6_set_patch(tr, v);
-    f = motion_guard();                               /* the audio ISR sees the old sound or the new one */
-    memcpy(t->p, p, sizeof t->p);
+    uint32_t f = motion_guard();                      /* (V10.7.66: DIGITAL no longer converted: FM6's first sound) */
+    (void)p;
     t->eng_req = ENGI_FM6;
-    t->preset = (uint8_t)pr;
+    t->preset = 0;
     motion_unguard(f);
-    fm6_adopt(tr);                                    /* SLOT OWN: the converted patch is the track's own */
 }
 static void fm4_track(track_t *t)                     /* t holds a DIGITAL sound (engine 1): convert it */
 {
@@ -1606,10 +1602,7 @@ static void fm4_load_preset(track_t *t, uint32_t k)
     if (t == TSEL)
         sync_reload = 1;
     memcpy(p, t->p, sizeof p);
-    for (i = 0; i < P_E0; i++)
-        if (!param_kept(i))
-            p[i] = TP[i].def;
-    fm4_preset_values(p, k);
+    (void)i; (void)k;
     fm4_apply(t, p);
     load_end(t);
 }

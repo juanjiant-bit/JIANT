@@ -290,37 +290,18 @@ static void proj_new_tracks(project_t *q, uint32_t from)
  * whatever format the project is: the conversion runs on every load, the stored record keeps what it holds until it
  * is saved again). Their motion events on the EDIT values or the OP ENV values go: DIGITAL's meanings do not carry
  * over to FM6's macros. Idempotent */
-static void proj_fm4(project_t *q)
+static void proj_fm4(project_t *q)                    /* (V10.7.66: no conversion: FM6's first sound) */
 {
 #if !FELUCCA_FM4
-    uint32_t k, i, n, hit = 0;
-    for (k = 0; k < NTRK; k++) {
-        proj_trk_t *d = &q->t[k];
-        uint8_t v[FP_SIZE + 1u];
-        uint32_t pr;
-        if (d->engine != ENGI_DIGITAL)
-            continue;
-        for (i = 0; i < P_COUNT; i++)
-            d->p[i] = (int16_t)clamp(d->p[i], param_desc_of(ENGI_DIGITAL, i)->min, param_desc_of(ENGI_DIGITAL, i)->max);
-        pr = fm4_convert(d->p, v);
-        fm6_pack(v, q->fm6[k]);
-        d->engine = ENGI_FM6;
-        if (d->preset < PROJ_DEF_KEEP)
-            d->preset = (uint8_t)pr;
-        hit |= 1u << k;
-    }
-    if (!hit)
-        return;
-    for (i = n = 0; i < q->motion.count && i < MOTION_MAX; i++) {
-        const motion_event_t *e = &q->motion.event[i];
-        if (((hit >> MOTION_TRK(e)) & 1u) && (MOTION_ID(e) >= P_E0 || (MOTION_ID(e) >= P_FM1_ATK && MOTION_ID(e) <= P_FM4_LEVEL)))
-            continue;
-        q->motion.event[n++] = *e;
-    }
-    for (i = n; i < q->motion.count && i < MOTION_MAX; i++)
-        memset(&q->motion.event[i], 0, sizeof q->motion.event[i]);
-    q->motion.count = (uint8_t)n;
-    q->sum = proj_sum(q);
+    uint32_t k, hit = 0;
+    for (k = 0; k < NTRK; k++)
+        if (q->t[k].engine == ENGI_DIGITAL) {
+            q->t[k].engine = ENGI_FM6;
+            q->t[k].preset = 0;
+            hit = 1;
+        }
+    if (hit)
+        q->sum = proj_sum(q);
 #else
     (void)q;
 #endif
@@ -350,23 +331,7 @@ static void proj_phys_gone(project_t *q)
             d->preset = 0;
         hit = 1;
     }
-    if (q->phys < PROJ_PHYS) {                          /* (V10.7.36) a project of before WEST: engine 11 was NOISE */
-        uint32_t w = 0, n;
-        for (k = 0; k < NTRK; k++)
-            if (q->t[k].engine == ENGI_WEST) {          /* (its preset number stays: WEST's 0..7 are NOISE's names) */
-                west_from_noise(&q->t[k].p[P_E0]);
-                w |= 1u << k;
-            }
-        for (i = n = 0; w && i < q->motion.count && i < MOTION_MAX; i++) {   /* their motion on the EDIT values goes */
-            const motion_event_t *e = &q->motion.event[i];
-            if (((w >> MOTION_TRK(e)) & 1u) && MOTION_ID(e) >= P_E0)
-                continue;
-            q->motion.event[n++] = *e;
-        }
-        for (i = n; w && i < q->motion.count && i < MOTION_MAX; i++)
-            memset(&q->motion.event[i], 0, sizeof q->motion.event[i]);
-        if (w)
-            q->motion.count = (uint8_t)n;
+    if (q->phys < PROJ_PHYS) {                          /* (V10.7.36: engine 11 was NOISE; V10.7.66: its sound kept) */
         q->phys = PROJ_PHYS;
         hit = 1;
     }
@@ -2127,7 +2092,7 @@ static int autosave_boot(int allowed)
         }
     }
     if (flash_ok)
-        song_retired();                            /* (V10.6p) songs 7, 8 retired: said once, over RESTORED */
+        /* (V10.7.66: songs 7-8's notice, V10.6p, retired) */
 #else
     (void)allowed;
 #endif

@@ -372,22 +372,6 @@ static int analog_from_chip(uint32_t engine, int16_t *e)
  * COLOR: DECAY 88..127), RES its PEAK; the register tones (LFSR, META) a folded, modulated tone (FOLD 90, RATIO 0.5 or
  * 1.41, DECAY 127). TRK DRIFT CRUSH have no place. Projects (project.c proj_phys_gone: those without PROJ_PHYS 3),
  * user presets (upreset.c up_migrate: those without UP_WEST_MARK). Not idempotent: the callers mark what they did */
-static __attribute__((noinline)) void west_from_noise(int16_t *e)
-{
-    int32_t mode = e[0] < 0 ? 0 : e[0] > 3 ? 3 : e[0], colr = e[1] < 0 ? 0 : e[1] > 127 ? 127 : e[1];
-    int32_t peak = e[3] < 0 ? 0 : e[3] > 127 ? 127 : e[3], cut = e[2] - (colr > 32 ? (colr - 32) / 3 : 0);
-    int16_t w[8] = {0, 0, 0, 1, 0, 0, 0, 0};
-    uint32_t i;
-    cut = cut < 0 ? 0 : cut > 127 ? 127 : cut;
-    w[5] = (int16_t)(88 + cut * 39 / 127);
-    w[6] = (int16_t)peak;
-    w[7] = (int16_t)(mode == 1 ? 96 : 127);
-    if (mode >= 2) {                                    /* LFSR, META */
-        w[0] = 90; w[1] = 30; w[2] = 45; w[3] = (int16_t)(mode == 2 ? 0 : 2); w[4] = 64; w[5] = 127; w[7] = 0;
-    }
-    for (i = 0; i < 8u; i++)
-        e[i] = w[i];
-}
 
 /* SAMPLE SET 4 was PERC, the GM-mapped drum kit (tools/gen_samples.py); retired after 1.0.2: its index stays
  * (SET / GRAIN SRC 4 is an alias of PIANO; 5..7, once USR1..3, clamp to it). A sound that selected it is the DRUM engine with

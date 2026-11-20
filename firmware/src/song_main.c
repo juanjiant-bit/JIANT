@@ -49,25 +49,6 @@ static void song_index_load(void)
     song_cur = 0;
     song_idx.rsv[0] = 1;                          /* (no index yet: song_index_boot takes section A's rows) */
 }
-#if FELUCCA_FLASH
-/* (V10.6p) power-on (autosave_boot), once: songs 7 and 8 retired (6 songs), their sections an older JIANT stored still
- * in their flash (FL_SAMPLES, a commit record of one of their objects: OBJ_COUNT..+7): said; checked once (the index's
- * rsv[1], written with it) */
-static __attribute__((noinline)) void song_retired(void)   /* (out of line: fm1_main's room is pinned) */
-{
-    uint32_t i, h[2];
-    if (song_idx.rsv[1])
-        return;
-    song_idx.rsv[1] = 1;
-    for (i = 0; i < FL_SAMPLES_SIZE / ST_SECTOR; i++)
-        if (!st_read(FL_SAMPLES + i * ST_SECTOR, h, sizeof h) && h[0] == ST_MAGIC && (uint16_t)(h[1] - OBJ_COUNT) < 8u) {
-            ui_message("SONGS 7-8 RETIRED");
-            str_cpy(ui.msg2, "6 SONGS NOW: SEE MANUAL", sizeof ui.msg2);
-            song_idx_touch();
-            return;
-        }
-}
-#endif
 /* persist_boot, after the slots: the current song's rows */
 static void song_index_boot(void)
 {
