@@ -226,7 +226,22 @@ static void graph_clips(void)
                 cv_frame(x - 2, y - 2, 54, 19, T_TEXT);
         }
     }
-    cv_text(4, 128, &AF_X, "OCT+ GO \xB7 OCT- STOP \xB7 F3-B3 PART \xB7 REC", T_MID);
+    {   /* (V10.8) the JAM take: each track a lane, its sequences' colours as they sounded; LOCK: where it plays */
+        uint32_t len = jam_len(), i, x0, x1, s, p;
+        if (!len) { cv_text(4, 128, &AF_X, "OCT+ GO \xB7 OCT- STOP \xB7 REC TAKE \xB7 K4 LOCK", T_MID); return; }
+        for (k = 0; k < NTRK; k++) {
+            for (x0 = 24, s = 0, i = 0; i < JAM_N && live.jam[i]; i++) {
+                if (JE_K(live.jam[i]) != k) continue;
+                p = JE_POS(live.jam[i]);
+                x1 = 24u + p * 212u / len;
+                if (x1 > x0) cv_rect((int32_t)x0, 120 + (int32_t)k * 3, (int32_t)(x1 - x0), 2, sec_col(s));
+                x0 = x1; s = JE_S(live.jam[i]);
+            }
+            if (236u > x0) cv_rect((int32_t)x0, 120 + (int32_t)k * 3, (int32_t)(236u - x0), 2, sec_col(s));
+        }
+        if (jam_lock && song.playing)
+            cv_rect(24 + (int32_t)((gl_step_at(0) - jam_base) % len * 212u / len), 118, 1, 20, T_TEXT);
+    }
 }
 /* (V10.6o, the owner's mock-up B) TIMELINE: the song as blocks (the cursor's row framed), what plays; under it the row
  * opened: each track's bar (its own part's colour calm, another part's bright with FROM and its letter,

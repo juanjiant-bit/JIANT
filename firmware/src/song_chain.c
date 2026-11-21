@@ -135,8 +135,7 @@ static struct {
     volatile uint8_t srec;            /* SONG REC: 0 off, 1 armed (from the next bar), 2 recording */
     volatile uint8_t nrec;            /* .. its rows so far (the last one still growing) */
     volatile uint8_t rec_done;        /* .. ISR: written, n rows (0xFF: nothing played); song_poll takes them */
-    chain_row_t rec[CHAIN_ROWS];
-    scene_t rec_scene[CHAIN_ROWS];    /* .. the scene as each row began */
+    uint16_t jam[80];                 /* (V10.8: SONG REC's rows' room) the JAM take: JAM_EV events, its END last */
     uint8_t dirty;                    /* sections stored in RAM, not in flash yet (bit s) */
     uint8_t mode;                     /* 1 SONG: PLAY plays the song; 0 LOOP */
 } live = {.req = -1, .cur = -1};
@@ -151,8 +150,17 @@ static uint8_t clip_mix __attribute__((section(".lowbuf")));   /* song_stage sta
  * with the playhead kept: the main loop stages the one asked for in sec_stage.t[k] (song_main.c jam_switch: what the
  * track played is put back into its part first, its edits kept), the ISR takes it on the step CAMBIO allows (seq.c
  * seq_tick: jam_due). jam_q CAMBIO: 0 AT ONCE, 1 1/16, 2 1/8, 3 1/4, 4 1/2, 5 BAR (MENU's byte: ui.c rp_apply) */
+#define JAM_N 80u
+#define JAM_EV(p, k, s) ((uint16_t)((((p) + 1u) << 5) | ((k) << 2) | (s)))
+#define JE_POS(e) (((uint32_t)(e) >> 5) - 1u)
+#define JE_K(e) (((uint32_t)(e) >> 2) & 7u)
+#define JE_S(e) ((uint32_t)(e) & 3u)
 static volatile uint8_t jam_rdy __attribute__((section(".lowbuf")));   /* bit k: track k's next sequence staged */
 static uint8_t jam_q __attribute__((section(".lowbuf")));
+static void jam_add(uint32_t e)                       /* (ISR) a change into the take; full: it ends there */
+{
+    if (live.nrec < JAM_N - 1u) live.jam[live.nrec++] = (uint16_t)e;
+}
 static void jam_in(track_t *t, uint32_t k)            /* (ISR, or stopped) the staged sequence in */
 {
     memcpy(t->step, sec_stage.t[k].step, sizeof t->step);
@@ -161,8 +169,15 @@ static void jam_in(track_t *t, uint32_t k)            /* (ISR, or stopped) the s
     clip_go[k] = 0;
     jam_rdy &= (uint8_t)~(1u << k);
 }
-static uint32_t rec_src[CHAIN_ROWS] __attribute__((section(".lowbuf")));   /* SONG REC's rows: where their tracks
-                                              * played from (sec_stage.src, tsrc's form: CLIPS' launches) */
+/* (V10.8, the owner's song mode) the JAM take (live.jam): each sequence change as it sounded, a 16th exact: (its 16th
+ * from the take's start + 1) << 5 | track << 2 | sequence; track 7 the END (the take's length, whole bars); the take's
+ * first six its tracks' sequences at 0. REC (live.srec: armed, recording) writes it from a bar line; LOCK plays it
+ * round (song_main.c jam_poll stages each track's next change ahead, seq.c jam_step puts it in on its 16th) while the
+ * player jams over it. Kept per song (storage.c OBJ_JAM) */
+static uint32_t jam_at[NTRK] __attribute__((section(".lowbuf")));   /* LOCK: the 16th + 1 a staged change is due (0: CAMBIO's) */
+static uint32_t jam_t0 __attribute__((section(".lowbuf")));          /* the take's first 16th (transport's) */
+static uint32_t jam_base __attribute__((section(".lowbuf")));        /* LOCK: this round's first 16th */
+static uint8_t jam_lock __attribute__((section(".lowbuf")));
 
 static void song_mode_restore(void)
 {

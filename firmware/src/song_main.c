@@ -9,6 +9,7 @@ static project_store_t song_keep __attribute__((section(".pool")));   /* the mus
 static uint8_t song_idx_dirty;                    /* the index changed (rows, the current song), not in flash yet */
 static uint32_t song_idx_t;                       /* .. since (fm1_ms): written once the rows rest a while */
 
+static void jam_load(void);
 static void song_rows_fix(chain_config_t *c)      /* a song's rows as chain_config takes them */
 {
     if (!chain_valid(c))
@@ -59,6 +60,7 @@ static void song_index_boot(void)
     }
     chain_config = song_idx.rows[song_cur];
     song_mode_restore();
+    jam_load();                                         /* (V10.8) the song's JAM take */
 }
 /* the current song's name: its section A's, else SONG n (b: PROJ_NAME_LEN + 1 bytes) */
 static void song_name(char *b)
@@ -248,6 +250,7 @@ static uint32_t chain_prepare_at(uint32_t r0)
     rc = song_unsaved(&chain_config);
     if (rc)
         return rc;
+    jam_lock = 0;                                     /* (V10.8.1: the song plays, not the JAM take) */
     project_capture(&proj_scratch);                   /* the music as it is: back when the song ends */
     chain.kept = proj_pack(&song_keep, &proj_scratch) ? (uint8_t)(1u | ((uint32_t)(live.cur + 1) << 1)) : 0u;
     chain.config = chain_config;
@@ -443,7 +446,7 @@ static int jam_switch(uint32_t k, uint32_t s)
     s &= 3u;
     chain_cut();
     live.mode = 0;
-    fm1_irq_off(); jam_rdy &= (uint8_t)~(1u << k); fm1_irq_on();
+    fm1_irq_off(); jam_rdy &= (uint8_t)~(1u << k); jam_at[k] = 0; fm1_irq_on();
     clip_go[k] = 0;
     if (s == cur)
         return 0;                                       /* (back to the one playing: nothing asked) */
@@ -510,6 +513,7 @@ static void quick_chain(const uint8_t *s, uint32_t n)
             return;
         }
     chain_cut();
+    jam_lock = 0;                                       /* (V10.8.1: a quick chain plays, not the JAM take) */
     chain_defaults(&chain.config);
     chain.config.count = (uint8_t)n;
     for (i = 0; i < n; i++) {
@@ -530,6 +534,73 @@ static void quick_chain(const uint8_t *s, uint32_t n)
     }
     ui_message("QUICK CHAIN");
 }
+/* (V10.8) the songs' JAM takes in flash (OBJ_JAM: NSONG takes of JAM_N events), the current one in live.jam */
+#ifndef OBJ_JAM
+#define OBJ_JAM 65u                            /* (storage.c's) */
+#endif
+static void jam_load(void)
+{
+    uint8_t *b = (uint8_t *)&proj_scratch;
+    memset(live.jam, 0, sizeof live.jam);
+#if FELUCCA_FLASH
+    if (st_load(OBJ_JAM, b, NSONG * sizeof live.jam) == (int)(NSONG * sizeof live.jam))
+        memcpy(live.jam, b + song_cur % NSONG * sizeof live.jam, sizeof live.jam);
+#else
+    (void)b;
+#endif
+    jam_lock = 0;
+}
+static void jam_store(void)
+{
+#if FELUCCA_FLASH
+    uint8_t *b = (uint8_t *)&proj_scratch;
+    if (st_load(OBJ_JAM, b, NSONG * sizeof live.jam) != (int)(NSONG * sizeof live.jam))
+        memset(b, 0, NSONG * sizeof live.jam);
+    memcpy(b + song_cur % NSONG * sizeof live.jam, live.jam, sizeof live.jam);
+    (void)st_save(OBJ_JAM, b, NSONG * sizeof live.jam);
+#endif
+}
+static uint32_t jam_len(void)                           /* the take's length in 16ths (its END), 0 none */
+{
+    uint32_t i;
+    for (i = 0; i < JAM_N && live.jam[i]; i++)
+        if (JE_K(live.jam[i]) == 7u) return JE_POS(live.jam[i]);
+    return 0;
+}
+/* LOCK: each track's next change of the take staged ahead (in on its 16th: seq.c jam_step); stopped, the take's start */
+static void jam_poll(void)
+{
+    uint32_t len = jam_len(), k, i, g, rel, best, bs, p, s;
+    if (!jam_lock || !len || live.srec)
+        return;
+    if (!song.playing) {
+        jam_base = 0;
+        for (i = 0; i < NTRK && live.jam[i]; i++) {     /* (the first six: the tracks at the start) */
+            k = JE_K(live.jam[i]);
+            if (k < NTRK && !clip_go[k] && jam_cur(k) != JE_S(live.jam[i])) jam_switch(k, JE_S(live.jam[i]));
+        }
+        return;
+    }
+    g = gl_step_at(0);
+    while (g >= jam_base + len) jam_base += len;        /* (round and round) */
+    rel = g - jam_base;
+    for (k = 0; k < NTRK; k++) {
+        if (clip_go[k] || ((jam_rdy >> k) & 1u))
+            continue;                                   /* (one staged at a time: the player's or the take's) */
+        best = 0xFFFFFFFFu; bs = 0;
+        for (i = 0; i < JAM_N && live.jam[i]; i++) {
+            if (JE_K(live.jam[i]) != k) continue;
+            p = JE_POS(live.jam[i]);
+            p = p > rel ? p : p + len;                  /* (past this round: the next) */
+            if (p < best) { best = p; bs = JE_S(live.jam[i]); }
+        }
+        if (best == 0xFFFFFFFFu || bs == jam_cur(k) || best - rel > 32u)
+            continue;                                   /* (staged two bars ahead at most) */
+        s = bs;
+        jam_switch(k, s);
+        jam_at[k] = jam_base + best + 1u;
+    }
+}
 /* SONG REC on / off */
 static void song_rec_toggle(void)
 {
@@ -543,8 +614,10 @@ static void song_rec_toggle(void)
     else
         live.srec = 1;
     fm1_irq_on();
-    if (live.srec)
-        ui_message(song.playing ? "SONG REC NEXT BAR" : "SONG REC: PLAY");
+    if (live.srec) {
+        jam_lock = 0;                                   /* (V10.8: a new take, the old one's LOCK off) */
+        ui_message(song.playing ? "JAM REC NEXT BAR" : "JAM REC: PLAY");
+    }
 }
 
 /* the current song's stored sections into flash: 0 done (or no flash) */
@@ -632,6 +705,7 @@ static int song_switch(uint32_t n, int load_a)
     /* The original index is restored before opening another saved project. */
     song_cur = (uint8_t)n;
     chain_config = song_idx.rows[n];
+    jam_load();                                         /* (V10.8) its JAM take */
     if (song_index_save()) {                          /* (failed: written again by song_poll) */
         song_idx_dirty = 1;
         song_idx_t = fm1_ms;
@@ -687,29 +761,12 @@ static void song_poll(void)
         if (next < chain.config.count)
             (void)song_stage(chain.config.row[next].slot, next);
     }
-    if (live.rec_done) {
-        uint32_t n = live.rec_done;
+    if (live.rec_done && !song.playing) {               /* (V10.8) the JAM take into flash, stopped */
         live.rec_done = 0;
-        if (n == 0xFFu) {
-            ui_message("NO SONG");
-        } else {
-            char b[8];
-            chain_defaults(&chain_config);
-            chain_config.count = (uint8_t)n;
-            memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
-            memset(song_idx.tsrc[song_cur], 0, sizeof song_idx.tsrc[song_cur]);   /* (SONG REC: whole sections; */
-            memset(song_idx.tvar[song_cur], 0, sizeof song_idx.tvar[song_cur]);   /* V10.6s: CLIPS' tracks FROM) */
-            for (k = 0; k < n; k++) {
-                chain_config.row[k] = live.rec[k];
-                song_idx.tsrc[song_cur][k] = rec_src[k];
-                song_idx.scene[song_cur][k] = live.rec_scene[k];   /* (each row's scene, as it began) */
-            }
-            song_idx_touch();
-            ui.song_row = 0;
-            fmt_int(b, (int32_t)n);
-            ui_say("SONG ROWS ", b);
-        }
+        jam_store();
+        ui_message("JAM TAKE KEPT");
     }
+    jam_poll();
     if (chain.ended && !song.playing) {
         uint8_t cur = proj_cur;
         char name[PROJ_NAME_LEN + 1u];

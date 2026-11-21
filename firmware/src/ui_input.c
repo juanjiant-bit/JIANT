@@ -1519,7 +1519,8 @@ static void edit_param(uint32_t slot, int32_t steps)
             uint32_t q = (uint32_t)clamp((int32_t)jam_q + (steps > 0 ? 1 : -1), 0, 5);
             ui_help_off = (uint8_t)((ui_help_off & ~0x1Cu) | ((q ^ 1u) << 2));
             jam_q = (uint8_t)q;
-        }
+        } else if (slot == 3u)                          /* (V10.8) LOCK: the JAM take plays round, jam over it */
+            jam_lock = (uint8_t)(steps > 0 && !live.srec);
         return;
     }
     if (SONG_TRK(pg)) {                                 /* (V10.6o) TIMELINE: ROW, its SECT, its BARS, the VAR of the track

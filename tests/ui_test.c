@@ -197,6 +197,10 @@ static void ui_power_on(void)
     memset(&chain, 0, sizeof chain);
     chain_defaults(&chain_config);
     live.mode = 0;                                /* (0.6.81: PLAY the loop, as at power-on; a DICE ALL leaves SONG) */
+    live.srec = live.nrec = live.rec_done = 0;    /* (V10.8.1) the JAM take: none, no LOCK (as after a boot) */
+    memset(live.jam, 0, sizeof live.jam);
+    jam_lock = jam_rdy = 0;
+    memset(jam_at, 0, sizeof jam_at);
     for (i = 0; i < 4u; i++)                      /* (and the sections a DICE ALL wrote emptied: power-on has none) */
         if ((dice_secs >> i) & 1u) memset(proj_slot[i].raw, 0, 4);
     dice_secs = 0;
@@ -3923,7 +3927,7 @@ static int test_product_ux(void)
             continue;
         press(B_REC);
         if (SONG_CLIPS(&PAGES[i])) {                   /* (V10.6s) CLIPS: REC is SONG REC (the launches as rows) */
-            ok &= song.rec == 0 && !transport_req && live.srec == 1u && msg_is("SONG REC: PLAY");
+            ok &= song.rec == 0 && !transport_req && live.srec == 1u && msg_is("JAM REC: PLAY");   /* (V10.8.1: the JAM take) */
             live.srec = 0;
         } else if (PAGES[i].graph == GR_SONG)
             ok &= song.rec == 0 && !transport_req && msg_is("[SEQ] TO RECORD");
@@ -3931,7 +3935,7 @@ static int test_product_ux(void)
             ok &= song.rec == 1 && !transport_req && ui.page == i && !ui.home;
         else ok &= song.rec == 1 && transport_req == 0 && ui.page == i && !ui.home;
     }
-    bad += check("REC stays on every page, SONG stopped asks for pattern recording (STEP: step recording, stopped; CLIPS: SONG REC)", ok);
+    bad += check("REC stays on every page, SONG stopped asks for pattern recording (STEP: step recording, stopped; CLIPS: the JAM take, V10.8.1)", ok);
     ui_power_on(); hold(B_HOME); press(B_REC);
     bad += check("REC in the MENU does nothing (the menu stays, no arm, no transport start)",
                  ui.menu == 1 && song.rec == 0 && !transport_req);
@@ -8594,11 +8598,12 @@ static int test_song_layer(void)
     sl_key(0);                                          /* A on the next bar */
     sl_play(bar);
     sl_play(bar / 2u);                                  /* A, half a bar */
-    transport_req = 2; sl_play(128);                    /* STOP: the begun bar counts */
-    ok &= !live.srec && chain_config.count == 2 && chain_config.row[0].slot == 1 && chain_config.row[0].bars == 2 &&
-          chain_config.row[1].slot == 0 && chain_config.row[1].bars == 1 && msg_is("SONG ROWS 2");
-    bad += check("  E5 SONG REC: the sections played and their bars become the song's rows (STOP: the begun bar counts)",
+    transport_req = 2; sl_play(128);                    /* STOP: the take ends on its bar line */
+    ok &= !live.srec && jam_len() >= 32u && !(jam_len() & 15u) && msg_is("JAM TAKE KEPT");
+    bad += check("  E5 REC (V10.8.1): the JAM take, from the next bar, its END on a bar line (kept when stopped)",
                  ok);
+    chain_config.count = 2;                             /* (the rows E5 recorded before V10.8.1: B 2 bars, A 1) */
+    chain_config.row[0] = (chain_row_t){1, 2}; chain_config.row[1] = (chain_row_t){0, 1};
     sl_key(12);                                         /* D5: SONG */
     ok = live.mode == 1u;
     sl_steps(80);

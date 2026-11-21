@@ -1332,7 +1332,8 @@ static void draw_columns(void)
         val[0] = (char)('A' + (ui.part & 3u)); val[1] = 0;
         text_column(1, "PART", val, VAL(1u));
         text_column(2, "CAMBIO", JAM_Q_N[jam_q % 6u], VAL(2u));   /* (V10.8) */
-        text_column(3, "REC", live.srec ? "ON" : "OFF", live.srec ? T_ACCENT : T_DIM);
+        text_column(3, "TAKE", live.srec == 2u ? "REC" : live.srec ? "ARM" : jam_lock ? "LOCK" : "FREE",
+                    live.srec || jam_lock ? T_ACCENT : T_DIM);   /* (V10.8) the JAM take: REC (the REC key), LOCK (KNOB 4) */
         return;
     }
     if (SONG_TRK(cur_page())) {                        /* (V10.6o) TIMELINE: ROW, PART, BARS, the ALGORITHM track's VAR */

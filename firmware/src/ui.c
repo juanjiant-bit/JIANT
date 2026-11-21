@@ -832,6 +832,7 @@ static void chain_cut(void);
 static int clip_launch(uint32_t k, uint32_t s);        /* (V10.6s) song_main.c: CLIPS' launches */
 static int jam_switch(uint32_t k, uint32_t s);         /* (V10.8) song_main.c: JAM, a track's sequence */
 static uint32_t jam_cur(uint32_t k);
+static uint32_t jam_len(void);
 static void song_rec_toggle(void);
 static int section_jump(uint32_t s);
 /* (0.6.22) ARRANGE: the rows 0..count-1, + ADD (while there is room), then the song's END row */

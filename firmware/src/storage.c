@@ -42,6 +42,9 @@ enum { OBJ_SETTINGS, OBJ_PROJECT0, OBJ_UPRESET0 = OBJ_PROJECT0 + 4, OBJ_FM6BANK 
  * objects there are only looked at once (song_main.c song_retired) */
 #define FL_SAMPLES 0xC8000u                    /* (V10.6p) the drum sample bank's flash, reserved: 16 sectors */
 #define FL_SAMPLES_SIZE (16u * 4096u)
+#ifndef OBJ_JAM
+#define OBJ_JAM 65u                            /* (V10.8) the songs' JAM takes: 0xDA000 / 0xDB000 (song_main.c jam_store) */
+#endif
 #define OBJ_FM6VB 64u                          /* the voice bank's commit records (fm6_vbank.c; >= OBJ_COUNT, 31 with
                                                 * the songs: st_load never takes one, no object takes its sector.
                                                 * Felucca's 32 was a song object here) */
@@ -87,6 +90,8 @@ static uint32_t st_sector(uint32_t obj, uint32_t copy)  /* flash offset of copy 
         return 0xE5000u + copy * ST_SECTOR;
     if (obj == OBJ_SONGIDX)
         return 0xD8000u + copy * ST_SECTOR;
+    if (obj == OBJ_JAM)
+        return 0xDA000u + copy * ST_SECTOR;
     if (obj >= OBJ_SONG1)
         return 0xA0000u + (obj - OBJ_SONG1) * 2u * ST_SECTOR + copy * ST_SECTOR;
     if (obj >= OBJ_UPRESET0)
@@ -99,7 +104,7 @@ static uint8_t st_buf[ST_PAYLOAD_MAX] __attribute__((aligned(4), section(".lowbu
 
 static int st_head(uint32_t obj, uint32_t copy, st_hdr_t *h)   /* commit record valid: 0 */
 {
-    if (obj >= OBJ_COUNT || copy > 1u)
+    if ((obj >= OBJ_COUNT && obj != OBJ_JAM) || copy > 1u)
         return -1;
     if (st_read(st_sector(obj, copy), h, sizeof *h))
         return -1;
@@ -146,7 +151,7 @@ static int st_load(uint32_t obj, void *dst, uint32_t max)
 {
     uint32_t i;
     st_hdr_t h;
-    if (obj >= OBJ_COUNT || st_current(obj, &h) < 0 || h.len > max)
+    if ((obj >= OBJ_COUNT && obj != OBJ_JAM) || st_current(obj, &h) < 0 || h.len > max)
         return -1;
     for (i = 0; i < h.len; i++)
         ((uint8_t *)dst)[i] = st_buf[i];
@@ -159,7 +164,7 @@ static int st_save_to(uint32_t obj, const void *src, uint32_t len, int to)
     uint32_t seq, base, off;
     int cur, rc;
     st_hdr_t h;
-    if (obj >= OBJ_COUNT || len > ST_PAYLOAD_MAX || to > 1)
+    if ((obj >= OBJ_COUNT && obj != OBJ_JAM) || len > ST_PAYLOAD_MAX || to > 1)
         return -1;
     cur = st_current(obj, &h);
     seq = cur < 0 ? 0u : h.seq;
