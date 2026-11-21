@@ -772,7 +772,7 @@ static uint32_t lz_level(void)
     if (f == LZ_MENU)
         return menu_tab();
     if (f == LZ_LAYER)
-        return ui.lylv % 3u;
+        return 0;                                   /* (V10.7.67: MAP only) */
     (void)nav_groups(cnt, gi, &g, &p, &i, &m);
     return g;
 }

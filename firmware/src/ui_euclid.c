@@ -6,7 +6,8 @@
  * 64), a melodic track's VARY. MODES: four amounts that add to what is generated, 0 none:
  *   DRUM    ACCENT (a second euclid of accents), GHOST (soft hits between), RATCHET (x2 / x4 hits), VARY
  *   melodic (V10.7.66) CONTOUR (WALK UP DOWN ARCH WAVE LEAP RANDOM), RANGE (2..15 notes), MOTIF (OFF 2 3 4 8: repeated
- *           as a sequence), CHORD (%: onto the triad; SCL > HARMONY moves it chord by chord)
+ *           as a sequence), (V10.7.67) ROLE (MELODY CHORDS BASS ARP): on the harmony the other melodic tracks play, bar by
+ *           bar (four bars when it changes; the beats on its chord), else the key's (SCL > HARMONY moves it)
  * VARY loosens the even grid: some hits move a step (towards the offbeat, more in the second half: it answers the
  * first), a pickup before a strong beat, a hit left out; on a melodic track notes held over the gap after them.
  * A melodic track's notes: its SCL (ROOT, SCALE) when one is set; else the key the other tracks' notes fit best (the
@@ -16,7 +17,7 @@
 #define EU_M 4u
 typedef struct { uint8_t h, n, r; } eul_t;
 typedef struct { uint8_t on, lane, src, root, ctr, vary; uint16_t mask, prev, seed; uint8_t m[EU_M]; eul_t a, l[NLANE];
-                 uint8_t rl; uint16_t rs; uint8_t mu[4], bar, flip, own; uint16_t rsm; uint32_t sg; uint16_t s2, xm; } eu_t;   /* (V10.31)
+                 uint8_t rl; uint16_t rs; uint8_t mu[4], bar, flip, own; uint16_t rsm; uint32_t sg; uint16_t s2, xm; uint8_t role; } eu_t;   /* (V10.31)
                                                          * rsm: the rs taken (the lanes the sequence had) */   /* (V10.28) rl: the recorded
                                                          * sequence's length, rs: what plays its rhythm (bit l a kit's lane,
                                                          * bit 0 a melody's), own: it had notes, sg: the steps last seen */   /* lane 0 ALL (a: DENSITY, STEPS, ROTATE), 1.. a lane; (V10.16) mu: MUTATE's
@@ -130,7 +131,7 @@ static int eu_back(uint32_t k, eu_t *e)
 /* every setting at rest on a taken sequence: its own rhythm (all its lanes), VARY and MODES 0 */
 static int eu_rest(const eu_t *e)
 {
-    return e->own && e->rl && e->rs == e->rsm && !e->vary && !e->m[0] && !e->m[1] && !e->m[2] && !e->m[3];
+    return e->own && e->rl && e->rs == e->rsm && !e->vary && !e->m[0] && !e->m[1] && !e->m[2] && !e->m[3] && !e->role;
 }
 /* track k's settings, made the first time: (V10.28) all at 0 (a kit: DENSITY 0, no lanes; a melody: no HITS), so
  * EUCLID builds from nothing, or from the sequence the track has (eu_take) */
@@ -287,14 +288,43 @@ static int32_t eu_up(const eu_t *e, int32_t nt, uint32_t k)
     while (k) { nt++; if ((e->mask >> ((uint32_t)(nt - e->root + 120) % 12u)) & 1u) k--; }
     return nt;
 }
+/* (V10.7.67, the owner) the harmony track k's notes follow, bar by bar (four, 64 steps): the scale degree whose triad
+ * the other melodic tracks' notes in that bar fit best (beats twice), 0 the key's own where nothing plays (SCL >
+ * HARMONY moves it at playback, as every sequence). Returns how many bars had notes */
+static __attribute__((noinline)) uint32_t eu_harm(uint32_t k, const eu_t *e, const uint8_t *pc, uint32_t np, int8_t *cd)
+{
+    uint32_t b, j, i, c, d, nb = 0;
+    for (b = 0; b < 4u; b++) {
+        uint32_t h[12] = {0}, tot = 0, top = 0;
+        cd[b] = 0;
+        for (j = 0; j < trk_live && j < NTRK; j++) {
+            uint32_t len = (uint32_t)clamp(trk[j].p[P_SLEN], 1, NSTEP);
+            if (j == k || drum_track(&trk[j]) || trk[j].p[P_MUTE]) continue;
+            for (i = 0; i < 16u; i++) {
+                const step_t *st = &trk[j].step[(b * 16u + i) % len];
+                if (st->time != ST_NOTE) continue;
+                for (c = 0; c < st->n && c < 4u; c++, tot++) h[(st->note[c] + 120u - e->root) % 12u] += (i & 3u) ? 1u : 2u;
+            }
+        }
+        if (!tot || np < 3u) continue;
+        nb++;
+        for (d = 0; d < np; d++) {
+            uint32_t sc = h[pc[d]] * 3u + h[pc[(d + 2u) % np]] * 2u + h[pc[(d + 4u) % np]] * 2u + (d ? 0u : 1u);
+            if (sc > top) { top = sc; cd[b] = (int8_t)d; }
+        }
+    }
+    return nb;
+}
 static __attribute__((noinline)) void eu_melody(uint32_t k, track_t *t, eu_t *e)
 {
+    int8_t cd[4];
+    uint32_t hh;
     uint8_t on[64], ln[64], pc[12], sq[64];
     int8_t mem[64] = {0};                                   /* (V10.16) the first turn's degrees, hit by hit: the motif */
     const uint8_t *src = eu_src[k % NTRK];
     uint32_t rs = e->rl && (e->rs & 1u), ns = 0, nh = 0;
     uint32_t n = rs ? e->rl : e->l[0].n ? e->l[0].n : 16u, i, c, np = 0, g = 0, cy, nc = eu_turns(n, e->vary), o, j, vc;
-    int32_t ctr = 0, base, deg = 0, mo = e->m[0], ha = e->m[1];
+    int32_t ctr = 0, base, deg = 0;
     for (i = 0; e->own && i < 64u; i++)                  /* (V10.28) the recorded notes, in order */
         if (src[i] > 1u) sq[ns++] = src[i];
     for (i = 0; !e->ctr && i < (uint32_t)clamp(t->p[P_SLEN], 1, NSTEP); i++)   /* the register: the notes it had at the
@@ -307,6 +337,8 @@ static __attribute__((noinline)) void eu_melody(uint32_t k, track_t *t, eu_t *e)
         if ((e->mask >> c) & 1u) pc[np++] = (uint8_t)c;
     if (!np) { pc[0] = 0; np = 1; }
     base = ctr - ((ctr - e->root + 120) % 12);           /* the root at or below the middle */
+    if ((hh = eu_harm(k, e, pc, np, cd)) != 0u && (cd[0] != cd[1] || cd[1] != cd[2] || cd[2] != cd[3]) && n <= 16u)
+        nc = 64u / n > nc ? 64u / n : nc;               /* (V10.7.67: the neighbours' chords change: four bars) */
     for (i = 0; i < NSTEP; i++) step_clear(&t->step[i]);
     t->p[P_SLEN] = (int16_t)(n * nc);
     eu_s = e->seed * 2654435761u + k * 131u + 7u;
@@ -321,22 +353,21 @@ static __attribute__((noinline)) void eu_melody(uint32_t k, track_t *t, eu_t *e)
         for (i = 0, nh = 0; i < n; i++) nh += on[i];
         for (i = 0, j = 0; i < n; i++) {
             step_t *s = &t->step[o + i];
-            int32_t note, sh = 0;
+            int32_t note;
             if (!on[i]) continue;
-            if (ns) {                                    /* (V10.28) the recorded notes: in order, MOTION picks others */
-                int32_t ix = (int32_t)j, sp = 1 + mo * (int32_t)ns / 200;
+            if (ns) {                                    /* (V10.28) the recorded notes, in order (V10.7.67: as they
+                                                         * were, chords too; VARY's turns their own) */
+                int32_t ix = (int32_t)j;
                 uint32_t v;
                 if (cy && j < 64u && !eu_ch(vc * 6u / 10u)) ix = mem[j];
-                else if (mo && eu_ch((uint32_t)mo)) ix += (int32_t)(eu_rnd() % (uint32_t)(2 * sp + 1)) - sp;
                 if (!cy && j < 64u) mem[j] = (int8_t)ix;
                 j++;
-                v = sq[(uint32_t)(ix % (int32_t)ns + (int32_t)ns) % ns];
-                if (eu_ch(e->m[2] * 6u / 10u)) sh = eu_ch(50) ? 12 : -12;
-                note = clamp((int32_t)(v & 0x7Fu) + sh, 24, 108);
+                v = sq[(uint32_t)ix % ns];
+                note = (int32_t)(v & 0x7Fu);
                 s->time = ST_NOTE; s->vel = 100; s->note[0] = (uint8_t)note; s->n = 1;
-                if ((v & 0x80u) || (!(i & 3u) && eu_ch((uint32_t)ha))) {
+                if (v & 0x80u) {
                     s->note[s->n++] = (uint8_t)clamp(eu_up(e, note, 2), 24, 108);
-                    if ((v & 0x80u) || ha > 50) s->note[s->n++] = (uint8_t)clamp(eu_up(e, note, 4), 24, 108);
+                    s->note[s->n++] = (uint8_t)clamp(eu_up(e, note, 4), 24, 108);
                 }
             } else {                                     /* (V10.7.66, the owner) CONTOUR RANGE MOTIF CHORD */
             static const uint8_t MT[5] = {0, 2, 3, 4, 8};
@@ -344,6 +375,7 @@ static __attribute__((noinline)) void eu_melody(uint32_t k, track_t *t, eu_t *e)
             static const uint8_t NEAR[7] = {0, 0, 2, 2, 4, 4, 7};
             int32_t rg = e->m[1] ? e->m[1] : 5, M = MT[e->m[2] % 5u], u, f, d7;
             uint32_t ct = e->m[0] % 7u, q = M ? j % (uint32_t)M : j, tot = M ? (uint32_t)M : nh, sv = eu_s;
+            int32_t hc = cd[((o + i) >> 4) & 3u];   /* (V10.7.67) the bar's chord, a degree */
             eu_s = ((e->xm >> (j & 15u)) & 1u ? seed_fuse(e->seed, e->s2, j) : (e->seed + 1u) * 2654435761u) ^ (j + 1u) * 40503u ^ cy * 0x9E37u;   /* (V10.7.66,
                                                          * the owner: each note its seed's: MUTATE crosses two) */
             if (!eu_s) eu_s = 1u;
@@ -360,18 +392,40 @@ static __attribute__((noinline)) void eu_melody(uint32_t k, track_t *t, eu_t *e)
                     deg = clamp(deg + d, -rg / 3, rg - 1 - rg / 3);
                 } else
                     deg = f * (rg - 1) / 1000 - rg / 3;
-                if (eu_ch(e->m[3])) { d7 = (deg % 7 + 7) % 7; deg += NEAR[d7] - d7; }   /* CHORD: onto the triad */
+                if (hh && np == 7u && eu_ch(!(i & 3u) ? 100u : 40u)) {   /* CHORD: onto the bar's triad (V10.7.67: the
+                                                         * beats always) */
+                    d7 = ((deg - hc) % 7 + 7) % 7; deg += NEAR[d7] - d7;
+                }
             }
             if (!cy && j < 64u) mem[j] = (int8_t)deg;
             j++;
-            eu_s = sv;
-            note = clamp(eu_deg(pc, np, base, deg), 24, 108);
             s->time = ST_NOTE;
             s->vel = (uint8_t)(!(i & 3u) ? 110 : 92);
-            s->note[0] = (uint8_t)note;
             s->n = 1;
+            if (e->role == 1u) {                         /* (V10.7.67) CHORDS: the bar's triad (a seventh, a ninth
+                                                         * now and then), voiced round the middle, CONTOUR its inversion */
+                int32_t r0 = hc > 3 ? hc - (int32_t)np : hc, v = (deg % 3 + 3) % 3, x;
+                uint32_t nn = 3u + (eu_ch(30) ? 1u : 0u);
+                for (c = 0; c < nn; c++) {
+                    x = r0 + (c < 3u ? 2 * (int32_t)c : eu_ch(50) ? 6 : 8) + ((int32_t)c < v ? (int32_t)np : 0);
+                    s->note[c] = (uint8_t)clamp(eu_deg(pc, np, base, x), 24, 108);
+                }
+                s->n = (uint8_t)nn;
+            } else if (e->role == 2u) {                  /* BASS: an octave down; the root on the bar's first hit and the
+                                                         * beats, else the fifth, the octave or a step to the next root */
+                int32_t nx = cd[(((o + i) >> 4) + 1u) & 3u], x = hc;
+                if (i & 3u) x = eu_ch(40) ? hc + 4 : eu_ch(50) ? hc + (int32_t)np : nx + (eu_ch(50) ? 1 : -1);
+                s->note[0] = (uint8_t)clamp(eu_deg(pc, np, base, x) - 12, 24, 108);
+            } else if (e->role == 3u) {                  /* ARP: the chord's tones in turn (RANGE how many, CONTOUR the
+                                                         * order: UP DOWN ARCH, else as the seeds fuse) */
+                uint32_t tn = (uint32_t)(rg < 3 ? 3 : rg > 8 ? 8 : rg), a = ct == 2u ? tn - 1u - q % tn : ct == 3u ? (q / (tn - 1u) & 1u ?
+                              tn - 1u - q % (tn - 1u) : q % (tn - 1u)) : ct == 1u ? q % tn : eu_rnd() % tn;
+                s->note[0] = (uint8_t)clamp(eu_deg(pc, np, base, (hc > 3 ? hc - (int32_t)np : hc) + (int32_t)a * 2), 24, 108);
+            } else
+                s->note[0] = (uint8_t)clamp(eu_deg(pc, np, base, deg), 24, 108);
+            eu_s = sv;
+            note = s->note[0];
             }
-            if (ns && eu_ch(e->m[3] * 7u / 10u)) s->flags |= SF_SLIDE;   /* (a recorded melody: SLIDE) */
             for (c = 1; c < ln[i] && i + c < n; c++) {   /* held over the gap */
                 t->step[o + i + c].time = ST_TIE;
                 t->step[o + i + c].n = 0;
@@ -407,9 +461,10 @@ static param_desc_t eu_d;
 static const param_desc_t *eu_desc(uint32_t k, int16_t **valp)
 {
     static const char *const LN[NLANE + 1] = {"ALL", "BD", "SD", "CP", "CH", "OH", "TM", "RS", "CB"};
-    static const char *const MD[2][EU_M] = {{"CONTOUR", "RANGE", "MOTIF", "CHORD"}, {"ACCENT", "GHOST", "RATCHET", "VARY"}};
+    static const char *const MD[2][EU_M] = {{"CONTOUR", "RANGE", "MOTIF", "ROLE"}, {"ACCENT", "GHOST", "RATCHET", "VARY"}};
     static const char *const CT[7] = {"WALK", "UP", "DOWN", "ARCH", "WAVE", "LEAP", "RANDOM"};   /* (V10.7.66, the owner) */
     static const char *const MO[5] = {"OFF", "2", "3", "4", "8"};
+    static const char *const RO[4] = {"MELODY", "CHORDS", "BASS", "ARP"};   /* (V10.7.67, the owner) */
     static const char *const MU[3][6] = {{"OFF", "1 BAR", "2 BARS", "4 BARS", "8 BARS", "16 BARS"}, {"ORBIT", "DRIFT", "PULSE"},
                                          {"GROOVE", "RHYTHM", "FEEL", "ALL"}};
     static const char *const ML[4] = {"EVERY", "AMOUNT", "MODE", "WHAT"};
@@ -430,6 +485,7 @@ static const param_desc_t *eu_desc(uint32_t k, int16_t **valp)
         if (!dr && k == EK_M0) { eu_d.fmt = F_ENUM; eu_d.max = 6; eu_d.names = CT; }   /* (a melody: CONTOUR RANGE MOTIF CHORD) */
         else if (!dr && k == EK_M0 + 1u) { eu_d.min = 2; eu_d.max = 15; eu_v[k] = e->m[1] ? e->m[1] : 5; }
         else if (!dr && k == EK_M0 + 2u) { eu_d.fmt = F_ENUM; eu_d.max = 4; eu_d.names = MO; }
+        else if (!dr) { eu_d.fmt = F_ENUM; eu_d.max = 3; eu_d.names = RO; eu_v[k] = e->role; }   /* (V10.7.67) ROLE */
     }
     else {                                               /* (V10.16) MUTATE */
         k -= EK_U0;
@@ -458,6 +514,7 @@ static void eu_put(uint32_t k, int32_t v)
     else if (k == EK_STEPS) { L->n = (uint8_t)clamp(v, 2, 64); if (!al && L->h > L->n) L->h = L->n; if (L->r >= L->n) L->r = 0; }
     else if (k == EK_ROT) L->r = (uint8_t)clamp(v, 0, L->n - 1);
     else if (k == EK_K4) e->vary = (uint8_t)clamp(v, 0, 100);
+    else if (!dr && k == EK_M0 + 3u) e->role = (uint8_t)clamp(v, 0, 3);
     else e->m[(k - EK_M0) % EU_M] = (uint8_t)clamp(v, 0, 100);
     if (al && k < EK_K4) eu_kit(e);                      /* (ALL: the kit again, of DENSITY, STEPS, ROTATE) */
     if (k < EK_K4) e->rs &= (uint16_t)(al ? 0u : ~(1u << (dr ? (e->lane + NLANE) % (NLANE + 1u) : 0u)));   /* (V10.28: the
@@ -492,7 +549,7 @@ static void eu_mutate(uint32_t k, eu_t *e)
         e->rs &= (uint16_t)(al ? 0u : ~(1u << (dr ? sl - 1u : 0u)));
     }
     if (w >= 2u) {                                       /* FEEL */
-        static const uint8_t MX[2][EU_M] = {{6, 15, 4, 100}, {100, 100, 100, 100}};   /* (a melody's CONTOUR RANGE MOTIF) */
+        static const uint8_t MX[2][EU_M] = {{6, 15, 4, 0}, {100, 100, 100, 100}};   /* (a melody's CONTOUR RANGE MOTIF) */
         for (i = 0; i <= EU_M; i++) {
             uint8_t *m = i < EU_M ? &e->m[i] : &e->vary;
             int32_t top = i < EU_M ? MX[dr][i] : 100, st = i < EU_M && !dr && i < 3u ? 1 + (int32_t)p / 50 : (int32_t)p / 2;

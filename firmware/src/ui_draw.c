@@ -1987,8 +1987,7 @@ static void confirm_text(char *a, char *b)
     case CF_DICE_SEQ:                                /* (0.6.67) SEQ / LFO / FX + SELECT */
     case CF_DICE_LFO:
     case CF_DICE_FX:
-        str_cpy(a, ui.confirm == CF_DICE_SEQ ? "KEEP DICED SEQ?" : ui.confirm == CF_DICE_LFO ? "KEEP DICED LFO?" :
-                   ui.confirm == CF_DICE_FX ? "KEEP DICED FX?" : drum_track(TSEL) ? "KEEP DICED KIT?" : "KEEP DICED SOUND?", 24);
+        str_cpy(a, ui.confirm == CF_DICE_SEQ ? "KEEP DICED SEQ?" : drum_track(TSEL) ? "KEEP DICED KIT?" : "KEEP DICED SOUND?", 24);
         str_cpy(b, "SELECT: DICE AGAIN", 24);
         break;
     case CF_DICE_ALL:                                /* (0.6.21) HOME + SELECT */

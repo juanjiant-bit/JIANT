@@ -2336,12 +2336,9 @@ static void sound_dice_of(track_t *t, int quiet)
  * LFO, FX its effects and the shared reverb and delay), at once so it is heard, under a dialog: OCT+ OK keeps it, OCT-
  * CANCEL brings back what it was before the first dice (only that part: the music plays on), SELECT again dices again.
  * (0.6.65: the sound first.) UNDO (GLO + G4) still brings back what was before */
-static const uint8_t DK_LFO[8] = {P_LRATE, P_LWAVE, P_LPHASE, P_LFADE, P_LD_PIT, P_LD_FLT, P_LD_SHP, P_LD_AMP};
-static const uint8_t DK_FXT[9] = {P_DIST, P_DTYPE, P_DTONE, P_CHOR, P_DLY, P_REV, P_APDEP, P_APRATE, P_APWAVE};
-static const uint8_t DK_FXG[6] = {G_RTYPE, G_RSIZE, G_RDAMP, G_DTIME, G_DFDBK, G_DPIT};
 static struct {                                         /* what CANCEL puts back (the sound: undo_sound) */
     step_t step[NSTEP];
-    int16_t slen, v[9], g[6];
+    int16_t slen;
     const char *msg;
 } dk;
 static const char *dice_seq(track_t *t);                /* gen.c */
@@ -2390,16 +2387,6 @@ static void dice_side(uint32_t now, int32_t x0)          /* one half of the pane
             if (step_on(&st[i]))
                 cv_rect(x0 + 4 + (int32_t)i * 7, 96 - clamp((int32_t)st[i].note[0] - 36, 0, 40) * 2, 5, 3,
                         now ? T_ACCENT : T_MID);
-    } else {                                            /* LFO / FX: their four first values as bars */
-        const uint8_t *ids = kind == CF_DICE_LFO ? DK_LFO : DK_FXT;
-        for (i = 0; i < 4u; i++) {
-            int16_t v = now ? t->p[ids[i]] : dk.v[i];
-            const param_desc_t *d = track_desc(t, ids[i]);
-            int32_t w = d ? clamp(RATIO(d, enum_rank(d, v)), 0, 1000) * 96 / 1000 : 0;
-            cv_text(x0 + 8, 20 + (int32_t)i * 20 - AF_X_CAP_Y, &AF_X, d ? d->label : "", T_DIM);
-            cv_rect(x0 + 8, 29 + (int32_t)i * 20, 96, 3, T_LINE);
-            cv_rect(x0 + 8, 29 + (int32_t)i * 20, w ? w : 1, 3, now ? T_ACCENT : T_MID);
-        }
     }
 }
 static void dice_panel(void)
@@ -2431,11 +2418,6 @@ static void dk_keep(uint32_t kind)
     if (kind == CF_DICE_SEQ) {
         for (i = 0; i < NSTEP; i++) dk.step[i] = t->step[i];
         dk.slen = t->p[P_SLEN];
-    } else if (kind == CF_DICE_LFO) {
-        for (i = 0; i < 8u; i++) dk.v[i] = t->p[DK_LFO[i]];
-    } else if (kind == CF_DICE_FX) {
-        for (i = 0; i < 9u; i++) dk.v[i] = t->p[DK_FXT[i]];
-        for (i = 0; i < 6u; i++) dk.g[i] = song.g[DK_FXG[i]];
     }
 }
 static int dk_back(uint32_t kind, uint32_t k)           /* CANCEL: 0 done */
@@ -2450,11 +2432,6 @@ static int dk_back(uint32_t kind, uint32_t k)           /* CANCEL: 0 done */
         t->p[P_SLEN] = dk.slen;
         load_end(t);
         latch_drop_req |= (uint8_t)(1u << (k % NTRK));
-    } else if (kind == CF_DICE_LFO) {
-        for (i = 0; i < 8u; i++) t->p[DK_LFO[i]] = dk.v[i];
-    } else {
-        for (i = 0; i < 9u; i++) t->p[DK_FXT[i]] = dk.v[i];
-        for (i = 0; i < 6u; i++) song.g[DK_FXG[i]] = dk.g[i];
     }
     return 0;
 }
@@ -2475,12 +2452,11 @@ static void part_dice(uint32_t kind)
         dk_vis_take();
         confirm_open(kind, song.sel);
     }
-    dk.msg = kind == CF_DICE_SEQ ? dice_seq(TSEL) : kind == CF_DICE_LFO ? "LFO DICED" : kind == CF_DICE_FX ? "FX DICED" :
-             drum_track(TSEL) ? "KIT DICED" : "SOUND DICED";
+    dk.msg = kind == CF_DICE_SEQ ? dice_seq(TSEL) : drum_track(TSEL) ? "KIT DICED" : "SOUND DICED";
     if (kind == CF_DICE_SOUND) sound_dice_of(TSEL, 1);
     /* (V10.7.66: LFO's and FX's dice gone, the owner) */
 }
-static int dice_kind(uint32_t c) { return c == CF_DICE_SOUND || c == CF_DICE_SEQ || c == CF_DICE_LFO || c == CF_DICE_FX; }
+static int dice_kind(uint32_t c) { return c == CF_DICE_SOUND || c == CF_DICE_SEQ; }
 /* (0.6.21) HOME + SELECT (after the dialog): everything diced into a new piece. One scale for the song (ROOT, a
  * musical SCALE: never CHR / WHOLE / DIM; the RESO reverb and the SLICER follow it), each melodic track an engine, a
  * sound (dice of a factory preset) and a sequence in that scale by its role (T1 the bass; the others a lead, a pad or an
@@ -3048,8 +3024,7 @@ static void ui_input_frame(void)
         } else if (oct & 1u) {
             if (dice_kind(ui.confirm))                  /* (0.6.65) CANCEL: the part before the dice */
                 ui_message(dk_back(ui.confirm, ui.confirm_trk) ? "CAN'T UNDO" :
-                           ui.confirm == CF_DICE_SEQ ? "SEQ BACK" : ui.confirm == CF_DICE_LFO ? "LFO BACK" :
-                           ui.confirm == CF_DICE_FX ? "FX BACK" : "SOUND BACK");
+                           ui.confirm == CF_DICE_SEQ ? "SEQ BACK" : "SOUND BACK");
             ui.confirm = 0;
             ui.force = 1;
         } else if (dice_kind(ui.confirm) && panel_enc(EN_SELECT)) {   /* (0.6.65) SELECT again: another dice
