@@ -332,7 +332,7 @@ typedef struct { uint8_t n; int8_t deg[4]; uint8_t q[4]; } gprog_t;
  * would come out diminished (or augmented) does not take that progression (gen.c tries the genre's next one) */
 enum { PR_ONE, PR_I_VII, PR_I_VI, PR_I_IV, PR_I_V, PR_I_II, PR_I_III, PR_IV_I, PR_AEOL, PR_TRANCE, PR_MINOR4, PR_ANDAL,
        PR_EPIC, PR_50S, PR_CYCLE, PR_DEEP4, PR_DEEPVI, PR_JAZZ, PR_SUS, PR_NEOCL, PR_PHRY, PR_ELEC, PR_DREAM, PR_DREAM2,
-       PR_TURN, PR_MSTAB, PR_N };
+       PR_TURN, PR_MSTAB, PR_NSOUL, PR_NSOUL2, PR_JAZZ2, PR_JAZZ3, PR_IDM1, PR_IDM2, PR_PROG1, PR_PROG2, PR_N };
 static const gprog_t PROG[PR_N] = {
     [PR_ONE]     = {1, {0}, {Q_7}},                                           /* i7 (a pedal) */
     [PR_I_VII]   = {2, {0, 6}, {Q_TRI, Q_TRI | F_FLAT}},                      /* i bVII (I bVII: borrowed) */
@@ -361,6 +361,15 @@ static const gprog_t PROG[PR_N] = {
     [PR_TURN]    = {4, {0, 5, 1, 4}, {Q_7, Q_7, Q_7, Q_7}},                   /* (V10.6w) Imaj7 vi7 ii7 V7: jazz's turnaround */
     [PR_MSTAB]   = {1, {0}, {Q_ADD9}},                                        /* i(add9): minimal techno's one dissonant stab
                                                          * (close: the ninth and the minor third a semitone apart) */
+    /* (V10.7.66, the owner: "jazzy progressions, IDM, neo-soul, progressive") */
+    [PR_NSOUL]   = {4, {0, 2, 5, 3}, {Q_9, Q_7, Q_9, Q_7}},                   /* Imaj9 iii7 vi9 IVmaj7: neo-soul's */
+    [PR_NSOUL2]  = {4, {3, 2, 1, 0}, {Q_9, Q_7, Q_9, Q_9}},                   /* IVmaj9 iii7 ii9 Imaj9: the walk down */
+    [PR_JAZZ2]   = {4, {2, 5, 1, 4}, {Q_7, Q_7, Q_7, Q_7}},                   /* iii7 vi7 ii7 V7: the long turnaround */
+    [PR_JAZZ3]   = {4, {1, 4, 0, 5}, {Q_9, Q_7, Q_9, Q_7 | F_DOM}},           /* ii9 V7 Imaj9 VI7: back to ii by its dominant */
+    [PR_IDM1]    = {2, {0, 6}, {Q_7, Q_7 | F_FLAT}},                          /* Imaj7 bVIImaj7: the same shape a step down */
+    [PR_IDM2]    = {4, {0, 2, 5, 3}, {Q_9, Q_7, Q_7, Q_9}},                   /* i9 bIIImaj7 bVImaj7 iv9: modal, no cadence */
+    [PR_PROG1]   = {4, {0, 1, 3, 0}, {Q_ADD9, Q_TRI, Q_7, Q_ADD9}},           /* I II IV I: the lydian lift */
+    [PR_PROG2]   = {4, {0, 5, 2, 6}, {Q_SUS2, Q_7, Q_TRI, Q_SUS4}},           /* i bVI bIII bVII, suspended: progressive's */
 };
 /* (0.8.3) a genre's harmony: its family (how it composes) and what it may colour with */
 enum { HF_LOOP, HF_JAZZY, HF_POP, HF_COLOR, HF_CINE, HF_JAZZ };   /* modal loops; 7th loops; functional pop; colour
@@ -676,7 +685,7 @@ static const ggenre_t GENRE[] = {
     /* Larry Heard (Can You Feel It), Chez Damier, Kerri Chandler: an 808, a Rhodes on 7ths and 9ths through the
      * delay, a walking sub, swing ~57 % */
     {"DEEP HOUSE", 120, 126, 35, {SC_MIN, SC_DOR, SC_DOR, SC_MPEN}, DM_DEEP, 100, KIT_808, 0, HC_HOUSE, FL_DROP, 1,
-     {BA_DEEPWALK, BA_OFFBEAT, BA_UKG}, 36, KM_ANSWER, 50, {PR_I_IV, PR_JAZZ, PR_IV_I}, 2, CS_STAB, VM_PLANE,
+     {BA_DEEPWALK, BA_OFFBEAT, BA_UKG}, 36, KM_ANSWER, 50, {PR_I_IV, PR_JAZZ, PR_NSOUL}, 2, CS_STAB, VM_PLANE,
      {AP_BROKEN, AP_UPDOWN}, LD_SPARSE, AMT(85, 75, 75, 0, 0), {KIT_808, SR_SUB, SR_EP, SR_KEYS, SR_SINEKEY}, SR_TEXTURE,
      0, 1, 55, DT(0, FXS_NONE), FM_CLUB, 20, HF_JAZZY, 0},
     /* (gen6b, the owner: "nothing like the real thing") Green Velvet, Hot Since 82, Solardo, Terry Francis: a 909
@@ -754,25 +763,25 @@ static const ggenre_t GENRE[] = {
     /* Autechre, Aphex Twin's edits (Windowlicker, Come to Daddy), Squarepusher: the Amen edited bar by bar (rolls,
      * stutters, a beat moved, half a bar reversed, the kick out), an acid or FM bass, a lullaby on bells */
     {"IDM GLITCH", 135, 165, 0, {SC_MIN, SC_PHRY, SC_DOR, SC_HARM}, DM_AMEN, 100, KIT_CLICK, 2, HC_FLAT, FL_ROLL, 0,
-     {BA_ACID, BA_ANGULAR, BA_JUNGLE}, 33, KM_INTERLOCK, 50, {PR_MINOR4, PR_I_VI, PR_IV_I}, 2, CS_SPARSE, VM_PAD,
+     {BA_ACID, BA_ANGULAR, BA_JUNGLE}, 33, KM_INTERLOCK, 50, {PR_MINOR4, PR_IDM2, PR_IV_I}, 2, CS_SPARSE, VM_PAD,
      {AP_WALK, AP_CYCLE5}, LD_MOTIF, AMT(90, 70, 45, 55, 50), {KIT_CLICK, SR_FMBASS, SR_EP, SR_BELL, SR_BELL}, SR_TEXTURE,
      4, 5, 45, DT(1, FXS_NONE), FM_ARC, 10, HF_JAZZY, 3},
     /* Boards of Canada, Floating Points, Aphex Twin's SAW: a soft hip hop break laid back, a sub on long roots, warm
      * sevenths and ninths a chord every four bars, pads with the tape's wobble, a few notes of melody */
     {"IDM AMBIENT", 85, 100, 30, {SC_DOR, SC_MAJ, SC_MIN, SC_LYD}, DM_BOC, 100, KIT_SOFT, 1, HC_FUNK, FL_NONE, 2,
-     {BA_PEDAL, BA_FIFTHS, BA_DUST}, 31, KM_SUSTAIN, 110, {PR_I_IV, PR_I_VI, PR_SUS}, 4, CS_SWELL, VM_RICH,
+     {BA_PEDAL, BA_FIFTHS, BA_DUST}, 31, KM_SUSTAIN, 110, {PR_IDM1, PR_IDM2, PR_SUS}, 4, CS_SWELL, VM_RICH,
      {AP_GLASS, AP_UPDOWN}, LD_SPARSE, AMT(60, 60, 90, 35, 40), {KIT_SOFT, SR_SUB, SR_PAD, SR_BELL, SR_SINEKEY}, SR_DRONE,
      4, 4, 75, DT(0, FXS_WARM), FM_ARC, 30, HF_COLOR, 1 | GSP_WOW},
     /* Aphex Twin (drukqs), Venetian Snares made musical: a break edited, a 3:4 arp and lead over a three-bar cycle,
      * detuned, bells and chips, playful */
     {"IDM WEIRD", 100, 130, 12, {SC_LYD, SC_DOR, SC_PHRY, SC_MIX}, DM_BREAKS, 100, KIT_CLICK, 1, HC_FLAT, FL_KICK16, 0,
-     {BA_ANGULAR, BA_DUST, BA_ACID}, 33, KM_INTERLOCK, 55, {PR_I_II, PR_I_III, PR_DEEPVI}, 2, CS_SPARSE, VM_SUS,
+     {BA_ANGULAR, BA_DUST, BA_ACID}, 33, KM_INTERLOCK, 55, {PR_I_II, PR_IDM1, PR_DEEPVI}, 2, CS_SPARSE, VM_SUS,
      {AP_CYCLE3, AP_WALK}, LD_MOTIF, AMT(80, 70, 50, 60, 45), {KIT_CLICK, SR_FMBASS, SR_EP, SR_CHIP, SR_BELL}, SR_TEXTURE,
      4, 3, 50, DT(1, FXS_LOFI), FM_ARC, 10, HF_COLOR, 2 | GSP_POLY | GSP_WOW},
     /* ---- kraut, EBM */
     /* NEU! (Hallogallo), Can, Harmonia: the motorik beat, one chord, a droning guitar, the layers coming in over time */
     {"KRAUT", 118, 140, 0, {SC_MAJ, SC_MIX, SC_DOR, SC_MIN}, DM_MOTORIK, 100, KIT_SOFT, 0, HC_FLAT, FL_NONE, 0,
-     {BA_MOTORIK, BA_ROCK8, BA_PUMP8}, 33, KM_DOUBLE, 60, {PR_ONE, PR_I_IV, PR_I_VII}, 4, CS_PULSE, VM_PLAIN,
+     {BA_MOTORIK, BA_ROCK8, BA_PUMP8}, 33, KM_DOUBLE, 60, {PR_ONE, PR_PROG2, PR_I_VII}, 4, CS_PULSE, VM_PLAIN,
      {AP_UPDOWN, AP_GLASS}, LD_TINTI, AMT(90, 95, 45, 50, 35), {KIT_SOFT, SR_ROCKBASS, SR_GTR, SR_PLUCK, SR_LEAD}, SR_DRONE,
      0, 1, 45, DT(0, FXS_WARM), FM_ARC, 30, HF_LOOP | HX_BOR, 0},
     /* (V10.6p, the owner: "heavier and faster, pseudo-industrial, analog basses slightly detuned") DAF, Nitzer Ebb,
@@ -815,7 +824,7 @@ static const ggenre_t GENRE[] = {
     /* Beach House, Cocteau Twins, Slowdive: a slow drum machine, washed pads in chorus, a clean guitar's arpeggio in a
      * long delay, I vi IV and I iii IV in sevenths and ninths, a dreamy line, the shimmer's reverb */
     {"DREAM POP", 70, 100, 0, {SC_MAJ, SC_LYD, SC_MAJ, SC_MIX}, DM_DREAM, 100, KIT_SOFT, 0, HC_FLAT, FL_NONE, 0,
-     {BA_FIFTHS, BA_ROCK8, BA_NEOARP}, 33, KM_SUSTAIN, 100, {PR_DREAM, PR_DREAM2, PR_I_IV}, 2, CS_SWELL, VM_RICH,
+     {BA_FIFTHS, BA_ROCK8, BA_NEOARP}, 33, KM_SUSTAIN, 100, {PR_DREAM, PR_DREAM2, PR_PROG1}, 2, CS_SWELL, VM_RICH,
      {AP_UPDOWN, AP_GLASS}, LD_SPARSE, AMT(55, 70, 90, 75, 45), {KIT_SOFT, SR_SUB, SR_PAD, SR_GTR, SR_VOXLEAD}, SR_WALL,
      2, 3, 85, DT(2, FXS_WARM), FM_ARC, 30, HF_COLOR, GSP_WOW},
     /* (V10.6p, the owner: "a very archetypal genre": the pitched 808 cowbell's riff and heavy distorted drums) drift
@@ -847,7 +856,7 @@ static const ggenre_t GENRE[] = {
      * chord: gen.c gplan), the EP's rootless voicings comped on Charleston's 1 and 2's "and" (gen_pads CS_CHARL), a
      * vibraphone's line with its chromatic approaches */
     {"JAZZ", 40, 150, 70, {SC_MAJ, SC_MAJ, SC_DOR, SC_MIN}, DM_JAZZ, 100, KIT_SOFT, 2, HC_FLAT, FL_NONE, 1,
-     {BA_WALK, BA_WALK2, BA_WALK3}, 28, KM_DOUBLE, 100, {PR_JAZZ, PR_TURN, PR_JAZZ}, 1, CS_CHARL, VM_RICH,
+     {BA_WALK, BA_WALK2, BA_WALK3}, 28, KM_DOUBLE, 100, {PR_JAZZ2, PR_TURN, PR_JAZZ3}, 1, CS_CHARL, VM_RICH,
      {AP_WALK, AP_UPDOWN}, LD_MOTIF, AMT(100, 95, 80, 0, 55), {KIT_SOFT, SR_UPRIGHT, SR_EP, SR_PIANO, SR_SINEKEY}, SR_TEXTURE,
      0, 1, 30, DT(0, FXS_NONE), FM_PARTS, 70, HF_JAZZ | HX_RAISE | HX_SEC | HX_APPR, 0},
     /* (V10.6w, the owner: "all the hip hop inside one HIP HOP") a throw one of five (GSUB below): trap (Metro Boomin,
@@ -856,7 +865,7 @@ static const ggenre_t GENRE[] = {
      * boom bap (Pete Rock, DJ Premier: 86 .. 96 swung, a break's kit, a sub, soul keys) and lofi (the break late and
      * soft, 70 .. 88 swung more, an EP's sevenths with the tape's wobble) */
     {"HIP HOP", 136, 150, 0, {SC_MIN, SC_MIN, SC_HARM, SC_PHRY}, DM_TRAP, 100, KIT_808, 0, HC_FLAT, FL_HAT, 0,
-     {BA_WOBBLE, BA_PH808, BA_JUNGLE}, 29, KM_DOUBLE, 110, {PR_I_VI, PR_MINOR4, PR_AEOL}, 2, CS_SPARSE, VM_RICH,
+     {BA_WOBBLE, BA_PH808, BA_JUNGLE}, 29, KM_DOUBLE, 110, {PR_NSOUL2, PR_MINOR4, PR_NSOUL}, 2, CS_SPARSE, VM_RICH,
      {AP_BROKEN, AP_UPDOWN}, LD_HOOK, AMT(95, 100, 50, 40, 45), {KIT_808, SR_808, SR_PAD, SR_PLUCK, SR_BELL}, SR_TEXTURE,
      0, 1, 35, DT(0, FXS_LOFI), FM_PARTS, 0, HF_POP | HX_RAISE, 0},
     /* ---- (V10.7.63, the users asked: dubstep and shoegaze back, metalcore) */
