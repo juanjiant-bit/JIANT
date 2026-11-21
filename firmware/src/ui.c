@@ -2111,7 +2111,9 @@ static uint32_t act_cols(void)                   /* the columns that are actions
     uint32_t c, m = 0;
     if (ui.home)
         return 0;
-    if (pg->graph == GR_MOTION || pg->graph == GR_PUNCH) return 8u;   /* (0.6.99) PUNCH: KNOB 4 CLEAR */
+    if (pg->graph == GR_MOTION || (pg->graph == GR_PUNCH && pg->id[0] != 0xFF)) return 8u;   /* (0.6.99) PUNCH: KNOB 4
+                                                         * CLEAR (V10.7.70: PUNCH LANE's only; PUNCH IN its knobs the
+                                                         * macros, OCT+ the editor) */
     if (pg->graph == GR_EVENTS || pg->graph==GR_TRACKGEN) return 16u;
     if (pg->graph == GR_TOOLS) return 15u;
     if (pg->graph == GR_LYRIC || pg->graph==GR_LYRSTEP) return 8u;
