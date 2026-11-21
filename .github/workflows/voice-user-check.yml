@@ -173,6 +173,8 @@ jobs:
           build/song-check/euclid-mel | tee build/song-check/euclid-mel.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/math_morph_test.c -lm -o build/song-check/math-morph
           build/song-check/math-morph | tee build/song-check/math-morph.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/dx_math_test.c -lm -o build/song-check/dx-math
+          build/song-check/dx-math | tee build/song-check/dx-math.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/life_test.c -lm -o build/song-check/life
           build/song-check/life | tee build/song-check/life.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/fill_test.c -lm -o build/song-check/fill

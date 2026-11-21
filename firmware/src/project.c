@@ -114,6 +114,7 @@ typedef struct {
                                                 * block, 0 before */
     uint8_t dx_snd[8];                         /* (0.6.48) its sounds' SENDs (eng_drum.c): FUNC's 'D' 'S' block, 0 before */
     uint8_t dx_lay[8];                         /* (0.6.49) its sounds' LAYER, FEEDBK (drumx_voice.c): 'D' 'L', 0 before */
+    uint8_t dx_fml[8];                         /* (V10.7.74) its sounds' MATH formula modulators: 'D' 'F', 0 before */
     uint8_t fugue[NTRK][3][2];                 /* (0.6.52) SEQ > FUGUE's heads (fugue.c): RATE | DIR << 4, INTERVAL (int8);
                                                 * FUNC's 'F' 'G' block, none before */
     uint8_t pfx_lane[32], pfx_ltgt;            /* the punch-in lane (pfx.c), in FUN9's spare bytes (PROJ_PFX_OFF) */
@@ -597,6 +598,8 @@ static uint32_t proj_packed_size(const project_t *q)
     for (t = 0; t < NTRK; t++)                          /* (V10.7.64) the tracks' GAIN */
         if (q->tgain[t]) { n += 2u + NTRK; break; }
     n += q->g[G_HPROG] ? 6u : 0u;                       /* (V10.7.66) HARMONY */
+    for (i = 0; i < 8u && !q->dx_fml[i]; i++) {}
+    n += i < 8u ? 10u : 0u;                             /* (V10.7.74) DRUM-X's MATH modulators */
     return n;
 }
 static int proj_split_ok(const uint8_t *s)
@@ -803,6 +806,10 @@ static int proj_pack(project_store_t *out, const project_t *q)
     if (q->g[G_HPROG]) {                                /* (V10.7.66) SCL > HARMONY (the last) */
         b[pos++] = 'H'; b[pos++] = 'M';
         for (i = 0; i < 4u; i++) b[pos++] = (uint8_t)q->g[G_HPROG + i];
+    }
+    for (i = 0; i < 8u && !q->dx_fml[i]; i++) {}
+    if (i < 8u) {                                       /* (V10.7.74) DRUM-X's MATH modulators (the last) */
+        b[pos++] = 'D'; b[pos++] = 'F'; memcpy(b + pos, q->dx_fml, 8); pos += 8u;
     }
     memcpy(b + PROJC_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJC_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
@@ -1155,6 +1162,11 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         for (i = 0; i < 4u; i++) q->g[G_HPROG + i] = (int16_t)clamp(b[pos + 2u + i], GP[G_HPROG + i].min, GP[G_HPROG + i].max);
         pos += 6u;
     }
+    memset(q->dx_fml, 0, sizeof q->dx_fml);            /* (V10.7.74) DRUM-X's MATH modulators: as saved, else none */
+    if (pos + 10u <= room && b[pos] == 'D' && b[pos + 1u] == 'F') {
+        for (i = 0; i < 8u; i++) q->dx_fml[i] = b[pos + 2u + i] <= 48u ? b[pos + 2u + i] : 0u;
+        pos += 10u;
+    }
     proj_new_tracks(q, nt);                             /* (a FUNC of fewer tracks: the rest at power-on) */
     for (t = nt; t < NTRK; t++)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);
@@ -1351,6 +1363,7 @@ static void project_capture(project_t *p)
     p->dx_hands = (uint8_t)(dx_hands | dx_glue << 4);   /* (0.7.9; snd1: GLUE) */
     memcpy(p->dx_snd, dx_snd, sizeof p->dx_snd);        /* (0.6.48) */
     memcpy(p->dx_lay, dx_lay, sizeof p->dx_lay);        /* (0.6.49) */
+    memcpy(p->dx_fml, dx_fml, sizeof p->dx_fml);        /* (V10.7.74) */
     {                                                   /* (0.6.52) FUGUE */
         uint32_t a, h;
         for (a = 0; a < NTRK; a++)
@@ -1479,6 +1492,7 @@ static __attribute__((noinline)) void dx_take(const project_t *p)   /* DRUM-X's 
     dx_glue = p->dx_hands >> 4;                         /* (snd1: its GLUE) */
     memcpy(dx_snd, p->dx_snd, sizeof dx_snd);           /* (0.6.48: its SENDs) */
     memcpy(dx_lay, p->dx_lay, sizeof dx_lay);           /* (0.6.49: its LAYERs) */
+    memcpy(dx_fml, p->dx_fml, sizeof dx_fml);           /* (V10.7.74) */
 }
 static __attribute__((noinline)) int project_recall_sound(uint32_t slot, uint32_t k)
 {
@@ -1712,6 +1726,7 @@ static __attribute__((noinline)) void system_init(void)   /* (snd8: out of its c
     dx_glue = 0;
     memset(dx_snd, 0, sizeof dx_snd);
     memcpy(dx_lay, DX_LAY_DEF, sizeof dx_lay);
+    memset(dx_fml, 0, sizeof dx_fml);                   /* (V10.7.74) */
     memset(fg_set, 0, sizeof fg_set);                   /* (0.6.52) no FUGUE */
     live_reset();                                       /* (p2) no LIVE modifier (seq_live.c) */
     dx_mute_set(0);

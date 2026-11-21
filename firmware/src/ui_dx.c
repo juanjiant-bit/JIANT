@@ -69,7 +69,12 @@ static __attribute__((noinline)) void dx_knob(const page_t *pg, uint32_t k, int3
                                                          * click), P.ENV (the pitch envelope's shape) */
         uint32_t m = L->mode, f = ((m >> 2) & 3u) * 2u + ((m >> 4) & 1u);
         int32_t d = s > 0 ? 1 : -1;
-        if (k == 1u) m = (m & ~3u) | (uint32_t)clamp((int32_t)(m & 3u) + d, 0, 3);
+        if (k == 1u) {                                  /* (V10.7.74, the owner) WAVE: SINE FM METAL BELL, then F01..F48 (a
+                                                         * MATH formula the FM's modulator; COLOR its index) */
+            int32_t w = clamp((dx_fml[dx_ui_lane & 7u] ? 3 + (int32_t)dx_fml[dx_ui_lane & 7u] : (int32_t)(m & 3u)) + d, 0, 51);
+            dx_fml[dx_ui_lane & 7u] = (uint8_t)(w > 3 ? w - 3 : 0);
+            if (w <= 3) m = (m & ~3u) | (uint32_t)w;
+        }
         else if (k == 2u) {
             f = (uint32_t)clamp((int32_t)f + d, 0, 7);
             m = (m & ~0x1Cu) | (f >> 1) << 2 | (f & 1u) << 4;
@@ -137,7 +142,11 @@ static void dx_cards(const page_t *pg)
         static const char *const PM[4] = {"DECAY", "LONG", "NOISE", "SINE"}, *const W[4] = {"SINE", "FM", "METAL", "BELL"},
                                  *const F[4] = {"LP", "BP", "HP", "GUIRO"};
         uint32_t m = L->mode, f = (m >> 2) & 3u;
-        hot_gauge_column(1, "WAVE", W[m & 3u], (int32_t)(m & 3u) * 333);
+        {   /* (V10.7.74) a formula: "F07" */
+            uint32_t fm = dx_fml[dx_ui_lane & 7u];
+            char wb[4] = {'F', (char)('0' + fm / 10u), (char)('0' + fm % 10u), 0};
+            hot_gauge_column(1, "WAVE", fm ? wb : W[m & 3u], fm ? (int32_t)(fm + 3u) * 1000 / 51 : (int32_t)(m & 3u) * 1000 / 51);
+        }
         draw_column(2, "FILTER", F[f], (m >> 4) & 1u ? "SHORT" : "", VAL(2u), (int32_t)(f * 2u + ((m >> 4) & 1u)) * 1000 / 7, ICON_TONE);
         hot_gauge_column(3, "P.ENV", PM[(m >> 5) & 3u], (int32_t)((m >> 5) & 3u) * 333);
         return;

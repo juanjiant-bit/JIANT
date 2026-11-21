@@ -132,9 +132,11 @@ static __attribute__((noinline)) int32_t dx_sq(uint32_t ph, int32_t k) { return 
  * they were) */
 static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32_t n, uint32_t *php, uint32_t *ph2p,
                                                int32_t *op, int32_t *o1p, int32_t inc, int32_t dinc, int32_t ga, int32_t dga,
-                                               int32_t ix, int32_t dix, uint32_t ratio, int32_t fbk, int32_t lay)
+                                               int32_t ix, int32_t dix, uint32_t ratio, int32_t fbk, int32_t lay, uint32_t fl)
 {
-    uint32_t i, ph = *php, ph2 = *ph2p, ph4 = v->ph4;
+    static int32_t aux;                                  /* (V10.7.74: a MATH formula's own state, the kit's) */
+    uint32_t i, ph = *php, ph2 = *ph2p, ph4 = v->ph4, hp = (uint32_t)v->hpos << 2;
+    int32_t md = 0;
     int32_t o = *op, o1 = *o1p, lx = lay * lay * 600, lm = lay * 3, fh = fbk >> 1;   /* (snd1: FEEDBK's mean of two) */
     uint32_t st4 = lay ? 1448u : 0u;                     /* (LAYER 0: its phase kept) */
     if (!ix && !dix)                                     /* (no FM on it: the modulator stands still, its phase kept) */
@@ -142,7 +144,10 @@ static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32
     for (i = 0; i < n; i++, inc += dinc, ga += dga, ix += dix) {
         int32_t o2, f = o + o1;
         o1 = o;
-        o = sine_i(ph + (uint32_t)(sine_i(ph2) * ix) * 512u + (uint32_t)(f * fh));
+        if (!fl) md = sine_i(ph2);                       /* (V10.7.74, the owner) the modulator a MATH formula: its x the
+                                                          * modulator's phase, its t the hit's time; a sample in four */
+        else if (!(i & 3u)) md = lofi_float(fl - 1u, hp + i * 4u, ph2 >> 19, &aux);
+        o = sine_i(ph + (uint32_t)(md * ix) * 512u + (uint32_t)(f * fh));
         o2 = dx_tri(ph4 + (uint32_t)(o * lx));
         y[i] = mulq15(o + (((o2 - o) * lm) >> 6), ga >> 8);
         ph += (uint32_t)inc << 4;
@@ -179,6 +184,8 @@ static dx_lane_t dx_kit[8] __attribute__((section(".data.dx_kit")));            
  * nibble LAYER, a second oscillator (a triangle) at sqrt 2 of the pitch (the most out of tune with it there is) frequency-modulated
  * by the first, more as it goes up (1..15: a metal edge .. a clang with no note: the sound melts into the rhythm and
  * stays out of the harmony); high nibble FEEDBK, the sound's own oscillator fed back (on top of TONE's, the kit's) */
+static uint8_t dx_fml[8];                               /* (V10.7.74, the owner) each sound's MATH formula as its FM's
+                                                         * modulator: 0 the sine, 1..48 F01..F48 (project.c 'D' 'F') */
 static uint8_t dx_lay[8] __attribute__((section(".data.dx_lay")));                                /* (V10.6o: no initializer; the power-on and a project set it: the
                                                           * factory kit's, DX_LAY_DEF) */
 #define DX_LAY_L(x) ((uint32_t)(x) & 15u)
@@ -240,7 +247,9 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
     uint32_t nf = n, ln = L >= dx_kit && L < dx_kit + 8 ? (uint32_t)(L - dx_kit) : 0u;
     int32_t lay = (int32_t)DX_LAY_L(dx_lay[ln]), lfb = 0;   /* (V10.7.63, the owner: FEEDBK "high squeals, no use": gone,
                                                           * the kit's, the sound's, a hit's; LAYER off the panel, a kit's own) */
+    uint32_t fl = dx_fml[ln] <= 48u ? dx_fml[ln] : 0u;   /* (V10.7.74) a MATH formula: the FM's modulator */
     (void)feedback;
+    if (fl) wave = DXW_FM;
     if (!v->live && !v->trig) {
         for (i = 0; i < n; i++)
             y[i] = 0;
@@ -409,7 +418,9 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
             int32_t base = wave == DXW_SINE ? 0 : dx_fm_lim(q[DXP_COLOR] * 3, inc1, ratio), fe = fm ? dx_fm_lim(dx_fm_env(fm), inc1, ratio) : 0;   /* (snd1) */
             int32_t ix = base + ((fe * v->ep) >> 15), dix = ((base + ((fe * ep1) >> 15)) - ix) / (int32_t)n;
             int32_t o = v->mo, o1 = v->mo1, fbk = 0;
-            dx_layer(v, y, n, &ph, &ph2, &o, &o1, inc, dinc, ga, dga, ix, dix, ratio, fbk, lay);   /* (0.6.49) LAYER: a second
+            dx_layer(v, y, n, &ph, &ph2, &o, &o1, inc, dinc, ga, dga, ix, dix, ratio, fbk, lay, fl);
+            if (fl && ln != DV_CLAP && !gr)              /* (the formula's time: the hit's, half-rate samples) */
+                v->hpos = (uint16_t)(v->hpos + n < 65535u ? v->hpos + n : 65535u);   /* (0.6.49) LAYER: a second
                                                           * one at sqrt 2, FM'd by the first (V10.6q: its loop the only
                                                           * one, LAYER 0 none of it) */
             v->ph2 = ph2;
