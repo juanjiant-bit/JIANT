@@ -154,11 +154,16 @@ static void script(double t0, double t)
     if (AT(82.5)) { menu_put(MI_PRSCR, 1u); ui.force = 1; }
     /* ---- the grid, the outro */
     if (AT(85.0)) {
-        menu_put(MI_PRSCR, 0u); ui.menu = 0; go_home(); ui.force = 1;
-        caption(85.0, "", "V10.7.81", "EXPLORE|HARMONY|PUNCH-IN CELLS|FOCUS IN HEAT|MATH WAVETABLES|GLITCH FM · MATH LAB|DUBSTEP|CUMBIA VILLERA", 2,
+        menu_put(MI_PRSCR, 0u); ui.menu = 0; ui.confirm = 0; go_home(); ui.force = 1;
+        caption(85.0, "NEXT", "SONG MODE,|REDESIGNED", "coming in the next version:|each track its sequences A B C D, switched live|the jam recorded as the song, LOCK to keep it", 0,
+                "PRÓXIMAMENTE", "MODO CANCIÓN,|REDISEÑADO", "llega en la próxima versión:|cada pista con sus secuencias A B C D, en vivo|la jam se graba como canción, LOCK para fijarla");
+    }
+    if (AT(90.5)) {
+        ui.menu = 0; go_home(); ui.force = 1;
+        caption(90.5, "", "V10.7.81", "EXPLORE|HARMONY|PUNCH-IN CELLS|FOCUS IN HEAT|MATH WAVETABLES|GLITCH FM · MATH LAB|DUBSTEP|CUMBIA VILLERA", 2,
                 "", "V10.7.81", "EXPLORE|HARMONY|CELDAS DE PUNCH-IN|FOCUS TÉRMICO|WAVETABLES MATH|GLITCH FM · MATH LAB|DUBSTEP|CUMBIA VILLERA");
     }
-    if (AT(93.0)) caption(93.0, "", "", "", 0, "", "", "");
+    if (AT(96.0)) caption(96.0, "", "", "", 0, "", "", "");
 }
 
 static void put_screen(void)
