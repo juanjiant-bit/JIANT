@@ -596,6 +596,7 @@ static void jam_round_end(void)
     jam_sort(w);
     live.jam[w++] = end;
     memset(&live.jam[w], 0, (JAM_N - w) * sizeof live.jam[0]);
+    jam_vos &= (uint8_t)~(1u << K);                     /* (the player's is the take's now) */
     live.rec_done = 1;
     ui_message("TRACK DONE");
 }
@@ -617,11 +618,11 @@ static void jam_poll(void)
         return;
     if (!song.playing) {
         jam_base = 0;
-        jam_vos = 0;
         for (i = 0; i < JAM_N && live.jam[i] && !JE_POS(live.jam[i]); i++) {   /* (the tracks at the start) */
             k = JE_K(live.jam[i]);
             if (k < NTRK && !clip_go[k] && jam_cur(k) != JE_S(live.jam[i])) jam_switch(k, JE_S(live.jam[i]));
         }
+        jam_vos = 0;                                    /* (the take's, not the player's) */
         return;
     }
     g = gl_step_at(0);

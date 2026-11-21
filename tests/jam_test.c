@@ -119,7 +119,7 @@ int main(void)
             ok &= n3 >= 2u && c3 && sorted && t2;
             bad += check("JAM LOCK REC: T3 again for a round, its change to C in the take, T2's kept, in time order", ok);
             jam_switch(0, 3);                            /* the player's T1 over the take */
-            ok = (jam_vos & 1u) != 0u;
+            ok = jam_vos == 1u;                         /* (only the player's: the take's start is not) */
             bad += check("JAM LOCK: the player's sequence over the take marked (VOS)", ok);
         }
         transport_req = 2; ui_input(); mix_block(o, CTL); frames(8);
