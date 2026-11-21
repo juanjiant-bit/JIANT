@@ -1183,6 +1183,31 @@ static void ly_piano(uint32_t l)
             cv_text_up(x0 + HALF_UP(10 - AF_X_CAP_H) - AF_X_CAP_Y, y + bh - 4, &AF_X, nm, fill == T_BG ? T_DIM : ink, fill, bh - 8);
     }
 }
+/* (V10.7.77, the owner: "clearer") the FX layer as Felucca's cells were: the keys that do something, five a row in the
+ * keys' order (F3 .. G5), each its name, its state's fill (held / latched lit) */
+static __attribute__((noinline)) void ly_fx_cells(void)
+{
+    static const uint8_t BK[12] = {0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0};   /* (from F: the black ones) */
+    uint32_t k, pass, n, m = 0, wi, bi;
+    int32_t ch = ((int32_t)graph_h() - 6) / 7;
+    char nm[12];
+    for (pass = 0; pass < 2u; pass++)                   /* the effects four a row, then the tracks' mutes a row of six */
+        for (k = 0, n = 0, wi = 0, bi = 0; k < 27u; k++) {
+            uint32_t b = BK[k % 12u], st, mu;
+            uint16_t ink, fill;
+            int32_t x, y, w;
+            st = ly_keyname(LAYER_FX, (int)b, b ? bi++ : wi++, nm);
+            mu = nm[0] == 'M' && nm[1] == 'U';
+            if (!nm[0] || mu != pass || (!pass && m >= 24u)) continue;
+            fill = pk_fill(st, 0, 1, &ink);
+            w = pass ? 36 : 56;
+            x = 4 + (int32_t)(n % (pass ? 6u : 4u)) * (w + 2);
+            y = 3 + (pass ? 6 : (int32_t)(n / 4u)) * ch;
+            cv_rrect(x, y, w, ch - 2, 3, fill, T_SURF);
+            cv_text_in(x, y + (ch - 2) / 2 - 4, w, &AF_X, pass ? nm + 5 : nm, ink, fill);
+            n++; m += !pass;
+        }
+}
 /* Draw REC controls separately so the pinned UI/audio boundary stays unchanged. */
 static __attribute__((noinline)) void rec_columns(void)
 {
@@ -1613,7 +1638,8 @@ static __attribute__((noinline)) void draw_layer(void)
         cv_begin(240, graph_h(), T_BG);
         cv_rrect(4, 0, 232, (int32_t)graph_h(), 6, T_SURF, T_BG);
         cv_bg = T_SURF;
-        ly_piano(l);                                    /* MAP: the keyboard (V10.7.66: KNOBS / STATE gone) */
+        if (l == LAYER_FX && !pk.edit) ly_fx_cells();   /* (V10.7.77, the owner) FX: the effects as cells, as before 0.8.9 */
+        else ly_piano(l);                               /* MAP: the keyboard (V10.7.66: KNOBS / STATE gone) */
         cv_blit(0, graph_y());
     }
     draw_tabs();                                        /* (0.8.5: MAP . KNOBS . STATE, the breadcrumb) */
