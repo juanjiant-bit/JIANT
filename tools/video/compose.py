@@ -29,7 +29,7 @@ def heat_strip(w, h, a=0.0, b=0.86):                 # the rule: heat left to ri
     return np.repeat(row[None], h, 0)
 FONT = ROOT / 'assets/fonts'
 def font(w, s): return ImageFont.truetype(str(FONT / f'ChakraPetch-{w}.ttf'), s)
-VER = re.search(r'FELUCCA_VERSION "(v[^"]+)"', (ROOT / 'firmware/src/felucca.c').read_text()).group(1)
+VER = re.search(r'FELUCCA_VERSION "([vV][^"]+)"', (ROOT / 'firmware/src/felucca.c').read_text()).group(1)
 
 # ---- the script: scenes.txt (start s, category, title lines, subtitle lines, kind; '|' splits lines; an empty
 # title ends the captions: the outro)
@@ -127,8 +127,9 @@ for s0, s1, tg, ti, su, kd in SCENES:
         src = next((c for c in CARDS if c[3][0] == name), None)
         if src: cells.append((src, text_layer([name], font('SemiBold', 24), heat(0.04 + 0.82 * j / 7))))
     GRIDS.append((s0, s1, text_layer(ti, font('Bold', 60), TXT), cells))
+_outro = (D / 'outro.txt').read_text().strip().split('|') if (D / 'outro.txt').exists() else ['try it in your browser']   # (V10.7.81: a film's own words)
 OUT_L = [text_layer(['JIANT FM'], font('Bold', 124), TXT),
-         text_layer(['try it in your browser'], font('SemiBold', 40), TXT),
+         text_layer([_outro[0]], font('SemiBold', 40), TXT),
          text_layer(['juanjiant-bit.github.io/JIANT'], font('Medium', 34), heat(0.62)),
          text_layer(['emulator · web installer · editor · cheat sheets'], font('Medium', 24), MID),
          text_layer(['support: ko-fi.com/juanjiant · cafecito.app/juanjiant'], font('Medium', 24), heat(0.3))]
@@ -163,6 +164,7 @@ def draw_dice(img, t):                             # over a throw: the die tumbl
             return
     if SEPS and SEPS[0] < t < OUT:                 # between throws: the last face, small and calm
         i = max(j for j, s0 in enumerate(SEPS) if s0 <= t)
+        if __import__('os').environ.get('DIE_HOLD') and t - SEPS[i] > float(__import__('os').environ['DIE_HOLD']): return   # (V10.7.81: a while only)
         L = DIE[(i * 5 + 3) % 6 + 1].resize((150, 150), Image.BILINEAR)
         paste(img, L, 420 - 75, 600 - 75, 0.55 * ease((t - SEPS[i] - 0.7) / 0.3))
 
@@ -204,7 +206,7 @@ ff = None if PREVIEW else subprocess.Popen(['ffmpeg', '-y', '-loglevel', 'error'
                        '-af', f'afade=t=in:d=0.3,afade=t=out:st={END - 2.0:.2f}:d=2.0',
                        '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p',
                        '-c:a', 'aac', '-b:a', '256k', '-movflags', '+faststart', '-shortest',
-                       str(D / 'jiant-fm.mp4')], stdin=subprocess.PIPE)
+                       str(D / (__import__('os').environ.get('OUT') or 'jiant-fm.mp4'))], stdin=subprocess.PIPE)
 rng = np.random.default_rng(7)
 for f in (PREVIEW or range(N)):
     t = f / FPS
@@ -308,4 +310,4 @@ for f in (PREVIEW or range(N)):
     if PREVIEW: Image.fromarray(out).save(D / f'preview-{f:04d}.png'); continue
     ff.stdin.write(out.tobytes())
     if f % 300 == 0: print(f'{f}/{N}', flush=True)
-if ff: ff.stdin.close(); ff.wait(); print(D / 'jiant-fm.mp4')
+if ff: ff.stdin.close(); ff.wait(); print(D / (__import__('os').environ.get('OUT') or 'jiant-fm.mp4'))
