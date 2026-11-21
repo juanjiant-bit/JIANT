@@ -2790,6 +2790,14 @@ static __attribute__((noinline)) uint32_t gcpu_est(void)
     }
     return c + GCPU_VOX * (v < 128u ? v : 128u) / 16u;
 }
+/* (V10.7.77, the owner) a wobble bass's rate moving: its LFO RATE automated, half a bar each its own (1/4 1/8 1/8T
+ * 1/16); in the Bluetooth segment (gen_make runs only where it is) */
+static BTAPP_FN void gwobble(track_t *b)
+{
+    static const int8_t WR[5] = {-5, -8, -9, -10, -8};
+    uint32_t i, len = dlen(b);
+    for (i = 0; i < len; i += 8u) motion_set_event(b, i, P_LRATE, WR[gr() % 5u]);
+}
 static __attribute__((noinline)) void gen_make(void)
 {
     const ggenre_t *g;
@@ -3030,13 +3038,7 @@ static __attribute__((noinline)) void gen_make(void)
     song.g[G_CDEPTH] = (int16_t)grr(20, 80);
     song.g[G_DUCK] = (int16_t)(gs.act[RL_DRUM] ? (g->spec & GSP_PUMP ? grr(60, 80) : g->kick_mode == KM_SUSTAIN ? grr(30, 50) : grr(14, 30)) : 0);   /* (V10.6n:
                                                          * hard bass pumped) */
-    if (g->snd[GP_BASS] == SR_WOW && gs.act[RL_BASS] && gs.trk_of[RL_BASS] < NTRK) {   /* (V10.7.77, the owner) the wobble's
-                                                         * rate moving: half a bar each its own (1/4 1/8 1/8T 1/16) */
-        static const int8_t WR[5] = {-5, -8, -9, -10, -8};
-        track_t *b = &trk[gs.trk_of[RL_BASS]];
-        uint32_t i, len = dlen(b);
-        for (i = 0; i < len; i += 8u) motion_set_event(b, i, P_LRATE, WR[gr() % 5u]);
-    }
+    if (g->snd[GP_BASS] == SR_WOW && gs.act[RL_BASS] && gs.trk_of[RL_BASS] < NTRK) gwobble(&trk[gs.trk_of[RL_BASS]]);
     song.g[G_DREL] = (int16_t)(g->drum == DM_TECHNO || g->drum == DM_HARD || g->drum == DM_HBASS ? grr(15, 30) : grr(25, 45));
     song.g[G_CLIP] = (int16_t)(gs.act[RL_DRUM] ? (g->spec & GSP_HEAVY ? grr(60, 85) : grr(35, 65)) : grr(10, 30));   /* (gen3: a
                                                          * little more: the peaks rounded; V10.6p: a heavy genre's driven) */

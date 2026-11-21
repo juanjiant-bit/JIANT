@@ -13,15 +13,12 @@ static const char KNOB_HINT[] =
     "SNAP" "\0" "EVERY HIT'S CLICK" "\0"
     "GLUE" "\0" "KIT BUS COMPRESSOR" "\0"
     "LEADER" "\0" "KEYS OR A TRACK PLAY THE ROLES" "\0"
-    "GL TYPE" "\0" "GLIDE: RATE OR TIME" "\0"
     "NOTE PRIO" "\0" "WHICH NOTE WINS" "\0"
     "VOICE ORDER" "\0" "HOW VOICES ARE USED" "\0"
     "FEEDBK" "\0" "DELAY REPEATS" "\0"
     "QUANT" "\0" "SNAP TO SCALE" "\0"
     "ALL TRK" "\0" "TRANSPOSE ALL TRACKS" "\0"
-    "CHORD" "\0" "SETS: EACH KEY ITS OWN CHORD" "\0"
-    "MACRO" "\0" "WHICH MACRO" "\0"
-    "DEST" "\0" "WHAT IT MOVES" "\0";
+    "CHORD" "\0" "SETS: EACH KEY ITS OWN CHORD" "\0";
 
 static void knob_hint(const char *label)
 {
