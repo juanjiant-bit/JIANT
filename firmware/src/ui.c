@@ -2048,7 +2048,7 @@ static uint32_t preset_visible(uint32_t cur, uint32_t total, uint32_t row)
 
 /* (JIANT 0.4) the MACRO layer latched: LFO held opens it, let go it stays (M1..M4 on KNOB 1..4, SELECT the dice, its
  * cards drawn by ui_draw over any page, no layer open: the keys stay notes) until LFO is pressed again (ui_layer.c) */
-static uint8_t mac_latch;
+#define mac_latch 0u                                    /* (V10.7.66: the MACRO latch gone with LFO's layer) */
 /* HOME: what KNOB k edits: the engine's four main parameters */
 static const param_desc_t *home_param(uint32_t k, int16_t **vp)
 {

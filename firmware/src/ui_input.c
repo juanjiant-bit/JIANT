@@ -2458,43 +2458,6 @@ static int dk_back(uint32_t kind, uint32_t k)           /* CANCEL: 0 done */
     }
     return 0;
 }
-/* the LFO: its rate in the middle of the range, any wave, MODE FREE or TRIG (any phase) alike, a fade now and then; aimed mostly at the filter,
- * a little at the shape, seldom at the pitch or the level (a wobble, not a siren) */
-static void lfo_dice(track_t *t)
-{
-    const param_desc_t *d;
-    d = track_desc(t, P_LRATE); t->p[P_LRATE] = (int16_t)dk_frac(d, 25, 80);
-    d = track_desc(t, P_LWAVE); t->p[P_LWAVE] = (int16_t)dk_frac(d, 0, 100);
-    d = track_desc(t, P_LPHASE); t->p[P_LPHASE] = (int16_t)(rng() >> 31 ? -1 : dk_rr(0, d->max));   /* (0.9.18: MODE FREE
-                                                         * half the time, was 2 in 3; TRIG at a phase the rest, 0..127) */
-    d = track_desc(t, P_LFADE); t->p[P_LFADE] = (int16_t)(rng() % 3u ? d->min : dk_frac(d, 0, 50));
-    d = track_desc(t, P_LD_PIT); t->p[P_LD_PIT] = (int16_t)(rng() % 4u ? 0 : dk_frac(d, 44, 56));
-    d = track_desc(t, P_LD_FLT); t->p[P_LD_FLT] = (int16_t)dk_frac(d, d->min < 0 ? 15 : 20, d->min < 0 ? 85 : 70);
-    d = track_desc(t, P_LD_SHP); t->p[P_LD_SHP] = (int16_t)(rng() % 2u ? 0 : dk_frac(d, d->min < 0 ? 30 : 0, d->min < 0 ? 70 : 40));
-    d = track_desc(t, P_LD_AMP); t->p[P_LD_AMP] = (int16_t)(rng() % 3u ? 0 : dk_frac(d, 0, 35));
-}
-/* the effects: the track's drive (half the time none), its sends, an AUTOPAN one time in three; the shared reverb's
- * kind and size and the delay's time and feedback, a pitched delay one time in five */
-static void fx_dice(track_t *t)
-{
-    const param_desc_t *d;
-    d = track_desc(t, P_DIST); t->p[P_DIST] = (int16_t)(rng() % 2u ? 0 : dk_frac(d, 8, 55));
-    d = track_desc(t, P_DTYPE); t->p[P_DTYPE] = (int16_t)dk_frac(d, 0, 100);
-    d = track_desc(t, P_DTONE); t->p[P_DTONE] = (int16_t)dk_frac(d, 30, 80);
-    d = track_desc(t, P_CHOR); t->p[P_CHOR] = (int16_t)(rng() % 2u ? 0 : dk_frac(d, 15, 70));
-    d = track_desc(t, P_DLY); t->p[P_DLY] = (int16_t)dk_frac(d, 0, 65);
-    d = track_desc(t, P_REV); t->p[P_REV] = (int16_t)dk_frac(d, 10, 85);
-    d = track_desc(t, P_APDEP); t->p[P_APDEP] = (int16_t)(rng() % 3u ? 0 : dk_frac(d, 25, 80));
-    d = track_desc(t, P_APRATE); t->p[P_APRATE] = (int16_t)dk_frac(d, 20, 80);
-    d = track_desc(t, P_APWAVE); t->p[P_APWAVE] = (int16_t)dk_frac(d, 0, 100);
-    song.g[G_RTYPE] = (int16_t)dk_rr(GP[G_RTYPE].min, GP[G_RTYPE].max);
-    song.g[G_RSIZE] = (int16_t)dk_rr(GP[G_RSIZE].min + (GP[G_RSIZE].max - GP[G_RSIZE].min) / 3, GP[G_RSIZE].max);
-    song.g[G_RDAMP] = (int16_t)dk_rr(GP[G_RDAMP].min, GP[G_RDAMP].max);
-    song.g[G_DTIME] = (int16_t)dk_rr(GP[G_DTIME].min, GP[G_DTIME].max);
-    song.g[G_DFDBK] = (int16_t)dk_rr(20, 70);
-    song.g[G_DPIT] = (int16_t)(rng() % 10u ? 0 : (rng() & 1u ? 12 : -12));   /* (V10.8: one in ten, octaves; was 1/5 with
-                                                         * fifths and fourths) */
-}
 static void part_dice(uint32_t kind)
 {
     static uint32_t last_ms;                            /* (once a turn burst, the dialog's turns too) */
@@ -2515,8 +2478,7 @@ static void part_dice(uint32_t kind)
     dk.msg = kind == CF_DICE_SEQ ? dice_seq(TSEL) : kind == CF_DICE_LFO ? "LFO DICED" : kind == CF_DICE_FX ? "FX DICED" :
              drum_track(TSEL) ? "KIT DICED" : "SOUND DICED";
     if (kind == CF_DICE_SOUND) sound_dice_of(TSEL, 1);
-    else if (kind == CF_DICE_LFO) lfo_dice(TSEL);
-    else if (kind == CF_DICE_FX) fx_dice(TSEL);
+    /* (V10.7.66: LFO's and FX's dice gone, the owner) */
 }
 static int dice_kind(uint32_t c) { return c == CF_DICE_SOUND || c == CF_DICE_SEQ || c == CF_DICE_LFO || c == CF_DICE_FX; }
 /* (0.6.21) HOME + SELECT (after the dialog): everything diced into a new piece. One scale for the song (ROOT, a

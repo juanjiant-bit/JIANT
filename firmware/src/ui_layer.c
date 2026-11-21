@@ -180,7 +180,6 @@ static void layer_arm(uint32_t pressed, uint32_t now)
         return;
     }
     if (mac_latch && (pressed & ly_bit(LAYER_MACRO))) { /* (JIANT 0.4) LFO pressed again: the latch off, nothing else */
-        mac_latch = 0;
         ui.force = 1;
         ui.ly = LAYER_MACRO;
         ui.ly_t0 = (now & ~15u) | 1u | LY_DEAD;
@@ -385,11 +384,6 @@ static __attribute__((noinline)) void layer_let_go(uint32_t quiet)
         layer_allowed()) {                              /* (V10.7) REC held alone and let go: UNDO (again: REDO) */
         undo_ui();
         quiet = 0;
-    }
-    if (ui.ly == LAYER_MACRO && (ui.ly_t0 & LY_OPEN) && !(ui.ly_t0 & LY_DEAD)) {   /* (JIANT 0.4) MACRO opened, let go: */
-        mac_latch = 1;                                  /* latched (its knobs at once: no quiet time) */
-        quiet = 0;
-        ui.force = 1;
     }
     if (ui.ly == LAYER_EDIT && mom_on)                  /* (0.9.9-seq2e) MOMENTARY: what was touched glides back */
         mom_release();
@@ -785,13 +779,6 @@ static __attribute__((noinline)) void layer_key(uint32_t l, uint32_t k)
         }
     } else if (l == LAYER_SCL) {
         TSEL->p[P_ROOT] = (int16_t)((k + 5u) % 12u);    /* the key's note name (F3 = F) */
-    } else if (l == LAYER_MACRO && !key_black(k) && p < 2u) {   /* (JIANT 0.4) F3 DICE, G3 CLEAR */
-        if (chain_busy()) {
-            ui_message("SONG PLAYS: STOP IT TO EDIT");
-        } else {
-            macro_dice(p ? 2u : 1u);
-            ui_message(p ? "MACROS CLEARED" : "MACROS DICED");
-        }
     } else if (l == LAYER_EDIT && key_black(k) && p < NLANE && drum_track(TSEL)) {
         dx_mute_set(dx_mute ^ DXM_LANE(p));             /* DRUM: black keys 1..8 mute each sound (lit = sounding) */
     } else if (l == LAYER_EDIT && !key_black(k) && p <= LY_RECALL) {

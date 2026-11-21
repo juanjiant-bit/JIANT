@@ -209,7 +209,7 @@ static void ui_power_on(void)
     memset(&favorites, 0, sizeof favorites);
     ui_prefs = PREF_ACCEL_OFF;                    /* (the tests turn a detent a frame: one step each; KNOB ACCEL, ON on the
                                                    * device by default, has its own test) */
-    mac_latch = 0;
+    /* (V10.7.66: no MACRO latch) */
     fx_lock = 0;                                  /* (0.6.44) */
     memset(pat_last, 0, sizeof pat_last);
     memset(proj_slot, 0, sizeof proj_slot);
@@ -1677,18 +1677,7 @@ static int test_lfo_free(void)
     ok &= !project_restore_runtime(&proj_scratch) && t->lfo_fade == 32767;
     proj_lfo_keep = 0;
     bad += check("LFO MODE in a project: as stored; a load fades FREE in once, a section / UNDO keeps it going", ok);
-    {   /* LFO + SELECT: FREE half the time (was 2 in 3), TRIG at any phase 0..127 */
-        uint32_t n = 0, lo = 0, hi = 0, i;
-        for (i = 0; i < 4000u; i++) {
-            lfo_dice(t);
-            n += t->p[P_LPHASE] < 0;
-            lo += t->p[P_LPHASE] >= 0 && t->p[P_LPHASE] < 64;
-            hi += t->p[P_LPHASE] >= 64;
-            if (t->p[P_LPHASE] < -1 || t->p[P_LPHASE] > 127) n = 99999u;
-        }
-        printf("ui:   LFO dice: FREE %u of 4000, TRIG 0..63 %u, 64..127 %u\n", n, lo, hi);
-        bad += check("LFO dice: MODE FREE half the time, TRIG at any phase", n > 1850u && n < 2150u && lo > 850u && hi > 850u);
-    }
+    /* (V10.7.66: the LFO dice gone, the owner) */
     return bad;
 }
 static int test_patterns(void)
@@ -12085,7 +12074,7 @@ static int test_organic(void)
     {   /* SELECT on HOME's macros: the routes rolled again (once a turn), the tempo untouched; on the sound's four: tempo */
         int16_t bpm = song.g[G_BPM], before[NTRK][12];
         uint32_t diff = 0;
-        mac_latch = 1;
+        /* (V10.7.66: no MACRO latch) */
         go_home(); frames(64);
         for (k = 0; k < NTRK; k++)
             for (j = 0; j < 12u; j++) before[k][j] = trk[k].p[P_M1SRC + j];
@@ -12093,7 +12082,7 @@ static int test_organic(void)
         for (k = 0; k < NTRK; k++)
             for (j = 0; j < 12u; j++) diff += before[k][j] != trk[k].p[P_M1SRC + j];
         ok = diff > 0u && song.g[G_BPM] == bpm;
-        mac_latch = 0;
+        /* (no latch) */
         fm1_ms += 1200u;
         held_turn(B_HOME, 1);
         ok &= song.g[G_BPM] == bpm && ui.confirm == CF_DICE_ALL;   /* (0.6.67) HOME + SELECT: DICE EVERYTHING? */

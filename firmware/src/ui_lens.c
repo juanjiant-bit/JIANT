@@ -211,7 +211,7 @@ static uint32_t pd_level(void) { return nav_lv(); }
 static uint32_t save_level(void) { return nav_lv(); }
 static uint32_t home_level(void) { return gen_on() ? 2u : ui.hlv ? 1u : 0u; }
 static uint32_t home_set(void) { return ui.hset[home_level() & 1u] & 1u; }
-static int home_macros(void) { return ui.home && !ui.menu && home_level() == 1u && home_set(); }   /* ROUTES: M1..M4 */
+static int home_macros(void) { return 0; }             /* (V10.7.66: HOME > ROUTES gone, the macros FX > PUNCH IN's) */
 static int home_life(void) { return ui.home && !ui.menu && home_level() == 0u && home_set(); }   /* (V10.7.62) LIFE */
 /* the entries shown now (on this track, at this LOAD), in order: their indices in v (NAV_MAX at most: the longest chain,
  * FX's 17 since snd8's TAPE, fits: ui_test checks every chain against it; snd8b's 17th page overran a 16 and crashed
