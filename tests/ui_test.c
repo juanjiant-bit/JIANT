@@ -8553,9 +8553,11 @@ static int test_dx_sound(void)
         uint8_t m0 = dx_kit[2].mode;
         uint32_t ix;
         go_title("SOUND 3");
-        for (ix = 0; ix < 40u; ix++) turn(EN_K2, 1);    /* (a step a detent; V10.7.63: WAVE, FILTER, P.ENV each its knob) */
+        for (ix = 0; ix < 60u; ix++) turn(EN_K2, 1);    /* (a step a detent; V10.7.63: WAVE, FILTER, P.ENV each its knob) */
+        ok = dx_fml[2] == 48u && (dx_kit[2].mode & 3u) == DXW_FM;   /* (V10.7.74: past BELL the formulas, F48 the last, the FM's) */
+        for (ix = 0; ix < 48u; ix++) turn(EN_K2, -1);   /* (back to BELL) */
         for (ix = 0; ix < 40u; ix++) turn(EN_K3, 1);
-        ok = ((dx_kit[2].mode >> 2) & 3u) == DXF_GR && (dx_kit[2].mode & 3u) == DXW_BELL && ((dx_kit[2].mode >> 4) & 1u) &&
+        ok &= !dx_fml[2] && ((dx_kit[2].mode >> 2) & 3u) == DXF_GR && (dx_kit[2].mode & 3u) == DXW_BELL && ((dx_kit[2].mode >> 4) & 1u) &&
              dx_kit_ok(dx_kit);
         for (ix = 0; ix < 3u; ix++) turn(EN_K3, -1);    /* (GR+ GR HP+ HP) */
         ok &= ((dx_kit[2].mode >> 2) & 3u) == DXF_HP && !((dx_kit[2].mode >> 4) & 1u) && (dx_kit[2].mode & 3u) == DXW_BELL;
