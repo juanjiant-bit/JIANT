@@ -2468,8 +2468,8 @@ static int test_grid(void)
     leds = grid_leds();
     ok &= (leds >> key_at(0, 0) & 1u) != 0u;
     bad += check("ACC held: a tap adds the hit accented, again drops the accent only; the LEDs show accents", ok);
-    /* the knobs: STEP LANE HIT ACC */
-    turn(EN_K1, 2);
+    /* the knobs: (V10.8) SEQ LANE HIT ACC, the cursor PRESETS' */
+    turn(EN_PRESET, 1); turn(EN_PRESET, 1);
     turn(EN_K2, 1);
     turn(EN_K3, 1);
     ok = ui.cursor == 2u && ui.lane == 2u && t->step[2].hit == 1u << DV_CLAP;
@@ -2479,7 +2479,7 @@ static int test_grid(void)
     ok &= !t->step[2].hit && !t->step[2].acc && t->step[2].time == ST_REST;
     turn(EN_K4, 1);
     ok &= t->step[2].hit == 1u << DV_CLAP && t->step[2].acc == 1u << DV_CLAP;
-    bad += check("KNOB 1 STEP, 2 LANE, 3 HIT on / off, 4 ACC (an accent adds the hit)", ok);
+    bad += check("PRESETS the step, KNOB 2 LANE, 3 HIT on / off, 4 ACC (an accent adds the hit; V10.8: KNOB 1 the sequence)", ok);
     clr_step();
     bad += check("0.9.2 SEQ + G5 (was EDIT): the cursor step cleared, on to the next", t->step[2].time == ST_REST && !t->step[2].hit && ui.cursor == 3u &&
                  grid_on());
@@ -3891,15 +3891,17 @@ static int test_presets_knob(void)
     TSEL->p[P_SLEN] = 32;
     go_page(GR_ROLL);
     frame();
-    turn(EN_K1, 17);
+    cursor_set(17); frame();                            /* (V10.8: KNOB 1 the sequence, A..D; the cursor PRESETS') */
     grid_ok = grid_on() && ui.cursor == 17u && ui.bank == 1u && TSEL->eng_req == ENGI_DRUM;
-    turn(EN_K1, -18);
-    grid_ok &= ui.cursor == 31u;
+    turn(EN_K1, 1);
+    grid_ok &= ui.cursor == 17u && jam_cur(song.sel) == 1u;
+    turn(EN_K1, -1);
+    cursor_set(31); frame();
     turn(EN_PRESET, 1);
     grid_ok &= cur_page()->graph == GR_ROLL && ui.cursor == 0u;
     turn(EN_PRESET, -2);
     grid_ok &= ui.cursor == 30u;
-    bad += check("seq2i the DRUM grid: KNOB 1 the cursor (and the page; wraps), PRESETS the step too (wraps in LEN)", grid_ok);
+    bad += check("seq2i the DRUM grid: PRESETS the step (wraps in LEN); V10.8 KNOB 1 the sequence B, the cursor kept", grid_ok);
     ui_power_on();
     hold(B_HOME);
     i = ui.menu_sel;
@@ -6432,21 +6434,21 @@ static int test_cursor_step_leds(void)
     fm1_in.notes = 1u << 0;
     bad += check("#89 a key held lights with them", key_leds(0) == (1u << 0 | 1u << 7 | 1u << 11));
     fm1_in.notes = 0;
-    turn(EN_K1, 1);
+    turn(EN_PRESET, 1);
     ok = ui.cursor == 1u && key_leds(0) == 0u;          /* G#7: off the keyboard */
-    turn(EN_K1, 1);
+    turn(EN_PRESET, 1);
     ok &= ui.cursor == 2u && key_leds(0) == 0u;         /* a REST */
-    turn(EN_K1, 1);
+    turn(EN_PRESET, 1);
     ok &= ui.cursor == 3u && key_leds(0) == 1u << 14;   /* a TIE carries its G4 */
-    turn(EN_K1, 1);
+    turn(EN_PRESET, 1);
     ok &= ui.cursor == 4u && key_leds(0) == 0u;         /* empty */
-    bad += check("#89 KNOB 1 moves the cursor and the keys follow its step (REST, empty, off the keys: dark)", ok);
-    turn(EN_K1, -4);
+    bad += check("#89 PRESETS (V10.8; was KNOB 1) moves the cursor and the keys follow its step (REST, empty, off the keys: dark)", ok);
+    turn(EN_PRESET, -4);
     seq_start();
     events_block(CTL);
     bad += check("#89 playing: the keys show what plays, not the cursor step", song.playing && ui.cursor == 0u &&
                  key_leds(0) == play_leds());
-    turn(EN_K1, 3);
+    turn(EN_PRESET, 3);
     bad += check("#89   (the cursor on G4's step changes nothing while playing)", key_leds(0) == play_leds() &&
                  !((key_leds(0) >> 14) & 1u));
     transport_req = 2;
@@ -7759,85 +7761,8 @@ static int test_save_lens(void)
     ok = ui.confirm == CF_DEL_ROW && chain_config.count == 3u;
     press(B_OCTUP); frame();
     ok &= !ui.confirm && chain_config.count == 2u && chain_config.row[1].slot == 2u && chain_config.row[1].bars == 2u;
-    nav_put(SEC_HOME, "TIMELINE"); frame();
-    ui.song_row = 0;
-    press(B_OCTDN); frame(); press(B_OCTDN); frame();                        /* (OCT- in the dialog: NO) */
-    ok &= !ui.confirm && chain_config.count == 2u && SONG_TRK(cur_page());
-    press(B_OCTDN); frame(); press(B_OCTUP); frame();
-    ok &= chain_config.count == 1u && chain_config.row[0].slot == 2u;
-    bad += check("V10.4 ARRANGE / TIMELINE: OCT- asks DELETE ROW? for the row picked (OCT+ deletes, OCT- keeps it)", ok);
-    ui_power_on();
-    go_home(); frame();                                                      /* (V10.6o) TIMELINE, the owner's mock-up B */
-    my_steps(&trk[0]); my_steps(&trk[2]); trk[2].p[P_MUTE] = 1;
-    section_store(0); section_store(1); section_store(2);
-    chain_config.count = 2;
-    chain_config.row[0] = (chain_row_t){0, 4}; chain_config.row[1] = (chain_row_t){1, 4};
-    memset(song_idx.tsrc[song_cur], 0, sizeof song_idx.tsrc[song_cur]);
-    memset(song_idx.tvar[song_cur], 0, sizeof song_idx.tvar[song_cur]);
-    memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
-    press(B_SAVE); frame();
-    nav_put(SEC_HOME, "TIMELINE"); frame();
-    ok = SONG_TRK(cur_page()) && SONG_TRK(&PAGES[nv_page(SEC_HOME, HE_SONG)]) && !SONG_TRK(&PAGES[nv_page(SEC_HOME, HE_SONG + 1u)]);   /* (V10.7.63:
-                                                         * HOME's song pages, TIMELINE their first) */
-    turn(EN_K1, 1); frame();                                                 /* row 2 */
-    turn(EN_K2, 1); frame();                                                 /* its section C */
-    turn(EN_K3, 2); frame();                                                 /* 6 bars */
-    ok &= ui.song_row == 1u && chain_config.row[1].slot == 2u && chain_config.row[1].bars == 6u && chain_config.row[0].slot == 0u;
-    track_select(2); frame();
-    turn(EN_K4, 1); frame(); turn(EN_K4, 1); frame();                        /* T3's VAR: MUTE, THIN */
-    ok &= row_var(1, 2) == RV_THIN && !row_var(1, 0) && !row_var(0, 2);
-    tl_key(8);                                                               /* G4: T3 FROM B */
-    ok &= row_src(1, 2, 2) == 1u && row_src(1, 0, 2) == 2u;
-    tl_key(8);                                                               /* (again: the row's own) */
-    ok &= row_src(1, 2, 2) == 2u;
-    bad += check("V10.6o TIMELINE: KNOB 1 the row, 2 its section, 3 its bars, 4 the ALGORITHM track's VAR; F4..B4 its FROM", ok);
-    tl_key(1);                                                               /* G3: T2 muted in row 2 (a scene) */
-    ok = song_idx.scene[song_cur][1].on & 1u && (song_idx.scene[song_cur][1].mute >> 1) & 1u && !song_idx.scene[song_cur][0].on;
-    tl_key(1);
-    ok &= !((song_idx.scene[song_cur][1].mute >> 1) & 1u);
-    tl_key(5);                                                               /* D4: T6 */
-    ok &= (song_idx.scene[song_cur][1].on >> 2) & 1u;
-    bad += check("V10.6o TIMELINE: a white key mutes / unmutes its track in the row (its scene; T5 T6 in .on)", ok);
-    press(B_OCTUP); frame();                                                 /* a copy of row 2 after it */
-    ok = chain_config.count == 3u && ui.song_row == 2u && chain_config.row[2].slot == 2u && chain_config.row[2].bars == 6u &&
-         row_var(2, 2) == RV_THIN && (song_idx.scene[song_cur][2].on >> 2) & 1u;
-    press(B_OCTDN); frame(); press(B_OCTUP); frame();                        /* DELETE ROW? yes */
-    ok &= chain_config.count == 2u && !ui.confirm;
-    bad += check("V10.6o TIMELINE: OCT+ a copy of the row after it (scene, VAR), OCT- deletes it (DELETE ROW?)", ok);
-    ui.song_row = 1;
-    press(B_PLAY); frame();                                                  /* stopped: row 2 loops */
-    ok = chain.armed && chain.hold && sec_stage.row == 1u && transport_req == 1u;
-    chain.armed = 0; transport_req = 0; song.playing = 1; chain.running = 1; chain.row = 1; chain.remaining = 6;
-    press(B_PLAY); frame();                                                  /* on it: the song goes on */
-    ok &= !chain.hold && chain.running && transport_req == 0u;
-    press(B_PLAY); frame();                                                  /* then PLAY stops, as anywhere */
-    ok &= transport_req == 2u;
-    chain_stop(); chain.running = 0; song.playing = 0; transport_req = 0; chain.ended = 0;
-    bad += check("V10.6o TIMELINE: PLAY loops the cursor's row; PLAY again the song goes on from it; again: STOP", ok);
-    chain_config.row[1].slot = 1; ui.song_row = 0;
-    nav_put(SEC_HOME, "PARTS"); frame();                                     /* (V10.6o) PARTS, the owner's mock-up A */
-    frames(600);                                                             /* (the sections read: their tracks) */
-    ok = SONG_PARTS(cur_page()) && keys_mode() == 2u && (part_play.b[0] & 5u) == 1u;
-    turn(EN_K1, -3); frame(); turn(EN_K1, 1); frame();                       /* B */
-    press(B_OCTUP); frame();
-    ok &= ui.part == 1u && live.cur == 1 && !live.mode && !chain.running && transport_req == 1u;
-    transport_req = 0;
-    press(B_OCTDN); frame();                                                 /* the song from B's row */
-    ok &= live.mode && chain.armed && !chain.hold && ui.song_row == 1u && sec_stage.row == 1u;
-    chain.armed = 0; transport_req = 0;
-    bad += check("V10.6o PARTS: KNOB 1 + OCT+ the part loops (LOOP, live.cur); OCT- the song again from its row", ok);
-    ui.song_row = 0;
-    tl_key(2);                                                               /* A3: C at once (stopped) */
-    ok = ui.part == 2u && live.cur == 2 && !live.mode;
-    transport_req = 0;
-    tl_key(1);                                                               /* G3: B */
-    ok &= ui.part == 1u && live.cur == 1;
-    transport_req = 0;
-    turn(EN_K2, 1); frame();                                                 /* KNOB 2: B's row in the song */
-    ok &= ui.song_row == 1u;
-    turn(EN_K4, 1); frame();                                                 /* KNOB 4: PLAY plays the SONG */
-    ok &= live.mode == 1u;
-    bad += check("V10.6o PARTS: F3..B3 pick and loop A..D; KNOB 2 the part's row, KNOB 4 LOOP / SONG", ok);
+    bad += check("V10.4 ARRANGE: OCT- asks DELETE ROW? for the row picked (OCT+ deletes; V10.8: TIMELINE gone)", ok);
+    /* (V10.8, the song mode redesigned: TIMELINE and PARTS gone, their tests with them) */
     memset(song_idx.tvar[song_cur], 0, sizeof song_idx.tvar[song_cur]);
     chain_config.count = 0;
     ui_power_on();
@@ -7941,11 +7866,11 @@ static int test_lente(void)
     ok &= ui.bank == 1u && ui.cursor == 21u;                                       /* (LEN 32: two bars) */
     go_title("STEP"); frames(32);
     cursor_set(15);
-    turn(EN_K1, 1);
-    ok &= str_eq(cur_page()->title, "STEP") && ui.cursor == 16u && ui.bank == 1u;  /* STEP: the step, into the next bar */
+    turn(EN_PRESET, 1); frames(2);
+    ok &= str_eq(cur_page()->title, "STEP") && ui.cursor == 16u && ui.bank == 1u;  /* (V10.8) PRESETS: the step, into the next bar */
     turn(EN_PRESET, 1); frames(2);
     ok &= str_eq(cur_page()->title, "STEP") && ui.cursor == 17u;                  /* PRESETS: the next step */
-    bad += check("0.9.2 SEQ > BAR: KNOB 1 the bar (no wrap), KNOB 2 LEN; STEP's KNOB 1 into the next bar; PRESETS the step", ok);
+    bad += check("0.9.2 SEQ > BAR: KNOB 1 the bar (no wrap), KNOB 2 LEN; on STEP PRESETS the step, into the next bar (V10.8)", ok);
     {
         char ti[20];
         go_title("COMP 2"); frame();
@@ -8724,17 +8649,18 @@ static int test_clips(void)
     bad += check("V10.6s CLIPS: F3 (stopped) every track part A at once, and PLAY", ok);
     sl_play(256);
     bar = chain_bar();
+    favorites.factory[15][31] = (uint8_t)((5u ^ 1u) << 2);   /* (V10.8) JAM's CAMBIO: BAR */
     turn(EN_K1, 1); frame();                            /* T2 */
     turn(EN_K2, 1); frame();                            /* B */
     press(B_OCTUP);
-    ok = song.playing && song.sel == 1u && ui.part == 1u && clip_go[1] == 2u && clip_now[1] == 1u && live.req >= 0 &&
+    ok = song.playing && song.sel == 1u && ui.part == 1u && clip_go[1] == 2u && clip_now[1] == 1u && jam_rdy == 2u &&
          trk[1].step[0].note[0] == 61;
     left = bar - chain.bar_pos;
     sl_play(left > 512u ? left - 512u : 0u);            /* (just before the bar line) */
     ok &= clip_go[1] == 2u && clip_now[1] == 1u && trk[1].step[0].note[0] == 61;
-    bad += check("V10.6s CLIPS: KNOB 1 T2, KNOB 2 B, OCT+: the cell queued (dashed), nothing changes before the bar", ok);
+    bad += check("V10.6s CLIPS: KNOB 1 T2, KNOB 2 B, OCT+ (V10.8 JAM, CAMBIO BAR): the sequence queued, nothing changes before the bar", ok);
     sl_play(1024);
-    ok = trk[1].step[0].note[0] == 71 && clip_now[1] == 2u && !clip_go[1] && live.req < 0;
+    ok = trk[1].step[0].note[0] == 71 && clip_now[1] == 2u && !clip_go[1] && !jam_rdy;
     for (i = 0; i < NTRK; i++)
         ok &= i == 1u || (trk[i].step[0].note[0] == 60u + i && clip_now[i] == 1u);
     bad += check("  .. on the next bar T2 plays B's pattern (framed: sounding), every other track A's as before", ok);
@@ -8752,27 +8678,8 @@ static int test_clips(void)
     ok &= trk[2].p[P_MUTE] == 1 && clip_now[2] == CLIP_STOP && !trk[1].p[P_MUTE] && !trk[3].p[P_MUTE] &&
           trk[2].step[0].note[0] == 82u && trk[0].step[0].note[0] == 80u;
     bad += check("V10.6s CLIPS: OCT- stops the track on the next bar (the others play on)", ok);
-    press(B_REC);                                       /* SONG REC, from the next bar */
-    ok = live.srec == 1u;
-    sl_play(bar);                                       /* row 1: C (T3 stopped) */
-    ok &= live.srec == 2u;
-    turn(EN_K1, -2); frame(); turn(EN_K2, -2); frame(); /* T1, A */
-    press(B_OCTUP);
-    sl_play(bar);                                       /* row 2: T1 from A */
-    sl_play(bar);
-    press(B_REC);                                       /* off: the rows */
-    sl_play(256);
-    ok &= !live.srec && chain_config.count == 2u && chain_config.row[0].slot == 2u && chain_config.row[0].bars == 1u &&
-          chain_config.row[1].slot == 2u && chain_config.row[1].bars == 2u && msg_is("SONG ROWS 2");
-    ok &= row_src(0, 0, 2) == 2u && row_src(1, 0, 2) == 0u && row_src(1, 1, 2) == 2u && row_src(1, 2, 2) == 2u;
-    ok &= (song_idx.scene[song_cur][0].mute >> 2) & 1u && (song_idx.scene[song_cur][1].mute >> 2) & 1u &&
-          !(song_idx.scene[song_cur][1].mute & 1u);
-    bad += check("V10.6s CLIPS: REC records the launches as the song's rows (C 1 bar; C with T1 FROM A 2 bars; T3's stop)", ok);
+    /* (V10.8: SONG REC of the launches as rows gone with the song mode's redesign: the jam's own recording next) */
     transport_req = 2; sl_play(256);
-    ok = !song_stage(2, 1) && sec_stage.t[0].step[0].note[0] == 60u && sec_stage.t[1].step[0].note[0] == 81u &&
-         sec_stage.t[5].step[0].note[0] == 85u;
-    sec_stage.ready = 0;
-    bad += check("  .. the second row stages T1 from A, the rest from C (as it played)", ok);
     chain_defaults(&chain_config);
     memset(song_idx.tsrc[song_cur], 0, sizeof song_idx.tsrc[song_cur]);
     memset(song_idx.scene[song_cur], 0, sizeof song_idx.scene[song_cur]);
@@ -12159,16 +12066,16 @@ static int test_lz_home(void)
     uint32_t c, k;
     ui_power_on(); frame();
     ok = ui.home && lz_on() && lz_fam() == LZ_HOME && home_level() == 0u && !home_set() && lz_tab_lit(0) && lz_tabs() == 4u &&
-         lz_crumb_is("HOME \xB7 ECO \xB7 ECO") && lz_count_is("1/11");   /* (V10.7.62: LIFE in MACROS' place, seven) */   /* (seven pages, as the n/7 below; the "1/8" came
+         lz_crumb_is("HOME \xB7 ECO \xB7 ECO") && lz_count_is("1/9");   /* (V10.7.62: LIFE in MACROS' place, seven) */   /* (seven pages, as the n/7 below; the "1/8" came
                                                          * with e147a98's import, 2026-11-04, the rest of the test says 7) */
     press(B_HOME); frame();                                         /* a HOME tap: BEING (the next group) */
     ok &= ui.home && home_level() == 1u && !home_set() && lz_tab_lit(1) && lz_crumb_is("HOME \xB7 BEING \xB7 BEING") &&
-          lz_count_is("3/11");
+          lz_count_is("3/9");
     k = macro_v[0];
     c = (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
     turn(EN_SELECT, -1); frame();                                   /* SELECT left: LIFE (V10.7.62), its KNOB 1 FILTER */
     ok &= home_level() == 0u && home_set() && home_life() && !home_macros() && lz_crumb_is("HOME \xB7 ECO \xB7 LIFE") &&
-          lz_count_is("2/11");
+          lz_count_is("2/9");
     turn(EN_K1, 3); frame();
     ok &= life_v[0] > 0 && (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == c && !strncmp(ui.col[0], "FILTER|", 7);
     life_v[0] = 0;
@@ -12181,11 +12088,11 @@ static int test_lz_home(void)
     bad += check("0.9.2 HOME: ECO LIFE BEING .. one chain by SELECT (no wrap), a HOME tap the next group; tabs, crumb, n/7 (V10.7.62: LIFE)", ok);
     turn(EN_SELECT, 2); frame();                                    /* BEING (V10.7.66: ROUTES gone, the macros FX >
                                                                      * PUNCH IN's) */
-    ok = home_level() == 1u && !home_set() && !home_macros() && lz_count_is("3/11");
+    ok = home_level() == 1u && !home_set() && !home_macros() && lz_count_is("3/9");
     fm1_ms += 1000u;
-    turn(EN_SELECT, 5); frame();                                    /* GEN 1 (V10.7.63: past the song's four) */
+    turn(EN_SELECT, 3); frame();                                    /* GEN 1 (V10.8: past the song's two) */
     ok &= gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(3) && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 1") &&
-          lz_count_is("8/11");
+          lz_count_is("6/9");
     k = gp.genre;
     {   /* (V10.7.22, the owner) PRESETS on GEN: the sound, as on every page but SEQ's; the GENRE only by KNOB 1 */
         uint32_t pr = TSEL->preset, en = TSEL->eng_req;
@@ -12196,15 +12103,15 @@ static int test_lz_home(void)
     ok &= gp.genre == (k == GEN_EXPLORE ? 0u : k == NGENRE ? GEN_EXPLORE : k + 1u);   /* KNOB 1: the GENRE, its order
                                                          * (0.8.6: EXPLORE, RANDOM, the genres) */
     turn(EN_SELECT, 1); frame();
-    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 2") && lz_count_is("9/11");
-    turn(EN_SELECT, -6); frame();                                   /* back: BEING, GEN shut */
+    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 2") && lz_count_is("7/9");
+    turn(EN_SELECT, -4); frame();                                   /* back: BEING, GEN shut */
     ok &= !ui.confirm && ui.home && home_level() == 1u && !home_set();
-    turn(EN_SELECT, 5); frame();
+    turn(EN_SELECT, 3); frame();
     ok &= gen_on() && gen_page() == 0u;
     press(B_HOME); frame();                                         /* a HOME tap on GEN: round to ECO */
     ok &= !ui.confirm && ui.home && home_level() == 0u && !home_set();
     bad += check("0.9.2 HOME: ROUTES, then GEN 1..3 (KNOB 1 its GENRE, PRESETS the sound); SELECT back out of GEN; a HOME tap on GEN: ECO", ok);
-    turn(EN_SELECT, 8); frame();                                    /* GEN 2 */
+    turn(EN_SELECT, 6); frame();                                    /* GEN 2 */
     ok = gen_on() && gen_page() == 1u;
     press(B_ENV); frame();                                          /* not modal: a section's button leaves it */
     ok &= !ui.confirm && !ui.home && str_eq(cur_page()->title, "ENV");
@@ -12218,14 +12125,14 @@ static int test_lz_home(void)
     bad += check("0.9.2 HOME: GEN is HOME's pages, not modal (ENV leaves it, HOME comes back to GEN 2, ALGORITHM works); OCT- ECO", ok);
     {   /* (V10.8, testers) GEN's GENRE kept when GEN is left and opened again */
         uint32_t g0;
-        turn(EN_SELECT, 7); frame();                    /* GEN 1 */
+        turn(EN_SELECT, 5); frame();                    /* GEN 1 */
         ok = gen_on() && gen_page() == 0u;
         turn(EN_K1, 3); frame();                        /* (V10.7.22: KNOB 1 the GENRE; PRESETS the sound) */
         g0 = gp.genre;
         press(B_OCTDN); frame();                        /* out (ECO) */
         open_family(FAM_ENV); frame();
         go_home(); frames(64);
-        turn(EN_SELECT, 7); frame();
+        turn(EN_SELECT, 5); frame();
         ok &= gen_on() && gp.genre == g0 && g0 != GEN_EXPLORE;
         press(B_OCTDN); frame();
         bad += check("V10.8 GEN: the GENRE picked stays after leaving GEN (was EXPLORE again each visit)", ok);
@@ -13266,7 +13173,7 @@ static int test_lz_reach(void)
                                             ui.home && home_level() == HL[e] && home_set() == (e & 1u));
                     turn(EN_SELECT, 1); frames(2);
                 }
-                okh &= n == 11u;
+                okh &= n == 9u;   /* (V10.8: TIMELINE, PARTS gone) */
                 press(B_OCTDN); frames(2);
             }
         }
@@ -13279,7 +13186,7 @@ static int test_lz_reach(void)
     bad += check("0.9.2 reach: every page each engine shows (LOFI BYTE, LOAD ECO too) by its button and SELECT alone", ok);
     bad += check("0.9.2 reach: every parameter of those pages (the ids on them)", okp);
     bad += check("0.9.2 reach: every 0.9.1 lens page at its 0.9.1 level (drawn as it was; NOTE's STEP view merged)", okold);
-    bad += check("0.9.2 reach: HOME's eleven pages by SELECT (ECO LIFE BEING TIMELINE ARRANGE PARTS CLIPS GEN 1..4)", okh);
+    bad += check("0.9.2 reach: HOME's nine pages by SELECT (ECO LIFE BEING CLIPS ARRANGE GEN 1..4; V10.8)", okh);
     ui_power_on();
     return bad;
 }
@@ -13319,7 +13226,7 @@ static void tk_start(uint32_t from)                     /* 0 home, 1 seq, 2 fxdl
 }
 static int test_nav_tasks(void)
 {
-    static const uint8_t WANT[14] = {4, 3, 5, 6, 34, 9, 9, 2, 3, 1, 4, 7, 19, 5};   /* (V10.7.63: task 11 a detent less) */   /* (V10.7.63: task 5 a SAVE tap less) */   /* (2463a3b, 2026-11-04: SEQ > LENGTH >
+    static const uint8_t WANT[14] = {4, 3, 5, 6, 4, 9, 9, 2, 3, 1, 4, 7, 19, 5};   /* (V10.8: task 5 by PRESETS, two fast turns) */   /* (V10.7.63: task 11 a detent less) */   /* (V10.7.63: task 5 a SAVE tap less) */   /* (2463a3b, 2026-11-04: SEQ > LENGTH >
                                                          * RHYTHM between LENGTH and TRACK: tasks 11 and 13 a detent more) */   /* (V10.37: COMPS before GLOBAL, SYSTEM a tap further) */   /* (V10.1: SAVE composes first, 106 -> 108) */   /* (seq2: task 5 by STEP's KNOB 1, no BAR;
                                                          * task 11 TRACK under LEN's tab; task 13 eight detents (seq2c:
                                                          * MUTATE 2); was 73) */
@@ -13345,11 +13252,11 @@ static int test_nav_tasks(void)
             ok = str_eq(cur_page()->title, "DLY 2") && song.g[G_DMOD] != v;
             break;
         case 3:                                         /* step 5's note: TIME 2 ST */
-            tk_start(0); tk_btn(B_SEQ); tk_go(EN_K1, 4); tk_val(EN_K3, 1);
+            tk_start(0); tk_btn(B_SEQ); tk_go(EN_PRESET, 4); tk_val(EN_K3, 1);
             ok = str_eq(cur_page()->title, "STEP") && ui.cursor == 4u && note_len(TSEL, 4, 64) == 2u;
             break;
         case 4:                                         /* bar 3, an accent on its first step */
-            tk_start(1); tk_go(EN_K1, 32); tk_val(EN_K4, 40); tk_val(EN_K4, 1);   /* (seq2: no BAR page in the chain; STEP's KNOB 1 crosses bars;
+            tk_start(1); tk_val(EN_PRESET, 4); tk_val(EN_PRESET, 4); tk_val(EN_K4, 40); tk_val(EN_K4, 1);   /* (V10.8: PRESETS a bar a fast turn; KNOB 1 the sequence) */   /* (seq2: no BAR page in the chain; STEP's KNOB 1 crosses bars;
                                                          * V10.8: KNOB 4 VEL, past 127 ACC) */
             ok = str_eq(cur_page()->title, "STEP") && ui.cursor == 32u && (TSEL->step[32].flags & SF_ACCENT);
             break;
@@ -13391,7 +13298,7 @@ static int test_nav_tasks(void)
               ok = song.sel == 3u && str_eq(cur_page()->title, "SOUND") && c == 1u && dv[DXP_DECAY] != d0; }
             break;
         case 12:                                        /* COMP 2 of step 9 */
-            tk_start(1); tk_go(EN_K1, 8); tk_go(EN_SELECT, 10); tk_val(EN_K1, 1);   /* (2463a3b: RHYTHM, ten) */   /* (seq2c: eight detents to COMP 2, V10.16 nine;
+            tk_start(1); tk_go(EN_PRESET, 8); tk_go(EN_SELECT, 10); tk_val(EN_K1, 1);   /* (2463a3b: RHYTHM, ten) */   /* (seq2c: eight detents to COMP 2, V10.16 nine;
                                                          * seq2d: the step picked on STEP, KNOB 1 its ACTION) */
             ok = str_eq(cur_page()->title, "COMP 2") && ui.cursor == 8u && TSEL->step[8].comp2 != 0u;
             break;
@@ -13410,7 +13317,7 @@ static int test_nav_tasks(void)
     }
     printf("ui:   the race: %u %u %u %u %u %u %u %u %u %u %u %u %u %u = %u actions (0.9.1: 75)\n", got[0], got[1], got[2], got[3],
            got[4], got[5], got[6], got[7], got[8], got[9], got[10], got[11], got[12], got[13], tot);
-    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 111u);   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
+    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 81u);   /* (V10.8: task 5 by PRESETS, 34 -> 4) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
     ui_power_on();
     return bad;
 }

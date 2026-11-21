@@ -3415,6 +3415,18 @@ static void seq_due(track_t *t, uint32_t n)
     }
 }
 
+/* (V10.8) JAM: a staged sequence goes in on this step (off samples into the block) if CAMBIO lets it */
+static __attribute__((noinline)) uint32_t jam_step(track_t *t, uint32_t n, uint32_t start, uint32_t len)
+{                                                       /* (out of the RAM code: tools/build.py keeps it by seq_step) */
+    static const uint8_t Q[6] = {1, 1, 2, 4, 8, 16};
+    uint32_t k = trk_index(t);
+    if (!((jam_rdy >> k) & 1u) || !(start || !jam_q || gl_step_at(t->seq_pos >= n ? 0u : n - t->seq_pos) % Q[jam_q % 6u] == 0u))
+        return len;
+    jam_in(t, k);                                       /* (V10.8) JAM: the next sequence, the playhead where it was */
+    len = (uint32_t)t->p[P_SLEN];
+    t->seq_idx = (uint16_t)(t->seq_idx % (len ? len : 1u));
+    return len;
+}
 static void seq_tick(track_t *t, uint32_t n)
 {
     uint32_t period, len, lon, nf;
@@ -3450,6 +3462,8 @@ static void seq_tick(track_t *t, uint32_t n)
         else
             t->seq_idx = (uint16_t)((t->seq_idx + 1u) % (len ? len : 1u));
         t->jump_to = 0;
+        if (jam_rdy)
+            len = jam_step(t, n, start, len);           /* (V10.8) JAM */
         if (!t->seq_idx && !start && t->loops < 0xFFFFu)
             t->loops++;                                 /* (0.6.39) one more loop of the pattern (TRIG) */
         if (!lon)

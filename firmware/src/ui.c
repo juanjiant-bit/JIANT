@@ -239,6 +239,8 @@ static void rp_apply(void)                             /* the settings into clic
     sys_load = (uint8_t)(ui_load <= LOAD_ECO ? ui_load : LOAD_FULL);   /* (0.6.30) LOAD (voice.c) */
     trks_ui = trk_live == NTRK;                         /* (GLO > SYSTEM's TRACKS and LOAD show them) */
     load_ui = (int16_t)(LOAD_ECO - sys_load);
+    jam_q = (uint8_t)((((favorites.factory[15][31] >> 2) & 7u) ^ 1u) % 6u);   /* (V10.8) JAM's CAMBIO: bits 2..4 of
+                                                        * HELP's byte, 1/16 stored as 0 (older settings: 1/16) */
 }
 static void trks_put(uint32_t v)                       /* TRACKS: 0 four, 1 six */
 {
@@ -626,8 +628,8 @@ static uint32_t layer_btn(void);
  * LANES 2 a DRUM track's (its lane levels); SOUND / SOUND 2 a DRUM track's (DRUM-X: ui_dx.c) */
 static int page_visible(uint32_t i)
 {
-    if (PAGES[i].graph == GR_SONG && PAGES[i].fam == FAM_SEQ)
-        return 0;                                       /* (0.6.24) the song in one place: SAVE > ARRANGE (SEQ > SONG
+    if (PAGES[i].graph == GR_SONG && (PAGES[i].fam == FAM_SEQ || PAGES[i].title[0] == 'T' || PAGES[i].title[0] == 'P'))
+        return 0;                                       /* (V10.8: TIMELINE, PARTS gone, the song mode's redesign) */                                       /* (0.6.24) the song in one place: SAVE > ARRANGE (SEQ > SONG
                                                          * was the same page twice; kept in the table: its index) */
     if (sys_load == LOAD_ECO && ((PAGES[i].graph == GR_SLCR || PAGES[i].graph == GR_SLPIT) ||
                                  (PAGES[i].fam == FAM_FX && PAGES[i].id[0] == G_CRATE)))
@@ -828,6 +830,8 @@ static uint32_t part_scan(uint32_t s);                 /* (V10.6o) song_main.c: 
 static int chain_goto(uint32_t r, uint32_t hold);
 static void chain_cut(void);
 static int clip_launch(uint32_t k, uint32_t s);        /* (V10.6s) song_main.c: CLIPS' launches */
+static int jam_switch(uint32_t k, uint32_t s);         /* (V10.8) song_main.c: JAM, a track's sequence */
+static uint32_t jam_cur(uint32_t k);
 static void song_rec_toggle(void);
 static int section_jump(uint32_t s);
 /* (0.6.22) ARRANGE: the rows 0..count-1, + ADD (while there is room), then the song's END row */
@@ -2100,8 +2104,8 @@ static void dx_knob(const page_t *pg, uint32_t k, int32_t s);
 static void dx_cards(const page_t *pg);
 static void sw_ui_knob(const page_t *pg, uint32_t k, int32_t s);   /* (V10.6z6) EDIT > SWARM, SWARM 2 */
 static void sw_ui_cards_bt(const page_t *pg);
-#define SONG_TRK(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'T')   /* (add15-beta5) TIMELINE (was ARRANGE 2) */
-#define SONG_PARTS(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'P')   /* (V10.6o) PARTS */
+#define SONG_TRK(pg) ((void)(pg), 0)   /* (V10.8: TIMELINE gone, the song mode redesigned; was title T) */   /* (add15-beta5) TIMELINE (was ARRANGE 2) */
+#define SONG_PARTS(pg) ((void)(pg), 0)   /* (V10.8: PARTS gone; was title P) */   /* (V10.6o) PARTS */
 #define SONG_CLIPS(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'C')   /* (V10.6s) CLIPS */
 #define DX_KIT3(pg) ((pg)->graph == GR_DXIMG && (pg)->title[0] == 'K')   /* (0.6.58) GR_DXIMG: KIT 3, or STEREO (IMAGE) */
 static uint32_t dx_sig(void);

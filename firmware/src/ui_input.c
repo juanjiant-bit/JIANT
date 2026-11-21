@@ -1015,6 +1015,12 @@ static __attribute__((noinline)) void step_edit(uint32_t slot, int32_t steps)
         if (slot < 3u) ui_preview();
         return;
     }
+    if (slot == 0u) {                                     /* (V10.8, the owner) KNOB 1: the track's sequence A..D (JAM);
+                                                         * the cursor PRESETS' and the step keys' */
+        uint32_t k = song.sel % NTRK, c = clip_go[k] - 1u < 4u ? clip_go[k] - 1u : jam_cur(k);
+        jam_switch(k, (uint32_t)clamp((int32_t)c + steps, 0, 3));
+        return;
+    }
     if (drum_track(TSEL)) {
         grid_edit(slot, steps);
         return;
@@ -1509,6 +1515,11 @@ static void edit_param(uint32_t slot, int32_t steps)
             track_select((uint32_t)clamp((int32_t)song.sel + steps, 0, NTRK - 1));
         else if (slot == 1u)
             ui.part = (uint8_t)clamp((int32_t)ui.part + steps, 0, 3);
+        else if (slot == 2u) {                          /* (V10.8) CAMBIO: when a sequence goes in */
+            uint32_t q = (uint32_t)clamp((int32_t)jam_q + (steps > 0 ? 1 : -1), 0, 5);
+            ui_help_off = (uint8_t)((ui_help_off & ~0x1Cu) | ((q ^ 1u) << 2));
+            jam_q = (uint8_t)q;
+        }
         return;
     }
     if (SONG_TRK(pg)) {                                 /* (V10.6o) TIMELINE: ROW, its SECT, its BARS, the VAR of the track
@@ -1794,8 +1805,8 @@ static __attribute__((noinline)) void act_do(void)
         parts_audition(ui.part);
         return;
     }
-    if (SONG_CLIPS(cur_page())) {                       /* (V10.6s) CLIPS: the cell in on the next bar */
-        clip_launch(song.sel, ui.part);
+    if (SONG_CLIPS(cur_page())) {                       /* (V10.6s) CLIPS: the cell in; (V10.8) JAM's: on CAMBIO's step */
+        jam_switch(song.sel % NTRK, ui.part);
         return;
     }
     if (cur_page()->graph == GR_SONG) {                 /* (0.8.5) SAVE > PROJECT's ARRANGE: OCT+ adds a row; (V10.6o) after

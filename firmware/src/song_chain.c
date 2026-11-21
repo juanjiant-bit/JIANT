@@ -147,6 +147,20 @@ static struct {
 #define CLIP_STOP 5u
 static uint8_t clip_now[NTRK] __attribute__((section(".lowbuf"))), clip_go[NTRK] __attribute__((section(".lowbuf")));
 static uint8_t clip_mix __attribute__((section(".lowbuf")));   /* song_stage stages CLIPS' launch */
+/* (V10.8, the owner's song mode) JAM: each track its own sequence A..D (the parts' steps of that track), switched alone
+ * with the playhead kept: the main loop stages the one asked for in sec_stage.t[k] (song_main.c jam_switch: what the
+ * track played is put back into its part first, its edits kept), the ISR takes it on the step CAMBIO allows (seq.c
+ * seq_tick: jam_due). jam_q CAMBIO: 0 AT ONCE, 1 1/16, 2 1/8, 3 1/4, 4 1/2, 5 BAR (MENU's byte: ui.c rp_apply) */
+static volatile uint8_t jam_rdy __attribute__((section(".lowbuf")));   /* bit k: track k's next sequence staged */
+static uint8_t jam_q __attribute__((section(".lowbuf")));
+static void jam_in(track_t *t, uint32_t k)            /* (ISR, or stopped) the staged sequence in */
+{
+    memcpy(t->step, sec_stage.t[k].step, sizeof t->step);
+    t->p[P_SLEN] = sec_stage.t[k].p[P_SLEN];
+    clip_now[k] = clip_go[k];
+    clip_go[k] = 0;
+    jam_rdy &= (uint8_t)~(1u << k);
+}
 static uint32_t rec_src[CHAIN_ROWS] __attribute__((section(".lowbuf")));   /* SONG REC's rows: where their tracks
                                               * played from (sec_stage.src, tsrc's form: CLIPS' launches) */
 

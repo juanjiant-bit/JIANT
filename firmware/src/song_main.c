@@ -409,6 +409,63 @@ static void clip_seen(void)
     }
 }
 
+/* (V10.8) JAM: track k's sequence as it plays now into part s (its edits kept), when it differs; an empty part is
+ * made from the music now, the tracks not on it empty */
+static void step_clear(step_t *st);
+static void jam_put(uint32_t k, uint32_t s)
+{
+    project_t *p = &proj_scratch;
+    uint32_t j, i;
+    s &= 3u;
+    if (!proj_import(p, &proj_slot[s], sizeof(project_store_t))) {
+        project_capture(p);
+        for (j = 0; j < NTRK; j++)
+            if (j != k && clip_now[j] != s + 1u)
+                for (i = 0; i < NSTEP; i++) step_clear(&p->t[j].step[i]);
+    } else if (!memcmp(p->t[k].step, trk[k].step, sizeof trk[k].step) && p->t[k].p[P_SLEN] == trk[k].p[P_SLEN])
+        return;
+    memcpy(p->t[k].step, trk[k].step, sizeof p->t[k].step);
+    p->t[k].p[P_SLEN] = trk[k].p[P_SLEN];
+    if (!proj_pack(&proj_wire, p)) { proj_err(); return; }
+    proj_wire_gen++;
+    memcpy(&proj_slot[s], &proj_wire, sizeof proj_slot[s]);
+    live.dirty |= (uint8_t)(1u << s);
+}
+static uint32_t jam_cur(uint32_t k)                     /* the sequence track k plays (0..3) */
+{
+    return clip_now[k] - 1u < 4u ? clip_now[k] - 1u : live.cur >= 0 ? (uint32_t)live.cur & 3u : 0u;
+}
+/* track k to sequence s: staged, in on CAMBIO's step (stopped: at once); 0 done */
+static int jam_switch(uint32_t k, uint32_t s)
+{
+    project_t *p = &proj_scratch;
+    uint32_t cur = jam_cur(k), i;
+    s &= 3u;
+    chain_cut();
+    live.mode = 0;
+    fm1_irq_off(); jam_rdy &= (uint8_t)~(1u << k); fm1_irq_on();
+    clip_go[k] = 0;
+    if (s == cur)
+        return 0;                                       /* (back to the one playing: nothing asked) */
+    jam_put(k, cur);
+    clip_now[k] = (uint8_t)(cur + 1u);
+    if (proj_import(p, &proj_slot[s], sizeof(project_store_t))) {
+        memcpy(sec_stage.t[k].step, p->t[k].step, sizeof sec_stage.t[k].step);
+        proj_steps(sec_stage.t[k].step);
+        sec_stage.t[k].p[P_SLEN] = (int16_t)clamp(p->t[k].p[P_SLEN], 1, NSTEP);
+    } else {
+        for (i = 0; i < NSTEP; i++) step_clear(&sec_stage.t[k].step[i]);
+        sec_stage.t[k].p[P_SLEN] = trk[k].p[P_SLEN];
+    }
+    clip_go[k] = (uint8_t)(s + 1u);
+    RING_PUBLISH();
+    fm1_irq_off();
+    if (song.playing) jam_rdy |= (uint8_t)(1u << k);
+    else jam_in(&trk[k], k);
+    fm1_irq_on();
+    return 0;
+}
+
 /* the music now into section s: RAM at once (playing too), flash once stopped (song_poll) */
 static void section_store(uint32_t s)
 {

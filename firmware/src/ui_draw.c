@@ -1237,6 +1237,18 @@ static void pf_column(uint32_t c, const char *label, const param_desc_t *d, int3
     param_format(d, v, val, &unit);
     draw_column(c, label, val, unit, col, RATIO(d, v), icon);
 }
+static const char *const JAM_Q_N[6] = {"AT ONCE", "1/16", "1/8", "1/4", "1/2", "BAR"};   /* (V10.8) JAM's CAMBIO */
+/* (V10.8, the owner) SEQ > STEP's KNOB 1: the track's sequence A..D (JAM), the one asked for after it (in on CAMBIO's
+ * step), else where the cursor is */
+static void jam_card(void)
+{
+    uint32_t k = song.sel % NTRK, g = clip_go[k];
+    char v[4] = "A", u[8];
+    v[0] = (char)('A' + jam_cur(k));
+    if (g - 1u < 4u) { u[0] = '>'; u[1] = (char)('A' + g - 1u); u[2] = 0; }
+    else { fmt_int(u, (int32_t)ui.cursor + 1); str_cpy(u + str_len(u), "/", 2); fmt_int(u + str_len(u), TSEL->p[P_SLEN]); }
+    hot_unit_column(0, "SEQ", v, u);
+}
 static void draw_columns(void)
 {
     uint32_t c;
@@ -1319,7 +1331,7 @@ static void draw_columns(void)
         hot_text_column(0, "TRACK", val);
         val[0] = (char)('A' + (ui.part & 3u)); val[1] = 0;
         text_column(1, "PART", val, VAL(1u));
-        empty_column(2);
+        text_column(2, "CAMBIO", JAM_Q_N[jam_q % 6u], VAL(2u));   /* (V10.8) */
         text_column(3, "REC", live.srec ? "ON" : "OFF", live.srec ? T_ACCENT : T_DIM);
         return;
     }
@@ -1659,7 +1671,7 @@ static void draw_columns(void)
         fmt_int(sn, (int32_t)ui.cursor + 1);
         str_cpy(sl, "/", 8);
         fmt_int(sl + 1, TSEL->p[P_SLEN]);
-        hot_unit_column(0, "STEP", sn, sl);
+        jam_card();
         hot_text_column(1, "LANE", drum_lane_name(TSEL, ui.lane));
         text_column(2, "HIT", GRID_HIT[grid_hit_of(st, ui.lane)], on ? VAL(2u) : T_DIM);   /* (0.8.5: its mode) */
         text_column(3, "ACC", ac ? "ON" : "--", ac ? VAL(3u) : T_DIM);
@@ -1716,7 +1728,7 @@ static void draw_columns(void)
             fmt_int(sl + 1, TSEL->p[P_SLEN]);
             if (nl > 1u) fmt_int(tv, (int32_t)nl);            /* (0.8.4) a NOTE's length: 3 ST (NOTE: one step) */
             else str_cpy(tv, TIME_N[st->time % 3u], sizeof tv);
-            hot_unit_column(0, "STEP", sn, sl);
+            jam_card();
             unit_column(1, "NOTE", val, u, step_on(st) ? VAL(1u) : T_DIM);
             hot_unit_column(2, "TIME", tv, nl > 1u ? "ST" : "");
             {   /* (V10.8) VEL, past 127 the flags */

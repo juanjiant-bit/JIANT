@@ -601,7 +601,8 @@ def build_app():
             if keep and (FW / "src" / "seq_fit.c").exists():
                 # FIT's new out-of-line clock is called from RAM audio code: keep it near seq_step,
                 # not among new functions after the tables, beyond pi32v2's short-call reach.
-                clocks = ["fit_valid", "fit_value_span", "fit_span", "fit_step_samples", "step_samples"]
+                clocks = ["fit_valid", "fit_value_span", "fit_span", "fit_step_samples", "step_samples",
+                          "jam_step", "jam_in"]   # (V10.8) JAM's sequence switch, called from seq_tick
                 keep = [name for name in keep if name not in clocks]
                 at = keep.index("seq_step") if "seq_step" in keep else 0
                 keep[at:at] = clocks

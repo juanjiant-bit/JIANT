@@ -39,7 +39,7 @@ int main(void)
     int bad=0;
     step_t before[NSTEP];
     edit_reset(); memcpy(before,TSEL->step,sizeof before);
-    turn(EN_K1,1);
+    turn(EN_PRESET,1);   /* (V10.8: the cursor PRESETS'; KNOB 1 the sequence) */
     bad+=check("cursor publishes preview without main-loop voice mutation",preview_req && !voices_busy());
     render_preview(1);
     bad+=check("stopped selection auditions the four-note chord",note_gate(48)&&note_gate(52)&&note_gate(55)&&note_gate(59));
