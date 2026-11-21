@@ -169,6 +169,8 @@ jobs:
           build/song-check/gen-entry | tee build/song-check/gen-entry.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/harmony_test.c -lm -o build/song-check/harmony
           build/song-check/harmony | tee build/song-check/harmony.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/euclid_mel_test.c -lm -o build/song-check/euclid-mel
+          build/song-check/euclid-mel | tee build/song-check/euclid-mel.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/life_test.c -lm -o build/song-check/life
           build/song-check/life | tee build/song-check/life.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/fill_test.c -lm -o build/song-check/fill
