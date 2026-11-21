@@ -332,10 +332,10 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
             int32_t d = fbk ? (fb * fbk) >> 10 : 0;
             uint32_t ta = tl + (uint32_t)(d >> 8), xa = (tl << 8 | tf >> 16) + (uint32_t)d;
             s = lofi_float(mo == 127u ? fb2 : f, ta, xa, mo == 127u ? &aux2 : &aux);   /* (MORPH at the top: B alone) */
-            if (mo - 1u < 126u) {                        /* (CPU: between the ends B a sample in four, the line between
-                                                         * them: +25 %, not twice) */
-                if (!(i & 3u)) { bp = bn; bn = lofi_float(fb2, ta, xa, &aux2); }
-                s += ((bp + (((bn - bp) * (int32_t)(i & 3u)) >> 2) - s) * (int32_t)mo) >> 7;
+            if (mo - 1u < 126u) {                        /* (CPU: between the ends B a sample in eight, the line
+                                                         * between them: +12.5 %, not twice; the owner) */
+                if (!(i & 7u)) { bp = bn; bn = lofi_float(fb2, ta, xa, &aux2); }
+                s += ((bp + (((bn - bp) * (int32_t)(i & 7u)) >> 3) - s) * (int32_t)mo) >> 7;
             }
         }
         fb = s;
