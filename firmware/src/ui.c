@@ -303,7 +303,7 @@ static struct {
     uint32_t ly_t0;              /* the layer button's press time | 1, LY_* bits (ui_layer.c layer_gesture) */
     uint8_t ly;                  /* the layer whose button is down (LAYER_*), 0 = none */
     uint8_t layer;               /* the layer whose map is shown (LAYER_*), 0 = none */
-    uint16_t pg_down;            /* page buttons down (panel ids) that act when let go */
+    ui_btnmask_t pg_down;        /* page buttons down (panel ids) that act when let go */
     uint32_t layer_sig;          /* drawn-state cache of the map */
     char msg[40];                /* (0.9.0: 40, was 24 and cut the long ones silently; longer: ellipsised, ui_say) */
     char msg2[40];               /* a second message, shown when the first is over */
@@ -555,6 +555,12 @@ static uint32_t layer_btn(void);
  * LANES 2 a DRUM track's (its lane levels); SOUND / SOUND 2 a DRUM track's (DRUM-X: ui_dx.c) */
 static int page_visible(uint32_t i)
 {
+#if FELUCCA_HOST_POWER
+    if (i >= HP_PAGE0 && i < NPAGES)                    /* (ports/) SAMPLE's TRIG REC, GRAIN's TRAVEL SOURCE PITCH, DRUM-X's
+                                                         * SAMPLES (params.c) */
+        return i < HP_PAGE0 + 2u ? trk_engp(TSEL) == &ENG_SAMPLE : i < HP_PAGE0 + 5u ? trk_engp(TSEL) == &ENG_GRAIN
+                                                                                       : trk_eng(TSEL) == ENGI_DRUM;
+#endif
     if (PAGES[i].graph == GR_SONG && PAGES[i].fam == FAM_SEQ)
         return 0;                                       /* (0.6.24) the song in one place: SAVE > ARRANGE (SEQ > SONG
                                                          * was the same page twice; kept in the table: its index) */
@@ -1354,7 +1360,7 @@ static void apply_preset_to(track_t *t, uint32_t pi)
         return;
     }
 #endif
-    if (trk_eng(t) == ENGI_SAMPLE && pi == SMP_SET_PERC) {   /* SAMPLE preset 4 was PERC (retired, a stored */
+    if (!FELUCCA_HOST_POWER && trk_eng(t) == ENGI_SAMPLE && pi == SMP_SET_PERC) {   /* SAMPLE preset 4 was PERC (retired, a stored */
         set_engine_of(t, ENGI_DRUM);                  /* number: the editor's PRESET, a favourite): DRUM's kit */
         return;                                       /* (core.h drum_from_perc) */
     }
@@ -1395,6 +1401,9 @@ static void apply_preset_to(track_t *t, uint32_t pi)
             t->p[P_DIST + i] = (int16_t)(pr->fx[i] ? pr->fx[i] - 1 : FX_DEF[i]);
     }
     fm6_track_loaded(t);                              /* FM6: the preset's patch (its SLOT) */
+#if FELUCCA_HOST_POWER
+    hp_preset_x(t, e, pi);                            /* (ports/) SAMPLE GRAIN: their extra values (engines.c) */
+#endif
     load_end(t);
 }
 

@@ -2018,6 +2018,8 @@ static uint32_t gc_dev(void)
 static uint32_t gc_budget(void)                          /* (65 / 63, 55 / 77, over the device; less 0.10; one core 0.12:
                                                          * its pieces sparse, a held chord more of them) */
 {
+    if (FELUCCA_HOST_POWER)                              /* (ports/: a computer's CPU, the governor on its real time) */
+        return 0x7FFFFFFFu;
     return mc_two() ? 1030u * 100u / gc_dev() - 100u : 714u * 100u / gc_dev() - 120u;
 }
 static uint32_t gc_cost(int steps)                      /* steps 0: before the parts (a chord track's triads) */

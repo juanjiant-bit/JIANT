@@ -4,12 +4,14 @@
 # Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 """Build Felucca: the app, the update loader and an installable .fwsc package.
 
-  tools/build.py [--release X.Y[-suffix]]
+  tools/build.py [--release X.Y[-suffix]] [--board fm1|smk37] [--model pro|elite]
 
 Outputs in build/: felucca.bin (app), loader/ota.bin (update loader),
 felucca.fwsc (package). A release build (--release X.Y) writes felucca-X.Y.fwsc and a folder
 release-X.Y/ with the package, the app, SHA256SUMS, the sample attribution and the licence files.
 See BUILDING.md for the toolchain and the SDK.
+--board smk37 (the M-VAVE SMK-37 Pro / Elite, docs/SMK37.md) builds with -DBOARD_SMK37=1 into build/smk37-MODEL/
+(felucca-smk37-MODEL.fwsc, identity "SMK-37 Pro_900" / "SMK-37 Elite_900"); the FM-1 build gets no new flag.
 
 The JieLi toolchain is Linux x86-64 only. JIELI_TOOLCHAIN points at it; on
 macOS (or with JIELI_DOCKER=1) each tool runs in a linux/amd64 container.
@@ -55,6 +57,11 @@ SDK_SHA256 = {
 }
 
 PRODUCT = "FM-1_900"                # package identity; release builds are FM-1_9XY
+# (JIANT, after Melodee's build.py) the target board: fm1 (default) or smk37 (--board / $BOARD). The FM-1 build gets
+# no new flag (byte-identical); the SMK-37's goes to a folder of its own, so build/felucca.* stay the FM-1's
+BOARD = "fm1"
+BOARD_DEFS = {"fm1": [], "smk37": ["-DBOARD_SMK37=1"]}
+MODEL = "pro"                       # smk37: the model's name (--model / $MODEL; fm1pkg_make.MODELS)
 VERSION = None                      # FELUCCA_VERSION for release builds (default: firmware/src/felucca.c)
 
 
@@ -157,7 +164,7 @@ def ldr_wrap(image):
 def build_loader():
     LDR.mkdir(parents=True, exist_ok=True)
     src = FW / "loader"
-    flags = [*CFLAGS, "-Ifirmware/hal", "-Ifirmware/src"]
+    flags = [*CFLAGS, *BOARD_DEFS[BOARD], "-Ifirmware/hal", "-Ifirmware/src"]
     tc_all(("cc", "-c", src / "crt0_ldr.S", "-o", LDR / "crt0_ldr.o"),
            ("cc", *flags, "-c", src / "loader.c", "-o", LDR / "loader.o"))
     elf = LDR / "loader.elf"
@@ -232,7 +239,7 @@ def audio_sections(ir, reach):
 
 
 def build_app():
-    flags = [*CFLAGS, "-Ifirmware/hal", "-Ifirmware/src", "-Ibuild/gen"]
+    flags = [*CFLAGS, *BOARD_DEFS[BOARD], "-Ifirmware/hal", "-Ifirmware/src", "-Ibuild/gen"]
     for flag in ("FELUCCA_FLASH", "FELUCCA_OTA", "FELUCCA_OTA_DRYRUN", "FELUCCA_OTA_RAMONLY", "FELUCCA_CDC",
                  "FELUCCA_UART", "FELUCCA_UAC", "FELUCCA_UAC_TONE", "FELUCCA_UAC_48K", "FELUCCA_ICONS", "FELUCCA_SLICE", "FELUCCA_FM4",
                  "FELUCCA_CDC_DEFAULT"):
@@ -422,20 +429,47 @@ def mmio_check():
     return errors
 
 
+def set_board(board, model):
+    """(SMK-37) the board's flags, output folder, package layout and identity"""
+    global BOARD, MODEL, OUT, LDR, PRODUCT
+    BOARD = (board or "fm1").lower().replace("-", "")
+    if BOARD not in BOARD_DEFS:
+        raise SystemExit(f"BOARD={BOARD}: use fm1 or smk37")
+    MODEL = (model or "pro").lower()
+    if MODEL not in fm1pkg_make.MODELS or (MODEL != "pro" and BOARD != "smk37"):
+        raise SystemExit(f"MODEL={MODEL}: {' or '.join(sorted(fm1pkg_make.MODELS))}, with BOARD=smk37")
+    fm1pkg_make.set_board(BOARD)
+    if BOARD == "smk37":
+        name = fm1pkg_make.MODELS[MODEL]
+        BOARD_DEFS[BOARD] = ["-DBOARD_SMK37=1", f'-DSMK_MODEL="{name}"']
+        v = os.environ.get("FELUCCA_SMK_FLASH")   # (docs/SMK37.md) 1: the store on the SMK's own part (0xEB6014)
+        if v in ("0", "1"):
+            BOARD_DEFS[BOARD].append(f"-DFELUCCA_SMK_FLASH={v}")
+        OUT = SRC / "build" / f"smk37-{MODEL}"
+        LDR = OUT / "loader"
+        PRODUCT = name + PRODUCT[PRODUCT.index("_"):]
+
+
 def main():
     global PRODUCT, VERSION
     ap = argparse.ArgumentParser()
     ap.add_argument("--release", metavar="X.Y", help="release build: identity FM-1_9XY, version string vX.Y")
     ap.add_argument("--sdk", type=Path, help="JieLi AC79 SDK checkout (default: $AC79_SDK)")
+    ap.add_argument("--board", choices=sorted(BOARD_DEFS), default=None,
+                    help="target board: fm1 (default) or smk37, the M-VAVE SMK-37 (default: $BOARD, else fm1)")
+    ap.add_argument("--model", choices=sorted(fm1pkg_make.MODELS), default=None,
+                    help="smk37: the model's name, pro (default) or elite (default: $MODEL, else pro)")
     a = ap.parse_args()
-    name = "felucca.fwsc"
+    board = a.board or os.environ.get("BOARD") or "fm1"
+    set_board(board, a.model or (os.environ.get("MODEL") if board.lower() == "smk37" else None))
+    name = "felucca.fwsc" if BOARD == "fm1" else f"felucca-smk37-{MODEL}.fwsc"
     if a.release:                   # one digit each: the identity has room for two (X.Y.Z and X.Y.Z.W keep X.Y's)
         m = re.fullmatch(r"(\d)\.(\d)(?:\.\d){0,2}(-[A-Za-z0-9]+)?", a.release)
         if not m:
             raise SystemExit(f"--release {a.release}: use X.Y, X.Y.Z, X.Y.Z.W or X.Y-suffix, one digit each")
-        PRODUCT = "FM-1_9" + m[1] + m[2]
+        PRODUCT = PRODUCT[:PRODUCT.index("_")] + "_9" + m[1] + m[2]   # FM-1_9XY, SMK-37 Pro_9XY
         VERSION = "v" + a.release.lower()      # e.g. v1.0, v1.1-rc1
-        name = f"felucca-{a.release}.fwsc"
+        name = name[:-len(".fwsc")] + f"-{a.release}.fwsc"
     fm1pkg_make.SDK = a.sdk
     for rel, sha in SDK_SHA256.items():          # fail early without the SDK
         if hashlib.sha256(fm1pkg_make.sdk_file(rel)).hexdigest() != sha:
@@ -461,7 +495,8 @@ def main():
     (OUT / name).write_bytes(pkg)
     print(f"app      {OUT / 'felucca.bin'}  {len(img)} B")
     print(f"loader   {LDR / 'ota.bin'}  {len(ota)} B")
-    print(f"package  {OUT / name}  {len(pkg)} B, identity {PRODUCT}")
+    print(f"package  {OUT / name}  {len(pkg)} B, identity {PRODUCT}" +
+          (f", board {BOARD}, flash.bin {fm1pkg_make.FLASH_SIZE:#x}" if BOARD != "fm1" else ""))
     if a.release:                   # what a release carries: the package, the app and every licence they need
         rel = OUT / f"release-{a.release}"
         shutil.rmtree(rel, ignore_errors=True)

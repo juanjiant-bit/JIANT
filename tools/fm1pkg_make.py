@@ -20,7 +20,12 @@ The three SDK files (uboot.boot, cfg_tool.bin, eq_cfg_hw.bin) are Apache-2.0, no
 ship LICENSES/Apache-2.0.txt with every package (LICENSING.md; make_site.py and
 build.py --release do).
 
-  fm1pkg_make.py APP.bin OTA.bin OUT.fwsc [--product FM-1_9XY] [--key 0x980F]
+  fm1pkg_make.py APP.bin OTA.bin OUT.fwsc [--product FM-1_9XY] [--key 0x980F] [--board fm1|smk37]
+
+--board smk37 (the M-VAVE SMK-37, same AC791N, SPL and loader; after Melodee's fm1pkg_make.py) selects the SMK's
+flash layout: flash.bin is the stock PRCT, 0x9D000 bytes, and the app area carries the stock v016 region table (VM,
+PRCT, BTIF, USRTRIM, USRFLASH, USR) byte for byte, so a later return to stock sees the same regions. app.bin's slot
+(APP_SLOT) is the FM-1's: the encrypted region still ends at 0x92FFE.
 """
 import argparse
 import os
@@ -33,6 +38,37 @@ from pathlib import Path
 # firmware/app.ld's XIP LENGTH is this value (tools/build.py checks it).
 APP_SLOT = 0x8EA90
 FLASH_SIZE = 0x93000
+BOARD = "fm1"
+# (SMK-37, after Melodee's fm1pkg_make.py) the region descriptors after app.bin / cfg_tool.bin, per board: (offset,
+# size or None for FLASH_SIZE, flags, resvd, index, 16 name bytes or a name). The bytes after the names are SDK packer
+# fields (VM size, "CODE", "AUTO"). The FM-1's are the four this file always wrote.
+REGIONS = {
+    "fm1": [(0x93000, 352256, 0x12, 0x80, 0, bytes.fromhex("564d00ffffffffffffffffff00800000")),     # VM
+            (0, None, 0x92, 0x82, 0, bytes.fromhex("5052435400ffffffffffffff434f4445")),         # PRCT
+            (0xE9000, 0x1000, 0x92, 0x80, 0, bytes.fromhex("4254494600ffffffffffffff4155544f")),  # BTIF
+            (0xEA000, 0x12000, 0x92, 0x81, 1, "USR")],
+    # the SMK-37's stock v016 package's region table
+    "smk37": [(0x9D000, 0x23000, 0x12, 0x81, 0, bytes.fromhex("564d00ffffffffffffffffff00800000")),    # VM
+              (0, None, 0x92, 0x82, 0, bytes.fromhex("5052435400ffffffffffffff434f4445")),        # PRCT
+              (0xC0000, 0x1000, 0x92, 0x82, 0, bytes.fromhex("4254494600ffffffffffffff4155544f")), # BTIF
+              (0xC1000, 0x1000, 0x92, 0x81, 0, bytes.fromhex("5553525452494d00ffffffffffffffff")), # USRTRIM
+              (0xC2000, 0x29000, 0x92, 0x81, 0, bytes.fromhex("555352464c41534800ffffffffffffff")), # USRFLASH
+              (0xF4000, 0xA000, 0x92, 0x81, 1, "USR")],
+}
+BOARDS = {"fm1": 0x93000, "smk37": 0x9D000}          # FLASH_SIZE = PRCT = the end of what the update loader writes
+# smk37: one board under two model names; each build carries its model's name (identity, loader, update record)
+MODELS = {"pro": "SMK-37 Pro", "elite": "SMK-37 Elite"}
+
+
+def set_board(board):
+    """select the flash layout of a board ("fm1", the default, or "smk37")"""
+    global BOARD, FLASH_SIZE
+    if board not in BOARDS:
+        raise SystemExit(f"fm1pkg_make: unknown board {board!r} (fm1, smk37)")
+    BOARD = board
+    FLASH_SIZE = BOARDS[board]
+
+
 KEY = 0x980F
 # flash header: JieLi SDK defaults (burner_size 544, VID "0.01", flash_size 0xFF000,
 # fs_ver 0x10, PID "AC791N_STORY"), plain, without its CRC
@@ -140,10 +176,9 @@ def flash_image(app, key):
     ents = [entry(crc16(app), 0x120, APP_SLOT, 0x82, 0xFF, 0, "app.bin"),
             entry(crc16(cfg_tool), 0x120 + APP_SLOT, len(cfg_tool), 0x82, 0xFF, 0, "cfg_tool.bin"),
             # region descriptors; the bytes after the names are SDK packer fields (VM size, "CODE", "AUTO")
-            entry(0xFFFF, 0x93000, 352256, 0x12, 0x80, 0, bytes.fromhex("564d00ffffffffffffffffff00800000")),
-            entry(0xFFFF, 0, FLASH_SIZE, 0x92, 0x82, 0, bytes.fromhex("5052435400ffffffffffffff434f4445")),
-            entry(0xFFFF, 0xE9000, 0x1000, 0x92, 0x80, 0, bytes.fromhex("4254494600ffffffffffffff4155544f")),
-            entry(0xFFFF, 0xEA000, 0x12000, 0x92, 0x81, 1, "USR")]
+            *(entry(0xFFFF, o, FLASH_SIZE if sz is None else sz, fl, rs, ix, nm)
+              for o, sz, fl, rs, ix, nm in REGIONS[BOARD])]
+    assert 32 * (1 + len(ents)) <= 0x120, "the entries overrun app.bin (app_area_head + 0x120)"
     area[32:32 + len(b"".join(ents))] = b"".join(ents)
     area[0:32] = entry(crc16(area[32:blk]), 0x02000120, blk, 0x83, 0xFF, 0, "app_area_head")
     # nested cfg directory right after the block: SDK default EQ table
@@ -210,9 +245,11 @@ def main():
     ap.add_argument("--product", default="FM-1_900")
     ap.add_argument("--key", type=lambda s: int(s, 0), default=KEY)
     ap.add_argument("--sdk", type=Path, help="JieLi AC79 SDK checkout (default: $AC79_SDK)")
+    ap.add_argument("--board", choices=sorted(BOARDS), default="fm1")
     a = ap.parse_args()
     global SDK
     SDK = a.sdk
+    set_board(a.board)
     pkg = ufw(flash_image(a.app.read_bytes(), a.key), a.ota.read_bytes(), a.product)
     a.out.write_bytes(pkg)
     print(f"package {a.out}: {len(pkg)} B, identity {a.product}, chip key {a.key:#06x}")

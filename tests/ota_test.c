@@ -10,8 +10,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FELUCCA_ID "FM-1_900"
 #define FELUCCA_OTA_DRYRUN 0
+/* (SMK-37) -DBOARD_SMK37=1 -Ifirmware/hal: the SMK build of ota.c (staging 0xBB000, the board check);
+ *   ota_test SMK.fwsc FM1.fwsc */
+#if BOARD_SMK37
+#include "fm1_flash_map.h"
+#define FELUCCA_ID SMK_MODEL "_900"
+#define T_OTA_LO 0xBB000u
+#else
+#define FELUCCA_ID "FM-1_900"
+#define T_OTA_LO 0xE0000u
+#endif
+#define T_OTA_HI (T_OTA_LO + 0x5000u)
 
 static uint8_t nor[0x100000];
 static uint8_t *logical;
@@ -96,7 +106,7 @@ static uint32_t ota_now_ms(void) { return now_ms; }
 static void ota_idle(void) { now_ms += 1; }
 static int ota_erase(uint32_t off)
 {
-    if (off < 0xE0000u || off >= 0xE5000u || (off & 0xFFFu)) { bad_erase++; return -8; }
+    if (off < T_OTA_LO || off >= T_OTA_HI || (off & 0xFFFu)) { bad_erase++; return -8; }
     memset(nor + off, 0xFF, 4096);
     return 0;
 }
@@ -104,7 +114,7 @@ static int ota_prog(uint32_t off, const void *src, uint32_t n)
 {
     const uint8_t *s = src;
     uint32_t i;
-    if (off < 0xE0000u || off + n > 0xE5000u) { bad_erase++; return -8; }
+    if (off < T_OTA_LO || off + n > T_OTA_HI) { bad_erase++; return -8; }
     for (i = 0; i < n; i++) nor[off + i] &= s[i];
     return 0;
 }
@@ -138,7 +148,7 @@ static int check(const char *what, int ok)
 static int area_erased(void)
 {
     uint32_t i;
-    for (i = 0xE0000; i < 0xE5000; i++) if (nor[i] != 0xFF) return 0;
+    for (i = T_OTA_LO; i < T_OTA_HI; i++) if (nor[i] != 0xFF) return 0;
     return 1;
 }
 
@@ -146,6 +156,10 @@ static void reset_dev(void)
 {
     memset(nor, 0xFF, sizeof nor);
     memcpy(nor, logical + 0x400, 0x4000);                 /* device flash head = package flash.bin head */
+#if BOARD_SMK37
+    memcpy(nor + FL_RT_OFF, logical + 0x400 + FL_RT_OFF, FL_RT_LEN);   /* the stock region table (smk_pkg_test.py:
+                                                                      * the package's is the stock v016's) */
+#endif
     rx_full = 0; requests = 0; ident_replies = 0; committed = 0; last_code = 0;
     mute_after = 0xFFFFFFFFu; corrupt_at = NULL; bad_erase = 0;
 }
@@ -186,15 +200,18 @@ int main(int argc, char **argv)
     bad += check("session commits", rc == 0 && committed);
     bad += check("headers + loader + confirm, no head reads", requests >= 10 && requests <= 30);
     {
-        uint8_t *h = nor + 0xE0000, *p = committed_parm;
-        bad += check("staged body == the package's loader", !memcmp(nor + 0xE0020, logical + ota_body_off(), 64));
+        uint8_t *h = nor + T_OTA_LO, *p = committed_parm;
+        bad += check("staged body == the package's loader", !memcmp(nor + T_OTA_LO + 0x20u, logical + ota_body_off(), 64));
         bad += check("LOADER.BIN head CRC",
                      (h[0] | h[1] << 8) == ota_crc16(h + 2, 30, 0) && !memcmp(h + 16, "LOADER.BIN", 10));
-        bad += check("record at 0xE4F00 == RAM record", !memcmp(nor + 0xE4F00, p, 112));
+        bad += check("record at the area's end - 256 == RAM record", !memcmp(nor + T_OTA_HI - 0x100u, p, 112));
         bad += check("record CRC / type / magic / ota_addr",
                      (p[0] | p[1] << 8) == ota_crc16(p + 2, 78, 0) && (p[2] | p[3] << 8) == 0x5A0D &&
-                     (p[6] | p[7] << 8) == 0x5441 && ota_rd32(p + 72) == 0xE0000);
-        bad += check("nothing written outside 0xE0000..0xE4FFF", bad_erase == 0);
+                     (p[6] | p[7] << 8) == 0x5441 && ota_rd32(p + 72) == T_OTA_LO);
+        bad += check("record identity " OTA_PARM_ID ", zero after it",
+                     !memcmp(p + 8, OTA_PARM_ID, sizeof OTA_PARM_ID - 1u) && p[8 + sizeof OTA_PARM_ID - 1u] == 0 &&
+                     p[0x27] == 0);
+        bad += check("nothing written outside the OTA area", bad_erase == 0);
     }
     /* boot cleanup erases it */
     bad += check("boot cleanup erases the area", ota_boot_cleanup() == 1 && area_erased());
@@ -218,6 +235,36 @@ int main(int argc, char **argv)
         rc = ota_session();
         bad += check("no 'success' -> -13, no commit, area clean", rc == -13 && !committed && area_erased());
     }
+#if BOARD_SMK37
+    {   /* the board check: refused before anything is erased or staged */
+        uint8_t *own = logical;
+        size_t own_len = logical_len;
+        reset_dev();
+        nor[FL_RT_OFF + 5] ^= 0x10u;                      /* the device's region table differs (an FM-1, ...) */
+        memset(nor + T_OTA_LO, 0x5A, 16);
+        rc = ota_session();
+        bad += check("SMK: a region table not the device's -> -16, nothing erased",
+                     rc == -16 && !committed && nor[T_OTA_LO] == 0x5A && bad_erase == 0);
+        if (argc > 2 && (f = fopen(argv[2], "rb")) != NULL) {   /* the FM-1's package (flash.bin 0x93000) */
+            n = fread(raw, 1, 0x200000, f);
+            fclose(f);
+            logical = malloc(n);
+            for (i = 0; i < 20; i++) memcpy(logical + i * 47, raw + i * 48, 47);
+            memcpy(logical + 20 * 47, raw + 20 * 48, n - 20 * 48);
+            logical_len = n - 20;
+            memset(nor, 0xFF, sizeof nor);
+            memcpy(nor, own + 0x400, 0x4000);              /* the SMK's own head and table */
+            memset(nor + T_OTA_LO, 0x5A, 16);
+            rx_full = 0; requests = 0; committed = 0; bad_erase = 0;
+            rc = ota_session();
+            bad += check("SMK: the FM-1's package (flash.bin 0x93000) -> -15, nothing erased",
+                         rc == -15 && !committed && nor[T_OTA_LO] == 0x5A && bad_erase == 0);
+            logical = own;
+            logical_len = own_len;
+        } else
+            bad += check("SMK: the FM-1's package given (argv 2)", 0);
+    }
+#endif
 
     printf("%s\n", bad ? "OTA TEST FAILED" : "ota test passed");
     return bad != 0;

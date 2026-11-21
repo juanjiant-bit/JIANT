@@ -275,6 +275,10 @@ if [ -f build/gen/felucca_tables.h ]; then
     mkdir -p build/ui_fm4/ppm build/ui_fm4_slot
     run "UI renders with FELUCCA_FM4=1: DIGITAL's screens (EDIT, OP ENV, the 8 algorithm charts), lint, GREY gray, MONO neutral" \
         "$OUT/ui_render_fm4" build/ui_fm4 build/ui_fm4_slot
+    $CC -O1 -w -DFELUCCA_HOST_POWER=1 "-DFELUCCA_VERSION=\"$FV\"" -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/ui_render_hp" tests/ui_render.c -lm
+    mkdir -p build/ui_hp/ppm build/ui_hp_slot
+    run "UI renders with FELUCCA_HOST_POWER=1 (ports/): SAMPLE, GRAIN and DRUM-X's samples, their pages and values, lint, GREY gray, MONO neutral" \
+        "$OUT/ui_render_hp" build/ui_hp build/ui_hp_slot
     $CC -w -Ibuild/gen -Ifirmware/src -o "$OUT/audio_test" tests/audio_test.c -lm
     run "audio: overload protection, bounded fades and DMA diagnostics" "$OUT/audio_test"
     $CC -O2 -w -Ibuild/gen -Ifirmware/src -o "$OUT/click_test" tests/click_test.c -lm
@@ -386,6 +390,44 @@ else
     echo "== skip CPU under valgrind (no valgrind, or not Linux x86-64)"
 fi
 
+# (SMK-37, docs/SMK37.md) the flash map and its guards, the store on it, the board check, the loader
+$CC -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_flash_test" tests/smk_flash_test.c
+run "SMK-37 flash map + store: never the head, BTIF/USRTRIM, USR, 0xFE000, key_mac; the stock marker only released" \
+    "$OUT/smk_flash_test"
+smk_driver_guard() {                              # the RAM driver checks FL_GUARD (FL_PROTECTED on the SMK) itself
+    [ "$(grep -c '!FL_GUARD(off, 0x1000u)\|!FL_GUARD(off, n)' firmware/hal/fm1_flash.h)" = 2 ] &&
+        ! grep -q 'FL_RANGE_OK(off, 0x1000u) ||\|!FL_RANGE_OK(off, n) ||' firmware/hal/fm1_flash.h
+}
+run "SMK-37 flash driver: fl_erase4k_ram / fl_prog_ram refuse what FL_GUARD refuses" smk_driver_guard
+$CC -w -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_map_test" tests/smk_map_test.c
+run "SMK-37 controls: the printed buttons, K1-K8, the 27 middle keys, the pads as the 16 white keys" "$OUT/smk_map_test"
+$CC -w -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_keys_test" tests/smk_keys_test.c
+run "SMK-37 keybed (hal/smk_input.h, Melodee's test): two contacts, bounces, re-strikes, outer keys, pads, curves" \
+    "$OUT/smk_keys_test"
+if [ -f build/smk37-pro/felucca-smk37-pro.fwsc ]; then
+    $CC -w -DOWN_PKG=1 -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/ota_test_smk" tests/ota_test.c
+    run "SMK-37 M-UPGRADE entry: staging 0xBB000, the model's record, the board check (-15 FM-1 package, -16 table)" \
+        "$OUT/ota_test_smk" build/smk37-pro/felucca-smk37-pro.fwsc build/felucca.fwsc
+    head -c 200000 build/smk37-pro/felucca.bin > "$OUT/smk_old_app.bin"
+    python3 tools/fm1pkg_make.py --board smk37 --product "SMK-37 Pro_900" "$OUT/smk_old_app.bin" \
+        build/smk37-pro/loader/ota.bin "$OUT/smk_old.fwsc" >/dev/null
+    $CC -DBOARD_SMK37=1 -Ifirmware/hal -o "$OUT/smk_ldr_test" tests/smk_ldr_test.c
+    run "SMK-37 update loader: the app area 0x4000-0x9CFFF only, the record at 0xBFF00, the FM-1's package refused" \
+        "$OUT/smk_ldr_test" "$OUT/smk_old.fwsc" build/smk37-pro/felucca-smk37-pro.fwsc build/felucca.fwsc
+fi
+# the SMK-37 packages, when built (./build.sh --board smk37 [--model elite]); a stock M-VAVE
+# v016 package for the region table's bytes: SMK_STOCK=folder with SMK37-Pro-V16.fwsc / SMK37-Elite-V16.fwsc (read only)
+for m in pro elite; do
+    P=build/smk37-$m/felucca-smk37-$m.fwsc
+    [ -f "$P" ] || { echo "== skip SMK-37 $m package (./build.sh --board smk37 --model $m)"; continue; }
+    [ $m = pro ] && N="SMK-37 Pro" || N="SMK-37 Elite"
+    [ $m = pro ] && S=SMK37-Pro-V16.fwsc || S=SMK37-Elite-V16.fwsc
+    STOCK=""
+    [ -n "${SMK_STOCK:-}" ] && [ -f "$SMK_STOCK/$S" ] && STOCK="$SMK_STOCK/$S"
+    run "SMK-37 $m package: identity, flash.bin 0x9D000, the stock v016 region table${STOCK:+ (= the bytes of $S)}" \
+        python3 tests/smk_pkg_test.py "$P" "${N}_900" "build/smk37-$m/felucca.bin" $STOCK
+done
+
 run "installer CLI (fm1_install.py) against a simulated FM-1" python3 tests/install_test.py
 run "published installers' patch (tools/patch_installer_downloads.py) on pages as built and as patched before" \
     python3 tests/patch_installer_test.py
@@ -410,6 +452,12 @@ else
     run "browser emulator: boot, keys, MIDI, screen, LEDs, PLAY, a save kept across instances, = native, cost" \
         node web/emu/emu_test.mjs build/emu/felucca.wasm "$OUT/emu_native.f32"
         run "stems from the browser build (web/emu/stems.js): a backup in, each part alone, the song once round, WAV + ZIP" node web/emu/stems_test.mjs build/emu/felucca.wasm
+    if node -e "require('playwright')" >/dev/null 2>&1; then
+        run "devices.html in Chromium: the MPC on felucca_hp.wasm, a WAV into slot 1 through the SAMPLE BROWSER, SAMPLE / GRAIN sound, RESAMPLE recorded, FM-1 and SMK-37 still play" \
+            node web/emu/browser_mpc_test.mjs
+    else
+        echo "== skip devices.html in a browser (no Playwright for node)"
+    fi
 fi
 
 [ $fail -eq 0 ] && echo "ALL HOST TESTS PASSED" || { echo "HOST TESTS FAILED"; exit 1; }

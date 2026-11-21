@@ -259,6 +259,13 @@ static const param_desc_t *track_desc(const track_t *t, uint32_t id)
 {
     if (id == MOT_DJF)                                /* (0.9.1) a DJ FILTER record (motion.c): the global's */
         return &GP[G_DJF];
+#if FELUCCA_HOST_POWER
+    {   /* (ports/) SAMPLE GRAIN: their extra values in other engines' slots; DRUM-X's sample layer (engines.c) */
+        const param_desc_t *x = hp_xdesc(t, id);
+        if (x)
+            return x;
+    }
+#endif
     if ((id == P_VLANG || id == P_VLYR) && ENGINES[eng_idx(t->eng_req)] == &ENG_FORMANT)
         return id == P_VLANG ? &VLANG_DESC : &VLYR_DESC;
     if (id >= P_E0 && id <= P_E7) {                   /* the engine asked for (t->engine follows after a fade) */
@@ -674,8 +681,22 @@ static const page_t PAGES[] = {
                                                          * modifiers (ui_live.c, seq_live.c) */
     {"RIELES", FAM_GLO, SC_GLOBAL, GR_LIVE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* .. the six sequences as rails, four knobs */
     {"LFO 2", FAM_LFO, SC_TRACK, GR_LFO, {ID_LPHS, 0xFF, 0xFF, 0xFF}},   /* (0.9.18) PHASE: where TRIG starts (FREE: dimmed) */
+#if FELUCCA_HOST_POWER
+    /* (ports/) the sample engines' pages beyond EDIT 1 / 2 (their values in other engines' slots: engines.c hp_xdesc),
+     * each its engine's only (ui.c page_visible); last, so the FM-1's pages keep their indices. HP_PAGE0 the first */
+    {"TRIG", FAM_EDIT, SC_TRACK, GR_NONE, {P_LN0, P_LN1, P_LN2, P_LN3}},        /* SAMPLE: TRIG AMOUNT RATE SLICES */
+    {"REC", FAM_EDIT, SC_TRACK, GR_NONE, {P_LN4, P_LN5, P_LN6, P_LN7}},         /* .. REC WOW STOP DECAY */
+    {"TRAVEL", FAM_EDIT, SC_TRACK, GR_NONE, {P_LN0, P_LN1, P_LN2, P_LN3}},      /* GRAIN: TRAVEL REGION FEEDBK SHIMMR */
+    {"SOURCE", FAM_EDIT, SC_TRACK, GR_NONE, {P_LN4, P_LN5, P_LN6, P_LN7}},      /* .. WINDOW WIDTH SOURCE REC */
+    {"PITCH", FAM_EDIT, SC_TRACK, GR_NONE, {P_FM3_DEC, P_FM4_SUS, 0xFF, 0xFF}}, /* .. QUANT DAMP */
+    {"SAMPLES", FAM_EDIT, SC_TRACK, GR_NONE, {P_LRTRG, P_FM3_DEC, P_FM4_LEVEL, P_FM4_SUS}},   /* DRUM-X: SMORPH BLEND SLOT MAP */
+    {"SAMPLES 2", FAM_EDIT, SC_TRACK, GR_NONE, {P_FM3_LEVEL, 0xFF, 0xFF, 0xFF}},             /* .. SLEVEL */
+#endif
 };
 #define NPAGES (sizeof(PAGES) / sizeof(PAGES[0]))
+#if FELUCCA_HOST_POWER
+#define HP_PAGE0 (NPAGES - 7u)
+#endif
 static uint8_t mod_ui_slot;      /* the MOD page: the matrix slot (0..3) KNOB 2..4 edit */
 static uint8_t ms_ui_step;       /* (JIANT) the MSEQ page: the step (0..15) KNOB 2 edits */
 static const char *const N_RFOLW[] = {"OFF", "T1", "T2", "T3", "T4", "T5", "T6"};

@@ -1977,6 +1977,9 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
         if ((duck_g0 < 32767 || duck_g1 < 32767) && ENGINES[t->engine] != &ENG_DRUM)   /* DUCK: the kick's */
             lq = duck_ramp(l0 >> 8, mp_lvl[ti] >> 8, &dl);
         track_dist(t, b, n);
+#if FELUCCA_HOST_POWER
+        smp_track_tap(ti, b, n);                        /* (ports/) the recorder's track source */
+#endif
         int32_t pm0 = 32768, pm1 = 32768;               /* (0.6.48: drum_mix's; pf.mg counts only while muting) */
         if ((pf.mute >> (t - trk)) & 1u) {
             pm0 = pf.mg[ti];
@@ -2008,6 +2011,16 @@ static inline __attribute__((always_inline)) void mix_part(track_t *t, uint32_t 
             ol[i] += (x * gl) >> 12;
             or_[i] += (x * gr) >> 12;
         }
+#if FELUCCA_HOST_POWER
+        if (smp_side_on && smp_side_trk == ti && !t->p[P_DIST] && !t->p[P_FTYPE] && t->p[P_FCUT] >= 127 &&
+            !t->p[P_FRES] && !tf_on[ti])                /* (ports/) a stereo sample, GRAIN's spread: the side */
+            for (i = 0, lq = lq0, gl = gl0, gr = gr0; i < n; i++, lq += dl, gl += dgl, gr += dgr) {
+                int32_t x = ((smp_side[i] >> 2) * (lq >> 8)) >> 10;
+                ol[i] += (x * gl) >> 12;
+                or_[i] -= (x * gr) >> 12;
+            }
+        smp_side_on = 0;
+#endif
         uint32_t st = ti;                               /* (0.8.0) the stem the last of the mix goes to */
         if (uin && !t->p[P_MUTE] && !((trk_hush >> ti) & 1u)) {   /* (0.7.5) the host's audio, in its stem too */
             if (fx_stems == 2u) {                       /* (0.8.0) STEMS+IN: in a stem of its own */

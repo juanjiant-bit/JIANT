@@ -4,6 +4,9 @@
 /* Engine table (order = PRESETS browsing order and the engine numbers of the editor protocol), the
  * factory patterns (SEQ > PATTERNS) and the parts' sounds at power-on. */
 #include "dsp.c"
+#if FELUCCA_HOST_POWER
+#include "smp_slots.c"          /* (ports/) the sample slots, the recorder, the LIVE buffers */
+#endif
 #include "eng_analog.c"
 #include "eng_phase.c"
 #include "eng_lofi.c"
@@ -14,6 +17,11 @@
 #include "eng_fm6.c"            /* FM6: 6-operator FM, msfa ported (fm6_core.c, Apache-2.0) */
 #include "eng_animal.c"         /* (JIANT 0.8.3) ANIMAL: animal calls (CMOS PULSE WHSTL WING GLOTT) */
 #include "fm4_convert.c"        /* DIGITAL's tables, and its sounds -> FM6 */
+#if FELUCCA_HOST_POWER
+static void voice_kill(voice_t *v);   /* (voice.c) */
+#include "eng_sample.c"         /* (ports/) SAMPLE: one shot, experimental modes, feedback, DESTROY, REC */
+#include "eng_grain.c"          /* (ports/) GRAIN: granular, on a slot or LIVE */
+#endif
 #if FELUCCA_FM4
 #include "eng_digital.c"        /* DIGITAL: four-operator FM (retired; FELUCCA_FM4=1 builds it) */
 #endif
@@ -53,11 +61,19 @@ static const engine_t *const ENGINES[NENGINES] = {
 #endif
     &ENG_PHASE,                  /* 2 */
     &ENG_LOFI,                   /* 3 */
+#if FELUCCA_HOST_POWER
+    &ENG_SAMPLE,                 /* 4 (ENGI_SAMPLE; ports/ only: eng_sample.c) */
+#else
     &ENG_GONE,                   /* 4: reserved (SAMPLE, retired in JIANT) */
+#endif
     &ENG_FORMANT,                /* 5 VOICE (eng_formant.c: "voice" is a sounding note in voice.c) */
     &ENG_GONE,                   /* 6: reserved (TRIO, folded into ANALOG in JIANT 0.4: core.h analog_from_trio) */
     &ENG_WHEEL,                  /* 7 */
+#if FELUCCA_HOST_POWER
+    &ENG_GRAIN,                  /* 8 (ENGI_GRAIN; ports/ only: eng_grain.c) */
+#else
     &ENG_GONE,                   /* 8: reserved (GRAIN, retired in JIANT) */
+#endif
     &ENG_GONE,                   /* 9: reserved (PHYS, retired in TONIC: its sounds play as ANALOG) */
     &ENG_DRUM,                   /* 10 (ENGI_DRUM) */
     &ENG_NOISE,                  /* 11 */
@@ -65,6 +81,41 @@ static const engine_t *const ENGINES[NENGINES] = {
     &ENG_GONE,                   /* 13: reserved (SLICE, retired in JIANT) */
     &ENG_ANIMAL,                 /* 14 (ENGI_ANIMAL, JIANT 0.8.3) */
 };
+
+#if FELUCCA_HOST_POWER
+/* (ports/) the engines of the big CPUs keep more values than EDIT's eight, in slots of other engines' a track of theirs
+ * never reads (core.h: DRUM's lane levels P_LN0..7); stored in projects and user presets as those are. Their
+ * descriptors (params.c track_desc) and a preset's values of them (ui.c apply_preset_to) */
+static const param_desc_t *hp_xdesc(const track_t *t, uint32_t id)
+{
+    const engine_t *e = ENGINES[t->eng_req < NENGINES ? t->eng_req : 0u];
+    if (e == &ENG_SAMPLE && id >= P_LN0 && id <= P_LN7)
+        return smp_xdesc(t, id - P_LN0);
+    if (e == &ENG_DRUM && (id == P_DXSMORPH || id == P_DXSBLEND || id == P_DXSSLOT || id == P_DXSMAP || id == P_DXSLEVEL))
+        return dxs_desc(id);
+    if (e == &ENG_GRAIN && ((id >= P_LN0 && id <= P_LN7) || id == P_GXQUANT || id == P_GXDAMP))
+        return gr_xdesc(t, id);
+    return 0;
+}
+static void hp_preset_x(track_t *t, const engine_t *e, uint32_t pi)
+{
+    uint32_t i;
+    if (e == &ENG_SAMPLE)
+        for (i = 0; i < 8u; i++)
+            t->p[P_LN0 + i] = SMP_PRESET_X[pi % NELEM(SMP_PRESETS)][i];
+    if (e == &ENG_DRUM) {                       /* (DRUM-X's sample layer: off, slot 1, SLOTS) */
+        t->p[P_DXSSLOT] = 112;
+        t->p[P_DXSMAP] = 125;
+    }
+    if (e == &ENG_GRAIN) {
+        const uint8_t *x = GR_PRESET_X[pi % NELEM(GR_PRESETS)];
+        for (i = 0; i < 8u; i++)
+            t->p[P_LN0 + i] = x[i];
+        t->p[P_GXQUANT] = x[8];
+        t->p[P_GXDAMP] = x[9];
+    }
+}
+#endif
 
 /* a track's engine number as an index (the audio paths: a compare, cheaper than % NENGINES; a bad number: 0) */
 static inline uint32_t eng_idx(uint32_t e) { return e < NENGINES ? e : 0u; }
@@ -83,6 +134,9 @@ static const uint8_t ENGINE_ORDER[NENG_SHOWN] = {
     ENGI_FM6,                    /* FM6 */
     ENGI_PHASE, ENGI_WHEEL,      /* PHASE WHEEL */
     ENGI_NOISE,                  /* NOISE */
+#if FELUCCA_HOST_POWER
+    ENGI_SAMPLE, ENGI_GRAIN,     /* (ports/) SAMPLE GRAIN: after the FM-1's, so PROGRAM CHANGE numbers them as before */
+#endif
 #if FELUCCA_FM4
     ENGI_DIGITAL,                /* DIGITAL (retired, FELUCCA_FM4 builds only): after the rest */
 #endif

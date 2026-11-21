@@ -295,7 +295,7 @@ static volatile uint8_t sys_load;
  * of its own while the guard keeps fading voices (two sheds in a second; 5 s calm to go back): the song's polyphony and
  * the heavy reverbs give way before the audio is late. LOAD_EFF(): the LOAD the sound plays (the MENU's, else the
  * governor's) */
-static volatile uint8_t gov_cap = 16u, gov_lite;
+static volatile uint8_t gov_cap = FELUCCA_HOST_POWER ? VOICES_ALL : 16u, gov_lite;
 #define LOAD_EFF() (sys_load ? sys_load : gov_lite)
 #define LITE_FM6_POLY 2u
 #define ECO_POLY 4u
@@ -335,7 +335,7 @@ static struct { volatile uint32_t peak, late, shed; } load_diag;
 static int mc_two(void);                                /* (fx.c) */
 static uint32_t voice_cap(void)
 {
-    uint32_t c = sys_load == LOAD_ECO ? ECO_VOICES : mc_two() ? VOICES_2CORE : NVOICE;
+    uint32_t c = sys_load == LOAD_ECO ? ECO_VOICES : FELUCCA_HOST_POWER ? VOICES_ALL : mc_two() ? VOICES_2CORE : NVOICE;
     return c < gov_cap ? c : gov_cap;
 }
 static uint32_t voices_busy(void)                       /* sounding voices of all parts (not the fading ones) */

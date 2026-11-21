@@ -1,0 +1,15 @@
+{
+  "name": "JIANT FM",
+  "manufacturer": "Juan Jiant",
+  "version": "1.0.0",
+  "format": "vst2",
+  "kind": "instrument",
+  "uid": "JnFM",
+  "numInputs": 0,
+  "numOutputs": 2,
+  "category": "Synth",
+  "file32": "VST/jiant-fm-arm32.so",
+  "file64": "VST/jiant-fm-arm64.so",
+  "description": "JIANT FM, the FM-1 firmware: six tracks, eleven engines, sequencer, songs, generator and FX. MIDI channels 1-4 play tracks 1-4; Sync Host follows the MPC's transport.",
+  "license": "GPL-3.0-only"
+}

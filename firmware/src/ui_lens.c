@@ -46,16 +46,33 @@ static const nv_t CE_HOME[] = {NV(0, "ECO", 0, 0), NV(0, "MACROS", 0, 0), NV(0, 
 static const ng_t CG_HOME[] = {{"ECO", 0}, {"BEING", 0}, {"GEN", 0}};
 static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("MORPH", 0, 1, 1),
                               NV("RETRIG", 0, 1, 1), NV("ROTOR", 0, 1, 1), NV("VOICE", 0, 1, 1), NV("VOICE 2", 0, 1, 1),
-                              NV("WORDS", 0, 1, 1), NV("FOCUS", 0, 2, 2)};
-static const ng_t CG_SYN[] = {{"SOUND", 0}, {"TONE", 0}, {"FOCUS", 0}};
+                              NV("WORDS", 0, 1, 1), NV("FOCUS", 0, 2, 2),
+#if FELUCCA_HOST_POWER
+                              NV("TRIG", 0, 3, 1), NV("REC", 0, 3, 1), NV("TRAVEL", 0, 3, 1), NV("SOURCE", 0, 3, 1),
+                              NV("PITCH", 0, 3, 1),   /* (ports/) SAMPLE's, GRAIN's (ui.c page_visible) */
+#endif
+};
+static const ng_t CG_SYN[] = {{"SOUND", 0}, {"TONE", 0}, {"FOCUS", 0},
+#if FELUCCA_HOST_POWER
+                              {"SAMPLE", "SMP"},
+#endif
+};
 static const nv_t CE_FM6[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("VOICE", 0, 1, 1),
                               NV("VOICE 2", 0, 1, 1), NV("OPERATOR", 0, 2, 2), NV("OP ENV", 0, 2, 2), NV("OPERATOR 2", 0, 2, 2)};
 static const ng_t CG_FM6[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}};
 static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0, 0), NV("KIT 3", 0, 0, 0),
                               NV("SOUND", 0, 1, 2), NV("SOUND 2", 0, 1, 2), NV("SOUND 3", 0, 1, 2), NV("SOUND 4", 0, 1, 2),
                               NV("LEVELS", 0, 2, 1), NV("LEVELS 2", 0, 2, 1), NV("X-MOD", 0, 3, 1), NV("FILTER", 0, 3, 1),
-                              NV("STEREO", 0, 3, 1), NV("VOICE", 0, 3, 1)};
-static const ng_t CG_DRM[] = {{"KIT", 0}, {"SOUND", 0}, {"LEVELS", "LEVEL"}, {"TONE", 0}};
+                              NV("STEREO", 0, 3, 1), NV("VOICE", 0, 3, 1),
+#if FELUCCA_HOST_POWER
+                              NV("SAMPLES", 0, 4, 1), NV("SAMPLES 2", 0, 4, 1),   /* (ports/) the lanes' samples */
+#endif
+};
+static const ng_t CG_DRM[] = {{"KIT", 0}, {"SOUND", 0}, {"LEVELS", "LEVEL"}, {"TONE", 0},
+#if FELUCCA_HOST_POWER
+                              {"SAMPLE", "SMP"},
+#endif
+};
 static const nv_t CE_DIG[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("VOICE", 0, 1, 1),
                               NV("VOICE 2", 0, 1, 1), NV("OP1 ENV", 0, 2, 2), NV("OP2 ENV", 0, 2, 2), NV("OP3 ENV", 0, 2, 2),
                               NV("OP4 ENV", 0, 2, 2), NV("OP LEVEL", 0, 2, 2)};

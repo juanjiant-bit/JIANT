@@ -2102,6 +2102,9 @@ static VX_CODE void vx_lofi(const track_t *t, const int32_t *A, int32_t en_home)
     vxs.kc = 0;
 }
 
+#if FELUCCA_HOST_POWER
+#include "ui_smpvis.c"           /* (ports/) SAMPLE's and GRAIN's picture */
+#endif
 /* ------------------------------------------------------------------------------------------------ the glue --- */
 /* the engine's own creature in the rectangle x y w h (px: EDIT's left panel 8 14 108 112, HOME's middle 146 x 112, or a
  * whole panel: each fits itself to it), en_home: HOME's level for the track (-1: its own); 0 when the engine has none
@@ -2134,6 +2137,10 @@ static int vx_draw(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h,
         vx_phase(t, A, en_home);
     else if (e == &ENG_LOFI)
         vx_lofi(t, A, en_home);
+#if FELUCCA_HOST_POWER
+    else if (e == &ENG_SAMPLE || e == &ENG_GRAIN)       /* (ports/) the slot's waveform, its region, the playheads */
+        vx_smp(t, A);
+#endif
     else
         return 0;
     return 1;

@@ -266,6 +266,7 @@ static void con_dbg(void)
 #endif
 }
 
+#if !BOARD_SMK37                                     /* (the FM-1's scan statistics: none in hal/smk_input.h) */
 /* input scan (hal/fm1_input.h fm1_in_stat) since the last `inp`, then cleared: tick gaps (= LED
  * on-time of a column), per-column LED share in 1/1000, the tick cost, the dim pulse (its average width and the
  * bits of the 595 shift it spans), encoder transitions */
@@ -328,6 +329,7 @@ static void con_inp(void)
         fm1__unlock(k2);
     }
 }
+#endif
 
 static void con_crash(void)
 {
@@ -367,8 +369,10 @@ static void con_exec(const char *p)
         con_dbg();
     else if (con_word(&p, "crash"))
         con_crash();
+#if !BOARD_SMK37
     else if (con_word(&p, "inp"))
         con_inp();
+#endif
     else if (con_word(&p, "params"))
         con_params();
     else if (con_word(&p, "memr"))

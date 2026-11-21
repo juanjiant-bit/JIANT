@@ -5,6 +5,12 @@
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
 [![Emulator](https://img.shields.io/badge/try%20it-in%20the%20browser-ff7a00.svg)](https://juanjiant-bit.github.io/JIANT/emu/)
 
+> **New: JIANT FM beyond the FM-1 (preview).** The same firmware on the **Akai MPC Sample**, the **MPC standalones**
+> (plugin), **VST3 / LV2 / standalone** for Linux and Windows, and soon the **M-VAVE SMK-37**. On these bigger CPUs it
+> adds a **SAMPLE** engine, a **GRAIN** engine and **DRUM-X with samples**. Free, GPL-3.0, looking for testers.
+> **▶ [Try every device in the browser](https://juanjiant-bit.github.io/JIANT/emu/devices.html)** ·
+> **[Downloads (pre-release)](https://github.com/juanjiant-bit/JIANT/releases)** · **[How it works](ports/README.md)**
+
 ![JIANT FM: the signature and screens of the firmware](docs/jiant-hero.png)
 
 JIANT FM is a free, alternative firmware for the **M-VAVE FM-1**, made for playing live and building whole songs

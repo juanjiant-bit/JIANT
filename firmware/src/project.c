@@ -2255,10 +2255,24 @@ static void persist_boot(void)                    /* before settings_init / pane
 #if FELUCCA_FLASH
     persist_t p;
     uint32_t f = irq_save();
+#if BOARD_SMK37
+    /* (SMK-37, docs/SMK37.md) the store only with FELUCCA_SMK_FLASH=1 and only on the SMK's own part (0xEB6014,
+     * hal/fm1_flash_map.h FL_JEDEC_OK), in the SMK's windows; else RAM-only, as JIANT on any unknown part */
+    uint32_t id = FL_FAR(fl_jedec_ram)();
+    flash_ok = FELUCCA_SMK_FLASH && FL_JEDEC_OK(id);
+#else
     flash_ok = FL_FAR(fl_jedec_ram)() == 0x856014u;       /* the expected 1 MiB part, else stay RAM-only */
+#endif
     irq_restore(f);
     if (!flash_ok)
         return;
+#if BOARD_SMK37
+    if (st_owner_check() < 0) {                    /* never parse another ported firmware's store (storage.c): */
+        flash_ok = 0;                              /* not cleared, so RAM-only until the next boot */
+        st_foreign = 1;
+        return;
+    }
+#endif
     {
         int n = st_load(OBJ_SETTINGS, &p, sizeof p);
         if (settings_import(&p, n)) {

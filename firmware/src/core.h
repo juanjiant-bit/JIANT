@@ -12,6 +12,15 @@
 #define NVOICE 8                 /* voices per part, and the budget shared by all parts */
 #define NPART 6                  /* synth parts: tracks 1..6 (JIANT 0.6: was 4) */
 #define NTRK NPART               /* tracks (the formats and the protocol count these): every track is a part */
+/* (JIANT, ports/) FELUCCA_HOST_POWER 1: the firmware on a computer's CPU, not the FM-1's (ports/core sets it: the MPC
+ * Sample, the MPC plugin). The parts no longer share NVOICE voices: each has its own NVOICE (NPART x NVOICE in all);
+ * EXPLORE no longer makes its pieces lighter for the FM-1's CPU (gen.c gc_budget). The load governor and the overload
+ * guard stay, measuring the computer's real time (ports/core: felucca_web.c JIANT_REAL_LOAD): the sound gives way
+ * only if that CPU itself runs short. 0 (the FM-1, the browser emulator, the host tests): as ever */
+#ifndef FELUCCA_HOST_POWER
+#define FELUCCA_HOST_POWER 0
+#endif
+#define VOICES_ALL (FELUCCA_HOST_POWER ? NPART * NVOICE : NVOICE)   /* the voices all parts may share at most */
 #define NSTEP 64
 #define HALF_FRAMES 128          /* I2S half buffer: 2.9 ms at 44.1 kHz (a key waits 0..1 half, then plays 1 half later) */
 #ifndef FELUCCA_FM4
@@ -20,7 +29,7 @@
 #endif
 #define NENGINES 15              /* the stores' engine numbers 0..14 (engines.c ENGINES[], append-only; 0.8.3: 14 ANIMAL) */
 #define ENGI_DIGITAL 1u          /* reserved without FELUCCA_FM4: never selectable (eng_ok), its sounds load as FM6 */
-#define NENG_SHOWN (NENGINES - !FELUCCA_FM4 - 5)   /* the engines one can pick: PRESETS, the EDIT layer, the editor,
+#define NENG_SHOWN (NENGINES - !FELUCCA_FM4 - 5 + 2 * !!FELUCCA_HOST_POWER)   /* (ports/: SAMPLE, GRAIN too) */   /* the engines one can pick: PRESETS, the EDIT layer, the editor,
                                                 * in the display order of engines.c ENGINE_ORDER (PHYS 9, and in
                                                 * JIANT SAMPLE 4, GRAIN 8, SLICE 13: retired) */
 /* (JIANT 0.6.71) the second core (hal/fm1_multicore.h; fx.c mix_block hands it some synth tracks). MC_CPU(): the core
@@ -218,7 +227,11 @@ static void params_by_count(int16_t *out, const int16_t *in, uint32_t np, const 
  * set as DRUM first: drum_from_perc) */
 static inline int eng_gone(uint32_t e)
 {
+#if FELUCCA_HOST_POWER                   /* (ports/) SAMPLE and GRAIN again, on the samples of smp_slots.c */
+    return e == ENGI_PHYS || e == ENGI_SLICE || e == ENGI_TRIO;
+#else
     return e == ENGI_PHYS || e == ENGI_SAMPLE || e == ENGI_GRAIN || e == ENGI_SLICE || e == ENGI_TRIO;
+#endif
 }
 /* (JIANT 0.4) a sound stored before 0.4 -> today's E values, in place: LOFI (3) {.., SWP, VIB, ARP, TONE} -> {.., CUT
  * (its TONE), VIB, BEND 0, MASK 0}; ANALOG (0) KTR -> INT 0 (the key tracking fixed at its old default). Projects
@@ -280,8 +293,8 @@ static int drum_from_perc(uint32_t engine, int16_t *e)
 {
     static const int16_t KIT[8] = DRUM_KIT_E;
     uint32_t i;
-    if (engine != ENGI_SAMPLE || e[0] != (int16_t)SMP_SET_PERC)
-        return 0;
+    if (FELUCCA_HOST_POWER || engine != ENGI_SAMPLE || e[0] != (int16_t)SMP_SET_PERC)
+        return 0;                                       /* (ports/: SAMPLE is an engine again, its E0 a slot) */
     for (i = 0; i < 8u; i++)
         e[i] = KIT[i];
     return 1;

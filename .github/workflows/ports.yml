@@ -1,0 +1,176 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# JIANT beyond the FM-1 (ports/): the core's test, the MPC plugin (desktop, ARM32, ARM64; the SDK's host simulator and
+# validator) and the MPC Sample app (ARM64 in Debian bookworm, as the MPC runs it: its tests and the SD card zip).
+# The zips are this run's artifacts.
+name: ports
+on:
+  workflow_dispatch:
+  workflow_call:          # (ports-release.yml: the same builds, named for a release)
+    inputs:
+      release_version:
+        type: string
+        default: ""
+  push:
+    paths: ["ports/**", ".github/workflows/ports.yml"]
+permissions:
+  contents: read
+jobs:
+  core-and-plugin:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install Pillow==12.3.0 numpy==2.3.5 fonttools==4.61.1 ziglang
+      - name: generated headers
+        run: python3 -c "import sys; sys.path.insert(0, 'tools'); import build; build.generate()"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gen
+          path: build/gen
+      - name: the core
+        run: ports/core/build.sh test
+      - name: the MPC plugin
+        run: python3 ports/mpc-plugin/build.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JIANT-FM-MPC-plugin
+          path: build/mpc-plugin/*.zip
+  mpc-sample:
+    needs: core-and-plugin
+    runs-on: ubuntu-24.04-arm
+    container: debian:bookworm
+    steps:
+      - name: build tools (sample-base's image)
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends g++ make git ca-certificates pkg-config python3 patch \
+            libasound2-dev libsystemd-dev dbus libdrm-dev libfreetype6-dev libfontconfig1-dev fonts-liberation
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: gen
+          path: build/gen
+      - name: the app and its tests
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          ports/mpc-sample/build.sh test
+          ports/mpc-sample/build/jiant --bench
+      - name: the SD card zip
+        run: |
+          strip -o ports/mpc-sample/build/jiant.release ports/mpc-sample/build/jiant
+          V="${{ inputs.release_version }}"; [ -n "$V" ] || V="v0.0-ci${GITHUB_RUN_NUMBER}"
+          python3 ports/mpc-sample/tools/make_release.py "$V" \
+            --binary ports/mpc-sample/build/jiant.release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JIANT-FM-MPC-Sample
+          path: |
+            ports/mpc-sample/dist/*.zip
+            ports/mpc-sample/build/preview.png
+  # JIANT FM as a plugin and an app (ports/juce-plugin, JUCE): each platform's formats, checked by loading them as a
+  # host does (tests/plugin_check.cpp) where the runner can; unsigned (macOS: ad hoc; iOS: to be signed to install)
+  plugin-linux:
+    needs: core-and-plugin
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: gen
+          path: build/gen
+      - name: JUCE's Linux libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build libasound2-dev libfreetype-dev libfontconfig1-dev \
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxext-dev libxi-dev libgl1-mesa-dev xvfb
+      - name: VST3, LV2, standalone, and the checks
+        run: ports/juce-plugin/build.sh -DJIANT_CHECK=ON
+      - name: the plugin loaded as a host loads it; the editor's picture
+        run: |
+          A=build/juce-plugin/JiantFM_artefacts/Release
+          xvfb-run -a build/juce-plugin/plugin_check_artefacts/Release/plugin_check "$A/VST3/JIANT FM.vst3"
+          xvfb-run -a build/juce-plugin/editor_shot_artefacts/Release/editor_shot build/juce-plugin/editor.png
+          cd "$A" && zip -qr "$GITHUB_WORKSPACE/JIANT-FM-Linux.zip" "VST3/JIANT FM.vst3" "LV2/JIANT FM.lv2" "Standalone/JIANT FM"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JIANT-FM-Linux
+          path: |
+            JIANT-FM-Linux.zip
+            build/juce-plugin/editor.png
+  plugin-macos:
+    # macOS runners: set the repository variable MACOS_RUNNERS to true once the account can use them
+    if: vars.MACOS_RUNNERS == 'true'
+    needs: core-and-plugin
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: gen
+          path: build/gen
+      - name: VST3, AU, AUv3, standalone (universal), and the checks
+        run: |
+          ports/juce-plugin/build.sh -G Xcode -DJIANT_CHECK=ON "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+      - name: the plugin loaded as a host loads it (VST3, AU)
+        run: |
+          A=build/juce-plugin/JiantFM_artefacts/Release
+          C=build/juce-plugin/plugin_check_artefacts/Release/plugin_check
+          "$C" "$A/VST3/JIANT FM.vst3"
+          mkdir -p ~/Library/Audio/Plug-Ins/Components && cp -R "$A/AU/JIANT FM.component" ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          auval -v aumu JnFM Jnnt
+          "$C" ~/Library/Audio/Plug-Ins/Components/"JIANT FM.component"
+          cd "$A" && ditto -c -k --keepParent "VST3/JIANT FM.vst3" "$GITHUB_WORKSPACE/JIANT-FM-macOS-VST3.zip" &&
+            ditto -c -k --keepParent "AU/JIANT FM.component" "$GITHUB_WORKSPACE/JIANT-FM-macOS-AU.zip" &&
+            ditto -c -k --keepParent "Standalone/JIANT FM.app" "$GITHUB_WORKSPACE/JIANT-FM-macOS-app-with-AUv3.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JIANT-FM-macOS
+          path: JIANT-FM-macOS-*.zip
+  plugin-ios:
+    if: vars.MACOS_RUNNERS == 'true'
+    needs: core-and-plugin
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: gen
+          path: build/gen
+      - name: AUv3 and the app for iPad and iPhone (unsigned)
+        run: |
+          cmake -S ports/juce-plugin -B build/juce-ios -G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO
+          cmake --build build/juce-ios --config Release --target JiantFM_Standalone -- -sdk iphoneos -quiet \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+          APP=$(find build/juce-ios -name "JIANT FM.app" -path "*Release-iphoneos*" | head -1)
+          ls "$APP/PlugIns"
+          mkdir -p ipa/Payload && cp -R "$APP" ipa/Payload/ && (cd ipa && zip -qr "$GITHUB_WORKSPACE/JIANT-FM-iOS-unsigned.ipa" Payload)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JIANT-FM-iOS
+          path: JIANT-FM-iOS-unsigned.ipa
+  plugin-windows:
+    needs: core-and-plugin
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: gen
+          path: build/gen
+      - name: VST3 and standalone, and the check
+        shell: bash
+        run: |
+          cmake -S ports/juce-plugin -B build/juce-plugin -T ClangCL -DJIANT_CHECK=ON   # (clang-cl: the firmware's GNU C)
+          cmake --build build/juce-plugin --config Release --parallel
+          A=build/juce-plugin/JiantFM_artefacts/Release
+          build/juce-plugin/plugin_check_artefacts/Release/plugin_check.exe "$A/VST3/JIANT FM.vst3"
+          cd "$A" && 7z a -tzip "$GITHUB_WORKSPACE/JIANT-FM-Windows.zip" "VST3/JIANT FM.vst3" "Standalone/JIANT FM.exe" > /dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JIANT-FM-Windows
+          path: JIANT-FM-Windows.zip

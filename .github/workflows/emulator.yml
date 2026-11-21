@@ -69,12 +69,16 @@ jobs:
           shell = Path(template).read_text().replace("@VERSION@", version).replace("@PREVIEW@", "")
           target.write_text(shell)
           shutil.copy("web/emu/worklet.js", "build/emu/worklet.js")
+          shutil.copy("web/emu/devices.html", "build/emu/devices.html")   # (ports) every device's panel, one page
           for f in ("transfer.js", "transfer-ui.js", "../fm1backup.js"):   # (emu-transfer) the FM-1 panel
               shutil.copy("web/emu/" + f, "build/emu/" + Path(f).name)
           PY
           if [ "$E" = ADDITIVE ]; then
             node web/emu/additive-boot-test.mjs build/emu/felucca.wasm
           fi
+          # (ports) devices.html is this tree's (above), so is its MPC panel's firmware: felucca_hp.wasm (the big CPUs'
+          # build: SAMPLE, GRAIN, the slots), built here whatever web/EMULATOR pins; felucca.wasm stays the pinned one
+          EMU_ONLY=hp sh web/emu/build.sh
       - name: Browser emulator audio
         timeout-minutes: 4
         run: |
@@ -202,12 +206,18 @@ jobs:
       - name: the front page and the emulator under emu/
         run: |
           mkdir -p build/pages/emu
-          for f in index.html worklet.js fm1backup.js transfer.js transfer-ui.js felucca.wasm fonts; do
+          # (ports) devices.html beside what it loads (worklet.js, felucca.wasm, felucca_hp.wasm, fonts, index.html)
+          for f in index.html worklet.js fm1backup.js transfer.js transfer-ui.js felucca.wasm devices.html felucca_hp.wasm fonts; do
             if [ -e "build/emu/$f" ]; then mv "build/emu/$f" build/pages/emu/; fi
           done
           cp -r build/emu/. build/pages/
           cp web/landing/index.html build/pages/index.html
           cp web/landing/frecuencia.html build/pages/frecuencia.html
+          # (ports) the old address of the devices page (it was at the root, without its wasm): to emu/devices.html
+          printf '%s\n' '<!doctype html><meta charset="utf-8"><title>JIANT FM devices</title>' \
+            '<meta http-equiv="refresh" content="0; url=emu/devices.html">' \
+            '<script>location.replace("emu/devices.html" + location.hash)</script><a href="emu/devices.html">JIANT FM devices</a>' \
+            > build/pages/devices.html
           # (0.9.12) the front page's animations, recorded from the firmware's drawing code (tools/landing_anim)
           cp -r web/landing/anim build/pages/anim
           # (V10) the front page's screens: V10's own pages recorded moving (tools/landing_anim/build_screens.sh)

@@ -72,7 +72,7 @@ const missing = A.CONTROL_IDS.filter((id) => { const c = M.controls[id]; return 
 ok(!missing.length, "manual: every knob and button has its text, in both languages" + (missing.length ? " (" + missing + ")" : ""));
 ok(Object.keys(M.controls).every((id) => A.CONTROL_IDS.includes(id)), "manual: no entry for a control the drawing lacks");
 ok(A.KEYS.every((k) => A.keyLayers(k.name, "es").length > 0) && M.keyAlone[0] && M.keyAlone[1], "manual: every key has its text and at least one layer");
-const firmwareButtons = /B_NAME\[NB\] = \{([^}]*)\}/.exec(readFileSync(join(ROOT, "firmware/src/panel.c"), "utf8"))[1].match(/"([^"]+)"/g).map((s) => s.slice(1, -1));
+const firmwareButtons = [...readFileSync(join(ROOT, "firmware/src/panel.c"), "utf8").matchAll(/B_NAME\[NB\] = \{([^}]*)\}/g)].pop()[1].match(/"([^"]+)"/g).map((s) => s.slice(1, -1));   // (the FM-1's: the last; an SMK-37 table comes first)
 ok(firmwareButtons.every((b) => A.CONTROL_IDS.includes(b)), "manual: the buttons are panel.c's (FX SCL ENV LFO EDIT GLO HOME SAVE ARP SEQ PLAY REC OCT±)");
 const keyNames = new Set(A.KEYS.map((k) => k.name));
 const tokOk = (t) => A.CONTROL_IDS.includes(t) || keyNames.has(t) || t === "STEP";

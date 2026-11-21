@@ -1,0 +1,26 @@
+{
+  "kit": "mpc-red",
+  "qlinkGroups": "rows",
+  "pages": [
+    {
+      "name": "JIANT",
+      "controls": [
+        { "param": "Volume", "widget": "fader" },
+        { "param": "Sync", "widget": "switch" },
+        { "param": "Play", "widget": "switch" },
+        "empty"
+      ]
+    },
+    {
+      "name": "GENE",
+      "controls": [
+        { "param": "Genre", "widget": "knob", "overlay": "menu" },
+        { "param": "Seed", "widget": "knob" },
+        { "param": "Energy", "widget": "knob" },
+        { "param": "Form", "widget": "switch" },
+        { "param": "Generate", "widget": "switch" },
+        "empty", "empty", "empty"
+      ]
+    }
+  ]
+}
