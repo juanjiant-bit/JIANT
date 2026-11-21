@@ -148,8 +148,8 @@ static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32
         int32_t o2, f = o + o1;
         o1 = o;
         if (!fl) md = sine_i(ph2);                       /* (V10.7.74, the owner) the modulator a MATH formula: its x the
-                                                          * modulator's phase, its t the hit's time; a sample in four */
-        else if (!(i & 3u)) md = lofi_float(fl - 1u, hp + i * 4u, ph2 >> 19, &aux);
+                                                          * modulator's phase, its t the hit's time; a sample in eight (CPU) */
+        else if (!(i & 7u)) md = lofi_float(fl - 1u, hp + i * 4u, ph2 >> 19, &aux);
         o = sine_i(ph + (uint32_t)(md * ix) * 512u + (uint32_t)(f * fh));
         o2 = dx_tri(ph4 + (uint32_t)(o * lx));
         y[i] = mulq15(o + (((o2 - o) * lm) >> 6), ga >> 8);
