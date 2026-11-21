@@ -200,6 +200,13 @@ static void prefs_update(void)
         prefs_rev = 5u;
         settings_save();
     }
+    if (prefs_rev < 6u) {                              /* (V10.7.73, the owner) once: LARGE off (the normal layout), the
+                                                        * CLICK while recording (REC), COUNT-IN 1 BAR; later choices persist */
+        ui_prefs &= (uint8_t)~PREF_LARGE;
+        favorites.factory[15][28] = (uint8_t)((favorites.factory[15][28] & ~0x33u) | 0x11u);   /* (ui_rec_prefs, below) */
+        prefs_rev = 6u;
+        settings_save();
+    }
 }
 /* MENU > AUDIO CLICK, CLICK LEVEL, COUNT-IN (1.1, Discussion #131; click.c, seq.c): two bits each in another byte no
  * engine uses, saved with the settings: bits 0-1 CLICK (OFF REC ON), 2-3 CLICK LEVEL (stored 0 MID, 1 LOW, 2 HIGH),
