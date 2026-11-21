@@ -75,24 +75,7 @@ static void tech_dest(const track_t *t)
 }
 
 /* (V10.7.72, the owner) GLOBAL (BPM SWING CLOCK TUNE): the scope, its bars gone */
-/* (0.6.12) RETRIG (LOFI BYTE / FLOAT): the formula's time over four notes (their ticks under it): RTRG ON a ramp from 0
- * at each note (the formula from its start every time), OFF one ramp running on under them */
-static void tech_retrig(const track_t *t)
-{
-    int32_t x0 = TK_X0 + 10, w = PANEL_W - 20, base = TK_Y1 - 12, top = TK_Y0 + 10, on = t->p[P_LRTRG] != 0, i, py = base;
-    for (i = 0; i < 4; i++)                              /* the notes */
-        cv_rect(x0 + i * w / 4, base + 3, 3, 6, T_ACCENT);
-    for (i = 0; i <= w; i++) {
-        int32_t ph = on ? (i % (w / 4)) * 1000 / (w / 4) : i * 1000 / w;
-        int32_t y = base - ph * (base - top) / 1000;
-        if (i && !(on && i % (w / 4) == 0))
-            cv_line_t(x0 + i - 1, py, x0 + i, y, heat_y(y, base, top, T_THEME), 2);
-        else if (i)
-            cv_rect(x0 + i, y, 1, py - y + 1, T_RAISE);  /* (back to 0) */
-        py = y;
-    }
-    cv_text(x0, TK_Y0, &AF_S, on ? "FROM THE START, EVERY NOTE" : "THE FORMULA RUNS ON", T_DIM);
-}
+/* (V10.7.75: MATH's RESTART the scope, its ramps' picture gone: flash) */
 
 /* the page's technical graph, if it has one (1) */
 /* (V10.44) pictures in the Bluetooth segment (BTAPP_FN: the app slot full), drawn only once bt_hw_seg() said it is this
@@ -176,7 +159,6 @@ static int graph_tech(const track_t *t, const page_t *pg)
 {
     if (pg->scope != SC_GLOBAL)
         switch (pg->id[0]) {
-        case P_LRTRG: if (pg->id[1] != 0xFFu) return 0; tech_retrig(t); return 1;   /* (not DIGITAL's OP1 ENV) */
         case P_ED_FLT: tech_dest(t); return 1;
         case P_LN0: case P_LN4: if (!bt_hw_seg()) return 0; tech_levels(t, pg->id[0] - P_LN0); return 1;
         default: return 0;

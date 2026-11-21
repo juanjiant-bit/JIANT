@@ -49,6 +49,9 @@ typedef struct {                                         /* a hit */
 /* (V10.6q) the SINE's drive: 1 / tanh(its gain), Q12, every 8 COLOR (0..128): the driven sine's peak back to the sine's */
 static const uint16_t DX_NRM[17] = {16724, 11014, 8422, 6987, 6105, 5526, 5131, 4854, 4655, 4511, 4406, 4328, 4270, 4249, 4249,
                                     4249, 4249};
+/* (V10.7.75, the owner) a MATH modulator's RATIO (Q12): 1/4 .. 16, the harmonic ones and the bells' between */
+static const uint16_t DX_FRT[24] = {1024, 2048, 3072, 4096, 5793, 6144, 8192, 10240, 11305, 12288, 12868, 14336, 16384,
+                                    18432, 20480, 22528, 24576, 28672, 32768, 36864, 45056, 53248, 57344, 65535};
 /* the oscillator's modulator ratios (Q12), by wave */
 static const uint16_t DX_RATIO[4] = {4096, 4096, 6021, 11305};
 
@@ -184,7 +187,7 @@ static dx_lane_t dx_kit[8] __attribute__((section(".data.dx_kit")));            
  * nibble LAYER, a second oscillator (a triangle) at sqrt 2 of the pitch (the most out of tune with it there is) frequency-modulated
  * by the first, more as it goes up (1..15: a metal edge .. a clang with no note: the sound melts into the rhythm and
  * stays out of the harmony); high nibble FEEDBK, the sound's own oscillator fed back (on top of TONE's, the kit's) */
-static uint8_t dx_fml[8];                               /* (V10.7.74, the owner) each sound's MATH formula as its FM's
+static uint8_t dx_fml[8], dx_frt[8];                    /* (V10.7.75: dx_frt its RATIO, DX_FRT's place) */                               /* (V10.7.74, the owner) each sound's MATH formula as its FM's
                                                          * modulator: 0 the sine, 1..48 F01..F48 (project.c 'D' 'F') */
 static uint8_t dx_lay[8] __attribute__((section(".data.dx_lay")));                                /* (V10.6o: no initializer; the power-on and a project set it: the
                                                           * factory kit's, DX_LAY_DEF) */
@@ -414,7 +417,7 @@ static __attribute__((noinline)) void dx_run_fx(const dx_lane_t *L, dx_voice_t *
                                                           * modulator, the other waves their own ratio and COLOR's index
                                                           * under it. (V10.6o: one loop; without FM ENV, FEEDBK and LAYER
                                                           * its index steady, nothing fed back, as the plain FM loop was) */
-            uint32_t ph2 = v->ph2, ratio = wave == DXW_SINE ? 8192u : DX_RATIO[wave];
+            uint32_t ph2 = v->ph2, ratio = fl ? DX_FRT[(dx_frt[ln] + 3u) % 24u] : wave == DXW_SINE ? 8192u : DX_RATIO[wave];
             int32_t base = wave == DXW_SINE ? 0 : dx_fm_lim(q[DXP_COLOR] * 3, inc1, ratio), fe = fm ? dx_fm_lim(dx_fm_env(fm), inc1, ratio) : 0;   /* (snd1) */
             int32_t ix = base + ((fe * v->ep) >> 15), dix = ((base + ((fe * ep1) >> 15)) - ix) / (int32_t)n;
             int32_t o = v->mo, o1 = v->mo1, fbk = 0;

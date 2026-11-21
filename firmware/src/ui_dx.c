@@ -78,7 +78,9 @@ static __attribute__((noinline)) void dx_knob(const page_t *pg, uint32_t k, int3
         else if (k == 2u) {
             f = (uint32_t)clamp((int32_t)f + d, 0, 7);
             m = (m & ~0x1Cu) | (f >> 1) << 2 | (f & 1u) << 4;
-        } else m = (m & ~0x60u) | (uint32_t)clamp((int32_t)((m >> 5) & 3u) + d, 0, 3) << 5;
+        } else if (dx_fml[dx_ui_lane & 7u])            /* (V10.7.75) a formula: KNOB 4 its RATIO */
+            dx_frt[dx_ui_lane & 7u] = (uint8_t)((clamp((int32_t)((dx_frt[dx_ui_lane & 7u] + 3u) % 24u) + accel(EN_K4, s, 23), 0, 23) + 21) % 24);
+        else m = (m & ~0x60u) | (uint32_t)clamp((int32_t)((m >> 5) & 3u) + d, 0, 3) << 5;
         L->mode = (uint8_t)m;
         return;
     }
@@ -148,14 +150,21 @@ static void dx_cards(const page_t *pg)
             hot_gauge_column(1, "WAVE", fm ? wb : W[m & 3u], fm ? (int32_t)(fm + 3u) * 1000 / 51 : (int32_t)(m & 3u) * 1000 / 51);
         }
         draw_column(2, "FILTER", F[f], (m >> 4) & 1u ? "SHORT" : "", VAL(2u), (int32_t)(f * 2u + ((m >> 4) & 1u)) * 1000 / 7, ICON_TONE);
-        hot_gauge_column(3, "P.ENV", PM[(m >> 5) & 3u], (int32_t)((m >> 5) & 3u) * 333);
+        if (dx_fml[dx_ui_lane & 7u])                    /* (V10.7.75) a formula: its RATIO */
+        {   /* "2.76": the ratio, two decimals at most */
+            uint32_t ix = (dx_frt[dx_ui_lane & 7u] + 3u) % 24u, r = (DX_FRT[ix] * 100u + 2048u) >> 12;
+            fmt_int(val, (int32_t)(r / 100u));
+            if (r % 100u) { uint32_t l = str_len(val); val[l] = '.'; val[l + 1] = (char)('0' + r / 10u % 10u); val[l + 2] = (char)('0' + r % 10u); val[l + 3 - !(r % 10u)] = 0; }
+            hot_gauge_column(3, "RATIO", val, (int32_t)ix * 1000 / 23);
+        }
+        else hot_gauge_column(3, "P.ENV", PM[(m >> 5) & 3u], (int32_t)((m >> 5) & 3u) * 333);
         return;
     }
     if (pn == 2u) {                                     /* SOUND 2: NOISE COLOR PMOD */
         fmt_int(val, v[DXP_NOISE]);
         hot_gauge_column(1, "NOISE", val, v[DXP_NOISE] * 1000 / 127);
         fmt_int(val, v[DXP_COLOR]);
-        hot_gauge_column(2, "COLOR", val, v[DXP_COLOR] * 1000 / 127);
+        hot_gauge_column(2, dx_fml[dx_ui_lane & 7u] ? "MOD AMT" : "COLOR", val, v[DXP_COLOR] * 1000 / 127);   /* (V10.7.75) */
         if ((dx_ui_lane & 7u) == DV_CLAP) {             /* (V10.7.63) the CLAP's HANDS */
             fmt_int(val, (int32_t)dx_hands);
             gauge_column(3, "HANDS", dx_hands ? val : "OFF", dx_hands ? VAL(3u) : T_DIM, (int32_t)dx_hands * 1000 / 15);

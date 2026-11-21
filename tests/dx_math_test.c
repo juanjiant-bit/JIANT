@@ -31,13 +31,16 @@ int main(void)
     h0 = hit(DV_TOM, 0); h0b = hit(DV_TOM, 0); h5 = hit(DV_TOM, 5); h9 = hit(DV_TOM, 9);
     bad += check("DRUM-X MATH: no formula, the hit as before (twice the same)", h0 == h0b);
     bad += check("DRUM-X MATH: a formula changes the hit, each its own", h5 != h0 && h9 != h0 && h5 != h9);
+    dx_frt[DV_TOM] = 6;                                 /* (V10.7.75) RATIO 3 */
+    bad += check("DRUM-X MATH: its RATIO changes the hit", hit(DV_TOM, 5) != h5);
+    dx_frt[DV_TOM] = 0;
     {
         memset(dx_fml, 0, sizeof dx_fml);
-        dx_fml[DV_TOM] = 12; dx_fml[DV_KICK] = 48;
+        dx_fml[DV_TOM] = 12; dx_fml[DV_KICK] = 48; dx_frt[DV_TOM] = 9;
         ok = !project_save(1);
-        memset(dx_fml, 0, sizeof dx_fml);
+        memset(dx_fml, 0, sizeof dx_fml); memset(dx_frt, 0, sizeof dx_frt);
         project_load(1); frames(4);
-        ok &= dx_fml[DV_TOM] == 12 && dx_fml[DV_KICK] == 48;
+        ok &= dx_fml[DV_TOM] == 12 && dx_fml[DV_KICK] == 48 && dx_frt[DV_TOM] == 9;
         memset(dx_fml, 0, sizeof dx_fml);
         ok &= !project_save(2);
         dx_fml[DV_TOM] = 7;
