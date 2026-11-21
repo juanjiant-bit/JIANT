@@ -1590,7 +1590,8 @@ static int16_t gnear(int32_t c, int32_t w) { return (int16_t)(c ? clamp(grr(c - 
 static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint32_t ri)
 {
     const grecipe_t *r = &RECIPE[ri];
-    static const uint8_t EW[2][3] = {{55, 30, 15}, {70, 30, 0}};
+    static const uint8_t EW[2][3] = {{45, 30, 25}, {65, 25, 10}};   /* (V10.7.72, the owner: MATH WEST STRING more,
+                                                         * the third options theirs; a bass's third one time in ten) */
     uint32_t sub = role == RL_BASS && gs.ba >= BA_MT1, o = sub ? 0u : gpickw(EW[role == RL_BASS], 3), e, i, n, ft = r->ft & 7u, pre;   /* (the
                                                          * owner's references: minimal's and EBM's sub as written) */
     const engine_t *en;

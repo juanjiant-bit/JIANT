@@ -1047,7 +1047,7 @@ int main(void)
                     ri = gs.g->snd[r == RL_BASS ? GP_BASS : GP_LEAD];
                     a = &RECIPE[ri];
                     checks++;
-                    for (o = 0; o < (r == RL_BASS ? 2u : 3u); o++) ok |= a->o[o][0] == t->eng_req;
+                    for (o = 0; o < 3u; o++) ok |= a->o[o][0] == t->eng_req;   /* (V10.7.72: a bass's third too, one time in ten) */
                     if (!ok && !(t->eng_req == EG_A || (a->o[0][0] == ENGI_FM6 && t->eng_req == a->o[2][0]))) { eng_bad++; printf("  archetype: %s %s on %s\n", gs.g->name, r == RL_BASS ? "bass" : "lead", trk_engp(t)->name); }
                     ft = a->ft & 7u;
                     if (ft != 7u && t->p[P_FTYPE] != (int16_t)ft) flt_bad++;
