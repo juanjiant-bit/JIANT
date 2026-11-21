@@ -8,31 +8,12 @@ static uint8_t fx_mon;                                  /* (V10.7.59) ui_layer.c
  * keeps the value): the labels that need one */
 /* (V10.60) a knob's meaning, by its label: "LABEL" "\0" "HINT" "\0" in one string (V10.7.62, BYTE's: no pointers,
  * ~600 B of flash); its end the "" after the last */
-static const char KNOB_HINT[] =
-    "LEADER" "\0" "KEYS OR A TRACK PLAY THE ROLES" "\0"
-    "CHORD" "\0" "SETS: EACH KEY ITS OWN CHORD" "\0";
-
-static void knob_hint(const char *label)
+static void knob_hint(const char *label)           /* (V10.7.81: CHORD's the one left, no table) */
 {
-    const char *l = KNOB_HINT, *h = KNOB_HINT;
-    char b[40];
     if (!label || (ui_help_off & 1u))                  /* (MENU > DISPLAY > HELP OFF) */
         return;
-    for (; *l; l = h + str_len(h) + 1) {
-        h = l + str_len(l) + 1;
-        if (str_eq(l, label))
-            break;
-    }
-    if (!*l || str_eq(l, h))
-        return;
-    str_cpy(b, label, sizeof b);
-    str_cpy(b + str_len(b), ": ", sizeof b - str_len(b));
-    str_cpy(b + str_len(b), h, sizeof b - str_len(b));
-    if (ui.msg_t && str_eq(ui.msg, b)) {
-        ui.msg_t = 40;                                  /* (still turning: it stays) */
-        return;
-    }
-    ui_say(b, "");
+    if (str_eq(label, "CHORD"))
+        ui_say("CHORD: EACH KEY ITS OWN CHORD", "");
 }
 
 static void fx_macro_back(void);
@@ -2183,6 +2164,11 @@ static void presets_turn(int32_t s)
         str_cpy(b + str_len(b), "  STEP ", sizeof b - str_len(b));
         fmt_int(b + str_len(b), (int32_t)ui.cursor + 1);
         ui_message(b);
+        return;
+    }
+    if ((ui_help_off & 2u) && (ui.home || cur_page()->graph != GR_BROWSE)) {   /* (V10.7.81, the owner) MENU > PRESETS
+                                                         * MENU: the knob opens the PRESETS list, then scrolls it */
+        nav_put(SEC_SAVE, "PRESETS");
         return;
     }
     if (!ui.home && cur_page()->graph == GR_BROWSE && !br_armed) {   /* (V10.24) as KNOB 1 there */

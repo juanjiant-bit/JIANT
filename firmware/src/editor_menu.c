@@ -31,7 +31,7 @@ static const uint8_t ED_MENU[][2] = {
                                                         * the device's own gesture, is not offered) */
     {MI_OCTBEND, 26},                                  /* (V10.6z4) OCT BEND OFF / 1 .. 12 ST, a row of AUDIO */
     {MI_VEL, 27}, {MI_VELMIN, 28}, {MI_AT, 29}, {MI_VLEARN, 30},
-    {MI_HELP, 31},                                     /* (V10.7.60) HELP OFF / ON, a row of DISPLAY */   /* (V10.6z6) VELOCITY, VEL MIN, AFTERTOUCH, VEL LEARN,
+    {MI_HELP, 31}, {MI_PRSCR, 32},                     /* (V10.7.81) PRESETS SCROLL / MENU, DISPLAY */                                     /* (V10.7.60) HELP OFF / ON, a row of DISPLAY */   /* (V10.6z6) VELOCITY, VEL MIN, AFTERTOUCH, VEL LEARN,
                                                         * rows of CONTROL (vel.c) */
 };
 #define ED_MENU_N NELEM(ED_MENU)
