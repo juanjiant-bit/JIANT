@@ -71,8 +71,8 @@ int main(void)
     TSEL->step[1]=(step_t){.time=ST_NOTE,.hit=0x0f,.vel=100};ui.lane=2;cursor_set(1);render_preview(1);
     bad+=check("drum cursor previews the selected lane only",note_gate(DRUM_LANE_NOTE[2])&&!note_gate(DRUM_LANE_NOTE[0]));
 
-    edit_reset();prefs_rev=4;ui_prefs&=~PREF_LARGE;prefs_update();
-    bad+=check("v23 settings migrate once to larger controls",prefs_rev==5&&(ui_prefs&PREF_LARGE));
+    edit_reset();prefs_rev=4;ui_prefs|=PREF_LARGE;prefs_update();   /* (V10.7.73, the owner: LARGE off, CLICK REC, COUNT-IN 1 BAR, once) */
+    bad+=check("settings migrate once: LARGE off, CLICK REC, COUNT-IN 1 BAR",prefs_rev==6&&!(ui_prefs&PREF_LARGE)&&rp_get(RP_CLICK)==1u&&rp_get(RP_COUNTIN)==1u);
     ui_prefs&=~PREF_LARGE;prefs_update();
     bad+=check("later compact-type choice is respected",!(ui_prefs&PREF_LARGE));
     bad+=test_rec_layer();
