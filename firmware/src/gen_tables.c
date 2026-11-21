@@ -1023,10 +1023,13 @@ static const uint8_t GSUB_HH[] = {
 /* (V10.7.2) the latin genres' throws (gen_tables.c DM_CUMB2 ..): CUMBIA's sonidera (the row), villera, digital;
  * REGGAETON's classic (the row), romantico, perreo; DEMBOW's classic (the row), rapido */
 static const uint8_t GSUB_CU[] = {
-    3,   /* CUMBIA */
+    4,   /* CUMBIA (V10.7.77, the owner: "more villera": villera one throw in two) */
     0,
     8, GSO(drum, DM_CUMB2), GSO(bpm_lo, 88), GSO(bpm_hi, 98), GSO(bass[0], BA_CUMB3), GSO(bass[2], BA_CUMB3), GSO(cbars, 2),
     GSO(amt[GP_BASS], 55), GSO(amt[GP_CHORDS], 30),     /* (V10.7.8: RKT's music low under the drums) */
+    11, GSO(drum, DM_CUMB2), GSO(bpm_lo, 92), GSO(bpm_hi, 100), GSO(bass[0], BA_CUMB3), GSO(bass[2], BA_CUMB3), GSO(cbars, 2),
+    GSO(scale[1], SC_MIN), GSO(scale[3], SC_MIN), GSO(snd[GP_LEAD], SR_LEAD), GSO(amt[GP_LEAD], 90), GSO(amt[GP_CHORDS], 45),
+                                                        /* (V10.7.77) villera's "teclado": minor, the keyboard's lead up front */
     8, GSO(drum, DM_CUMB3), GSO(bpm_lo, 90), GSO(bpm_hi, 100), GSO(bass[0], BA_FIFTHS), GSO(bass[2], BA_CUMB2),
     GSO(snd[GP_BASS], SR_SUB), GSO(amt[GP_ARP], 35), GSO(kit, KIT_808),
 };

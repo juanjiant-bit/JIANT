@@ -1716,6 +1716,25 @@ int main(void)
         bad += gcheck("  a throw's own: IDM's breaks (3 maps at least), HOUSE's three basses, 8 progressions, extra kicks", maps >= 3u && ba_n == 3u && prog_n >= 8u && kx > 0u);
         bad += gcheck("  the anchors: the four on the floor, the dembow riddim's 3 + 3 + 2 in every bar", anchors == anch_n);
     }
+    {   /* (V10.7.77, the owner) DUBSTEP: the wobble's rate moving (the bass's LFO RATE automated, half a bar each, more
+         * than one rate in the loop); CUMBIA: villera one throw in two (92 .. 100 BPM) */
+        uint32_t s, n = 0, moving = 0, vill = 0, i;
+        for (s = 0; s < 6u; s++) {
+            int16_t r0 = 999; uint32_t ev = 0, diff = 0;
+            gen_with(genre_of("DUBSTEP"), 300u + 17u * s, 60, 0);
+            for (i = 0; i < motion.count; i++)
+                if (MOTION_ID(&motion.event[i]) == P_LRATE && MOTION_TRK(&motion.event[i]) == gs.trk_of[RL_BASS]) {
+                    ev++;
+                    if (r0 != 999 && MOTION_VAL(&motion.event[i]) != r0) diff = 1;
+                    r0 = (int16_t)MOTION_VAL(&motion.event[i]);
+                }
+            n += ev >= 2u; moving += diff;
+            gen_with(genre_of("CUMBIA"), 500u + 31u * s, 60, 0);
+            vill += song.g[G_BPM] >= 88;
+        }
+        printf("gen: DUBSTEP x 6: %u with the wobble's rate automated, %u moving; CUMBIA x 6: %u villera\n", n, moving, vill);
+        bad += gcheck("V10.7.77 DUBSTEP's wobble rate moves half a bar each; CUMBIA villera often", n == 6u && moving >= 4u && vill >= 2u);
+    }
     printf(bad ? "gen: %d FAILED\n" : "gen: all passed\n", bad);
     return bad ? 1 : 0;
 }
