@@ -12466,16 +12466,16 @@ static int test_lz_key(void)
     ui_power_on(); frame();
     press(B_SCL); frame();
     ok = pd_on() && lz_fam() == LZ_KEY && pd_level() == 0u && str_eq(cur_page()->title, "SCL") && lz_tab_lit(0) &&
-         lz_tabs() == 3u && lz_crumb_is("SCL \xB7 KEY \xB7 KEY") && lz_count_is("1/3");   /* (V10.25: SCENE third) */
+         lz_tabs() == 3u && lz_crumb_is("SCL \xB7 KEY \xB7 KEY") && lz_count_is("1/4");   /* (V10.25: SCENE third; V10.7.66: HARMONY) */
     frames(320); press(B_SCL); frame();
     ok &= pd_level() == 1u && str_eq(cur_page()->title, "CHORD") && lz_tab_lit(1) && lz_crumb_is("SCL \xB7 CHORD \xB7 CHORD");
     frames(320); press(B_SCL); frame();
     ok &= pd_level() == 2u && str_eq(cur_page()->title, "SCENE");
     frames(320); press(B_SCL); frame();
     ok &= pd_level() == 0u && str_eq(cur_page()->title, "SCL");
-    turn(EN_SELECT, 4); frame();
+    turn(EN_SELECT, 5); frame();
     ok &= str_eq(cur_page()->title, "SCENE");                       /* (SCL's chain ends there: not into ARP) */
-    turn(EN_SELECT, -1); frame();
+    turn(EN_SELECT, -2); frame();                                   /* (CHORD, past HARMONY) */
     frames(320); press(B_ARP); frame();
     ok &= pd_level() == 2u && str_eq(cur_page()->title, "ARP") && lz_tab_lit(0) && lz_tabs() == 1u &&
           lz_crumb_is("ARP \xB7 ARP \xB7 ARP") && lz_count_is("1/2");

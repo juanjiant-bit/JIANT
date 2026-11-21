@@ -726,6 +726,26 @@ static volatile uint8_t fx_lock_on;              /* (0.6.44) ui_layer.c: the FX 
                                                  * the keys are its effects without FX held */
 static volatile uint32_t beat_pos, beat_n;      /* samples into the beat, the beat of the bar (0..3) */
 static volatile uint32_t bar_n;                 /* (0.6.43) the bars since PLAY (MUTATE: project.c mutate_poll) */
+/* (V10.7.66, the owner) SCL > HARMONY: the progression's degrees (gen.c hm_load, the main loop: PROG's), how many; a
+ * sequence's note on track t this many steps of its scale up (the chord now: the bar and beat, LENGTH; EVOLVE now and
+ * then the relative, a fourth), 0 off or for SKIP's track */
+static int8_t hm_dg[4];
+static uint8_t hm_n;
+static int32_t hm_shift(const track_t *t)
+{
+    uint32_t pos, i, cyc, h;
+    int32_t d;
+    if (!song.g[G_HPROG] || !hm_n || (uint32_t)(t - trk) + 1u == (uint32_t)song.g[G_HSKIP])
+        return 0;
+    pos = (bar_n * 4u + beat_n) >> (uint32_t)song.g[G_HLEN];   /* (LENGTH: 1, 2, 4, 8, 16 beats) */
+    i = pos % hm_n;
+    cyc = pos / hm_n;
+    d = hm_dg[i];
+    h = ((cyc + 1u) * 2654435761u ^ (i + 1u) * 40503u) >> 16;
+    if (cyc && h % 128u < (uint32_t)song.g[G_HEVO])
+        d += cyc & 1u ? 3 : 2;                          /* (a fourth up, the relative) */
+    return d;
+}
 static uint8_t mut_n[NTRK];                     /* (V10.6z3) each track's EUCLID MUTATEs, counted (ui_euclid.c eu_mutate; the
                                                  * editor's MUTATE push, editor.c) */
 
@@ -3094,8 +3114,11 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
             if (octs)                               /* (0.6.82: with a RAND too) */
                 x = (uint32_t)clamp((int32_t)x + octs, 0, 127);
         }
-        if (song.g[G_STRN] && !kit)                 /* (JIANT 0.4) STRN: up / down the scale, every sequence */
-            x = (uint32_t)clamp(scale_steps(t, (int32_t)x, song.g[G_STRN]), 0, 127);
+        if ((song.g[G_STRN] || song.g[G_HPROG]) && !kit) {   /* (JIANT 0.4) STRN: up / down the scale, every sequence;
+                                                         * (V10.7.66) HARMONY's chord */
+            int32_t d = song.g[G_STRN] + hm_shift(t);
+            if (d) x = (uint32_t)clamp(scale_steps(t, (int32_t)x, d), 0, 127);
+        }
         if (qseq) {                                 /* QNT SEQ: onto the scale now; two notes snapping */
             x = (uint32_t)clamp(scale_snap(t, (int32_t)x), 0, 127);   /* together play once */
             for (j = 0; j < m && nn[j] != x; j++)

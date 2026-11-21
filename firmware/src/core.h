@@ -259,6 +259,9 @@ enum {                          /* global parameters */
                                  * project.c: block 'DD', after GLUE's) */
     G_DRTIM,                    /* (V10.49) the delay's right TIME as a ratio of the left's: 0 =L (as before), x1/2 .. x2
                                  * (fx.c dly_rate; project.c: block 'DR', the last) */
+    G_HPROG, G_HLEN, G_HEVO, G_HSKIP,   /* (V10.7.66, the owner) SCL > HARMONY: a progression every melodic sequence follows
+                                 * (OFF, gen_tables.c PROG's), a chord's length (1/4 .. 4 BARS), EVOLVE (its substitutions,
+                                 * %), the track that does not follow (NONE, T1..T6) (seq.c hm_shift; project.c: block 'HM') */
     G_COUNT
 };
 #define G_SL_N (G_SLP15 + 1 - G_SLMODE)     /* the SLICER's globals (stored together: project.c, song_chain.c) */

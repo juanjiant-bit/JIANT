@@ -596,6 +596,7 @@ static uint32_t proj_packed_size(const project_t *q)
         n += 3u;
     for (t = 0; t < NTRK; t++)                          /* (V10.7.64) the tracks' GAIN */
         if (q->tgain[t]) { n += 2u + NTRK; break; }
+    n += q->g[G_HPROG] ? 6u : 0u;                       /* (V10.7.66) HARMONY */
     return n;
 }
 static int proj_split_ok(const uint8_t *s)
@@ -798,6 +799,10 @@ static int proj_pack(project_store_t *out, const project_t *q)
     for (i = 0; i < NTRK && !q->tgain[i]; i++) {}
     if (i < NTRK) {                                     /* (V10.7.64) the tracks' GAIN (the last) */
         b[pos++] = 'T'; b[pos++] = 'G'; memcpy(b + pos, q->tgain, NTRK); pos += NTRK;
+    }
+    if (q->g[G_HPROG]) {                                /* (V10.7.66) SCL > HARMONY (the last) */
+        b[pos++] = 'H'; b[pos++] = 'M';
+        for (i = 0; i < 4u; i++) b[pos++] = (uint8_t)q->g[G_HPROG + i];
     }
     memcpy(b + PROJC_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJC_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
@@ -1144,6 +1149,11 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
     if (pos + 2u + NTRK <= room && b[pos] == 'T' && b[pos + 1u] == 'G') {
         for (uint32_t g = 0; g < NTRK; g++) q->tgain[g] = b[pos + 2u + g] > 12u ? 12u : b[pos + 2u + g];
         pos += 2u + NTRK;
+    }
+    for (i = 0; i < 4u; i++) q->g[G_HPROG + i] = GP[G_HPROG + i].def;   /* (V10.7.66) HARMONY: as saved, else OFF */
+    if (pos + 6u <= room && b[pos] == 'H' && b[pos + 1u] == 'M') {
+        for (i = 0; i < 4u; i++) q->g[G_HPROG + i] = (int16_t)clamp(b[pos + 2u + i], GP[G_HPROG + i].min, GP[G_HPROG + i].max);
+        pos += 6u;
     }
     proj_new_tracks(q, nt);                             /* (a FUNC of fewer tracks: the rest at power-on) */
     for (t = nt; t < NTRK; t++)

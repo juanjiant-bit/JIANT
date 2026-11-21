@@ -47,6 +47,13 @@ static const char *const N_SCALE[] = {"CHR", "MAJ", "MIN", "DOR", "MIX", "PEN", 
 static const char *const N_ONOFF[] = {"OFF", "ON"};
 static const char *const N_DLYTYPE[] = {"ANALOG", "DIGITAL", "REVERS", 0};   /* (0.6.90) DLY 3 > TYPE; (V10.6g) REVERSE */
 static const char *const N_PFXRES[] = {"1/8", "1/16", "1/32"};     /* (0.6.99) FX > PUNCH: the lane's step */
+/* (V10.7.66) SCL > HARMONY: the progressions, gen_tables.c PROG's order (1 + PR_*) */
+static const char *const N_HPROG[] = {"OFF", "PEDAL", "I-bVII", "I-VI", "I-IV", "I-V", "I-II", "I-III", "IV-I", "AXIS",
+                                      "TRANCE", "MINOR 4", "ANDALUZ", "EPIC", "50S", "CADENCE", "DEEP", "DEEP VI", "II-V-I",
+                                      "SUS", "POP", "PHRYGIAN", "ELECTRO", "DREAM", "DREAM 2", "TURN", "STAB", "NEO SOUL",
+                                      "NEOSOUL2", "JAZZ 2", "JAZZ 3", "IDM 1", "IDM 2", "LYDIAN", "PROG"};
+static const char *const N_HLEN[] = {"1/4", "1/2", "1 BAR", "2 BARS", "4 BARS"};
+static const char *const N_HSKIP[] = {"NONE", "T1", "T2", "T3", "T4", "T5", "T6"};
 /* seq.c kb_map; 1 = SNAP (stored projects: the former ON); 3 = SEQ: SNAP, and the sequencer's notes snap too as
  * they play (seq.c seq_step; the steps keep what was written). Append-only: older projects hold 0..2 */
 static const char *const N_QUANT[] = {"OFF", "SNAP", "WHITE", "SEQ"};
@@ -224,6 +231,10 @@ static const param_desc_t GP[G_COUNT] = {
     [G_PFXLEN] = PD("LEN", F_INT, 1, 64, 64),    /* (0.6.99) the punch-in lane: its steps and their size */
     [G_PFXRES] = {"RES", F_ENUM, 0, 2, 1, N_PFXRES},
     [G_DRTIM] = PE("RIGHT", N_DRTIM, 0),           /* (V10.49) the right echo's time, a ratio of TIME (fx.c dly_rate) */
+    [G_HPROG] = PE("PROG", N_HPROG, 0),            /* (V10.7.66) SCL > HARMONY */
+    [G_HLEN] = PE("LENGTH", N_HLEN, 2),
+    [G_HEVO] = PD("EVOLVE", F_PCT, 0, 127, 0),
+    [G_HSKIP] = PE("SKIP", N_HSKIP, 0),
     [G_DDRV] = PD("DRIVE", F_PCT, 0, 100, 0),    /* (snd2) the delay's loop driven: 0 clean as before, 100 x4 into the clip */
     [G_DMOD] = PD("MOD", F_PCT, 0, 127, 0),      /* (0.6.89: 0, the repeats exact copies, by default) */     /* (0.6.86) the delay's drift: WOW + FLUTTER (fx.c dly_wow_adv) */
     [G_RMOD] = PD("MOD", F_PCT, 0, 127, 0),      /* the reverb's modulation depth (ROOM: the combs, SPRING: its wobble) */
@@ -754,6 +765,8 @@ static const page_t PAGES[] = {
     {"SCL", FAM_SCL, SC_TRACK, GR_SCALE, {P_ROOT, P_SCALE, P_QUANT, ID_ALLTR}},   /* (JIANT: ROOT, SCALE every melodic track's;
                                                          * 0.7.6: ALL TR, the global, where TRANS was: SCL 2 gone) */
     {"CHORD", FAM_SCL, SC_TRACK, GR_NONE, {P_CHRD, P_CVOI, P_CSTR, 0xFF}},   /* (0.6.81) a key plays a chord (seq.c) */
+    {"HARMONY", FAM_SCL, SC_GLOBAL, GR_NONE, {G_HPROG, G_HLEN, G_HEVO, G_HSKIP}},   /* (V10.7.66, the owner) a progression
+                                                         * every melodic sequence follows (seq.c hm_shift) */
     {"SCENE", FAM_SCL, SC_TRACK, GR_SCENE, {ID_SC0, ID_SC0 + 1u, ID_SC0 + 2u, ID_SC0 + 3u}},   /* (V10.25) the multitimbral
                                                          * mode: SCENE, TRACK, ROLE, CHORD (ui_scene.c) */
     {"EDIT 1", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E0, P_E1, P_E2, P_E3}},

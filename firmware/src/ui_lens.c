@@ -111,7 +111,8 @@ static const nv_t CE_LFO[] = {NV("MOD", 0, 0, 0), NV("LFO", 0, 1, 1), NV("LFO 2"
                               NV("MSEQ", "MOD SEQ", 2, 2), NV("MSEQ 2", "MOD SEQ 2", 2, 2)};   /* (0.9.18: LFO 2, PHASE) */
 static const ng_t CG_LFO[] = {{"MOD", 0}, {"LFO", 0}, {"MOD SEQ", "MSEQ"}};   /* (V10.7.59: MOD SEQ) */
 static const nv_t CE_SCL[] = {NV("SCL", "KEY", 0, 0),   /* (codex/coherence: KEY, its group's name) */
-                               NV("CHORD", 0, 1, 1), NV("SCENE", 0, 2, 2)};   /* (V10.25 SCENE) */
+                               NV("CHORD", 0, 1, 1), NV("HARMONY", 0, 1, 1), NV("SCENE", 0, 2, 2)};   /* (V10.25 SCENE;
+                                                         * V10.7.66 HARMONY) */
 static const ng_t CG_SCL[] = {{"KEY", 0}, {"CHORD", 0}, {"SCENE", 0}};
 static const nv_t CE_ARP[] = {NV("ARP", 0, 0, 2), NV("ARP 2", 0, 0, 2)};
 static const ng_t CG_ARP[] = {{"ARP", 0}};

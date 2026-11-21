@@ -3151,6 +3151,12 @@ static void gen_press(void)
 }
 static void gen_tick(void)                              /* (every UI frame) */
 {
+    if (song.g[G_HPROG]) {                              /* (V10.7.66) SCL > HARMONY's progression for seq.c */
+        const gprog_t *pr = &PROG[(uint32_t)(song.g[G_HPROG] - 1) % PR_N];
+        uint32_t k;
+        for (k = 0; k < 4u; k++) hm_dg[k] = pr->deg[k];
+        hm_n = pr->n;
+    }
     if (gen_wait && (!song.playing || bar_n != gen_wbar)) gen_press();
     gst_tick();
 }
