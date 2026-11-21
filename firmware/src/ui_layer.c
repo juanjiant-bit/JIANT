@@ -123,8 +123,6 @@ static const char *layer_head(void)                     /* FX: LATCH, and the MI
     static const char *const H[3][3] = {{"[FX] HOLD", "[FX] HOLD", "[FX] HOLD"},   /* (V10.7.59: every track, no SYN DRM) */
                                         {"[FX] LATCH", "[FX] LATCH", "[FX] LATCH"},
                                         {"[FX] LOCKED", "[FX] LOCKED", "[FX] LOCKED"}};
-    if (ui.layer == LAYER_MACRO && !layer_open())       /* (JIANT 0.4) the MACRO layer latched */
-        return "[LFO] LATCH";
     return ui.layer == LAYER_FX ? H[fx_lock && !ui.ly ? 2 : perf_latch_on ? 1 : 0][pfx_tgt % 3u] : LAYERS[ui.layer % LAYER_N].head;
 }
 static uint32_t layer_open(void)
@@ -839,8 +837,6 @@ static void layer_knob(uint32_t k, int32_t s)
         if (k == 0u)
             lys.song = (uint8_t)(clamp((int32_t)(lys.song ? lys.song - 1u : song_cur) + (s > 0 ? 1 : -1), 0,
                                        NSONG - 1) + 1);
-    } else if (l == LAYER_MACRO) {                      /* M1..M4 (the project's; the MOD slots that name them) */
-        macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
     } else if (l == LAYER_REC) {                        /* K1 CLICK, K2 REC Q */
         if (k == 1u)
             TSEL->p[P_HRQ] = (int16_t)clamp(TSEL->p[P_HRQ] + accel(EN_K2, s, 127), 0, 127);
@@ -1151,10 +1147,6 @@ static uint32_t ly_keyname(uint32_t l, int blk, uint32_t p, char *nm)
             return !ui.home && (cur_page()->graph == GR_USER || cur_page()->graph == GR_SLOTS) ? LS_OFF : LS_DIM;
         return p == SK_MODE && live.mode ? LS_SEL : p == SK_REC ? (live.srec == 2u ? LS_HELD : live.srec ? LS_WAIT : LS_OFF) : LS_OFF;
     }
-    if (l == LAYER_MACRO && !blk && p < 2u) {            /* F3 DICE, G3 CLEAR */
-        str_cpy(nm, p ? "CLEAR" : "DICE", 12);
-        return busy;
-    }
     return LS_OFF;
 }
 /* a key's fill and its name's ink by its state (named: n) */
@@ -1451,12 +1443,6 @@ static __attribute__((noinline)) void layer_cards(uint32_t l)
         text_column(1, "PART", val, live.cur >= 0 ? VAL(1u) : T_DIM);
         hot_text_column(2, "PLAY", live.mode ? "SONG" : "LOOP");
         text_column(3, "REC", live.srec == 2u ? "ON" : live.srec ? "ARM" : "OFF", live.srec ? VAL(3u) : T_DIM);
-    } else if (l == LAYER_MACRO) {                      /* M1..M4, 0..100 % */
-        static const char *const M[4] = {"M1", "M2", "M3", "M4"};
-        for (c = 0; c < 4u; c++) {
-            fmt_int(val, macro_v[c] * 100 / 127);
-            draw_column(c, M[c], val, "%", macro_routes(c, 0, 0) ? VAL(c) : T_DIM, macro_v[c] * 1000 / 127, ICON_MIX);
-        }
     } else if (l == LAYER_REC) {                        /* CLICK, then empty cards */
         rec_columns();
     } else if (l == LAYER_EDIT) {                       /* (0.9.9-seq2f) ENG, No. (PRESETS), FAV (ui_draw.c) */
@@ -1480,7 +1466,7 @@ static __attribute__((noinline)) void layer_cards(uint32_t l)
  * on. The header "[FX] HELD"; the breadcrumb "LENTE . MAP . FX" */
 static const khint_t *layer_foot(uint32_t l)
 {
-    return l == LAYER_FX && perf_latch_on ? FX_LATCH_FOOT : l == LAYER_MACRO && !layer_open() ? MAC_LATCH_FOOT : LAYERS[l].foot;
+    return l == LAYER_FX && perf_latch_on ? FX_LATCH_FOOT : LAYERS[l].foot;
 }
 static void layer_knobs(uint32_t l)                     /* the four as gauges in their knobs' colours, the keys' words */
 {
@@ -1537,7 +1523,7 @@ static __attribute__((noinline)) void layer_state(uint32_t l)
     uint32_t k, e;
     char b[48], v[8];
     str_cpy(b, LN[l], sizeof b);
-    str_cpy(b + str_len(b), l == LAYER_MACRO && !layer_open() ? " \xB7 LATCHED" : " \xB7 HELD", sizeof b - str_len(b));
+    str_cpy(b + str_len(b), " \xB7 HELD", sizeof b - str_len(b));
     cv_text(6, 5 - AF_X_CAP_Y, &AF_X, b, T_THEME);
     if (l == LAYER_FX && fx_lock)
         cv_text_r(234, 5 - AF_X_CAP_Y, &AF_X, "[FX] LOCKED", T_ACCENT, T_SURF);
@@ -1560,13 +1546,6 @@ static __attribute__((noinline)) void layer_state(uint32_t l)
         for (k = 0; glo_drums() && k < 4u; k++)
             lst_chip(GLO_GROUP[k], (dx_mute >> k) & 1u ? "MUTE" : "ON", !((dx_mute >> k) & 1u));
         lst_chip("UNDO", undo_ok ? "READY" : "-", undo_ok);
-    } else if (l == LAYER_MACRO) {                      /* the latch, each macro's routes */
-        lst_chip("LATCH", mac_latch ? "ON" : "OFF", mac_latch);
-        for (k = 0; k < 4u; k++) {
-            char m[3] = {'M', (char)('1' + k), 0};
-            uint32_t n = macro_routes(k, b, sizeof b);
-            lst_chip(m, n ? b : "NO ROUTE", n != 0u);
-        }
     } else if (l == LAYER_REC) {
         b[0] = 'T'; b[1] = (char)('1' + song.sel); b[2] = 0;
         lst_chip("ARMED", b, (song.rec >> song.sel) & 1u);
@@ -1624,8 +1603,6 @@ static __attribute__((noinline)) void draw_layer(void)
         sig += (uint32_t)(live.cur + 1) * 31u + (uint32_t)(live.req + 1) * 131u + live.srec * 7u + live.mode * 11u +
                live.dirty * 977u + lys.nqc * 4099u + (chain.running ? chain.row * 13u + chain.remaining * 17u : 0u) +
                (lys.song * 8u + song_cur) * 65537u;
-    else if (l == LAYER_MACRO)
-        sig += macro_sig();
     else if (l == LAYER_SEQ)
         sig += (uint32_t)drum_track(TSEL) * 31u + ui.lane * 5u + (uint32_t)chain_busy() * 3u + (uint32_t)TSEL->p[P_E0] * 131u + song.sel * 977u;
     else

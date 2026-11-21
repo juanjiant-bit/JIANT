@@ -229,6 +229,69 @@ def share_strings(ir, keep=()):
     return ir, n, saved
 
 
+# (BYTE 0.16, CPU) this clang's pi32v2 back end lowers a division by a constant to its divide instruction (iterative,
+# slow), never to a multiply: FORM alone filled the FM-1 (its oscillator 51 of them, called ~10 times a sample). In the
+# audio's hottest functions each i32 udiv / urem / sdiv / srem by a constant becomes the multiply (one 32x32->64
+# instruction) by floor((2^32-1)/d) and one correction: exact for every input (the estimate is at most one low)
+DIV_FNS = ("lofi_float", "lofi_byte")   # (V10.7.69, from JIANT BYTE 0.16, GPL-3.0: MATH's formulas, a sample each; not
+                                                         # the RAM code's, mix_part_m0 ..: its room)
+
+
+def const_divs(ir, names=DIV_FNS):
+    """(the IR, how many divisions turned into multiplies)"""
+    k = [0]
+
+    def udiv(x, d, p, rem):
+        m = (2**32 - 1) // d
+        o = [f"{p}a = zext i32 {x} to i64", f"{p}b = mul i64 {p}a, {m}", f"{p}c = lshr i64 {p}b, 32",
+             f"{p}q = trunc i64 {p}c to i32", f"{p}m = mul i32 {p}q, {d}", f"{p}r = sub i32 {x}, {p}m",
+             f"{p}g = icmp uge i32 {p}r, {d}"]
+        if rem:                                                        # (only what is used: no optimiser after this)
+            return o + [f"{p}s = select i1 {p}g, i32 {d}, i32 0", f"{p}ur = sub i32 {p}r, {p}s"]
+        return o + [f"{p}i = zext i1 {p}g to i32", f"{p}uq = add i32 {p}q, {p}i"]
+
+    def line(m):
+        ind, dst, op, x, d = m[1], m[2], m[3], m[5], int(m[6])
+        if d in (0, 1, -1) or (op[0] == "u" and d < 0):
+            return m[0]
+        a = abs(d)
+        if op[0] == "u" and a & (a - 1) == 0:
+            return m[0]
+        k[0] += 1
+        p = f"%dvq{k[0]}."
+        out = []
+        if op[0] == "s":
+            out += [f"{p}n = icmp slt i32 {x}, 0", f"{p}ng = sub i32 0, {x}", f"{p}ax = select i1 {p}n, i32 {p}ng, i32 {x}"]
+            ux = f"{p}ax"
+        else:
+            ux = x
+        if a & (a - 1) == 0:
+            sh = a.bit_length() - 1
+            out += [f"{p}ur = and i32 {ux}, {a - 1}"] if op.endswith("rem") else [f"{p}uq = lshr i32 {ux}, {sh}"]
+        else:
+            out += udiv(ux, a, p, op.endswith("rem"))
+        if op == "udiv":
+            out += [f"{dst} = add i32 {p}uq, 0"]
+        elif op == "urem":
+            out += [f"{dst} = add i32 {p}ur, 0"]
+        elif op == "sdiv":
+            q = f"{p}uq"
+            if d < 0:
+                out += [f"{p}nq = sub i32 0, {p}uq", f"{dst} = select i1 {p}n, i32 {p}uq, i32 {p}nq"]
+            else:
+                out += [f"{p}nq = sub i32 0, {q}", f"{dst} = select i1 {p}n, i32 {p}nq, i32 {q}"]
+        else:                                                          # srem: the sign of x
+            out += [f"{p}nr = sub i32 0, {p}ur", f"{dst} = select i1 {p}n, i32 {p}nr, i32 {p}ur"]
+        return "\n".join(ind + o for o in out)
+
+    body = re.compile(r"^(\s+)(%[\w.]+) = (udiv|urem|sdiv|srem)( exact)? i32 ([%\w.]+), (-?\d+)\s*$", re.M)
+
+    def fn(m):
+        return body.sub(line, m[0])
+    ir = re.sub(r"^define [^\n]*?@(" + "|".join(names) + r")\([^\n]*\{\n.*?^\}$", fn, ir, flags=re.M | re.S)
+    return ir, k[0]
+
+
 def hot_sections(ir):
     """HOT_FNS' definitions in the optimised IR given section ".hot_text.<name>"; (the IR, how many found)"""
     found = 0
@@ -516,6 +579,9 @@ def build_app():
             aligns[m.group(2)] = int(m.group(4))
             return f'{m.group(1)}, section ".rodata.n.{m.group(2)}"{m.group(3)}'
         ir, n, saved = share_strings(hot_ir)
+        if os.environ.get("FELUCCA_CONSTDIV") != "0":
+            ir, nd = const_divs(ir)
+            print(f"divisions: {nd} by a constant turned into multiplies (DIV_FNS)", flush=True)
         print(f"strings: {n} shared with a longer one ({saved} B)", flush=True)
         ir = re.sub(r'^(@"?([\w.]+)"? = [^\n]*? constant [^\n]*?)(, align (\d+))$', const, ir, flags=re.M)
         (OUT / "felucca_hot.ll").write_text(ir)
