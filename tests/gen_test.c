@@ -36,6 +36,7 @@ static void gen_with(uint32_t genre, uint32_t seed, uint32_t energy, uint32_t fo
 {
     uint32_t k;
     gp.genre = (uint8_t)genre; gp.seed = (uint16_t)seed; gp.energy = (uint8_t)energy; gp.form = (uint8_t)form;
+    gp.seed2 = 0; gp.mix = 0;                           /* (V10.7.66: the seed alone, not crossed) */
     for (k = 0; k < GP_N; k++) gp.amt[k] = GA_AUTO;
     gp.complex = 50; gp.swing = GA_AUTO; gp.human = 30;
     gen_go();

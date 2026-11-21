@@ -69,6 +69,24 @@ int main(void)
         bad += check("ENTRY BUILD: the kit first, a track a bar, the others the piece before until theirs", ok);
         if (!ok) printf("  n0 %u nb %u old %x\n", n0, nb, gst_old);
     }
+    {   /* (V10.7.66, the owner: "combinations of two seeds") a piece two seeds crossed: named A+B, not A's alone nor B's,
+         * the same three again the same piece */
+        uint32_t ha, hb, hx, hy;
+        uint16_t a, b2, mx;
+        transport_req = 2; blk();                       /* (stop) */
+        gp.entry = 0; gp.key = 0; gp.sig = 0;
+        gen_press(); frames(64);
+        a = gp.seed; b2 = gp.seed2; mx = gp.mix;
+        ok = mx != 0u && str_len(gp.last) > 6u && gp.last[str_len(gp.last) - 5u] == '+';
+        gen_make();                                     /* (the piece as made, its CPU fit aside) */
+        hx = steps_sig(&trk[0]) ^ steps_sig(&trk[1]) * 3u ^ steps_sig(&trk[2]) * 7u;
+        gp.mix = 0; gp.seed = a; gen_make(); ha = steps_sig(&trk[0]) ^ steps_sig(&trk[1]) * 3u ^ steps_sig(&trk[2]) * 7u;
+        gp.seed = b2; gen_make(); hb = steps_sig(&trk[0]) ^ steps_sig(&trk[1]) * 3u ^ steps_sig(&trk[2]) * 7u;
+        gp.seed = a; gp.seed2 = b2; gp.mix = mx; gen_make(); hy = steps_sig(&trk[0]) ^ steps_sig(&trk[1]) * 3u ^ steps_sig(&trk[2]) * 7u;
+        ok &= hx != ha && hx != hb && hx == hy;
+        if (!ok) printf("  cross: %s mix %x s2 %u  %x %x %x %x\n", gp.last, mx, b2, hx, ha, hb, hy);
+        bad += check("GEN: two seeds crossed (A+B, neither alone, the same three the same piece)", ok);
+    }
     printf(bad ? "gen-entry: %d FAILED\n" : "gen-entry: all ok\n", bad);
     return bad != 0;
 }

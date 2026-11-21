@@ -16,7 +16,7 @@
 #define EU_M 4u
 typedef struct { uint8_t h, n, r; } eul_t;
 typedef struct { uint8_t on, lane, src, root, ctr, vary; uint16_t mask, prev, seed; uint8_t m[EU_M]; eul_t a, l[NLANE];
-                 uint8_t rl; uint16_t rs; uint8_t mu[4], bar, flip, own; uint16_t rsm; uint32_t sg; } eu_t;   /* (V10.31)
+                 uint8_t rl; uint16_t rs; uint8_t mu[4], bar, flip, own; uint16_t rsm; uint32_t sg; uint16_t s2, xm; } eu_t;   /* (V10.31)
                                                          * rsm: the rs taken (the lanes the sequence had) */   /* (V10.28) rl: the recorded
                                                          * sequence's length, rs: what plays its rhythm (bit l a kit's lane,
                                                          * bit 0 a melody's), own: it had notes, sg: the steps last seen */   /* lane 0 ALL (a: DENSITY, STEPS, ROTATE), 1.. a lane; (V10.16) mu: MUTATE's
@@ -343,7 +343,10 @@ static __attribute__((noinline)) void eu_melody(uint32_t k, track_t *t, eu_t *e)
             static const int8_t SQ[4] = {0, 2, -1, 1};       /* (the motif's repeats: a sequence) */
             static const uint8_t NEAR[7] = {0, 0, 2, 2, 4, 4, 7};
             int32_t rg = e->m[1] ? e->m[1] : 5, M = MT[e->m[2] % 5u], u, f, d7;
-            uint32_t ct = e->m[0] % 7u, q = M ? j % (uint32_t)M : j, tot = M ? (uint32_t)M : nh;
+            uint32_t ct = e->m[0] % 7u, q = M ? j % (uint32_t)M : j, tot = M ? (uint32_t)M : nh, sv = eu_s;
+            eu_s = (((e->xm >> (j & 15u)) & 1u ? e->s2 : e->seed) + 1u) * 2654435761u ^ (j + 1u) * 40503u ^ cy * 0x9E37u;   /* (V10.7.66,
+                                                         * the owner: each note its seed's: MUTATE crosses two) */
+            if (!eu_s) eu_s = 1u;
             if (cy && j < 64u && !eu_ch(vc * 6u / 10u)) deg = mem[j];   /* (VARY: the first turn's note, or a new one) */
             else if (M && j >= (uint32_t)M && j < 64u && !eu_ch(vc * 6u / 10u)) deg = mem[q] + SQ[(j / M) & 3u];
             else {
@@ -361,6 +364,7 @@ static __attribute__((noinline)) void eu_melody(uint32_t k, track_t *t, eu_t *e)
             }
             if (!cy && j < 64u) mem[j] = (int8_t)deg;
             j++;
+            eu_s = sv;
             note = clamp(eu_deg(pc, np, base, deg), 24, 108);
             s->time = ST_NOTE;
             s->vel = (uint8_t)(!(i & 3u) ? 110 : 92);
@@ -473,20 +477,28 @@ static void eu_mutate(uint32_t k, eu_t *e)
     int32_t d = (int32_t)(1u + p / 40u);
     mut_n[k % NTRK]++;                                   /* (V10.6z3) the editor's MUTATE push (editor.c) */
     if (e->mu[2] != 1u) memcpy((uint8_t *)e + EU_Z0, eu_z[k], EU_ZN);
-    if (e->mu[2] == 2u && (e->flip ^= 1u) == 0u) { e->seed = eu_zs[k]; eu_gen(k, 0); return; }   /* (PULSE: the anchor's turn) */
-    eu_s ^= fm1_ms * 2654435761u + k;
-    e->seed = (uint16_t)(eu_rnd() | 1u);
+    if (e->mu[2] == 2u && (e->flip ^= 1u) == 0u) { e->seed = eu_zs[k]; e->xm = 0; eu_gen(k, 0); return; }   /* (PULSE: the anchor's turn) */
+    eu_s ^= fm1_ms * 2654435761u + k + mut_n[k % NTRK] * 0x9E3779B9u;   /* (V10.7.66: each mutation its own) */
+    if (dr) e->seed = (uint16_t)(eu_rnd() | 1u);
+    else {                                               /* (V10.7.66, the owner) a melody: the anchor's notes crossed with
+                                                         * a new seed's, note by note (four to twelve of sixteen new) */
+        e->s2 = (uint16_t)(eu_rnd() | 1u);
+        do e->xm = (uint16_t)eu_rnd(); while (__builtin_popcount(e->xm) < 4 || __builtin_popcount(e->xm) > 12);
+    }
     if ((w == 1u || w == 3u) && L->n) {                  /* RHYTHM */
         if (eu_ch(p)) L->h = (uint8_t)clamp((int32_t)L->h + (eu_ch(50) ? d : -d), al || !dr ? 1 : 0, al ? 8 : L->n);
         if (eu_ch(p)) L->r = (uint8_t)((L->r + eu_rnd() % (1u + p * L->n / 200u)) % L->n);
         if (al) eu_kit(e);
         e->rs &= (uint16_t)(al ? 0u : ~(1u << (dr ? sl - 1u : 0u)));
     }
-    if (w >= 2u)                                         /* FEEL */
+    if (w >= 2u) {                                       /* FEEL */
+        static const uint8_t MX[2][EU_M] = {{6, 15, 4, 100}, {100, 100, 100, 100}};   /* (a melody's CONTOUR RANGE MOTIF) */
         for (i = 0; i <= EU_M; i++) {
             uint8_t *m = i < EU_M ? &e->m[i] : &e->vary;
-            if (eu_ch(p)) *m = (uint8_t)clamp((int32_t)*m + (int32_t)(eu_rnd() % (p + 1u)) - (int32_t)p / 2, 0, 100);
+            int32_t top = i < EU_M ? MX[dr][i] : 100, st = i < EU_M && !dr && i < 3u ? 1 + (int32_t)p / 50 : (int32_t)p / 2;
+            if (eu_ch(p)) *m = (uint8_t)clamp((int32_t)*m + (int32_t)(eu_rnd() % (uint32_t)(2 * st + 1)) - st, 0, top);
         }
+    }
     eu_gen(k, 0);
 }
 /* (V10.16) called every UI frame: playing (not a song's chain), each track with EVERY on mutates in the last beat of
@@ -512,7 +524,7 @@ static void eu_oct(int up, int mu)
     if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
     if (mu) {
         if (up) eu_mutate(song.sel, e);
-        else { memcpy((uint8_t *)e + EU_Z0, eu_z[song.sel], EU_ZN); e->seed = eu_zs[song.sel]; eu_gen(song.sel, 1); }
+        else { memcpy((uint8_t *)e + EU_Z0, eu_z[song.sel], EU_ZN); e->seed = eu_zs[song.sel]; e->xm = 0; eu_gen(song.sel, 1); }
         ui_message(up ? "MUTATED" : "ANCHOR");
         return;
     }

@@ -41,9 +41,12 @@ static struct {
     uint8_t complex, swing, human;                      /* 0..100 (swing: GA_AUTO the genre's) */
     uint8_t page, hot;                                  /* the GEN screen's page, its last knob */
     uint8_t key, entry;                                 /* (V10.7.66, Hollusion) KEY 0 NEW 1 KEEP; ENTRY 0 ALL 1 BUILD */
+    uint16_t seed2, mix;                                /* (V10.7.66, the owner) a second seed, and the parts (GS_* bits)
+                                                         * drawn from it: a piece two seeds crossed (mix 0: the first's
+                                                         * alone, as before) */
     uint32_t sig;                                       /* the settings of the last piece made (OCT+ again: a new seed) */
-    char last[20];                                      /* the last piece: "HOUSE 0421" */
-} gp = {GEN_EXPLORE, 1, 50, 1, {GA_AUTO, GA_AUTO, GA_AUTO, GA_AUTO, GA_AUTO}, 50, GA_AUTO, 30, 0, 0, 0, 0, 0, ""};
+    char last[26];                                      /* the last piece: "HOUSE 0421+7733" */
+} gp = {GEN_EXPLORE, 1, 50, 1, {GA_AUTO, GA_AUTO, GA_AUTO, GA_AUTO, GA_AUTO}, 50, GA_AUTO, 30, 0, 0, 0, 0, 0, 0, 0, ""};
 
 /* (V10.7.39) the cost model of gcpu_est (below, gen_make's), on CPU TEST's scale (instructions a sample on the host: its
  * song 3083): a track its engine's own cost (in eighths), the voices the piece keeps sounding GCPU_VOX each, the reverb's
@@ -74,7 +77,7 @@ static uint32_t gr(void) { gq ^= gq << 13; gq ^= gq >> 17; gq ^= gq << 5; return
 static uint32_t gseed_mix(uint32_t part);
 static void gseed(uint32_t part)
 {
-    gq = ((uint32_t)gp.seed + 1u) * 2654435761u ^ (part + 1u) * 0x9E3779B9u ^ 0x6D2B79F5u ^
+    gq = ((uint32_t)((gp.mix >> part) & 1u ? gp.seed2 : gp.seed) + 1u) * 2654435761u ^ (part + 1u) * 0x9E3779B9u ^ 0x6D2B79F5u ^
          gseed_mix(part);                               /* (0.8.3: a genre's own motifs, figures and drums; V10.6z10: a
                                                          * section's bass, chords and arp their own variation) */
     if (!gq) gq = 1;
@@ -3074,6 +3077,7 @@ static __attribute__((noinline)) void gcpu_fit(void)
 /* the piece made from the settings (UNDO brings back what was there); the message */
 static void gen_go(void)
 {
+    uint32_t n;
     uint32_t k;
     char b[8];
     uint32_t play = song.playing || chain_busy() || seq_counting();
@@ -3093,9 +3097,14 @@ static void gen_go(void)
     if (!gls.u) gcpu_fit();                             /* (V10.7.39) within the FM-1's budget */
     str_cpy(gp.last, gs.g->name, sizeof gp.last);
     k = str_len(gp.last);
-    b[0] = ' '; b[1] = (char)('0' + gp.seed / 1000u % 10u); b[2] = (char)('0' + gp.seed / 100u % 10u);
-    b[3] = (char)('0' + gp.seed / 10u % 10u); b[4] = (char)('0' + gp.seed % 10u); b[5] = 0;
-    str_cpy(gp.last + k, b, sizeof gp.last - k);
+    for (n = 0; n < 2u; n++) {                          /* "0421", (V10.7.66) "+7733" crossed */
+        uint32_t sd = n ? gp.seed2 : gp.seed;
+        if (n && !gp.mix) break;
+        b[0] = n ? '+' : ' '; b[1] = (char)('0' + sd / 1000u % 10u); b[2] = (char)('0' + sd / 100u % 10u);
+        b[3] = (char)('0' + sd / 10u % 10u); b[4] = (char)('0' + sd % 10u); b[5] = 0;
+        str_cpy(gp.last + k, b, sizeof gp.last - k);
+        k = str_len(gp.last);
+    }
     ui_say("GENE: ", gp.last);
     str_cpy(ui.msg2, gls.u && !gls.room ? "NO EMPTY TRACK: ARRANGED" : live.mode ? "PLAY: SONG / SAVE: ALL PARTS" : "UNDO: GLO + G4", sizeof ui.msg2);
     if (play) { if (live.mode) chain_play_ui(); else transport_req = 1; }
@@ -3107,6 +3116,7 @@ static uint32_t gen_sig(void)                           /* the settings that mak
     h = (h ^ gp.genre) * 16777619u; h = (h ^ gp.seed) * 16777619u; h = (h ^ gp.energy) * 16777619u; h = (h ^ gp.form) * 16777619u;
     for (k = 0; k < GP_N; k++) h = (h ^ gp.amt[k]) * 16777619u;
     h = (h ^ gp.complex) * 16777619u; h = (h ^ gp.swing) * 16777619u; h = (h ^ gp.human) * 16777619u;
+    h = (h ^ gp.seed2 ^ (uint32_t)gp.mix << 14) * 16777619u;
     return h ^ (trk_live << 28);
 }
 static __attribute__((noinline)) void gen_new_seed(void)
@@ -3120,6 +3130,9 @@ static __attribute__((noinline)) void gen_new_seed(void)
         for (j = 0; j < 4u && gsr.s[j] != gp.seed; j++) {}
     } while (j < 4u);
     gsr.s[gsr.sat++ & 3u] = gp.seed;
+    gp.seed2 = (uint16_t)(rng() % 10000u);              /* (V10.7.66, the owner) crossed with a second: the parts but
+                                                         * the genre and key (GS_PICK) from it by a mask, three to nine */
+    do gp.mix = (uint16_t)(rng() & 0xFFEu); while (__builtin_popcount(gp.mix) < 3 || __builtin_popcount(gp.mix) > 9);
     gsr.thrown = 1;                                     /* (V10.6z10: gen_make keeps it off the genre's last eight) */
 }
 /* OCT+ on the GEN screen: the piece; the same settings again, or the first press since power-on (V10.6l: it was always
