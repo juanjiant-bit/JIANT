@@ -129,6 +129,32 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
     }
     ui.force = 1;
 }
+/* (V10.7.70, the owner) SCL > HARMONY's picture: the progression's chords as roman numerals in the key ("-" minor,
+ * "o" diminished), each its root's colour (SCL's keys'), its name under it; the one playing lit */
+static __attribute__((noinline)) void graph_harm(void)
+{
+    static const char RN[7][4] = {"I", "II", "III", "IV", "V", "VI", "VII"};
+    const track_t *t = trk;
+    uint32_t i, m, np = 0, now = song.playing ? hm_now() : 9u;
+    uint8_t pc[12];
+    while (t < trk + trk_live - 1 && drum_track(t)) t++;
+    m = scale_mask(t);
+    if (__builtin_popcount(m & 0xFFFu) != 7) m = 0xAB5u;   /* (no mode of seven: major's, as seq.c's chords) */
+    for (i = 0; i < 12u; i++) if ((m >> i) & 1u) pc[np++] = (uint8_t)i;
+    if (!song.g[G_HPROG]) { cv_text_in(8, graph_ht / 2 - 8, 224, &AF_M, "PROG: A PROGRESSION", T_DIM, T_SURF); return; }
+    for (i = 0; i < hm_n; i++) {
+        uint32_t d = (uint32_t)hm_dg[i] % 7u, r = pc[d], th = pc[(d + 2u) % 7u] + 12u - r, fi = pc[(d + 4u) % 7u] + 12u - r;
+        uint16_t c = note_col(r + (uint32_t)t->p[P_ROOT]);
+        char b[6], *q = b;
+        const char *s = RN[d];
+        while (*s) *q++ = *s++;
+        if (fi % 12u == 6u) *q++ = 'o';                   /* (the font's capitals: "-" minor, "o" diminished) */
+        else if (th % 12u == 3u) *q++ = '-';
+        *q = 0;
+        cv_rect(8 + (int32_t)i * 56, 2, 50, graph_ht - 4, i == now ? c : ux_mix(c, T_SURF, 70));
+        cv_text_in(8 + (int32_t)i * 56, graph_ht / 2 - 14, 50, &AF_L, b, i == now ? T_BG : T_TEXT, T_SURF);
+    }
+}
 static void graph_scene(void)
 {
     uint32_t i, j, n, h = graph_h();

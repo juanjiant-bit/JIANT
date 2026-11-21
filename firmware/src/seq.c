@@ -731,6 +731,8 @@ static volatile uint32_t bar_n;                 /* (0.6.43) the bars since PLAY 
  * then the relative, a fourth), 0 off or for SKIP's track */
 static int8_t hm_dg[4];
 static uint8_t hm_n;
+static uint32_t hm_now(void) { return hm_n ? ((bar_n * 4u + beat_n) >> (uint32_t)song.g[G_HLEN]) % hm_n : 0u; }   /* (V10.7.70:
+                                                         * the chord playing, SCL > HARMONY's picture) */
 static int32_t hm_shift(const track_t *t)
 {
     uint32_t pos, i, cyc, h;

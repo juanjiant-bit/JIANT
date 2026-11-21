@@ -1347,12 +1347,15 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
     h ^= (uint32_t)pg->graph * 131u + TSEL->eng_req + song.sel * 7777u + ui.page * 1291u;
     if (strip_kind() == SK_TITLE)                    /* MENU > LARGE: the page's title (its engine, its number); (V10.8) an
                                                       * EDIT page: the engine's creature, alive */
-        return h ^ 0x5A17u ^ (pg->fam == FAM_EDIT ? anim_fr / 2u * 2654435761u : 0u);
+        return h ^ 0x5A17u ^ (pg->fam == FAM_EDIT ? anim_fr / 2u * 2654435761u : 0u) ^
+               (pg->graph == GR_HARM ? (hm_now() + 1u) * 40503u * song.playing + (uint32_t)song.g[G_HPROG] * 977u : 0u);   /* (V10.7.70) */
     if ((pg->graph == GR_NONE && !fx_on()) || SPLIT_PAGE(pg) || pg->graph == GR_ARP ||
         (pg->graph == GR_MOTION && !seq_roll_view(pg))) h ^= anim_fr / 2u;   /* (0.9.9-seq2b: AUTOMATION the roll, still) */   /* (0.8.5:
                                                          * FX's lens pictures change with their values, */
     if (fx_on() && (song.playing || bg_energy() > 2))   /* .. and with the sound while it sounds: FX live) */
         h ^= anim_fr / 2u * 2246822519u;
+    if (pg->graph == GR_HARM)                        /* (V10.7.70) the chord playing, the progression */
+        h ^= (hm_now() + 1u) * 40503u * song.playing + (uint32_t)song.g[G_HPROG] * 977u;
     if (pg->graph == GR_LFO && ui_hold < 3u)             /* (JIANT 0.5) the LFO runs: its phase, its level (0.9.9-beta4: held under load) */
         h ^= (t->lfo_ph >> 23) * 2654435761u ^ (uint32_t)(t->lfo_val * t->lfo_fade >> 22);
     if (pg->graph == GR_ADSR && ui_hold < 3u)            /* the envelope's dot: every voice's stage and level */
@@ -2092,7 +2095,8 @@ static void draw_graph(void)
             vx_small = 1;
             ok = pg->fam == FAM_EDIT && vx_draw(t, 8, 2, 224, (int32_t)graph_ht - 4, -1);   /* (V10.8) EDIT: the creature */
             vx_small = 0;
-            if (!ok) graph_title();
+            if (!ok && pg->graph == GR_HARM) graph_harm();   /* (V10.7.70) HARMONY: its chords */
+            else if (!ok) graph_title();
         }
         graph_ht = 100;
     } else if (ui.confirm == CF_DICE_ALL) {          /* (0.8.5) GEN, HOME's lens's last level (gen.c) */
@@ -2108,6 +2112,9 @@ static void draw_graph(void)
     } else if (pg->graph == GR_SCENE) {              /* (V10.25) SCL > SCENE: the six tracks' roles */
         cv_oy = 0;
         graph_scene();
+    } else if (pg->graph == GR_HARM) {               /* (V10.7.70) SCL > HARMONY: the progression's chords */
+        cv_oy = 0;
+        graph_harm();
     } else if (pg->graph == GR_EUCLID) {             /* (V10.6) SEQ > EUCLID / MODES: the ring, the lanes or the notes */
         cv_oy = 0;
         graph_euclid(t);
