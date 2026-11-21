@@ -28,6 +28,7 @@ int main(void)
     uint32_t h0, h0b, h5, h9;
     ui_power_on();
     dx_kit[DV_TOM].a[DXP_COLOR] = dx_kit[DV_TOM].b[DXP_COLOR] = 80;
+    dx_kit[DV_TOM].mode = (uint8_t)((dx_kit[DV_TOM].mode & ~3u) | DXW_FM);   /* (a formula: WAVE FM, as SOUND 3 sets it) */
     h0 = hit(DV_TOM, 0); h0b = hit(DV_TOM, 0); h5 = hit(DV_TOM, 5); h9 = hit(DV_TOM, 9);
     bad += check("DRUM-X MATH: no formula, the hit as before (twice the same)", h0 == h0b);
     bad += check("DRUM-X MATH: a formula changes the hit, each its own", h5 != h0 && h9 != h0 && h5 != h9);

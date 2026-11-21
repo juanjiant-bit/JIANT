@@ -16,7 +16,7 @@ fm6_render 395
 fm6_op_run 72
 fm6_op_fb 25
 dx_run_fx 392
-dx_layer 67
+dx_layer 84
 drum_side_ramp 45
 drum_mix 125
 drum_bus 102

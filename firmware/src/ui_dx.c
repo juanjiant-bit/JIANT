@@ -73,7 +73,7 @@ static __attribute__((noinline)) void dx_knob(const page_t *pg, uint32_t k, int3
                                                          * MATH formula the FM's modulator; COLOR its index) */
             int32_t w = clamp((dx_fml[dx_ui_lane & 7u] ? 3 + (int32_t)dx_fml[dx_ui_lane & 7u] : (int32_t)(m & 3u)) + d, 0, 51);
             dx_fml[dx_ui_lane & 7u] = (uint8_t)(w > 3 ? w - 3 : 0);
-            if (w <= 3) m = (m & ~3u) | (uint32_t)w;
+            m = (m & ~3u) | (uint32_t)(w <= 3 ? w : DXW_FM);   /* (a formula: the FM's loop) */
         }
         else if (k == 2u) {
             f = (uint32_t)clamp((int32_t)f + d, 0, 7);
