@@ -1735,6 +1735,19 @@ int main(void)
         printf("gen: DUBSTEP x 6: %u with the wobble's rate automated, %u moving; CUMBIA x 6: %u villera\n", n, moving, vill);
         bad += gcheck("V10.7.77 DUBSTEP's wobble rate moves half a bar each; CUMBIA villera often", n == 6u && moving >= 4u && vill >= 2u);
     }
+    {   /* (V10.7.79, the owner) DUBSTEP's bass MATH some throws (MATH BASS wobbled), its kit MATH formulas some throws */
+        uint32_t s, l, mb = 0, kf = 0, nf = 0;
+        for (s = 0; s < 24u; s++) {
+            gen_with(genre_of("DUBSTEP"), 900u + 13u * s, 60, 0);
+            mb += gs.trk_of[RL_BASS] < NTRK && trk_eng(&trk[gs.trk_of[RL_BASS]]) == ENGI_LOFI;
+            for (l = 0, nf = 0; l < 8u; l++) nf += dx_fml[l] != 0;
+            kf += nf != 0;
+        }
+        gen_with(genre_of("HOUSE"), 77u, 60, 0);
+        for (l = 0, nf = 0; l < 8u; l++) nf += dx_fml[l] != 0;
+        printf("gen: DUBSTEP x 24: %u MATH basses, %u kits with formulas; HOUSE's kit %u\n", mb, kf, nf);
+        bad += gcheck("V10.7.79 DUBSTEP's bass MATH some throws, its kit MATH formulas some; HOUSE's none", mb >= 2u && mb <= 16u && kf >= 4u && !nf);
+    }
     printf(bad ? "gen: %d FAILED\n" : "gen: all passed\n", bad);
     return bad ? 1 : 0;
 }

@@ -683,10 +683,29 @@ static const dx_kit_t DX_KITS[] = {
         },
         {0, 4, 0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0},   /* the layers; the sends (bus << 6 | amount: V10.7.10 none, every kit dry) */
     },
+    {   /* GLITCH FM (V10.7.79): short, high ratios, the formulas hard on the noise's band */
+        {
+            {DX_MODE(DXW_FM, DXF_LP, 1) | DX_DRIVE, {6, 100, 50, 0, 40}, {10, 127, 64, 6, 80}},   /* KICK */
+            {DX_MODE(DXW_FM, DXF_BP, 0), {52, 50, 30, 60, 90}, {60, 30, 40, 90, 120}},   /* SNARE */
+            {DX_MODE(DXW_FM, DXF_HP, 0), {72, 20, 24, 100, 80}, {80, 0, 34, 120, 110}},   /* CLAP */
+            {DX_MODE(DXW_FM, DXF_HP, 0), {116, 0, 8, 70, 100}, {124, 0, 4, 90, 127}},   /* HAT CL */
+            {DX_MODE(DXW_FM, DXF_BP, 0), {110, 30, 40, 70, 96}, {118, 60, 54, 90, 120}},   /* HAT OP */
+            {DX_MODE(DXW_FM, DXF_LP, 1), {24, 90, 40, 6, 70}, {30, 120, 50, 10, 100}},   /* TOM */
+            {DX_MODE(DXW_FM, DXF_BP, 1), {84, 60, 8, 10, 90}, {96, 90, 12, 20, 120}},   /* RIM */
+            {DX_MODE(DXW_FM, DXF_HP, 1), {90, 0, 30, 20, 80}, {100, 40, 40, 30, 110}},   /* BELL */
+        },
+        {0, 8, 0, 4, 0, 0, 6, 9}, {0, 0, 0, 0, 0, 0, 0, 0},
+    },
+};
+/* (V10.7.79) the MATH kits' formulas (F01 .. F48) and their RATIOs (dx_frt: stored as ui_dx.c keeps them) */
+static const uint8_t DX_KFML[2][16] = {
+    {17, 26, 35, 46, 39, 3, 28, 48, 22, 6, 9, 12, 7, 1, 15, 18},   /* GLITCH FM */
+    {5, 12, 20, 31, 31, 8, 40, 44, 0, 21, 21, 1, 1, 0, 2, 4},      /* MATH LAB: DRUM-X's sounds, these their FM */
 };
 #define DX_NKIT ((uint32_t)(sizeof DX_KITS / sizeof DX_KITS[0]))
 #define DXK_LATIN 10u                                    /* (V10.7.8) LATIN PERC (gen.c gen_kit: the latin genres' percussion) */
-_Static_assert(DXK_LATIN + 1u == DX_NKIT, "LATIN PERC the last kit");
+#define DXK_GLFM 11u                                     /* (V10.7.79) GLITCH FM, the last kit; MATH LAB (preset 12) DRUM-X's */
+_Static_assert(DXK_GLFM + 1u == DX_NKIT, "GLITCH FM the last kit");
 /* (V10.6o) the factory kit (DX_KIT_DEF: what a project without one gets) and (0.6.49) its LAYERs (FEEDBK 0: the snare,
  * the hats and the bell, no note to them; the rest clean, CPU): the first kit's, DRUM-X (were copies of it) */
 #define DX_KIT_DEF (DX_KITS[0].lane)

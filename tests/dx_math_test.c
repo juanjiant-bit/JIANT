@@ -50,5 +50,14 @@ int main(void)
         bad += check("DRUM-X MATH: kept with the project ('D' 'F'); one without it: none", ok);
     }
     printf(bad ? "dx-math: %d FAILED\n" : "dx-math: all ok\n", bad);
+    {   /* (V10.7.79, the owner) the MATH kits load their formulas (MATH LAB DRUM-X's sounds, GLITCH FM its own), any
+         * other kit none; the DRUM-X DICE gives formulas to some sounds */
+        uint32_t l, nf = 0, n0 = 0, nd = 0, r;
+        dx_kit_load(12); for (l = 0; l < 8u; l++) nf += dx_fml[l] != 0 && (dx_kit[l].mode & 3u) == DXW_FM;
+        dx_kit_load(11); for (l = 0; l < 8u; l++) nf += dx_fml[l] != 0;
+        dx_kit_load(0); for (l = 0; l < 8u; l++) n0 += dx_fml[l] != 0;
+        for (r = 0; r < 8u; r++) { sound_dice_of(&trk[3], 1); for (l = 0; l < 8u; l++) nd += dx_fml[l] != 0; }
+        bad += check("DRUM-X MATH: MATH LAB and GLITCH FM their formulas, other kits none, DICE some", nf >= 15u && !n0 && nd >= 16u && nd < 56u);
+    }
     return bad != 0;
 }

@@ -9859,7 +9859,7 @@ static int test_drum_kits(void)
     for (i = 0; i < NTRK; i++)                          /* (0.8.1: this track the only DRUM one: the kit is its to load) */
         if (&trk[i] != TSEL && trk[i].eng_req == ENGI_DRUM) set_engine_of(&trk[i], ENGI_ANALOG);
     set_engine(ENGI_DRUM);
-    ok = k909 == 1u && ENG_DRUM.npresets == 11u && DX_NKIT == 11u && TSEL->preset == 0 &&   /* (V10.7.8: LATIN PERC) */
+    ok = k909 == 1u && ENG_DRUM.npresets == 13u && DX_NKIT == 12u && TSEL->preset == 0 &&   /* (V10.7.8: LATIN PERC; V10.7.79 GLITCH FM, MATH LAB) */
          dx_kit[DV_KICK].a[DXP_PMOD] == DX_KIT_DEF[DV_KICK].a[DXP_PMOD];
     TSEL->preset = (uint8_t)(k909 - 1u);
     turn(EN_PRESET, 1);                                 /* browsing (HOME): 909 CLUB */
@@ -9874,8 +9874,8 @@ static int test_drum_kits(void)
     ok &= !memcmp(dx_kit, DX_KITS[k909].lane, sizeof dx_kit);
     for (i = 1; i < ENG_DRUM.npresets; i++) {           /* every kit loads whole and differs from the factory one */
         apply_preset(i);
-        ok &= TSEL->preset == i && !memcmp(dx_kit, DX_KITS[i].lane, sizeof dx_kit) && memcmp(dx_kit, DX_KIT_DEF, sizeof dx_kit) != 0 &&
-              dx_kit_ok(DX_KITS[i].lane);               /* (every value in range: the project would take it) */
+        ok &= TSEL->preset == i && (i > DXK_GLFM || !memcmp(dx_kit, DX_KITS[i].lane, sizeof dx_kit)) && memcmp(dx_kit, DX_KIT_DEF, sizeof dx_kit) != 0 &&
+              dx_kit_ok(dx_kit);                        /* (every value in range: the project would take it; MATH LAB DRUM-X's, FM) */
     }
     apply_preset(0);
     ok &= !memcmp(dx_kit, DX_KIT_DEF, sizeof dx_kit);

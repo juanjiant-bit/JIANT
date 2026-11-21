@@ -730,15 +730,31 @@ static const preset_t DRUM_PRESETS[] = {                /* (0.7.2) one a factory
     {"BREAKS", {62, 66, 74, 62, 71, 0, 0, 10}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(4, 0, 0, 22), PAT(12)},
     {"HIP HOP", {58, 62, 56, 64, 67, 0, 0, 18}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(6, 0, 0, 20), PAT(14)},   /* (V10.34) */
     {"LATIN PERC", {60, 64, 64, 64, 64, 0, 0, 0}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 0, 22), PAT(12)},   /* (V10.7.8) */
+    {"GLITCH FM", {60, 66, 84, 50, 64, 30, 0, 50}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(12, 0, 0, 16), PAT(12)},   /* (V10.7.79) */
+    {"MATH LAB", {64, 64, 70, 60, 60, 0, 20, 20}, {0, 100, 127, 100}, 0, TAG(DRUM), FX(0, 0, 10, 24), PAT(12)},   /* (V10.7.79: DRUM-X's kit) */
 };
-_Static_assert(sizeof DRUM_PRESETS / sizeof DRUM_PRESETS[0] == sizeof DX_KITS / sizeof DX_KITS[0], "a DRUM preset a kit");
+_Static_assert(sizeof DRUM_PRESETS / sizeof DRUM_PRESETS[0] == DX_NKIT + 1u, "a DRUM preset a kit (MATH LAB DRUM-X's)");
 /* (0.7.2) a factory kit into the section's: the sounds, their LAYERs, their SENDs (the project saves them) */
 static void dx_kit_load(uint32_t k)
 {
-    const dx_kit_t *K = &DX_KITS[k % DX_NKIT];
+    const dx_kit_t *K;
+    uint32_t l, f;
+    k %= DX_NKIT + 1u;
+    K = &DX_KITS[k > DXK_GLFM ? 0u : k];
     memcpy(dx_kit, K->lane, sizeof dx_kit);
     memcpy(dx_lay, K->lay, sizeof dx_lay);
     memcpy(dx_snd, K->snd, sizeof dx_snd);
+    for (l = 0; l < 8u; l++) {                          /* (V10.7.79) the MATH kits' formulas (their FM, MOD AMT
+                                                         * MATH LAB's at five eighths of DRUM-X's COLOR); the others none */
+        f = k >= DXK_GLFM ? DX_KFML[k - DXK_GLFM][l] : 0u;
+        dx_fml[l] = (uint8_t)f;
+        dx_frt[l] = k >= DXK_GLFM ? DX_KFML[k - DXK_GLFM][l + 8u] : 0u;
+        if (k > DXK_GLFM) {
+            dx_kit[l].mode = (uint8_t)((dx_kit[l].mode & ~3u) | DXW_FM);
+            dx_kit[l].a[DXP_COLOR] = (uint8_t)(dx_kit[l].a[DXP_COLOR] * 5u / 8u);
+            dx_kit[l].b[DXP_COLOR] = (uint8_t)(dx_kit[l].b[DXP_COLOR] * 5u / 8u);
+        }
+    }
 }
 
 static const engine_t ENG_DRUM = {

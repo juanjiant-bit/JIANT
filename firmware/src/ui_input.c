@@ -11,12 +11,7 @@ static uint8_t fx_mon;                                  /* (V10.7.59) ui_layer.c
 static const char KNOB_HINT[] =
     "GAIN" "\0" "KIT LOUDER, CLEAN, +12 DB" "\0"
     "SNAP" "\0" "EVERY HIT'S CLICK" "\0"
-    "GLUE" "\0" "KIT BUS COMPRESSOR" "\0"
     "LEADER" "\0" "KEYS OR A TRACK PLAY THE ROLES" "\0"
-    "NOTE PRIO" "\0" "WHICH NOTE WINS" "\0"
-    "VOICE ORDER" "\0" "HOW VOICES ARE USED" "\0"
-    "FEEDBK" "\0" "DELAY REPEATS" "\0"
-    "QUANT" "\0" "SNAP TO SCALE" "\0"
     "ALL TRK" "\0" "TRANSPOSE ALL TRACKS" "\0"
     "CHORD" "\0" "SETS: EACH KEY ITS OWN CHORD" "\0";
 
@@ -2229,6 +2224,13 @@ static void sound_dice_of(track_t *t, int quiet)
                 L->b[i] = (uint8_t)dice_by(D->b[i], 0, D->b[i] + up < 127 ? D->b[i] + up : 127, 40);
             }                                            /* (a new wave: SINE or FM, the gentle two) */
             L->mode = (uint8_t)((D->mode & ~3u) | (rng() % 5u ? (D->mode & 3u) : rng() % 2u));
+            dx_fml[l] = 0;                              /* (V10.7.79, the owner) the MATH formulas: half the sounds
+                                                         * (the kick one time in five) a table of its own, its RATIO */
+            if (!(rng() % (l ? 2u : 5u))) {
+                L->mode = (uint8_t)((L->mode & ~3u) | DXW_FM);
+                dx_fml[l] = (uint8_t)(1u + rng() % 48u);
+                dx_frt[l] = (uint8_t)(rng() % 24u);
+            }
         }
         for (l = 0; l < 8u; l++) {                      /* (0.6.49) LAYER strong where a note is in the way (snare,
                                                          * hats, rim, bell), light on the kick, clap and tom; FEEDBK

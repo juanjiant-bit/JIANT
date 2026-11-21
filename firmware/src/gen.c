@@ -1590,9 +1590,9 @@ static int16_t gnear(int32_t c, int32_t w) { return (int16_t)(c ? clamp(grr(c - 
 static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint32_t ri)
 {
     const grecipe_t *r = &RECIPE[ri];
-    static const uint8_t EW[2][3] = {{45, 30, 25}, {65, 25, 10}};   /* (V10.7.72, the owner: MATH WEST STRING more,
+    static const uint8_t EW[3][3] = {{45, 30, 25}, {65, 25, 10}, {45, 25, 30}};   /* (V10.7.79: the wobble's MATH 30 %) */   /* (V10.7.72, the owner: MATH WEST STRING more,
                                                          * the third options theirs; a bass's third one time in ten) */
-    uint32_t sub = role == RL_BASS && gs.ba >= BA_MT1, o = sub ? 0u : gpickw(EW[role == RL_BASS], 3), e, i, n, ft = r->ft & 7u, pre;   /* (the
+    uint32_t sub = role == RL_BASS && gs.ba >= BA_MT1, o = sub ? 0u : gpickw(EW[role == RL_BASS ? 1u + (ri == SR_WOW) : 0u], 3), e, i, n, ft = r->ft & 7u, pre;   /* (the
                                                          * owner's references: minimal's and EBM's sub as written) */
     const engine_t *en;
     if (r->o[o][0] == 255u) o = 0;
@@ -1719,6 +1719,23 @@ static __attribute__((noinline)) void gen_sound(track_t *t, uint32_t role, uint3
  * (KICK SNARE CLAP HATC HATO TOM RIM BELL: -12 0 -8 -6 -12 -14 -4 -6; the snare shortened below), a constant (not a
  * table: the pinned sound's .rodata stays where it is) */
 #define DX_SHORT(l) (2 * (int32_t)((0x32763406u >> (4u * (l))) & 15u))
+/* (V10.7.79) gen_kit's MATH formulas (BT: gen_make's) */
+static BTAPP_FN __attribute__((noinline)) void gkit_math(void)
+{
+    uint32_t l;
+    for (l = 0; l < 8u; l++) {                          /* (V10.7.79, the owner: MATH in more places) DUBSTEP, the
+                                                         * industrial and click kits, EXPLORE: a sound in four (never the
+                                                         * kick) its FM a MATH formula's table, the MOD AMT under 80 */
+        uint32_t x = l && (gx.on || gs.g->kit == KIT_INDUS || gs.g->kit == KIT_CLICK || gs.g->snd[GP_BASS] == SR_WOW) && gch(25);
+        dx_fml[l] = (uint8_t)(x ? grr(1, 48) : 0);
+        if (x) {                                        /* (the dice only here: the other genres' throws as they were) */
+            dx_frt[l] = (uint8_t)grr(0, 23);
+            dx_kit[l].mode = (uint8_t)((dx_kit[l].mode & ~3u) | DXW_FM);
+            dx_kit[l].a[DXP_COLOR] = (uint8_t)(dx_kit[l].a[DXP_COLOR] * 5u / 8u);
+            dx_kit[l].b[DXP_COLOR] = (uint8_t)(dx_kit[l].b[DXP_COLOR] * 5u / 8u);
+        }
+    }
+}
 static __attribute__((noinline)) void gen_kit(track_t *t)
 {
     const gkit_t *k = &KIT[gs.g->kit];
@@ -1773,6 +1790,7 @@ static __attribute__((noinline)) void gen_kit(track_t *t)
         memset(&dx_lay[lo], 0, hi - lo);
         if (hi - lo == 5u) dx_kit[DV_HATC].a[DXP_PMOD] = (uint8_t)grr(96, 116);   /* (CUMBIA: the guiro's SCRAPE) */
     }
+    gkit_math();
     if (gx.on)                                          /* (0.8.6) EXPLORE: the sounds far from the kit's, each its own */
         for (l = 0; l < 8u; l++) {
             dx_lane_t *L = &dx_kit[l];
