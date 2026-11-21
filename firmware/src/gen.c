@@ -77,8 +77,9 @@ static uint32_t gr(void) { gq ^= gq << 13; gq ^= gq >> 17; gq ^= gq << 5; return
 static uint32_t gseed_mix(uint32_t part);
 static void gseed(uint32_t part)
 {
-    gq = ((uint32_t)((gp.mix >> part) & 1u ? gp.seed2 : gp.seed) + 1u) * 2654435761u ^ (part + 1u) * 0x9E3779B9u ^ 0x6D2B79F5u ^
-         gseed_mix(part);                               /* (0.8.3: a genre's own motifs, figures and drums; V10.6z10: a
+    gq = ((gp.mix >> part) & 1u ? seed_fuse(gp.seed, gp.seed2, part ^ gp.mix >> 12) : (uint32_t)(gp.seed + 1u) * 2654435761u) ^
+         (part + 1u) * 0x9E3779B9u ^ 0x6D2B79F5u ^ gseed_mix(part);   /* (V10.7.67: the parts of the mask the two seeds
+                                                         * fused, never B's as it is) */                              /* (0.8.3: a genre's own motifs, figures and drums; V10.6z10: a
                                                          * section's bass, chords and arp their own variation) */
     if (!gq) gq = 1;
     gr(); gr(); gr();
@@ -2857,7 +2858,7 @@ static __attribute__((noinline)) void gen_make(void)
         for (j = 0; j < gs.pn; j++) h = h * 7u + gs.pdeg[j];
         gq = q;
         for (j = 0; j < 8u && gsr.h[j] != (uint16_t)h; j++) {}
-        if (j == 8u || k == 8u) { gsr.h[gsr.at++ & 7u] = (uint16_t)h; break; }
+        if (j == 8u || k == 16u) { gsr.h[gsr.at++ & 7u] = (uint16_t)h; break; }   /* (V10.7.67: 16 tries, the cores fused) */
         gp.seed = (uint16_t)(rng() % 10000u);           /* (its core one of the last eight: another seed) */
         gseed(GS_PICK);
         gmut = GENRE[gs.gi];
@@ -3130,9 +3131,13 @@ static __attribute__((noinline)) void gen_new_seed(void)
         for (j = 0; j < 4u && gsr.s[j] != gp.seed; j++) {}
     } while (j < 4u);
     gsr.s[gsr.sat++ & 3u] = gp.seed;
-    gp.seed2 = (uint16_t)(rng() % 10000u);              /* (V10.7.66, the owner) crossed with a second: the parts but
-                                                         * the genre and key (GS_PICK) from it by a mask, three to nine */
-    do gp.mix = (uint16_t)(rng() & 0xFFEu); while (__builtin_popcount(gp.mix) < 3 || __builtin_popcount(gp.mix) > 9);
+    do gp.seed2 = (uint16_t)(rng() % 10000u);           /* (V10.7.66, the owner) fused with a second (V10.7.67: far from the
+                                                         * first, three digits of four other): the parts but the genre and
+                                                         * key (GS_PICK) by a mask, three to nine; its top nibble how */
+    while ((gp.seed2 > gp.seed ? gp.seed2 - gp.seed : gp.seed - gp.seed2) < 1500u ||
+           (gp.seed2 % 10u == gp.seed % 10u) + (gp.seed2 / 10u % 10u == gp.seed / 10u % 10u) +
+           (gp.seed2 / 100u % 10u == gp.seed / 100u % 10u) + (gp.seed2 / 1000u == gp.seed / 1000u) > 1u);
+    do gp.mix = (uint16_t)(rng() & 0xFFFEu); while (__builtin_popcount(gp.mix & 0xFFEu) < 3 || __builtin_popcount(gp.mix & 0xFFEu) > 9);
     gsr.thrown = 1;                                     /* (V10.6z10: gen_make keeps it off the genre's last eight) */
 }
 /* OCT+ on the GEN screen: the piece; the same settings again, or the first press since power-on (V10.6l: it was always

@@ -344,7 +344,7 @@ static __attribute__((noinline)) void eu_melody(uint32_t k, track_t *t, eu_t *e)
             static const uint8_t NEAR[7] = {0, 0, 2, 2, 4, 4, 7};
             int32_t rg = e->m[1] ? e->m[1] : 5, M = MT[e->m[2] % 5u], u, f, d7;
             uint32_t ct = e->m[0] % 7u, q = M ? j % (uint32_t)M : j, tot = M ? (uint32_t)M : nh, sv = eu_s;
-            eu_s = (((e->xm >> (j & 15u)) & 1u ? e->s2 : e->seed) + 1u) * 2654435761u ^ (j + 1u) * 40503u ^ cy * 0x9E37u;   /* (V10.7.66,
+            eu_s = ((e->xm >> (j & 15u)) & 1u ? seed_fuse(e->seed, e->s2, j) : (e->seed + 1u) * 2654435761u) ^ (j + 1u) * 40503u ^ cy * 0x9E37u;   /* (V10.7.66,
                                                          * the owner: each note its seed's: MUTATE crosses two) */
             if (!eu_s) eu_s = 1u;
             if (cy && j < 64u && !eu_ch(vc * 6u / 10u)) deg = mem[j];   /* (VARY: the first turn's note, or a new one) */
@@ -482,7 +482,7 @@ static void eu_mutate(uint32_t k, eu_t *e)
     if (dr) e->seed = (uint16_t)(eu_rnd() | 1u);
     else {                                               /* (V10.7.66, the owner) a melody: the anchor's notes crossed with
                                                          * a new seed's, note by note (four to twelve of sixteen new) */
-        e->s2 = (uint16_t)(eu_rnd() | 1u);
+        do e->s2 = (uint16_t)(eu_rnd() | 1u); while (__builtin_popcount((uint32_t)(e->s2 ^ e->seed)) < 6);   /* (V10.7.67: far) */
         do e->xm = (uint16_t)eu_rnd(); while (__builtin_popcount(e->xm) < 4 || __builtin_popcount(e->xm) > 12);
     }
     if ((w == 1u || w == 3u) && L->n) {                  /* RHYTHM */

@@ -150,7 +150,7 @@ enum { C_INFO = 1, C_GET = 2, C_SET = 3, C_WATCH = 22, C_CHANGED = 23, C_RELOAD 
 enum { APP_P_MUTE = 40, APP_MO_INDEX = 20, APP_MO_ID = 20, APP_MO_ALL = 2 };
 /* frozen since 1.0; additive changes only (core.h: common parameters go just before P_E0, so P_E0 and P_COUNT may
  * grow, a version bump each; G_COUNT may grow) */
-enum { K_P_COUNT = 123, K_P_E0 = 115, K_G_COUNT = 73, K_NSTEP = 64, K_NTRK = 6, K_NENGINES = 16 };
+enum { K_P_COUNT = 123, K_P_E0 = 115, K_G_COUNT = 77, K_NSTEP = 64, K_NTRK = 6, K_NENGINES = 16 };
 
 static int contract_constants(void)
 {
@@ -163,7 +163,7 @@ static int contract_constants(void)
        ED_TRANSPORT == C_TRANSPORT && ED_PUNCH == C_PUNCH && ED_MUTATE == C_MUTATE && ED_BACKUP_LIST == C_LIST &&
        ED_BACKUP_GET == C_BGET && ED_BACKUP_PUT == C_PUT && ED_MENU_DESC == C_MENU_DESC && ED_MENU_SET == C_MENU_SET);
     ok("protocol version 1.x (a major never changes: that would be a break)", ED_PROTO_MAJOR == 1u);
-    ok("P_COUNT 123, P_E0 115 (E1..E8 the last 8), G_COUNT 73, NSTEP 64, NTRK 6, NENGINES 16",
+    ok("P_COUNT 123, P_E0 115 (E1..E8 the last 8), G_COUNT 77, NSTEP 64, NTRK 6, NENGINES 16",
        P_COUNT == K_P_COUNT && P_E0 == K_P_E0 && P_COUNT - P_E0 == 8 && G_COUNT == K_G_COUNT && NSTEP == K_NSTEP &&
        NTRK == K_NTRK && NENGINES == K_NENGINES);
     ok("the app's ids: P_LEVEL 0, P_PAN 39, P_MUTE 40, G_BPM 0, G_DJF 17; MENU's MIDI OUT index 20 id 20, ALL 2",

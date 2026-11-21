@@ -281,3 +281,7 @@ Each engine's EDIT values as its preset 1 shows them (a mode may rename one: DES
 | 70 | RES | 0..2 | 1 | 1/8 1/16 1/32 |
 | 71 | DRIVE | 0..100 | 0 | |
 | 72 | RIGHT | 0..6 | 0 | =L x1/2 x2/3 x3/4 x4/3 x3/2 x2 |
+| 73 | PROG | 0..34 | 0 | OFF PEDAL I-bVII I-VI I-IV I-V I-II I-III IV-I AXIS TRANCE MINOR 4 ANDALUZ EPIC 50S CADENCE DEEP DEEP VI II-V-I SUS POP PHRYGIAN ELECTRO DREAM DREAM 2 TURN STAB NEO SOUL NEOSOUL2 JAZZ 2 JAZZ 3 IDM 1 IDM 2 LYDIAN PROG |
+| 74 | LENGTH | 0..4 | 2 | 1/4 1/2 1 BAR 2 BARS 4 BARS |
+| 75 | EVOLVE | 0..127 | 0 | |
+| 76 | SKIP | 0..6 | 0 | NONE T1 T2 T3 T4 T5 T6 |

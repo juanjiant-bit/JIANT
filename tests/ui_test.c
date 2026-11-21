@@ -9513,8 +9513,10 @@ static int test_fx_latch(void)
         ok &= !ui.layer && ui.home == h && ui.page == pg;
     }
     btn_down(B_FX); frame(); frames(800); press(B_OCTUP); btn_up(B_FX); frame();
-    ok &= song.octave == -1 && !pk.edit;                          /* (V10.7.65: FX + OCT+ nothing, DICE gone, no octave; the
-                                                         * punch-in editor is OCT+ on FX > PUNCH IN) */
+    ok &= song.octave == -1 && pk.edit;                           /* (V10.7.67: FX + OCT+ the punch-in editor again, as
+                                                         * OCT+ on FX > PUNCH IN; no octave) */
+    press(B_OCTDN); frame();                                      /* (OCT-: out of it, no octave) */
+    ok &= song.octave == -1 && !pk.edit && !fx_lock;
     if (!ok) printf("  latchoff: edit %u oct %d lock %u layer %u\n", pk.edit, song.octave, fx_lock, ui.layer);
     song.octave = -1;
     frames(64); press(B_OCTUP);

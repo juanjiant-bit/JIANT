@@ -84,6 +84,7 @@ int main(void)
         gp.seed = b2; gen_make(); hb = steps_sig(&trk[0]) ^ steps_sig(&trk[1]) * 3u ^ steps_sig(&trk[2]) * 7u;
         gp.seed = a; gp.seed2 = b2; gp.mix = mx; gen_make(); hy = steps_sig(&trk[0]) ^ steps_sig(&trk[1]) * 3u ^ steps_sig(&trk[2]) * 7u;
         ok &= hx != ha && hx != hb && hx == hy;
+        ok &= (a > b2 ? a - b2 : b2 - a) >= 1500u;      /* (V10.7.67: the two far apart) */
         if (!ok) printf("  cross: %s mix %x s2 %u  %x %x %x %x\n", gp.last, mx, b2, hx, ha, hb, hy);
         bad += check("GEN: two seeds crossed (A+B, neither alone, the same three the same piece)", ok);
     }

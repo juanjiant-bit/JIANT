@@ -962,6 +962,14 @@ struct { uint32_t magic, failed, pending; } bootguard __attribute__((section(".n
 
 /* (V10.60) the Bluetooth segment's section macros and its check, here, ahead of the sound: cold code of
  * its files (fm4_convert.c) goes there too (bt.c has the story) */
+/* (V10.7.67, the owner: "the seeds through a light fusion, never one as it is") two seeds fused for part k: both always
+ * in it, k turning how (a rotation, a multiply, the avalanche of a hash's finaliser) */
+static __attribute__((noinline, unused)) uint32_t seed_fuse(uint32_t a, uint32_t b, uint32_t k)
+{
+    uint32_t r = 3u + (k * 7u & 15u), h = (a + 1u) * 2654435761u ^ (((b + 1u) * 0x85EBCA6Bu) << r | ((b + 1u) * 0x85EBCA6Bu) >> (32u - r));
+    h ^= (k + 1u) * 0x9E3779B9u; h ^= h >> 16; h *= 0x7FEB352Du; h ^= h >> 15; h *= 0x846CA68Bu; h ^= h >> 16;
+    return h ? h : 1u;
+}
 #if FELUCCA_BT
 #define BTAPP_RO __attribute__((section(".btapp.rodata"), used))
 #define BTAPP_FN __attribute__((section(".btapp.text"), used, noinline))

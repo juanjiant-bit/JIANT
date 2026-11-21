@@ -2750,8 +2750,9 @@ static void ui_input_frame(void)
             if (pk.edit && bt_hw_seg() && (sd = panel_enc(EN_SELECT)) != 0) pke_sel_bt(sd);
             if (pk.edit && !pk_page() && ui.ly != LAYER_FX)
                 pk.edit = 0;                            /* (the layer shut, FX tapped: the editor too, unsaved) */
-        } else if ((pressed & u) && !(fm1_in.buttons & d) && !ui.home && !ui.menu && !ui.confirm && !ui.ly && !ui.act &&
-                   cur_page()->graph == GR_PUNCH && pke_oct(1))
+        } else if ((pressed & u) && !(fm1_in.buttons & d) && !ui.menu && !ui.confirm &&
+                   ((ui.ly == LAYER_FX && layer_held()) ||     /* (V10.7.67) FX + OCT+ as in V10.7.65, too */
+                    (!ui.home && !ui.ly && !ui.act && cur_page()->graph == GR_PUNCH)) && pke_oct(1))
             pressed &= ~u;
     }
     oct = oct_taps(pressed, ui.menu || ui.confirm || act_cols() || name_on() || layer_set_open());
