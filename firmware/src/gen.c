@@ -3132,11 +3132,9 @@ static __attribute__((noinline)) void gen_new_seed(void)
     } while (j < 4u);
     gsr.s[gsr.sat++ & 3u] = gp.seed;
     do gp.seed2 = (uint16_t)(rng() % 10000u);           /* (V10.7.66, the owner) fused with a second (V10.7.67: far from the
-                                                         * first, three digits of four other): the parts but the genre and
+                                                         * first, 1500 at least, its last two digits other): the parts but the genre and
                                                          * key (GS_PICK) by a mask, three to nine; its top nibble how */
-    while ((gp.seed2 > gp.seed ? gp.seed2 - gp.seed : gp.seed - gp.seed2) < 1500u ||
-           (gp.seed2 % 10u == gp.seed % 10u) + (gp.seed2 / 10u % 10u == gp.seed / 10u % 10u) +
-           (gp.seed2 / 100u % 10u == gp.seed / 100u % 10u) + (gp.seed2 / 1000u == gp.seed / 1000u) > 1u);
+    while ((uint32_t)(gp.seed2 - gp.seed + 1499) < 2999u || gp.seed2 % 100u == gp.seed % 100u);
     do gp.mix = (uint16_t)(rng() & 0xFFFEu); while (__builtin_popcount(gp.mix & 0xFFEu) < 3 || __builtin_popcount(gp.mix & 0xFFEu) > 9);
     gsr.thrown = 1;                                     /* (V10.6z10: gen_make keeps it off the genre's last eight) */
 }

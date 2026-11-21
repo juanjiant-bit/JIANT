@@ -317,7 +317,7 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
     uint32_t lm = p[P_E7] ? (1u << (17u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: t's window */
     uint32_t ft = ft_voice(p);
     int32_t rs = p[P_FRES] > 50 ? p[P_FRES] : 50, kd = 8192 - rs * 7600 / 127, y1 = v->s[4], y2 = v->s[5];
-    int32_t aux = v->s[3], aux2 = v->s[6], fb = v->s[0], fbk = p[P_E5], sm = (int32_t)v->ph[2];   /* (sm: LOFI_SOFT's
+    int32_t aux = v->s[3], aux2 = v->s[6], bp = v->s[1], bn = v->s[7], fb = v->s[0], fbk = p[P_E5], sm = (int32_t)v->ph[2];   /* (sm: LOFI_SOFT's
                                                          * state; aux2 B's) */
     sr <<= vsh;
     for (i = 0; i < n; i++) {
@@ -331,10 +331,11 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
              * FM-like; (V10.7.69) MORPH: A and B both only between the ends, B alone at the top */
             int32_t d = fbk ? (fb * fbk) >> 10 : 0;
             uint32_t ta = tl + (uint32_t)(d >> 8), xa = (tl << 8 | tf >> 16) + (uint32_t)d;
-            s = mo < 127u ? lofi_float(f, ta, xa, &aux) : 0;
-            if (mo) {
-                int32_t b = lofi_float(fb2, ta, xa, &aux2);
-                s = mo < 127u ? s + (((b - s) * (int32_t)mo) >> 7) : b;
+            s = lofi_float(mo == 127u ? fb2 : f, ta, xa, mo == 127u ? &aux2 : &aux);   /* (MORPH at the top: B alone) */
+            if (mo - 1u < 126u) {                        /* (CPU: between the ends B a sample in four, the line between
+                                                         * them: +25 %, not twice) */
+                if (!(i & 3u)) { bp = bn; bn = lofi_float(fb2, ta, xa, &aux2); }
+                s += ((bp + (((bn - bp) * (int32_t)(i & 3u)) >> 2) - s) * (int32_t)mo) >> 7;
             }
         }
         fb = s;
@@ -351,6 +352,8 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
     v->s[2] = (int32_t)tt;
     v->s[3] = aux;
     v->s[6] = aux2;
+    v->s[1] = bp;
+    v->s[7] = bn;
     v->s[4] = y1;
     v->s[5] = y2;
     v->ph[0] = tf;
@@ -375,7 +378,7 @@ static void lofi_note_on(track_t *t, voice_t *v)
     v->s[3] = 0;                 /* (BYTE: its smoothing's first pole) */
     v->ph[2] = 0;                /* (.. its second; FLOAT: its patch's own state) */
     v->s[4] = v->s[5] = 0;       /* (JIANT 0.4) the filter's two states */
-    v->s[6] = 0;                 /* (V10.7.69) FLOAT's ALGO B: its own state */
+    v->s[6] = v->s[7] = 0;       /* (V10.7.69) FLOAT's ALGO B: its own state, its last sample */
     if (t->p[P_E1] == RW_FLOAT)                         /* (0.5.6: its t from 0, its fraction too) */
         v->ph[0] = 0;
 }

@@ -79,7 +79,6 @@ static const char KNOB_HINT[] =
     "SCATTER" "\0" "GRAIN SCATTER" "\0"
     "RIGHT" "\0" "RIGHT ECHO TIME" "\0"
     "PING" "\0" "PING-PONG" "\0"
-    "DCW" "\0" "WAVE BRIGHTNESS" "\0"
     "SUB" "\0" "SUB OSCILLATOR" "\0"
     "DETUNE" "\0" "DETUNE" "\0"
     "MACRO" "\0" "WHICH MACRO" "\0"
