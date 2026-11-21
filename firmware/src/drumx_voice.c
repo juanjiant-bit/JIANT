@@ -144,8 +144,8 @@ static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32
     static int32_t aux;                                  /* (V10.7.74: a MATH formula's own state, the kit's) */
     uint32_t fl = dx_fml[dx_cur_ln & 7u] <= 48u ? dx_fml[dx_cur_ln & 7u] : 0u;   /* (V10.7.74, the owner) a MATH formula
                                                          * the modulator (its WAVE FM: ui_dx.c), (V10.7.75) its RATIO */
-    uint32_t i, ph = *php, ph2 = *ph2p, ph4 = v->ph4, hp = (uint32_t)v->hpos << 2;
-    int32_t md = 0;
+    uint32_t i, ph = *php, ph2 = *ph2p, ph4 = v->ph4, t0 = ((uint32_t)v->hpos << 1) & ~31u;
+    int32_t md = 0, mp = 0, mn = 0;                     /* (V10.7.76) the formula's two last values */
     int32_t o = *op, o1 = *o1p, lx = lay * lay * 600, lm = lay * 3, fh = fbk >> 1;   /* (snd1: FEEDBK's mean of two) */
     uint32_t st4 = lay ? 1448u : 0u;                     /* (LAYER 0: its phase kept) */
     if (fl) ratio = dx_frt_q12(dx_cur_ln);
@@ -154,9 +154,20 @@ static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32
     for (i = 0; i < n; i++, inc += dinc, ga += dga, ix += dix) {
         int32_t o2, f = o + o1;
         o1 = o;
-        if (!fl) md = sine_i(ph2);                       /* (V10.7.74, the owner) the modulator a MATH formula: its x the
-                                                          * modulator's phase, its t the hit's time; a sample in eight (CPU) */
-        else if (!(i & 7u)) md = lofi_float(fl - 1u, hp + i * 4u, ph2 >> 19, &aux);
+        if (!fl) md = sine_i(ph2);                       /* (V10.7.74, the owner) the modulator a MATH formula; (V10.7.76,
+                                                          * the owner: "harsh") a wavetable of it: its x the modulator's
+                                                          * phase, its t that cycle's (whole cycles of the hit's time: one
+                                                          * shape evolving, not t running a sample); a sample in eight,
+                                                          * the line between (was held: grit) */
+        else {
+            if (!(i & 7u)) {
+                uint32_t t = t0 + (ph2 >> 27);
+                mp = mn;
+                mn = lofi_float(fl - 1u, t, t << 8 | ((ph2 >> 19) & 255u), &aux);
+                if (!i) mp = mn;                         /* (a block's first: no line from nothing) */
+            }
+            md = mp + (((mn - mp) * (int32_t)(i & 7u)) >> 3);
+        }
         o = sine_i(ph + (uint32_t)(md * ix) * 512u + (uint32_t)(f * fh));
         o2 = dx_tri(ph4 + (uint32_t)(o * lx));
         y[i] = mulq15(o + (((o2 - o) * lm) >> 6), ga >> 8);
@@ -169,8 +180,9 @@ static __attribute__((noinline)) void dx_layer(dx_voice_t *v, int32_t *y, uint32
     *op = o;
     *o1p = o1;
     v->ph4 = ph4;
-    if (fl)                                              /* (V10.7.74) the formula's time: the hit's, half-rate samples */
+    if (fl) {                                            /* (V10.7.74) the formula's time: the hit's, half-rate samples */
         v->hpos = (uint16_t)(v->hpos + n < 65535u ? v->hpos + n : 65535u);
+    }
 }
 
 /* one block of lane L's hit v into y (n <= CTL): Q15, peaks near full scale. morph 0..127; tune16 1/16 semitones;

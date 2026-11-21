@@ -2040,6 +2040,18 @@ static __attribute__((noinline)) void panel_send(uint32_t y)
     dc_frame(ui.force);
     cv_blit_cells(0, y);
 }
+/* (V10.7.76, the owner) a DRUM-X sound's MATH formula as the hit plays it: one cycle at four moments of the hit (its
+ * t 0, 2048, 4096, 6144), cold to hot, over each other */
+static __attribute__((noinline)) void dx_wave_draw(uint32_t fm)
+{
+    int32_t f, i, py = 0, mid = graph_ht / 2, aux;
+    for (f = 0; f < 4; f++)
+        for (i = 0, aux = 0; i < 64; i++) {
+            int32_t y = mid - ((lofi_float(fm - 1u, ((uint32_t)f << 11) + ((uint32_t)i >> 1), (uint32_t)i << 7, &aux) * (mid - 4)) >> 15);
+            if (i) cv_line_t(21 + i * 3, py, 24 + i * 3, y, heat_col(40 + f * 60), 2);
+            py = y;
+        }
+}
 static void draw_graph(void)
 {
     const page_t *pg = cur_page();
@@ -2173,7 +2185,9 @@ static void draw_graph(void)
             break;
         case GR_DXSND:                               /* EDIT > SOUND: the kit's lanes, the sound edited singled out */
             cv_oy = 0;
-            if (pg->title[0] == 'S')                 /* (0.9.4) SOUND 1..4: the drum kit, the sound edited lit (ui_engvis.c) */
+            if (pg->title[0] == 'S' && pg->title[6] == '3' && dx_fml[dx_ui_lane & 7u])
+                dx_wave_draw(dx_fml[dx_ui_lane & 7u]);   /* (V10.7.76, the owner) SOUND 3, a formula: its wavetable */
+            else if (pg->title[0] == 'S')            /* (0.9.4) SOUND 1..4: the drum kit, the sound edited lit (ui_engvis.c) */
                 vx_kit_page(t, (int32_t)(dx_ui_lane & 7u));
             else
                 graph_colony(t, dx_ui_lane);

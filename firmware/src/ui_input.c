@@ -20,17 +20,8 @@ static const char KNOB_HINT[] =
     "QUANT" "\0" "SNAP TO SCALE" "\0"
     "ALL TRK" "\0" "TRANSPOSE ALL TRACKS" "\0"
     "CHORD" "\0" "SETS: EACH KEY ITS OWN CHORD" "\0"
-    "VOICING" "\0" "CHORD SPREAD" "\0"
-    "ALG" "\0" "FM ALGORITHM" "\0"
-    "RESTART" "\0" "PHASE RESET" "\0"
     "MACRO" "\0" "WHICH MACRO" "\0"
-    "ROUTE" "\0" "MACRO ROUTE 1-8" "\0"
-    "DEST" "\0" "WHAT IT MOVES" "\0"
-    "VARIANT" "\0" "FORMULA VARIANT" "\0"
-    "FEEDBK" "\0" "SELF FEEDBACK" "\0"
-    "MORPH" "\0" "WAVE MORPH" "\0"
-    "DRIFT" "\0" "VOICES WANDER" "\0"
-    "STICKY" "\0" "STAYS IN A STATE" "\0";
+    "DEST" "\0" "WHAT IT MOVES" "\0";
 
 static void knob_hint(const char *label)
 {
