@@ -53,14 +53,14 @@ static const nv_t CE_HOME[] = {NV(0, "ECO", 0, 0), NV(0, "LIFE", 0, 0), NV(0, "B
                                NV(0, "GENE 1", 3, 2), NV(0, "GENE 2", 3, 2), NV(0, "GENE 3", 3, 2), NV(0, "GENE 4", 3, 2)};
 static const ng_t CG_HOME[] = {{"ECO", 0}, {"BEING", 0}, {"SONG", 0}, {"GENE", 0}};
 static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("WORDS", 0, 1, 1),
-                              NV("SWARM", 0, 1, 1), NV("SWARM 2", 0, 1, 1), NV("FOCUS", 0, 2, 2), NV("PLAY", 0, 3, 1), NV("MORE", 0, 3, 1)};   /* (V10.7.60:
+                              NV("SWARM", 0, 1, 1), NV("SWARM 2", 0, 1, 1), NV("FOCUS", 0, 2, 2), NV("MORE", 0, 3, 1), NV("PLAY", 0, 3, 1)};   /* (V10.7.80, the owner: MORE before PLAY) */   /* (V10.7.60:
                                                          * MORPH RETRIG ROTOR and PLAY 2 one MORE) */   /* (the
                                                          * voices' pages last, after the sound's (the user); codex/coherence:
                                                          * PLAY, was VOICE (the engine's name too); STEREO's IMAGE on PLAY 2) */
 static const ng_t CG_SYN[] = {{"SOUND", 0}, {"TONE", 0}, {"FOCUS", 0}, {"PLAY", 0}};
 static const nv_t CE_FM6[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1),
-                              NV("OPERATOR", 0, 2, 2), NV("OP ENV", 0, 2, 2), NV("OPERATOR 2", 0, 2, 2), NV("PLAY", 0, 3, 1),
-                              NV("MORE", 0, 3, 1)};
+                              NV("OPERATOR", 0, 2, 2), NV("OP ENV", 0, 2, 2), NV("OPERATOR 2", 0, 2, 2), NV("MORE", 0, 3, 1),
+                              NV("PLAY", 0, 3, 1)};
 static const ng_t CG_FM6[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}, {"PLAY", 0}};
 static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0, 0),   /* (V10.7.63, the owner: 8 pages) */
                               NV("SOUND", 0, 1, 2), NV("SOUND 2", 0, 1, 2), NV("SOUND 3", 0, 1, 2), NV("SOUND 4", 0, 1, 2),
@@ -68,8 +68,8 @@ static const nv_t CE_DRM[] = {NV("EDIT 1", "KIT", 0, 0), NV("EDIT 2", "KIT 2", 0
                                                          * 13 -> 8; LEVELS' levels on SOUND, STEREO's IMAGE on FILTER, BUS's
                                                          * GLUE on KIT 2, PLAY's KEY MAP on SOUND 4) */
 static const ng_t CG_DRM[] = {{"KIT", 0}, {"SOUND", 0}, {"TONE", 0}};
-static const nv_t CE_DIG[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("PLAY", 0, 1, 1),
-                              NV("MORE", 0, 1, 1), NV("OP1 ENV", 0, 2, 2), NV("OP2 ENV", 0, 2, 2), NV("OP3 ENV", 0, 2, 2),
+static const nv_t CE_DIG[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("MORE", 0, 1, 1),
+                              NV("PLAY", 0, 1, 1), NV("OP1 ENV", 0, 2, 2), NV("OP2 ENV", 0, 2, 2), NV("OP3 ENV", 0, 2, 2),
                               NV("OP4 ENV", 0, 2, 2), NV("OP LEVEL", 0, 2, 2)};
 static const ng_t CG_DIG[] = {{"SOUND", 0}, {"TONE", 0}, {"OPERATOR", "OPS"}};
 enum { LV_PAT, LV_BAR, LV_STEP, LV_N };                 /* SEQ's pictures: the bars, the roll, the step large */

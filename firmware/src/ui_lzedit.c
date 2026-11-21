@@ -153,7 +153,8 @@ static void graph_focus_lz(const track_t *t)
     char b[24];
     param_format(d, t->p[P_E0 + k], b, &u);
     str_cpy(b + str_len(b), u, 24 - str_len(b));
-    lz_arc(120, 58, 44, 4, clamp(RATIO(d, enum_rank(d, t->p[P_E0 + k])), 0, 1000), T_RAISE, T_THEME);
+    i = (uint32_t)clamp(RATIO(d, enum_rank(d, t->p[P_E0 + k])), 0, 1000);   /* (V10.7.80, the owner: FOCUS thermal) */
+    lz_arc(120, 58, 44, 6, (int32_t)i, T_LINE, heat_col((int32_t)i * 256 / 1000));
     GFX_HOOK_ALIGN(80, 0, 160, 0, AL_H, "FOCUS value centred in its gauge");
     cv_text_in(80, 40 - AF_X_CAP_Y, 80, &AF_X, d->label, T_MID, T_SURF);
     cv_text_in(70, 52 - AF_M_CAP_Y, 100, &AF_M, b, T_TEXT, T_SURF);
@@ -173,11 +174,13 @@ static void graph_focus_lz(const track_t *t)
     fmt_int(b + str_len(b), (int32_t)(k & 3u) + 1);
     str_cpy(b + str_len(b), "/4", 3);
     ed_cap(10, 6, b, T_DIM);
-    for (i = 0; i < 8u; i++) {                          /* E1..E8 */
+    for (i = 0; i < 8u; i++) {                          /* E1..E8, (V10.7.80) each its value as heat: a bar, the
+                                                         * focused one filled with it */
         const param_desc_t *di = track_desc(t, P_E0 + i);
-        int32_t x = 8 + (int32_t)i * 28;
-        uint16_t bg = i == k ? T_THEME : T_RAISE;
-        cv_rect(x, 118, 26, 13, bg);
+        int32_t x = 8 + (int32_t)i * 28, r = di ? clamp(RATIO(di, enum_rank(di, t->p[P_E0 + i])), 0, 1000) : 0;
+        uint16_t h = heat_col(r * 256 / 1000), bg = i == k ? h : T_RAISE;
+        cv_rect(x, 116, 26, 15, bg);
+        cv_rect(x, 131, 26 * r / 1000 + 1, 2, h);
         if (di && di->label && di->label[0] != '-')
             cv_clip_text(x + 2, 121 - AF_X_CAP_Y, &AF_X, di->label, i == k ? T_INK : T_DIM, bg, 23);
     }

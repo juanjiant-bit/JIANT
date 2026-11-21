@@ -4657,13 +4657,13 @@ static int test_edit_cycle(void)
 {
     /* (0.9.2: one chain, SELECT a page a detent; an EDIT tap the next group's first. Was 0.8.5's lens: SELECT a level, the
      * tap the level's next set) */
-    static const char *const CH_A[] = {"EDIT 1", "FILTER", "FOCUS", "PLAY", "MORE"};   /* (V10.7.60: MORPH and PLAY 2 one MORE) */   /* (JIANT 0.5:
+    static const char *const CH_A[] = {"EDIT 1", "FILTER", "FOCUS", "MORE", "PLAY"};   /* (V10.7.80: MORE before PLAY) */   /* (V10.7.60: MORPH and PLAY 2 one MORE) */   /* (JIANT 0.5:
                                                          * ANALOG's FILTER; 0.6.45: MORPH; V10.7.21: no EDIT 2; codex/coherence:
                                                          * PLAY, was VOICE; STEREO's IMAGE on PLAY 2) */
-    static const char *const TP_A[] = {"FILTER", "FOCUS", "PLAY"};
+    static const char *const TP_A[] = {"FILTER", "FOCUS", "MORE"};   /* (V10.7.80: the group's first MORE) */
     static const char *const CH_F[] = {"EDIT 1", "EDIT 2", "FILTER", "OPERATOR", "OP ENV", "OPERATOR 2", "PLAY"};   /* (V10.7.64: MORE gone) */
     static const char *const TP_F[] = {"FILTER", "OPERATOR", "PLAY"};
-    static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "PLAY", "MORE", "OP1 ENV", "OP2 ENV", "OP3 ENV",
+    static const char *const CH_D[] = {"EDIT 1", "EDIT 2", "FILTER", "MORE", "PLAY", "OP1 ENV", "OP2 ENV", "OP3 ENV",
                                        "OP4 ENV", "OP LEVEL"};
     static const char *const TP_D[] = {"FILTER", "OP1 ENV"};
     int bad = 0, ok;
@@ -12280,13 +12280,13 @@ static int test_lz_edit(void)
     ok &= pd_level() == 2u && lz_tab_lit(2) && str_eq(cur_page()->title, "FOCUS") && lz_crumb_is("EDIT \xB7 FOCUS \xB7 FOCUS") &&
           lz_count_is("3/5");
     turn(EN_SELECT, 3); frame();
-    ok &= str_eq(cur_page()->title, "MORE");                        /* (V10.7.60: PLAY MORE last; no wrap) */
+    ok &= str_eq(cur_page()->title, "PLAY");                        /* (V10.7.80: MORE PLAY last; no wrap) */
     turn(EN_SELECT, -3); frame();
     ok &= pd_level() == 1u && str_eq(cur_page()->title, "FILTER");   /* (FILTER FOCUS PLAY MORE: three back) */
     frames(320); press(B_EDIT); frame();
     ok &= str_eq(cur_page()->title, "FOCUS");
     frames(320); press(B_EDIT); frame();
-    ok &= str_eq(cur_page()->title, "PLAY");                        /* (V10.49: the voices' group; codex/coherence: PLAY) */
+    ok &= str_eq(cur_page()->title, "MORE");                        /* (V10.49: the voices' group, V10.7.80 MORE first) */
     frames(320); press(B_EDIT); frame();
     ok &= str_eq(cur_page()->title, "EDIT 1");                      /* (round) */
     bad += check("0.9.2 EDIT: one chain by SELECT (no wrap), an EDIT tap the next group's first (round); tabs, crumb, n/N", ok);
@@ -12334,7 +12334,7 @@ static int test_lz_edit(void)
         turn(EN_K4, 3); frame();
         ok &= TSEL->p[P_SIMG] != v && !nav_put(SEC_EDIT, "STEREO");
         go_title("PLAY"); frame();
-        turn(EN_SELECT, 1); frame();
+        turn(EN_SELECT, -1); frame();                   /* (V10.7.80: MORE before PLAY) */
         ok &= str_eq(cur_page()->title, "MORE") && str_eq(page_desc(cur_page(), 0, &hv)->label, "MORPH") &&
               str_eq(page_desc(cur_page(), 2, &hv)->label, "GAIN");
         v = trk_gain[song.sel];
