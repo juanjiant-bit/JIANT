@@ -171,6 +171,8 @@ jobs:
           build/song-check/harmony | tee build/song-check/harmony.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/euclid_mel_test.c -lm -o build/song-check/euclid-mel
           build/song-check/euclid-mel | tee build/song-check/euclid-mel.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/math_morph_test.c -lm -o build/song-check/math-morph
+          build/song-check/math-morph | tee build/song-check/math-morph.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/life_test.c -lm -o build/song-check/life
           build/song-check/life | tee build/song-check/life.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/fill_test.c -lm -o build/song-check/fill

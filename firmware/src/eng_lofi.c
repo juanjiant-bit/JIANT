@@ -92,10 +92,11 @@ static const param_desc_t LOFI_ALGO = {"ALGO", F_INT, 0, 191, 64, N_BYTE};    /*
                                                          * 0..127, FUN7's byte) */
 static const param_desc_t LOFI_MOTN = {"MOTION", F_INT, 0, 255, 0, 0};   /* (p6: 128 .. 255 SYNC; V10.6d: 0) */
 static const param_desc_t LOFI_FALGO = {"ALGO", F_INT, 0, 191, 64, N_FLOAT};   /* = edit[2] (FLOAT) */
+static const param_desc_t LOFI_FALGB = {"ALGO B", F_INT, 0, 191, 0, N_FLOAT};   /* (V10.7.69) = edit[0] (FLOAT) */
+static const param_desc_t LOFI_FMRPH = {"MORPH", F_PCT, 0, 127, 0, 0};          /* (V10.7.69) = edit[6] (FLOAT) */
 /* .. its CHIP the resolution: 4 bits, 4 bits held over two samples, FULL (smooth, the default), 1 bit, STEP (4 bits and
  * the stepped envelope) */
-static const char *const N_FCHIP[] = {"4BIT", "4B/2", "FULL", "1BIT"};
-static const param_desc_t LOFI_FCHIP = {"CHIP", F_ENUM, 0, 3, 2, N_FCHIP};    /* = edit[0] (FLOAT; 0.5.5: no STEP) */
+/* (V10.7.69: FLOAT's CHIP gone, its knob ALGO B) */
 /* (0.5.4) BYTE's and FLOAT's own second page: MOTN (E4, where CUT was: the time's speed, 64 as written), GRIT (BYTE,
  * E5: the samples held longer, a rate crusher), FBK (FLOAT, E5: the output back into the formula's time) */
 static const param_desc_t LOFI_FDCY = {"FEEDBK", F_PCT, 0, 127, 0, 0};            /* = edit[5] (FLOAT, 0.6.4: was DRV, a
@@ -311,32 +312,31 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
     uint32_t sy = p[P_E4] >= 128, sr = 0, sb = sy ? lofi_sync(&sr) : 0u, vsh = VH_SH();   /* (p6) SYNC */
     uint32_t mul = lofi_motion(p[P_E4]), var = (uint32_t)clamp(p[P_E3] + ((m->shape - (64 << 8)) >> 8), 0, 127);   /*
                                                          * (0.6.81: SHAPE moves VAR, as BYTE's) */
-    uint32_t bs = p[P_E6] ? 13u - (uint32_t)p[P_E6] / 11u : 0u;   /* BEND: t ^ t >> 13 .. 2 */
+    uint32_t fb2 = (uint32_t)p[P_E0] >> 2, mo = (uint32_t)clamp(p[P_E6], 0, 127);   /* (V10.7.69, the owner) FLOAT: ALGO B
+                                                         * (where CHIP was), MORPH A -> B (where BEND was) */
     uint32_t lm = p[P_E7] ? (1u << (17u - (uint32_t)p[P_E7] * 12u / 127u)) - 1u : 0xFFFFFFFFu;   /* LOOP: t's window */
     uint32_t ft = ft_voice(p);
     int32_t rs = p[P_FRES] > 50 ? p[P_FRES] : 50, kd = 8192 - rs * 7600 / 127, y1 = v->s[4], y2 = v->s[5];
-    int32_t aux = v->s[3], fb = v->s[0], fbk = p[P_E5], sm = (int32_t)v->ph[2];   /* (sm: LOFI_SOFT's state) */
-    uint32_t chip = (uint32_t)p[P_E0], qs = chip == CHIP_8BIT ? 0u : chip == CHIP_1BIT ? 15u : 12u;   /* (CHIP: the bits) */
+    int32_t aux = v->s[3], aux2 = v->s[6], fb = v->s[0], fbk = p[P_E5], sm = (int32_t)v->ph[2];   /* (sm: LOFI_SOFT's
+                                                         * state; aux2 B's) */
     sr <<= vsh;
     for (i = 0; i < n; i++) {
-        uint32_t te, tl, tw;
+        uint32_t te, tl;
         int32_t s;
         if (sy)                                          /* (p6 SYNC: the slow bits at the bar's position) */
             ts = (sb + ((i * sr) >> 16)) * mul;
         te = mul == 256u && !sy ? tt : (tt & 255u) | ((ts >> 8) & ~255u);
         tl = lofi_mut(te & lm, var);
-        tw = bs ? tl ^ (tl >> bs) : tl;
-        if (fbk) {                                        /* FBK: the last output moves t, up to +-16 t (half a turn of
-                                                         * the sines, Q8): the formula modulates itself, FM-like */
-            int32_t d = (fb * fbk) >> 10;
-            s = lofi_float(f, tw + (uint32_t)(d >> 8), (tw << 8 | tf >> 16) + (uint32_t)d, &aux);
-        } else {
-            s = lofi_float(f, tw, tw << 8 | tf >> 16, &aux);
+        {   /* FBK: the last output moves t, up to +-16 t (half a turn of the sines, Q8): the formula modulates itself,
+             * FM-like; (V10.7.69) MORPH: A and B both only between the ends, B alone at the top */
+            int32_t d = fbk ? (fb * fbk) >> 10 : 0;
+            uint32_t ta = tl + (uint32_t)(d >> 8), xa = (tl << 8 | tf >> 16) + (uint32_t)d;
+            s = mo < 127u ? lofi_float(f, ta, xa, &aux) : 0;
+            if (mo) {
+                int32_t b = lofi_float(fb2, ta, xa, &aux2);
+                s = mo < 127u ? s + (((b - s) * (int32_t)mo) >> 7) : b;
+            }
         }
-        if (qs)
-            s = ((s + (1 << (qs - 1u))) >> qs) << qs;
-        if (chip == CHIP_4B2 && (tt & 1u))                /* (4B/2: held over two t) */
-            s = fb;
         fb = s;
         tf += ti;
         tt += tf >> 24;
@@ -350,6 +350,7 @@ static __attribute__((noinline)) void lofi_float_render(track_t *t, voice_t *v, 
     v->s[0] = fb;
     v->s[2] = (int32_t)tt;
     v->s[3] = aux;
+    v->s[6] = aux2;
     v->s[4] = y1;
     v->s[5] = y2;
     v->ph[0] = tf;
@@ -362,7 +363,7 @@ static const param_desc_t *lofi_desc(const track_t *t, uint32_t k)
         return &LOFI_MOTN;
     if (t->p[P_E1] != RW_FLOAT)
         return k == 2u ? &LOFI_ALGO : 0;
-    return k == 0u ? &LOFI_FCHIP : k == 2u ? &LOFI_FALGO : k == 5u ? &LOFI_FDCY : 0;
+    return k == 0u ? &LOFI_FALGB : k == 2u ? &LOFI_FALGO : k == 5u ? &LOFI_FDCY : k == 6u ? &LOFI_FMRPH : 0;
 }
 
 static void lofi_note_on(track_t *t, voice_t *v)
@@ -374,6 +375,7 @@ static void lofi_note_on(track_t *t, voice_t *v)
     v->s[3] = 0;                 /* (BYTE: its smoothing's first pole) */
     v->ph[2] = 0;                /* (.. its second; FLOAT: its patch's own state) */
     v->s[4] = v->s[5] = 0;       /* (JIANT 0.4) the filter's two states */
+    v->s[6] = 0;                 /* (V10.7.69) FLOAT's ALGO B: its own state */
     if (t->p[P_E1] == RW_FLOAT)                         /* (0.5.6: its t from 0, its fraction too) */
         v->ph[0] = 0;
 }
