@@ -1330,10 +1330,31 @@ static void draw_columns(void)
         val[0] = 'T'; val[1] = (char)('1' + song.sel % NTRK); val[2] = 0;
         hot_text_column(0, "TRACK", val);
         val[0] = (char)('A' + (ui.part & 3u)); val[1] = 0;
-        text_column(1, "PART", val, VAL(1u));
+        text_column(1, "SEQ", val, sec_col(ui.part & 3u));
         text_column(2, "CAMBIO", JAM_Q_N[jam_q % 6u], VAL(2u));   /* (V10.8) */
-        text_column(3, "TAKE", live.srec == 2u ? "REC" : live.srec ? "ARM" : jam_lock ? "LOCK" : "FREE",
-                    live.srec || jam_lock ? T_ACCENT : T_DIM);   /* (V10.8) the JAM take: REC (the REC key), LOCK (KNOB 4) */
+        text_column(3, "TAKE", live.srec == 2u || jam_tr & 8u ? "REC" : live.srec || jam_tr ? "ARM" : jam_lock ? "LOCK" : "FREE",
+                    live.srec || jam_tr ? T_ACCENT : jam_lock ? T_THEME : T_DIM);   /* (V10.8.2: LOCK's REC, one track) */   /* (V10.8) the JAM
+                                                         * take: REC (the REC key), LOCK (KNOB 4) */
+        return;
+    }
+    if (SONG_TAKE(cur_page())) {                       /* (V10.8.2) TAKE: the change (n/N), WHEN (bar.beat.16th), its
+                                                         * SEQ, the take's BARS */
+        uint32_t e = jam_end(), len = jam_len(), i = take_i < e ? take_i : 0u, p = JE_POS(live.jam[i]), s = JE_S(live.jam[i]);
+        char w[12];
+        if (!len) {
+            for (i = 0; i < 4u; i++) text_column(i, "TAKE", "--", T_DIM);
+            return;
+        }
+        fmt_frac(val, (int32_t)i + 1, (int32_t)e);
+        text_column(0, "CHANGE", val, VAL(0u));
+        fmt_int(w, (int32_t)(p >> 4) + 1);
+        e = str_len(w);
+        w[e] = '.'; w[e + 1u] = (char)('1' + (p >> 2 & 3u)); w[e + 2u] = '.'; w[e + 3u] = (char)('1' + (p & 3u)); w[e + 4u] = 0;
+        text_column(1, "WHEN", w, VAL(1u));
+        val[0] = (char)('A' + s); val[1] = 0;
+        text_column(2, "SEQ", val, sec_col(s));
+        fmt_int(w, (int32_t)(len >> 4));
+        text_column(3, "BARS", w, VAL(3u));
         return;
     }
     if (SONG_TRK(cur_page())) {                        /* (V10.6o) TIMELINE: ROW, PART, BARS, the ALGORITHM track's VAR */

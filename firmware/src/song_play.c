@@ -123,12 +123,14 @@ static void srec_bar(void)                            /* a bar ended (playing) *
         return;
     live.srec = 2;
     live.nrec = 0;
+    memset(live.jam, 0, sizeof live.jam);             /* (the old take's events gone) */
     jam_t0 = gl_step_at(0);
     for (k = 0; k < NTRK; k++)
         jam_add(JAM_EV(0u, k, (clip_go[k] - 1u < 4u ? clip_go[k] : clip_now[k] - 1u < 4u ? clip_now[k] : 1u) - 1u));
 }
 static void srec_stop(void)                           /* REC again, or STOP: the take ends on its bar line */
 {
+    jam_tr = 0;                                       /* (V10.8.2) a track's round cut: the take as it was */
     if (live.srec == 2u) {
         uint32_t p = gl_step_at(0) - jam_t0;
         live.jam[live.nrec < JAM_N ? live.nrec : JAM_N - 1u] = JAM_EV((p + 15u) & ~15u ? (p + 15u) & ~15u : 16u, 7u, 0u);

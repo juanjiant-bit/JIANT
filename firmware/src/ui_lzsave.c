@@ -198,17 +198,48 @@ static void clip_dash(int32_t x, int32_t y, uint16_t c)   /* a cell's frame, das
         if (i < 15) { cv_rect(x, y + i, 2, 2, c); cv_rect(x + 48, y + i, 2, 2, c); }
     }
 }
-static void graph_clips(void)
+/* (V10.8, V10.8.2 the owner's mock-up D2) the JAM take: each track a lane, its sequences' colours as they sounded (REC:
+ * as it grows), the player's over it in LOCK white till the take's next change there; LOCK: where it plays; sel: a
+ * change ringed (TAKE) */
+static int jam_full(void) { return live.srec == 2u || jam_tr || (jam_lock && jam_len()); }
+static void jam_lanes(int32_t y, int32_t dy, int32_t h, int32_t sel)
 {
-    uint32_t s, k;
+    uint32_t len = jam_len(), k, i, x0, x1, xe = 236u, xp = 0, s, p, e;
+    if (live.srec == 2u) {                              /* (REC: the take so far, a bar more) */
+        p = gl_step_at(0) - jam_t0;
+        len = (p / 16u + 1u) * 16u;
+        xe = 24u + p * 212u / len;
+    } else if (jam_lock && song.playing && len) {
+        xp = 24u + (gl_step_at(0) - jam_base) % len * 212u / len;
+    }
+    if (!len) return;
+    for (k = 0; k < NTRK; k++, y += dy) {
+        for (x0 = 24, s = 0, i = 0; i < JAM_N && (e = live.jam[i]) && JE_K(e) != 7u; i++) {
+            if (JE_K(e) != k) continue;
+            p = JE_POS(e);
+            x1 = 24u + (p < len ? p : len) * 212u / len;
+            if (x1 > x0) cv_rect((int32_t)x0, y, (int32_t)(x1 - x0), h, sec_col(s));
+            if ((int32_t)i == sel) cv_frame((int32_t)x1 - 2, y - 2, 4, h + 4, T_TEXT);
+            x0 = x1; s = JE_S(e);
+        }
+        if (xe > x0) cv_rect((int32_t)x0, y, (int32_t)(xe - x0), h, sec_col(s));
+        if (xp && ((jam_vos >> k) & 1u))                /* (the player's, over the take: white at the playhead) */
+            cv_rect((int32_t)xp - 6, y + 2, 12, h - 4, T_TEXT);
+    }
+    if (xp) cv_rect((int32_t)xp, y - dy * NTRK - 2, 1, dy * NTRK + 2, T_TEXT);
+}
+static void graph_clips(void)                           /* (V10.8.2) and TAKE: the take full screen, the change picked */
+{                                                       /* ringed, its track lit */
+    uint32_t s, k, tk = SONG_TAKE(cur_page()), full = tk || jam_full(), hi = song.sel;
     char b[3] = "T1";
-    if (live.srec)
-        cv_text(4, 2, &AF_X, "REC", T_ACCENT);         /* (SONG REC: the launches become rows) */
+    if (tk) { if (take_i >= jam_end()) take_i = 0; hi = JE_K(live.jam[take_i]); }
+    if (live.srec || jam_tr)
+        cv_text(4, 2, &AF_X, "REC", T_ACCENT);
     for (k = 0; k < NTRK; k++) {
         int32_t y = 13 + (int32_t)k * 18;
         b[1] = (char)('1' + k);
-        cv_text(4, y + CAP_IN(X, 15), &AF_X, b, k == song.sel ? T_THEME : T_MID);
-        for (s = 0; s < 4u; s++) {
+        cv_text(4, y + CAP_IN(X, 15), &AF_X, b, k == hi ? T_THEME : T_MID);
+        for (s = 0; s < 4u && !full; s++) {
             int32_t x = 24 + (int32_t)s * 53;
             uint16_t c = sec_col(s);
             int used = graph_project_used(s);
@@ -226,22 +257,13 @@ static void graph_clips(void)
                 cv_frame(x - 2, y - 2, 54, 19, T_TEXT);
         }
     }
-    {   /* (V10.8) the JAM take: each track a lane, its sequences' colours as they sounded; LOCK: where it plays */
-        uint32_t len = jam_len(), i, x0, x1, s, p;
-        if (!len) { cv_text(4, 128, &AF_X, "OCT+ GO \xB7 OCT- STOP \xB7 REC TAKE \xB7 K4 LOCK", T_MID); return; }
-        for (k = 0; k < NTRK; k++) {
-            for (x0 = 24, s = 0, i = 0; i < JAM_N && live.jam[i]; i++) {
-                if (JE_K(live.jam[i]) != k) continue;
-                p = JE_POS(live.jam[i]);
-                x1 = 24u + p * 212u / len;
-                if (x1 > x0) cv_rect((int32_t)x0, 120 + (int32_t)k * 3, (int32_t)(x1 - x0), 2, sec_col(s));
-                x0 = x1; s = JE_S(live.jam[i]);
-            }
-            if (236u > x0) cv_rect((int32_t)x0, 120 + (int32_t)k * 3, (int32_t)(236u - x0), 2, sec_col(s));
-        }
-        if (jam_lock && song.playing)
-            cv_rect(24 + (int32_t)((gl_step_at(0) - jam_base) % len * 212u / len), 118, 1, 20, T_TEXT);
-    }
+    if (full) {
+        jam_lanes(13, 18, 15, tk ? (int32_t)take_i : -1);
+        if (jam_lock) cv_text(4, 128, &AF_X, "REC: TRACK AGAIN", T_MID);
+    } else if (jam_len())
+        jam_lanes(120, 3, 2, -1);
+    else
+        cv_text(4, 128, &AF_X, "OCT+ GO \xB7 OCT- STOP \xB7 REC \xB7 K4 LOCK", T_MID);
 }
 /* (V10.6o, the owner's mock-up B) TIMELINE: the song as blocks (the cursor's row framed), what plays; under it the row
  * opened: each track's bar (its own part's colour calm, another part's bright with FROM and its letter,
@@ -528,7 +550,7 @@ static void graph_save_lz(const page_t *pg)
     if (pg->graph == GR_TOOLS) graph_lz_tools();
     else if (SONG_TRK(pg)) graph_tl();
     else if (SONG_PARTS(pg)) graph_parts();
-    else if (SONG_CLIPS(pg)) graph_clips();
+    else if (SONG_CLIPS(pg) || SONG_TAKE(pg)) graph_clips();
     else if (pg->graph == GR_SONG) graph_proj(1);
     else if (pg->graph == GR_SLOTS) { if (lv == SV_PROJ) graph_proj(0); else graph_lib(); }
     else if (pg->graph == GR_USER) graph_sound();

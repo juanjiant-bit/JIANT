@@ -461,6 +461,7 @@ static int jam_switch(uint32_t k, uint32_t s)
         sec_stage.t[k].p[P_SLEN] = trk[k].p[P_SLEN];
     }
     clip_go[k] = (uint8_t)(s + 1u);
+    jam_vos |= (uint8_t)(jam_lock << k);                /* (V10.8.2: over the take, the player's; jam_poll: the take's) */
     RING_PUBLISH();
     fm1_irq_off();
     if (song.playing) jam_rdy |= (uint8_t)(1u << k);
@@ -560,6 +561,44 @@ static void jam_store(void)
     (void)st_save(OBJ_JAM, b, NSONG * sizeof live.jam);
 #endif
 }
+static uint32_t jam_end(void)                           /* (V10.8.2) the take's END index (none: its events' count) */
+{
+    uint32_t i;
+    for (i = 0; i < JAM_N && live.jam[i] && JE_K(live.jam[i]) != 7u; i++) {}
+    return i;
+}
+static void jam_sort(uint32_t n)                        /* the take's first n events in time order (stable) */
+{
+    uint32_t i, j;
+    uint16_t e;
+    for (i = 1; i < n; i++) {
+        e = live.jam[i];
+        for (j = i; j && JE_POS(live.jam[j - 1u]) > JE_POS(e); j--) live.jam[j] = live.jam[j - 1u];
+        live.jam[j] = e;
+    }
+}
+/* (V10.8.2) a track's round ended: its old changes out, the round's in (where it crossed the take's start: its
+ * sequence there at 0), in time order, END last */
+static void jam_round_end(void)
+{
+    uint32_t K, i, n, w = 0, s0 = 8u, p;
+    uint16_t end = live.jam[jam_e];
+    fm1_irq_off(); K = (jam_tr & 7u) - 1u; jam_tr = 0; n = live.nrec; live.nrec = 0; fm1_irq_on();
+    for (i = jam_e + 1u; i < n; i++) {
+        p = JE_POS(live.jam[i]);
+        if (!p) s0 = 9u;
+        else if (p >= jam_r0 && s0 != 9u) s0 = JE_S(live.jam[i]);
+    }
+    for (i = 0; i < jam_e; i++)
+        if (JE_K(live.jam[i]) != K) live.jam[w++] = live.jam[i];
+    if (jam_r0 && s0 < 4u) live.jam[w++] = JAM_EV(0u, K, s0);
+    for (i = jam_e + 1u; i < n; i++) live.jam[w++] = live.jam[i];
+    jam_sort(w);
+    live.jam[w++] = end;
+    memset(&live.jam[w], 0, (JAM_N - w) * sizeof live.jam[0]);
+    live.rec_done = 1;
+    ui_message("TRACK DONE");
+}
 static uint32_t jam_len(void)                           /* the take's length in 16ths (its END), 0 none */
 {
     uint32_t i;
@@ -571,24 +610,41 @@ static uint32_t jam_len(void)                           /* the take's length in 
 static void jam_poll(void)
 {
     uint32_t len = jam_len(), k, i, g, rel, best, bs, p, s;
+    if (!jam_lock && jam_tr) {                          /* (V10.8.2) LOCK off: a track's round cut */
+        fm1_irq_off(); srec_stop(); fm1_irq_on();
+    }
     if (!jam_lock || !len || live.srec)
         return;
     if (!song.playing) {
         jam_base = 0;
-        for (i = 0; i < NTRK && live.jam[i]; i++) {     /* (the first six: the tracks at the start) */
+        jam_vos = 0;
+        for (i = 0; i < JAM_N && live.jam[i] && !JE_POS(live.jam[i]); i++) {   /* (the tracks at the start) */
             k = JE_K(live.jam[i]);
             if (k < NTRK && !clip_go[k] && jam_cur(k) != JE_S(live.jam[i])) jam_switch(k, JE_S(live.jam[i]));
         }
         return;
     }
     g = gl_step_at(0);
+    if (jam_tr && !(jam_tr & 8u) && g >= jam_t0) {     /* (V10.8.2) LOCK's REC: one track, from its bar, a round */
+        for (k = jam_base; g >= k + jam_tl; k += jam_tl) {}
+        jam_r0 = (uint16_t)(g - k);
+        i = (jam_tr & 7u) - 1u;
+        fm1_irq_off();
+        jam_t0 = k;
+        jam_add(JAM_EV(jam_r0, i, jam_cur(i)));
+        jam_tr |= 8u;
+        fm1_irq_on();
+    }
+    if ((jam_tr & 8u) && g - jam_t0 >= jam_r0 + (uint32_t)jam_tl)
+        jam_round_end();                                /* (V10.8.2) a track's round done */
     while (g >= jam_base + len) jam_base += len;        /* (round and round) */
     rel = g - jam_base;
     for (k = 0; k < NTRK; k++) {
-        if (clip_go[k] || ((jam_rdy >> k) & 1u))
-            continue;                                   /* (one staged at a time: the player's or the take's) */
+        if (clip_go[k] || ((jam_rdy >> k) & 1u) || ((jam_tr & 8u) && (jam_tr & 7u) == k + 1u))
+            continue;                                   /* (one staged at a time: the player's or the take's; a track
+                                                         * recorded again: the player's) */
         best = 0xFFFFFFFFu; bs = 0;
-        for (i = 0; i < JAM_N && live.jam[i]; i++) {
+        for (i = 0; i < JAM_N && live.jam[i] && JE_K(live.jam[i]) != 7u; i++) {
             if (JE_K(live.jam[i]) != k) continue;
             p = JE_POS(live.jam[i]);
             p = p > rel ? p : p + len;                  /* (past this round: the next) */
@@ -598,14 +654,73 @@ static void jam_poll(void)
             continue;                                   /* (staged two bars ahead at most) */
         s = bs;
         jam_switch(k, s);
+        jam_vos &= (uint8_t)~(1u << k);
         jam_at[k] = jam_base + best + 1u;
     }
+}
+/* (V10.8.2, the owner's mock-up D3) TAKE: the JAM take's changes edited, one at a time (take_i: KNOB 1's); kept in
+ * flash when the page is left, stopped (song_poll) */
+static int take_busy(void)
+{
+    if (jam_tr || live.srec || !jam_len()) { ui_message("NO TAKE"); return 1; }
+    return 0;
+}
+static void take_pick(uint16_t v)                       /* the change v picked again, after the sort */
+{
+    uint32_t i;
+    for (i = 0; i < JAM_N - 1u && live.jam[i] != v; i++) {}
+    take_i = (uint8_t)i;
+    live.rec_done = 1;
+}
+static void take_knob(uint32_t slot, int32_t steps)
+{
+    uint32_t e = jam_end(), len = jam_len(), p;
+    uint16_t v;
+    if (take_busy()) return;
+    if (take_i >= e) take_i = (uint8_t)(e - 1u);
+    v = live.jam[take_i];
+    p = JE_POS(v);
+    if (slot == 0u) {
+        take_i = (uint8_t)clamp((int32_t)take_i + steps, 0, (int32_t)e - 1);
+    } else if (slot == 1u) {                            /* when: a 16th a detent (each track's start stays) */
+        if (!p) return;                                 /* (each track's start stays) */
+        live.jam[take_i] = JAM_EV((uint32_t)clamp((int32_t)p + steps, 1, (int32_t)len - 1), JE_K(v), JE_S(v));
+        v = live.jam[take_i];
+        jam_sort(e);
+        take_pick(v);
+    } else if (slot == 2u) {                            /* its sequence */
+        live.jam[take_i] = JAM_EV(p, JE_K(v), (uint32_t)clamp((int32_t)JE_S(v) + steps, 0, 3));
+        live.rec_done = 1;
+    }
+}
+static void take_del(void)                              /* OCT-: the change picked out */
+{
+    uint32_t e = jam_end(), i;
+    if (take_busy() || take_i >= e) return;
+    if (!JE_POS(live.jam[take_i])) return;
+    for (i = take_i; i < JAM_N - 1u; i++) live.jam[i] = live.jam[i + 1u];
+    live.jam[JAM_N - 1u] = 0;
+    if (take_i >= e - 1u) take_i--;
+    live.rec_done = 1;
 }
 /* SONG REC on / off */
 static void song_rec_toggle(void)
 {
     if (chain.running && !chain.loop) {
         ui_message("STOP THE SONG FIRST");
+        return;
+    }
+    if (jam_lock && jam_len() && !live.srec) {          /* (V10.8.2) LOCK: REC the track picked again, a round */
+        uint32_t e = jam_end();
+        fm1_irq_off();
+        if (jam_tr) srec_stop();
+        else if (e < JAM_N - 3u) {
+            jam_e = (uint8_t)e; jam_tl = (uint16_t)jam_len(); live.nrec = e + 1u;
+            jam_t0 = song.playing ? (gl_step_at(0) | 15u) + 1u : 0u;   /* (from the next bar) */
+            jam_tr = (uint8_t)(song.sel % NTRK + 1u);
+        }
+        fm1_irq_on();
+        ui_message(jam_tr ? "REC TRACK" : "REC OFF");
         return;
     }
     fm1_irq_off();
@@ -761,7 +876,8 @@ static void song_poll(void)
         if (next < chain.config.count)
             (void)song_stage(chain.config.row[next].slot, next);
     }
-    if (live.rec_done && !song.playing) {               /* (V10.8) the JAM take into flash, stopped */
+    if (live.rec_done && !song.playing && (ui.home || !SONG_TAKE(cur_page()))) {   /* (V10.8) the JAM take into flash,
+                                                         * stopped (V10.8.2: TAKE's edits when it is left) */
         live.rec_done = 0;
         jam_store();
         ui_message("JAM TAKE KEPT");

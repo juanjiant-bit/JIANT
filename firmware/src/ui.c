@@ -628,7 +628,7 @@ static uint32_t layer_btn(void);
  * LANES 2 a DRUM track's (its lane levels); SOUND / SOUND 2 a DRUM track's (DRUM-X: ui_dx.c) */
 static int page_visible(uint32_t i)
 {
-    if (PAGES[i].graph == GR_SONG && (PAGES[i].fam == FAM_SEQ || PAGES[i].title[0] == 'T' || PAGES[i].title[0] == 'P'))
+    if (PAGES[i].graph == GR_SONG && (PAGES[i].fam == FAM_SEQ || (PAGES[i].title[0] == 'T' && PAGES[i].title[1] == 'I')))
         return 0;                                       /* (V10.8: TIMELINE, PARTS gone, the song mode's redesign) */                                       /* (0.6.24) the song in one place: SAVE > ARRANGE (SEQ > SONG
                                                          * was the same page twice; kept in the table: its index) */
     if (sys_load == LOAD_ECO && ((PAGES[i].graph == GR_SLCR || PAGES[i].graph == GR_SLPIT) ||
@@ -833,6 +833,9 @@ static int clip_launch(uint32_t k, uint32_t s);        /* (V10.6s) song_main.c: 
 static int jam_switch(uint32_t k, uint32_t s);         /* (V10.8) song_main.c: JAM, a track's sequence */
 static uint32_t jam_cur(uint32_t k);
 static uint32_t jam_len(void);
+static uint32_t jam_end(void);                          /* (V10.8.2) song_main.c: TAKE, a track's round undone */
+static void take_knob(uint32_t slot, int32_t steps);
+static void take_del(void);
 static void song_rec_toggle(void);
 static int section_jump(uint32_t s);
 /* (0.6.22) ARRANGE: the rows 0..count-1, + ADD (while there is room), then the song's END row */
@@ -2107,7 +2110,8 @@ static void sw_ui_knob(const page_t *pg, uint32_t k, int32_t s);   /* (V10.6z6) 
 static void sw_ui_cards_bt(const page_t *pg);
 #define SONG_TRK(pg) ((void)(pg), 0)   /* (V10.8: TIMELINE gone, the song mode redesigned; was title T) */   /* (add15-beta5) TIMELINE (was ARRANGE 2) */
 #define SONG_PARTS(pg) ((void)(pg), 0)   /* (V10.8: PARTS gone; was title P) */   /* (V10.6o) PARTS */
-#define SONG_CLIPS(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'C')   /* (V10.6s) CLIPS */
+#define SONG_CLIPS(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'J')   /* (V10.6s) CLIPS; (V10.8.2) JAM */
+#define SONG_TAKE(pg) ((pg)->graph == GR_SONG && (pg)->title[0] == 'T' && (pg)->title[1] == 'A')   /* (V10.8.2) TAKE */
 #define DX_KIT3(pg) ((pg)->graph == GR_DXIMG && (pg)->title[0] == 'K')   /* (0.6.58) GR_DXIMG: KIT 3, or STEREO (IMAGE) */
 static uint32_t dx_sig(void);
 
@@ -2202,6 +2206,8 @@ static int act_ready(void)
                                  c == 2u || c >= 5u ? 1 : c == 3u ? ui.song_row < chain_config.count : chain_config.count != 0u);
     if (SONG_PARTS(cur_page()) || SONG_CLIPS(cur_page()))
         return project_used(ui.part);
+    if (SONG_TAKE(cur_page()))
+        return 0;
     if (cur_page()->graph == GR_SONG)
         return !chain_busy() && chain_config.count < CHAIN_ROWS;
     if (cur_page()->graph == GR_PATS)

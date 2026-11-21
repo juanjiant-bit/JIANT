@@ -46,9 +46,9 @@ typedef struct { const nv_t *e; const ng_t *g; uint8_t n, ng; } ch_t;
  * HOME's tabs, breadcrumb and header (nav_sec). SAVE keeps saving and loading */
 enum { SV_LIB, SV_PROJ, SV_SOUND };
 #define HE_SONG 4u                                      /* CE_HOME: the song's first entry, */
-#define HE_GEN 6u                                       /* .. GENE 1's */
+#define HE_GEN 7u                                       /* .. GENE 1's */
 static const nv_t CE_HOME[] = {NV(0, "ECO", 0, 0), NV(0, "LIFE", 0, 0), NV(0, "BEING", 1, 1), NV(0, "ROUTES", 1, 1),
-                               NV("CLIPS", 0, 2, SV_PROJ), NV("ARRANGE", 0, 2, SV_PROJ),   /* (V10.8: JAM's CLIPS first;
+                               NV("JAM", 0, 2, SV_PROJ), NV("TAKE", 0, 2, SV_PROJ), NV("ARRANGE", 0, 2, SV_PROJ),   /* (V10.8: JAM's CLIPS first;
                                                          * TIMELINE, PARTS gone, the song mode's redesign) */
                                NV(0, "GENE 1", 3, 2), NV(0, "GENE 2", 3, 2), NV(0, "GENE 3", 3, 2), NV(0, "GENE 4", 3, 2)};
 static const ng_t CG_HOME[] = {{"ECO", 0}, {"BEING", 0}, {"SONG", 0}, {"GENE", 0}};

@@ -3424,8 +3424,11 @@ static __attribute__((noinline)) uint32_t jam_step(track_t *t, uint32_t n, uint3
     if (!((jam_rdy >> k) & 1u) || !(jam_at[k] ? g + 1u >= jam_at[k] : start || !jam_q || g % Q[jam_q % 6u] == 0u))
         return len;
     jam_in(t, k);                                       /* (V10.8) JAM: the next sequence, the playhead where it was */
-    if (live.srec == 2u)                                /* REC: the change where it sounded */
-        jam_add(JAM_EV(gl_step_at(t->seq_pos >= n ? 0u : n - t->seq_pos) - jam_t0, k, clip_now[k] - 1u & 3u));
+    if (live.srec == 2u || ((jam_tr & 8u) && (jam_tr & 7u) == k + 1u)) {   /* REC: the change where it sounded */
+        uint32_t p = gl_step_at(t->seq_pos >= n ? 0u : n - t->seq_pos) - jam_t0;
+        if ((jam_tr & 8u) && p >= jam_tl) p -= jam_tl;  /* (V10.8.2: a track's round, past the take's start) */
+        jam_add(JAM_EV(p, k, clip_now[k] - 1u & 3u));
+    }
     jam_at[k] = 0;
     len = (uint32_t)t->p[P_SLEN];
     t->seq_idx = (uint16_t)(t->seq_idx % (len ? len : 1u));

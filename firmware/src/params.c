@@ -882,9 +882,10 @@ static const page_t PAGES[] = {
                                                          * mutations on the bar: EVERY AMOUNT MODE WHAT */
     {"RHYTHM", FAM_SEQ, SC_TRACK, GR_STEPS, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (codex/coherence) SPAN FIT (seq_fit), KNOB 1 and 2;
                                                          * LEN and DIV on LENGTH only, the page before */
-    {"PARTS", FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.6o) the song's four sections as cards: KNOB 1 one,
-                                                         * OCT+ it loops, OCT- the song from its row (ui_lzsave.c graph_parts) */
-    {"CLIPS", FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.6s) tracks x parts: KNOB 1 the track, 2 the part,
+    {"TAKE", FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.8.2, was PARTS) the JAM take's changes: KNOB 1
+                                                         * one, 2 when, 3 its sequence, 4 the take's bars; OCT+ a new one,
+                                                         * OCT- out (ui_lzsave.c graph_clips, song_main.c take_*) */
+    {"JAM", FAM_SAVE, SC_GLOBAL, GR_SONG, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.6s) tracks x parts: KNOB 1 the track, 2 the part,
                                                          * OCT+ the cell, OCT- the track stops, F3-B3 a part, REC the song
                                                          * (ui_lzsave.c graph_clips, song_main.c clip_launch) */
     {"SWARM", FAM_EDIT, SC_TRACK, GR_SWARM, {0xFF, 0xFF, 0xFF, 0xFF}},   /* (V10.6z6) a SWARM track's FAR / NEAR: SIDE RATE MOVE

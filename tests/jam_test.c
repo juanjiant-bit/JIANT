@@ -70,7 +70,7 @@ int main(void)
         uint32_t at = 0, g = 0, rnd = 0, len;
         favorites.factory[15][31] = (uint8_t)((0u ^ 1u) << 2);   /* AT ONCE */
         turn(EN_K1, -3); frame();                        /* T2: A (stopped: at once) */
-        nav_put(SEC_HOME, "CLIPS"); frame();
+        nav_put(SEC_HOME, "JAM"); frame();
         transport_req = 1; ui_input();
         press(B_REC); frame();                           /* REC: armed */
         ok = live.srec == 1u;
@@ -99,7 +99,48 @@ int main(void)
         }
         ok &= rnd == 3u;
         bad += check("JAM LOCK: the take round and round, T2 to B on its 16th every round (and back to A)", ok);
-        transport_req = 2; ui_input(); mix_block(o, CTL);
+        {   /* (V10.8.2) LOCK's REC: T3 again for a round (its change to C kept, the others as they were); the
+             * player's over the take marked (VOS) */
+            uint32_t n3 = 0, c3 = 0, sorted = 1, t2 = 0;
+            track_select(2); frame();
+            press(B_REC); frame();
+            ok = jam_tr == 3u;
+            for (i = 0; i < 200000u && !(jam_tr & 8u); i++) { mix_block(o, CTL); if (!(i & 15u)) { frame(); song_poll(); } }
+            ok &= (jam_tr & 8u) != 0u;
+            for (i = 0; i < 40000u && (gl_step_at(0) - jam_base) % len != (jam_r0 + 6u) % len; i++) mix_block(o, CTL);
+            jam_switch(2, 2);                            /* T3 to C, recorded */
+            for (i = 0; i < 400000u && jam_tr; i++) { mix_block(o, CTL); if (!(i & 15u)) { frame(); song_poll(); } }
+            ok &= !jam_tr && jam_len() == 32u && live.rec_done;
+            for (i = 0; i < JAM_N && live.jam[i] && JE_K(live.jam[i]) != 7u; i++) {
+                if (i && JE_POS(live.jam[i]) < JE_POS(live.jam[i - 1u])) sorted = 0;
+                if (JE_K(live.jam[i]) == 2u) { n3++; c3 |= JE_S(live.jam[i]) == 2u; ok &= JE_POS(live.jam[i]) < 32u; }
+                if (JE_K(live.jam[i]) == 1u && JE_POS(live.jam[i]) == at) t2 = 1;
+            }
+            ok &= n3 >= 2u && c3 && sorted && t2;
+            bad += check("JAM LOCK REC: T3 again for a round, its change to C in the take, T2's kept, in time order", ok);
+            jam_switch(0, 3);                            /* the player's T1 over the take */
+            ok = (jam_vos & 1u) != 0u;
+            bad += check("JAM LOCK: the player's sequence over the take marked (VOS)", ok);
+        }
+        transport_req = 2; ui_input(); mix_block(o, CTL); frames(8);
+        {   /* (V10.8.2) TAKE: T2's change a 16th later, to C, then out; the take kept when the page is left */
+            uint32_t e = jam_end(), j;
+            jam_lock = 0;
+            nav_put(SEC_HOME, "TAKE"); frame();
+            ok = SONG_TAKE(cur_page());
+            for (j = 0; j < e && !(JE_K(live.jam[j]) == 1u && JE_POS(live.jam[j])); j++) {}
+            take_i = (uint8_t)j;
+            turn(EN_K2, 1); frame();
+            ok &= JE_K(live.jam[take_i]) == 1u && JE_POS(live.jam[take_i]) == at + 1u;
+            turn(EN_K3, 1); frame();
+            ok &= JE_S(live.jam[take_i]) == 2u;
+            press(B_OCTDN); frame();
+            for (j = 0; j < jam_end(); j++) ok &= !(JE_K(live.jam[j]) == 1u && JE_POS(live.jam[j]));
+            ok &= jam_end() == e - 1u && jam_len() == 32u;
+            nav_put(SEC_HOME, "JAM"); frame(); song_poll();
+            ok &= !live.rec_done;
+            bad += check("TAKE: a change moved a 16th, its sequence changed, then out; kept when the page is left", ok);
+        }
         jam_lock = 0;
     }
     printf(bad ? "jam: %d FAILED\n" : "jam: all ok\n", bad);
