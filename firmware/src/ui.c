@@ -1090,9 +1090,10 @@ static uint32_t gco_slot(void) { return ui.page > 0u && PAGES[ui.page - 1u].grap
 static int keys_pg(uint32_t g) { return !ui.home && !ui.menu && !ui.confirm && !ui.layer && cur_page()->graph == g; }   /* (V10.6o) */
 static int gco_on(void) { return keys_pg(GR_GCOMP); }
 static int ckeys_on(void) { return keys_pg(GR_COMP); }   /* (seq2g) */
-/* (V10.8.8, the owner) STEP FX's PLAY (OCT+ on COMP / COMP 2): the white keys hold a component on the track (seq.c
- * hc_run), REC writes it into the step it began on; sfx_key the one held (16: none) */
-static uint8_t sfx_play, sfx_key = 16;
+/* (V10.8.8, the owner) STEP FX (COMP / COMP 2): the white keys hold a component on the track (seq.c hc_run), REC writes
+ * it into the step it began on (V10.8.9: always; PRESETS picks the step, as on every SEQ page); sfx_key the one held
+ * (16: none) */
+static uint8_t sfx_key = 16;
 static const uint8_t SFX_KA[16] = {CA_STUT, CA_STUT, CA_STUT, CA_RATCH, CA_RATCH, CA_RATCH, CA_RATCH, CA_ARP, CA_ARP,
                                    CA_ARP, CA_OCTU, CA_OCTD, CA_RAND, CA_TRANS, CA_CHORD, CA_MUTE};
 static const uint8_t SFX_KV[16] = {0, 1, 3, 0, 1, 2, 6, CV_ARP_SCALE | CP_ARG(0, 2, 1), CV_ARP_SCALE | CP_ARG(1, 2, 1),

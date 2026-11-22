@@ -233,6 +233,19 @@ static void jam_lanes(int32_t y, int32_t dy, int32_t h, int32_t sel)
     }
     if (xp) cv_rect((int32_t)xp, y - dy * NTRK - 2, 1, dy * NTRK + 2, T_TEXT);
 }
+/* (V10.8.9, the owner) the song mode's hint, by its state (MENU > DISPLAY > HELP OFF: none); the cards name the knobs */
+static const char *song_hint(void)
+{
+    if (ui_help_off & 1u)
+        return 0;
+    if (SONG_TAKE(cur_page()))
+        return jam_len() ? "OCT+ A NEW CHANGE \xB7 OCT- DELETE IT" : "NO TAKE: REC ONE ON JAM";
+    return live.srec == 2u ? "RECORDING: CHANGE SEQS \xB7 REC ENDS" : live.srec ? "REC: FROM THE NEXT BAR" :
+           jam_tr & 8u ? "RECORDING THE TRACK: ONE ROUND" : jam_tr ? "TRACK REC: FROM THE TAKE START" :
+           jam_undo ? "OCT- UNDO THE ROUND" : jam_lock ? "PLAY OVER IT: YOU \xB7 REC: REDO A TRACK" :
+           jam_len() ? "K4 LOCK: THE TAKE PLAYS \xB7 JAM OVER IT" :
+           song.playing ? "KEYS A-D ALL \xB7 OCT+ GO \xB7 REC: A TAKE" : "PLAY \xB7 KEYS A-D ALL \xB7 OCT+ GO \xB7 OCT- STOP";
+}
 static void graph_clips(void)                           /* (V10.8.2) and TAKE: the take full screen, the change picked */
 {                                                       /* ringed, its track lit */
     uint32_t s, k, i, tk = SONG_TAKE(cur_page()), full = tk || jam_full(), hi = song.sel;
@@ -272,11 +285,11 @@ static void graph_clips(void)                           /* (V10.8.2) and TAKE: t
                 cv_rect(24 + (int32_t)q * 13, 124, 12, 12, sec_col(s));
                 if (b + q == JE_POS(live.jam[take_i])) cv_frame(23 + (int32_t)q * 13, 123, 14, 14, T_TEXT);
             }
-        } else if (jam_lock) cv_text(4, 128, &AF_X, jam_undo ? "OCT- UNDO THE ROUND" : "REC: TRACK AGAIN", T_MID);
+        }
     } else if (jam_len())
         jam_lanes(120, 3, 2, -1);
-    else
-        cv_text(4, 128, &AF_X, "OCT+ GO \xB7 OCT- STOP \xB7 REC \xB7 K4 LOCK", T_MID);
+    if (song_hint())                                    /* (V10.8.9) TAKE: over its lanes (its zoom row below) */
+        cv_text(tk ? 26 : 4, tk ? 2 : 128, &AF_X, song_hint(), live.srec || jam_tr ? T_ACCENT : T_MID);
 }
 /* (V10.6o, the owner's mock-up B) TIMELINE: the song as blocks (the cursor's row framed), what plays; under it the row
  * opened: each track's bar (its own part's colour calm, another part's bright with FROM and its letter,

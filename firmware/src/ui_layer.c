@@ -1611,13 +1611,16 @@ static __attribute__((noinline)) void layer_state(uint32_t l)
 }
 static __attribute__((noinline)) void draw_layer(void)
 {
-    uint32_t l = ui.layer % LAYER_N, sig = l * 7919u + ux.gen * 977u;
+    uint32_t l = ui.layer % LAYER_N, sig = l * 7919u + ux.gen * 977u, k;
+    for (fx_hk = 0, k = 0; k < 27u; k++)                /* (V10.8.9) the FX layer's key held (+ 1), the highest */
+        if ((kb_layer & fm1_in.notes) >> k & 1u)
+            fx_hk = (uint8_t)(k + 1u);
     layer_cards(l);
     if (l == LAYER_FX)
     {
         uint32_t s;
         sig += (perf_kill ? 0u : perf_held | perf_latched) * 31u + perf_latch_on * 11u + perf_act * 131u + perf_avail() * 7u;
-        sig += pk.edit * 3u + pk.ekey * 4099u + (kb_layer != 0u) * 65537u + pk.mod * 17u + pk.pkey * 257u;   /* (V10.8.5: the
+        sig += fx_hk * 524287u + (uint32_t)pfx_rec_ok() * 29u + pk.edit * 3u + pk.ekey * 4099u + (kb_layer != 0u) * 65537u + pk.mod * 17u + pk.pkey * 257u;   /* (V10.8.5: the
                                                          * editor's key lit while pressed, its keys' names as set) */
         for (s = 0; pk.edit && s < PK_KEYS; s++) sig = (sig ^ pk.we[s] ^ (uint32_t)pk.wo[s] << 8) * 16777619u;
     }
@@ -1647,6 +1650,11 @@ static __attribute__((noinline)) void draw_layer(void)
         cv_bg = T_SURF;
         if (l == LAYER_FX && !pk.edit) ly_fx_cells();   /* (V10.7.77, the owner) FX: the effects as cells, as before 0.8.9 */
         else ly_piano(l);                               /* MAP: the keyboard (V10.7.66: KNOBS / STATE gone) */
+        if (l == LAYER_FX && !pk.edit && fx_hk) {       /* (V10.8.9, the owner) the punch-in held, large */
+            char nm[12];
+            ly_keyname(LAYER_FX, key_black(fx_hk - 1u), key_place(fx_hk - 1u), nm);
+            if (nm[0]) hold_banner(nm, fx_hk - 1u, pfx_rec_ok());
+        }
         cv_blit(0, graph_y());
     }
     draw_tabs();                                        /* (0.8.5: MAP . KNOBS . STATE, the breadcrumb) */

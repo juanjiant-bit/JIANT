@@ -1,5 +1,5 @@
 // Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant). All rights reserved.
-/* (V10.8.8, the owner) SEQ > STEP FX's PLAY: OCT+ on COMP turns the white keys into components held live (seq.c hc_run):
+/* (V10.8.8, the owner) SEQ > STEP FX (COMP / COMP 2; V10.8.9: always, PRESETS picks the step): the white keys hold components live (seq.c hc_run):
  * held, the selected track plays it from its next step; let go, the pattern again; REC armed and playing, the step it
  * began on gets it (VALUE, LENGTH the steps held), in C1, or C2 when C1 holds another. Built and run by CI
  * (voice-user-check.yml) */
@@ -25,6 +25,7 @@ static void steps(uint32_t n)                           /* n steps of track 1 pl
     }
     frame();
 }
+static uint16_t spx(int32_t x, int32_t y) { return swap16(host_screen[y * 240 + x]); }
 static void hold_key(uint32_t p) { fm1_in.notes |= 1u << wkey(p); frame(); }
 static void let_go(uint32_t p) { fm1_in.notes &= ~(1u << wkey(p)); frame(); }
 int main(void)
@@ -38,10 +39,18 @@ int main(void)
     trk[0].p[P_SLEN] = 16;
     for (i = 0; i < 16u; i++) trk[0].step[i] = (step_t){{(uint8_t)(48 + i), 0, 0, 0}, 1, ST_NOTE, 0, 96, 0, 0};
     go_title("COMP"); frame();
-    ok = cur_page()->graph == GR_COMP && !sfx_play;
-    press(B_OCTUP); frame();
-    ok &= sfx_play == 1u && song.octave == 0;
-    bad += check("STEP FX: OCT+ turns PLAY on (no octave)", ok);
+    {
+        uint32_t p0 = TSEL->preset, c0 = ui.cursor;
+        ok = cur_page()->graph == GR_COMP;
+        turn(EN_PRESET, 1); frame();
+        ok &= ui.cursor == c0 + 1u && TSEL->preset == p0 && cur_page()->graph == GR_COMP;
+        fm1_in.notes |= 1u << wkey(3); host_notes |= 1u << wkey(3); frame();   /* a white key: no step picked */
+        ok &= ui.cursor == c0 + 1u && sfx_key == 3u;
+        fm1_in.notes = 0; frame();
+        turn(EN_PRESET, -1); frame();
+        ok &= ui.cursor == c0 && sfx_key == 16u;
+        bad += check("STEP FX: PRESETS picks the step (no sound loaded), a white key holds a component (no step picked)", ok);
+    }
 
     transport_req = 1; ui_input();
     steps(2);
@@ -80,10 +89,61 @@ int main(void)
              CO_ACT(trk[0].step[i0].comp2) == CA_OCTD && trk[0].step[i0].clen[1] >= 1u;
         bad += check("REC: C1 holding another component, the new one goes into C2 (they add up)", ok);
     }
+    {   /* (V10.8.9) the banner: the component held large over the graph, its key, REC */
+        uint32_t by = graph_y() + graph_h() / 2u - 24u;
+        hold_key(1); frame();
+        ok = str_eq(SFX_NM[sfx_key], "STUT /2") && sfx_k == wkey(1) && key_place(sfx_k) + 1u == 2u &&
+             spx(120, (int32_t)by) == T_RAISE && rec_on(TSEL);
+        let_go(1); frame(); frame();
+        ok &= sfx_key == 16u && spx(120, (int32_t)by) != T_RAISE;
+        bad += check("STEP FX banner: STUT /2, KEY 2, REC while held; gone when let go", ok);
+    }
     song.rec = 0;
-    press(B_OCTUP); frame();
-    ok = !sfx_play && hc_act == 0u;
-    bad += check("STEP FX: OCT+ again, the keys pick the step", ok);
+    {   /* (V10.8.9) the FX layer's punch-in held: its banner */
+        uint32_t by = graph_y() + graph_h() / 2u - 24u;
+        char nm[12];
+        go_title("STEP"); frame();
+        btn_down(B_FX); key_down(white(2)); frame(); frame();
+        ok = ui.layer == LAYER_FX && fx_hk == white(2) + 1u;
+        ly_keyname(LAYER_FX, 0, 2, nm);
+        ok &= str_eq(nm, "RPT 1/32") && spx(120, (int32_t)by) == T_RAISE;
+        key_up(white(2)); frame(); frame();
+        ok &= !fx_hk && spx(120, (int32_t)by) != T_RAISE;
+        btn_up(B_FX); frame();
+        bad += check("FX layer banner: the punch-in held (RPT 1/32) large with its key; gone when let go", ok);
+    }
+    {   /* (V10.8.9) the song mode's hints: one a state, each fits the line; HELP OFF: none */
+        const char *h[6];
+        uint8_t ho = ui_help_off;
+        stop_transport(); frame();
+        nav_put(SEC_HOME, "JAM"); frame();
+        memset(live.jam, 0, sizeof live.jam); jam_lock = 0; jam_tr = 0; jam_undo = 0; live.srec = 0;
+        h[0] = song_hint();
+        live.srec = 1; h[1] = song_hint();
+        live.srec = 2; h[2] = song_hint();
+        live.srec = 0; jam_lock = 1; h[3] = song_hint();
+        jam_undo = 1; h[4] = song_hint();
+        jam_undo = 0; jam_lock = 0;
+        nav_put(SEC_HOME, "TAKE"); frame();
+        h[5] = song_hint();
+        ok = h[0] && str_eq(h[0], "PLAY \xB7 KEYS A-D ALL \xB7 OCT+ GO \xB7 OCT- STOP") && str_eq(h[1], "REC: FROM THE NEXT BAR") &&
+             str_eq(h[2], "RECORDING: CHANGE SEQS \xB7 REC ENDS") && str_eq(h[3], "PLAY OVER IT: YOU \xB7 REC: REDO A TRACK") &&
+             str_eq(h[4], "OCT- UNDO THE ROUND") && str_eq(h[5], "NO TAKE: REC ONE ON JAM");
+        for (i = 0; i < 6u; i++) ok &= h[i] && text_w(&AF_X, h[i]) <= 230;
+        ui_help_off |= 1u;
+        ok &= !song_hint();
+        nav_put(SEC_HOME, "JAM"); frame();
+        ok &= !song_hint();
+        ui_help_off = ho;
+        bad += check("song mode hints: JAM stopped / REC armed / recording / LOCK / UNDO, TAKE; they fit; HELP OFF none", ok);
+        go_title("COMP"); frame();
+        transport_req = 1; ui_input(); steps(1);
+    }
+    hold_key(4); steps(1);
+    go_title("STEP"); frame();
+    ok = hc_act == 0u && sfx_key == 16u;
+    let_go(4);
+    bad += check("STEP FX: off the page, nothing held", ok);
     if (bad) printf("stepfx: %d failed\n", bad);
     else printf("stepfx: all passed\n");
     return bad != 0;

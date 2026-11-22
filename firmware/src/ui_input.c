@@ -674,7 +674,7 @@ static void sfx_keys(void)
     uint32_t k, w = 16;
     for (k = 0; k < 27u; k++)
         if (((fm1_in.notes >> k) & 1u) && !key_black(k) && key_place(k) < 16u)
-            w = key_place(k);
+            w = key_place(k), sfx_k = k;
     if (w != sfx_key && w < 16u)
         ui_message(SFX_NM[w]);
     sfx_key = (uint8_t)w;
@@ -682,28 +682,12 @@ static void sfx_keys(void)
     hc_trk = (uint8_t)song.sel;
     hc_act = w < 16u ? SFX_KA[w] : 0u;
 }
-static void comp_keys(uint32_t pressed)
-{
-    uint32_t k;
-    for (k = 0; k < 27u; k++) {
-        uint32_t p = key_place(k), i = ui.bank * 16u + p;
-        char b[12];
-        if (!((pressed >> k) & 1u))
-            continue;
-        if (key_black(k)) {
-            if (p == GK_PGUP || p == GK_PGDN)
-                page_go(p == GK_PGUP ? 1 : -1);
-            continue;
-        }
-        if (sfx_play)                                   /* (V10.8.8: PLAY, sfx_keys) */
-            continue;
-        if (i >= (uint32_t)TSEL->p[P_SLEN])
-            continue;
-        cursor_set((int32_t)i);
-        str_cpy(b, "STEP ", sizeof b);
-        fmt_int(b + 5, (int32_t)i + 1);
-        ui_message(b);
-    }
+static void comp_keys(uint32_t pressed)                 /* (V10.8.9: the black keys PG UP / DN only; the white keys hold */
+{                                                       /* components, sfx_keys; PRESETS picks the step) */
+    uint32_t k, p;
+    for (k = 0; k < 27u; k++)
+        if (((pressed >> k) & 1u) && key_black(k) && ((p = key_place(k)) == GK_PGUP || p == GK_PGDN))
+            page_go(p == GK_PGUP ? 1 : -1);
 }
 
 /* ------------------------------------------------- parameter locks --- */
@@ -3057,12 +3041,6 @@ static void ui_input_frame(void)
                 ui.force = 1;
                 break;
             }
-            if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_COMP && b == B_OCTUP && !fm1_in.notes) {
-                sfx_play ^= 1u;                         /* (V10.8.8, the owner) STEP FX: OCT+ PLAY, the keys hold */
-                ui_message(sfx_play ? "PLAY: HOLD A KEY" : "KEYS PICK THE STEP");   /* components (sfx_keys) */
-                ui.force = 1;
-                break;
-            }
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_COMP && b == B_OCTDN && !fm1_in.notes) {
                 if (chain_busy()) ui_message("SONG PLAYS: STOP IT TO EDIT");   /* (V10.7.62) STEP FX: OCT- clears the */
                 else confirm_open(CF_CLEAR_COMP, song.sel);                    /* track's (a dialog) */
@@ -3126,7 +3104,7 @@ static void ui_input_frame(void)
     song.grid = (uint8_t)keys_mode();                 /* (seq.c: the keys are the grid's) */
     seq_fill = (uint8_t)((fm1_in.buttons >> panel.btn[B_FX]) & 1u);   /* (0.6.42) FILL steps: FX held */
     lock_keys();                                        /* (a grid key on a hit let go: the hit goes) */
-    if (ckeys_on() && sfx_play)                         /* (V10.8.8) STEP FX's PLAY: the keys held */
+    if (ckeys_on())                                     /* (V10.8.8) STEP FX: the keys held, components */
         sfx_keys();
     else
         hc_act = 0, sfx_key = 16;

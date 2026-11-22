@@ -8086,13 +8086,14 @@ static int test_foot_steps(void)
     t->p[P_SLEN] = 32;
     for (i = 0; i < 32u; i++) step_clear(&t->step[i]);
     go_page(GR_COMP); frame();
-    tap_key(key_at(0, 4));
-    ok = cur_page()->graph == GR_COMP && ui.cursor == 4u && ui.bank == 0u && str_eq(ui.msg, "STEP 5");
-    tap_key(key_at(1, GK_PGUP)); tap_key(key_at(0, 4));
-    ok &= ui.cursor == 20u && ui.bank == 1u && str_eq(ui.msg, "STEP 21") && fpx(fs_x(4), fs_my()) == T_ACCENT;
+    for (i = 0; i < 4u; i++) { turn(EN_PRESET, 1); frames(20); }   /* (V10.8.9: PRESETS picks the step; the keys */
+    tap_key(key_at(0, 7));                                            /* hold components) */
+    ok = cur_page()->graph == GR_COMP && ui.cursor == 4u && ui.bank == 0u;
+    for (i = 0; i < 16u; i++) { turn(EN_PRESET, 1); frames(20); }
+    ok &= ui.cursor == 20u && ui.bank == 1u && fpx(fs_x(4), fs_my()) == T_ACCENT;
     turn(EN_K1, 1); frame();
     ok &= CO_ACT(t->step[20].comp) != 0 && !t->step[4].comp;
-    bad += check("SEQ > COMP: key 5 the step 5 (bar 1), on bar 2 step 21; KNOB 1 its C1", ok);
+    bad += check("SEQ > COMP: PRESETS the step (5, then 21 on bar 2), a key picks none; KNOB 1 its C1", ok);
     ui_power_on();
     return bad;
 }

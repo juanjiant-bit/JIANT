@@ -1131,6 +1131,21 @@ BTAPP_FN static void ramp_draw_bt(const track_t *t, uint32_t dr, int32_t top, ui
     for (px = 0; px < w; px++)
         cv_rect(x + px, top + 12 - (ramp_curve(CV_RAMP_CURVE(v), px * 32768 / w) * 12 >> 15), 1, 2, T_TEXT);
 }
+/* (V10.8.9, the owner) a key held: what it plays large, centred over the graph, its key under it, REC (red) recording */
+static __attribute__((noinline)) void hold_banner(const char *nm, uint32_t k, int rec)
+{
+    char b[12];
+    int32_t y = (int32_t)graph_h() / 2 - 26;
+    cv_rrect(14, y, 212, 52, 8, T_RAISE, cv_bg);
+    cv_text_in(14, y + 6, 212, large_face_has(nm) ? &AF_L : &AF_M, nm, T_ACCENT, T_RAISE);
+    str_cpy(b, key_black(k) ? "BLACK " : "KEY ", sizeof b);
+    fmt_int(b + str_len(b), (int32_t)key_place(k) + 1);
+    cv_text_in(14, y + 36, rec ? 150 : 212, &AF_S, b, T_TEXT, T_RAISE);
+    if (rec)
+        cv_text_in(150, y + 36, 60, &AF_S, "REC", T_REC, T_RAISE);
+}
+static uint32_t sfx_k;                                  /* (V10.8.9) the key sfx_key is (sfx_keys) */
+static uint8_t fx_hk;                                   /* (V10.8.9) the FX layer's key held + 1 (ui_layer.c draw_layer) */
 /* the page's marks over the roll / the grid (0.9.17's): PLAYHEADS FUGUE's heads on the grid too (the roll draws them on
  * every page); COMP the steps with the cursor's component a bar on top ACCENT, another component a thin MID one;
  * AUTOMATION / AUTO LIST the records at the foot (a lock ACCENT, automation TEXT; AUTO LIST the row picked framed THEME);
@@ -1157,8 +1172,10 @@ static __attribute__((noinline)) void seq_overlay(const track_t *t, const page_t
         k = ui.cursor % NSTEP;
         if (mine == CA_RAMP && k >= base && k < base + 16u && bt_hw_seg())
             ramp_draw_bt(t, dr, top, k - base);
-        if (sfx_play)                                   /* (V10.8.8) PLAY: the component held, ACCENT */
-            cv_text(4, 2, &AF_X, sfx_key < 16u ? SFX_NM[sfx_key] : "PLAY: HOLD A KEY", sfx_key < 16u ? T_ACCENT : T_MID);
+        if (sfx_key < 16u)                              /* (V10.8.8) the component held, large (V10.8.9) */
+            hold_banner(SFX_NM[sfx_key], sfx_k, rec_on(t));
+        else
+            cv_text(4, 2, &AF_X, "HOLD A KEY: STEP FX", T_MID);
     } else if (pg->graph == GR_MOTION || pg->graph == GR_EVENTS) {
         uint8_t idx[MOTION_MAX];
         uint32_t n = ev_rows(idx), cur = ev_row(n);
@@ -1384,7 +1401,7 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
         for (i = 0; i < 4u; i++) h ^= (uint32_t)graph_project_used(i) << (24u + i);
         for (i = 0; i < NTRK; i++) h = (h ^ (clip_now[i] | clip_go[i] << 4)) * 16777619u;   /* (V10.6s) CLIPS */
         h ^= live.srec * 3266489917u + ui.part * 668265263u;
-        h ^= jam_lock * 5u + jam_tr * 11u + jam_vos * 131u + jam_undo * 17u + take_i * 40503u;   /* (V10.8.2) JAM, TAKE */
+        h ^= jam_lock * 5u + jam_tr * 11u + jam_vos * 131u + jam_undo * 17u + take_i * 40503u + (ui_help_off & 1u) * 7u + song.playing * 13u;   /* (V10.8.2) JAM, TAKE; (V10.8.9) the hint */
         for (i = 0; i < JAM_N; i++) h = (h ^ live.jam[i]) * 31u;
         h += graph_pname_sig;
     }
@@ -1472,7 +1489,7 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
     if (pg->graph == GR_COMP) {                      /* (0.6.39) the steps, their components, the arpeggio and the loop */
         const step_t *cs = &t->step[ui.cursor];
         uint32_t ph = song.playing ? seq_src(t, t->seq_idx) : 0xFFFFu;
-        h = (h ^ (steps_hash(t) + ph * 31u + ui.cursor * 7919u + ui.bank * 613u + sfx_play * 3u + sfx_key * 65537u)) * 16777619u;
+        h = (h ^ (steps_hash(t) + ph * 31u + ui.cursor * 7919u + ui.bank * 613u + sfx_key * 65537u + (uint32_t)rec_on(t) * 101u)) * 16777619u;
         h = (h ^ ((uint32_t)t->p[P_CLEN] << 8 | (song.playing ? t->cpos : 0xFFu))) * 16777619u;   /* (0.6.47) C.LEN */
         for (i = ui.bank * 16u; i < ui.bank * 16u + 16u && i < NSTEP; i++)
             h = (h ^ ((uint32_t)t->step[i].comp << 8 | t->step[i].carg | (uint32_t)t->step[i].probability << 16 |
