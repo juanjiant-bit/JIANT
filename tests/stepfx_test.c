@@ -92,7 +92,7 @@ int main(void)
     {   /* (V10.8.9) the banner: the component held large over the graph, its key, REC */
         uint32_t by = graph_y() + graph_h() / 2u - 24u;
         hold_key(1); frame();
-        ok = str_eq(SFX_NM[sfx_key], "STUT /2") && sfx_k == wkey(1) && key_place(sfx_k) + 1u == 2u &&
+        ok = str_eq(SFX_NM[sfx_key], "STUTTER /2") && sfx_k == wkey(1) && key_place(sfx_k) + 1u == 2u &&
              spx(120, (int32_t)by) == T_RAISE && rec_on(TSEL);
         let_go(1); frame(); frame();
         ok &= sfx_key == 16u && spx(120, (int32_t)by) != T_RAISE;

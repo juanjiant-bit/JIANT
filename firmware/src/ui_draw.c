@@ -971,7 +971,7 @@ static __attribute__((noinline)) void foot_crumbs(char *b, uint32_t n)   /* b ho
         (void)nav_groups(cnt, gi, &g, &p, &i, &m);
         str_cpy(b, SEC_NAME[nav_sec()], n);
         str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), nav_group_name(gi[g]), 12);
+        str_cpy(b + str_len(b), nav_group_name(gi[g]), 16);
         str_cpy(b + str_len(b), " \xB7 ", 4);
         if (grid_on() && black_held(GK_ACC))
             str_cpy(ti, "ACCENT", sizeof ti);

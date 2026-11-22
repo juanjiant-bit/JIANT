@@ -946,8 +946,8 @@ static void rate_name(const track_t *t, uint32_t n, char *b)
 /* (0.9.9-seq2d) SEQ > COMP / COMP 2: the step's C1 / C2 as ACTION LENGTH CONDITION VALUE (core.h CA_* CC_*) */
 /* (gen3) the names short, each read whole on its card: the value's M where it fits with its unit (COMP's 49 px), else S
  * (ui_test test_comp_cards: every value of every knob, every page) */
-static const char *const CA_NAMES[CA_N + 1u] = {"OFF", "ARP", "SEQ", "OCT+", "OCT-", "RATCH", "STUT", "MUTE", "TRANS",
-                                                "RAND", "FILL", "RAMP", "SOUND", "BEND", "SHIFT", "CHORD", "TRIG"};
+static const char *const CA_NAMES[CA_N + 1u] = {"OFF", "ARP", "SEQ", "OCT+", "OCT-", "RATCHET", "STUTTER", "MUTE", "TRANS",
+                                                "RANDOM", "FILL", "RAMP", "SOUND", "BEND", "SHIFT", "CHORD", "TRIG"};
 static const char *const CC_NAMES[CC_NM] = {"ALWAYS", "25%", "50%", "75%", "1ST", "!1ST", "FILL", "!FILL", "PRE",
                                             "!PRE", "NEI", "!NEI", "ELSE"};
 #define CCL_NM 135u                                     /* N:M, M 2..16, N 1..M */
@@ -1103,8 +1103,9 @@ static const uint8_t SFX_KA[16] = {CA_STUT, CA_STUT, CA_STUT, CA_RATCH, CA_RATCH
                                    CA_ARP, CA_OCTU, CA_OCTD, CA_RAND, CA_TRANS, CA_CHORD, CA_MUTE};
 static const uint8_t SFX_KV[16] = {0, 1, 3, 0, 1, 2, 6, CV_ARP_SCALE | CP_ARG(0, 2, 1), CV_ARP_SCALE | CP_ARG(1, 2, 1),
                                    CV_ARP_SCALE | CP_ARG(2, 2, 1), 0, 0, 2, CV_TR_MAKE(2, 1), 0, 0};
-static const char SFX_NM[16][10] = {"STUT", "STUT /2", "STUT /4", "RATCH x2", "RATCH x3", "RATCH x4", "RATCH x8",
-                                    "ARP UP", "ARP DOWN", "ARP UP-DN", "OCT+", "OCT-", "RANDOM", "TRANS +2", "CHORD", "MUTE"};
+static const char SFX_NM[16][13] = {"STUTTER", "STUTTER /2", "STUTTER /4", "RATCHET x2", "RATCHET x3", "RATCHET x4",
+                                    "RATCHET x8", "ARP UP", "ARP DOWN", "ARP UP-DOWN", "OCTAVE UP", "OCTAVE DOWN", "RANDOM",
+                                    "TRANSPOSE +2", "CHORD", "MUTE"};
 /* (V10.6o) PARTS, TIMELINE: the keys are the page's (silent): F3..B3 the parts; T1..T6's mutes, F4..B4 a track's FROM */
 static int skeys_on(void) { return keys_pg(GR_SONG) && cur_page()->title[0] != 'A'; }
 static uint32_t ga_idx(uint32_t a)

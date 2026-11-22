@@ -47,11 +47,12 @@ typedef struct { const nv_t *e; const ng_t *g; uint8_t n, ng; } ch_t;
 enum { SV_LIB, SV_PROJ, SV_SOUND };
 #define HE_SONG 4u                                      /* CE_HOME: the song's first entry, */
 #define HE_GEN 7u                                       /* .. GENE 1's */
-static const nv_t CE_HOME[] = {NV(0, "ECO", 0, 0), NV(0, "LIFE", 0, 0), NV(0, "BEING", 1, 1), NV(0, "ROUTES", 1, 1),
+static const nv_t CE_HOME[] = {NV(0, "ECOSYSTEM", 0, 0), NV(0, "LIFE", 0, 0), NV(0, "BEING", 1, 1), NV(0, "ROUTES", 1, 1),
                                NV("JAM", 0, 2, SV_PROJ), NV("TAKE", 0, 2, SV_PROJ), NV("ARRANGE", 0, 2, SV_PROJ),   /* (V10.8: JAM's CLIPS first;
                                                          * TIMELINE, PARTS gone, the song mode's redesign) */
-                               NV(0, "GENE 1", 3, 2), NV(0, "GENE 2", 3, 2), NV(0, "GENE 3", 3, 2), NV(0, "GENE 4", 3, 2)};
-static const ng_t CG_HOME[] = {{"ECO", 0}, {"BEING", 0}, {"SONG", 0}, {"GENE", 0}};
+                               NV(0, "GENERATOR 1", 3, 2), NV(0, "GENERATOR 2", 3, 2), NV(0, "GENERATOR 3", 3, 2),
+                               NV(0, "GENERATOR 4", 3, 2)};   /* (V10.8.11, the owner: the words whole where they fit) */
+static const ng_t CG_HOME[] = {{"ECOSYSTEM", "ECO"}, {"BEING", 0}, {"SONG", 0}, {"GENERATOR", "GENE"}};
 static const nv_t CE_SYN[] = {NV("EDIT 1", 0, 0, 0), NV("EDIT 2", 0, 0, 0), NV("FILTER", 0, 1, 1), NV("WORDS", 0, 1, 1),
                               NV("SWARM", 0, 1, 1), NV("SWARM 2", 0, 1, 1), NV("FOCUS", 0, 2, 2), NV("MORE", 0, 3, 1), NV("PLAY", 0, 3, 1)};   /* (V10.7.80, the owner: MORE before PLAY) */   /* (V10.7.60:
                                                          * MORPH RETRIG ROTOR and PLAY 2 one MORE) */   /* (the
@@ -101,7 +102,7 @@ static const nv_t CE_GLO[] = {NV("MIXER", 0, 0, 0), NV("SENDS", 0, 0, 0),   /* (
                               NV("SYSTEM", 0, 2, 2), NV("SYSTEM 2", "MIDI", 2, 2), NV("KEY SPLIT", 0, 2, 2), NV("KEY SPLIT 2", 0, 2, 2)};   /* (V10.37) the performing pages first, the
                                                          * settings (GLOBAL, SYSTEM) last */   /* (0.9.9-seq2f) the global lane; (p2) LIVE first
                                                          * (ui_live.c) */
-static const ng_t CG_GLO[] = {{"MIX", 0}, {"G.COMP", "GCMP"}, {"SETUP", 0}};   /* (codex/coherence: SETUP, the
+static const ng_t CG_GLO[] = {{"MIXER", "MIX"}, {"GLOBAL COMP", "G.COMP"}, {"SETUP", 0}};   /* (codex/coherence: SETUP, the
                                                          * settings in one group: GLOBAL, SYSTEM, SYSTEM 2, KEY SPLIT) */   /* (five tabs of 44 px in the labels' face) */
 static const nv_t CE_ENV[] = {NV("ENV", 0, 0, 1), NV("ENV DEST", 0, 0, 1), NV("ENV 2", 0, 0, 1), NV("STAGE", 0, 1, 2),
                               NV("ENV", "TRACKS", 2, 0)};   /* (V10.22: ENV 2) (codex/coherence) the track's pages first;
@@ -110,7 +111,7 @@ static const nv_t CE_ENV[] = {NV("ENV", 0, 0, 1), NV("ENV DEST", 0, 0, 1), NV("E
 static const ng_t CG_ENV[] = {{"ENV", 0}, {"STAGE", 0}, {"TRACKS", 0}};
 static const nv_t CE_LFO[] = {NV("MOD", 0, 0, 0), NV("LFO", 0, 1, 1), NV("LFO 2", 0, 1, 1), NV("LFO DEST", 0, 1, 1),
                               NV("MSEQ", "MOD SEQ", 2, 2), NV("MSEQ 2", "MOD SEQ 2", 2, 2)};   /* (0.9.18: LFO 2, PHASE) */
-static const ng_t CG_LFO[] = {{"MOD", 0}, {"LFO", 0}, {"MOD SEQ", "MSEQ"}};   /* (V10.7.59: MOD SEQ) */
+static const ng_t CG_LFO[] = {{"MODULATION", "MOD"}, {"LFO", 0}, {"MOD SEQUENCE", "MOD SEQ"}};   /* (V10.7.59: MOD SEQ) */
 static const nv_t CE_SCL[] = {NV("SCL", "KEY", 0, 0),   /* (codex/coherence: KEY, its group's name) */
                                NV("CHORD", 0, 1, 1), NV("HARMONY", 0, 2, 1), NV("SCENE", 0, 3, 2)};   /* (V10.25 SCENE;
                                                          * V10.7.66 HARMONY) */

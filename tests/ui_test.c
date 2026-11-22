@@ -12070,7 +12070,7 @@ static int test_lz_home(void)
     uint32_t c, k;
     ui_power_on(); frame();
     ok = ui.home && lz_on() && lz_fam() == LZ_HOME && home_level() == 0u && !home_set() && lz_tab_lit(0) && lz_tabs() == 4u &&
-         lz_crumb_is("HOME \xB7 ECO \xB7 ECO") && lz_count_is("1/10");   /* (V10.7.62: LIFE in MACROS' place, seven) */   /* (seven pages, as the n/7 below; the "1/8" came
+         lz_crumb_is("HOME \xB7 ECOSYSTEM \xB7 ECOSYSTEM") && lz_count_is("1/10");   /* (V10.7.62: LIFE in MACROS' place, seven) */   /* (seven pages, as the n/7 below; the "1/8" came
                                                          * with e147a98's import, 2026-11-04, the rest of the test says 7) */
     press(B_HOME); frame();                                         /* a HOME tap: BEING (the next group) */
     ok &= ui.home && home_level() == 1u && !home_set() && lz_tab_lit(1) && lz_crumb_is("HOME \xB7 BEING \xB7 BEING") &&
@@ -12078,7 +12078,7 @@ static int test_lz_home(void)
     k = macro_v[0];
     c = (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]];
     turn(EN_SELECT, -1); frame();                                   /* SELECT left: LIFE (V10.7.62), its KNOB 1 FILTER */
-    ok &= home_level() == 0u && home_set() && home_life() && !home_macros() && lz_crumb_is("HOME \xB7 ECO \xB7 LIFE") &&
+    ok &= home_level() == 0u && home_set() && home_life() && !home_macros() && lz_crumb_is("HOME \xB7 ECOSYSTEM \xB7 LIFE") &&
           lz_count_is("2/10");
     turn(EN_K1, 3); frame();
     ok &= life_v[0] > 0 && (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] == c && !strncmp(ui.col[0], "FILTER|", 7);
@@ -12086,7 +12086,7 @@ static int test_lz_home(void)
     turn(EN_SELECT, -1); frame();                                   /* ECO: the HOME knobs */
     turn(EN_K1, 1); frame();
     ok &= !home_set() && home_level() == 0u && (uint32_t)TSEL->p[ENGINES[TSEL->eng_req]->knob[0]] != c &&
-          macro_v[0] == (uint8_t)k && lz_crumb_is("HOME \xB7 ECO \xB7 ECO");
+          macro_v[0] == (uint8_t)k && lz_crumb_is("HOME \xB7 ECOSYSTEM \xB7 ECOSYSTEM");
     turn(EN_SELECT, -1); frame();                                   /* (no wrap) */
     ok &= home_level() == 0u && !home_set() && ui.home && !ui.confirm;
     bad += check("0.9.2 HOME: ECO LIFE BEING .. one chain by SELECT (no wrap), a HOME tap the next group; tabs, crumb, n/7 (V10.7.62: LIFE)", ok);
@@ -12095,7 +12095,7 @@ static int test_lz_home(void)
     ok = home_level() == 1u && !home_set() && !home_macros() && lz_count_is("3/10");
     fm1_ms += 1000u;
     turn(EN_SELECT, 4); frame();                                    /* GEN 1 (V10.8.2: past the song's three) */
-    ok &= gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(3) && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 1") &&
+    ok &= gen_on() && gen_page() == 0u && home_level() == 2u && lz_on() && lz_tab_lit(3) && lz_crumb_is("HOME \xB7 GENERATOR \xB7 GENERATOR 1") &&
           lz_count_is("7/10");
     k = gp.genre;
     {   /* (V10.7.22, the owner) PRESETS on GEN: the sound, as on every page but SEQ's; the GENRE only by KNOB 1 */
@@ -12107,7 +12107,7 @@ static int test_lz_home(void)
     ok &= gp.genre == (k == GEN_EXPLORE ? 0u : k == NGENRE ? GEN_EXPLORE : k + 1u);   /* KNOB 1: the GENRE, its order
                                                          * (0.8.6: EXPLORE, RANDOM, the genres) */
     turn(EN_SELECT, 1); frame();
-    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENE \xB7 GENE 2") && lz_count_is("8/10");
+    ok &= gen_on() && gen_page() == 1u && lz_crumb_is("HOME \xB7 GENERATOR \xB7 GENERATOR 2") && lz_count_is("8/10");
     turn(EN_SELECT, -5); frame();                                   /* back: BEING, GEN shut */
     ok &= !ui.confirm && ui.home && home_level() == 1u && !home_set();
     turn(EN_SELECT, 4); frame();
@@ -12361,11 +12361,11 @@ static int test_lz_mod(void)
     turn(EN_SELECT, 1); frame();
     ok &= str_eq(cur_page()->title, "LFO DEST");
     turn(EN_SELECT, 1); frame();
-    ok &= pd_level() == 2u && str_eq(cur_page()->title, "MSEQ") && lz_crumb_is("LFO \xB7 MOD SEQ \xB7 MOD SEQ");
+    ok &= pd_level() == 2u && str_eq(cur_page()->title, "MSEQ") && lz_crumb_is("LFO \xB7 MOD SEQUENCE \xB7 MOD SEQ");
     turn(EN_SELECT, 1); frame();
-    ok &= str_eq(cur_page()->title, "MSEQ 2") && lz_crumb_is("LFO \xB7 MOD SEQ \xB7 MOD SEQ 2") && lz_count_is("6/6");   /* (V10.7.66: MACROS to FX) */
+    ok &= str_eq(cur_page()->title, "MSEQ 2") && lz_crumb_is("LFO \xB7 MOD SEQUENCE \xB7 MOD SEQ 2") && lz_count_is("6/6");   /* (V10.7.66: MACROS to FX) */
     frames(320); press(B_LFO); frame();
-    ok &= pd_level() == 0u && str_eq(cur_page()->title, "MOD") && lz_tab_lit(0) && lz_crumb_is("LFO \xB7 MOD \xB7 MOD");
+    ok &= pd_level() == 0u && str_eq(cur_page()->title, "MOD") && lz_tab_lit(0) && lz_crumb_is("LFO \xB7 MODULATION \xB7 MOD");
     bad += check("0.9.2 LFO: opens on LFO; MOD . LFO (LFO, LFO 2, LFO DEST) . MSEQ (MSEQ, MSEQ 2) by SELECT; an LFO tap round to MOD", ok);
     mod_ui_slot = 0;
     TSEL->p[P_M1SRC] = 1; TSEL->p[P_M1DST] = 2; TSEL->p[P_M1AMT] = 40;
@@ -12448,9 +12448,9 @@ static int test_lz_glo(void)
     ui_power_on(); frame();
     press(B_GLO); frame();
     ok = pd_on() && lz_fam() == LZ_GLO && pd_level() == 0u && str_eq(cur_page()->title, "MIXER") && lz_tab_lit(0) &&
-         lz_crumb_is("GLO \xB7 MIX \xB7 MIXER") && lz_count_is("1/9");   /* (V10.8.3: LIVE gone) */   /* (snd8: SYSTEM 2; p2: LIVE first; V10.7.58: one) */
+         lz_crumb_is("GLO \xB7 MIXER \xB7 MIXER") && lz_count_is("1/9");   /* (V10.8.3: LIVE gone) */   /* (snd8: SYSTEM 2; p2: LIVE first; V10.7.58: one) */
     turn(EN_SELECT, 1); frame();
-    ok &= str_eq(cur_page()->title, "SENDS") && lz_crumb_is("GLO \xB7 MIX \xB7 SENDS");
+    ok &= str_eq(cur_page()->title, "SENDS") && lz_crumb_is("GLO \xB7 MIXER \xB7 SENDS");
     v = TSEL->p[P_DLY];
     turn(EN_K2, 4); frame();                            /* (codex/coherence: the sends only, CHORUS DLY REV) */
     ok &= TSEL->p[P_DLY] > v;
