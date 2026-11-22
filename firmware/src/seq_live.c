@@ -47,25 +47,15 @@ typedef struct {
     uint8_t ws, pad;                                    /* a LOOP's first step (ui_live.c: where the playhead was) */
 } lv_mod_t;                                             /* all 0: nothing */
 static struct {
-    /* main loop (ui_live.c): the latched layer per track, the knobs of both pages and KEYS's black keys */
-    int8_t rate[NTRK], dn[NTRK], rot[NTRK];             /* dn: DENS -9 .. 3 (THIN 90 % .. 10 %, RATCH x2 .. x4) */
-    uint8_t cut[NTRK];                                  /* LV_CUT index */
-    uint8_t here, rnd;                                  /* a bit per track: the window is a LOOP; DIR RND */
-    uint8_t tk[16], lt[16];                             /* KEYS's white keys: the tracks each acts on, held / latched */
-    uint8_t latch, tgt, byp, rkey, ob;                  /* LATCH; RAILS' K1 (0 ALL, 1..6 T1..T6, 7 SYN, 8 DRM); OCT-
-                                                         * held; the tracks a rate key acted on last frame; OCT- / + */
-    uint32_t kprev, oms;                                /* KEYS's keys last frame; OCT- down since (0: not) */
     /* main loop -> ISR */
     lv_mod_t want[NTRK];
     uint8_t r16, busy;                                  /* tracks whose RATE goes in on the 1/16; anything to do */
     uint8_t rq[NTRK], rk[NTRK];                         /* a request: rq moved on, of kind rk (LQ_*) */
     /* ISR */
-    uint32_t kb;                                        /* keyboard_block: the keys held on KEYS */
     lv_mod_t cur[NTRK];
-    uint8_t act, rs[NTRK], pd[NTRK], rem[NTRK];         /* modified (a bit a track); rq seen; PING going down; RATE's
+    uint8_t act, rs[NTRK], rem[NTRK];         /* modified (a bit a track); rq seen; PING going down; RATE's
                                                          * remainder */
     uint8_t pfo[NTRK], pfa;                             /* the FX layer's 1/2 TEMPO / LOOP on it last block; a bit a track */
-    int8_t rj[NTRK];                                    /* GIRO moved: steps the next one is on / back */
     uint16_t gidx[NTRK];                                /* the ghost: its step, samples into it */
     uint32_t gpos[NTRK];
     uint32_t hd[NTRK];                                  /* the samples the PLAYHEADS missed (a slower RATE) */
@@ -79,13 +69,9 @@ static int lv_phase0(const lv_mod_t *m) { return !(m->rate | m->cut | (m->fl & 6
  * step), its direction (seq_tick takes it as a JUMP component's: a component's own JUMP first) */
 static __attribute__((noinline)) uint32_t live_next(const track_t *t, uint32_t len)
 {
-    uint32_t ti = trk_index(t), n = lv.cur[ti].cut, lo = 0, d = LF_DIR(lv.cur[ti].fl);
-    int32_t r = (int32_t)(t->seq_idx % len) + lv.rj[ti], w;
-    lv.rj[ti] = 0;
-    while (r < 0)                                       /* (GIRO: the playhead a step on / back) */
-        r += (int32_t)len;
-    while (r >= (int32_t)len)
-        r -= (int32_t)len;
+    uint32_t ti = trk_index(t), n = lv.cur[ti].cut, lo = 0;   /* (V10.8.12: forward only; REV, PING, RND, GIRO gone
+                                                         * with GLO > LIVE) */
+    int32_t r = (int32_t)(t->seq_idx % len), w;
     if (!n || n >= len)
         n = len;
     else if (lv.cur[ti].fl & LF_HERE)
@@ -94,24 +80,7 @@ static __attribute__((noinline)) uint32_t live_next(const track_t *t, uint32_t l
     r -= (int32_t)lo;
     if (r < 0)
         r += (int32_t)len;
-    if (r >= w)                                         /* (outside the window: it enters at its start / end) */
-        r = d == LVD_REV ? w : -1;
-    if (d == LVD_REV)
-        r = r <= 0 ? w - 1 : r - 1;
-    else if (d == LVD_PING) {
-        if (w < 2)
-            r = 0;
-        else if ((r += lv.pd[ti] ? -1 : 1) >= w) {
-            r = w - 2;
-            lv.pd[ti] = 1;
-        } else if (r < 0) {
-            r = 1;
-            lv.pd[ti] = 0;
-        }
-    } else if (d == LVD_RND)
-        r = (int32_t)(rng() % n);
-    else
-        r = r + 1 >= w ? 0 : r + 1;
+    r = r >= w || r + 1 >= w ? 0 : r + 1;               /* (outside the window: it enters at its start) */
     r += (int32_t)lo;
     return (uint32_t)(r >= (int32_t)len ? r - (int32_t)len : r);
 }
@@ -152,22 +121,7 @@ static __attribute__((noinline)) uint32_t live_adv(track_t *t, uint32_t n, uint3
     return x;
 }
 
-/* (step_rolls) THIN: the step playing kept silent this time; the same steps on the same loop every PLAY */
-static int live_drop(const track_t *t)
-{
-    uint32_t ti = trk_index(t), h;
-    if (!LV_ON(ti) || !lv.cur[ti].drop)
-        return 0;
-    h = ((ti << 6 | t->seq_idx) + (uint32_t)t->loops * 65539u) * 0x9E3779B1u;
-    h = (h ^ h >> 15) * 0x9E3779B1u;
-    return ((h >> 16) * 100u) >> 16 < lv.cur[ti].drop;
-}
-static uint32_t live_rat(const track_t *t) { uint32_t ti = trk_index(t); return LV_ON(ti) ? lv.cur[ti].rat : 0u; }
-static int32_t live_up(const track_t *t)               /* (seq_step) OCT: semitones on the sequencer's notes */
-{
-    uint32_t ti = trk_index(t), f = lv.cur[ti].fl;
-    return !LV_ON(ti) ? 0 : (f & LF_UP) ? 12 : (f & LF_DN) ? -12 : 0;
-}
+/* (V10.8.12: THIN, RATCH, OCT gone with GLO > LIVE: the FX layer's 1/2 TEMPO and LOOP set none of them) */
 /* (rec_note, rec_release) a modified track's playhead and ghost swapped: recording at the ghost's place */
 static int live_swap(track_t *t)
 {
@@ -236,23 +190,23 @@ static __attribute__((noinline)) void live_q(uint32_t n)
             }
             lv.gidx[i] = t->seq_idx;                    /* (the ghost from here) */
             lv.gpos[i] = t->seq_pos;
-            lv.rem[i] = lv.pd[i] = 0;
+            lv.rem[i] = 0;
             lv.hd[i] = 0;
-            lv.rj[i] = c->rot;                          /* (the ghost's place: no GIRO in it yet) */
             lv.act |= (uint8_t)bit;
         }
-        lv.rj[i] = (int8_t)(lv.rj[i] + w.rot - c->rot);   /* (GIRO: live_next) */
         *c = w;
         t->jump_to = 0;                                 /* (live_adv: the next step again, by the new window) */
         if (lv_phase0(c)) {                             /* in phase again: onto the ghost */
             t->seq_idx = lv.gidx[i];
             t->seq_pos = lv.gpos[i];
             t->ext = 0;
-            lv.rj[i] = 0;
             if (lv.hd[i] && song.playing)
                 live_heads(t, i, (uint32_t)t->p[P_SLEN]);
             if (lv_neutral(c))
                 lv.act &= (uint8_t)~bit;
         }
     }
+    for (i = 0; i < NTRK && lv.rq[i] == lv.rs[i]; i++) {}
+    if (i == NTRK)
+        lv.busy = 0;                                    /* (V10.8.12: the requests in; was the main loop's, GLO > LIVE's) */
 }

@@ -2009,8 +2009,6 @@ static volatile uint8_t seq_fill;
 static int step_rolls(const track_t *t, const step_t *s)
 {
     uint32_t c = trk_chance(t, s);
-    if (live_drop(t))                               /* (p2) LIVE THIN */
-        return 0;
     return c >= 100u || rng() % 100u < c;
 }
 /* (0.9.9-seq2d) STEP COMPONENTS v2 (core.h CA_* CC_*). Component k's CONDITION on step s this pass (t->loops: the
@@ -2799,8 +2797,6 @@ static uint32_t step_parts(const track_t *t, const step_t *s, uint32_t *div)
     if (o)
         return *div = CP_RATES[CP_RATE(o->carg) % CP_NRATE];
     h = s->time == ST_NOTE && t->cx_rat ? t->cx_rat : step_ratchet(s);   /* (seq2d: a RATCHET, x2..x8) */
-    if ((d = live_rat(t)) > h)                      /* (p2) LIVE RATCH: every step at least that many parts, inside it */
-        return *div = d;
     d = CT_DIVS[CT_DIV(s) % CT_NDIV];
     if (h < 2u || !d)
         return *div = h;
@@ -3092,7 +3088,7 @@ static __attribute__((noinline)) void seq_step(track_t *t, const step_t *s, uint
     const engine_t *e = ENGINES[eng_idx(t->eng_req)];
     uint32_t kit = e->oneshot || (e->keys && e->keys(t, 0) >= 0);
     uint32_t qseq = t->p[P_QUANT] == QN_SEQ && !kit;
-    int32_t up = (kit ? 0 : t->p[P_POFS] + live_up(t)) +   /* SHIFT PIT: the notes up (a kit keeps its lanes); LIVE OCT */
+    int32_t up = (kit ? 0 : t->p[P_POFS]) +   /* SHIFT PIT: the notes up (a kit keeps its lanes); LIVE OCT */
                  (t->p[P_AMODE] == AM_TRNS ? t->trn : 0);   /* ARP TRNS: the keys' interval */
     if (!(skip & SEQ_REP)) {
         t->rat_left = 0;
