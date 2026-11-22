@@ -1390,7 +1390,7 @@ static void edit_param(uint32_t slot, int32_t steps)
     const page_t *pg = cur_page();
     const param_desc_t *d;
     int32_t v;
-    if (pg->graph == GR_LIVE) {                         /* (p2) GLO > LIVE (ui_live.c) */
+    if (0 && pg->graph == GR_LIVE) {                    /* (p2) GLO > LIVE (ui_live.c; V10.8.3: gone) */
         live_knob(slot, steps);
         return;
     }

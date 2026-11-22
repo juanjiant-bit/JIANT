@@ -629,7 +629,9 @@ static uint32_t layer_btn(void);
 static int page_visible(uint32_t i)
 {
     if (PAGES[i].graph == GR_SONG && (PAGES[i].fam == FAM_SEQ || (PAGES[i].title[0] == 'T' && PAGES[i].title[1] == 'I')))
-        return 0;                                       /* (V10.8: TIMELINE, PARTS gone, the song mode's redesign) */                                       /* (0.6.24) the song in one place: SAVE > ARRANGE (SEQ > SONG
+        return 0;                                       /* (V10.8: TIMELINE, PARTS gone, the song mode's redesign) */
+    if (PAGES[i].graph == GR_LIVE)
+        return 0;                                       /* (V10.8.3, the owner: GLO > LIVE gone for the song mode's flash) */                                       /* (0.6.24) the song in one place: SAVE > ARRANGE (SEQ > SONG
                                                          * was the same page twice; kept in the table: its index) */
     if (sys_load == LOAD_ECO && ((PAGES[i].graph == GR_SLCR || PAGES[i].graph == GR_SLPIT) ||
                                  (PAGES[i].fam == FAM_FX && PAGES[i].id[0] == G_CRATE)))

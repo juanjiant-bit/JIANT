@@ -241,10 +241,40 @@ static void lz_arc(int32_t cx, int32_t cy, int32_t r, int32_t w, int32_t f, uint
 /* ECO: 0.8.4's HOME (graph_ecosys) in the lens's panel: the cytoplasm's granules drifting, the six beings swimming free
  * over the whole panel (0.9.7: variant A, eco_being), each with its number under it (the selected one larger, its number in
  * the theme's colour; a mutation landed, white) */
-static void graph_eco(void)                             /* (V10.8.3, the owner: the beings' swim out for the song mode's
-                                                         * flash) the output's scope, LIFE's line */
+static void graph_eco(void)
 {
-    graph_scope(T_THEME);
+    uint32_t c, k, still = ANIM_OFF() != 0;
+    int32_t bx[ECO_N], by[ECO_N], bot = eco_bot();
+    (void)eco_step();                                   /* (the swim, once a frame) */
+    (void)bg_energy();                                  /* (the output's level kept as it was read: once a frame) */
+    for (k = 0; k < 22u; k++) {                         /* the cytoplasm: granules drifting */
+        uint32_t h = k * 2654435761u;
+        int32_t gx = 10 + (int32_t)((h >> 8) % 220u + anim_fr * (1u + (h >> 28)) / 6u) % 220;   /* (still: where they were) */
+        int32_t gy = 6 + (int32_t)(((h >> 16) % (uint32_t)(bot + 6)) + (still ? 0 : (uint32_t)(bg_sin((uint32_t)(anim_fr * 300u + h)) >> 13))) %
+                         (uint32_t)(bot + 6);
+        cv_rect(gx, gy, 1 + (int32_t)(h >> 31), 1 + (int32_t)(h >> 31), ux_mix(T_SURF, T_THEME, 22 + (int32_t)(h >> 29) * 4));
+    }
+    for (c = 0; c < ECO_N; c++) {
+        eco_at(c, &bx[c], &by[c]);                      /* (codex/anim: between its last two steps) */
+        bx[c] >>= 4;
+        by[c] >>= 4;
+    }
+    if (home_set() && life_on) {                        /* (V10.7.62) LIFE: who moves whom, as bright as the mover sounds */
+        uint32_t n = trk_live < ECO_N ? trk_live : ECO_N, j;
+        for (c = 0; c < n; c++) {
+            j = (c + n - 1u) % n;
+            if (j != c)
+                og_line_a(bx[j], by[j], bx[c], by[c], trk[j].engine == ENGI_DRUM ? T_ACCENT : T_THEME,
+                          clamp(48 + track_env[j] / 96, 48, 256));
+        }
+    }
+    for (c = 0; c < ECO_N; c++) {
+        int32_t rad = eco.r[c] >> 4, px = bx[c] >> 4, py = by[c] >> 4, ny;
+        char num[2] = {(char)('1' + c), 0};
+        eco_being(c, bx[c], by[c], eco.r[c]);
+        ny = clamp(py + rad / 2 + 4, 4, bot);
+        cv_text_in(px - 30, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM : T_MID, T_SURF);
+    }
     if (home_set())                                     /* (V10.7.62) LIFE (was MACROS: the FX layer's knobs since V10.7.59) */
         cv_text(6, 2, &AF_X, life_on ? "THE TRACKS MOVE EACH OTHER" : "LIFE OFF: TURN A KNOB", life_on ? T_MID : T_DIM);
 }

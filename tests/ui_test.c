@@ -3954,8 +3954,7 @@ static int test_product_ux(void)
     press(B_GLO); frames(320); ok &= cur_page()->fam == FAM_GLO && str_eq(cur_page()->title, "G.COMP");   /* the next group;
                                                          * V10.37: G.COMP right after MIX) */
     press(B_GLO); frames(320); ok &= str_eq(cur_page()->title, "GLOBAL");   /* (codex/coherence: SETUP, GLOBAL .. KEY SPLIT 2) */
-    press(B_GLO); frames(320); ok &= cur_page()->graph == GR_LIVE && str_eq(cur_page()->title, "KEYS");   /* (p2: LIVE first, */
-    press(B_GLO); ok &= cur_page()->graph == GR_TRK && str_eq(cur_page()->title, "MIXER");          /* then MIX) */
+    press(B_GLO); ok &= cur_page()->graph == GR_TRK && str_eq(cur_page()->title, "MIXER");          /* (V10.8.3: LIVE gone) */
     bad += check("0.9.2 GLO: SELECT MIXER > SENDS, a GLO tap the next group: (V10.37) G.COMP > SETUP (GLOBAL) > LIVE (KEYS) > MIXER", ok);
     go_home(); hold(B_SEQ);
     bad += check("long SEQ off the SEQ pages is a tap (no SONG: SAVE held, G5)", cur_page()->graph != GR_SONG);
@@ -11530,7 +11529,7 @@ static int test_home_a(void)
     ok &= ha_eye_rows(0) == 2u && ha_eye_rows(EF_SHUT) == 1u && ha_eye_rows(EF_SLEEP) >= 1u;
     bad += check("0.9.7 HOME A: the face: its mouth opens with the level, its eyes shut on a hit (one row), it looks up on MUTATE", ok);
     {   /* the face as HOME runs it: a hit shuts the eyes 0.1 s, a mutation landed looks up, muted asleep */
-        ui_power_on(); ui.home = 1; ui.hlv = 1; ui.hset[1] = 0;   /* (V10.8.3: the beings on BEING, ECO a scope) */
+        ui_power_on(); ui.home = 1; ui.hlv = 0; ui.hset[0] = 0;
         for (c = 0; c < NTRK; c++) trk[c].p[P_MUTE] = 0;
         frames(320);
         ok = eco_fc.init && !(eco_fc.fl[0] & (EF_SHUT | EF_UP));
@@ -11542,7 +11541,7 @@ static int test_home_a(void)
     }
     for (sk = 0; sk < 1u; sk++) {   /* no critters, no ring of MUTATE dots: MUTATE on draws nothing until one lands */
         static uint16_t a[240 * 240];
-        ui_power_on(); ui.home = 1; ui.hlv = 1; ui.hset[1] = 0;   /* (V10.8.3: BEING) */
+        ui_power_on(); ui.home = 1; ui.hlv = 0; ui.hset[0] = 0;
         frames(320);
         ui_prefs = PREF_ANIM_OFF;
         for (c = 0; c < NTRK; c++) { trk[c].p[P_MSND] = 0; trk[c].p[P_MPAT] = 0; }
@@ -11559,7 +11558,8 @@ static int test_home_a(void)
             ok &= d == 0u;
         }
                                                                   /* (V10.6: no MUTATE, nothing lands) */
-        (void)ha_loose;                                           /* (V10.8.3: ECO's granules gone with its swim) */
+        if (!sk)
+            ok &= ha_loose() <= 22u * 4u;                         /* (away from the beings the granules only: 22, 4 px at most) */
         bad += check(!sk ? "0.9.7 HOME A (COLORS): no critters, no ring" :
                      "0.9.7 HOME A (AIR): no ring", ok);
     }
@@ -12148,7 +12148,8 @@ static int test_lz_home(void)
     ok &= ui.home && home_level() == 1u && home_set() == 0u;
     {   /* the beings drawn: the ECO panel differs from frame to frame while the tracks sound (their life, their faces) */
         static uint16_t a[240 * 140];
-        for (c = 0; c < NTRK; c++) trk[c].peak = 9000;   /* (V10.8.3: on BEING; ECO is a scope) */
+        turn(EN_SELECT, -2); frame();
+        for (c = 0; c < NTRK; c++) trk[c].peak = 9000;
         frames(64);
         memcpy(a, host_screen + LZ_GRAPH_Y * 240, sizeof a);
         for (c = 0; c < NTRK; c++) trk[c].peak = 9000;
@@ -12446,22 +12447,20 @@ static int test_lz_glo(void)
     int16_t v;
     ui_power_on(); frame();
     press(B_GLO); frame();
-    ok = pd_on() && lz_fam() == LZ_GLO && pd_level() == 0u && str_eq(cur_page()->title, "MIXER") && lz_tab_lit(1) &&
-         lz_crumb_is("GLO \xB7 MIX \xB7 MIXER") && lz_count_is("2/10");   /* (snd8: SYSTEM 2; p2: LIVE first; V10.7.58: one) */
+    ok = pd_on() && lz_fam() == LZ_GLO && pd_level() == 0u && str_eq(cur_page()->title, "MIXER") && lz_tab_lit(0) &&
+         lz_crumb_is("GLO \xB7 MIX \xB7 MIXER") && lz_count_is("1/9");   /* (V10.8.3: LIVE gone) */   /* (snd8: SYSTEM 2; p2: LIVE first; V10.7.58: one) */
     turn(EN_SELECT, 1); frame();
     ok &= str_eq(cur_page()->title, "SENDS") && lz_crumb_is("GLO \xB7 MIX \xB7 SENDS");
     v = TSEL->p[P_DLY];
     turn(EN_K2, 4); frame();                            /* (codex/coherence: the sends only, CHORUS DLY REV) */
     ok &= TSEL->p[P_DLY] > v;
     frames(320); press(B_GLO); frame();
-    ok &= pd_level() == 3u && str_eq(cur_page()->title, "G.COMP") && lz_tab_lit(2);   /* (V10.37: after MIX) */
+    ok &= pd_level() == 3u && str_eq(cur_page()->title, "G.COMP") && lz_tab_lit(1);   /* (V10.37: after MIX) */
     frames(320); press(B_GLO); frame();
-    ok &= pd_level() == 1u && str_eq(cur_page()->title, "GLOBAL") && lz_tab_lit(3) && lz_crumb_is("GLO \xB7 SETUP \xB7 GLOBAL");
+    ok &= pd_level() == 1u && str_eq(cur_page()->title, "GLOBAL") && lz_tab_lit(2) && lz_crumb_is("GLO \xB7 SETUP \xB7 GLOBAL");
     turn(EN_SELECT, 1); frame();                        /* (codex/coherence: SETUP, GLOBAL SYSTEM SYSTEM 2 KEY SPLIT) */
-    ok &= pd_level() == 2u && str_eq(cur_page()->title, "SYSTEM") && lz_tab_lit(3) && lz_crumb_is("GLO \xB7 SETUP \xB7 SYSTEM");
-    frames(320); press(B_GLO); frame();
-    ok &= str_eq(cur_page()->title, "KEYS") && lz_tab_lit(0) && lz_crumb_is("GLO \xB7 LIVE \xB7 RAILS") && lz_count_is("1/10");
-    frames(320); press(B_GLO); frame();                 /* (p2: LIVE first in the chain; at power-on GLO opens MIXER) */
+    ok &= pd_level() == 2u && str_eq(cur_page()->title, "SYSTEM") && lz_tab_lit(2) && lz_crumb_is("GLO \xB7 SETUP \xB7 SYSTEM");
+    frames(320); press(B_GLO); frame();                 /* (V10.8.3: LIVE gone, round to MIX) */
     ok &= pd_level() == 0u && str_eq(cur_page()->title, "MIXER");
     turn(EN_SELECT, 3); frame();
     ok &= pd_level() == 3u && str_eq(cur_page()->title, "G.COMP 2");   /* (V10.37: SENDS G.COMP G.COMP 2) */
@@ -13099,7 +13098,7 @@ static int test_coherence(void)
         int16_t *hv;
         ui_power_on(); frame();
         ok = nav_put(SEC_SAVE, "PART SLOTS") && nav_put(SEC_FX, "PUNCH IN") && !nav_put(SEC_GLO, "KEYS") &&
-             nav_put(SEC_GLO, "RAILS") && str_eq(cur_page()->title, "KEYS") && !nav_put(SEC_GLO, "MANO") && !nav_put(SEC_ENV, "TRACKS DEST") &&
+             !nav_put(SEC_GLO, "RAILS") && !nav_put(SEC_GLO, "MANO") && !nav_put(SEC_ENV, "TRACKS DEST") &&
              nav_put(SEC_EDIT, "PLAY") && !nav_put(SEC_EDIT, "VOICE") && !nav_put(SEC_EDIT, "STEREO");
         for (i = 0; i < MI_COUNT; i++)
             ok &= !str_eq(MI_NAME[i], "INIT SYSTEM");   /* (one action, one name: SAVE > TOOLS > CLEAR PROJECT) */

@@ -1275,7 +1275,7 @@ static void draw_columns(void)
             sw_ui_cards_bt(cur_page());
         return;
     }
-    if (cur_page()->graph == GR_LIVE) {                /* (p2) GLO > LIVE (ui_live.c) */
+    if (0 && cur_page()->graph == GR_LIVE) {           /* (p2) GLO > LIVE (ui_live.c; V10.8.3: gone) */
         live_cards();
         return;
     }

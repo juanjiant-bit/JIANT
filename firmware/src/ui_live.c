@@ -34,7 +34,7 @@ static const char LV_TG[9][4] = {"ALL", "T1", "T2", "T3", "T4", "T5", "T6", "SYN
 static const char LV_BK[11] = {'1', '2', '3', '4', '5', '6', 'L', 'A', '<', '>', '?'};
 static const int8_t LV_KRATE[4] = {-2, 2, 1, -1};       /* F3 .. B3: /2 x2 3/2 2/3 */
 
-static int live_page(void) { return !ui.home && !ui.menu && cur_page()->graph == GR_LIVE; }   /* (main 0.9.19's fix: no track
+static int live_page(void) { return 0; }   /* (V10.8.3: GLO > LIVE gone; was !ui.home && !ui.menu && GR_LIVE) */   /* (main 0.9.19's fix: no track
                                                          * picked, TARGET SYN / DRM with none of that kind: the first) */
 static int lv_isman(void) { return cur_page()->title[0] == 'K'; }   /* (KEYS; off LIVE: KEY SPLIT .., unread) */
 static int live_mano(void) { return live_page() && !ui.confirm && lv_isman(); }
