@@ -180,8 +180,8 @@ static uint32_t jam_base __attribute__((section(".lowbuf")));        /* LOCK: th
 static uint8_t jam_lock __attribute__((section(".lowbuf")));
 /* (V10.8.2) LOCK's REC: one track again for a round of the take (jam_tr: its k + 1, | 8 recording; its changes after
  * the take's END, jam_e, merged when the round ends: song_main.c jam_round_end), jam_r0 where the round began; jam_vos
- * bit k: the player's sequence over the take (drawn white) */
-static uint8_t jam_tr, jam_e, jam_vos, take_i;   /* (take_i: TAKE's KNOB 1, song_main.c take_*) */
+ * bit k: the player's sequence over the take (drawn white, YOU); jam_undo: OCT- the take as stored */
+static uint8_t jam_tr, jam_e, jam_vos, jam_undo, take_i;   /* (take_i: TAKE's KNOB 1, song_main.c take_*) */
 static uint16_t jam_tl, jam_r0;
 
 static void song_mode_restore(void)

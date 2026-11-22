@@ -204,33 +204,38 @@ static void clip_dash(int32_t x, int32_t y, uint16_t c)   /* a cell's frame, das
 static int jam_full(void) { return live.srec == 2u || jam_tr || (jam_lock && jam_len()); }
 static void jam_lanes(int32_t y, int32_t dy, int32_t h, int32_t sel)
 {
-    uint32_t len = jam_len(), k, i, x0, x1, xe = 236u, xp = 0, s, p, e;
+    uint32_t len = jam_len(), k, i, x0, x1, xe = 236u, xp = 0, s, p, e, rel = 0, nx;
     if (live.srec == 2u) {                              /* (REC: the take so far, a bar more) */
         p = gl_step_at(0) - jam_t0;
         len = (p / 16u + 1u) * 16u;
         xe = 24u + p * 212u / len;
     } else if (jam_lock && song.playing && len) {
-        xp = 24u + (gl_step_at(0) - jam_base) % len * 212u / len;
+        rel = (gl_step_at(0) - jam_base) % len;
+        xp = 24u + rel * 212u / len;
     }
     if (!len) return;
     for (k = 0; k < NTRK; k++, y += dy) {
-        for (x0 = 24, s = 0, i = 0; i < JAM_N && (e = live.jam[i]) && JE_K(e) != 7u; i++) {
+        for (x0 = 24, s = 0, nx = 0, i = 0; i < JAM_N && (e = live.jam[i]) && JE_K(e) != 7u; i++) {
             if (JE_K(e) != k) continue;
             p = JE_POS(e);
             x1 = 24u + (p < len ? p : len) * 212u / len;
             if (x1 > x0) cv_rect((int32_t)x0, y, (int32_t)(x1 - x0), h, sec_col(s));
+            if (!nx && p > rel) nx = x1;
             if ((int32_t)i == sel) cv_frame((int32_t)x1 - 2, y - 2, 4, h + 4, T_TEXT);
             x0 = x1; s = JE_S(e);
         }
         if (xe > x0) cv_rect((int32_t)x0, y, (int32_t)(xe - x0), h, sec_col(s));
-        if (xp && ((jam_vos >> k) & 1u))                /* (the player's, over the take: white at the playhead) */
-            cv_rect((int32_t)xp - 6, y + 2, 12, h - 4, T_TEXT);
+        if (xp && ((jam_vos >> k) & 1u)) {              /* (the player's, over the take: YOU, white to its next change) */
+            if (!nx || nx < xp) nx = 236u;
+            cv_rect((int32_t)xp, y, (int32_t)(nx - xp), h, T_TEXT);
+            if (h > 8) cv_text((int32_t)xp + 2, y + CAP_IN(X, h), &AF_X, "YOU", T_BG);
+        }
     }
     if (xp) cv_rect((int32_t)xp, y - dy * NTRK - 2, 1, dy * NTRK + 2, T_TEXT);
 }
 static void graph_clips(void)                           /* (V10.8.2) and TAKE: the take full screen, the change picked */
 {                                                       /* ringed, its track lit */
-    uint32_t s, k, tk = SONG_TAKE(cur_page()), full = tk || jam_full(), hi = song.sel;
+    uint32_t s, k, i, tk = SONG_TAKE(cur_page()), full = tk || jam_full(), hi = song.sel;
     char b[3] = "T1";
     if (tk) { if (take_i >= jam_end()) take_i = 0; hi = JE_K(live.jam[take_i]); }
     if (live.srec || jam_tr)
@@ -259,7 +264,15 @@ static void graph_clips(void)                           /* (V10.8.2) and TAKE: t
     }
     if (full) {
         jam_lanes(13, 18, 15, tk ? (int32_t)take_i : -1);
-        if (jam_lock) cv_text(4, 128, &AF_X, "REC: TRACK AGAIN", T_MID);
+        if (tk && take_i < jam_end()) {                 /* (TAKE: the change's bar, its track's 16ths as they sound) */
+            uint32_t b = JE_POS(live.jam[take_i]) & ~15u, q, kk = JE_K(live.jam[take_i]);
+            for (q = 0; q < 16u; q++) {
+                for (s = 0, i = 0; i < JAM_N && live.jam[i] && JE_K(live.jam[i]) != 7u; i++)
+                    if (JE_K(live.jam[i]) == kk && JE_POS(live.jam[i]) <= b + q) s = JE_S(live.jam[i]);
+                cv_rect(24 + (int32_t)q * 13, 124, 12, 12, sec_col(s));
+                if (b + q == JE_POS(live.jam[take_i])) cv_frame(23 + (int32_t)q * 13, 123, 14, 14, T_TEXT);
+            }
+        } else if (jam_lock) cv_text(4, 128, &AF_X, jam_undo ? "OCT- UNDO THE ROUND" : "REC: TRACK AGAIN", T_MID);
     } else if (jam_len())
         jam_lanes(120, 3, 2, -1);
     else

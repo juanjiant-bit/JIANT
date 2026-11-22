@@ -1791,8 +1791,10 @@ static __attribute__((noinline)) void act_do(void)
         jam_switch(song.sel % NTRK, ui.part);
         return;
     }
-    if (SONG_TAKE(cur_page()))                          /* (V10.8.2) TAKE: OCT+ nothing */
+    if (SONG_TAKE(cur_page())) {                        /* (V10.8.2) TAKE: a new change */
+        take_new();
         return;
+    }
     if (cur_page()->graph == GR_SONG) {                 /* (0.8.5) SAVE > PROJECT's ARRANGE: OCT+ adds a row; (V10.6o) after
                                                          * the one picked, a copy of it (its scene, tracks, variations; on
                                                          * ADD / END: of the last; none: A, 4 bars), the new one selected */
@@ -3061,8 +3063,10 @@ static void ui_input_frame(void)
             nav_go(SEC_SEQ, nav_cur(), 0);
         else if (SONG_PARTS(cur_page()))                 /* (V10.6o) PARTS: back to the song */
             parts_song();
-        else if (SONG_CLIPS(cur_page()))                 /* (V10.6s) CLIPS: the track stops on the next bar */
-            clip_launch(song.sel, 4u);
+        else if (SONG_CLIPS(cur_page())) {               /* (V10.6s) CLIPS: the track stops on the next bar; (V10.8.2) */
+            if (jam_undo) jam_undo_round();             /* after a track's round in LOCK: the take as it was */
+            else clip_launch(song.sel, 4u);
+        }
         else if (SONG_TAKE(cur_page()))                /* (V10.8.2) TAKE: the change out */
             take_del();
         else if (cur_page()->graph == GR_SONG) {         /* (V10.4) ARRANGE, TIMELINE: OCT+ adds a row, OCT- deletes

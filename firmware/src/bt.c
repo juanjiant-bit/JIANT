@@ -176,7 +176,7 @@ static struct {
 #define BT_MIN() ((int32_t)(BT_TUNE[0] > 18u ? 0u : BT_TUNE[0]) * 5)
 #define BT_MAX() (100 - (int32_t)(BT_TUNE[1] > 18u ? 0u : BT_TUNE[1]) * 5)
 #define BT_SPEED() ((uint32_t)(BT_TUNE[2] > 4u ? 0u : BT_TUNE[2]))
-BTAPP_FN static int32_t bt_prox_map(int32_t lvl)
+static __attribute__((noinline)) int32_t bt_prox_map(int32_t lvl)   /* (V10.8.3: out of the segment, 44 B over) */
 {
     int32_t f = (int32_t)BT_CAL[0] << 7, n = (int32_t)BT_CAL[1] << 7, lo = BT_MIN(), hi = BT_MAX(), p;
     if (f == n)

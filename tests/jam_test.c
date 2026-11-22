@@ -140,6 +140,14 @@ int main(void)
             nav_put(SEC_HOME, "JAM"); frame(); song_poll();
             ok &= !live.rec_done;
             bad += check("TAKE: a change moved a 16th, its sequence changed, then out; kept when the page is left", ok);
+            nav_put(SEC_HOME, "TAKE"); frame();
+            e = jam_end(); take_i = 0;                   /* (T1's start) */
+            press(B_OCTUP); frame();                     /* OCT+: a new change a beat later, the next sequence */
+            ok = jam_end() == e + 1u && JE_K(live.jam[take_i]) == JE_K(live.jam[0]) && JE_POS(live.jam[take_i]) == 4u;
+            turn(EN_K4, -1); frame();                    /* the take a bar shorter: 16 */
+            ok &= jam_len() == 16u;
+            for (j = 0; j < jam_end(); j++) ok &= JE_POS(live.jam[j]) < 16u;
+            bad += check("TAKE: OCT+ a new change a beat on, KNOB 4 the take's bars (what falls past it goes)", ok);
         }
         jam_lock = 0;
     }

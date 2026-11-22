@@ -1,6 +1,6 @@
 // Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant). All rights reserved.
 /* (V10.8.2) the song mode's screens for the owner's check page: SEQ > STEP's sequence card, JAM FREE / REC / LOCK (the
- * player's over the take) / a track's REC, TAKE. A GEN piece in four parts, played as a jam. Writes NAME.ppm into DIR.
+ * player's over the take, YOU) / a track's REC and its OCT- UNDO, TAKE (the change's bar zoomed under the take). A GEN piece in four parts, played as a jam. Writes NAME.ppm into DIR.
  *   cc -O2 -w -Ibuild/gen -Ifirmware/src -Itests -o build/jamshots/cap tools/video/capture_jam.c -lm
  *   build/jamshots/cap build/jamshots */
 #define UI_TEST_NO_MAIN 1
@@ -98,6 +98,7 @@ int main(int argc, char **argv)
     run(5000); jam_switch(2, 1); run(4000);
     shot("jam_rec_track");
     for (k = 0; k < 400000u && jam_tr; k++) run(1);
+    run(200); shot("jam_undo");
     transport_req = 2; ui_input(); run(200);
 
     jam_lock = 0;

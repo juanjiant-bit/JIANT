@@ -550,6 +550,7 @@ static void jam_load(void)
     (void)b;
 #endif
     jam_lock = 0;
+    jam_undo = 0;
 }
 static void jam_store(void)
 {
@@ -560,6 +561,7 @@ static void jam_store(void)
     memcpy(b + song_cur % NSONG * sizeof live.jam, live.jam, sizeof live.jam);
     (void)st_save(OBJ_JAM, b, NSONG * sizeof live.jam);
 #endif
+    jam_undo = 0;
 }
 static uint32_t jam_end(void)                           /* (V10.8.2) the take's END index (none: its events' count) */
 {
@@ -578,7 +580,7 @@ static void jam_sort(uint32_t n)                        /* the take's first n ev
     }
 }
 /* (V10.8.2) a track's round ended: its old changes out, the round's in (where it crossed the take's start: its
- * sequence there at 0), in time order, END last */
+ * sequence there at 0), in time order, END last; OCT- undoes it (the take as stored) until it is stored */
 static void jam_round_end(void)
 {
     uint32_t K, i, n, w = 0, s0 = 8u, p;
@@ -597,8 +599,9 @@ static void jam_round_end(void)
     live.jam[w++] = end;
     memset(&live.jam[w], 0, (JAM_N - w) * sizeof live.jam[0]);
     jam_vos &= (uint8_t)~(1u << K);                     /* (the player's is the take's now) */
+    jam_undo = 1;
     live.rec_done = 1;
-    ui_message("TRACK DONE");
+    ui_message("TRACK DONE: OCT- UNDO");
 }
 static uint32_t jam_len(void)                           /* the take's length in 16ths (its END), 0 none */
 {
@@ -692,7 +695,37 @@ static void take_knob(uint32_t slot, int32_t steps)
     } else if (slot == 2u) {                            /* its sequence */
         live.jam[take_i] = JAM_EV(p, JE_K(v), (uint32_t)clamp((int32_t)JE_S(v) + steps, 0, 3));
         live.rec_done = 1;
+    } else {                                            /* the take's bars: shorter, what falls past its end goes */
+        uint32_t i;
+        p = (uint32_t)clamp((int32_t)(len >> 4) + steps, 1, 127) << 4;
+        for (i = 0; i < e && JE_POS(live.jam[i]) < p; i++) {}
+        live.jam[i] = JAM_EV(p, 7u, 0u);
+        memset(&live.jam[i + 1u], 0, (JAM_N - 1u - i) * sizeof live.jam[0]);
+        if (take_i >= i) take_i = (uint8_t)(i - 1u);
+        live.rec_done = 1;
     }
+}
+static void take_new(void)                              /* OCT+: a change a beat after the one picked, the next sequence */
+{
+    uint32_t e = jam_end(), len = jam_len(), p;
+    uint16_t v;
+    if (take_busy()) return;
+    if (e >= JAM_N - 2u) { ui_message("TAKE FULL"); return; }
+    if (take_i >= e) take_i = (uint8_t)(e - 1u);
+    v = live.jam[take_i];
+    p = JE_POS(v) + 4u;
+    live.jam[e + 1u] = live.jam[e];
+    live.jam[e] = v = JAM_EV(p < len ? p : len - 1u, JE_K(v), (JE_S(v) + 1u) & 3u);
+    jam_sort(e + 1u);
+    take_pick(v);
+}
+static void jam_undo_round(void)                        /* (V10.8.2) JAM's OCT- after a track's round: the take stored */
+{
+    uint8_t l = jam_lock;
+    jam_load();
+    jam_lock = l;
+    live.rec_done = 0;
+    ui_message("ROUND UNDONE");
 }
 static void take_del(void)                              /* OCT-: the change picked out */
 {

@@ -836,6 +836,8 @@ static uint32_t jam_len(void);
 static uint32_t jam_end(void);                          /* (V10.8.2) song_main.c: TAKE, a track's round undone */
 static void take_knob(uint32_t slot, int32_t steps);
 static void take_del(void);
+static void take_new(void);
+static void jam_undo_round(void);
 static void song_rec_toggle(void);
 static int section_jump(uint32_t s);
 /* (0.6.22) ARRANGE: the rows 0..count-1, + ADD (while there is room), then the song's END row */
@@ -2178,7 +2180,7 @@ static const char *act_name(uint32_t c)          /* column c's action (the foote
         return actions[c < 6u ? c : 5u];
     }
     if (cur_page()->graph == GR_SONG)                   /* (0.8.5) SAVE's lens: OCT+ adds a row (PLAY plays); PARTS: */
-        return SONG_PARTS(cur_page()) ? "LOOP" : SONG_CLIPS(cur_page()) ? "GO" : "ADD";   /* the part loops; CLIPS: the cell */
+        return SONG_PARTS(cur_page()) ? "LOOP" : SONG_CLIPS(cur_page()) ? "GO" : SONG_TAKE(cur_page()) ? "NEW" : "ADD";   /* the part loops; CLIPS: the cell */
     if (cur_page()->graph == GR_PATS)
         return "LOAD";
     if (cur_page()->graph == GR_USER)
@@ -2207,7 +2209,7 @@ static int act_ready(void)
     if (SONG_PARTS(cur_page()) || SONG_CLIPS(cur_page()))
         return project_used(ui.part);
     if (SONG_TAKE(cur_page()))
-        return 0;
+        return jam_len() != 0u;
     if (cur_page()->graph == GR_SONG)
         return !chain_busy() && chain_config.count < CHAIN_ROWS;
     if (cur_page()->graph == GR_PATS)

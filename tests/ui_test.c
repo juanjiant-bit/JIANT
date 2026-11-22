@@ -11530,7 +11530,7 @@ static int test_home_a(void)
     ok &= ha_eye_rows(0) == 2u && ha_eye_rows(EF_SHUT) == 1u && ha_eye_rows(EF_SLEEP) >= 1u;
     bad += check("0.9.7 HOME A: the face: its mouth opens with the level, its eyes shut on a hit (one row), it looks up on MUTATE", ok);
     {   /* the face as HOME runs it: a hit shuts the eyes 0.1 s, a mutation landed looks up, muted asleep */
-        ui_power_on(); ui.home = 1; ui.hlv = 0; ui.hset[0] = 0;
+        ui_power_on(); ui.home = 1; ui.hlv = 1; ui.hset[1] = 0;   /* (V10.8.3: the beings on BEING, ECO a scope) */
         for (c = 0; c < NTRK; c++) trk[c].p[P_MUTE] = 0;
         frames(320);
         ok = eco_fc.init && !(eco_fc.fl[0] & (EF_SHUT | EF_UP));
@@ -11542,7 +11542,7 @@ static int test_home_a(void)
     }
     for (sk = 0; sk < 1u; sk++) {   /* no critters, no ring of MUTATE dots: MUTATE on draws nothing until one lands */
         static uint16_t a[240 * 240];
-        ui_power_on(); ui.home = 1; ui.hlv = 0; ui.hset[0] = 0;
+        ui_power_on(); ui.home = 1; ui.hlv = 1; ui.hset[1] = 0;   /* (V10.8.3: BEING) */
         frames(320);
         ui_prefs = PREF_ANIM_OFF;
         for (c = 0; c < NTRK; c++) { trk[c].p[P_MSND] = 0; trk[c].p[P_MPAT] = 0; }
@@ -11559,8 +11559,7 @@ static int test_home_a(void)
             ok &= d == 0u;
         }
                                                                   /* (V10.6: no MUTATE, nothing lands) */
-        if (!sk)
-            ok &= ha_loose() <= 22u * 4u;                         /* (away from the beings the granules only: 22, 4 px at most) */
+        (void)ha_loose;                                           /* (V10.8.3: ECO's granules gone with its swim) */
         bad += check(!sk ? "0.9.7 HOME A (COLORS): no critters, no ring" :
                      "0.9.7 HOME A (AIR): no ring", ok);
     }
@@ -12149,8 +12148,7 @@ static int test_lz_home(void)
     ok &= ui.home && home_level() == 1u && home_set() == 0u;
     {   /* the beings drawn: the ECO panel differs from frame to frame while the tracks sound (their life, their faces) */
         static uint16_t a[240 * 140];
-        turn(EN_SELECT, -2); frame();
-        for (c = 0; c < NTRK; c++) trk[c].peak = 9000;
+        for (c = 0; c < NTRK; c++) trk[c].peak = 9000;   /* (V10.8.3: on BEING; ECO is a scope) */
         frames(64);
         memcpy(a, host_screen + LZ_GRAPH_Y * 240, sizeof a);
         for (c = 0; c < NTRK; c++) trk[c].peak = 9000;

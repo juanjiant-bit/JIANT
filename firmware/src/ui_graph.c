@@ -1382,7 +1382,7 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
         for (i = 0; i < 4u; i++) h ^= (uint32_t)graph_project_used(i) << (24u + i);
         for (i = 0; i < NTRK; i++) h = (h ^ (clip_now[i] | clip_go[i] << 4)) * 16777619u;   /* (V10.6s) CLIPS */
         h ^= live.srec * 3266489917u + ui.part * 668265263u;
-        h ^= jam_lock * 5u + jam_tr * 11u + jam_vos * 131u + take_i * 40503u;   /* (V10.8.2) JAM, TAKE */
+        h ^= jam_lock * 5u + jam_tr * 11u + jam_vos * 131u + jam_undo * 17u + take_i * 40503u;   /* (V10.8.2) JAM, TAKE */
         for (i = 0; i < JAM_N; i++) h = (h ^ live.jam[i]) * 31u;
         h += graph_pname_sig;
     }

@@ -53,7 +53,7 @@ static inline void og_plot(int32_t x, int32_t y, uint16_t c, int32_t a)
     *p = swap16((uint16_t)(r << 11 | g << 5 | b));
 }
 /* an antialiased line between Q4 points, at strength a (0..256) */
-static void og_line_a(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c, int32_t a)
+static __attribute__((noinline)) void og_line_a(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint16_t c, int32_t a)
 {
     int32_t dx = x1 - x0, dy = y1 - y0, adx = dx < 0 ? -dx : dx, ady = dy < 0 ? -dy : dy, t, g, p, e, f;
     if (adx >= ady) {                                    /* along x: y in Q8, two pixels per column */
