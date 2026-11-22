@@ -52,7 +52,8 @@ static uint32_t ms_clock;        /* (JIANT) samples since PLAY on the transport'
                                   * 0): MS_STEP's place */
 enum { MD_OFF, MD_PITCH, MD_CUT, MD_SHP, MD_AMP, MD_PAN, MD_DIST, MD_CHO, MD_DLY, MD_REV, MD_RATE, MD_VIB, MD_E1,
        MD_CLIP = MD_E1 + 8, MD_PNCH, MD_DTIME, MD_DFDBK, MD_DCOL, MD_DMIX, MD_RSIZE, MD_RDAMP, MD_CRATE, MD_CDEPTH, MD_MASTER_END,
-       MD_FCUT = MD_MASTER_END, MD_LEVEL, MD_N };
+       MD_FCUT = MD_MASTER_END, MD_LEVEL, MD_M1, MD_N = MD_M1 + 4 };   /* (V10.8.7, the owner) M1..M4 a track's slot
+                                                         * moves (macro_master: the macro's value, every route of it) */
 /* (0.7.0) the FX buses' globals as destinations (a mod sequence on the delay time ..): once an audio block
  * macro_master sums every track's slots on them and fx.c reads the stored value plus that offset through GFX(k) in
  * place of song.g[] (no slot on a bus: the stored value, live for the UI's graphs and the host tests of a bus alone) */
@@ -78,7 +79,12 @@ static volatile int8_t pkr_a;   /* .. its amount (AMT: 64 the whole range) */
 static int16_t life_x[NTRK] __attribute__((section(".bss.tape"))), life_p[NTRK] __attribute__((section(".bss.tape")));
 static uint8_t life_on __attribute__((section(".bss.tape")));
 static uint8_t life_fol __attribute__((section(".bss.tape")));
-static uint8_t mx_on;            /* bit r: route r acts this block (macro_master: its destination, amount, macro not 0) */
+static int16_t macro_e[4];       /* (V10.8.7) M1..M4 as they act this block: the knob's value plus what the tracks' slots
+                                  * added the block before (macro_master, once a block, first) */
+static int16_t macro_mm[4];
+#define macro_eff(m) ((int32_t)macro_e[(m) & 3u])
+static uint16_t mx_on;
+static uint8_t mx_hi;            /* (V10.8.7) the last route acting + 1: mod_begin reads no further */            /* bit r: route r acts this block (macro_master: its destination, amount, macro not 0) */
 static uint8_t mx_trk;           /* .. one of them on a track's destination (mod_begin) */
 static void mx_defaults(void)
 {
@@ -97,7 +103,7 @@ _Static_assert(P_M2SRC == P_M1SRC + 3 && P_M4AMT == P_M1SRC + 11 && P_M4AMT + 1 
 #define MS_VOICE(s) ((MS_VMASK >> ((s) & 31u)) & 1u)   /* a value per voice: ENV VEL KEY RAND, (V10.22) ENV2 */
 #define MS_BIPOLAR(s) ((s) == MS_LFO || (s) == MS_KEY || (s) == MS_RAND || (s) == MS_NOISE)
 
-_Static_assert(MS_N <= 32 && MD_N <= 32, "matrix UI bitsets hold all IDs");
+_Static_assert(MS_N <= 32 && MD_N <= 36, "matrix UI bitsets hold all IDs");   /* (V10.8.7: M1..M4 past 32: no bitset of destinations reaches them; the editor protocol lists the first 32) */
 
 /* the track parameter of a per-block destination */
 static uint32_t mod_param(uint32_t d)
@@ -256,7 +262,7 @@ static int32_t mod_tsrc(const track_t *t, uint32_t s, int32_t lfo)
     case MS_NOISE:                                      /* (0.7.8) a random wander, a new point every ~46 ms, eased */
         return drift_noise((uint32_t)(t - trk) * 7919u + 0x1234u, mns_clk, 6u - (CTL_LOG2 - 5u));
     default:
-        return s == MS_ENV2 ? t->m_env2 : s == MS_FOLLOW ? mod_follow : macro_v[(s - MS_M1) & 3u] * 258;   /* (V10.22 ENV2: out of the switch's run) */
+        return s == MS_ENV2 ? t->m_env2 : s == MS_FOLLOW ? mod_follow : macro_eff(s - MS_M1);   /* (V10.22 ENV2: out of the switch's run) */
     }
 }
 
@@ -386,7 +392,7 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
     mp->nv = mp->nk = 0;
     mp->pit = mp->cut = mp->shp = 0;
     mp->gain = 32767;
-    for (n = NMSLOT + MX_N; k < n; k++) {               /* the track's slots, then (V10.7.59) the MACROS' routes */
+    for (n = NMSLOT + mx_hi; k < n; k++) {              /* the track's slots, then (V10.7.59) the MACROS' routes */
         uint32_t s, d;
         int32_t a, x;
         if (k < NMSLOT) {
@@ -397,7 +403,7 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
                 continue;
             s = MS_M1 + (r->m & 3u); d = r->d; a = r->a;
         }
-        if (!s || !d || !a || s >= MS_N || d >= MD_N || (d >= MD_CLIP && d < MD_MASTER_END))   /* (the master's: macro_master) */
+        if (!s || !d || !a || s >= MS_N || d >= MD_M1 || (d >= MD_CLIP && d < MD_MASTER_END))   /* (the master's: macro_master) */
             continue;
         /* These engines have no voice-level CUT consumer: use their track filter. */
         if (d == MD_CUT && (t->engine == ENGI_WHEEL || t->engine == ENGI_DRUM ||
@@ -492,9 +498,10 @@ static __attribute__((noinline)) void life_block(void)
 static void (*const volatile DLY_REV_SET)(void);         /* (fx.c: REVERSE's grains, set from flash) */
 static __attribute__((noinline)) void macro_master(void)
 {
-    int32_t off[MD_MASTER_END - MD_CLIP] = {0};
+    int32_t off[MD_MASTER_END - MD_CLIP] = {0}, mm[4] = {0};
     uint32_t i, k, any = 0, sw1 = 0;
     mns_clk++;
+    for (k = 0; k < 4u; k++) macro_e[k] = (int16_t)clamp(macro_v[k] * 258 + macro_mm[k], 0, 32767);
     DLY_REV_SET();
     if (ain_sw)                                         /* (SWARM: a track's SOURCE; its own block, a USB input too) */
         AIN_SWARM(CTL);
@@ -514,8 +521,9 @@ static __attribute__((noinline)) void macro_master(void)
             int32_t a = t->p[P_M1AMT + 3u * k], v;
             if (!s || !a || s >= MS_N || !d || d >= MD_N) continue;
             if (s - MS_T1 < NTRK) track_follow_mask |= (uint8_t)(1u << (s - MS_T1));
-            if (d < MD_CLIP || d >= MD_MASTER_END) continue;
+            if ((d < MD_CLIP || d >= MD_MASTER_END) && d < MD_M1) continue;
             v = (mod_tsrc(t, s, mulq15(t->lfo_val, t->lfo_fade)) * a) >> 6;   /* Q15: AMT 64 at a full source = the range */
+            if (d >= MD_M1) { mm[d - MD_M1] += v; continue; }   /* (V10.8.7) a macro moved: every route of it */
             if (d <= MD_PNCH)
                 off[d - MD_CLIP] += (v * 100) >> 15;
             else {                                      /* (0.7.0) an FX bus global: its whole range */
@@ -526,20 +534,22 @@ static __attribute__((noinline)) void macro_master(void)
             }
         }
     }
+    for (k = 0; k < 4u; k++) macro_mm[k] = (int16_t)clamp(mm[k], -32767, 32767);
     {   /* (V10.7.59) the MACROS' routes: which act; the master's destinations once (not a track's each) */
-        uint32_t on = 0, tr = 0;
+        uint32_t on = 0, tr = 0, hi = 0;
         for (k = 0; k < MX_N; k++) {
             const mx_t *r = &mx_r[k];
             uint32_t d = r->d;
             int32_t v;
-            if (!d || d >= MD_N || !r->a || !macro_v[r->m & 3u])
+            if (!d || d >= MD_M1 || !r->a || !macro_eff((uint32_t)r->m))
                 continue;
             on |= 1u << k;
+            hi = k + 1u;
             if (d < MD_CLIP || d >= MD_MASTER_END) {
                 tr = 1;
                 continue;
             }
-            v = (macro_v[r->m & 3u] * 258 * r->a) >> 6;
+            v = (macro_eff((uint32_t)r->m) * r->a) >> 6;
             if (d <= MD_PNCH)
                 off[d - MD_CLIP] += (v * 100) >> 15;
             else {
@@ -552,7 +562,8 @@ static __attribute__((noinline)) void macro_master(void)
             int32_t v = (pkr_v * 258 * pkr_a) >> 6;
             off[pkr_d - MD_CLIP] += (v * (pkr_d == MD_DTIME ? DT_FREE + 47 : pd->max - pd->min)) >> 15;
         }
-        mx_on = (uint8_t)on;
+        mx_on = (uint16_t)on;
+        mx_hi = (uint8_t)hi;
         mx_trk = (uint8_t)tr;
     }
     life_block();                                       /* (V10.7.62) LIFE */
@@ -640,6 +651,7 @@ BTAPP_FN static int mod_dst_ok(const track_t *t, uint32_t d)
 {
     uint32_t e = eng_idx(t->eng_req), k;
     if (d >= MD_N) return 0;
+    if (d >= MD_M1) return 1;                           /* (V10.8.7) the macros */
     if (d == MD_CUT) {
         if (e == ENGI_ADD || (e == ENGI_VOICE && t->p[P_VLANG])) return 0;
         if (e == ENGI_ANIMAL) return t->p[P_E0] == AN_PULSE || t->p[P_E0] >= AN_WING;
@@ -691,7 +703,7 @@ static int32_t mod_dst_turn(const track_t *t, int32_t d, int32_t steps)
 static char mod_dst_scope(const track_t *t, uint32_t d)
 {
     uint32_t e = eng_idx(t->eng_req);
-    if (d >= MD_CLIP && d < MD_MASTER_END) return 'M';
+    if ((d >= MD_CLIP && d < MD_MASTER_END) || d >= MD_M1) return 'M';
     if (d && d <= MD_AMP && !(d == MD_CUT && (e == ENGI_WHEEL || e == ENGI_DRUM || e == ENGI_STRING || e == ENGI_INPUT))) return 'V';
     return 'T';
 }

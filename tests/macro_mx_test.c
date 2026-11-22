@@ -40,7 +40,7 @@ int main(void)
         mx_r[5].m = 2; mx_r[5].d = MD_PAN; mx_r[5].a = 33;
         project_capture(&p);
         n1 = proj_packed_size(&p);
-        ok = n1 == n0 + 2u + sizeof p.mx && !project_save(1);   /* (0: saved) */
+        ok = n1 == n0 + 2u + MX_OLD * 3u && !project_save(1);   /* (0: saved; V10.8.7: routes 1..8 the MX block, 9..16 MY) */
         if (!ok) printf("  sizes %u %u\n", n0, n1);
         mx_defaults();
         project_load(1); frames(4);
@@ -224,6 +224,42 @@ int main(void)
         if (!ok) printf("  how: cuts %u %u pans %d %d ps %u d %u\n", cuts0, cuts1, p0, p1, pk.ps, pkr_d);
         bad += check("PUNCH-IN HOWs: DROP, STUT ACC faster, PAT 1; PAN every other track the other way", ok);
         pk.magic = 0; frame();
+    }
+    {   /* (V10.8.7, the owner) FX > MACROS: KNOB 1 the macro, 2 a destination, 3 how much; destinations add up (one macro
+         * moving several), 0 lets one go */
+        uint32_t k, n2 = 0, rev = 0, pan = 0;
+        ui_power_on();
+        go_title("MACROS"); frame();
+        ok = cur_page()->id[0] == ID_MX0;
+        turn(EN_K1, 1); frame();                        /* M2 */
+        mx_ui[1] = MD_PAN; turn(EN_K3, 3); frame();     /* M2 -> PAN */
+        mx_ui[1] = MD_CHO; turn(EN_K3, 2); frame();     /* M2 -> CHO too */
+        for (k = 0; k < MX_N; k++)
+            if (mx_r[k].m == 1 && mx_r[k].a) { n2++; pan |= mx_r[k].d == MD_PAN; rev |= mx_r[k].d == MD_REV || mx_r[k].d == MD_CHO; }
+        ok &= mx_ui[0] == 1 && n2 == 3u && pan && rev;  /* (REV the default's, PAN, CHO) */
+        if (!ok) { printf("  page %s mac %d n2 %u pan %u rev %u:", cur_page()->title, mx_ui[0], n2, pan, rev); for (k = 0; k < MX_N; k++) printf(" %d/%d/%d", mx_r[k].m, mx_r[k].d, mx_r[k].a); printf("\n"); }
+        mx_ui[1] = MD_PAN; turn(EN_K3, -100); frame();  /* PAN let go */
+        for (n2 = 0, k = 0; k < MX_N; k++) n2 += mx_r[k].m == 1 && mx_r[k].a && mx_r[k].d;
+        ok &= n2 == 2u;
+        if (n2 != 2u) { printf("  after: n2 %u ui %d %d %d:", n2, mx_ui[0], mx_ui[1], mx_ui[2]); for (k = 0; k < MX_N; k++) printf(" %d/%d/%d", mx_r[k].m, mx_r[k].d, mx_r[k].a); printf("\n"); }
+        turn(EN_SELECT, 0); frame();
+        bad += check("MACROS page: KNOB 1 the macro, 2 / 3 its destinations added (M2: REV PAN CHO), one let go at 0", ok);
+    }
+    {   /* (V10.8.7) the macros a destination of a track's slot (LFO -> M1 moves every route of M1), no source on MOD */
+        int16_t v;
+        ui_power_on();
+        int32_t o[2 * CTL];
+        trk[0].p[P_M1SRC] = MS_LFO; trk[0].p[P_M1DST] = MD_M1; trk[0].p[P_M1AMT] = 63;
+        trk[0].p[P_LRATE] = 100;
+        macro_v[0] = 64;
+        for (v = 0; v < 2000 && macro_e[0] == 64 * 258; v++) mix_block(o, CTL);
+        ok = macro_e[0] != 64 * 258;
+        if (!ok) printf("  macro_e %d\n", macro_e[0]);
+        go_title("MOD"); frame(); mod_ui_slot = 1; trk[0].p[P_M2SRC] = MS_M1 - 1;
+        turn(EN_K2, 1); frame();
+        ok &= trk[0].p[P_M2SRC] == MS_M1 + 4;           /* (M1..M4 passed over) */
+        bad += check("MOD: the macros a destination (M1..M4 at the end of DEST), not a source (SRC passes them)", ok);
+        trk[0].p[P_M1SRC] = 0; trk[0].p[P_M2SRC] = 0; macro_v[0] = 0;
     }
     printf(bad ? "macro-mx: %d FAILED\n" : "macro-mx: all ok\n", bad);
     return bad != 0;

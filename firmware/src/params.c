@@ -83,7 +83,7 @@ static const char *const N_MSRC[] = {"OFF", "LFO", "ENV", "VEL", "KEY", "RAND", 
 static const char *const N_MDST[] = {"OFF", "PITCH", "CUT", "SHP", "AMP", "PAN", "DIST", "CHO", "DLY", "REV", "L.RATE",
                                      "L.PIT", "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8",
                                      "CLIP", "PNCH",   /* (JIANT: the master, FX > MASTER) */
-                                     "D.TIM", "D.FB", "D.TON", "D.MIX", "R.SIZ", "R.DMP", "C.RAT", "C.DEP", "F.CUT", "LEVEL"};   /* (0.7.0) the FX buses'
+                                     "D.TIM", "D.FB", "D.TON", "D.MIX", "R.SIZ", "R.DMP", "C.RAT", "C.DEP", "F.CUT", "LEVEL", "M1", "M2", "M3", "M4"};   /* (0.7.0) the FX buses'
                                                          * globals (DELAY TIME FDBK TONE MIX, REVERB SIZE DAMP, CHORUS RATE
                                                          * DEPTH): mod.c macro_master, fx.c GFX() */
 static const char *const N_ENGNAME[] = {"ANALOG", FELUCCA_FM4 ? "DIGITAL" : "-", "PHASE", "MATH", "-", "VOICE", "-", "WHEEL", "STRING", "-",
@@ -702,17 +702,17 @@ static int16_t tape_v[2] __attribute__((section(".bss.tape")));
 /* (p9, the owner: "a light 4-band EQ on the master, to refine the song") FX > EQ: LOW (under ~200 Hz), LO MID (200 Hz ..
  * 1 kHz), HI MID (1 .. 4 kHz), HIGH (over 4 kHz), -12 .. +12 dB each (fx.c eq_block; all 0: not run). Kept with the
  * project ('E' 'Q', project.c proj_eq) */
-#define MX_N 8u                                         /* (V10.7.59) the MACROS' routes (mod.c) */
-typedef struct { int16_t m, d, a; } mx_t;               /* (int16: LFO > MACROS edits them in place) */
+#define MX_N 16u                                        /* (V10.7.59) the MACROS' routes (mod.c); (V10.8.7) 16, shared */
+#define MX_OLD 8u                                       /* (the first eight: project.c's 'M' 'X' block, the rest 'M' 'Y') */
+typedef struct { uint8_t m, d; int8_t a; } mx_t;
 static mx_t mx_r[MX_N];
-/* (V10.7.59) LFO > MACROS: KNOB 1 the route (1 .. MX_N), 2 its macro, 3 its destination, 4 its amount (mod.c mx_r) */
+/* (V10.8.7, the owner) FX > MACROS: KNOB 1 the macro (M1..M4), 2 a destination, 3 how much that macro moves it (0: none;
+ * the destinations add up, a macro moves as many as it is given), 4 its next destination set (the count shown) */
 #define ID_MX0 0xECu
-static const char *const N_MXR[] = {"1", "2", "3", "4", "5", "6", "7", "8"};
 static const char *const N_MXM[] = {"M1", "M2", "M3", "M4"};
-static const param_desc_t MX_DESC[4] = {PE("ROUTE", N_MXR, 0), PE("MACRO", N_MXM, 0), PE("DEST", N_MDST, 0),
-                                        PD("AMOUNT", F_BIPCT, -64, 63, 0)};
-static int16_t mx_sel;
-_Static_assert(sizeof N_MXR / sizeof N_MXR[0] == MX_N, "a name a route");
+static const param_desc_t MX_DESC[4] = {PE("MACRO", N_MXM, 0), PE("DEST", N_MDST, 0), PD("AMOUNT", F_BIPCT, -64, 63, 0),
+                                        PD("DESTS", F_INT, 0, MX_N, 0)};
+static int16_t mx_ui[4] = {0, 2, 0, 0};                 /* (the macro, the destination: MD_CUT; the views) */
 /* (V10.7.62, the owner: "the tracks interacting, completely audible, as light as it can be") LIFE: HOME > LIFE, ECO's
  * second page: each track moved by the others' sound, a block late (mod.c life_block): KNOB 1 FILTER (a kit's hits close
  * the others' filter, a voice's open it), 2 TIMBRE (the same on the shape), 3 PUMP (a kit's hits duck the others' level),
@@ -919,8 +919,14 @@ static uint8_t sl_ui_step;       /* (JIANT 0.6.3) the SL PITCH page: the step KN
 static __attribute__((noinline)) const param_desc_t *page_desc_v(uint32_t id, int16_t **valp)
 {
     if (id >= ID_MX0 && id < ID_MX0 + 4u) {           /* (V10.7.59) LFO > MACROS */
-        mx_t *r = &mx_r[(uint32_t)mx_sel % MX_N];
-        *valp = id == ID_MX0 ? &mx_sel : id == ID_MX0 + 1u ? &r->m : id == ID_MX0 + 2u ? &r->d : &r->a;
+        uint32_t k;
+        mx_ui[2] = mx_ui[3] = 0;
+        for (k = 0; k < MX_N; k++)
+            if (mx_r[k].d && mx_r[k].a && (mx_r[k].m & 3) == mx_ui[0]) {
+                mx_ui[3]++;
+                if (mx_r[k].d == mx_ui[1]) mx_ui[2] = mx_r[k].a;
+            }
+        *valp = &mx_ui[id - ID_MX0];
         return &MX_DESC[id - ID_MX0];
     }
     if (id >= ID_EQ0 && id < ID_EQ0 + 4u) {           /* (p9) the master's EQ */

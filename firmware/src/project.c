@@ -591,7 +591,9 @@ static uint32_t proj_packed_size(const project_t *q)
     for (i = 0; i < sizeof q->split; i++) if (q->split[i]) { n += 2u + sizeof q->split; break; }
     for (i = 0; i < sizeof q->scpat; i++) if (q->scpat[i]) { n += 2u + sizeof q->scpat; break; }
     if (proj_mx_custom(q))                              /* (V10.7.59) the MACROS' routes, when not the defaults */
-        n += 2u + sizeof q->mx;
+        n += 2u + MX_OLD * 3u;
+    for (i = MX_OLD * 3u; i < sizeof q->mx; i++)
+        if (q->mx[i]) { n += 2u + sizeof q->mx - MX_OLD * 3u; break; }
     if (q->lf[0] | q->lf[1] | q->lf[2] | q->lf[3])       /* (V10.7.62) LIFE, when on */
         n += 2u + sizeof q->lf;
     if (q->dx_gain)                                     /* (V10.7.63) the kit's GAIN */
@@ -792,7 +794,11 @@ static int proj_pack(project_store_t *out, const project_t *q)
     for (i = 0; i < sizeof q->scpat && !q->scpat[i]; i++) {}   /* (V10.6k) SCENE's patterns (the last) */
     if (i < sizeof q->scpat) { b[pos++] = 'S'; b[pos++] = 'P'; memcpy(b + pos, q->scpat, sizeof q->scpat); pos += sizeof q->scpat; }
     if (proj_mx_custom(q)) {                            /* (V10.7.59) the MACROS' routes (after SCENE's patterns: the last) */
-        b[pos++] = 'M'; b[pos++] = 'X'; memcpy(b + pos, q->mx, sizeof q->mx); pos += sizeof q->mx;
+        b[pos++] = 'M'; b[pos++] = 'X'; memcpy(b + pos, q->mx, MX_OLD * 3u); pos += MX_OLD * 3u;
+    }
+    for (i = MX_OLD * 3u; i < sizeof q->mx && !q->mx[i]; i++) {}
+    if (i < sizeof q->mx) {                             /* (V10.8.7) routes 9 .. 16, when any */
+        b[pos++] = 'M'; b[pos++] = 'Y'; memcpy(b + pos, q->mx + MX_OLD * 3u, sizeof q->mx - MX_OLD * 3u); pos += sizeof q->mx - MX_OLD * 3u;
     }
     if (q->lf[0] | q->lf[1] | q->lf[2] | q->lf[3]) {     /* (V10.7.62) LIFE (the last) */
         b[pos++] = 'L'; b[pos++] = 'F'; memcpy(b + pos, q->lf, sizeof q->lf); pos += sizeof q->lf;
@@ -1137,9 +1143,13 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         pos += 2u + sizeof q->scpat;
     }
     proj_mx_def(q);                                     /* (V10.7.59) the MACROS' routes: as saved, else the defaults */
-    if (pos + 2u + sizeof q->mx <= room && b[pos] == 'M' && b[pos + 1u] == 'X') {
-        memcpy(q->mx, b + pos + 2u, sizeof q->mx);
-        pos += 2u + sizeof q->mx;
+    if (pos + 2u + MX_OLD * 3u <= room && b[pos] == 'M' && b[pos + 1u] == 'X') {
+        memcpy(q->mx, b + pos + 2u, MX_OLD * 3u);
+        pos += 2u + MX_OLD * 3u;
+    }
+    if (pos + 2u + sizeof q->mx - MX_OLD * 3u <= room && b[pos] == 'M' && b[pos + 1u] == 'Y') {   /* (V10.8.7) 9 .. 16 */
+        memcpy(q->mx + MX_OLD * 3u, b + pos + 2u, sizeof q->mx - MX_OLD * 3u);
+        pos += 2u + sizeof q->mx - MX_OLD * 3u;
     }
     memset(q->lf, 0, sizeof q->lf);                     /* (V10.7.62) LIFE: as saved, else off */
     if (pos + 2u + sizeof q->lf <= room && b[pos] == 'L' && b[pos + 1u] == 'F') {

@@ -5488,14 +5488,14 @@ static int test_macro_layer(void)
     btn_up(B_LFO); frames(64);
     bad += check("MACRO: LFO held opens no layer (V10.7.66: the macros FX > PUNCH IN's only)", ok && !ui.layer);
     t->p[P_M1SRC] = MS_M1; t->p[P_M1DST] = MD_E1; t->p[P_M1AMT] = 64;
-    macro_v[0] = 127;
+    macro_v[0] = 127; macro_master();                   /* (V10.8.7: the block's macros, macro_master's, first) */
     {
         const param_desc_t *pd = &ENGINES[t->engine]->edit[0];
         int16_t keep = t->p[P_E0] = (int16_t)pd->min;
         ok = mod_begin(t) && t->p[P_E0] >= pd->max - 1;
         mod_end(t);
         ok &= t->p[P_E0] == keep;
-        macro_v[0] = 0;
+        macro_v[0] = 0; macro_master();
         ok &= !mod_begin(t) || t->p[P_E0] == keep;
         mod_end(t);
     }
@@ -9444,10 +9444,9 @@ static int test_fx_latch(void)
         ok &= !ui.layer && ui.home == h && ui.page == pg;
     }
     btn_down(B_FX); frame(); frames(800); press(B_OCTUP); btn_up(B_FX); frame();
-    ok &= song.octave == -1 && pk.edit;                           /* (V10.7.67: FX + OCT+ the punch-in editor again, as
+    ok &= song.octave == -1 && !pk.edit;                          /* (V10.8.7, the owner: FX + OCT+ no editor any more, only
                                                          * OCT+ on FX > PUNCH IN; no octave) */
-    press(B_OCTDN); frame();                                      /* (OCT-: out of it, no octave) */
-    ok &= song.octave == -1 && !pk.edit && !fx_lock;
+    ok &= !fx_lock;
     if (!ok) printf("  latchoff: edit %u oct %d lock %u layer %u\n", pk.edit, song.octave, fx_lock, ui.layer);
     song.octave = -1;
     frames(64); press(B_OCTUP);

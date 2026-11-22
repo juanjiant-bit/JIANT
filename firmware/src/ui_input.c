@@ -1667,6 +1667,39 @@ sect:
         mod_ui_slot = (uint8_t)clamp((int32_t)mod_ui_slot + (steps > 0 ? 1 : -1), 0, 3);
         return;
     }
+    if (pg->graph == GR_MOD && slot == 1u) {             /* (V10.8.7, the owner) SRC: the macros no source (a destination) */
+        int16_t *src = &TSEL->p[P_M1SRC + 3u * mod_ui_slot];
+        int32_t v = *src, dir = steps > 0 ? 1 : -1;
+        do v = clamp(v + dir, 0, MS_N - 1); while (v >= MS_M1 && v < MS_M1 + 4 && v > 0 && v < MS_N - 1);
+        *src = (int16_t)v;
+        return;
+    }
+    if (pg->id[0] == ID_MX0) {                          /* (V10.8.7, the owner) FX > MACROS: a macro, its destinations */
+        uint32_t k, f = MX_N;
+        int32_t a;
+        if (slot == 0u) mx_ui[0] = (int16_t)clamp(mx_ui[0] + (steps > 0 ? 1 : -1), 0, 3);
+        else if (slot == 1u) mx_ui[1] = (int16_t)clamp(mx_ui[1] + (steps > 0 ? 1 : -1), 1, MD_M1 - 1);
+        else if (slot == 3u) {                          /* the macro's next destination set */
+            for (k = 1; k < MD_M1; k++) {
+                uint32_t d = ((uint32_t)mx_ui[1] - 1u + (steps > 0 ? k : MD_M1 - 1u - k)) % (MD_M1 - 1u) + 1u, j;
+                for (j = 0; j < MX_N && !(mx_r[j].d == (uint8_t)d && mx_r[j].a && (mx_r[j].m & 3) == mx_ui[0]); j++) {}
+                if (j < MX_N) { mx_ui[1] = (int16_t)d; break; }
+            }
+        } else {                                        /* how much: a route found, made (a free one), or let go at 0 */
+            for (k = 0; k < MX_N; k++) {
+                if ((mx_r[k].m & 3) == mx_ui[0] && mx_r[k].d == mx_ui[1] && mx_r[k].a) break;
+                if ((!mx_r[k].d || !mx_r[k].a) && f == MX_N) f = k;
+            }
+            if (k == MX_N && (k = f) == MX_N) { ui_message("16 ROUTES USED"); return; }
+            f = k < MX_N && mx_r[k].d == mx_ui[1] ? (uint32_t)(int32_t)mx_r[k].a : 0u;   /* (was) */
+            a = clamp((int32_t)f + accel(EN_K1 + 2u, steps, 127), -64, 63);
+            if (((int32_t)f > 0 && a < 0) || ((int32_t)f < 0 && a > 0)) a = 0;   /* (through 0: it stops there, let go) */
+            fm1_irq_off();
+            mx_r[k] = a ? (mx_t){(uint8_t)mx_ui[0], (uint8_t)mx_ui[1], (int8_t)a} : (mx_t){0, 0, 0};
+            fm1_irq_on();
+        }
+        return;
+    }
     if (pg->graph == GR_MOD && slot == 2u) {
         int16_t *dst = &TSEL->p[P_M1DST + 3u * mod_ui_slot];
         *dst = (int16_t)mod_dst_turn(TSEL, *dst, steps);
@@ -2633,8 +2666,8 @@ static void ui_input_frame(void)
             if (pk.edit && !pk_page() && ui.ly != LAYER_FX)
                 pk.edit = 0;                            /* (the layer shut, FX tapped: the editor too, unsaved) */
         } else if ((pressed & u) && !(fm1_in.buttons & d) && !ui.menu && !ui.confirm &&
-                   ((ui.ly == LAYER_FX && layer_held()) ||     /* (V10.7.67) FX + OCT+ as in V10.7.65, too */
-                    (!ui.home && !ui.ly && !ui.act && cur_page()->graph == GR_PUNCH)) && pke_oct(1))
+                   !ui.home && !ui.ly && !ui.act && cur_page()->graph == GR_PUNCH && pke_oct(1))   /* (V10.8.7, the owner:
+                                                         * only OCT+ on FX > PUNCH IN; FX + OCT+ gone: FX again shut it) */
             pressed &= ~u;
     }
     oct = oct_taps(pressed, ui.menu || ui.confirm || act_cols() || name_on() || layer_set_open());
