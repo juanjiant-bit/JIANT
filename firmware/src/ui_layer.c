@@ -1253,8 +1253,9 @@ static void pk_load(void)                               /* the slot played, from
 /* a PARAM key's destination (its options' bits 0-3): M1..M4, then a parameter of every track */
 #define PD_N 32u                                        /* (bits 0-3 and 7: the owner, "more destinations") */
 static const char PD_NM[PD_N][9] = {"M1", "M2", "M3", "M4", "CUT", "FILTER", "PITCH", "VIBRATO", "TIMBRE", "VOLUME", "PAN",
-                                    "DIST", "CHORUS", "DELAY", "REVERB", "LFO RATE", "EDIT 1", "EDIT 2", "EDIT 3", "EDIT 4",
-                                    "EDIT 5", "EDIT 6", "EDIT 7", "EDIT 8", "DLY TIME", "DLY FDBK", "DLY TONE", "DLY MIX",
+                                    "DIST", "CHORUS", "DELAY", "REVERB", "LFO RATE", "EDIT1 K1", "EDIT1 K2", "EDIT1 K3", "EDIT1 K4",
+                                    "EDIT2 K1", "EDIT2 K2", "EDIT2 K3", "EDIT2 K4",   /* (V10.8.5, the owner: "EDIT 1..8, what
+                                                         * are they?": each track's EDIT 1 / EDIT 2 page, its knob) */ "DLY TIME", "DLY FDBK", "DLY TONE", "DLY MIX",
                                     "REV SIZE", "REV DAMP", "CHO RATE", "CHO DPTH"};
 static void pk_name(uint32_t e, uint32_t o, char *nm)
 {
@@ -1613,7 +1614,13 @@ static __attribute__((noinline)) void draw_layer(void)
     uint32_t l = ui.layer % LAYER_N, sig = l * 7919u + ux.gen * 977u;
     layer_cards(l);
     if (l == LAYER_FX)
+    {
+        uint32_t s;
         sig += (perf_kill ? 0u : perf_held | perf_latched) * 31u + perf_latch_on * 11u + perf_act * 131u + perf_avail() * 7u;
+        sig += pk.edit * 3u + pk.ekey * 4099u + (kb_layer != 0u) * 65537u + pk.mod * 17u + pk.pkey * 257u;   /* (V10.8.5: the
+                                                         * editor's key lit while pressed, its keys' names as set) */
+        for (s = 0; pk.edit && s < PK_KEYS; s++) sig = (sig ^ pk.we[s] ^ (uint32_t)pk.wo[s] << 8) * 16777619u;
+    }
     else if (l == LAYER_GLO)
         sig += perf_solo * 31u + (uint32_t)song.g[G_CLOCK] * 5u +
                (uint32_t)(trk[0].p[P_MUTE] | trk[1].p[P_MUTE] << 1 | trk[2].p[P_MUTE] << 2 | trk[3].p[P_MUTE] << 3 |
