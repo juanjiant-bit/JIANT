@@ -20,7 +20,7 @@ static void sweep(void)
     }
     int d=0,count=0;
     while(d<MD_N-1){int n=mod_dst_turn(t,d,1);assert(n>d&&++count<MD_N);d=n;}
-    assert(mod_dst_turn(t,31,100000)==31&&mod_dst_turn(t,0,-100000)==0);
+    assert(mod_dst_turn(t,MD_N-1,100000)==MD_N-1&&mod_dst_turn(t,0,-100000)==0);   /* (V10.8.7: M1..M4 the last) */
     assert(!memcmp(before,t->p,sizeof before));
 }
 int main(void)
@@ -49,7 +49,7 @@ int main(void)
     assert(!strcmp(mod_dst_name(TSEL,MD_CUT),"MOD")&&!strcmp(mod_dst_name(TSEL,MD_SHP),"FB+MOD"));
     engine(ENGI_ANALOG);TSEL->p[P_E0]=7;TSEL->p[P_E3]=0;macro_v[0]=127;
     TSEL->p[P_M1SRC]=MS_M1;TSEL->p[P_M1DST]=MD_E1+3;TSEL->p[P_M1AMT]=-64;
-    mod_begin(TSEL);assert(TSEL->p[P_E3]==-24);mod_end(TSEL);assert(TSEL->p[P_E3]==0);
+    macro_master();mod_begin(TSEL);assert(TSEL->p[P_E3]==-24);   /* (V10.8.7: the block's macros first) */mod_end(TSEL);assert(TSEL->p[P_E3]==0);
     engine(ENGI_ANALOG);TSEL->p[P_M1SRC]=MS_T1;TSEL->p[P_M1DST]=MD_SHP;TSEL->p[P_M1AMT]=35;
     project_capture(&proj_scratch);assert(proj_pack(&proj_wire,&proj_scratch));
     assert(proj_import(&proj_scratch,&proj_wire,sizeof proj_wire));assert(proj_scratch.t[0].p[P_M1DST]==MD_SHP);
