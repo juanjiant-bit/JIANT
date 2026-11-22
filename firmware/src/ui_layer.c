@@ -1653,7 +1653,10 @@ static __attribute__((noinline)) void draw_layer(void)
     draw_foot();
 }
 
-#include "ui_live.c"                                    /* (p2, main 0.9.11) GLO > LIVE: KEYS, RAILS */
+static void tl_take(const track_t *t);                 /* (V10.8.8: GLO > LIVE, ui_live.c, gone; its prototypes stay) */
+static uint32_t tl_stretch(track_t *t, int32_t k);
+static uint16_t pk_fill(uint32_t st, int blk, int n, uint16_t *ink);
+static void tracks_edit(uint32_t slot, int32_t steps);
 
 
 

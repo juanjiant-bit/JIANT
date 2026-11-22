@@ -413,15 +413,7 @@ enum { CF_NONE, CF_CLEAR_SEQ, CF_CLEAR_TRK, CF_OVR_PROJ, CF_OVR_USER, CF_LOAD_PA
                                    * SAVE over a used slot; a pattern over the user's steps;
                                    * USER ERASE; (0.9.3) MUTATE turned OFF: BACK TO BEFORE MUTATE?; (p2) LIVE's COMMIT */
 /* (p2, main 0.9.11) GLO > LIVE: KEYS, RAILS (ui_live.c, included by ui_layer.c) */
-static int live_page(void);
-static int live_mano(void);
-static void live_frame(void);
-static void live_knob(uint32_t slot, int32_t steps);
-static void live_cards(void);
-static void graph_live(void);
-static uint32_t live_sig(uint32_t h);
-static uint32_t live_leds(void);
-static void live_commit(uint32_t m);
+/* (V10.8.8: gone, its flash for SEQ > STEP FX's PLAY; seq_live.c stays: the FX layer's 1/2 TEMPO, LOOP) */
 
 /* MENU > DISPLAY > SCREEN OFF (1.1.5): after a while with no input on the panel the screen goes dark (the backlight
  * stays on: lcd.c lcd_power)
@@ -1098,6 +1090,15 @@ static uint32_t gco_slot(void) { return ui.page > 0u && PAGES[ui.page - 1u].grap
 static int keys_pg(uint32_t g) { return !ui.home && !ui.menu && !ui.confirm && !ui.layer && cur_page()->graph == g; }   /* (V10.6o) */
 static int gco_on(void) { return keys_pg(GR_GCOMP); }
 static int ckeys_on(void) { return keys_pg(GR_COMP); }   /* (seq2g) */
+/* (V10.8.8, the owner) STEP FX's PLAY (OCT+ on COMP / COMP 2): the white keys hold a component on the track (seq.c
+ * hc_run), REC writes it into the step it began on; sfx_key the one held (16: none) */
+static uint8_t sfx_play, sfx_key = 16;
+static const uint8_t SFX_KA[16] = {CA_STUT, CA_STUT, CA_STUT, CA_RATCH, CA_RATCH, CA_RATCH, CA_RATCH, CA_ARP, CA_ARP,
+                                   CA_ARP, CA_OCTU, CA_OCTD, CA_RAND, CA_TRANS, CA_CHORD, CA_MUTE};
+static const uint8_t SFX_KV[16] = {0, 1, 3, 0, 1, 2, 6, CV_ARP_SCALE | CP_ARG(0, 2, 1), CV_ARP_SCALE | CP_ARG(1, 2, 1),
+                                   CV_ARP_SCALE | CP_ARG(2, 2, 1), 0, 0, 2, CV_TR_MAKE(2, 1), 0, 0};
+static const char SFX_NM[16][10] = {"STUT", "STUT /2", "STUT /4", "RATCH x2", "RATCH x3", "RATCH x4", "RATCH x8",
+                                    "ARP UP", "ARP DOWN", "ARP UP-DN", "OCT+", "OCT-", "RANDOM", "TRANS +2", "CHORD", "MUTE"};
 /* (V10.6o) PARTS, TIMELINE: the keys are the page's (silent): F3..B3 the parts; T1..T6's mutes, F4..B4 a track's FROM */
 static int skeys_on(void) { return keys_pg(GR_SONG) && cur_page()->title[0] != 'A'; }
 static uint32_t ga_idx(uint32_t a)

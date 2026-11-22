@@ -1157,6 +1157,8 @@ static __attribute__((noinline)) void seq_overlay(const track_t *t, const page_t
         k = ui.cursor % NSTEP;
         if (mine == CA_RAMP && k >= base && k < base + 16u && bt_hw_seg())
             ramp_draw_bt(t, dr, top, k - base);
+        if (sfx_play)                                   /* (V10.8.8) PLAY: the component held, ACCENT */
+            cv_text(4, 2, &AF_X, sfx_key < 16u ? SFX_NM[sfx_key] : "PLAY: HOLD A KEY", sfx_key < 16u ? T_ACCENT : T_MID);
     } else if (pg->graph == GR_MOTION || pg->graph == GR_EVENTS) {
         uint8_t idx[MOTION_MAX];
         uint32_t n = ev_rows(idx), cur = ev_row(n);
@@ -1426,8 +1428,6 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
         h = (h ^ (n + 1u) * 40503u ^ ev_row(n) * 2654435761u ^ ((uint32_t)ui.ev_step << 8 | ui.ev_id) * 104729u) * 16777619u;
     }
     if (pg->graph == GR_CHANCE) h ^= ui.cursor * 40503u + step_chance(&t->step[ui.cursor]);
-    if (0 && pg->graph == GR_LIVE)                   /* (p2) GLO > LIVE: the playheads, the ghosts, the keys (V10.8.3: gone) */
-        h = live_sig(h);
     if (pg->graph == GR_FUGUE) {                     /* (0.6.52) the heads, their settings, where they are */
         uint32_t ti = song.sel % NTRK, k;
         h = (h ^ (steps_hash(t) + (song.playing ? seq_src(t, t->seq_idx) : 0xFFFFu) * 31u + fg_ui * 7u)) * 16777619u;
@@ -1472,7 +1472,7 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
     if (pg->graph == GR_COMP) {                      /* (0.6.39) the steps, their components, the arpeggio and the loop */
         const step_t *cs = &t->step[ui.cursor];
         uint32_t ph = song.playing ? seq_src(t, t->seq_idx) : 0xFFFFu;
-        h = (h ^ (steps_hash(t) + ph * 31u + ui.cursor * 7919u + ui.bank * 613u)) * 16777619u;
+        h = (h ^ (steps_hash(t) + ph * 31u + ui.cursor * 7919u + ui.bank * 613u + sfx_play * 3u + sfx_key * 65537u)) * 16777619u;
         h = (h ^ ((uint32_t)t->p[P_CLEN] << 8 | (song.playing ? t->cpos : 0xFFu))) * 16777619u;   /* (0.6.47) C.LEN */
         for (i = ui.bank * 16u; i < ui.bank * 16u + 16u && i < NSTEP; i++)
             h = (h ^ ((uint32_t)t->step[i].comp << 8 | t->step[i].carg | (uint32_t)t->step[i].probability << 16 |
@@ -2120,9 +2120,6 @@ static void draw_graph(void)
         cv_oy = 0;
         graph_home_lz();                             /* (0.8.5: HOME's lens, ECO / BEING; JIANT 0.5: the system's
                                                       * beings, was the scope) */
-    } else if (0 && pg->graph == GR_LIVE) {          /* (p2) GLO > LIVE: the rails, KEYS's board (ui_live.c; V10.8.3: gone) */
-        cv_oy = 0;
-        graph_live();
     } else if (pg->graph == GR_SCENE) {              /* (V10.25) SCL > SCENE: the six tracks' roles */
         cv_oy = 0;
         graph_scene();

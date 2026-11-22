@@ -1275,10 +1275,6 @@ static void draw_columns(void)
             sw_ui_cards_bt(cur_page());
         return;
     }
-    if (0 && cur_page()->graph == GR_LIVE) {           /* (p2) GLO > LIVE (ui_live.c; V10.8.3: gone) */
-        live_cards();
-        return;
-    }
     if (cur_page()->graph == GR_FOCUS) {               /* (0.8.5) EDIT > FOCUS: PARAM, its value, SRC, AMT */
         uint32_t k = focus_k();
         int32_t j = focus_slot(k);
@@ -2007,10 +2003,6 @@ static void confirm_text(char *a, char *b)
         break;
     case CF_CPU_TEST:                                /* (0.6.83) SAVE > TOOLS 6 */
         str_cpy(a, "BUILD CPU TEST SONG?", 24);
-        str_cpy(b, "UNDO AFTER: GLO + G4", 24);
-        break;
-    case CF_LIVE_COMMIT:                             /* (p2) GLO > LIVE (k: the tracks) */
-        str_cpy(a, "WRITE LIVE CHANGES?", 24);
         str_cpy(b, "UNDO AFTER: GLO + G4", 24);
         break;
     case CF_INIT_SYS:                                /* (0.6.40) SAVE > TOOLS; (V10.7.22) CLEAR PROJECT, MENU > INIT */

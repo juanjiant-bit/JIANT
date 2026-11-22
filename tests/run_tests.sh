@@ -39,9 +39,6 @@
 #                   (1.2: when it writes, the power-on restore, damaged copies, a write cut short, wear over a session),
 #                   malformed transfers, transport-stop timeouts, MIDI and UART recovery; the MENU settings over the
 #                   editor (MENU_DESC / MENU_SET: every item, clamping, unknown ids, saving, USB SERIAL applied later).
-# LIVE (tests/live_test.c, p2 from main 0.9.11): GLO > LIVE's modifiers (seq_live.c, ui_live.c): their timing, the ghost,
-#                   RETURN, BYPASS, COMMIT + UNDO, recording at the ghost, MANO's keys, RIELES' PISTAS, the GLO chain,
-#                   the PLAYHEADS under a slower RATE (the FX layer's 1/2 TEMPO and LOOP: perform_test).
 # RATCH (tests/ratchet_test.c): a step's ratchet (x1..x4): its parts in the sequencer (equal, gated, chords and drum
 #                   hits whole, one chance roll, swing, no slide or tie out, STOP), FUN8 round trip and older projects x1,
 #                   user preset patterns, SEQ > CHANCE KNOB 3 and the roll / grid drawing.
@@ -282,8 +279,6 @@ if [ -f build/gen/felucca_tables.h ]; then
     run "CPU safety (p1, main 0.9.12 / 0.9.13): crash code, the crash record (row 9), a crash logged (p2b: 2 CORES kept), MENU > SYSTEM > CPU CORES / CPU CLOCK" "$OUT/cpu_safe_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/ratchet_test" tests/ratchet_test.c -lm
     run "RATCH: x1..x4 in a step (notes, chords, drum hits), gates, chance, swing, projects, user presets, CHANCE page" "$OUT/ratchet_test"
-    $CC -O1 -w -Ibuild/gen -Ifirmware/src -Itests -o "$OUT/live_test" tests/live_test.c -lm
-    run "LIVE (p2, main 0.9.11, GLO > LIVE MANO / RIELES): RATE on the beat, CORTE / LOOP / RATCH / THIN / REV / PING on the 1/16, the ghost, RETURN, BYPASS, COMMIT + UNDO, REC at the ghost, PISTAS ALL..T6, MANO's keys only there, the chain, the PLAYHEADS" "$OUT/live_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/comp_test" tests/comp_test.c -lm
     run "COMPONENTS v2 (seq2d): the 16-bar cycle, RATCHET STUTTER MUTE ARP SEQ JUMP over their LENGTH, MONO / POLY, migration, COMP pages; (seq2f) the global lane" "$OUT/comp_test"
     $CC -O1 -w -Ibuild/gen -Ifirmware/src -o "$OUT/drumx_oct_test" tests/drumx_oct_test.c -lm

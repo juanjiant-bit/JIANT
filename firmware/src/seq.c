@@ -1894,8 +1894,6 @@ static void keyboard_block(void)
             if (song.grid >= 2u) {                /* NAME (ui_name.c): every key types, none sounds; (p2) 3: GLO > LIVE
                                                    * KEYS, the keys its board (seq_live.c, ui_live.c) */
                 kb_note[k] = KB_SILENT;
-                if (song.grid == 3u)
-                    lv.kb |= 1u << k;
             } else if (song.grid)                   /* the DRUM grid: a lane key plays its lane, the rest are the UI's */
                 kb_note[k] = key_black(k) && key_place(k) < NLANE ? DRUM_LANE_NOTE[key_place(k)] : KB_SILENT;
             else {
@@ -1924,10 +1922,8 @@ static void keyboard_block(void)
                 PERF_KP(k, 0);
                 continue;
             }
-            if (kb_note[k] == KB_SILENT) {
-                lv.kb &= ~(1u << k);
+            if (kb_note[k] == KB_SILENT)
                 continue;
-            }
             if ((scn_keys >> k) & 1u) {           /* (V10.25) a SCENE key: its notes on every role */
                 scn_keys &= ~(1u << k);
                 scene_fp(k, 0);
@@ -2339,6 +2335,56 @@ static __attribute__((noinline)) void fill_apply(track_t *t, step_t *c, uint32_t
     }
     if (r > 1u) t->cx_rat = (uint8_t)(r > 8u ? 8u : r);
 }
+/* (V10.8.8, the owner) SEQ > STEP FX's PLAY: a component held on a key (ui_input.c sfx_keys: hc_act / hc_val / hc_trk)
+ * plays on the track from its next step as a span of its own (CSF_LIVE, LENGTH 32, round again while held), as that
+ * component programmed on a step does; let go: gone at the next step. Recording (rec_on), the step it began on gets it,
+ * VALUE and LENGTH the steps it was held: in C1 when that is free or the same action, else in C2 (both: C2 replaced) */
+#define CSF_LIVE 0x40u
+static uint8_t hc_act, hc_val, hc_trk;                  /* (main loop) held now; act 0: none */
+static uint8_t hc_on, hc_i0, hc_n, hc_rec;              /* (here) the track playing it + 1, where it began, its steps */
+static __attribute__((noinline)) void hc_run(track_t *t, uint32_t ti, const step_t *s)
+{
+    uint32_t i, a = hc_act, held = a && a < CA_N && hc_trk == ti, at = CSP_N;
+    cspan_t *c;
+    for (i = 0; i < t->csp_n; i++)
+        if (t->csp[i].act & CSF_LIVE)
+            at = i;
+    if (at < CSP_N) {
+        c = &t->csp[at];
+        if (held && (c->act & 15u) == a && c->val == hc_val) {
+            if (hc_n < CL_MAX) hc_n++;
+            return;
+        }
+        if (hc_rec && hc_on == ti + 1u) {               /* REC: into the step it began on */
+            step_t *d = &t->step[hc_i0 % NSTEP];
+            uint32_t k = CO_ACT(d->comp) && CO_ACT(d->comp) != (c->act & 15u);
+            if (k) d->comp2 = CO_MAKE(c->act & 15u, CC_ALWAYS), d->carg2 = c->val;
+            else d->comp = CO_MAKE(c->act & 15u, CC_ALWAYS), d->carg = c->val;
+            d->clen[k] = (uint8_t)(hc_n - 1u);
+            d->cnm[k] = 0;
+        }
+        for (i = at + 1u; i < t->csp_n; i++)
+            t->csp[i - 1u] = t->csp[i];
+        t->csp_n--;
+        hc_on = 0;
+    } else if (hc_on == ti + 1u)
+        hc_on = 0;                                      /* (a stop took it) */
+    if (!held || hc_on)
+        return;
+    if (t->csp_n == CSP_N) {
+        for (i = 1; i < CSP_N; i++) t->csp[i - 1u] = t->csp[i];
+        t->csp_n--;
+    }
+    c = &t->csp[t->csp_n++];
+    c->act = (uint8_t)(a | CSF_LIVE); c->val = hc_val; c->len = c->left = CL_MAX; c->base = 0;
+    c->mv = (int8_t)(a == CA_TRANS ? CV_TR_MOVE(hc_val) : 0);
+    if (a == CA_STUT)
+        t->cvp = *s;
+    hc_on = (uint8_t)(ti + 1u);
+    hc_i0 = (uint8_t)seq_src(t, t->seq_idx);
+    hc_n = 1;
+    hc_rec = (uint8_t)rec_on(t);
+}
 /* the step the track plays now, with its components: the spans before it a step older (gone after their LENGTH), this
  * step's own (C1, then C2: those whose CONDITION holds start a span of their LENGTH, this step its first), then what
  * every span does here, the oldest first: s itself when nothing replaces or silences it, else t->cvs (cv_on: a RATCH
@@ -2363,11 +2409,13 @@ static __attribute__((noinline)) const step_t *comp_run(track_t *t, const step_t
                 t->csp[n] = t->csp[i];
                 t->csp[n++].left = (uint8_t)l;
             }
-        } else if (t->csp[i].left > 1u) {
+        } else if (t->csp[i].left > 1u || (t->csp[i].act & CSF_LIVE)) {   /* (V10.8.8: a held one, round again) */
             t->csp[n] = t->csp[i];
-            t->csp[n++].left--;
+            t->csp[n].left = (uint8_t)(t->csp[n].left > 1u ? t->csp[n].left - 1u : t->csp[n].len);
+            n++;
         }
     t->csp_n = (uint8_t)n;
+    hc_run(t, ti, s);
     if (gsp_n)
         gl_take(t, s, ti, g);
     for (i = 0; i < t->csp_n; i++)
@@ -2432,7 +2480,7 @@ static __attribute__((noinline)) const step_t *comp_run(track_t *t, const step_t
         if (ps != !(c->act & CSF_GLO) || (ps && gm))
             continue;
         if (ps && !grep) grep = rep | 0x100u;           /* (what the globals left: an ARP of the track's keeps it) */
-        switch (c->act & ~CSF_GLO) {
+        switch (c->act & 15u) {
         case CA_ARP: arp = j ? 2u : 1u; av = v; rep = ps ? grep & 0xFFu : 0u; break;
         case CA_SEQ: rep = 1; rq = (uint32_t)c->base + j; rb = (v & CV_SEQ_BOUNCE) != 0u; arp = 0; break;
         case CA_STUT: rep = j % (v % 4u + 1u) ? 2u : 3u; arp = 0; break;
