@@ -144,6 +144,28 @@ int main(void)
     ok = hc_act == 0u && sfx_key == 16u;
     let_go(4);
     bad += check("STEP FX: off the page, nothing held", ok);
+    {   /* (V10.8.10) the track's bar: TRACK N / ENGINE on its colour on the track's pages; not on HOME, GLO, SAVE */
+        static const uint16_t C[6] = {0xFE87u, 0xFC45u, 0xF9C7u, 0xF9D6u, 0xA2FFu, 0x3C7Fu};
+        char tt[40];
+        uint32_t k;
+        stop_transport(); song.rec = 0;
+        ok = 1;
+        for (k = 0; k < 6u; k++) {
+            track_select(k); go_title("ENV"); frames(2);
+            ui.msg_t = 0; ui.force = 1; ui_draw();
+            ok &= head_trk() && head_title(tt) == C[k] && trk_col(k) == C[k] && !memcmp(tt, "TRACK ", 6) && !memcmp(tt + 7, " / ", 3) &&
+                  tt[6] == (char)('1' + k) && str_eq(tt + 10, trk_engp(TSEL)->name) &&
+                  swap16(host_screen[(Y_HEAD + HEAD_MID) * 240 + 192]) == C[k] &&
+                  swap16(host_screen[(Y_HEAD + HEAD_MID) * 240 + HEAD_TK_X + 1]) == C[k];
+        }
+        track_select(0); go_title("STEP"); frames(2); ok &= head_trk();
+        go_title("COMP"); frames(2); ok &= head_trk();
+        go_title("MIXER"); frames(2); ok &= !head_trk();
+        go_home(); frames(2); ok &= !head_trk();
+        nav_put(SEC_HOME, "JAM"); frames(2); ok &= !head_trk();
+        go_title("GLOBAL"); frames(2); ok &= !head_trk();
+        bad += check("track bar: TRACK N / ENGINE on T1..T6's colours (header and the number's box); none on HOME, GLO, JAM", ok);
+    }
     if (bad) printf("stepfx: %d failed\n", bad);
     else printf("stepfx: all passed\n");
     return bad != 0;

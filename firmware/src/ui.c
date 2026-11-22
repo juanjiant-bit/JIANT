@@ -12,6 +12,11 @@ static track_t *tsel_p(void) { return &trk[song.sel]; }
 #define TSEL tsel_p()
 static uint32_t trk_eng(const track_t *t) { return t->eng_req % NENGINES; }   /* (0.9.7, flash) a track's engine */
 static const engine_t *trk_engp(const track_t *t) { return ENGINES[trk_eng(t)]; }   /* .. its engine's table */
+/* (V10.8.10, the owner; JIANT BYTE's the same) each track its colour, fixed (not the palette's): T1 yellow, T2 orange, T3
+ * red, T4 magenta, T5 violet, T6 blue; ink on it black (T1..T4), white (T5, T6) */
+static const uint16_t TRK_COL[6] = {0xFE87u, 0xFC45u, 0xF9C7u, 0xF9D6u, 0xA2FFu, 0x3C7Fu};
+#define trk_col(k) TRK_COL[(k) % 6u]
+#define trk_ink(k) ((k) % 6u >= 4u ? 0xFFFFu : 0x0000u)
 static int project_save(uint32_t slot);
 static int song_save_as(uint32_t target, const char *name);
 static int song_draft_begin(void);

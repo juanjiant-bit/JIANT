@@ -273,7 +273,7 @@ static void graph_eco(void)
         char num[2] = {(char)('1' + c), 0};
         eco_being(c, bx[c], by[c], eco.r[c]);
         ny = clamp(py + rad / 2 + 4, 4, bot);
-        cv_text_in(px - 30, ny, 60, &AF_S, num, c == song.sel ? T_THEME : eco_off(c) ? T_DIM : T_MID, T_SURF);
+        cv_text_in(px - 30, ny, 60, &AF_S, num, eco_off(c) ? T_DIM : trk_col(c), T_SURF);   /* (V10.8.10) */
     }
     if (home_set())                                     /* (V10.7.62) LIFE (was MACROS: the FX layer's knobs since V10.7.59) */
         cv_text(6, 2, &AF_X, life_on ? "THE TRACKS MOVE EACH OTHER" : "LIFE OFF: TURN A KNOB", life_on ? T_MID : T_DIM);

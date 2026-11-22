@@ -230,6 +230,14 @@ static void head_transport(void)
 }
 static void sound_name(const track_t *t, char *b);
 /* the centre's words (b holds 40) and their colour */
+/* (V10.8.10) a page of the selected track: its bar in the header, TRACK N / ENGINE on the track's colour (not HOME,
+ * MENU, a layer, GLO, SAVE, SLOTS, the song's, TOOLS: their title as before) */
+static int head_trk(void)
+{
+    const page_t *pg = cur_page();
+    return !ui.home && !ui.menu && !ui.layer && !(pg->graph == GR_SLOTS || pg->graph == GR_SONG || pg->graph == GR_TOOLS ||
+                                                  pg->fam == FAM_GLO || pg->fam == FAM_TRK || pg->fam == FAM_SAVE);
+}
 static uint16_t head_title(char *b)
 {
     const page_t *pg = cur_page();
@@ -241,11 +249,15 @@ static uint16_t head_title(char *b)
             str_cpy(b + str_len(b), MTAB_NAME[MI_TAB[ui.menu_sel % MI_COUNT]], 16);
         return T_MID;
     }
+    if (head_trk()) {                                   /* (V10.8.10) "TRACK 3 / DRUM-X" */
+        str_cpy(b, "TRACK 1 / ", 40);
+        b[6] = (char)('1' + song.sel % NTRK);
+        str_cpy(b + 10, trk_engp(TSEL)->name, 16);
+        return trk_col(song.sel);
+    }
     b[0] = 'T';
     b[1] = (char)('1' + song.sel % NTRK);
     b[2] = 0;
-    if (!ui.home && !ui.layer && pg->fam == FAM_FX)
-        return T_ACCENT;
     if (glob) {
         char nm[16];
         b[0] = 'P';
@@ -343,9 +355,9 @@ static void draw_head(void)
     cv_begin(240, H_HEAD, T_BG);
     if (!ui.menu) {                                     /* (0.8.9) the track's box, as the 0.6 had it */
         char n[2] = {(char)('1' + song.sel % NTRK), 0};
-        cv_rrect(HEAD_TK_X, HEAD_MID - 6, 13, 13, 3, T_ACCENT, T_BG);
+        cv_rrect(HEAD_TK_X, HEAD_MID - 6, 13, 13, 3, trk_col(song.sel), T_BG);   /* (V10.8.10: the track's colour) */
         GFX_HOOK_ALIGN(HEAD_TK_X, HEAD_MID - 6, HEAD_TK_X + 13, HEAD_MID + 7, AL_HV, "header track number in its box");
-        cv_text_in(HEAD_TK_X, HEAD_XY, 13, &AF_X, n, T_INK, T_ACCENT);
+        cv_text_in(HEAD_TK_X, HEAD_XY, 13, &AF_X, n, 0x0000u, trk_col(song.sel));
     }
     head_transport();
     if (!ui.roll[ROLL_BPM].from[0])
@@ -366,7 +378,10 @@ static void draw_head(void)
     }
     if (!msg && (chain.running || song.octave))
         r = head_group() - 6;
-    if (!msg) {                                        /* the centre's words on x 120, between the BPM and the right */
+    if (!msg && head_trk()) {                          /* (V10.8.10) the track's bar: BPM .. load, its colour */
+        cv_rrect(lx + 6, HEAD_MID - 8, r - lx - 6, 17, 4, tc, T_BG);
+        cv_text_in(lx + 6, HEAD_XY, r - lx - 6, &AF_X, ttl, trk_ink(song.sel), tc);
+    } else if (!msg) {                                 /* the centre's words on x 120, between the BPM and the right */
         int32_t w = text_w(&AF_X, ttl), x = 120 - HALF_UP(w), l = lx + 8;
         if (x + w > r) x = r - w;
         if (x < l) x = l;

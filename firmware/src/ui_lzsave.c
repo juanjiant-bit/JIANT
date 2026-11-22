@@ -256,7 +256,8 @@ static void graph_clips(void)                           /* (V10.8.2) and TAKE: t
     for (k = 0; k < NTRK; k++) {
         int32_t y = 13 + (int32_t)k * 18;
         b[1] = (char)('1' + k);
-        cv_text(4, y + CAP_IN(X, 15), &AF_X, b, k == hi ? T_THEME : T_MID);
+        cv_text(4, y + CAP_IN(X, 15), &AF_X, b, trk_col(k));   /* (V10.8.10: the track's colour; the one picked marked) */
+        if (k == hi) cv_rect(0, y + 2, 2, 11, trk_col(k));
         for (s = 0; s < 4u && !full; s++) {
             int32_t x = 24 + (int32_t)s * 53;
             uint16_t c = sec_col(s);

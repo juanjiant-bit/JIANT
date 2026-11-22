@@ -1175,7 +1175,7 @@ static __attribute__((noinline)) void seq_overlay(const track_t *t, const page_t
         if (sfx_key < 16u)                              /* (V10.8.8) the component held, large (V10.8.9) */
             hold_banner(SFX_NM[sfx_key], sfx_k, rec_on(t));
         else
-            cv_text(4, 2, &AF_X, "HOLD A KEY: STEP FX", T_MID);
+            cv_text(100, 2, &AF_X, "HOLD A KEY: STEP FX", T_MID);
     } else if (pg->graph == GR_MOTION || pg->graph == GR_EVENTS) {
         uint8_t idx[MOTION_MAX];
         uint32_t n = ev_rows(idx), cur = ev_row(n);
@@ -1734,7 +1734,7 @@ static void track_strip(uint32_t c, uint32_t sel, uint32_t st, uint32_t mute, ui
     uint16_t vc = mute ? T_DIM : T_THEME;
     cv_begin(CARD_W, LG_H_GRAPH, T_BG);
     cv_rrect(0, 0, CARD_W, LG_H_GRAPH, 5, T_SURF, T_BG);
-    cv_trk(4, 4, 16, c, sel ? T_ACCENT : T_MID, T_SURF);
+    cv_trk(4, 4, 16, c, sel ? trk_col(c) : ux_mix(T_SURF, trk_col(c), 55), T_SURF);   /* (V10.8.10) */
     if (st)
         GFX_HOOK_ALIGN(0, 4, 0, 20, AL_V, "mixer badge on the cushion's line");
     if (st == 1u || st == 2u)
@@ -1768,7 +1768,7 @@ static __attribute__((noinline)) void track_col6(uint32_t c, uint32_t sel, uint3
     uint16_t lc = hot == 1u ? T_ACCENT : lvl ? (mute ? T_DIM : T_TEXT) : T_DIM;
     cv_begin(T6_W, H_GRAPH, T_BG);
     cv_rrect(0, 0, T6_W, H_GRAPH, 5, T_SURF, T_BG);
-    cv_trk(4, 5, 16, c, sel ? T_ACCENT : mute ? T_DIM : T_MID, T_SURF);
+    cv_trk(4, 5, 16, c, mute ? T_DIM : sel ? trk_col(c) : ux_mix(T_SURF, trk_col(c), 55), T_SURF);   /* (V10.8.10) */
     if (st == 1u || st == 2u)                        /* armed: a dot (recording: red) */
         cv_rrect(T6_W - 11, 10, 6, 6, 3, st == 1u ? T_REC : T_ACCENT, T_SURF);
     if (mute == 2u)                                  /* asleep (TRACKS 4) */
@@ -1872,7 +1872,7 @@ static __attribute__((noinline)) void draw_tracks(void)
         }
         cv_begin(CARD_W, H_GRAPH, T_BG);
         cv_rrect(0, 0, CARD_W, H_GRAPH, 5, T_SURF, T_BG);
-        cv_trk(4, 5, 16, c, sel ? T_ACCENT : T_MID, T_SURF);
+        cv_trk(4, 5, 16, c, sel ? trk_col(c) : ux_mix(T_SURF, trk_col(c), 55), T_SURF);   /* (V10.8.10) */
         if (st)
             GFX_HOOK_ALIGN(0, 5, 0, 21, AL_V, "mixer badge on the cushion's line");
         if (st == 1u || st == 2u)                    /* REC (recording) / ARM (armed, stopped) */
