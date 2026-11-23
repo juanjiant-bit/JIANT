@@ -1,0 +1,400 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-only
+     Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) -->
+<!-- JIANT Studio: one page for JIANT FM and JIANT BYTE on the M-VAVE FM-1. Install, edit, the FM-1's screen big,
+     the emulator, recording. The tools are the sites' own pages (both on juanjiant-bit.github.io: one origin), shown
+     here in frames and dressed in the firmware's look; one USB link for the screen and the device check. studio.js.
+     ?mock=1: a simulated FM-1 (no hardware). ?fw=fm|byte, ?view=home|install|editor|screen|emu|rec, ?screen: straight to
+     the screen. -->
+<html lang="es" data-skin="fm">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050409">
+<title>JIANT Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Instrument+Sans:wght@400;500;600&amp;family=Silkscreen&amp;family=VT323&amp;display=swap">
+<style>
+  /* ---- the two looks: JIANT FM (the landing page's: cream on near-black, the heat gradient, Michroma, a horizon of
+     lines) and JIANT BYTE (its screens': black, stars, violet and orange, pixel type, synthwave stripes) ---- */
+  :root, :root[data-skin="fm"] {
+    --bg: #050409; --panel: #0d0b14; --field: #08070e; --fg: #efe6c8; --dim: #a39bb6; --line: rgba(239,230,200,.18);
+    --accent: #c9a2ff; --accent-2: #ff9a8a; --ok: #7be0a8; --warn: #ffc07a; --bad: #ff6b6b; --on-accent: #050409;
+    --frame: #3fe0e6;
+    --heat: linear-gradient(90deg, #3b6cff, #9d6bff 25%, #ff4a7a 50%, #ff8a1f 75%, #ffe14d);
+    --display: "Michroma", "Arial Black", system-ui, sans-serif;
+    --body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+    --radius: 14px; --radius-s: 9px; --border: 1px;
+  }
+  :root[data-skin="byte"] {
+    --bg: #000; --panel: #0b0912; --field: #05040a; --fg: #f2f0f7; --dim: #9d94b8; --line: rgba(167,123,255,.35);
+    --accent: #a77bff; --accent-2: #ff7a1a; --ok: #6bff9e; --warn: #ffb21a; --bad: #ff3b3b; --on-accent: #000;
+    --frame: #a77bff;
+    --heat: linear-gradient(90deg, #ff3b3b, #ff7a1a 40%, #ffb21a 60%, #a77bff);
+    --display: "Silkscreen", "VT323", ui-monospace, monospace;
+    --body: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+    --mono: "VT323", "IBM Plex Mono", ui-monospace, monospace;
+    --radius: 3px; --radius-s: 2px; --border: 2px;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--body); }
+  a { color: inherit; }
+  button, select { font: inherit; color: inherit; }
+  [hidden] { display: none !important; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  /* backdrops: FM's horizon grid; BYTE's stars and stripes (both behind everything, never under the frames' clicks) */
+  .backdrop { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  :root[data-skin="fm"] .backdrop::after { content: ""; position: absolute; left: -50%; right: -50%; bottom: 0; height: 42vh;
+    background: repeating-linear-gradient(90deg, rgba(157,107,255,.16) 0 1px, transparent 1px 64px),
+                repeating-linear-gradient(0deg, rgba(157,107,255,.14) 0 1px, transparent 1px 32px);
+    transform: perspective(380px) rotateX(62deg); transform-origin: bottom; mask-image: linear-gradient(to top, #000, transparent); }
+  :root[data-skin="byte"] .backdrop { background:
+      radial-gradient(1px 1px at 12% 18%, #fff8, transparent), radial-gradient(1px 1px at 72% 12%, #fff6, transparent),
+      radial-gradient(1px 1px at 33% 64%, #fff5, transparent), radial-gradient(1px 1px at 86% 48%, #fff7, transparent),
+      radial-gradient(1px 1px at 52% 31%, #fff4, transparent), radial-gradient(1px 1px at 8% 82%, #fff6, transparent),
+      radial-gradient(1px 1px at 91% 86%, #fff5, transparent), radial-gradient(1px 1px at 64% 77%, #fff4, transparent);
+    background-size: 340px 340px; }
+
+  /* ---- top bar: the wordmark, the views, the firmware and the target, the device ---- */
+  header.top { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px); border-bottom: var(--border) solid var(--line); }
+  .bar { max-width: 1180px; margin: 0 auto; padding: 10px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+  .brand { display: flex; align-items: baseline; gap: 8px; text-decoration: none; font: 18px/1 var(--display); letter-spacing: .04em; }
+  .brand .fw { background: var(--heat); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .brand small { font: 11px/1 var(--mono); color: var(--dim); letter-spacing: .12em; text-transform: uppercase; }
+  :root[data-skin="byte"] .brand { font-size: 20px; }
+  nav.views { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; min-width: 0; }
+  nav.views::-webkit-scrollbar { display: none; }
+  nav.views button { background: none; border: var(--border) solid transparent; border-radius: var(--radius-s); padding: 7px 12px;
+    cursor: pointer; color: var(--dim); white-space: nowrap; font-size: 14px; }
+  nav.views button[aria-current="page"] { color: var(--fg); border-color: var(--line); background: var(--panel); }
+  :root[data-skin="byte"] nav.views button { font-family: var(--display); font-size: 11px; text-transform: uppercase; padding: 7px 9px; }
+  :root[data-skin="byte"] nav.views button[aria-current="page"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .seg { display: inline-flex; border: var(--border) solid var(--line); border-radius: var(--radius-s); overflow: hidden; }
+  .seg button { background: none; border: 0; padding: 6px 10px; cursor: pointer; color: var(--dim); font-size: 13px; white-space: nowrap; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+  .chip { display: inline-flex; align-items: center; gap: 7px; font: 12px/1 var(--mono); color: var(--dim); padding: 6px 10px;
+    border: var(--border) solid var(--line); border-radius: 999px; white-space: nowrap; }
+  :root[data-skin="byte"] .chip { border-radius: var(--radius-s); font-size: 16px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex: none; }
+  .dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
+  .lang { background: none; border: 0; color: var(--dim); cursor: pointer; text-decoration: underline; font-size: 13px; }
+
+  /* ---- views ---- */
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+  .view { animation: in .18s ease-out; }
+  @keyframes in { from { opacity: 0; transform: translateY(4px); } }
+  @media (prefers-reduced-motion: reduce) { .view { animation: none; } }
+  .eyebrow { font: 12px/1.4 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--frame); margin: 0 0 8px; }
+  :root[data-skin="byte"] .eyebrow { font-size: 17px; letter-spacing: .08em; }
+  h1 { font: 400 clamp(34px, 7vw, 64px)/1.02 var(--display); margin: 0 0 14px; letter-spacing: .01em; }
+  h1 .fw { background: var(--heat); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  :root[data-skin="byte"] h1 { text-shadow: 0 0 0 transparent; }
+  .rule { height: 3px; border-radius: 3px; background: var(--heat); margin: 18px 0 22px; max-width: 520px; }
+  :root[data-skin="byte"] .rule { height: 6px; border-radius: 0; box-shadow: 0 8px 0 -2px #ff7a1a55, 0 16px 0 -4px #a77bff44; margin-bottom: 34px; }
+  h2 { font: 500 18px/1.3 var(--body); margin: 0 0 6px; }
+  :root[data-skin="byte"] h2 { font: 14px/1.4 var(--display); text-transform: uppercase; letter-spacing: .04em; }
+  .lead { font-size: 17px; color: var(--dim); max-width: 640px; margin: 0 0 16px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 26px; }
+  .dim { color: var(--dim); }
+  .small { font-size: 13px; }
+
+  .card { background: var(--panel); border: var(--border) solid var(--line); border-radius: var(--radius); padding: 20px; position: relative; }
+  :root[data-skin="byte"] .card { box-shadow: 4px 4px 0 #a77bff22; }
+  .steps { display: grid; gap: 14px; }
+  .step { display: grid; grid-template-columns: 34px 1fr; gap: 14px; }
+  .num { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 600 14px/1 var(--mono);
+    border: var(--border) solid var(--line); color: var(--dim); }
+  .step.now .num { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  :root[data-skin="byte"] .num { border-radius: var(--radius-s); font: 13px/1 var(--display); }
+  .step p { margin: 0 0 12px; color: var(--dim); }
+  .btn { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 9px 18px; border-radius: var(--radius-s);
+    border: var(--border) solid var(--fg); background: var(--fg); color: var(--bg); cursor: pointer; font-weight: 600; text-decoration: none; }
+  .btn.ghost { background: none; color: var(--fg); border-color: var(--line); font-weight: 500; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  :root[data-skin="byte"] .btn { font: 12px/1 var(--display); text-transform: uppercase; background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  :root[data-skin="byte"] .btn.ghost { background: none; color: var(--fg); border-color: var(--line); }
+  .result { margin-top: 12px; font: 14px/1.5 var(--mono); }
+  :root[data-skin="byte"] .result { font-size: 18px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+  .fwcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .fwcard { border-radius: var(--radius); padding: 18px; border: 1px solid rgba(239,230,200,.18); cursor: pointer; text-align: left;
+    color: #efe6c8; background: #0d0b14; position: relative; overflow: hidden; min-height: 150px; }
+  .fwcard h3 { margin: 0 0 6px; font: 400 22px/1.1 "Michroma", sans-serif; }
+  .fwcard p { margin: 0; color: #a39bb6; font: 14px/1.45 "Instrument Sans", sans-serif; }
+  .fwcard .tag { position: absolute; top: 14px; right: 14px; font: 11px/1 "IBM Plex Mono", monospace; letter-spacing: .1em; color: #3fe0e6; }
+  .fwcard.fm h3 { background: linear-gradient(90deg, #efe6c8 40%, #c9a2ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .fwcard.fm::after { content: ""; position: absolute; left: 18px; right: 18px; bottom: 14px; height: 3px; border-radius: 3px;
+    background: linear-gradient(90deg, #3b6cff, #9d6bff 25%, #ff4a7a 50%, #ff8a1f 75%, #ffe14d); }
+  .fwcard.byte { background: #000; border: 2px solid #a77bff; border-radius: 3px; color: #f2f0f7; }
+  .fwcard.byte h3 { font: 24px/1.1 "Silkscreen", monospace; color: #ff7a1a; text-shadow: 3px 3px 0 #ff3b3b66; }
+  .fwcard.byte p { font: 14px/1.45 "IBM Plex Mono", monospace; color: #9d94b8; }
+  .fwcard.byte .tag { color: #a77bff; font-family: "VT323", monospace; font-size: 16px; }
+  .fwcard.byte::after { content: ""; position: absolute; left: 0; right: 0; bottom: 12px; height: 4px;
+    background: linear-gradient(90deg, #ff3b3b, #ff7a1a, #a77bff); box-shadow: 0 -8px 0 #ff7a1a44; }
+  .fwcard[aria-pressed="true"] { outline: 2px solid var(--frame); outline-offset: 3px; }
+
+  .tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+  .tool { text-align: left; background: var(--field); border: var(--border) solid var(--line); border-radius: var(--radius-s); padding: 14px;
+    cursor: pointer; }
+  .tool b { display: block; margin-bottom: 4px; }
+  :root[data-skin="byte"] .tool b { font: 12px/1.3 var(--display); text-transform: uppercase; color: var(--accent); }
+  .tool span { color: var(--dim); font-size: 13px; }
+
+  details.help { border-top: var(--border) solid var(--line); padding: 14px 0; }
+  details.help:last-of-type { border-bottom: var(--border) solid var(--line); }
+  details.help summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; }
+  details.help summary::after { content: "+"; color: var(--dim); }
+  details.help[open] summary::after { content: "–"; }
+  details.help p { color: var(--dim); margin: 10px 0 0; max-width: 760px; }
+
+  .note { border-left: 3px solid var(--warn); background: color-mix(in srgb, var(--warn) 9%, transparent); padding: 10px 14px;
+    border-radius: 0 var(--radius-s) var(--radius-s) 0; margin: 0 0 14px; font-size: 14px; }
+  .note.safe { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 8%, transparent); }
+
+  /* the tools in frames: as tall as the window below the bar */
+  .framebox { border: var(--border) solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--field); }
+  .framebox iframe { display: block; width: 100%; height: calc(100vh - 210px); min-height: 520px; border: 0; background: var(--bg); }
+  .viewhead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 10px; margin-bottom: 14px; }
+  .viewhead h1 { font-size: clamp(24px, 4vw, 34px); margin: 0; }
+
+  /* ---- the screen: square, as big as fits; portrait: on top, the rest below; landscape: the height, the rest beside ---- */
+  .screen-wrap { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+  .stage { position: relative; background: #000; border-radius: var(--radius); border: var(--border) solid var(--line);
+    display: grid; place-items: center; aspect-ratio: 1; width: min(100%, calc(100vh - 270px)); margin: 0 auto; overflow: hidden; }
+  .stage canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+  .stage.smooth canvas { image-rendering: auto; }
+  .stage .wait { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: #aaa; font: 14px/1.5 var(--mono); }
+  .side { display: grid; gap: 10px; align-content: start; }
+  @media (orientation: landscape) and (min-width: 700px) {
+    .screen-wrap { grid-template-columns: minmax(0, auto) minmax(240px, 320px); justify-content: center; }
+    .stage { width: min(calc(100vw - 400px), calc(100vh - 270px)); }
+  }
+  /* full screen: only the picture, square, centred; the bar fades and comes back on a touch */
+  .stage:fullscreen { width: 100vw; height: 100vh; aspect-ratio: auto; border: 0; border-radius: 0; background: #000; }
+  .stage:fullscreen canvas { width: min(100vw, 100vh); height: min(100vw, 100vh); }
+  .stage .fsbar { position: absolute; top: 0; left: 0; right: 0; display: none; justify-content: flex-end; gap: 8px; padding: 12px;
+    padding-top: max(12px, env(safe-area-inset-top)); transition: opacity .4s; }
+  .stage:fullscreen .fsbar { display: flex; }
+  .stage .fsbar.faded { opacity: 0; }
+  .stage .fsbar button { background: #000a; color: #eee; border: 1px solid #fff4; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+  .stat { font: 13px/1.4 var(--mono); color: var(--dim); }
+  :root[data-skin="byte"] .stat { font-size: 17px; }
+
+  /* other devices: a card each (its picture or its outline, state, what it is, the links) */
+  .ports { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .port { display: flex; flex-direction: column; gap: 10px; }
+  .port .pic { aspect-ratio: 16 / 9; border-radius: var(--radius-s); border: var(--border) solid var(--line); background: var(--field);
+    display: grid; place-items: center; overflow: hidden; }
+  .port .pic img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+  .port .pic svg { width: 78%; height: auto; color: var(--dim); }
+  .port h2 { margin: 0; }
+  .port .meta { display: flex; flex-wrap: wrap; gap: 6px; }
+  .state { font: 12px/1 var(--mono); padding: 5px 8px; border-radius: 999px; border: var(--border) solid var(--line); color: var(--dim); }
+  .state.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 50%, transparent); }
+  .state.soon { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 50%, transparent); }
+  :root[data-skin="byte"] .state { border-radius: var(--radius-s); font-size: 16px; }
+  .port p { margin: 0; color: var(--dim); font-size: 14px; }
+  .port ul { margin: 0; padding-left: 18px; color: var(--dim); font-size: 13px; }
+  .port .links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 6px; }
+  .port .links .btn { min-height: 36px; padding: 7px 12px; font-size: 13px; }
+  .port .links .na { opacity: .5; pointer-events: none; }
+  .devtry iframe { height: calc(100vh - 220px); }
+
+  /* recording */
+  .meter { height: 10px; border-radius: 5px; background: var(--field); border: var(--border) solid var(--line); overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0; background: var(--heat); transition: width .08s linear; }
+  .clock { font: 32px/1 var(--mono); letter-spacing: .04em; }
+  :root[data-skin="byte"] .clock { font-size: 42px; color: var(--accent-2); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  label.field { display: grid; gap: 6px; font-size: 13px; color: var(--dim); }
+  label.field select { background: var(--field); border: var(--border) solid var(--line); border-radius: var(--radius-s); padding: 9px 10px; color: var(--fg); }
+  .takes { display: grid; gap: 8px; margin-top: 12px; }
+  .take { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 10px 12px; background: var(--field);
+    border: var(--border) solid var(--line); border-radius: var(--radius-s); font-size: 14px; }
+  .take .name { flex: 1 1 160px; font-family: var(--mono); }
+  footer { max-width: 1180px; margin: 0 auto; padding: 0 16px 40px; color: var(--dim); font-size: 12px; }
+  @media (max-height: 520px) { header.top { position: static; } }   /* (a phone held sideways: the screen gets the height) */
+  @media (max-width: 640px) {
+    .bar { gap: 8px 10px; }
+    nav.views { order: 3; flex-basis: 100%; }
+    .card { padding: 16px; }
+    .framebox iframe { height: calc(100vh - 240px); }
+  }
+</style>
+</head>
+<body>
+<div class="backdrop" aria-hidden="true"></div>
+<header class="top">
+  <div class="bar">
+    <a class="brand" href="#home" data-go="home" aria-label="JIANT Studio">JIANT <span class="fw" id="brandfw">FM</span> <small>studio</small></a>
+    <nav class="views" aria-label="Studio">
+      <button data-go="home" data-t="vHome"></button>
+      <button data-go="install" data-t="vInstall"></button>
+      <button data-go="editor" data-t="vEditor"></button>
+      <button data-go="screen" data-t="vScreen"></button>
+      <button data-go="emu" data-t="vEmu"></button>
+      <button data-go="rec" data-t="vRec"></button>
+      <button data-go="ports" data-t="vPorts"></button>
+    </nav>
+    <div class="controls">
+      <span class="seg" role="group" aria-label="Firmware" id="fwseg">
+        <button data-fw="fm" aria-pressed="true">FM</button><button data-fw="byte" aria-pressed="false">BYTE</button>
+      </span>
+      <span class="seg" role="group" id="targetseg" data-t-label="target">
+        <button data-target="fm1" aria-pressed="true" data-t="tFm1"></button><button data-target="emu" aria-pressed="false" data-t="tEmu"></button>
+      </span>
+      <span class="chip" id="devchip" role="status"><span class="dot" id="devdot"></span><span id="devtext"></span></span>
+      <button class="lang" id="lang"></button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ======================================================================================= home -->
+  <section class="view" id="v-home">
+    <p class="eyebrow" data-t="eyebrow"></p>
+    <h1>JIANT <span class="fw" id="herofw">FM</span></h1>
+    <p class="lead" id="herolead"></p>
+    <div class="chips"><span class="chip" data-t="needBrowser"></span><span class="chip" data-t="needCable"></span><span class="chip" data-t="needPhone"></span></div>
+    <div class="steps">
+      <div class="card step now" id="step1">
+        <div class="num">1</div>
+        <div>
+          <h2 data-t="s1Title"></h2>
+          <p data-t="s1Text"></p>
+          <div class="row"><button class="btn" id="find" data-t="find"></button><button class="btn ghost" id="forget" data-t="forget" hidden></button></div>
+          <div class="result" id="findres" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="card step" id="step2">
+        <div class="num">2</div>
+        <div>
+          <h2 data-t="s2Title"></h2>
+          <p data-t="s2Text"></p>
+          <div class="fwcards">
+            <button class="fwcard fm" data-install="fm" aria-pressed="false"><span class="tag">FM-1</span><h3>JIANT FM</h3><p data-t="fmPitch"></p></button>
+            <button class="fwcard byte" data-install="byte" aria-pressed="false"><span class="tag">FM-1</span><h3>JIANT BYTE</h3><p data-t="bytePitch"></p></button>
+          </div>
+        </div>
+      </div>
+      <div class="card step" id="step3">
+        <div class="num">3</div>
+        <div>
+          <h2 data-t="s3Title"></h2>
+          <p data-t="s3Text"></p>
+          <div class="tools">
+            <button class="tool" data-go="editor"><b data-t="vEditor"></b><span data-t="toolEditor"></span></button>
+            <button class="tool" data-go="screen"><b data-t="vScreen"></b><span data-t="toolScreen"></span></button>
+            <button class="tool" data-go="emu"><b data-t="vEmu"></b><span data-t="toolEmu"></span></button>
+            <button class="tool" data-go="rec"><b data-t="vRec"></b><span data-t="toolRec"></span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top: 28px">
+      <details class="help"><summary data-t="hSafeQ"></summary><p data-t="hSafeA"></p></details>
+      <details class="help"><summary data-t="hStopQ"></summary><p data-t="hStopA"></p></details>
+      <details class="help"><summary data-t="hDeadQ"></summary><p data-t="hDeadA"></p></details>
+      <details class="help"><summary data-t="hPhoneQ"></summary><p data-t="hPhoneA"></p></details>
+    </div>
+  </section>
+
+  <!-- ======================================================================================= install -->
+  <section class="view" id="v-install" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vInstall"></p><h1 id="insttitle"></h1></div>
+      <span class="seg" role="group" aria-label="Firmware"><button data-fw="fm" aria-pressed="true">JIANT FM</button><button data-fw="byte" aria-pressed="false">JIANT BYTE</button></span></div>
+    <p class="note safe" data-t="instSafe"></p>
+    <div class="framebox"><iframe id="f-install" title="Installer" loading="lazy"></iframe></div>
+  </section>
+
+  <!-- ======================================================================================= editor -->
+  <section class="view" id="v-editor" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vEditor"></p><h1 id="edtitle"></h1></div><span class="stat" id="edtarget"></span></div>
+    <p class="note" id="ednote" hidden></p>
+    <div class="framebox"><iframe id="f-editor" title="Editor" loading="lazy"></iframe></div>
+  </section>
+
+  <!-- ======================================================================================= screen -->
+  <section class="view" id="v-screen" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vScreen"></p><h1 data-t="scrTitle"></h1></div></div>
+    <div class="screen-wrap">
+      <div class="stage" id="stage">
+        <canvas id="scr" width="240" height="240" aria-label=""></canvas>
+        <div class="wait" id="scrwait"></div>
+        <div class="fsbar" id="fsbar"><button id="fssharp" data-t="scrSharp"></button><button id="fsexit" data-t="scrExitFull"></button></div>
+      </div>
+      <div class="side">
+        <div class="card">
+          <div class="row" style="margin-bottom:10px">
+            <button class="btn" id="scrgo" data-t="scrStart"></button>
+            <button class="btn ghost" id="scrfull" data-t="scrFull"></button>
+          </div>
+          <div class="row"><button class="btn ghost" id="scrsharp" aria-pressed="true" data-t="scrSharp"></button></div>
+          <p class="stat" id="scrstat" role="status" aria-live="polite"></p>
+          <p class="small dim" id="scrhelp"></p>
+        </div>
+        <div class="card small dim" data-t="scrOrient"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================================= ports -->
+  <section class="view" id="v-ports" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vPorts"></p><h1 data-t="portsTitle"></h1></div>
+      <a class="btn ghost" href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/README.md" target="_blank" rel="noopener" data-t="portsHow"></a></div>
+    <p class="lead" data-t="portsLead"></p>
+    <div class="ports" id="portlist"></div>
+    <div class="card devtry" id="devtry" hidden>
+      <div class="viewhead" style="margin-bottom:10px"><h2 id="devtrytitle"></h2><button class="btn ghost" id="devtryclose" data-t="scrExitFull"></button></div>
+      <div class="framebox"><iframe id="f-devices" title="Devices" allow="autoplay; midi; fullscreen"></iframe></div>
+    </div>
+  </section>
+
+  <!-- ======================================================================================= emulator -->
+  <section class="view" id="v-emu" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vEmu"></p><h1 id="emutitle"></h1></div><label class="field" style="min-width:240px"><span data-t="emuMidi"></span><select id="emumidi"></select></label></div>
+    <div class="framebox"><iframe id="f-emu" title="Emulator" loading="lazy" allow="autoplay; midi; fullscreen"></iframe></div>
+  </section>
+
+  <!-- ======================================================================================= record -->
+  <section class="view" id="v-rec" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vRec"></p><h1 data-t="recTitle"></h1></div></div>
+    <div class="grid2">
+      <div class="card">
+        <h2 data-t="recAudio"></h2>
+        <p class="small dim" id="recsrchelp"></p>
+        <label class="field"><span data-t="recInput"></span><select id="recdev"></select></label>
+        <div class="row" style="margin: 14px 0 10px">
+          <button class="btn" id="recgo" data-t="recStart"></button>
+          <span class="clock" id="recclock">00:00</span>
+        </div>
+        <div class="meter" aria-hidden="true"><i id="recmeter"></i></div>
+        <p class="stat" id="recstat" role="status" aria-live="polite"></p>
+      </div>
+      <div class="card">
+        <h2 data-t="recMidi"></h2>
+        <p class="small dim" data-t="recMidiHelp"></p>
+        <label class="field"><span data-t="recMidiIn"></span><select id="midisrc"></select></label>
+        <p class="stat" id="midistat"></p>
+      </div>
+      <div class="card">
+        <h2 data-t="recStems"></h2>
+        <p class="small dim" data-t="recStemsHelp"></p>
+        <div class="row"><button class="btn ghost" data-go="emu" data-t="recStemsGo"></button></div>
+      </div>
+    </div>
+    <h2 style="margin-top:22px" data-t="recTakes"></h2>
+    <div class="takes" id="takes"><p class="small dim" data-t="recNone"></p></div>
+  </section>
+</main>
+<footer><span data-t="foot"></span> · <a href="https://github.com/juanjiant-bit/JIANT">JIANT FM</a> · <a href="https://github.com/juanjiant-bit/JIANT-BYTE">JIANT BYTE</a> · GPL-3.0</footer>
+<script type="module" src="studio.js"></script>
+</body>
+</html>

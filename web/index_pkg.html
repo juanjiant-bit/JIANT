@@ -619,10 +619,18 @@ applyLang();
 
 /* (0.9.11) the JIANT editor in another tab of this browser talks to the FM-1 too and reconnects by itself when the
  * device comes back (the update loader is a "JIANT" port): while writing, the installer asks it to let go */
-let bc = null, editorTabs = 0, busyBeat = null;
+/* (studio) every page of this site that uses MIDI answers too (the editors of JIANT FM and JIANT BYTE, their emulators,
+ * the studio: /JIANT/ and /JIANT-BYTE/ are one origin): "who" -> {type: "editor" | "emulator" | "studio", connected};
+ * "installer" busy -> each lets go of every MIDI port and says {type: "released", who} (letGo below waits for them) */
+let bc = null, editorTabs = 0, busyBeat = null, released = 0;
+const MIDI_PAGES = ["editor", "emulator", "studio"];
 try {
   bc = new BroadcastChannel("jiant-midi");
-  bc.onmessage = (e) => { const m = e.data || {}; if (m.type === "editor") { editorTabs++; state.editorTabs = `${editorTabs} (${m.connected ? "connected" : "idle"})`; log(`editor tab: ${m.connected ? "connected" : "idle"}`); } };
+  bc.onmessage = (e) => {
+    const m = e.data || {};
+    if (MIDI_PAGES.includes(m.type)) { editorTabs++; state.editorTabs = `${editorTabs} (${m.connected ? "connected" : "idle"})`; log(`${m.type} tab: ${m.connected ? "connected" : "idle"}`); }
+    if (m.type === "released") { released++; log(`${m.who || "a tab"}: MIDI let go`); }
+  };
   bc.postMessage({ type: "who" });
 } catch (_) {}
 const tellEditors = (busy) => {
@@ -631,6 +639,18 @@ const tellEditors = (busy) => {
   clearInterval(busyBeat);
   if (busy) busyBeat = setInterval(() => { try { bc.postMessage({ type: "installer", busy: true }); } catch (_) {} }, 20000);
 };
+/* before the first byte goes to the FM-1: ask the other tabs again who is there, tell them to let go, and wait until each
+ * said so (at most 1.5 s: a tab asleep in the background answers late, and a page from before this one never does) */
+async function letGo() {
+  if (!bc) return;
+  editorTabs = 0; released = 0;
+  try { bc.postMessage({ type: "who" }); } catch (_) {}
+  await new Promise((r) => setTimeout(r, 250));
+  const asked = editorTabs;
+  tellEditors(true);
+  for (let t = 0; t < 1500 && released < asked; t += 50) await new Promise((r) => setTimeout(r, 50));
+  if (asked) log(`${released} of ${asked} MIDI tab(s) let go before writing`);
+}
 
 let writing = false, stock = null, stockFileEpoch = 0;
 const lockInstaller = (on) => { writing = on; tellEditors(on); $("ver").disabled = on; $("go").disabled = on || !image; $("stock-go").disabled = on || !stock; $("stock-file").disabled = on; $("stock-recovery").disabled = on; };
@@ -763,6 +783,7 @@ $("go").addEventListener("click", async () => {
   if (nk && !confirm(t(nk + "Confirm"))) { $("notice").scrollIntoView({ behavior: "smooth" }); return; }
   lockInstaller(true);
   try {
+    await letGo();
     const up = await begin();
     const selected = versions[+$("ver").value] || versions[0];
     const result = await runInstall({ up, image, product, ui, state, allowV16: true });   /* (V10: V16 both channels) */
@@ -800,6 +821,7 @@ $("stock-go").addEventListener("click", async () => {
   if (!stock || writing) return;
   const selected = stock; lockInstaller(true);
   try {
+    await letGo();
     const up = await begin();
     const r = await runStock({ up, stock: selected, recovery: $("stock-recovery").checked, ui, state });
     if (r === "done") sayK("done");

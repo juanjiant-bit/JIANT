@@ -440,7 +440,11 @@ run "navigation map (docs/navigation-map*.svg) matches the firmware's chains" py
 
 if command -v node >/dev/null 2>&1; then
     run "web pages: editor protocol, package builder, update protocol" node web/test_web.mjs
+    run "JIANT Studio: the screen's frames (as the editor's and the firmware's), WAV / ZIP / MIDI files, its words" \
+        node web/studio/studio_test.mjs
     if node -e "require('playwright')" >/dev/null 2>&1; then
+        run "JIANT Studio in Chromium: the FM-1 found, its screen, install safety, the editor on the emulator, recording" \
+            node web/studio/browser_test.mjs
         run "editor in Chromium: FM-1, SMK-37 and a big CPU (SAMPLE, GRAIN, DRUM-X's samples) on its mock" \
             node web/editor_browser_test.mjs
     fi
