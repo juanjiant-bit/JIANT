@@ -206,7 +206,7 @@ static void ui_power_on(void)
     memset(&ui, 0, sizeof ui);
     cin_left = cin_total = 0;                     /* (no count-in) */
     memset(&nm, 0, sizeof nm);                    /* NAME closed, no project name */
-    memset(glane, 0, sizeof glane); gl_mono = 0; gl_touch(); gl_cur = gl_trk = 0;   /* (seq2f) no global lane */
+    memset(glane, 0, sizeof glane); gl_mono = 0; gl_touch();   /* (seq2f) no global lane; V10.8.21: G.COMP gone */
     proj_name[0] = 0;
     proj_cur = PROJ_NO_SLOT;
     memset(&favorites, 0, sizeof favorites);
@@ -1005,16 +1005,7 @@ static int test_mutate(void)
         ok &= c == 0u;
         bad += check("V10.6 OCT+ a new variation, OCT- the one before (the same notes again)", ok);
     }
-    {   /* (V10.7) SEQ + SELECT on a kit: hits, whatever the genre (one without drums: its empty map, every try) */
-        uint32_t g, empty = 0;
-        for (g = 0; g < NGENRE; g++) {
-            gs.g = &GENRE[g]; gs.gi = (uint8_t)g; gs.root = (uint8_t)(d->p[P_ROOT] + 1);
-            dice_seq(d);
-            for (i = n = 0; i < NSTEP; i++) n += step_lanes(&d->step[i]) != 0u;
-            empty += n < 4u;                            /* (NEO CLASSIC before: two hits at most) */
-        }
-        bad += check("V10.7 the kit's SEQ dice: a beat in every genre (NEO CLASSIC's no drums too)", empty == 0u);
-    }
+    /* (V10.8.21, the owner: the SEQ dice gone) */
     {   /* (V10.8, testers) SEQ > STEP's KNOB 4: the step's velocity 1..127, a fast turn stops at 127, then ACC SLD A+S */
         step_t *st;
         ui_power_on();
@@ -3814,7 +3805,6 @@ static int test_presets_knob(void)
         ui_power_on();
         song.sel = 0;
         my_steps(TSEL);
-        gl_cur = 0;
         ui.home = 0; ui.page = (uint8_t)i; page_entered();
         if (!page_visible(i))
             continue;
@@ -3832,11 +3822,7 @@ static int test_presets_knob(void)
                 seq_ok &= ui.page == pg && ui.cursor == (cur0 + 1u) % (uint32_t)(TSEL->p[P_SLEN] > 0 ? TSEL->p[P_SLEN] : 1) && same_snd && same_steps && song.sel == 0u;
                 if (g == GR_PATS) pat_ok &= pat_pick() == ppick;   /* (PHRASES: its pick untouched; KNOB 1 picks) */
                 n_seq++;
-            } else if (g == GR_GCOMP) {                   /* (67cab79, 2026-10-28, par10c-beta1: GLO > COMPS / COMPS 2's
-                                                         * PRESETS the lane's step, as SEQ's the cursor; the sound stays) */
-                snd_ok &= same_snd && same_steps && ui.page == pg && gl_cur == 1u;
-                if (!(same_snd && gl_cur == 1u)) printf("  PRESETS on %s\n", PAGES[i].title);
-            } else {
+            } else {                                      /* (V10.8.21: GLO > G.COMP gone) */
                 snd_ok &= !same_snd && same_steps && ui.page == pg && !ui.home && song.sel == 0u && !ui.confirm;
                 if (!(!same_snd && same_steps && ui.page == pg)) printf("  PRESETS on %s\n", PAGES[i].title);
                 n_snd++;
@@ -3910,8 +3896,6 @@ static int test_product_ux(void)
     turn(EN_K3, -1);
     frames(320);                                       /* (taps further apart than a double tap: #83) */
     turn(EN_SELECT, 1); frames(320); ok = str_eq(cur_page()->title, "SENDS");   /* (0.9.2: SELECT the chain; a GLO tap */
-    press(B_GLO); frames(320); ok &= cur_page()->fam == FAM_GLO && str_eq(cur_page()->title, "G.COMP");   /* the next group;
-                                                         * V10.37: G.COMP right after MIX) */
     press(B_GLO); frames(320); ok &= str_eq(cur_page()->title, "GLOBAL");   /* (codex/coherence: SETUP, GLOBAL .. KEY SPLIT 2) */
     press(B_GLO); ok &= cur_page()->graph == GR_TRK && str_eq(cur_page()->title, "MIXER");          /* (V10.8.3: LIVE gone) */
     bad += check("0.9.2 GLO: SELECT MIXER > SENDS, a GLO tap the next group: (V10.37) G.COMP > SETUP (GLOBAL) > LIVE (KEYS) > MIXER", ok);
@@ -4879,10 +4863,8 @@ static int test_quick_layers(void)
             ok &= str_eq(cur_page()->title, "STAGE") && !ui.layer;
             frames(30);
             sig = steps_sig(TSEL);
-            held_turn(B_SEQ, 1);
-            ok &= ui.confirm == CF_DICE_SEQ && steps_sig(TSEL) != sig && str_eq(cur_page()->title, "STAGE");
-            press(B_OCTDN); frame();
-            ok &= !ui.confirm && steps_sig(TSEL) == sig && msg_is("SEQ BACK");
+            held_turn(B_SEQ, 1);                          /* (V10.8.21: SEQ + SELECT no dice, its pages) */
+            ok &= !ui.confirm && steps_sig(TSEL) == sig;
             for (j = 0; j < 8u; j++) lf[j] = TSEL->p[P_LRATE + j];
             fm1_ms += 1200u;
             held_turn(B_LFO, 1);                          /* (V10.7.66: LFO + SELECT its pages, no dice) */
@@ -7749,37 +7731,38 @@ static int test_lente(void)
 {
     /* (2463a3b, 2026-11-04, FIT / SPAN: SEQ > LENGTH > RHYTHM after LENGTH; 92fc1d7, 2026-11-05: the GENERATE tab at the
      * end (LYRIC STEP only on a VOICE track): 14 pages in eight tabs, was 12 in seven) */
-    static const char *const CH[12] = {"STEP", "LENGTH", "RHYTHM", "TRACK", "EUCLID", "MODES", "PLAYHEADS",
-                                       "STEP FX", "STEP FX 2", "AUTOMATION", "AUTO LIST", "TRACK GEN"};   /* (V10.8.20: MUTATE, STRETCH gone) */   /* (V10.7.59: STEP FX,
+    static const char *const CH[19] = {"STEP", "LENGTH", "RHYTHM", "TRACK", "EUCLID", "MODES", "PLAYHEADS",
+                                       "STEP FX", "STEP FX 2", "AUTOMATION", "AUTO LIST", "TRACK GEN", "DRONE CLAY",
+                                       "CLAY MOD 1", "CLAY MOD 2", "CLAY MOD 3", "CLAY MOD 4", "CLAY DECAY", "CLAY TIME"};   /* (V10.8.21: DRONE CLAY) */   /* (V10.8.20: MUTATE, STRETCH gone) */   /* (V10.7.59: STEP FX,
                                                          * was COMP) (codex/coherence: TRACK
                                                          * GEN, was GENERATE) */
-    static const char *const TP[6] = {"LENGTH", "EUCLID", "PLAYHEADS", "STEP FX", "AUTOMATION", "TRACK GEN"};
+    static const char *const TP[7] = {"LENGTH", "EUCLID", "PLAYHEADS", "STEP FX", "AUTOMATION", "TRACK GEN", "DRONE CLAY"};
     int bad = 0, ok;
     uint32_t q, sig;
     ui_power_on();
     TSEL->p[P_SLEN] = 64;
     open_family(FAM_SEQ); frame();
-    ok = str_eq(cur_page()->title, "STEP") && lens_level() == LV_BAR && roll_view(cur_page()) && lz_tabs() == 7u &&
-         lz_tab_lit(0) && lz_crumb_is("SEQ \xB7 STEP \xB7 STEP") && lz_count_is("1/12");
+    ok = str_eq(cur_page()->title, "STEP") && lens_level() == LV_BAR && roll_view(cur_page()) && lz_tabs() == 8u &&
+         lz_tab_lit(0) && lz_crumb_is("SEQ \xB7 STEP \xB7 STEP") && lz_count_is("1/19");
     turn(EN_SELECT, -1); frames(32);
-    ok &= str_eq(cur_page()->title, "STEP") && lz_count_is("1/12");                /* (the first: no wrap) */
+    ok &= str_eq(cur_page()->title, "STEP") && lz_count_is("1/19");                /* (the first: no wrap) */
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "PATTERN") && seq_roll_view(cur_page()) && lz_tab_lit(1) && lz_count_is("2/12") &&
+    ok &= str_eq(cur_page()->title, "PATTERN") && seq_roll_view(cur_page()) && lz_tab_lit(1) && lz_count_is("2/19") &&
           lz_crumb_is("SEQ \xB7 PATTERN \xB7 LENGTH");                             /* (PATTERN, named LENGTH; codex/coherence:
                                                          * its group PATTERN) */
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "RHYTHM") && lz_tab_lit(1) && lz_count_is("3/12");
+    ok &= str_eq(cur_page()->title, "RHYTHM") && lz_tab_lit(1) && lz_count_is("3/19");
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "TRACK") && lz_tab_lit(1) && lz_count_is("4/12") &&
+    ok &= str_eq(cur_page()->title, "TRACK") && lz_tab_lit(1) && lz_count_is("4/19") &&
           lz_crumb_is("SEQ \xB7 PATTERN \xB7 TRACK");                              /* (TRACK under the PAT tab) */
     turn(EN_SELECT, 4); frames(32);
-    ok &= str_eq(cur_page()->title, "COMP") && seq_roll_view(cur_page()) && lz_tab_lit(4) && lz_count_is("8/12") &&
+    ok &= str_eq(cur_page()->title, "COMP") && seq_roll_view(cur_page()) && lz_tab_lit(4) && lz_count_is("8/19") &&
           lz_crumb_is("SEQ \xB7 STEP FX \xB7 STEP FX");
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "COMP 2") && lz_tab_lit(4) && lz_count_is("9/12");
-    bad += check("seq2 SEQ: enters at STEP (1/12, seven tabs); LENGTH the roll (seq2b), RHYTHM, TRACK under its tab, COMP the roll, COMP 2 after it", ok);
-    bad += check("seq2 SEQ: one chain of 12 by SELECT (no wrap); a SEQ tap the next tab's first, round",
-                 chain_walk(B_SEQ, CH, 12, TP, 6));
+    ok &= str_eq(cur_page()->title, "COMP 2") && lz_tab_lit(4) && lz_count_is("9/19");
+    bad += check("seq2 SEQ: enters at STEP (1/19, eight tabs: V10.8.21 DRONE CLAY); LENGTH the roll (seq2b), RHYTHM, TRACK under its tab, COMP the roll, COMP 2 after it", ok);
+    bad += check("seq2 SEQ: one chain of 19 by SELECT (no wrap); a SEQ tap the next tab's first, round",
+                 chain_walk(B_SEQ, CH, 19, TP, 7));
     {   /* (0.9.9-seq2b) every page of the chain the same picture: the bars' strip, the roll with its keys */
         static const char *const TI[10] = {"STEP", "PATTERN", "TRACK", "EUCLID", "MODES", "PLAYHEADS",
                                            "COMP", "COMP 2", "AUTOMATION", "AUTO LIST"};
@@ -7866,10 +7849,8 @@ static int test_lente(void)
         ok &= !ui.layer && ui.page == pg;
         fm1_ms += 1200u;
         sig = steps_sig(TSEL);
-        held_turn(B_SEQ, 1); frame();
-        ok &= ui.confirm == CF_DICE_SEQ && ui.page == pg;
-        press(B_OCTDN); frame();
-        ok &= !ui.confirm && steps_sig(TSEL) == sig && ui.page == pg;
+        held_turn(B_SEQ, 1); frame();                   /* (V10.8.21: SEQ + SELECT no dice) */
+        ok &= !ui.confirm && steps_sig(TSEL) == sig;
     }
     bad += check("  SEQ held: the tools on every page (MUTATE, AUTO LIST, BAR); SEQ + SELECT: the dice, the page stays", ok);
     /* the DRUM grid: STEP's; BAR its bars, KNOB 1 the bar; COMP the step large, the grid's keys still its */
@@ -12311,25 +12292,23 @@ static int test_lz_glo(void)
     ui_power_on(); frame();
     press(B_GLO); frame();
     ok = pd_on() && lz_fam() == LZ_GLO && pd_level() == 0u && str_eq(cur_page()->title, "MIXER") && lz_tab_lit(0) &&
-         lz_crumb_is("GLO \xB7 MIXER \xB7 MIXER") && lz_count_is("1/9");   /* (V10.8.3: LIVE gone) */   /* (snd8: SYSTEM 2; p2: LIVE first; V10.7.58: one) */
+         lz_crumb_is("GLO \xB7 MIXER \xB7 MIXER") && lz_count_is("1/7");   /* (V10.8.21: G.COMP gone) */   /* (V10.8.3: LIVE gone) */   /* (snd8: SYSTEM 2; p2: LIVE first; V10.7.58: one) */
     turn(EN_SELECT, 1); frame();
     ok &= str_eq(cur_page()->title, "SENDS") && lz_crumb_is("GLO \xB7 MIXER \xB7 SENDS");
     v = TSEL->p[P_DLY];
     turn(EN_K2, 4); frame();                            /* (codex/coherence: the sends only, CHORUS DLY REV) */
     ok &= TSEL->p[P_DLY] > v;
     frames(320); press(B_GLO); frame();
-    ok &= pd_level() == 3u && str_eq(cur_page()->title, "G.COMP") && lz_tab_lit(1);   /* (V10.37: after MIX) */
-    frames(320); press(B_GLO); frame();
-    ok &= pd_level() == 1u && str_eq(cur_page()->title, "GLOBAL") && lz_tab_lit(2) && lz_crumb_is("GLO \xB7 SETUP \xB7 GLOBAL");
+    ok &= pd_level() == 1u && str_eq(cur_page()->title, "GLOBAL") && lz_tab_lit(1) && lz_crumb_is("GLO \xB7 SETUP \xB7 GLOBAL");
     turn(EN_SELECT, 1); frame();                        /* (codex/coherence: SETUP, GLOBAL SYSTEM SYSTEM 2 KEY SPLIT) */
-    ok &= pd_level() == 2u && str_eq(cur_page()->title, "SYSTEM") && lz_tab_lit(2) && lz_crumb_is("GLO \xB7 SETUP \xB7 SYSTEM");
+    ok &= pd_level() == 2u && str_eq(cur_page()->title, "SYSTEM") && lz_tab_lit(1) && lz_crumb_is("GLO \xB7 SETUP \xB7 SYSTEM");
     frames(320); press(B_GLO); frame();                 /* (V10.8.3: LIVE gone, round to MIX) */
     ok &= pd_level() == 0u && str_eq(cur_page()->title, "MIXER");
     turn(EN_SELECT, 3); frame();
-    ok &= pd_level() == 3u && str_eq(cur_page()->title, "G.COMP 2");   /* (V10.37: SENDS G.COMP G.COMP 2) */
+    ok &= pd_level() == 2u && str_eq(cur_page()->title, "SYSTEM");   /* (V10.8.21: SENDS GLOBAL SYSTEM) */
     open_family(FAM_ENV); frame();
     press(B_GLO); frame();
-    ok &= str_eq(cur_page()->title, "G.COMP 2");
+    ok &= str_eq(cur_page()->title, "SYSTEM");
     bad += check("0.9.2 GLO: MIXER SENDS (G.COMP G.COMP 2) SETUP by SELECT, a GLO tap the next group (p2: LIVE first); from elsewhere the page left", ok);
     {   /* (0.9.9-snd8b) every chain fits nav_list's buffer (FX's 17th page, TAPE, overran a 16: a crash entering FX) */
         uint32_t k, worst = 0;
@@ -13038,7 +13017,7 @@ static void tk_start(uint32_t from)                     /* 0 home, 1 seq, 2 fxdl
 }
 static int test_nav_tasks(void)
 {
-    static const uint8_t WANT[14] = {4, 3, 5, 6, 4, 9, 9, 2, 3, 1, 4, 7, 17, 5};   /* (V10.8.20: task 13 two detents less) */   /* (V10.8: task 5 by PRESETS, two fast turns) */   /* (V10.7.63: task 11 a detent less) */   /* (V10.7.63: task 5 a SAVE tap less) */   /* (2463a3b, 2026-11-04: SEQ > LENGTH >
+    static const uint8_t WANT[14] = {4, 3, 5, 6, 4, 9, 9, 2, 3, 1, 4, 7, 17, 4};   /* (V10.8.21: task 14 a GLO tap less) */   /* (V10.8.20: task 13 two detents less) */   /* (V10.8: task 5 by PRESETS, two fast turns) */   /* (V10.7.63: task 11 a detent less) */   /* (V10.7.63: task 5 a SAVE tap less) */   /* (2463a3b, 2026-11-04: SEQ > LENGTH >
                                                          * RHYTHM between LENGTH and TRACK: tasks 11 and 13 a detent more) */   /* (V10.37: COMPS before GLOBAL, SYSTEM a tap further) */   /* (V10.1: SAVE composes first, 106 -> 108) */   /* (seq2: task 5 by STEP's KNOB 1, no BAR;
                                                          * task 11 TRACK under LEN's tab; task 13 eight detents (seq2c:
                                                          * MUTATE 2); was 73) */
@@ -13115,7 +13094,7 @@ static int test_nav_tasks(void)
             ok = str_eq(cur_page()->title, "COMP 2") && ui.cursor == 8u && TSEL->step[8].comp2 != 0u;
             break;
         default:                                        /* GLO: six tracks (SYSTEM > TRACKS) */
-            tk_start(0); trks_put(0); frame(); tk_btn(B_GLO); tk_btn(B_GLO); tk_btn(B_GLO); tk_go(EN_SELECT, 1); tk_val(EN_K1, 1); frame();   /* (codex/
+            tk_start(0); trks_put(0); frame(); tk_btn(B_GLO); tk_btn(B_GLO); tk_go(EN_SELECT, 1);   /* (V10.8.21: G.COMP's tab gone, a tap less) */ tk_val(EN_K1, 1); frame();   /* (codex/
                                                          * coherence: SETUP's GLOBAL, then SYSTEM a detent on) */
             ok = str_eq(cur_page()->title, "SYSTEM") && trk_live == NTRK;
             break;
@@ -13129,7 +13108,7 @@ static int test_nav_tasks(void)
     }
     printf("ui:   the race: %u %u %u %u %u %u %u %u %u %u %u %u %u %u = %u actions (0.9.1: 75)\n", got[0], got[1], got[2], got[3],
            got[4], got[5], got[6], got[7], got[8], got[9], got[10], got[11], got[12], got[13], tot);
-    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 79u);   /* (V10.8.20: MUTATE, STRETCH out of SEQ's chain: -2) */   /* (V10.8: task 5 by PRESETS, 34 -> 4) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
+    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 78u);   /* (V10.8.21: G.COMP gone, GLO a tap less) */   /* (V10.8.20: MUTATE, STRETCH out of SEQ's chain: -2) */   /* (V10.8: task 5 by PRESETS, 34 -> 4) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
     ui_power_on();
     return bad;
 }
@@ -13431,7 +13410,7 @@ static int test_comp_cards(void)
     char what[96] = "";
     for (sk = 0; sk < 1u; sk++)                       /* (V10.7.23: COLORS, the one skin) */
         for (lg = 0; lg < 2u; lg++)
-            for (pg = 0; pg < 3u; pg++) {
+            for (pg = 0; pg < 2u; pg++) {   /* (V10.8.21: G.COMP gone) */
                 step_t *st;
                 ui_power_on();
                 if (lg) ui_prefs |= PREF_LARGE; else ui_prefs &= ~PREF_LARGE;
@@ -13443,17 +13422,12 @@ static int test_comp_cards(void)
                 frame();
                 for (a = 0; a < CA_N; a++) {
                     uint32_t nv = (uint32_t)CA_VMAX[a] + 1u + (a == CA_MUTE), nc = a ? CCL_N : 1u, nl = a ? CL_MAX : 1u, k;
-                    if (pg == 2u && ga_idx(a) == 0u && a) continue;   /* (the lane's actions: GA_LIST) */
                     for (k = 0; k < nv + nc + nl; k++) {
                         uint32_t v = k < nv ? k : 0u, ci = k >= nv && k < nv + nc ? k - nv : 0u, l = k >= nv + nc ? k - nv - nc : 0u;
                         uint32_t c, nm;
                         cond_at(ci, &c, &nm);
                         if (pg == 2u && c >= CC_NEI && c <= CC_ELSE) continue;
-                        if (pg == 2u) {
-                            gcomp_t *g = &glane[gl_cur % GL_N];
-                            g->comp = CO_MAKE(a, c); g->nm = (uint8_t)nm; g->len = (uint8_t)l;
-                            g->val = (uint8_t)comp_vat(a, v); g->mask = 0x3F;
-                        } else if (pg == 1u) {
+                        if (pg == 1u) {
                             st->comp = CO_MAKE(CA_OCTU, CC_ALWAYS);
                             st->comp2 = (uint8_t)CO_MAKE(a, c); st->carg2 = (uint8_t)comp_vat(a, v);
                             st->cnm[1] = (uint8_t)nm; st->clen[1] = (uint8_t)l;

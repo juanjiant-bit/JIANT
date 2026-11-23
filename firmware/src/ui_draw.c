@@ -1172,37 +1172,6 @@ static void comp_value(const step_t *s, uint32_t a, uint32_t v, char *lb, char *
 static __attribute__((noinline)) void comp_columns(void)
 {
     char val[12];
-    if (cur_page()->graph == GR_GCOMP) {               /* (0.9.9-seq2f) GLO > COMPS: the lane's step; COMPS 2 its tracks */
-        const gcomp_t *gc = &glane[gl_cur % GL_N];
-        uint32_t a = CA_VIEW(CO_ACT(gc->comp), gc->val);
-        char lb[10], un[8];
-        if (gco_slot()) {
-            fmt_int(val, (int32_t)gl_cur + 1);
-            hot_text_column(0, "STEP", val);
-            val[0] = 'T'; fmt_int(val + 1, (int32_t)gl_trk + 1);
-            hot_text_column(1, "TRACK", val);
-            text_column(2, "APPLIES", (gc->mask >> gl_trk) & 1u ? "ON" : "OFF", a ? VAL(2u) : T_DIM);
-            hot_text_column(3, "MODE", gl_mono ? "MONO" : "POLY");
-            return;
-        }
-        text_column(0, "ACTION", CA_NAMES[a], a ? VAL(0u) : T_DIM);
-        if (a) {
-            fmt_int(val, (int32_t)gc->len + 1);
-            hot_unit_column(1, "LENGTH", val, "ST");   /* (gen3: "32 ST" in M) */
-        } else
-            text_column(1, "LENGTH", "-", T_DIM);
-        if (a) {
-            cond_name(CO_COND(gc->comp), gc->nm, val);
-            text_column(2, "COND", val, CO_COND(gc->comp) ? VAL(2u) : T_DIM);   /* (gen3: MONO / POLY on
-                                                         * COMPS 2, the value whole) */
-            comp_value(TSEL->step, a, gc->val, lb, val, un);
-            unit_column(3, lb, val, un, lb[0] ? VAL(3u) : T_DIM);
-        } else {
-            text_column(2, "COND", "", T_DIM);
-            empty_column(3);
-        }
-        return;
-    }
     {                                                   /* (seq2d) the cursor step's C1 / C2: ACTION LENGTH COND VALUE */
         const step_t *cs = &TSEL->step[ui.cursor];
         uint32_t a = comp_view(), k = comp_slot(), c = CO_COND(k ? cs->comp2 : cs->comp), l = cs->clen[k & 1u];
@@ -2067,10 +2036,9 @@ static void confirm_text(char *a, char *b)
         str_cpy(b, "THE SAVED ONE STAYS", 24);
         break;
     case CF_DICE_SOUND:                              /* (0.6.65) EDIT + SELECT: heard already */
-    case CF_DICE_SEQ:                                /* (0.6.67) SEQ / LFO / FX + SELECT */
     case CF_DICE_LFO:
     case CF_DICE_FX:
-        str_cpy(a, ui.confirm == CF_DICE_SEQ ? "KEEP DICED SEQ?" : drum_track(TSEL) ? "KEEP DICED KIT?" : "KEEP DICED SOUND?", 24);
+        str_cpy(a, drum_track(TSEL) ? "KEEP DICED KIT?" : "KEEP DICED SOUND?", 24);
         str_cpy(b, "SELECT: DICE AGAIN", 24);
         break;
     case CF_DICE_ALL:                                /* (0.6.21) HOME + SELECT */

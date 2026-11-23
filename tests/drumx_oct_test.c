@@ -794,7 +794,7 @@ static int rec_ratch(void)
     static const char *const WAY[4] = {"RATCH", "a RATCHET", "a RATCHET's span", "the global lane's RATCHET"};
     int bad = 0, ok, late;
     uint32_t r, w;
-    for (w = 0; w < 4u; w++)
+    for (w = 0; w < 3u; w++)                         /* (V10.8.21: the global lane's gone) */
         for (late = 0; late < 2; late++)
             for (r = 2; r <= 4u; r++) {
                 uint32_t sl, at = late ? 1u : 2u, hats;

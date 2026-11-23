@@ -20,6 +20,7 @@
 #if FELUCCA_FM4
 #include "eng_digital.c"        /* DIGITAL: four-operator FM (retired; FELUCCA_FM4=1 builds it) */
 #endif
+#include "clay_form.c"            /* (V10.8.21) DRONE CLAY's composer (JIANT BYTE's, GPL): its state before mod.c reads it */
 
 /* PHYS (engine 9): retired in TONIC (its 50 KB of voice state went to the song and the drums); SAMPLE (4), GRAIN (8) and
  * SLICE (13): retired in JIANT (core.h eng_gone). The numbers stay reserved, as DIGITAL's: the stores name engines by

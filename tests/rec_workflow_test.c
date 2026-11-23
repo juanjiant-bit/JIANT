@@ -67,13 +67,7 @@ int main(void)
     bad += check("PLAY independently starts an already armed recording",transport_req==1 && song.rec==1);
     song.playing=1;transport_req=0;frames(400);press(B_REC);
     bad += check("REC disarms during playback without stopping PLAY",song.rec==0 && song.playing && !transport_req);
-    ui_power_on();go_page(GR_GCOMP);gl_cur=14;frame();
-    {uint32_t preset=TSEL->preset,engine=TSEL->eng_req,cur=ui.cursor;
-     turn(EN_PRESET,3);
-     bad += check("PRESET moves the global component step with wrap; sound and local cursor stay intact",gl_cur==1 && TSEL->preset==preset && TSEL->eng_req==engine && ui.cursor==cur);
-     ui.page++;page_entered();frame();turn(EN_PRESET,-2);
-     bad += check("PRESET also moves horizontally on global COMPS 2",gco_slot() && gl_cur==15 && TSEL->preset==preset && TSEL->eng_req==engine);
-    }
+    /* (V10.8.21: GLO > G.COMP gone) */
     bad += test_rec();
     bad += test_rec_layer();
     bad += test_rec_combos();

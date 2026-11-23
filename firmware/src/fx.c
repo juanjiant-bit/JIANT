@@ -703,6 +703,7 @@ static uint32_t beat_samples(void)
 {
     return song.g[G_CLOCK] && midi_beat_samples ? midi_beat_samples : (uint32_t)FS * 60u / (uint32_t)song.g[G_BPM];
 }
+static void clay_tick(uint32_t n);                      /* (V10.8.21: seq.c clay.c) DRONE CLAY, a block */
 static uint32_t div_samples(uint32_t div)
 {
     uint32_t quarter = beat_samples();
@@ -2983,6 +2984,7 @@ static __attribute__((noinline)) void mix_block(int32_t *out, uint32_t n)   /* (
                                                          * the transport's grid (through tempo changes, an external clock) */
         ms_clock = clk_pos == CLK_START ? ms_clock + n : clk_n * div_samples(2) + clk_pos + n;
     macro_master();                                     /* CLIP / PNCH with the matrix (mod.c) */
+    clay_tick(n);                                       /* (V10.8.21, BYTE's) DRONE CLAY: its modulators, its drone (seq.c clay.c) */
     dx_mot_block(n);                                    /* (0.5.1) DRUM-X X-MOD's LFO */
     master_begin();
     duck_block();

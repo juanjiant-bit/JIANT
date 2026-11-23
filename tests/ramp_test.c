@@ -156,7 +156,7 @@ static int ramp_tests(void)
         ok &= proj_import(&proj_scratch, &st, sizeof st) && !project_restore_runtime(&proj_scratch);
         ok &= !trk[0].step[1].comp && !trk[0].step[2].comp && !trk[0].step[4].comp && !trk[0].step[5].comp;
         ok &= trk[0].step[3].comp2 == CO_MAKE(CA_RAMP, CC_ALWAYS) && trk[0].step[3].carg2 == 3u;
-        ok &= CO_ACT(trk[0].step[0].comp) == CA_RAMP && !CO_ACT(glane[3].comp);
+        ok &= CO_ACT(trk[0].step[0].comp) == CA_RAMP;   /* (V10.8.21: the global lane gone, its bytes kept, read by nothing) */
         memset(ls, 0, sizeof ls);
         comp_legacy(&ls[0], 0, CP_JUMP, 2); comp_legacy(&ls[1], 0, CP_REV, 1); comp_legacy(&ls[2], 1, CP_JUMP, 0x80u | 3u);
         comp_migrate(ls, 4);

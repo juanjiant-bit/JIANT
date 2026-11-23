@@ -1312,10 +1312,6 @@ static void edit_param(uint32_t slot, int32_t steps)
         comp_knob(slot, steps);
         return;
     }
-    if (pg->graph == GR_GCOMP) {                        /* (0.9.9-seq2f) GLO > COMPS / COMPS 2 (ui.c) */
-        gco_knob(slot, steps);
-        return;
-    }
     if (pg->graph == GR_FUGUE) {                        /* (0.6.52) HEAD, RATE, DIR, INTERVAL */
         fg_set_t *f = &fg_set[song.sel % NTRK][fg_ui % FG_HEADS];
         int32_t d = steps > 0 ? 1 : -1;
@@ -1618,6 +1614,7 @@ sect:
     if (!d || !vp || d->max == d->min)
         return;
     v = param_turn(d, *vp, accel(EN_K1 + slot, steps, d->fmt == F_ENUM ? 0 : d->max - d->min));
+    int32_t was_clay = *vp;
     {
         int32_t was = *vp;
         if ((TSEL->seq_fit & 128u) && (vp == &TSEL->p[P_SLEN] || vp == &TSEL->p[P_SDIV]))
@@ -1627,6 +1624,10 @@ sect:
     }
     if (vp >= sc_v && vp < sc_v + 4) {                  /* (V10.25) SCENE's SCENE TRACK ROLE; (V10.6j) PATTERN STYLE */
         sc_put((uint32_t)(vp - sc_v), v);
+        return;
+    }
+    if (vp >= &clay[0][0] && vp < &clay[NTRK][0]) {    /* (V10.8.21, BYTE's) DRONE CLAY's settings (seq.c clay.c clay_put) */
+        clay_put((uint32_t)(vp - &clay[0][0]), was_clay, v);
         return;
     }
     if (vp >= eu_v && vp < eu_v + EK_N) {               /* (V10.6) EUCLID / MODES: the setting, the pattern again */
@@ -2075,11 +2076,6 @@ static void seq_entry(uint32_t pressed)
  * generator, MUTATE and the components make patterns enough) */
 static void presets_turn(int32_t s)
 {
-    if (gco_on()) {
-        gl_cur = (uint8_t)(((int32_t)gl_cur + s) & (GL_N - 1u));
-        ui.force = 1;
-        return;
-    }
 
     if (!ui.home && PAGES[ui.page].fam == FAM_SEQ) {   /* (V10.7.60, the owner) PRESETS: slow a step, fast a whole bar; the
                                                          * bar and the step said, on every SEQ page */
@@ -2178,12 +2174,9 @@ static void sound_dice_of(track_t *t, int quiet)
  * LFO, FX its effects and the shared reverb and delay), at once so it is heard, under a dialog: OCT+ OK keeps it, OCT-
  * CANCEL brings back what it was before the first dice (only that part: the music plays on), SELECT again dices again.
  * (0.6.65: the sound first.) UNDO (GLO + G4) still brings back what was before */
-static struct {                                         /* what CANCEL puts back (the sound: undo_sound) */
-    step_t step[NSTEP];
-    int16_t slen;
+static struct {                                         /* (V10.8.21: the sequence's dice gone, the owner; CANCEL: undo_sound) */
     const char *msg;
 } dk;
-static const char *dice_seq(track_t *t);                /* gen.c */
 static int32_t dk_rr(int32_t lo, int32_t hi) { return hi <= lo ? lo : lo + (int32_t)(rng() % (uint32_t)(hi - lo + 1)); }
 static int32_t dk_frac(const param_desc_t *d, int32_t a, int32_t b)   /* a value a% .. b% up the range */
 {
@@ -2223,12 +2216,6 @@ static void dice_side(uint32_t now, int32_t x0)          /* one half of the pane
         if (now)
             dk_feat(t, &f);
         being_lines(now ? dk_genome(t) : dkv.g, now ? &f : &dkv.f, (x0 + 56) * 16, 66 * 16, 14 * 16, 0, 0);
-    } else if (kind == CF_DICE_SEQ) {                   /* the first 16 steps' notes as dots */
-        const step_t *st = now ? t->step : dk.step;
-        for (i = 0; i < 16u; i++)
-            if (step_on(&st[i]))
-                cv_rect(x0 + 4 + (int32_t)i * 7, 96 - clamp((int32_t)st[i].note[0] - 36, 0, 40) * 2, 5, 3,
-                        now ? T_ACCENT : T_MID);
     }
 }
 static void dice_panel(void)
@@ -2253,29 +2240,9 @@ static void dice_panel(void)
     }
     cv_blit(0, LZ_CARD_Y);
 }
-static void dk_keep(uint32_t kind)
-{
-    track_t *t = TSEL;
-    uint32_t i;
-    if (kind == CF_DICE_SEQ) {
-        for (i = 0; i < NSTEP; i++) dk.step[i] = t->step[i];
-        dk.slen = t->p[P_SLEN];
-    }
-}
 static int dk_back(uint32_t kind, uint32_t k)           /* CANCEL: 0 done */
 {
-    track_t *t = &trk[k % NTRK];
-    uint32_t i;
-    if (kind == CF_DICE_SOUND)
-        return undo_sound(k);
-    if (kind == CF_DICE_SEQ) {
-        load_begin(t, LOAD_PAT);
-        for (i = 0; i < NSTEP; i++) t->step[i] = dk.step[i];
-        t->p[P_SLEN] = dk.slen;
-        load_end(t);
-        latch_drop_req |= (uint8_t)(1u << (k % NTRK));
-    }
-    return 0;
+    return kind == CF_DICE_SOUND ? undo_sound(k) : 0;
 }
 static void part_dice(uint32_t kind)
 {
@@ -2290,15 +2257,14 @@ static void part_dice(uint32_t kind)
     }
     if (ui.confirm != kind) {
         undo_mark();
-        dk_keep(kind);
         dk_vis_take();
         confirm_open(kind, song.sel);
     }
-    dk.msg = kind == CF_DICE_SEQ ? dice_seq(TSEL) : drum_track(TSEL) ? "KIT DICED" : "SOUND DICED";
+    dk.msg = drum_track(TSEL) ? "KIT DICED" : "SOUND DICED";
     if (kind == CF_DICE_SOUND) sound_dice_of(TSEL, 1);
     /* (V10.7.66: LFO's and FX's dice gone, the owner) */
 }
-static int dice_kind(uint32_t c) { return c == CF_DICE_SOUND || c == CF_DICE_SEQ; }
+static int dice_kind(uint32_t c) { return c == CF_DICE_SOUND; }
 /* (0.6.21) HOME + SELECT (after the dialog): everything diced into a new piece. One scale for the song (ROOT, a
  * musical SCALE: never CHR / WHOLE / DIM; the RESO reverb and the SLICER follow it), each melodic track an engine, a
  * sound (dice of a factory preset) and a sequence in that scale by its role (T1 the bass; the others a lead, a pad or an
@@ -2598,7 +2564,7 @@ static void ui_input_frame(void)
         int32_t ps;
         if (!ui.menu && !dlg_on() && !name_on() && (f != FAM_COUNT || hb) && f != FAM_GLO &&
             (ps = panel_enc(EN_SELECT)) != 0) {
-            uint32_t k = f == FAM_EDIT ? CF_DICE_SOUND : f == FAM_SEQ ? CF_DICE_SEQ : 
+            uint32_t k = f == FAM_EDIT ? CF_DICE_SOUND : 
                          0u;                    /* (V10.7.66, the owner: FX + SELECT's dice gone) */
             if (f == FAM_COUNT) {                       /* HOME held: GEN, HOME's generator */
                 ui.home_t0 |= 2u;
@@ -2860,7 +2826,7 @@ static void ui_input_frame(void)
         } else if (oct & 1u) {
             if (dice_kind(ui.confirm))                  /* (0.6.65) CANCEL: the part before the dice */
                 ui_message(dk_back(ui.confirm, ui.confirm_trk) ? "CAN'T UNDO" :
-                           ui.confirm == CF_DICE_SEQ ? "SEQ BACK" : "SOUND BACK");
+                           "SOUND BACK");
             ui.confirm = 0;
             ui.force = 1;
         } else if (dice_kind(ui.confirm) && panel_enc(EN_SELECT)) {   /* (0.6.65) SELECT again: another dice
@@ -3007,9 +2973,7 @@ static void ui_input_frame(void)
         sfx_keys();
     else
         hc_act = 0, sfx_key = 16;
-    if (gco_on()) {                                     /* (0.9.9-seq2f) GLO > COMPS: the keys are the lane's */
-        gco_keys(notes);
-    } else if (ckeys_on()) {                            /* (seq2g) SEQ > COMP: the keys pick the step */
+    if (ckeys_on()) {                            /* (seq2g) SEQ > COMP: the keys pick the step */
         comp_keys(notes);
     } else if (skeys_on()) {                            /* (V10.6o) PARTS, TIMELINE: theirs */
         tl_keys(notes);

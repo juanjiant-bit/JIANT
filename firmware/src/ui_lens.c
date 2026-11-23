@@ -81,9 +81,12 @@ static const nv_t CE_SEQ[] = {NV("STEP", 0, 0, LV_BAR), NV("PATTERN", "LENGTH", 
                               NV("EUCLID", 0, 2, LV_PAT), NV("MODES", 0, 2, LV_PAT),
                               NV("PLAYHEADS", 0, 3, LV_PAT),
                               NV("COMP", "STEP FX", 4, LV_STEP), NV("COMP 2", "STEP FX 2", 4, LV_STEP), NV("AUTOMATION", 0, 5, LV_BAR),
-                              NV("AUTO LIST", 0, 5, LV_BAR), NV("LYRIC STEP",0,5,LV_BAR),NV("TRACK GEN",0,6,LV_BAR)};   /* (V10.8.20: STRETCH gone) */
+                              NV("AUTO LIST", 0, 5, LV_BAR), NV("LYRIC STEP",0,5,LV_BAR),NV("TRACK GEN",0,6,LV_BAR),
+                              NV("DRONE CLAY", 0, 7, LV_PAT), NV("CLAY MOD 1", 0, 7, LV_PAT), NV("CLAY MOD 2", 0, 7, LV_PAT),
+                              NV("CLAY MOD 3", 0, 7, LV_PAT), NV("CLAY MOD 4", 0, 7, LV_PAT), NV("CLAY DECAY", 0, 7, LV_PAT),
+                              NV("CLAY TIME", 0, 7, LV_PAT)};   /* (V10.8.21: BYTE's DRONE CLAY) */   /* (V10.8.20: STRETCH gone) */
 static const ng_t CG_SEQ[] = {{"STEP", 0}, {"PATTERN", "PAT"}, {"EUCLID", "EUCL"}, {"PLAYHEADS", "HEAD"},
-                              {"STEP FX", "SFX"}, {"AUTO", 0}, {"TRACK GEN", "GEN"}};   /* (V10.7.59: STEP FX, was COMP) */   /* (codex/coherence: PATTERN, was LENGTH: its
+                              {"STEP FX", "SFX"}, {"AUTO", 0}, {"TRACK GEN", "GEN"}, {"DRONE CLAY", "CLAY"}};   /* (V10.7.59: STEP FX, was COMP) */   /* (codex/coherence: PATTERN, was LENGTH: its
                                                          * LENGTH RHYTHM TRACK; TRACK GEN, was GENERATE) */
 enum { FXL_TRACK, FXL_BUSES, FXL_EFFECT };
 static const nv_t CE_FX[] = {NV("FX", "SENDS", 0, FXL_TRACK), NV("DIST", 0, 0, FXL_TRACK), NV("AUTO PAN", 0, 0, FXL_TRACK),
@@ -98,11 +101,11 @@ static const ng_t CG_FX[] = {{"TRACK", "TRK"}, {"BUSES", "BUS"}, {"DELAY", "DLY"
                              {"SLICER", "SLC"}, {"PUNCH IN", "PCH"}, {"MASTER", "MST"}};
 static const nv_t CE_GLO[] = {NV("MIXER", 0, 0, 0), NV("SENDS", 0, 0, 0),   /* (V10.8.3, the owner: LIVE's KEYS RAILS gone for the
                                                          * song mode's flash; JAM plays the sequences live) */
-                              NV("G.COMP", 0, 1, 3), NV("G.COMP 2", 0, 1, 3), NV("GLOBAL", 0, 2, 1),
-                              NV("SYSTEM", 0, 2, 2), NV("SYSTEM 2", "MIDI", 2, 2), NV("KEY SPLIT", 0, 2, 2), NV("KEY SPLIT 2", 0, 2, 2)};   /* (V10.37) the performing pages first, the
+                              NV("GLOBAL", 0, 1, 1),   /* (V10.8.21, the owner: G.COMP gone for DRONE CLAY's flash) */
+                              NV("SYSTEM", 0, 1, 2), NV("SYSTEM 2", "MIDI", 1, 2), NV("KEY SPLIT", 0, 1, 2), NV("KEY SPLIT 2", 0, 1, 2)};   /* (V10.37) the performing pages first, the
                                                          * settings (GLOBAL, SYSTEM) last */   /* (0.9.9-seq2f) the global lane; (p2) LIVE first
                                                          * (ui_live.c) */
-static const ng_t CG_GLO[] = {{"MIXER", "MIX"}, {"GLOBAL COMP", "G.COMP"}, {"SETUP", 0}};   /* (codex/coherence: SETUP, the
+static const ng_t CG_GLO[] = {{"MIXER", "MIX"}, {"SETUP", 0}};   /* (codex/coherence: SETUP, the
                                                          * settings in one group: GLOBAL, SYSTEM, SYSTEM 2, KEY SPLIT) */   /* (five tabs of 44 px in the labels' face) */
 static const nv_t CE_ENV[] = {NV("ENV", 0, 0, 1), NV("ENV DEST", 0, 0, 1), NV("ENV 2", 0, 0, 1), NV("STAGE", 0, 1, 2)};   /* (V10.8.16, the owner: TRACKS, the six
                                                          * envelopes together, gone for ENV's layers' room) */   /* (V10.22: ENV 2) (codex/coherence) the track's pages first;

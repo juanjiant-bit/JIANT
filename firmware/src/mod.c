@@ -58,6 +58,12 @@ enum { MD_OFF, MD_PITCH, MD_CUT, MD_SHP, MD_AMP, MD_PAN, MD_DIST, MD_CHO, MD_DLY
  * macro_master sums every track's slots on them and fx.c reads the stored value plus that offset through GFX(k) in
  * place of song.g[] (no slot on a bus: the stored value, live for the UI's graphs and the host tests of a bus alone) */
 static const uint8_t GFX_ID[8] = {G_DTIME, G_DFDBK, G_DCOLOR, G_DMIX, G_RSIZE, G_RDAMP, G_CRATE, G_CDEPTH};
+/* (V10.8.21, JIANT BYTE's DRONE CLAY) its DEST knob -> the matrix's destination: every per-voice and per-track one but the
+ * master's (FM: no LIFE destination; the macros M1..M4 not a track's to move) */
+static const uint8_t CLAY_MD[] = {MD_OFF, MD_PITCH, MD_FCUT, MD_SHP, MD_AMP, MD_PAN, MD_DIST, MD_CHO, MD_DLY, MD_REV, MD_RATE,
+                                  MD_VIB, MD_E1, MD_E1 + 1, MD_E1 + 2, MD_E1 + 3, MD_E1 + 4, MD_E1 + 5, MD_E1 + 6, MD_E1 + 7,
+                                  MD_CUT, MD_LEVEL};   /* (CUTOFF: the part's filter, every engine's; VOICE CUT: a voice's own) */
+#define CLAY_ND ((int32_t)sizeof CLAY_MD)
 enum { GF_DTIME, GF_DFDBK, GF_DCOL, GF_DMIX, GF_RSIZE, GF_RDAMP, GF_CRATE, GF_CDEPTH };
 static volatile int16_t gfx_off[8];                      /* the matrix's offset on each (0: the stored value, as before) */
 static inline int32_t gfx_val(uint32_t k)
@@ -134,9 +140,9 @@ typedef struct {                 /* the part in mix_part (one at a time) */
     int32_t pit, cut, shp, gain; /* per voice, from the per-track sources (gain Q15) */
     uint8_t vsrc[NMSLOT], vdst[NMSLOT];
     int8_t vamt[NMSLOT];
-    uint8_t kid[NMSLOT + MX_N + LF_N + 1u];   /* per-block: the parameter, its stored value (V10.7.59: the MACROS' routes
-                                         * too; V10.7.62: LIFE's) */
-    int16_t keep[NMSLOT + MX_N + LF_N + 1u];
+    uint8_t kid[NMSLOT + MX_N + LF_N + 1u + 4u];   /* per-block: the parameter, its stored value (V10.7.59: the MACROS' routes
+                                         * too; V10.7.62: LIFE's; V10.8.21: DRONE CLAY's four) */
+    int16_t keep[NMSLOT + MX_N + LF_N + 1u + 4u];
 } mod_t;
 static mod_t mod_c[2];                      /* (JIANT 0.6.71) one a core: each renders its own parts at once (fx.c mix_block) */
 #define MOD (mod_c[MC_CPU() & 1u])
@@ -367,19 +373,52 @@ static __attribute__((noinline)) void life_mod(track_t *t, int32_t *off)
 }
 static void (*const volatile LIFE_MOD)(track_t *, int32_t *) = life_mod;   /* (mod_begin's RAM copy: its reach) */
 
+/* (V10.8.21, BYTE's) DRONE CLAY's four: what each adds now on its DEST, as a slot of the whole range (clay.c clay_tick;
+ * its AMOUNT in it) */
+static __attribute__((noinline)) void clay_mod(mod_t *mp, const track_t *t, uint32_t tr, int32_t *off)
+{
+    const int16_t *p = t->p;
+    uint32_t k, j;
+    for (k = 0; k < 4u; k++) {                   /* (V10.8.21, BYTE's) DRONE CLAY's four: what each adds now on its DEST,
+                                                         * as a slot of the whole range (seq.c clay.c clay_tick; its AMOUNT in it) */
+        uint32_t d = CLAY_MD[clamp(clay[tr][CL_MF(k, 0u)], 0, CLAY_ND - 1)], id;
+        int32_t x = clay_v[tr][k];
+        const param_desc_t *pd;
+        if (!d || !x)
+            continue;
+        if (d == MD_CUT && (t->engine == ENGI_WHEEL || t->engine == ENGI_DRUM ||
+                            t->engine == ENGI_STRING || t->engine == ENGI_INPUT)) d = MD_FCUT;
+        if (d <= MD_AMP) {
+            mp->amp |= d == MD_AMP;
+            mod_voice_add(MS_LFO, d, x, 64, &mp->pit, &mp->cut, &mp->shp, &mp->gain);
+            continue;
+        }
+        id = d == MD_FCUT && t->engine == ENGI_ANALOG ? P_E4 : mod_param(d);
+        pd = mod_track_desc(t, id);
+        for (j = 0; j < mp->nk && mp->kid[j] != id; j++)
+            ;
+        if (j == mp->nk) {
+            mp->kid[j] = (uint8_t)id;
+            mp->keep[j] = p[id];
+            off[j] = 0;
+            mp->nk++;
+        }
+        off[j] += (x * (id == P_LRATE ? 127 : pd->max - pd->min)) >> 15;
+    }
+}
 /* before a part's block (fx.c mix_part): the per-track offsets, the per-block destinations into t->p.
  * 0 = no slot active (then nothing changed) */
 static __attribute__((noinline)) int mod_begin(track_t *t)
 {
     mod_t *const mp = &MOD;                          /* (0.6.71) this core's */
     const int16_t *p = t->p;
-    int32_t lfo, off[NMSLOT + MX_N + LF_N + 1u];
-    uint32_t k, j, n;
+    int32_t lfo, off[NMSLOT + MX_N + LF_N + 1u + 4u];
+    uint32_t k, j, n, tr = (uint32_t)(t - trk) % NTRK, cl = clay[tr][CL_ON] != 0;
     mp->on = 0;
     for (k = 0; k < NMSLOT; k++)
         if (p[P_M1SRC + 3u * k] && p[P_M1DST + 3u * k] && p[P_M1AMT + 3u * k])
             break;
-    if (k == NMSLOT && !mx_trk && !life_on && !pkr_v)
+    if (k == NMSLOT && !mx_trk && !life_on && !pkr_v && !cl)
         return 0;
     lfo = mulq15(t->lfo_val, t->lfo_fade);              /* (the LFO of the block before: track_render ticks it) */
     for (j = k; j < NMSLOT; j++)
@@ -435,6 +474,9 @@ static __attribute__((noinline)) int mod_begin(track_t *t)
                                                                                                * as before its in-time values) */
         }
     }
+    if (cl)                                             /* (V10.8.21, BYTE's) DRONE CLAY's four (out of mod_begin's
+                                                         * budget: its own function) */
+        clay_mod(mp, t, tr, off);
     if (life_on || pkr_v)                               /* (V10.7.62) LIFE's routes; (V10.7.66) a punch-in key's */
         LIFE_MOD(t, off);
     for (j = 0; j < mp->nk; j++) {

@@ -132,6 +132,8 @@ typedef struct {
                                                 * block after the kit's, when one is set; absent: 0 */
     uint8_t dx_gain;                           /* (V10.7.63) the kit's GAIN (eng_drum.c dx_gain, 0..12): FUNC's 'K' 'G' block
                                                 * after LIFE's, when set; absent: 0 */
+    uint8_t clay[NTRK][CLAY_NF];               /* (V10.8.21) DRONE CLAY (seq.c clay.c clay, 0..127): FUNC's 'C' 'Y' blocks
+                                                * (track, its settings) after DRUM-X's MATH, one per track ON; absent: off */
     uint8_t lf[4];                             /* (V10.7.62) LIFE (params.c life_v, 0..100): FUNC's 'L' 'F' block after
                                                 * MACROS', when any is set; absent: all 0 (off) */
     uint32_t sum;
@@ -603,6 +605,8 @@ static uint32_t proj_packed_size(const project_t *q)
     n += q->g[G_HPROG] ? 6u : 0u;                       /* (V10.7.66) HARMONY */
     for (i = 0; i < 8u && !q->dx_fml[i]; i++) {}
     n += i < 8u ? 18u : 0u;                             /* (V10.7.74) DRUM-X's MATH modulators */
+    for (t = 0; t < NTRK; t++)                          /* (V10.8.21) DRONE CLAY */
+        if (q->clay[t][CL_ON]) n += 3u + CLAY_NF;
     return n;
 }
 static int proj_split_ok(const uint8_t *s)
@@ -818,6 +822,11 @@ static int proj_pack(project_store_t *out, const project_t *q)
     if (i < 8u) {                                       /* (V10.7.74) DRUM-X's MATH modulators (the last) */
         b[pos++] = 'D'; b[pos++] = 'F'; memcpy(b + pos, q->dx_fml, 16); pos += 16u;
     }
+    for (i = 0; i < NTRK; i++)                          /* (V10.8.21) DRONE CLAY: a block per track ON (the last) */
+        if (q->clay[i][CL_ON]) {
+            b[pos++] = 'C'; b[pos++] = 'Y'; b[pos++] = (uint8_t)i;
+            memcpy(b + pos, q->clay[i], CLAY_NF); pos += CLAY_NF;
+        }
     memcpy(b + PROJC_PFX_OFF, q->pfx_lane, sizeof q->pfx_lane);
     b[PROJC_PFX_OFF + sizeof q->pfx_lane] = q->pfx_ltgt > 2u ? 0u : q->pfx_ltgt;
     for (i = 0; i < 4u; i++)
@@ -1178,6 +1187,12 @@ static int proj_unpack_c(project_t *q, const uint8_t *b)
         for (i = 0; i < 16u; i++) q->dx_fml[i] = b[pos + 2u + i] <= (i < 8u ? 48u : 23u) ? b[pos + 2u + i] : 0u;
         pos += 18u;
     }
+    memset(q->clay, 0, sizeof q->clay);                 /* (V10.8.21) DRONE CLAY: as saved, else off */
+    while (pos + 3u + CLAY_NF <= room && b[pos] == 'C' && b[pos + 1u] == 'Y') {
+        if (b[pos + 2u] < NTRK)
+            for (i = 0; i < CLAY_NF; i++) q->clay[b[pos + 2u]][i] = b[pos + 3u + i] & 127u;
+        pos += 3u + CLAY_NF;
+    }
     proj_new_tracks(q, nt);                             /* (a FUNC of fewer tracks: the rest at power-on) */
     for (t = nt; t < NTRK; t++)
         memcpy(q->fm6[t], FM6_INIT, FM6_PACKED);
@@ -1330,6 +1345,7 @@ static __attribute__((noinline)) void proj_master_put(project_t *p)
     for (k = 0; k < 4u; k++) p->lf[k] = (uint8_t)clamp(life_v[k], 0, 100);   /* (V10.7.62) LIFE, the same */
     p->dx_gain = (uint8_t)clamp(dx_gain, 0, 12);        /* (V10.7.63) the kit's GAIN, as the kit's TONE */
     for (k = 0; k < NTRK; k++) p->tgain[k] = (uint8_t)clamp(trk_gain[k], 0, 12);   /* (V10.7.64) */
+    for (k = 0; k < NTRK * CLAY_NF; k++) (&p->clay[0][0])[k] = (uint8_t)clamp((&clay[0][0])[k], 0, 127);   /* (V10.8.21) */
     for (k = 0; k < 4u; k++) p->eq[k] = (int8_t)eq_v[k];
     p->tp[0] = (uint8_t)tape_v[0]; p->tp[1] = (uint8_t)tape_v[1];
 }
@@ -1597,6 +1613,8 @@ static int project_restore_runtime(const project_t *input)
         for (k = 0; k < 4u; k++) life_v[k] = p->lf[k] > 100u ? 100 : p->lf[k];   /* (V10.7.62) LIFE */
         dx_gain = p->dx_gain > 12u ? 12 : p->dx_gain;   /* (V10.7.63) the kit's GAIN */
         for (k = 0; k < NTRK; k++) trk_gain[k] = p->tgain[k] > 12u ? 12 : p->tgain[k];   /* (V10.7.64) */
+        for (k = 0; k < NTRK * CLAY_NF; k++) (&clay[0][0])[k] = (&p->clay[0][0])[k] & 127u;   /* (V10.8.21) DRONE CLAY */
+        memset(clay_dn, 0, sizeof clay_dn); memset(clay_nn, 0, sizeof clay_nn);   /* (its notes: the load's all-off) */
     }
     {                                                   /* (V10.31) SCENE */
         uint32_t i;
@@ -1712,6 +1730,7 @@ static __attribute__((noinline)) void system_init(void)   /* (snd8: out of its c
     life_v[0] = life_v[1] = life_v[2] = life_v[3] = 0;  /* (V10.7.62) LIFE off */
     dx_gain = 0;                                        /* (V10.7.63) the kit's GAIN */
     memset(trk_gain, 0, sizeof trk_gain);               /* (V10.7.64) the tracks' GAIN */
+    memset(clay, 0, sizeof clay); memset(clay_b0, 0, sizeof clay_b0); memset(clay_pq, 0, sizeof clay_pq);   /* (V10.8.21) DRONE CLAY off */
     for (i = 0; i < 5u; i++) song.g[KEEP[i]] = kept[i];
     kept[0] = dice_secs;
     chain_defaults(&chain_config);

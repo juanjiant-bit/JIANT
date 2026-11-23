@@ -279,6 +279,9 @@ static const param_desc_t DXIMG_DESC = {"IMAGE", F_INT, 0, 127, 0, 0};       /* 
 #define ID_EU0 0xF0u
 #define ID_SC0 0xE8u                                    /* (V10.25) SCL > SCENE's four (ui_scene.c sc_desc) */
 #define ID_MU0 0xE4u                                    /* (V10.16) SEQ > MUTATE's four (EK_U0 + 0..3) */
+#define ID_CL0 0xC0u                                    /* (V10.8.21) DRONE CLAY's settings (seq.c clay.c clay_desc: CL_*) */
+_Static_assert(ID_CL0 + CLAY_NF <= 0xDFu && P_COUNT < ID_CL0, "DRONE CLAY's ids between the parameters and GAIN's");
+static const param_desc_t *clay_desc(const track_t *t, uint32_t f, int16_t **valp);   /* (seq.c clay.c) */
 static const param_desc_t *eu_desc(uint32_t k, int16_t **valp);
 static const param_desc_t *sc_desc(uint32_t k, int16_t **valp);   /* (V10.25) ui_scene.c */
 static const char *const N_CHRD[] = {"OFF", "TRIAD", "7TH", "ADD9", "SUS2", "SUS4", "MAJ", "MIN", "7", "MAJ7", "MIN7",
@@ -653,7 +656,7 @@ enum { GR_NONE, GR_ADSR, GR_LFO, GR_STEPS, GR_ARP, GR_SCALE, GR_FX, GR_ROLL, GR_
        GR_SLCR, GR_MOD, GR_PATS, GR_SONG, GR_TOOLS, GR_CHANCE, GR_MOTION, GR_EVENTS, GR_DXSND, GR_MSEQ, GR_SLPIT,
        GR_FMOP, GR_FMOP2, GR_FMENV,
        GR_COMP, GR_EUCLID, GR_MORPH, GR_DXIMG, GR_FUGUE, GR_SHAPE, GR_PUNCH, GR_BUSES, GR_FOCUS, GR_STAGE,
-       GR_LYRIC, GR_GCOMP, GR_LIVE, GR_SCENE, GR_SONGSAVE, GR_SPLIT, GR_SPLIT2, GR_LYRSTEP, GR_TRACKGEN, GR_SWARM, GR_HARM };   /* append only */   /* (0.8.5:
+       GR_LYRIC, GR_GCOMP, GR_LIVE, GR_SCENE, GR_SONGSAVE, GR_SPLIT, GR_SPLIT2, GR_LYRSTEP, GR_TRACKGEN, GR_SWARM, GR_HARM, GR_CLAY };   /* append only */   /* (0.8.5:
                                                          * LENTE's EDIT > FOCUS, ENV > STAGE) */   /* (0.6.99) FX > PUNCH: the punch-in lane */   /* (JIANT 0.6.39) SEQ > COMP: the step components (ui_input.c comp_*, ui_graph.c graph_comp) */   /* (JIANT 0.6.10, from Felucca 1.5: FM6's operator pages, ui_fm6op.c) */
 
 typedef struct {
@@ -898,6 +901,14 @@ static const page_t PAGES[] = {
                                                          * WAVE INT INT 3 DETUNE, the intervals together; MIX on FOCUS */
     {"EDIT 2", FAM_EDIT, SC_ENGINE, GR_NONE, {P_E7, P_E4, P_E5, P_E6}},   /* (codex/coherence) FM6's EDIT 2 (PATCH): SLOT on KNOB 1
                                                          * (rule 4: a page that picks, picks with KNOB 1), MEG VMOD SPREAD */
+    /* (V10.8.21, JIANT BYTE's DRONE CLAY) a track's sequencer: its drone, four modulators on the matrix (seq.c clay.c) */
+    {"DRONE CLAY", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_ON, ID_CL0 + CL_OCT, ID_CL0 + CL_RATE, ID_CL0 + CL_RUN}},
+    {"CLAY MOD 1", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + 4u, ID_CL0 + 5u, ID_CL0 + 6u, ID_CL0 + 7u}},
+    {"CLAY MOD 2", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + 8u, ID_CL0 + 9u, ID_CL0 + 10u, ID_CL0 + 11u}},
+    {"CLAY MOD 3", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + 12u, ID_CL0 + 13u, ID_CL0 + 14u, ID_CL0 + 15u}},
+    {"CLAY MOD 4", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + 16u, ID_CL0 + 17u, ID_CL0 + 18u, ID_CL0 + 19u}},
+    {"CLAY DECAY", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_DEC, ID_CL0 + CL_DEC + 1u, ID_CL0 + CL_DEC + 2u, ID_CL0 + CL_DEC + 3u}},
+    {"CLAY TIME", FAM_SEQ, SC_TRACK, GR_CLAY, {ID_CL0 + CL_STEP, ID_CL0 + CL_SEED, 0xFF, 0xFF}},
 };
 #define SPLIT_PAGE(pg) ((uint32_t)((pg)->graph - GR_SPLIT) < 2u)
 #define FIT_PAGE(pg) ((pg)->graph == GR_STEPS && (pg)->id[1] == 0xFFu)   /* RHYTHM (BAR: KNOB 2 LEN) */
@@ -1013,6 +1024,8 @@ static const param_desc_t *page_desc(const page_t *pg, uint32_t slot, int16_t **
         return eu_desc(id - ID_MU0 + 8u, valp);
     if (id >= ID_SC0 && id < ID_SC0 + 4u)            /* (V10.25) SCENE's */
         return sc_desc(id - ID_SC0, valp);
+    if (id >= ID_CL0 && id < ID_CL0 + CLAY_NF)        /* (V10.8.21) DRONE CLAY's (seq.c clay.c clay_desc) */
+        return clay_desc(TSEL, id - ID_CL0, valp);
     *valp = &TSEL->p[id];
     if (id == P_APRATE && TSEL->p[P_APSYNC])         /* (0.6.9) AUTO PAN on the tempo: a division */
         return &AP_BEAT;

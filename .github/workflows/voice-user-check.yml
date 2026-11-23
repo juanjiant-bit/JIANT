@@ -180,6 +180,8 @@ jobs:
           build/song-check/jam | tee build/song-check/jam.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src -Itests tests/stepfx_test.c -lm -o build/song-check/stepfx
           build/song-check/stepfx | tee build/song-check/stepfx.log
+          cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src -Itests tests/clay_test.c -lm -o build/song-check/clay
+          build/song-check/clay | tee build/song-check/clay.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/life_test.c -lm -o build/song-check/life
           build/song-check/life | tee build/song-check/life.log
           cc -O1 -w -Wno-implicit-function-declaration -Ibuild/gen -Ifirmware/src tests/fill_test.c -lm -o build/song-check/fill
