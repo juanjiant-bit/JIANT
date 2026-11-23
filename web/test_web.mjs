@@ -69,8 +69,73 @@ const E = vm.runInNewContext(proto + `
    FM4, fromDigital, fromPerc, DRUM_KIT_E,
    MENU: typeof MENU === "undefined" ? null : MENU, MENU_TABS: typeof MENU_TABS === "undefined" ? null : MENU_TABS,
    readDeviceMenu: typeof readDeviceMenu === "undefined" ? null : readDeviceMenu, fm6Bank, crc32, lyricText,
-   deviceName, editorPort, HP_PAGES, hpIds })`,
+   deviceName, editorPort, HP_PAGES, hpIds,
+   scrEncode: typeof scrEncode === "undefined" ? null : scrEncode, scrDecode: typeof scrDecode === "undefined" ? null : scrDecode })`,
 { setTimeout, clearTimeout, setInterval, clearInterval, console });
+
+/* the screen mirror (78 SCREEN, 79 SCREEN_DATA; firmware/src/editor_screen.c): the editor's encoder gives the firmware's
+   bytes (a vector from tests/editor_test.c's scr_tap), its decoder the pixels back (a fill, runs, noise, a stride, frames
+   that start mid-row); against the mock: SCREEN's query, on, the whole picture then the rows that change, off, and no
+   reply from firmware without it */
+async function editorScreen() {
+  if (!E.scrDecode) { console.log("SCREEN: (editor.html has no screen mirror)".padEnd(64) + " skip"); return; }
+  const C = E.CMD;
+  /* the firmware's frame for a 24 x 5 strip at 3, 7 (tests/editor_test.c's scr_tap, the same seed) */
+  const FW = [240,125,70,76,79,0,3,0,7,0,24,0,5,0,0,0,0,113,17,20,92,112,63,0,113,93,6,113,105,16,127,64,0,59,113,45,4,59,29,116,32,6,29,117,82,13,117,0,17,59,29,116,122,12,114,67,31,59,29,59,29,59,114,108,26,116,7,18,29,59,29,114,102,5,29,114,109,22,112,4,6,59,29,114,40,10,29,59,29,117,120,16,29,59,29,59,29,59,29,117,24,14,29,115,40,6,116,55,28,59,29,115,43,19,112,106,24,116,89,25,29,59,115,47,12,59,29,59,117,35,18,117,81,14,115,36,29,59,115,34,24,59,29,59,116,38,2,59,117,49,24,113,77,26,29,112,63,0,29,59,29,115,90,10,127,64,0,59,113,27,30,59,29,59,29,112,116,15,29,59,29,59,115,18,3,247];
+  const img = new Uint16Array(24 * 5);
+  for (let i = 0, seed = 7; i < img.length; i++) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    img[i] = i < 30 ? 0x1234 : (seed >>> 28) < 6 ? seed >>> 16 : (i & 1 ? 0xF800 : 0x07E0);
+  }
+  const fr = E.scrEncode(img, 3, 7, 24, 5);
+  ok(fr.length === 1 && eq(E.frame(C.SCREEN_DATA, fr[0]), FW), "SCREEN: the editor's encoder gives the firmware's bytes");
+  const fb = new Uint16Array(240 * 240);
+  const box = E.scrDecode(FW.slice(5, -1), fb);
+  let same = box && box.x === 3 && box.y === 7 && box.w === 24 && box.h === 5;
+  for (let j = 0; j < 5; j++) for (let i = 0; i < 24; i++) same &&= fb[(7 + j) * 240 + 3 + i] === img[j * 24 + i];
+  ok(same, "SCREEN: the firmware's frame decodes to its pixels, in its box");
+  /* noise through a stride: many frames, each one alone */
+  const big = new Uint16Array(240 * 240);
+  for (let i = 0, seed = 1; i < big.length; i++) { seed = (Math.imul(seed, 1103515245) + 12345) >>> 0; big[i] = i % 7 < 3 ? 0x0841 : seed >>> 16; }
+  const many = E.scrEncode(big.subarray(10), 5, 2, 200, 230, 240);
+  fb.fill(0);
+  let fine = many.length > 50 && many.every((f) => f.length <= 12 + 480 && f.every((b) => b >= 0 && b < 128));
+  for (const f of [...many].reverse()) fine &&= !!E.scrDecode(f, fb);          /* (any order: each frame stands alone) */
+  for (let j = 0; j < 230; j++) for (let i = 0; i < 200; i++) fine &&= fb[(2 + j) * 240 + 5 + i] === big[10 + j * 240 + i];
+  ok(fine, "SCREEN: noise through a stride: 7-bit frames <= 0.5 KiB, decoded in any order");
+  ok(E.scrDecode([0, 0, 2, 0, 0, 16, 0, 1, 0, 0, 0, 0, 0x40], fb) === null && E.scrDecode([1, 0, 0], fb) === null,
+    "SCREEN: a box past the screen or a short frame: refused");
+  /* the mock: query, on, the picture, the playhead's rows, off */
+  const m = E.makeMockDevice({ auto: false });
+  const shots = [];
+  const link = new E.Link((d) => [...m.access.outputs.values()][0].send(d), { timeout: 300, onPush: (f) => shots.push(f) });
+  [...m.access.inputs.values()][0].onmidimessage = (e) => link.receive(e.data);
+  const q = E.parse[C.SCREEN](await link.request(E.req.screen(0)));
+  ok(q.rc === 0 && !q.on && q.w === 240 && q.h === 240, "SCREEN 0: rc 0, off, 240 x 240");
+  const on = E.parse[C.SCREEN](await link.request(E.req.screen(1)));
+  await new Promise((r) => setTimeout(r, 450));
+  const mine = new Uint16Array(240 * 240);
+  for (const f of shots) E.scrDecode(f.a, mine);
+  ok(on.on === 1 && shots.length > 3 && shots.every((f) => f.cmd === C.SCREEN_DATA) && shots[0].a[0] === 1,
+    "SCREEN 1: on; a fill, then the whole screen, then the rows that change");
+  /* (the mock's own picture: m's closure; the playhead's rows match the cells drawn above them) */
+  ok(mine[0] !== 0 && mine[45 * 240 + 130] !== mine[0] && mine.subarray(224 * 240, 225 * 240).some((c) => c !== mine[0]),
+    "SCREEN: the mirror holds the mock's picture and its moving playhead");
+  const off = E.parse[C.SCREEN](await link.request(E.req.screen(4)));
+  const n = shots.length;
+  await new Promise((r) => setTimeout(r, 300));
+  ok(!off.on && shots.length === n, "SCREEN 4: off, nothing more sent");
+  const bad = E.parse[C.SCREEN](await link.request(E.req.screen(9)));
+  ok(bad.rc === 1, "SCREEN with an unknown op: rc 1");
+  link.close();
+  const old = E.makeMockDevice({ auto: false, noScreen: true });
+  const link2 = new E.Link((d) => [...old.access.outputs.values()][0].send(d), { timeout: 150 });
+  [...old.access.inputs.values()][0].onmidimessage = (e) => link2.receive(e.data);
+  let answered = true;
+  try { await link2.request(E.req.screen(0), { retries: 0, quiet: true }); } catch (e) { answered = false; }
+  ok(!answered, "SCREEN on firmware without the mirror: no reply (the editor hides its button)");
+  link2.close();
+}
 
 /* (JIANT 0.6.11, from Felucca 1.4.1's test) FM6's voice bank (cmds 74..77; the editor's fm6Bank) against the mock: INFO 56 01 32, a 32-voice .syx
    sent whole (BEGIN, 32 WRITEs, END with the CRC), LIST's names, SLOT B1..B32 loading the exact records, empty bank
@@ -2058,6 +2123,7 @@ function siteRedirects() {
 
 await editorMock();
 await editorFm6Bank();
+await editorScreen();
 await editorLyric();
 await editorSamplePresets();
 mockTables();

@@ -13,7 +13,7 @@ static unsigned char host_flash[0x2000];                 /* fl_erase4k / fl_writ
 #undef main
 
 static uint32_t host_progress = 1, host_erases, host_writes;
-static uint8_t host_wire[4096];
+static uint8_t host_wire[1u << 20];   /* (the screen mirror's test: a whole screen of frames) */
 static uint32_t host_wire_n;
 static void host_drain(void)
 {
@@ -63,6 +63,8 @@ static int st_read(uint32_t off, void *p, uint32_t n) { (void)off; (void)p; (voi
 static int st_prog(uint32_t off, const void *p, uint32_t n) { (void)off; (void)p; (void)n; return -1; }
 static int st_erase(uint32_t off) { (void)off; return -1; }
 #include "../firmware/src/storage.c"
+#define SCR_HAS_LCD 1                                    /* (the screen mirror: lcd.c's hook, called by screen_mirror) */
+static uint8_t scr_on;
 #include "../firmware/src/editor.c"
 
 static int check(const char *what, int ok)
@@ -1067,12 +1069,128 @@ static int drum_kit_retired(void)
     return bad;
 }
 
+
+/* the screen mirror (78 SCREEN, 79 SCREEN_DATA, editor_screen.c): SCREEN's ops, and what scr_tap sends decoded back
+ * (as editor.html scrDecode does) to the very pixels drawn: a fill, the canvas with text and cards, noise, a stride */
+static uint16_t scr_fb[240 * 240];
+static int scr_decode(const uint8_t *w, uint32_t n, uint32_t *frames, uint32_t *maxlen)
+{
+    uint32_t i = 0;
+    *frames = 0; *maxlen = 0;
+    while (i < n) {
+        uint32_t e = i, x, y, fw, fh, k, end, prev = 0, j;
+        uint16_t tab[64] = {0};
+        while (e < n && w[e] != 0xF7) e++;
+        if (e >= n || w[i] != 0xF0 || w[i + 4] != ED_SCREEN_DATA) return -1;
+        if (e - i + 1u > *maxlen) *maxlen = e - i + 1u;
+        (*frames)++;
+        x = w[i + 6] | w[i + 7] << 7; y = w[i + 8] | w[i + 9] << 7;
+        fw = w[i + 10] | w[i + 11] << 7; fh = w[i + 12] | w[i + 13] << 7;
+        k = w[i + 14] | w[i + 15] << 7 | (uint32_t)w[i + 16] << 14;
+        end = fw * fh;
+        if (x + fw > 240u || y + fh > 240u) return -2;
+        if (w[i + 5] == 1u) {
+            uint32_t c = (w[i + 17] & 15u) << 12 | w[i + 18] << 5 | w[i + 19];
+            for (j = 0; j < end; j++) scr_fb[(y + j / fw) * 240u + x + j % fw] = (uint16_t)c;
+            i = e + 1u;
+            continue;
+        }
+        for (j = i + 17u; j < e;) {
+            uint32_t t = w[j++], c, r = 1;
+            if (t < 0x40u) c = tab[t];
+            else if (t < 0x68u) { c = prev; r = t - 0x40u + 1u; }
+            else if (t < 0x70u) { c = prev; r = 41u + ((t & 7u) << 7 | w[j++]); }
+            else { c = (t & 15u) << 12 | w[j] << 5 | w[j + 1]; j += 2; tab[scr_hash(c)] = (uint16_t)c; }
+            prev = c;
+            while (r--) {
+                if (k >= end) return -3;
+                scr_fb[(y + k / fw) * 240u + x + k % fw] = (uint16_t)c;
+                k++;
+            }
+        }
+        i = e + 1u;
+    }
+    return 0;
+}
+static int screen_mirror(void)
+{
+    static uint16_t img[240 * 240];
+    uint8_t a[2];
+    uint32_t i, j, n, frames, maxlen, ok;
+    uint32_t seed = 12345u;
+    int bad = 0;
+    reset();
+    scr_on = 0; fm1_ms = 1000;
+    n = request(ED_SCREEN, a, 0);
+    bad += check("SCREEN query: op 0, rc 0, off, 240 x 240", n == 13u && host_wire[4] == ED_SCREEN && host_wire[5] == 0 &&
+        host_wire[6] == 0 && host_wire[7] == 0 && (host_wire[8] | host_wire[9] << 7) == 240u &&
+        (host_wire[10] | host_wire[11] << 7) == 240u);
+    host_wire_n = 0; scr_tap(0, 0, 240, 240, 0, 0, 0x1234u); host_drain();
+    bad += check("SCREEN off: nothing sent", host_wire_n == 0);
+    a[0] = 1; ui.force = 0;
+    request(ED_SCREEN, a, 1);
+    bad += check("SCREEN 1: on, the whole screen redrawn (ui.force)", scr_on && ui.force && host_wire[7] == 1);
+    ed_w.last_ms = fm1_ms;
+    memset(scr_fb, 0, sizeof scr_fb);
+    host_wire_n = 0; scr_tap(0, 0, 240, 240, 0, 0, 0xF81Fu); host_drain();
+    ok = !scr_decode(host_wire, host_wire_n, &frames, &maxlen) && frames == 1u && host_wire_n == 21u;
+    for (i = 0; i < 240u * 240u; i++) ok &= scr_fb[i] == 0xF81Fu;
+    bad += check("a fill: one 21-byte frame, the colour everywhere", ok);
+    /* the canvas as the UI draws it: cards, the three faces, in each palette */
+    for (j = 0; j < 3u; j++) {
+        palette_set(j);
+        cv_begin(240, 150, T_BG);
+        cv_rrect(8, 8, 108, 60, 6, T_SURF, T_BG);
+        cv_rrect(124, 8, 108, 60, 6, T_THEME, T_BG);
+        cv_text(14, 20, &AF_S, "CUTOFF 1.2 kHz", T_TEXT);
+        cv_text(14, 80, &AF_M, "ANALOG  A12 BASS", T_TEXT);
+        cv_text(14, 110, &AF_L, "120 BPM", T_ACCENT);
+        host_wire_n = 0; scr_tap(0, 45, 240, 150, cv_px, 240, 0); host_drain();
+        ok = !scr_decode(host_wire, host_wire_n, &frames, &maxlen) && maxlen <= 18u + SCR_CAP + 1u;
+        for (i = 0; i < 240u * 150u; i++)
+            ok &= scr_fb[45u * 240u + i] == (uint16_t)(cv_px[i] >> 8 | cv_px[i] << 8);
+        printf("editor:   palette %u: 240 x 150 canvas in %u frames, %u B (%.2f B a pixel)\n", (unsigned)j,
+               (unsigned)frames, (unsigned)host_wire_n, host_wire_n / (240.0 * 150.0));
+        bad += check("a canvas of cards and text decodes to its pixels, frames <= 0.5 KiB", ok);
+    }
+    /* noise (nothing repeats: every pixel in full) through a stride, inside the screen */
+    for (i = 0; i < 240u * 240u; i++) { seed = seed * 1664525u + 1013904223u; img[i] = (uint16_t)(seed >> 16); }
+    host_wire_n = 0; scr_tap(17, 3, 200, 237, img + 5, 240, 0); host_drain();
+    ok = !scr_decode(host_wire, host_wire_n, &frames, &maxlen) && maxlen <= 18u + SCR_CAP + 1u;
+    for (j = 0; j < 237u; j++)
+        for (i = 0; i < 200u; i++)
+            ok &= scr_fb[(3u + j) * 240u + 17u + i] == (uint16_t)(img[j * 240u + 5u + i] >> 8 | img[j * 240u + 5u + i] << 8);
+    bad += check("noise through a stride: every pixel, split in frames that start mid-row", ok && frames > 100u);
+    /* a long run: one colour across rows, past the longest run token */
+    for (i = 0; i < 240u * 240u; i++) img[i] = 0x3412u;
+    host_wire_n = 0; scr_tap(0, 0, 240, 240, img, 240, 0); host_drain();
+    ok = !scr_decode(host_wire, host_wire_n, &frames, &maxlen) && frames == 1u && host_wire_n < 150u;
+    for (i = 0; i < 240u * 240u; i++) ok &= scr_fb[i] == 0x1234u;
+    bad += check("one colour on a whole strip: runs across rows, one small frame", ok);
+    host_wire_n = 0; scr_tap(230, 0, 20, 1, img, 20, 0); host_drain();
+    bad += check("a strip past the panel's edge is not sent", host_wire_n == 0);
+    fm1_ms += SCR_IDLE_MS + 1u;
+    host_wire_n = 0; scr_tap(0, 0, 10, 10, 0, 0, 0); host_drain();
+    bad += check("4 s without a request from the editor: off by itself, nothing sent", !scr_on && host_wire_n == 0);
+    a[0] = 1; request(ED_SCREEN, a, 1);
+    usb.config = 0;
+    host_wire_n = 0; scr_tap(0, 0, 240, 240, img, 240, 0); scr_tap(0, 0, 240, 240, img, 240, 0);
+    bad += check("nobody reads the port: off after the first frame that cannot go out", !scr_on && scr.lost == 1u);
+    usb.config = 1;
+    a[0] = 1; request(ED_SCREEN, a, 1);
+    a[0] = 4; request(ED_SCREEN, a, 1);
+    bad += check("SCREEN 4: off", !scr_on && host_wire[7] == 0);
+    a[0] = 9; request(ED_SCREEN, a, 1);
+    bad += check("SCREEN with an unknown op: rc 1, nothing changes", host_wire[6] == 1 && !scr_on);
+    return bad;
+}
+
 #ifndef EDITOR_TEST_NO_MAIN                              /* (robust_test.c, fuzz_*.c: this file is their base) */
 int main(void)
 {
     int bad = preferences() + motion_locks() + framing() + uart_recovery() + steps() + stop_failures() + song_protocol() + malformed_saves() +
               fm6_patches() + user_preset_roundtrip() + live_sync() + usb_burst() + menu_protocol() + drum_kit_retired() +
-              lyric_protocol() + host_power();
+              lyric_protocol() + host_power() + screen_mirror();
     printf("%s\n", bad ? "EDITOR TEST FAILED" : "editor test passed");
     return bad != 0;
 }

@@ -12,6 +12,17 @@
 #endif
 
 static uint8_t lcd_small[64];
+
+/* the editor's screen mirror (editor_screen.c, EDITOR_PROTOCOL.md "Screen mirror"): while the editor asks for it, every
+ * fill and strip sent to the panel is also sent to the editor, compressed (the firmware keeps no frame of its own) */
+#if FELUCCA_OTA
+#define SCR_HAS_LCD 1
+static uint8_t scr_on;
+static void scr_tap(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px, uint32_t stride, uint32_t fill);
+#define SCR_TAP(x, y, w, h, px, stride, fill) do { if (scr_on) scr_tap(x, y, w, h, px, stride, fill); } while (0)
+#else
+#define SCR_TAP(x, y, w, h, px, stride, fill) ((void)0)
+#endif
 static uint8_t lcd_busy;           /* a lcd_data DMA may still run; CS is low */
 
 static void lcd_spin(uint32_t n)
@@ -75,6 +86,7 @@ static void lcd_fill(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint16_t c)
         w = 240u - x;
     if (y + h > 240u)
         h = 240u - y;
+    SCR_TAP(x, y, w, h, 0, 0, c);
     lcd_sync();
     k = 240u / w * w;                       /* whole rows per transfer (narrow fills: one DMA) */
     for (i = 0; i < k; i++)
@@ -91,6 +103,7 @@ static void lcd_blit(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint1
 {
     if (!w || !h)
         return;
+    SCR_TAP(x, y, w, h, px, w, 0);
     lcd_window(x, y, x + w - 1u, y + h - 1u);
     lcd_data(px, w * h * 2u);
 }
@@ -102,6 +115,7 @@ static void lcd_blit_stride(uint32_t x, uint32_t y, uint32_t w, uint32_t h, cons
     uint32_t r;
     if (!w || !h)
         return;
+    SCR_TAP(x, y, w, h, px, stride, 0);
     lcd_window(x, y, x + w - 1u, y + h - 1u);
     for (r = 0; r < h; r++)
         lcd_data(px + r * stride, w * 2u);

@@ -1141,6 +1141,36 @@ into plain ones (stress is not marked in singing) and ñ into "ny" before sendin
 flash write, also while playing): the track's lyric starts over at its next note. Saved with the project (FUNC's
 `L` `Y` block per track that has one; a project without it loads with none) and in the backup's runtime object (id 0).
 
+## Screen mirror (78, 79)
+
+The editor shows the device's 240 x 240 screen, as big as the computer's or the phone's screen (`firmware/src/editor_screen.c`;
+the editor's **Screen** button, or `?screen` in its URL to open it once connected). The firmware keeps no frame of its
+own (gfx.c draws strips straight to the panel), so while the mirror is on, `lcd.c` hands every fill and strip it sends to
+the panel to the mirror as well, which sends it on as `SCREEN_DATA` pushes. Firmware without it does not answer
+`SCREEN`: the editor hides its button.
+
+| Command | Request | Reply |
+| --- | --- | --- |
+| 78 SCREEN | op: 0 query, 1 on (and the whole screen redrawn: `ui.force`), 2 keep it on, 3 the whole screen again (while on), 4 off | op, rc (0 ok, 1 an unknown op or a device with no screen to mirror: the ports), on (0/1), width (2 x 7 bits, LSB first), height (2 x 7 bits) |
+| 79 SCREEN_DATA (push) | — | type, x, y, w, h (each 2 x 7 bits, LSB first), start (3 x 7 bits, LSB first), then the type's data |
+
+- **Type 1, a fill:** `start` 0, then a colour in full (below): the box w x h at x, y all that colour.
+- **Type 0, a strip's pixels:** the box w x h at x, y, row by row, from pixel `start` (counted from the box's top left,
+  `w` a row) on, as tokens. Each frame starts with an empty 64-colour table (all 0) and the colour before 0:
+  - `0x00..0x3F`: the colour at that place in the table (it becomes the colour before);
+  - `0x40..0x67`: the colour before, 1..40 pixels;
+  - `0x68..0x6F` then a byte `b`: the colour before, `41 + ((token & 7) << 7 | b)` pixels (41..1064);
+  - `0x70..0x7F` then two bytes `g`, `b`: a colour in full, RGB565 `(token & 15) << 12 | g << 5 | b`; it goes in the
+    table at `((c >> 11) * 3 + ((c >> 5) & 63) * 5 + (c & 31) * 7) & 63` and becomes the colour before.
+
+  A strip that does not fit one frame (480 token bytes at most) goes on in the next, its `start` where the last ended.
+  Every frame stands alone: a lost frame costs its pixels until they are drawn again (`SCREEN 3`).
+- It stops by itself 4 s after the editor's last request of any kind (the editor sends `SCREEN 2` every second; a hidden
+  tab or a phone gone to sleep stops it), and at once if a frame could not go out within 200 ms (nobody reads the port).
+- While it is on, the device's UI draws its frames as fast as USB takes them; a screen at rest costs nothing, a page that
+  moves all the time draws fewer frames a second. The sound does not wait (it runs in its interrupt). A whole screen of
+  the UI is about 0.1 byte a pixel (a 240 x 150 page ~4 KB; `tests/editor_test.c` prints it).
+
 ## Device and big CPUs (INFO `44`, `48`)
 
 JIANT runs on more than the FM-1, and the editor says which device answers and offers what that one has. Both tags

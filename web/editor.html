@@ -140,6 +140,22 @@
   .strip button { width: 100%; padding: 1px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .strip button.selb:disabled { opacity: 1; background: none; color: var(--dim); }
   #sysinfo th { padding-right: 16px; }
+  /* the screen mirror: the page's colours around the picture, the picture as big as it fits (square), its pixels
+     sharp or smoothed */
+  .mirror { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; background: var(--bg); color: var(--fg);
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  .mirror-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 16px; font-size: 13px; }
+  .mirror-bar #mirrorstat { color: var(--dim); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mirror-btns { display: flex; gap: 8px; margin-left: auto; }
+  .mirror-btns button { min-height: 36px; padding: 6px 12px; }
+  .mirror-btns button[aria-pressed="false"] { color: var(--dim); }
+  .mirror-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 0 8px 8px; }
+  .mirror canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: crisp-edges;
+                   image-rendering: pixelated; touch-action: manipulation; }
+  .mirror.smooth canvas { image-rendering: auto; }
+  .mirror:fullscreen .mirror-bar { opacity: 0.35; transition: opacity 0.3s; }
+  .mirror:fullscreen .mirror-bar:hover, .mirror:fullscreen .mirror-bar:focus-within { opacity: 1; }
+  body.mirroring { overflow: hidden; }
   [hidden] { display: none !important; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -159,6 +175,7 @@
       <span id="version" class="dim"></span>
       <span id="live" class="dim"></span>
       <span id="mock" class="dim" hidden data-t="mock"></span>
+      <button id="screenbtn" data-t="screenBtn" hidden></button>
     </div>
     <div id="status"></div>
     <details id="midiports"><summary data-t="midiPorts"></summary><p id="midiportcounts" class="dim"></p><p class="dim" data-t="midiPortHelp"></p><p class="bar">
@@ -177,6 +194,19 @@
     <div class="trackbar" id="trackbar" hidden><span class="dim" data-t="track"></span><span class="seg" id="trackbtns" role="group"></span></div>
   </header>
   <p class="hint" id="hint" hidden></p>
+  <!-- the screen mirror: the FM-1's screen as big as this screen (a phone: the FM-1 on its USB-C port) -->
+  <div class="mirror" id="mirror" role="dialog" aria-modal="true" aria-labelledby="mirrortitle" hidden>
+    <div class="mirror-bar">
+      <strong id="mirrortitle" data-t="screenTitle"></strong>
+      <span id="mirrorstat"></span>
+      <span class="mirror-btns">
+        <button id="mirrorsharp" data-t="screenSharp" aria-pressed="true"></button>
+        <button id="mirrorfull" data-t="screenFull"></button>
+        <button id="mirrorclose" data-t="screenClose"></button>
+      </span>
+    </div>
+    <div class="mirror-stage"><canvas id="mirrorcv" width="240" height="240" aria-label=""></canvas></div>
+  </div>
 
   <section class="panel" id="p-sound" data-tab="sound" data-dev hidden>
     <div class="browser" id="browser">
@@ -358,9 +388,68 @@ const CMD = { INFO: 1, GET: 2, SET: 3, DUMP: 4, DESC: 5, STEP_GET: 6, STEP_SET: 
   MOTION: 64, BACKUP_LIST: 65, BACKUP_GET: 66, BACKUP_PUT: 67,
   FM6_GET: 68, FM6_PUT: 69, FM6_LIST: 70, FM6_ERASE: 71,
   FM6B_BEGIN: 74, FM6B_WRITE: 75, FM6B_END: 76, FM6B_LIST: 77,   /* (JIANT 0.6.11, Felucca 1.4.1) FM6's voice bank */
+  SCREEN: 78, SCREEN_DATA: 79,                                     /* the screen mirror (EDITOR_PROTOCOL.md "Screen mirror") */
 };
 /* frames the device sends on its own (while WATCH is on); never replies */
-const PUSH = new Set([CMD.CHANGED, CMD.RELOAD, CMD.STEP_CHANGED, CMD.TRACK_CHANGED]);
+const PUSH = new Set([CMD.CHANGED, CMD.RELOAD, CMD.STEP_CHANGED, CMD.TRACK_CHANGED, CMD.SCREEN_DATA]);
+
+/* ---- the screen mirror (78 SCREEN, 79 SCREEN_DATA; firmware/src/editor_screen.c): a SCREEN_DATA frame is a fill
+   (type 1: x y w h, a colour) or the pixels of a strip from pixel `start` on, row by row (type 0), as tokens:
+   0x00..0x3F the colour at that hash, 0x40..0x67 the colour before 1..40 times more, 0x68..0x6F then a byte: 41..1064
+   times, 0x70..0x7F then two bytes: a colour in full (RGB565: 4 + 7 + 5 bits). Each frame starts with an empty hash table
+   and the colour before 0. */
+const SCR = { W: 240, H: 240, CAP: 480 };
+const scrHash = (c) => ((c >> 11) * 3 + ((c >> 5) & 63) * 5 + (c & 31) * 7) & 63;
+/* a = the frame's bytes after the command; fb: Uint16Array(240 * 240) of RGB565. -> the box drawn {x, y, w, h}, or null */
+function scrDecode(a, fb) {
+  if (a.length < 17) return null;
+  const x = a[1] | a[2] << 7, y = a[3] | a[4] << 7, w = a[5] | a[6] << 7, h = a[7] | a[8] << 7, end = w * h;
+  let k = a[9] | a[10] << 7 | a[11] << 14;
+  if (!w || !h || x + w > SCR.W || y + h > SCR.H) return null;
+  const put = (c, r) => { for (; r > 0 && k < end; r--, k++) fb[(y + (k / w | 0)) * SCR.W + x + k % w] = c; };
+  if (a[0] === 1) {
+    if (a.length < 15) return null;
+    k = 0; put((a[12] & 15) << 12 | a[13] << 5 | a[14], end);
+    return { x, y, w, h };
+  }
+  if (a[0] !== 0) return null;
+  const tab = new Uint16Array(64);
+  let prev = 0;
+  for (let j = 12; j < a.length;) {
+    const t = a[j++];
+    if (t < 0x40) { prev = tab[t]; put(prev, 1); }
+    else if (t < 0x68) put(prev, t - 0x40 + 1);
+    else if (t < 0x70) put(prev, 41 + ((t & 7) << 7 | (a[j++] | 0)));
+    else { prev = (t & 15) << 12 | (a[j] | 0) << 5 | (a[j + 1] | 0); j += 2; tab[scrHash(prev)] = prev; put(prev, 1); }
+  }
+  return { x, y, w, h };
+}
+/* the device's side (editor_screen.c scr_tap), for the mock device and the tests: px[] RGB565, a row every `stride`
+   pixels -> the frames' argument arrays (type 0) */
+function scrEncode(px, x, y, w, h, stride = w, cap = SCR.CAP) {
+  const frames = [];
+  let out, tab, prev, run, k = 0;
+  const hdr = (start) => { out = [0, x & 127, x >> 7, y & 127, y >> 7, w & 127, w >> 7, h & 127, h >> 7,
+    start & 127, (start >> 7) & 127, start >> 14]; tab = new Uint16Array(64); prev = 0; run = 0; };
+  const flushRun = () => {
+    if (!run) return;
+    if (run <= 40) out.push(0x40 + run - 1); else { const r = run - 41; out.push(0x68 | r >> 7, r & 127); }
+    run = 0;
+  };
+  hdr(0);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++, k++) {
+    const c = px[j * stride + i] & 0xFFFF;
+    if (out.length + 5 > 12 + cap) { flushRun(); frames.push(out); hdr(k); }
+    if (c === prev) { if (++run === 1064) flushRun(); continue; }
+    flushRun();
+    const hh = scrHash(c);
+    if (tab[hh] === c) out.push(hh); else { out.push(0x70 | c >> 12, (c >> 5) & 127, c & 31); tab[hh] = c; }
+    prev = c;
+  }
+  flushRun();
+  if (out.length > 12) frames.push(out);
+  return frames;
+}
 /* user preset bank: name 1..12 printable ASCII, a 16-step pattern of (note, flags 1 acc 2 slide 4 tie) */
 const UP = { NAME_MAX: 12, PAT: 16, LIST_MAX: 16 };
 const F = { INT: 0, PCT: 1, BIPCT: 2, TIME: 3, LFOHZ: 4, CUTOFF: 5, DB: 6, SEMI: 7, ENUM: 8, BPM: 9, NOTE: 10, ONOFF: 11, OCT: 12, STEPS: 13 };
@@ -428,6 +517,7 @@ class Reader {
 }
 
 const parse = {
+  [CMD.SCREEN](a) { const r = new Reader(a); return { op: r.b(), rc: r.b(), on: r.b(), w: r.b() | r.b() << 7, h: r.b() | r.b() << 7 }; },
   [CMD.INFO](a) {
     const r = new Reader(a);
     const o = { version: r.s(), nengines: r.b(), pcount: r.b(), gcount: r.b(), nstep: r.b(), pe0: r.b(), engines: [] };
@@ -621,6 +711,7 @@ function lyricText(s) {
 function upName(s) { return String(s ?? "").replace(/[^\x20-\x7E]/g, "").trim().slice(0, UP.NAME_MAX) || "PATCH"; }
 
 const req = {
+  screen: (op) => [CMD.SCREEN, [op]],                /* 0 query, 1 on (the whole screen), 2 keep on, 3 the whole screen again, 4 off */
   uiState: () => [CMD.UI_STATE, []],
   uiSet: (id, value) => [CMD.UI_SET, [id, value]],
   uiPalettes: () => [CMD.UI_PALETTES, []],
@@ -700,6 +791,7 @@ function replyMatches(cmd, args, a) {
     case CMD.FAV_GET: case CMD.FAV_SET:
       return ![0, 3, 4].includes(a[0]) || (a[1] === args[0] && a[2] === args[1] && a[3] === args[2] && a[4] === args[3]);
     case CMD.LYRIC: return a[0] === args[0];
+    case CMD.SCREEN: return a[0] === args[0];
     case CMD.GET: case CMD.SET: case CMD.DESC: return a[0] === args[0] && a[1] === args[1];
     case CMD.STEP_GET: case CMD.STEP_SET: case CMD.NAMES: return a[0] === args[0];
     case CMD.SONG: return a[0] === args[0];
@@ -2330,6 +2422,14 @@ function makeMockDevice(opt = {}) {
         b(a[0]); b(k); b(st.slots[k] ? 1 : 0);
         break;
       }
+      case CMD.SCREEN: {                            /* the screen mirror: a picture of its own, a bar moving (scrMock) */
+        if (opt.legacy || opt.noScreen) return null;   /* (firmware before it: no reply) */
+        const op = a.length ? a[0] : 0, bad = a.length > 1 || op > 4;
+        if (!bad && (op === 1 || (op === 3 && st.screen))) { st.screen = true; scrMock.full = true; scrMock.start(); }
+        else if (!bad && op === 4) st.screen = false;
+        b(op); b(bad ? 1 : 0); b(st.screen ? 1 : 0); b(240 & 127); b(240 >> 7); b(240 & 127); b(240 >> 7);
+        break;
+      }
       case CMD.NAMES:
         if (a.length < 1 || a[0] >= ENG.length) return null;
         b(a[0]); b(ENG[a[0]].presets.length); ENG[a[0]].presets.forEach((p) => s(p.name));
@@ -2364,6 +2464,38 @@ function makeMockDevice(opt = {}) {
         if (r && ((!syncCaps() && ((f.cmd === CMD.SET && f.a[0] === 1 && f.a[1] === G_ENGSEL) || f.cmd === CMD.PRESET))
           || (f.cmd === CMD.PROJECT && f.a[0] === 0 && ra[2]) || (f.cmd === CMD.UP_LOAD && !ra[1]))) reloadPush();
       }, flash ? 150 : 4 + Math.random() * 12);
+    },
+  };
+  /* the screen mirror's picture: a frame like the FM-1's (a header, two cards, a step row), the steps' playhead moving;
+     the whole screen when asked, then only the row that changed. Off by itself 4 s after the last request */
+  const scrMock = {
+    full: false, t: 0, timer: 0, fb: new Uint16Array(240 * 240),
+    rgb: (r, g, b) => (r >> 3) << 11 | (g >> 2) << 5 | b >> 3,
+    rect(x, y, w, h, c) { for (let j = y; j < y + h; j++) this.fb.fill(c, j * 240 + x, j * 240 + x + w); },
+    draw() {
+      const bg = this.rgb(20, 20, 24), surf = this.rgb(44, 44, 52), theme = this.rgb(236, 110, 80), text = this.rgb(230, 230, 230);
+      this.rect(0, 0, 240, 240, bg);
+      this.rect(0, 0, 240, 26, surf); this.rect(8, 9, 60, 8, text); this.rect(200, 9, 32, 8, theme);
+      this.rect(8, 40, 108, 70, surf); this.rect(124, 40, 108, 70, theme);
+      for (let i = 0; i < 16; i++) this.rect(8 + i * 14, 200, 12, 20, (i & 3) === 0 ? text : surf);
+      for (let i = 0; i < 100; i++) this.fb[(60 + (i >> 2)) * 240 + 16 + i] = this.rgb(120 + i, 120, 255 - i);   /* a gradient */
+    },
+    start() {
+      if (this.timer) return;
+      this.timer = setInterval(() => {
+        if (!st.screen || Date.now() - st.lastReq > 4000) { st.screen = false; clearInterval(this.timer); this.timer = 0; return; }
+        const send = (args) => setTimeout(() => { if (input.onmidimessage) input.onmidimessage({ data: Uint8Array.from(frame(CMD.SCREEN_DATA, args)) }); }, 0);
+        if (this.full) {
+          this.full = false; this.draw();
+          send([1, 0, 0, 0, 0, 240 & 127, 240 >> 7, 240 & 127, 240 >> 7, 0, 0, 0, 0x70 | this.fb[0] >> 12, (this.fb[0] >> 5) & 127, this.fb[0] & 31]);
+          for (const f of scrEncode(this.fb, 0, 0, 240, 240)) send(f);
+          return;
+        }
+        const step = this.t++ % 16, row = this.fb.subarray(224 * 240);
+        row.fill(this.rgb(20, 20, 24)); row.fill(this.rgb(236, 110, 80), 8 + step * 14, 20 + step * 14);
+        this.fb.copyWithin(225 * 240, 224 * 240, 225 * 240); this.fb.copyWithin(226 * 240, 224 * 240, 225 * 240);
+        for (const f of scrEncode(this.fb.subarray(224 * 240), 0, 224, 240, 3)) send(f);
+      }, 125);
     },
   };
   /* WATCH ends by itself watchMs after the last request */
@@ -2638,6 +2770,9 @@ const TEXT = {
     connecting: "接続中", reading: "読み込み中 ", steploading: "ステップを読み込み中 ",
     ready: "接続しました", disconnected: "切断されました", lost: "JIANT が外されました", instbusy: "別のタブでインストーラーが書き込み中です。終わってから接続してください。",
     noreply: "応答がありません", error: "エラー: ", busy: "処理中",
+    screenBtn: "画面", screenTitle: "画面", screenSharp: "シャープ", screenFull: "全画面", screenClose: "閉じる",
+    screenWait: "FM-1 の画面を待っています…", screenRate: " KB/s", screenNo: "このファームウェアには画面ミラーがありません（JIANT FM を更新してください）",
+    screenHelp: "スマートフォンで大きく見るには: このエディターをスマートフォンの Chrome で開き、FM-1 を USB-C（OTG）でつなぎます。",
     applying: "書き込み中 ", applied: "読み込みました", badfile: "ファイルを読み込めません: ",
     savedSlot: "保存しました: スロット ", loadedSlot: "読み込みました: スロット ", emptySlot: "空のスロットです: ",
     confirmSave: "スロット {n} に上書き保存しますか？", confirmLoad: "スロット {n} を読み込みますか？ すべてのトラックの音色とシーケンスが置き換わります（元に戻せません）。",
@@ -2742,6 +2877,9 @@ const TEXT = {
     connecting: "Connecting", reading: "Reading ", steploading: "Reading steps ",
     ready: "Connected", disconnected: "Disconnected", lost: "JIANT was unplugged", instbusy: "The installer is writing in another tab: connect when it has finished.",
     noreply: "No reply from the device", error: "Error: ", busy: "Busy",
+    screenBtn: "Screen", screenTitle: "Screen", screenSharp: "Sharp", screenFull: "Full screen", screenClose: "Close",
+    screenWait: "Waiting for the FM-1's screen…", screenRate: " KB/s", screenNo: "This firmware has no screen mirror (update JIANT FM)",
+    screenHelp: "To see it big on a phone: open this editor in Chrome on the phone and plug the FM-1 into its USB-C port (OTG).",
     applying: "Writing ", applied: "Loaded", badfile: "Cannot read the file: ",
     savedSlot: "Saved to slot ", loadedSlot: "Loaded slot ", emptySlot: "Empty slot: ",
     confirmSave: "Overwrite slot {n}?", confirmLoad: "Load slot {n}? The sounds and sequences of all tracks are replaced (no undo).",
@@ -3014,6 +3152,11 @@ async function connect() {
     connectedDevice = dev;
     setLabel($("connect"), t("disconnect"));
     await load(connectedDevice);
+    if (connectedDevice === dev) {
+      connectedDevice.screen = await screenSupported(connectedDevice);
+      renderScreenBtn();
+      if (connectedDevice.screen && QS.has("screen")) openMirror();   /* (?screen: straight to the screen, a phone's bookmark) */
+    }
   } catch (e) {
     console.error(e);
     if (!connectedDevice || connectedDevice === dev) {
@@ -3036,6 +3179,8 @@ function disconnect(reasonKey = "disconnected") {
     portsClosing = Promise.allSettled([dev.input.close?.(), dev.output.close?.()]);
   }
   dev = null;
+  closeMirror(false);
+  renderScreenBtn();
   resetBusy();
   needReload = false;
   renderPanels();
@@ -3966,6 +4111,7 @@ async function panOther(i, v) {
    safety net. Older firmware: DUMP every 400 ms and two steps per round. */
 function onPush(f) {
   const d = dev;
+  if (f.cmd === CMD.SCREEN_DATA) { onScreenData(f); return; }
   if (!d || !d.dump || !d.info) return;
   try {
     if (f.cmd === CMD.CHANGED) {
@@ -4052,6 +4198,126 @@ async function keepAlive() {
   }
 }
 setInterval(keepAlive, 1000);
+
+/* ------------------------------------------------------- screen mirror --- */
+/* SCREEN 1 turns it on: the device redraws its whole screen and sends every fill and strip it draws (SCREEN_DATA,
+   scrDecode) into mirror.fb, painted once per animation frame. SCREEN 2 every second keeps it on (the device stops
+   by itself 4 s after the editor's last request: a closed tab, a phone gone to sleep); back in view, SCREEN 1 again. */
+const mirror = { on: false, fb: new Uint16Array(SCR.W * SCR.H), ctx: null, img: null, lut: null, dirty: null, raf: 0,
+  timer: 0, bytes: 0, rateT: 0, rate: 0, got: false, lock: null };
+function mirrorLut() {
+  const lut = new Uint32Array(65536);
+  for (let c = 0; c < 65536; c++) {
+    const r = ((c >> 11) & 31) * 255 / 31 | 0, g = ((c >> 5) & 63) * 255 / 63 | 0, b = (c & 31) * 255 / 31 | 0;
+    lut[c] = 0xFF000000 | b << 16 | g << 8 | r;                    /* (ImageData's bytes R G B A, little-endian) */
+  }
+  return lut;
+}
+function onScreenData(f) {
+  if (!mirror.on) return;
+  const box = scrDecode(f.a, mirror.fb);
+  if (!box) return;
+  mirror.bytes += f.a.length + 6;
+  mirror.got = true;
+  const d = mirror.dirty;
+  mirror.dirty = !d ? box : { x: Math.min(d.x, box.x), y: Math.min(d.y, box.y),
+    w: Math.max(d.x + d.w, box.x + box.w) - Math.min(d.x, box.x), h: Math.max(d.y + d.h, box.y + box.h) - Math.min(d.y, box.y) };
+  if (!mirror.raf) mirror.raf = requestAnimationFrame(mirrorPaint);
+}
+function mirrorPaint() {
+  mirror.raf = 0;
+  const d = mirror.dirty;
+  if (!d || !mirror.ctx) return;
+  mirror.dirty = null;
+  const px = new Uint32Array(mirror.img.data.buffer), fb = mirror.fb, lut = mirror.lut;
+  for (let y = d.y; y < d.y + d.h; y++)
+    for (let i = y * SCR.W + d.x, e = i + d.w; i < e; i++) px[i] = lut[fb[i]];
+  mirror.ctx.putImageData(mirror.img, 0, 0, d.x, d.y, d.w, d.h);
+}
+function mirrorStatus() {
+  const now = Date.now(), dt = now - mirror.rateT;
+  if (dt >= 1000) { mirror.rate = mirror.bytes * 1000 / dt; mirror.bytes = 0; mirror.rateT = now; }
+  $("mirrorstat").textContent = !mirror.got ? t("screenWait") : (mirror.rate / 1024).toFixed(1) + t("screenRate");
+}
+async function screenSupported(d) {
+  try { return parse[CMD.SCREEN](await sessionRequest(d, req.screen(0), { timeout: 500, retries: 1, quiet: true })).rc === 0; }
+  catch (e) { return false; }
+}
+function renderScreenBtn() { $("screenbtn").hidden = !(dev && dev.screen); $("screenbtn").title = t("screenHelp"); }
+async function mirrorWake() {
+  try { if (mirror.on && !mirror.lock && navigator.wakeLock && !document.hidden) {
+    mirror.lock = await navigator.wakeLock.request("screen");      /* (the phone stays awake while it shows the screen) */
+    mirror.lock.addEventListener("release", () => { mirror.lock = null; });
+  } } catch (e) { /* not offered */ }
+}
+async function openMirror() {
+  const d = dev;
+  if (!d || !d.screen || mirror.on) return;
+  if (!mirror.ctx) {
+    const cv = $("mirrorcv");
+    mirror.ctx = cv.getContext("2d");
+    mirror.img = mirror.ctx.createImageData(SCR.W, SCR.H);
+    mirror.lut = mirrorLut();
+  }
+  mirror.fb.fill(0);
+  mirror.dirty = { x: 0, y: 0, w: SCR.W, h: SCR.H };
+  mirrorPaint();
+  mirror.on = true; mirror.got = false; mirror.bytes = 0; mirror.rateT = Date.now();
+  $("mirrorcv").setAttribute("aria-label", t("screenTitle") + " " + deviceName(d.info, d.input.name));
+  $("mirror").hidden = false;
+  document.body.classList.add("mirroring");
+  mirrorStatus();
+  mirrorWake();
+  $("mirrorclose").focus();
+  try {
+    const r = parse[CMD.SCREEN](await sessionRequest(d, req.screen(1), { timeout: 600, retries: 1 }));
+    if (r.rc || !r.on) { closeMirror(false); sayK("screenNo"); return; }
+  } catch (e) { closeMirror(false); report(e); return; }
+  clearInterval(mirror.timer);
+  mirror.timer = setInterval(async () => {
+    if (!mirror.on) return;
+    if (!dev || dev !== d) { closeMirror(false); return; }
+    mirrorStatus();
+    if (document.hidden || d.link.hasQueued("screen")) return;
+    try {
+      const r = parse[CMD.SCREEN](await sessionRequest(d, req.screen(2), { key: "screen", quiet: true, retries: 0 }));
+      if (mirror.on && !r.on) await sessionRequest(d, req.screen(1), { key: "screen", quiet: true });   /* it stopped: again */
+    } catch (e) { /* the next one */ }
+  }, 1000);
+}
+function closeMirror(tell = true) {
+  if (!mirror.on && $("mirror").hidden) return;
+  mirror.on = false;
+  clearInterval(mirror.timer); mirror.timer = 0;
+  $("mirror").hidden = true;
+  document.body.classList.remove("mirroring");
+  if (mirror.lock) { mirror.lock.release().catch(() => {}); mirror.lock = null; }
+  const fs = document.fullscreenElement || document.webkitFullscreenElement;
+  if (fs === $("mirror")) (document.exitFullscreen || document.webkitExitFullscreen).call(document)?.catch?.(() => {});
+  if (tell && dev) dev.link.request(req.screen(4), { quiet: true, retries: 0 }).catch(() => {});
+  $("screenbtn").focus?.();
+}
+$("screenbtn").addEventListener("click", () => openMirror());
+$("mirrorclose").addEventListener("click", () => closeMirror());
+$("mirrorsharp").addEventListener("click", (e) => {
+  const sharp = $("mirror").classList.toggle("smooth") === false;
+  e.currentTarget.setAttribute("aria-pressed", String(sharp));
+  try { localStorage.setItem("jiant.screen.smooth", sharp ? "0" : "1"); } catch (err) { /* private mode */ }
+});
+try { if (localStorage.getItem("jiant.screen.smooth") === "1") { $("mirror").classList.add("smooth"); $("mirrorsharp").setAttribute("aria-pressed", "false"); } }
+catch (e) { /* private mode */ }
+$("mirrorfull").addEventListener("click", () => {
+  const m = $("mirror"), fs = document.fullscreenElement || document.webkitFullscreenElement;
+  if (fs) (document.exitFullscreen || document.webkitExitFullscreen).call(document)?.catch?.(() => {});
+  else (m.requestFullscreen || m.webkitRequestFullscreen)?.call(m)?.catch?.(() => {});
+});
+$("mirrorfull").hidden = !(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && mirror.on && !document.fullscreenElement) closeMirror(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden || !mirror.on || !dev) return;
+  mirrorWake();
+  sessionRequest(dev, req.screen(1), { key: "screen", quiet: true }).catch(() => {});   /* (it may have stopped meanwhile) */
+});
 document.addEventListener("visibilitychange", () => { if (!document.hidden && dev && dev.watch) { rewatch = true; keepAlive(); } });
 
 let stepRR = 0;
