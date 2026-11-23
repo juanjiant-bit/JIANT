@@ -293,6 +293,19 @@
 :root[data-skin] table { border-collapse:separate; border-spacing:0 4px; }
 :root[data-skin] th { font:500 10px/1.3 var(--sk-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--dim); text-align:left; }
 :root[data-skin] .seg button[aria-pressed="true"], :root[data-skin] button.tog[aria-pressed="true"] { background:var(--sk-accent); border-color:var(--sk-accent); color:var(--sk-on); }
+/* the FM6 page and the steps' table: small fields as the firmware's values (the accent, the value type), the table's
+   rows as cards */
+:root[data-skin] input[type="number"], :root[data-skin] td input:not([type="checkbox"]):not([type="range"]), :root[data-skin] td select {
+  font:400 calc(var(--sk-value-size) * .7)/1.1 var(--sk-value); color:var(--sk-k1); background:var(--sk-field); text-align:center;
+  border:var(--sk-b) solid color-mix(in srgb,var(--sk-k1) 30%,transparent); border-radius:var(--sk-rs); padding:4px 4px; min-height:32px; min-width:3.6em; }
+:root[data-skin] input[type="number"]:focus, :root[data-skin] td input:focus { border-color:var(--sk-k1); }
+:root[data-skin] tbody tr { background:var(--sk-panel); }
+:root[data-skin] tbody tr:hover { background:color-mix(in srgb,var(--sk-accent) 8%,var(--sk-panel)); }
+:root[data-skin] td { padding:4px 6px; border-top:var(--sk-b) solid var(--line); border-bottom:var(--sk-b) solid var(--line); }
+:root[data-skin] td:first-child { border-left:var(--sk-b) solid var(--line); border-radius:var(--sk-rs) 0 0 var(--sk-rs); font:500 12px var(--sk-mono); color:var(--sk-frame); }
+:root[data-skin] td:last-child { border-right:var(--sk-b) solid var(--line); border-radius:0 var(--sk-rs) var(--sk-rs) 0; }
+:root[data-skin] .group label, :root[data-skin] .group .bar { font:500 11px/1.4 var(--sk-mono); letter-spacing:.06em; color:var(--dim); }
+:root[data-skin] input[type="checkbox"] { accent-color:var(--sk-accent); width:16px; height:16px; }
 /* the support line and the footer */
 :root[data-skin] p.kofi { border-left:3px solid; border-image:var(--sk-heat) 1; padding-left:12px; }
 :root[data-skin] footer { color:var(--dim); font:11px/1.6 var(--sk-mono); border-top:var(--sk-b) solid var(--line); padding-top:14px; }
