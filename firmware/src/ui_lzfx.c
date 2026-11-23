@@ -35,42 +35,51 @@ static void fxg_label(int32_t x, int32_t y, const char *s, uint16_t c, int right
     else
         cv_text(x, y + 3, &AF_X, s, c);
 }
+/* (V10.8.15, JIANT BYTE's "tunnel" (GPL, as BYTE has it), the owner's pick) DELAY: each echo heard a frame going into the
+ * centre, the first the track's colour, the one sounding yellow; WIDE / PITCH / PING / DRIVE move and tint them */
+static void fxg_frame(int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c, int32_t t)
+{
+    cv_rect(x, y, w, t, c); cv_rect(x, y + h - t, w, t, c);
+    cv_rect(x, y, t, h, c); cv_rect(x + w - t, y, t, h, c);
+}
 static void fxg_delay(int32_t x, int32_t y, int32_t w, int32_t h)
 {
     char b[24];
     const char *u;
-    int32_t i, a = 1000, mix = song.g[G_DMIX], fb = song.g[G_DFDBK], en = fxg_en();
-    int32_t tr = RATIO(&GP[G_DTIME], enum_rank(&GP[G_DTIME], song.g[G_DTIME])), step = w * (500 + tr) / 10000;
-    int32_t pulse = en && step > 0 ? (int32_t)(anim_fr * 2u % (uint32_t)(9 * step)) : -99;   /* (the echo running) */
-    for (i = 0; i < w; i += 3) cv_pset(x + i, y + h - 1, T_LINE);   /* (a dotted floor) */
-    for (i = 0; i < 9 && a > 8; i++) {
-        int32_t px = x + 6 + i * step, bh = (h - 14) * 9 / 10 * a / 1000 * (mix * 7 / 10 + 38) / 127;
-        int hit = pulse >= i * step && pulse < (i + 1) * step;
-        if (px + 4 > x + w)
-            break;
-        if (en)
-            bh = bh * (176 + clamp(en, 0, 288) * 80 / 288) / 256;
-        if (bh > 0)
-            cv_rect(px, y + h - 1 - bh, 4, bh, hit ? HUD_YE : i == 0 ? FXG_TC : FXG_H(64 + a * 179 / 1000));
-        if (song.g[G_DPING] && w > 120) {
-            b[0] = i & 1 ? 'R' : 'L';
-            b[1] = 0;
-            fxg_label(px - 1, y + 9, b, T_DIM, 0);
-        }
-        a = a * (fb > 127 ? 127 : fb) / 127;
+    int32_t i, n, a = 1000, fb = song.g[G_DFDBK], tone = song.g[G_DCOLOR], en = fxg_en(), top = w > 120 ? y + 12 : y;
+    int32_t hh = y + h - top, cx = x + w / 2, cy = top + hh / 2, fw = w * 85 / 100, fh = hh * 95 / 100, run;
+    int32_t wide = song.g[G_WIDTH], pit = song.g[G_DPIT], ping = song.g[G_DPING], drv = song.g[G_DDRV];
+    int32_t lv[14];
+    uint16_t tc = FXG_TC;
+    for (n = 0; n < 14 && a > 40; n++) { lv[n] = a; a = a * (fb > 127 ? 127 : fb) / 127; }
+    run = en && n ? (int32_t)(anim_fr / 3u % (uint32_t)n) : -1;
+    if (drv)
+        cv_rect(cx - fw / 2 + 2, cy - fh / 2 + 2, fw - 4, fh - 4, ux_mix(T_BG, tc, drv / 2));
+    for (i = 0; i < 4; i++) {
+        int32_t ex = cx + (i & 1 ? fw / 2 : -fw / 2), ey = cy + (i & 2 ? fh / 2 : -fh / 2), k;
+        for (k = 0; k < 32; k += 2)
+            cv_pset(ex + (cx - ex) * k / 32, ey + (cy - ey) * k / 32, T_LINE);
     }
-    if (pulse >= 0 && x + 6 + pulse + 2 <= x + w) {   /* (the pulse itself: the HUD's yellow cursor) */
-        cv_rect(x + 6 + pulse, y + 11, 1, h - 12, HUD_YE);
-        cv_rect(x + 4 + pulse, y + 11, 5, 1, HUD_YE);
+    for (i = n - 1; i >= 0; i--) {
+        int32_t d = 1000000 / (1000 + i * 450), side = i & 1 ? -1 : 1;
+        int32_t ox = side * (wide * 30 / 127 + (ping ? w / 6 : 0)) * (1000 - d) / 1000, oy = -pit * 12 / 10 * (1000 - d) / 1000;
+        int32_t ww = fw * d / 1000, wh = fh * d / 1000, fx = cx + ox - ww / 2, fy = cy + oy - wh / 2;
+        uint16_t c = i == run ? HUD_YE : i == 0 ? tc : FXG_H((40 + lv[i] * 200 / 1000) * (1000 - tone * 700 / 127) / 1000 * (1000 - i * 50) / 1000);
+        if (ww < 3 || wh < 3) continue;
+        fxg_frame(fx, fy, ww, wh, c, i == 0 || i == run ? 2 : 1);
     }
-    param_format(&GP[G_DTIME], song.g[G_DTIME], b, &u);
     if (w > 120) {
+        int32_t tw;
+        param_format(&GP[G_DTIME], song.g[G_DTIME], b, &u);
         str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), song.g[G_DTYPE] ? "DIGITAL" : "ANALOG", 9);
-        fxg_label(x + w, y, song.g[G_DCOLOR] < 58 ? "DARKER" : song.g[G_DCOLOR] > 70 ? "BRIGHTER" : "EXACT COPY", T_DIM, 1);
+        fmt_int(b + str_len(b), n);
+        str_cpy(b + str_len(b), n == 1 ? " ECHO" : " ECHOES", 8);
+        tw = text_w(&AF_X, b) + 4;
+        cv_rect(x, y, tw, 11, HUD_BL);
+        cv_text_on(x + 2, y + 1 - AF_X_CAP_Y, &AF_X, b, T_TEXT, HUD_BL);
     }
-    fxg_label(x, y, b, T_MID, 0);
 }
+
 static void fxg_reverb(int32_t x, int32_t y, int32_t w, int32_t h)
 {
     int32_t i, sz = song.g[G_RSIZE], ty = song.g[G_RTYPE], e = 1000, k = 1000 - (5000 - sz * 4300 / 127) / (w ? w : 1);
