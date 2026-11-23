@@ -3450,81 +3450,31 @@ static void gen_cards(void)
 }
 static uint32_t gen_draw_sig(void)
 {
-    return gen_sig() * 31u + gp.page * 7u + str_hash(gp.hot * 977u, gp.last) + ux.gen + anim_fr / 2u * 2246822519u +
+    return gen_sig() * 31u + gp.page * 7u + str_hash(gp.hot * 977u, gp.last) + ux.gen + song_draft * 3u +
         chain_config.count * 7919u + live.mode * 13u + song.playing * 29u +
         (chain.running ? (chain.row + 1u) * 104729u + chain.remaining * 1299709u : 0u);
 }
-BTAPP_FN static void gen_panel_bt(void)
-{
-    uint32_t k;
-    char v[24];
-    if (chain_config.count) {
-        /* Reuse the actual arrangement, not FORM's illustrative BCADCA chips.
-         * Progress refreshes per bar; no new high-rate animation or DSP work. */
-        graph_proj(2);                                   /* (V10.6i) the lanes leave the helix a band of its own */
-        cv_rect(0, 124, 240, 16, T_SURF);
-        if (chain.running) {
-            v[0] = (char)('A' + (uint32_t)live.cur % 4u); v[1] = ' ';
-            fmt_int(v + 2, (int32_t)chain.row + 1);
-            k = str_len(v); v[k++] = '/'; fmt_int(v + k, chain.config.count);
-            str_cpy(v + str_len(v), " LEFT ", 7);
-            fmt_int(v + str_len(v), chain.remaining);
-        } else str_cpy(v, song.playing ? "PLAYING LOOP" : live.mode ? "SONG READY" : "LOOP MODE", sizeof v);
-        cv_text(4, 128, &AF_X, v, T_TEXT);
-        cv_text_r(236, 128, &AF_X, song_draft ? "DRAFT / SAVE" : "SAVE: SONG", T_ACCENT, T_SURF);
-        return;
-    }
-    graph_proj(0);
-    cv_rect(0, 124, 240, 16, T_SURF);
-    cv_text(4, 128, &AF_X, song_draft ? "DRAFT LOOP" : "SAVED PARTS", T_TEXT);
-    cv_text_r(236, 128, &AF_X, "SAVE: LOOP/SONG", T_ACCENT, T_SURF);
-}
-
-
-/* (V10.6d) GENE: a double helix turning under the parts, its rungs the SEED's own bases (two bits a rung, four
- * colours: each seed its DNA); under ARRANGE's first row when a song is arranged, none past it */
-static void gen_helix(void)
-{
-    uint32_t n = chain_config.count, x, s = gp.seed * 2654435761u + (gp.genre == GEN_EXPLORE ? 28u : gp.genre) * 40503u, t = 0, i;   /* (V10.7.63:
-                                                         * EXPLORE's 28 as before) */
-    int32_t cy = n ? 116 : 94, a = n ? 5 : 16, x0 = n ? 24 : 6;   /* (V10.6i) arranged: a band of its own under the lanes */
-    int heat = 1;   /* (V10.6q, the owner) the DNA in the thermal palette */
-    uint16_t f = T_THEME, b = T_ACCENT;
-    if (n > 16u)
-        return;
-    for (i = 0; i < n; i++) t += chain_config.row[i].bars;
-    for (x = (uint32_t)x0; x < 234u; x += 2u) {
-        uint32_t ang = (x * 6u + anim_fr * 4u) << 23;
-        int32_t d = osc_sine(ang) * a >> 15, z = osc_sine(ang + 0x40000000u);
-        if (heat) {                                      /* along the strand violet > red > orange > yellow and back,
-                                                          * drifting; the strand behind dimmer */
-            uint32_t p = (x * 2u + anim_fr * 3u) % 440u;
-            f = heat_col(24 + (int32_t)(p < 220u ? p : 440u - p));
-            b = heat_col(24 + (int32_t)(p < 220u ? 219u - p : p - 220u));
-        }
-        if (x % 10u == 0u) {                             /* a rung: a base pair, the seed's; arranged, the section's above it */
-            int32_t h = d < 0 ? -d : d;
-            uint16_t c = ux_mix(T_SURF, heat_col(40 + 64 * (int32_t)(s >> (x / 10u % 16u * 2u) & 3u)), 88);
-            if (n && t) {
-                uint32_t acc = 0, k;
-                for (k = 0; k < n && 24u + (acc + chain_config.row[k].bars) * 212u / t <= x; k++)
-                    acc += chain_config.row[k].bars;
-                c = sec_col(chain_config.row[k < n ? k : n - 1u].slot & 3u);
-            }
-            cv_rect((int32_t)x, cy - h, 1, 2 * h + 1, c);
-        }
-        cv_rect((int32_t)x, cy + d, 2, 2, z > 0 ? f : heat ? ux_mix(T_SURF, f, 45) : T_DIM);
-        cv_rect((int32_t)x, cy - d, 2, 2, z > 0 ? (heat ? ux_mix(T_SURF, b, 45) : T_DIM) : b);
-    }
-}
+/* (V10.8.14, the owner's "partitura viva") GEN's panel: its four settings on the cards, the song under them as
+ * ARRANGE draws it (ui_lzsave.c graph_score; no song yet: the sections), one line of state and what to press */
 static void gen_panel(void)
 {
-    if (bt_hw_seg()) {                                  /* (its own words at the foot: not the song's length under them) */
+    char v[40];
+    uint32_t k;
+    if (chain_config.count)
+        graph_score(1);
+    else {
         proj_nofoot = 1;
-        gen_panel_bt();
+        graph_proj(0);
         proj_nofoot = 0;
+    }
+    cv_rect(0, 124, 240, 16, T_SURF);
+    if (chain.running) {
+        v[0] = (char)('A' + (uint32_t)live.cur % 4u); v[1] = ' ';
+        fmt_int(v + 2, (int32_t)chain.row + 1);
+        k = str_len(v); v[k++] = '/'; fmt_int(v + k, chain.config.count);
     } else
-        graph_proj(chain_config.count ? 2 : 0);
-    gen_helix();
+        str_cpy(v, song_draft ? "DRAFT" : song.playing ? "PLAYING" : chain_config.count ? "SONG READY" : "READY", sizeof v);
+    str_cpy(v + str_len(v), song_draft ? " \xB7 SAVE KEEPS \xB7 OCT+ NEW" : " \xB7 OCT+ NEW \xB7 OCT- BACK", sizeof v - str_len(v));
+    cv_text_in(4, 128, 232, &AF_X, v, song_draft ? T_ACCENT : T_TEXT, T_SURF);
 }
 #include "gen_track.c"

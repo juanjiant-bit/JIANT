@@ -349,58 +349,92 @@ static __attribute__((noinline)) void graph_tl(void)
     }
     cv_text(4, 128, &AF_X, "KEYS: F3-D4 MUTE \xB7 F4-B4 FROM", T_MID);
 }
-/* PROJECT: the sections, the arrangement's chips, the song's strip (ar: ARRANGE, its rows picked; 2: GENE's lanes) */
+/* (V10.8.14, the owner's "partitura viva") ARRANGE and GENE: the song as blocks as wide as their bars (32 bars at most
+ * on the screen, round the playhead or the row picked), the parts' strip on top (the row picked, GENE the row playing,
+ * its part's colour, the others dim; its bars when not 4), a lane a track in its colour, a part's letter only where the
+ * track plays another part than its row's (a VAR MUTE: an empty frame); the playhead a white line */
+static void graph_score(int gen)
+{
+    uint32_t n = chain_config.count, t = 0, i, k, acc, play = 0, f = 0, W, w0 = 0;
+    uint32_t sel = gen ? (chain.running ? chain.row : 255u) : ui.song_row;
+    char b[8];
+    for (i = 0; i < n; i++) {
+        if (i < sel) f += chain_config.row[i].bars;
+        if (chain.running && i < chain.row) play += chain_config.row[i].bars;
+        t += chain_config.row[i].bars;
+    }
+    if (chain.running && chain.row < n) play += chain_config.row[chain.row].bars - chain.remaining;
+    if (chain.running) f = play;
+    W = t < 32u ? t : 32u;
+    if (t > W) w0 = f > 8u ? f - 8u : 0u;
+    if (w0 + W > t) w0 = t - W;
+    for (k = 0; k < NTRK; k++) {
+        b[0] = 'T'; b[1] = (char)('1' + k); b[2] = 0;
+        cv_text(4, 21 + (int32_t)k * 16, &AF_X, b, trk_col(k));
+    }
+    for (i = 0, acc = 0; i < n && W; acc += chain_config.row[i].bars, i++) {
+        const chain_row_t *r = &chain_config.row[i];
+        uint32_t s = r->slot & 3u, a = acc > w0 ? acc : w0, e = acc + r->bars < w0 + W ? acc + r->bars : w0 + W;
+        int32_t x, w;
+        uint16_t c = sec_col(s), cf;
+        if (acc + r->bars <= w0 || acc >= w0 + W)
+            continue;
+        x = 24 + (int32_t)((a - w0) * 212u / W);
+        w = 24 + (int32_t)((e - w0) * 212u / W) - x - 1;
+        if (w < 1) w = 1;
+        cf = i == sel ? c : ux_mix(T_SURF, c, 40);
+        cv_rect(x, 2, w, 14, cf);
+        if (w >= 9) {
+            b[0] = (char)('A' + s); b[1] = 0;
+            if (r->bars != 4u && w >= 18) fmt_int(b + 1, r->bars);
+            cv_text_in(x, 2 + CAP_IN(X, 14), w, &AF_X, b, i == sel ? T_INK : T_TEXT, cf);
+        }
+        if (song_idx.scene[song_cur][i].on) cv_rect(x + w - 3, 4, 2, 2, T_TEXT);   /* a scene: a dot */
+        for (k = 0; k < NTRK; k++) {
+            int32_t y = 19 + (int32_t)k * 16;
+            uint32_t src = row_src(i, k, s);
+            uint16_t tc = trk_col(k);
+            if (row_var(i, k) == RV_MUTE) {
+                cv_frame(x, y, w, 12, ux_mix(T_SURF, tc, 30));
+                continue;
+            }
+            cv_rect(x, y, w, 12, ux_mix(T_SURF, tc, i == sel ? 60 : 24));
+            if (src != s && w >= 9) {                     /* another part: its letter in a pill of its colour */
+                b[0] = (char)('A' + src); b[1] = 0;
+                cv_rect(x + w / 2 - 5, y, 11, 12, sec_col(src));
+                cv_text_in(x + w / 2 - 5, y + CAP_IN(X, 12), 11, &AF_X, b, T_INK, sec_col(src));
+            }
+        }
+    }
+    if (chain.running && play >= w0 && play <= w0 + W && W)
+        cv_rect(24 + (int32_t)((play - w0) * 212u / W), 0, 1, 114, T_TEXT);
+    if (gen)
+        return;
+    if (!n) {
+        cv_text_in(4, 128, 232, &AF_X, "NO ROWS: OCT+ ADDS ONE", T_MID, T_SURF);
+        return;
+    }
+    if (ui.song_row < n) {                                  /* the row picked: ROW n/N . its part and bars */
+        char v[24] = "ROW ";
+        fmt_int(v + 4, (int32_t)ui.song_row + 1);
+        k = str_len(v); v[k++] = '/'; fmt_int(v + k, (int32_t)n);
+        k = str_len(v); v[k++] = ' '; v[k++] = '\xB7'; v[k++] = ' '; v[k++] = (char)('A' + (chain_config.row[ui.song_row].slot & 3u));
+        fmt_int(v + k, chain_config.row[ui.song_row].bars);
+        cv_text(4, 128, &AF_X, v, T_TEXT);
+    } else
+        cv_text(4, 128, &AF_X, "END", T_THEME);
+    {
+        char v[24];
+        song_len_txt(v, t);
+        cv_text_r(236, 128, &AF_X, v, T_MID, T_SURF);
+    }
+}
+/* PROJECT: the sections, the arrangement's chips, the song's strip (ar: ARRANGE, its rows picked) */
 static uint8_t proj_nofoot;                              /* (gen.c: GENE draws its own words where the song's length stands) */
 static void graph_proj(int ar)
 {
     uint32_t i, total = 0, sel = (uint32_t)song.g[G_SLOT] - 1u, n = chain_config.count;
     char b[24];
-    if (ar == 2) {                                       /* (beta5) GENE's lanes (TIMELINE's until V10.6o): the song left to
-                                                         * right, its bars the width; a lane for the rows (PRT, the parts; was SEC) and one a track:
-                                                         * its own section calm (half), another bright with its letter, MUTE an
-                                                         * empty frame, a VAR its short name. (V10.6o: no scan lines) */
-        static const char *const LN[NTRK + 1] = {"PRT", "T1", "T2", "T3", "T4", "T5", "T6"};
-        static const char *const RV_SH[RV_N] = {"", "", "TH", "FL", "HF", "RV", "SH", "+8", "-8", "V1", "V2", "V3", "V4"};
-        uint32_t t = song_bars(4u), acc = 0, played = 0, j;
-        int32_t ls = 15, lh = ls - 2;                    /* (V10.6i) lanes 2 px shorter, the helix a band of its own */
-        for (j = 0; j <= NTRK; j++)
-            cv_text(5, 4 + (int32_t)j * ls + (j ? 3 : 2), &AF_X, LN[j], T_DIM);
-        for (i = 0; i < n && t; i++) {
-            const chain_row_t *r = &chain_config.row[i];
-            uint32_t s = r->slot & 3u;
-            int32_t x = 24 + (int32_t)(acc * 212u / t), w = 24 + (int32_t)((acc + r->bars) * 212u / t) - x;
-            if (w < 2) w = 2;
-            for (j = 0; j <= NTRK; j++) {          /* (V10.3) the columns lead: a row's edge a 1 px line of its colour
-                                                    * well darker; between lanes 2 px of it only a little darker */
-                int32_t y = 4 + (int32_t)j * ls, h = lh;
-                uint32_t src = j ? row_src(i, j - 1u, s) : s, v = j ? row_var(i, j - 1u) : 0u, own = !j || src == s;
-                uint16_t c = j && own ? lz_sec(src, 1, 1) : sec_col(src);
-                if (v == RV_MUTE) {
-                    cv_rect(x, y, w, h, T_BG);
-                    cv_frame(x + 1, y + 1, w - 1, h - 2, T_DIM);
-                } else {
-                    cv_rect(x, y, w, h, c);
-                    if (j < NTRK) cv_rect(x, y + h, w, 2, ux_mix(T_BG, c, 45));
-                    if (i) cv_rect(x, y, 1, j < NTRK ? h + 2 : h, ux_mix(T_BG, c, 15));
-                    if (w >= 12 && (!j || !own)) {
-                        b[0] = (char)('A' + src); b[1] = 0;
-                        if (!j && w >= 22) fmt_int(b + 1, r->bars);
-                        cv_text_on(x + 3, y + 2 + (h - 15) / 2, &AF_X, b, T_INK, c);
-                    }
-                    if (v && v < RV_N && w >= 24) cv_text_r(x + w - 2, y + 2 + (h - 15) / 2, &AF_X, RV_SH[v], T_INK, c);
-                }
-            }
-            if (chain.running && i < chain.row) played += r->bars;
-            acc += r->bars;
-        }
-        if (chain.running && chain.row < n && t) {         /* the playhead */
-            played += chain_config.row[chain.row].bars - chain.remaining;
-            cv_rect(24 + (int32_t)(played * 212u / t), 2, 1, 4 + 7 * ls, T_TEXT);
-        }
-        song_len_txt(b, t);
-        cv_text_r(236, 128, &AF_X, n ? b : "NO ROWS: OCT+ ADDS ONE", T_MID, T_SURF);
-        return;
-    } else
     for (i = 0; i < 4u; i++) {
         int32_t x = LZ_TX(i);
         int used = graph_project_used(i), pick = !ar && i == (sel & 3u);
@@ -578,7 +612,7 @@ static void graph_save_lz(const page_t *pg)
     else if (SONG_TRK(pg)) graph_tl();
     else if (SONG_PARTS(pg)) graph_parts();
     else if (SONG_CLIPS(pg) || SONG_TAKE(pg)) graph_clips();
-    else if (pg->graph == GR_SONG) graph_proj(1);
+    else if (pg->graph == GR_SONG) graph_score(0);   /* (V10.8.14: ARRANGE's partitura viva) */
     else if (pg->graph == GR_SLOTS) { if (lv == SV_PROJ) graph_proj(0); else graph_lib(); }
     else if (pg->graph == GR_USER) graph_sound();
     else graph_lz_presets();

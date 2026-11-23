@@ -1387,7 +1387,9 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
     if (fx_on() && (song.playing || bg_energy() > 2))   /* .. and with the sound while it sounds: FX live) */
         h ^= anim_fr / 2u * 2246822519u;
     if (pg->graph == GR_HARM)                        /* (V10.7.70) the chord playing, the progression */
-        h ^= (hm_now() + 1u) * 40503u * song.playing + (uint32_t)song.g[G_HPROG] * 977u;
+        h ^= (hm_now() + 1u) * 40503u * song.playing + (uint32_t)song.g[G_HPROG] * 977u + hm_n * 131u;
+    if (pg->id[0] == P_CHRD)                         /* (V10.8.14) CHORD: the last key's degree lit */
+        h ^= (uint32_t)last_note * 7919u;
     if (pg->graph == GR_LFO && ui_hold < 3u)             /* (JIANT 0.5) the LFO runs: its phase, its level (0.9.9-beta4: held under load) */
         h ^= (t->lfo_ph >> 23) * 2654435761u ^ (uint32_t)(t->lfo_val * t->lfo_fade >> 22);
     if (pg->graph == GR_ADSR && ui_hold < 3u)            /* the envelope's dot: every voice's stage and level */

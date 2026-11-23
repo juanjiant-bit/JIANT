@@ -129,81 +129,102 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
     }
     ui.force = 1;
 }
-/* (V10.7.70, the owner) SCL > HARMONY's picture: the progression's chords as roman numerals in the key ("-" minor,
- * "o" diminished), each its root's colour (SCL's keys'), its name under it; the one playing lit */
+/* (V10.8.14, the owner's "teclado y grados") SCL's pictures share a key's names, a chord's name and an octave of keys */
+static const char NN12[12][3] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+static const char RN7[7][4] = {"I", "II", "III", "IV", "V", "VI", "VII"};
+/* the triad on degree d of the seven notes pc (semitones from ROOT rt) as b (4): its root's name, "-" minor, the degree
+ * sign diminished, "+" augmented (the faces have no lowercase) */
+static void chord_nm(char *b, const uint8_t *pc, uint32_t d, uint32_t rt)
+{
+    uint32_t r = pc[d % 7u], th = (pc[(d + 2u) % 7u] + 12u - r) % 12u, fi = (pc[(d + 4u) % 7u] + 12u - r) % 12u;
+    str_cpy(b, NN12[(r + rt) % 12u], 4);
+    str_cpy(b + str_len(b), fi == 6u ? "\xB0" : fi == 8u ? "+" : th == 3u ? "-" : "", 2);
+}
+/* an octave of keys from C at y, h high, in x 8..232 as the device's: the notes lit (bit n: note n) in their colour (col
+ * 0) or col, their names on the white keys (the black ones' when lit), the root a dot */
+static void piano(int32_t y, int32_t h, uint32_t lit, uint32_t rt, uint16_t col)
+{
+    static const uint8_t WH[7] = {0, 2, 4, 5, 7, 9, 11}, BK[5] = {1, 3, 6, 8, 10}, BX[5] = {1, 2, 4, 5, 6};
+    uint32_t i;
+    int32_t bh = h * 58 / 100;
+    for (i = 0; i < 12u; i++) {
+        uint32_t blk = i >= 7u, n = blk ? BK[i - 7u] : WH[i], on = lit >> n & 1u;
+        int32_t x = blk ? 2 + (int32_t)BX[i - 7u] * 32 - 10 : 8 + (int32_t)i * 32, w = blk ? 19 : 30, kh = blk ? bh : h;
+        uint16_t c = on ? (col ? col : note_col(n)) : blk ? 0x10A2u : 0xCE59u;
+        cv_rect(x, y, w, kh, c);
+        if (!blk || on)
+            cv_text_in(x, y + kh - (blk ? 12 : 22), w, &AF_X, NN12[n], on || !blk ? T_INK : T_DIM, c);
+        if (n == rt)
+            cv_rect(x + w / 2 - 2, y + kh - (blk ? 4 : 8), 4, 4, blk && !on ? 0xFFFFu : 0x0000u);
+    }
+}
+/* (V10.7.70; V10.8.14) SCL > PROG: a card a chord of the progression, its name, its degree and its bar, the one playing
+ * lit, under them where the progression is; OFF: the cards dim and what turns it on */
 static __attribute__((noinline)) void graph_harm(void)
 {
-    static const char RN[7][4] = {"I", "II", "III", "IV", "V", "VI", "VII"};
     const track_t *t = trk;
-    uint32_t i, m, np = 0, now = song.playing ? hm_now() : 9u;
+    uint32_t i, m, np = 0, off = !song.g[G_HPROG] || !hm_n, n = off ? 4u : hm_n, now = song.playing && !off ? hm_now() : 9u;
+    int32_t w = 224 / (int32_t)n;
     uint8_t pc[12];
+    char b[8];
     while (t < trk + trk_live - 1 && drum_track(t)) t++;
     m = scale_mask(t);
     if (__builtin_popcount(m & 0xFFFu) != 7) m = 0xAB5u;   /* (no mode of seven: major's, as seq.c's chords) */
     for (i = 0; i < 12u; i++) if ((m >> i) & 1u) pc[np++] = (uint8_t)i;
-    if (!song.g[G_HPROG]) { cv_text_in(8, graph_ht / 2 - 8, 224, &AF_M, "PROG: A PROGRESSION", T_DIM, T_SURF); return; }
-    for (i = 0; i < hm_n; i++) {
-        uint32_t d = (uint32_t)hm_dg[i] % 7u, r = pc[d], th = pc[(d + 2u) % 7u] + 12u - r, fi = pc[(d + 4u) % 7u] + 12u - r;
-        uint16_t c = note_col(r + (uint32_t)t->p[P_ROOT]);
-        char b[6], *q = b;
-        const char *s = RN[d];
-        while (*s) *q++ = *s++;
-        if (fi % 12u == 6u) *q++ = 'o';                   /* (the font's capitals: "-" minor, "o" diminished) */
-        else if (th % 12u == 3u) *q++ = '-';
-        *q = 0;
-        cv_rect(8 + (int32_t)i * 56, 2, 50, graph_ht - 4, i == now ? c : ux_mix(c, T_SURF, 70));
-        cv_text_in(8 + (int32_t)i * 56, graph_ht / 2 - 14, 50, &AF_L, b, i == now ? T_BG : T_TEXT, T_SURF);
+    for (i = 0; i < n; i++) {
+        int32_t x = 8 + (int32_t)i * w;
+        uint32_t d = off ? i : (uint32_t)hm_dg[i] % 7u;
+        uint16_t c = i == now ? T_ACCENT : T_RAISE, ink = i == now ? T_INK : off ? T_DIM : T_TEXT;
+        cv_rect(x, 2, w - 6, 72, c);
+        if (off) str_cpy(b, "-", 2); else chord_nm(b, pc, d, (uint32_t)t->p[P_ROOT]);
+        cv_text_in(x, 12, w - 6, text_w(&AF_L, b) <= w - 8 && large_face_has(b) ? &AF_L : &AF_M, b, ink, c);
+        if (!off) cv_text_in(x, 44, w - 6, &AF_X, RN7[d], ink, c);
+        str_cpy(b, "BAR ", 8); fmt_int(b + 4, (int32_t)i + 1);
+        cv_text_in(x, 58, w - 6, &AF_X, b, ink, c);
     }
+    cv_rect(8, 82, 218, 3, T_RAISE);
+    if (now < n) cv_rect(8, 82, 218 * (int32_t)(now + 1u) / (int32_t)n, 3, T_ACCENT);
+    if (off) cv_text(8, 94, &AF_X, "PROG OFF \xB7 KNOB 1 PICKS ONE", T_DIM);
 }
+/* (V10.8.14) SCL > SCENE: a row a track, its colour's pill, its role, the notes it plays (their range: names and a bar
+ * over C2 .. C7), the one picked its role lit; one line: what that role does */
 static void graph_scene(void)
 {
-    uint32_t i, j, n, h = graph_h();
-    int32_t cw = 38, x0 = 6, y0 = 30, yh = (int32_t)h - y0 - 27;   /* (V10.7.63: two lines under it) */
+    static const char *const RD[SC_N] = {"PLAYS ITS OWN SEQUENCE", "HOLDS EACH NOTE'S CHORD", "ARPEGGIATES EACH NOTE'S CHORD",
+                                         "A BASS LINE UNDER THE NOTES", "A LINE ABOVE THE NOTES", "A NEW BEAT EACH KEY, WHILE HELD"};
+    uint32_t i, j, n;
     uint8_t o[KB_CH + 1];
+    char b[48];
     for (i = 0; i < NTRK; i++) {
         track_t *t = &trk[i];
-        int32_t x = x0 + (int32_t)i * cw;
-        uint32_t r = drum_track(t) && scn_role[i] != SC_DRUM ? SC_KEEP : scn_role[i];
-        uint16_t c = r == SC_KEEP ? T_DIM : r == SC_CHORD ? T_THEME : r == SC_ARP ? T_MID : r == SC_BASS ? T_ACCENT : T_TEXT;
-        char b[3] = {'T', (char)('1' + i), 0};
-        cv_text_in(x, 2, cw - 4, &AF_X, b, i == sc_trk ? T_TEXT : T_DIM, T_SURF);
-        cv_text_in(x - 2, 14, cw, &AF_X, scn_on == 8u ? "PRESS" : scn_on >= 2u && i == scn_on - 2u ? "LEADS" : drum_track(t) && r == SC_KEEP ? "KIT" : SC_ROLE[r],
-                   scn_on >= 2u && i == scn_on - 2u ? T_ACCENT : c, T_SURF);
-        if (i == sc_trk) cv_frame(x - 3, 0, cw - 1, 25, T_ACCENT);
-        if (i >= trk_live) continue;
-        if ((r == SC_KEEP || r == SC_DRUM) && scn_on != 8u) {   /* its own sequence: the steps, dim; DRUM: the beat's lanes lit */
-            for (j = 0; j < 16u; j++) {
-                uint32_t h = t->step[j].hit;
-                int32_t y = y0 + (int32_t)j * yh / 16;
-                if (r == SC_DRUM) {
-                    if (h & 1u) cv_rect(x + 1, y, 9, 2, heat_col(60));
-                    if (h & 6u) cv_rect(x + 12, y, 9, 2, heat_col(150));
-                    if (h & 24u) cv_rect(x + 23, y, 7, 2, heat_col(235));
-                } else if (t->step[j].time == ST_NOTE) cv_rect(x + 2, y, cw - 10, 2, T_DIM);
-            }
+        int32_t y = 2 + (int32_t)i * 19;
+        uint32_t r = drum_track(t) && scn_role[i] != SC_DRUM ? SC_KEEP : scn_role[i], lo = 127, hi = 0;
+        const char *rn = scn_on == 8u ? "PRESS" : scn_on >= 2u && i == scn_on - 2u ? "LEADS" : drum_track(t) && r == SC_KEEP ? "KIT" : SC_ROLE[r];
+        b[0] = 'T'; b[1] = (char)('1' + i); b[2] = 0;
+        cv_rect(4, y, 26, 16, i < trk_live ? trk_col(i) : T_RAISE);
+        cv_text_in(4, y + CAP_IN(X, 16), 26, &AF_X, b, i < trk_live ? trk_ink(i) : T_DIM, i < trk_live ? trk_col(i) : T_RAISE);
+        cv_text(36, y + 1, &AF_M, rn, i == sc_trk ? T_ACCENT : r == SC_KEEP ? T_DIM : T_TEXT);
+        cv_rect(150, y + 6, 84, 5, T_RAISE);
+        if (i >= trk_live || r == SC_KEEP || r == SC_DRUM || scn_on == 8u) {
+            cv_text(98, y + 4, &AF_X, i >= trk_live ? "ASLEEP" : r == SC_DRUM ? "BEAT" : "OWN SEQ", T_DIM);
             continue;
         }
-        n = scn_on == 8u ? (o[0] = (uint8_t)last_note, 1u) : scn_notes(t, r, scn_on >= 2u ? scn_fnote : last_note, o, 1);   /* the last key's (or leading note's) notes on it */
-        for (j = 0; j < n; j++) {
-            int32_t y = y0 + yh - 4 - (clamp(o[j], 36, 96) - 36) * (yh - 6) / 60;
-            cv_rect(x + 2 + (r == SC_ARP ? (int32_t)j * 7 : 0), y, r == SC_ARP ? 6 : cw - 10, 3, note_col(o[j]));
-        }
+        n = scn_notes(t, r, scn_on >= 2u ? scn_fnote : last_note, o, 1);
+        for (j = 0; j < n; j++) { if (o[j] < lo) lo = o[j]; if (o[j] > hi) hi = o[j]; }
+        if (!n) continue;
+        str_cpy(b, NN12[lo % 12u], 4); fmt_int(b + str_len(b), (int32_t)lo / 12 - 1);
+        str_cpy(b + str_len(b), "-", 2);
+        str_cpy(b + str_len(b), NN12[hi % 12u], 4); fmt_int(b + str_len(b), (int32_t)hi / 12 - 1);
+        cv_text(98, y + 4, &AF_X, b, T_MID);
+        lo = (uint32_t)clamp((int32_t)lo, 36, 96); hi = (uint32_t)clamp((int32_t)hi, 36, 96);
+        cv_rect(150 + (int32_t)(lo - 36u) * 84 / 60, y + 6, (int32_t)(hi - lo) * 84 / 60 + 2, 5, trk_col(i));
     }
-    {   /* (V10.7.63, the owner: "confusing") what the picked track's role does, in words; then the keys */
-        static const char *const RD[SC_N] = {"PLAYS ITS OWN SEQUENCE", "HOLDS EACH NOTE'S CHORD", "ARPEGGIATES EACH NOTE'S CHORD",
-                                             "A BASS LINE UNDER THE NOTES", "A LINE ABOVE THE NOTES", "A NEW BEAT EACH KEY, WHILE HELD"};
-        uint32_t r = scn_role[sc_trk % NTRK] % SC_N;
-        char b[48] = "T1 ";
-        b[1] = (char)('1' + sc_trk % NTRK);
-        if (scn_on == 8u)
-            str_cpy(b, "PRESS: EVERY TRACK PLAYS THE KEYS", 48);
-        else if (scn_on >= 2u && sc_trk % NTRK == scn_on - 2u)
-            str_cpy(b + 3, "LEADS: ITS NOTES PLAY THE OTHERS", 45);
-        else
-            str_cpy(b + 3, RD[r], 45);
-        cv_text_in(4, (int32_t)h - 22, 232, &AF_X, scn_on ? b : "SCENE OFF: KNOB 1 KEYS OR A TRACK LEADS", scn_on ? T_TEXT : T_DIM, T_SURF);
-        cv_text_in(4, (int32_t)h - 11, 232, &AF_X, "OCT+ DICE  OCT- ALL KEEP", scn_on ? T_ACCENT : T_DIM, T_SURF);
-    }
+    str_cpy(b, "T1 ", 48);
+    b[1] = (char)('1' + sc_trk % NTRK);
+    if (scn_on == 8u) str_cpy(b, "PRESS: EVERY TRACK PLAYS THE KEYS", 48);
+    else if (scn_on >= 2u && sc_trk % NTRK == scn_on - 2u) str_cpy(b + 3, "LEADS: ITS NOTES PLAY THE OTHERS", 45);
+    else str_cpy(b + 3, RD[scn_role[sc_trk % NTRK] % SC_N], 45);
+    cv_text_in(4, 120, 232, &AF_X, scn_on ? b : "SCENE OFF: KNOB 1 KEYS OR A TRACK LEADS", scn_on ? T_TEXT : T_DIM, T_SURF);
 }
 
 /* (V10.6j) SCENE's DRUM: key k's beat into the kit, 16 steps (main loop: ui_input.c's poll; the key in the audio side

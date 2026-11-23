@@ -174,6 +174,13 @@ int main(void)
         go_title("GLOBAL"); frames(2); ok &= !head_trk();
         bad += check("track bar: TRACK N / ENGINE on T1..T6's colours (header and the number's box); none on HOME, GLO, JAM", ok);
     }
+    {   /* (V10.8.14) SCL > CHORD's names: the triads of D major, "-" minor, the degree sign diminished */
+        static const uint8_t PC[7] = {0, 2, 4, 5, 7, 9, 11};
+        static const char *const W[7] = {"D", "E-", "F#-", "G", "A", "B-", "C#\xB0"};
+        char nm[4];
+        for (ok = 1, i = 0; i < 7u; i++) { chord_nm(nm, PC, i, 2); ok &= str_eq(nm, W[i]) && text_w(&AF_M, nm) <= 28; }
+        bad += check("SCL chords: D major's seven named (D E- F#- G A B- C#dim), each fits its card", ok);
+    }
     if (bad) printf("stepfx: %d failed\n", bad);
     else printf("stepfx: all passed\n");
     return bad != 0;

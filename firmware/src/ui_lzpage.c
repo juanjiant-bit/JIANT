@@ -229,62 +229,53 @@ static uint16_t note_col(uint32_t n)
 {
     return heat_col(40 + (int32_t)(n % 12u) * 200 / 11);
 }
+/* (V10.8.14, the owner's "teclado y grados") KEY: an octave of keys, the scale's lit in their colours, ROOT a dot; under it
+ * "D MINOR" and the scale's notes from ROOT */
 static __attribute__((noinline)) void graph_key(const track_t *t, const page_t *pg)
 {
-    static const char *const NN[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
-    static const uint8_t BLK[12] = {0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0};
-    uint32_t mask = scale_mask(t), i, rt = (uint32_t)clamp(t->p[P_ROOT], 0, 11), first = 12u, prev = 12u;
-    int32_t px[12], py[12];
+    uint32_t mask = scale_mask(t), rt = (uint32_t)clamp(t->p[P_ROOT], 0, 11), lit = 0, i;
     const char *u = "";
-    char b[16];
-    for (i = 0; i < 12u; i++) {
-        uint32_t a = (uint32_t)(i * 65536u / 12u) + 0xC000u;   /* (C on top, clockwise; a turn 65536, in decimal: the
-                                                         * build's register lint reads 0x10000 as an SFR) */
-        px[i] = 62 + (og_cos(a) * 42 >> 15);
-        py[i] = 58 + (og_sin(a) * 42 >> 15);
-    }
-    for (i = 0; i < 12u; i++) {                         /* the scale joined */
-        uint32_t n = (rt + i) % 12u;
-        if (!(mask >> i & 1u))
-            continue;
-        if (prev < 12u)
-            og_line(px[prev] * 16, py[prev] * 16, px[n] * 16, py[n] * 16, note_col(prev));
-        else
-            first = n;
-        prev = n;
-    }
-    if (first < 12u && prev != first)
-        og_line(px[prev] * 16, py[prev] * 16, px[first] * 16, py[first] * 16, note_col(prev));
-    for (i = 0; i < 12u; i++) {
-        uint32_t deg = (i + 12u - rt) % 12u, in = mask >> deg & 1u;
-        uint16_t c = in ? note_col(i) : T_RAISE;
-        if (deg == 0u)                                  /* the ROOT: its colour in a ring of text */
-            og_node(px[i] * 16, py[i] * 16, 9, T_TEXT);
-        og_node(px[i] * 16, py[i] * 16, in ? 7 : 4, c);
-        if (in)
-            cv_text_in(px[i] - 7, py[i] - 3 - AF_X_CAP_Y, 14, &AF_X, NN[i], T_INK, c);
-    }
-    cv_text_in(42, 48 - AF_M_CAP_Y, 40, &AF_M, NN[rt], note_col(rt), T_SURF);
-    param_format(&TP[P_SCALE], t->p[P_SCALE], b, &u);
-    cv_text_in(32, 66 - AF_X_CAP_Y, 60, &AF_X, b, T_MID, T_SURF);
-    (void)pg;                                           /* (QUANT and ALL TR stood at the right: their cards say them) */
-    for (i = 0; i < 24u; i++) {                         /* two octaves from C */
-        uint32_t deg = (i + 24u - rt) % 12u;
-        cv_rect(8 + (int32_t)i * 9, BLK[i % 12u] ? 112 : 122, 8, BLK[i % 12u] ? 10 : 12,
-                mask >> deg & 1u ? note_col(i) : BLK[i % 12u] ? T_LINE : T_RAISE);
-        if (deg == 0u)
-            cv_rect(8 + (int32_t)i * 9, BLK[i % 12u] ? 110 : 120, 8, 1, T_TEXT);
-    }
+    char b[48];
+    (void)pg;
+    for (i = 0; i < 12u; i++)
+        if (mask >> i & 1u) lit |= 1u << ((rt + i) % 12u);
+    piano(4, 84, lit, rt, 0);
+    str_cpy(b, NN12[rt], 4);
+    str_cpy(b + str_len(b), " ", 2);
+    param_format(&TP[P_SCALE], t->p[P_SCALE], b + str_len(b), &u);
+    cv_text(8, 94, &AF_M, b, T_TEXT);
+    b[0] = 0;
+    for (i = 0; i < 12u; i++)
+        if (mask >> i & 1u && str_len(b) < 40u) {
+            str_cpy(b + str_len(b), NN12[(rt + i) % 12u], 4);
+            str_cpy(b + str_len(b), " ", 2);
+        }
+    cv_text(8, 116, &AF_X, b, T_MID);
 }
+/* CHORD: a card a degree of the key, the chord it plays (its name, its degree), the one of the last key played lit
+ * (else I); that chord's notes lit on the keys under them (chord_peek: as the keys play it now) */
 static __attribute__((noinline)) void graph_chord(const track_t *t)
 {
-    static const char *const RN[7] = {"I", "II", "III", "IV", "V", "VI", "VII"};
-    uint32_t mask = scale_mask(t), deg[12], c = 0, i, d, rt = (uint32_t)clamp(t->p[P_ROOT], 0, 11);
+    uint32_t mask = scale_mask(t), c = 0, i, d, sel = 0, n, lit = 0, rt = (uint32_t)clamp(t->p[P_ROOT], 0, 11);
+    uint8_t pc[12], nt[8];
     const char *u = "";
     char b[32], v[12];
     for (i = 0; i < 12u; i++)
         if (mask >> i & 1u && c < 7u)
-            deg[c++] = i;
+            pc[c++] = (uint8_t)i;
+    for (d = 0; d < c; d++)
+        if (pc[d] == ((uint32_t)last_note + 12u - rt) % 12u) sel = d;
+    for (d = 0; d < c; d++) {
+        int32_t x = 6 + (int32_t)d * 33;
+        uint16_t f = d == sel ? T_ACCENT : T_RAISE;
+        if (c == 7u) chord_nm(v, pc, d, rt); else str_cpy(v, NN12[(rt + pc[d]) % 12u], 4);
+        cv_rect(x, 2, 30, 36, f);
+        cv_text_in(x, 6, 30, text_w(&AF_M, v) <= 28 ? &AF_M : &AF_X, v, d == sel ? T_INK : T_TEXT, f);
+        cv_text_in(x, 26, 30, &AF_X, RN7[d], d == sel ? T_INK : T_DIM, f);
+    }
+    n = c ? chord_peek(t, 48u + rt + pc[sel], nt) : 0u;
+    for (i = 0; i < n && i < 8u; i++) lit |= 1u << (nt[i] % 12u);
+    piano(44, 70, lit, (rt + (c ? pc[sel] : 0u)) % 12u, T_ACCENT);
     if (t->p[P_CHRD]) {
         param_format(&CHORD_DESC[0], t->p[P_CHRD], b, &u);
         str_cpy(b + str_len(b), " \xB7 ", 32 - str_len(b));
@@ -292,20 +283,7 @@ static __attribute__((noinline)) void graph_chord(const track_t *t)
         str_cpy(b + str_len(b), v, 32 - str_len(b));
     } else
         str_cpy(b, "CHORD OFF \xB7 ONE NOTE A KEY", 32);
-    ed_cap(10, 6, b, T_TEXT);
-    for (d = 0; d < c; d++) {
-        uint8_t nt[8];
-        int32_t x = 14 + (int32_t)d * 31;
-        uint32_t n = chord_peek(t, 48u + rt + deg[d], nt), k;
-        cv_rect(x - 2, 18, 27, 100, d == 0u ? T_TINT : T_SURF);
-        for (k = 0; k < n && k < 8u; k++) {
-            int32_t y = 112 - clamp((int32_t)nt[k] - 48, 0, 31) * 3;
-            cv_rect(x + 2, y, 21, 3, note_col(nt[k]));
-            if (k == 0u)                                /* the chord's root: a tick of text */
-                cv_rect(x - 1, y, 2, 3, T_TEXT);
-        }
-        cv_text_in(x - 2, 125 - AF_X_CAP_Y, 27, &AF_X, RN[d], d == 0u ? T_THEME : T_DIM, T_SURF);
-    }
+    cv_text(8, 120, &AF_X, b, T_MID);
 }
 static void graph_arp(const track_t *t)
 {
