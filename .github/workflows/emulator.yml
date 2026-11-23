@@ -11,6 +11,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 concurrency:
@@ -234,6 +235,50 @@ jobs:
           cp docs/navigation-map.png docs/navigation-map.svg docs/navigation-map.es.png docs/navigation-map.es.svg build/pages/docs/
           # (0.9.12) the interactive manual (web/manual: the panel, every command, the map, what's new) at manual/
           python3 web/make_site.py manual build/pages
+      - name: the beta emulator's pin (web/SPLIT_BETA.json, when it is web/PREVIEW's commit)
+        id: betaemu
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          out=open(os.environ['GITHUB_OUTPUT'],'a')
+          try:
+              m=json.loads(Path('web/SPLIT_BETA.json').read_text())
+              ok=m.get('emulator_sha256') and m['source']==Path('web/PREVIEW').read_text().strip()
+          except Exception:
+              ok=False
+          out.write('run_id='+(str(m['run_id']) if ok else '')+'\n')
+          PY
+      # (V10.8.20) a full rebuild from main used to drop preview/emu (only split-beta.yml wrote it): the same
+      # verified candidate emulator again, from the CI run the beta was published from
+      - name: the beta emulator's candidate
+        if: steps.betaemu.outputs.run_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: drum-kits-emulator-candidate
+          run-id: ${{ steps.betaemu.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: build/beta-emulator
+      - name: the beta emulator under preview/emu
+        if: steps.betaemu.outputs.run_id != ''
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,shutil
+          from pathlib import Path
+          m=json.loads(Path('web/SPLIT_BETA.json').read_text())
+          emu=Path('build/beta-emulator'); wasm=emu/'felucca.wasm'
+          if not wasm.exists() or hashlib.sha256(wasm.read_bytes()).hexdigest()!=m['emulator_sha256']:
+              print('beta emulator: candidate missing or its SHA256 differs, preview/emu left out'); raise SystemExit(0)
+          html=(emu/'index.html').read_text()
+          (emu/'index.html').write_text(html.replace('Installer (approved version)','Installer (beta)'))
+          target=Path('build/pages/preview/emu')
+          if target.exists(): shutil.rmtree(target)
+          shutil.copytree(emu,target)
+          (target/'SOURCE_COMMIT').write_text(m['source']+'\n')
+          (target/'SHA256SUMS').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.relative_to(target).as_posix()+'\n' for p in sorted(target.rglob('*')) if p.is_file()))
+          print('beta emulator restored:',m['version'])
+          PY
       - name: Site manifest (every file with its SHA-256, for the next publish to recover the site exactly)
         run: python3 tools/fetch_live_site.py manifest build/pages
       - uses: actions/upload-pages-artifact@v3
