@@ -3,17 +3,20 @@
 **Bio-synthetic operating system for the M-VAVE FM-1** — synthesis, sequencing, mutation, performance.
 
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
-[![Emulator](https://img.shields.io/badge/try%20it-in%20the%20browser-ff7a00.svg)](https://juanjiant-bit.github.io/JIANT/emu/)
-[![JIANT Studio](https://img.shields.io/badge/JIANT%20Studio-install%20·%20edit%20·%20screen%20·%20record-c9a2ff.svg)](https://juanjiant-bit.github.io/JIANT/studio/)
 
-## 📖 Guides · Guías (V10.8.21)
+**▶ [Emulator](https://juanjiant-bit.github.io/JIANT/emu/)** · **[Installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/)** · **[Editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/)** · **[JIANT Studio](https://juanjiant-bit.github.io/JIANT/studio/)** · **[What's new](https://juanjiant-bit.github.io/JIANT/docs/guide/whats-new-v10.8.21.html)** · **[Manual](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.html)** · **[Manual ES](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.es.html)**
 
-| | English | Español |
-| --- | --- | --- |
-| **What's new in V10.8.21** · **Lo nuevo en V10.8.21** | [Read online](https://juanjiant-bit.github.io/JIANT/docs/guide/whats-new-v10.8.21.html) · [Download](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/whats-new-v10.8.21.html) | [Ver online](https://juanjiant-bit.github.io/JIANT/docs/guide/whats-new-v10.8.21.es.html) · [Descargar](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/whats-new-v10.8.21.es.html) |
-| **Full manual** · **Manual completo** (with the essential commands · con los comandos esenciales) | [Read online](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.html) · [Download](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/manual.html) | [Ver online](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.es.html) · [Descargar](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/manual.es.html) |
+![JIANT FM: the signature and screens of the firmware](docs/jiant-hero.png)
 
-Each page is a single file: once downloaded it works offline. · Cada página es un solo archivo: descargada funciona sin conexión.
+JIANT FM is a free, alternative firmware for the **M-VAVE FM-1**, made for playing live and building whole songs
+without a computer: six tracks, eleven synthesis engines plus one for external signals, a 64-step sequencer with
+step components you can play live, a song mode you perform and record, a generator, DRONE CLAY and effects, all
+inside the little keyboard. It is a fork of [Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 by Hügelton
+Instruments (GPL-3.0) and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
+
+> **Current public release: V10.8.21** (not a beta). **Back up your projects before updating**: save a complete
+> backup with the editor or the installer first. If something doesn't work for you, V10.7.81 is still offered in the
+> installer.
 
 ## ▶ [JIANT Studio](https://juanjiant-bit.github.io/JIANT/studio/): everything in one page
 
@@ -35,63 +38,6 @@ look. Up top you choose what you work with: **the FM-1 over USB, or the emulator
 English and Spanish. To look around without an FM-1: **[Studio with a simulated FM-1](https://juanjiant-bit.github.io/JIANT/studio/?mock=1)**.
 Its code: [`web/studio`](web/studio) (run it locally with `python3 web/studio/dev_server.py`).
 
-> **New: JIANT FM beyond the FM-1 (preview).** The same firmware on the **Akai MPC Sample**, the **MPC standalones**
-> (plugin), **VST3 / LV2 / standalone** for Linux and Windows, and soon the **M-VAVE SMK-37**. On these bigger CPUs it
-> adds a **SAMPLE** engine, a **GRAIN** engine and **DRUM-X with samples**. Free, GPL-3.0, looking for testers.
-> **▶ [Try every device in the browser](https://juanjiant-bit.github.io/JIANT/emu/devices.html)** ·
-> **[Downloads (pre-release)](https://github.com/juanjiant-bit/JIANT/releases)** · **[How it works](https://github.com/juanjiant-bit/JIANT/blob/main/ports/README.md)**
->
-> | Device | Install | Emulator | Editor |
-> | --- | --- | --- | --- |
-> | **M-VAVE FM-1** | [Web installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) | [FM-1 emulator](https://juanjiant-bit.github.io/JIANT/emu/index.html) | [Web editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/) |
-> | **M-VAVE SMK-37** | not yet: [build from source](https://github.com/juanjiant-bit/JIANT/blob/main/docs/SMK37.md) | [SMK-37 panel](https://juanjiant-bit.github.io/JIANT/emu/devices.html#smk37) | [Web editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/) |
-> | **Akai MPC Sample** | [Download](https://github.com/juanjiant-bit/JIANT/releases) (the zip for the microSD card) · [how to install](https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample/README.md) | [MPC panel](https://juanjiant-bit.github.io/JIANT/emu/devices.html#mpc) | coming |
-> | **Plugins** (MPC standalones, VST3 / LV2 / standalone) | [Download](https://github.com/juanjiant-bit/JIANT/releases) · [how they work](https://github.com/juanjiant-bit/JIANT/blob/main/ports/README.md) | | |
-
-![JIANT FM: the signature and screens of the firmware](docs/jiant-hero.png)
-
-JIANT FM is a free, alternative firmware for the **M-VAVE FM-1**, made for playing live and building whole songs
-without a computer: six tracks, eleven synthesis engines plus one for external signals, a 64-step sequencer, songs,
-a generator and effects, all inside the little keyboard. It is a fork of [Felucca](https://github.com/hugelton/Felucca)
-1.1.5.1 by Hügelton Instruments (GPL-3.0) and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
-
-**▶ [Try it in the browser](https://juanjiant-bit.github.io/JIANT/emu/)** · **[Install](https://juanjiant-bit.github.io/JIANT/webapp/installer/)** · **[Interactive manual](https://juanjiant-bit.github.io/JIANT/manual/)** · **[Web editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/)** · **[Manual EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)**
-
-The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
-always offers the current public version first, and the earlier ones under it.
-
-## This release: V10.8.21
-
-The installer offers **V10.8.21**, the public version (V10.7.81 and the earlier ones stay under it). What it brings since V10.7.81 (the betas V10.8.1 to V10.8.20):
-
-- **Song mode** (HOME › JAM · TAKE · ARRANGE): play the four sequences A–D of every track live (F3–B3 pick A–D on
-  all tracks, OCT+ GO, OCT− STOP, CAMBIO sets when a change lands). **REC** records the take; **K4 LOCK** plays it back
-  and what you play over it is marked **YOU**; with a track selected, **REC** redoes that track for one round and
-  **OCT−** undoes it. **TAKE** edits the changes (K1 pick, K2 move, K3 sequence, K4 bars, OCT+ new, OCT− delete). A help
-  line on JAM and TAKE says what to do next (MENU › DISPLAY › HELP OFF hides it). GLO › LIVE is gone: JAM plays the
-  sequences live.
-- **Step components you play** (SEQ › STEP FX): the **PRESETS knob picks the step**; the 16 white keys play components
-  while held — STUTTER, STUTTER /2, /4, RATCHET x2 x3 x4 x8, ARP UP / DOWN / UP-DOWN, OCTAVE UP / DOWN, RANDOM, TRANSPOSE
-  +2, CHORD, MUTE — and with **REC** they are written into the step with their value and length (into COMP, or COMP 2
-  when COMP is taken). A big **banner** names the key and what it does while held (also on the FX layer's punch-ins).
-- **DRONE CLAY** (SEQ › CLAY, from JIANT BYTE): a sequencer per track — a very low drone in the track's own voice (RATE
-  re-strikes it with the transport, or holds it) and four modulators (shape, euclid, amount, decay, gestures) aimed at
-  any of the track's parameters; note gestures (ARP, CHORD, HIT) play on the scale. On MONO / LEGATO it yields the voice
-  to the steps; a TIME or PITCH punch-in restarts it from its first hit.
-- **Which track you are on, always**: a bar on top reads **TRACK N / ENGINE** in the track's own colour (T1 yellow, T2
-  orange, T3 red, T4 magenta, T5 violet, T6 blue); the same colours on the mixer, the beings, JAM and TAKE.
-- **Macros as destinations**: LFO › MACROS — KNOB 1 picks the macro, its destinations add up (16 routes in all); in the
-  MOD matrix M1–M4 are destinations, not sources.
-- **Redesigned screens**: FX in the HUD look (DELAY's echoes a tunnel, REVERB cells, CHORUS L/R orbit, SLICER, MASTER,
-  DIST); FX › SENDS as columns; GLO › MIXER channels; ENV as layers of the last notes; LFO as a satellite writing its
-  wave; EDIT › FOCUS a horizontal heat bar with the parameter's whole name and its modulation; ARRANGE and GENERATOR a
-  living score (sections as wide as their bars, one lane per track); SCL › KEY the scale's whole name, its notes and
-  degrees; SCL › CHORD the chord really played (D MIN7…), its notes and intervals, the seven degrees' chords. Names are
-  whole where they fit (ECOSYSTEM, GENERATOR, MIXER, MODULATION…).
-- **Power-on**: the boot "Six threads" with the signature drawn smooth and the version shown; the **click at power-on**
-  is gone (the output opens after the audio has started, then fades in).
-- **Removed for room**: GLO › LIVE, SEQ › STRETCH, MUTATE, the sequence dice (SEQ + SELECT; the sound dice stays), GLO ›
-  GLOBAL COMP, ENV › TRACKS and the one-time teaching hints. Old projects open: their settings are kept and ignored.
 ### Installing
 
 Open the **[web installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/)** in Chrome or Edge on a computer
@@ -114,218 +60,11 @@ Open the **[web installer](https://juanjiant-bit.github.io/JIANT/webapp/installe
 JIANT has no user samples: Felucca's user samples (USR1–3) are lost on install. Keep your WAV files. Use it at your own
 risk: it is a custom firmware.
 
-### What's new since V10.6c
-
-- **Songs**: SAVE opens on the song, **TIMELINE** (the song as blocks, each row opened track by track: mutes, FROM
-  another part, a variation), **PARTS** (the four parts as cards, one loops with OCT+) and **CLIPS** (six tracks × four
-  parts, launched on the next bar; REC writes the rows). A sound you change while the song plays stays. A whole song or
-  just its loop is saved on **PROJECTS** (SONG / LOOP on the NAME screen's KNOB 3).
-- **DRUM-X**: a quality pass, a classic CMOS cowbell, the **EXTENDED** key map (real fills on OCT+1, every sound
-  chromatic on OCT−1), the punchy kicks back. **SCENE DRUM GEN**: SCL › SCENE's drum role plays a kit generated for the
-  genre.
-- **GENE**, the generator, plays the owner's curated genres: CUMBIA, EBM, BAILE FUNK, PHONK, HIP HOP (trap, drill,
-  pluggnb, boom bap or lofi), JAZZ at every tempo, TECHNO ROCK (rock or synth 80s) and more.
-- **Key velocity and aftertouch** on the FM-1's own keys (F3..C5, each key calibrated as you play; after Charles
-  Vestal's *Velo*): MENU › CONTROL › VELOCITY, VEL MIN, AFTERTOUCH, VEL LEARN, and a live view at
-  [webapp/vel](https://juanjiant-bit.github.io/JIANT/webapp/vel/).
-- **Expression keys**: a note held + OCT− fades in a vibrato, + OCT+ bends it (MENU › AUDIO › OCT BEND).
-- **REC keeps the feel** (lengths, legato, velocity); **GATE 100 %** for new tracks; step component **RAMP** (a lock
-  glides there over steps or bars) replaces JUMP.
-- **SWARM** (EXT's Bluetooth instrument) plays a melody from how near you are, with a FAR / NEAR morph and CHAOS.
-- The **thermal palette** everywhere: the piano roll coloured by pitch class.
-- *(next version)* **Seven palettes, all JIANT's own**: MENU › DISPLAY › COLOR offers JIANT (unchanged, the default),
-  SELVA, CONTRAST, BRASA, ABISAL, HUESO and NEON, each with the thermal ramp on beings, notes and bars and its own four
-  knob colours on the cards (JIANT: each value's heat, as before). The
-  ten palettes inherited from Felucca are gone; a saved one lands on the nearest of the family.
-- *(next version)* **Two skins**: MENU › DISPLAY › SKIN is AIR or COLORS; BOTTOM and HUD are gone (a saved one loads
-  as COLORS).
-- *(next version)* **No STYLE row**: FLAT is the one style, LINE is gone (a saved LINE loads as FLAT).
-- *(next version)* **Bigger small letters**: names, tabs, the header's words and the breadcrumb with 9 px capitals
-  (Chakra Petch; the 5 × 7 pixel face is gone), five tabs at a time, eight menu rows at a time.
-- *(next version)* **Bigger values**: a card's number in 14 px figures (was 11), rolling as before; MENU › LARGE's tall
-  cards on SEQ's, SAVE's and FX's pages too.
-- *(next version)* **COLORS without the panel box**: the picture sits on the background, as in AIR (cards and tiles as
-  before).
-- **VOICE** no longer clips on open vowels; WORDS › CONS sets the consonants' length.
-- **NRPN** for every automatable parameter ([docs/NRPN.md](docs/NRPN.md)); the editor protocol is a versioned
-  contract, 1.2 ([web/EDITOR_PROTOCOL.md](web/EDITOR_PROTOCOL.md)).
-- The newer FM-1 flash chip is supported, and the second core starts only on the stock power settings.
-
-Every detail: the [Changelog](#changelog) and the manual's
-[What's new in this version](docs/MANUAL.md#whats-new-in-this-version).
-
-### What's in it
-
-- **Engines**: DRUM-X (synthesized drums with a morph between two sides), ANALOG, FM6 (six operators, 32 algorithms,
-  DX7 banks), PHASE, MATH (bytebeat and floatbeat), VOICE (sings words in Spanish, English and Japanese), WHEEL, WEST (a west-coast voice: folders and a low-pass gate),
-  ANIMAL (birds, insects and frogs from physical models), STRING (a plucked, struck or bowed string, and guitar
-  feedback), ADD (additive) and EXT (the USB audio input, or SWARM). No samples.
-- **Sequencer**: 64 steps a track, piano roll and drum grid, step components, EUCLID and MODES, MUTATE, PLAYHEADS,
-  STRETCH, parameter locks and automation, copy and paste.
-- **Songs**: 6 songs × 4 parts, up to 16 rows each, scenes, SONG REC, TIMELINE · PARTS · CLIPS, and GENE, which writes
-  a whole song idea from a genre, or in EXPLORE breaking every rule.
-- **Performance**: GLO › LIVE (the six sequences as a live board), punch-in effects, a DJ filter, macros.
-- **Connections**: USB MIDI and audio (the FM-1 is a sound card: stems for every track, the computer's audio back in),
-  MIDI over the TRS jack, Bluetooth MIDI and PROX (how near a phone is, as a modulation), USB HOST (a USB-MIDI keyboard
-  straight in, experimental).
-
-> 🫶 If you resonate with my work, consider supporting me on **[Ko-fi](https://ko-fi.com/juanjiant)** (in Argentina:
-> **[Cafecito](https://cafecito.app/juanjiant)**). Thanks for all the good energy, hope you enjoy this little beast ✨🎹
-
-## Reporting a crash
-
-If the FM-1 crashes, the red screen stays **10 seconds** and names the core, the VEC, PC and SP, and the bus master
-that wrote or read where it should not. **Take a photo of it**, then power on and open **MENU › ABOUT**, which keeps
-the CRASH line until power-off. Report both, with the version you installed, on the JIANT Discord server
-(GitHub issues are closed).
-
-## Navigation
-
-Ten buttons, ten sections, and the same six rules in every one of them (0.9.2). The map shows every section, its
-groups (the tabs on the screen) and its pages in the order SELECT walks them, with the held layers and the combos.
-Click it to open it full size ([SVG](docs/navigation-map.svg), zoomable · [en español](docs/navigation-map.es.svg)).
-
-[![JIANT FM navigation map: every section, its groups and its pages in chain order, the six rules, the held layers and the combos](docs/navigation-map.png)](docs/navigation-map.svg)
-
-1. **SELECT walks the pages**: one chain per section, a page a detent, stopping at the first and the last.
-2. **The section's button: in, or on**: from elsewhere, the page you left there; inside, the first page of the next
-   group (round). FX › DLY 2 → REVERB; EDIT › FILTER → FOCUS.
-3. **PRESETS loads presets**: the track's sounds everywhere, the patterns in SEQ, the genre in GEN; never a page, a
-   track or a module.
-4. **KNOB 1 picks**: the step, the bar, the slot, the stage, the operator, the kit's sound. The track is always
-   **ALGORITHM**'s.
-5. **Hold = the layer**: a button held puts its shortcuts on the keys and knobs (SEQ + G5 CLR STEP, SAVE + C5 NAME,
-   GLO + G4 UNDO …). Held + SELECT: **HOME** GEN, **EDIT / SEQ / LFO / FX** their dice, **GLO** the tempo,
-   **ENV / SCL / ARP / SAVE** walk their chain.
-6. **The screen says where**: on top the section's groups as tabs (a dot a page), at the foot
-   **SECTION · GROUP · page** and **n/N**: **FX · DELAY · DLY 2  6/16**.
-
-The whole chapter: [the manual, § 3](docs/MANUAL.md#3-pages-and-layers) ·
-[el manual, § 3](docs/MANUAL.es.md#3-páginas-y-capas). The map is generated from the firmware's own chain tables
-(`firmware/src/ui_lens.c`) by `tools/gen_nav_map.py`.
-
-## Manual
-
-What changed in each version: the **[Changelog](#changelog)**, at the end of this page.
-
-The full user manual, every page, layer and setting, with a careful chapter on saving: **[English](docs/MANUAL.md)** ·
-**[Español](docs/MANUAL.es.md)**.
-
-**[The interactive manual](https://juanjiant-bit.github.io/JIANT/manual/)** (Spanish and English): the FM-1 drawn
-with every control (touch one: what it does alone, held and in combination, with the firmware's real screen), every
-command searchable, step-by-step recipes, the navigation map and what's new by version. Its source is
-`web/manual` on `main` (the chains and screens from the firmware, `tools/gen_manual.py`).
-
-## Cheat sheets
-
-Two printable sheets with everything on the device. Click an image to open it full size, or download the PDF.
-
-| Controls | Sound · FX · Mod |
-| --- | --- |
-| [![JIANT FM cheat sheet: controls](docs/cheatsheet-controls.png)](docs/cheatsheet-controls.png) | [![JIANT FM cheat sheet: sound, effects and modulation](docs/cheatsheet-sound.png)](docs/cheatsheet-sound.png) |
-| Every knob and button, the layers with their key maps (FX, GLO, SAVE, EDIT, LFO, SCL, SEQ, REC), the combos and every page's four knobs. **[PDF](docs/cheatsheet-controls.pdf)** | The twelve engines' EDIT pages (STRING and ADD included), FILTER, VOICE, ENV, LFO, the MOD matrix, MSEQ, macros, the sequencer, scales and ARP, songs, and every effect: DIST, the SLICER bus, delay, the five reverbs, the master, TAPE and the 4-band EQ. **[PDF](docs/cheatsheet-sound.pdf)** |
-
-## The idea
-
-A pocket synthesizer shouldn't feel like a menu. JIANT starts from a simple question: what if the device behaved
-less like a tool and more like an organism?
-
-That's why everything in JIANT is alive and visible. The screen works like a **thermal camera**: colour isn't
-decoration, it's intensity. Cold is cyan and violet, hot is red, orange, yellow and white. A high parameter burns; a
-sounding voice glows; silence cools down. Each engine is a **being**, a protozoan drawn in lines whose shape comes
-from what you're playing: open the filter and it grows spines, raise the resonance and its membrane vibrates, detune
-the oscillators and its nuclei drift apart. HOME is an **ecosystem**: six creatures, one per track, breathing with
-their own audio. You don't need to read numbers to know what's going on; you can see it.
-
-At the same time, what is technical is shown as technical. The LFO runs at its rate, the envelope shows where the
-voice is, the distortion draws its transfer curve, the delay its echoes, the reverb its response. The organic invites
-you to play; the technical lets you understand what you did.
-
-The second idea is that **randomness is an invitation, not an accident**. Every session starts with macros rolled
-towards what your sounds have; HOME + SELECT writes a whole piece, EDIT + SELECT dices the sound; macro dice only land on what is playing.
-The system pushes you to move things and always leaves you near something that works: the dice start from factory
-presets and vary around them, never from nothing.
-
-The third is that **everything is playable and everything is recordable**. Effects are played on the keys and land
-in an automation lane; knobs record their movement; songs are built from bars and scenes, and recorded while you
-play them. The synthesis engines run in real time on a chip designed for something else.
-
-And the last one is a discipline: **lightweight**. Every graphic is a handful of lines, every effect fits in the
-audio CPU budget, the signature shown at power-on is 428 bytes. An instrument that feels big inside a small device.
-
-## The system
-
-### Both cores (dual core)
-
-*Since 0.6.71, experimental.* The FM-1's chip (JieLi AC791N) has **two processor cores**; Felucca and JIANT up to
-0.6.70 used one, which ran everything: the sound, the screen, the keys. Now the second one helps with the sound:
-
-- **How the work is shared.** Every 0.7 ms block, the tracks are split between the two cores by how long each took to
-  render over the last blocks (timed as they play, since 0.6.73). While the first core renders its tracks, the second
-  renders the others into buffers of its own; then they are added together and go through the master on the first
-  core. The drum tracks go together, on one core or the other. Since 0.6.75 the second core also runs the effect
-  buses (chorus, delay, reverb), on the sends of the block before (0.7 ms later, inaudible), so they no longer wait.
-- **The same sound.** The sum is exactly the one-core sum: a test plays a whole six-track song both ways and checks
-  that the output is identical, bit for bit.
-- **More room.** With the second core doing part of the synth work, the load meter stays lower: more tracks, voices,
-  FM6 and heavy reverbs before the clicks and the cut notes start. LOAD LITE / ECO are still there for the heaviest
-  songs. **12 voices** (0.9.12, after [Skiff](https://github.com/illuminus5/skiff)): while the second core plays, the
-  tracks share 12 voices instead of 8 (each still at most 8; ECO 6); with one core, 8 as before.
-- **Units that cannot run it.** On some FM-1s the second core now and then reads a word of memory wrong, more often
-  under load (found by the Melodee and fm1-x0x developers). JIANT guards against it: every job carries a check word,
-  and if the second core reads a wrong one, faults or does not answer in time, it is **stopped at once and the first
-  core plays every track again**, with no crash (at most one 0.7 ms block of those tracks is lost). Since 0.6.76 the
-  effects' output is checked too: far out of range, the block is muted, their lines cleared and the second core stopped
-  the same way. Such a unit
-  then stays on one core **until it is switched off**, and so does any unit after a crash while both cores ran.
-- **What it says.** MENU > SYSTEM > ABOUT, under AUDIO LOAD: **CORES 2**, or **CORES 1** with the reason: REC AT POWER-ON,
-  BAD READ, NO ANSWER, FAULT, SINCE A FAULT (an earlier one this power-on), NO START.
-- **One core on purpose.** Hold **REC** while switching the FM-1 on: that session plays on one core, as before.
-- **Credits.** How to start the second core safely on the FM-1 and the guard against misreads come from
-  [Melodee](https://github.com/keremimo/melodee) (keremimo) and [fm1-x0x](https://github.com/charlesvestal/fm1-x0x)
-  (Charles Vestal), both GPL-3.0; JIANT's version is in `firmware/hal/fm1_multicore.h`.
-
-### A living screen
-
-![HOME, ARRANGE, SEQ › NOTE off the grid, FX › DELAY, the DRUM-X kit and VOICE's WORDS in the COLORS skin](docs/jiant-screens.png)
-
-*HOME with its six beings, the song in ARRANGE, SEQ › NOTE with a note 13/64 late, the delay, the DRUM-X colony and
-VOICE singing its lyric, in the COLORS skin, exactly as the firmware draws them (the renders of `tests/ui_render.c`).*
-
-- **Thermal palette**: values, curves, steps, hits and notes are coloured by intensity (cyan → blue → violet → red →
-  orange → yellow → white). Selection is violet and active is orange; on JIANT each card's value and gauge are its
-  amount's heat (0.9.5, as 0.6), the other palettes give each knob a colour of their own.
-- **Skins** (MENU › DISPLAY › SKIN): **AIR** (0.9.7, the default of new settings: floating words on
-  every page, the knob row on top under the tabs, the middle free, HOME's beings over the whole screen) and **COLORS**
-  (near-black rounded cards on top). Every skin wears the **LENTE** layout (0.8.5): the
-  section's groups as tabs on top (a dot a page), the breadcrumb **SECTION · GROUP · page n/N** at the foot. Values
-  in [Inter Tight](https://github.com/rsms/inter-tight) SemiBold, names, tabs, the breadcrumb and small captions
-  in [Chakra Petch](https://github.com/m4rc1e/Chakra-Petch).
-- **HOME, the ecosystem**: one being per track (its species from its engine, its shape from its four knobs). Each one
-  heats up, swells and moves with its own audio; the selected track is drawn bigger; muted ones go dark; in silence
-  they all stay still. (0.9.7) Each wears a little face: its eyes shut on a hit, its mouth opens with its level;
-  muted, it sleeps.
-- **Engine pages**: each engine draws its own creature (0.9.4 / 0.9.6, [below](#v096)): VOICE a singing head, ANIMAL
-  a bird / insect / mammal, DRUM-X its kit of little beings, ANALOG a cell, FM6 a colony of operators, WHEEL tube worms,
-  NOISE a swarm, PHASE a snail, MATH (LOFI) a caterpillar. (Before: the sound's being drawn in isotherms, four contours of
-  the same body, cold edge, hot core, as HOME's ecosystem still shows them.) The being's knobs read as what they are: **CUT** grows spines (more harmonics, spikier), **RES** makes the membrane vibrate,
-  **DTN/SPRD** splits two nuclei, **NOIS/RAND/CRSH** frays the edge, **WAVE** changes the lobes.
-- **DRUM-X, the colony**: one being per kit sound, each with its own shape (round kick, spiky snare, fringed hats,
-  clustered clap, star-shaped cowbell) that swells and heats up when it hits (KIT 2, KIT 3, X-MOD); on KIT, SOUND 1–4
-  and HOME (0.9.4) **the kit as little beings** with eyes and mouths that squash and shout with every hit.
-- **Live technical graphs**: LFO (the wave runs at its rate, with playhead and current value), ENV (a dot travels the
-  curve with the sounding voice), DIST (transfer curve by TYPE and TONE response), DLY and DLY 2 (the echoes, L and
-  R), REVERB and REVERB 2 (the impulse response, stereo, drawn per model), CHORUS (the three modulated lines), AUTOPAN (the swing across the stereo field), MASTER
-  (clipper curve, PUNCH shape, how much DUCK pulls down), ENV/LFO DEST (bipolar columns under each knob, lit by what
-  they send), VOICE (one cell per voice and the glide curve), GLOBAL (the bar in thermal columns with swing, clock and
-  tuning).
-- **Load meter**: five small bars next to the battery showing the current audio load.
-- **Power-on**: the "jiant fm" logo (V10.6l) is written in the owner's own stroke order in thermal colours (MENU › DISPLAY › ANIM OFF: it shows
-  up whole).
+## Engines and features
 
 ### Engines
 Eleven synthesis engines and one for external signals, in the order PRESETS shows them (V10.6e; the first six are the
-tracks at power-on, a band in tune): **DRUM-X, ANALOG, PHASE, FM6, VOICE, ANIMAL**, then **MATH, WHEEL, NOISE, STRING,
+tracks at power-on, a band in tune): **DRUM-X, ANALOG, PHASE, FM6, VOICE, ANIMAL**, then **MATH, WHEEL, WEST, STRING,
 ADD** and **EXT** (the USB audio input, or SWARM: a melody out of the Bluetooth around, from how near you are).
 - **ANALOG**: two oscillators with **INT** (an interval of ±24 semitones: fifths, octaves) and DTN; besides SAW, SQR,
   TRI, SIN and PWM it has **SYNC**, **RING**, **SAW3** and **PLS3** (three saws, three pulses, osc 3 its own INT 3). Its filter is per voice.
@@ -353,7 +92,7 @@ ADD** and **EXT** (the USB audio input, or SWARM: a melody out of the Bluetooth 
 - **ADD** (0.9.9-snd5): additive. MODE picks the spectrum (HARM ODD WIDE BELL BAR DRUM PRIME FIFTH SUB PLATE), MORPH
   moves between spectra, BRIGHT and PARTIAL how many partials, SHIFT stretches them, COMB carves notches, DECAY lets
   the highs die first and MOTION sweeps the spectrum.
-- **VOICE** (formants, after klattsch), **WHEEL** (drawbar organ) and **NOISE** (coloured and metallic noise).
+- **VOICE** (formants, after klattsch), **WHEEL** (drawbar organ) and **WEST** (a west-coast voice: folders and a low-pass gate).
   **VOICE sings words** (0.8.5): LANG ES / EN / JA, each note the next syllable of a lyric you type (on the device or
   from the web editor) or of phrases the dice puts together from each language's word bank; POS and LOOP automate it.
 - **ANIMAL** (0.8.3): animal calls from physical models: a source that oscillates or strikes exciting a resonator,
@@ -369,107 +108,96 @@ ADD** and **EXT** (the USB audio input, or SWARM: a melody out of the Bluetooth 
   filter, with DRV; on MATH it's per voice too (its CUT and RES are the ones on this page); on the others it's a filter
   on the track that follows the LFO and the envelope (LFO/ENV DEST FLT), and its DRV is the track's DIST.
 
-### DRUM-X: synthesized drums with morph
-An 8-sound kit (BD SD CP CH OH TM RS CB) generated in real time, Microtonic style.
-- Each sound has two sides, **A** and **B**; **MORPH** (KNOB 1) moves between them.
-- **FOLD** runs each sound's oscillator through a wavefolder after its envelope: the hit starts bright and the tail
-  returns to the clean wave. **FM** changes the timbre with harmonic FM in 8 bands; plus TUNE, TONE, DECAY, NOISE and
-  DRV.
-- **EDIT > SOUND 1–4** (one sound each, KNOB 1 picks it): SIDE, PITCH, PMOD; DECAY, NOISE, COLOR; **MODE**,
-  **PM.TYPE** (how the pitch moves: DECAY, LONG like the 808, NOISE, SINE), DRIVE; **LAYER**, **FEEDBK** and a
-  per-hit **SEND**.
-- **The kit in every octave** (0.8.5): the keys play the kit on the same keys at every OCT; above the centre a key
-  **ratchets** in time (x2, x4, x8), below it plays **SHORT**, **GHOST** or **FLAM**, each sound its own on each step,
-  and live recording keeps exactly what you played. MIDI drum notes outside 35–81 trigger the same variations.
-- **Group mutes** (KICK, SNARE, HAT, PERC) with GLO held and **per-sound mutes** with EDIT held.
-- **EDIT > X-MOD** (0.5.1): a tempo-synced LFO on MORPH and RAND, which gives every hit its own MORPH and tune.
-- **MATH formulas** (V10.7.74–V10.7.81): SOUND 3's WAVE past BELL is **F01–F48**, a MATH formula as the sound's FM,
-  used as a wavetable (smooth) and drawn on screen; **RATIO** on KNOB 4 (¼ … 16, 24 values) and **MOD AMT** in
-  COLOR's place. The kits **GLITCH FM** and **MATH LAB** are made of formulas; EDIT + SELECT (DICE) gives half the
-  sounds one.
-- Nine kits as the DRUM engine's presets (DRUM-X, 909 CLUB, 808 BOOM, LOFI DUST …); EDIT + SELECT rolls a new kit
-- **Keys** (V10.6r, EDIT › KIT 4 KEY MAP **EXTENDED**, the default): OCT+1 plays real **fills**, OCT−1 the kick and tom
-  (or any one sound) **chromatically**, OCT−2 the FX kit; CLASSIC keeps the octaves above. The cowbell is a classic CMOS
-  one (V10.6q); the kicks punch as before V10.6q (V10.6z9).
+### Features
 
-### Dice: the system invites you to move everything
-- A button held + **SELECT** rolls that part's dice (0.9.2: SELECT alone walks the pages). **EDIT + SELECT rolls the
-  track's sound dice**: a synth loads one of its factory presets at random and moves each engine parameter up to a
-  quarter of its range; DRUM-X rolls the A and B sides of each sound around the factory kit. **SEQ / LFO / FX +
-  SELECT** dice the sequence, the LFO, the effects, each shown **BEFORE** and **NOW** to keep or cancel; **GLO +
-  SELECT** is the tempo. **HOME + SELECT** opens
-  **GENE** (GEN until V10.6m), the song generator (since 0.6.91; HOME's last three pages since 0.9.2): it starts on **EXPLORE** (0.8.6: no
-  genre, every rule broken: odd metres, exotic modes, any engine on any role; at power-on and NEW PROJECT, V10.8:
-  after that it keeps the genre you picked), then RANDOM or one of the owner's genres (V10.6n: minimal and hard techno,
-  house, cumbia, reggaeton, dembow, EBM, phonk, baile funk, hip hop, jazz, techno rock, IDM …), a seed, an energy, a form (a loop, parts, a club song); how much drums,
-  bass, chords, arp and lead; complexity, swing, how human. **OCT+** writes the piece from them (OCT+ again: a new
-  seed; a knob turned and OCT+: the same piece with that one thing changed), **OCT−** is done. Every piece has one
-  key, written to the SCALE page (and the CHORD page set to its chords: the keys play along in key), drums from the
-  genre's priority map, a bass archetype written against the kick, a functional or modal progression with cadences
-  voiced and led voice by voice, a lead composed from a motif in periods and sentences, a sound recipe a role, the
-  genre's kit and space (see v0.6.91, v0.8.3).
-- **UNDO: GLO held + G4** takes back the last big change (DICE ALL, a sound diced, a clear, INIT, RECALL, a pattern or
-  project loaded); pressing it again goes forward (redo). G4 breathes when there is something to undo.
-- **Macros M1–M4** (LFO held; they stay latched when released until you press LFO again): every session starts with
-  two random routes per track towards what its sound has. With the macros open, **F3** rolls new routes, only on
-  the tracks that are playing; G3 clears them (LFO + SELECT rolls the track's LFO). They can be assigned by hand in MOD (SRC M1…M4) and are saved
-  with the project.
+- **Sequencer**: 64 steps a track, piano roll and drum grid, step components (two per step) you can also **play live
+  and record on SEQ › STEP FX**, EUCLID and MODES, PLAYHEADS, parameter locks and automation, copy and paste.
+- **DRONE CLAY** (SEQ › CLAY): a per-track sequencer with a low drone and four modulators (shapes, euclidean, gestures)
+  that move any parameter of the track.
+- **Song mode**: **JAM** (switch every track's sequence A–D live), **TAKE** (record it and edit its changes), **LOCK**
+  (play over the take: **YOU**), **ARRANGE**, and the **GENERATOR**, which writes a whole song idea from a genre.
+- **Performance**: punch-in effects on the keys, macros with up to 16 routes (and as MOD destinations), a DJ filter,
+  LIFE (tracks modulating each other).
+- **Screen**: each track in its own colour with a TRACK / ENGINE bar, HUD-style effect pages, big banners for held keys
+  and hints that tell you what to do.
+- **Connections**: USB MIDI and audio (the FM-1 is a sound card: stems for every track, the computer's audio back in),
+  MIDI over the TRS jack, Bluetooth MIDI and PROX, USB HOST (experimental).
 
-### Punch-in FX: effects you play and record
+## What's new in V10.8.21
 
-> **V10.7.81:** hold **FX** and the screen is a map of **named cells**: every effect by its name, the macros M1–M4 on top
-> and the mutes T1–T6 below. **OCT+ on FX › PUNCH IN** (or FX + OCT+) opens the **punch-in editor**: each key WHAT (an
-> effect, or a parameter: M1–M4, CUT, PITCH, TIMBRE, VOLUME, PAN, DIST, CHORUS, DELAY, REVERB, VIBRATO), HOW (HOLD,
-> LATCH, QUANT, RAMP, SINE, STUTTER, S&H), AMOUNT and TIME; two slots, A and B.
+Song mode (JAM · TAKE · LOCK), live STEP FX, DRONE CLAY, track colours, macros as destinations, redesigned effects,
+MIXER, ENV, LFO, FOCUS, ARRANGE, GENERATOR, KEY and CHORD pages, the "Six threads" power-on and no more power-on click.
+Removed to make room: GLO › LIVE, STRETCH, MUTATE, the sequence dice, GLOBAL COMP, ENV › TRACKS (old projects still open).
 
-> **Now (V10.7.44+):** each key's effect is yours: hold **FX**, hold a key and turn **SELECT** (any effect, MUTE T1–T6,
-> LOCK, DEC−/DEC+, LPF/HPF or nothing). Three layouts on **FX + OCT+**; the default has T1–T4 MUTE, FREEZE on G4,
-> REV ALL on D#4. The history below tells how they got here.
+| | English | Español |
+| --- | --- | --- |
+| **What's new in V10.8.21** · **Lo nuevo** | [Read online](https://juanjiant-bit.github.io/JIANT/docs/guide/whats-new-v10.8.21.html) · [Download](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/whats-new-v10.8.21.html) | [Ver online](https://juanjiant-bit.github.io/JIANT/docs/guide/whats-new-v10.8.21.es.html) · [Descargar](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/whats-new-v10.8.21.es.html) |
+| **Full manual** · **Manual completo** (with the essential commands) | [Read online](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.html) · [Download](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/manual.html) | [Ver online](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.es.html) · [Descargar](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/manual.es.html) |
 
-With FX held the keys become effects that act while hel…8050 tokens truncated…er a pattern of another
-  length they drift across the notes (polymeter, as the OP-Z's). The COMP page marks the lane and where it is.
-  Automatable. Costs nothing on the audio: a copy of the step once per step.
+Each page is a single file: downloaded, it works offline. Also: the **[interactive manual](https://juanjiant-bit.github.io/JIANT/manual/)**,
+the manual in Markdown **[EN](docs/MANUAL.md) · [ES](docs/MANUAL.es.md)**, and the **[Changelog](#changelog)**.
 
-### Making a song (sections, TIMELINE, ARRANGE)
+## Cheat sheets
 
-- **Sections**: make a loop, hold **SAVE** + **C4** to store it as section **A** (D4–F4: B–D; it works while playing
-  and goes to flash when you stop). Change it and store B, C, D. SAVE + F3–B3 plays a section on the next bar.
-- **TIMELINE** (V10.6o; SAVE opens on it at power-on): the song as blocks. **OCT+** adds a copy of the row picked;
-  KNOB 1 the row, KNOB 2 its section, KNOB 3 its bars, KNOB 4 the **VAR** of the ALGORITHM track (MUTE, THIN, FILL,
-  HALF, REV, SHIFT, OCT±, VAR 1–4); F3–D4 mute T1–T6 in the row, F4–B4 make the track play another section (**FROM**).
-  PLAY loops the row; PLAY again lets the song go on.
-- **PARTS** (V10.6o): the four parts as cards, OCT+ loops one, OCT− back to the song. **CLIPS** (V10.6s): six tracks ×
-  four parts, a cell launched on the next bar; with REC each launch becomes a row.
-- **ARRANGE** (SELECT right from TIMELINE, or SAVE + G5): KNOB 2 on **END** picks STOP,
-  x2–x8 or LOOP; KNOB 4 right stores a **scene** (mutes, macros) in the row.
-- **Play**: PLAY on ARRANGE plays the song from the top; elsewhere SAVE + D5 (SONG mode) first.
-  **OCT−** on a row asks **DELETE SONG ROW?** (OCT+ deletes). **SAVE + E5 (SONG REC)** writes the sections you play
-  live into the rows instead.
-- Step by step: [the manual, § 7](docs/MANUAL.md#your-first-song-step-by-step) ·
-  [el manual, § 7](docs/MANUAL.es.md#tu-primer-tema-paso-a-paso).
+Two printable sheets with everything on the device. Click an image to open it full size, or download the PDF.
 
-### EUCLID
+| Controls | Sound · FX · Mod |
+| --- | --- |
+| [![JIANT FM cheat sheet: controls](docs/cheatsheet-controls.png)](docs/cheatsheet-controls.png) | [![JIANT FM cheat sheet: sound, effects and modulation](docs/cheatsheet-sound.png)](docs/cheatsheet-sound.png) |
+| Every knob and button, the layers with their key maps (FX, GLO, SAVE, EDIT, LFO, SCL, SEQ, REC), the combos and every page's four knobs. **[PDF](docs/cheatsheet-controls.pdf)** | The twelve engines' EDIT pages (STRING and ADD included), FILTER, VOICE, ENV, LFO, the MOD matrix, MSEQ, macros, the sequencer, scales and ARP, songs, and every effect: DIST, the SLICER bus, delay, the five reverbs, the master, TAPE and the 4-band EQ. **[PDF](docs/cheatsheet-sound.pdf)** |
 
-- **SEQ › EUCLID** (V10.6) writes the selected track's pattern as a euclidean rhythm, live; **MODES** (the next page)
-  adds to it.
-- **Drums**: LANE (KNOB 4) starts on **ALL**, where KNOB 1 **DENSITY** (1–8) writes a whole kit, with KNOB 2 STEPS and
-  KNOB 3 ROTATE. Pick a lane (BD SD CP CH OH TM RS CB) to change that sound alone. MODES: ACCENT, GHOST, RATCHET, VARY.
-- **Melodic**: KNOB 1 HITS (exactly that many notes), STEPS, ROTATE, KNOB 4 VARY; the notes stay in the SCL key, or in
-  the key the other tracks play (else a new one). MODES: MOTION, HARMONY, OCTAVE, SLIDE.
-- **VARY** (V10.16): above 0 the pattern is four turns of the cycle, A A' A'' B, each varied anew (HITS exact in
-  each); a melody answers its own motif.
-- **SEQ › MUTATE** (V10.16, the page after MODES): EVERY (OFF, 1–16 bars), AMOUNT, MODE (ORBIT round the anchor,
-  DRIFT walking on, PULSE mutation and anchor by turns), WHAT (GROOVE, RHYTHM, FEEL, ALL). It mutates on the bar while
-  playing; OCT+ mutates now, OCT− returns to the anchor (what you dialled).
-- **OCT+** a new variation, **OCT−** the one before; **GLO + G4** (or REC held alone and let go) undoes.
-- In one minute: [the manual](docs/MANUAL.md#euclid-and-modes-v106) ·
-  [el manual](docs/MANUAL.es.md#euclid-y-modes-v106).
+## Navigation
 
-### Bluetooth
+Ten buttons, ten sections, and the same six rules in every one of them (0.9.2). The map shows every section, its
+groups (the tabs on the screen) and its pages in the order SELECT walks them, with the held layers and the combos.
+Click it to open it full size ([SVG](docs/navigation-map.svg), zoomable · [en español](docs/navigation-map.es.svg)).
 
-- **MIDI by Bluetooth** (V10.13): MENU › SYSTEM › BLUETOOTH ON, connect from an app (**JIANT FM-1**): notes, CC, clock in;
-  MIDI OUT to the app. **PROX** (V10.14–V10.20): how close the **phone** is, as a modulation source (the BLUETOOTH row › OCT+:
-  phone away OCT− FAR, phone on the FM-1 OCT+ NEAR; then SRC PROX on a MOD slot). See the manual, § 14.
+[![JIANT FM navigation map: every section, its groups and its pages in chain order, the six rules, the held layers and the combos](docs/navigation-map.png)](docs/navigation-map.svg)
+
+1. **SELECT walks the pages**: one chain per section, a page a detent, stopping at the first and the last.
+2. **The section's button: in, or on**: from elsewhere, the page you left there; inside, the first page of the next
+   group (round). FX › DLY 2 → REVERB; EDIT › FILTER → FOCUS.
+3. **PRESETS loads presets**: the track's sounds everywhere, the patterns in SEQ, the genre in GEN; never a page, a
+   track or a module.
+4. **KNOB 1 picks**: the step, the bar, the slot, the stage, the operator, the kit's sound. The track is always
+   **ALGORITHM**'s.
+5. **Hold = the layer**: a button held puts its shortcuts on the keys and knobs (SEQ + G5 CLR STEP, SAVE + C5 NAME,
+   GLO + G4 UNDO …). Held + SELECT: **HOME** GEN, **EDIT / SEQ / LFO / FX** their dice, **GLO** the tempo,
+   **ENV / SCL / ARP / SAVE** walk their chain.
+6. **The screen says where**: on top the section's groups as tabs (a dot a page), at the foot
+   **SECTION · GROUP · page** and **n/N**: **FX · DELAY · DLY 2  6/16**.
+
+The whole chapter: [the manual, § 3](docs/MANUAL.md#3-pages-and-layers) ·
+[el manual, § 3](docs/MANUAL.es.md#3-páginas-y-capas). The map is generated from the firmware's own chain tables
+(`firmware/src/ui_lens.c`) by `tools/gen_nav_map.py`.
+
+## Coming soon
+
+- **PUNCH SEQ**: a punch-in sequencer (four rows, sixteen steps, on OCT+), replacing PUNCH LANE.
+- **DRONE CLAY keys**: play DRONE CLAY's gestures from the keys, with a card that says what each one does.
+
+> **New: JIANT FM beyond the FM-1 (preview).** The same firmware on the **Akai MPC Sample**, the **MPC standalones**
+> (plugin), **VST3 / LV2 / standalone** for Linux and Windows, and soon the **M-VAVE SMK-37**. On these bigger CPUs it
+> adds a **SAMPLE** engine, a **GRAIN** engine and **DRUM-X with samples**. Free, GPL-3.0, looking for testers.
+> **▶ [Try every device in the browser](https://juanjiant-bit.github.io/JIANT/emu/devices.html)** ·
+> **[Downloads (pre-release)](https://github.com/juanjiant-bit/JIANT/releases)** · **[How it works](https://github.com/juanjiant-bit/JIANT/blob/main/ports/README.md)**
+>
+> | Device | Install | Emulator | Editor |
+> | --- | --- | --- | --- |
+> | **M-VAVE FM-1** | [Web installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) | [FM-1 emulator](https://juanjiant-bit.github.io/JIANT/emu/index.html) | [Web editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/) |
+> | **M-VAVE SMK-37** | not yet: [build from source](https://github.com/juanjiant-bit/JIANT/blob/main/docs/SMK37.md) | [SMK-37 panel](https://juanjiant-bit.github.io/JIANT/emu/devices.html#smk37) | [Web editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/) |
+> | **Akai MPC Sample** | [Download](https://github.com/juanjiant-bit/JIANT/releases) (the zip for the microSD card) · [how to install](https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample/README.md) | [MPC panel](https://juanjiant-bit.github.io/JIANT/emu/devices.html#mpc) | coming |
+> | **Plugins** (MPC standalones, VST3 / LV2 / standalone) | [Download](https://github.com/juanjiant-bit/JIANT/releases) · [how they work](https://github.com/juanjiant-bit/JIANT/blob/main/ports/README.md) | | |
+
+## Reporting a crash
+
+If the FM-1 crashes, the red screen stays **10 seconds** and names the core, the VEC, PC and SP, and the bus master
+that wrote or read where it should not. **Take a photo of it**, then power on and open **MENU › ABOUT**, which keeps
+the CRASH line until power-off. Report both, with the version you installed, on the JIANT Discord server
+(GitHub issues are closed).
+
+> 🫶 If you resonate with my work, consider supporting me on **[Ko-fi](https://ko-fi.com/juanjiant)** (in Argentina:
+> **[Cafecito](https://cafecito.app/juanjiant)**). Thanks for all the good energy, hope you enjoy this little beast ✨🎹
 
 ## Building and testing
 
