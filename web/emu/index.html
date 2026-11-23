@@ -429,20 +429,42 @@ function saveFlash(sectors) {
 }
 
 // ------------------------------------------------------------------ Web MIDI in (channel messages)
+/* (studio) the web installer in another tab of this site (index_pkg.html, JIANT FM's or JIANT BYTE's) writes to an FM-1:
+ * meanwhile the emulator listens to no MIDI port at all (the FM-1's update loader is one of them), says so ("released"),
+ * and listens again when the installer has finished (or said nothing for 60 s) */
+let midiAccess = null, midiHeld = 0;
+function midiBind() {
+  if (!midiAccess) return;
+  for (const input of midiAccess.inputs.values()) {
+    input.onmidimessage = Date.now() < midiHeld ? null : (e) => {
+      const d = e.data;
+      if (d.length >= 2 && d[0] >= 0x80 && d[0] < 0xF0) send({ type: "midi", data: [d[0], d[1], d[2] || 0] });
+    };
+    if (Date.now() < midiHeld && input.close) input.close().catch(() => {});
+  }
+}
+try {
+  const bc = new BroadcastChannel("jiant-midi");
+  let again = 0;
+  bc.onmessage = (e) => {
+    const m = e.data || {};
+    if (m.type === "who") bc.postMessage({ type: "emulator", connected: !!midiAccess && !midiHeld });
+    if (m.type !== "installer") return;
+    clearTimeout(again);
+    if (m.busy) {
+      midiHeld = Date.now() + 60000;
+      midiBind();
+      bc.postMessage({ type: "released", who: "emulator" });
+      again = setTimeout(() => { midiHeld = 0; midiBind(); }, 60000);
+    } else { midiHeld = 0; midiBind(); }
+  };
+} catch (_) {}
 async function midiOn() {
   if (!navigator.requestMIDIAccess) return;
   try {
-    const access = await navigator.requestMIDIAccess();
-    const bind = () => {
-      for (const input of access.inputs.values()) {
-        input.onmidimessage = (e) => {
-          const d = e.data;
-          if (d.length >= 2 && d[0] >= 0x80 && d[0] < 0xF0) send({ type: "midi", data: [d[0], d[1], d[2] || 0] });
-        };
-      }
-    };
-    access.onstatechange = bind;
-    bind();
+    midiAccess = await navigator.requestMIDIAccess();
+    midiAccess.onstatechange = midiBind;
+    midiBind();
   } catch { /* no permission: the panel only */ }
 }
 

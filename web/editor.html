@@ -3111,7 +3111,11 @@ try {
     if (m.type === "who") bc.postMessage({ type: "editor", connected: !!dev });
     if (m.type === "installer") {
       installerUntil = m.busy ? Date.now() + 60000 : 0;
-      if (m.busy) { wantConnected = false; if (dev) disconnect("instbusy"); }
+      if (m.busy) {
+        wantConnected = false;
+        if (dev) disconnect("instbusy");                 /* (the screen mirror closes with it) */
+        Promise.resolve(portsClosing).then(() => bc.postMessage({ type: "released", who: "editor" }));   /* (the installer waits) */
+      }
     }
   };
 } catch (_) {}
