@@ -1,0 +1,724 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
+// JIANT Studio (index.html): one page for JIANT FM and JIANT BYTE. What it does itself: finds the FM-1 and says which
+// firmware it runs (INFO: BYTE's engines include MATH), shows its screen big (78 SCREEN / 79 SCREEN_DATA, as the editor's
+// mirror) or the emulator's, and records audio (the FM-1's USB audio: stereo, or the 8 channels of USB > STEMS; or the
+// emulator's output) and MIDI. The installer, the editor and the emulator are the sites' own pages in frames (one origin:
+// /JIANT/ and /JIANT-BYTE/ on juanjiant-bit.github.io), dressed in the firmware's look.
+// Install safety: the BroadcastChannel "jiant-midi" (as every MIDI page of both sites): while an installer writes, this
+// page lets the FM-1 go (link closed, screen off) and says "released"; the editor and the emulator in the frames do the
+// same on their own.
+import { scrDecode, scrEncode, wavFile, zipStored, midiFile, SCR } from "./studio-lib.js";
+
+const $ = (id) => document.getElementById(id);
+const QS = new URLSearchParams(location.search);
+const MOCK = QS.get("mock") === "1";
+
+/* ------------------------------------------------------------------------------------------------- the words */
+const TEXT = {
+  es: {
+    other: "English", vHome: "Inicio", vInstall: "Instalar", vEditor: "Editor", vScreen: "Pantalla", vEmu: "Emulador", vRec: "Grabar",
+    tFm1: "FM-1", tEmu: "Emulador", target: "Destino",
+    eyebrow: "Un firmware libre para la M-VAVE FM-1",
+    leadFm: "Síntesis, secuencias, mutación y escena en vivo. Instalalo, editalo, mirá su pantalla en grande y grabá, todo desde acá.",
+    leadByte: "Bytebeat y floatbeat: cada sonido, batería y animación es una fórmula del tiempo. Instalalo, editalo y grabá desde acá.",
+    needBrowser: "Chrome o Edge", needCable: "Un cable USB de datos", needPhone: "Celular Android con USB-C (OTG)",
+    s1Title: "Conectá la FM-1", s1Text: "Enchufala directo a esta computadora o celular, sin hub, y prendela. Cuando el navegador pida usar dispositivos MIDI, elegí Permitir.",
+    find: "Buscar FM-1", forget: "Soltar la FM-1",
+    s2Title: "Instalá o actualizá", s2Text: "Elegí el firmware. Antes de escribir, el instalador hace un backup y todas las demás herramientas sueltan la FM-1 solas.",
+    fmPitch: "Seis pistas vivas, once motores, secuenciador de 64 pasos, canciones, generador y efectos.",
+    bytePitch: "Fórmulas como voces: MATH, WAVE y DRUM-X con fórmulas. LIFE: las pistas se escuchan entre sí.",
+    s3Title: "Usala", s3Text: "Todo con la misma conexión. Arriba elegís si trabajás con la FM-1 por USB o con el emulador.",
+    toolEditor: "Sonidos, pasos, pistas, proyectos y backups desde la computadora.",
+    toolScreen: "La pantalla de la FM-1 en grande, a pantalla completa en el celular.",
+    toolEmu: "La FM-1 en el navegador, con sonido. Tocala con un teclado MIDI.",
+    toolRec: "Master o stems en WAV, y lo que tocaste en MIDI.",
+    hSafeQ: "¿Es seguro tener el editor o el emulador abiertos mientras instalo?",
+    hSafeA: "Sí. Cuando el instalador empieza a escribir, avisa a todas las pestañas y marcos de JIANT FM y JIANT BYTE: el editor se desconecta, la pantalla se apaga y el emulador deja de escuchar MIDI, y el instalador espera a que cada uno confirme antes de mandar el primer byte. Nadie se vuelve a conectar hasta que termina. Cerrá otros programas de música que usen la FM-1 (un DAW, otro editor): esos no se enteran.",
+    hStopQ: "Si la instalación se cortó", hStopA: "La FM-1 queda en modo actualización: volvé a enchufarla (o prendela) en esta misma página y la instalación sigue desde donde quedó.",
+    hDeadQ: "Si la FM-1 no arranca", hDeadA: "Abrí Instalar: el instalador la encuentra en modo actualización y la recupera. Si ni así responde, hace falta un FM-1-transporter (está explicado en el instalador).",
+    hPhoneQ: "¿Funciona en el celular?", hPhoneA: "En Android con Chrome, enchufando la FM-1 al USB-C del teléfono (un cable o adaptador OTG). En iPhone no: Safari no tiene Web MIDI.",
+    devNone: "sin FM-1", devLooking: "buscando…", devGone: "FM-1 desconectada", devBusy: "instalando en otra pestaña", devMock: "(simulada)",
+    found: "Encontrada: ", foundNot: "No aparece ninguna FM-1 con JIANT. Si tiene otro firmware o el oficial, instalá JIANT FM o JIANT BYTE desde el paso 2.",
+    noMidi: "Este navegador no tiene Web MIDI: usá Chrome o Edge (en iPhone no hay).", denied: "El navegador no dio permiso para MIDI.",
+    nowBusy: "Un instalador está escribiendo: la FM-1 quedó libre para él.",
+    instTitleFm: "JIANT FM", instTitleByte: "JIANT BYTE",
+    instSafe: "Mientras el instalador escribe, el editor, la pantalla y el emulador de esta página (y de otras pestañas) sueltan la FM-1 y esperan. No desenchufes ni apagues la FM-1 hasta que termine.",
+    edTarget: "Destino: ", edEmuNote: "Editando el emulador: el editor habla con la FM-1 del navegador (pestaña Emulador). Prendelo ahí primero.",
+    scrTitle: "La pantalla, en grande", scrStart: "Mostrar", scrStop: "Detener", scrFull: "Pantalla completa", scrExitFull: "Salir",
+    scrSharp: "Píxeles nítidos", scrWaitFm1: "Conectá la FM-1 (Inicio) y tocá Mostrar.", scrWaitEmu: "Prendé el emulador en la pestaña Emulador y tocá Mostrar.",
+    scrNo: "Este firmware no tiene espejo de pantalla: actualizá JIANT FM o JIANT BYTE.",
+    scrHelpFm1: "La FM-1 manda solo lo que cambia: una pantalla quieta no cuesta nada. Mientras se ve acá, la interfaz de la FM-1 puede ir un poco más lenta en páginas muy animadas; el sonido no cambia.",
+    scrHelpEmu: "La pantalla del emulador, cuadro a cuadro.",
+    scrOrient: "La pantalla de la FM-1 es cuadrada (240 × 240). En vertical ocupa todo el ancho; en horizontal, todo el alto, con los controles al costado. A pantalla completa queda centrada y lo más grande posible en las dos posiciones: girá el celular como te quede cómodo.",
+    scrRate: " KB/s", scrFps: " cuadros/s", scrWaiting: "esperando la imagen…",
+    emuMidi: "MIDI que toca el emulador", emuMidiAll: "Todas las entradas", emuMidiNone: "Ninguna", emuMidiOff: "(prendé el emulador)",
+    recTitle: "Grabar", recAudio: "Audio", recInput: "Entrada", recStart: "Grabar", recStop: "Detener",
+    recSrcFm1: "La FM-1 por USB es una entrada de audio: estéreo (USB > AUDIO), u 8 canales en USB > STEMS (las 6 pistas y los efectos por separado). Elegila acá.",
+    recSrcEmu: "Graba la salida del emulador (prendelo en la pestaña Emulador).",
+    recNoDev: "No hay entradas de audio (dale permiso al micrófono para verlas).", recAsk: "Pedir permiso de audio",
+    recMidi: "MIDI", recMidiHelp: "Mientras grabás, también se guarda lo que entra por MIDI: lo que tocás en la FM-1 (MENU > MIDI OUT) o en un teclado.",
+    recMidiIn: "Entrada MIDI", recMidiNone: "(ninguna)",
+    recStems: "Stems de una canción", recStemsHelp: "Desde un backup, sin tiempo real: cada pista en su WAV, alineadas al sample (el panel Stems del emulador).",
+    recStemsGo: "Abrir el emulador",
+    recTakes: "Tomas", recNone: "Todavía no grabaste nada.", recWav: "WAV master", recStemsZip: "Stems (ZIP)", recMid: "MIDI",
+    recChannels: " canales", recNotes: " notas",
+    foot: "JIANT Studio, de Juan Jiant",
+  },
+  en: {
+    other: "Español", vHome: "Home", vInstall: "Install", vEditor: "Editor", vScreen: "Screen", vEmu: "Emulator", vRec: "Record",
+    tFm1: "FM-1", tEmu: "Emulator", target: "Target",
+    eyebrow: "A free firmware for the M-VAVE FM-1",
+    leadFm: "Synthesis, sequencing, mutation and performance. Install it, edit it, see its screen big and record, all from here.",
+    leadByte: "Bytebeat and floatbeat: every sound, drum and animation is a formula of time. Install it, edit it and record from here.",
+    needBrowser: "Chrome or Edge", needCable: "A USB data cable", needPhone: "Android phone with USB-C (OTG)",
+    s1Title: "Connect the FM-1", s1Text: "Plug it straight into this computer or phone, without a hub, and switch it on. When the browser asks to use MIDI devices, choose Allow.",
+    find: "Find FM-1", forget: "Let the FM-1 go",
+    s2Title: "Install or update", s2Text: "Pick the firmware. Before writing, the installer makes a backup and every other tool lets the FM-1 go by itself.",
+    fmPitch: "Six living tracks, eleven engines, a 64-step sequencer, songs, a generator and effects.",
+    bytePitch: "Formulas as voices: MATH, WAVE and DRUM-X with formulas. LIFE: the tracks hear each other.",
+    s3Title: "Use it", s3Text: "All over one connection. Up top you choose the FM-1 over USB or the emulator.",
+    toolEditor: "Sounds, steps, tracks, projects and backups from the computer.",
+    toolScreen: "The FM-1's screen big, full screen on a phone.",
+    toolEmu: "The FM-1 in the browser, with sound. Play it from a MIDI keyboard.",
+    toolRec: "Master or stems as WAV, and what you played as MIDI.",
+    hSafeQ: "Is it safe to keep the editor or the emulator open while installing?",
+    hSafeA: "Yes. When the installer starts writing it tells every JIANT FM and JIANT BYTE tab and frame: the editor disconnects, the screen stops and the emulator stops listening to MIDI, and the installer waits until each one confirms before the first byte goes out. Nothing reconnects until it has finished. Close other music software using the FM-1 (a DAW, another editor): those are not told.",
+    hStopQ: "If an installation stopped", hStopA: "The FM-1 stays in update mode: plug it back in (or switch it on) on this same page and the install carries on where it stopped.",
+    hDeadQ: "If the FM-1 won't start", hDeadA: "Open Install: the installer finds it in update mode and recovers it. If it still does not answer, an FM-1-transporter is needed (explained in the installer).",
+    hPhoneQ: "Does it work on a phone?", hPhoneA: "On Android with Chrome, with the FM-1 plugged into the phone's USB-C (an OTG cable or adapter). Not on iPhone: Safari has no Web MIDI.",
+    devNone: "no FM-1", devLooking: "looking…", devGone: "FM-1 unplugged", devBusy: "installing in another tab", devMock: "(simulated)",
+    found: "Found: ", foundNot: "No FM-1 with JIANT answers. If it runs other or official firmware, install JIANT FM or JIANT BYTE in step 2.",
+    noMidi: "This browser has no Web MIDI: use Chrome or Edge (none on iPhone).", denied: "The browser did not allow MIDI.",
+    nowBusy: "An installer is writing: the FM-1 was let go for it.",
+    instTitleFm: "JIANT FM", instTitleByte: "JIANT BYTE",
+    instSafe: "While the installer writes, the editor, the screen and the emulator on this page (and in other tabs) let the FM-1 go and wait. Do not unplug or switch off the FM-1 until it has finished.",
+    edTarget: "Target: ", edEmuNote: "Editing the emulator: the editor talks to the FM-1 in the browser (Emulator tab). Switch it on there first.",
+    scrTitle: "The screen, big", scrStart: "Show", scrStop: "Stop", scrFull: "Full screen", scrExitFull: "Exit",
+    scrSharp: "Sharp pixels", scrWaitFm1: "Connect the FM-1 (Home) and press Show.", scrWaitEmu: "Switch the emulator on in the Emulator tab and press Show.",
+    scrNo: "This firmware has no screen mirror: update JIANT FM or JIANT BYTE.",
+    scrHelpFm1: "The FM-1 sends only what changes: a screen at rest costs nothing. While it shows here the FM-1's UI may run a little slower on very animated pages; the sound does not change.",
+    scrHelpEmu: "The emulator's screen, frame by frame.",
+    scrOrient: "The FM-1's screen is square (240 × 240). In portrait it fills the width; in landscape, the height, with the controls beside it. Full screen keeps it centred and as big as it gets either way: turn the phone as you like.",
+    scrRate: " KB/s", scrFps: " frames/s", scrWaiting: "waiting for the picture…",
+    emuMidi: "MIDI that plays the emulator", emuMidiAll: "Every input", emuMidiNone: "None", emuMidiOff: "(switch the emulator on)",
+    recTitle: "Record", recAudio: "Audio", recInput: "Input", recStart: "Record", recStop: "Stop",
+    recSrcFm1: "The FM-1 over USB is an audio input: stereo (USB > AUDIO), or 8 channels in USB > STEMS (the 6 tracks and the effects apart). Pick it here.",
+    recSrcEmu: "Records the emulator's output (switch it on in the Emulator tab).",
+    recNoDev: "No audio inputs (allow the microphone to list them).", recAsk: "Ask for audio permission",
+    recMidi: "MIDI", recMidiHelp: "While recording, what comes in over MIDI is kept too: what you play on the FM-1 (MENU > MIDI OUT) or on a keyboard.",
+    recMidiIn: "MIDI input", recMidiNone: "(none)",
+    recStems: "A song's stems", recStemsHelp: "From a backup, not in real time: each track its own WAV, sample-aligned (the emulator's Stems panel).",
+    recStemsGo: "Open the emulator",
+    recTakes: "Takes", recNone: "Nothing recorded yet.", recWav: "WAV master", recStemsZip: "Stems (ZIP)", recMid: "MIDI",
+    recChannels: " channels", recNotes: " notes",
+    foot: "JIANT Studio, by Juan Jiant",
+  },
+};
+let lang = (() => { try { const l = localStorage.getItem("jiant.studio.lang"); if (TEXT[l]) return l; } catch (_) {} return /^es/i.test(navigator.language || "") ? "es" : "en"; })();
+const t = (k) => TEXT[lang][k] ?? TEXT.en[k] ?? k;
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach((e) => { e.textContent = t(e.dataset.t); });
+  document.querySelectorAll("[data-t-label]").forEach((e) => e.setAttribute("aria-label", t(e.dataset.tLabel)));
+  $("lang").textContent = t("other");
+  render();
+}
+$("lang").addEventListener("click", () => { lang = lang === "es" ? "en" : "es"; try { localStorage.setItem("jiant.studio.lang", lang); } catch (_) {} applyLang(); });
+
+/* ------------------------------------------------------------------------------------- where the tools live */
+/* The sites: /JIANT/ (JIANT FM) and /JIANT-BYTE/ (JIANT BYTE) under one origin; this page is /JIANT/studio/. Anywhere else
+ * (a copy on disk) the tools come from the published sites (then they cannot hear this page: another origin). */
+const ROOT = (() => { const m = location.pathname.match(/^(.*?)\/JIANT\//); return location.protocol.startsWith("http") && m ? m[1] : null; })();
+const SITE = ROOT !== null ? `${ROOT}/` : "https://juanjiant-bit.github.io/";
+const TOOLS = {
+  fm: { base: `${SITE}JIANT/`, installer: "webapp/installer/", editor: "webapp/editor/", emu: "emu/" },
+  byte: { base: `${SITE}JIANT-BYTE/`, installer: "webapp/installer/", editor: "webapp/editor/", emu: "emu/" },
+};
+const toolUrl = (fw, tool, q = "") => TOOLS[fw].base + TOOLS[fw][tool] + q;
+
+/* ------------------------------------------------------------------------------------------------ the state */
+const state = {
+  view: "home", fw: QS.get("fw") === "byte" ? "byte" : "fm", target: QS.get("target") === "emu" ? "emu" : "fm1",
+  dev: null,                    // {link, input, output, version, kind ("fm" | "byte"), engines}
+  looking: false, busy: false,  // busy: an installer writes (jiant-midi)
+  found: "",                    // the last result line
+};
+try { const f = localStorage.getItem("jiant.studio.fw"); if (!QS.get("fw") && (f === "fm" || f === "byte")) state.fw = f; } catch (_) {}
+
+/* ------------------------------------------------------------------------------------- the USB link (SysEx) */
+const HDR = [0x7D, 0x46, 0x4C];
+const CMD = { INFO: 1, PING: 25, SCREEN: 78, SCREEN_DATA: 79 };
+const frame = (cmd, args = []) => [0xF0, ...HDR, cmd & 0x7F, ...args, 0xF7];
+function unframe(d) {
+  if (!d || d.length < 6 || d[0] !== 0xF0 || d[d.length - 1] !== 0xF7 || d[1] !== HDR[0] || d[2] !== HDR[1] || d[3] !== HDR[2]) return null;
+  return { cmd: d[4], a: Array.from(d.subarray ? d.subarray(5, d.length - 1) : d.slice(5, -1)) };
+}
+/* one request at a time, each matched by its command (the device answers in order); pushes (79) to onPush */
+class Link {
+  constructor(output, onPush) { this.output = output; this.onPush = onPush; this.q = []; this.cur = null; this.lastSent = 0; this.closed = false; }
+  request(cmd, args = [], timeout = 600) {
+    if (this.closed) return Promise.reject(new Error("closed"));
+    return new Promise((res, rej) => { this.q.push({ cmd, args, res, rej, timeout }); this.pump(); });
+  }
+  pump() {
+    if (this.cur || !this.q.length || this.closed) return;
+    const c = this.cur = this.q.shift();
+    try { this.output.send(frame(c.cmd, c.args)); this.lastSent = Date.now(); } catch (e) { this.finish(null, e); return; }
+    c.timer = setTimeout(() => this.finish(null, new Error("timeout")), c.timeout);
+  }
+  finish(a, err) {
+    const c = this.cur;
+    if (!c) return;
+    clearTimeout(c.timer); this.cur = null;
+    if (err) c.rej(err); else c.res(a);
+    this.pump();
+  }
+  receive(data) {
+    const f = unframe(data);
+    if (!f) return;
+    if (f.cmd === CMD.SCREEN_DATA) { this.onPush(f); return; }
+    if (this.cur && f.cmd === this.cur.cmd && (f.cmd !== CMD.SCREEN || f.a[0] === this.cur.args[0])) this.finish(f.a);
+  }
+  close() { this.closed = true; for (const c of [this.cur, ...this.q].filter(Boolean)) { clearTimeout(c.timer); c.rej(new Error("closed")); } this.cur = null; this.q = []; }
+}
+/* INFO: version string, NENGINES, P_COUNT, G_COUNT, NSTEP, P_E0, then the engines' names. JIANT BYTE's include MATH */
+function parseInfo(a) {
+  let i = 0;
+  const str = () => { let s = ""; while (i < a.length && a[i]) s += String.fromCharCode(a[i++]); i++; return s; };
+  const version = str(), n = a[i]; i += 5;
+  const engines = [];
+  for (let k = 0; k < n && i < a.length; k++) engines.push(str());
+  return { version, engines, kind: engines.includes("MATH") ? "byte" : "fm", jiant: /^(JIANT|FELUCCA)\b/i.test(version) };
+}
+const PORT_RE = /felucca|jiant|skiff|fm[ _-]*1|smk[ _-]*37|m[ _-]*vave|cuvave|composite|sinco|usb[ _-]*midi|usb audio/i;
+let access = null;
+async function midiAccess() {
+  if (access) return access;
+  if (MOCK) return (access = mockAccess());
+  if (!navigator.requestMIDIAccess) throw Object.assign(new Error("nomidi"), { code: "noMidi" });
+  try { access = await navigator.requestMIDIAccess({ sysex: true }); }
+  catch (e) { throw Object.assign(new Error("denied"), { code: "denied" }); }
+  access.onstatechange = (e) => {
+    const p = e.port;
+    if (state.dev && p && p.state === "disconnected" && (p.id === state.dev.input.id || p.id === state.dev.output.id)) { letGo(); state.found = t("devGone"); render(); }
+    renderMidiInputs();
+  };
+  return access;
+}
+async function find() {
+  if (state.looking || state.busy) return;
+  state.looking = true; state.found = ""; render();
+  try {
+    const acc = await midiAccess();
+    const live = (m) => [...m.values()].filter((p) => p.state !== "disconnected");
+    let ins = live(acc.inputs).filter((p) => PORT_RE.test(p.name || "")), outs = live(acc.outputs).filter((p) => PORT_RE.test(p.name || ""));
+    if (!ins.length || !outs.length) { ins = live(acc.inputs); outs = live(acc.outputs); }
+    const pairs = ins.flatMap((input) => outs.map((output) => ({ input, output, s: input.name === output.name ? 1 : 0 }))).sort((x, y) => y.s - x.s);
+    for (const { input, output } of pairs) {
+      const link = new Link(output, onScreenData);
+      input.onmidimessage = (e) => link.receive(e.data);
+      try {
+        const info = parseInfo(await link.request(CMD.INFO, [], 900));
+        if (!info.jiant) throw new Error("not JIANT");
+        letGo();
+        state.dev = { link, input, output, ...info };
+        if (state.fw !== info.kind) setFw(info.kind);
+        state.found = t("found") + `${info.kind === "byte" ? "JIANT BYTE" : "JIANT FM"} ${info.version.replace(/^\S+\s*/, "")}${MOCK ? " " + t("devMock") : ""}`;
+        return;
+      } catch (_) { link.close(); input.onmidimessage = null; }
+    }
+    state.found = t("foundNot");
+  } catch (e) { state.found = t(e.code || "foundNot"); }
+  finally { state.looking = false; render(); }
+}
+function letGo() {
+  const d = state.dev;
+  if (!d) return;
+  screenStop(false);
+  d.link.close();
+  d.input.onmidimessage = midiTap;                       // (the recorder keeps listening to what the FM-1 plays)
+  state.dev = null;
+}
+$("find").addEventListener("click", find);
+$("forget").addEventListener("click", () => { letGo(); state.found = ""; render(); });
+
+/* -------------------------------------------------------------------- install safety: the jiant-midi channel */
+let busyUntil = 0, busyTimer = 0;
+try {
+  const bc = new BroadcastChannel("jiant-midi");
+  bc.onmessage = (e) => {
+    const m = e.data || {};
+    if (m.type === "who") bc.postMessage({ type: "studio", connected: !!state.dev });
+    if (m.type !== "installer") return;
+    clearTimeout(busyTimer);
+    if (m.busy) {
+      busyUntil = Date.now() + 60000; state.busy = true;
+      letGo(); recStop();
+      state.found = t("nowBusy");
+      bc.postMessage({ type: "released", who: "studio" });
+      busyTimer = setTimeout(() => { state.busy = false; render(); }, 60000);
+    } else { state.busy = false; busyUntil = 0; }
+    render();
+  };
+} catch (_) {}
+
+/* ------------------------------------------------------------------------------------- views, firmware, target */
+const VIEWS = ["home", "install", "editor", "screen", "emu", "rec"];
+function go(view, push = true) {
+  if (!VIEWS.includes(view)) view = "home";
+  state.view = view;
+  for (const v of VIEWS) $("v-" + v).hidden = v !== view;
+  if (push) history.replaceState(null, "", location.pathname + location.search + "#" + view);
+  showFrames();
+  render();
+  window.scrollTo({ top: 0 });
+}
+document.addEventListener("click", (e) => {
+  const g = e.target.closest("[data-go]");
+  if (g) { e.preventDefault(); go(g.dataset.go); return; }
+  const f = e.target.closest("[data-fw]");
+  if (f) { setFw(f.dataset.fw); return; }
+  const i = e.target.closest("[data-install]");
+  if (i) { setFw(i.dataset.install); go("install"); return; }
+  const tg = e.target.closest("[data-target]");
+  if (tg) { setTarget(tg.dataset.target); }
+});
+function setFw(fw) {
+  if (fw !== "fm" && fw !== "byte") return;
+  const changed = fw !== state.fw;
+  state.fw = fw;
+  try { localStorage.setItem("jiant.studio.fw", fw); } catch (_) {}
+  document.documentElement.dataset.skin = fw;
+  document.querySelector('meta[name="theme-color"]').content = fw === "byte" ? "#000000" : "#050409";
+  if (changed) for (const k of Object.keys(frames)) frames[k].fw = null;   // the tools of the other firmware: loaded anew
+  showFrames();
+  render();
+}
+function setTarget(target) {
+  state.target = target === "emu" ? "emu" : "fm1";
+  if (frames.editor.fw) frames.editor.fw = null;                            // the editor anew, for the other target
+  screenStop(false);
+  showFrames();
+  render();
+}
+
+/* ------------------------------------------------------------------------- the tools in frames, in our look */
+const frames = {
+  install: { el: $("f-install"), fw: null, tool: "installer" },
+  editor: { el: $("f-editor"), fw: null, tool: "editor" },
+  emu: { el: $("f-emu"), fw: null, tool: "emu" },
+};
+const VIEW_FRAME = { install: "install", editor: "editor", emu: "emu" };
+function showFrames() {
+  const k = VIEW_FRAME[state.view];
+  // the emulator stays loaded once it was (it keeps playing; the screen and the recorder read it)
+  if (k) loadFrame(k);
+  if (state.view === "screen" && state.target === "emu") loadFrame("emu");
+}
+function loadFrame(k) {
+  const f = frames[k];
+  if (f.fw === state.fw && f.el.src) return;
+  f.fw = state.fw;
+  const q = k === "editor" && state.target === "emu" ? "?emu=1" : MOCK && k === "editor" ? "?mock=1" : "";
+  f.el.src = toolUrl(state.fw, f.tool, q);
+}
+for (const [k, f] of Object.entries(frames)) f.el.addEventListener("load", () => { dress(f.el); if (k === "editor") editorLoaded(); });
+/* the firmware's look inside a tool's frame (same origin only): its colour tokens and type, over the page's own */
+const DRESS = {
+  fm: `:root,:root:not([data-theme="light"]){--bg:#050409;--fg:#efe6c8;--dim:#a39bb6;--line:rgba(239,230,200,.18)}
+       body{background:#050409;color:#efe6c8;font-family:"Instrument Sans",system-ui,sans-serif}`,
+  byte: `:root,:root:not([data-theme="light"]){--bg:#000;--fg:#f2f0f7;--dim:#9d94b8;--line:rgba(167,123,255,.35);
+         --jiant-panel:#0b0912;--jiant-field:#05040a;--jiant-cyan:#a77bff;--jiant-yellow:#ffb21a;--jiant-mag:#ff3b3b;--jiant-orange:#ff7a1a;
+         --jiant-display:"Silkscreen",monospace;--jiant-body:"IBM Plex Mono",monospace;--jiant-mono:"VT323",monospace;
+         --jiant-heat:linear-gradient(90deg,#ff3b3b,#ff7a1a 40%,#ffb21a 60%,#a77bff)}
+         body{background:#000;color:#f2f0f7;font-family:"IBM Plex Mono",monospace}
+         h1,h2,.jiant-wordmark{font-family:"Silkscreen",monospace}`,
+};
+/* inside Studio a tool's own wordmark, links to the other tools, support line and footer are Studio's already */
+const EMBEDDED = `h1.jiant-wordmark,.jiant-wordmark,p.kofi,.kofi,body>main>footer,body>footer,main>p.dim:first-of-type{display:none!important}
+  main{padding-top:8px!important} a{color:inherit}`;
+function dress(iframe) {
+  try {
+    const d = iframe.contentDocument;
+    if (!d || !d.head) return;
+    let s = d.getElementById("studio-skin");
+    if (!s) {
+      s = d.createElement("style"); s.id = "studio-skin"; d.head.append(s);
+      const l = d.createElement("link"); l.rel = "stylesheet";
+      l.href = "https://fonts.googleapis.com/css2?family=Michroma&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&family=Silkscreen&family=VT323&display=swap";
+      d.head.append(l);
+    }
+    s.textContent = DRESS[state.fw] + EMBEDDED;
+  } catch (_) { /* another origin: its own look */ }
+}
+function editorLoaded() {
+  // the FM-1 found here, or the emulator running: the editor (just loaded, so not connected) connects at once, as its own
+  // button would
+  if (state.busy || (state.target === "fm1" ? !state.dev : !emuOn())) return;
+  try { const b = frames.editor.el.contentDocument.getElementById("connect"); if (b && !b.disabled) b.click(); } catch (_) {}
+}
+
+/* ------------------------------------------------------------------------------------------------ the screen */
+const scr = { on: false, src: null, ctx: $("scr").getContext("2d"), img: null, lut: null, fb: new Uint16Array(SCR.W * SCR.H),
+  dirty: null, raf: 0, timer: 0, bytes: 0, frames: 0, t0: 0, rate: 0, fps: 0, got: false, lock: null, copy: 0 };
+scr.img = scr.ctx.createImageData(SCR.W, SCR.H);
+scr.lut = (() => { const l = new Uint32Array(65536); for (let c = 0; c < 65536; c++) l[c] = 0xFF000000 | ((c & 31) * 255 / 31 | 0) << 16 | (((c >> 5) & 63) * 255 / 63 | 0) << 8 | (((c >> 11) & 31) * 255 / 31 | 0); return l; })();
+function onScreenData(f) {
+  if (!scr.on || scr.src !== "fm1") return;
+  const box = scrDecode(f.a, scr.fb);
+  if (!box) return;
+  scr.bytes += f.a.length + 6; scr.got = true;
+  const d = scr.dirty;
+  scr.dirty = !d ? box : { x: Math.min(d.x, box.x), y: Math.min(d.y, box.y),
+    w: Math.max(d.x + d.w, box.x + box.w) - Math.min(d.x, box.x), h: Math.max(d.y + d.h, box.y + box.h) - Math.min(d.y, box.y) };
+  if (!scr.raf) scr.raf = requestAnimationFrame(paint);
+}
+function paint() {
+  scr.raf = 0;
+  const d = scr.dirty;
+  if (!d) return;
+  scr.dirty = null; scr.frames++;
+  const px = new Uint32Array(scr.img.data.buffer);
+  for (let y = d.y; y < d.y + d.h; y++) for (let i = y * SCR.W + d.x, e = i + d.w; i < e; i++) px[i] = scr.lut[scr.fb[i]];
+  scr.ctx.putImageData(scr.img, 0, 0, d.x, d.y, d.w, d.h);
+}
+function emuCanvas() {
+  try { return frames.emu.el.contentDocument && frames.emu.el.contentDocument.getElementById("screen"); } catch (_) { return null; }
+}
+async function screenStart() {
+  if (scr.on) return;
+  scr.src = state.target; scr.got = false; scr.bytes = 0; scr.frames = 0; scr.t0 = Date.now();
+  scr.fb.fill(0); scr.ctx.fillStyle = "#000"; scr.ctx.fillRect(0, 0, SCR.W, SCR.H);
+  if (scr.src === "emu") {
+    loadFrame("emu");
+    scr.on = true;
+    const step = () => {
+      if (!scr.on) return;
+      const c = emuCanvas();
+      if (c && c.width) { scr.ctx.drawImage(c, 0, 0, SCR.W, SCR.H); scr.got = true; scr.frames++; }
+      scr.copy = requestAnimationFrame(step);
+    };
+    step();
+  } else {
+    const d = state.dev;
+    if (!d) { render(); return; }
+    scr.on = true;
+    try {
+      const a = await d.link.request(CMD.SCREEN, [1]);
+      if (a[1] || !a[2]) { scr.on = false; $("scrstat").textContent = t("scrNo"); render(); return; }
+    } catch (e) { scr.on = false; $("scrstat").textContent = t("scrNo"); render(); return; }
+    clearInterval(scr.timer);
+    scr.timer = setInterval(async () => {
+      if (!scr.on || !state.dev || document.hidden) return;
+      try { const a = await state.dev.link.request(CMD.SCREEN, [2]); if (scr.on && !a[2]) await state.dev.link.request(CMD.SCREEN, [1]); } catch (_) {}
+    }, 1000);
+  }
+  wake();
+  render();
+}
+function screenStop(tell = true) {
+  if (!scr.on) return;
+  scr.on = false;
+  clearInterval(scr.timer); cancelAnimationFrame(scr.copy);
+  if (tell && scr.src === "fm1" && state.dev) state.dev.link.request(CMD.SCREEN, [4]).catch(() => {});
+  if (scr.lock) { scr.lock.release().catch(() => {}); scr.lock = null; }
+  render();
+}
+async function wake() {
+  try { if (scr.on && !scr.lock && navigator.wakeLock && !document.hidden) { scr.lock = await navigator.wakeLock.request("screen"); scr.lock.addEventListener("release", () => { scr.lock = null; }); } } catch (_) {}
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden || !scr.on) return;
+  wake();
+  if (scr.src === "fm1" && state.dev) state.dev.link.request(CMD.SCREEN, [3]).catch(() => {});   // (it may have stopped meanwhile)
+});
+setInterval(() => {
+  if (!scr.on) return;
+  const dt = (Date.now() - scr.t0) / 1000;
+  if (dt >= 1) { scr.rate = scr.bytes / dt; scr.fps = scr.frames / dt; scr.bytes = 0; scr.frames = 0; scr.t0 = Date.now(); }
+  if (state.view === "screen") $("scrstat").textContent = !scr.got ? t("scrWaiting") :
+    scr.src === "fm1" ? `${(scr.rate / 1024).toFixed(1)}${t("scrRate")} · ${scr.fps.toFixed(0)}${t("scrFps")}` : `${scr.fps.toFixed(0)}${t("scrFps")}`;
+}, 500);
+
+const fullscreen = () => {
+  const s = $("stage");
+  if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  else (s.requestFullscreen || s.webkitRequestFullscreen).call(s)?.catch?.(() => {});
+};
+/* Show: the screen on, and full screen at once (the same tap: browsers allow full screen only from one); Exit leaves full
+ * screen with the picture still here, Stop ends it */
+$("scrgo").addEventListener("click", () => { if (scr.on) { screenStop(); return; } fullscreen(); screenStart(); });
+$("scrfull").addEventListener("click", async () => { if (!scr.on) await screenStart(); fullscreen(); });
+$("fsexit").addEventListener("click", fullscreen);
+const sharp = () => {
+  const on = $("stage").classList.toggle("smooth") === false;
+  $("scrsharp").setAttribute("aria-pressed", String(on));
+  try { localStorage.setItem("jiant.studio.smooth", on ? "0" : "1"); } catch (_) {}
+};
+$("scrsharp").addEventListener("click", sharp); $("fssharp").addEventListener("click", sharp);
+try { if (localStorage.getItem("jiant.studio.smooth") === "1") { $("stage").classList.add("smooth"); $("scrsharp").setAttribute("aria-pressed", "false"); } } catch (_) {}
+let fade = 0;
+const showBar = () => { $("fsbar").classList.remove("faded"); clearTimeout(fade); fade = setTimeout(() => $("fsbar").classList.add("faded"), 2500); };
+$("stage").addEventListener("pointerdown", showBar);
+document.addEventListener("fullscreenchange", () => { if (document.fullscreenElement) showBar(); });
+if (QS.has("screen")) { state.view = "screen"; }
+
+/* ------------------------------------------------------------------------------------------------ recording */
+const rec = { on: false, stream: null, ac: null, node: null, chunks: [], ch: 2, rate: 44100, t0: 0, peak: 0, midi: [], takes: [], clock: 0 };
+let midiTapInput = null;
+function midiTap(e) {
+  const d = e.data;
+  if (!rec.on || !d || !d.length || d[0] < 0x80 || d[0] >= 0xF0) return;
+  rec.midi.push({ t: performance.now() - rec.t0, data: Array.from(d) });
+}
+async function renderAudioInputs(ask = false) {
+  const sel = $("recdev"), was = sel.value;
+  if (state.target === "emu") { sel.replaceChildren(new Option(t("tEmu"), "emu")); sel.disabled = true; return; }
+  sel.disabled = false;
+  try {
+    if (ask) (await navigator.mediaDevices.getUserMedia({ audio: true })).getTracks().forEach((x) => x.stop());
+    const ins = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "audioinput");
+    const opts = ins.map((d, i) => new Option(d.label || `${t("recInput")} ${i + 1}`, d.deviceId));
+    if (!opts.length || !ins.some((d) => d.label)) opts.push(new Option(t("recAsk"), "ask"));
+    sel.replaceChildren(...opts);
+    const fm1 = ins.find((d) => /fm-?1|jiant|felucca|m-?vave/i.test(d.label));
+    sel.value = [...sel.options].some((o) => o.value === was) ? was : fm1 ? fm1.deviceId : sel.options[0].value;
+  } catch (_) { sel.replaceChildren(new Option(t("recNoDev"), "")); }
+}
+$("recdev").addEventListener("change", () => { if ($("recdev").value === "ask") renderAudioInputs(true); });
+function renderMidiInputs() {
+  const sel = $("midisrc"), was = sel.value;
+  const ins = access ? [...access.inputs.values()].filter((p) => p.state !== "disconnected") : [];
+  sel.replaceChildren(new Option(t("recMidiNone"), ""), ...ins.map((p) => new Option(p.name || p.id, p.id)));
+  const fm1 = ins.find((p) => PORT_RE.test(p.name || ""));
+  sel.value = [...sel.options].some((o) => o.value === was) ? was : fm1 ? fm1.id : "";
+}
+$("midisrc").addEventListener("focus", async () => { if (!access && !MOCK) { try { await midiAccess(); } catch (_) {} renderMidiInputs(); } });
+async function recStart() {
+  if (rec.on || state.busy) return;
+  let stream;
+  try {
+    if (state.target === "emu") {
+      const w = frames.emu.el.contentWindow;
+      stream = w && w.jiantEmu && w.jiantEmu.stream && w.jiantEmu.stream();
+      if (!stream) { $("recstat").textContent = t("recSrcEmu"); return; }
+    } else {
+      const id = $("recdev").value;
+      if (!id || id === "ask") { await renderAudioInputs(true); return; }
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: id }, channelCount: { ideal: 8 },
+        echoCancellation: false, noiseSuppression: false, autoGainControl: false, sampleRate: 44100 } });
+    }
+  } catch (e) { $("recstat").textContent = e.message; return; }
+  const ac = new AudioContext({ latencyHint: "playback" });
+  const src = ac.createMediaStreamSource(stream);
+  const ch = Math.max(1, Math.min(8, src.channelCount || 2, stream.getAudioTracks()[0]?.getSettings?.().channelCount || src.channelCount || 2));
+  await ac.audioWorklet.addModule("recorder-worklet.js");
+  const node = new AudioWorkletNode(ac, "studio-recorder", { numberOfInputs: 1, numberOfOutputs: 0, channelCount: ch, channelCountMode: "explicit", channelInterpretation: "discrete" });
+  Object.assign(rec, { on: true, stream, ac, node, chunks: [], ch, rate: ac.sampleRate, t0: performance.now(), midi: [], peak: 0 });
+  node.port.onmessage = (e) => { if (e.data.chunk) { rec.chunks.push(e.data.chunk); rec.peak = Math.max(rec.peak * 0.85, e.data.peak); } };
+  src.connect(node);
+  // MIDI: the input chosen (the FM-1's port while the link holds it: midiTap is chained there)
+  const mid = $("midisrc").value;
+  if (mid && access) {
+    const inp = access.inputs.get(mid);
+    if (inp) {
+      midiTapInput = inp;
+      if (state.dev && state.dev.input.id === inp.id) { const prev = inp.onmidimessage; inp.onmidimessage = (e) => { midiTap(e); prev && prev(e); }; }
+      else inp.addEventListener("midimessage", midiTap);
+    }
+  }
+  rec.clock = setInterval(() => {
+    const s = Math.floor((performance.now() - rec.t0) / 1000);
+    $("recclock").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+    $("recmeter").style.width = `${Math.min(100, rec.peak * 100).toFixed(0)}%`;
+  }, 100);
+  $("recstat").textContent = `${ch}${t("recChannels")} · ${rec.rate} Hz`;
+  render();
+}
+function recStop() {
+  if (!rec.on) return;
+  rec.on = false;
+  clearInterval(rec.clock);
+  try { rec.node.port.postMessage("flush"); } catch (_) {}
+  const finish = () => {
+    if (state.target !== "emu") rec.stream.getTracks().forEach((x) => x.stop());
+    rec.ac.close().catch(() => {});
+    if (midiTapInput) { midiTapInput.removeEventListener("midimessage", midiTap); midiTapInput = null; }
+    makeTake();
+    render();
+  };
+  setTimeout(finish, 150);                                 // (the worklet's last chunk)
+}
+$("recgo").addEventListener("click", () => (rec.on ? recStop() : recStart()));
+function makeTake() {
+  const n = rec.chunks.reduce((s, c) => s + c[0].length, 0);
+  if (!n && !rec.midi.length) return;
+  const planes = Array.from({ length: rec.ch }, () => new Float32Array(n));
+  let o = 0;
+  for (const c of rec.chunks) { for (let k = 0; k < rec.ch; k++) planes[k].set(c[k] || c[0], o); o += c[0].length; }
+  const stamp = new Date().toISOString().replace(/[:T]/g, "-").slice(0, 19);
+  const name = `${state.fw === "byte" ? "JIANT-BYTE" : "JIANT-FM"}-${state.target === "emu" ? "emu" : "fm1"}-${stamp}`;
+  const take = { name, secs: n / rec.rate, files: [] };
+  if (n) {
+    if (rec.ch >= 8) {                                     // USB > STEMS: 1..6 the tracks (mono), 7..8 the effects; and their sum
+      const sum = [new Float32Array(n), new Float32Array(n)];
+      for (let i = 0; i < n; i++) { let s = 0; for (let k = 0; k < 6; k++) s += planes[k][i] * 0.5; sum[0][i] = s + planes[6][i]; sum[1][i] = s + planes[7][i]; }
+      const entries = [...Array.from({ length: 6 }, (_, k) => ({ name: `${name}/T${k + 1}.wav`, data: wavFile([planes[k]], rec.rate) })),
+        { name: `${name}/FX.wav`, data: wavFile([planes[6], planes[7]], rec.rate) }, { name: `${name}/MIX.wav`, data: wavFile(sum, rec.rate) }];
+      take.files.push({ label: t("recStemsZip"), name: `${name}-stems.zip`, blob: new Blob([zipStored(entries)], { type: "application/zip" }) });
+      take.files.push({ label: t("recWav"), name: `${name}.wav`, blob: new Blob([wavFile(sum, rec.rate)], { type: "audio/wav" }) });
+    } else {
+      take.files.push({ label: t("recWav"), name: `${name}.wav`, blob: new Blob([wavFile(planes.slice(0, 2), rec.rate)], { type: "audio/wav" }) });
+    }
+  }
+  if (rec.midi.length) {
+    take.files.push({ label: `${t("recMid")} (${rec.midi.filter((m) => (m.data[0] & 0xF0) === 0x90 && m.data[2]).length}${t("recNotes")})`, name: `${name}.mid`,
+      blob: new Blob([midiFile(rec.midi)], { type: "audio/midi" }) });
+  }
+  rec.takes.unshift(take);
+  rec.chunks = [];
+}
+function renderTakes() {
+  const box = $("takes");
+  if (!rec.takes.length) { box.replaceChildren(Object.assign(document.createElement("p"), { className: "small dim", textContent: t("recNone") })); return; }
+  box.replaceChildren(...rec.takes.map((tk) => {
+    const row = document.createElement("div"); row.className = "take";
+    const nm = document.createElement("span"); nm.className = "name"; nm.textContent = `${tk.name} · ${tk.secs.toFixed(1)} s`;
+    row.append(nm, ...tk.files.map((f) => {
+      const a = document.createElement("a"); a.className = "btn ghost"; a.textContent = f.label; a.download = f.name;
+      a.href = f.url || (f.url = URL.createObjectURL(f.blob)); return a;
+    }));
+    return row;
+  }));
+}
+
+/* ------------------------------------------------------------------------------------------- the whole page */
+function render() {
+  const d = state.dev, fwName = state.fw === "byte" ? "BYTE" : "FM";
+  $("brandfw").textContent = fwName; $("herofw").textContent = fwName;
+  $("herolead").textContent = t(state.fw === "byte" ? "leadByte" : "leadFm");
+  document.querySelectorAll("[data-fw]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.fw === state.fw)));
+  document.querySelectorAll("[data-install]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.install === state.fw)));
+  document.querySelectorAll("[data-target]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.target === state.target)));
+  document.querySelectorAll("nav.views button").forEach((b) => b.setAttribute("aria-current", b.dataset.go === state.view ? "page" : "false"));
+  // the device chip
+  const dot = $("devdot");
+  dot.className = "dot" + (state.busy ? " warn" : d ? " ok" : "");
+  $("devtext").textContent = state.busy ? t("devBusy") : state.looking ? t("devLooking") :
+    d ? `${d.kind === "byte" ? "JIANT BYTE" : "JIANT FM"} ${d.version.replace(/^\S+\s*/, "")}` : t("devNone");
+  $("find").disabled = state.looking || state.busy; $("forget").hidden = !d;
+  $("findres").textContent = state.found;
+  $("step1").classList.toggle("now", !d); $("step3").classList.toggle("now", !!d);
+  // install
+  $("insttitle").textContent = t(state.fw === "byte" ? "instTitleByte" : "instTitleFm");
+  // editor
+  $("edtitle").textContent = state.fw === "byte" ? "JIANT BYTE" : "JIANT FM";
+  $("edtarget").textContent = t("edTarget") + t(state.target === "emu" ? "tEmu" : "tFm1");
+  $("ednote").hidden = state.target !== "emu"; $("ednote").textContent = t("edEmuNote");
+  // emulator
+  $("emutitle").textContent = state.fw === "byte" ? "JIANT BYTE" : "JIANT FM";
+  // screen
+  $("scrgo").textContent = t(scr.on ? "scrStop" : "scrStart");
+  $("scrgo").disabled = state.busy || (!scr.on && state.target === "fm1" && !state.dev);
+  $("scrwait").hidden = scr.on && scr.got;
+  $("scrwait").textContent = scr.on ? t("scrWaiting") : t(state.target === "emu" ? "scrWaitEmu" : "scrWaitFm1");
+  $("scrhelp").textContent = t(state.target === "emu" ? "scrHelpEmu" : "scrHelpFm1");
+  $("scr").setAttribute("aria-label", t("scrTitle"));
+  if (!scr.on && state.view !== "screen") $("scrstat").textContent = "";
+  $("scrfull").hidden = !(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+  // record
+  $("recgo").textContent = t(rec.on ? "recStop" : "recStart");
+  $("recgo").disabled = state.busy;
+  $("recsrchelp").textContent = t(state.target === "emu" ? "recSrcEmu" : "recSrcFm1");
+  if (state.view === "rec" && !rec.on) { renderAudioInputs(); renderMidiInputs(); }
+  renderTakes();
+}
+
+/* ------------------------------------------------- the editor and the emulator joined (target: Emulator) */
+/* A MIDIAccess-like pair of ports for the editor's frame (editor.html ?emu=1): what the editor sends goes to the emulator's
+ * own editor handler (emu/index.html jiantEmu.sysex -> worklet.js -> editor-api.h), its replies and pushes come back */
+function emuMidi() {
+  const emu = () => { try { return frames.emu.el.contentWindow.jiantEmu; } catch (_) { return null; } };
+  loadFrame("emu");
+  const input = { id: "emu-in", name: "JIANT (emulator)", type: "input", state: "connected", manufacturer: "JIANT", onmidimessage: null,
+    _l: new Set(), addEventListener(_, f) { this._l.add(f); }, removeEventListener(_, f) { this._l.delete(f); },
+    open() { return Promise.resolve(this); }, close() { return Promise.resolve(this); } };
+  let off = null;
+  const hook = () => {
+    const e = emu();
+    if (!e || off) return;
+    off = e.listen((bytes) => { const ev = { data: Uint8Array.from(bytes) }; input.onmidimessage && input.onmidimessage(ev); input._l.forEach((f) => f(ev)); });
+  };
+  const output = { id: "emu-out", name: "JIANT (emulator)", type: "output", state: "connected", manufacturer: "JIANT",
+    open() { return Promise.resolve(this); }, close() { return Promise.resolve(this); },
+    send(d) { hook(); const e = emu(); if (e && e.on()) e.sysex(Array.from(d)); } };
+  hook();
+  return { inputs: new Map([[input.id, input]]), outputs: new Map([[output.id, output]]), onstatechange: null, sysexEnabled: true };
+}
+/* which MIDI inputs play the emulator (emu/index.html jiantEmu.midiInput): every one, none, or one port */
+function renderEmuMidi() {
+  const sel = $("emumidi");
+  let e = null;
+  try { e = frames.emu.el.contentWindow.jiantEmu; } catch (_) {}
+  if (!e || !e.on()) { sel.replaceChildren(new Option(t("emuMidiOff"), "")); sel.disabled = true; return; }
+  sel.disabled = false;
+  sel.replaceChildren(new Option(t("emuMidiAll"), "all"), new Option(t("emuMidiNone"), "none"), ...e.midiInputs().map((p) => new Option(p.name, p.id)));
+  sel.value = e.midiInput();
+}
+$("emumidi").addEventListener("change", () => { try { frames.emu.el.contentWindow.jiantEmu.midiInput($("emumidi").value); } catch (_) {} });
+$("emumidi").addEventListener("pointerdown", renderEmuMidi);
+setInterval(() => { if (state.view === "emu" && document.activeElement !== $("emumidi")) renderEmuMidi(); }, 1500);
+const emuOn = () => { try { const e = frames.emu.el.contentWindow.jiantEmu; return !!(e && e.on()); } catch (_) { return false; } };
+
+/* ------------------------------------------------------------------------------- ?mock=1: a simulated FM-1 */
+function mockAccess() {
+  const fb = new Uint16Array(SCR.W * SCR.H), rgb = (r, g, b) => (r >> 3) << 11 | (g >> 2) << 5 | b >> 3;
+  const rect = (x, y, w, h, c) => { for (let j = y; j < y + h; j++) fb.fill(c, j * SCR.W + x, j * SCR.W + x + w); };
+  const kind = QS.get("fw") === "byte" ? "byte" : "fm";
+  let on = false, last = 0, step = 0, tick = 0;
+  const input = { id: "mock-in", name: "JIANT", type: "input", state: "connected", onmidimessage: null,
+    _l: new Set(), addEventListener(_, f) { this._l.add(f); }, removeEventListener(_, f) { this._l.delete(f); } };
+  const deliver = (bytes) => setTimeout(() => { const ev = { data: Uint8Array.from(bytes) }; input.onmidimessage && input.onmidimessage(ev); input._l.forEach((f) => f(ev)); }, 2);
+  const draw = () => {
+    const bg = kind === "byte" ? rgb(0, 0, 0) : rgb(20, 18, 28), acc = kind === "byte" ? rgb(167, 123, 255) : rgb(236, 110, 80);
+    rect(0, 0, 240, 240, bg); rect(0, 0, 240, 24, rgb(40, 36, 52)); rect(8, 8, 70, 8, rgb(230, 230, 230)); rect(196, 8, 36, 8, acc);
+    rect(8, 34, 52, 44, acc); rect(64, 34, 52, 44, rgb(60, 56, 80)); rect(120, 34, 52, 44, rgb(60, 56, 80)); rect(176, 34, 56, 44, rgb(60, 56, 80));
+    for (let i = 0; i < 120; i++) fb[(120 + Math.round(30 * Math.sin(i / 9))) * 240 + 60 + i] = acc;
+  };
+  const output = { id: "mock-out", name: "JIANT", type: "output", state: "connected", send(d) {
+    const f = unframe(Uint8Array.from(d));
+    if (!f) return;
+    last = Date.now();
+    if (f.cmd === CMD.INFO) {
+      const s = (x) => [...x].map((c) => c.charCodeAt(0)).concat(0);
+      const eng = kind === "byte" ? ["ANALOG", "-", "PHASE", "MATH", "WAVE", "DRUM"] : ["ANALOG", "-", "PHASE", "LOFI", "DRUM", "FM6"];
+      deliver(frame(CMD.INFO, [...s(kind === "byte" ? "JIANT V10.7.37" : "JIANT V10.8.19"), eng.length, 100, 40, 64, 10, ...eng.flatMap(s)]));
+    } else if (f.cmd === CMD.SCREEN) {
+      const op = f.a[0] | 0;
+      if (op === 1 || (op === 3 && on)) { on = true; draw(); for (const a of scrEncode(fb, 0, 0, 240, 240)) deliver(frame(CMD.SCREEN_DATA, a)); }
+      if (op === 4) on = false;
+      deliver(frame(CMD.SCREEN, [op, 0, on ? 1 : 0, 240 & 127, 240 >> 7, 240 & 127, 240 >> 7]));
+    }
+  } };
+  setInterval(() => {                                        // the playhead's row moving, and a note now and then
+    if (on && Date.now() - last < 4000) {
+      const y = 200, row = fb.subarray(y * 240, (y + 12) * 240);
+      row.fill(rgb(20, 18, 28)); for (let j = 0; j < 12; j++) row.fill(rgb(255, 210, 63), j * 240 + 8 + (step % 16) * 14, j * 240 + 20 + (step % 16) * 14);
+      step++;
+      for (const a of scrEncode(fb.subarray(y * 240), 0, y, 240, 12)) deliver(frame(CMD.SCREEN_DATA, a));
+    } else on = false;
+    if (++tick % 4 === 0) { const n = 48 + (tick % 12); deliver([0x90, n, 100]); setTimeout(() => deliver([0x80, n, 0]), 200); }
+  }, 125);
+  return { inputs: new Map([[input.id, input]]), outputs: new Map([[output.id, output]]), onstatechange: null, sysexEnabled: true };
+}
+
+/* ------------------------------------------------------------------------------------------------- the start */
+document.documentElement.dataset.skin = state.fw;
+const fromHash = (location.hash || "").replace(/^#/, "").split("?")[0];
+applyLang();
+go(QS.get("view") || (VIEWS.includes(fromHash) ? fromHash : state.view), false);
+window.addEventListener("hashchange", () => { const h = location.hash.replace(/^#/, ""); if (VIEWS.includes(h) && h !== state.view) go(h, false); });
+if (MOCK || QS.has("screen")) find().then(() => { if (QS.has("screen") && state.dev) { screenStart(); } });
+/* (for the tests) */
+window.jiantStudio = { emuMidi, state, find, letGo, screenStart, screenStop, recStart, recStop, setFw, setTarget, go, rec, scr };

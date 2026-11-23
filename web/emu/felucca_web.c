@@ -605,3 +605,8 @@ EXPORT void web_play(uint32_t on) { transport_req = (uint8_t)(on ? 1u : 2u); }
 EXPORT uint32_t web_beat_samples(void) { return beat_samples(); }
 EXPORT uint32_t web_trk_live(void) { return trk_live; }
 
+
+#if FELUCCA_WEB_EDITOR                                   /* (studio) the whole web editor into this emulator: web/emu/build.sh's
+                                                          * felucca.wasm only (the ports' core has its own, jiant_core.c) */
+#include "editor-api.h"
+#endif

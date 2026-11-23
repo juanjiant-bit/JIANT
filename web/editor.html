@@ -3001,6 +3001,8 @@ $("tabs").addEventListener("keydown", (e) => {          /* arrow keys move betwe
 window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (TABS.includes(h) && h !== tab) showTab(h); });
 
 const QS = new URLSearchParams(location.search);
+/* (studio) ?emu=1 inside JIANT Studio: the editor edits the emulator beside it (studio.js emuMidi), not a USB FM-1 */
+const EMU = QS.get("emu") === "1" && (() => { try { return window.parent !== window && window.parent.jiantStudio; } catch (_) { return null; } })();
 const MOCK = QS.get("mock") === "1";
 $("mock").hidden = !MOCK;
 let mock = null;
@@ -3125,7 +3127,7 @@ async function connect() {
   connecting = true;
   let connectedDevice = null;
   wantConnected = true;
-  if (!MOCK && !navigator.requestMIDIAccess) { connecting = false; sayK("nomidi"); return; }
+  if (!MOCK && !EMU && !navigator.requestMIDIAccess) { connecting = false; sayK("nomidi"); return; }
   $("connect").disabled = true;
   sayK("connecting");
   try {
@@ -3133,7 +3135,7 @@ async function connect() {
       if (MOCK) { mock = makeMockDevice({ legacy: QS.get("legacy") === "1", hostPower: QS.get("hp") === "1",   /* (?hp=1: a big CPU, ?board=1: an SMK-37) */
         board: +QS.get("board") || 0, portName: QS.get("port") || undefined }); access = mock.access; }
       else {
-        try { access = await navigator.requestMIDIAccess({ sysex: true }); }
+        try { access = EMU ? EMU.emuMidi() : await navigator.requestMIDIAccess({ sysex: true }); }
         catch (e) { sayK("denied"); return; }
       }
       access.onstatechange = onState;
@@ -4295,7 +4297,16 @@ function closeMirror(tell = true) {
   if (tell && dev) dev.link.request(req.screen(4), { quiet: true, retries: 0 }).catch(() => {});
   $("screenbtn").focus?.();
 }
-$("screenbtn").addEventListener("click", () => openMirror());
+/* the screen on: full screen at once (the same click; a phone shows the FM-1's screen as big as it gets), Close or Esc
+   leave it */
+$("screenbtn").addEventListener("click", () => {
+  const m = $("mirror");
+  if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
+    m.hidden = false;                                 /* (it must show to go full screen; openMirror fills it) */
+    (m.requestFullscreen || m.webkitRequestFullscreen)?.call(m)?.catch?.(() => {});
+  }
+  openMirror();
+});
 $("mirrorclose").addEventListener("click", () => closeMirror());
 $("mirrorsharp").addEventListener("click", (e) => {
   const sharp = $("mirror").classList.toggle("smooth") === false;

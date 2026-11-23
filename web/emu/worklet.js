@@ -79,6 +79,12 @@ export function edServe(ex, req) {
   const n = ex.web_ed(req.length);
   return n ? Array.from(new Uint8Array(ex.memory.buffer, ex.web_ed_reply(), n)) : null;
 }
+/* (studio) the editor's replies and pushes waiting in the device (editor-api.h), each a whole F0..F7 message */
+export function sysexOut(ex) {
+  const out = [];
+  for (let n, k = 0; k < 64 && (n = ex.web_sysex_out()); k++) out.push(Array.from(new Uint8Array(ex.memory.buffer, ex.web_sysex_msg(), n)));
+  return out;
+}
 export function edVersion(ex) {
   if (!ex.web_version) return "";
   const m = new Uint8Array(ex.memory.buffer, ex.web_version(), 64), z = m.indexOf(0);
@@ -145,6 +151,13 @@ if (typeof registerProcessor === "function") {
       else if (m.type === "enc") ex.web_enc(m.role, m.n | 0);
       else if (m.type === "master") ex.web_master(m.value | 0);
       else if (m.type === "midi") ex.web_midi(m.data[0] | 0, m.data[1] | 0, m.data[2] | 0);
+      else if (m.type === "sysex") {               // (studio) the web editor's frame (editor-api.h): its replies at once
+        if (!ex.web_sysex || !Array.isArray(m.data) || m.data.length > 640) return;
+        new Uint8Array(ex.memory.buffer, ex.web_sysex_buf(), m.data.length).set(m.data.map((v) => v & 255));
+        ex.web_sysex(m.data.length);
+        const out = sysexOut(ex);
+        if (out.length) this.port.postMessage({ type: "sysex", msgs: out });
+      }
       else if (m.type === "visible") this.period = m.on ? 1 / 30 : 1 / 4;
       else if (m.type === "meter") {               // the output's level since the last ask (tests, the page)
         this.metering = true;
@@ -223,7 +236,12 @@ if (typeof registerProcessor === "function") {
         const k = JSON.stringify(slots) + JSON.stringify(rec);
         if (k !== this.sentSlots) { this.sentSlots = k; msg.slots = slots; msg.rec = rec; }
       }
-      if (msg.leds || msg.fb || msg.sectors || msg.slots || msg.load !== undefined) this.port.postMessage(msg, transfer);
+      if (ex.web_editor_poll) {                       // (studio) the editor's live pushes (WATCH), in the same message
+        ex.web_editor_poll();
+        const out = sysexOut(ex);
+        if (out.length) msg.sysex = out;
+      }
+      if (msg.leds || msg.fb || msg.sectors || msg.slots || msg.sysex || msg.load !== undefined) this.port.postMessage(msg, transfer);
     }
 
     // A click's down and up can arrive within one render quantum, but the FM-1's contacts never close for less than
