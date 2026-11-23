@@ -5,11 +5,23 @@ as a standalone app, built with JUCE 9 from the same sources as the FM-1 ([`port
 
 ![The plugin's editor](editor.png)
 
-Unlike the MPC plugin ([`ports/mpc-plugin`](../mpc-plugin)), the editor here is JIANT's own: its screen, live, and the
-FM-1's panel as the browser emulator draws it: MASTER, SELECT, PRESETS, ALGORITHM, KNOB 1-4, the twelve buttons, OCT
-- / +, the 27 keys and their lights. Mouse or fingers (several at once on an iPad), the mouse wheel on the knobs,
-SHIFT-click holds a button, and the computer keyboard as the emulator's (Z..' and Q..O the keys, 1..= the buttons,
-[ ] OCT, arrows SELECT / ALGORITHM).
+Unlike the MPC plugin ([`ports/mpc-plugin`](../mpc-plugin)), the editor here is JIANT's own, made for a DAW rather than
+a copy of the FM-1, in JIANT's look (the site's FM-1 panel: the dark body with its dot grid, the heat line, orange
+corner brackets, rings with value arcs, DotGothic16 and IBM Plex Mono):
+
+- **The screen**, live, in the middle at an integer scale (x2 at the default size, x3 at 150 %), the way into everything
+  the firmware's UI does: the mouse wheel or a drag on it turns SELECT (with SHIFT, ALGORITHM: the track).
+- **Its buttons as tabs** under it: HOME EDIT FX ENV LFO SCL ARP / SEQ GLO SAVE PLAY REC OCT- OCT+, lit as the FM-1's;
+  SHIFT-click holds one. The four **page knobs** as big rings beside it, SELECT, PRESETS, ALGORITHM and MASTER small.
+- **The six tracks** on the left (number in its colour, engine, preset, level, mute; a click selects one), and a
+  one-octave strip to audition (MIDI from the DAW plays it anyway).
+- **The selected track's sound** on the right, from the firmware's own descriptors (the web editor's protocol, through
+  the core): its engine (< >), its presets, its eight EDIT parameters as rings with their names and values.
+- **The sample browser** (SAMPLES) over the right side; files dropped anywhere go into it.
+- A badge **JIANT n/8**, the transport and tempo, the CPU. The window scales (60 % to 200 %), its shape kept; the
+  computer keyboard as the emulator's (Z..' and Q..O the keys, 1..= the buttons, [ ] OCT, arrows SELECT / ALGORITHM).
+
+The sample browser and a track's sound: [editor-samples.png](editor-samples.png), [editor-sound.png](editor-sound.png).
 
 | | |
 | --- | --- |
@@ -17,7 +29,7 @@ SHIFT-click holds a button, and the computer keyboard as the emulator's (Z..' an
 | MIDI | channels 1-4 play tracks 1-4 (GLO > MIDI IN ROUTE CH1-4); CCs as JIANT's MIDI map |
 | Web editor | the standalone app answers [the web editor](../../web/editor.html) (its SysEx in, the replies out of the MIDI output chosen in its settings: connect the two through a virtual MIDI cable, e.g. IAC on macOS, loopMIDI on Windows); it shows as "JIANT FM app / plugin" with SAMPLE, GRAIN and DRUM-X's samples. The plugins take the editor's SysEx but have no MIDI output (their buses as before), so a DAW does not pass the replies back |
 | Sync | **Host** (default): the sequencer follows the host's transport and tempo; **Internal**: its own tempo |
-| Parameters | Volume (the MASTER knob), Sync |
+| Parameters | Volume (the MASTER knob), Sync, and for automation T1..T6 Level, T1..T6 Cutoff (the filter on each track's sum) and DJ Filter: fixed to their tracks (the protocol's frozen ids), whatever sound a track plays, so recorded automation plays back the same; they follow the device too (a level turned in JIANT moves them) |
 | Samples | JIANT's 16 slots (SAMPLE, GRAIN, DRUM-X's sample layer): drop WAV / AIFF / FLAC / MP3 / OGG files anywhere on the window (on a slot of the browser: that slot; elsewhere: the browser's slot, the next ones for several files), or the browser's LOAD and CLEAR. Any rate (resampled to 44.1 kHz), mono or stereo, up to 60 s. REC inside JIANT (SAMPLE / GRAIN) records the master or a track, and the input when the host gives the plugin one (its **Input** bus, off until turned on: a DAW's sidechain; not on AU) |
 | Saved | in the host's project: the live section, the songs, the user presets, and every slot's audio embedded (FLAC, lossless, about half the PCM's size: a 60 s stereo slot ~5-7 MB of its 10.6 MB, so a session with 16 full slots can reach ~100 MB; a short one-shot a few KB) with its name and the file it came from. The project carries its samples to another computer; nothing is read from the original files again |
 | Sample rate | any (the firmware's 44.1 kHz, resampled) |
@@ -39,7 +51,8 @@ The check (`plugin_check <plugin>`) loads the built plugin as a host loads it (J
 description, a chord at 44.1, 48 and 96 kHz in blocks of 32 to 1024 frames (it sounds, then it is silent after the
 note-offs, nothing non-finite), the state out and back; then 4 instances
 at once on 4 threads, each its own sound (no two the same; a note into one sounds there only), each its own state
-(saved, changed, put back), 8 sounding, the 9th silent, one closed and its JIANT taken by a new one; the editor made. macOS adds Apple's
+(saved, changed, put back), 8 sounding, the 9th silent, one closed and its JIANT taken by a new one; T1 Level from the host silencing and
+sounding track 1, a level set in the device moving T2 Level; the editor made. macOS adds Apple's
 `auval`. `sample_check` makes the processor and its editor: a WAV dropped on the editor lands in slot 1, SAMPLE plays it,
 REC MST records a bar into slot 2 from inside JIANT, the state carries both to a new instance (another JIANT), which
 plays them; the state it writes is loaded into the built VST3 by `plugin_check` (as the second argument).

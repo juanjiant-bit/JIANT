@@ -53,8 +53,17 @@ public:
     void setStateInformation(const void* data, int size) override;
 
     // ---- the editor's side (message thread) ----
-    struct Command { enum Kind : uint8_t { None, Buttons, Keys, Encoder, Midi } kind = None; uint32_t value = 0; uint8_t enc = 0; int32_t steps = 0; };
+    struct Command {
+        enum Kind : uint8_t { None, Buttons, Keys, Encoder, Midi, Sysex } kind = None;
+        uint32_t value = 0; uint8_t enc = 0; int32_t steps = 0;
+        uint8_t sx[14] = {}; uint8_t n = 0;              // Sysex: the editor protocol's request, cmd and args
+    };
     void post(const Command& c);                        // the panel into the device
+    // a request of the web editor's protocol (web/EDITOR_PROTOCOL.md: cmd, args) into the device, its reply dropped:
+    // queued, the audio thread's (or, no audio running, the service timer's)
+    void postRequest(std::initializer_list<uint8_t> cmdArgs);
+    // .. and one answered: the reply's cmd and args (empty: none). Blocks for up to a block (withCore)
+    std::vector<uint8_t> request(std::initializer_list<uint8_t> cmdArgs);
     bool owner() const { return owner_; }
     int copy() const { return copy_; }                   // this instance's JIANT, 0..copies()-1 (-1: none free)
     static int copies();
@@ -65,6 +74,8 @@ public:
     uint32_t dimButtons() const { return dimButtons_.load(std::memory_order_relaxed); }
     uint32_t dimKeys() const { return dimKeys_.load(std::memory_order_relaxed); }
     uint32_t cpuPercent() const { return cpu_.load(std::memory_order_relaxed); }
+    uint32_t bpm() const { return bpm_.load(std::memory_order_relaxed); }
+    bool playing() const { return playing_.load(std::memory_order_relaxed); }
     // the core, from the message thread: f runs with the core to itself (on the audio thread at the end of a block, or
     // here when no audio runs); false: no core (a silent instance). Blocks for up to a block's time
     bool withCore(const std::function<void(const jiant_api&)>& f);
@@ -87,12 +98,37 @@ public:
     bool hasInput() const { return getTotalNumInputChannels() > 0; }
     void service();                                     // the service timer's work (the tests call it too)
 
+    // ---- the device as the editor protocol reads it (the native panels) ----
+    struct Info {
+        bool ok = false;
+        int nEngines = 0, pCount = 0, gCount = 0, pE0 = 0, nTrk = 0;
+        juce::String version;
+        juce::StringArray engines;                       // by engine byte ("-": retired)
+    };
+    const Info& info() const { return info_; }
+    static constexpr int kTracks = 6, kMaxP = 128;
+    struct Link {                                        // every ~100 ms: TRACK and each track's TRACK_DUMP
+        uint32_t seq = 0;                                // 0: not read yet
+        int selected = 0, nTrk = 0;
+        struct Track { int engine = 0, preset = 0, level = 0, mute = 0, armed = 0; std::array<int16_t, kMaxP> p {}; } t[kTracks];
+        std::array<int, 2 * kTracks + 1> sent {};        // (the host's values as sent when this was read)
+    };
+    Link link() const;                                   // a copy of the last
+    // the host's parameters past Volume and Sync: each track's level and filter cutoff, the master DJ filter (ids
+    // frozen by the protocol: P_LEVEL 0, P_FCUT, G_DJF 17), so automation recorded once plays back the same
+    static constexpr int kCutId = 113, kDjfId = 17;
+
     juce::AudioProcessorValueTreeState params;
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout layout();
     static BusesProperties buses();
     void applyParams();
+    void runCommands();                                  // (the core's thread) the editor's queue
+    void readLink();                                     // (the core's thread) link_ from the device
+    void syncFromDevice();                               // (message thread) the host's parameters from the device
+    // (the core's thread) one request in, its reply (cmd, args) out; what else the device had queued is dropped
+    static size_t ask(const jiant_api& c, const uint8_t* cmdArgs, size_t n, uint8_t* reply, size_t cap);
     int hostClock(int frames);                           // Sync HOST: the clock this block needs, into clock_
     void render(float* l, float* r, int n);              // n frames at the host's rate
     static float hermite(const float* y, float x);
@@ -120,7 +156,8 @@ private:
     std::atomic<uint32_t> screenSeq_ {0};
     std::array<uint16_t, 240 * 240> screen_ {};
     uint32_t screenDraws_ = ~0u;
-    std::atomic<uint32_t> ledButtons_ {0}, ledKeys_ {0}, dimButtons_ {0}, dimKeys_ {0}, cpu_ {0};
+    std::atomic<uint32_t> ledButtons_ {0}, ledKeys_ {0}, dimButtons_ {0}, dimKeys_ {0}, cpu_ {0}, bpm_ {120};
+    std::atomic<bool> playing_ {false};
     std::atomic<int> recState_ {0}, recSlot_ {0}, recFrames_ {0};
 
     // a job for the core (withCore)
@@ -146,6 +183,14 @@ private:
 
     // parameters as last applied (audio thread)
     int lastMaster_ = -1, lastSync_ = -1;
+    std::array<std::atomic<int>, 2 * kTracks + 1> sent_ {};   // the host's values as last sent (INT_MIN: none yet)
+    int cutMin_ = 0, cutMax_ = 127;
+    std::vector<juce::RangedAudioParameter*> hostParams_;     // T1..T6 level, T1..T6 cutoff, DJ filter
+    int linkFrames_ = 0;
+    uint32_t idleTicks_ = 0;
+    Info info_;
+    mutable juce::SpinLock linkLock_;
+    Link link_;
     bool hostPlaying_ = false;
     double lastPpq_ = 0.0;
     struct ClockEvent { int offset; uint8_t status; };

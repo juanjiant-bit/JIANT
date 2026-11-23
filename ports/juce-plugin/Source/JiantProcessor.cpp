@@ -4,6 +4,7 @@
 #include "JiantEditor.h"
 #include "jiant_copies.h"
 #include <chrono>
+#include <climits>
 #include <cstring>
 #include <thread>
 
@@ -41,6 +42,15 @@ juce::AudioProcessorValueTreeState::ParameterLayout JiantProcessor::layout()
                                                       juce::NormalisableRange<float>(0.0f, 100.0f, 0.1f), 68.0f));
     l.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID {"sync", 1}, "Sync",
                                                        juce::StringArray {"Internal", "Host"}, 1));
+    // automation: fixed per track, the same parameter whatever the track plays (each track's LEVEL and the filter's CUT
+    // on its sum), and the master DJ filter. They follow the device: what JIANT's own panel turns moves them too
+    for (int t = 0; t < kTracks; ++t)
+        l.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID {"t" + juce::String(t + 1) + "level", 1},
+                                                        "T" + juce::String(t + 1) + " Level", 0, 127, 100));
+    for (int t = 0; t < kTracks; ++t)
+        l.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID {"t" + juce::String(t + 1) + "cut", 1},
+                                                        "T" + juce::String(t + 1) + " Cutoff", 0, 127, 127));
+    l.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID {"djf", 1}, "DJ Filter", -64, 63, 0));
     return l;
 }
 
@@ -60,6 +70,13 @@ JiantProcessor::JiantProcessor()
       params(*this, nullptr, "JIANT", layout())
 {
     formats_.registerBasicFormats();
+    for (int t = 0; t < kTracks; ++t)
+        hostParams_.push_back(params.getParameter("t" + juce::String(t + 1) + "level"));
+    for (int t = 0; t < kTracks; ++t)
+        hostParams_.push_back(params.getParameter("t" + juce::String(t + 1) + "cut"));
+    hostParams_.push_back(params.getParameter("djf"));
+    for (auto& v : sent_)
+        v.store(INT_MIN);
     uint32_t k = 0;
     core_ = jiant_copy_claim(&k);
     owner_ = core_ != nullptr;
@@ -82,6 +99,23 @@ JiantProcessor::JiantProcessor()
         }
         publish();
         refreshSlots();
+        // the device as the protocol describes it (INFO), once: the engines' names, the parameters' count
+        uint8_t rep[1024];
+        const uint8_t infoReq[] = {1};
+        size_t n = ask(*core_, infoReq, 1, rep, sizeof rep);
+        if (n > 8) {
+            size_t at = 1;
+            auto str = [&] { juce::String v; while (at < n && rep[at]) v += juce::juce_wchar(rep[at++]); ++at; return v; };
+            info_.version = str();
+            if (at + 5 <= n) {
+                info_.nEngines = rep[at]; info_.pCount = rep[at + 1]; info_.gCount = rep[at + 2]; info_.pE0 = rep[at + 4];
+                at += 5;
+                for (int e = 0; e < info_.nEngines && at < n; ++e) info_.engines.add(str());
+                info_.nTrk = at < n ? rep[at] : 6;
+                info_.ok = info_.engines.size() == info_.nEngines && info_.pCount <= kMaxP;
+            }
+        }
+        readLink();
         service_ = std::make_unique<Service>(*this);
         service_->startTimer(100);
     }
@@ -175,6 +209,138 @@ void JiantProcessor::publish()
     ledButtons_.store(core_->jiant_led_buttons(), std::memory_order_relaxed);
     ledKeys_.store(core_->jiant_led_keys(), std::memory_order_relaxed);
     cpu_.store(core_->jiant_cpu_percent(), std::memory_order_relaxed);
+    bpm_.store(core_->jiant_bpm(), std::memory_order_relaxed);
+    playing_.store(core_->jiant_playing() != 0, std::memory_order_relaxed);
+}
+
+size_t JiantProcessor::ask(const jiant_api& c, const uint8_t* cmdArgs, size_t n, uint8_t* reply, size_t cap)
+{
+    uint8_t req[32], out[1024];
+    if (n + 6 > sizeof req)
+        return 0;
+    while (c.jiant_sysex_out(out, sizeof out)) {}       // (what was queued before: not this request's)
+    req[0] = 0xF0; req[1] = 0x7D; req[2] = 0x46; req[3] = 0x4C;
+    std::memcpy(req + 4, cmdArgs, n);
+    req[4 + n] = 0xF7;
+    if (c.jiant_sysex(req, n + 5))
+        return 0;
+    size_t got = 0;
+    for (size_t m; (m = c.jiant_sysex_out(out, sizeof out)) != 0;) {
+        if (m > sizeof out) {                            // (too long for here: dropped)
+            std::vector<uint8_t> big(m);
+            c.jiant_sysex_out(big.data(), m);
+            continue;
+        }
+        if (!got && m >= 6 && out[4] == cmdArgs[0] && reply) {
+            got = std::min(m - 5, cap);
+            std::memcpy(reply, out + 4, got);
+        }
+    }
+    return got;
+}
+
+void JiantProcessor::postRequest(std::initializer_list<uint8_t> cmdArgs)
+{
+    Command c;
+    c.kind = Command::Sysex;
+    for (uint8_t b : cmdArgs)
+        if (c.n < sizeof c.sx)
+            c.sx[c.n++] = b;
+    post(c);
+    if (nowMs() - lastBlockMs_.load(std::memory_order_relaxed) >= 100)
+        withCore([](const jiant_api&) {});              // (no audio: in now)
+}
+
+std::vector<uint8_t> JiantProcessor::request(std::initializer_list<uint8_t> cmdArgs)
+{
+    std::vector<uint8_t> req(cmdArgs), rep(1024);
+    size_t n = 0;
+    if (!withCore([&](const jiant_api& c) { n = ask(c, req.data(), req.size(), rep.data(), rep.size()); }))
+        return {};
+    rep.resize(n);
+    return rep;
+}
+
+// (the core's thread) the editor's queue: the panel, notes, the protocol's requests (their replies dropped)
+void JiantProcessor::runCommands()
+{
+    uint32_t r = qRead_.load(std::memory_order_relaxed), w = qWrite_.load(std::memory_order_acquire);
+    for (; r != w; ++r) {
+        const Command& c = queue_[r % kQueue];
+        switch (c.kind) {
+        case Command::Buttons: core_->jiant_buttons(c.value); break;
+        case Command::Keys: core_->jiant_keys(c.value); break;
+        case Command::Encoder: core_->jiant_encoder(static_cast<enum jiant_encoder>(c.enc), c.steps); break;
+        case Command::Midi: core_->jiant_midi(uint8_t(c.value), uint8_t(c.value >> 8), uint8_t(c.value >> 16)); break;
+        case Command::Sysex: ask(*core_, c.sx, c.n, nullptr, 0); break;
+        default: break;
+        }
+    }
+    qRead_.store(r, std::memory_order_release);
+}
+
+static int v14(const uint8_t* p) { return int(p[0] | p[1] << 7) - 8192; }
+
+// (the core's thread) the tracks as the device has them: TRACK, then each track's TRACK_DUMP, the DJ filter
+void JiantProcessor::readLink()
+{
+    uint8_t rep[512];
+    Link l;
+    const uint8_t q[] = {27};
+    size_t n = ask(*core_, q, 1, rep, sizeof rep);
+    if (n < 3)
+        return;
+    l.selected = rep[1];
+    l.nTrk = std::min<int>(rep[2], kTracks);
+    for (int t = 0; t < l.nTrk && 3 + t * 6 + 5 < int(n); ++t) {
+        const uint8_t* e = rep + 3 + t * 6;
+        l.t[t].engine = e[0]; l.t[t].preset = e[1]; l.t[t].level = v14(e + 2); l.t[t].mute = e[4]; l.t[t].armed = e[5];
+    }
+    for (int t = 0; t < l.nTrk; ++t) {
+        const uint8_t d[] = {29, uint8_t(t)};
+        size_t m = ask(*core_, d, 2, rep, sizeof rep);
+        for (int i = 0; 4 + 2 * i + 1 < int(m) && i < kMaxP; ++i)
+            l.t[t].p[size_t(i)] = int16_t(v14(rep + 4 + 2 * i));
+    }
+    const uint8_t gq[] = {2, 1, uint8_t(kDjfId)};
+    if (ask(*core_, gq, 3, rep, sizeof rep) >= 5)
+        l.t[0].p[size_t(kMaxP - 1)] = int16_t(v14(rep + 3));    // (the DJ filter, a global, kept past the tracks')
+    for (size_t i = 0; i < sent_.size(); ++i)
+        l.sent[i] = sent_[i].load(std::memory_order_relaxed);
+    const juce::SpinLock::ScopedTryLockType lock(linkLock_);
+    if (lock.isLocked()) {
+        l.seq = link_.seq + 1;
+        link_ = l;
+    }
+}
+
+JiantProcessor::Link JiantProcessor::link() const
+{
+    const juce::SpinLock::ScopedLockType lock(linkLock_);
+    return link_;
+}
+
+// (message thread) what the device changed (its own panel, a preset, a project) into the host's parameters
+void JiantProcessor::syncFromDevice()
+{
+    Link l = link();
+    if (!l.seq || l.nTrk < 1)
+        return;
+    for (int i = 0; i < int(hostParams_.size()); ++i) {
+        const int t = i % kTracks;
+        int dev = i < kTracks ? l.t[t].level : i < 2 * kTracks ? l.t[t].p[size_t(kCutId)] : l.t[0].p[size_t(kMaxP - 1)];
+        if (i < 2 * kTracks && t >= l.nTrk)
+            continue;
+        int was = l.sent[size_t(i)];
+        if (dev == was)
+            continue;
+        if (!sent_[size_t(i)].compare_exchange_strong(was, dev))   // (the host moved it since: the host's, newer)
+            continue;
+        auto* p = hostParams_[size_t(i)];
+        float v = p->convertTo0to1(float(dev));
+        if (std::abs(p->getValue() - v) > 1e-6f)
+            p->setValueNotifyingHost(v);
+    }
 }
 
 void JiantProcessor::applyParams()
@@ -189,6 +355,25 @@ void JiantProcessor::applyParams()
         core_->jiant_clock_external(sync == 1);
         hostPlaying_ = false;
         lastSync_ = sync;
+    }
+    // the tracks' levels and cutoffs, the DJ filter: what the host moved (once the device's values are known)
+    for (int i = 0; i < int(hostParams_.size()); ++i) {
+        const int was = sent_[size_t(i)].load(std::memory_order_relaxed);
+        if (was == INT_MIN)
+            continue;
+        const int v = int(std::lround(hostParams_[size_t(i)]->convertFrom0to1(hostParams_[size_t(i)]->getValue())));
+        if (v == was)
+            continue;
+        const int x = v + 8192;
+        const uint8_t lo = uint8_t(x & 127), hi = uint8_t(x >> 7);
+        if (i < 2 * kTracks) {
+            const uint8_t req[] = {31, uint8_t(i % kTracks), uint8_t(i < kTracks ? 0 : kCutId), lo, hi};
+            ask(*core_, req, sizeof req, nullptr, 0);
+        } else {
+            const uint8_t req[] = {3, 1, uint8_t(kDjfId), lo, hi};
+            ask(*core_, req, sizeof req, nullptr, 0);
+        }
+        sent_[size_t(i)].store(v, std::memory_order_relaxed);
     }
 }
 
@@ -299,18 +484,7 @@ void JiantProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBu
     lastBlockMs_.store(nowMs(), std::memory_order_relaxed);
 
     handOff();
-    uint32_t r = qRead_.load(std::memory_order_relaxed), w = qWrite_.load(std::memory_order_acquire);
-    for (; r != w; ++r) {
-        const Command& c = queue_[r % kQueue];
-        switch (c.kind) {
-        case Command::Buttons: core_->jiant_buttons(c.value); break;
-        case Command::Keys: core_->jiant_keys(c.value); break;
-        case Command::Encoder: core_->jiant_encoder(static_cast<enum jiant_encoder>(c.enc), c.steps); break;
-        case Command::Midi: core_->jiant_midi(uint8_t(c.value), uint8_t(c.value >> 8), uint8_t(c.value >> 16)); break;
-        default: break;
-        }
-    }
-    qRead_.store(r, std::memory_order_release);
+    runCommands();
     applyParams();
 
     float* outL = buffer.getWritePointer(0);
@@ -359,6 +533,10 @@ void JiantProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBu
     }
 
     publish();
+    if ((linkFrames_ += frames) >= int(getSampleRate() * 0.1)) {   // the tracks for the editor, ~10 a second
+        linkFrames_ = 0;
+        readLink();
+    }
     if (auto* j = job_.exchange(nullptr, std::memory_order_acq_rel)) {
         (*j)(*core_);
         jobDone_.store(true, std::memory_order_release);
@@ -400,6 +578,7 @@ bool JiantProcessor::withCore(const std::function<void(const jiant_api&)>& f)
     if (!idleCore())                                     // no audio: the core is ours
         return false;
     handOff();
+    runCommands();
     f(*core_);
     publish();
     busy_.store(0, std::memory_order_release);
@@ -499,8 +678,10 @@ void JiantProcessor::service()
 {
     if (!owner_)
         return;
-    if (handOffPending() && nowMs() - lastBlockMs_.load(std::memory_order_relaxed) >= 100)
-        withCore([](const jiant_api&) {});
+    if (nowMs() - lastBlockMs_.load(std::memory_order_relaxed) >= 100 &&
+        (handOffPending() || qRead_.load() != qWrite_.load() || ++idleTicks_ % 3 == 0))
+        withCore([this](const jiant_api&) { readLink(); });   // (no audio: the queue, the hand-offs, the tracks from here)
+    syncFromDevice();
     std::lock_guard<std::mutex> g(serviceMutex_);
     core_->jiant_service();
     refreshSlots();

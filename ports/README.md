@@ -21,7 +21,7 @@ firmware sources (`firmware/src`), so a song sounds the same everywhere.
 | --- | --- | --- |
 | [`core/`](core/) | The whole firmware as one C library: boot, audio, MIDI, the panel, the screen, the music saved and restored. The browser emulator's host layer behind a stable API ([`jiant_core.h`](core/jiant_core.h)). | Works, tested |
 | [`mpc-plugin/`](mpc-plugin/) | JIANT FM as an instrument plugin: MPC standalones (MPC OS 3.10.1+), and desktop VST2 hosts. | Builds for ARM32, ARM64 and desktop; passes the SDK's host simulator; not yet tried on an MPC |
-| [`juce-plugin/`](juce-plugin/) | JIANT FM as VST3, AU, AUv3 (AUM on the iPad), LV2 and a standalone app, its own screen and the FM-1's panel in the editor; up to 8 in one session, each its own JIANT. | Builds and passes its host check on Linux; macOS, iOS and Windows built by CI |
+| [`juce-plugin/`](juce-plugin/) | JIANT FM as VST3, AU, AUv3 (AUM on the iPad), LV2 and a standalone app, an editor made for a DAW (the screen, the tracks, each sound's presets and EDIT parameters, a sample browser with drag and drop, the samples saved in the session); up to 8 in one session, each its own JIANT. | Builds and passes its host check on Linux; macOS, iOS and Windows built by CI |
 | [`mpc-sample/`](mpc-sample/) | JIANT as the MPC Sample's whole instrument, its own screen, the MPC's pads, buttons and knobs as the FM-1's panel, started from the microSD card (on keremimo's sample-base). | Builds for ARM64; runs and passes its tests on Linux; not yet tried on an MPC Sample |
 | SMK-37 | JIANT on the SMK-37 Pro / Elite, bare metal like the FM-1 (same AC791N chip, same screen and audio format). | Next |
 

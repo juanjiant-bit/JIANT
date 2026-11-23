@@ -213,6 +213,42 @@ int main(int argc, char** argv)
 
     severalJiants(fm, d, *p);
 
+    {                                                    // automation: the tracks' levels both ways
+        juce::AudioProcessorParameter *t1 = nullptr, *t2 = nullptr;
+        for (auto* q : p->getParameters()) {
+            if (q->getName(32) == "T1 Level") t1 = q;
+            if (q->getName(32) == "T2 Level") t2 = q;
+        }
+        check(t1 && t2, "the host's parameters: T1..T6 Level and Cutoff, DJ Filter");
+        if (t1 && t2) {
+            auto settle = [&] {
+                for (int i = 0; i < 6; ++i) {
+                    take(*p, -1, 0, 2048);
+                    juce::MessageManager::getInstance()->runDispatchLoopUntil(60);
+                }
+            };
+            settle();                                    // (the device's values into the parameters first)
+            t1->setValueNotifyingHost(0.0f);
+            settle();
+            Out off = take(*p, -1, 48, 22050);
+            t1->setValueNotifyingHost(1.0f);
+            settle();
+            Out on = take(*p, -1, 48, 22050);
+            check(off.peak < 0.0005f && on.peak > 0.01f, "T1 Level from the host: 0 silences track 1 (peak " +
+                                                              juce::String(off.peak, 4) + "), 127 it sounds (" +
+                                                              juce::String(on.peak, 3) + ")");
+            // the device changes track 2's level (TRACK_PARAM, as JIANT's own panel would): the host sees it
+            juce::AudioBuffer<float> buf(2, 256);
+            juce::MidiBuffer midi;
+            const uint8_t sx[] = {0xF0, 0x7D, 0x46, 0x4C, 31, 1, 0, uint8_t((40 + 8192) & 127), uint8_t((40 + 8192) >> 7), 0xF7};
+            midi.addEvent(sx, int(sizeof sx), 0);
+            p->processBlock(buf, midi);
+            settle();
+            check(std::lround(t2->getValue() * 127.0f) == 40, "track 2's level set in the device (40): T2 Level follows (" +
+                                                                  juce::String(std::lround(t2->getValue() * 127.0f)) + ")");
+        }
+    }
+
     if (argc > 2 && d.pluginFormatName == "VST3") {    // a state with samples (sample_check's) into the built plugin
         juce::MemoryBlock st;
         juce::File(juce::File::getCurrentWorkingDirectory().getChildFile(argv[2])).loadFileAsData(st);
