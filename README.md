@@ -1,6 +1,6 @@
 # JIANT FM
 
-**Bio-synthetic operating system for the M-VAVE FM-1** — synthesis, sequencing, mutation, performance.
+**A bio-generative, morphable, evolving instrument for the M-VAVE FM-1** — living tracks that move each other, sounds that morph, music that evolves as you play. · *Bio-generativo, morfeable, evolutivo.*
 
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
 
@@ -162,7 +162,7 @@ Click it to open it full size ([SVG](docs/navigation-map.svg), zoomable · [en e
 4. **KNOB 1 picks**: the step, the bar, the slot, the stage, the operator, the kit's sound. The track is always
    **ALGORITHM**'s.
 5. **Hold = the layer**: a button held puts its shortcuts on the keys and knobs (SEQ + G5 CLR STEP, SAVE + C5 NAME,
-   GLO + G4 UNDO …). Held + SELECT: **HOME** GEN, **EDIT / SEQ / LFO / FX** their dice, **GLO** the tempo,
+   GLO + G4 UNDO …). Held + SELECT: **HOME** GEN, **EDIT / LFO / FX** their dice, **GLO** the tempo,
    **ENV / SCL / ARP / SAVE** walk their chain.
 6. **The screen says where**: on top the section's groups as tabs (a dot a page), at the foot
    **SECTION · GROUP · page** and **n/N**: **FX · DELAY · DLY 2  6/16**.

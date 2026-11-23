@@ -1677,32 +1677,7 @@ Melódica (cualquier otra pista):
 
 ### MUTATE (V10.16)
 
-La tercera página bajo la pestaña **EUCL** (EUCLID · MODES · **MUTATE**): cambia el patrón de EUCLID solo mientras
-suena, en el compás, alrededor de lo que marcaste (el **ancla**). Trae de vuelta lo que hacía MUTATE antes de V10.6,
-pero adentro de EUCLID: el patrón siempre es de EUCLID, en la tonalidad, con HITS exacto.
-
-| KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
-| --- | --- | --- | --- |
-| **EVERY** OFF · 1 · 2 · 4 · 8 · 16 BARS | **AMOUNT** 0–100 (50 de fábrica) | **MODE** ORBIT · DRIFT · PULSE | **WHAT** GROOVE · RHYTHM · FEEL · ALL |
-
-- **EVERY**: cada cuántos compases muta, mientras suena. El patrón nuevo arranca en el compás siguiente (se escribe en
-  el último tiempo del compás). No mientras suena un tema (modo SONG, PLAY en ARRANGE / TIMELINE).
-- **AMOUNT**: cuánto cambia cada mutación.
-- **MODE**: **ORBIT** cada mutación desde el ancla (se aleja y vuelve); **DRIFT** cada una desde la anterior (se va
-  alejando; OCT− la trae de vuelta); **PULSE** una mutación y el ancla, de a turnos (pregunta y respuesta).
-- **WHAT**: **GROOVE** solo una variación nueva (dónde caen los golpes, las notas); **RHYTHM** además HITS (DENSITY en
-  ALL) y ROTATE; **FEEL** además los cuatro MODES y VARY; **ALL** todo.
-- **El ancla** es lo que marcás: girar cualquier perilla de EUCLID o MODES, OCT+ / OCT− en esas páginas, o prender
-  EVERY la fija.
-- **En MUTATE**: **OCT+** muta ya (también parado), **OCT−** vuelve al ancla.
-- DRUM-X: con un LANE elegido muta solo ese carril, los otros quedan; con ALL, todo el kit.
-- **La página MUTATE** (V10.24): arriba el patrón del ancla (gris), abajo el que suena, con los pasos que cambió una
-  mutación en el color de acento; a la derecha un arco se llena hasta la próxima mutación (NEXT *n*: los compases que faltan).
-- En EUCLID la esquina del anillo muestra **MUT *n***: los compases que faltan para la próxima mutación. Las mutaciones no hacen
-  puntos de UNDO; GLO + G4 deshace el último gesto de perilla.
-
-**MUTATE en un minuto**: armá un patrón en EUCLID, SELECT hasta MUTATE, KNOB 1 en 2 BARS, PLAY. Girá AMOUNT, probá los
-MODE; OCT− cuando quieras volver al original.
+*Se sacó en V10.8.20 para hacer lugar a DRONE CLAY. Los proyectos viejos conservan sus ajustes de MUTATE, sin uso. Para música que evoluciona, usá **DRONE CLAY** (SEQ › CLAY), el **GENERATOR** y el modo canción (HOME › JAM).*
 
 ### Parameter locks
 
@@ -1894,62 +1869,7 @@ largo y su END (**120 BARS · LOOP**).
 
 ### TIMELINE, PARTS y CLIPS (SAVE › SONG)
 
-(V10.6o, V10.6s) El primer grupo de SAVE, **SONG**, es donde se arma el tema: **TIMELINE**, **PARTS** y **CLIPS**, y
-después **SECTIONS**. Al encender SAVE abre en TIMELINE; después vuelve a la página de SAVE que dejaste. En las tres el
-tema se dibuja como una tira de **bloques**, cada fila tan ancha como sus compases y del color de su parte; mientras
-suena, una línea marca por dónde va. (Una **parte** es una de las cuatro secciones del proyecto, A–D.)
-
-**TIMELINE**: el tema en bloques, la fila elegida enmarcada, y debajo **esa fila abierta pista por pista**: la barra de
-cada pista en el color de su propia parte (calmo), en el color de otra parte con su letra cuando toca esa parte
-(**FROM**), oscura si está muteada, `--` si no suena en su parte; su variación (**VAR**) a la derecha; la pista de
-ALGORITHM encendida.
-
-| Control | En TIMELINE |
-| --- | --- |
-| KNOB 1 | la fila |
-| KNOB 2 | la parte de la fila (A–D) |
-| KNOB 3 | los compases de la fila (1–64) |
-| KNOB 4 | la **VAR** de la pista de ALGORITHM en esta fila |
-| F3 … D4 | mutear / desmutear T1 … T6 en esta fila (se guarda como la escena de la fila; la fila que suena: al instante) |
-| F4 … B4 | el **FROM** de la pista de ALGORITHM en esta fila: la parte A … D (su propia letra otra vez: vuelve a la parte de la fila) |
-| OCT+ | una copia de la fila elegida, después de ella (con su escena, FROM y VAR), elegida |
-| OCT− | **DELETE SONG ROW?** (OCT+ la borra, OCT− la deja) |
-| PLAY | parado: **la fila elegida en loop** (LOOP ROW); PLAY sobre ella mientras está en loop: **THE SONG GOES ON** desde ahí |
-
-Una pista tomada de otra parte trae el sonido, los pasos, el patch de FM6 y la automatización de esa parte (una pista
-DRUM también su kit); todo lo demás (el carril de punch-in, el SLICER) es de la parte de la fila. **VAR** cambia la pista
-**solo en esta fila**, nunca la parte guardada:
-
-| VAR | Qué toca la pista |
-| --- | --- |
-| -- | sus pasos tal cual |
-| MUTE | nada (por encima de la escena de la fila) |
-| THIN | sin las semicorcheas de contratiempo |
-| FILL | el último tiempo lleno: suenan todos los pasos (un redoble hacia la fila siguiente) |
-| HALF | su primera mitad dos veces |
-| REV | al revés |
-| SHIFT | una corchea tarde, en ronda dentro de su largo |
-| OCT+ / OCT− | una octava arriba / abajo (pistas melódicas) |
-| VAR 1–4 | mutaciones, cada una más fuerte: golpes y notas movidos, sacados y agregados; la misma fila suena siempre igual |
-
-**PARTS**: las cuatro partes como tarjetas (2 × 2, sus colores): la letra, el nombre, sus compases en el tema y las
-pistas que suenan en ella; debajo el tema, con las filas de la parte elegida encendidas. **KNOB 1** (o **F3 … B3**)
-elige la parte, **KNOB 2** una de sus filas en el tema, **KNOB 4** qué toca PLAY (**LOOP** o **SONG**; el D5 de la capa
-SAVE, a la vista). **OCT+** pone la parte en loop (sonando: desde el compás siguiente, cortando el tema; parado: ya, con
-PLAY); **OCT−** vuelve a **THE SONG** desde la fila que eligió KNOB 2. Es la forma más rápida de escuchar una parte sola.
-
-**CLIPS** (V10.6s): las seis pistas × las cuatro partes como una grilla, cada celda el patrón de una pista en una parte
-(con su color donde suena, gris donde no suena o está vacía). La parte que está sonando en cada pista va enmarcada; una
-celda pedida queda enmarcada con línea cortada hasta el compás siguiente. **KNOB 1** la pista, **KNOB 2** la parte;
-**OCT+** lanza esa celda **en el compás siguiente** (solo esa pista), **OCT−** para la pista en el compás siguiente,
-**F3 … B3** lanzan una parte entera (todas las pistas). Con **REC** armado, cada lanzamiento se escribe como una **fila
-del tema** (FROM por pista, una pista parada en los mutes de la fila): tocás los clips y el tema queda escrito.
-
-- Las cadenas rápidas y los saltos en vivo (la capa SAVE) tocan secciones enteras, sin FROM ni VAR. Las filas
-  agregadas, borradas o grabadas con SONG REC mantienen las pistas en orden; CLEAR SONG también las borra.
-- (V10.6z8) **Un sonido que cambiás mientras suena el tema se queda** en las secciones siguientes (ver la página
-  ARRANGE arriba); un lanzamiento de CLIPS, una carga o una tirada nueva de GENE hacen que las secciones vuelvan a traer
-  sus sonidos.
+*Reemplazado en V10.8 por el modo canción: **HOME › JAM · TAKE · ARRANGE** (ver "Lo nuevo en V10.8.21" al principio).*
 
 ### SAVE SONG AS (SAVE › PROJECT)
 
@@ -2295,23 +2215,7 @@ primera tirada (solo el sonido de esa pista: la música sigue). Después de OK, 
 
 ### Dados de secuencia, LFO y FX (SEQ / LFO / FX + SELECT)
 
-La misma idea para las otras partes de la pista seleccionada, cada una se escucha al instante bajo su diálogo **KEEP
-DICED …?** (SELECT otra vez: otra tirada, **OCT+ OK** la deja, **OCT− CANCEL** devuelve lo que había, el resto sigue
-sonando):
-
-- **SEQ + SELECT** (0.9.17): una secuencia nueva, la parte que escribiría el generador de GEN para la pista: sobre la
-  armonía de la canción si GEN hizo la pieza (su plan, su género y el rol de la pista), así encaja con las otras; si
-  no, en la tonalidad de la pista, con un género inventado para ella. Batería en una pista DRUM; si no, el rol al que
-  suenan sus pasos (notas graves: un bajo, acordes: un pad, si no una lead o un arpegio). Nunca la misma parte dos
-  veces seguidas. Su sonido, su mezcla y su automatización quedan. (V10.7) En una pista DRUM-X siempre suena un
-  ritmo: antes un género sin batería (NEO CLASSIC) o el mapa ralo de AMBIENT daban un patrón vacío o casi vacío;
-  ahora un patrón de kit que sale casi sin golpes se vuelve a tirar.
-- **LFO + SELECT**: el LFO de la pista: un rate en el medio del rango, cualquier onda, MODE FREE o TRIG (mitad y
-  mitad; TRIG con cualquier fase), a veces un fade, apuntado
-  sobre todo al filtro, un poco a la forma, rara vez al pitch o al volumen.
-- **FX + SELECT**: el drive de la pista (la mitad de las veces nada), sus envíos de chorus, delay y reverb, un AUTO PAN
-  una vez de cada tres, y el tipo, tamaño y damping del reverb compartido y el tiempo y feedback del delay (con pitch una
-  vez de cada diez, una octava arriba o abajo; V10.8, antes una de cada cinco, con quintas y cuartas).
+**LFO + SELECT** y **FX + SELECT** sortean el LFO y los efectos (OCT+ los deja, OCT− los cancela). El dado de secuencia (SEQ + SELECT) se sacó en V10.8.21.
 
 ### Dados de macros
 
@@ -2530,69 +2434,7 @@ pequeña curva de respuesta donde iría la barra.
 
 ### Secuencias en vivo: GLO › LIVE (0.9.11)
 
-Las seis secuencias una al lado de la otra y modificadores para tocar encima, como efectos MIDI sobre un master:
-dividir, multiplicar, acortar, dar vuelta, ralear, repetir. Nunca tocan los pasos: cambian cómo el secuenciador los
-recorre, y la pista siempre vuelve en fase. Dos páginas, el primer grupo de GLO (**LIVE · MIX · COMPS · GLOBAL · SYSTEM**, V10.37: primero las páginas para tocar): un
-toque de GLO adentro recorre los grupos, SELECT a la izquierda de MIXER llega a ellas; al prender, GLO sigue abriendo
-el MIXER.
-
-**RIELES**: el loop de cada pista a lo ancho con su propio largo, su cabezal (naranja) a su propia velocidad, el
-**fantasma** (puntos violeta: donde estaría la pista sin modificar) y la ventana de CORTE o LOOP enmarcada en violeta
-(los pasos de afuera se apagan). Los números de la izquierda: la pista de ALGORITHM en la insignia naranja, las pistas
-a las que van las perillas en violeta con una raya.
-
-- **KNOB 1 PISTAS**: a qué pistas van las otras tres: **ALL**, después **T1 … T6** de a una, después **SYN** (los
-  sintes) y **DRM** (las baterías). La pista que editás sigue siendo la de ALGORITHM.
-- **KNOB 2 RATE**: /4 /3 /2 2/3 · x1 · 3/2 x2 x3 x4 (2/3 puntillo, 3/2 tresillo). Entra en el próximo tiempo.
-- **KNOB 3 CORTE**: solo los primeros N pasos (32 … 1, OFF). En el próximo 1/16.
-- **KNOB 4 DENS**: a la izquierda THIN (suena del 90 al 10 % de los pasos; los mismos pasos en la misma vuelta en cada
-  PLAY), al centro todo, a la derecha RATCH (cada paso x2 … x4, nunca una parte de menos de ~1,4 ms). En el próximo 1/16.
-
-**MANO**: las teclas pasan a ser una botonera; arriba los carriles chicos, abajo la botonera (mantenido: naranja;
-enganchado: violeta).
-
-- **Negras 1–6** (F#3 … F#4): mantenelas para elegir pistas (varias a la vez); ninguna, o **A#4**: todas.
-- **Blancas**, activas mientras las mantenés, de vuelta en fase al soltarlas: **F3** /2, **G3** x2, **A3** TR (3/2),
-  **B3** DT (2/3), **C4 … F4** LOOP 8 4 2 1 (los N pasos donde está el cabezal; gana el más corto), **G4** REV,
-  **A4** PING, **B4 C5** RATCH x2 x3, **D5** THIN 50 %, **E5 F5** OCT+ OCT− (las notas de la secuencia una octava
-  arriba / abajo), **G5** RETURN. Entran en el próximo 1/16 (las de velocidad también).
-- **G#4 LATCH**: entonces una blanca enciende su modificador y otro toque lo apaga (para las pistas mantenidas en ese
-  momento). **C#5 / D#5** GIRO: el cabezal un paso atrás / adelante (una rotación). **F#5** RND: los pasos en cualquier
-  orden (encendido / apagado).
-- **KNOB 1 RATE, 2 LOOP, 3 THIN** sobre las pistas mantenidas (ninguna: todas), enganchadas como cualquier perilla;
-  **KNOB 4** el DJ FILTER del master.
-- En MANO las teclas no tocan notas; en cualquier otra página vuelven a tocar (una tecla todavía apretada sostiene su
-  modificador hasta que la soltás).
-
-**En las dos páginas**: **OCT− tocado** es RETURN: las pistas elegidas pierden todo modificador y caen sobre su
-fantasma en el próximo tiempo. **OCT− mantenido** es BYPASS: el original mientras lo apretás, todas las pistas; al
-soltar vuelven los modificadores. **OCT+** es COMMIT: pregunta (WRITE LIVE CHANGES?) y **OCT+ otra vez** escribe lo que
-suena en las pistas: RATE en DIV cuando hay una que calza (x2 de 1/16 = 1/32, 3/2 = 16T, /2 = 1/8), si no STRETCH
-(/2 /3 /4 más lento, x3 x4 más rápido); CORTE en LEN (los pasos de un LOOP pasan al principio); GIRO en ROTATE; THIN en
-el CHANCE de la pista. REV, PING, RND, RATCH, OCT y una velocidad sin DIV ni STRETCH (2/3 de 1/16) siguen en vivo.
-**UNDO: GLO + G4.**
-
-**Cómo se combinan las dos páginas**: mueven los mismos modificadores, un juego por pista. Las perillas de las dos
-páginas son una sola capa enganchada: RATE es el mismo valor en las dos; el LOOP de MANO y el CORTE de RIELES son la
-misma ventana (LOOP cuenta desde donde está el cabezal, CORTE desde el paso 1; gana la última que giraste); THIN y DENS
-son la misma densidad. Las teclas de MANO van encima mientras están mantenidas o enganchadas: una tecla de velocidad
-reemplaza la velocidad, una de LOOP achica la ventana (gana la más corta), THIN toma el más raleado, RATCH el mayor;
-REV, PING y OCT son solo de las teclas. MANO es la cara para tocar (momentánea, varias pistas a la vez), RIELES la
-enganchada y visual.
-
-**Grabar**: con REC armado, una nota tocada mientras su pista está modificada cae donde está el fantasma (donde está
-el paso en el patrón escrito), así grabar sobre una pista modificada nunca la desordena; la automatización y los locks
-siguen al paso que suena.
-
-**Nunca se guardan**: los modificadores son estado de interpretación, como los FX punch-in; STOP no los borra, NEW
-PROJECT sí. Lo que queda es lo que hacés COMMIT. No cuestan nada en el render de audio; en el secuenciador, unas pocas
-instrucciones por pista.
-
-**1/2 TEMPO y los LOOP 3 / 5 / 7 de la capa FX** son estos mismos modificadores: 1/2 TEMPO es RATE /2 (o más lento, si
-LIVE ya tiene la pista más lenta), un LOOP los últimos N pasos (el que suena, el último de ellos), entran enseguida en
-el 1/16 en que empieza el punch-in, y al soltarlos la pista cae en su fantasma, donde habría estado. Con un RATE más
-lento (o 1/2 TEMPO) los PLAYHEADS (SEQ › PLAYHEADS) van más lentos con la pista y, de vuelta en fase, saltan lo que se
-perdieron; uno más rápido los deja a tiempo.
+*Se sacó en V10.8.3. Tocá las secuencias en vivo desde **HOME › JAM** (A–D por pista) y los componentes de paso desde **SEQ › STEP FX** (manteniendo una tecla).*
 
 ### FX punch-in (mantené FX)
 

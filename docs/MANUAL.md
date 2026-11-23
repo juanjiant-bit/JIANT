@@ -1608,32 +1608,7 @@ Melodic (any other track):
 
 ### MUTATE (V10.16)
 
-The third page under the **EUCL** tab (EUCLID · MODES · **MUTATE**): it changes the EUCLID pattern by itself while it
-plays, on the bar, around what you dialled (the **anchor**). It brings back what MUTATE did before V10.6, but inside
-EUCLID: the pattern is always a EUCLID one, in the key, HITS exact.
-
-| KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
-| --- | --- | --- | --- |
-| **EVERY** OFF · 1 · 2 · 4 · 8 · 16 BARS | **AMOUNT** 0–100 (default 50) | **MODE** ORBIT · DRIFT · PULSE | **WHAT** GROOVE · RHYTHM · FEEL · ALL |
-
-- **EVERY**: how often it mutates, in bars, while playing. The new pattern starts on the next bar (it is written in the
-  bar's last beat). Not while a song plays (SONG mode, ARRANGE / TIMELINE PLAY).
-- **AMOUNT**: how far each mutation goes.
-- **MODE**: **ORBIT** each mutation from the anchor (it wanders and comes back); **DRIFT** each from the last one (it
-  walks away; OCT− brings it back); **PULSE** a mutation and the anchor by turns (call and answer).
-- **WHAT**: **GROOVE** a new variation (where the hits fall, the notes) only; **RHYTHM** also HITS (DENSITY on ALL)
-  and ROTATE; **FEEL** also the four MODES and VARY; **ALL** everything.
-- **The anchor** is what you dial: turning any EUCLID or MODES knob, OCT+ / OCT− on those pages, or turning EVERY on
-  sets it.
-- **On MUTATE**: **OCT+** mutates now (stopped too), **OCT−** goes back to the anchor.
-- DRUM-X: with a LANE picked only that lane mutates, the others stay; with ALL the whole kit.
-- **The MUTATE page** (V10.24): the anchor's pattern above (grey), the one playing below, the steps a mutation changed
-  in the accent; an arc at the right fills to the next mutation (NEXT *n*: the bars left).
-- On EUCLID the ring's corner shows **MUT *n***: the bars to the next mutation. Mutations make no UNDO points; GLO + G4 undoes
-  the last knob gesture.
-
-**MUTATE in one minute**: make a pattern on EUCLID, SELECT to MUTATE, KNOB 1 to 2 BARS, press PLAY. Turn AMOUNT, try
-the MODEs; OCT− when you want the original back.
+*Removed in V10.8.20 to make room for DRONE CLAY. Old projects keep their MUTATE settings, unused. For music that keeps evolving, use **DRONE CLAY** (SEQ › CLAY), the **GENERATOR** and the song mode (HOME › JAM).*
 
 ### Parameter locks
 
@@ -1816,60 +1791,7 @@ strip (its rows by their length, a white line where it plays) with its length an
 
 ### TIMELINE, PARTS and CLIPS (SAVE › SONG)
 
-(V10.6o, V10.6s) SAVE's first group, **SONG**, is where a song is made: **TIMELINE**, **PARTS** and **CLIPS**, then
-**SECTIONS**. At power-on SAVE opens on TIMELINE; afterwards it comes back to the SAVE page you left. On all three the
-song is drawn as a strip of **blocks**, each row as wide as its bars and in its part's colour; while it plays, a line
-shows where. (A **part** is one of the project's four sections, A–D.)
-
-**TIMELINE**: the song as blocks, the row picked framed, and under it **that row opened track by track**: each track's
-bar in its own part's colour (calm), in another part's colour with its letter when it plays that part (**FROM**), dark
-when muted, `--` when it is silent in its part; its variation (**VAR**) at the right; the ALGORITHM track lit.
-
-| Control | On TIMELINE |
-| --- | --- |
-| KNOB 1 | the row |
-| KNOB 2 | the row's part (A–D) |
-| KNOB 3 | the row's bars (1–64) |
-| KNOB 4 | the **VAR** of the ALGORITHM track in this row |
-| F3 … D4 | mute / unmute T1 … T6 in this row (stored as the row's scene; the row playing: at once) |
-| F4 … B4 | the ALGORITHM track's **FROM** in this row: part A … D (its own letter again: back to the row's part) |
-| OCT+ | a copy of the row picked, after it (its scene, FROM and VAR with it), selected |
-| OCT− | **DELETE SONG ROW?** (OCT+ deletes it, OCT− keeps it) |
-| PLAY | stopped: **the row picked loops** (LOOP ROW); PLAY on it again while it loops: **THE SONG GOES ON** from there |
-
-A track taken from another part brings that part's sound, steps, FM6 patch and automation (a DRUM track also its kit);
-everything else (the punch-in lane, the SLICER) is the row's part's. **VAR** changes the track **in this row only**,
-never the part stored:
-
-| VAR | What the track plays |
-| --- | --- |
-| -- | its steps as they are |
-| MUTE | nothing (over the row's scene) |
-| THIN | the off-beat 16ths out |
-| FILL | the last beat filled: every step plays (a roll into the next row) |
-| HALF | its first half twice |
-| REV | backwards |
-| SHIFT | an 8th late, round within its length |
-| OCT+ / OCT− | an octave up / down (melodic tracks) |
-| VAR 1–4 | mutations, stronger each: hits and notes moved, dropped and added; the same row always plays the same |
-
-**PARTS**: the four parts as cards (2 × 2, their colours): the letter, the name, its bars in the song and the tracks
-that sound in it; under them the song, the picked part's rows lit. **KNOB 1** (or **F3 … B3**) picks the part, **KNOB 2**
-one of its rows in the song, **KNOB 4** what PLAY plays (**LOOP** or **SONG**; the SAVE layer's D5, shown). **OCT+** loops
-the part (playing: from the next bar, the song cut; stopped: now, with PLAY); **OCT−** goes back to **THE SONG** from the
-row KNOB 2 picked. It is the quickest way to hear one part on its own.
-
-**CLIPS** (V10.6s): the six tracks × the four parts as a grid, each cell a track's pattern in a part (its colour where
-it plays there, grey where silent or empty). The part each track is sounding is framed; a cell asked for is framed
-dashed until the next bar. **KNOB 1** the track, **KNOB 2** the part; **OCT+** launches that cell **on the next bar**
-(that track only), **OCT−** stops the track on the next bar, **F3 … B3** launch a whole part (every track). With **REC**
-armed, each launch is written as a **song row** (FROM per track, a stopped track in the row's mutes): play the clips and
-the song is written.
-
-- Quick chains and live jumps (the SAVE layer) play whole sections, without FROM or VAR. Rows added, deleted or
-  recorded with SONG REC keep the tracks in step; CLEAR SONG clears them too.
-- (V10.6z8) **A sound you change while the song plays stays** over the next sections (see the ARRANGE page above);
-  a CLIPS launch, a load or a new GENE throw lets the sections bring their sounds again.
+*Replaced in V10.8 by the song mode: **HOME › JAM · TAKE · ARRANGE** (see "What's new in V10.8.21" at the top).*
 
 ### SAVE SONG AS (SAVE › PROJECT)
 
@@ -2185,21 +2107,7 @@ the music plays on). After OK, **GLO held + G4** still undoes it.
 
 ### Sequence, LFO and FX dice (SEQ / LFO / FX + SELECT)
 
-The same idea for the other parts of the selected track, each heard at once under its **KEEP DICED …?** dialog
-(SELECT again: another roll, **OCT+ OK** keeps it, **OCT− CANCEL** puts back what was there, the rest plays on):
-
-- **SEQ + SELECT** (0.9.17): a new sequence, the part GEN's generator would write for the track: on the song's
-  harmony when GEN made the piece (its plan, genre and the track's role), so it fits the others; else in the track's
-  own key, a genre made up for it. Drums on a DRUM track, else the role its steps sound like (low notes: a bass line,
-  chords: a pad, else a lead or an arp). Never the same part twice in a row. Its sound, mix and automation stay.
-  (V10.7) On a DRUM-X track it always plays a beat: before, a genre with no drums (NEO CLASSIC) or AMBIENT's sparse
-  map gave an empty or almost empty pattern; now a kit pattern that comes out with almost no hits is thrown again.
-- **LFO + SELECT**: the track's LFO: a rate in the middle of the range, any wave, MODE FREE or TRIG (half the time
-  each; TRIG at any phase), a fade now and then, aimed
-  mostly at the filter, a little at the shape, seldom at the pitch or the level.
-- **FX + SELECT**: the track's drive (half the time none), its chorus, delay and reverb sends, an AUTO PAN one time in
-  three, and the shared reverb's kind, size and damping and the delay's time and feedback (pitched one time in ten, an octave up or down; V10.8, was one in five, with fifths
-  and fourths).
+**LFO + SELECT** and **FX + SELECT** roll the LFO and the effects (OCT+ keeps, OCT− cancels). The sequence dice (SEQ + SELECT) was removed in V10.8.21.
 
 ### Macro dice
 
@@ -2403,63 +2311,7 @@ curve where the bar would be.
 
 ### Live sequences: GLO › LIVE (0.9.11)
 
-The six sequences side by side, and modifiers you play over them like MIDI effects on a master: divide, multiply,
-shorten, reverse, thin, repeat. They never touch the steps: they change how the sequencer walks them, and a track
-always comes back in phase. Two pages, the first group of GLO (**LIVE · MIX · COMPS · GLOBAL · SYSTEM**, V10.37: the performing pages first): a GLO tap inside goes
-round the groups, SELECT left of MIXER reaches them; at power-on GLO still opens the MIXER.
-
-**RIELES** (rails): each track's loop across the screen at its own length, its playhead (orange) running at its own
-speed, the **ghost** (violet dots: where the track would be if nothing were done to it) and the window of CORTE or LOOP
-framed in violet (the steps outside it dim). The numbers at the left: ALGORITHM's track on the orange badge, the
-tracks the knobs act on in violet with a bar.
-
-- **KNOB 1 PISTAS**: which tracks the other three act on: **ALL**, then **T1 … T6** one by one, then **SYN** (the
-  synths) and **DRM** (the drum tracks). The track you edit is still ALGORITHM's.
-- **KNOB 2 RATE**: /4 /3 /2 2/3 · x1 · 3/2 x2 x3 x4 (2/3 dotted, 3/2 triplets). It goes in on the next beat.
-- **KNOB 3 CORTE**: the first N steps only (32 … 1, OFF). On the next 1/16.
-- **KNOB 4 DENS**: to the left THIN (90 … 10 % of the steps play; the same steps on the same loop every PLAY), in the
-  middle everything, to the right RATCH (every step x2 … x4, never a part shorter than ~1.4 ms). On the next 1/16.
-
-**MANO** (hand): the keys become a board; the rails small on top, the board under them (held: orange; latched: violet).
-
-- **Black keys 1–6** (F#3 … F#4): hold them to pick the tracks (several at once); none held, or **A#4**: all of them.
-- **White keys**, on while held, back in phase when let go: **F3** /2, **G3** x2, **A3** TR (3/2), **B3** DT (2/3),
-  **C4 … F4** LOOP 8 4 2 1 (the N steps the playhead is in; the shortest held wins), **G4** REV, **A4** PING, **B4 C5**
-  RATCH x2 x3, **D5** THIN 50 %, **E5 F5** OCT+ OCT− (the sequence's notes an octave up / down), **G5** RETURN. They go
-  in on the next 1/16 (the rate keys too).
-- **G#4 LATCH**: then a white key turns its modifier on and the next press off (for the tracks held at the time).
-  **C#5 / D#5** GIRO: the playhead a step back / on (a rotation). **F#5** RND: the steps in any order (on / off).
-- **KNOB 1 RATE, 2 LOOP, 3 THIN** on the tracks held (none: all), latched as any knob; **KNOB 4** the DJ FILTER, the
-  same as MIXER's KNOB 4.
-- On MANO the keys play no notes; on any other page they play again (a key still held keeps its modifier until it is
-  let go).
-
-**On both pages**: **OCT− tapped** is RETURN: the tracks picked lose every modifier and land on their ghost on the next
-beat. **OCT− held** is BYPASS: the original while you hold it, every track; let go, the modifiers are back. **OCT+** is
-COMMIT: it asks (WRITE LIVE CHANGES?) and **OCT+ again** writes what plays into the tracks: RATE into DIV when one fits
-(x2 of 1/16 = 1/32, 3/2 = 16T, /2 = 1/8), else STRETCH (/2 /3 /4 slower, x3 x4 faster); CORTE into LEN (a LOOP's steps
-moved to the start); GIRO into ROTATE; THIN into the track's CHANCE. REV, PING, RND, RATCH, OCT and a rate with no DIV
-or STRETCH (2/3 of a 1/16) stay live. **UNDO: GLO + G4.**
-
-**How the two pages combine**: they drive the same modifiers, one set per track. The knobs of both pages are one
-latched layer: RATE is the same value on both; MANO's LOOP and RIELES' CORTE are the same window (LOOP counts from where
-the playhead is, CORTE from step 1; the last one turned wins); THIN and DENS are the same density. MANO's keys sit on
-top while held or latched: a rate key replaces the rate, a LOOP key shortens the window (the shortest wins), THIN takes
-the thinner, RATCH the larger; REV, PING and OCT are the keys' alone. MANO is the hands-on face (momentary, several
-tracks at once), RIELES the latched, visual one.
-
-**Recording**: with REC armed, a note played while its track is modified lands where the ghost is (where the step is
-in the written pattern), so recording over a modified track never scrambles it; the automation and the locks follow
-the step that sounds.
-
-**Never saved**: the modifiers are performance state, like the punch-in FX; STOP keeps them, NEW PROJECT clears them.
-What you COMMIT is what stays. They cost nothing in the audio render, a few instructions a track in the sequencer.
-
-**The FX layer's 1/2 TEMPO and LOOP 3 / 5 / 7** are these same modifiers: 1/2 TEMPO is RATE /2 (or slower, if LIVE
-already has the track slower), a LOOP the last N steps (the one playing the last of them), in at once on the 1/16 the
-punch-in starts on, and let go the track lands on its ghost, where it would have been. With a slower RATE (or 1/2
-TEMPO) the PLAYHEADS (SEQ › PLAYHEADS) slow down with the track and, back in phase, skip what they missed; a faster one
-leaves them in time.
+*Removed in V10.8.3. Play the sequences live from **HOME › JAM** (A–D per track) and the step components from **SEQ › STEP FX** (hold a key).*
 
 ### Punch-in FX (hold FX)
 
