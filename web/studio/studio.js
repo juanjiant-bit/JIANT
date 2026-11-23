@@ -17,7 +17,7 @@ const MOCK = QS.get("mock") === "1";
 /* ------------------------------------------------------------------------------------------------- the words */
 const TEXT = {
   es: {
-    other: "English", vHome: "Inicio", vInstall: "Instalar", vEditor: "Editor", vScreen: "Pantalla", vEmu: "Emulador", vRec: "Grabar",
+    other: "English", vPorts: "Otros aparatos", vHome: "Inicio", vInstall: "Instalar", vEditor: "Editor", vScreen: "Pantalla", vEmu: "Emulador", vRec: "Grabar",
     tFm1: "FM-1", tEmu: "Emulador", target: "Destino",
     eyebrow: "Un firmware libre para la M-VAVE FM-1",
     leadFm: "Síntesis, secuencias, mutación y escena en vivo. Instalalo, editalo, mirá su pantalla en grande y grabá, todo desde acá.",
@@ -63,10 +63,24 @@ const TEXT = {
     recStemsGo: "Abrir el emulador",
     recTakes: "Tomas", recNone: "Todavía no grabaste nada.", recWav: "WAV master", recStemsZip: "Stems (ZIP)", recMid: "MIDI",
     recChannels: " canales", recNotes: " notas",
+    portsTitle: "JIANT FM en otros aparatos",
+    portsLead: "El mismo firmware, de las mismas fuentes, en otras máquinas: una canción suena igual en todas. En las CPU grandes suma los motores SAMPLE y GRAIN, DRUM-X con samples y 8 voces por pista. Todos gratis y GPL-3.0; algunos todavía buscan quién los pruebe.",
+    portsHow: "Cómo funcionan", portTry: "Probar en el navegador", portDownload: "Descargar", portManual: "Manual", portInstall: "Cómo instalar",
+    portSource: "Código", portBuild: "Compilar", portSoon: "Instalador: próximamente",
+    stOk: "funciona", stPreview: "preview: buscamos testers", stDev: "en desarrollo", stCi: "compilado en CI",
+    pSmkTitle: "M-VAVE SMK-37 Pro / Elite", pSmkText: "JIANT directo en el chip del SMK-37 (el mismo AC791N que la FM-1): 37 teclas, 16 pads RGB, 8 encoders y 4 faders como panel. Usa el mismo editor web.",
+    pSmk1: "Pads con color por pista", pSmk2: "El mismo editor y los mismos sonidos que la FM-1",
+    pMpcTitle: "Akai MPC Sample", pMpcText: "JIANT como el instrumento entero de la MPC Sample: su pantalla, sus pads, botones y perillas como el panel de la FM-1, arrancando desde la microSD.",
+    pMpc1: "SAMPLE, GRAIN y DRUM-X con samples", pMpc2: "16 slots de samples de 60 s, grabación desde la entrada",
+    pPlugMpcTitle: "Plugin para MPC", pPlugMpcText: "JIANT FM como instrumento dentro de las MPC standalone (MPC OS 3.10.1 o más nuevo) y de hosts VST2 de escritorio.",
+    pPlugMpc1: "ARM32, ARM64 y escritorio", pPlugMpc2: "Pasa el simulador de host del SDK; falta probarlo en una MPC",
+    pDawTitle: "VST3 · AU · LV2 · app", pDawText: "Para tu DAW o el iPad (AUM, GarageBand, Logic, Cubasis…), con un editor hecho para DAW: la pantalla en vivo, las seis pistas, los presets y parámetros de cada sonido, y un navegador de samples con arrastrar y soltar.",
+    pDaw1: "Hasta 8 JIANT en una sesión, cada uno el suyo", pDaw2: "La app standalone responde al editor web (con un cable MIDI virtual)",
+    pDaw3: "VST3 (macOS, Windows, Linux), AU y AUv3 (macOS, iPadOS), LV2 (Linux), standalone",
     foot: "JIANT Studio, de Juan Jiant",
   },
   en: {
-    other: "Español", vHome: "Home", vInstall: "Install", vEditor: "Editor", vScreen: "Screen", vEmu: "Emulator", vRec: "Record",
+    other: "Español", vPorts: "Other devices", vHome: "Home", vInstall: "Install", vEditor: "Editor", vScreen: "Screen", vEmu: "Emulator", vRec: "Record",
     tFm1: "FM-1", tEmu: "Emulator", target: "Target",
     eyebrow: "A free firmware for the M-VAVE FM-1",
     leadFm: "Synthesis, sequencing, mutation and performance. Install it, edit it, see its screen big and record, all from here.",
@@ -112,6 +126,20 @@ const TEXT = {
     recStemsGo: "Open the emulator",
     recTakes: "Takes", recNone: "Nothing recorded yet.", recWav: "WAV master", recStemsZip: "Stems (ZIP)", recMid: "MIDI",
     recChannels: " channels", recNotes: " notes",
+    portsTitle: "JIANT FM on other devices",
+    portsLead: "The same firmware from the same sources on other machines: a song sounds the same on every one. On the bigger CPUs it adds the SAMPLE and GRAIN engines, DRUM-X with samples and 8 voices a track. All free and GPL-3.0; some are still looking for testers.",
+    portsHow: "How they work", portTry: "Try it in the browser", portDownload: "Download", portManual: "Manual", portInstall: "How to install",
+    portSource: "Source", portBuild: "Build", portSoon: "Installer: coming",
+    stOk: "works", stPreview: "preview: testers wanted", stDev: "in development", stCi: "built by CI",
+    pSmkTitle: "M-VAVE SMK-37 Pro / Elite", pSmkText: "JIANT bare metal on the SMK-37's chip (the FM-1's AC791N): 37 keys, 16 RGB pads, 8 encoders and 4 faders as its panel. The same web editor.",
+    pSmk1: "Pads lit in each track's colour", pSmk2: "The FM-1's editor and sounds",
+    pMpcTitle: "Akai MPC Sample", pMpcText: "JIANT as the MPC Sample's whole instrument: its screen, its pads, buttons and knobs as the FM-1's panel, started from the microSD card.",
+    pMpc1: "SAMPLE, GRAIN and DRUM-X with samples", pMpc2: "16 sample slots of 60 s, recording from the input",
+    pPlugMpcTitle: "MPC plugin", pPlugMpcText: "JIANT FM as an instrument inside the MPC standalones (MPC OS 3.10.1 or newer) and desktop VST2 hosts.",
+    pPlugMpc1: "ARM32, ARM64 and desktop", pPlugMpc2: "Passes the SDK's host simulator; not yet tried on an MPC",
+    pDawTitle: "VST3 · AU · LV2 · app", pDawText: "For your DAW or the iPad (AUM, GarageBand, Logic, Cubasis…), with an editor made for a DAW: the live screen, the six tracks, each sound's presets and parameters, and a sample browser with drag and drop.",
+    pDaw1: "Up to 8 JIANTs in one session, each its own", pDaw2: "The standalone app answers the web editor (through a virtual MIDI cable)",
+    pDaw3: "VST3 (macOS, Windows, Linux), AU and AUv3 (macOS, iPadOS), LV2 (Linux), standalone",
     foot: "JIANT Studio, by Juan Jiant",
   },
 };
@@ -264,7 +292,7 @@ try {
 } catch (_) {}
 
 /* ------------------------------------------------------------------------------------- views, firmware, target */
-const VIEWS = ["home", "install", "editor", "screen", "emu", "rec"];
+const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "ports"];
 function go(view, push = true) {
   if (!VIEWS.includes(view)) view = "home";
   state.view = view;
@@ -593,6 +621,69 @@ function renderTakes() {
   }));
 }
 
+/* -------------------------------------------------------------------------------------------- other devices */
+/* JIANT FM's ports (ports/README.md): each one's state, what it is, and its links: the emulator (emu/devices.html, the
+ * same origin: shown here in a frame), the download (the releases), its manual. The words are TEXT's (p<Name>...) */
+const GH = "https://github.com/juanjiant-bit/JIANT/blob/main/", RELEASES = "https://github.com/juanjiant-bit/JIANT/releases";
+const OUTLINE = {   // a device's outline where there is no picture (the pads, the keys)
+  smk: '<svg viewBox="0 0 320 120" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="312" height="112" rx="10"/><rect x="16" y="14" width="44" height="34" rx="3"/>' +
+       Array.from({ length: 8 }, (_, i) => `<rect x="${72 + i * 26}" y="16" width="20" height="13" rx="2"/><rect x="${72 + i * 26}" y="34" width="20" height="13" rx="2"/>`).join("") +
+       Array.from({ length: 22 }, (_, i) => `<rect x="${16 + i * 13.3}" y="62" width="11" height="46" rx="2"/>`).join("") + "</svg>",
+  mpc: '<svg viewBox="0 0 240 150" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="232" height="142" rx="12"/><rect x="16" y="16" width="86" height="54" rx="4"/>' +
+       Array.from({ length: 16 }, (_, i) => `<rect x="${118 + (i % 4) * 28}" y="${16 + Math.floor(i / 4) * 31}" width="24" height="27" rx="4"/>`).join("") +
+       '<circle cx="30" cy="96" r="10"/><circle cx="60" cy="96" r="10"/><circle cx="90" cy="96" r="10"/><rect x="18" y="118" width="84" height="8" rx="4"/></svg>',
+  plug: '<svg viewBox="0 0 240 150" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="232" height="142" rx="8"/><path d="M4 26h232"/><circle cx="16" cy="15" r="3"/><circle cx="28" cy="15" r="3"/>' +
+       '<rect x="18" y="40" width="60" height="92" rx="3"/><rect x="88" y="40" width="64" height="64" rx="3"/><circle cx="178" cy="54" r="12"/><circle cx="210" cy="54" r="12"/><rect x="164" y="80" width="60" height="52" rx="3"/></svg>',
+};
+const PORTS = [
+  { id: "smk37", name: "pSmkTitle", text: "pSmkText", points: ["pSmk1", "pSmk2"], state: ["stDev", "soon"], pic: OUTLINE.smk,
+    links: [["portTry", "#try:smk37"], ["portManual", GH + "docs/SMK37.md"], ["portBuild", GH + "docs/SMK37.md"], ["portSoon", null]] },
+  { id: "mpc", name: "pMpcTitle", text: "pMpcText", points: ["pMpc1", "pMpc2"], state: ["stPreview", "soon"], pic: OUTLINE.mpc,
+    links: [["portTry", "#try:mpc"], ["portDownload", RELEASES], ["portInstall", GH + "ports/mpc-sample/README.md"]] },
+  { id: "mpcplug", name: "pPlugMpcTitle", text: "pPlugMpcText", points: ["pPlugMpc1", "pPlugMpc2"], state: ["stPreview", "soon"], pic: OUTLINE.mpc,
+    links: [["portDownload", RELEASES], ["portManual", GH + "ports/README.md#the-mpc-plugin"], ["portSource", "https://github.com/juanjiant-bit/JIANT/tree/main/ports/mpc-plugin"]] },
+  { id: "daw", name: "pDawTitle", text: "pDawText", points: ["pDaw1", "pDaw2", "pDaw3"], state: ["stCi", "ok"], img: "img/plugin.webp",
+    links: [["portDownload", RELEASES], ["portManual", GH + "ports/juce-plugin/README.md"], ["portSource", "https://github.com/juanjiant-bit/JIANT/tree/main/ports/juce-plugin"]] },
+];
+function renderPorts() {
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  $("portlist").replaceChildren(...PORTS.map((p) => {
+    const card = el("article", "card port");
+    const pic = el("div", "pic");
+    if (p.img) { const im = new Image(); im.src = p.img; im.alt = t(p.name); im.loading = "lazy"; pic.append(im); }
+    else { pic.innerHTML = p.pic; pic.setAttribute("aria-hidden", "true"); }
+    const meta = el("div", "meta"); meta.append(el("span", "state " + p.state[1], t(p.state[0])));
+    const ul = el("ul"); ul.append(...p.points.map((k) => el("li", null, t(k))));
+    const links = el("div", "links");
+    links.append(...p.links.map(([k, href], i) => {
+      if (!href) return el("span", "btn ghost na", t(k));
+      const a = el("a", "btn" + (i ? " ghost" : ""), t(k)); a.href = href;
+      if (href.startsWith("#try:")) a.addEventListener("click", (e) => { e.preventDefault(); tryDevice(href.slice(5), t(p.name)); });
+      else { a.target = "_blank"; a.rel = "noopener"; }
+      return a;
+    }));
+    card.append(pic, el("h2", null, t(p.name)), meta, el("p", null, t(p.text)), ul, links);
+    return card;
+  }));
+}
+/* the device's emulator (the JIANT FM site's emu/devices.html, its panel picked by the hash) in the frame below */
+function tryDevice(dev, name) {
+  const f = $("f-devices"), url = `${TOOLS.fm.base}emu/devices.html#${dev}`;
+  $("devtry").hidden = false; $("devtrytitle").textContent = `${t("portTry")} · ${name}`;
+  if (f.src !== new URL(url, location.href).href) f.src = url;
+  $("devtry").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("f-devices").addEventListener("load", () => {
+  const f = $("f-devices");
+  dress(f);
+  try {   // inside Studio: straight to the devices and their panel (its own bar, title, plugins note and footer are Studio's)
+    const d = f.contentDocument, st = d.createElement("style");
+    st.textContent = "main>header.top,main>section:first-of-type,section.plugins,main>footer,body>footer{display:none!important}";
+    d.head.append(st);
+  } catch (_) {}
+});
+$("devtryclose").addEventListener("click", () => { $("devtry").hidden = true; $("f-devices").src = "about:blank"; });
+
 /* ------------------------------------------------------------------------------------------- the whole page */
 function render() {
   const d = state.dev, fwName = state.fw === "byte" ? "BYTE" : "FM";
@@ -633,6 +724,7 @@ function render() {
   $("recsrchelp").textContent = t(state.target === "emu" ? "recSrcEmu" : "recSrcFm1");
   if (state.view === "rec" && !rec.on) { renderAudioInputs(); renderMidiInputs(); }
   renderTakes();
+  if (state.view === "ports") renderPorts();
 }
 
 /* ------------------------------------------------- the editor and the emulator joined (target: Emulator) */
