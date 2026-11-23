@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 #include "JiantEditor.h"
+#include "JiantLook.h"
 #include "jiant_core.h"
 #include <cmath>
 
@@ -85,8 +86,10 @@ int buttonForChar(juce::juce_wchar c)
 }
 }  // namespace
 
-JiantEditor::JiantEditor(JiantProcessor& p) : AudioProcessorEditor(p), proc_(p)
+JiantEditor::JiantEditor(JiantProcessor& p) : AudioProcessorEditor(p), proc_(p), samples_(p)
 {
+    addChildComponent(samples_);
+    samples_.onClose = [this] { samples_.setVisible(false); repaint(); };
     float master = proc_.params.getRawParameterValue("volume")->load();
     angle_[0] = -135.0f + 270.0f * master / 100.0f;
     setResizable(true, true);
@@ -104,7 +107,22 @@ JiantEditor::~JiantEditor()
     proc_.post({JiantProcessor::Command::Keys, 0});
 }
 
-void JiantEditor::resized() { scale_ = float(getWidth()) / kW; }
+void JiantEditor::resized()
+{
+    scale_ = float(getWidth()) / kW;
+    samples_.setBounds(juce::Rectangle<float>(kW - 340, 12, 328, kH - 24).transformedBy(juce::AffineTransform::scale(scale_)).toNearestInt());
+}
+
+bool JiantEditor::isInterestedInFileDrag(const juce::StringArray& files) { return samples_.isInterestedInFileDrag(files); }
+
+void JiantEditor::filesDropped(const juce::StringArray& files, int x, int y)
+{
+    samples_.setVisible(true);
+    if (samples_.getBounds().contains(x, y))
+        samples_.filesDropped(files, x - samples_.getX(), y - samples_.getY());
+    else
+        samples_.load(samples_.selected(), files);
+}
 
 juce::Point<float> JiantEditor::toPanel(juce::Point<float> p) const { return p / scale_; }
 
@@ -208,7 +226,10 @@ void JiantEditor::paint(juce::Graphics& g)
     }
     g.setColour(cLabel.withAlpha(0.5f));
     g.setFont(juce::FontOptions(11.0f));
-    g.drawText("JIANT FM  -  CPU " + juce::String(proc_.cpuPercent()) + " %", juce::Rectangle<float>(36, 596, 928, 20),
+    jlook::button(g, samplesButton_, "SAMPLES", samples_.isVisible());
+    g.setColour(cLabel.withAlpha(0.5f));
+    g.setFont(juce::FontOptions(11.0f));
+    g.drawText("JIANT " + juce::String(proc_.copy() + 1) + " OF " + juce::String(JiantProcessor::copies()) + "  -  CPU " + juce::String(proc_.cpuPercent()) + " %", juce::Rectangle<float>(36, 596, 928, 20),
                juce::Justification::centredRight);
 }
 
@@ -274,6 +295,11 @@ void JiantEditor::turn(int knob, int n)
 void JiantEditor::mouseDown(const juce::MouseEvent& e)
 {
     grabKeyboardFocus();
+    if (samplesButton_.contains(toPanel(e.position))) {
+        samples_.setVisible(!samples_.isVisible());
+        repaint();
+        return;
+    }
     Hit h = hitTest(toPanel(e.position));
     const int src = e.source.getIndex();
     if (h.kind == Knob)

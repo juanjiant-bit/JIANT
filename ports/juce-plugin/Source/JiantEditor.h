@@ -8,10 +8,11 @@
 // ALGORITHM). The window scales, its shape kept.
 #pragma once
 #include "JiantProcessor.h"
+#include "SamplePanel.h"
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <map>
 
-class JiantEditor : public juce::AudioProcessorEditor, private juce::Timer
+class JiantEditor : public juce::AudioProcessorEditor, public juce::FileDragAndDropTarget, private juce::Timer
 {
 public:
     explicit JiantEditor(JiantProcessor&);
@@ -26,6 +27,9 @@ public:
     bool keyPressed(const juce::KeyPress&) override;
     bool keyStateChanged(bool isKeyDown) override;
     void focusLost(FocusChangeType) override;
+    // audio files dropped anywhere: into the sample browser's slot (on a slot of it: that one)
+    bool isInterestedInFileDrag(const juce::StringArray& files) override;
+    void filesDropped(const juce::StringArray& files, int x, int y) override;
 
     static constexpr int kW = 1000, kH = 624;           // the drawing's own units
 
@@ -52,6 +56,8 @@ private:
     std::map<int, Drag> drags_;
     float angle_[8] = {};
     float scale_ = 1.0f;
+    SamplePanel samples_;
+    juce::Rectangle<float> samplesButton_ {36, 594, 110, 24};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JiantEditor)
 };

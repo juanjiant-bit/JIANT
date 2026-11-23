@@ -18,7 +18,8 @@ SHIFT-click holds a button, and the computer keyboard as the emulator's (Z..' an
 | Web editor | the standalone app answers [the web editor](../../web/editor.html) (its SysEx in, the replies out of the MIDI output chosen in its settings: connect the two through a virtual MIDI cable, e.g. IAC on macOS, loopMIDI on Windows); it shows as "JIANT FM app / plugin" with SAMPLE, GRAIN and DRUM-X's samples. The plugins take the editor's SysEx but have no MIDI output (their buses as before), so a DAW does not pass the replies back |
 | Sync | **Host** (default): the sequencer follows the host's transport and tempo; **Internal**: its own tempo |
 | Parameters | Volume (the MASTER knob), Sync |
-| Saved | in the host's project: the live section, the songs, the user presets |
+| Samples | JIANT's 16 slots (SAMPLE, GRAIN, DRUM-X's sample layer): drop WAV / AIFF / FLAC / MP3 / OGG files anywhere on the window (on a slot of the browser: that slot; elsewhere: the browser's slot, the next ones for several files), or the browser's LOAD and CLEAR. Any rate (resampled to 44.1 kHz), mono or stereo, up to 60 s. REC inside JIANT (SAMPLE / GRAIN) records the master or a track, and the input when the host gives the plugin one (its **Input** bus, off until turned on: a DAW's sidechain; not on AU) |
+| Saved | in the host's project: the live section, the songs, the user presets, and every slot's audio embedded (FLAC, lossless, about half the PCM's size: a 60 s stereo slot ~5-7 MB of its 10.6 MB, so a session with 16 full slots can reach ~100 MB; a short one-shot a few KB) with its name and the file it came from. The project carries its samples to another computer; nothing is read from the original files again |
 | Sample rate | any (the firmware's 44.1 kHz, resampled) |
 | Power | a computer's CPU: every track its own 8 voices; the firmware's own load governor on the real time ([`ports/README.md`](../README.md)) |
 | Several per session | up to 8 instances in one DAW session (one process), each a whole JIANT of its own, on its own audio thread if the host gives it one: the core is compiled 8 times, every copy's symbols its own ([`ports/core/jiant_copies.h`](../core/jiant_copies.h)); a 9th stays silent and says so. Memory: ~1 MB of code and ~6.4 MB of zeroed data per copy in the binary, resident only once a copy plays; the sample slots as loaded, the recorder's 60 s spare (21 MB, zeroed until it records) per playing instance |
@@ -27,7 +28,7 @@ SHIFT-click holds a button, and the computer keyboard as the emulator's (Z..' an
 
 ```sh
 ports/juce-plugin/build.sh                    # this computer's formats -> build/juce-plugin/JiantFM_artefacts/Release
-ports/juce-plugin/build.sh -DJIANT_CHECK=ON   # and the checks: tests/plugin_check.cpp, tests/editor_shot.cpp, tests/sysex_check.cpp
+ports/juce-plugin/build.sh -DJIANT_CHECK=ON   # and the checks: tests/plugin_check.cpp, editor_shot.cpp, sysex_check.cpp, sample_check.cpp
 ```
 
 JUCE 9.0.5 is fetched (or `JUCE_DIR=<a checkout>`). macOS: `-G Xcode` (AUv3). iOS:
@@ -39,7 +40,10 @@ description, a chord at 44.1, 48 and 96 kHz in blocks of 32 to 1024 frames (it s
 note-offs, nothing non-finite), the state out and back; then 4 instances
 at once on 4 threads, each its own sound (no two the same; a note into one sounds there only), each its own state
 (saved, changed, put back), 8 sounding, the 9th silent, one closed and its JIANT taken by a new one; the editor made. macOS adds Apple's
-`auval`. `sysex_check` makes the processor as the standalone app does and sends the web editor's INFO, PRESET and DESC
+`auval`. `sample_check` makes the processor and its editor: a WAV dropped on the editor lands in slot 1, SAMPLE plays it,
+REC MST records a bar into slot 2 from inside JIANT, the state carries both to a new instance (another JIANT), which
+plays them; the state it writes is loaded into the built VST3 by `plugin_check` (as the second argument).
+`sysex_check` makes the processor as the standalone app does and sends the web editor's INFO, PRESET and DESC
 through processBlock: the replies come back in its MIDI (the device as a computer, its big CPU's engines).
 
 ## Installing

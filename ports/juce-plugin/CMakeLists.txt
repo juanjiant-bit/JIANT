@@ -74,7 +74,11 @@ foreach(k RANGE ${JIANT_LAST})
     endif()
     list(APPEND JIANT_CORE_SOURCES "${f}")
 endforeach()
-target_sources(JiantFM PRIVATE Source/JiantProcessor.cpp Source/JiantEditor.cpp ${JIANT_CORE_SOURCES})
+target_sources(JiantFM PRIVATE Source/JiantProcessor.cpp Source/JiantEditor.cpp Source/SamplePanel.cpp Source/JiantLook.cpp
+    ${JIANT_CORE_SOURCES})
+# the editor's type: DotGothic16 (ASCII, from web/emu/fonts) and IBM Plex Mono, both OFL (fonts/)
+juce_add_binary_data(JiantFMFonts SOURCES fonts/DotGothic16-ascii.ttf fonts/IBMPlexMono-SemiBold.ttf)
+set_target_properties(JiantFMFonts PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(JiantFM PRIVATE "${REPO}/ports/core" "${REPO}/build/gen" "${REPO}/firmware/src")
 target_compile_definitions(JiantFM PRIVATE JIANT_COPIES=${JIANT_COPIES})
 # the firmware's C, as the emulator and the host tests build it: no fused multiply-adds, its own warnings off; out of
@@ -90,10 +94,10 @@ if(WIN32)
     target_include_directories(JiantFM PRIVATE "${REPO}/ports/core/compat")
 endif()
 target_compile_definitions(JiantFM PUBLIC
-    JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0 JUCE_DISPLAY_SPLASH_SCREEN=0
+    JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0 JUCE_DISPLAY_SPLASH_SCREEN=0 JUCE_USE_FLAC=1 JUCE_USE_MP3AUDIOFORMAT=1
     JUCE_REPORT_APP_USAGE=0)
 target_link_libraries(JiantFM
-    PRIVATE juce::juce_audio_utils
+    PRIVATE juce::juce_audio_utils JiantFMFonts
     PUBLIC juce::juce_recommended_config_flags juce::juce_recommended_lto_flags)
 
 # the check: the built plugin loaded as a host loads it (tests/plugin_check.cpp); -DJIANT_CHECK=ON
@@ -118,4 +122,9 @@ if(JIANT_CHECK AND NOT WIN32)
     target_sources(sysex_check PRIVATE tests/sysex_check.cpp)
     target_compile_definitions(sysex_check PRIVATE JUCE_MODAL_LOOPS_PERMITTED=1 JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
     target_link_libraries(sysex_check PRIVATE JiantFM juce::juce_audio_utils PUBLIC juce::juce_recommended_config_flags)
+    # samples: a file dropped on the editor, SAMPLE playing it, REC, the slots through the state (tests/sample_check.cpp)
+    juce_add_console_app(sample_check PRODUCT_NAME "sample_check")
+    target_sources(sample_check PRIVATE tests/sample_check.cpp)
+    target_compile_definitions(sample_check PRIVATE JUCE_MODAL_LOOPS_PERMITTED=1 JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0)
+    target_link_libraries(sample_check PRIVATE JiantFM juce::juce_audio_utils PUBLIC juce::juce_recommended_config_flags)
 endif()

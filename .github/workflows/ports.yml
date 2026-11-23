@@ -90,8 +90,11 @@ jobs:
       - name: the plugin loaded as a host loads it; the editor's picture
         run: |
           A=build/juce-plugin/JiantFM_artefacts/Release
-          xvfb-run -a build/juce-plugin/plugin_check_artefacts/Release/plugin_check "$A/VST3/JIANT FM.vst3"
-          xvfb-run -a build/juce-plugin/editor_shot_artefacts/Release/editor_shot build/juce-plugin/editor.png
+          B=build/juce-plugin
+          xvfb-run -a $B/sysex_check_artefacts/Release/sysex_check
+          xvfb-run -a $B/sample_check_artefacts/Release/sample_check $B/sample_state.bin
+          xvfb-run -a $B/plugin_check_artefacts/Release/plugin_check "$A/VST3/JIANT FM.vst3" $B/sample_state.bin
+          xvfb-run -a $B/editor_shot_artefacts/Release/editor_shot $B/editor.png
           cd "$A" && zip -qr "$GITHUB_WORKSPACE/JIANT-FM-Linux.zip" "VST3/JIANT FM.vst3" "LV2/JIANT FM.lv2" "Standalone/JIANT FM"
       - uses: actions/upload-artifact@v4
         with:

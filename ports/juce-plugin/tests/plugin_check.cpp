@@ -3,7 +3,7 @@
 // The built JIANT FM plugin loaded as a host loads it (JUCE's VST3 / AU hosting): its description, MIDI notes at
 // 44.1 and 48 kHz in several block sizes (sound, then silence after the note-offs, nothing non-finite), the state
 // out and back in, several instances at once (each its own JIANT, on its own thread; the 9th silent), the editor made and closed.
-//   plugin_check "<path to JIANT FM.vst3 or .component>"
+//   plugin_check "<path to JIANT FM.vst3 or .component>" [a state with samples, from sample_check]
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_events/juce_events.h>
 #include <cmath>
@@ -176,7 +176,7 @@ static void severalJiants(juce::AudioPluginFormatManager& fm, const juce::Plugin
 int main(int argc, char** argv)
 {
     juce::ScopedJuceInitialiser_GUI gui;
-    if (argc < 2) { std::printf("usage: plugin_check <plugin>\n"); return 2; }
+    if (argc < 2) { std::printf("usage: plugin_check <plugin> [state]\n"); return 2; }
     juce::AudioPluginFormatManager fm;
     juce::addDefaultFormatsToManager(fm);
     juce::OwnedArray<juce::PluginDescription> found;
@@ -212,6 +212,33 @@ int main(int argc, char** argv)
     check(again.getSize() == state.getSize(), "and saves the same size again");
 
     severalJiants(fm, d, *p);
+
+    if (argc > 2 && d.pluginFormatName == "VST3") {    // a state with samples (sample_check's) into the built plugin
+        juce::MemoryBlock st;
+        juce::File(juce::File::getCurrentWorkingDirectory().getChildFile(argv[2])).loadFileAsData(st);
+        auto q = fm.createPluginInstance(d, 44100.0, 256, err);
+        check(q && st.getSize() > 40000, "a session's state with its samples: " + juce::String(int(st.getSize())) + " bytes");
+        if (q) {
+            q->setRateAndBufferSizeDetails(44100.0, 256);
+            q->prepareToPlay(44100.0, 256);
+            take(*q, -1, 0, 4096);
+            // (a VST3 host's state is the component's, in JUCE's hosting wrapped as XML)
+            juce::XmlElement wrap("VST3PluginState");
+            wrap.createNewChildElement("IComponent")->addTextElement(st.toBase64Encoding());
+            juce::MemoryBlock wrapped;
+            juce::AudioProcessor::copyXmlToBinary(wrap, wrapped);
+            q->setStateInformation(wrapped.getData(), int(wrapped.getSize()));
+            Out o = take(*q, -1, 60, 44100);
+            juce::MemoryBlock got, back;
+            q->getStateInformation(got);
+            if (auto x = juce::AudioProcessor::getXmlFromBinary(got.getData(), int(got.getSize())))
+                if (auto* c = x->getChildByName("IComponent"))
+                    back.fromBase64Encoding(c->getAllSubText());
+            check(o.finite && o.peak > 0.02f && back.getSize() + 64 > st.getSize(),
+                  "restored: slot 1 plays in SAMPLE (peak " + juce::String(o.peak, 3) + "), saved again with its audio (" +
+                      juce::String(int(back.getSize())) + " bytes)");
+        }
+    }
 
     if (juce::Desktop::getInstance().getDisplays().getPrimaryDisplay() != nullptr) {
         std::unique_ptr<juce::AudioProcessorEditor> ed(p->createEditorIfNeeded());

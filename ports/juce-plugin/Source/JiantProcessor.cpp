@@ -12,6 +12,26 @@ namespace {
 // claimed by a new one starts that one from there, not from the last one's music
 std::vector<uint8_t> g_fresh[JIANT_COPIES];
 constexpr uint32_t kStateMagic = 0x504E544Au;            // "JNTP": the plugin's state, then the core's
+constexpr uint32_t kSampleMagic = 0x4C504D53u;           // "SMPL": then the sample slots, each slot's audio whole
+constexpr int kFifo = 1 << 15;                           // (the input's room at the host's rate)
+int64_t nowMs()
+{
+    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+// a slot's audio as its key: frames, channels, name and every sample (FNV-1a 64)
+uint64_t pcmKey(const int16_t* l, const int16_t* r, uint32_t frames, uint32_t ch, const char* name)
+{
+    uint64_t h = 1469598103934665603ull;
+    auto mix = [&](uint64_t v) { h = (h ^ v) * 1099511628211ull; };
+    mix(frames);
+    mix(ch);
+    for (const char* c = name; c && *c; ++c) mix(uint8_t(*c));
+    for (uint32_t i = 0; i < frames; ++i) {
+        mix(uint16_t(l[i]));
+        if (ch > 1) mix(uint16_t(r[i]));
+    }
+    return h | 1u;
+}
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout JiantProcessor::layout()
@@ -24,10 +44,22 @@ juce::AudioProcessorValueTreeState::ParameterLayout JiantProcessor::layout()
     return l;
 }
 
+// stereo out; an input for JIANT's recorder (REC from the input, GRAIN LIVE; a DAW's sidechain), off until the host
+// turns it on: not on AU / AUv3, where an instrument with an input is an effect to some hosts
+juce::AudioProcessor::BusesProperties JiantProcessor::buses()
+{
+    auto b = BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true);
+    auto t = juce::PluginHostType::getPluginLoadedAs();
+    if (t != wrapperType_AudioUnit && t != wrapperType_AudioUnitv3)
+        b = b.withInput("Input", juce::AudioChannelSet::stereo(), false);
+    return b;
+}
+
 JiantProcessor::JiantProcessor()
-    : AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)),
+    : AudioProcessor(buses()),
       params(*this, nullptr, "JIANT", layout())
 {
+    formats_.registerBasicFormats();
     uint32_t k = 0;
     core_ = jiant_copy_claim(&k);
     owner_ = core_ != nullptr;
@@ -49,12 +81,19 @@ JiantProcessor::JiantProcessor()
             core_->jiant_service();
         }
         publish();
+        refreshSlots();
+        service_ = std::make_unique<Service>(*this);
+        service_->startTimer(100);
     }
 }
 
 JiantProcessor::~JiantProcessor()
 {
+    service_.reset();
     if (owner_) {
+        for (auto& in : slotIn_)
+            if (void* o = in.exchange(nullptr))
+                core_->jiant_sample_free(static_cast<jiant_sample*>(o));
         if (core_->jiant_playing())
             core_->jiant_play(0);
         core_->jiant_buttons(0);
@@ -66,7 +105,10 @@ JiantProcessor::~JiantProcessor()
 bool JiantProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 {
     const auto& out = layouts.getMainOutputChannelSet();
-    return out == juce::AudioChannelSet::stereo() || out == juce::AudioChannelSet::mono();
+    if (out != juce::AudioChannelSet::stereo() && out != juce::AudioChannelSet::mono())
+        return false;
+    const auto& in = layouts.getMainInputChannelSet();
+    return in.isDisabled() || in == juce::AudioChannelSet::stereo() || in == juce::AudioChannelSet::mono();
 }
 
 void JiantProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
@@ -77,7 +119,13 @@ void JiantProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
     std::fill(std::begin(histL_), std::end(histL_), 0.0f);
     std::fill(std::begin(histR_), std::end(histR_), 0.0f);
     bufN_ = bufAt_ = 0;
-    (void)samplesPerBlock;
+    const size_t room = size_t(std::max(samplesPerBlock, 0)) + size_t(kFifo);
+    inL_.assign(room, 0.0f);
+    inR_.assign(room, 0.0f);
+    fifoL_.assign(room + size_t(kFifo), 0.0f);
+    fifoR_.assign(room + size_t(kFifo), 0.0f);
+    fifoN_ = int(std::ceil(kBuf / step_)) + 4;          // (the core renders ahead: its first input is silence)
+    inPos_ = 0.0;
     hostPlaying_ = false;
     lastMaster_ = lastSync_ = -1;
 }
@@ -189,6 +237,17 @@ void JiantProcessor::render(float* l, float* r, int n)
     for (int i = 0; i < n; ++i) {
         while (frac_ >= 1.0) {
             if (bufAt_ >= bufN_) {
+                if (input_) {                            // this much of the input, at 44.1 kHz
+                    const double per = 1.0 / step_;
+                    for (int k = 0; k < kBuf; ++k, inPos_ += per) {
+                        int i = int(inPos_);
+                        float f = float(inPos_ - i);
+                        bool in = i + 1 < fifoN_;
+                        coreInL_[k] = in ? fifoL_[size_t(i)] + f * (fifoL_[size_t(i + 1)] - fifoL_[size_t(i)]) : 0.0f;
+                        coreInR_[k] = in ? fifoR_[size_t(i)] + f * (fifoR_[size_t(i + 1)] - fifoR_[size_t(i)]) : 0.0f;
+                    }
+                    core_->jiant_input(coreInL_, coreInR_, kBuf);
+                }
                 core_->jiant_render(bufL_, bufR_, kBuf);
                 bufN_ = kBuf;
                 bufAt_ = 0;
@@ -211,15 +270,35 @@ void JiantProcessor::render(float* l, float* r, int n)
 void JiantProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
+    const int frames = buffer.getNumSamples();
+    // the host's input (if it gives one), kept before the buffer becomes the output
+    const int inCh = getTotalNumInputChannels();
+    input_ = owner_ && inCh > 0 && frames <= int(inL_.size());
+    if (input_) {
+        std::memcpy(inL_.data(), buffer.getReadPointer(0), size_t(frames) * sizeof(float));
+        std::memcpy(inR_.data(), buffer.getReadPointer(inCh > 1 ? 1 : 0), size_t(frames) * sizeof(float));
+        if (resample_) {                                 // onto the input's queue (its rate), what was taken dropped
+            int drop = std::max(0, std::min(int(inPos_) - 1, fifoN_));
+            if (drop) {
+                std::memmove(fifoL_.data(), fifoL_.data() + drop, size_t(fifoN_ - drop) * sizeof(float));
+                std::memmove(fifoR_.data(), fifoR_.data() + drop, size_t(fifoN_ - drop) * sizeof(float));
+                fifoN_ -= drop;
+                inPos_ -= drop;
+            }
+            if (fifoN_ + frames <= int(fifoL_.size())) {
+                std::memcpy(fifoL_.data() + fifoN_, inL_.data(), size_t(frames) * sizeof(float));
+                std::memcpy(fifoR_.data() + fifoN_, inR_.data(), size_t(frames) * sizeof(float));
+                fifoN_ += frames;
+            }
+        }
+    }
     buffer.clear();
     int idle = 0;
     if (!owner_ || !busy_.compare_exchange_strong(idle, 1, std::memory_order_acquire))
         return;
+    lastBlockMs_.store(nowMs(), std::memory_order_relaxed);
 
-    if (size_t len = pendingLen_.load(std::memory_order_acquire)) {   // a session's music, staged by the host
-        core_->jiant_state_load(pending_.data(), len);
-        pendingLen_.store(0, std::memory_order_release);
-    }
+    handOff();
     uint32_t r = qRead_.load(std::memory_order_relaxed), w = qWrite_.load(std::memory_order_acquire);
     for (; r != w; ++r) {
         const Command& c = queue_[r % kQueue];
@@ -227,13 +306,13 @@ void JiantProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBu
         case Command::Buttons: core_->jiant_buttons(c.value); break;
         case Command::Keys: core_->jiant_keys(c.value); break;
         case Command::Encoder: core_->jiant_encoder(static_cast<enum jiant_encoder>(c.enc), c.steps); break;
+        case Command::Midi: core_->jiant_midi(uint8_t(c.value), uint8_t(c.value >> 8), uint8_t(c.value >> 16)); break;
         default: break;
         }
     }
     qRead_.store(r, std::memory_order_release);
     applyParams();
 
-    const int frames = buffer.getNumSamples();
     float* outL = buffer.getWritePointer(0);
     float* outR = buffer.getNumChannels() > 1 ? buffer.getWritePointer(1) : nullptr;
     int nclk = lastSync_ == 1 ? hostClock(frames) : 0;
@@ -258,6 +337,8 @@ void JiantProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBu
             next = std::min(next, clock_[size_t(ck)].offset);
         if (next <= at)
             next = at + 1;
+        if (input_ && !resample_)                        // the input as it came, before the frames it goes with
+            core_->jiant_input(inL_.data() + at, inR_.data() + at, uint32_t(next - at));
         render(outL + at, outR ? outR + at : nullptr, next - at);   // (mono: the left side)
         at = next;
     }
@@ -278,11 +359,263 @@ void JiantProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBu
     }
 
     publish();
-    if (snapReq_.exchange(false, std::memory_order_acq_rel)) {
-        snapLen_ = core_->jiant_state_save(snapshot_.data(), snapshot_.size());
-        snapDone_.store(true, std::memory_order_release);
+    if (auto* j = job_.exchange(nullptr, std::memory_order_acq_rel)) {
+        (*j)(*core_);
+        jobDone_.store(true, std::memory_order_release);
     }
     busy_.store(0, std::memory_order_release);
+}
+
+// ----------------------------------------------------------------------------------------- the core from elsewhere
+
+bool JiantProcessor::idleCore()
+{
+    for (int t = 0; t < 2000; ++t) {
+        int idle = 0;
+        if (busy_.compare_exchange_weak(idle, 2, std::memory_order_acquire))
+            return true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return false;
+}
+
+bool JiantProcessor::withCore(const std::function<void(const jiant_api&)>& f)
+{
+    if (!owner_)
+        return false;
+    std::lock_guard<std::mutex> one(jobMutex_);
+    // audio running (a block in the last 100 ms): its thread runs f at the end of its next block
+    if (nowMs() - lastBlockMs_.load(std::memory_order_relaxed) < 100) {
+        jobDone_.store(false, std::memory_order_relaxed);
+        job_.store(&f, std::memory_order_release);
+        for (int t = 0; t < 300 && !jobDone_.load(std::memory_order_acquire); ++t)
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        const std::function<void(const jiant_api&)>* mine = &f;
+        if (jobDone_.load(std::memory_order_acquire) || !job_.compare_exchange_strong(mine, nullptr)) {
+            while (!jobDone_.load(std::memory_order_acquire))   // (taken just now: it finishes)
+                std::this_thread::yield();
+            return true;
+        }
+    }
+    if (!idleCore())                                     // no audio: the core is ours
+        return false;
+    handOff();
+    f(*core_);
+    publish();
+    busy_.store(0, std::memory_order_release);
+    return true;
+}
+
+// ---------------------------------------------------------------------------------------------------- samples
+
+void JiantProcessor::handOff()
+{
+    for (int k = 0; k < kSlots; ++k)
+        if (slotIn_[size_t(k)].load(std::memory_order_relaxed))
+            if (void* o = slotIn_[size_t(k)].exchange(nullptr, std::memory_order_acq_rel))
+                core_->jiant_slot_put(uint32_t(k), static_cast<jiant_sample*>(o));
+    if (uint32_t m = clearMask_.exchange(0, std::memory_order_acq_rel))
+        for (int k = 0; k < kSlots; ++k)
+            if ((m >> k) & 1u)
+                core_->jiant_slot_clear(uint32_t(k));
+    uint32_t slot = 0, fr = 0;
+    recState_.store(core_->jiant_rec_state(&slot, &fr), std::memory_order_relaxed);
+    recSlot_.store(int(slot), std::memory_order_relaxed);
+    recFrames_.store(int(fr), std::memory_order_relaxed);
+}
+
+int JiantProcessor::recState(int* slot, int* frames) const
+{
+    if (slot)
+        *slot = recSlot_.load(std::memory_order_relaxed);
+    if (frames)
+        *frames = recFrames_.load(std::memory_order_relaxed);
+    return recState_.load(std::memory_order_relaxed);
+}
+
+bool JiantProcessor::handOffPending() const
+{
+    if (clearMask_.load(std::memory_order_acquire))
+        return true;
+    for (auto& a : slotIn_)
+        if (a.load(std::memory_order_acquire))
+            return true;
+    return false;
+}
+
+juce::String JiantProcessor::loadSample(int k, const float* l, const float* r, int frames, double rate,
+                                        const juce::String& name, const juce::String& file)
+{
+    if (!owner_)
+        return "this instance has no JIANT (all " + juce::String(copies()) + " are playing)";
+    if (k < 0 || k >= kSlots)
+        return "no such slot";
+    if (!l || frames <= 0 || rate < 1000.0)
+        return "no audio";
+    juce::String n = name.toUpperCase().retainCharacters("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_.+#").substring(0, 31);
+    jiant_sample* o = core_->jiant_sample_make(l, r, uint32_t(frames), uint32_t(std::lround(rate)), n.toRawUTF8());
+    if (!o)
+        return "out of memory";
+    clearMask_.fetch_and(~(1u << k), std::memory_order_acq_rel);
+    if (void* was = slotIn_[size_t(k)].exchange(o, std::memory_order_acq_rel))   // (one not taken yet: never played)
+        core_->jiant_sample_free(static_cast<jiant_sample*>(was));
+    files_[size_t(k)] = file;
+    service();
+    return {};
+}
+
+juce::String JiantProcessor::loadSample(int k, const juce::File& file)
+{
+    std::unique_ptr<juce::AudioFormatReader> rd(formats_.createReaderFor(file));
+    if (!rd)
+        return "not an audio file JIANT reads: " + file.getFileName();
+    if (rd->sampleRate < 1000.0 || rd->lengthInSamples <= 0 || rd->numChannels < 1)
+        return "no audio in " + file.getFileName();
+    // up to 60 s at 44.1 kHz (the slot's most), read at the file's rate
+    const int64_t most = int64_t(std::ceil(double(JIANT_SLOT_MAX_FRAMES) * rd->sampleRate / JIANT_RATE)) + 64;
+    const int frames = int(std::min<int64_t>(rd->lengthInSamples, most));
+    const int ch = rd->numChannels > 1 ? 2 : 1;
+    juce::AudioBuffer<float> buf(ch, frames);
+    if (!rd->read(&buf, 0, frames, 0, true, ch > 1))
+        return "could not read " + file.getFileName();
+    return loadSample(k, buf.getReadPointer(0), ch > 1 ? buf.getReadPointer(1) : nullptr, frames, rd->sampleRate,
+                      file.getFileNameWithoutExtension(), file.getFullPathName());
+}
+
+void JiantProcessor::clearSample(int k)
+{
+    if (!owner_ || k < 0 || k >= kSlots)
+        return;
+    if (void* was = slotIn_[size_t(k)].exchange(nullptr, std::memory_order_acq_rel))
+        core_->jiant_sample_free(static_cast<jiant_sample*>(was));
+    clearMask_.fetch_or(1u << k, std::memory_order_acq_rel);
+    files_[size_t(k)] = {};
+    service();
+}
+
+// the service timer (message thread) and after each load: with no audio running the hand-offs go in from here; then
+// what the slots let go of is freed, the recorder's room kept, the slots read for the browser
+void JiantProcessor::service()
+{
+    if (!owner_)
+        return;
+    if (handOffPending() && nowMs() - lastBlockMs_.load(std::memory_order_relaxed) >= 100)
+        withCore([](const jiant_api&) {});
+    std::lock_guard<std::mutex> g(serviceMutex_);
+    core_->jiant_service();
+    refreshSlots();
+}
+
+// (serviceMutex_ held) the slots as the core has them
+void JiantProcessor::refreshSlots()
+{
+    for (int k = 0; k < kSlots; ++k) {
+        jiant_slot_info_t in;
+        core_->jiant_slot_info(uint32_t(k), &in);
+        Slot s;
+        s.frames = in.frames;
+        s.channels = in.channels;
+        s.name = juce::String(in.name);
+        s.file = in.frames && !in.changed ? files_[size_t(k)] : juce::String();   // (recorded in JIANT: no file has it)
+        auto& was = slots_[size_t(k)];
+        if (s.frames != was.frames || s.channels != was.channels || s.name != was.name || s.file != was.file) {
+            was = s;
+            ++slotsSeq_;
+        }
+    }
+}
+
+// the slots into the state: "SMPL", 1, the count, then each slot that holds audio: its number, name, file, channels,
+// frames, and its audio as FLAC (16 bit, 44.1 kHz: lossless, about half the PCM's size). A slot unchanged since the
+// last save reuses that save's FLAC
+void JiantProcessor::writeSamples(juce::MemoryOutputStream& out)
+{
+    std::lock_guard<std::mutex> g(serviceMutex_);
+    struct One { int k; juce::String name; uint32_t ch, frames; const juce::MemoryBlock* flac; };
+    std::vector<One> all;
+    juce::FlacAudioFormat flac;
+    for (int k = 0; k < kSlots; ++k) {
+        const jiant_sample* o = core_->jiant_slot_object(uint32_t(k));   // (whole until this thread's next service)
+        uint32_t frames = 0, ch = 0;
+        const int16_t* l = core_->jiant_sample_data(o, 0, &frames, &ch);
+        const int16_t* r = core_->jiant_sample_data(o, 1, nullptr, nullptr);
+        jiant_slot_info_t in;
+        core_->jiant_slot_info(uint32_t(k), &in);
+        if (!l || !frames)
+            continue;
+        const uint64_t key = pcmKey(l, r, frames, ch, in.name);
+        Blob& b = blobs_[size_t(k)];
+        if (b.key != key) {
+            b.flac.reset();
+            std::unique_ptr<juce::OutputStream> os = std::make_unique<juce::MemoryOutputStream>(b.flac, false);
+            auto wr = flac.createWriterFor(os, juce::AudioFormatWriterOptions {}
+                                                   .withSampleRate(double(JIANT_RATE))
+                                                   .withNumChannels(int(ch))
+                                                   .withBitsPerSample(16)
+                                                   .withQualityOptionIndex(5));
+            bool ok = wr != nullptr;
+            std::vector<int> a(4096), c(4096);
+            for (uint32_t at = 0; ok && at < frames; at += 4096) {
+                const int n = int(std::min<uint32_t>(4096, frames - at));
+                for (int i = 0; i < n; ++i) {
+                    a[size_t(i)] = int(l[at + uint32_t(i)]) * 65536;      // (JUCE's integers: 32 bit, left justified)
+                    c[size_t(i)] = int(r[at + uint32_t(i)]) * 65536;
+                }
+                const int* chans[3] = {a.data(), ch > 1 ? c.data() : nullptr, nullptr};
+                ok = wr->write(chans, n);
+            }
+            wr.reset();                                  // (the stream finished)
+            b.key = ok ? key : 0;
+            if (!ok)
+                continue;
+        }
+        all.push_back({k, juce::String(in.name), ch, frames, &b.flac});
+    }
+    out.writeInt(int(kSampleMagic));
+    out.writeInt(1);
+    out.writeInt(int(all.size()));
+    for (auto& one : all) {
+        out.writeInt(one.k);
+        out.writeString(one.name);
+        out.writeString(files_[size_t(one.k)]);
+        out.writeInt(int(one.ch));
+        out.writeInt(int(one.frames));
+        out.writeInt(int(one.flac->getSize()));
+        out.write(one.flac->getData(), one.flac->getSize());
+    }
+}
+
+void JiantProcessor::readSamples(juce::MemoryInputStream& in)
+{
+    uint32_t have = 0;
+    juce::FlacAudioFormat flac;
+    if (in.getNumBytesRemaining() >= 12 && uint32_t(in.readInt()) == kSampleMagic && in.readInt() == 1) {
+        int count = in.readInt();
+        for (int i = 0; i < count && i < kSlots && in.getNumBytesRemaining() > 0; ++i) {
+            int k = in.readInt();
+            juce::String name = in.readString(), file = in.readString();
+            int ch = in.readInt(), frames = in.readInt(), size = in.readInt();
+            if (k < 0 || k >= kSlots || ch < 1 || ch > 2 || frames <= 0 || frames > int(JIANT_SLOT_MAX_FRAMES) ||
+                size <= 0 || size > in.getNumBytesRemaining())
+                break;
+            juce::MemoryBlock blob;
+            in.readIntoMemoryBlock(blob, size);
+            std::unique_ptr<juce::AudioFormatReader> rd(flac.createReaderFor(new juce::MemoryInputStream(blob, false), true));
+            if (!rd)
+                continue;
+            juce::AudioBuffer<float> buf(ch, frames);
+            buf.clear();
+            if (!rd->read(&buf, 0, frames, 0, true, ch > 1))
+                continue;
+            // (int16 through float and back: the same samples, made at 44.1 kHz)
+            if (loadSample(k, buf.getReadPointer(0), ch > 1 ? buf.getReadPointer(1) : nullptr, frames, JIANT_RATE, name,
+                           file).isEmpty())
+                have |= 1u << k;
+        }
+    }
+    for (int k = 0; k < kSlots; ++k)                     // the session's slots only: the others emptied
+        if (!((have >> k) & 1u) && (slots_[size_t(k)].frames || slotIn_[size_t(k)].load()))
+            clearSample(k);
 }
 
 // ---------------------------------------------------------------------------------------------------- the state
@@ -294,27 +627,15 @@ void JiantProcessor::getStateInformation(juce::MemoryBlock& dest)
     auto xml = params.copyState().createXml();
     juce::String text = xml ? xml->toString() : juce::String();
     out.writeString(text);
-    if (!owner_) {
-        out.writeInt(0);
-        return;
-    }
-    snapDone_.store(false);
-    snapReq_.store(true, std::memory_order_release);
-    for (int t = 0; t < 300 && !snapDone_.load(std::memory_order_acquire); ++t)
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    if (!snapDone_.load(std::memory_order_acquire)) {    // no audio running: the core is ours to read
-        snapReq_.store(false);
-        int idle = 0;
-        while (!busy_.compare_exchange_weak(idle, 2)) {
-            idle = 0;
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-        snapLen_ = core_->jiant_state_save(snapshot_.data(), snapshot_.size());
-        busy_.store(0, std::memory_order_release);
-    }
-    size_t len = snapLen_ <= snapshot_.size() ? snapLen_ : 0;
+    size_t len = 0;
+    if (owner_)
+        withCore([&](const jiant_api& c) { len = c.jiant_state_save(snapshot_.data(), snapshot_.size()); });
+    if (len > snapshot_.size())
+        len = 0;
     out.writeInt(int(len));
     out.write(snapshot_.data(), len);
+    if (owner_)
+        writeSamples(out);
 }
 
 void JiantProcessor::setStateInformation(const void* data, int size)
@@ -326,13 +647,15 @@ void JiantProcessor::setStateInformation(const void* data, int size)
         if (xml->hasTagName(params.state.getType()))
             params.replaceState(juce::ValueTree::fromXml(*xml));
     int len = in.readInt();
-    if (!owner_ || len <= 0 || len > size)
+    if (!owner_ || len < 0 || len > in.getNumBytesRemaining())
         return;
-    std::vector<uint8_t> blob(static_cast<size_t>(len));
-    if (in.read(blob.data(), len) != len)
-        return;
-    pending_ = std::move(blob);                          // in before the next block (processBlock)
-    pendingLen_.store(pending_.size(), std::memory_order_release);
+    if (len > 0) {
+        std::vector<uint8_t> blob(static_cast<size_t>(len));
+        if (in.read(blob.data(), len) != len)
+            return;
+        withCore([&](const jiant_api& c) { c.jiant_state_load(blob.data(), blob.size()); });
+    }
+    readSamples(in);
 }
 
 int JiantProcessor::copies() { return JIANT_COPIES; }
