@@ -6,6 +6,15 @@
 [![Emulator](https://img.shields.io/badge/try%20it-in%20the%20browser-ff7a00.svg)](https://juanjiant-bit.github.io/JIANT/emu/)
 [![JIANT Studio](https://img.shields.io/badge/JIANT%20Studio-install%20·%20edit%20·%20screen%20·%20record-c9a2ff.svg)](https://juanjiant-bit.github.io/JIANT/studio/)
 
+## 📖 Guides · Guías (V10.8.21)
+
+| | English | Español |
+| --- | --- | --- |
+| **What's new in V10.8.21** · **Lo nuevo en V10.8.21** | [Read online](https://juanjiant-bit.github.io/JIANT/docs/guide/whats-new-v10.8.21.html) · [Download](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/whats-new-v10.8.21.html) | [Ver online](https://juanjiant-bit.github.io/JIANT/docs/guide/whats-new-v10.8.21.es.html) · [Descargar](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/whats-new-v10.8.21.es.html) |
+| **Full manual** · **Manual completo** (with the essential commands · con los comandos esenciales) | [Read online](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.html) · [Download](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/manual.html) | [Ver online](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.es.html) · [Descargar](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/manual.es.html) |
+
+Each page is a single file: once downloaded it works offline. · Cada página es un solo archivo: descargada funciona sin conexión.
+
 ## ▶ [JIANT Studio](https://juanjiant-bit.github.io/JIANT/studio/): everything in one page
 
 One page for **JIANT FM and JIANT BYTE**, from a computer or an Android phone (Chrome or Edge, the FM-1 on USB; on a
