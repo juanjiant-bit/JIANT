@@ -21,7 +21,7 @@ firmware sources (`firmware/src`), so a song sounds the same everywhere.
 | --- | --- | --- |
 | [`core/`](core/) | The whole firmware as one C library: boot, audio, MIDI, the panel, the screen, the music saved and restored. The browser emulator's host layer behind a stable API ([`jiant_core.h`](core/jiant_core.h)). | Works, tested |
 | [`mpc-plugin/`](mpc-plugin/) | JIANT FM as an instrument plugin: MPC standalones (MPC OS 3.10.1+), and desktop VST2 hosts. | Builds for ARM32, ARM64 and desktop; passes the SDK's host simulator; not yet tried on an MPC |
-| [`juce-plugin/`](juce-plugin/) | JIANT FM as VST3, AU, AUv3 (AUM on the iPad), LV2 and a standalone app, its own screen and the FM-1's panel in the editor. | Builds and passes its host check on Linux; macOS, iOS and Windows built by CI |
+| [`juce-plugin/`](juce-plugin/) | JIANT FM as VST3, AU, AUv3 (AUM on the iPad), LV2 and a standalone app, its own screen and the FM-1's panel in the editor; up to 8 in one session, each its own JIANT. | Builds and passes its host check on Linux; macOS, iOS and Windows built by CI |
 | [`mpc-sample/`](mpc-sample/) | JIANT as the MPC Sample's whole instrument, its own screen, the MPC's pads, buttons and knobs as the FM-1's panel, started from the microSD card (on keremimo's sample-base). | Builds for ARM64; runs and passes its tests on Linux; not yet tried on an MPC Sample |
 | SMK-37 | JIANT on the SMK-37 Pro / Elite, bare metal like the FM-1 (same AC791N chip, same screen and audio format). | Next |
 
@@ -58,12 +58,19 @@ its four cores, to be measured with `--bench` on the hardware.
 ports/core/build.sh test      # build/core/libjiant_core.a, then its test
 ```
 
-One device per process (the firmware keeps its state in globals), not thread safe; see the header. The test boots it,
+One device per library (the firmware keeps its state in globals), not thread safe; see the header. For several in
+one process (JIANT FM on several tracks of a DAW), [`jiant_copies.h`](core/jiant_copies.h): the core compiled N times
+(`jiant_copy.c`, 8 in the JUCE plugin), each copy one translation unit with every external symbol renamed (the list,
+`copy_symbols.h`, is made from the core's object by `ports/core/build.sh symbols` and checked by the test), its API a
+table of functions; an instance claims a free copy and gives it back. The copies share nothing, so each may run on its
+own thread. Plain C and the preprocessor: no object tools, the same on Linux, Windows (clang-cl) and macOS. The test boots it,
 plays a MIDI note, draws the screen, plays a generated song, saves and restores the music, follows an external MIDI
 clock, loads and records sample slots. `sample_test` drives the sample engines with the firmware's internals at hand:
 every SAMPLE mode and trigger, GRAIN's travel modes, time-stretch, feedback and LIVE input, DRUM-X's blends (and with
 SMORPH 0 bit for bit the FM-1's DRUM-X), REC from the master, the bounds at the engines' tops and their cost; then
-`fm1_load_test`, the core built as the FM-1 is, loads the project it saved.
+`fm1_load_test`, the core built as the FM-1 is, loads the project it saved; `copies_test` links 8 copies beside the
+single library: copy 0 plays what the single core plays, sample for sample; three copies on three threads at once play
+what three others play one after another, bit for bit; one copy's music and samples touch no other's.
 
 ## The MPC plugin
 

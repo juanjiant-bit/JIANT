@@ -6,7 +6,8 @@
  * layer (web/emu/felucca_web.c) behind a stable API: the same sources, so a port plays what the FM-1 and the
  * emulator play, sample for sample.
  *
- * One device per process: the firmware keeps its state in globals. Not thread safe: call everything from one
+ * One device per process: the firmware keeps its state in globals (several: jiant_copies.h, the core compiled once per
+ * device). Not thread safe: call everything from one
  * thread at a time (a plugin calls it from its audio thread and hands state requests over; ports/mpc-plugin).
  *
  *   boot:    jiant_boot(seed, 1)            (1: the power-on splash runs here, not in the first seconds of audio)

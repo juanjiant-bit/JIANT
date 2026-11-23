@@ -153,7 +153,7 @@ void JiantEditor::paint(juce::Graphics& g)
         g.fillRect(sr);
         g.setColour(cLabel);
         g.setFont(juce::FontOptions(16.0f, juce::Font::bold));
-        g.drawFittedText("JIANT FM runs once a session:\nthe first instance plays.", sr.toNearestInt(), juce::Justification::centred, 3);
+        g.drawFittedText("All " + juce::String(JiantProcessor::copies()) + " JIANTs are playing:\nthis one stays silent.", sr.toNearestInt(), juce::Justification::centred, 3);
     }
     // the knobs
     g.setFont(juce::FontOptions(14.0f, juce::Font::bold));

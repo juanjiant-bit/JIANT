@@ -2,12 +2,14 @@
 // Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
 // The built JIANT FM plugin loaded as a host loads it (JUCE's VST3 / AU hosting): its description, MIDI notes at
 // 44.1 and 48 kHz in several block sizes (sound, then silence after the note-offs, nothing non-finite), the state
-// out and back in, a second instance silent, the editor made and closed.
+// out and back in, several instances at once (each its own JIANT, on its own thread; the 9th silent), the editor made and closed.
 //   plugin_check "<path to JIANT FM.vst3 or .component>"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_events/juce_events.h>
 #include <cmath>
 #include <cstdio>
+#include <thread>
+#include <vector>
 
 static int fails = 0;
 static void check(bool ok, const juce::String& what)
@@ -42,6 +44,133 @@ static Take play(juce::AudioPluginInstance& p, double rate, int block, double se
     }
     p.releaseResources();
     return t;
+}
+
+// ---- several JIANTs in one session (ports/core/jiant_copies.h): each instance its own device
+struct Out { std::vector<float> l, r; float peak = 0; bool finite = true; };
+// one instance's take: its sound (the web editor's PRESET, a SysEx), then note held for half the frames
+static Out take(juce::AudioPluginInstance& p, int engine, int note, int frames, int block = 256)
+{
+    Out o;
+    juce::AudioBuffer<float> buf(2, block);
+    for (int at = 0, b = 0; at < frames; at += block, ++b) {
+        juce::MidiBuffer midi;
+        if (b == 0 && engine >= 0) {
+            const uint8_t sx[] = {0xF0, 0x7D, 0x46, 0x4C, 8, uint8_t(engine), 0, 0xF7};
+            midi.addEvent(sx, int(sizeof sx), 0);
+        }
+        if (b == 2 && note > 0) midi.addEvent(juce::MidiMessage::noteOn(1, note, uint8_t(100)), 0);
+        if (at >= frames / 2 && at - block < frames / 2 && note > 0) midi.addEvent(juce::MidiMessage::noteOff(1, note), 0);
+        buf.clear();
+        p.processBlock(buf, midi);
+        for (int i = 0; i < block; ++i) {
+            float l = buf.getSample(0, i), r = buf.getSample(1, i);
+            o.finite &= std::isfinite(l) && std::isfinite(r);
+            o.peak = std::max(o.peak, std::max(std::abs(l), std::abs(r)));
+            o.l.push_back(l);
+            o.r.push_back(r);
+        }
+    }
+    return o;
+}
+static std::vector<char> stateOf(juce::AudioPluginInstance& p)
+{
+    juce::MemoryBlock m;
+    p.getStateInformation(m);
+    auto* c = static_cast<const char*>(m.getData());
+    return std::vector<char>(c, c + m.getSize());
+}
+
+static void severalJiants(juce::AudioPluginFormatManager& fm, const juce::PluginDescription& d, juce::AudioPluginInstance& first)
+{
+    juce::String err;
+    std::vector<std::unique_ptr<juce::AudioPluginInstance>> more;
+    std::vector<juce::AudioPluginInstance*> four {&first};
+    for (int i = 1; i < 4; ++i) {
+        more.push_back(fm.createPluginInstance(d, 44100.0, 256, err));
+        if (!more.back()) break;
+        four.push_back(more.back().get());
+    }
+    check(four.size() == 4, "4 instances in one process");
+    if (four.size() != 4) return;
+    for (auto* p : four) {
+        p->setRateAndBufferSizeDetails(44100.0, 256);
+        p->prepareToPlay(44100.0, 256);
+    }
+    const int engines[4] = {0, 12, 2, 3}, notes[4] = {48, 60, 67, 55};   // ANALOG, FM6, PHASE, LOFI
+    const int frames = 44100;
+    Out outs[4];
+    {                                                    // all four at once, each on its own thread
+        std::vector<std::thread> th;
+        for (int i = 0; i < 4; ++i)
+            th.emplace_back([&, i] { outs[i] = take(*four[size_t(i)], engines[i], notes[i], frames); });
+        for (auto& t : th) t.join();
+    }
+    bool sound = true, differ = true;
+    for (int i = 0; i < 4; ++i) {
+        sound &= outs[i].finite && outs[i].peak > 0.001f;
+        for (int j = 0; j < i; ++j) differ &= outs[i].l != outs[j].l;
+    }
+    check(sound, "4 instances on 4 threads at once, each its own sound and note: peaks " +
+                     juce::String(outs[0].peak, 3) + " " + juce::String(outs[1].peak, 3) + " " +
+                     juce::String(outs[2].peak, 3) + " " + juce::String(outs[3].peak, 3));
+    check(differ, "and no two the same");
+    {                                                    // a note into one: the other three, running, stay silent
+        for (auto* p : four) take(*p, -1, 0, 4 * 44100);  // (the tails gone first)
+        std::vector<std::thread> th;
+        for (int i = 0; i < 4; ++i)
+            th.emplace_back([&, i] { outs[i] = take(*four[size_t(i)], -1, i == 1 ? 64 : 0, frames); });
+        for (auto& t : th) t.join();
+        check(outs[1].peak > 0.001f && outs[0].peak == 0.0f && outs[2].peak == 0.0f && outs[3].peak == 0.0f,
+              "a note into instance 2 sounds there only (peak " + juce::String(outs[1].peak, 3) + ", the others 0)");
+    }
+    std::vector<char> st[4];
+    for (int i = 0; i < 4; ++i) st[i] = stateOf(*four[size_t(i)]);
+    check(st[0] != st[1] && st[1] != st[2] && st[0] != st[3], "each instance's state its own (" +
+                                                                juce::String(int(st[1].size())) + " bytes)");
+    take(*four[2], 10, 0, 2048);                         // instance 3 to DRUM: its state only
+    std::vector<char> now[4];
+    for (int i = 0; i < 4; ++i) now[i] = stateOf(*four[size_t(i)]);
+    check(now[2] != st[2] && now[0] == st[0] && now[1] == st[1] && now[3] == st[3],
+          "a sound loaded into instance 3 changes its state, no other's");
+    four[2]->setStateInformation(st[2].data(), int(st[2].size()));
+    take(*four[2], -1, 0, 1024);
+    check(stateOf(*four[2]) == st[2], "and its own state put back restores it");
+    four[3]->setStateInformation(st[1].data(), int(st[1].size()));
+    Out a = take(*four[1], -1, 60, 22050), b = take(*four[3], -1, 60, 22050);
+    check(stateOf(*four[3]) == stateOf(*four[1]) && a.peak > 0.001f && b.peak > 0.001f,
+          "instance 2's state into instance 4: the same music in both");
+
+    for (int i = 4; i < 8; ++i) more.push_back(fm.createPluginInstance(d, 44100.0, 256, err));
+    bool eight = true;
+    for (int i = 4; i < 8; ++i) {
+        auto& p = more[size_t(i - 1)];
+        eight &= p != nullptr;
+        if (p) {
+            p->setRateAndBufferSizeDetails(44100.0, 256);
+            p->prepareToPlay(44100.0, 256);
+            eight &= take(*p, -1, 60, 11025).peak > 0.001f;
+        }
+    }
+    check(eight, "8 instances, each sounds");
+    auto ninth = fm.createPluginInstance(d, 44100.0, 256, err);
+    if (ninth) {
+        ninth->setRateAndBufferSizeDetails(44100.0, 256);
+        ninth->prepareToPlay(44100.0, 256);
+        Out o = take(*ninth, 0, 60, 22050);
+        check(o.finite && o.peak == 0.0f, "a 9th stays silent (all 8 JIANTs taken)");
+        ninth.reset();
+    }
+    more[5].reset();                                     // (the 7th) gone: its JIANT is free again
+    auto again = fm.createPluginInstance(d, 44100.0, 256, err);
+    if (again) {
+        again->setRateAndBufferSizeDetails(44100.0, 256);
+        again->prepareToPlay(44100.0, 256);
+        Out o = take(*again, -1, 60, 11025);
+        check(o.peak > 0.001f, "one closed, a new instance plays in its place");
+    }
+    again.reset();
+    more.clear();
 }
 
 int main(int argc, char** argv)
@@ -82,12 +211,7 @@ int main(int argc, char** argv)
     p->getStateInformation(again);
     check(again.getSize() == state.getSize(), "and saves the same size again");
 
-    auto second = fm.createPluginInstance(d, 44100.0, 512, err);
-    if (second) {
-        Take s = play(*second, 44100.0, 512, 1.0);
-        check(s.finite && s.peak == 0.0f, "a second instance stays silent (one device a session)");
-        second.reset();
-    }
+    severalJiants(fm, d, *p);
 
     if (juce::Desktop::getInstance().getDisplays().getPrimaryDisplay() != nullptr) {
         std::unique_ptr<juce::AudioProcessorEditor> ed(p->createEditorIfNeeded());

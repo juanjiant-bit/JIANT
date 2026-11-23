@@ -56,14 +56,34 @@ juce_add_plugin(JiantFM
     COPY_PLUGIN_AFTER_BUILD FALSE
     FORMATS ${JIANT_FORMATS})
 
-target_sources(JiantFM PRIVATE Source/JiantProcessor.cpp Source/JiantEditor.cpp "${REPO}/ports/core/jiant_core.c")
+# the core, JIANT_COPIES times (ports/core/jiant_copies.h): each plugin instance its own JIANT, up to that many in a
+# process; every copy one translation unit with its symbols renamed (ports/core/jiant_copy.c), a one-line file each
+set(JIANT_COPIES 8 CACHE STRING "JIANTs a process can play at once (1..16)")
+set(JIANT_CORE_SOURCES "${REPO}/ports/core/jiant_copies.c")
+math(EXPR JIANT_LAST "${JIANT_COPIES} - 1")
+foreach(k RANGE ${JIANT_LAST})
+    set(f "${CMAKE_CURRENT_BINARY_DIR}/jiant_copy_${k}.c")
+    set(body "/* JIANT core, copy ${k} (ports/core/jiant_copies.h) */\n#define JIANT_COPY ${k}\n#include \"jiant_copy.c\"\n")
+    if(EXISTS "${f}")
+        file(READ "${f}" was)
+    else()
+        set(was "")
+    endif()
+    if(NOT was STREQUAL body)
+        file(WRITE "${f}" "${body}")
+    endif()
+    list(APPEND JIANT_CORE_SOURCES "${f}")
+endforeach()
+target_sources(JiantFM PRIVATE Source/JiantProcessor.cpp Source/JiantEditor.cpp ${JIANT_CORE_SOURCES})
 target_include_directories(JiantFM PRIVATE "${REPO}/ports/core" "${REPO}/build/gen" "${REPO}/firmware/src")
-# the firmware's C, as the emulator and the host tests build it: no fused multiply-adds, its own warnings off
-set(CORE_FLAGS -ffp-contract=off -w)
+target_compile_definitions(JiantFM PRIVATE JIANT_COPIES=${JIANT_COPIES})
+# the firmware's C, as the emulator and the host tests build it: no fused multiply-adds, its own warnings off; out of
+# the link-time optimisation (each copy is one translation unit already: LTO of eight would only slow the link)
+set(CORE_FLAGS -ffp-contract=off -w -fvisibility=hidden -fno-lto)
 if(MSVC)                                                 # Windows: clang-cl (-T ClangCL), MSVC does not take GNU C
     set(CORE_FLAGS /w /clang:-ffp-contract=off /clang:-std=gnu99)
 endif()
-set_source_files_properties("${REPO}/ports/core/jiant_core.c" PROPERTIES
+set_source_files_properties(${JIANT_CORE_SOURCES} PROPERTIES
     COMPILE_OPTIONS "${CORE_FLAGS}"
     COMPILE_DEFINITIONS "FELUCCA_VERSION=\"${JIANT_FIRMWARE_VERSION}\"")
 if(WIN32)

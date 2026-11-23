@@ -9,12 +9,15 @@
 // Threads: the core belongs to the audio thread. The editor (message thread) sends the panel through a lock-free queue
 // and reads back the screen (a seqlock) and the lights (atomics). A state save asks the audio thread for a snapshot
 // and waits; with no audio running it takes the core itself (busy_). One device per process (the firmware's state is
-// global): a second instance stays silent and says so.
+// global): each instance claims its own copy of the core
+// (ports/core/jiant_copies.h), up to JIANT_COPIES in a process; one more stays silent and says so.
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <array>
 #include <atomic>
 #include <vector>
+
+struct jiant_api;
 
 class JiantProcessor : public juce::AudioProcessor
 {
@@ -48,6 +51,8 @@ public:
     struct Command { enum Kind : uint8_t { None, Buttons, Keys, Encoder } kind = None; uint32_t value = 0; uint8_t enc = 0; int32_t steps = 0; };
     void post(const Command& c);                        // the panel into the device
     bool owner() const { return owner_; }
+    int copy() const { return copy_; }                   // this instance's JIANT, 0..copies()-1 (-1: none free)
+    static int copies();
     // the 240 x 240 frame (RGB565, the panel's byte order) into out when it changed since `seen`; true if copied
     bool copyScreen(uint16_t* out, uint32_t& seen) const;
     uint32_t litButtons() const { return ledButtons_.load(std::memory_order_relaxed); }
@@ -66,7 +71,9 @@ private:
     static float hermite(const float* y, float x);
     void publish();
 
+    const jiant_api* core_ = nullptr;                    // this instance's JIANT (0: all taken, silent)
     bool owner_ = false;
+    int copy_ = -1;
     std::atomic<int> busy_ {0};                          // 1 the audio thread is in the core, 2 a save without audio
 
     // editor -> audio: one producer, one consumer

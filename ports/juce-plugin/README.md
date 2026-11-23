@@ -21,7 +21,7 @@ SHIFT-click holds a button, and the computer keyboard as the emulator's (Z..' an
 | Saved | in the host's project: the live section, the songs, the user presets |
 | Sample rate | any (the firmware's 44.1 kHz, resampled) |
 | Power | a computer's CPU: every track its own 8 voices; the firmware's own load governor on the real time ([`ports/README.md`](../README.md)) |
-| One per session | the firmware is one device: a second instance stays silent and says so |
+| Several per session | up to 8 instances in one DAW session (one process), each a whole JIANT of its own, on its own audio thread if the host gives it one: the core is compiled 8 times, every copy's symbols its own ([`ports/core/jiant_copies.h`](../core/jiant_copies.h)); a 9th stays silent and says so. Memory: ~1 MB of code and ~6.4 MB of zeroed data per copy in the binary, resident only once a copy plays; the sample slots as loaded, the recorder's 60 s spare (21 MB, zeroed until it records) per playing instance |
 
 ## Build
 
@@ -36,7 +36,9 @@ every platform on each push to `ports/`, and keeps the results as the run's arti
 
 The check (`plugin_check <plugin>`) loads the built plugin as a host loads it (JUCE's VST3 / AU hosting): its
 description, a chord at 44.1, 48 and 96 kHz in blocks of 32 to 1024 frames (it sounds, then it is silent after the
-note-offs, nothing non-finite), the state out and back, a second instance silent, the editor made. macOS adds Apple's
+note-offs, nothing non-finite), the state out and back; then 4 instances
+at once on 4 threads, each its own sound (no two the same; a note into one sounds there only), each its own state
+(saved, changed, put back), 8 sounding, the 9th silent, one closed and its JIANT taken by a new one; the editor made. macOS adds Apple's
 `auval`. `sysex_check` makes the processor as the standalone app does and sends the web editor's INFO, PRESET and DESC
 through processBlock: the replies come back in its MIDI (the device as a computer, its big CPU's engines).
 
