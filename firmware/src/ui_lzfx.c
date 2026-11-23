@@ -272,17 +272,23 @@ static void fxg_slpitch(int32_t x, int32_t y, int32_t w, int32_t h)
     fxg_label(x, y, song.g[G_SLPQ] ? "SL PITCH \xB7 SCL" : "SL PITCH \xB7 CHR", T_MID, 0);
 }
 static void fxg_sends(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h)
-{
+{                                                       /* (V10.8.15, JIANT BYTE's COLUMNS: a column of thermal cells a send,
+                                                         * its tag above, its level a yellow line and its percent; in the
+                                                         * cards' order) */
     static const char *const N[4] = {"CHOR", "DLY", "REV", "DIST"};   /* (V10.7.58, the owner: DIST back on SENDS) */
     static const uint8_t ID[4] = {P_CHOR, P_DLY, P_REV, P_DIST};
-    int32_t i, bw = w / 4 - 6;
+    int32_t i, r, cw = w / 4 - 8, nr = (h - 16) / 5;
+    char b[8];
     for (i = 0; i < 4; i++) {
-        int32_t v = t->p[ID[i]], bx = x + i * (w / 4), fh = (h - 20) * v / 127;
-        cv_rect(bx, y + 10, bw, h - 20, T_RAISE);
-        if (fh > 0)
-            cv_rect(bx, y + h - 10 - fh, bw, fh, FXG_H(51 + v * 205 / 127));
-        GFX_HOOK_ALIGN(bx, 0, bx + bw, 0, AL_H, "FX send name centred under its bar");
-        cv_text_in(bx, y + h - 6, bw, &AF_X, N[i], T_DIM, T_SURF);
+        int32_t v = t->p[ID[i]], bx = x + i * (w / 4), on = v * nr / 127, ly = y + h - 2 - v * nr * 5 / 127;
+        cv_rect(bx, y, text_w(&AF_X, N[i]) + 4, 11, HUD_BL);
+        cv_text_on(bx + 2, y + 1 - AF_X_CAP_Y, &AF_X, N[i], T_TEXT, HUD_BL);
+        for (r = 0; r < nr; r++)
+            cv_rect(bx, y + h - 6 - r * 5, cw, 4, r < on ? FXG_H(51 + r * 205 / (nr ? nr : 1)) : T_LINE);
+        cv_rect(bx - 2, ly, cw + 4, 1, HUD_YE);
+        fmt_int(b, v * 100 / 127);
+        str_cpy(b + str_len(b), "%", 2);
+        cv_text_on(bx + cw / 2 - 8, ly - 9 - AF_X_CAP_Y + 1, &AF_X, b, HUD_YE, cv_bg);
     }
 }
 static void fxg_dist(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h)
