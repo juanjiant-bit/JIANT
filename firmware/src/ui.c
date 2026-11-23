@@ -17,6 +17,8 @@ static const engine_t *trk_engp(const track_t *t) { return ENGINES[trk_eng(t)]; 
 static const uint16_t TRK_COL[6] = {0xFE87u, 0xFC45u, 0xF9C7u, 0xF9D6u, 0xA2FFu, 0x3C7Fu};
 #define trk_col(k) TRK_COL[(k) % 6u]
 #define trk_ink(k) ((k) % 6u >= 4u ? 0xFFFFu : 0x0000u)
+#define HUD_YE 0xEF8Bu                                  /* (V10.8.15, JIANT BYTE's HUD: the cursor yellow, the tags' blue) */
+#define HUD_BL 0x29FFu
 static int project_save(uint32_t slot);
 static int song_save_as(uint32_t target, const char *name);
 static int song_draft_begin(void);

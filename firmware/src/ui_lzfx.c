@@ -20,8 +20,6 @@
  * while it sounds: graph_signature); nothing of the audio path */
 #define FXG_H(v) heat_col((int32_t)(v))                 /* (0..256) */
 #define FXG_TC TRK_COL[song.sel % 6u]                 /* (BYTE, the HUD: the track's colour) */
-#define HUD_YE 0xEF8Bu                                  /* (V10.8.15, JIANT BYTE's HUD: the cursor yellow) */
-#define HUD_BL 0x29FFu
 static void hud_tag(int32_t x, int32_t y, const char *s, uint16_t fg, uint16_t bg)   /* a tag: s on bg */
 {
     cv_rect(x, y, text_w(&AF_X, s) + 4, 11, bg);
@@ -297,7 +295,7 @@ static void fxg_sends(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t
         cv_rect(bx - 2, ly, cw + 4, 1, HUD_YE);
         fmt_int(b, v * 100 / 127);
         str_cpy(b + str_len(b), "%", 2);
-        cv_text_on(bx + cw / 2 - 8, ly - 9 - AF_X_CAP_Y + 1, &AF_X, b, HUD_YE, cv_bg);
+        cv_text_on(bx + cw / 2 - 8, (ly - 12 > y + 12 ? ly - 12 : y + 12) - AF_X_CAP_Y, &AF_X, b, HUD_YE, cv_bg);   /* (above its line) */
     }
 }
 static void fxg_dist(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h)
@@ -385,7 +383,7 @@ static __attribute__((noinline)) void graph_fx_lz(const track_t *t, const page_t
         if (k == 0) fxg_sends(t, 8, 12, 224, 70);
         else if (k == 1) fxg_dist(t, 8, 12, 224, 70);
         else fxg_pan(t, 8, 12, 224, 70);
-        fxg_dist(t, 8, 92, 224, 40);
+        if (k != 1) fxg_dist(t, 8, 92, 224, 40);       /* (the drive small under the others; DIST's own page: once) */
     } else if (lv == FXL_BUSES) {
         uint32_t m;
         for (m = 0; m < FX_NMOD; m++) {

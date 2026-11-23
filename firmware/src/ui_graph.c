@@ -70,38 +70,53 @@ static uint16_t heat_y(int32_t y, int32_t y0, int32_t y1, uint16_t c)
 /* Matches voice.c: attack is linear, decay and release are exponential
  * (env += (target - env) * k each tick, ~99 % after the set time). Time
  * axis is the parameter value (the times themselves are exponential). */
+/* (V10.8.16, JIANT BYTE's ENV "layers" (GPL, as BYTE has it), the owner's pick) */
+static uint8_t adsr_h[10], adsr_ps[NVOICE], adsr_tr = 0xFF;
 static void graph_adsr(const track_t *t, uint16_t c)
 {
     const page_t *pg = cur_page();
-    int32_t a = 4 + t->p[pg->id[0]] * 50 / 127, d = 6 + t->p[pg->id[1]] * 50 / 127, r = 6 + t->p[pg->id[3]] * 60 / 127;
-    int32_t top = 6 * graph_ht / 100, bot = 88 * graph_ht / 100, sus = t->p[pg->id[2]] * 1000 / 127;   /* 0..1000 */
-    int32_t x0 = 12, x1 = x0 + a, x3 = 226 - r, i, px, py;
-    int32_t e = 32768;                                                  /* exp(-4.6 u), Q15 */
-#define EGY(lvl) (bot - (lvl) * (bot - top) / 1000)
-    cv_rect(PANEL_X0, bot + 2, PANEL_W, 1, T_RAISE);
-    cv_line_t(x0, bot, x1, top, heat_y((bot + top) / 2, top, bot, c), 2);                                  /* attack: linear */
-    px = x1;
-    py = top;
-    for (i = 1; i <= d; i++) {                                          /* decay: exponential to SUS */
-        int32_t lvl;
-        e = (e * (32768 - 150733 / d)) >> 15;           /* k^d = exp(-4.6) */
-        lvl = sus + ((1000 - sus) * e >> 15);
-        cv_line_t(px, py, x1 + i, EGY(lvl), heat_y(py, top, bot, c), 2);
-        px = x1 + i;
-        py = EGY(lvl);
+    int32_t a = 4 + t->p[pg->id[0]] * 34 / 127, d = 6 + t->p[pg->id[1]] * 34 / 127, r = 6 + t->p[pg->id[3]] * 40 / 127;
+    int32_t sus = t->p[pg->id[2]] * 1000 / 127, sl = 150 - a - d - r, x0 = 12, bot = 94 * graph_ht / 100, H = 52 * graph_ht / 100;
+    int16_t lv[160];
+    int32_t n = 0, i, k, e = 32768;
+    uint32_t tr = (uint32_t)(t - trk) % NTRK;
+    uint16_t tc = TRK_COL[tr % 6u];
+    (void)c;
+    if (sl < 8) sl = 8;
+    if (adsr_tr != tr) { memset(adsr_h, 0, sizeof adsr_h); memset(adsr_ps, 0, sizeof adsr_ps); adsr_tr = (uint8_t)tr; }
+    for (i = 0; i < NVOICE; i++) {                      /* a note begun: a layer */
+        if (t->v[i].stage == 1u && adsr_ps[i] != 1u) {
+            for (k = 9; k > 0; k--) adsr_h[k] = adsr_h[k - 1];   /* (no memmove on the device) */
+            adsr_h[0] = (uint8_t)clamp(t->v[i].vel ? t->v[i].vel : 100, 20, 127);
+        }
+        adsr_ps[i] = t->v[i].stage;
     }
-    cv_line_t(px, py, x3, EGY(sus), heat_y(py, top, bot, c), 2);                               /* sustain */
-    px = x3;
-    py = EGY(sus);
-    e = 32768;
-    for (i = 1; i <= r; i++) {                                          /* release: exponential to 0 */
-        e = (e * (32768 - 150733 / r)) >> 15;
-        cv_line_t(px, py, x3 + i, EGY(sus * e >> 15), heat_y(py, top, bot, c), 2);
-        px = x3 + i;
-        py = EGY(sus * e >> 15);
+    for (i = 0; i <= a && n < 160; i++) lv[n++] = (int16_t)(i * 1000 / (a ? a : 1));   /* the shape, a level a column */
+    for (i = 1; i <= d && n < 160; i++) { e = (e * (32768 - 150733 / d)) >> 15; lv[n++] = (int16_t)(sus + ((1000 - sus) * e >> 15)); }
+    for (i = 0; i < sl && n < 160; i++) lv[n++] = (int16_t)sus;
+    for (i = 1, e = 32768; i <= r && n < 160; i++) { e = (e * (32768 - 150733 / r)) >> 15; lv[n++] = (int16_t)(sus * e >> 15); }
+    for (k = 9; k >= 0; k--) {                          /* the layers, the far first */
+        int32_t ox = x0 + k * 7, oy = bot - k * 5, g = k ? adsr_h[k] : 127, py = 0;
+        uint16_t lc = k ? ux_mix(T_BG, HUD_BL, 85 - k * 7) : tc;
+        if (k && !adsr_h[k]) continue;
+        for (i = 0; i < n; i++) {
+            int32_t y = oy - lv[i] * H / 1000 * g / 127;
+            if (i) cv_line_t(ox + i - 1, py, ox + i, y, lc, k ? 1 : 2);
+            py = y;
+        }
     }
-    if (pg->id[0] == P_ATK) {                           /* (JIANT 0.5) the track's envelope now: the loudest voice's */
-        const voice_t *bv = 0;                          /* level as a dot on the curve, a line down to the axis */
+    for (i = 0; i < 160; i += 3) cv_pset(x0 + i, bot + 2, T_LINE);
+    {   /* A D S R: tags at the front shape's corners */
+        static const char *const L4[4] = {"A", "D", "S", "R"};
+        int32_t cx[4] = {a, a + d, a + d + sl / 2, n - 1}, q;
+        for (q = 0; q < 4; q++) {
+            int32_t x = x0 + cx[q], y = bot - lv[cx[q] < n ? cx[q] : n - 1] * H / 1000 - 14;
+            cv_rect(x - 3, y, 9, 11, T_TEXT);
+            cv_text_on(x - 1, y + 1 - AF_X_CAP_Y, &AF_X, L4[q], 0x0000u, T_TEXT);
+        }
+    }
+    if (pg->id[0] == P_ATK) {                           /* the track's envelope now: the loudest voice's, a yellow node */
+        const voice_t *bv = 0;
         int32_t lvl, x;
         for (i = 0; i < NVOICE; i++)
             if (t->v[i].stage && t->v[i].stage < 4u && (!bv || t->v[i].env > bv->env))
@@ -109,38 +124,47 @@ static void graph_adsr(const track_t *t, uint16_t c)
         if (bv) {
             lvl = (int32_t)(((int64_t)bv->env * 1000) >> 24);
             if (bv->stage == 1u)
-                x = x0 + a * lvl / 1000;
+                x = a * lvl / 1000;
             else if (bv->stage == 2u)
-                x = x1 + (sus < 1000 ? clamp((1000 - lvl) * d / (1000 - sus), 0, d) : 0);
+                x = a + (sus < 1000 ? clamp((1000 - lvl) * d / (1000 - sus), 0, d) : 0);
             else
-                x = x3 + (sus > 0 ? clamp((sus - lvl) * r / sus, 0, r) : r);
-            cv_rect(x, EGY(lvl), 1, bot + 2 - EGY(lvl), T_MID);
-            cv_rrect(x - 3, EGY(lvl) - 3, 7, 7, 3, T_TEXT, T_SURF);
+                x = a + d + sl + (sus > 0 ? clamp((sus - lvl) * r / sus, 0, r) : r);
+            cv_rect(x0 + x, bot - H - 4, 1, H + 6, HUD_YE);
+            cv_rect(x0 + x - 2, bot - lvl * H / 1000 - 2, 5, 5, HUD_YE);
         }
     }
-#undef EGY
 }
 
 /* LFO: the wave as it runs (JIANT 0.5): the phase now at the playhead (a quarter in), two cycles across, scrolling
  * at the LFO's own rate; behind the playhead dimmer (what it played), the level now a dot, its depth after FADE */
+/* (V10.8.16, JIANT BYTE's LFO "satellite" (GPL, as BYTE has it), the owner's pick) */
 static void graph_lfo(const track_t *t, uint16_t c)
 {
-    int32_t x, cy = graph_ht / 2, a = 38 * graph_ht / 100, py = cy, xp = PANEL_W / 4;
-    uint32_t span = 0xFFFFFFFFu / (PANEL_W / 2u), ph = t->lfo_ph - (uint32_t)xp * span;
-    int32_t now = cy - mulq15(t->lfo_val, t->lfo_fade) * a / 32768;
-    cv_rect(PANEL_X0, cy, PANEL_W, 1, T_RAISE);
-    for (x = 0; x < PANEL_W; x++) {                  /* (lfo_wave only reads the track) */
-        uint32_t px = ph + (uint32_t)x * span;
-        int32_t y = cy - lfo_wave((track_t *)t, px) * a / 32768;
-        if (t->p[P_LWAVE] == 4)                      /* S&H: a value per cycle part, held */
-            y = cy - ((int32_t)((((px >> 29) + 1u) * 2654435761u) >> 16) - 32768) * a / 32768;
-        if (x)
-            cv_line_t(PANEL_X0 + x - 1, py, PANEL_X0 + x, y,
-                      x < xp ? ux_mix(T_SURF, heat_y(y, cy - a, cy + a, c), 45) : heat_y(y, cy - a, cy + a, c), 2);
+    int32_t cy = graph_ht / 2, a = 38 * graph_ht / 100, ox = PANEL_X0 + a + 6, x0 = ox + a + 12, x, py = cy, i;
+    int32_t val = mulq15(t->lfo_val, t->lfo_fade), sx = ox + (og_cos(t->lfo_ph >> 16) * a >> 15), sy = cy - val * a / 32768;
+    uint32_t span = 0xFFFFFFFFu / (uint32_t)(PANEL_W - (x0 - PANEL_X0)) * 3u / 2u;
+    uint16_t tc = TRK_COL[(uint32_t)(t - trk) % 6u];
+    char b[16];
+    (void)c;
+    for (i = 0; i < 64; i += 2)                         /* its orbit, dotted; the axis */
+        cv_pset(ox + (a * og_cos((uint32_t)i * 1024u) >> 15), cy + (a * og_sin((uint32_t)i * 1024u) >> 15), T_DIM);
+    for (x = PANEL_X0; x < PANEL_X0 + PANEL_W; x += 3) cv_pset(x, cy, T_LINE);
+    for (x = 0; x < PANEL_X0 + PANEL_W - x0; x++) {     /* the wave it wrote, the newest nearest */
+        uint32_t ph = t->lfo_ph - (uint32_t)x * span;
+        int32_t y = cy - lfo_wave((track_t *)t, ph) * a / 32768;
+        if (t->p[P_LWAVE] == 4)
+            y = cy - ((int32_t)((((ph >> 29) + 1u) * 2654435761u) >> 16) - 32768) * a / 32768;
+        if (!x) y = sy;                                 /* (it starts where the satellite is) */
+        if (x) cv_line_t(x0 + x - 1, py, x0 + x, y, tc, 2);
         py = y;
     }
-    cv_rect(PANEL_X0 + xp, cy - a - 4, 1, 2 * a + 8, T_MID);   /* the playhead */
-    cv_rrect(PANEL_X0 + xp - 3, now - 3, 7, 7, 3, T_TEXT, T_SURF);
+    cv_line(ox, cy, sx, sy, HUD_YE);                    /* the satellite, its height carried over */
+    for (x = sx; x < x0; x += 2) cv_pset(x, sy, T_MID);
+    cv_rect(sx - 2, sy - 2, 5, 5, HUD_YE);
+    str_cpy(b, "PHASE ", sizeof b); fmt_int(b + 6, (int32_t)((t->lfo_ph >> 16) * 360u >> 16));
+    cv_text_on(PANEL_X0 + 2, graph_ht - 8 - AF_X_CAP_Y, &AF_X, b, HUD_YE, cv_bg);
+    str_cpy(b, "VALUE ", sizeof b); fmt_int(b + 6, val * 100 / 32768);
+    cv_text_on(x0, graph_ht - 8 - AF_X_CAP_Y, &AF_X, b, T_TEXT, cv_bg);
 }
 
 
@@ -1775,22 +1799,35 @@ static void track_strip(uint32_t c, uint32_t sel, uint32_t st, uint32_t mute, ui
  * beside it, PAN (from the middle) and the REV send as the two bars under it */
 #define T6_W 38
 #define T6_X(c) (3 + 39 * (int32_t)(c))
+/* a track's number in its colour: the selected one full, the others half into the card, a muted one dim */
+static uint16_t trk_num_col(uint32_t c, uint32_t sel)
+{
+    return trk[c].p[P_MUTE] ? T_DIM : sel ? TRK_COL[c % 6u] : ux_mix(T_SURF, TRK_COL[c % 6u], 55);
+}
+/* (V10.8.16, JIANT BYTE's CHANNELS HUD (GPL, as BYTE has it), the owner's pick) */
 static __attribute__((noinline)) void track_col6(uint32_t c, uint32_t sel, uint32_t st, uint32_t mute, uint32_t hot, uint32_t lvl, int32_t pan,
                        int32_t rv, const char *b)
 {
     char v[8];
     int32_t k, lv = (int32_t)lvl * 14 / 127, mt = ts.meter[c] * 14 / TS_MH, pw = T6_W - 8;
-    uint16_t lc = hot == 1u ? T_ACCENT : lvl ? (mute ? T_DIM : T_TEXT) : T_DIM;
     cv_begin(T6_W, H_GRAPH, T_BG);
-    cv_rrect(0, 0, T6_W, H_GRAPH, 5, T_SURF, T_BG);
-    cv_trk(4, 5, 16, c, mute ? T_DIM : sel ? trk_col(c) : ux_mix(T_SURF, trk_col(c), 55), T_SURF);   /* (V10.8.10) */
+    cv_rect(0, 0, T6_W, H_GRAPH, T_SURF);               /* (CHANNELS HUD) its number a tag in its colour */
+    {
+        uint16_t nb = mute == 2u ? T_LINE : trk_num_col(c, sel);
+        char nn[2] = {(char)('1' + c), 0};
+        cv_rect(3, 4, 13, 14, nb);
+        cv_text_on(6, 5 + (14 - AF_S_CAP_H) / 2 - AF_S_CAP_Y, &AF_S, nn, c % 6u >= 4u && mute != 2u ? 0xFFFFu : 0x0000u, nb);
+    }
+    if (sel) {                                       /* (the one chosen: yellow corners) */
+        cv_rect(0, 0, 3, 1, HUD_YE); cv_rect(0, 0, 1, 3, HUD_YE); cv_rect(T6_W - 3, 0, 3, 1, HUD_YE); cv_rect(T6_W - 1, 0, 1, 3, HUD_YE);
+        cv_rect(0, H_GRAPH - 1, 3, 1, HUD_YE); cv_rect(0, H_GRAPH - 3, 1, 3, HUD_YE);
+        cv_rect(T6_W - 3, H_GRAPH - 1, 3, 1, HUD_YE); cv_rect(T6_W - 1, H_GRAPH - 3, 1, 3, HUD_YE);
+    }
     if (st == 1u || st == 2u)                        /* armed: a dot (recording: red) */
         cv_rrect(T6_W - 11, 10, 6, 6, 3, st == 1u ? T_REC : T_ACCENT, T_SURF);
-    if (mute == 2u)                                  /* asleep (TRACKS 4) */
+    if (mute == 2u)
         cv_text_in(2, 22, T6_W - 4, &AF_S, "OFF", T_DIM, T_SURF);
-    else {                                           /* (0.6.24) the sound's name cut to the column (its first word, as
-                                                      * many letters as fit, no "..."); muted: in MUTE's colour, still
-                                                      * there (it said MUTE instead: which sound, gone) */
+    else {
         char sn[13];
         uint32_t n;
         for (n = 0; b[n] && b[n] != ' ' && n < 12u; n++)
@@ -1798,46 +1835,40 @@ static __attribute__((noinline)) void track_col6(uint32_t c, uint32_t sel, uint3
         sn[n] = 0;
         while (n > 1u && text_w(&AF_S, sn) > T6_W - 7)
             sn[--n] = 0;
-        cv_text_on(4, 22, &AF_S, sn, mute ? T_ACCENT : sel ? T_TEXT : T_MID, T_SURF);
+        cv_text_on(4, 22, &AF_S, sn, mute ? T_ACCENT : T_TEXT, T_SURF);
     }
-    if (cur_page()->id[0] == P_CHOR) {               /* (0.8.5) GLO > MIX > SENDS: CHORUS DLY REV as bars (codex/coherence:
-                                                         * the sends only, DIST on FX's own page) */
+    if (cur_page()->id[0] == P_CHOR) {               /* GLO > MIX > SENDS: CHORUS DLY REV as cells */
         static const char *const SN[3] = {"C", "D", "R"};
         for (k = 0; k < 3; k++) {
-            int32_t v = trk[c].p[P_CHOR + (uint32_t)k] * 60 / 127;   /* (P_CHOR P_DLY P_REV: in a row) */
-            cv_rect(4 + k * 10, 38, 8, 62, T_RAISE);
-            if (v)
-                cv_rect(4 + k * 10, 100 - v, 8, v, mute ? T_DIM : sel && hot == (uint32_t)k + 1u ? T_ACCENT :
-                        heat_col(60 + v * 3));
-            cv_text(5 + k * 10, 106 - AF_X_CAP_Y, &AF_X, SN[k], T_DIM);
+            int32_t v2 = trk[c].p[P_CHOR + (uint32_t)k] * 60 / 127, q;
+            for (q = 0; q < 12; q++)
+                cv_rect(4 + k * 10, 95 - q * 5, 8, 4, q * 5 < v2 ? (mute ? T_DIM : sel && hot == (uint32_t)k + 1u ? HUD_YE : heat_col(40 + q * 18)) : T_LINE);
+            cv_text(5 + k * 10, 106 - AF_X_CAP_Y, &AF_X, SN[k], T_TEXT);
         }
         cv_blit((uint32_t)T6_X(c), lz_on() ? graph_y() + 9u : Y_GRAPH);
         return;
     }
-    for (k = 0; k < 14; k++) {                       /* LEVEL: cold at the bottom, hot at the top */
+    for (k = 0; k < 14; k++) {                       /* LEVEL: the meter a matrix, cold at the bottom, hot at the top */
         int32_t sy = 95 - k * 4;
         uint16_t sc = heat_col(20 + k * 220 / 13);
-        sc = mute ? (k < lv ? T_DIM : T_RAISE) : k < mt ? sc : k < lv ? ux_mix(T_SURF, sc, 42) : T_RAISE;
+        sc = mute ? (k < mt ? T_DIM : T_LINE) : k < mt ? sc : T_LINE;
         cv_rect(4, sy, 12, 3, sc);
     }
+    if (lvl)                                         /* the fader: a yellow line */
+        cv_rect(2, 98 - lv * 4, 16, 1, mute ? T_DIM : HUD_YE);
     if (lvl) {
         int32_t d = LEVEL_DB_X10_AT(lvl);
         fmt_int(v, (d + (d < 0 ? -5 : 5)) / 10);
-    } else {
+    } else
         str_cpy(v, "OFF", sizeof v);
-    }
-    cv_text_in(17, 44, T6_W - 18, &AF_S, v, lc, T_SURF);
+    cv_text_in(17, 44, T6_W - 18, &AF_S, v, hot == 1u ? HUD_YE : lvl && !mute ? HUD_YE : T_DIM, T_SURF);
     cv_text_in(17, 58, T6_W - 18, &AF_S, "dB", T_DIM, T_SURF);
-    cv_rect(4, 104, pw, 3, T_RAISE);                 /* PAN, from the middle */
-    cv_rect(4 + pw / 2, 102, 1, 7, hot == 2u ? T_ACCENT : T_MID);
-    if (pan)
-        cv_rect(pan > 0 ? 4 + pw / 2 + 1 : 4 + pw / 2 + pan * (pw / 2) / 64, 104, (pan > 0 ? pan : -pan) * (pw / 2) / 64 + 1,
-                3, mute ? T_DIM : hot == 2u ? T_ACCENT : heat_col(70 + (pan > 0 ? pan : -pan) * 2));
-    cv_rect(4, 113, pw, 3, T_RAISE);                 /* the REV send */
-    if (rv)
-        cv_rect(4, 113, rv * pw / 127 + 1, 3, mute ? T_DIM : heat_col(40 + rv * 3 / 2));   /* (codex/coherence: on SENDS'
-                                                         * knobs, MIXER's KNOB 3 MUTE) */
-    cv_blit((uint32_t)T6_X(c), lz_on() ? graph_y() + 9u : Y_GRAPH);   /* (0.8.5: GLO's lens, the panel under the cards) */
+    for (k = 0; k < pw; k += 3) cv_pset(4 + k, 105, T_LINE);   /* PAN: a dotted line, a dot in its colour */
+    cv_rect(4 + pw / 2, 103, 1, 5, T_MID);
+    cv_rect(4 + pw / 2 + pan * (pw / 2) / 64 - 1, 102, 3, 7, mute ? T_DIM : hot == 2u ? HUD_YE : TRK_COL[c % 6u]);
+    for (k = 0; k < pw / 4; k++)                     /* the REV send: cells */
+        cv_rect(4 + k * 4, 113, 3, 3, k * 4 < rv * pw / 127 ? (mute ? T_DIM : heat_col(40 + k * 12)) : T_LINE);
+    cv_blit((uint32_t)T6_X(c), lz_on() ? graph_y() + 9u : Y_GRAPH);
 }
 static __attribute__((noinline)) void draw_tracks(void)
 {

@@ -104,11 +104,11 @@ static const nv_t CE_GLO[] = {NV("MIXER", 0, 0, 0), NV("SENDS", 0, 0, 0),   /* (
                                                          * (ui_live.c) */
 static const ng_t CG_GLO[] = {{"MIXER", "MIX"}, {"GLOBAL COMP", "G.COMP"}, {"SETUP", 0}};   /* (codex/coherence: SETUP, the
                                                          * settings in one group: GLOBAL, SYSTEM, SYSTEM 2, KEY SPLIT) */   /* (five tabs of 44 px in the labels' face) */
-static const nv_t CE_ENV[] = {NV("ENV", 0, 0, 1), NV("ENV DEST", 0, 0, 1), NV("ENV 2", 0, 0, 1), NV("STAGE", 0, 1, 2),
-                              NV("ENV", "TRACKS", 2, 0)};   /* (V10.22: ENV 2) (codex/coherence) the track's pages first;
+static const nv_t CE_ENV[] = {NV("ENV", 0, 0, 1), NV("ENV DEST", 0, 0, 1), NV("ENV 2", 0, 0, 1), NV("STAGE", 0, 1, 2)};   /* (V10.8.16, the owner: TRACKS, the six
+                                                         * envelopes together, gone for ENV's layers' room) */   /* (V10.22: ENV 2) (codex/coherence) the track's pages first;
                                                          * TRACKS, the six tracks' envelopes at a glance (ENV's knobs), last
                                                          * (TRACKS DEST, ENV DEST's twin, gone) */
-static const ng_t CG_ENV[] = {{"ENV", 0}, {"STAGE", 0}, {"TRACKS", 0}};
+static const ng_t CG_ENV[] = {{"ENV", 0}, {"STAGE", 0}};
 static const nv_t CE_LFO[] = {NV("MOD", 0, 0, 0), NV("LFO", 0, 1, 1), NV("LFO 2", 0, 1, 1), NV("LFO DEST", 0, 1, 1),
                               NV("MSEQ", "MOD SEQ", 2, 2), NV("MSEQ 2", "MOD SEQ 2", 2, 2)};   /* (0.9.18: LFO 2, PHASE) */
 static const ng_t CG_LFO[] = {{"MODULATION", "MOD"}, {"LFO", 0}, {"MOD SEQUENCE", "MOD SEQ"}};   /* (V10.7.59: MOD SEQ) */

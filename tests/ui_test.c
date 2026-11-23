@@ -5970,6 +5970,15 @@ static int test_piano_roll(void)
 }
 
 /* bug fixes, second round (UI) */
+static uint32_t hudye_in(int32_t x0, int32_t y0, int32_t x1, int32_t y1)   /* (V10.8.16) the HUD's yellow there */
+{
+    uint32_t n = 0;
+    int32_t x, y;
+    for (y = y0; y < y1; y++)
+        for (x = x0; x < x1; x++)
+            n += host_screen[y * 240 + x] == (uint16_t)((HUD_YE >> 8) | (HUD_YE << 8));
+    return n;
+}
 static uint32_t accent_in(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
 {
     uint32_t n = 0;
@@ -6015,8 +6024,8 @@ static int test_bughunt_ui2(void)
             Y = lz_on() ? (int32_t)graph_y() + 9 : Y_GRAPH;            /* (0.8.5: GLO's lens, under its cards) */
             turn(EN_K1 + k, 1);                                       /* (K4 right: the DJ FILTER, a high-pass) */
             ui.force = 1; frame();
-            a[k][0] = accent_in(X + 17, Y + 44, X + 37, Y + 57);      /* LEVEL's dB */
-            a[k][1] = accent_in(X + 4, Y + 100, X + 37, Y + 110);     /* PAN */
+            a[k][0] = 0;                                              /* (V10.8.16, BYTE's CHANNELS HUD: LEVEL's dB always yellow) */
+            a[k][1] = hudye_in(X + 4, Y + 100, X + 37, Y + 110);      /* PAN: its dot yellow while turned */
             a[k][2] = accent_in(X + 4, Y + 112, X + 37, Y + 117);     /* REV (codex/coherence: no knob of MIXER's) */
             a[k][3] = accent_in(X + 4, Y + 22, X + 37, Y + 37);       /* the name (in the accent: muted) */
             if (k == 3u)
@@ -6024,8 +6033,8 @@ static int test_bughunt_ui2(void)
         }
         for (k = 0; k < 4u; k++) {
             uint32_t j;
-            for (j = 0; j < 4u; j++)
-                ok &= (k < 2u ? j == k : k == 2u && j == 3u) ? a[k][j] > 0u : a[k][j] == 0u;
+            for (j = 1; j < 4u; j++)
+                ok &= (k == 1u ? j == 1u : k == 2u && j == 3u) ? a[k][j] > 0u : a[k][j] == 0u;
         }
         bad += check("MIXER (six columns, any COLOR): K1 K2 light LEVEL / PAN, K3 MUTE the name (codex/coherence: was REV), K4 (V10.37: BPM) none of them", ok);
     }
@@ -12298,33 +12307,20 @@ static int test_lz_env(void)
     ui_power_on(); frame();
     press(B_ENV); frame();
     ok = pd_on() && lz_fam() == LZ_ENV && pd_level() == 1u && str_eq(cur_page()->title, "ENV") && lz_tab_lit(0) &&
-         lz_crumb_is("ENV \xB7 ENV \xB7 ENV") && lz_count_is("1/5");
+         lz_crumb_is("ENV \xB7 ENV \xB7 ENV") && lz_count_is("1/4");
     turn(EN_SELECT, 1); frame();
-    ok &= str_eq(cur_page()->title, "ENV DEST") && lz_crumb_is("ENV \xB7 ENV \xB7 ENV DEST") && lz_count_is("2/5");
+    ok &= str_eq(cur_page()->title, "ENV DEST") && lz_crumb_is("ENV \xB7 ENV \xB7 ENV DEST") && lz_count_is("2/4");
     turn(EN_SELECT, 1); frame();
-    ok &= str_eq(cur_page()->title, "ENV 2") && lz_crumb_is("ENV \xB7 ENV \xB7 ENV 2") && lz_count_is("3/5");   /* (V10.22) */
+    ok &= str_eq(cur_page()->title, "ENV 2") && lz_crumb_is("ENV \xB7 ENV \xB7 ENV 2") && lz_count_is("3/4");   /* (V10.22) */
     turn(EN_SELECT, 1); frame();
-    ok &= pd_level() == 2u && str_eq(cur_page()->title, "STAGE") && lz_tab_lit(1) && lz_count_is("4/5");
-    turn(EN_SELECT, 1); frame();
-    ok &= pd_level() == 0u && lz_tab_lit(2) && str_eq(cur_page()->title, "ENV") && lz_crumb_is("ENV \xB7 TRACKS \xB7 TRACKS") &&
-          lz_count_is("5/5");
-    turn(EN_SELECT, 1); frame();                                    /* (the end: TRACKS DEST gone, ENV DEST's twin) */
-    ok &= pd_level() == 0u && str_eq(cur_page()->title, "ENV") && lz_count_is("5/5");
+    ok &= pd_level() == 2u && str_eq(cur_page()->title, "STAGE") && lz_tab_lit(1) && lz_count_is("4/4");
+    turn(EN_SELECT, 1); frame();                                    /* (the end: V10.8.16, TRACKS gone) */
+    ok &= pd_level() == 2u && str_eq(cur_page()->title, "STAGE") && lz_count_is("4/4");
     frames(320); press(B_ENV); frame();
     ok &= pd_level() == 1u && str_eq(cur_page()->title, "ENV");     /* (round) */
     frames(320); press(B_ENV); frame();
     ok &= pd_level() == 2u && str_eq(cur_page()->title, "STAGE") && lz_tab_lit(1);
-    frames(320); press(B_ENV); frame();
-    ok &= pd_level() == 0u && lz_crumb_is("ENV \xB7 TRACKS \xB7 TRACKS");
-    bad += check("0.9.2 ENV: opens on ENV; ENV (ENV, ENV DEST, ENV 2) . STAGE . TRACKS (codex/coherence: the six last, no TRACKS DEST), SELECT and the taps", ok);
-    pr = TSEL->preset;                                              /* TRACKS: ALGORITHM the track, PRESETS the sound */
-    turn(EN_ALGO, 1); frame();
-    ok = song.sel == 1u && pd_level() == 0u && pd_on();
-    turn(EN_ALGO, -1); frame();
-    pr = TSEL->preset;
-    turn(EN_PRESET, 1); frame();
-    ok &= song.sel == 0u && pd_level() == 0u && (TSEL->preset != pr || TSEL->eng_req != trk_def_engine(0));
-    bad += check("0.9.2 ENV > TRACKS: ALGORITHM picks the track (the tiles), PRESETS the sound (was the track); the page stays", ok);
+    bad += check("0.9.2 ENV: opens on ENV; ENV (ENV, ENV DEST, ENV 2) . STAGE (V10.8.16: TRACKS gone), SELECT and the taps", ok);
     go_title("STAGE"); frame();
     ui.stage = 0;
     turn(EN_K1, 1); frame();
@@ -12983,7 +12979,7 @@ static const old_lv_t OLD_LV[] = {
     {FAM_EDIT, 2, 1, {"OPERATOR", "OP ENV", "OPERATOR 2"}},
     {FAM_EDIT, 0, 2, {"EDIT 1", "EDIT 2"}}, {FAM_EDIT, 1, 2, {"X-MOD", "FILTER"}},   /* (V10.7.63: STEREO LEVELS BUS PLAY gone) */
     {FAM_EDIT, 2, 2, {"SOUND", "SOUND 2", "SOUND 3", "SOUND 4"}},
-    {FAM_ENV, 0, 9, {"ENV"}},   /* (codex/coherence: TRACKS DEST gone) */ {FAM_ENV, 1, 9, {"ENV", "ENV DEST"}}, {FAM_ENV, 2, 9, {"STAGE"}},
+    /* (V10.8.16: ENV's TRACKS, level 0, gone) */ {FAM_ENV, 1, 9, {"ENV", "ENV DEST"}}, {FAM_ENV, 2, 9, {"STAGE"}},
     {FAM_LFO, 0, 9, {"MOD"}}, {FAM_LFO, 1, 9, {"LFO", "LFO 2", "LFO DEST"}}, {FAM_LFO, 2, 9, {"MSEQ", "MSEQ 2"}},
     {FAM_SCL, 0, 9, {"SCL"}}, {FAM_SCL, 1, 9, {"CHORD"}}, {FAM_ARP, 2, 9, {"ARP", "ARP 2"}},
     {FAM_GLO, 0, 9, {"MIXER", "SENDS"}}, {FAM_GLO, 1, 9, {"GLOBAL"}}, {FAM_GLO, 2, 9, {"SYSTEM", "SYSTEM 2"}},
