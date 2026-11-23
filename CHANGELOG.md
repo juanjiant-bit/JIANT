@@ -6,6 +6,8 @@ Custom firmware for the M-VAVE FM-1 by Juan Jiant. Newest version first.
 
 | Version | Date | Status |
 | --- | --- | --- |
+| **V10.8.21** | 2026-11-23 | **Public** |
+| V10.8.1 … V10.8.20 | 2026-11-21 … 11-23 | Beta |
 | **V10.7.81** | 2026-11-21 | **Public** |
 | V10.7.59 … V10.7.80 | 2026-11-19 … 11-21 | Beta |
 | **V10.7.58** | 2026-11-19 | **Public** |
@@ -39,6 +41,41 @@ The sections marked **Compatibility notes** are the ones to check before you ins
 > 31 October 2026 are much older builds with the same names; they are covered under "Older versions" at the end.
 
 ---
+
+## V10.8.21 — song mode, DRONE CLAY, step components you play, and the screens redrawn (2026-11-23)
+
+Includes the betas V10.8.1 to V10.8.20. If you come from V10.7.81, this is everything new.
+
+**Compatibility notes**: projects from V10.7.81 open; STRETCH, MUTATE, GLOBAL COMP and the removed pages' settings are kept but do nothing. SEQ + SELECT now walks the pages (the sequence dice is gone; EDIT + SELECT still dices the sound).
+
+- **Song mode** (HOME › JAM · TAKE · ARRANGE): play the four sequences A–D of every track live (F3–B3 pick A–D on
+  all tracks, OCT+ GO, OCT− STOP, CAMBIO sets when a change lands). **REC** records the take; **K4 LOCK** plays it back
+  and what you play over it is marked **YOU**; with a track selected, **REC** redoes that track for one round and
+  **OCT−** undoes it. **TAKE** edits the changes (K1 pick, K2 move, K3 sequence, K4 bars, OCT+ new, OCT− delete). A help
+  line on JAM and TAKE says what to do next (MENU › DISPLAY › HELP OFF hides it). GLO › LIVE is gone: JAM plays the
+  sequences live.
+- **Step components you play** (SEQ › STEP FX): the **PRESETS knob picks the step**; the 16 white keys play components
+  while held — STUTTER, STUTTER /2, /4, RATCHET x2 x3 x4 x8, ARP UP / DOWN / UP-DOWN, OCTAVE UP / DOWN, RANDOM, TRANSPOSE
+  +2, CHORD, MUTE — and with **REC** they are written into the step with their value and length (into COMP, or COMP 2
+  when COMP is taken). A big **banner** names the key and what it does while held (also on the FX layer's punch-ins).
+- **DRONE CLAY** (SEQ › CLAY, from JIANT BYTE): a sequencer per track — a very low drone in the track's own voice (RATE
+  re-strikes it with the transport, or holds it) and four modulators (shape, euclid, amount, decay, gestures) aimed at
+  any of the track's parameters; note gestures (ARP, CHORD, HIT) play on the scale. On MONO / LEGATO it yields the voice
+  to the steps; a TIME or PITCH punch-in restarts it from its first hit.
+- **Which track you are on, always**: a bar on top reads **TRACK N / ENGINE** in the track's own colour (T1 yellow, T2
+  orange, T3 red, T4 magenta, T5 violet, T6 blue); the same colours on the mixer, the beings, JAM and TAKE.
+- **Macros as destinations**: LFO › MACROS — KNOB 1 picks the macro, its destinations add up (16 routes in all); in the
+  MOD matrix M1–M4 are destinations, not sources.
+- **Redesigned screens**: FX in the HUD look (DELAY's echoes a tunnel, REVERB cells, CHORUS L/R orbit, SLICER, MASTER,
+  DIST); FX › SENDS as columns; GLO › MIXER channels; ENV as layers of the last notes; LFO as a satellite writing its
+  wave; EDIT › FOCUS a horizontal heat bar with the parameter's whole name and its modulation; ARRANGE and GENERATOR a
+  living score (sections as wide as their bars, one lane per track); SCL › KEY the scale's whole name, its notes and
+  degrees; SCL › CHORD the chord really played (D MIN7…), its notes and intervals, the seven degrees' chords. Names are
+  whole where they fit (ECOSYSTEM, GENERATOR, MIXER, MODULATION…).
+- **Power-on**: the boot "Six threads" with the signature drawn smooth and the version shown; the **click at power-on**
+  is gone (the output opens after the audio has started, then fades in).
+- **Removed for room**: GLO › LIVE, SEQ › STRETCH, MUTATE, the sequence dice (SEQ + SELECT; the sound dice stays), GLO ›
+  GLOBAL COMP, ENV › TRACKS and the one-time teaching hints. Old projects open: their settings are kept and ignored.
 
 ## V10.7.81 — DRUM-X MATH, the punch-in editor, HARMONY and a clearer FX layer (2026-11-21)
 

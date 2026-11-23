@@ -6,6 +6,8 @@ Firmware personalizado para el M-VAVE FM-1, de Juan Jiant. Primero la versión m
 
 | Versión | Fecha | Estado |
 | --- | --- | --- |
+| **V10.8.21** | 2026-11-23 | **Pública** |
+| V10.8.1 … V10.8.20 | 2026-11-21 … 11-23 | Beta |
 | **V10.7.81** | 2026-11-21 | **Pública** |
 | V10.7.59 … V10.7.80 | 2026-11-19 … 11-21 | Beta |
 | **V10.7.58** | 2026-11-19 | **Pública** |
@@ -40,6 +42,44 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 > al final.
 
 ---
+
+## V10.8.21 — modo canción, DRONE CLAY, componentes de paso que se tocan y las pantallas redibujadas (2026-11-23)
+
+Incluye las betas V10.8.1 a V10.8.20. Si venís de V10.7.81, esto es todo lo nuevo.
+
+**Notas de compatibilidad**: los proyectos de V10.7.81 abren; los ajustes de STRETCH, MUTATE, GLOBAL COMP y de las páginas quitadas se conservan pero no hacen nada. SEQ + SELECT ahora recorre las páginas (se fue el dado de secuencia; EDIT + SELECT sigue sorteando el sonido).
+
+- **Modo canción** (HOME › JAM · TAKE · ARRANGE): tocás en vivo las cuatro secuencias A–D de cada pista (F3–B3 eligen
+  A–D en todas, OCT+ GO, OCT− STOP, CAMBIO dice cuándo entra el cambio). **REC** graba la toma; **K4 LOCK** la
+  reproduce y lo que tocás encima queda marcado **YOU**; con una pista elegida, **REC** rehace esa pista una vuelta y
+  **OCT−** la deshace. **TAKE** edita los cambios (K1 elegir, K2 mover, K3 secuencia, K4 compases, OCT+ nuevo, OCT−
+  borrar). Una línea de ayuda en JAM y TAKE dice qué hacer (MENU › DISPLAY › HELP OFF la oculta). GLO › LIVE se fue: JAM
+  toca las secuencias en vivo.
+- **Componentes de paso que se tocan** (SEQ › STEP FX): el **knob PRESETS elige el paso**; las 16 teclas blancas tocan
+  componentes mientras las mantenés — STUTTER, STUTTER /2, /4, RATCHET x2 x3 x4 x8, ARP UP / DOWN / UP-DOWN, OCTAVE UP /
+  DOWN, RANDOM, TRANSPOSE +2, CHORD, MUTE — y con **REC** se escriben en el paso con su valor y su duración (en COMP, o
+  en COMP 2 si COMP está ocupado). Un **cartel** grande dice qué tecla es y qué hace mientras la mantenés (también en los
+  punch-ins del FX layer).
+- **DRONE CLAY** (SEQ › CLAY, de JIANT BYTE): un secuenciador por pista — un drone muy grave con la voz de la pista (RATE
+  lo vuelve a atacar con el transporte, o lo sostiene) y cuatro moduladores (forma, euclidiano, cantidad, caída, gestos)
+  sobre cualquier parámetro de la pista; los gestos de nota (ARP, CHORD, HIT) tocan sobre la escala. En MONO / LEGATO
+  cede la voz a los pasos; un punch-in de TIEMPO o PITCH lo reinicia desde su primer golpe.
+- **Siempre sabés en qué pista estás**: una barra arriba dice **TRACK N / ENGINE** con el color de la pista (T1 amarillo,
+  T2 naranja, T3 rojo, T4 magenta, T5 violeta, T6 azul); los mismos colores en el mixer, los seres, JAM y TAKE.
+- **Macros como destinos**: LFO › MACROS — KNOB 1 elige la macro y sus destinos se suman (16 rutas en total); en la
+  matriz MOD, M1–M4 son destinos, no fuentes.
+- **Pantallas rediseñadas**: FX con estilo HUD (los ecos del DELAY como un túnel, REVERB en celdas, la órbita L/R del
+  CHORUS, SLICER, MASTER, DIST); FX › SENDS en columnas; GLO › MIXER por canales; ENV en capas de las últimas notas; LFO
+  como un satélite que escribe su onda; EDIT › FOCUS una barra térmica horizontal con el nombre completo del parámetro y
+  su modulación; ARRANGE y GENERATOR como partitura viva (secciones tan anchas como sus compases, un carril por pista);
+  SCL › KEY el nombre completo de la escala, sus notas y grados; SCL › CHORD el acorde que suena de verdad (D MIN7…),
+  sus notas e intervalos y los acordes de los siete grados. Nombres completos donde entran (ECOSYSTEM, GENERATOR,
+  MIXER, MODULATION…).
+- **Encendido**: el inicio «Seis hilos» con la firma suavizada y la versión a la vista; se fue el **click al encender**
+  (la salida se abre cuando el audio ya arrancó y sube de a poco).
+- **Quitado para hacer lugar**: GLO › LIVE, SEQ › STRETCH, MUTATE, el dado de secuencia (SEQ + SELECT; el de sonido
+  sigue), GLO › GLOBAL COMP, ENV › TRACKS y las ayudas de enseñanza de una sola vez. Los proyectos viejos abren: sus
+  ajustes se conservan y se ignoran.
 
 ## V10.7.81 — DRUM-X MATH, el editor de punch-in, HARMONY y una capa FX más clara (2026-11-21)
 

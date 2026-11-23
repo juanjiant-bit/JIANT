@@ -51,34 +51,38 @@ a generator and effects, all inside the little keyboard. It is a fork of [Felucc
 The emulator runs the same code as the FM-1, with sound, played with the computer keyboard or the mouse. The installer
 always offers the current public version first, and the earlier ones under it.
 
-## This release: V10.7.81 · beta V10.8.1
+## This release: V10.8.21
 
-The installer offers **V10.7.81**, the public version. What it brings since V10.7.58 (the betas V10.7.59 to V10.7.80):
+The installer offers **V10.8.21**, the public version (V10.7.81 and the earlier ones stay under it). What it brings since V10.7.81 (the betas V10.8.1 to V10.8.20):
 
-- **DRUM-X with MATH**: SOUND 3's WAVE goes on past SINE FM METAL BELL to **F01–F48**, a MATH formula as each sound's
-  FM, used as a wavetable and drawn on screen, with **RATIO** (24 values) and **MOD AMT**. Two kits made of formulas,
-  **GLITCH FM** and **MATH LAB**; **DICE** gives half the sounds a formula of their own. DRUM-X in 8 pages, **BODY**
-  (the shell's resonance) and a clean **GAIN** up to +12 dB.
-- **MATH MORPH**: ALGO B and MORPH glide from one formula to another, light on the CPU.
-- **Performance**: the **FX layer is a map of named cells** again (the effects by name, M1–M4 on top, the mutes T1–T6
-  below); the **punch-in editor** (OCT+ on FX › PUNCH IN): each key an effect or a parameter, how it moves, how much,
-  for how long; REVERSE, FREEZE, TAPE STOP, PITCH UP / DOWN, STRETCH.
-- **Harmony**: **SCL › HARMONY** (its own tab) makes every melodic sequence follow a progression, shown in roman
-  numerals; the CHORD page and its sets (POP JAZZ SOUL DREAM QUART) stay. **EUCLID › ROLE** writes melodies, chords,
-  basses or arps over the harmony the other tracks play.
-- **GENE**: seeds fused (A+B, never the same twice), DUBSTEP (the wobble's rate moving, MATH basses), SHOEGAZE,
-  METALCORE, CUMBIA villera; MATH, WEST and STRING more often; it waits for the bar while playing.
-- **Clearer screens**: EDIT › FOCUS in heat colours, MORE before PLAY, the oscilloscope instead of decorative bars,
-  **MENU › DISPLAY › PRESETS** SCROLL / MENU, a knob's meaning in the header where it is not obvious (MENU › HELP).
-- **LIFE** (HOME › LIFE): the tracks move each other.
-
-**V10.8.1 is the beta** ([emulator](https://juanjiant-bit.github.io/JIANT/preview/emu/) ·
-[beta installer](https://juanjiant-bit.github.io/JIANT/preview/webapp/installer/)): the **song mode redesigned**. Each
-track has its own sequences A–D, switched live (SEQ › STEP's KNOB 1) when **CAMBIO** says (at once, 1/16 … a bar);
-**REC** records the jam a 16th exact and **LOCK** plays it round while you jam over it.
-
-What each version changed: [CHANGELOG.md](CHANGELOG.md) · en castellano: [CHANGELOG.es.md](CHANGELOG.es.md).
-
+- **Song mode** (HOME › JAM · TAKE · ARRANGE): play the four sequences A–D of every track live (F3–B3 pick A–D on
+  all tracks, OCT+ GO, OCT− STOP, CAMBIO sets when a change lands). **REC** records the take; **K4 LOCK** plays it back
+  and what you play over it is marked **YOU**; with a track selected, **REC** redoes that track for one round and
+  **OCT−** undoes it. **TAKE** edits the changes (K1 pick, K2 move, K3 sequence, K4 bars, OCT+ new, OCT− delete). A help
+  line on JAM and TAKE says what to do next (MENU › DISPLAY › HELP OFF hides it). GLO › LIVE is gone: JAM plays the
+  sequences live.
+- **Step components you play** (SEQ › STEP FX): the **PRESETS knob picks the step**; the 16 white keys play components
+  while held — STUTTER, STUTTER /2, /4, RATCHET x2 x3 x4 x8, ARP UP / DOWN / UP-DOWN, OCTAVE UP / DOWN, RANDOM, TRANSPOSE
+  +2, CHORD, MUTE — and with **REC** they are written into the step with their value and length (into COMP, or COMP 2
+  when COMP is taken). A big **banner** names the key and what it does while held (also on the FX layer's punch-ins).
+- **DRONE CLAY** (SEQ › CLAY, from JIANT BYTE): a sequencer per track — a very low drone in the track's own voice (RATE
+  re-strikes it with the transport, or holds it) and four modulators (shape, euclid, amount, decay, gestures) aimed at
+  any of the track's parameters; note gestures (ARP, CHORD, HIT) play on the scale. On MONO / LEGATO it yields the voice
+  to the steps; a TIME or PITCH punch-in restarts it from its first hit.
+- **Which track you are on, always**: a bar on top reads **TRACK N / ENGINE** in the track's own colour (T1 yellow, T2
+  orange, T3 red, T4 magenta, T5 violet, T6 blue); the same colours on the mixer, the beings, JAM and TAKE.
+- **Macros as destinations**: LFO › MACROS — KNOB 1 picks the macro, its destinations add up (16 routes in all); in the
+  MOD matrix M1–M4 are destinations, not sources.
+- **Redesigned screens**: FX in the HUD look (DELAY's echoes a tunnel, REVERB cells, CHORUS L/R orbit, SLICER, MASTER,
+  DIST); FX › SENDS as columns; GLO › MIXER channels; ENV as layers of the last notes; LFO as a satellite writing its
+  wave; EDIT › FOCUS a horizontal heat bar with the parameter's whole name and its modulation; ARRANGE and GENERATOR a
+  living score (sections as wide as their bars, one lane per track); SCL › KEY the scale's whole name, its notes and
+  degrees; SCL › CHORD the chord really played (D MIN7…), its notes and intervals, the seven degrees' chords. Names are
+  whole where they fit (ECOSYSTEM, GENERATOR, MIXER, MODULATION…).
+- **Power-on**: the boot "Six threads" with the signature drawn smooth and the version shown; the **click at power-on**
+  is gone (the output opens after the audio has started, then fades in).
+- **Removed for room**: GLO › LIVE, SEQ › STRETCH, MUTATE, the sequence dice (SEQ + SELECT; the sound dice stays), GLO ›
+  GLOBAL COMP, ENV › TRACKS and the one-time teaching hints. Old projects open: their settings are kept and ignored.
 ### Installing
 
 Open the **[web installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/)** in Chrome or Edge on a computer
@@ -554,6 +558,12 @@ same license.
 ## Changelog
 
 Every update is listed here, newest first. (Since 0.6.80 at the end of the page: what the synth does comes first.)
+
+### V10.8.21 — public (2026-11-23)
+- Everything since V10.7.81: song mode (JAM, TAKE, LOCK, YOU), step components played and recorded on STEP FX, DRONE CLAY, the TRACK / ENGINE bar and track colours, macros as destinations, the redesigned FX / MIXER / ENV / LFO / FOCUS / ARRANGE / SCL screens, the boot and no click at power-on. Details: [CHANGELOG.md](CHANGELOG.md).
+
+### V10.8.2 – V10.8.20 — betas (2026-11-21 … 11-23)
+- See V10.8.21 above and [CHANGELOG.md](CHANGELOG.md).
 
 ### V10.8.0 – V10.8.1 — betas (2026-11-21)
 - **The song mode redesigned** (JAM): each track its sequences A–D, chosen on SEQ › STEP's KNOB 1 (the cursor moves
