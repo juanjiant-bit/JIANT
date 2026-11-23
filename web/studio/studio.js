@@ -69,13 +69,15 @@ const TEXT = {
     recFewerLong: "Llegan %got canales y el modo de la FM-1 manda %need. Chrome en Android entrega como mucho 2 (son T1 y T2, o el master): el navegador no puede leer el audio USB de otra forma (protege las interfaces de audio). Para los stems en vivo: Chrome o Edge en una computadora (Mac, Windows o Linux), o la app JIANT Probe en el celular; o los stems de una canción desde un backup (abajo), exactos y sin límite.",
     laneTrack: "pista, mono", lane_L: "master izquierdo", lane_R: "master derecho", lane_FXL: "efectos, izquierda", lane_FXR: "efectos, derecha",
     lane_VOX: "la voz mezclada", lane_DRY: "la voz como llegó", recMute: "Silenciar", recSolo: "Solo",
+    stWhat: "Qué", stLive: "La sección que suena (8 compases)", stGo: "Stems desde la FM-1", stFile: "…o desde un backup",
+    stReading: "Leyendo el backup de la FM-1… ", stRender: "Armando los stems: ", stDone: "Listo: las pistas están arriba.", stNeedDev: "Conectá la FM-1 (Inicio) o elegí un archivo de backup.",
     recSaved: "Toma guardada: está abajo, en Tomas.",
     recSrcFm1: "La FM-1 por USB es una entrada de audio: estéreo (USB > AUDIO), u 8 canales en USB > STEMS (las 6 pistas y los efectos por separado). Elegila acá.",
     recSrcEmu: "Graba la salida del emulador (prendelo en la pestaña Emulador).",
     recNoDev: "No hay entradas de audio (dale permiso al micrófono para verlas).", recAsk: "Pedir permiso de audio",
     recMidi: "MIDI", recMidiHelp: "Mientras grabás, también se guarda lo que entra por MIDI: lo que tocás en la FM-1 (MENU > MIDI OUT) o en un teclado.",
     recMidiIn: "Entrada MIDI", recMidiNone: "(ninguna)",
-    recStems: "Stems de una canción", recStemsHelp: "Desde un backup, sin tiempo real: cada pista en su WAV, alineadas al sample (el panel Stems del emulador).",
+    recStems: "Stems de una canción", recStemsHelp: "Exactos y sin límite de canales, también en el celular: Studio lee la canción de la FM-1 por USB (o un archivo de backup) y la toca en el emulador una vez por pista. Cada pista en su WAV, alineadas al sample.",
     recStemsGo: "Abrir el emulador",
     recTakes: "Tomas", recNone: "Todavía no grabaste nada.", recWav: "WAV master", recStemsZip: "Stems (ZIP)", recMid: "MIDI",
     recChannels: " canales", recNotes: " notas",
@@ -147,13 +149,15 @@ const TEXT = {
     recFewerLong: "%got channels come in and the FM-1's mode sends %need. Chrome on Android hands over at most 2 (T1 and T2, or the master): a web page cannot read USB audio any other way (browsers protect audio interfaces). For live stems: Chrome or Edge on a computer (Mac, Windows or Linux), or the JIANT Probe app on the phone; or a song's stems from a backup (below), exact and unlimited.",
     laneTrack: "track, mono", lane_L: "master left", lane_R: "master right", lane_FXL: "effects, left", lane_FXR: "effects, right",
     lane_VOX: "the voice as mixed", lane_DRY: "the voice as it came", recMute: "Mute", recSolo: "Solo",
+    stWhat: "What", stLive: "The section playing (8 bars)", stGo: "Stems from the FM-1", stFile: "…or from a backup",
+    stReading: "Reading the FM-1's backup… ", stRender: "Making the stems: ", stDone: "Done: the tracks are above.", stNeedDev: "Connect the FM-1 (Home) or pick a backup file.",
     recSaved: "Take saved: it is below, under Takes.",
     recSrcFm1: "The FM-1 over USB is an audio input: stereo (USB > AUDIO), or 8 channels in USB > STEMS (the 6 tracks and the effects apart). Pick it here.",
     recSrcEmu: "Records the emulator's output (switch it on in the Emulator tab).",
     recNoDev: "No audio inputs (allow the microphone to list them).", recAsk: "Ask for audio permission",
     recMidi: "MIDI", recMidiHelp: "While recording, what comes in over MIDI is kept too: what you play on the FM-1 (MENU > MIDI OUT) or on a keyboard.",
     recMidiIn: "MIDI input", recMidiNone: "(none)",
-    recStems: "A song's stems", recStemsHelp: "From a backup, not in real time: each track its own WAV, sample-aligned (the emulator's Stems panel).",
+    recStems: "A song's stems", recStemsHelp: "Exact and with no channel limit, on a phone too: Studio reads the song from the FM-1 over USB (or a backup file) and plays it in the emulator once a track. Each track its own WAV, sample-aligned.",
     recStemsGo: "Open the emulator",
     recTakes: "Takes", recNone: "Nothing recorded yet.", recWav: "WAV master", recStemsZip: "Stems (ZIP)", recMid: "MIDI",
     recChannels: " channels", recNotes: " notes",
@@ -663,6 +667,64 @@ function recStop() {
 $("recgo").addEventListener("click", () => (rec.on ? recStop() : recStart()));
 $("recplay").addEventListener("click", () => (daw.playing ? daw.stop() : daw.play()));
 daw.onState = () => render();
+/* ---- a song's stems from a backup (the FM-1's, read over USB, or a file): the emulator's own renderer (emu/stems.js,
+   in a Worker) plays it once a track; the result shown in the lanes as a take */
+async function stemsFrom(archiveOrNull) {
+  const base = TOOLS[state.fw].base + "emu/", say = (x) => { $("ststat").textContent = x; };
+  try {
+    const BK = await import(base + "fm1backup.js");
+    let archive = archiveOrNull;
+    if (!archive) {
+      const d = state.dev;
+      if (!d || state.busy) { say(t("stNeedDev")); return; }
+      archive = await BK.captureBackup((r, o) => d.link.request(r[0], r[1], (o && o.timeout) || 2000), d.version,
+        (done, total) => say(t("stReading") + Math.round(done / Math.max(1, total) * 100) + " %"));
+    }
+    const backup = BK.readBackup(archive), wasm = await (await fetch(base + "felucca.wasm")).arrayBuffer();
+    const v = $("stsong").value, opts = v === "live" ? { mode: "live", bars: 8 } : { mode: "song", song: +v };
+    const out = await new Promise((res, rej) => {
+      const w = new Worker(base + "stems.js", { type: "module" });
+      w.onmessage = (e) => { const m = e.data; if (m.type === "progress") say(t("stRender") + `${m.step} / ${m.steps}`); else { w.terminate(); m.type === "done" ? res(m) : rej(new Error(m.message)); } };
+      w.onerror = (e) => { w.terminate(); rej(new Error(e.message || "stems")); };
+      w.postMessage({ wasm, backup, opts }, [wasm]);
+    });
+    const files = unzipStored(new Uint8Array(out.zip)), col = LANE_COLORS[state.fw], planes = [], lanes = [];
+    for (const f of files) {
+      const { l, r, rate } = readWav(f.data), m = new Float32Array(l.length);
+      for (let i = 0; i < l.length; i++) m[i] = (l[i] + r[i]) * 0.5;
+      const k = /^T(\d)/.exec(f.name), n = k ? +k[1] : 0;
+      planes.push(m); lanes.push({ name: f.name.replace(".wav", ""), sub: k ? t("laneTrack").replace(", mono", "") : "MIX", color: k ? col[n] : col[0], pan: 0 });
+      rec.rate = rate;
+    }
+    const name = `${state.fw === "byte" ? "JIANT-BYTE" : "JIANT-FM"}-${v === "live" ? "live" : "song" + (+v + 1)}-stems`;
+    const take = { name, secs: out.seconds, planes, files: [{ label: t("recStemsZip"), name: name + ".zip", blob: new Blob([out.zip], { type: "application/zip" }) },
+      ...files.map((f) => ({ label: f.name.replace(".wav", ""), name: `${name}-${f.name}`, blob: new Blob([f.data], { type: "audio/wav" }), small: true }))] };
+    rec.takes.unshift(take);
+    daw.setLanes(lanes); daw.show(planes, rec.rate);
+    say(t("stDone"));
+    render();
+  } catch (e) { say(String(e.message || e)); }
+}
+$("stgo").addEventListener("click", () => stemsFrom(null));
+$("stfile").addEventListener("change", async () => { const f = $("stfile").files[0]; if (f) stemsFrom(JSON.parse(await f.text())); $("stfile").value = ""; });
+/* the renderer's ZIP is stored (no compression) and its WAVs 16-bit stereo: read back without a library */
+function unzipStored(z) {
+  const out = [], dv = new DataView(z.buffer, z.byteOffset, z.byteLength);
+  for (let o = 0; o + 30 <= z.length && dv.getUint32(o, true) === 0x04034B50;) {
+    const size = dv.getUint32(o + 18, true), nl = dv.getUint16(o + 26, true), xl = dv.getUint16(o + 28, true);
+    const name = new TextDecoder().decode(z.subarray(o + 30, o + 30 + nl)), start = o + 30 + nl + xl;
+    out.push({ name, data: z.slice(start, start + size) }); o = start + size;
+  }
+  return out;
+}
+function readWav(b) {
+  const dv = new DataView(b.buffer, b.byteOffset, b.byteLength), ch = dv.getUint16(22, true), rate = dv.getUint32(24, true);
+  let o = 12; while (o + 8 <= b.length && String.fromCharCode(...b.subarray(o, o + 4)) !== "data") o += 8 + dv.getUint32(o + 4, true);
+  const n = Math.floor(dv.getUint32(o + 4, true) / (2 * ch)), l = new Float32Array(n), r = new Float32Array(n);
+  for (let i = 0, p = o + 8; i < n; i++, p += 2 * ch) { l[i] = dv.getInt16(p, true) / 32768; r[i] = ch > 1 ? dv.getInt16(p + 2, true) / 32768 : l[i]; }
+  return { l, r, rate };
+}
+
 function makeTake() {
   const n = rec.chunks.reduce((s, c) => s + c[0].length, 0);
   if (!n && !rec.midi.length) return null;
