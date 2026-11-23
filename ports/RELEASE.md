@@ -8,6 +8,15 @@
 | `JIANT-FM-Linux-*.zip` | **VST3, LV2 and a standalone app** for Linux. |
 | `JIANT-FM-Windows-*.zip` | **VST3 and a standalone app** for Windows. |
 
+**New in preview2 (the VST3 / LV2 / standalone plugin):**
+
+- **Up to 8 JIANTs in one DAW project** (Ableton Live and others), each its own device, its own sounds and music.
+- **A new window made for the DAW**: the six tracks, JIANT's screen large, page tabs, the page's knobs, a sound
+  browser and the engine's parameters as knobs, resizable.
+- **Samples in the plugin**: drop WAV / AIFF / FLAC / MP3 files on the window or use the 16-slot panel; REC works;
+  the samples are saved inside the DAW project (FLAC).
+- **Automation**: T1-T6 Level, T1-T6 Cutoff and DJ Filter, besides Volume and Sync.
+
 **New on the big CPUs** (MPC Sample, plugins), not on the FM-1:
 
 - **Every track has its own 8 voices**, and the CPU limits are lifted.
@@ -48,6 +57,7 @@ Problems and test reports: [Issues](https://github.com/juanjiant-bit/JIANT/issue
   [emulador](https://juanjiant-bit.github.io/JIANT/emu/devices.html#mpc) · editor: próximamente.
 - **MPC standalone:** el plugin ([cómo funciona](https://github.com/juanjiant-bit/JIANT/blob/main/ports/README.md)).
 - **Computadora:** VST3 y app standalone para Linux y Windows.
+- **Nuevo en preview2 (plugin VST3 / LV2 / standalone):** hasta 8 JIANT en un mismo proyecto de Ableton, una ventana nueva pensada para el DAW, samples arrastrando archivos (guardados en el proyecto) y automatización por track.
 - **Motores nuevos en estos aparatos:** SAMPLE (one-shot experimental, feedback, resample, triggers complejos),
   GRAIN (granular con recorridos, stretch, feedback y modo LIVE) y DRUM-X con morph entre síntesis y samples.
 - **Probalo antes en el navegador:** https://juanjiant-bit.github.io/JIANT/emu/devices.html
