@@ -19,6 +19,14 @@
  * level is a dot on its curve, AUTO PAN's dot swings at RATE. Drawn on the panel's redraws only (every other frame
  * while it sounds: graph_signature); nothing of the audio path */
 #define FXG_H(v) heat_col((int32_t)(v))                 /* (0..256) */
+#define FXG_TC TRK_COL[song.sel % 6u]                 /* (BYTE, the HUD: the track's colour) */
+#define HUD_YE 0xEF8Bu                                  /* (V10.8.15, JIANT BYTE's HUD: the cursor yellow) */
+#define HUD_BL 0x29FFu
+static void hud_tag(int32_t x, int32_t y, const char *s, uint16_t fg, uint16_t bg)   /* a tag: s on bg */
+{
+    cv_rect(x, y, text_w(&AF_X, s) + 4, 11, bg);
+    cv_text_on(x + 2, y + 1 - AF_X_CAP_Y, &AF_X, s, fg, bg);
+}
 static int32_t fxg_en(void) { return song.playing || bg_energy() > 2 ? 32 + bg_energy() : 0; }   /* 0: still */
 static void fxg_label(int32_t x, int32_t y, const char *s, uint16_t c, int right)
 {
@@ -34,7 +42,7 @@ static void fxg_delay(int32_t x, int32_t y, int32_t w, int32_t h)
     int32_t i, a = 1000, mix = song.g[G_DMIX], fb = song.g[G_DFDBK], en = fxg_en();
     int32_t tr = RATIO(&GP[G_DTIME], enum_rank(&GP[G_DTIME], song.g[G_DTIME])), step = w * (500 + tr) / 10000;
     int32_t pulse = en && step > 0 ? (int32_t)(anim_fr * 2u % (uint32_t)(9 * step)) : -99;   /* (the echo running) */
-    cv_rect(x, y + h - 1, w, 1, T_LINE);
+    for (i = 0; i < w; i += 3) cv_pset(x + i, y + h - 1, T_LINE);   /* (a dotted floor) */
     for (i = 0; i < 9 && a > 8; i++) {
         int32_t px = x + 6 + i * step, bh = (h - 14) * 9 / 10 * a / 1000 * (mix * 7 / 10 + 38) / 127;
         int hit = pulse >= i * step && pulse < (i + 1) * step;
@@ -43,7 +51,7 @@ static void fxg_delay(int32_t x, int32_t y, int32_t w, int32_t h)
         if (en)
             bh = bh * (176 + clamp(en, 0, 288) * 80 / 288) / 256;
         if (bh > 0)
-            cv_rect(px, y + h - 1 - bh, 4, bh, hit ? FXG_H(240) : FXG_H(64 + a * 179 / 1000));
+            cv_rect(px, y + h - 1 - bh, 4, bh, hit ? HUD_YE : i == 0 ? FXG_TC : FXG_H(64 + a * 179 / 1000));
         if (song.g[G_DPING] && w > 120) {
             b[0] = i & 1 ? 'R' : 'L';
             b[1] = 0;
@@ -51,8 +59,10 @@ static void fxg_delay(int32_t x, int32_t y, int32_t w, int32_t h)
         }
         a = a * (fb > 127 ? 127 : fb) / 127;
     }
-    if (pulse >= 0 && x + 6 + pulse + 2 <= x + w)     /* (the pulse itself, on the line) */
-        cv_rect(x + 6 + pulse, y + h - 3, 3, 2, T_TEXT);
+    if (pulse >= 0 && x + 6 + pulse + 2 <= x + w) {   /* (the pulse itself: the HUD's yellow cursor) */
+        cv_rect(x + 6 + pulse, y + 11, 1, h - 12, HUD_YE);
+        cv_rect(x + 4 + pulse, y + 11, 5, 1, HUD_YE);
+    }
     param_format(&GP[G_DTIME], song.g[G_DTIME], b, &u);
     if (w > 120) {
         str_cpy(b + str_len(b), " \xB7 ", 4);
@@ -73,8 +83,13 @@ static void fxg_reverb(int32_t x, int32_t y, int32_t w, int32_t h)
         ch = hh * 9 / 10 * env / 1000 * n / 1000;
         if (en)                                         /* (the tail swells with the output) */
             ch = ch * (168 + clamp(en, 0, 288) * 88 / 288) / 256;
-        if (ch > 0)
-            cv_rect(x + i, top + hh - ch, 1, ch, i == sweep ? T_TEXT : FXG_H(218 - i * 180 / (w ? w : 1)));
+        if (!(i % 5)) {                                 /* (a matrix of cells, 5 px a column) */
+            int32_t r, nr = ch / 6;
+            for (r = 0; r < nr; r++)
+                cv_rect(x + i, top + hh - (r + 1) * 6, 4, 5, i / 5 == sweep / 5 ? HUD_YE : FXG_H(60 + (218 - i * 180 / (w ? w : 1)) * (nr - r / 2) / (nr ? nr : 1) * 3 / 4));
+            for (; r < hh / 6; r++)
+                cv_rect(x + i, top + hh - (r + 1) * 6, 4, 5, T_SURF);
+        }
         e = e * k / 1000;
     }
     fxg_label(x, y, N_RTYPE[clamp(ty, 0, 4)], T_MID, 0);
@@ -97,9 +112,22 @@ static void fxg_chorus(int32_t x, int32_t y, int32_t w, int32_t h)
             int32_t yy = mid + (bg_sin((uint32_t)(i * 65536 / (w ? w : 1) * 2) + (uint32_t)k * 21000u + ph) * amp >> 15);
             yy = clamp(yy, y + 9, y + h - 1);
             if (i)
-                cv_line(x + i - 1, py, x + i, yy, FXG_H(77 + k * 64));
+                cv_line(x + i - 1, py, x + i, yy, k == 0 ? FXG_TC : k == 1 ? T_TEXT : HUD_BL);
             py = yy;
         }
+    }
+    if (w > 120) {                                      /* the stereo an orbit at the left: L against R */
+        int32_t R = (h - 16) / 2, ox = x + R + 2, oy = y + 10 + R, px = 0, py2 = 0, amp = R * (40 + dep * 60 / 127) / 100;
+        cv_rect(x, y + 9, 2 * R + 6, h - 9, T_BG);
+        for (i = 0; i < 48; i += 2) cv_pset(ox + (R * og_cos((uint32_t)i * 1365u) >> 15), oy + (R * og_sin((uint32_t)i * 1365u) >> 15), T_DIM);
+        for (i = 0; i <= 96; i++) {
+            uint32_t a2 = (uint32_t)i * 683u;
+            int32_t xx = ox + (bg_sin(a2 * 2u + ph) * amp >> 15), yy = oy + (bg_sin(a2 * 3u + ph + (uint32_t)st * 200u) * amp >> 15);
+            if (i) cv_line_t(px, py2, xx, yy, FXG_TC, 2);
+            px = xx; py2 = yy;
+        }
+        cv_text(ox - R - 1, oy - 3, &AF_X, "L", T_DIM);
+        cv_text(ox + R - 4, oy - 3, &AF_X, "R", T_DIM);
     }
     str_cpy(b, "STEREO ", sizeof b);
     b[7] = st > 0 ? '+' : 0;
@@ -115,9 +143,7 @@ static void fxg_slicer(int32_t x, int32_t y, int32_t w, int32_t h)
     for (i = 0; i < 16u; i++) {
         int on = ((pat >> i) & 1u) && mode;
         int32_t cx = x0 + (int32_t)i * cw;
-        cv_rect(cx + 1, y + 12, cw - 2, h - 18, on ? FXG_H(102 + song.g[G_SLDEP] * 128 / 127) : T_RAISE);
-        if (i == play)
-            cv_frame(cx, y + 11, cw, h - 16, T_TEXT);
+        cv_rect(cx + 1, y + 12, cw - 2, h - 18, i == play ? (on ? HUD_YE : T_MID) : on ? FXG_H(102 + song.g[G_SLDEP] * 128 / 127) : T_SURF);
     }
     str_cpy(b, mode == SL_OFF ? "OFF" : mode == SL_STUT ? "STUT" : "GATE", sizeof b);
     str_cpy(b + str_len(b), " ", 2);
@@ -149,8 +175,8 @@ static void fxg_master(int32_t x, int32_t y, int32_t w, int32_t h)
     int32_t en = bg_energy(), lvl = song.playing || en > 2 ? 128 + en / 2 : 26, i, py = 0, duck = song.g[G_DUCK];
     int32_t rel = song.g[G_DREL], cy = y + 30, ch = h - 32;
     char b[24];
-    cv_rect(x, y + 2, w, 9, T_RAISE);
-    cv_rect(x, y + 2, w * lvl / 256 > 1 ? w * lvl / 256 : 1, 9, FXG_H(lvl));
+    for (i = 0; i < w / 5; i++)                         /* (the meter a matrix) */
+        cv_rect(x + i * 5, y + 2, 4, 9, i * 5 < w * lvl / 256 ? FXG_H(40 + i * 5 * 216 / (w ? w : 1)) : T_SURF);
     str_cpy(b, "CLIP ", sizeof b);
     fmt_int(b + 5, song.g[G_CLIP]);
     if (w > 120) {
@@ -162,14 +188,15 @@ static void fxg_master(int32_t x, int32_t y, int32_t w, int32_t h)
     if (w > 120) {                                      /* (V10.43) the page: CLIP's curve (in -> out, the level now a dot),
                                                          * PUNCH's bar (its push on the peaks now), then the duck */
         int32_t s = ch, d = song.g[G_CLIP] * 127 / 100, g = 4096 + d * d * 2, dy = 0;
-        cv_frame(x, cy, s, s, T_LINE);
+        for (i = 0; i < s; i += 3) { cv_pset(x + i, cy + s - 1, T_LINE); cv_pset(x, cy + i, T_LINE); }
         for (i = 0; i < s; i++) {
             int32_t yy = cy + s - 1 - tk_dist_y(DT_SOFT, i * 32768 / s, d ? g : 4096, d) * (s - 2) / 32767;
-            if (i) cv_line(x + i - 1, py, x + i, yy, FXG_H(200));
+            if (i) cv_line_t(x + i - 1, py, x + i, yy, FXG_TC, 2);
             if (i == lvl * s / 320) dy = yy;
             py = yy;
         }
-        cv_rect(x + lvl * s / 320 - 1, dy - 1, 3, 3, T_TEXT);
+        cv_rect(x + lvl * s / 320, cy, 1, s, HUD_YE);
+        cv_rect(x + lvl * s / 320 - 2, dy - 2, 5, 5, HUD_YE);
         cv_rect(x + s + 6, cy, 6, s, T_RAISE);
         i = song.g[G_PUNCH] * s / 100 * (lvl - 26) / 230;
         if (i > 0) cv_rect(x + s + 6, cy + s - i, 6, i, FXG_H(230));
@@ -264,20 +291,20 @@ static void fxg_dist(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t 
     uint32_t type = (uint32_t)t->p[P_DTYPE] > DT_AMP ? DT_SOFT : (uint32_t)t->p[P_DTYPE];
     char b[16];
     (void)w;
-    cv_frame(x, y, s, s, T_LINE);
+    for (i = 0; i < s; i += 3) { cv_pset(x + i, cy, T_LINE); cv_pset(x + s / 2, y + i, T_LINE); }
     for (i = 0; i < s; i++) {
         int32_t xx = (i - s / 2) * 131072 / (s / 2), yy = cy - tk_dist_y(type, xx, d ? g : 4096, d) * (s / 2 - 1) * 9 / 10 / 32767;
         yy = clamp(yy, y + 1, y + s - 2);
         if (i)
-            cv_line_t(x + i - 1, py, x + i, yy, FXG_H(102 + d), 2);
+            cv_line_t(x + i - 1, py, x + i, yy, FXG_TC, 2);
         py = yy;
     }
     if (fxg_en() && s > 20) {                           /* the level now, a dot on the curve */
         int32_t xx = clamp(bg_energy(), 0, 256) * 131072 / 256, px = x + s / 2 + xx * (s / 2) / 131072;
         int32_t yy = clamp(cy - tk_dist_y(type, xx, d ? g : 4096, d) * (s / 2 - 1) * 9 / 10 / 32767, y + 3, y + s - 4);
-        cv_rect(clamp(px, x + 3, x + s - 4) - 1, yy - 1, 3, 3, T_TEXT);
+        cv_rect(clamp(px, x + 3, x + s - 4) - 2, yy - 2, 5, 5, HUD_YE);
     }
-    fxg_label(x + s + 8, y + 1, N_DTYPE[type], T_MID, 0);
+    hud_tag(x + s + 8, y + 1, N_DTYPE[type], song.sel % 6u >= 4u ? 0xFFFFu : 0x0000u, FXG_TC);
     str_cpy(b, "TONE ", sizeof b);
     fmt_int(b + 5, t->p[P_DTONE]);
     fxg_label(x + s + 8, y + 15, b, T_DIM, 0);
@@ -329,7 +356,7 @@ static void fx_dots(uint32_t n, uint32_t k, const char *a, const char *b)
 {
     uint32_t i;
     for (i = 0; i < n; i++)
-        cv_rect(6 + (int32_t)i * 7, 6, 5, 3, i == k ? T_THEME : T_DIM);
+        cv_rect(6 + (int32_t)i * 7, 6, i == k ? 5 : 3, 3, i == k ? FXG_TC : T_LINE);
     (void)a; (void)b;                                  /* (its name stood at the right, "FX . T1", "SLICER . SL BUS 2": the
                                                         * header, the tabs and the breadcrumb say it) */
 }
