@@ -48,6 +48,8 @@ const TEXT = {
     scrTitle: "La pantalla, en grande", scrStart: "Mostrar", scrStop: "Detener", scrFull: "Pantalla completa", scrExitFull: "Salir",
     scrSharp: "Píxeles nítidos", scrWaitFm1: "Conectá la FM-1 (Inicio) y tocá Mostrar.", scrWaitEmu: "Prendé el emulador en la pestaña Emulador y tocá Mostrar.",
     scrNo: "Este firmware no tiene espejo de pantalla: actualizá JIANT FM o JIANT BYTE.",
+    scrNoFw: "Tu FM-1 tiene %s, que todavía no trae el espejo de pantalla: llega con la próxima versión del firmware. Mientras tanto, elegí Emulador arriba y mirá la pantalla del emulador.",
+    scrNoShort: "sin espejo de pantalla (llega en la próxima versión)",
     scrHelpFm1: "La FM-1 manda solo lo que cambia: una pantalla quieta no cuesta nada. Mientras se ve acá, la interfaz de la FM-1 puede ir un poco más lenta en páginas muy animadas; el sonido no cambia.",
     scrHelpEmu: "La pantalla del emulador, cuadro a cuadro.",
     scrOrient: "La pantalla de la FM-1 es cuadrada (240 × 240). En vertical ocupa todo el ancho; en horizontal, todo el alto, con los controles al costado. A pantalla completa queda centrada y lo más grande posible en las dos posiciones: girá el celular como te quede cómodo.",
@@ -111,6 +113,8 @@ const TEXT = {
     scrTitle: "The screen, big", scrStart: "Show", scrStop: "Stop", scrFull: "Full screen", scrExitFull: "Exit",
     scrSharp: "Sharp pixels", scrWaitFm1: "Connect the FM-1 (Home) and press Show.", scrWaitEmu: "Switch the emulator on in the Emulator tab and press Show.",
     scrNo: "This firmware has no screen mirror: update JIANT FM or JIANT BYTE.",
+    scrNoFw: "Your FM-1 runs %s, which has no screen mirror yet: it comes with the next firmware release. Meanwhile pick Emulator up top and see the emulator's screen.",
+    scrNoShort: "no screen mirror (comes in the next release)",
     scrHelpFm1: "The FM-1 sends only what changes: a screen at rest costs nothing. While it shows here the FM-1's UI may run a little slower on very animated pages; the sound does not change.",
     scrHelpEmu: "The emulator's screen, frame by frame.",
     scrOrient: "The FM-1's screen is square (240 × 240). In portrait it fills the width; in landscape, the height, with the controls beside it. Full screen keeps it centred and as big as it gets either way: turn the phone as you like.",
@@ -250,9 +254,12 @@ async function find() {
         const info = parseInfo(await link.request(CMD.INFO, [], 900));
         if (!info.jiant) throw new Error("not JIANT");
         letGo();
-        state.dev = { link, input, output, ...info };
+        /* does it mirror its screen? (78 SCREEN, op 0: firmware before the mirror sends no reply) */
+        let screen = false;
+        try { const a = await link.request(CMD.SCREEN, [0], 500); screen = a[1] === 0; } catch (_) {}
+        state.dev = { link, input, output, ...info, screen };
         if (state.fw !== info.kind) setFw(info.kind);
-        state.found = t("found") + `${info.kind === "byte" ? "JIANT BYTE" : "JIANT FM"} ${info.version.replace(/^\S+\s*/, "")}${MOCK ? " " + t("devMock") : ""}`;
+        state.found = t("found") + `${devName(state.dev)}${MOCK ? " " + t("devMock") : ""}` + (state.dev.screen ? "" : " · " + t("scrNoShort"));
         return;
       } catch (_) { link.close(); input.onmidimessage = null; }
     }
@@ -260,6 +267,8 @@ async function find() {
   } catch (e) { state.found = t(e.code || "foundNot"); }
   finally { state.looking = false; render(); }
 }
+/* "JIANT BYTE v0.16", "JIANT FM V10.8.21": the firmware's name once (its INFO says "JIANT BYTE v0.16" or "JIANT V10.8.21") */
+const devName = (d) => `${d.kind === "byte" ? "JIANT BYTE" : "JIANT FM"} ${d.version.replace(/^(JIANT|FELUCCA)\s+/i, "").replace(/^(BYTE|FM)\s+/i, "")}`;
 function letGo() {
   const d = state.dev;
   if (!d) return;
@@ -476,7 +485,11 @@ const fullscreen = () => {
 };
 /* Show: the screen on, and full screen at once (the same tap: browsers allow full screen only from one); Exit leaves full
  * screen with the picture still here, Stop ends it */
-$("scrgo").addEventListener("click", () => { if (scr.on) { screenStop(); return; } fullscreen(); screenStart(); });
+$("scrgo").addEventListener("click", () => {
+  if (scr.on) { screenStop(); return; }
+  if (state.target === "emu" || (state.dev && state.dev.screen)) fullscreen();   // (only a picture that will come goes full screen)
+  screenStart();
+});
 $("scrfull").addEventListener("click", async () => { if (!scr.on) await screenStart(); fullscreen(); });
 $("fsexit").addEventListener("click", fullscreen);
 const sharp = () => {
@@ -697,7 +710,7 @@ function render() {
   const dot = $("devdot");
   dot.className = "dot" + (state.busy ? " warn" : d ? " ok" : "");
   $("devtext").textContent = state.busy ? t("devBusy") : state.looking ? t("devLooking") :
-    d ? `${d.kind === "byte" ? "JIANT BYTE" : "JIANT FM"} ${d.version.replace(/^\S+\s*/, "")}` : t("devNone");
+    d ? devName(d) : t("devNone");
   $("find").disabled = state.looking || state.busy; $("forget").hidden = !d;
   $("findres").textContent = state.found;
   $("step1").classList.toggle("now", !d); $("step3").classList.toggle("now", !!d);
@@ -711,9 +724,12 @@ function render() {
   $("emutitle").textContent = state.fw === "byte" ? "JIANT BYTE" : "JIANT FM";
   // screen
   $("scrgo").textContent = t(scr.on ? "scrStop" : "scrStart");
-  $("scrgo").disabled = state.busy || (!scr.on && state.target === "fm1" && !state.dev);
+  const noMirror = state.target === "fm1" && d && !d.screen;
+  $("scrgo").disabled = state.busy || (!scr.on && state.target === "fm1" && (!d || noMirror));
+  $("scrfull").disabled = noMirror;
   $("scrwait").hidden = scr.on && scr.got;
-  $("scrwait").textContent = scr.on ? t("scrWaiting") : t(state.target === "emu" ? "scrWaitEmu" : "scrWaitFm1");
+  $("scrwait").textContent = scr.on ? t("scrWaiting") : noMirror ? t("scrNoFw").replace("%s", devName(d)) :
+    t(state.target === "emu" ? "scrWaitEmu" : "scrWaitFm1");
   $("scrhelp").textContent = t(state.target === "emu" ? "scrHelpEmu" : "scrHelpFm1");
   $("scr").setAttribute("aria-label", t("scrTitle"));
   if (!scr.on && state.view !== "screen") $("scrstat").textContent = "";
@@ -785,8 +801,8 @@ function mockAccess() {
     if (f.cmd === CMD.INFO) {
       const s = (x) => [...x].map((c) => c.charCodeAt(0)).concat(0);
       const eng = kind === "byte" ? ["ANALOG", "-", "PHASE", "MATH", "WAVE", "DRUM"] : ["ANALOG", "-", "PHASE", "LOFI", "DRUM", "FM6"];
-      deliver(frame(CMD.INFO, [...s(kind === "byte" ? "JIANT V10.7.37" : "JIANT V10.8.19"), eng.length, 100, 40, 64, 10, ...eng.flatMap(s)]));
-    } else if (f.cmd === CMD.SCREEN) {
+      deliver(frame(CMD.INFO, [...s(kind === "byte" ? (QS.has("nomirror") ? "JIANT BYTE v0.16" : "JIANT V10.7.37") : "JIANT V10.8.19"), eng.length, 100, 40, 64, 10, ...eng.flatMap(s)]));
+    } else if (f.cmd === CMD.SCREEN && !QS.has("nomirror")) {      // (?nomirror: firmware from before the mirror: no reply)
       const op = f.a[0] | 0;
       if (op === 1 || (op === 3 && on)) { on = true; draw(); for (const a of scrEncode(fb, 0, 0, 240, 240)) deliver(frame(CMD.SCREEN_DATA, a)); }
       if (op === 4) on = false;
