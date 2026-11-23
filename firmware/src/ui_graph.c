@@ -1222,7 +1222,7 @@ static __attribute__((noinline)) void seq_overlay(const track_t *t, const page_t
         if (bn_on(1))                                   /* (V10.8.8) the component held, large (V10.8.9; V10.8.13: 0.6 s on) */
             hold_banner(bn_nm, bn_k, rec_on(t));
         else
-            cv_text(100, 2, &AF_X, "HOLD A KEY: STEP FX", T_MID);
+            cv_text_r(236, (int32_t)graph_h() - 9, &AF_X, "HOLD A KEY: STEP FX", T_MID, cv_bg);   /* (V10.8.22: at the foot, off the steps) */
     } else if (pg->graph == GR_MOTION || pg->graph == GR_EVENTS) {
         uint8_t idx[MOTION_MAX];
         uint32_t n = ev_rows(idx), cur = ev_row(n);

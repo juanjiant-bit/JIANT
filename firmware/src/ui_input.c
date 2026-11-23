@@ -2418,9 +2418,39 @@ static void scale_link(void)
 }
 
 static void ui_input_frame(void);
+/* (V10.8.22, the owner) MOD: while a slot's SRC or DEST turns, its route in full ("LFO > FILTER CUTOFF"), the engine's own
+ * names for E1..E8; always (HELP OFF too), the message's 40 frames */
+static uint8_t mxn_s;                                   /* the slot turned + 1 (0: none) */
+static const char *const MX_SRC_FULL[MS_N] = {"OFF", "LFO", "ENVELOPE", "VELOCITY", "KEY TRACK", "RANDOM", "MOD WHEEL",
+    "AFTERTOUCH", "EXPRESSION", "MACRO 1", "MACRO 2", "MACRO 3", "MACRO 4", "MOD SEQUENCE", "NOISE", "PROXIMITY", "ENVELOPE 2",
+    "INPUT LEVEL", "T1 LEVEL", "T2 LEVEL", "T3 LEVEL", "T4 LEVEL", "T5 LEVEL", "T6 LEVEL", "OCT+ KEY", "OCT- KEY"};
+static const char *const MX_DST_FULL[MD_N] = {"OFF", "PITCH", "FILTER CUTOFF", "SHAPE", "AMP", "PAN", "DIST SEND",
+    "CHORUS SEND", "DELAY SEND", "REVERB SEND", "LFO RATE", "VIBRATO", 0, 0, 0, 0, 0, 0, 0, 0, "MASTER CLIP", "MASTER PUNCH",
+    "DELAY TIME", "DELAY FEEDBACK", "DELAY TONE", "DELAY MIX", "REVERB SIZE", "REVERB DAMP", "CHORUS RATE", "CHORUS DEPTH",
+    "FX FILTER", "LEVEL", "MACRO 1", "MACRO 2", "MACRO 3", "MACRO 4"};
+static void mx_banner(void)
+{
+    uint32_t s = mxn_s - 1u, src, dst;
+    const char *dn;
+    char b[40];
+    mxn_s = 0;
+    if (s >= 4u) return;
+    src = (uint32_t)clamp(TSEL->p[P_M1SRC + 3u * s], 0, MS_N - 1);
+    dst = (uint32_t)clamp(TSEL->p[P_M1DST + 3u * s], 0, MD_N - 1);
+    dn = MX_DST_FULL[dst];
+    if (!dn) {                                          /* E1..E8: the engine's own label */
+        const param_desc_t *d = track_desc(TSEL, P_E0 + (dst - 12u));
+        dn = d && d->label && d->label[0] != '-' ? d->label : N_MDST[dst];
+    }
+    str_cpy(b, MX_SRC_FULL[src], sizeof b);
+    str_cpy(b + str_len(b), " > ", sizeof b - str_len(b));
+    str_cpy(b + str_len(b), dn, sizeof b - str_len(b));
+    ui_say(b, "");
+}
 static void ui_input(void)
 {
     ui_input_frame();
+    if (mxn_s) mx_banner();                             /* (V10.8.22) the value turned, its route in full */
     if (!ui_preview_ok() && (preview_req || preview_left)) preview_req = PREVIEW_CANCEL;
     gen_tick();                                         /* (V10.7.66) GEN on the bar, ENTRY BUILD */
     scale_link();                                       /* (JIANT 0.4) one scale for every melodic track (after the
@@ -3052,6 +3082,9 @@ static void ui_input_frame(void)
             const param_desc_t *hd = page_desc(pg, k, &hv);
             if (hd)
                 knob_hint(hd->label);
+            if (hd && hd->label && ((hd->label[0] == 'S' && hd->label[1] == 'R') || (hd->label[0] == 'D' && hd->label[1] == 'E')) &&
+                pg->graph == GR_MOD)                    /* (V10.8.22) a slot's SRC / DEST: its full names (mx_banner) */
+                mxn_s = (uint8_t)(hd->label[str_len(hd->label) - 1u] - '0');
         }
         if (home_macros()) {                            /* (0.8.5) HOME's MACROS / ROUTES: M1..M4 */
             macro_v[k] = (uint8_t)clamp(macro_v[k] + accel(EN_K1 + k, s, 127), 0, 127);
