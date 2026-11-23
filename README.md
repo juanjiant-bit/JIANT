@@ -4,6 +4,27 @@
 
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
 [![Emulator](https://img.shields.io/badge/try%20it-in%20the%20browser-ff7a00.svg)](https://juanjiant-bit.github.io/JIANT/emu/)
+[![JIANT Studio](https://img.shields.io/badge/JIANT%20Studio-install%20·%20edit%20·%20screen%20·%20record-c9a2ff.svg)](https://juanjiant-bit.github.io/JIANT/studio/)
+
+## ▶ [JIANT Studio](https://juanjiant-bit.github.io/JIANT/studio/): everything in one page
+
+One page for **JIANT FM and JIANT BYTE**, from a computer or an Android phone (Chrome or Edge, the FM-1 on USB; on a
+phone, its USB-C port with an OTG cable). It finds the FM-1, says which firmware it runs and takes that firmware's
+look. Up top you choose what you work with: **the FM-1 over USB, or the emulator**.
+
+[![JIANT Studio: connect, install, use it](docs/studio.png)](https://juanjiant-bit.github.io/JIANT/studio/)
+
+| Tab | What it does |
+| --- | --- |
+| **Install** | JIANT FM or JIANT BYTE, with a backup first. While it writes, every other JIANT tab (the editor, the emulator, the screen) lets the FM-1 go and waits, so nothing else talks to it mid-install. |
+| **Editor** | Sounds, steps, tracks, projects and backups. It connects by itself to the FM-1 Studio found; with the target on Emulator it edits the FM-1 in the browser (with the next emulator build). |
+| **Screen** | The FM-1's screen as big as yours, straight to full screen: on a phone it fills the width upright and the height on its side. Needs firmware with the screen mirror (coming in the next release); the emulator's screen works now. |
+| **Emulator** | JIANT FM or JIANT BYTE in the browser, with sound; play it from a MIDI keyboard and choose which input. |
+| **Record** | The master or the stems as WAV: from the FM-1's USB audio (stereo, or in USB > STEMS the six tracks and the effects apart, as a ZIP) or from the emulator. What you play comes out as a MIDI file too. |
+| **Other devices** | JIANT FM on the SMK-37, the MPC Sample, the MPC standalones and as VST3 / AU / LV2 / app: each with its emulator, manual and download. |
+
+English and Spanish. To look around without an FM-1: **[Studio with a simulated FM-1](https://juanjiant-bit.github.io/JIANT/studio/?mock=1)**.
+Its code: [`web/studio`](web/studio) (run it locally with `python3 web/studio/dev_server.py`).
 
 > **New: JIANT FM beyond the FM-1 (preview).** The same firmware on the **Akai MPC Sample**, the **MPC standalones**
 > (plugin), **VST3 / LV2 / standalone** for Linux and Windows, and soon the **M-VAVE SMK-37**. On these bigger CPUs it
