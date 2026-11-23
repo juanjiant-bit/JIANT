@@ -3,7 +3,7 @@
      Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
      Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant)
      The page follows X0X's browser page, web/emu/index.html of charlesvestal/fm1-x0x (GPL-3.0), a Felucca fork. -->
-<html lang="en">
+<html lang="en" data-skin="fm">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -70,6 +70,26 @@ kbd { font: 600 11px ui-monospace, Menlo, monospace; border: 1px solid var(--rul
 footer { margin-top: 12px; font-size: 12px; }
 footer nav a { margin: 0 6px; }
 footer small { font-size: 11px; opacity: .8; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Instrument+Sans:wght@400;500;600&amp;family=Silkscreen&amp;family=VT323&amp;display=swap">
+<style id="jiant-skin">
+/*SKIN-BEGIN*/
+/* (studio) The emulator's page in the firmware's look, as JIANT Studio, the editor and the installer (html[data-skin]): the
+   page around the drawn FM-1 dark, its panels as cards, the same type. The FM-1 itself is drawn as before. */
+:root[data-skin="fm"] { --bg:#050409; --fg:#efe6c8; --dim:#a39bb6; --rule:rgba(239,230,200,.16); --sk-panel:#0d0b14; --sk-accent:#c9a2ff;
+  --sk-body:"Instrument Sans",system-ui,sans-serif; --sk-mono:"IBM Plex Mono",ui-monospace,monospace; --sk-rs:9px; --sk-b:1px; color-scheme:dark; }
+:root[data-skin="byte"] { --bg:#000; --fg:#f2f0f7; --dim:#9d94b8; --rule:rgba(167,123,255,.32); --sk-panel:#0b0912; --sk-accent:#a77bff;
+  --sk-body:"IBM Plex Mono",ui-monospace,monospace; --sk-mono:"IBM Plex Mono",ui-monospace,monospace; --sk-rs:2px; --sk-b:2px; color-scheme:dark; }
+:root[data-skin] body { background:var(--bg) !important; color:var(--fg) !important; font-family:var(--sk-body) !important; }
+:root[data-skin="fm"] body { background:radial-gradient(1100px 480px at 75% -10%,#1b1030 0,transparent 60%),var(--bg) !important; }
+:root[data-skin] details { background:var(--sk-panel) !important; border:var(--sk-b) solid var(--rule) !important; border-radius:var(--sk-rs) !important; color:var(--fg); }
+:root[data-skin] summary { color:var(--fg); }
+:root[data-skin] kbd { background:var(--sk-panel); color:var(--fg); border-color:var(--rule); }
+:root[data-skin] footer, :root[data-skin] .keys, :root[data-skin] .hint, :root[data-skin] #version { color:var(--dim) !important; }
+:root[data-skin] a { color:inherit; }
+:root[data-skin] button.go, :root[data-skin] #go { background:var(--fg); color:var(--bg); border-radius:var(--sk-rs); font:600 16px/1 var(--sk-body); }
+:root[data-skin="byte"] #go { background:var(--sk-accent); color:#000; }
+/*SKIN-END*/
 </style>
 </head>
 <body>

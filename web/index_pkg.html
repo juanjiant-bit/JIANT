@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only
      Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments
      Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) -->
-<html lang="ja">
+<html lang="ja" data-skin="fm">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -39,12 +39,82 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Instrument+Sans:wght@400;500;600&amp;family=Noto+Sans+JP:wght@400;500&amp;display=swap">
 <style id="jiant-brand">/*JIANT_UI*/</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Instrument+Sans:wght@400;500;600&amp;family=Silkscreen&amp;family=VT323&amp;display=swap">
+<style id="jiant-skin">
+/*SKIN-BEGIN*/
+/* (studio) The installer in the firmware's own look, JIANT FM's or JIANT BYTE's (html[data-skin]; JIANT Studio sets it), the
+   same tokens and type as JIANT Studio and the editor: the notices as cards, Install as the one big button, the progress in
+   the heat gradient, the report in its panel. Nothing of the page's markup or code changes for it. */
+:root[data-skin="fm"] { --bg:#050409; --fg:#efe6c8; --dim:#a39bb6; --line:rgba(239,230,200,.16); --sk-panel:#0d0b14; --sk-field:#08070e;
+  --sk-accent:#c9a2ff; --sk-on:#050409; --sk-frame:#3fe0e6; --sk-ok:#7be0a8; --sk-warn:#ffc07a; --sk-bad:#ff6b6b;
+  --sk-heat:linear-gradient(90deg,#3b6cff,#9d6bff 25%,#ff4a7a 50%,#ff8a1f 75%,#ffe14d);
+  --sk-display:"Michroma","Arial Black",system-ui,sans-serif; --sk-body:"Instrument Sans",system-ui,sans-serif; --sk-mono:"IBM Plex Mono",ui-monospace,monospace;
+  --sk-r:14px; --sk-rs:9px; --sk-b:1px; color-scheme:dark; }
+:root[data-skin="byte"] { --bg:#000; --fg:#f2f0f7; --dim:#9d94b8; --line:rgba(167,123,255,.32); --sk-panel:#0b0912; --sk-field:#05040a;
+  --sk-accent:#a77bff; --sk-on:#000; --sk-frame:#a77bff; --sk-ok:#6bff9e; --sk-warn:#ffb21a; --sk-bad:#ff3b3b;
+  --sk-heat:linear-gradient(90deg,#ff3b3b,#ff7a1a 40%,#ffb21a 60%,#a77bff);
+  --sk-display:"Silkscreen","VT323",ui-monospace,monospace; --sk-body:"IBM Plex Mono",ui-monospace,monospace; --sk-mono:"IBM Plex Mono",ui-monospace,monospace;
+  --sk-r:3px; --sk-rs:2px; --sk-b:2px; color-scheme:dark; }
+:root[data-skin] body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.55 var(--sk-body); }
+:root[data-skin="fm"] body { background:radial-gradient(1100px 480px at 75% -10%,#1b1030 0,transparent 60%),var(--bg); }
+:root[data-skin="byte"] body { background:radial-gradient(1px 1px at 12% 18%,#fff8,transparent),radial-gradient(1px 1px at 72% 12%,#fff6,transparent),
+  radial-gradient(1px 1px at 33% 64%,#fff5,transparent),radial-gradient(1px 1px at 86% 48%,#fff7,transparent),radial-gradient(1px 1px at 8% 82%,#fff6,transparent),#000;
+  background-size:340px 340px; }
+:root[data-skin] main { max-width:660px; margin:0 auto; padding:28px 16px 56px; }
+:root[data-skin] a { color:inherit; }
+:root[data-skin] h1, :root[data-skin] h1.jiant-wordmark { font:400 clamp(30px,7vw,46px)/1.05 var(--sk-display); margin:8px 0 18px; letter-spacing:.02em; }
+:root[data-skin] h1 a { text-decoration:none; }
+:root[data-skin] h1 .fm { background:var(--sk-heat); -webkit-background-clip:text; background-clip:text; color:transparent; }
+:root[data-skin] h1 .jiant-tool { font:500 11px/1 var(--sk-mono); letter-spacing:.16em; color:var(--sk-frame); border:var(--sk-b) solid var(--line);
+  border-radius:var(--sk-rs); padding:6px 8px; margin-left:12px; vertical-align:middle; }
+:root[data-skin] h1::after { content:""; display:block; height:3px; max-width:360px; margin-top:16px; border-radius:3px; background:var(--sk-heat); }
+:root[data-skin="byte"] h1::after { height:5px; border-radius:0; box-shadow:0 7px 0 -1px #ff7a1a55; }
+:root[data-skin] p { margin:0 0 12px; }
+:root[data-skin] .small { font-size:13px; color:var(--dim); }
+/* the notices (with their own inline borders): cards */
+:root[data-skin] .jiant-notice, :root[data-skin] main > div[style*="border"], :root[data-skin] #notice, :root[data-skin] #six {
+  background:var(--sk-panel) !important; border:var(--sk-b) solid var(--line) !important; border-left:3px solid var(--sk-warn) !important;
+  border-radius:var(--sk-rs) !important; padding:16px 18px !important; margin:16px 0 !important; }
+:root[data-skin] [data-t="samples"] { color:var(--sk-warn) !important; }
+:root[data-skin] [data-t="dual"], :root[data-skin] p.kofi { border-left:3px solid var(--sk-accent) !important; }
+/* buttons and fields */
+:root[data-skin] button, :root[data-skin] select, :root[data-skin] input[type="file"], :root[data-skin] textarea {
+  font:500 13px/1.3 var(--sk-mono); color:var(--fg); background:var(--sk-field); border:var(--sk-b) solid var(--line); border-radius:var(--sk-rs); }
+:root[data-skin] button { padding:9px 14px; min-height:40px; cursor:pointer; }
+:root[data-skin] button:hover:not(:disabled) { border-color:var(--sk-accent); }
+:root[data-skin] button:disabled { opacity:.45; cursor:default; }
+:root[data-skin] select { padding:9px 10px; min-height:44px; width:100%; margin:6px 0; }
+:root[data-skin] :focus-visible { outline:2px solid var(--sk-accent); outline-offset:2px; }
+/* Install: the one big button */
+:root[data-skin] #go { width:100%; min-height:56px; margin:8px 0 4px; font:600 17px/1 var(--sk-body); background:var(--fg); color:var(--bg); border-color:var(--fg); }
+:root[data-skin="byte"] #go { font:15px/1 var(--sk-display); text-transform:uppercase; background:var(--sk-accent); border-color:var(--sk-accent); color:var(--sk-on); }
+:root[data-skin] #go:disabled { opacity:.4; }
+:root[data-skin] nav.lang, :root[data-skin] button.lang { float:right; display:flex; gap:4px; background:none; border:0; }
+:root[data-skin] nav.lang button, :root[data-skin] button.lang { min-height:30px; padding:4px 8px; font-size:11px; color:var(--dim); }
+:root[data-skin] nav.lang button[aria-pressed="true"] { color:var(--sk-on); background:var(--sk-accent); border-color:var(--sk-accent); }
+/* the official firmware: a panel that opens */
+:root[data-skin] details { background:var(--sk-panel); border:var(--sk-b) solid var(--line); border-radius:var(--sk-rs); padding:12px 16px; }
+:root[data-skin] summary { cursor:pointer; font-weight:600; }
+/* the progress and what it says */
+:root[data-skin] progress { -webkit-appearance:none; appearance:none; width:100%; height:10px; margin:18px 0 6px; border:var(--sk-b) solid var(--line);
+  border-radius:var(--sk-rs); background:var(--sk-field); overflow:hidden; }
+:root[data-skin] progress::-webkit-progress-bar { background:var(--sk-field); }
+:root[data-skin] progress::-webkit-progress-value { background:var(--sk-heat); }
+:root[data-skin] progress::-moz-progress-bar { background:var(--sk-heat); }
+:root[data-skin] #status { font:500 15px/1.5 var(--sk-mono); color:var(--sk-frame); min-height:1.5em; }
+:root[data-skin] .tip { border-left:3px solid var(--sk-bad); background:color-mix(in srgb,var(--sk-bad) 8%,transparent); padding:10px 16px; border-radius:0 var(--sk-rs) var(--sk-rs) 0; }
+:root[data-skin] .diag { background:var(--sk-panel); border:var(--sk-b) solid var(--line); border-radius:var(--sk-rs); padding:14px 16px; margin:18px 0; }
+:root[data-skin] pre#log { font:11px/1.5 var(--sk-mono); color:var(--dim); white-space:pre-wrap; max-height:240px; overflow:auto; }
+/*SKIN-END*/
+</style>
 </head>
 <body class="jiant-installer">
 <main>
   <p id="beta-banner" hidden style="margin:0 0 20px;padding:14px;border:2px solid #ff8a00;color:#ff8a00;font:700 24px/1.2 monospace">BETA</p>
   <nav class="lang" id="lang" aria-label="Language"><button data-lang="es" lang="es">Español</button><button data-lang="en" lang="en">English</button><button data-lang="ja" lang="ja">日本語</button></nav>
-  <h1 class="jiant-wordmark"><a href="https://juanjiant-bit.github.io/JIANT/" aria-label="JIANT FM home">JIANT<span class="fm">FM</span></a><span class="jiant-tool">INSTALLER</span></h1>
+  <h1 class="jiant-wordmark"><a href="https://juanjiant-bit.github.io/JIANT/" aria-label="JIANT FM home">JIANT <span class="fm">FM</span></a><span class="jiant-tool">INSTALLER</span></h1>
   <p data-t="intro"></p>
   <p data-t="warn"></p>
   <p data-t="samples" style="color:#ec6e50"></p>

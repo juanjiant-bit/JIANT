@@ -211,6 +211,10 @@
   .meter { height: 10px; border-radius: 5px; background: var(--field); border: var(--border) solid var(--line); overflow: hidden; }
   .meter i { display: block; height: 100%; width: 0; background: var(--heat); transition: width .08s linear; }
   .clock { font: 32px/1 var(--mono); letter-spacing: .04em; }
+  #recgo.recording { background: var(--bad); border-color: var(--bad); color: #fff; }
+  #recgo.recording::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #fff; animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .2; } }
+  @media (prefers-reduced-motion: reduce) { #recgo.recording::before { animation: none; } }
   :root[data-skin="byte"] .clock { font-size: 42px; color: var(--accent-2); }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
   label.field { display: grid; gap: 6px; font-size: 13px; color: var(--dim); }
@@ -371,6 +375,8 @@
         <h2 data-t="recAudio"></h2>
         <p class="small dim" id="recsrchelp"></p>
         <label class="field"><span data-t="recInput"></span><select id="recdev"></select></label>
+        <label class="field" style="margin-top:10px"><span data-t="recMode"></span><select id="recmode">
+          <option value="2" data-t="recStereo"></option><option value="8" data-t="recStems8"></option></select></label>
         <div class="row" style="margin: 14px 0 10px">
           <button class="btn" id="recgo" data-t="recStart"></button>
           <span class="clock" id="recclock">00:00</span>

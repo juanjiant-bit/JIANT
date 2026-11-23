@@ -56,6 +56,8 @@ const TEXT = {
     scrRate: " KB/s", scrFps: " cuadros/s", scrWaiting: "esperando la imagen…",
     emuMidi: "MIDI que toca el emulador", emuMidiAll: "Todas las entradas", emuMidiNone: "Ninguna", emuMidiOff: "(prendé el emulador)",
     recTitle: "Grabar", recAudio: "Audio", recInput: "Entrada", recStart: "Grabar", recStop: "Detener",
+    recMode: "Canales", recStereo: "Estéreo (la mezcla)", recStems8: "STEMS: 8 canales (USB > STEMS en la FM-1)",
+    recFewer: "el dispositivo dio menos canales que los pedidos (Android suele dar el audio USB en mono)", recSaved: "Toma guardada: está abajo, en Tomas.",
     recSrcFm1: "La FM-1 por USB es una entrada de audio: estéreo (USB > AUDIO), u 8 canales en USB > STEMS (las 6 pistas y los efectos por separado). Elegila acá.",
     recSrcEmu: "Graba la salida del emulador (prendelo en la pestaña Emulador).",
     recNoDev: "No hay entradas de audio (dale permiso al micrófono para verlas).", recAsk: "Pedir permiso de audio",
@@ -121,6 +123,8 @@ const TEXT = {
     scrRate: " KB/s", scrFps: " frames/s", scrWaiting: "waiting for the picture…",
     emuMidi: "MIDI that plays the emulator", emuMidiAll: "Every input", emuMidiNone: "None", emuMidiOff: "(switch the emulator on)",
     recTitle: "Record", recAudio: "Audio", recInput: "Input", recStart: "Record", recStop: "Stop",
+    recMode: "Channels", recStereo: "Stereo (the mix)", recStems8: "STEMS: 8 channels (USB > STEMS on the FM-1)",
+    recFewer: "the device gave fewer channels than asked (Android often hands USB audio over in mono)", recSaved: "Take saved: it is below, under Takes.",
     recSrcFm1: "The FM-1 over USB is an audio input: stereo (USB > AUDIO), or 8 channels in USB > STEMS (the 6 tracks and the effects apart). Pick it here.",
     recSrcEmu: "Records the emulator's output (switch it on in the Emulator tab).",
     recNoDev: "No audio inputs (allow the microphone to list them).", recAsk: "Ask for audio permission",
@@ -387,6 +391,7 @@ function dress(iframe) {
       d.head.append(l);
     }
     s.textContent = DRESS[state.fw] + EMBEDDED;
+    d.documentElement.dataset.skin = state.fw;          // (the editor's own design layer, editor.html #jiant-skin: the firmware's look)
   } catch (_) { /* another origin: its own look */ }
 }
 function editorLoaded() {
@@ -547,8 +552,13 @@ async function recStart() {
     } else {
       const id = $("recdev").value;
       if (!id || id === "ask") { await renderAudioInputs(true); return; }
-      stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: id }, channelCount: { ideal: 8 },
-        echoCancellation: false, noiseSuppression: false, autoGainControl: false, sampleRate: 44100 } });
+      /* stereo: exactly 2 channels if the device gives them (Android otherwise hands USB audio over in mono); STEMS: up
+         to 8. With what it cannot give, whatever it can */
+      const want = +$("recmode").value === 8 ? 8 : 2;
+      const base = { deviceId: { exact: id }, echoCancellation: false, noiseSuppression: false, autoGainControl: false, sampleRate: { ideal: 44100 } };
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: { ...base, channelCount: want === 8 ? { min: 3, ideal: 8 } : { exact: 2 } } }); }
+      catch (_) { stream = await navigator.mediaDevices.getUserMedia({ audio: { ...base, channelCount: { ideal: want } } }); }
+      rec.want = want;
     }
   } catch (e) { $("recstat").textContent = e.message; return; }
   const ac = new AudioContext({ latencyHint: "playback" });
@@ -574,7 +584,7 @@ async function recStart() {
     $("recclock").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
     $("recmeter").style.width = `${Math.min(100, rec.peak * 100).toFixed(0)}%`;
   }, 100);
-  $("recstat").textContent = `${ch}${t("recChannels")} · ${rec.rate} Hz`;
+  $("recstat").textContent = `${ch}${t("recChannels")} · ${rec.rate} Hz` + (state.target !== "emu" && ch < (rec.want || 2) ? ` · ${t("recFewer")}` : "");
   render();
 }
 function recStop() {
@@ -587,6 +597,8 @@ function recStop() {
     rec.ac.close().catch(() => {});
     if (midiTapInput) { midiTapInput.removeEventListener("midimessage", midiTap); midiTapInput = null; }
     makeTake();
+    $("recclock").textContent = "00:00"; $("recmeter").style.width = "0%";
+    $("recstat").textContent = t("recSaved");
     render();
   };
   setTimeout(finish, 150);                                 // (the worklet's last chunk)
@@ -736,6 +748,8 @@ function render() {
   $("scrfull").hidden = !(document.fullscreenEnabled || document.webkitFullscreenEnabled);
   // record
   $("recgo").textContent = t(rec.on ? "recStop" : "recStart");
+  $("recgo").classList.toggle("recording", rec.on);
+  $("recmode").disabled = rec.on || state.target === "emu";
   $("recgo").disabled = state.busy;
   $("recsrchelp").textContent = t(state.target === "emu" ? "recSrcEmu" : "recSrcFm1");
   if (state.view === "rec" && !rec.on) { renderAudioInputs(); renderMidiInputs(); }

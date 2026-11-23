@@ -4,7 +4,7 @@
      Portions Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) -->
 <!-- Felucca web editor. One file, no libraries. Protocol: EDITOR_PROTOCOL.md.
      Add ?mock=1 to the URL to use a built-in simulated device. -->
-<html lang="ja">
+<html lang="ja" data-skin="fm">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -160,13 +160,167 @@
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Instrument+Sans:wght@400;500;600&amp;family=Noto+Sans+JP:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Instrument+Sans:wght@400;500;600&amp;family=Noto+Sans+JP:wght@400;500&amp;family=Silkscreen&amp;family=VT323&amp;display=swap">
 <style id="jiant-brand">/*JIANT_UI*/</style>
+<style id="jiant-skin">
+/*SKIN-BEGIN*/
+/* (studio) The editor in the firmware's own look, JIANT FM's or JIANT BYTE's (html[data-skin]; JIANT Studio sets it):
+   each parameter a card as the FM-1's screen draws one (its name small, its value big in the accent, a bar of how much),
+   the sections as the firmware's tabs, each track its colour; the same tokens and type as JIANT Studio. The same block in
+   both sites' editor.html; nothing of the page's markup or code changes for it (one script below: the bars' fill). */
+:root[data-skin="fm"] {
+  --bg:#050409; --fg:#efe6c8; --dim:#a39bb6; --line:rgba(239,230,200,.16); --sk-panel:#0d0b14; --sk-field:#08070e;
+  --sk-accent:#c9a2ff; --sk-on:#050409; --sk-frame:#3fe0e6; --sk-ok:#7be0a8; --sk-warn:#ffc07a;
+  --sk-heat:linear-gradient(90deg,#3b6cff,#9d6bff 25%,#ff4a7a 50%,#ff8a1f 75%,#ffe14d);
+  --sk-k1:#ff9a4d; --sk-k2:#ff9a4d; --sk-k3:#ff9a4d; --sk-k4:#ff9a4d;
+  --sk-t1:#9d97ff; --sk-t2:#d39bff; --sk-t3:#ff9fd2; --sk-t4:#ff9a8a; --sk-t5:#ffc07a; --sk-t6:#fff3a8;
+  --sk-display:"Michroma","Arial Black",system-ui,sans-serif; --sk-body:"Instrument Sans","Noto Sans JP",system-ui,sans-serif;
+  --sk-mono:"IBM Plex Mono","Noto Sans JP",ui-monospace,monospace; --sk-value:"Instrument Sans",system-ui,sans-serif; --sk-value-size:22px;
+  --sk-r:12px; --sk-rs:8px; --sk-b:1px; color-scheme:dark;
+}
+:root[data-skin="byte"] {
+  --bg:#000; --fg:#f2f0f7; --dim:#9d94b8; --line:rgba(167,123,255,.32); --sk-panel:#0b0912; --sk-field:#05040a;
+  --sk-accent:#a77bff; --sk-on:#000; --sk-frame:#a77bff; --sk-ok:#6bff9e; --sk-warn:#ffb21a;
+  --sk-heat:linear-gradient(90deg,#ff3b3b,#ff7a1a 40%,#ffb21a 60%,#a77bff);
+  --sk-k1:#ff6fae; --sk-k2:#a77bff; --sk-k3:#ff7a1a; --sk-k4:#6bc8ff;
+  --sk-t1:#ff7a1a; --sk-t2:#a77bff; --sk-t3:#ff3b3b; --sk-t4:#6bc8ff; --sk-t5:#ffd23f; --sk-t6:#f2f0f7;
+  --sk-display:"Silkscreen","VT323",ui-monospace,monospace; --sk-body:"IBM Plex Mono","Noto Sans JP",ui-monospace,monospace;
+  --sk-mono:"IBM Plex Mono","Noto Sans JP",ui-monospace,monospace; --sk-value:"VT323",ui-monospace,monospace; --sk-value-size:25px;
+  --sk-r:3px; --sk-rs:2px; --sk-b:2px; color-scheme:dark;
+}
+:root[data-skin] body { background:var(--bg); color:var(--fg); font:14px/1.5 var(--sk-body); }
+:root[data-skin="fm"] body { background:radial-gradient(1200px 500px at 70% -10%,#1b1030 0,transparent 60%),var(--bg); }
+:root[data-skin="byte"] body { background:
+  radial-gradient(1px 1px at 12% 18%,#fff8,transparent),radial-gradient(1px 1px at 72% 12%,#fff6,transparent),
+  radial-gradient(1px 1px at 33% 64%,#fff5,transparent),radial-gradient(1px 1px at 86% 48%,#fff7,transparent),
+  radial-gradient(1px 1px at 52% 31%,#fff4,transparent),radial-gradient(1px 1px at 8% 82%,#fff6,transparent),#000;
+  background-size:340px 340px; }
+:root[data-skin] main { max-width:1180px; padding:24px 16px 56px; }
+:root[data-skin] a { color:inherit; }
+/* the wordmark: JIANT and the firmware's word in its colours */
+:root[data-skin] h1.jiant-wordmark { font:400 clamp(28px,5vw,44px)/1 var(--sk-display); letter-spacing:.02em; margin:0 0 6px; }
+:root[data-skin] h1.jiant-wordmark a { text-decoration:none; }
+:root[data-skin] h1.jiant-wordmark .fm { background:var(--sk-heat); -webkit-background-clip:text; background-clip:text; color:transparent; }
+:root[data-skin] h1.jiant-wordmark .jiant-tool { font:500 11px/1 var(--sk-mono); letter-spacing:.16em; color:var(--sk-frame);
+  border:var(--sk-b) solid var(--line); border-radius:var(--sk-rs); padding:6px 8px; margin-left:12px; vertical-align:middle; }
+/* the connection bar and the tabs: a panel, the firmware's tabs (the one shown filled) */
+:root[data-skin] header.top { background:var(--sk-panel); border:var(--sk-b) solid var(--line); border-radius:var(--sk-r); padding:14px 14px 0; margin:14px 0 18px; }
+:root[data-skin] nav.tabs { display:flex; flex-wrap:wrap; gap:6px; border:0; margin-top:12px; padding-bottom:12px; border-bottom:var(--sk-b) solid var(--line); }
+:root[data-skin] nav.tabs button { font:500 11px/1 var(--sk-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--dim);
+  background:var(--sk-field); border:var(--sk-b) solid var(--line); border-radius:var(--sk-rs); padding:10px 12px; min-height:38px; cursor:pointer; }
+:root[data-skin="byte"] nav.tabs button { font:11px/1 var(--sk-display); }
+:root[data-skin] nav.tabs button[aria-selected="true"] { background:var(--sk-accent); border-color:var(--sk-accent); color:var(--sk-on); }
+:root[data-skin] nav.tabs button .ic { margin-right:6px; }
+/* buttons, fields, lists */
+:root[data-skin] button, :root[data-skin] select, :root[data-skin] input[type="text"], :root[data-skin] input[type="number"],
+:root[data-skin] input:not([type]), :root[data-skin] textarea {
+  font:500 13px/1.3 var(--sk-mono); color:var(--fg); background:var(--sk-field); border:var(--sk-b) solid var(--line); border-radius:var(--sk-rs); }
+:root[data-skin] button { padding:8px 12px; min-height:36px; cursor:pointer; }
+:root[data-skin] button:hover:not(:disabled) { border-color:var(--sk-accent); }
+:root[data-skin] button:disabled { opacity:.45; cursor:default; }
+:root[data-skin] #connect { background:var(--fg); color:var(--bg); border-color:var(--fg); font-weight:600; }
+:root[data-skin="byte"] #connect { background:var(--sk-accent); border-color:var(--sk-accent); color:var(--sk-on); font:12px/1 var(--sk-display); text-transform:uppercase; }
+:root[data-skin] select { padding:6px 8px; }
+:root[data-skin] select[size] { padding:4px; }
+:root[data-skin] select[size] option { padding:3px 6px; border-radius:var(--sk-rs); }
+:root[data-skin] select[size] option:checked { background:var(--sk-accent); color:var(--sk-on); }
+:root[data-skin] :focus-visible { outline:2px solid var(--sk-accent); outline-offset:2px; }
+:root[data-skin] summary { cursor:pointer; color:var(--sk-frame); font:12px/1.6 var(--sk-mono); }
+:root[data-skin] .dim, :root[data-skin] #status { color:var(--dim); }
+:root[data-skin] #status { font:12px/1.6 var(--sk-mono); color:var(--sk-frame); }
+:root[data-skin] .hint { border-left:3px solid var(--sk-warn); background:color-mix(in srgb,var(--sk-warn) 9%,transparent); padding:8px 12px; border-radius:0 var(--sk-rs) var(--sk-rs) 0; }
+/* the track buttons: each track its colour, the selected one filled */
+:root[data-skin] #trackbtns { display:inline-flex; gap:6px; }
+:root[data-skin] #trackbtns button { --tc:var(--sk-t1); min-width:38px; min-height:34px; font:600 14px/1 var(--sk-mono);
+  color:var(--tc); border-color:color-mix(in srgb,var(--tc) 55%,transparent); background:var(--sk-field); }
+:root[data-skin] #trackbtns button:nth-child(2) { --tc:var(--sk-t2); } :root[data-skin] #trackbtns button:nth-child(3) { --tc:var(--sk-t3); }
+:root[data-skin] #trackbtns button:nth-child(4) { --tc:var(--sk-t4); } :root[data-skin] #trackbtns button:nth-child(5) { --tc:var(--sk-t5); }
+:root[data-skin] #trackbtns button:nth-child(6) { --tc:var(--sk-t6); }
+:root[data-skin] #trackbtns button[aria-pressed="true"], :root[data-skin] #trackbtns button.sel { background:var(--tc); color:var(--sk-on); border-color:var(--tc); }
+/* the sections: a panel each, its title as the firmware's tab, its parameters as cards */
+:root[data-skin] .groups { columns:auto; display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; align-items:start; }
+:root[data-skin] .group { background:var(--sk-panel); border:var(--sk-b) solid var(--line); border-radius:var(--sk-r); padding:14px;
+  margin:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(98px,1fr)); gap:8px; break-inside:avoid; }
+:root[data-skin] .group > :not(.row), :root[data-skin] .group > .row.modrow { grid-column:1/-1; }
+:root[data-skin] .group h2 { display:flex; align-items:center; gap:8px; margin:0 0 4px; padding:0 0 10px; border-bottom:var(--sk-b) solid var(--line);
+  font:500 12px/1 var(--sk-mono); letter-spacing:.12em; text-transform:uppercase; color:var(--fg); }
+:root[data-skin="byte"] .group h2 { font:13px/1 var(--sk-display); color:var(--sk-accent); }
+:root[data-skin] .group h2::after { content:""; flex:1; height:3px; border-radius:3px; background:var(--sk-heat); opacity:.55; max-width:80px; margin-left:auto; }
+:root[data-skin] .group h3 { margin:6px 0 0; font:500 10px/1.2 var(--sk-mono); letter-spacing:.14em; text-transform:uppercase; color:var(--sk-frame); }
+:root[data-skin] .group p { margin:0; }
+/* a parameter: name, value, how much (the firmware's card) */
+:root[data-skin] .group .row:not(.modrow) { --kc:var(--sk-k1); display:grid; grid-template-columns:1fr; grid-template-areas:"l" "v" "c";
+  gap:2px; align-content:start; min-height:0; padding:8px 9px 9px; background:var(--sk-field);
+  border:var(--sk-b) solid color-mix(in srgb,var(--kc) 28%,transparent); border-radius:var(--sk-rs); }
+:root[data-skin] .group .row:not(.modrow):nth-of-type(4n+2) { --kc:var(--sk-k2); }
+:root[data-skin] .group .row:not(.modrow):nth-of-type(4n+3) { --kc:var(--sk-k3); }
+:root[data-skin] .group .row:not(.modrow):nth-of-type(4n+4) { --kc:var(--sk-k4); }
+:root[data-skin] .group .row:not(.modrow):hover, :root[data-skin] .group .row:not(.modrow):focus-within { border-color:var(--kc); }
+:root[data-skin] .group .row:not(.modrow) > span:first-child { grid-area:l; font:500 10px/1.2 var(--sk-mono); letter-spacing:.08em;
+  text-transform:uppercase; color:var(--fg); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+:root[data-skin] .group .row:not(.modrow) > .v { grid-area:v; font:400 var(--sk-value-size)/1.1 var(--sk-value); color:var(--kc);
+  text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+:root[data-skin] .group .row:not(.modrow) > input, :root[data-skin] .group .row:not(.modrow) > select,
+:root[data-skin] .group .row:not(.modrow) > .sel, :root[data-skin] .group .row:not(.modrow) > div { grid-area:c; width:100%; min-width:0; }
+:root[data-skin] .group .row.pushed { border-color:var(--sk-ok); box-shadow:0 0 0 1px var(--sk-ok); }
+/* a list's card: the choice is the value (the select itself, large) */
+:root[data-skin] .group .row:not(.modrow):has(> select) > .v { display:none; }
+:root[data-skin] .group .row:not(.modrow) > select { grid-area:v; font:400 var(--sk-value-size)/1.1 var(--sk-value); color:var(--kc);
+  background:transparent; border:0; padding:0; appearance:none; -webkit-appearance:none; cursor:pointer; text-overflow:ellipsis; }
+:root[data-skin="fm"] .group .row:not(.modrow) > select { font-size:14px; }
+:root[data-skin] .group .row:not(.modrow) > select option { font:13px var(--sk-mono); background:var(--sk-panel); color:var(--fg); }
+/* the bars: a range as the firmware's bar, filled to its value (--p: the script below) */
+:root[data-skin] input[type="range"] { -webkit-appearance:none; appearance:none; height:16px; background:transparent; cursor:pointer; margin:2px 0 0;
+  --kcol:var(--kc,var(--sk-accent)); }
+:root[data-skin] input[type="range"]::-webkit-slider-runnable-track { height:5px; border-radius:var(--sk-rs);
+  background:linear-gradient(90deg,var(--kcol) 0 var(--p,0%),color-mix(in srgb,var(--fg) 14%,transparent) var(--p,0%) 100%); }
+:root[data-skin] input[type="range"]::-moz-range-track { height:5px; border-radius:var(--sk-rs); background:color-mix(in srgb,var(--fg) 14%,transparent); }
+:root[data-skin] input[type="range"]::-moz-range-progress { height:5px; border-radius:var(--sk-rs); background:var(--kcol); }
+:root[data-skin] input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; width:11px; height:15px; margin-top:-5px;
+  border-radius:var(--sk-rs); background:var(--fg); border:0; box-shadow:0 0 0 2px var(--bg); }
+:root[data-skin] input[type="range"]::-moz-range-thumb { width:11px; height:15px; border-radius:var(--sk-rs); background:var(--fg); border:0; }
+:root[data-skin] input[type="range"]:disabled { opacity:.35; }
+/* the mixer: each strip its track's colour */
+:root[data-skin] .strip { background:var(--sk-panel); border:var(--sk-b) solid var(--line); border-radius:var(--sk-r); --kc:var(--sk-t1); }
+:root[data-skin] .strip:nth-child(2) { --kc:var(--sk-t2); } :root[data-skin] .strip:nth-child(3) { --kc:var(--sk-t3); }
+:root[data-skin] .strip:nth-child(4) { --kc:var(--sk-t4); } :root[data-skin] .strip:nth-child(5) { --kc:var(--sk-t5); }
+:root[data-skin] .strip:nth-child(6) { --kc:var(--sk-t6); }
+:root[data-skin] .strip.sel { border-color:var(--kc); box-shadow:0 0 0 1px var(--kc); }
+:root[data-skin] .strip button.selb:disabled, :root[data-skin] .strip .num { color:var(--kc); }
+/* the steps: the grid as the firmware's step row */
+:root[data-skin] .grid button { background:var(--sk-field); color:var(--dim); border:var(--sk-b) solid var(--line); border-radius:var(--sk-rs); font:11px/1.3 var(--sk-mono); }
+:root[data-skin] .grid button.on { background:var(--sk-accent); color:var(--sk-on); border-color:var(--sk-accent); }
+:root[data-skin] table { border-collapse:separate; border-spacing:0 4px; }
+:root[data-skin] th { font:500 10px/1.3 var(--sk-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--dim); text-align:left; }
+:root[data-skin] .seg button[aria-pressed="true"], :root[data-skin] button.tog[aria-pressed="true"] { background:var(--sk-accent); border-color:var(--sk-accent); color:var(--sk-on); }
+/* the support line and the footer */
+:root[data-skin] p.kofi { border-left:3px solid; border-image:var(--sk-heat) 1; padding-left:12px; }
+:root[data-skin] footer { color:var(--dim); font:11px/1.6 var(--sk-mono); border-top:var(--sk-b) solid var(--line); padding-top:14px; }
+@media (max-width:640px) {
+  :root[data-skin] .groups { grid-template-columns:1fr; }
+  :root[data-skin] .group { grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); padding:12px; }
+  :root[data-skin] nav.tabs { overflow-x:auto; flex-wrap:nowrap; }
+}
+/*SKIN-END*/
+</style>
+<script id="jiant-skin-fill">
+/* (studio) each range's fill (--p) at its value: when it moves, and when the page shows a new value (a push, a load) */
+(() => {
+  const fill = (r) => { const lo = +r.min || 0, hi = r.max === "" ? 100 : +r.max; r.style.setProperty("--p", `${((+r.value - lo) * 100 / ((hi - lo) || 1)).toFixed(1)}%`); };
+  let raf = 0;
+  const all = () => { raf = 0; document.querySelectorAll('input[type="range"]').forEach(fill); };
+  document.addEventListener("input", (e) => { if (e.target.type === "range") fill(e.target); }, true);
+  addEventListener("DOMContentLoaded", () => {
+    all();
+    new MutationObserver(() => { if (!raf) raf = requestAnimationFrame(all); }).observe(document.body, { subtree: true, childList: true, characterData: true });
+  });
+})();
+</script>
 </head>
 <body class="jiant-editor">
 <main>
   <button class="lang" id="lang"></button>
-  <h1 class="jiant-wordmark"><a href="https://juanjiant-bit.github.io/JIANT/" aria-label="JIANT FM home">JIANT<span class="fm">FM</span></a><span class="jiant-tool">EDITOR</span></h1>
+  <h1 class="jiant-wordmark"><a href="https://juanjiant-bit.github.io/JIANT/" aria-label="JIANT FM home">JIANT <span class="fm">FM</span></a><span class="jiant-tool">EDITOR</span></h1>
   <p class="dim"><a href="../installer/" style="color:inherit" data-t="installer"></a></p>
   <!-- always visible: connection, version, sync mode, the tabs and (Sound / Sequencer / Tracks) the track selector -->
   <header class="top">
