@@ -140,24 +140,6 @@ static void chord_nm(char *b, const uint8_t *pc, uint32_t d, uint32_t rt)
     str_cpy(b, NN12[(r + rt) % 12u], 4);
     str_cpy(b + str_len(b), fi == 6u ? "\xB0" : fi == 8u ? "+" : th == 3u ? "-" : "", 2);
 }
-/* an octave of keys from C at y, h high, in x 8..232 as the device's: the notes lit (bit n: note n) in their colour (col
- * 0) or col, their names on the white keys (the black ones' when lit), the root a dot */
-static void piano(int32_t y, int32_t h, uint32_t lit, uint32_t rt, uint16_t col)
-{
-    static const uint8_t WH[7] = {0, 2, 4, 5, 7, 9, 11}, BK[5] = {1, 3, 6, 8, 10}, BX[5] = {1, 2, 4, 5, 6};
-    uint32_t i;
-    int32_t bh = h * 58 / 100;
-    for (i = 0; i < 12u; i++) {
-        uint32_t blk = i >= 7u, n = blk ? BK[i - 7u] : WH[i], on = lit >> n & 1u;
-        int32_t x = blk ? 2 + (int32_t)BX[i - 7u] * 32 - 10 : 8 + (int32_t)i * 32, w = blk ? 19 : 30, kh = blk ? bh : h;
-        uint16_t c = on ? (col ? col : note_col(n)) : blk ? 0x10A2u : 0xCE59u;
-        cv_rect(x, y, w, kh, c);
-        if (!blk || on)
-            cv_text_in(x, y + kh - (blk ? 12 : 22), w, &AF_X, NN12[n], on || !blk ? T_INK : T_DIM, c);
-        if (n == rt)
-            cv_rect(x + w / 2 - 2, y + kh - (blk ? 4 : 8), 4, 4, blk && !on ? 0xFFFFu : 0x0000u);
-    }
-}
 /* (V10.7.70; V10.8.14) SCL > PROG: a card a chord of the progression, its name, its degree and its bar, the one playing
  * lit, under them where the progression is; OFF: the cards dim and what turns it on */
 static __attribute__((noinline)) void graph_harm(void)

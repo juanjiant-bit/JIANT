@@ -282,7 +282,6 @@ static uint32_t page_icon(const page_t *pg)
     case GR_GCOMP: return ICON_ARP;           /* (0.9.9-seq2f) GLO > COMPS: the global ones */
     case GR_EUCLID: return ICON_PROB;         /* (V10.6) EUCLID (was MUTATE) */
     case GR_FUGUE: return ICON_X_PATTERN;     /* (0.6.52) FUGUE */
-    case GR_SHAPE: return ICON_X_REPEAT;      /* (0.6.85) STRETCH */
     case GR_MORPH: return ICON_LFO_WAVE;
     case GR_DXIMG: return ICON_MIX;      /* (0.6.45) MORPH */
     case GR_MOTION: return motion_icon();

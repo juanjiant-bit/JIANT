@@ -1414,31 +1414,6 @@ static void draw_columns(void)
         text_column(3, "SCENE", used && song_idx.scene[song_cur][row].on ? "ON" : "--", used && song_idx.scene[song_cur][row].on ? VAL(3u) : T_DIM);   /* (JIANT) */
         return;
     }
-    if (cur_page()->graph == GR_SHAPE) {               /* (0.6.85) STRETCH REPEAT NUDGE; (0.6.92) ROTATE, done on the turn */
-        int32_t k = shp_k(), r = (int32_t)shp_rep(), ofs = TSEL->p[P_SOFS];
-        val[0] = k > 0 ? 'x' : '/';
-        fmt_int(val + 1, k > 0 ? k : -k);
-        gauge_column(0, "STRETCH", val, k != 1 ? VAL(0u) : T_DIM, (int32_t)shp_i * 1000 / 14);
-        if (r == 1) str_cpy(val, "OFF", sizeof val);
-        else if (r) { val[0] = 'x'; fmt_int(val + 1, r); }
-        else str_cpy(val, "TO 64", sizeof val);
-        gauge_column(1, "REPEAT", val, r != 1 ? VAL(1u) : T_DIM, (int32_t)shp_r * 1000 / 8);
-        if (ndg_step == 2u) {                            /* (V10.7.4) the cursor step moved by steps */
-            val[0] = 'S'; fmt_int(val + 1, (int32_t)(ui.cursor % NSTEP) + 1);
-            text_column(2, "NUDGE", val, T_REC);
-        } else if (ndg_step) {                           /* (V10.25) red: the cursor step's MICRO (64ths) */
-            int32_t m = ST_MICRO(&TSEL->step[ui.cursor % NSTEP]);
-            val[0] = m > 0 ? '+' : 0;
-            fmt_int(val + (m > 0), m);
-            text_column(2, "NUDGE", val, T_REC);
-        } else
-            text_column(2, "NUDGE", "< >", T_THEME);   /* blue: the whole sequence by steps */
-        val[0] = ofs > 0 ? '+' : 0;
-        fmt_int(val + (ofs > 0), ofs);
-        card_mot_of(&TSEL->p[P_SOFS]);
-        draw_column(3, "ROTATE", val, "ST", ofs ? VAL(3u) : T_DIM, (ofs + 32) * 1000 / 64, ICON_ORDER);
-        return;
-    }
     if (cur_page()->graph == GR_FUGUE) {               /* (0.6.52) HEAD RATE DIR INTERVAL */
         const fg_set_t *f = &fg_set[song.sel % NTRK][fg_ui % FG_HEADS];
         fmt_int(val, (int32_t)(fg_ui % FG_HEADS) + 2);
@@ -1833,8 +1808,8 @@ static void draw_columns(void)
  * ui_signature.h, tools/gen_logo.py: a point every ~3 px, bit 7 of y a stroke's start). (V10.8.18, the owner's pick
  * "Seis hilos") 0 .. SPL_IN ms: the six tracks' threads (TRK_COL) come in from the screen's edges, curving, easing out,
  * onto the logo's first point; then the logo writes itself in the thermal scale (SPL_LOGO ms, the pen's tip white),
- * a white flash at its start fading (300 ms); then six dots in the tracks' colours one by one under it and the version
- * and "by Juan Jiant" fading in. MENU > ANIM OFF: the last picture at once. The strokes are drawn smooth: each a
+ * a white flash at its start fading (300 ms); then six dots in the tracks' colours one by one under it; the version and
+ * "by Juan Jiant" under them from the first frame (V10.8.20). MENU > ANIM OFF: the last picture at once. The strokes are drawn smooth: each a
  * line through its points, an antialiased round pen ~4 px wide stamped along it a pixel apart (spl_seg, spl_disc:
  * the joins round; nothing new stored: the same points). In the saved palette (settings_init before it) */
 #include "ui_signature.h"
@@ -1858,6 +1833,13 @@ static __attribute__((noinline)) void spl_disc(int32_t cx, int32_t cy, int32_t r
             k = r > 8 && d <= (r - 8) * (r - 8) ? 256 : d >= (r + 8) * (r + 8) ? 0 : ((r + 8) * (r + 8) - d) * 256 / (32 * r);
             og_plot(x, y, c, k * a >> 8);
         }
+}
+/* (V10.8.20, the owner: the version always seen) the version and "by Juan Jiant" at canvas y, from the first frame */
+static __attribute__((noinline)) void spl_lines(int32_t y)
+{
+    uint32_t k;
+    for (k = 0; k < 2u; k++)
+        cv_text_in(0, y + (int32_t)k * 16, 240, &AF_S, SPLASH_LINES[k], k ? T_DIM : T_MID, T_BG);
 }
 /* the round pen from (x0, y0) to (x1, y1) (Q4), a stamp a pixel (the joins round) */
 static __attribute__((noinline)) void spl_seg(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t r, uint16_t c)
@@ -1887,13 +1869,15 @@ BTAPP_FN static void spl_threads(uint32_t ms)
             }
         }
         cv_oy = 0;
+        if (j)
+            spl_lines(SPL_TY - 120);
         cv_blit(0, (uint32_t)(120 * j));
     }
 }
 /* the splash at ms (>= SPL_WRITE: whole) */
 static void splash_at(uint32_t ms)
 {
-    int32_t i, k, j, x0 = 0, y0 = 0, sx = 34 * 16, sy = (SPL_SY + 6 + 101) * 16;
+    int32_t i, k, x0 = 0, y0 = 0, sx = 34 * 16, sy = (SPL_SY + 6 + 101) * 16;
     if (ms < SPL_IN) {
         if (bt_hw_seg())
             spl_threads(ms);
@@ -1922,9 +1906,7 @@ static void splash_at(uint32_t ms)
     cv_begin(240, 52, T_BG);                            /* the six dots, the lines */
     for (k = 0; k < 6; k++)
         spl_disc((70 + 20 * k) * 16 + 8, 8 * 16 + 8, clamp((int32_t)ms - 700 - k * 60, 0, 200) * 48 / 200, TRK_COL[k], 256);
-    j = clamp((int32_t)ms - 900, 0, 300) / 3;
-    for (k = 0; j && k < 2; k++)
-        cv_text_in(0, SPL_TY - 180 + k * 16, 240, &AF_S, SPLASH_LINES[k], ux_mix(T_BG, k ? T_DIM : T_MID, j), T_BG);
+    spl_lines(SPL_TY - 180);
     cv_blit(0, 180);
 }
 static void draw_splash(void)
@@ -1936,10 +1918,11 @@ static void draw_splash(void)
 /* main.c's splash loop: the splash ms after the start */
 static void splash_write(uint32_t ms)
 {
-    static uint8_t done;
-    if (!spl_anim || (ui_prefs & PREF_ANIM_OFF) || done)
+    if (!spl_anim || (ui_prefs & PREF_ANIM_OFF))
         return;
-    done = ms >= SPL_WRITE;                             /* (the last picture once) */
+    if ((int32_t)ms < 0)                                /* (V10.8.20: the emulator's first 30 ms came in below 0, as the
+                                                         * end: its last picture, without the lines, and no more) */
+        ms = 0;
     splash_at(ms);
     lcd_sync();
 }

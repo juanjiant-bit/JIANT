@@ -83,7 +83,11 @@ static void graph_adsr(const track_t *t, uint16_t c)
     uint16_t tc = TRK_COL[tr % 6u];
     (void)c;
     if (sl < 8) sl = 8;
-    if (adsr_tr != tr) { memset(adsr_h, 0, sizeof adsr_h); memset(adsr_ps, 0, sizeof adsr_ps); adsr_tr = (uint8_t)tr; }
+    if (adsr_tr != tr) {                                /* (V10.8.19, BYTE's v2) the trail from the start: ghosts fainter back */
+        for (k = 0; k < 10; k++) adsr_h[k] = (uint8_t)(118 - k * 7);
+        memset(adsr_ps, 0, sizeof adsr_ps);
+        adsr_tr = (uint8_t)tr;
+    }
     for (i = 0; i < NVOICE; i++) {                      /* a note begun: a layer */
         if (t->v[i].stage == 1u && adsr_ps[i] != 1u) {
             for (k = 9; k > 0; k--) adsr_h[k] = adsr_h[k - 1];   /* (no memmove on the device) */
@@ -97,7 +101,7 @@ static void graph_adsr(const track_t *t, uint16_t c)
     for (i = 1, e = 32768; i <= r && n < 160; i++) { e = (e * (32768 - 150733 / r)) >> 15; lv[n++] = (int16_t)(sus * e >> 15); }
     for (k = 9; k >= 0; k--) {                          /* the layers, the far first */
         int32_t ox = x0 + k * 7, oy = bot - k * 5, g = k ? adsr_h[k] : 127, py = 0;
-        uint16_t lc = k ? ux_mix(T_BG, HUD_BL, 85 - k * 7) : tc;
+        uint16_t lc = k ? ux_mix(T_BG, heat_col(150 - k * 12), 95 - k * 7) : tc;   /* (v2: warm near, cold far) */
         if (k && !adsr_h[k]) continue;
         for (i = 0; i < n; i++) {
             int32_t y = oy - lv[i] * H / 1000 * g / 127;
@@ -106,13 +110,19 @@ static void graph_adsr(const track_t *t, uint16_t c)
         }
     }
     for (i = 0; i < 160; i += 3) cv_pset(x0 + i, bot + 2, T_LINE);
-    {   /* A D S R: tags at the front shape's corners */
+    {   /* A D S R: tags at the front shape's corners, (v2) each stage's value beside its tag */
         static const char *const L4[4] = {"A", "D", "S", "R"};
         int32_t cx[4] = {a, a + d, a + d + sl / 2, n - 1}, q;
         for (q = 0; q < 4; q++) {
             int32_t x = x0 + cx[q], y = bot - lv[cx[q] < n ? cx[q] : n - 1] * H / 1000 - 14;
+            const char *u = "";
+            char vb[12];
             cv_rect(x - 3, y, 9, 11, T_TEXT);
             cv_text_on(x - 1, y + 1 - AF_X_CAP_Y, &AF_X, L4[q], 0x0000u, T_TEXT);
+            param_format(track_desc(t, pg->id[q]), t->p[pg->id[q]], vb, &u);
+            str_cpy(vb + str_len(vb), u, sizeof vb - str_len(vb));
+            if (graph_ht == 100 && (q < 3 || x + 8 + text_w(&AF_X, vb) < 236))   /* (MENU > LARGE's strip: the tags only) */
+                cv_text(x + 8, y + 1 - AF_X_CAP_Y, &AF_X, vb, T_MID);
         }
     }
     if (pg->id[0] == P_ATK) {                           /* the track's envelope now: the loudest voice's, a yellow node */
@@ -1303,7 +1313,7 @@ static int drift_on(void)
         return 0;
     return !ui.home && !sys_load && !ANIM_OFF() && strip_kind() == SK_NONE && !roll_view(cur_page()) &&
            !seq_roll_view(cur_page()) &&
-           g != GR_ROLL && g != GR_SHAPE && g != GR_COMP && g != GR_FUGUE && g != GR_LIVE &&   /* (0.8.3: LENTE's step, the
+           g != GR_ROLL && g != GR_COMP && g != GR_FUGUE && g != GR_LIVE &&   /* (0.8.3: LENTE's step, the
                                                          * heads; p2: LIVE's rails) */
            g != GR_STEPS && g != GR_CHANCE && g != GR_BROWSE && g != GR_USER && g != GR_SLOTS && g != GR_EVENTS &&
            g != GR_SONG && g != GR_TOOLS && g != GR_PATS;
@@ -1609,7 +1619,7 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
             }
         }
     }
-    if (pg->graph == GR_STEPS || pg->graph == GR_ROLL || pg->graph == GR_CHANCE || pg->graph == GR_SHAPE || roll_view(pg) ||
+    if (pg->graph == GR_STEPS || pg->graph == GR_ROLL || pg->graph == GR_CHANCE || roll_view(pg) ||
         seq_roll_view(pg)) {
         uint32_t ph = song.playing ? seq_src(t, t->seq_idx) : 0xFFFFu, rl = roll_view(pg) || seq_roll_view(pg) ||
                                                                           pg->graph == GR_CHANCE;
@@ -2170,7 +2180,6 @@ static void draw_graph(void)
         case GR_ROLL:
         case GR_TRACKGEN:
         case GR_CHANCE:
-        case GR_SHAPE:                               /* (0.6.85) STRETCH: the whole sequence, as the roll shows it */
             cv_oy = 0;
             if (drum_track(t))
                 graph_grid(t, c);

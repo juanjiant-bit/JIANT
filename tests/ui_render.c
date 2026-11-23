@@ -596,7 +596,7 @@ static void state(void)                          /* a playing song with steps on
 {
     uint32_t i;
     ui_power_on();
-    ndg_step = 0; scn_on = 0; memset(scn_role, 0, sizeof scn_role);   /* (V10.25: the session's NUDGE and SCENE off) */
+    scn_on = 0; memset(scn_role, 0, sizeof scn_role);   /* (V10.25: the session's NUDGE and SCENE off) */
     dx_mute_set(0);
     memset(macro_v, 0, sizeof macro_v);
     if (large_on) ui_prefs |= PREF_LARGE;
@@ -1101,12 +1101,9 @@ static void setup(int s)
     case S_EUMUTATE:                                    /* (V10.24) SEQ > MUTATE: the anchor above, a mutation below */
         song.sel = 0; set_engine_of(TSEL, ENGI_DRUM); go_title("EUCLID");
         eu_put(EK_HITS, 5);
-        eu[0].mu[0] = 2; eu[0].mu[1] = 70; eu[0].mu[3] = 3;
-        eu_mutate(0, &eu[0]);
-        go_title("MUTATE");
-        break;
-    case S_NUDGE:                                       /* (V10.25) STRETCH's NUDGE red: the cursor step 12/64 late */
-        go_title("STRETCH"); ndg_step = 1; ui.cursor = 0;
+        break;                                          /* (V10.8.20: MUTATE gone; EUCLID's ring) */
+    case S_NUDGE:                                       /* (V10.8.20: STRETCH's NUDGE gone) a step 12/64 late, on NOTE */
+        go_title("NOTE"); ui.cursor = 0;
         TSEL->step[0] = (step_t){{60}, 1, ST_NOTE, 0, 100};
         ST_MICRO_SET(&TSEL->step[0], 12);
         break;
@@ -1489,7 +1486,7 @@ static void setup(int s)
         if (s == S_LENTE_BAR_LONG)                      /* (0.8.5) ALL TR at the right of the bars' strip */
             song.g[G_STRN] = -12;
         song.playing = 1; t->seq_idx = 21;
-        nav_scene(SEC_SEQ, s == S_LENTE_PAT ? "LENGTH" : s == S_LENTE_STRETCH ? "STRETCH" : s == S_LENTE_BAR || s == S_LENTE_BAR_LONG ?
+        nav_scene(SEC_SEQ, s == S_LENTE_PAT ? "LENGTH" : s == S_LENTE_STRETCH ? "PLAYHEADS" : s == S_LENTE_BAR || s == S_LENTE_BAR_LONG ?
                   "STEP" : s == S_LENTE_STEP_COMP2 ? "COMP 2" : s == S_LENTE_STEP ? "NOTE" : s == S_SEQ_BAR ? "BAR" : "COMP");   /* (0.9.2: NOTE the roll; the
                                                          * step large on COMP: TIE, REST, LONG there) */
         cursor_set(s == S_LENTE_STEP_TIE ? 35 : s == S_LENTE_STEP_REST ? 36 : s == S_LENTE_BAR_LONG || s == S_LENTE_STEP_LONG ? 40 : 34);

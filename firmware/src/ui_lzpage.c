@@ -191,53 +191,97 @@ static uint16_t note_col(uint32_t n)
 {
     return heat_col(40 + (int32_t)(n % 12u) * 200 / 11);
 }
-/* (V10.8.14, the owner's "teclado y grados") KEY: an octave of keys, the scale's lit in their colours, ROOT a dot; under it
- * "D MINOR" and the scale's notes from ROOT */
+/* (V10.8.19, the owner: "big, clear, the notes it uses") KEY: "D MAJOR" large (the scale's whole name, AF_L, else M,
+ * else its short one); the scale's notes as chips in their colours from ROOT (ROOT framed); an octave of keys, those
+ * lit, each its degree (1 ..) on it */
+static const char *const SCL_LONG[] = {"CHROMATIC", "MAJOR", "MINOR", "DORIAN", "MIXOLYDIAN", "PENTATONIC", "MINOR PENTA",
+                                       "HARMONIC MIN", "PHRYGIAN", "LYDIAN", "LOCRIAN", "MELODIC MIN", "BLUES", "WHOLE TONE",
+                                       "DIM HALF-WHOLE", "DIM WHOLE-HALF"};
 static __attribute__((noinline)) void graph_key(const track_t *t, const page_t *pg)
 {
-    uint32_t mask = scale_mask(t), rt = (uint32_t)clamp(t->p[P_ROOT], 0, 11), lit = 0, i;
+    static const uint8_t WH[7] = {0, 2, 4, 5, 7, 9, 11}, BK[5] = {1, 3, 6, 8, 10}, BX[5] = {1, 2, 4, 5, 6};
+    uint32_t mask = scale_mask(t) & 0xFFFu, rt = (uint32_t)clamp(t->p[P_ROOT], 0, 11), i, n = 0, dg[12];
+    const aafont_t *f = &AF_L;
     const char *u = "";
-    char b[48];
+    char b[32];
     (void)pg;
-    for (i = 0; i < 12u; i++)
-        if (mask >> i & 1u) lit |= 1u << ((rt + i) % 12u);
-    piano(4, 84, lit, rt, 0);
     str_cpy(b, NN12[rt], 4);
     str_cpy(b + str_len(b), " ", 2);
-    param_format(&TP[P_SCALE], t->p[P_SCALE], b + str_len(b), &u);
-    cv_text(8, 94, &AF_M, b, T_TEXT);
-    b[0] = 0;
-    for (i = 0; i < 12u; i++)
-        if (mask >> i & 1u && str_len(b) < 40u) {
-            str_cpy(b + str_len(b), NN12[(rt + i) % 12u], 4);
-            str_cpy(b + str_len(b), " ", 2);
+    str_cpy(b + str_len(b), SCL_LONG[(uint32_t)t->p[P_SCALE] % NELEM(SCL_LONG)], 30 - str_len(b));
+    if (text_w(f, b) > 228) f = &AF_M;
+    if (text_w(f, b) > 228) { b[str_len(NN12[rt]) + 1u] = 0; param_format(&TP[P_SCALE], t->p[P_SCALE], b + str_len(b), &u); }
+    cv_text(6, 4 - (f == &AF_L ? AF_L_CAP_Y : AF_M_CAP_Y), f, b, T_TEXT);
+    for (i = 0; i < 12u; i++)                           /* dg[note]: its degree (1 ..), 0 not in the scale */
+        dg[(rt + i) % 12u] = mask >> i & 1u ? ++n : 0u;
+    for (i = 0; i < 12u; i++)                           /* the chips, from ROOT */
+        if (mask >> i & 1u) {
+            uint32_t nt = (rt + i) % 12u, k = dg[nt] - 1u;
+            int32_t w = 228 / (int32_t)n, x = 6 + (int32_t)k * w;
+            cv_rect(x, 34, w - 2, 24, note_col(nt));
+            cv_text_in(x, 34 + (n > 9u ? CAP_IN(X, 24) : CAP_IN(M, 24)), w - 2, n > 9u ? &AF_X : &AF_M, NN12[nt], T_INK, note_col(nt));
+            if (!i) cv_frame(x - 1, 33, w, 26, T_TEXT);
         }
-    cv_text(8, 116, &AF_X, b, T_MID);
+    for (i = 0; i < 12u; i++) {                         /* an octave of keys from C, the scale's lit, each its degree */
+        uint32_t blk = i >= 7u, nt = blk ? BK[i - 7u] : WH[i];
+        int32_t x = blk ? 2 + (int32_t)BX[i - 7u] * 32 - 10 : 8 + (int32_t)i * 32, w = blk ? 19 : 30, kh = blk ? 40 : 68;
+        uint16_t c = dg[nt] ? note_col(nt) : blk ? 0x10A2u : 0xCE59u;
+        char d[3];
+        cv_rect(x, 66, w, kh, c);
+        if (dg[nt]) {
+            fmt_int(d, (int32_t)dg[nt]);
+            cv_text_in(x, 66 + kh - (blk ? 14 : 22), w, blk ? &AF_X : &AF_M, d, T_INK, c);
+        }
+        if (nt == rt)
+            cv_rect(x + w / 2 - 2, 66 + kh - 4, 4, 3, 0x0000u);
+    }
 }
-/* CHORD: a card a degree of the key, the chord it plays (its name, its degree), the one of the last key played lit
- * (else I); that chord's notes lit on the keys under them (chord_peek: as the keys play it now) */
+/* (V10.8.19, JIANT BYTE's CHORD redesign (GPL, as BYTE has it), the owner's pick) a chord's name from its notes (pn[0]
+ * the root): long "D MIN ADD9", short the quality alone "MIN9" */
+static void chord_label(const uint8_t *pn, uint32_t n, char *o, int lng)
+{
+    static const char LQ[12][10] = {" DIM7", " HALF-DIM", " DIM", " AUG", " SUS4", " SUS2", " MIN7", " MIN MAJ7", " MIN", " MAJ7",
+                                    " 7", " MAJ"};
+    static const char SQ[15][5] = {"DIM7", "M7B5", "DIM", "AUG", "SUS4", "SUS2", "MIN7", "MIN", "MIN", "MAJ7", "7", "MAJ",
+                                   "MIN9", "MAJ9", "9"};   /* (the last three: 6, 9, 10 with a ninth) */
+    uint32_t m = 0, k, q;
+    int mi, dim, aug, s4, s2, b7, M7, six, nine, d7;
+    for (k = 1; k < n && k < 8u; k++) m |= 1u << (((uint32_t)pn[k] + 120u - pn[0]) % 12u);
+    mi = (m >> 3 & 1) && !(m >> 4 & 1); dim = mi && (m >> 6 & 1) && !(m >> 7 & 1); aug = (m >> 4 & 1) && (m >> 8 & 1) && !(m >> 7 & 1);
+    s4 = !(m >> 3 & 1) && !(m >> 4 & 1) && (m >> 5 & 1); s2 = !(m >> 3 & 1) && !(m >> 4 & 1) && !s4 && (m >> 2 & 1);
+    b7 = m >> 10 & 1; M7 = m >> 11 & 1; six = (m >> 9 & 1) && !dim; nine = (m >> 2 & 1) && !s2; d7 = dim && (m >> 9 & 1);
+    q = dim ? (d7 ? 0u : b7 ? 1u : 2u) : aug ? 3u : s4 ? 4u : s2 ? 5u : mi ? (b7 ? 6u : M7 ? 7u : 8u) : M7 ? 9u : b7 ? 10u : 11u;
+    if (lng) {
+        str_cpy(o, NN12[pn[0] % 12u], 24);
+        str_cpy(o + str_len(o), LQ[q], 24);
+        if (six && !d7) str_cpy(o + str_len(o), " 6", 24);
+        if (nine) str_cpy(o + str_len(o), b7 || M7 ? " 9" : " ADD9", 24);
+        return;
+    }
+    str_cpy(o, SQ[nine && (q == 6u || q == 9u || q == 10u) ? (q == 6u ? 12u : q == 9u ? 13u : 14u) : q], 12);
+    if (six && !d7) str_cpy(o + str_len(o), "6", 12);
+    if (nine && !b7 && !M7) str_cpy(o, mi ? "MI+9" : dim ? "DIM+9" : "ADD9", 12);
+}
+/* note k's interval on its key (no lowercase in the font: a flat "-", as "E-" is minor; a sharp "#") */
+static void chord_ivl(int32_t x, int32_t y, const uint8_t *pn, uint32_t k)
+{
+    static const char IV[12][3] = {"R", "-9", "9", "-3", "3", "4", "-5", "5", "#5", "6", "-7", "7"};
+    const char *s = k ? IV[((uint32_t)pn[k] + 120u - pn[0]) % 12u] : "R";
+    cv_text(x + (13 - text_w(&AF_X, s)) / 2, y - AF_X_CAP_Y, &AF_X, s, 0x0000u);
+}
+/* CHORD: the last key's chord named large (yellow while it sounds, else the track's colour), TYPE . VOICING under it; two
+ * octaves of keys, the chord's notes lit (its root the track's colour) and each its interval; the seven degrees as tags,
+ * each its chord's short name, the one of the last key yellow */
 static __attribute__((noinline)) void graph_chord(const track_t *t)
 {
-    uint32_t mask = scale_mask(t), c = 0, i, d, sel = 0, n, lit = 0, rt = (uint32_t)clamp(t->p[P_ROOT], 0, 11);
-    uint8_t pc[12], nt[8];
+    uint32_t mask = scale_mask(t), c = 0, i, d, rt = (uint32_t)clamp(t->p[P_ROOT], 0, 11);
+    uint16_t tc = TRK_COL[(uint32_t)(t - trk) % 6u];
+    uint32_t key = last_note, kd, pd = 99u, snd = 0, k, n;
+    uint8_t deg[12], pn[8];
     const char *u = "";
-    char b[32], v[12];
+    char b[32], v[12], nm[24];
     for (i = 0; i < 12u; i++)
         if (mask >> i & 1u && c < 7u)
-            pc[c++] = (uint8_t)i;
-    for (d = 0; d < c; d++)
-        if (pc[d] == ((uint32_t)last_note + 12u - rt) % 12u) sel = d;
-    for (d = 0; d < c; d++) {
-        int32_t x = 6 + (int32_t)d * 33;
-        uint16_t f = d == sel ? T_ACCENT : T_RAISE;
-        if (c == 7u) chord_nm(v, pc, d, rt); else str_cpy(v, NN12[(rt + pc[d]) % 12u], 4);
-        cv_rect(x, 2, 30, 36, f);
-        cv_text_in(x, 6, 30, text_w(&AF_M, v) <= 28 ? &AF_M : &AF_X, v, d == sel ? T_INK : T_TEXT, f);
-        cv_text_in(x, 26, 30, &AF_X, RN7[d], d == sel ? T_INK : T_DIM, f);
-    }
-    n = c ? chord_peek(t, 48u + rt + pc[sel], nt) : 0u;
-    for (i = 0; i < n && i < 8u; i++) lit |= 1u << (nt[i] % 12u);
-    piano(44, 70, lit, (rt + (c ? pc[sel] : 0u)) % 12u, T_ACCENT);
+            deg[c++] = (uint8_t)i;
     if (t->p[P_CHRD]) {
         param_format(&CHORD_DESC[0], t->p[P_CHRD], b, &u);
         str_cpy(b + str_len(b), " \xB7 ", 32 - str_len(b));
@@ -245,7 +289,46 @@ static __attribute__((noinline)) void graph_chord(const track_t *t)
         str_cpy(b + str_len(b), v, 32 - str_len(b));
     } else
         str_cpy(b, "CHORD OFF \xB7 ONE NOTE A KEY", 32);
-    cv_text(8, 120, &AF_X, b, T_MID);
+    kd = (key + 12u - rt) % 12u;
+    for (k = 0; k < NVOICE; k++) snd |= t->v[k].active && t->v[k].gate;
+    for (d = 0; d < c; d++) if (deg[d] == kd) pd = d;
+    n = t->p[P_CHRD] ? chord_peek(t, key, pn) : 0u;
+    if (n == 1u) {                                      /* (V10.8.20) CHORD on, one note sounds: say why (a kit, not POLY) */
+        str_cpy(nm, drum_track(t) ? "DRUM TRACK" : "NOT POLY", sizeof nm);
+        str_cpy(b, drum_track(t) ? "CHORDS PLAY ON SYNTH TRACKS" : "CHORDS NEED EDIT > PLAY > POLY", 32);
+        n = 0;
+    } else if (t->p[P_CHRD]) chord_label(pn, n, nm, 1); else str_cpy(nm, "OFF", sizeof nm);
+    cv_text(10, 4 - AF_L_CAP_Y + 1, text_w(&AF_L, nm) <= 220 ? &AF_L : &AF_M, nm, snd ? HUD_YE : t->p[P_CHRD] ? tc : T_DIM);
+    cv_free_text(10, 26 - AF_X_CAP_Y + 1, &AF_X, b, T_MID, cv_bg, 220);
+    {   /* the keys: two octaves from the C under its lowest note */
+        static const uint8_t WK[7] = {0, 2, 4, 5, 7, 9, 11}, BK[5] = {1, 3, 6, 8, 10}, BX[5] = {0, 1, 3, 4, 5};
+        uint32_t lo = n ? pn[0] : key, base = lo / 12u * 12u, on[25] = {0}, oct, w;
+        for (k = 0; k < n && k < 8u; k++) { uint32_t r = (uint32_t)pn[k] - base; while (r >= 24u) r -= 12u; on[r] = k + 1u; }
+        for (oct = 0; oct < 2u; oct++)
+            for (w = 0; w < 7u; w++) {
+                uint32_t r = oct * 12u + WK[w], h = on[r];
+                int32_t x = 8 + (int32_t)(oct * 7u + w) * 16;
+                cv_rect(x, 40, 15, 52, h ? (h == 1u ? tc : snd ? HUD_YE : T_TEXT) : T_RAISE);
+                if (h) chord_ivl(x + 1, 80, pn, h - 1u);
+            }
+        for (oct = 0; oct < 2u; oct++)
+            for (w = 0; w < 5u; w++) {
+                uint32_t r = oct * 12u + BK[w], h = on[r];
+                int32_t x = 8 + (int32_t)(oct * 7u + BX[w]) * 16 + 10;
+                cv_rect(x, 40, 11, 32, h ? (h == 1u ? tc : snd ? HUD_YE : T_TEXT) : T_BG);
+                if (h) chord_ivl(x - 1, 60, pn, h - 1u);
+            }
+    }
+    for (d = 0; d < c; d++) {                           /* the degrees: numeral tag, its chord's short name */
+        uint8_t nt[8];
+        int32_t x = 8 + (int32_t)d * 32, tw = text_w(&AF_X, RN7[d]) + 4;
+        uint32_t m = n ? chord_peek(t, 48u + rt + deg[d], nt) : 0u, on = d == pd;
+        uint16_t bg = on ? HUD_YE : d == 0u ? tc : HUD_BL;
+        char sn[12];
+        cv_rect(x, 100, tw, 11, bg);
+        cv_text_on(x + 2, 101 - AF_X_CAP_Y, &AF_X, RN7[d], on || d == 0u ? 0x0000u : T_TEXT, bg);
+        if (m) { chord_label(nt, m, sn, 0); cv_text(x, 116 - AF_X_CAP_Y, &AF_X, sn, on ? HUD_YE : T_TEXT); }
+    }
 }
 static void graph_arp(const track_t *t)
 {

@@ -1126,102 +1126,13 @@ static __attribute__((noinline)) void comp_knob(uint32_t slot, int32_t steps)
         *ap = (uint8_t)(comp_vat(a, (uint32_t)i) | b);
     }
 }
-/* (0.6.85) SEQ > STRETCH: KNOB 1 STRETCH /8 .. /2, x1, x2 .. x8; KNOB 2 REPEAT OFF, x2 .. x8, TO 64; (0.6.92) done as the
- * knob turns, always from the sequence as it was before the first turn (its base: the steps, LEN and automation,
- * kept while the result stays untouched; back to the middle = back to it; UNDO: GLO + G4); KNOB 3 NUDGE: the whole
- * sequence a step left / right; KNOB 4 ROTATE: played from another step (P_SOFS). ui_tools.c tl_stretch, tl_repeat,
- * tl_shift */
+/* (V10.8.20) SEQ > STRETCH gone (the owner: the flash); its tools (ui_tools.c tl_*) stay for the FX layer and TOOLS */
 #define tl_len ev_len                                /* (ui_events.c: the same length, one copy) */
 static void tl_take(const track_t *t);
 static void tl_shift(track_t *t, uint32_t len, uint32_t d);
 static void tl_order(track_t *t, uint32_t len, const uint8_t *src);
 static uint32_t tl_stretch(track_t *t, int32_t k);
 static uint32_t tl_repeat(track_t *t, uint32_t k);
-static struct {
-    uint8_t valid, trk, which;                          /* which: the knob the base belongs to (0.6.96: the other knob
-                                                         * takes the result as its base, so REPEAT then STRETCH
-                                                         * stretches the repeats) */
-    int16_t len;
-    uint32_t sig;                                       /* the result's steps: another sig, the user edited: a new base */
-    step_t step[NSTEP];
-    motion_store_t mo;
-} shp_base;
-static void shape_apply(uint32_t which)
-{
-    track_t *t = TSEL;
-    uint32_t was, n, f;
-    char m[24];
-    if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
-    if (!shp_base.valid || shp_base.trk != song.sel || shp_base.sig != steps_sig(t) || shp_base.which != which) {   /* the
-                                                         * base: as it is now (the other knob's result included) */
-        undo_mark();
-        shp_base.valid = 1; shp_base.trk = (uint8_t)song.sel; shp_base.len = t->p[P_SLEN]; shp_base.which = (uint8_t)which;
-        memcpy(shp_base.step, t->step, sizeof shp_base.step);
-        f = motion_guard(); memcpy(&shp_base.mo, &motion, sizeof shp_base.mo); motion_unguard(f);
-        if (which == 0u) shp_r = 0; else shp_i = 7;    /* (the other knob's pick starts over) */
-    } else {                                            /* back to the base, then the new pick (as the tools write:
-                                                         * straight into the steps, the automation with them) */
-        memcpy(t->step, shp_base.step, sizeof t->step);
-        t->p[P_SLEN] = shp_base.len;
-        f = motion_guard(); memcpy(&motion, &shp_base.mo, sizeof motion); RING_PUBLISH(); motion_unguard(f);
-    }
-    was = (uint32_t)clamp(shp_base.len, 1, NSTEP);
-    n = which == 0u ? (shp_k() == 1 ? was : tl_stretch(t, shp_k())) : (shp_rep() == 1u ? was : tl_repeat(t, shp_rep()));
-    shp_base.sig = steps_sig(t);
-    if (!n) { ui_message("LEN 64: NO ROOM"); return; }
-    str_cpy(m, "LEN ", sizeof m); fmt_int(m + 4, (int32_t)was); str_cpy(m + str_len(m), " > ", 4);
-    fmt_int(m + str_len(m), (int32_t)n);
-    if (which == 0u && shp_k() > 1 && was * (uint32_t)shp_k() > NSTEP) str_cpy(m + str_len(m), " CUT", 5);
-    ui_message(m);
-}
-/* (NUDGE's step) a note's first step: back from i over TIEs; one past its last: on from i over TIEs, inside len */
-static __attribute__((noinline)) uint32_t ndg_note(const step_t *s, uint32_t i) { while (i && s[i].time == ST_TIE) i--; return i; }
-static __attribute__((noinline)) uint32_t ndg_end(const step_t *s, uint32_t i, uint32_t len)
-{
-    while (++i < len && s[i].time == ST_TIE) {}
-    return i;
-}
-static void shape_knob(uint32_t slot, int32_t steps)
-{
-    int32_t d = steps > 0 ? 1 : -1;
-    if (slot == 0u) { shp_i = (uint8_t)clamp((int32_t)shp_i + d, 0, 14); shape_apply(0); }
-    else if (slot == 1u) { shp_r = (uint8_t)clamp((int32_t)shp_r + d, 0, 8); shape_apply(1); }
-    else if (slot == 2u && ndg_step == 1u) {            /* (V10.25) the cursor step off the grid, 64ths of a step */
-        micro_edit(steps);
-    } else if (slot == 2u && ndg_step) {                /* (V10.7.4) OCT+ again: the cursor step itself a step left / right
-                                                         * (traded with its neighbour), the cursor with it. A note moves with
-                                                         * its TIEs and trades with the neighbour's note whole (V10.7.4
-                                                         * swapped single steps: a moved note lost its length, the TIE left
-                                                         * behind lengthened the note before it); at step 1 / LEN it stays
-                                                         * (V10.7.4 wrapped: a note's TIEs cannot) */
-        track_t *t = TSEL;
-        uint8_t src[NSTEP];
-        uint32_t len = tl_len(t), c = ui.cursor % len, a, b, x, y, z, j;
-        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
-        a = ndg_note(t->step, c);                       /* the cursor's note [a, b): back over its TIEs, past them */
-        b = ndg_end(t->step, a, len);
-        if (d > 0 ? b >= len : !a)                      /* (an end: it stays) */
-            return;
-        if (d > 0) { x = a; y = b; z = ndg_end(t->step, b, len); }
-        else { y = a; z = b; x = ndg_note(t->step, a - 1u); }
-        for (j = 0; j < len; j++)                       /* [x, y) and [y, z) trade places */
-            src[j] = (uint8_t)(j < x || j >= z ? j : j - x < z - y ? y + j - x : j - (z - y));
-        x = d > 0 ? x + z - y : x;                      /* (the note's new place) */
-        undo_mark();
-        tl_take(t);
-        tl_order(t, len, src);
-        ui.cursor = (uint8_t)x;
-    } else if (slot == 2u) {
-        track_t *t = TSEL;
-        if (chain_busy()) { ui_message("SONG PLAYS: STOP IT TO EDIT"); return; }
-        tl_take(t);
-        tl_shift(t, tl_len(t), d > 0 ? 1u : tl_len(t) - 1u);
-        ui_message(d > 0 ? "NUDGED RIGHT" : "NUDGED LEFT");
-    } else {
-        TSEL->p[P_SOFS] = (int16_t)clamp(TSEL->p[P_SOFS] + steps, -32, 32);
-        knob_cap(TSEL, P_SOFS);
-    }
-}
 /* (0.8.5) EDIT > FOCUS: KNOB 1 the parameter (E1..E8 with a name, no wrap), 2 its value, 3 the SRC of the MOD slot aimed
  * at it (from OFF: a free slot takes it, its DEST E1..E8; back to OFF: the slot free again), 4 that slot's AMT */
 static __attribute__((noinline)) void focus_knob(uint32_t slot, int32_t steps)
@@ -1403,10 +1314,6 @@ static void edit_param(uint32_t slot, int32_t steps)
     }
     if (pg->graph == GR_GCOMP) {                        /* (0.9.9-seq2f) GLO > COMPS / COMPS 2 (ui.c) */
         gco_knob(slot, steps);
-        return;
-    }
-    if (pg->graph == GR_SHAPE) {                        /* (0.6.85) STRETCH, REPEAT (picked, OCT+ does it), NUDGE (now) */
-        shape_knob(slot, steps);
         return;
     }
     if (pg->graph == GR_FUGUE) {                        /* (0.6.52) HEAD, RATE, DIR, INTERVAL */
@@ -2549,7 +2456,6 @@ static void ui_input(void)
 {
     ui_input_frame();
     if (!ui_preview_ok() && (preview_req || preview_left)) preview_req = PREVIEW_CANCEL;
-    eu_tick();                                          /* (V10.16) EUCLID's MUTATE, on the bar */
     gen_tick();                                         /* (V10.7.66) GEN on the bar, ENTRY BUILD */
     scale_link();                                       /* (JIANT 0.4) one scale for every melodic track (after the
                                                          * frame's edits) */
@@ -3035,21 +2941,13 @@ static void ui_input_frame(void)
                 ui.force = 1;
                 break;
             }
-            if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_SHAPE) {   /* (V10.25) STRETCH: NUDGE's */
-                ndg_step = b != B_OCTUP ? 0u : ndg_step == 1u ? 2u : 1u;   /* mode, OCT- the sequence (blue), OCT+ the
-                                                         * step's MICRO (red), OCT+ again the step itself (V10.7.4) */
-                ui_message(ndg_step == 2u ? "NUDGE: THE STEP" : ndg_step ? "NUDGE: THE STEP'S MICRO" : "NUDGE: THE SEQUENCE");
-                ui.force = 1;
-                break;
-            }
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_COMP && b == B_OCTDN && !fm1_in.notes) {
                 if (chain_busy()) ui_message("SONG PLAYS: STOP IT TO EDIT");   /* (V10.7.62) STEP FX: OCT- clears the */
                 else confirm_open(CF_CLEAR_COMP, song.sel);                    /* track's (a dialog) */
                 break;
             }
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_EUCLID) {   /* (V10.6) EUCLID / MODES: */
-                eu_oct(b == B_OCTUP, cur_page()->id[0] == ID_MU0);   /* OCT+ a new variation, OCT- the one before;
-                                                         * (V10.16) MUTATE: a mutation now, back to the anchor */
+                eu_oct(b == B_OCTUP);                    /* OCT+ a new variation, OCT- the one before */
                 break;
             }
             oct_key(b, both);                           /* (V10.6z4: a note held, the expression keys) */

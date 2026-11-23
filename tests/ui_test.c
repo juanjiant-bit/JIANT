@@ -192,7 +192,6 @@ static void ui_power_on(void)
     mx_defaults();
     scn_on = 0; scn_keys = 0;                     /* (V10.25: SCENE off at power-on, its roles the defaults) */
     memset(eu, 0, sizeof eu);                     /* (EUCLID / MUTATE: the session's, none at power-on) */
-    ndg_step = 0;
     memset(scn_role, 0, sizeof scn_role); sc_trk = 5;
     memset(&chain, 0, sizeof chain);
     chain_defaults(&chain_config);
@@ -890,53 +889,10 @@ static int test_eumutate(void)
         if (m->step[i].time == ST_NOTE && m->step[i].n) { n++; c += (SCALE_MASK[2] >> (m->step[i].note[0] % 12u)) & 1u; }
     ok &= n == 4u * eu[1].l[0].h && c == n;
     bad += check("V10.16 VARY on a melody: four turns, the motif answered (notes in the key, HITS in each turn)", ok);
-    go_title("MUTATE"); frame();
-    ok = str_eq(cur_page()->title, "MUTATE") && cur_page()->graph == GR_EUCLID;
-    {
-        int16_t *v; const param_desc_t *pd = page_desc(cur_page(), 0, &v);
-        ok &= pd && str_eq(pd->label, "EVERY") && *v == 0;
-        pd = page_desc(cur_page(), 2, &v);
-        ok &= pd && str_eq(pd->label, "MODE") && pd->fmt == F_ENUM && str_eq(pd->names[*v], "ORBIT");
-    }
-    {   /* EVERY 1 BAR, playing: the bar's last beat mutates (no UNDO point); stopped nothing */
-        uint8_t anc[EU_ZN];
-        uint32_t sig = mel_sig(m);
-        turn(EN_K1, 1); frame();
-        ok &= eu[1].mu[0] == 1u;
-        memcpy(anc, eu_z[1], EU_ZN);
-        eu_put(EK_U0 + 1u, 100); eu_put(EK_U0 + 3u, 3);   /* AMOUNT 100, WHAT ALL */
-        song.playing = 0; eu_tick();
-        ok &= mel_sig(m) == sig;
-        song.playing = 1; bar_n = 0; beat_n = 3; beat_pos = beat_samples() - 1u;
-        undo_ok = 0; fm1_ms += 5000u;
-        eu_tick();
-        ok &= mel_sig(m) != sig && !undo_ok;
-        sig = mel_sig(m);
-        eu_tick();                                       /* (once a bar) */
-        ok &= mel_sig(m) == sig;
-        bar_n = 1; eu_tick();
-        ok &= mel_sig(m) != sig && !memcmp(anc, eu_z[1], EU_ZN);   /* (ORBIT: the anchor stays) */
-        song.playing = 0; beat_n = 0;
-        press(B_OCTDN); frame();                         /* OCT-: back to the anchor */
-        ok &= !memcmp((uint8_t *)&eu[1] + EU_Z0, anc, EU_ZN) && msg_is("ANCHOR");
-        sig = mel_sig(m);
-        press(B_OCTUP); frame();                         /* OCT+: a mutation now, stopped too */
-        ok &= mel_sig(m) != sig && msg_is("MUTATED");
-        bad += check("V10.16 MUTATE: EVERY on the bar's last beat while playing (none stopped, once a bar, no UNDO point); OCT- the anchor, OCT+ now", ok);
-        eu_put(EK_U0 + 2u, 2);                           /* PULSE: the anchor every second time */
-        press(B_OCTDN); frame();
-        sig = mel_sig(m);
-        eu[1].flip = 0;
-        press(B_OCTUP); frame(); ok = mel_sig(m) != sig;
-        press(B_OCTUP); frame(); ok &= mel_sig(m) == sig;
-        eu_put(EK_U0 + 2u, 1);                           /* DRIFT: from where it is (AMOUNT 100: HITS or ROTATE move) */
-        press(B_OCTUP); frame(); press(B_OCTUP); frame(); press(B_OCTUP); frame();
-        ok &= memcmp((uint8_t *)&eu[1] + EU_Z0, anc, EU_ZN) != 0 && !memcmp(anc, eu_z[1], EU_ZN);
-        bad += check("V10.16 MUTATE's MODE: PULSE the anchor by turns, DRIFT walks on (the anchor kept)", ok);
-        chain.running = 1; song.playing = 1; bar_n = 3; beat_n = 3;
-        sig = mel_sig(m); eu_tick(); ok = mel_sig(m) == sig;
-        chain.running = 0; song.playing = 0; beat_n = 0;
-        bad += check("V10.16 MUTATE: not while a song's chain plays", ok);
+    {   /* (V10.8.20, the owner) MUTATE gone: its page hidden (kept in the table: its index), its settings read by nothing */
+        uint32_t i2, vis = 0;
+        for (i2 = 0; i2 < NPAGES; i2++) if (PAGES[i2].id[0] == ID_MU0) vis |= (uint32_t)page_visible(i2);
+        bad += check("V10.8.20 MUTATE gone: its page out of SEQ", !vis);
     }
     memset(eu, 0, sizeof eu);
     return bad;
@@ -5551,9 +5507,8 @@ static int test_shift_page(void)
     ok = str_eq(cur_page()->title, "TRACK") && cur_page()->fam == FAM_SEQ && cur_page()->id[0] == P_POFS &&
          cur_page()->id[1] == P_TCHAN && cur_page()->id[2] == P_HVEL && cur_page()->id[3] == P_HRQ;
     turn(EN_K1, -2); frame();
-    go_title("STRETCH"); frame();
-    turn(EN_K4, 3); frame();
-    bad += check("TRACK page: KNOB 1 PIT -2; STRETCH page: KNOB 4 ROTATE +3", ok && t->p[P_SOFS] == 3 && t->p[P_POFS] == -2);
+    t->p[P_SOFS] = 3;                                    /* (V10.8.20: STRETCH's page gone; ROTATE the SCL layer's KNOB 3, below) */
+    bad += check("TRACK page: KNOB 1 PIT -2", ok && t->p[P_POFS] == -2);
     apply_preset_to(t, 1);
     bad += check("  a sound load keeps OFS and PIT (sequence settings)", t->p[P_SOFS] == 3 && t->p[P_POFS] == -2);
     ui_power_on();
@@ -7794,44 +7749,44 @@ static int test_lente(void)
 {
     /* (2463a3b, 2026-11-04, FIT / SPAN: SEQ > LENGTH > RHYTHM after LENGTH; 92fc1d7, 2026-11-05: the GENERATE tab at the
      * end (LYRIC STEP only on a VOICE track): 14 pages in eight tabs, was 12 in seven) */
-    static const char *const CH[14] = {"STEP", "LENGTH", "RHYTHM", "TRACK", "EUCLID", "MODES", "MUTATE", "PLAYHEADS", "STRETCH",
-                                       "STEP FX", "STEP FX 2", "AUTOMATION", "AUTO LIST", "TRACK GEN"};   /* (V10.7.59: STEP FX,
+    static const char *const CH[12] = {"STEP", "LENGTH", "RHYTHM", "TRACK", "EUCLID", "MODES", "PLAYHEADS",
+                                       "STEP FX", "STEP FX 2", "AUTOMATION", "AUTO LIST", "TRACK GEN"};   /* (V10.8.20: MUTATE, STRETCH gone) */   /* (V10.7.59: STEP FX,
                                                          * was COMP) (codex/coherence: TRACK
                                                          * GEN, was GENERATE) */
-    static const char *const TP[7] = {"LENGTH", "EUCLID", "PLAYHEADS", "STRETCH", "STEP FX", "AUTOMATION", "TRACK GEN"};
+    static const char *const TP[6] = {"LENGTH", "EUCLID", "PLAYHEADS", "STEP FX", "AUTOMATION", "TRACK GEN"};
     int bad = 0, ok;
     uint32_t q, sig;
     ui_power_on();
     TSEL->p[P_SLEN] = 64;
     open_family(FAM_SEQ); frame();
-    ok = str_eq(cur_page()->title, "STEP") && lens_level() == LV_BAR && roll_view(cur_page()) && lz_tabs() == 8u &&
-         lz_tab_lit(0) && lz_crumb_is("SEQ \xB7 STEP \xB7 STEP") && lz_count_is("1/14");
+    ok = str_eq(cur_page()->title, "STEP") && lens_level() == LV_BAR && roll_view(cur_page()) && lz_tabs() == 7u &&
+         lz_tab_lit(0) && lz_crumb_is("SEQ \xB7 STEP \xB7 STEP") && lz_count_is("1/12");
     turn(EN_SELECT, -1); frames(32);
-    ok &= str_eq(cur_page()->title, "STEP") && lz_count_is("1/14");                /* (the first: no wrap) */
+    ok &= str_eq(cur_page()->title, "STEP") && lz_count_is("1/12");                /* (the first: no wrap) */
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "PATTERN") && seq_roll_view(cur_page()) && lz_tab_lit(1) && lz_count_is("2/14") &&
+    ok &= str_eq(cur_page()->title, "PATTERN") && seq_roll_view(cur_page()) && lz_tab_lit(1) && lz_count_is("2/12") &&
           lz_crumb_is("SEQ \xB7 PATTERN \xB7 LENGTH");                             /* (PATTERN, named LENGTH; codex/coherence:
                                                          * its group PATTERN) */
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "RHYTHM") && lz_tab_lit(1) && lz_count_is("3/14");
+    ok &= str_eq(cur_page()->title, "RHYTHM") && lz_tab_lit(1) && lz_count_is("3/12");
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "TRACK") && lz_tab_lit(1) && lz_count_is("4/14") &&
+    ok &= str_eq(cur_page()->title, "TRACK") && lz_tab_lit(1) && lz_count_is("4/12") &&
           lz_crumb_is("SEQ \xB7 PATTERN \xB7 TRACK");                              /* (TRACK under the PAT tab) */
-    turn(EN_SELECT, 6); frames(32);
-    ok &= str_eq(cur_page()->title, "COMP") && seq_roll_view(cur_page()) && lz_tab_lit(5) && lz_count_is("10/14") &&
+    turn(EN_SELECT, 4); frames(32);
+    ok &= str_eq(cur_page()->title, "COMP") && seq_roll_view(cur_page()) && lz_tab_lit(4) && lz_count_is("8/12") &&
           lz_crumb_is("SEQ \xB7 STEP FX \xB7 STEP FX");
     turn(EN_SELECT, 1); frames(32);
-    ok &= str_eq(cur_page()->title, "COMP 2") && lz_tab_lit(5) && lz_count_is("11/14");
-    bad += check("seq2 SEQ: enters at STEP (1/14, eight tabs); LENGTH the roll (seq2b), RHYTHM, TRACK under its tab, COMP the roll, COMP 2 after it", ok);
-    bad += check("seq2 SEQ: one chain of 14 by SELECT (no wrap); a SEQ tap the next tab's first, round",
-                 chain_walk(B_SEQ, CH, 14, TP, 7));
+    ok &= str_eq(cur_page()->title, "COMP 2") && lz_tab_lit(4) && lz_count_is("9/12");
+    bad += check("seq2 SEQ: enters at STEP (1/12, seven tabs); LENGTH the roll (seq2b), RHYTHM, TRACK under its tab, COMP the roll, COMP 2 after it", ok);
+    bad += check("seq2 SEQ: one chain of 12 by SELECT (no wrap); a SEQ tap the next tab's first, round",
+                 chain_walk(B_SEQ, CH, 12, TP, 6));
     {   /* (0.9.9-seq2b) every page of the chain the same picture: the bars' strip, the roll with its keys */
-        static const char *const TI[12] = {"STEP", "PATTERN", "TRACK", "EUCLID", "MODES", "MUTATE", "PLAYHEADS", "STRETCH",
+        static const char *const TI[10] = {"STEP", "PATTERN", "TRACK", "EUCLID", "MODES", "PLAYHEADS",
                                            "COMP", "COMP 2", "AUTOMATION", "AUTO LIST"};
         ui_power_on(); TSEL->p[P_SLEN] = 64;
         open_family(FAM_SEQ); frame();
         ok = 1;
-        for (q = 0; q < 12u; q++) {
+        for (q = 0; q < 10u; q++) {
             go_title(TI[q]); frame();
             memset(host_screen, 0, sizeof host_screen); ui.force = 1; ui_draw();
             ok &= str_eq(cur_page()->title, TI[q]) && seq_roll_view(cur_page()) && lens_strip() &&
@@ -7929,7 +7884,7 @@ static int test_lente(void)
     go_title("BAR"); frames(32);
     turn(EN_K1, 1);
     ok &= ui.bank == 1u;
-    turn(EN_SELECT, 8); frames(32);                                               /* (from BAR, LENGTH's place: COMP; V10.16: past MUTATE;
+    turn(EN_SELECT, 6); frames(32);                                               /* (from BAR, LENGTH's place: COMP; V10.8.20: MUTATE, STRETCH gone;
                                                                                     * 2463a3b: past RHYTHM) */
     ok &= seq_roll_view(cur_page()) && lens_level() == LV_STEP;
     bad += check("  DRUM: STEP is the grid (its keys); LENGTH the grid (seq2b), BAR (by code) KNOB 1 the bar; COMP the grid", ok);
@@ -8112,7 +8067,7 @@ static int test_foot_steps(void)
 
 static int test_seq_tools(void)
 {
-    static const uint8_t PG[8] = {GR_ROLL, GR_STEPS, GR_CHANCE, GR_MOTION, GR_SHAPE, GR_FUGUE, GR_EUCLID, GR_COMP};
+    static const uint8_t PG[7] = {GR_ROLL, GR_STEPS, GR_CHANCE, GR_MOTION, GR_FUGUE, GR_EUCLID, GR_COMP};   /* (V10.8.20: STRETCH gone) */
     static const uint8_t NOT[4] = {GR_PATS, GR_SONG, GR_TRK, 0};
     int bad = 0, ok, okc, flash;
     uint32_t i, k, a, b2, pg, seed;
@@ -8120,7 +8075,7 @@ static int test_seq_tools(void)
 
     /* where it opens: (0.8.3) every LENTE page; elsewhere SEQ held is a tap (SONG: SAVE held, G5) */
     ok = 1;
-    for (i = 0; i < 8u; i++) {
+    for (i = 0; i < 7u; i++) {
         ui_power_on();
         go_page(PG[i]); frame();
         pg = ui.page;
@@ -8147,7 +8102,7 @@ static int test_seq_tools(void)
     ui_power_on();
     go_page(GR_ROLL); frame();
     {   /* (0.9.2) a tap on STEP: the next tab's first (seq2: LENGTH MUTATE PLAYHEADS STRETCH COMP AUTOMATION, round) */
-        static const char *const ORD[] = {"PATTERN", "EUCLID", "PLAYHEADS", "STRETCH", "COMP", "AUTOMATION"};
+        static const char *const ORD[] = {"PATTERN", "EUCLID", "PLAYHEADS", "COMP", "AUTOMATION"};
         uint32_t q;
         ok = 1;
         for (q = 0; q < sizeof ORD / sizeof ORD[0]; q++) {
@@ -8161,88 +8116,7 @@ static int test_seq_tools(void)
     bad += test_foot_steps();
     bad += test_copy_paste();
     bad += test_save_lens();
-    {   /* (0.6.85) SEQ > STRETCH: x2 .. x8 / 2 .. / 8 (the notes spread, held ones held), REPEAT x2 .. x8 / TO 64, NUDGE */
-        track_t *t;
-        uint32_t i, ok2 = 1, ok3 = 1, ok4 = 1, ok5;
-        ui_power_on(); stop_transport();
-        song.sel = 0; t = &trk[0];
-        for (i = 0; i < NSTEP; i++) step_clear(&t->step[i]);
-        motion_clear(t);
-        t->p[P_SLEN] = 4;                                /* C D E G, the D held a step (N T) */
-        t->step[0].time = ST_NOTE; t->step[0].n = 1; t->step[0].note[0] = 60; t->step[0].vel = 100;
-        t->step[1].time = ST_NOTE; t->step[1].n = 1; t->step[1].note[0] = 62; t->step[1].vel = 100;
-        t->step[2].time = ST_TIE;
-        t->step[3].time = ST_NOTE; t->step[3].n = 1; t->step[3].note[0] = 67; t->step[3].vel = 100;
-        (void)motion_put(t, 3, P_FCUT, 20, 0);
-        go_page(GR_SHAPE); frame();
-        shp_i = 7u; shp_r = 0u; shp_base.valid = 0;      /* (x1, OFF: whatever an earlier test turned) */
-        ok = str_eq(cur_page()->title, "STRETCH");
-        turn(EN_K1, 1); turn(EN_K1, 1);                  /* x1 -> x2 -> x3, done as it turns (0.6.92), from the base */
-        ok &= shp_k() == 3 && !ui.act;
-        ok &= t->p[P_SLEN] == 12 && t->step[0].note[0] == 60 && t->step[3].note[0] == 62 && t->step[9].note[0] == 67;
-        for (i = 4; i < 9u; i++) ok2 &= t->step[i].time == ST_TIE;          /* the D held through its old TIE */
-        ok2 &= t->step[1].time == ST_REST && t->step[10].time == ST_REST;   /* the short ones stay short */
-        ok2 &= motion.count == 1u && MOTION_STEP(&motion.event[0]) == 9u;  /* the lock went with its step */
-        if (!(ok && ok2)) { printf("  len %d mc %u ms %u |", t->p[P_SLEN], motion.count, motion.count ? MOTION_STEP(&motion.event[0]) : 99u);
-            for (i = 0; i < 12u; i++) printf(" %u:%u", t->step[i].time, t->step[i].note[0]); printf("\n"); }
-        bad += check("STRETCH x3: LEN 4 > 12, each step three apart, a held note held, its lock along", ok && ok2);
-        turn(EN_K1, -1); turn(EN_K1, -1);              /* back to x1: the base again */
-        ok = t->p[P_SLEN] == 4 && t->step[3].note[0] == 67 && motion.count == 1u && MOTION_STEP(&motion.event[0]) == 3u;
-        bad += check("  back to x1: the sequence as it was before (the base), its lock too", ok);
-        turn(EN_K1, 1);                                  /* x2 */
-        ok = !undo_do() && t->p[P_SLEN] == 4 && t->step[3].note[0] == 67 && MOTION_STEP(&motion.event[0]) == 3u;
-        bad += check("  UNDO: the sequence back as it was", ok);
-        t->p[P_SLEN] = 8;                               /* eight steps: C . D T E . G . (edited: a new base) */
-        t->step[4] = t->step[3]; t->step[4].note[0] = 64; t->step[3].time = ST_REST; t->step[6] = t->step[4]; t->step[6].note[0] = 67;
-        motion_clear(t);
-        shp_i = 7u;
-        turn(EN_K1, -1);                                /* /2 */
-        ok3 = t->p[P_SLEN] == 4 && t->step[0].note[0] == 60 && t->step[1].note[0] == 62 && t->step[2].note[0] == 64 &&
-              t->step[3].note[0] == 67 && t->step[4].time == ST_REST;
-        bad += check("STRETCH /2: LEN 8 > 4, the first note of each pair", ok3);
-        turn(EN_K1, 1);                                 /* (x1: the eight back) */
-        t->p[P_SLEN] = 4;                               /* (edited: four steps, a lock) */
-        for (i = 4; i < NSTEP; i++) step_clear(&t->step[i]);
-        motion_clear(t);
-        (void)motion_put(t, 1, P_FCUT, 30, 0);
-        shp_r = 0u;
-        turn(EN_K2, 1); turn(EN_K2, 1);                 /* OFF -> x2 -> x3 */
-        ok4 = shp_rep() == 3u && t->p[P_SLEN] == 12;
-        for (i = 4; i < 12u; i++) ok4 &= t->step[i].time == t->step[i % 4u].time && t->step[i].note[0] == t->step[i % 4u].note[0];
-        ok4 &= motion.count == 3u && t->step[12].time == ST_REST;
-        if (!ok4) printf("  rep len %d mc %u\n", t->p[P_SLEN], motion.count);
-        while (shp_r != 8u) turn(EN_K2, 1);             /* TO 64 (from the base of four) */
-        ok4 &= t->p[P_SLEN] == 64 && t->step[63].note[0] == t->step[3].note[0] && motion.count == 16u;
-        for (i = 0; i < 8u; i++) turn(EN_K2, -1);       /* OFF: the four back */
-        ok4 &= t->p[P_SLEN] == 4 && motion.count == 1u;
-        bad += check("REPEAT x3: 4 steps > 12, their locks copied; TO 64: whole copies (4 > 64); OFF: the base back", ok4);
-        {   /* (0.6.96) the other knob's result is the base: REPEAT x2 (4 > 8), then STRETCH x2 stretches the eight (> 16),
-             * STRETCH x1 back to the eight; REPEAT again then takes the stretched result as its base */
-            int ok6;
-            shp_r = 0u; shp_i = 7u;
-            turn(EN_K2, 1);                             /* x2: 8 */
-            ok6 = t->p[P_SLEN] == 8;
-            turn(EN_K1, 1);                             /* STRETCH x2 over the repeats: 16 */
-            ok6 &= t->p[P_SLEN] == 16 && t->step[8].note[0] == t->step[0].note[0];
-            if (!ok6) printf("  after stretch: len %d n8 %d n0 %d\n", t->p[P_SLEN], t->step[8].note[0], t->step[0].note[0]);
-            turn(EN_K1, -1);                            /* x1: the eight back (not the four) */
-            ok6 &= t->p[P_SLEN] == 8 && shp_r == 0u;
-            if (!ok6) printf("  after x1: len %d shp_r %u\n", t->p[P_SLEN], shp_r);
-            turn(EN_K1, 1); turn(EN_K2, 1);             /* x2 again (16), then REPEAT x2 from the sixteen: 32 */
-            ok6 &= t->p[P_SLEN] == 32 && t->step[16].time == t->step[0].time;
-            if (!ok6) printf("  stretch over repeat: len %d\n", t->p[P_SLEN]);
-            bad += check("STRETCH over REPEAT (0.6.96): the other knob's result is the base; the same knob keeps its own", ok6);
-        }
-        t->p[P_SLEN] = 4;
-        for (i = 4; i < NSTEP; i++) step_clear(&t->step[i]);
-        motion_clear(t); shp_r = 0u; shp_i = 7u;
-        ok5 = t->step[0].note[0] == 60;
-        turn(EN_K3, 1);
-        ok5 &= t->step[1].note[0] == 60 && t->step[0].note[0] == 67 && t->p[P_SLEN] == 4;
-        turn(EN_K3, -1);
-        ok5 &= t->step[0].note[0] == 60;
-        bad += check("NUDGE: KNOB 3 moves the sequence a step right / left at once", ok5);
-    }
+    /* (V10.8.20, the owner) SEQ > STRETCH gone (STRETCH, REPEAT, NUDGE, ROTATE): its tests with it */
     {   /* (0.6.37) SHIFT: OFFSET PITCH CHANCE, the last SEQ page; CHANCE 0 skips every step, 100 % (stored 0) none */
         char v[12]; const char *u; step_t st; track_t *t3 = &trk[0];
         ui_power_on(); go_title("TRACK"); frame();
@@ -12925,7 +12799,7 @@ static const old_lv_t OLD_LV[] = {
     {FAM_GLO, 0, 9, {"MIXER", "SENDS"}}, {FAM_GLO, 1, 9, {"GLOBAL"}}, {FAM_GLO, 2, 9, {"SYSTEM", "SYSTEM 2"}},
     {FAM_SAVE, SV_LIB, 9, {"PROJECT", "TOOLS"}}, {FAM_SAVE, SV_PROJ, 9, {"PROJECT", "ARRANGE"}},
     {FAM_SAVE, SV_SOUND, 9, {"USER", "PRESETS"}},
-    {FAM_SEQ, LV_PAT, 9, {"PATTERN", "STRETCH", "PLAYHEADS", "TRACK", "EUCLID"}},   /* (seq2: BAR, NOTE out of the chain) */
+    {FAM_SEQ, LV_PAT, 9, {"PATTERN", "PLAYHEADS", "TRACK", "EUCLID"}},   /* (seq2: BAR, NOTE out of the chain) */
     {FAM_SEQ, LV_BAR, 9, {"STEP", "AUTOMATION", "AUTO LIST"}},
     {FAM_SEQ, LV_STEP, 9, {"COMP", "COMP 2"}},   /* (NOTE's STEP view: merged into BAR's, the mock-up's "páginas repetidas") */
     {FAM_FX, FXL_TRACK, 9, {"FX", "DIST", "AUTO PAN"}}, {FAM_FX, FXL_BUSES, 9, {"BUSES"}},
@@ -13164,7 +13038,7 @@ static void tk_start(uint32_t from)                     /* 0 home, 1 seq, 2 fxdl
 }
 static int test_nav_tasks(void)
 {
-    static const uint8_t WANT[14] = {4, 3, 5, 6, 4, 9, 9, 2, 3, 1, 4, 7, 19, 5};   /* (V10.8: task 5 by PRESETS, two fast turns) */   /* (V10.7.63: task 11 a detent less) */   /* (V10.7.63: task 5 a SAVE tap less) */   /* (2463a3b, 2026-11-04: SEQ > LENGTH >
+    static const uint8_t WANT[14] = {4, 3, 5, 6, 4, 9, 9, 2, 3, 1, 4, 7, 17, 5};   /* (V10.8.20: task 13 two detents less) */   /* (V10.8: task 5 by PRESETS, two fast turns) */   /* (V10.7.63: task 11 a detent less) */   /* (V10.7.63: task 5 a SAVE tap less) */   /* (2463a3b, 2026-11-04: SEQ > LENGTH >
                                                          * RHYTHM between LENGTH and TRACK: tasks 11 and 13 a detent more) */   /* (V10.37: COMPS before GLOBAL, SYSTEM a tap further) */   /* (V10.1: SAVE composes first, 106 -> 108) */   /* (seq2: task 5 by STEP's KNOB 1, no BAR;
                                                          * task 11 TRACK under LEN's tab; task 13 eight detents (seq2c:
                                                          * MUTATE 2); was 73) */
@@ -13236,7 +13110,7 @@ static int test_nav_tasks(void)
               ok = song.sel == 3u && str_eq(cur_page()->title, "SOUND") && c == 1u && dv[DXP_DECAY] != d0; }
             break;
         case 12:                                        /* COMP 2 of step 9 */
-            tk_start(1); tk_go(EN_PRESET, 8); tk_go(EN_SELECT, 10); tk_val(EN_K1, 1);   /* (2463a3b: RHYTHM, ten) */   /* (seq2c: eight detents to COMP 2, V10.16 nine;
+            tk_start(1); tk_go(EN_PRESET, 8); tk_go(EN_SELECT, 8); tk_val(EN_K1, 1);   /* (2463a3b: RHYTHM, ten; V10.8.20: MUTATE, STRETCH gone, eight) */   /* (seq2c: eight detents to COMP 2, V10.16 nine;
                                                          * seq2d: the step picked on STEP, KNOB 1 its ACTION) */
             ok = str_eq(cur_page()->title, "COMP 2") && ui.cursor == 8u && TSEL->step[8].comp2 != 0u;
             break;
@@ -13255,7 +13129,7 @@ static int test_nav_tasks(void)
     }
     printf("ui:   the race: %u %u %u %u %u %u %u %u %u %u %u %u %u %u = %u actions (0.9.1: 75)\n", got[0], got[1], got[2], got[3],
            got[4], got[5], got[6], got[7], got[8], got[9], got[10], got[11], got[12], got[13], tot);
-    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 81u);   /* (V10.8: task 5 by PRESETS, 34 -> 4) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
+    bad += check("0.9.2 the mock-up's 14 tasks on the panel: each goal reached in its PROPOSED actions (seq2c: 106, was 73)", okall && tot == 79u);   /* (V10.8.20: MUTATE, STRETCH out of SEQ's chain: -2) */   /* (V10.8: task 5 by PRESETS, 34 -> 4) */   /* (2463a3b RHYTHM: +2) */   /* (V10.8: an accent past VEL 127: +1; V10.16 MUTATE in SEQ's chain: +1) */
     ui_power_on();
     return bad;
 }
@@ -13649,63 +13523,6 @@ static int test_chord_peek(void)
     return check("CHORD LEAD: the CHORD page on screen does not change the next key's chord (V10.27)", na == nb && !memcmp(a, b, na));
 }
 /* (V10.25) SEQ > STRETCH's NUDGE: OCT- the whole sequence a step (blue), OCT+ the cursor step's MICRO timing (red) */
-static int test_nudge_micro(void)
-{
-    int ok;
-    track_t *t;
-    ui_power_on();
-    song.sel = 1; t = TSEL;
-    my_steps(t);
-    go_title("STRETCH"); frame();
-    ui.cursor = 0;
-    t->step[0] = (step_t){{60}, 1, ST_NOTE, 0, 100};
-    press(B_OCTUP);
-    ok = ndg_step == 1u;
-    turn(EN_K3, 1); turn(EN_K3, 1); turn(EN_K3, 1);
-    ok &= ST_MICRO(&t->step[0]) == 3 && t->step[0].note[0] == 60;
-    turn(EN_K3, -1);
-    ok &= ST_MICRO(&t->step[0]) == 2;
-    press(B_OCTDN);
-    ok &= ndg_step == 0u;
-    turn(EN_K3, 1);
-    ok &= t->step[1].note[0] == 60 && ST_MICRO(&t->step[1]) == 2;   /* (the sequence a step right, its MICRO with it) */
-    ok = check("NUDGE: OCT+ the step's MICRO (64ths), OCT- the whole sequence a step (V10.25)", ok) == 0;
-    {   /* (V10.7.4) OCT+ again: the cursor step moved a step; a note moves with its TIEs (its length), the locks with it,
-         * the neighbour's note keeps its own; UNDO puts it back */
-        uint32_t i;
-        int16_t lv;
-        step_t keep[NSTEP];
-        int ok2;
-        ui_power_on();
-        song.sel = 1; t = TSEL;
-        for (i = 0; i < NSTEP; i++) step_clear(&t->step[i]);
-        t->p[P_SLEN] = 16;
-        t->step[1] = (step_t){{64}, 1, ST_NOTE, 0, 100};
-        t->step[2] = (step_t){{60}, 1, ST_NOTE, 0, 100};
-        t->step[3].time = ST_TIE; t->step[3].vel = 100;
-        (void)motion_set_lock(t, 2, P_PAN, 20);
-        memcpy(keep, t->step, sizeof keep);
-        go_title("STRETCH"); frame();
-        ui.cursor = 2;
-        press(B_OCTUP); press(B_OCTUP);
-        ok2 = ndg_step == 2u;
-        turn(EN_K3, 1); frame();
-        ok2 &= t->step[1].time == ST_NOTE && t->step[1].note[0] == 64 && t->step[2].time == ST_REST &&
-               t->step[3].time == ST_NOTE && t->step[3].note[0] == 60 && t->step[4].time == ST_TIE &&
-               t->step[5].time == ST_REST && ui.cursor == 3u;
-        ok2 &= motion_lock_get(t, 3, P_PAN, &lv) && lv == 20 && !motion_lock_get(t, 2, P_PAN, &lv);
-        (void)undo_do(); frame();
-        ok2 &= !memcmp(keep, t->step, sizeof keep) && motion_lock_get(t, 2, P_PAN, &lv) && lv == 20;   /* (UNDO: as before) */
-        ui.cursor = 2;
-        turn(EN_K3, -1); frame();                             /* (left: past the note at 1, which keeps its length) */
-        ok2 &= t->step[1].time == ST_NOTE && t->step[1].note[0] == 60 && t->step[2].time == ST_TIE &&
-               t->step[3].time == ST_NOTE && t->step[3].note[0] == 64 && t->step[4].time == ST_REST && ui.cursor == 1u;
-        ok2 &= motion_lock_get(t, 1, P_PAN, &lv) && lv == 20;
-        if (!ok2) for (i = 0; i < 6u; i++) printf("  step %u: time %u note %u\n", i, t->step[i].time, t->step[i].note[0]);
-        ok &= !check("NUDGE: OCT+ again moves the cursor step (V10.7.4): a note with its TIEs and its locks, the neighbour whole", ok2);
-    }
-    return !ok;
-}
 /* (V10.25) SCL > SCENE: one key plays every track given a role (T6 CHORD a triad, T5 BASS an octave down, T2 LEAD an
  * octave up, T4 ARP the chord into its arp); the kit and KEEP tracks are not reached; the key up ends them all; REC
  * records every role's track */
@@ -13970,7 +13787,6 @@ int main(void)
     bad += test_string_excite();
     bad += test_presets_back();
     bad += test_scene();
-    bad += test_nudge_micro();
     bad += test_chord_peek();
     bad += test_slower();
     bad += test_large_face();

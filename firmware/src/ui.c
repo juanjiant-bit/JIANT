@@ -618,7 +618,9 @@ static int page_visible(uint32_t i)
 {
     if (PAGES[i].graph == GR_SONG && (PAGES[i].fam == FAM_SEQ || (PAGES[i].title[0] == 'T' && PAGES[i].title[1] == 'I')))
         return 0;                                       /* (V10.8: TIMELINE, PARTS gone, the song mode's redesign) */
-    if (PAGES[i].graph == GR_LIVE)
+    if (PAGES[i].graph == GR_LIVE || PAGES[i].graph == GR_SHAPE || PAGES[i].id[0] == ID_MU0)   /* (V10.8.20, the owner: SEQ >
+                                                         * STRETCH and MUTATE gone for the flash; kept in the table: their
+                                                         * index; ROTATE's P_SOFS, MUTATE's settings kept in the projects) */
         return 0;                                       /* (V10.8.3, the owner: GLO > LIVE gone for the song mode's flash) */                                       /* (0.6.24) the song in one place: SAVE > ARRANGE (SEQ > SONG
                                                          * was the same page twice; kept in the table: its index) */
     if (sys_load == LOAD_ECO && ((PAGES[i].graph == GR_SLCR || PAGES[i].graph == GR_SLPIT) ||
@@ -878,8 +880,6 @@ static uint32_t lock_id(uint32_t k)
 
 static void ev_enter(void);
 static uint8_t br_armed;
-static uint8_t ndg_step;                            /* (V10.25) SEQ > STRETCH's NUDGE: 0 the sequence by steps (blue), 1 the
-                                                     * cursor step's MICRO timing (red); OCT- / OCT+ pick it */
 static uint32_t tl_t0;                              /* (V10.24) TOOLS: OCT+ held since (0: not), its action and track */
 static uint8_t tl_kind, tl_trk;
 #define TL_HOLD 900u                                /* (ms: held this long, it is done; no dialog) */
@@ -2147,11 +2147,6 @@ static uint32_t act_cols(void)                   /* the columns that are actions
 }
 
 /* the action OCT+ does: its column + 1, 0 = none picked yet (PATTERNS has LOAD only) */
-/* (0.6.85) SEQ > STRETCH's picks (ui_input.c shape_knob); (0.6.92) done as the knob turns, from a neutral middle:
- * STRETCH /8 .. /2 (0..6), x1 (7: as it was), x2 .. x8 (8..14); REPEAT OFF (0), x2 .. x8 (1..7), TO 64 (8) */
-static uint8_t shp_i = 7u, shp_r = 0u;
-static int32_t shp_k(void) { return shp_i < 7u ? -(int32_t)(8u - shp_i) : shp_i == 7u ? 1 : (int32_t)shp_i - 6; }
-static uint32_t shp_rep(void) { return shp_r == 0u ? 1u : shp_r < 8u ? shp_r + 1u : 0u; }   /* 1 as it was, 2..8, 0 to 64 */
 
 static uint32_t act_col(void)
 {
