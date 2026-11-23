@@ -7,7 +7,7 @@
    box from pixel `start` on, row by row, as tokens: 0x00..0x3F the colour at that hash, 0x40..0x67 the colour before
    1..40 times more, 0x68..0x6F then a byte: 41..1064 times, 0x70..0x7F then two bytes: a colour in full (RGB565). Each
    frame starts with an empty hash table and the colour before 0. */
-export const SCR = { W: 240, H: 240, CAP: 480 };
+export const SCR = { W: 240, H: 240, CAP: 256 };
 export const scrHash = (c) => ((c >> 11) * 3 + ((c >> 5) & 63) * 5 + (c & 31) * 7) & 63;
 /* a = the frame's bytes after the command; fb: Uint16Array(240 * 240) of RGB565. -> the box drawn {x, y, w, h}, or null */
 export function scrDecode(a, fb) {

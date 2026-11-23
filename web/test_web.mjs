@@ -99,10 +99,10 @@ async function editorScreen() {
   for (let i = 0, seed = 1; i < big.length; i++) { seed = (Math.imul(seed, 1103515245) + 12345) >>> 0; big[i] = i % 7 < 3 ? 0x0841 : seed >>> 16; }
   const many = E.scrEncode(big.subarray(10), 5, 2, 200, 230, 240);
   fb.fill(0);
-  let fine = many.length > 50 && many.every((f) => f.length <= 12 + 480 && f.every((b) => b >= 0 && b < 128));
+  let fine = many.length > 50 && many.every((f) => f.length <= 12 + 256 && f.every((b) => b >= 0 && b < 128));
   for (const f of [...many].reverse()) fine &&= !!E.scrDecode(f, fb);          /* (any order: each frame stands alone) */
   for (let j = 0; j < 230; j++) for (let i = 0; i < 200; i++) fine &&= fb[(2 + j) * 240 + 5 + i] === big[10 + j * 240 + i];
-  ok(fine, "SCREEN: noise through a stride: 7-bit frames <= 0.5 KiB, decoded in any order");
+  ok(fine, "SCREEN: noise through a stride: 7-bit frames <= 0.3 KiB, decoded in any order");
   ok(E.scrDecode([0, 0, 2, 0, 0, 16, 0, 1, 0, 0, 0, 0, 0x40], fb) === null && E.scrDecode([1, 0, 0], fb) === null &&
      E.scrDecode([1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0x40], fb) === null,
     "SCREEN: a box past the screen, a short frame or another type: refused");

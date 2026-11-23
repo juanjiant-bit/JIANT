@@ -1164,7 +1164,7 @@ the panel to the mirror as well, which sends it on as `SCREEN_DATA` pushes. Firm
     table at `((c >> 11) * 3 + ((c >> 5) & 63) * 5 + (c & 31) * 7) & 63` and becomes the colour before.
 
   Another type is for later: an editor skips it.
-  A strip that does not fit one frame (480 token bytes at most) goes on in the next, its `start` where the last ended.
+  A strip that does not fit one frame (256 token bytes at most) goes on in the next, its `start` where the last ended.
   Every frame stands alone: a lost frame costs its pixels until they are drawn again (`SCREEN 3`).
 - It stops by itself 4 s after the editor's last request of any kind (the editor sends `SCREEN 2` every second; a hidden
   tab or a phone gone to sleep stops it), and at once if a frame could not go out within 200 ms (nobody reads the port).
