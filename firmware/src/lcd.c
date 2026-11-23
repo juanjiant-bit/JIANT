@@ -15,7 +15,10 @@ static uint8_t lcd_small[64];
 
 /* the editor's screen mirror (editor_screen.c, EDITOR_PROTOCOL.md "Screen mirror"): while the editor asks for it, every
  * fill and strip sent to the panel is also sent to the editor, compressed (the firmware keeps no frame of its own) */
-#if FELUCCA_OTA
+#ifndef FELUCCA_SCREEN_MIRROR
+#define FELUCCA_SCREEN_MIRROR 1          /* 0: no mirror (928 B of flash and 432 B of the pool back; the editor hides its button) */
+#endif
+#if FELUCCA_OTA && FELUCCA_SCREEN_MIRROR
 #define SCR_HAS_LCD 1
 uint8_t scr_on __attribute__((section(".pool.mirror")));   /* (not static, after the pool: kept out of the compiler's merged
                                                          * globals, so no other variable moves; app.ld) */

@@ -14,6 +14,12 @@
  * JIANT BYTE pins its sound's code, and the compiler merges the static variables functions use together, so new
  * functions touching several of the existing ones would move it. scr_tap touches only its own. */
 enum { ED_SCREEN = 78, ED_SCREEN_DATA };
+#ifndef FELUCCA_SCREEN_MIRROR
+#define FELUCCA_SCREEN_MIRROR 1                /* (lcd.c's default; 0: no mirror at all, SCREEN gets no reply as before) */
+#endif
+#if !FELUCCA_SCREEN_MIRROR
+static int ed_screen_handle(uint32_t cmd, const uint8_t *a, uint32_t na) { (void)cmd; (void)a; (void)na; return 0; }
+#else
 #define SCR_W 240u
 #define SCR_H 240u
 #define SCR_CAP 256u                           /* the token bytes of one frame (+ 17 header bytes: a 0.3 KiB SysEx; 480 until V10.8.20's pool
@@ -136,3 +142,4 @@ static int ed_screen_handle(uint32_t cmd, const uint8_t *a, uint32_t na)
 #endif
     return 1;
 }
+#endif                                         /* FELUCCA_SCREEN_MIRROR */
