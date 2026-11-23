@@ -341,6 +341,9 @@ static int layer_hint_said(void)
     return 0;
 }
 /* frames, true when a layer hint was said in any of them */
+#ifndef HINT_DWELL_MS
+#define HINT_DWELL_MS 800u                              /* (V10.8.18: the firmware's gone with its teaching hints) */
+#endif
 static int frames_layer_hint(uint32_t n)
 {
     int said = 0;
@@ -11413,16 +11416,6 @@ static int test_skin(void)
         frames(100);
         bad += check("ui.msg: 40 bytes, a longer message ellipsised at its end (MUTATE's whole) (L8)", ok);
     }
-    {   /* (0.9.0) a page's hint (MUTATE's) on its page only: gone when the page changes (0.9.5: the layers' gone) */
-        ui_power_on(); frame();
-        press(B_EDIT);
-        ok = !frames_layer_hint(HINT_DWELL_MS + 64u) && !ui.hint_pg;
-        go_title("TRACK"); frames(160); turn(EN_SELECT, 1); frames(HINT_DWELL_MS + 64u);
-        ok &= str_eq(cur_page()->title, "EUCLID") && ui.msg_t && ui.hint_pg && msg_is("TURN A KNOB: A PATTERN");
-        go_title("ENV"); frame();
-        ok &= !ui.msg_t && !ui.hint_pg;
-        bad += check("a page's hint goes when the page changes (not carried onto the next page); no layer hint after EDIT", ok);
-    }
     {                                                             /* every lens page */
         int okp = 1;
         for (i = 0; i < NPAGES; i++) {
@@ -12638,79 +12631,26 @@ static int test_toasts(void)
         ok &= !ui.confirm && memcmp(toast_snap + H_HEAD * 240u, host_screen + H_HEAD * 240u, (240u - H_HEAD) * 480u) == 0;
     }
     bad += check("  NOTICE blacks out no more than its box (its tabs, its card, its breadcrumb): the page round it, back whole", ok);
-    /* hints: walking SEQ's chain with SELECT (TRACK > EUCLID > PLAYHEADS) says nothing; dwelt on, MUTATE's; at most HINT_MAX */
+    /* (V10.8.18) the teaching hints (EUCLID's, MUTATE's, AUTOMATION's, PUNCH LANE's: at most twice ever) gone for the
+     * boot's room: walked past or dwelt on, those pages say nothing; no layer hint either */
     ui_power_on(); go_title("TRACK"); frames(400);
     for (seen = passed = 0, k = 0; k < 4u; k++) {
         turn(EN_SELECT, 1); passed |= str_eq(cur_page()->title, "EUCLID");
-        for (n = 0; n < 12u; n++) { frame(); seen |= msg_is("TURN A KNOB: A PATTERN") || msg_is("OCT+ NEW  OCT- BEFORE"); }
+        for (n = 0; n < 12u; n++) { frame(); seen |= ui.msg_t && ui.msg[0]; }
     }
-    for (n = 0; n < 200u; n++) { frame(); seen |= ui.msg_t && ui.msg[0]; }
-    bad += check("0.9.5 a page's hint: none while SELECT walks past it (TRACK > EUCLID > PLAYHEADS), nor carried onto the next",
-                 passed && str_eq(cur_page()->title, "PLAYHEADS") && !seen);
-    turn(EN_SELECT, -3);                                /* back to EUCLID (past MUTATE, MODES): stay */
+    turn(EN_SELECT, -3);
     ok = str_eq(cur_page()->title, "EUCLID");
-    frames(HINT_DWELL_MS - 160u);
-    ok &= !ui.msg_t;
-    frames(240u);
-    ok &= msg_is("TURN A KNOB: A PATTERN");
-    for (n = 0, seen = 0; n < 200u; n++) { frame(); seen |= msg_is("OCT+ NEW  OCT- BEFORE"); }
-    ok &= seen;
-    bad += check("  dwelt on (HINT_DWELL_MS): EUCLID's, then its second line", ok);
-    for (k = 0, n = 0; k < 3u; k++) {                   /* three more visits: once more (HINT_MAX), then no more */
-        go_title("BAR"); frames(400);
-        go_title("EUCLID");
-        for (seen = 0, x = 0; x < 120u; x++) { frame(); seen |= msg_is("TURN A KNOB: A PATTERN"); }
-        n += seen;
-    }
-    bad += check("  at most HINT_MAX (2) times in all: counted (hint_given), then never", n == HINT_MAX - 1u &&
-                 hint_given(HK_EUCLID) == HINT_MAX);
-    {   /* the counts kept with the settings: a reboot (the settings saved, power off, loaded back) gives no more */
-        persist_t p = {0};
-        uint32_t lc;
-        ui.msg_t = 0;
-        for (k = 0, lc = 0; k < 3u; k++) {              /* (0.9.5) SCL tapped: no layer hint, ever (nothing counted) */
-            go_home(); frames(160); ui.msg_t = 0;
-            press(B_SCL);
-            lc += (uint32_t)frames_layer_hint(HINT_DWELL_MS + 64u);
-        }
-        ok = lc == 0u;
-        for (k = HK_N; k < 13u; k++)                    /* (the old layer counts' bytes: untouched) */
-            ok &= favorites.factory[15][k] == 0u;
-        bad += check("  0.9.5 SCL tapped three times, dwelt on: no \"HOLD [SCL] QUICK\", nothing counted", ok);
-        p.magic = PERSIST_MAGIC; p.panel = panel;
-        settings_export(&p);
-        ui_power_on();                                  /* (a fresh power-on: favorites cleared, then the settings loaded) */
-        ok = hint_given(HK_EUCLID) == 0u && settings_import(&p, sizeof p) && hint_given(HK_EUCLID) == HINT_MAX;
-        go_title("TRACK"); frames(160); turn(EN_SELECT, 1);
-        for (seen = 0, x = 0; x < 120u; x++) { frame(); seen |= msg_is("TURN A KNOB: A PATTERN"); }
-        go_home(); frames(160); ui.msg_t = 0;
-        press(B_SCL);
-        seen |= frames_layer_hint(120u);
-        bad += check("  the counts kept with the settings: after a reboot no more EUCLID hints (no SCL one)", ok && !seen);
-        p.favorites.factory[15][HK_EUCLID] = 0;         /* (older settings: those bytes 0 = not given yet) */
-        ui_power_on();
-        ok = settings_import(&p, sizeof p) && hint_given(HK_EUCLID) == 0u;
-        bad += check("  older settings (the spare bytes 0): the hints not given yet", ok);
-    }
-    ui_power_on();                                      /* (0.9.5) no layer hint: not before the layer is held, nor after */
-    press(B_EDIT);
+    for (n = 0; n < 200u; n++) { frame(); seen |= ui.msg_t && ui.msg[0]; }
+    go_title("AUTOMATION"); for (n = 0; n < 200u; n++) { frame(); seen |= ui.msg_t && ui.msg[0]; }
+    go_title("PUNCH LANE"); for (n = 0; n < 200u; n++) { frame(); seen |= ui.msg_t && ui.msg[0]; }
+    bad += check("V10.8.18 no teaching hint: EUCLID walked past or dwelt on, AUTOMATION, PUNCH LANE say nothing", passed && ok && !seen);
+    ui_power_on();                                      /* (0.9.5) no layer hint: SCL or EDIT tapped, dwelt on */
+    go_home(); frames(160); ui.msg_t = 0;
+    press(B_SCL);
     ok = !frames_layer_hint(HINT_DWELL_MS + 64u);
-    go_home(); frames(160);
-    fm1_in.buttons |= 1u << panel.btn[B_EDIT]; host_pressed |= 1u << panel.btn[B_EDIT];
-    frames(480);
-    ok &= ui.layer == LAYER_EDIT;
-    fm1_in.buttons &= ~(1u << panel.btn[B_EDIT]); frame();
     go_home(); frames(160); ui.msg_t = 0;
     press(B_EDIT);
-    bad += check("  0.9.5 no layer hint after an EDIT tap: before its layer is held, nor after", ok && !frames_layer_hint(120u));
-    /* INIT SYSTEM (SAVE > TOOLS): the hints start over */
-    hint_given(HK_EUCLID) = HINT_MAX;
-    confirm_open(CF_INIT_SYS, 0); ui.force = 1; frame();
-    press(B_OCTUP); frames(160);
-    ok = !ui.confirm && hint_given(HK_EUCLID) == 0u;
-    go_title("TRACK"); frames(160); turn(EN_SELECT, 1); ui.msg_t = 0;
-    for (seen = 0, x = 0; x < 120u; x++) { frame(); seen |= msg_is("TURN A KNOB: A PATTERN"); }
-    bad += check("  INIT SYSTEM: the counts start over (MUTATE's hint again)", ok && seen);
+    bad += check("  no layer hint after an SCL or EDIT tap", ok && !frames_layer_hint(HINT_DWELL_MS + 64u));
     return bad;
 }
 
@@ -13027,7 +12967,7 @@ static const char *coh_name(uint32_t sec, uint32_t e) { const nv_t *v = &nav_ch(
 static int coh_ok(uint32_t sec, const char *a, const char *b)
 {
     static const struct { uint8_t sec; const char *a, *b; } OK[] = {
-        {SEC_ENV, "ENV", "TRACKS"}, {SEC_GLO, "MIXER", "GLOBAL"}, {SEC_FX, "SENDS", "DIST"},
+        {SEC_GLO, "MIXER", "GLOBAL"}, {SEC_FX, "SENDS", "DIST"},
         {SEC_FX, "BUSES", "DLY"}, {SEC_FX, "BUSES", "REVERB"}, {SEC_FX, "BUSES", "CHORUS"}, {SEC_FX, "BUSES", "SLICER"},
         {SEC_EDIT, "MORE", FELUCCA_FM4 ? "OP LEVEL" : "-"}};   /* (FELUCCA_FM4's retired DIGITAL: P_TVEL is its OP4 LEVEL) */
     uint32_t i;

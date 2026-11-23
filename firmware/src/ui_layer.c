@@ -461,46 +461,6 @@ static void layer_tap(uint32_t l)
     else
         (void)page_tap(LAYERS[l].btn);
 }
-typedef char hk_room_t[HK_N <= 20 ? 1 : -1];   /* (bytes 20.. of engine 15's: other settings) */
-/* (0.9.5) INIT SYSTEM: the teaching hints start over (none given) */
-static void hints_reset(void)
-{
-    uint32_t k;
-    for (k = 0; k < HK_N; k++)
-        hint_given(k) = 0;
-    ui.hint_k = 0;
-    settings_save();
-}
-/* (0.9.5) a frame: the page's hint waiting (page_entered: MOTION, PUNCH, MUTATE) given once its page has been shown HINT_DWELL_MS (gone with
- * another page: walking past with SELECT says nothing), when nothing else is said or open over it, at most HINT_MAX times
- * ever (hint_given, kept with the settings); on its page only (ui.hint_pg) */
-static void hint_tick(void)
-{
-    uint32_t k = ui.hint_k, at = ui.home ? 255u : ui.page + 1u;
-    if (!k)
-        return;
-    if (ui.hint_at != at) {
-        ui.hint_k = 0;
-        return;
-    }
-    if (fm1_ms - ui.hint_ms < HINT_DWELL_MS || ui.msg_t || ui.menu || ui.confirm || ui.layer || name_on() || ui.uboot)
-        return;
-    ui.hint_k = 0;
-    if (hint_given(k) >= HINT_MAX)
-        return;
-    hint_given(k)++;
-    settings_save();                                    /* (the count kept: deferred while playing) */
-    if (k == HK_MOTION)
-        ui_message("REC + PLAY, TURN A KNOB");          /* (0.6.92) how it is recorded */
-    else if (k == HK_PUNCH)
-        ui_message("REC + PLAY, HOLD FX + A KEY");      /* (0.6.99) the lane's recording */
-    else {                                              /* (V10.6) HK_EUCLID */
-        int mu = cur_page()->id[0] == ID_MU0;           /* (V10.16) MUTATE's keys */
-        ui_message(mu ? "EVERY: MUTATE ON THE BAR" : "TURN A KNOB: A PATTERN");
-        str_cpy(ui.msg2, mu ? "OCT+ MUTATE  OCT- ANCHOR" : "OCT+ NEW  OCT- BEFORE", sizeof ui.msg2);
-    }
-    ui.hint_pg = (uint8_t)at;                           /* (0.9.0: this page's only) */
-}
 
 static uint32_t snd_id(void) { return TSEL->eng_req | (uint32_t)TSEL->preset << 8 | (uint32_t)TSEL->user << 16; }
 /* EDIT RECALL: the section playing has a stored sound to come back to */

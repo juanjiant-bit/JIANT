@@ -324,14 +324,8 @@ static int32_t ratio_d(const param_desc_t *d, int32_t v) { return ratio_of(d->mi
 #define LG_H_GRAPH 62
 #define LZ_LG_Y_GRAPH 150                 /* (0.8.5) .. under a lens's tabs: the tall cards 42..146, the strip 150..212 */
 
-/* (0.9.5) the hints a page gives ("OCT+ KEEP  GLO+A4 FREEZE"): only once the page has been dwelt on HINT_DWELL_MS (never
- * while SELECT walks past it), each at most HINT_MAX times ever. The count kept with the settings, a byte a hint in engine
- * 15's spare favourite bytes 0..12 (no engine 15: 0 in older settings, a hint not yet given; 4..12 held the layer buttons'
- * "HOLD [X] QUICK" counts, gone: kept as saved, unused); INIT SYSTEM starts them over */
-enum { HK_NONE, HK_MOTION, HK_PUNCH, HK_EUCLID, HK_N };
-#define HINT_DWELL_MS 800u
-#define HINT_MAX 2u
-#define hint_given(k) (favorites.factory[15][(k)])
+/* (0.9.5 .. V10.8.17) the teaching hints (EUCLID's, MUTATE's, AUTOMATION's, PUNCH LANE's, each at most twice ever, counted in
+ * engine 15's spare favourite bytes 0..12) gone in V10.8.18 for the boot's room; those bytes kept as saved, unused */
 static struct {
     uint8_t home;
     uint8_t page;                /* index into PAGES */
@@ -389,11 +383,6 @@ static struct {
     uint32_t layer_sig;          /* drawn-state cache of the map */
     char msg[40];                /* (0.9.0: 40, was 24 and cut the long ones silently; longer: ellipsised, ui_say) */
     char msg2[40];               /* a second message, shown when the first is over */
-    uint8_t hint_pg;             /* (0.9.0) the page (+ 1, HOME 255) a page's hint (MUTATE's) was given on: gone
-                                  * on another (ui_draw_page) */
-    uint8_t hint_k;              /* (0.9.5) a hint waiting for its page to be dwelt on (HK_*; 0 none: ui_layer.c hint_tick) */
-    uint8_t hint_at;             /* .. the page it is for (+ 1, HOME 255) */
-    uint32_t hint_ms;            /* .. shown since */
     uint32_t enc_t[NE];
     /* drawn-state cache */
     char col[4][56];   /* (0.6.10: was 32, a key up to 51 lost its colour / gauge / icon tail) */
@@ -798,7 +787,6 @@ static void ui_say(const char *a, const char *b)
         ui.msg[sizeof ui.msg - 2u] = ELLIPSIS;
     ui.msg_t = 40;
     ui.msg2[0] = 0;
-    ui.hint_pg = 0;
 }
 
 static void ui_message(const char *s) { ui_say(s, ""); }
@@ -910,10 +898,6 @@ static void page_entered(void)
     if (!ui.home && lock_page_ok(ui.page))
         ui.plk_src = (uint8_t)(ui.page + 1u);
     song.seq_mode = !ui.home && pg->fam == FAM_SEQ;
-    ui.hint_k = ui.home ? HK_NONE : pg->graph == GR_MOTION ? HK_MOTION : pg->graph == GR_PUNCH ? HK_PUNCH :
-                pg->graph == GR_EUCLID ? HK_EUCLID : HK_NONE;   /* (0.9.5: its hint once dwelt on: ui_layer.c hint_tick) */
-    ui.hint_at = (uint8_t)(ui.home ? 255u : ui.page + 1u);
-    ui.hint_ms = fm1_ms;
     ui.entry_open = 0;
     ui.hot_t = 0;                                /* clear the previous page's emphasis */
     ui.act = pg->graph == GR_USER ? 4u : 0u;     /* the save screen is ready for OCT+ */

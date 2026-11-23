@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (codex/anim) The animation under load, on the host (tests/ui_render.c's screens, firmware/src/ui*.c):
  *   time     the same moment draws the same picture whatever the frame rate: HOME's ECO, BEING, EDIT's beings and
- *            creatures, DRUM-X's kit, GEN's helix drawn at 66 frames a second and at 10 (frames dropped, long gaps):
+ *            creatures, DRUM-X's kit, GEN drawn at 66 frames a second and at 10 (frames dropped, long gaps):
  *            the panel identical at the same time (ui.c anim_at, the clock; ui_lzhome.c eco_swim / eco_at, the swim in
  *            fixed steps drawn between them)
  *   jumps    LITE (75 %: a frame each 100 ms) the beings move on, no step between two frames past what they swim in it,
@@ -87,10 +87,10 @@ static void run_to(int s, uint32_t step, uint32_t T, uint16_t *out)
 /* (the first NSTRICT pixel for pixel; the others keep a state of their own stepped once a frame drawn (WHEEL's rotors,
  * VOICE's articulation and nod, ANIMAL's flap and glide, NOISE's swarm, LOFI's bits, the kit's beings: their time is the
  * clock's, those steps the frames'; no room in the flash to step them by the ticks): their difference reported only) */
-#define NSTRICT 7u
+#define NSTRICT 6u                                      /* (V10.8.18: GEN out, still since its helix went, V10.8.14) */
 static void test_time(void)
 {
-    static const char *const SC[] = {"home", "home_being", "v6_analog", "v6_phase", "gen", "edit_analog", "v6_fm6_op",
+    static const char *const SC[] = {"home", "home_being", "v6_analog", "v6_phase", "edit_analog", "v6_fm6_op",
                                      "v6_wheel", "vx_head_s", "vx_bird", "v6_noise", "v6_lofi", "vx_kit_hits"};
     uint32_t k;
     for (k = 0; k < sizeof SC / sizeof SC[0]; k++) {

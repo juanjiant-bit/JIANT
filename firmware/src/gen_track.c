@@ -38,7 +38,7 @@ static __attribute__((noinline)) void trackgen_make(void)
     if(!bt_hw_seg()) {seg_missing();return;}   /* (V10.6y: gen.c gen_pick in the segment) */
     track_t temp;
     _Static_assert(sizeof temp+sizeof save<8192,"track generator main-stack budget (15.75 KiB stack)");
-    if(!trackgen_ok(t)||chain_busy()) {ui_message("STOP SONG TO EDIT");return;}
+    if(!trackgen_ok(t)||chain_busy()) {ui_message("STOP THE SONG FIRST");return;}
     /* These pattern helpers never write gmut_name (only gen_make does). */
     memset(&temp,0,sizeof temp);memcpy(temp.p,t->p,sizeof temp.p);
     temp.eng_req=t->eng_req;temp.engine=t->engine;

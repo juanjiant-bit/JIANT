@@ -90,7 +90,7 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
         scn_frel = 1;                                    /* (V10.7.63: a led scene's notes let go) */
         if (scn_on == 8u) {                              /* (V10.7.64) PRESS: the key's note on every live track, its own
                                                          * sound each; no roles, no dice, the scale as it is */
-            ui_message("PRESS: EVERY TRACK PLAYS THE KEYS");
+            ui_message("EVERY TRACK PLAYS THE KEYS");
             return;
         }
         if (scn_on >= 2u && !drum_track(&trk[scn_on - 2u]))
@@ -106,7 +106,7 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
         {
             char b[32] = "SCENE: T1'S NOTES LEAD THE ROLES";
             b[8] = (char)('1' + (scn_on >= 2u ? scn_on - 2u : 0u));
-            ui_message(!scn_on ? "SCENE OFF: KEYS PLAY ONE TRACK" : need ? "SCENE: T5 T6 ASLEEP (MENU > 6 TRACKS)" :
+            ui_message(!scn_on ? "SCENE OFF: KEYS PLAY ONE TRACK" : need ? "T5 T6 ASLEEP: MENU > 6 TRACKS" :
                        scn_on == 1u ? "SCENE: KEYS PLAY THE ROLES" : b);
         }
     } else if (k == 1u)
@@ -190,8 +190,8 @@ static __attribute__((noinline)) void graph_harm(void)
  * over C2 .. C7), the one picked its role lit; one line: what that role does */
 static void graph_scene(void)
 {
-    static const char *const RD[SC_N] = {"PLAYS ITS OWN SEQUENCE", "HOLDS EACH NOTE'S CHORD", "ARPEGGIATES EACH NOTE'S CHORD",
-                                         "A BASS LINE UNDER THE NOTES", "A LINE ABOVE THE NOTES", "A NEW BEAT EACH KEY, WHILE HELD"};
+    static const char *const RD[SC_N] = {"PLAYS ITS OWN SEQUENCE", "HOLDS EACH CHORD", "ARPEGGIATES EACH CHORD",
+                                         "A BASS LINE UNDER THE NOTES", "A LINE ABOVE THE NOTES", "A NEW BEAT EACH KEY HELD"};
     uint32_t i, j, n;
     uint8_t o[KB_CH + 1];
     char b[48];
@@ -221,10 +221,10 @@ static void graph_scene(void)
     }
     str_cpy(b, "T1 ", 48);
     b[1] = (char)('1' + sc_trk % NTRK);
-    if (scn_on == 8u) str_cpy(b, "PRESS: EVERY TRACK PLAYS THE KEYS", 48);
-    else if (scn_on >= 2u && sc_trk % NTRK == scn_on - 2u) str_cpy(b + 3, "LEADS: ITS NOTES PLAY THE OTHERS", 45);
+    if (scn_on == 8u) str_cpy(b, "EVERY TRACK PLAYS THE KEYS", 48);
+    else if (scn_on >= 2u && sc_trk % NTRK == scn_on - 2u) str_cpy(b + 3, "ITS NOTES LEAD THE OTHERS", 45);
     else str_cpy(b + 3, RD[scn_role[sc_trk % NTRK] % SC_N], 45);
-    cv_text_in(4, 120, 232, &AF_X, scn_on ? b : "SCENE OFF: KNOB 1 KEYS OR A TRACK LEADS", scn_on ? T_TEXT : T_DIM, T_SURF);
+    cv_text_in(4, 120, 232, &AF_X, scn_on ? b : "SCENE OFF: K1 KEYS OR A TRACK", scn_on ? T_TEXT : T_DIM, T_SURF);
 }
 
 /* (V10.6j) SCENE's DRUM: key k's beat into the kit, 16 steps (main loop: ui_input.c's poll; the key in the audio side

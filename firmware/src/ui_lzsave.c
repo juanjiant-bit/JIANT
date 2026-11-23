@@ -429,15 +429,15 @@ static void graph_score(int gen)
         cv_text_r(236, 128, &AF_X, v, T_MID, T_SURF);
     }
 }
-/* PROJECT: the sections, the arrangement's chips, the song's strip (ar: ARRANGE, its rows picked) */
+/* PROJECT: the sections, the arrangement's chips, the song's strip (V10.8.18: ARRANGE's own, ar, gone: graph_score) */
 static uint8_t proj_nofoot;                              /* (gen.c: GENE draws its own words where the song's length stands) */
-static void graph_proj(int ar)
+static void graph_proj(void)
 {
     uint32_t i, total = 0, sel = (uint32_t)song.g[G_SLOT] - 1u, n = chain_config.count;
     char b[24];
     for (i = 0; i < 4u; i++) {
         int32_t x = LZ_TX(i);
-        int used = graph_project_used(i), pick = !ar && i == (sel & 3u);
+        int used = graph_project_used(i), pick = i == (sel & 3u);
         uint16_t c = lz_sec(i, used, used ? !pick : -1), ink = used ? T_INK : T_DIM;
         const char *nm = graph_project_name(i);
         b[0] = (char)('A' + i); b[1] = 0;
@@ -453,33 +453,30 @@ static void graph_proj(int ar)
         }
     }
     GFX_HOOK_ALIGN(0, 58, 0, 69, AL_V | AL_PASS, "project arrange title");
-    cv_text(6, 58, &AF_X, ar == 2 ? "ARRANGE 2" : "ARRANGE", ar ? T_THEME : T_DIM);
+    cv_text(6, 58, &AF_X, "ARRANGE", T_DIM);
     for (i = 0; i < n && i < CHAIN_ROWS; i++) {
         const chain_row_t *r = &chain_config.row[i];
         int32_t x = 4 + (int32_t)(i % 8u) * 293 / 10, y = 72 + (int32_t)(i / 8u) * 22;
-        int pick = ar && i == ui.song_row, used = graph_project_used(r->slot);
-        uint16_t c = used ? lz_sec(r->slot, 1, !pick) : T_RAISE;   /* (a row of an empty section: a well, its words DIM;
+        int used = graph_project_used(r->slot);
+        uint16_t c = used ? lz_sec(r->slot, 1, 1) : T_RAISE;   /* (a row of an empty section: a well, its words DIM;
                                                          * DIM on the section's colour could not be read) */
         b[0] = (char)('A' + (r->slot & 3u));
         fmt_int(b + 1, r->bars);
         cv_rect(x, y, 27, 20, c);
         GFX_HOOK_ALIGN(x, y, x + 27, y + 20, AL_HV, "arrange chip centred");
         cv_text_in(x, y + CAP_IN(X, 20), 27, &AF_X, b, used ? T_INK : T_DIM, c);
-        if (pick)
-            cv_frame(x - 1, y - 1, 29, 22, T_TEXT);
         if (song_idx.scene[song_cur][i].on)              /* a scene: a dot */
             cv_rect(x + 22, y + 3, 2, 2, T_TEXT);
         if (song_idx.tsrc[song_cur][i] || song_idx.tvar[song_cur][i])   /* (add15) tracks of their own: a dot below */
             cv_rect(x + 3, y + 15, 2, 2, T_TEXT);
         total += r->bars;
     }
-    song_strip(118, 6, ar ? 5u : 6u, 0);                /* the song: its rows by their bars (V10.6o: song_strip's) */
+    song_strip(118, 6, 6u, 0);                /* the song: its rows by their bars (V10.6o: song_strip's) */
     if (proj_nofoot)
         return;
     song_len_txt(b, total);
     GFX_HOOK_ALIGN(0, 128, 0, 139, AL_V | AL_PASS, "project song length");
-    cv_text_r(236, 128, &AF_X, n ? b : "NO ROWS: OCT+ ADDS ONE", ar && ui.song_row >= song_end_row() ? T_THEME : T_MID,
-              T_SURF);
+    cv_text_r(236, 128, &AF_X, n ? b : "NO ROWS: OCT+ ADDS ONE", T_MID, T_SURF);
 }
 /* a being small at (cx, cy) radius r (px): engine e's species, its outline in heat c; 24 vertices (bg_outline's form,
  * its spikes and lobes, at a slot's size: a quarter of the lines) */
@@ -613,7 +610,7 @@ static void graph_save_lz(const page_t *pg)
     else if (SONG_PARTS(pg)) graph_parts();
     else if (SONG_CLIPS(pg) || SONG_TAKE(pg)) graph_clips();
     else if (pg->graph == GR_SONG) graph_score(0);   /* (V10.8.14: ARRANGE's partitura viva) */
-    else if (pg->graph == GR_SLOTS) { if (lv == SV_PROJ) graph_proj(0); else graph_lib(); }
+    else if (pg->graph == GR_SLOTS) { if (lv == SV_PROJ) graph_proj(); else graph_lib(); }
     else if (pg->graph == GR_USER) graph_sound();
     else graph_lz_presets();
 }

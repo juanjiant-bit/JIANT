@@ -3464,7 +3464,7 @@ static void gen_panel(void)
         graph_score(1);
     else {
         proj_nofoot = 1;
-        graph_proj(0);
+        graph_proj();
         proj_nofoot = 0;
     }
     cv_rect(0, 124, 240, 16, T_SURF);

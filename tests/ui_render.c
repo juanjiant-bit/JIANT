@@ -664,7 +664,7 @@ enum { S_HOME, S_HOME_IDLE, S_MESSAGE, S_MESSAGE_KEY, S_MESSAGE_NOFILE, S_PRESET
        S_FXL_SENDS, S_FXL_DIST, S_FXL_PAN, S_FXL_BUSES, S_FXL_DELAY, S_FXL_DELAY2, S_FXL_REVERB, S_FXL_SLICER, S_FXL_MASTER,
        S_HOME_MACROS, S_HOME_BEING, S_HOME_ROUTES, S_GEN_LEAD,
        S_ED_FILTER, S_ED_FILTER_BP, S_ED_VOICE2, S_ED_FOCUS, S_ED_FOCUS_MOD, S_ED_OPERATOR,
-       S_ENV_TRACKS, S_ENV_TRACKS_DEST, S_ENV_STAGE, S_ENV_STAGE_SUS, S_MSEQ2, S_KEY_CHORD, S_KEY_CHORD_OFF, S_KEY_ARP, S_KEY_ARP2, S_GLO_SENDS, S_MENU_ROW, S_MENU_ROW_LEDS, S_LY_FX_KNOBS, S_LY_FX_STATE, S_LY_GLO_STATE, S_DLG_DICE_SOUND, S_DLG_DICE_SEQ, S_DLG_DICE_FX, S_DLG_MUT_BACK,
+       S_ENV_LZ, S_ENV_LZ_DEST, S_ENV_STAGE, S_ENV_STAGE_SUS, S_MSEQ2, S_KEY_CHORD, S_KEY_CHORD_OFF, S_KEY_ARP, S_KEY_ARP2, S_GLO_SENDS, S_MENU_ROW, S_MENU_ROW_LEDS, S_LY_FX_KNOBS, S_LY_FX_STATE, S_LY_GLO_STATE, S_DLG_DICE_SOUND, S_DLG_DICE_SEQ, S_DLG_DICE_FX, S_DLG_MUT_BACK,
        S_DRUM_X4, S_DRUM_GHOST, S_DRUM_OCT_UP, S_DRUM_OCT_DN, S_COMP_TOUCH, S_COMP_EVEN, S_GEN_EXPLORE, S_GEN_SONG,
        S_VX_HEAD_A, S_VX_HEAD_I, S_VX_HEAD_U, S_VX_HEAD_S, S_VX_HEAD_M, S_VX_HEAD_K, S_VX_HEAD_T, S_VX_HEAD_F, S_VX_HEAD_VOWEL,
        S_VX_HEAD_HOME, S_VX_HEAD_QUIET, S_VX_BIRD, S_VX_CMOS, S_VX_INSECT, S_VX_WING, S_VX_MAMMAL, S_VX_MORPH_IB, S_VX_MORPH_BM,
@@ -672,7 +672,6 @@ enum { S_HOME, S_HOME_IDLE, S_MESSAGE, S_MESSAGE_KEY, S_MESSAGE_NOFILE, S_PRESET
        S_VX_BUG_BD, S_VX_BUG_SD, S_VX_BUG_CP, S_VX_BUG_CH, S_VX_BUG_OH, S_VX_BUG_TM, S_VX_BUG_RS, S_VX_BUG_CB, S_VX_BUG_GHOST,
        S_VX_BUG_FLAM, S_VX_BUG_RATCH, S_VX_BUG_QUIET,
        S_V6_ANALOG, S_V6_ANALOG_SQR, S_V6_ANALOG_RING, S_V6_ANALOG_QUIET, S_V6_ANALOG_HOME, S_V6_ANALOG_FULL, S_V6_FM6, S_V6_FM6_ALG32, S_V6_FM6_OP, S_V6_FM6_OP2, S_V6_FM6_ENV, S_V6_FM6_ENV_REL, S_V6_FM6_HOME, S_V6_FM6_FULL, S_V6_WHEEL, S_V6_WHEEL_FAST, S_V6_WHEEL_HOME, S_V6_WHEEL_FULL, S_V6_NOISE, S_V6_NOISE_LFSR, S_V6_NOISE_WHITE, S_V6_NOISE_HOME, S_V6_NOISE_FULL, S_V6_PHASE, S_V6_PHASE_RING, S_V6_PHASE_HOME, S_V6_PHASE_FULL, S_V6_LOFI, S_V6_LOFI_FLOAT, S_V6_LOFI_PLS, S_V6_LOFI_HOME, S_V6_LOFI_FULL, S_V6_VOICE_FULL, S_V6_ANIMAL_FULL, S_VX_TRACT_A_FULL, S_VX_TRACT_M_FULL, S_VX_TRACT_A_EDIT, S_VX_TRACT_M_EDIT, S_VX_TRACT_A_HOME, S_VX_TRACT_M_HOME, S_V6_STRING, S_V6_STRING_BOW, S_V6_STRING_HOME, S_V6_STRING_FULL, S_V6_ADD, S_V6_ADD_BELL, S_V6_ADD_HOME, S_V6_ADD_FULL, S_HOME_MUT, S_HOME_FACES,
-       S_LIVE_RIELES, S_LIVE_RIELES_T3, S_LIVE_MANO, S_LIVE_MANO_KEYS,
        S_MIXER_T4, S_HOME_T4, S_MOCK_HOME, S_MOCK_PRESETS, S_MOCK_SEQ, S_MOCK_DRUM, S_MOCK_MIXER, S_MOCK_DIALOG, S_MOCK_MENU,
        S_TOAST_ENV, S_TOAST_MUTATE, S_TOAST_MUTATE_HINT, S_TOAST_MOTION, S_TOAST_MOTION_LOCKS, S_TOAST_PUNCH, S_TOAST_AUTO_LIST,
        S_TOAST_AUTO_LIST_DRUM, S_TOAST_PATTERN, S_TOAST_FM6_OP, S_TOAST_ANALOG, S_COUNT };
@@ -702,7 +701,7 @@ static const char *const S_NAME[S_COUNT] = {"home", "home_idle", "message", "mes
     "fx_effect_slicer", "fx_effect_master",
     "home_macros", "home_being", "home_routes", "gen_lead",
     "ed_filter", "ed_filter_bp", "ed_voice2", "ed_focus", "ed_focus_mod", "ed_operator",
-    "env_tracks", "env_tracks_dest", "env_stage", "env_stage_sus", "mseq2", "key_chord", "key_chord_off", "key_arp", "key_arp2", "glo_sends", "menu_row", "menu_row_leds", "ly_fx_knobs", "ly_fx_state", "ly_glo_state", "dlg_dice_sound", "dlg_dice_seq", "dlg_dice_fx", "euclid_modes",
+    "env_lz", "env_lz_dest", "env_stage", "env_stage_sus", "mseq2", "key_chord", "key_chord_off", "key_arp", "key_arp2", "glo_sends", "menu_row", "menu_row_leds", "ly_fx_knobs", "ly_fx_state", "ly_glo_state", "dlg_dice_sound", "dlg_dice_seq", "dlg_dice_fx", "euclid_modes",
     "drum_hit_x4", "drum_hit_ghost", "drum_oct_x8", "drum_oct_flam", "comp_touch", "comp_echo_even", "gen_explore", "gen_song",
     "vx_head_a", "vx_head_i", "vx_head_u", "vx_head_s", "vx_head_m", "vx_head_k", "vx_head_t", "vx_head_f", "vx_head_vowel",
     "vx_head_home", "vx_head_quiet", "vx_bird", "vx_cmos", "vx_insect", "vx_wing", "vx_mammal", "vx_morph_insect_bird", "vx_morph_bird_mammal",
@@ -710,49 +709,9 @@ static const char *const S_NAME[S_COUNT] = {"home", "home_idle", "message", "mes
     "vx_bug_bd", "vx_bug_sd", "vx_bug_cp", "vx_bug_ch", "vx_bug_oh", "vx_bug_tm", "vx_bug_rs", "vx_bug_cb", "vx_bug_ghost",
     "vx_bug_flam", "vx_bug_ratchet", "vx_bug_quiet",
     "v6_analog", "v6_analog_sqr", "v6_analog_ring", "v6_analog_quiet", "v6_analog_home", "v6_analog_full", "v6_fm6", "v6_fm6_alg32", "v6_fm6_op", "v6_fm6_op2", "v6_fm6_env", "v6_fm6_env_rel", "v6_fm6_home", "v6_fm6_full", "v6_wheel", "v6_wheel_fast", "v6_wheel_home", "v6_wheel_full", "v6_noise", "v6_noise_lfsr", "v6_noise_white", "v6_noise_home", "v6_noise_full", "v6_phase", "v6_phase_ring", "v6_phase_home", "v6_phase_full", "v6_lofi", "v6_lofi_float", "v6_lofi_pls", "v6_lofi_home", "v6_lofi_full", "v6_voice_full", "v6_animal_full", "vx_tract_a_full", "vx_tract_m_full", "vx_tract_a_edit", "vx_tract_m_edit", "vx_tract_a_home", "vx_tract_m_home", "v6_string", "v6_string_bow", "v6_string_home", "v6_string_full", "v6_add", "v6_add_bell", "v6_add_home", "v6_add_full", "home_mutate", "home_faces",
-    "live_rieles", "live_rieles_t3", "live_mano", "live_mano_keys",
     "mixer_tracks4", "home_tracks4", "mock_home", "mock_presets", "mock_seq", "mock_drum", "mock_mixer", "mock_dialog", "mock_menu",
     "toast_env", "toast_mutate", "toast_mutate_hint", "toast_motion", "toast_motion_locks", "toast_punch", "toast_auto_list",
     "toast_auto_list_drum", "toast_pattern", "toast_fm6_op", "toast_analog"};
-
-/* (p2, main 0.9.11) GLO > LIVE: six sequences of their own lengths (16 32 7 16 . 1/8 20 4 . 1/4, as the mock-up's),
- * modifiers on T2 (THIN 70 %), T3 (x2 RATCH x3), T4 (LOOP 8), T5 (2/3), played two seconds from PLAY so the playheads
- * and ghosts are where they would be; RIELES (KNOB 1 ALL or T3), MANO (black key 3 and C4 held, A4 PING latched on T5,
- * LATCH on) */
-static void live_scene(int s)
-{
-    static const uint8_t NN[5] = {60, 67, 63, 72, 58};
-    uint32_t k;
-    trk[2].p[P_SLEN] = 7; trk[3].p[P_SDIV] = 1; trk[4].p[P_SLEN] = 20; trk[5].p[P_SLEN] = 4; trk[5].p[P_SDIV] = 0;
-    for (k = 0; k < 20u; k++) {
-        step_t *st = &trk[4].step[k];
-        if (k % 3u) continue;
-        st->time = ST_NOTE; st->n = 1; st->note[0] = NN[k % 5u]; st->vel = 100;
-    }
-    for (k = 0; k < 4u; k++) { trk[5].step[k].time = ST_NOTE; trk[5].step[k].n = 1; trk[5].step[k].note[0] = NN[k]; trk[5].step[k].vel = 90; }
-    for (k = 0; k < 16u; k++) {                         /* T1 an acid line, T3 seven steps, T4 a beat of 1/8 */
-        static const uint8_t A[16] = {36, 0, 48, 36, 0, 39, 0, 36, 43, 0, 36, 48, 0, 41, 39, 0};
-        step_t *st = &trk[0].step[k], *d = &trk[3].step[k];
-        if (A[k]) { st->time = ST_NOTE; st->n = 1; st->note[0] = A[k]; st->vel = 100; st->flags = k % 4u ? 0 : SF_ACCENT; }
-        memset(d, 0, sizeof *d);
-        d->time = ST_NOTE; d->vel = 100;
-        d->hit = (uint8_t)((k % 4u == 0u ? 1u : 0u) | (k % 8u == 4u ? 2u : 0u) | (k % 2u ? 0u : 8u));
-        if (k < 7u && k != 4u) { trk[2].step[k].time = ST_NOTE; trk[2].step[k].n = 1; trk[2].step[k].note[0] = NN[k % 5u] - 12u; trk[2].step[k].vel = 100; }
-    }
-    memset(&lv, 0, sizeof lv);
-    lv.dn[1] = -3; lv.rate[2] = 2; lv.dn[2] = 2; lv.cut[3] = 5; lv.here = 1u << 3; lv.rate[4] = -1;
-    if (s == S_LIVE_RIELES_T3) lv.tgt = 3;
-    if (s == S_LIVE_MANO_KEYS) {
-        lv.latch = 1; lv.lt[9] = 1u << 4; lv.tk[5] = 1u << 2;
-        lv.kb = 1u << key_at(1, 2) | 1u << key_at(0, 5);
-    }
-    song.sel = 2;
-    seq_start();
-    live_publish();
-    for (k = 0; k < 2800u; k++) { events_block(CTL); if (!(k % 64u)) live_publish(); }
-    nav_put(SEC_GLO, "RAILS");                         /* (V10.7.58: one LIVE page, KEYS shown as RAILS) */
-    if (s == S_LIVE_RIELES_T3) { ui.hot_col = 0; ui.hot_t = 30; }
-}
 
 /* the scenes of the UI design screens: the state the UI-redesign
  * prototype drew them from (its setup(): two pattern tracks, the drum pattern on track 4, a synthetic scope),
@@ -1268,8 +1227,8 @@ static void setup(int s)
         go_title("FOCUS"); ui.focus = 4;
         if (s == S_ED_FOCUS_MOD) { TSEL->p[P_M2SRC] = 1; TSEL->p[P_M2DST] = MD_E1 + 4; TSEL->p[P_M2AMT] = 40; }
         break;
-    case S_ENV_TRACKS: case S_ENV_TRACKS_DEST:          /* (0.8.5) ENV's lens: TRACKS (ENV / DEST), T2 sounding */
-        song.sel = 1; nav_scene(SEC_ENV, s == S_ENV_TRACKS ? "TRACKS" : "ENV DEST");   /* (codex/coherence: TRACKS DEST gone) */
+    case S_ENV_LZ: case S_ENV_LZ_DEST:                  /* ENV's lens (V10.8.16: its layers; TRACKS gone) / ENV DEST, T2 sounding */
+        song.sel = 1; nav_scene(SEC_ENV, s == S_ENV_LZ ? "ENV" : "ENV DEST");
         trk[1].v[0].stage = 2; trk[1].v[0].env = 10u << 20; trk[2].p[P_ED_FLT] = 60; trk[2].p[P_ED_PIT] = -40;
         trk[1].p[P_ED_SHP] = 90; trk[3].p[P_MUTE] = 1;
         break;
@@ -1835,7 +1794,6 @@ static void setup(int s)
         song.octave = s == S_DRUM_OCT_UP ? 3 : -3;
         ui_message(drum_oct_name(song.octave));
         break;
-    case S_LIVE_RIELES: case S_LIVE_RIELES_T3: case S_LIVE_MANO: case S_LIVE_MANO_KEYS: live_scene(s); break;
     case S_COMP_TOUCH: case S_COMP_EVEN:
         drum(0);
         trk[3].step[0].comp = s == S_COMP_TOUCH ? CP_TOUCH : CP_ECHO;
@@ -2445,7 +2403,7 @@ int main(int argc, char **argv)
         static const int COST[] = {S_HOME, S_PRESETS, S_STEP, S_ROLL_CHORDS, S_DRUM, S_MIXER, S_MENU, S_ABOUT_CREDITS, S_CONFIRM_PROJ,
                                    S_PATTERN, S_COMP, S_LENTE_PAT, S_LENTE_BAR, S_LENTE_STEP, S_LENTE_STEP_DRUM,
                                    S_SAVE_LIB, S_SAVE_PROJ, S_SAVE_SOUND, S_FXL_SENDS, S_FXL_BUSES, S_FXL_REVERB,
-                                   S_HOME_BEING, S_EDIT_ANALOG, S_ED_FILTER, S_ED_FOCUS, S_ENV_TRACKS, S_MOD, S_KEY_CHORD,
+                                   S_HOME_BEING, S_EDIT_ANALOG, S_ED_FILTER, S_ED_FOCUS, S_ENV_LZ, S_MOD, S_KEY_CHORD,
                                    S_SYSTEM, S_MENU_ROW, S_LY_FX_KNOBS, S_DLG_DICE_SOUND, S_EDIT_SAMPLE, S_VX_HEAD_S, S_VX_BIRD,
                                    S_VX_MAMMAL, S_VX_KIT_HITS, S_VX_HEAD_HOME, S_VX_KIT_HOME, S_VX_BUG_SD,
                                    S_V6_ANALOG, S_V6_FM6, S_V6_FM6_OP, S_V6_FM6_OP2, S_V6_FM6_ENV, S_V6_WHEEL, S_V6_NOISE, S_V6_PHASE,
@@ -2481,7 +2439,7 @@ int main(int argc, char **argv)
         {   /* the STEP page's piano roll: its panel alone redrawn, and a frame that changes nothing (the signature only) */
             static const int G[] = {S_ROLL_CHORDS, S_ROLL_PLAYING, S_DRUM, S_PATTERN, S_COMP, S_LENTE_PAT, S_LENTE_STEP,
                                     S_SAVE_LIB, S_SAVE_SOUND, S_FXL_BUSES, S_FXL_REVERB, S_FXL_DELAY, S_EDIT_ANALOG,
-                                    S_ENV_TRACKS, S_MOD, S_SYSTEM, S_VX_HEAD_S, S_VX_INSECT, S_VX_KIT_HITS, S_DX_SOUND};
+                                    S_ENV_LZ, S_MOD, S_SYSTEM, S_VX_HEAD_S, S_VX_INSECT, S_VX_KIT_HITS, S_DX_SOUND};
             for (k = 0; k < sizeof G / sizeof G[0]; k++) {
                 clock_t c0;
                 double tg, ti;

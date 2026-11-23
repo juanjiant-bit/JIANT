@@ -2499,7 +2499,6 @@ static void seq_clr_step(void)
  * or project load, SRC / SET turned, a slot erased; again after another source or a project load. One a frame; after
  * a message already showing (LOADED) as the second message. Not on notes: nothing in the audio path */
 
-static void hints_reset(void);                          /* (ui_layer.c) */
 /* messages of things that happened elsewhere (a load, the editor, MIDI in): after this frame's own */
 static void ui_notices(void)
 {
@@ -2902,7 +2901,6 @@ static void ui_input_frame(void)
                 }
             } else if (kind == CF_INIT_SYS) {           /* (0.6.40) SAVE > TOOLS: everything as at power-on; */
                 if (!project_clear()) {                 /* (V10.7.22) CLEAR PROJECT, stopped (project.c) */
-                    hints_reset();                      /* (0.9.5) the teaching hints start over */
                     gp.genre = GEN_EXPLORE;             /* (0.8.6) GEN's GENRE as at power-on: EXPLORE */
                 }
             } else if (kind == CF_CLEAR_ALL) {          /* SEQ + REC: every track's steps and automation, the lane */
@@ -3040,7 +3038,7 @@ static void ui_input_frame(void)
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_SHAPE) {   /* (V10.25) STRETCH: NUDGE's */
                 ndg_step = b != B_OCTUP ? 0u : ndg_step == 1u ? 2u : 1u;   /* mode, OCT- the sequence (blue), OCT+ the
                                                          * step's MICRO (red), OCT+ again the step itself (V10.7.4) */
-                ui_message(ndg_step == 2u ? "NUDGE: THE STEP" : ndg_step ? "NUDGE: THE STEP'S MICRO TIMING" : "NUDGE: THE WHOLE SEQUENCE");
+                ui_message(ndg_step == 2u ? "NUDGE: THE STEP" : ndg_step ? "NUDGE: THE STEP'S MICRO" : "NUDGE: THE SEQUENCE");
                 ui.force = 1;
                 break;
             }
@@ -3201,8 +3199,8 @@ static void ui_input_frame(void)
             int32_t was = *vp;
             *vp = (int16_t)param_turn(d, *vp, accel(EN_K1 + k, s, d->fmt == F_ENUM ? 0 : d->max - d->min));
             if (home_life()) {                          /* (V10.7.62) LIFE: the project's, no track's */
-                static const char *const LH[4] = {"FILTER: HITS CLOSE, NOTES OPEN", "TIMBRE: THE OTHERS SHAPE IT",
-                                                  "PUMP: THE KICKS DUCK THE SYNTHS", "FX: THE OTHERS FEED THE SENDS"};
+                static const char *const LH[4] = {"HITS CLOSE, NOTES OPEN", "THE OTHERS SHAPE IT",
+                                                  "KICKS DUCK THE SYNTHS", "THE OTHERS FEED THE SENDS"};
                 if (ui.msg_t && str_eq(ui.msg, LH[k & 3u]))
                     ui.msg_t = 40;                      /* (still turning: it stays) */
                 else if (!(ui_help_off & 1u))

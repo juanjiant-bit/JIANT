@@ -416,7 +416,7 @@ static __attribute__((noinline)) void nm_draw_panel(void)
         }
         cv_text(14 + 14 * (int32_t)n, 48 - AF_X_CAP_Y, &AF_X, "TAP AGAIN: NEXT", T_MID);
     } else
-        cv_text(10, 48 - AF_X_CAP_Y, &AF_X, nm.num ? "ONE TAP, ONE CHARACTER" : "TAP AGAIN: NEXT LETTER", T_MID);
+        cv_text(10, 48 - AF_X_CAP_Y, &AF_X, nm.num ? "ONE TAP, ONE CHARACTER" : "TAP AGAIN: NEXT", T_MID);
     GFX_HOOK_ALIGN(4, 0, 236, 0, AL_H | AL_CELLS | AL_N(8), "name keys' row in the panel");
     for (i = 0; i < 16u; i++) {                        /* the white keys: the left octave, then the right one */
         int32_t x = 9 + 28 * (int32_t)(i % 8u), y = i < 8u ? 62 : 84;

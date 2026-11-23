@@ -1829,59 +1829,118 @@ static void draw_columns(void)
 }
 
 
-/* The power-on splash (main.c fm1_main, web/emu felucca_web.c; JIANT 0.5): the maker's signature ("Jiant FM1",
- * tools/gen_signature.py: 24 strokes, 214 points) written in the thermal colours, stroke by stroke as the hand went:
- * the line cold (cyan) where the pen started, hotter along its way (violet, red, orange) to yellow white where it
- * ended, the pen's tip a white point while it writes; under it, small, the version and "by Juan Jiant". Written over
- * SPL_WRITE ms (splash_write, main.c's splash loop; MENU > ANIM OFF: whole at once). Lines only, the canvas
- * redrawn a step (~700 short lines). In the saved palette (settings_init before it) */
+/* The power-on splash (main.c fm1_main, web/emu felucca_web.c; JIANT 0.5): the logo ("jiant fm" in the owner's pen,
+ * ui_signature.h, tools/gen_logo.py: a point every ~3 px, bit 7 of y a stroke's start). (V10.8.18, the owner's pick
+ * "Seis hilos") 0 .. SPL_IN ms: the six tracks' threads (TRK_COL) come in from the screen's edges, curving, easing out,
+ * onto the logo's first point; then the logo writes itself in the thermal scale (SPL_LOGO ms, the pen's tip white),
+ * a white flash at its start fading (300 ms); then six dots in the tracks' colours one by one under it and the version
+ * and "by Juan Jiant" fading in. MENU > ANIM OFF: the last picture at once. The strokes are drawn smooth: each a
+ * line through its points, an antialiased round pen ~4 px wide stamped along it a pixel apart (spl_seg, spl_disc:
+ * the joins round; nothing new stored: the same points). In the saved palette (settings_init before it) */
 #include "ui_signature.h"
-#define SPL_WRITE 800u                              /* ms: the signature written (was 900; 0.6.51: 600 -> 800) */
-#define SPL_HOLD 900u                               /* .. then shown whole, before the UI (was 1100; 0.6.51: 500 -> 900) */
-#define SPL_SY 40                                   /* the signature's canvas on the screen (240 x SIG_H + 12) */
-#define SPL_TY 186                                  /* the two lines under it */
+#define SPL_IN 550u                                 /* ms: the threads come in */
+#define SPL_LOGO 800u                               /* .. the logo written */
+#define SPL_WRITE 1750u                             /* .. the dots and the lines in: the animation */
+#define SPL_HOLD 150u                               /* .. then still, before the UI (all: ~1.9 s) */
+#define SPL_SY 40                                   /* the logo's canvas on the screen (240 x SIG_H + 12) */
+#define SPL_TY 198                                  /* the two lines under it (the dots at 188) */
 static const char *const SPLASH_LINES[] = {FELUCCA_VERSION, "by Juan Jiant"};
-static uint8_t spl_anim;                            /* main.c: 1 = the signature to be written (splash_write) */
-/* (V10.6k) the logo (ui_signature.h, tools/gen_logo.py: "jiant fm" in the owner's pen, a point every ~3 px) up to point
- * n (>= SIG_N: whole), a round pen 5 px wide, solid, in the thermal scale as it is written (violet to red, orange,
- * yellow), the pen's tip white while it writes (V10.6n: was an outline filled at the end). Nothing computed but
- * the colour: no curves, no creatures (the 0.5.2 signature and its beings were ~1.9 KB) */
-static uint16_t sig_col(uint32_t i)                 /* the thermal scale along the writing: violet, red, orange, yellow */
+static uint8_t spl_anim, spl_clr;                   /* main.c: 1 = the splash animated (splash_write) */
+/* an antialiased disc: centre (cx, cy) and radius r in Q4 (1/16 px), c over the canvas at strength a (0..256) */
+static __attribute__((noinline)) void spl_disc(int32_t cx, int32_t cy, int32_t r, uint16_t c, int32_t a)
 {
-    return heat_col(24 + (int32_t)(i * 220u / SIG_N));
+    int32_t i, j, n = (r >> 4) + 2;
+    if (r < 4)
+        return;
+    for (j = -n; j <= n; j++)
+        for (i = -n; i <= n; i++) {
+            int32_t x = (cx >> 4) + i, y = (cy >> 4) + j, dx = x * 16 + 8 - cx, dy = y * 16 + 8 - cy, d = dx * dx + dy * dy, k;
+            k = r > 8 && d <= (r - 8) * (r - 8) ? 256 : d >= (r + 8) * (r + 8) ? 0 : ((r + 8) * (r + 8) - d) * 256 / (32 * r);
+            og_plot(x, y, c, k * a >> 8);
+        }
 }
-static void splash_sig(uint32_t n)
+/* the round pen from (x0, y0) to (x1, y1) (Q4), a stamp a pixel (the joins round) */
+static __attribute__((noinline)) void spl_seg(int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t r, uint16_t c)
 {
-    uint32_t i;
-    cv_begin(240, SIG_H + 12, T_BG);
-    for (i = 0; i < SIG_N && i < n; i++) {             /* the pen (a rounded square, 5 px), solid as it writes */
-        int32_t x = (240 - SIG_W) / 2 + SIG_PTS[2u * i], y = 6 + (SIG_PTS[2u * i + 1u] & 127);
-        uint16_t c = i + 1u == n && n < SIG_N ? T_TEXT : sig_col(i);
-        cv_rect(x - 2, y - 1, 5, 3, c);
-        cv_rect(x - 1, y - 2, 3, 5, c);
+    int32_t dx = x1 - x0, dy = y1 - y0, n = ((dx < 0 ? -dx : dx) > (dy < 0 ? -dy : dy) ? (dx < 0 ? -dx : dx) : (dy < 0 ? -dy : dy)) / 16 + 1, s;
+    for (s = 1; s <= n; s++)
+        spl_disc(x0 + dx * s / n, y0 + dy * s / n, r, c, 256);
+}
+/* the six threads' edges (px; the screen's centre + 170 px at k * 60 + 23 degrees) */
+BTAPP_RO static const int16_t SPL_E[12] = {277, 186, 141, 289, -16, 222, -37, 54, 99, -49, 256, 18};
+/* the threads at ms (< SPL_IN; the screen in two bands): quadratics from the edges bowed 30 px aside, eased out onto
+ * the logo's start (the Bluetooth segment's room: without it, the screen dark that while) */
+BTAPP_FN static void spl_threads(uint32_t ms)
+{
+    int32_t k, j, sx = 34 * 16, sy = (SPL_SY + 6 + 101) * 16, u = 256 - (int32_t)(ms * 256u / SPL_IN), e = 256 - u * u / 256 * u / 256;
+    for (j = 0; j < 2; j++) {
+        cv_begin(240, 120, T_BG);
+        cv_oy = -120 * j;
+        for (k = 0; k < 6; k++) {
+            int32_t ex = SPL_E[2 * k] * 16, ey = SPL_E[2 * k + 1] * 16, mx = ex + (sx - ex) * e / 256, my = ey + (sy - ey) * e / 256;
+            int32_t cx = (ex + mx) / 2 + (ey - 1920) * 3 / 17, cy = (ey + my) / 2 - (ex - 1920) * 3 / 17, t, x0 = ex, y0 = ey;
+            for (t = 0; t <= 16; t++) {
+                int32_t x = ((16 - t) * (16 - t) * ex + 2 * t * (16 - t) * cx + t * t * mx) / 256,
+                        y = ((16 - t) * (16 - t) * ey + 2 * t * (16 - t) * cy + t * t * my) / 256;
+                spl_seg(x0, y0, x, y, 13, TRK_COL[k]);
+                x0 = x; y0 = y;
+            }
+        }
+        cv_oy = 0;
+        cv_blit(0, (uint32_t)(120 * j));
     }
+}
+/* the splash at ms (>= SPL_WRITE: whole) */
+static void splash_at(uint32_t ms)
+{
+    int32_t i, k, j, x0 = 0, y0 = 0, sx = 34 * 16, sy = (SPL_SY + 6 + 101) * 16;
+    if (ms < SPL_IN) {
+        if (bt_hw_seg())
+            spl_threads(ms);
+        return;
+    }
+    ms -= SPL_IN;
+    if (!spl_clr) {                                     /* (the threads' last picture away) */
+        spl_clr = 1;
+        lcd_fill(0, 0, 240, 240, T_BG);
+    }
+    cv_begin(240, SIG_H + 12, T_BG);                    /* the logo up to point n: the pen along its strokes */
+    cv_oy = -SPL_SY;
+    k = ms >= SPL_LOGO ? SIG_N : SIG_N * (int32_t)ms / (int32_t)SPL_LOGO;
+    for (i = 0; i < k; i++) {
+        int32_t x = ((240 - SIG_W) / 2 + SIG_PTS[2 * i]) * 16, y = (SPL_SY + 6 + (SIG_PTS[2 * i + 1] & 127)) * 16;
+        if (SIG_PTS[2 * i + 1] & 128) { x0 = x; y0 = y; }   /* (a stroke's start) */
+        spl_seg(x0, y0, x, y, 30, heat_col(24 + i * 220 / SIG_N));
+        x0 = x; y0 = y;
+    }
+    if (k < SIG_N && k)                                 /* the pen's tip */
+        spl_disc(x0, y0, 36, T_TEXT, 256);
+    if (ms < 300u)                                      /* the flash at its start */
+        spl_disc(sx, sy, 128 - (int32_t)ms * 2 / 5, 0xFFFFu, 256 - (int32_t)ms * 256 / 300);
+    cv_oy = 0;
     cv_blit(0, SPL_SY);
+    cv_begin(240, 52, T_BG);                            /* the six dots, the lines */
+    for (k = 0; k < 6; k++)
+        spl_disc((70 + 20 * k) * 16 + 8, 8 * 16 + 8, clamp((int32_t)ms - 700 - k * 60, 0, 200) * 48 / 200, TRK_COL[k], 256);
+    j = clamp((int32_t)ms - 900, 0, 300) / 3;
+    for (k = 0; j && k < 2; k++)
+        cv_text_in(0, SPL_TY - 180 + k * 16, 240, &AF_S, SPLASH_LINES[k], ux_mix(T_BG, k ? T_DIM : T_MID, j), T_BG);
+    cv_blit(0, 180);
 }
 static void draw_splash(void)
 {
-    uint32_t k;
     lcd_fill(0, 0, 240, 240, T_BG);
-    cv_begin(240, 36, T_BG);
-    for (k = 0; k < 2u; k++)
-        cv_text_in(0, (int32_t)k * 16, 240, &AF_S, SPLASH_LINES[k], k ? T_DIM : T_MID, T_BG);
-    cv_blit(0, SPL_TY);
-    if (spl_anim && !(ui_prefs & PREF_ANIM_OFF))
-        splash_sig(0);
-    else
-        splash_sig(SIG_N);
+    splash_at(spl_anim && !(ui_prefs & PREF_ANIM_OFF) ? 0u : SPL_WRITE);
     lcd_sync();
 }
-/* main.c's splash loop: the signature as written ms after the start */
+/* main.c's splash loop: the splash ms after the start */
 static void splash_write(uint32_t ms)
 {
-    if (!spl_anim || (ui_prefs & PREF_ANIM_OFF))
+    static uint8_t done;
+    if (!spl_anim || (ui_prefs & PREF_ANIM_OFF) || done)
         return;
-    splash_sig(ms >= SPL_WRITE ? SIG_N : SIG_N * ms / SPL_WRITE);   /* (V10.6n: solid as it writes, the owner) */
+    done = ms >= SPL_WRITE;                             /* (the last picture once) */
+    splash_at(ms);
     lcd_sync();
 }
 
@@ -2242,7 +2301,6 @@ static void ui_draw(void)
     anim_st.non = 0;
     scr_shown();
 }
-static void hint_tick(void);                            /* (ui_layer.c) */
 static uint8_t dlg_behind;                              /* (0.9.5) the page being drawn round a NOTICE */
 /* (0.9.5) a NOTICE (the OCT- / OCT+ questions) over the page: its tabs, its card, its breadcrumb the screen's holes (gfx.c
  * scr_holes), the page drawn round them as ever (DICE's BEFORE / NOW are the whole screen; over the menu, NAME, UPDATE MODE:
@@ -2257,7 +2315,6 @@ static void ui_draw_page(uint32_t counting)
     if (dlg_notice()) {
         const int16_t R[3][4] = {{0, LT_Y, 240, (int16_t)DLG_TAB_H}, {14, 66, 212, 140}, {0, LZ_FOOT_Y, 240, LZ_FOOT_H}};
         uint8_t f = ui.force;
-        hint_tick();
         scr_holes(R, 3);
         dlg_behind = 1;
         ui_draw_body(counting);
@@ -2269,16 +2326,10 @@ static void ui_draw_page(uint32_t counting)
         }
         return;
     }
-    hint_tick();
     ui_draw_body(counting);
 }
 static void ui_draw_body(uint32_t counting)
 {
-    if (ui.hint_pg && ui.hint_pg != (ui.home ? 255u : ui.page + 1u)) {   /* (0.9.0) a layer's hint: its own page's only */
-        ui.hint_pg = 0;
-        ui.msg_t = 0;
-        ui.msg2[0] = 0;
-    }
     if (ui.uboot) {
         draw_uboot();
         draw_head();

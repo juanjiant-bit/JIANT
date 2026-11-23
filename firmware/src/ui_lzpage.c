@@ -2,9 +2,8 @@
  * Copyright (C) 2026 Juan Ignacio Antonucci (Juan Jiant) */
 /* (0.8.5) the lens panels of ENV, LFO . MOD, SCL . ARP and GLO (ui_lens.c), as the approved mock-up's; included by
  * ui_graph.c after ui_lzedit.c (ed_cap, ed_chip). The canvas is the lens's panel (240 x 140, x 4..236).
- *   ENV  TRACKS: the six tracks' envelopes as tiles (the selected one tinted, its live level a dot; DEST: the three
- *        amounts under each); ENV keeps graph_adsr / the DEST columns; STAGE: the envelope with the stage picked
- *        shaded, the stage's own curve large under it, its time */
+ *   ENV  ENV keeps graph_adsr (V10.8.16: its layers; TRACKS gone) / the DEST columns; STAGE: the envelope with the
+ *        stage picked shaded, the stage's own curve large under it, its time */
 /* track t's envelope in the box (x, y, w, h): attack straight, decay and release as three bends, sustain flat */
 static void env_mini(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t h, uint16_t c, int32_t th)
 {
@@ -26,15 +25,6 @@ static void env_mini(const track_t *t, int32_t x, int32_t y, int32_t w, int32_t 
         px = xx;
         py = yy;
     }
-}
-static int32_t env_now(const track_t *t)                /* the loudest voice's level now, 0..1000 (-1: none) */
-{
-    int32_t lv = -1;
-    uint32_t i;
-    for (i = 0; i < NVOICE; i++)
-        if (t->v[i].stage && t->v[i].stage < 4u)
-            lv = clamp((int32_t)(((int64_t)t->v[i].env * 1000) >> 24), lv, 1000);
-    return lv;
 }
 static void graph_stage(const track_t *t)
 {
@@ -302,7 +292,7 @@ static int graph_key_lz(const track_t *t, const page_t *pg)
     return 1;
 }
 
-/* GLO  MIX: the six strips (draw_tracks, track_col6; SENDS: the four sends as bars); GLOBAL keeps its bar of sixteenths;
+/* GLO  MIX: the six strips (draw_tracks, track_col6; SENDS: the three sends as cells); GLOBAL the scope;
  *      SYSTEM: the tracks that play as chips, LOAD's three settings (the one set lit), MIDI's route, (V10.7.63) the output's scope
  *      and the CPU in % */
 static void scope_at(int32_t x0, int32_t pw, int32_t cy, int32_t a, uint16_t c);   /* (ui_graph.c) */
