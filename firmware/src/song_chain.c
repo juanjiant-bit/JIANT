@@ -187,7 +187,8 @@ static uint16_t jam_tl, jam_r0;
 static void song_mode_restore(void)
 {
     if ((chain_config.rsv[2] & 0xFEu) == SONG_MODE_TAG)
-        live.mode = chain_config.rsv[2] & 1u;
+        live.mode = (uint8_t)((chain_config.rsv[2] & 1u) && chain_config.count);   /* (V10.8.17, BYTE's: an empty song
+                                                         * saved in SONG mode plays its loop) */
 }
 
 static void chain_start(void);                   /* song_play.c (end of seq.c) */

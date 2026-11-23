@@ -143,46 +143,58 @@ static void graph_voice_lz(const track_t *t, const page_t *pg)
         py = y;
     }
 }
+/* (V10.8.17, the owner) FOCUS: the parameter's name and value large, its place (OSC 1/4) small; a thermal bar to its value,
+ * a yellow marker there, a MOD slot aimed at it its reach in the track's colour over the bar and its words; the eight
+ * as two rows of four, their names whole, the one picked a tag in the track's colour, each a small bar of its value */
 static void graph_focus_lz(const track_t *t)
 {
     const engine_t *e = trk_engp(t);
     uint32_t k = focus_k(), i;
-    int32_t j = focus_slot(k);
+    int32_t j = focus_slot(k), r, fill, px;
     const param_desc_t *d = track_desc(t, P_E0 + k);
     const char *u = "", *pt = e->page_title[k >> 2];
+    uint16_t tc = TRK_COL[song.sel % 6u];
     char b[24];
     param_format(d, t->p[P_E0 + k], b, &u);
     str_cpy(b + str_len(b), u, 24 - str_len(b));
-    i = (uint32_t)clamp(RATIO(d, enum_rank(d, t->p[P_E0 + k])), 0, 1000);   /* (V10.7.80, the owner: FOCUS thermal) */
-    lz_arc(120, 58, 44, 6, (int32_t)i, T_LINE, heat_col((int32_t)i * 256 / 1000));
-    GFX_HOOK_ALIGN(80, 0, 160, 0, AL_H, "FOCUS value centred in its gauge");
-    cv_text_in(80, 40 - AF_X_CAP_Y, 80, &AF_X, d->label, T_MID, T_SURF);
-    cv_text_in(70, 52 - AF_M_CAP_Y, 100, &AF_M, b, T_TEXT, T_SURF);
-    if (j >= 0) {
-        const param_desc_t *da = track_desc(t, P_M1AMT + 3u * (uint32_t)j);
-        char a[16];
-        str_cpy(b, N_MSRC[clamp(t->p[P_M1SRC + 3u * (uint32_t)j], 0, MS_N - 1)], 24);
-        str_cpy(b + str_len(b), " > ", 4);
-        param_format(da, t->p[P_M1AMT + 3u * (uint32_t)j], a, &u);
-        str_cpy(b + str_len(b), a, 24 - str_len(b));
-        str_cpy(b + str_len(b), u, 24 - str_len(b));
-    } else
-        str_cpy(b, "NO MOD", 24);
-    cv_text_in(70, 74 - AF_X_CAP_Y, 100, &AF_X, b, j >= 0 ? T_THEME : T_DIM, T_SURF);
+    cv_text(8, 4, &AF_M, d->label, T_TEXT);
+    cv_text_r(232, 2, large_face_has(b) ? &AF_L : &AF_M, b, HUD_YE, T_SURF);
     str_cpy(b, pt && pt[0] != '-' ? pt : e->name, 16);
     str_cpy(b + str_len(b), " ", 2);
     fmt_int(b + str_len(b), (int32_t)(k & 3u) + 1);
     str_cpy(b + str_len(b), "/4", 3);
-    ed_cap(10, 6, b, T_DIM);
-    for (i = 0; i < 8u; i++) {                          /* E1..E8, (V10.7.80) each its value as heat: a bar, the
-                                                         * focused one filled with it */
+    cv_text(8, 26, &AF_X, b, T_DIM);
+    r = clamp(RATIO(d, enum_rank(d, t->p[P_E0 + k])), 0, 1000);
+    fill = r * 220 / 1000;
+    for (px = 0; px < 220; px += 2)                     /* the bar: thermal to the value, dotted past it */
+        if (px < fill) cv_rect(10 + px, 50, 2, 18, heat_col(px * 256 / 220));
+        else if (!(px % 6)) cv_pset(10 + px, 59, T_LINE);
+    cv_rect(9 + fill, 45, 2, 28, HUD_YE);
+    if (j >= 0) {                                       /* MOD: its reach over the bar, its words */
+        const param_desc_t *da = track_desc(t, P_M1AMT + 3u * (uint32_t)j);
+        int32_t am = t->p[P_M1AMT + 3u * (uint32_t)j], sp = (am < 0 ? -am : am) * 220 / (da->max > 0 ? 2 * da->max : 1);
+        int32_t x0 = clamp(fill - sp, 0, 220), x1 = clamp(fill + sp, 0, 220);
+        char a[16];
+        cv_rect(10 + x0, 42, x1 - x0 + 1, 3, tc);
+        cv_rect(10 + x0, 40, 1, 5, tc); cv_rect(10 + x1, 40, 1, 5, tc);
+        str_cpy(b, "MOD: ", 24);
+        str_cpy(b + 5, N_MSRC[clamp(t->p[P_M1SRC + 3u * (uint32_t)j], 0, MS_N - 1)], 19);
+        str_cpy(b + str_len(b), " \xB7 ", 4);
+        param_format(da, am, a, &u);
+        str_cpy(b + str_len(b), a, 24 - str_len(b));
+        str_cpy(b + str_len(b), u, 24 - str_len(b));
+        cv_text(10, 74, &AF_X, b, tc);
+    } else
+        cv_text(10, 74, &AF_X, "NO MOD", T_DIM);
+    for (i = 0; i < 8u; i++) {                          /* the eight: two rows of four */
         const param_desc_t *di = track_desc(t, P_E0 + i);
-        int32_t x = 8 + (int32_t)i * 28, r = di ? clamp(RATIO(di, enum_rank(di, t->p[P_E0 + i])), 0, 1000) : 0;
-        uint16_t h = heat_col(r * 256 / 1000), bg = i == k ? h : T_RAISE;
-        cv_rect(x, 116, 26, 15, bg);
-        cv_rect(x, 131, 26 * r / 1000 + 1, 2, h);
+        int32_t x = 6 + (int32_t)(i & 3u) * 57, y = 90 + (int32_t)(i >> 2) * 24;
+        uint16_t bg = i == k ? tc : T_RAISE;
+        r = di ? clamp(RATIO(di, enum_rank(di, t->p[P_E0 + i])), 0, 1000) : 0;
+        cv_rect(x, y, 54, 16, bg);
         if (di && di->label && di->label[0] != '-')
-            cv_clip_text(x + 2, 121 - AF_X_CAP_Y, &AF_X, di->label, i == k ? T_INK : T_DIM, bg, 23);
+            cv_clip_text(x + 2, y + 3 - AF_X_CAP_Y + 2, &AF_X, di->label, i == k ? trk_ink(song.sel) : T_TEXT, bg, 50);
+        cv_rect(x, y + 18, 54 * r / 1000 + 1, 3, heat_col(r * 256 / 1000));
     }
 }
 /* the lens's panel for EDIT's page pg (1), else 0 (its own) */

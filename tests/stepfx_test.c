@@ -181,6 +181,16 @@ int main(void)
         for (ok = 1, i = 0; i < 7u; i++) { chord_nm(nm, PC, i, 2); ok &= str_eq(nm, W[i]) && text_w(&AF_M, nm) <= 28; }
         bad += check("SCL chords: D major's seven named (D E- F#- G A B- C#dim), each fits its card", ok);
     }
+    {   /* (V10.8.17, BYTE's fix) SONG mode on with no song rows: PLAY off the SONG page plays the loop */
+        stop_transport(); frame();
+        chain_config.count = 0; live.mode = 1;
+        go_title("STEP"); frame();
+        press(B_PLAY);
+        {   int32_t o2[2 * CTL]; for (i = 0; i < 400u; i++) { mix_block(o2, CTL); if (!(i & 15u)) frame(); } }
+        ok = song.playing && !chain.running;
+        stop_transport(); frame(); live.mode = 0;
+        bad += check("SONG mode, no rows: PLAY plays the loop (not ADD A SONG ROW)", ok);
+    }
     if (bad) printf("stepfx: %d failed\n", bad);
     else printf("stepfx: all passed\n");
     return bad != 0;

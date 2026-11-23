@@ -2985,7 +2985,8 @@ static void ui_input_frame(void)
             if (song.playing || chain_busy() || seq_counting())   /* (a count-in: PLAY stops it) */
                 transport_req = 2;
             else if (!song.rec && ((!ui.home && cur_page()->graph == GR_SONG && !SONG_PARTS(cur_page()) &&
-                                    !SONG_CLIPS(cur_page()) && !SONG_TAKE(cur_page())) || live.mode))   /* (the song layer's SONG mode; PARTS: as
+                                    !SONG_CLIPS(cur_page()) && !SONG_TAKE(cur_page())) || (live.mode && chain_config.count)))   /* (V10.8.17, BYTE's: no rows,
+                                                         * the loop) */   /* (the song layer's SONG mode; PARTS: as
                                                          * KNOB 4 says. A track armed: the loop, recorded; a song does
                                                          * not record, chain_start) */
                 chain_play_ui();
