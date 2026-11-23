@@ -77,7 +77,7 @@ SECTIONS
      * written by the radio's DMA) here, in the RAM every DMA reaches */
     .bss (NOLOAD) : { _bss_start = .; *(EXCLUDE_FILE(*bt_seg.o) .bss*) *(EXCLUDE_FILE(*bt_seg.o) .sbss*)
                       *(EXCLUDE_FILE(*bt_seg.o) COMMON) *bt_seg.o(.bss.bb) . = ALIGN(4); _bss_end = .; } > RAM
-    .pool (NOLOAD) : { _pool_start = .; *(.pool*) *bt_seg.o(.bss* .sbss* COMMON) . = ALIGN(4); _pool_end = .; } > POOL
+    .pool (NOLOAD) : { _pool_start = .; *(.pool) *(.pool.*) *bt_seg.o(.bss* .sbss* COMMON) . = ALIGN(4); _pool_end = .; } > POOL
     /* (JIANT 0.6.71) the second core's stacks (hal/fm1_multicore.h): 6 KiB for the render, 1 KiB for an exception */
     .c1_stacks (NOLOAD) : { . = ALIGN(32); _c1_stack_lo = .; . += 7168; _c1_stack_hi = .; } > POOL
     _c1_ustack_top = _c1_stack_lo + 6144;
