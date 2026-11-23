@@ -43,6 +43,10 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 
 ---
 
+## V10.8.24 — el emulador en JIANT Studio (2026-11-23)
+
+- El emulador responde todo el protocolo del editor: JIANT Studio y el editor web editan el emulador, graban su salida y eligen su entrada MIDI. El firmware es el de V10.8.23.
+
 ## V10.8.23 — espejo de pantalla y nombres completos en la MOD MATRIX (2026-11-23)
 
 - Espejo de pantalla: el editor web y JIANT Studio muestran la pantalla del FM-1 en vivo (protocolo 78/79).

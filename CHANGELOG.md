@@ -42,6 +42,10 @@ The sections marked **Compatibility notes** are the ones to check before you ins
 
 ---
 
+## V10.8.24 — the emulator in JIANT Studio (2026-11-23)
+
+- The emulator answers the whole editor protocol: JIANT Studio and the web editor edit the emulator, record its output and pick its MIDI input. Firmware unchanged from V10.8.23.
+
 ## V10.8.23 — screen mirror and full MOD MATRIX names (2026-11-23)
 
 - Screen mirror: the web editor and JIANT Studio show the FM-1's screen live (protocol 78/79).
