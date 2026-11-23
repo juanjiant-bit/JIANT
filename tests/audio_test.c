@@ -18,6 +18,8 @@ static uint8_t fm1_audio_pending(void) { return host_pending; }
 static void fm1_audio_ack_aux(uint8_t p) { (void)p; }
 static uint32_t fm1_audio_free_half(void) { return host_dma_advanced && host_half_reads++ > 0u; }
 static void fm1_audio_ack_half(void) { host_acks++; }
+static uint32_t host_unmutes;
+static void fm1_audio_unmute(void) { host_unmutes++; }   /* (V10.8.19: the output enable, main.c's power-on) */
 static void fm1_audio_init(int32_t *b, uint32_t n, void (*isr)(void), uint32_t p)
 { (void)b; (void)n; (void)isr; (void)p; }
 void isr_alnk0(void) {}
@@ -499,6 +501,27 @@ static double boot_run(int32_t pot, int boot, uint32_t *splash_peak, uint32_t *f
     fm1_in.notes = 0;
     return r / 340.0;
 }
+/* (V10.8.19, the power-on pop) main.c's order: the level 0 and the output (PC6) off until the DMA has played ~100 ms
+ * of zeros, then the output on and the level faded in from 0 to the knob's over 128 ms; the emulator's (mf_on 0) as before */
+static void power_on_pop(void)
+{
+    uint32_t q0, q1, q2, full;
+    host_pot = 900; host_unmutes = 0; audio_halves = 0;
+    mf_on = 1; mf_t0 = 0;
+    master_boot();
+    full = master_of_pot(900);
+    q0 = song.master_q12;
+    audio_halves = MF_HALVES - 1u; master_poll();
+    check("power-on: the level 0 and the output off before ~100 ms of zeros", q0 == 0u && song.master_q12 == 0u && host_unmutes == 0u);
+    audio_halves = MF_HALVES; master_poll();
+    check("  the output on once the DMA has played them (once), the level still 0", host_unmutes == 1u && mf_t0 && song.master_q12 == 0u);
+    fm1_ms += 64u; master_poll(); q1 = song.master_q12;
+    fm1_ms += 70u; master_poll(); q2 = song.master_q12; master_poll();
+    check("  then faded in (half way at 64 ms, the knob's at 128 ms, then as before)",
+          q1 > full / 3u && q1 < full * 2u / 3u && q2 == full && !mf_on && host_unmutes == 1u);
+    mf_on = 0; master_boot();
+    check("  without mf_on (the emulator, the tests): the knob's level at once", song.master_q12 == full);
+}
 static void boot_keys(void)
 {
     uint32_t peak, peak0, peak_old, m, m0, m_old, busy, busy0, busy_old, ref_m, b;
@@ -617,6 +640,7 @@ int main(void)
     vpol_on = 0;                                        /* (V10.7.56) the guard's and the shared budget's checks: LOAD ECO's
                                                          * budget as before (VPOL: regress chk_vpol, voices_probe stress) */
     usb_level();
+    power_on_pop();
     boot_keys();
     overload(); dma();
     input_engine();

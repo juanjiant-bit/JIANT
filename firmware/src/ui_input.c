@@ -13,7 +13,7 @@ static void knob_hint(const char *label)           /* (V10.7.81: CHORD's the one
     if (!label || (ui_help_off & 1u))                  /* (MENU > DISPLAY > HELP OFF) */
         return;
     if (str_eq(label, "CHORD"))
-        ui_say("CHORD: EACH KEY ITS OWN CHORD", "");
+        ui_say("EACH KEY ITS OWN CHORD", "");
 }
 
 static void fx_macro_back(void);
@@ -1793,7 +1793,7 @@ static __attribute__((noinline)) void act_do(void)
         uint32_t err=motion_set_lock(TSEL,ui.cursor,P_E0,(int16_t)pos);
         if(err) {ui_message(err==2u?"AUTOMATION FULL":"CANNOT PLACE LYRIC");return;}
         TSEL->p[P_VLYR]=LYR_FIXED;
-        ui_message(pos?"SYLLABLE PLACED":"AUTO ADVANCE PLACED");
+        ui_message(pos?"PLACED":"PLACED: AUTO");
         return;
     }
     if (cur_page()->graph == GR_PUNCH) {                /* (0.6.99) the punch-in lane cleared (a dialog) */
@@ -3022,9 +3022,9 @@ static void ui_input_frame(void)
                 break;
             if (!ui.home && !ui.menu && !ui.confirm && cur_page()->graph == GR_BROWSE) {   /* (V10.24) PRESETS: OCT+ keeps
                                                          * the sound, OCT- the one before the browse */
-                if (!br_armed) ui_message(b == B_OCTUP ? "TURN KNOB 1 TO BROWSE" : "NOTHING TO GO BACK TO");
+                if (!br_armed) ui_message(b == B_OCTUP ? "KNOB 1 BROWSES" : "NOTHING BEFORE");
                 else if (b == B_OCTUP) ui_message("SOUND KEPT");
-                else ui_message(undo_sound(song.sel) ? "NOTHING TO GO BACK TO" : "SOUND BEFORE");
+                else ui_message(undo_sound(song.sel) ? "NOTHING BEFORE" : "SOUND BEFORE");
                 br_armed = 0;
                 break;
             }

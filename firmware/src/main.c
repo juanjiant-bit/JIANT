@@ -341,6 +341,7 @@ static void fm1_main(void)
                                                          * VOICE's English dictionary there (sing.c) */
 #endif
     felucca_init();
+    mf_on = 1;                                /* (V10.8.19: the output on ~100 ms after the DMA, faded in: master.c) */
     master_boot();
     kb_boot_hold = 1;                         /* #137: no notes from the keys before the UI (seq.c keyboard_block) */
     audio_init();

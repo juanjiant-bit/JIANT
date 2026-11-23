@@ -10,6 +10,7 @@
  *                 if (p & FM1_AUDIO_HALF) { fill fm1_audio_free_half();
  *                                           fm1_audio_ack_half(); }
  *   fm1_audio_stop()      DMA off (crash screen, UBOOT): no looping buzz
+ *   fm1_audio_unmute()    (V10.8.19) PC6 high: the output on, once the clocks and DMA have run (main.c)
  */
 #pragma once
 #include <stdint.h>
@@ -65,14 +66,17 @@ FM1_INLINE void fm1_audio_init(int32_t *buf, uint32_t half_words, void (*isr)(vo
     FM1_ALNK_CON1 |= 1u << 12;
     FM1_ALNK_CON1 |= 1u << 14;
     FM1_ALNK_ADR3 = (uint32_t)(uintptr_t)buf;
-    fm1__pc_out(6, 1);
+    fm1__pc_out(6, 0);                          /* (V10.8.19: was 1; held low, see below) */
     FM1_ALNK_CON1 &= ~(1u << 15);
     FM1_ALNK_CON2 = 0x0Fu;
     fm1_irq_attach(FM1_IRQ_ALNK0, isr, prio);
     FM1_ALNK_CON0 |= 0x800u;
     fm1_delay_ms(5);
-    fm1__pc_out(6, 1);
+    fm1__pc_out(6, 0);                          /* (V10.8.19: was 1. PC6, the output's enable, stays low here: the
+                                                 * power-on pop was it going high before the I2S clocks and the DMA
+                                                 * ran; fm1_audio_unmute, ~100 ms of zeros later: master.c) */
 }
+FM1_INLINE void fm1_audio_unmute(void) { fm1__pc_out(6, 1); }
 
 FM1_INLINE uint8_t fm1_audio_pending(void) { return FM1_ALNK_CON2; }
 FM1_INLINE void fm1_audio_ack_aux(uint8_t p)   /* the other three pendings */

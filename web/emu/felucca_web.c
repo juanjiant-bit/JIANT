@@ -55,6 +55,7 @@ static void fm1_audio_ack_half(void) {}
 static void fm1_audio_init(int32_t *buf, uint32_t words, void (*isr)(void), uint32_t prio)
 { (void)buf; (void)words; (void)isr; (void)prio; }
 static void fm1_audio_stop(void) {}
+static void fm1_audio_unmute(void) {}   /* (V10.8.19: main.c's power-on only; here never called) */
 void isr_alnk0(void) {}
 #include "../../firmware/src/audio.c"
 

@@ -25,6 +25,7 @@ static uint8_t fm1_audio_pending(void) { return FM1_AUDIO_HALF; }
 static void fm1_audio_ack_aux(uint8_t p) { (void)p; }
 static uint32_t fm1_audio_free_half(void) { return 0; }
 static void fm1_audio_ack_half(void) {}
+static void fm1_audio_unmute(void) {}                    /* (V10.8.19: the output enable, main.c's power-on) */
 static void fm1_audio_init(int32_t *b, uint32_t n, void (*isr)(void), uint32_t p)
 { (void)b; (void)n; (void)isr; (void)p; }
 void isr_alnk0(void) {}

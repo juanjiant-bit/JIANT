@@ -104,10 +104,10 @@ static __attribute__((noinline)) void sc_put(uint32_t k, int32_t v)
             need |= (uint32_t)(i >= trk_live && scn_role[i] && !drum_track(&trk[i]));
         }
         {
-            char b[32] = "SCENE: T1'S NOTES LEAD THE ROLES";
+            char b[16] = "SCENE: T1 LEADS";
             b[8] = (char)('1' + (scn_on >= 2u ? scn_on - 2u : 0u));
-            ui_message(!scn_on ? "SCENE OFF: KEYS PLAY ONE TRACK" : need ? "T5 T6 ASLEEP: MENU > 6 TRACKS" :
-                       scn_on == 1u ? "SCENE: KEYS PLAY THE ROLES" : b);
+            ui_message(!scn_on ? "SCENE OFF: ONE TRACK" : need ? "T5 T6 ASLEEP: MENU > 6 TRACKS" :
+                       scn_on == 1u ? "SCENE: KEYS PLAY ROLES" : b);
         }
     } else if (k == 1u)
         sc_trk = (uint8_t)clamp(v, 0, (int32_t)(trk_live > 0u && trk_live < NTRK ? trk_live - 1u : NTRK - 1u));
