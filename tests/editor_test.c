@@ -1089,18 +1089,13 @@ static int scr_decode(const uint8_t *w, uint32_t n, uint32_t *frames, uint32_t *
         k = w[i + 14] | w[i + 15] << 7 | (uint32_t)w[i + 16] << 14;
         end = fw * fh;
         if (x + fw > 240u || y + fh > 240u) return -2;
-        if (w[i + 5] == 1u) {
-            uint32_t c = (w[i + 17] & 15u) << 12 | w[i + 18] << 5 | w[i + 19];
-            for (j = 0; j < end; j++) scr_fb[(y + j / fw) * 240u + x + j % fw] = (uint16_t)c;
-            i = e + 1u;
-            continue;
-        }
+        if (w[i + 5] != 0u) return -4;
         for (j = i + 17u; j < e;) {
             uint32_t t = w[j++], c, r = 1;
             if (t < 0x40u) c = tab[t];
             else if (t < 0x68u) { c = prev; r = t - 0x40u + 1u; }
             else if (t < 0x70u) { c = prev; r = 41u + ((t & 7u) << 7 | w[j++]); }
-            else { c = (t & 15u) << 12 | w[j] << 5 | w[j + 1]; j += 2; tab[scr_hash(c)] = (uint16_t)c; }
+            else { c = (t & 15u) << 12 | w[j] << 5 | w[j + 1]; j += 2; tab[((c >> 11) * 3u + ((c >> 5) & 63u) * 5u + (c & 31u) * 7u) & 63u] = (uint16_t)c; }
             prev = c;
             while (r--) {
                 if (k >= end) return -3;
@@ -1133,9 +1128,9 @@ static int screen_mirror(void)
     ed_w.last_ms = fm1_ms;
     memset(scr_fb, 0, sizeof scr_fb);
     host_wire_n = 0; scr_tap(0, 0, 240, 240, 0, 0, 0xF81Fu); host_drain();
-    ok = !scr_decode(host_wire, host_wire_n, &frames, &maxlen) && frames == 1u && host_wire_n == 21u;
+    ok = !scr_decode(host_wire, host_wire_n, &frames, &maxlen) && frames == 1u && host_wire_n < 140u;
     for (i = 0; i < 240u * 240u; i++) ok &= scr_fb[i] == 0xF81Fu;
-    bad += check("a fill: one 21-byte frame, the colour everywhere", ok);
+    bad += check("a fill of the whole screen: one small frame (a colour, its runs), the colour everywhere", ok);
     /* the canvas as the UI draws it: cards, the three faces, in each palette */
     for (j = 0; j < 3u; j++) {
         palette_set(j);
@@ -1170,6 +1165,7 @@ static int screen_mirror(void)
     host_wire_n = 0; scr_tap(230, 0, 20, 1, img, 20, 0); host_drain();
     bad += check("a strip past the panel's edge is not sent", host_wire_n == 0);
     fm1_ms += SCR_IDLE_MS + 1u;
+    ed_service();                                                       /* (the main loop: no request came) */
     host_wire_n = 0; scr_tap(0, 0, 10, 10, 0, 0, 0); host_drain();
     bad += check("4 s without a request from the editor: off by itself, nothing sent", !scr_on && host_wire_n == 0);
     a[0] = 1; request(ED_SCREEN, a, 1);

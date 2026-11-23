@@ -17,7 +17,8 @@ static uint8_t lcd_small[64];
  * fill and strip sent to the panel is also sent to the editor, compressed (the firmware keeps no frame of its own) */
 #if FELUCCA_OTA
 #define SCR_HAS_LCD 1
-static uint8_t scr_on;
+uint8_t scr_on __attribute__((section(".pool.mirror")));   /* (not static, after the pool: kept out of the compiler's merged
+                                                         * globals, so no other variable moves; app.ld) */
 static void scr_tap(uint32_t x, uint32_t y, uint32_t w, uint32_t h, const uint16_t *px, uint32_t stride, uint32_t fill);
 #define SCR_TAP(x, y, w, h, px, stride, fill) do { if (scr_on) scr_tap(x, y, w, h, px, stride, fill); } while (0)
 #else

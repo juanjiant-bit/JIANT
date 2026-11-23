@@ -103,8 +103,9 @@ async function editorScreen() {
   for (const f of [...many].reverse()) fine &&= !!E.scrDecode(f, fb);          /* (any order: each frame stands alone) */
   for (let j = 0; j < 230; j++) for (let i = 0; i < 200; i++) fine &&= fb[(2 + j) * 240 + 5 + i] === big[10 + j * 240 + i];
   ok(fine, "SCREEN: noise through a stride: 7-bit frames <= 0.5 KiB, decoded in any order");
-  ok(E.scrDecode([0, 0, 2, 0, 0, 16, 0, 1, 0, 0, 0, 0, 0x40], fb) === null && E.scrDecode([1, 0, 0], fb) === null,
-    "SCREEN: a box past the screen or a short frame: refused");
+  ok(E.scrDecode([0, 0, 2, 0, 0, 16, 0, 1, 0, 0, 0, 0, 0x40], fb) === null && E.scrDecode([1, 0, 0], fb) === null &&
+     E.scrDecode([1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0x40], fb) === null,
+    "SCREEN: a box past the screen, a short frame or another type: refused");
   /* the mock: query, on, the picture, the playhead's rows, off */
   const m = E.makeMockDevice({ auto: false });
   const shots = [];
@@ -116,8 +117,8 @@ async function editorScreen() {
   await new Promise((r) => setTimeout(r, 450));
   const mine = new Uint16Array(240 * 240);
   for (const f of shots) E.scrDecode(f.a, mine);
-  ok(on.on === 1 && shots.length > 3 && shots.every((f) => f.cmd === C.SCREEN_DATA) && shots[0].a[0] === 1,
-    "SCREEN 1: on; a fill, then the whole screen, then the rows that change");
+  ok(on.on === 1 && shots.length > 3 && shots.every((f) => f.cmd === C.SCREEN_DATA && f.a[0] === 0),
+    "SCREEN 1: on; the whole screen, then the rows that change");
   /* (the mock's own picture: m's closure; the playhead's rows match the cells drawn above them) */
   ok(mine[0] !== 0 && mine[45 * 240 + 130] !== mine[0] && mine.subarray(224 * 240, 225 * 240).some((c) => c !== mine[0]),
     "SCREEN: the mirror holds the mock's picture and its moving playhead");

@@ -393,8 +393,8 @@ const CMD = { INFO: 1, GET: 2, SET: 3, DUMP: 4, DESC: 5, STEP_GET: 6, STEP_SET: 
 /* frames the device sends on its own (while WATCH is on); never replies */
 const PUSH = new Set([CMD.CHANGED, CMD.RELOAD, CMD.STEP_CHANGED, CMD.TRACK_CHANGED, CMD.SCREEN_DATA]);
 
-/* ---- the screen mirror (78 SCREEN, 79 SCREEN_DATA; firmware/src/editor_screen.c): a SCREEN_DATA frame is a fill
-   (type 1: x y w h, a colour) or the pixels of a strip from pixel `start` on, row by row (type 0), as tokens:
+/* ---- the screen mirror (78 SCREEN, 79 SCREEN_DATA; firmware/src/editor_screen.c): a SCREEN_DATA frame is the pixels
+   of a box (a strip, or a fill) from pixel `start` on, row by row (type 0, the only one), as tokens:
    0x00..0x3F the colour at that hash, 0x40..0x67 the colour before 1..40 times more, 0x68..0x6F then a byte: 41..1064
    times, 0x70..0x7F then two bytes: a colour in full (RGB565: 4 + 7 + 5 bits). Each frame starts with an empty hash table
    and the colour before 0. */
@@ -407,11 +407,6 @@ function scrDecode(a, fb) {
   let k = a[9] | a[10] << 7 | a[11] << 14;
   if (!w || !h || x + w > SCR.W || y + h > SCR.H) return null;
   const put = (c, r) => { for (; r > 0 && k < end; r--, k++) fb[(y + (k / w | 0)) * SCR.W + x + k % w] = c; };
-  if (a[0] === 1) {
-    if (a.length < 15) return null;
-    k = 0; put((a[12] & 15) << 12 | a[13] << 5 | a[14], end);
-    return { x, y, w, h };
-  }
   if (a[0] !== 0) return null;
   const tab = new Uint16Array(64);
   let prev = 0;
@@ -2487,7 +2482,6 @@ function makeMockDevice(opt = {}) {
         const send = (args) => setTimeout(() => { if (input.onmidimessage) input.onmidimessage({ data: Uint8Array.from(frame(CMD.SCREEN_DATA, args)) }); }, 0);
         if (this.full) {
           this.full = false; this.draw();
-          send([1, 0, 0, 0, 0, 240 & 127, 240 >> 7, 240 & 127, 240 >> 7, 0, 0, 0, 0x70 | this.fb[0] >> 12, (this.fb[0] >> 5) & 127, this.fb[0] & 31]);
           for (const f of scrEncode(this.fb, 0, 0, 240, 240)) send(f);
           return;
         }
