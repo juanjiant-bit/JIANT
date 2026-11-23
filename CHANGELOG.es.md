@@ -43,6 +43,13 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 
 ---
 
+## V10.8.23 — espejo de pantalla y nombres completos en la MOD MATRIX (2026-11-23)
+
+- Espejo de pantalla: el editor web y JIANT Studio muestran la pantalla del FM-1 en vivo (protocolo 78/79).
+- MOD MATRIX: al girar SRC o DEST de un slot se ve la ruta con nombres completos (por ej. "LFO > FILTER CUTOFF", "MOD WHEEL"), aunque HELP esté apagado; E1..E8 con los nombres del motor actual (V10.8.22).
+- SEQ > STEP FX: la ayuda "HOLD A KEY" ya no tapa los pasos.
+- El sonido no cambió desde V10.8.21.
+
 ## V10.8.21 — modo canción, DRONE CLAY, componentes de paso que se tocan y las pantallas redibujadas (2026-11-23)
 
 Incluye las betas V10.8.1 a V10.8.20. Si venís de V10.7.81, esto es todo lo nuevo.

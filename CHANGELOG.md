@@ -42,6 +42,13 @@ The sections marked **Compatibility notes** are the ones to check before you ins
 
 ---
 
+## V10.8.23 — screen mirror and full MOD MATRIX names (2026-11-23)
+
+- Screen mirror: the web editor and JIANT Studio show the FM-1's screen live (protocol 78/79).
+- MOD MATRIX: turning a slot's SRC or DEST shows the route with full names (e.g. "LFO > FILTER CUTOFF", "MOD WHEEL"), even with HELP OFF; E1..E8 named as the current engine's parameters (V10.8.22).
+- SEQ > STEP FX: the "HOLD A KEY" hint moved off the step row.
+- Sound unchanged since V10.8.21.
+
 ## V10.8.21 — song mode, DRONE CLAY, step components you play, and the screens redrawn (2026-11-23)
 
 Includes the betas V10.8.1 to V10.8.20. If you come from V10.7.81, this is everything new.

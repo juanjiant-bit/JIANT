@@ -1,11 +1,11 @@
 {
-  "source": "17dc2256e4e21b6eaeb03cf6c30d6a0fc99a9208",
-  "version": "V10.8.21",
-  "released_site_run": 45241801229,
-  "previous_public_source": "e58c52e4fa0954dd6e9991d87c4b4d64c27236e7",
-  "audit_source": "17dc2256e4e21b6eaeb03cf6c30d6a0fc99a9208",
-  "candidate_run_id": 45239239811,
-  "sha256": "2a1f8bb09458f219cbcbfeed22cccc027a9e869793bd5b0ebfd01e821ea6fbc7",
+  "source": "865b12d0d0d975e1b738452ac94c3d9c2cb4925c",
+  "version": "V10.8.23",
+  "released_site_run": 45278387491,
+  "previous_public_source": "17dc2256e4e21b6eaeb03cf6c30d6a0fc99a9208",
+  "audit_source": "865b12d0d0d975e1b738452ac94c3d9c2cb4925c",
+  "candidate_run_id": 45278499121,
+  "sha256": "2d40f7fd4fc8706fccd2692867980b0f44cb73bc7b4793ae9ef7d5dbc57b9add",
   "regressions": [
     "loop_song",
     "song_generator",
@@ -13,5 +13,5 @@
     "gen"
   ],
   "publication_revision": 1,
-  "emulator_sha256": "0322aca9e30243110a45c03bfe3ec204ab84f18ec4c07c0abb4065a329166f8b"
+  "emulator_sha256": "72ff748da00ec1ed511c50040a2fb6eb809cd4d491593c482b0e69325b488b06"
 }

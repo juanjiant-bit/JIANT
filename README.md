@@ -14,7 +14,7 @@ step components you can play live, a song mode you perform and record, a generat
 inside the little keyboard. It is a fork of [Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 by Hügelton
 Instruments (GPL-3.0) and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 
-> **Current public release: V10.8.21** (not a beta). **Back up your projects before updating**: save a complete
+> **Current public release: V10.8.23** (not a beta). **Back up your projects before updating**: save a complete
 > backup with the editor or the installer first. If something doesn't work for you, V10.7.81 is still offered in the
 > installer.
 
@@ -122,6 +122,10 @@ ADD** and **EXT** (the USB audio input, or SWARM: a melody out of the Bluetooth 
   and hints that tell you what to do.
 - **Connections**: USB MIDI and audio (the FM-1 is a sound card: stems for every track, the computer's audio back in),
   MIDI over the TRS jack, Bluetooth MIDI and PROX, USB HOST (experimental).
+
+## What's new in V10.8.23
+
+- **V10.8.23:** screen mirror for the web editor / JIANT Studio (see the FM-1's screen live in the browser); MOD MATRIX shows routes with full names while you turn SRC/DEST (V10.8.22); the STEP FX hint no longer covers the steps.
 
 ## What's new in V10.8.21
 
