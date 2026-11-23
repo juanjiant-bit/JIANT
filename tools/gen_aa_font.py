@@ -40,7 +40,11 @@ import aa_raster as ar  # noqa: E402
 
 FONTS = Path(__file__).resolve().parents[1] / "fonts"
 LOCAL_INTER = os.path.expanduser("~/Library/Fonts/Inter.ttc")   # 4.001: 0 Regular, 10 Medium, 12 SemiBold
-EXTRAS = [0xA9, 0xB0, 0xB7, 0xC4, 0xD6, 0xDC, 0xE4, 0xF6, 0xFC, 0x2026]  # (c) deg . A: O: U: a: o: u: (Latin-1), ...
+EXTRAS = [0xB0, 0xB7, 0xC4, 0xD6, 0xDC, 0xE4, 0xF6, 0xFC, 0x2026]  # deg . A: O: U: a: o: u: (Latin-1), ... (V10.8.13: (c) gone,
+                                       # no text draws it; a name with it: '?', gfx.c glyph)
+# (V10.8.13, the owner) S and M (AF_X is S): these no text of the firmware draws (tests/glyph_cover_test.py); their places in
+# the range kept (its index is the character's), drawn as a space: a name from the app or a patch with one stays in its layout
+BLANK = {"S": '"$\\^', "M": '"$\\^'}
 CODE = {0x2026: 0x85}                  # characters outside Latin-1 -> their one-byte code in the firmware
 PHASES, PHASES_L = 1, 1                # horizontal phases per glyph (aa_raster.raster_font): S M, L. (JIANT 0.9.9-snd4, flash)
                                        # S M 2, were 4: 12.9 KB less of the glyph tables; a glyph within 1/4 px of its
@@ -199,6 +203,8 @@ def emit(face, tracking, gamma, kern_min):
         r["h"] -= rise
         r["glyphs"] = {ch: (a, [(bx, by - rise if bw else by, bw, bh, b) for bx, by, bw, bh, b in ph])
                        for ch, (a, ph) in r["glyphs"].items()}
+    for ch in BLANK.get(name, ""):                 # (V10.8.13) as the space: no ink, its advance
+        r["glyphs"][ch] = r["glyphs"][" "]
     data, table, lines = bytearray(), [], []
     for ch in chars:
         adv16, ph = r["glyphs"][ch]

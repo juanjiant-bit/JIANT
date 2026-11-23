@@ -95,8 +95,10 @@ int main(void)
         ok = str_eq(SFX_NM[sfx_key], "STUTTER /2") && sfx_k == wkey(1) && key_place(sfx_k) + 1u == 2u &&
              spx(120, (int32_t)by) == T_RAISE && rec_on(TSEL);
         let_go(1); frame(); frame();
-        ok &= sfx_key == 16u && spx(120, (int32_t)by) != T_RAISE;
-        bad += check("STEP FX banner: STUT /2, KEY 2, REC while held; gone when let go", ok);
+        ok &= sfx_key == 16u && spx(120, (int32_t)by) == T_RAISE;   /* (V10.8.13: 0.6 s more) */
+        frames(700);
+        ok &= spx(120, (int32_t)by) != T_RAISE;
+        bad += check("STEP FX banner: STUTTER /2, KEY 2, REC while held; 0.6 s after it is let go, then gone", ok);
     }
     song.rec = 0;
     {   /* (V10.8.9) the FX layer's punch-in held: its banner */
@@ -108,9 +110,15 @@ int main(void)
         ly_keyname(LAYER_FX, 0, 2, nm);
         ok &= str_eq(nm, "RPT 1/32") && spx(120, (int32_t)by) == T_RAISE;
         key_up(white(2)); frame(); frame();
-        ok &= !fx_hk && spx(120, (int32_t)by) != T_RAISE;
+        ok &= !fx_hk && spx(120, (int32_t)by) == T_RAISE;            /* (V10.8.13: 0.6 s more) */
+        frames(700);
+        ok &= spx(120, (int32_t)by) != T_RAISE;
+        key_down(white(2)); frame(); frame();                          /* latched: the key let go, the effect on */
+        key_up(white(2)); perf_latched |= PF_BIT(PF_R32); frame(); frames(700);
+        ok &= spx(120, (int32_t)by) != T_RAISE;
+        perf_latched = 0;
         btn_up(B_FX); frame();
-        bad += check("FX layer banner: the punch-in held (RPT 1/32) large with its key; gone when let go", ok);
+        bad += check("FX layer banner: the punch-in held (RPT 1/32) large with its key; 0.6 s after, then gone, latched too", ok);
     }
     {   /* (V10.8.9) the song mode's hints: one a state, each fits the line; HELP OFF: none */
         const char *h[6];

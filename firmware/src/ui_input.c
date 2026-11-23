@@ -677,6 +677,8 @@ static void sfx_keys(void)
             w = key_place(k), sfx_k = k;
     if (w != sfx_key && w < 16u)
         ui_message(SFX_NM[w]);
+    if (w < 16u)
+        bn_set(SFX_NM[w], sfx_k, 1);                   /* (V10.8.13: the banner, 0.6 s after the key) */
     sfx_key = (uint8_t)w;
     hc_val = w < 16u ? SFX_KV[w] : 0u;
     hc_trk = (uint8_t)song.sel;

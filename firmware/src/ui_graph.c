@@ -1146,6 +1146,19 @@ static __attribute__((noinline)) void hold_banner(const char *nm, uint32_t k, in
 }
 static uint32_t sfx_k;                                  /* (V10.8.9) the key sfx_key is (sfx_keys) */
 static uint8_t fx_hk;                                   /* (V10.8.9) the FX layer's key held + 1 (ui_layer.c draw_layer) */
+/* (V10.8.13, the owner) the banner momentary: a key physically held (not a latch) sets it each frame; it stays 0.6 s
+ * after the key is let go, its last words, then goes (bn_pg: 1 STEP FX, 2 the FX layer's punch-ins) */
+static char bn_nm[13];
+static uint8_t bn_k, bn_pg;
+static uint32_t bn_t;
+static void bn_set(const char *nm, uint32_t k, uint32_t pg)
+{
+    str_cpy(bn_nm, nm, sizeof bn_nm);
+    bn_k = (uint8_t)k;
+    bn_pg = (uint8_t)pg;
+    bn_t = fm1_ms | 1u;
+}
+static uint32_t bn_on(uint32_t pg) { return bn_t && bn_pg == pg && (fm1_ms | 1u) - bn_t < 600u ? bn_k + 1u : 0u; }
 /* the page's marks over the roll / the grid (0.9.17's): PLAYHEADS FUGUE's heads on the grid too (the roll draws them on
  * every page); COMP the steps with the cursor's component a bar on top ACCENT, another component a thin MID one;
  * AUTOMATION / AUTO LIST the records at the foot (a lock ACCENT, automation TEXT; AUTO LIST the row picked framed THEME);
@@ -1172,8 +1185,8 @@ static __attribute__((noinline)) void seq_overlay(const track_t *t, const page_t
         k = ui.cursor % NSTEP;
         if (mine == CA_RAMP && k >= base && k < base + 16u && bt_hw_seg())
             ramp_draw_bt(t, dr, top, k - base);
-        if (sfx_key < 16u)                              /* (V10.8.8) the component held, large (V10.8.9) */
-            hold_banner(SFX_NM[sfx_key], sfx_k, rec_on(t));
+        if (bn_on(1))                                   /* (V10.8.8) the component held, large (V10.8.9; V10.8.13: 0.6 s on) */
+            hold_banner(bn_nm, bn_k, rec_on(t));
         else
             cv_text(100, 2, &AF_X, "HOLD A KEY: STEP FX", T_MID);
     } else if (pg->graph == GR_MOTION || pg->graph == GR_EVENTS) {
@@ -1489,7 +1502,7 @@ static __attribute__((noinline)) uint32_t graph_signature(void)
     if (pg->graph == GR_COMP) {                      /* (0.6.39) the steps, their components, the arpeggio and the loop */
         const step_t *cs = &t->step[ui.cursor];
         uint32_t ph = song.playing ? seq_src(t, t->seq_idx) : 0xFFFFu;
-        h = (h ^ (steps_hash(t) + ph * 31u + ui.cursor * 7919u + ui.bank * 613u + sfx_key * 65537u + (uint32_t)rec_on(t) * 101u)) * 16777619u;
+        h = (h ^ (steps_hash(t) + ph * 31u + ui.cursor * 7919u + ui.bank * 613u + bn_on(1) * 65537u + (uint32_t)rec_on(t) * 101u)) * 16777619u;
         h = (h ^ ((uint32_t)t->p[P_CLEN] << 8 | (song.playing ? t->cpos : 0xFFu))) * 16777619u;   /* (0.6.47) C.LEN */
         for (i = ui.bank * 16u; i < ui.bank * 16u + 16u && i < NSTEP; i++)
             h = (h ^ ((uint32_t)t->step[i].comp << 8 | t->step[i].carg | (uint32_t)t->step[i].probability << 16 |

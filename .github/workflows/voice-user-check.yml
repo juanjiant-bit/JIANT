@@ -106,6 +106,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 tests/font_pack_test.py
+          python3 tests/glyph_cover_test.py
           cc -O1 -w -Ibuild/gen -Ifirmware/src tests/text_ref_test.c -lm -o build/song-check/text-ref
           build/song-check/text-ref | tee build/song-check/text-ref.log
           cc -O1 -g -w -Wno-implicit-function-declaration -fsanitize=address,bounds -Ibuild/gen -Ifirmware/src tests/track_generator_test.c -lm -o build/song-check/track-gen
