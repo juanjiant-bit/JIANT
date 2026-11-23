@@ -207,6 +207,28 @@
   .port .links .na { opacity: .5; pointer-events: none; }
   .devtry iframe { height: calc(100vh - 220px); }
 
+  /* recording: the source, the transport, the lanes as a DAW's */
+  .srcgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .transport { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 14px 0; }
+  .daw { position: relative; display: grid; gap: 6px; }
+  .lane { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 8px; align-items: stretch; --lc: var(--accent); }
+  .lane.off { opacity: .35; }
+  .lhead { background: var(--field); border: var(--border) solid var(--line); border-left: 4px solid var(--lc); border-radius: var(--radius-s);
+    padding: 6px 8px; display: grid; grid-template-columns: 1fr auto; grid-template-areas: "n b" "s b" "m m"; gap: 2px 6px; align-content: center; }
+  .lname { grid-area: n; font: 600 13px/1.2 var(--mono); color: var(--lc); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  :root[data-skin="byte"] .lname { font: 18px/1 var(--mono); }
+  .lsub { grid-area: s; font-size: 11px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lbtns { grid-area: b; display: flex; gap: 4px; align-items: center; }
+  .lbtns button { width: 26px; height: 26px; padding: 0; border-radius: 6px; border: var(--border) solid var(--line); background: var(--panel); color: var(--dim);
+    font: 600 11px/1 var(--mono); cursor: pointer; }
+  .lbtns button[aria-pressed="true"]:first-child { background: var(--warn); color: #000; border-color: var(--warn); }
+  .lbtns button[aria-pressed="true"]:last-child { background: var(--ok); color: #000; border-color: var(--ok); }
+  .lmeter { grid-area: m; height: 4px; border-radius: 2px; background: color-mix(in srgb, var(--fg) 12%, transparent); overflow: hidden; margin-top: 4px; }
+  .lmeter i { display: block; height: 100%; width: 0; background: var(--lc); transition: width .08s linear; }
+  .lwave { width: 100%; height: 56px; display: block; background: var(--field); border: var(--border) solid var(--line); border-radius: var(--radius-s); }
+  .playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--fg); pointer-events: none; box-shadow: 0 0 8px var(--fg); }
+  #recgo.recording { background: var(--bad); border-color: var(--bad); color: #fff; }
+  @media (max-width: 640px) { .lane { grid-template-columns: 104px minmax(0, 1fr); } .lsub { display: none; } }
   /* recording */
   .meter { height: 10px; border-radius: 5px; background: var(--field); border: var(--border) solid var(--line); overflow: hidden; }
   .meter i { display: block; height: 100%; width: 0; background: var(--heat); transition: width .08s linear; }
@@ -370,20 +392,25 @@
   <!-- ======================================================================================= record -->
   <section class="view" id="v-rec" hidden>
     <div class="viewhead"><div><p class="eyebrow" data-t="vRec"></p><h1 data-t="recTitle"></h1></div></div>
-    <div class="grid2">
-      <div class="card">
-        <h2 data-t="recAudio"></h2>
-        <p class="small dim" id="recsrchelp"></p>
+    <div class="card recsrc">
+      <div class="srcgrid">
+        <label class="field"><span data-t="recProfile"></span><select id="recprof">
+          <option value="auto" data-t="profAuto"></option><option value="master" data-t="profMaster"></option>
+          <option value="stems" data-t="profStems"></option><option value="stemsin" data-t="profStemsIn"></option></select></label>
         <label class="field"><span data-t="recInput"></span><select id="recdev"></select></label>
-        <label class="field" style="margin-top:10px"><span data-t="recMode"></span><select id="recmode">
-          <option value="2" data-t="recStereo"></option><option value="8" data-t="recStems8"></option></select></label>
-        <div class="row" style="margin: 14px 0 10px">
-          <button class="btn" id="recgo" data-t="recStart"></button>
-          <span class="clock" id="recclock">00:00</span>
-        </div>
-        <div class="meter" aria-hidden="true"><i id="recmeter"></i></div>
-        <p class="stat" id="recstat" role="status" aria-live="polite"></p>
       </div>
+      <p class="small dim" id="profhelp"></p>
+      <div class="transport">
+        <button class="btn ghost" id="recmon" data-t="recMonitor"></button>
+        <button class="btn" id="recgo" data-t="recStart"></button>
+        <span class="clock" id="recclock">00:00</span>
+        <button class="btn ghost" id="recplay" data-t="recPlay" disabled></button>
+        <span class="stat" id="recstat" role="status" aria-live="polite"></span>
+      </div>
+      <p class="note" id="recwarn" hidden></p>
+      <div class="daw" id="daw"><p class="small dim" data-t="recDawEmpty"></p></div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
       <div class="card">
         <h2 data-t="recMidi"></h2>
         <p class="small dim" data-t="recMidiHelp"></p>

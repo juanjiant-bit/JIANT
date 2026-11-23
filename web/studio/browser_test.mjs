@@ -54,6 +54,20 @@ try {
     const r = await m.evaluate(() => { const c = document.getElementById("scr").getBoundingClientRect(); return { fs: document.fullscreenElement && document.fullscreenElement.id, w: c.width, h: c.height }; });
     ok(r.fs === "stage" && Math.abs(r.w - r.h) < 2 && Math.round(r.w) === Math.min(vp.width, vp.height), `full screen, ${name}: square, ${Math.round(r.w)} px (the short side)`);
   }
+  /* record: the simulated FM-1 in STEMS+IN (10 channels): a lane each, named by track and engine; a take of each stem */
+  {
+    const r = await (await b.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+    r.on("pageerror", (e) => errs.push(e.message));
+    await r.goto(URL0 + "?mock=1#rec"); await r.waitForTimeout(1500);
+    await r.click('nav.views [data-go="rec"]'); await r.waitForTimeout(600);
+    await r.selectOption("#recdev", "mock-stems"); await r.click("#recmon"); await r.waitForTimeout(1200);
+    const lanes = await r.$$eval(".lname", (x) => x.map((e) => e.textContent));
+    await r.click("#recgo"); await r.waitForTimeout(2500); await r.click("#recgo"); await r.waitForTimeout(800);
+    const files = await r.evaluate(() => jiantStudio.rec.takes[0].files.map((f) => f.label));
+    ok(lanes.length === 10 && lanes[0] === "T1 · DRUM" && lanes[8] === "VOX" && lanes[9] === "DRY" &&
+       ["T1", "T6", "FX", "VOX", "DRY"].every((l) => files.some((f) => f.startsWith(l))) && files.length >= 11 && !lanes.some((l) => / · -$/.test(l)),
+      `record, STEMS+IN: 10 lanes (${lanes[0]} … ${lanes[9]}), a WAV a stem, the ZIP and the mix`);
+  }
   /* install safety */
   const other = await p.context().newPage();               // (the same browser profile: BroadcastChannel reaches it)
   await other.goto(URL0); await other.waitForTimeout(800);
