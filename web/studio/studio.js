@@ -28,6 +28,25 @@ const TEXT = {
     lvUnknown: "Un parámetro de esta página.", lvReload: "Cambiaste de sonido: el motor y su preset en la pista elegida.", lvStepWhat: "Editaste un paso de la secuencia de esta pista.",
     lvPlay: "La música está sonando: el secuenciador avanza paso a paso.", lvStop: "Se detuvo la reproducción.", lvPunch: "Mantené FX y tocá teclas: un efecto suena solo mientras lo sostenés.",
     lvPunchOn: "un efecto activo", lvPunchOff: "ninguno", lvMutate: "MUTATE cambió el patrón de esta pista.", lvPage: "La página que está en pantalla y sus perillas.", lvMore: "Ver en la guía:",
+    tourOpen: "Guía rápida", tourNext: "Siguiente", tourPrev: "Anterior", tourSkip: "Saltear", tourDone: "Listo",
+    tourWelcomeT: "Bienvenido a JIANT Studio", tourWelcome: "Todo para tu FM-1 en una página: instalar el firmware, editarlo, ver su pantalla en grande, tocar el emulador, grabar, guardar tus proyectos y aprender cómo funciona. Te muestro dónde está cada cosa.",
+    tourWelcomeH: "Son unos pasos; podés saltearlo y volver cuando quieras con el botón ? de arriba.",
+    tourFwT: "JIANT FM o JIANT BYTE", tourFw: "Elegí el firmware: FM (síntesis) o BYTE (fórmulas). Studio cambia sus herramientas, sus manuales y su estética según cuál elijas.", tourFwH: "Si conectás una FM-1, Studio lo detecta y lo elige solo.",
+    tourTargetT: "FM-1 o Emulador", tourTarget: "¿Con qué trabajás? Con tu FM-1 por USB, o con el emulador: el firmware real corriendo en el navegador.", tourTargetH: "El editor, la pantalla, grabar y la guía en vivo usan lo que elijas acá.",
+    tourDevT: "Tu FM-1", tourDev: "Acá ves si hay una FM-1 conectada y qué firmware y versión tiene.", tourDevH: "Verde: conectada. Si algo no responde, desconectá y volvé a buscar.",
+    tourFindT: "Buscar la FM-1", tourFind: "Conectá la FM-1 con un cable USB de datos y tocá Buscar: Studio la encuentra por MIDI.", tourFindH: "Funciona en Chrome o Edge (computadora) y Chrome en Android.",
+    tourV_installT: "Instalar", tourV_install: "Instala o actualiza el firmware, con un backup antes. Primero leés las advertencias y aceptás; después son tres pasos.", tourV_installH: "Mientras instala, todo lo demás suelta la FM-1 para no interrumpirla.",
+    tourV_editorT: "Editor", tourV_editor: "Cada sonido y ajuste de la FM-1 en la pantalla: motores, presets, perillas, secuencias, proyectos.", tourV_editorH: "Lo que cambiás acá cambia en el aparato al instante, y al revés.",
+    tourV_screenT: "Pantalla", tourV_screen: "La pantalla de la FM-1 en grande, en vivo, incluso en el celular a pantalla completa.", tourV_screenH: "Tocá Mostrar; se gira sola en horizontal o vertical.",
+    tourV_emuT: "Emulador", tourV_emu: "El firmware real en el navegador, para tocar con el mouse, el teclado de la computadora o un teclado MIDI.", tourV_emuH: "Tiene pantalla completa; elegí qué entrada MIDI lo toca.",
+    tourV_recT: "Grabar", tourV_rec: "Graba el master o cada pista por separado (stems), en WAV y MIDI, con pistas como en un DAW.", tourV_recH: "De la FM-1 por USB (modo STEMS) o directamente del emulador.",
+    tourV_projT: "Proyectos", tourV_proj: "Tus ranuras de proyecto A–D y los backups a mano, guardados en este navegador.", tourV_projH: "Hacé un backup antes de instalar o probar algo nuevo.",
+    tourV_learnT: "Cómo funciona", tourV_learn: "Cada motor, secuenciador, efecto, modulador y generador, explicado con animaciones. Y En vivo: tocás la FM-1 y Studio te explica qué moviste.", tourV_learnH: "Empezá por el Índice o por ● En vivo.",
+    tourV_docsT: "Manuales", tourV_docs: "El manual interactivo, el manual completo y las hojas de ayuda de cada firmware.", tourV_docsH: "Las hojas de ayuda se pueden imprimir.",
+    tourV_rescueT: "Rescate", tourV_rescue: "Si una FM-1 no enciende o no aparece por USB, una placa RP2040 la puede revivir: un tutorial paso a paso.", tourV_rescueH: "Solo para FM-1 que no prenden; si prende, usá Instalar.",
+    tourV_portsT: "Otros aparatos", tourV_ports: "JIANT en el SMK-37 y la MPC Sample, con su emulador y su manual, y los plugins que vienen.", tourV_portsH: "Probalos en el navegador sin tener el aparato.",
+    tourLangT: "Idioma", tourLang: "Cambiá entre español e inglés.",
+    tourEndT: "Listo", tourEnd: "Esta guía vuelve cuando quieras con este botón.", tourEndH: "Para empezar: conectá tu FM-1 y tocá Buscar, o elegí Emulador y prendelo.",
     siteLink: "El sitio de %s: qué es, sus pantallas y su historia →", vLearn: "Cómo funciona", lrIndex: "Índice", lrIndexLead: "Todo, de un vistazo: tocá cualquier elemento para abrir su página. Con ← y → pasás al siguiente.", lrTitleFm: "JIANT FM por dentro", lrTitleByte: "JIANT BYTE por dentro", lrTry: "Probarlo en el emulador", lrWhere: "En la FM-1: ", lrNone: "Esta guía todavía se está escribiendo.",
     vRescue: "Rescate", rsTitle: "Rescatar un FM-1", rsBeta: "experimental · sin probar en hardware",
     rsLead: "Para un FM-1 que no enciende o que la computadora no ve por USB (hard brick). Una placa RP2040 de pocos dólares hace todo sola: se conecta al USB-C del FM-1 con tres cables y le vuelve a escribir el firmware. Sin Python ni terminal: Studio arma el archivo para la placa.",
@@ -163,6 +182,25 @@ const TEXT = {
     lvUnknown: "A parameter of this page.", lvReload: "You changed the sound: the engine and its preset on the selected track.", lvStepWhat: "You edited a step of this track's sequence.",
     lvPlay: "The music is playing: the sequencer moves step by step.", lvStop: "Playback stopped.", lvPunch: "Hold FX and play keys: an effect sounds only while you hold it.",
     lvPunchOn: "an effect on", lvPunchOff: "none", lvMutate: "MUTATE changed this track's pattern.", lvPage: "The page on screen and its knobs.", lvMore: "See it in the guide:",
+    tourOpen: "Quick tour", tourNext: "Next", tourPrev: "Back", tourSkip: "Skip", tourDone: "Done",
+    tourWelcomeT: "Welcome to JIANT Studio", tourWelcome: "Everything for your FM-1 in one page: install the firmware, edit it, see its screen big, play the emulator, record, keep your projects and learn how it works. Here is where each thing is.",
+    tourWelcomeH: "A few steps; skip it and come back whenever you want with the ? button at the top.",
+    tourFwT: "JIANT FM or JIANT BYTE", tourFw: "Pick the firmware: FM (synthesis) or BYTE (formulas). Studio changes its tools, manuals and look to match.", tourFwH: "Connect an FM-1 and Studio picks it by itself.",
+    tourTargetT: "FM-1 or Emulator", tourTarget: "What are you working with? Your FM-1 over USB, or the emulator: the real firmware running in the browser.", tourTargetH: "The editor, the screen, recording and the live guide use what you pick here.",
+    tourDevT: "Your FM-1", tourDev: "Here you see whether an FM-1 is connected, and its firmware and version.", tourDevH: "Green: connected. If something does not answer, forget it and find it again.",
+    tourFindT: "Find the FM-1", tourFind: "Connect the FM-1 with a USB data cable and press Find: Studio finds it over MIDI.", tourFindH: "Works in Chrome or Edge (computer) and Chrome on Android.",
+    tourV_installT: "Install", tourV_install: "Installs or updates the firmware, with a backup first. First you read the warnings and accept; then three steps.", tourV_installH: "While it installs, everything else lets go of the FM-1 so nothing interrupts it.",
+    tourV_editorT: "Editor", tourV_editor: "Every sound and setting of the FM-1 on screen: engines, presets, knobs, sequences, projects.", tourV_editorH: "What you change here changes on the device at once, and the other way round.",
+    tourV_screenT: "Screen", tourV_screen: "The FM-1's screen, big and live, even full screen on your phone.", tourV_screenH: "Press Show; it turns by itself, landscape or portrait.",
+    tourV_emuT: "Emulator", tourV_emu: "The real firmware in the browser, played with the mouse, the computer keyboard or a MIDI keyboard.", tourV_emuH: "It goes full screen; choose which MIDI input plays it.",
+    tourV_recT: "Record", tourV_rec: "Records the master or each track apart (stems), as WAV and MIDI, with tracks as in a DAW.", tourV_recH: "From the FM-1 over USB (STEMS mode) or straight from the emulator.",
+    tourV_projT: "Projects", tourV_proj: "Your project slots A–D and backups by hand, kept in this browser.", tourV_projH: "Back up before installing or trying something new.",
+    tourV_learnT: "How it works", tourV_learn: "Every engine, sequencer, effect, modulator and generator, explained with animations. And Live: play the FM-1 and Studio tells you what you moved.", tourV_learnH: "Start with the Index or ● Live.",
+    tourV_docsT: "Manuals", tourV_docs: "The interactive manual, the full manual and the cheat sheets of each firmware.", tourV_docsH: "The cheat sheets print well.",
+    tourV_rescueT: "Rescue", tourV_rescue: "If an FM-1 does not turn on or show over USB, an RP2040 board can bring it back: a step-by-step tutorial.", tourV_rescueH: "Only for FM-1s that do not start; if it starts, use Install.",
+    tourV_portsT: "Other devices", tourV_ports: "JIANT on the SMK-37 and the MPC Sample, with their emulators and manuals, and the plugins coming.", tourV_portsH: "Try them in the browser without the device.",
+    tourLangT: "Language", tourLang: "Switch between Spanish and English.",
+    tourEndT: "Done", tourEnd: "This tour comes back whenever you want with this button.", tourEndH: "To start: connect your FM-1 and press Find, or pick Emulator and switch it on.",
     siteLink: "%s's site: what it is, its screens and its story →", vLearn: "How it works", lrIndex: "Index", lrIndexLead: "Everything at a glance: tap any element to open its page. ← and → go to the next one.", lrTitleFm: "Inside JIANT FM", lrTitleByte: "Inside JIANT BYTE", lrTry: "Try it in the emulator", lrWhere: "On the FM-1: ", lrNone: "This guide is still being written.",
     vRescue: "Rescue", rsTitle: "Rescue an FM-1", rsBeta: "experimental · not tried on hardware yet",
     rsLead: "For an FM-1 that does not turn on, or that the computer does not see over USB (hard brick). A few-dollar RP2040 board does it all by itself: wired to the FM-1's USB-C with three wires, it writes the firmware again. No Python, no terminal: Studio makes the board's file.",
@@ -1368,6 +1406,60 @@ $("lrback").addEventListener("click", () => lrOpen(-1, 0));
 $("lrnext").addEventListener("click", () => lrStep(1));
 document.addEventListener("keydown", (e) => { if (state.view !== "learn" || /input|select|textarea/i.test(e.target.tagName)) return; if (e.key === "ArrowRight") lrStep(1); else if (e.key === "ArrowLeft") lrStep(-1); });
 
+/* ---------------------------------------------------------------------------------------- the quick tour */
+/* The first time Studio opens (and from the ? button): each part in turn, lit while the rest dims, a card telling what
+ * it is, what it does and how to use it; Next / Back / Skip, the arrow keys, Esc. Remembered in this browser */
+const TOUR = [
+  { k: "Welcome" },
+  { k: "Fw", sel: "#fwseg" },
+  { k: "Target", sel: "#targetseg" },
+  { k: "Dev", sel: "#devchip", view: "home" },
+  { k: "Find", sel: "#find", view: "home" },
+  ...["install", "editor", "screen", "emu", "rec", "proj", "learn", "docs", "rescue", "ports"].map((v) => ({ k: "V_" + v, sel: `nav.views [data-go="${v}"]` })),
+  { k: "Lang", sel: "#lang" },
+  { k: "End", sel: "#tourbtn" },
+];
+const tour = { i: 0, on: false };
+const TOUR_KEY = "jiant.studio.tour.1";
+function tourShow(i) {
+  tour.i = Math.max(0, Math.min(TOUR.length - 1, i));
+  const st = TOUR[tour.i];
+  if (st.view && state.view !== st.view) go(st.view);
+  $("tour").hidden = false; tour.on = true;
+  $("tourstep").textContent = `${tour.i + 1} / ${TOUR.length}`;
+  $("tourtitle").textContent = t("tour" + st.k + "T"); $("tourwhat").textContent = t("tour" + st.k);
+  const how = TEXT[lang]["tour" + st.k + "H"]; $("tourhow").textContent = how || ""; $("tourhow").hidden = !how;
+  $("tourprev").disabled = tour.i === 0; $("tournext").textContent = t(tour.i === TOUR.length - 1 ? "tourDone" : "tourNext");
+  $("tourdots").replaceChildren(...TOUR.map((_, k) => Object.assign(document.createElement("i"), { className: k === tour.i ? "on" : "" })));
+  const el = st.sel && document.querySelector(st.sel);
+  const hole = $("tourhole"), card = $("tourcard");
+  if (el && el.getClientRects().length) {
+    el.scrollIntoView({ block: "nearest", inline: "center" });
+    requestAnimationFrame(() => {
+      const r = el.getBoundingClientRect(), pad = 6;
+      Object.assign(hole.style, { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + 2 * pad}px`, height: `${r.height + 2 * pad}px`, display: "" });
+      const cw = card.offsetWidth, ch = card.offsetHeight, below = r.bottom + 14 + ch < innerHeight;
+      card.style.top = `${below ? r.bottom + 14 : Math.max(12, r.top - 14 - ch)}px`;
+      card.style.left = `${Math.max(12, Math.min(innerWidth - cw - 12, r.left + r.width / 2 - cw / 2))}px`;
+    });
+  } else {
+    hole.style.display = "none";
+    requestAnimationFrame(() => { card.style.top = `${Math.max(12, (innerHeight - card.offsetHeight) / 2)}px`; card.style.left = `${(innerWidth - card.offsetWidth) / 2}px`; });
+  }
+  $("tournext").focus();
+}
+function tourEnd() { $("tour").hidden = true; tour.on = false; try { localStorage.setItem(TOUR_KEY, "1"); } catch (_) {} }
+$("tournext").addEventListener("click", () => (tour.i === TOUR.length - 1 ? tourEnd() : tourShow(tour.i + 1)));
+$("tourprev").addEventListener("click", () => tourShow(tour.i - 1));
+$("tourskip").addEventListener("click", tourEnd);
+$("tourbtn").addEventListener("click", () => tourShow(0));
+document.addEventListener("keydown", (e) => {
+  if (!tour.on) return;
+  if (e.key === "Escape") tourEnd(); else if (e.key === "ArrowRight") $("tournext").click(); else if (e.key === "ArrowLeft") tourShow(tour.i - 1); else return;
+  e.preventDefault(); e.stopPropagation();
+}, true);
+addEventListener("resize", () => { if (tour.on) tourShow(tour.i); });
+
 /* -------------------------------------------------------------------------------- how it works: live */
 /* Following the FM-1 (or the emulator): WATCH 31 and a PING a second keep its pushes coming; a knob turned (CHANGED)
  * is named by its DESC (cached per engine) and explained by the firmware's glossary (live-fm.json, live-byte.json:
@@ -1990,4 +2082,5 @@ window.addEventListener("hashchange", () => {
 if (MOCK || QS.has("screen")) find().then(() => { if (QS.has("screen") && state.dev) { screenStart(); } });
 /* (for the tests) */
 loadList();
-window.jiantStudio = { proj, bkDb, emuMidi, state, find, letGo, screenStart, screenStop, recStart, recStop, setFw, setTarget, go, rec, scr };
+try { if (!localStorage.getItem(TOUR_KEY) && !MOCK && !QS.has("notour") && !location.hash) setTimeout(() => tourShow(0), 700); } catch (_) {}
+window.jiantStudio = { tourShow, tourEnd, proj, bkDb, emuMidi, state, find, letGo, screenStart, screenStop, recStart, recStop, setFw, setTarget, go, rec, scr };

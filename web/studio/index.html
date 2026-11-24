@@ -281,6 +281,22 @@
     .lritems button { flex: none; max-width: 200px; }
     .lrstage { aspect-ratio: 4 / 3; }
   }
+  /* the quick tour: the page dimmed but for the part it shows (a hole of box-shadow), a card beside it */
+  .tourbtn { all: unset; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; border: var(--border) solid var(--line); display: grid; place-items: center; font-weight: 600; color: var(--dim); }
+  .tourbtn:hover, .tourbtn:focus-visible { color: var(--fg); border-color: var(--accent); }
+  .tour { position: fixed; inset: 0; z-index: 200; }
+  .tourhole { position: fixed; border-radius: var(--radius-s); box-shadow: 0 0 0 9999px rgba(0, 0, 0, .72); border: 2px solid var(--accent); transition: all .25s ease; pointer-events: none; }
+  .tourcard { position: fixed; width: min(380px, calc(100vw - 32px)); background: var(--panel); color: var(--fg); border: var(--border) solid var(--accent); border-radius: var(--radius); padding: 16px 18px; box-shadow: 0 12px 40px rgba(0, 0, 0, .5); transition: top .25s ease, left .25s ease; }
+  .tourcard h2 { margin: 2px 0 8px; font-size: 20px; }
+  .tourcard p { margin: 0 0 8px; }
+  .tourstep { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .08em; }
+  .tourhow { color: var(--dim); font-size: 14px; }
+  .tourdots { display: flex; gap: 5px; flex-wrap: wrap; margin: 6px 0 12px; }
+  .tourdots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+  .tourdots i.on { background: var(--accent); }
+  .tourcard .row { display: flex; gap: 8px; align-items: center; }
+  .tourcard .btn { min-height: 36px; padding: 7px 14px; font-size: 14px; }
+  @media (prefers-reduced-motion: reduce) { .tourhole, .tourcard { transition: none; } }
   /* rescue: numbered steps (done: ticked), the board's wiring drawn, the LED's colours */
   .badge.warn { font-family: var(--mono, monospace); font-size: 12px; padding: 6px 10px; border-radius: 999px; border: var(--border) solid var(--accent); color: var(--accent); white-space: nowrap; }
   .rsfirst { border-color: var(--accent); margin-bottom: 16px; }
@@ -422,6 +438,7 @@
       </span>
       <span class="chip" id="devchip" role="status"><span class="dot" id="devdot"></span><span id="devtext"></span></span>
       <button class="lang" id="lang"></button>
+      <button class="tourbtn" id="tourbtn" type="button" data-t-label="tourOpen">?</button>
     </div>
   </div>
 </header>
@@ -683,6 +700,19 @@
     <div class="takes" id="takes"><p class="small dim" data-t="recNone"></p></div>
   </section>
 </main>
+<!-- the quick tour: a spotlight on each part, its card beside it -->
+<div class="tour" id="tour" hidden>
+  <div class="tourhole" id="tourhole"></div>
+  <div class="tourcard" id="tourcard" role="dialog" aria-modal="true" aria-labelledby="tourtitle">
+    <p class="tourstep" id="tourstep"></p>
+    <h2 id="tourtitle"></h2>
+    <p id="tourwhat"></p>
+    <p class="tourhow" id="tourhow"></p>
+    <div class="tourdots" id="tourdots"></div>
+    <div class="row"><button class="btn ghost" type="button" id="tourskip" data-t="tourSkip"></button><span style="flex:1"></span>
+      <button class="btn ghost" type="button" id="tourprev" data-t="tourPrev"></button><button class="btn" type="button" id="tournext"></button></div>
+  </div>
+</div>
 <footer><span data-t="foot"></span> · <a href="../">JIANT FM</a> (<a href="https://github.com/juanjiant-bit/JIANT">GitHub</a>) · <a href="../../JIANT-BYTE/">JIANT BYTE</a> (<a href="https://github.com/juanjiant-bit/JIANT-BYTE">GitHub</a>) · GPL-3.0</footer>
 <script type="module" src="studio.js"></script>
 </body>

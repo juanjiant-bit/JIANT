@@ -156,6 +156,25 @@ try {
     ok(a.t === "CUT" && /^\d+$/.test(a.v) && a.what.length > 20 && !/parameter of this page|parámetro de esta/.test(a.what) && a.more && log.some((l) => /preset/.test(l)),
       `live: the FM-1 followed: ${a.t} = ${a.v}, "${a.what.slice(0, 50)}…", the guide linked, ${log.length} events (a sound change among them)`);
   }
+  /* the quick tour: opens by itself the first time (no link to a view), walks every part (each lit), skipped: not again;
+     the ? button opens it again */
+  {
+    const q = await (await b.newContext({ viewport: { width: 1280, height: 860 } })).newPage(); q.on("pageerror", (e) => errs.push(e.message));
+    await q.goto(URL0); await q.waitForTimeout(1600);
+    const first = await q.evaluate(() => !document.getElementById("tour").hidden);
+    let lit = 0, n = 0;
+    for (; n < 30; n++) {
+      const st = await q.evaluate(() => ({ step: document.getElementById("tourstep").textContent, hole: getComputedStyle(document.getElementById("tourhole")).display !== "none", last: /Done|Listo/.test(document.getElementById("tournext").textContent) }));
+      if (st.hole) lit++;
+      if (st.last) break;
+      await q.click("#tournext"); await q.waitForTimeout(120);
+    }
+    await q.click("#tournext"); await q.reload(); await q.waitForTimeout(1500);
+    const again = await q.evaluate(() => !document.getElementById("tour").hidden);
+    await q.click("#tourbtn"); await q.waitForTimeout(300);
+    const reopened = await q.evaluate(() => !document.getElementById("tour").hidden);
+    ok(first && n >= 15 && lit >= 15 && !again && reopened, `the quick tour: opens the first time, ${n + 1} steps (${lit} lit), not again once done, the ? opens it`);
+  }
   /* the manuals: JIANT FM's (the interactive manual opens here), JIANT BYTE's (what its site lacks says so) */
   {
     const m = await page("#docs", { width: 1280, height: 900 });
