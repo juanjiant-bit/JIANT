@@ -33,21 +33,24 @@ try {
   };
   /* the simulated FM-1 */
   const p = await page("?mock=1");
-  ok((await p.textContent("#devtext")).startsWith("JIANT FM V10.8.19") && await p.evaluate(() => document.documentElement.dataset.skin) === "fm",
+  ok((await p.textContent("#devtext")).startsWith("JIANT FM V10.8.24") && await p.evaluate(() => document.documentElement.dataset.skin) === "fm",
     "the simulated FM-1 found: JIANT FM, its version, its look");
   const pb = await page("?mock=1&fw=byte");
   ok((await pb.textContent("#devtext")).startsWith("JIANT BYTE") && await pb.evaluate(() => document.documentElement.dataset.skin) === "byte",
     "a JIANT BYTE (its engines include MATH): named, the BYTE look");
-  /* firmware from before the mirror (JIANT BYTE v0.16): named once, the screen says why and its buttons stay off */
+  /* firmware from before the mirror (JIANT BYTE v0.16: no reply to SCREEN): named once; Show tries, then says why */
   const old = await page("?mock=1&fw=byte&nomirror=1");
+  await old.waitForTimeout(2500);
   await old.click('nav.views [data-go="screen"]'); await old.waitForTimeout(300);
-  const o = await old.evaluate(() => ({ chip: document.getElementById("devtext").textContent, wait: document.getElementById("scrwait").textContent,
-    go: document.getElementById("scrgo").disabled, full: document.getElementById("scrfull").disabled }));
-  ok(o.chip === "JIANT BYTE v0.16" && /v0\.16/.test(o.wait) && o.go && o.full, `firmware without the mirror: "${o.chip}", the screen says so, Show and Full screen off`);
+  await old.click("#scrgo"); await old.waitForTimeout(1800);
+  const o = await old.evaluate(() => ({ chip: document.getElementById("devtext").textContent, stat: document.getElementById("scrstat").textContent,
+    on: jiantStudio.scr.on, fs: !!document.fullscreenElement }));
+  ok(o.chip === "JIANT BYTE v0.16" && !o.on && !o.fs && /espejo|mirror/i.test(o.stat), `firmware without the mirror: "${o.chip}", Show tries and says why, no black full screen`);
   /* the screen */
   await p.click('nav.views [data-go="screen"]'); await p.click("#scrgo"); await p.waitForTimeout(1500);
   const lit = await p.evaluate(() => { const d = document.getElementById("scr").getContext("2d").getImageData(0, 0, 240, 240).data; let n = 0; for (let i = 0; i < d.length; i += 4) n += d[i] | d[i + 1] | d[i + 2] ? 1 : 0; return n; });
-  ok(lit > 20000 && /KB\/s/.test(await p.textContent("#scrstat")), `the FM-1's screen painted (${lit} pixels lit), its rate shown`);
+  ok(lit > 20000 && /KB\/s/.test(await p.textContent("#scrstat")) && await p.evaluate(() => document.getElementById("scrwait").hidden),
+    `the FM-1's screen painted (${lit} pixels lit), its rate shown, the waiting line gone`);
   for (const [vp, name] of [[{ width: 412, height: 915 }, "portrait"], [{ width: 915, height: 412 }, "landscape"]]) {
     const m = await page("?mock=1&screen=1", vp);
     await m.waitForTimeout(800); await m.click("#scrfull"); await m.waitForTimeout(600);
