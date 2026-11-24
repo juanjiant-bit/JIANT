@@ -1,0 +1,2313 @@
+{
+ "firmware": "fm",
+ "labels": {
+  "ATK": {
+   "es": {
+    "what": "El ataque: cuánto tarda cada nota en llegar a su volumen máximo.",
+    "how": "Bajo, golpes y plucks que pegan al instante; alto, pads y cuerdas que entran de a poco."
+   },
+   "en": {
+    "what": "Attack: how long each note takes to reach full level.",
+    "how": "Low for hits and plucks that strike at once; high for pads and strings that fade in."
+   },
+   "learn": "env"
+  },
+  "DEC": {
+   "es": {
+    "what": "El decaimiento: cuánto tarda la nota en bajar desde el pico hasta el nivel de SUS.",
+    "how": "Corto y con SUS bajo, notas que pegan y se apagan, ideales para bajos y plucks; largo, una caída suave."
+   },
+   "en": {
+    "what": "Decay: how long the note takes to fall from its peak to the SUS level.",
+    "how": "Short with a low SUS gives notes that hit and die away, great for basses and plucks; long gives a gentle fall."
+   },
+   "learn": "env"
+  },
+  "SUS": {
+   "es": {
+    "what": "El sustain: el nivel en que queda la nota mientras mantenés la tecla.",
+    "how": "Alto, órganos y pads que se sostienen; en 0 la nota se apaga sola aunque sigas apretando, como un pluck."
+   },
+   "en": {
+    "what": "Sustain: the level the note holds while you keep the key down.",
+    "how": "High for organs and pads that hold; at 0 the note dies on its own even while held, like a pluck."
+   },
+   "learn": "env"
+  },
+  "REL": {
+   "es": {
+    "what": "El release: cuánto sigue sonando la nota después de soltar la tecla. En MASTER, cuánto tarda en volver el DUCK.",
+    "how": "Corto para notas secas y precisas; largo para colas que se funden entre sí. En MASTER, corto bombea más."
+   },
+   "en": {
+    "what": "Release: how long the note rings after you let go. On MASTER, how fast DUCK recovers.",
+    "how": "Short for dry, tight notes; long for tails that melt into each other. On MASTER, short pumps harder."
+   },
+   "learn": "env"
+  },
+  "FILTER": {
+   "es": {
+    "what": "Cuánto mueve la envolvente o el LFO al filtro de la pista (o a lo que el motor usa como brillo).",
+    "how": "Positivo abre, negativo cierra. Con la ENV da el wow de cada nota; con el LFO, un barrido que respira."
+   },
+   "en": {
+    "what": "How much the envelope or the LFO moves the track's filter (or whatever the engine uses as brightness).",
+    "how": "Positive opens, negative closes. On the ENV it gives each note its wow; on the LFO, a breathing sweep."
+   },
+   "learn": "env"
+  },
+  "PITCH": {
+   "es": {
+    "what": "Mueve la afinación: la ENV o el LFO sobre la altura, la transposición de la pista, o los semitonos de ecos y cortes.",
+    "how": "En el LFO, valores chicos dan vibrato; en la ENV, el golpe de altura de un zap o un tom; en la pista, transpone."
+   },
+   "en": {
+    "what": "Moves pitch: the ENV or LFO on pitch, the track's transpose, or the semitones of delay grains and slicer steps.",
+    "how": "On the LFO small values give vibrato; on the ENV, the pitch drop of a zap or tom; on the track, a transpose."
+   },
+   "learn": "lfo"
+  },
+  "SHAPE": {
+   "es": {
+    "what": "Cuánto mueve la envolvente o el LFO al timbre propio del motor: el ancho de onda, el zumbido, el doblez…",
+    "how": "Positivo empuja el timbre hacia un lado, negativo hacia el otro. Sirve para animar el color sin tocar el filtro."
+   },
+   "en": {
+    "what": "How much the envelope or the LFO moves the engine's own timbre: pulse width, buzz, fold…",
+    "how": "Positive pushes the timbre one way, negative the other. A way to animate colour without touching the filter."
+   },
+   "learn": "lfo"
+  },
+  "LOOP": {
+   "es": {
+    "what": "Hace que la envolvente vuelva a empezar mientras mantenés la nota: un latido con forma de ADSR.",
+    "how": "ON con ATK y DEC cortos da un pulso rítmico; con tiempos largos, una respiración lenta."
+   },
+   "en": {
+    "what": "Makes the envelope start again while you hold the note: a pulse shaped like an ADSR.",
+    "how": "ON with short ATK and DEC gives a rhythmic pulse; with long times, a slow breath."
+   },
+   "learn": "env"
+  },
+  "RATE": {
+   "es": {
+    "what": "La velocidad de lo que se mueve en la página: el LFO, el arpegiador, el AUTO PAN, el CHORUS, la REVERB o el SLICER.",
+    "how": "Bajo, movimiento lento; alto, rápido. En el LFO, por debajo de 0 va a tempo, de 16BAR a 1/32."
+   },
+   "en": {
+    "what": "The speed of whatever the page moves: the LFO, the arpeggiator, AUTO PAN, CHORUS, the reverb's motion or the SLICER.",
+    "how": "Low is slow motion, high is fast. On the LFO, below 0 it locks to tempo, from 16BAR to 1/32."
+   },
+   "learn": "lfo"
+  },
+  "WAVE": {
+   "es": {
+    "what": "La forma de onda: la del LFO o del AUTO PAN (SIN, TRI, SAW, SQR, S&H, DRIFT) o la del oscilador del motor.",
+    "how": "En el LFO, SIN y TRI mecen suave, SQR salta, S&H da pasos al azar y DRIFT deriva lento para pads que respiran."
+   },
+   "en": {
+    "what": "The waveform: the LFO's or AUTO PAN's (SIN, TRI, SAW, SQR, S&H, DRIFT), or the engine oscillator's.",
+    "how": "On the LFO, SIN and TRI rock gently, SQR jumps, S&H steps at random and DRIFT wanders slowly for breathing pads."
+   },
+   "learn": "lfo"
+  },
+  "PHASE": {
+   "es": {
+    "what": "En qué punto de su onda arranca el LFO cuando se reinicia; en −1 queda libre y nunca se reinicia.",
+    "how": "Fijalo para que cada frase arranque igual; libre, el LFO corre entre notas y suena más orgánico."
+   },
+   "en": {
+    "what": "Where in its wave the LFO starts when it restarts; at −1 it runs free and never restarts.",
+    "how": "Set it so every phrase starts the same; free, the LFO keeps running between notes and feels more organic."
+   },
+   "learn": "lfo"
+  },
+  "FADE": {
+   "es": {
+    "what": "Cuánto tarda el LFO en entrar después de cada nota: un fade-in del movimiento.",
+    "how": "En 0 mueve desde el principio; subilo para un vibrato que aparece solo en las notas largas, como un cantante."
+   },
+   "en": {
+    "what": "How long the LFO takes to come in after each note: a fade-in of the motion.",
+    "how": "At 0 it moves from the start; raise it for a vibrato that only shows on long notes, like a singer."
+   },
+   "learn": "lfo"
+  },
+  "AMP": {
+   "es": {
+    "what": "Cuánto mueve el LFO el volumen de la pista: un trémolo.",
+    "how": "Bajo, un latido suave; alto, un corte rítmico. Con el RATE del LFO a tempo queda un trémolo en el compás."
+   },
+   "en": {
+    "what": "How much the LFO moves the track's volume: a tremolo.",
+    "how": "Low is a soft throb; high is a rhythmic chop. With the LFO RATE on tempo you get a tremolo in time."
+   },
+   "learn": "lfo"
+  },
+  "SRC1": {
+   "es": {
+    "what": "La fuente de la ruta 1 de la matriz MOD: qué la mueve (LFO, ENV, velocidad, aftertouch, azar, macros, otras pistas…).",
+    "how": "Elegí primero la fuente, después el destino en DEST y cuánto en AMT. OFF apaga la ruta."
+   },
+   "en": {
+    "what": "The source of route 1 in the MOD matrix: what drives it (LFO, ENV, velocity, aftertouch, random, macros, other tracks…).",
+    "how": "Pick the source first, then the target in DEST and how much in AMT. OFF switches the route off."
+   },
+   "learn": "mod-matrix"
+  },
+  "DEST1": {
+   "es": {
+    "what": "El destino de la ruta 1 de la matriz MOD: qué parámetro mueve (PITCH, CUT, PAN, los efectos, E1–E8, las macros…).",
+    "how": "Con la fuente elegida, buscá acá qué querés que se mueva; la pantalla muestra la ruta con nombres completos."
+   },
+   "en": {
+    "what": "The target of route 1 in the MOD matrix: which parameter it moves (PITCH, CUT, PAN, the effects, E1–E8, the macros…).",
+    "how": "With the source chosen, pick here what should move; the screen shows the route with full names."
+   },
+   "learn": "mod-matrix"
+  },
+  "AMT1": {
+   "es": {
+    "what": "Cuánto y en qué sentido mueve la fuente al destino en la ruta 1 de la matriz MOD.",
+    "how": "En 0 la ruta no hace nada; positivo empuja hacia arriba, negativo hacia abajo. Empezá con poco y subí hasta que se note."
+   },
+   "en": {
+    "what": "How much, and which way, the source moves the target in route 1 of the MOD matrix.",
+    "how": "At 0 the route does nothing; positive pushes up, negative down. Start small and raise it until you hear it."
+   },
+   "learn": "mod-matrix"
+  },
+  "SRC2": {
+   "es": {
+    "what": "La fuente de la ruta 2 de la matriz MOD: qué la mueve (LFO, ENV, velocidad, aftertouch, azar, macros, otras pistas…).",
+    "how": "Elegí primero la fuente, después el destino en DEST y cuánto en AMT. OFF apaga la ruta."
+   },
+   "en": {
+    "what": "The source of route 2 in the MOD matrix: what drives it (LFO, ENV, velocity, aftertouch, random, macros, other tracks…).",
+    "how": "Pick the source first, then the target in DEST and how much in AMT. OFF switches the route off."
+   },
+   "learn": "mod-matrix"
+  },
+  "DEST2": {
+   "es": {
+    "what": "El destino de la ruta 2 de la matriz MOD: qué parámetro mueve (PITCH, CUT, PAN, los efectos, E1–E8, las macros…).",
+    "how": "Con la fuente elegida, buscá acá qué querés que se mueva; la pantalla muestra la ruta con nombres completos."
+   },
+   "en": {
+    "what": "The target of route 2 in the MOD matrix: which parameter it moves (PITCH, CUT, PAN, the effects, E1–E8, the macros…).",
+    "how": "With the source chosen, pick here what should move; the screen shows the route with full names."
+   },
+   "learn": "mod-matrix"
+  },
+  "AMT2": {
+   "es": {
+    "what": "Cuánto y en qué sentido mueve la fuente al destino en la ruta 2 de la matriz MOD.",
+    "how": "En 0 la ruta no hace nada; positivo empuja hacia arriba, negativo hacia abajo. Empezá con poco y subí hasta que se note."
+   },
+   "en": {
+    "what": "How much, and which way, the source moves the target in route 2 of the MOD matrix.",
+    "how": "At 0 the route does nothing; positive pushes up, negative down. Start small and raise it until you hear it."
+   },
+   "learn": "mod-matrix"
+  },
+  "SRC3": {
+   "es": {
+    "what": "La fuente de la ruta 3 de la matriz MOD: qué la mueve (LFO, ENV, velocidad, aftertouch, azar, macros, otras pistas…).",
+    "how": "Elegí primero la fuente, después el destino en DEST y cuánto en AMT. OFF apaga la ruta."
+   },
+   "en": {
+    "what": "The source of route 3 in the MOD matrix: what drives it (LFO, ENV, velocity, aftertouch, random, macros, other tracks…).",
+    "how": "Pick the source first, then the target in DEST and how much in AMT. OFF switches the route off."
+   },
+   "learn": "mod-matrix"
+  },
+  "DEST3": {
+   "es": {
+    "what": "El destino de la ruta 3 de la matriz MOD: qué parámetro mueve (PITCH, CUT, PAN, los efectos, E1–E8, las macros…).",
+    "how": "Con la fuente elegida, buscá acá qué querés que se mueva; la pantalla muestra la ruta con nombres completos."
+   },
+   "en": {
+    "what": "The target of route 3 in the MOD matrix: which parameter it moves (PITCH, CUT, PAN, the effects, E1–E8, the macros…).",
+    "how": "With the source chosen, pick here what should move; the screen shows the route with full names."
+   },
+   "learn": "mod-matrix"
+  },
+  "AMT3": {
+   "es": {
+    "what": "Cuánto y en qué sentido mueve la fuente al destino en la ruta 3 de la matriz MOD.",
+    "how": "En 0 la ruta no hace nada; positivo empuja hacia arriba, negativo hacia abajo. Empezá con poco y subí hasta que se note."
+   },
+   "en": {
+    "what": "How much, and which way, the source moves the target in route 3 of the MOD matrix.",
+    "how": "At 0 the route does nothing; positive pushes up, negative down. Start small and raise it until you hear it."
+   },
+   "learn": "mod-matrix"
+  },
+  "SRC4": {
+   "es": {
+    "what": "La fuente de la ruta 4 de la matriz MOD: qué la mueve (LFO, ENV, velocidad, aftertouch, azar, macros, otras pistas…).",
+    "how": "Elegí primero la fuente, después el destino en DEST y cuánto en AMT. OFF apaga la ruta."
+   },
+   "en": {
+    "what": "The source of route 4 in the MOD matrix: what drives it (LFO, ENV, velocity, aftertouch, random, macros, other tracks…).",
+    "how": "Pick the source first, then the target in DEST and how much in AMT. OFF switches the route off."
+   },
+   "learn": "mod-matrix"
+  },
+  "DEST4": {
+   "es": {
+    "what": "El destino de la ruta 4 de la matriz MOD: qué parámetro mueve (PITCH, CUT, PAN, los efectos, E1–E8, las macros…).",
+    "how": "Con la fuente elegida, buscá acá qué querés que se mueva; la pantalla muestra la ruta con nombres completos."
+   },
+   "en": {
+    "what": "The target of route 4 in the MOD matrix: which parameter it moves (PITCH, CUT, PAN, the effects, E1–E8, the macros…).",
+    "how": "With the source chosen, pick here what should move; the screen shows the route with full names."
+   },
+   "learn": "mod-matrix"
+  },
+  "AMT4": {
+   "es": {
+    "what": "Cuánto y en qué sentido mueve la fuente al destino en la ruta 4 de la matriz MOD.",
+    "how": "En 0 la ruta no hace nada; positivo empuja hacia arriba, negativo hacia abajo. Empezá con poco y subí hasta que se note."
+   },
+   "en": {
+    "what": "How much, and which way, the source moves the target in route 4 of the MOD matrix.",
+    "how": "At 0 the route does nothing; positive pushes up, negative down. Start small and raise it until you hear it."
+   },
+   "learn": "mod-matrix"
+  },
+  "SLEW": {
+   "es": {
+    "what": "Suaviza el salto entre los pasos del MSEQ.",
+    "how": "En 0 cambia en escalones; subilo para curvas suaves, como un LFO que dibujaste vos."
+   },
+   "en": {
+    "what": "Smooths the jump between MSEQ steps.",
+    "how": "At 0 it moves in stairs; raise it for smooth curves, like an LFO you drew yourself."
+   },
+   "learn": "mseq"
+  },
+  "LEVEL": {
+   "es": {
+    "what": "El volumen de la pista, de un operador o de un sonido del kit, o el valor de un paso del MSEQ.",
+    "how": "En la mezcla, balanceá las pistas de oído; en el MSEQ, dibujá la forma de la modulación paso a paso."
+   },
+   "en": {
+    "what": "The volume of a track, an operator or a kit sound, or the value of one MSEQ step.",
+    "how": "In the mix, balance tracks by ear; in the MSEQ, draw the modulation shape step by step."
+   }
+  },
+  "MODE": {
+   "es": {
+    "what": "El modo: el orden en que el arpegiador toca las notas (UP, DN, RND, CHORD, TRNS…) o el del SLICER (GATE, STUT).",
+    "how": "UP y UPDN son los clásicos; RND y WALK suenan más sueltos; TRNS hace que las teclas transpongan la secuencia. OFF lo apaga."
+   },
+   "en": {
+    "what": "The mode: the order the arpeggiator plays notes in (UP, DN, RND, CHORD, TRNS…) or the SLICER's (GATE, STUT).",
+    "how": "UP and UPDN are the classics; RND and WALK feel looser; TRNS lets the keys transpose the sequence. OFF turns it off."
+   },
+   "learn": "arp"
+  },
+  "OCT": {
+   "es": {
+    "what": "Cuántas octavas recorre el arpegio, de 1 a 4.",
+    "how": "En 1 queda dentro del acorde; 2 o 3 lo abren hacia arriba y lo vuelven más brillante y trance."
+   },
+   "en": {
+    "what": "How many octaves the arpeggio spans, 1 to 4.",
+    "how": "At 1 it stays inside the chord; 2 or 3 open it upwards, brighter and more trance-like."
+   },
+   "learn": "arp"
+  },
+  "GATE": {
+   "es": {
+    "what": "El largo de cada nota del arpegio o de la secuencia: qué parte del paso suena.",
+    "how": "Bajo, notas cortas y staccato; alto, notas largas y ligadas que llenan el paso."
+   },
+   "en": {
+    "what": "The length of each arpeggio or sequence note: how much of the step sounds.",
+    "how": "Low for short, staccato notes; high for long, legato notes that fill the step."
+   },
+   "learn": "pattern"
+  },
+  "SWING": {
+   "es": {
+    "what": "Atrasa los contratiempos para que el groove se balancee: en el tema entero, en la secuencia o en el arpegio.",
+    "how": "En 0 es recto; entre 20 y 40 da el balanceo del hip hop o el house. Distinto swing por pista suena más humano."
+   },
+   "en": {
+    "what": "Delays the off-beats so the groove swings: for the whole song, a sequence or an arpeggio.",
+    "how": "At 0 it's straight; 20 to 40 gives the bounce of hip hop or house. Different swing per track feels more human."
+   },
+   "learn": "pattern"
+  },
+  "PROB": {
+   "es": {
+    "what": "La probabilidad de que suene cada nota del arpegio.",
+    "how": "En 127 suenan todas; bajala para que falten algunas y el arpegio respire distinto en cada vuelta."
+   },
+   "en": {
+    "what": "The chance that each arpeggio note plays.",
+    "how": "At 127 they all play; lower it so some drop out and the arpeggio breathes differently each time."
+   },
+   "learn": "arp"
+  },
+  "HOLD": {
+   "es": {
+    "what": "Mantiene el arpegio sonando aunque sueltes las teclas.",
+    "how": "Prendelo, tocá un acorde y soltá: queda arpegiando y tenés las manos libres para otra cosa."
+   },
+   "en": {
+    "what": "Keeps the arpeggio running after you let go of the keys.",
+    "how": "Turn it on, play a chord and let go: it keeps arpeggiating and your hands are free."
+   },
+   "learn": "arp"
+  },
+  "ORDER": {
+   "es": {
+    "what": "En qué orden arpegia: NOTE por altura, PLAY en el orden en que tocaste las teclas.",
+    "how": "PLAY te deja componer la figura con el orden de tus dedos; NOTE la ordena siempre de grave a agudo."
+   },
+   "en": {
+    "what": "Which order it arpeggiates in: NOTE by pitch, PLAY in the order you pressed the keys.",
+    "how": "PLAY lets you compose the figure with the order of your fingers; NOTE always sorts it low to high."
+   },
+   "learn": "arp"
+  },
+  "ROOT": {
+   "es": {
+    "what": "La tónica de la escala del tema, de C a B.",
+    "how": "Fijala una vez y todas las pistas melódicas la siguen. Con SCL mantenido, una tecla también la cambia."
+   },
+   "en": {
+    "what": "The root note of the song's scale, C to B.",
+    "how": "Set it once and every melodic track follows. Holding SCL and pressing a key changes it too."
+   },
+   "learn": "scale"
+  },
+  "SCALE": {
+   "es": {
+    "what": "La escala del tema: cromática, mayor, menor, dórica, pentatónicas, blues y más.",
+    "how": "Con QUANT prendido nada desafina; MIN o PEN son un buen punto de partida para improvisar."
+   },
+   "en": {
+    "what": "The song's scale: chromatic, major, minor, dorian, pentatonics, blues and more.",
+    "how": "With QUANT on nothing goes out of key; MIN or PEN are a good place to start improvising."
+   },
+   "learn": "scale"
+  },
+  "QUANT": {
+   "es": {
+    "what": "Ajusta las notas a la escala: SNAP las teclas, WHITE hace que las blancas recorran la escala, SEQ también la secuencia.",
+    "how": "SNAP para tocar sin errores; WHITE para tocar cualquier escala como si fuera Do mayor. En SL PITCH elige CHR o SCL."
+   },
+   "en": {
+    "what": "Fits notes to the scale: SNAP the keys, WHITE makes the white keys walk the scale, SEQ the sequencer too.",
+    "how": "SNAP to play without wrong notes; WHITE to play any scale as if it were C major. On SL PITCH it picks CHR or SCL."
+   },
+   "learn": "scale"
+  },
+  "TRANS": {
+   "es": {
+    "what": "Transpone la pista en semitonos, hasta dos octavas para arriba o para abajo.",
+    "how": "Usalo para llevar un bajo una octava abajo (−12) o subir una melodía sin reescribirla."
+   },
+   "en": {
+    "what": "Transposes the track in semitones, up to two octaves up or down.",
+    "how": "Use it to drop a bass an octave (−12) or lift a melody without rewriting it."
+   },
+   "learn": "scale"
+  },
+  "ALL TRK": {
+   "es": {
+    "what": "Mueve todas las secuencias melódicas a la vez hacia arriba o abajo por la escala, hasta ±14 grados.",
+    "how": "Es la forma rápida de cambiar de acorde sin reescribir nada: probá +2 o +4 para un pasaje nuevo y volvé a 0."
+   },
+   "en": {
+    "what": "Moves every melodic sequence up or down the scale at once, up to ±14 degrees.",
+    "how": "The quick way to change chord without rewriting anything: try +2 or +4 for a new passage, then back to 0."
+   },
+   "learn": "scale"
+  },
+  "PROG": {
+   "es": {
+    "what": "Elige la progresión de acordes que siguen todas las secuencias melódicas (POP, ANDALUZ, II-V-I, NEO SOUL…).",
+    "how": "OFF deja todo en la tónica. Elegí una y tus secuencias cambian de acorde solas, sin desafinar."
+   },
+   "en": {
+    "what": "Picks the chord progression every melodic sequence follows (POP, ANDALUZ, II-V-I, NEO SOUL…).",
+    "how": "OFF keeps everything on the root. Pick one and your sequences change chord by themselves, always in key."
+   },
+   "learn": "harmony"
+  },
+  "LENGTH": {
+   "es": {
+    "what": "Cuánto dura cada acorde de la progresión de HARMONY, de 1/4 a 4 compases.",
+    "how": "1 BAR es lo más común; 2 o 4 BARS para armonías lentas y aireadas, 1/4 para cambios rápidos."
+   },
+   "en": {
+    "what": "How long each chord of the HARMONY progression lasts, from 1/4 to 4 bars.",
+    "how": "1 BAR is the usual; 2 or 4 BARS for slow, airy harmony, 1/4 for fast changes."
+   },
+   "learn": "harmony"
+  },
+  "EVOLVE": {
+   "es": {
+    "what": "Hace que la progresión de HARMONY cambie con las vueltas, sustituyendo acordes.",
+    "how": "En 0 se repite igual; subilo para que la armonía se transforme sola sin perder el rumbo."
+   },
+   "en": {
+    "what": "Makes the HARMONY progression change over the loops by substituting chords.",
+    "how": "At 0 it repeats exactly; raise it so the harmony transforms by itself without losing its way."
+   },
+   "learn": "harmony"
+  },
+  "SKIP": {
+   "es": {
+    "what": "Elige una pista que no sigue la progresión de HARMONY.",
+    "how": "Usalo para que un bajo pedal o un drone se quede quieto mientras las otras pistas cambian de acorde."
+   },
+   "en": {
+    "what": "Picks one track that does not follow the HARMONY progression.",
+    "how": "Use it to keep a pedal bass or a drone still while the other tracks change chord."
+   },
+   "learn": "harmony"
+  },
+  "LEN": {
+   "es": {
+    "what": "El largo en pasos: de la secuencia (1–64), del MSEQ, de la secuencia de SL PITCH o del carril de punch-in.",
+    "how": "Largos distintos entre pistas hacen que los patrones giren unos contra otros y el loop nunca se repita igual."
+   },
+   "en": {
+    "what": "Length in steps: of the sequence (1–64), the MSEQ, the SL PITCH sequence or the punch-in lane.",
+    "how": "Different lengths across tracks make patterns turn against each other, so the loop never repeats the same."
+   },
+   "learn": "pattern"
+  },
+  "DIV": {
+   "es": {
+    "what": "La figura de cada paso: 1/16, 1/8, tresillos, hasta 4 compases por paso (en la secuencia o en el MSEQ).",
+    "how": "1/16 es lo normal; 1/8 va a media velocidad y 1/32 al doble. DIV distintas entre pistas arman polirritmias."
+   },
+   "en": {
+    "what": "The note value of each step: 1/16, 1/8, triplets, up to 4 bars a step (for the sequence or the MSEQ).",
+    "how": "1/16 is normal; 1/8 is half speed and 1/32 double. Different DIVs across tracks make polyrhythms."
+   },
+   "learn": "pattern"
+  },
+  "ROTATE": {
+   "es": {
+    "what": "Corre la secuencia de la pista unos pasos antes o después, sin cambiar las notas.",
+    "how": "Probá ±1 o ±2 para que el patrón caiga en otro lugar del compás: un groove nuevo con la misma música."
+   },
+   "en": {
+    "what": "Shifts the track's sequence some steps earlier or later without changing the notes.",
+    "how": "Try ±1 or ±2 so the pattern lands somewhere else in the bar: a new groove with the same music."
+   },
+   "learn": "pattern"
+  },
+  "DIST": {
+   "es": {
+    "what": "Cuánta distorsión propia tiene la pista, antes de los efectos compartidos.",
+    "how": "Bajo calienta, alto rompe. Elegí el carácter en TYPE (SOFT, HARD, FOLD, CRUSH, RECT, AMP) y el color en TONE."
+   },
+   "en": {
+    "what": "How much of its own distortion the track has, before the shared effects.",
+    "how": "Low warms, high breaks. Pick the character in TYPE (SOFT, HARD, FOLD, CRUSH, RECT, AMP) and the colour in TONE."
+   },
+   "learn": "sends"
+  },
+  "CHORUS": {
+   "es": {
+    "what": "Cuánto de esta pista se manda al CHORUS compartido.",
+    "how": "Un poco abre el sonido a los costados; mucho lo hace ondular. Ideal en pads y teclados, poco en bombo y bajo."
+   },
+   "en": {
+    "what": "How much of this track goes to the shared CHORUS.",
+    "how": "A little widens the sound; a lot makes it wobble. Great on pads and keys, keep it low on kick and bass."
+   },
+   "learn": "sends"
+  },
+  "DLY": {
+   "es": {
+    "what": "Cuánto de esta pista se manda al DELAY compartido.",
+    "how": "Un toque da profundidad, mucho la llena de ecos. Más en leads y percusiones sueltas, poco en bombo y bajo."
+   },
+   "en": {
+    "what": "How much of this track goes to the shared DELAY.",
+    "how": "A touch adds depth, a lot fills it with echoes. More on leads and loose percussion, little on kick and bass."
+   },
+   "learn": "sends"
+  },
+  "REV": {
+   "es": {
+    "what": "Cuánto de esta pista se manda a la REVERB compartida.",
+    "how": "Poco la ubica en una sala; mucho la aleja y la vuelve ambiente. Dejá el bombo y el bajo más secos."
+   },
+   "en": {
+    "what": "How much of this track goes to the shared REVERB.",
+    "how": "A little places it in a room; a lot pushes it far away into ambience. Keep kick and bass drier."
+   },
+   "learn": "sends"
+  },
+  "TYPE": {
+   "es": {
+    "what": "Elige el tipo: de la distorsión de la pista (SOFT, HARD, FOLD, CRUSH, RECT, AMP), del filtro, de la reverb o del delay.",
+    "how": "En DIST, AMP suena a ampli de guitarra y CRUSH a bits rotos; en el filtro, LP oscurece, HP afina y COMB resuena a la nota."
+   },
+   "en": {
+    "what": "Picks the type: of the track's distortion (SOFT, HARD, FOLD, CRUSH, RECT, AMP), the filter, the reverb or the delay.",
+    "how": "On DIST, AMP is a guitar amp and CRUSH broken bits; on the filter, LP darkens, HP thins and COMB rings at the note."
+   },
+   "learn": "sends"
+  },
+  "TONE": {
+   "es": {
+    "what": "El color: de la distorsión de la pista o de las repeticiones del DELAY, de más oscuro a más brillante.",
+    "how": "Oscuro para una mugre cálida o ecos tipo cinta que se pierden; brillante para que corten la mezcla."
+   },
+   "en": {
+    "what": "The colour: of the track's distortion or of the DELAY's repeats, from darker to brighter.",
+    "how": "Dark for warm grit or tape-like echoes that fade away; bright so they cut through the mix."
+   },
+   "learn": "delay"
+  },
+  "PAN": {
+   "es": {
+    "what": "Ubica la pista en el estéreo, de izquierda a derecha.",
+    "how": "Abrí las pistas a los costados para que cada una tenga su lugar; el bombo y el bajo, mejor al medio."
+   },
+   "en": {
+    "what": "Places the track in the stereo field, left to right.",
+    "how": "Spread tracks to the sides so each has its own place; keep kick and bass in the middle."
+   }
+  },
+  "MUTE": {
+   "es": {
+    "what": "Silencia la pista sin detener su secuencia.",
+    "how": "Sacar y meter pistas es la forma más simple de arreglar en vivo: probá mutear la batería antes de un drop."
+   },
+   "en": {
+    "what": "Silences the track without stopping its sequence.",
+    "how": "Dropping tracks in and out is the simplest way to arrange live: try muting the drums before a drop."
+   },
+   "learn": "mutes"
+  },
+  "DEPTH": {
+   "es": {
+    "what": "La profundidad de un efecto que se mece: el AUTO PAN de la pista, el CHORUS o el SLICER.",
+    "how": "Bajo, un movimiento sutil; alto, un efecto marcado. Arrancá por la mitad y ajustá de oído."
+   },
+   "en": {
+    "what": "The depth of a moving effect: the track's AUTO PAN, the CHORUS or the SLICER.",
+    "how": "Low for a subtle motion; high for an obvious effect. Start halfway and adjust by ear."
+   }
+  },
+  "SYNC": {
+   "es": {
+    "what": "Si el AUTO PAN va libre (FREE, en Hz) o atado al tempo (BEAT).",
+    "how": "BEAT para que el paneo vaya con el compás; FREE para un vaivén que no se alinea y suena más suelto."
+   },
+   "en": {
+    "what": "Whether AUTO PAN runs free (FREE, in Hz) or locked to the tempo (BEAT).",
+    "how": "BEAT keeps the panning in time with the bar; FREE gives a sway that drifts against it, looser."
+   },
+   "learn": "sends"
+  },
+  "POLY": {
+   "es": {
+    "what": "Cómo toca la pista: POLY (acordes), MONO (una nota), LEG (una nota, ligada) o UNI (varias voces juntas en una nota).",
+    "how": "MONO o LEG para bajos y leads con GLIDE; UNI para un lead gordo, abrilo con UNISON."
+   },
+   "en": {
+    "what": "How the track plays: POLY (chords), MONO (one note), LEG (one note, legato) or UNI (stacked voices on one note).",
+    "how": "MONO or LEG for basses and leads with GLIDE; UNI for a fat lead, spread it with UNISON."
+   }
+  },
+  "GLIDE": {
+   "es": {
+    "what": "El tiempo que tarda una nota en deslizarse hasta la siguiente: el portamento.",
+    "how": "En 0 salta; un poco da slides suaves en un bajo MONO o LEG; mucho, glissandos largos."
+   },
+   "en": {
+    "what": "How long a note takes to slide into the next one: portamento.",
+    "how": "At 0 it jumps; a little gives smooth slides on a MONO or LEG bass; a lot, long glissandos."
+   }
+  },
+  "GL TYPE": {
+   "es": {
+    "what": "Cómo se mide el GLIDE: RATE (a velocidad fija, los saltos grandes tardan más) o TIME (siempre el mismo tiempo).",
+    "how": "TIME para slides parejos estilo acid; RATE para un portamento más natural, como un cantante."
+   },
+   "en": {
+    "what": "How GLIDE is measured: RATE (a fixed speed, so big jumps take longer) or TIME (always the same time).",
+    "how": "TIME for even, acid-style slides; RATE for a more natural portamento, like a singer."
+   }
+  },
+  "NOTE PRIO": {
+   "es": {
+    "what": "En MONO o LEG, qué nota gana cuando mantenés varias: la última, la más grave o la más aguda.",
+    "how": "LAST es lo natural; LOW para bajos que siempre tocan la de abajo; HIGH para leads que siguen la de arriba."
+   },
+   "en": {
+    "what": "In MONO or LEG, which note wins when you hold several: the last, the lowest or the highest.",
+    "how": "LAST feels natural; LOW for basses that always play the bottom note; HIGH for leads that follow the top."
+   }
+  },
+  "VOICE ORDER": {
+   "es": {
+    "what": "Qué voz toma cada nota nueva: ROT las va rotando, REUSE usa la libre que estaba más cerca en altura.",
+    "how": "REUSE hace que los glides en POLY salgan de la nota vecina; ROT deja que las colas se superpongan."
+   },
+   "en": {
+    "what": "Which voice takes each new note: ROT rotates through them, REUSE takes the free one nearest in pitch.",
+    "how": "REUSE makes POLY glides start from the neighbouring note; ROT lets tails overlap."
+   }
+  },
+  "UNISON": {
+   "es": {
+    "what": "Cuánto se separan en afinación las voces del modo UNI.",
+    "how": "Bajo, un lead apenas engordado; alto, un muro ancho tipo supersaw. Solo actúa con POLY en UNI."
+   },
+   "en": {
+    "what": "How far apart in pitch the voices of UNI mode are spread.",
+    "how": "Low for a lead only slightly fattened; high for a wide supersaw wall. It only acts with POLY on UNI."
+   }
+  },
+  "CUT": {
+   "es": {
+    "what": "La frecuencia de corte del filtro: cuánto brillo deja pasar.",
+    "how": "Bajalo para un sonido oscuro y lejano, subilo para abrirlo. Moverlo mientras suena es el gesto clásico; con RES alto, canta."
+   },
+   "en": {
+    "what": "The filter's cutoff frequency: how much brightness gets through.",
+    "how": "Lower it for a dark, distant sound, raise it to open up. Sweeping it while playing is the classic move; with high RES it sings."
+   },
+   "learn": "filter"
+  },
+  "RES": {
+   "es": {
+    "what": "La resonancia del filtro: realza la zona del corte hasta que silba. En el carril de punch-in, RES es la grilla de sus pasos.",
+    "how": "Bajo, un filtro suave; alto, un pico que canta cuando movés CUT. Con el peine (COMB), cuánto resuena la nota."
+   },
+   "en": {
+    "what": "The filter's resonance: boosts the area around the cutoff until it whistles. On the punch-in lane, RES is its step grid.",
+    "how": "Low for a gentle filter; high for a peak that sings as you move CUT. With COMB, how much the note rings."
+   },
+   "learn": "filter"
+  },
+  "KICK": {
+   "es": {
+    "what": "El volumen del bombo (KICK) dentro del kit de DRUM-X.",
+    "how": "Balanceá el kit sin tocar los sonidos: bajalo para que quede de fondo, subilo para que mande."
+   },
+   "en": {
+    "what": "The kick's volume inside the DRUM-X kit.",
+    "how": "Balance the kit without touching the sounds: lower it to sit in the back, raise it to lead."
+   },
+   "learn": "drum-x"
+  },
+  "SNARE": {
+   "es": {
+    "what": "El volumen del redoblante (SNARE) dentro del kit de DRUM-X.",
+    "how": "Balanceá el kit sin tocar los sonidos: bajalo para que quede de fondo, subilo para que mande."
+   },
+   "en": {
+    "what": "The snare's volume inside the DRUM-X kit.",
+    "how": "Balance the kit without touching the sounds: lower it to sit in the back, raise it to lead."
+   },
+   "learn": "drum-x"
+  },
+  "CLAP": {
+   "es": {
+    "what": "El volumen del aplauso (CLAP) dentro del kit de DRUM-X.",
+    "how": "Balanceá el kit sin tocar los sonidos: bajalo para que quede de fondo, subilo para que mande."
+   },
+   "en": {
+    "what": "The clap's volume inside the DRUM-X kit.",
+    "how": "Balance the kit without touching the sounds: lower it to sit in the back, raise it to lead."
+   },
+   "learn": "drum-x"
+  },
+  "HH CL": {
+   "es": {
+    "what": "El volumen del hi-hat cerrado dentro del kit de DRUM-X.",
+    "how": "Balanceá el kit sin tocar los sonidos: bajalo para que quede de fondo, subilo para que mande."
+   },
+   "en": {
+    "what": "The closed hi-hat's volume inside the DRUM-X kit.",
+    "how": "Balance the kit without touching the sounds: lower it to sit in the back, raise it to lead."
+   },
+   "learn": "drum-x"
+  },
+  "HH OP": {
+   "es": {
+    "what": "El volumen del hi-hat abierto dentro del kit de DRUM-X.",
+    "how": "Balanceá el kit sin tocar los sonidos: bajalo para que quede de fondo, subilo para que mande."
+   },
+   "en": {
+    "what": "The open hi-hat's volume inside the DRUM-X kit.",
+    "how": "Balance the kit without touching the sounds: lower it to sit in the back, raise it to lead."
+   },
+   "learn": "drum-x"
+  },
+  "TOM": {
+   "es": {
+    "what": "El volumen del tom dentro del kit de DRUM-X.",
+    "how": "Balanceá el kit sin tocar los sonidos: bajalo para que quede de fondo, subilo para que mande."
+   },
+   "en": {
+    "what": "The tom's volume inside the DRUM-X kit.",
+    "how": "Balance the kit without touching the sounds: lower it to sit in the back, raise it to lead."
+   },
+   "learn": "drum-x"
+  },
+  "RIM": {
+   "es": {
+    "what": "El volumen del aro (RIM) dentro del kit de DRUM-X.",
+    "how": "Balanceá el kit sin tocar los sonidos: bajalo para que quede de fondo, subilo para que mande."
+   },
+   "en": {
+    "what": "The rimshot's volume inside the DRUM-X kit.",
+    "how": "Balance the kit without touching the sounds: lower it to sit in the back, raise it to lead."
+   },
+   "learn": "drum-x"
+  },
+  "BELL": {
+   "es": {
+    "what": "El volumen del cencerro (BELL) dentro del kit de DRUM-X.",
+    "how": "Balanceá el kit sin tocar los sonidos: bajalo para que quede de fondo, subilo para que mande."
+   },
+   "en": {
+    "what": "The cowbell's volume inside the DRUM-X kit.",
+    "how": "Balance the kit without touching the sounds: lower it to sit in the back, raise it to lead."
+   },
+   "learn": "drum-x"
+  },
+  "TIME": {
+   "es": {
+    "what": "El tiempo del DELAY: a tempo (1/16, 1/8, con puntillo, tresillos) o libre, en milisegundos y segundos.",
+    "how": "1/8D es el eco clásico que rellena; tiempos cortos (5–40 ms) dan doblados y sonidos metálicos."
+   },
+   "en": {
+    "what": "The DELAY time: in tempo (1/16, 1/8, dotted, triplets) or free, in milliseconds and seconds.",
+    "how": "1/8D is the classic filling echo; short times (5–40 ms) give doubling and metallic sounds."
+   },
+   "learn": "delay"
+  },
+  "FEEDBK": {
+   "es": {
+    "what": "Realimentación: la salida vuelve a entrar. En el DELAY, cuántas repeticiones hay.",
+    "how": "Bajo, uno o dos ecos; alto, una cola larga. En ANALOG, pasado 100 % el lazo se sostiene solo: cuidado, crece."
+   },
+   "en": {
+    "what": "Feedback: the output goes back in. On the DELAY, how many repeats there are.",
+    "how": "Low gives one or two echoes; high, a long tail. On ANALOG, past 100 % the loop sustains itself: careful, it grows."
+   },
+   "learn": "delay"
+  },
+  "MIX": {
+   "es": {
+    "what": "La mezcla entre el sonido seco y el efecto; en el DELAY, cuánto se escuchan los ecos.",
+    "how": "Con los envíos de cada pista ya regulados, usalo para subir o bajar los ecos de todo el tema a la vez."
+   },
+   "en": {
+    "what": "The blend between dry sound and effect; on the DELAY, how loud the echoes are.",
+    "how": "With each track's sends set, use it to bring every echo in the song up or down at once."
+   },
+   "learn": "delay"
+  },
+  "WIDE": {
+   "es": {
+    "what": "El ancho estéreo: separa el eco derecho del DELAY y las voces del CHORUS, o abre la REVERB a los costados.",
+    "how": "Un poco da aire y espacio; mucho, una mezcla enorme. Si la escuchás en mono, no te pases."
+   },
+   "en": {
+    "what": "Stereo width: spreads the DELAY's right echo and the CHORUS voices, or opens the REVERB to the sides.",
+    "how": "A little adds air and space; a lot makes the mix huge. If it will be heard in mono, don't overdo it."
+   },
+   "learn": "delay"
+  },
+  "SCATTER": {
+   "es": {
+    "what": "En el delay GRAIN, desordena los granos: cada repetición sale de un lugar al azar.",
+    "how": "En 0 es un delay común; subilo para nubes de ecos rotos. Combinalo con PITCH para un shimmer granular."
+   },
+   "en": {
+    "what": "In the GRAIN delay, scatters the grains: each repeat comes from a random place.",
+    "how": "At 0 it's a plain delay; raise it for clouds of broken echoes. Combine with PITCH for a granular shimmer."
+   },
+   "learn": "delay"
+  },
+  "MOD": {
+   "es": {
+    "what": "Modulación de un efecto: en el DELAY, la deriva de la cinta (wow y flutter); en la REVERB, cuánto se mueve su cola.",
+    "how": "En 0 las repeticiones son copias exactas; cerca de 20 suena a cinta; mucho, un chorus mareado."
+   },
+   "en": {
+    "what": "An effect's modulation: on the DELAY, the tape drift (wow and flutter); on the REVERB, how much its tail moves.",
+    "how": "At 0 repeats are exact copies; around 20 it sounds like tape; a lot, a seasick chorus."
+   },
+   "learn": "delay"
+  },
+  "PING": {
+   "es": {
+    "what": "Ping-pong: los ecos del DELAY saltan izquierda, derecha, izquierda…",
+    "how": "Prendelo para abrir la mezcla con ecos que viajan; queda muy bien con TIME en 1/8 o 1/8D."
+   },
+   "en": {
+    "what": "Ping-pong: the DELAY's echoes bounce left, right, left…",
+    "how": "Turn it on to open the mix with travelling echoes; it works great with TIME on 1/8 or 1/8D."
+   },
+   "learn": "delay"
+  },
+  "RIGHT": {
+   "es": {
+    "what": "El tiempo propio del eco derecho del DELAY, como proporción del izquierdo (=L, igual).",
+    "how": "x3/4 o x2/3 hacen ecos que se cruzan entre los costados; =L vuelve al delay común."
+   },
+   "en": {
+    "what": "The DELAY's right echo time, as a ratio of the left one (=L, the same).",
+    "how": "x3/4 or x2/3 make echoes that cross between the sides; =L goes back to a plain delay."
+   },
+   "learn": "delay"
+  },
+  "DRIVE": {
+   "es": {
+    "what": "Satura para dar calor y mugre: en DLY 3, dentro del lazo del delay; en un motor, su propia saturación.",
+    "how": "En el delay, cada repetición se ensucia un poco más, como una cinta empujada; en 0 queda limpio."
+   },
+   "en": {
+    "what": "Saturates for warmth and grit: on DLY 3, inside the delay's loop; on an engine, its own drive.",
+    "how": "On the delay each repeat gets a little dirtier, like a pushed tape; at 0 it stays clean."
+   },
+   "learn": "delay"
+  },
+  "SIZE": {
+   "es": {
+    "what": "El tamaño: en la REVERB, cuánto dura su cola en todos los modelos; en CLOUD, al máximo la congela.",
+    "how": "Bajo, una habitación chica; alto, una catedral. Con muchas pistas, una reverb más corta deja la mezcla clara."
+   },
+   "en": {
+    "what": "Size: on the REVERB, how long its tail lasts in every model; on CLOUD, at maximum it freezes.",
+    "how": "Low is a small room; high, a cathedral. With many tracks, a shorter reverb keeps the mix clear."
+   },
+   "learn": "reverb"
+  },
+  "DAMP": {
+   "es": {
+    "what": "Cuánto se apagan los agudos en la cola de la REVERB.",
+    "how": "Bajo, un espacio brillante y metálico; alto, uno cálido y oscuro que molesta menos en la mezcla."
+   },
+   "en": {
+    "what": "How much the treble dies away in the REVERB's tail.",
+    "how": "Low gives a bright, metallic space; high, a warm, dark one that crowds the mix less."
+   },
+   "learn": "reverb"
+  },
+  "PRE": {
+   "es": {
+    "what": "El pre-delay de la REVERB, en ms: el silencio antes de que llegue el espacio (en SHIMR y CLOUD, AIR; en RESO, PITCH).",
+    "how": "Unos 20–40 ms separan la voz de su reverb y la dejan clara. En SHIMR y CLOUD mueve el aire; en RESO, el acorde."
+   },
+   "en": {
+    "what": "The REVERB pre-delay, in ms: the gap before the space arrives (on SHIMR and CLOUD, AIR; on RESO, PITCH).",
+    "how": "About 20–40 ms separates a sound from its reverb and keeps it clear. On SHIMR and CLOUD it moves the air; on RESO, the chord."
+   },
+   "learn": "reverb"
+  },
+  "FILT": {
+   "es": {
+    "what": "El tono de lo que entra a la REVERB: negativo más oscuro, positivo más brillante.",
+    "how": "Oscurecela para que el espacio no tape la mezcla; brillante para colas de aire. Tiene una resonancia suave para tallar el lugar."
+   },
+   "en": {
+    "what": "The tone of what goes into the REVERB: negative darker, positive brighter.",
+    "how": "Darken it so the space doesn't cloud the mix; brighten it for airy tails. A soft resonance helps carve the space."
+   },
+   "learn": "reverb"
+  },
+  "STEREO": {
+   "es": {
+    "what": "El ancho del CHORUS: hacia abajo hasta mono, hacia arriba casi el doble de ancho.",
+    "how": "En 0 suena como siempre; subilo para pads enormes, bajalo si el chorus te desarma el centro."
+   },
+   "en": {
+    "what": "The CHORUS width: down to mono, up to nearly twice as wide.",
+    "how": "At 0 it sounds as usual; raise it for huge pads, lower it if the chorus blurs the centre."
+   },
+   "learn": "chorus"
+  },
+  "PAT": {
+   "es": {
+    "what": "Elige el patrón de cortes del SLICER, de 1 a 16.",
+    "how": "Probá varios mientras suena el tema: cada uno corta la mezcla con otro ritmo."
+   },
+   "en": {
+    "what": "Picks the SLICER's chopping pattern, 1 to 16.",
+    "how": "Try several while the song plays: each one chops the mix with a different rhythm."
+   },
+   "learn": "slicer"
+  },
+  "T1": {
+   "es": {
+    "what": "Si la pista 1 entra al SLICER.",
+    "how": "Prendé solo las pistas que querés cortar: por ejemplo, los sintes sí y la batería no."
+   },
+   "en": {
+    "what": "Whether track 1 goes into the SLICER.",
+    "how": "Switch on only the tracks you want chopped: for example the synths, but not the drums."
+   },
+   "learn": "slicer"
+  },
+  "T2": {
+   "es": {
+    "what": "Si la pista 2 entra al SLICER.",
+    "how": "Prendé solo las pistas que querés cortar: por ejemplo, los sintes sí y la batería no."
+   },
+   "en": {
+    "what": "Whether track 2 goes into the SLICER.",
+    "how": "Switch on only the tracks you want chopped: for example the synths, but not the drums."
+   },
+   "learn": "slicer"
+  },
+  "T3": {
+   "es": {
+    "what": "Si la pista 3 entra al SLICER.",
+    "how": "Prendé solo las pistas que querés cortar: por ejemplo, los sintes sí y la batería no."
+   },
+   "en": {
+    "what": "Whether track 3 goes into the SLICER.",
+    "how": "Switch on only the tracks you want chopped: for example the synths, but not the drums."
+   },
+   "learn": "slicer"
+  },
+  "T4": {
+   "es": {
+    "what": "Si la pista 4 entra al SLICER.",
+    "how": "Prendé solo las pistas que querés cortar: por ejemplo, los sintes sí y la batería no."
+   },
+   "en": {
+    "what": "Whether track 4 goes into the SLICER.",
+    "how": "Switch on only the tracks you want chopped: for example the synths, but not the drums."
+   },
+   "learn": "slicer"
+  },
+  "T5": {
+   "es": {
+    "what": "Si la pista 5 entra al SLICER.",
+    "how": "Prendé solo las pistas que querés cortar: por ejemplo, los sintes sí y la batería no."
+   },
+   "en": {
+    "what": "Whether track 5 goes into the SLICER.",
+    "how": "Switch on only the tracks you want chopped: for example the synths, but not the drums."
+   },
+   "learn": "slicer"
+  },
+  "T6": {
+   "es": {
+    "what": "Si la pista 6 entra al SLICER.",
+    "how": "Prendé solo las pistas que querés cortar: por ejemplo, los sintes sí y la batería no."
+   },
+   "en": {
+    "what": "Whether track 6 goes into the SLICER.",
+    "how": "Switch on only the tracks you want chopped: for example the synths, but not the drums."
+   },
+   "learn": "slicer"
+  },
+  "FX": {
+   "es": {
+    "what": "Si las colas de los efectos (delay, reverb y chorus) también entran al SLICER.",
+    "how": "ON corta también los ecos y la reverb, más prolijo; OFF deja las colas sonando libres alrededor de los cortes."
+   },
+   "en": {
+    "what": "Whether the effect tails (delay, reverb and chorus) also go into the SLICER.",
+    "how": "ON chops the echoes and reverb too, tighter; OFF leaves the tails ringing freely around the cuts."
+   },
+   "learn": "slicer"
+  },
+  "CLIP": {
+   "es": {
+    "what": "Saturación del master: le suma carácter y densidad a toda la mezcla, sin subir el volumen.",
+    "how": "Un poco pega la mezcla; mucho la ensucia como una consola empujada. Escuchalo en los golpes de la batería."
+   },
+   "en": {
+    "what": "Master saturation: adds character and density to the whole mix without raising the level.",
+    "how": "A little glues the mix; a lot dirties it like a pushed desk. Listen to the drum hits."
+   },
+   "learn": "master"
+  },
+  "PUNCH": {
+   "es": {
+    "what": "Engorda las pistas de batería: más golpe en el ataque y más cuerpo.",
+    "how": "Subilo para que el kit pegue más fuerte en la mezcla sin subir su volumen."
+   },
+   "en": {
+    "what": "Fattens the drum tracks: more snap in the attack and more body.",
+    "how": "Raise it so the kit hits harder in the mix without turning it up."
+   },
+   "learn": "master"
+  },
+  "DUCK": {
+   "es": {
+    "what": "El bombo hace bajar todo lo demás: el bombeo del sidechain.",
+    "how": "Un poco le hace lugar al bombo; mucho bombea como en el house. REL decide qué tan rápido vuelve."
+   },
+   "en": {
+    "what": "The kick pushes everything else down: sidechain pumping.",
+    "how": "A little makes room for the kick; a lot pumps like house music. REL sets how fast it comes back."
+   },
+   "learn": "master"
+  },
+  "DJ FILT": {
+   "es": {
+    "what": "Un filtro sobre toda la mezcla: a la izquierda cierra los agudos, a la derecha corta los graves; en 0 no hace nada.",
+    "how": "Llevalo lento hacia un lado para armar tensión antes de un cambio y volvé al medio para el drop."
+   },
+   "en": {
+    "what": "One filter over the whole mix: left closes the treble, right cuts the bass; at 0 it does nothing.",
+    "how": "Move it slowly to one side to build tension before a change, then back to the middle for the drop."
+   },
+   "learn": "dj-filter"
+  },
+  "BPM": {
+   "es": {
+    "what": "El tempo del tema, de 40 a 240 pulsos por minuto.",
+    "how": "Todo lo que va a tempo lo sigue: secuencias, arpegios, delays y LFOs. Con CLOCK externo, manda el otro aparato."
+   },
+   "en": {
+    "what": "The song's tempo, 40 to 240 beats per minute.",
+    "how": "Everything in tempo follows it: sequences, arpeggios, delays and LFOs. With an external CLOCK, the other device leads."
+   }
+  },
+  "CLOCK": {
+   "es": {
+    "what": "De dónde toma el tempo el FM-1: su reloj interno (INT), USB y Bluetooth, o el jack TRS.",
+    "how": "Dejalo en INT para tocar solo; cambialo cuando quieras que la computadora u otro aparato marque el tempo."
+   },
+   "en": {
+    "what": "Where the FM-1 gets its tempo: its internal clock (INT), USB and Bluetooth, or the TRS jack.",
+    "how": "Leave it on INT to play alone; change it when a computer or another device should set the tempo."
+   }
+  },
+  "TUNE": {
+   "es": {
+    "what": "La afinación fina de todo el FM-1, en cents (±50).",
+    "how": "Dejalo en 0, salvo para afinar con otros instrumentos o con una grabación que no está en 440."
+   },
+   "en": {
+    "what": "Fine tuning for the whole FM-1, in cents (±50).",
+    "how": "Leave it at 0 unless you need to match other instruments or a recording that isn't at 440."
+   }
+  },
+  "MIDI": {
+   "es": {
+    "what": "Elige la entrada MIDI que se muestra: USB o el jack TRS.",
+    "how": "Sirve para revisar si llegan mensajes cuando conectás un controlador o la computadora y algo no suena."
+   },
+   "en": {
+    "what": "Picks which MIDI input is shown: USB or the TRS jack.",
+    "how": "Useful to check that messages arrive when you plug in a controller or computer and nothing sounds."
+   }
+  },
+  "ROUTE": {
+   "es": {
+    "what": "Qué pista toca cada canal MIDI que entra: CH1-6 (canales 1–6 a pistas 1–6) o SEL (todo a la pista elegida).",
+    "how": "SEL para tocar la pista que mirás desde un teclado externo; CH1-6 para secuenciar las seis pistas desde la computadora."
+   },
+   "en": {
+    "what": "Which track each incoming MIDI channel plays: CH1-6 (channels 1–6 to tracks 1–6) or SEL (all to the selected track).",
+    "how": "SEL to play the track you're on from an external keyboard; CH1-6 to sequence all six tracks from a computer."
+   },
+   "learn": "midi-learn"
+  },
+  "CPU": {
+   "es": {
+    "what": "Muestra cuánta carga de procesador está usando el FM-1; no cambia el sonido.",
+    "how": "Si se acerca al máximo, probá con menos voces, efectos más livianos o LOAD en LITE o ECO."
+   },
+   "en": {
+    "what": "Shows how much processor load the FM-1 is using; it doesn't change the sound.",
+    "how": "If it nears the top, try fewer voices, lighter effects or LOAD on LITE or ECO."
+   }
+  },
+  "SLOT": {
+   "es": {
+    "what": "Elige un lugar de memoria: el del proyecto que vas a guardar o cargar, o el patch de FM6.",
+    "how": "Mirá bien el número antes de guardar, para no pisar un tema que querías conservar."
+   },
+   "en": {
+    "what": "Picks a memory slot: the project to save or load, or the FM6 patch.",
+    "how": "Check the number before saving so you don't overwrite a song you wanted to keep."
+   },
+   "learn": "save"
+  },
+  "LOAD": {
+   "es": {
+    "what": "Carga el proyecto elegido.",
+    "how": "Poné GO para abrir el tema guardado. Guardá antes el actual si no querés perder lo que cambiaste."
+   },
+   "en": {
+    "what": "Loads the chosen project.",
+    "how": "Set GO to open the saved song. Save the current one first if you don't want to lose your changes."
+   },
+   "learn": "save"
+  },
+  "SAVE": {
+   "es": {
+    "what": "Guarda el proyecto en su lugar, con sus partes y sonidos, adentro del FM-1.",
+    "how": "Poné GO para guardar; guardá seguido mientras armás un tema."
+   },
+   "en": {
+    "what": "Saves the project to its slot, with its parts and sounds, inside the FM-1.",
+    "how": "Set GO to save; save often while you build a song."
+   },
+   "learn": "save"
+  },
+  "ENG": {
+   "es": {
+    "what": "Elige el motor de síntesis de la pista: DRUM, ANALOG, PHASE, FM6, VOICE, ANIMAL, MATH, WHEEL, WEST, STRING, ADD o EXT.",
+    "how": "Recorré los motores para elegir la especie de sonido; después buscá entre los sonidos de ese motor."
+   },
+   "en": {
+    "what": "Picks the track's synthesis engine: DRUM, ANALOG, PHASE, FM6, VOICE, ANIMAL, MATH, WHEEL, WEST, STRING, ADD or EXT.",
+    "how": "Browse the engines to choose the species of sound, then look through that engine's sounds."
+   },
+   "learn": "organism"
+  },
+  "CLEAR SEQ": {
+   "es": {
+    "what": "Borra los pasos y la automatización de la pista elegida.",
+    "how": "Poné GO para limpiar la pista y empezar de cero; si te arrepentís, UNDO la devuelve."
+   },
+   "en": {
+    "what": "Clears the selected track's steps and automation.",
+    "how": "Set GO to wipe the track and start over; if you regret it, UNDO brings it back."
+   },
+   "learn": "undo"
+  },
+  "INIT": {
+   "es": {
+    "what": "Devuelve el sonido de la pista a los valores por defecto de su motor, seco y sin efectos.",
+    "how": "Poné GO para partir de un sonido limpio y construir el tuyo desde cero; UNDO lo devuelve."
+   },
+   "en": {
+    "what": "Resets the track's sound to its engine's defaults, dry and without effects.",
+    "how": "Set GO to start from a clean sound and build your own from scratch; UNDO brings it back."
+   },
+   "learn": "undo"
+  },
+  "INT": {
+   "es": {
+    "what": "El intervalo del segundo oscilador de ANALOG, de −24 a +24 semitonos.",
+    "how": "7 suma una quinta, 12 una octava: acordes de power y bajos gordos. Equilibralos con MIX."
+   },
+   "en": {
+    "what": "The interval of ANALOG's second oscillator, −24 to +24 semitones.",
+    "how": "7 adds a fifth, 12 an octave: power chords and fat basses. Balance them with MIX."
+   },
+   "learn": "analog"
+  },
+  "DETUNE": {
+   "es": {
+    "what": "Desafina una onda respecto de la otra, en cents: el batido que engorda el sonido.",
+    "how": "Un poco da un sonido gordo y vivo; mucho, el desafinado de un sinte viejo."
+   },
+   "en": {
+    "what": "Detunes one wave against the other, in cents: the beating that fattens the sound.",
+    "how": "A little makes it fat and alive; a lot, the out-of-tune charm of an old synth."
+   },
+   "learn": "analog"
+  },
+  "NOISE": {
+   "es": {
+    "what": "Cuánto ruido se mezcla en el sonido.",
+    "how": "Un poco suma aire y textura; mucho, soplido y chasquido. Probalo en percusiones y efectos."
+   },
+   "en": {
+    "what": "How much noise is mixed into the sound.",
+    "how": "A little adds air and texture; a lot, hiss and crack. Try it on percussion and effects."
+   }
+  },
+  "WAVE2": {
+   "es": {
+    "what": "La segunda onda de PHASE, que se alterna con la primera: SAW, SQR, PLS, DSIN y más; ‘-’ la apaga.",
+    "how": "Elegí una distinta de WAVE para que el timbre cambie entre ciclos; mezclalas o multiplicalas con LINE."
+   },
+   "en": {
+    "what": "PHASE's second wave, alternating with the first: SAW, SQR, PLS, DSIN and more; ‘-’ turns it off.",
+    "how": "Pick one unlike WAVE so the timbre shifts between cycles; blend or multiply them with LINE."
+   },
+   "learn": "phase"
+  },
+  "BRIGHT": {
+   "es": {
+    "what": "El brillo del sonido; cómo se logra depende del motor.",
+    "how": "Bajalo para un sonido redondo y oscuro, subilo para que tenga filo y corte la mezcla."
+   },
+   "en": {
+    "what": "The sound's brightness; how it is made depends on the engine.",
+    "how": "Lower it for a round, dark sound; raise it for edge that cuts through the mix."
+   }
+  },
+  "ENV": {
+   "es": {
+    "what": "Cuánto se mueve el doblez de la fase de PHASE en cada nota: un brillo que se abre y se cierra.",
+    "how": "Bajo, un timbre quieto; alto, notas que arrancan brillantes y se apagan, como un bajo de sinte clásico."
+   },
+   "en": {
+    "what": "How much PHASE's phase bend moves with each note: a brightness that opens and closes.",
+    "how": "Low keeps the timbre still; high gives notes that start bright and fade, like a classic synth bass."
+   },
+   "learn": "phase"
+  },
+  "LINE": {
+   "es": {
+    "what": "Cómo se juntan las dos ondas de PHASE: MIX las suma, RING las multiplica.",
+    "how": "MIX para sonidos llenos; RING para campanas y timbres metálicos e inarmónicos."
+   },
+   "en": {
+    "what": "How PHASE's two waves combine: MIX adds them, RING multiplies them.",
+    "how": "MIX for full sounds; RING for bells and metallic, inharmonic timbres."
+   },
+   "learn": "phase"
+  },
+  "SUB": {
+   "es": {
+    "what": "Suma graves por debajo del sonido.",
+    "how": "Subilo para bajos con peso; bajalo si el sonido se pelea con el bombo."
+   },
+   "en": {
+    "what": "Adds low end beneath the sound.",
+    "how": "Raise it for basses with weight; lower it if the sound fights the kick."
+   }
+  },
+  "CHIP": {
+   "es": {
+    "what": "La resolución del sonido de MATH: 4 bits, 4 bits retenidos (4B/2), 8 bits o 1 bit.",
+    "how": "8BIT suena más suave; 4BIT y 1BIT, crudos, de consola vieja. 4B/2 agrega todavía más grano."
+   },
+   "en": {
+    "what": "MATH's sound resolution: 4 bits, held 4 bits (4B/2), 8 bits or 1 bit.",
+    "how": "8BIT is smoother; 4BIT and 1BIT are raw, old-console sounds. 4B/2 adds even more grain."
+   },
+   "learn": "math"
+  },
+  "ALGO": {
+   "es": {
+    "what": "Elige la fórmula de MATH: una línea de matemática que da ritmo, melodía y timbre a la vez.",
+    "how": "Girala despacio, cada valor es otra fórmula. Cuando encontrás una que te gusta, mutala con VARIANT."
+   },
+   "en": {
+    "what": "Picks MATH's formula: one line of maths that gives rhythm, melody and timbre at once.",
+    "how": "Turn it slowly, every value is another formula. When you find one you like, mutate it with VARIANT."
+   },
+   "learn": "math"
+  },
+  "VARIANT": {
+   "es": {
+    "what": "Muta la fórmula elegida en ALGO: cambia una de sus variables y con ella el patrón.",
+    "how": "Probá valores cercanos para variaciones de la misma idea; lockealo en pasos distintos para que cada uno suene diferente."
+   },
+   "en": {
+    "what": "Mutates the formula chosen in ALGO: changes one of its variables, and the pattern with it.",
+    "how": "Try nearby values for variations on the same idea; lock it on different steps so each sounds different."
+   },
+   "learn": "math"
+  },
+  "MOTION": {
+   "es": {
+    "what": "El movimiento propio del motor: el tiempo de la fórmula en MATH o el barrido del espectro en ADD.",
+    "how": "En 0 queda quieto; subilo para que el sonido se mueva solo, sin LFO."
+   },
+   "en": {
+    "what": "The engine's own motion: the formula's time in MATH or the spectrum sweep in ADD.",
+    "how": "At 0 it stays still; raise it so the sound moves on its own, no LFO needed."
+   }
+  },
+  "GRIT": {
+   "es": {
+    "what": "Ensucia la fórmula de MATH: retiene cada muestra más tiempo en BYTE, o la realimenta en FLOAT.",
+    "how": "Un poco da un crujido lo-fi; mucho la tritura hasta el ruido. En 0, la fórmula limpia."
+   },
+   "en": {
+    "what": "Dirties MATH's formula: holds each sample longer on BYTE, or feeds it back on FLOAT.",
+    "how": "A little gives lo-fi crunch; a lot grinds it into noise. At 0, the clean formula."
+   },
+   "learn": "math"
+  },
+  "BEND": {
+   "es": {
+    "what": "Pliega el tiempo de la fórmula de MATH: el ritmo y la melodía se doblan sobre sí mismos.",
+    "how": "En 0 suena tal cual; al subirlo aparecen giros y quiebres. Andá de a poco, cambia mucho entre valores cercanos."
+   },
+   "en": {
+    "what": "Folds the time of MATH's formula: rhythm and melody bend back on themselves.",
+    "how": "At 0 it plays as written; raising it brings twists and breaks. Go slowly, nearby values differ a lot."
+   },
+   "learn": "math"
+  },
+  "VOWEL": {
+   "es": {
+    "what": "La primera vocal de VOICE: recorre A, E, I, O, U y lo que hay entre ellas.",
+    "how": "Elegí la vocal donde arranca cada nota; con TALK pasa hacia VOWEL2."
+   },
+   "en": {
+    "what": "VOICE's first vowel: sweeps through A, E, I, O, U and everything between.",
+    "how": "Pick the vowel each note starts on; TALK moves it toward VOWEL2."
+   },
+   "learn": "voice"
+  },
+  "VOWEL2": {
+   "es": {
+    "what": "La segunda vocal de VOICE, a la que llega la voz con TALK.",
+    "how": "Ponela lejos de VOWEL para que la voz diga algo (ua, ai); cerca, para un color estable."
+   },
+   "en": {
+    "what": "VOICE's second vowel, the one TALK moves toward.",
+    "how": "Set it far from VOWEL so the voice says something (wah, ai); close to it for a steady colour."
+   },
+   "learn": "voice"
+  },
+  "TALK": {
+   "es": {
+    "what": "Cuánto tarda VOICE en pasar de VOWEL a VOWEL2 en cada nota: la voz habla.",
+    "how": "Corto, una sílaba rápida; largo, una vocal que se transforma de a poco."
+   },
+   "en": {
+    "what": "How long VOICE takes to move from VOWEL to VOWEL2 on each note: the voice talks.",
+    "how": "Short for a quick syllable; long for a vowel that slowly transforms."
+   },
+   "learn": "voice"
+  },
+  "SHIFT": {
+   "es": {
+    "what": "Corre los formantes o los parciales sin cambiar la nota que tocás.",
+    "how": "Hacia un lado el sonido se agranda, hacia el otro se achica; probalo en notas largas para escucharlo bien."
+   },
+   "en": {
+    "what": "Shifts the formants or partials without changing the note you play.",
+    "how": "One way the sound grows bigger, the other smaller; try it on long notes to hear it well."
+   }
+  },
+  "BUZZ": {
+   "es": {
+    "what": "El zumbido de las cuerdas vocales de VOICE: el brillo de la fuente de la voz.",
+    "how": "Bajo, una voz suave y oscura; alto, un canto nasal y brillante que corta la mezcla."
+   },
+   "en": {
+    "what": "The buzz of VOICE's vocal folds: the brightness of the voice's source.",
+    "how": "Low for a soft, dark voice; high for a nasal, bright chant that cuts the mix."
+   },
+   "learn": "voice"
+  },
+  "BREATH": {
+   "es": {
+    "what": "El aire en la voz de VOICE: cuánto soplo se mezcla con el tono.",
+    "how": "Bajo, una voz cantada y clara; arriba, un susurro. Un poco de aire la vuelve más humana."
+   },
+   "en": {
+    "what": "The air in VOICE's voice: how much breath mixes with the tone.",
+    "how": "Low for a clear sung voice; high, a whisper. A little air makes it more human."
+   },
+   "learn": "voice"
+  },
+  "RESO": {
+   "es": {
+    "what": "Qué tan marcados son los formantes de VOICE: la definición de las vocales.",
+    "how": "Bajo, vocales borrosas; alto, vocales nítidas y resonantes, casi silbadas."
+   },
+   "en": {
+    "what": "How pronounced VOICE's formants are: how defined the vowels sound.",
+    "how": "Low for blurred vowels; high for crisp, resonant vowels, almost whistled."
+   },
+   "learn": "voice"
+  },
+  "RAND": {
+   "es": {
+    "what": "La inquietud de VOICE: pequeñas variaciones al azar en cada nota.",
+    "how": "Un poco la hace humana; mucho, una voz nerviosa e inestable."
+   },
+   "en": {
+    "what": "VOICE's restlessness: small random variations on each note.",
+    "how": "A little makes it human; a lot, a nervous, unstable voice."
+   },
+   "learn": "voice"
+  },
+  "BARS": {
+   "es": {
+    "what": "La registración del órgano WHEEL: una de 16 posiciones de tirantes, de FLUTE suave a FULL.",
+    "how": "Arrancá por una clásica (GOSPL, ROCK, 3BAR) y después teñila con SUB, BODY y TOP."
+   },
+   "en": {
+    "what": "The WHEEL organ's registration: one of 16 drawbar settings, from soft FLUTE to FULL.",
+    "how": "Start from a classic (GOSPL, ROCK, 3BAR) and then tint it with SUB, BODY and TOP."
+   },
+   "learn": "wheel"
+  },
+  "BODY": {
+   "es": {
+    "what": "Le da cuerpo al sonido; qué cuerpo depende del motor: los tirantes del medio, la caja de la cuerda o el parche.",
+    "how": "Giralo y escuchá cómo cambia el centro del sonido; bajo queda más seco, alto más lleno."
+   },
+   "en": {
+    "what": "Gives the sound body; which body depends on the engine: the middle drawbars, the string's box or the drumhead.",
+    "how": "Turn it and hear the centre of the sound change; low is drier, high fuller."
+   }
+  },
+  "TOP": {
+   "es": {
+    "what": "Suma o quita a los tirantes agudos del órgano WHEEL (2 2/3' a 1'): su brillo.",
+    "how": "Negativo para un órgano dulce de jazz; positivo para un órgano filoso de rock que se escucha arriba de todo."
+   },
+   "en": {
+    "what": "Adds to or takes from the WHEEL organ's upper drawbars (2 2/3' to 1'): its sparkle.",
+    "how": "Negative for a sweet jazz organ; positive for a cutting rock organ that sits above everything."
+   },
+   "learn": "wheel"
+  },
+  "PERC": {
+   "es": {
+    "what": "La percusión del órgano WHEEL: un golpe en el 2.º o 3.er armónico, normal, suave o lento.",
+    "how": "3RD es el clásico del jazz; suena solo en las notas que empezás sin otra tecla apretada, así que tocá separado."
+   },
+   "en": {
+    "what": "The WHEEL organ's percussion: a strike on the 2nd or 3rd harmonic, normal, soft or slow.",
+    "how": "3RD is the jazz classic; it only sounds on notes started with no other key held, so play detached."
+   },
+   "learn": "wheel"
+  },
+  "CLICK": {
+   "es": {
+    "what": "El click de tecla del órgano WHEEL: el golpecito al comienzo de cada nota.",
+    "how": "Bajo, un órgano liso; alto, el chasquido de un tonewheel viejo, que ayuda a que se escuchen las notas rápidas."
+   },
+   "en": {
+    "what": "The WHEEL organ's key click: the little tick at the start of each note.",
+    "how": "Low for a smooth organ; high for the snap of an old tonewheel, which helps fast notes speak."
+   },
+   "learn": "wheel"
+  },
+  "SPEED": {
+   "es": {
+    "what": "La velocidad del parlante giratorio de WHEEL: OFF, SLOW o FAST.",
+    "how": "SLOW para un coro suave; pasá a FAST en el momento justo para levantar la parte."
+   },
+   "en": {
+    "what": "The speed of WHEEL's rotating speaker: OFF, SLOW or FAST.",
+    "how": "SLOW for a gentle swirl; switch to FAST at the right moment to lift the section."
+   },
+   "learn": "wheel"
+  },
+  "EXCITE": {
+   "es": {
+    "what": "Cómo se excita la cuerda de STRING: ruido, pulsada, púa, martillo, palillo, o FDBK, una guitarra acoplada en un ampli.",
+    "how": "PLUCK y PICK para guitarras, HAMMR para pianos, STICK para mazos. En FDBK las perillas pasan a ser las del ampli."
+   },
+   "en": {
+    "what": "How STRING's string is excited: noise, pluck, pick, hammer, stick, or FDBK, a guitar feeding back into an amp.",
+    "how": "PLUCK and PICK for guitars, HAMMR for pianos, STICK for mallets. On FDBK the knobs become the amp's."
+   },
+   "learn": "string"
+  },
+  "DECAY": {
+   "es": {
+    "what": "Cuánto tarda el sonido en apagarse; qué se apaga depende del motor.",
+    "how": "Corto, golpes secos y apagados; largo, sonidos que resuenan y se quedan."
+   },
+   "en": {
+    "what": "How long the sound takes to die away; what dies depends on the engine.",
+    "how": "Short for dry, muted hits; long for sounds that ring and linger."
+   }
+  },
+  "POS": {
+   "es": {
+    "what": "Dónde se toca la cuerda de STRING: cerca del puente o hacia el medio.",
+    "how": "Bajo suena fino y nasal, como tocar junto al puente; hacia el medio, más redondo y hueco."
+   },
+   "en": {
+    "what": "Where STRING's string is played: near the bridge or toward the middle.",
+    "how": "Low is thin and nasal, like playing by the bridge; toward the middle, rounder and hollower."
+   },
+   "learn": "string"
+  },
+  "STRETCH": {
+   "es": {
+    "what": "Vuelve rígida la cuerda de STRING: los parciales se estiran como en un piano o una barra de metal.",
+    "how": "Bajo, guitarra o arpa; alto, pianos, campanas y metales."
+   },
+   "en": {
+    "what": "Stiffens STRING's string: its partials stretch like a piano's or a metal bar's.",
+    "how": "Low for guitar or harp; high for pianos, bells and metals."
+   },
+   "learn": "string"
+  },
+  "BOW": {
+   "es": {
+    "what": "Le pasa un arco a la cuerda de STRING: sopla en el lazo mientras mantenés la tecla, y la nota se sostiene.",
+    "how": "En 0 la cuerda se pulsa y muere; subilo para violín, viola o cello, y mantené las notas largas."
+   },
+   "en": {
+    "what": "Bows STRING's string: feeds the loop while you hold the key, so the note sustains.",
+    "how": "At 0 the string is plucked and dies; raise it for violin, viola or cello, and hold long notes."
+   },
+   "learn": "string"
+  },
+  "MORPH": {
+   "es": {
+    "what": "Desliza el sonido entre dos estados, de manera continua.",
+    "how": "Movelo despacio o con un LFO para que el sonido se transforme vivo mientras toca."
+   },
+   "en": {
+    "what": "Slides the sound continuously between two states.",
+    "how": "Move it slowly or with an LFO so the sound transforms live while it plays."
+   }
+  },
+  "SNAP": {
+   "es": {
+    "what": "El chasquido del ataque de todos los golpes del kit de DRUM-X.",
+    "how": "Subilo para que el kit corte la mezcla con un click en cada golpe; bajo, golpes más blandos."
+   },
+   "en": {
+    "what": "The attack click of every hit in the DRUM-X kit.",
+    "how": "Raise it so the kit cuts through the mix with a click on each hit; low for softer hits."
+   },
+   "learn": "drum-x"
+  },
+  "FOLD": {
+   "es": {
+    "what": "Cuánto se pliega la onda de WEST sobre sí misma: de un seno puro a un timbre lleno de armónicos.",
+    "how": "Es el corazón de WEST: barrelo lento para un timbre que canta, y tocá más fuerte, que pliega más."
+   },
+   "en": {
+    "what": "How far WEST's wave folds back on itself: from a pure sine to a timbre full of harmonics.",
+    "how": "It's WEST's heart: sweep it slowly for a singing timbre, and play harder, which folds more."
+   },
+   "learn": "west"
+  },
+  "SKEW": {
+   "es": {
+    "what": "La simetría del plegado de WEST: lo vuelve asimétrico y suma armónicos pares.",
+    "how": "En 0 el plegado es simétrico y hueco; subilo para un timbre más lleno y nasal."
+   },
+   "en": {
+    "what": "The symmetry of WEST's folding: makes it asymmetric and adds even harmonics.",
+    "how": "At 0 the folding is symmetric and hollow; raise it for a fuller, nasal timbre."
+   },
+   "learn": "west"
+  },
+  "RATIO": {
+   "es": {
+    "what": "La relación de frecuencia del oscilador modulador con la nota.",
+    "how": "Valores enteros dan timbres armónicos; los raros (1.41, 2.76) dan campanas y metales."
+   },
+   "en": {
+    "what": "The frequency ratio of the modulating oscillator to the note.",
+    "how": "Whole numbers give harmonic timbres; odd ones (1.41, 2.76) give bells and metals."
+   }
+  },
+  "DUST": {
+   "es": {
+    "what": "Polvo de impulsos dentro de la compuerta de WEST: crujidos, golpes fantasma y, arriba, soplido.",
+    "how": "Un poco suma vida tipo vinilo; hacia el máximo el núcleo se apaga y quedan impulsos y ruido, bueno para texturas."
+   },
+   "en": {
+    "what": "Dust of impulses inside WEST's gate: crackle, ghost hits and, at the top, hiss.",
+    "how": "A little adds vinyl-like life; toward the top the core fades and only impulses and noise remain, good for textures."
+   },
+   "learn": "west"
+  },
+  "ALG": {
+   "es": {
+    "what": "El algoritmo de FM6: cómo se cablean los seis operadores. PAT deja el del patch; 1–32 prueban otro.",
+    "how": "Los algoritmos con muchos portadores suenan a órgano; los apilados, más metálicos y brillantes. Probalo sobre un mismo patch."
+   },
+   "en": {
+    "what": "FM6's algorithm: how the six operators are wired. PAT keeps the patch's own; 1–32 try another.",
+    "how": "Algorithms with many carriers sound organ-like; stacked ones, more metallic and bright. Try it on one patch."
+   },
+   "learn": "fm6"
+  },
+  "MOD ENV": {
+   "es": {
+    "what": "Los tiempos de las envolventes de los moduladores de FM6: positivo más lentas, negativo más rápidas.",
+    "how": "Negativo para ataques cortos y percusivos; positivo para un brillo que se abre despacio."
+   },
+   "en": {
+    "what": "The timing of FM6's modulator envelopes: positive slower, negative faster.",
+    "how": "Negative for short, percussive attacks; positive for a brightness that opens slowly."
+   },
+   "learn": "fm6"
+  },
+  "VEL MOD": {
+   "es": {
+    "what": "Cuánto le llega la fuerza de la tecla a los moduladores de FM6: tocar más fuerte da más brillo.",
+    "how": "Subilo para un piano eléctrico que se ensucia cuando pegás fuerte; negativo hace lo contrario."
+   },
+   "en": {
+    "what": "How much key force reaches FM6's modulators: playing harder gives more brightness.",
+    "how": "Raise it for an electric piano that bites when you hit hard; negative does the opposite."
+   },
+   "learn": "fm6"
+  },
+  "SPREAD": {
+   "es": {
+    "what": "Separa en afinación a los operadores portadores de FM6: un desafinado que engorda el patch.",
+    "how": "Un poco abre el sonido y lo hace vivir; mucho, el coro desafinado de un piano eléctrico viejo."
+   },
+   "en": {
+    "what": "Spreads FM6's carrier operators apart in pitch: a detune that fattens the patch.",
+    "how": "A little opens up the sound and brings it to life; a lot, the detuned chorus of an old electric piano."
+   },
+   "learn": "fm6"
+  },
+  "PARTIAL": {
+   "es": {
+    "what": "Cuántos parciales del espectro de ADD suenan, desde el fundamental hacia arriba.",
+    "how": "Bajo, un sonido casi senoidal; alto, el espectro completo. Moverlo es como un filtro hecho de armónicos."
+   },
+   "en": {
+    "what": "How many partials of ADD's spectrum sound, from the fundamental upward.",
+    "how": "Low is nearly a sine; high, the full spectrum. Moving it is like a filter made of harmonics."
+   },
+   "learn": "add"
+  },
+  "COMB": {
+   "es": {
+    "what": "Talla muescas en el espectro de ADD, como un filtro peine sobre los parciales.",
+    "how": "Subilo de a poco para un sonido hueco y faseado; movido con un LFO da un barrido tipo phaser."
+   },
+   "en": {
+    "what": "Carves notches in ADD's spectrum, like a comb filter over the partials.",
+    "how": "Raise it gradually for a hollow, phased sound; moved by an LFO it gives a phaser-like sweep."
+   },
+   "learn": "add"
+  },
+  "PRESS": {
+   "es": {
+    "what": "La presión del aire que hace cantar al animal de ANIMAL.",
+    "how": "Bajo, un canto tímido que casi no arranca; alto, fuerte y lleno. La fuerza de la tecla también suma presión."
+   },
+   "en": {
+    "what": "The air pressure that makes ANIMAL's creature sing.",
+    "how": "Low for a shy call that barely starts; high, loud and full. Key force adds pressure too."
+   },
+   "learn": "animal"
+  },
+  "CHAOS": {
+   "es": {
+    "what": "Irregularidad en la presión y la altura del canto de ANIMAL: el animal se vuelve menos perfecto.",
+    "how": "En 0 canta prolijo, como una máquina; subilo para pájaros e insectos más vivos y rasposos."
+   },
+   "en": {
+    "what": "Irregularity in the pressure and pitch of ANIMAL's call: the creature becomes less perfect.",
+    "how": "At 0 it sings neatly, like a machine; raise it for livelier, raspier birds and insects."
+   },
+   "learn": "animal"
+  },
+  "SWEEP": {
+   "es": {
+    "what": "El gesto de altura de cada sílaba de ANIMAL: sube o cae como un silbido.",
+    "how": "Positivo, sílabas que suben; negativo, que caen. Cerca de 0, un canto más plano."
+   },
+   "en": {
+    "what": "The pitch gesture of each ANIMAL syllable: rising or falling like a whistle.",
+    "how": "Positive for rising syllables; negative for falling ones. Near 0, a flatter call."
+   },
+   "learn": "animal"
+  },
+  "GROUP": {
+   "es": {
+    "what": "Cómo se agrupan las sílabas de ANIMAL: HOLD, TRILL sin pausas, o n+m (n sílabas y m silencios).",
+    "how": "HOLD para un canto largo por nota; 2+2 o 3+9 para pájaros que cantan y callan; TRILL para grillos."
+   },
+   "en": {
+    "what": "How ANIMAL's syllables are grouped: HOLD, TRILL with no gaps, or n+m (n syllables, m silent).",
+    "how": "HOLD for one long call per note; 2+2 or 3+9 for birds that sing and pause; TRILL for crickets."
+   },
+   "learn": "animal"
+  },
+  "TEMP": {
+   "es": {
+    "what": "La temperatura en grados de ANIMAL: más calor acelera los cantos, como pasa con los grillos de verdad.",
+    "how": "22 °C es lo normal; bajala para cantos lentos de noche fría, subila para un enjambre apurado."
+   },
+   "en": {
+    "what": "ANIMAL's temperature in degrees: heat speeds up the calls, just like real crickets.",
+    "how": "22 °C is normal; lower it for slow, cold-night calls, raise it for a hurried swarm."
+   },
+   "learn": "animal"
+  },
+  "SOURCE": {
+   "es": {
+    "what": "Qué entra a la pista EXT: IN 1, IN 2, 1+2 o STEREO (el audio USB), o SWARM (el Bluetooth de alrededor).",
+    "how": "Elegí IN 1 o IN 2 para una sola señal; STEREO para un loop de la computadora; SWARM para que el ambiente toque."
+   },
+   "en": {
+    "what": "What goes into the EXT track: IN 1, IN 2, 1+2 or STEREO (USB audio), or SWARM (the Bluetooth around you).",
+    "how": "Pick IN 1 or IN 2 for a single signal; STEREO for a loop from the computer; SWARM to let the surroundings play."
+   },
+   "learn": "ext"
+  },
+  "GAIN": {
+   "es": {
+    "what": "El nivel de la señal que entra a EXT, hasta +12 dB.",
+    "how": "Ajustalo para que la entrada suene fuerte sin romper; 64 la deja como llega."
+   },
+   "en": {
+    "what": "The level of the signal coming into EXT, up to +12 dB.",
+    "how": "Set it so the input is strong without breaking up; 64 leaves it as it arrives."
+   },
+   "learn": "ext"
+  },
+  "WIDTH": {
+   "es": {
+    "what": "El ancho estéreo de la entrada de EXT cuando SOURCE está en STEREO.",
+    "how": "Al máximo conserva la imagen original; bajalo para centrar un loop ancho y que no tape las otras pistas."
+   },
+   "en": {
+    "what": "The stereo width of EXT's input when SOURCE is STEREO.",
+    "how": "At maximum it keeps the original image; lower it to centre a wide loop so it doesn't cover other tracks."
+   },
+   "learn": "ext"
+  },
+  "RING": {
+   "es": {
+    "what": "Multiplica la entrada de EXT por un seno a la altura de la nota (en KEYS): modulación en anillo.",
+    "how": "Un poco da un brillo metálico; mucho, un robot inarmónico. Tocá notas distintas para cambiarle el tono."
+   },
+   "en": {
+    "what": "Multiplies EXT's input by a sine at the note's pitch (in KEYS): ring modulation.",
+    "how": "A little adds metallic shimmer; a lot, an inharmonic robot. Play different notes to change its tone."
+   },
+   "learn": "ext"
+  },
+  "BITS": {
+   "es": {
+    "what": "Reduce los bits de la señal que entra a EXT: la vuelve áspera y digital, un bitcrusher.",
+    "how": "En 0 queda limpia; subilo para un audio roto de videojuego viejo. Combinalo con RATE para destruir más."
+   },
+   "en": {
+    "what": "Reduces the bits of the signal coming into EXT: harsh and digital, a bitcrusher.",
+    "how": "At 0 it's clean; raise it for broken old-video-game audio. Combine with RATE for more destruction."
+   },
+   "learn": "ext"
+  }
+ },
+ "engines": {
+  "ANALOG": {
+   "WAVE": {
+    "es": {
+     "what": "La onda de los osciladores: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 o PLS3 (tres sierras o tres pulsos).",
+     "how": "SAW para bajos y leads brillantes, SQR y PWM huecos, SIN y TRI suaves; SAW3 para pads enormes."
+    },
+    "en": {
+     "what": "The oscillators' wave: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 or PLS3 (three saws or three pulses).",
+     "how": "SAW for bright basses and leads, SQR and PWM hollow, SIN and TRI soft; SAW3 for huge pads."
+    }
+   },
+   "MIX": {
+    "es": {
+     "what": "El balance entre los dos osciladores de ANALOG.",
+     "how": "En el medio suenan parejos; hacia un lado domina uno. Con INT en 7 o 12, regulá cuánto se oye el intervalo."
+    },
+    "en": {
+     "what": "The balance between ANALOG's two oscillators.",
+     "how": "In the middle they're even; toward one side one dominates. With INT on 7 or 12, set how much of the interval you hear."
+    }
+   },
+   "NOISE": {
+    "es": {
+     "what": "Un generador de ruido que se mezcla con los dos osciladores de ANALOG.",
+     "how": "Un poco da aire a un pad o soplo a una flauta; mucho sirve para hi-hats y efectos de viento."
+    },
+    "en": {
+     "what": "A noise generator mixed with ANALOG's two oscillators.",
+     "how": "A little adds air to a pad or breath to a flute; a lot works for hi-hats and wind effects."
+    }
+   },
+   "CUT": {
+    "es": {
+     "what": "El corte del filtro propio de ANALOG, por voz: cada nota se filtra por separado.",
+     "how": "Bajalo y abrilo con la ENV para el clásico wow de sinte; con RES alto canta."
+    },
+    "en": {
+     "what": "The cutoff of ANALOG's own filter, per voice: each note is filtered on its own.",
+     "how": "Lower it and open it with the ENV for the classic synth wow; with high RES it sings."
+    }
+   },
+   "RES": {
+    "es": {
+     "what": "La resonancia del filtro por voz de ANALOG.",
+     "how": "Subila para un pico que silba al barrer CUT; alta con CUT bajo, el bajo ácido de siempre."
+    },
+    "en": {
+     "what": "The resonance of ANALOG's per-voice filter.",
+     "how": "Raise it for a peak that whistles as you sweep CUT; high with low CUT, the classic acid bass."
+    }
+   },
+   "DRIVE": {
+    "es": {
+     "what": "La saturación del filtro de ANALOG: calienta y ensucia cada voz.",
+     "how": "Un poco da calor analógico; mucho, un bajo rugiente. Compensá el volumen con LEVEL si hace falta."
+    },
+    "en": {
+     "what": "The drive of ANALOG's filter: warms and dirties each voice.",
+     "how": "A little gives analogue warmth; a lot, a growling bass. Compensate with LEVEL if needed."
+    }
+   }
+  },
+  "PHASE": {
+   "WAVE": {
+    "es": {
+     "what": "La primera onda de PHASE: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI o RTRP.",
+     "how": "Las R son ondas resonantes, buenas para timbres vocales; combinala con WAVE2 para que alternen."
+    },
+    "en": {
+     "what": "PHASE's first wave: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI or RTRP.",
+     "how": "The R waves are resonant, good for vocal timbres; pair it with WAVE2 so they alternate."
+    }
+   },
+   "BRIGHT": {
+    "es": {
+     "what": "Cuánto se dobla la fase de la onda: de un seno suave a un filo lleno de armónicos.",
+     "how": "Es el filtro de PHASE: bajalo para graves redondos, subilo para leads cortantes. ENV decide cómo se mueve en cada nota."
+    },
+    "en": {
+     "what": "How far the wave's phase bends: from a soft sine to an edge full of harmonics.",
+     "how": "It's PHASE's filter: lower it for round lows, raise it for cutting leads. ENV sets how it moves each note."
+    }
+   },
+   "SUB": {
+    "es": {
+     "what": "Suma un oscilador grave por debajo de las ondas de PHASE.",
+     "how": "Subilo para bajos con peso; bajalo en leads para que no se embarren."
+    },
+    "en": {
+     "what": "Adds a low oscillator under PHASE's waves.",
+     "how": "Raise it for basses with weight; lower it on leads so they don't get muddy."
+    }
+   },
+   "FEEDBK": {
+    "es": {
+     "what": "Realimenta la salida de PHASE hacia su fase: del filo duro al gruñido.",
+     "how": "Un poco agrega aspereza; mucho, un rugido inestable. Bueno para bajos sucios."
+    },
+    "en": {
+     "what": "Feeds PHASE's output back into its phase: from a hard edge to a growl.",
+     "how": "A little adds roughness; a lot, an unstable roar. Good for dirty basses."
+    }
+   }
+  },
+  "MATH": {
+   "WAVE": {
+    "es": {
+     "what": "El tipo de fórmula: BYTE (bytebeat, en escalones) o FLOAT (floatbeat, hecho de senos).",
+     "how": "BYTE suena crudo y de chip; FLOAT más suave y musical. Cada uno tiene sus propias fórmulas en ALGO."
+    },
+    "en": {
+     "what": "The formula type: BYTE (bytebeat, stepped) or FLOAT (floatbeat, made of sines).",
+     "how": "BYTE sounds raw and chiptune-like; FLOAT smoother and more musical. Each has its own formulas in ALGO."
+    }
+   },
+   "LOOP": {
+    "es": {
+     "what": "Encierra la fórmula en un tramo corto que se repite, hasta volverla una nota afinada.",
+     "how": "En 0 la fórmula evoluciona libre; subilo para que el ritmo se vuelva tono. Más alto, ciclos más cortos."
+    },
+    "en": {
+     "what": "Holds the formula in a short repeating window, until it becomes a pitched note.",
+     "how": "At 0 the formula evolves freely; raise it so rhythm becomes tone. Higher means shorter cycles."
+    }
+   },
+   "MOTION": {
+    "es": {
+     "what": "Acelera o frena el ritmo de la fórmula; en la parte alta de la perilla la sincroniza al compás.",
+     "how": "En 0 queda quieta; subila para que la fórmula evolucione. En SYNC cada nota toca la misma secuencia transpuesta, a tempo."
+    },
+    "en": {
+     "what": "Speeds up or slows down the formula's rhythm; at the top of the knob it syncs to the bar.",
+     "how": "At 0 it stays still; raise it so the formula evolves. In SYNC every note plays the same sequence transposed, in time."
+    }
+   }
+  },
+  "WHEEL": {
+   "SUB": {
+    "es": {
+     "what": "Suma o quita a los tirantes graves del órgano (16' y 5 1/3').",
+     "how": "Positivo para un órgano con pie de bajo; negativo si otra pista ya lleva los graves."
+    },
+    "en": {
+     "what": "Adds to or takes from the organ's low drawbars (16' and 5 1/3').",
+     "how": "Positive for an organ with a bass foot; negative if another track already carries the low end."
+    }
+   },
+   "BODY": {
+    "es": {
+     "what": "Suma o quita a los tirantes del medio del órgano (8' y 4'): su centro.",
+     "how": "Negativo lo afina y le deja lugar a la voz; positivo lo llena y lo empuja adelante."
+    },
+    "en": {
+     "what": "Adds to or takes from the organ's middle drawbars (8' and 4'): its centre.",
+     "how": "Negative thins it and leaves room for a voice; positive fills it and pushes it forward."
+    }
+   },
+   "DRIVE": {
+    "es": {
+     "what": "La saturación del órgano, como un amplificador de válvulas empujado.",
+     "how": "Un poco da calor; mucho, el órgano rugiente del rock. Combinalo con SPEED en FAST."
+    },
+    "en": {
+     "what": "The organ's drive, like a pushed valve amp.",
+     "how": "A little gives warmth; a lot, the roaring rock organ. Combine it with SPEED on FAST."
+    }
+   }
+  },
+  "STRING": {
+   "BODY": {
+    "es": {
+     "what": "La caja de resonancia bajo la cuerda: cuánto se mezcla su resonancia grave.",
+     "how": "Bajo, una cuerda sola y seca; alto, una guitarra o un violín con caja. El tamaño lo da SIZE."
+    },
+    "en": {
+     "what": "The resonant box under the string: how much of its low resonance is mixed in.",
+     "how": "Low is a bare, dry string; high, a guitar or violin with a body. SIZE sets its size."
+    }
+   },
+   "BRIGHT": {
+    "es": {
+     "what": "El brillo de la cuerda: cuánto agudo conserva al vibrar.",
+     "how": "Bajo suena a nylon o cuerda apagada; alto, a metal recién pulsado."
+    },
+    "en": {
+     "what": "The string's brightness: how much treble it keeps while vibrating.",
+     "how": "Low sounds like nylon or a muted string; high, like freshly plucked steel."
+    }
+   },
+   "DECAY": {
+    "es": {
+     "what": "Cuánto vibra la cuerda antes de apagarse, de 50 ms a 13 s.",
+     "how": "Corto suena a cuerda apagada con la palma; largo, a arpa o piano que resuena."
+    },
+    "en": {
+     "what": "How long the string rings before dying, from 50 ms to 13 s.",
+     "how": "Short sounds palm-muted; long, like a harp or piano ringing out."
+    }
+   },
+   "SIZE": {
+    "es": {
+     "what": "El tamaño de la caja bajo la cuerda: de un instrumento chico a uno grande.",
+     "how": "Chico para violines y ukeleles; grande para cellos y guitarras graves."
+    },
+    "en": {
+     "what": "The size of the box under the string: from a small instrument to a big one.",
+     "how": "Small for violins and ukuleles; large for cellos and deep guitars."
+    }
+   }
+  },
+  "DRUM": {
+   "MORPH": {
+    "es": {
+     "what": "Lleva todo el kit de su cara A a su cara B, como si respirara.",
+     "how": "Movelo en vivo o con un LFO lento para que la batería cambie sin cambiar el ritmo."
+    },
+    "en": {
+     "what": "Moves the whole kit from its A face to its B face, as if it breathed.",
+     "how": "Move it live or with a slow LFO so the drums change without changing the rhythm."
+    }
+   },
+   "TUNE": {
+    "es": {
+     "what": "La afinación de todo el kit a la vez, ±12 semitonos.",
+     "how": "Bajalo para un kit grave y pesado, subilo para uno chico y seco; afinalo al tono del tema."
+    },
+    "en": {
+     "what": "The tuning of the whole kit at once, ±12 semitones.",
+     "how": "Lower it for a deep, heavy kit, raise it for a small, tight one; tune it to the song's key."
+    }
+   },
+   "TONE": {
+    "es": {
+     "what": "El color de todo el kit a la vez: más oscuro o más brillante.",
+     "how": "Oscuro para un kit cálido y lo-fi; brillante para que los platos y la caja corten."
+    },
+    "en": {
+     "what": "The colour of the whole kit at once: darker or brighter.",
+     "how": "Dark for a warm, lo-fi kit; bright so the cymbals and snare cut through."
+    }
+   },
+   "DECAY": {
+    "es": {
+     "what": "El largo de todos los golpes del kit a la vez.",
+     "how": "Bajalo para un kit seco y apretado; subilo para bombos largos y platos abiertos."
+    },
+    "en": {
+     "what": "The length of every hit in the kit at once.",
+     "how": "Lower it for a dry, tight kit; raise it for long kicks and open cymbals."
+    }
+   },
+   "NOISE": {
+    "es": {
+     "what": "El ruido de todos los sonidos del kit a la vez: más chasquido y soplido.",
+     "how": "Subilo para cajas y platos más ásperos; bajalo para un kit más tonal y limpio."
+    },
+    "en": {
+     "what": "The noise of every kit sound at once: more crack and hiss.",
+     "how": "Raise it for rougher snares and cymbals; lower it for a cleaner, more tonal kit."
+    }
+   },
+   "BODY": {
+    "es": {
+     "what": "La resonancia del parche en todo el kit: los tambores suenan con más cuerpo.",
+     "how": "Bajo, golpes secos y cortos; alto, toms y bombos que resuenan como un parche real."
+    },
+    "en": {
+     "what": "The drumhead resonance across the whole kit: the drums sound with more body.",
+     "how": "Low for dry, short hits; high for toms and kicks that ring like a real head."
+    }
+   },
+   "DRIVE": {
+    "es": {
+     "what": "La saturación de todo el kit.",
+     "how": "Un poco pega la batería; mucho la rompe, ideal para techno industrial o lo-fi."
+    },
+    "en": {
+     "what": "Drive across the whole kit.",
+     "how": "A little glues the drums; a lot breaks them up, great for industrial techno or lo-fi."
+    }
+   }
+  },
+  "WEST": {
+   "MOD": {
+    "es": {
+     "what": "La profundidad de la FM de un segundo seno sobre el núcleo de WEST.",
+     "how": "Subilo para campanas y metales; RATIO elige el intervalo. Pasado 100 también modula la amplitud, como un ring."
+    },
+    "en": {
+     "what": "The depth of FM from a second sine onto WEST's core.",
+     "how": "Raise it for bells and metals; RATIO picks the interval. Past 100 it also modulates amplitude, like a ring."
+    }
+   },
+   "RATIO": {
+    "es": {
+     "what": "El intervalo del seno modulador, de 0.5 a 8; los valores con T usan núcleo y plegado triangular, al estilo Serge.",
+     "how": "1 y 2 dan timbres armónicos; 1.41, 2.76 o 5.40, campanas y marimbas. Las T suenan más cristalinas."
+    },
+    "en": {
+     "what": "The modulating sine's interval, 0.5 to 8; values with T use a triangle core and fold, Serge style.",
+     "how": "1 and 2 give harmonic timbres; 1.41, 2.76 or 5.40, bells and marimbas. The T values sound glassier."
+    }
+   },
+   "GATE": {
+    "es": {
+     "what": "Qué hace la compuerta de vactrol: solo filtro (0), filtro y volumen juntos (64, el clásico) o solo volumen (127).",
+     "how": "Hacia 0 el golpe se oscurece más que bajar; hacia 127 solo baja el volumen. El medio da el pluck de la costa oeste."
+    },
+    "en": {
+     "what": "What the vactrol gate does: filter only (0), filter and volume together (64, the classic) or volume only (127).",
+     "how": "Toward 0 the hit darkens more than it fades; toward 127 it only fades. The middle gives the west-coast pluck."
+    }
+   },
+   "DECAY": {
+    "es": {
+     "what": "La memoria del vactrol: cuánto tarda la compuerta en cerrarse después del golpe.",
+     "how": "Corto, un bongó o una marimba; largo, campanas que se oscurecen de a poco. Pasado 80, una nota mantenida se sostiene."
+    },
+    "en": {
+     "what": "The vactrol's memory: how long the gate takes to close after the hit.",
+     "how": "Short for a bongo or marimba; long for bells that darken slowly. Past 80 a held note sustains."
+    }
+   },
+   "RES": {
+    "es": {
+     "what": "La resonancia del filtro de la compuerta de WEST.",
+     "how": "Un poco le da el toc del bongó, un golpe que baja de tono; al máximo, plucks que suenan como gotas."
+    },
+    "en": {
+     "what": "The resonance of WEST's gate filter.",
+     "how": "A little gives the bongo's knock, a hit that falls in pitch; at maximum, plucks that sound like drops."
+    }
+   }
+  },
+  "FM6": {
+   "FEEDBK": {
+    "es": {
+     "what": "Se suma a la realimentación del patch: un operador que se modula a sí mismo.",
+     "how": "Positivo agrega aspereza, hasta ruido; útil para metales, ruidos y bajos sucios."
+    },
+    "en": {
+     "what": "Added to the patch's feedback: an operator modulating itself.",
+     "how": "Positive adds roughness, all the way to noise; useful for metals, noises and dirty basses."
+    }
+   },
+   "MOD": {
+    "es": {
+     "what": "El nivel de todos los moduladores: el brillo del patch, de −36 a +36 dB.",
+     "how": "Negativo lo suaviza hacia un seno; positivo lo vuelve brillante y agresivo. Es como el filtro de FM6."
+    },
+    "en": {
+     "what": "The level of every modulator: the patch's brightness, from −36 to +36 dB.",
+     "how": "Negative softens it toward a sine; positive makes it bright and aggressive. It works like FM6's filter."
+    }
+   },
+   "RATIO": {
+    "es": {
+     "what": "Se suma a la relación gruesa de los moduladores: cambia los armónicos del patch.",
+     "how": "Pasos chicos cambian el carácter por completo; probalo en un bajo o una campana y quedate con el que cante."
+    },
+    "en": {
+     "what": "Added to the modulators' coarse ratio: changes the patch's harmonics.",
+     "how": "Small steps change the character completely; try it on a bass or bell and keep the one that sings."
+    }
+   },
+   "SLOT": {
+    "es": {
+     "what": "Elige el patch: F1–F8 de fábrica, OWN el de la pista, o B1–B32 del banco enviado desde el editor.",
+     "how": "Recorrelos para encontrar una base; al volver a OWN recuperás tu patch editado."
+    },
+    "en": {
+     "what": "Picks the patch: factory F1–F8, OWN the track's own, or B1–B32 from the bank sent from the editor.",
+     "how": "Browse them to find a starting point; going back to OWN brings back your edited patch."
+    }
+   }
+  },
+  "ADD": {
+   "MODE": {
+    "es": {
+     "what": "Elige el espectro: HARM, ODD, WIDE, BELL, BAR, DRUM, PRIME, FIFTH, SUB o PLATE.",
+     "how": "HARM y ODD para tonos de órgano y clarinete; BELL, BAR y PLATE para campanas y metales."
+    },
+    "en": {
+     "what": "Picks the spectrum: HARM, ODD, WIDE, BELL, BAR, DRUM, PRIME, FIFTH, SUB or PLATE.",
+     "how": "HARM and ODD for organ and clarinet tones; BELL, BAR and PLATE for bells and metals."
+    }
+   },
+   "MORPH": {
+    "es": {
+     "what": "Pasa del espectro elegido en MODE al siguiente.",
+     "how": "Movelo con un LFO lento o la ENV para un sonido que cambia de color mientras suena."
+    },
+    "en": {
+     "what": "Slides from the spectrum chosen in MODE into the next one.",
+     "how": "Move it with a slow LFO or the ENV for a sound that changes colour as it plays."
+    }
+   },
+   "BRIGHT": {
+    "es": {
+     "what": "Cuánto pesan los parciales agudos del espectro.",
+     "how": "Bajalo para sonidos redondos tipo flauta; subilo para un espectro brillante. PARTIAL limita cuántos suenan."
+    },
+    "en": {
+     "what": "How much weight the upper partials of the spectrum carry.",
+     "how": "Lower it for round, flute-like sounds; raise it for a bright spectrum. PARTIAL limits how many sound."
+    }
+   },
+   "SHIFT": {
+    "es": {
+     "what": "Estira los parciales: de armónicos prolijos a timbres inarmónicos de campana.",
+     "how": "En 0 suena armónico; movelo un poco para metales y campanas, mucho para sonidos raros."
+    },
+    "en": {
+     "what": "Stretches the partials: from tidy harmonics to inharmonic, bell-like timbres.",
+     "how": "At 0 it's harmonic; move it a little for metals and bells, a lot for strange sounds."
+    }
+   },
+   "DECAY": {
+    "es": {
+     "what": "Hace que los parciales agudos se apaguen antes que los graves.",
+     "how": "En 127 todo dura igual; bajalo para golpes que se vuelven redondos al morir, como una campana o un piano."
+    },
+    "en": {
+     "what": "Makes the upper partials die away before the lower ones.",
+     "how": "At 127 everything lasts the same; lower it for hits that turn round as they fade, like a bell or piano."
+    }
+   },
+   "MOTION": {
+    "es": {
+     "what": "Barre el espectro solo: los parciales se mueven en el tiempo.",
+     "how": "En 0 queda quieto; hacia un lado o el otro el espectro se mueve, para pads que nunca suenan igual."
+    },
+    "en": {
+     "what": "Sweeps the spectrum by itself: the partials move over time.",
+     "how": "At 0 it stays still; either way the spectrum moves, for pads that never sound the same."
+    }
+   }
+  },
+  "VOICE": {
+   "SHIFT": {
+    "es": {
+     "what": "Mueve todos los formantes de VOICE: una voz más grande o más chica, sin cambiar la nota.",
+     "how": "Negativo, una voz grave y enorme; positivo, una voz chiquita, de dibujo animado."
+    },
+    "en": {
+     "what": "Moves all of VOICE's formants: a bigger or smaller voice, without changing the note.",
+     "how": "Negative for a huge, deep voice; positive for a tiny cartoon voice."
+    }
+   }
+  },
+  "ANIMAL": {
+   "MODE": {
+    "es": {
+     "what": "Elige la fuente del animal: CMOS, PULSE (grillos, ranas), WHSTL (pájaros), WING (insectos) o GLOTT (lobos, perros).",
+     "how": "Empezá por la fuente y después ajustá SIZE: el mismo modo pasa de pájaro chico a bicho grande."
+    },
+    "en": {
+     "what": "Picks the creature's source: CMOS, PULSE (crickets, frogs), WHSTL (birds), WING (insects) or GLOTT (wolves, dogs).",
+     "how": "Start with the source, then adjust SIZE: the same mode goes from a small bird to a big beast."
+    }
+   },
+   "SIZE": {
+    "es": {
+     "what": "El tamaño del animal: más chico, más agudo y ágil; más grande, más grave.",
+     "how": "Movelo para metamorfosear la criatura; con la secuencia, una bandada de tamaños distintos."
+    },
+    "en": {
+     "what": "The creature's size: smaller is higher and nimbler; bigger is deeper.",
+     "how": "Move it to morph the creature; with the sequence, a flock of different sizes."
+    }
+   },
+   "RATE": {
+    "es": {
+     "what": "La tasa de sílabas del canto: cuántas por segundo.",
+     "how": "Lento para llamados espaciados; rápido para trinos e insectos. TEMP también la acelera."
+    },
+    "en": {
+     "what": "The call's syllable rate: how many per second.",
+     "how": "Slow for spaced calls; fast for trills and insects. TEMP speeds it up too."
+    }
+   }
+  },
+  "EXT": {
+   "MODE": {
+    "es": {
+     "what": "THRU deja sonar la entrada todo el tiempo; KEYS solo mientras tocás teclas o pasos, con la envolvente de la nota.",
+     "how": "KEYS con la secuencia corta la señal a tempo, como un trance gate; THRU para procesar algo que suena siempre."
+    },
+    "en": {
+     "what": "THRU lets the input sound all the time; KEYS only while you play keys or steps, at the note's envelope.",
+     "how": "KEYS with the sequence chops the signal in time, like a trance gate; THRU to process something that always plays."
+    }
+   },
+   "GATE": {
+    "es": {
+     "what": "Una compuerta de ruido: por debajo de su nivel, la entrada se cierra.",
+     "how": "Subilo hasta que el ruido de fondo desaparezca entre frases; demasiado alto corta las partes suaves."
+    },
+    "en": {
+     "what": "A noise gate: below its level, the input closes.",
+     "how": "Raise it until the background noise disappears between phrases; too high cuts the quiet parts."
+    }
+   },
+   "RATE": {
+    "es": {
+     "what": "Baja la frecuencia de muestreo de la entrada: retiene muestras y la vuelve lo-fi.",
+     "how": "En 0 queda limpia; subilo para un aliasing áspero y metálico. Combinalo con BITS."
+    },
+    "en": {
+     "what": "Lowers the input's sample rate: holds samples and makes it lo-fi.",
+     "how": "At 0 it stays clean; raise it for harsh, metallic aliasing. Combine it with BITS."
+    }
+   }
+  }
+ }
+}

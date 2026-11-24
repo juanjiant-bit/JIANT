@@ -144,6 +144,18 @@ try {
     ok(tiles > 50 && /^#learn\/engines\//.test(pg.hash) && pg.name && pg.how >= 3 && f1 !== f2 && dn.name === "WAVE" && /BYTE/.test(dn.title),
       `how it works: ${tiles} elements in the index, "${pg.name}" at ${pg.hash} (moving), a link opens JIANT BYTE's ${dn.name}`);
   }
+  /* how it works, live: the simulated FM-1 followed (WATCH); a knob turned (its CHANGED pushes) is named by DESC, its
+     value shown, explained by the glossary and linked to the guide; a sound change told */
+  {
+    const v = await page("?mock=1#learn/live", { width: 1280, height: 900 });
+    await v.waitForTimeout(1200);
+    await v.click("#lvgo"); await v.waitForTimeout(2000);
+    const a = await v.evaluate(() => ({ t: lvtitle.textContent, v: lvvaltext.textContent, what: lvwhat.textContent, more: !lvmore.hidden }));
+    await v.waitForTimeout(3200);
+    const log = await v.$$eval("#lvlog li", (x) => x.map((e) => e.textContent));
+    ok(a.t === "CUT" && /^\d+$/.test(a.v) && a.what.length > 20 && !/parameter of this page|parámetro de esta/.test(a.what) && a.more && log.some((l) => /preset/.test(l)),
+      `live: the FM-1 followed: ${a.t} = ${a.v}, "${a.what.slice(0, 50)}…", the guide linked, ${log.length} events (a sound change among them)`);
+  }
   /* the manuals: JIANT FM's (the interactive manual opens here), JIANT BYTE's (what its site lacks says so) */
   {
     const m = await page("#docs", { width: 1280, height: 900 });
