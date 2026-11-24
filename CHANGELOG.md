@@ -6,6 +6,7 @@ Custom firmware for the M-VAVE FM-1 by Juan Jiant. Newest version first.
 
 | Version | Date | Status |
 | --- | --- | --- |
+| V10.8.22 … V10.8.35 | 2026-11-23 … 11-24 | Beta |
 | **V10.8.21** | 2026-11-23 | **Public** |
 | V10.8.1 … V10.8.20 | 2026-11-21 … 11-23 | Beta |
 | **V10.7.81** | 2026-11-21 | **Public** |
@@ -41,6 +42,54 @@ The sections marked **Compatibility notes** are the ones to check before you ins
 > 31 October 2026 are much older builds with the same names; they are covered under "Older versions" at the end.
 
 ---
+
+## V10.8.35 — MUTATE and LIVE back, compact (2026-11-24, beta)
+
+- **SEQ › MUTATE** is back with one knob, **EVERY** (OFF, 1, 2, 4, 8 bars): EUCLID's pattern mutates from the anchor, as far as VARY says. On EUCLID or MUTATE, **OCT+** mutates now and **OCT−** goes back to the anchor; on MODES, OCT+ / OCT− are still a new variation / the one before.
+- **LIVE** is back on the **black keys 1–9 of SEQ › STEP FX**, on the selected track: RATE x2, x3/2, x2/3, REVERSE, PING-PONG, RANDOM and THIN held (in on the 1/16; let go, the track is back in phase), GIRO − / + pressed.
+- **EUCLID**: on a melodic track KNOB 4 is **ROLE** (MELODY, CHORDS, BASS, ARP) and the MODES page is named **MELODY**, with VARY. The picture is one ring of dots.
+- **Removed for room**: the filter types **MS20** and **LP24** (a sound that used them opens with LP; the generator's EBM bass uses a resonant LP) and the **ENV › STAGE** page (LOOP and the destinations were on ENV DEST already).
+
+## V10.8.34 — the song generator, stage 1 (2026-11-24, beta)
+
+- Twelve more progressions (two a harmony family), the contrast section with a progression of its own and each section a register of its own.
+- The lead's motif with a signature leap (a fifth or a sixth), four more syncopated cells, more call and response (the answers above the call) and a dialogue: the arp silent where the lead speaks, answering in its gaps.
+
+## V10.8.33 — the FM-1 tells JIANT Studio which page you are on (2026-11-24, beta)
+
+- The editor gets the section, the page and the layer the screen shows (push 43): JIANT Studio's live guide follows them.
+- FX › PUNCH IN no longer draws the lane (the lane stays: REC and the generator use it).
+
+## V10.8.32 — DRUM-X: the MATH formulas as modulators, clean (2026-11-24, beta)
+
+- The MATH formulas used as FM modulators in DRUM-X no longer sound broken or stepped.
+
+## V10.8.31 — DRONE CLAY: the keys (2026-11-24, beta)
+
+- With CLAY ON, the white keys strike a gesture on the MOD picked (OCT picks the group: 0 hits, +1 tables, +2 gestures, −1 notes, −2 FM) and the last seven keys pick the drone's degree on the scale. On a DRUM track the whites are the pads.
+- CLAY TIME › **RUN**: SONG, FREE, **SONG NOKEY**, **FREE NOKEY** (with NOKEY the keys play notes as usual).
+
+## V10.8.30 — DRONE CLAY: AMOUNT 0 strikes nothing (2026-11-24, beta)
+
+- A modulator at AMOUNT 0 no longer strikes or re-strikes the drone; at RATE HOLD the drone is never struck again.
+
+## V10.8.29 — DRONE CLAY: the modulators' bars (2026-11-24, beta)
+
+- Under the scope, a thin bar a modulator shows what it adds now; the bar of the MOD the knobs edit in the track's colour.
+
+## V10.8.28 — WEST: a new DUST, and METAL (2026-11-24, beta)
+
+- **DUST 1–95**: white noise into the folder with the core (it folds and passes the gate with it); from 48 some of it straight to the gate. It no longer crackles. **DUST 96–127: METAL**, a metallic tone tuned to the note.
+- Projects and presets made with the NOISE engine are mapped to WEST again; ten WEST presets revoiced.
+
+## V10.8.27 — DRONE CLAY as JIANT BYTE has it (2026-11-24, beta)
+
+- Each modulator its own **RATE** (1/64 … 4BAR, dotted, triplets and polyrhythms), **PITCH** −24 … +36, the hits a drum on any engine, and four pages: DRONE CLAY, CLAY MOD, CLAY RHYTHM, CLAY TIME.
+- The PUNCH LANE page is gone (the punch-in lane stays).
+
+## V10.8.26 — the screen mirror, smoother (2026-11-24, beta)
+
+- The screen mirror sends only the rows that changed.
 
 ## V10.8.25 — the emulator as an input in JIANT Studio (2026-11-24)
 

@@ -6,6 +6,7 @@ Firmware personalizado para el M-VAVE FM-1, de Juan Jiant. Primero la versión m
 
 | Versión | Fecha | Estado |
 | --- | --- | --- |
+| V10.8.22 … V10.8.35 | 2026-11-23 … 11-24 | Beta |
 | **V10.8.21** | 2026-11-23 | **Pública** |
 | V10.8.1 … V10.8.20 | 2026-11-21 … 11-23 | Beta |
 | **V10.7.81** | 2026-11-21 | **Pública** |
@@ -42,6 +43,54 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 > al final.
 
 ---
+
+## V10.8.35 — MUTATE y LIVE de vuelta, compactos (2026-11-24, beta)
+
+- **SEQ › MUTATE** volvió con una sola perilla, **EVERY** (OFF, 1, 2, 4, 8 compases): el patrón de EUCLID muta desde el ancla, tanto como diga VARY. En EUCLID o MUTATE, **OCT+** muta ahora y **OCT−** vuelve al ancla; en MODES, OCT+ / OCT− siguen siendo variación nueva / la de antes.
+- **LIVE** volvió en las **teclas negras 1–9 de SEQ › STEP FX**, sobre la pista elegida: RATE x2, x3/2, x2/3, REVERSE, PING-PONG, RANDOM y THIN mantenidas (entran en el 1/16; al soltar, la pista vuelve en fase), GIRO − / + con un toque.
+- **EUCLID**: en una pista melódica la KNOB 4 es **ROLE** (MELODY, CHORDS, BASS, ARP) y la página MODES se llama **MELODY**, con VARY. El dibujo es un solo anillo de puntos.
+- **Quitado para hacer lugar**: los tipos de filtro **MS20** y **LP24** (un sonido que los usaba abre con LP; el bajo EBM del generador usa un LP con resonancia) y la página **ENV › STAGE** (LOOP y los destinos ya estaban en ENV DEST).
+
+## V10.8.34 — el generador de temas, etapa 1 (2026-11-24, beta)
+
+- Doce progresiones más (dos por familia de armonía), la sección de contraste con su propia progresión y cada sección con su propio registro.
+- El motivo del lead con un salto característico (una quinta o una sexta), cuatro células sincopadas más, más pregunta y respuesta (las respuestas arriba de la pregunta) y un diálogo: el arpegio calla donde habla el lead y contesta en sus huecos.
+
+## V10.8.33 — el FM-1 le dice a JIANT Studio en qué página estás (2026-11-24, beta)
+
+- El editor recibe la sección, la página y la capa que muestra la pantalla (push 43): la guía en vivo de JIANT Studio las sigue.
+- FX › PUNCH IN ya no dibuja el carril (el carril sigue: lo usan REC y el generador).
+
+## V10.8.32 — DRUM-X: las fórmulas MATH como moduladores, limpias (2026-11-24, beta)
+
+- Las fórmulas MATH usadas como moduladores de FM en DRUM-X ya no suenan rotas ni con escalones.
+
+## V10.8.31 — DRONE CLAY: las teclas (2026-11-24, beta)
+
+- Con CLAY ON, las teclas blancas golpean un gesto sobre el MOD elegido (OCT elige el grupo: 0 golpes, +1 tablas, +2 gestos, −1 notas, −2 FM) y las últimas siete teclas eligen el grado del drone en la escala. En una pista DRUM las blancas son los pads.
+- CLAY TIME › **RUN**: SONG, FREE, **SONG NOKEY**, **FREE NOKEY** (con NOKEY las teclas tocan notas como siempre).
+
+## V10.8.30 — DRONE CLAY: AMOUNT 0 no golpea (2026-11-24, beta)
+
+- Un modulador con AMOUNT 0 ya no golpea ni vuelve a atacar el drone; con RATE HOLD el drone nunca se vuelve a atacar.
+
+## V10.8.29 — DRONE CLAY: las barras de los moduladores (2026-11-24, beta)
+
+- Debajo del osciloscopio, una barra fina por modulador muestra lo que suma ahora; la del MOD que editan las perillas, en el color de la pista.
+
+## V10.8.28 — WEST: DUST nuevo y METAL (2026-11-24, beta)
+
+- **DUST 1–95**: ruido blanco que entra al plegador con el núcleo (se pliega y pasa la compuerta con él); desde 48, una parte directo a la compuerta. Ya no crepita. **DUST 96–127: METAL**, un tono metálico afinado a la nota.
+- Los proyectos y presets hechos con el motor NOISE vuelven a mapearse a WEST; diez presets de WEST revoiceados.
+
+## V10.8.27 — DRONE CLAY como en JIANT BYTE (2026-11-24, beta)
+
+- Cada modulador con su propio **RATE** (1/64 … 4BAR, con puntillo, tresillos y polirritmos), **PITCH** −24 … +36, los golpes una batería en cualquier motor, y cuatro páginas: DRONE CLAY, CLAY MOD, CLAY RHYTHM, CLAY TIME.
+- Se fue la página PUNCH LANE (el carril de punch-in sigue).
+
+## V10.8.26 — el espejo de pantalla, más fluido (2026-11-24, beta)
+
+- El espejo de pantalla manda solo las filas que cambiaron.
 
 ## V10.8.25 — el emulador como entrada en JIANT Studio (2026-11-24)
 
