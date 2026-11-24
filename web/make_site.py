@@ -171,6 +171,8 @@ def main(pkg, version, out, prev=None):
         if e["file"] in allowed:
             shutil.copy(src, fw / e["file"])
     (fw / "versions.json").write_text(json.dumps(versions, indent=1) + "\n", encoding="utf-8")
+    if (HERE / "VERSION_NOTES.json").exists():      # what each version has and has not (the installer's window)
+        shutil.copy(HERE / "VERSION_NOTES.json", fw / "VERSION_NOTES.json")
     lic = HERE.parent / "LICENSES"                  # the package holds JieLi SDK files (Apache-2.0): their
     (fw / "LICENSES").mkdir(exist_ok=True)          # licence travels next to it, with Felucca's own
     names = sorted(f.name for f in lic.glob("*.txt"))
