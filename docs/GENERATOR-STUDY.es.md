@@ -788,3 +788,28 @@ cc ... -o build/host/gen_audit tests/gen_audit.c -lm && build/host/gen_audit 16 
 cc -O2 ... -o build/host/gen_stems tests/gen_stems.c -lm && build/host/gen_stems 4 # niveles por rol
 build/host/gen_dump GÉNERO SEMILLA ENERGÍA FORMA                                   # una pieza como partitura
 ```
+
+## 10. V10.8.36: etapas 7, 2 y 3 (aplicadas)
+
+Mismas herramientas, mismas semillas. Nada fue juzgado de oído: la mezcla la tenés que validar vos en la beta.
+
+**Etapa 2, mezcla y envíos** (tabla `GMIX` y `gen_mix`):
+
+| Género | Rol | Antes (dB bajo la batería) | Después |
+|---|---|---|---|
+| Reggaeton | lead | −19,1 | −14,4 |
+| Dream pop | lead | −22,8 | −18,4 |
+| Dubstep | lead | −17,2 | −15,8 |
+| Dubstep | arp | −28,9 | −23,2 |
+| Hard bass | arp | −22,2 | −16,8 |
+| Cumbia | arp | −20,8 | −16,5 |
+| Electro metal | arp | −20,8 | −16,5 |
+| Metalcore | arp | −20,2 | −15,7 |
+
+- El lead elige: si tenía reverb y delay altos a la vez, se le baja a la mitad uno de los dos (el reverb en los ganchos y riffs, el delay en las líneas largas).
+- En los géneros de club: el reverb de los stabs a la mitad (house: 55 → 27), el release del arp corto (house: 31 → 20) y el DUCK del bombo sobre el resto de 14–30 a 30–50.
+- No cambió: EBM (su lead ya estaba al tope del nivel: 125 de 127; para subirlo hay que tocar el sonido), dembow y baile funk (arp al tope), y la textura (apagarla en cumbia y jazz cambiaba los sonidos de las demás pistas, así que quedó como estaba).
+
+**Etapa 3, sonido** (parcial): el arp de club como pluck, el stab seco, y un color propio por pieza: las tres partes melódicas juntas un poco más oscuras, como estaban, o un poco más brillantes (corte al 79, 85 o 91 %), según la tonalidad y la cantidad de acordes. Falta: afinación del bombo respecto de la tónica y recetas de ADSR por género.
+
+**Etapa 7, EXPLORE:** toma el diálogo lead/arp (2,5 → 7,5 % de los medios compases) y la progresión propia de la sección de contraste también cuando la pieza tiene un solo acorde. La medida de secciones con otros acordes no se movió (36,1 %).
