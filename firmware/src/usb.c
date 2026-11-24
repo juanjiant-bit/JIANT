@@ -284,9 +284,12 @@ static int midi_enqueue(uint32_t pkt, uint32_t source)
 #include "../bt/bt_midi.h"
 struct bt_oq bt_oq;                                     /* (V10.13) MIDI OUT over Bluetooth too (bt_seg.c takes it) */
 #endif
+#ifndef USB_MIDI_TAP
+#define USB_MIDI_TAP 0
+#endif
 static void midi_out_event_at(uint32_t pkt, uint32_t due)   /* from the audio ISR; due: fm1_ticks() it goes at, 0 now */
 {
-    if (usb.config && mo_w - mo_r < MQ) {
+    if ((usb.config || USB_MIDI_TAP) && mo_w - mo_r < MQ) {
         midi_out_q[mo_w % MQ] = pkt;
         midi_out_due[mo_w % MQ] = due;
         RING_PUBLISH();
