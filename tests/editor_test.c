@@ -70,6 +70,11 @@ static int st_prog(uint32_t off, const void *p, uint32_t n) { (void)off; (void)p
 static int st_erase(uint32_t off) { (void)off; return -1; }
 #include "../firmware/src/storage.c"
 #include "../firmware/src/editor.c"
+/* (V10.8.33) the UI push (43) names the page through ui_lens.c, which asks these (gen_track.c, ui_name.c, gen.c: not
+ * in this harness): the plain answers */
+static int trackgen_ok(const track_t *t) { (void)t; return 0; }
+static int name_on(void) { return 0; }
+static uint32_t gen_page(void) { return 0; }
 /* (V10.40) editor.c calls ui_input.c's excite_turn (a WAVE / EXCITE whose knobs change meaning); ui_input.c is not
  * part of this test: the knob's value is what the protocol tests check, not the panel's follow-up */
 #ifndef EDITOR_TEST_NO_MAIN                              /* (V10.7.2: the files built on this one stub it themselves) */

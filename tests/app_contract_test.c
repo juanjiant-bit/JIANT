@@ -489,6 +489,34 @@ static void pushes_10(void)
 }
 
 /* ------------------------------------------------------------------ NRPN (midi_control.c, seq.c) */
+/* (V10.8.33) UI (43), WATCH bit 5: section, the page as shown (0-terminated), the layer; once on asking, then on a change */
+static void push_ui(void)
+{
+    const uint8_t *r;
+    uint32_t n;
+    reset();
+    ui.home = 1; ui.layer = 0; ui.menu = 0;
+    APP(C_WATCH, 3 | 32);
+    r = frame(C_WATCH, &n);
+    ok("WATCH 35 -> 35 (bit 5: UI)", r && r[0] == 35);
+    pump();
+    r = frame(43, &n);
+    ok("UI (43) once on asking: section 0 HOME, a page name, layer 0",
+       r && frames(43) == 1u && r[0] == 0 && n >= 3u && r[1] >= 32u && r[n - 2u] == 0 && r[n - 1u] == 0);
+    pump();
+    ok("UI: nothing more while nothing changes", frames(43) == 0u);
+    ui.home = 0; ui.page = (uint8_t)page_first(FAM_FX);
+    pump();
+    r = frame(43, &n);
+    ok("UI: a new page -> one frame, section 3 FX", r && frames(43) == 1u && r[0] == 3);
+    ui.layer = LAYER_GLO;
+    pump();
+    r = frame(43, &n);
+    ok("UI: a layer held -> its index (2 GLO) last", r && r[n - 1u] == 2);
+    APP(C_WATCH, 0);
+    ui.layer = 0; ui.home = 1;
+}
+
 static void cc_in(uint32_t ch, uint32_t cc, uint32_t v)
 {
     midi_in_event(0x0Bu | (0xB0u | ch) << 8 | cc << 16 | v << 24);
@@ -786,6 +814,7 @@ int main(int argc, char **argv)
     backup();
     pushes();
     pushes_10();
+    push_ui();
     nrpn();
     nrpn_doc();
     ok("docs/NRPN.md is the table params.c gives (else: app-contract --write-nrpn)", file_is("docs/NRPN.md"));

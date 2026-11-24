@@ -224,49 +224,6 @@ static void fxg_master(int32_t x, int32_t y, int32_t w, int32_t h)
             cv_rect(x, cy + ch - duck_g1 * ch / 32767, w, 1, T_TEXT);
     }
 }
-static void fxg_punch(int32_t x, int32_t y, int32_t w, int32_t h)
-{
-    static const uint8_t RES[3] = {8, 16, 32};
-    int32_t steps = song.g[G_PFXLEN] * RES[clamp(song.g[G_PFXRES], 0, 2)] / 8, i, cw;
-    char b[32];
-    if (steps > 64) steps = 64;
-    if (steps < 1) steps = 1;
-    if (w > 120) {                                      /* (V10.43) the page: 16 a row, the empty steps as boxes, an open one
-                                                         * its punch's colour, the playhead framed (a lane never shown
-                                                         * empty before: an empty lane drew nothing) */
-        int32_t ch = (h - 22) / 4, cw2 = w / 16;
-        for (i = 0; i < steps; i++) {
-            uint32_t v = pfx_lane_at((uint32_t)i);
-            int32_t cx = x + i % 16 * cw2, cy = y + 20 + i / 16 * ch;
-            cv_rect(cx, cy, cw2 - 2, ch - 3, v ? FXG_H(48 + v * 13) : (i & 3) ? T_RAISE : T_LINE);
-            if (song.playing && (uint32_t)i == pfx_lane_pos())
-                cv_frame(cx - 1, cy - 1, cw2, ch - 1, T_TEXT);
-        }
-    } else {
-    cw = w / steps;
-    if (cw < 1) cw = 1;
-    for (i = 0; i < steps && i * cw < w; i++) {
-        int on = pfx_lane_at((uint32_t)i) != 0u, at = song.playing && (uint32_t)i == pfx_lane_pos();   /* (the playhead) */
-        if (on || at)                                   /* (0.8.9, the skins' mock-up: the open steps as lines, an empty one a
-                                                         * tick at the foot) */
-            cv_rect(x + i * cw, y + (w > 120 ? 20 : 14), cw > 2 ? cw - 1 : 1, h - (w > 120 ? 26 : 20), at ? T_TEXT : FXG_H(179));
-        else
-            cv_rect(x + i * cw, y + h - 7, cw > 2 ? cw - 1 : 1, 1, T_LINE);
-    }
-    }
-    str_cpy(b, "LANE ", sizeof b);
-    fmt_int(b + 5, song.g[G_PFXLEN]);
-    str_cpy(b + str_len(b), " ST", 4);
-    if (w > 120) {
-        str_cpy(b + str_len(b), " \xB7 ", 4);
-        str_cpy(b + str_len(b), N_PFXRES[clamp(song.g[G_PFXRES], 0, 2)], 6);
-        if (pfx_rec_ok()) str_cpy(b + str_len(b), " \xB7 REC", 7);
-    }
-    if (w > 120)                                        /* (snd2: the page's letters large, AF_M; the tile's as before) */
-        cv_text(x, y, &AF_M, b, T_MID);
-    else
-        fxg_label(x, y, b, T_MID, 0);
-}
 static void fxg_slpitch(int32_t x, int32_t y, int32_t w, int32_t h)
 {
     int32_t i, cw = w / 16, mid = y + 10 + (h - 10) / 2, len = clamp(song.g[G_SLPLEN], 1, 16);
@@ -357,7 +314,7 @@ static void fxg_mod(uint32_t m, int32_t x, int32_t y, int32_t w, int32_t h)
     case 1: fxg_reverb(x, y, w, h); break;
     case 2: fxg_chorus(x, y, w, h); break;
     case 3: if (cur_page()->graph == GR_SLPIT && w > 120) fxg_slpitch(x, y, w, h); else fxg_slicer(x, y, w, h); break;
-    case 4: fxg_punch(x, y, w, h); break;
+    case 4: break;                                     /* (V10.8.33: PUNCH IN's lane picture gone, the owner: its room) */
     default:
         if (w > 120 && cur_page()->id[0] == ID_EQ0 && bt_hw_seg()) tech_eq(x, y, w, h);   /* (V10.44) EQ: its curve */
         else fxg_master(x, y, w, h);

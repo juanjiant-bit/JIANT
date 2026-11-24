@@ -19,7 +19,7 @@ enum { ED_INFO = 1, ED_GET, ED_SET, ED_DUMP, ED_DESC, ED_STEP_GET, ED_STEP_SET, 
        ED_TRACK_PARAM, ED_TRACK_CHANGED, ED_SONG,
        ED_UI_STATE, ED_UI_SET, ED_UI_PALETTES, ED_FAV_GET, ED_FAV_SET,
        ED_LYRIC,                                                                /* (JIANT 0.8.5) VOICE's lyric */
-       ED_TRANSPORT, ED_PUNCH, ED_MUTATE,                                       /* (1.0) pushes: WATCH bits 2..4 */
+       ED_TRANSPORT, ED_PUNCH, ED_MUTATE, ED_UI,                                /* (1.0) pushes: WATCH bits 2..5 (UI V10.8.33) */
        ED_MOTION = 64, ED_BACKUP_LIST, ED_BACKUP_GET, ED_BACKUP_PUT };                              /* v6: song chain */
 /* (V10.6z3) the protocol's version, INFO's tag 43 02 major minor: 1.0 the stability contract (web/EDITOR_PROTOCOL.md
  * "Stability contract"): from it on only additive changes; a minor for each addition, a major never (a break) */
@@ -116,7 +116,8 @@ static const uint8_t ED_TIDS[3] = {P_LEVEL, P_PAN, P_MUTE};
 static struct {
     uint8_t on, eng, preset, sel;
     uint8_t v4;                                          /* WATCH bit 1: TRACK_CHANGED pushes too */
-    uint8_t ext;                                         /* (1.0) WATCH bits 2..4: TRANSPORT, PUNCH, MUTATE pushes */
+    uint8_t ext;                                         /* (1.0) WATCH bits 2..5: TRANSPORT, PUNCH, MUTATE, UI pushes */
+    uint16_t uih;                                        /* (V10.8.33) UI: the section, layer and page last said (a hash) */
     uint8_t tp_play, tp_beat, ptgt;                      /* .. what they last said */
     uint32_t punch;
     uint8_t mut[NTRK];
@@ -215,6 +216,25 @@ static __attribute__((noinline)) int ed_perf(uint32_t *n)
         ed_b(pfx_tgt);
         ed_send();
         (*n)++;
+    }
+    if (ed_w.ext & 8u) {                                 /* (V10.8.33) UI (43): section, the page as shown, the layer */
+        const char *pg = lz_on() && lz_fam() == LZ_MENU ? "MENU" : nav_page_name();
+        uint32_t sec = nav_sec(), h = sec * 31u + ui.layer;
+        for (i = 0; pg[i] && i < 16u; i++)
+            h = h * 33u + (uint8_t)pg[i];
+        if ((uint16_t)h != ed_w.uih) {
+            if (!ed_room())
+                return 0;
+            ed_w.uih = (uint16_t)h;
+            ed_begin(ED_UI);
+            ed_b(sec);
+            for (i = 0; pg[i] && i < 16u; i++)
+                ed_b((uint8_t)pg[i] < 32u || (uint8_t)pg[i] > 126u ? 32u : (uint8_t)pg[i]);
+            ed_b(0);
+            ed_b(ui.layer);
+            ed_send();
+            (*n)++;
+        }
     }
     for (i = 0; (ed_w.ext & 4u) && i < NTRK; i++)
         if (mut_n[i] != ed_w.mut[i]) {
@@ -742,11 +762,12 @@ static void ed_handle(const uint8_t *f, uint32_t n)   /* f: the bytes between F0
         keep = ed_w.on && ed_w.resets == usb.resets && (a[0] & 1u);   /* already watching: the changes not yet */
         ed_w.on = a[0] & 1u;                                          /* pushed stay pending (INFO 53 01 bit 0) */
         ed_w.v4 = (uint8_t)(ed_w.on && (a[0] & 2u));     /* v4: also TRACK_CHANGED; the reply says it is known */
-        i = ed_w.on ? (a[0] >> 2) & 7u : 0u;             /* (1.0) bits 2..4: TRANSPORT, PUNCH, MUTATE */
+        i = ed_w.on ? (a[0] >> 2) & 15u : 0u;            /* (1.0) bits 2..5: TRANSPORT, PUNCH, MUTATE, UI */
         if (i & ~(keep ? ed_w.ext : 0u)) {               /* newly asked for: the state as it is goes out first; MUTATEs
                                                           * from now on */
             ed_w.tp_play = ed_w.ptgt = 0xFF;
             ed_w.punch = ~0u;
+            ed_w.uih ^= 0x5A5Au;                         /* (UI: the page as it is goes out) */
             memcpy(ed_w.mut, mut_n, sizeof ed_w.mut);
         }
         ed_w.ext = (uint8_t)i;

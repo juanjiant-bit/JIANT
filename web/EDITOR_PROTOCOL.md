@@ -186,6 +186,20 @@ sends the state as it is first (`TRANSPORT`, `PUNCH`; `MUTATE` counts from then 
 - **MUTATE** (42): `track, count`: a EUCLID MUTATE of that track (EVERY's, or OCT+ on the MUTATE page); count is
   the track's MUTATEs since power-on, 7 bits, so a missed frame shows as a jump.
 
+### UI push (43, V10.8.33)
+
+Asked for with `WATCH` bit 5 (JIANT Studio sends `WATCH 63`; the reply says the bits taken). Sent once at once when
+the bit is asked for, then whenever the section, the page or the held layer changes (at most one per main-loop pass,
+the latest state). Payload (the reduced form; JIANT BYTE's 1.4 frame adds `button` and four knob labels after it, a
+client reads them only if present):
+
+- **section** (1 byte): 0 HOME, 1 EDIT, 2 SEQ, 3 FX, 4 GLO, 5 ENV, 6 LFO, 7 SCL, 8 ARP, 9 SAVE (JIANT FM has no other
+  sections; the menu is sent as the page `MENU`).
+- **page** (string, 0-terminated): the page's name as the screen shows it (`FILTER`, `STEP FX`, `ARRANGE`,
+  `DRONE CLAY`...), ASCII 32..126 (other characters as a space), 16 characters at most.
+- **layer** (1 byte): the layer whose map is shown: 0 none, 1 FX, 2 GLO, 3 SCL, 4 EDIT, 5 SEQ, 6 REC, 7 SAVE,
+  8 MACRO (LFO).
+
 ## 1.1: the velocity diagnostic (81)
 
 `VEL` turns the key sensing of the velocity diagnostic on and off and reads what it measured
@@ -368,7 +382,7 @@ at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device 
 | 19 UP_STORE | slot, name | slot, rc. Stores the current sound: engine, parameters, the first 16 sequencer steps as the pattern (TIE steps → flag 4) |
 | 20 UP_LOAD | slot | slot, rc (0 ok, 1 empty/invalid). Applies its sound (not its pattern; the steps stay) |
 | 21 UP_ERASE | slot | slot, rc |
-| 22 WATCH | on (0/1; v4: 3 = also `TRACK_CHANGED`; 1.0: bit 2 `TRANSPORT`, bit 3 `PUNCH`, bit 4 `MUTATE`) | the bits it took: on (bit 0), bit 1 (v4 firmware), bits 2..4 (1.0 firmware; older answers 3 or 1). While on, the device pushes cmds 23, 24, 26 (and 32 with bit 1, 40 / 41 / 42 with bits 2 / 3 / 4) |
+| 22 WATCH | on (0/1; v4: 3 = also `TRACK_CHANGED`; 1.0: bit 2 `TRANSPORT`, bit 3 `PUNCH`, bit 4 `MUTATE`; V10.8.33: bit 5 `UI`) | the bits it took: on (bit 0), bit 1 (v4 firmware), bits 2..4 (1.0 firmware; older answers 3 or 1), bit 5 (V10.8.33 on). While on, the device pushes cmds 23, 24, 26 (and 32 with bit 1, 40 / 41 / 42 / 43 with bits 2 / 3 / 4 / 5) |
 | 23 CHANGED (push) | — | scope, id, v14 |
 | 24 RELOAD (push) | — | engine, preset, then (v3) the selected track |
 | 25 PING | — | 0 |
@@ -391,6 +405,7 @@ at 1..3 and hides 6 5 8: what it sets still plays the right kit, and the device 
 | 40 TRANSPORT (push) | — | playing (0/1), beat of the bar (0..3), bar lo, bar hi (the bars since PLAY, 14 bits): on PLAY / STOP and each beat while playing (only while `WATCH` was sent with bit 2) |
 | 41 PUNCH (push) | — | the effects running, 4 × 7 bits LSB first (the bit numbers in "1.0: performance pushes"), then their tracks (0 ALL, 1 SYN, 2 DRM): on every change (only with `WATCH` bit 3) |
 | 42 MUTATE (push) | — | track, its MUTATE count (7 bits, wrapping): a EUCLID MUTATE of that track (only with `WATCH` bit 4) |
+| 43 UI (push) | — | section, page (string, 0-terminated), layer: what the screen shows (only with `WATCH` bit 5; V10.8.33, "UI push" below) |
 
 | cmd (v7) | Request args | Reply args |
 | --- | --- | --- |
