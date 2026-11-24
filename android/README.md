@@ -7,6 +7,7 @@ driver, the mic through the FM-1 and back). Kept for diagnosing a phone; see [pr
 | | What it is | APK |
 |---|---|---|
 | **JIANT Probe** (`android/probe`, 0.4) | What a phone does with the FM-1 over USB: the channels Android passes, the stream read directly, the round trip. | `jiant-probe.apk` |
+| **FM-1 Rescue** (`android/rescue`, 0.1) | Unbricks a hard-bricked FM-1 with an RP2040 and the phone: programs the RP2040 over OTG, then shows the repair. See [LEEME](rescue/LEEME.md). | artifact `fm1-rescue` |
 
 Download it from the site (<https://juanjiant-bit.github.io/JIANT/app/jiant-probe.apk>, once the change is on `main`)
 or from any branch: the Actions tab → the **android** run → **Artifacts** → `jiant-probe`. Android 10 or later and a

@@ -1,0 +1,9 @@
+// FM-1 Rescue for Android (android/rescue/LEEME.md)
+pluginManagement {
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
+}
+dependencyResolutionManagement {
+    repositories { google(); mavenCentral() }
+}
+rootProject.name = "fm1-rescue"
+include ":app"
