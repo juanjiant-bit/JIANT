@@ -252,7 +252,9 @@ function parseInfo(a) {
   const version = str(), n = a[i]; i += 5;
   const engines = [];
   for (let k = 0; k < n && i < a.length; k++) engines.push(str());
-  return { version, engines, kind: engines.includes("MATH") ? "byte" : "fm", jiant: /^(JIANT|FELUCCA)\b/i.test(version) };
+  /* JIANT BYTE names itself ("JIANT BYTE v0.16"); JIANT FM does not ("JIANT V10.8.24"). (Not by its engines: JIANT FM has
+     MATH too since V10.8.21) */
+  return { version, engines, kind: /\bBYTE\b/i.test(version) ? "byte" : "fm", jiant: /^(JIANT|FELUCCA)\b/i.test(version) };
 }
 const PORT_RE = /felucca|jiant|skiff|fm[ _-]*1|smk[ _-]*37|m[ _-]*vave|cuvave|composite|sinco|usb[ _-]*midi|usb audio/i;
 let access = null;
@@ -286,11 +288,13 @@ async function find() {
         if (!info.jiant) throw new Error("not JIANT");
         letGo();
         /* does it mirror its screen? (78 SCREEN, op 0: firmware before the mirror sends no reply) */
-        let screen = false;
-        try { const a = await link.request(CMD.SCREEN, [0], 500); screen = a[1] === 0; } catch (_) {}
+        let screen = null;                                 // (null: it did not say; Show tries anyway)
+        for (let k = 0; k < 2 && screen === null; k++) {
+          try { const a = await link.request(CMD.SCREEN, [0], 1200); screen = a[1] === 0; } catch (_) {}
+        }
         state.dev = { link, input, output, ...info, screen };
         if (state.fw !== info.kind) setFw(info.kind);
-        state.found = t("found") + `${devName(state.dev)}${MOCK ? " " + t("devMock") : ""}` + (state.dev.screen ? "" : " · " + t("scrNoShort"));
+        state.found = t("found") + `${devName(state.dev)}${MOCK ? " " + t("devMock") : ""}` + (state.dev.screen === false ? " · " + t("scrNoShort") : "");
         return;
       } catch (_) { link.close(); input.onmidimessage = null; }
     }
@@ -437,7 +441,8 @@ function onScreenData(f) {
   if (!scr.on || scr.src !== "fm1") return;
   const box = scrDecode(f.a, scr.fb);
   if (!box) return;
-  scr.bytes += f.a.length + 6; scr.got = true;
+  scr.bytes += f.a.length + 6;
+  if (!scr.got) { scr.got = true; $("scrwait").hidden = true; }   // (the first picture: the waiting line goes)
   const d = scr.dirty;
   scr.dirty = !d ? box : { x: Math.min(d.x, box.x), y: Math.min(d.y, box.y),
     w: Math.max(d.x + d.w, box.x + box.w) - Math.min(d.x, box.x), h: Math.max(d.y + d.h, box.y + box.h) - Math.min(d.y, box.y) };
@@ -465,7 +470,7 @@ async function screenStart() {
     const step = () => {
       if (!scr.on) return;
       const c = emuCanvas();
-      if (c && c.width) { scr.ctx.drawImage(c, 0, 0, SCR.W, SCR.H); scr.got = true; scr.frames++; }
+      if (c && c.width) { scr.ctx.drawImage(c, 0, 0, SCR.W, SCR.H); if (!scr.got) { scr.got = true; $("scrwait").hidden = true; } scr.frames++; }
       scr.copy = requestAnimationFrame(step);
     };
     step();
@@ -519,7 +524,7 @@ const fullscreen = () => {
  * screen with the picture still here, Stop ends it */
 $("scrgo").addEventListener("click", () => {
   if (scr.on) { screenStop(); return; }
-  if (state.target === "emu" || (state.dev && state.dev.screen)) fullscreen();   // (only a picture that will come goes full screen)
+  if (state.target === "emu" || (state.dev && state.dev.screen === true)) fullscreen();   // (unsure: the page first, Full screen after)   // (only a picture that will come goes full screen)
   screenStart();
 });
 $("scrfull").addEventListener("click", async () => { if (!scr.on) await screenStart(); fullscreen(); });
@@ -899,7 +904,7 @@ function render() {
   $("emutitle").textContent = state.fw === "byte" ? "JIANT BYTE" : "JIANT FM";
   // screen
   $("scrgo").textContent = t(scr.on ? "scrStop" : "scrStart");
-  const noMirror = state.target === "fm1" && d && !d.screen;
+  const noMirror = state.target === "fm1" && d && d.screen === false;
   $("scrgo").disabled = state.busy || (!scr.on && state.target === "fm1" && (!d || noMirror));
   $("scrfull").disabled = noMirror;
   $("scrwait").hidden = scr.on && scr.got;
@@ -993,8 +998,8 @@ function mockAccess() {
     last = Date.now();
     if (f.cmd === CMD.INFO) {
       const s = (x) => [...x].map((c) => c.charCodeAt(0)).concat(0);
-      const eng = kind === "byte" ? ["ANALOG", "-", "PHASE", "MATH", "WAVE", "DRUM"] : ["ANALOG", "-", "PHASE", "LOFI", "DRUM", "FM6"];
-      deliver(frame(CMD.INFO, [...s(kind === "byte" ? (QS.has("nomirror") ? "JIANT BYTE v0.16" : "JIANT V10.7.37") : "JIANT V10.8.19"), eng.length, 100, 40, 64, 10, ...eng.flatMap(s)]));
+      const eng = kind === "byte" ? ["ANALOG", "-", "PHASE", "MATH", "WAVE", "DRUM"] : ["ANALOG", "-", "PHASE", "MATH", "DRUM", "FM6"];   // (FM has MATH too)
+      deliver(frame(CMD.INFO, [...s(kind === "byte" ? (QS.has("nomirror") ? "JIANT BYTE v0.16" : "JIANT BYTE v0.17") : "JIANT V10.8.24"), eng.length, 100, 40, 64, 10, ...eng.flatMap(s)]));
     } else if (f.cmd === 27) {                                 // TRACK: six tracks, their engines (indexes into INFO's list)
       deliver(frame(27, [0, 6, ...[4, 0, 2, 3, 5, 1].flatMap((e) => [e, 0, 0, 64, 0, 0])]));
     } else if (f.cmd === CMD.SCREEN && !QS.has("nomirror")) {      // (?nomirror: firmware from before the mirror: no reply)
