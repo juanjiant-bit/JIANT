@@ -167,9 +167,77 @@
     "chorus_mix": {
       "es": "MIX del chorus (de chorus a vibrato)",
       "en": "Chorus MIX (chorus to vibrato)"
+    },
+    "key_trk": {
+      "es": "KEY TRK en FILTER (OFF / 50 / 100 / NOTE)",
+      "en": "KEY TRK on FILTER (OFF / 50 / 100 / NOTE)"
+    },
+    "presets_retouch": {
+      "es": "Presets de fábrica retocados (envíos por rol, más movimiento)",
+      "en": "Factory presets retouched (sends by role, more movement)"
     }
   },
   "versions": {
+    "V10.8.37": {
+      "date": "2026-11-24",
+      "status": "beta",
+      "summary": {
+        "es": "Beta: KEY TRK en el filtro, presets de fábrica retocados y MUTATE sin página propia (EVERY como etiqueta en EUCLID), sobre V10.8.36.",
+        "en": "Beta: KEY TRK on the filter, factory presets retouched and MUTATE without its own page (EVERY as a tag on EUCLID), on top of V10.8.36."
+      },
+      "has": [
+        "eng_west",
+        "drumx_math",
+        "life",
+        "punch_editor",
+        "fx_punchins",
+        "song_mode",
+        "stepfx_keys",
+        "drone_clay",
+        "macros_dest",
+        "euclid",
+        "euclid_role",
+        "harmony",
+        "scene",
+        "half_rate",
+        "track_colours",
+        "hud_screens",
+        "no_power_click",
+        "velocity_at",
+        "gen_new_genres",
+        "copy_paste_oct",
+        "clay_rate",
+        "clay_bars",
+        "clay_keys",
+        "west_dust_metal",
+        "ui_push",
+        "screen_mirror",
+        "emu_editor",
+        "emu_stems",
+        "mutate_compact",
+        "live_compact",
+        "cloud_fix",
+        "dist_noise",
+        "chorus_mix",
+        "key_trk",
+        "presets_retouch"
+      ],
+      "hasnt": [
+        "eng_noise",
+        "mutate",
+        "stretch",
+        "live",
+        "seq_dice",
+        "punch_lane",
+        "help_hints",
+        "flt_ms20_lp24",
+        "env_stage"
+      ],
+      "notes": {
+        "es": "Beta: puede tener errores. Los proyectos y presets con filtro MS20 o LP24 abren como LP. MUTATE y LIVE no son las páginas originales (esas quedan en V10.7.81). Hacé un respaldo completo de tus proyectos antes de cambiar de versión.",
+        "en": "Beta: it may have bugs. Projects and presets using the MS20 or LP24 filter open as LP. MUTATE and LIVE are not the original pages (those remain in V10.7.81). Make a complete backup of your projects before changing version."
+      }
+    },
     "V10.8.36": {
       "date": "2026-11-24",
       "status": "beta",
