@@ -2159,11 +2159,11 @@
   "ANALOG": {
    "WAVE": {
     "es": {
-     "what": "La onda de los osciladores: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 o PLS3 (tres sierras o tres pulsos). En LFO y AUTO PAN, WAVE es la forma de su onda.",
+     "what": "La onda de los osciladores: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 o PLS3 (tres sierras o tres pulsos).",
      "how": "SAW para bajos y leads brillantes, SQR y PWM huecos, SIN y TRI suaves; SAW3 para pads enormes."
     },
     "en": {
-     "what": "The oscillators' wave: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 or PLS3 (three saws or three pulses). On LFO and AUTO PAN, WAVE is the shape of their wave.",
+     "what": "The oscillators' wave: SAW, SQR, TRI, SIN, PWM, SYNC, RING, SAW3 or PLS3 (three saws or three pulses).",
      "how": "SAW for bright basses and leads, SQR and PWM hollow, SIN and TRI soft; SAW3 for huge pads."
     },
     "learn": "analog"
@@ -2227,11 +2227,11 @@
   "PHASE": {
    "WAVE": {
     "es": {
-     "what": "La primera onda de PHASE: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI o RTRP. En LFO y AUTO PAN, WAVE es la forma de su onda.",
+     "what": "La primera onda de PHASE: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI o RTRP.",
      "how": "Las R son ondas resonantes, buenas para timbres vocales; combinala con WAVE2 para que alternen."
     },
     "en": {
-     "what": "PHASE's first wave: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI or RTRP. On LFO and AUTO PAN, WAVE is the shape of their wave.",
+     "what": "PHASE's first wave: SAW, SQR, PLS, DSIN, SPLS, RSAW, RTRI or RTRP.",
      "how": "The R waves are resonant, good for vocal timbres; pair it with WAVE2 so they alternate."
     },
     "learn": "phase"
@@ -2273,22 +2273,22 @@
   "MATH": {
    "WAVE": {
     "es": {
-     "what": "El tipo de fórmula: BYTE (bytebeat, en escalones) o FLOAT (floatbeat, hecho de senos). En LFO y AUTO PAN, WAVE es la forma de su onda.",
+     "what": "El tipo de fórmula: BYTE (bytebeat, en escalones) o FLOAT (floatbeat, hecho de senos).",
      "how": "BYTE suena crudo y de chip; FLOAT más suave y musical. Cada uno tiene sus propias fórmulas en ALGO."
     },
     "en": {
-     "what": "The formula type: BYTE (bytebeat, stepped) or FLOAT (floatbeat, made of sines). On LFO and AUTO PAN, WAVE is the shape of their wave.",
+     "what": "The formula type: BYTE (bytebeat, stepped) or FLOAT (floatbeat, made of sines).",
      "how": "BYTE sounds raw and chiptune-like; FLOAT smoother and more musical. Each has its own formulas in ALGO."
     },
     "learn": "math"
    },
    "LOOP": {
     "es": {
-     "what": "Encierra la fórmula en un tramo corto que se repite, hasta volverla una nota afinada. En ENV DEST, LOOP hace que la envolvente vuelva a empezar.",
+     "what": "Encierra la fórmula en un tramo corto que se repite, hasta volverla una nota afinada.",
      "how": "En 0 la fórmula evoluciona libre; subilo para que el ritmo se vuelva tono. Más alto, ciclos más cortos."
     },
     "en": {
-     "what": "Holds the formula in a short repeating window, until it becomes a pitched note. On ENV DEST, LOOP makes the envelope start again.",
+     "what": "Holds the formula in a short repeating window, until it becomes a pitched note.",
      "how": "At 0 the formula evolves freely; raise it so rhythm becomes tone. Higher means shorter cycles."
     },
     "learn": "math"
@@ -2442,11 +2442,11 @@
    },
    "DIST": {
     "es": {
-     "what": "Con EXCITE en FDBK, en EDIT: la saturación del ampli que realimenta la cuerda (el lugar de BODY). En SENDS y DIST, DIST es la distorsión de la pista.",
+     "what": "Con EXCITE en FDBK, en EDIT: la saturación del ampli que realimenta la cuerda (el lugar de BODY).",
      "how": "Poca, un acople limpio que canta; mucha, un ampli al rojo."
     },
     "en": {
-     "what": "With EXCITE on FDBK, on EDIT: the drive of the amp that feeds the string back (BODY's place). On SENDS and DIST, DIST is the track's distortion.",
+     "what": "With EXCITE on FDBK, on EDIT: the drive of the amp that feeds the string back (BODY's place).",
      "how": "A little, a clean singing feedback; a lot, an amp in the red."
     },
     "learn": "string"
@@ -2477,11 +2477,11 @@
    },
    "TONE": {
     "es": {
-     "what": "El color de todo el kit a la vez: más oscuro o más brillante. En DIST, TONE es el color de la distorsión de la pista.",
+     "what": "El color de todo el kit a la vez: más oscuro o más brillante.",
      "how": "Oscuro para un kit cálido y lo-fi; brillante para que los platos y la caja corten."
     },
     "en": {
-     "what": "The colour of the whole kit at once: darker or brighter. On DIST, TONE is the colour of the track's distortion.",
+     "what": "The colour of the whole kit at once: darker or brighter.",
      "how": "Dark for a warm, lo-fi kit; bright so the cymbals and snare cut through."
     },
     "learn": "drum-x"
@@ -2556,11 +2556,11 @@
    },
    "GATE": {
     "es": {
-     "what": "Qué hace la compuerta de vactrol: solo filtro (0), filtro y volumen juntos (64, el clásico) o solo volumen (127). En ARP y PATTERN, GATE es el largo de cada nota.",
+     "what": "Qué hace la compuerta de vactrol: solo filtro (0), filtro y volumen juntos (64, el clásico) o solo volumen (127).",
      "how": "Hacia 0 el golpe se oscurece más que bajar; hacia 127 solo baja el volumen. El medio da el pluck de la costa oeste."
     },
     "en": {
-     "what": "What the vactrol gate does: filter only (0), filter and volume together (64, the classic) or volume only (127). On ARP and PATTERN, GATE is each note's length.",
+     "what": "What the vactrol gate does: filter only (0), filter and volume together (64, the classic) or volume only (127).",
      "how": "Toward 0 the hit darkens more than it fades; toward 127 it only fades. The middle gives the west-coast pluck."
     },
     "learn": "west"
@@ -2578,11 +2578,11 @@
    },
    "RES": {
     "es": {
-     "what": "La resonancia del filtro de la compuerta de WEST. En la página FILTER, RES es la del filtro de la pista.",
+     "what": "La resonancia del filtro de la compuerta de WEST.",
      "how": "Un poco le da el toc del bongó, un golpe que baja de tono; al máximo, plucks que suenan como gotas."
     },
     "en": {
-     "what": "The resonance of WEST's gate filter. On the FILTER page, RES is the track filter's.",
+     "what": "The resonance of WEST's gate filter.",
      "how": "A little gives the bongo's knock, a hit that falls in pitch; at maximum, plucks that sound like drops."
     },
     "learn": "west"
@@ -2648,11 +2648,11 @@
   "ADD": {
    "MODE": {
     "es": {
-     "what": "Elige el espectro: HARM, ODD, WIDE, BELL, BAR, DRUM, PRIME, FIFTH, SUB o PLATE. En ARP, MODE es el orden del arpegio.",
+     "what": "Elige el espectro: HARM, ODD, WIDE, BELL, BAR, DRUM, PRIME, FIFTH, SUB o PLATE.",
      "how": "HARM y ODD para tonos de órgano y clarinete; BELL, BAR y PLATE para campanas y metales."
     },
     "en": {
-     "what": "Picks the spectrum: HARM, ODD, WIDE, BELL, BAR, DRUM, PRIME, FIFTH, SUB or PLATE. On ARP, MODE is the arpeggio's order.",
+     "what": "Picks the spectrum: HARM, ODD, WIDE, BELL, BAR, DRUM, PRIME, FIFTH, SUB or PLATE.",
      "how": "HARM and ODD for organ and clarinet tones; BELL, BAR and PLATE for bells and metals."
     },
     "learn": "add"
@@ -2738,11 +2738,11 @@
    },
    "LOOP": {
     "es": {
-     "what": "Con un idioma en LANG: cada cuántas vueltas del patrón la letra vuelve a empezar (FREE, 1, 2, 4, 8). En ENV DEST, LOOP reinicia la envolvente.",
+     "what": "Con un idioma en LANG: cada cuántas vueltas del patrón la letra vuelve a empezar (FREE, 1, 2, 4, 8).",
      "how": "1 para un estribillo igual en cada vuelta; FREE para que la letra siga de largo sobre el patrón."
     },
     "en": {
-     "what": "With a language in LANG: every how many pattern loops the lyric starts over (FREE, 1, 2, 4, 8). On ENV DEST, LOOP restarts the envelope.",
+     "what": "With a language in LANG: every how many pattern loops the lyric starts over (FREE, 1, 2, 4, 8).",
      "how": "1 for a refrain that is the same every loop; FREE so the lyric runs on across the pattern."
     },
     "learn": "voice-words"
@@ -2751,11 +2751,11 @@
   "ANIMAL": {
    "MODE": {
     "es": {
-     "what": "Elige la fuente del animal: CMOS (una máquina de pájaros), PULSE (grillos, ranas), WHSTL (pájaros), WING (insectos) o GLOTT (lobos, perros). En ARP, MODE es el orden del arpegio.",
+     "what": "Elige la fuente del animal: CMOS (una máquina de pájaros), PULSE (grillos, ranas), WHSTL (pájaros), WING (insectos) o GLOTT (lobos, perros).",
      "how": "Empezá por la fuente y después ajustá SIZE; cada modo les cambia el nombre y el sentido a varias perillas."
     },
     "en": {
-     "what": "Picks the creature's source: CMOS (a bird machine), PULSE (crickets, frogs), WHSTL (birds), WING (insects) or GLOTT (wolves, dogs). On ARP, MODE is the arpeggio's order.",
+     "what": "Picks the creature's source: CMOS (a bird machine), PULSE (crickets, frogs), WHSTL (birds), WING (insects) or GLOTT (wolves, dogs).",
      "how": "Start with the source, then adjust SIZE; each mode renames and repurposes several knobs."
     },
     "learn": "animal"
@@ -2773,11 +2773,11 @@
    },
    "RATE": {
     "es": {
-     "what": "La tasa de sílabas del canto: cuántas por segundo (en CMOS, la velocidad del oscilador lento). En LFO, ARP y AUTO PAN, RATE es la velocidad de cada uno.",
+     "what": "La tasa de sílabas del canto: cuántas por segundo (en CMOS, la velocidad del oscilador lento).",
      "how": "Lento para llamados espaciados; rápido para trinos e insectos. TEMP también la acelera."
     },
     "en": {
-     "what": "The call's syllable rate: how many per second (on CMOS, the slow oscillator's speed). On LFO, ARP and AUTO PAN, RATE is the speed of each.",
+     "what": "The call's syllable rate: how many per second (on CMOS, the slow oscillator's speed).",
      "how": "Slow for spaced calls; fast for trills and insects. TEMP speeds it up too."
     },
     "learn": "animal"
@@ -2852,33 +2852,33 @@
   "EXT": {
    "MODE": {
     "es": {
-     "what": "THRU deja sonar la entrada todo el tiempo; KEYS solo mientras tocás teclas o pasos, con la envolvente de la nota. En ARP, MODE es el orden del arpegio.",
+     "what": "THRU deja sonar la entrada todo el tiempo; KEYS solo mientras tocás teclas o pasos, con la envolvente de la nota.",
      "how": "KEYS con la secuencia corta la señal a tempo, como un trance gate; THRU para procesar algo que suena siempre."
     },
     "en": {
-     "what": "THRU lets the input sound all the time; KEYS only while you play keys or steps, at the note's envelope. On ARP, MODE is the arpeggio's order.",
+     "what": "THRU lets the input sound all the time; KEYS only while you play keys or steps, at the note's envelope.",
      "how": "KEYS with the sequence chops the signal in time, like a trance gate; THRU to process something that always plays."
     },
     "learn": "ext"
    },
    "GATE": {
     "es": {
-     "what": "Una compuerta de ruido: por debajo de su nivel, la entrada se cierra. En ARP y PATTERN, GATE es el largo de cada nota.",
+     "what": "Una compuerta de ruido: por debajo de su nivel, la entrada se cierra.",
      "how": "Subilo hasta que el ruido de fondo desaparezca entre frases; demasiado alto corta las partes suaves."
     },
     "en": {
-     "what": "A noise gate: below its level, the input closes. On ARP and PATTERN, GATE is each note's length.",
+     "what": "A noise gate: below its level, the input closes.",
      "how": "Raise it until the background noise disappears between phrases; too high cuts the quiet parts."
     },
     "learn": "ext"
    },
    "RATE": {
     "es": {
-     "what": "Baja la frecuencia de muestreo de la entrada: retiene muestras y la vuelve lo-fi. En LFO, ARP y AUTO PAN, RATE es la velocidad de cada uno.",
+     "what": "Baja la frecuencia de muestreo de la entrada: retiene muestras y la vuelve lo-fi.",
      "how": "En 0 queda limpia; subilo para un aliasing áspero y metálico. Combinalo con BITS."
     },
     "en": {
-     "what": "Lowers the input's sample rate: holds samples and makes it lo-fi. On LFO, ARP and AUTO PAN, RATE is the speed of each.",
+     "what": "Lowers the input's sample rate: holds samples and makes it lo-fi.",
      "how": "At 0 it stays clean; raise it for harsh, metallic aliasing. Combine it with BITS."
     },
     "learn": "ext-lofi"
