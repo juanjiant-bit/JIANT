@@ -1396,14 +1396,14 @@ async function liveStart() {
   live.on = true; live.link = S.link; live.desc.clear(); live.status = t("lvWaiting").replace("%s", S.name); renderLive();
   try {
     live.engines = S.engines || parseInfo(await S.link.request(CMD.INFO, [], 900)).engines;
-    await S.link.request(22, [31], 900);                     // WATCH: every push this firmware has
+    await S.link.request(22, [63], 900);                     // WATCH: every push this firmware has (bit 5: UI, 43)
     const d = await S.link.request(4, [], 1500);             // DUMP: the selected track's engine
     live.engine = d[0];
   } catch (_) {}
   await lrLoad(state.fw); await liveGloss(state.fw);
   clearInterval(live.timer);
   let tick = 0;                                              // (a PING a second; WATCH again every 5 s: another tool's WATCH 0 ends it)
-  live.timer = setInterval(() => { if (!live.on || state.busy) return; live.link.request(++tick % 5 ? CMD.PING : 22, tick % 5 ? [] : [31], 600).catch(() => {}); }, 1000);
+  live.timer = setInterval(() => { if (!live.on || state.busy) return; live.link.request(++tick % 5 ? CMD.PING : 22, tick % 5 ? [] : [63], 600).catch(() => {}); }, 1000);
   renderLive();
 }
 function liveStop() {
