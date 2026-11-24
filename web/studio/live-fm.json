@@ -3,44 +3,44 @@
  "labels": {
   "ATK": {
    "es": {
-    "what": "El ataque: cuánto tarda cada nota en llegar a su volumen máximo.",
+    "what": "El ataque: cuánto tarda cada nota en llegar a su volumen máximo. En ENV 2 es lo mismo para la segunda envolvente (la fuente ENV2 de la matriz).",
     "how": "Bajo, golpes y plucks que pegan al instante; alto, pads y cuerdas que entran de a poco."
    },
    "en": {
-    "what": "Attack: how long each note takes to reach full level.",
+    "what": "Attack: how long each note takes to reach full level. On ENV 2 it is the same for the second envelope (the matrix's ENV2 source).",
     "how": "Low for hits and plucks that strike at once; high for pads and strings that fade in."
    },
    "learn": "env"
   },
   "DEC": {
    "es": {
-    "what": "El decaimiento: cuánto tarda la nota en bajar desde el pico hasta el nivel de SUS.",
+    "what": "El decaimiento: cuánto tarda la nota en bajar desde el pico hasta el nivel de SUS. En ENV 2 es lo mismo para la segunda envolvente (la fuente ENV2 de la matriz).",
     "how": "Corto y con SUS bajo, notas que pegan y se apagan, ideales para bajos y plucks; largo, una caída suave."
    },
    "en": {
-    "what": "Decay: how long the note takes to fall from its peak to the SUS level.",
+    "what": "Decay: how long the note takes to fall from its peak to the SUS level. On ENV 2 it is the same for the second envelope (the matrix's ENV2 source).",
     "how": "Short with a low SUS gives notes that hit and die away, great for basses and plucks; long gives a gentle fall."
    },
    "learn": "env"
   },
   "SUS": {
    "es": {
-    "what": "El sustain: el nivel en que queda la nota mientras mantenés la tecla.",
+    "what": "El sustain: el nivel en que queda la nota mientras mantenés la tecla. En ENV 2 es lo mismo para la segunda envolvente (la fuente ENV2 de la matriz).",
     "how": "Alto, órganos y pads que se sostienen; en 0 la nota se apaga sola aunque sigas apretando, como un pluck."
    },
    "en": {
-    "what": "Sustain: the level the note holds while you keep the key down.",
+    "what": "Sustain: the level the note holds while you keep the key down. On ENV 2 it is the same for the second envelope (the matrix's ENV2 source).",
     "how": "High for organs and pads that hold; at 0 the note dies on its own even while held, like a pluck."
    },
    "learn": "env"
   },
   "REL": {
    "es": {
-    "what": "El release: cuánto sigue sonando la nota después de soltar la tecla. En MASTER, cuánto tarda en volver el DUCK.",
+    "what": "El release: cuánto sigue sonando la nota después de soltar la tecla. En MASTER, cuánto tarda en volver el DUCK. En ENV 2 es lo mismo para la segunda envolvente (la fuente ENV2 de la matriz).",
     "how": "Corto para notas secas y precisas; largo para colas que se funden entre sí. En MASTER, corto bombea más."
    },
    "en": {
-    "what": "Release: how long the note rings after you let go. On MASTER, how fast DUCK recovers.",
+    "what": "Release: how long the note rings after you let go. On MASTER, how fast DUCK recovers. On ENV 2 it is the same for the second envelope (the matrix's ENV2 source).",
     "how": "Short for dry, tight notes; long for tails that melt into each other. On MASTER, short pumps harder."
    },
    "learn": "env"
@@ -409,11 +409,11 @@
   },
   "TRANS": {
    "es": {
-    "what": "Transpone la pista en semitonos, hasta dos octavas para arriba o para abajo.",
+    "what": "Transpone lo que suena la pista en semitonos, hasta dos octavas para arriba o para abajo. No está en ninguna página del equipo: se llega desde el editor o por MIDI.",
     "how": "Usalo para llevar un bajo una octava abajo (−12) o subir una melodía sin reescribirla."
    },
    "en": {
-    "what": "Transposes the track in semitones, up to two octaves up or down.",
+    "what": "Transposes what the track plays in semitones, up to two octaves up or down. It is on no page of the device: reached from the editor or over MIDI.",
     "how": "Use it to drop a bass an octave (−12) or lift a melody without rewriting it."
    },
    "learn": "scale"
@@ -453,11 +453,11 @@
   },
   "EVOLVE": {
    "es": {
-    "what": "Hace que la progresión de HARMONY cambie con las vueltas, sustituyendo acordes.",
+    "what": "Desde la segunda vuelta de la progresión de HARMONY, la probabilidad de que cada acorde se sustituya por otro (una cuarta arriba, o su relativo).",
     "how": "En 0 se repite igual; subilo para que la armonía se transforme sola sin perder el rumbo."
    },
    "en": {
-    "what": "Makes the HARMONY progression change over the loops by substituting chords.",
+    "what": "From the progression's second round on, the chance that each HARMONY chord is replaced by another (a fourth up, or its relative).",
     "how": "At 0 it repeats exactly; raise it so the harmony transforms by itself without losing its way."
    },
    "learn": "harmony"
@@ -1241,12 +1241,12 @@
   },
   "SLOT": {
    "es": {
-    "what": "Elige un lugar de memoria: el del proyecto que vas a guardar o cargar, o el patch de FM6.",
-    "how": "Mirá bien el número antes de guardar, para no pisar un tema que querías conservar."
+    "what": "Elige la parte del proyecto, A a D (1 = A … 4 = D), sobre la que actúan LOAD, SAVE y ERASE en SAVE › PROJECT.",
+    "how": "Mirá bien la letra antes de guardar, para no pisar una parte que querías conservar."
    },
    "en": {
-    "what": "Picks a memory slot: the project to save or load, or the FM6 patch.",
-    "how": "Check the number before saving so you don't overwrite a song you wanted to keep."
+    "what": "Picks the project's part, A to D (1 = A … 4 = D), that LOAD, SAVE and ERASE act on, on SAVE › PROJECT.",
+    "how": "Check the letter before saving so you don't overwrite a part you wanted to keep."
    },
    "learn": "save"
   },
@@ -1588,11 +1588,11 @@
   },
   "LYRIC": {
    "es": {
-    "what": "Qué canta VOICE: TEXT (tu letra), W1–W16 (palabras del idioma), S1–S8 (scat) o TEXT FIXED (tu letra con las sílabas puestas en los pasos).",
+    "what": "Qué canta VOICE: TEXT (tu letra), W1–W16 (palabras del idioma), S1–S8 (scat) o TEXT FIXED (tu letra, y cada paso canta siempre la misma sílaba).",
     "how": "Probá W y S para encontrar frases al toque; escribí tu letra desde el editor y elegí TEXT. Un TEXT vacío canta W1."
    },
    "en": {
-    "what": "What VOICE sings: TEXT (your lyric), W1–W16 (words of the language), S1–S8 (scat) or TEXT FIXED (your lyric with its syllables placed on the steps).",
+    "what": "What VOICE sings: TEXT (your lyric), W1–W16 (words of the language), S1–S8 (scat) or TEXT FIXED (your lyric, each step always singing the same syllable).",
     "how": "Try W and S to find phrases at once; write your lyric from the editor and pick TEXT. An empty TEXT sings W1."
    },
    "learn": "voice-words"
@@ -1752,11 +1752,11 @@
   "MOVE": {
    "es": {
     "what": "En STRING con EXCITE en FDBK: cuánto se mece la guitarra frente al ampli (el lugar de POS).",
-    "how": "Un poco hace que el acople cambie solo, como al moverte delante del parlante."
+    "how": "Un poco hace que el acople cambie solo, como al moverte delante del parlante; más alto, el vaivén es más rápido y más amplio."
    },
    "en": {
     "what": "On STRING with EXCITE on FDBK: how much the guitar sways in front of the amp (POS's place).",
-    "how": "A little makes the feedback shift by itself, like moving in front of the speaker."
+    "how": "A little makes the feedback shift by itself, like moving in front of the speaker; higher, the sway is faster and wider."
    },
    "learn": "string"
   },
