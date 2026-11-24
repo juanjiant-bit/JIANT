@@ -1593,8 +1593,11 @@ static void key_next(uint32_t k, track_t *t)
     }
     kb_on[k]++;
 }
+static int clay_kb(uint32_t k, track_t *t);   /* (clay.c, V10.8.31: DRONE CLAY ON, KEYS ON: the keys its gestures) */
 static void key_on(uint32_t k, track_t *t)
 {
+    if (clay_kb(k, t))
+        return;
     uint32_t n = chord_build(t, kb_note[k], kb_snd[k]), gap = n > 1u ? chord_gap(t) : 0u, i;
     kb_lt = key_latch(t) ? kb_lt | 1u << k : kb_lt & ~(1u << k);
     if (key_latch(t)) {                             /* LATCH: a new chord lets the last one go */

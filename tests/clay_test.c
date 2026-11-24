@@ -62,6 +62,28 @@ int main(void)
         clay_defaults(clay[tr]); clay[tr][CL_ON] = 1; clay[tr][CL_RUN] = 1; clay[tr][CL_RATE] = 0;
     }
 
+    {   /* (V10.8.31, BYTE's keys reduced) KEYS ON (RUN's bit 1 clear): a white strikes a gesture on the pages' MOD, no
+         * note; the last keys the drone's degree on the scale; KEYS OFF (RUN 2/3): the key plays its note as before */
+        uint32_t i, live = 0;
+        clay_km[tr] = 1; song.octave = 0;               /* MOD 2, OCT 0: the HITS */
+        for (i = 0; i < FORM_G; i++) form_st[tr].g[i].fl = 0;
+        key_on(0u, t);
+        for (i = 0; i < FORM_G; i++) live |= (form_st[tr].g[i].fl & 8u) && form_st[tr].g[i].mod == 1u;
+        ok = live && !kb_on[0] && (form_lit[tr] & 2u);
+        key_off(0u, t);
+        clay_kr[tr] = 0;
+        key_on(22u, t);                                 /* the third of the last seven: degree 2 */
+        ok &= clay_kr[tr] > 0 && clay_kr[tr] < 12 && !kb_on[22];
+        key_off(22u, t); clay_kr[tr] = 0;
+        bad += check("clay KEYS ON: a white strikes a gesture on the MOD (no note), a degree key moves the drone", ok);
+        clay[tr][CL_RUN] = 3;                           /* FREE, KEYS OFF */
+        key_on(0u, t);
+        ok = kb_on[0] != 0;
+        key_off(0u, t);
+        clay[tr][CL_RUN] = 1;
+        bad += check("clay KEYS OFF: the key plays its note", ok);
+    }
+
     clay[tr][CL_ON] = 0;
     blocks(40);
     ok = !clay_dn[tr] && !clay_nn[tr] && !clay_vk(tr, 0) && !clay_vk(tr, 1) && !clay_vk(tr, 2) && !clay_vk(tr, 3);
@@ -138,7 +160,7 @@ int main(void)
         clay_from_v1(o, nb);
         clay_unpack(nb, c);
         ok = c[CL_ON] == 1 && c[CL_OCT] == 2 && c[CL_RATE] == 3 && c[CL_PIT] == 0 && c[CL_SEED] == 33 &&
-             c[CL_MF(0u, 0u)] == 6 && c[CL_MF(0u, 3u)] == 100 && c[CL_MF(0u, 5u)] == 3;
+             c[CL_MF(0u, 0u)] == 6 && c[CL_MF(0u, 3u)] == 100 && c[CL_MF(0u, 5u)] == 3 && !(c[CL_RUN] & 2);   /* (KEYS ON) */
         bad += check("an older 'C' 'Y' block read: ON, OCT, RATE 1/16, PITCH 0, MOD 1 on DIST, its STEP its RATE", ok);
     }
     printf(bad ? "clay: %d FAILED\n" : "clay: all passed\n", bad);

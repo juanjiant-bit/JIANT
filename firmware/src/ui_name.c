@@ -442,7 +442,7 @@ static void nm_draw_foot(void)
     cv_begin(240, LZ_FOOT_H, T_BG);
     cv_text(6, CRUMB_Y, &AF_X, nm.kind == NK_LYRIC ? "K3 DICE \xB7 OCT- CANCEL" :   /* (0.8.5: playing too) */
             transport_busy() ? "STOP TO SAVE" :
-            nm.kind == NK_SONG_SAVE ? "K3 SONG/LOOP \xB7 OCT- CANCEL" : "OCT- CANCEL", T_DIM);
+            "OCT- CANCEL", T_DIM);
     cv_blit(0, LZ_FOOT_Y);
 }
 static void name_draw(void)

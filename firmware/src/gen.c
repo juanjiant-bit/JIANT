@@ -3135,7 +3135,7 @@ static void gen_go(void)
         k = str_len(gp.last);
     }
     ui_say("GENE: ", gp.last);
-    str_cpy(ui.msg2, gls.u && !gls.room ? "NO EMPTY TRACK: ARRANGED" : live.mode ? "" : "UNDO: GLO + G4", sizeof ui.msg2);
+    str_cpy(ui.msg2, gls.u && !gls.room ? "NO EMPTY TRACK: ARRANGED" : "", sizeof ui.msg2);
     if (play) { if (live.mode) chain_play_ui(); else transport_req = 1; }
     ui.force = 1;
 }

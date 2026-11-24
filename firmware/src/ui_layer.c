@@ -542,7 +542,6 @@ static void rec_clear(void)
         char cb[16] = "T1 CLEARED";
         cb[1] = (char)('1' + (t - trk));
         ui_say(cb, "");
-        str_cpy(ui.msg2, "SEQ+REC: ALL TRACKS", sizeof ui.msg2);
     }
     ui.force = 1;
 }

@@ -609,9 +609,10 @@ def build_app():
                 keep[at:at] = clocks
             if keep and (FW / "src" / "clay.c").exists():
                 # (V10.8.21) DRONE CLAY's clock, called from RAM audio code (fx.c mix_block): beside the master's.
-                keep = [name for name in keep if name != "clay_tick"]
+                ck = ["clay_tick", "clay_kb"]   # (V10.8.30: its keys, called from key_on's RAM code)
+                keep = [name for name in keep if name not in ck]
                 at = keep.index("macro_master") + 1 if "macro_master" in keep else 0
-                keep[at:at] = ["clay_tick"]
+                keep[at:at] = ck
             compile_hot([])
             LAYOUT_LD.write_text("".join(f"*(.text.{n})\n" for n in keep) + "*(.text*)\n")
             # This preliminary link has not packed UI tables into the audio

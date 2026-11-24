@@ -2016,7 +2016,6 @@ static void confirm_text(char *a, char *b)
         break;
     case CF_CPU_TEST:                                /* (0.6.83) SAVE > TOOLS 6 */
         str_cpy(a, "BUILD CPU TEST SONG?", 24);
-        str_cpy(b, "UNDO: GLO + G4", 24);
         break;
     case CF_INIT_SYS:                                /* (0.6.40) SAVE > TOOLS; (V10.7.22) CLEAR PROJECT, MENU > INIT */
         str_cpy(a, "CLEAR PROJECT?", 24);
@@ -2028,7 +2027,6 @@ static void confirm_text(char *a, char *b)
         break;
     case CF_DICE_ALL:                                /* (0.6.21) HOME + SELECT */
         str_cpy(a, "DICE EVERYTHING?", 24);
-        str_cpy(b, "UNDO: GLO + G4", 24);
         break;
     case CF_RECALL_SOUND:
         str_cpy(a, drum_track(TSEL) ? "RECALL SOUND + KIT?" : "RECALL SAVED SOUND?", 24);

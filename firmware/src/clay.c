@@ -63,7 +63,7 @@ static __attribute__((noinline)) void clay_tick(uint32_t n)
             seq_note_off(t, st->pn);
             st->pn = 0;
         }
-        if (!c[CL_ON] || tr >= trk_live || t->p[P_MUTE] || (!song.playing && c[CL_RUN] != 1)) {
+        if (!c[CL_ON] || tr >= trk_live || t->p[P_MUTE] || (!song.playing && !(c[CL_RUN] & 1))   /* (V10.8.31: bit 1 KEYS) */) {
             if (clay_dn[tr] | clay_nn[tr] | st->pn | form_lit[tr] | st->hb.on) clay_stop(tr);
             continue;
         }
@@ -91,7 +91,7 @@ static __attribute__((noinline)) void clay_tick(uint32_t n)
         }
         clay_eval(st, c, &o, t->at);
         root = (uint32_t)clamp(t->p[P_ROOT], 0, 11);
-        dn = (uint32_t)clamp(12 * (clamp(c[CL_OCT], 0, 3) + 1) + (int32_t)root + clamp(c[CL_PIT], -24, 36), 1, 127);
+        dn = (uint32_t)clamp(12 * (clamp(c[CL_OCT], 0, 3) + 1) + (int32_t)root + clay_kr[tr] + clamp(c[CL_PIT], -24, 36), 1, 127);
                                                          /* the drone: C0 .. C3 on the ROOT, PITCH */
         if (drum)                                       /* (a DRUM track: its pads, no drone) */
             st->hb.on = 0;
@@ -160,7 +160,7 @@ static __attribute__((noinline)) void clay_tick(uint32_t n)
 /* the pages' knobs (params.c page_desc: ids ID_CL0 + CL_*): the selected track's settings, through their int16 view
  * (clay_ui: ui_input.c edit_param writes it, clay_put back); MOD (CL_SEL) the modulator the pages' others edit */
 static const char *const CL_ONN[] = {"OFF", "ON", 0};
-static const char *const CL_RUNN[] = {"SONG", "FREE", 0};
+static const char *const CL_RUNN[] = {"SONG", "FREE", "SONG NOKEY", "FREE NOKEY", 0};   /* (V10.8.31: bit 1 the keys' OFF) */
 static const char *const CL_MODN[] = {"1", "2", "3", "4", 0};
 static const char *const CL_NN[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
 static const param_desc_t *clay_desc(const track_t *t, uint32_t f, int16_t **valp)
@@ -194,7 +194,7 @@ static const param_desc_t *clay_desc(const track_t *t, uint32_t f, int16_t **val
         on[4] = 0;
         d.label = "DRONE"; d.max = 3; d.def = 1; d.names = on;
     } else if (f == CL_RATE) { d.label = "RATE"; d.max = CLAY_NRES; d.names = CLAY_RESN; }
-    else if (f == CL_RUN) { d.label = "RUN"; d.max = 1; d.names = CL_RUNN; }
+    else if (f == CL_RUN) { d.label = "RUN"; d.max = 3; d.names = CL_RUNN; }
     else if (f == CL_PIT) { d.label = "PITCH"; d.fmt = F_SEMI; d.min = -24; d.max = 36; }
     else if (f == CL_SEED) { d.label = "SEED"; d.fmt = F_INT; d.max = 127; }
     else {
@@ -266,4 +266,27 @@ static void clay_from_v1(const uint8_t *o, uint8_t *b)
         b[CL_MF(m, 2u)] = CLAY_EU_OLD[o[6u + 4u * m] % 25u]; b[CL_MF(m, 3u)] = o[7u + 4u * m] & 127u;
         b[CL_MF(m, 4u)] = o[20u + m] & 127u; b[CL_MF(m, 5u)] = STEP1[o[24] & 3u];
     }
+}
+
+/* (V10.8.31, JIANT BYTE's keys, GPL, reduced: no card, no blacks) DRONE CLAY ON and KEYS ON: the keys are its
+ * gestures, not notes (seq.c key_on / key_off). A white strikes a shape of the OCT's page (0 the HITS, +1 the TABLES,
+ * +2 the GESTURES, -1 the NOTES, -2 FM) on the MOD the pages chose, as its RATE's strikes (held for its DECAY), its
+ * velocity the strength; the last seven the drone's degree on the track's scale; the other blacks nothing */
+static const uint8_t CLAY_KMAP[27] = {0, 99, 1, 99, 2, 99, 3, 4, 99, 5, 99, 6, 7, 99, 8, 99, 9, 99, 10, 11, 32, 33, 34, 35, 36, 37, 38};
+static const uint8_t CLAY_KPG[5] = {FPG_FM, FPG_NOTE, FPG_HIT, FPG_TAB, FPG_GES};   /* (OCT -2 .. +2) */
+/* seq.c key_on: 1 if DRONE CLAY took the key (ON, KEYS ON; a DRUM track's: its pads); its kb_on left 0, so key_off
+ * lets it go at once (a gesture is struck, held for its MOD's DECAY) */
+static __attribute__((noinline)) int clay_kb(uint32_t k, track_t *t)
+{
+    uint32_t tr = trk_index(t), c = CLAY_KMAP[k];
+    if (!clay[tr][CL_ON] || (clay[tr][CL_RUN] & 2))
+        return 0;
+    kb_on[k] = 0;
+    if (c >= 32u)                                       /* the drone's degree */
+        clay_kr[tr] = (int8_t)(scale_steps(t, t->p[P_ROOT], (int32_t)c - 32) - t->p[P_ROOT]);
+    else if (c < 12u) {                                 /* a white: a gesture of the OCT's page struck on the MOD */
+        uint32_t pg = CLAY_KPG[clamp(song.octave, -2, 2) + 2];
+        clay_strike(tr, t, &form_st[tr], (uint32_t)clay_km[tr] & 3u, pg * 12u + c, KB_VEL(k));   /* (FM: the ratio k % 7) */
+    }
+    return 1;
 }

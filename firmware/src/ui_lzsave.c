@@ -299,7 +299,7 @@ static __attribute__((noinline)) void graph_tl(void)
     if (chain.running && !chain.loop) {
         str_cpy(b, chain.hold ? "LOOP ROW " : "ROW ", sizeof b);
         fmt_int(b + str_len(b), (int32_t)chain.row + 1);
-    } else str_cpy(b, "PLAY: LOOP THE ROW", sizeof b);
+    } else b[0] = 0;
     cv_text(4, 25, &AF_X, b, chain.hold ? T_THEME : T_DIM);
     song_len_txt(b, song_bars(4u));
     cv_text_r(236, 25, &AF_X, b, T_DIM, T_SURF);

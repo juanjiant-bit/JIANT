@@ -204,6 +204,7 @@ static int16_t clay_v[NTRK][4] __attribute__((used));   /* (V10.8.21's, kept in 
 int16_t clay_ui[CLAY_NF];                            /* (the pages' knobs: the selected track's, as int16, clay.c clay_desc;
                                                          * not static: after the RAM's others, as the new ones) */
 int16_t clay_km[NTRK];                               /* (the pages' MOD: the modulator CLAY MOD / CLAY RHYTHM edit) */
+int8_t clay_kr[NTRK];                                /* (V10.8.31, BYTE's keys) a degree key's semitones over the ROOT */
 /* what modulator k of track tr adds now (Q15): mod.c's per-block source, the panel's */
 static int32_t clay_vk(uint32_t tr, uint32_t k) { return clamp(form_st[tr % NTRK].mv[k & 3u] * 256, -32767, 32767); }
 static uint8_t clay_dn[NTRK], clay_nn[NTRK];          /* the drone's note sounding, a NOTE gesture's (0: none) */

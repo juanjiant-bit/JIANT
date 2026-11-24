@@ -9125,8 +9125,7 @@ static int test_rec_layer(void)
     memcpy(before, trk[1].step, sizeof before);
     rec_down(); frame();
     key_down(white(0)); frame();                        /* a combo: the map at once, cleared */
-    ok = ui.layer == LAYER_REC && seq_is_empty(&trk[1]) && !ui.confirm && msg_is("T2 CLEARED") && !gates() &&
-         str_eq(ui.msg2, "SEQ+REC: ALL TRACKS");
+    ok = ui.layer == LAYER_REC && seq_is_empty(&trk[1]) && !ui.confirm && msg_is("T2 CLEARED") && !gates();   /* (V10.8.31: its SEQ+REC hint gone for the flash) */
     key_up(white(0)); frame();
     rec_up();
     ok &= !ui.layer && song.rec == 0u && !transport_req && seq_is_empty(&trk[1]);
@@ -10178,7 +10177,7 @@ static int test_click_menu(void)
         ui_rec_prefs &= (uint8_t)~0x80u; frame();       /* (0.6.28) a note sent to it: the screen says why it is silent */
         ui.msg_t = 0; ui.msg[0] = 0; fm1_ms += 5000u;
         trk_note_on(&trk[4], 60, 100); frame();
-        ok = msg_is("T5-T6 ASLEEP: ") && str_eq(ui.msg2, "GLO>SYSTEM>TRACKS 6");
+        ok = msg_is("T5-T6 ASLEEP: ");   /* (V10.8.31: its GLO>SYSTEM hint gone for the flash) */
         ui.msg_t = 0; ui.msg[0] = ui.msg2[0] = 0;
         ui_rec_prefs |= 0x80u; frame();
         bad += check("TRACKS 4: a note for T5 says T5-T6 ASLEEP, GLO>SYSTEM>TRACKS 6", ok);

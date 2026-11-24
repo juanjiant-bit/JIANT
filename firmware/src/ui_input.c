@@ -1949,7 +1949,7 @@ static void ent_message(void)
     } else {
         str_cpy(a, "LEN ", sizeof a); fmt_int(a + str_len(a), ui.ent_len);
         str_cpy(a + str_len(a), ui.ent_len > 1u ? " STEPS" : " STEP", 8);
-        str_cpy(b, "ARP: ARPEGGIATE", sizeof b);
+        b[0] = 0;
     }
     str_cpy(ui.msg, a, sizeof ui.msg); str_cpy(ui.msg2, b, sizeof ui.msg2); ui.msg_t = 40;
 }
@@ -2502,7 +2502,6 @@ static void ui_input_frame(void)
             if (song.g[G_STRN] < 0) str_cpy(b + 7, "-", 2);
             fmt_int(b + str_len(b), song.g[G_STRN] < 0 ? -song.g[G_STRN] : song.g[G_STRN]);
             ui_say(b, " DEG");
-            str_cpy(ui.msg2, "SCL > ALL TR: 0 = OFF", sizeof ui.msg2);   /* (0.7.6: SCL KNOB 4, was SCL 2) */
         }
         if (song.playing && !play0 && quiet)
             for (k = trk_live; k < NTRK; k++)
@@ -2510,7 +2509,6 @@ static void ui_input_frame(void)
         if (asleep_hit) { asleep_hit = 0; said |= quiet; }
         if (said) {
             ui_say("T5-T6 ASLEEP: ", "");
-            str_cpy(ui.msg2, "GLO>SYSTEM>TRACKS 6", sizeof ui.msg2);
             said_ms = fm1_ms | 1u;
         }
         sel0 = song.sel;
@@ -2830,7 +2828,6 @@ static void ui_input_frame(void)
                         char cb[16] = "T1 CLEARED";
                         cb[1] = (char)('1' + ui.confirm_trk % NTRK);
                         ui_say(cb, "");
-                        str_cpy(ui.msg2, "SEQ+REC: ALL TRACKS", sizeof ui.msg2);
                     }
                 }
             }
@@ -3099,7 +3096,6 @@ static void setup_title(void)
         cv_text(x, HEAD_MY, &AF_M, t, T_TEXT);
         cv_blit(0, 5);
     }
-    draw_text_box(0, 32, 240, &AF_S, "TEACH EACH BUTTON AND KNOB", T_MID, 1);
     lcd_fill(16, 56, 208, 1, T_LINE);
     draw_text_box(0, 206, 240, &AF_S, "ANY KEY: CANCEL", T_DIM, 1);
 }
