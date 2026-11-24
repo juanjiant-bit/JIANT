@@ -371,6 +371,24 @@ static const gprog_t PROG[PR_N] = {
     [PR_PROG1]   = {4, {0, 1, 3, 0}, {Q_ADD9, Q_TRI, Q_7, Q_ADD9}},           /* I II IV I: the lydian lift */
     [PR_PROG2]   = {4, {0, 5, 2, 6}, {Q_SUS2, Q_7, Q_TRI, Q_SUS4}},           /* i bVI bIII bVII, suspended: progressive's */
 };
+static const gprog_t PROGF[12] BTAPP_RO = {             /* (in the segment, with gen_pick: the image's tables stay put) */
+    /* (V10.8.34, the owner: "more progressions") two more a harmony family (gen.c gen_pick: one throw in four, where the
+     * mode takes it), the records' own: HF_LOOP i iv i v, i III VII iv; JAZZY the minor cycle of fourths iv7 VII7 IIImaj7
+     * VImaj7, i7 VI7 iv7 v7; POP I V vi IV, vi IV I V; COLOR I bVII IV I (mixolydian's), IV I V vi; CINE i VI III V, i III
+     * iv VI; JAZZ Imaj7 IVmaj7 iii7 VI7, ii7 V7 iii7 VI7 (back to ii by its dominant) */
+                   {4, {0, 3, 0, 4}, {Q_TRI, Q_TRI, Q_TRI, Q_TRI}},
+                   {4, {0, 2, 6, 3}, {Q_TRI, Q_TRI, Q_TRI, Q_TRI}},
+                   {4, {3, 6, 2, 5}, {Q_7, Q_7, Q_7, Q_7}},
+                   {4, {0, 5, 3, 4}, {Q_7, Q_7, Q_7, Q_7}},
+                   {4, {0, 4, 5, 3}, {Q_TRI, Q_TRI, Q_TRI, Q_TRI}},
+                   {4, {5, 3, 0, 4}, {Q_TRI, Q_TRI, Q_TRI, Q_TRI}},
+                   {4, {0, 6, 3, 0}, {Q_ADD9, Q_TRI | F_FLAT, Q_7, Q_ADD9}},
+                   {4, {3, 0, 4, 5}, {Q_ADD9, Q_7, Q_TRI, Q_7}},
+                   {4, {0, 5, 2, 4}, {Q_TRI, Q_TRI, Q_TRI, Q_TRI | F_MAJ}},
+                   {4, {0, 2, 3, 5}, {Q_TRI, Q_TRI, Q_TRI, Q_TRI}},
+                   {4, {0, 3, 2, 5}, {Q_7, Q_7, Q_7, Q_7 | F_DOM}},
+                   {4, {1, 4, 2, 5}, {Q_7, Q_7, Q_7, Q_7 | F_DOM}},
+};
 /* (0.8.3) a genre's harmony: its family (how it composes) and what it may colour with */
 enum { HF_LOOP, HF_JAZZY, HF_POP, HF_COLOR, HF_CINE, HF_JAZZ };   /* modal loops; 7th loops; functional pop; colour
                                                          * washes; film; jazz (ii-V, secondary dominants) */

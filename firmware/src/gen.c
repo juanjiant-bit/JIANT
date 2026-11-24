@@ -1260,8 +1260,10 @@ static void gl_write(track_t *t, gline_t *L, uint32_t len, uint32_t legato)
  * dotted push ..); (V10.6p) bit p the step p (were text: 228 B less): x..x..x...x..... x.x.x...x.x..... x...x.x.x.......
  * ..x...x...x...x. x..x.x..x..x.x.. x.......x.x.x... x...x...x...x... x.x...x.x...x... ..x.x...x.x..... x..x..x..x..x...
  * x.....x...x.x... x...x.x.......x. */
-static const uint16_t GL_CELL[12] = {0x0449u, 0x0515u, 0x0151u, 0x4444u, 0x2929u, 0x1501u, 0x1111u, 0x1145u, 0x0514u,
-                                     0x1249u, 0x1441u, 0x4051u};
+static const uint16_t GL_CELL[16] BTAPP_RO = {0x0449u, 0x0515u, 0x0151u, 0x4444u, 0x2929u, 0x1501u, 0x1111u, 0x1145u, 0x0514u,
+                                     0x1249u, 0x1441u, 0x4051u, 0x0149u, 0x1454u, 0x0941u, 0x2425u};   /* (V10.8.34: four
+                                                         * more, syncopated: x..x..x.x....... ..x.x.x...x.x... x.....x.x..x....
+                                                         * x.x..x....x..x..) */
 enum { LB_M, LB_V, LB_R, LB_C, LB_REST };               /* a bar of the phrase: the motif, varied, the answer, the
                                                          * continuation, a rest */
 /* (V10.6p) a riff as written (gen_tables.c BASS_ARCH's BA_RF1 ..): its codes the key's degrees from the tonic (R .. 9:
@@ -1429,20 +1431,25 @@ BTAPP_FN static void gen_lead(track_t *t, uint32_t len)   /* (V10.7.56: the segm
                                           {LB_M, LB_M, LB_M, LB_V},    /* the hook: A A A A' */
                                           {LB_M, LB_R, LB_M, LB_R},    /* call and response */
                                           {LB_M, LB_REST, LB_M, LB_V}};/* the dub's: space */
-        static const int8_t ARCH[6][4] = {{0, 0, 1, 0}, {0, 0, 2, 0}, {0, 0, 1, 0}, {0, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 0}};
+        static const int8_t ARCH[6][4] = {{0, 0, 1, 0}, {0, 0, 2, 0}, {0, 0, 1, 0}, {0, 0, 0, 0}, {0, 2, 0, 3}, {0, 0, 0, 0}};   /* (V10.8.34:
+                                                         * call and response's answers a third, then a fourth over the call) */
         uint8_t at[8], used[16] = {0};
         int8_t mo[8];
-        uint32_t k = 3u + gs.complex / 40u + (a > 60u), nc = 0, tpl, op = gr() % 5u, ct = gr() % 4u;   /* (op: the varied
+        uint32_t k = 3u + gs.complex / 40u + (a > 60u), nc = 0, tpl, op = gr() % 6u, ct = gr() % 4u, sig = 1u + op % 3u;   /* (V10.8.34:
+                                                         * a sixth operator, DISPL: the bar an eighth late; sig: the motif's
+                                                         * own leap, its signature) */   /* (op: the varied
                                                          * bar's: 0 TRUNC, 1 RETRO, 2 END moved, 3 ORN, 4 AUG) */
         int32_t anchor, d = 0, pv = 0, base0;
-        uint32_t cell = GL_CELL[gr() % 12u];
+        uint32_t cell = GL_CELL[gr() % 16u];
         if (a < 35u && k > 3u) k--;
         if (k > 6u) k = 6u;
         tpl = style == LD_HOOK ? (gch(65) ? 4u : 2u) :
               fam == HF_LOOP ? (gch(60) ? 3u : 5u) :
               fam == HF_POP ? (gr() % 3u == 0u ? 1u : gch(50) ? 0u : 4u) :
               fam == HF_JAZZ || fam == HF_JAZZY ? (gch(40) ? 1u : gch(50) ? 2u : 0u) : (gch(50) ? 0u : 1u);
-        if (gs.sec) { op = (op + gs.sec) % 5u; tpl = (tpl + gs.sec) % 6u; }   /* (V10.6z10) a section's development of the
+        if (gch(25)) tpl = 4u;                          /* (V10.8.34, the owner: "call and response") a question and its
+                                                         * answer (the motif, the motif turned over) a throw in four more */
+        if (gs.sec) { op = (op + gs.sec) % 6u; tpl = (tpl + gs.sec) % 6u; }   /* (V10.6z10) a section's development of the
                                                          * same motif: another of the varied bar's operators (TRUNC RETRO
                                                          * END ORN AUG), another phrase (the answer inverted, call and
                                                          * response, space) */
@@ -1460,9 +1467,12 @@ BTAPP_FN static void gen_lead(track_t *t, uint32_t len)   /* (V10.7.56: the segm
                 int32_t m = (int32_t)gpickw(W, 4), dir;
                 if (!m && !pv) m = 1;                   /* (never two repeats running) */
                 if (m == 3) m = gch(60) ? 3 : 4;
+                if (j == sig) m = 4 + (int32_t)(ct & 1u);   /* (V10.8.34, the owner: "personality") the motif's
+                                                         * signature: one leap of a fifth or a sixth, its place the seed's
+                                                         * (filled by the step back after it) */
                 dir = ct == 0u ? (j <= k / 2u ? 1 : -1) : ct == 1u ? (gch(75) ? -1 : 1) : ct == 2u ? (gch(75) ? 1 : -1) : (j & 1u ? 1 : -1);
                 if (pv >= 3 || pv <= -3) { m = 1; dir = pv > 0 ? -1 : 1; }   /* (the leap filled) */
-                if (d + dir * m > 4 || d + dir * m < -3) dir = -dir;
+                if (d + dir * m > 5 || d + dir * m < -4) dir = -dir;
                 pv = dir * m;
                 d += pv;
             }
@@ -1515,7 +1525,8 @@ BTAPP_FN static void gen_lead(track_t *t, uint32_t len)   /* (V10.7.56: the segm
                 sh += bo;
             }
             for (j = 0; j < kk; j++) {
-                uint32_t pos = b0 + (vop == 4u ? at[j] * 2u : at[j]);   /* AUG: its first half's rhythm doubled */
+                uint32_t pos = b0 + (vop == 4u ? at[j] * 2u : vop == 5u ? at[j] + 2u : at[j]);   /* AUG: its first half's rhythm
+                                                         * doubled; DISPL: an eighth late */
                 int32_t mj = vop == 1u ? mo[kk - 1u - j] - mo[kk - 1u] + mo[0] : mo[j];   /* RETRO: its notes backwards
                                                          * from its first (the rhythm kept) */
                 int32_t dd = anchor + (inv ? -mj + 2 * mo[0] : mj) + sh + arch;
@@ -2074,6 +2085,7 @@ static __attribute__((noinline)) void gtile(track_t *t)
     t->p[P_SLEN] = NSTEP;
 }
 static uint32_t gls_snare(const track_t *t);
+BTAPP_FN static void gx_prog(uint32_t fam);
 static void gen_parts(void)
 {
     const ggenre_t *g = gs.g;
@@ -2147,7 +2159,16 @@ static void gen_parts(void)
         if (gls.on && gls.v.n && (k == 1u || (k == 3u && gch(50)))) { gs.pn = gls.v.n; memcpy(gs.pdeg, gls.v.deg, 8); }   /* (MY
                                                          * LOOP: the verse the genre's progression, the break it or the
                                                          * drop's) */
-        if (fam != HF_LOOP && ((form == FM_PARTS && k == 1u) || (form != FM_PARTS && k == 3u))) rot = gsec_rot();
+        if (fam != HF_LOOP && ((form == FM_PARTS && k == 1u) || (form != FM_PARTS && k == 3u))) {
+            if (pn > 1u && !gls.on && !glatin() && gch(80)) {   /* (V10.8.34, the owner: "different parts within a song") the
+                                                         * contrast section its own progression, the family's grammar's (as
+                                                         * many chords as A's, A's qualities), from its predominant */
+                for (i = 0; i < 6u && (gx_prog(fam), gs.pn != pn || !memcmp(gs.pdeg, pdeg, pn)); i++) {}
+                if (i < 6u) for (i = 0; i < pn; i++) gs.pq[i] = QQ(pq[i]);
+                else { memcpy(gs.pdeg, pdeg, sizeof pdeg); memcpy(gs.pq, pq, sizeof pq); gs.pn = pn; }
+            }
+            rot = gsec_rot();
+        }
         if (form == FM_PARTS && k == 2u && (gs.hx & HX_LIFT)) {
             static const int8_t XL[7] = {1, 3, 5, 6, -1, -3, -5};   /* (0.8.6) EXPLORE: anywhere, not a whole step */
             lift = gx.on ? XL[gr() % 7u] : 2;
@@ -2156,10 +2177,12 @@ static void gen_parts(void)
         gs.sec = (uint8_t)k;                            /* (V10.6z10) the section's own variations (gseed_mix, gen_lead) */
         en = gs.energy;
         if (gls.on) gs.energy = (uint32_t)grr(25, 95);  /* (MY LOOP: a seed's energy a section) */
+        gs.reg = (int8_t)(k == 2u ? 5 : k == 1u ? -4 : 0);   /* (V10.8.34) a section's register its own: the arp's and the
+                                                         * lead's windows a fourth up in C, a third down in B */
         if (pn == 1u) {                                 /* (V10.6z10) one chord: the section's register and density its
                                                          * own (C up a fifth and busier, B and D thinner, D down a fourth:
                                                          * the arp's rate, the lead's notes, the chords' pulse by ENERGY) */
-            gs.reg = (int8_t)(k == 2u ? 7 : k == 3u ? -5 : 0);
+            if (k == 3u) gs.reg = -5;
             gs.energy = k == 2u ? (en + 100u) / 2u : en * 2u / 3u;
         }
         if (gls.on || form != FM_CLUB || k != 1u) gen_pitched(rot, lift);   /* (B: A's but the crash; MY LOOP: every
@@ -2524,6 +2547,24 @@ static void gen_post(void)
                 if (i + 1u < len && trk[bs].step[i + 1u].time == ST_NOTE && gch(GG_SLD(gg) * 12u)) s->flags |= SF_SLIDE;
                 if (i % 4u == 2u && s->n == 1u && s->note[0] <= 52u && gin_mode(s->note[0]) && gch(GG_OCT(gg) * 12u)) s->note[0] += 12;
             }
+        {   /* (V10.8.34, the owner: "call and response") a dialogue, a throw in two: where the lead speaks (two notes or
+             * more in a half bar) the arp is silent, and answers in its gaps; not where the lead leaves it none */
+            uint32_t ld = gs.trk_of[RL_LEAD], ar = gs.trk_of[RL_ARP], c = 0, kill = 0, busy = 0, j;
+            if (ld < NTRK && ar < NTRK && gs.act[RL_LEAD] && gs.act[RL_ARP] && !gx.on && gch(50)) {
+                uint32_t ll = dlen(&trk[ld]);
+                len = dlen(&trk[ar]);
+                for (k = 0; k < 2u; k++)                /* (the first pass counts the lead's busy half bars) */
+                    for (i = 0; i < len && busy * 4u <= len / 8u * 3u; i++) {
+                        step_t *s = &trk[ar].step[i];
+                        if (!(i & 7u)) {
+                            for (j = c = 0; j < 8u; j++) c += trk[ld].step[(i + j) % ll].time == ST_NOTE;
+                            if (!k) busy += c >= 2u;
+                        }
+                        if (!k) continue;
+                        if (c >= 2u || (kill && s->time == ST_TIE)) { gclear(s); kill = 1; } else kill = 0;
+                    }
+            }
+        }
         gq = q0;
     }
     /* (0.8.3: the lead's clashes with the bass are avoided as it is written, against the chord's root: so turning
@@ -2565,14 +2606,13 @@ static void gen_post(void)
                                                          * line: its notes are composed) */
                     uint32_t c = gr() % 3u;
                     if (s->time != ST_NOTE || !gin_mode(s->note[0])) continue;
-                    uint32_t cc = c == 0u ? CP_ECHO : c == 1u ? CP_BEND : CP_PULSE;
-                    comp_legacy(s, 0, cc, cc == CP_ECHO ? gr() % 2u : cc == CP_BEND ? (gch(50) ? 2u : 10u) : 1u);
+                    uint32_t cc = c ? CP_ECHO : CP_PULSE;   /* (V10.8.34: no BEND thrown onto the line: a cartoon's) */
+                    comp_legacy(s, 0, cc, cc == CP_ECHO ? gr() % 2u : 1u);
                 } else {                                /* (the arp: its chord's tones; 0.8.3: no RAND, no WALK; gen3: the
                                                          * SEQ walker, its steps from this one on) */
                     uint32_t c = gr() % 4u;
-                    uint32_t cc = c == 0u ? CP_OCT : c == 1u ? CP_ECHO : c == 2u ? CP_CLIMB : CP_ARPQ;
-                    comp_legacy(s, 0, cc, cc == CP_OCT ? 4u : cc == CP_CLIMB ? CP_WARG(2u + gr() % 6u, gch(50) ? 2u : 0u, gr() % 2u) :
-                                cc == CP_ARPQ ? CP_ARG(0u, 0u, 0u) : 0u);
+                    uint32_t cc = c == 0u ? CP_OCT : c == 3u ? CP_ARPQ : CP_ECHO;   /* (V10.8.34: no CLIMB) */
+                    comp_legacy(s, 0, cc, cc == CP_OCT ? 4u : cc == CP_ARPQ ? CP_ARG(0u, 0u, 0u) : 0u);
                     if (c == 1u && gs.energy > 60u && gch(50)) { s->comp = 0; s->clen[0] = 0; step_set_ratchet(s, 2); }
                 }
                 if (s->comp && gch(55)) {               /* (every other loop; gen3: or once in four, the third of four:
@@ -2710,7 +2750,9 @@ BTAPP_FN static void gen_pick(void)
             p = &PROG[gminor() ? (gs.sc[1] == 1u ? PR_PHRY : gs.sc[6] == 11u ? PR_I_IV : PR_I_VII) : gs.sc[3] == 6u ? PR_I_II : PR_I_IV];
             if (!gprog_ok(p)) p = &PROG[PR_ONE];
         }
-        if (!glatin() && !gch(p->n == 1u ? 50u : 35u)) {   /* (V10.7.2: the latin genres' progressions their own) */
+        if (!glatin() && !gls.on && p->n > 1u && gch(25) && gprog_ok(&PROGF[t = 2u * HXF(g->hx) + (gr() & 1u)])) p = &PROGF[t];   /* (V10.8.34)
+                                                         * the family's own two, a throw in four */
+        else if (!glatin() && !gch(p->n == 1u ? 50u : 35u)) {   /* (V10.7.2: the latin genres' progressions their own) */
             gx_prog(HXF(g->hx));
             pg.n = gs.pn; memcpy(pg.deg, gs.pdeg, 4); memcpy(pg.q, gs.pq, 4);
             if (pg.n != 3u && gprog_ok(&pg)) p = &pg;      /* (a chord the mode would not take left out: never three,
