@@ -10,9 +10,6 @@ JIANT FM ya no es solo para la M-VAVE FM-1. El mismo firmware, nota por nota, ah
   desde la microSD.
   Descarga: https://github.com/juanjiant-bit/JIANT/releases · Cómo instalarlo: https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample/README.md ·
   Emulador: https://juanjiant-bit.github.io/JIANT/emu/devices.html#mpc · Editor: próximamente.
-- **MPC standalone** (One, Live, Key…), como plugin.
-- **VST3 / LV2 / app standalone** para Linux y Windows. Mac e iOS vienen después.
-  Descarga: https://github.com/juanjiant-bit/JIANT/releases · Cómo funcionan: https://github.com/juanjiant-bit/JIANT/blob/main/ports/README.md
 - **M-VAVE SMK-37 Pro / Elite**: en desarrollo, mismo chip que la FM-1. Instalación: todavía no (se compila desde el
   código: https://github.com/juanjiant-bit/JIANT/blob/main/docs/SMK37.md) · Emulador: https://juanjiant-bit.github.io/JIANT/emu/devices.html#smk37 ·
   Editor: https://juanjiant-bit.github.io/JIANT/webapp/editor/
@@ -33,7 +30,7 @@ https://juanjiant-bit.github.io/JIANT/emu/devices.html
 
 **Descargas (preview):** https://github.com/juanjiant-bit/JIANT/releases
 
-⚠️ Es una preview: todavía no se probó en hardware real. **Buscamos testers** con MPC Sample, MPC standalone o
+⚠️ Es una preview: todavía no se probó en hardware real. **Buscamos testers** con MPC Sample o
 SMK-37. Contanos cómo te va en Issues o por acá.
 
 Gratis y libre, GPL-3.0. 🧡
@@ -48,9 +45,6 @@ JIANT FM is no longer just for the M-VAVE FM-1. The same firmware, note for note
   microSD card.
   Download: https://github.com/juanjiant-bit/JIANT/releases · How to install: https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample/README.md ·
   Emulator: https://juanjiant-bit.github.io/JIANT/emu/devices.html#mpc · Editor: coming.
-- **MPC standalones** (One, Live, Key…), as a plugin.
-- **VST3 / LV2 / standalone app** for Linux and Windows. Mac and iOS come later.
-  Download: https://github.com/juanjiant-bit/JIANT/releases · How they work: https://github.com/juanjiant-bit/JIANT/blob/main/ports/README.md
 - **M-VAVE SMK-37 Pro / Elite**: in development, on the same chip as the FM-1. Install: not yet (build from source:
   https://github.com/juanjiant-bit/JIANT/blob/main/docs/SMK37.md) · Emulator: https://juanjiant-bit.github.io/JIANT/emu/devices.html#smk37 ·
   Editor: https://juanjiant-bit.github.io/JIANT/webapp/editor/
@@ -72,7 +66,7 @@ https://juanjiant-bit.github.io/JIANT/emu/devices.html
 
 **Downloads (preview):** https://github.com/juanjiant-bit/JIANT/releases
 
-⚠️ This is a preview: nothing has been tried on real hardware yet. **We're looking for testers** with an MPC Sample,
-an MPC standalone or an SMK-37. Tell us how it goes in Issues or here.
+⚠️ This is a preview: nothing has been tried on real hardware yet. **We're looking for testers** with an MPC Sample
+or an SMK-37. Tell us how it goes in Issues or here.
 
 Free and open, GPL-3.0. 🧡
