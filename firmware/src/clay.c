@@ -85,7 +85,8 @@ static __attribute__((noinline)) void clay_tick(uint32_t n)
             if ((int16_t)s1 == st->lastm[k]) continue;
             st->lastm[k] = (int16_t)s1;
             form_lit[tr] = (uint8_t)(form_lit[tr] & ~(1u << k));
-            if (form_hit(eu, k, s1, seed))
+            if (c[CL_MF(k, 3u)] > 0 && form_hit(eu, k, s1, seed))   /* (V10.8.30, the owner: AMOUNT 0 strikes nothing,
+                                                         * the drone left clean) */
                 clay_strike(tr, t, st, k, clay_sh(c[CL_MF(k, 1u)]), (s1 & 3u) ? 90u : 127u);
         }
         clay_eval(st, c, &o, t->at);

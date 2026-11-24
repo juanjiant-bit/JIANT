@@ -1966,7 +1966,6 @@ static __attribute__((noinline)) void draw_countin(void)
         ui.force = 0;
         return;
     }
-    draw_text_box(0, CI_Y + CI_H + 14, 240, &AF_S, "RECORDING STARTS AFTER 1", T_MID, 1);
     {   /* PLAY stops it */
         int32_t x = HALF_UP(240 - kh_ink(KC_PLAY, "STOP"));
         cv_begin(240, KC_H + 2, T_BG);

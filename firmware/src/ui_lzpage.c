@@ -347,7 +347,6 @@ static void graph_arp(const track_t *t)
     cv_text_r(228, 6 - AF_X_CAP_Y, &AF_X, b, T_DIM, T_SURF);
     if (!md) {
         cv_text_in(4, 56 - AF_M_CAP_Y, 232, &AF_M, "ARP OFF", T_MID, T_SURF);
-        cv_text_in(4, 76 - AF_X_CAP_Y, 232, &AF_X, "KEYS PLAY STRAIGHT", T_DIM, T_SURF);
         return;
     }
     for (i = 0; i < 16u; i++) {                         /* the pattern over a triad, OCT octaves */

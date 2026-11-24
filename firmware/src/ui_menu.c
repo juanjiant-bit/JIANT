@@ -378,10 +378,8 @@ static __attribute__((noinline)) void menu_panel(void)
         str_cpy(b + str_len(b), " > ", 32 - str_len(b));
         str_cpy(b + str_len(b), MI_NAME[row], 32 - str_len(b));
         cv_text(10, 6 - AF_X_CAP_Y, &AF_X, b, T_THEME);
-        if (!nv) {
-            cv_text_in(4, 60 - AF_M_CAP_Y, 232, &AF_M, "OCT+ OPENS IT", T_MID, T_SURF);
+        if (!nv)
             return;
-        }
         for (k = 0; k < nv && k < 18u; k++) {
             int32_t x = 8 + (int32_t)(k % 3u) * 75, y = 16 + (int32_t)(k / 3u) * 20;
             uint16_t bg = k == cur ? T_TINT : T_RAISE;

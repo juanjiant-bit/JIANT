@@ -852,7 +852,7 @@ static void cp_put(track_t *t, uint32_t a, uint32_t whole)
     for(j=0;j<clip.nl;j++)
         if(clip.lk[j].off<n && (clip.engine==eng_idx(t->eng_req) || clip.lk[j].id<P_E0) &&
            motion_set_lock(t,(a+clip.lk[j].off)%len,clip.lk[j].id,clip.lk[j].v)==2)break;
-    cp_say("PASTED ",n);str_cpy(ui.msg2,"UNDO: GLO + G4",sizeof ui.msg2);ui.force=1;
+    cp_say("PASTED ",n);ui.force=1;
 }
 static void cp_seq(uint32_t paste)
 {

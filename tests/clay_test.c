@@ -40,6 +40,28 @@ int main(void)
     ok = clay_dn[tr] == dn && voice_on(t, dn);
     bad += check("clay ON (FREE): the drone sounds on the track's voice, C(OCT+1) on the ROOT", ok);
 
+    {   /* (V10.8.30, the owner) every modulator's AMOUNT 0 (their EUCLIDs on, a HIT on MOD 1), RATE HOLD: the drone held
+         * clean, one note-on for bars, no strikes, no dips in its level */
+        uint32_t m, att = 0, was = 1, lit = 0, gap = 0, b2;
+        for (m = 0; m < 4u; m++) clay[tr][CL_MF(m, 3u)] = 0;
+        clay_tick(1);
+        for (b2 = 0; b2 < 6000u; b2++) {               /* (a few bars at 120) */
+            int32_t o[2 * CTL];
+            uint32_t i, st = 0;
+            mix_block(o, CTL);
+            for (i = 0; i < NVOICE; i++)
+                if (t->v[i].active && t->v[i].note == clay_dn[tr]) st = t->v[i].stage;
+            att += st == 1u && was != 1u;
+            was = st;
+            lit |= form_lit[tr];
+            gap += !voice_on(t, clay_dn[tr]);
+        }
+        ok = !att && !lit && !gap && !form_st[tr].hb.on;
+        if (!ok) printf("  (re-attacks %u, lit %u, blocks without it %u)\n", att, lit, gap);
+        bad += check("clay AMOUNT 0 everywhere, RATE HOLD: the drone held clean (one note-on, no strike, no duck)", ok);
+        clay_defaults(clay[tr]); clay[tr][CL_ON] = 1; clay[tr][CL_RUN] = 1; clay[tr][CL_RATE] = 0;
+    }
+
     clay[tr][CL_ON] = 0;
     blocks(40);
     ok = !clay_dn[tr] && !clay_nn[tr] && !clay_vk(tr, 0) && !clay_vk(tr, 1) && !clay_vk(tr, 2) && !clay_vk(tr, 3);
