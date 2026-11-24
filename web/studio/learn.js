@@ -40,8 +40,8 @@ const alpha = (col, a) => {                       // a CSS colour (#rgb, #rrggbb
 };
 
 /* a step grid (16 by default) with a playhead; lit(i) says which steps play */
-function grid(c, t, W, H, C, n, lit, rows = 1, label) {
-  const pad = 18, gw = (W - pad * 2) / n, gh = Math.min(42, (H - 60) / rows), y0 = H / 2 - (gh * rows) / 2;
+function grid(c, t, W, H, C, n, lit, rows = 1, label, pad = 18) {
+  const gw = (W - pad - 18) / n, gh = Math.min(42, (H - 60) / rows), y0 = H / 2 - (gh * rows) / 2;
   const head = Math.floor(t * 4) % n;
   for (let r = 0; r < rows; r++) for (let i = 0; i < n; i++) {
     const on = lit(i, r), x = pad + i * gw + 2, y = y0 + r * gh + 2;
@@ -146,8 +146,9 @@ K.creature = (c, t, W, H, p, C) => {      // a creature breathing: what the engi
 };
 K.drum = (c, t, W, H, p, C) => {          // a kit: each voice its row, each hit a flash
   const names = ["KICK", "SNARE", "HAT", "PERC"], pat = [0x1111, 0x0808, 0xaaaa, 0x2244];
-  const head = grid(c, t * 1.2, W, H, C, 16, (i, r) => (pat[r] >> (15 - i)) & 1, 4);
-  names.forEach((n, r) => { const on = (pat[r] >> (15 - head)) & 1; text(c, n, 12, H / 2 - 84 + r * 42 + 21, on ? C.acc : C.dim, 9, "left"); });
+  const head = grid(c, t * 1.2, W, H, C, 16, (i, r) => (pat[r] >> (15 - i)) & 1, 4, null, 62);
+  const gh = Math.min(42, (H - 60) / 4);
+  names.forEach((n, r) => { const on = (pat[r] >> (15 - head)) & 1; text(c, n, 12, H / 2 - gh * 2 + r * gh + gh / 2, on ? C.acc : C.dim, 11, "left"); });
 };
 K.wheel = (c, t, W, H, p, C) => {         // a wheel of steps turning: each spoke a sound
   const cx = W / 2, cy = H / 2, R = Math.min(W, H) * .34, n = 8;

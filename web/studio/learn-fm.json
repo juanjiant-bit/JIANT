@@ -651,7 +651,7 @@
      "id": "ext",
      "name": "EXT",
      "tag": {
-      "es": "El mundo de afuera, en una pista",
+      "es": "El mundo de afuera, sonando",
       "en": "The outside world, on a track"
      },
      "statement": {
@@ -685,8 +685,8 @@
      "id": "swarm",
      "name": "SWARM",
      "tag": {
-      "es": "Una melodía según qué tan cerca estás",
-      "en": "A melody from how near you are"
+      "es": "Melodía según la cercanía",
+      "en": "A melody from nearness"
      },
      "statement": {
       "es": "El Bluetooth que rodea al FM-1 se vuelve música: qué tan cerca está algo decide qué toca y cómo suena. Si te acercás, la melodía sube; si te alejás, baja.",
@@ -1024,7 +1024,7 @@
      "name": "LOCKS",
      "tag": {
       "es": "Un valor propio por paso",
-      "en": "A value of its own per step"
+      "en": "Each step, its own value"
      },
      "statement": {
       "es": "Cada paso puede tener su propio sonido: un corte, una vocal, un MORPH distinto. El patrón deja de ser notas y se vuelve un paisaje.",
@@ -2359,8 +2359,8 @@
      "id": "take",
      "name": "TAKE",
      "tag": {
-      "es": "La toma y lo que tocás encima",
-      "en": "The take and what you play over it"
+      "es": "La toma y tocar encima",
+      "en": "The take, and playing over"
      },
      "statement": {
       "es": "Lo que tocás queda como una toma; después la toma suena sola y vos tocás encima, y lo tuyo queda marcado.",
