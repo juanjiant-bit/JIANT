@@ -1,6 +1,7 @@
 # Public alternatives while voice allocation is investigated in beta.
 # (V10.8.4, the owner) the public releases before V10.7.81 kept in the installer: emulator.yml rebuilds the public list
 # from web/STABLE and this file alone, so a release not named here dropped out at the next push to main
+02c0a7d3053783f920478406d7728e200b6a4fbc  # V10.8.24
 865b12d0d0d975e1b738452ac94c3d9c2cb4925c  # V10.8.23
 17dc2256e4e21b6eaeb03cf6c30d6a0fc99a9208  # V10.8.21
 e58c52e4fa0954dd6e9991d87c4b4d64c27236e7  # V10.7.81

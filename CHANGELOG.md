@@ -42,6 +42,10 @@ The sections marked **Compatibility notes** are the ones to check before you ins
 
 ---
 
+## V10.8.25 — the emulator as an input in JIANT Studio (2026-11-24)
+
+- In JIANT Studio › Record, the emulator can be the input: its 8 stems (as USB STEMS sends them: six tracks and the FX return) and its MIDI OUT. Firmware unchanged from V10.8.24.
+
 ## V10.8.24 — the emulator in JIANT Studio (2026-11-23)
 
 - The emulator answers the whole editor protocol: JIANT Studio and the web editor edit the emulator, record its output and pick its MIDI input. Firmware unchanged from V10.8.23.

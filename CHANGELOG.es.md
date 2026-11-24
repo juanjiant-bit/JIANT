@@ -43,6 +43,10 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 
 ---
 
+## V10.8.25 — el emulador como entrada en JIANT Studio (2026-11-24)
+
+- En JIANT Studio › Grabar, el emulador puede ser la entrada: sus 8 stems (como los manda USB STEMS: las seis pistas y la vuelta de FX) y su MIDI OUT. El firmware es el de V10.8.24.
+
 ## V10.8.24 — el emulador en JIANT Studio (2026-11-23)
 
 - El emulador responde todo el protocolo del editor: JIANT Studio y el editor web editan el emulador, graban su salida y eligen su entrada MIDI. El firmware es el de V10.8.23.
