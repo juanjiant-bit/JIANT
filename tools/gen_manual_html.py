@@ -215,14 +215,14 @@ PORT_DOCS = {
                 title='JIANT <span class="fm">FM</span> on the MPC Sample',
                 lead="JIANT as the MPC Sample's whole instrument, started from the microSD card: its screen, pads, buttons and knobs as the FM-1's panel, with the SAMPLE and GRAIN engines, DRUM-X with samples and 16 sample slots. Preview: testers wanted.",
                 links=[("Download", "https://github.com/juanjiant-bit/JIANT/releases"), ("Try it in the browser", "https://juanjiant-bit.github.io/JIANT/emu/devices.html#mpc"), ("JIANT Studio", STUDIO + "#ports")]),
-    "ports": dict(src="ports/README.md", eyebrow="Manual · the ports and the MPC plugin", shot="mpc-plugin.webp",
+    "ports": dict(src="ports/README.md", eyebrow="Manual · the ports and the MPC plugin (coming soon)", shot="mpc-plugin.webp",
                   title='JIANT <span class="fm">FM</span> beyond the FM-1',
                   lead="The same firmware from the same sources on other machines: the MPC plugin for the MPC standalones (MPC OS 3.10.1+) and desktop VST2 hosts, the MPC Sample app, the desktop plugins. A song sounds the same on every one.",
-                  links=[("Download", "https://github.com/juanjiant-bit/JIANT/releases"), ("JIANT Studio", STUDIO + "#ports")]),
-    "plugin": dict(src="ports/juce-plugin/README.md", eyebrow="Manual · VST3 · AU · AUv3 · LV2 · app", shot="plugin.webp",
+                  links=[("JIANT Studio", STUDIO + "#ports")]),
+    "plugin": dict(src="ports/juce-plugin/README.md", eyebrow="Coming soon · VST3 · AU · AUv3 · LV2 · app", shot="plugin.webp",
                    title='JIANT <span class="fm">FM</span> in your DAW',
                    lead="For your DAW or the iPad (AUM, GarageBand, Logic, Cubasis…), with an editor made for a DAW: the live screen, the six tracks, each sound's presets and parameters, and a sample browser with drag and drop.",
-                   links=[("Download", "https://github.com/juanjiant-bit/JIANT/releases"), ("JIANT Studio", STUDIO + "#ports")]),
+                   links=[("JIANT Studio", STUDIO + "#ports")]),
 }
 
 

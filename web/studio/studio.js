@@ -134,7 +134,7 @@ const TEXT = {
     shotDawSamples: "el editor del plugin: el explorador de samples", portsManuals: "Manuales",
     portsHow: "Cómo funcionan", portTry: "Probar en el navegador", portDownload: "Descargar", portManual: "Manual", portInstall: "Cómo instalar",
     portSource: "Código", portBuild: "Compilar", portSoon: "Instalador: próximamente",
-    stOk: "funciona", stPreview: "preview: buscamos testers", stDev: "en desarrollo", stCi: "compilado en CI",
+    stOk: "funciona", stSoon: "próximamente", portSoonBuy: "Próximamente a la venta", stPreview: "preview: buscamos testers", stDev: "en desarrollo", stCi: "compilado en CI",
     pSmkTitle: "M-VAVE SMK-37 Pro / Elite", pSmkText: "JIANT directo en el chip del SMK-37 (el mismo AC791N que la FM-1): 37 teclas, 16 pads RGB, 8 encoders y 4 faders como panel. Usa el mismo editor web.",
     pSmk1: "Pads con color por pista", pSmk2: "El mismo editor y los mismos sonidos que la FM-1",
     pMpcTitle: "Akai MPC Sample", pMpcText: "JIANT como el instrumento entero de la MPC Sample: su pantalla, sus pads, botones y perillas como el panel de la FM-1, arrancando desde la microSD.",
@@ -261,7 +261,7 @@ const TEXT = {
     shotDawSamples: "the plugin's editor: the sample browser", portsManuals: "Manuals",
     portsHow: "How they work", portTry: "Try it in the browser", portDownload: "Download", portManual: "Manual", portInstall: "How to install",
     portSource: "Source", portBuild: "Build", portSoon: "Installer: coming",
-    stOk: "works", stPreview: "preview: testers wanted", stDev: "in development", stCi: "built by CI",
+    stOk: "works", stSoon: "coming soon", portSoonBuy: "Coming soon, for sale", stPreview: "preview: testers wanted", stDev: "in development", stCi: "built by CI",
     pSmkTitle: "M-VAVE SMK-37 Pro / Elite", pSmkText: "JIANT bare metal on the SMK-37's chip (the FM-1's AC791N): 37 keys, 16 RGB pads, 8 encoders and 4 faders as its panel. The same web editor.",
     pSmk1: "Pads lit in each track's colour", pSmk2: "The FM-1's editor and sounds",
     pMpcTitle: "Akai MPC Sample", pMpcText: "JIANT as the MPC Sample's whole instrument: its screen, its pads, buttons and knobs as the FM-1's panel, started from the microSD card.",
@@ -976,11 +976,12 @@ const PORTS = [
   { id: "mpc", name: "pMpcTitle", text: "pMpcText", points: ["pMpc1", "pMpc2"], state: ["stPreview", "soon"], pic: OUTLINE.mpc,
     shots: [["img/mpc.webp", "shotMpc"]], whole: true,           // (the unit stands upright: all of it shown)
     links: [["portTry", "#try:mpc"], ["portManual", MAN + "mpc-sample.html"], ["portDownload", RELEASES], ["portInstall", MAN + "mpc-sample.html#release"]] },
-  { id: "mpcplug", name: "pPlugMpcTitle", text: "pPlugMpcText", points: ["pPlugMpc1", "pPlugMpc2"], state: ["stPreview", "soon"], pic: OUTLINE.mpc,
-    links: [["portDownload", RELEASES], ["portManual", MAN + "ports.html#the-mpc-plugin"], ["portSource", "https://github.com/juanjiant-bit/JIANT/tree/main/ports/mpc-plugin"]] },
-  { id: "daw", name: "pDawTitle", text: "pDawText", points: ["pDaw1", "pDaw2", "pDaw3"], state: ["stCi", "ok"],
+  // (the plugins: coming soon, for sale; no download here)
+  { id: "mpcplug", name: "pPlugMpcTitle", text: "pPlugMpcText", points: ["pPlugMpc1"], state: ["stSoon", "soon"], pic: OUTLINE.mpc,
+    links: [["portManual", MAN + "ports.html#the-mpc-plugin"], ["portSoonBuy", null]] },
+  { id: "daw", name: "pDawTitle", text: "pDawText", points: ["pDaw1", "pDaw2", "pDaw3"], state: ["stSoon", "soon"],
     shots: [["img/plugin.webp", "shotDaw"], ["img/plugin-sound.webp", "shotDawSound"], ["img/plugin-samples.webp", "shotDawSamples"]],
-    links: [["portDownload", RELEASES], ["portManual", MAN + "plugin.html"], ["portSource", "https://github.com/juanjiant-bit/JIANT/tree/main/ports/juce-plugin"]] },
+    links: [["portManual", MAN + "plugin.html"], ["portSoonBuy", null]] },
 ];
 let docsFor = "";
 function renderPorts() {
