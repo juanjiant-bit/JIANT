@@ -47,7 +47,7 @@ const TEXT = {
     tourV_portsT: "Otros aparatos", tourV_ports: "JIANT en el SMK-37 y la MPC Sample, con su emulador y su manual, y los plugins que vienen.", tourV_portsH: "Probalos en el navegador sin tener el aparato.",
     tourLangT: "Idioma", tourLang: "Cambiá entre español e inglés.",
     tourEndT: "Listo", tourEnd: "Esta guía vuelve cuando quieras con este botón.", tourEndH: "Para empezar: conectá tu FM-1 y tocá Buscar, o elegí Emulador y prendelo.",
-    siteLink: "El sitio de %s: qué es, sus pantallas y su historia →", vLearn: "Cómo funciona", lrIndex: "Índice", lrIndexLead: "Todo, de un vistazo: tocá cualquier elemento para abrir su página. Con ← y → pasás al siguiente.", lrTitleFm: "JIANT FM por dentro", lrTitleByte: "JIANT BYTE por dentro", lrTry: "Probarlo en el emulador", lrWhere: "En la FM-1: ", lrNone: "Esta guía todavía se está escribiendo.",
+    siteLink: "El sitio de %s: qué es, sus pantallas y su historia →", vLearn: "Cómo funciona", lrIndex: "Índice", lrIndexLead: "Todo, de un vistazo: tocá cualquier elemento para abrir su página. Con ← y → pasás al siguiente.", lrTitleFm: "JIANT FM por dentro", lrTitleByte: "JIANT BYTE por dentro", lrTry: "Probarlo en el emulador", lrWhere: "En la FM-1: ", lrSince: "desde %s", lrNone: "Esta guía todavía se está escribiendo.",
     vRescue: "Rescate", rsTitle: "Rescatar un FM-1", rsBeta: "experimental · sin probar en hardware",
     rsLead: "Para un FM-1 que no enciende o que la computadora no ve por USB (hard brick). Una placa RP2040 de pocos dólares hace todo sola: se conecta al USB-C del FM-1 con tres cables y le vuelve a escribir el firmware. Sin Python ni terminal: Studio arma el archivo para la placa.",
     rsFirstT: "Antes de empezar", rsFirst: "Si el FM-1 enciende y la computadora lo ve (aunque esté trabado o suene raro), no hace falta esto: usá Instalar, que lo actualiza por USB.", rsToInstall: "Ir a Instalar",
@@ -201,7 +201,7 @@ const TEXT = {
     tourV_portsT: "Other devices", tourV_ports: "JIANT on the SMK-37 and the MPC Sample, with their emulators and manuals, and the plugins coming.", tourV_portsH: "Try them in the browser without the device.",
     tourLangT: "Language", tourLang: "Switch between Spanish and English.",
     tourEndT: "Done", tourEnd: "This tour comes back whenever you want with this button.", tourEndH: "To start: connect your FM-1 and press Find, or pick Emulator and switch it on.",
-    siteLink: "%s's site: what it is, its screens and its story →", vLearn: "How it works", lrIndex: "Index", lrIndexLead: "Everything at a glance: tap any element to open its page. ← and → go to the next one.", lrTitleFm: "Inside JIANT FM", lrTitleByte: "Inside JIANT BYTE", lrTry: "Try it in the emulator", lrWhere: "On the FM-1: ", lrNone: "This guide is still being written.",
+    siteLink: "%s's site: what it is, its screens and its story →", vLearn: "How it works", lrIndex: "Index", lrIndexLead: "Everything at a glance: tap any element to open its page. ← and → go to the next one.", lrTitleFm: "Inside JIANT FM", lrTitleByte: "Inside JIANT BYTE", lrTry: "Try it in the emulator", lrWhere: "On the FM-1: ", lrSince: "since %s", lrNone: "This guide is still being written.",
     vRescue: "Rescue", rsTitle: "Rescue an FM-1", rsBeta: "experimental · not tried on hardware yet",
     rsLead: "For an FM-1 that does not turn on, or that the computer does not see over USB (hard brick). A few-dollar RP2040 board does it all by itself: wired to the FM-1's USB-C with three wires, it writes the firmware again. No Python, no terminal: Studio makes the board's file.",
     rsFirstT: "Before you start", rsFirst: "If the FM-1 turns on and the computer sees it (even stuck or sounding wrong), you do not need this: use Install, which updates it over USB.", rsToInstall: "Go to Install",
@@ -1350,7 +1350,7 @@ async function renderLearn() {
   $("lrstate").textContent = L(it.statement);
   const how = (it.how && (it.how[lang] || it.how.es || it.how.en)) || [];
   $("lrhow").replaceChildren(...how.map((h) => Object.assign(document.createElement("li"), { textContent: h })));
-  const where = L(it.where); $("lrwhere").hidden = !where; $("lrwhere").textContent = where ? t("lrWhere") + where : "";
+  const where = L(it.where); $("lrwhere").hidden = !where; $("lrwhere").textContent = where ? t("lrWhere") + where + (it.since ? ` · ${t("lrSince").replace("%s", it.since)}` : "") : "";
   $("lrpos").textContent = `${lr.item + 1} / ${S.items.length}`;
   lr.player = lr.player || new Player($("lrcanvas"));
   lr.player.show(it.anim && it.anim.kind, it.anim && it.anim.params);

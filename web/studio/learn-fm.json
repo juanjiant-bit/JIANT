@@ -733,13 +733,13 @@
      },
      "how": {
       "es": [
-       "TYPE: LP, HP, BP, LP24, COMB y COMB- (un peine afinado a la nota que tocás).",
+       "TYPE: LP, HP, BP, COMB y COMB- (un peine afinado a la nota que tocás); hasta V10.8.34 también MS20 y LP24.",
        "CUT mueve el corte, RES la resonancia; en el peine, cuánto resuena.",
        "LFO DEST y ENV DEST mueven el filtro; KEY TRK hace que siga a la nota.",
        "En ANALOG el filtro es por voz, con su propio DRIVE."
       ],
       "en": [
-       "TYPE: LP, HP, BP, LP24, COMB and COMB- (a comb tuned to the note you play).",
+       "TYPE: LP, HP, BP, COMB and COMB- (a comb tuned to the note you play); up to V10.8.34 also MS20 and LP24.",
        "CUT moves the cutoff, RES the resonance; on the comb, how much it rings.",
        "LFO DEST and ENV DEST move the filter; KEY TRK makes it follow the note.",
        "On ANALOG the filter is per voice, with its own DRIVE."
@@ -884,13 +884,13 @@
      },
      "how": {
       "es": [
-       "TYPE: LP, HP, BP, MS20 (más sucio) y LP24 (más empinado), con CUTOFF y RES.",
+       "TYPE: LP, HP y BP con CUTOFF y RES (hasta V10.8.34 también MS20 y LP24).",
        "COMB pasa la entrada por un peine con realimentación afinado a la última nota que tocaste; COMB- es el mismo con la realimentación negativa: más hueco, armónicos impares.",
        "Con COMB y RES alta, un ruido o una voz se vuelven una cuerda que tocás con las teclas.",
        "Mové CUTOFF con un LFO o con FOLLOW para que el filtro respire con la música."
       ],
       "en": [
-       "TYPE: LP, HP, BP, MS20 (dirtier) and LP24 (steeper), with CUTOFF and RES.",
+       "TYPE: LP, HP and BP with CUTOFF and RES (up to V10.8.34 also MS20 and LP24).",
        "COMB runs the input through a feedback comb tuned to the last note you played; COMB- is the same with negative feedback: hollower, odd harmonics.",
        "With COMB and high RES, noise or a voice becomes a string you play from the keys.",
        "Move CUTOFF with an LFO or with FOLLOW so the filter breathes with the music."
@@ -1250,14 +1250,14 @@
        "HITS, STEPS (2–64) y ROTATE escriben el patrón; en DRUM-X, LANE ALL y DENSITY arman un kit entero de una sola perilla.",
        "En DRUM-X cada carril (BD … CB) tiene sus HITS, STEPS y ROTATE.",
        "En una pista melódica toca en la tonalidad de SCL, o la encuentra en las otras pistas.",
-       "VARY afloja la grilla y arma vueltas que se contestan (A A' A'' B).",
+       "VARY afloja la grilla; la pantalla es un anillo de golpes (el acento más grande, el paso que suena en blanco).",
        "OCT+ una variación nueva, OCT− la anterior; con todo en 0 vuelve tu secuencia."
       ],
       "en": [
        "HITS, STEPS (2–64) and ROTATE write the pattern; on DRUM-X, LANE ALL and DENSITY build a whole kit from one knob.",
        "On DRUM-X each lane (BD … CB) has its own HITS, STEPS and ROTATE.",
        "On a melodic track it plays in SCL's key, or finds it in the other tracks.",
-       "VARY loosens the grid and builds rounds that answer each other (A A' A'' B).",
+       "VARY loosens the grid; the screen is one ring of hits (the accent larger, the step playing in white).",
        "OCT+ a new variation, OCT− the previous one; with everything at 0 your sequence comes back."
       ]
      },
@@ -1289,13 +1289,13 @@
       "es": [
        "DRUM-X: ACCENT (un segundo euclidiano de acentos), GHOST (golpes suaves), RATCHET (algunos x2 / x4), VARY.",
        "Melódica: MOTION (de nota pedal a saltos), HARMONY (acordes en los tiempos fuertes), OCTAVE, SLIDE.",
-       "ROLE: MELODY, CHORDS, BASS o ARP, siguiendo la armonía de las otras pistas.",
+       "ROLE (en la perilla 4 de EUCLID): MELODY, CHORDS, BASS o ARP, siguiendo la armonía de las otras pistas.",
        "CONTOUR, RANGE y MOTIF le dan forma a la melodía."
       ],
       "en": [
        "DRUM-X: ACCENT (a second euclidean of accents), GHOST (soft hits), RATCHET (some x2 / x4), VARY.",
        "Melodic: MOTION (from a pedal note to leaps), HARMONY (chords on the strong beats), OCTAVE, SLIDE.",
-       "ROLE: MELODY, CHORDS, BASS or ARP, following the other tracks' harmony.",
+       "ROLE (on EUCLID's knob 4): MELODY, CHORDS, BASS or ARP, following the other tracks' harmony.",
        "CONTOUR, RANGE and MOTIF shape the melody."
       ]
      },
@@ -1308,6 +1308,41 @@
       "params": {}
      },
      "since": "V10.6"
+    },
+    {
+     "id": "mutate",
+     "name": "MUTATE",
+     "tag": {
+      "es": "Variaciones que llegan solas",
+      "en": "Variations that arrive on their own"
+     },
+     "statement": {
+      "es": "El patrón euclidiano muta cada tantos compases desde un ancla: nunca se aleja más que lo que VARY permite y siempre podés volver al original.",
+      "en": "The euclidean pattern mutates every few bars from an anchor: it never strays further than VARY allows and you can always go back to the original."
+     },
+     "how": {
+      "es": [
+       "EVERY: OFF, 1, 2, 4 u 8 compases; en cada uno llega una mutación nueva al compás.",
+       "Muta desde el ancla tanto como VARY: la semilla, HITS, ROTATE y los MODES.",
+       "OCT+ (en EUCLID o MUTATE) muta ya; OCT− vuelve al ancla.",
+       "En MODES, OCT+ / OCT− siguen siendo una variación nueva / la anterior."
+      ],
+      "en": [
+       "EVERY: OFF, 1, 2, 4 or 8 bars; each time a new mutation arrives on the bar.",
+       "It mutates from the anchor as far as VARY: the seed, HITS, ROTATE and the MODES.",
+       "OCT+ (on EUCLID or MUTATE) mutates now; OCT− goes back to the anchor.",
+       "On MODES, OCT+ / OCT− are still a new variation / the previous one."
+      ]
+     },
+     "where": {
+      "es": "SEQ › MUTATE",
+      "en": "SEQ › MUTATE"
+     },
+     "anim": {
+      "kind": "euclid",
+      "params": {}
+     },
+     "since": "V10.8.35"
     },
     {
      "id": "comp",
@@ -1379,6 +1414,41 @@
       "params": {}
      },
      "since": "V10.8.21"
+    },
+    {
+     "id": "live-fx",
+     "name": "LIVE",
+     "tag": {
+      "es": "La secuencia, doblada en vivo",
+      "en": "The sequence, bent live"
+     },
+     "statement": {
+      "es": "Mientras las blancas tocan componentes, las negras doblan la secuencia entera de la pista: más rápido, al revés, salteada; al soltar vuelve en fase, como si nunca se hubiera ido.",
+      "en": "While the white keys play components, the black keys bend the track's whole sequence: faster, backwards, thinned; let go and it comes back in phase, as if it had never left."
+     },
+     "how": {
+      "es": [
+       "En SEQ › STEP FX, las negras 1–9 actúan sobre la pista seleccionada mientras las mantenés.",
+       "RATE x2, x3/2, x2/3 · REVERSE · PING-PONG · RANDOM · THIN (saca notas).",
+       "Entra en el próximo 1/16 y al soltar vuelve en fase con la secuencia fantasma que siguió corriendo.",
+       "GIRO − / + mueven el cabezal un paso atrás o adelante con cada toque."
+      ],
+      "en": [
+       "On SEQ › STEP FX, black keys 1–9 act on the selected track while held.",
+       "RATE x2, x3/2, x2/3 · REVERSE · PING-PONG · RANDOM · THIN (drops notes).",
+       "It comes in on the next 1/16 and, let go, returns in phase with the ghost sequence that kept running.",
+       "GIRO − / + move the playhead a step back or on with each press."
+      ]
+     },
+     "where": {
+      "es": "SEQ › STEP FX (teclas negras)",
+      "en": "SEQ › STEP FX (black keys)"
+     },
+     "anim": {
+      "kind": "seq",
+      "params": {}
+     },
+     "since": "V10.8.35"
     },
     {
      "id": "locks",
