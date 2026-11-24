@@ -80,8 +80,11 @@ static void web_stem_tap(uint32_t n)
     }
     stem_w += n;
 }
-#define WEB_STEM_TAP(n) web_stem_tap(n)
+/* audio.c stays V23's byte for byte (the CI's check): the tap rides on its mix_block call (a function-like macro
+ * does not expand inside itself, so it still calls fx.c's) */
+#define mix_block(o, n) (mix_block(o, n), fx_stems ? web_stem_tap(n) : (void)0)
 #include "../../firmware/src/audio.c"
+#undef mix_block
 
 /* ------------------------------------------------------------ the panel --- */
 #define FM1_NCOL 11u

@@ -40,10 +40,6 @@ static void audio_block(int32_t *out, uint32_t n)       /* mix (fx.c), then Q15 
         uin_on = 0;
 #endif
     mix_block(out, n);
-#ifdef WEB_STEM_TAP
-    if (fx_stems)                                       /* (studio) the browser build: the stems as USB STEMS sends them */
-        WEB_STEM_TAP(n);
-#endif
 #if FELUCCA_UAC
 #ifdef UAC_TAP8
     if (fx_stems)                                       /* (0.7.1) MENU > USB STEMS: 8 channels (fx.c stem_buf) */
