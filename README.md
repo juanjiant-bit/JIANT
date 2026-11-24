@@ -33,7 +33,7 @@ look. Up top you choose what you work with: **the FM-1 over USB, or the emulator
 | **Screen** | The FM-1's screen as big as yours, straight to full screen: on a phone it fills the width upright and the height on its side. Needs firmware with the screen mirror (coming in the next release); the emulator's screen works now. |
 | **Emulator** | JIANT FM or JIANT BYTE in the browser, with sound; play it from a MIDI keyboard and choose which input. |
 | **Record** | The master or the stems as WAV: from the FM-1's USB audio (stereo, or in USB > STEMS the six tracks and the effects apart, as a ZIP) or from the emulator. What you play comes out as a MIDI file too. |
-| **Other devices** | JIANT FM on the SMK-37, the MPC Sample, the MPC standalones and as VST3 / AU / LV2 / app: each with its emulator, manual and download. |
+| **Other devices** | JIANT FM on the SMK-37, the MPC Sample, the MPC standalones and, coming soon (for sale), as VST3 / AU / LV2 / app and the MPC plugin. |
 
 English and Spanish. To look around without an FM-1: **[Studio with a simulated FM-1](https://juanjiant-bit.github.io/JIANT/studio/?mock=1)**.
 Its code: [`web/studio`](web/studio) (run it locally with `python3 web/studio/dev_server.py`).
@@ -182,9 +182,9 @@ The whole chapter: [the manual, § 3](docs/MANUAL.md#3-pages-and-layers) ·
 - **PUNCH SEQ**: a punch-in sequencer (four rows, sixteen steps, on OCT+), replacing PUNCH LANE.
 - **DRONE CLAY keys**: play DRONE CLAY's gestures from the keys, with a card that says what each one does.
 
-> **New: JIANT FM beyond the FM-1 (preview).** The same firmware on the **Akai MPC Sample**, the **MPC standalones**
-> (plugin), **VST3 / LV2 / standalone** for Linux and Windows, and soon the **M-VAVE SMK-37**. On these bigger CPUs it
-> adds a **SAMPLE** engine, a **GRAIN** engine and **DRUM-X with samples**. Free, GPL-3.0, looking for testers.
+> **New: JIANT FM beyond the FM-1 (preview).** The same firmware on the **Akai MPC Sample** (free, GPL-3.0, looking for
+> testers) and soon the **M-VAVE SMK-37**; the **plugins** (MPC standalones, VST3 / AU / LV2 / standalone) are **coming
+> soon, for sale**. On these bigger CPUs it adds a **SAMPLE** engine, a **GRAIN** engine and **DRUM-X with samples**.
 > **▶ [Try every device in the browser](https://juanjiant-bit.github.io/JIANT/emu/devices.html)** ·
 > **[Downloads (pre-release)](https://github.com/juanjiant-bit/JIANT/releases)** · **[How it works](https://github.com/juanjiant-bit/JIANT/blob/main/ports/README.md)**
 >
@@ -193,7 +193,7 @@ The whole chapter: [the manual, § 3](docs/MANUAL.md#3-pages-and-layers) ·
 > | **M-VAVE FM-1** | [Web installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/) | [FM-1 emulator](https://juanjiant-bit.github.io/JIANT/emu/index.html) | [Web editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/) |
 > | **M-VAVE SMK-37** | not yet: [build from source](https://github.com/juanjiant-bit/JIANT/blob/main/docs/SMK37.md) | [SMK-37 panel](https://juanjiant-bit.github.io/JIANT/emu/devices.html#smk37) | [Web editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/) |
 > | **Akai MPC Sample** | [Download](https://github.com/juanjiant-bit/JIANT/releases) (the zip for the microSD card) · [how to install](https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample/README.md) | [MPC panel](https://juanjiant-bit.github.io/JIANT/emu/devices.html#mpc) | coming |
-> | **Plugins** (MPC standalones, VST3 / LV2 / standalone) | [Download](https://github.com/juanjiant-bit/JIANT/releases) · [how they work](https://github.com/juanjiant-bit/JIANT/blob/main/ports/README.md) | | |
+> | **Plugins** (MPC standalones, VST3 / AU / LV2 / standalone) | Coming soon, for sale | | |
 
 ## Reporting a crash
 
