@@ -206,6 +206,22 @@
   .shotbar { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
   .shotbar p { flex: 1; margin: 0; color: var(--dim); font-size: 13px; }
   .port h2 { margin: 0; }
+  /* the manuals: a card each (the interactive manual first and wide), a cheat sheet's picture opens large */
+  .docs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+  .doc { display: flex; flex-direction: column; gap: 10px; }
+  .doc.wide { grid-column: 1 / -1; }
+  .doc .pic { aspect-ratio: 16 / 9; border-radius: var(--radius-s); border: var(--border) solid var(--line); background: var(--field); overflow: hidden; }
+  .doc.wide .pic { aspect-ratio: 23 / 10; max-height: 460px; width: 100%; }
+  .doc.wide .pic img { object-fit: contain; }
+  .doc .pic button { all: unset; display: block; width: 100%; height: 100%; cursor: zoom-in; }
+  .doc .pic img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+  .doc .pic.glyph { display: grid; place-items: center; padding: 0 16px; text-align: center; font-family: var(--display, inherit); font-size: clamp(16px, 2.4vw, 26px); color: var(--dim); letter-spacing: .04em; }
+  .doc.wide .pic.glyph { aspect-ratio: 5 / 1; }
+  .doc h2 { margin: 0; }
+  .doc p { margin: 0; color: var(--dim); font-size: 14px; }
+  .doc .links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 6px; }
+  .doc .links .btn { min-height: 36px; padding: 7px 12px; font-size: 13px; }
+  .doc .soon { font-family: var(--mono, monospace); font-size: 12px; color: var(--dim); border: var(--border) dashed var(--line); border-radius: var(--radius-s); padding: 7px 12px; }
   .port .meta { display: flex; flex-wrap: wrap; gap: 6px; }
   .state { font: 12px/1 var(--mono); padding: 5px 8px; border-radius: 999px; border: var(--border) solid var(--line); color: var(--dim); }
   .state.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 50%, transparent); }
@@ -285,6 +301,7 @@
       <button data-go="screen" data-t="vScreen"></button>
       <button data-go="emu" data-t="vEmu"></button>
       <button data-go="rec" data-t="vRec"></button>
+      <button data-go="docs" data-t="vDocs"></button>
       <button data-go="ports" data-t="vPorts"></button>
     </nav>
     <div class="controls">
@@ -390,6 +407,17 @@
   </section>
 
   <!-- ======================================================================================= ports -->
+  <!-- ======================================================================================= manuals -->
+  <section class="view" id="v-docs" hidden>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vDocs"></p><h1 id="docstitle"></h1></div></div>
+    <p class="lead" id="docslead"></p>
+    <div class="docs" id="doclist"></div>
+    <div class="card devtry" id="mantry" hidden>
+      <div class="viewhead" style="margin-bottom:10px"><h2 id="mantrytitle"></h2><div class="emuctl"><a class="btn ghost" id="mannew" target="_blank" rel="noopener" data-t="docNewTab"></a><button class="btn ghost" id="manclose" type="button" data-t="scrExitFull"></button></div></div>
+      <div class="framebox"><iframe id="f-manual" title="Manual"></iframe></div>
+    </div>
+  </section>
+
   <section class="view" id="v-ports" hidden>
     <div class="viewhead"><div><p class="eyebrow" data-t="vPorts"></p><h1 data-t="portsTitle"></h1></div>
       <div class="emuctl"><a class="btn" href="../docs/guide/manual.html" target="_blank" rel="noopener" data-t="portsManuals"></a><a class="btn ghost" href="../docs/guide/ports.html" target="_blank" rel="noopener" data-t="portsHow"></a></div></div>

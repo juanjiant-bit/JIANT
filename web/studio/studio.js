@@ -18,6 +18,15 @@ const MOCK = QS.get("mock") === "1";
 /* ------------------------------------------------------------------------------------------------- the words */
 const TEXT = {
   es: {
+    vDocs: "Manuales", docsLeadFm: "Todo para aprender JIANT FM: el manual interactivo (tocá cualquier control del FM-1 y mirá qué hace), el manual completo y las dos hojas de ayuda para tener a mano.",
+    docsLeadByte: "Todo para aprender JIANT BYTE: el manual interactivo, el manual completo y sus hojas de ayuda. Lo que todavía no está publicado dice «en camino».",
+    docInter: "Manual interactivo", docInterText: "El FM-1 dibujado: tocá un control y mirá qué hace solo, mantenido y en combinación, con la pantalla a la que lleva. Tutorial paso a paso, buscador de comandos y recetas.",
+    docInterTextByte: "El panel de JIANT BYTE: cada control, sus capas y combinaciones, las fórmulas y los motores, con la pantalla a la que lleva.",
+    docOpenHere: "Abrir acá", docNewTab: "Abrir en otra pestaña", docFull: "Manual completo", docFullText: "Cada botón, perilla y mensaje con el nombre que muestra el aparato; índice que sigue la lectura. Para leer o imprimir.",
+    docCtl: "Hoja de ayuda · Controles", docCtlText: "Las seis reglas de navegación, cada botón, capa, combinación y página en una hoja.",
+    docSnd: "Hoja de ayuda · Sonido", docSndText: "Los motores, sus parámetros y los efectos en una hoja.", docView: "Ver", docPdf: "PDF", docPng: "Imagen",
+    docSoon: "en camino", docNew: "Lo nuevo", docNewText: "Qué cambió en la última versión, con capturas.", docMap: "Mapa de navegación", docMapText: "Cada sección, sus grupos y páginas en el orden en que se recorren.",
+    docPorts: "Manuales de otros aparatos", docPortsText: "SMK-37, MPC Sample, el plugin de MPC y el plugin VST3 · AU · LV2.",
     other: "English", vPorts: "Otros aparatos", vHome: "Inicio", vInstall: "Instalar", vEditor: "Editor", vScreen: "Pantalla", vEmu: "Emulador", vRec: "Grabar",
     tFm1: "FM-1", tEmu: "Emulador", target: "Destino",
     eyebrow: "Un firmware libre para la M-VAVE FM-1",
@@ -101,6 +110,15 @@ const TEXT = {
     foot: "JIANT Studio, de Juan Jiant",
   },
   en: {
+    vDocs: "Manuals", docsLeadFm: "Everything to learn JIANT FM: the interactive manual (touch any control of the FM-1 and see what it does), the full manual and the two cheat sheets to keep at hand.",
+    docsLeadByte: "Everything to learn JIANT BYTE: the interactive manual, the full manual and its cheat sheets. What is not published yet says “on its way”.",
+    docInter: "Interactive manual", docInterText: "The FM-1 drawn: touch a control to see what it does alone, held and in combination, with the screen it leads to. A step-by-step tutorial, a command search and recipes.",
+    docInterTextByte: "JIANT BYTE's panel: every control, its layers and combos, the formulas and the engines, with the screen it leads to.",
+    docOpenHere: "Open here", docNewTab: "Open in a new tab", docFull: "Full manual", docFullText: "Every button, knob and message named as the device shows it; contents that follow your reading. To read or print.",
+    docCtl: "Cheat sheet · Controls", docCtlText: "The six navigation rules, every button, layer, combo and page on one sheet.",
+    docSnd: "Cheat sheet · Sound", docSndText: "The engines, their parameters and the effects on one sheet.", docView: "View", docPdf: "PDF", docPng: "Image",
+    docSoon: "on its way", docNew: "What's new", docNewText: "What changed in the latest version, with screenshots.", docMap: "Navigation map", docMapText: "Every section, its groups and pages in the order you walk them.",
+    docPorts: "Manuals for other devices", docPortsText: "SMK-37, MPC Sample, the MPC plugin and the VST3 · AU · LV2 plugin.",
     other: "Español", vPorts: "Other devices", vHome: "Home", vInstall: "Install", vEditor: "Editor", vScreen: "Screen", vEmu: "Emulator", vRec: "Record",
     tFm1: "FM-1", tEmu: "Emulator", target: "Target",
     eyebrow: "A free firmware for the M-VAVE FM-1",
@@ -342,7 +360,7 @@ try {
 } catch (_) {}
 
 /* ------------------------------------------------------------------------------------- views, firmware, target */
-const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "ports"];
+const VIEWS = ["home", "install", "editor", "screen", "emu", "rec", "docs", "ports"];
 function go(view, push = true) {
   if (!VIEWS.includes(view)) view = "home";
   state.view = view;
@@ -849,6 +867,7 @@ const PORTS = [
     shots: [["img/plugin.webp", "shotDaw"], ["img/plugin-sound.webp", "shotDawSound"], ["img/plugin-samples.webp", "shotDawSamples"]],
     links: [["portDownload", RELEASES], ["portManual", MAN + "plugin.html"], ["portSource", "https://github.com/juanjiant-bit/JIANT/tree/main/ports/juce-plugin"]] },
 ];
+let docsFor = "";
 function renderPorts() {
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   $("portlist").replaceChildren(...PORTS.map((p) => {
@@ -891,7 +910,7 @@ function renderPorts() {
 /* a port's shots, large: a dialog, its caption, ← → between them */
 function openShot(p, k) {
   const dlg = $("shotdlg"), img = $("shotimg"), cap = $("shotcap");
-  const show = () => { img.src = p.shots[k][0]; img.alt = t(p.shots[k][1]); cap.textContent = `${t(p.name)} · ${t(p.shots[k][1])}`;
+  const show = () => { img.src = p.shots[k][0]; img.alt = p.title || t(p.shots[k][1]); cap.textContent = p.title || `${t(p.name)} · ${t(p.shots[k][1])}`;
     $("shotprev").hidden = $("shotnext").hidden = p.shots.length < 2; };
   dlg._step = (d) => { k = (k + d + p.shots.length) % p.shots.length; show(); };
   show();
@@ -922,6 +941,76 @@ $("f-devices").addEventListener("load", () => {
   } catch (_) {}
 });
 $("devtryclose").addEventListener("click", () => { $("devtry").hidden = true; $("f-devices").src = "about:blank"; });
+
+/* ------------------------------------------------------------------------------------------------ manuals */
+/* each firmware's manuals on its own site (same origin): the interactive manual (here, in a frame, or a tab), the full
+ * manual in HTML (tools/gen_manual_html.py), the two cheat sheets (picture and PDF) and, for JIANT FM, what's new, the
+ * map and the other devices' manuals. What a site does not have yet (a HEAD that fails) says "on its way" */
+const DOCS = {
+  fm: { inter: "manual/", full: { es: "docs/guide/manual.es.html", en: "docs/guide/manual.html" },
+        ctl: "docs/cheatsheet-controls", snd: "docs/cheatsheet-sound",
+        extra: [["docNew", "docNewText", { es: "docs/guide/whats-new-v10.8.21.es.html", en: "docs/guide/whats-new-v10.8.21.html" }, null],
+                ["docMap", "docMapText", { es: "docs/navigation-map.es.png", en: "docs/navigation-map.png" }, "docs/navigation-map.png"],
+                ["docPorts", "docPortsText", { es: "docs/guide/smk37.html", en: "docs/guide/smk37.html" }, "studio/img/smk37.webp"]] },
+  byte: { inter: "manual/", full: { es: "docs/guide/manual.es.html" }, ctl: "docs/cheatsheet-byte-controls", snd: "docs/cheatsheet-byte-sound", extra: [] },
+};
+const docHas = new Map();   // url -> Promise<bool>
+const has = (url) => {
+  if (MOCK) return Promise.resolve(true);
+  // (a GET let go once its answer starts: any server answers it, a HEAD not always)
+  if (!docHas.has(url)) { const c = new AbortController();
+    docHas.set(url, fetch(url, { cache: "no-cache", signal: c.signal }).then((r) => { c.abort(); return r.ok; }, () => false)); }
+  return docHas.get(url);
+};
+function renderDocs() {
+  const fw = state.fw, D = DOCS[fw], base = TOOLS[fw].base, name = fw === "byte" ? "JIANT BYTE" : "JIANT FM";
+  $("docstitle").textContent = name;
+  $("docslead").textContent = t(fw === "byte" ? "docsLeadByte" : "docsLeadFm");
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const link = (text, href, go) => { const a = el("a", "btn" + (go ? "" : " ghost"), text); a.href = href; a.target = "_blank"; a.rel = "noopener"; return a; };
+  // a card: its picture (an image that opens large, or a word), title, text, its links once the site has them
+  const card = (o) => {
+    const c = el("article", "card doc" + (o.wide ? " wide" : ""));
+    const pic = el("div", "pic" + (o.img ? "" : " glyph"));
+    if (o.img) {
+      const b = el("button"); b.type = "button"; const im = new Image(); im.loading = "lazy"; im.alt = o.title; b.append(im);
+      b.addEventListener("click", () => openShot({ name: "", shots: [[o.big || o.img, ""]] , title: o.title }, 0));
+      pic.append(b);
+      has(o.img).then((ok) => { if (ok) im.src = o.img; else { pic.className = "pic glyph"; pic.replaceChildren(name); } });
+    } else pic.textContent = o.glyph || name;
+    const links = el("div", "links");
+    c.append(pic, el("h2", null, o.title), el("p", null, o.text), links);
+    has(o.check).then((ok) => links.replaceChildren(...(ok ? o.links() : [el("span", "soon", t("docSoon"))])));
+    return c;
+  };
+  const full = D.full[lang] || D.full.es || D.full.en;
+  const cards = [
+    card({ wide: true, title: t("docInter"), text: t(fw === "byte" ? "docInterTextByte" : "docInterText"), glyph: `${name} · ${t("docInter")}`,
+      img: fw === "fm" ? "img/manual-fm.webp" : null, check: base + D.inter, links: () => {
+        const here = el("button", "btn", t("docOpenHere")); here.type = "button";
+        here.addEventListener("click", () => openManual(base + D.inter, `${name} · ${t("docInter")}`));
+        return [here, link(t("docNewTab"), base + D.inter)];
+      } }),
+    card({ title: t("docFull"), text: t("docFullText"), glyph: name, check: base + full,
+      links: () => Object.entries(D.full).map(([l, h], i) => link(Object.keys(D.full).length > 1 ? (l === "es" ? "Español" : "English") : t("docNewTab"), base + h, l === lang || (i === 0 && !D.full[lang]))) }),
+    ...[["docCtl", "docCtlText", D.ctl], ["docSnd", "docSndText", D.snd]].map(([k, tx, f]) =>
+      card({ title: t(k), text: t(tx), img: base + f + ".png", check: base + f + ".png",
+        links: () => { const v = el("button", "btn", t("docView")); v.type = "button";
+          v.addEventListener("click", () => openShot({ name: "", shots: [[base + f + ".png", ""]], title: t(k) }, 0));
+          return [v, link(t("docPdf"), base + f + ".pdf"), link(t("docPng"), base + f + ".png")]; } })),
+    ...D.extra.map(([k, tx, hrefs, img]) => card({ title: t(k), text: t(tx), img: img && base + img, glyph: t(k), check: base + (hrefs[lang] || hrefs.en),
+      links: () => [link(t("docNewTab"), base + (hrefs[lang] || hrefs.en), true)] })),
+  ];
+  $("doclist").replaceChildren(...cards);
+}
+/* the interactive manual inside Studio, in its frame under the cards */
+function openManual(url, title) {
+  const f = $("f-manual");
+  $("mantry").hidden = false; $("mantrytitle").textContent = title; $("mannew").href = url;
+  if (f.src !== new URL(url, location.href).href) f.src = url;
+  $("mantry").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("manclose").addEventListener("click", () => { $("mantry").hidden = true; $("f-manual").src = "about:blank"; });
 
 /* ------------------------------------------------------------------------------------------- the whole page */
 function render() {
@@ -973,6 +1062,7 @@ function render() {
   if (state.view === "rec" && !rec.on) { renderAudioInputs(); renderMidiInputs(); }
   renderTakes();
   if (state.view === "ports") renderPorts();
+  if (state.view === "docs" && docsFor !== state.fw + lang) { docsFor = state.fw + lang; renderDocs(); }
 }
 
 /* ------------------------------------------------- the editor and the emulator joined (target: Emulator) */
