@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>JIANT FM beyond the FM-1 · Manual</title>
+<meta name="description" content="The same firmware from the same sources on other machines: the MPC plugin for the MPC standalones (MPC OS 3.10.1+) and desktop VST2 hosts, the MPC Sample app, the desktop plugins. A song sounds the same on every one.">
+<meta name="theme-color" content="#050409">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#050409;--surf:#0b0912;--raise:#100e18;--line:rgba(239,230,200,.14);--fg:#efe6c8;--mid:#c9c1d8;--dim:#a39bb6;
+--accent:#ff7a1a;--vio:#b870ff;--cyan:#3fe0e6;--heat:linear-gradient(90deg,#6b5cff,#b870ff 35%,#ff4bb0 60%,#ff7a1a 85%,#ffd34d);
+--display:"Michroma","Segoe UI",system-ui,sans-serif;--body:"Instrument Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.65;
+ background-image:radial-gradient(900px 420px at 85% -120px,rgba(184,112,255,.16),transparent 70%),radial-gradient(700px 360px at -10% 0,rgba(255,122,26,.08),transparent 70%);background-repeat:no-repeat}
+.top{position:sticky;top:0;z-index:5;background:rgba(5,4,9,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1240px;margin:0 auto;padding:12px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:14px 22px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-size:17px;letter-spacing:.04em;color:var(--fg);text-decoration:none;white-space:nowrap}
+.brand b{font-weight:400;background:var(--heat);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand small{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--dim);margin-left:8px;text-transform:uppercase}
+.docs{display:flex;gap:4px;flex-wrap:wrap}
+.docs a{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--dim);text-decoration:none;padding:6px 10px;border:1px solid transparent;border-radius:8px}
+.docs a:hover{color:var(--fg)}
+.docs a[aria-current="page"]{color:var(--fg);border-color:var(--line);background:var(--surf)}
+.layout{max-width:1240px;margin:0 auto;padding-block:28px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;grid-template-columns:270px minmax(0,1fr);gap:44px}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr);gap:16px}}
+nav.toc{position:sticky;top:76px;align-self:start;max-height:calc(100vh - 96px);overflow:auto;font-size:14px;padding-right:12px}
+@media (max-width:900px){nav.toc{position:static;max-height:none;padding-right:0}}
+nav.toc details{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--surf)}
+nav.toc summary{cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--cyan)}
+nav.toc ul{list-style:none;margin:8px 0 0;padding-left:0}
+nav.toc ul ul{padding-left:12px;border-left:1px solid var(--line);margin:2px 0 6px 2px}
+nav.toc a{color:var(--dim);text-decoration:none;display:block;padding:3px 0;line-height:1.35}
+nav.toc a:hover,nav.toc a:focus-visible,nav.toc a.here{color:var(--fg)}
+nav.toc a.here{box-shadow:inset 2px 0 0 var(--accent);padding-left:8px}
+main{min-width:0;max-width:840px}
+.hero{position:relative;padding:26px 26px 22px;margin:0 0 26px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,rgba(184,112,255,.07),transparent 70%),var(--surf);overflow:hidden}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--heat);opacity:.8}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);margin:0 0 10px}
+.hero h1{margin:0 0 10px}
+.hero .lead{color:var(--mid);margin:0 0 16px;max-width:64ch}
+.hero img.shot{display:block;width:100%;margin:6px 0 16px;border:1px solid var(--line);border-radius:10px}
+.bar{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font-family:var(--body);font-weight:600;font-size:14px;text-decoration:none;color:var(--fg);border:1px solid var(--line);background:var(--raise);border-radius:10px;padding:8px 14px}
+.btn.go{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn:hover,.btn:focus-visible{border-color:var(--accent);outline:none}
+h1,h2,h3,h4{font-family:var(--display);font-weight:400;line-height:1.2;text-wrap:balance;scroll-margin-top:84px;letter-spacing:.01em}
+h1{font-size:clamp(26px,4.6vw,42px)}
+h1 .fm{background:var(--heat);-webkit-background-clip:text;background-clip:text;color:transparent}
+main>h1:first-of-type{display:none}
+h2{font-size:clamp(19px,2.6vw,25px);margin:56px 0 14px;padding-top:18px;border-top:1px solid var(--line);position:relative}
+h2::before{content:"";position:absolute;top:-1px;left:0;width:56px;height:2px;background:var(--heat)}
+h3{font-size:17px;margin:34px 0 8px;color:var(--fg)}
+h4{font-size:14px;margin:24px 0 6px;color:var(--mid);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase}
+p,li{max-width:74ch}
+li{margin:3px 0}
+strong{color:#fff3ce;font-weight:600}
+a{color:var(--vio);text-underline-offset:3px}
+a:hover{color:var(--accent)}
+code,kbd{font-family:var(--mono);font-size:.86em}
+code{background:var(--raise);border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:#fff3ce}
+kbd{background:#16131f;border:1px solid rgba(255,122,26,.45);border-bottom-width:2px;border-radius:6px;padding:0 6px;white-space:nowrap;color:#ffd9b8}
+.tw{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:12px;background:var(--surf)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);font-weight:500;background:rgba(63,224,230,.04)}
+tbody tr:hover td{background:rgba(184,112,255,.05)}
+img{max-width:100%;height:auto;border-radius:10px}
+pre{overflow-x:auto;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+pre code{background:none;border:0;padding:0;color:var(--mid)}
+blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--vio);background:rgba(184,112,255,.06);border-radius:0 10px 10px 0;color:var(--mid)}
+blockquote p{margin:4px 0}
+hr{border:0;border-top:1px solid var(--line);margin:36px 0}
+.ess{position:relative;background:var(--surf);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:8px 0 26px}
+.ess h2{margin:0 0 8px;border:0;padding:0}
+.ess h2::before{display:none}
+.ess h3{font-size:12px;margin:18px 0 8px;color:var(--cyan);font-family:var(--mono);letter-spacing:.16em;text-transform:uppercase}
+.ess dl{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:8px 18px;margin:0}
+.ess dt{min-width:0}
+.ess dd{margin:0;min-width:0;color:var(--mid)}
+@media (max-width:600px){.ess dl{grid-template-columns:minmax(0,1fr)}.ess dd{margin-bottom:8px}}
+footer{max-width:1240px;margin:0 auto;padding:24px 16px 40px;color:var(--dim);font-size:13px;border-top:1px solid var(--line)}
+footer a{color:var(--dim)}
+@media print{.top,nav.toc,.bar{display:none}.layout{display:block}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in"><a class="brand" href="https://juanjiant-bit.github.io/JIANT/studio/">JIANT <b>FM</b><small>Manuals</small></a><nav class="docs" aria-label="Manuals"><a href="manual.html">JIANT FM · FM-1</a><a href="smk37.html">SMK-37</a><a href="mpc-sample.html">MPC Sample</a><a href="ports.html" aria-current="page">MPC plugin · ports</a><a href="plugin.html">VST3 · AU · LV2</a></nav></div></header>
+<div class="layout">
+<nav class="toc" aria-label="Contents"><details open><summary>Contents</summary>
+<ul>
+<li><a href="#full-power-on-a-bigger-cpu">Full power on a bigger CPU</a></li>
+<li><a href="#the-core">The core</a></li>
+<li><a href="#the-mpc-plugin">The MPC plugin</a></li>
+<li><a href="#licences">Licences</a></li>
+</ul>
+
+</details></nav>
+<main>
+<section class="hero"><p class="eyebrow">Manual · the ports and the MPC plugin</p><h1>JIANT <span class="fm">FM</span> beyond the FM-1</h1>
+<p class="lead">The same firmware from the same sources on other machines: the MPC plugin for the MPC standalones (MPC OS 3.10.1+) and desktop VST2 hosts, the MPC Sample app, the desktop plugins. A song sounds the same on every one.</p><div class="bar"><a class="btn go" href="https://github.com/juanjiant-bit/JIANT/releases">Download</a><a class="btn" href="https://juanjiant-bit.github.io/JIANT/studio/#ports">JIANT Studio</a><a class="btn" href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/README.md">GitHub</a></div></section>
+<h1 id="jiant-beyond-the-fm-1">JIANT beyond the FM-1</h1>
+<p>JIANT FM is meant to run whole, on its own, on more than one machine: the M-VAVE FM-1, the M-VAVE SMK-37 Pro / Elite
+and the Akai MPC Sample, plus a plugin for the MPC standalones and desktop hosts. Every one of them plays the same
+firmware sources (<code>firmware/src</code>), so a song sounds the same everywhere.</p>
+<pre><code>                        firmware/src  (engines, sequencer, songs, generator, FX, UI, 240 x 240 screen)
+                                  |
+          +-----------------------+------------------------+
+          |                                                |
+   firmware/hal  (bare metal, JieLi AC79)           ports/core  (one C library, any CPU)
+          |                                                |
+   +------+-------+                     +------------------+-------------------+
+   |              |                     |                  |                   |
+ FM-1     SMK-37 Pro / Elite     web/emu (browser)   ports/mpc-plugin    MPC Sample app
+ (today)  (same chip: next)      (today)             (this folder)       (next: its own OS)
+</code></pre>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Port</th>
+<th>What it is</th>
+<th>State</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/core"><code>core/</code></a></td>
+<td>The whole firmware as one C library: boot, audio, MIDI, the panel, the screen, the music saved and restored. The browser emulator's host layer behind a stable API (<a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/core/jiant_core.h"><code>jiant_core.h</code></a>).</td>
+<td>Works, tested</td>
+</tr>
+<tr>
+<td><a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-plugin"><code>mpc-plugin/</code></a></td>
+<td>JIANT FM as an instrument plugin: MPC standalones (MPC OS 3.10.1+), and desktop VST2 hosts.</td>
+<td>Builds for ARM32, ARM64 and desktop; passes the SDK's host simulator; not yet tried on an MPC</td>
+</tr>
+<tr>
+<td><a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/juce-plugin"><code>juce-plugin/</code></a></td>
+<td>JIANT FM as VST3, AU, AUv3 (AUM on the iPad), LV2 and a standalone app, an editor made for a DAW (the screen, the tracks, each sound's presets and EDIT parameters, a sample browser with drag and drop, the samples saved in the session); up to 8 in one session, each its own JIANT.</td>
+<td>Builds and passes its host check on Linux; macOS, iOS and Windows built by CI</td>
+</tr>
+<tr>
+<td><a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample"><code>mpc-sample/</code></a></td>
+<td>JIANT as the MPC Sample's whole instrument, its own screen, the MPC's pads, buttons and knobs as the FM-1's panel, started from the microSD card (on keremimo's sample-base).</td>
+<td>Builds for ARM64; runs and passes its tests on Linux; not yet tried on an MPC Sample</td>
+</tr>
+<tr>
+<td>SMK-37</td>
+<td>JIANT on the SMK-37 Pro / Elite, bare metal like the FM-1 (same AC791N chip, same screen and audio format).</td>
+<td>Next</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="full-power-on-a-bigger-cpu">Full power on a bigger CPU</h2>
+<p>The FM-1's chip is small, and JIANT lives within it: when the load runs high it gives way (STRING, WEST and VOICE at
+half the rate, FM6 at a quarter, the heavy reverbs as lighter ones, voices faded), all parts share 8 voices, and
+EXPLORE keeps its pieces light. The ports run on far bigger CPUs, so the core builds with <code>FELUCCA_HOST_POWER</code>
+(<code>firmware/src/core.h</code>; the FM-1, the browser emulator and the host tests are untouched by it):</p>
+<ul>
+<li><strong>Every track its own 8 voices</strong> (48 in all), not 8 between all of them.</li>
+<li><strong>EXPLORE at full size</strong>: no lighter pieces for the FM-1's CPU.</li>
+<li>
+<p><strong>The load measured in real time on that CPU</strong> (<code>web/emu/felucca_web.c</code> <code>JIANT_REAL_LOAD</code>): the firmware's own
+  governor and overload guard stay, so the sound gives way only if that CPU itself runs short; on one with room it
+  never does. <code>jiant_cpu_percent()</code> and friends report it; the MPC Sample app shows it on the screen (CPU, red when
+  anything gave way), in <code>status</code>, and <code>jiant --bench</code> measures the bench song on the MPC's own CPU.</p>
+</li>
+<li>
+<p><strong>Samples</strong> (<code>firmware/src/smp_slots.c</code>, the API in <a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/core/jiant_core.h"><code>jiant_core.h</code></a>): 16 slots of up to 60 s,
+  mono or stereo, loaded from the host's PCM at any rate (made and resampled on the host's own thread, handed to the
+  audio thread by pointer, freed by <code>jiant_service</code> on the host's service thread), recorded from the device's input
+  (<code>jiant_input</code>), JIANT's master or a track, and played by two engines in the FM-1's retired slots, <strong>SAMPLE</strong> (4:
+  one shot with experimental modes and triggers, a feedback comb, DESTROY, REC) and <strong>GRAIN</strong> (8: granular, on a slot
+  or LIVE on the input or the master, time-stretch, feedback and shimmer), and by a sample layer on every <strong>DRUM-X</strong>
+  sound (SMORPH and its blends). The controls: <a href="mpc-sample.html#samples-sample-grain-and-drum-xs-sample-layer"><code>mpc-sample/README.md</code></a>.
+  On the FM-1 none of it exists: a project made with them plays SAMPLE and GRAIN as ANALOG there (the retired engines'
+  way) and DRUM-X as its synthesized kit (the layer's values sit in slots a DRUM track there never reads).</p>
+</li>
+</ul>
+<p>On this computer (x86) the bench song renders at ~37x real time; on the MPC Sample's Cortex-A55 a share of one of
+its four cores, to be measured with <code>--bench</code> on the hardware.</p>
+<h2 id="the-core">The core</h2>
+<pre><code class="language-sh">ports/core/build.sh test      # build/core/libjiant_core.a, then its test
+</code></pre>
+<p>One device per library (the firmware keeps its state in globals), not thread safe; see the header. For several in
+one process (JIANT FM on several tracks of a DAW), <a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/core/jiant_copies.h"><code>jiant_copies.h</code></a>: the core compiled N times
+(<code>jiant_copy.c</code>, 8 in the JUCE plugin), each copy one translation unit with every external symbol renamed (the list,
+<code>copy_symbols.h</code>, is made from the core's object by <code>ports/core/build.sh symbols</code> and checked by the test), its API a
+table of functions; an instance claims a free copy and gives it back. The copies share nothing, so each may run on its
+own thread. Plain C and the preprocessor: no object tools, the same on Linux, Windows (clang-cl) and macOS. The test boots it,
+plays a MIDI note, draws the screen, plays a generated song, saves and restores the music, follows an external MIDI
+clock, loads and records sample slots. <code>sample_test</code> drives the sample engines with the firmware's internals at hand:
+every SAMPLE mode and trigger, GRAIN's travel modes, time-stretch, feedback and LIVE input, DRUM-X's blends (and with
+SMORPH 0 bit for bit the FM-1's DRUM-X), REC from the master, the bounds at the engines' tops and their cost; then
+<code>fm1_load_test</code>, the core built as the FM-1 is, loads the project it saved; <code>copies_test</code> links 8 copies beside the
+single library: copy 0 plays what the single core plays, sample for sample; three copies on three threads at once play
+what three others play one after another, bit for bit; one copy's music and samples touch no other's.</p>
+<h2 id="the-mpc-plugin">The MPC plugin</h2>
+<pre><code class="language-sh">pip install ziglang           # the cross compiler, as inMusic's SDK uses
+python3 ports/mpc-plugin/build.py
+</code></pre>
+<p>It fetches inMusic's <a href="https://github.com/inmusic-software/mpc-plugin-builder-sdk">MPC Plugin SDK</a> (MIT) at a pinned
+commit into <code>build/mpc-plugin-sdk</code>, builds the core and the plugin for the desktop, ARM32 and ARM64, runs the SDK's
+host simulator (the MPC's load sequence and its quirks, at 44.1 kHz and at 48 kHz), and assembles the folder the MPC
+installs, checked with the SDK's <code>validate.py</code>:</p>
+<pre><code>build/mpc-plugin/Juan Jiant - VST - JIANT FM/      (and a zip of it)
+</code></pre>
+<p>On an MPC: Preferences &gt; Enhancements (Beta) &gt; Enable Enhancements and External Plugin Support; copy the folder to
+<code>VST2 Plugins</code> on a USB drive or SD card, restart, and load JIANT FM on a plugin track.</p>
+<p>What the plugin does:</p>
+<ul>
+<li><strong>MIDI</strong>: channels 1 to 4 play tracks 1 to 4 (GLO &gt; MIDI IN ROUTE CH1-4).</li>
+<li><strong>Sync Host</strong> (default): the sequencer follows the MPC's transport and tempo (a 24 PPQN clock made from the host's
+  beats). <strong>Internal</strong>: its own tempo; <strong>Play</strong> starts and stops it.</li>
+<li><strong>GENE</strong>: genre, seed, energy and form; <strong>Generate</strong> makes a song.</li>
+<li><strong>The music is saved in the MPC project</strong>: the live section, the songs and the user presets.</li>
+<li><strong>Any sample rate</strong>: 44.1 kHz as is (the MPC's), other rates resampled.</li>
+</ul>
+<p>Limits, today:</p>
+<ul>
+<li><strong>No JIANT screen inside an MPC</strong>: MPC plugins show only the MPC's parameter page. The full JIANT, its screen and
+  its UI, is the MPC Sample app's job (<a href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/mpc-sample"><code>mpc-sample/</code></a>), not the plugin's.</li>
+<li><strong>One JIANT per project</strong>: a second instance stays silent (the firmware is one device).</li>
+<li>Tried in the SDK's host simulator, not yet on MPC hardware.</li>
+</ul>
+<h2 id="licences">Licences</h2>
+<p>JIANT is GPL-3.0-only. The SDK's framework is MIT and links into the plugin under the GPL; the plugin folder carries
+JIANT's <code>LICENSE</code> and where its source is. The SMK-37's own SDK library is proprietary: the SMK-37 port is to run bare
+metal on JIANT's own HAL, as on the FM-1, not linked with it.</p>
+</main>
+</div>
+<footer>JIANT FM, by Juan Jiant · GPL-3.0 · <a href="https://juanjiant-bit.github.io/JIANT/studio/">JIANT Studio</a> · <a href="https://github.com/juanjiant-bit/JIANT">GitHub</a>.
+M-VAVE, FM-1, SMK-37, Akai and MPC are trademarks of their owners; JIANT is not affiliated with or endorsed by them.</footer>
+<script>
+(function(){var d=document.querySelector('nav.toc details');if(d&&matchMedia('(max-width:900px)').matches)d.open=false;
+var as=[].slice.call(document.querySelectorAll('nav.toc a[href^="#"]')),hs=as.map(function(a){return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)))});
+function spy(){var y=innerHeight*.25,k=-1;hs.forEach(function(h,i){if(h&&h.getBoundingClientRect().top<y)k=i});as.forEach(function(a,i){a.classList.toggle('here',i===k)})}
+addEventListener('scroll',spy,{passive:true});spy();})();
+</script>
+</body>
+</html>

@@ -125,9 +125,10 @@ h1 .fm { background: var(--heat); -webkit-background-clip: text; background-clip
 }
 /* the bench: the device, and beside it (the MPC, wide screens) its screen larger, its samples and its map */
 .bench { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
-/* the MPC: wide enough that its screen is twice its pixels (320 x 240 at x2) on a wide screen */
-.bench.dev-mpc { grid-template-columns: minmax(0, 744px) minmax(0, 1fr); }
-@media (max-width: 1100px) { .bench.dev-mpc { grid-template-columns: minmax(0, 1fr); } .bench.dev-mpc .stage { max-width: 744px; width: 100%; margin: 0 auto; } }
+/* the MPC: the unit as it is (portrait), its screen at its own size on it; beside it the screen larger */
+.bench.dev-mpc { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); }
+@media (max-width: 960px) { .bench.dev-mpc { grid-template-columns: minmax(0, 1fr); } .bench.dev-mpc .stage { max-width: 560px; width: 100%; margin: 0 auto; } }
+@media (min-width: 961px) { .bench.dev-mpc .stage { position: sticky; top: 12px; } }
 .stage { --bc: var(--orange); position: relative; padding: 14px; min-width: 0; }
 .bench.dev-mpc .stage { padding: clamp(6px, 2vw, 22px); }
 .side { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
@@ -248,6 +249,12 @@ h1 .fm { background: var(--heat); -webkit-background-clip: text; background-clip
 .start button:hover:not(:disabled) { background: #ff3ea5; border-color: #ff3ea5; }
 .start button:disabled { opacity: .5; cursor: progress; }
 .start p { margin: 0; max-width: 32em; text-align: center; color: #fff; font: 13px/1.5 var(--mono); background: rgba(5, 4, 9, .8); padding: 6px 10px; }
+/* the screen, larger (on the drawings it is the unit's size: small, as on the unit) */
+.mirror { --bc: var(--violet); padding: 14px; margin: 0; }
+.mirror canvas { display: block; width: 100%; max-width: 640px; margin: 0 auto; image-rendering: pixelated; background: #000; }
+.cap { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 8px 0 0; font: 500 10px/1.4 var(--mono);
+       letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.cap b { color: var(--line); font-weight: 500; }
 /* the map and notes */
 .k { font: 500 10px/1.4 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--cyan); margin: 0 0 10px; }
 .map { --bc: var(--cyan); padding: 18px 20px; font-size: 14px; }
@@ -461,6 +468,22 @@ function fitScreen(dev, canvas, W, rect, w, h, onScale) {
   ro.observe(dev);
   fit();
   return () => ro.disconnect();
+}
+
+// a device's screen larger: a copy of its canvas (w x h) at the top of the side column, drawn every frame; returns stop()
+function bigScreen(canvas, w, h, title, note, max) {
+  const fig = document.createElement("figure");
+  fig.className = "mirror brk";
+  fig.innerHTML = `<canvas width="${w}" height="${h}" role="img"></canvas><figcaption class="cap"><span><b></b></span><span></span></figcaption>`;
+  const c = fig.querySelector("canvas");
+  c.setAttribute("aria-label", title); c.style.aspectRatio = `${w} / ${h}`; if (max) c.style.maxWidth = max + "px";
+  fig.querySelector("b").textContent = title; fig.querySelector(".cap span:last-child").textContent = note;
+  document.getElementById("side").prepend(fig);
+  const mctx = c.getContext("2d");
+  let raf = 0;
+  const copy = () => { mctx.drawImage(canvas, 0, 0); raf = requestAnimationFrame(copy); };
+  copy();
+  return () => { cancelAnimationFrame(raf); fig.remove(); };
 }
 
 // ------------------------------------------------------------------ drawing a panel
@@ -789,8 +812,10 @@ function buildSMK(stage) {
   };
   wheel(32, "PITCH", "BEND", (v) => { const b = Math.min(16383, v * 129); emu.midi(0xE0, b & 127, b >> 7); }, true);
   wheel(92, "MOD", "MOD", (v) => emu.midi(0xB0, 1, v), false);
-  // the screen (the FM-1's: 240 x 240), the JIANT frame in it, violet HUD corners round it
-  const S = [174, 46, 248];
+  // the screen (the FM-1's chip and its 240 x 240 panel, 1.54" on the SMK-37: small, beside the wheels), the JIANT
+  // frame in it, violet HUD corners round it; larger under the keyboard (bigScreen)
+  const S = [222, 74, 152];
+  label(svg, S[0] + S[2] / 2, S[1] + S[2] + 44, "1.54″ · 240 × 240", 10, MONO, DIM).setAttribute("letter-spacing", ".1em");
   el("rect", { x: S[0] - 14, y: S[1] - 12, width: S[2] + 28, height: S[2] + 26, rx: 6, fill: "#030206", stroke: "rgba(184,112,255,.35)", "stroke-width": 1.5 });
   brackets(svg, S[0] - 20, S[1] - 18, S[2] + 40, S[2] + 38, 18, VIO, 2);
   el("rect", { x: S[0] - 2, y: S[1] - 2, width: S[2] + 4, height: S[2] + 4, fill: "#000" });
@@ -799,6 +824,7 @@ function buildSMK(stage) {
   Object.assign(canvas.style, { left: `${S[0] / W * 100}%`, top: `${S[1] / H * 100}%`, width: `${S[2] / W * 100}%` });
   dev.appendChild(canvas);
   const ctx = canvas.getContext("2d");
+  const unbig = bigScreen(canvas, 240, 240, "The screen · larger", "the SMK-37's own is 1.54″", 480);
   let bank = 0, masterValue = 700;
   // K1..K8 in one row: rings (K1-K4 in the JIANT skin's knob colours, MASTER its level as heat), JIANT's name under each
   const ROLE_NAME = { [EN.K1]: "KNOB 1", [EN.K2]: "KNOB 2", [EN.K3]: "KNOB 3", [EN.K4]: "KNOB 4", master: "MASTER",
@@ -906,7 +932,7 @@ function buildSMK(stage) {
     for (const { m, g } of keys) { const k = m - 53; g.classList.toggle("lit", k >= 0 && k < FM1_KEYS && !!(litK & (1 << k))); }
     pads.forEach((g, p) => padLit(g, litK & (1 << smkPadKey(p)) ? padHeat(p) : ""));
   }
-  return { dev, frame };
+  return { dev, frame, stop: unbig };
 }
 const SMK_INFO = `
 <div class="map brk">
@@ -1185,13 +1211,13 @@ function paintBrowser(ctx, B) {
 // under each control in orange: what it is in JIANT
 const MPC_INK = DIM, MPC_JIANT = ORG;
 function buildMPC(stage) {
-  // the screen is the drawing's star, much larger than on the unit (it is what one reads): nearly the band's whole
-  // width; the soft keys over it, VOLUME, the pad bank, the meter and the speaker in a strip under it. Everything under
-  // the band is where it is on the unit, DY lower
-  const W = 990, DY = 582, H = 1194 + DY;
+  // the unit's own proportions: the band at the top (VOLUME, the pad bank, the screen at its size, the meter, the
+  // speaker), the MODE and PAD PLAY columns either side of the knobs and the pads, the palm rest. The screen larger
+  // beside it (bigScreen)
+  const W = 990, H = 1194;
   const dev = document.createElement("div");
   dev.className = "device mpc";
-  dev.style.setProperty("--start-r", "1.6% / 1%");
+  dev.style.setProperty("--start-r", "1.6% / 1.4%");
   stage.appendChild(dev);
   svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -1201,43 +1227,33 @@ function buildMPC(stage) {
   jiantDefs(defs());
   // the body, the screen's band (the heat along its foot)
   jiantBody(W, H, 16);
-  el("rect", { x: 15, y: 27, width: 960, height: 888, rx: 8, fill: "#040307", stroke: "rgba(184,112,255,.3)", "stroke-width": 1.5 });
-  el("rect", { x: 40, y: 913, width: 910, height: 2, fill: "url(#j-heat)", opacity: .7 });
-  const start = (t) => { t.setAttribute("text-anchor", "start"); return t; }, end = (t) => { t.setAttribute("text-anchor", "end"); return t; };
-  end(label(svg, 958, 66, "MPC SAMPLE", 15, MICH, "#6e6884")).setAttribute("letter-spacing", ".1em");
-  end(label(svg, 958, 84, "running JIANT FM", 10, MONO, DIM));
-  start(label(svg, 34, 66, "THE SCREEN · 320 × 240", 12, MONO, DIM)).setAttribute("letter-spacing", ".12em");
-  const scaleNote = start(label(svg, 34, 84, "JIANT in the middle, the pad bank left", 11, MONO, "#6e6884"));
-  // the screen: 320 x 240, as crisp as it can be (a whole number of pixels per pixel), in a black frame
-  const S = [30, 100, 930, 697.5];
-  el("rect", { x: S[0], y: S[1], width: S[2], height: S[3], rx: 4, fill: "#000", stroke: "rgba(184,112,255,.35)", "stroke-width": 1.5 });
-  brackets(svg, S[0] - 8, S[1] - 8, S[2] + 16, S[3] + 16, 22, VIO, 2);
+  el("rect", { x: 15, y: 27, width: 960, height: 306, rx: 8, fill: "#040307", stroke: "rgba(184,112,255,.3)", "stroke-width": 1.5 });
+  el("rect", { x: 40, y: 331, width: 910, height: 2, fill: "url(#j-heat)", opacity: .7 });
+  label(svg, 861, 82, "MPC SAMPLE", 15, MICH, "#6e6884").setAttribute("letter-spacing", ".1em");
+  label(svg, 861, 100, "running JIANT FM", 10, MONO, DIM);
+  // the meter (two columns of five, as heat) and the speaker: drawn, not wired
+  [688, 714].forEach((x) => [0, 1, 2, 3, 4].forEach((r) =>
+    el("rect", { x, y: 128 + r * 38, width: 16, height: 26, rx: 2, fill: heatAt(.85 - r * .18), opacity: .32 })));
+  el("rect", { x: 766, y: 112, width: 190, height: 196, rx: 6, fill: "#07060b", stroke: "rgba(239,230,200,.14)" });
+  el("rect", { x: 774, y: 120, width: 174, height: 180, rx: 4, fill: "url(#j-grille)" });
+  brackets(svg, 770, 116, 182, 188, 14, VIO, 1.5);
+  // the screen: 320 x 240 at the unit's size
+  const S = [369, 125, 262, 196.5];
+  el("rect", { x: S[0] - 8, y: S[1] - 8, width: S[2] + 16, height: S[3] + 16, rx: 4, fill: "#000", stroke: "rgba(184,112,255,.35)", "stroke-width": 1.5 });
+  brackets(svg, S[0] - 15, S[1] - 15, S[2] + 30, S[3] + 30, 16, VIO, 2);
   const canvas = document.createElement("canvas");
   canvas.width = 320; canvas.height = 240;
   canvas.setAttribute("role", "img"); canvas.setAttribute("aria-label", "The MPC's screen");
   dev.appendChild(canvas);
   const ctx = canvas.getContext("2d");
-  const unfit = fitScreen(dev, canvas, W, S, 320, 240, (sc) => {
-    const n = Math.round(sc * 100) / 100;
-    scaleNote.textContent = `×${Number.isInteger(n) ? n : n.toFixed(2)} · JIANT in the middle, pad bank left`;
-  });
-  // the strip under the screen: VOLUME (drawn below, with the knobs), the pad bank's letter and the power light, the
-  // meter (two rows of heat) and the speaker: the meter and the speaker drawn, not wired
-  el("line", { x1: 232, x2: 232, y1: 826, y2: 896, stroke: "rgba(239,230,200,.14)" });
-  start(label(svg, 256, 848, "PAD BANK", 10, MONO, DIM)).setAttribute("letter-spacing", ".12em");
-  el("rect", { x: 256, y: 868, width: 24, height: 8, rx: 2, class: "led-pwr" });
-  const bankLetter = label(svg, 372, 884, "A", 46, MICH, ORG);
+  const unfit = fitScreen(dev, canvas, W, S, 320, 240);
+  const unbig = bigScreen(canvas, 320, 240, "The screen · larger", "JIANT in the middle, the pad bank left");
+  // the pad bank's letter and the power light, left of the screen
+  label(svg, 244, 160, "PAD BANK", 10, MONO, DIM).setAttribute("letter-spacing", ".12em");
+  const bankLetter = label(svg, 244, 228, "A", 50, MICH, ORG);
   bankLetter.setAttribute("filter", "url(#j-glow)");
-  el("line", { x1: 432, x2: 432, y1: 826, y2: 896, stroke: "rgba(239,230,200,.14)" });
-  [842, 866].forEach((y) => [0, 1, 2, 3, 4, 5].forEach((c) =>
-    el("rect", { x: 456 + c * 26, y, width: 20, height: 16, rx: 2, fill: heatAt(.1 + c * .17), opacity: .32 })));
-  el("rect", { x: 640, y: 822, width: 320, height: 78, rx: 6, fill: "#07060b", stroke: "rgba(239,230,200,.14)" });
-  el("rect", { x: 648, y: 830, width: 304, height: 62, rx: 4, fill: "url(#j-grille)" });
-  brackets(svg, 644, 826, 312, 70, 12, VIO, 1.5);
-  // the rest of the body: DY lower (the soft keys and VOLUME, drawn among the others below, stay up here)
-  const topLayer = svg;
-  svg = el("g", { transform: `translate(0 ${DY})` });
-  const lowLayer = svg;
+  el("rect", { x: 232, y: 284, width: 24, height: 8, rx: 2, class: "led-pwr" });
+  const topLayer = svg, lowLayer = svg;
   // printed captions on the body: a name between two rules
   const caption = (x1, x2, y, s) => {
     const t = label(svg, (x1 + x2) / 2, y + 4, s, 11, MONO, MPC_INK);
@@ -1303,7 +1319,7 @@ function buildMPC(stage) {
   // above the screen: HOME, EDIT, GLO (the soft keys, unprinted on the unit; in the browser CLOSE, PLAY, LOAD)
   svg = topLayer;
   [["◀ HOME", "HOME"], ["EDIT", "EDIT"], ["GLO", "GLO"]].forEach(([n, r], i) =>
-    mpcButton(404 + i * 120, 58, 72, 30, n, r, { text: "", sub: n === "◀ HOME" ? "HOME" : n, over: true }));
+    mpcButton(380 + i * 88, 62, 64, 30, n, r, { text: "", sub: n === "◀ HOME" ? "HOME" : n, over: true }));
   svg = lowLayer;
   // the left column: MODE (SAMPLE, SEQ, PAD FX, KNOB FX), SHIFT and PAD BANK, then ERASE and NOTE REPEAT under the fader
   const L = 45, L2 = 144, R = 780, R2 = 879, BW = 81;
@@ -1349,9 +1365,9 @@ function buildMPC(stage) {
   pot(678, "K3", "KNOB 3", (dd) => emu.enc(EN.K3, dd));
   pos.VOL = 88;
   svg = topLayer;
-  const vol = knobAt(76, 861, 25, "VOL", "", 0);
-  start(label(svg, 126, 852, "VOLUME", 11, MONO, DIM)).setAttribute("letter-spacing", ".14em");
-  start(label(svg, 126, 878, "MASTER", 13, DOT, ORG));
+  const vol = knobAt(126, 180, 40, "VOL", "", 0);
+  label(svg, 126, 268, "VOLUME", 11, MONO, DIM).setAttribute("letter-spacing", ".14em");
+  label(svg, 126, 292, "MASTER", 13, DOT, ORG);
   svg = lowLayer;
   vol.set(pos.VOL / 127);
   positional(vol.g, () => pos.VOL, (v) => { pos.VOL = v; vol.set(v / 127); emu.master(v * 1023 / 127); }, 160);
@@ -1478,7 +1494,7 @@ function buildMPC(stage) {
       await browser.restore();
       redraw();
     },
-    stop: () => { clearInterval(shiftWatch); unfit(); browser.stop(); panel.stop(); },
+    stop: () => { clearInterval(shiftWatch); unfit(); unbig(); browser.stop(); panel.stop(); },
   };
 }
 

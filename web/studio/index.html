@@ -194,6 +194,17 @@
     display: grid; place-items: center; overflow: hidden; }
   .port .pic img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
   .port .pic svg { width: 78%; height: auto; color: var(--dim); }
+  .port .pic .picopen { all: unset; display: block; width: 100%; height: 100%; cursor: zoom-in; }
+  .port .pic .picopen:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .port .thumbs { display: flex; gap: 6px; }
+  .port .thumbs button { all: unset; cursor: pointer; width: 64px; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; border: var(--border) solid var(--line); opacity: .6; }
+  .port .thumbs button[aria-pressed="true"] { opacity: 1; border-color: var(--accent); }
+  .port .thumbs img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+  .shotdlg { max-width: min(1200px, 96vw); max-height: 96vh; padding: 12px; border: var(--border) solid var(--line); border-radius: var(--radius); background: var(--panel, var(--field)); color: var(--fg); }
+  .shotdlg::backdrop { background: rgba(0, 0, 0, .78); }
+  .shotdlg img { display: block; max-width: 100%; max-height: calc(96vh - 90px); margin: 0 auto; border-radius: var(--radius-s); }
+  .shotbar { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .shotbar p { flex: 1; margin: 0; color: var(--dim); font-size: 13px; }
   .port h2 { margin: 0; }
   .port .meta { display: flex; flex-wrap: wrap; gap: 6px; }
   .state { font: 12px/1 var(--mono); padding: 5px 8px; border-radius: 999px; border: var(--border) solid var(--line); color: var(--dim); }
@@ -205,6 +216,13 @@
   .port .links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 6px; }
   .port .links .btn { min-height: 36px; padding: 7px 12px; font-size: 13px; }
   .port .links .na { opacity: .5; pointer-events: none; }
+  .emuctl { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  /* the emulator full screen: the browser's own where it has one, else the frame over the whole page (iPhone) */
+  #emubox { position: relative; }
+  #emubox .emuexit { display: none; position: absolute; bottom: 10px; right: 10px; z-index: 2; opacity: .85; }
+  #emubox.max { position: fixed; inset: 0; z-index: 100; border: 0; border-radius: 0; background: var(--bg); }
+  #emubox.max .emuexit, #emubox:fullscreen .emuexit { display: inline-flex; }
+  #emubox.max iframe, #emubox:fullscreen iframe { height: 100%; min-height: 0; }
   .devtry iframe { height: calc(100vh - 220px); }
 
   /* recording: the source, the transport, the lanes as a DAW's */
@@ -374,7 +392,7 @@
   <!-- ======================================================================================= ports -->
   <section class="view" id="v-ports" hidden>
     <div class="viewhead"><div><p class="eyebrow" data-t="vPorts"></p><h1 data-t="portsTitle"></h1></div>
-      <a class="btn ghost" href="https://github.com/juanjiant-bit/JIANT/blob/main/ports/README.md" target="_blank" rel="noopener" data-t="portsHow"></a></div>
+      <div class="emuctl"><a class="btn" href="../docs/guide/manual.html" target="_blank" rel="noopener" data-t="portsManuals"></a><a class="btn ghost" href="../docs/guide/ports.html" target="_blank" rel="noopener" data-t="portsHow"></a></div></div>
     <p class="lead" data-t="portsLead"></p>
     <div class="ports" id="portlist"></div>
     <div class="card devtry" id="devtry" hidden>
@@ -383,10 +401,16 @@
     </div>
   </section>
 
+  <dialog class="shotdlg" id="shotdlg" aria-labelledby="shotcap">
+    <img id="shotimg" alt="">
+    <div class="shotbar"><button class="btn ghost" id="shotprev" type="button" aria-label="←">←</button><p id="shotcap"></p>
+      <button class="btn ghost" id="shotnext" type="button" aria-label="→">→</button><button class="btn" id="shotclose" type="button" data-t="scrExitFull"></button></div>
+  </dialog>
+
   <!-- ======================================================================================= emulator -->
   <section class="view" id="v-emu" hidden>
-    <div class="viewhead"><div><p class="eyebrow" data-t="vEmu"></p><h1 id="emutitle"></h1></div><label class="field" style="min-width:240px"><span data-t="emuMidi"></span><select id="emumidi"></select></label></div>
-    <div class="framebox"><iframe id="f-emu" title="Emulator" loading="lazy" allow="autoplay; midi; fullscreen"></iframe></div>
+    <div class="viewhead"><div><p class="eyebrow" data-t="vEmu"></p><h1 id="emutitle"></h1></div><div class="emuctl"><label class="field" style="min-width:240px"><span data-t="emuMidi"></span><select id="emumidi"></select></label><button class="btn" id="emufull" type="button" data-t="scrFull"></button></div></div>
+    <div class="framebox" id="emubox"><button class="btn emuexit" id="emuexit" type="button" data-t="scrExitFull"></button><iframe id="f-emu" title="Emulator" loading="lazy" allow="autoplay; midi; fullscreen"></iframe></div>
   </section>
 
   <!-- ======================================================================================= record -->
