@@ -95,7 +95,7 @@ footer a{color:var(--dim)}
 <ul><li><a href="#essential">Essential commands</a></li>
 <li><a href="#contents">Contents</a></li>
 <li><a href="#whats-new-in-this-version">What's new in this version</a><ul>
-<li><a href="#new-in-v10835-since-v10821">New in V10.8.35 (since V10.8.21)</a></li>
+<li><a href="#new-in-v10836-since-v10821">New in V10.8.36 (since V10.8.21)</a></li>
 <li><a href="#new-in-v10821-since-v10781">New in V10.8.21 (since V10.7.81)</a></li>
 <li><a href="#new-in-v10781-since-v10716">New in V10.7.81 (since V10.7.16)</a></li>
 <li><a href="#since-v106c">Since V10.6c</a></li>
@@ -254,8 +254,8 @@ footer a{color:var(--dim)}
 <p class="lead">All of JIANT FM on one page: every button, knob and message named as the device shows it. If you read one chapter, read <a href="#12-saving-and-loading">Saving and loading</a>.</p>
 <div class="bar"><a class="btn go" href="https://juanjiant-bit.github.io/JIANT/studio/">Open JIANT Studio</a><a class="btn" href="manual.es.html">Español</a><a class="btn" href="whats-new-v10.8.21.html">What's new in V10.8.21</a><a class="btn" href="https://juanjiant-bit.github.io/JIANT/manual/">Interactive manual</a><a class="btn" href="manual.html" download>Download</a></div></section>
 <h1 id="jiant-fm-user-manual">JIANT FM — User Manual</h1>
-<p><strong>JIANT FM V10.8.35 for the M-VAVE FM-1</strong> (the public version is V10.8.21; V10.8.22 to V10.8.35 are betas: what
-changed in them is in <a href="#new-in-v10835-since-v10821">New in V10.8.35</a>)</p>
+<p><strong>JIANT FM V10.8.36 for the M-VAVE FM-1</strong> (the public version is V10.8.21; V10.8.22 to V10.8.36 are betas: what
+changed in them is in <a href="#new-in-v10836-since-v10821">New in V10.8.36</a>)</p>
 <blockquote>
 <p><em>Versión en español: <a href="manual.es.html">manual en español</a>.</em></p>
 </blockquote>
@@ -324,9 +324,18 @@ public version) or earlier: <a href="#whats-new-in-this-version">What's new in t
 </ul>
 <hr />
 <h2 id="whats-new-in-this-version">What's new in this version</h2>
-<h3 id="new-in-v10835-since-v10821">New in V10.8.35 (since V10.8.21)</h3>
-<p>The betas V10.8.22 to V10.8.35 in one list. Where a chapter below still describes the earlier screen, this list is right.</p>
+<h3 id="new-in-v10836-since-v10821">New in V10.8.36 (since V10.8.21)</h3>
+<p>The betas V10.8.22 to V10.8.36 in one list. Where a chapter below still describes the earlier screen, this list is right.</p>
 <ul>
+<li><strong>FX › DIST, KNOB 4: NOISE</strong> (V10.8.36; 0–127, a track's): a noise that moves the gain and the tone inside the
+  distortion: grain stuck to the note, not a hiss added (silence stays silent). Not on the AMP type.</li>
+<li><strong>FX › CHORUS, KNOB 4: MIX</strong> (V10.8.36; 0–100 %, global): at 0 the chorus as it was; towards 100 each track's dry
+  sound goes down by its CHORUS send and one modulated voice is left, in the middle: MIX 100 and the send whole, a
+  vibrato.</li>
+<li><strong>CLOUD reverb</strong> (V10.8.36): it starts with the note (no longer like a late delay); half the grains read just
+  behind the present and the others 1, 2 or 3 sixteenths back, by the tempo; the tail a little lower.</li>
+<li><strong>GENERATOR</strong> (V10.8.36): the mix by genre (the lead and the arp up where they were buried, less reverb on a club's
+  stabs, the kick's DUCK stronger) and EXPLORE with the lead / arp dialogue.</li>
 <li><strong>DRONE CLAY, complete</strong> (V10.8.27–V10.8.31; see <a href="#drone-clay-seq--clay-v10821">DRONE CLAY</a>): each modulator has its
   own <strong>RATE</strong> on the bar's grid (1/64 … 4BAR, dotted, triplets and polyrhythms), the drone has <strong>PITCH</strong> (−24 … +36
   semitones), the hits (KICK, SNARE, HAT…) are a drum on any engine, and there are four pages: <strong>DRONE CLAY · CLAY MOD
@@ -1140,7 +1149,7 @@ since 0.6.51: every project opens as it was.</p>
 <td>DIST</td>
 <td>TYPE</td>
 <td>TONE</td>
-<td>—</td>
+<td>NOISE (V10.8.36)</td>
 </tr>
 <tr>
 <td>AUTO PAN</td>
@@ -1224,7 +1233,7 @@ since 0.6.51: every project opens as it was.</p>
 <td>RATE</td>
 <td>DEPTH</td>
 <td>STEREO</td>
-<td>—</td>
+<td>MIX (V10.8.36)</td>
 </tr>
 <tr>
 <td>MASTER</td>
@@ -3840,7 +3849,9 @@ its page). PRESETS loads the track's sounds, as everywhere. The pages, their kno
 <li><strong>FX</strong>: DIST amount and the three sends (CHORUS, DLY, REV).</li>
 <li><strong>DIST</strong>: amount, <strong>TYPE</strong> (SOFT, HARD, FOLD, CRUSH, RECT, <strong>AMP</strong>), <strong>TONE</strong> (darker / brighter). <strong>AMP</strong> is a guitar
   amp: two valve stages that clip unevenly (low DIST clean, then crunch, then lead), the bias breathing with the level,
-  and a speaker cabinet with its presence peak; TONE moves the cabinet's brightness.</li>
+  and a speaker cabinet with its presence peak; TONE moves the cabinet's brightness. <strong>NOISE</strong> (V10.8.36, KNOB 4,
+  0–127): a low-passed noise moves the drive's gain and TONE's corner, so grain appears round every harmonic of the
+  note; nothing is added (silence stays silent, the level as it was). Not on AMP.</li>
 <li><strong>AUTO PAN</strong>: the track's pan swung left and right around its PAN. <strong>DEPTH</strong> (0 = off), <strong>RATE</strong>, <strong>SYNC</strong> (BEAT:
   RATE in divisions 4BAR … 1/32, locked to the bar; FREE: RATE in Hz), <strong>WAVE</strong> (SIN, TRI, SAW, SQR, S&amp;H).</li>
 <li><strong>FILTER</strong>: see <a href="#4-engines">4</a>.</li>
@@ -3952,7 +3963,7 @@ its page). PRESETS loads the track's sounds, as everywhere. The pages, their kno
 </tr>
 <tr>
 <td><strong>CLOUD</strong></td>
-<td>Granular wash; SIZE at max freezes it</td>
+<td>Granular wash that starts with the note (V10.8.36: half the grains just behind the present, the others 1, 2 or 3 sixteenths back); SIZE at max freezes it</td>
 <td>DAMP</td>
 <td><strong>AIR</strong></td>
 </tr>
@@ -3966,7 +3977,9 @@ ECO and back) cuts the old model's tail with a short fade (under a millisecond, 
 silent. Since 0.8.4 coming back to <strong>CLOUD</strong> starts an empty cloud, a frozen one too (it used to resume the cloud left
 from before).</p>
 <h3 id="chorus">Chorus</h3>
-<p><strong>CHORUS</strong>: RATE, DEPTH, <strong>STEREO</strong> (0 as always, down to mono, up to about twice as wide). Hidden with LOAD ECO
+<p><strong>CHORUS</strong>: RATE, DEPTH, <strong>STEREO</strong> (0 as always, down to mono, up to about twice as wide) and <strong>MIX</strong> (V10.8.36,
+KNOB 4, 0–100 %): at 0 the chorus as it was; towards 100 each track's dry goes down by its CHORUS send and the three
+voices become one, in the middle: MIX 100 and the send whole, a vibrato. Hidden with LOAD ECO
 (a track's chorus send card then says ECO).</p>
 <h3 id="master">MASTER</h3>
 <ul>
@@ -4122,7 +4135,8 @@ whole mix, what comes in on an EXT track too. This is the factory map (V10.7.59)
 <li><strong>G5 CLR AUTO</strong>: FX + G5 empties the punch-in lane (its automation) and nothing else, stopped or playing; while
   recording it erases only where the playhead passes.</li>
 </ul>
-<p><strong>The punch-in lane</strong>: each section has a lane of 64 steps of 1/16 (4 bars). With <strong>REC armed and playing</strong> (not
+<p><strong>The punch-in lane</strong>: each section has a lane, 64 steps of 1/16 (4 bars) by default; LEN and RES keep the
+project's value and are no longer edited on the device. With <strong>REC armed and playing</strong> (not
 during a song), the <strong>note effects (D4–F5)</strong> you hold are recorded into it, one per step (the audio ones and the mutes
 are not recorded). Hold <strong>FX + G5</strong> while playing to erase where the playhead passes; stopped, FX + G5 erases the whole
 lane. <strong>REC held + FX</strong> also clears it (along with the track's FX automation). Saved with the section. The page that
@@ -4924,7 +4938,7 @@ dub style.</p>
 <p><strong>9. The input as a modulator: IN ENV.</strong> In the matrix (LFO › MOD), the source <strong>IN ENV</strong> is the level of what comes
 in (up at once, down in about 50 ms; it watches both inputs). Send it to any destination of any track: CUT, PITCH, AMP,
 PAN, a send. It works even when no track plays the input: the input can be a controller only. With a negative amount
-it ducks: the synths go down when you speak. (In the code and in JIANT Studio this source is also called FOLLOW.) The
+it ducks: the synths go down when you speak. (JIANT Studio calls it FOLLOW.) The
 sources <strong>T1 ENV – T6 ENV</strong> do the same with another track's level.</p>
 <p><strong>10. Recording.</strong> What is recorded over USB has the input in it as its track mixed it: <strong>IN+OUT</strong> sends the host the
 stereo master; <strong>STEMS+IN</strong> sends each track apart, the FX return and the voice on two channels of its own (see

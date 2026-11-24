@@ -6,7 +6,7 @@ Firmware personalizado para el M-VAVE FM-1, de Juan Jiant. Primero la versión m
 
 | Versión | Fecha | Estado |
 | --- | --- | --- |
-| V10.8.22 … V10.8.35 | 2026-11-23 … 11-24 | Beta |
+| V10.8.22 … V10.8.36 | 2026-11-23 … 11-24 | Beta |
 | **V10.8.21** | 2026-11-23 | **Pública** |
 | V10.8.1 … V10.8.20 | 2026-11-21 … 11-23 | Beta |
 | **V10.7.81** | 2026-11-21 | **Pública** |
@@ -43,6 +43,13 @@ Antes de instalar, revisá los apartados **Compatibilidad**.
 > al final.
 
 ---
+
+## V10.8.36 — NOISE en DIST, MIX en CHORUS, CLOUD arranca con la nota (2026-11-24, beta)
+
+- **FX › DIST, KNOB 4: NOISE** (0–127, por pista): un ruido que mueve la ganancia y el tono dentro de la distorsión, grano pegado a la nota; el silencio sigue en silencio. No actúa en el tipo AMP. Un proyecto anterior abre con NOISE 0.
+- **FX › CHORUS, KNOB 4: MIX** (0–100 %, global): en 0 el chorus de siempre; hacia 100 el seco de cada pista baja según su envío a CHORUS y queda una sola voz modulada en el centro: un vibrato.
+- **Reverb CLOUD**: arranca con la nota; la mitad de los granos lee pegado al presente y los demás 1, 2 o 3 semicorcheas atrás según el tempo; la cola más baja (con SIZE alto recortaba).
+- **Generador**: la mezcla por género (lead y arpegio más arriba donde quedaban tapados, menos reverb en los stabs de club, DUCK del bombo más marcado), cada tema con su propio color, y EXPLORE con el diálogo lead / arpegio.
 
 ## V10.8.35 — MUTATE y LIVE de vuelta, compactos (2026-11-24, beta)
 

@@ -95,7 +95,7 @@ footer a{color:var(--dim)}
 <ul><li><a href="#essential">Comandos esenciales</a></li>
 <li><a href="#contenido">Contenido</a></li>
 <li><a href="#que-hay-de-nuevo-en-esta-version">Qué hay de nuevo en esta versión</a><ul>
-<li><a href="#lo-nuevo-en-v10835-desde-v10821">Lo nuevo en V10.8.35 (desde V10.8.21)</a></li>
+<li><a href="#lo-nuevo-en-v10836-desde-v10821">Lo nuevo en V10.8.36 (desde V10.8.21)</a></li>
 <li><a href="#lo-nuevo-en-v10821-desde-v10781">Lo nuevo en V10.8.21 (desde V10.7.81)</a></li>
 <li><a href="#lo-nuevo-en-v10781-desde-v10716">Lo nuevo en V10.7.81 (desde V10.7.16)</a></li>
 <li><a href="#desde-v106c">Desde V10.6c</a></li>
@@ -254,8 +254,8 @@ footer a{color:var(--dim)}
 <p class="lead">Todo JIANT FM en una página: cada botón, perilla y mensaje con el nombre que muestra el aparato. Si leés un solo capítulo, que sea <a href="#12-guardar-y-cargar">Guardar y cargar</a>.</p>
 <div class="bar"><a class="btn go" href="https://juanjiant-bit.github.io/JIANT/studio/">Abrir JIANT Studio</a><a class="btn" href="manual.html">English</a><a class="btn" href="whats-new-v10.8.21.es.html">Lo nuevo en V10.8.21</a><a class="btn" href="https://juanjiant-bit.github.io/JIANT/manual/">Manual interactivo</a><a class="btn" href="manual.es.html" download>Descargar</a></div></section>
 <h1 id="jiant-fm-manual-de-usuario">JIANT FM — Manual de usuario</h1>
-<p><strong>JIANT FM V10.8.35 para el M-VAVE FM-1</strong> (la versión pública es la V10.8.21; de la V10.8.22 a la V10.8.35 son betas:
-lo que cambió en ellas está en <a href="#lo-nuevo-en-v10835-desde-v10821">Lo nuevo en V10.8.35</a>)</p>
+<p><strong>JIANT FM V10.8.36 para el M-VAVE FM-1</strong> (la versión pública es la V10.8.21; de la V10.8.22 a la V10.8.36 son betas:
+lo que cambió en ellas está en <a href="#lo-nuevo-en-v10836-desde-v10821">Lo nuevo en V10.8.36</a>)</p>
 <blockquote>
 <p><em>English version: <a href="manual.html">English manual</a>.</em></p>
 </blockquote>
@@ -324,9 +324,18 @@ versión pública) o de antes: <a href="#qué-hay-de-nuevo-en-esta-versión">Qu�
 </ul>
 <hr />
 <h2 id="que-hay-de-nuevo-en-esta-version">Qué hay de nuevo en esta versión</h2>
-<h3 id="lo-nuevo-en-v10835-desde-v10821">Lo nuevo en V10.8.35 (desde V10.8.21)</h3>
-<p>Las betas V10.8.22 a V10.8.35 en una lista. Donde un capítulo de abajo todavía describe la pantalla anterior, vale esta lista.</p>
+<h3 id="lo-nuevo-en-v10836-desde-v10821">Lo nuevo en V10.8.36 (desde V10.8.21)</h3>
+<p>Las betas V10.8.22 a V10.8.36 en una lista. Donde un capítulo de abajo todavía describe la pantalla anterior, vale esta lista.</p>
 <ul>
+<li><strong>FX › DIST, KNOB 4: NOISE</strong> (V10.8.36; 0–127, por pista): un ruido que mueve la ganancia y el tono dentro de la
+  distorsión: grano pegado a la nota, no un soplido sumado (el silencio sigue en silencio). No actúa en el tipo AMP.</li>
+<li><strong>FX › CHORUS, KNOB 4: MIX</strong> (V10.8.36; 0–100 %, global): en 0 el chorus de siempre; hacia 100 el sonido seco de
+  cada pista baja según su envío a CHORUS y queda una sola voz modulada, en el centro: con MIX 100 y el envío entero,
+  un vibrato.</li>
+<li><strong>Reverb CLOUD</strong> (V10.8.36): arranca con la nota (ya no suena como un delay atrasado); la mitad de los granos lee
+  pegado al presente y los demás 1, 2 o 3 semicorcheas atrás, según el tempo; la cola, un poco más baja.</li>
+<li><strong>GENERATOR</strong> (V10.8.36): la mezcla por género (el lead y el arpegio más arriba donde quedaban tapados, menos reverb
+  en los stabs de club, el DUCK del bombo más marcado) y EXPLORE con el diálogo entre lead y arpegio.</li>
 <li><strong>DRONE CLAY, completo</strong> (V10.8.27–V10.8.31; ver <a href="#drone-clay-seq--clay-v10821">DRONE CLAY</a>): cada modulador tiene su
   propio <strong>RATE</strong> sobre la grilla del compás (1/64 … 4BAR, con puntillo, tresillos y polirritmos), el drone tiene
   <strong>PITCH</strong> (−24 … +36 semitonos), los golpes (KICK, SNARE, HAT…) son una batería en cualquier motor, y las páginas son
@@ -1163,7 +1172,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>DIST</td>
 <td>TYPE</td>
 <td>TONE</td>
-<td>—</td>
+<td>NOISE (V10.8.36)</td>
 </tr>
 <tr>
 <td>AUTO PAN</td>
@@ -1247,7 +1256,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.</p>
 <td>RATE</td>
 <td>DEPTH</td>
 <td>STEREO</td>
-<td>—</td>
+<td>MIX (V10.8.36)</td>
 </tr>
 <tr>
 <td>MASTER</td>
@@ -3946,7 +3955,10 @@ sus perillas y sus dibujos son los mismos.</p>
 <li><strong>FX</strong>: cantidad de DIST y los tres envíos (CHORUS, DLY, REV).</li>
 <li><strong>DIST</strong>: cantidad, <strong>TYPE</strong> (SOFT, HARD, FOLD, CRUSH, RECT, <strong>AMP</strong>), <strong>TONE</strong> (más oscuro / más brillante). <strong>AMP</strong>
   es un amplificador de guitarra: dos etapas de válvula que saturan desparejo (DIST bajo limpio, después crunch, después
-  lead), el bias respirando con el nivel, y un bafle con su pico de presencia; TONE mueve el brillo del bafle.</li>
+  lead), el bias respirando con el nivel, y un bafle con su pico de presencia; TONE mueve el brillo del bafle.
+  <strong>NOISE</strong> (V10.8.36, KNOB 4, 0–127): un ruido filtrado mueve la ganancia de la distorsión y la esquina de TONE,
+  así aparece grano alrededor de cada armónico de la nota; no suma nada (el silencio sigue en silencio y el nivel
+  queda como estaba). En AMP no actúa.</li>
 <li><strong>AUTO PAN</strong>: el paneo de la pista oscilando a izquierda y derecha alrededor de su PAN. <strong>DEPTH</strong> (0 = apagado),
   <strong>RATE</strong>, <strong>SYNC</strong> (BEAT: RATE en divisiones 4BAR … 1/32, sincronizado al compás; FREE: RATE en Hz), <strong>WAVE</strong> (SIN,
   TRI, SAW, SQR, S&amp;H).</li>
@@ -4062,7 +4074,7 @@ según el tipo:</p>
 </tr>
 <tr>
 <td><strong>CLOUD</strong></td>
-<td>Nube granular; SIZE al máximo la congela</td>
+<td>Nube granular que arranca con la nota (V10.8.36: la mitad de los granos pegados al presente, los demás 1, 2 o 3 semicorcheas atrás); SIZE al máximo la congela</td>
 <td>DAMP</td>
 <td><strong>AIR</strong></td>
 </tr>
@@ -4078,7 +4090,9 @@ sin clic) y el nuevo empieza en silencio. Desde 0.8.4, volver a <strong>CLOUD</s
 congelada (antes retomaba la nube que había quedado).</p>
 <h3 id="chorus">Chorus</h3>
 <p><strong>CHORUS</strong>: RATE, DEPTH, <strong>STEREO</strong> (0 como siempre, hacia abajo hasta mono, hacia arriba hasta casi el doble de
-ancho). Se oculta con LOAD ECO (la tarjeta de envío de chorus de una pista dice entonces ECO).</p>
+ancho) y <strong>MIX</strong> (V10.8.36, KNOB 4, 0–100 %): en 0 el chorus de siempre; hacia 100 el seco de cada pista baja según
+su envío a CHORUS y las tres voces pasan a ser una sola, en el centro: con MIX 100 y el envío entero queda un vibrato.
+Se oculta con LOAD ECO (la tarjeta de envío de chorus de una pista dice entonces ECO).</p>
 <h3 id="master">MASTER</h3>
 <ul>
 <li><strong>CLIP</strong>: saturación que agrega carácter, no volumen.</li>
@@ -4242,7 +4256,8 @@ sobre el master: toda la mezcla, también lo que entra por una pista EXT. Este e
 <li><strong>G5 CLR AUTO</strong>: FX + G5 vacía el carril de punch-in (su automatización) y nada más, parado o tocando; grabando,
   borra solo donde pasa el cabezal.</li>
 </ul>
-<p><strong>El carril de punch-in</strong>: cada sección tiene un carril de 64 pasos de 1/16 (4 compases). Con <strong>REC armado y sonando</strong>
+<p><strong>El carril de punch-in</strong>: cada sección tiene un carril, de 64 pasos de 1/16 (4 compases) por defecto; LEN y RES
+conservan el valor del proyecto y ya no se editan en el equipo. Con <strong>REC armado y sonando</strong>
 (no durante un tema), los <strong>efectos de nota (D4–F5)</strong> que mantenés se graban en él, uno por paso (los del audio y los
 mutes no se graban). Mantené <strong>FX + G5</strong> mientras suena para borrar por donde pasa el cabezal; parado, FX + G5
 borra todo el carril. <strong>REC mantenido + FX</strong> también lo borra (junto con la automatización de FX de la pista). Se
@@ -5073,8 +5088,7 @@ lo girás, como en el dub.</p>
 <p><strong>9. La entrada como modulador: IN ENV.</strong> En la matriz (LFO › MOD), la fuente <strong>IN ENV</strong> es el volumen de lo que entra
 (sube al instante, baja en unos 50 ms; mira las dos entradas). Mandala a cualquier destino de cualquier pista: CUT,
 PITCH, AMP, PAN, un envío. Funciona aunque ninguna pista esté sonando la entrada: puede ser solo un controlador. Con
-cantidad negativa hace ducking: los sintes bajan cuando hablás. (En el código y en JIANT Studio esta fuente se llama
-también FOLLOW.) Las fuentes <strong>T1 ENV – T6 ENV</strong> hacen lo mismo con el volumen de otra pista.</p>
+cantidad negativa hace ducking: los sintes bajan cuando hablás. (En JIANT Studio se llama FOLLOW.) Las fuentes <strong>T1 ENV – T6 ENV</strong> hacen lo mismo con el volumen de otra pista.</p>
 <p><strong>10. Grabar.</strong> Lo que se graba por USB incluye la entrada tal como la mezcló su pista: <strong>IN+OUT</strong> manda al host el
 master estéreo; <strong>STEMS+IN</strong> manda cada pista por separado, el retorno de efectos y la voz en dos canales propios
 (ver abajo). Con una interfaz en el puerto HOST no hay audio USB hacia la computadora: grabá por la salida de audio.</p>

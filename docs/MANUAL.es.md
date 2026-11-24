@@ -1,7 +1,7 @@
 # JIANT FM — Manual de usuario
 
-**JIANT FM V10.8.35 para el M-VAVE FM-1** (la versión pública es la V10.8.21; de la V10.8.22 a la V10.8.35 son betas:
-lo que cambió en ellas está en [Lo nuevo en V10.8.35](#lo-nuevo-en-v10835-desde-v10821))
+**JIANT FM V10.8.36 para el M-VAVE FM-1** (la versión pública es la V10.8.21; de la V10.8.22 a la V10.8.36 son betas:
+lo que cambió en ellas está en [Lo nuevo en V10.8.36](#lo-nuevo-en-v10836-desde-v10821))
 
 > *English version: [MANUAL.md](MANUAL.md).*
 
@@ -37,10 +37,19 @@ versión pública) o de antes: [Qué hay de nuevo en esta versión](#qué-hay-de
 
 ## Qué hay de nuevo en esta versión
 
-### Lo nuevo en V10.8.35 (desde V10.8.21)
+### Lo nuevo en V10.8.36 (desde V10.8.21)
 
-Las betas V10.8.22 a V10.8.35 en una lista. Donde un capítulo de abajo todavía describe la pantalla anterior, vale esta lista.
+Las betas V10.8.22 a V10.8.36 en una lista. Donde un capítulo de abajo todavía describe la pantalla anterior, vale esta lista.
 
+- **FX › DIST, KNOB 4: NOISE** (V10.8.36; 0–127, por pista): un ruido que mueve la ganancia y el tono dentro de la
+  distorsión: grano pegado a la nota, no un soplido sumado (el silencio sigue en silencio). No actúa en el tipo AMP.
+- **FX › CHORUS, KNOB 4: MIX** (V10.8.36; 0–100 %, global): en 0 el chorus de siempre; hacia 100 el sonido seco de
+  cada pista baja según su envío a CHORUS y queda una sola voz modulada, en el centro: con MIX 100 y el envío entero,
+  un vibrato.
+- **Reverb CLOUD** (V10.8.36): arranca con la nota (ya no suena como un delay atrasado); la mitad de los granos lee
+  pegado al presente y los demás 1, 2 o 3 semicorcheas atrás, según el tempo; la cola, un poco más baja.
+- **GENERATOR** (V10.8.36): la mezcla por género (el lead y el arpegio más arriba donde quedaban tapados, menos reverb
+  en los stabs de club, el DUCK del bombo más marcado) y EXPLORE con el diálogo entre lead y arpegio.
 - **DRONE CLAY, completo** (V10.8.27–V10.8.31; ver [DRONE CLAY](#drone-clay-seq--clay-v10821)): cada modulador tiene su
   propio **RATE** sobre la grilla del compás (1/64 … 4BAR, con puntillo, tresillos y polirritmos), el drone tiene
   **PITCH** (−24 … +36 semitonos), los golpes (KICK, SNARE, HAT…) son una batería en cualquier motor, y las páginas son
@@ -631,7 +640,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | Página | KNOB 1 | KNOB 2 | KNOB 3 | KNOB 4 |
 | --- | --- | --- | --- | --- |
 | FX | DIST | CHORUS (envío) | DLY (envío) | REV (envío) |
-| DIST | DIST | TYPE | TONE | — |
+| DIST | DIST | TYPE | TONE | NOISE (V10.8.36) |
 | AUTO PAN | DEPTH | RATE | SYNC | WAVE |
 | BUSES (0.8.5) | MIX (del delay) | SIZE (de la reverb) | DEPTH (del chorus) | DEPTH (del SLICER) |
 | SLICER | MODE | PAT | RATE | DEPTH |
@@ -643,7 +652,7 @@ PHASE −1, como desde 0.6.51: todo proyecto abre como estaba.
 | DLY 3 | TYPE (ANALOG / DIGITAL / REVERS, V10.6h) | PING (OFF / ON) | DRIVE | R TIME (V10.49: el tiempo propio del eco derecho) |
 | REVERB | TYPE | SIZE | DAMP (RESO: FOLLOW) | PRE (SHIMMER/CLOUD: AIR; RESO: PITCH) |
 | REVERB 2 | MOD | RATE | FILT | WIDE |
-| CHORUS | RATE | DEPTH | STEREO | — |
+| CHORUS | RATE | DEPTH | STEREO | MIX (V10.8.36) |
 | MASTER | CLIP | PUNCH | DUCK | REL |
 
 **SCL**
@@ -2367,6 +2376,9 @@ sus perillas y sus dibujos son los mismos.
 - **DIST**: cantidad, **TYPE** (SOFT, HARD, FOLD, CRUSH, RECT, **AMP**), **TONE** (más oscuro / más brillante). **AMP**
   es un amplificador de guitarra: dos etapas de válvula que saturan desparejo (DIST bajo limpio, después crunch, después
   lead), el bias respirando con el nivel, y un bafle con su pico de presencia; TONE mueve el brillo del bafle.
+  **NOISE** (V10.8.36, KNOB 4, 0–127): un ruido filtrado mueve la ganancia de la distorsión y la esquina de TONE,
+  así aparece grano alrededor de cada armónico de la nota; no suma nada (el silencio sigue en silencio y el nivel
+  queda como estaba). En AMP no actúa.
 - **AUTO PAN**: el paneo de la pista oscilando a izquierda y derecha alrededor de su PAN. **DEPTH** (0 = apagado),
   **RATE**, **SYNC** (BEAT: RATE en divisiones 4BAR … 1/32, sincronizado al compás; FREE: RATE en Hz), **WAVE** (SIN,
   TRI, SAW, SQR, S&H).
@@ -2435,7 +2447,7 @@ según el tipo:
 | **SPRING** | Tanque de resortes de amplificador | DAMP | PRE |
 | **SHIMR** (shimmer) | Sube una octava en cada pasada | DAMP | **AIR** (±24 st: más oscuro y grave / más aireado y agudo) |
 | **RESO** | Cuatro cuerdas afinadas a la escala del tema | **FOLLOW** (OFF / T1–T6: el acorde sigue la nota más grave que toca esa pista) | **PITCH** (el acorde 0–14 grados hacia arriba en la escala) |
-| **CLOUD** | Nube granular; SIZE al máximo la congela | DAMP | **AIR** |
+| **CLOUD** | Nube granular que arranca con la nota (V10.8.36: la mitad de los granos pegados al presente, los demás 1, 2 o 3 semicorcheas atrás); SIZE al máximo la congela | DAMP | **AIR** |
 
 **REVERB 2**: **MOD** (profundidad de modulación), **RATE**, **FILT** (tono de entrada: más oscuro / más brillante;
 0.6.86 resonante, una banda en el corte para tallar el lugar del espacio), **WIDE**.
@@ -2451,7 +2463,9 @@ congelada (antes retomaba la nube que había quedado).
 ### Chorus
 
 **CHORUS**: RATE, DEPTH, **STEREO** (0 como siempre, hacia abajo hasta mono, hacia arriba hasta casi el doble de
-ancho). Se oculta con LOAD ECO (la tarjeta de envío de chorus de una pista dice entonces ECO).
+ancho) y **MIX** (V10.8.36, KNOB 4, 0–100 %): en 0 el chorus de siempre; hacia 100 el seco de cada pista baja según
+su envío a CHORUS y las tres voces pasan a ser una sola, en el centro: con MIX 100 y el envío entero queda un vibrato.
+Se oculta con LOAD ECO (la tarjeta de envío de chorus de una pista dice entonces ECO).
 
 ### MASTER
 
@@ -2580,7 +2594,8 @@ sobre el master: toda la mezcla, también lo que entra por una pista EXT. Este e
 - **G5 CLR AUTO**: FX + G5 vacía el carril de punch-in (su automatización) y nada más, parado o tocando; grabando,
   borra solo donde pasa el cabezal.
 
-**El carril de punch-in**: cada sección tiene un carril de 64 pasos de 1/16 (4 compases). Con **REC armado y sonando**
+**El carril de punch-in**: cada sección tiene un carril, de 64 pasos de 1/16 (4 compases) por defecto; LEN y RES
+conservan el valor del proyecto y ya no se editan en el equipo. Con **REC armado y sonando**
 (no durante un tema), los **efectos de nota (D4–F5)** que mantenés se graban en él, uno por paso (los del audio y los
 mutes no se graban). Mantené **FX + G5** mientras suena para borrar por donde pasa el cabezal; parado, FX + G5
 borra todo el carril. **REC mantenido + FX** también lo borra (junto con la automatización de FX de la pista). Se
@@ -3157,8 +3172,7 @@ lo girás, como en el dub.
 **9. La entrada como modulador: IN ENV.** En la matriz (LFO › MOD), la fuente **IN ENV** es el volumen de lo que entra
 (sube al instante, baja en unos 50 ms; mira las dos entradas). Mandala a cualquier destino de cualquier pista: CUT,
 PITCH, AMP, PAN, un envío. Funciona aunque ninguna pista esté sonando la entrada: puede ser solo un controlador. Con
-cantidad negativa hace ducking: los sintes bajan cuando hablás. (En el código y en JIANT Studio esta fuente se llama
-también FOLLOW.) Las fuentes **T1 ENV – T6 ENV** hacen lo mismo con el volumen de otra pista.
+cantidad negativa hace ducking: los sintes bajan cuando hablás. (En JIANT Studio se llama FOLLOW.) Las fuentes **T1 ENV – T6 ENV** hacen lo mismo con el volumen de otra pista.
 
 **10. Grabar.** Lo que se graba por USB incluye la entrada tal como la mezcló su pista: **IN+OUT** manda al host el
 master estéreo; **STEMS+IN** manda cada pista por separado, el retorno de efectos y la voz en dos canales propios
