@@ -4,7 +4,7 @@
 
 [![License: GPL-3.0-only](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
 
-**▶ [Emulator](https://juanjiant-bit.github.io/JIANT/emu/)** · **[Installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/)** · **[Editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/)** · **[JIANT Studio](https://juanjiant-bit.github.io/JIANT/studio/)** · **[What's new](https://juanjiant-bit.github.io/JIANT/docs/guide/whats-new-v10.8.21.html)** · **[Manual](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.html)** · **[Manual ES](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.es.html)**
+**▶ [Emulator](https://juanjiant-bit.github.io/JIANT/emu/)** · **[Installer](https://juanjiant-bit.github.io/JIANT/webapp/installer/)** · **[Editor](https://juanjiant-bit.github.io/JIANT/webapp/editor/)** · **[JIANT Studio](https://juanjiant-bit.github.io/JIANT/studio/)** · **[What's new](https://juanjiant-bit.github.io/JIANT/docs/guide/whats-new-v10.8.21.html)** · **[DRONE CLAY](https://juanjiant-bit.github.io/JIANT/docs/guide/drone-clay.html)** · **[Manual](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.html)** · **[Manual ES](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.es.html)**
 
 ![JIANT FM: the signature and screens of the firmware](docs/jiant-hero.png)
 
@@ -14,7 +14,7 @@ step components you can play live, a song mode you perform and record, a generat
 inside the little keyboard. It is a fork of [Felucca](https://github.com/hugelton/Felucca) 1.1.5.1 by Hügelton
 Instruments (GPL-3.0) and takes its song system from [SLOOP](https://github.com/isod89/sloop-fm1).
 
-> **Current public release: V10.8.24** (not a beta). **Back up your projects before updating**: save a complete
+> **Current public release: V10.8.25** (not a beta). **Back up your projects before updating**: save a complete
 > backup with the editor or the installer first. If something doesn't work for you, V10.7.81 is still offered in the
 > installer.
 
@@ -137,6 +137,7 @@ Removed to make room: GLO › LIVE, STRETCH, MUTATE, the sequence dice, GLOBAL C
 | | English | Español |
 | --- | --- | --- |
 | **What's new in V10.8.21** · **Lo nuevo** | [Read online](https://juanjiant-bit.github.io/JIANT/docs/guide/whats-new-v10.8.21.html) · [Download](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/whats-new-v10.8.21.html) | [Ver online](https://juanjiant-bit.github.io/JIANT/docs/guide/whats-new-v10.8.21.es.html) · [Descargar](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/whats-new-v10.8.21.es.html) |
+| **DRONE CLAY** · concept and guide · **concepto y guía** | [Read online](https://juanjiant-bit.github.io/JIANT/docs/guide/drone-clay.html) · [Download](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/drone-clay.html) | [Ver online](https://juanjiant-bit.github.io/JIANT/docs/guide/drone-clay.es.html) · [Descargar](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/drone-clay.es.html) |
 | **Full manual** · **Manual completo** (with the essential commands) | [Read online](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.html) · [Download](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/manual.html) | [Ver online](https://juanjiant-bit.github.io/JIANT/docs/guide/manual.es.html) · [Descargar](https://github.com/juanjiant-bit/JIANT/raw/main/docs/guide/manual.es.html) |
 
 Each page is a single file: downloaded, it works offline. Also: the **[interactive manual](https://juanjiant-bit.github.io/JIANT/manual/)**,

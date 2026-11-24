@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRONE CLAY — JIANT FM</title>
+<style>
+:root{--bg:#0d0b10;--fg:#ece6dc;--dim:#a39b90;--line:#2a2530;--card:#16131b;
+--t1:#f2c230;--t2:#f08a24;--t3:#e2463a;--t4:#d6409f;--t5:#8a5cf0;--t6:#3a8cf0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:860px;margin:0 auto;padding:40px 16px 80px}
+.eyebrow{color:var(--t2);letter-spacing:.14em;text-transform:uppercase;font-size:13px}
+h1{font-size:clamp(40px,9vw,76px);line-height:1;margin:.15em 0 .2em;letter-spacing:-.02em}
+h2{font-size:26px;margin:48px 0 12px}
+p,li{color:var(--fg)} .dim{color:var(--dim)}
+.lede{font-size:21px;color:var(--dim);max-width:40em}
+blockquote{margin:28px 0;padding:18px 22px;border-left:3px solid var(--t4);background:var(--card);font-size:20px;font-style:italic}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:16px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.grid .card{margin:0}
+.card h3{margin:0 0 6px;font-size:17px}
+code,.k{font-family:ui-monospace,Menlo,monospace;font-size:.92em;background:#221d29;padding:1px 6px;border-radius:5px}
+svg{width:100%;height:auto;display:block;margin:24px 0}
+nav a{color:var(--dim);margin-right:14px}
+a{color:var(--t6)}
+footer{margin-top:60px;color:var(--dim);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<nav><a href="drone-clay.es.html">Español</a><a href="manual.html">Manual</a><a href="https://github.com/juanjiant-bit/JIANT">JIANT FM</a></nav>
+
+<span class="eyebrow">JIANT FM · SEQ › CLAY · from JIANT BYTE</span>
+<h1>DRONE CLAY</h1>
+<p class="lede">A sequencer that does not line up notes: it kneads sound. A drone with plasticity, a malleable mass of frequency that stretches, gets struck and transforms without ever stopping.</p>
+
+<svg viewBox="0 0 800 220" role="img" aria-label="A mass of frequency shaped by four modulators">
+  <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#f2c230"/><stop offset=".35" stop-color="#e2463a"/><stop offset=".7" stop-color="#d6409f"/><stop offset="1" stop-color="#3a8cf0"/></linearGradient></defs>
+  <path d="M0 150 C80 90 140 190 220 130 S360 60 430 120 S560 200 640 110 S760 120 800 140 L800 220 L0 220Z" fill="url(#g)" opacity=".85"/>
+  <path d="M0 170 C90 130 150 200 230 160 S370 110 440 150 S570 210 650 150 S760 160 800 170" fill="none" stroke="#ece6dc" stroke-opacity=".35" stroke-width="2"/>
+  <g fill="#ece6dc" font-family="ui-monospace,monospace" font-size="14">
+    <circle cx="140" cy="60" r="5"/><text x="152" y="65">MOD 1 · KICK</text>
+    <circle cx="360" cy="40" r="5"/><text x="372" y="45">MOD 2 · DRIFT</text>
+    <circle cx="560" cy="55" r="5"/><text x="572" y="60">MOD 3 · ARP UP</text>
+    <circle cx="700" cy="30" r="5"/><text x="618" y="22">MOD 4 · FM x3</text>
+  </g>
+</svg>
+
+<h2>The idea</h2>
+<p>The usual sequencer thinks of time as a row of boxes: each holds a note or nothing. DRONE CLAY starts from the opposite. Sound comes first, continuous, deep, already there; time does not create it, it <b>shapes</b> it.</p>
+<p>The drone is the clay: a single very low note, played with the track's own voice, that can be held forever. Four hands work that mass, the modulators. Each presses a different place (the filter, the pitch, the waveform, the pan, an effect send) with its own gesture: a dry hit, a slow drift, a staircase, a bounce, an arpeggio on the scale. What you hear is the imprint of those hands on the material.</p>
+<blockquote>You do not write a melody: you give form to a mass of frequency. The pattern is not a list of events, it is a pressure that returns.</blockquote>
+<p>That is why the mass is never the same twice. The modulators have their own rhythms (shapes, euclideans, amounts, decays) and cross at different phases: the clay settles into a state and the next hit pulls it out. Bio-generative in JIANT's sense: simple rules, living material, a result that evolves.</p>
+
+<h2>The parts</h2>
+<div class="grid">
+  <div class="card"><h3 style="color:var(--t1)">The drone</h3><p>A low note in the track's voice. Pick note and octave. <span class="k">RATE</span> en <span class="k">HOLD</span> holds it forever; from <span class="k">4BAR</span> a <span class="k">1/16</span> retriggers it with the tempo.</p></div>
+  <div class="card"><h3 style="color:var(--t2)">Four modulators</h3><p><span class="k">CLAY MOD 1–4</span>. Each has <span class="k">DEST</span> (which track parameter it kneads), <span class="k">SHAPE</span> (the gesture), <span class="k">EUCLID</span> (when it presses) y <span class="k">AMOUNT</span> (how much).</p></div>
+  <div class="card"><h3 style="color:var(--t3)">Hits</h3><p>The first shapes are drum hits made from the mass itself: <span class="k">KICK</span>, <span class="k">SNARE</span>, <span class="k">HAT</span>, <span class="k">CLAP</span>, <span class="k">TOM</span>, <span class="k">ZAP</span>… The drone turns percussive without ceasing to be a drone.</p></div>
+  <div class="card"><h3 style="color:var(--t4)">Slow shapes</h3><p><span class="k">SINE</span>, <span class="k">DRIFT</span>, <span class="k">SPRING</span>, <span class="k">STAIRS</span>, <span class="k">BOUNCE</span>, <span class="k">CHAOS</span>, <span class="k">S&amp;H</span>, ramps and envelopes: stretch, loosen, let fall.</p></div>
+  <div class="card"><h3 style="color:var(--t5)">Note gestures</h3><p><span class="k">ARP</span>, <span class="k">CHORD</span>, <span class="k">+OCT</span>, <span class="k">+5TH</span>, <span class="k">GLIDE DN</span> play on the project's scale; the <span class="k">FM x½ … x7</span> shapes change the harmonic colour.</p></div>
+  <div class="card"><h3 style="color:var(--t6)">Memory of the imprint</h3><p><span class="k">CLAY DECAY</span> sets how long each hit takes to let go: short is a pinch, long is a mark that stays. <span class="k">SEED</span> changes the variation; <span class="k">RUN</span> chooses whether it follows the song (<span class="k">SONG</span>) or runs free (<span class="k">FREE</span>).</p></div>
+</div>
+
+<h2>Quick start</h2>
+<div class="card">
+<ol>
+  <li>Pick a track and go to <span class="k">SEQ</span> › tab <span class="k">CLAY</span>.</li>
+  <li>En <span class="k">DRONE CLAY</span> set <span class="k">ON</span>, pick note and octave, and <span class="k">RATE</span> en <span class="k">HOLD</span> to start with the mass still.</li>
+  <li>En <span class="k">CLAY MOD 1</span>: <span class="k">DEST</span> to CUTOFF, <span class="k">SHAPE</span> to KICK, an <span class="k">EUCLID</span> and raise <span class="k">AMOUNT</span> until the hit is felt.</li>
+  <li>Add <span class="k">MOD 2</span> with a slow shape (DRIFT or SINE) on SHAPE or PAN: the mass starts to breathe.</li>
+  <li>With <span class="k">MOD 3</span> on a note gesture (ARP UP, CHORD m) the clay sings on the scale.</li>
+  <li>Set <span class="k">CLAY DECAY</span> so the imprints fade fast or stay.</li>
+</ol>
+</div>
+
+<h2>Good to know</h2>
+<ul>
+  <li>With <b>MONO</b> or <b>LEGATO</b> voicing, when a sequence step plays the drone yields the voice and comes back after. In <b>POLY</b> both sound.</li>
+  <li>A time or pitch punch-in restarts the mass from its first hit; on release it returns to the grid.</li>
+  <li>It works per track: six different masses, each with its own engine, can be kneaded at once.</li>
+  <li>It is saved with the project. Old projects open with DRONE CLAY off.</li>
+</ul>
+
+<footer>DRONE CLAY was born in JIANT BYTE and came to JIANT FM in V10.8.20. JIANT FM — Juan Jiant.</footer>
+</main>
+</body>
+</html>
